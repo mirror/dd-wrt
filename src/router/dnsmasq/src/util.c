@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2007 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2014 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -9,15 +9,13 @@
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-     
-  You should have received a copy of the GNU General Public License
-  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+      
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-/* Some code in this file contributed by Rob Funk. */
-
 /* The SURF random number generator was taken from djbdns-1.05, by 
-   Daniel J Berstein, which is public domain. */
+   Daniel J Bernstein, which is public domain. */
 
 
 #include "dnsmasq.h"
@@ -26,27 +24,16 @@
 #include <sys/times.h>
 #endif
 
-
-#ifdef HAVE_ARC4RANDOM
-void rand_init(void)
-{
-  return;
-}
-
-unsigned short rand16(void)
-{
-   return (unsigned short) (arc4random() >> 15);
-}
-
-#else
+#if defined(LOCALEDIR) || defined(HAVE_IDN)
+#include <idna.h>
+#endif
 
 /* SURF random number generator */
 
-typedef unsigned int uint32;
-
-static uint32 seed[32];
-static uint32 in[12];
-static uint32 out[8];
+static u32 seed[32];
+static u32 in[12];
+static u32 out[8];
+static int outleft = 0;
 
 void rand_init()
 {
@@ -65,7 +52,7 @@ void rand_init()
 
 static void surf(void)
 {
-  uint32 t[12]; uint32 x; uint32 sum = 0;
+  u32 t[12]; u32 x; u32 sum = 0;
   int r; int i; int loop;
 
   for (i = 0;i < 12;++i) t[i] = in[i] ^ seed[12 + i];
@@ -84,61 +71,151 @@ static void surf(void)
 
 unsigned short rand16(void)
 {
-  static int outleft = 0;
-
-  if (!outleft) {
-    if (!++in[0]) if (!++in[1]) if (!++in[2]) ++in[3];
-    surf();
-    outleft = 8;
-  }
-
+  if (!outleft) 
+    {
+      if (!++in[0]) if (!++in[1]) if (!++in[2]) ++in[3];
+      surf();
+      outleft = 8;
+    }
+  
   return (unsigned short) out[--outleft];
 }
 
-#endif
-
-
-int legal_char(char c)
+u32 rand32(void)
 {
-  /* check for legal char a-z A-Z 0-9 - 
-     (also / , used for RFC2317 and _ used in windows queries
-     and space, for DNS-SD stuff) */
-  if ((c >= 'A' && c <= 'Z') ||
-      (c >= 'a' && c <= 'z') ||
-      (c >= '0' && c <= '9') ||
-      c == '-' || c == '/' || c == '_' || c == ' ')
-    return 1;
-  
-  return 0;
-}
-  
-int canonicalise(char *s)
-{
-  /* check for legal chars and remove trailing . 
-     also fail empty string and label > 63 chars */
-  size_t dotgap = 0, l = strlen(s);
-  char c;
-  int nowhite = 0;
-
-  if (l == 0 || l > MAXDNAME) return 0;
-
-  if (s[l-1] == '.')
+ if (!outleft) 
     {
-      if (l == 1) return 0;
-      s[l-1] = 0;
+      if (!++in[0]) if (!++in[1]) if (!++in[2]) ++in[3];
+      surf();
+      outleft = 8;
     }
   
-  while ((c = *s))
+  return out[--outleft]; 
+}
+
+u64 rand64(void)
+{
+  static int outleft = 0;
+
+  if (outleft < 2)
+    {
+      if (!++in[0]) if (!++in[1]) if (!++in[2]) ++in[3];
+      surf();
+      outleft = 8;
+    }
+  
+  outleft -= 2;
+
+  return (u64)out[outleft+1] + (((u64)out[outleft]) << 32);
+}
+
+static int check_name(char *in)
+{
+  /* remove trailing . 
+     also fail empty string and label > 63 chars */
+  size_t dotgap = 0, l = strlen(in);
+  char c;
+  int nowhite = 0;
+  
+  if (l == 0 || l > MAXDNAME) return 0;
+  
+  if (in[l-1] == '.')
+    {
+      in[l-1] = 0;
+      nowhite = 1;
+    }
+
+  for (; (c = *in); in++)
     {
       if (c == '.')
 	dotgap = 0;
-      else if (!legal_char(c) || (++dotgap > MAXLABEL))
+      else if (++dotgap > MAXLABEL)
 	return 0;
+      else if (isascii((unsigned char)c) && iscntrl((unsigned char)c)) 
+	/* iscntrl only gives expected results for ascii */
+	return 0;
+#if !defined(LOCALEDIR) && !defined(HAVE_IDN)
+      else if (!isascii((unsigned char)c))
+	return 0;
+#endif
       else if (c != ' ')
 	nowhite = 1;
-      s++;
     }
-  return nowhite;
+
+  if (!nowhite)
+    return 0;
+
+  return 1;
+}
+
+/* Hostnames have a more limited valid charset than domain names
+   so check for legal char a-z A-Z 0-9 - _ 
+   Note that this may receive a FQDN, so only check the first label 
+   for the tighter criteria. */
+int legal_hostname(char *name)
+{
+  char c;
+  int first;
+
+  if (!check_name(name))
+    return 0;
+
+  for (first = 1; (c = *name); name++, first = 0)
+    /* check for legal char a-z A-Z 0-9 - _ . */
+    {
+      if ((c >= 'A' && c <= 'Z') ||
+	  (c >= 'a' && c <= 'z') ||
+	  (c >= '0' && c <= '9'))
+	continue;
+
+      if (!first && (c == '-' || c == '_'))
+	continue;
+      
+      /* end of hostname part */
+      if (c == '.')
+	return 1;
+      
+      return 0;
+    }
+  
+  return 1;
+}
+  
+char *canonicalise(char *in, int *nomem)
+{
+  char *ret = NULL;
+#if defined(LOCALEDIR) || defined(HAVE_IDN)
+  int rc;
+#endif
+
+  if (nomem)
+    *nomem = 0;
+  
+  if (!check_name(in))
+    return NULL;
+  
+#if defined(LOCALEDIR) || defined(HAVE_IDN)
+  if ((rc = idna_to_ascii_lz(in, &ret, 0)) != IDNA_SUCCESS)
+    {
+      if (ret)
+	free(ret);
+
+      if (nomem && (rc == IDNA_MALLOC_ERROR || rc == IDNA_DLOPEN_ERROR))
+	{
+	  my_syslog(LOG_ERR, _("failed to allocate memory"));
+	  *nomem = 1;
+	}
+    
+      return NULL;
+    }
+#else
+  if ((ret = whine_malloc(strlen(in)+1)))
+    strcpy(ret, in);
+  else if (nomem)
+    *nomem = 1;    
+#endif
+
+  return ret;
 }
 
 unsigned char *do_rfc1035_name(unsigned char *p, char *sval)
@@ -219,7 +296,7 @@ int sa_len(union mysockaddr *addr)
 }
 
 /* don't use strcasecmp and friends here - they may be messed up by LOCALE */
-int hostname_isequal(char *a, char *b)
+int hostname_isequal(const char *a, const char *b)
 {
   unsigned int c1, c2;
   
@@ -254,10 +331,65 @@ time_t dnsmasq_time(void)
 #endif
 }
 
+int netmask_length(struct in_addr mask)
+{
+  int zero_count = 0;
+
+  while (0x0 == (mask.s_addr & 0x1) && zero_count < 32) 
+    {
+      mask.s_addr >>= 1;
+      zero_count++;
+    }
+  
+  return 32 - zero_count;
+}
+
 int is_same_net(struct in_addr a, struct in_addr b, struct in_addr mask)
 {
   return (a.s_addr & mask.s_addr) == (b.s_addr & mask.s_addr);
 } 
+
+#ifdef HAVE_IPV6
+int is_same_net6(struct in6_addr *a, struct in6_addr *b, int prefixlen)
+{
+  int pfbytes = prefixlen >> 3;
+  int pfbits = prefixlen & 7;
+
+  if (memcmp(&a->s6_addr, &b->s6_addr, pfbytes) != 0)
+    return 0;
+
+  if (pfbits == 0 ||
+      (a->s6_addr[pfbytes] >> (8 - pfbits) == b->s6_addr[pfbytes] >> (8 - pfbits)))
+    return 1;
+
+  return 0;
+}
+
+/* return least signigicant 64 bits if IPv6 address */
+u64 addr6part(struct in6_addr *addr)
+{
+  int i;
+  u64 ret = 0;
+
+  for (i = 8; i < 16; i++)
+    ret = (ret << 8) + addr->s6_addr[i];
+
+  return ret;
+}
+
+void setaddr6part(struct in6_addr *addr, u64 host)
+{
+  int i;
+
+  for (i = 15; i >= 8; i--)
+    {
+      addr->s6_addr[i] = host;
+      host = host >> 8;
+    }
+}
+
+#endif
+ 
 
 /* returns port number from address */
 int prettyprint_addr(union mysockaddr *addr, char *buf)
@@ -272,7 +404,15 @@ int prettyprint_addr(union mysockaddr *addr, char *buf)
     }
   else if (addr->sa.sa_family == AF_INET6)
     {
+      char name[IF_NAMESIZE];
       inet_ntop(AF_INET6, &addr->in6.sin6_addr, buf, ADDRSTRLEN);
+      if (addr->in6.sin6_scope_id != 0 &&
+	  if_indextoname(addr->in6.sin6_scope_id, name) &&
+	  strlen(buf) + strlen(name) + 2 <= ADDRSTRLEN)
+	{
+	  strcat(buf, "%");
+	  strcat(buf, name);
+	}
       port = ntohs(addr->in6.sin6_port);
     }
 #else
@@ -302,7 +442,8 @@ void prettyprint_time(char *buf, unsigned int t)
 }
 
 
-/* in may equal out, when maxlen may be -1 (No max len). */
+/* in may equal out, when maxlen may be -1 (No max len). 
+   Return -1 for extraneous no-hex chars found. */
 int parse_hex(char *in, unsigned char *out, int maxlen, 
 	      unsigned int *wildcard_mask, int *mac_type)
 {
@@ -314,7 +455,10 @@ int parse_hex(char *in, unsigned char *out, int maxlen,
   
   while (maxlen == -1 || i < maxlen)
     {
-      for (r = in; *r != 0 && *r != ':' && *r != '-'; r++);
+      for (r = in; *r != 0 && *r != ':' && *r != '-' && *r != ' '; r++)
+	if (*r != '*' && !isxdigit((unsigned char)*r))
+	  return -1;
+      
       if (*r == 0)
 	maxlen = i;
       
@@ -329,12 +473,29 @@ int parse_hex(char *in, unsigned char *out, int maxlen,
 	  else
 	    {
 	      *r = 0;
-	      mask = mask << 1;
 	      if (strcmp(in, "*") == 0)
-		mask |= 1;
+		{
+		  mask = (mask << 1) | 1;
+		  i++;
+		}
 	      else
-		out[i] = strtol(in, NULL, 16);
-	      i++;
+		{
+		  int j, bytes = (1 + (r - in))/2;
+		  for (j = 0; j < bytes; j++)
+		    { 
+		      char sav = sav;
+		      if (j < bytes - 1)
+			{
+			  sav = in[(j+1)*2];
+			  in[(j+1)*2] = 0;
+			}
+		      out[i] = strtol(&in[j*2], NULL, 16);
+		      mask = mask << 1;
+		      i++;
+		      if (j < bytes - 1)
+			in[(j+1)*2] = sav;
+		    }
+		}
 	    }
 	}
       in = r+1;
@@ -346,14 +507,19 @@ int parse_hex(char *in, unsigned char *out, int maxlen,
   return i;
 }
 
+/* return 0 for no match, or (no matched octets) + 1 */
 int memcmp_masked(unsigned char *a, unsigned char *b, int len, unsigned int mask)
 {
-  int i;
-  for (i = len - 1; i >= 0; i--, mask = mask >> 1)
-    if (!(mask & 1) && a[i] != b[i])
-      return 0;
-
-  return 1;
+  int i, count;
+  for (count = 1, i = len - 1; i >= 0; i--, mask = mask >> 1)
+    if (!(mask & 1))
+      {
+	if (a[i] == b[i])
+	  count++;
+	else
+	  return 0;
+      }
+  return count;
 }
 
 /* _note_ may copy buffer */
@@ -404,18 +570,28 @@ void bump_maxfd(int fd, int *max)
 
 int retry_send(void)
 {
-   struct timespec waiter;
-   if (errno == EAGAIN)
+  /* Linux kernels can return EAGAIN in perpetuity when calling
+     sendmsg() and the relevant interface has gone. Here we loop
+     retrying in EAGAIN for 1 second max, to avoid this hanging 
+     dnsmasq. */
+
+  static int retries = 0;
+  struct timespec waiter;
+
+   if (errno == EAGAIN || errno == EWOULDBLOCK)
      {
        waiter.tv_sec = 0;
        waiter.tv_nsec = 10000;
        nanosleep(&waiter, NULL);
-       return 1;
+       if (retries++ < 1000)
+	 return 1;
      }
+
+   retries = 0;
    
    if (errno == EINTR)
      return 1;
-
+   
    return 0;
 }
 
@@ -444,3 +620,39 @@ int read_write(int fd, unsigned char *packet, int size, int rw)
   return 1;
 }
 
+/* Basically match a string value against a wildcard pattern.  */
+int wildcard_match(const char* wildcard, const char* match)
+{
+  while (*wildcard && *match)
+    {
+      if (*wildcard == '*')
+        return 1;
+
+      if (*wildcard != *match)
+        return 0; 
+
+      ++wildcard;
+      ++match;
+    }
+
+  return *wildcard == *match;
+}
+
+/* The same but comparing a maximum of NUM characters, like strncmp.  */
+int wildcard_matchn(const char* wildcard, const char* match, int num)
+{
+  while (*wildcard && *match && num)
+    {
+      if (*wildcard == '*')
+        return 1;
+
+      if (*wildcard != *match)
+        return 0; 
+
+      ++wildcard;
+      ++match;
+      --num;
+    }
+
+  return (!num) || (*wildcard == *match);
+}
