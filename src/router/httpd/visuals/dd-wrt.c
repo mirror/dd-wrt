@@ -932,6 +932,10 @@ static void show_security_prefix(webs_t wp, int argc, char_t ** argv, char *pref
 #else
 	websWrite(wp, "<option value=\"psk2\" %s>WPA2 Personal</option>\n", selmatch(var, "psk2", "selected=\"selected\""));
 #endif
+
+#ifdef HAVE_QTN
+	if (!has_qtn(prefix))
+#endif
 	if (!primary || nvram_match(sta, "ap") || nvram_match(sta, "wdsap")) {
 		websWrite(wp,
 #ifdef HAVE_IAS
@@ -950,6 +954,9 @@ static void show_security_prefix(webs_t wp, int argc, char_t ** argv, char *pref
 			  "<option value=\"psk psk2\" %s>WPA2 Personal Mixed</option>\n", selmatch(var, "psk psk2", "selected=\"selected\""));
 #endif
 
+#ifdef HAVE_QTN
+	if (!has_qtn(prefix))
+#endif
 	if (!primary || nvram_match(sta, "ap") || nvram_match(sta, "wdsap")) {
 		websWrite(wp,
 #ifdef HAVE_IAS
@@ -968,6 +975,9 @@ static void show_security_prefix(webs_t wp, int argc, char_t ** argv, char *pref
 		websWrite(wp, "<option value=\"radius\" %s>RADIUS</option>\n", selmatch(var, "radius", "selected=\"selected\""));
 #endif
 	}
+#ifdef HAVE_QTN
+	if (!has_qtn(prefix))
+#endif
 #ifdef HAVE_IAS
 	websWrite(wp, "<option value=\"wep\" %s>%s</option>\n", selmatch(var, "wep", "selected=\"selected\""), ias_enc_label("wep"));
 #else
