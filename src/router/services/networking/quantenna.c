@@ -253,6 +253,16 @@ int gen_rpc_qcsapi_ip(void)
 
 }
 
+void start_qtntelnet(void)
+{
+    enable_qtn_telnetsrv(1);
+}
+
+void stop_qtntelnet(void)
+{
+    enable_qtn_telnetsrv(0);
+}
+
 void start_qtn(void)
 {
 	gen_rpc_qcsapi_ip();
