@@ -919,6 +919,9 @@ static void show_security_prefix(webs_t wp, int argc, char_t ** argv, char *pref
 	websWrite(wp, "<option value=\"psk\" %s>WPA Personal</option>\n", selmatch(var, "psk", "selected=\"selected\""));
 #endif
 	sprintf(sta, "%s_mode", prefix);
+#ifdef HAVE_QTN
+	if (!has_qtn(prefix))
+#endif
 	if (!primary || nvram_match(sta, "ap") || nvram_match(sta, "wdsap")) {
 		websWrite(wp,
 #ifdef HAVE_IAS
