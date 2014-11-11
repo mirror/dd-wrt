@@ -1484,6 +1484,8 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	submenu = argv[1];
 
 	int vlan_supp = check_vlan_support();
+	if (getRouterBrand() == ROUTER_UNBT_UNIFIAC)
+	    vlan_supp = 1;
 
 #ifdef HAVE_SPUTNIK_APD
 	int sputnik = nvram_match("apd_enable", "1");
