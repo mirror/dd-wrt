@@ -5325,6 +5325,8 @@ int led_control(int type, int act)
 		}
 		break;
 	case ROUTER_UBNT_UNIFIAC:
+		power_gpio = 0x00e;
+		diag_gpio = 0x00f;
 		break;
 	case ROUTER_D1800H:
 		usb_gpio = 0x101;
