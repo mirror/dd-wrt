@@ -2037,8 +2037,8 @@ int internal_getRouterBrand()
 		{"Ubiquiti Airgrid M5", 0xe215, "1", "1", ROUTER_BOARD_BS5M, 0, 10},	//
 		{"Ubiquiti Airgrid M5", 0xe245, "1", "1", ROUTER_BOARD_BS5M, 0, 10},	//
 		{"Ubiquiti Airgrid M5 XW", 0xe835, "1", "1", ROUTER_BOARD_BS5M, 0, 10},	//
-		{"Ubiquiti AirRouter", 0xe4a2, "3", "3", ROUTER_BOARD_NS2M, 0, 10},	//
-		{"Ubiquiti AirRouter", 0xe4b2, "3", "3", ROUTER_BOARD_NS2M, 0, 10},	//
+		{"Ubiquiti AirRouter", 0xe4a2, "3", "3", ROUTER_BOARD_AIRROUTER, 0, 10},	//
+		{"Ubiquiti AirRouter HP", 0xe4b2, "3", "3", ROUTER_BOARD_AIRROUTER, 0, 10},	//
 		{"Ubiquiti Pico M2", 0xe302, "1", "1", ROUTER_BOARD_BS2M, 0, 10},	//
 		{"Ubiquiti Pico M5", 0xe305, "1", "1", ROUTER_BOARD_BS5M, 0, 10},	//
 		{"Ubiquiti Airwire", 0xe405, "3", "3", ROUTER_BOARD_BS5M, 0, 10},	//
@@ -4735,6 +4735,9 @@ int led_control(int type, int act)
 	case ROUTER_BOARD_UNIFI:
 		ses_gpio = 0x001;
 		sec0_gpio = 0x001;
+		break;
+	case ROUTER_BOARD_AIRROUTER:
+		connected_gpio = 0x10b;
 		break;
 	case ROUTER_BOARD_DANUBE:
 #ifdef HAVE_WMBR_G300NH

@@ -1488,6 +1488,7 @@ void start_lan(void)
 		break;
 	case ROUTER_BOARD_NS2M:
 	case ROUTER_BOARD_NS5M:
+	case ROUTER_BOARD_AIRROUTER:
 		devnum = 2;
 		break;
 	default:
