@@ -3243,6 +3243,14 @@ int internal_getRouterBrand()
 		return ROUTER_LINKSYS_EA6500;
 	}
 
+	if (nvram_match("boardtype","0x0617") &&
+	   nvram_match("boardrev","0x1103"))
+	 {
+	    setRouter("Ubiquiti UnifiAP AC");
+	    return ROUTER_UBNT_UNIFIAC;
+	 }
+	
+	
 	if (boardnum == 24 && nvram_match("boardtype", "0x0617")
 	    && nvram_match("boardrev", "0x1102")
 	    && nvram_match("gpio7", "usbport1")) {
@@ -5315,6 +5323,8 @@ int led_control(int type, int act)
 			bridge_gpio = 0x101;
 			ses_gpio = 0x106;
 		}
+		break;
+	case ROUTER_UBNT_UNIFIAC:
 		break;
 	case ROUTER_D1800H:
 		usb_gpio = 0x101;
