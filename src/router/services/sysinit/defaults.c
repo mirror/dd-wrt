@@ -2001,6 +2001,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"dhcpd_usenvram", "0", 0},
 	{"local_dns", "0", 0},
 	{"dnsmasq_no_dns_rebind", "1", 0},
+	{"dnsmasq_add_mac", "0", 0},
 #ifdef HAVE_POWERNOC_WOAP54G
 	{"dnsmasq_enable", "0", 0},
 #elif HAVE_FON
