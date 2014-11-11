@@ -93,7 +93,7 @@ void start_dhcp6c(void)
 		}
 	}
 
-	eval("dhcp6c", "-c", "/tmp/dhcp6c.conf", "-T", "LL", "-D", get_wan_face());
+	eval("dhcp6c", "-c", "/tmp/dhcp6c.conf", "-T", "LL", get_wan_face());
 }
 
 void stop_dhcp6c(void)
