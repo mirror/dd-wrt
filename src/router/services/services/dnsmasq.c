@@ -191,7 +191,7 @@ void start_dnsmasq(void)
 	}
 	fprintf(fp, "\n");
 
-	fprintf(fp, "resolv-file=/tmp/resolv.dnsmasq\n" "all-servers\n");
+	fprintf(fp, "resolv-file=/tmp/resolv.dnsmasq\n" "all-servers\n" "strict-order\n");
 
 	/*
 	 * Domain 
