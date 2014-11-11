@@ -1172,14 +1172,6 @@ int internal_getRouterBrand()
 		setRouter("Dlink-DIR868L");
 		return ROUTER_DLINK_DIR868;
 	}
-
-	if (boardnum == 24 && nvram_match("boardtype", "0x0617")
-	    && nvram_match("boardrev", "0x1102")
-	    && nvram_match("gpio7", "usbport1")) {
-		setRouter("Dlink-DIR865L");
-		return ROUTER_DLINK_DIR865;
-	}
-
 	if (boardnum == 00 && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1100")
 	    && nvram_match("gpio15", "wps_button")) {
@@ -3250,6 +3242,14 @@ int internal_getRouterBrand()
 		setRouter("Linksys EA6500");
 		return ROUTER_LINKSYS_EA6500;
 	}
+
+	if (boardnum == 24 && nvram_match("boardtype", "0x0617")
+	    && nvram_match("boardrev", "0x1102")
+	    && nvram_match("gpio7", "usbport1")) {
+		setRouter("Dlink-DIR865L");
+		return ROUTER_DLINK_DIR865;
+	}
+
 
 	if (boardnum == 00 && nvram_match("boardtype", "0xf52e")
 	    && nvram_match("boardrev", "0x1204")) {
