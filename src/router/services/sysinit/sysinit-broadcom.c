@@ -287,6 +287,8 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 	case ROUTER_NETGEAR_R6300:
 	case ROUTER_ASUS_AC66U:
 	case ROUTER_D1800H:
+	case ROUTER_UBNT_UNIFIAC:
+	case ROUTER_DLINK_DIR865:
 		insmod("emf");
 		insmod("igs");
 		insmod("wl");	// load module
@@ -2928,6 +2930,8 @@ void start_sysinit(void)
 			case ROUTER_NETGEAR_WNDR4500V2:
 			case ROUTER_NETGEAR_R6300:
 			case ROUTER_D1800H:
+			case ROUTER_DLINK_DIR865:
+			case ROUTER_UBNT_UNIFIAC:
 				modules = "et switch-core switch-robo";
 				break;
 			case ROUTER_LINKSYS_WRT55AG:
@@ -3018,6 +3022,8 @@ void start_sysinit(void)
 			case ROUTER_NETGEAR_WNDR4500V2:
 			case ROUTER_NETGEAR_R6300:
 			case ROUTER_D1800H:
+			case ROUTER_DLINK_DIR865:
+			case ROUTER_UBNT_UNIFIAC:
 				modules = "et switch-core switch-robo";
 				break;
 			case ROUTER_LINKSYS_WRT55AG:
