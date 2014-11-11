@@ -39,7 +39,7 @@
 
 #include <qtnapi.h>
 
-//#define dbG(a,...)
+#define dbG(a,...)
 
 #define dbg(fmt, args...) fprintf(stderr, fmt, ## args)
 #define dbG(fmt, args...) dbg("%s(0x%04x): " fmt , __FUNCTION__ , __LINE__, ## args)
@@ -162,6 +162,8 @@ int rpc_qcsapi_init(int verbose)
 
 #define nvram_get_int(name) atoi(nvram_safe_get(name))
 
+
+
 int rpc_qtn_ready()
 {
 	int ret, qtn_ready;
@@ -224,6 +226,26 @@ int rpc_qcsapi_set_SSID_broadcast(const char *ifname, const char *option)
 	}
 	dbG("Set Broadcast SSID of interface %s as: %s\n", ifname, OPTION ? "TRUE" : "FALSE");
 
+	return 0;
+}
+
+int enable_qtn_telnetsrv(int enable_flag)
+{
+	int ret;
+
+	if (!rpc_qtn_ready()) {
+		fprintf(stderr, "ATE command error\n");
+		return -1;
+	}
+	if(enable_flag == 0){
+		ret = qcsapi_wifi_run_script("set_test_mode", "enable_telnet_srv 0");
+	}else{
+		ret = qcsapi_wifi_run_script("set_test_mode", "enable_telnet_srv 1");
+	}
+	if (ret < 0) {
+		fprintf(stderr, "[ate] set telnet server error\n");
+		return -1;
+	}
 	return 0;
 }
 

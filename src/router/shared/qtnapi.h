@@ -14,6 +14,7 @@
 
 #define WIFINAME "wifi0"
 
+extern int enable_qtn_telnetsrv(int enable_flag);
 extern int rpc_qcsapi_init(int verbose);
 extern int rpc_qtn_ready();
 extern int qcsapi_init(void);
