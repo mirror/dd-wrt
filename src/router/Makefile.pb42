@@ -235,7 +235,7 @@ ifeq ($(CONFIG_WP546),y)
 	cp $(LINUXDIR)/.config_wp546 $(LINUXDIR)/.config
 endif
 ifeq ($(CONFIG_UBNTM),y)
-	cp $(LINUXDIR)/.config_ar7240 $(LINUXDIR)/.config
+	cp $(LINUXDIR)/.config_ar724x $(LINUXDIR)/.config
 endif
 ifeq ($(CONFIG_WRT160NL),y)
 	cp $(LINUXDIR)/.config_wrt160nl $(LINUXDIR)/.config
