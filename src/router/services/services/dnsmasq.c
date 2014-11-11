@@ -356,6 +356,9 @@ void start_dnsmasq(void)
 	if (nvram_match("dnsmasq_no_dns_rebind", "1")) {
 		fprintf(fp, "stop-dns-rebind\n");
 	}
+	if (nvram_match("dnsmasq_add_mac", "1")) {
+		fprintf(fp, "add-mac\n");
+	}
 	/*
 	 * Additional options 
 	 */

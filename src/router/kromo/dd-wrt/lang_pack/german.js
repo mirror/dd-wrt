@@ -1339,6 +1339,7 @@ service.dnsmasq_legend="DNSMasq";
 service.dnsmasq_srv="DNSMasq";
 service.dnsmasq_loc="Lokaler DNS";
 service.dnsmasq_no_dns_rebind="Kein DNS Rebind";
+service.dnsmasq_add_mac="DNS Abfrage mit Anfrage MAC";
 service.dnsmasq_opt="Zusätzliche DNSMasq-Optionen";
 
 //pptp.webservices
