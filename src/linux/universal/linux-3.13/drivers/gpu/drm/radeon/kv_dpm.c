@@ -2620,7 +2620,11 @@ int kv_dpm_init(struct radeon_device *rdev)
 	if (rdev->family == CHIP_KABINI)
 		pi->high_voltage_t = 4001;
 
-	pi->enable_nb_dpm = true;
+	/* Enabling nb dpm on an asrock system prevents dpm from working */
+	if (rdev->pdev->subsystem_vendor == 0x1849)
+		pi->enable_nb_dpm = false;
+	else
+		pi->enable_nb_dpm = true;
 
 	pi->caps_power_containment = true;
 	pi->caps_cac = true;
@@ -2635,10 +2639,19 @@ int kv_dpm_init(struct radeon_device *rdev)
 	pi->caps_sclk_ds = true;
 	pi->enable_auto_thermal_throttling = true;
 	pi->disable_nb_ps3_in_battery = false;
-	if (radeon_bapm == 0)
+	if (radeon_bapm == -1) {
+		/* There are stability issues reported on with
+		 * bapm enabled on an asrock system.
+		 */
+		if (rdev->pdev->subsystem_vendor == 0x1849)
+			pi->bapm_enable = false;
+		else
+			pi->bapm_enable = true;
+	} else if (radeon_bapm == 0) {
 		pi->bapm_enable = false;
-	else
+	} else {
 		pi->bapm_enable = true;
+	}
 	pi->voltage_drop_t = 0;
 	pi->caps_sclk_throttle_low_notification = false;
 	pi->caps_fps = false; /* true? */

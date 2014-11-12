@@ -359,11 +359,14 @@ static void ima_reset_appraise_flags(struct inode *inode)
 int ima_inode_setxattr(struct dentry *dentry, const char *xattr_name,
 		       const void *xattr_value, size_t xattr_value_len)
 {
+        const struct evm_ima_xattr_data *xvalue = xattr_value;
 	int result;
 
 	result = ima_protect_xattr(dentry, xattr_name, xattr_value,
 				   xattr_value_len);
 	if (result == 1) {
+		if (!xattr_value_len || (xvalue->type >= IMA_XATTR_LAST))
+			return -EINVAL;
 		ima_reset_appraise_flags(dentry->d_inode);
 		result = 0;
 	}
