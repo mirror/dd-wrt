@@ -505,7 +505,7 @@ struct mtd_partition *__init init_mtd_partitions(struct mtd_info *mtd, size_t si
 	switch (get_router()) {
 	case ROUTER_UBNT_UNIFIAC:
 		board_data_size = 0x10000;	//Netgear: checksum is @ 0x003AFFF8 for 4M flash
-		jffs_exclude_size = 0x10000;	//or checksum is @ 0x007AFFF8 for 8M flash
+		jffs_exclude_size = 0x0;	//or checksum is @ 0x007AFFF8 for 8M flash
 		break;
 	case ROUTER_NETGEAR_WGR614L:
 	case ROUTER_NETGEAR_WNR834B:
