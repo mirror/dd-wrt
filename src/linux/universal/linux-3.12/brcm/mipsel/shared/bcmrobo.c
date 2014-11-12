@@ -1626,6 +1626,7 @@ bcm_robo_enable_switch(robo_info_t *robo)
 	char *boothwmodel = nvram_get("boot_hw_model");
 	char *boothwver = nvram_get("boot_hw_ver");
 	char *boardnum = nvram_get("boardnum");
+	char *boardrev = nvram_get("boardrev");
 	char *boardtype = nvram_get("boardtype");
 	char *cardbus = nvram_get("cardbus");
 
@@ -1700,6 +1701,18 @@ bcm_robo_enable_switch(robo_info_t *robo)
 		/* WAN port LED */
 		val16 = 0x1F;
 		robo->ops->write_reg(robo, PAGE_CTRL, 0x16, &val16, sizeof(val16));    
+	}
+
+
+	if (boardnum != NULL && boardtype != NULL && boardrev != NULL)
+	if (!strcmp(boardnum, "32") && !strcmp(boardtype, "0x0665") && !strcmp(boardrev, "0x1301") ) {
+		/* WAN port LED fix*/
+		val16 = 0x3000 ;
+		robo->ops->write_reg(robo, PAGE_CTRL, 0x10, &val16, sizeof(val16));
+		val8 = 0x78 ;
+		robo->ops->write_reg(robo, PAGE_CTRL, 0x12, &val8, sizeof(val8)); 
+		val8 = 0x01 ;
+		robo->ops->write_reg(robo, PAGE_CTRL, 0x14, &val8, sizeof(val8)); 
 	}
 
 
