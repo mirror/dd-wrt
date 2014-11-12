@@ -571,6 +571,9 @@
 /* */
 #undef HAVE_DCNGETTEXT
 
+/* Define if the compiler supports Decimal32/64/128 types. */
+#undef HAVE_DECIMAL_FP_SUPPORT
+
 /* Whether system headers declare timezone */
 #undef HAVE_DECLARED_TIMEZONE
 
