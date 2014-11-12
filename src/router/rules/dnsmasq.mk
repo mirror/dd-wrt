@@ -13,19 +13,19 @@ dnsmasq-clean:
 dnsmasq:
 	$(MAKE) -C dnsmasq clean
 ifeq ($(CONFIG_DNSMASQ_TFTP),y)
-	$(MAKE) -j 4 -C dnsmasq COPTS=-DHAVE_BROKEN_RTC CFLAGS="$(COPTS) $(DNSMASQ_COPTS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections"
+	$(MAKE) -j 4 -C dnsmasq COPTS=-DHAVE_BROKEN_RTC CFLAGS="$(COPTS) $(DNSMASQ_COPTS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) $(DNSMASQ_COPTS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections"
 else
 ifeq ($(CONFIG_DIST),"micro")
-	$(MAKE) -j 4 -C dnsmasq "COPTS=-DHAVE_BROKEN_RTC -DNO_TFTP" CFLAGS="$(COPTS) $(DNSMASQ_COPTS) $(DNSMASQ_MAKEFLAGS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections"
+	$(MAKE) -j 4 -C dnsmasq "COPTS=-DHAVE_BROKEN_RTC -DNO_TFTP" CFLAGS="$(COPTS) $(DNSMASQ_COPTS) $(DNSMASQ_MAKEFLAGS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) $(DNSMASQ_COPTS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections"
 else
 ifeq ($(CONFIG_DIST),"micro-special")
-	$(MAKE) -j 4 -C dnsmasq "COPTS=-DHAVE_BROKEN_RTC -DNO_TFTP" CFLAGS="$(COPTS) $(DNSMASQ_COPTS) $(DNSMASQ_MAKEFLAGS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections"
+	$(MAKE) -j 4 -C dnsmasq "COPTS=-DHAVE_BROKEN_RTC -DNO_TFTP" CFLAGS="$(COPTS) $(DNSMASQ_COPTS) $(DNSMASQ_MAKEFLAGS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) $(DNSMASQ_COPTS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections"
 else
-	$(MAKE) -j 4 -C dnsmasq "COPTS=-DHAVE_BROKEN_RTC -DNO_TFTP" CFLAGS="$(COPTS) $(DNSMASQ_COPTS) $(DNSMASQ_MAKEFLAGS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections" 
+	$(MAKE) -j 4 -C dnsmasq "COPTS=-DHAVE_BROKEN_RTC -DNO_TFTP" CFLAGS="$(COPTS) $(DNSMASQ_COPTS) $(DNSMASQ_MAKEFLAGS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) $(DNSMASQ_COPTS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections"
 endif
 endif
 endif
-	$(MAKE) -j 4 -C dnsmasq/contrib/wrt CFLAGS="$(COPTS)  $(DNSMASQ_COPTS)"
+	$(MAKE) -j 4 -C dnsmasq/contrib/wrt CFLAGS="$(COPTS) $(DNSMASQ_COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) $(DNSMASQ_COPTS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections"
 
 dnsmasq-install:
 	install -D dnsmasq/contrib/wrt/lease_update.sh $(INSTALLDIR)/dnsmasq/etc/lease_update.sh
