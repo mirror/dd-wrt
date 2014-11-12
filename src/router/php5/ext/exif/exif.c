@@ -17,7 +17,7 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id: 38907b4d942a8d2419060a688aa3c5e5dedcb118 $ */
+/* $Id: 637ebf9289b40d157fdf8edcdddeb3d907b28d9b $ */
 
 /*  ToDos
  *
@@ -138,7 +138,7 @@ const zend_function_entry exif_functions[] = {
 };
 /* }}} */
 
-#define EXIF_VERSION "1.4 $Id: 38907b4d942a8d2419060a688aa3c5e5dedcb118 $"
+#define EXIF_VERSION "1.4 $Id: 637ebf9289b40d157fdf8edcdddeb3d907b28d9b $"
 
 /* {{{ PHP_MINFO_FUNCTION
  */
@@ -2426,11 +2426,11 @@ static void* exif_ifd_make_value(image_info_data *info_data, int motorola_intel 
 					data_ptr += 8;
 					break;
 				case TAG_FMT_SINGLE:
-					memmove(data_ptr, &info_data->value.f, byte_count);
+					memmove(data_ptr, &info_value->f, 4);
 					data_ptr += 4;
 					break;
 				case TAG_FMT_DOUBLE:
-					memmove(data_ptr, &info_data->value.d, byte_count);
+					memmove(data_ptr, &info_value->d, 8);
 					data_ptr += 8;
 					break;
 			}
