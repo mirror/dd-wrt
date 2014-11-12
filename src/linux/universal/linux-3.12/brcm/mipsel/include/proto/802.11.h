@@ -15,7 +15,7 @@
  *
  * Fundamental types and constants relating to 802.11
  *
- * $Id: 802.11.h 395543 2013-04-08 13:40:04Z $
+ * $Id: 802.11.h 397770 2013-04-20 00:13:40Z $
  */
 
 #ifndef _802_11_H_
@@ -1297,6 +1297,8 @@ typedef struct ti_ie ti_ie_t;
 /* Extended capabilities IE bitfields */
 /* 20/40 BSS Coexistence Management support bit position */
 #define DOT11_EXT_CAP_OBSS_COEX_MGMT		0
+/* Extended Channel Switching support bit position */
+#define DOT11_EXT_CAP_EXT_CHAN_SWITCHING	2
 /* scheduled PSMP support bit position */
 #define DOT11_EXT_CAP_SPSMP					6
 /*  Flexible Multicast Service */
@@ -1406,7 +1408,6 @@ typedef struct dot11_oper_mode_notif_ie dot11_oper_mode_notif_ie_t;
 #define DOT11_SM_ACTION_TPC_REQ		2	/* d11 action TPC request */
 #define DOT11_SM_ACTION_TPC_REP		3	/* d11 action TPC response */
 #define DOT11_SM_ACTION_CHANNEL_SWITCH	4	/* d11 action channel switch */
-#define DOT11_SM_ACTION_EXT_CSA		5	/* d11 extened CSA for 11n */
 
 /* HT action ids */
 #define DOT11_ACTION_ID_HT_CH_WIDTH	0	/* notify channel width action id */
