@@ -18,7 +18,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: wlioctl.h 395988 2013-04-10 15:30:09Z $
+ * $Id: wlioctl.h 398650 2013-04-25 10:41:39Z $
  */
 
 #ifndef _wlioctl_h_
@@ -3522,7 +3522,7 @@ typedef struct {
 	uint32  rxmpdu_stbc;    /* count for stbc received */
 } wl_cnt_ver_six_t;
 
-#define	WL_DELTA_STATS_T_VERSION	1	/* current version of wl_delta_stats_t struct */
+#define	WL_DELTA_STATS_T_VERSION	2	/* current version of wl_delta_stats_t struct */
 
 typedef struct {
 	uint16 version;     /* see definition of WL_DELTA_STATS_T_VERSION */
@@ -3560,6 +3560,13 @@ typedef struct {
 	uint32  rx432mbps;	/* packets rx at 432 mbps */
 	uint32  rx486mbps;	/* packets rx at 486 mbps */
 	uint32  rx540mbps;	/* packets rx at 540 mbps */
+
+	/* phy stats */
+	uint32 rxbadplcp;
+	uint32 rxcrsglitch;
+	uint32 bphy_rxcrsglitch;
+	uint32 bphy_badplcp;
+
 } wl_delta_stats_t;
 #endif /* LINUX_POSTMOGRIFY_REMOVAL */
 
@@ -5465,5 +5472,15 @@ typedef struct wlc_dwds_config {
 	uint32		mode; /* STA/AP interface */
 	struct ether_addr ea;
 } wlc_dwds_config_t;
+
+typedef enum wl_stamon_cmd_type {
+	STAMON_CFG_CMD_DEL = 0,
+	STAMON_CFG_CMD_ADD = 1,
+} wl_stamon_cfg_cmd_type_t;
+
+typedef struct wlc_stamon_config {
+	wl_stamon_cfg_cmd_type_t cmd; /* 0 - delete, 1 - add */
+	struct ether_addr ea;
+} wlc_stamon_config_t;
 
 #endif /* _wlioctl_h_ */

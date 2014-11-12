@@ -74,7 +74,7 @@ static struct mtd_info *bcm947xx_mtd;
 #define ROUTER_NETGEAR_WNDR4500          8
 #define ROUTER_BELKIN_F5D8235V3          9
 #define ROUTER_BELKIN_F7D3301_3302_4302  10
-
+#define ROUTER_UBNT_UNIFIAC              11
 /* Belkin series */
 #define TRX_MAGIC_F7D3301              0x20100322	/* Belkin Share Max; router's birthday ? */
 #define TRX_MAGIC_F7D3302              0x20090928	/* Belkin Share; router's birthday ? */
@@ -148,6 +148,13 @@ static int get_router(void)
 		printk(KERN_INFO "found WNDR4500 / R6300\n");
 		return ROUTER_NETGEAR_WNDR4500;	//Netgear WNDR4500                 
 	}
+
+	if (nvram_match("boardtype","0x0617") &&
+	   nvram_match("boardrev","0x1103"))
+	 {
+	    printk(KERN_INFO "found Ubiquiti UnifiAP AC");
+	    return ROUTER_UBNT_UNIFIAC;
+	 }
 
 	return 0;
 }
@@ -496,6 +503,10 @@ struct mtd_partition *__init init_mtd_partitions(struct mtd_info *mtd, size_t si
 	int jffs_exclude_size = 0;	// to prevent overwriting len/checksum on e.g. Netgear WGR614v8/L/WW
 
 	switch (get_router()) {
+	case ROUTER_UBNT_UNIFIAC:
+		board_data_size = 0x10000;	//Netgear: checksum is @ 0x003AFFF8 for 4M flash
+		jffs_exclude_size = 0x10000;	//or checksum is @ 0x007AFFF8 for 8M flash
+		break;
 	case ROUTER_NETGEAR_WGR614L:
 	case ROUTER_NETGEAR_WNR834B:
 	case ROUTER_NETGEAR_WNDR3300:
