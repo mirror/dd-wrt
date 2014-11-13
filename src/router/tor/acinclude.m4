@@ -43,6 +43,8 @@ AC_DEFUN([TOR_DEFINE_CODEPATH],
 ])
 
 dnl 1:flags
+dnl 2:also try to link (yes: non-empty string)
+dnl   will set yes or no in $tor_can_link_$1 (as modified by AS_VAR_PUSHDEF)
 AC_DEFUN([TOR_CHECK_CFLAGS], [
   AS_VAR_PUSHDEF([VAR],[tor_cv_cflags_$1])
   AC_CACHE_CHECK([whether the compiler accepts $1], VAR, [
@@ -51,6 +53,13 @@ AC_DEFUN([TOR_CHECK_CFLAGS], [
     AC_TRY_COMPILE([], [return 0;],
                    [AS_VAR_SET(VAR,yes)],
                    [AS_VAR_SET(VAR,no)])
+    if test x$2 != x; then
+      AS_VAR_PUSHDEF([can_link],[tor_can_link_$1])
+      AC_TRY_LINK([], [return 0;],
+                  [AS_VAR_SET(can_link,yes)],
+                  [AS_VAR_SET(can_link,no)])
+      AS_VAR_POPDEF([can_link])
+    fi
     CFLAGS="$tor_saved_CFLAGS"
   ])
   if test x$VAR = xyes; then
@@ -106,7 +115,7 @@ if test -f /etc/fedora-release && test x"$tor_$1_$2_redhat" != x; then
   fi 
 else
   if test -f /etc/redhat-release && test x"$tor_$1_$2_redhat" != x; then
-    AC_WARN([On most Redhat-based systems, you can get$h $1 by installing the $tor_$1_$2_redhat" RPM package])
+    AC_WARN([On most Redhat-based systems, you can get$h $1 by installing the $tor_$1_$2_redhat RPM package])
     if test x"$tor_$1_$2_redhat" != x"$tor_$1_devpkg_redhat"; then 
       AC_WARN([   You will probably need to install $tor_$1_devpkg_redhat too.])
     fi 
@@ -145,7 +154,7 @@ AC_CACHE_CHECK([for $1 directory], tor_cv_library_$1_dir, [
   tor_$1_dir_found=no
   tor_$1_any_linkable=no
 
-  for tor_trydir in "$try$1dir" "(system)" /usr/pkg $8; do
+  for tor_trydir in "$try$1dir" "(system)" "$prefix" /usr/local /usr/pkg $8; do
     LDFLAGS="$tor_saved_LDFLAGS"
     LIBS="$tor_saved_LIBS $3"
     CPPFLAGS="$tor_saved_CPPFLAGS"

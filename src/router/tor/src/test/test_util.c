@@ -4,6 +4,7 @@
 /* See LICENSE for licensing information */
 
 #include "orconfig.h"
+#define COMPAT_PRIVATE
 #define CONTROL_PRIVATE
 #define MEMPOOL_PRIVATE
 #define UTIL_PRIVATE
@@ -11,8 +12,11 @@
 #include "config.h"
 #include "control.h"
 #include "test.h"
+#ifdef ENABLE_MEMPOOLS
 #include "mempool.h"
+#endif /* ENABLE_MEMPOOLS */
 #include "memarea.h"
+#include "util_process.h"
 
 #ifdef _WIN32
 #include <tchar.h>
@@ -99,6 +103,107 @@ test_util_read_file_eof_zero_bytes(void *arg)
   (void)arg;
   // zero-byte fifo
   test_util_read_until_eof_impl("tor_test_fifo_empty", 0, 10000);
+}
+
+/* Test the basic expected behaviour for write_chunks_to_file.
+ * NOTE: This will need to be updated if we ever change the tempfile location
+ * or extension */
+static void
+test_util_write_chunks_to_file(void *arg)
+{
+  char *fname = NULL;
+  char *tempname = NULL;
+  char *str = NULL;
+  int r;
+  struct stat st;
+
+  /* These should be two different sizes to ensure the data is different
+   * between the data file and the temp file's 'known string' */
+  int temp_str_len = 1024;
+  int data_str_len = 512;
+  char *data_str = tor_malloc(data_str_len);
+  char *temp_str = tor_malloc(temp_str_len);
+
+  smartlist_t *chunks = smartlist_new();
+  sized_chunk_t c = {data_str, data_str_len/2};
+  sized_chunk_t c2 = {data_str + data_str_len/2, data_str_len/2};
+  (void)arg;
+
+  crypto_rand(temp_str, temp_str_len);
+  crypto_rand(data_str, data_str_len);
+
+  // Ensure it can write multiple chunks
+
+  smartlist_add(chunks, &c);
+  smartlist_add(chunks, &c2);
+
+  /*
+  * Check if it writes using a tempfile
+  */
+  fname = tor_strdup(get_fname("write_chunks_with_tempfile"));
+  tor_asprintf(&tempname, "%s.tmp", fname);
+
+  // write a known string to a file where the tempfile will be
+  r = write_bytes_to_file(tempname, temp_str, temp_str_len, 1);
+  tt_int_op(r, ==, 0);
+
+  // call write_chunks_to_file
+  r = write_chunks_to_file(fname, chunks, 1, 0);
+  tt_int_op(r, ==, 0);
+
+  // assert the file has been written (expected size)
+  str = read_file_to_str(fname, RFTS_BIN, &st);
+  tt_assert(str != NULL);
+  tt_u64_op((uint64_t)st.st_size, ==, data_str_len);
+  test_mem_op(data_str, ==, str, data_str_len);
+  tor_free(str);
+
+  // assert that the tempfile is removed (should not leave artifacts)
+  str = read_file_to_str(tempname, RFTS_BIN|RFTS_IGNORE_MISSING, &st);
+  tt_assert(str == NULL);
+
+  // Remove old testfile for second test
+  r = unlink(fname);
+  tt_int_op(r, ==, 0);
+  tor_free(fname);
+  tor_free(tempname);
+
+  /*
+  *  Check if it skips using a tempfile with flags
+  */
+  fname = tor_strdup(get_fname("write_chunks_with_no_tempfile"));
+  tor_asprintf(&tempname, "%s.tmp", fname);
+
+  // write a known string to a file where the tempfile will be
+  r = write_bytes_to_file(tempname, temp_str, temp_str_len, 1);
+  tt_int_op(r, ==, 0);
+
+  // call write_chunks_to_file with no_tempfile = true
+  r = write_chunks_to_file(fname, chunks, 1, 1);
+  tt_int_op(r, ==, 0);
+
+  // assert the file has been written (expected size)
+  str = read_file_to_str(fname, RFTS_BIN, &st);
+  tt_assert(str != NULL);
+  tt_u64_op((uint64_t)st.st_size, ==, data_str_len);
+  test_mem_op(data_str, ==, str, data_str_len);
+  tor_free(str);
+
+  // assert the tempfile still contains the known string
+  str = read_file_to_str(tempname, RFTS_BIN, &st);
+  tt_assert(str != NULL);
+  tt_u64_op((uint64_t)st.st_size, ==, temp_str_len);
+  test_mem_op(temp_str, ==, str, temp_str_len);
+
+ done:
+  unlink(fname);
+  unlink(tempname);
+  smartlist_free(chunks);
+  tor_free(fname);
+  tor_free(tempname);
+  tor_free(str);
+  tor_free(data_str);
+  tor_free(temp_str);
 }
 
 static void
@@ -242,7 +347,7 @@ test_util_time(void)
 
   tv.tv_sec = (time_t)1326296338;
   tv.tv_usec = 3060;
-  format_iso_time(timestr, tv.tv_sec);
+  format_iso_time(timestr, (time_t)tv.tv_sec);
   test_streq("2012-01-11 15:38:58", timestr);
   /* The output of format_local_iso_time will vary by timezone, and setting
      our timezone for testing purposes would be a nontrivial flaky pain.
@@ -250,7 +355,7 @@ test_util_time(void)
   format_local_iso_time(timestr, tv.tv_sec);
   test_streq("2012-01-11 10:38:58", timestr);
   */
-  format_iso_time_nospace(timestr, tv.tv_sec);
+  format_iso_time_nospace(timestr, (time_t)tv.tv_sec);
   test_streq("2012-01-11T15:38:58", timestr);
   test_eq(strlen(timestr), ISO_TIME_LEN);
   format_iso_time_nospace_usec(timestr, &tv);
@@ -796,6 +901,64 @@ test_util_expand_filename(void)
 }
 #endif
 
+/** Test tor_escape_str_for_pt_args(). */
+static void
+test_util_escape_string_socks(void)
+{
+  char *escaped_string = NULL;
+
+  /** Simple backslash escape. */
+  escaped_string = tor_escape_str_for_pt_args("This is a backslash: \\",";\\");
+  test_assert(escaped_string);
+  test_streq(escaped_string, "This is a backslash: \\\\");
+  tor_free(escaped_string);
+
+  /** Simple semicolon escape. */
+  escaped_string = tor_escape_str_for_pt_args("First rule:Do not use ;",";\\");
+  test_assert(escaped_string);
+  test_streq(escaped_string, "First rule:Do not use \\;");
+  tor_free(escaped_string);
+
+  /** Empty string. */
+  escaped_string = tor_escape_str_for_pt_args("", ";\\");
+  test_assert(escaped_string);
+  test_streq(escaped_string, "");
+  tor_free(escaped_string);
+
+  /** Escape all characters. */
+  escaped_string = tor_escape_str_for_pt_args(";\\;\\", ";\\");
+  test_assert(escaped_string);
+  test_streq(escaped_string, "\\;\\\\\\;\\\\");
+  tor_free(escaped_string);
+
+  escaped_string = tor_escape_str_for_pt_args(";", ";\\");
+  test_assert(escaped_string);
+  test_streq(escaped_string, "\\;");
+  tor_free(escaped_string);
+
+ done:
+  tor_free(escaped_string);
+}
+
+static void
+test_util_string_is_key_value(void *ptr)
+{
+  (void)ptr;
+  test_assert(string_is_key_value(LOG_WARN, "key=value"));
+  test_assert(string_is_key_value(LOG_WARN, "k=v"));
+  test_assert(string_is_key_value(LOG_WARN, "key="));
+  test_assert(string_is_key_value(LOG_WARN, "x="));
+  test_assert(string_is_key_value(LOG_WARN, "xx="));
+  test_assert(!string_is_key_value(LOG_WARN, "=value"));
+  test_assert(!string_is_key_value(LOG_WARN, "=x"));
+  test_assert(!string_is_key_value(LOG_WARN, "="));
+
+  /* ??? */
+  /* test_assert(!string_is_key_value(LOG_WARN, "===")); */
+ done:
+  ;
+}
+
 /** Test basic string functionality. */
 static void
 test_util_strmisc(void)
@@ -867,6 +1030,8 @@ test_util_strmisc(void)
   test_eq(0L,   tor_parse_long("10",-2,0,100,NULL,NULL));
   test_eq(68284L, tor_parse_long("10abc",16,0,70000,NULL,NULL));
   test_eq(68284L, tor_parse_long("10ABC",16,0,70000,NULL,NULL));
+  test_eq(0, tor_parse_long("10ABC",-1,0,70000,&i,NULL));
+  test_eq(i, 0);
 
   /* Test parse_ulong */
   test_eq(0UL, tor_parse_ulong("",10,0,100,NULL,NULL));
@@ -878,6 +1043,8 @@ test_util_strmisc(void)
   test_eq(0UL, tor_parse_ulong("8",8,0,100,NULL,NULL));
   test_eq(50UL, tor_parse_ulong("50",10,50,100,NULL,NULL));
   test_eq(0UL, tor_parse_ulong("-50",10,-100,100,NULL,NULL));
+  test_eq(0UL, tor_parse_ulong("50",-1,50,100,&i,NULL));
+  test_eq(0, i);
 
   /* Test parse_uint64 */
   test_assert(U64_LITERAL(10) == tor_parse_uint64("10 x",10,0,100, &i, &cp));
@@ -889,6 +1056,9 @@ test_util_strmisc(void)
   test_streq(cp, "");
   test_assert(U64_LITERAL(0) ==
               tor_parse_uint64("12345678901",10,500,INT32_MAX, &i, &cp));
+  test_eq(0, i);
+  test_assert(U64_LITERAL(0) ==
+              tor_parse_uint64("123",-1,0,INT32_MAX, &i, &cp));
   test_eq(0, i);
 
   {
@@ -923,7 +1093,7 @@ test_util_strmisc(void)
     test_eq(i, 0);
     test_eq(0UL, tor_parse_ulong(TOOBIG, 10, 0, ULONG_MAX, &i, NULL));
     test_eq(i, 0);
-    test_eq(U64_LITERAL(0), tor_parse_uint64(TOOBIG, 10,
+    tt_u64_op(U64_LITERAL(0), ==, tor_parse_uint64(TOOBIG, 10,
                                              0, UINT64_MAX, &i, NULL));
     test_eq(i, 0);
   }
@@ -1022,19 +1192,19 @@ test_util_strmisc(void)
   }
 
   /* Test str-foo functions */
-  cp = tor_strdup("abcdef");
-  test_assert(tor_strisnonupper(cp));
-  cp[3] = 'D';
-  test_assert(!tor_strisnonupper(cp));
-  tor_strupper(cp);
-  test_streq(cp, "ABCDEF");
-  tor_strlower(cp);
-  test_streq(cp, "abcdef");
-  test_assert(tor_strisnonupper(cp));
-  test_assert(tor_strisprint(cp));
-  cp[3] = 3;
-  test_assert(!tor_strisprint(cp));
-  tor_free(cp);
+  cp_tmp = tor_strdup("abcdef");
+  test_assert(tor_strisnonupper(cp_tmp));
+  cp_tmp[3] = 'D';
+  test_assert(!tor_strisnonupper(cp_tmp));
+  tor_strupper(cp_tmp);
+  test_streq(cp_tmp, "ABCDEF");
+  tor_strlower(cp_tmp);
+  test_streq(cp_tmp, "abcdef");
+  test_assert(tor_strisnonupper(cp_tmp));
+  test_assert(tor_strisprint(cp_tmp));
+  cp_tmp[3] = 3;
+  test_assert(!tor_strisprint(cp_tmp));
+  tor_free(cp_tmp);
 
   /* Test memmem and memstr */
   {
@@ -1045,6 +1215,10 @@ test_util_strmisc(void)
     test_assert(!tor_memmem(haystack, 4, "cde", 3));
     haystack = "ababcad";
     test_eq_ptr(tor_memmem(haystack, 7, "abc", 3), haystack + 2);
+    test_eq_ptr(tor_memmem(haystack, 7, "ad", 2), haystack + 5);
+    test_eq_ptr(tor_memmem(haystack, 7, "cad", 3), haystack + 4);
+    test_assert(!tor_memmem(haystack, 7, "dadad", 5));
+    test_assert(!tor_memmem(haystack, 7, "abcdefghij", 10));
     /* memstr */
     test_eq_ptr(tor_memstr(haystack, 7, "abc"), haystack + 2);
     test_eq_ptr(tor_memstr(haystack, 7, "cad"), haystack + 4);
@@ -1117,21 +1291,21 @@ test_util_pow2(void)
   test_eq(tor_log2(UINT64_MAX), 63);
 
   /* Test round_to_power_of_2 */
-  test_eq(round_to_power_of_2(120), 128);
-  test_eq(round_to_power_of_2(128), 128);
-  test_eq(round_to_power_of_2(130), 128);
-  test_eq(round_to_power_of_2(U64_LITERAL(40000000000000000)),
-          U64_LITERAL(1)<<55);
-  test_eq(round_to_power_of_2(U64_LITERAL(0xffffffffffffffff)),
+  tt_u64_op(round_to_power_of_2(120), ==, 128);
+  tt_u64_op(round_to_power_of_2(128), ==, 128);
+  tt_u64_op(round_to_power_of_2(130), ==, 128);
+  tt_u64_op(round_to_power_of_2(U64_LITERAL(40000000000000000)), ==,
+            U64_LITERAL(1)<<55);
+  tt_u64_op(round_to_power_of_2(U64_LITERAL(0xffffffffffffffff)), ==,
           U64_LITERAL(1)<<63);
-  test_eq(round_to_power_of_2(0), 1);
-  test_eq(round_to_power_of_2(1), 1);
-  test_eq(round_to_power_of_2(2), 2);
-  test_eq(round_to_power_of_2(3), 2);
-  test_eq(round_to_power_of_2(4), 4);
-  test_eq(round_to_power_of_2(5), 4);
-  test_eq(round_to_power_of_2(6), 4);
-  test_eq(round_to_power_of_2(7), 8);
+  tt_u64_op(round_to_power_of_2(0), ==, 1);
+  tt_u64_op(round_to_power_of_2(1), ==, 1);
+  tt_u64_op(round_to_power_of_2(2), ==, 2);
+  tt_u64_op(round_to_power_of_2(3), ==, 2);
+  tt_u64_op(round_to_power_of_2(4), ==, 4);
+  tt_u64_op(round_to_power_of_2(5), ==, 4);
+  tt_u64_op(round_to_power_of_2(6), ==, 4);
+  tt_u64_op(round_to_power_of_2(7), ==, 8);
 
  done:
   ;
@@ -1410,14 +1584,14 @@ test_util_mmap(void)
   test_eq(mapping->size, strlen("Short file."));
   test_streq(mapping->data, "Short file.");
 #ifdef _WIN32
-  tor_munmap_file(mapping);
+  tt_int_op(0, ==, tor_munmap_file(mapping));
   mapping = NULL;
   test_assert(unlink(fname1) == 0);
 #else
   /* make sure we can unlink. */
   test_assert(unlink(fname1) == 0);
   test_streq(mapping->data, "Short file.");
-  tor_munmap_file(mapping);
+  tt_int_op(0, ==, tor_munmap_file(mapping));
   mapping = NULL;
 #endif
 
@@ -1438,7 +1612,7 @@ test_util_mmap(void)
   test_assert(mapping);
   test_eq(mapping->size, buflen);
   test_memeq(mapping->data, buf, buflen);
-  tor_munmap_file(mapping);
+  tt_int_op(0, ==, tor_munmap_file(mapping));
   mapping = NULL;
 
   /* Now try a big aligned file. */
@@ -1447,7 +1621,7 @@ test_util_mmap(void)
   test_assert(mapping);
   test_eq(mapping->size, 16384);
   test_memeq(mapping->data, buf, 16384);
-  tor_munmap_file(mapping);
+  tt_int_op(0, ==, tor_munmap_file(mapping));
   mapping = NULL;
 
  done:
@@ -1460,8 +1634,7 @@ test_util_mmap(void)
   tor_free(fname3);
   tor_free(buf);
 
-  if (mapping)
-    tor_munmap_file(mapping);
+  tor_munmap_file(mapping);
 }
 
 /** Run unit tests for escaping/unescaping data for use by controllers. */
@@ -1729,6 +1902,8 @@ test_util_path_is_relative(void)
   ;
 }
 
+#ifdef ENABLE_MEMPOOLS
+
 /** Run unittests for memory pool allocator */
 static void
 test_util_mempool(void)
@@ -1786,6 +1961,8 @@ test_util_mempool(void)
   if (pool)
     mp_pool_destroy(pool);
 }
+
+#endif /* ENABLE_MEMPOOLS */
 
 /** Run unittests for memory area allocator */
 static void
@@ -2071,18 +2248,21 @@ test_util_asprintf(void *ptr)
   test_assert(cp);
   test_streq("simple string 100% safe", cp);
   test_eq(strlen(cp), r);
+  tor_free(cp);
 
   /* empty string */
   r = tor_asprintf(&cp, "%s", "");
   test_assert(cp);
   test_streq("", cp);
   test_eq(strlen(cp), r);
+  tor_free(cp);
 
   /* numbers (%i) */
   r = tor_asprintf(&cp, "I like numbers-%2i, %i, etc.", -1, 2);
   test_assert(cp);
   test_streq("I like numbers--1, 2, etc.", cp);
   test_eq(strlen(cp), r);
+  /* don't free cp; next test uses it. */
 
   /* numbers (%d) */
   r = tor_asprintf(&cp2, "First=%d, Second=%d", 101, 202);
@@ -2155,6 +2335,8 @@ test_util_listdir(void *ptr)
  done:
   tor_free(fname1);
   tor_free(fname2);
+  tor_free(fname3);
+  tor_free(dir1);
   tor_free(dirname);
   if (dir_contents) {
     SMARTLIST_FOREACH(dir_contents, char *, cp, tor_free(cp));
@@ -2223,6 +2405,7 @@ test_util_load_win_lib(void *ptr)
 }
 #endif
 
+#ifndef _WIN32
 static void
 clear_hex_errno(char *hex_errno)
 {
@@ -2267,6 +2450,7 @@ test_util_exit_status(void *ptr)
  done:
   ;
 }
+#endif
 
 #ifndef _WIN32
 /** Check that fgets waits until a full line, and not return a partial line, on
@@ -2355,6 +2539,19 @@ test_util_fgets_eagain(void *ptr)
 }
 #endif
 
+#ifndef BUILDDIR
+#define BUILDDIR "."
+#endif
+
+#ifdef _WIN32
+#define notify_pending_waitpid_callbacks() STMT_NIL
+#define TEST_CHILD "test-child.exe"
+#define EOL "\r\n"
+#else
+#define TEST_CHILD (BUILDDIR "/src/test/test-child")
+#define EOL "\n"
+#endif
+
 /** Helper function for testing tor_spawn_background */
 static void
 run_util_spawn_background(const char *argv[], const char *expected_out,
@@ -2374,19 +2571,28 @@ run_util_spawn_background(const char *argv[], const char *expected_out,
   status = tor_spawn_background(argv[0], argv, NULL, &process_handle);
 #endif
 
+  notify_pending_waitpid_callbacks();
+
   test_eq(expected_status, status);
-  if (status == PROCESS_STATUS_ERROR)
+  if (status == PROCESS_STATUS_ERROR) {
+    tt_ptr_op(process_handle, ==, NULL);
     return;
+  }
 
   test_assert(process_handle != NULL);
   test_eq(expected_status, process_handle->status);
+
+#ifndef _WIN32
+  notify_pending_waitpid_callbacks();
+  tt_ptr_op(process_handle->waitpid_cb, !=, NULL);
+#endif
 
 #ifdef _WIN32
   test_assert(process_handle->stdout_pipe != INVALID_HANDLE_VALUE);
   test_assert(process_handle->stderr_pipe != INVALID_HANDLE_VALUE);
 #else
-  test_assert(process_handle->stdout_pipe > 0);
-  test_assert(process_handle->stderr_pipe > 0);
+  test_assert(process_handle->stdout_pipe >= 0);
+  test_assert(process_handle->stderr_pipe >= 0);
 #endif
 
   /* Check stdout */
@@ -2397,11 +2603,18 @@ run_util_spawn_background(const char *argv[], const char *expected_out,
   test_eq(strlen(expected_out), pos);
   test_streq(expected_out, stdout_buf);
 
+  notify_pending_waitpid_callbacks();
+
   /* Check it terminated correctly */
   retval = tor_get_exit_code(process_handle, 1, &exit_code);
   test_eq(PROCESS_EXIT_EXITED, retval);
   test_eq(expected_exit, exit_code);
   // TODO: Make test-child exit with something other than 0
+
+#ifndef _WIN32
+  notify_pending_waitpid_callbacks();
+  tt_ptr_op(process_handle->waitpid_cb, ==, NULL);
+#endif
 
   /* Check stderr */
   pos = tor_read_all_from_process_stderr(process_handle, stderr_buf,
@@ -2410,6 +2623,8 @@ run_util_spawn_background(const char *argv[], const char *expected_out,
   stderr_buf[pos] = '\0';
   test_streq(expected_err, stderr_buf);
   test_eq(strlen(expected_err), pos);
+
+  notify_pending_waitpid_callbacks();
 
  done:
   if (process_handle)
@@ -2420,29 +2635,20 @@ run_util_spawn_background(const char *argv[], const char *expected_out,
 static void
 test_util_spawn_background_ok(void *ptr)
 {
-#ifdef _WIN32
-  const char *argv[] = {"test-child.exe", "--test", NULL};
-  const char *expected_out = "OUT\r\n--test\r\nSLEEPING\r\nDONE\r\n";
-  const char *expected_err = "ERR\r\n";
-#else
-  const char *argv[] = {BUILDDIR "/src/test/test-child", "--test", NULL};
-  const char *expected_out = "OUT\n--test\nSLEEPING\nDONE\n";
-  const char *expected_err = "ERR\n";
-#endif
+  const char *argv[] = {TEST_CHILD, "--test", NULL};
+  const char *expected_out = "OUT"EOL "--test"EOL "SLEEPING"EOL "DONE" EOL;
+  const char *expected_err = "ERR"EOL;
 
   (void)ptr;
 
   run_util_spawn_background(argv, expected_out, expected_err, 0,
-                            PROCESS_STATUS_RUNNING);
+      PROCESS_STATUS_RUNNING);
 }
 
 /** Check that failing to find the executable works as expected */
 static void
 test_util_spawn_background_fail(void *ptr)
 {
-#ifndef BUILDDIR
-#define BUILDDIR "."
-#endif
   const char *argv[] = {BUILDDIR "/src/test/no-such-file", "--test", NULL};
   const char *expected_err = "";
   char expected_out[1024];
@@ -2463,13 +2669,13 @@ test_util_spawn_background_fail(void *ptr)
     "ERR: Failed to spawn background process - code %s\n", code);
 
   run_util_spawn_background(argv, expected_out, expected_err, 255,
-                            expected_status);
+      expected_status);
 }
 
 /** Test that reading from a handle returns a partial read rather than
  * blocking */
 static void
-test_util_spawn_background_partial_read(void *ptr)
+test_util_spawn_background_partial_read_impl(int exit_early)
 {
   const int expected_exit = 0;
   const int expected_status = PROCESS_STATUS_RUNNING;
@@ -2479,22 +2685,22 @@ test_util_spawn_background_partial_read(void *ptr)
   process_handle_t *process_handle=NULL;
   int status;
   char stdout_buf[100], stderr_buf[100];
-#ifdef _WIN32
-  const char *argv[] = {"test-child.exe", "--test", NULL};
-  const char *expected_out[] = { "OUT\r\n--test\r\nSLEEPING\r\n",
-                                 "DONE\r\n",
+
+  const char *argv[] = {TEST_CHILD, "--test", NULL};
+  const char *expected_out[] = { "OUT" EOL "--test" EOL "SLEEPING" EOL,
+                                 "DONE" EOL,
                                  NULL };
-  const char *expected_err = "ERR\r\n";
-#else
-  const char *argv[] = {BUILDDIR "/src/test/test-child", "--test", NULL};
-  const char *expected_out[] = { "OUT\n--test\nSLEEPING\n",
-                                 "DONE\n",
-                                 NULL };
-  const char *expected_err = "ERR\n";
+  const char *expected_err = "ERR" EOL;
+
+#ifndef _WIN32
   int eof = 0;
 #endif
   int expected_out_ctr;
-  (void)ptr;
+
+  if (exit_early) {
+    argv[1] = "--hang";
+    expected_out[0] = "OUT"EOL "--hang"EOL "SLEEPING" EOL;
+  }
 
   /* Start the program */
 #ifdef _WIN32
@@ -2528,6 +2734,12 @@ test_util_spawn_background_partial_read(void *ptr)
     test_streq(expected_out[expected_out_ctr], stdout_buf);
     test_eq(strlen(expected_out[expected_out_ctr]), pos);
     expected_out_ctr++;
+  }
+
+  if (exit_early) {
+    tor_process_handle_destroy(process_handle, 1);
+    process_handle = NULL;
+    goto done;
   }
 
   /* The process should have exited without writing more */
@@ -2567,15 +2779,84 @@ test_util_spawn_background_partial_read(void *ptr)
   tor_process_handle_destroy(process_handle, 1);
 }
 
+static void
+test_util_spawn_background_partial_read(void *arg)
+{
+  (void)arg;
+  test_util_spawn_background_partial_read_impl(0);
+}
+
+static void
+test_util_spawn_background_exit_early(void *arg)
+{
+  (void)arg;
+  test_util_spawn_background_partial_read_impl(1);
+}
+
+static void
+test_util_spawn_background_waitpid_notify(void *arg)
+{
+  int retval, exit_code;
+  process_handle_t *process_handle=NULL;
+  int status;
+  int ms_timer;
+
+  const char *argv[] = {TEST_CHILD, "--fast", NULL};
+
+  (void) arg;
+
+#ifdef _WIN32
+  status = tor_spawn_background(NULL, argv, NULL, &process_handle);
+#else
+  status = tor_spawn_background(argv[0], argv, NULL, &process_handle);
+#endif
+
+  tt_int_op(status, ==, PROCESS_STATUS_RUNNING);
+  tt_ptr_op(process_handle, !=, NULL);
+
+  /* We're not going to look at the stdout/stderr output this time. Instead,
+   * we're testing whether notify_pending_waitpid_calbacks() can report the
+   * process exit (on unix) and/or whether tor_get_exit_code() can notice it
+   * (on windows) */
+
+#ifndef _WIN32
+  ms_timer = 30*1000;
+  tt_ptr_op(process_handle->waitpid_cb, !=, NULL);
+  while (process_handle->waitpid_cb && ms_timer > 0) {
+    tor_sleep_msec(100);
+    ms_timer -= 100;
+    notify_pending_waitpid_callbacks();
+  }
+  tt_int_op(ms_timer, >, 0);
+  tt_ptr_op(process_handle->waitpid_cb, ==, NULL);
+#endif
+
+  ms_timer = 30*1000;
+  while (((retval = tor_get_exit_code(process_handle, 0, &exit_code))
+                == PROCESS_EXIT_RUNNING) && ms_timer > 0) {
+    tor_sleep_msec(100);
+    ms_timer -= 100;
+  }
+  tt_int_op(ms_timer, >, 0);
+
+  tt_int_op(retval, ==, PROCESS_EXIT_EXITED);
+
+ done:
+  tor_process_handle_destroy(process_handle, 1);
+}
+
+#undef TEST_CHILD
+#undef EOL
+
 /**
- * Test for format_hex_number_for_helper_exit_status()
+ * Test for format_hex_number_sigsafe()
  */
 
 static void
 test_util_format_hex_number(void *ptr)
 {
   int i, len;
-  char buf[HEX_ERRNO_SIZE + 1];
+  char buf[33];
   const struct {
     const char *str;
     unsigned int x;
@@ -2584,6 +2865,8 @@ test_util_format_hex_number(void *ptr)
     {"1", 1},
     {"273A", 0x273a},
     {"FFFF", 0xffff},
+    {"7FFFFFFF", 0x7fffffff},
+    {"FFFFFFFF", 0xffffffff},
 #if UINT_MAX >= 0xffffffff
     {"31BC421D", 0x31bc421d},
     {"FFFFFFFF", 0xffffffff},
@@ -2594,19 +2877,73 @@ test_util_format_hex_number(void *ptr)
   (void)ptr;
 
   for (i = 0; test_data[i].str != NULL; ++i) {
-    len = format_hex_number_for_helper_exit_status(test_data[i].x,
-        buf, HEX_ERRNO_SIZE);
+    len = format_hex_number_sigsafe(test_data[i].x, buf, sizeof(buf));
     test_neq(len, 0);
-    buf[len] = '\0';
+    test_eq(len, strlen(buf));
     test_streq(buf, test_data[i].str);
   }
+
+  test_eq(4, format_hex_number_sigsafe(0xffff, buf, 5));
+  test_streq(buf, "FFFF");
+  test_eq(0, format_hex_number_sigsafe(0xffff, buf, 4));
+  test_eq(0, format_hex_number_sigsafe(0, buf, 1));
 
  done:
   return;
 }
 
 /**
- * Test that we can properly format q Windows command line
+ * Test for format_hex_number_sigsafe()
+ */
+
+static void
+test_util_format_dec_number(void *ptr)
+{
+  int i, len;
+  char buf[33];
+  const struct {
+    const char *str;
+    unsigned int x;
+  } test_data[] = {
+    {"0", 0},
+    {"1", 1},
+    {"1234", 1234},
+    {"12345678", 12345678},
+    {"99999999",  99999999},
+    {"100000000", 100000000},
+    {"4294967295", 4294967295u},
+#if UINT_MAX > 0xffffffff
+    {"18446744073709551615", 18446744073709551615u },
+#endif
+    {NULL, 0}
+  };
+
+  (void)ptr;
+
+  for (i = 0; test_data[i].str != NULL; ++i) {
+    len = format_dec_number_sigsafe(test_data[i].x, buf, sizeof(buf));
+    test_neq(len, 0);
+    test_eq(len, strlen(buf));
+    test_streq(buf, test_data[i].str);
+
+    len = format_dec_number_sigsafe(test_data[i].x, buf,
+                                    (int)(strlen(test_data[i].str) + 1));
+    test_eq(len, strlen(buf));
+    test_streq(buf, test_data[i].str);
+  }
+
+  test_eq(4, format_dec_number_sigsafe(7331, buf, 5));
+  test_streq(buf, "7331");
+  test_eq(0, format_dec_number_sigsafe(7331, buf, 4));
+  test_eq(1, format_dec_number_sigsafe(0, buf, 2));
+  test_eq(0, format_dec_number_sigsafe(0, buf, 1));
+
+ done:
+  return;
+}
+
+/**
+ * Test that we can properly format a Windows command line
  */
 static void
 test_util_join_win_cmdline(void *ptr)
@@ -2817,7 +3154,7 @@ test_util_eat_whitespace(void *ptr)
   (void)ptr;
 
   /* Try one leading ws */
-  strcpy(str, "fuubaar");
+  strlcpy(str, "fuubaar", sizeof(str));
   for (i = 0; i < sizeof(ws); ++i) {
     str[0] = ws[i];
     test_eq_ptr(str + 1, eat_whitespace(str));
@@ -2832,14 +3169,14 @@ test_util_eat_whitespace(void *ptr)
   test_eq_ptr(str,     eat_whitespace_eos_no_nl(str, str + strlen(str)));
 
   /* Empty string */
-  strcpy(str, "");
+  strlcpy(str, "", sizeof(str));
   test_eq_ptr(str, eat_whitespace(str));
   test_eq_ptr(str, eat_whitespace_eos(str, str));
   test_eq_ptr(str, eat_whitespace_no_nl(str));
   test_eq_ptr(str, eat_whitespace_eos_no_nl(str, str));
 
   /* Only ws */
-  strcpy(str, " \t\r\n");
+  strlcpy(str, " \t\r\n", sizeof(str));
   test_eq_ptr(str + strlen(str), eat_whitespace(str));
   test_eq_ptr(str + strlen(str), eat_whitespace_eos(str, str + strlen(str)));
   test_eq_ptr(str + strlen(str) - 1,
@@ -2847,7 +3184,7 @@ test_util_eat_whitespace(void *ptr)
   test_eq_ptr(str + strlen(str) - 1,
               eat_whitespace_eos_no_nl(str, str + strlen(str)));
 
-  strcpy(str, " \t\r ");
+  strlcpy(str, " \t\r ", sizeof(str));
   test_eq_ptr(str + strlen(str), eat_whitespace(str));
   test_eq_ptr(str + strlen(str),
               eat_whitespace_eos(str, str + strlen(str)));
@@ -2856,7 +3193,7 @@ test_util_eat_whitespace(void *ptr)
               eat_whitespace_eos_no_nl(str, str + strlen(str)));
 
   /* Multiple ws */
-  strcpy(str, "fuubaar");
+  strlcpy(str, "fuubaar", sizeof(str));
   for (i = 0; i < sizeof(ws); ++i)
     str[i] = ws[i];
   test_eq_ptr(str + sizeof(ws), eat_whitespace(str));
@@ -2866,28 +3203,28 @@ test_util_eat_whitespace(void *ptr)
               eat_whitespace_eos_no_nl(str, str + strlen(str)));
 
   /* Eat comment */
-  strcpy(str, "# Comment \n No Comment");
+  strlcpy(str, "# Comment \n No Comment", sizeof(str));
   test_streq("No Comment", eat_whitespace(str));
   test_streq("No Comment", eat_whitespace_eos(str, str + strlen(str)));
   test_eq_ptr(str, eat_whitespace_no_nl(str));
   test_eq_ptr(str, eat_whitespace_eos_no_nl(str, str + strlen(str)));
 
   /* Eat comment & ws mix */
-  strcpy(str, " # \t Comment \n\t\nNo Comment");
+  strlcpy(str, " # \t Comment \n\t\nNo Comment", sizeof(str));
   test_streq("No Comment", eat_whitespace(str));
   test_streq("No Comment", eat_whitespace_eos(str, str + strlen(str)));
   test_eq_ptr(str + 1, eat_whitespace_no_nl(str));
   test_eq_ptr(str + 1, eat_whitespace_eos_no_nl(str, str + strlen(str)));
 
   /* Eat entire comment */
-  strcpy(str, "#Comment");
+  strlcpy(str, "#Comment", sizeof(str));
   test_eq_ptr(str + strlen(str), eat_whitespace(str));
   test_eq_ptr(str + strlen(str), eat_whitespace_eos(str, str + strlen(str)));
   test_eq_ptr(str, eat_whitespace_no_nl(str));
   test_eq_ptr(str, eat_whitespace_eos_no_nl(str, str + strlen(str)));
 
   /* Blank line, then comment */
-  strcpy(str, " \t\n # Comment");
+  strlcpy(str, " \t\n # Comment", sizeof(str));
   test_eq_ptr(str + strlen(str), eat_whitespace(str));
   test_eq_ptr(str + strlen(str), eat_whitespace_eos(str, str + strlen(str)));
   test_eq_ptr(str + 2, eat_whitespace_no_nl(str));
@@ -2913,6 +3250,8 @@ smartlist_new_from_text_lines(const char *lines)
   last_line = smartlist_pop_last(sl);
   if (last_line != NULL && *last_line != '\0') {
     smartlist_add(sl, last_line);
+  } else {
+    tor_free(last_line);
   }
 
   return sl;
@@ -3212,11 +3551,203 @@ test_util_mathlog(void *arg)
   ;
 }
 
+static void
+test_util_round_to_next_multiple_of(void *arg)
+{
+  (void)arg;
+
+  test_assert(round_uint64_to_next_multiple_of(0,1) == 0);
+  test_assert(round_uint64_to_next_multiple_of(0,7) == 0);
+
+  test_assert(round_uint64_to_next_multiple_of(99,1) == 99);
+  test_assert(round_uint64_to_next_multiple_of(99,7) == 105);
+  test_assert(round_uint64_to_next_multiple_of(99,9) == 99);
+
+ done:
+  ;
+}
+
+static void
+test_util_strclear(void *arg)
+{
+  static const char *vals[] = { "", "a", "abcdef", "abcdefgh", NULL };
+  int i;
+  char *v = NULL;
+  (void)arg;
+
+  for (i = 0; vals[i]; ++i) {
+    size_t n;
+    v = tor_strdup(vals[i]);
+    n = strlen(v);
+    tor_strclear(v);
+    tt_assert(tor_mem_is_zero(v, n+1));
+    tor_free(v);
+  }
+ done:
+  tor_free(v);
+}
+
 #define UTIL_LEGACY(name)                                               \
   { #name, legacy_test_helper, 0, &legacy_setup, test_util_ ## name }
 
 #define UTIL_TEST(name, flags)                          \
   { #name, test_util_ ## name, flags, NULL, NULL }
+
+#ifdef FD_CLOEXEC
+#define CAN_CHECK_CLOEXEC
+static int
+fd_is_cloexec(tor_socket_t fd)
+{
+  int flags = fcntl(fd, F_GETFD, 0);
+  return (flags & FD_CLOEXEC) == FD_CLOEXEC;
+}
+#endif
+
+#ifndef _WIN32
+#define CAN_CHECK_NONBLOCK
+static int
+fd_is_nonblocking(tor_socket_t fd)
+{
+  int flags = fcntl(fd, F_GETFL, 0);
+  return (flags & O_NONBLOCK) == O_NONBLOCK;
+}
+#endif
+
+static void
+test_util_socket(void *arg)
+{
+  tor_socket_t fd1 = TOR_INVALID_SOCKET;
+  tor_socket_t fd2 = TOR_INVALID_SOCKET;
+  tor_socket_t fd3 = TOR_INVALID_SOCKET;
+  tor_socket_t fd4 = TOR_INVALID_SOCKET;
+  int n = get_n_open_sockets();
+
+  TT_BLATHER(("Starting with %d open sockets.", n));
+
+  (void)arg;
+
+  fd1 = tor_open_socket_with_extensions(AF_INET, SOCK_STREAM, 0, 0, 0);
+  fd2 = tor_open_socket_with_extensions(AF_INET, SOCK_STREAM, 0, 0, 1);
+  tt_assert(SOCKET_OK(fd1));
+  tt_assert(SOCKET_OK(fd2));
+  tt_int_op(get_n_open_sockets(), ==, n + 2);
+  //fd3 = tor_open_socket_with_extensions(AF_INET, SOCK_STREAM, 0, 1, 0);
+  //fd4 = tor_open_socket_with_extensions(AF_INET, SOCK_STREAM, 0, 1, 1);
+  fd3 = tor_open_socket(AF_INET, SOCK_STREAM, 0);
+  fd4 = tor_open_socket_nonblocking(AF_INET, SOCK_STREAM, 0);
+  tt_assert(SOCKET_OK(fd3));
+  tt_assert(SOCKET_OK(fd4));
+  tt_int_op(get_n_open_sockets(), ==, n + 4);
+
+#ifdef CAN_CHECK_CLOEXEC
+  tt_int_op(fd_is_cloexec(fd1), ==, 0);
+  tt_int_op(fd_is_cloexec(fd2), ==, 0);
+  tt_int_op(fd_is_cloexec(fd3), ==, 1);
+  tt_int_op(fd_is_cloexec(fd4), ==, 1);
+#endif
+#ifdef CAN_CHECK_NONBLOCK
+  tt_int_op(fd_is_nonblocking(fd1), ==, 0);
+  tt_int_op(fd_is_nonblocking(fd2), ==, 1);
+  tt_int_op(fd_is_nonblocking(fd3), ==, 0);
+  tt_int_op(fd_is_nonblocking(fd4), ==, 1);
+#endif
+
+  tor_close_socket(fd1);
+  tor_close_socket(fd2);
+  fd1 = fd2 = TOR_INVALID_SOCKET;
+  tt_int_op(get_n_open_sockets(), ==, n + 2);
+  tor_close_socket(fd3);
+  tor_close_socket(fd4);
+  fd3 = fd4 = TOR_INVALID_SOCKET;
+  tt_int_op(get_n_open_sockets(), ==, n);
+
+ done:
+  if (SOCKET_OK(fd1))
+    tor_close_socket(fd1);
+  if (SOCKET_OK(fd2))
+    tor_close_socket(fd2);
+  if (SOCKET_OK(fd3))
+    tor_close_socket(fd3);
+  if (SOCKET_OK(fd4))
+    tor_close_socket(fd4);
+}
+
+static void *
+socketpair_test_setup(const struct testcase_t *testcase)
+{
+  return testcase->setup_data;
+}
+static int
+socketpair_test_cleanup(const struct testcase_t *testcase, void *ptr)
+{
+  (void)testcase;
+  (void)ptr;
+  return 1;
+}
+
+static const struct testcase_setup_t socketpair_setup = {
+  socketpair_test_setup, socketpair_test_cleanup
+};
+
+/* Test for socketpair and ersatz_socketpair().  We test them both, since
+ * the latter is a tolerably good way to exersize tor_accept_socket(). */
+static void
+test_util_socketpair(void *arg)
+{
+  const int ersatz = !strcmp(arg, "1");
+  int (*const tor_socketpair_fn)(int, int, int, tor_socket_t[2]) =
+    ersatz ? tor_ersatz_socketpair : tor_socketpair;
+  int n = get_n_open_sockets();
+  tor_socket_t fds[2] = {TOR_INVALID_SOCKET, TOR_INVALID_SOCKET};
+  const int family = AF_UNIX;
+
+  tt_int_op(0, ==, tor_socketpair_fn(family, SOCK_STREAM, 0, fds));
+  tt_assert(SOCKET_OK(fds[0]));
+  tt_assert(SOCKET_OK(fds[1]));
+  tt_int_op(get_n_open_sockets(), ==, n + 2);
+#ifdef CAN_CHECK_CLOEXEC
+  tt_int_op(fd_is_cloexec(fds[0]), ==, 1);
+  tt_int_op(fd_is_cloexec(fds[1]), ==, 1);
+#endif
+#ifdef CAN_CHECK_NONBLOCK
+  tt_int_op(fd_is_nonblocking(fds[0]), ==, 0);
+  tt_int_op(fd_is_nonblocking(fds[1]), ==, 0);
+#endif
+
+ done:
+  if (SOCKET_OK(fds[0]))
+    tor_close_socket(fds[0]);
+  if (SOCKET_OK(fds[1]))
+    tor_close_socket(fds[1]);
+}
+
+static void
+test_util_max_mem(void *arg)
+{
+  size_t memory1, memory2;
+  int r, r2;
+  (void) arg;
+
+  r = get_total_system_memory(&memory1);
+  r2 = get_total_system_memory(&memory2);
+  tt_int_op(r, ==, r2);
+  tt_uint_op(memory2, ==, memory1);
+
+  TT_BLATHER(("System memory: "U64_FORMAT, U64_PRINTF_ARG(memory1)));
+
+  if (r==0) {
+    /* You have at least a megabyte. */
+    tt_uint_op(memory1, >, (1<<20));
+  } else {
+    /* You do not have a petabyte. */
+#if SIZEOF_SIZE_T == SIZEOF_UINT64_T
+    tt_uint_op(memory1, <, (U64_LITERAL(1)<<50));
+#endif
+  }
+
+ done:
+  ;
+}
 
 struct testcase_t util_tests[] = {
   UTIL_LEGACY(time),
@@ -3228,11 +3759,15 @@ struct testcase_t util_tests[] = {
 #ifndef _WIN32
   UTIL_LEGACY(expand_filename),
 #endif
+  UTIL_LEGACY(escape_string_socks),
+  UTIL_LEGACY(string_is_key_value),
   UTIL_LEGACY(strmisc),
   UTIL_LEGACY(pow2),
   UTIL_LEGACY(gzip),
   UTIL_LEGACY(datadir),
+#ifdef ENABLE_MEMPOOLS
   UTIL_LEGACY(mempool),
+#endif
   UTIL_LEGACY(memarea),
   UTIL_LEGACY(control_formats),
   UTIL_LEGACY(mmap),
@@ -3241,6 +3776,8 @@ struct testcase_t util_tests[] = {
   UTIL_LEGACY(path_is_relative),
   UTIL_LEGACY(strtok),
   UTIL_LEGACY(di_ops),
+  UTIL_TEST(round_to_next_multiple_of, 0),
+  UTIL_TEST(strclear, 0),
   UTIL_TEST(find_str_at_start_of_line, 0),
   UTIL_TEST(string_is_C_identifier, 0),
   UTIL_TEST(asprintf, 0),
@@ -3249,14 +3786,17 @@ struct testcase_t util_tests[] = {
 #ifdef _WIN32
   UTIL_TEST(load_win_lib, 0),
 #endif
-  UTIL_TEST(exit_status, 0),
 #ifndef _WIN32
+  UTIL_TEST(exit_status, 0),
   UTIL_TEST(fgets_eagain, TT_SKIP),
 #endif
   UTIL_TEST(spawn_background_ok, 0),
   UTIL_TEST(spawn_background_fail, 0),
   UTIL_TEST(spawn_background_partial_read, 0),
+  UTIL_TEST(spawn_background_exit_early, 0),
+  UTIL_TEST(spawn_background_waitpid_notify, 0),
   UTIL_TEST(format_hex_number, 0),
+  UTIL_TEST(format_dec_number, 0),
   UTIL_TEST(join_win_cmdline, 0),
   UTIL_TEST(split_lines, 0),
   UTIL_TEST(n_bits_set, 0),
@@ -3268,8 +3808,15 @@ struct testcase_t util_tests[] = {
   UTIL_TEST(read_file_eof_tiny_limit, 0),
   UTIL_TEST(read_file_eof_two_loops, 0),
   UTIL_TEST(read_file_eof_zero_bytes, 0),
+  UTIL_TEST(write_chunks_to_file, 0),
   UTIL_TEST(mathlog, 0),
   UTIL_TEST(weak_random, 0),
+  UTIL_TEST(socket, TT_FORK),
+  { "socketpair", test_util_socketpair, TT_FORK, &socketpair_setup,
+    (void*)"0" },
+  { "socketpair_ersatz", test_util_socketpair, TT_FORK,
+    &socketpair_setup, (void*)"1" },
+  UTIL_TEST(max_mem, 0),
   END_OF_TESTCASES
 };
 

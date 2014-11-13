@@ -19,6 +19,7 @@
 #include "circuitbuild.h"
 #include "circuitlist.h"
 #include "circuitstats.h"
+#include "config.h"
 #include "connection_or.h" /* For var_cell_free() */
 #include "circuitmux.h"
 #include "entrynodes.h"
@@ -95,12 +96,7 @@ typedef struct channel_idmap_entry_s {
 static INLINE unsigned
 channel_idmap_hash(const channel_idmap_entry_t *ent)
 {
-  const unsigned *a = (const unsigned *)ent->digest;
-#if SIZEOF_INT == 4
-  return a[0] ^ a[1] ^ a[2] ^ a[3] ^ a[4];
-#elif SIZEOF_INT == 8
-  return a[0] ^ a[1];
-#endif
+  return (unsigned) siphash24g(ent->digest, DIGEST_LEN);
 }
 
 static INLINE int
@@ -117,11 +113,15 @@ HT_GENERATE(channel_idmap, channel_idmap_entry_s, node, channel_idmap_hash,
 
 static cell_queue_entry_t * cell_queue_entry_dup(cell_queue_entry_t *q);
 static void cell_queue_entry_free(cell_queue_entry_t *q, int handed_off);
+#if 0
 static int cell_queue_entry_is_padding(cell_queue_entry_t *q);
+#endif
 static cell_queue_entry_t *
 cell_queue_entry_new_fixed(cell_t *cell);
 static cell_queue_entry_t *
 cell_queue_entry_new_var(var_cell_t *var_cell);
+static int is_destroy_cell(channel_t *chan,
+                           const cell_queue_entry_t *q, circid_t *circid_out);
 
 /* Functions to maintain the digest map */
 static void channel_add_to_digest_map(channel_t *chan);
@@ -729,10 +729,10 @@ channel_init(channel_t *chan)
   chan->global_identifier = n_channels_allocated++;
 
   /* Init timestamp */
-  chan->timestamp_last_added_nonpadding = time(NULL);
+  chan->timestamp_last_had_circuits = time(NULL);
 
-  /* Init next_circ_id */
-  chan->next_circ_id = crypto_rand_int(1 << 15);
+  /* Warn about exhausted circuit IDs no more than hourly. */
+  chan->last_warned_circ_ids_exhausted.rate = 3600;
 
   /* Initialize queues. */
   TOR_SIMPLEQ_INIT(&chan->incoming_queue);
@@ -803,7 +803,8 @@ channel_free(channel_t *chan)
 
   /* Get rid of cmux */
   if (chan->cmux) {
-    circuitmux_detach_all_circuits(chan->cmux);
+    circuitmux_detach_all_circuits(chan->cmux, NULL);
+    circuitmux_mark_destroyed_circids_usable(chan->cmux, chan);
     circuitmux_free(chan->cmux);
     chan->cmux = NULL;
   }
@@ -1597,6 +1598,7 @@ cell_queue_entry_free(cell_queue_entry_t *q, int handed_off)
   tor_free(q);
 }
 
+#if 0
 /**
  * Check whether a cell queue entry is padding; this is a helper function
  * for channel_write_cell_queue_entry()
@@ -1625,6 +1627,7 @@ cell_queue_entry_is_padding(cell_queue_entry_t *q)
 
   return 0;
 }
+#endif
 
 /**
  * Allocate a new cell queue entry for a fixed-size cell
@@ -1683,9 +1686,11 @@ channel_write_cell_queue_entry(channel_t *chan, cell_queue_entry_t *q)
              chan->state == CHANNEL_STATE_OPEN ||
              chan->state == CHANNEL_STATE_MAINT);
 
-  /* Increment the timestamp unless it's padding */
-  if (!cell_queue_entry_is_padding(q)) {
-    chan->timestamp_last_added_nonpadding = approx_time();
+  {
+    circid_t circ_id;
+    if (is_destroy_cell(chan, q, &circ_id)) {
+      channel_note_destroy_not_pending(chan, circ_id);
+    }
   }
 
   /* Can we send it right out?  If so, try */
@@ -2355,7 +2360,7 @@ channel_do_open_actions(channel_t *chan)
   started_here = channel_is_outgoing(chan);
 
   if (started_here) {
-    circuit_build_times_network_is_live(&circ_times);
+    circuit_build_times_network_is_live(get_circuit_build_times_mutable());
     rep_hist_note_connect_succeeded(chan->identity_digest, now);
     if (entry_guard_register_connect_status(
           chan->identity_digest, 1, 0, now) < 0) {
@@ -2373,8 +2378,14 @@ channel_do_open_actions(channel_t *chan)
     /* only report it to the geoip module if it's not a known router */
     if (!router_get_by_id_digest(chan->identity_digest)) {
       if (channel_get_addr_if_possible(chan, &remote_addr)) {
-        geoip_note_client_seen(GEOIP_CLIENT_CONNECT, &remote_addr,
+        char *transport_name = NULL;
+        if (chan->get_transport_name(chan, &transport_name) < 0)
+          transport_name = NULL;
+
+        geoip_note_client_seen(GEOIP_CLIENT_CONNECT,
+                               &remote_addr, transport_name,
                                now);
+        tor_free(transport_name);
       }
       /* Otherwise the underlying transport can't tell us this, so skip it */
     }
@@ -2611,6 +2622,54 @@ channel_queue_var_cell(channel_t *chan, var_cell_t *var_cell)
   }
 }
 
+/** If <b>packed_cell</b> on <b>chan</b> is a destroy cell, then set
+ * *<b>circid_out</b> to its circuit ID, and return true.  Otherwise, return
+ * false. */
+/* XXXX Move this function. */
+int
+packed_cell_is_destroy(channel_t *chan,
+                       const packed_cell_t *packed_cell,
+                       circid_t *circid_out)
+{
+  if (chan->wide_circ_ids) {
+    if (packed_cell->body[4] == CELL_DESTROY) {
+      *circid_out = ntohl(get_uint32(packed_cell->body));
+      return 1;
+    }
+  } else {
+    if (packed_cell->body[2] == CELL_DESTROY) {
+      *circid_out = ntohs(get_uint16(packed_cell->body));
+      return 1;
+    }
+  }
+  return 0;
+}
+
+/** DOCDOC */
+static int
+is_destroy_cell(channel_t *chan,
+                const cell_queue_entry_t *q, circid_t *circid_out)
+{
+  *circid_out = 0;
+  switch (q->type) {
+    case CELL_QUEUE_FIXED:
+      if (q->u.fixed.cell->command == CELL_DESTROY) {
+        *circid_out = q->u.fixed.cell->circ_id;
+        return 1;
+      }
+      break;
+    case CELL_QUEUE_VAR:
+      if (q->u.var.var_cell->command == CELL_DESTROY) {
+        *circid_out = q->u.var.var_cell->circ_id;
+        return 1;
+      }
+      break;
+    case CELL_QUEUE_PACKED:
+      return packed_cell_is_destroy(chan, q->u.packed.packed_cell, circid_out);
+  }
+  return 0;
+}
+
 /**
  * Send destroy cell on a channel
  *
@@ -2622,25 +2681,28 @@ channel_queue_var_cell(channel_t *chan, var_cell_t *var_cell)
 int
 channel_send_destroy(circid_t circ_id, channel_t *chan, int reason)
 {
-  cell_t cell;
-
   tor_assert(chan);
+  if (circ_id == 0) {
+    log_warn(LD_BUG, "Attempted to send a destroy cell for circID 0 "
+             "on a channel " U64_FORMAT " at %p in state %s (%d)",
+             U64_PRINTF_ARG(chan->global_identifier),
+             chan, channel_state_to_string(chan->state),
+             chan->state);
+    return 0;
+  }
 
   /* Check to make sure we can send on this channel first */
   if (!(chan->state == CHANNEL_STATE_CLOSING ||
         chan->state == CHANNEL_STATE_CLOSED ||
-        chan->state == CHANNEL_STATE_ERROR)) {
-    memset(&cell, 0, sizeof(cell_t));
-    cell.circ_id = circ_id;
-    cell.command = CELL_DESTROY;
-    cell.payload[0] = (uint8_t) reason;
+        chan->state == CHANNEL_STATE_ERROR) &&
+      chan->cmux) {
+    channel_note_destroy_pending(chan, circ_id);
+    circuitmux_append_destroy_cell(chan, chan->cmux, circ_id, reason);
     log_debug(LD_OR,
               "Sending destroy (circID %u) on channel %p "
               "(global ID " U64_FORMAT ")",
               (unsigned)circ_id, chan,
               U64_PRINTF_ARG(chan->global_identifier));
-
-    channel_write_cell(chan, &cell);
   } else {
     log_warn(LD_BUG,
              "Someone called channel_send_destroy() for circID %u "
@@ -2806,7 +2868,7 @@ channel_free_list(smartlist_t *channels, int mark_for_close)
               channel_state_to_string(curr->state), curr->state);
     /* Detach circuits early so they can find the channel */
     if (curr->cmux) {
-      circuitmux_detach_all_circuits(curr->cmux);
+      circuitmux_detach_all_circuits(curr->cmux, NULL);
     }
     channel_unregister(curr);
     if (mark_for_close) {
@@ -3224,9 +3286,9 @@ channel_dump_statistics(channel_t *chan, int severity)
         " is %s, and gives a canonical description of \"%s\" and an "
         "actual description of \"%s\"",
         U64_PRINTF_ARG(chan->global_identifier),
-        remote_addr_str,
-        channel_get_canonical_remote_descr(chan),
-        actual);
+        safe_str(remote_addr_str),
+        safe_str(channel_get_canonical_remote_descr(chan)),
+        safe_str(actual));
     tor_free(remote_addr_str);
     tor_free(actual);
   } else {
@@ -3298,7 +3360,7 @@ channel_dump_statistics(channel_t *chan, int severity)
       U64_PRINTF_ARG(chan->timestamp_recv),
       U64_PRINTF_ARG(now - chan->timestamp_recv));
   tor_log(severity, LD_GENERAL,
-      " * Channel " U64_FORMAT " last trasmitted a cell "
+      " * Channel " U64_FORMAT " last transmitted a cell "
       "at " U64_FORMAT " (" U64_FORMAT " seconds ago)",
       U64_PRINTF_ARG(chan->global_identifier),
       U64_PRINTF_ARG(chan->timestamp_xmit),
@@ -3695,6 +3757,23 @@ channel_mark_local(channel_t *chan)
   tor_assert(chan);
 
   chan->is_local = 1;
+}
+
+/**
+ * Mark a channel as remote
+ *
+ * This internal-only function should be called by the lower layer if the
+ * channel is not to a local address but has previously been marked local.
+ * See channel_is_local() above or the description of the is_local bit in
+ * channel.h
+ */
+
+void
+channel_mark_remote(channel_t *chan)
+{
+  tor_assert(chan);
+
+  chan->is_local = 0;
 }
 
 /**

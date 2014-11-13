@@ -4,6 +4,7 @@
 #ifndef TOR_CRYPTO_CURVE25519_H
 #define TOR_CRYPTO_CURVE25519_H
 
+#include "testsupport.h"
 #include "torint.h"
 
 /** Length of a curve25519 public key when encoded. */
@@ -30,6 +31,11 @@ typedef struct curve25519_keypair_t {
 } curve25519_keypair_t;
 
 #ifdef CURVE25519_ENABLED
+/* These functions require that we actually know how to use curve25519 keys.
+ * The other data structures and functions in this header let us parse them,
+ * store them, and move them around.
+ */
+
 int curve25519_public_key_is_ok(const curve25519_public_key_t *);
 
 int curve25519_secret_key_generate(curve25519_secret_key_t *key_out,
@@ -52,8 +58,8 @@ int curve25519_keypair_read_from_file(curve25519_keypair_t *keypair_out,
                                       const char *fname);
 
 #ifdef CRYPTO_CURVE25519_PRIVATE
-int curve25519_impl(uint8_t *output, const uint8_t *secret,
-                    const uint8_t *basepoint);
+STATIC int curve25519_impl(uint8_t *output, const uint8_t *secret,
+                           const uint8_t *basepoint);
 #endif
 #endif
 

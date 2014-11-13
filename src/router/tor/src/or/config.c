@@ -1,4 +1,4 @@
- /* Copyright (c) 2001 Matej Pfajfar.
+/* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
  * Copyright (c) 2007-2013, The Tor Project, Inc. */
@@ -10,7 +10,6 @@
  **/
 
 #define CONFIG_PRIVATE
-
 #include "or.h"
 #include "addressmap.h"
 #include "channel.h"
@@ -40,11 +39,14 @@
 #include "rendservice.h"
 #include "rephist.h"
 #include "router.h"
+#include "sandbox.h"
 #include "util.h"
 #include "routerlist.h"
 #include "routerset.h"
 #include "statefile.h"
 #include "transports.h"
+#include "ext_orport.h"
+#include "torgzip.h"
 #ifdef _WIN32
 #include <shlobj.h>
 #endif
@@ -83,6 +85,7 @@ static config_abbrev_t option_abbrevs_[] = {
   { "DirFetchPostPeriod", "StatusFetchPeriod", 0, 0},
   { "DirServer", "DirAuthority", 0, 0}, /* XXXX024 later, make this warn? */
   { "MaxConn", "ConnLimit", 0, 1},
+  { "MaxMemInCellQueues", "MaxMemInQueues", 0, 0},
   { "ORBindAddress", "ORListenAddress", 0, 0},
   { "DirBindAddress", "DirListenAddress", 0, 0},
   { "SocksBindAddress", "SocksListenAddress", 0, 0},
@@ -135,7 +138,7 @@ static config_var_t option_vars_[] = {
   V(AllowSingleHopExits,         BOOL,     "0"),
   V(AlternateBridgeAuthority,    LINELIST, NULL),
   V(AlternateDirAuthority,       LINELIST, NULL),
-  V(AlternateHSAuthority,        LINELIST, NULL),
+  OBSOLETE("AlternateHSAuthority"),
   V(AssumeReachable,             BOOL,     "0"),
   V(AuthDirBadDir,               LINELIST, NULL),
   V(AuthDirBadDirCCs,            CSV,      ""),
@@ -144,7 +147,7 @@ static config_var_t option_vars_[] = {
   V(AuthDirInvalid,              LINELIST, NULL),
   V(AuthDirInvalidCCs,           CSV,      ""),
   V(AuthDirFastGuarantee,        MEMUNIT,  "100 KB"),
-  V(AuthDirGuardBWGuarantee,     MEMUNIT,  "250 KB"),
+  V(AuthDirGuardBWGuarantee,     MEMUNIT,  "2 MB"),
   V(AuthDirReject,               LINELIST, NULL),
   V(AuthDirRejectCCs,            CSV,      ""),
   V(AuthDirRejectUnlisted,       BOOL,     "0"),
@@ -213,11 +216,14 @@ static config_var_t option_vars_[] = {
   V(DisableAllSwap,              BOOL,     "0"),
   V(DisableDebuggerAttachment,   BOOL,     "1"),
   V(DisableIOCP,                 BOOL,     "1"),
-  V(DisableV2DirectoryInfo_,     BOOL,     "0"),
+  OBSOLETE("DisableV2DirectoryInfo_"),
   V(DynamicDHGroups,             BOOL,     "0"),
   VPORT(DNSPort,                     LINELIST, NULL),
   V(DNSListenAddress,            LINELIST, NULL),
   V(DownloadExtraInfo,           BOOL,     "0"),
+  V(TestingEnableConnBwEvent,    BOOL,     "0"),
+  V(TestingEnableCellStatsEvent, BOOL,     "0"),
+  V(TestingEnableTbEmptyEvent,   BOOL,     "0"),
   V(EnforceDistinctSubnets,      BOOL,     "1"),
   V(EntryNodes,                  ROUTERSET,   NULL),
   V(EntryStatistics,             BOOL,     "0"),
@@ -230,6 +236,9 @@ static config_var_t option_vars_[] = {
   V(ExitPolicyRejectPrivate,     BOOL,     "1"),
   V(ExitPortStatistics,          BOOL,     "0"),
   V(ExtendAllowPrivateAddresses, BOOL,     "0"),
+  VPORT(ExtORPort,               LINELIST, NULL),
+  V(ExtORPortCookieAuthFile,     STRING,   NULL),
+  V(ExtORPortCookieAuthFileGroupReadable, BOOL, "0"),
   V(ExtraInfoStatistics,         BOOL,     "1"),
   V(FallbackDir,                 LINELIST, NULL),
 
@@ -242,7 +251,7 @@ static config_var_t option_vars_[] = {
   V(FetchServerDescriptors,      BOOL,     "1"),
   V(FetchHidServDescriptors,     BOOL,     "1"),
   V(FetchUselessDescriptors,     BOOL,     "0"),
-  V(FetchV2Networkstatus,        BOOL,     "0"),
+  OBSOLETE("FetchV2Networkstatus"),
   V(GeoIPExcludeUnknown,         AUTOBOOL, "auto"),
 #ifdef _WIN32
   V(GeoIPFile,                   FILENAME, "<default>"),
@@ -270,7 +279,7 @@ static config_var_t option_vars_[] = {
   VAR("HiddenServiceVersion",LINELIST_S, RendConfigLines,    NULL),
   VAR("HiddenServiceAuthorizeClient",LINELIST_S,RendConfigLines, NULL),
   V(HidServAuth,                 LINELIST, NULL),
-  V(HSAuthoritativeDir,          BOOL,     "0"),
+  OBSOLETE("HSAuthoritativeDir"),
   OBSOLETE("HSAuthorityRecordStats"),
   V(CloseHSClientCircuitsImmediatelyOnTimeout, BOOL, "0"),
   V(CloseHSServiceRendCircuitsImmediatelyOnTimeout, BOOL, "0"),
@@ -281,6 +290,7 @@ static config_var_t option_vars_[] = {
   V(IPv6Exit,                    BOOL,     "0"),
   VAR("ServerTransportPlugin",   LINELIST, ServerTransportPlugin,  NULL),
   V(ServerTransportListenAddr,   LINELIST, NULL),
+  V(ServerTransportOptions,      LINELIST, NULL),
   V(Socks4Proxy,                 STRING,   NULL),
   V(Socks5Proxy,                 STRING,   NULL),
   V(Socks5ProxyUsername,         STRING,   NULL),
@@ -299,7 +309,7 @@ static config_var_t option_vars_[] = {
   V(MaxAdvertisedBandwidth,      MEMUNIT,  "1 GB"),
   V(MaxCircuitDirtiness,         INTERVAL, "10 minutes"),
   V(MaxClientCircuitsPending,    UINT,     "32"),
-  V(MaxMemInCellQueues,          MEMUNIT,  "8 GB"),
+  VAR("MaxMemInQueues",          MEMUNIT,   MaxMemInQueues_raw, "0"),
   OBSOLETE("MaxOnionsPending"),
   V(MaxOnionQueueDelay,          MSEC_INTERVAL, "1750 msec"),
   V(MinMeasuredBWsForAuthToIgnoreAdvertised, INT, "500"),
@@ -310,6 +320,7 @@ static config_var_t option_vars_[] = {
   V(NATDListenAddress,           LINELIST, NULL),
   VPORT(NATDPort,                    LINELIST, NULL),
   V(Nickname,                    STRING,   NULL),
+  V(PredictedPortsRelevanceTime,  INTERVAL, "1 hour"),
   V(WarnUnsafeSocks,              BOOL,     "1"),
   OBSOLETE("NoPublish"),
   VAR("NodeFamily",              LINELIST, NodeFamilies,         NULL),
@@ -347,7 +358,7 @@ static config_var_t option_vars_[] = {
   V(OptimisticData,              AUTOBOOL, "auto"),
   V(PortForwarding,              BOOL,     "0"),
   V(PortForwardingHelper,        FILENAME, "tor-fw-helper"),
-  V(PreferTunneledDirConns,      BOOL,     "1"),
+  OBSOLETE("PreferTunneledDirConns"),
   V(ProtocolWarnings,            BOOL,     "0"),
   V(PublishServerDescriptor,     CSV,      "1"),
   V(PublishHidServDescriptors,   BOOL,     "1"),
@@ -370,6 +381,7 @@ static config_var_t option_vars_[] = {
   V(RunAsDaemon,                 BOOL,     "0"),
 //  V(RunTesting,                  BOOL,     "0"),
   OBSOLETE("RunTesting"), // currently unused
+  V(Sandbox,                     BOOL,     "0"),
   V(SafeLogging,                 STRING,   "1"),
   V(SafeSocks,                   BOOL,     "0"),
   V(ServerDNSAllowBrokenConfig,  BOOL,     "1"),
@@ -400,21 +412,23 @@ static config_var_t option_vars_[] = {
   OBSOLETE("TrafficShaping"),
   V(TransListenAddress,          LINELIST, NULL),
   VPORT(TransPort,                   LINELIST, NULL),
-  V(TunnelDirConns,              BOOL,     "1"),
+  V(TransProxyType,              STRING,   "default"),
+  OBSOLETE("TunnelDirConns"),
   V(UpdateBridgesFromAuthority,  BOOL,     "0"),
   V(UseBridges,                  BOOL,     "0"),
   V(UseEntryGuards,              BOOL,     "1"),
   V(UseEntryGuardsAsDirGuards,   BOOL,     "1"),
   V(UseMicrodescriptors,         AUTOBOOL, "auto"),
-  V(UseNTorHandshake,            AUTOBOOL, "auto"),
+  V(UseNTorHandshake,            AUTOBOOL, "1"),
   V(User,                        STRING,   NULL),
   V(UserspaceIOCPBuffers,        BOOL,     "0"),
-  VAR("V1AuthoritativeDirectory",BOOL, V1AuthoritativeDir,   "0"),
-  VAR("V2AuthoritativeDirectory",BOOL, V2AuthoritativeDir,   "0"),
+  OBSOLETE("V1AuthoritativeDirectory"),
+  OBSOLETE("V2AuthoritativeDirectory"),
   VAR("V3AuthoritativeDirectory",BOOL, V3AuthoritativeDir,   "0"),
   V(TestingV3AuthInitialVotingInterval, INTERVAL, "30 minutes"),
   V(TestingV3AuthInitialVoteDelay, INTERVAL, "5 minutes"),
   V(TestingV3AuthInitialDistDelay, INTERVAL, "5 minutes"),
+  V(TestingV3AuthVotingStartOffset, INTERVAL, "0"),
   V(V3AuthVotingInterval,        INTERVAL, "1 hour"),
   V(V3AuthVoteDelay,             INTERVAL, "5 minutes"),
   V(V3AuthDistDelay,             INTERVAL, "5 minutes"),
@@ -435,6 +449,24 @@ static config_var_t option_vars_[] = {
   VAR("__OwningControllerProcess",STRING,OwningControllerProcess, NULL),
   V(MinUptimeHidServDirectoryV2, INTERVAL, "25 hours"),
   V(VoteOnHidServDirectoriesV2,  BOOL,     "1"),
+  V(TestingServerDownloadSchedule, CSV_INTERVAL, "0, 0, 0, 60, 60, 120, "
+                                 "300, 900, 2147483647"),
+  V(TestingClientDownloadSchedule, CSV_INTERVAL, "0, 0, 60, 300, 600, "
+                                 "2147483647"),
+  V(TestingServerConsensusDownloadSchedule, CSV_INTERVAL, "0, 0, 60, "
+                                 "300, 600, 1800, 1800, 1800, 1800, "
+                                 "1800, 3600, 7200"),
+  V(TestingClientConsensusDownloadSchedule, CSV_INTERVAL, "0, 0, 60, "
+                                 "300, 600, 1800, 3600, 3600, 3600, "
+                                 "10800, 21600, 43200"),
+  V(TestingBridgeDownloadSchedule, CSV_INTERVAL, "3600, 900, 900, 3600"),
+  V(TestingClientMaxIntervalWithoutRequest, INTERVAL, "10 minutes"),
+  V(TestingDirConnectionMaxStall, INTERVAL, "5 minutes"),
+  V(TestingConsensusMaxDownloadTries, UINT, "8"),
+  V(TestingDescriptorMaxDownloadTries, UINT, "8"),
+  V(TestingMicrodescMaxDownloadTries, UINT, "8"),
+  V(TestingCertMaxDownloadTries, UINT, "8"),
+  V(TestingDirAuthVoteGuard, ROUTERSET, NULL),
   VAR("___UsingTestNetworkDefaults", BOOL, UsingTestNetworkDefaults_, "0"),
 
   { NULL, CONFIG_TYPE_OBSOLETE, 0, NULL }
@@ -460,9 +492,28 @@ static const config_var_t testing_tor_network_defaults[] = {
   V(TestingV3AuthInitialVotingInterval, INTERVAL, "5 minutes"),
   V(TestingV3AuthInitialVoteDelay, INTERVAL, "20 seconds"),
   V(TestingV3AuthInitialDistDelay, INTERVAL, "20 seconds"),
+  V(TestingV3AuthVotingStartOffset, INTERVAL, "0"),
   V(TestingAuthDirTimeToLearnReachability, INTERVAL, "0 minutes"),
   V(TestingEstimatedDescriptorPropagationTime, INTERVAL, "0 minutes"),
   V(MinUptimeHidServDirectoryV2, INTERVAL, "0 minutes"),
+  V(TestingServerDownloadSchedule, CSV_INTERVAL, "0, 0, 0, 5, 10, 15, "
+                                 "20, 30, 60"),
+  V(TestingClientDownloadSchedule, CSV_INTERVAL, "0, 0, 5, 10, 15, 20, "
+                                 "30, 60"),
+  V(TestingServerConsensusDownloadSchedule, CSV_INTERVAL, "0, 0, 5, 10, "
+                                 "15, 20, 30, 60"),
+  V(TestingClientConsensusDownloadSchedule, CSV_INTERVAL, "0, 0, 5, 10, "
+                                 "15, 20, 30, 60"),
+  V(TestingBridgeDownloadSchedule, CSV_INTERVAL, "60, 30, 30, 60"),
+  V(TestingClientMaxIntervalWithoutRequest, INTERVAL, "5 seconds"),
+  V(TestingDirConnectionMaxStall, INTERVAL, "30 seconds"),
+  V(TestingConsensusMaxDownloadTries, UINT, "80"),
+  V(TestingDescriptorMaxDownloadTries, UINT, "80"),
+  V(TestingMicrodescMaxDownloadTries, UINT, "80"),
+  V(TestingCertMaxDownloadTries, UINT, "80"),
+  V(TestingEnableConnBwEvent,    BOOL,     "1"),
+  V(TestingEnableCellStatsEvent, BOOL,     "1"),
+  V(TestingEnableTbEmptyEvent,   BOOL,     "1"),
   VAR("___UsingTestNetworkDefaults", BOOL, UsingTestNetworkDefaults_, "1"),
 
   { NULL, CONFIG_TYPE_OBSOLETE, 0, NULL }
@@ -475,9 +526,6 @@ static const config_var_t testing_tor_network_defaults[] = {
 #ifdef _WIN32
 static char *get_windows_conf_root(void);
 #endif
-static int options_validate(or_options_t *old_options,
-                            or_options_t *options,
-                            int from_setconf, char **msg);
 static int options_act_reversible(const or_options_t *old_options, char **msg);
 static int options_act(const or_options_t *old_options);
 static int options_transition_allowed(const or_options_t *old,
@@ -487,12 +535,13 @@ static int options_transition_affects_workers(
       const or_options_t *old_options, const or_options_t *new_options);
 static int options_transition_affects_descriptor(
       const or_options_t *old_options, const or_options_t *new_options);
-static int check_nickname_list(const char *lst, const char *name, char **msg);
+static int check_nickname_list(char **lst, const char *name, char **msg);
 
-static int parse_bridge_line(const char *line, int validate_only);
-static int parse_client_transport_line(const char *line, int validate_only);
+static int parse_client_transport_line(const or_options_t *options,
+                                       const char *line, int validate_only);
 
-static int parse_server_transport_line(const char *line, int validate_only);
+static int parse_server_transport_line(const or_options_t *options,
+                                       const char *line, int validate_only);
 static char *get_bindaddr_from_transport_listen_line(const char *line,
                                                      const char *transport);
 static int parse_dir_authority_line(const char *line,
@@ -517,18 +566,23 @@ static int parse_outbound_addresses(or_options_t *options, int validate_only,
                                     char **msg);
 static void config_maybe_load_geoip_files_(const or_options_t *options,
                                            const or_options_t *old_options);
+static int options_validate_cb(void *old_options, void *options,
+                               void *default_options,
+                               int from_setconf, char **msg);
+static uint64_t compute_real_max_mem_in_queues(const uint64_t val,
+                                               int log_guess);
 
 /** Magic value for or_options_t. */
 #define OR_OPTIONS_MAGIC 9090909
 
 /** Configuration format for or_options_t. */
-static config_format_t options_format = {
+STATIC config_format_t options_format = {
   sizeof(or_options_t),
   OR_OPTIONS_MAGIC,
   STRUCT_OFFSET(or_options_t, magic_),
   option_abbrevs_,
   option_vars_,
-  (validate_fn_t)options_validate,
+  options_validate_cb,
   NULL
 };
 
@@ -545,8 +599,12 @@ static or_options_t *global_default_options = NULL;
 static char *torrc_fname = NULL;
 /** Name of the most recently read torrc-defaults file.*/
 static char *torrc_defaults_fname;
-/** Configuration Options set by command line. */
+/** Configuration options set by command line. */
 static config_line_t *global_cmdline_options = NULL;
+/** Non-configuration options set by the command line */
+static config_line_t *global_cmdline_only_options = NULL;
+/** Boolean: Have we parsed the command line? */
+static int have_parsed_cmdline = 0;
 /** Contents of most recently read DirPortFrontPage file. */
 static char *global_dirfrontpagecontents = NULL;
 /** List of port_cfg_t for all configured ports. */
@@ -568,8 +626,8 @@ get_options_mutable(void)
 }
 
 /** Returns the currently configured options */
-const or_options_t *
-get_options(void)
+MOCK_IMPL(const or_options_t *,
+get_options,(void))
 {
   return get_options_mutable();
 }
@@ -678,7 +736,7 @@ get_short_version(void)
 
 /** Release additional memory allocated in options
  */
-static void
+STATIC void
 or_options_free(or_options_t *options)
 {
   if (!options)
@@ -691,6 +749,7 @@ or_options_free(or_options_t *options)
     smartlist_free(options->NodeFamilySets);
   }
   tor_free(options->BridgePassword_AuthDigest_);
+  tor_free(options->command_arg);
   config_free(&options_format, options);
 }
 
@@ -706,6 +765,9 @@ config_free_all(void)
 
   config_free_lines(global_cmdline_options);
   global_cmdline_options = NULL;
+
+  config_free_lines(global_cmdline_only_options);
+  global_cmdline_only_options = NULL;
 
   if (configured_ports) {
     SMARTLIST_FOREACH(configured_ports,
@@ -787,30 +849,30 @@ add_default_trusted_dir_authorities(dirinfo_type_t type)
 {
   int i;
   const char *authorities[] = {
-    "moria1 orport=9101 no-v2 "
+    "moria1 orport=9101 "
       "v3ident=D586D18309DED4CD6D57C18FDB97EFA96D330566 "
       "128.31.0.39:9131 9695 DFC3 5FFE B861 329B 9F1A B04C 4639 7020 CE31",
-    "tor26 v1 orport=443 v3ident=14C131DFC5C6F93646BE72FA1401C02A8DF2E8B4 "
+    "tor26 orport=443 v3ident=14C131DFC5C6F93646BE72FA1401C02A8DF2E8B4 "
       "86.59.21.38:80 847B 1F85 0344 D787 6491 A548 92F9 0493 4E4E B85D",
     "dizum orport=443 v3ident=E8A9C45EDE6D711294FADF8E7951F4DE6CA56B58 "
       "194.109.206.212:80 7EA6 EAD6 FD83 083C 538F 4403 8BBF A077 587D D755",
-    "Tonga orport=443 bridge no-v2 82.94.251.203:80 "
+    "Tonga orport=443 bridge 82.94.251.203:80 "
       "4A0C CD2D DC79 9508 3D73 F5D6 6710 0C8A 5831 F16D",
-    "turtles orport=9090 no-v2 "
+    "turtles orport=9090 "
       "v3ident=27B6B5996C426270A5C95488AA5BCEB6BCC86956 "
       "76.73.17.194:9030 F397 038A DC51 3361 35E7 B80B D99C A384 4360 292B",
-    "gabelmoo orport=443 no-v2 "
+    "gabelmoo orport=443 "
       "v3ident=ED03BB616EB2F60BEC80151114BB25CEF515B226 "
-      "212.112.245.170:80 F204 4413 DAC2 E02E 3D6B CF47 35A1 9BCA 1DE9 7281",
-    "dannenberg orport=443 no-v2 "
+      "131.188.40.189:80 F204 4413 DAC2 E02E 3D6B CF47 35A1 9BCA 1DE9 7281",
+    "dannenberg orport=443 "
       "v3ident=585769C78764D58426B8B52B6651A5A71137189A "
       "193.23.244.244:80 7BE6 83E6 5D48 1413 21C5 ED92 F075 C553 64AC 7123",
-    "urras orport=80 no-v2 v3ident=80550987E1D626E3EBA5E5E75A458DE0626D088C "
+    "urras orport=80 v3ident=80550987E1D626E3EBA5E5E75A458DE0626D088C "
       "208.83.223.34:443 0AD3 FA88 4D18 F89E EA2D 89C0 1937 9E0E 7FD9 4417",
-    "maatuska orport=80 no-v2 "
+    "maatuska orport=80 "
       "v3ident=49015F787433103580E3B66A1707A00E60F2D15B "
       "171.25.193.9:443 BD6A 8292 55CB 08E6 6FBE 7D37 4836 3586 E46B 3810",
-    "Faravahar orport=443 no-v2 "
+    "Faravahar orport=443 "
       "v3ident=EFCBE720AB3A82B99F9E953CD5BF50F7EEFC7B97 "
       "154.35.32.5:80 CF6D 0AAF B385 BE71 B8E1 11FC 5CFF 4B47 9237 33BC",
     NULL
@@ -850,8 +912,7 @@ validate_dir_servers(or_options_t *options, or_options_t *old_options)
   config_line_t *cl;
 
   if (options->DirAuthorities &&
-      (options->AlternateDirAuthority || options->AlternateBridgeAuthority ||
-       options->AlternateHSAuthority)) {
+      (options->AlternateDirAuthority || options->AlternateBridgeAuthority)) {
     log_warn(LD_CONFIG,
              "You cannot set both DirAuthority and Alternate*Authority.");
     return -1;
@@ -887,9 +948,6 @@ validate_dir_servers(or_options_t *options, or_options_t *old_options)
   for (cl = options->AlternateDirAuthority; cl; cl = cl->next)
     if (parse_dir_authority_line(cl->value, NO_DIRINFO, 1)<0)
       return -1;
-  for (cl = options->AlternateHSAuthority; cl; cl = cl->next)
-    if (parse_dir_authority_line(cl->value, NO_DIRINFO, 1)<0)
-      return -1;
   for (cl = options->FallbackDir; cl; cl = cl->next)
     if (parse_dir_fallback_line(cl->value, 1)<0)
       return -1;
@@ -912,9 +970,7 @@ consider_adding_dir_servers(const or_options_t *options,
     !config_lines_eq(options->AlternateBridgeAuthority,
                      old_options->AlternateBridgeAuthority) ||
     !config_lines_eq(options->AlternateDirAuthority,
-                     old_options->AlternateDirAuthority) ||
-    !config_lines_eq(options->AlternateHSAuthority,
-                     old_options->AlternateHSAuthority);
+                     old_options->AlternateDirAuthority);
 
   if (!need_to_update)
     return 0; /* all done */
@@ -928,10 +984,7 @@ consider_adding_dir_servers(const or_options_t *options,
     if (!options->AlternateBridgeAuthority)
       type |= BRIDGE_DIRINFO;
     if (!options->AlternateDirAuthority)
-      type |= V1_DIRINFO | V2_DIRINFO | V3_DIRINFO | EXTRAINFO_DIRINFO |
-        MICRODESC_DIRINFO;
-    if (!options->AlternateHSAuthority)
-      type |= HIDSERV_DIRINFO;
+      type |= V3_DIRINFO | EXTRAINFO_DIRINFO | MICRODESC_DIRINFO;
     add_default_trusted_dir_authorities(type);
   }
   if (!options->FallbackDir)
@@ -944,9 +997,6 @@ consider_adding_dir_servers(const or_options_t *options,
     if (parse_dir_authority_line(cl->value, NO_DIRINFO, 0)<0)
       return -1;
   for (cl = options->AlternateDirAuthority; cl; cl = cl->next)
-    if (parse_dir_authority_line(cl->value, NO_DIRINFO, 0)<0)
-      return -1;
-  for (cl = options->AlternateHSAuthority; cl; cl = cl->next)
     if (parse_dir_authority_line(cl->value, NO_DIRINFO, 0)<0)
       return -1;
   for (cl = options->FallbackDir; cl; cl = cl->next)
@@ -972,6 +1022,7 @@ options_act_reversible(const or_options_t *old_options, char **msg)
   int set_conn_limit = 0;
   int r = -1;
   int logs_marked = 0;
+  int old_min_log_level = get_min_log_level();
 
   /* Daemonize _first_, since we only want to open most of this stuff in
    * the subprocess.  Libevent bases can't be reliably inherited across
@@ -998,12 +1049,18 @@ options_act_reversible(const or_options_t *old_options, char **msg)
   if (running_tor) {
     int n_ports=0;
     /* We need to set the connection limit before we can open the listeners. */
-    if (set_max_file_descriptors((unsigned)options->ConnLimit,
-                                 &options->ConnLimit_) < 0) {
-      *msg = tor_strdup("Problem with ConnLimit value. See logs for details.");
-      goto rollback;
+    if (! sandbox_is_active()) {
+      if (set_max_file_descriptors((unsigned)options->ConnLimit,
+                                   &options->ConnLimit_) < 0) {
+        *msg = tor_strdup("Problem with ConnLimit value. "
+                          "See logs for details.");
+        goto rollback;
+      }
+      set_conn_limit = 1;
+    } else {
+      tor_assert(old_options);
+      options->ConnLimit_ = old_options->ConnLimit_;
     }
-    set_conn_limit = 1;
 
     /* Set up libevent.  (We need to do this before we can register the
      * listeners as listeners.) */
@@ -1044,7 +1101,8 @@ options_act_reversible(const or_options_t *old_options, char **msg)
 
 #if defined(HAVE_NET_IF_H) && defined(HAVE_NET_PFVAR_H)
   /* Open /dev/pf before dropping privileges. */
-  if (options->TransPort_set) {
+  if (options->TransPort_set &&
+      options->TransProxyType_parsed == TPT_DEFAULT) {
     if (get_pf_socket() < 0) {
       *msg = tor_strdup("Unable to open /dev/pf for transparent proxy.");
       goto rollback;
@@ -1081,23 +1139,6 @@ options_act_reversible(const or_options_t *old_options, char **msg)
     /* No need to roll back, since you can't change the value. */
   }
 
-  /* Write control ports to disk as appropriate */
-  control_ports_write_to_file();
-
-  if (directory_caches_v2_dir_info(options)) {
-    char *fn = NULL;
-    tor_asprintf(&fn, "%s"PATH_SEPARATOR"cached-status",
-                 options->DataDirectory);
-    if (check_private_dir(fn, running_tor ? CPD_CREATE : CPD_CHECK,
-                          options->User) < 0) {
-      tor_asprintf(msg,
-                "Couldn't access/create private data directory \"%s\"", fn);
-      tor_free(fn);
-      goto done;
-    }
-    tor_free(fn);
-  }
-
   /* Bail out at this point if we're not going to be a client or server:
    * we don't run Tor itself. */
   if (!running_tor)
@@ -1119,13 +1160,44 @@ options_act_reversible(const or_options_t *old_options, char **msg)
     add_callback_log(severity, control_event_logmsg);
     control_adjust_event_log_severity();
     tor_free(severity);
+    tor_log_update_sigsafe_err_fds();
   }
+
+  {
+    const char *badness = NULL;
+    int bad_safelog = 0, bad_severity = 0, new_badness = 0;
+    if (options->SafeLogging_ != SAFELOG_SCRUB_ALL) {
+      bad_safelog = 1;
+      if (!old_options || old_options->SafeLogging_ != options->SafeLogging_)
+        new_badness = 1;
+    }
+    if (get_min_log_level() >= LOG_INFO) {
+      bad_severity = 1;
+      if (get_min_log_level() != old_min_log_level)
+        new_badness = 1;
+    }
+    if (bad_safelog && bad_severity)
+      badness = "you disabled SafeLogging, and "
+        "you're logging more than \"notice\"";
+    else if (bad_safelog)
+      badness = "you disabled SafeLogging";
+    else
+      badness = "you're logging more than \"notice\"";
+    if (new_badness)
+      log_warn(LD_GENERAL, "Your log may contain sensitive information - %s. "
+               "Don't log unless it serves an important reason. "
+               "Overwrite the log afterwards.", badness);
+  }
+
   SMARTLIST_FOREACH(replaced_listeners, connection_t *, conn,
   {
+    int marked = conn->marked_for_close;
     log_notice(LD_NET, "Closing old %s on %s:%d",
                conn_type_to_string(conn->type), conn->address, conn->port);
     connection_close_immediate(conn);
-    connection_mark_for_close(conn);
+    if (!marked) {
+      connection_mark_for_close(conn);
+    }
   });
   goto done;
 
@@ -1272,6 +1344,9 @@ options_act(const or_options_t *old_options)
     }
   }
 
+  /* Write control ports to disk as appropriate */
+  control_ports_write_to_file();
+
   if (running_tor && !have_lockfile()) {
     if (try_locking(options, 1) < 0)
       return -1;
@@ -1302,14 +1377,29 @@ options_act(const or_options_t *old_options)
   }
 #endif
 
+  /* If we are a bridge with a pluggable transport proxy but no
+     Extended ORPort, inform the user that she is missing out. */
+  if (server_mode(options) && options->ServerTransportPlugin &&
+      !options->ExtORPort_lines) {
+    log_notice(LD_CONFIG, "We use pluggable transports but the Extended "
+               "ORPort is disabled. Tor and your pluggable transports proxy "
+               "communicate with each other via the Extended ORPort so it "
+               "is suggested you enable it: it will also allow your Bridge "
+               "to collect statistics about its clients that use pluggable "
+               "transports. Please enable it using the ExtORPort torrc option "
+               "(e.g. set 'ExtORPort auto').");
+  }
+
   if (options->Bridges) {
     mark_bridge_list();
     for (cl = options->Bridges; cl; cl = cl->next) {
-      if (parse_bridge_line(cl->value, 0)<0) {
+      bridge_line_t *bridge_line = parse_bridge_line(cl->value);
+      if (!bridge_line) {
         log_warn(LD_BUG,
                  "Previously validated Bridge line could not be added!");
         return -1;
       }
+      bridge_add_from_config(bridge_line);
     }
     sweep_bridge_list();
   }
@@ -1337,7 +1427,7 @@ options_act(const or_options_t *old_options)
   pt_prepare_proxy_list_for_config_read();
   if (options->ClientTransportPlugin) {
     for (cl = options->ClientTransportPlugin; cl; cl = cl->next) {
-      if (parse_client_transport_line(cl->value, 0)<0) {
+      if (parse_client_transport_line(options, cl->value, 0)<0) {
         log_warn(LD_BUG,
                  "Previously validated ClientTransportPlugin line "
                  "could not be added!");
@@ -1348,7 +1438,7 @@ options_act(const or_options_t *old_options)
 
   if (options->ServerTransportPlugin && server_mode(options)) {
     for (cl = options->ServerTransportPlugin; cl; cl = cl->next) {
-      if (parse_server_transport_line(cl->value, 0)<0) {
+      if (parse_server_transport_line(options, cl->value, 0)<0) {
         log_warn(LD_BUG,
                  "Previously validated ServerTransportPlugin line "
                  "could not be added!");
@@ -1358,6 +1448,12 @@ options_act(const or_options_t *old_options)
   }
   sweep_transport_list();
   sweep_proxy_list();
+
+  /* Start the PT proxy configuration. By doing this configuration
+     here, we also figure out which proxies need to be restarted and
+     which not. */
+  if (pt_proxies_configuration_pending() && !net_is_disabled())
+    pt_configure_remaining_proxies();
 
   /* Bail out at this point if we're not going to be a client or server:
    * we want to not fork, and to log stuff to stderr. */
@@ -1408,8 +1504,9 @@ options_act(const or_options_t *old_options)
 
   /* Write our PID to the PID file. If we do not have write permissions we
    * will log a warning */
-  if (options->PidFile)
+  if (options->PidFile && !sandbox_is_active()) {
     write_pidfile(options->PidFile);
+  }
 
   /* Register addressmap directives */
   config_register_addressmaps(options);
@@ -1423,8 +1520,14 @@ options_act(const or_options_t *old_options)
     return -1;
   }
 
-  if (init_cookie_authentication(options->CookieAuthentication) < 0) {
-    log_warn(LD_CONFIG,"Error creating cookie authentication file.");
+  if (init_control_cookie_authentication(options->CookieAuthentication) < 0) {
+    log_warn(LD_CONFIG,"Error creating control cookie authentication file.");
+    return -1;
+  }
+
+  /* If we have an ExtORPort, initialize its auth cookie. */
+  if (init_ext_or_cookie_authentication(!!options->ExtORPort_lines) < 0) {
+    log_warn(LD_CONFIG,"Error creating Extended ORPort cookie file.");
     return -1;
   }
 
@@ -1606,10 +1709,14 @@ options_act(const or_options_t *old_options)
     time_t now = time(NULL);
     int print_notice = 0;
 
-    /* If we aren't acting as a server, we can't collect stats anyway. */
+    /* Only collect directory-request statistics on relays and bridges. */
     if (!server_mode(options)) {
-      options->CellStatistics = 0;
       options->DirReqStatistics = 0;
+    }
+
+    /* Only collect other relay-only statistics on relays. */
+    if (!public_server_mode(options)) {
+      options->CellStatistics = 0;
       options->EntryStatistics = 0;
       options->ExitPortStatistics = 0;
     }
@@ -1732,40 +1839,66 @@ options_act(const or_options_t *old_options)
   return 0;
 }
 
-/** Helper: Read a list of configuration options from the command line.
- * If successful, put them in *<b>result</b> and return 0, and return
- * -1 and leave *<b>result</b> alone. */
-static int
-config_get_commandlines(int argc, char **argv, config_line_t **result)
+static const struct {
+  const char *name;
+  int takes_argument;
+} CMDLINE_ONLY_OPTIONS[] = {
+  { "-f",                     1 },
+  { "--allow-missing-torrc",  0 },
+  { "--defaults-torrc",       1 },
+  { "--hash-password",        1 },
+  { "--dump-config",          1 },
+  { "--list-fingerprint",     0 },
+  { "--verify-config",        0 },
+  { "--ignore-missing-torrc", 0 },
+  { "--quiet",                0 },
+  { "--hush",                 0 },
+  { "--version",              0 },
+  { "--library-versions",     0 },
+  { "-h",                     0 },
+  { "--help",                 0 },
+  { "--list-torrc-options",   0 },
+  { "--digests",              0 },
+  { "--nt-service",           0 },
+  { "-nt-service",            0 },
+  { NULL, 0 },
+};
+
+/** Helper: Read a list of configuration options from the command line.  If
+ * successful, or if ignore_errors is set, put them in *<b>result</b>, put the
+ * commandline-only options in *<b>cmdline_result</b>, and return 0;
+ * otherwise, return -1 and leave *<b>result</b> and <b>cmdline_result</b>
+ * alone. */
+int
+config_parse_commandline(int argc, char **argv, int ignore_errors,
+                         config_line_t **result,
+                         config_line_t **cmdline_result)
 {
+  config_line_t *param = NULL;
+
   config_line_t *front = NULL;
   config_line_t **new = &front;
-  char *s;
+
+  config_line_t *front_cmdline = NULL;
+  config_line_t **new_cmdline = &front_cmdline;
+
+  char *s, *arg;
   int i = 1;
 
   while (i < argc) {
     unsigned command = CONFIG_LINE_NORMAL;
     int want_arg = 1;
+    int is_cmdline = 0;
+    int j;
 
-    if (!strcmp(argv[i],"-f") ||
-        !strcmp(argv[i],"--defaults-torrc") ||
-        !strcmp(argv[i],"--hash-password")) {
-      i += 2; /* command-line option with argument. ignore them. */
-      continue;
-    } else if (!strcmp(argv[i],"--list-fingerprint") ||
-               !strcmp(argv[i],"--verify-config") ||
-               !strcmp(argv[i],"--ignore-missing-torrc") ||
-               !strcmp(argv[i],"--quiet") ||
-               !strcmp(argv[i],"--hush")) {
-      i += 1; /* command-line option. ignore it. */
-      continue;
-    } else if (!strcmp(argv[i],"--nt-service") ||
-               !strcmp(argv[i],"-nt-service")) {
-      i += 1;
-      continue;
+    for (j = 0; CMDLINE_ONLY_OPTIONS[j].name != NULL; ++j) {
+      if (!strcmp(argv[i], CMDLINE_ONLY_OPTIONS[j].name)) {
+        is_cmdline = 1;
+        want_arg = CMDLINE_ONLY_OPTIONS[j].takes_argument;
+        break;
+      }
     }
 
-    *new = tor_malloc_zero(sizeof(config_line_t));
     s = argv[i];
 
     /* Each keyword may be prefixed with one or two dashes. */
@@ -1785,22 +1918,39 @@ config_get_commandlines(int argc, char **argv, config_line_t **result)
     }
 
     if (want_arg && i == argc-1) {
-      log_warn(LD_CONFIG,"Command-line option '%s' with no value. Failing.",
-               argv[i]);
-      config_free_lines(front);
-      return -1;
+      if (ignore_errors) {
+        arg = strdup("");
+      } else {
+        log_warn(LD_CONFIG,"Command-line option '%s' with no value. Failing.",
+            argv[i]);
+        config_free_lines(front);
+        config_free_lines(front_cmdline);
+        return -1;
+      }
+    } else {
+      arg = want_arg ? tor_strdup(argv[i+1]) : strdup("");
     }
 
-    (*new)->key = tor_strdup(config_expand_abbrev(&options_format, s, 1, 1));
-    (*new)->value = want_arg ? tor_strdup(argv[i+1]) : tor_strdup("");
-    (*new)->command = command;
-    (*new)->next = NULL;
+    param = tor_malloc_zero(sizeof(config_line_t));
+    param->key = is_cmdline ? tor_strdup(argv[i]) :
+                   tor_strdup(config_expand_abbrev(&options_format, s, 1, 1));
+    param->value = arg;
+    param->command = command;
+    param->next = NULL;
     log_debug(LD_CONFIG, "command line: parsed keyword '%s', value '%s'",
-        (*new)->key, (*new)->value);
+        param->key, param->value);
 
-    new = &((*new)->next);
+    if (is_cmdline) {
+      *new_cmdline = param;
+      new_cmdline = &((*new_cmdline)->next);
+    } else {
+      *new = param;
+      new = &((*new)->next);
+    }
+
     i += want_arg ? 2 : 1;
   }
+  *cmdline_result = front_cmdline;
   *result = front;
   return 0;
 }
@@ -1852,7 +2002,8 @@ options_trial_assign(config_line_t *list, int use_defaults,
     return r;
   }
 
-  if (options_validate(get_options_mutable(), trial_options, 1, msg) < 0) {
+  if (options_validate(get_options_mutable(), trial_options,
+                       global_default_options, 1, msg) < 0) {
     config_free(&options_format, trial_options);
     return SETOPT_ERR_PARSE; /*XXX make this a separate return value. */
   }
@@ -1945,6 +2096,7 @@ resolve_my_address(int warn_severity, const or_options_t *options,
   int notice_severity = warn_severity <= LOG_NOTICE ?
                           LOG_NOTICE : warn_severity;
 
+  tor_addr_t myaddr;
   tor_assert(addr_out);
 
   /*
@@ -1995,24 +2147,26 @@ resolve_my_address(int warn_severity, const or_options_t *options,
              "local interface. Using that.", fmt_addr32(addr));
       strlcpy(hostname, "<guessed from interfaces>", sizeof(hostname));
     } else { /* resolved hostname into addr */
+      tor_addr_from_ipv4h(&myaddr, addr);
+
       if (!explicit_hostname &&
-          is_internal_IP(addr, 0)) {
-        uint32_t interface_ip;
+          tor_addr_is_internal(&myaddr, 0)) {
+        tor_addr_t interface_ip;
 
         log_fn(notice_severity, LD_CONFIG, "Guessed local hostname '%s' "
                "resolves to a private IP address (%s). Trying something "
                "else.", hostname, fmt_addr32(addr));
 
-        if (get_interface_address(warn_severity, &interface_ip)) {
+        if (get_interface_address6(warn_severity, AF_INET, &interface_ip)<0) {
           log_fn(warn_severity, LD_CONFIG,
                  "Could not get local interface IP address. Too bad.");
-        } else if (is_internal_IP(interface_ip, 0)) {
+        } else if (tor_addr_is_internal(&interface_ip, 0)) {
           log_fn(notice_severity, LD_CONFIG,
                  "Interface IP address '%s' is a private address too. "
-                 "Ignoring.", fmt_addr32(interface_ip));
+                 "Ignoring.", fmt_addr(&interface_ip));
         } else {
           from_interface = 1;
-          addr = interface_ip;
+          addr = tor_addr_to_ipv4h(&interface_ip);
           log_fn(notice_severity, LD_CONFIG,
                  "Learned IP address '%s' for local interface."
                  " Using that.", fmt_addr32(addr));
@@ -2030,8 +2184,10 @@ resolve_my_address(int warn_severity, const or_options_t *options,
    * out if it is and we don't want that.
    */
 
+  tor_addr_from_ipv4h(&myaddr,addr);
+
   addr_string = tor_dup_ip(addr);
-  if (is_internal_IP(addr, 0)) {
+  if (tor_addr_is_internal(&myaddr, 0)) {
     /* make sure we're ok with publishing an internal IP */
     if (!options->DirAuthorities && !options->AlternateDirAuthority) {
       /* if they are using the default authorities, disallow internal IPs
@@ -2137,7 +2293,7 @@ is_local_addr(const tor_addr_t *addr)
      * resolve_my_address will never be called at all).  In those cases,
      * last_resolved_addr will be 0, and so checking to see whether ip is on
      * the same /24 as last_resolved_addr will be the same as checking whether
-     * it was on net 0, which is already done by is_internal_IP.
+     * it was on net 0, which is already done by tor_addr_is_internal.
      */
     if ((last_resolved_addr & (uint32_t)0xffffff00ul)
         == (ip & (uint32_t)0xffffff00ul))
@@ -2166,10 +2322,29 @@ options_init(or_options_t *options)
  * include options that are the same as Tor's defaults.
  */
 char *
-options_dump(const or_options_t *options, int minimal)
+options_dump(const or_options_t *options, int how_to_dump)
 {
-  return config_dump(&options_format, global_default_options,
-                     options, minimal, 0);
+  const or_options_t *use_defaults;
+  int minimal;
+  switch (how_to_dump) {
+    case OPTIONS_DUMP_MINIMAL:
+      use_defaults = global_default_options;
+      minimal = 1;
+      break;
+    case OPTIONS_DUMP_DEFAULTS:
+      use_defaults = NULL;
+      minimal = 1;
+      break;
+    case OPTIONS_DUMP_ALL:
+      use_defaults = NULL;
+      minimal = 0;
+      break;
+    default:
+      log_warn(LD_BUG, "Bogus value for how_to_dump==%d", how_to_dump);
+      return NULL;
+  }
+
+  return config_dump(&options_format, use_defaults, options, minimal, 0);
 }
 
 /** Return 0 if every element of sl is a string holding a decimal
@@ -2218,7 +2393,7 @@ ensure_bandwidth_cap(uint64_t *value, const char *desc, char **msg)
 
 /** Parse an authority type from <b>options</b>-\>PublishServerDescriptor
  * and write it to <b>options</b>-\>PublishServerDescriptor_. Treat "1"
- * as "v2,v3" unless BridgeRelay is 1, in which case treat it as "bridge".
+ * as "v3" unless BridgeRelay is 1, in which case treat it as "bridge".
  * Treat "0" as "".
  * Return 0 on success or -1 if not a recognized authority type (in which
  * case the value of PublishServerDescriptor_ is undefined). */
@@ -2232,14 +2407,16 @@ compute_publishserverdescriptor(or_options_t *options)
     return 0;
   SMARTLIST_FOREACH_BEGIN(list, const char *, string) {
     if (!strcasecmp(string, "v1"))
-      *auth |= V1_DIRINFO;
+      log_warn(LD_CONFIG, "PublishServerDescriptor v1 has no effect, because "
+                          "there are no v1 directory authorities anymore.");
     else if (!strcmp(string, "1"))
       if (options->BridgeRelay)
         *auth |= BRIDGE_DIRINFO;
       else
-        *auth |= V2_DIRINFO | V3_DIRINFO;
+        *auth |= V3_DIRINFO;
     else if (!strcasecmp(string, "v2"))
-      *auth |= V2_DIRINFO;
+      log_warn(LD_CONFIG, "PublishServerDescriptor v2 has no effect, because "
+                          "there are no v2 directory authorities anymore.");
     else if (!strcasecmp(string, "v3"))
       *auth |= V3_DIRINFO;
     else if (!strcasecmp(string, "bridge"))
@@ -2259,6 +2436,11 @@ compute_publishserverdescriptor(or_options_t *options)
 /** Lowest allowable value for RendPostPeriod; if this is too low, hidden
  * services can overload the directory system. */
 #define MIN_REND_POST_PERIOD (10*60)
+
+/** Higest allowable value for PredictedPortsRelevanceTime; if this is
+ * too high, our selection of exits will decrease for an extended
+ * period of time to an uncomfortable level .*/
+#define MAX_PREDICTED_CIRCS_RELEVANCE (60*60)
 
 /** Highest allowable value for RendPostPeriod. */
 #define MAX_DIR_PERIOD (MIN_ONION_KEY_LIFETIME/2)
@@ -2286,10 +2468,19 @@ compute_publishserverdescriptor(or_options_t *options)
  * */
 #define RECOMMENDED_MIN_CIRCUIT_BUILD_TIMEOUT (10)
 
-/** Return 0 if every setting in <b>options</b> is reasonable, and a
- * permissible transition from <b>old_options</b>. Else return -1.
- * Should have no side effects, except for normalizing the contents of
- * <b>options</b>.
+static int
+options_validate_cb(void *old_options, void *options, void *default_options,
+                    int from_setconf, char **msg)
+{
+  return options_validate(old_options, options, default_options,
+                          from_setconf, msg);
+}
+
+/** Return 0 if every setting in <b>options</b> is reasonable, is a
+ * permissible transition from <b>old_options</b>, and none of the
+ * testing-only settings differ from <b>default_options</b> unless in
+ * testing mode.  Else return -1.  Should have no side effects, except for
+ * normalizing the contents of <b>options</b>.
  *
  * On error, tor_strdup an error explanation into *<b>msg</b>.
  *
@@ -2298,9 +2489,9 @@ compute_publishserverdescriptor(or_options_t *options)
  * Log line should stay empty. If it's 0, then give us a default log
  * if there are no logs defined.
  */
-static int
+STATIC int
 options_validate(or_options_t *old_options, or_options_t *options,
-                 int from_setconf, char **msg)
+                 or_options_t *default_options, int from_setconf, char **msg)
 {
   int i;
   config_line_t *cl;
@@ -2373,6 +2564,13 @@ options_validate(or_options_t *old_options, or_options_t *options,
     REJECT("Can't use a relative path to torrc when RunAsDaemon is set.");
 #endif
 
+  if (server_mode(options) && options->RendConfigLines)
+    log_warn(LD_CONFIG,
+        "Tor is currently configured as a relay and a hidden service. "
+        "That's not very secure: you should probably run your hidden service "
+        "in a separate Tor process, at least -- see "
+        "https://trac.torproject.org/8742");
+
   /* XXXX require that the only port not be DirPort? */
   /* XXXX require that at least one port be listened-upon. */
   if (n_ports == 0 && !options->RendConfigLines)
@@ -2381,19 +2579,48 @@ options_validate(or_options_t *old_options, or_options_t *options,
         "undefined, and there aren't any hidden services configured.  "
         "Tor will still run, but probably won't do anything.");
 
-#ifndef USE_TRANSPARENT
-  /* XXXX024 I think we can remove this TransListenAddress */
-  if (options->TransPort_set || options->TransListenAddress)
-    REJECT("TransPort and TransListenAddress are disabled in this build.");
+  options->TransProxyType_parsed = TPT_DEFAULT;
+#ifdef USE_TRANSPARENT
+  if (options->TransProxyType) {
+    if (!strcasecmp(options->TransProxyType, "default")) {
+      options->TransProxyType_parsed = TPT_DEFAULT;
+    } else if (!strcasecmp(options->TransProxyType, "pf-divert")) {
+#ifndef __OpenBSD__
+      REJECT("pf-divert is a OpenBSD-specific feature.");
+#else
+      options->TransProxyType_parsed = TPT_PF_DIVERT;
+#endif
+    } else if (!strcasecmp(options->TransProxyType, "tproxy")) {
+#ifndef __linux__
+      REJECT("TPROXY is a Linux-specific feature.");
+#else
+      options->TransProxyType_parsed = TPT_TPROXY;
+#endif
+    } else if (!strcasecmp(options->TransProxyType, "ipfw")) {
+#ifndef __FreeBSD__
+      REJECT("ipfw is a FreeBSD-specific feature.");
+#else
+      options->TransProxyType_parsed = TPT_IPFW;
+#endif
+    } else {
+      REJECT("Unrecognized value for TransProxyType");
+    }
+
+    if (strcasecmp(options->TransProxyType, "default") &&
+        !options->TransPort_set) {
+      REJECT("Cannot use TransProxyType without any valid TransPort or "
+             "TransListenAddress.");
+    }
+  }
+#else
+  if (options->TransPort_set)
+    REJECT("TransPort and TransListenAddress are disabled "
+           "in this build.");
 #endif
 
   if (options->TokenBucketRefillInterval <= 0
       || options->TokenBucketRefillInterval > 1000) {
     REJECT("TokenBucketRefillInterval must be between 1 and 1000 inclusive.");
-  }
-
-  if (options->DisableV2DirectoryInfo_ && ! authdir_mode(options)) {
-    REJECT("DisableV2DirectoryInfo_ set, but we aren't an authority.");
   }
 
   if (options->ExcludeExitNodes || options->ExcludeNodes) {
@@ -2429,8 +2656,6 @@ options_validate(or_options_t *old_options, or_options_t *options,
   if (options->AuthoritativeDir) {
     if (!options->ContactInfo && !options->TestingTorNetwork)
       REJECT("Authoritative directory servers must set ContactInfo");
-    if (options->V1AuthoritativeDir && !options->RecommendedVersions)
-      REJECT("V1 authoritative dir servers must set RecommendedVersions.");
     if (!options->RecommendedClientVersions)
       options->RecommendedClientVersions =
         config_lines_dup(options->RecommendedVersions);
@@ -2452,11 +2677,10 @@ options_validate(or_options_t *old_options, or_options_t *options,
                "extra-info documents. Setting DownloadExtraInfo.");
       options->DownloadExtraInfo = 1;
     }
-    if (!(options->BridgeAuthoritativeDir || options->HSAuthoritativeDir ||
-          options->V1AuthoritativeDir || options->V2AuthoritativeDir ||
+    if (!(options->BridgeAuthoritativeDir ||
           options->V3AuthoritativeDir))
       REJECT("AuthoritativeDir is set, but none of "
-             "(Bridge/HS/V1/V2/V3)AuthoritativeDir is set.");
+             "(Bridge/V3)AuthoritativeDir is set.");
     /* If we have a v3bandwidthsfile and it's broken, complain on startup */
     if (options->V3BandwidthsFile && !old_options) {
       dirserv_read_measured_bandwidths(options->V3BandwidthsFile, NULL);
@@ -2475,10 +2699,6 @@ options_validate(or_options_t *old_options, or_options_t *options,
   if (options->FetchDirInfoExtraEarly && !options->FetchDirInfoEarly)
     REJECT("FetchDirInfoExtraEarly requires that you also set "
            "FetchDirInfoEarly");
-
-  if (options->HSAuthoritativeDir && proxy_mode(options))
-    REJECT("Running as authoritative v0 HS directory, but also configured "
-           "as a client.");
 
   if (options->ConnLimit <= 0) {
     tor_asprintf(msg,
@@ -2616,11 +2836,9 @@ options_validate(or_options_t *old_options, or_options_t *options,
     REJECT("If EntryNodes is set, UseEntryGuards must be enabled.");
   }
 
-  if (options->MaxMemInCellQueues < (256 << 20)) {
-    log_warn(LD_CONFIG, "MaxMemInCellQueues must be at least 256 MB for now. "
-             "Ideally, have it as large as you can afford.");
-    options->MaxMemInCellQueues = (256 << 20);
-  }
+  options->MaxMemInQueues =
+    compute_real_max_mem_in_queues(options->MaxMemInQueues_raw,
+                                   server_mode(options));
 
   options->AllowInvalid_ = 0;
 
@@ -2665,8 +2883,7 @@ options_validate(or_options_t *old_options, or_options_t *options,
 
   if ((options->BridgeRelay
         || options->PublishServerDescriptor_ & BRIDGE_DIRINFO)
-      && (options->PublishServerDescriptor_
-          & (V1_DIRINFO|V2_DIRINFO|V3_DIRINFO))) {
+      && (options->PublishServerDescriptor_ & V3_DIRINFO)) {
     REJECT("Bridges are not supposed to publish router descriptors to the "
            "directory authorities. Please correct your "
            "PublishServerDescriptor line.");
@@ -2696,6 +2913,13 @@ options_validate(or_options_t *old_options, or_options_t *options,
     log_warn(LD_CONFIG, "RendPostPeriod is too large; clipping to %ds.",
              MAX_DIR_PERIOD);
     options->RendPostPeriod = MAX_DIR_PERIOD;
+  }
+
+  if (options->PredictedPortsRelevanceTime >
+      MAX_PREDICTED_CIRCS_RELEVANCE) {
+    log_warn(LD_CONFIG, "PredictedPortsRelevanceTime is too large; "
+             "clipping to %ds.", MAX_PREDICTED_CIRCS_RELEVANCE);
+    options->PredictedPortsRelevanceTime = MAX_PREDICTED_CIRCS_RELEVANCE;
   }
 
   if (options->Tor2webMode && options->LearnCircuitBuildTimeout) {
@@ -2813,6 +3037,11 @@ options_validate(or_options_t *old_options, or_options_t *options,
 
   if (options->KeepalivePeriod < 1)
     REJECT("KeepalivePeriod option must be positive.");
+
+  if (options->PortForwarding && options->Sandbox) {
+    REJECT("PortForwarding is not compatible with Sandbox; at most one can "
+           "be set");
+  }
 
   if (ensure_bandwidth_cap(&options->BandwidthRate,
                            "BandwidthRate", msg) < 0)
@@ -2973,14 +3202,14 @@ options_validate(or_options_t *old_options, or_options_t *options,
     size_t len;
 
     len = strlen(options->Socks5ProxyUsername);
-    if (len < 1 || len > 255)
+    if (len < 1 || len > MAX_SOCKS5_AUTH_FIELD_SIZE)
       REJECT("Socks5ProxyUsername must be between 1 and 255 characters.");
 
     if (!options->Socks5ProxyPassword)
       REJECT("Socks5ProxyPassword must be included with Socks5ProxyUsername.");
 
     len = strlen(options->Socks5ProxyPassword);
-    if (len < 1 || len > 255)
+    if (len < 1 || len > MAX_SOCKS5_AUTH_FIELD_SIZE)
       REJECT("Socks5ProxyPassword must be between 1 and 255 characters.");
   } else if (options->Socks5ProxyPassword)
     REJECT("Socks5ProxyPassword must be included with Socks5ProxyUsername.");
@@ -3037,7 +3266,7 @@ options_validate(or_options_t *old_options, or_options_t *options,
              "You should also make sure you aren't listing this bridge's "
              "fingerprint in any other MyFamily.");
   }
-  if (check_nickname_list(options->MyFamily, "MyFamily", msg))
+  if (check_nickname_list(&options->MyFamily, "MyFamily", msg))
     return -1;
   for (cl = options->NodeFamilies; cl; cl = cl->next) {
     routerset_t *rs = routerset_new();
@@ -3057,26 +3286,22 @@ options_validate(or_options_t *old_options, or_options_t *options,
 
   if (options->UseBridges && !options->Bridges)
     REJECT("If you set UseBridges, you must specify at least one bridge.");
-  if (options->UseBridges && !options->TunnelDirConns)
-    REJECT("If you set UseBridges, you must set TunnelDirConns.");
-  if (options->RendConfigLines &&
-      (!options->TunnelDirConns || !options->PreferTunneledDirConns))
-    REJECT("If you are running a hidden service, you must set TunnelDirConns "
-           "and PreferTunneledDirConns");
 
   for (cl = options->Bridges; cl; cl = cl->next) {
-    if (parse_bridge_line(cl->value, 1)<0)
-      REJECT("Bridge line did not parse. See logs for details.");
+      bridge_line_t *bridge_line = parse_bridge_line(cl->value);
+      if (!bridge_line)
+        REJECT("Bridge line did not parse. See logs for details.");
+      bridge_line_free(bridge_line);
   }
 
   for (cl = options->ClientTransportPlugin; cl; cl = cl->next) {
-    if (parse_client_transport_line(cl->value, 1)<0)
-      REJECT("Transport line did not parse. See logs for details.");
+    if (parse_client_transport_line(options, cl->value, 1)<0)
+      REJECT("Invalid client transport line. See logs for details.");
   }
 
   for (cl = options->ServerTransportPlugin; cl; cl = cl->next) {
-    if (parse_server_transport_line(cl->value, 1)<0)
-      REJECT("Server transport line did not parse. See logs for details.");
+    if (parse_server_transport_line(options, cl->value, 1)<0)
+      REJECT("Invalid server transport line. See logs for details.");
   }
 
   if (options->ServerTransportPlugin && !server_mode(options)) {
@@ -3100,6 +3325,19 @@ options_validate(or_options_t *old_options, or_options_t *options,
     log_notice(LD_GENERAL, "You need at least a single managed-proxy to "
                "specify a transport listen address. The "
                "ServerTransportListenAddr line will be ignored.");
+  }
+
+  for (cl = options->ServerTransportOptions; cl; cl = cl->next) {
+    /** If get_options_from_transport_options_line() fails with
+        'transport' being NULL, it means that something went wrong
+        while parsing the ServerTransportOptions line. */
+    smartlist_t *options_sl =
+      get_options_from_transport_options_line(cl->value, NULL);
+    if (!options_sl)
+      REJECT("ServerTransportOptions did not parse. See logs for details.");
+
+    SMARTLIST_FOREACH(options_sl, char *, cp, tor_free(cp));
+    smartlist_free(options_sl);
   }
 
   if (options->ConstrainedSockets) {
@@ -3160,15 +3398,6 @@ options_validate(or_options_t *old_options, or_options_t *options,
                                  AF_INET6, 1, msg)<0)
     return -1;
 
-  if (options->PreferTunneledDirConns && !options->TunnelDirConns)
-    REJECT("Must set TunnelDirConns if PreferTunneledDirConns is set.");
-
-  if ((options->Socks4Proxy || options->Socks5Proxy) &&
-      !options->HTTPProxy && !options->PreferTunneledDirConns)
-    REJECT("When Socks4Proxy or Socks5Proxy is configured, "
-           "PreferTunneledDirConns and TunnelDirConns must both be "
-           "set to 1, or HTTPProxy must be configured.");
-
   if (options->AutomapHostsSuffixes) {
     SMARTLIST_FOREACH(options->AutomapHostsSuffixes, char *, suf,
     {
@@ -3194,35 +3423,46 @@ options_validate(or_options_t *old_options, or_options_t *options,
              "ignore you.");
   }
 
-  /*XXXX checking for defaults manually like this is a bit fragile.*/
+#define CHECK_DEFAULT(arg)                                              \
+  STMT_BEGIN                                                            \
+    if (!options->TestingTorNetwork &&                                  \
+        !options->UsingTestNetworkDefaults_ &&                          \
+        !config_is_same(&options_format,options,                        \
+                        default_options,#arg)) {                        \
+      REJECT(#arg " may only be changed in testing Tor "                \
+             "networks!");                                              \
+    } STMT_END
+  CHECK_DEFAULT(TestingV3AuthInitialVotingInterval);
+  CHECK_DEFAULT(TestingV3AuthInitialVoteDelay);
+  CHECK_DEFAULT(TestingV3AuthInitialDistDelay);
+  CHECK_DEFAULT(TestingV3AuthVotingStartOffset);
+  CHECK_DEFAULT(TestingAuthDirTimeToLearnReachability);
+  CHECK_DEFAULT(TestingEstimatedDescriptorPropagationTime);
+  CHECK_DEFAULT(TestingServerDownloadSchedule);
+  CHECK_DEFAULT(TestingClientDownloadSchedule);
+  CHECK_DEFAULT(TestingServerConsensusDownloadSchedule);
+  CHECK_DEFAULT(TestingClientConsensusDownloadSchedule);
+  CHECK_DEFAULT(TestingBridgeDownloadSchedule);
+  CHECK_DEFAULT(TestingClientMaxIntervalWithoutRequest);
+  CHECK_DEFAULT(TestingDirConnectionMaxStall);
+  CHECK_DEFAULT(TestingConsensusMaxDownloadTries);
+  CHECK_DEFAULT(TestingDescriptorMaxDownloadTries);
+  CHECK_DEFAULT(TestingMicrodescMaxDownloadTries);
+  CHECK_DEFAULT(TestingCertMaxDownloadTries);
+#undef CHECK_DEFAULT
 
-  /* Keep changes to hard-coded values synchronous to man page and default
-   * values table. */
-  if (options->TestingV3AuthInitialVotingInterval != 30*60 &&
-      !options->TestingTorNetwork && !options->UsingTestNetworkDefaults_) {
-    REJECT("TestingV3AuthInitialVotingInterval may only be changed in testing "
-           "Tor networks!");
-  } else if (options->TestingV3AuthInitialVotingInterval < MIN_VOTE_INTERVAL) {
+  if (options->TestingV3AuthInitialVotingInterval < MIN_VOTE_INTERVAL) {
     REJECT("TestingV3AuthInitialVotingInterval is insanely low.");
   } else if (((30*60) % options->TestingV3AuthInitialVotingInterval) != 0) {
     REJECT("TestingV3AuthInitialVotingInterval does not divide evenly into "
            "30 minutes.");
   }
 
-  if (options->TestingV3AuthInitialVoteDelay != 5*60 &&
-      !options->TestingTorNetwork && !options->UsingTestNetworkDefaults_) {
-
-    REJECT("TestingV3AuthInitialVoteDelay may only be changed in testing "
-           "Tor networks!");
-  } else if (options->TestingV3AuthInitialVoteDelay < MIN_VOTE_SECONDS) {
+  if (options->TestingV3AuthInitialVoteDelay < MIN_VOTE_SECONDS) {
     REJECT("TestingV3AuthInitialVoteDelay is way too low.");
   }
 
-  if (options->TestingV3AuthInitialDistDelay != 5*60 &&
-      !options->TestingTorNetwork && !options->UsingTestNetworkDefaults_) {
-    REJECT("TestingV3AuthInitialDistDelay may only be changed in testing "
-           "Tor networks!");
-  } else if (options->TestingV3AuthInitialDistDelay < MIN_DIST_SECONDS) {
+  if (options->TestingV3AuthInitialDistDelay < MIN_DIST_SECONDS) {
     REJECT("TestingV3AuthInitialDistDelay is way too low.");
   }
 
@@ -3233,24 +3473,77 @@ options_validate(or_options_t *old_options, or_options_t *options,
            "must be less than half TestingV3AuthInitialVotingInterval");
   }
 
-  if (options->TestingAuthDirTimeToLearnReachability != 30*60 &&
-      !options->TestingTorNetwork && !options->UsingTestNetworkDefaults_) {
-    REJECT("TestingAuthDirTimeToLearnReachability may only be changed in "
-           "testing Tor networks!");
-  } else if (options->TestingAuthDirTimeToLearnReachability < 0) {
+  if (options->TestingV3AuthVotingStartOffset >
+      MIN(options->TestingV3AuthInitialVotingInterval,
+          options->V3AuthVotingInterval)) {
+    REJECT("TestingV3AuthVotingStartOffset is higher than the voting "
+           "interval.");
+  }
+
+  if (options->TestingAuthDirTimeToLearnReachability < 0) {
     REJECT("TestingAuthDirTimeToLearnReachability must be non-negative.");
   } else if (options->TestingAuthDirTimeToLearnReachability > 2*60*60) {
     COMPLAIN("TestingAuthDirTimeToLearnReachability is insanely high.");
   }
 
-  if (options->TestingEstimatedDescriptorPropagationTime != 10*60 &&
-      !options->TestingTorNetwork && !options->UsingTestNetworkDefaults_) {
-    REJECT("TestingEstimatedDescriptorPropagationTime may only be changed in "
-           "testing Tor networks!");
-  } else if (options->TestingEstimatedDescriptorPropagationTime < 0) {
+  if (options->TestingEstimatedDescriptorPropagationTime < 0) {
     REJECT("TestingEstimatedDescriptorPropagationTime must be non-negative.");
   } else if (options->TestingEstimatedDescriptorPropagationTime > 60*60) {
     COMPLAIN("TestingEstimatedDescriptorPropagationTime is insanely high.");
+  }
+
+  if (options->TestingClientMaxIntervalWithoutRequest < 1) {
+    REJECT("TestingClientMaxIntervalWithoutRequest is way too low.");
+  } else if (options->TestingClientMaxIntervalWithoutRequest > 3600) {
+    COMPLAIN("TestingClientMaxIntervalWithoutRequest is insanely high.");
+  }
+
+  if (options->TestingDirConnectionMaxStall < 5) {
+    REJECT("TestingDirConnectionMaxStall is way too low.");
+  } else if (options->TestingDirConnectionMaxStall > 3600) {
+    COMPLAIN("TestingDirConnectionMaxStall is insanely high.");
+  }
+
+  if (options->TestingConsensusMaxDownloadTries < 2) {
+    REJECT("TestingConsensusMaxDownloadTries must be greater than 1.");
+  } else if (options->TestingConsensusMaxDownloadTries > 800) {
+    COMPLAIN("TestingConsensusMaxDownloadTries is insanely high.");
+  }
+
+  if (options->TestingDescriptorMaxDownloadTries < 2) {
+    REJECT("TestingDescriptorMaxDownloadTries must be greater than 1.");
+  } else if (options->TestingDescriptorMaxDownloadTries > 800) {
+    COMPLAIN("TestingDescriptorMaxDownloadTries is insanely high.");
+  }
+
+  if (options->TestingMicrodescMaxDownloadTries < 2) {
+    REJECT("TestingMicrodescMaxDownloadTries must be greater than 1.");
+  } else if (options->TestingMicrodescMaxDownloadTries > 800) {
+    COMPLAIN("TestingMicrodescMaxDownloadTries is insanely high.");
+  }
+
+  if (options->TestingCertMaxDownloadTries < 2) {
+    REJECT("TestingCertMaxDownloadTries must be greater than 1.");
+  } else if (options->TestingCertMaxDownloadTries > 800) {
+    COMPLAIN("TestingCertMaxDownloadTries is insanely high.");
+  }
+
+  if (options->TestingEnableConnBwEvent &&
+      !options->TestingTorNetwork && !options->UsingTestNetworkDefaults_) {
+    REJECT("TestingEnableConnBwEvent may only be changed in testing "
+           "Tor networks!");
+  }
+
+  if (options->TestingEnableCellStatsEvent &&
+      !options->TestingTorNetwork && !options->UsingTestNetworkDefaults_) {
+    REJECT("TestingEnableCellStatsEvent may only be changed in testing "
+           "Tor networks!");
+  }
+
+  if (options->TestingEnableTbEmptyEvent &&
+      !options->TestingTorNetwork && !options->UsingTestNetworkDefaults_) {
+    REJECT("TestingEnableTbEmptyEvent may only be changed in testing "
+           "Tor networks!");
   }
 
   if (options->TestingTorNetwork) {
@@ -3286,6 +3579,68 @@ options_validate(or_options_t *old_options, or_options_t *options,
 #undef COMPLAIN
 }
 
+/* Given the value that the user has set for MaxMemInQueues, compute the
+ * actual maximum value.  We clip this value if it's too low, and autodetect
+ * it if it's set to 0. */
+static uint64_t
+compute_real_max_mem_in_queues(const uint64_t val, int log_guess)
+{
+  uint64_t result;
+
+  if (val == 0) {
+#define ONE_GIGABYTE (U64_LITERAL(1) << 30)
+#define ONE_MEGABYTE (U64_LITERAL(1) << 20)
+#if SIZEOF_VOID_P >= 8
+#define MAX_DEFAULT_MAXMEM (8*ONE_GIGABYTE)
+#else
+#define MAX_DEFAULT_MAXMEM (2*ONE_GIGABYTE)
+#endif
+    /* The user didn't pick a memory limit.  Choose a very large one
+     * that is still smaller than the system memory */
+    static int notice_sent = 0;
+    size_t ram = 0;
+    if (get_total_system_memory(&ram) < 0) {
+      /* We couldn't determine our total system memory!  */
+#if SIZEOF_VOID_P >= 8
+      /* 64-bit system.  Let's hope for 8 GB. */
+      result = 8 * ONE_GIGABYTE;
+#else
+      /* (presumably) 32-bit system. Let's hope for 1 GB. */
+      result = ONE_GIGABYTE;
+#endif
+    } else {
+      /* We detected it, so let's pick 3/4 of the total RAM as our limit. */
+      const uint64_t avail = (ram / 4) * 3;
+
+      /* Make sure it's in range from 0.25 GB to 8 GB. */
+      if (avail > MAX_DEFAULT_MAXMEM) {
+        /* If you want to use more than this much RAM, you need to configure
+           it yourself */
+        result = MAX_DEFAULT_MAXMEM;
+      } else if (avail < ONE_GIGABYTE / 4) {
+        result = ONE_GIGABYTE / 4;
+      } else {
+        result = avail;
+      }
+    }
+    if (log_guess && ! notice_sent) {
+      log_notice(LD_CONFIG, "%sMaxMemInQueues is set to "U64_FORMAT" MB. "
+                 "You can override this by setting MaxMemInQueues by hand.",
+                 ram ? "Based on detected system memory, " : "",
+                 U64_PRINTF_ARG(result / ONE_MEGABYTE));
+      notice_sent = 1;
+    }
+    return result;
+  } else if (val < ONE_GIGABYTE / 4) {
+    log_warn(LD_CONFIG, "MaxMemInQueues must be at least 256 MB for now. "
+             "Ideally, have it as large as you can afford.");
+    return ONE_GIGABYTE / 4;
+  } else {
+    /* The value was fine all along */
+    return val;
+  }
+}
+
 /** Helper: return true iff s1 and s2 are both NULL, or both non-NULL
  * equal strings. */
 static int
@@ -3310,6 +3665,12 @@ options_transition_allowed(const or_options_t *old,
 
   if (old->RunAsDaemon != new_val->RunAsDaemon) {
     *msg = tor_strdup("While Tor is running, changing RunAsDaemon "
+                      "is not allowed.");
+    return -1;
+  }
+
+  if (old->Sandbox != new_val->Sandbox) {
+    *msg = tor_strdup("While Tor is running, changing Sandbox "
                       "is not allowed.");
     return -1;
   }
@@ -3364,6 +3725,38 @@ options_transition_allowed(const or_options_t *old,
     *msg = tor_strdup("While Tor is running, disabling "
                       "DisableDebuggerAttachment is not allowed.");
     return -1;
+  }
+
+  if (sandbox_is_active()) {
+#define SB_NOCHANGE_STR(opt)                                            \
+    do {                                                                \
+      if (! opt_streq(old->opt, new_val->opt)) {                        \
+        *msg = tor_strdup("Can't change " #opt " while Sandbox is active"); \
+        return -1;                                                      \
+      }                                                                 \
+    } while (0)
+
+    SB_NOCHANGE_STR(PidFile);
+    SB_NOCHANGE_STR(ServerDNSResolvConfFile);
+    SB_NOCHANGE_STR(DirPortFrontPage);
+    SB_NOCHANGE_STR(CookieAuthFile);
+    SB_NOCHANGE_STR(ExtORPortCookieAuthFile);
+
+#undef SB_NOCHANGE_STR
+
+    if (! config_lines_eq(old->Logs, new_val->Logs)) {
+      *msg = tor_strdup("Can't change Logs while Sandbox is active");
+      return -1;
+    }
+    if (old->ConnLimit != new_val->ConnLimit) {
+      *msg = tor_strdup("Can't change ConnLimit while Sandbox is active");
+      return -1;
+    }
+    if (server_mode(old) != server_mode(new_val)) {
+      *msg = tor_strdup("Can't start/stop being a server while "
+                        "Sandbox is active");
+      return -1;
+    }
   }
 
   return 0;
@@ -3511,31 +3904,63 @@ get_default_conf_file(int defaults_file)
 }
 
 /** Verify whether lst is a string containing valid-looking comma-separated
- * nicknames, or NULL. Return 0 on success. Warn and return -1 on failure.
+ * nicknames, or NULL. Will normalise <b>lst</b> to prefix '$' to any nickname
+ * or fingerprint that needs it. Return 0 on success.
+ * Warn and return -1 on failure.
  */
 static int
-check_nickname_list(const char *lst, const char *name, char **msg)
+check_nickname_list(char **lst, const char *name, char **msg)
 {
   int r = 0;
   smartlist_t *sl;
+  int changes = 0;
 
-  if (!lst)
+  if (!*lst)
     return 0;
   sl = smartlist_new();
 
-  smartlist_split_string(sl, lst, ",",
+  smartlist_split_string(sl, *lst, ",",
     SPLIT_SKIP_SPACE|SPLIT_IGNORE_BLANK|SPLIT_STRIP_SPACE, 0);
 
-  SMARTLIST_FOREACH(sl, const char *, s,
+  SMARTLIST_FOREACH_BEGIN(sl, char *, s)
     {
       if (!is_legal_nickname_or_hexdigest(s)) {
+        // check if first char is dollar
+        if (s[0] != '$') {
+          // Try again but with a dollar symbol prepended
+          char *prepended;
+          tor_asprintf(&prepended, "$%s", s);
+
+          if (is_legal_nickname_or_hexdigest(prepended)) {
+            // The nickname is valid when it's prepended, swap the current
+            // version with a prepended one
+            tor_free(s);
+            SMARTLIST_REPLACE_CURRENT(sl, s, prepended);
+            changes = 1;
+            continue;
+          }
+
+          // Still not valid, free and fallback to error message
+          tor_free(prepended);
+        }
+
         tor_asprintf(msg, "Invalid nickname '%s' in %s line", s, name);
         r = -1;
         break;
       }
-    });
+    }
+  SMARTLIST_FOREACH_END(s);
+
+  // Replace the caller's nickname list with a fixed one
+  if (changes && r == 0) {
+    char *newNicknames = smartlist_join_strings(sl, ", ", 0, NULL);
+    tor_free(*lst);
+    *lst = newNicknames;
+  }
+
   SMARTLIST_FOREACH(sl, char *, s, tor_free(s));
   smartlist_free(sl);
+
   return r;
 }
 
@@ -3551,26 +3976,26 @@ check_nickname_list(const char *lst, const char *name, char **msg)
  * filename if it doesn't exist.
  */
 static char *
-find_torrc_filename(int argc, char **argv,
+find_torrc_filename(config_line_t *cmd_arg,
                     int defaults_file,
                     int *using_default_fname, int *ignore_missing_torrc)
 {
   char *fname=NULL;
-  int i;
+  config_line_t *p_index;
   const char *fname_opt = defaults_file ? "--defaults-torrc" : "-f";
   const char *ignore_opt = defaults_file ? NULL : "--ignore-missing-torrc";
 
   if (defaults_file)
     *ignore_missing_torrc = 1;
 
-  for (i = 1; i < argc; ++i) {
-    if (i < argc-1 && !strcmp(argv[i],fname_opt)) {
+  for (p_index = cmd_arg; p_index; p_index = p_index->next) {
+    if (!strcmp(p_index->key, fname_opt)) {
       if (fname) {
         log_warn(LD_CONFIG, "Duplicate %s options on command line.",
             fname_opt);
         tor_free(fname);
       }
-      fname = expand_filename(argv[i+1]);
+      fname = expand_filename(p_index->value);
 
       {
         char *absfname;
@@ -3580,8 +4005,7 @@ find_torrc_filename(int argc, char **argv,
       }
 
       *using_default_fname = 0;
-      ++i;
-    } else if (ignore_opt && !strcmp(argv[i],ignore_opt)) {
+    } else if (ignore_opt && !strcmp(p_index->key,ignore_opt)) {
       *ignore_missing_torrc = 1;
     }
   }
@@ -3618,7 +4042,7 @@ find_torrc_filename(int argc, char **argv,
  * Return the contents of the file on success, and NULL on failure.
  */
 static char *
-load_torrc_from_disk(int argc, char **argv, int defaults_file)
+load_torrc_from_disk(config_line_t *cmd_arg, int defaults_file)
 {
   char *fname=NULL;
   char *cf = NULL;
@@ -3626,7 +4050,7 @@ load_torrc_from_disk(int argc, char **argv, int defaults_file)
   int ignore_missing_torrc = 0;
   char **fname_var = defaults_file ? &torrc_defaults_fname : &torrc_fname;
 
-  fname = find_torrc_filename(argc, argv, defaults_file,
+  fname = find_torrc_filename(cmd_arg, defaults_file,
                               &using_default_torrc, &ignore_missing_torrc);
   tor_assert(fname);
   log_debug(LD_CONFIG, "Opening config file \"%s\"", fname);
@@ -3668,59 +4092,75 @@ int
 options_init_from_torrc(int argc, char **argv)
 {
   char *cf=NULL, *cf_defaults=NULL;
-  int i, command;
+  int command;
   int retval = -1;
-  static char **backup_argv;
-  static int backup_argc;
   char *command_arg = NULL;
   char *errmsg=NULL;
+  config_line_t *p_index = NULL;
+  config_line_t *cmdline_only_options = NULL;
 
-  if (argv) { /* first time we're called. save command line args */
-    backup_argv = argv;
-    backup_argc = argc;
-  } else { /* we're reloading. need to clean up old options first. */
-    argv = backup_argv;
-    argc = backup_argc;
+  /* Go through command-line variables */
+  if (! have_parsed_cmdline) {
+    /* Or we could redo the list every time we pass this place.
+     * It does not really matter */
+    if (config_parse_commandline(argc, argv, 0, &global_cmdline_options,
+                                 &global_cmdline_only_options) < 0) {
+      goto err;
+    }
+    have_parsed_cmdline = 1;
   }
-  if (argc > 1 && (!strcmp(argv[1], "-h") || !strcmp(argv[1],"--help"))) {
+  cmdline_only_options = global_cmdline_only_options;
+
+  if (config_line_find(cmdline_only_options, "-h") ||
+      config_line_find(cmdline_only_options, "--help")) {
     print_usage();
     exit(0);
   }
-  if (argc > 1 && !strcmp(argv[1], "--list-torrc-options")) {
+  if (config_line_find(cmdline_only_options, "--list-torrc-options")) {
     /* For documenting validating whether we've documented everything. */
     list_torrc_options();
     exit(0);
   }
 
-  if (argc > 1 && (!strcmp(argv[1],"--version"))) {
+  if (config_line_find(cmdline_only_options, "--version")) {
     printf("Tor version %s.\n",get_version());
     exit(0);
   }
-  if (argc > 1 && (!strcmp(argv[1],"--digests"))) {
+
+  if (config_line_find(cmdline_only_options, "--digests")) {
     printf("Tor version %s.\n",get_version());
     printf("%s", libor_get_digests());
     printf("%s", tor_get_digests());
     exit(0);
   }
 
-  /* Go through command-line variables */
-  if (!global_cmdline_options) {
-    /* Or we could redo the list every time we pass this place.
-     * It does not really matter */
-    if (config_get_commandlines(argc, argv, &global_cmdline_options) < 0) {
-      goto err;
-    }
+  if (config_line_find(cmdline_only_options, "--library-versions")) {
+    printf("Tor version %s. \n", get_version());
+    printf("Library versions\tCompiled\t\tRuntime\n");
+    printf("Libevent\t\t%-15s\t\t%s\n",
+                      tor_libevent_get_header_version_str(),
+                      tor_libevent_get_version_str());
+    printf("OpenSSL \t\t%-15s\t\t%s\n",
+                      crypto_openssl_get_header_version_str(),
+                      crypto_openssl_get_version_str());
+    printf("Zlib    \t\t%-15s\t\t%s\n",
+                      tor_zlib_get_header_version_str(),
+                      tor_zlib_get_version_str());
+    //TODO: Hex versions?
+    exit(0);
   }
 
   command = CMD_RUN_TOR;
-  for (i = 1; i < argc; ++i) {
-    if (!strcmp(argv[i],"--list-fingerprint")) {
+  for (p_index = cmdline_only_options; p_index; p_index = p_index->next) {
+    if (!strcmp(p_index->key,"--list-fingerprint")) {
       command = CMD_LIST_FINGERPRINT;
-    } else if (!strcmp(argv[i],"--hash-password")) {
+    } else if (!strcmp(p_index->key, "--hash-password")) {
       command = CMD_HASH_PASSWORD;
-      command_arg = tor_strdup( (i < argc-1) ? argv[i+1] : "");
-      ++i;
-    } else if (!strcmp(argv[i],"--verify-config")) {
+      command_arg = p_index->value;
+    } else if (!strcmp(p_index->key, "--dump-config")) {
+      command = CMD_DUMP_CONFIG;
+      command_arg = p_index->value;
+    } else if (!strcmp(p_index->key, "--verify-config")) {
       command = CMD_VERIFY_CONFIG;
     }
   }
@@ -3729,10 +4169,15 @@ options_init_from_torrc(int argc, char **argv)
     cf_defaults = tor_strdup("");
     cf = tor_strdup("");
   } else {
-    cf_defaults = load_torrc_from_disk(argc, argv, 1);
-    cf = load_torrc_from_disk(argc, argv, 0);
-    if (!cf)
-      goto err;
+    cf_defaults = load_torrc_from_disk(cmdline_only_options, 1);
+    cf = load_torrc_from_disk(cmdline_only_options, 0);
+    if (!cf) {
+      if (config_line_find(cmdline_only_options, "--allow-missing-torrc")) {
+        cf = tor_strdup("");
+      } else {
+        goto err;
+      }
+    }
   }
 
   retval = options_init_from_string(cf_defaults, cf, command, command_arg,
@@ -3776,7 +4221,7 @@ options_init_from_string(const char *cf_defaults, const char *cf,
   newoptions->magic_ = OR_OPTIONS_MAGIC;
   options_init(newoptions);
   newoptions->command = command;
-  newoptions->command_arg = command_arg;
+  newoptions->command_arg = command_arg ? tor_strdup(command_arg) : NULL;
 
   for (i = 0; i < 2; ++i) {
     const char *body = i==0 ? cf_defaults : cf;
@@ -3840,7 +4285,7 @@ options_init_from_string(const char *cf_defaults, const char *cf,
     newoptions->magic_ = OR_OPTIONS_MAGIC;
     options_init(newoptions);
     newoptions->command = command;
-    newoptions->command_arg = command_arg;
+    newoptions->command_arg = command_arg ? tor_strdup(command_arg) : NULL;
 
     /* Assign all options a second time. */
     for (i = 0; i < 2; ++i) {
@@ -3872,7 +4317,8 @@ options_init_from_string(const char *cf_defaults, const char *cf,
   }
 
   /* Validate newoptions */
-  if (options_validate(oldoptions, newoptions, 0, msg) < 0) {
+  if (options_validate(oldoptions, newoptions, newdefaultoptions,
+                       0, msg) < 0) {
     err = SETOPT_ERR_PARSE; /*XXX make this a separate return value.*/
     goto err;
   }
@@ -4129,21 +4575,72 @@ options_init_logs(or_options_t *options, int validate_only)
   return ok?0:-1;
 }
 
+/** Given a smartlist of SOCKS arguments to be passed to a transport
+ *  proxy in <b>args</b>, validate them and return -1 if they are
+ *  corrupted. Return 0 if they seem OK. */
+static int
+validate_transport_socks_arguments(const smartlist_t *args)
+{
+  char *socks_string = NULL;
+  size_t socks_string_len;
+
+  tor_assert(args);
+  tor_assert(smartlist_len(args) > 0);
+
+  SMARTLIST_FOREACH_BEGIN(args, const char *, s) {
+    if (!string_is_key_value(LOG_WARN, s)) { /* items should be k=v items */
+      log_warn(LD_CONFIG, "'%s' is not a k=v item.", s);
+      return -1;
+    }
+  } SMARTLIST_FOREACH_END(s);
+
+  socks_string = pt_stringify_socks_args(args);
+  if (!socks_string)
+    return -1;
+
+  socks_string_len = strlen(socks_string);
+  tor_free(socks_string);
+
+  if (socks_string_len > MAX_SOCKS5_AUTH_SIZE_TOTAL) {
+    log_warn(LD_CONFIG, "SOCKS arguments can't be more than %u bytes (%lu).",
+             MAX_SOCKS5_AUTH_SIZE_TOTAL,
+             (unsigned long) socks_string_len);
+    return -1;
+  }
+
+  return 0;
+}
+
+/** Deallocate a bridge_line_t structure. */
+/* private */ void
+bridge_line_free(bridge_line_t *bridge_line)
+{
+  if (!bridge_line)
+    return;
+
+  if (bridge_line->socks_args) {
+    SMARTLIST_FOREACH(bridge_line->socks_args, char*, s, tor_free(s));
+    smartlist_free(bridge_line->socks_args);
+  }
+  tor_free(bridge_line->transport_name);
+  tor_free(bridge_line);
+}
+
 /** Read the contents of a Bridge line from <b>line</b>. Return 0
  * if the line is well-formed, and -1 if it isn't. If
  * <b>validate_only</b> is 0, and the line is well-formed, then add
- * the bridge described in the line to our internal bridge list. */
-static int
-parse_bridge_line(const char *line, int validate_only)
+ * the bridge described in the line to our internal bridge list.
+ *
+ * Bridge line format:
+ * Bridge [transport] IP:PORT [id-fingerprint] [k=v] [k=v] ...
+ */
+/* private */ bridge_line_t *
+parse_bridge_line(const char *line)
 {
   smartlist_t *items = NULL;
-  int r;
   char *addrport=NULL, *fingerprint=NULL;
-  char *transport_name=NULL;
-  char *field1=NULL;
-  tor_addr_t addr;
-  uint16_t port = 0;
-  char digest[DIGEST_LEN];
+  char *field=NULL;
+  bridge_line_t *bridge_line = tor_malloc_zero(sizeof(bridge_line_t));
 
   items = smartlist_new();
   smartlist_split_string(items, line, NULL,
@@ -4153,80 +4650,109 @@ parse_bridge_line(const char *line, int validate_only)
     goto err;
   }
 
-  /* field1 is either a transport name or addrport */
-  field1 = smartlist_get(items, 0);
+  /* first field is either a transport name or addrport */
+  field = smartlist_get(items, 0);
   smartlist_del_keeporder(items, 0);
 
-  if (!(strstr(field1, ".") || strstr(field1, ":"))) {
-    /* new-style bridge line */
-    transport_name = field1;
+  if (string_is_C_identifier(field)) {
+    /* It's a transport name. */
+    bridge_line->transport_name = field;
     if (smartlist_len(items) < 1) {
       log_warn(LD_CONFIG, "Too few items to Bridge line.");
       goto err;
     }
-    addrport = smartlist_get(items, 0);
+    addrport = smartlist_get(items, 0); /* Next field is addrport then. */
     smartlist_del_keeporder(items, 0);
   } else {
-    addrport = field1;
+    addrport = field;
   }
 
-  if (tor_addr_port_lookup(addrport, &addr, &port)<0) {
+  if (tor_addr_port_parse(LOG_INFO, addrport,
+                          &bridge_line->addr, &bridge_line->port, 443)<0) {
     log_warn(LD_CONFIG, "Error parsing Bridge address '%s'", addrport);
     goto err;
   }
-  if (!port) {
-    log_info(LD_CONFIG,
-             "Bridge address '%s' has no port; using default port 443.",
-             addrport);
-    port = 443;
+
+  /* If transports are enabled, next field could be a fingerprint or a
+     socks argument. If transports are disabled, next field must be
+     a fingerprint. */
+  if (smartlist_len(items)) {
+    if (bridge_line->transport_name) { /* transports enabled: */
+      field = smartlist_get(items, 0);
+      smartlist_del_keeporder(items, 0);
+
+      /* If it's a key=value pair, then it's a SOCKS argument for the
+         transport proxy... */
+      if (string_is_key_value(LOG_DEBUG, field)) {
+        bridge_line->socks_args = smartlist_new();
+        smartlist_add(bridge_line->socks_args, field);
+      } else { /* ...otherwise, it's the bridge fingerprint. */
+        fingerprint = field;
+      }
+
+    } else { /* transports disabled: */
+      fingerprint = smartlist_join_strings(items, "", 0, NULL);
+    }
   }
 
-  if (smartlist_len(items)) {
-    fingerprint = smartlist_join_strings(items, "", 0, NULL);
+  /* Handle fingerprint, if it was provided. */
+  if (fingerprint) {
     if (strlen(fingerprint) != HEX_DIGEST_LEN) {
       log_warn(LD_CONFIG, "Key digest for Bridge is wrong length.");
       goto err;
     }
-    if (base16_decode(digest, DIGEST_LEN, fingerprint, HEX_DIGEST_LEN)<0) {
+    if (base16_decode(bridge_line->digest, DIGEST_LEN,
+                      fingerprint, HEX_DIGEST_LEN)<0) {
       log_warn(LD_CONFIG, "Unable to decode Bridge key digest.");
       goto err;
     }
   }
 
-  if (!validate_only) {
-    log_debug(LD_DIR, "Bridge at %s (transport: %s) (%s)",
-              fmt_addrport(&addr, port),
-              transport_name ? transport_name : "no transport",
-              fingerprint ? fingerprint : "no key listed");
-    bridge_add_from_config(&addr, port,
-                           fingerprint ? digest : NULL, transport_name);
+  /* If we are using transports, any remaining items in the smartlist
+     should be k=v values. */
+  if (bridge_line->transport_name && smartlist_len(items)) {
+    if (!bridge_line->socks_args)
+      bridge_line->socks_args = smartlist_new();
+
+    /* append remaining items of 'items' to 'socks_args' */
+    smartlist_add_all(bridge_line->socks_args, items);
+    smartlist_clear(items);
+
+    tor_assert(smartlist_len(bridge_line->socks_args) > 0);
   }
 
-  r = 0;
+  if (bridge_line->socks_args) {
+    if (validate_transport_socks_arguments(bridge_line->socks_args) < 0)
+      goto err;
+  }
+
   goto done;
 
  err:
-  r = -1;
+  bridge_line_free(bridge_line);
+  bridge_line = NULL;
 
  done:
   SMARTLIST_FOREACH(items, char*, s, tor_free(s));
   smartlist_free(items);
   tor_free(addrport);
-  tor_free(transport_name);
   tor_free(fingerprint);
-  return r;
+
+  return bridge_line;
 }
 
 /** Read the contents of a ClientTransportPlugin line from
  * <b>line</b>. Return 0 if the line is well-formed, and -1 if it
  * isn't.
  *
- * If <b>validate_only</b> is 0, and the line is well-formed:
+ * If <b>validate_only</b> is 0, the line is well-formed, and the
+ * transport is needed by some bridge:
  * - If it's an external proxy line, add the transport described in the line to
  * our internal transport list.
  * - If it's a managed proxy line, launch the managed proxy. */
 static int
-parse_client_transport_line(const char *line, int validate_only)
+parse_client_transport_line(const or_options_t *options,
+                            const char *line, int validate_only)
 {
   smartlist_t *items = NULL;
   int r;
@@ -4243,7 +4769,8 @@ parse_client_transport_line(const char *line, int validate_only)
   int is_managed=0;
   char **proxy_argv=NULL;
   char **tmp=NULL;
-  int proxy_argc,i;
+  int proxy_argc, i;
+  int is_useless_proxy=1;
 
   int line_length;
 
@@ -4265,11 +4792,16 @@ parse_client_transport_line(const char *line, int validate_only)
   smartlist_split_string(transport_list, transports, ",",
                          SPLIT_SKIP_SPACE|SPLIT_IGNORE_BLANK, 0);
   SMARTLIST_FOREACH_BEGIN(transport_list, const char *, transport_name) {
+    /* validate transport names */
     if (!string_is_C_identifier(transport_name)) {
       log_warn(LD_CONFIG, "Transport name is not a C identifier (%s).",
                transport_name);
       goto err;
     }
+
+    /* see if we actually need the transports provided by this proxy */
+    if (!validate_only && transport_is_needed(transport_name))
+      is_useless_proxy = 0;
   } SMARTLIST_FOREACH_END(transport_name);
 
   /* field2 is either a SOCKS version or "exec" */
@@ -4287,10 +4819,22 @@ parse_client_transport_line(const char *line, int validate_only)
     goto err;
   }
 
+  if (is_managed && options->Sandbox) {
+    log_warn(LD_CONFIG, "Managed proxies are not compatible with Sandbox mode."
+             "(ClientTransportPlugin line was %s)", escaped(line));
+    goto err;
+  }
+
   if (is_managed) { /* managed */
-    if (!validate_only) {  /* if we are not just validating, use the
-                             rest of the line as the argv of the proxy
-                             to be launched */
+    if (!validate_only && is_useless_proxy) {
+      log_info(LD_GENERAL, "Pluggable transport proxy (%s) does not provide "
+               "any needed transports and will not be launched.", line);
+    }
+
+    /* If we are not just validating, use the rest of the line as the
+       argv of the proxy to be launched. Also, make sure that we are
+       only launching proxies that contribute useful transports.  */
+    if (!validate_only && !is_useless_proxy) {
       proxy_argc = line_length-2;
       tor_assert(proxy_argc > 0);
       proxy_argv = tor_malloc_zero(sizeof(char*)*(proxy_argc+1));
@@ -4385,7 +4929,7 @@ get_bindaddr_from_transport_listen_line(const char *line,const char *transport)
     goto err;
 
   /* Validate addrport */
-  if (tor_addr_port_parse(LOG_WARN, addrport, &addr, &port)<0) {
+  if (tor_addr_port_parse(LOG_WARN, addrport, &addr, &port, -1)<0) {
     log_warn(LD_CONFIG, "Error parsing ServerTransportListenAddr "
              "address '%s'", addrport);
     goto err;
@@ -4402,6 +4946,63 @@ get_bindaddr_from_transport_listen_line(const char *line,const char *transport)
   smartlist_free(items);
 
   return addrport;
+}
+
+/** Given a ServerTransportOptions <b>line</b>, return a smartlist
+ *  with the options. Return NULL if the line was not well-formed.
+ *
+ *  If <b>transport</b> is set, return NULL if the line is not
+ *  referring to <b>transport</b>.
+ *
+ *  The returned smartlist and its strings are allocated on the heap
+ *  and it's the responsibility of the caller to free it. */
+smartlist_t *
+get_options_from_transport_options_line(const char *line,const char *transport)
+{
+  smartlist_t *items = smartlist_new();
+  smartlist_t *options = smartlist_new();
+  const char *parsed_transport = NULL;
+
+  smartlist_split_string(items, line, NULL,
+                         SPLIT_SKIP_SPACE|SPLIT_IGNORE_BLANK, -1);
+
+  if (smartlist_len(items) < 2) {
+    log_warn(LD_CONFIG,"Too few arguments on ServerTransportOptions line.");
+    goto err;
+  }
+
+  parsed_transport = smartlist_get(items, 0);
+  /* If 'transport' is given, check if it matches the one on the line */
+  if (transport && strcmp(transport, parsed_transport))
+    goto err;
+
+  SMARTLIST_FOREACH_BEGIN(items, const char *, option) {
+    if (option_sl_idx == 0) /* skip the transport field (first field)*/
+      continue;
+
+    /* validate that it's a k=v value */
+    if (!string_is_key_value(LOG_WARN, option)) {
+      log_warn(LD_CONFIG, "%s is not a k=v value.", escaped(option));
+      goto err;
+    }
+
+    /* add it to the options smartlist */
+    smartlist_add(options, tor_strdup(option));
+    log_debug(LD_CONFIG, "Added %s to the list of options", escaped(option));
+  } SMARTLIST_FOREACH_END(option);
+
+  goto done;
+
+ err:
+  SMARTLIST_FOREACH(options, char*, s, tor_free(s));
+  smartlist_free(options);
+  options = NULL;
+
+ done:
+  SMARTLIST_FOREACH(items, char*, s, tor_free(s));
+  smartlist_free(items);
+
+  return options;
 }
 
 /** Given the name of a pluggable transport in <b>transport</b>, check
@@ -4424,13 +5025,34 @@ get_transport_bindaddr_from_config(const char *transport)
   return NULL;
 }
 
+/** Given the name of a pluggable transport in <b>transport</b>, check
+ *  the configuration file to see if the user has asked us to pass any
+ *  parameters to the pluggable transport. Return a smartlist
+ *  containing the parameters, otherwise NULL. */
+smartlist_t *
+get_options_for_server_transport(const char *transport)
+{
+  config_line_t *cl;
+  const or_options_t *options = get_options();
+
+  for (cl = options->ServerTransportOptions; cl; cl = cl->next) {
+    smartlist_t *options_sl =
+      get_options_from_transport_options_line(cl->value, transport);
+    if (options_sl)
+      return options_sl;
+  }
+
+  return NULL;
+}
+
 /** Read the contents of a ServerTransportPlugin line from
  * <b>line</b>. Return 0 if the line is well-formed, and -1 if it
  * isn't.
  * If <b>validate_only</b> is 0, the line is well-formed, and it's a
  * managed proxy line, launch the managed proxy. */
 static int
-parse_server_transport_line(const char *line, int validate_only)
+parse_server_transport_line(const or_options_t *options,
+                            const char *line, int validate_only)
 {
   smartlist_t *items = NULL;
   int r;
@@ -4482,6 +5104,12 @@ parse_server_transport_line(const char *line, int validate_only)
     is_managed=0;
   } else {
     log_warn(LD_CONFIG, "Strange ServerTransportPlugin type '%s'", type);
+    goto err;
+  }
+
+  if (is_managed && options->Sandbox) {
+    log_warn(LD_CONFIG, "Managed proxies are not compatible with Sandbox mode."
+             "(ServerTransportPlugin line was %s)", escaped(line));
     goto err;
   }
 
@@ -4560,8 +5188,7 @@ parse_dir_authority_line(const char *line, dirinfo_type_t required_type,
   uint16_t dir_port = 0, or_port = 0;
   char digest[DIGEST_LEN];
   char v3_digest[DIGEST_LEN];
-  dirinfo_type_t type = V2_DIRINFO;
-  int is_not_hidserv_authority = 0, is_not_v2_authority = 0;
+  dirinfo_type_t type = 0;
   double weight = 1.0;
 
   items = smartlist_new();
@@ -4581,16 +5208,15 @@ parse_dir_authority_line(const char *line, dirinfo_type_t required_type,
     char *flag = smartlist_get(items, 0);
     if (TOR_ISDIGIT(flag[0]))
       break;
-    if (!strcasecmp(flag, "v1")) {
-      type |= (V1_DIRINFO | HIDSERV_DIRINFO);
-    } else if (!strcasecmp(flag, "hs")) {
-      type |= HIDSERV_DIRINFO;
-    } else if (!strcasecmp(flag, "no-hs")) {
-      is_not_hidserv_authority = 1;
+    if (!strcasecmp(flag, "hs") ||
+               !strcasecmp(flag, "no-hs")) {
+      log_warn(LD_CONFIG, "The DirAuthority options 'hs' and 'no-hs' are "
+               "obsolete; you don't need them any more.");
     } else if (!strcasecmp(flag, "bridge")) {
       type |= BRIDGE_DIRINFO;
     } else if (!strcasecmp(flag, "no-v2")) {
-      is_not_v2_authority = 1;
+      /* obsolete, but may still be contained in DirAuthority lines generated
+         by various tools */;
     } else if (!strcasecmpstart(flag, "orport=")) {
       int ok;
       char *portstring = flag + strlen("orport=");
@@ -4622,10 +5248,6 @@ parse_dir_authority_line(const char *line, dirinfo_type_t required_type,
     tor_free(flag);
     smartlist_del_keeporder(items, 0);
   }
-  if (is_not_hidserv_authority)
-    type &= ~HIDSERV_DIRINFO;
-  if (is_not_v2_authority)
-    type &= ~V2_DIRINFO;
 
   if (smartlist_len(items) < 2) {
     log_warn(LD_CONFIG, "Too few arguments to DirAuthority line.");
@@ -4828,6 +5450,27 @@ warn_nonlocal_client_ports(const smartlist_t *ports, const char *portname,
   } SMARTLIST_FOREACH_END(port);
 }
 
+/** Warn for every Extended ORPort port in <b>ports</b> that is on a
+ *  publicly routable address. */
+static void
+warn_nonlocal_ext_orports(const smartlist_t *ports, const char *portname)
+{
+  SMARTLIST_FOREACH_BEGIN(ports, const port_cfg_t *, port) {
+    if (port->type != CONN_TYPE_EXT_OR_LISTENER)
+      continue;
+    if (port->is_unix_addr)
+      continue;
+    /* XXX maybe warn even if address is RFC1918? */
+    if (!tor_addr_is_internal(&port->addr, 1)) {
+      log_warn(LD_CONFIG, "You specified a public address '%s' for %sPort. "
+               "This is not advised; this address is supposed to only be "
+               "exposed on localhost so that your pluggable transport "
+               "proxies can connect to it.",
+               fmt_addrport(&port->addr, port->port), portname);
+    }
+  } SMARTLIST_FOREACH_END(port);
+}
+
 /** Given a list of port_cfg_t in <b>ports</b>, warn any controller port there
  * is listening on any non-loopback address.  If <b>forbid</b> is true,
  * then emit a stronger warning and remove the port from the list.
@@ -4928,6 +5571,7 @@ parse_port_config(smartlist_t *out,
   smartlist_t *elts;
   int retval = -1;
   const unsigned is_control = (listener_type == CONN_TYPE_CONTROL_LISTENER);
+  const unsigned is_ext_orport = (listener_type == CONN_TYPE_EXT_OR_LISTENER);
   const unsigned allow_no_options = flags & CL_PORT_NO_OPTIONS;
   const unsigned use_server_options = flags & CL_PORT_SERVER_OPTIONS;
   const unsigned warn_nonlocal = flags & CL_PORT_WARN_NONLOCAL;
@@ -5005,6 +5649,8 @@ parse_port_config(smartlist_t *out,
     if (warn_nonlocal && out) {
       if (is_control)
         warn_nonlocal_controller_ports(out, forbid_nonlocal);
+      else if (is_ext_orport)
+        warn_nonlocal_ext_orports(out, portname);
       else
         warn_nonlocal_client_ports(out, portname, listener_type);
     }
@@ -5278,6 +5924,8 @@ parse_port_config(smartlist_t *out,
   if (warn_nonlocal && out) {
     if (is_control)
       warn_nonlocal_controller_ports(out, forbid_nonlocal);
+    else if (is_ext_orport)
+      warn_nonlocal_ext_orports(out, portname);
     else
       warn_nonlocal_client_ports(out, portname, listener_type);
   }
@@ -5424,6 +6072,14 @@ parse_ports(or_options_t *options, int validate_only,
       goto err;
     }
     if (parse_port_config(ports,
+                          options->ExtORPort_lines, NULL,
+                          "ExtOR", CONN_TYPE_EXT_OR_LISTENER,
+                          "127.0.0.1", 0,
+                          CL_PORT_SERVER_OPTIONS|CL_PORT_WARN_NONLOCAL) < 0) {
+      *msg = tor_strdup("Invalid ExtORPort configuration");
+      goto err;
+    }
+    if (parse_port_config(ports,
                           options->DirPort_lines, options->DirListenAddress,
                           "Dir", CONN_TYPE_DIR_LISTENER,
                           "0.0.0.0", 0,
@@ -5458,6 +6114,8 @@ parse_ports(or_options_t *options, int validate_only,
     !! count_real_listeners(ports, CONN_TYPE_DIR_LISTENER);
   options->DNSPort_set =
     !! count_real_listeners(ports, CONN_TYPE_AP_DNS_LISTENER);
+  options->ExtORPort_set =
+    !! count_real_listeners(ports, CONN_TYPE_EXT_OR_LISTENER);
 
   if (!validate_only) {
     if (configured_ports) {
@@ -5745,7 +6403,7 @@ write_configuration_file(const char *fname, const or_options_t *options)
       return -1;
   }
 
-  if (!(new_conf = options_dump(options, 1))) {
+  if (!(new_conf = options_dump(options, OPTIONS_DUMP_MINIMAL))) {
     log_warn(LD_BUG, "Couldn't get configuration string");
     goto err;
   }
@@ -5764,7 +6422,7 @@ write_configuration_file(const char *fname, const or_options_t *options)
       ++i;
     }
     log_notice(LD_CONFIG, "Renaming old configuration file to \"%s\"", fn_tmp);
-    if (rename(fname, fn_tmp) < 0) {
+    if (tor_rename(fname, fn_tmp) < 0) {//XXXX sandbox doesn't allow
       log_warn(LD_FS,
                "Couldn't rename configuration file \"%s\" to \"%s\": %s",
                fname, fn_tmp, strerror(errno));
@@ -5905,6 +6563,43 @@ options_get_datadir_fname2_suffix(const or_options_t *options,
   return fname;
 }
 
+/** Check wether the data directory has a private subdirectory
+ * <b>subdir</b>. If not, try to create it. Return 0 on success,
+ * -1 otherwise. */
+int
+check_or_create_data_subdir(const char *subdir)
+{
+  char *statsdir = get_datadir_fname(subdir);
+  int return_val = 0;
+
+  if (check_private_dir(statsdir, CPD_CREATE, get_options()->User) < 0) {
+    log_warn(LD_HIST, "Unable to create %s/ directory!", subdir);
+    return_val = -1;
+  }
+  tor_free(statsdir);
+  return return_val;
+}
+
+/** Create a file named <b>fname</b> with contents <b>str</b> in the
+ * subdirectory <b>subdir</b> of the data directory. <b>descr</b>
+ * should be a short description of the file's content and will be
+ * used for the warning message, if it's present and the write process
+ * fails. Return 0 on success, -1 otherwise.*/
+int
+write_to_data_subdir(const char* subdir, const char* fname,
+                     const char* str, const char* descr)
+{
+  char *filename = get_datadir_fname2(subdir, fname);
+  int return_val = 0;
+
+  if (write_str_to_file(filename, str, 0) < 0) {
+    log_warn(LD_HIST, "Unable to write %s to disk!", descr ? descr : fname);
+    return_val = -1;
+  }
+  tor_free(filename);
+  return return_val;
+}
+
 /** Given a file name check to see whether the file exists but has not been
  * modified for a very long time.  If so, remove it. */
 void
@@ -5913,12 +6608,17 @@ remove_file_if_very_old(const char *fname, time_t now)
 #define VERY_OLD_FILE_AGE (28*24*60*60)
   struct stat st;
 
-  if (stat(fname, &st)==0 && st.st_mtime < now-VERY_OLD_FILE_AGE) {
+  log_debug(LD_FS, "stat()ing %s", fname);
+  if (stat(sandbox_intern_string(fname), &st)==0 &&
+      st.st_mtime < now-VERY_OLD_FILE_AGE) {
     char buf[ISO_TIME_LEN+1];
     format_local_iso_time(buf, st.st_mtime);
     log_notice(LD_GENERAL, "Obsolete file %s hasn't been modified since %s. "
                "Removing it.", fname, buf);
-    unlink(fname);
+    if (unlink(fname) != 0) {
+      log_warn(LD_FS, "Failed to unlink %s: %s",
+               fname, strerror(errno));
+    }
   }
 }
 
@@ -5994,6 +6694,7 @@ getinfo_helper_config(control_connection_t *conn,
         case CONFIG_TYPE_ISOTIME: type = "Time"; break;
         case CONFIG_TYPE_ROUTERSET: type = "RouterList"; break;
         case CONFIG_TYPE_CSV: type = "CommaList"; break;
+        case CONFIG_TYPE_CSV_INTERVAL: type = "TimeIntervalCommaList"; break;
         case CONFIG_TYPE_LINELIST: type = "LineList"; break;
         case CONFIG_TYPE_LINELIST_S: type = "Dependant"; break;
         case CONFIG_TYPE_LINELIST_V: type = "Virtual"; break;
@@ -6123,5 +6824,73 @@ config_maybe_load_geoip_files_(const or_options_t *options,
                                    options->GeoIPv6File))
        || !geoip_is_loaded(AF_INET6)))
     config_load_geoip_file_(AF_INET6, options->GeoIPv6File, "geoip6");
+}
+
+/** Initialize cookie authentication (used so far by the ControlPort
+ *  and Extended ORPort).
+ *
+ *  Allocate memory and create a cookie (of length <b>cookie_len</b>)
+ *  in <b>cookie_out</b>.
+ *  Then write it down to <b>fname</b> and prepend it with <b>header</b>.
+ *
+ *  If <b>group_readable</b> is set, set <b>fname</b> to be readable
+ *  by the default GID.
+ *
+ *  If the whole procedure was successful, set
+ *  <b>cookie_is_set_out</b> to True. */
+int
+init_cookie_authentication(const char *fname, const char *header,
+                           int cookie_len, int group_readable,
+                           uint8_t **cookie_out, int *cookie_is_set_out)
+{
+  char cookie_file_str_len = strlen(header) + cookie_len;
+  char *cookie_file_str = tor_malloc(cookie_file_str_len);
+  int retval = -1;
+
+  /* We don't want to generate a new cookie every time we call
+   * options_act(). One should be enough. */
+  if (*cookie_is_set_out) {
+    retval = 0; /* we are all set */
+    goto done;
+  }
+
+  /* If we've already set the cookie, free it before re-setting
+     it. This can happen if we previously generated a cookie, but
+     couldn't write it to a disk. */
+  if (*cookie_out)
+    tor_free(*cookie_out);
+
+  /* Generate the cookie */
+  *cookie_out = tor_malloc(cookie_len);
+  if (crypto_rand((char *)*cookie_out, cookie_len) < 0)
+    goto done;
+
+  /* Create the string that should be written on the file. */
+  memcpy(cookie_file_str, header, strlen(header));
+  memcpy(cookie_file_str+strlen(header), *cookie_out, cookie_len);
+  if (write_bytes_to_file(fname, cookie_file_str, cookie_file_str_len, 1)) {
+    log_warn(LD_FS,"Error writing auth cookie to %s.", escaped(fname));
+    goto done;
+  }
+
+#ifndef _WIN32
+  if (group_readable) {
+    if (chmod(fname, 0640)) {
+      log_warn(LD_FS,"Unable to make %s group-readable.", escaped(fname));
+    }
+  }
+#else
+  (void) group_readable;
+#endif
+
+  /* Success! */
+  log_info(LD_GENERAL, "Generated auth cookie file in '%s'.", escaped(fname));
+  *cookie_is_set_out = 1;
+  retval = 0;
+
+ done:
+  memwipe(cookie_file_str, 0, cookie_file_str_len);
+  tor_free(cookie_file_str);
+  return retval;
 }
 

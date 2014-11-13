@@ -53,6 +53,33 @@ static void command_process_created_cell(cell_t *cell, channel_t *chan);
 static void command_process_relay_cell(cell_t *cell, channel_t *chan);
 static void command_process_destroy_cell(cell_t *cell, channel_t *chan);
 
+/** Convert the cell <b>command</b> into a lower-case, human-readable
+ * string. */
+const char *
+cell_command_to_string(uint8_t command)
+{
+  switch (command) {
+    case CELL_PADDING: return "padding";
+    case CELL_CREATE: return "create";
+    case CELL_CREATED: return "created";
+    case CELL_RELAY: return "relay";
+    case CELL_DESTROY: return "destroy";
+    case CELL_CREATE_FAST: return "create_fast";
+    case CELL_CREATED_FAST: return "created_fast";
+    case CELL_VERSIONS: return "versions";
+    case CELL_NETINFO: return "netinfo";
+    case CELL_RELAY_EARLY: return "relay_early";
+    case CELL_CREATE2: return "create2";
+    case CELL_CREATED2: return "created2";
+    case CELL_VPADDING: return "vpadding";
+    case CELL_CERTS: return "certs";
+    case CELL_AUTH_CHALLENGE: return "auth_challenge";
+    case CELL_AUTHENTICATE: return "authenticate";
+    case CELL_AUTHORIZE: return "authorize";
+    default: return "unrecognized";
+  }
+}
+
 #ifdef KEEP_TIMING_STATS
 /** This is a wrapper function around the actual function that processes the
  * <b>cell</b> that just arrived on <b>conn</b>. Increment <b>*time</b>
@@ -200,6 +227,34 @@ command_process_create_cell(cell_t *cell, channel_t *chan)
             (unsigned)cell->circ_id,
             U64_PRINTF_ARG(chan->global_identifier), chan);
 
+  /* We check for the conditions that would make us drop the cell before
+   * we check for the conditions that would make us send a DESTROY back,
+   * since those conditions would make a DESTROY nonsensical. */
+  if (cell->circ_id == 0) {
+    log_fn(LOG_PROTOCOL_WARN, LD_PROTOCOL,
+           "Received a create cell (type %d) from %s with zero circID; "
+           " ignoring.", (int)cell->command,
+           channel_get_actual_remote_descr(chan));
+    return;
+  }
+
+  if (circuit_id_in_use_on_channel(cell->circ_id, chan)) {
+    const node_t *node = node_get_by_id(chan->identity_digest);
+    log_fn(LOG_PROTOCOL_WARN, LD_PROTOCOL,
+           "Received CREATE cell (circID %u) for known circ. "
+           "Dropping (age %d).",
+           (unsigned)cell->circ_id,
+           (int)(time(NULL) - channel_when_created(chan)));
+    if (node) {
+      char *p = esc_for_log(node_get_platform(node));
+      log_fn(LOG_PROTOCOL_WARN, LD_PROTOCOL,
+             "Details: router %s, platform %s.",
+             node_describe(node), p);
+      tor_free(p);
+    }
+    return;
+  }
+
   if (we_are_hibernating()) {
     log_info(LD_OR,
              "Received create cell but we're shutting down. Sending back "
@@ -221,14 +276,6 @@ command_process_create_cell(cell_t *cell, channel_t *chan)
     return;
   }
 
-  if (cell->circ_id == 0) {
-    log_fn(LOG_PROTOCOL_WARN, LD_PROTOCOL,
-           "Received a create cell (type %d) from %s with zero circID; "
-           " ignoring.", (int)cell->command,
-           channel_get_actual_remote_descr(chan));
-    return;
-  }
-
   /* If the high bit of the circuit ID is not as expected, close the
    * circ. */
   if (chan->wide_circ_ids)
@@ -244,23 +291,6 @@ command_process_create_cell(cell_t *cell, channel_t *chan)
            (unsigned)cell->circ_id);
     channel_send_destroy(cell->circ_id, chan,
                          END_CIRC_REASON_TORPROTOCOL);
-    return;
-  }
-
-  if (circuit_id_in_use_on_channel(cell->circ_id, chan)) {
-    const node_t *node = node_get_by_id(chan->identity_digest);
-    log_fn(LOG_PROTOCOL_WARN, LD_PROTOCOL,
-           "Received CREATE cell (circID %u) for known circ. "
-           "Dropping (age %d).",
-           (unsigned)cell->circ_id,
-           (int)(time(NULL) - channel_when_created(chan)));
-    if (node) {
-      char *p = esc_for_log(node_get_platform(node));
-      log_fn(LOG_PROTOCOL_WARN, LD_PROTOCOL,
-             "Details: router %s, platform %s.",
-             node_describe(node), p);
-      tor_free(p);
-    }
     return;
   }
 
@@ -349,7 +379,7 @@ command_process_created_cell(cell_t *cell, channel_t *chan)
     return;
   }
 
-  if (circ->n_circ_id != cell->circ_id) {
+  if (circ->n_circ_id != cell->circ_id || circ->n_chan != chan) {
     log_fn(LOG_PROTOCOL_WARN,LD_PROTOCOL,
            "got created cell from Tor client? Closing.");
     circuit_mark_for_close(circ, END_CIRC_REASON_TORPROTOCOL);
@@ -434,6 +464,7 @@ command_process_relay_cell(cell_t *cell, channel_t *chan)
   }
 
   if (!CIRCUIT_IS_ORIGIN(circ) &&
+      chan == TO_OR_CIRCUIT(circ)->p_chan &&
       cell->circ_id == TO_OR_CIRCUIT(circ)->p_circ_id)
     direction = CELL_DIRECTION_OUT;
   else
@@ -514,6 +545,7 @@ command_process_destroy_cell(cell_t *cell, channel_t *chan)
   circ->received_destroy = 1;
 
   if (!CIRCUIT_IS_ORIGIN(circ) &&
+      chan == TO_OR_CIRCUIT(circ)->p_chan &&
       cell->circ_id == TO_OR_CIRCUIT(circ)->p_circ_id) {
     /* the destroy came from behind */
     circuit_set_p_circid_chan(TO_OR_CIRCUIT(circ), 0, NULL);

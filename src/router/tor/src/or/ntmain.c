@@ -3,7 +3,6 @@
  * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
-#define MAIN_PRIVATE
 #include "or.h"
 #include "config.h"
 #include "main.h"
@@ -315,6 +314,7 @@ nt_service_main(void)
       case CMD_LIST_FINGERPRINT:
       case CMD_HASH_PASSWORD:
       case CMD_VERIFY_CONFIG:
+      case CMD_DUMP_CONFIG:
         log_err(LD_CONFIG, "Unsupported command (--list-fingerprint, "
                 "--hash-password, or --verify-config) in NT service.");
         break;

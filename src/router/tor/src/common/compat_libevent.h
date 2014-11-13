@@ -78,6 +78,7 @@ void tor_check_libevent_version(const char *m, int server,
                                 const char **badness_out);
 void tor_check_libevent_header_compatibility(void);
 const char *tor_libevent_get_version_str(void);
+const char *tor_libevent_get_header_version_str(void);
 
 #ifdef USE_BUFFEREVENTS
 const struct timeval *tor_libevent_get_one_tick_timeout(void);
@@ -88,8 +89,14 @@ int tor_add_bufferevent_to_rate_limit_group(struct bufferevent *bev,
                                    struct bufferevent_rate_limit_group *g);
 #endif
 
+int tor_init_libevent_rng(void);
+
 void tor_gettimeofday_cached(struct timeval *tv);
 void tor_gettimeofday_cache_clear(void);
+#ifdef TOR_UNIT_TESTS
+void tor_gettimeofday_cache_set(const struct timeval *tv);
+#endif
+void tor_gettimeofday_cached_monotonic(struct timeval *tv);
 
 #endif
 

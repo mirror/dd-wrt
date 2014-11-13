@@ -10,6 +10,7 @@
 #define TOR_CIRCUITMUX_H
 
 #include "or.h"
+#include "testsupport.h"
 
 typedef struct circuitmux_policy_s circuitmux_policy_t;
 typedef struct circuitmux_policy_data_s circuitmux_policy_data_t;
@@ -98,7 +99,8 @@ void circuitmux_assert_okay(circuitmux_t *cmux);
 
 /* Create/destroy */
 circuitmux_t * circuitmux_alloc(void);
-void circuitmux_detach_all_circuits(circuitmux_t *cmux);
+void circuitmux_detach_all_circuits(circuitmux_t *cmux,
+                                    smartlist_t *detached_out);
 void circuitmux_free(circuitmux_t *cmux);
 
 /* Policy control */
@@ -119,18 +121,32 @@ unsigned int circuitmux_num_cells(circuitmux_t *cmux);
 unsigned int circuitmux_num_circuits(circuitmux_t *cmux);
 unsigned int circuitmux_num_active_circuits(circuitmux_t *cmux);
 
+/* Debuging interface - slow. */
+int64_t circuitmux_count_queued_destroy_cells(const channel_t *chan,
+                                              const circuitmux_t *cmux);
+
 /* Channel interface */
-circuit_t * circuitmux_get_first_active_circuit(circuitmux_t *cmux);
+circuit_t * circuitmux_get_first_active_circuit(circuitmux_t *cmux,
+                                           cell_queue_t **destroy_queue_out);
 void circuitmux_notify_xmit_cells(circuitmux_t *cmux, circuit_t *circ,
                                   unsigned int n_cells);
+void circuitmux_notify_xmit_destroy(circuitmux_t *cmux);
 
 /* Circuit interface */
-void circuitmux_attach_circuit(circuitmux_t *cmux, circuit_t *circ,
-                               cell_direction_t direction);
-void circuitmux_detach_circuit(circuitmux_t *cmux, circuit_t *circ);
+MOCK_DECL(void, circuitmux_attach_circuit, (circuitmux_t *cmux,
+                                            circuit_t *circ,
+                                            cell_direction_t direction));
+MOCK_DECL(void, circuitmux_detach_circuit,
+          (circuitmux_t *cmux, circuit_t *circ));
 void circuitmux_clear_num_cells(circuitmux_t *cmux, circuit_t *circ);
 void circuitmux_set_num_cells(circuitmux_t *cmux, circuit_t *circ,
                               unsigned int n_cells);
+
+void circuitmux_append_destroy_cell(channel_t *chan,
+                                    circuitmux_t *cmux, circid_t circ_id,
+                                    uint8_t reason);
+void circuitmux_mark_destroyed_circids_usable(circuitmux_t *cmux,
+                                              channel_t *chan);
 
 #endif /* TOR_CIRCUITMUX_H */
 

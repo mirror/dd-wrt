@@ -32,6 +32,12 @@ EXTRA_DIST+= \
 	README						\
 	ReleaseNotes
 
+if COVERAGE_ENABLED
+TEST_CFLAGS=-fno-inline -fprofile-arcs -ftest-coverage
+else
+TEST_CFLAGS=
+endif
+
 #install-data-local:
 #	$(INSTALL) -m 755 -d $(LOCALSTATEDIR)/lib/tor
 
@@ -60,10 +66,18 @@ doxygen:
 test: all
 	./src/test/test
 
+# Note that test-network requires a copy of Chutney in $CHUTNEY_PATH.
+# Chutney can be cloned from https://git.torproject.org/chutney.git .
+test-network: all
+	./src/test/test-network.sh
+
+reset-gcov:
+	rm -f src/*/*.gcda
+
 # Avoid strlcpy.c, strlcat.c, aes.c, OpenBSD_malloc_Linux.c, sha256.c,
 # eventdns.[hc], tinytest*.[ch]
 check-spaces:
-	./contrib/checkSpace.pl -C                    \
+	./scripts/maint/checkSpace.pl -C              \
 		src/common/*.[ch]		      \
 		src/or/*.[ch]			      \
 		src/test/*.[ch]			      \
@@ -71,10 +85,10 @@ check-spaces:
 		src/tools/tor-fw-helper/*.[ch]
 
 check-docs:
-	./contrib/checkOptionDocs.pl
+	./scripts/maint/checkOptionDocs.pl
 
 check-logs:
-	./contrib/checkLogs.pl                        \
+	./scripts/maint/checkLogs.pl                  \
 		src/*/*.[ch] | sort -n
 
 version:
@@ -84,3 +98,5 @@ version:
 	   (cd "$(top_srcdir)" && git rev-parse --short=16 HEAD); \
 	fi
 
+mostlyclean-local:
+	rm -f src/*/*.gc{da,no}

@@ -339,7 +339,7 @@ static token_rule_t extrainfo_token_table[] = {
   END_OF_TABLE
 };
 
-/** List of tokens recognized in the body part of v2 and v3 networkstatus
+/** List of tokens recognized in the body part of v3 networkstatus
  * documents. */
 static token_rule_t rtrstatus_token_table[] = {
   T01("p",                   K_P,               CONCAT_ARGS, NO_OBJ ),
@@ -353,31 +353,6 @@ static token_rule_t rtrstatus_token_table[] = {
   END_OF_TABLE
 };
 
-/** List of tokens recognized in the header part of v2 networkstatus documents.
- */
-static token_rule_t netstatus_token_table[] = {
-  T1( "published",           K_PUBLISHED,       CONCAT_ARGS, NO_OBJ ),
-  T0N("opt",                 K_OPT,             CONCAT_ARGS, OBJ_OK ),
-  T1( "contact",             K_CONTACT,         CONCAT_ARGS, NO_OBJ ),
-  T1( "dir-signing-key",     K_DIR_SIGNING_KEY,  NO_ARGS,    NEED_KEY_1024 ),
-  T1( "fingerprint",         K_FINGERPRINT,     CONCAT_ARGS, NO_OBJ ),
-  T1_START("network-status-version", K_NETWORK_STATUS_VERSION,
-                                                    GE(1),   NO_OBJ ),
-  T1( "dir-source",          K_DIR_SOURCE,          GE(3),   NO_OBJ ),
-  T01("dir-options",         K_DIR_OPTIONS,         ARGS,    NO_OBJ ),
-  T01("client-versions",     K_CLIENT_VERSIONS, CONCAT_ARGS, NO_OBJ ),
-  T01("server-versions",     K_SERVER_VERSIONS, CONCAT_ARGS, NO_OBJ ),
-
-  END_OF_TABLE
-};
-
-/** List of tokens recognized in the footer of v1/v2 directory/networkstatus
- * footers. */
-static token_rule_t dir_footer_token_table[] = {
-  T1("directory-signature", K_DIRECTORY_SIGNATURE, EQ(1), NEED_OBJ ),
-  END_OF_TABLE
-};
-
 /** List of tokens common to V3 authority certificates and V3 consensuses. */
 #define CERTIFICATE_MEMBERS                                                  \
   T1("dir-key-certificate-version", K_DIR_KEY_CERTIFICATE_VERSION,           \
@@ -386,7 +361,7 @@ static token_rule_t dir_footer_token_table[] = {
   T1("dir-key-published",K_DIR_KEY_PUBLISHED,        CONCAT_ARGS, NO_OBJ),   \
   T1("dir-key-expires",  K_DIR_KEY_EXPIRES,          CONCAT_ARGS, NO_OBJ),   \
   T1("dir-signing-key",  K_DIR_SIGNING_KEY,          NO_ARGS,     NEED_KEY ),\
-  T01("dir-key-crosscert", K_DIR_KEY_CROSSCERT,       NO_ARGS,    NEED_OBJ ),\
+  T1("dir-key-crosscert", K_DIR_KEY_CROSSCERT,       NO_ARGS,     NEED_OBJ ),\
   T1("dir-key-certification", K_DIR_KEY_CERTIFICATION,                       \
                                                      NO_ARGS,     NEED_OBJ), \
   T01("dir-address",     K_DIR_ADDRESS,              GE(1),       NO_OBJ),
@@ -486,8 +461,7 @@ static token_rule_t networkstatus_consensus_token_table[] = {
   END_OF_TABLE
 };
 
-/** List of tokens recognized in the footer of v1/v2 directory/networkstatus
- * footers. */
+/** List of tokens recognized in the footer of v1 directory footers. */
 static token_rule_t networkstatus_vote_footer_token_table[] = {
   T01("directory-footer",    K_DIRECTORY_FOOTER,    NO_ARGS,   NO_OBJ ),
   T01("bandwidth-weights",   K_BW_WEIGHTS,          ARGS,      NO_OBJ ),
@@ -598,7 +572,7 @@ dump_desc(const char *desc, const char *type)
     char *content = tor_malloc_zero(filelen);
     tor_snprintf(content, filelen, "Unable to parse descriptor of type "
                  "%s:\n%s", type, desc);
-    write_str_to_file(debugfile, content, 0);
+    write_str_to_file(debugfile, content, 1);
     log_info(LD_DIR, "Unable to parse descriptor of type %s. See file "
              "unparseable-desc in data directory for details.", type);
     tor_free(content);
@@ -626,28 +600,6 @@ router_get_router_hash(const char *s, size_t s_len, char *digest)
 {
   return router_get_hash_impl(s, s_len, digest,
                               "router ","\nrouter-signature", '\n',
-                              DIGEST_SHA1);
-}
-
-/** Set <b>digest</b> to the SHA-1 digest of the hash of the running-routers
- * string in <b>s</b>. Return 0 on success, -1 on failure.
- */
-int
-router_get_runningrouters_hash(const char *s, char *digest)
-{
-  return router_get_hash_impl(s, strlen(s), digest,
-                              "network-status","\ndirectory-signature", '\n',
-                              DIGEST_SHA1);
-}
-
-/** Set <b>digest</b> to the SHA-1 digest of the hash of the network-status
- * string in <b>s</b>.  Return 0 on success, -1 on failure. */
-int
-router_get_networkstatus_v2_hash(const char *s, char *digest)
-{
-  return router_get_hash_impl(s, strlen(s), digest,
-                              "network-status-version","\ndirectory-signature",
-                              '\n',
                               DIGEST_SHA1);
 }
 
@@ -728,7 +680,7 @@ router_get_dirobj_signature(const char *digest,
 
 /** Helper: used to generate signatures for routers, directories and
  * network-status objects.  Given a digest in <b>digest</b> and a secret
- * <b>private_key</b>, generate an PKCS1-padded signature, BASE64-encode it,
+ * <b>private_key</b>, generate a PKCS1-padded signature, BASE64-encode it,
  * surround it with -----BEGIN/END----- pairs, and write it to the
  * <b>buf_len</b>-byte buffer at <b>buf</b>.  Return 0 on success, -1 on
  * failure.
@@ -751,6 +703,7 @@ router_append_dirobj_signature(char *buf, size_t buf_len, const char *digest,
     return -1;
   }
   memcpy(buf+s_len, sig, sig_len+1);
+  tor_free(sig);
   return 0;
 }
 
@@ -970,7 +923,7 @@ router_parse_list_from_string(const char **s, const char *eos,
 {
   routerinfo_t *router;
   extrainfo_t *extrainfo;
-  signed_descriptor_t *signed_desc;
+  signed_descriptor_t *signed_desc = NULL;
   void *elt;
   const char *end, *start;
   int have_extrainfo;
@@ -1027,6 +980,7 @@ router_parse_list_from_string(const char **s, const char *eos,
       continue;
     }
     if (saved_location != SAVED_NOWHERE) {
+      tor_assert(signed_desc);
       signed_desc->saved_location = saved_location;
       signed_desc->saved_offset = *s - start;
     }
@@ -1232,8 +1186,7 @@ router_parse_entry_from_string(const char *s, const char *end,
     log_warn(LD_DIR,"Router nickname is invalid");
     goto err;
   }
-  router->address = tor_strdup(tok->args[1]);
-  if (!tor_inet_aton(router->address, &in)) {
+  if (!tor_inet_aton(tok->args[1], &in)) {
     log_warn(LD_DIR,"Router address is not an IP address.");
     goto err;
   }
@@ -1728,7 +1681,6 @@ authority_cert_parse_from_string(const char *s, const char **end_of_string)
       log_debug(LD_DIR, "We already checked the signature on this "
                 "certificate; no need to do so again.");
       found = 1;
-      cert->is_cross_certified = old_cert->is_cross_certified;
     }
   }
   if (!found) {
@@ -1737,18 +1689,14 @@ authority_cert_parse_from_string(const char *s, const char **end_of_string)
       goto err;
     }
 
-    if ((tok = find_opt_by_keyword(tokens, K_DIR_KEY_CROSSCERT))) {
-      /* XXXX Once all authorities generate cross-certified certificates,
-       * make this field mandatory. */
-      if (check_signature_token(cert->cache_info.identity_digest,
-                                DIGEST_LEN,
-                                tok,
-                                cert->signing_key,
-                                CST_NO_CHECK_OBJTYPE,
-                                "key cross-certification")) {
-        goto err;
-      }
-      cert->is_cross_certified = 1;
+    tok = find_by_keyword(tokens, K_DIR_KEY_CROSSCERT);
+    if (check_signature_token(cert->cache_info.identity_digest,
+                              DIGEST_LEN,
+                              tok,
+                              cert->signing_key,
+                              CST_NO_CHECK_OBJTYPE,
+                              "key cross-certification")) {
+      goto err;
     }
   }
 
@@ -1948,8 +1896,6 @@ routerstatus_parse_entry_from_string(memarea_t *area,
         rs->is_named = 1;
       else if (!strcmp(tok->args[i], "Valid"))
         rs->is_valid = 1;
-      else if (!strcmp(tok->args[i], "V2Dir"))
-        rs->is_v2_dir = 1;
       else if (!strcmp(tok->args[i], "Guard"))
         rs->is_possible_guard = 1;
       else if (!strcmp(tok->args[i], "BadExit"))
@@ -2084,202 +2030,12 @@ routerstatus_parse_entry_from_string(memarea_t *area,
   return rs;
 }
 
-/** Helper to sort a smartlist of pointers to routerstatus_t */
-int
-compare_routerstatus_entries(const void **_a, const void **_b)
-{
-  const routerstatus_t *a = *_a, *b = *_b;
-  return fast_memcmp(a->identity_digest, b->identity_digest, DIGEST_LEN);
-}
-
 int
 compare_vote_routerstatus_entries(const void **_a, const void **_b)
 {
   const vote_routerstatus_t *a = *_a, *b = *_b;
   return fast_memcmp(a->status.identity_digest, b->status.identity_digest,
                      DIGEST_LEN);
-}
-
-/** Helper: used in call to _smartlist_uniq to clear out duplicate entries. */
-static void
-free_duplicate_routerstatus_entry_(void *e)
-{
-  log_warn(LD_DIR,
-           "Network-status has two entries for the same router. "
-           "Dropping one.");
-  routerstatus_free(e);
-}
-
-/** Given a v2 network-status object in <b>s</b>, try to
- * parse it and return the result.  Return NULL on failure.  Check the
- * signature of the network status, but do not (yet) check the signing key for
- * authority.
- */
-networkstatus_v2_t *
-networkstatus_v2_parse_from_string(const char *s)
-{
-  const char *eos, *s_dup = s;
-  smartlist_t *tokens = smartlist_new();
-  smartlist_t *footer_tokens = smartlist_new();
-  networkstatus_v2_t *ns = NULL;
-  char ns_digest[DIGEST_LEN];
-  char tmp_digest[DIGEST_LEN];
-  struct in_addr in;
-  directory_token_t *tok;
-  int i;
-  memarea_t *area = NULL;
-
-  if (router_get_networkstatus_v2_hash(s, ns_digest)) {
-    log_warn(LD_DIR, "Unable to compute digest of network-status");
-    goto err;
-  }
-
-  area = memarea_new();
-  eos = find_start_of_next_routerstatus(s);
-  if (tokenize_string(area, s, eos, tokens, netstatus_token_table,0)) {
-    log_warn(LD_DIR, "Error tokenizing network-status header.");
-    goto err;
-  }
-  ns = tor_malloc_zero(sizeof(networkstatus_v2_t));
-  memcpy(ns->networkstatus_digest, ns_digest, DIGEST_LEN);
-
-  tok = find_by_keyword(tokens, K_NETWORK_STATUS_VERSION);
-  tor_assert(tok->n_args >= 1);
-  if (strcmp(tok->args[0], "2")) {
-    log_warn(LD_BUG, "Got a non-v2 networkstatus. Version was "
-             "%s", escaped(tok->args[0]));
-    goto err;
-  }
-
-  tok = find_by_keyword(tokens, K_DIR_SOURCE);
-  tor_assert(tok->n_args >= 3);
-  ns->source_address = tor_strdup(tok->args[0]);
-  if (tor_inet_aton(tok->args[1], &in) == 0) {
-    log_warn(LD_DIR, "Error parsing network-status source address %s",
-             escaped(tok->args[1]));
-    goto err;
-  }
-  ns->source_addr = ntohl(in.s_addr);
-  ns->source_dirport =
-    (uint16_t) tor_parse_long(tok->args[2],10,0,65535,NULL,NULL);
-  if (ns->source_dirport == 0) {
-    log_warn(LD_DIR, "Directory source without dirport; skipping.");
-    goto err;
-  }
-
-  tok = find_by_keyword(tokens, K_FINGERPRINT);
-  tor_assert(tok->n_args);
-  if (base16_decode(ns->identity_digest, DIGEST_LEN, tok->args[0],
-                    strlen(tok->args[0]))) {
-    log_warn(LD_DIR, "Couldn't decode networkstatus fingerprint %s",
-             escaped(tok->args[0]));
-    goto err;
-  }
-
-  if ((tok = find_opt_by_keyword(tokens, K_CONTACT))) {
-    tor_assert(tok->n_args);
-    ns->contact = tor_strdup(tok->args[0]);
-  }
-
-  tok = find_by_keyword(tokens, K_DIR_SIGNING_KEY);
-  tor_assert(tok->key);
-  ns->signing_key = tok->key;
-  tok->key = NULL;
-
-  if (crypto_pk_get_digest(ns->signing_key, tmp_digest)<0) {
-    log_warn(LD_DIR, "Couldn't compute signing key digest");
-    goto err;
-  }
-  if (tor_memneq(tmp_digest, ns->identity_digest, DIGEST_LEN)) {
-    log_warn(LD_DIR,
-             "network-status fingerprint did not match dir-signing-key");
-    goto err;
-  }
-
-  if ((tok = find_opt_by_keyword(tokens, K_DIR_OPTIONS))) {
-    for (i=0; i < tok->n_args; ++i) {
-      if (!strcmp(tok->args[i], "Names"))
-        ns->binds_names = 1;
-      if (!strcmp(tok->args[i], "Versions"))
-        ns->recommends_versions = 1;
-      if (!strcmp(tok->args[i], "BadExits"))
-        ns->lists_bad_exits = 1;
-      if (!strcmp(tok->args[i], "BadDirectories"))
-        ns->lists_bad_directories = 1;
-    }
-  }
-
-  if (ns->recommends_versions) {
-    if (!(tok = find_opt_by_keyword(tokens, K_CLIENT_VERSIONS))) {
-      log_warn(LD_DIR, "Missing client-versions on versioning directory");
-      goto err;
-    }
-    ns->client_versions = tor_strdup(tok->args[0]);
-
-    if (!(tok = find_opt_by_keyword(tokens, K_SERVER_VERSIONS)) ||
-        tok->n_args<1) {
-      log_warn(LD_DIR, "Missing server-versions on versioning directory");
-      goto err;
-    }
-    ns->server_versions = tor_strdup(tok->args[0]);
-  }
-
-  tok = find_by_keyword(tokens, K_PUBLISHED);
-  tor_assert(tok->n_args == 1);
-  if (parse_iso_time(tok->args[0], &ns->published_on) < 0) {
-     goto err;
-  }
-
-  ns->entries = smartlist_new();
-  s = eos;
-  SMARTLIST_FOREACH(tokens, directory_token_t *, t, token_clear(t));
-  smartlist_clear(tokens);
-  memarea_clear(area);
-  while (!strcmpstart(s, "r ")) {
-    routerstatus_t *rs;
-    if ((rs = routerstatus_parse_entry_from_string(area, &s, tokens,
-                                                   NULL, NULL, 0, 0)))
-      smartlist_add(ns->entries, rs);
-  }
-  smartlist_sort(ns->entries, compare_routerstatus_entries);
-  smartlist_uniq(ns->entries, compare_routerstatus_entries,
-                 free_duplicate_routerstatus_entry_);
-
-  if (tokenize_string(area,s, NULL, footer_tokens, dir_footer_token_table,0)) {
-    log_warn(LD_DIR, "Error tokenizing network-status footer.");
-    goto err;
-  }
-  if (smartlist_len(footer_tokens) < 1) {
-    log_warn(LD_DIR, "Too few items in network-status footer.");
-    goto err;
-  }
-  tok = smartlist_get(footer_tokens, smartlist_len(footer_tokens)-1);
-  if (tok->tp != K_DIRECTORY_SIGNATURE) {
-    log_warn(LD_DIR,
-             "Expected network-status footer to end with a signature.");
-    goto err;
-  }
-
-  note_crypto_pk_op(VERIFY_DIR);
-  if (check_signature_token(ns_digest, DIGEST_LEN, tok, ns->signing_key, 0,
-                            "network-status") < 0)
-    goto err;
-
-  goto done;
- err:
-  dump_desc(s_dup, "v2 networkstatus");
-  networkstatus_v2_free(ns);
-  ns = NULL;
- done:
-  SMARTLIST_FOREACH(tokens, directory_token_t *, t, token_clear(t));
-  smartlist_free(tokens);
-  SMARTLIST_FOREACH(footer_tokens, directory_token_t *, t, token_clear(t));
-  smartlist_free(footer_tokens);
-  if (area) {
-    DUMP_AREA(area, "v2 networkstatus");
-    memarea_drop_all(area);
-  }
-  return ns;
 }
 
 /** Verify the bandwidth weights of a network status document */

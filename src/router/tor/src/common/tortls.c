@@ -48,9 +48,6 @@
 #include "compat_libevent.h"
 #endif
 
-#define CRYPTO_PRIVATE /* to import prototypes from crypto.h */
-#define TORTLS_PRIVATE
-
 #include "crypto.h"
 #include "tortls.h"
 #include "util.h"
@@ -152,6 +149,7 @@ typedef enum {
     TOR_TLS_ST_SENTCLOSE, TOR_TLS_ST_CLOSED, TOR_TLS_ST_RENEGOTIATE,
     TOR_TLS_ST_BUFFEREVENT
 } tor_tls_state_t;
+#define tor_tls_state_bitfield_t ENUM_BF(tor_tls_state_t)
 
 /** Holds a SSL object and its associated data.  Members are only
  * accessed from within tortls.c.
@@ -162,7 +160,7 @@ struct tor_tls_t {
   SSL *ssl; /**< An OpenSSL SSL object. */
   int socket; /**< The underlying file descriptor for this TLS connection. */
   char *address; /**< An address to log when describing this connection. */
-  ENUM_BF(tor_tls_state_t) state : 3; /**< The current SSL state,
+  tor_tls_state_bitfield_t state : 3; /**< The current SSL state,
                                        * depending on which operations
                                        * have completed successfully. */
   unsigned int isServer:1; /**< True iff this is a server-side connection */
@@ -822,24 +820,24 @@ tor_cert_new(X509 *x509_cert)
   tor_cert_t *cert;
   EVP_PKEY *pkey;
   RSA *rsa;
-  int length, length2;
-  unsigned char *cp;
+  int length;
+  unsigned char *buf = NULL;
 
   if (!x509_cert)
     return NULL;
 
-  length = i2d_X509(x509_cert, NULL);
+  length = i2d_X509(x509_cert, &buf);
   cert = tor_malloc_zero(sizeof(tor_cert_t));
-  if (length <= 0) {
+  if (length <= 0 || buf == NULL) {
     tor_free(cert);
     log_err(LD_CRYPTO, "Couldn't get length of encoded x509 certificate");
     X509_free(x509_cert);
     return NULL;
   }
   cert->encoded_len = (size_t) length;
-  cp = cert->encoded = tor_malloc(length);
-  length2 = i2d_X509(x509_cert, &cp);
-  tor_assert(length2 == length);
+  cert->encoded = tor_malloc(length);
+  memcpy(cert->encoded, buf, length);
+  OPENSSL_free(buf);
 
   cert->cert = x509_cert;
 
@@ -995,31 +993,6 @@ tor_tls_cert_get_key(tor_cert_t *cert)
   return result;
 }
 
-/** Return true iff <b>a</b> and <b>b</b> represent the same public key. */
-static int
-pkey_eq(EVP_PKEY *a, EVP_PKEY *b)
-{
-  /* We'd like to do this, but openssl 0.9.7 doesn't have it:
-     return EVP_PKEY_cmp(a,b) == 1;
-  */
-  unsigned char *a_enc=NULL, *b_enc=NULL, *a_ptr, *b_ptr;
-  int a_len1, b_len1, a_len2, b_len2, result;
-  a_len1 = i2d_PublicKey(a, NULL);
-  b_len1 = i2d_PublicKey(b, NULL);
-  if (a_len1 != b_len1)
-    return 0;
-  a_ptr = a_enc = tor_malloc(a_len1);
-  b_ptr = b_enc = tor_malloc(b_len1);
-  a_len2 = i2d_PublicKey(a, &a_ptr);
-  b_len2 = i2d_PublicKey(b, &b_ptr);
-  tor_assert(a_len2 == a_len1);
-  tor_assert(b_len2 == b_len1);
-  result = tor_memeq(a_enc, b_enc, a_len1);
-  tor_free(a_enc);
-  tor_free(b_enc);
-  return result;
-}
-
 /** Return true iff the other side of <b>tls</b> has authenticated to us, and
  * the key certified in <b>cert</b> is the same as the key they used to do it.
  */
@@ -1035,7 +1008,7 @@ tor_tls_cert_matches_key(const tor_tls_t *tls, const tor_cert_t *cert)
   link_key = X509_get_pubkey(peercert);
   cert_key = X509_get_pubkey(cert->cert);
 
-  result = link_key && cert_key && pkey_eq(cert_key, link_key);
+  result = link_key && cert_key && EVP_PKEY_cmp(cert_key, link_key) == 1;
 
   X509_free(peercert);
   if (link_key)
@@ -1272,10 +1245,11 @@ tor_tls_context_new(crypto_pk_t *identity, unsigned int key_lifetime,
     goto error;
 #endif
 
-  /* Tell OpenSSL to use SSL3 or TLS1 but not SSL2. */
+  /* Tell OpenSSL to use TLS 1.0 or later but not SSL2 or SSL3. */
   if (!(result->ctx = SSL_CTX_new(SSLv23_method())))
     goto error;
   SSL_CTX_set_options(result->ctx, SSL_OP_NO_SSLv2);
+  SSL_CTX_set_options(result->ctx, SSL_OP_NO_SSLv3);
 
   /* Prefer the server's ordering of ciphers: the client's ordering has
   * historically been chosen for fingerprinting resistance. */
@@ -1314,6 +1288,7 @@ tor_tls_context_new(crypto_pk_t *identity, unsigned int key_lifetime,
   }
 #endif
 
+  /* XXX This block is now obsolete. */
   if (
 #ifdef DISABLE_SSL3_HANDSHAKE
       1 ||
@@ -1345,10 +1320,12 @@ tor_tls_context_new(crypto_pk_t *identity, unsigned int key_lifetime,
     SSL_CTX_set_options(result->ctx,
                         SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION);
   }
+#ifndef OPENSSL_NO_COMP
   /* Don't actually allow compression; it uses ram and time, but the data
    * we transmit is all encrypted anyway. */
   if (result->ctx->comp_methods)
     result->ctx->comp_methods = NULL;
+#endif
 #ifdef SSL_MODE_RELEASE_BUFFERS
   SSL_CTX_set_mode(result->ctx, SSL_MODE_RELEASE_BUFFERS);
 #endif
@@ -1438,6 +1415,21 @@ tor_tls_context_new(crypto_pk_t *identity, unsigned int key_lifetime,
   return NULL;
 }
 
+/** Invoked when a TLS state changes: log the change at severity 'debug' */
+static void
+tor_tls_debug_state_callback(const SSL *ssl, int type, int val)
+{
+  log_debug(LD_HANDSHAKE, "SSL %p is now in state %s [type=%d,val=%d].",
+            ssl, SSL_state_string_long(ssl), type, val);
+}
+
+/* Return the name of the negotiated ciphersuite in use on <b>tls</b> */
+const char *
+tor_tls_get_ciphersuite_name(tor_tls_t *tls)
+{
+  return SSL_get_cipher(tls->ssl);
+}
+
 #ifdef V2_HANDSHAKE_SERVER
 
 /* Here's the old V2 cipher list we sent from 0.2.1.1-alpha up to
@@ -1478,6 +1470,43 @@ static uint16_t v2_cipher_list[] = {
 /** Have we removed the unrecognized ciphers from v2_cipher_list yet? */
 static int v2_cipher_list_pruned = 0;
 
+/** Return 0 if <b>m</b> does not support the cipher with ID <b>cipher</b>;
+ * return 1 if it does support it, or if we have no way to tell. */
+static int
+find_cipher_by_id(const SSL_METHOD *m, uint16_t cipher)
+{
+  const SSL_CIPHER *c;
+#ifdef HAVE_STRUCT_SSL_METHOD_ST_GET_CIPHER_BY_CHAR
+  if (m && m->get_cipher_by_char) {
+    unsigned char cipherid[3];
+    set_uint16(cipherid, htons(cipher));
+    cipherid[2] = 0; /* If ssl23_get_cipher_by_char finds no cipher starting
+                      * with a two-byte 'cipherid', it may look for a v2
+                      * cipher with the appropriate 3 bytes. */
+    c = m->get_cipher_by_char(cipherid);
+    if (c)
+      tor_assert((c->id & 0xffff) == cipher);
+    return c != NULL;
+  } else
+#endif
+  if (m && m->get_cipher && m->num_ciphers) {
+    /* It would seem that some of the "let's-clean-up-openssl" forks have
+     * removed the get_cipher_by_char function.  Okay, so now you get a
+     * quadratic search.
+     */
+    int i;
+    for (i = 0; i < m->num_ciphers(); ++i) {
+      c = m->get_cipher(i);
+      if (c && (c->id & 0xffff) == cipher) {
+        return 1;
+      }
+    }
+    return 0;
+  } else {
+    return 1; /* No way to search */
+  }
+}
+
 /** Remove from v2_cipher_list every cipher that we don't support, so that
  * comparing v2_cipher_list to a client's cipher list will give a sensible
  * result. */
@@ -1489,16 +1518,7 @@ prune_v2_cipher_list(void)
 
   inp = outp = v2_cipher_list;
   while (*inp) {
-    unsigned char cipherid[3];
-    const SSL_CIPHER *cipher;
-    /* Is there no better way to do this? */
-    set_uint16(cipherid, htons(*inp));
-    cipherid[2] = 0; /* If ssl23_get_cipher_by_char finds no cipher starting
-                      * with a two-byte 'cipherid', it may look for a v2
-                      * cipher with the appropriate 3 bytes. */
-    cipher = m->get_cipher_by_char(cipherid);
-    if (cipher) {
-      tor_assert((cipher->id & 0xffff) == *inp);
+    if (find_cipher_by_id(m, *inp)) {
       *outp++ = *inp++;
     } else {
       inp++;
@@ -1507,13 +1527,6 @@ prune_v2_cipher_list(void)
   *outp = 0;
 
   v2_cipher_list_pruned = 1;
-}
-
-/* Return the name of the negotiated ciphersuite in use on <b>tls</b> */
-const char *
-tor_tls_get_ciphersuite_name(tor_tls_t *tls)
-{
-  return SSL_get_cipher(tls->ssl);
 }
 
 /** Examine the client cipher list in <b>ssl</b>, and determine what kind of
@@ -1614,56 +1627,6 @@ tor_tls_client_is_using_v2_ciphers(const SSL *ssl)
   return tor_tls_classify_client_ciphers(ssl, session->ciphers) >= CIPHERS_V2;
 }
 
-#if OPENSSL_VERSION_NUMBER >= OPENSSL_V_SERIES(1,0,0)
-/** Callback to get invoked on a server after we've read the list of ciphers
- * the client supports, but before we pick our own ciphersuite.
- *
- * We can't abuse an info_cb for this, since by the time one of the
- * client_hello info_cbs is called, we've already picked which ciphersuite to
- * use.
- *
- * Technically, this function is an abuse of this callback, since the point of
- * a session_secret_cb is to try to set up and/or verify a shared-secret for
- * authentication on the fly.  But as long as we return 0, we won't actually be
- * setting up a shared secret, and all will be fine.
- */
-static int
-tor_tls_session_secret_cb(SSL *ssl, void *secret, int *secret_len,
-                          STACK_OF(SSL_CIPHER) *peer_ciphers,
-                          SSL_CIPHER **cipher, void *arg)
-{
-  (void) secret;
-  (void) secret_len;
-  (void) peer_ciphers;
-  (void) cipher;
-  (void) arg;
-
-  if (tor_tls_classify_client_ciphers(ssl, peer_ciphers) ==
-       CIPHERS_UNRESTRICTED) {
-    SSL_set_cipher_list(ssl, UNRESTRICTED_SERVER_CIPHER_LIST);
-  }
-
-  SSL_set_session_secret_cb(ssl, NULL, NULL);
-
-  return 0;
-}
-static void
-tor_tls_setup_session_secret_cb(tor_tls_t *tls)
-{
-  SSL_set_session_secret_cb(tls->ssl, tor_tls_session_secret_cb, NULL);
-}
-#else
-#define tor_tls_setup_session_secret_cb(tls) STMT_NIL
-#endif
-
-/** Invoked when a TLS state changes: log the change at severity 'debug' */
-static void
-tor_tls_debug_state_callback(const SSL *ssl, int type, int val)
-{
-  log_debug(LD_HANDSHAKE, "SSL %p is now in state %s [type=%d,val=%d].",
-            ssl, SSL_state_string_long(ssl), type, val);
-}
-
 /** Invoked when we're accepting a connection on <b>ssl</b>, and the connection
  * changes state. We use this:
  * <ul><li>To alter the state of the handshake partway through, so we
@@ -1721,6 +1684,48 @@ tor_tls_server_info_callback(const SSL *ssl, int type, int val)
     }
   }
 }
+#endif
+
+#if OPENSSL_VERSION_NUMBER >= OPENSSL_V_SERIES(1,0,0)
+/** Callback to get invoked on a server after we've read the list of ciphers
+ * the client supports, but before we pick our own ciphersuite.
+ *
+ * We can't abuse an info_cb for this, since by the time one of the
+ * client_hello info_cbs is called, we've already picked which ciphersuite to
+ * use.
+ *
+ * Technically, this function is an abuse of this callback, since the point of
+ * a session_secret_cb is to try to set up and/or verify a shared-secret for
+ * authentication on the fly.  But as long as we return 0, we won't actually be
+ * setting up a shared secret, and all will be fine.
+ */
+static int
+tor_tls_session_secret_cb(SSL *ssl, void *secret, int *secret_len,
+                          STACK_OF(SSL_CIPHER) *peer_ciphers,
+                          SSL_CIPHER **cipher, void *arg)
+{
+  (void) secret;
+  (void) secret_len;
+  (void) peer_ciphers;
+  (void) cipher;
+  (void) arg;
+
+  if (tor_tls_classify_client_ciphers(ssl, peer_ciphers) ==
+       CIPHERS_UNRESTRICTED) {
+    SSL_set_cipher_list(ssl, UNRESTRICTED_SERVER_CIPHER_LIST);
+  }
+
+  SSL_set_session_secret_cb(ssl, NULL, NULL);
+
+  return 0;
+}
+static void
+tor_tls_setup_session_secret_cb(tor_tls_t *tls)
+{
+  SSL_set_session_secret_cb(tls->ssl, tor_tls_session_secret_cb, NULL);
+}
+#else
+#define tor_tls_setup_session_secret_cb(tls) STMT_NIL
 #endif
 
 /** Explain which ciphers we're missing. */
@@ -2362,6 +2367,7 @@ log_cert_lifetime(int severity, const X509 *cert, const char *problem)
   char mytime[33];
   time_t now = time(NULL);
   struct tm tm;
+  size_t n;
 
   if (problem)
     tor_log(severity, LD_GENERAL,
@@ -2387,11 +2393,17 @@ log_cert_lifetime(int severity, const X509 *cert, const char *problem)
   BIO_get_mem_ptr(bio, &buf);
   s2 = tor_strndup(buf->data, buf->length);
 
-  strftime(mytime, 32, "%b %d %H:%M:%S %Y UTC", tor_gmtime_r(&now, &tm));
-
-  tor_log(severity, LD_GENERAL,
-      "(certificate lifetime runs from %s through %s. Your time is %s.)",
-      s1,s2,mytime);
+  n = strftime(mytime, 32, "%b %d %H:%M:%S %Y UTC", tor_gmtime_r(&now, &tm));
+  if (n > 0) {
+    tor_log(severity, LD_GENERAL,
+        "(certificate lifetime runs from %s through %s. Your time is %s.)",
+        s1,s2,mytime);
+  } else {
+    tor_log(severity, LD_GENERAL,
+        "(certificate lifetime runs from %s through %s. "
+        "Couldn't get your time.)",
+        s1, s2);
+  }
 
  end:
   /* Not expected to get invoked */
@@ -2606,8 +2618,8 @@ tor_tls_get_n_raw_bytes(tor_tls_t *tls, size_t *n_read, size_t *n_written)
 
 /** Return a ratio of the bytes that TLS has sent to the bytes that we've told
  * it to send. Used to track whether our TLS records are getting too tiny. */
-double
-tls_get_write_overhead_ratio(void)
+MOCK_IMPL(double,
+tls_get_write_overhead_ratio,(void))
 {
   if (total_bytes_written_over_tls == 0)
     return 1.0;
