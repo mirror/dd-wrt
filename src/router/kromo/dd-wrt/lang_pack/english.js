@@ -1265,6 +1265,7 @@ management.ipv6_legend="IPv6 Support";
 management.ipv6_srv="IPv6";
 management.ipv6_typ="IPv6 Type";
 management.ipv6_pf_len="Prefix Length";
+management.ipv6_rad_enable="Radvd";
 management.ipv6_rad="Radvd custom";
 management.ipv6_radconf="Radvd config";
 management.ipv6_dns="Static DNS";
