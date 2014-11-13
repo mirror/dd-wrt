@@ -29,7 +29,7 @@ struct dlna_share *getdlnashares(void)
 	json_error_t error;
 	const char *key;
 	json_t *iterator, *entry, *value;
-	char mp[64],sd[64], types;
+	char mp[64], sd[64], types;
 
 	// first create dummy entry
 	list = getdlnashare("", "", 0);

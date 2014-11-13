@@ -1249,7 +1249,7 @@ int internal_getRouterBrand()
 
 	if (boardnum == 32 && nvram_match("boardtype", "0x0665")
 	    && nvram_match("boardrev", "0x1301")) {
-		if(nvram_match("board_id", "U12H270T10_NETGEAR")) {
+		if (nvram_match("board_id", "U12H270T10_NETGEAR")) {
 			setRouter("Netgear R6700");
 		} else {
 			setRouter("Netgear R7000");
@@ -3243,21 +3243,22 @@ int internal_getRouterBrand()
 		return ROUTER_LINKSYS_EA6500;
 	}
 
-	if (nvram_match("boardtype","0x0617") &&
-	   nvram_match("boardrev","0x1103"))
-	 {
-	    setRouter("Ubiquiti UnifiAP AC");
-	    return ROUTER_UBNT_UNIFIAC;
-	 }
-	
-	
+	if (nvram_match("boardtype", "0x0617") && nvram_match("boardrev", "0x1103")) {
+		setRouter("Ubiquiti UnifiAP AC");
+#ifdef HAVE_REGISTER
+		return ROUTER_UBNT_UNIFIAC;
+#else
+		sys_reboot();
+		exit(-1);
+#endif
+	}
+
 	if (boardnum == 24 && nvram_match("boardtype", "0x0617")
 	    && nvram_match("boardrev", "0x1102")
 	    && nvram_match("gpio7", "usbport1")) {
 		setRouter("Dlink-DIR865L");
 		return ROUTER_DLINK_DIR865;
 	}
-
 
 	if (boardnum == 00 && nvram_match("boardtype", "0xf52e")
 	    && nvram_match("boardrev", "0x1204")) {
@@ -3689,7 +3690,7 @@ static char *getUEnvExt(char *name)
 	}
 	if (!strcmp(name, "DEF-p_wireless_ath0_11bg-wpapsk")) {
 		static char passphrase[25];
-		strncpy(passphrase, (char*)&data.passphrase[1],(data.passphrase[0]&0xff));
+		strncpy(passphrase, (char *)&data.passphrase[1], (data.passphrase[0] & 0xff));
 		return passphrase;
 	}
 	if (!strcmp(name, "DEF-p_wireless_ath0_11bg-crypto")) {
@@ -3704,8 +3705,8 @@ static char *getUEnvExt(char *name)
 	}
 	if (!strcmp(name, "pincode")) {
 		static char pincode[9];
-		memcpy(pincode, data.wpspin,8);
-		pincode[8]=0;
+		memcpy(pincode, data.wpspin, 8);
+		pincode[8] = 0;
 		return pincode;
 	}
 
@@ -3717,7 +3718,6 @@ static char *getUEnvExt(char *name)
 #if defined(HAVE_BUFFALO) || defined(HAVE_BUFFALO_BL_DEFAULTS) || defined(HAVE_WMBR_G300NH) || defined(HAVE_WZRG450)
 void *getUEnv(char *name)
 {
-
 
 #ifdef HAVE_WZRG300NH
 #define UOFFSET 0x40000
@@ -3793,7 +3793,7 @@ char *get_wan_ipaddr(void)
 		wan_ipaddr = nvram_safe_get("wan_ipaddr");
 	}
 
-	if (strlen(wan_ipaddr)==0)
+	if (strlen(wan_ipaddr) == 0)
 		wan_ipaddr = "0.0.0.0";
 
 	return wan_ipaddr;
