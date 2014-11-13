@@ -2067,6 +2067,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"ipv6_pf_len", "64", 0},
 	{"ipv6_mtu", "", 0},
 	{"ipv6_tun_client_addr_pref", "64", 0},
+	{"radvd_enable", "1", 0},
 	{"radvd_custom", "0", 0},
 	{"radvd_conf", "", 0},
 	{"dhcp6c_custom", "0", 0},
