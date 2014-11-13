@@ -2,6 +2,7 @@
  "ipv6_typ" "ipv6 service type" "NULL" "FALSE" "0"
  "ipv6_pf_len" "ipv6 prefix length" "NULL" "FALSE" "0"
  "ipv6_mtu" "ipv6 mtu" "NULL" "FALSE" "0"
+ "radvd_enable" "radvd support" "CHOICE" "2" "0" "1"  "FALSE" "0"
  "radvd_custom" "enable custom" "CHOICE" "2" "0" "1"  "FALSE" "0"
  "radvd_conf" "custom config"  "NULL"  "TRUE" "0"
  "dhcp6c_custom" "enable custom" "CHOICE" "2" "0" "1"  "FALSE" "0"
