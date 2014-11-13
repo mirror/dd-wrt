@@ -10,6 +10,7 @@
 #define RENDSERVICE_PRIVATE
 
 #include "or.h"
+#include "circpathbias.h"
 #include "circuitbuild.h"
 #include "circuitlist.h"
 #include "circuituse.h"
@@ -81,7 +82,7 @@ typedef struct rend_service_port_config_t {
 #define MAX_INTRO_CIRCS_PER_PERIOD 10
 /** How many times will a hidden service operator attempt to connect to
  * a requested rendezvous point before giving up? */
-#define MAX_REND_FAILURES 30
+#define MAX_REND_FAILURES 8
 /** How many seconds should we spend trying to connect to a requested
  * rendezvous point before giving up? */
 #define MAX_REND_TIMEOUT 30
@@ -543,7 +544,7 @@ rend_config_services(const or_options_t *options, int validate_only)
     /* XXXX it would be nicer if we had a nicer abstraction to use here,
      * so we could just iterate over the list of services to close, but
      * once again, this isn't critical-path code. */
-    for (circ = circuit_get_global_list_(); circ; circ = circ->next) {
+    TOR_LIST_FOREACH(circ, circuit_get_global_list(), head) {
       if (!circ->marked_for_close &&
           circ->state == CIRCUIT_STATE_OPEN &&
           (circ->purpose == CIRCUIT_PURPOSE_S_ESTABLISH_INTRO ||
@@ -653,6 +654,35 @@ rend_service_load_all_keys(void)
   } SMARTLIST_FOREACH_END(s);
 
   return 0;
+}
+
+/** Add to <b>lst</b> every filename used by <b>s</b>. */
+static void
+rend_service_add_filenames_to_list(smartlist_t *lst, const rend_service_t *s)
+{
+  tor_assert(lst);
+  tor_assert(s);
+  smartlist_add_asprintf(lst, "%s"PATH_SEPARATOR"private_key",
+                         s->directory);
+  smartlist_add_asprintf(lst, "%s"PATH_SEPARATOR"hostname",
+                         s->directory);
+  smartlist_add_asprintf(lst, "%s"PATH_SEPARATOR"client_keys",
+                         s->directory);
+}
+
+/** Add to <b>open_lst</b> every filename used by a configured hidden service,
+ * and to <b>stat_lst</b> every directory used by a configured hidden
+ * service */
+void
+rend_services_add_filenames_to_lists(smartlist_t *open_lst,
+                                     smartlist_t *stat_lst)
+{
+  if (!rend_service_list)
+    return;
+  SMARTLIST_FOREACH_BEGIN(rend_service_list, rend_service_t *, s) {
+    rend_service_add_filenames_to_list(open_lst, s);
+    smartlist_add(stat_lst, tor_strdup(s->directory));
+  } SMARTLIST_FOREACH_END(s);
 }
 
 /** Load and/or generate private keys for the hidden service <b>s</b>,
@@ -1208,7 +1238,7 @@ rend_service_introduce(origin_circuit_t *circuit, const uint8_t *request,
   /* check for replay of PK-encrypted portion. */
   replay = replaycache_add_test_and_elapsed(
     intro_point->accepted_intro_rsa_parts,
-    parsed_req->ciphertext, (int)parsed_req->ciphertext_len,
+    parsed_req->ciphertext, parsed_req->ciphertext_len,
     &elapsed);
 
   if (replay) {
@@ -1500,27 +1530,6 @@ find_rp_for_intro(const rend_intro_cell_t *intro,
   if (rp && need_free_out) *need_free_out = need_free;
 
   return rp;
-}
-
-/** Remove unnecessary parts from a rend_intro_cell_t - the ciphertext if
- * already decrypted, the plaintext too if already parsed
- */
-
-void
-rend_service_compact_intro(rend_intro_cell_t *request)
-{
-  if (!request) return;
-
-  if ((request->plaintext && request->plaintext_len > 0) ||
-       request->parsed) {
-    tor_free(request->ciphertext);
-    request->ciphertext_len = 0;
-  }
-
-  if (request->parsed) {
-    tor_free(request->plaintext);
-    request->plaintext_len = 0;
-  }
 }
 
 /** Free a parsed INTRODUCE1 or INTRODUCE2 cell that was allocated by
@@ -2061,7 +2070,7 @@ rend_service_decrypt_intro(
   if (err_msg_out && !err_msg) {
     tor_asprintf(&err_msg,
                  "unknown INTRODUCE%d error decrypting encrypted part",
-                 (int)(intro->type));
+                 intro ? (int)(intro->type) : -1);
   }
   if (status >= 0) status = -1;
 
@@ -2167,7 +2176,7 @@ rend_service_parse_intro_plaintext(
   if (err_msg_out && !err_msg) {
     tor_asprintf(&err_msg,
                  "unknown INTRODUCE%d error parsing encrypted part",
-                 (int)(intro->type));
+                 intro ? (int)(intro->type) : -1);
   }
   if (status >= 0) status = -1;
 
@@ -2376,7 +2385,7 @@ count_established_intro_points(const char *query)
 {
   int num_ipos = 0;
   circuit_t *circ;
-  for (circ = circuit_get_global_list_(); circ; circ = circ->next) {
+  TOR_LIST_FOREACH(circ, circuit_get_global_list(), head) {
     if (!circ->marked_for_close &&
         circ->state == CIRCUIT_STATE_OPEN &&
         (circ->purpose == CIRCUIT_PURPOSE_S_ESTABLISH_INTRO ||

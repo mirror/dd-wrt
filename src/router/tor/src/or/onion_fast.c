@@ -22,7 +22,7 @@ fast_handshake_state_free(fast_handshake_state_t *victim)
   tor_free(victim);
 }
 
-/** Create the state needed to perform a CREATE_FAST hasnshake. Return 0
+/** Create the state needed to perform a CREATE_FAST handshake. Return 0
  * on success, -1 on failure. */
 int
 fast_onionskin_create(fast_handshake_state_t **handshake_state_out,
@@ -104,6 +104,7 @@ fast_client_handshake(const fast_handshake_state_t *handshake_state,
   out_len = key_out_len+DIGEST_LEN;
   out = tor_malloc(out_len);
   if (crypto_expand_key_material_TAP(tmp, sizeof(tmp), out, out_len)) {
+    log_warn(LD_CIRC, "Failed to expand key material");
     goto done;
   }
   if (tor_memneq(out, handshake_reply_out+DIGEST_LEN, DIGEST_LEN)) {

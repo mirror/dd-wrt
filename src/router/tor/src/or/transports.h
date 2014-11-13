@@ -25,6 +25,9 @@ typedef struct transport_t {
   /** Boolean: We are re-parsing our transport list, and we are going to remove
    * this one if we don't find it in the list of configured transports. */
   unsigned marked_for_removal : 1;
+  /** Arguments for this transport that must be written to the
+      extra-info descriptor. */
+  char *extra_info_args;
 } transport_t;
 
 void mark_transport_list(void);
@@ -55,6 +58,10 @@ void pt_prepare_proxy_list_for_config_read(void);
 void sweep_proxy_list(void);
 
 smartlist_t *get_transport_proxy_ports(void);
+char *pt_stringify_socks_args(const smartlist_t *socks_args);
+
+char *pt_get_socks_args_for_proxy_addrport(const tor_addr_t *addr,
+                                            uint16_t port);
 
 #ifdef PT_PRIVATE
 /** State of the managed proxy configuration protocol. */
@@ -90,7 +97,7 @@ typedef struct {
    * this flag to signify that this proxy might need to be restarted
    * so that it can listen for other transports according to the new
    * torrc. */
-  unsigned int got_hup : 1;
+  unsigned int was_around_before_config_read : 1;
 
   /* transports to-be-launched by this proxy */
   smartlist_t *transports_to_launch;
@@ -100,12 +107,21 @@ typedef struct {
   smartlist_t *transports;
 } managed_proxy_t;
 
-int parse_cmethod_line(const char *line, managed_proxy_t *mp);
-int parse_smethod_line(const char *line, managed_proxy_t *mp);
+STATIC int parse_cmethod_line(const char *line, managed_proxy_t *mp);
+STATIC int parse_smethod_line(const char *line, managed_proxy_t *mp);
 
-int parse_version(const char *line, managed_proxy_t *mp);
-void parse_env_error(const char *line);
-void handle_proxy_line(const char *line, managed_proxy_t *mp);
+STATIC int parse_version(const char *line, managed_proxy_t *mp);
+STATIC void parse_env_error(const char *line);
+STATIC void handle_proxy_line(const char *line, managed_proxy_t *mp);
+STATIC char *get_transport_options_for_server_proxy(const managed_proxy_t *mp);
+
+STATIC void managed_proxy_destroy(managed_proxy_t *mp,
+                                  int also_terminate_process);
+
+STATIC managed_proxy_t *managed_proxy_create(const smartlist_t *transport_list,
+                                             char **proxy_argv, int is_server);
+
+STATIC int configure_proxy(managed_proxy_t *mp);
 
 #endif
 

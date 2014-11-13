@@ -26,6 +26,9 @@ typedef enum config_type_t {
   CONFIG_TYPE_ISOTIME,      /**< An ISO-formatted time relative to UTC. */
   CONFIG_TYPE_CSV,          /**< A list of strings, separated by commas and
                               * optional whitespace. */
+  CONFIG_TYPE_CSV_INTERVAL, /**< A list of strings, separated by commas and
+                              * optional whitespace, representing intervals in
+                              * seconds, with optional units */
   CONFIG_TYPE_LINELIST,     /**< Uninterpreted config lines */
   CONFIG_TYPE_LINELIST_S,   /**< Uninterpreted, context-sensitive config lines,
                              * mixed with other keywords. */
@@ -68,12 +71,12 @@ typedef struct config_var_description_t {
 /** Type of a callback to validate whether a given configuration is
  * well-formed and consistent. See options_trial_assign() for documentation
  * of arguments. */
-typedef int (*validate_fn_t)(void*,void*,int,char**);
+typedef int (*validate_fn_t)(void*,void*,void*,int,char**);
 
 /** Information on the keys, value types, key-to-struct-member mappings,
  * variable descriptions, validation functions, and abbreviations for a
  * configuration or storage format. */
-typedef struct {
+typedef struct config_format_t {
   size_t size; /**< Size of the struct that everything gets parsed into. */
   uint32_t magic; /**< Required 'magic value' to make sure we have a struct
                    * of the right type. */
@@ -100,6 +103,8 @@ void *config_new(const config_format_t *fmt);
 void config_line_append(config_line_t **lst,
                         const char *key, const char *val);
 config_line_t *config_lines_dup(const config_line_t *inp);
+const config_line_t *config_line_find(const config_line_t *lines,
+                                      const char *key);
 void config_free(const config_format_t *fmt, void *options);
 int config_lines_eq(config_line_t *a, config_line_t *b);
 int config_count_key(const config_line_t *a, const char *key);

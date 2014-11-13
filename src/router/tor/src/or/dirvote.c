@@ -60,7 +60,7 @@ static char *make_consensus_method_list(int low, int high, const char *sep);
 /** Return a new string containing the string representation of the vote in
  * <b>v3_ns</b>, signed with our v3 signing key <b>private_signing_key</b>.
  * For v3 authorities. */
-char *
+STATIC char *
 format_networkstatus_vote(crypto_pk_t *private_signing_key,
                           networkstatus_t *v3_ns)
 {
@@ -335,6 +335,9 @@ static int
 compare_vote_rs(const vote_routerstatus_t *a, const vote_routerstatus_t *b)
 {
   int r;
+  tor_assert(a);
+  tor_assert(b);
+
   if ((r = fast_memcmp(a->status.identity_digest, b->status.identity_digest,
                   DIGEST_LEN)))
     return r;
@@ -432,6 +435,7 @@ compute_routerstatus_consensus(smartlist_t *votes, int consensus_method,
     const tor_addr_port_t *most_alt_orport = NULL;
 
     SMARTLIST_FOREACH_BEGIN(votes, vote_routerstatus_t *, rs) {
+      tor_assert(rs);
       if (compare_vote_rs(most, rs) == 0 &&
           !tor_addr_is_null(&rs->status.ipv6_addr)
           && rs->status.ipv6_orport) {
@@ -587,7 +591,7 @@ compute_consensus_versions_list(smartlist_t *lst, int n_versioning)
 /** Helper: given a list of valid networkstatus_t, return a new string
  * containing the contents of the consensus network parameter set.
  */
-/* private */ char *
+STATIC char *
 dirvote_compute_params(smartlist_t *votes, int method, int total_authorities)
 {
   int i;
@@ -2533,12 +2537,13 @@ dirvote_get_preferred_voting_intervals(vote_timing_t *timing_out)
   timing_out->dist_delay = options->V3AuthDistDelay;
 }
 
-/** Return the start of the next interval of size <b>interval</b> (in seconds)
- * after <b>now</b>.  Midnight always starts a fresh interval, and if the last
- * interval of a day would be truncated to less than half its size, it is
- * rolled into the previous interval. */
+/** Return the start of the next interval of size <b>interval</b> (in
+ * seconds) after <b>now</b>, plus <b>offset</b>. Midnight always
+ * starts a fresh interval, and if the last interval of a day would be
+ * truncated to less than half its size, it is rolled into the
+ * previous interval. */
 time_t
-dirvote_get_start_of_next_interval(time_t now, int interval)
+dirvote_get_start_of_next_interval(time_t now, int interval, int offset)
 {
   struct tm tm;
   time_t midnight_today=0;
@@ -2565,6 +2570,10 @@ dirvote_get_start_of_next_interval(time_t now, int interval)
    * skip over to the next day. */
   if (next + interval/2 > midnight_tomorrow)
     next = midnight_tomorrow;
+
+  next += offset;
+  if (next - interval > now)
+    next -= interval;
 
   return next;
 }
@@ -2629,8 +2638,10 @@ dirvote_recalculate_timing(const or_options_t *options, time_t now)
     vote_delay = dist_delay = interval / 4;
 
   start = voting_schedule.interval_starts =
-    dirvote_get_start_of_next_interval(now,interval);
-  end = dirvote_get_start_of_next_interval(start+1, interval);
+    dirvote_get_start_of_next_interval(now,interval,
+                                      options->TestingV3AuthVotingStartOffset);
+  end = dirvote_get_start_of_next_interval(start+1, interval,
+                                      options->TestingV3AuthVotingStartOffset);
 
   tor_assert(end > start);
 
@@ -3136,7 +3147,7 @@ dirvote_compute_consensuses(void)
     });
 
   votefile = get_datadir_fname("v3-status-votes");
-  write_chunks_to_file(votefile, votestrings, 0);
+  write_chunks_to_file(votefile, votestrings, 0, 0);
   tor_free(votefile);
   SMARTLIST_FOREACH(votestrings, sized_chunk_t *, c, tor_free(c));
   smartlist_free(votestrings);
@@ -3581,6 +3592,12 @@ dirvote_create_microdescriptor(const routerinfo_t *ri, int consensus_method)
     tor_free(p6);
   }
 
+  if (consensus_method >= MIN_METHOD_FOR_ID_HASH_IN_MD) {
+    char idbuf[BASE64_DIGEST_LEN+1];
+    digest_to_base64(idbuf, ri->cache_info.identity_digest);
+    smartlist_add_asprintf(chunks, "id rsa1024 %s\n", idbuf);
+  }
+
   output = smartlist_join_strings(chunks, "", 0, NULL);
 
   {
@@ -3650,7 +3667,8 @@ static const struct consensus_method_range_t {
   {MIN_METHOD_FOR_MICRODESC, MIN_METHOD_FOR_A_LINES - 1},
   {MIN_METHOD_FOR_A_LINES, MIN_METHOD_FOR_P6_LINES - 1},
   {MIN_METHOD_FOR_P6_LINES, MIN_METHOD_FOR_NTOR_KEY - 1},
-  {MIN_METHOD_FOR_NTOR_KEY, MAX_SUPPORTED_CONSENSUS_METHOD},
+  {MIN_METHOD_FOR_NTOR_KEY, MIN_METHOD_FOR_ID_HASH_IN_MD - 1},
+  {MIN_METHOD_FOR_ID_HASH_IN_MD,  MAX_SUPPORTED_CONSENSUS_METHOD},
   {-1, -1}
 };
 

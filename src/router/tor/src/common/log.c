@@ -36,6 +36,10 @@
 #include "torlog.h"
 #include "container.h"
 
+/** Given a severity, yields an index into log_severity_list_t.masks to use
+ * for that severity. */
+#define SEVERITY_MASK_IDX(sev) ((sev) - LOG_ERR)
+
 /** @{ */
 /** The string we stick at the end of a log message when it is too long,
  * and its length. */
@@ -83,12 +87,12 @@ should_log_function_name(log_domain_mask_t domain, int severity)
     case LOG_DEBUG:
     case LOG_INFO:
       /* All debugging messages occur in interesting places. */
-      return 1;
+      return (domain & LD_NOFUNCNAME) == 0;
     case LOG_NOTICE:
     case LOG_WARN:
     case LOG_ERR:
       /* We care about places where bugs occur. */
-      return (domain == LD_BUG);
+      return (domain & (LD_BUG|LD_NOFUNCNAME)) == LD_BUG;
     default:
       /* Call assert, not tor_assert, since tor_assert calls log on failure. */
       assert(0); return 0;
@@ -143,9 +147,6 @@ static INLINE char *format_msg(char *buf, size_t buf_len,
            const char *suffix,
            const char *format, va_list ap, size_t *msg_len_out)
   CHECK_PRINTF(7,0);
-static void logv(int severity, log_domain_mask_t domain, const char *funcname,
-                 const char *suffix, const char *format, va_list ap)
-  CHECK_PRINTF(5,0);
 
 /** Name of the application: used to generate the message we write at the
  * start of each new log. */
@@ -332,9 +333,9 @@ format_msg(char *buf, size_t buf_len,
  * <b>severity</b>.  If provided, <b>funcname</b> is prepended to the
  * message.  The actual message is derived as from tor_snprintf(format,ap).
  */
-static void
-logv(int severity, log_domain_mask_t domain, const char *funcname,
-     const char *suffix, const char *format, va_list ap)
+MOCK_IMPL(STATIC void,
+logv,(int severity, log_domain_mask_t domain, const char *funcname,
+     const char *suffix, const char *format, va_list ap))
 {
   char buf[10024];
   size_t msg_len = 0;
@@ -437,6 +438,149 @@ tor_log(int severity, log_domain_mask_t domain, const char *format, ...)
   va_start(ap,format);
   logv(severity, domain, NULL, NULL, format, ap);
   va_end(ap);
+}
+
+/** Maximum number of fds that will get notifications if we crash */
+#define MAX_SIGSAFE_FDS 8
+/** Array of fds to log crash-style warnings to. */
+static int sigsafe_log_fds[MAX_SIGSAFE_FDS] = { STDERR_FILENO };
+/** The number of elements used in sigsafe_log_fds */
+static int n_sigsafe_log_fds = 1;
+
+/** Write <b>s</b> to each element of sigsafe_log_fds. Return 0 on success, -1
+ * on failure. */
+static int
+tor_log_err_sigsafe_write(const char *s)
+{
+  int i;
+  ssize_t r;
+  size_t len = strlen(s);
+  int err = 0;
+  for (i=0; i < n_sigsafe_log_fds; ++i) {
+    r = write(sigsafe_log_fds[i], s, len);
+    err += (r != (ssize_t)len);
+  }
+  return err ? -1 : 0;
+}
+
+/** Given a list of string arguments ending with a NULL, writes them
+ * to our logs and to stderr (if possible).  This function is safe to call
+ * from within a signal handler. */
+void
+tor_log_err_sigsafe(const char *m, ...)
+{
+  va_list ap;
+  const char *x;
+  char timebuf[33];
+  time_t now = time(NULL);
+
+  if (!m)
+    return;
+  if (log_time_granularity >= 2000) {
+    int g = log_time_granularity / 1000;
+    now -= now % g;
+  }
+  timebuf[0] = now < 0 ? '-' : ' ';
+  if (now < 0) now = -now;
+  timebuf[1] = '\0';
+  format_dec_number_sigsafe(now, timebuf+1, sizeof(timebuf)-1);
+  tor_log_err_sigsafe_write("\n=========================================="
+                             "================== T=");
+  tor_log_err_sigsafe_write(timebuf);
+  tor_log_err_sigsafe_write("\n");
+  tor_log_err_sigsafe_write(m);
+  va_start(ap, m);
+  while ((x = va_arg(ap, const char*))) {
+    tor_log_err_sigsafe_write(x);
+  }
+  va_end(ap);
+}
+
+/** Set *<b>out</b> to a pointer to an array of the fds to log errors to from
+ * inside a signal handler. Return the number of elements in the array. */
+int
+tor_log_get_sigsafe_err_fds(const int **out)
+{
+  *out = sigsafe_log_fds;
+  return n_sigsafe_log_fds;
+}
+
+/** Helper function; return true iff the <b>n</b>-element array <b>array</b>
+ * contains <b>item</b>. */
+static int
+int_array_contains(const int *array, int n, int item)
+{
+  int j;
+  for (j = 0; j < n; ++j) {
+    if (array[j] == item)
+      return 1;
+  }
+  return 0;
+}
+
+/** Function to call whenever the list of logs changes to get ready to log
+ * from signal handlers. */
+void
+tor_log_update_sigsafe_err_fds(void)
+{
+  const logfile_t *lf;
+  int found_real_stderr = 0;
+
+  LOCK_LOGS();
+  /* Reserve the first one for stderr. This is safe because when we daemonize,
+   * we dup2 /dev/null to stderr, */
+  sigsafe_log_fds[0] = STDERR_FILENO;
+  n_sigsafe_log_fds = 1;
+
+  for (lf = logfiles; lf; lf = lf->next) {
+     /* Don't try callback to the control port, or syslogs: We can't
+      * do them from a signal handler. Don't try stdout: we always do stderr.
+      */
+    if (lf->is_temporary || lf->is_syslog ||
+        lf->callback || lf->seems_dead || lf->fd < 0)
+      continue;
+    if (lf->severities->masks[SEVERITY_MASK_IDX(LOG_ERR)] &
+        (LD_BUG|LD_GENERAL)) {
+      if (lf->fd == STDERR_FILENO)
+        found_real_stderr = 1;
+      /* Avoid duplicates */
+      if (int_array_contains(sigsafe_log_fds, n_sigsafe_log_fds, lf->fd))
+        continue;
+      sigsafe_log_fds[n_sigsafe_log_fds++] = lf->fd;
+      if (n_sigsafe_log_fds == MAX_SIGSAFE_FDS)
+        break;
+    }
+  }
+
+  if (!found_real_stderr &&
+      int_array_contains(sigsafe_log_fds, n_sigsafe_log_fds, STDOUT_FILENO)) {
+    /* Don't use a virtual stderr when we're also logging to stdout. */
+    assert(n_sigsafe_log_fds >= 2); /* Don't use assert inside log functions*/
+    sigsafe_log_fds[0] = sigsafe_log_fds[--n_sigsafe_log_fds];
+  }
+
+  UNLOCK_LOGS();
+}
+
+/** Add to <b>out</b> a copy of every currently configured log file name. Used
+ * to enable access to these filenames with the sandbox code. */
+void
+tor_log_get_logfile_names(smartlist_t *out)
+{
+  logfile_t *lf;
+  tor_assert(out);
+
+  LOCK_LOGS();
+
+  for (lf = logfiles; lf; lf = lf->next) {
+    if (lf->is_temporary || lf->is_syslog || lf->callback)
+      continue;
+    if (lf->filename == NULL)
+      continue;
+    smartlist_add(out, tor_strdup(lf->filename));
+  }
+
+  UNLOCK_LOGS();
 }
 
 /** Output a message to the log, prefixed with a function name <b>fn</b>. */
@@ -1152,39 +1296,4 @@ switch_logs_debug(void)
   log_global_min_severity_ = get_min_log_level();
   UNLOCK_LOGS();
 }
-
-#if 0
-static void
-dump_log_info(logfile_t *lf)
-{
-  const char *tp;
-
-  if (lf->filename) {
-    printf("=== log into \"%s\" (%s-%s) (%stemporary)\n", lf->filename,
-           sev_to_string(lf->min_loglevel),
-           sev_to_string(lf->max_loglevel),
-           lf->is_temporary?"":"not ");
-  } else if (lf->is_syslog) {
-    printf("=== syslog (%s-%s) (%stemporary)\n",
-           sev_to_string(lf->min_loglevel),
-           sev_to_string(lf->max_loglevel),
-           lf->is_temporary?"":"not ");
-  } else {
-    printf("=== log (%s-%s) (%stemporary)\n",
-           sev_to_string(lf->min_loglevel),
-           sev_to_string(lf->max_loglevel),
-           lf->is_temporary?"":"not ");
-  }
-}
-
-void
-describe_logs(void)
-{
-  logfile_t *lf;
-  printf("==== BEGIN LOGS ====\n");
-  for (lf = logfiles; lf; lf = lf->next)
-    dump_log_info(lf);
-  printf("==== END LOGS ====\n");
-}
-#endif
 

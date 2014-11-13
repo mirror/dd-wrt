@@ -12,8 +12,10 @@
 #ifndef TOR_CONFIG_H
 #define TOR_CONFIG_H
 
+#include "testsupport.h"
+
 const char *get_dirportfrontpage(void);
-const or_options_t *get_options(void);
+MOCK_DECL(const or_options_t *,get_options,(void));
 or_options_t *get_options_mutable(void);
 int set_options(or_options_t *new_val, char **msg);
 void config_free_all(void);
@@ -32,7 +34,11 @@ int resolve_my_address(int warn_severity, const or_options_t *options,
                        const char **method_out, char **hostname_out);
 int is_local_addr(const tor_addr_t *addr);
 void options_init(or_options_t *options);
-char *options_dump(const or_options_t *options, int minimal);
+
+#define OPTIONS_DUMP_MINIMAL 1
+#define OPTIONS_DUMP_DEFAULTS 2
+#define OPTIONS_DUMP_ALL 3
+char *options_dump(const or_options_t *options, int how_to_dump);
 int options_init_from_torrc(int argc, char **argv);
 setopt_err_t options_init_from_string(const char *cf_defaults, const char *cf,
                             int command, const char *command_arg, char **msg);
@@ -58,6 +64,10 @@ char *options_get_datadir_fname2_suffix(const or_options_t *options,
  * get_datadir_fname2_suffix. */
 #define get_datadir_fname_suffix(sub1, suffix) \
   get_datadir_fname2_suffix((sub1), NULL, (suffix))
+
+int check_or_create_data_subdir(const char *subdir);
+int write_to_data_subdir(const char* subdir, const char* fname,
+                         const char* str, const char* descr);
 
 int get_num_cpus(const or_options_t *options);
 
@@ -86,10 +96,15 @@ uint32_t get_effective_bwburst(const or_options_t *options);
 
 char *get_transport_bindaddr_from_config(const char *transport);
 
-#ifdef CONFIG_PRIVATE
-/* Used only by config.c and test.c */
+int init_cookie_authentication(const char *fname, const char *header,
+                               int cookie_len, int group_readable,
+                               uint8_t **cookie_out, int *cookie_is_set_out);
+
 or_options_t *options_new(void);
-#endif
+
+int config_parse_commandline(int argc, char **argv, int ignore_errors,
+                             config_line_t **result,
+                             config_line_t **cmdline_result);
 
 void config_register_addressmaps(const or_options_t *options);
 /* XXXX024 move to connection_edge.h */
@@ -97,6 +112,35 @@ int addressmap_register_auto(const char *from, const char *to,
                              time_t expires,
                              addressmap_entry_source_t addrmap_source,
                              const char **msg);
+
+/** Represents the information stored in a torrc Bridge line. */
+typedef struct bridge_line_t {
+  tor_addr_t addr; /* The IP address of the bridge. */
+  uint16_t port; /* The TCP port of the bridge. */
+  char *transport_name; /* The name of the pluggable transport that
+                           should be used to connect to the bridge. */
+  char digest[DIGEST_LEN]; /* The bridge's identity key digest. */
+  smartlist_t *socks_args; /* SOCKS arguments for the pluggable
+                               transport proxy. */
+} bridge_line_t;
+
+void bridge_line_free(bridge_line_t *bridge_line);
+bridge_line_t *parse_bridge_line(const char *line);
+smartlist_t *get_options_from_transport_options_line(const char *line,
+                                                     const char *transport);
+smartlist_t *get_options_for_server_transport(const char *transport);
+
+#ifdef CONFIG_PRIVATE
+#ifdef TOR_UNIT_TESTS
+extern struct config_format_t options_format;
+#endif
+
+STATIC void or_options_free(or_options_t *options);
+STATIC int options_validate(or_options_t *old_options,
+                            or_options_t *options,
+                            or_options_t *default_options,
+                            int from_setconf, char **msg);
+#endif
 
 #endif
 

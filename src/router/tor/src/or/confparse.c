@@ -79,6 +79,21 @@ config_line_append(config_line_t **lst,
   (*lst) = newline;
 }
 
+/** Return the line in <b>lines</b> whose key is exactly <b>key</b>, or NULL
+ * if no such key exists. For handling commandline-only options only; other
+ * options should be looked up in the appropriate data structure. */
+const config_line_t *
+config_line_find(const config_line_t *lines,
+                 const char *key)
+{
+  const config_line_t *cl;
+  for (cl = lines; cl; cl = cl->next) {
+    if (!strcmp(cl->key, key))
+      return cl;
+  }
+  return NULL;
+}
+
 /** Helper: parse the config string and strdup into key/value
  * strings. Set *result to the list, or NULL if parsing the string
  * failed.  Return 0 on success, -1 on failure. Warn and ignore any
@@ -223,6 +238,8 @@ config_assign_value(const config_format_t *fmt, void *options,
   int i, ok;
   const config_var_t *var;
   void *lvalue;
+  int *csv_int;
+  smartlist_t *csv_str;
 
   CONFIG_CHECK(fmt, options);
 
@@ -355,6 +372,36 @@ config_assign_value(const config_format_t *fmt, void *options,
 
     smartlist_split_string(*(smartlist_t**)lvalue, c->value, ",",
                            SPLIT_SKIP_SPACE|SPLIT_IGNORE_BLANK, 0);
+    break;
+
+  case CONFIG_TYPE_CSV_INTERVAL:
+    if (*(smartlist_t**)lvalue) {
+      SMARTLIST_FOREACH(*(smartlist_t**)lvalue, int *, cp, tor_free(cp));
+      smartlist_clear(*(smartlist_t**)lvalue);
+    } else {
+      *(smartlist_t**)lvalue = smartlist_new();
+    }
+    csv_str = smartlist_new();
+    smartlist_split_string(csv_str, c->value, ",",
+                           SPLIT_SKIP_SPACE|SPLIT_IGNORE_BLANK, 0);
+    SMARTLIST_FOREACH_BEGIN(csv_str, char *, str)
+      {
+        i = config_parse_interval(str, &ok);
+        if (!ok) {
+          tor_asprintf(msg,
+              "Interval in '%s %s' is malformed or out of bounds.",
+              c->key, c->value);
+          SMARTLIST_FOREACH(csv_str, char *, cp, tor_free(cp));
+          smartlist_free(csv_str);
+          return -1;
+        }
+        csv_int = tor_malloc_zero(sizeof(int));
+        *csv_int = i;
+        smartlist_add(*(smartlist_t**)lvalue, csv_int);
+      }
+    SMARTLIST_FOREACH_END(str);
+    SMARTLIST_FOREACH(csv_str, char *, cp, tor_free(cp));
+    smartlist_free(csv_str);
     break;
 
   case CONFIG_TYPE_LINELIST:
@@ -555,6 +602,7 @@ config_get_assigned_option(const config_format_t *fmt, const void *options,
   const config_var_t *var;
   const void *value;
   config_line_t *result;
+  smartlist_t *csv_str;
   tor_assert(options && key);
 
   CONFIG_CHECK(fmt, options);
@@ -635,6 +683,20 @@ config_get_assigned_option(const config_format_t *fmt, const void *options,
         result->value =
           smartlist_join_strings(*(smartlist_t**)value, ",", 0, NULL);
       else
+        result->value = tor_strdup("");
+      break;
+    case CONFIG_TYPE_CSV_INTERVAL:
+      if (*(smartlist_t**)value) {
+        csv_str = smartlist_new();
+        SMARTLIST_FOREACH_BEGIN(*(smartlist_t**)value, int *, i)
+          {
+            smartlist_add_asprintf(csv_str, "%d", *i);
+          }
+        SMARTLIST_FOREACH_END(i);
+        result->value = smartlist_join_strings(csv_str, ",", 0, NULL);
+        SMARTLIST_FOREACH(csv_str, char *, cp, tor_free(cp));
+        smartlist_free(csv_str);
+      } else
         result->value = tor_strdup("");
       break;
     case CONFIG_TYPE_OBSOLETE:
@@ -826,6 +888,13 @@ config_clear(const config_format_t *fmt, void *options,
         *(smartlist_t **)lvalue = NULL;
       }
       break;
+    case CONFIG_TYPE_CSV_INTERVAL:
+      if (*(smartlist_t**)lvalue) {
+        SMARTLIST_FOREACH(*(smartlist_t **)lvalue, int *, cp, tor_free(cp));
+        smartlist_free(*(smartlist_t **)lvalue);
+        *(smartlist_t **)lvalue = NULL;
+      }
+      break;
     case CONFIG_TYPE_LINELIST:
     case CONFIG_TYPE_LINELIST_S:
       config_free_lines(*(config_line_t **)lvalue);
@@ -1005,8 +1074,8 @@ config_dump(const config_format_t *fmt, const void *default_options,
 
   /* XXX use a 1 here so we don't add a new log line while dumping */
   if (default_options == NULL) {
-    if (fmt->validate_fn(NULL, defaults_tmp, 1, &msg) < 0) {
-      log_err(LD_BUG, "Failed to validate default config.");
+    if (fmt->validate_fn(NULL, defaults_tmp, defaults_tmp, 1, &msg) < 0) {
+      log_err(LD_BUG, "Failed to validate default config: %s", msg);
       tor_free(msg);
       tor_assert(0);
     }
@@ -1072,20 +1141,36 @@ static struct unit_table_t memory_units[] = {
   { "kbytes",    1<<10 },
   { "kilobyte",  1<<10 },
   { "kilobytes", 1<<10 },
+  { "kilobits",  1<<7  },
+  { "kilobit",   1<<7  },
+  { "kbits",     1<<7  },
+  { "kbit",      1<<7  },
   { "m",         1<<20 },
   { "mb",        1<<20 },
   { "mbyte",     1<<20 },
   { "mbytes",    1<<20 },
   { "megabyte",  1<<20 },
   { "megabytes", 1<<20 },
+  { "megabits",  1<<17 },
+  { "megabit",   1<<17 },
+  { "mbits",     1<<17 },
+  { "mbit",      1<<17 },
   { "gb",        1<<30 },
   { "gbyte",     1<<30 },
   { "gbytes",    1<<30 },
   { "gigabyte",  1<<30 },
   { "gigabytes", 1<<30 },
+  { "gigabits",  1<<27 },
+  { "gigabit",   1<<27 },
+  { "gbits",     1<<27 },
+  { "gbit",      1<<27 },
   { "tb",        U64_LITERAL(1)<<40 },
   { "terabyte",  U64_LITERAL(1)<<40 },
   { "terabytes", U64_LITERAL(1)<<40 },
+  { "terabits",  U64_LITERAL(1)<<37 },
+  { "terabit",   U64_LITERAL(1)<<37 },
+  { "tbits",     U64_LITERAL(1)<<37 },
+  { "tbit",      U64_LITERAL(1)<<37 },
   { NULL, 0 },
 };
 

@@ -25,6 +25,8 @@
 static void nodelist_drop_node(node_t *node, int remove_from_ht);
 static void node_free(node_t *node);
 static void update_router_have_minimum_dir_info(void);
+static double get_frac_paths_needed_for_circs(const or_options_t *options,
+                                              const networkstatus_t *ns);
 
 /** A nodelist_t holds a node_t object for every router we're "willing to use
  * for something".  Specifically, it should hold a node_t for every node that
@@ -41,14 +43,7 @@ typedef struct nodelist_t {
 static INLINE unsigned int
 node_id_hash(const node_t *node)
 {
-#if SIZEOF_INT == 4
-  const uint32_t *p = (const uint32_t*)node->identity;
-  return p[0] ^ p[1] ^ p[2] ^ p[3] ^ p[4];
-#elif SIZEOF_INT == 8
-  const uint64_t *p = (const uint32_t*)node->identity;
-  const uint32_t *p32 = (const uint32_t*)node->identity;
-  return p[0] ^ p[1] ^ p32[4];
-#endif
+  return (unsigned) siphash24g(node->identity, DIGEST_LEN);
 }
 
 static INLINE unsigned int
@@ -90,8 +85,8 @@ node_get_mutable_by_id(const char *identity_digest)
 
 /** Return the node_t whose identity is <b>identity_digest</b>, or NULL
  * if no such node exists. */
-const node_t *
-node_get_by_id(const char *identity_digest)
+MOCK_IMPL(const node_t *,
+node_get_by_id,(const char *identity_digest))
 {
   return node_get_mutable_by_id(identity_digest);
 }
@@ -211,7 +206,7 @@ void
 nodelist_set_consensus(networkstatus_t *ns)
 {
   const or_options_t *options = get_options();
-  int authdir = authdir_mode_v2(options) || authdir_mode_v3(options);
+  int authdir = authdir_mode_v3(options);
   int client = !server_mode(options);
 
   init_nodelist();
@@ -335,6 +330,25 @@ nodelist_drop_node(node_t *node, int remove_from_ht)
     tmp->nodelist_idx = idx;
   }
   node->nodelist_idx = -1;
+}
+
+/** Return a newly allocated smartlist of the nodes that have <b>md</b> as
+ * their microdescriptor. */
+smartlist_t *
+nodelist_find_nodes_with_microdesc(const microdesc_t *md)
+{
+  smartlist_t *result = smartlist_new();
+
+  if (the_nodelist == NULL)
+    return result;
+
+  SMARTLIST_FOREACH_BEGIN(the_nodelist->nodes, node_t *, node) {
+    if (node->md == md) {
+      smartlist_add(result, node);
+    }
+  } SMARTLIST_FOREACH_END(node);
+
+  return result;
 }
 
 /** Release storage held by <b>node</b>  */
@@ -644,7 +658,7 @@ node_get_purpose(const node_t *node)
 
 /** Compute the verbose ("extended") nickname of <b>node</b> and store it
  * into the MAX_VERBOSE_NICKNAME_LEN+1 character buffer at
- * <b>verbose_nickname_out</b> */
+ * <b>verbose_name_out</b> */
 void
 node_get_verbose_nickname(const node_t *node,
                           char *verbose_name_out)
@@ -658,6 +672,25 @@ node_get_verbose_nickname(const node_t *node,
     return;
   verbose_name_out[1+HEX_DIGEST_LEN] = is_named ? '=' : '~';
   strlcpy(verbose_name_out+1+HEX_DIGEST_LEN+1, nickname, MAX_NICKNAME_LEN+1);
+}
+
+/** Compute the verbose ("extended") nickname of node with
+ * given <b>id_digest</b> and store it into the MAX_VERBOSE_NICKNAME_LEN+1
+ * character buffer at <b>verbose_name_out</b>
+ *
+ * If node_get_by_id() returns NULL, base 16 encoding of
+ * <b>id_digest</b> is returned instead. */
+void
+node_get_verbose_nickname_by_id(const char *id_digest,
+                                char *verbose_name_out)
+{
+  const node_t *node = node_get_by_id(id_digest);
+  if (!node) {
+    verbose_name_out[0] = '$';
+    base16_encode(verbose_name_out+1, HEX_DIGEST_LEN+1, id_digest, DIGEST_LEN);
+  } else {
+    node_get_verbose_nickname(node, verbose_name_out);
+  }
 }
 
 /** Return true iff it seems that <b>node</b> allows circuits to exit
@@ -771,7 +804,7 @@ void
 node_get_address_string(const node_t *node, char *buf, size_t len)
 {
   if (node->ri) {
-    strlcpy(buf, node->ri->address, len);
+    strlcpy(buf, fmt_addr32(node->ri->addr), len);
   } else if (node->rs) {
     tor_addr_t addr;
     tor_addr_from_ipv4h(&addr, node->rs->addr);
@@ -1216,10 +1249,12 @@ router_set_status(const char *digest, int up)
     if (!up && node_is_me(node) && !net_is_disabled())
       log_warn(LD_NET, "We just marked ourself as down. Are your external "
                "addresses reachable?");
+
+    if (bool_neq(node->is_running, up))
+      router_dir_info_changed();
+
     node->is_running = up;
   }
-
-  router_dir_info_changed();
 }
 
 /** True iff, the last time we checked whether we had enough directory info
@@ -1240,10 +1275,21 @@ static char dir_info_status[256] = "";
 int
 router_have_minimum_dir_info(void)
 {
+  static int logged_delay=0;
+  const char *delay_fetches_msg = NULL;
+  if (should_delay_dir_fetches(get_options(), &delay_fetches_msg)) {
+    if (!logged_delay)
+      log_notice(LD_DIR, "Delaying directory fetches: %s", delay_fetches_msg);
+    logged_delay=1;
+    strlcpy(dir_info_status, delay_fetches_msg,  sizeof(dir_info_status));
+    return 0;
+  }
+  logged_delay = 0; /* reset it if we get this far */
+
   if (PREDICT_UNLIKELY(need_to_update_have_min_dir_info)) {
     update_router_have_minimum_dir_info();
-    need_to_update_have_min_dir_info = 0;
   }
+
   return have_min_dir_info;
 }
 
@@ -1317,7 +1363,7 @@ count_usable_descriptors(int *num_present, int *num_usable,
             md ? "microdesc" : "desc", exit_only ? " exits" : "s");
 }
 
-/** Return an extimate of which fraction of usable paths through the Tor
+/** Return an estimate of which fraction of usable paths through the Tor
  * network we have available for use. */
 static double
 compute_frac_paths_available(const networkstatus_t *consensus,
@@ -1329,9 +1375,10 @@ compute_frac_paths_available(const networkstatus_t *consensus,
   smartlist_t *mid    = smartlist_new();
   smartlist_t *exits  = smartlist_new();
   smartlist_t *myexits= smartlist_new();
-  double f_guard, f_mid, f_exit, f_myexit;
+  smartlist_t *myexits_unflagged = smartlist_new();
+  double f_guard, f_mid, f_exit, f_myexit, f_myexit_unflagged;
   int np, nu; /* Ignored */
-  const int authdir = authdir_mode_v2(options) || authdir_mode_v3(options);
+  const int authdir = authdir_mode_v3(options);
 
   count_usable_descriptors(num_present_out, num_usable_out,
                            mid, consensus, options, now, NULL, 0);
@@ -1350,20 +1397,42 @@ compute_frac_paths_available(const networkstatus_t *consensus,
     });
   }
 
+  /* All nodes with exit flag */
   count_usable_descriptors(&np, &nu, exits, consensus, options, now,
                            NULL, 1);
+  /* All nodes with exit flag in ExitNodes option */
   count_usable_descriptors(&np, &nu, myexits, consensus, options, now,
                            options->ExitNodes, 1);
+  /* Now compute the nodes in the ExitNodes option where which we don't know
+   * what their exit policy is, or we know it permits something. */
+  count_usable_descriptors(&np, &nu, myexits_unflagged,
+                           consensus, options, now,
+                           options->ExitNodes, 0);
+  SMARTLIST_FOREACH_BEGIN(myexits_unflagged, const node_t *, node) {
+    if (node_has_descriptor(node) && node_exit_policy_rejects_all(node))
+      SMARTLIST_DEL_CURRENT(myexits_unflagged, node);
+  } SMARTLIST_FOREACH_END(node);
 
   f_guard = frac_nodes_with_descriptors(guards, WEIGHT_FOR_GUARD);
   f_mid   = frac_nodes_with_descriptors(mid,    WEIGHT_FOR_MID);
   f_exit  = frac_nodes_with_descriptors(exits,  WEIGHT_FOR_EXIT);
   f_myexit= frac_nodes_with_descriptors(myexits,WEIGHT_FOR_EXIT);
+  f_myexit_unflagged=
+            frac_nodes_with_descriptors(myexits_unflagged,WEIGHT_FOR_EXIT);
+
+  /* If our ExitNodes list has eliminated every possible Exit node, and there
+   * were some possible Exit nodes, then instead consider nodes that permit
+   * exiting to some ports. */
+  if (smartlist_len(myexits) == 0 &&
+      smartlist_len(myexits_unflagged)) {
+    f_myexit = f_myexit_unflagged;
+  }
 
   smartlist_free(guards);
   smartlist_free(mid);
   smartlist_free(exits);
   smartlist_free(myexits);
+  smartlist_free(myexits_unflagged);
 
   /* This is a tricky point here: we don't want to make it easy for a
    * directory to trickle exits to us until it learns which exits we have
@@ -1372,13 +1441,14 @@ compute_frac_paths_available(const networkstatus_t *consensus,
   if (f_myexit < f_exit)
     f_exit = f_myexit;
 
-  tor_asprintf(status_out,
-               "%d%% of guards bw, "
-               "%d%% of midpoint bw, and "
-               "%d%% of exit bw",
-               (int)(f_guard*100),
-               (int)(f_mid*100),
-               (int)(f_exit*100));
+  if (status_out)
+    tor_asprintf(status_out,
+                 "%d%% of guards bw, "
+                 "%d%% of midpoint bw, and "
+                 "%d%% of exit bw",
+                 (int)(f_guard*100),
+                 (int)(f_mid*100),
+                 (int)(f_exit*100));
 
   return f_guard * f_mid * f_exit;
 }
@@ -1391,19 +1461,19 @@ count_loading_descriptors_progress(void)
 {
   int num_present = 0, num_usable=0;
   time_t now = time(NULL);
+  const or_options_t *options = get_options();
   const networkstatus_t *consensus =
     networkstatus_get_reasonably_live_consensus(now,usable_consensus_flavor());
-  double fraction;
+  double paths, fraction;
 
   if (!consensus)
     return 0; /* can't count descriptors if we have no list of them */
 
-  count_usable_descriptors(&num_present, &num_usable, NULL,
-                           consensus, get_options(), now, NULL, 0);
+  paths = compute_frac_paths_available(consensus, options, now,
+                                       &num_present, &num_usable,
+                                       NULL);
 
-  if (num_usable == 0)
-    return 0; /* don't div by 0 */
-  fraction = num_present / (num_usable/4.);
+  fraction = paths / get_frac_paths_needed_for_circs(options,consensus);
   if (fraction > 1.0)
     return 0; /* it's not the number of descriptors holding us back */
   return BOOTSTRAP_STATUS_LOADING_DESCRIPTORS + (int)
@@ -1447,14 +1517,6 @@ update_router_have_minimum_dir_info(void)
     else
       strlcpy(dir_info_status, "We have no recent usable consensus.",
               sizeof(dir_info_status));
-    res = 0;
-    goto done;
-  }
-
-  if (should_delay_dir_fetches(get_options())) {
-    log_notice(LD_DIR, "no known bridge descriptors running yet; stalling");
-    strlcpy(dir_info_status, "No live bridge descriptors.",
-            sizeof(dir_info_status));
     res = 0;
     goto done;
   }

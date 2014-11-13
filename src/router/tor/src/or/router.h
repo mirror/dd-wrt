@@ -12,6 +12,8 @@
 #ifndef TOR_ROUTER_H
 #define TOR_ROUTER_H
 
+#include "testsupport.h"
+
 crypto_pk_t *get_onion_key(void);
 time_t get_onion_key_set_at(void);
 void set_server_identity_key(crypto_pk_t *k);
@@ -48,8 +50,6 @@ void router_perform_bandwidth_test(int num_circs, time_t now);
 int net_is_disabled(void);
 
 int authdir_mode(const or_options_t *options);
-int authdir_mode_v1(const or_options_t *options);
-int authdir_mode_v2(const or_options_t *options);
 int authdir_mode_v3(const or_options_t *options);
 int authdir_mode_any_main(const or_options_t *options);
 int authdir_mode_any_nonhidserv(const or_options_t *options);
@@ -66,8 +66,8 @@ uint16_t router_get_advertised_or_port_by_af(const or_options_t *options,
 uint16_t router_get_advertised_dir_port(const or_options_t *options,
                                         uint16_t dirport);
 
-int server_mode(const or_options_t *options);
-int public_server_mode(const or_options_t *options);
+MOCK_DECL(int, server_mode, (const or_options_t *options));
+MOCK_DECL(int, public_server_mode, (const or_options_t *options));
 int advertised_server_mode(void);
 int proxy_mode(const or_options_t *options);
 void consider_publishable_server(int force);
@@ -82,7 +82,7 @@ void router_new_address_suggestion(const char *suggestion,
                                    const dir_connection_t *d_conn);
 int router_compare_to_my_exit_policy(const tor_addr_t *addr, uint16_t port);
 int router_my_exit_policy_is_reject_star(void);
-const routerinfo_t *router_get_my_routerinfo(void);
+MOCK_DECL(const routerinfo_t *, router_get_my_routerinfo, (void));
 extrainfo_t *router_get_my_extrainfo(void);
 const char *router_get_my_descriptor(void);
 const char *router_get_descriptor_gen_reason(void);
@@ -90,11 +90,13 @@ int router_digest_is_me(const char *digest);
 const uint8_t *router_get_my_id_digest(void);
 int router_extrainfo_digest_is_me(const char *digest);
 int router_is_me(const routerinfo_t *router);
-int router_fingerprint_is_me(const char *fp);
 int router_pick_published_address(const or_options_t *options, uint32_t *addr);
 int router_rebuild_descriptor(int force);
 char *router_dump_router_to_string(routerinfo_t *router,
                                    crypto_pk_t *ident_key);
+char *router_dump_exit_policy_to_string(const routerinfo_t *router,
+                                         int include_ipv4,
+                                         int include_ipv6);
 void router_get_prim_orport(const routerinfo_t *router,
                             tor_addr_port_t *addr_port_out);
 void router_get_pref_orport(const routerinfo_t *router,
@@ -146,7 +148,8 @@ smartlist_t *router_get_all_orports(const routerinfo_t *ri);
 
 #ifdef ROUTER_PRIVATE
 /* Used only by router.c and test.c */
-void get_platform_str(char *platform, size_t len);
+STATIC void get_platform_str(char *platform, size_t len);
+STATIC int router_write_fingerprint(int hashed);
 #endif
 
 #endif

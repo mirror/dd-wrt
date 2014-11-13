@@ -8,6 +8,7 @@
  **/
 
 #include "or.h"
+#include "circpathbias.h"
 #include "circuitbuild.h"
 #include "circuitlist.h"
 #include "circuituse.h"
@@ -25,6 +26,7 @@
 #include "router.h"
 #include "routerlist.h"
 #include "routerset.h"
+#include "control.h"
 
 static extend_info_t *rend_client_get_random_intro_impl(
                           const rend_cache_entry_t *rend_query,
@@ -269,7 +271,7 @@ rend_client_send_introduction(origin_circuit_t *introcirc,
     extend_info_t *extend_info = rendcirc->build_state->chosen_exit;
     int klen;
     /* nul pads */
-    set_uint32(tmp+v3_shift+1, tor_addr_to_ipv4h(&extend_info->addr));
+    set_uint32(tmp+v3_shift+1, tor_addr_to_ipv4n(&extend_info->addr));
     set_uint16(tmp+v3_shift+5, htons(extend_info->port));
     memcpy(tmp+v3_shift+7, extend_info->identity_digest, DIGEST_LEN);
     klen = crypto_pk_asn1_encode(extend_info->onion_key,
@@ -376,7 +378,7 @@ rend_client_close_other_intros(const char *onion_address)
 {
   circuit_t *c;
   /* abort parallel intro circs, if any */
-  for (c = circuit_get_global_list_(); c; c = c->next) {
+  TOR_LIST_FOREACH(c, circuit_get_global_list(), head) {
     if ((c->purpose == CIRCUIT_PURPOSE_C_INTRODUCING ||
         c->purpose == CIRCUIT_PURPOSE_C_INTRODUCE_ACK_WAIT) &&
         !c->marked_for_close && CIRCUIT_IS_ORIGIN(c)) {
@@ -617,11 +619,14 @@ static int
 directory_get_from_hs_dir(const char *desc_id, const rend_data_t *rend_query)
 {
   smartlist_t *responsible_dirs = smartlist_new();
+  smartlist_t *usable_responsible_dirs = smartlist_new();
+  const or_options_t *options = get_options();
   routerstatus_t *hs_dir;
   char desc_id_base32[REND_DESC_ID_V2_LEN_BASE32 + 1];
   time_t now = time(NULL);
   char descriptor_cookie_base64[3*REND_DESC_COOKIE_LEN_BASE64];
-  int tor2web_mode = get_options()->Tor2webMode;
+  const int tor2web_mode = options->Tor2webMode;
+  int excluded_some;
   tor_assert(desc_id);
   tor_assert(rend_query);
   /* Determine responsible dirs. Even if we can't get all we want,
@@ -642,16 +647,33 @@ directory_get_from_hs_dir(const char *desc_id, const rend_data_t *rend_query)
                             dir, desc_id_base32, rend_query, 0, 0);
       const node_t *node = node_get_by_id(dir->identity_digest);
       if (last + REND_HID_SERV_DIR_REQUERY_PERIOD >= now ||
-          !node || !node_has_descriptor(node))
-      SMARTLIST_DEL_CURRENT(responsible_dirs, dir);
+          !node || !node_has_descriptor(node)) {
+        SMARTLIST_DEL_CURRENT(responsible_dirs, dir);
+        continue;
+      }
+      if (! routerset_contains_node(options->ExcludeNodes, node)) {
+        smartlist_add(usable_responsible_dirs, dir);
+      }
   });
 
-  hs_dir = smartlist_choose(responsible_dirs);
+  excluded_some =
+    smartlist_len(usable_responsible_dirs) < smartlist_len(responsible_dirs);
+
+  hs_dir = smartlist_choose(usable_responsible_dirs);
+  if (! hs_dir && ! options->StrictNodes)
+    hs_dir = smartlist_choose(responsible_dirs);
+
   smartlist_free(responsible_dirs);
+  smartlist_free(usable_responsible_dirs);
   if (!hs_dir) {
     log_info(LD_REND, "Could not pick one of the responsible hidden "
                       "service directories, because we requested them all "
                       "recently without success.");
+    if (options->StrictNodes && excluded_some) {
+      log_warn(LD_REND, "Could not pick a hidden service directory for the "
+               "requested hidden service: they are all either down or "
+               "excluded, and StrictNodes is set.");
+    }
     return 0;
   }
 
@@ -693,6 +715,9 @@ directory_get_from_hs_dir(const char *desc_id, const rend_data_t *rend_query)
            (rend_query->auth_type == REND_NO_AUTH ? "[none]" :
             escaped_safe_str_client(descriptor_cookie_base64)),
            routerstatus_describe(hs_dir));
+  control_event_hs_descriptor_requested(rend_query,
+                                        hs_dir->identity_digest,
+                                        desc_id_base32);
   return 1;
 }
 
@@ -772,8 +797,7 @@ rend_client_cancel_descriptor_fetches(void)
 
   SMARTLIST_FOREACH_BEGIN(connection_array, connection_t *, conn) {
     if (conn->type == CONN_TYPE_DIR &&
-        (conn->purpose == DIR_PURPOSE_FETCH_RENDDESC ||
-         conn->purpose == DIR_PURPOSE_FETCH_RENDDESC_V2)) {
+        conn->purpose == DIR_PURPOSE_FETCH_RENDDESC_V2) {
       /* It's a rendezvous descriptor fetch in progress -- cancel it
        * by marking the connection for close.
        *

@@ -12,16 +12,10 @@
 #ifndef TOR_NETWORKSTATUS_H
 #define TOR_NETWORKSTATUS_H
 
-/** How old do we allow a v2 network-status to get before removing it
- * completely? */
-#define MAX_NETWORKSTATUS_AGE (10*24*60*60)
-
 void networkstatus_reset_warnings(void);
 void networkstatus_reset_download_failures(void);
-int router_reload_v2_networkstatus(void);
 int router_reload_consensus_networkstatus(void);
 void routerstatus_free(routerstatus_t *rs);
-void networkstatus_v2_free(networkstatus_v2_t *ns);
 void networkstatus_vote_free(networkstatus_t *ns);
 networkstatus_voter_info_t *networkstatus_get_voter_by_id(
                                        networkstatus_t *vote,
@@ -31,26 +25,16 @@ int networkstatus_check_consensus_signature(networkstatus_t *consensus,
 int networkstatus_check_document_signature(const networkstatus_t *consensus,
                                            document_signature_t *sig,
                                            const authority_cert_t *cert);
-char *networkstatus_get_cache_filename(const char *identity_digest);
-int router_set_networkstatus_v2(const char *s, time_t arrived_at,
-                             v2_networkstatus_source_t source,
-                             smartlist_t *requested_fingerprints);
-void networkstatus_v2_list_clean(time_t now);
 int compare_digest_to_routerstatus_entry(const void *_key,
                                          const void **_member);
 int compare_digest_to_vote_routerstatus_entry(const void *_key,
                                               const void **_member);
-const routerstatus_t *networkstatus_v2_find_entry(networkstatus_v2_t *ns,
-                                         const char *digest);
 const routerstatus_t *networkstatus_vote_find_entry(networkstatus_t *ns,
                                               const char *digest);
-routerstatus_t *networkstatus_v2_find_mutable_entry(networkstatus_v2_t *ns,
-                                        const char *digest);
 routerstatus_t *networkstatus_vote_find_mutable_entry(networkstatus_t *ns,
                                               const char *digest);
 int networkstatus_vote_find_entry_idx(networkstatus_t *ns,
                                       const char *digest, int *found_out);
-const smartlist_t *networkstatus_get_v2_list(void);
 download_status_t *router_get_dl_status_by_descriptor_digest(const char *d);
 const routerstatus_t *router_get_consensus_status_by_id(const char *digest);
 routerstatus_t *router_get_mutable_consensus_status_by_id(
@@ -69,7 +53,7 @@ int networkstatus_nickname_is_unnamed(const char *nickname);
 void networkstatus_consensus_download_failed(int status_code,
                                              const char *flavname);
 void update_consensus_networkstatus_fetch_time(time_t now);
-int should_delay_dir_fetches(const or_options_t *options);
+int should_delay_dir_fetches(const or_options_t *options,const char **msg_out);
 void update_networkstatus_downloads(time_t now);
 void update_certificate_downloads(time_t now);
 int consensus_is_waiting_for_certs(void);
@@ -114,6 +98,10 @@ void document_signature_free(document_signature_t *sig);
 document_signature_t *document_signature_dup(const document_signature_t *sig);
 void networkstatus_free_all(void);
 int networkstatus_get_weight_scale_param(networkstatus_t *ns);
+
+#ifdef NETWORKSTATUS_PRIVATE
+STATIC void vote_routerstatus_free(vote_routerstatus_t *rs);
+#endif
 
 #endif
 
