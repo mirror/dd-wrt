@@ -1839,7 +1839,7 @@ void ej_show_mdhcp(webs_t wp, int argc, char_t ** argv)
 
 		// sprintf (mdhcp_name, "%s.%s", tag, port);
 		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "<div class=\"label\">DHCP %d</div>\n", totalcount);
+		websWrite(wp, "DHCP %d\n", totalcount);
 		// interface
 		sprintf(vlan_name, "mdhcpifname%d", totalcount);
 		showOptions(wp, vlan_name, buffer, "");
@@ -2188,7 +2188,7 @@ void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 		char vlan_name[32];
 
 		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(networking.assign);</script> %d</div>\n", count);
+		websWrite(wp, "<script type=\"text/javascript\">Capture(networking.assign);</script> %d\n", count);
 		sprintf(vlan_name, "bridge%d", count);
 		showOptions(wp, vlan_name, finalbuffer, tag);
 		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.bridge);</script><script type=\"text/javascript\">Capture(networking.iface);</script>&nbsp;");
@@ -2209,7 +2209,7 @@ void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 		char vlan_name[32];
 
 		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(networking.assign)</script> %d</div>\n", i);
+		websWrite(wp, "<script type=\"text/javascript\">Capture(networking.assign)</script> %d\n", i);
 		sprintf(vlan_name, "bridge%d", i);
 		showOptions(wp, vlan_name, finalbuffer, "");
 		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.iface)</script>&nbsp;");
