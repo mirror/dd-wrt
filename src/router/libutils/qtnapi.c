@@ -162,8 +162,6 @@ int rpc_qcsapi_init(int verbose)
 
 #define nvram_get_int(name) atoi(nvram_safe_get(name))
 
-
-
 int rpc_qtn_ready()
 {
 	int ret, qtn_ready;
@@ -237,9 +235,9 @@ int enable_qtn_telnetsrv(int enable_flag)
 		fprintf(stderr, "ATE command error\n");
 		return -1;
 	}
-	if(enable_flag == 0){
+	if (enable_flag == 0) {
 		ret = qcsapi_wifi_run_script("set_test_mode", "enable_telnet_srv 0");
-	}else{
+	} else {
 		ret = qcsapi_wifi_run_script("set_test_mode", "enable_telnet_srv 1");
 	}
 	if (ret < 0) {
