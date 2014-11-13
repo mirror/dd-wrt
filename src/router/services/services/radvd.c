@@ -83,7 +83,7 @@ void start_radvd(void)
 	int do_mtu = 0, do_6to4 = 0, do_6rd = 0;
 	FILE *fp;
 
-	if (!nvram_match("ipv6_enable", "1"))
+	if (!nvram_match("ipv6_enable", "1") && !nvram_match("radvd_enable", "1"))
 		return;
 
 	if (nvram_match("dhcp6s_enable", "1") && (nvram_match("dhcp6s_seq_ips", "1") || nvram_invmatch("dhcp6s_hosts", "")))
