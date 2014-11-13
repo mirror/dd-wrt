@@ -11,6 +11,8 @@
 #ifndef TOR_ROUTERLIST_H
 #define TOR_ROUTERLIST_H
 
+#include "testsupport.h"
+
 int get_n_authorities(dirinfo_type_t type);
 int trusted_dirs_reload_certs(void);
 
@@ -53,8 +55,7 @@ const routerstatus_t *router_pick_trusteddirserver(dirinfo_type_t type,
                                                    int flags);
 const routerstatus_t *router_pick_fallback_dirserver(dirinfo_type_t type,
                                                      int flags);
-int router_get_my_share_of_directory_requests(double *v2_share_out,
-                                              double *v3_share_out);
+int router_get_my_share_of_directory_requests(double *v3_share_out);
 void router_reset_status_download_failures(void);
 int routers_have_same_or_addrs(const routerinfo_t *r1, const routerinfo_t *r2);
 const routerinfo_t *routerlist_find_my_routerinfo(void);
@@ -207,9 +208,10 @@ typedef union u64_dbl_t {
   double dbl;
 } u64_dbl_t;
 
-int choose_array_element_by_weight(const u64_dbl_t *entries, int n_entries);
-void scale_array_elements_to_u64(u64_dbl_t *entries, int n_entries,
-                                 uint64_t *total_out);
+STATIC int choose_array_element_by_weight(const u64_dbl_t *entries,
+                                          int n_entries);
+STATIC void scale_array_elements_to_u64(u64_dbl_t *entries, int n_entries,
+                                        uint64_t *total_out);
 #endif
 
 #endif

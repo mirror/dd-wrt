@@ -22,7 +22,6 @@
 #include "relay.h"
 #include "rephist.h"
 #include "router.h"
-#include "tor_queue.h"
 
 /** Type for a linked list of circuits that are waiting for a free CPU worker
  * to process a waiting onion handshake. */
@@ -59,7 +58,7 @@ static void onion_queue_entry_remove(onion_queue_t *victim);
  * MAX_ONIONSKIN_CHALLENGE/REPLY_LEN."  Also, make sure that we can pass
  * over-large values via EXTEND2/EXTENDED2, for future-compatibility.*/
 
-/** Return true iff we have room to queue another oninoskin of type
+/** Return true iff we have room to queue another onionskin of type
  * <b>type</b>. */
 static int
 have_room_for_onionskin(uint16_t type)
@@ -330,12 +329,14 @@ onion_queue_entry_remove(onion_queue_t *victim)
 void
 clear_pending_onions(void)
 {
-  onion_queue_t *victim;
+  onion_queue_t *victim, *next;
   int i;
   for (i=0; i<=MAX_ONION_HANDSHAKE_TYPE; i++) {
-    while ((victim = TOR_TAILQ_FIRST(&ol_list[i]))) {
+    for (victim = TOR_TAILQ_FIRST(&ol_list[i]); victim; victim = next) {
+      next = TOR_TAILQ_NEXT(victim,next);
       onion_queue_entry_remove(victim);
     }
+    tor_assert(TOR_TAILQ_EMPTY(&ol_list[i]));
   }
   memset(ol_entries, 0, sizeof(ol_entries));
 }
@@ -553,8 +554,10 @@ onion_skin_client_handshake(int type,
 
   switch (type) {
   case ONION_HANDSHAKE_TYPE_TAP:
-    if (reply_len != TAP_ONIONSKIN_REPLY_LEN)
+    if (reply_len != TAP_ONIONSKIN_REPLY_LEN) {
+      log_warn(LD_CIRC, "TAP reply was not of the correct length.");
       return -1;
+    }
     if (onion_skin_TAP_client_handshake(handshake_state->u.tap,
                                         (const char*)reply,
                                         (char *)keys_out, keys_out_len) < 0)
@@ -564,8 +567,10 @@ onion_skin_client_handshake(int type,
 
     return 0;
   case ONION_HANDSHAKE_TYPE_FAST:
-    if (reply_len != CREATED_FAST_LEN)
+    if (reply_len != CREATED_FAST_LEN) {
+      log_warn(LD_CIRC, "CREATED_FAST reply was not of the correct length.");
       return -1;
+    }
     if (fast_client_handshake(handshake_state->u.fast, reply,
                               keys_out, keys_out_len) < 0)
       return -1;
@@ -574,8 +579,10 @@ onion_skin_client_handshake(int type,
     return 0;
 #ifdef CURVE25519_ENABLED
   case ONION_HANDSHAKE_TYPE_NTOR:
-    if (reply_len < NTOR_REPLY_LEN)
+    if (reply_len < NTOR_REPLY_LEN) {
+      log_warn(LD_CIRC, "ntor reply was not of the correct length.");
       return -1;
+    }
     {
       size_t keys_tmp_len = keys_out_len + DIGEST_LEN;
       uint8_t *keys_tmp = tor_malloc(keys_tmp_len);
@@ -861,16 +868,19 @@ extend_cell_parse(extend_cell_t *cell_out, const uint8_t command,
     }
   case RELAY_COMMAND_EXTEND2:
     {
-      uint8_t n_specs = *payload, spectype, speclen;
+      uint8_t n_specs, spectype, speclen;
       int i;
       int found_ipv4 = 0, found_ipv6 = 0, found_id = 0;
       tor_addr_make_unspec(&cell_out->orport_ipv4.addr);
       tor_addr_make_unspec(&cell_out->orport_ipv6.addr);
 
+      if (payload_length == 0)
+        return -1;
+
       cell_out->cell_type = RELAY_COMMAND_EXTEND2;
-      ++payload;
+      n_specs = *payload++;
       /* Parse the specifiers. We'll only take the first IPv4 and first IPv6
-       * addres, and the node ID, and ignore everything else */
+       * address, and the node ID, and ignore everything else */
       for (i = 0; i < n_specs; ++i) {
         if (eop - payload < 2)
           return -1;

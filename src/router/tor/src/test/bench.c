@@ -14,9 +14,6 @@ const char tor_git_revision[] = "";
 
 #include "orconfig.h"
 
-#define RELAY_PRIVATE
-#define CONFIG_PRIVATE
-
 #include "or.h"
 #include "onion_tap.h"
 #include "relay.h"
@@ -204,6 +201,7 @@ bench_onion_ntor(void)
   for (i = 0; i < iters; ++i) {
     onion_skin_ntor_create(nodeid, &keypair1.pubkey, &state, os);
     ntor_handshake_state_free(state);
+    state = NULL;
   }
   end = perftime();
   printf("Client-side, part 1: %f usec.\n", NANOCOUNT(start, end, iters)/1e3);
@@ -337,6 +335,28 @@ bench_dmap(void)
   SMARTLIST_FOREACH(sl2, char *, cp, tor_free(cp));
   smartlist_free(sl);
   smartlist_free(sl2);
+}
+
+static void
+bench_siphash(void)
+{
+  char buf[128];
+  int lens[] = { 7, 8, 15, 16, 20, 32, 111, 128, -1 };
+  int i, j;
+  uint64_t start, end;
+  const int N = 300000;
+  crypto_rand(buf, sizeof(buf));
+
+  for (i = 0; lens[i] > 0; ++i) {
+    reset_perftime();
+    start = perftime();
+    for (j = 0; j < N; ++j) {
+      siphash24g(buf, lens[i]);
+    }
+    end = perftime();
+    printf("siphash24g(%d): %.2f ns per call\n",
+           lens[i], NANOCOUNT(start,end,N));
+  }
 }
 
 static void
@@ -489,6 +509,7 @@ typedef struct benchmark_t {
 
 static struct benchmark_t benchmarks[] = {
   ENT(dmap),
+  ENT(siphash),
   ENT(aes),
   ENT(onion_TAP),
 #ifdef CURVE25519_ENABLED
@@ -546,6 +567,7 @@ main(int argc, const char **argv)
   reset_perftime();
 
   crypto_seed_rng(1);
+  crypto_init_siphash_key();
   options = options_new();
   init_logging();
   options->command = CMD_RUN_UNITTESTS;

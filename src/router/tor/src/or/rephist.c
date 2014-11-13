@@ -879,126 +879,6 @@ rep_hist_record_mtbf_data(time_t now, int missing_means_down)
   return -1;
 }
 
-/** Format the current tracked status of the router in <b>hist</b> at time
- * <b>now</b> for analysis; return it in a newly allocated string. */
-static char *
-rep_hist_format_router_status(or_history_t *hist, time_t now)
-{
-  char sor_buf[ISO_TIME_LEN+1];
-  char sod_buf[ISO_TIME_LEN+1];
-  double wfu;
-  double mtbf;
-  int up = 0, down = 0;
-  char *cp = NULL;
-
-  if (hist->start_of_run) {
-    format_iso_time(sor_buf, hist->start_of_run);
-    up = 1;
-  }
-  if (hist->start_of_downtime) {
-    format_iso_time(sod_buf, hist->start_of_downtime);
-    down = 1;
-  }
-
-  wfu = get_weighted_fractional_uptime(hist, now);
-  mtbf = get_stability(hist, now);
-  tor_asprintf(&cp,
-               "%s%s%s"
-               "%s%s%s"
-               "wfu %0.3f\n"
-               " weighted-time %lu\n"
-               " weighted-uptime %lu\n"
-               "mtbf %0.1f\n"
-               " weighted-run-length %lu\n"
-               " total-run-weights %f\n",
-               up?"uptime-started ":"", up?sor_buf:"", up?" UTC\n":"",
-               down?"downtime-started ":"", down?sod_buf:"", down?" UTC\n":"",
-               wfu,
-               hist->total_weighted_time,
-               hist->weighted_uptime,
-               mtbf,
-               hist->weighted_run_length,
-               hist->total_run_weights
-               );
-  return cp;
-}
-
-/** The last stability analysis document that we created, or NULL if we never
- * have created one. */
-static char *last_stability_doc = NULL;
-/** The last time we created a stability analysis document, or 0 if we never
- * have created one. */
-static time_t built_last_stability_doc_at = 0;
-/** Shortest allowable time between building two stability documents. */
-#define MAX_STABILITY_DOC_BUILD_RATE (3*60)
-
-/** Return a pointer to a NUL-terminated document describing our view of the
- * stability of the routers we've been tracking.  Return NULL on failure. */
-const char *
-rep_hist_get_router_stability_doc(time_t now)
-{
-  char *result;
-  smartlist_t *chunks;
-  if (built_last_stability_doc_at + MAX_STABILITY_DOC_BUILD_RATE > now)
-    return last_stability_doc;
-
-  if (!history_map)
-    return NULL;
-
-  tor_free(last_stability_doc);
-  chunks = smartlist_new();
-
-  if (rep_hist_have_measured_enough_stability()) {
-    smartlist_add(chunks, tor_strdup("we-have-enough-measurements\n"));
-  } else {
-    smartlist_add(chunks, tor_strdup("we-do-not-have-enough-measurements\n"));
-  }
-
-  DIGESTMAP_FOREACH(history_map, id, or_history_t *, hist) {
-    const node_t *node;
-    char dbuf[BASE64_DIGEST_LEN+1];
-    char *info;
-    digest_to_base64(dbuf, id);
-    node = node_get_by_id(id);
-    if (node) {
-      char ip[INET_NTOA_BUF_LEN+1];
-      char tbuf[ISO_TIME_LEN+1];
-      time_t published = node_get_published_on(node);
-      node_get_address_string(node,ip,sizeof(ip));
-      if (published > 0)
-        format_iso_time(tbuf, published);
-      else
-        strlcpy(tbuf, "???", sizeof(tbuf));
-      smartlist_add_asprintf(chunks,
-                   "router %s %s %s\n"
-                   "published %s\n"
-                   "relevant-flags %s%s%s\n"
-                   "declared-uptime %ld\n",
-                   dbuf, node_get_nickname(node), ip,
-                   tbuf,
-                   node->is_running ? "Running " : "",
-                   node->is_valid ? "Valid " : "",
-                   node->ri && node->ri->is_hibernating ? "Hibernating " : "",
-                   node_get_declared_uptime(node));
-    } else {
-      smartlist_add_asprintf(chunks,
-                   "router %s {no descriptor}\n", dbuf);
-    }
-    info = rep_hist_format_router_status(hist, now);
-    if (info)
-      smartlist_add(chunks, info);
-
-  } DIGESTMAP_FOREACH_END;
-
-  result = smartlist_join_strings(chunks, "", 0, NULL);
-  SMARTLIST_FOREACH(chunks, char *, cp, tor_free(cp));
-  smartlist_free(chunks);
-
-  last_stability_doc = result;
-  built_last_stability_doc_at = time(NULL);
-  return result;
-}
-
 /** Helper: return the first j >= i such that !strcmpstart(sl[j], prefix) and
  * such that no line sl[k] with i <= k < j starts with "R ".  Return -1 if no
  * such line exists. */
@@ -1051,7 +931,7 @@ correct_time(time_t t, time_t now, time_t stored_at, time_t started_measuring)
     return 0;
   else {
     long run_length = stored_at - t;
-    t = now - run_length;
+    t = (time_t)(now - run_length);
     if (t < started_measuring)
       t = started_measuring;
     return t;
@@ -1212,7 +1092,7 @@ rep_hist_load_mtbf_data(time_t now)
       hist->start_of_run = correct_time(start_of_run, now, stored_at,
                                         tracked_since);
       if (hist->start_of_run < latest_possible_start + wrl)
-        latest_possible_start = hist->start_of_run - wrl;
+        latest_possible_start = (time_t)(hist->start_of_run - wrl);
 
       hist->weighted_run_length = wrl;
       hist->total_run_weights = trw;
@@ -1690,7 +1570,7 @@ rep_hist_load_bwhist_state_section(bw_array_t *b,
   time_t start;
 
   uint64_t v, mv;
-  int i,ok,ok_m;
+  int i,ok,ok_m = 0;
   int have_maxima = s_maxima && s_values &&
     (smartlist_len(s_values) == smartlist_len(s_maxima));
 
@@ -1862,22 +1742,20 @@ rep_hist_note_used_port(time_t now, uint16_t port)
   add_predicted_port(now, port);
 }
 
-/** For this long after we've seen a request for a given port, assume that
- * we'll want to make connections to the same port in the future.  */
-#define PREDICTED_CIRCS_RELEVANCE_TIME (60*60)
-
 /** Return a newly allocated pointer to a list of uint16_t * for ports that
  * are likely to be asked for in the near future.
  */
 smartlist_t *
 rep_hist_get_predicted_ports(time_t now)
 {
+  int predicted_circs_relevance_time;
   smartlist_t *out = smartlist_new();
   tor_assert(predicted_ports_list);
+  predicted_circs_relevance_time = get_options()->PredictedPortsRelevanceTime;
 
   /* clean out obsolete entries */
   SMARTLIST_FOREACH_BEGIN(predicted_ports_list, predicted_port_t *, pp) {
-    if (pp->time + PREDICTED_CIRCS_RELEVANCE_TIME < now) {
+    if (pp->time + predicted_circs_relevance_time < now) {
       log_debug(LD_CIRC, "Expiring predicted port %d", pp->port);
 
       rephist_total_alloc -= sizeof(predicted_port_t);
@@ -1944,14 +1822,17 @@ int
 rep_hist_get_predicted_internal(time_t now, int *need_uptime,
                                 int *need_capacity)
 {
+  int predicted_circs_relevance_time;
+  predicted_circs_relevance_time = get_options()->PredictedPortsRelevanceTime;
+
   if (!predicted_internal_time) { /* initialize it */
     predicted_internal_time = now;
     predicted_internal_uptime_time = now;
     predicted_internal_capacity_time = now;
   }
-  if (predicted_internal_time + PREDICTED_CIRCS_RELEVANCE_TIME < now)
+  if (predicted_internal_time + predicted_circs_relevance_time < now)
     return 0; /* too long ago */
-  if (predicted_internal_uptime_time + PREDICTED_CIRCS_RELEVANCE_TIME >= now)
+  if (predicted_internal_uptime_time + predicted_circs_relevance_time >= now)
     *need_uptime = 1;
   // Always predict that we need capacity.
   *need_capacity = 1;
@@ -1963,8 +1844,11 @@ rep_hist_get_predicted_internal(time_t now, int *need_uptime,
 int
 any_predicted_circuits(time_t now)
 {
+  int predicted_circs_relevance_time;
+  predicted_circs_relevance_time = get_options()->PredictedPortsRelevanceTime;
+
   return smartlist_len(predicted_ports_list) ||
-         predicted_internal_time + PREDICTED_CIRCS_RELEVANCE_TIME >= now;
+         predicted_internal_time + predicted_circs_relevance_time >= now;
 }
 
 /** Return 1 if we have no need for circuits currently, else return 0. */
@@ -2313,7 +2197,7 @@ rep_hist_format_exit_stats(time_t now)
 time_t
 rep_hist_exit_stats_write(time_t now)
 {
-  char *statsdir = NULL, *filename = NULL, *str = NULL;
+  char *str = NULL;
 
   if (!start_of_exit_stats_interval)
     return 0; /* Not initialized. */
@@ -2329,19 +2213,12 @@ rep_hist_exit_stats_write(time_t now)
   rep_hist_reset_exit_stats(now);
 
   /* Try to write to disk. */
-  statsdir = get_datadir_fname("stats");
-  if (check_private_dir(statsdir, CPD_CREATE, get_options()->User) < 0) {
-    log_warn(LD_HIST, "Unable to create stats/ directory!");
-    goto done;
+  if (!check_or_create_data_subdir("stats")) {
+    write_to_data_subdir("stats", "exit-stats", str, "exit port statistics");
   }
-  filename = get_datadir_fname2("stats", "exit-stats");
-  if (write_str_to_file(filename, str, 0) < 0)
-    log_warn(LD_HIST, "Unable to write exit port statistics to disk!");
 
  done:
   tor_free(str);
-  tor_free(statsdir);
-  tor_free(filename);
   return start_of_exit_stats_interval + WRITE_STATS_INTERVAL;
 }
 
@@ -2434,7 +2311,7 @@ rep_hist_buffer_stats_add_circ(circuit_t *circ, time_t end_of_interval)
     return;
   start_of_interval = (circ->timestamp_created.tv_sec >
                        start_of_buffer_stats_interval) ?
-        circ->timestamp_created.tv_sec :
+        (time_t)circ->timestamp_created.tv_sec :
         start_of_buffer_stats_interval;
   interval_length = (int) (end_of_interval - start_of_interval);
   if (interval_length <= 0)
@@ -2598,7 +2475,7 @@ time_t
 rep_hist_buffer_stats_write(time_t now)
 {
   circuit_t *circ;
-  char *statsdir = NULL, *filename = NULL, *str = NULL;
+  char *str = NULL;
 
   if (!start_of_buffer_stats_interval)
     return 0; /* Not initialized. */
@@ -2606,7 +2483,7 @@ rep_hist_buffer_stats_write(time_t now)
     goto done; /* Not ready to write */
 
   /* Add open circuits to the history. */
-  for (circ = circuit_get_global_list_(); circ; circ = circ->next) {
+  TOR_LIST_FOREACH(circ, circuit_get_global_list(), head) {
     rep_hist_buffer_stats_add_circ(circ, now);
   }
 
@@ -2617,19 +2494,12 @@ rep_hist_buffer_stats_write(time_t now)
   rep_hist_reset_buffer_stats(now);
 
   /* Try to write to disk. */
-  statsdir = get_datadir_fname("stats");
-  if (check_private_dir(statsdir, CPD_CREATE, get_options()->User) < 0) {
-    log_warn(LD_HIST, "Unable to create stats/ directory!");
-    goto done;
+  if (!check_or_create_data_subdir("stats")) {
+    write_to_data_subdir("stats", "buffer-stats", str, "buffer statistics");
   }
-  filename = get_datadir_fname2("stats", "buffer-stats");
-  if (write_str_to_file(filename, str, 0) < 0)
-    log_warn(LD_HIST, "Unable to write buffer stats to disk!");
 
  done:
   tor_free(str);
-  tor_free(filename);
-  tor_free(statsdir);
   return start_of_buffer_stats_interval + WRITE_STATS_INTERVAL;
 }
 
@@ -2741,7 +2611,7 @@ rep_hist_format_desc_stats(time_t now)
 time_t
 rep_hist_desc_stats_write(time_t now)
 {
-  char *statsdir = NULL, *filename = NULL, *str = NULL;
+  char *filename = NULL, *str = NULL;
 
   if (!start_of_served_descs_stats_interval)
     return 0; /* We're not collecting stats. */
@@ -2751,10 +2621,8 @@ rep_hist_desc_stats_write(time_t now)
   str = rep_hist_format_desc_stats(now);
   tor_assert(str != NULL);
 
-  statsdir = get_datadir_fname("stats");
-  if (check_private_dir(statsdir, CPD_CREATE, get_options()->User) < 0) {
-    log_warn(LD_HIST, "Unable to create stats/ directory!");
-      goto done;
+  if (check_or_create_data_subdir("stats") < 0) {
+    goto done;
   }
   filename = get_datadir_fname2("stats", "served-desc-stats");
   if (append_bytes_to_file(filename, str, strlen(str), 0) < 0)
@@ -2763,7 +2631,6 @@ rep_hist_desc_stats_write(time_t now)
   rep_hist_reset_desc_stats(now);
 
  done:
-  tor_free(statsdir);
   tor_free(filename);
   tor_free(str);
   return start_of_served_descs_stats_interval + WRITE_STATS_INTERVAL;
@@ -2981,7 +2848,7 @@ rep_hist_format_conn_stats(time_t now)
 time_t
 rep_hist_conn_stats_write(time_t now)
 {
-  char *statsdir = NULL, *filename = NULL, *str = NULL;
+  char *str = NULL;
 
   if (!start_of_conn_stats_interval)
     return 0; /* Not initialized. */
@@ -2995,28 +2862,21 @@ rep_hist_conn_stats_write(time_t now)
   rep_hist_reset_conn_stats(now);
 
   /* Try to write to disk. */
-  statsdir = get_datadir_fname("stats");
-  if (check_private_dir(statsdir, CPD_CREATE, get_options()->User) < 0) {
-    log_warn(LD_HIST, "Unable to create stats/ directory!");
-    goto done;
+  if (!check_or_create_data_subdir("stats")) {
+    write_to_data_subdir("stats", "conn-stats", str, "connection statistics");
   }
-  filename = get_datadir_fname2("stats", "conn-stats");
-  if (write_str_to_file(filename, str, 0) < 0)
-    log_warn(LD_HIST, "Unable to write conn stats to disk!");
 
  done:
   tor_free(str);
-  tor_free(filename);
-  tor_free(statsdir);
   return start_of_conn_stats_interval + WRITE_STATS_INTERVAL;
 }
 
 /** Internal statistics to track how many requests of each type of
- * handshake we've received, and how many we've completed. Useful for
- * seeing trends in cpu load.
+ * handshake we've received, and how many we've assigned to cpuworkers.
+ * Useful for seeing trends in cpu load.
  * @{ */
-static int onion_handshakes_requested[MAX_ONION_HANDSHAKE_TYPE+1] = {0};
-static int onion_handshakes_completed[MAX_ONION_HANDSHAKE_TYPE+1] = {0};
+STATIC int onion_handshakes_requested[MAX_ONION_HANDSHAKE_TYPE+1] = {0};
+STATIC int onion_handshakes_assigned[MAX_ONION_HANDSHAKE_TYPE+1] = {0};
 /**@}*/
 
 /** A new onionskin (using the <b>type</b> handshake) has arrived. */
@@ -3030,10 +2890,10 @@ rep_hist_note_circuit_handshake_requested(uint16_t type)
 /** We've sent an onionskin (using the <b>type</b> handshake) to a
  * cpuworker. */
 void
-rep_hist_note_circuit_handshake_completed(uint16_t type)
+rep_hist_note_circuit_handshake_assigned(uint16_t type)
 {
   if (type <= MAX_ONION_HANDSHAKE_TYPE)
-    onion_handshakes_completed[type]++;
+    onion_handshakes_assigned[type]++;
 }
 
 /** Log our onionskin statistics since the last time we were called. */
@@ -3041,13 +2901,13 @@ void
 rep_hist_log_circuit_handshake_stats(time_t now)
 {
   (void)now;
-  log_notice(LD_HIST, "Circuit handshake stats since last time: "
+  log_notice(LD_HEARTBEAT, "Circuit handshake stats since last time: "
              "%d/%d TAP, %d/%d NTor.",
-             onion_handshakes_completed[ONION_HANDSHAKE_TYPE_TAP],
+             onion_handshakes_assigned[ONION_HANDSHAKE_TYPE_TAP],
              onion_handshakes_requested[ONION_HANDSHAKE_TYPE_TAP],
-             onion_handshakes_completed[ONION_HANDSHAKE_TYPE_NTOR],
+             onion_handshakes_assigned[ONION_HANDSHAKE_TYPE_NTOR],
              onion_handshakes_requested[ONION_HANDSHAKE_TYPE_NTOR]);
-  memset(onion_handshakes_completed, 0, sizeof(onion_handshakes_completed));
+  memset(onion_handshakes_assigned, 0, sizeof(onion_handshakes_assigned));
   memset(onion_handshakes_requested, 0, sizeof(onion_handshakes_requested));
 }
 
@@ -3061,11 +2921,9 @@ rep_hist_free_all(void)
   tor_free(write_array);
   tor_free(dir_read_array);
   tor_free(dir_write_array);
-  tor_free(last_stability_doc);
   tor_free(exit_bytes_read);
   tor_free(exit_bytes_written);
   tor_free(exit_streams);
-  built_last_stability_doc_at = 0;
   predicted_ports_free();
   bidi_map_free();
 

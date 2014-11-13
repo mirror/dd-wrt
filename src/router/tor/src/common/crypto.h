@@ -15,6 +15,7 @@
 
 #include <stdio.h>
 #include "torint.h"
+#include "testsupport.h"
 
 /*
   Macro to create an arbitrary OpenSSL version number as used by
@@ -69,13 +70,9 @@
  * signs removed. */
 #define BASE64_DIGEST256_LEN 43
 
-/** Constant used to indicate PKCS1 padding for public-key encryption */
-#define PK_PKCS1_PADDING      60001
 /** Constant used to indicate OAEP padding for public-key encryption */
 #define PK_PKCS1_OAEP_PADDING 60002
 
-/** Number of bytes added for PKCS1 padding. */
-#define PKCS1_PADDING_OVERHEAD 11
 /** Number of bytes added for PKCS1-OAEP padding. */
 #define PKCS1_OAEP_PADDING_OVERHEAD 42
 
@@ -92,6 +89,7 @@ typedef enum {
   DIGEST_SHA256 = 1,
 } digest_algorithm_t;
 #define  N_DIGEST_ALGORITHMS (DIGEST_SHA256+1)
+#define digest_algorithm_bitfield_t ENUM_BF(digest_algorithm_t)
 
 /** A set of all the digests we know how to compute, taken on a single
  * string.  Any digests that are shorter than 256 bits are right-padded
@@ -112,6 +110,8 @@ typedef struct crypto_dh_t crypto_dh_t;
 
 /* global state */
 const char * crypto_openssl_get_version_str(void);
+const char * crypto_openssl_get_header_version_str(void);
+int crypto_early_init(void);
 int crypto_global_init(int hardwareAccel,
                        const char *accelName,
                        const char *accelPath);
@@ -183,6 +183,7 @@ crypto_pk_t *crypto_pk_asn1_decode(const char *str, size_t len);
 int crypto_pk_get_digest(crypto_pk_t *pk, char *digest_out);
 int crypto_pk_get_all_digests(crypto_pk_t *pk, digests_t *digests_out);
 int crypto_pk_get_fingerprint(crypto_pk_t *pk, char *fp_out,int add_space);
+int crypto_pk_get_hashed_fingerprint(crypto_pk_t *pk, char *fp_out);
 
 /* symmetric crypto */
 const char *crypto_cipher_get_key(crypto_cipher_t *env);
@@ -221,9 +222,6 @@ void crypto_digest_get_digest(crypto_digest_t *digest,
 crypto_digest_t *crypto_digest_dup(const crypto_digest_t *digest);
 void crypto_digest_assign(crypto_digest_t *into,
                           const crypto_digest_t *from);
-void crypto_hmac_sha1(char *hmac_out,
-                      const char *key, size_t key_len,
-                      const char *msg, size_t msg_len);
 void crypto_hmac_sha256(char *hmac_out,
                         const char *key, size_t key_len,
                         const char *msg, size_t msg_len);
@@ -254,13 +252,14 @@ int crypto_expand_key_material_rfc5869_sha256(
 
 /* random numbers */
 int crypto_seed_rng(int startup);
-int crypto_rand(char *to, size_t n);
+MOCK_DECL(int,crypto_rand,(char *to, size_t n));
 int crypto_strongest_rand(uint8_t *out, size_t out_len);
 int crypto_rand_int(unsigned int max);
 uint64_t crypto_rand_uint64(uint64_t max);
 double crypto_rand_double(void);
 struct tor_weak_rng_t;
 void crypto_seed_weak_rng(struct tor_weak_rng_t *rng);
+int crypto_init_siphash_key(void);
 
 char *crypto_random_hostname(int min_rand_len, int max_rand_len,
                              const char *prefix, const char *suffix);
@@ -290,7 +289,6 @@ void secret_to_key(char *key_out, size_t key_out_len, const char *secret,
 /** OpenSSL-based utility functions. */
 void memwipe(void *mem, uint8_t byte, size_t sz);
 
-#ifdef CRYPTO_PRIVATE
 /* Prototypes for private functions only used by tortls.c, crypto.c, and the
  * unit tests. */
 struct rsa_st;
@@ -301,9 +299,8 @@ crypto_pk_t *crypto_new_pk_from_rsa_(struct rsa_st *rsa);
 struct evp_pkey_st *crypto_pk_get_evp_pkey_(crypto_pk_t *env,
                                                 int private);
 struct dh_st *crypto_dh_get_dh_(crypto_dh_t *dh);
-/* Prototypes for private functions only used by crypto.c and test.c*/
-void add_spaces_to_fp(char *out, size_t outlen, const char *in);
-#endif
+
+void crypto_add_spaces_to_fp(char *out, size_t outlen, const char *in);
 
 #endif
 

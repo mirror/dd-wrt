@@ -17,7 +17,7 @@
   } STMT_END
 
 node_t *node_get_mutable_by_id(const char *identity_digest);
-const node_t *node_get_by_id(const char *identity_digest);
+MOCK_DECL(const node_t *, node_get_by_id, (const char *identity_digest));
 const node_t *node_get_by_hex_id(const char *identity_digest);
 node_t *nodelist_set_routerinfo(routerinfo_t *ri, routerinfo_t **ri_old_out);
 node_t *nodelist_add_microdesc(microdesc_t *md);
@@ -26,6 +26,7 @@ void nodelist_set_consensus(networkstatus_t *ns);
 void nodelist_remove_microdesc(const char *identity_digest, microdesc_t *md);
 void nodelist_remove_routerinfo(routerinfo_t *ri);
 void nodelist_purge(void);
+smartlist_t *nodelist_find_nodes_with_microdesc(const microdesc_t *md);
 
 void nodelist_free_all(void);
 void nodelist_assert_ok(void);
@@ -33,6 +34,8 @@ void nodelist_assert_ok(void);
 const node_t *node_get_by_nickname(const char *nickname, int warn_if_unnamed);
 void node_get_verbose_nickname(const node_t *node,
                                char *verbose_name_out);
+void node_get_verbose_nickname_by_id(const char *id_digest,
+                                char *verbose_name_out);
 int node_is_named(const node_t *node);
 int node_is_dir(const node_t *node);
 int node_has_descriptor(const node_t *node);

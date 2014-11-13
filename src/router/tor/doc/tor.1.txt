@@ -18,17 +18,22 @@ SYNOPSIS
 
 DESCRIPTION
 -----------
-__tor__ is a connection-oriented anonymizing communication
+Tor is a connection-oriented anonymizing communication
 service. Users choose a source-routed path through a set of nodes, and
 negotiate a "virtual circuit" through the network, in which each node
 knows its predecessor and successor, but no others. Traffic flowing down
 the circuit is unwrapped by a symmetric key at each node, which reveals
 the downstream node. +
 
-Basically __tor__ provides a distributed network of servers ("onion routers").
-Users bounce their TCP streams -- web traffic, ftp, ssh, etc -- around the
-routers, and recipients, observers, and even the routers themselves have
+Basically, Tor provides a distributed network of servers or relays ("onion routers").
+Users bounce their TCP streams -- web traffic, ftp, ssh, etc. -- around the
+network, and recipients, observers, and even the relays themselves have
 difficulty tracking the source of the stream.
+
+By default, **tor** will only act as a client only.  To help the network
+by providing bandwidth as a relay, change the **ORPort** configuration
+option -- see below.  Please also consult the documentation on the Tor
+Project's website.
 
 COMMAND-LINE OPTIONS
 --------------------
@@ -40,13 +45,22 @@ COMMAND-LINE OPTIONS
     options. (Default: @CONFDIR@/torrc, or $HOME/.torrc if that file is not
     found)
 
+[[opt-allow-missing-torrc]] **--allow-missing-torrc**::
+    Do not require that configuration file specified by **-f** exist if
+    default torrc can be accessed.
+
 [[opt-defaults-torrc]] **--defaults-torrc** __FILE__::
     Specify a file in which to find default values for Tor options.  The
     contents of this file are overridden by those in the regular
     configuration file, and by those on the command line. (Default:
     @CONFDIR@/torrc-defaults.)
 
-[[opt-hash-password]] **--hash-password**::
+[[opt-ignore-missing-torrc]] **--ignore-missing-torrc**::
+    Specifies that Tor should treat a missing torrc file as though it
+    were empty. Ordinarily, Tor does this for missing default torrc files,
+    but not for those specified on the command line.
+
+[[opt-hash-password]] **--hash-password** __PASSWORD__::
     Generates a hashed password for control port access.
 
 [[opt-list-fingerprint]] **--list-fingerprint**::
@@ -124,42 +138,52 @@ option name with a forward slash.
 GENERAL OPTIONS
 ---------------
 
-[[BandwidthRate]] **BandwidthRate** __N__ **bytes**|**KBytes**|**MBytes**|**GBytes**::
+[[BandwidthRate]] **BandwidthRate** __N__ **bytes**|**KBytes**|**MBytes**|**GBytes**|**KBits**|**MBits**|**GBits**::
     A token bucket limits the average incoming bandwidth usage on this node to
     the specified number of bytes per second, and the average outgoing
     bandwidth usage to that same value.  If you want to run a relay in the
     public network, this needs to be _at the very least_ 30 KBytes (that is,
-    30720 bytes). (Default: 1 GByte)
+    30720 bytes). (Default: 1 GByte) +
+ +
+    With this option, and in other options that take arguments in bytes,
+    KBytes, and so on, other formats are also supported. Notably, "KBytes" can
+    also be written as "kilobytes" or "kb"; "MBytes" can be written as
+    "megabytes" or "MB"; "kbits" can be written as "kilobits"; and so forth.
+    Tor also accepts "byte" and "bit" in the singular.
+    The prefixes "tera" and "T" are also recognized.
+    If no units are given, we default to bytes.
+    To avoid confusion, we recommend writing "bytes" or "bits" explicitly,
+    since it's easy to forget that "B" means bytes, not bits.
 
-[[BandwidthBurst]] **BandwidthBurst** __N__ **bytes**|**KBytes**|**MBytes**|**GBytes**::
+[[BandwidthBurst]] **BandwidthBurst** __N__ **bytes**|**KBytes**|**MBytes**|**GBytes**|**KBits**|**MBits**|**GBits**::
     Limit the maximum token bucket size (also known as the burst) to the given
     number of bytes in each direction. (Default: 1 GByte)
 
-[[MaxAdvertisedBandwidth]] **MaxAdvertisedBandwidth** __N__ **bytes**|**KBytes**|**MBytes**|**GBytes**::
+[[MaxAdvertisedBandwidth]] **MaxAdvertisedBandwidth** __N__ **bytes**|**KBytes**|**MBytes**|**GBytes**|**KBits**|**MBits**|**GBits**::
     If set, we will not advertise more than this amount of bandwidth for our
     BandwidthRate. Server operators who want to reduce the number of clients
     who ask to build circuits through them (since this is proportional to
     advertised bandwidth rate) can thus reduce the CPU demands on their server
     without impacting network performance.
 
-[[RelayBandwidthRate]] **RelayBandwidthRate** __N__ **bytes**|**KBytes**|**MBytes**|**GBytes**::
+[[RelayBandwidthRate]] **RelayBandwidthRate** __N__ **bytes**|**KBytes**|**MBytes**|**GBytes**|**KBits**|**MBits**|**GBits**::
     If not 0, a separate token bucket limits the average incoming bandwidth
     usage for \_relayed traffic_ on this node to the specified number of bytes
     per second, and the average outgoing bandwidth usage to that same value.
     Relayed traffic currently is calculated to include answers to directory
     requests, but that may change in future versions. (Default: 0)
 
-[[RelayBandwidthBurst]] **RelayBandwidthBurst** __N__ **bytes**|**KBytes**|**MBytes**|**GBytes**::
+[[RelayBandwidthBurst]] **RelayBandwidthBurst** __N__ **bytes**|**KBytes**|**MBytes**|**GBytes**|**KBits**|**MBits**|**GBits**::
     If not 0, limit the maximum token bucket size (also known as the burst) for
     \_relayed traffic_ to the given number of bytes in each direction.
     (Default: 0)
 
-[[PerConnBWRate]] **PerConnBWRate** __N__ **bytes**|**KBytes**|**MBytes**|**GBytes**::
+[[PerConnBWRate]] **PerConnBWRate** __N__ **bytes**|**KBytes**|**MBytes**|**GBytes**|**KBits**|**MBits**|**GBits**::
     If set, do separate rate limiting for each connection from a non-relay.
     You should never need to change this value, since a network-wide value is
     published in the consensus and your relay will use that value. (Default: 0)
 
-[[PerConnBWBurst]] **PerConnBWBurst** __N__ **bytes**|**KBytes**|**MBytes**|**GBytes**::
+[[PerConnBWBurst]] **PerConnBWBurst** __N__ **bytes**|**KBytes**|**MBytes**|**GBytes**|**KBits**|**MBits**|**GBits**::
     If set, do separate rate limiting for each connection from a non-relay.
     You should never need to change this value, since a network-wide value is
     published in the consensus and your relay will use that value. (Default: 0)
@@ -186,6 +210,27 @@ GENERAL OPTIONS
     listening address of any pluggable transport proxy that tries to
     launch __transport__.
 
+[[ServerTransportOptions]] **ServerTransportOptions** __transport__ __k=v__ __k=v__ ...::
+    When this option is set, Tor will pass the __k=v__ parameters to
+    any pluggable transport proxy that tries to launch __transport__. +
+    (Example: ServerTransportOptions obfs45 shared-secret=bridgepasswd cache=/var/lib/tor/cache)
+
+[[ExtORPort]] **ExtORPort** \['address':]__port__|**auto**
+    Open this port to listen for Extended ORPort connections from your
+    pluggable transports.
+
+[[ExtORPortCookieAuthFile]] **ExtORPortCookieAuthFile** __Path__::
+    If set, this option overrides the default location and file name
+    for the Extended ORPort's cookie file -- the cookie file is needed
+    for pluggable transports to communicate through the Extended ORPort.
+
+[[ExtORPortCookieAuthFileGroupReadable]] **ExtORPortCookieAuthFileGroupReadable** **0**|**1**::
+    If this option is set to 0, don't allow the filesystem group to read the
+    Extended OR Port cookie file. If the option is set to 1, make the cookie
+    file readable by the default GID. [Making the file readable by other
+    groups is not yet implemented; let us know if you need this for some
+    reason.] (Default: 0)
+
 [[ConnLimit]] **ConnLimit** __NUM__::
     The minimum number of file descriptors that must be available to the Tor
     process before it will start. Tor will ask the OS for as many file
@@ -197,7 +242,8 @@ GENERAL OPTIONS
 
 [[DisableNetwork]] **DisableNetwork** **0**|**1**::
     When this option is set, we don't listen for or accept any connections
-    other than controller connections, and we don't make any outbound
+    other than controller connections, and we close (and don't reattempt)
+    any outbound
     connections.  Controllers sometimes use this option to avoid using
     the network until Tor is fully configured. (Default: 0)
 
@@ -273,7 +319,7 @@ GENERAL OPTIONS
     If set, this option overrides the default location and file name
     for Tor's cookie file. (See CookieAuthentication above.)
 
-[[CookieAuthFileGroupReadable]] **CookieAuthFileGroupReadable** **0**|**1**|__Groupname__::
+[[CookieAuthFileGroupReadable]] **CookieAuthFileGroupReadable** **0**|**1**::
     If this option is set to 0, don't allow the filesystem group to read the
     cookie file. If the option is set to 1, make the cookie file readable by
     the default GID. [Making the file readable by other groups is not yet
@@ -302,12 +348,8 @@ GENERAL OPTIONS
     and port, with the specified key fingerprint. This option can be repeated
     many times, for multiple authoritative directory servers. Flags are
     separated by spaces, and determine what kind of an authority this directory
-    is. By default, every authority is authoritative for current ("v2")-style
-    directories, unless the "no-v2" flag is given. If the "v1" flags is
-    provided, Tor will use this server as an authority for old-style (v1)
-    directories as well. (Only directory mirrors care about this.) Tor will
-    use this server as an authority for hidden service information if the "hs"
-    flag is set, or if the "v1" flag is set and the "no-hs" flag is **not** set.
+    is. By default, an authority is not authoritative for any directory style
+    or version unless an appropriate flag is given.
     Tor will use this authority as a bridge authoritative directory if the
     "bridge" flag is set. If a flag "orport=**port**" is given, Tor will use the
     given port when opening encrypted tunnels to the dirserver. If a flag
@@ -336,17 +378,14 @@ GENERAL OPTIONS
 
 [[AlternateDirAuthority]] **AlternateDirAuthority** [__nickname__] [**flags**] __address__:__port__ __fingerprint__ +
 
-[[AlternateHSAuthority]] **AlternateHSAuthority** [__nickname__] [**flags**] __address__:__port__ __fingerprint__ +
-
 [[AlternateBridgeAuthority]] **AlternateBridgeAuthority** [__nickname__] [**flags**] __address__:__port__ __ fingerprint__::
     These options behave as DirAuthority, but they replace fewer of the
     default directory authorities. Using
     AlternateDirAuthority replaces the default Tor directory authorities, but
-    leaves the default hidden service authorities and bridge authorities in
-    place.  Similarly, AlternateHSAuthority replaces the default hidden
-    service authorities, but not the directory or bridge authorities; and
+    leaves the default bridge authorities in
+    place.  Similarly,
     AlternateBridgeAuthority replaces the default bridge authority,
-    but leaves the directory and hidden service authorities alone.
+    but leaves the directory authorities alone.
 
 [[DisableAllSwap]] **DisableAllSwap** **0**|**1**::
     If set to 1, Tor will attempt to lock all current and future memory pages,
@@ -424,6 +463,11 @@ GENERAL OPTIONS
     proxy authentication that Tor supports; feel free to submit a patch if you
     want it to support others.
 
+[[Sandbox]] **Sandbox** **0**|**1**::
+    If set to 1, Tor will run securely through the use of a syscall sandbox.
+    Otherwise the sandbox will be disabled. The option is currently an
+    experimental feature. (Default: 0)
+
 [[Socks4Proxy]] **Socks4Proxy** __host__[:__port__]::
     Tor will make all OR connections through the SOCKS 4 proxy at host:port
     (or host:1080 if port is not specified).
@@ -454,15 +498,15 @@ GENERAL OPTIONS
     attacker who obtains the logs. If only one severity level is given, all
     messages of that level or higher will be sent to the listed destination.
 
-**Log** __minSeverity__[-__maxSeverity__] **file** __FILENAME__::
+[[Log2]] **Log** __minSeverity__[-__maxSeverity__] **file** __FILENAME__::
     As above, but send log messages to the listed filename. The
     "Log" option may appear more than once in a configuration file.
     Messages are sent to all the logs that match their severity
     level.
 
-**Log** **[**__domain__,...**]**__minSeverity__[-__maxSeverity__] ... **file** __FILENAME__ +
+[[Log3]] **Log** **[**__domain__,...**]**__minSeverity__[-__maxSeverity__] ... **file** __FILENAME__ +
 
-**Log** **[**__domain__,...**]**__minSeverity__[-__maxSeverity__] ... **stderr**|**stdout**|**syslog**::
+[[Log4]] **Log** **[**__domain__,...**]**__minSeverity__[-__maxSeverity__] ... **stderr**|**stdout**|**syslog**::
     As above, but select messages by range of log severity __and__ by a
     set of "logging domains".  Each logging domain corresponds to an area of
     functionality inside Tor.  You can specify any number of severity ranges
@@ -504,6 +548,12 @@ GENERAL OPTIONS
     If 1, Tor will log with severity \'warn' various cases of other parties not
     following the Tor specification. Otherwise, they are logged with severity
     \'info'. (Default: 0)
+
+[[PredictedPortsRelevanceTime]] **PredictedPortsRelevanceTime** __NUM__::
+    Set how long, after the client has mad an anonymized connection to a
+    given port, we will try to make sure that we build circuits to
+    exits that support that port. The maximum value for this option is 1
+    hour. (Default: 1 hour)
 
 [[RunAsDaemon]] **RunAsDaemon** **0**|**1**::
     If 1, Tor forks and daemonizes to the background. This option has no effect
@@ -550,15 +600,6 @@ GENERAL OPTIONS
     This is useful when running on flash memory or other media that support
     only a limited number of writes. (Default: 0)
 
-[[TunnelDirConns]] **TunnelDirConns** **0**|**1**::
-    If non-zero, when a directory server we contact supports it, we will build
-    a one-hop circuit and make an encrypted connection via its ORPort.
-    (Default: 1)
-
-[[PreferTunneledDirConns]] **PreferTunneledDirConns** **0**|**1**::
-    If non-zero, we will avoid directory servers that don't support tunneled
-    directory connections, when possible. (Default: 1)
-
 [[CircuitPriorityHalflife]] **CircuitPriorityHalflife** __NUM1__::
     If this value is set, we override the default algorithm for choosing which
     circuit's cell to deliver or relay next. When the value is 0, we
@@ -583,7 +624,7 @@ GENERAL OPTIONS
     This feature is experimental; don't use it yet unless you're eager to
     help tracking down bugs. (Default: 0)
 
-[[_UseFilteringSSLBufferevents]] **_UseFilteringSSLBufferevents** **0**|**1**::
+[[UseFilteringSSLBufferevents]] **UseFilteringSSLBufferevents** **0**|**1**::
     Tells Tor to do its SSL communication using a chain of
     bufferevents: one for SSL and one for networking.  This option has no
     effect if bufferevents are disabled (in which case it can't turn on), or
@@ -601,7 +642,7 @@ CLIENT OPTIONS
 --------------
 
 The following options are useful only for clients (that is, if
-[[SocksPort]] **SocksPort**, **TransPort**, **DNSPort**, or **NATDPort** is non-zero):
+**SocksPort**, **TransPort**, **DNSPort**, or **NATDPort** is non-zero):
 
 [[AllowInvalidNodes]] **AllowInvalidNodes** **entry**|**exit**|**middle**|**introduction**|**rendezvous**|**...**::
     If some Tor servers are obviously not working right, the directory
@@ -657,12 +698,13 @@ The following options are useful only for clients (that is, if
     number like 60. (Default: 0)
 
 [[ClientOnly]] **ClientOnly** **0**|**1**::
-    If set to 1, Tor will under no circumstances run as a relay or serve
-    directory requests. This config option is mostly meaningless: we
-    added it back when we were considering having Tor clients auto-promote
-    themselves to being relays if they were stable and fast enough. The
-    current behavior is simply that Tor is a client unless ORPort or
-    DirPort are configured. (Default: 0)
+    If set to 1, Tor will not run as a relay or serve
+    directory requests, even if the ORPort, ExtORPort, or DirPort options are
+    set. (This config option is
+    mostly unnecessary: we added it back when we were considering having
+    Tor clients auto-promote themselves to being relays if they were stable
+    and fast enough. The current behavior is simply that Tor is a client
+    unless ORPort, ExtORPort, or DirPort are configured.) (Default: 0)
 
 [[ExcludeNodes]] **ExcludeNodes** __node__,__node__,__...__::
     A list of identity fingerprints, nicknames, country codes and address
@@ -928,9 +970,10 @@ The following options are useful only for clients (that is, if
         on this port to share circuits with streams from every other
         port with the same session group.  (By default, streams received
         on different SOCKSPorts, TransPorts, etc are always isolated from one
-        another. This option overrides that behavior.) +
-+
-    Other recognized _flags_ for a SOCKSPort are:
+        another. This option overrides that behavior.)
+
+[[OtherSOCKSPortFlags]]::
+    Other recognized __flags__ for a SOCKSPort are:
     **NoIPv4Traffic**;;
         Tell exits to not connect to IPv4 addresses in response to SOCKS
         requests on this connection.
@@ -941,13 +984,14 @@ The following options are useful only for clients (that is, if
     **PreferIPv6**;;
         Tells exits that, if a host has both an IPv4 and an IPv6 address,
         we would prefer to connect to it via IPv6. (IPv4 is the default.) +
-+
-       NOTE: Although this option allows you to specify an IP address
-       other than localhost, you should do so only with extreme caution.
-       The SOCKS protocol is unencrypted and (as we use it)
-       unauthenticated, so exposing it in this way could leak your
-       information to anybody watching your network, and allow anybody
-       to use your computer as an open proxy.
+ +
+        NOTE: Although this option allows you to specify an IP address
+        other than localhost, you should do so only with extreme caution.
+        The SOCKS protocol is unencrypted and (as we use it)
+        unauthenticated, so exposing it in this way could leak your
+        information to anybody watching your network, and allow anybody
+        to use your computer as an open proxy. +
+ +
     **CacheIPv4DNS**;;
         Tells the client to remember IPv4 DNS answers we receive from exit
         nodes via this connection. (On by default.)
@@ -996,7 +1040,8 @@ The following options are useful only for clients (that is, if
 [[SocksPolicy]] **SocksPolicy** __policy__,__policy__,__...__::
     Set an entrance policy for this server, to limit who can connect to the
     SocksPort and DNSPort ports. The policies have the same form as exit
-    policies below.
+    policies below, except that port specifiers are ignored. Any address
+    not matched by some entry in the policy is accepted.
 
 [[SocksTimeout]] **SocksTimeout** __NUM__::
     Let a socks connection wait NUM seconds handshaking, and NUM seconds
@@ -1043,7 +1088,7 @@ The following options are useful only for clients (that is, if
     increases the odds that an adversary who owns some servers will observe a
     fraction of your paths. (Default: 1)
 
-[[UseEntryGuardsAsDirectoryGuards]] **UseEntryGuardsAsDirectoryGuards** **0**|**1**::
+[[UseEntryGuardsAsDirGuards]] **UseEntryGuardsAsDirGuards** **0**|**1**::
     If this option is set to 1, and UseEntryGuards is also set to 1,
     we try to use our entry guards as directory
     guards, and failing that, pick more nodes to act as our directory guards.
@@ -1152,6 +1197,32 @@ The following options are useful only for clients (that is, if
     entries, so TransListenAddress no longer has a purpose.  For backward
     compatibility, TransListenAddress is only allowed when TransPort is just
     a port number.)
+
+[[TransProxyType]] **TransProxyType** **default**|**TPROXY**|**ipfw**|**pf-divert**::
+    TransProxyType may only be enabled when there is transparent proxy listener
+    enabled.
+ +
+    Set this to "TPROXY" if you wish to be able to use the TPROXY Linux module
+    to transparently proxy connections that are configured using the TransPort
+    option. This setting lets the listener on the TransPort accept connections
+    for all addresses, even when the TransListenAddress is configured for an
+    internal address. Detailed information on how to configure the TPROXY
+    feature can be found in the Linux kernel source tree in the file
+    Documentation/networking/tproxy.txt.
+ +
+    Set this option to "ipfw" to use the FreeBSD ipfw interface.
+ +
+    On *BSD operating systems when using pf, set this to "pf-divert" to take
+    advantage of +divert-to+ rules, which do not modify the packets like
+    +rdr-to+ rules do. Detailed information on how to configure pf to use
+    +divert-to+ rules can be found in the pf.conf(5) manual page. On OpenBSD,
+    +divert-to+ is available to use on versions greater than or equal to
+    OpenBSD 4.4.
+ +
+    Set this to "default", or leave it unconfigured, to use regular IPTables
+    on Linux, or to use pf +rdr-to+ rules on *BSD systems.
+ +
+    (Default: "default".)
 
 [[NATDPort]] **NATDPort** \['address':]__port__|**auto** [_isolation flags_]::
     Open this port to listen for connections from old versions of ipfw (as
@@ -1262,9 +1333,9 @@ The following options are useful only for clients (that is, if
     it too early might make your client stand out. If this option is 0, your
     Tor client won't use the ntor handshake. If it's 1, your Tor client
     will use the ntor handshake to extend circuits through servers that
-    support it. If this option is "auto" (recommended), then your client
+    support it. If this option is "auto", then your client
     will use the ntor handshake once enough directory authorities recommend
-    it. (Default: auto)
+    it. (Default: 1)
 
 [[PathBiasCircThreshold]] **PathBiasCircThreshold** __NUM__ +
 
@@ -1422,6 +1493,11 @@ is non-zero):
     public (external) IP address. See RFC 1918 and RFC 3330 for more details
     about internal and reserved IP address space. +
  +
+    Tor also allow IPv6 exit policy entries. For instance, "reject6 [FC00::]/7:*"
+    rejects all destinations that share 7 most significant bit prefix with 
+    address FC00::. Respectively, "accept6 [C000::]/3:*" accepts all destinations
+    that share 3 most significant bit prefix with address C000::. +
+ +
     This directive can be specified multiple times so you don't have to put it
     all on one line. +
  +
@@ -1524,7 +1600,7 @@ is non-zero):
     If set to a path, only the specified path will be executed.
     (Default: tor-fw-helper)
 
-[[PublishServerDescriptor]] **PublishServerDescriptor** **0**|**1**|**v1**|**v2**|**v3**|**bridge**,**...**::
+[[PublishServerDescriptor]] **PublishServerDescriptor** **0**|**1**|**v3**|**bridge**,**...**::
     This option specifies which descriptors Tor will publish when acting as
     a relay. You can
     choose multiple arguments, separated by commas.
@@ -1554,7 +1630,7 @@ is non-zero):
     server is still alive and doing useful things. Settings this
     to 0 will disable the heartbeat. (Default: 6 hours)
 
-[[AccountingMax]] **AccountingMax** __N__ **bytes**|**KBytes**|**MBytes**|**GBytes**|**TBytes**::
+[[AccountingMax]] **AccountingMax** __N__ **bytes**|**KBytes**|**MBytes**|**GBytes**|**KBits**|**MBits**|**GBits**|**TBytes**::
     Never send more than the specified number of bytes in a given accounting
     period, or receive more than that number in the period. For example, with
     AccountingMax set to 1 GByte, a server could send 900 MBytes and
@@ -1630,7 +1706,7 @@ is non-zero):
 
 [[BridgeRecordUsageByCountry]] **BridgeRecordUsageByCountry** **0**|**1**::
     When this option is enabled and BridgeRelay is also enabled, and we have
-    GeoIP data, Tor keeps a keep a per-country count of how many client
+    GeoIP data, Tor keeps a per-country count of how many client
     addresses have contacted it so that it can help the bridge authority guess
     which countries have blocked access to it. (Default: 1)
 
@@ -1685,20 +1761,64 @@ is non-zero):
     localhost, RFC1918 addresses, and so on. This can create security issues;
     you should probably leave it off. (Default: 0)
 
-[[MaxMemInCellQueues]] **MaxMemInCellQueues**  __N__ **bytes**|**KB**|**MB**|**GB**::
+[[MaxMemInQueues]] **MaxMemInQueues**  __N__ **bytes**|**KB**|**MB**|**GB**::
     This option configures a threshold above which Tor will assume that it
-    needs to stop queueing cells because it's about to run out of memory.
-    If it hits this threshold, it will begin killing circuits until it
-    has recovered at least 10% of this memory.  Do not set this option too
+    needs to stop queueing or buffering data because it's about to run out of
+    memory.  If it hits this threshold, it will begin killing circuits until
+    it has recovered at least 10% of this memory.  Do not set this option too
     low, or your relay may be unreliable under load.  This option only
-    affects circuit queues, so the actual process size will be larger than
-    this. (Default: 8GB)
+    affects some queues, so the actual process size will be larger than
+    this.  If this option is set to 0, Tor will try to pick a reasonable
+    default based on your system's physical memory.  (Default: 0)
 
 DIRECTORY SERVER OPTIONS
 ------------------------
 
 The following options are useful only for directory servers (that is,
 if DirPort is non-zero):
+
+[[DirPortFrontPage]] **DirPortFrontPage** __FILENAME__::
+    When this option is set, it takes an HTML file and publishes it as "/" on
+    the DirPort. Now relay operators can provide a disclaimer without needing
+    to set up a separate webserver. There's a sample disclaimer in
+    contrib/operator-tools/tor-exit-notice.html.
+
+[[HidServDirectoryV2]] **HidServDirectoryV2** **0**|**1**::
+    When this option is set, Tor accepts and serves v2 hidden service
+    descriptors. Setting DirPort is not required for this, because clients
+    connect via the ORPort by default. (Default: 1)
+
+[[DirPort]] **DirPort** \['address':]__PORT__|**auto** [_flags_]::
+    If this option is nonzero, advertise the directory service on this port.
+    Set it to "auto" to have Tor pick a port for you.  This option can occur
+    more than once, but only one advertised DirPort is supported: all
+    but one DirPort must have the **NoAdvertise** flag set. (Default: 0)
++
+    The same flags are supported here as are supported by ORPort.
+
+[[DirListenAddress]] **DirListenAddress** __IP__[:__PORT__]::
+    Bind the directory service to this address. If you specify a port, bind to
+    this port rather than the one specified in DirPort.  (Default: 0.0.0.0)
+    This directive can be specified multiple times  to bind to multiple
+    addresses/ports.
++
+    This option is deprecated; you can get the same behavior with DirPort now
+    that it supports NoAdvertise and explicit addresses.
+
+[[DirPolicy]] **DirPolicy** __policy__,__policy__,__...__::
+    Set an entrance policy for this server, to limit who can connect to the
+    directory ports. The policies have the same form as exit policies above,
+    except that port specifiers are ignored. Any address not matched by
+    some entry in the policy is accepted.
+
+
+DIRECTORY AUTHORITY SERVER OPTIONS
+----------------------------------
+
+The following options enable operation as a directory authority, and
+control how Tor behaves as a directory authority.  You should not need
+to adjust any of them if you're running a regular relay or exit server
+on the public Tor network.
 
 [[AuthoritativeDirectory]] **AuthoritativeDirectory** **0**|**1**::
     When this option is set to 1, Tor operates as an authoritative directory
@@ -1707,23 +1827,6 @@ if DirPort is non-zero):
     already have you listed as a trusted directory, you probably do not want
     to set this option. Please coordinate with the other admins at
     tor-ops@torproject.org if you think you should be a directory.
-
-[[DirPortFrontPage]] **DirPortFrontPage** __FILENAME__::
-    When this option is set, it takes an HTML file and publishes it as "/" on
-    the DirPort. Now relay operators can provide a disclaimer without needing
-    to set up a separate webserver. There's a sample disclaimer in
-    contrib/tor-exit-notice.html.
-
-[[V1AuthoritativeDirectory]] **V1AuthoritativeDirectory** **0**|**1**::
-    When this option is set in addition to **AuthoritativeDirectory**, Tor
-    generates version 1 directory and running-routers documents (for legacy
-    Tor clients up to 0.1.0.x).
-
-[[V2AuthoritativeDirectory]] **V2AuthoritativeDirectory** **0**|**1**::
-    When this option is set in addition to **AuthoritativeDirectory**, Tor
-    generates version 2 network statuses and serves descriptors, etc as
-    described in doc/spec/dir-spec-v2.txt (for Tor clients and servers running
-    0.1.1.x and 0.1.2.x).
 
 [[V3AuthoritativeDirectory]] **V3AuthoritativeDirectory** **0**|**1**::
     When this option is set in addition to **AuthoritativeDirectory**, Tor
@@ -1747,55 +1850,6 @@ if DirPort is non-zero):
     accept or publish descriptors that contradict a registered binding. See
     **approved-routers** in the **FILES** section below.
 
-[[HSAuthoritativeDir]] **HSAuthoritativeDir** **0**|**1**::
-    When this option is set in addition to **AuthoritativeDirectory**, Tor also
-    accepts and serves v0 hidden service descriptors,
-    which are produced and used by Tor 0.2.1.x and older. (Default: 0)
-
-[[HidServDirectoryV2]] **HidServDirectoryV2** **0**|**1**::
-    When this option is set, Tor accepts and serves v2 hidden service
-    descriptors. Setting DirPort is not required for this, because clients
-    connect via the ORPort by default. (Default: 1)
-
-[[BridgeAuthoritativeDir]] **BridgeAuthoritativeDir** **0**|**1**::
-    When this option is set in addition to **AuthoritativeDirectory**, Tor
-    accepts and serves router descriptors, but it caches and serves the main
-    networkstatus documents rather than generating its own. (Default: 0)
-
-[[MinUptimeHidServDirectoryV2]] **MinUptimeHidServDirectoryV2** __N__ **seconds**|**minutes**|**hours**|**days**|**weeks**::
-    Minimum uptime of a v2 hidden service directory to be accepted as such by
-    authoritative directories. (Default: 25 hours)
-
-[[DirPort]] **DirPort** \['address':]__PORT__|**auto** [_flags_]::
-    If this option is nonzero, advertise the directory service on this port.
-    Set it to "auto" to have Tor pick a port for you.  This option can occur
-    more than once, but only one advertised DirPort is supported: all
-    but one DirPort must have the **NoAdvertise** flag set. (Default: 0)
-+
-    The same flags are supported here as are supported by ORPort.
-
-[[DirListenAddress]] **DirListenAddress** __IP__[:__PORT__]::
-    Bind the directory service to this address. If you specify a port, bind to
-    this port rather than the one specified in DirPort.  (Default: 0.0.0.0)
-    This directive can be specified multiple times  to bind to multiple
-    addresses/ports.
-+
-    This option is deprecated; you can get the same behavior with DirPort now
-    that it supports NoAdvertise and explicit addresses.
-
-[[DirPolicy]] **DirPolicy** __policy__,__policy__,__...__::
-    Set an entrance policy for this server, to limit who can connect to the
-    directory ports. The policies have the same form as exit policies above.
-
-[[FetchV2Networkstatus]] **FetchV2Networkstatus** **0**|**1**::
-    If set, we try to fetch the (obsolete, unused) version 2 network status
-    consensus documents from the directory authorities. No currently
-    supported Tor version uses them.  (Default: 0)
-
-
-DIRECTORY AUTHORITY SERVER OPTIONS
-----------------------------------
-
 [[RecommendedVersions]] **RecommendedVersions** __STRING__::
     STRING is a comma-separated list of Tor versions currently believed to be
     safe. The list is included in each directory, and nodes which pull down the
@@ -1809,6 +1863,15 @@ DIRECTORY AUTHORITY SERVER OPTIONS
     directories. If this is not set then the value of **RecommendedVersions**
     is used. When this is set then **VersioningAuthoritativeDirectory** should
     be set too.
+
+[[BridgeAuthoritativeDir]] **BridgeAuthoritativeDir** **0**|**1**::
+    When this option is set in addition to **AuthoritativeDirectory**, Tor
+    accepts and serves router descriptors, but it caches and serves the main
+    networkstatus documents rather than generating its own. (Default: 0)
+
+[[MinUptimeHidServDirectoryV2]] **MinUptimeHidServDirectoryV2** __N__ **seconds**|**minutes**|**hours**|**days**|**weeks**::
+    Minimum uptime of a v2 hidden service directory to be accepted as such by
+    authoritative directories. (Default: 25 hours)
 
 [[RecommendedServerVersions]] **RecommendedServerVersions** __STRING__::
     STRING is a comma-separated list of Tor versions currently believed to be
@@ -1829,7 +1892,11 @@ DIRECTORY AUTHORITY SERVER OPTIONS
 [[AuthDirBadDir]] **AuthDirBadDir** __AddressPattern...__::
     Authoritative directories only. A set of address patterns for servers that
     will be listed as bad directories in any network status document this
-    authority publishes, if **AuthDirListBadDirs** is set.
+    authority publishes, if **AuthDirListBadDirs** is set. +
+ +
+    (The address pattern syntax here and in the options below
+    is the same as for exit policies, except that you don't need to say
+    "accept" or "reject", and ports are not needed.)
 
 [[AuthDirBadExit]] **AuthDirBadExit** __AddressPattern...__::
     Authoritative directories only. A set of address patterns for servers that
@@ -1887,12 +1954,12 @@ DIRECTORY AUTHORITY SERVER OPTIONS
     Authoritative directories only. Like AuthDirMaxServersPerAddr, but applies
     to addresses shared with directory authorities. (Default: 5)
 
-[[AuthDirFastGuarantee]] **AuthDirFastGuarantee** __N__ **bytes**|**KBytes**|**MBytes**|**GBytes**::
+[[AuthDirFastGuarantee]] **AuthDirFastGuarantee** __N__ **bytes**|**KBytes**|**MBytes**|**GBytes**|**KBits**|**MBits**|**GBits**::
     Authoritative directories only. If non-zero, always vote the
     Fast flag for any relay advertising this amount of capacity or
     more. (Default: 100 KBytes)
 
-[[AuthDirGuardBWGuarantee]] **AuthDirGuardBWGuarantee** __N__ **bytes**|**KBytes**|**MBytes**|**GBytes**::
+[[AuthDirGuardBWGuarantee]] **AuthDirGuardBWGuarantee** __N__ **bytes**|**KBytes**|**MBytes**|**GBytes**|**KBits**|**MBits**|**GBits**::
     Authoritative directories only. If non-zero, this advertised capacity
     or more is always sufficient to satisfy the bandwidth requirement
     for the Guard flag. (Default: 250 KBytes)
@@ -1959,6 +2026,12 @@ DIRECTORY AUTHORITY SERVER OPTIONS
     When set to 1, IPv6 OR ports are being tested just like IPv4 OR
     ports. (Default: 0)
 
+[[MinMeasuredBWsForAuthToIgnoreAdvertised]] **MinMeasuredBWsForAuthToIgnoreAdvertised** __N__::
+    A total value, in abstract bandwidth units, describing how much
+    measured total bandwidth an authority should have observed on the network
+    before it will treat advertised bandwidths as wholly
+    unreliable. (Default: 500)
+
 HIDDEN SERVICE OPTIONS
 ----------------------
 
@@ -1995,7 +2068,7 @@ The following options are used to configure a hidden service.
     authorization protocol or \'stealth' for a less scalable protocol that also
     hides service activity from unauthorized clients. Only clients that are
     listed here are authorized to access the hidden service. Valid client names
-    are 1 to 19 characters  long and only use characters in A-Za-z0-9+-_ (no
+    are 1 to 16 characters long and only use characters in A-Za-z0-9+-_ (no
     spaces). If this option is set, the hidden service is not accessible for
     clients without authorization any more. Generated authorization data can be
     found in the hostname file. Clients need to put this authorization data in
@@ -2038,6 +2111,20 @@ The following options are used for running a testing Tor network.
        TestingV3AuthInitialDistDelay 20 seconds
        TestingAuthDirTimeToLearnReachability 0 minutes
        TestingEstimatedDescriptorPropagationTime 0 minutes
+       TestingServerDownloadSchedule 0, 0, 0, 5, 10, 15, 20, 30, 60
+       TestingClientDownloadSchedule 0, 0, 5, 10, 15, 20, 30, 60
+       TestingServerConsensusDownloadSchedule 0, 0, 5, 10, 15, 20, 30, 60
+       TestingClientConsensusDownloadSchedule 0, 0, 5, 10, 15, 20, 30, 60
+       TestingBridgeDownloadSchedule 60, 30, 30, 60
+       TestingClientMaxIntervalWithoutRequest 5 seconds
+       TestingDirConnectionMaxStall 30 seconds
+       TestingConsensusMaxDownloadTries 80
+       TestingDescriptorMaxDownloadTries 80
+       TestingMicrodescMaxDownloadTries 80
+       TestingCertMaxDownloadTries 80
+       TestingEnableConnBwEvent 1
+       TestingEnableCellStatsEvent 1
+       TestingEnableTbEmptyEvent 1
 
 [[TestingV3AuthInitialVotingInterval]] **TestingV3AuthInitialVotingInterval** __N__ **minutes**|**hours**::
     Like V3AuthVotingInterval, but for initial voting interval before the first
@@ -2054,6 +2141,10 @@ The following options are used for running a testing Tor network.
     the first consensus has been created. Changing this requires that
     **TestingTorNetwork** is set. (Default: 5 minutes)
 
+[[TestingV3AuthVotingStartOffset]] **TestingV3AuthVotingStartOffset** __N__ **seconds**|**minutes**|**hours**::
+    Directory authorities offset voting start time by this much.
+    Changing this requires that **TestingTorNetwork** is set. (Default: 0)
+
 [[TestingAuthDirTimeToLearnReachability]] **TestingAuthDirTimeToLearnReachability** __N__ **minutes**|**hours**::
     After starting as an authority, do not make claims about whether routers
     are Running until this much time has passed. Changing this requires
@@ -2064,10 +2155,89 @@ The following options are used for running a testing Tor network.
     time. Changing this requires that **TestingTorNetwork** is set. (Default:
     10 minutes)
 
-[[TestingMinFastFlagThreshold]] **TestingMinFastFlagThreshold** __N__ **bytes**|**KBytes**|**MBytes**|**GBytes**::
+[[TestingMinFastFlagThreshold]] **TestingMinFastFlagThreshold** __N__ **bytes**|**KBytes**|**MBytes**|**GBytes**|**KBits**|**MBits**|**GBits**::
     Minimum value for the Fast flag.  Overrides the ordinary minimum taken
     from the consensus when TestingTorNetwork is set. (Default: 0.)
 
+[[TestingServerDownloadSchedule]] **TestingServerDownloadSchedule** __N__,__N__,__...__::
+    Schedule for when servers should download things in general. Changing this
+    requires that **TestingTorNetwork** is set. (Default: 0, 0, 0, 60, 60, 120,
+    300, 900, 2147483647)
+
+[[TestingClientDownloadSchedule]] **TestingClientDownloadSchedule** __N__,__N__,__...__::
+    Schedule for when clients should download things in general. Changing this
+    requires that **TestingTorNetwork** is set. (Default: 0, 0, 60, 300, 600,
+    2147483647)
+
+[[TestingServerConsensusDownloadSchedule]] **TestingServerConsensusDownloadSchedule** __N__,__N__,__...__::
+    Schedule for when servers should download consensuses. Changing this
+    requires that **TestingTorNetwork** is set. (Default: 0, 0, 60, 300, 600,
+    1800, 1800, 1800, 1800, 1800, 3600, 7200)
+
+[[TestingClientConsensusDownloadSchedule]] **TestingClientConsensusDownloadSchedule** __N__,__N__,__...__::
+    Schedule for when clients should download consensuses. Changing this
+    requires that **TestingTorNetwork** is set. (Default: 0, 0, 60, 300, 600,
+    1800, 3600, 3600, 3600, 10800, 21600, 43200)
+
+[[TestingBridgeDownloadSchedule]] **TestingBridgeDownloadSchedule** __N__,__N__,__...__::
+    Schedule for when clients should download bridge descriptors. Changing this
+    requires that **TestingTorNetwork** is set. (Default: 3600, 900, 900, 3600)
+
+[[TestingClientMaxIntervalWithoutRequest]] **TestingClientMaxIntervalWithoutRequest** __N__ **seconds**|**minutes**::
+    When directory clients have only a few descriptors to request, they batch
+    them until they have more, or until this amount of time has passed.
+    Changing this requires that **TestingTorNetwork** is set. (Default: 10
+    minutes)
+
+[[TestingDirConnectionMaxStall]] **TestingDirConnectionMaxStall** __N__ **seconds**|**minutes**::
+    Let a directory connection stall this long before expiring it.
+    Changing this requires that **TestingTorNetwork** is set. (Default:
+    5 minutes)
+
+[[TestingConsensusMaxDownloadTries]] **TestingConsensusMaxDownloadTries** __NUM__::
+    Try this often to download a consensus before giving up. Changing
+    this requires that **TestingTorNetwork** is set. (Default: 8)
+
+[[TestingDescriptorMaxDownloadTries]] **TestingDescriptorMaxDownloadTries** __NUM__::
+    Try this often to download a router descriptor before giving up.
+    Changing this requires that **TestingTorNetwork** is set. (Default: 8)
+
+[[TestingMicrodescMaxDownloadTries]] **TestingMicrodescMaxDownloadTries** __NUM__::
+    Try this often to download a microdesc descriptor before giving up.
+    Changing this requires that **TestingTorNetwork** is set. (Default: 8)
+
+[[TestingCertMaxDownloadTries]] **TestingCertMaxDownloadTries** __NUM__::
+    Try this often to download a v3 authority certificate before giving up.
+    Changing this requires that **TestingTorNetwork** is set. (Default: 8)
+
+[[TestingDirAuthVoteGuard]] **TestingDirAuthVoteGuard** __node__,__node__,__...__::
+    A list of identity fingerprints, nicknames, country codes and
+    address patterns of nodes to vote Guard for regardless of their
+    uptime and bandwidth. See the **ExcludeNodes** option for more
+    information on how to specify nodes.
+ +
+    In order for this option to have any effect, **TestingTorNetwork**
+    has to be set.
+
+[[TestingEnableConnBwEvent]] **TestingEnableConnBwEvent** **0**|**1**::
+    If this option is set, then Tor controllers may register for CONN_BW
+    events.  Changing this requires that **TestingTorNetwork** is set.
+    (Default: 0)
+
+[[TestingEnableCellStatsEvent]] **TestingEnableCellStatsEvent** **0**|**1**::
+    If this option is set, then Tor controllers may register for CELL_STATS
+    events.  Changing this requires that **TestingTorNetwork** is set.
+    (Default: 0)
+
+[[TestingEnableTbEmptyEvent]] **TestingEnableTbEmptyEvent** **0**|**1**::
+    If this option is set, then Tor controllers may register for TB_EMPTY
+    events.  Changing this requires that **TestingTorNetwork** is set.
+    (Default: 0)
+
+[[TestingMinExitFlagThreshold]] **TestingMinExitFlagThreshold**  __N__ **KBytes**|**MBytes**|**GBytes**|**KBits**|**MBits**|**GBits**::
+    Sets a lower-bound for assigning an exit flag when running as an
+    authority on a testing network. Overrides the usual default lower bound
+    of 4 KB. (Default: 0)
 
 SIGNALS
 -------
@@ -2120,6 +2290,10 @@ __DataDirectory__**/cached-status/**::
     Each file holds one such document; the filenames are the hexadecimal
     identity key fingerprints of the directory authorities.  Mostly obsolete.
 
+__DataDirectory__**/cached-certs**::
+    This file holds downloaded directory key certificates that are used to
+    verify authenticity of documents generated by Tor directory authorities.
+
 __DataDirectory__**/cached-consensus** and/or **cached-microdesc-consensus**::
     The most recent consensus network status document we've downloaded.
 
@@ -2163,11 +2337,20 @@ __DataDirectory__**/control_auth_cookie**::
     control-spec.txt for details. Only used when cookie authentication is
     enabled.
 
+__DataDirectory__**/lock**::
+    This file is used to prevent two Tor instances from using same data
+    directory. If access to this file is locked, data directory is already
+    in use by Tor.
+
 __DataDirectory__**/keys/***::
     Only used by servers. Holds identity keys and onion keys.
 
 __DataDirectory__**/fingerprint**::
     Only used by servers. Holds the fingerprint of the server's identity key.
+
+__DataDirectory__**/hashed-fingerprint**::
+    Only used by bridges. Holds the hashed fingerprint of the bridge's
+    identity key. (That is, the hash of the hash of the identity key.)
 
 __DataDirectory__**/approved-routers**::
     Only for naming authoritative directory servers (see
@@ -2179,10 +2362,52 @@ __DataDirectory__**/approved-routers**::
     **!invalid** then descriptors are accepted but marked in the directory as
     not valid, that is, not recommended.
 
+__DataDirectory__**/v3-status-votes**::
+    Only for authoritative directory servers. This file contains status votes
+    from all the authoritative directory servers and is used to generate the
+    network consensus document.
+
+__DataDirectory__**/unverified-consensus**::
+    This file contains a network consensus document that has been downloaded,
+    but which we didn't have the right certificates to check yet.
+
+__DataDirectory__**/unverified-microdesc-consensus**::
+    This file contains a microdescriptor-flavored network consensus document
+    that has been downloaded, but which we didn't have the right certificates
+    to check yet.
+
+__DataDirectory__**/unparseable-desc**::
+    Onion router descriptors that Tor was unable to parse are dumped to this
+    file. Only used for debugging.
+
 __DataDirectory__**/router-stability**::
     Only used by authoritative directory servers. Tracks measurements for
     router mean-time-between-failures so that authorities have a good idea of
     how to set their Stable flags.
+
+__DataDirectory__**/stats/dirreq-stats**::
+    Only used by directory caches and authorities. This file is used to
+    collect directory request statistics.
+
+__DataDirectory__**/stats/entry-stats**::
+    Only used by servers. This file is used to collect incoming connection
+    statistics by Tor entry nodes.
+
+__DataDirectory__**/stats/bridge-stats**::
+    Only used by servers. This file is used to collect incoming connection
+    statistics by Tor bridges.
+
+__DataDirectory__**/stats/exit-stats**::
+    Only used by servers. This file is used to collect outgoing connection
+    statistics by Tor exit routers.
+
+__DataDirectory__**/stats/buffer-stats**::
+    Only used by servers. This file is used to collect buffer usage
+    history.
+
+__DataDirectory__**/stats/conn-stats**::
+    Only used by servers. This file is used to collect approximate connection
+    history (number of active connections over time).
 
 __HiddenServiceDirectory__**/hostname**::
     The <base32-encoded-fingerprint>.onion domain name for this hidden service.
@@ -2198,7 +2423,7 @@ __HiddenServiceDirectory__**/client_keys**::
 
 SEE ALSO
 --------
-**privoxy**(1), **torsocks**(1), **torify**(1) +
+**torsocks**(1), **torify**(1) +
 
 **https://www.torproject.org/**
 
@@ -2211,4 +2436,3 @@ Plenty, probably. Tor is still in development. Please report them.
 AUTHORS
 -------
 Roger Dingledine [arma at mit.edu], Nick Mathewson [nickm at alum.mit.edu].
-

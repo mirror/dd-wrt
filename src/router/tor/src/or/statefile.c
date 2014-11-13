@@ -4,6 +4,7 @@
  * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
+#define STATEFILE_PRIVATE
 #include "or.h"
 #include "circuitstats.h"
 #include "config.h"
@@ -12,6 +13,7 @@
 #include "hibernate.h"
 #include "rephist.h"
 #include "router.h"
+#include "sandbox.h"
 #include "statefile.h"
 
 /** A list of state-file "abbreviations," for compatibility. */
@@ -90,8 +92,11 @@ static config_var_t state_vars_[] = {
 #undef VAR
 #undef V
 
-static int or_state_validate(or_state_t *old_options, or_state_t *options,
-                             int from_setconf, char **msg);
+static int or_state_validate(or_state_t *state, char **msg);
+
+static int or_state_validate_cb(void *old_options, void *options,
+                                void *default_options,
+                                int from_setconf, char **msg);
 
 /** Magic value for or_state_t. */
 #define OR_STATE_MAGIC 0x57A73f57
@@ -109,7 +114,7 @@ static const config_format_t state_format = {
   STRUCT_OFFSET(or_state_t, magic_),
   state_abbrevs_,
   state_vars_,
-  (validate_fn_t)or_state_validate,
+  or_state_validate_cb,
   &state_extra_var,
 };
 
@@ -117,8 +122,8 @@ static const config_format_t state_format = {
 static or_state_t *global_state = NULL;
 
 /** Return the persistent state struct for this Tor. */
-or_state_t *
-get_or_state(void)
+MOCK_IMPL(or_state_t *,
+get_or_state, (void))
 {
   tor_assert(global_state);
   return global_state;
@@ -194,21 +199,27 @@ validate_transports_in_state(or_state_t *state)
   return 0;
 }
 
+static int
+or_state_validate_cb(void *old_state, void *state, void *default_state,
+                     int from_setconf, char **msg)
+{
+  /* We don't use these; only options do. Still, we need to match that
+   * signature. */
+  (void) from_setconf;
+  (void) default_state;
+  (void) old_state;
+
+  return or_state_validate(state, msg);
+}
+
 /** Return 0 if every setting in <b>state</b> is reasonable, and a
  * permissible transition from <b>old_state</b>.  Else warn and return -1.
  * Should have no side effects, except for normalizing the contents of
  * <b>state</b>.
  */
-/* XXX from_setconf is here because of bug 238 */
 static int
-or_state_validate(or_state_t *old_state, or_state_t *state,
-                  int from_setconf, char **msg)
+or_state_validate(or_state_t *state, char **msg)
 {
-  /* We don't use these; only options do. Still, we need to match that
-   * signature. */
-  (void) from_setconf;
-  (void) old_state;
-
   if (entry_guards_parse_state(state, 0, msg)<0)
     return -1;
 
@@ -237,7 +248,8 @@ or_state_set(or_state_t *new_state)
     tor_free(err);
     ret = -1;
   }
-  if (circuit_build_times_parse_state(&circ_times, global_state) < 0) {
+  if (circuit_build_times_parse_state(
+      get_circuit_build_times_mutable(),global_state) < 0) {
     ret = -1;
   }
   return ret;
@@ -249,7 +261,7 @@ or_state_set(or_state_t *new_state)
 static void
 or_state_save_broken(char *fname)
 {
-  int i;
+  int i, res;
   file_status_t status;
   char *fname2 = NULL;
   for (i = 0; i < 100; ++i) {
@@ -263,17 +275,33 @@ or_state_save_broken(char *fname)
     log_warn(LD_BUG, "Unable to parse state in \"%s\"; too many saved bad "
              "state files to move aside. Discarding the old state file.",
              fname);
-    unlink(fname);
+    res = unlink(fname);
+    if (res != 0) {
+      log_warn(LD_FS,
+               "Also couldn't discard old state file \"%s\" because "
+               "unlink() failed: %s",
+               fname, strerror(errno));
+    }
   } else {
     log_warn(LD_BUG, "Unable to parse state in \"%s\". Moving it aside "
              "to \"%s\".  This could be a bug in Tor; please tell "
              "the developers.", fname, fname2);
-    if (rename(fname, fname2) < 0) {
+    if (tor_rename(fname, fname2) < 0) {//XXXX sandbox prohibits
       log_warn(LD_BUG, "Weirdly, I couldn't even move the state aside. The "
                "OS gave an error of %s", strerror(errno));
     }
   }
   tor_free(fname2);
+}
+
+STATIC or_state_t *
+or_state_new(void)
+{
+  or_state_t *new_state = tor_malloc_zero(sizeof(or_state_t));
+  new_state->magic_ = OR_STATE_MAGIC;
+  config_init(&state_format, new_state);
+
+  return new_state;
 }
 
 /** Reload the persistent state from disk, generating a new state as needed.
@@ -303,9 +331,7 @@ or_state_load(void)
       log_warn(LD_GENERAL,"State file \"%s\" is not a file? Failing.", fname);
       goto done;
   }
-  new_state = tor_malloc_zero(sizeof(or_state_t));
-  new_state->magic_ = OR_STATE_MAGIC;
-  config_init(&state_format, new_state);
+  new_state = or_state_new();
   if (contents) {
     config_line_t *lines=NULL;
     int assign_retval;
@@ -322,7 +348,7 @@ or_state_load(void)
     }
   }
 
-  if (!badstate && or_state_validate(NULL, new_state, 1, &errmsg) < 0)
+  if (!badstate && or_state_validate(new_state, &errmsg) < 0)
     badstate = 1;
 
   if (errmsg) {
@@ -340,9 +366,7 @@ or_state_load(void)
     tor_free(contents);
     config_free(&state_format, new_state);
 
-    new_state = tor_malloc_zero(sizeof(or_state_t));
-    new_state->magic_ = OR_STATE_MAGIC;
-    config_init(&state_format, new_state);
+    new_state = or_state_new();
   } else if (contents) {
     log_info(LD_GENERAL, "Loaded state from \"%s\"", fname);
   } else {
@@ -404,7 +428,7 @@ or_state_save(time_t now)
    * to avoid redundant writes. */
   entry_guards_update_state(global_state);
   rep_hist_update_state(global_state);
-  circuit_build_times_update_state(&circ_times, global_state);
+  circuit_build_times_update_state(get_circuit_build_times(), global_state);
   if (accounting_is_enabled(get_options()))
     accounting_run_housekeeping(now);
 
@@ -449,7 +473,7 @@ or_state_save(time_t now)
 
 /** Return the config line for transport <b>transport</b> in the current state.
  *  Return NULL if there is no config line for <b>transport</b>. */
-static config_line_t *
+STATIC config_line_t *
 get_transport_in_state_by_name(const char *transport)
 {
   or_state_t *or_state = get_or_state();
@@ -607,10 +631,19 @@ save_transport_to_state(const char *transport,
   tor_free(transport_addrport);
 }
 
+STATIC void
+or_state_free(or_state_t *state)
+{
+  if (!state)
+    return;
+
+  config_free(&state_format, state);
+}
+
 void
 or_state_free_all(void)
 {
-  config_free(&state_format, global_state);
+  or_state_free(global_state);
   global_state = NULL;
 }
 

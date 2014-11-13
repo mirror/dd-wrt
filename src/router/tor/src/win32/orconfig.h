@@ -241,7 +241,7 @@
 #define USING_TWOS_COMPLEMENT
 
 /* Version number of package */
-#define VERSION "0.2.4.23"
+#define VERSION "0.2.5.10"
 
 
 
@@ -257,3 +257,11 @@
 #define USE_CURVE25519_DONNA
 
 #define ENUM_VALS_ARE_SIGNED 1
+
+#ifndef STDOUT_FILENO
+#define STDOUT_FILENO 1
+#endif
+
+#ifndef STDERR_FILENO
+#define STDERR_FILENO 2
+#endif

@@ -26,6 +26,7 @@
 #include "router.h"
 #include "routerlist.h"
 #include "routerparse.h"
+#include "routerset.h"
 
 /**
  * \file dirserv.c
@@ -41,30 +42,9 @@
  * directory authorities. */
 #define MAX_UNTRUSTED_NETWORKSTATUSES 16
 
-/** If a v1 directory is older than this, discard it. */
-#define MAX_V1_DIRECTORY_AGE (30*24*60*60)
-/** If a v1 running-routers is older than this, discard it. */
-#define MAX_V1_RR_AGE (7*24*60*60)
-
 extern time_t time_of_process_start; /* from main.c */
 
 extern long stats_n_seconds_working; /* from main.c */
-
-/** Do we need to regenerate the v1 directory when someone asks for it? */
-static time_t the_directory_is_dirty = 1;
-/** Do we need to regenerate the v1 runningrouters document when somebody
- * asks for it? */
-static time_t runningrouters_is_dirty = 1;
-/** Do we need to regenerate our v2 networkstatus document when somebody asks
- * for it? */
-static time_t the_v2_networkstatus_is_dirty = 1;
-
-/** Most recently generated encoded signed v1 directory. (v1 auth dirservers
- * only.) */
-static cached_dir_t *the_directory = NULL;
-
-/** For authoritative directories: the current (v1) network status. */
-static cached_dir_t the_runningrouters;
 
 /** Total number of routers with measured bandwidth; this is set by
  * dirserv_count_measured_bws() before the loop in
@@ -74,14 +54,12 @@ static cached_dir_t the_runningrouters;
 static int routers_with_measured_bw = 0;
 
 static void directory_remove_invalid(void);
-static cached_dir_t *dirserv_regenerate_directory(void);
 static char *format_versions_list(config_line_t *ln);
 struct authdir_config_t;
 static int add_fingerprint_to_dir(const char *nickname, const char *fp,
                                   struct authdir_config_t *list);
 static uint32_t
 dirserv_get_status_impl(const char *fp, const char *nickname,
-                        const char *address,
                         uint32_t addr, uint16_t or_port,
                         const char *platform, const char *contact,
                         const char **msg, int should_log);
@@ -329,7 +307,6 @@ dirserv_router_get_status(const routerinfo_t *router, const char **msg)
   }
 
   return dirserv_get_status_impl(d, router->nickname,
-                                 router->address,
                                  router->addr, router->or_port,
                                  router->platform, router->contact_info,
                                  msg, 1);
@@ -343,7 +320,6 @@ dirserv_would_reject_router(const routerstatus_t *rs)
   uint32_t res;
 
   res = dirserv_get_status_impl(rs->identity_digest, rs->nickname,
-                                "", /* address is only used in logs */
                                 rs->addr, rs->or_port,
                                 NULL, NULL,
                                 NULL, 0);
@@ -382,7 +358,6 @@ dirserv_get_name_status(const char *id_digest, const char *nickname)
  */
 static uint32_t
 dirserv_get_status_impl(const char *id_digest, const char *nickname,
-                        const char *address,
                         uint32_t addr, uint16_t or_port,
                         const char *platform, const char *contact,
                         const char **msg, int should_log)
@@ -399,13 +374,15 @@ dirserv_get_status_impl(const char *id_digest, const char *nickname,
               strmap_size(fingerprint_list->fp_by_name),
               digestmap_size(fingerprint_list->status_by_digest));
 
-  /* Versions before Tor 0.2.2.35 have known security issues that
-   * make them unsuitable for the current network. */
-  if (platform && !tor_version_as_new_as(platform,"0.2.2.35")) {
+  /* Versions before Tor 0.2.3.16-alpha are too old to support, and are
+   * missing some important security fixes too. Disable them. */
+  if (platform && !tor_version_as_new_as(platform,"0.2.3.16-alpha")) {
     if (msg)
       *msg = "Tor version is insecure or unsupported. Please upgrade!";
     return FP_REJECT;
-  } else if (platform && tor_version_as_new_as(platform,"0.2.3.0-alpha")) {
+  }
+#if 0
+  else if (platform && tor_version_as_new_as(platform,"0.2.3.0-alpha")) {
     /* Versions from 0.2.3-alpha...0.2.3.9-alpha have known security
      * issues that make them unusable for the current network */
     if (!tor_version_as_new_as(platform, "0.2.3.10-alpha")) {
@@ -414,6 +391,7 @@ dirserv_get_status_impl(const char *id_digest, const char *nickname,
       return FP_REJECT;
     }
   }
+#endif
 
   result = dirserv_get_name_status(id_digest, nickname);
   if (result & FP_NAMED) {
@@ -454,14 +432,14 @@ dirserv_get_status_impl(const char *id_digest, const char *nickname,
     if (should_log)
       log_info(LD_DIRSERV,
                "Marking '%s' as bad directory because of address '%s'",
-               nickname, address);
+               nickname, fmt_addr32(addr));
     result |= FP_BADDIR;
   }
 
   if (authdir_policy_badexit_address(addr, or_port)) {
     if (should_log)
       log_info(LD_DIRSERV, "Marking '%s' as bad exit because of address '%s'",
-               nickname, address);
+               nickname, fmt_addr32(addr));
     result |= FP_BADEXIT;
   }
 
@@ -469,7 +447,7 @@ dirserv_get_status_impl(const char *id_digest, const char *nickname,
     if (!authdir_policy_permits_address(addr, or_port)) {
       if (should_log)
         log_info(LD_DIRSERV, "Rejecting '%s' because of address '%s'",
-                 nickname, address);
+                 nickname, fmt_addr32(addr));
       if (msg)
         *msg = "Authdir is rejecting routers in this range.";
       return FP_REJECT;
@@ -477,7 +455,7 @@ dirserv_get_status_impl(const char *id_digest, const char *nickname,
     if (!authdir_policy_valid_address(addr, or_port)) {
       if (should_log)
         log_info(LD_DIRSERV, "Not marking '%s' valid because of address '%s'",
-                 nickname, address);
+                 nickname, fmt_addr32(addr));
       result |= FP_INVALID;
     }
     if (reject_unlisted) {
@@ -526,19 +504,15 @@ dirserv_free_fingerprint_list(void)
 static int
 dirserv_router_has_valid_address(routerinfo_t *ri)
 {
-  struct in_addr iaddr;
+  tor_addr_t addr;
   if (get_options()->DirAllowPrivateAddresses)
     return 0; /* whatever it is, we're fine with it */
-  if (!tor_inet_aton(ri->address, &iaddr)) {
-    log_info(LD_DIRSERV,"Router %s published non-IP address '%s'. Refusing.",
-             router_describe(ri),
-             ri->address);
-    return -1;
-  }
-  if (is_internal_IP(ntohl(iaddr.s_addr), 0)) {
+  tor_addr_from_ipv4h(&addr, ri->addr);
+
+  if (tor_addr_is_internal(&addr, 0)) {
     log_info(LD_DIRSERV,
-             "Router %s published internal IP address '%s'. Refusing.",
-             router_describe(ri), ri->address);
+             "Router %s published internal IP address. Refusing.",
+             router_describe(ri));
     return -1; /* it's a private IP, we should reject it */
   }
   return 0;
@@ -590,12 +564,10 @@ authdir_wants_to_reject_router(routerinfo_t *ri, const char **msg,
   }
   if (dirserv_router_has_valid_address(ri) < 0) {
     log_fn(severity, LD_DIRSERV,
-           "Router %s has invalid address '%s'. "
-           "Not adding (%s).",
+           "Router %s has invalid address. Not adding (%s).",
            router_describe(ri),
-           ri->address,
            esc_router_info(ri));
-    *msg = "Rejected: Address is not an IP, or IP is a private address.";
+    *msg = "Rejected: Address is a private address.";
     return -1;
   }
 
@@ -839,7 +811,6 @@ dirserv_add_extrainfo(extrainfo_t *ei, const char **msg)
 static void
 directory_remove_invalid(void)
 {
-  int changed = 0;
   routerlist_t *rl = router_get_routerlist();
   smartlist_t *nodes = smartlist_new();
   smartlist_add_all(nodes, nodelist_get_list());
@@ -857,7 +828,6 @@ directory_remove_invalid(void)
       log_info(LD_DIRSERV, "Router %s is now rejected: %s",
                description, msg?msg:"");
       routerlist_remove(rl, ent, 0, time(NULL));
-      changed = 1;
       continue;
     }
 #if 0
@@ -866,70 +836,33 @@ directory_remove_invalid(void)
                "Router %s is now %snamed.", description,
                (r&FP_NAMED)?"":"un");
       ent->is_named = (r&FP_NAMED)?1:0;
-      changed = 1;
     }
     if (bool_neq((r & FP_UNNAMED), ent->auth_says_is_unnamed)) {
       log_info(LD_DIRSERV,
                "Router '%s' is now %snamed. (FP_UNNAMED)", description,
                (r&FP_NAMED)?"":"un");
       ent->is_named = (r&FP_NUNAMED)?0:1;
-      changed = 1;
     }
 #endif
     if (bool_neq((r & FP_INVALID), !node->is_valid)) {
       log_info(LD_DIRSERV, "Router '%s' is now %svalid.", description,
                (r&FP_INVALID) ? "in" : "");
       node->is_valid = (r&FP_INVALID)?0:1;
-      changed = 1;
     }
     if (bool_neq((r & FP_BADDIR), node->is_bad_directory)) {
       log_info(LD_DIRSERV, "Router '%s' is now a %s directory", description,
                (r & FP_BADDIR) ? "bad" : "good");
       node->is_bad_directory = (r&FP_BADDIR) ? 1: 0;
-      changed = 1;
     }
     if (bool_neq((r & FP_BADEXIT), node->is_bad_exit)) {
       log_info(LD_DIRSERV, "Router '%s' is now a %s exit", description,
                (r & FP_BADEXIT) ? "bad" : "good");
       node->is_bad_exit = (r&FP_BADEXIT) ? 1: 0;
-      changed = 1;
     }
   } SMARTLIST_FOREACH_END(node);
-  if (changed)
-    directory_set_dirty();
 
   routerlist_assert_ok(rl);
   smartlist_free(nodes);
-}
-
-/** Mark the directory as <b>dirty</b> -- when we're next asked for a
- * directory, we will rebuild it instead of reusing the most recently
- * generated one.
- */
-void
-directory_set_dirty(void)
-{
-  time_t now = time(NULL);
-  int set_v1_dirty=0;
-
-  /* Regenerate stubs only every 8 hours.
-   * XXXX It would be nice to generate less often, but these are just
-   * stubs: it doesn't matter. */
-#define STUB_REGENERATE_INTERVAL (8*60*60)
-  if (!the_directory || !the_runningrouters.dir)
-    set_v1_dirty = 1;
-  else if (the_directory->published < now - STUB_REGENERATE_INTERVAL ||
-           the_runningrouters.published < now - STUB_REGENERATE_INTERVAL)
-    set_v1_dirty = 1;
-
-  if (set_v1_dirty) {
-    if (!the_directory_is_dirty)
-      the_directory_is_dirty = now;
-    if (!runningrouters_is_dirty)
-      runningrouters_is_dirty = now;
-  }
-  if (!the_v2_networkstatus_is_dirty)
-    the_v2_networkstatus_is_dirty = now;
 }
 
 /**
@@ -1271,14 +1204,6 @@ directory_fetches_dir_info_later(const or_options_t *options)
   return options->UseBridges != 0;
 }
 
-/** Return 1 if we want to cache v2 dir info (each status file).
- */
-int
-directory_caches_v2_dir_info(const or_options_t *options)
-{
-  return options->DirPort_set;
-}
-
 /** Return true iff we want to fetch and keep certificates for authorities
  * that we don't acknowledge as aurthorities ourself.
  */
@@ -1313,15 +1238,6 @@ directory_permits_begindir_requests(const or_options_t *options)
   return options->BridgeRelay != 0 || options->DirPort_set;
 }
 
-/** Return 1 if we want to allow controllers to ask us directory
- * requests via the controller interface, which doesn't require
- * having any separate port open. */
-int
-directory_permits_controller_requests(const or_options_t *options)
-{
-  return options->DirPort_set;
-}
-
 /** Return 1 if we have no need to fetch new descriptors. This generally
  * happens when we're not a dir cache and we haven't built any circuits
  * lately.
@@ -1337,54 +1253,9 @@ directory_too_idle_to_fetch_descriptors(const or_options_t *options,
 
 /********************************************************************/
 
-/* Used only by non-v1-auth dirservers: The v1 directory and
- * runningrouters we'll serve when requested. */
-
-/** The v1 directory we'll serve (as a cache or as an authority) if
- * requested. */
-static cached_dir_t *cached_directory = NULL;
-/** The v1 runningrouters document we'll serve (as a cache or as an authority)
- * if requested. */
-static cached_dir_t cached_runningrouters;
-
-/** Used for other dirservers' v2 network statuses.  Map from hexdigest to
- * cached_dir_t. */
-static digestmap_t *cached_v2_networkstatus = NULL;
-
 /** Map from flavor name to the cached_dir_t for the v3 consensuses that we're
  * currently serving. */
 static strmap_t *cached_consensuses = NULL;
-
-/** Possibly replace the contents of <b>d</b> with the value of
- * <b>directory</b> published on <b>when</b>, unless <b>when</b> is older than
- * the last value, or too far in the future.
- *
- * Does not copy <b>directory</b>; frees it if it isn't used.
- */
-static void
-set_cached_dir(cached_dir_t *d, char *directory, time_t when)
-{
-  time_t now = time(NULL);
-  if (when<=d->published) {
-    log_info(LD_DIRSERV, "Ignoring old directory; not caching.");
-    tor_free(directory);
-  } else if (when>=now+ROUTER_MAX_AGE_TO_PUBLISH) {
-    log_info(LD_DIRSERV, "Ignoring future directory; not caching.");
-    tor_free(directory);
-  } else {
-    /* if (when>d->published && when<now+ROUTER_MAX_AGE) */
-    log_debug(LD_DIRSERV, "Caching directory.");
-    tor_free(d->dir);
-    d->dir = directory;
-    d->dir_len = strlen(directory);
-    tor_free(d->dir_z);
-    if (tor_gzip_compress(&(d->dir_z), &(d->dir_z_len), d->dir, d->dir_len,
-                          ZLIB_METHOD)) {
-      log_warn(LD_BUG,"Error compressing cached directory");
-    }
-    d->published = when;
-  }
-}
 
 /** Decrement the reference count on <b>d</b>, and free it if it no longer has
  * any references. */
@@ -1435,86 +1306,6 @@ free_cached_dir_(void *_d)
   cached_dir_decref(d);
 }
 
-/** If we have no cached v1 directory, or it is older than <b>published</b>,
- * then replace it with <b>directory</b>, published at <b>published</b>.
- *
- * If <b>published</b> is too old, do nothing.
- *
- * If <b>is_running_routers</b>, this is really a v1 running_routers
- * document rather than a v1 directory.
- */
-static void
-dirserv_set_cached_directory(const char *directory, time_t published)
-{
-
-  cached_dir_decref(cached_directory);
-  cached_directory = new_cached_dir(tor_strdup(directory), published);
-}
-
-/** If <b>networkstatus</b> is non-NULL, we've just received a v2
- * network-status for an authoritative directory with identity digest
- * <b>identity</b> published at <b>published</b> -- store it so we can
- * serve it to others.
- *
- * If <b>networkstatus</b> is NULL, remove the entry with the given
- * identity fingerprint from the v2 cache.
- */
-void
-dirserv_set_cached_networkstatus_v2(const char *networkstatus,
-                                    const char *identity,
-                                    time_t published)
-{
-  cached_dir_t *d, *old_d;
-  if (!cached_v2_networkstatus)
-    cached_v2_networkstatus = digestmap_new();
-
-  old_d = digestmap_get(cached_v2_networkstatus, identity);
-  if (!old_d && !networkstatus)
-    return;
-
-  if (networkstatus) {
-    if (!old_d || published > old_d->published) {
-      d = new_cached_dir(tor_strdup(networkstatus), published);
-      digestmap_set(cached_v2_networkstatus, identity, d);
-      if (old_d)
-        cached_dir_decref(old_d);
-    }
-  } else {
-    if (old_d) {
-      digestmap_remove(cached_v2_networkstatus, identity);
-      cached_dir_decref(old_d);
-    }
-  }
-
-  /* Now purge old entries. */
-
-  if (digestmap_size(cached_v2_networkstatus) >
-      get_n_authorities(V2_DIRINFO) + MAX_UNTRUSTED_NETWORKSTATUSES) {
-    /* We need to remove the oldest untrusted networkstatus. */
-    const char *oldest = NULL;
-    time_t oldest_published = TIME_MAX;
-    digestmap_iter_t *iter;
-
-    for (iter = digestmap_iter_init(cached_v2_networkstatus);
-         !digestmap_iter_done(iter);
-         iter = digestmap_iter_next(cached_v2_networkstatus, iter)) {
-      const char *ident;
-      void *val;
-      digestmap_iter_get(iter, &ident, &val);
-      d = val;
-      if (d->published < oldest_published &&
-          !router_digest_is_trusted_dir(ident)) {
-        oldest = ident;
-        oldest_published = d->published;
-      }
-    }
-    tor_assert(oldest);
-    d = digestmap_remove(cached_v2_networkstatus, oldest);
-    if (d)
-      cached_dir_decref(d);
-  }
-}
-
 /** Replace the v3 consensus networkstatus of type <b>flavor_name</b> that
  * we're serving with <b>networkstatus</b>, published at <b>published</b>.  No
  * validation is performed. */
@@ -1537,186 +1328,6 @@ dirserv_set_cached_consensus_networkstatus(const char *networkstatus,
     cached_dir_decref(old_networkstatus);
 }
 
-/** Remove any v2 networkstatus from the directory cache that was published
- * before <b>cutoff</b>. */
-void
-dirserv_clear_old_networkstatuses(time_t cutoff)
-{
-  if (!cached_v2_networkstatus)
-    return;
-
-  DIGESTMAP_FOREACH_MODIFY(cached_v2_networkstatus, id, cached_dir_t *, dir) {
-    if (dir->published < cutoff) {
-      char *fname;
-      fname = networkstatus_get_cache_filename(id);
-      if (file_status(fname) == FN_FILE) {
-        log_info(LD_DIR, "Removing too-old untrusted networkstatus in %s",
-                 fname);
-        unlink(fname);
-      }
-      tor_free(fname);
-      cached_dir_decref(dir);
-      MAP_DEL_CURRENT(id);
-    }
-  } DIGESTMAP_FOREACH_END
-}
-
-/** Remove any v1 info from the directory cache that was published
- * too long ago. */
-void
-dirserv_clear_old_v1_info(time_t now)
-{
-  if (cached_directory &&
-      cached_directory->published < (now - MAX_V1_DIRECTORY_AGE)) {
-    cached_dir_decref(cached_directory);
-    cached_directory = NULL;
-  }
-  if (cached_runningrouters.published < (now - MAX_V1_RR_AGE)) {
-    clear_cached_dir(&cached_runningrouters);
-  }
-}
-
-/** Helper: If we're an authority for the right directory version (v1 or v2)
- * (based on <b>auth_type</b>), try to regenerate
- * auth_src as appropriate and return it, falling back to cache_src on
- * failure.  If we're a cache, simply return cache_src.
- */
-static cached_dir_t *
-dirserv_pick_cached_dir_obj(cached_dir_t *cache_src,
-                            cached_dir_t *auth_src,
-                            time_t dirty, cached_dir_t *(*regenerate)(void),
-                            const char *name,
-                            dirinfo_type_t auth_type)
-{
-  const or_options_t *options = get_options();
-  int authority = (auth_type == V1_DIRINFO && authdir_mode_v1(options)) ||
-                  (auth_type == V2_DIRINFO && authdir_mode_v2(options));
-
-  if (!authority || authdir_mode_bridge(options)) {
-    return cache_src;
-  } else {
-    /* We're authoritative. */
-    if (regenerate != NULL) {
-      if (dirty && dirty + DIR_REGEN_SLACK_TIME < time(NULL)) {
-        if (!(auth_src = regenerate())) {
-          log_err(LD_BUG, "Couldn't generate %s?", name);
-          exit(1);
-        }
-      } else {
-        log_info(LD_DIRSERV, "The %s is still clean; reusing.", name);
-      }
-    }
-    return auth_src ? auth_src : cache_src;
-  }
-}
-
-/** Return the most recently generated encoded signed v1 directory,
- * generating a new one as necessary.  If not a v1 authoritative directory
- * may return NULL if no directory is yet cached. */
-cached_dir_t *
-dirserv_get_directory(void)
-{
-  return dirserv_pick_cached_dir_obj(cached_directory, the_directory,
-                                     the_directory_is_dirty,
-                                     dirserv_regenerate_directory,
-                                     "v1 server directory", V1_DIRINFO);
-}
-
-/** Only called by v1 auth dirservers.
- * Generate a fresh v1 directory; set the_directory and return a pointer
- * to the new value.
- */
-static cached_dir_t *
-dirserv_regenerate_directory(void)
-{
-  /* XXXX 024 Get rid of this function if we can confirm that nobody's
-   * fetching these any longer */
-  char *new_directory=NULL;
-
-  if (dirserv_dump_directory_to_string(&new_directory,
-                                       get_server_identity_key())) {
-    log_warn(LD_BUG, "Error creating directory.");
-    tor_free(new_directory);
-    return NULL;
-  }
-  cached_dir_decref(the_directory);
-  the_directory = new_cached_dir(new_directory, time(NULL));
-  log_info(LD_DIRSERV,"New directory (size %d) has been built.",
-           (int)the_directory->dir_len);
-  log_debug(LD_DIRSERV,"New directory (size %d):\n%s",
-            (int)the_directory->dir_len, the_directory->dir);
-
-  the_directory_is_dirty = 0;
-
-  /* Save the directory to disk so we re-load it quickly on startup.
-   */
-  dirserv_set_cached_directory(the_directory->dir, time(NULL));
-
-  return the_directory;
-}
-
-/** Only called by v1 auth dirservers.
- * Replace the current running-routers list with a newly generated one. */
-static cached_dir_t *
-generate_runningrouters(void)
-{
-  char *s=NULL;
-  char digest[DIGEST_LEN];
-  char published[ISO_TIME_LEN+1];
-  size_t len;
-  crypto_pk_t *private_key = get_server_identity_key();
-  char *identity_pkey; /* Identity key, DER64-encoded. */
-  size_t identity_pkey_len;
-
-  if (crypto_pk_write_public_key_to_string(private_key,&identity_pkey,
-                                           &identity_pkey_len)<0) {
-    log_warn(LD_BUG,"write identity_pkey to string failed!");
-    goto err;
-  }
-  format_iso_time(published, time(NULL));
-
-  len = 2048;
-  s = tor_malloc_zero(len);
-  tor_snprintf(s, len,
-               "network-status\n"
-               "published %s\n"
-               "router-status %s\n"
-               "dir-signing-key\n%s"
-               "directory-signature %s\n",
-               published, "", identity_pkey,
-               get_options()->Nickname);
-  tor_free(identity_pkey);
-  if (router_get_runningrouters_hash(s,digest)) {
-    log_warn(LD_BUG,"couldn't compute digest");
-    goto err;
-  }
-  note_crypto_pk_op(SIGN_DIR);
-  if (router_append_dirobj_signature(s, len, digest, DIGEST_LEN,
-                                     private_key)<0)
-    goto err;
-
-  set_cached_dir(&the_runningrouters, s, time(NULL));
-  runningrouters_is_dirty = 0;
-
-  return &the_runningrouters;
- err:
-  tor_free(s);
-  return NULL;
-}
-
-/** Set *<b>rr</b> to the most recently generated encoded signed
- * running-routers list, generating a new one as necessary.  Return the
- * size of the directory on success, and 0 on failure. */
-cached_dir_t *
-dirserv_get_runningrouters(void)
-{
-  return dirserv_pick_cached_dir_obj(
-                         &cached_runningrouters, &the_runningrouters,
-                         runningrouters_is_dirty,
-                         generate_runningrouters,
-                         "v1 network status list", V1_DIRINFO);
-}
-
 /** Return the latest downloaded consensus networkstatus in encoded, signed,
  * optionally compressed format, suitable for sending to clients. */
 cached_dir_t *
@@ -1725,19 +1336,6 @@ dirserv_get_consensus(const char *flavor_name)
   if (!cached_consensuses)
     return NULL;
   return strmap_get(cached_consensuses, flavor_name);
-}
-
-/** For authoritative directories: the current (v2) network status. */
-static cached_dir_t *the_v2_networkstatus = NULL;
-
-/** Return true iff our opinion of the routers has been stale for long
- * enough that we should generate a new v2 network status doc. */
-static int
-should_generate_v2_networkstatus(void)
-{
-  return authdir_mode_v2(get_options()) &&
-    the_v2_networkstatus_is_dirty &&
-    the_v2_networkstatus_is_dirty + DIR_REGEN_SLACK_TIME < time(NULL);
 }
 
 /** If a router's uptime is at least this value, then it is always
@@ -1907,7 +1505,7 @@ router_counts_toward_thresholds(const node_t *node, time_t now,
  * the Weighted Fractional Uptime history, and use them to set thresholds for
  * the Stable, Fast, and Guard flags.  Update the fields stable_uptime,
  * stable_mtbf, enough_mtbf_info, guard_wfu, guard_tk, fast_bandwidth,
- * guard_bandwidh_including_exits, guard_bandwidth_excluding_exits,
+ * guard_bandwidth_including_exits, and guard_bandwidth_excluding_exits.
  *
  * Also, set the is_exit flag of each router appropriately. */
 static void
@@ -1956,6 +1554,10 @@ dirserv_compute_performance_thresholds(routerlist_t *rl,
 
   /* Now, fill in the arrays. */
   SMARTLIST_FOREACH_BEGIN(nodelist_get_list(), node_t *, node) {
+    if (options->BridgeAuthoritativeDir &&
+        node->ri &&
+        node->ri->purpose != ROUTER_PURPOSE_BRIDGE)
+      continue;
     if (router_counts_toward_thresholds(node, now, omit_as_sybil,
                                         require_mbw)) {
       routerinfo_t *ri = node->ri;
@@ -1986,7 +1588,7 @@ dirserv_compute_performance_thresholds(routerlist_t *rl,
     /* (Now bandwidths is sorted.) */
     if (fast_bandwidth_kb < ROUTER_REQUIRED_MIN_BANDWIDTH/(2 * 1000))
       fast_bandwidth_kb = bandwidths_kb[n_active/4];
-    guard_bandwidth_including_exits_kb = bandwidths_kb[(n_active-1)/2];
+    guard_bandwidth_including_exits_kb = bandwidths_kb[n_active*3/4];
     guard_tk = find_nth_long(tks, n_active, n_active/8);
   }
 
@@ -2044,7 +1646,8 @@ dirserv_compute_performance_thresholds(routerlist_t *rl,
 
   if (n_active_nonexit) {
     guard_bandwidth_excluding_exits_kb =
-      median_uint32(bandwidths_excluding_exits_kb, n_active_nonexit);
+      find_nth_uint32(bandwidths_excluding_exits_kb,
+                      n_active_nonexit, n_active_nonexit*3/4);
   }
 
   log_info(LD_DIRSERV,
@@ -2070,6 +1673,21 @@ dirserv_compute_performance_thresholds(routerlist_t *rl,
   tor_free(wfus);
 }
 
+/* Use dirserv_compute_performance_thresholds() to compute the thresholds
+ * for the status flags, specifically for bridges.
+ *
+ * This is only called by a Bridge Authority from
+ * networkstatus_getinfo_by_purpose().
+ */
+void
+dirserv_compute_bridge_flag_thresholds(routerlist_t *rl)
+{
+
+  digestmap_t *omit_as_sybil = digestmap_new();
+  dirserv_compute_performance_thresholds(rl, omit_as_sybil);
+  digestmap_free(omit_as_sybil, NULL);
+}
+
 /** Measured bandwidth cache entry */
 typedef struct mbw_cache_entry_s {
   long mbw_kb;
@@ -2082,7 +1700,7 @@ static digestmap_t *mbw_cache = NULL;
 
 /** Store a measured bandwidth cache entry when reading the measured
  * bandwidths file. */
-void
+STATIC void
 dirserv_cache_measured_bw(const measured_bw_line_t *parsed_line,
                           time_t as_of)
 {
@@ -2112,7 +1730,7 @@ dirserv_cache_measured_bw(const measured_bw_line_t *parsed_line,
 }
 
 /** Clear and free the measured bandwidth cache */
-void
+STATIC void
 dirserv_clear_measured_bw_cache(void)
 {
   if (mbw_cache) {
@@ -2123,7 +1741,7 @@ dirserv_clear_measured_bw_cache(void)
 }
 
 /** Scan the measured bandwidth cache and remove expired entries */
-void
+STATIC void
 dirserv_expire_measured_bw_cache(time_t now)
 {
 
@@ -2145,7 +1763,7 @@ dirserv_expire_measured_bw_cache(time_t now)
 }
 
 /** Get the current size of the measured bandwidth cache */
-int
+STATIC int
 dirserv_get_measured_bw_cache_size(void)
 {
   if (mbw_cache) return digestmap_size(mbw_cache);
@@ -2155,7 +1773,7 @@ dirserv_get_measured_bw_cache_size(void)
 /** Query the cache by identity digest, return value indicates whether
  * we found it. The bw_out and as_of_out pointers receive the cached
  * bandwidth value and the time it was cached if not NULL. */
-int
+STATIC int
 dirserv_query_measured_bw_cache_kb(const char *node_id, long *bw_kb_out,
                                    time_t *as_of_out)
 {
@@ -2176,7 +1794,7 @@ dirserv_query_measured_bw_cache_kb(const char *node_id, long *bw_kb_out,
 }
 
 /** Predicate wrapper for dirserv_query_measured_bw_cache() */
-int
+STATIC int
 dirserv_has_measured_bw(const char *node_id)
 {
   return dirserv_query_measured_bw_cache_kb(node_id, NULL, NULL);
@@ -2391,7 +2009,7 @@ routerstatus_format_entry(const routerstatus_t *rs, const char *version,
                    rs->is_flagged_running?" Running":"",
                    rs->is_stable?" Stable":"",
                    rs->is_unnamed?" Unnamed":"",
-                   rs->is_v2_dir?" V2Dir":"",
+                   (rs->dir_port!=0)?" V2Dir":"",
                    rs->is_valid?" Valid":"");
 
   /* length of "opt v \n" */
@@ -2705,12 +2323,16 @@ set_routerstatus_from_routerinfo(routerstatus_t *rs,
   } else {
     rs->is_possible_guard = 0;
   }
+  if (options->TestingTorNetwork &&
+      routerset_contains_routerstatus(options->TestingDirAuthVoteGuard,
+                                      rs, 0)) {
+    rs->is_possible_guard = 1;
+  }
 
   rs->is_bad_directory = listbaddirs && node->is_bad_directory;
   rs->is_bad_exit = listbadexits && node->is_bad_exit;
   node->is_hs_dir = dirserv_thinks_router_is_hs_dir(ri, node, now);
   rs->is_hs_dir = vote_on_hsdirs && node->is_hs_dir;
-  rs->is_v2_dir = ri->dir_port != 0;
 
   if (!strcasecmp(ri->nickname, UNNAMED_ROUTER_NICKNAME))
     rs->is_named = rs->is_unnamed = 0;
@@ -2741,7 +2363,7 @@ static void
 clear_status_flags_on_sybil(routerstatus_t *rs)
 {
   rs->is_authority = rs->is_exit = rs->is_stable = rs->is_fast =
-    rs->is_flagged_running = rs->is_named = rs->is_valid = rs->is_v2_dir =
+    rs->is_flagged_running = rs->is_named = rs->is_valid =
     rs->is_hs_dir = rs->is_possible_guard = rs->is_bad_exit =
     rs->is_bad_directory = 0;
   /* FFFF we might want some mechanism to check later on if we
@@ -2754,7 +2376,7 @@ clear_status_flags_on_sybil(routerstatus_t *rs)
  * into a measured_bw_line_t output structure. Returns -1 on failure
  * or 0 on success.
  */
-int
+STATIC int
 measured_bw_line_parse(measured_bw_line_t *out, const char *orig_line)
 {
   char *line = tor_strdup(orig_line);
@@ -2835,7 +2457,7 @@ measured_bw_line_parse(measured_bw_line_t *out, const char *orig_line)
  * of bandwidth statuses. Returns true if a line is found,
  * false otherwise.
  */
-int
+STATIC int
 measured_bw_line_apply(measured_bw_line_t *parsed_line,
                        smartlist_t *routerstatuses)
 {
@@ -2886,7 +2508,7 @@ dirserv_read_measured_bandwidths(const char *from_file,
   }
 
   line[strlen(line)-1] = '\0';
-  file_time = tor_parse_ulong(line, 10, 0, ULONG_MAX, &ok, NULL);
+  file_time = (time_t)tor_parse_ulong(line, 10, 0, ULONG_MAX, &ok, NULL);
   if (!ok) {
     log_warn(LD_DIRSERV, "Non-integer time in bandwidth file: %s",
              escaped(line));
@@ -2957,14 +2579,6 @@ dirserv_generate_networkstatus_vote_obj(crypto_pk_t *private_key,
   tor_assert(private_key);
   tor_assert(cert);
 
-  if (resolve_my_address(LOG_WARN, options, &addr, NULL, &hostname)<0) {
-    log_warn(LD_NET, "Couldn't resolve my hostname");
-    return NULL;
-  }
-  if (!hostname || !strchr(hostname, '.')) {
-    tor_free(hostname);
-    hostname = tor_dup_ip(addr);
-  }
   if (crypto_pk_get_digest(private_key, signing_key_digest)<0) {
     log_err(LD_BUG, "Error computing signing key digest");
     return NULL;
@@ -2972,6 +2586,14 @@ dirserv_generate_networkstatus_vote_obj(crypto_pk_t *private_key,
   if (crypto_pk_get_digest(cert->identity_key, identity_digest)<0) {
     log_err(LD_BUG, "Error computing identity key digest");
     return NULL;
+  }
+  if (resolve_my_address(LOG_WARN, options, &addr, NULL, &hostname)<0) {
+    log_warn(LD_NET, "Couldn't resolve my hostname");
+    return NULL;
+  }
+  if (!hostname || !strchr(hostname, '.')) {
+    tor_free(hostname);
+    hostname = tor_dup_ip(addr);
   }
 
   if (options->VersioningAuthoritativeDir) {
@@ -3093,7 +2715,8 @@ dirserv_generate_networkstatus_vote_obj(crypto_pk_t *private_key,
     else
       last_consensus_interval = options->TestingV3AuthInitialVotingInterval;
     v3_out->valid_after =
-      dirvote_get_start_of_next_interval(now, (int)last_consensus_interval);
+      dirvote_get_start_of_next_interval(now, (int)last_consensus_interval,
+                                      options->TestingV3AuthVotingStartOffset);
     format_iso_time(tbuf, v3_out->valid_after);
     log_notice(LD_DIR,"Choosing valid-after time in vote as %s: "
                "consensus_set=%d, last_interval=%d",
@@ -3162,270 +2785,6 @@ dirserv_generate_networkstatus_vote_obj(crypto_pk_t *private_key,
    * format the vote. */
 
   return v3_out;
-}
-
-/** For v2 authoritative directories only: Replace the contents of
- * <b>the_v2_networkstatus</b> with a newly generated network status
- * object.  */
-cached_dir_t *
-generate_v2_networkstatus_opinion(void)
-{
-  cached_dir_t *r = NULL;
-  size_t identity_pkey_len;
-  char *status = NULL, *client_versions = NULL, *server_versions = NULL,
-    *identity_pkey = NULL, *hostname = NULL;
-  const or_options_t *options = get_options();
-  char fingerprint[FINGERPRINT_LEN+1];
-  char published[ISO_TIME_LEN+1];
-  char digest[DIGEST_LEN];
-  uint32_t addr;
-  crypto_pk_t *private_key;
-  routerlist_t *rl = router_get_routerlist();
-  time_t now = time(NULL);
-  time_t cutoff = now - ROUTER_MAX_AGE_TO_PUBLISH;
-  int naming = options->NamingAuthoritativeDir;
-  int versioning = options->VersioningAuthoritativeDir;
-  int listbaddirs = options->AuthDirListBadDirs;
-  int listbadexits = options->AuthDirListBadExits;
-  int vote_on_hsdirs = options->VoteOnHidServDirectoriesV2;
-  const char *contact;
-  char *version_lines = NULL;
-  smartlist_t *routers = NULL;
-  digestmap_t *omit_as_sybil = NULL;
-  smartlist_t *chunks = NULL;
-
-  private_key = get_server_identity_key();
-
-  if (resolve_my_address(LOG_WARN, options, &addr, NULL, &hostname)<0) {
-    log_warn(LD_NET, "Couldn't resolve my hostname");
-    goto done;
-  }
-  if (!hostname)
-    hostname = tor_dup_ip(addr);
-
-  format_iso_time(published, now);
-
-  client_versions = format_versions_list(options->RecommendedClientVersions);
-  server_versions = format_versions_list(options->RecommendedServerVersions);
-
-  if (crypto_pk_write_public_key_to_string(private_key, &identity_pkey,
-                                           &identity_pkey_len)<0) {
-    log_warn(LD_BUG,"Writing public key to string failed.");
-    goto done;
-  }
-
-  if (crypto_pk_get_fingerprint(private_key, fingerprint, 0)<0) {
-    log_err(LD_BUG, "Error computing fingerprint");
-    goto done;
-  }
-
-  contact = options->ContactInfo;
-  if (!contact)
-    contact = "(none)";
-
-  if (versioning) {
-    tor_asprintf(&version_lines,
-                 "client-versions %s\nserver-versions %s\n",
-                 client_versions, server_versions);
-  } else {
-    version_lines = tor_strdup("");
-  }
-
-  chunks = smartlist_new();
-  smartlist_add_asprintf(chunks,
-               "network-status-version 2\n"
-               "dir-source %s %s %d\n"
-               "fingerprint %s\n"
-               "contact %s\n"
-               "published %s\n"
-               "dir-options%s%s%s%s\n"
-               "%s" /* client version line, server version line. */
-               "dir-signing-key\n%s",
-               hostname, fmt_addr32(addr),
-               (int)router_get_advertised_dir_port(options, 0),
-               fingerprint,
-               contact,
-               published,
-               naming ? " Names" : "",
-               listbaddirs ? " BadDirectories" : "",
-               listbadexits ? " BadExits" : "",
-               versioning ? " Versions" : "",
-               version_lines,
-               identity_pkey);
-
-  /* precompute this part, since we need it to decide what "stable"
-   * means. */
-  SMARTLIST_FOREACH(rl->routers, routerinfo_t *, ri, {
-    dirserv_set_router_is_running(ri, now);
-  });
-
-  routers = smartlist_new();
-  smartlist_add_all(routers, rl->routers);
-  routers_sort_by_identity(routers);
-  omit_as_sybil = get_possible_sybil_list(routers);
-
-  dirserv_compute_performance_thresholds(rl, omit_as_sybil);
-
-  SMARTLIST_FOREACH_BEGIN(routers, routerinfo_t *, ri) {
-    if (ri->cache_info.published_on >= cutoff) {
-      routerstatus_t rs;
-      char *version = version_from_platform(ri->platform);
-      node_t *node = node_get_mutable_by_id(ri->cache_info.identity_digest);
-      if (!node) {
-        tor_free(version);
-        continue;
-      }
-      set_routerstatus_from_routerinfo(&rs, node, ri, now,
-                                       naming, listbadexits, listbaddirs,
-                                       vote_on_hsdirs);
-
-      if (digestmap_get(omit_as_sybil, ri->cache_info.identity_digest))
-        clear_status_flags_on_sybil(&rs);
-
-      {
-        char *rsf = routerstatus_format_entry(&rs, version, NS_V2, NULL);
-        if (rsf)
-          smartlist_add(chunks, rsf);
-      }
-      tor_free(version);
-    }
-  } SMARTLIST_FOREACH_END(ri);
-
-  smartlist_add_asprintf(chunks, "directory-signature %s\n",
-                         options->Nickname);
-
-  crypto_digest_smartlist(digest, DIGEST_LEN, chunks, "", DIGEST_SHA1);
-
-  note_crypto_pk_op(SIGN_DIR);
-  {
-    char *sig;
-    if (!(sig = router_get_dirobj_signature(digest,DIGEST_LEN,
-                                            private_key))) {
-      log_warn(LD_BUG, "Unable to sign router status.");
-      goto done;
-    }
-    smartlist_add(chunks, sig);
-  }
-
-  status = smartlist_join_strings(chunks, "", 0, NULL);
-
-  {
-    networkstatus_v2_t *ns;
-    if (!(ns = networkstatus_v2_parse_from_string(status))) {
-      log_err(LD_BUG,"Generated a networkstatus we couldn't parse.");
-      goto done;
-    }
-    networkstatus_v2_free(ns);
-  }
-
-  {
-    cached_dir_t **ns_ptr = &the_v2_networkstatus;
-    if (*ns_ptr)
-      cached_dir_decref(*ns_ptr);
-    *ns_ptr = new_cached_dir(status, now);
-    status = NULL; /* So it doesn't get double-freed. */
-    the_v2_networkstatus_is_dirty = 0;
-    router_set_networkstatus_v2((*ns_ptr)->dir, now, NS_GENERATED, NULL);
-    r = *ns_ptr;
-  }
-
- done:
-  if (chunks) {
-    SMARTLIST_FOREACH(chunks, char *, cp, tor_free(cp));
-    smartlist_free(chunks);
-  }
-  tor_free(client_versions);
-  tor_free(server_versions);
-  tor_free(version_lines);
-  tor_free(status);
-  tor_free(hostname);
-  tor_free(identity_pkey);
-  smartlist_free(routers);
-  digestmap_free(omit_as_sybil, NULL);
-  return r;
-}
-
-/** Given the portion of a networkstatus request URL after "tor/status/" in
- * <b>key</b>, append to <b>result</b> the digests of the identity keys of the
- * networkstatus objects that the client has requested. */
-void
-dirserv_get_networkstatus_v2_fingerprints(smartlist_t *result,
-                                          const char *key)
-{
-  tor_assert(result);
-
-  if (!cached_v2_networkstatus)
-    cached_v2_networkstatus = digestmap_new();
-
-  if (should_generate_v2_networkstatus())
-    generate_v2_networkstatus_opinion();
-
-  if (!strcmp(key,"authority")) {
-    if (authdir_mode_v2(get_options())) {
-      const routerinfo_t *me = router_get_my_routerinfo();
-      if (me)
-        smartlist_add(result,
-                      tor_memdup(me->cache_info.identity_digest, DIGEST_LEN));
-    }
-  } else if (!strcmp(key, "all")) {
-    if (digestmap_size(cached_v2_networkstatus)) {
-      digestmap_iter_t *iter;
-      iter = digestmap_iter_init(cached_v2_networkstatus);
-      while (!digestmap_iter_done(iter)) {
-        const char *ident;
-        void *val;
-        digestmap_iter_get(iter, &ident, &val);
-        smartlist_add(result, tor_memdup(ident, DIGEST_LEN));
-        iter = digestmap_iter_next(cached_v2_networkstatus, iter);
-      }
-    } else {
-      SMARTLIST_FOREACH(router_get_trusted_dir_servers(),
-                  dir_server_t *, ds,
-                  if (ds->type & V2_DIRINFO)
-                    smartlist_add(result, tor_memdup(ds->digest, DIGEST_LEN)));
-    }
-    smartlist_sort_digests(result);
-    if (smartlist_len(result) == 0)
-      log_info(LD_DIRSERV,
-               "Client requested 'all' network status objects; we have none.");
-  } else if (!strcmpstart(key, "fp/")) {
-    dir_split_resource_into_fingerprints(key+3, result, NULL,
-                                         DSR_HEX|DSR_SORT_UNIQ);
-  }
-}
-
-/** Look for a network status object as specified by <b>key</b>, which should
- * be either "authority" (to find a network status generated by us), a hex
- * identity digest (to find a network status generated by given directory), or
- * "all" (to return all the v2 network status objects we have).
- */
-void
-dirserv_get_networkstatus_v2(smartlist_t *result,
-                             const char *key)
-{
-  cached_dir_t *cached;
-  smartlist_t *fingerprints = smartlist_new();
-  tor_assert(result);
-
-  if (!cached_v2_networkstatus)
-    cached_v2_networkstatus = digestmap_new();
-
-  dirserv_get_networkstatus_v2_fingerprints(fingerprints, key);
-  SMARTLIST_FOREACH_BEGIN(fingerprints, const char *, fp) {
-      if (router_digest_is_me(fp) && should_generate_v2_networkstatus())
-        generate_v2_networkstatus_opinion();
-      cached = digestmap_get(cached_v2_networkstatus, fp);
-      if (cached) {
-        smartlist_add(result, cached);
-      } else {
-        char hexbuf[HEX_DIGEST_LEN+1];
-        base16_encode(hexbuf, sizeof(hexbuf), fp, DIGEST_LEN);
-        log_info(LD_DIRSERV, "Don't know about any network status with "
-                 "fingerprint '%s'", hexbuf);
-      }
-  } SMARTLIST_FOREACH_END(fp);
-  SMARTLIST_FOREACH(fingerprints, char *, cp, tor_free(cp));
-  smartlist_free(fingerprints);
 }
 
 /** As dirserv_get_routerdescs(), but instead of getting signed_descriptor_t
@@ -3661,7 +3020,7 @@ dirserv_single_reachability_test(time_t now, routerinfo_t *router)
 
   /* IPv4. */
   log_debug(LD_OR,"Testing reachability of %s at %s:%u.",
-            router->nickname, router->address, router->or_port);
+            router->nickname, fmt_addr32(router->addr), router->or_port);
   tor_addr_from_ipv4h(&router_addr, router->addr);
   chan = channel_tls_connect(&router_addr, router->or_port,
                              router->cache_info.identity_digest);
@@ -3727,15 +3086,12 @@ static cached_dir_t *
 lookup_cached_dir_by_fp(const char *fp)
 {
   cached_dir_t *d = NULL;
-  if (tor_digest_is_zero(fp) && cached_consensuses)
+  if (tor_digest_is_zero(fp) && cached_consensuses) {
     d = strmap_get(cached_consensuses, "ns");
-  else if (memchr(fp, '\0', DIGEST_LEN) && cached_consensuses &&
+  } else if (memchr(fp, '\0', DIGEST_LEN) && cached_consensuses &&
            (d = strmap_get(cached_consensuses, fp))) {
     /* this here interface is a nasty hack XXXX024 */;
-  } else if (router_digest_is_me(fp) && the_v2_networkstatus)
-    d = the_v2_networkstatus;
-  else if (cached_v2_networkstatus)
-    d = digestmap_get(cached_v2_networkstatus, fp);
+  }
   return d;
 }
 
@@ -3941,8 +3297,6 @@ connection_dirserv_add_servers_to_outbuf(dir_connection_t *conn)
     }
     body = signed_descriptor_get_body(sd);
     if (conn->zlib_state) {
-      /* XXXX024 This 'last' business should actually happen on the last
-       * routerinfo, not on the last fingerprint. */
       int last = ! smartlist_len(conn->fingerprint_stack);
       connection_write_to_buf_zlib(body, sd->signed_descriptor_len, conn,
                                    last);
@@ -3959,6 +3313,11 @@ connection_dirserv_add_servers_to_outbuf(dir_connection_t *conn)
 
   if (!smartlist_len(conn->fingerprint_stack)) {
     /* We just wrote the last one; finish up. */
+    if (conn->zlib_state) {
+      connection_write_to_buf_zlib("", 0, conn, 1);
+      tor_zlib_free(conn->zlib_state);
+      conn->zlib_state = NULL;
+    }
     conn->dir_spool_src = DIR_SPOOL_NONE;
     smartlist_free(conn->fingerprint_stack);
     conn->fingerprint_stack = NULL;
@@ -3984,8 +3343,6 @@ connection_dirserv_add_microdescs_to_outbuf(dir_connection_t *conn)
     if (!md || !md->body)
       continue;
     if (conn->zlib_state) {
-      /* XXXX024 This 'last' business should actually happen on the last
-       * routerinfo, not on the last fingerprint. */
       int last = !smartlist_len(conn->fingerprint_stack);
       connection_write_to_buf_zlib(md->body, md->bodylen, conn, last);
       if (last) {
@@ -3997,6 +3354,11 @@ connection_dirserv_add_microdescs_to_outbuf(dir_connection_t *conn)
     }
   }
   if (!smartlist_len(conn->fingerprint_stack)) {
+    if (conn->zlib_state) {
+      connection_write_to_buf_zlib("", 0, conn, 1);
+      tor_zlib_free(conn->zlib_state);
+      conn->zlib_state = NULL;
+    }
     conn->dir_spool_src = DIR_SPOOL_NONE;
     smartlist_free(conn->fingerprint_stack);
     conn->fingerprint_stack = NULL;
@@ -4128,14 +3490,6 @@ dirserv_free_all(void)
 {
   dirserv_free_fingerprint_list();
 
-  cached_dir_decref(the_directory);
-  clear_cached_dir(&the_runningrouters);
-  cached_dir_decref(the_v2_networkstatus);
-  cached_dir_decref(cached_directory);
-  clear_cached_dir(&cached_runningrouters);
-
-  digestmap_free(cached_v2_networkstatus, free_cached_dir_);
-  cached_v2_networkstatus = NULL;
   strmap_free(cached_consensuses, free_cached_dir_);
   cached_consensuses = NULL;
 

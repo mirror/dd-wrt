@@ -5,7 +5,7 @@
 /* See LICENSE for licensing information */
 
 /**
- * \file guardnodes.h
+ * \file entrynodes.h
  * \brief Header file for circuitbuild.c.
  **/
 
@@ -77,6 +77,8 @@ int num_live_entry_guards(int for_directory);
 
 #endif
 
+void remove_all_entry_guards(void);
+
 void entry_guards_compute_status(const or_options_t *options, time_t now);
 int entry_guard_register_connect_status(const char *digest, int succeeded,
                                         int mark_relay_status, time_t now);
@@ -97,27 +99,30 @@ int routerinfo_is_a_configured_bridge(const routerinfo_t *ri);
 int node_is_a_configured_bridge(const node_t *node);
 void learned_router_identity(const tor_addr_t *addr, uint16_t port,
                              const char *digest);
-void bridge_add_from_config(const tor_addr_t *addr, uint16_t port,
-                            const char *digest,
-                            const char *transport_name);
+struct bridge_line_t;
+void bridge_add_from_config(struct bridge_line_t *bridge_line);
 void retry_bridge_descriptor_fetch_directly(const char *digest);
 void fetch_bridge_descriptors(const or_options_t *options, time_t now);
 void learned_bridge_descriptor(routerinfo_t *ri, int from_cache);
 int any_bridge_descriptors_known(void);
-int any_pending_bridge_descriptor_fetches(void);
 int entries_known_but_down(const or_options_t *options);
 void entries_retry_all(const or_options_t *options);
 
 int any_bridge_supports_microdescriptors(void);
+const smartlist_t *get_socks_args_by_bridge_addrport(const tor_addr_t *addr,
+                                                     uint16_t port);
+
+int any_bridges_dont_support_microdescriptors(void);
 
 void entry_guards_free_all(void);
 
 const char *find_transport_name_by_bridge_addrport(const tor_addr_t *addr,
                                                    uint16_t port);
 struct transport_t;
-int find_transport_by_bridge_addrport(const tor_addr_t *addr, uint16_t port,
+int get_transport_by_bridge_addrport(const tor_addr_t *addr, uint16_t port,
                                       const struct transport_t **transport);
 
+int transport_is_needed(const char *transport_name);
 int validate_pluggable_transports_config(void);
 
 double pathbias_get_close_success_count(entry_guard_t *guard);

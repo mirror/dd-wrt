@@ -14,6 +14,7 @@
 #include "addressmap.h"
 #include "buffers.h"
 #include "channel.h"
+#include "circpathbias.h"
 #include "circuitlist.h"
 #include "circuituse.h"
 #include "config.h"
@@ -61,19 +62,14 @@ static int connection_ap_process_natd(entry_connection_t *conn);
 static int connection_exit_connect_dir(edge_connection_t *exitconn);
 static int consider_plaintext_ports(entry_connection_t *conn, uint16_t port);
 static int connection_ap_supports_optimistic_data(const entry_connection_t *);
-static void connection_ap_handshake_socks_resolved_addr(
-                                            entry_connection_t *conn,
-                                            const tor_addr_t *answer,
-                                            int ttl,
-                                            time_t expires);
 
 /** An AP stream has failed/finished. If it hasn't already sent back
  * a socks reply, send one now (based on endreason). Also set
  * has_sent_end to 1, and mark the conn.
  */
-void
-connection_mark_unattached_ap_(entry_connection_t *conn, int endreason,
-                               int line, const char *file)
+MOCK_IMPL(void,
+connection_mark_unattached_ap_,(entry_connection_t *conn, int endreason,
+                                int line, const char *file))
 {
   connection_t *base_conn = ENTRY_TO_CONN(conn);
   edge_connection_t *edge_conn = ENTRY_TO_EDGE_CONN(conn);
@@ -412,7 +408,7 @@ connection_edge_finished_flushing(edge_connection_t *conn)
  * that the name resolution that led us to <b>addr</b> will be valid for
  * <b>ttl</b> seconds. Return -1 on error, or the number of bytes used on
  * success. */
-/* private */int
+STATIC int
 connected_cell_format_payload(uint8_t *payload_out,
                               const tor_addr_t *addr,
                               uint32_t ttl)
@@ -1395,35 +1391,48 @@ get_pf_socket(void)
 }
 #endif
 
-/** Fetch the original destination address and port from a
- * system-specific interface and put them into a
- * socks_request_t as if they came from a socks request.
- *
- * Return -1 if an error prevents fetching the destination,
- * else return 0.
- */
+#if defined(TRANS_NETFILTER) || defined(TRANS_PF)
+/** Try fill in the address of <b>req</b> from the socket configured
+ * with <b>conn</b>. */
 static int
-connection_ap_get_original_destination(entry_connection_t *conn,
-                                       socks_request_t *req)
+destination_from_socket(entry_connection_t *conn, socks_request_t *req)
 {
-#ifdef TRANS_NETFILTER
-  /* Linux 2.4+ */
   struct sockaddr_storage orig_dst;
   socklen_t orig_dst_len = sizeof(orig_dst);
   tor_addr_t addr;
 
+#ifdef TRANS_NETFILTER
   if (getsockopt(ENTRY_TO_CONN(conn)->s, SOL_IP, SO_ORIGINAL_DST,
                  (struct sockaddr*)&orig_dst, &orig_dst_len) < 0) {
     int e = tor_socket_errno(ENTRY_TO_CONN(conn)->s);
     log_warn(LD_NET, "getsockopt() failed: %s", tor_socket_strerror(e));
     return -1;
   }
+#elif defined(TRANS_PF)
+  if (getsockname(ENTRY_TO_CONN(conn)->s, (struct sockaddr*)&orig_dst,
+                  &orig_dst_len) < 0) {
+    int e = tor_socket_errno(ENTRY_TO_CONN(conn)->s);
+    log_warn(LD_NET, "getsockname() failed: %s", tor_socket_strerror(e));
+    return -1;
+  }
+#else
+  (void)conn;
+  (void)req;
+  log_warn(LD_BUG, "Unable to determine destination from socket.");
+  return -1;
+#endif
 
   tor_addr_from_sockaddr(&addr, (struct sockaddr*)&orig_dst, &req->port);
   tor_addr_to_str(req->address, &addr, sizeof(req->address), 1);
 
   return 0;
-#elif defined(TRANS_PF)
+}
+#endif
+
+#ifdef TRANS_PF
+static int
+destination_from_pf(entry_connection_t *conn, socks_request_t *req)
+{
   struct sockaddr_storage proxy_addr;
   socklen_t proxy_addr_len = sizeof(proxy_addr);
   struct sockaddr *proxy_sa = (struct sockaddr*) &proxy_addr;
@@ -1438,6 +1447,21 @@ connection_ap_get_original_destination(entry_connection_t *conn,
              "failed: %s", tor_socket_strerror(e));
     return -1;
   }
+
+#ifdef __FreeBSD__
+  if (get_options()->TransProxyType_parsed == TPT_IPFW) {
+    /* ipfw(8) is used and in this case getsockname returned the original
+       destination */
+    if (tor_addr_from_sockaddr(&addr, proxy_sa, &req->port) < 0) {
+      tor_fragile_assert();
+      return -1;
+    }
+
+    tor_addr_to_str(req->address, &addr, sizeof(req->address), 0);
+
+    return 0;
+  }
+#endif
 
   memset(&pnl, 0, sizeof(pnl));
   pnl.proto           = IPPROTO_TCP;
@@ -1485,6 +1509,36 @@ connection_ap_get_original_destination(entry_connection_t *conn,
   req->port = ntohs(pnl.rdport);
 
   return 0;
+}
+#endif
+
+/** Fetch the original destination address and port from a
+ * system-specific interface and put them into a
+ * socks_request_t as if they came from a socks request.
+ *
+ * Return -1 if an error prevents fetching the destination,
+ * else return 0.
+ */
+static int
+connection_ap_get_original_destination(entry_connection_t *conn,
+                                       socks_request_t *req)
+{
+#ifdef TRANS_NETFILTER
+  return destination_from_socket(conn, req);
+#elif defined(TRANS_PF)
+  const or_options_t *options = get_options();
+
+  if (options->TransProxyType_parsed == TPT_PF_DIVERT)
+    return destination_from_socket(conn, req);
+
+  if (options->TransProxyType_parsed == TPT_DEFAULT)
+    return destination_from_pf(conn, req);
+
+  (void)conn;
+  (void)req;
+  log_warn(LD_BUG, "Proxy destination determination mechanism %s unknown.",
+           options->TransProxyType);
+  return -1;
 #else
   (void)conn;
   (void)req;
@@ -2064,7 +2118,7 @@ tell_controller_about_resolved_result(entry_connection_t *conn,
  * As connection_ap_handshake_socks_resolved, but take a tor_addr_t to send
  * as the answer.
  */
-static void
+void
 connection_ap_handshake_socks_resolved_addr(entry_connection_t *conn,
                                             const tor_addr_t *answer,
                                             int ttl,
@@ -2097,13 +2151,13 @@ connection_ap_handshake_socks_resolved_addr(entry_connection_t *conn,
  **/
 /* XXXX the use of the ttl and expires fields is nutty.  Let's make this
  * interface and those that use it less ugly. */
-void
-connection_ap_handshake_socks_resolved(entry_connection_t *conn,
+MOCK_IMPL(void,
+connection_ap_handshake_socks_resolved,(entry_connection_t *conn,
                                        int answer_type,
                                        size_t answer_len,
                                        const uint8_t *answer,
                                        int ttl,
-                                       time_t expires)
+                                       time_t expires))
 {
   char buf[384];
   size_t replylen;
@@ -2241,13 +2295,21 @@ connection_ap_handshake_socks_reply(entry_connection_t *conn, char *reply,
       endreason == END_STREAM_REASON_RESOURCELIMIT) {
     if (!conn->edge_.on_circuit ||
        !CIRCUIT_IS_ORIGIN(conn->edge_.on_circuit)) {
-      // DNS remaps can trigger this. So can failed hidden service
-      // lookups.
-      log_info(LD_BUG,
-               "No origin circuit for successful SOCKS stream "U64_FORMAT
-               ". Reason: %d",
-               U64_PRINTF_ARG(ENTRY_TO_CONN(conn)->global_identifier),
-               endreason);
+      if (endreason != END_STREAM_REASON_RESOLVEFAILED) {
+        log_info(LD_BUG,
+                 "No origin circuit for successful SOCKS stream "U64_FORMAT
+                 ". Reason: %d",
+                 U64_PRINTF_ARG(ENTRY_TO_CONN(conn)->global_identifier),
+                 endreason);
+      }
+      /*
+       * Else DNS remaps and failed hidden service lookups can send us
+       * here with END_STREAM_REASON_RESOLVEFAILED; ignore it
+       *
+       * Perhaps we could make the test more precise; we can tell hidden
+       * services by conn->edge_.renddata != NULL; anything analogous for
+       * the DNS remap case?
+       */
     } else {
       // XXX: Hrmm. It looks like optimistic data can't go through this
       // codepath, but someone should probably test it and make sure.
@@ -2272,13 +2334,24 @@ connection_ap_handshake_socks_reply(entry_connection_t *conn, char *reply,
     /* leave version, destport, destip zero */
     connection_write_to_buf(buf, SOCKS4_NETWORK_LEN, ENTRY_TO_CONN(conn));
   } else if (conn->socks_request->socks_version == 5) {
-    buf[0] = 5; /* version 5 */
-    buf[1] = (char)status;
-    buf[2] = 0;
-    buf[3] = 1; /* ipv4 addr */
-    memset(buf+4,0,6); /* Set external addr/port to 0.
-                          The spec doesn't seem to say what to do here. -RD */
-    connection_write_to_buf(buf,10,ENTRY_TO_CONN(conn));
+    size_t buf_len;
+    memset(buf,0,sizeof(buf));
+    if (tor_addr_family(&conn->edge_.base_.addr) == AF_INET) {
+      buf[0] = 5; /* version 5 */
+      buf[1] = (char)status;
+      buf[2] = 0;
+      buf[3] = 1; /* ipv4 addr */
+      /* 4 bytes for the header, 2 bytes for the port, 4 for the address. */
+      buf_len = 10;
+    } else { /* AF_INET6. */
+      buf[0] = 5; /* version 5 */
+      buf[1] = (char)status;
+      buf[2] = 0;
+      buf[3] = 4; /* ipv6 addr */
+      /* 4 bytes for the header, 2 bytes for the port, 16 for the address. */
+      buf_len = 22;
+    }
+    connection_write_to_buf(buf,buf_len,ENTRY_TO_CONN(conn));
   }
   /* If socks_version isn't 4 or 5, don't send anything.
    * This can happen in the case of AP bridges. */
@@ -2294,7 +2367,7 @@ connection_ap_handshake_socks_reply(entry_connection_t *conn, char *reply,
  * Return -1 in the case where want to send a RELAY_END cell, and < -1 when
  * we don't.
  **/
-/* static */ int
+STATIC int
 begin_cell_parse(const cell_t *cell, begin_cell_t *bcell,
                  uint8_t *end_reason_out)
 {

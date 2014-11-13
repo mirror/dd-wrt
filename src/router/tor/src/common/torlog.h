@@ -13,6 +13,7 @@
 #ifndef TOR_TORLOG_H
 
 #include "compat.h"
+#include "testsupport.h"
 
 #ifdef HAVE_SYSLOG_H
 #include <syslog.h>
@@ -102,6 +103,9 @@
 /** This log message is not safe to send to a callback-based logger
  * immediately.  Used as a flag, not a log domain. */
 #define LD_NOCB (1u<<31)
+/** This log message should not include a function name, even if it otherwise
+ * would. Used as a flag, not a log domain. */
+#define LD_NOFUNCNAME (1u<<30)
 
 /** Mask of zero or more log domains, OR'd together. */
 typedef uint32_t log_domain_mask_t;
@@ -113,12 +117,6 @@ typedef struct log_severity_list_t {
    * logging. */
   log_domain_mask_t masks[LOG_DEBUG-LOG_ERR+1];
 } log_severity_list_t;
-
-#ifdef LOG_PRIVATE
-/** Given a severity, yields an index into log_severity_list_t.masks to use
- * for that severity. */
-#define SEVERITY_MASK_IDX(sev) ((sev) - LOG_ERR)
-#endif
 
 /** Callback type used for add_callback_log. */
 typedef void (*log_callback)(int severity, uint32_t domain, const char *msg);
@@ -154,9 +152,16 @@ void set_log_time_granularity(int granularity_msec);
 void tor_log(int severity, log_domain_mask_t domain, const char *format, ...)
   CHECK_PRINTF(3,4);
 
-#if defined(__GNUC__) || defined(RUNNING_DOXYGEN)
+void tor_log_err_sigsafe(const char *m, ...);
+int tor_log_get_sigsafe_err_fds(const int **out);
+void tor_log_update_sigsafe_err_fds(void);
+
+struct smartlist_t;
+void tor_log_get_logfile_names(struct smartlist_t *out);
+
 extern int log_global_min_severity_;
 
+#if defined(__GNUC__) || defined(RUNNING_DOXYGEN)
 void log_fn_(int severity, log_domain_mask_t domain,
              const char *funcname, const char *format, ...)
   CHECK_PRINTF(4,5);
@@ -226,6 +231,12 @@ extern const char *log_fn_function_name_;
 #endif
 
 #endif /* !GNUC */
+
+#ifdef LOG_PRIVATE
+MOCK_DECL(STATIC void, logv, (int severity, log_domain_mask_t domain,
+    const char *funcname, const char *suffix, const char *format,
+    va_list ap) CHECK_PRINTF(5,0));
+#endif
 
 # define TOR_TORLOG_H
 #endif

@@ -63,9 +63,9 @@ replaycache_new(time_t horizon, time_t interval)
 /** See documentation for replaycache_add_and_test()
  */
 
-int
+STATIC int
 replaycache_add_and_test_internal(
-    time_t present, replaycache_t *r, const void *data, int len,
+    time_t present, replaycache_t *r, const void *data, size_t len,
     time_t *elapsed)
 {
   int rv = 0;
@@ -73,7 +73,7 @@ replaycache_add_and_test_internal(
   time_t *access_time;
 
   /* sanity check */
-  if (present <= 0 || !r || !data || len <= 0) {
+  if (present <= 0 || !r || !data || len == 0) {
     log_info(LD_BUG, "replaycache_add_and_test_internal() called with stupid"
         " parameters; please fix this.");
     goto done;
@@ -127,14 +127,13 @@ replaycache_add_and_test_internal(
 /** See documentation for replaycache_scrub_if_needed()
  */
 
-void
+STATIC void
 replaycache_scrub_if_needed_internal(time_t present, replaycache_t *r)
 {
   digestmap_iter_t *itr = NULL;
   const char *digest;
   void *valp;
   time_t *access_time;
-  char scrub_this;
 
   /* sanity check */
   if (!r || !(r->digests_seen)) {
@@ -152,20 +151,10 @@ replaycache_scrub_if_needed_internal(time_t present, replaycache_t *r)
   /* okay, scrub time */
   itr = digestmap_iter_init(r->digests_seen);
   while (!digestmap_iter_done(itr)) {
-    scrub_this = 0;
     digestmap_iter_get(itr, &digest, &valp);
     access_time = (time_t *)valp;
-    if (access_time) {
-      /* aged out yet? */
-      if (*access_time < present - r->horizon) scrub_this = 1;
-    } else {
-      /* Buh? Get rid of it, anyway */
-      log_info(LD_BUG, "replaycache_scrub_if_needed_internal() saw a NULL"
-          " entry in the digestmap.");
-      scrub_this = 1;
-    }
-
-    if (scrub_this) {
+    /* aged out yet? */
+    if (*access_time < present - r->horizon) {
       /* Advance the iterator and remove this one */
       itr = digestmap_iter_next_rmv(r->digests_seen, itr);
       /* Free the value removed */
@@ -187,7 +176,7 @@ replaycache_scrub_if_needed_internal(time_t present, replaycache_t *r)
  */
 
 int
-replaycache_add_and_test(replaycache_t *r, const void *data, int len)
+replaycache_add_and_test(replaycache_t *r, const void *data, size_t len)
 {
   return replaycache_add_and_test_internal(time(NULL), r, data, len, NULL);
 }
@@ -198,7 +187,7 @@ replaycache_add_and_test(replaycache_t *r, const void *data, int len)
 
 int
 replaycache_add_test_and_elapsed(
-    replaycache_t *r, const void *data, int len, time_t *elapsed)
+    replaycache_t *r, const void *data, size_t len, time_t *elapsed)
 {
   return replaycache_add_and_test_internal(time(NULL), r, data, len, elapsed);
 }

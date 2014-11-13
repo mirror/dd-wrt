@@ -11,6 +11,7 @@
 #define ROUTER_PRIVATE
 #define ROUTERLIST_PRIVATE
 #define HIBERNATE_PRIVATE
+#define NETWORKSTATUS_PRIVATE
 #include "or.h"
 #include "config.h"
 #include "directory.h"
@@ -97,7 +98,6 @@ test_dir_formats(void)
 
   get_platform_str(platform, sizeof(platform));
   r1 = tor_malloc_zero(sizeof(routerinfo_t));
-  r1->address = tor_strdup("18.244.0.1");
   r1->addr = 0xc0a80001u; /* 192.168.0.1 */
   r1->cache_info.published_on = 0;
   r1->or_port = 9000;
@@ -124,7 +124,6 @@ test_dir_formats(void)
   ex2->maskbits = 8;
   ex2->prt_min = ex2->prt_max = 24;
   r2 = tor_malloc_zero(sizeof(routerinfo_t));
-  r2->address = tor_strdup("1.1.1.1");
   r2->addr = 0x0a030201u; /* 10.3.2.1 */
   r2->platform = tor_strdup(platform);
   r2->cache_info.published_on = 5;
@@ -153,7 +152,7 @@ test_dir_formats(void)
   tor_free(options->ContactInfo);
   test_assert(buf);
 
-  strlcpy(buf2, "router Magri 18.244.0.1 9000 0 9003\n"
+  strlcpy(buf2, "router Magri 192.168.0.1 9000 0 9003\n"
           "or-address [1:2:3:4::]:9999\n"
           "platform Tor "VERSION" on ", sizeof(buf2));
   strlcat(buf2, get_uname(), sizeof(buf2));
@@ -187,7 +186,7 @@ test_dir_formats(void)
   cp = buf;
   rp1 = router_parse_entry_from_string((const char*)cp,NULL,1,0,NULL);
   test_assert(rp1);
-  test_streq(rp1->address, r1->address);
+  test_eq(rp1->addr, r1->addr);
   test_eq(rp1->or_port, r1->or_port);
   //test_eq(rp1->dir_port, r1->dir_port);
   test_eq(rp1->bandwidthrate, r1->bandwidthrate);
@@ -196,9 +195,10 @@ test_dir_formats(void)
   test_assert(crypto_pk_cmp_keys(rp1->onion_pkey, pk1) == 0);
   test_assert(crypto_pk_cmp_keys(rp1->identity_pkey, pk2) == 0);
   //test_assert(rp1->exit_policy == NULL);
+  tor_free(buf);
 
   strlcpy(buf2,
-          "router Fred 1.1.1.1 9005 0 0\n"
+          "router Fred 10.3.2.1 9005 0 0\n"
           "platform Tor "VERSION" on ", sizeof(buf2));
   strlcat(buf2, get_uname(), sizeof(buf2));
   strlcat(buf2, "\n"
@@ -214,8 +214,10 @@ test_dir_formats(void)
   strlcat(buf2, "signing-key\n", sizeof(buf2));
   strlcat(buf2, pk1_str, sizeof(buf2));
   strlcat(buf2, "hidden-service-dir\n", sizeof(buf2));
+#ifdef CURVE25519_ENABLED
   strlcat(buf2, "ntor-onion-key "
           "skyinAnvardNostarsNomoonNowindormistsorsnow=\n", sizeof(buf2));
+#endif
   strlcat(buf2, "accept *:80\nreject 18.0.0.0/8:24\n", sizeof(buf2));
   strlcat(buf2, "router-signature\n", sizeof(buf2));
 
@@ -229,15 +231,17 @@ test_dir_formats(void)
   cp = buf;
   rp2 = router_parse_entry_from_string((const char*)cp,NULL,1,0,NULL);
   test_assert(rp2);
-  test_streq(rp2->address, r2->address);
+  test_eq(rp2->addr, r2->addr);
   test_eq(rp2->or_port, r2->or_port);
   test_eq(rp2->dir_port, r2->dir_port);
   test_eq(rp2->bandwidthrate, r2->bandwidthrate);
   test_eq(rp2->bandwidthburst, r2->bandwidthburst);
   test_eq(rp2->bandwidthcapacity, r2->bandwidthcapacity);
+#ifdef CURVE25519_ENABLED
   test_memeq(rp2->onion_curve25519_pkey->public_key,
              r2->onion_curve25519_pkey->public_key,
              CURVE25519_PUBKEY_LEN);
+#endif
   test_assert(crypto_pk_cmp_keys(rp2->onion_pkey, pk2) == 0);
   test_assert(crypto_pk_cmp_keys(rp2->identity_pkey, pk1) == 0);
 
@@ -275,6 +279,8 @@ test_dir_formats(void)
     routerinfo_free(r1);
   if (r2)
     routerinfo_free(r2);
+  if (rp2)
+    routerinfo_free(rp2);
 
   tor_free(buf);
   tor_free(pk1_str);
@@ -937,7 +943,7 @@ gen_routerstatus_for_v3ns(int idx, time_t now)
       tor_addr_copy(&rs->ipv6_addr, &addr_ipv6);
       rs->ipv6_orport = 4711;
       rs->is_exit = rs->is_stable = rs->is_fast = rs->is_flagged_running =
-        rs->is_valid = rs->is_v2_dir = rs->is_possible_guard = 1;
+        rs->is_valid = rs->is_possible_guard = 1;
       break;
     case 2:
       /* Generate the third routerstatus. */
@@ -952,7 +958,7 @@ gen_routerstatus_for_v3ns(int idx, time_t now)
       rs->or_port = 400;
       rs->dir_port = 9999;
       rs->is_authority = rs->is_exit = rs->is_stable = rs->is_fast =
-        rs->is_flagged_running = rs->is_valid = rs->is_v2_dir =
+        rs->is_flagged_running = rs->is_valid =
         rs->is_possible_guard = 1;
       break;
     case 3:
@@ -1009,16 +1015,14 @@ vote_tweaks_for_v3ns(networkstatus_t *v, int voter, time_t now)
     /* Monkey around with the list a bit */
     vrs = smartlist_get(v->routerstatus_list, 2);
     smartlist_del_keeporder(v->routerstatus_list, 2);
-    tor_free(vrs->version);
-    tor_free(vrs);
+    vote_routerstatus_free(vrs);
     vrs = smartlist_get(v->routerstatus_list, 0);
     vrs->status.is_fast = 1;
 
     if (voter == 3) {
       vrs = smartlist_get(v->routerstatus_list, 0);
       smartlist_del_keeporder(v->routerstatus_list, 0);
-      tor_free(vrs->version);
-      tor_free(vrs);
+      vote_routerstatus_free(vrs);
       vrs = smartlist_get(v->routerstatus_list, 0);
       memset(vrs->status.descriptor_digest, (int)'Z', DIGEST_LEN);
       test_assert(router_add_to_routerlist(
@@ -1061,7 +1065,8 @@ test_vrs_for_v3ns(vote_routerstatus_t *vrs, int voter, time_t now)
     test_eq(rs->addr, 0x99008801);
     test_eq(rs->or_port, 443);
     test_eq(rs->dir_port, 8000);
-    test_eq(vrs->flags, U64_LITERAL(16)); // no flags except "running"
+    /* no flags except "running" (16) and "v2dir" (64) */
+    tt_u64_op(vrs->flags, ==, U64_LITERAL(80));
   } else if (tor_memeq(rs->identity_digest,
                        "\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5"
                        "\x5\x5\x5\x5",
@@ -1086,10 +1091,11 @@ test_vrs_for_v3ns(vote_routerstatus_t *vrs, int voter, time_t now)
     test_assert(tor_addr_eq(&rs->ipv6_addr, &addr_ipv6));
     test_eq(rs->ipv6_orport, 4711);
     if (voter == 1) {
-      test_eq(vrs->flags, U64_LITERAL(254)); // all flags except "authority."
+      /* all except "authority" (1) and "v2dir" (64) */
+      tt_u64_op(vrs->flags, ==, U64_LITERAL(190));
     } else {
-      /* 1023 - authority(1) - madeofcheese(16) - madeoftin(32) */
-      test_eq(vrs->flags, U64_LITERAL(974));
+      /* 1023 - authority(1) - madeofcheese(16) - madeoftin(32) - v2dir(256) */
+      tt_u64_op(vrs->flags, ==, U64_LITERAL(718));
     }
   } else if (tor_memeq(rs->identity_digest,
                        "\x33\x33\x33\x33\x33\x33\x33\x33\x33\x33"
@@ -1157,7 +1163,6 @@ test_routerstatus_for_v3ns(routerstatus_t *rs, time_t now)
     test_assert(!rs->is_stable);
     /* (If it wasn't running it wouldn't be here) */
     test_assert(rs->is_flagged_running);
-    test_assert(!rs->is_v2_dir);
     test_assert(!rs->is_valid);
     test_assert(!rs->is_named);
     /* XXXX check version */
@@ -1184,7 +1189,6 @@ test_routerstatus_for_v3ns(routerstatus_t *rs, time_t now)
     test_assert(rs->is_possible_guard);
     test_assert(rs->is_stable);
     test_assert(rs->is_flagged_running);
-    test_assert(rs->is_v2_dir);
     test_assert(rs->is_valid);
     test_assert(!rs->is_named);
     /* XXXX check version */
@@ -1226,7 +1230,8 @@ test_a_networkstatus(
   vote_routerstatus_t *vrs;
   routerstatus_t *rs;
   int idx, n_rs, n_vrs;
-  char *v1_text=NULL, *v2_text=NULL, *v3_text=NULL, *consensus_text=NULL, *cp;
+  char *v1_text=NULL, *v2_text=NULL, *v3_text=NULL, *consensus_text=NULL,
+    *cp=NULL;
   smartlist_t *votes = smartlist_new();
 
   /* For generating the two other consensuses. */
@@ -1244,7 +1249,6 @@ test_a_networkstatus(
   /* Parse certificates and keys. */
   cert1 = authority_cert_parse_from_string(AUTHORITY_CERT_1, NULL);
   test_assert(cert1);
-  test_assert(cert1->is_cross_certified);
   cert2 = authority_cert_parse_from_string(AUTHORITY_CERT_2, NULL);
   test_assert(cert2);
   cert3 = authority_cert_parse_from_string(AUTHORITY_CERT_3, NULL);
@@ -1358,7 +1362,8 @@ test_a_networkstatus(
   vote->dist_seconds = 300;
   authority_cert_free(vote->cert);
   vote->cert = authority_cert_dup(cert2);
-  vote->net_params = smartlist_new();
+  SMARTLIST_FOREACH(vote->net_params, char *, c, tor_free(c));
+  smartlist_clear(vote->net_params);
   smartlist_split_string(vote->net_params, "bar=2000000000 circuitwindow=20",
                          NULL, 0, 0);
   tor_free(vote->client_versions);
@@ -1402,7 +1407,8 @@ test_a_networkstatus(
   vote->dist_seconds = 250;
   authority_cert_free(vote->cert);
   vote->cert = authority_cert_dup(cert3);
-  vote->net_params = smartlist_new();
+  SMARTLIST_FOREACH(vote->net_params, char *, c, tor_free(c));
+  smartlist_clear(vote->net_params);
   smartlist_split_string(vote->net_params, "circuitwindow=80 foo=660",
                          NULL, 0, 0);
   smartlist_add(vote->supported_methods, tor_strdup("4"));
@@ -1645,6 +1651,7 @@ test_a_networkstatus(
   }
 
  done:
+  tor_free(cp);
   smartlist_free(votes);
   tor_free(v1_text);
   tor_free(v2_text);
@@ -1768,7 +1775,7 @@ test_dir_random_weighted(void *testdata)
     inp[i].u64 = vals[i];
     total += vals[i];
   }
-  tt_int_op(total, ==, 45);
+  tt_u64_op(total, ==, 45);
   for (i=0; i<n; ++i) {
     choice = choose_array_element_by_weight(inp, 10);
     tt_int_op(choice, >=, 0);
@@ -1886,7 +1893,7 @@ gen_routerstatus_for_umbw(int idx, time_t now)
       tor_addr_copy(&rs->ipv6_addr, &addr_ipv6);
       rs->ipv6_orport = 4711;
       rs->is_exit = rs->is_stable = rs->is_fast = rs->is_flagged_running =
-        rs->is_valid = rs->is_v2_dir = rs->is_possible_guard = 1;
+        rs->is_valid = rs->is_possible_guard = 1;
       /*
        * This one has measured bandwidth above the clip cutoff, and
        * so shouldn't be clipped; we'll have to test that it isn't
@@ -1909,7 +1916,7 @@ gen_routerstatus_for_umbw(int idx, time_t now)
       rs->or_port = 400;
       rs->dir_port = 9999;
       rs->is_authority = rs->is_exit = rs->is_stable = rs->is_fast =
-        rs->is_flagged_running = rs->is_valid = rs->is_v2_dir =
+        rs->is_flagged_running = rs->is_valid =
         rs->is_possible_guard = 1;
       /*
        * This one has unmeasured bandwidth above the clip cutoff, and
@@ -1978,6 +1985,7 @@ vote_tweaks_for_umbw(networkstatus_t *v, int voter, time_t now)
   (void)now;
 
   test_assert(v->supported_methods);
+  SMARTLIST_FOREACH(v->supported_methods, char *, c, tor_free(c));
   smartlist_clear(v->supported_methods);
   /* Method 17 is MIN_METHOD_TO_CLIP_UNMEASURED_BW_KB */
   smartlist_split_string(v->supported_methods,
@@ -2145,7 +2153,6 @@ test_routerstatus_for_umbw(routerstatus_t *rs, time_t now)
     test_assert(!rs->is_stable);
     /* (If it wasn't running it wouldn't be here) */
     test_assert(rs->is_flagged_running);
-    test_assert(!rs->is_v2_dir);
     test_assert(!rs->is_valid);
     test_assert(!rs->is_named);
     /* This one should have measured bandwidth below the clip cutoff */
@@ -2176,7 +2183,6 @@ test_routerstatus_for_umbw(routerstatus_t *rs, time_t now)
     test_assert(rs->is_possible_guard);
     test_assert(rs->is_stable);
     test_assert(rs->is_flagged_running);
-    test_assert(rs->is_v2_dir);
     test_assert(rs->is_valid);
     test_assert(!rs->is_named);
     /* This one should have measured bandwidth above the clip cutoff */
@@ -2254,82 +2260,6 @@ test_dir_clip_unmeasured_bw_kb_alt(void)
                        test_routerstatus_for_umbw);
 }
 
-extern time_t time_of_process_start; /* from main.c */
-
-static void
-test_dir_v2_dir(void *arg)
-{
-  /* Runs in a forked process: acts like a v2 directory just enough to make and
-   * sign a v2 networkstatus opinion */
-
-  cached_dir_t *v2 = NULL;
-  or_options_t *options = get_options_mutable();
-  crypto_pk_t *id_key = pk_generate(4);
-  (void) arg;
-
-  options->ORPort_set = 1; /* So we believe we're a server. */
-  options->DirPort_set = 1;
-  options->Address = tor_strdup("99.99.99.99");
-  options->Nickname = tor_strdup("TestV2Auth");
-  options->ContactInfo = tor_strdup("TestV2Auth <testv2auth@example.com>");
-  {
-    /* Give it a DirPort */
-    smartlist_t *ports = (smartlist_t *)get_configured_ports();
-    port_cfg_t *port = tor_malloc_zero(sizeof(port_cfg_t));
-    port->type = CONN_TYPE_DIR_LISTENER;
-    port->port = 9999;
-    smartlist_add(ports, port);
-  }
-  set_server_identity_key(id_key);
-  set_client_identity_key(id_key);
-
-  /* Add a router. */
-  {
-    was_router_added_t wra;
-    const char *msg = NULL;
-    routerinfo_t *r1 = tor_malloc_zero(sizeof(routerinfo_t));
-    r1->address = tor_strdup("18.244.0.1");
-    r1->addr = 0xc0a80001u; /* 192.168.0.1 */
-    r1->cache_info.published_on = time(NULL)-60;
-    r1->or_port = 9000;
-    r1->dir_port = 9003;
-    tor_addr_parse(&r1->ipv6_addr, "1:2:3:4::");
-    r1->ipv6_orport = 9999;
-    r1->onion_pkey = pk_generate(1);
-    r1->identity_pkey = pk_generate(2);
-    r1->bandwidthrate = 1000;
-    r1->bandwidthburst = 5000;
-    r1->bandwidthcapacity = 10000;
-    r1->exit_policy = NULL;
-    r1->nickname = tor_strdup("Magri");
-    r1->platform = tor_strdup("Tor 0.2.7.7-gamma");
-    r1->cache_info.routerlist_index = -1;
-    r1->cache_info.signed_descriptor_body =
-      router_dump_router_to_string(r1, r1->identity_pkey);
-    r1->cache_info.signed_descriptor_len =
-      strlen(r1->cache_info.signed_descriptor_body);
-    wra = router_add_to_routerlist(r1, &msg, 0, 0);
-    tt_int_op(wra, ==, ROUTER_ADDED_SUCCESSFULLY);
-  }
-
-  /* Prevent call of rep_hist_note_router_unreachable(). */
-  time_of_process_start = time(NULL);
-
-  /* Make a directory so there's somewhere to store the thing */
-#ifdef _WIN32
-  mkdir(get_fname("cached-status"));
-#else
-  mkdir(get_fname("cached-status"), 0700);
-#endif
-
-  v2 = generate_v2_networkstatus_opinion();
-  tt_assert(v2);
-
- done:
-  crypto_pk_free(id_key);
-  cached_dir_decref(v2);
-}
-
 static void
 test_dir_fmt_control_ns(void *arg)
 {
@@ -2357,11 +2287,79 @@ test_dir_fmt_control_ns(void *arg)
             "r TetsuoMilk U3RhdGVseSwgcGx1bXAgQnVjayA "
                "TXVsbGlnYW4gY2FtZSB1cCBmcm8 2013-04-02 17:53:18 "
                "32.48.64.80 9001 9002\n"
-            "s Exit Fast Running\n"
+            "s Exit Fast Running V2Dir\n"
             "w Bandwidth=1000\n");
 
  done:
   tor_free(s);
+}
+
+static void
+test_dir_http_handling(void *args)
+{
+  char *url = NULL;
+  (void)args;
+
+  /* Parse http url tests: */
+  /* Good headers */
+  test_eq(parse_http_url("GET /tor/a/b/c.txt HTTP/1.1\r\n"
+                           "Host: example.com\r\n"
+                           "User-Agent: Mozilla/5.0 (Windows;"
+                           " U; Windows NT 6.1; en-US; rv:1.9.1.5)\r\n",
+                           &url), 0);
+  test_streq(url, "/tor/a/b/c.txt");
+  tor_free(url);
+
+  test_eq(parse_http_url("GET /tor/a/b/c.txt HTTP/1.0\r\n", &url), 0);
+  test_streq(url, "/tor/a/b/c.txt");
+  tor_free(url);
+
+  test_eq(parse_http_url("GET /tor/a/b/c.txt HTTP/1.600\r\n", &url), 0);
+  test_streq(url, "/tor/a/b/c.txt");
+  tor_free(url);
+
+  /* Should prepend '/tor/' to url if required */
+  test_eq(parse_http_url("GET /a/b/c.txt HTTP/1.1\r\n"
+                           "Host: example.com\r\n"
+                           "User-Agent: Mozilla/5.0 (Windows;"
+                           " U; Windows NT 6.1; en-US; rv:1.9.1.5)\r\n",
+                           &url), 0);
+  test_streq(url, "/tor/a/b/c.txt");
+  tor_free(url);
+
+  /* Bad headers -- no HTTP/1.x*/
+  test_eq(parse_http_url("GET /a/b/c.txt\r\n"
+                           "Host: example.com\r\n"
+                           "User-Agent: Mozilla/5.0 (Windows;"
+                           " U; Windows NT 6.1; en-US; rv:1.9.1.5)\r\n",
+                           &url), -1);
+  tt_assert(!url);
+
+  /* Bad headers */
+  test_eq(parse_http_url("GET /a/b/c.txt\r\n"
+                           "Host: example.com\r\n"
+                           "User-Agent: Mozilla/5.0 (Windows;"
+                           " U; Windows NT 6.1; en-US; rv:1.9.1.5)\r\n",
+                           &url), -1);
+  tt_assert(!url);
+
+  test_eq(parse_http_url("GET /tor/a/b/c.txt", &url), -1);
+  tt_assert(!url);
+
+  test_eq(parse_http_url("GET /tor/a/b/c.txt HTTP/1.1", &url), -1);
+  tt_assert(!url);
+
+  test_eq(parse_http_url("GET /tor/a/b/c.txt HTTP/1.1x\r\n", &url), -1);
+  tt_assert(!url);
+
+  test_eq(parse_http_url("GET /tor/a/b/c.txt HTTP/1.", &url), -1);
+  tt_assert(!url);
+
+  test_eq(parse_http_url("GET /tor/a/b/c.txt HTTP/1.\r", &url), -1);
+  tt_assert(!url);
+
+ done:
+  tor_free(url);
 }
 
 #define DIR_LEGACY(name)                                                   \
@@ -2384,8 +2382,8 @@ struct testcase_t dir_tests[] = {
   DIR(scale_bw, 0),
   DIR_LEGACY(clip_unmeasured_bw_kb),
   DIR_LEGACY(clip_unmeasured_bw_kb_alt),
-  DIR(v2_dir, TT_FORK),
   DIR(fmt_control_ns, 0),
+  DIR(http_handling, 0),
   END_OF_TESTCASES
 };
 

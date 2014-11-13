@@ -12,11 +12,16 @@
 #include "config.h"
 #include "confparse.h"
 #include "control.h"
+#include "main.h"
 #include "networkstatus.h"
 #include "statefile.h"
 
 #undef log
 #include <math.h>
+
+static void cbt_control_event_buildtimeout_set(
+                                  const circuit_build_times_t *cbt,
+                                  buildtimeout_set_event_t type);
 
 #define CBT_BIN_TO_MS(bin) ((bin)*CBT_BIN_WIDTH + (CBT_BIN_WIDTH/2))
 
@@ -26,12 +31,46 @@
 // vary in their own latency. The downside of this is that guards
 // can change frequently, so we'd be building a lot more circuits
 // most likely.
-/* XXXX024 Make this static; add accessor functions. */
-circuit_build_times_t circ_times;
+static circuit_build_times_t circ_times;
 
+#ifdef TOR_UNIT_TESTS
 /** If set, we're running the unit tests: we should avoid clobbering
  * our state file or accessing get_options() or get_or_state() */
 static int unit_tests = 0;
+#else
+#define unit_tests 0
+#endif
+
+/** Return a pointer to the data structure describing our current circuit
+ * build time history and computations. */
+const circuit_build_times_t *
+get_circuit_build_times(void)
+{
+  return &circ_times;
+}
+
+/** As get_circuit_build_times, but return a mutable pointer. */
+circuit_build_times_t *
+get_circuit_build_times_mutable(void)
+{
+  return &circ_times;
+}
+
+/** Return the time to wait before actually closing an under-construction, in
+ * milliseconds. */
+double
+get_circuit_build_close_time_ms(void)
+{
+  return circ_times.close_ms;
+}
+
+/** Return the time to wait before giving up on an under-construction circuit,
+ * in milliseconds. */
+double
+get_circuit_build_timeout_ms(void)
+{
+  return circ_times.timeout_ms;
+}
 
 /**
  * This function decides if CBT learning should be disabled. It returns
@@ -56,18 +95,22 @@ circuit_build_times_disabled(void)
 
     if (consensus_disabled || config_disabled || dirauth_disabled ||
            state_disabled) {
+#if 0
       log_debug(LD_CIRC,
                "CircuitBuildTime learning is disabled. "
                "Consensus=%d, Config=%d, AuthDir=%d, StateFile=%d",
                consensus_disabled, config_disabled, dirauth_disabled,
                state_disabled);
+#endif
       return 1;
     } else {
+#if 0
       log_debug(LD_CIRC,
                 "CircuitBuildTime learning is not disabled. "
                 "Consensus=%d, Config=%d, AuthDir=%d, StateFile=%d",
                 consensus_disabled, config_disabled, dirauth_disabled,
                 state_disabled);
+#endif
       return 0;
     }
   }
@@ -154,7 +197,7 @@ circuit_build_times_min_circs_to_observe(void)
 /** Return true iff <b>cbt</b> has recorded enough build times that we
  * want to start acting on the timeout it implies. */
 int
-circuit_build_times_enough_to_compute(circuit_build_times_t *cbt)
+circuit_build_times_enough_to_compute(const circuit_build_times_t *cbt)
 {
   return cbt->total_build_times >= circuit_build_times_min_circs_to_observe();
 }
@@ -438,7 +481,7 @@ circuit_build_times_get_initial_timeout(void)
  * Leave estimated parameters, timeout and network liveness intact
  * for future use.
  */
-void
+STATIC void
 circuit_build_times_reset(circuit_build_times_t *cbt)
 {
   memset(cbt->circuit_build_times, 0, sizeof(cbt->circuit_build_times));
@@ -471,7 +514,7 @@ circuit_build_times_init(circuit_build_times_t *cbt)
     cbt->liveness.timeouts_after_firsthop = NULL;
   }
   cbt->close_ms = cbt->timeout_ms = circuit_build_times_get_initial_timeout();
-  control_event_buildtimeout_set(cbt, BUILDTIMEOUT_SET_EVENT_RESET);
+  cbt_control_event_buildtimeout_set(cbt, BUILDTIMEOUT_SET_EVENT_RESET);
 }
 
 /**
@@ -557,7 +600,7 @@ circuit_build_times_add_time(circuit_build_times_t *cbt, build_time_t time)
  * Return maximum circuit build time
  */
 static build_time_t
-circuit_build_times_max(circuit_build_times_t *cbt)
+circuit_build_times_max(const circuit_build_times_t *cbt)
 {
   int i = 0;
   build_time_t max_build_time = 0;
@@ -598,7 +641,7 @@ circuit_build_times_min(circuit_build_times_t *cbt)
  * The return value must be freed by the caller.
  */
 static uint32_t *
-circuit_build_times_create_histogram(circuit_build_times_t *cbt,
+circuit_build_times_create_histogram(const circuit_build_times_t *cbt,
                                      build_time_t *nbins)
 {
   uint32_t *histogram;
@@ -688,7 +731,7 @@ circuit_build_times_get_xm(circuit_build_times_t *cbt)
  * the or_state_t state structure.
  */
 void
-circuit_build_times_update_state(circuit_build_times_t *cbt,
+circuit_build_times_update_state(const circuit_build_times_t *cbt,
                                  or_state_t *state)
 {
   uint32_t *histogram;
@@ -949,7 +992,7 @@ circuit_build_times_parse_state(circuit_build_times_t *cbt,
  * an acceptable approximation because we are only concerned with the
  * accuracy of the CDF of the tail.
  */
-int
+STATIC int
 circuit_build_times_update_alpha(circuit_build_times_t *cbt)
 {
   build_time_t *x=cbt->circuit_build_times;
@@ -1033,7 +1076,7 @@ circuit_build_times_update_alpha(circuit_build_times_t *cbt)
  *
  * Return value is in milliseconds.
  */
-double
+STATIC double
 circuit_build_times_calculate_timeout(circuit_build_times_t *cbt,
                                       double quantile)
 {
@@ -1050,6 +1093,7 @@ circuit_build_times_calculate_timeout(circuit_build_times_t *cbt,
   return ret;
 }
 
+#ifdef TOR_UNIT_TESTS
 /** Pareto CDF */
 double
 circuit_build_times_cdf(circuit_build_times_t *cbt, double x)
@@ -1060,7 +1104,9 @@ circuit_build_times_cdf(circuit_build_times_t *cbt, double x)
   tor_assert(0 <= ret && ret <= 1.0);
   return ret;
 }
+#endif
 
+#ifdef TOR_UNIT_TESTS
 /**
  * Generate a synthetic time using our distribution parameters.
  *
@@ -1093,7 +1139,9 @@ circuit_build_times_generate_sample(circuit_build_times_t *cbt,
   tor_assert(ret > 0);
   return ret;
 }
+#endif
 
+#ifdef TOR_UNIT_TESTS
 /**
  * Estimate an initial alpha parameter by solving the quantile
  * function with a quantile point and a specific timeout value.
@@ -1114,12 +1162,13 @@ circuit_build_times_initial_alpha(circuit_build_times_t *cbt,
     (tor_mathlog(cbt->Xm)-tor_mathlog(timeout_ms));
   tor_assert(cbt->alpha > 0);
 }
+#endif
 
 /**
  * Returns true if we need circuits to be built
  */
 int
-circuit_build_times_needs_circuits(circuit_build_times_t *cbt)
+circuit_build_times_needs_circuits(const circuit_build_times_t *cbt)
 {
   /* Return true if < MIN_CIRCUITS_TO_OBSERVE */
   return !circuit_build_times_enough_to_compute(cbt);
@@ -1130,11 +1179,17 @@ circuit_build_times_needs_circuits(circuit_build_times_t *cbt)
  * right now.
  */
 int
-circuit_build_times_needs_circuits_now(circuit_build_times_t *cbt)
+circuit_build_times_needs_circuits_now(const circuit_build_times_t *cbt)
 {
   return circuit_build_times_needs_circuits(cbt) &&
     approx_time()-cbt->last_circ_at > circuit_build_times_test_frequency();
 }
+
+/**
+ * How long should we be unreachable before we think we need to check if
+ * our published IP address has changed.
+ */
+#define CIRCUIT_TIMEOUT_BEFORE_RECHECK_IP (60*3)
 
 /**
  * Called to indicate that the network showed some signs of liveness,
@@ -1151,12 +1206,15 @@ circuit_build_times_network_is_live(circuit_build_times_t *cbt)
 {
   time_t now = approx_time();
   if (cbt->liveness.nonlive_timeouts > 0) {
+    time_t time_since_live = now - cbt->liveness.network_last_live;
     log_notice(LD_CIRC,
                "Tor now sees network activity. Restoring circuit build "
                "timeout recording. Network was down for %d seconds "
                "during %d circuit attempts.",
-               (int)(now - cbt->liveness.network_last_live),
+               (int)time_since_live,
                cbt->liveness.nonlive_timeouts);
+    if (time_since_live > CIRCUIT_TIMEOUT_BEFORE_RECHECK_IP)
+      reschedule_descriptor_update_check();
   }
   cbt->liveness.network_last_live = now;
   cbt->liveness.nonlive_timeouts = 0;
@@ -1263,7 +1321,7 @@ circuit_build_times_network_close(circuit_build_times_t *cbt,
  * in the case of recent liveness changes.
  */
 int
-circuit_build_times_network_check_live(circuit_build_times_t *cbt)
+circuit_build_times_network_check_live(const circuit_build_times_t *cbt)
 {
   if (cbt->liveness.nonlive_timeouts > 0) {
     return 0;
@@ -1282,7 +1340,7 @@ circuit_build_times_network_check_live(circuit_build_times_t *cbt)
  * to restart the process of building test circuits and estimating a
  * new timeout.
  */
-int
+STATIC int
 circuit_build_times_network_check_changed(circuit_build_times_t *cbt)
 {
   int total_build_times = cbt->total_build_times;
@@ -1329,7 +1387,7 @@ circuit_build_times_network_check_changed(circuit_build_times_t *cbt)
                   = circuit_build_times_get_initial_timeout();
   }
 
-  control_event_buildtimeout_set(cbt, BUILDTIMEOUT_SET_EVENT_RESET);
+  cbt_control_event_buildtimeout_set(cbt, BUILDTIMEOUT_SET_EVENT_RESET);
 
   log_notice(LD_CIRC,
             "Your network connection speed appears to have changed. Resetting "
@@ -1511,7 +1569,7 @@ circuit_build_times_set_timeout(circuit_build_times_t *cbt)
     }
   }
 
-  control_event_buildtimeout_set(cbt, BUILDTIMEOUT_SET_EVENT_COMPUTED);
+  cbt_control_event_buildtimeout_set(cbt, BUILDTIMEOUT_SET_EVENT_COMPUTED);
 
   timeout_rate = circuit_build_times_timeout_rate(cbt);
 
@@ -1546,11 +1604,55 @@ circuit_build_times_set_timeout(circuit_build_times_t *cbt)
              cbt->total_build_times);
   }
 }
+
+#ifdef TOR_UNIT_TESTS
 /** Make a note that we're running unit tests (rather than running Tor
  * itself), so we avoid clobbering our state file. */
 void
 circuitbuild_running_unit_tests(void)
 {
   unit_tests = 1;
+}
+#endif
+
+void
+circuit_build_times_update_last_circ(circuit_build_times_t *cbt)
+{
+  cbt->last_circ_at = approx_time();
+}
+
+static void
+cbt_control_event_buildtimeout_set(const circuit_build_times_t *cbt,
+                                   buildtimeout_set_event_t type)
+{
+  char *args = NULL;
+  double qnt;
+
+  switch (type) {
+    case BUILDTIMEOUT_SET_EVENT_RESET:
+    case BUILDTIMEOUT_SET_EVENT_SUSPENDED:
+    case BUILDTIMEOUT_SET_EVENT_DISCARD:
+      qnt = 1.0;
+      break;
+    case BUILDTIMEOUT_SET_EVENT_COMPUTED:
+    case BUILDTIMEOUT_SET_EVENT_RESUME:
+    default:
+      qnt = circuit_build_times_quantile_cutoff();
+      break;
+  }
+
+  tor_asprintf(&args, "TOTAL_TIMES=%lu "
+               "TIMEOUT_MS=%lu XM=%lu ALPHA=%f CUTOFF_QUANTILE=%f "
+               "TIMEOUT_RATE=%f CLOSE_MS=%lu CLOSE_RATE=%f",
+               (unsigned long)cbt->total_build_times,
+               (unsigned long)cbt->timeout_ms,
+               (unsigned long)cbt->Xm, cbt->alpha, qnt,
+               circuit_build_times_timeout_rate(cbt),
+               (unsigned long)cbt->close_ms,
+               circuit_build_times_close_rate(cbt));
+
+  control_event_buildtimeout_set(type, args);
+
+  tor_free(args);
 }
 

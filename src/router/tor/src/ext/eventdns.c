@@ -842,10 +842,11 @@ name_parse(u8 *packet, int length, int *idx, char *name_out, size_t name_out_len
 		}
 		if (label_len > 63) return -1;
 		if (cp != name_out) {
-			if (cp + 1 >= end) return -1;
+			if (cp >= name_out + name_out_len - 1) return -1;
 			*cp++ = '.';
 		}
-		if (cp + label_len >= end) return -1;
+		if (label_len > name_out_len ||
+			cp >= name_out + name_out_len - label_len) return -1;
 		memcpy(cp, packet + j, label_len);
 		cp += label_len;
 		j += label_len;
@@ -2298,6 +2299,10 @@ _evdns_nameserver_add_impl(const struct sockaddr *address,
 
 	evtimer_set(&ns->timeout_event, nameserver_prod_callback, ns);
 
+#if 1
+	ns->socket = tor_open_socket_nonblocking(address->sa_family, SOCK_DGRAM, 0);
+	if (!SOCKET_OK(ns->socket)) { err = 1; goto out1; }
+#else
 	ns->socket = tor_open_socket(address->sa_family, SOCK_DGRAM, 0);
 	if (ns->socket < 0) { err = 1; goto out1; }
 #ifdef _WIN32
@@ -2314,6 +2319,7 @@ _evdns_nameserver_add_impl(const struct sockaddr *address,
 	}
 #endif
 
+#endif /* 1 */
 	if (global_bind_addr_is_set &&
 	    !sockaddr_is_loopback((struct sockaddr*)&global_bind_address)) {
 		if (bind(ns->socket, (struct sockaddr *)&global_bind_address,
@@ -3009,7 +3015,8 @@ resolv_conf_parse_line(char *const start, int flags) {
 
 	if (!strcmp(first_token, "nameserver") && (flags & DNS_OPTION_NAMESERVERS)) {
 		const char *const nameserver = NEXT_TOKEN;
-		evdns_nameserver_ip_add(nameserver);
+		if (nameserver)
+			evdns_nameserver_ip_add(nameserver);
 	} else if (!strcmp(first_token, "domain") && (flags & DNS_OPTION_SEARCH)) {
 		const char *const domain = NEXT_TOKEN;
 		if (domain) {
@@ -3473,8 +3480,12 @@ main(int c, char **v) {
 	if (servertest) {
 		int sock;
 		struct sockaddr_in my_addr;
+#if 1
+		sock = tor_open_socket_nonblocking(PF_INET, SOCK_DGRAM, 0)
+#else
 		sock = tor_open_socket(PF_INET, SOCK_DGRAM, 0);
 		fcntl(sock, F_SETFL, O_NONBLOCK);
+#endif
 		my_addr.sin_family = AF_INET;
 		my_addr.sin_port = htons(10053);
 		my_addr.sin_addr.s_addr = INADDR_ANY;

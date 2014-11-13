@@ -8,6 +8,7 @@
 
 #include "orconfig.h"
 #include "torint.h"
+#include "testsupport.h"
 #ifdef _WIN32
 #ifndef _WIN32_WINNT
 #define _WIN32_WINNT 0x0501
@@ -84,12 +85,18 @@
 
 /* ===== Compiler compatibility */
 
-/* GCC can check printf types on arbitrary functions. */
+/* GCC can check printf and scanf types on arbitrary functions. */
 #ifdef __GNUC__
 #define CHECK_PRINTF(formatIdx, firstArg) \
    __attribute__ ((format(printf, formatIdx, firstArg)))
 #else
 #define CHECK_PRINTF(formatIdx, firstArg)
+#endif
+#ifdef __GNUC__
+#define CHECK_SCANF(formatIdx, firstArg) \
+   __attribute__ ((format(scanf, formatIdx, firstArg)))
+#else
+#define CHECK_SCANF(formatIdx, firstArg)
 #endif
 
 /* inline is __inline on windows. */
@@ -285,7 +292,7 @@ typedef struct tor_mmap_t {
 } tor_mmap_t;
 
 tor_mmap_t *tor_mmap_file(const char *filename) ATTR_NONNULL((1));
-void tor_munmap_file(tor_mmap_t *handle) ATTR_NONNULL((1));
+int tor_munmap_file(tor_mmap_t *handle) ATTR_NONNULL((1));
 
 int tor_snprintf(char *str, size_t size, const char *format, ...)
   CHECK_PRINTF(3,4) ATTR_NONNULL((1,3));
@@ -314,7 +321,7 @@ tor_memstr(const void *haystack, size_t hlen, const char *needle)
   extern const uint32_t TOR_##name##_TABLE[];                           \
   static INLINE int TOR_##name(char c) {                                \
     uint8_t u = c;                                                      \
-    return !!(TOR_##name##_TABLE[(u >> 5) & 7] & (1 << (u & 31)));      \
+    return !!(TOR_##name##_TABLE[(u >> 5) & 7] & (1u << (u & 31)));     \
   }
 DECLARE_CTYPE_FN(ISALPHA)
 DECLARE_CTYPE_FN(ISALNUM)
@@ -403,6 +410,7 @@ struct tm *tor_gmtime_r(const time_t *timep, struct tm *result);
 /* ===== File compatibility */
 int tor_open_cloexec(const char *path, int flags, unsigned mode);
 FILE *tor_fopen_cloexec(const char *path, const char *mode);
+int tor_rename(const char *path_old, const char *path_new);
 
 int replace_file(const char *from, const char *to);
 int touch_file(const char *fname);
@@ -446,10 +454,22 @@ typedef int socklen_t;
 #define TOR_INVALID_SOCKET (-1)
 #endif
 
+int tor_close_socket_simple(tor_socket_t s);
 int tor_close_socket(tor_socket_t s);
+tor_socket_t tor_open_socket_with_extensions(
+                                           int domain, int type, int protocol,
+                                           int cloexec, int nonblock);
 tor_socket_t tor_open_socket(int domain, int type, int protocol);
+tor_socket_t tor_open_socket_nonblocking(int domain, int type, int protocol);
 tor_socket_t tor_accept_socket(tor_socket_t sockfd, struct sockaddr *addr,
                                   socklen_t *len);
+tor_socket_t tor_accept_socket_nonblocking(tor_socket_t sockfd,
+                                           struct sockaddr *addr,
+                                           socklen_t *len);
+tor_socket_t tor_accept_socket_with_extensions(tor_socket_t sockfd,
+                                               struct sockaddr *addr,
+                                               socklen_t *len,
+                                               int cloexec, int nonblock);
 int get_n_open_sockets(void);
 
 #define tor_socket_send(s, buf, len, flags) send(s, buf, len, flags)
@@ -613,10 +633,17 @@ int switch_id(const char *user);
 char *get_user_homedir(const char *username);
 #endif
 
+#ifndef _WIN32
+const struct passwd *tor_getpwnam(const char *username);
+const struct passwd *tor_getpwuid(uid_t uid);
+#endif
+
 int get_parent_directory(char *fname);
 char *make_path_absolute(char *fname);
 
 char **get_environment(void);
+
+int get_total_system_memory(size_t *mem_out);
 
 int spawn_func(void (*func)(void *), void *data);
 void spawn_exit(void) ATTR_NORETURN;
@@ -720,6 +747,18 @@ char *format_win32_error(DWORD err);
 #define VER_SUITE_SINGLEUSERTS 0x00000100
 #endif
 
+#endif
+
+#ifdef TOR_UNIT_TESTS
+void tor_sleep_msec(int msec);
+#endif
+
+#ifdef COMPAT_PRIVATE
+#if !defined(HAVE_SOCKETPAIR) || defined(_WIN32) || defined(TOR_UNIT_TESTS)
+#define NEED_ERSATZ_SOCKETPAIR
+STATIC int tor_ersatz_socketpair(int family, int type, int protocol,
+                                   tor_socket_t fd[2]);
+#endif
 #endif
 
 #endif

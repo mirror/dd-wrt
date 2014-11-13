@@ -7,6 +7,7 @@
 #define TOR_CONTAINER_H
 
 #include "util.h"
+#include "siphash.h"
 
 /** A resizeable list of pointers, with associated helpful functionality.
  *
@@ -42,6 +43,7 @@ int smartlist_contains_string_case(const smartlist_t *sl, const char *element);
 int smartlist_contains_int_as_string(const smartlist_t *sl, int num);
 int smartlist_strings_eq(const smartlist_t *sl1, const smartlist_t *sl2);
 int smartlist_contains_digest(const smartlist_t *sl, const char *element);
+int smartlist_ints_eq(const smartlist_t *sl1, const smartlist_t *sl2);
 int smartlist_overlap(const smartlist_t *sl1, const smartlist_t *sl2);
 void smartlist_intersect(smartlist_t *sl1, const smartlist_t *sl2);
 void smartlist_subtract(smartlist_t *sl1, const smartlist_t *sl2);
@@ -101,6 +103,7 @@ void smartlist_uniq(smartlist_t *sl,
 void smartlist_sort_strings(smartlist_t *sl);
 void smartlist_sort_digests(smartlist_t *sl);
 void smartlist_sort_digests256(smartlist_t *sl);
+void smartlist_sort_pointers(smartlist_t *sl);
 
 char *smartlist_get_most_frequent_string(smartlist_t *sl);
 char *smartlist_get_most_frequent_digest256(smartlist_t *sl);
@@ -619,11 +622,11 @@ typedef struct {
 static INLINE void
 digestset_add(digestset_t *set, const char *digest)
 {
-  const uint32_t *p = (const uint32_t *)digest;
-  const uint32_t d1 = p[0] + (p[1]>>16);
-  const uint32_t d2 = p[1] + (p[2]>>16);
-  const uint32_t d3 = p[2] + (p[3]>>16);
-  const uint32_t d4 = p[3] + (p[0]>>16);
+  const uint64_t x = siphash24g(digest, 20);
+  const uint32_t d1 = (uint32_t) x;
+  const uint32_t d2 = (uint32_t)( (x>>16) + x);
+  const uint32_t d3 = (uint32_t)( (x>>32) + x);
+  const uint32_t d4 = (uint32_t)( (x>>48) + x);
   bitarray_set(set->ba, BIT(d1));
   bitarray_set(set->ba, BIT(d2));
   bitarray_set(set->ba, BIT(d3));
@@ -635,11 +638,11 @@ digestset_add(digestset_t *set, const char *digest)
 static INLINE int
 digestset_contains(const digestset_t *set, const char *digest)
 {
-  const uint32_t *p = (const uint32_t *)digest;
-  const uint32_t d1 = p[0] + (p[1]>>16);
-  const uint32_t d2 = p[1] + (p[2]>>16);
-  const uint32_t d3 = p[2] + (p[3]>>16);
-  const uint32_t d4 = p[3] + (p[0]>>16);
+  const uint64_t x = siphash24g(digest, 20);
+  const uint32_t d1 = (uint32_t) x;
+  const uint32_t d2 = (uint32_t)( (x>>16) + x);
+  const uint32_t d3 = (uint32_t)( (x>>32) + x);
+  const uint32_t d4 = (uint32_t)( (x>>48) + x);
   return bitarray_is_set(set->ba, BIT(d1)) &&
          bitarray_is_set(set->ba, BIT(d2)) &&
          bitarray_is_set(set->ba, BIT(d3)) &&

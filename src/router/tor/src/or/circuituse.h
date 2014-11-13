@@ -16,11 +16,13 @@ void circuit_expire_building(void);
 void circuit_remove_handled_ports(smartlist_t *needed_ports);
 int circuit_stream_is_being_handled(entry_connection_t *conn, uint16_t port,
                                     int min);
+void circuit_log_ancient_one_hop_circuits(int age);
 #if 0
 int circuit_conforms_to_options(const origin_circuit_t *circ,
                                 const or_options_t *options);
 #endif
 void circuit_build_needed_circs(time_t now);
+void circuit_expire_old_circs_as_needed(time_t now);
 void circuit_detach_stream(circuit_t *circ, edge_connection_t *conn);
 
 void circuit_expire_old_circuits_serverside(time_t now);

@@ -30,7 +30,7 @@ typedef enum {
   DIRIND_ONEHOP=0,
   /** Connect over a multi-hop anonymizing Tor circuit */
   DIRIND_ANONYMOUS=1,
-  /** Conncet to the DirPort directly */
+  /** Connect to the DirPort directly */
   DIRIND_DIRECT_CONN,
   /** Connect over a multi-hop anonymizing Tor circuit to our dirport */
   DIRIND_ANON_DIRPORT,
@@ -63,7 +63,7 @@ int connection_dir_process_inbuf(dir_connection_t *conn);
 int connection_dir_finished_flushing(dir_connection_t *conn);
 int connection_dir_finished_connecting(dir_connection_t *conn);
 void connection_dir_about_to_close(dir_connection_t *dir_conn);
-void directory_initiate_command(const char *address, const tor_addr_t *addr,
+void directory_initiate_command(const tor_addr_t *addr,
                                 uint16_t or_port, uint16_t dir_port,
                                 const char *digest,
                                 uint8_t dir_purpose, uint8_t router_purpose,
@@ -117,6 +117,11 @@ download_status_mark_impossible(download_status_t *dl)
 }
 
 int download_status_get_n_failures(const download_status_t *dls);
+
+#ifdef TOR_UNIT_TESTS
+/* Used only by directory.c and test_dir.c */
+STATIC int parse_http_url(const char *headers, char **url);
+#endif
 
 #endif
 

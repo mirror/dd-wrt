@@ -13,6 +13,7 @@
 #include "dirserv.h"
 #include "nodelist.h"
 #include "policies.h"
+#include "router.h"
 #include "routerparse.h"
 #include "geoip.h"
 #include "ht.h"
@@ -438,7 +439,7 @@ validate_addr_policies(const or_options_t *options, char **msg)
 
   if (policies_parse_exit_policy(options->ExitPolicy, &addr_policy,
                                  options->IPv6Exit,
-                                 options->ExitPolicyRejectPrivate, NULL,
+                                 options->ExitPolicyRejectPrivate, 0,
                                  !options->BridgeRelay))
     REJECT("Error in ExitPolicy entry.");
 
@@ -482,10 +483,12 @@ validate_addr_policies(const or_options_t *options, char **msg)
  * Ignore port specifiers.
  */
 static int
-load_policy_from_option(config_line_t *config, smartlist_t **policy,
+load_policy_from_option(config_line_t *config, const char *option_name,
+                        smartlist_t **policy,
                         int assume_action)
 {
   int r;
+  int killed_any_ports = 0;
   addr_policy_list_free(*policy);
   *policy = NULL;
   r = parse_addr_policy(config, policy, assume_action);
@@ -504,8 +507,12 @@ load_policy_from_option(config_line_t *config, smartlist_t **policy,
         c = addr_policy_get_canonical_entry(&newp);
         SMARTLIST_REPLACE_CURRENT(*policy, n, c);
         addr_policy_free(n);
+        killed_any_ports = 1;
       }
     } SMARTLIST_FOREACH_END(n);
+  }
+  if (killed_any_ports) {
+    log_warn(LD_CONFIG, "Ignoring ports in %s option.", option_name);
   }
   return 0;
 }
@@ -516,20 +523,22 @@ int
 policies_parse_from_options(const or_options_t *options)
 {
   int ret = 0;
-  if (load_policy_from_option(options->SocksPolicy, &socks_policy, -1) < 0)
+  if (load_policy_from_option(options->SocksPolicy, "SocksPolicy",
+                              &socks_policy, -1) < 0)
     ret = -1;
-  if (load_policy_from_option(options->DirPolicy, &dir_policy, -1) < 0)
+  if (load_policy_from_option(options->DirPolicy, "DirPolicy",
+                              &dir_policy, -1) < 0)
     ret = -1;
-  if (load_policy_from_option(options->AuthDirReject,
+  if (load_policy_from_option(options->AuthDirReject, "AuthDirReject",
                               &authdir_reject_policy, ADDR_POLICY_REJECT) < 0)
     ret = -1;
-  if (load_policy_from_option(options->AuthDirInvalid,
+  if (load_policy_from_option(options->AuthDirInvalid, "AuthDirInvalid",
                               &authdir_invalid_policy, ADDR_POLICY_REJECT) < 0)
     ret = -1;
-  if (load_policy_from_option(options->AuthDirBadDir,
+  if (load_policy_from_option(options->AuthDirBadDir, "AuthDirBadDir",
                               &authdir_baddir_policy, ADDR_POLICY_REJECT) < 0)
     ret = -1;
-  if (load_policy_from_option(options->AuthDirBadExit,
+  if (load_policy_from_option(options->AuthDirBadExit, "AuthDirBadExit",
                               &authdir_badexit_policy, ADDR_POLICY_REJECT) < 0)
     ret = -1;
   if (parse_reachable_addresses() < 0)
@@ -597,21 +606,25 @@ policy_eq(policy_map_ent_t *a, policy_map_ent_t *b)
 
 /** Return a hashcode for <b>ent</b> */
 static unsigned int
-policy_hash(policy_map_ent_t *ent)
+policy_hash(const policy_map_ent_t *ent)
 {
-  addr_policy_t *a = ent->policy;
-  unsigned int r;
-  if (a->is_private)
-    r = 0x1234abcd;
-  else
-    r = tor_addr_hash(&a->addr);
-  r += a->prt_min << 8;
-  r += a->prt_max << 16;
-  r += a->maskbits;
-  if (a->policy_type == ADDR_POLICY_REJECT)
-    r ^= 0xffffffff;
+  const addr_policy_t *a = ent->policy;
+  addr_policy_t aa;
+  memset(&aa, 0, sizeof(aa));
 
-  return r;
+  aa.prt_min = a->prt_min;
+  aa.prt_max = a->prt_max;
+  aa.maskbits = a->maskbits;
+  aa.policy_type = a->policy_type;
+  aa.is_private = a->is_private;
+
+  if (a->is_private) {
+    aa.is_private = 1;
+  } else {
+    tor_addr_copy_tight(&aa.addr, &a->addr);
+  }
+
+  return (unsigned) siphash24g(&aa, sizeof(aa));
 }
 
 HT_PROTOTYPE(policy_map, policy_map_ent_t, node, policy_hash,
@@ -958,7 +971,7 @@ exit_policy_remove_redundancies(smartlist_t *dest)
 int
 policies_parse_exit_policy(config_line_t *cfg, smartlist_t **dest,
                            int ipv6_exit,
-                           int rejectprivate, const char *local_address,
+                           int rejectprivate, uint32_t local_address,
                            int add_default_policy)
 {
   if (!ipv6_exit) {
@@ -968,7 +981,7 @@ policies_parse_exit_policy(config_line_t *cfg, smartlist_t **dest,
     append_exit_policy_string(dest, "reject private:*");
     if (local_address) {
       char buf[POLICY_BUF_LEN];
-      tor_snprintf(buf, sizeof(buf), "reject %s:*", local_address);
+      tor_snprintf(buf, sizeof(buf), "reject %s:*", fmt_addr32(local_address));
       append_exit_policy_string(dest, buf);
     }
   }
@@ -1680,6 +1693,28 @@ getinfo_helper_policies(control_connection_t *conn,
   (void) errmsg;
   if (!strcmp(question, "exit-policy/default")) {
     *answer = tor_strdup(DEFAULT_EXIT_POLICY);
+  } else if (!strcmpstart(question, "exit-policy/")) {
+    const routerinfo_t *me = router_get_my_routerinfo();
+
+    int include_ipv4 = 0;
+    int include_ipv6 = 0;
+
+    if (!strcmp(question, "exit-policy/ipv4")) {
+      include_ipv4 = 1;
+    } else if (!strcmp(question, "exit-policy/ipv6")) {
+      include_ipv6 = 1;
+    } else if (!strcmp(question, "exit-policy/full")) {
+      include_ipv4 = include_ipv6 = 1;
+    } else {
+      return 0; /* No such key. */
+    }
+
+    if (!me) {
+      *errmsg = "router_get_my_routerinfo returned NULL";
+      return -1;
+    }
+
+    *answer = router_dump_exit_policy_to_string(me,include_ipv4,include_ipv6);
   }
   return 0;
 }
