@@ -29,7 +29,7 @@
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.ssh_key"); %></div>
-			<textarea id="sshd_authorized_keys" name="sshd_authorized_keys" cols="60" rows="2">&nbsp;</textarea>
+			<textarea id="sshd_authorized_keys" name="sshd_authorized_keys" cols="60" rows="2" wrap="off">&nbsp;</textarea>
 			<script type="text/javascript">
 			//<![CDATA[
 				var var_authorized_keys = fix_cr( '<% nvram_get("sshd_authorized_keys"); %>' );

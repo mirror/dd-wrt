@@ -1,4 +1,6 @@
-h2, h3, .submitFooter {
+h2,
+h3,
+.submitFooter {
 padding: 4px 12px;
 font-size: 12px;
 line-height: 1.42857;
@@ -24,7 +26,10 @@ border-radius: 4px 4px 0px 0px;
 li.current {
 margin-top:2px;
 }
-#menuMainList li span, #menuSubList li span, #menuMainList li a, #menuSubList li a {
+#menuMainList li span,
+#menuSubList li span,
+#menuMainList li a,
+#menuSubList li a {
 border-radius: 4px 4px 0px 0px;
 border-style: solid solid none;
 border-width: 0.09em;
@@ -79,9 +84,11 @@ transition: border-color 0.15s ease-in-out 0s, box-shadow 0.15s ease-in-out 0s;
 }
 input[value="Apply Settings"]{
 background: none repeat scroll 0 0 #696969;
+color: #FFF;
 }
 input[value="Apply Settings"]:hover{
 background: none repeat scroll 0 0 #777674;
+color: #000;
 }
 input[value="Cancel Changes"] {
 background: none repeat scroll 0 0 #fff;
@@ -93,9 +100,11 @@ color: #000;
 }
 input[value="Reboot Router"]{
 background: none repeat scroll 0 0 #FF0000;
+color:#FFF;
 }
 input[value="Reboot Router"]:hover{
 background: none repeat scroll 0 0 #FF7C7C;
+color:#000;
 }
 input:focus,
 input.focus {
@@ -119,7 +128,8 @@ border-radius: 4px;
 box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.075) inset;
 transition: border-color 0.15s ease-in-out 0s, box-shadow 0.15s ease-in-out 0s;
 }
-button:hover, button:focus {
+button:hover,
+button:focus {
 color: #333;
 text-decoration: none;
 }
@@ -138,4 +148,33 @@ font-size: 12px;
 line-height: 1.42857;
 border-radius: 4px;
 -moz-user-select: none;
+}
+
+#content.infopage{
+	background-color: transparent;
+}
+#content.infopage #main{
+	background-color: #FFF;
+	border-radius: 5px;
+}
+input.button {
+	border-radius: 11px;
+	box-shadow: 2px 2px 2px gray;
+}
+input.button[disabled] {
+	box-shadow: none;
+}
+#content {
+	border-radius: 0 0 5px 5px;
+	margin-bottom: 7px;
+}
+/* I can't change the size attributes therefore this will have to do - fix in firefox*/
+table[summary="ports forwardig table"] .num[size="15"]{ 
+	max-width: 100px;
+}
+table[summary="ports forwardig table"] .num[size="5"]{
+	max-width: 50px;
+}
+table[summary="ports forwardig table"] input[size="10"]{
+	max-width: 79px;
 }
