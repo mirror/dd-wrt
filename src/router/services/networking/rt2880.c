@@ -628,7 +628,7 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 		fprintf(fp, "WirelessMode=15\n");
 		fprintf(fp, "VHT_DisallowNonVHT=1\n");
 	}
-	if (nvram_nmatch("acn-only", "wl%d_net_mode", idx)) {
+	if (nvram_nmatch("acn-mixed", "wl%d_net_mode", idx)) {
 		fprintf(fp, "WirelessMode=15\n");
 	}
 
