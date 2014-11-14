@@ -79,7 +79,7 @@ void add_netgear_boarddata_sflash(void)
 }
 void add_cfenvram(void)
 {
-	if (cfe_nvrampart.name)
+	if (bcmsflash.mtd.name && cfe_nvrampart.name)
 		add_mtd_partitions(&bcmsflash.mtd, &cfe_nvrampart, 1);
 }
 #endif
