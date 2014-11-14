@@ -2407,6 +2407,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 				    || nvram_match(wl_net_mode, "na-only")
 				    || nvram_match(wl_net_mode, "n5-only")
 				    || nvram_match(wl_net_mode, "ac-only")
+				    || nvram_match(wl_net_mode, "acn-mixed")
 				    || (net_is_a && nvram_match(wl_net_mode, "mixed"))) {
 					if (chanlist[i] < 25)
 						showit = 0;
@@ -2415,7 +2416,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 						showit = 0;
 				}
 
-				if ((nvram_match(wl_net_mode, "na-only") || nvram_match(wl_net_mode, "ac-only")
+				if ((nvram_match(wl_net_mode, "na-only") || nvram_match(wl_net_mode, "ac-only") || nvram_match(wl_net_mode, "acn-mixed")
 				     || (net_is_a && nvram_match(wl_net_mode, "mixed"))
 				     || nvram_match(wl_net_mode, "n5-only"))
 				    && nvram_match(wl_nbw, "40")) {
@@ -2726,6 +2727,7 @@ static void show_netmode(webs_t wp, char *prefix)
 		websWrite(wp, "document.write(\"<option value=\\\"n5-only\\\" %s>\" + wl_basic.n5 + \"</option>\");\n", nvram_match(wl_net_mode, "n5-only") ? "selected=\\\"selected\\\"" : "");
 	}
 	if (has_ac(prefix) && has_5ghz(prefix)) {
+		websWrite(wp, "document.write(\"<option value=\\\"acn-mixed\\\" %s>\" + wl_basic.acn + \"</option>\");\n", nvram_match(wl_net_mode, "acn-mixed") ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "document.write(\"<option value=\\\"ac-only\\\" %s>\" + wl_basic.ac + \"</option>\");\n", nvram_match(wl_net_mode, "ac-only") ? "selected=\\\"selected\\\"" : "");
 	}
 #else
@@ -3774,6 +3776,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 			     || nvram_nmatch("mixed", "%s_net_mode", prefix)
 			     || nvram_nmatch("n5-only", "%s_net_mode", prefix)
 			     || nvram_nmatch("ac-only", "%s_net_mode", prefix)
+			     || nvram_nmatch("acn-mixed", "%s_net_mode", prefix)
 			     || nvram_nmatch("na-only", "%s_net_mode", prefix))) {
 				websWrite(wp, "document.write(\"<option value=\\\"2040\\\" %s >\" + share.dynamicturbo + \"</option>\");\n", nvram_match(wl_width, "2040") ? "selected=\\\"selected\\\"" : "");
 				fprintf(stderr, "[CHANNEL WIDTH] 20/40 (1)\n");
@@ -3786,6 +3789,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 							   || nvram_nmatch("mixed", "%s_net_mode", prefix)
 							   || nvram_nmatch("n5-only", "%s_net_mode", prefix)
 							   || nvram_nmatch("ac-only", "%s_net_mode", prefix)
+							   || nvram_nmatch("acn-mixed", "%s_net_mode", prefix)
 							   || nvram_nmatch("na-only", "%s_net_mode", prefix))))
 #endif
 	{
@@ -4013,6 +4017,7 @@ if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
 		|| nvram_nmatch("mixed", "%s_net_mode", prefix)
 		|| nvram_nmatch("n2-only", "%s_net_mode", prefix)
 		|| nvram_nmatch("n5-only", "%s_net_mode", prefix)
+		|| nvram_nmatch("acn-mixed", "%s_net_mode", prefix)
 		|| nvram_nmatch("ac-only", "%s_net_mode", prefix)
 		|| nvram_nmatch("na-only", "%s_net_mode", prefix))) {
 		show_channel(wp, prefix, prefix, 1);
@@ -4329,6 +4334,7 @@ if (!strcmp(prefix, "wl1"))
 			     || nvram_nmatch("mixed", "%s_net_mode", prefix)
 			     || nvram_nmatch("n5-only", "%s_net_mode", prefix)
 			     || nvram_nmatch("ac-only", "%s_net_mode", prefix)
+			     || nvram_nmatch("acn-mixed", "%s_net_mode", prefix)
 			     || nvram_nmatch("na-only", "%s_net_mode", prefix)))
 				websWrite(wp, "document.write(\"<option value=\\\"2040\\\" %s >\" + share.dynamicturbo + \"</option>\");\n", nvram_match(wl_width, "2040") ? "selected=\\\"selected\\\"" : "");
 
@@ -4341,6 +4347,7 @@ if (!strcmp(prefix, "wl1"))
 		    || nvram_nmatch("mixed", "%s_net_mode", prefix)
 		    || nvram_nmatch("n5-only", "%s_net_mode", prefix)
 		    || nvram_nmatch("ac-only", "%s_net_mode", prefix)
+		    || nvram_nmatch("acn-mixed", "%s_net_mode", prefix)
 		    || nvram_nmatch("na-only", "%s_net_mode", prefix))))
 #endif
 	{
@@ -4396,6 +4403,7 @@ if (!strcmp(prefix, "wl1"))
 			|| nvram_nmatch("n2-only", "%s_net_mode", prefix)
 			|| nvram_nmatch("n5-only", "%s_net_mode", prefix)
 			|| nvram_nmatch("ac-only", "%s_net_mode", prefix)
+			|| nvram_nmatch("acn-mixed", "%s_net_mode", prefix)
 			|| nvram_nmatch("na-only", "%s_net_mode", prefix))) {
 			show_channel(wp, prefix, prefix, 1);
 
