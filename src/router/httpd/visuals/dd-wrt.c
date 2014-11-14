@@ -2755,6 +2755,7 @@ static void show_netmode(webs_t wp, char *prefix)
 		}
 #ifdef HAVE_ATH10K
 		if (has_ac(prefix) && has_5ghz(prefix)) {
+			websWrite(wp, "document.write(\"<option value=\\\"acn-mixed\\\" %s>\" + wl_basic.acn + \"</option>\");\n", nvram_match(wl_net_mode, "acn-mixed") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "document.write(\"<option value=\\\"ac-only\\\" %s>\" + wl_basic.ac + \"</option>\");\n", nvram_match(wl_net_mode, "ac-only") ? "selected=\\\"selected\\\"" : "");
 		}
 #endif
