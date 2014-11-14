@@ -1277,11 +1277,6 @@ struct super_block {
 	/* Being remounted read-only */
 	int s_readonly_remount;
 
-	/*
-	 * Indicates how deep in a filesystem stack this SB is
-	 */
-	int s_stack_depth;
-
 	/* AIO completions deferred from interrupt context */
 	struct workqueue_struct *s_dio_done_wq;
 	struct hlist_head s_pins;
@@ -2552,7 +2547,7 @@ ssize_t __blockdev_direct_IO(int rw, struct kiocb *iocb, struct inode *inode,
 static inline void dio_end_io(struct bio *bio, int error)
 {
 }
-ssize_t __blockdev_direct_IO(int rw, struct kiocb *iocb, struct inode *inode,
+static ssize_t __blockdev_direct_IO(int rw, struct kiocb *iocb, struct inode *inode,
 	struct block_device *bdev, struct iov_iter *iter, loff_t offset,
 	get_block_t get_block, dio_iodone_t end_io,
 	dio_submit_t submit_io,	int flags)
