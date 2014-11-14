@@ -341,6 +341,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	     !strcmp(netmode, "n2-only") ||	//
 	     !strcmp(netmode, "n5-only") ||	//
 	     !strcmp(netmode, "ac-only") ||	//
+	     !strcmp(netmode, "acn-mixed") ||	//
 	     !strcmp(netmode, "mixed"))
 	    && strcmp(akm, "wep")
 	    && !aoss) {
@@ -456,13 +457,18 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 #ifdef HAVE_ATH10K
 	if (is_ath10k(prefix)) {
 		if ((!strcmp(netmode, "mixed") ||	//
-		     !strcmp(netmode, "ac-only"))) {
+		     !strcmp(netmode, "ac-only") || 
+		     !strcmp(netmode, "acn-mixed"))) {
 			caps = mac80211_get_vhtcaps(prefix);
 			fprintf(fp, "vht_capab=%s\n", caps);
 			free(caps);
 			fprintf(fp, "ieee80211ac=1\n");
 			if (!strcmp(netmode, "ac-only")) {
 				fprintf(fp, "require_vht=1\n");
+			}
+
+			if (!strcmp(netmode, "acn-mixed")) {
+				fprintf(fp, "require_ht=1\n");
 			}
 
 			if (nvram_match(bw, "40")) {
