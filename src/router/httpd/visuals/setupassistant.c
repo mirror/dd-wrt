@@ -681,6 +681,7 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 			|| nvram_selnmatch(wp, "n2-only", "%s_net_mode", prefix)
 			|| nvram_selnmatch(wp, "n5-only", "%s_net_mode", prefix)
 			|| nvram_selnmatch(wp, "ac-only", "%s_net_mode", prefix)
+			|| nvram_selnmatch(wp, "acn-mixed", "%s_net_mode", prefix)
 			|| nvram_selnmatch(wp, "na-only", "%s_net_mode", prefix))) {
 
 			sas_show_channel(wp, prefix, prefix, 1);
@@ -848,6 +849,7 @@ void sas_show_netmode(webs_t wp, char *prefix)
 	}
 
 	if (has_ac(prefix) && has_5ghz(prefix)) {
+		websWrite(wp, "document.write(\"<option value=\\\"acn-mixed\\\" %s>\" + wl_basic.acn + \"</option>\");\n", nvram_selmatch(wp, wl_net_mode, "acn-mixed") ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "document.write(\"<option value=\\\"ac-only\\\" %s>\" + wl_basic.ac + \"</option>\");\n", nvram_selmatch(wp, wl_net_mode, "ac-only") ? "selected=\\\"selected\\\"" : "");
 	}
 #else
@@ -1029,6 +1031,7 @@ void sas_show_channel(webs_t wp, char *dev, char *prefix, int type)
 			if (nvram_selmatch(wp, wl_net_mode, "a-only")
 			    || nvram_selmatch(wp, wl_net_mode, "na-only")
 			    || nvram_selmatch(wp, wl_net_mode, "n5-only")
+			    || nvram_selmatch(wp, wl_net_mode, "acn-mixed")
 			    || nvram_selmatch(wp, wl_net_mode, "ac-only")
 			    || (net_is_a && nvram_selmatch(wp, wl_net_mode, "mixed"))) {
 				if (chanlist[i] < 25)
@@ -1038,7 +1041,7 @@ void sas_show_channel(webs_t wp, char *dev, char *prefix, int type)
 					showit = 0;
 			}
 
-			if ((nvram_selmatch(wp, wl_net_mode, "na-only") || nvram_selmatch(wp, wl_net_mode, "ac-only")
+			if ((nvram_selmatch(wp, wl_net_mode, "na-only") || nvram_selmatch(wp, wl_net_mode, "ac-only") || nvram_selmatch(wp, wl_net_mode, "acn-mixed")
 			     || (net_is_a && nvram_selmatch(wp, wl_net_mode, "mixed"))
 			     || nvram_selmatch(wp, wl_net_mode, "n5-only"))
 			    && nvram_selmatch(wp, wl_nbw, "40")) {

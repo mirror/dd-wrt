@@ -1832,6 +1832,12 @@ void convert_wl_gmode(char *value, char *prefix)
 		nvram_nset("1", "%s_nreqd", prefix);
 		nvram_nset("3", "%s_bss_opmode_cap_reqd", prefix);
 		nvram_nset("1", "%s_nband", prefix);
+	} else if (!strcmp(value, "acn-mixed")) {
+		nvram_nset(value, "%s_net_mode", prefix);
+		nvram_nset("2", "%s_nmode", prefix);
+		nvram_nset("1", "%s_nreqd", prefix);
+		nvram_nset("2", "%s_bss_opmode_cap_reqd", prefix);
+		nvram_nset("1", "%s_nband", prefix);
 	}
 }
 
