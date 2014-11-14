@@ -1,0 +1,70 @@
+if RALINK_OPENWRT
+
+
+choice
+	prompt "Ralink SoC selection"
+	default SOC_RT305X
+	help
+	  Select Ralink MIPS SoC type.
+
+	config SOC_RT288X_OPENWRT
+		bool "RT288x"
+		select MIPS_L1_CACHE_SHIFT_4
+		select HW_HAS_PCI
+
+	config SOC_RT305X_OPENWRT
+		bool "RT305x"
+		select USB_ARCH_HAS_HCD
+		select USB_ARCH_HAS_OHCI
+		select USB_ARCH_HAS_EHCI
+
+	config SOC_RT3883_OPENWRT
+		bool "RT3883"
+		select USB_ARCH_HAS_OHCI
+		select USB_ARCH_HAS_EHCI
+		select HW_HAS_PCI
+
+	config SOC_MT7620_OPENWRT
+		bool "MT7620"
+		select USB_ARCH_HAS_OHCI
+		select USB_ARCH_HAS_EHCI
+		select HW_HAS_PCI
+
+endchoice
+
+choice
+	prompt "Devicetree selection"
+	default DTB_RT_NONE
+	help
+	  Select the devicetree.
+
+	config DTB_RT_NONE
+		bool "None"
+
+	config DTB_RT2880_EVAL
+		bool "RT2880 eval kit"
+		depends on SOC_RT288X_OPENWRT
+
+	config DTB_RT305X_EVAL
+		bool "RT305x eval kit"
+		depends on SOC_RT305X_OPENWRT
+
+	config DTB_RT3883_EVAL
+		bool "RT3883 eval kit"
+		depends on SOC_RT3883_OPENWRT
+
+	config DTB_MT7620A_EVAL
+		bool "MT7620A eval kit"
+		depends on SOC_MT7620_OPENWRT
+
+endchoice
+
+config CLKEVT_RT3352
+	prompt "Dynamic Frequeny Selection clocksource"
+	bool
+	depends on SOC_RT305X_OPENWRT || SOC_MT7620_OPENWRT
+	default y
+	select CLKSRC_OF
+	select CLKSRC_MMIO
+
+endif
