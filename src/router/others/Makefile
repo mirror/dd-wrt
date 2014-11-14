@@ -123,6 +123,9 @@ ifdef CONFIG_NCURSES
 	install -d $(INSTALLDIR)/etc/terminfo
 	cp -r terminfo $(INSTALLDIR)/etc/
 endif
+ifdef CONFIG_WDR4900
+	ln -sf /tmp/firmware $(INSTALLDIR)/lib/firmware
+endif
 
 
 	install fstab $(INSTALLDIR)/etc
