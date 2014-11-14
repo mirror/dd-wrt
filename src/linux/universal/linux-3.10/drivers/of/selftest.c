@@ -221,7 +221,7 @@ static int __init of_selftest(void)
 
 	pr_info("start of selftest - you will see error messages\n");
 	of_selftest_parse_phandle_with_args();
-	of_selftest_property_match_string();
+	of_selftest_property_string();
 	pr_info("end of selftest - %s\n", selftest_passed ? "PASS" : "FAIL");
 	return 0;
 }
