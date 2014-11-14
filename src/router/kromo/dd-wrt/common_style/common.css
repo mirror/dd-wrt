@@ -112,8 +112,6 @@ input.num {
   text-decoration:none;
 }
 #menuMainList li span {
-  position:relative;
-  z-index:1;
   font-weight:bold;
   padding-bottom:.626em;
   margin-top:0;
@@ -262,7 +260,7 @@ table td {
 #help a {
   display:block;
   position:absolute;
-  top:1.178em;
+  top:1.478em;
   right:0.901em;
   text-align:right;
   text-decoration:none;
@@ -362,6 +360,11 @@ body input.button {
 	border-left-color: #ddd;
 	border-top-color: #ddd
 }
+body input.button[disabled] {
+	cursor: default;
+	color: #000;
+	background-color: #DADADA;
+}
 input.spaceradio {
   margin-right:.4em;
 }
@@ -412,18 +415,4 @@ td.bulle {
 }
 .status_yellow {
 	background: #ff0;
-}
-/* For Opera browsers only */
-@media all and (min-width: 0px) {
-  fieldset {
-    padding-top:0;
-  }
-  fieldset legend {
-    position:relative;
-    left:-1.268em;
-    margin-bottom:.723em;
-  }
-  .setting {
-    line-height:1.812em;
-  }
 }

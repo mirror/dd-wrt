@@ -282,6 +282,6 @@ background:url(/images/bin_bt.gif) center no-repeat;
 cursor:pointer;
 }
 
-input.spaceradio {
+input.spaceradio, .submitFooter input.button {
 margin-right:.4em;
 }

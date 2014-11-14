@@ -15,7 +15,7 @@ font-size:11px;
 color:#115B80;
 }
 #content {
-background:url(help_bg.png) top right repeat-y;
+background:url(/style/xirian/help_bg.png) top right repeat-y;
 }
 #content.infopage {
 background-image:none;
@@ -58,7 +58,7 @@ margin-top:-40px;
 }
 #header {
 height:115px;
-background:url(header_bg.png) top left repeat-x;
+background:url(/style/xirian/header_bg.png) top left repeat-x;
 border-bottom:solid 1px #ccc;
 }
 div.infopage #header {
@@ -67,7 +67,7 @@ height:92px;
 #header div#logo  {
 height: 67px;
 width:228px;
-background:url(logo.png) top left no-repeat;
+background:url(/style/xirian/logo.png) top left no-repeat;
 }
 #header div#logo h1 {
 display:none;
@@ -91,7 +91,7 @@ width:100%;
 height:23px;
 margin:0 auto;
 padding:0;
-background:url(nav_bar.png) top left repeat-x;
+background:url(/style/xirian/nav_bar.png) top left repeat-x;
 }
 #menu li {
 display:inline;
@@ -108,10 +108,10 @@ text-decoration:none;
 }
 #menu li span {
 font-weight:bold;
-background:url(nav_bar_rev.png) top left repeat-x;
+background:url(/style/xirian/nav_bar_rev.png) top left repeat-x;
 }
 #menu li a:hover {
-background:url(nav_bar_rev.png) top left repeat-x;
+background:url(/style/xirian/nav_bar_rev.png) top left repeat-x;
 } 
 #contents {
 margin:12px 192px 0 12px;
@@ -149,7 +149,7 @@ position:absolute;
 top:116px;
 right:0;
 width:180px;
-background:url(help_bg.png);
+background:url(/style/xirian/help_bg.png);
 }
 #help {
 padding:7px;
@@ -157,7 +157,7 @@ padding:7px;
 #help div#logo  {
 height:54px;
 width:100%;
-background:url(help.png) top center no-repeat;
+background:url(/style/xirian/help.png) top center no-repeat;
 }
 #help div#logo * {
 display:none;
@@ -204,7 +204,7 @@ text-align:center;
 .gui .submitFooter {
 margin:0 -12px;
 padding:6px 0;
-background:url(footer.png) top left;
+background:url(/style/xirian/footer.png) top left;
 }
 div.setting {
 clear:both;
@@ -240,7 +240,7 @@ border-style:solid;
 border-width:1px;
 }
 .meter .bar {
-background:url(help_bg.png);
+background:url(/style/xirian/help_bg.png);
 height:14px;
 }
 .meter .text {
@@ -268,7 +268,7 @@ border-width:1px;
 }
 .progressbarblock {
 position:absolute;
-background-image: url(help_bg.png);
+background-image: url(/style/xirian/help_bg.png);
 font-size:1px;
 }
 .bin {
