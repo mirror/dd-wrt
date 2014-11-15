@@ -1,11 +1,11 @@
-const char parsers_rcs[] = "$Id: parsers.c,v 1.277 2013/04/23 09:43:25 fabiankeil Exp $";
+const char parsers_rcs[] = "$Id: parsers.c,v 1.297 2014/11/12 11:59:47 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/parsers.c,v $
  *
  * Purpose     :  Declares functions to parse/crunch headers and pages.
  *
- * Copyright   :  Written by and Copyright (C) 2001-2012 the
+ * Copyright   :  Written by and Copyright (C) 2001-2014 the
  *                Privoxy team. http://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -116,6 +116,7 @@ static jb_err client_if_none_match      (struct client_state *csp, char **header
 static jb_err crunch_client_header      (struct client_state *csp, char **header);
 static jb_err client_x_filter           (struct client_state *csp, char **header);
 static jb_err client_range              (struct client_state *csp, char **header);
+static jb_err client_expect             (struct client_state *csp, char **header);
 static jb_err server_set_cookie         (struct client_state *csp, char **header);
 static jb_err server_connection         (struct client_state *csp, char **header);
 static jb_err server_content_type       (struct client_state *csp, char **header);
@@ -203,6 +204,7 @@ static const struct parsers client_patterns[] = {
 #if 0
    { "Transfer-Encoding:",       18,   client_transfer_encoding },
 #endif
+   { "Expect:",                   7,   client_expect },
    { "*",                         0,   crunch_client_header },
    { "*",                         0,   filter_header },
    { NULL,                        0,   NULL }
@@ -750,15 +752,12 @@ jb_err decompress_iob(struct client_state *csp)
  *
  * Function    :  normalize_lws
  *
- * Description :  Reduces unquoted linear white space in headers
- *                to a single space in accordance with RFC 2616 2.2.
+ * Description :  Reduces unquoted linear whitespace in headers to
+ *                a single space in accordance with RFC 7230 3.2.4.
  *                This simplifies parsing and filtering later on.
  *
- *                XXX: Remove log messages before
- *                     the next stable release?
- *
  * Parameters  :
- *          1  :  header = A header with linear white space to reduce.
+ *          1  :  header = A header with linear whitespace to reduce.
  *
  * Returns     :  N/A
  *
@@ -777,7 +776,7 @@ static void normalize_lws(char *header)
          {
             q++;
          }
-         log_error(LOG_LEVEL_HEADER, "Reducing white space in '%s'", header);
+         log_error(LOG_LEVEL_HEADER, "Reducing whitespace in '%s'", header);
          string_move(p+1, q);
       }
 
@@ -1097,6 +1096,7 @@ static void enforce_header_order(struct list *headers, const struct list *ordere
    return;
 }
 
+
 /*********************************************************************
  *
  * Function    :  sed
@@ -1115,7 +1115,8 @@ static void enforce_header_order(struct list *headers, const struct list *ordere
  *                                        server and header filtering.
  *
  * Returns     :  JB_ERR_OK in case off success, or
- *                JB_ERR_MEMORY on out-of-memory error.
+ *                JB_ERR_MEMORY on some out-of-memory errors, or
+ *                JB_ERR_PARSE in case of fatal parse errors.
  *
  *********************************************************************/
 jb_err sed(struct client_state *csp, int filter_server_headers)
@@ -1126,22 +1127,24 @@ jb_err sed(struct client_state *csp, int filter_server_headers)
    const add_header_func_ptr *f;
    jb_err err = JB_ERR_OK;
 
+   scan_headers(csp);
+
    if (filter_server_headers)
    {
       v = server_patterns;
       f = add_server_headers;
+      check_negative_tag_patterns(csp, PATTERN_SPEC_NO_RESPONSE_TAG_PATTERN);
    }
    else
    {
       v = client_patterns;
       f = add_client_headers;
+      check_negative_tag_patterns(csp, PATTERN_SPEC_NO_REQUEST_TAG_PATTERN);
    }
 
-   scan_headers(csp);
-
-   while ((err == JB_ERR_OK) && (v->str != NULL))
+   while (v->str != NULL)
    {
-      for (p = csp->headers->first; (err == JB_ERR_OK) && (p != NULL); p = p->next)
+      for (p = csp->headers->first; p != NULL; p = p->next)
       {
          /* Header crunch()ed in previous run? -> ignore */
          if (p->str == NULL) continue;
@@ -1151,6 +1154,10 @@ jb_err sed(struct client_state *csp, int filter_server_headers)
              (v->len == CHECK_EVERY_HEADER_REMAINING))
          {
             err = v->parser(csp, &(p->str));
+            if (err != JB_ERR_OK)
+            {
+               return err;
+            }
          }
       }
       v++;
@@ -1274,12 +1281,10 @@ jb_err update_server_headers(struct client_state *csp)
  *********************************************************************/
 static jb_err header_tagger(struct client_state *csp, char *header)
 {
-   int wanted_filter_type;
+   enum filter_type wanted_filter_type;
    int multi_action_index;
-   int i;
    pcrs_job *job;
 
-   struct file_list *fl;
    struct re_filterfile_spec *b;
    struct list_entry *tag_name;
 
@@ -1296,151 +1301,127 @@ static jb_err header_tagger(struct client_state *csp, char *header)
       multi_action_index = ACTION_MULTI_CLIENT_HEADER_TAGGER;
    }
 
-   if (filters_available(csp) == FALSE)
+   if (list_is_empty(csp->action->multi[multi_action_index])
+      || filters_available(csp) == FALSE)
    {
-      log_error(LOG_LEVEL_ERROR, "Inconsistent configuration: "
-         "tagging enabled, but no taggers available.");
+      /* Return early if no taggers apply or if none are available. */
       return JB_ERR_OK;
    }
 
-   for (i = 0; i < MAX_AF_FILES; i++)
+   /* Execute all applying taggers */
+   for (tag_name = csp->action->multi[multi_action_index]->first;
+        NULL != tag_name; tag_name = tag_name->next)
    {
-      fl = csp->rlist[i];
-      if ((NULL == fl) || (NULL == fl->f))
+      char *modified_tag = NULL;
+      char *tag = header;
+      size_t size = header_length;
+      pcrs_job *joblist;
+
+      b = get_filter(csp, tag_name->str, wanted_filter_type);
+      if (b == NULL)
       {
-         /*
-          * Either there are no filter files
-          * left, or this filter file just
-          * contains no valid filters.
-          *
-          * Continue to be sure we don't miss
-          * valid filter files that are chained
-          * after empty or invalid ones.
-          */
          continue;
       }
 
-      /* For all filters, */
-      for (b = fl->f; b; b = b->next)
+      joblist = b->joblist;
+
+      if (b->dynamic) joblist = compile_dynamic_pcrs_job_list(csp, b);
+
+      if (NULL == joblist)
       {
-         if (b->type != wanted_filter_type)
+         log_error(LOG_LEVEL_RE_FILTER,
+            "Tagger %s has empty joblist. Nothing to do.", b->name);
+         continue;
+      }
+
+      /* execute their pcrs_joblist on the header. */
+      for (job = joblist; NULL != job; job = job->next)
+      {
+         const int hits = pcrs_execute(job, tag, size, &modified_tag, &size);
+
+         if (0 < hits)
          {
-            /* skip the ones we don't care about, */
+            /* Success, continue with the modified version. */
+            if (tag != header)
+            {
+               freez(tag);
+            }
+            tag = modified_tag;
+         }
+         else
+         {
+            /* Tagger doesn't match */
+            if (0 > hits)
+            {
+               /* Regex failure, log it but continue anyway. */
+               assert(NULL != header);
+               log_error(LOG_LEVEL_ERROR,
+                  "Problems with tagger \'%s\' and header \'%s\': %s",
+                  b->name, *header, pcrs_strerror(hits));
+            }
+            freez(modified_tag);
+         }
+      }
+
+      if (b->dynamic) pcrs_free_joblist(joblist);
+
+      /* If this tagger matched */
+      if (tag != header)
+      {
+         if (0 == size)
+         {
+            /*
+             * There is no technical limitation which makes
+             * it impossible to use empty tags, but I assume
+             * no one would do it intentionally.
+             */
+            freez(tag);
+            log_error(LOG_LEVEL_INFO,
+               "Tagger \'%s\' created an empty tag. Ignored.", b->name);
             continue;
          }
-         /* leaving only taggers that could apply, of which we use the ones, */
-         for (tag_name = csp->action->multi[multi_action_index]->first;
-              NULL != tag_name; tag_name = tag_name->next)
+
+         if (!list_contains_item(csp->tags, tag))
          {
-            /* that do apply, and */
-            if (strcmp(b->name, tag_name->str) == 0)
+            if (JB_ERR_OK != enlist(csp->tags, tag))
             {
-               char *modified_tag = NULL;
-               char *tag = header;
-               size_t size = header_length;
-               pcrs_job *joblist = b->joblist;
-
-               if (b->dynamic) joblist = compile_dynamic_pcrs_job_list(csp, b);
-
-               if (NULL == joblist)
+               log_error(LOG_LEVEL_ERROR,
+                  "Insufficient memory to add tag \'%s\', "
+                  "based on tagger \'%s\' and header \'%s\'",
+                  tag, b->name, *header);
+            }
+            else
+            {
+               char *action_message;
+               /*
+                * update the action bits right away, to make
+                * tagging based on tags set by earlier taggers
+                * of the same kind possible.
+                */
+               if (update_action_bits_for_tag(csp, tag))
                {
-                  log_error(LOG_LEVEL_RE_FILTER,
-                     "Tagger %s has empty joblist. Nothing to do.", b->name);
-                  continue;
+                  action_message = "Action bits updated accordingly.";
+               }
+               else
+               {
+                  action_message = "No action bits update necessary.";
                }
 
-               /* execute their pcrs_joblist on the header. */
-               for (job = joblist; NULL != job; job = job->next)
-               {
-                  const int hits = pcrs_execute(job, tag, size, &modified_tag, &size);
-
-                  if (0 < hits)
-                  {
-                     /* Success, continue with the modified version. */
-                     if (tag != header)
-                     {
-                        freez(tag);
-                     }
-                     tag = modified_tag;
-                  }
-                  else
-                  {
-                     /* Tagger doesn't match */
-                     if (0 > hits)
-                     {
-                        /* Regex failure, log it but continue anyway. */
-                        assert(NULL != header);
-                        log_error(LOG_LEVEL_ERROR,
-                           "Problems with tagger \'%s\' and header \'%s\': %s",
-                           b->name, *header, pcrs_strerror(hits));
-                     }
-                     freez(modified_tag);
-                  }
-               }
-
-               if (b->dynamic) pcrs_free_joblist(joblist);
-
-               /* If this tagger matched */
-               if (tag != header)
-               {
-                  if (0 == size)
-                  {
-                     /*
-                      * There is no technical limitation which makes
-                      * it impossible to use empty tags, but I assume
-                      * no one would do it intentionally.
-                      */
-                     freez(tag);
-                     log_error(LOG_LEVEL_INFO,
-                        "Tagger \'%s\' created an empty tag. Ignored.",
-                        b->name);
-                     continue;
-                  }
-
-                  if (!list_contains_item(csp->tags, tag))
-                  {
-                     if (JB_ERR_OK != enlist(csp->tags, tag))
-                     {
-                        log_error(LOG_LEVEL_ERROR,
-                           "Insufficient memory to add tag \'%s\', "
-                           "based on tagger \'%s\' and header \'%s\'",
-                           tag, b->name, *header);
-                     }
-                     else
-                     {
-                        char *action_message;
-                        /*
-                         * update the action bits right away, to make
-                         * tagging based on tags set by earlier taggers
-                         * of the same kind possible.
-                         */
-                        if (update_action_bits_for_tag(csp, tag))
-                        {
-                           action_message = "Action bits updated accordingly.";
-                        }
-                        else
-                        {
-                           action_message = "No action bits update necessary.";
-                        }
-
-                        log_error(LOG_LEVEL_HEADER,
-                           "Tagger \'%s\' added tag \'%s\'. %s",
-                           b->name, tag, action_message);
-                     }
-                  }
-                  else
-                  {
-                     /* XXX: Is this log-worthy? */
-                     log_error(LOG_LEVEL_HEADER,
-                        "Tagger \'%s\' didn't add tag \'%s\'. "
-                        "Tag already present", b->name, tag);
-                  }
-                  freez(tag);
-               } /* if the tagger matched */
-            } /* if the tagger applies */
-         } /* for every tagger that could apply */
-      } /* for all filters */
-   } /* for all filter files */
+               log_error(LOG_LEVEL_HEADER,
+                  "Tagger \'%s\' added tag \'%s\'. %s",
+                  b->name, tag, action_message);
+            }
+         }
+         else
+         {
+            /* XXX: Is this log-worthy? */
+            log_error(LOG_LEVEL_HEADER,
+               "Tagger \'%s\' didn't add tag \'%s\'. Tag already present",
+               b->name, tag);
+         }
+         freez(tag);
+      }
+   }
 
    return JB_ERR_OK;
 }
@@ -1475,12 +1456,10 @@ static jb_err filter_header(struct client_state *csp, char **header)
    char *newheader = NULL;
    pcrs_job *job;
 
-   struct file_list *fl;
    struct re_filterfile_spec *b;
    struct list_entry *filtername;
 
-   int i;
-   int wanted_filter_type;
+   enum filter_type wanted_filter_type;
    int multi_action_index;
 
    if (csp->flags & CSP_FLAG_NO_FILTERING)
@@ -1499,97 +1478,72 @@ static jb_err filter_header(struct client_state *csp, char **header)
       multi_action_index = ACTION_MULTI_CLIENT_HEADER_FILTER;
    }
 
-   if (filters_available(csp) == FALSE)
+   if (list_is_empty(csp->action->multi[multi_action_index])
+      || filters_available(csp) == FALSE)
    {
-      log_error(LOG_LEVEL_ERROR, "Inconsistent configuration: "
-         "header filtering enabled, but no matching filters available.");
+      /* Return early if no filters apply or if none are available. */
       return JB_ERR_OK;
    }
 
-   for (i = 0; i < MAX_AF_FILES; i++)
+   /* Execute all applying header filters */
+   for (filtername = csp->action->multi[multi_action_index]->first;
+        filtername != NULL; filtername = filtername->next)
    {
-      fl = csp->rlist[i];
-      if ((NULL == fl) || (NULL == fl->f))
+      int current_hits = 0;
+      pcrs_job *joblist;
+
+      b = get_filter(csp, filtername->str, wanted_filter_type);
+      if (b == NULL)
       {
-         /*
-          * Either there are no filter files
-          * left, or this filter file just
-          * contains no valid filters.
-          *
-          * Continue to be sure we don't miss
-          * valid filter files that are chained
-          * after empty or invalid ones.
-          */
          continue;
       }
-      /*
-       * For all applying +filter actions, look if a filter by that
-       * name exists and if yes, execute its pcrs_joblist on the
-       * buffer.
-       */
-      for (b = fl->f; b; b = b->next)
+
+      joblist = b->joblist;
+
+      if (b->dynamic) joblist = compile_dynamic_pcrs_job_list(csp, b);
+
+      if (NULL == joblist)
       {
-         if (b->type != wanted_filter_type)
+         log_error(LOG_LEVEL_RE_FILTER, "Filter %s has empty joblist. Nothing to do.", b->name);
+         continue;
+      }
+
+      log_error(LOG_LEVEL_RE_FILTER, "filtering \'%s\' (size %d) with \'%s\' ...",
+         *header, size, b->name);
+
+      /* Apply all jobs from the joblist */
+      for (job = joblist; NULL != job; job = job->next)
+      {
+         matches = pcrs_execute(job, *header, size, &newheader, &size);
+         if (0 < matches)
          {
-            /* Skip other filter types */
-            continue;
+            current_hits += matches;
+            log_error(LOG_LEVEL_HEADER, "Transforming \"%s\" to \"%s\"", *header, newheader);
+            freez(*header);
+            *header = newheader;
          }
-
-         for (filtername = csp->action->multi[multi_action_index]->first;
-              filtername ; filtername = filtername->next)
+         else if (0 == matches)
          {
-            if (strcmp(b->name, filtername->str) == 0)
+            /* Filter doesn't change header */
+            freez(newheader);
+         }
+         else
+         {
+            /* RegEx failure */
+            log_error(LOG_LEVEL_ERROR, "Filtering \'%s\' with \'%s\' didn't work out: %s",
+               *header, b->name, pcrs_strerror(matches));
+            if (newheader != NULL)
             {
-               int current_hits = 0;
-               pcrs_job *joblist = b->joblist;
-
-               if (b->dynamic) joblist = compile_dynamic_pcrs_job_list(csp, b);
-
-               if (NULL == joblist)
-               {
-                  log_error(LOG_LEVEL_RE_FILTER, "Filter %s has empty joblist. Nothing to do.", b->name);
-                  continue;
-               }
-
-               log_error(LOG_LEVEL_RE_FILTER, "filtering \'%s\' (size %d) with \'%s\' ...",
-                         *header, size, b->name);
-
-               /* Apply all jobs from the joblist */
-               for (job = joblist; NULL != job; job = job->next)
-               {
-                  matches = pcrs_execute(job, *header, size, &newheader, &size);
-                  if (0 < matches)
-                  {
-                     current_hits += matches;
-                     log_error(LOG_LEVEL_HEADER, "Transforming \"%s\" to \"%s\"", *header, newheader);
-                     freez(*header);
-                     *header = newheader;
-                  }
-                  else if (0 == matches)
-                  {
-                     /* Filter doesn't change header */
-                     freez(newheader);
-                  }
-                  else
-                  {
-                     /* RegEx failure */
-                     log_error(LOG_LEVEL_ERROR, "Filtering \'%s\' with \'%s\' didn't work out: %s",
-                        *header, b->name, pcrs_strerror(matches));
-                     if (newheader != NULL)
-                     {
-                        log_error(LOG_LEVEL_ERROR, "Freeing what's left: %s", newheader);
-                        freez(newheader);
-                     }
-                  }
-               }
-
-               if (b->dynamic) pcrs_free_joblist(joblist);
-
-               log_error(LOG_LEVEL_RE_FILTER, "... produced %d hits (new size %d).", current_hits, size);
-               hits += current_hits;
+               log_error(LOG_LEVEL_ERROR, "Freeing what's left: %s", newheader);
+               freez(newheader);
             }
          }
       }
+
+      if (b->dynamic) pcrs_free_joblist(joblist);
+
+      log_error(LOG_LEVEL_RE_FILTER, "... produced %d hits (new size %d).", current_hits, size);
+      hits += current_hits;
    }
 
    /*
@@ -1708,6 +1662,8 @@ static jb_err server_keep_alive(struct client_state *csp, char **header)
       csp->flags |= CSP_FLAG_SERVER_KEEP_ALIVE_TIMEOUT_SET;
    }
 
+   freez(*header);
+
    return JB_ERR_OK;
 }
 
@@ -1785,7 +1741,7 @@ static jb_err proxy_authentication(struct client_state *csp, char **header)
 static jb_err client_keep_alive(struct client_state *csp, char **header)
 {
    unsigned int keep_alive_timeout;
-   const char *timeout_position = strstr(*header, ": ");
+   char *timeout_position;
 
    if (!(csp->config->feature_flags & RUNTIME_FEATURE_CONNECTION_KEEP_ALIVE))
    {
@@ -1795,27 +1751,39 @@ static jb_err client_keep_alive(struct client_state *csp, char **header)
       return JB_ERR_OK;
    }
 
+   /* Check for parameter-less format "Keep-Alive: 100" */
+   timeout_position = strstr(*header, ": ");
    if ((NULL == timeout_position)
     || (1 != sscanf(timeout_position, ": %u", &keep_alive_timeout)))
    {
-      log_error(LOG_LEVEL_ERROR, "Couldn't parse: %s", *header);
+      /* Assume parameter format "Keep-Alive: timeout=100" */
+      timeout_position = strstr(*header, "timeout=");
+      if ((NULL == timeout_position)
+         || (1 != sscanf(timeout_position, "timeout=%u", &keep_alive_timeout)))
+      {
+         log_error(LOG_LEVEL_HEADER,
+            "Couldn't parse: '%s'. Using default timeout %u",
+            *header, csp->config->keep_alive_timeout);
+         freez(*header);
+
+         return JB_ERR_OK;
+      }
+   }
+
+   if (keep_alive_timeout < csp->config->keep_alive_timeout)
+   {
+      log_error(LOG_LEVEL_HEADER,
+         "Reducing keep-alive timeout from %u to %u.",
+         csp->config->keep_alive_timeout, keep_alive_timeout);
+      csp->server_connection.keep_alive_timeout = keep_alive_timeout;
    }
    else
    {
-      if (keep_alive_timeout < csp->config->keep_alive_timeout)
-      {
-         log_error(LOG_LEVEL_HEADER,
-            "Reducing keep-alive timeout from %u to %u.",
-            csp->config->keep_alive_timeout, keep_alive_timeout);
-         csp->server_connection.keep_alive_timeout = keep_alive_timeout;
-      }
-      else
-      {
-         /* XXX: Is this log worthy? */
-         log_error(LOG_LEVEL_HEADER,
-            "Client keep-alive timeout is %u. Sticking with %u.",
-            keep_alive_timeout, csp->config->keep_alive_timeout);
-      }
+      /* XXX: Is this log worthy? */
+      log_error(LOG_LEVEL_HEADER,
+         "Client keep-alive timeout is %u. Sticking with %u.",
+         keep_alive_timeout, csp->config->keep_alive_timeout);
+      freez(*header);
    }
 
    return JB_ERR_OK;
@@ -2049,6 +2017,40 @@ jb_err client_transfer_encoding(struct client_state *csp, char **header)
 
 /*********************************************************************
  *
+ * Function    :  client_expect
+ *
+ * Description :  Raise the CSP_FLAG_UNSUPPORTED_CLIENT_EXPECTATION
+ *                if the Expect header value is unsupported.
+ *
+ *                Rejecting unsupported expectations is a RFC 7231 5.1.1
+ *                MAY and a RFC 2616 (obsolete) MUST.
+ *
+ * Parameters  :
+ *          1  :  csp = Current client state (buffers, headers, etc...)
+ *          2  :  header = On input, pointer to header to modify.
+ *                On output, pointer to the modified header, or NULL
+ *                to remove the header.  This function frees the
+ *                original string if necessary.
+ *
+ * Returns     :  JB_ERR_OK on success, or
+ *
+ *********************************************************************/
+jb_err client_expect(struct client_state *csp, char **header)
+{
+   if (0 != strcmpic(*header, "Expect: 100-continue"))
+   {
+      csp->flags |= CSP_FLAG_UNSUPPORTED_CLIENT_EXPECTATION;
+      log_error(LOG_LEVEL_HEADER,
+         "Unsupported client expectaction: %s", *header);
+   }
+
+   return JB_ERR_OK;
+
+}
+
+
+/*********************************************************************
+ *
  * Function    :  crumble
  *
  * Description :  This is called if a header matches a pattern to "crunch"
@@ -2195,11 +2197,12 @@ static jb_err server_content_type(struct client_state *csp, char **header)
        */
       if ((csp->content_type & CT_TEXT) || (csp->action->flags & ACTION_FORCE_TEXT_MODE))
       {
+         jb_err err;
          freez(*header);
          *header = strdup_or_die("Content-Type: ");
-         string_append(header, csp->action->string[ACTION_STRING_CONTENT_TYPE]);
 
-         if (header == NULL)
+         err = string_append(header, csp->action->string[ACTION_STRING_CONTENT_TYPE]);
+         if (JB_ERR_OK != err)
          {
             log_error(LOG_LEVEL_HEADER, "Insufficient memory to replace Content-Type!");
             return JB_ERR_MEMORY;
@@ -2321,8 +2324,7 @@ static jb_err server_content_encoding(struct client_state *csp, char **header)
       /*
        * Log a warning if the user expects the content to be filtered.
        */
-      if ((csp->rlist != NULL) &&
-         (!list_is_empty(csp->action->multi[ACTION_MULTI_FILTER])))
+      if (content_filters_enabled(csp->action))
       {
          log_error(LOG_LEVEL_INFO,
             "SDCH-compressed content detected, content filtering disabled. "
@@ -3837,6 +3839,7 @@ static jb_err client_connection_header_adder(struct client_state *csp)
  *                  is a partial range (HTTP status 206)
  *                - Rewrite HTTP/1.1 answers to HTTP/1.0 if +downgrade
  *                  action applies.
+ *                - Normalize the HTTP-version.
  *
  * Parameters  :
  *          1  :  csp = Current client state (buffers, headers, etc...)
@@ -3846,35 +3849,83 @@ static jb_err client_connection_header_adder(struct client_state *csp)
  *                original string if necessary.
  *
  * Returns     :  JB_ERR_OK on success, or
- *                JB_ERR_MEMORY on out-of-memory error.
+ *                JB_ERR_PARSE on fatal parse errors.
  *
  *********************************************************************/
 static jb_err server_http(struct client_state *csp, char **header)
 {
-   sscanf(*header, "HTTP/%*d.%*d %d", &(csp->http->status));
+   char *reason_phrase = NULL;
+   char *new_response_line;
+   char *p;
+   size_t length;
+   unsigned int major_version;
+   unsigned int minor_version;
+
+   /* Get the reason phrase which start after the second whitespace */
+   p = strchr(*header, ' ');
+   if (NULL != p)
+   {
+      p++;
+      reason_phrase = strchr(p, ' ');
+   }
+
+   if (reason_phrase != NULL)
+   {
+      reason_phrase++;
+   }
+   else
+   {
+      log_error(LOG_LEVEL_ERROR,
+         "Response line lacks reason phrase: %s", *header);
+      reason_phrase="";
+   }
+
+   if (3 != sscanf(*header, "HTTP/%u.%u %d", &major_version,
+         &minor_version, &(csp->http->status)))
+   {
+      log_error(LOG_LEVEL_ERROR,
+         "Failed to parse the response line: %s", *header);
+      return JB_ERR_PARSE;
+   }
+
    if (csp->http->status == 206)
    {
       csp->content_type = CT_TABOO;
    }
 
-   if ((csp->action->flags & ACTION_DOWNGRADE) != 0)
+   if (major_version != 1 || (minor_version != 0 && minor_version != 1))
    {
-      /* XXX: Should we do a real validity check here? */
-      if (strlen(*header) > 8)
-      {
-         (*header)[7] = '0';
-         log_error(LOG_LEVEL_HEADER, "Downgraded answer to HTTP/1.0");
-      }
-      else
-      {
-         /*
-          * XXX: Should we block the request or
-          * enlist a valid status code line here?
-          */
-         log_error(LOG_LEVEL_INFO, "Malformed server response detected. "
-            "Downgrading to HTTP/1.0 impossible.");
-      }
+      /*
+       * According to RFC 7230 2.6 intermediaries MUST send
+       * their own HTTP-version in forwarded messages.
+       */
+      log_error(LOG_LEVEL_ERROR,
+         "Unsupported HTTP version. Downgrading to 1.1.");
+      major_version = 1;
+      minor_version = 1;
    }
+
+   if (((csp->action->flags & ACTION_DOWNGRADE) != 0) && (minor_version == 1))
+   {
+      log_error(LOG_LEVEL_HEADER, "Downgrading answer to HTTP/1.0");
+      minor_version = 0;
+   }
+
+   /* Rebuild response line. */
+   length = sizeof("HTTP/1.1 200 ") + strlen(reason_phrase) + 1;
+   new_response_line = malloc_or_die(length);
+
+   snprintf(new_response_line, length, "HTTP/%u.%u %d %s",
+      major_version, minor_version, csp->http->status, reason_phrase);
+
+   if (0 != strcmp(*header, new_response_line))
+   {
+      log_error(LOG_LEVEL_HEADER, "Response line '%s' changed to '%s'",
+         *header, new_response_line);
+   }
+
+   freez(*header);
+   *header = new_response_line;
 
    return JB_ERR_OK;
 }

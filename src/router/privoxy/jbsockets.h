@@ -1,6 +1,6 @@
 #ifndef JBSOCKETS_H_INCLUDED
 #define JBSOCKETS_H_INCLUDED
-#define JBSOCKETS_H_VERSION "$Id: jbsockets.h,v 1.21 2012/10/12 11:17:48 fabiankeil Exp $"
+#define JBSOCKETS_H_VERSION "$Id: jbsockets.h,v 1.24 2014/06/02 06:22:20 fabiankeil Exp $"
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/jbsockets.h,v $
@@ -10,7 +10,7 @@
  *                OS-independent.  Contains #ifdefs to make this work
  *                on many platforms.
  *
- * Copyright   :  Written by and Copyright (C) 2001-2009 the
+ * Copyright   :  Written by and Copyright (C) 2001-2014 the
  *                Privoxy team. http://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -40,10 +40,6 @@
 
 #include "project.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 struct client_state;
 
 extern jb_socket connect_to(const char *host, int portnum, struct client_state *csp);
@@ -65,6 +61,10 @@ extern unsigned long resolve_hostname_to_ip(const char *host);
 
 extern int socket_is_still_alive(jb_socket sfd);
 
+#ifdef FEATURE_EXTERNAL_FILTERS
+extern void mark_socket_for_close_on_execute(jb_socket fd);
+#endif
+
 /* Revision control strings from this header and associated .c file */
 extern const char jbsockets_rcs[];
 extern const char jbsockets_h_rcs[];
@@ -77,10 +77,6 @@ extern const char jbsockets_h_rcs[];
 #define INADDR_NONE -1
 #endif
 
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
 #endif /* ndef JBSOCKETS_H_INCLUDED */
 

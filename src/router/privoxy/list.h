@@ -1,6 +1,6 @@
 #ifndef LIST_H_INCLUDED
 #define LIST_H_INCLUDED
-#define LIST_H_VERSION "$Id: list.h,v 1.18 2011/09/04 11:10:56 fabiankeil Exp $"
+#define LIST_H_VERSION "$Id: list.h,v 1.19 2013/11/24 14:23:28 fabiankeil Exp $"
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/list.h,v $
@@ -38,11 +38,6 @@
 
 
 #include "project.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 
 /*
  * struct list
@@ -93,10 +88,6 @@ extern const char * lookup   (const struct map * the_map, const char * name);
 /* Revision control strings from this header and associated .c file */
 extern const char list_rcs[];
 extern const char list_h_rcs[];
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
 #endif /* ndef LIST_H_INCLUDED */
 

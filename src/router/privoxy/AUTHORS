@@ -38,9 +38,10 @@ Former Privoxy Team Members:
  Stefan Waldherr
 
 Thanks to the many people who have tested Privoxy, reported bugs, provided
-patches, made suggestions or contributed in some way. These include (in
-alphabetical order):
+patches, made suggestions, donated or contributed in some other way. These
+include (in alphabetical order):
 
+ Anatoly Arzhnikov
  Ken Arromdee
  Natxo Asenjo
  Devin Bayer
@@ -51,7 +52,9 @@ alphabetical order):
  Reiner Buehl
  Andrew J. Caines
  Clifford Caoile
+ Edward Carrel
  Wan-Teh Chang
+ Sam Chen
  Ramkumar Chinchani
  Billy Crook
  Frédéric Crozat
@@ -66,9 +69,11 @@ alphabetical order):
  Matthew Fischer
  Dean Gaudet
  Stephen Gildea
+ John McGowan
  Lizik Grelier
  Daniel Griscom
  Felix Gröbert
+ Bernard Guillot
  Jeff H.
  Tim H.
  Aaron Hamid
@@ -84,6 +89,7 @@ alphabetical order):
  Ralf Jungblut
  Petr Kadlec
  Steven Kolins
+ Stefan Kurtz
  Zeno Kugy
  David Laight
  Bert van Leeuwen
@@ -98,16 +104,20 @@ alphabetical order):
  Angelina Matson
  David Mediavilla
  Raphael Moll
+ Mathew Murphy
  Amuro Namie
+ Mark Nelson
  Adam Piggott
  Petr Písar
  Dan Price
  Roberto Ragusa
  Félix Rauch
+ Chris John Riley
  Maynard Riley
  Andreas Rutkauskas
  Bart Schelstraete
  Chung-chieh Shan
+ Benjamin C. Wiley Sittler
  Simon South
  Dan Stahlke
  Oliver Stoeneberg
@@ -115,8 +125,10 @@ alphabetical order):
  Spinor S.
  Peter Thoenen
  Martin Thomas
+ Reuben Thomas
  Bobby G. Vinyard
  Jochen Voss
+ David Wagner
  Glenn Washburn
  Song Weijia
  Jörg Weinmann

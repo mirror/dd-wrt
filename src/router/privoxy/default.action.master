@@ -11,7 +11,7 @@
 #
 #  File        :  $Source: /cvsroot/ijbswa/current/default.action.master,v $
 #
-#  $Id: default.action.master,v 1.296 2013/06/02 14:11:46 fabiankeil Exp $
+#  $Id: default.action.master,v 1.313 2014/11/11 12:19:38 fabiankeil Exp $
 #
 #  Requires    :  This version requires Privoxy v3.0.11 or later due to
 #                 syntax changes.
@@ -30,7 +30,7 @@
 # http://www.privoxy.org/user-manual/contact.html
 #
 # The current development version of this file is located:
-# http://ijbswa.cvs.sourceforge.net/*checkout*/ijbswa/current/default.action.master
+# http://ijbswa.cvs.sourceforge.net/viewvc/ijbswa/current/default.action.master
 #
 #############################################################################
 # Syntax
@@ -675,14 +675,18 @@ countr*.
 metrics.torproject.org/
 # URL = http://linuxcounter.net/
 linuxcounter.net/
+# URL = http://adinablafasel.example.org/
+adina*.
+# URL = http://adelelimedesign.deviantart.com/
+adele*.
 
 #############################################################################
 # Generic block patterns by path:
 #############################################################################
 {+block{Path matches generic block pattern.}}
-/(.*/)?ad(\?|/|s|v|_?(image|se?rv|box)|cycle|rotate|mentor|click|f[ra]m|script|stream|fetch|log|space)
 # Blocked URL = http://www.example.org/adimage
 # Blocked URL = http://www.example.org/adspace
+/(.*/)?ad(\?|/|s|v|_?(image|se?rv|box)|cycle|rotate|mentor|click|f[ra]m|script|stream|fetch|log|space)
 /phpads(new)?/
 /(.*/)?(ad|all|nn|db|promo(tion)?)?[-_]?banner
 /(.*/)?(publicite|werbung|rekla(me|am)|annonse|maino(kset|nta|s)?/)
@@ -695,6 +699,10 @@ linuxcounter.net/
 /openx/www/delivery/
 # Blocked URL = http://mem.brandreachsys.com/www/delivery/lg.php?bannerid=13783&campaignid=0&zoneid=550&cb=f22df9acaa
 /.*bannerid=
+# MASTER# BLOCK-REFERRER: http://www.augsburger-allgemeine.de/donauwoerth/Grosseinsatz-Polizist-schiesst-um-sich-Er-hat-mehrere-Waffen-id30561822.html
+# Blocked URL = http://bilder.augsburger-allgemeine.de/img/incoming/orig30444932/2560007661/DigiAd-Zeopexx-03072014.gif
+# Blocked URL = http://bilder.augsburger-allgemeine.de/img/incoming/orig30463337/9180008457/DigiAd-AugenblickOptik-04072014.gif
+/.*DigiAd
 
 #############################################################################
 # Generic unblockers by path:
@@ -880,6 +888,9 @@ pool.*.adhese.com/
 #MASTER# BLOCK-REFERRER: http://www.tradera.com/
 # Blocked URL = http://oskar.tradera.com/script.js
 oskar.tradera.com/
+#MASTER# BLOCK-REFERRER: http://www12.zippyshare.com/v/64444425/file.html
+# Blocked URL = http://www.adcash.com/script/java.php?option=rotateur&rotateur=146355
+.adcash.com/script/
 
 {+block{Might be a web-bug.} -handle-as-empty-document +handle-as-image}
 #MASTER# BLOCK-REFERRER: http://versiontracker.com and many others. 10/20/06
@@ -1880,6 +1891,22 @@ websupport.wdc.com/
 adn.speedtest.net
 # URL = http://adressbuch.bundestag.de/adressbuch/
 .bundestag.de/
+# URL = http://www.rote-hilfe.de/images/banners/mitglied_werden_banner156.png
+.rote-hilfe.de/
+# URL = http://cs.stackexchange.com/posts/popup/close/suggest-originals/16678?_=1383517814677
+.stackexchange.com/(.*/)?popup
+# URL = http://cs.stackoverflow.com/posts/popup/close/suggest-originals/16678?_=1383517814677
+.stackoverflow.com/(.*/)?popup
+# URL = http://cs.serverfault.com/posts/popup/close/suggest-originals/16678?_=1383517814677
+.serverfault.com/(.*/)?popup
+# URL = http://cs.superuser.com/posts/popup/close/suggest-originals/16678?_=1383517814677
+.superuser.com/(.*/)?popup
+#MASTER# UNBLOCK-REFERRER: http://cologne.stopwatchingus.info/demo-12-april.html
+# URL = http://cologne.stopwatchingus.info/images/banner/Demo-Koeln-12-04-14-Banner.png
+# URL = http://cologne.stopwatchingus.info/images/banner/Demo-Koeln-12-04-14-Banner2.png
+# URL = http://cologne.stopwatchingus.info/images/banner/Demo-12-April.jpg
+.stopwatchingus.info/
+
 
 #############################################################################
 # Site-specific special rules:
@@ -2054,6 +2081,12 @@ webcache.googleusercontent.com/
 .google./sorry/\?continue?=
 # URL = http://www.microsofttranslator.com/bv.aspx?from=ru&to=en&a=http://ru.wikipedia.org/wiki/Privoxy
 .microsofttranslator.com/
+# URL = http://www.facebook.com/plugins/like.php?locale=de_DE&href=http%3A%2F%2Fwww.spiegel.de%2Fpolitik%2Fausland%2Fnsa-und-britischer-geheimdienst-knacken-systematisch-verschluesselung-a-920710.html&layout=standard&show_faces=false&width=480&action=recommend&font=verdana&colorscheme=light&height=22
+.facebook.com/plugins/like.php
+# URL = http://creativecommons.org/choose/zero/confirm?license-class=zero&name=...&actor_href=http%3A%2F%2Fexample.org%2F&work_title=...&work_jurisdiction=DE&confirm=confirm&understand=confirm&lang=de&field1=weiter
+creativecommons.org/
+# URL = http://ixquick-proxy.com/do/spg/proxy?ah=&c=hnf&rid=LHLOLMSTPRKK&proxiedformtype=&q=%22lord+lucan%22&sp=19f738b4691d795804a6bc60c5b2c766&ts=MTQxMjg5NTcxNw%3D%3D&u=https%3A%2F%2Fen.wikipedia.org%2Fwiki%2FJohn_Bingham%2C_7th_Earl_of_Lucan&rpos=1&l=english_uk&cat=web&zst=1412895717.21&znt=1412895717.2125&rl=NONE&hlq=https%3A%2F%2Fstartpage.com%2Fdo%2Fsearch&mtppabp=1&mtppcat=web&mtppcmd=process_search&mtppenginecount=1&mtppflag_ac=0&mtpplanguage=english_uk&udata=e9a958f0a1bae930ec8f60fdef42ceb3&/file.gz
+ixquick-proxy.com/
 
 {+redirect{s@.*url=@http://@} -block}
 # Sticky Actions = +redirect -block
@@ -2219,6 +2252,8 @@ javabog.dk/ijk/
 .dgb-tagungszentren.de/
 # URL = http://creativecommons.org/licenses/
 creativecommons.org/
+# URL = http://kggp.de/Blogosphere/blog/2014/11/07/frankfurtmain-hessen-polizeibeamter-muss-sich-vor-gericht-verantworten/
+kggp.de/
 
 {-filter{banners-by-link}}
 # Sticky Actions = -filter{banners-by-link}
@@ -2438,6 +2473,13 @@ config.privoxy.org/
 # Redirect Destination = http://login.yahoo.com/config/login?logout=1&.done=http://mail.yahoo.com&.src=ym&.intl=us
 .yahoo./.*http://login.yahoo.com/config/login.*http://
 
+#MASTER# PROBLEM-URL: http://www.washingtonpost.com/news/volokh-conspiracy/wp/2014/07/09/missouri-voters-will-consider-strengthening-state-constitutional-right-to-bear-arms/
+{-fast-redirects +redirect{s@.*(http://[^&]+\.jpg).*$@$1@i}}
+# Sticky Actions = -fast-redirects +redirect
+# Redirected URL = http://www.washingtonpost.com/wp-apps/imrs.php?src=http://img.washingtonpost.com/news/volokh-conspiracy/wp-content/uploads/sites/14/2014/07/Volk1.jpg&w=480
+# Redirect Destination = http://img.washingtonpost.com/news/volokh-conspiracy/wp-content/uploads/sites/14/2014/07/Volk1.jpg
+.washingtonpost.com/wp-apps/imrs\.php\?src=
+
 #MASTER# REMARKS: The next two sections are to get flickr's Ajax interface working
 #MASTER# REMARKS: with default pre-settings. For more aggressive defaults they additionally
 #MASTER# REMARKS: need -crunch-incoming-cookies and -crunch-outgoing-cookies.
@@ -2475,5 +2517,32 @@ TAG:^IMAGE-REQUEST$
  -handle-as-image \
 }
 TAG:^CSS-REQUEST$
+
+#############################################################################
+# Depends on +client-header-tagger{content-type}
+#############################################################################
+{-filter{html-annoyances} \
+ -filter{content-cookies} \
+ -filter{refresh-tags} \
+ -filter{img-reorder} \
+ -filter{banners-by-size} \
+ -filter{banners-by-link} \
+ -filter{webbugs} \
+ -filter{tiny-textforms} \
+ -filter{frameset-borders} \
+ -filter{iframes} \
+ -filter{demoronizer} \
+ -filter{shockwave-flash} \
+ -filter{quicktime-kioskmode} \
+ -filter{fun} \
+ -filter{crude-parental} \
+ -filter{site-specifics} \
+ -filter{no-ping} \
+ -filter{google} \
+ -filter{yahoo} \
+ -filter{msn} \
+ -filter{blogspot} \
+}
+TAG:^(application|text)/(x-)?javascript$
 
 #MASTER# set vi:nowrap

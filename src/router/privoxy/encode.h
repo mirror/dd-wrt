@@ -1,6 +1,6 @@
 #ifndef ENCODE_H_INCLUDED
 #define ENCODE_H_INCLUDED
-#define ENCODE_H_VERSION "$Id: encode.h,v 1.12 2011/11/06 11:44:56 fabiankeil Exp $"
+#define ENCODE_H_VERSION "$Id: encode.h,v 1.13 2013/11/24 14:23:28 fabiankeil Exp $"
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/encode.h,v $
@@ -36,10 +36,6 @@
  *********************************************************************/
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 extern char * html_encode(const char *s);
 extern char * url_encode(const char *s);
 extern char * url_decode(const char *str);
@@ -50,10 +46,6 @@ extern char * percent_encode_url(const char *s);
 /* Revision control strings from this header and associated .c file */
 extern const char encode_rcs[];
 extern const char encode_h_rcs[];
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
 #endif /* ndef ENCODE_H_INCLUDED */
 

@@ -1,6 +1,6 @@
 #ifndef GATEWAY_H_INCLUDED
 #define GATEWAY_H_INCLUDED
-#define GATEWAY_H_VERSION "$Id: gateway.h,v 1.22 2012/10/23 10:16:52 fabiankeil Exp $"
+#define GATEWAY_H_VERSION "$Id: gateway.h,v 1.23 2013/11/24 14:23:28 fabiankeil Exp $"
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/gateway.h,v $
@@ -37,10 +37,6 @@
  *********************************************************************/
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 struct forward_spec;
 struct http_request;
 struct client_state;
@@ -75,10 +71,6 @@ extern int connection_destination_matches(const struct reusable_connection *conn
  */
 extern const char gateway_rcs[];
 extern const char gateway_h_rcs[];
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
 #endif /* ndef GATEWAY_H_INCLUDED */
 

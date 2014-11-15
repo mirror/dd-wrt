@@ -41,7 +41,7 @@
     <h1 class="SECT1"><a name="MISC" id="MISC">4. Miscellaneous</a></h1>
 
     <div class="SECT2">
-      <h3 class="SECT2"><a name="AEN735" id="AEN735">4.1. How much does
+      <h3 class="SECT2"><a name="AEN730" id="AEN730">4.1. How much does
       Privoxy slow my browsing down? This has to add extra time to
       browsing.</a></h3>
 
@@ -201,7 +201,7 @@
     </div>
 
     <div class="SECT2">
-      <h3 class="SECT2"><a name="AEN800" id="AEN800">4.8. Can Privoxy
+      <h3 class="SECT2"><a name="AEN795" id="AEN795">4.8. Can Privoxy
       guarantee I am anonymous?</a></h3>
 
       <p>No. Your chances of remaining anonymous are improved, but unless you
@@ -246,7 +246,7 @@
     </div>
 
     <div class="SECT2">
-      <h3 class="SECT2"><a name="AEN818" id="AEN818">4.9. A test site says I
+      <h3 class="SECT2"><a name="AEN813" id="AEN813">4.9. A test site says I
       am not using a Proxy.</a></h3>
 
       <p>Good! Actually, they are probably testing for some other kinds of
@@ -293,7 +293,7 @@
       your local network. Using socks4a would work too, but with socks5 you
       get more precise error messages.</p>
 
-      <p>Since <span class="APPLICATION">Privoxy</span> 3.0.5, its <a href=
+      <p><span class="APPLICATION">Privoxy's</span> <a href=
       "../user-manual/config.html" target="_top">main configuration file</a>
       is already prepared for <span class="APPLICATION">Tor</span>, if you
       are using a default <span class="APPLICATION">Tor</span> configuration
@@ -306,7 +306,7 @@
         <tr>
           <td>
             <pre class="SCREEN">
-#        forward-socks5             /     127.0.0.1:9050 .
+#        forward-socks5t             /     127.0.0.1:9050 .
 
 </pre>
           </td>
@@ -369,7 +369,7 @@
     </div>
 
     <div class="SECT2">
-      <h3 class="SECT2"><a name="AEN874" id="AEN874">4.11. Might some things
+      <h3 class="SECT2"><a name="AEN869" id="AEN869">4.11. Might some things
       break because header information or content is being altered?</a></h3>
 
       <p>Definitely. It is common for sites to use browser type, browser
@@ -409,7 +409,7 @@
     </div>
 
     <div class="SECT2">
-      <h3 class="SECT2"><a name="AEN888" id="AEN888">4.12. Can Privoxy act as
+      <h3 class="SECT2"><a name="AEN883" id="AEN883">4.12. Can Privoxy act as
       a <span class="QUOTE">"caching"</span> proxy to speed up web
       browsing?</a></h3>
 
@@ -425,7 +425,7 @@
     </div>
 
     <div class="SECT2">
-      <h3 class="SECT2"><a name="AEN898" id="AEN898">4.13. What about as a
+      <h3 class="SECT2"><a name="AEN893" id="AEN893">4.13. What about as a
       firewall? Can Privoxy protect me?</a></h3>
 
       <p>Not in the way you mean, or in the way some firewall vendors claim
@@ -436,7 +436,7 @@
     </div>
 
     <div class="SECT2">
-      <h3 class="SECT2"><a name="AEN903" id="AEN903">4.14. I have large empty
+      <h3 class="SECT2"><a name="AEN898" id="AEN898">4.14. I have large empty
       spaces / a checkerboard pattern now where ads used to be. Why?</a></h3>
 
       <p>It is technically possible to eliminate banners and ads in a way
@@ -464,7 +464,7 @@
     </div>
 
     <div class="SECT2">
-      <h3 class="SECT2"><a name="AEN911" id="AEN911">4.15. How can Privoxy
+      <h3 class="SECT2"><a name="AEN906" id="AEN906">4.15. How can Privoxy
       filter Secure (HTTPS) URLs?</a></h3>
 
       <p>Since secure HTTP connections are encrypted SSL sessions between
@@ -498,7 +498,7 @@
     </div>
 
     <div class="SECT2">
-      <h3 class="SECT2"><a name="AEN925" id="AEN925">4.16. Privoxy runs as a
+      <h3 class="SECT2"><a name="AEN920" id="AEN920">4.16. Privoxy runs as a
       <span class="QUOTE">"server"</span>. How secure is it? Do I need to
       take any special precautions?</a></h3>
 
@@ -785,9 +785,10 @@
       <table border="0">
         <tbody>
           <tr>
-            <td><a href="http://www.pps.jussieu.fr/~jch/software/polipo/"
+            <td><a href=
+            "http://www.pps.univ-paris-diderot.fr/~jch/software/polipo/"
             target=
-            "_top">http://www.pps.jussieu.fr/~jch/software/polipo/</a>,
+            "_top">http://www.pps.univ-paris-diderot.fr/~jch/software/polipo/</a>,
             <span class="APPLICATION">Polipo</span> is a caching proxy with
             advanced features like pipelining, multiplexing and caching of
             partial instances. In many setups it can be used as <span class=

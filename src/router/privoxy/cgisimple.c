@@ -1,4 +1,4 @@
-const char cgisimple_rcs[] = "$Id: cgisimple.c,v 1.120 2013/01/26 13:30:20 fabiankeil Exp $";
+const char cgisimple_rcs[] = "$Id: cgisimple.c,v 1.131 2014/10/18 11:28:49 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/cgisimple.c,v $
@@ -6,7 +6,7 @@ const char cgisimple_rcs[] = "$Id: cgisimple.c,v 1.120 2013/01/26 13:30:20 fabia
  * Purpose     :  Simple CGIs to get information about Privoxy's
  *                status.
  *
- * Copyright   :  Written by and Copyright (C) 2001-2013 the
+ * Copyright   :  Written by and Copyright (C) 2001-2014 the
  *                Privoxy team. http://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -142,12 +142,7 @@ jb_err cgi_error_404(struct client_state *csp,
       return JB_ERR_MEMORY;
    }
 
-   rsp->status = strdup("404 Privoxy configuration page not found");
-   if (rsp->status == NULL)
-   {
-      free_map(exports);
-      return JB_ERR_MEMORY;
-   }
+   rsp->status = strdup_or_die("404 Privoxy configuration page not found");
 
    return template_fill_for_cgi(csp, "cgi-error-404", exports, rsp);
 }
@@ -171,7 +166,6 @@ jb_err cgi_error_404(struct client_state *csp,
  * CGI Parameters : none
  *
  * Returns     :  JB_ERR_OK on success
- *                JB_ERR_MEMORY on out-of-memory error.
  *
  *********************************************************************/
 jb_err cgi_die (struct client_state *csp,
@@ -205,13 +199,8 @@ jb_err cgi_die (struct client_state *csp,
    rsp->head_length = 0;
    rsp->is_static = 0;
 
-   rsp->body = strdup(body);
-   rsp->status = strdup(status);
-
-   if ((rsp->body == NULL) || (rsp->status == NULL))
-   {
-      return JB_ERR_MEMORY;
-   }
+   rsp->body = strdup_or_die(body);
+   rsp->status = strdup_or_die(status);
 
    return JB_ERR_OK;
 }
@@ -374,11 +363,7 @@ jb_err cgi_send_banner(struct client_state *csp,
     */
    if (imagetype == 'r')
    {
-      rsp->status = strdup("302 Local Redirect from Privoxy");
-      if (rsp->status == NULL)
-      {
-         return JB_ERR_MEMORY;
-      }
+      rsp->status = strdup_or_die("302 Local Redirect from Privoxy");
       if (enlist_unique_header(rsp->headers, "Location",
                                csp->action->string[ACTION_STRING_IMAGE_BLOCKER]))
       {
@@ -697,8 +682,8 @@ static const char *get_content_type(const char *filename)
    int i;
    struct content_type
    {
-      const char *extension;
-      const char *content_type;
+      const char extension[6];
+      const char content_type[11];
    };
    static const struct content_type content_types[] =
    {
@@ -963,7 +948,7 @@ jb_err cgi_show_status(struct client_state *csp,
    }
 
 #else /* ndef FEATURE_STATISTICS */
-   err = err || map_block_killer(exports, "statistics");
+   if (!err) err = map_block_killer(exports, "statistics");
 #endif /* ndef FEATURE_STATISTICS */
 
    /*
@@ -1064,6 +1049,8 @@ jb_err cgi_show_status(struct client_state *csp,
    }
 #endif /* ndef CGI_EDIT_ACTIONS */
 
+   if (!err) err = map(exports, "force-prefix", 1, FORCE_PREFIX, 1);
+
    if (err)
    {
       free_map(exports);
@@ -1117,12 +1104,7 @@ jb_err cgi_show_url_info(struct client_state *csp,
    /*
     * Get the url= parameter (if present) and remove any leading/trailing spaces.
     */
-   url_param = strdup(lookup(parameters, "url"));
-   if (url_param == NULL)
-   {
-      free_map(exports);
-      return JB_ERR_MEMORY;
-   }
+   url_param = strdup_or_die(lookup(parameters, "url"));
    chomp(url_param);
 
    /*
@@ -1165,7 +1147,7 @@ jb_err cgi_show_url_info(struct client_state *csp,
        * No prefix or at least no prefix before
        * the first slash - assume http://
        */
-      char *url_param_prefixed = strdup("http://");
+      char *url_param_prefixed = strdup_or_die("http://");
 
       if (JB_ERR_OK != string_join(&url_param_prefixed, url_param))
       {
@@ -1185,6 +1167,7 @@ jb_err cgi_show_url_info(struct client_state *csp,
        map_block_killer(exports, "privoxy-is-toggled-off")
       )
    {
+      freez(url_param);
       free_map(exports);
       return JB_ERR_MEMORY;
    }
@@ -1277,7 +1260,7 @@ jb_err cgi_show_url_info(struct client_state *csp,
          }
       }
 
-      matches = strdup("<table summary=\"\" class=\"transparent\">");
+      matches = strdup_or_die("<table summary=\"\" class=\"transparent\">");
 
       for (i = 0; i < MAX_AF_FILES; i++)
       {
@@ -1516,7 +1499,7 @@ jb_err cgi_robots_txt(struct client_state *csp,
    (void)csp;
    (void)parameters;
 
-   rsp->body = strdup(
+   rsp->body = strdup_or_die(
       "# This is the Privoxy control interface.\n"
       "# It isn't very useful to index it, and you're likely to break stuff.\n"
       "# So go away!\n"
@@ -1524,10 +1507,6 @@ jb_err cgi_robots_txt(struct client_state *csp,
       "User-agent: *\n"
       "Disallow: /\n"
       "\n");
-   if (rsp->body == NULL)
-   {
-      return JB_ERR_MEMORY;
-   }
 
    err = enlist_unique(rsp->headers, "Content-Type: text/plain", 13);
 
@@ -1557,136 +1536,186 @@ jb_err cgi_robots_txt(struct client_state *csp,
 static jb_err show_defines(struct map *exports)
 {
    jb_err err = JB_ERR_OK;
+   int i;
+   struct feature {
+      const char name[31];
+      const unsigned char is_available;
+   };
 
+   static const struct feature features[] = {
+      {
+         "FEATURE_ACCEPT_FILTER",
 #ifdef FEATURE_ACCEPT_FILTER
-   if (!err) err = map_conditional(exports, "FEATURE_ACCEPT_FILTER", 1);
-#else /* ifndef FEATURE_ACCEPT_FILTER */
-   if (!err) err = map_conditional(exports, "FEATURE_ACCEPT_FILTER", 0);
-#endif /* ndef FEATURE_ACCEPT_FILTER */
-
+         1,
+#else
+         0,
+#endif
+      },
+      {
+         "FEATURE_ACL",
 #ifdef FEATURE_ACL
-   if (!err) err = map_conditional(exports, "FEATURE_ACL", 1);
-#else /* ifndef FEATURE_ACL */
-   if (!err) err = map_conditional(exports, "FEATURE_ACL", 0);
-#endif /* ndef FEATURE_ACL */
-
+         1,
+#else
+         0,
+#endif
+      },
+      {
+         "FEATURE_CGI_EDIT_ACTIONS",
 #ifdef FEATURE_CGI_EDIT_ACTIONS
-   if (!err) err = map_conditional(exports, "FEATURE_CGI_EDIT_ACTIONS", 1);
-#else /* ifndef FEATURE_CGI_EDIT_ACTIONS */
-   if (!err) err = map_conditional(exports, "FEATURE_CGI_EDIT_ACTIONS", 0);
-#endif /* ndef FEATURE_CGI_EDIT_ACTIONS */
-
+         1,
+#else
+         0,
+#endif
+      },
+      {
+         "FEATURE_COMPRESSION",
 #ifdef FEATURE_COMPRESSION
-   if (!err) err = map_conditional(exports, "FEATURE_COMPRESSION", 1);
-#else /* ifndef FEATURE_COMPRESSION */
-   if (!err) err = map_conditional(exports, "FEATURE_COMPRESSION", 0);
-#endif /* ndef FEATURE_COMPRESSION */
-
+         1,
+#else
+         0,
+#endif
+      },
+      {
+         "FEATURE_CONNECTION_KEEP_ALIVE",
 #ifdef FEATURE_CONNECTION_KEEP_ALIVE
-   if (!err) err = map_conditional(exports, "FEATURE_CONNECTION_KEEP_ALIVE", 1);
-#else /* ifndef FEATURE_CONNECTION_KEEP_ALIVE */
-   if (!err) err = map_conditional(exports, "FEATURE_CONNECTION_KEEP_ALIVE", 0);
-#endif /* ndef FEATURE_CONNECTION_KEEP_ALIVE */
-
+         1,
+#else
+         0,
+#endif
+      },
+      {
+         "FEATURE_CONNECTION_SHARING",
 #ifdef FEATURE_CONNECTION_SHARING
-   if (!err) err = map_conditional(exports, "FEATURE_CONNECTION_SHARING", 1);
-#else /* ifndef FEATURE_CONNECTION_SHARING */
-   if (!err) err = map_conditional(exports, "FEATURE_CONNECTION_SHARING", 0);
-#endif /* ndef FEATURE_CONNECTION_SHARING */
-
+         1,
+#else
+         0,
+#endif
+      },
+      {
+         "FEATURE_FAST_REDIRECTS",
 #ifdef FEATURE_FAST_REDIRECTS
-   if (!err) err = map_conditional(exports, "FEATURE_FAST_REDIRECTS", 1);
-#else /* ifndef FEATURE_FAST_REDIRECTS */
-   if (!err) err = map_conditional(exports, "FEATURE_FAST_REDIRECTS", 0);
-#endif /* ndef FEATURE_FAST_REDIRECTS */
-
+         1,
+#else
+         0,
+#endif
+      },
+      {
+         "FEATURE_FORCE_LOAD",
 #ifdef FEATURE_FORCE_LOAD
-   if (!err) err = map_conditional(exports, "FEATURE_FORCE_LOAD", 1);
-   if (!err) err = map(exports, "FORCE_PREFIX", 1, FORCE_PREFIX, 1);
-#else /* ifndef FEATURE_FORCE_LOAD */
-   if (!err) err = map_conditional(exports, "FEATURE_FORCE_LOAD", 0);
-   if (!err) err = map(exports, "FORCE_PREFIX", 1, "(none - disabled)", 1);
-#endif /* ndef FEATURE_FORCE_LOAD */
-
+         1,
+#else
+         0,
+#endif
+      },
+      {
+         "FEATURE_GRACEFUL_TERMINATION",
 #ifdef FEATURE_GRACEFUL_TERMINATION
-   if (!err) err = map_conditional(exports, "FEATURE_GRACEFUL_TERMINATION", 1);
-#else /* ifndef FEATURE_GRACEFUL_TERMINATION */
-   if (!err) err = map_conditional(exports, "FEATURE_GRACEFUL_TERMINATION", 0);
-#endif /* ndef FEATURE_GRACEFUL_TERMINATION */
-
+         1,
+#else
+         0,
+#endif
+      },
+      {
+         "FEATURE_IMAGE_BLOCKING",
 #ifdef FEATURE_IMAGE_BLOCKING
-   if (!err) err = map_conditional(exports, "FEATURE_IMAGE_BLOCKING", 1);
-#else /* ifndef FEATURE_IMAGE_BLOCKING */
-   if (!err) err = map_conditional(exports, "FEATURE_IMAGE_BLOCKING", 0);
-#endif /* ndef FEATURE_IMAGE_BLOCKING */
-
+         1,
+#else
+         0,
+#endif
+      },
+      {
+         "FEATURE_IMAGE_DETECT_MSIE",
 #ifdef FEATURE_IMAGE_DETECT_MSIE
-   if (!err) err = map_conditional(exports, "FEATURE_IMAGE_DETECT_MSIE", 1);
-#else /* ifndef FEATURE_IMAGE_DETECT_MSIE */
-   if (!err) err = map_conditional(exports, "FEATURE_IMAGE_DETECT_MSIE", 0);
-#endif /* ndef FEATURE_IMAGE_DETECT_MSIE */
-
+         1,
+#else
+         0,
+#endif
+      },
+      {
+         "FEATURE_IPV6_SUPPORT",
 #ifdef HAVE_RFC2553
-   if (!err) err = map_conditional(exports, "FEATURE_IPV6_SUPPORT", 1);
-#else /* ifndef HAVE_RFC2553 */
-   if (!err) err = map_conditional(exports, "FEATURE_IPV6_SUPPORT", 0);
-#endif /* ndef HAVE_RFC2553 */
-
+         1,
+#else
+         0,
+#endif
+      },
+      {
+         "FEATURE_NO_GIFS",
 #ifdef FEATURE_NO_GIFS
-   if (!err) err = map_conditional(exports, "FEATURE_NO_GIFS", 1);
-#else /* ifndef FEATURE_NO_GIFS */
-   if (!err) err = map_conditional(exports, "FEATURE_NO_GIFS", 0);
-#endif /* ndef FEATURE_NO_GIFS */
-
+         1,
+#else
+         0,
+#endif
+      },
+      {
+         "FEATURE_PTHREAD",
 #ifdef FEATURE_PTHREAD
-   if (!err) err = map_conditional(exports, "FEATURE_PTHREAD", 1);
-#else /* ifndef FEATURE_PTHREAD */
-   if (!err) err = map_conditional(exports, "FEATURE_PTHREAD", 0);
-#endif /* ndef FEATURE_PTHREAD */
-
+         1,
+#else
+         0,
+#endif
+      },
+      {
+         "FEATURE_STATISTICS",
 #ifdef FEATURE_STATISTICS
-   if (!err) err = map_conditional(exports, "FEATURE_STATISTICS", 1);
-#else /* ifndef FEATURE_STATISTICS */
-   if (!err) err = map_conditional(exports, "FEATURE_STATISTICS", 0);
-#endif /* ndef FEATURE_STATISTICS */
-
+         1,
+#else
+         0,
+#endif
+      },
+      {
+         "FEATURE_STRPTIME_SANITY_CHECKS",
 #ifdef FEATURE_STRPTIME_SANITY_CHECKS
-   if (!err) err = map_conditional(exports, "FEATURE_STRPTIME_SANITY_CHECKS", 1);
-#else /* ifndef FEATURE_STRPTIME_SANITY_CHECKS */
-   if (!err) err = map_conditional(exports, "FEATURE_STRPTIME_SANITY_CHECKS", 0);
-#endif /* ndef FEATURE_STRPTIME_SANITY_CHECKS */
-
+         1,
+#else
+         0,
+#endif
+      },
+      {
+         "FEATURE_TOGGLE",
 #ifdef FEATURE_TOGGLE
-   if (!err) err = map_conditional(exports, "FEATURE_TOGGLE", 1);
-#else /* ifndef FEATURE_TOGGLE */
-   if (!err) err = map_conditional(exports, "FEATURE_TOGGLE", 0);
-#endif /* ndef FEATURE_TOGGLE */
-
+         1,
+#else
+         0,
+#endif
+      },
+      {
+         "FEATURE_TRUST",
 #ifdef FEATURE_TRUST
-   if (!err) err = map_conditional(exports, "FEATURE_TRUST", 1);
-#else /* ifndef FEATURE_TRUST */
-   if (!err) err = map_conditional(exports, "FEATURE_TRUST", 0);
-#endif /* ndef FEATURE_TRUST */
-
+         1,
+#else
+         0,
+#endif
+      },
+      {
+         "FEATURE_ZLIB",
 #ifdef FEATURE_ZLIB
-   if (!err) err = map_conditional(exports, "FEATURE_ZLIB", 1);
-#else /* ifndef FEATURE_ZLIB */
-   if (!err) err = map_conditional(exports, "FEATURE_ZLIB", 0);
-#endif /* ndef FEATURE_ZLIB */
+         1,
+#else
+         0,
+#endif
+      },
+      {
+         "FEATURE_DYNAMIC_PCRE",
+#ifdef FEATURE_DYNAMIC_PCRE
+         1,
+#else
+         0,
+#endif
+      }
+   };
 
-#ifdef STATIC_PCRE
-   if (!err) err = map_conditional(exports, "STATIC_PCRE", 1);
-#else /* ifndef STATIC_PCRE */
-   if (!err) err = map_conditional(exports, "STATIC_PCRE", 0);
-#endif /* ndef STATIC_PCRE */
-
-#ifdef STATIC_PCRS
-   if (!err) err = map_conditional(exports, "STATIC_PCRS", 1);
-#else /* ifndef STATIC_PCRS */
-   if (!err) err = map_conditional(exports, "STATIC_PCRS", 0);
-#endif /* ndef STATIC_PCRS */
+   for (i = 0; i < SZ(features); i++)
+   {
+      err = map_conditional(exports, features[i].name, features[i].is_available);
+      if (err)
+      {
+         break;
+      }
+   }
 
    return err;
+
 }
 
 
@@ -1703,7 +1732,7 @@ static jb_err show_defines(struct map *exports)
  *********************************************************************/
 static char *show_rcs(void)
 {
-   char *result = strdup("");
+   char *result = strdup_or_die("");
    char buf[BUFFER_SIZE];
 
    /* Instead of including *all* dot h's in the project (thus creating a
@@ -1885,6 +1914,7 @@ static jb_err cgi_show_file(struct client_state *csp,
          s = html_encode_and_free_original(s);
          if (NULL == s)
          {
+            free_map(exports);
             return JB_ERR_MEMORY;
          }
 
@@ -1961,14 +1991,16 @@ static jb_err load_file(const char *filename, char **buffer, size_t *length)
    {
       err = JB_ERR_MEMORY;
    }
-   else if (!fread(*buffer, *length, 1, fp))
+   else if (1 != fread(*buffer, *length, 1, fp))
    {
       /*
-       * May happen if the file size changes between fseek() and
-       * fread(). If it does, we just log it and serve what we got.
+       * May theoretically happen if the file size changes between
+       * fseek() and fread() because it's edited in-place. Privoxy
+       * and common text editors don't do that, thus we just fail.
        */
       log_error(LOG_LEVEL_ERROR,
          "Couldn't completely read file %s.", filename);
+      freez(*buffer);
       err = JB_ERR_FILE;
    }
 

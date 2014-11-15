@@ -1,4 +1,4 @@
-const char urlmatch_rcs[] = "$Id: urlmatch.c,v 1.75 2012/12/07 12:49:47 fabiankeil Exp $";
+const char urlmatch_rcs[] = "$Id: urlmatch.c,v 1.85 2014/07/25 11:56:26 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/urlmatch.c,v $
@@ -6,7 +6,7 @@ const char urlmatch_rcs[] = "$Id: urlmatch.c,v 1.75 2012/12/07 12:49:47 fabianke
  * Purpose     :  Declares functions to match URLs against URL
  *                patterns.
  *
- * Copyright   :  Written by and Copyright (C) 2001-2011
+ * Copyright   :  Written by and Copyright (C) 2001-2014
  *                the Privoxy team. http://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -65,7 +65,7 @@ enum regex_anchoring
    RIGHT_ANCHORED,
    RIGHT_ANCHORED_HOST
 };
-static jb_err compile_host_pattern(struct url_spec *url, const char *host_pattern);
+static jb_err compile_host_pattern(struct pattern_spec *url, const char *host_pattern);
 
 /*********************************************************************
  *
@@ -454,6 +454,12 @@ static int unknown_method(const char *method)
        */
       "VERSION-CONTROL", "REPORT", "CHECKOUT", "CHECKIN", "UNCHECKOUT",
       "MKWORKSPACE", "UPDATE", "LABEL", "MERGE", "BASELINE-CONTROL", "MKACTIVITY",
+      /*
+       * The PATCH method is defined by RFC5789, the format of the
+       * actual patch in the body depends on the application, but from
+       * Privoxy's point of view it doesn't matter.
+       */
+      "PATCH",
    };
    int i;
 
@@ -466,6 +472,50 @@ static int unknown_method(const char *method)
    }
 
    return TRUE;
+
+}
+
+
+/*********************************************************************
+ *
+ * Function    :  normalize_http_version
+ *
+ * Description :  Take a supported HTTP version string and remove
+ *                leading zeroes etc., reject unsupported versions.
+ *
+ *                This is an explicit RFC 2616 (3.1) MUST and
+ *                RFC 7230 mandates that intermediaries send their
+ *                own HTTP-version in forwarded messages.
+ *
+ * Parameters  :
+ *          1  :  http_version = HTTP version string
+ *
+ * Returns     :  JB_ERR_OK on success
+ *                JB_ERR_PARSE if the HTTP version is unsupported
+ *
+ *********************************************************************/
+jb_err static normalize_http_version(char *http_version)
+{
+   unsigned int major_version;
+   unsigned int minor_version;
+
+   if (2 != sscanf(http_version, "HTTP/%u.%u", &major_version, &minor_version))
+   {
+      log_error(LOG_LEVEL_ERROR, "Unsupported HTTP version: %s", http_version);
+      return JB_ERR_PARSE;
+   }
+
+   if (major_version != 1 || (minor_version != 0 && minor_version != 1))
+   {
+      log_error(LOG_LEVEL_ERROR, "The only supported HTTP "
+         "versions are 1.0 and 1.1. This rules out: %s", http_version);
+      return JB_ERR_PARSE;
+   }
+
+   assert(strlen(http_version) >= 8);
+   snprintf(http_version, 9, "HTTP/%u.%u", major_version, minor_version);
+
+   return JB_ERR_OK;
 
 }
 
@@ -489,7 +539,7 @@ static int unknown_method(const char *method)
 jb_err parse_http_request(const char *req, struct http_request *http)
 {
    char *buf;
-   char *v[10]; /* XXX: Why 10? We should only need three. */
+   char *v[3];
    int n;
    jb_err err;
 
@@ -520,10 +570,8 @@ jb_err parse_http_request(const char *req, struct http_request *http)
       return JB_ERR_PARSE;
    }
 
-   if (strcmpic(v[2], "HTTP/1.1") && strcmpic(v[2], "HTTP/1.0"))
+   if (JB_ERR_OK != normalize_http_version(v[2]))
    {
-      log_error(LOG_LEVEL_ERROR, "The only supported HTTP "
-         "versions are 1.0 and 1.1. This rules out: %s", v[2]);
       freez(buf);
       return JB_ERR_PARSE;
    }
@@ -543,6 +591,7 @@ jb_err parse_http_request(const char *req, struct http_request *http)
    http->cmd = strdup_or_die(req);
    http->gpc = strdup_or_die(v[0]);
    http->ver = strdup_or_die(v[2]);
+   http->ocmd = strdup_or_die(http->cmd);
 
    freez(buf);
 
@@ -573,7 +622,7 @@ jb_err parse_http_request(const char *req, struct http_request *http)
  *
  *********************************************************************/
 static jb_err compile_pattern(const char *pattern, enum regex_anchoring anchoring,
-                              struct url_spec *url, regex_t **regex)
+                              struct pattern_spec *url, regex_t **regex)
 {
    int errcode;
    char rebuf[BUFFER_SIZE];
@@ -610,7 +659,7 @@ static jb_err compile_pattern(const char *pattern, enum regex_anchoring anchorin
    *regex = zalloc(sizeof(**regex));
    if (NULL == *regex)
    {
-      free_url_spec(url);
+      free_pattern_spec(url);
       return JB_ERR_MEMORY;
    }
 
@@ -628,7 +677,7 @@ static jb_err compile_pattern(const char *pattern, enum regex_anchoring anchorin
       rebuf[errlen] = '\0';
       log_error(LOG_LEVEL_ERROR, "error compiling %s from %s: %s",
          pattern, url->spec, rebuf);
-      free_url_spec(url);
+      free_pattern_spec(url);
 
       return JB_ERR_PARSE;
    }
@@ -645,7 +694,7 @@ static jb_err compile_pattern(const char *pattern, enum regex_anchoring anchorin
  * Description :  Compiles the three parts of an URL pattern.
  *
  * Parameters  :
- *          1  :  url = Target url_spec to be filled in.
+ *          1  :  url = Target pattern_spec to be filled in.
  *          2  :  buf = The url pattern to compile. Will be messed up.
  *
  * Returns     :  JB_ERR_OK - Success
@@ -653,7 +702,7 @@ static jb_err compile_pattern(const char *pattern, enum regex_anchoring anchorin
  *                JB_ERR_PARSE - Cannot parse regex
  *
  *********************************************************************/
-static jb_err compile_url_pattern(struct url_spec *url, char *buf)
+static jb_err compile_url_pattern(struct pattern_spec *url, char *buf)
 {
    char *p;
 
@@ -669,7 +718,7 @@ static jb_err compile_url_pattern(struct url_spec *url, char *buf)
          /*
           * XXX: does it make sense to compile the slash at the beginning?
           */
-         jb_err err = compile_pattern(p, LEFT_ANCHORED, url, &url->preg);
+         jb_err err = compile_pattern(p, LEFT_ANCHORED, url, &url->pattern.url_spec.preg);
 
          if (JB_ERR_OK != err)
          {
@@ -709,11 +758,11 @@ static jb_err compile_url_pattern(struct url_spec *url, char *buf)
    if (NULL != p)
    {
       *p++ = '\0';
-      url->port_list = strdup_or_die(p);
+      url->pattern.url_spec.port_list = strdup_or_die(p);
    }
    else
    {
-      url->port_list = NULL;
+      url->pattern.url_spec.port_list = NULL;
    }
 
    if (buf[0] != '\0')
@@ -734,7 +783,7 @@ static jb_err compile_url_pattern(struct url_spec *url, char *buf)
  * Description :  Parses and compiles a host pattern.
  *
  * Parameters  :
- *          1  :  url = Target url_spec to be filled in.
+ *          1  :  url = Target pattern_spec to be filled in.
  *          2  :  host_pattern = Host pattern to compile.
  *
  * Returns     :  JB_ERR_OK - Success
@@ -742,9 +791,9 @@ static jb_err compile_url_pattern(struct url_spec *url, char *buf)
  *                JB_ERR_PARSE - Cannot parse regex
  *
  *********************************************************************/
-static jb_err compile_host_pattern(struct url_spec *url, const char *host_pattern)
+static jb_err compile_host_pattern(struct pattern_spec *url, const char *host_pattern)
 {
-   return compile_pattern(host_pattern, RIGHT_ANCHORED_HOST, url, &url->host_regex);
+   return compile_pattern(host_pattern, RIGHT_ANCHORED_HOST, url, &url->pattern.url_spec.host_regex);
 }
 
 #else
@@ -756,14 +805,14 @@ static jb_err compile_host_pattern(struct url_spec *url, const char *host_patter
  * Description :  Parses and "compiles" an old-school host pattern.
  *
  * Parameters  :
- *          1  :  url = Target url_spec to be filled in.
+ *          1  :  url = Target pattern_spec to be filled in.
  *          2  :  host_pattern = Host pattern to parse.
  *
  * Returns     :  JB_ERR_OK - Success
  *                JB_ERR_PARSE - Cannot parse regex
  *
  *********************************************************************/
-static jb_err compile_host_pattern(struct url_spec *url, const char *host_pattern)
+static jb_err compile_host_pattern(struct pattern_spec *url, const char *host_pattern)
 {
    char *v[150];
    size_t size;
@@ -774,22 +823,22 @@ static jb_err compile_host_pattern(struct url_spec *url, const char *host_patter
     */
    if (host_pattern[strlen(host_pattern) - 1] == '.')
    {
-      url->unanchored |= ANCHOR_RIGHT;
+      url->pattern.url_spec.unanchored |= ANCHOR_RIGHT;
    }
    if (host_pattern[0] == '.')
    {
-      url->unanchored |= ANCHOR_LEFT;
+      url->pattern.url_spec.unanchored |= ANCHOR_LEFT;
    }
 
    /*
     * Split domain into components
     */
-   url->dbuffer = strdup_or_die(host_pattern);
+   url->pattern.url_spec.dbuffer = strdup_or_die(host_pattern);
 
    /*
     * Map to lower case
     */
-   for (p = url->dbuffer; *p ; p++)
+   for (p = url->pattern.url_spec.dbuffer; *p ; p++)
    {
       *p = (char)privoxy_tolower(*p);
    }
@@ -797,23 +846,23 @@ static jb_err compile_host_pattern(struct url_spec *url, const char *host_patter
    /*
     * Split the domain name into components
     */
-   url->dcount = ssplit(url->dbuffer, ".", v, SZ(v));
+   url->pattern.url_spec.dcount = ssplit(url->pattern.url_spec.dbuffer, ".", v, SZ(v));
 
-   if (url->dcount < 0)
+   if (url->pattern.url_spec.dcount < 0)
    {
-      free_url_spec(url);
+      free_pattern_spec(url);
       return JB_ERR_PARSE;
    }
-   else if (url->dcount != 0)
+   else if (url->pattern.url_spec.dcount != 0)
    {
       /*
        * Save a copy of the pointers in dvec
        */
-      size = (size_t)url->dcount * sizeof(*url->dvec);
+      size = (size_t)url->pattern.url_spec.dcount * sizeof(*url->pattern.url_spec.dvec);
 
-      url->dvec = malloc_or_die(size);
+      url->pattern.url_spec.dvec = malloc_or_die(size);
 
-      memcpy(url->dvec, v, size);
+      memcpy(url->pattern.url_spec.dvec, v, size);
    }
    /*
     * else dcount == 0 in which case we needn't do anything,
@@ -1003,25 +1052,25 @@ static int simple_domaincmp(char **pv, char **fv, int len)
  * Function    :  domain_match
  *
  * Description :  Domain-wise Compare fqdn's. Governed by the bimap in
- *                pattern->unachored, the comparison is un-, left-,
+ *                p.pattern->unachored, the comparison is un-, left-,
  *                right-anchored, or both.
  *                The individual domain names are compared with
  *                simplematch().
  *
  * Parameters  :
- *          1  :  pattern = a domain that may contain a '*' as a wildcard.
+ *          1  :  p = a domain that may contain a '*' as a wildcard.
  *          2  :  fqdn = domain name against which the patterns are compared.
  *
  * Returns     :  0 => domains are equivalent, else no match.
  *
  *********************************************************************/
-static int domain_match(const struct url_spec *pattern, const struct http_request *fqdn)
+static int domain_match(const struct pattern_spec *p, const struct http_request *fqdn)
 {
    char **pv, **fv;  /* vectors  */
    int    plen, flen;
-   int unanchored = pattern->unanchored & (ANCHOR_RIGHT | ANCHOR_LEFT);
+   int unanchored = p->pattern.url_spec.unanchored & (ANCHOR_RIGHT | ANCHOR_LEFT);
 
-   plen = pattern->dcount;
+   plen = p->pattern.url_spec.dcount;
    flen = fqdn->dcount;
 
    if (flen < plen)
@@ -1030,7 +1079,7 @@ static int domain_match(const struct url_spec *pattern, const struct http_reques
       return 1;
    }
 
-   pv   = pattern->dvec;
+   pv   = p->pattern.url_spec.dvec;
    fv   = fqdn->dvec;
 
    if (unanchored == ANCHOR_LEFT)
@@ -1084,18 +1133,18 @@ static int domain_match(const struct url_spec *pattern, const struct http_reques
 
 /*********************************************************************
  *
- * Function    :  create_url_spec
+ * Function    :  create_pattern_spec
  *
- * Description :  Creates a "url_spec" structure from a string.
- *                When finished, free with free_url_spec().
+ * Description :  Creates a "pattern_spec" structure from a string.
+ *                When finished, free with free_pattern_spec().
  *
  * Parameters  :
- *          1  :  url = Target url_spec to be filled in.  Will be
- *                      zeroed before use.
+ *          1  :  pattern = Target pattern_spec to be filled in.
+ *                          Will be zeroed before use.
  *          2  :  buf = Source pattern, null terminated.  NOTE: The
  *                      contents of this buffer are destroyed by this
  *                      function.  If this function succeeds, the
- *                      buffer is copied to url->spec.  If this
+ *                      buffer is copied to pattern->spec.  If this
  *                      function fails, the contents of the buffer
  *                      are lost forever.
  *
@@ -1104,68 +1153,95 @@ static int domain_match(const struct url_spec *pattern, const struct http_reques
  *                               written to system log)
  *
  *********************************************************************/
-jb_err create_url_spec(struct url_spec *url, char *buf)
+jb_err create_pattern_spec(struct pattern_spec *pattern, char *buf)
 {
-   assert(url);
+   static const struct
+   {
+      /** The tag pattern prefix to match */
+      const char *prefix;
+
+      /** The length of the prefix to match */
+      const size_t prefix_length;
+
+      /** The pattern flag */
+      const unsigned flag;
+   } tag_pattern[] = {
+      { "TAG:",              4, PATTERN_SPEC_TAG_PATTERN},
+      { "NO-REQUEST-TAG:",  15, PATTERN_SPEC_NO_REQUEST_TAG_PATTERN},
+      { "NO-RESPONSE-TAG:", 16, PATTERN_SPEC_NO_RESPONSE_TAG_PATTERN}
+   };
+   int i;
+
+   assert(pattern);
    assert(buf);
 
-   memset(url, '\0', sizeof(*url));
+   memset(pattern, '\0', sizeof(*pattern));
 
    /* Remember the original specification for the CGI pages. */
-   url->spec = strdup_or_die(buf);
+   pattern->spec = strdup_or_die(buf);
 
-   /* Is it a tag pattern? */
-   if (0 == strncmpic(url->spec, "TAG:", 4))
+   /* Check if it's a tag pattern */
+   for (i = 0; i < SZ(tag_pattern); i++)
    {
-      /* The pattern starts with the first character after "TAG:" */
-      const char *tag_pattern = buf + 4;
-      return compile_pattern(tag_pattern, NO_ANCHORING, url, &url->tag_regex);
+      if (0 == strncmpic(pattern->spec, tag_pattern[i].prefix, tag_pattern[i].prefix_length))
+      {
+         /* The regex starts after the prefix */
+         const char *tag_regex = buf + tag_pattern[i].prefix_length;
+
+         pattern->flags |= tag_pattern[i].flag;
+
+         return compile_pattern(tag_regex, NO_ANCHORING, pattern,
+            &pattern->pattern.tag_regex);
+      }
    }
 
    /* If it isn't a tag pattern it must be an URL pattern. */
-   return compile_url_pattern(url, buf);
+   pattern->flags |= PATTERN_SPEC_URL_PATTERN;
+
+   return compile_url_pattern(pattern, buf);
+
 }
 
 
 /*********************************************************************
  *
- * Function    :  free_url_spec
+ * Function    :  free_pattern_spec
  *
- * Description :  Called from the "unloaders".  Freez the url
+ * Description :  Called from the "unloaders".  Freez the pattern
  *                structure elements.
  *
  * Parameters  :
- *          1  :  url = pointer to a url_spec structure.
+ *          1  :  pattern = pointer to a pattern_spec structure.
  *
  * Returns     :  N/A
  *
  *********************************************************************/
-void free_url_spec(struct url_spec *url)
+void free_pattern_spec(struct pattern_spec *pattern)
 {
-   if (url == NULL) return;
+   if (pattern == NULL) return;
 
-   freez(url->spec);
+   freez(pattern->spec);
 #ifdef FEATURE_EXTENDED_HOST_PATTERNS
-   if (url->host_regex)
+   if (pattern->pattern.url_spec.host_regex)
    {
-      regfree(url->host_regex);
-      freez(url->host_regex);
+      regfree(pattern->pattern.url_spec.host_regex);
+      freez(pattern->pattern.url_spec.host_regex);
    }
 #else
-   freez(url->dbuffer);
-   freez(url->dvec);
-   url->dcount = 0;
+   freez(pattern->pattern.url_spec.dbuffer);
+   freez(pattern->pattern.url_spec.dvec);
+   pattern->pattern.url_spec.dcount = 0;
 #endif /* ndef FEATURE_EXTENDED_HOST_PATTERNS */
-   freez(url->port_list);
-   if (url->preg)
+   freez(pattern->pattern.url_spec.port_list);
+   if (pattern->pattern.url_spec.preg)
    {
-      regfree(url->preg);
-      freez(url->preg);
+      regfree(pattern->pattern.url_spec.preg);
+      freez(pattern->pattern.url_spec.preg);
    }
-   if (url->tag_regex)
+   if (pattern->pattern.tag_regex)
    {
-      regfree(url->tag_regex);
-      freez(url->tag_regex);
+      regfree(pattern->pattern.tag_regex);
+      freez(pattern->pattern.tag_regex);
    }
 }
 
@@ -1203,13 +1279,13 @@ static int port_matches(const int port, const char *port_list)
  *
  *********************************************************************/
 static int host_matches(const struct http_request *http,
-                        const struct url_spec *pattern)
+                        const struct pattern_spec *pattern)
 {
 #ifdef FEATURE_EXTENDED_HOST_PATTERNS
-   return ((NULL == pattern->host_regex)
-      || (0 == regexec(pattern->host_regex, http->host, 0, NULL, 0)));
+   return ((NULL == pattern->pattern.url_spec.host_regex)
+      || (0 == regexec(pattern->pattern.url_spec.host_regex, http->host, 0, NULL, 0)));
 #else
-   return ((NULL == pattern->dbuffer) || (0 == domain_match(pattern, http)));
+   return ((NULL == pattern->pattern.url_spec.dbuffer) || (0 == domain_match(pattern, http)));
 #endif
 }
 
@@ -1227,10 +1303,10 @@ static int host_matches(const struct http_request *http,
  * Returns     :  TRUE for yes, FALSE otherwise.
  *
  *********************************************************************/
-static int path_matches(const char *path, const struct url_spec *pattern)
+static int path_matches(const char *path, const struct pattern_spec *pattern)
 {
-   return ((NULL == pattern->preg)
-      || (0 == regexec(pattern->preg, path, 0, NULL, 0)));
+   return ((NULL == pattern->pattern.url_spec.preg)
+      || (0 == regexec(pattern->pattern.url_spec.preg, path, 0, NULL, 0)));
 }
 
 
@@ -1247,16 +1323,16 @@ static int path_matches(const char *path, const struct url_spec *pattern)
  * Returns     :  Nonzero if the URL matches the pattern, else 0.
  *
  *********************************************************************/
-int url_match(const struct url_spec *pattern,
+int url_match(const struct pattern_spec *pattern,
               const struct http_request *http)
 {
-   if (pattern->tag_regex != NULL)
+   if (!(pattern->flags & PATTERN_SPEC_URL_PATTERN))
    {
-      /* It's a tag pattern and shouldn't be matched against URLs */
+      /* It's not an URL pattern and thus shouldn't be matched against URLs */
       return 0;
    }
 
-   return (port_matches(http->port, pattern->port_list)
+   return (port_matches(http->port, pattern->pattern.url_spec.port_list)
       && host_matches(http, pattern) && path_matches(http->path, pattern));
 
 }

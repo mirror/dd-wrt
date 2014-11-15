@@ -40,8 +40,8 @@ compiler like gcc are required.
 
 When building from a source tarball, first unpack the source:
 
- tar xzvf privoxy-3.0.21-stable-src.tar.gz
- cd privoxy-3.0.21-stable
+ tar xzvf privoxy-3.0.22-stable-src.tar.gz
+ cd privoxy-3.0.22-stable
 
 For retrieving the current CVS sources, you'll need a CVS client installed.
 Note that sources from CVS are typically development quality, and may not be

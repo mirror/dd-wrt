@@ -6,7 +6,7 @@
   <title>The Main Configuration File</title>
   <meta name="GENERATOR" content=
   "Modular DocBook HTML Stylesheet Version 1.79">
-  <link rel="HOME" title="Privoxy 3.0.21 User Manual" href="index.html">
+  <link rel="HOME" title="Privoxy 3.0.22 User Manual" href="index.html">
   <link rel="PREVIOUS" title="Privoxy Configuration" href=
   "configuration.html">
   <link rel="NEXT" title="Actions Files" href="actions-file.html">
@@ -21,7 +21,7 @@
     <table summary="Header navigation table" width="100%" border="0"
     cellpadding="0" cellspacing="0">
       <tr>
-        <th colspan="3" align="center">Privoxy 3.0.21 User Manual</th>
+        <th colspan="3" align="center">Privoxy 3.0.22 User Manual</th>
       </tr>
 
       <tr>
@@ -430,7 +430,55 @@
       </div>
 
       <div class="SECT3">
-        <h4 class="SECT3"><a name="LOGDIR" id="LOGDIR">7.2.3. logdir</a></h4>
+        <h4 class="SECT3"><a name="TEMPORARY-DIRECTORY" id=
+        "TEMPORARY-DIRECTORY">7.2.3. temporary-directory</a></h4>
+
+        <div class="VARIABLELIST">
+          <dl>
+            <dt>Specifies:</dt>
+
+            <dd>
+              <p>A directory where Privoxy can create temporary files.</p>
+            </dd>
+
+            <dt>Type of value:</dt>
+
+            <dd>
+              <p>Path name</p>
+            </dd>
+
+            <dt>Default value:</dt>
+
+            <dd>
+              <p>unset</p>
+            </dd>
+
+            <dt>Effect if unset:</dt>
+
+            <dd>
+              <p>No temporary files are created, external filters don't
+              work.</p>
+            </dd>
+
+            <dt>Notes:</dt>
+
+            <dd>
+              <p>To execute <tt class="LITERAL"><a href=
+              "actions-file.html#EXTERNAL-FILTER" target="_top">external
+              filters</a></tt>, <span class="APPLICATION">Privoxy</span> has
+              to create temporary files. This directive specifies the
+              directory the temporary files should be written to.</p>
+
+              <p>It should be a directory only <span class=
+              "APPLICATION">Privoxy</span> (and trusted users) can
+              access.</p>
+            </dd>
+          </dl>
+        </div>
+      </div>
+
+      <div class="SECT3">
+        <h4 class="SECT3"><a name="LOGDIR" id="LOGDIR">7.2.4. logdir</a></h4>
 
         <div class="VARIABLELIST">
           <dl>
@@ -473,7 +521,7 @@
       </div>
 
       <div class="SECT3">
-        <h4 class="SECT3"><a name="ACTIONSFILE" id="ACTIONSFILE">7.2.4.
+        <h4 class="SECT3"><a name="ACTIONSFILE" id="ACTIONSFILE">7.2.5.
         actionsfile</a></h4><a name="DEFAULT.ACTION" id=
         "DEFAULT.ACTION"></a><a name="STANDARD.ACTION" id=
         "STANDARD.ACTION"></a><a name="USER.ACTION" id="USER.ACTION"></a>
@@ -544,22 +592,14 @@
 
               <p>Actions files contain all the per site and per URL
               configuration for ad blocking, cookie management, privacy
-              considerations, etc. There is no point in using <span class=
-              "APPLICATION">Privoxy</span> without at least one actions
-              file.</p>
-
-              <p>Note that since Privoxy 3.0.7, the complete filename,
-              including the <span class="QUOTE">".action"</span> extension
-              has to be specified. The syntax change was necessary to be
-              consistent with the other file options and to allow previously
-              forbidden characters.</p>
+              considerations, etc.</p>
             </dd>
           </dl>
         </div>
       </div>
 
       <div class="SECT3">
-        <h4 class="SECT3"><a name="FILTERFILE" id="FILTERFILE">7.2.5.
+        <h4 class="SECT3"><a name="FILTERFILE" id="FILTERFILE">7.2.6.
         filterfile</a></h4><a name="DEFAULT.FILTER" id="DEFAULT.FILTER"></a>
 
         <div class="VARIABLELIST">
@@ -630,7 +670,7 @@
       </div>
 
       <div class="SECT3">
-        <h4 class="SECT3"><a name="LOGFILE" id="LOGFILE">7.2.6.
+        <h4 class="SECT3"><a name="LOGFILE" id="LOGFILE">7.2.7.
         logfile</a></h4>
 
         <div class="VARIABLELIST">
@@ -676,27 +716,28 @@
               <p>Depending on the debug options below, the logfile may be a
               privacy risk if third parties can get access to it. As most
               users will never look at it, <span class=
-              "APPLICATION">Privoxy</span> 3.0.7 and later only log fatal
-              errors by default.</p>
+              "APPLICATION">Privoxy</span> only logs fatal errors by
+              default.</p>
 
               <p>For most troubleshooting purposes, you will have to change
               that, please refer to the debugging section for details.</p>
 
-              <p>Your logfile will grow indefinitely, and you will probably
-              want to periodically remove it. On Unix systems, you can do
-              this with a cron job (see <span class="QUOTE">"man
-              cron"</span>).</p>
-
               <p>Any log files must be writable by whatever user <span class=
               "APPLICATION">Privoxy</span> is being run as (on Unix, default
               user id is <span class="QUOTE">"privoxy"</span>).</p>
+
+              <p>To prevent the logfile from growing indefinitely, it is
+              recommended to periodically rotate or shorten it. Many
+              operating systems support log rotation out of the box, some
+              require additional software to do it. For details, please refer
+              to the documentation for your operating system.</p>
             </dd>
           </dl>
         </div>
       </div>
 
       <div class="SECT3">
-        <h4 class="SECT3"><a name="TRUSTFILE" id="TRUSTFILE">7.2.7.
+        <h4 class="SECT3"><a name="TRUSTFILE" id="TRUSTFILE">7.2.8.
         trustfile</a></h4>
 
         <div class="VARIABLELIST">
@@ -859,11 +900,6 @@
               problem. They can produce a hell of an output (especially
               16).</p>
 
-              <p><span class="APPLICATION">Privoxy</span> used to ship with
-              the debug levels recommended above enabled by default, but due
-              to privacy concerns 3.0.7 and later are configured to only log
-              fatal errors.</p>
-
               <p>If you are used to the more verbose settings, simply enable
               the debug lines below again.</p>
 
@@ -901,15 +937,14 @@
             <dt>Type of value:</dt>
 
             <dd>
-              <p><span class="emphasis"><i class=
-              "EMPHASIS">None</i></span></p>
+              <p><span class="emphasis"><i class="EMPHASIS">1 or
+              0</i></span></p>
             </dd>
 
             <dt>Default value:</dt>
 
             <dd>
-              <p><span class="emphasis"><i class=
-              "EMPHASIS">Unset</i></span></p>
+              <p><span class="emphasis"><i class="EMPHASIS">0</i></span></p>
             </dd>
 
             <dt>Effect if unset:</dt>
@@ -2031,7 +2066,7 @@
                 <tr>
                   <td>
                     <pre class="SCREEN">
-  forward-socks5   /               127.0.0.1:9050 .
+  forward-socks5t   /               127.0.0.1:9050 .
 </pre>
                   </td>
                 </tr>
@@ -2288,6 +2323,9 @@
               option and configure your packet filter to redirect outgoing
               HTTP connections into <span class=
               "APPLICATION">Privoxy</span>.</p>
+
+              <p>Note that intercepting encrypted connections (HTTPS) isn't
+              supported.</p>
 
               <p>Make sure that <span class="APPLICATION">Privoxy's</span>
               own requests aren't redirected as well. Additionally take care
@@ -2909,15 +2947,15 @@
             <dt>Notes:</dt>
 
             <dd>
-              <p>This is a work-around for Firefox bug 492459: <span class=
-              "QUOTE">" Websites are no longer rendered if SSL requests for
-              JavaScripts are blocked by a proxy. "</span> (<a href=
+              <p>This directive was added as a work-around for Firefox bug
+              492459: <span class="QUOTE">" Websites are no longer rendered
+              if SSL requests for JavaScripts are blocked by a proxy.
+              "</span> (<a href=
               "https://bugzilla.mozilla.org/show_bug.cgi?id=492459" target=
-              "_top">https://bugzilla.mozilla.org/show_bug.cgi?id=492459</a>)
-              As the bug has been fixed for quite some time this option
-              should no longer be needed and will be removed in a future
-              release. Please speak up if you have a reason why the option
-              should be kept around.</p>
+              "_top">https://bugzilla.mozilla.org/show_bug.cgi?id=492459</a>),
+              the bug has been fixed for quite some time, but this directive
+              is also useful to make it harder for websites to detect whether
+              or not resources are being blocked.</p>
             </dd>
           </dl>
         </div>
