@@ -344,7 +344,7 @@ static int etherip_tunnel_ioctl(struct net_device *dev, struct ifreq *ifr,
 			err = -ENOMEM;
 			tmp_dev = alloc_netdev(
 					sizeof(struct etherip_tunnel),
-					dev_name,
+					dev_name,NET_NAME_UNKNOWN,
 					etherip_tunnel_setup);
 
 			if (tmp_dev == NULL)
@@ -536,7 +536,7 @@ static int __init etherip_init(void)
 	}
 
 	etherip_tunnel_dev = alloc_netdev(sizeof(struct etherip_tunnel),
-			"etherip0",
+			"etherip0",NET_NAME_UNKNOWN,
 			etherip_tunnel_setup);
 
 	if (!etherip_tunnel_dev) {

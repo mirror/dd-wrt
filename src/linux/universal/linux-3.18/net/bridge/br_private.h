@@ -636,11 +636,6 @@ static inline struct net_port_vlans *nbp_get_vlan_info(
 	return rcu_dereference_rtnl(p->vlan_info);
 }
 
-static inline int nbp_vlan_init(struct net_bridge_port *port)
-{
-	return 0;
-}
-
 /* Since bridge now depends on 8021Q module, but the time bridge sees the
  * skb, the vlan tag will always be present if the frame was tagged.
  */
@@ -700,6 +695,11 @@ static inline struct sk_buff *br_handle_vlan(struct net_bridge *br,
 	return skb;
 }
 
+static inline int nbp_vlan_init(struct net_bridge_port *port)
+{
+	return 0;
+}
+
 static inline int br_vlan_add(struct net_bridge *br, u16 vid, u16 flags)
 {
 	return -EOPNOTSUPP;
@@ -719,14 +719,15 @@ static inline bool br_vlan_find(struct net_bridge *br, u16 vid)
 	return false;
 }
 
-static inline void br_recalculate_fwd_mask(struct net_bridge *br)
-{
-}
-
 static inline int br_vlan_init(struct net_bridge *br)
 {
 	return 0;
 }
+
+static inline void br_recalculate_fwd_mask(struct net_bridge *br)
+{
+}
+
 
 static inline int nbp_vlan_add(struct net_bridge_port *port, u16 vid, u16 flags)
 {

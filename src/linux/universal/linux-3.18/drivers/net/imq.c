@@ -875,7 +875,7 @@ static int __init imq_init_one(int index)
 	struct net_device *dev;
 	int ret;
 
-	dev = alloc_netdev_mq(0, "imq%d", imq_setup, numqueues);
+	dev = alloc_netdev_mq(0, "imq%d", NET_NAME_UNKNOWN, imq_setup, numqueues);
 	if (!dev)
 		return -ENOMEM;
 
