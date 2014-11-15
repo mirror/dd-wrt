@@ -614,7 +614,7 @@ static void batadv_softif_init_early(struct net_device *dev)
 	memset(priv, 0, sizeof(*priv));
 }
 
-#if LINUX_VERSION_CODE > KERNEL_VERSION(3,15,0)
+#if LINUX_VERSION_CODE > KERNEL_VERSION(3,16,0)
 typedef struct ctl_table ctl_table;
 #define m_alloc_netdev(a,b,c) alloc_netdev(a,b,NET_NAME_UNKNOWN, c)
 #else
