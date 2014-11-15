@@ -39,17 +39,6 @@ static inline int should_deliver(const struct net_bridge_port *p,
 /* Fill in the header for fragmented IP packets handled by
  * the IPv4 connection tracking code.
  */
-#ifdef CONFIG_BRIDGE_NETFILTER
-
-static inline void nf_bridge_update_protocol(struct sk_buff *skb)
-{
-	if (skb->nf_bridge->mask & BRNF_8021Q)
-		skb->protocol = htons(ETH_P_8021Q);
-	else if (skb->nf_bridge->mask & BRNF_PPPoE)
-		skb->protocol = htons(ETH_P_PPP_SES);
-}
-EXPORT_SYMBOL_GPL(br_dev_queue_push_xmit);
-#endif
 int br_dev_queue_push_xmit(struct sk_buff *skb)
 {
 	/* ip_fragment doesn't copy the MAC header */
@@ -64,8 +53,6 @@ int br_dev_queue_push_xmit(struct sk_buff *skb)
 
 	return 0;
 }
-EXPORT_SYMBOL_GPL(br_forward_finish);
-
 EXPORT_SYMBOL(br_dev_queue_push_xmit);
 
 int br_forward_finish(struct sk_buff *skb)

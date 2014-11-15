@@ -955,7 +955,7 @@ EXPORT_SYMBOL_GPL(add_disk_randomness);
  */
 void random_input_words(__u32 *buf, size_t wordcount, int ent_count)
 {
-        mix_pool_bytes(&input_pool, buf, wordcount*4, NULL);
+	mix_pool_bytes(&input_pool, buf, wordcount*4);
 
         credit_entropy_bits(&input_pool, ent_count);
 	/*

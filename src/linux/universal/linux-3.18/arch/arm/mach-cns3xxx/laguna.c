@@ -958,7 +958,7 @@ static int __init cns3xxx_pciextirq_disable(char *s)
 __setup("noextirq", cns3xxx_pciextirq_disable);
 
 
-static int __init laguna_pcie_init(void)
+static void __init laguna_pcie_init(void)
 {
 	u32 __iomem *mem = (void __iomem *)(CNS3XXX_GPIOB_BASE_VIRT + 0x0004);
 	u32 reg = (__raw_readl(mem) >> 26) & 0xf;
@@ -980,11 +980,13 @@ static int __init laguna_pcie_init(void)
 		printk("laguna: using isolated PCI interrupts:"
 		       " irq%d/irq%d/irq%d/irq%d\n",
 		       irqs[0], irqs[1], irqs[2], irqs[3]);
-		return cns3xxx_pcie_init(irqs, NULL);
+		cns3xxx_pcie_init(irqs, NULL);
+		return;
 	}
 	printk("laguna: using shared PCI interrupts: irq%d\n",
 	       IRQ_CNS3XXX_PCIE0_DEVICE);
-	return cns3xxx_pcie_init(NULL, NULL);
+	cns3xxx_pcie_init(NULL, NULL);
+	return;
 }
 
 extern void __init cns3xxx_gpio_init(int gpio_base, int ngpio,
