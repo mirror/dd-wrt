@@ -1433,7 +1433,7 @@ br_multicast_leave_group(struct net_bridge *br,
 			 struct net_bridge_port *port,
 			 struct br_ip *group,
 			 struct bridge_mcast_other_query *other_query,
-			 struct bridge_mcast_own_query *own_query
+			 struct bridge_mcast_own_query *own_query,
 			 const unsigned char *src)
 {
 	struct net_bridge_mdb_htable *mdb;

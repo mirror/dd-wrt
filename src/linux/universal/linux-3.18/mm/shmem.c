@@ -848,7 +848,7 @@ redirty:
 	unlock_page(page);
 	return 0;
 }
-
+#error "check"
 #ifdef CONFIG_NUMA
 #ifdef CONFIG_TMPFS
 static void shmem_show_mpol(struct seq_file *seq, struct mempolicy *mpol)
@@ -936,7 +936,6 @@ static inline struct page *shmem_alloc_page(gfp_t gfp,
 	return alloc_page(gfp);
 }
 #endif /* CONFIG_NUMA */
-
 #if !defined(CONFIG_NUMA) || !defined(CONFIG_TMPFS)
 static inline struct mempolicy *shmem_get_sbmpol(struct shmem_sb_info *sbinfo)
 {

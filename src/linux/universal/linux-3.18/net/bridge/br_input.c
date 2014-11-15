@@ -266,4 +266,3 @@ drop:
 	}
 	return RX_HANDLER_CONSUMED;
 }
-EXPORT_SYMBOL(br_handle_frame_finish);

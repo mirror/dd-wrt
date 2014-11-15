@@ -201,7 +201,6 @@ static void __exit br_deinit(void)
 {
 	stp_proto_unregister(&br_stp_proto);
 
-	dst_entries_destroy(&fake_dst_ops);
 	br_netlink_fini();
 	unregister_netdevice_notifier(&br_device_notifier);
 	brioctl_set(NULL);
