@@ -1,4 +1,4 @@
-$Id: TODO,v 1.80 2013/05/28 14:38:39 fabiankeil Exp $
+$Id: TODO,v 1.128 2014/11/12 12:00:10 fabiankeil Exp $
 
 Some Privoxy-related tasks, sorted by the time they
 have been added, not by priority.
@@ -6,10 +6,15 @@ have been added, not by priority.
 The latest version should be available at:
 http://ijbswa.cvs.sourceforge.net/viewvc/ijbswa/current/TODO
 
-1)  Add some regression tests. Filters should be tested automatically
+There's work in progress to fund development on these items using
+donations. If you want to donate, please have a look at:
+http://www.privoxy.org/faq/general.html#DONATE
+
+1)  Add more regression tests. Filters should be tested automatically
     (variables too). Could probably reuse large parts of Privoxy-Filter-Test.
     Note that there is currently work in progress to leverage curl's
-    test suite which could be used for this as well.
+    test suite, patches have been submitted upstream:
+    http://curl.haxx.se/mail/lib-2014-06/0070.html
 
 3)  Fix some more XXX: comments.
 
@@ -120,20 +125,15 @@ http://ijbswa.cvs.sourceforge.net/viewvc/ijbswa/current/TODO
     It would probably also make sense to look into what other
     projects did when migrating away from SF.
 
+    2014-05-13: Work in progress. Hosting wish list at the end
+    of this file.
+
+    Interested donors: 1.
+
 54) Move away from CVS to a more modern revision control system.
     Find out if there are any objection against going with Git.
-    Using Git would also have the advantage that SF now pretents
+    Using Git would also have the advantage that SF now pretends
     to support it, so we could do it independently from 53).
-
-55) Apply for Coverity scans: http://scan.coverity.com/
-
-56) Apply for the "free online access for qualified open-source
-    software projects" for the Co-Advisor HTTP compliance tests:
-    http://coad.measurement-factory.com/details.html#pricing
-
-57) Allow piping into external programs to allow more powerful
-    filters and policy decisions. Incomplete support available
-    in Fabian's popen branch.
 
 58) Move more template strings from the code into the actual templates.
 
@@ -216,7 +216,7 @@ http://ijbswa.cvs.sourceforge.net/viewvc/ijbswa/current/TODO
     and redirect requests for them to Privoxy.
 
 86) Add a server-body-tagger action. This is trivial as as all the
-    functionallity required to do it already exists.
+    functionality required to do it already exists.
 
 87) Add a client-body-tagger action. This is less trivial as we currently
     don't buffer client bodies. After 14) is implemented it would be
@@ -229,10 +229,6 @@ http://ijbswa.cvs.sourceforge.net/viewvc/ijbswa/current/TODO
 89) When multiple block actions apply, consider showing all the block
     reasons on the blocked page that haven't been overruled, not just
     the last one.
-
-90) Implement NO-TAG: patterns that enable a section if the
-    provided pattern doesn't match any TAG. This would make
-    some things cleaner.
 
 91) Add an optional limit for internal redirects. It would probably
     be reasonable to default to a limit of one and showing an error
@@ -255,7 +251,7 @@ http://ijbswa.cvs.sourceforge.net/viewvc/ijbswa/current/TODO
     for misconfigured setups.
 
 95) Support a non-standard client header in CONNECT requests that
-    contains the URL of the requested ressource, which is then treated
+    contains the URL of the requested resource, which is then treated
     like the request URL.
 
     This way the client could opt-in for path-based blocking of https
@@ -264,11 +260,9 @@ http://ijbswa.cvs.sourceforge.net/viewvc/ijbswa/current/TODO
     acceptable if the client and Privoxy are running on the same system
     or in a trusted environment.
 
-96) Enabled filters should be easier to look up. Currently most functions
-    that work with filters spent more (duplicated) code on finding
-    filters than on actually doing something useful with them. Dividing
-    filters by type instead of filter file would reduce the lookup-code
-    quite a bit.
+96) Filters should be easier to look up. Currently get_filter() has to
+    go through all filters and skip the filter types the caller isn't
+    interested in.
 
 98) When showing action section on the CGI pages, properly escape
     line breaks so they can be copy&pasted into action files without
@@ -276,7 +270,7 @@ http://ijbswa.cvs.sourceforge.net/viewvc/ijbswa/current/TODO
 
 99) Figure out a mechanism through which a user can easily enable
     site-specific action sections that are too aggressive to be
-    enalbled by default. This could be similiar to the presettings
+    enabled by default. This could be similar to the presettings
     in default.action, but could also be just another action file
     that isn't used by default.
 
@@ -287,7 +281,7 @@ http://ijbswa.cvs.sourceforge.net/viewvc/ijbswa/current/TODO
 102) Add an include directive to split the config file into several parts.
 
 103) Potential performance improvement for large action files:
-     when figuring out which actions apply, check the action bitmask
+     when figuring out which actions apply, check the action bit mask
      before pattern matching and skip section that wouldn't modify the
      actions already set. To increase the impact the sections would have
      to be applied in reverse.
@@ -305,15 +299,155 @@ http://ijbswa.cvs.sourceforge.net/viewvc/ijbswa/current/TODO
 107) Support more pcrs variables, for example $destination-ip-address
      and $source-ip-address.
 
-108) Allow to use a somewhat random string intead of PRIVOXY-FORCE.
+108) Allow to use a somewhat random string instead of PRIVOXY-FORCE.
 
 109) Let log_error() support the format specifier %S which should
      work like %s but escape new lines like %N. This would be useful
      to log the result of header filters which may inject new lines.
 
 110) Add a global-buffer-limit directive that roughly limits how
-     much malloc'ed memory Privoxy will use and can potentionally
+     much malloc'ed memory Privoxy will use and can potentially
      be smaller than (buffer-limit * max-client-connections).
 
 111) Reject requests if hosts and ports in request line and Host
      header don't match (before filters have been applied).
+
+112) If a header filter is used to inject another header by inserting
+     a \r\n (undocumented feature), detect it and split the headers so
+     following header actions do not treat them as a single string.
+     Alternatively add another header injection mechanism.
+
+113) Log statistics upon receiving a certain signal (SIGINFO or SIGUSR1).
+
+114) Properly deal with status code 100. The current "Continue hack"
+     can cause problems for gpg when uploading keys through Privoxy.
+
+115) Add ICAP (RFC 3507) support. FR #3615158.
+
+116) Due to the use of sscanf(), Privoxy currently will fail to properly
+     parse chunks whose size can't be represented with 32 bit. This is
+     unlikely to cause problems in the real world, but should eventually
+     be fixed anyway. See also:
+     https://bugzilla.mozilla.org/show_bug.cgi?id=959100
+
+118) There should be "escaped" dynamic variables that are guaranteed
+     not to break filters.
+
+119) Evaluate using pcre's jit mode.
+
+120) Add an option to limit pcre's recursion limit below the default.
+     On some platforms the recursion limit doesn't prevent pcre from
+     running out of stack space, causing the kernel to kill Privoxy
+     ungracefully.
+
+121) Add HTTP/2 support. As a first step, incomming HTTP/1.x requests
+     should be translated to outgoing HTTP/2 requests where possible
+     (and if desired by the user).
+
+122) Allow customized log messages.
+
+123) Evaluate if the voluntarily-disclose-session-keys option in Firefox
+     (and other browsers) can be leveraged. Probably depends on #16.
+
+124) Add support for the "lightweight OS capability and sandbox framework"
+     Capsicum. http://www.cl.cam.ac.uk/research/security/capsicum/
+     Interested donors: 1.
+
+125) Allow clients to HTTPS-encrypt the proxy connection.
+     Interested donors: 1.
+
+126) Run the Co-Advisor HTTP compliance tests, evaluate the results,
+     fix the compliance issues that aren't by design and document
+     the rest.
+     Note that Privoxy developers qualified for free account upgrades:
+     http://coad.measurement-factory.com/details.html#pricing
+
+127) Add "real" CGI support (serve program output instead of forwarding
+     the request). The work is mostly done due to +external-filter{}.
+
+128) Add a config directive to control the stack limit.
+
+129) Completely implement RFC 7230 4.1 (Chunked Transfer Coding).
+     Currently Privoxy doesn't properly deal with trailers which
+     are rarely used in the real world but should be supported anyway.
+
+130) Move header_tagger() out of the parser structs and let it execute
+     taggers one-by-one against all headers so the header order has less
+     influence on the tagging result. As a bonus, dynamic taggers would
+     have to be compiled less often.
+
+131) The handle-as-empty-doc-returns-ok directive should be replaced with
+     an action so the behaviour can be enabled on a per-request basis.
+     Interested donors: 1.
+
+132) Provide a Tor hidden service to reach the Privoxy website.
+     Interested donors: 1.
+
+133) Consider allowing bitcoin donations.
+     Interested donors: 1.
+
+134) Track the total number of bytes written to and received from a socket.
+
+135) Add OpenBSM audit support.
+
+136) Make builds reproducible.
+
+137) Add a (preferably vector-based) logo.
+
+138) Bring back the scripts to provide actions file feedback.
+
+     Once upon a time (~2003) there were scripts on the webserver
+     to make reporting action file feedback more convenient for the
+     user and the actual reports more useful for the developers.
+     They have been unusable for years and have thus been disabled,
+     but making the reporting mechanism available again would be a
+     good idea.
+
+##########################################################################
+
+Hosting wish list (relevant for #53)
+
+What we need:
+
+- Bug tracker
+- Mailinglists (Mailman with public archives preferred)
+- Webspace (on a Unix-like OS that works with the webserver targets
+  in GNUMakefile)
+- Source code repositories (currently CVS, but migrating away
+  from it is TODO #54 anyway and shouldn't be too much trouble)
+- Commit mails (preferably with unified diffs)
+
+(Unsorted) details to look at when evaluating hosters:
+
+1. Preferably no third-party ads and trackers.
+   External images, CSS and JavaScript may count as trackers
+   but texts like "supported by company XYZ" may be acceptable.
+
+2. JavaScript should be optional or not used at all.
+
+3. Services we don't need shouldn't be enabled anyway.
+   (We currently don't use Web forums, wikis, surveys etc.)
+
+4. It would be preferable if the hoster didn't have a bad track
+   record as far as user experience, security and privacy are
+   concerned and if the terms of service are "reasonable" and
+   haven't changed too often in the past. Updates in the past
+   should have been improvements and not regressions.
+
+5. It would be preferable if most of the server administration
+   is done by a trusted third-party (or at least not a lot of work
+   for us).
+
+6. The server(s) should be located in a country with laws we can
+   understand and follow (or at least not unintentionally violate).
+
+7. A server location in a country with some kind of due process
+   and strong data protection laws (at least on paper) would be
+   preferable.
+
+8. Given that Privoxy is a free software project it would be
+   preferable if the hoster would use free software where possible.
+
+9. Migrating away from the hoster in the future without losing
+   any important data should be possible without writing web
+   scrapers first.

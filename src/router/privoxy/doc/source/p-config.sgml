@@ -3,9 +3,9 @@
 
  Purpose     :  Used with other docs and files only.
 
- $Id: p-config.sgml,v 2.100 2013/03/07 14:10:48 fabiankeil Exp $
+ $Id: p-config.sgml,v 2.111 2014/11/14 11:31:24 fabiankeil Exp $
 
- Copyright (C) 2001-2011 Privoxy Developers http://www.privoxy.org/
+ Copyright (C) 2001-2014 Privoxy Developers http://www.privoxy.org/
  See LICENSE.
 
  ========================================================================
@@ -97,10 +97,10 @@
  Sample Configuration File for Privoxy &p-version;
 </title>
 <para>
- $Id: p-config.sgml,v 2.100 2013/03/07 14:10:48 fabiankeil Exp $
+ $Id: p-config.sgml,v 2.111 2014/11/14 11:31:24 fabiankeil Exp $
 </para>
 <para>
-Copyright (C) 2001-2013 Privoxy Developers http://www.privoxy.org/
+Copyright (C) 2001-2014 Privoxy Developers http://www.privoxy.org/
 </para>
 
 <para>
@@ -534,16 +534,6 @@ II. FORMAT OF THE CONFIGURATION FILE
    <para>
     No trailing <quote><literal>/</literal></quote>, please.
    </para>
-  <!--
-   This is really outdated and not likely to happen. HB 09/20/06
-   <para>
-    When development goes modular and multi-user, the blocker, filter, and
-    per-user config will be stored in subdirectories of <quote>confdir</quote>.
-    For now, the configuration directory structure is flat, except for
-    <filename>confdir/templates</filename>, where the HTML templates for CGI
-    output reside (e.g. <application>Privoxy's</application> 404 error page).
-   </para>
-  -->
   </listitem>
  </varlistentry>
 </variablelist>
@@ -595,6 +585,55 @@ II. FORMAT OF THE CONFIGURATION FILE
 </variablelist>
 
 <![%config-file;[<literallayout>@@#templdir .</literallayout>]]>
+</sect3>
+
+
+<!--   ~~~~~       New section      ~~~~~     -->
+<sect3 renderas="sect4" id="temporary-directory"><title>temporary-directory</title>
+
+<variablelist>
+ <varlistentry>
+  <term>Specifies:</term>
+  <listitem>
+   <para>A directory where Privoxy can create temporary files.</para>
+  </listitem>
+ </varlistentry>
+ <varlistentry>
+  <term>Type of value:</term>
+  <listitem>
+   <para>Path name</para>
+  </listitem>
+ </varlistentry>
+ <varlistentry>
+  <term>Default value:</term>
+  <listitem>
+   <para>unset</para>
+  </listitem>
+ </varlistentry>
+ <varlistentry>
+  <term>Effect if unset:</term>
+  <listitem>
+   <para>No temporary files are created, external filters don't work.</para>
+  </listitem>
+ </varlistentry>
+ <varlistentry>
+  <term>Notes:</term>
+  <listitem>
+   <para>
+    To execute <literal><ulink url="actions-file.html#EXTERNAL-FILTER">external filters</ulink></literal>,
+    <application>Privoxy</application> has to create temporary files.
+    This directive specifies the directory the temporary files should
+    be written to.
+   </para>
+   <para>
+    It should be a directory only <application>Privoxy</application>
+    (and trusted users) can access.
+   </para>
+  </listitem>
+ </varlistentry>
+</variablelist>
+
+<![%config-file;[<literallayout>@@#temporary-directory .</literallayout>]]>
 </sect3>
 
 
@@ -704,13 +743,6 @@ actionsfile
    <para>
     Actions files contain all the per site and per URL configuration for
     ad blocking, cookie management, privacy considerations, etc.
-    There is no point in using <application>Privoxy</application> without at
-    least one actions file.
-   </para>
-   <para>
-    Note that since Privoxy 3.0.7, the complete filename, including the <quote>.action</quote>
-    extension has to be specified.  The syntax change was necessary to be consistent
-    with the other file options and to allow previously forbidden characters.
    </para>
   </listitem>
  </varlistentry>
@@ -847,21 +879,21 @@ actionsfile
    <para>
     Depending on the debug options below, the logfile may be a privacy risk
     if third parties can get access to it. As most users will never look
-    at it, <application>Privoxy</application> 3.0.7 and later only log fatal
-    errors by default.
+    at it, <application>Privoxy</application> only logs fatal errors by default.
    </para>
    <para>
     For most troubleshooting purposes, you will have to change that,
     please refer to the debugging section for details.
    </para>
    <para>
-    Your logfile will grow indefinitely, and you will probably want to
-    periodically remove it.  On Unix systems, you can do this with a cron job
-    (see <quote>man cron</quote>).
-   </para>
-   <para>
     Any log files must be writable by whatever user <application>Privoxy</application>
     is being run as (on Unix, default user id is <quote>privoxy</quote>).
+   </para>
+   <para>
+    To prevent the logfile from growing indefinitely, it is recommended to
+    periodically rotate or shorten it. Many operating systems support log
+    rotation out of the box, some require additional software to do it.
+    For details, please refer to the documentation for your operating system.
    </para>
   </listitem>
  </varlistentry>
@@ -1036,11 +1068,6 @@ actionsfile
     <!-- LOL -->
    </para>
    <para>
-    &my-app; used to ship with the debug levels recommended above enabled by
-    default, but due to privacy concerns 3.0.7 and later are configured to
-    only log fatal errors.
-   </para>
-   <para>
     If you are used to the more verbose settings, simply enable the debug lines
     below again.
    </para>
@@ -1084,13 +1111,13 @@ actionsfile
  <varlistentry>
   <term>Type of value:</term>
   <listitem>
-   <para><emphasis>None</emphasis></para>
+   <para><emphasis>1 or 0</emphasis></para>
   </listitem>
  </varlistentry>
  <varlistentry>
   <term>Default value:</term>
   <listitem>
-   <para><emphasis>Unset</emphasis></para>
+   <para><emphasis>0</emphasis></para>
   </listitem>
  </varlistentry>
  <varlistentry>
@@ -1113,7 +1140,7 @@ actionsfile
  </varlistentry>
 </variablelist>
 
-<![%config-file;[<literallayout>@@#single-threaded</literallayout>]]>
+<![%config-file;[<literallayout>@@#single-threaded 1</literallayout>]]>
 </sect3>
 
 <!--   ~~~~~       New section      ~~~~~     -->
@@ -2195,7 +2222,7 @@ forward-socks4, forward-socks4a, forward-socks5 and forward-socks5t</title>
    </para>
    <para>
     <screen>
-  forward-socks5   /               127.0.0.1:9050 .
+  forward-socks5t   /               127.0.0.1:9050 .
 </screen>
    </para>
 
@@ -2435,6 +2462,9 @@ forward-socks4, forward-socks4a, forward-socks5 and forward-socks5t</title>
     to use <application>Privoxy</application>, enable this
     option and configure your packet filter to redirect outgoing
     HTTP connections into <application>Privoxy</application>.
+   </para>
+   <para>
+    Note that intercepting encrypted connections (HTTPS) isn't supported.
    </para>
    <para>
     Make sure that <application>Privoxy's</application> own requests
@@ -3107,15 +3137,13 @@ forward-socks4, forward-socks4a, forward-socks5 and forward-socks5t</title>
   <term>Notes:</term>
   <listitem>
    <para>
-    This is a work-around for Firefox bug 492459:
-    <quote>
-    Websites are no longer rendered if SSL requests for JavaScripts are blocked by a proxy.
-    </quote>
+    This directive was added as a work-around for Firefox bug 492459:
+    <quote>Websites are no longer rendered if SSL requests for JavaScripts are blocked by a proxy.</quote>
     (<ulink url="https://bugzilla.mozilla.org/show_bug.cgi?id=492459"
-	>https://bugzilla.mozilla.org/show_bug.cgi?id=492459</ulink>)
-    As the bug has been fixed for quite some time this option should no longer
-    be needed and will be removed in a future release. Please speak up if you
-    have a reason why the option should be kept around.
+	>https://bugzilla.mozilla.org/show_bug.cgi?id=492459</ulink>),
+    the bug has been fixed for quite some time, but this directive is also useful
+    to make it harder for websites to detect whether or not resources are being
+    blocked.
    </para>
   </listitem>
  </varlistentry>

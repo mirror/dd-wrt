@@ -1,6 +1,6 @@
 #ifndef JCC_H_INCLUDED
 #define JCC_H_INCLUDED
-#define JCC_H_VERSION "$Id: jcc.h,v 1.32 2011/11/06 11:48:23 fabiankeil Exp $"
+#define JCC_H_VERSION "$Id: jcc.h,v 1.35 2014/06/02 06:22:21 fabiankeil Exp $"
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/jcc.h,v $
@@ -8,7 +8,7 @@
  * Purpose     :  Main file.  Contains main() method, main loop, and
  *                the main connection-handling function.
  *
- * Copyright   :  Written by and Copyright (C) 2001-2006 the SourceForge
+ * Copyright   :  Written by and Copyright (C) 2001-2014 the
  *                Privoxy team. http://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -35,10 +35,6 @@
  *
  *********************************************************************/
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 struct client_state;
 struct file_list;
@@ -83,6 +79,10 @@ extern privoxy_mutex_t log_mutex;
 extern privoxy_mutex_t log_init_mutex;
 extern privoxy_mutex_t connection_reuse_mutex;
 
+#ifdef FEATURE_EXTERNAL_FILTERS
+extern privoxy_mutex_t external_filter_mutex;
+#endif
+
 #ifndef HAVE_GMTIME_R
 extern privoxy_mutex_t gmtime_mutex;
 #endif /* ndef HAVE_GMTIME_R */
@@ -112,10 +112,6 @@ int main(int argc, char **argv);
 /* Revision control strings from this header and associated .c file */
 extern const char jcc_rcs[];
 extern const char jcc_h_rcs[];
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
 #endif /* ndef JCC_H_INCLUDED */
 

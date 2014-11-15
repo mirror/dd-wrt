@@ -13,11 +13,11 @@
 <!entity p-authors SYSTEM "p-authors.sgml">
 <!entity config SYSTEM "p-config.sgml">
 <!entity changelog SYSTEM "changelog.sgml">
-<!entity p-version "3.0.21">
-<!entity p-status "stable">
+<!entity p-version "3.0.22">
+<!entity p-status "UNRELEASED">
 <!entity % p-authors-formal "INCLUDE"> <!-- include additional text, etc  -->
-<!entity % p-not-stable "IGNORE">
-<!entity % p-stable "INCLUDE">
+<!entity % p-not-stable "INCLUDE">
+<!entity % p-stable "IGNORE">
 <!entity % p-text "IGNORE">        <!-- define we are not a text only doc -->
 <!entity % p-doc "INCLUDE">        <!-- and we are a formal doc           -->
 <!entity % p-readme "IGNORE">
@@ -36,9 +36,9 @@
                 This file belongs into
                 ijbswa.sourceforge.net:/home/groups/i/ij/ijbswa/htdocs/
 
- $Id: user-manual.sgml,v 2.174 2013/03/02 14:39:24 fabiankeil Exp $
+ $Id: user-manual.sgml,v 2.194 2014/10/21 15:30:52 fabiankeil Exp $
 
- Copyright (C) 2001-2013 Privoxy Developers http://www.privoxy.org/
+ Copyright (C) 2001-2014 Privoxy Developers http://www.privoxy.org/
  See LICENSE.
 
  ========================================================================
@@ -57,12 +57,12 @@
  <subscript>
 <!-- Completely the wrong markup, but very little is allowed  -->
 <!-- in this part of an article. FIXME -->
- <link linkend="copyright">Copyright</link> &my-copy; 2001-2013 by
+ <link linkend="copyright">Copyright</link> &my-copy; 2001-2014 by
  <ulink url="http://www.privoxy.org/">Privoxy Developers</ulink>
  </subscript>
 </pubdate>
 
-<pubdate>$Id: user-manual.sgml,v 2.174 2013/03/02 14:39:24 fabiankeil Exp $</pubdate>
+<pubdate>$Id: user-manual.sgml,v 2.194 2014/10/21 15:30:52 fabiankeil Exp $</pubdate>
 
 <!--
 
@@ -623,18 +623,6 @@ How to install the binary packages depends on your operating system:
     <quote>misbehave</quote>.
   </para>
  </listitem>
-
-<!--
- Did anyone test these lately?
- fk 2007-11-10
- <listitem>
-  <para>
-   For easy access to &my-app;'s most important controls, drag the provided
-   <link linkend="bookmarklets">Bookmarklets</link> into your browser's
-   personal toolbar.
-  </para>
- </listitem>
--->
 
  <listitem>
   <para>
@@ -1344,9 +1332,10 @@ must find a better place for this paragraph
    <emphasis>--pre-chroot-nslookup hostname</emphasis>
   </para>
   <para>
-   Specifies a hostname to look up before doing a chroot. On some systems, initializing the
-   resolver library involves reading config files from /etc and/or loading additional shared
-   libraries from /lib. On these systems, doing a hostname lookup before the chroot reduces
+   Specifies a hostname (for example www.privoxy.org) to look up before doing a chroot.
+   On some systems, initializing the resolver library involves reading config files from
+   /etc and/or loading additional shared libraries from /lib.
+   On these systems, doing a hostname lookup before the chroot reduces
    the number of files that must be copied into the chroot tree.
   </para>
   <para>
@@ -1457,10 +1446,7 @@ for details.
  it as a test to see whether it is <application>Privoxy</application>
  causing the problem or not. <application>Privoxy</application> continues
  to run as a proxy in this case, but all manipulation is disabled, i.e.
- <application>Privoxy</application> acts like a normal forwarding proxy. There
- is even a toggle <link linkend="bookmarklets">Bookmarklet</link> offered, so
- that you can toggle <application>Privoxy</application> with one click from
- your browser.
+ <application>Privoxy</application> acts like a normal forwarding proxy.
 </para>
 
 <para>
@@ -1984,23 +1970,23 @@ for details.
 
 <para>
  Generally, an URL pattern has the form
- <literal>&lt;domain&gt;&lt;port&gt;/&lt;path&gt;</literal>, where the
- <literal>&lt;domain&gt;</literal>, the <literal>&lt;port&gt;</literal>
+ <literal>&lt;host&gt;&lt;port&gt;/&lt;path&gt;</literal>, where the
+ <literal>&lt;host&gt;</literal>, the <literal>&lt;port&gt;</literal>
  and the <literal>&lt;path&gt;</literal> are optional. (This is why the special
  <literal>/</literal> pattern matches all URLs). Note that the protocol
  portion of the URL pattern (e.g. <literal>http://</literal>) should
  <emphasis>not</emphasis> be included in the pattern. This is assumed already!
 </para>
 <para>
- The pattern matching syntax is different for the domain and path parts of
- the URL. The domain part uses a simple globbing type matching technique,
+ The pattern matching syntax is different for the host and path parts of
+ the URL. The host part uses a simple globbing type matching technique,
  while the path part uses more flexible
  <ulink url="http://en.wikipedia.org/wiki/Regular_expressions"><quote>Regular
   Expressions</quote></ulink> (POSIX 1003.2).
 </para>
 <para>
  The port part of a pattern is a decimal port number preceded by a colon
- (<literal>:</literal>). If the domain part contains a numerical IPv6 address,
+ (<literal>:</literal>). If the host part contains a numerical IPv6 address,
  it has to be put into angle brackets
  (<literal>&lt;</literal>, <literal>&gt;</literal>).
 </para>
@@ -2010,7 +1996,7 @@ for details.
   <term><literal>www.example.com/</literal></term>
   <listitem>
    <para>
-    is a domain-only pattern and will match any request to <literal>www.example.com</literal>,
+    is a host-only pattern and will match any request to <literal>www.example.com</literal>,
     regardless of which document on that server is requested. So ALL pages in
     this domain would be covered by the scope of this action. Note that a
     simple <literal>example.com</literal> is different and would NOT match.
@@ -2021,7 +2007,7 @@ for details.
   <term><literal>www.example.com</literal></term>
   <listitem>
    <para>
-    means exactly the same. For domain-only patterns, the trailing <literal>/</literal> may
+    means exactly the same. For host-only patterns, the trailing <literal>/</literal> may
     be omitted.
    </para>
   </listitem>
@@ -2071,6 +2057,15 @@ for details.
   </listitem>
  </varlistentry>
  <varlistentry>
+  <term><literal>10.0.0.1/</literal></term>
+  <listitem>
+   <para>
+    Matches any URL with the host address <literal>10.0.0.1</literal>.
+    (Note that the real URL uses plain brackets, not angle brackets.)
+   </para>
+  </listitem>
+ </varlistentry>
+ <varlistentry>
   <term><literal>&lt;2001:db8::1&gt;/</literal></term>
   <listitem>
    <para>
@@ -2093,11 +2088,13 @@ for details.
 
 
 <!--   ~~~~~       New section      ~~~~~     -->
-<sect3><title>The Domain Pattern</title>
+<sect3 id="host-pattern"><title>The Host Pattern</title>
 
 <para>
- The matching of the domain part offers some flexible options: if the
- domain starts or ends with a dot, it becomes unanchored at that end.
+ The matching of the host part offers some flexible options: if the
+ host pattern starts or ends with a dot, it becomes unanchored at that end.
+ The host pattern is often referred to as domain pattern as it is usually
+ used to match domain names and not IP addresses.
  For example:
 </para>
 
@@ -2362,6 +2359,23 @@ for details.
 </para>
 
 </sect3>
+
+<!--   ~~~~~       New section      ~~~~~     -->
+<sect3 id="negative-tag-patterns"><title>The Negative Tag Patterns</title>
+
+<para>
+ To match requests that do not have a certain tag, specify a negative tag pattern
+ by prefixing the tag pattern line with either <quote>NO-REQUEST-TAG:</quote>
+ or <quote>NO-RESPONSE-TAG:</quote> instead of <quote>TAG:</quote>.
+</para>
+
+<para>
+ Negative tag patterns created with <quote>NO-REQUEST-TAG:</quote> are checked
+ after all client headers are scanned, the ones created with <quote>NO-RESPONSE-TAG:</quote>
+ are checked after all server headers are scanned. In both cases all the created
+ tags are considered.
+</para>
+
 
 </sect2>
 
@@ -3573,6 +3587,94 @@ problem-host.example.com</screen>
 </sect3>
 
 <!--   ~~~~~       New section      ~~~~~     -->
+<sect3 renderas="sect4" id="external-filter">
+<title>external-filter</title>
+
+<variablelist>
+ <varlistentry>
+  <term>Typical use:</term>
+  <listitem>
+   <para>Modify content using a programming language of your choice.</para>
+  </listitem>
+ </varlistentry>
+
+ <varlistentry>
+  <term>Effect:</term>
+  <listitem>
+   <para>
+    All instances of text-based type, most notably HTML and JavaScript, to which
+    this action applies, can be filtered on-the-fly through the specified external
+    filter.
+    By default plain text documents are exempted from filtering, because web
+    servers often use the <literal>text/plain</literal> MIME type for all files
+    whose type they don't know.)
+   </para>
+  </listitem>
+ </varlistentry>
+
+ <varlistentry>
+  <term>Type:</term>
+  <!-- boolean, parameterized, Multi-value -->
+  <listitem>
+   <para>Parameterized.</para>
+  </listitem>
+ </varlistentry>
+
+ <varlistentry>
+  <term>Parameter:</term>
+  <listitem>
+   <para>
+    The name of an external content filter, as defined in the
+    <link linkend="filter-file">filter file</link>.
+    External filters can be defined in one or more files as defined by the
+    <literal><link linkend="filterfile">filterfile</link></literal>
+    option in the <link linkend="config">config file</link>.
+   </para>
+   <para>
+    When used in its negative form,
+    and without parameters, <emphasis>all</emphasis> filtering with external
+    filters is completely disabled.
+  </para>
+  </listitem>
+ </varlistentry>
+
+ <varlistentry>
+  <term>Notes:</term>
+  <listitem>
+   <para>
+    External filters are scripts or programs that can modify the content in
+    case common <literal><link linkend="filter">filters</link></literal>
+    aren't powerful enough. With the exception that this action doesn't
+    use pcrs-based filters, the notes in the
+    <literal><link linkend="filter">filter</link></literal> section apply.
+   </para>
+   <warning>
+    <para>
+     Currently external filters are executed with &my-app;'s privileges.
+     Only use external filters you understand and trust.
+    </para>
+   </warning>
+   <para>
+    This feature is experimental, the <literal><link
+    linkend="external-filter-syntax">syntax</link></literal>
+    may change in the future.
+   </para>
+
+  </listitem>
+ </varlistentry>
+
+ <varlistentry>
+  <term>Example usage:</term>
+  <listitem>
+   <para>
+    <screen>+external-filter{fancy-filter}</screen>
+   </para>
+  </listitem>
+ </varlistentry>
+</variablelist>
+</sect3>
+
+<!--   ~~~~~       New section      ~~~~~     -->
 <sect3 renderas="sect4" id="fast-redirects">
 <title>fast-redirects</title>
 
@@ -4098,7 +4200,8 @@ new action
     <para>
      If the ports are missing or invalid, default values will be used. This might change
      in the future and you shouldn't rely on it. Otherwise incorrect syntax causes Privoxy
-     to exit.
+     to exit. Due to design limitations, invalid parameter syntax isn't detected until the
+     action is used the first time.
     </para>
     <para>
      Use the <ulink url="http://config.privoxy.org/show-url-info">show-url-info CGI page</ulink>
@@ -4113,15 +4216,17 @@ new action
   <listitem>
    <para>
      <screen>
-# Always use direct connections for requests previously tagged as
+# Use an ssh tunnel for requests previously tagged as
 # <quote>User-Agent: fetch libfetch/2.0</quote> and make sure
 # resuming downloads continues to work.
+#
 # This way you can continue to use Tor for your normal browsing,
 # without overloading the Tor network with your FreeBSD ports updates
 # or downloads of bigger files like ISOs.
+#
 # Note that HTTP headers are easy to fake and therefore their
 # values are as (un)trustworthy as your clients and users.
-{+forward-override{forward .} \
+{+forward-override{forward-socks5 10.0.0.2:2222 .} \
  -hide-if-modified-since      \
  -overwrite-last-modified     \
 }
@@ -5251,9 +5356,15 @@ new action
     <link linkend="filter-file">filter file</link> section.
    </para>
    <para>
-    This action will be ignored if you use it together with
-    <literal><link linkend="block">block</link></literal>.
-    It can be combined with
+    Requests can't be blocked and redirected at the same time,
+    applying this action together with
+    <literal><link linkend="block">block</link></literal>
+    is a configuration error. Currently the request is blocked
+    and an error message logged, the behavior may change in the
+    future and result in Privoxy rejecting the action file.
+   </para>
+   <para>
+    This action can be combined with
     <literal><link linkend="fast-redirects">fast-redirects{check-decoded-url}</link></literal>
     to redirect to a decoded version of a rewritten URL.
    </para>
@@ -5278,7 +5389,7 @@ new action
  example.com/stylesheet\.css
 
 # Create a short, easy to remember nickname for a favorite site
-# (relies on the browser accept and forward invalid URLs to &my-app;)
+# (relies on the browser to accept and forward invalid URLs to &my-app;)
 { +redirect{http://www.privoxy.org/user-manual/actions-file.html} }
  a
 
@@ -5295,6 +5406,19 @@ undeadly.org/cgi\?action=article&amp;sid=\d*$
 # Redirect MSN search requests to Yahoo
 {+redirect{s@^http://[^/]*/results\.aspx\?q=([^&amp;]*).*@http://search.yahoo.com/search?p=$1@}}
 search.msn.com//results\.aspx\?q=
+
+# Redirect http://example.com/&amp;bla=fasel&amp;toChange=foo (and any other value but "bar")
+# to       http://example.com/&amp;bla=fasel&amp;toChange=bar
+#
+# The URL pattern makes sure that the following request isn't redirected again.
+{+redirect{s@toChange=[^&amp;]+@toChange=bar@}}
+example.com/.*toChange=(?!bar)
+
+# Add a shortcut to look up illumos bugs
+{+redirect{s@^http://i([0-9]+)/.*@https://www.illumos.org/issues/$1@}}
+# Redirected URL = http://i4974/
+# Redirect Destination = https://www.illumos.org/issues/4974
+i[0-9][0-9][0-9][0-9]*/
 
 # Redirect remote requests for this manual
 # to the local version delivered by Privoxy
@@ -5464,6 +5588,14 @@ example.org/instance-that-is-delivered-as-xml-but-is-not
 # Tag every request with the content type declared by the server
 {+server-header-tagger{content-type}}
 /
+
+# If the response has a tag starting with 'image/' enable an external
+# filter that only applies to images.
+#
+# Note that the filter is not available by default, it's just a
+# <literal><link linkend="external-filter-syntax">silly example</link></literal>.
+{+external-filter{rotate-image} +force-text-mode}
+TAG:^image/
     </screen>
     </para>
   </listitem>
@@ -6424,7 +6556,7 @@ stupid-server.example.com/</screen>
 </para>
 
 <para>
- &my-app; supports three different filter actions:
+ &my-app; supports three different pcrs-based filter actions:
  <literal><link linkend="filter">filter</link></literal> to
  rewrite the content that is send to the client,
  <literal><link linkend="client-header-filter">client-header-filter</link></literal>
@@ -6442,6 +6574,13 @@ stupid-server.example.com/</screen>
  is that taggers don't modify the text they are filtering, but use a rewritten
  version of the filtered text as tag. The tags can then be used to change the
  applying actions through sections with <link linkend="tag-pattern">tag-patterns</link>.
+</para>
+
+<para>
+ Finally &my-app; supports the
+ <literal><link linkend="external-filter">external-filter</link></literal> action
+ to enable <literal><link linkend="external-filter-syntax">external filters</link></literal>
+ written in proper programming languages.
 </para>
 
 
@@ -6516,9 +6655,35 @@ stupid-server.example.com/</screen>
  in a syntax that imitates <ulink url="http://www.perl.org/">Perl</ulink>'s
  <literal>s///</literal> operator. If you are familiar with Perl, you
  will find this to be quite intuitive, and may want to look at the
- PCRS documentation for the subtle differences to Perl behaviour. Most
- notably, the non-standard option letter <literal>U</literal> is supported,
- which turns the default to ungreedy matching.
+ PCRS documentation for the subtle differences to Perl behaviour.
+</para>
+
+<para>
+ Most notably, the non-standard option letter <literal>U</literal> is supported,
+ which turns the default to ungreedy matching (add <literal>?</literal> to
+ quantifiers to turn them greedy again).
+</para>
+
+<para>
+ The non-standard option letter <literal>D</literal> (dynamic) allows
+ to use the variables $host, $origin (the IP address the request came from),
+ $path and $url. They will be replaced with the value they refer to before
+ the filter is executed.
+</para>
+
+<para>
+ Note that '$' is a bad choice for a delimiter in a dynamic filter as you
+ might end up with unintended variables if you use a variable name
+ directly after the delimiter. Variables will be resolved without
+ escaping anything, therefore you also have to be careful not to chose
+ delimiters that appear in the replacement text. For example '<' should
+ be save, while '?' will sooner or later cause conflicts with $url.
+</para>
+
+<para>
+ The non-standard option letter <literal>T</literal> (trivial) prevents
+ parsing for backreferences in the substitute. Use it if you want to include
+ text like '$&' in your substitute without quoting.
 </para>
 
 <para>
@@ -7235,6 +7400,78 @@ pre-defined filters for your convenience:
 </variablelist>
 
 </sect2>
+
+<!--   ~~~~~~~~       New section Header    ~~~~~~~~~     -->
+<sect2 id="external-filter-syntax"><title>External filter syntax</title>
+<para>
+ External filters are scripts or programs that can modify the content in
+ case common <literal><link linkend="filter">filters</link></literal>
+ aren't powerful enough.
+</para>
+<para>
+ External filters can be written in any language the platform &my-app; runs
+ on supports.
+</para>
+<para>
+ They are controlled with the
+ <literal><link linkend="external-filter">external-filter</link></literal> action
+ and have to be defined in the <literal><link linkend="filterfile">filterfile</link></literal>
+ first.
+</para>
+<para>
+ The header looks like any other filter, but instead of pcrs jobs, external
+ filters contain a single job which can be a program or a shell script (which
+ may call other scripts or programs).
+</para>
+<para>
+ External filters read the content from STDIN and write the rewritten
+ content to STDOUT. The environment variables PRIVOXY_URL, PRIVOXY_PATH,
+ PRIVOXY_HOST, PRIVOXY_ORIGIN can be used to get some details about the
+ client request.
+</para>
+<para>
+ &my-app; will temporary store the content to filter in the
+ <literal><link linkend="temporary-directory">temporary-directory</link></literal>.
+</para>
+<para>
+ <screen>
+EXTERNAL-FILTER: cat Pointless example filter that doesn't actually modify the content
+/bin/cat
+
+# Incorrect reimplementation of the filter above in POSIX shell.
+#
+# Note that it's a single job that spans multiple lines, the line
+# breaks are not passed to the shell, thus the semicolons are required.
+#
+# If the script isn't trivial, it is recommended to put it into an external file.
+#
+# In general, writing external filters entirely in POSIX shell is not
+# considered a good idea.
+EXTERNAL-FILTER: cat2 Pointless example filter that despite its name may actually modify the content
+while read line; \
+do \
+  echo "$line"; \
+done
+
+EXTERNAL-FILTER: rotate-image Rotate an image by 180 degree. Test filter with limited value.
+/usr/local/bin/convert - -rotate 180 -
+
+EXTERNAL-FILTER: citation-needed Adds a "[citation needed]" tag to an image. The coordinates may need adjustment.
+/usr/local/bin/convert - -pointsize 16 -fill white  -annotate +17+418 "[citation needed]" -
+</screen>
+</para>
+
+<warning>
+ <para>
+  Currently external filters are executed with &my-app;'s privileges!
+  Only use external filters you understand and trust.
+ </para>
+</warning>
+<para>
+ External filters are experimental and the syntax may change in the future.
+</para>
+</sect2>
+
 </sect1>
 
 <!--  ~  End section  ~  -->
@@ -7753,84 +7990,6 @@ Requests</title>
  </itemizedlist>
 </para>
 
-<para>
- These may be bookmarked for quick reference. See next.
-
-</para>
-
-<sect3 id="bookmarklets">
-<title>Bookmarklets</title>
-<para>
- Below are some <quote>bookmarklets</quote> to allow you to easily access a
- <quote>mini</quote> version of some of <application>Privoxy's</application>
- special pages. They are designed for MS Internet Explorer, but should work
- equally well in Netscape, Mozilla, and other browsers which support
- JavaScript. They are designed to run directly from your bookmarks - not by
- clicking the links below (although that should work for testing).
-</para>
-<para>
- To save them, right-click the link and choose <quote>Add to Favorites</quote>
- (IE) or <quote>Add Bookmark</quote> (Netscape). You will get a warning that
- the bookmark <quote>may not be safe</quote> - just click OK. Then you can run the
- Bookmarklet directly from your favorites/bookmarks. For even faster access,
- you can put them on the <quote>Links</quote> bar (IE) or the <quote>Personal
- Toolbar</quote> (Netscape), and run them with a single click.
-</para>
-
-<para>
- <itemizedlist>
-
-  <listitem>
-   <para>
-    <ulink
-    url="javascript:void(window.open('http://config.privoxy.org/toggle?mini=y&#38;set=enabled','ijbstatus','width=250,height=100,resizable=yes,scrollbars=no,toolbar=no,location=no,directories=no,status=no,menubar=no,copyhistory=no').focus());">Privoxy - Enable</ulink>
-   </para>
-  </listitem>
-
-  <listitem>
-   <para>
-    <ulink
-    url="javascript:void(window.open('http://config.privoxy.org/toggle?mini=y&#38;set=disabled','ijbstatus','width=250,height=100,resizable=yes,scrollbars=no,toolbar=no,location=no,directories=no,status=no,menubar=no,copyhistory=no').focus());">Privoxy - Disable</ulink>
-   </para>
-  </listitem>
-
-  <listitem>
-   <para>
-    <ulink
-    url="javascript:void(window.open('http://config.privoxy.org/toggle?mini=y&#38;set=toggle','ijbstatus','width=250,height=100,resizable=yes,scrollbars=no,toolbar=no,location=no,directories=no,status=no,menubar=no,copyhistory=no').focus());">Privoxy - Toggle Privoxy</ulink> (Toggles between enabled and disabled)
-   </para>
-  </listitem>
-
-  <listitem>
-   <para>
-    <ulink
-    url="javascript:void(window.open('http://config.privoxy.org/toggle?mini=y','ijbstatus','width=250,height=2,resizable=yes,scrollbars=no,toolbar=no,location=no,directories=no,status=no,menubar=no,copyhistory=no').focus());">Privoxy- View Status</ulink>
-   </para>
-  </listitem>
-<!--
-  <listitem>
-   <para>
-    <ulink url="javascript:w=Math.floor(screen.width/2);h=Math.floor(screen.height*0.9);void(window.open('http://www.privoxy.org/actions/index.php?url='+escape(location.href),'Feedback','screenx='+w+',width='+w+',height='+h+',scrollbars=yes,toolbar=no,location=no,directories=no,status=no,menubar=no,copyhistory=no').focus());">Privoxy - Submit Actions File Feedback</ulink>
-   </para>
-  </listitem>
- -->
-  <listitem>
-   <para>
-    <ulink url="javascript:void(window.open('http://config.privoxy.org/show-url-info?url='+escape(location.href),'Why').focus());">Privoxy - Why?</ulink>
-   </para>
-  </listitem>
- </itemizedlist>
-</para>
-
-<para>
- Credit: The site which gave us the general idea for these bookmarklets is
- <ulink url="http://www.bookmarklets.com/">www.bookmarklets.com</ulink>. They
- have more information about bookmarklets.
-</para>
-
-
-</sect3>
-
 </sect2>
 
 
@@ -7982,8 +8141,7 @@ Requests</title>
 <para>
  One quick test to see if <application>Privoxy</application> is causing a problem
  or not, is to disable it temporarily. This should be the first troubleshooting
- step. See <link linkend="bookmarklets">the Bookmarklets</link> section on a quick
- and easy way to do this (be sure to flush caches afterward!). Looking at the
+ step (be sure to flush caches afterward!). Looking at the
  logs is a good idea too. (Note that both the toggle feature and logging are
  enabled via <filename>config</filename> file settings, and may need to be
  turned <quote>on</quote>.)

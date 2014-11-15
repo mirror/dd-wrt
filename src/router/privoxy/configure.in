@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
 dnl
-dnl $Id: configure.in,v 1.179 2013/03/01 17:40:18 fabiankeil Exp $
+dnl $Id: configure.in,v 1.186 2014/11/14 11:30:59 fabiankeil Exp $
 dnl
-dnl Written by and Copyright (C) 2001-2010 the
+dnl Written by and Copyright (C) 2001-2014 the
 dnl Privoxy team. http://www.privoxy.org/
 dnl
 dnl Based on the Internet Junkbuster originally written
@@ -32,7 +32,7 @@ dnl =================================================================
 dnl AutoConf Initialization
 dnl =================================================================
 
-AC_REVISION($Revision: 1.179 $)
+AC_REVISION($Revision: 1.186 $)
 AC_INIT(jcc.c)
 
 if test ! -f config.h.in; then
@@ -78,7 +78,7 @@ dnl =================================================================
 
 VERSION_MAJOR=3
 VERSION_MINOR=0
-VERSION_POINT=21
+VERSION_POINT=22
 CODE_STATUS="stable"
 
 dnl CODE_STATUS can be "alpha", "beta", "stable" or "UNRELEASED",
@@ -211,12 +211,14 @@ else
                     AC_MSG_RESULT($with_group)
                     $BGROUPS $USER >/dev/null
                     if test $? -eq 0 ; then
-                    # FIXME: this fails if valid group, but not first group
-                    # listed.
-                      if test "$with_group" != "`$BGROUPS $USER | sed 's/.*: //' 2>/dev/null |$AWK '{print $1}'`" ; then
+                      for i in `$BGROUPS $USER | sed 's/.*: //' 2>/dev/null`; do
+                        if test "x$i" = "x$with_group" ; then
+                          GROUP=$with_group
+                          break
+                        fi
+                      done
+                      if test "x$GROUP" != "x$with_group" ; then
                         AC_MSG_ERROR(The given value '$withval' does not match group entry)
-                      else
-                        GROUP=$with_group;
                       fi
                     else
                       AC_MSG_ERROR(There is no group entry for user '$USER')
@@ -750,7 +752,6 @@ AC_CHECK_FUNCS([ \
  gethostbyname_r \
  gettimeofday \
  inet_ntoa \
- localtime_r \
  memchr \
  memmove \
  memset \
@@ -961,6 +962,12 @@ AC_ARG_ENABLE(extended-host-patterns,
   AC_DEFINE(FEATURE_EXTENDED_HOST_PATTERNS)
 fi])
 
+AC_ARG_ENABLE(external-filters,
+[  --enable-external-filters      Allow to filter content with scripts and programs. Experimental.],
+[if test $enableval = yes; then
+  AC_DEFINE(FEATURE_EXTERNAL_FILTERS,1,[Define to 1 to allow to filter content with scripts and programs.])
+fi])
+
 AC_ARG_ENABLE(accept-filter,
 [  --enable-accept-filter          Try to use accf_http(9) if supported.],
 [if test $enableval = yes; then
@@ -1033,13 +1040,16 @@ fi
 if test $have_pcre = "yes"; then
   echo "using libpcre"
   pcre_dyn=yes
+  AC_DEFINE(FEATURE_DYNAMIC_PCRE,1,[Define to dynamically link to pcre.])
   STATIC_PCRE_ONLY=#
   LIBS="$LIBS -lpcre -lpcreposix"
 else
   AC_MSG_WARN([You are using the static PCRE code which is out of date and scheduled for removal, for details see:
     http://sourceforge.net/mailarchive/forum.php?thread_name=20080511195555.2dc6cfdc%40fabiankeil.de&forum_name=ijbswa-developers])
   pcre_dyn=no
-  AC_DEFINE(STATIC_PCRE)
+  # STATIC_PCRE is a name pcre needs to statically link on Windows.
+  # Privoxy itself no longer uses it.
+  AC_DEFINE(STATIC_PCRE,1,[Define to statically link to internal outdated pcre on Windows.])
   STATIC_PCRE_ONLY=
 fi
 

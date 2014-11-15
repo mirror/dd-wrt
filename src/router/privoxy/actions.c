@@ -1,4 +1,4 @@
-const char actions_rcs[] = "$Id: actions.c,v 1.87 2012/11/24 13:59:00 fabiankeil Exp $";
+const char actions_rcs[] = "$Id: actions.c,v 1.92 2013/12/24 13:35:23 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/actions.c,v $
@@ -55,6 +55,7 @@ const char actions_rcs[] = "$Id: actions.c,v 1.87 2012/11/24 13:59:00 fabiankeil
 #include "urlmatch.h"
 #include "cgi.h"
 #include "ssplit.h"
+#include "filters.h"
 
 const char actions_h_rcs[] = ACTIONS_H_VERSION;
 
@@ -810,14 +811,14 @@ int update_action_bits_for_tag(struct client_state *csp, const char *tag)
       /* and through all the action patterns, */
       for (b = b->next; NULL != b; b = b->next)
       {
-         /* skip the URL patterns, */
-         if (NULL == b->url->tag_regex)
+         /* skip everything but TAG patterns, */
+         if (!(b->url->flags & PATTERN_SPEC_TAG_PATTERN))
          {
             continue;
          }
 
          /* and check if one of the tag patterns matches the tag, */
-         if (0 == regexec(b->url->tag_regex, tag, 0, NULL, 0))
+         if (0 == regexec(b->url->pattern.tag_regex, tag, 0, NULL, 0))
          {
             /* if it does, update the action bit map, */
             if (merge_current_action(csp->action, b->action))
@@ -832,6 +833,76 @@ int update_action_bits_for_tag(struct client_state *csp, const char *tag)
    }
 
    return updated;
+}
+
+
+/*********************************************************************
+ *
+ * Function    :  check_negative_tag_patterns
+ *
+ * Description :  Updates the action bits based on NO-*-TAG patterns.
+ *
+ * Parameters  :
+ *          1  :  csp = Current client state (buffers, headers, etc...)
+ *          2  :  flag = The tag pattern type
+ *
+ * Returns     :  JB_ERR_OK in case off success, or
+ *                JB_ERR_MEMORY on out-of-memory error.
+ *
+ *********************************************************************/
+jb_err check_negative_tag_patterns(struct client_state *csp, unsigned int flag)
+{
+   struct list_entry *tag;
+   struct file_list *fl;
+   struct url_actions *b = NULL;
+   int i;
+
+   for (i = 0; i < MAX_AF_FILES; i++)
+   {
+      fl = csp->actions_list[i];
+      if ((fl == NULL) || ((b = fl->f) == NULL))
+      {
+         continue;
+      }
+      for (b = b->next; NULL != b; b = b->next)
+      {
+         int tag_found = 0;
+         if (0 == (b->url->flags & flag))
+         {
+            continue;
+         }
+         for (tag = csp->tags->first; NULL != tag; tag = tag->next)
+         {
+            if (0 == regexec(b->url->pattern.tag_regex, tag->str, 0, NULL, 0))
+            {
+               /*
+                * The pattern matches at least one tag, thus the action
+                * section doesn't apply and we don't need to look at the
+                * other tags.
+                */
+               tag_found = 1;
+               break;
+            }
+         }
+         if (!tag_found)
+         {
+            /*
+             * The pattern doesn't match any tags,
+             * thus the action section applies.
+             */
+            if (merge_current_action(csp->action, b->action))
+            {
+               log_error(LOG_LEVEL_ERROR,
+                  "Out of memory while changing action bits");
+               return JB_ERR_MEMORY;
+            }
+            log_error(LOG_LEVEL_HEADER, "Updated action bits based on: %s",
+               b->url->spec);
+         }
+      }
+   }
+
+   return JB_ERR_OK;
 }
 
 
@@ -921,7 +992,7 @@ void unload_actions_file(void *file_data)
    while (cur != NULL)
    {
       next = cur->next;
-      free_url_spec(cur->url);
+      free_pattern_spec(cur->url);
       if ((next == NULL) || (next->action != cur->action))
       {
          /*
@@ -1016,42 +1087,18 @@ int load_action_files(struct client_state *csp)
  *          3  :  multi_index = The index where to look for the filter.
  *          4  :  filter_type = The filter type the caller is interested in.
  *
- * Returns     :  0 => All referenced filters exists, everything else is an error.
+ * Returns     :  0 => All referenced filters exist, everything else is an error.
  *
  *********************************************************************/
 static int referenced_filters_are_missing(const struct client_state *csp,
    const struct action_spec *cur_action, int multi_index, enum filter_type filter_type)
 {
-   int i;
-   struct file_list *fl;
-   struct re_filterfile_spec *b;
    struct list_entry *filtername;
 
    for (filtername = cur_action->multi_add[multi_index]->first;
         filtername; filtername = filtername->next)
    {
-      int filter_found = 0;
-      for (i = 0; i < MAX_AF_FILES; i++)
-      {
-         fl = csp->rlist[i];
-         if ((NULL == fl) || (NULL == fl->f))
-         {
-            continue;
-         }
-
-         for (b = fl->f; b; b = b->next)
-         {
-            if (b->type != filter_type)
-            {
-               continue;
-            }
-            if (strcmp(b->name, filtername->str) == 0)
-            {
-               filter_found = 1;
-            }
-         }
-      }
-      if (!filter_found)
+      if (NULL == get_filter(csp, filtername->str, filter_type))
       {
          log_error(LOG_LEVEL_ERROR, "Missing filter '%s'", filtername->str);
          return 1;
@@ -1501,7 +1548,7 @@ static int load_one_actions_file(struct client_state *csp, int fileid)
          cur_action_used = 1;
 
          /* Save the URL pattern */
-         if (create_url_spec(perm->url, buf))
+         if (create_pattern_spec(perm->url, buf))
          {
             fclose(fp);
             log_error(LOG_LEVEL_FATAL,

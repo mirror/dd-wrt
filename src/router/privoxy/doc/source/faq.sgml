@@ -8,10 +8,10 @@
 <!entity history SYSTEM "history.sgml">
 <!entity copyright SYSTEM "copyright.sgml">
 <!entity license SYSTEM "license.sgml">
-<!entity p-version "3.0.21">
-<!entity p-status "stable">
-<!entity % p-not-stable "IGNORE">
-<!entity % p-stable "INCLUDE">
+<!entity p-version "3.0.22">
+<!entity p-status "UNRELEASED">
+<!entity % p-not-stable "INCLUDE">
+<!entity % p-stable "IGNORE">
 <!entity % p-text "IGNORE">        <!-- define we are not a text only doc -->
 <!entity % p-doc "INCLUDE">        <!-- and we are a formal doc           -->
 <!entity % p-supp-userman "INCLUDE"> <!-- Include all from supported.sgml -->
@@ -27,9 +27,9 @@
                 This file belongs into
                 ijbswa.sourceforge.net:/home/groups/i/ij/ijbswa/htdocs/
 
- $Id: faq.sgml,v 2.92 2013/03/01 17:44:24 fabiankeil Exp $
+ $Id: faq.sgml,v 2.104 2014/10/21 12:05:12 fabiankeil Exp $
 
- Copyright (C) 2001-2009 Privoxy Developers http://www.privoxy.org/
+ Copyright (C) 2001-2014 Privoxy Developers http://www.privoxy.org/
  See LICENSE.
 
  Based partially on the Internet Junkbuster FAQ originally written by and
@@ -73,12 +73,12 @@
  <subscript>
 <!-- Completely the wrong markup, but very little is allowed  -->
 <!-- in this part of an article. FIXME -->
- <link linkend="copyright">Copyright</link> &my-copy; 2001-2011 by
+ <link linkend="copyright">Copyright</link> &my-copy; 2001-2014 by
  <ulink url="http://www.privoxy.org/">Privoxy Developers</ulink>
  </subscript>
 </pubdate>
 
-<pubdate>$Id: faq.sgml,v 2.92 2013/03/01 17:44:24 fabiankeil Exp $</pubdate>
+<pubdate>$Id: faq.sgml,v 2.104 2014/10/21 12:05:12 fabiankeil Exp $</pubdate>
 
 <!--
 
@@ -394,7 +394,7 @@ Privoxy. Why should I use Privoxy at all?</title>
   and <application>Privoxy's</application> privacy enhancing features
   at the same time. While your browser probably lacks some features
   &my-app; offers, it should also be able to do some things more
-  reliable, for example restricting and suppressing JavaScript.
+  reliably, for example restricting and suppressing JavaScript.
  </para>
 </sect2>
 
@@ -486,7 +486,7 @@ warranty? Registration?</title>
  </para>
  <para>
   If you intend to help out with the trackers, you also might want to <ulink
-   url="https://sourceforge.net/account/register.php">get an account on SourceForge.net</ulink>
+   url="https://sourceforge.net/user/registration">get an account on SourceForge.net</ulink>
    so we don't confuse you with the other name-less users.
  </para>
  <para>
@@ -503,63 +503,45 @@ warranty? Registration?</title>
 
 <sect3 renderas="sect4" id="donate"><title>Would you like to donate?</title>
 <para>
- <application>Privoxy</application> is developed by unpaid volunteers
- and thus our current running costs are pretty low. Nevertheless, we
- have plans that will cost money in the future. They include,
- but aren't limited to spending money on:
-
+ Donations are welcome. Our
+ <ulink url="http://ijbswa.cvs.sourceforge.net/viewvc/ijbswa/current/TODO">TODO list</ulink>
+ is rather long and being able to pay one (or more) developers to work on Privoxy
+ would make a huge difference, even if it was only for a couple of weeks. Donations may
+ also be used for Privoxy-related travel expenses (for example to attend conferences),
+ for hardware used for Privoxy development and for hosting expenses etc.
 </para>
 
 <para>
-<itemizedlist>
- <listitem>
-   <para>
-     Hardware to help make sure <application>Privoxy</application>
-     keeps running on platforms the developers currently can't test
-     on and can be ported to others.
-   </para>
- </listitem>
- <listitem>
-   <para>
-     Technical books to educate our developers about said platforms
-     or to improve their knowledge in general.
-   </para>
- </listitem>
- <listitem>
-   <para>
-     More reliable hosting,
-   </para>
- </listitem>
-</itemizedlist>
+ <application>Privoxy</application> is an associated
+ project of <ulink url="http://www.spi-inc.org/">Software
+ in the Public Interest (SPI)</ulink>, which allows us to receive
+ tax-deductible donations in the United States. If you want to donate through
+ SPI, please use <ulink url="http://www.spi-inc.org/donations">SPI's donation page</ulink>
+ to see what the options are.
 </para>
 
 <para>
- We would like to get this money through donations made by our users.
+ You can also donate to Privoxy using a bank account managed by
+ <ulink url="https://www.zwiebelfreunde.de/">Zwiebelfreunde e.V.</ulink>:
+</para>
+<literallayout>
+ Name on Account: Zwiebelfreunde e.V.
+ IBAN: DE95430609671126825604
+ BIC: GENODEM1GLS
+ Bank: GLS Bank
+</literallayout>
+<para>
+ Donations made through Zwiebelfreunde e.V. are tax-deductible in Germany
+ and other countries that recognize German charitable clubs. Feel free to
+ use the Subject field to provide a name to be credited and a list of TODO
+ list items you are interested in the most. For example: Max Mustermann: #16, #1, #14.
 </para>
 
 <para>
- <application>Privoxy</application> has therefore become an associated
- project of <ulink url="http://www.spi-inc.org/about-spi/about-spi">Software
- in the Public Interest (SPI)</ulink>, which allows us to receive donations.
- In the United States they are tax-deductible, in a few other western countries
- they might be tax-deductible in the future.
-</para>
-
-<para>
- If you read this section before you may notice that paying for the
- project domain privoxy.org is no longer on the list. It has been
- transferred to SPI is sponsored by Mythic Beasts Ltd.
-</para>
-
-<para>
- If you enjoy our software and feel like helping out with a donation,
- please have a look at
- <ulink url="http://www.spi-inc.org/donations">SPI's donation page</ulink>
- to see what the options are. If you have any questions regarding donations
- please mail to either the public user mailing list or, if it's a private
- matter, to <ulink url="mailto:fk@fabiankeil.de">Fabian Keil</ulink>
- (Privoxy's SPI liason) directly.
-</para>
+ If you have any questions regarding donations please mail to either the
+ public user mailing list or, if it's a private matter, to
+ <ulink url="mailto:fk@fabiankeil.de">Fabian Keil</ulink> (Privoxy's SPI liason)
+ directly.
 </sect3>
 
 </sect2>
@@ -867,13 +849,23 @@ the differences?</title>
 <sect2 renderas="sect3" id="difficult">
 <title>Why is the configuration so complicated?</title>
  <para>
-  <quote>Complicated</quote> is in the eye of the beholder. Those that are
-  familiar with some of the underlying concepts, such as regular expression
-  syntax, take to it like a fish takes to water. Also, software that tries
-  hard to be <quote>user friendly</quote>, often lacks sophistication and
-  flexibility. There is always that trade-off there between power vs.
-  easy-of-use. Furthermore, anyone is welcome to contribute ideas and
-  implementations to enhance &my-app;.
+  <quote>Complicated</quote> is in the eye of the beholder.
+ </para>
+ <para>
+  Privoxy is currently mainly written by and for people who are already
+  familiar with the underlying concepts like regular expressions, HTTP and HTML,
+  or are willing to become familiar with them to be able to get the most
+  out of a powerful and flexible tool such as Privoxy.
+ </para>
+ <para>
+  While everybody is expected to be able to get a Privoxy default installation
+  up and running, fine-tuning requires a certain amount of background
+  information and Privoxy's documentation mainly concentrates on the
+  Privoxy-specific parts while only providing references to the rest.
+ </para>
+ <para>
+  If you or anyone you know has the skills, time and energy to
+  reduce the barrier of entry, please <link linkend="participate">get involved</link>.
  </para>
 </sect2>
 
@@ -1793,7 +1785,7 @@ us help you. Your efforts are not wasted, and we do appreciate them.
 </para>
 
 <para>
- Since <application>Privoxy</application> 3.0.5, its
+ <application>Privoxy's</application>
  <ulink url="../user-manual/config.html">main configuration file</ulink>
  is already prepared for <application>Tor</application>, if you are using a
  default <application>Tor</application> configuration and run it on the same
@@ -1803,7 +1795,7 @@ us help you. Your efforts are not wasted, and we do appreciate them.
 </para>
 <para>
  <screen>
-#        forward-socks5             /     127.0.0.1:9050 .
+#        forward-socks5t             /     127.0.0.1:9050 .
  </screen>
 </para>
 <para>
@@ -2574,7 +2566,6 @@ every time I start IE. What gives?</title>
  </para>
 </sect2>
 
-
 <!--   ~~~~~       New section      ~~~~~     -->
 <sect2 renderas="sect3" id="macosximages">
 <title>In Mac OS X Panther (10.3), images often fail to load and/or I
@@ -2585,6 +2576,24 @@ every time I start IE. What gives?</title>
   understand the issue yet. In any case, changing the proxy setting to
   <literal>127.0.0.1</literal> instead of <literal>localhost</literal>
   works around the problem.
+ </para>
+</sect2>
+
+<!--   ~~~~~       New section      ~~~~~     -->
+<sect2 renderas="sect3" id="macosxaccountdeletion">
+<title>I just upgraded to Mac OS X 10.9 (Mavericks) and now &my-app; has stopped
+ working.</title>
+ <para>
+  The upgrade process to Mac OS X Mavericks (10.9) from an earlier version of OS
+  X deletes all user accounts that are either not part of OS X itself or are
+  not interactive user accounts (ones you log in with). Since, for the sake of
+  security, &my-app; runs as a non-privileged user that is created by its
+  installer (_privoxy), it can no longer start up once that account gets deleted.
+  The solution is to perform a complete uninstall using the supplied
+  <application>uninstall.command</application> script (either back up your
+  configuration files or select to not have the uninstaller remove them when it
+  prompts you) and then reinstall &my-app; using the installer package and merge
+  in your configuration.
  </para>
 </sect2>
 
@@ -2668,11 +2677,24 @@ Why?</title>
  Pages with UTF-8 fonts are garbled.
 </title>
 <para>
- This is caused by the <quote>demoronizer</quote> filter. You should either
- upgrade <application>Privoxy</application>, or at least upgrade to the most
- recent <filename>default.action</filename> file available from <ulink
- url="http://sourceforge.net/project/showfiles.php?group_id=11118">SourceForge</ulink>.
- Or you can simply disable the demoronizer filter.
+ This may be the result of an overly aggressive filter. The filters that
+ are enabled in the default configuration aren't expected to cause problems
+ like this. If you enabled the <quote>demoronizer</quote> filter, please
+ try temporarily disabling it.
+</para>
+<para>
+ If that doesn't help, temporarily disable all filters to see if another
+ filter could be the culprit. If the problem disappears, enable the filters
+ one by one, until the problem reappears and the offending filter is found.
+</para>
+<para>
+ Once the problem-causing filter is known, it can be fixed or disabled.
+</para>
+<para>
+ Upgrading <application>Privoxy</application>, or going to the most recent
+ <filename>default.action</filename> file available from <ulink
+ url="http://sourceforge.net/project/showfiles.php?group_id=11118">SourceForge</ulink>
+ might be worth a try, too.
 </para>
 </sect2>
 
@@ -2682,13 +2704,11 @@ Why?</title>
  is used?
 </title>
 <para>
- This may also be caused by the <quote>demoronizer</quote> filter,
- in conjunction with a web server that is misreporting the content type. Binary
- files are exempted from <application>Privoxy's</application> filtering
- (unless the web server by mistake says the file is something else). Either
- upgrade <application>Privoxy</application>, or go to the most recent
- <filename>default.action</filename> file available from <ulink
- url="http://sourceforge.net/project/showfiles.php?group_id=11118">SourceForge</ulink>.
+ This may also be caused by an (<link linkend="DEMORONIZER">overly aggressive
+ filter</link> in conjunction with a web server that is misreporting the content
+ type. By default binary files are exempted from
+ <application>Privoxy's</application> filtering
+ (unless the web server by mistake says the file is something else).
 </para>
 </sect2>
 
@@ -2990,6 +3010,59 @@ browsing has slowed to a crawl. What gives? </title>
  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 $Log: faq.sgml,v $
+Revision 2.104  2014/10/21 12:05:12  fabiankeil
+Mention more stuff donations may be used for
+
+Revision 2.103  2014/10/21 12:02:16  fabiankeil
+Bump FAQ copyright
+
+Revision 2.102  2014/10/06 10:20:09  fabiankeil
+Update the 'Would you like to donate?' section
+
+Mention that donations will be used to get TODO list
+items done and add the Zwiebelfreunde e.V. bank
+account.
+
+Revision 2.101  2014/05/26 10:48:39  fabiankeil
+Bump entities for 3.0.22 UNRELEASED
+
+Revision 2.100  2014/05/05 09:59:30  fabiankeil
+Recommend forward-socks5t when using Tor
+
+It seems to work fine and modifying the Tor configuration
+to profit from it hasn't been necessary for a while now.
+
+Revision 2.99  2014/02/10 14:43:46  fabiankeil
+Make 'demoronizer' FAQ entries more generic
+
+Revision 2.98  2013/12/16 11:20:14  fabiankeil
+Spell 'more reliably' more correctly
+
+Reported by Reuben Thomas in #3615276.
+
+Revision 2.97  2013/11/07 14:42:02  fabiankeil
+White-space adjustments for the previous commit
+
+Revision 2.96  2013/11/06 19:24:18  diem
+Added an entry for the _privoxy user account deletion issue when upgrading to OS X 10.9
+
+Revision 2.95  2013/11/06 16:28:58  fabiankeil
+Rephrase the 'Why is the configuration so complicated?' answer
+
+.. to be slightly less condescending.
+
+Anonymously suggested in #3615122.
+
+Revision 2.94  2013/06/21 14:46:46  fabiankeil
+Link to the SPI homepage instead of the "About SPI" page which no longer exists
+
+Reported by Mark Nelson in #3614557.
+
+Revision 2.93  2013/06/21 14:46:09  fabiankeil
+Update link to the SF registration form
+
+Reported by Mark Nelson in #3614557.
+
 Revision 2.92  2013/03/01 17:44:24  fabiankeil
 Bump entities for 3.0.21 stable
 

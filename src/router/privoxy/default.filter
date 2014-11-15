@@ -1,38 +1,32 @@
-# ********************************************************************
+#################################################################################
 # 
 #  File        :  $Source: /cvsroot/ijbswa/current/default.filter,v $
 # 
-#  $Id: default.filter,v 1.86 2013/02/19 11:14:47 fabiankeil Exp $
+#  $Id: default.filter,v 1.92 2014/10/17 14:45:10 fabiankeil Exp $
 #
 #  Purpose     :  Rules to process the content of web pages
 # 
-#  Copyright   :  Written by and Copyright (C) 2001-2010 the
+#  Copyright   :  Written by and Copyright (C) 2001-2014 the
 #                 Privoxy team. http://www.privoxy.org/
 #
-# We value your feedback. However, to provide you with the best support,
-# please note:
-#  
-#  * Use the support forum to get help:
-#    http://sourceforge.net/tracker/?group_id=11118&atid=211118
-#  * Submit bugs only thru our bug forum:
-#    http://sourceforge.net/tracker/?group_id=11118&atid=111118 
-#    Make sure that the bug has not already been submitted. Please try
-#    to verify that it is a Privoxy bug, and not a browser or site
-#    bug first. If you are using your own custom configuration, please
-#    try the stock configs to see if the problem is a configuration
-#    related bug. And if not using the latest development snapshot,
-#    please try the latest one. Or even better, CVS sources.
-#  * Submit feature requests only thru our feature request forum:
-#    http://sourceforge.net/tracker/?atid=361118&group_id=11118&func=browse
-#      
-# For any other issues, feel free to use the mailing lists:
-# http://sourceforge.net/mail/?group_id=11118
-#    
-# Anyone interested in actively participating in development and related
-# discussions can join the appropriate mailing list here:
-# http://sourceforge.net/mail/?group_id=11118. Archives are available
-# here too.
-# 
+#                 This program is free software; you can redistribute it
+#                 and/or modify it under the terms of the GNU General
+#                 Public License as published by the Free Software
+#                 Foundation; either version 2 of the License, or (at
+#                 your option) any later version.
+#
+#                 This program is distributed in the hope that it will
+#                 be useful, but WITHOUT ANY WARRANTY; without even the
+#                 implied warranty of MERCHANTABILITY or FITNESS FOR A
+#                 PARTICULAR PURPOSE.  See the GNU General Public
+#                 License for more details.
+#
+#                 The GNU General Public License should be included with
+#                 this file.  If not, you can view it at
+#                 http://www.gnu.org/copyleft/gpl.html
+#                 or write to the Free Software Foundation, Inc., 59
+#                 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#
 #################################################################################
 #
 # Syntax:
@@ -93,7 +87,7 @@ FILTER: js-annoyances Get rid of particularly annoying JavaScript abuse.
 # Get rid of Javascript referrer tracking. 
 # Test page: http://www.javascript-page.com/referrer.html
 #
-s|(?:\w+\.)+referrer|"Not Your Business!"|gisU
+s|(?:\w+\.)+referrer|false.toString()|gisU
 
 # The status bar is for displaying link targets, not pointless blahblah
 #
@@ -150,7 +144,7 @@ FILTER: html-annoyances Get rid of particularly annoying HTML abuse.
 #
 s/(<a\s+href[^>]+resizable=)(['"]?)(?:no|0)\2/$1$2yes$2/igU 
 s/(<a\s+href[^>]+location=)(['"]?)(?:no|0)\2/$1$2yes$2/igU 
-s/(<a\s+href[^>]+status=)(['"]?)(?:no|0)\2/$1$2yes1$2/igU
+s/(<a\s+href[^>]+status=)(['"]?)(?:no|0)\2/$1$2yes$2/igU
 s/(<a\s+href[^>]+scrolling=)(['"]?)(?:no|0)\2/$1$2auto$2/igU
 s/(<a\s+href[^>]+menubar=)(['"]?)(?:no|0)\2/$1$2yes$2/igU
 
@@ -225,11 +219,11 @@ FILTER: img-reorder Reorder attributes in <img> tags to make the banners-by-* fi
 # This makes banners-by-size more effective and allows both banners-by-size
 # and banners-by-link to preserve the original image URL in the title attribute.
 
-s|<img\s+?([^>]*)\ssrc\s*=\s*(['"])([^>\\\2]+)\2|<img src=$2$3$2 $1|siUg
+s|<img\s+?([^>]*)\ssrc\s*=\s*(['"])([^>'" ]+)\2|<img src=$2$3$2 $1|siUg
 s|<img\s+?([^>]*)\ssrc\s*=\s*([^'">\\\s]+)|<img src=$2 $1|sig
 s|(<img[^>]+height)\s*=\s*|$1=|sig
 
-s|<img (src=(?:(['"])[^>\\\\2]*\2\|[^'">\\\s]+?))([^>]*)\s+width\s*=\s*((["']?)\d+?\5)(?=[\s>])|<img $1 width=$4$3|siUg
+s|<img (src=(?:(['"])[^>'" ]*\2\|[^'">\\\s]+?))([^>]*)\s+width\s*=\s*((["']?)\d+?\5)(?=[\s>])|<img $1 width=$4$3|siUg
 
 
 #################################################################################
@@ -634,17 +628,22 @@ FILTER: msn CSS-based block for MSN text ads. Also removes tracking URLs and a w
 s@</head>@<style type="text/css">\n\
  /* Style sheet inserted by Privoxy's msn filter. */\n\
  .msn_ads, \#at, \#ar, .mktmsg {display: none !important;}\n\
- \#results, .flank, .results_area_flank, .results_area_stroke,\n\
+ \#results, \#b_results, .flank, .results_area_flank, .results_area_stroke,\n\
  \#results_area, \#content, .sb_tlst, .sa_cc, .sb_ph, \#sw_main,\n\
-.content, \#sw_foot, \#bf, \#sw_content, \#sidebar, \#pag\n\
+ .content, .b_content, \#sw_foot, \#bf, \#sw_content, \#sidebar, \#pag\n\
  {width: 99% !important; min-width: 99% !important;\n\
  max-width: 100% !important; /* width:100% sometimes causes horizontal scrollbars */}\n\
+ /* Remove 'related' ads */\n\
+ .b_ad, .b_adlabel {clear: both; display:none;}\n\
  /* Remove "suggestions". They are next to worthless but partly overlap with the search results */\n\
  .suggestion, \#nys_right, \#nys {clear: both; display:none;}\n\
+ /* Remove "Related searches" at the left side of the main results.\n\
+    They are next to worthless, too, and also are still present below the main search results */\n\
+ \#b_results > .b_ans {clear: both; display:none;}\n\
  \#s_notf_div,\n \
  /* Overlay ads to enable Facebook 'likes' in search results. */\n\
  .sn_container {display:none !important;}\n\
- \#content {padding-right: 0;}\n\
+ \#content, \#b_content {padding: 0px 0px 0px 0px}\n\
  </style>\n$0@
 # Are these ids still in use?
 s@(<div[^>]*) id=(["']?)ads_[^\2]*\2@$1 class="msn_ads"@Uig

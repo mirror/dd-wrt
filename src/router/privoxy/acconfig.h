@@ -10,7 +10,7 @@
  *                introduced because the compile command line started
  *                getting ludicrously long with feature defines.
  *
- * Copyright   :  Written by and Copyright (C) 2001-2009 the
+ * Copyright   :  Written by and Copyright (C) 2001-2014 the
  *                Privoxy team. http://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -67,10 +67,10 @@
 /*
  * Should pcre be statically built in instead of linkling with libpcre?
  * (This is determined by configure depending on the availiability of
- * libpcre and user preferences). The name is ugly, but pcre needs it.
+ * libpcre and user preferences).
  * Don't bother to change this here! Use configure instead.
  */
-#undef STATIC_PCRE
+#undef FEATURE_DYNAMIC_PCRE
 
 /*
  * Should pcrs be statically built in instead of linkling with libpcrs?
@@ -160,6 +160,11 @@
  * Allow PCRE syntax in host patterns.
  */
 #undef FEATURE_EXTENDED_HOST_PATTERNS
+
+/*
+ * Allow filtering with scripts and programs.
+ */
+#undef FEATURE_EXTERNAL_FILTERS
 
 /*
  * Keep connections alive if possible.

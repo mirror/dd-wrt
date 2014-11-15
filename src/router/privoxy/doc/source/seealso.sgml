@@ -3,7 +3,7 @@
 
  Purpose     :  Entity included in other project documents.
 
- $Id: seealso.sgml,v 2.14 2012/06/19 12:48:54 fabiankeil Exp $
+ $Id: seealso.sgml,v 2.15 2014/11/11 12:19:52 fabiankeil Exp $
 
  Copyright (C) 2001-2009 Privoxy Developers http://www.privoxy.org/
  See LICENSE.
@@ -84,7 +84,7 @@
  </simplelist>
  <simplelist>
   <member>
-   <ulink url="http://www.pps.jussieu.fr/~jch/software/polipo/">http://www.pps.jussieu.fr/~jch/software/polipo/</ulink>,
+   <ulink url="http://www.pps.univ-paris-diderot.fr/~jch/software/polipo/">http://www.pps.univ-paris-diderot.fr/~jch/software/polipo/</ulink>,
    <application>Polipo</application> is a caching proxy with advanced features
    like pipelining, multiplexing and caching of partial instances. In many setups
    it can be used as <application>Squid</application> replacement.
