@@ -5,10 +5,10 @@
 <!entity p-intro SYSTEM "privoxy.sgml">
 <!entity history SYSTEM "history.sgml">
 <!entity seealso SYSTEM "seealso.sgml">
-<!entity p-version "3.0.21">
-<!entity p-status "stable">
-<!entity % p-not-stable "IGNORE">
-<!entity % p-stable "INCLUDE">
+<!entity p-version "3.0.22">
+<!entity p-status "UNRELEASED">
+<!entity % p-not-stable "INCLUDE">
+<!entity % p-stable "IGNORE">
 <!entity % p-text "IGNORE">        <!-- define we are not a text only doc -->
 <!entity % p-doc "INCLUDE">        <!-- and we are a formal doc           -->
 <!entity % seealso-extra "INCLUDE"> <!-- extra stuff from seealso.sgml    -->
@@ -21,7 +21,7 @@
                 This file belongs into
                 ijbswa.sourceforge.net:/home/groups/i/ij/ijbswa/htdocs/
 
- $Id: developer-manual.sgml,v 2.57 2013/03/01 17:44:24 fabiankeil Exp $
+ $Id: developer-manual.sgml,v 2.58 2014/05/26 10:48:39 fabiankeil Exp $
 
  Copyright (C) 2001-2012 Privoxy Developers http://www.privoxy.org/
  See LICENSE.
@@ -49,7 +49,7 @@
     </pubdate>
 
 
-    <pubdate>$Id: developer-manual.sgml,v 2.57 2013/03/01 17:44:24 fabiankeil Exp $</pubdate>
+    <pubdate>$Id: developer-manual.sgml,v 2.58 2014/05/26 10:48:39 fabiankeil Exp $</pubdate>
 
 <!--
 

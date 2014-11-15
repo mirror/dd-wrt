@@ -196,7 +196,7 @@ www.example.com/nasty-ads/sponsor.gif
 #{+block{Facebook "like" and similar tracking URLs.}}
 #www.facebook.com/(extern|plugins)/(login_status|like(box)?|activity|fan)\.php
 
-#kongmod rule
+#kong rules
 {+block{External-Tracking}}
     .google-analytics.*
     .googlesyndication.*
@@ -205,3 +205,11 @@ www.example.com/nasty-ads/sponsor.gif
     .connect.facebook.*
     .fbcdn.net/connect.php
     .badge.facebook.com/badge/
+#They do advanced tracking through fingerprinting
+{+block{Browser Fingerprint}}
+   .addthis.com
+   .ligatus.com
+   .kitcode.net
+   .vcmedia.vn
+   .shorte.st
+

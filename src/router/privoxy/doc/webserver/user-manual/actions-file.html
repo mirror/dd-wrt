@@ -6,7 +6,7 @@
   <title>Actions Files</title>
   <meta name="GENERATOR" content=
   "Modular DocBook HTML Stylesheet Version 1.79">
-  <link rel="HOME" title="Privoxy 3.0.21 User Manual" href="index.html">
+  <link rel="HOME" title="Privoxy 3.0.22 User Manual" href="index.html">
   <link rel="PREVIOUS" title="The Main Configuration File" href=
   "config.html">
   <link rel="NEXT" title="Filter Files" href="filter-file.html">
@@ -21,7 +21,7 @@
     <table summary="Header navigation table" width="100%" border="0"
     cellpadding="0" cellspacing="0">
       <tr>
-        <th colspan="3" align="center">Privoxy 3.0.21 User Manual</th>
+        <th colspan="3" align="center">Privoxy 3.0.22 User Manual</th>
       </tr>
 
       <tr>
@@ -117,7 +117,7 @@
         in <tt class="FILENAME">default.action</tt> are:</p>
 
         <div class="TABLE">
-          <a name="AEN2858" id="AEN2858"></a>
+          <a name="AEN2654" id="AEN2654"></a>
 
           <p><b>Table 1. Default Configurations</b></p>
 
@@ -314,7 +314,7 @@
     actions</a>.</p>
 
     <div class="SECT2">
-      <h2 class="SECT2"><a name="AEN2957" id="AEN2957">8.1. Finding the Right
+      <h2 class="SECT2"><a name="AEN2753" id="AEN2753">8.1. Finding the Right
       Mix</a></h2>
 
       <p>Note that some <a href="actions-file.html#ACTIONS">actions</a>, like
@@ -339,7 +339,7 @@
     </div>
 
     <div class="SECT2">
-      <h2 class="SECT2"><a name="AEN2964" id="AEN2964">8.2. How to
+      <h2 class="SECT2"><a name="AEN2760" id="AEN2760">8.2. How to
       Edit</a></h2>
 
       <p>The easiest way to edit the actions files is with a browser by using
@@ -430,8 +430,8 @@
       and potentially match against many similar patterns.</p>
 
       <p>Generally, an URL pattern has the form <tt class=
-      "LITERAL">&lt;domain&gt;&lt;port&gt;/&lt;path&gt;</tt>, where the
-      <tt class="LITERAL">&lt;domain&gt;</tt>, the <tt class=
+      "LITERAL">&lt;host&gt;&lt;port&gt;/&lt;path&gt;</tt>, where the
+      <tt class="LITERAL">&lt;host&gt;</tt>, the <tt class=
       "LITERAL">&lt;port&gt;</tt> and the <tt class=
       "LITERAL">&lt;path&gt;</tt> are optional. (This is why the special
       <tt class="LITERAL">/</tt> pattern matches all URLs). Note that the
@@ -440,15 +440,15 @@
       "EMPHASIS">not</i></span> be included in the pattern. This is assumed
       already!</p>
 
-      <p>The pattern matching syntax is different for the domain and path
-      parts of the URL. The domain part uses a simple globbing type matching
+      <p>The pattern matching syntax is different for the host and path parts
+      of the URL. The host part uses a simple globbing type matching
       technique, while the path part uses more flexible <a href=
       "http://en.wikipedia.org/wiki/Regular_expressions" target=
       "_top"><span class="QUOTE">"Regular Expressions"</span></a> (POSIX
       1003.2).</p>
 
       <p>The port part of a pattern is a decimal port number preceded by a
-      colon (<tt class="LITERAL">:</tt>). If the domain part contains a
+      colon (<tt class="LITERAL">:</tt>). If the host part contains a
       numerical IPv6 address, it has to be put into angle brackets
       (<tt class="LITERAL">&lt;</tt>, <tt class="LITERAL">&gt;</tt>).</p>
 
@@ -457,7 +457,7 @@
           <dt><tt class="LITERAL">www.example.com/</tt></dt>
 
           <dd>
-            <p>is a domain-only pattern and will match any request to
+            <p>is a host-only pattern and will match any request to
             <tt class="LITERAL">www.example.com</tt>, regardless of which
             document on that server is requested. So ALL pages in this domain
             would be covered by the scope of this action. Note that a simple
@@ -468,7 +468,7 @@
           <dt><tt class="LITERAL">www.example.com</tt></dt>
 
           <dd>
-            <p>means exactly the same. For domain-only patterns, the trailing
+            <p>means exactly the same. For host-only patterns, the trailing
             <tt class="LITERAL">/</tt> may be omitted.</p>
           </dd>
 
@@ -510,6 +510,14 @@
             <p>Matches any URL pointing to TCP port 8000.</p>
           </dd>
 
+          <dt><tt class="LITERAL">10.0.0.1/</tt></dt>
+
+          <dd>
+            <p>Matches any URL with the host address <tt class=
+            "LITERAL">10.0.0.1</tt>. (Note that the real URL uses plain
+            brackets, not angle brackets.)</p>
+          </dd>
+
           <dt><tt class="LITERAL">&lt;2001:db8::1&gt;/</tt></dt>
 
           <dd>
@@ -529,12 +537,14 @@
       </div>
 
       <div class="SECT3">
-        <h3 class="SECT3"><a name="AEN3076" id="AEN3076">8.4.1. The Domain
-        Pattern</a></h3>
+        <h3 class="SECT3"><a name="HOST-PATTERN" id="HOST-PATTERN">8.4.1. The
+        Host Pattern</a></h3>
 
-        <p>The matching of the domain part offers some flexible options: if
-        the domain starts or ends with a dot, it becomes unanchored at that
-        end. For example:</p>
+        <p>The matching of the host part offers some flexible options: if the
+        host pattern starts or ends with a dot, it becomes unanchored at that
+        end. The host pattern is often referred to as domain pattern as it is
+        usually used to match domain names and not IP addresses. For
+        example:</p>
 
         <div class="VARIABLELIST">
           <dl>
@@ -634,7 +644,7 @@
       </div>
 
       <div class="SECT3">
-        <h3 class="SECT3"><a name="AEN3152" id="AEN3152">8.4.2. The Path
+        <h3 class="SECT3"><a name="AEN2954" id="AEN2954">8.4.2. The Path
         Pattern</a></h3>
 
         <p><span class="APPLICATION">Privoxy</span> uses <span class=
@@ -783,6 +793,24 @@
         <p>While this is a limitation you should be aware of, this kind of
         indirection is seldom needed anyway and even the example doesn't make
         too much sense.</p>
+      </div>
+
+      <div class="SECT3">
+        <h3 class="SECT3"><a name="NEGATIVE-TAG-PATTERNS" id=
+        "NEGATIVE-TAG-PATTERNS">8.4.4. The Negative Tag Patterns</a></h3>
+
+        <p>To match requests that do not have a certain tag, specify a
+        negative tag pattern by prefixing the tag pattern line with either
+        <span class="QUOTE">"NO-REQUEST-TAG:"</span> or <span class=
+        "QUOTE">"NO-RESPONSE-TAG:"</span> instead of <span class=
+        "QUOTE">"TAG:"</span>.</p>
+
+        <p>Negative tag patterns created with <span class=
+        "QUOTE">"NO-REQUEST-TAG:"</span> are checked after all client headers
+        are scanned, the ones created with <span class=
+        "QUOTE">"NO-RESPONSE-TAG:"</span> are checked after all server
+        headers are scanned. In both cases all the created tags are
+        considered.</p>
       </div>
     </div>
 
@@ -1972,8 +2000,103 @@ problem-host.example.com
       </div>
 
       <div class="SECT3">
+        <h4 class="SECT3"><a name="EXTERNAL-FILTER" id=
+        "EXTERNAL-FILTER">8.5.14. external-filter</a></h4>
+
+        <div class="VARIABLELIST">
+          <dl>
+            <dt>Typical use:</dt>
+
+            <dd>
+              <p>Modify content using a programming language of your
+              choice.</p>
+            </dd>
+
+            <dt>Effect:</dt>
+
+            <dd>
+              <p>All instances of text-based type, most notably HTML and
+              JavaScript, to which this action applies, can be filtered
+              on-the-fly through the specified external filter. By default
+              plain text documents are exempted from filtering, because web
+              servers often use the <tt class="LITERAL">text/plain</tt> MIME
+              type for all files whose type they don't know.)</p>
+            </dd>
+
+            <dt>Type:</dt>
+
+            <dd>
+              <p>Parameterized.</p>
+            </dd>
+
+            <dt>Parameter:</dt>
+
+            <dd>
+              <p>The name of an external content filter, as defined in the
+              <a href="filter-file.html">filter file</a>. External filters
+              can be defined in one or more files as defined by the
+              <tt class="LITERAL"><a href=
+              "config.html#FILTERFILE">filterfile</a></tt> option in the
+              <a href="config.html">config file</a>.</p>
+
+              <p>When used in its negative form, and without parameters,
+              <span class="emphasis"><i class="EMPHASIS">all</i></span>
+              filtering with external filters is completely disabled.</p>
+            </dd>
+
+            <dt>Notes:</dt>
+
+            <dd>
+              <p>External filters are scripts or programs that can modify the
+              content in case common <tt class="LITERAL"><a href=
+              "actions-file.html#FILTER">filters</a></tt> aren't powerful
+              enough. With the exception that this action doesn't use
+              pcrs-based filters, the notes in the <tt class=
+              "LITERAL"><a href="actions-file.html#FILTER">filter</a></tt>
+              section apply.</p>
+
+              <div class="WARNING">
+                <table class="WARNING" border="1" width="90%">
+                  <tr>
+                    <td align="center"><b>Warning</b></td>
+                  </tr>
+
+                  <tr>
+                    <td align="left">
+                      <p>Currently external filters are executed with
+                      <span class="APPLICATION">Privoxy</span>'s privileges.
+                      Only use external filters you understand and trust.</p>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+
+              <p>This feature is experimental, the <tt class=
+              "LITERAL"><a href=
+              "filter-file.html#EXTERNAL-FILTER-SYNTAX">syntax</a></tt> may
+              change in the future.</p>
+            </dd>
+
+            <dt>Example usage:</dt>
+
+            <dd>
+              <table border="0" bgcolor="#E0E0E0" width="90%">
+                <tr>
+                  <td>
+                    <pre class="SCREEN">
++external-filter{fancy-filter}
+</pre>
+                  </td>
+                </tr>
+              </table>
+            </dd>
+          </dl>
+        </div>
+      </div>
+
+      <div class="SECT3">
         <h4 class="SECT3"><a name="FAST-REDIRECTS" id=
-        "FAST-REDIRECTS">8.5.14. fast-redirects</a></h4>
+        "FAST-REDIRECTS">8.5.15. fast-redirects</a></h4>
 
         <div class="VARIABLELIST">
           <dl>
@@ -2095,7 +2218,7 @@ problem-host.example.com
       </div>
 
       <div class="SECT3">
-        <h4 class="SECT3"><a name="FILTER" id="FILTER">8.5.15.
+        <h4 class="SECT3"><a name="FILTER" id="FILTER">8.5.16.
         filter</a></h4>
 
         <div class="VARIABLELIST">
@@ -2569,7 +2692,7 @@ problem-host.example.com
 
       <div class="SECT3">
         <h4 class="SECT3"><a name="FORCE-TEXT-MODE" id=
-        "FORCE-TEXT-MODE">8.5.16. force-text-mode</a></h4>
+        "FORCE-TEXT-MODE">8.5.17. force-text-mode</a></h4>
 
         <div class="VARIABLELIST">
           <dl>
@@ -2650,7 +2773,7 @@ problem-host.example.com
 
       <div class="SECT3">
         <h4 class="SECT3"><a name="FORWARD-OVERRIDE" id=
-        "FORWARD-OVERRIDE">8.5.17. forward-override</a></h4>
+        "FORWARD-OVERRIDE">8.5.18. forward-override</a></h4>
 
         <div class="VARIABLELIST">
           <dl>
@@ -2739,7 +2862,9 @@ problem-host.example.com
                       <p>If the ports are missing or invalid, default values
                       will be used. This might change in the future and you
                       shouldn't rely on it. Otherwise incorrect syntax causes
-                      Privoxy to exit.</p>
+                      Privoxy to exit. Due to design limitations, invalid
+                      parameter syntax isn't detected until the action is
+                      used the first time.</p>
 
                       <p>Use the <a href=
                       "http://config.privoxy.org/show-url-info" target=
@@ -2758,15 +2883,17 @@ problem-host.example.com
                 <tr>
                   <td>
                     <pre class="SCREEN">
-# Always use direct connections for requests previously tagged as
+# Use an ssh tunnel for requests previously tagged as
 # <span class="QUOTE">"User-Agent: fetch libfetch/2.0"</span> and make sure
 # resuming downloads continues to work.
+#
 # This way you can continue to use Tor for your normal browsing,
 # without overloading the Tor network with your FreeBSD ports updates
 # or downloads of bigger files like ISOs.
+#
 # Note that HTTP headers are easy to fake and therefore their
 # values are as (un)trustworthy as your clients and users.
-{+forward-override{forward .} \
+{+forward-override{forward-socks5 10.0.0.2:2222 .} \
  -hide-if-modified-since      \
  -overwrite-last-modified     \
 }
@@ -2783,7 +2910,7 @@ TAG:^User-Agent: fetch libfetch/2\.0$
 
       <div class="SECT3">
         <h4 class="SECT3"><a name="HANDLE-AS-EMPTY-DOCUMENT" id=
-        "HANDLE-AS-EMPTY-DOCUMENT">8.5.18. handle-as-empty-document</a></h4>
+        "HANDLE-AS-EMPTY-DOCUMENT">8.5.19. handle-as-empty-document</a></h4>
 
         <div class="VARIABLELIST">
           <dl>
@@ -2861,7 +2988,7 @@ example.org/.*\.js$
 
       <div class="SECT3">
         <h4 class="SECT3"><a name="HANDLE-AS-IMAGE" id=
-        "HANDLE-AS-IMAGE">8.5.19. handle-as-image</a></h4>
+        "HANDLE-AS-IMAGE">8.5.20. handle-as-image</a></h4>
 
         <div class="VARIABLELIST">
           <dl>
@@ -2950,7 +3077,7 @@ nasty-banner-server.example.com/junk.cgi\?output=trash
 
       <div class="SECT3">
         <h4 class="SECT3"><a name="HIDE-ACCEPT-LANGUAGE" id=
-        "HIDE-ACCEPT-LANGUAGE">8.5.20. hide-accept-language</a></h4>
+        "HIDE-ACCEPT-LANGUAGE">8.5.21. hide-accept-language</a></h4>
 
         <div class="VARIABLELIST">
           <dl>
@@ -3030,7 +3157,7 @@ nasty-banner-server.example.com/junk.cgi\?output=trash
 
       <div class="SECT3">
         <h4 class="SECT3"><a name="HIDE-CONTENT-DISPOSITION" id=
-        "HIDE-CONTENT-DISPOSITION">8.5.21. hide-content-disposition</a></h4>
+        "HIDE-CONTENT-DISPOSITION">8.5.22. hide-content-disposition</a></h4>
 
         <div class="VARIABLELIST">
           <dl>
@@ -3116,7 +3243,7 @@ nasty-banner-server.example.com/junk.cgi\?output=trash
 
       <div class="SECT3">
         <h4 class="SECT3"><a name="HIDE-IF-MODIFIED-SINCE" id=
-        "HIDE-IF-MODIFIED-SINCE">8.5.22. hide-if-modified-since</a></h4>
+        "HIDE-IF-MODIFIED-SINCE">8.5.23. hide-if-modified-since</a></h4>
 
         <div class="VARIABLELIST">
           <dl>
@@ -3203,7 +3330,7 @@ nasty-banner-server.example.com/junk.cgi\?output=trash
 
       <div class="SECT3">
         <h4 class="SECT3"><a name="HIDE-FROM-HEADER" id=
-        "HIDE-FROM-HEADER">8.5.23. hide-from-header</a></h4>
+        "HIDE-FROM-HEADER">8.5.24. hide-from-header</a></h4>
 
         <div class="VARIABLELIST">
           <dl>
@@ -3278,7 +3405,7 @@ nasty-banner-server.example.com/junk.cgi\?output=trash
       </div>
 
       <div class="SECT3">
-        <h4 class="SECT3"><a name="HIDE-REFERRER" id="HIDE-REFERRER">8.5.24.
+        <h4 class="SECT3"><a name="HIDE-REFERRER" id="HIDE-REFERRER">8.5.25.
         hide-referrer</a></h4><a name="HIDE-REFERER" id="HIDE-REFERER"></a>
 
         <div class="VARIABLELIST">
@@ -3398,7 +3525,7 @@ nasty-banner-server.example.com/junk.cgi\?output=trash
 
       <div class="SECT3">
         <h4 class="SECT3"><a name="HIDE-USER-AGENT" id=
-        "HIDE-USER-AGENT">8.5.25. hide-user-agent</a></h4>
+        "HIDE-USER-AGENT">8.5.26. hide-user-agent</a></h4>
 
         <div class="VARIABLELIST">
           <dl>
@@ -3487,7 +3614,7 @@ nasty-banner-server.example.com/junk.cgi\?output=trash
       </div>
 
       <div class="SECT3">
-        <h4 class="SECT3"><a name="LIMIT-CONNECT" id="LIMIT-CONNECT">8.5.26.
+        <h4 class="SECT3"><a name="LIMIT-CONNECT" id="LIMIT-CONNECT">8.5.27.
         limit-connect</a></h4>
 
         <div class="VARIABLELIST">
@@ -3568,7 +3695,7 @@ nasty-banner-server.example.com/junk.cgi\?output=trash
 
       <div class="SECT3">
         <h4 class="SECT3"><a name="LIMIT-COOKIE-LIFETIME" id=
-        "LIMIT-COOKIE-LIFETIME">8.5.27. limit-cookie-lifetime</a></h4>
+        "LIMIT-COOKIE-LIFETIME">8.5.28. limit-cookie-lifetime</a></h4>
 
         <div class="VARIABLELIST">
           <dl>
@@ -3650,7 +3777,7 @@ nasty-banner-server.example.com/junk.cgi\?output=trash
 
       <div class="SECT3">
         <h4 class="SECT3"><a name="PREVENT-COMPRESSION" id=
-        "PREVENT-COMPRESSION">8.5.28. prevent-compression</a></h4>
+        "PREVENT-COMPRESSION">8.5.29. prevent-compression</a></h4>
 
         <div class="VARIABLELIST">
           <dl>
@@ -3754,7 +3881,7 @@ nasty-banner-server.example.com/junk.cgi\?output=trash
 
       <div class="SECT3">
         <h4 class="SECT3"><a name="OVERWRITE-LAST-MODIFIED" id=
-        "OVERWRITE-LAST-MODIFIED">8.5.29. overwrite-last-modified</a></h4>
+        "OVERWRITE-LAST-MODIFIED">8.5.30. overwrite-last-modified</a></h4>
 
         <div class="VARIABLELIST">
           <dl>
@@ -3850,7 +3977,7 @@ nasty-banner-server.example.com/junk.cgi\?output=trash
       </div>
 
       <div class="SECT3">
-        <h4 class="SECT3"><a name="REDIRECT" id="REDIRECT">8.5.30.
+        <h4 class="SECT3"><a name="REDIRECT" id="REDIRECT">8.5.31.
         redirect</a></h4>
 
         <div class="VARIABLELIST">
@@ -3892,11 +4019,15 @@ nasty-banner-server.example.com/junk.cgi\?output=trash
               <p>The syntax for pcrs commands is documented in the <a href=
               "filter-file.html">filter file</a> section.</p>
 
-              <p>This action will be ignored if you use it together with
-              <tt class="LITERAL"><a href=
-              "actions-file.html#BLOCK">block</a></tt>. It can be combined
-              with <tt class="LITERAL"><a href=
-              "actions-file.html#FAST-REDIRECTS">fast-redirects{check-decoded-url}</a></tt>
+              <p>Requests can't be blocked and redirected at the same time,
+              applying this action together with <tt class="LITERAL"><a href=
+              "actions-file.html#BLOCK">block</a></tt> is a configuration
+              error. Currently the request is blocked and an error message
+              logged, the behavior may change in the future and result in
+              Privoxy rejecting the action file.</p>
+
+              <p>This action can be combined with <tt class=
+              "LITERAL"><a href="actions-file.html#FAST-REDIRECTS">fast-redirects{check-decoded-url}</a></tt>
               to redirect to a decoded version of a rewritten URL.</p>
 
               <p>Use this action carefully, make sure not to create
@@ -3920,7 +4051,7 @@ nasty-banner-server.example.com/junk.cgi\?output=trash
  example.com/stylesheet\.css
 
 # Create a short, easy to remember nickname for a favorite site
-# (relies on the browser accept and forward invalid URLs to <span class=
+# (relies on the browser to accept and forward invalid URLs to <span class=
 "APPLICATION">Privoxy</span>)
 { +redirect{http://www.privoxy.org/user-manual/actions-file.html} }
  a
@@ -3939,6 +4070,19 @@ undeadly.org/cgi\?action=article&amp;sid=\d*$
 {+redirect{s@^http://[^/]*/results\.aspx\?q=([^&amp;]*).*@http://search.yahoo.com/search?p=$1@}}
 search.msn.com//results\.aspx\?q=
 
+# Redirect http://example.com/&amp;bla=fasel&amp;toChange=foo (and any other value but "bar")
+# to       http://example.com/&amp;bla=fasel&amp;toChange=bar
+#
+# The URL pattern makes sure that the following request isn't redirected again.
+{+redirect{s@toChange=[^&amp;]+@toChange=bar@}}
+example.com/.*toChange=(?!bar)
+
+# Add a shortcut to look up illumos bugs
+{+redirect{s@^http://i([0-9]+)/.*@https://www.illumos.org/issues/$1@}}
+# Redirected URL = http://i4974/
+# Redirect Destination = https://www.illumos.org/issues/4974
+i[0-9][0-9][0-9][0-9]*/
+
 # Redirect remote requests for this manual
 # to the local version delivered by Privoxy
 {+redirect{s@^http://www@http://config@}}
@@ -3954,7 +4098,7 @@ www.privoxy.org/user-manual/
 
       <div class="SECT3">
         <h4 class="SECT3"><a name="SERVER-HEADER-FILTER" id=
-        "SERVER-HEADER-FILTER">8.5.31. server-header-filter</a></h4>
+        "SERVER-HEADER-FILTER">8.5.32. server-header-filter</a></h4>
 
         <div class="VARIABLELIST">
           <dl>
@@ -4026,7 +4170,7 @@ example.org/instance-that-is-delivered-as-xml-but-is-not
 
       <div class="SECT3">
         <h4 class="SECT3"><a name="SERVER-HEADER-TAGGER" id=
-        "SERVER-HEADER-TAGGER">8.5.32. server-header-tagger</a></h4>
+        "SERVER-HEADER-TAGGER">8.5.33. server-header-tagger</a></h4>
 
         <div class="VARIABLELIST">
           <dl>
@@ -4088,6 +4232,15 @@ example.org/instance-that-is-delivered-as-xml-but-is-not
 {+server-header-tagger{content-type}}
 /
 
+# If the response has a tag starting with 'image/' enable an external
+# filter that only applies to images.
+#
+# Note that the filter is not available by default, it's just a
+# <tt class="LITERAL"><a href=
+"filter-file.html#EXTERNAL-FILTER-SYNTAX">silly example</a></tt>.
+{+external-filter{rotate-image} +force-text-mode}
+TAG:^image/
+
 </pre>
                   </td>
                 </tr>
@@ -4099,7 +4252,7 @@ example.org/instance-that-is-delivered-as-xml-but-is-not
 
       <div class="SECT3">
         <h4 class="SECT3"><a name="SESSION-COOKIES-ONLY" id=
-        "SESSION-COOKIES-ONLY">8.5.33. session-cookies-only</a></h4>
+        "SESSION-COOKIES-ONLY">8.5.34. session-cookies-only</a></h4>
 
         <div class="VARIABLELIST">
           <dl>
@@ -4197,7 +4350,7 @@ example.org/instance-that-is-delivered-as-xml-but-is-not
 
       <div class="SECT3">
         <h4 class="SECT3"><a name="SET-IMAGE-BLOCKER" id=
-        "SET-IMAGE-BLOCKER">8.5.34. set-image-blocker</a></h4>
+        "SET-IMAGE-BLOCKER">8.5.35. set-image-blocker</a></h4>
 
         <div class="VARIABLELIST">
           <dl>
@@ -4336,7 +4489,7 @@ example.org/instance-that-is-delivered-as-xml-but-is-not
       </div>
 
       <div class="SECT3">
-        <h3 class="SECT3"><a name="AEN4827" id="AEN4827">8.5.35.
+        <h3 class="SECT3"><a name="AEN4686" id="AEN4686">8.5.36.
         Summary</a></h3>
 
         <p>Note that many of these actions have the potential to cause a page
@@ -4495,7 +4648,7 @@ example.org/instance-that-is-delivered-as-xml-but-is-not
       together:</p>
 
       <div class="SECT3">
-        <h3 class="SECT3"><a name="AEN4891" id="AEN4891">8.7.1.
+        <h3 class="SECT3"><a name="AEN4750" id="AEN4750">8.7.1.
         match-all.action</a></h3>
 
         <p>Remember <span class="emphasis"><i class="EMPHASIS">all actions
@@ -4544,7 +4697,7 @@ example.org/instance-that-is-delivered-as-xml-but-is-not
       </div>
 
       <div class="SECT3">
-        <h3 class="SECT3"><a name="AEN4913" id="AEN4913">8.7.2.
+        <h3 class="SECT3"><a name="AEN4772" id="AEN4772">8.7.2.
         default.action</a></h3>
 
         <p>If you aren't a developer, there's no need for you to edit the
@@ -4887,7 +5040,7 @@ wiki.
       </div>
 
       <div class="SECT3">
-        <h3 class="SECT3"><a name="AEN5026" id="AEN5026">8.7.3.
+        <h3 class="SECT3"><a name="AEN4885" id="AEN4885">8.7.3.
         user.action</a></h3>
 
         <p>So far we are painting with a broad brush by setting general

@@ -1,4 +1,4 @@
-const char jcc_rcs[] = "$Id: jcc.c,v 1.424 2013/03/01 17:38:34 fabiankeil Exp $";
+const char jcc_rcs[] = "$Id: jcc.c,v 1.431 2014/10/18 11:31:12 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/jcc.c,v $
@@ -6,7 +6,7 @@ const char jcc_rcs[] = "$Id: jcc.c,v 1.424 2013/03/01 17:38:34 fabiankeil Exp $"
  * Purpose     :  Main file.  Contains main() method, main loop, and
  *                the main connection-handling function.
  *
- * Copyright   :  Written by and Copyright (C) 2001-2012 the
+ * Copyright   :  Written by and Copyright (C) 2001-2014 the
  *                Privoxy team. http://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -182,6 +182,10 @@ privoxy_mutex_t log_mutex;
 privoxy_mutex_t log_init_mutex;
 privoxy_mutex_t connection_reuse_mutex;
 
+#ifdef FEATURE_EXTERNAL_FILTERS
+privoxy_mutex_t external_filter_mutex;
+#endif
+
 #if !defined(HAVE_GETHOSTBYADDR_R) || !defined(HAVE_GETHOSTBYNAME_R)
 privoxy_mutex_t resolver_mutex;
 #endif /* !defined(HAVE_GETHOSTBYADDR_R) || !defined(HAVE_GETHOSTBYNAME_R) */
@@ -274,6 +278,13 @@ static const char CLIENT_BODY_PARSE_ERROR_RESPONSE[] =
    "Content-Type: text/plain\r\n"
    "Connection: close\r\n\r\n"
    "Failed parsing or buffering the chunk-encoded client body.\r\n";
+
+static const char UNSUPPORTED_CLIENT_EXPECTATION_ERROR_RESPONSE[] =
+   "HTTP/1.1 417 Expecting too much\r\n"
+   "Proxy-Agent: Privoxy " VERSION "\r\n"
+   "Content-Type: text/plain\r\n"
+   "Connection: close\r\n\r\n"
+   "Privoxy detected an unsupported Expect header value.\r\n";
 
 /* A function to crunch a response */
 typedef struct http_response *(*crunch_func_ptr)(struct client_state *);
@@ -430,6 +441,40 @@ static int client_protocol_is_unsupported(const struct client_state *csp, char *
    }
 
    return FALSE;
+}
+
+
+/*********************************************************************
+ *
+ * Function    :  client_has_unsupported_expectations
+ *
+ * Description :  Checks if the client used an unsupported expectation
+ *                in which case an error message is delivered.
+ *
+ * Parameters  :
+ *          1  :  csp = Current client state (buffers, headers, etc...)
+ *
+ * Returns     :  TRUE if an error response has been generated, or
+ *                FALSE if the request doesn't look invalid.
+ *
+ *********************************************************************/
+static int client_has_unsupported_expectations(const struct client_state *csp)
+{
+   if ((csp->flags & CSP_FLAG_UNSUPPORTED_CLIENT_EXPECTATION))
+   {
+      log_error(LOG_LEVEL_ERROR,
+         "Rejecting request from client %s with unsupported Expect header value",
+         csp->ip_addr_str);
+      log_error(LOG_LEVEL_CLF,
+         "%s - - [%T] \"%s\" 417 0", csp->ip_addr_str, csp->http->cmd);
+      write_socket(csp->cfd, UNSUPPORTED_CLIENT_EXPECTATION_ERROR_RESPONSE,
+         strlen(UNSUPPORTED_CLIENT_EXPECTATION_ERROR_RESPONSE));
+
+      return TRUE;
+   }
+
+   return FALSE;
+
 }
 
 
@@ -919,11 +964,6 @@ static jb_err change_request_destination(struct client_state *csp)
    {
       log_error(LOG_LEVEL_ERROR, "Couldn't parse rewritten request: %s.",
          jb_err_to_string(err));
-   }
-   else
-   {
-      /* XXX: ocmd is a misleading name */
-      http->ocmd = strdup_or_die(http->cmd);
    }
 
    return err;
@@ -1603,17 +1643,13 @@ static jb_err receive_client_request(struct client_state *csp)
       get_url_actions(csp, http);
    }
 
-   /*
-    * Save a copy of the original request for logging
-    */
-   http->ocmd = strdup_or_die(http->cmd);
    enlist(csp->headers, http->cmd);
 
    /* Append the previously read headers */
-   list_append_list_unique(csp->headers, headers);
+   err = list_append_list_unique(csp->headers, headers);
    destroy_list(headers);
 
-   return JB_ERR_OK;
+   return err;
 
 }
 
@@ -1673,9 +1709,12 @@ static jb_err parse_client_request(struct client_state *csp)
    err = sed(csp, FILTER_CLIENT_HEADERS);
    if (JB_ERR_OK != err)
    {
-      /* XXX: Should be handled in sed(). */
-      assert(err == JB_ERR_PARSE);
-      log_error(LOG_LEVEL_FATAL, "Failed to parse client headers.");
+      log_error(LOG_LEVEL_ERROR, "Failed to parse client request from %s.",
+         csp->ip_addr_str);
+      log_error(LOG_LEVEL_CLF, "%s - - [%T] \"%s\" 400 0",
+         csp->ip_addr_str, csp->http->cmd);
+      write_socket(csp->cfd, CHEADER, strlen(CHEADER));
+      return JB_ERR_PARSE;
    }
    csp->flags |= CSP_FLAG_CLIENT_HEADER_PARSING_DONE;
 
@@ -1695,6 +1734,11 @@ static jb_err parse_client_request(struct client_state *csp)
          "Invalid request line after applying header filters.");
       free_http_request(http);
 
+      return JB_ERR_PARSE;
+   }
+
+   if (client_has_unsupported_expectations(csp))
+   {
       return JB_ERR_PARSE;
    }
 
@@ -2553,7 +2597,13 @@ static void chat(struct client_state *csp)
              */
             if (JB_ERR_OK != sed(csp, FILTER_SERVER_HEADERS))
             {
-               log_error(LOG_LEVEL_FATAL, "Failed to parse server headers.");
+               log_error(LOG_LEVEL_CLF,
+                  "%s - - [%T] \"%s\" 502 0", csp->ip_addr_str, http->cmd);
+               write_socket(csp->cfd, INVALID_SERVER_HEADERS_RESPONSE,
+                  strlen(INVALID_SERVER_HEADERS_RESPONSE));
+               free_http_request(http);
+               mark_server_socket_tainted(csp);
+               return;
             }
             hdr = list_to_text(csp->headers);
             if (hdr == NULL)
@@ -3134,6 +3184,9 @@ static void initialize_mutexes(void)
    privoxy_mutex_init(&log_mutex);
    privoxy_mutex_init(&log_init_mutex);
    privoxy_mutex_init(&connection_reuse_mutex);
+#ifdef FEATURE_EXTERNAL_FILTERS
+   privoxy_mutex_init(&external_filter_mutex);
+#endif
 
    /*
     * XXX: The assumptions below are a bit naive
@@ -3518,6 +3571,13 @@ int main(int argc, char **argv)
          close(fd);
       }
 
+#ifdef FEATURE_EXTERNAL_FILTERS
+      for (fd = 0; fd < 3; fd++)
+      {
+         mark_socket_for_close_on_execute(fd);
+      }
+#endif
+
       chdir("/");
 
    } /* -END- if (daemon_mode) */
@@ -3643,7 +3703,7 @@ int main(int argc, char **argv)
  *                on failure.
  *
  * Parameters  :
- *          1  :  haddr = Host addres to bind to. Use NULL to bind to
+ *          1  :  haddr = Host address to bind to. Use NULL to bind to
  *                        INADDR_ANY.
  *          2  :  hport = Specifies port to bind to.
  *

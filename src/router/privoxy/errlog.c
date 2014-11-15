@@ -1,4 +1,4 @@
-const char errlog_rcs[] = "$Id: errlog.c,v 1.117 2012/12/09 12:28:14 fabiankeil Exp $";
+const char errlog_rcs[] = "$Id: errlog.c,v 1.122 2014/10/18 11:30:40 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/errlog.c,v $
@@ -6,7 +6,7 @@ const char errlog_rcs[] = "$Id: errlog.c,v 1.117 2012/12/09 12:28:14 fabiankeil 
  * Purpose     :  Log errors to a designated destination in an elegant,
  *                printf-like fashion.
  *
- * Copyright   :  Written by and Copyright (C) 2001-2010 the
+ * Copyright   :  Written by and Copyright (C) 2001-2014 the
  *                Privoxy team. http://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -75,6 +75,9 @@ const char errlog_rcs[] = "$Id: errlog.c,v 1.117 2012/12/09 12:28:14 fabiankeil 
 #include "errlog.h"
 #include "project.h"
 #include "jcc.h"
+#ifdef FEATURE_EXTERNAL_FILTERS
+#include "jbsockets.h"
+#endif
 
 const char errlog_h_rcs[] = ERRLOG_H_VERSION;
 
@@ -354,6 +357,10 @@ void init_error_log(const char *prog_name, const char *logfname)
       log_error(LOG_LEVEL_FATAL, "init_error_log(): can't open logfile: \'%s\'", logfname);
    }
 
+#ifdef FEATURE_EXTERNAL_FILTERS
+   mark_socket_for_close_on_execute(3);
+#endif
+
    /* set logging to be completely unbuffered */
    setbuf(fp, NULL);
 
@@ -402,7 +409,7 @@ void init_error_log(const char *prog_name, const char *logfname)
  *********************************************************************/
 static long get_thread_id(void)
 {
-   long this_thread = 1;  /* was: pthread_t this_thread;*/
+   long this_thread;
 
 #ifdef __OS2__
    PTIB     ptib;
@@ -427,6 +434,9 @@ static long get_thread_id(void)
    ulrc = DosGetInfoBlocks(&ptib, NULL);
    if (ulrc == 0)
      this_thread = ptib -> tib_ptib2 -> tib2_ultid;
+#else
+   /* Forking instead of threading. */
+   this_thread = 1;
 #endif /* def FEATURE_PTHREAD */
 
    return this_thread;
@@ -636,6 +646,7 @@ static inline const char *get_log_level_string(int loglevel)
 }
 
 
+#define LOG_BUFFER_SIZE BUFFER_SIZE
 /*********************************************************************
  *
  * Function    :  log_error
@@ -655,7 +666,7 @@ void log_error(int loglevel, const char *fmt, ...)
    va_list ap;
    char *outbuf = NULL;
    static char *outbuf_save = NULL;
-   char tempbuf[BUFFER_SIZE];
+   char tempbuf[LOG_BUFFER_SIZE];
    size_t length = 0;
    const char * src = fmt;
    long thread_id;
@@ -665,7 +676,7 @@ void log_error(int loglevel, const char *fmt, ...)
     * why else do we allocate instead of using
     * an array?
     */
-   size_t log_buffer_size = BUFFER_SIZE;
+   size_t log_buffer_size = LOG_BUFFER_SIZE;
 
 #if defined(_WIN32) && !defined(_WIN_CONSOLE)
    /*
@@ -990,9 +1001,6 @@ const char *jb_err_to_string(int jb_error)
          return "File has been modified outside of the CGI actions editor.";
       case JB_ERR_COMPRESS:
          return "(De)compression failure";
-      default:
-         assert(0);
-         return "Unknown error";
    }
    assert(0);
    return "Internal error";

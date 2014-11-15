@@ -8,7 +8,7 @@
 #
 # http://www.fabiankeil.de/sourcecode/privoxy-log-parser/
 #
-# $Id: privoxy-log-parser.pl,v 1.159 2013/01/16 16:30:16 fabiankeil Exp $
+# $Id: privoxy-log-parser.pl,v 1.162 2014/06/03 10:26:21 fabiankeil Exp $
 #
 # TODO:
 #       - LOG_LEVEL_CGI, LOG_LEVEL_ERROR, LOG_LEVEL_WRITE content highlighting
@@ -646,7 +646,7 @@ sub highlight_request_line ($) {
 
         $rl = h('invalid-request') . $rl . h('Standard');
 
-    } elsif ($rl =~ m/^([-\w]+) (.*) (HTTP\/\d\.\d)/) {
+    } elsif ($rl =~ m/^([-\w]+) (.*) (HTTP\/\d+\.\d+)/) {
 
         # XXX: might not match in case of HTTP method fuzzing.
         # XXX: save these: ($method, $path, $http_version) = ($1, $2, $3);
@@ -2188,7 +2188,8 @@ sub print_stats () {
     unless ($cli_options{'show-complete-request-distribution'}) {
         printf "Enable --show-complete-request-distribution to get less common numbers as well.\n";
     }
-    printf "Unaccounted requests: ~%d\n", $stats{requests} - $client_requests_checksum;
+    # Due to log rotation we may not have a complete picture for all the requests
+    printf "Improperly accounted requests: ~%d\n", abs($stats{requests} - $client_requests_checksum);
 
     if ($stats{method} eq 0) {
         print "No response lines parsed yet yet.\n";
@@ -2425,7 +2426,7 @@ sub stats_loop () {
         (undef, $time_stamp, $thread, $log_level, $content) = split(/ /, $_, 5);
 
         # Skip LOG_LEVEL_CLF
-        next if ($time_stamp eq "-" or not defined($log_level));
+        next if (not defined($log_level) or $time_stamp eq "-");
 
         if (defined($log_level_handlers{$log_level})) {
 

@@ -11,7 +11,7 @@
  *                introduced because the compile command line started
  *                getting ludicrously long with feature defines.
  *
- * Copyright   :  Written by and Copyright (C) 2001-2009 the
+ * Copyright   :  Written by and Copyright (C) 2001-2014 the
  *                Privoxy team. http://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -67,10 +67,10 @@
 /*
  * Should pcre be statically built in instead of linkling with libpcre?
  * (This is determined by configure depending on the availiability of
- * libpcre and user preferences). The name is ugly, but pcre needs it.
+ * libpcre and user preferences).
  * Don't bother to change this here! Use configure instead.
  */
-#undef STATIC_PCRE
+#undef FEATURE_DYNAMIC_PCRE
 
 /*
  * Should pcrs be statically built in instead of linkling with libpcrs?
@@ -160,6 +160,11 @@
  * Allow PCRE syntax in host patterns.
  */
 #undef FEATURE_EXTENDED_HOST_PATTERNS
+
+/*
+ * Allow filtering with scripts and programs.
+ */
+#undef FEATURE_EXTERNAL_FILTERS
 
 /*
  * Keep connections alive if possible.
@@ -253,6 +258,12 @@
 /* Define to 1 to use compression through the zlib library. */
 #undef FEATURE_COMPRESSION
 
+/* Define to dynamically link to pcre. */
+#undef FEATURE_DYNAMIC_PCRE
+
+/* Define to 1 to allow to filter content with scripts and programs. */
+#undef FEATURE_EXTERNAL_FILTERS
+
 /* Define to 1 to use zlib to decompress data before filtering. */
 #undef FEATURE_ZLIB
 
@@ -313,9 +324,6 @@
 
 /* Define to 1 if you have the <locale.h> header file. */
 #undef HAVE_LOCALE_H
-
-/* Define to 1 if you have the `localtime_r' function. */
-#undef HAVE_LOCALTIME_R
 
 /* Define to 1 if you have the `memchr' function. */
 #undef HAVE_MEMCHR
@@ -484,6 +492,9 @@
 
 /* The size of `size_t', as computed by sizeof. */
 #undef SIZEOF_SIZE_T
+
+/* Define to statically link to internal outdated pcre on Windows. */
+#undef STATIC_PCRE
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS

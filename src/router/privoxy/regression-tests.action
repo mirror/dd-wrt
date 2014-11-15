@@ -1,5 +1,5 @@
 #############################################################################
-# $Id: regression-tests.action,v 1.50 2013/03/07 14:09:34 fabiankeil Exp $
+# $Id: regression-tests.action,v 1.56 2014/11/14 12:59:11 fabiankeil Exp $
 #############################################################################
 #
 # This is a configuration file for Privoxy-Regression-Test
@@ -10,7 +10,7 @@
 #
 #############################################################################
 #
-# Copyright (c) 2007-2013 Fabian Keil <fk@fabiankeil.de>
+# Copyright (c) 2007-2014 Fabian Keil <fk@fabiankeil.de>
 #
 # Permission to use, copy, modify, and distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -27,7 +27,7 @@
 #############################################################################
 
 {{settings}}
-for-privoxy-version=3.0.21
+for-privoxy-version=3.0.22
 
 # Some dependencies Privoxy-Regression-Test should know about:
 #
@@ -606,10 +606,28 @@ TAG:^Host header other than the target host$
 # Set Header = Keep-Alive: 20
 # Expect Header = NO CHANGE
 # Level = 13
-TAG:^Pass Keep-Alive header$
+# Set Header = Keep-Alive: timeout=20, max=3
+# Expect Header = NO CHANGE
+# Level = 13
+# Set Header = Keep-Alive: blah=fasel, timeout=20, max=3
+# Expect Header = NO CHANGE
+# Level = 13
+# Set Header = Keep-Alive: timeuot=20, max=3
+# Expect Header = REMOVAL
+# Level = 13
+# Set Header = Keep-Alive: twenty seconds please
+# Expect Header = REMOVAL
+# Level = 13
+TAG:^Parse Keep-Alive header$
 
 {}
 # Set Header = Keep-Alive: 20
+# Expect Header = REMOVAL
+# Level = 14
+# Set Header = Keep-Alive: timeout=20, max=3
+# Expect Header = REMOVAL
+# Level = 14
+# Set Header = Keep-Alive: blah=fasel, timeout=20, max=3
 # Expect Header = REMOVAL
 # Level = 14
 TAG:^Keep-Alive header removal$
@@ -844,6 +862,7 @@ TAG:^Proxy-Authorization header forwarding$
 # Method Test = MERGE
 # Method Test = BASELINE-CONTROL
 # Method Test = MKACTIVITY
+# Method Test = PATCH
 # Method Test = PRIVOXY-REGRESSION-TEST-IN-THE-HOUSE
 # Expect Status Code = 400
 

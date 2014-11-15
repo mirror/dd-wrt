@@ -1,6 +1,6 @@
 #ifndef CGI_H_INCLUDED
 #define CGI_H_INCLUDED
-#define CGI_H_VERSION "$Id: cgi.h,v 1.42 2012/11/09 10:47:42 fabiankeil Exp $"
+#define CGI_H_VERSION "$Id: cgi.h,v 1.43 2013/11/24 14:23:28 fabiankeil Exp $"
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/cgi.h,v $
@@ -40,10 +40,6 @@
 
 
 #include "project.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /*
  * Main dispatch function
@@ -129,10 +125,6 @@ extern const size_t  image_blank_length;
 /* Revision control strings from this header and associated .c file */
 extern const char cgi_rcs[];
 extern const char cgi_h_rcs[];
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
 #endif /* ndef CGI_H_INCLUDED */
 

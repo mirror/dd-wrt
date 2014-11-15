@@ -1,8 +1,8 @@
-#        Sample Configuration File for Privoxy 3.0.21
+#        Sample Configuration File for Privoxy 3.0.22
 #
-#  $Id: config,v 1.104 2013/03/07 14:11:51 fabiankeil Exp $
+#  $Id: config,v 1.106 2014/11/14 11:31:53 fabiankeil Exp $
 #
-#  Copyright (C) 2001-2013 Privoxy Developers http://www.privoxy.org/
+#  Copyright (C) 2001-2014 Privoxy Developers http://www.privoxy.org/
 #
 ####################################################################
 #                                                                  #
@@ -291,7 +291,37 @@ confdir .
 #
 #templdir .
 #
-#  2.3. logdir
+#  2.3. temporary-directory
+#  =========================
+#
+#  Specifies:
+#
+#      A directory where Privoxy can create temporary files.
+#
+#  Type of value:
+#
+#      Path name
+#
+#  Default value:
+#
+#      unset
+#
+#  Effect if unset:
+#
+#      No temporary files are created, external filters don't work.
+#
+#  Notes:
+#
+#      To execute external filters, Privoxy has to create temporary
+#      files. This directive specifies the directory the temporary
+#      files should be written to.
+#
+#      It should be a directory only Privoxy (and trusted users) can
+#      access.
+#
+#temporary-directory .
+#
+#  2.4. logdir
 #  ============
 #
 #  Specifies:
@@ -317,7 +347,7 @@ confdir .
 #
 logdir .
 #
-#  2.4. actionsfile
+#  2.5. actionsfile
 #  =================
 #
 #  Specifies:
@@ -351,19 +381,13 @@ logdir .
 #
 #      Actions files contain all the per site and per URL
 #      configuration for ad blocking, cookie management, privacy
-#      considerations, etc. There is no point in using Privoxy
-#      without at least one actions file.
-#
-#      Note that since Privoxy 3.0.7, the complete filename,
-#      including the ".action" extension has to be specified. The
-#      syntax change was necessary to be consistent with the other
-#      file options and to allow previously forbidden characters.
+#      considerations, etc.
 #
 actionsfile match-all.action # Actions that are applied to all sites and maybe overruled later on.
 actionsfile default.action   # Main actions file
 actionsfile user.action      # User customizations
 #
-#  2.5. filterfile
+#  2.6. filterfile
 #  ================
 #
 #  Specifies:
@@ -408,7 +432,7 @@ actionsfile user.action      # User customizations
 filterfile default.filter
 filterfile user.filter      # User customizations
 #
-#  2.6. logfile
+#  2.7. logfile
 #  =============
 #
 #  Specifies:
@@ -439,22 +463,24 @@ filterfile user.filter      # User customizations
 #
 #      Depending on the debug options below, the logfile may be a
 #      privacy risk if third parties can get access to it. As most
-#      users will never look at it, Privoxy 3.0.7 and later only log
-#      fatal errors by default.
+#      users will never look at it, Privoxy only logs fatal errors by
+#      default.
 #
 #      For most troubleshooting purposes, you will have to change
 #      that, please refer to the debugging section for details.
 #
-#      Your logfile will grow indefinitely, and you will probably
-#      want to periodically remove it. On Unix systems, you can do
-#      this with a cron job (see "man cron").
-#
 #      Any log files must be writable by whatever user Privoxy is
 #      being run as (on Unix, default user id is "privoxy").
 #
+#      To prevent the logfile from growing indefinitely, it is
+#      recommended to periodically rotate or shorten it. Many
+#      operating systems support log rotation out of the box, some
+#      require additional software to do it. For details, please
+#      refer to the documentation for your operating system.
+#
 logfile logfile
 #
-#  2.7. trustfile
+#  2.8. trustfile
 #  ===============
 #
 #  Specifies:
@@ -569,10 +595,6 @@ logfile logfile
 #      down a specific problem. They can produce a hell of an output
 #      (especially 16).
 #
-#      Privoxy used to ship with the debug levels recommended above
-#      enabled by default, but due to privacy concerns 3.0.7 and
-#      later are configured to only log fatal errors.
-#
 #      If you are used to the more verbose settings, simply enable
 #      the debug lines below again.
 #
@@ -602,11 +624,11 @@ logfile logfile
 #
 #  Type of value:
 #
-#      None
+#      1 or 0
 #
 #  Default value:
 #
-#      Unset
+#      0
 #
 #  Effect if unset:
 #
@@ -618,7 +640,7 @@ logfile logfile
 #      This option is only there for debugging purposes. It will
 #      drastically reduce performance.
 #
-#single-threaded
+#single-threaded 1
 #
 #  3.3. hostname
 #  ==============
@@ -1311,7 +1333,7 @@ enable-proxy-authentication-forwarding 0
 #      To chain Privoxy and Tor, both running on the same system, you
 #      would use something like:
 #
-#        forward-socks5   /               127.0.0.1:9050 .
+#        forward-socks5t   /               127.0.0.1:9050 .
 #
 #      The public Tor network can't be used to reach your local
 #      network, if you need to access local servers you therefore
@@ -1411,6 +1433,9 @@ forwarded-connect-retries  0
 #      If you don't trust your clients and want to force them to use
 #      Privoxy, enable this option and configure your packet filter
 #      to redirect outgoing HTTP connections into Privoxy.
+#
+#      Note that intercepting encrypted connections (HTTPS) isn't
+#      supported.
 #
 #      Make sure that Privoxy's own requests aren't redirected as
 #      well. Additionally take care that Privoxy can't intentionally
@@ -1845,13 +1870,13 @@ socket-timeout 300
 #
 #  Notes:
 #
-#      This is a work-around for Firefox bug 492459: " Websites are
-#      no longer rendered if SSL requests for JavaScripts are blocked
-#      by a proxy. " (https://bugzilla.mozilla.org/show_bug.cgi?id=
-#      492459) As the bug has been fixed for quite some time this
-#      option should no longer be needed and will be removed in a
-#      future release. Please speak up if you have a reason why the
-#      option should be kept around.
+#      This directive was added as a work-around for Firefox bug
+#      492459: "Websites are no longer rendered if SSL requests for
+#      JavaScripts are blocked by a proxy."
+#      (https://bugzilla.mozilla.org/show_bug.cgi?id=492459), the bug
+#      has been fixed for quite some time, but this directive is also
+#      useful to make it harder for websites to detect whether or not
+#      resources are being blocked.
 #
 #handle-as-empty-doc-returns-ok 1
 #

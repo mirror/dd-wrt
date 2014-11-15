@@ -1,4 +1,4 @@
-const char loaders_rcs[] = "$Id: loaders.c,v 1.95 2013/01/13 15:38:14 fabiankeil Exp $";
+const char loaders_rcs[] = "$Id: loaders.c,v 1.99 2014/06/02 06:22:21 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/loaders.c,v $
@@ -8,7 +8,7 @@ const char loaders_rcs[] = "$Id: loaders.c,v 1.95 2013/01/13 15:38:14 fabiankeil
  *                the list of active loaders, and to automatically
  *                unload files that are no longer in use.
  *
- * Copyright   :  Written by and Copyright (C) 2001-2012 the
+ * Copyright   :  Written by and Copyright (C) 2001-2014 the
  *                Privoxy team. http://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -779,7 +779,7 @@ static void unload_trustfile(void *f)
    {
       next = cur->next;
 
-      free_url_spec(cur->url);
+      free_pattern_spec(cur->url);
       free(cur);
 
       cur = next;
@@ -829,7 +829,7 @@ int load_trustfile(struct client_state *csp)
    FILE *fp;
 
    struct block_spec *b, *bl;
-   struct url_spec **tl;
+   struct pattern_spec **tl;
 
    char *buf = NULL;
    int reject, trusted;
@@ -908,7 +908,7 @@ int load_trustfile(struct client_state *csp)
       b->reject = reject;
 
       /* Save the URL pattern */
-      if (create_url_spec(b->url, buf))
+      if (create_pattern_spec(b->url, buf))
       {
          fclose(fp);
          goto load_trustfile_error;
@@ -1014,7 +1014,7 @@ static void unload_re_filterfile(void *f)
  *********************************************************************/
 void unload_forward_spec(struct forward_spec *fwd)
 {
-   free_url_spec(fwd->url);
+   free_pattern_spec(fwd->url);
    freez(fwd->gateway_host);
    freez(fwd->forward_host);
    free(fwd);
@@ -1170,6 +1170,12 @@ int load_one_re_filterfile(struct client_state *csp, int fileid)
       {
          new_filter = FT_SERVER_HEADER_TAGGER;
       }
+#ifdef FEATURE_EXTERNAL_FILTERS
+      else if (strncmp(buf, "EXTERNAL-FILTER:", 16) == 0)
+      {
+         new_filter = FT_EXTERNAL_CONTENT_FILTER;
+      }
+#endif
 
       /*
        * If this is the head of a new filter block, make it a
@@ -1186,6 +1192,12 @@ int load_one_re_filterfile(struct client_state *csp, int fileid)
          {
             new_bl->name = chomp(buf + 7);
          }
+#ifdef FEATURE_EXTERNAL_FILTERS
+         else if (new_filter == FT_EXTERNAL_CONTENT_FILTER)
+         {
+            new_bl->name = chomp(buf + 16);
+         }
+#endif
          else
          {
             new_bl->name = chomp(buf + 21);
@@ -1234,12 +1246,33 @@ int load_one_re_filterfile(struct client_state *csp, int fileid)
          continue;
       }
 
-      /*
-       * Else, save the expression, make it a pcrs_job
-       * and chain it into the current filter's joblist
-       */
+#ifdef FEATURE_EXTERNAL_FILTERS
+      if ((bl != NULL) && (bl->type == FT_EXTERNAL_CONTENT_FILTER))
+      {
+         /* Save the code as "pattern", but do not compile anything. */
+         if (bl->patterns->first != NULL)
+         {
+            log_error(LOG_LEVEL_FATAL, "External filter '%s' contains several jobss. "
+               "Did you forget to escape a line break?",
+               bl->name);
+         }
+         error = enlist(bl->patterns, buf);
+         if (JB_ERR_MEMORY == error)
+         {
+            log_error(LOG_LEVEL_FATAL,
+               "Out of memory while enlisting external filter code \'%s\' for filter %s.",
+               buf, bl->name);
+         }
+         freez(buf);
+         continue;
+      }
+#endif
       if (bl != NULL)
       {
+         /*
+          * Save the expression, make it a pcrs_job
+          * and chain it into the current filter's joblist
+          */
          error = enlist(bl->patterns, buf);
          if (JB_ERR_MEMORY == error)
          {

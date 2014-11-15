@@ -1,6 +1,146 @@
 --------------------------------------------------------------------
 ChangeLog for Privoxy
 --------------------------------------------------------------------
+*** Version 3.0.22 stable ***
+
+- Bug fixes:
+  - Fixed a memory leak when rejecting client connections due to
+    the socket limit being reached (CID 66382). This affected
+    Privoxy 3.0.21 when compiled with IPv6 support (on most
+    platforms this is the default).
+  - Fixed an immediate-use-after-free bug (CID 66394) and two
+    additional unconfirmed use-after-free complaints made by
+    Coverity scan (CID 66391, CID 66376).
+  - Actually show the FORCE_PREFIX value on the show-status page.
+  - Properly deal with Keep-Alive headers with timeout= parameters
+    If the timeout still can't be parsed, use the configured
+    timeout instead of preventing the client from keeping the
+    connection alive. Fixes #3615312/#870 reported by Bernard Guillot.
+  - Not using any filter files no longer results in warning messages
+    unless an action file is referencing header taggers or filters.
+    Reported by Stefan Kurtz in #3614835.
+  - Fixed a bug that prevented Privoxy from reusing some reusable
+    connections. Two bit masks with different purpose unintentionally
+    shared the same bit.
+  - A couple of additional bugs were discovered by Coverity Scan.
+    The fixes that are not expected to affect users are not explicitly
+    mentioned here, for details please have a look at the CVS logs.
+
+- General improvements:
+  - Introduced negative tag patterns NO-REQUEST-TAG and NO-RESPONSE-TAG.
+    They apply if no matching tag is found after parsing client or
+    server headers.
+  - Add support for external filters which allow to process the
+    response body with a script or program written in any language
+    the platform supports. External filters are enabled with
+    +external-filter{} after they have been defined in one of the
+    filter files with a header line starting with "EXTERNAL-FILTER:".
+    External filter support is experimental, not compiled by default
+    and known not to work on all platforms.
+  - Add support for the 'PATCH' method as defined in RFC5789.
+  - Reject requests with unsupported Expect header values.
+    Fixes a couple of Co-Advisor tests.
+  - Normalize the HTTP-version in forwarded requests and responses.
+    This is an explicit RFC 2616 MUST and RFC 7230 mandates that
+    intermediaries send their own HTTP-version in forwarded
+    messages.
+  - Server 'Keep-Alive' headers are no longer forwarded. From a user's
+    point of view it doesn't really matter, but RFC 2616 (obsolete)
+    mandates that the header is removed and this fixes a Co-Advisor
+    complaint.
+  - Change declared template file encoding to UTF-8. The templates
+    already used a subset of UTF-8 anyway and changing the declaration
+    allows to properly display UTF-8 characters used in the action files.
+    This change may require existing action files with ISO-8859-1
+    characters that aren't valid UTF-8 to be converted to UTF-8.
+    Requested by Sam Chen in #582.
+  - Do not pass rejected keep-alive timeouts to the server. It might
+    not have caused any problems (we know of), but doing the right
+    thing shouldn't hurt either.
+  - Let log_error() use its own buffer size #define to make changing
+    the log buffer size slightly less inconvenient.
+  - Turned single-threaded into a "proper" toggle directive with arguments.
+  - CGI templates no longer enforce new windows for some links.
+  - Remove an undocumented workaround ('HOST' header removal) for
+    an Apple iTunes bug that according to #729900 got fixed in 2003.
+
+- Action file improvements:
+  - The pattern 'promotions.' is no longer being blocked.
+    Reported by rakista in #3608540.
+  - Disable fast-redirects for .microsofttranslator.com/.
+  - Disable filter{banners-by-size} for .dgb-tagungszentren.de/.
+  - Add adn.speedtest.net as a site-specific unblocker.
+    Support request #3612908.
+  - Disable filter{banners-by-size} for creativecommons.org/.
+  - Block requests to data.gosquared.com/. Reported by cbug in #3613653.
+  - Unblock .conrad./newsletter/. Reported by David Bo in #3614238.
+  - Unblock .bundestag.de/.
+  - Unblock .rote-hilfe.de/.
+  - Disable fast-redirects for .facebook.com/plugins/like.php.
+  - Unblock Stackexchange popup URLs that aren't used to serve ads.
+    Reported by David Wagner in #3615179.
+  - Disable fast-redirects for creativecommons.org/.
+  - Unblock .stopwatchingus.info/.
+  - Block requests for .adcash.com/script/.
+    Reported by Tyrexionibus in #3615289.
+  - Disable HTML filters if the response was tagged as JavaScript.
+    Filtering JavaScript code with filters intended to deal with HTML
+    is usually a waste of time and, more importantly, may break stuff.
+  - Use a custom redirect{} for .washingtonpost.com/wp-apps/imrs\.php\?src=
+    Previously enabling the 'Advanced' settings (or manually enabling
+    +fast-redirects{}) prevented some images from being loaded properly.
+  - Unblock "adina*." Fixes #919 reported by Morton A. Goldberg.
+  - Block '/.*DigiAd'.
+  - Unblock 'adele*.'. Reported by Adele Lime in #1663.
+  - Disable banners-by-size for kggp.de/.
+
+- Filter file improvements & bug fixes:
+  - Decrease the chances that js-annoyances creates invalid JavaScript.
+    Submitted by John McGowan on ijbswa-users@.
+  - Let the msn filter hide 'related' ads again.
+  - Remove a stray '1' in the 'html-annoyances' filter.
+  - Prevent img-reorder from messing up img tags with empty src
+    attributes. Fixes #880 reported by Duncan.
+
+- Documentation improvements:
+  - Updated the 'Would you like to donate?' section.
+  - Note that invalid forward-override{} parameter syntax isn't
+    detected until the parameter is used.
+  - Add another +redirect{} example: a shortcut for illumos bugs.
+  - Make it more obvious that many operating systems support log
+    rotation out of the box.
+  - Fixed dead links. Reported by Mark Nelson in #3614557.
+  - Rephrased the 'Why is the configuration so complicated?' answer
+    to be slightly less condescending. Anonymously suggested in #3615122.
+  - Be more explicit about accept-intercepted-requests's lack of MITM support.
+  - Make 'demoronizer' FAQ entries more generic.
+  - Add an example hostname to the --pre-chroot-nslookup description.
+  - Add an example for a host pattern that matches an IP address.
+  - Rename the 'domain pattern' to 'host pattern' as it may
+    contain IP addresses as well.
+  - Recommend forward-socks5t when using Tor. It seems to work fine and
+    modifying the Tor configuration to profit from it hasn't been necessary
+    for a while now.
+  - Add another redirect{} example to stress that redirect loops can
+    and should be avoided.
+  - The usual spelling and grammar fixes. Parts of them were
+    reported by Reuben Thomas in #3615276.
+  - Mention the PCRS option letters T and D in the filter section.
+  - Clarify that handle-as-empty-doc-returns-ok is still useful
+    and will not be removed without replacement.
+  - Note that security issues shouldn't be reported using the bug tracker.
+  - Clarify what Privoxy does if both +block{} and +redirect{} apply.
+  - Removed the obsolete bookmarklets section.
+
+- Build system improvements:
+  - Let --with-group properly deal with secondary groups.
+    Patch submitted by Anatoly Arzhnikov in #3615187.
+  - Fix web-actions target.
+  - Add a web-faq target that only updates the FAQ on the webserver.
+  - Remove already-commented-out non-portable DOSFILTER alternatives.
+  - Remove the obsolete targets dok-put and dok-get.
+  - Add a sf-shell target.
+
 *** Version 3.0.21 stable ***
 
 - Bug fixes:
@@ -10,7 +150,7 @@ ChangeLog for Privoxy
     the limit to be reached.
   - Proxy authentication headers are removed unless the new directive
     enable-proxy-authentication-forwarding is used. Forwarding the
-    headers potentionally allows malicious sites to trick the user
+    headers potentially allows malicious sites to trick the user
     into providing them with login information.
     Reported by Chris John Riley.
   - Compiles on OS/2 again now that unistd.h is only included

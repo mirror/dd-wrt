@@ -44,7 +44,7 @@
     Troubleshooting</a></h1>
 
     <div class="SECT2">
-      <h3 class="SECT2"><a name="AEN1091" id="AEN1091">5.1. I cannot connect
+      <h3 class="SECT2"><a name="AEN1086" id="AEN1086">5.1. I cannot connect
       to any websites. Or, I am getting <span class="QUOTE">"connection
       refused"</span> message with every web page. Why?</a></h3>
 
@@ -94,7 +94,7 @@
     </div>
 
     <div class="SECT2">
-      <h3 class="SECT2"><a name="AEN1114" id="AEN1114">5.3. I just added a
+      <h3 class="SECT2"><a name="AEN1109" id="AEN1109">5.3. I just added a
       new rule, but the steenkin ad is still getting through. How?</a></h3>
 
       <p>If the ad had been displayed before you added its URL, it will
@@ -361,7 +361,28 @@ Request: 66.70.21.80/scripts/click.php?hid=a71b9f6504b0c5681fa5&amp;si=Ua
     </div>
 
     <div class="SECT2">
-      <h3 class="SECT2"><a name="BLANKPAGE" id="BLANKPAGE">5.10. I get a
+      <h3 class="SECT2"><a name="MACOSXACCOUNTDELETION" id=
+      "MACOSXACCOUNTDELETION">5.10. I just upgraded to Mac OS X 10.9
+      (Mavericks) and now <span class="APPLICATION">Privoxy</span> has
+      stopped working.</a></h3>
+
+      <p>The upgrade process to Mac OS X Mavericks (10.9) from an earlier
+      version of OS X deletes all user accounts that are either not part of
+      OS X itself or are not interactive user accounts (ones you log in
+      with). Since, for the sake of security, <span class=
+      "APPLICATION">Privoxy</span> runs as a non-privileged user that is
+      created by its installer (_privoxy), it can no longer start up once
+      that account gets deleted. The solution is to perform a complete
+      uninstall using the supplied <span class=
+      "APPLICATION">uninstall.command</span> script (either back up your
+      configuration files or select to not have the uninstaller remove them
+      when it prompts you) and then reinstall <span class=
+      "APPLICATION">Privoxy</span> using the installer package and merge in
+      your configuration.</p>
+    </div>
+
+    <div class="SECT2">
+      <h3 class="SECT2"><a name="BLANKPAGE" id="BLANKPAGE">5.11. I get a
       completely blank page at one site. <span class="QUOTE">"View
       Source"</span> shows only: <span class=
       "MARKUP">&lt;html&gt;&lt;body&gt;&lt;/body&gt;&lt;/html&gt;</span>.
@@ -398,7 +419,7 @@ Request: 66.70.21.80/scripts/click.php?hid=a71b9f6504b0c5681fa5&amp;si=Ua
     </div>
 
     <div class="SECT2">
-      <h3 class="SECT2"><a name="NOHOSTNAME" id="NOHOSTNAME">5.11. My logs
+      <h3 class="SECT2"><a name="NOHOSTNAME" id="NOHOSTNAME">5.12. My logs
       show many <span class="QUOTE">"Unable to get my own hostname"</span>
       lines. Why?</a></h3>
 
@@ -427,7 +448,7 @@ Request: 66.70.21.80/scripts/click.php?hid=a71b9f6504b0c5681fa5&amp;si=Ua
     </div>
 
     <div class="SECT2">
-      <h3 class="SECT2"><a name="INUSE" id="INUSE">5.12. When I try to launch
+      <h3 class="SECT2"><a name="INUSE" id="INUSE">5.13. When I try to launch
       Privoxy, I get an error message <span class="QUOTE">"port 8118 is
       already in use"</span> (or similar wording). Why?</a></h3>
 
@@ -443,36 +464,45 @@ Request: 66.70.21.80/scripts/click.php?hid=a71b9f6504b0c5681fa5&amp;si=Ua
     </div>
 
     <div class="SECT2">
-      <h3 class="SECT2"><a name="DEMORONIZER" id="DEMORONIZER">5.13. Pages
+      <h3 class="SECT2"><a name="DEMORONIZER" id="DEMORONIZER">5.14. Pages
       with UTF-8 fonts are garbled.</a></h3>
 
-      <p>This is caused by the <span class="QUOTE">"demoronizer"</span>
-      filter. You should either upgrade <span class=
-      "APPLICATION">Privoxy</span>, or at least upgrade to the most recent
-      <tt class="FILENAME">default.action</tt> file available from <a href=
+      <p>This may be the result of an overly aggressive filter. The filters
+      that are enabled in the default configuration aren't expected to cause
+      problems like this. If you enabled the <span class=
+      "QUOTE">"demoronizer"</span> filter, please try temporarily disabling
+      it.</p>
+
+      <p>If that doesn't help, temporarily disable all filters to see if
+      another filter could be the culprit. If the problem disappears, enable
+      the filters one by one, until the problem reappears and the offending
+      filter is found.</p>
+
+      <p>Once the problem-causing filter is known, it can be fixed or
+      disabled.</p>
+
+      <p>Upgrading <span class="APPLICATION">Privoxy</span>, or going to the
+      most recent <tt class="FILENAME">default.action</tt> file available
+      from <a href=
       "http://sourceforge.net/project/showfiles.php?group_id=11118" target=
-      "_top">SourceForge</a>. Or you can simply disable the demoronizer
-      filter.</p>
+      "_top">SourceForge</a> might be worth a try, too.</p>
     </div>
 
     <div class="SECT2">
-      <h3 class="SECT2"><a name="DEMORONIZER2" id="DEMORONIZER2">5.14. Why
+      <h3 class="SECT2"><a name="DEMORONIZER2" id="DEMORONIZER2">5.15. Why
       are binary files (such as images) corrupted when Privoxy is
       used?</a></h3>
 
-      <p>This may also be caused by the <span class=
-      "QUOTE">"demoronizer"</span> filter, in conjunction with a web server
-      that is misreporting the content type. Binary files are exempted from
-      <span class="APPLICATION">Privoxy's</span> filtering (unless the web
-      server by mistake says the file is something else). Either upgrade
-      <span class="APPLICATION">Privoxy</span>, or go to the most recent
-      <tt class="FILENAME">default.action</tt> file available from <a href=
-      "http://sourceforge.net/project/showfiles.php?group_id=11118" target=
-      "_top">SourceForge</a>.</p>
+      <p>This may also be caused by an (<a href=
+      "trouble.html#DEMORONIZER">overly aggressive filter</a> in conjunction
+      with a web server that is misreporting the content type. By default
+      binary files are exempted from <span class=
+      "APPLICATION">Privoxy's</span> filtering (unless the web server by
+      mistake says the file is something else).</p>
     </div>
 
     <div class="SECT2">
-      <h3 class="SECT2"><a name="DEMORONIZER3" id="DEMORONIZER3">5.15. What
+      <h3 class="SECT2"><a name="DEMORONIZER3" id="DEMORONIZER3">5.16. What
       is the <span class="QUOTE">"demoronizer"</span> and why is it
       there?</a></h3>
 
@@ -500,7 +530,7 @@ Request: 66.70.21.80/scripts/click.php?hid=a71b9f6504b0c5681fa5&amp;si=Ua
     </div>
 
     <div class="SECT2">
-      <h3 class="SECT2"><a name="WINDOWOPEN" id="WINDOWOPEN">5.16. Why do I
+      <h3 class="SECT2"><a name="WINDOWOPEN" id="WINDOWOPEN">5.17. Why do I
       keep seeing <span class="QUOTE">"PrivoxyWindowOpen()"</span> in raw
       source code?</a></h3>
 
@@ -521,7 +551,7 @@ Request: 66.70.21.80/scripts/click.php?hid=a71b9f6504b0c5681fa5&amp;si=Ua
     </div>
 
     <div class="SECT2">
-      <h3 class="SECT2"><a name="DNSERRORS" id="DNSERRORS">5.17. I am getting
+      <h3 class="SECT2"><a name="DNSERRORS" id="DNSERRORS">5.18. I am getting
       too many DNS errors like <span class="QUOTE">"404 No Such
       Domain"</span>. Why can't Privoxy do this better?</a></h3>
 
@@ -549,7 +579,7 @@ Request: 66.70.21.80/scripts/click.php?hid=a71b9f6504b0c5681fa5&amp;si=Ua
     </div>
 
     <div class="SECT2">
-      <h3 class="SECT2"><a name="ALLCPU" id="ALLCPU">5.18. At one site
+      <h3 class="SECT2"><a name="ALLCPU" id="ALLCPU">5.19. At one site
       Privoxy just hangs, and starts taking all CPU. Why is this?</a></h3>
 
       <p>This is probably a manifestation of the <span class="QUOTE">"100%
@@ -568,7 +598,7 @@ Request: 66.70.21.80/scripts/click.php?hid=a71b9f6504b0c5681fa5&amp;si=Ua
     </div>
 
     <div class="SECT2">
-      <h3 class="SECT2"><a name="SLOWCRAWL" id="SLOWCRAWL">5.19. I just
+      <h3 class="SECT2"><a name="SLOWCRAWL" id="SLOWCRAWL">5.20. I just
       installed Privoxy, and all my browsing has slowed to a crawl. What
       gives?</a></h3>
 
@@ -582,7 +612,7 @@ Request: 66.70.21.80/scripts/click.php?hid=a71b9f6504b0c5681fa5&amp;si=Ua
     </div>
 
     <div class="SECT2">
-      <h3 class="SECT2"><a name="PREVENTCOMP" id="PREVENTCOMP">5.20. Why do
+      <h3 class="SECT2"><a name="PREVENTCOMP" id="PREVENTCOMP">5.21. Why do
       my filters work on some sites but not on others?</a></h3>
 
       <p>It's probably due to compression. It is a common practice for web
@@ -599,7 +629,7 @@ Request: 66.70.21.80/scripts/click.php?hid=a71b9f6504b0c5681fa5&amp;si=Ua
     </div>
 
     <div class="SECT2">
-      <h3 class="SECT2"><a name="SSL-WARNINGS" id="SSL-WARNINGS">5.21. On
+      <h3 class="SECT2"><a name="SSL-WARNINGS" id="SSL-WARNINGS">5.22. On
       some HTTPS sites my browser warns me about unauthenticated content, the
       URL bar doesn't get highlighted and the lock symbol appears to be
       broken. What's going on?</a></h3>
@@ -645,7 +675,7 @@ Request: 66.70.21.80/scripts/click.php?hid=a71b9f6504b0c5681fa5&amp;si=Ua
     </div>
 
     <div class="SECT2">
-      <h3 class="SECT2"><a name="SE-LINUX" id="SE-LINUX">5.22. I get selinux
+      <h3 class="SECT2"><a name="SE-LINUX" id="SE-LINUX">5.23. I get selinux
       error messages. How can I fix this?</a></h3>
 
       <p>Please report the problem to the creator of your selinux
@@ -670,7 +700,7 @@ Request: 66.70.21.80/scripts/click.php?hid=a71b9f6504b0c5681fa5&amp;si=Ua
     </div>
 
     <div class="SECT2">
-      <h3 class="SECT2"><a name="GENTOO-RICERS" id="GENTOO-RICERS">5.23. I
+      <h3 class="SECT2"><a name="GENTOO-RICERS" id="GENTOO-RICERS">5.24. I
       compiled <span class="APPLICATION">Privoxy</span> with Gentoo's portage
       and it appears to be very slow. Why?</a></h3>
 

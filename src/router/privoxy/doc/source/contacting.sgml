@@ -3,7 +3,7 @@
 
  Purpose     :  Entity included in other project documents.
 
- $Id: contacting.sgml,v 2.36 2013/03/02 14:39:38 fabiankeil Exp $
+ $Id: contacting.sgml,v 2.38 2014/07/14 12:56:30 fabiankeil Exp $
 
  Copyright (C) 2001-2011 Privoxy Developers http://www.privoxy.org/
  See LICENSE.
@@ -257,6 +257,8 @@ debug  8192 # Non-fatal errors</literallayout>
    <para>
     <quote>Bugs</quote> in the programming code that makes up
     <application>Privoxy</application>, such as that might cause a crash.
+    Documentation issues, for example spelling errors and unclear descriptions,
+    are bugs, too.
    </para>
   </listitem>
 </itemizedlist>
@@ -285,7 +287,7 @@ debug  8192 # Non-fatal errors</literallayout>
 
 <sect3 id="contact-bugs"><title>Reporting Bugs</title>
 <para>
- Please report all bugs through our bug tracker:
+ Please report bugs that aren't security issues through our bug tracker:
  <ulink url="http://sourceforge.net/tracker/?group_id=11118&amp;atid=111118">http://sourceforge.net/tracker/?group_id=11118&amp;atid=111118</ulink>.
 </para>
 
@@ -297,6 +299,20 @@ debug  8192 # Non-fatal errors</literallayout>
   original report that might help to solve the issue.
 </para>
 </sect3>
+</sect2>
+
+<sect2 id="security-contact"><title>Reporting security problems</title>
+<para>
+ If you discovered a security problem or merely suspect that a bug might
+ be a security issue, please mail Fabian Keil &lt;fk@fabiankeil.de>
+ (OpenPGP fingerprint: 4F36 C17F 3816 9136 54A1 E850 6918 2291 8BA2 371C).
+</para>
+<para>
+ Usually you should get a response within a day, otherwise it's
+ likely that either your mail or the response didn't make it.
+ If that happens, please mail to the developer list to request a
+ status update.
+</para>
 </sect2>
 
 <sect2 id="contact-feature"><title>Request New Features</title>
