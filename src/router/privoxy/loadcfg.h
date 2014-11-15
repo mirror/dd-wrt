@@ -1,6 +1,6 @@
 #ifndef LOADCFG_H_INCLUDED
 #define LOADCFG_H_INCLUDED
-#define LOADCFG_H_VERSION "$Id: loadcfg.h,v 1.16 2011/09/04 11:10:56 fabiankeil Exp $"
+#define LOADCFG_H_VERSION "$Id: loadcfg.h,v 1.17 2013/11/24 14:23:28 fabiankeil Exp $"
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/loadcfg.h,v $
@@ -38,10 +38,6 @@
  *********************************************************************/
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* Don't need project.h, only this: */
 struct configuration_spec;
 
@@ -74,10 +70,6 @@ void unload_current_config_file(void);
 /* Revision control strings from this header and associated .c file */
 extern const char loadcfg_rcs[];
 extern const char loadcfg_h_rcs[];
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
 #endif /* ndef LOADCFG_H_INCLUDED */
 

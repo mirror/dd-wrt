@@ -1,11 +1,11 @@
-const char filters_rcs[] = "$Id: filters.c,v 1.177 2013/04/23 09:37:28 fabiankeil Exp $";
+const char filters_rcs[] = "$Id: filters.c,v 1.192 2014/10/18 11:30:24 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/filters.c,v $
  *
  * Purpose     :  Declares functions to parse/crunch headers and pages.
  *
- * Copyright   :  Written by and Copyright (C) 2001-2011 the
+ * Copyright   :  Written by and Copyright (C) 2001-2014 the
  *                Privoxy team. http://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -65,6 +65,7 @@ const char filters_rcs[] = "$Id: filters.c,v 1.177 2013/04/23 09:37:28 fabiankei
 #include "miscutil.h"
 #include "actions.h"
 #include "cgi.h"
+#include "jcc.h"
 #include "list.h"
 #include "deanimate.h"
 #include "urlmatch.h"
@@ -346,12 +347,7 @@ int acl_addr(const char *aspec, struct access_control_addr *aca)
     * Use a temporary acl spec copy so we can log
     * the unmodified original in case of parse errors.
     */
-   acl_spec = strdup(aspec);
-   if (acl_spec == NULL)
-   {
-      /* XXX: This will be logged as parse error. */
-      return(-1);
-   }
+   acl_spec = strdup_or_die(aspec);
 
    if ((p = strchr(acl_spec, '/')) != NULL)
    {
@@ -581,12 +577,7 @@ struct http_response *block_url(struct client_state *csp)
       /* and handle accordingly: */
       if ((p == NULL) || (0 == strcmpic(p, "pattern")))
       {
-         rsp->status = strdup("403 Request blocked by Privoxy");
-         if (rsp->status == NULL)
-         {
-            free_http_response(rsp);
-            return cgi_error_memory();
-         }
+         rsp->status = strdup_or_die("403 Request blocked by Privoxy");
          rsp->body = bindup(image_pattern_data, image_pattern_length);
          if (rsp->body == NULL)
          {
@@ -603,12 +594,7 @@ struct http_response *block_url(struct client_state *csp)
       }
       else if (0 == strcmpic(p, "blank"))
       {
-         rsp->status = strdup("403 Request blocked by Privoxy");
-         if (rsp->status == NULL)
-         {
-            free_http_response(rsp);
-            return cgi_error_memory();
-         }
+         rsp->status = strdup_or_die("403 Request blocked by Privoxy");
          rsp->body = bindup(image_blank_data, image_blank_length);
          if (rsp->body == NULL)
          {
@@ -625,12 +611,7 @@ struct http_response *block_url(struct client_state *csp)
       }
       else
       {
-         rsp->status = strdup("302 Local Redirect from Privoxy");
-         if (rsp->status == NULL)
-         {
-            free_http_response(rsp);
-            return cgi_error_memory();
-         }
+         rsp->status = strdup_or_die("302 Local Redirect from Privoxy");
 
          if (enlist_unique_header(rsp->headers, "Location", p))
          {
@@ -650,7 +631,7 @@ struct http_response *block_url(struct client_state *csp)
       new_content_type = csp->action->string[ACTION_STRING_CONTENT_TYPE];
 
       freez(rsp->body);
-      rsp->body = strdup(" ");
+      rsp->body = strdup_or_die(" ");
       rsp->content_length = 1;
 
       if (csp->config->feature_flags & RUNTIME_FEATURE_EMPTY_DOC_RETURNS_OK)
@@ -661,18 +642,13 @@ struct http_response *block_url(struct client_state *csp)
           * Return a 200 OK status for pages blocked with +handle-as-empty-document
           * if the "handle-as-empty-doc-returns-ok" runtime config option is set.
           */
-         rsp->status = strdup("200 Request blocked by Privoxy");
+         rsp->status = strdup_or_die("200 Request blocked by Privoxy");
       }
       else
       {
-         rsp->status = strdup("403 Request blocked by Privoxy");
+         rsp->status = strdup_or_die("403 Request blocked by Privoxy");
       }
 
-      if (rsp->status == NULL)
-      {
-         free_http_response(rsp);
-         return cgi_error_memory();
-      }
       if (new_content_type != 0)
       {
          log_error(LOG_LEVEL_HEADER, "Overwriting Content-Type with %s", new_content_type);
@@ -692,12 +668,7 @@ struct http_response *block_url(struct client_state *csp)
       jb_err err;
       struct map * exports;
 
-      rsp->status = strdup("403 Request blocked by Privoxy");
-      if (rsp->status == NULL)
-      {
-         free_http_response(rsp);
-         return cgi_error_memory();
-      }
+      rsp->status = strdup_or_die("403 Request blocked by Privoxy");
 
       exports = default_exports(csp, NULL);
       if (exports == NULL)
@@ -781,8 +752,8 @@ struct http_response *trust_url(struct client_state *csp)
    struct map * exports;
    char buf[BUFFER_SIZE];
    char *p;
-   struct url_spec **tl;
-   struct url_spec *t;
+   struct pattern_spec **tl;
+   struct pattern_spec *t;
    jb_err err;
 
    /*
@@ -801,9 +772,9 @@ struct http_response *trust_url(struct client_state *csp)
       return cgi_error_memory();
    }
 
-   rsp->status = strdup("403 Request blocked by Privoxy");
+   rsp->status = strdup_or_die("403 Request blocked by Privoxy");
    exports = default_exports(csp, NULL);
-   if (exports == NULL || rsp->status == NULL)
+   if (exports == NULL)
    {
       free_http_response(rsp);
       return cgi_error_memory();
@@ -835,7 +806,7 @@ struct http_response *trust_url(struct client_state *csp)
    /*
     * Export the trust list
     */
-   p = strdup("");
+   p = strdup_or_die("");
    for (tl = csp->config->trust_list; (t = *tl) != NULL ; tl++)
    {
       snprintf(buf, sizeof(buf), "<li>%s</li>\n", t->spec);
@@ -857,7 +828,7 @@ struct http_response *trust_url(struct client_state *csp)
    {
       struct list_entry *l;
 
-      p = strdup("");
+      p = strdup_or_die("");
       for (l = csp->config->trust_info->first; l ; l = l->next)
       {
          snprintf(buf, sizeof(buf), "<li> <a href=\"%s\">%s</a><br>\n", l->str, l->str);
@@ -1130,14 +1101,8 @@ char *get_last_url(char *subject, const char *redirect_mode)
          }
          if (NULL != url_segment)
          {
-            url_segment = strdup(url_segment);
+            url_segment = strdup_or_die(url_segment);
             freez(dtoken);
-            if (url_segment == NULL)
-            {
-               log_error(LOG_LEVEL_ERROR,
-                  "Out of memory while searching for redirects.");
-               return NULL;
-            }
             break;
          }
          freez(dtoken);
@@ -1237,11 +1202,14 @@ struct http_response *redirect_url(struct client_state *csp)
        * properly formatted URL and use it for the redirection
        * directly.
        *
-       * According to RFC 2616 section 14.30 the URL
-       * has to be absolute and if the user tries:
-       * +redirect{shit/this/will/be/parsed/as/pcrs_command.html}
+       * According to (the now obsolete) RFC 2616 section 14.30
+       * the URL has to be absolute and if the user tries:
+       * +redirect{sadly/this/will/be/parsed/as/pcrs_command.html}
        * she would get undefined results anyway.
        *
+       * RFC 7231 7.1.2 actually allows relative references,
+       * but those start with a leading slash (RFC 3986 4.2) and
+       * thus can't be mistaken for pcrs commands either.
        */
 
       if (*redirection_string == 's')
@@ -1320,8 +1288,8 @@ struct http_response *redirect_url(struct client_state *csp)
             return cgi_error_memory();
          }
 
-         if (enlist_unique_header(rsp->headers, "Location", new_url)
-           || (NULL == (rsp->status = strdup("302 Local Redirect from Privoxy"))))
+         rsp->status = strdup_or_die("302 Local Redirect from Privoxy");
+         if (enlist_unique_header(rsp->headers, "Location", new_url))
          {
             freez(new_url);
             free_http_response(rsp);
@@ -1409,7 +1377,7 @@ int is_untrusted_url(const struct client_state *csp)
 {
    struct file_list *fl;
    struct block_spec *b;
-   struct url_spec **trusted_url;
+   struct pattern_spec **trusted_url;
    struct http_request rhttp[1];
    const char * referer;
    jb_err err;
@@ -1466,7 +1434,7 @@ int is_untrusted_url(const struct client_state *csp)
          {
             char * path;
             char * path_end;
-            char * new_entry = strdup("~");
+            char * new_entry = strdup_or_die("~");
 
             string_append(&new_entry, csp->http->hostport);
 
@@ -1527,6 +1495,66 @@ int is_untrusted_url(const struct client_state *csp)
 
 /*********************************************************************
  *
+ * Function    :  get_filter
+ *
+ * Description :  Get a filter with a given name and type.
+ *                Note that taggers are filters, too.
+ *
+ * Parameters  :
+ *          1  :  csp = Current client state (buffers, headers, etc...)
+ *          2  :  requested_name = Name of the content filter to get
+ *          3  :  requested_type = Type of the filter to tagger to lookup
+ *
+ * Returns     :  A pointer to the requested filter
+ *                or NULL if the filter wasn't found
+ *
+ *********************************************************************/
+struct re_filterfile_spec *get_filter(const struct client_state *csp,
+                                      const char *requested_name,
+                                      enum filter_type requested_type)
+{
+   int i;
+   struct re_filterfile_spec *b;
+   struct file_list *fl;
+
+   for (i = 0; i < MAX_AF_FILES; i++)
+   {
+     fl = csp->rlist[i];
+     if ((NULL == fl) || (NULL == fl->f))
+     {
+        /*
+         * Either there are no filter files left or this
+         * filter file just contains no valid filters.
+         *
+         * Continue to be sure we don't miss valid filter
+         * files that are chained after empty or invalid ones.
+         */
+        continue;
+     }
+
+     for (b = fl->f; b != NULL; b = b->next)
+     {
+        if (b->type != requested_type)
+        {
+           /* The callers isn't interested in this filter type. */
+           continue;
+        }
+        if (strcmp(b->name, requested_name) == 0)
+        {
+           /* The requested filter has been found. Abort search. */
+           return b;
+        }
+     }
+   }
+
+   /* No filter with the given name and type exists. */
+   return NULL;
+
+}
+
+
+/*********************************************************************
+ *
  * Function    :  pcrs_filter_response
  *
  * Description :  Execute all text substitutions from all applying
@@ -1543,14 +1571,12 @@ int is_untrusted_url(const struct client_state *csp)
 static char *pcrs_filter_response(struct client_state *csp)
 {
    int hits = 0;
-   int i;
    size_t size, prev_size;
 
    char *old = NULL;
    char *new = NULL;
    pcrs_job *job;
 
-   struct file_list *fl;
    struct re_filterfile_spec *b;
    struct list_entry *filtername;
 
@@ -1572,108 +1598,87 @@ static char *pcrs_filter_response(struct client_state *csp)
    size = (size_t)(csp->iob->eod - csp->iob->cur);
    old = csp->iob->cur;
 
-   for (i = 0; i < MAX_AF_FILES; i++)
-   {
-     fl = csp->rlist[i];
-     if ((NULL == fl) || (NULL == fl->f))
-     {
-        /*
-         * Either there are no filter files
-         * left, or this filter file just
-         * contains no valid filters.
-         *
-         * Continue to be sure we don't miss
-         * valid filter files that are chained
-         * after empty or invalid ones.
-         */
-        continue;
-     }
    /*
     * For all applying +filter actions, look if a filter by that
     * name exists and if yes, execute it's pcrs_joblist on the
     * buffer.
     */
-   for (b = fl->f; b; b = b->next)
+   for (filtername = csp->action->multi[ACTION_MULTI_FILTER]->first;
+        filtername != NULL; filtername = filtername->next)
    {
-      if (b->type != FT_CONTENT_FILTER)
+      int current_hits = 0; /* Number of hits caused by this filter */
+      int job_number   = 0; /* Which job we're currently executing  */
+      int job_hits     = 0; /* How many hits the current job caused */
+      pcrs_job *joblist;
+
+      b = get_filter(csp, filtername->str, FT_CONTENT_FILTER);
+      if (b == NULL)
       {
-         /* Skip header filters */
          continue;
       }
 
-      for (filtername = csp->action->multi[ACTION_MULTI_FILTER]->first;
-           filtername ; filtername = filtername->next)
+      joblist = b->joblist;
+
+      if (b->dynamic) joblist = compile_dynamic_pcrs_job_list(csp, b);
+
+      if (NULL == joblist)
       {
-         if (strcmp(b->name, filtername->str) == 0)
+         log_error(LOG_LEVEL_RE_FILTER, "Filter %s has empty joblist. Nothing to do.", b->name);
+         continue;
+      }
+
+      prev_size = size;
+      /* Apply all jobs from the joblist */
+      for (job = joblist; NULL != job; job = job->next)
+      {
+         job_number++;
+         job_hits = pcrs_execute(job, old, size, &new, &size);
+
+         if (job_hits >= 0)
          {
-            int current_hits = 0; /* Number of hits caused by this filter */
-            int job_number   = 0; /* Which job we're currently executing  */
-            int job_hits     = 0; /* How many hits the current job caused */
-            pcrs_job *joblist = b->joblist;
-
-            if (b->dynamic) joblist = compile_dynamic_pcrs_job_list(csp, b);
-
-            if (NULL == joblist)
+            /*
+             * That went well. Continue filtering
+             * and use the result of this job as
+             * input for the next one.
+             */
+            current_hits += job_hits;
+            if (old != csp->iob->cur)
             {
-               log_error(LOG_LEVEL_RE_FILTER, "Filter %s has empty joblist. Nothing to do.", b->name);
-               continue;
+               freez(old);
             }
-
-            prev_size = size;
-            /* Apply all jobs from the joblist */
-            for (job = joblist; NULL != job; job = job->next)
-            {
-               job_number++;
-               job_hits = pcrs_execute(job, old, size, &new, &size);
-
-               if (job_hits >= 0)
-               {
-                  /*
-                   * That went well. Continue filtering
-                   * and use the result of this job as
-                   * input for the next one.
-                   */
-                  current_hits += job_hits;
-                  if (old != csp->iob->cur)
-                  {
-                     freez(old);
-                  }
-                  old = new;
-               }
-               else
-               {
-                  /*
-                   * This job caused an unexpected error. Inform the user
-                   * and skip the rest of the jobs in this filter. We could
-                   * continue with the next job, but usually the jobs
-                   * depend on each other or are similar enough to
-                   * fail for the same reason.
-                   *
-                   * At the moment our pcrs expects the error codes of pcre 3.4,
-                   * but newer pcre versions can return additional error codes.
-                   * As a result pcrs_strerror()'s error message might be
-                   * "Unknown error ...", therefore we print the numerical value
-                   * as well.
-                   *
-                   * XXX: Is this important enough for LOG_LEVEL_ERROR or
-                   * should we use LOG_LEVEL_RE_FILTER instead?
-                   */
-                  log_error(LOG_LEVEL_ERROR, "Skipped filter \'%s\' after job number %u: %s (%d)",
-                     b->name, job_number, pcrs_strerror(job_hits), job_hits);
-                  break;
-               }
-            }
-
-            if (b->dynamic) pcrs_free_joblist(joblist);
-
-            log_error(LOG_LEVEL_RE_FILTER,
-               "filtering %s%s (size %d) with \'%s\' produced %d hits (new size %d).",
-               csp->http->hostport, csp->http->path, prev_size, b->name, current_hits, size);
-
-            hits += current_hits;
+            old = new;
+         }
+         else
+         {
+            /*
+             * This job caused an unexpected error. Inform the user
+             * and skip the rest of the jobs in this filter. We could
+             * continue with the next job, but usually the jobs
+             * depend on each other or are similar enough to
+             * fail for the same reason.
+             *
+             * At the moment our pcrs expects the error codes of pcre 3.4,
+             * but newer pcre versions can return additional error codes.
+             * As a result pcrs_strerror()'s error message might be
+             * "Unknown error ...", therefore we print the numerical value
+             * as well.
+             *
+             * XXX: Is this important enough for LOG_LEVEL_ERROR or
+             * should we use LOG_LEVEL_RE_FILTER instead?
+             */
+            log_error(LOG_LEVEL_ERROR, "Skipped filter \'%s\' after job number %u: %s (%d)",
+               b->name, job_number, pcrs_strerror(job_hits), job_hits);
+            break;
          }
       }
-   }
+
+      if (b->dynamic) pcrs_free_joblist(joblist);
+
+      log_error(LOG_LEVEL_RE_FILTER,
+         "filtering %s%s (size %d) with \'%s\' produced %d hits (new size %d).",
+         csp->http->hostport, csp->http->path, prev_size, b->name, current_hits, size);
+
+      hits += current_hits;
    }
 
    /*
@@ -1693,6 +1698,230 @@ static char *pcrs_filter_response(struct client_state *csp)
    return(new);
 
 }
+
+
+#ifdef FEATURE_EXTERNAL_FILTERS
+/*********************************************************************
+ *
+ * Function    :  get_external_filter
+ *
+ * Description :  Lookup the code to execute for an external filter.
+ *                Masks the misuse of the re_filterfile_spec.
+ *
+ * Parameters  :
+ *          1  :  csp = Current client state (buffers, headers, etc...)
+ *          2  :  name = Name of the content filter to get
+ *
+ * Returns     :  A pointer to the requested code
+ *                or NULL if the filter wasn't found
+ *
+ *********************************************************************/
+static const char *get_external_filter(const struct client_state *csp,
+                                const char *name)
+{
+   struct re_filterfile_spec *external_filter;
+
+   external_filter = get_filter(csp, name, FT_EXTERNAL_CONTENT_FILTER);
+   if (external_filter == NULL)
+   {
+      log_error(LOG_LEVEL_FATAL,
+         "Didn't find stuff to execute for external filter: %s",
+         name);
+   }
+
+   return external_filter->patterns->first->str;
+
+}
+
+
+/*********************************************************************
+ *
+ * Function    :  set_privoxy_variables
+ *
+ * Description :  Sets a couple of privoxy-specific environment variables
+ *
+ * Parameters  :
+ *          1  :  csp = Current client state (buffers, headers, etc...)
+ *
+ * Returns     :  N/A
+ *
+ *********************************************************************/
+static void set_privoxy_variables(const struct client_state *csp)
+{
+   int i;
+   struct {
+      const char *name;
+      const char *value;
+   } env[] = {
+      { "PRIVOXY_URL",    csp->http->url   },
+      { "PRIVOXY_PATH",   csp->http->path  },
+      { "PRIVOXY_HOST",   csp->http->host  },
+      { "PRIVOXY_ORIGIN", csp->ip_addr_str },
+   };
+
+   for (i = 0; i < SZ(env); i++)
+   {
+      if (setenv(env[i].name, env[i].value, 1))
+      {
+         log_error(LOG_LEVEL_ERROR, "Failed to set %s=%s: %E",
+            env[i].name, env[i].value);
+      }
+   }
+}
+
+
+/*********************************************************************
+ *
+ * Function    :  execute_external_filter
+ *
+ * Description :  Pipe content into external filter and return the output
+ *
+ * Parameters  :
+ *          1  :  csp = Current client state (buffers, headers, etc...)
+ *          2  :  name = Name of the external filter to execute
+ *          3  :  content = The original content to filter
+ *          4  :  size = The size of the content buffer
+ *
+ * Returns     :  a pointer to the (newly allocated) modified buffer.
+ *                or NULL if there were no hits or something went wrong
+ *
+ *********************************************************************/
+static char *execute_external_filter(const struct client_state *csp,
+   const char *name, char *content, size_t *size)
+{
+   char cmd[200];
+   char file_name[FILENAME_MAX];
+   FILE *fp;
+   char *filter_output;
+   int fd;
+   int ret;
+   size_t new_size;
+   const char *external_filter;
+
+   if (csp->config->temporary_directory == NULL)
+   {
+      log_error(LOG_LEVEL_ERROR,
+         "No temporary-directory configured. Can't execute filter: %s",
+         name);
+      return NULL;
+   }
+
+   external_filter = get_external_filter(csp, name);
+
+   if (sizeof(file_name) < snprintf(file_name, sizeof(file_name),
+         "%s/privoxy-XXXXXXXX", csp->config->temporary_directory))
+   {
+      log_error(LOG_LEVEL_ERROR, "temporary-directory path too long");
+      return NULL;
+   }
+
+   fd = mkstemp(file_name);
+   if (fd == -1)
+   {
+      log_error(LOG_LEVEL_ERROR, "mkstemp() failed to create %s: %E", file_name);
+      return NULL;
+   }
+
+   fp = fdopen(fd, "w");
+   if (fp == NULL)
+   {
+      log_error(LOG_LEVEL_ERROR, "fdopen() failed: %E");
+      unlink(file_name);
+      return NULL;
+   }
+
+   /*
+    * The size may be zero if a previous filter discarded everything.
+    *
+    * This isn't necessary unintentional, so we just don't try
+    * to fwrite() nothing and let the user deal with the rest.
+    */
+   if ((*size != 0) && fwrite(content, *size, 1, fp) != 1)
+   {
+      log_error(LOG_LEVEL_ERROR, "fwrite(..., %d, 1, ..) failed: %E", *size);
+      unlink(file_name);
+      fclose(fp);
+      return NULL;
+   }
+   fclose(fp);
+
+   if (sizeof(cmd) < snprintf(cmd, sizeof(cmd), "%s < %s", external_filter, file_name))
+   {
+      log_error(LOG_LEVEL_ERROR,
+         "temporary-directory or external filter path too long");
+      unlink(file_name);
+      return NULL;
+   }
+
+   log_error(LOG_LEVEL_RE_FILTER, "Executing '%s': %s", name, cmd);
+
+   /*
+    * The locking is necessary to prevent other threads
+    * from overwriting the environment variables before
+    * the popen fork. Afterwards this no longer matters.
+    */
+   privoxy_mutex_lock(&external_filter_mutex);
+   set_privoxy_variables(csp);
+   fp = popen(cmd, "r");
+   privoxy_mutex_unlock(&external_filter_mutex);
+   if (fp == NULL)
+   {
+      log_error(LOG_LEVEL_ERROR, "popen(\"%s\", \"r\") failed: %E", cmd);
+      unlink(file_name);
+      return NULL;
+   }
+
+   filter_output = malloc_or_die(*size);
+
+   new_size = 0;
+   while (!feof(fp) && !ferror(fp))
+   {
+      size_t len;
+      /* Could be bigger ... */
+      enum { READ_LENGTH = 2048 };
+
+      if (new_size + READ_LENGTH >= *size)
+      {
+         char *p;
+
+         /* Could be considered wasteful if the content is 'large'. */
+         *size = (*size != 0) ? *size * 2 : READ_LENGTH;
+
+         p = realloc(filter_output, *size);
+         if (p == NULL)
+         {
+            log_error(LOG_LEVEL_ERROR, "Out of memory while reading "
+               "external filter output. Using what we got so far.");
+            break;
+         }
+         filter_output = p;
+      }
+      len = fread(&filter_output[new_size], 1, READ_LENGTH, fp);
+      if (len > 0)
+      {
+         new_size += len;
+      }
+   }
+
+   ret = pclose(fp);
+   if (ret == -1)
+   {
+      log_error(LOG_LEVEL_ERROR, "Executing %s failed: %E", cmd);
+   }
+   else
+   {
+      log_error(LOG_LEVEL_RE_FILTER,
+         "Executing '%s' resulted in return value %d. "
+         "Read %d of up to %d bytes.", name, (ret >> 8), new_size, *size);
+   }
+
+   unlink(file_name);
+   *size = new_size;
+
+   return filter_output;
+
+}
+#endif /* def FEATURE_EXTERNAL_FILTERS */
 
 
 /*********************************************************************
@@ -1761,7 +1990,8 @@ static char *gif_deanimate_response(struct client_state *csp)
  * Function    :  get_filter_function
  *
  * Description :  Decides which content filter function has
- *                to be applied (if any).
+ *                to be applied (if any). Only considers functions
+ *                for internal filters which are mutually-exclusive.
  *
  * Parameters  :
  *          1  :  csp = Current client state (buffers, headers, etc...)
@@ -1779,12 +2009,11 @@ static filter_function_ptr get_filter_function(const struct client_state *csp)
     * the content type and action settings.
     */
    if ((csp->content_type & CT_TEXT) &&
-       (csp->rlist != NULL) &&
        (!list_is_empty(csp->action->multi[ACTION_MULTI_FILTER])))
    {
       filter_function = pcrs_filter_response;
    }
-   else if ((csp->content_type & CT_GIF)  &&
+   else if ((csp->content_type & CT_GIF) &&
             (csp->action->flags & ACTION_DEANIMATE))
    {
       filter_function = gif_deanimate_response;
@@ -1799,7 +2028,8 @@ static filter_function_ptr get_filter_function(const struct client_state *csp)
  * Function    :  remove_chunked_transfer_coding
  *
  * Description :  In-situ remove the "chunked" transfer coding as defined
- *                in rfc2616 from a buffer.
+ *                in RFC 7230 4.1 from a buffer. XXX: The implementation
+ *                is neither complete nor compliant (TODO #129).
  *
  * Parameters  :
  *          1  :  buffer = Pointer to the text buffer
@@ -1956,6 +2186,7 @@ static jb_err prepare_for_filtering(struct client_state *csp)
  *********************************************************************/
 char *execute_content_filters(struct client_state *csp)
 {
+   char *content;
    filter_function_ptr content_filter;
 
    assert(content_filters_enabled(csp->action));
@@ -1986,8 +2217,41 @@ char *execute_content_filters(struct client_state *csp)
    }
 
    content_filter = get_filter_function(csp);
+   content = (content_filter != NULL) ? (*content_filter)(csp) : NULL;
 
-   return ((*content_filter)(csp));
+#ifdef FEATURE_EXTERNAL_FILTERS
+   if ((csp->content_type & CT_TEXT) &&
+       !list_is_empty(csp->action->multi[ACTION_MULTI_EXTERNAL_FILTER]))
+   {
+      struct list_entry *filtername;
+      size_t size = (size_t)csp->content_length;
+
+      if (content == NULL)
+      {
+         content = csp->iob->cur;
+         size = (size_t)(csp->iob->eod - csp->iob->cur);
+      }
+
+      for (filtername = csp->action->multi[ACTION_MULTI_EXTERNAL_FILTER]->first;
+           filtername ; filtername = filtername->next)
+      {
+         char *result = execute_external_filter(csp, filtername->str, content, &size);
+         if (result != NULL)
+         {
+            if (content != csp->iob->cur)
+            {
+               free(content);
+            }
+            content = result;
+         }
+      }
+      csp->flags |= CSP_FLAG_MODIFIED;
+      csp->content_length = size;
+   }
+#endif /* def FEATURE_EXTERNAL_FILTERS */
+
+   return content;
+
 }
 
 
@@ -2086,7 +2350,7 @@ void apply_url_actions(struct current_action_spec *action,
  *                Invalid syntax is fatal.
  *
  *********************************************************************/
-const static struct forward_spec *get_forward_override_settings(struct client_state *csp)
+static const struct forward_spec *get_forward_override_settings(struct client_state *csp)
 {
    const char *forward_override_line = csp->action->string[ACTION_STRING_FORWARD_OVERRIDE];
    char forward_settings[BUFFER_SIZE];
@@ -2211,7 +2475,7 @@ const static struct forward_spec *get_forward_override_settings(struct client_st
 const struct forward_spec *forward_url(struct client_state *csp,
                                        const struct http_request *http)
 {
-   static const struct forward_spec fwd_default[1] = { FORWARD_SPEC_INITIALIZER };
+   static const struct forward_spec fwd_default[1]; /* Zero'ed due to being static. */
    struct forward_spec *fwd = csp->config->forward;
 
    if (csp->action->flags & ACTION_FORWARD_OVERRIDE)
@@ -2289,12 +2553,7 @@ struct http_response *direct_response(struct client_state *csp)
                   return cgi_error_memory();
                }
 
-               if (NULL == (rsp->status = strdup("501 Not Implemented")))
-               {
-                  free_http_response(rsp);
-                  return cgi_error_memory();
-               }
-
+               rsp->status = strdup_or_die("501 Not Implemented");
                rsp->is_static = 1;
                rsp->crunch_reason = UNSUPPORTED;
 
@@ -2366,8 +2625,8 @@ int content_requires_filtering(struct client_state *csp)
     * the content type and action settings.
     */
    if ((csp->content_type & CT_TEXT) &&
-       (csp->rlist != NULL) &&
-       (!list_is_empty(csp->action->multi[ACTION_MULTI_FILTER])))
+       (!list_is_empty(csp->action->multi[ACTION_MULTI_FILTER]) ||
+        !list_is_empty(csp->action->multi[ACTION_MULTI_EXTERNAL_FILTER])))
    {
       return TRUE;
    }
@@ -2398,7 +2657,8 @@ int content_requires_filtering(struct client_state *csp)
 int content_filters_enabled(const struct current_action_spec *action)
 {
    return ((action->flags & ACTION_DEANIMATE) ||
-      !list_is_empty(action->multi[ACTION_MULTI_FILTER]));
+      !list_is_empty(action->multi[ACTION_MULTI_FILTER]) ||
+      !list_is_empty(action->multi[ACTION_MULTI_EXTERNAL_FILTER]));
 }
 
 

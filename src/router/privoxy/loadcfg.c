@@ -1,4 +1,4 @@
-const char loadcfg_rcs[] = "$Id: loadcfg.c,v 1.138 2013/04/23 09:42:53 fabiankeil Exp $";
+const char loadcfg_rcs[] = "$Id: loadcfg.c,v 1.142 2014/10/18 11:27:28 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/loadcfg.c,v $
@@ -8,7 +8,7 @@ const char loadcfg_rcs[] = "$Id: loadcfg.c,v 1.138 2013/04/23 09:42:53 fabiankei
  *                routine to load the configuration and the global
  *                variables it writes to.
  *
- * Copyright   :  Written by and Copyright (C) 2001-2009 the
+ * Copyright   :  Written by and Copyright (C) 2001-2014 the
  *                Privoxy team. http://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -157,6 +157,7 @@ static struct file_list *current_configfile = NULL;
 #define hash_split_large_cgi_forms        671658948U /* "split-large-cgi-forms" */
 #define hash_suppress_blocklists         1948693308U /* "suppress-blocklists" */
 #define hash_templdir                      11067889U /* "templdir" */
+#define hash_temporary_directory         1824125181U /* "temporary-directory" */
 #define hash_tolerate_pipelining         1360286620U /* "tolerate-pipelining" */
 #define hash_toggle                          447966U /* "toggle" */
 #define hash_trust_info_url               430331967U /* "trust-info-url" */
@@ -209,7 +210,7 @@ static void unload_configfile (void * data)
    while (cur_fwd != NULL)
    {
       struct forward_spec * next_fwd = cur_fwd->next;
-      free_url_spec(cur_fwd->url);
+      free_pattern_spec(cur_fwd->url);
 
       freez(cur_fwd->gateway_host);
       freez(cur_fwd->forward_host);
@@ -222,6 +223,9 @@ static void unload_configfile (void * data)
    freez(config->logdir);
    freez(config->templdir);
    freez(config->hostname);
+#ifdef FEATURE_EXTERNAL_FILTERS
+   freez(config->temporary_directory);
+#endif
 
    for (i = 0; i < MAX_LISTENING_SOCKETS; i++)
    {
@@ -937,13 +941,14 @@ struct configuration_spec * load_config(void)
             cur_fwd->type = SOCKS_NONE;
 
             /* Save the URL pattern */
-            if (create_url_spec(cur_fwd->url, vec[0]))
+            if (create_pattern_spec(cur_fwd->url, vec[0]))
             {
                log_error(LOG_LEVEL_ERROR, "Bad URL specifier for forward "
                      "directive in configuration file.");
                string_append(&config->proxy_args,
                   "<br>\nWARNING: Bad URL specifier for "
                   "forward directive in configuration file.");
+               freez(cur_fwd);
                break;
             }
 
@@ -992,13 +997,14 @@ struct configuration_spec * load_config(void)
             cur_fwd->type = SOCKS_4;
 
             /* Save the URL pattern */
-            if (create_url_spec(cur_fwd->url, vec[0]))
+            if (create_pattern_spec(cur_fwd->url, vec[0]))
             {
                log_error(LOG_LEVEL_ERROR, "Bad URL specifier for forward-socks4 "
                      "directive in configuration file.");
                string_append(&config->proxy_args,
                   "<br>\nWARNING: Bad URL specifier for "
                   "forward-socks4 directive in configuration file.");
+               freez(cur_fwd);
                break;
             }
 
@@ -1072,13 +1078,14 @@ struct configuration_spec * load_config(void)
             }
 
             /* Save the URL pattern */
-            if (create_url_spec(cur_fwd->url, vec[0]))
+            if (create_pattern_spec(cur_fwd->url, vec[0]))
             {
                log_error(LOG_LEVEL_ERROR, "Bad URL specifier for forward-socks4a "
                      "directive in configuration file.");
                string_append(&config->proxy_args,
                   "<br>\nWARNING: Bad URL specifier for "
                   "forward-socks4a directive in configuration file.");
+               freez(cur_fwd);
                break;
             }
 
@@ -1363,6 +1370,16 @@ struct configuration_spec * load_config(void)
             freez(config->templdir);
             config->templdir = make_path(NULL, arg);
             break;
+
+#ifdef FEATURE_EXTERNAL_FILTERS
+/* *************************************************************************
+ * temporary-directory directory-name
+ * *************************************************************************/
+         case hash_temporary_directory :
+            freez(config->temporary_directory);
+            config->temporary_directory = make_path(NULL, arg);
+            break;
+#endif
 
 /* *************************************************************************
  * tolerate-pipelining (0|1)

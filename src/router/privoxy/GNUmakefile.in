@@ -1,8 +1,8 @@
 # Note:  Makefile is built automatically from Makefile.in
 #
-# $Id: GNUmakefile.in,v 1.221 2013/02/05 14:04:11 fabiankeil Exp $
+# $Id: GNUmakefile.in,v 1.228 2014/10/21 15:31:16 fabiankeil Exp $
 #
-# Written by and Copyright (C) 2001-2013 members of the
+# Written by and Copyright (C) 2001-2014 members of the
 # Privoxy team. http://www.privoxy.org/
 #
 # Based on the Internet Junkbuster originally written
@@ -144,14 +144,9 @@ DOC_DIR    = doc/source
 DOC_TMP    = $(DOC_DIR)/tmp
 DOC_STATUS = @DOC_STATUS@
 TIDY       = tidy -modify -indent -wrap 78 --tidy-mark no
+RSYNC	   = rsync -av
 
 # Program to do LF->CRLF
-#
-# The sed version should be the most portable, but it doesn't for for me,
-# the other two do.  FIXME.
-#   - Jon
-#DOSFILTER  = $(SED) -e $$'s,$$,\r,'
-#DOSFILTER  = gawk -v ORS='\r\n' '{print $0;}'
 DOSFILTER  = $(PERL) -p -e 's/\n/\r\n/'
 CVSROOT    = :pserver:anonymous@ijbswa.cvs.sourceforge.net:/cvsroot/ijbswa
 #TMPDIR     := $(shell mktemp -d /tmp/$(PROGRAM).XXXXXX)
@@ -159,6 +154,8 @@ CVSROOT    = :pserver:anonymous@ijbswa.cvs.sourceforge.net:/cvsroot/ijbswa
 # change this to "ssh -l sf-username"
 SSH	= ssh
 WWW_ROOT = /home/project-web/ijbswa
+# SourceForge login name used by the 'sf-shell' target (optional)
+SOURCE_FORGE_NAME = ''
 
 #############################################################################
 # Setup for make distribution for now.
@@ -606,6 +603,12 @@ config-file-alt:
 # moves dokumentation to webserver
 #
 #############################################################################
+sf-shell:
+	@sf_name=$(SOURCE_FORGE_NAME); \
+	[ -n "$${sf_name}" ] || read -p "Enter SourceForge username: " sf_name || exit 1; \
+	echo "Opening shell for $${sf_name} ..."; \
+	ssh -t $${sf_name},ijbswa@shell.sourceforge.net create
+
 webserver: clean-editor-files
 	@$(ECHO) -------------------------------------------------------
 	@$(ECHO) You will need to "create" a SF shell first:
@@ -631,31 +634,17 @@ webserver: clean-editor-files
 	@$(SSH) shell.sourceforge.net 'chmod -R 775 $(WWW_ROOT)/htdocs 2>/dev/null; true'
 	@$(SSH) shell.sourceforge.net 'find $(WWW_ROOT)/htdocs/ -type f | xargs chmod 664 2>/dev/null; true'
 
-web-actions: clean-editor-files
-	@$(ECHO) Uploading
-	@cd doc/webserver/actions; \
-          upload=`find . -type f -a -not \( -path "*/CVS*" -o -path "*/results*" \)`; \
-          $(TAR) cf - $$upload | $(SSH) ijbswa.sourceforge.net 'cd $(WWW_ROOT)/htdocs/actions; tar xvm'
+web-actions:
+	@$(ECHO) Updating the actions on the webserver ...
+	@$(RSYNC) doc/webserver/actions/*.php shell.sourceforge.net:$(WWW_ROOT)/htdocs/actions
+	@$(ECHO) Enforcing reasonable permissions ...
+	@$(SSH) shell.sourceforge.net 'find $(WWW_ROOT)/htdocs/actions/ -type f | xargs chmod 664 2>/dev/null'
 
-	@$(ECHO) Fixing permissions
-	@$(SSH) ijbswa.sourceforge.net 'find $(WWW_ROOT)/htdocs/actions/ -type f | xargs chmod 664 2>/dev/null'
-	@$(SSH) ijbswa.sourceforge.net 'chmod 666 $(WWW_ROOT)/htdocs/actions/results/actions-feedback.txt 2>/dev/null'
-
-##
-dok-put:
-	tar --exclude ".cvsignore" --exclude "CVS" --exclude "source" --exclude ".htaccess" \
-	     --exclude "obsolete" --exclude "actions" --exclude "*.zip" --exclude "robots.txt"\
-		doc/* INSTALL LICENSE AUTHORS README \
-		-czf $(DOC_FILE) ;\
-		$(ECHO) "Uploading doc package ..." ;\
-		scp $(DOC_FILE) ijbswa.sourceforge.net:$(WWW_ROOT)/htdocs/docs/
-		@$(SSH) ijbswa.sourceforge.net 'chmod 775 $(WWW_ROOT)/htdocs/docs/*gz 2>/dev/null; true'
-		$(RM) $(DOC_FILE)
-
-dok-get:
-	cd /tmp ;\
-	$(WGET) http://www.privoxy.org/docs/$(DOC_FILE) ;\
-	$(TAR) -zxvf $(DOC_FILE)
+web-faq:
+	@$(ECHO) Updating the FAQ on the webserver ...
+	@$(RSYNC) doc/webserver/faq/*.html shell.sourceforge.net:$(WWW_ROOT)/htdocs/faq
+	@$(ECHO) Enforcing reasonable permissions ...
+	@$(SSH) shell.sourceforge.net 'find $(WWW_ROOT)/htdocs/faq/ -type f | xargs chmod 664 2>/dev/null'
 
 #############################################################################
 #
@@ -678,7 +667,7 @@ dok-tidy:
 # Source file dependencies
 #############################################################################
 
-actions.@OBJEXT@:   actions.c   actions.h   config.h $(PROJECT_H_DEPS) errlog.h jcc.h list.h loaders.h miscutil.h actionlist.h ssplit.h
+actions.@OBJEXT@:   actions.c   actions.h   config.h $(PROJECT_H_DEPS) errlog.h filters.h jcc.h list.h loaders.h miscutil.h actionlist.h ssplit.h
 cgi.@OBJEXT@:       cgi.c       cgi.h       config.h $(PROJECT_H_DEPS) cgiedit.h cgisimple.h jbsockets.h list.h pcrs.h encode.h ssplit.h jcc.h filters.h actions.h errlog.h miscutil.h
 cgiedit.@OBJEXT@:   cgiedit.c   cgiedit.h   config.h $(PROJECT_H_DEPS) cgi.h list.h pcrs.h encode.h ssplit.h jcc.h filters.h actionlist.h actions.h errlog.h miscutil.h
 cgisimple.@OBJEXT@: cgisimple.c cgisimple.h config.h $(PROJECT_H_DEPS) cgi.h list.h pcrs.h encode.h ssplit.h jcc.h filters.h actions.h errlog.h miscutil.h urlmatch.h
@@ -716,7 +705,7 @@ pcre/chartables.c:   pcre/dftables@EXEEXT@
 		pcre/dftables@EXEEXT@ >pcre/chartables.c
 
 pcre/dftables@EXEEXT@:       pcre/dftables.c pcre/maketables.c pcre/pcre.h pcre/internal.h pcre/config.h
-		gcc -o pcre/dftables@EXEEXT@ pcre/dftables.c
+		$(CC) -o pcre/dftables@EXEEXT@ $(CFLAGS) pcre/dftables.c
 
 # Win32
 w32log.@OBJEXT@: w32log.c errlog.h config.h jcc.h loadcfg.h miscutil.h pcre/pcre.h pcre/pcreposix.h pcrs.h project.h w32log.h w32taskbar.h win32.h

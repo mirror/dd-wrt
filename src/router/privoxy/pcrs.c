@@ -1,4 +1,4 @@
-const char pcrs_rcs[] = "$Id: pcrs.c,v 1.43 2012/10/29 12:01:31 fabiankeil Exp $";
+const char pcrs_rcs[] = "$Id: pcrs.c,v 1.46 2014/11/14 10:40:10 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/pcrs.c,v $
@@ -725,7 +725,7 @@ int pcrs_execute_list(pcrs_job *joblist, char *subject, size_t subject_length, c
  *          1  :  job = the pcrs_job to be executed
  *          2  :  subject = the subject (== original) string
  *          3  :  subject_length = the subject's length
- *          4  :  result = char** for returning  the result
+ *          4  :  result = char** for returning the result (NULL on error)
  *          5  :  result_length = size_t* for returning the result's length
  *
  * Returns     :  On success, the number of substitutions that were made.
@@ -747,19 +747,18 @@ int pcrs_execute(pcrs_job *job, const char *subject, size_t subject_length, char
    char *result_offset;
 
    offset = i = 0;
+   *result = NULL;
 
    /*
     * Sanity check & memory allocation
     */
    if (job == NULL || job->pattern == NULL || job->substitute == NULL || NULL == subject)
    {
-      *result = NULL;
       return(PCRS_ERR_BADJOB);
    }
 
    if (NULL == (matches = (pcrs_match *)malloc((size_t)max_matches * sizeof(pcrs_match))))
    {
-      *result = NULL;
       return(PCRS_ERR_NOMEM);
    }
    memset(matches, '\0', (size_t)max_matches * sizeof(pcrs_match));
@@ -806,7 +805,6 @@ int pcrs_execute(pcrs_job *job, const char *subject, size_t subject_length, char
          if (NULL == (dummy = (pcrs_match *)realloc(matches, (size_t)max_matches * sizeof(pcrs_match))))
          {
             free(matches);
-            *result = NULL;
             return(PCRS_ERR_NOMEM);
          }
          matches = dummy;
@@ -825,7 +823,7 @@ int pcrs_execute(pcrs_job *job, const char *subject, size_t subject_length, char
       else
          offset = offsets[1];
    }
-   /* Pass pcre error through if (bad) failiure */
+   /* Pass pcre error through if (bad) failure */
    if (submatches < PCRE_ERROR_NOMATCH)
    {
       free(matches);
@@ -1102,6 +1100,7 @@ pcrs_job *pcrs_compile_dynamic_command(char *pcrs_command, const struct pcrs_var
       {
          /* No proper delimiter found */
          *error = PCRS_ERR_CMDSYNTAX;
+         freez(pcrs_command_tmp);
          return NULL;
       }
 

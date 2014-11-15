@@ -1,6 +1,6 @@
 #ifndef CGIEDIT_H_INCLUDED
 #define CGIEDIT_H_INCLUDED
-#define CGIEDIT_H_VERSION "$Id: cgiedit.h,v 1.12 2011/09/04 11:10:56 fabiankeil Exp $"
+#define CGIEDIT_H_VERSION "$Id: cgiedit.h,v 1.13 2013/11/24 14:23:28 fabiankeil Exp $"
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/cgiedit.h,v $
@@ -39,10 +39,6 @@
 
 
 #include "project.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /*
  * CGI functions
@@ -97,10 +93,6 @@ extern jb_err cgi_toggle(struct client_state *csp,
 /* Revision control strings from this header and associated .c file */
 extern const char cgiedit_rcs[];
 extern const char cgiedit_h_rcs[];
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
 #endif /* ndef CGI_H_INCLUDED */
 

@@ -6,7 +6,7 @@
   <title>Filter Files</title>
   <meta name="GENERATOR" content=
   "Modular DocBook HTML Stylesheet Version 1.79">
-  <link rel="HOME" title="Privoxy 3.0.21 User Manual" href="index.html">
+  <link rel="HOME" title="Privoxy 3.0.22 User Manual" href="index.html">
   <link rel="PREVIOUS" title="Actions Files" href="actions-file.html">
   <link rel="NEXT" title="Privoxy's Template Files" href="templates.html">
   <link rel="STYLESHEET" type="text/css" href="../p_doc.css">
@@ -20,7 +20,7 @@
     <table summary="Header navigation table" width="100%" border="0"
     cellpadding="0" cellspacing="0">
       <tr>
-        <th colspan="3" align="center">Privoxy 3.0.21 User Manual</th>
+        <th colspan="3" align="center">Privoxy 3.0.22 User Manual</th>
       </tr>
 
       <tr>
@@ -45,7 +45,7 @@
     an <span class="QUOTE">"action"</span>.</p>
 
     <p><span class="APPLICATION">Privoxy</span> supports three different
-    filter actions: <tt class="LITERAL"><a href=
+    pcrs-based filter actions: <tt class="LITERAL"><a href=
     "actions-file.html#FILTER">filter</a></tt> to rewrite the content that is
     send to the client, <tt class="LITERAL"><a href=
     "actions-file.html#CLIENT-HEADER-FILTER">client-header-filter</a></tt> to
@@ -64,6 +64,13 @@
     use a rewritten version of the filtered text as tag. The tags can then be
     used to change the applying actions through sections with <a href=
     "actions-file.html#TAG-PATTERN">tag-patterns</a>.</p>
+
+    <p>Finally <span class="APPLICATION">Privoxy</span> supports the
+    <tt class="LITERAL"><a href=
+    "actions-file.html#EXTERNAL-FILTER">external-filter</a></tt> action to
+    enable <tt class="LITERAL"><a href=
+    "filter-file.html#EXTERNAL-FILTER-SYNTAX">external filters</a></tt>
+    written in proper programming languages.</p>
 
     <p>Multiple filter files can be defined through the <tt class=
     "LITERAL"><a href="config.html#FILTERFILE">filterfile</a></tt> config
@@ -134,9 +141,28 @@ FILTER: foo Replace all "foo" with "bar"
     "_top">Perl</a>'s <tt class="LITERAL">s///</tt> operator. If you are
     familiar with Perl, you will find this to be quite intuitive, and may
     want to look at the PCRS documentation for the subtle differences to Perl
-    behaviour. Most notably, the non-standard option letter <tt class=
+    behaviour.</p>
+
+    <p>Most notably, the non-standard option letter <tt class=
     "LITERAL">U</tt> is supported, which turns the default to ungreedy
-    matching.</p>
+    matching (add <tt class="LITERAL">?</tt> to quantifiers to turn them
+    greedy again).</p>
+
+    <p>The non-standard option letter <tt class="LITERAL">D</tt> (dynamic)
+    allows to use the variables $host, $origin (the IP address the request
+    came from), $path and $url. They will be replaced with the value they
+    refer to before the filter is executed.</p>
+
+    <p>Note that '$' is a bad choice for a delimiter in a dynamic filter as
+    you might end up with unintended variables if you use a variable name
+    directly after the delimiter. Variables will be resolved without escaping
+    anything, therefore you also have to be careful not to chose delimiters
+    that appear in the replacement text. For example '&lt;' should be save,
+    while '?' will sooner or later cause conflicts with $url.</p>
+
+    <p>The non-standard option letter <tt class="LITERAL">T</tt> (trivial)
+    prevents parsing for backreferences in the substitute. Use it if you want
+    to include text like '$&amp;' in your substitute without quoting.</p>
 
     <p>If you are new to <a href=
     "http://en.wikipedia.org/wiki/Regular_expressions" target=
@@ -151,7 +177,7 @@ FILTER: foo Replace all "foo" with "bar"
     started.</p>
 
     <div class="SECT2">
-      <h2 class="SECT2"><a name="AEN5181" id="AEN5181">9.1. Filter File
+      <h2 class="SECT2"><a name="AEN5053" id="AEN5053">9.1. Filter File
       Tutorial</a></h2>
 
       <p>Now, let's complete our <span class="QUOTE">"foo"</span> content
@@ -824,6 +850,87 @@ s* industry[ -]leading \
           </dd>
         </dl>
       </div>
+    </div>
+
+    <div class="SECT2">
+      <h2 class="SECT2"><a name="EXTERNAL-FILTER-SYNTAX" id=
+      "EXTERNAL-FILTER-SYNTAX">9.3. External filter syntax</a></h2>
+
+      <p>External filters are scripts or programs that can modify the content
+      in case common <tt class="LITERAL"><a href=
+      "actions-file.html#FILTER">filters</a></tt> aren't powerful enough.</p>
+
+      <p>External filters can be written in any language the platform
+      <span class="APPLICATION">Privoxy</span> runs on supports.</p>
+
+      <p>They are controlled with the <tt class="LITERAL"><a href=
+      "actions-file.html#EXTERNAL-FILTER">external-filter</a></tt> action and
+      have to be defined in the <tt class="LITERAL"><a href=
+      "config.html#FILTERFILE">filterfile</a></tt> first.</p>
+
+      <p>The header looks like any other filter, but instead of pcrs jobs,
+      external filters contain a single job which can be a program or a shell
+      script (which may call other scripts or programs).</p>
+
+      <p>External filters read the content from STDIN and write the rewritten
+      content to STDOUT. The environment variables PRIVOXY_URL, PRIVOXY_PATH,
+      PRIVOXY_HOST, PRIVOXY_ORIGIN can be used to get some details about the
+      client request.</p>
+
+      <p><span class="APPLICATION">Privoxy</span> will temporary store the
+      content to filter in the <tt class="LITERAL"><a href=
+      "config.html#TEMPORARY-DIRECTORY">temporary-directory</a></tt>.</p>
+
+      <table border="0" bgcolor="#E0E0E0" width="100%">
+        <tr>
+          <td>
+            <pre class="SCREEN">
+EXTERNAL-FILTER: cat Pointless example filter that doesn't actually modify the content
+/bin/cat
+
+# Incorrect reimplementation of the filter above in POSIX shell.
+#
+# Note that it's a single job that spans multiple lines, the line
+# breaks are not passed to the shell, thus the semicolons are required.
+#
+# If the script isn't trivial, it is recommended to put it into an external file.
+#
+# In general, writing external filters entirely in POSIX shell is not
+# considered a good idea.
+EXTERNAL-FILTER: cat2 Pointless example filter that despite its name may actually modify the content
+while read line; \
+do \
+  echo "$line"; \
+done
+
+EXTERNAL-FILTER: rotate-image Rotate an image by 180 degree. Test filter with limited value.
+/usr/local/bin/convert - -rotate 180 -
+
+EXTERNAL-FILTER: citation-needed Adds a "[citation needed]" tag to an image. The coordinates may need adjustment.
+/usr/local/bin/convert - -pointsize 16 -fill white  -annotate +17+418 "[citation needed]" -
+</pre>
+          </td>
+        </tr>
+      </table>
+
+      <div class="WARNING">
+        <table class="WARNING" border="1" width="100%">
+          <tr>
+            <td align="center"><b>Warning</b></td>
+          </tr>
+
+          <tr>
+            <td align="left">
+              <p>Currently external filters are executed with <span class=
+              "APPLICATION">Privoxy</span>'s privileges! Only use external
+              filters you understand and trust.</p>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <p>External filters are experimental and the syntax may change in the
+      future.</p>
     </div>
   </div>
 

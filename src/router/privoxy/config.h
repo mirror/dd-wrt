@@ -12,7 +12,7 @@
  *                introduced because the compile command line started
  *                getting ludicrously long with feature defines.
  *
- * Copyright   :  Written by and Copyright (C) 2001-2009 the
+ * Copyright   :  Written by and Copyright (C) 2001-2014 the
  *                Privoxy team. http://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -53,12 +53,12 @@
 /*
  * Version number - Point (_._.X)
  */
-#define VERSION_POINT 21
+#define VERSION_POINT 22
 
 /*
  * Version number, as a string
  */
-#define VERSION "3.0.21"
+#define VERSION "3.0.22"
 
 /*
  * Status of the code: "alpha", "beta" or "stable".
@@ -68,10 +68,10 @@
 /*
  * Should pcre be statically built in instead of linkling with libpcre?
  * (This is determined by configure depending on the availiability of
- * libpcre and user preferences). The name is ugly, but pcre needs it.
+ * libpcre and user preferences).
  * Don't bother to change this here! Use configure instead.
  */
-#define STATIC_PCRE 1
+#define FEATURE_DYNAMIC_PCRE 1
 
 /*
  * Should pcrs be statically built in instead of linkling with libpcrs?
@@ -163,6 +163,11 @@
 /* #undef FEATURE_EXTENDED_HOST_PATTERNS */
 
 /*
+ * Allow filtering with scripts and programs.
+ */
+/* #undef FEATURE_EXTERNAL_FILTERS */
+
+/*
  * Keep connections alive if possible.
  */
 #define FEATURE_CONNECTION_KEEP_ALIVE 1
@@ -252,7 +257,13 @@
 
 
 /* Define to 1 to use compression through the zlib library. */
-/* #undef FEATURE_COMPRESSION */
+#define FEATURE_COMPRESSION 1
+
+/* Define to dynamically link to pcre. */
+#define FEATURE_DYNAMIC_PCRE 1
+
+/* Define to 1 to allow to filter content with scripts and programs. */
+/* #undef FEATURE_EXTERNAL_FILTERS */
 
 /* Define to 1 to use zlib to decompress data before filtering. */
 #define FEATURE_ZLIB 1
@@ -304,7 +315,7 @@
 #define HAVE_INTTYPES_H 1
 
 /* Define to 1 if you have the `nsl' library (-lnsl). */
-#define HAVE_LIBNSL 1
+/* #undef HAVE_LIBNSL */
 
 /* Define to 1 if you have the `ws2_32' library (-lws2_32). */
 /* #undef HAVE_LIBWS2_32 */
@@ -314,9 +325,6 @@
 
 /* Define to 1 if you have the <locale.h> header file. */
 #define HAVE_LOCALE_H 1
-
-/* Define to 1 if you have the `localtime_r' function. */
-#define HAVE_LOCALTIME_R 1
 
 /* Define to 1 if you have the `memchr' function. */
 #define HAVE_MEMCHR 1
@@ -485,6 +493,9 @@
 
 /* The size of `size_t', as computed by sizeof. */
 #define SIZEOF_SIZE_T 4
+
+/* Define to statically link to internal outdated pcre on Windows. */
+/* #undef STATIC_PCRE */
 
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1

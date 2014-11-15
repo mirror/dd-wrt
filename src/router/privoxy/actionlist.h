@@ -12,7 +12,7 @@
  *                    DEFINE_ACTION_BOOL()
  *                    DEFINE_ACTION_ALIAS
  *
- * Copyright   :  Written by and Copyright (C) 2001-2008 the
+ * Copyright   :  Written by and Copyright (C) 2001-2014 the
  *                Privoxy team. http://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -71,6 +71,9 @@ DEFINE_ACTION_STRING     ("deanimate-gifs",             ACTION_DEANIMATE,       
 DEFINE_CGI_PARAM_RADIO   ("deanimate-gifs",             ACTION_DEANIMATE,       ACTION_STRING_DEANIMATE,     "first", 0)
 DEFINE_CGI_PARAM_RADIO   ("deanimate-gifs",             ACTION_DEANIMATE,       ACTION_STRING_DEANIMATE,     "last",  1)
 DEFINE_ACTION_BOOL       ("downgrade-http-version",     ACTION_DOWNGRADE)
+#ifdef FEATURE_EXTERNAL_FILTERS
+DEFINE_ACTION_MULTI      ("external-filter",            ACTION_MULTI_EXTERNAL_FILTER)
+#endif
 #ifdef FEATURE_FAST_REDIRECTS
 DEFINE_ACTION_STRING     ("fast-redirects",             ACTION_FAST_REDIRECTS,  ACTION_STRING_FAST_REDIRECTS)
 DEFINE_CGI_PARAM_RADIO   ("fast-redirects",             ACTION_FAST_REDIRECTS,  ACTION_STRING_FAST_REDIRECTS, "simple-check",  0)

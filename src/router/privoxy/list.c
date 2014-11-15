@@ -1,4 +1,4 @@
-const char list_rcs[] = "$Id: list.c,v 1.29 2012/03/09 17:55:50 fabiankeil Exp $";
+const char list_rcs[] = "$Id: list.c,v 1.32 2014/11/14 10:39:49 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/list.c,v $
@@ -876,15 +876,24 @@ int list_contains_item(const struct list *the_list, const char *str)
  * Function    :  new_map
  *
  * Description :  Create a new, empty map.
+ *                Causes program exit if the memory allocation fails.
  *
  * Parameters  :  N/A
  *
- * Returns     :  A new, empty map, or NULL if out of memory.
+ * Returns     :  A new, empty map
  *
  *********************************************************************/
 struct map *new_map(void)
 {
-   return (struct map *) zalloc(sizeof(struct map));
+   struct map *empty_map = zalloc(sizeof(struct map));
+
+   if (NULL == empty_map)
+   {
+      exit(1);
+   }
+
+   return empty_map;
+
 }
 
 
@@ -893,7 +902,7 @@ struct map *new_map(void)
  * Function    :  free_map
  *
  * Description :  Free the memory occupied by a map and its
- *                depandant strings
+ *                dependent strings
  *
  * Parameters  :
  *          1  :  the_map = map to be freed.  May be NULL.
@@ -1055,7 +1064,7 @@ jb_err unmap(struct map *the_map, const char *name)
    assert(the_map);
    assert(name);
 
-   last_entry = the_map->first;
+   last_entry = NULL;
 
    for (cur_entry = the_map->first; cur_entry != NULL; cur_entry = cur_entry->next)
    {
@@ -1087,7 +1096,11 @@ jb_err unmap(struct map *the_map, const char *name)
          freez(cur_entry->name);
          freez(cur_entry->value);
          freez(cur_entry);
-
+         if (last_entry == NULL)
+         {
+            /* The map only had a single entry which has just been removed. */
+            break;
+         }
          cur_entry = last_entry;
       }
       else

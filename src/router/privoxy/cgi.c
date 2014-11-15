@@ -1,4 +1,4 @@
-const char cgi_rcs[] = "$Id: cgi.c,v 1.158 2012/12/07 12:45:20 fabiankeil Exp $";
+const char cgi_rcs[] = "$Id: cgi.c,v 1.160 2014/10/18 11:31:52 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/cgi.c,v $
@@ -495,9 +495,12 @@ static struct http_response *dispatch_known_cgi(struct client_state * csp,
    if (*query_args_start == '/')
    {
       *query_args_start++ = '\0';
-      if ((param_list = new_map()))
-      {
-         map(param_list, "file", 1, url_decode(query_args_start), 0);
+      param_list = new_map();
+      err = map(param_list, "file", 1, url_decode(query_args_start), 0);
+      if (JB_ERR_OK != err) {
+         free(param_list);
+         free(path_copy);
+         return cgi_error_memory();
       }
    }
    else
@@ -631,11 +634,7 @@ static struct map *parse_cgi_parameters(char *argstring)
    }
    vector = malloc_or_die(max_segments * sizeof(char *));
 
-   if (NULL == (cgi_params = new_map()))
-   {
-      freez(vector);
-      return NULL;
-   }
+   cgi_params = new_map();
 
    /*
     * IE 5 does, of course, violate RFC 2316 Sect 4.1 and sends
@@ -2162,10 +2161,6 @@ struct map *default_exports(const struct client_state *csp, const char *caller)
    assert(csp);
 
    exports = new_map();
-   if (exports == NULL)
-   {
-      return NULL;
-   }
 
    if (csp->config->hostname)
    {
