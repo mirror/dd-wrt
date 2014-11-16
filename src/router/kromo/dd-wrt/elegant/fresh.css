@@ -158,7 +158,6 @@ border-radius: 4px;
 	border-radius: 5px;
 }
 input.button {
-	border-radius: 11px;
 	box-shadow: 2px 2px 2px gray;
 }
 input.button[disabled] {
