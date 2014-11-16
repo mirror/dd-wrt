@@ -585,6 +585,11 @@ static void batadv_softif_free(struct net_device *dev)
 	free_netdev(dev);
 }
 
+#ifndef SET_ETHTOOL_OPS
+					/* source back-compat hooks */
+#define SET_ETHTOOL_OPS(netdev,ops) \
+	( (netdev)->ethtool_ops = (ops) )
+#endif
 /**
  * batadv_softif_init_early - early stage initialization of soft interface
  * @dev: registered network device to modify
