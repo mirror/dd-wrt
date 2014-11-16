@@ -55,7 +55,7 @@ ifdef SYSLOG
 CFLAGS += -DSYSLOG
 endif
 
-CFLAGS += -W -Wall -Wstrict-prototypes -DVERSION='"$(VER)"' $(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections -D_GNU_SOURCE
+CFLAGS += -W -Wall -Wstrict-prototypes -DVERSION='"$(VER)"' $(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -D_GNU_SOURCE
 LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
 ifdef DEBUG
 CFLAGS += -g -DDEBUG -DMY_DEBUG
