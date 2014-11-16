@@ -1,5 +1,5 @@
 wol-configure:
-	cd wol && ./configure --disable-nls --host=$(ARCH)-linux CC="$(CC)" CFLAGS="$(COPTS) -Drpl_malloc=malloc" 
+	cd wol && ./configure --disable-nls --host=$(ARCH)-linux CC="$(CC)" CFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections   -Drpl_malloc=malloc" 
 
 wol:
 	$(MAKE) -C wol
