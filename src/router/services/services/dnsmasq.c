@@ -275,35 +275,25 @@ void start_dnsmasq(void)
 		if (nvram_match("auth_dnsmasq", "1"))
 			fprintf(fp, "dhcp-authoritative\n");
 		if (landhcp()) {
-
-			if (atoi(nvram_safe_get("dhcp_num")) > 253) {
-				// Do new code - multi-subnet range
-				// Assumes that lan_netmask is set accordingly
-				// Assumes that dhcp_num is a multiple of 256
-				fprintf(fp, "dhcp-range=lan,");
-				fprintf(fp, "%d.%d.0.%s,", get_single_ip(nvram_safe_get("lan_ipaddr"), 0), get_single_ip(nvram_safe_get("lan_ipaddr"), 1), nvram_safe_get("dhcp_start"));
-				fprintf(fp, "%d.%d.%d.%d,",
-					get_single_ip(nvram_safe_get("lan_ipaddr"), 0),
-					get_single_ip(nvram_safe_get("lan_ipaddr"), 1),
-					((atoi(nvram_safe_get("dhcp_num")) / 256)), abs(( 255 - atoi(nvram_safe_get("dhcp_num")) - atoi(nvram_safe_get("dhcp_start"))) % 256) - 1);
-				fprintf(fp, "%s,", nvram_safe_get("lan_netmask"));
-				fprintf(fp, "%sm\n", nvram_safe_get("dhcp_lease"));
-			} else {
-				// Do orig code - single subnet range
-				fprintf(fp, "dhcp-range=lan,");
-				fprintf(fp, "%d.%d.%d.%s,",
-					get_single_ip(nvram_safe_get("lan_ipaddr"), 0), get_single_ip(nvram_safe_get("lan_ipaddr"), 1), get_single_ip(nvram_safe_get("lan_ipaddr"), 2), nvram_safe_get("dhcp_start"));
-				if (nvram_match("dhcp_num", "0")) {
-					fprintf(fp, "static,");
-				} else {
-					fprintf(fp, "%d.%d.%d.%d,",
-						get_single_ip(nvram_safe_get
-							      ("lan_ipaddr"), 0),
-						get_single_ip(nvram_safe_get("lan_ipaddr"), 1), get_single_ip(nvram_safe_get("lan_ipaddr"), 2), atoi(nvram_safe_get("dhcp_start")) + atoi(nvram_safe_get("dhcp_num")) - 1);
-				}
-				fprintf(fp, "%s,", nvram_safe_get("lan_netmask"));
-				fprintf(fp, "%sm\n", nvram_safe_get("dhcp_lease"));
-			}
+			unsigned int dhcpnum = atoi(nvram_safe_get("dhcp_num"));
+			unsigned int ip1 = get_single_ip(nvram_safe_get("lan_ipaddr"), 0);
+			unsigned int ip2 = get_single_ip(nvram_safe_get("lan_ipaddr"), 1);
+			unsigned int ip3 = get_single_ip(nvram_safe_get("lan_ipaddr"), 2);
+			unsigned int ip4 = get_single_ip(nvram_safe_get("lan_ipaddr"), 4);
+			unsigned int im1 = get_single_ip(nvram_safe_get("lan_netmask"), 0);
+			unsigned int im2 = get_single_ip(nvram_safe_get("lan_netmask"), 1);
+			unsigned int im3 = get_single_ip(nvram_safe_get("lan_netmask"), 2);
+			unsigned int im4 = get_single_ip(nvram_safe_get("lan_netmask"), 4);
+			unsigned int sip = (ip1 & im1) << 24 + (ip2 & im2) << 16 + (ip3 & im3) << 8 + atoi(nvram_safe_get("dhcp_start"));
+			unsigned int eip = sip + dhcpnum;
+			// Do new code - multi-subnet range
+			// Assumes that lan_netmask is set accordingly
+			// Assumes that dhcp_num is a multiple of 256
+			fprintf(fp, "dhcp-range=lan,");
+			fprintf(fp, "%d.%d.%d.%s,", ip1 & im1, ip2 & im2, ip3 & im3, nvram_safe_get("dhcp_start"));
+			fprintf(fp, "%d.%d.%d.%d,", (eip >> 24) & 0xff, (eip >> 16) & 0xff, (eip >> 8) & 0xff, eip & 0xff);
+			fprintf(fp, "%s,", nvram_safe_get("lan_netmask"));
+			fprintf(fp, "%sm\n", nvram_safe_get("dhcp_lease"));
 		}
 
 		for (i = 0; i < mdhcpcount; i++) {
@@ -312,17 +302,24 @@ void start_dnsmasq(void)
 			if (strlen(nvram_nget("%s_ipaddr", getmdhcp(0, i))) == 0 || strlen(nvram_nget("%s_netmask", getmdhcp(0, i)))
 			    == 0)
 				continue;
-			fprintf(fp, "dhcp-range=%s,", getmdhcp(0, i));
-			fprintf(fp, "%d.%d.%d.",
-				get_single_ip(nvram_nget("%s_ipaddr", getmdhcp(0, i)), 0), get_single_ip(nvram_nget("%s_ipaddr", getmdhcp(0, i)), 1), get_single_ip(nvram_nget("%s_ipaddr", getmdhcp(0, i)), 2));
-			fprintf(fp, "%s,", getmdhcp(2, i));
-			fprintf(fp, "%d.%d.%d.",
-				get_single_ip(nvram_nget("%s_ipaddr", getmdhcp(0, i)), 0), get_single_ip(nvram_nget("%s_ipaddr", getmdhcp(0, i)), 1), get_single_ip(nvram_nget("%s_ipaddr", getmdhcp(0, i)), 2));
-			int end = atoi(getmdhcp(2, i));
+			char *ifname = getmdhcp(0, i);
+			unsigned int dhcpnum = atoi(getmdhcp(3, i));
+			unsigned int ip1 = get_single_ip(nvram_nget("%s_ipaddr", ifname), 0);
+			unsigned int ip2 = get_single_ip(nvram_nget("%s_ipaddr", ifname), 1);
+			unsigned int ip3 = get_single_ip(nvram_nget("%s_ipaddr", ifname), 2);
+			unsigned int ip4 = get_single_ip(nvram_nget("%s_ipaddr", ifname), 4);
+			unsigned int im1 = get_single_ip(nvram_nget("%s_netmask", ifname), 0);
+			unsigned int im2 = get_single_ip(nvram_nget("%s_netmask", ifname), 1);
+			unsigned int im3 = get_single_ip(nvram_nget("%s_netmask", ifname), 2);
+			unsigned int im4 = get_single_ip(nvram_nget("%s_netmask", ifname), 4);
+			unsigned int sip = (ip1 & im1) << 24 + (ip2 & im2) << 16 + (ip3 & im3) << 8 + atoi(nvram_safe_get("dhcp_start"));
+			unsigned int eip = sip + dhcpnum;
 
-			end += atoi(getmdhcp(3, i));
-			fprintf(fp, "%d,", end);
-			fprintf(fp, "%s,", nvram_nget("%s_netmask", getmdhcp(0, i)));
+			fprintf(fp, "dhcp-range=%s,", ifname);
+
+			fprintf(fp, "%d.%d.%d.%s,", ip1 & im1, ip2 & im2, ip3 & im3, getmdhcp(2, i));
+			fprintf(fp, "%d.%d.%d.%d,", (eip >> 24) & 0xff, (eip >> 16) & 0xff, (eip >> 8) & 0xff, eip & 0xff);
+			fprintf(fp, "%s,", nvram_nget("%s_netmask", ifname));
 			fprintf(fp, "%sm\n", getmdhcp(4, i));
 		}
 
