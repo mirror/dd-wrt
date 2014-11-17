@@ -284,7 +284,7 @@ void start_dnsmasq(void)
 			unsigned int im2 = get_single_ip(nvram_safe_get("lan_netmask"), 1);
 			unsigned int im3 = get_single_ip(nvram_safe_get("lan_netmask"), 2);
 			unsigned int im4 = get_single_ip(nvram_safe_get("lan_netmask"), 4);
-			unsigned int sip = (ip1 & im1) << 24 + (ip2 & im2) << 16 + (ip3 & im3) << 8 + atoi(nvram_safe_get("dhcp_start"));
+			unsigned int sip = ((ip1 & im1) << 24) + ((ip2 & im2) << 16) + ((ip3 & im3) << 8) + atoi(nvram_safe_get("dhcp_start"));
 			unsigned int eip = sip + dhcpnum;
 			// Do new code - multi-subnet range
 			// Assumes that lan_netmask is set accordingly
@@ -312,7 +312,7 @@ void start_dnsmasq(void)
 			unsigned int im2 = get_single_ip(nvram_nget("%s_netmask", ifname), 1);
 			unsigned int im3 = get_single_ip(nvram_nget("%s_netmask", ifname), 2);
 			unsigned int im4 = get_single_ip(nvram_nget("%s_netmask", ifname), 4);
-			unsigned int sip = (ip1 & im1) << 24 + (ip2 & im2) << 16 + (ip3 & im3) << 8 + atoi(nvram_safe_get("dhcp_start"));
+			unsigned int sip = ((ip1 & im1) << 24) + ((ip2 & im2) << 16) + ((ip3 & im3) << 8) + atoi(nvram_safe_get("dhcp_start"));
 			unsigned int eip = sip + dhcpnum;
 
 			fprintf(fp, "dhcp-range=%s,", ifname);
