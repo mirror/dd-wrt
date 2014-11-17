@@ -1,11 +1,24 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////
-//		Chinese (Simplified) reference translation file - DD-WRT V23 SP1 by JnJn 25/05/2006		//
-//    update to svn 11296, correct some errors. - by muziling 12/01/2009
+//		Chinese (Simplified) reference translation file - DD-WRT V23 SP1 by JnJn 25/05/2006  // update to svn 11296, correct some errors. - by muziling 12/01/2009  // DD-WRT V24 SP2 By Asx 18/11/2014 //
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-// ******************************************* COMMON SHARE LABEL *******************************************//
+// ** COMMON SHARE LABEL **//
 
 lang_charset.set="UTF-8";
+
+
+share.annex="Annex类型";
+share.apn="APN";
+share.pin="PIN";
+share.dial="拨号串";
+share.mode_3g="连接类型";
+share.mode_3g_auto="自动4G/3G/2G";
+share.mode_3g_4g="强制LTE/4G";
+share.mode_3g_3g="强制3G";
+share.mode_3g_2g="强制2G";
+share.mode_3g_prefer_3g="优先3G";
+share.mode_3g_prefer_2g="优先2G";
+share.mode_3g_3g2g="3G优先, 出错后2G";
 share.firmware="固件";
 share.time="时间";
 share.interipaddr="WAN IP地址";
@@ -18,9 +31,17 @@ share.disabled="已禁用";
 share.usrname="用户名";
 share.passwd="密码";
 share.hostname="主机名";
+share.advanced="高级设置";
 share.vdsl="DTAG VDSL Vlan Tagging";
+share.vdslvlan7="T-Home VLAN 7 support";
+share.vdslvlan8="T-Home VLAN 8 support";
 share.wan_vlantag="Vlan标记ID";
+share.wan_dualaccess="Dual-Access mode";
 share.compression="PPP Compression";
+share.mlppp="Single Line Multi Link";
+share.vpi_vci="VPI/VCI";
+share.encaps="Encapsulation";
+share.payload="Payload Type";
 share.domainname="域名";
 share.wandomainname="WAN 域名";
 share.landomainname="LAN 域名";
