@@ -2,7 +2,7 @@ ifneq ($(CONFIG_IPV6),y)
 export DNSMASQ_MAKEFLAGS:=-DNO_IPV6
 endif
 
-DNSMASQ_COPTS += $(MIPS16_OPT)
+DNSMASQ_COPTS += $(MIPS16_OPT) -DNO_AUTH
 
 dnsmasq-clean:
 	$(MAKE) -j 4 -C dnsmasq CFLAGS="$(COPTS)" clean
