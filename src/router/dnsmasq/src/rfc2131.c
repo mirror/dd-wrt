@@ -21,6 +21,7 @@
 #define option_len(opt) ((int)(((unsigned char *)(opt))[1]))
 #define option_ptr(opt, i) ((void *)&(((unsigned char *)(opt))[2u+(unsigned int)(i)]))
 
+
 #ifdef HAVE_SCRIPT
 static void add_extradata_opt(struct dhcp_lease *lease, unsigned char *opt);
 #endif
@@ -33,8 +34,14 @@ static void option_put_string(struct dhcp_packet *mess, unsigned char *end,
 			      int opt, char *string, int null_term);
 static struct in_addr option_addr(unsigned char *opt);
 static unsigned int option_uint(unsigned char *opt, int i, int size);
+
+#ifndef NEED_PRINTF
+#define log_packet(type,addr,mac,maclen,if,str,err,xid) do {  } while(0)
+#define log_options(start, xid) do {  } while(0)
+#else
 static void log_packet(char *type, void *addr, unsigned char *ext_mac, 
 		       int mac_len, char *interface, char *string, char *err, u32 xid);
+#endif
 static unsigned char *option_find(struct dhcp_packet *mess, size_t size, int opt_type, int minsize);
 static unsigned char *option_find1(unsigned char *p, unsigned char *end, int opt, int minsize);
 static size_t dhcp_packet_size(struct dhcp_packet *mess, unsigned char *agent_id, unsigned char *real_end);
@@ -1543,6 +1550,7 @@ static void add_extradata_opt(struct dhcp_lease *lease, unsigned char *opt)
 }
 #endif
 
+#ifdef NEED_PRINTF
 static void log_packet(char *type, void *addr, unsigned char *ext_mac, 
 		       int mac_len, char *interface, char *string, char *err, u32 xid)
 {
@@ -1589,6 +1597,7 @@ static void log_options(unsigned char *start, u32 xid)
       start += start[1] + 2;
     }
 }
+#endif
 
 static unsigned char *option_find1(unsigned char *p, unsigned char *end, int opt, int minsize)
 {
