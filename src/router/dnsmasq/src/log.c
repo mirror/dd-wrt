@@ -13,6 +13,7 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+#ifdef NEED_PRINTF
 
 #include "dnsmasq.h"
 
@@ -269,7 +270,6 @@ static void log_write(void)
       return;
     }
 }
-
 /* priority is one of LOG_DEBUG, LOG_INFO, LOG_NOTICE, etc. See sys/syslog.h.
    OR'd to priority can be MS_TFTP, MS_DHCP, ... to be able to do log separation between
    DNS, DHCP and TFTP services.
@@ -420,7 +420,6 @@ void my_syslog(int priority, const char *format, ...)
 	}
     } 
 }
-
 void set_log_writer(fd_set *set, int *maxfdp)
 {
   if (entries && log_fd != -1 && connection_good)
@@ -474,3 +473,4 @@ void die(char *message, char *arg1, int exit_code)
   
   exit(exit_code);
 }
+#endif

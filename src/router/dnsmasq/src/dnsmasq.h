@@ -1164,13 +1164,25 @@ int wildcard_match(const char* wildcard, const char* match);
 int wildcard_matchn(const char* wildcard, const char* match, int num);
 
 /* log.c */
+#ifdef NEED_PRINTF
+void my_syslog(int priority, const char *format, ...);
 void die(char *message, char *arg1, int exit_code);
 int log_start(struct passwd *ent_pw, int errfd);
 int log_reopen(char *log_file);
-void my_syslog(int priority, const char *format, ...);
 void set_log_writer(fd_set *set, int *maxfdp);
 void check_log_writer(fd_set *set);
 void flush_log(void);
+#else
+#define my_syslog(prio,fmt,...) do {  } while(0)
+#define die(message, a, exit_code) exit(exit_code)
+static int inline log_start(struct passwd *ent_pw, int errfd) {
+return 0;
+}
+#define log_reopen(file)  do {  } while(0)
+#define set_log_writer(set, maxfdp)  do {  } while(0)
+#define check_log_writer(set)  do {  } while(0)
+#define flush_log()  do {  } while(0)
+#endif
 
 /* option.c */
 void read_opts (int argc, char **argv, char *compile_opts);
