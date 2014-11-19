@@ -72,7 +72,11 @@ endif
 ifdef CONFIG_SER
 	install profile2 $(INSTALLDIR)/etc/profile
 else
+ifeq ($(CONFIG_DIST),"micro")
+	install profile_micro $(INSTALLDIR)/etc
+else
 	install profile $(INSTALLDIR)/etc
+endif
 endif
 ifndef CONFIG_MAKSAT
 ifndef CONFIG_WIKINGS
