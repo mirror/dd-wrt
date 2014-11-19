@@ -43,7 +43,7 @@ ln -sf tmp/var var
 mkdir -p dev
 cd dev
 
-mknod nvram c 229 0
+mknod nvram c 253 0
 mknod ppp c 108 0
 mknod console c 5 1
 mknod tty c 5 0
