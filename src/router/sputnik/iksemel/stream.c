@@ -415,7 +415,7 @@ iks_connect_async_with (iksparser *prs, const char *server, int port, const char
 }
 
 int
-iks_connect_fd (iksparser *prs, int fd)
+iks_connect_fd (iksparser *prs, long fd)
 {
 #ifdef USE_DEFAULT_IO
 	struct stream_data *data = iks_user_data (prs);
@@ -435,12 +435,12 @@ iks_connect_fd (iksparser *prs, int fd)
 #endif
 }
 
-int
+long
 iks_fd (iksparser *prs)
 {
 	struct stream_data *data = iks_user_data (prs);
 
-	return (int) data->sock;
+	return (long) data->sock;
 }
 
 int
