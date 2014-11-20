@@ -19,7 +19,7 @@
 static void
 io_close (void *socket)
 {
-	int sock = (int) socket;
+	long sock = (long) socket;
 #ifdef _WIN32
 	closesocket (sock);
 #else
@@ -30,7 +30,7 @@ io_close (void *socket)
 static int
 io_connect (iksparser *prs, void **socketptr, const char *server, int port)
 {
-	int sock = -1;
+	long sock = -1;
 	int tmp;
 #ifdef HAVE_GETADDRINFO
 	struct addrinfo hints;
@@ -88,7 +88,7 @@ io_connect (iksparser *prs, void **socketptr, const char *server, int port)
 static int
 io_send (void *socket, const char *data, size_t len)
 {
-	int sock = (int) socket;
+	long sock = (long) socket;
 
 	if (send (sock, data, len, 0) == -1) return IKS_NET_RWERR;
 	return IKS_OK;
@@ -97,7 +97,7 @@ io_send (void *socket, const char *data, size_t len)
 static int
 io_recv (void *socket, char *buffer, size_t buf_len, int timeout)
 {
-	int sock = (int) socket;
+	long sock = (long) socket;
 	fd_set fds;
 	struct timeval tv, *tvptr;
 	int len;
