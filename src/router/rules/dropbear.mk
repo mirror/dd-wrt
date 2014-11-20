@@ -1,4 +1,4 @@
-DROPBEAR_OPTS = $(MIPS16_OPT) 
+DROPBEAR_OPTS = $(MIPS16_OPT) -DDISABLE_X11FWD
 
 dropbear-configure: zlib
 	cd dropbear && ./configure --host=$(ARCH)-linux --disable-lastlog --disable-utmp --disable-utmpx --disable-wtmp --disable-wtmpx --disable-libutil CC="$(CC)" CFLAGS="-DNEED_PRINTF -I../zlib $(COPTS) $(DROPBEAR_OPTS) -L../zlib -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="-L../zlib -ffunction-sections -fdata-sections -Wl,--gc-sections" host_alias=$(ARCH)-linux
