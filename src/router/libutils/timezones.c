@@ -478,6 +478,8 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{"Asia/Jayapura", "EIT-9"}
 	,
+	{"Asia/Jerusalem", "EET-2EEST,M3.5.6/0:01,M9.1.5"}
+	,
 	{"Asia/Kabul", "AFT-4:30"}
 	,
 	{"Asia/Kamchatka", "PETT-11PETST,M3.5.0,M10.5.0/3"}
