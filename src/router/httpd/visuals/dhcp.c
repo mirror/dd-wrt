@@ -82,13 +82,21 @@ void ej_dumpleases(webs_t wp, int argc, char_t ** argv)
 			 * Parse leases file 
 			 */
 			cprintf("open default leases\n");
-			fp = fopen("/tmp/dnsmasq.leases", "r");
-			if (!fp) {
-				cprintf("open alternate leases\n");
+			if (nvram_match("dhcpd_usejffs", "1")) {
 				fp = fopen("/jffs/dnsmasq.leases", "r");
+				if (!fp) {
+					fp = fopen("/tmp/dnsmasq.leases", "r");
+				}
+				if (!fp) {
+					return;
+				}
+			} else {
+				fp = fopen("/tmp/dnsmasq.leases", "r");
+				if (!fp) {
+					fp = fopen("/jffs/dnsmasq.leases", "r");
+				}
 			}
 			if (!fp) {
-				cprintf("both failed\n");
 				return;
 			}
 			cprintf("entry dumpleases:%d\n", __LINE__);
