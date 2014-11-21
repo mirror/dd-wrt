@@ -1356,7 +1356,7 @@ void ej_show_usb_diskinfo(webs_t wp, int argc, char_t ** argv)
 	char buff[512];
 	char line[256];
 	char used[32];
-	char total[32];
+	char avail[32];
 	char per[16];
 	char mp[128];
 	char *pos;
@@ -1372,14 +1372,14 @@ void ej_show_usb_diskinfo(webs_t wp, int argc, char_t ** argv)
 		while (fgets(line, sizeof(line), fp)) {
 			if (strlen(line) > 2) {
 
-				sscanf(line, "%s %s %s %s", used, total, per, mp);
+				sscanf(line, "%s %s %s %s", used, avail, per, mp);
 
 				websWrite(wp, "<div class=\"setting\">");
 				websWrite(wp, "<div class=\"label\">%s %s</div>", live_translate("usb.usb_diskspace"), mp);
 				websWrite(wp, "<span id=\"usage\">");
 				websWrite(wp, "<div class=\"meter\"><div class=\"bar\" style=\"width:%s;\"></div>", per);
 				websWrite(wp, "<div class=\"text\">%s</div></div>", per);
-				websWrite(wp, "%s / %s </span></div><br><br>", used, total);
+				websWrite(wp, "%s / %s </span></div><br><br>", used, avail);
 			}
 		}
 		websWrite(wp, "<hr><br>");
@@ -1930,7 +1930,7 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<td><input class=\"num\" name=\"%s\"size=\"3\" value=\"1500\" /></td>\n", bridge_name);
 
 		sprintf(bridge_name, "lan_hwaddr");
-		websWrite(wp, "<td><input class=\"num\" name=\"%s\"size=\"16\" value=\"%s\" /></td></tr>\n", bridge_name, nvram_safe_get(bridge_name));
+		websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\"size=\"16\" value=\"%s\" /></td></tr>\n", bridge_name, nvram_safe_get(bridge_name));
 		// don't show that here, since that is under Basic Setup
 		// show_ipnetmask(wp, bridge);
 		count++;
