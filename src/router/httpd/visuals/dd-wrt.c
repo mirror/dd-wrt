@@ -1990,12 +1990,11 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 		}
 		
 		
-		websWrite(wp, "<td>");
+		if (strcmp(bridge, "br0")) {
 		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bridge_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script></td></tr>\n",
+			  "<td><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bridge_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script></td></tr>\n",
 			  count);
 		// don't show that here, since that is under Basic Setup
-		if (strcmp(bridge, "br0")) {
 			websWrite(wp, "<tr><td colspan=\"7\" align=\"center\">");
 			show_ipnetmask(wp, bridge);
 			websWrite(wp, "</td></tr>");
