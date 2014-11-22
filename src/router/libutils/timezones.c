@@ -21,6 +21,7 @@
  */
 
 #include <utils.h>
+#include <stdlib.h>
 #include <bcmnvram.h>
 
 TIMEZONE_TO_TZSTRING allTimezones[] = {
@@ -1163,5 +1164,5 @@ void update_timezone(void)
 	FILE *fp = fopen("/tmp/TZ", "wb");
 	fprintf(fp, "%s\n", zone);
 	fclose(fp);
-	setenv("TZ", zone);
+	setenv("TZ", zone, 1);
 }
