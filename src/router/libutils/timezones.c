@@ -132,7 +132,6 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{"Africa/Windhoek", "WAT-1WAST,M9.1.0,M4.1.0"}
 	,
-
 	{"America/Adak", "HAST10HADT,M3.2.0,M11.1.0"}
 	,
 	{"America/Anchorage", "AKST9AKDT,M3.2.0,M11.1.0"}
@@ -461,7 +460,6 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{"America/Yellowknife", "MST7MDT,M3.2.0,M11.1.0"}
 	,
-
 	{"Antarctica/Casey", "AWST-8"}
 	,
 	{"Antarctica/Davis", "DAVT-7"}
@@ -676,7 +674,6 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{"Asia/Yerevan", "AMT-4"}
 	,
-
 	{"Atlantic/Azores", "AZOT1AZOST,M3.5.0/0,M10.5.0/1"}
 	,
 	{"Atlantic/Bermuda", "AST4ADT,M3.2.0,M11.1.0"}
