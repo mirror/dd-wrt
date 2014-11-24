@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 3.18.0-rc4 Kernel Configuration
+# Linux/arm 3.18.0-rc6 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_MIGHT_HAVE_PCI=y
@@ -1298,6 +1298,7 @@ CONFIG_ARM_KS8695_ETHER=y
 # CONFIG_ETHOC is not set
 # CONFIG_NET_PACKET_ENGINE is not set
 # CONFIG_NET_VENDOR_QLOGIC is not set
+# CONFIG_NET_VENDOR_QUALCOMM is not set
 # CONFIG_NET_VENDOR_REALTEK is not set
 # CONFIG_NET_VENDOR_RDC is not set
 # CONFIG_NET_VENDOR_SAMSUNG is not set
@@ -2399,7 +2400,7 @@ CONFIG_FILE_LOCKING=y
 # CONFIG_AUTOFS4_FS is not set
 CONFIG_FUSE_FS=m
 # CONFIG_CUSE is not set
-# CONFIG_OVERLAYFS_FS is not set
+# CONFIG_OVERLAY_FS is not set
 
 #
 # Caches
