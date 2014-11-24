@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 3.18.0-rc4 Kernel Configuration
+# Linux/arm 3.18.0-rc6 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_ARM_HAS_SG_CHAIN=y
@@ -3380,7 +3380,7 @@ CONFIG_INOTIFY_USER=y
 # CONFIG_AUTOFS4_FS is not set
 CONFIG_FUSE_FS=m
 # CONFIG_CUSE is not set
-# CONFIG_OVERLAYFS_FS is not set
+# CONFIG_OVERLAY_FS is not set
 
 #
 # Caches
