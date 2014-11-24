@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.18.0-rc4 Kernel Configuration
+# Linux/mips 3.18.0-rc6 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -1126,6 +1126,7 @@ CONFIG_P5_RGMII_TO_MAC_MODE=y
 # CONFIG_NET_VENDOR_MICREL is not set
 # CONFIG_NET_VENDOR_NATSEMI is not set
 # CONFIG_ETHOC is not set
+# CONFIG_NET_VENDOR_QUALCOMM is not set
 # CONFIG_NET_VENDOR_SAMSUNG is not set
 # CONFIG_NET_VENDOR_SEEQ is not set
 # CONFIG_NET_VENDOR_SMSC is not set
@@ -1821,7 +1822,7 @@ CONFIG_INOTIFY_USER=y
 # CONFIG_AUTOFS4_FS is not set
 CONFIG_FUSE_FS=m
 # CONFIG_CUSE is not set
-# CONFIG_OVERLAYFS_FS is not set
+# CONFIG_OVERLAY_FS is not set
 
 #
 # Caches
