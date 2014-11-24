@@ -290,9 +290,8 @@
 #define   AR8316_POSTRIP_POWER_ON_SEL		BIT(31)
 
 #define AR8327_NUM_PORTS	7
-#define AR8327_NUM_LEDS		15
+#define AR8327_NUM_PHYS		5
 #define AR8327_PORTS_ALL	0x7f
-#define AR8327_NUM_LED_CTRL_REGS	4
 
 #define AR8327_REG_MASK				0x000
 
@@ -344,7 +343,6 @@
 #define   AR8327_MIB_CPU_KEEP			BIT(20)
 
 #define AR8327_REG_SERVICE_TAG			0x048
-#define AR8327_REG_LED_CTRL(_i)			(0x050 + (_i) * 4)
 #define AR8327_REG_LED_CTRL0			0x050
 #define AR8327_REG_LED_CTRL1			0x054
 #define AR8327_REG_LED_CTRL2			0x058
@@ -456,8 +454,6 @@
 #define   AR8327_PORT_HOL_CTRL1_EG_MIRROR_EN	BIT(16)
 
 #define AR8327_REG_PORT_STATS_BASE(_i)		(0x1000 + (_i) * 0x100)
-
-#define AR8337_PAD_MAC06_EXCHANGE_EN		BIT(31)
 
 /* port speed */
 enum {
