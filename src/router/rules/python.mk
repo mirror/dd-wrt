@@ -22,4 +22,5 @@ python-install:
 	make -C python install DESTDIR=$(INSTALLDIR)/python
 	rm -rf $(INSTALLDIR)/python/usr/include
 	rm -rf $(INSTALLDIR)/python/usr/share
+	rm -f $(INSTALLDIR)/python/usr/lib/python3.4/config-3.4m/*.a
 
