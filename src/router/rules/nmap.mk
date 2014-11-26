@@ -9,9 +9,9 @@ nmap-configure:
 		--with-libpcre=included \
 		--with-libpcap="../libpcap_noring" \
 		--without-liblua \
-		CPPFLAGS="-I$(TOP)/libpcap_noring $(COPTS) -DNEED_PRINTF" \
-		CFLAGS="-I$(TOP)/libpcap_noring $(COPTS) -DNEED_PRINTF" \
-		LDFLAGS="-L$(TOP)/libpcap_noring" PCAP_ROOT="$(TOP)/libpcap_noring"
+		CPPFLAGS="-I$(TOP)/libpcap_noring -I$(TOP)/openssl/include $(COPTS) -DNEED_PRINTF" \
+		CFLAGS="-I$(TOP)/libpcap_noring -I$(TOP)/openssl/include $(COPTS) -DNEED_PRINTF" \
+		LDFLAGS="-L$(TOP)/libpcap_noring -L$(TOP)/openssl" PCAP_ROOT="$(TOP)/libpcap_noring"
 
 nmap:
 	make -C nmap $(NMAP_EXTRAFLAGS) clean
