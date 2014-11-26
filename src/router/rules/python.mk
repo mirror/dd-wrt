@@ -9,7 +9,11 @@ python-configure:
 		--without-ensurepip \
 		--enable-ipv6 \
 		CONFIG_SITE="$(TOP)/python/site/config.site" \
-		OPT="$(COPTS) -I$(TOP)/zlib" LDFLAGS="-L$(TOP)/zlib -L$(TOP)/python"
+		OPT="$(COPTS) -I$(TOP)/openssl/include -I$(TOP)/zlib" \
+		LDFLAGS="$(COPTS) -L$(TOP)/openssl -L$(TOP)/zlib -L$(TOP)/python" \
+		CFLAGS="$(COPTS) -I$(TOP)/openssl/include -I$(TOP)/zlib" \
+		CXXFLAGS="$(COPTS) -I$(TOP)/openssl/include -I$(TOP)/zlib" \
+		CC="$(ARCH)-linux-uclibc-gcc $(COPTS)"
 
 python-clean:
 	make -C python clean
