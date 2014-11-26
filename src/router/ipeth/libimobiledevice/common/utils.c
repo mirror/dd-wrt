@@ -266,7 +266,6 @@ int plist_read_from_filename(plist_t *plist, const char *filename)
 
 	return 1;
 }
-
 int plist_write_to_filename(plist_t plist, const char *filename, enum plist_format_t format)
 {
 	char *buffer = NULL;
@@ -288,7 +287,6 @@ int plist_write_to_filename(plist_t plist, const char *filename, enum plist_form
 
 	return 1;
 }
-
 static const char base64_str[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 static const char base64_pad = '=';
 
