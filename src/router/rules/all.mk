@@ -269,6 +269,7 @@ include rules/tor.mk
 include rules/emf.mk
 include rules/softflowd.mk
 include rules/python.mk
+include rules/nmap.mk
 
 #
 # Generic rules
