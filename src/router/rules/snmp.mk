@@ -43,6 +43,10 @@ ifeq ($(CONFIG_SNMP),y)
 	install -D snmp/config/snmp.webservices $(INSTALLDIR)/snmp/etc/config/snmp.webservices
 	$(STRIP) $(INSTALLDIR)/snmp/usr/sbin/snmpd
 	ln -sf /tmp/etc/snmp $(INSTALLDIR)/snmp/etc/snmp
+ifeq ($(CONFIG_SNMP-UTILS),y)
+	mkdir -p $(INSTALLDIR)/snmp/usr/bin
+	install -D snmp/apps/snmp{get,set,status,test,trap,walk} $(INSTALLDIR)/snmp/usr/bin/
+endif
 else
         # So that generic rule does not take precedence
 	@true
