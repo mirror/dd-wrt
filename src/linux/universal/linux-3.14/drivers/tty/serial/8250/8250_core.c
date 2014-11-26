@@ -49,7 +49,7 @@
 #if defined(CONFIG_MACH_KS8695_VSOPENRISC)
 #define CONFIG_SERIAL_NETCOM_EPLD
 #define ENABLE_16C950_BAUD_GENERATION_FEATURES
-#define PROC_NAME_EPLD	"vsopenrisc/epld_ttyS"
+#define PROC_NAME_EPLD	"epld_ttyS"
 #include <linux/vsopenrisc.h>
 #include <linux/proc_fs.h>
 #endif
@@ -3201,6 +3201,9 @@ static const struct file_operations fops_info = {
 	.llseek = default_llseek,
 };
 #endif
+
+extern struct proc_dir_entry *openriscdir;
+
 /*
  * Register a set of serial devices attached to a platform device.  The
  * list is terminated with a zero flags entry, which means we expect
@@ -3297,11 +3300,16 @@ static int serial8250_probe(struct platform_device *dev)
 
 			/* set up /proc entries and read/write functions */
 			sprintf(proc_name_epld, PROC_NAME_EPLD"%d", up->port.line);
-			proc_epld = proc_create_data(proc_name_epld, S_IFREG | S_IRUGO, NULL, &fops_info, (void*)&up->port);
+
+			if (!openriscdir)
+	    		    openriscdir = proc_mkdir("vsopenrisc", NULL);
+	    		    
+			printk(KERN_INFO "create /proc/vsopenrisc/%s\n",proc_name_epld);
+			proc_epld = proc_create_data(proc_name_epld, 0644, openriscdir, &fops_info, (void*)&up->port);
 			if (proc_epld == NULL)
 			{
 				remove_proc_entry(proc_name_epld, 0);
-				printk(KERN_ALERT "Could not initialize /proc/%s\n", proc_name_epld);
+				printk(KERN_ALERT "Could not initialize /proc/vsopenrisc/%s\n", proc_name_epld);
 			}
 		}
 	}

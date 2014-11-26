@@ -24,6 +24,8 @@
 #include <linux/i2c.h>
 #include <linux/i2c-algo-pca.h>
 #include <linux/i2c-pca-platform.h>
+#include <linux/serial_core.h>
+#include <linux/serial_8250.h>
 
 #include <asm/mach-types.h>
 
@@ -120,6 +122,37 @@ static struct platform_device gpio_vsopenrisc_device = {
 	.id		= -1,
 	.num_resources	= 0,
 };
+
+#define VS_TTYS(n, epld_caps)	\
+	{ \
+		.uartclk		= 	921600 * 16, \
+		.irq			= 	KS8695_INTEPLD_UARTS, \
+		.flags			= 	UPF_BOOT_AUTOCONF | UPF_SKIP_TEST | UPF_IOREMAP, \
+		.mapbase		=	VSOPENRISC_PA_EXTIO0_BASE+0x6020+(n-1)*0x40, \
+		.regshift		=	2, \
+		.iotype			=	UPIO_MEM, \
+		.epld_capabilities	=	epld_caps \
+	}
+
+
+static struct plat_serial8250_port serial_platform_data[] = {
+		VS_TTYS(1, (CAP_EPLD_PORTOFF|CAP_EPLD_RS_ALL)),
+		VS_TTYS(2, (CAP_EPLD_PORTOFF|CAP_EPLD_RS_ALL)),
+		VS_TTYS(3, (CAP_EPLD_RS232)),
+		VS_TTYS(4, (CAP_EPLD_PORTOFF|CAP_EPLD_RS232|CAP_EPLD_CAN)),
+	{
+		.flags		= 0
+	},
+};
+
+static struct platform_device serial_device = {
+	.name			= "serial8250",
+	.id			= 0,
+	.dev			= {
+		.platform_data	= serial_platform_data,
+	},
+};
+
 
 static void __init ks8695_add_device_gpio_vsopenrisc(void)
 {
@@ -332,6 +365,8 @@ static void __init vsopenrisc_init(void)
 	/* add IDE */
 	platform_device_register(&vsopenrisc_ide_device);
 
+	/* add 16C950 UARTs */
+	platform_device_register(&serial_device);
 
 
 	ks8695_add_device_gpio_vsopenrisc();
