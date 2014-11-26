@@ -9,7 +9,3 @@ aclocal -I m4
 autoheader
 automake --add-missing
 autoconf
-
-if [ -z "$NOCONFIGURE" ]; then
-    ./configure "$@"
-fi
