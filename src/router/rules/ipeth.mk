@@ -38,14 +38,17 @@ ipeth-configure:
 	cd $(TOP)/ipeth/libplist && ./autogen.sh
 	cd $(TOP)/ipeth/libplist && ./configure --host=$(ARCH)-linux --without-cython CFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) $(MIPS16_OPT) -I$(TOP)/ipeth/libxml2/include -I$(TOP)/ipeth/libplist/include -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		CXXFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) $(MIPS16_OPT) -I$(TOP)/ipeth/libplist -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-		LDFLAGS="-L$(TOP)/ipeth/libxml2/.libs -ffunction-sections -fdata-sections -Wl,--gc-sections"
+		LDFLAGS="-L$(TOP)/ipeth/libxml2/.libs -lm -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+		libxml2_CFLAGS="-I$(TOP)/ipeth/libxml2/include" \
+		libxml2_LIBS="-L$(TOP)/ipeth/libxml2/.libs -lxml2"
+
 	cd $(TOP)/ipeth/libplist && make
 
 
 	cd $(TOP)/ipeth/libusbmuxd && ./autogen.sh
 	cd $(TOP)/ipeth/libusbmuxd && ./configure --host=$(ARCH)-linux --without-cython CFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) $(MIPS16_OPT) -I$(TOP)/ipeth/libxml2/include -I$(TOP)/ipeth/libplist/include -I$(TOP)/usb_modeswitch/libusb/libusb -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		CXXFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) $(MIPS16_OPT) -I$(TOP)/ipeth/libplist -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-		LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections" \
+		LDFLAGS="-L$(TOP)/ipeth/libplist/src/.libs -lplist -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		libplist_CFLAGS="-I$(TOP)/ipeth/libplist/include" \
 		libplist_LIBS="-L$(TOP)/ipeth/libplist/src/.libs -lplist" ac_cv_func_malloc_0_nonnull=yes  ac_cv_func_realloc_0_nonnull=yes
 		
@@ -55,7 +58,7 @@ ipeth-configure:
 	cd $(TOP)/ipeth/libimobiledevice && ./configure --without-cython --host=$(ARCH)-linux \
 		ac_cv_sys_file_offset_bits=64 \
 		CFLAGS="$(COPTS) $(MIPS16_OPT)  -ffunction-sections -fdata-sections -Wl,--gc-sections -fPIC -I$(TOP)/ipeth  -Drpl_localtime=localtime -I$(TOP)/openssl/include -Drpl_malloc=malloc -Drpl_realloc=realloc" \
-		LDFLAGS="-L$(TOP)/ipeth/nettle -L$(TOP)/openssl -L$(TOP)/ipeth/libusbmuxd/src/.libs -L$(TOP)/zlib" \
+		LDFLAGS="-L$(TOP)/ipeth/nettle -L$(TOP)/openssl -L$(TOP)/ipeth/libusbmuxd/src/.libs -lusbmuxd -L$(TOP)/ipeth/libplist/src/.libs -lplist  -L$(TOP)/zlib" \
 		libusbmuxd_CFLAGS="-I$(TOP)/usb_modeswitch/libusb/libusb -I$(TOP)/ipeth/libusbmuxd/include" \
 		libusbmuxd_LIBS="$(TOP)/usb_modeswitch/libusb/libusb/.libs/libusb-1.0.a -lusbmuxd" \
 		libplist_CFLAGS="-I$(TOP)/ipeth/libplist/include" \
