@@ -6,7 +6,7 @@
  *                                                                         *
  ***********************IMPORTANT NSOCK LICENSE TERMS***********************
  *                                                                         *
- * The nsock parallel socket event library is (C) 1999-2012 Insecure.Com   *
+ * The nsock parallel socket event library is (C) 1999-2013 Insecure.Com   *
  * LLC This library is free software; you may redistribute and/or          *
  * modify it under the terms of the GNU General Public License as          *
  * published by the Free Software Foundation; Version 2.  This guarantees  *
@@ -35,17 +35,18 @@
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
- * to nmap-dev@insecure.org for possible incorporation into the main       *
- * distribution.  By sending these changes to Fyodor or one of the         *
- * Insecure.Org development mailing lists, it is assumed that you are      *
- * offering the Nmap Project (Insecure.Com LLC) the unlimited,             *
- * non-exclusive right to reuse, modify, and relicense the code.  Nmap     *
- * will always be available Open Source, but this is important because the *
- * inability to relicense code has caused devastating problems for other   *
- * Free Software projects (such as KDE and NASM).  We also occasionally    *
- * relicense the code to third parties as discussed above.  If you wish to *
- * specify special license conditions of your contributions, just say so   *
- * when you send them.                                                     *
+ * to the dev@nmap.org mailing list for possible incorporation into the    *
+ * main distribution.  By sending these changes to Fyodor or one of the    *
+ * Insecure.Org development mailing lists, or checking them into the Nmap  *
+ * source code repository, it is understood (unless you specify otherwise) *
+ * that you are offering the Nmap Project (Insecure.Com LLC) the           *
+ * unlimited, non-exclusive right to reuse, modify, and relicense the      *
+ * code.  Nmap will always be available Open Source, but this is important *
+ * because the inability to relicense code has caused devastating problems *
+ * for other Free Software projects (such as KDE and NASM).  We also       *
+ * occasionally relicense the code to third parties as discussed above.    *
+ * If you wish to specify special license conditions of your               *
+ * contributions, just say so when you send them.                          *
  *                                                                         *
  * This program is distributed in the hope that it will be useful, but     *
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
@@ -55,9 +56,10 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nsock_pool.c 28195 2012-03-01 09:05:02Z henri $ */
+/* $Id: nsock_pool.c 31737 2013-08-10 23:59:30Z henri $ */
 
 #include "nsock_internal.h"
+#include "nsock_log.h"
 #include "gh_list.h"
 #include "netutils.h"
 
@@ -116,35 +118,28 @@ void *nsp_getud(nsock_pool nsp) {
   return mt->userdata;
 }
 
-/* Sets a trace/debug level and stream.  A level of 0 (the default) turns
- * tracing off, while higher numbers are more verbose.  If the stream given is
- * NULL, it defaults to stdout.  This is generally only used for debugging
- * purposes. A level of 1 or 2 is usually sufficient, but 10 will ensure you get
- * everything.  The basetime can be NULL to print trace lines with the current
- * time, otherwise the difference between the current time and basetime will be
- * used (the time program execution starts would be a good candidate) */
-void nsp_settrace(nsock_pool nsp, FILE *file, int level, const struct timeval *basetime) {
-  mspool *mt = (mspool *)nsp;
-
-  if (file == NULL)
-    mt->tracefile = stdout;
-  else
-    mt->tracefile = file;
-
-  mt->tracelevel = level;
-
-  if (!basetime)
-    memset(&mt->tracebasetime, 0, sizeof(struct timeval));
-  else
-    mt->tracebasetime = *basetime;
-}
-
 /* Turns on or off broadcast support on new sockets. Default is off (0, false)
  * set in nsp_new(). Any non-zero (true) value sets SO_BROADCAST on all new
  * sockets (value of optval will be used directly in the setsockopt() call */
 void nsp_setbroadcast(nsock_pool nsp, int optval) {
   mspool *mt = (mspool *)nsp;
   mt->broadcast = optval;
+}
+
+/* Sets the name of the interface for new sockets to bind to. */
+void nsp_setdevice(nsock_pool nsp, const char *device) {
+  mspool *mt = (mspool *)nsp;
+  mt->device = device;
+}
+
+static int expirable_cmp(gh_hnode_t *n1, gh_hnode_t *n2) {
+  msevent *nse1;
+  msevent *nse2;
+
+  nse1 = container_of(n1, msevent, expire);
+  nse2 = container_of(n2, msevent, expire);
+
+  return (TIMEVAL_BEFORE(nse1->timeout, nse2->timeout)) ? 1 : 0;
 }
 
 /* And here is how you create an nsock_pool.  This allocates, initializes, and
@@ -164,14 +159,16 @@ nsock_pool nsp_new(void *userdata) {
   memset(nsp, 0, sizeof(*nsp));
 
   gettimeofday(&nsock_tod, NULL);
-  nsp_settrace(nsp, NULL, 0, NULL);
+
+  nsp->loglevel = NSOCK_LOG_ERROR;
+  nsp->logger   = (nsock_logger_t)nsock_stderr_logger;
 
   nsp->id = nsp_next_id++;
 
   nsp->userdata = userdata;
 
   nsp->engine = get_io_engine();
-  nsp->engine->init(nsp);
+  nsock_engine_init(nsp);
 
   /* initialize IO events lists */
   gh_list_init(&nsp->connect_events);
@@ -180,8 +177,9 @@ nsock_pool nsp_new(void *userdata) {
 #if HAVE_PCAP
   gh_list_init(&nsp->pcap_read_events);
 #endif
-  /* initialize timer list */
-  gh_list_init(&nsp->timer_events);
+
+  /* initialize timer heap */
+  gh_heap_init(&nsp->expirables, expirable_cmp);
 
   /* initialize the list of IODs */
   gh_list_init(&nsp->active_iods);
@@ -192,9 +190,13 @@ nsock_pool nsp_new(void *userdata) {
 
   nsp->next_event_serial = 1;
 
+  nsp->device = NULL;
+
 #if HAVE_OPENSSL
   nsp->sslctx = NULL;
 #endif
+
+  nsp->px_chain = NULL;
 
   return (nsock_pool)nsp;
 }
@@ -208,12 +210,11 @@ void nsp_delete(nsock_pool ms_pool) {
   msevent *nse;
   msiod *nsi;
   int i;
-  gh_list_elem *current, *next;
-  gh_list *event_lists[] = {
+  gh_lnode_t *current, *next;
+  gh_list_t *event_lists[] = {
     &nsp->connect_events,
     &nsp->read_events,
     &nsp->write_events,
-    &nsp->timer_events,
 #if HAVE_PCAP
     &nsp->pcap_read_events,
 #endif
@@ -224,13 +225,24 @@ void nsp_delete(nsock_pool ms_pool) {
 
   /* First I go through all the events sending NSE_STATUS_KILL */
   for (i = 0; event_lists[i] != NULL; i++) {
-    while (GH_LIST_COUNT(event_lists[i]) > 0) {
-      nse = (msevent *)gh_list_pop(event_lists[i]);
+    while (gh_list_count(event_lists[i]) > 0) {
+      gh_lnode_t *lnode = gh_list_pop(event_lists[i]);
+
+      assert(lnode);
+
+#if HAVE_PCAP
+      if (event_lists[i] == &nsp->pcap_read_events)
+        nse = lnode_msevent2(lnode);
+      else
+#endif
+        nse = lnode_msevent(lnode);
 
       assert(nse);
+
       nse->status = NSE_STATUS_KILL;
       nsock_trace_handler_callback(nsp, nse);
       nse->handler(nsp, nse, nse->userdata);
+
       if (nse->iod) {
         nse->iod->events_pending--;
         assert(nse->iod->events_pending >= 0);
@@ -240,22 +252,45 @@ void nsp_delete(nsock_pool ms_pool) {
     gh_list_free(event_lists[i]);
   }
 
+  /* Kill timers too, they're not in event lists */
+  while (gh_heap_count(&nsp->expirables) > 0) {
+    gh_hnode_t *hnode;
+
+    hnode = gh_heap_pop(&nsp->expirables);
+    nse = container_of(hnode, msevent, expire);
+
+    if (nse->type == NSE_TYPE_TIMER) {
+      nse->status = NSE_STATUS_KILL;
+      nsock_trace_handler_callback(nsp, nse);
+      nse->handler(nsp, nse, nse->userdata);
+      msevent_delete(nsp, nse);
+      gh_list_append(&nsp->free_events, &nse->nodeq_io);
+    }
+  }
+
+  gh_heap_free(&nsp->expirables);
+
   /* foreach msiod */
-  for (current = GH_LIST_FIRST_ELEM(&nsp->active_iods); current != NULL; current = next) {
-    next = GH_LIST_ELEM_NEXT(current);
-    nsi = (msiod *)GH_LIST_ELEM_DATA(current);
+  for (current = gh_list_first_elem(&nsp->active_iods);
+       current != NULL;
+       current = next) {
+    next = gh_lnode_next(current);
+    nsi = container_of(current, msiod, nodeq);
+
     nsi_delete(nsi, NSOCK_PENDING_ERROR);
 
-    gh_list_remove_elem(&nsp->active_iods, current);
-    gh_list_prepend(&nsp->free_iods, nsi);
+    gh_list_remove(&nsp->active_iods, current);
+    gh_list_prepend(&nsp->free_iods, &nsi->nodeq);
   }
 
   /* Now we free all the memory in the free iod list */
-  while ((nsi = (msiod *)gh_list_pop(&nsp->free_iods))) {
+  while ((current = gh_list_pop(&nsp->free_iods))) {
+    nsi = container_of(current, msiod, nodeq);
     free(nsi);
   }
 
-  while ((nse = (msevent *)gh_list_pop(&nsp->free_events))) {
+  while ((current = gh_list_pop(&nsp->free_events))) {
+    nse = lnode_msevent(current);
     free(nse);
   }
 
@@ -263,7 +298,7 @@ void nsp_delete(nsock_pool ms_pool) {
   gh_list_free(&nsp->free_iods);
   gh_list_free(&nsp->free_events);
 
-  nsp->engine->destroy(nsp);
+  nsock_engine_destroy(nsp);
 
 #if HAVE_OPENSSL
   if (nsp->sslctx != NULL)

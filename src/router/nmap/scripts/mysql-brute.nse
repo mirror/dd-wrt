@@ -1,76 +1,97 @@
+local brute = require "brute"
+local creds = require "creds"
+local mysql = require "mysql"
+local nmap = require "nmap"
+local shortport = require "shortport"
+local stdnse = require "stdnse"
+
+local openssl = stdnse.silent_require "openssl"
+
 description = [[
-Performs password guessing against MySQL
+Performs password guessing against MySQL.
 ]]
 
 ---
+-- @usage
+-- nmap --script=mysql-brute <target>
+--
 -- @output
 -- 3306/tcp open  mysql
--- | mysql-brute:  
--- |   root:<empty> => Valid credentials
--- |_  test:test => Valid credentials
+-- | mysql-brute:
+-- |   Accounts
+-- |     root:root - Valid credentials
+--
+-- @args mysql-brute.timeout socket timeout for connecting to MySQL (default 5s)
 
 author = "Patrik Karlsson"
 license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
 categories = {"intrusive", "brute"}
 
-require 'shortport'
-require 'stdnse'
-require 'mysql'
-require 'unpwdb'
-stdnse.silent_require 'openssl'
-
--- Version 0.3
+-- Version 0.5
 -- Created 01/15/2010 - v0.1 - created by Patrik Karlsson <patrik@cqure.net>
 -- Revised 01/23/2010 - v0.2 - revised by Patrik Karlsson, changed username, password loop, added credential storage for other mysql scripts, added timelimit
 -- Revised 01/23/2010 - v0.3 - revised by Patrik Karlsson, fixed bug showing account passwords detected twice
 -- Revised 09/09/2011 - v0.4 - revised by Tom Sellers, changed account status text to be more consistent with other *-brute scripts
+-- Revised 05/25/2012 - v0.5 - revised by Aleksandar Nikolic, rewritten to use brute lib
 
 portrule = shortport.port_or_service(3306, "mysql")
 
+local arg_timeout = stdnse.parse_timespec(stdnse.get_script_args(SCRIPT_NAME .. ".timeout"))
+arg_timeout = (arg_timeout or 5) * 1000
+
+Driver = {
+
+  new = function(self, host, port)
+    local o = {}
+    setmetatable(o, self)
+    self.__index = self
+    o.host = host
+    o.port = port
+    return o
+  end,
+
+  connect = function( self )
+    self.socket = nmap.new_socket()
+    local status, err = self.socket:connect(self.host, self.port)
+    self.socket:set_timeout(arg_timeout)
+    if(not(status)) then
+      return false, brute.Error:new( "Couldn't connect to host: " .. err )
+    end
+    return true
+  end,
+
+  login = function (self, user, pass)
+    local status, response = mysql.receiveGreeting(self.socket)
+    if(not(status)) then
+      return false,brute.Error:new(response)
+    end
+    stdnse.print_debug( "Trying %s/%s ...", user, pass )
+    status, response = mysql.loginRequest( self.socket, { authversion = "post41", charset = response.charset }, user, pass, response.salt )
+    if status then
+      -- Add credentials for other mysql scripts to use
+      if nmap.registry.mysqlusers == nil then
+        nmap.registry.mysqlusers = {}
+      end
+      nmap.registry.mysqlusers[user]=pass
+      return true, brute.Account:new( user, pass, creds.State.VALID)
+    end
+    return false,brute.Error:new( "Incorrect password" )
+  end,
+
+  disconnect = function( self )
+    self.socket:close()
+    return true
+  end
+
+}
+
 action = function( host, port )
 
-	local socket = nmap.new_socket()
-	local catch = function() socket:close()	end
-	local try = nmap.new_try(catch)
-	local result, response, status = {}, nil, nil
-	local valid_accounts = {}	
-	local usernames, passwords
-	local username, password
+  local status, result
+  local engine = brute.Engine:new(Driver, host, port)
+  engine.options.script_name = SCRIPT_NAME
 
-	-- set a reasonable timeout value
-	socket:set_timeout(5000)
-		
- 	usernames = try(unpwdb.usernames())
-	passwords = try(unpwdb.passwords())	
-	
-	for username in usernames do
-		for password in passwords do
-				
-			try( socket:connect(host, port) )	
-			response = try( mysql.receiveGreeting( socket ) )
+  status, result = engine:start()
 
-			stdnse.print_debug( "Trying %s/%s ...", username, password )
-
-			status, response = mysql.loginRequest( socket, { authversion = "post41", charset = response.charset }, username, password, response.salt )
-			socket:close()
-
-			if status then				
-				-- Add credentials for other mysql scripts to use
-				if nmap.registry.mysqlusers == nil then
-					nmap.registry.mysqlusers = {}
-				end	
-				nmap.registry.mysqlusers[username]=password
-				
-				table.insert( valid_accounts, string.format("%s:%s => Valid credentials", username, password:len()>0 and password or "<empty>" ) )
-				break
-			end
-			
-		end
-		passwords("reset")
-	end
-
-	local output = stdnse.format_output(true, valid_accounts)	
-
-	return output
-
+  return result
 end

@@ -1,3 +1,10 @@
+local nmap = require "nmap"
+local os = require "os"
+local shortport = require "shortport"
+local stdnse = require "stdnse"
+local string = require "string"
+local table = require "table"
+
 description = [[
 Attempts to extract system information (OS, hardware, etc.) from the Sun Service Tags service agent (UDP port 6481).
 
@@ -8,6 +15,8 @@ http://arc.opensolaris.org/caselog/PSARC/2006/638/ServiceTag_API_CLI_v07.pdf
 ]]
 
 ---
+-- @usage
+-- nmap -sU -p 6481 --script=servicetags <target>
 -- @output
 -- | servicetags:
 -- |   URN: urn:st:3bf76681-5e68-415b-f980-abcdef123456
@@ -70,8 +79,6 @@ license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
 
 categories = {"default", "discovery", "safe"}
 
-require("stdnse")
-require("shortport")
 
 -- Mapping from XML element names to human-readable table labels.
 local XML_TO_TEXT = {
@@ -116,45 +123,45 @@ portrule = shortport.portnumber(6481, "udp", {"open", "open|filtered"})
 local get_agent, get_svctag_list, get_svctag
 
 ---
--- Sends Service Tags discovery packet to host, 
+-- Sends Service Tags discovery packet to host,
 -- and extracts service information from results
 action = function(host, port)
-    
+
     -- create the socket used for our connection
     local socket = nmap.new_socket()
-    
+
     -- set a reasonable timeout value
     socket:set_timeout(5000)
-    
+
     -- do some exception handling / cleanup
     local catch = function()
         socket:close()
     end
-    
+
     local try = nmap.new_try(catch)
-    
+
     -- connect to the potential service tags discoverer
     try(socket:connect(host.ip, port.number, "udp"))
-    
+
     local payload
-    
+
     payload = "[PROBE] ".. tostring(os.time()) .. "\r\n"
-    
+
     try(socket:send(payload))
-    
+
     local status
     local response
-    
+
     -- read in any response we might get
     response = try(socket:receive())
     socket:close()
 
     -- since we got something back, the port is definitely open
     nmap.set_port_state(host, port, "open")
-    
+
     -- buffer to hold script output
     local output = {}
-    
+
     -- We should get a response back that has contains one line for the
     -- agent URN and TCP port
     local urn, xport, split
@@ -167,9 +174,11 @@ action = function(host, port)
         get_agent(host, xport, output)
 
         -- Check if any other service tags are registered and enumerate them
+        local svctags_list
         status, svctags_list = get_svctag_list(host, xport, output)
         if status then
-            svctags = {}
+            local svctags = {}
+            local tag
             for _, svctag in ipairs(svctags_list) do
                 svctags['name'] = "Service Tags"
                 status, tag = get_svctag(host, port, svctag)
@@ -180,6 +189,9 @@ action = function(host, port)
             table.insert(output, svctags)
         end
     end
+
+    port.name = "servicetags"
+    nmap.set_port_version(host, port)
 
     return stdnse.format_output(true, output)
 end

@@ -2,62 +2,94 @@
  * ncat_listen.c -- --listen mode.                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2012 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
- * Foundation; Version 2 with the clarifications and exceptions described  *
- * below.  This guarantees your right to use, modify, and redistribute     *
- * this software under certain conditions.  If you wish to embed Nmap      *
- * technology into proprietary software, we sell alternative licenses      *
- * (contact sales@insecure.com).  Dozens of software vendors already       *
- * license Nmap technology such as host discovery, port scanning, OS       *
- * detection, version detection, and the Nmap Scripting Engine.            *
+ * Foundation; Version 2 ("GPL"), BUT ONLY WITH ALL OF THE CLARIFICATIONS  *
+ * AND EXCEPTIONS DESCRIBED HEREIN.  This guarantees your right to use,    *
+ * modify, and redistribute this software under certain conditions.  If    *
+ * you wish to embed Nmap technology into proprietary software, we sell    *
+ * alternative licenses (contact sales@nmap.com).  Dozens of software      *
+ * vendors already license Nmap technology such as host discovery, port    *
+ * scanning, OS detection, version detection, and the Nmap Scripting       *
+ * Engine.                                                                 *
  *                                                                         *
- * Note that the GPL places important restrictions on "derived works", yet *
- * it does not provide a detailed definition of that term.  To avoid       *
+ * Note that the GPL places important restrictions on "derivative works",  *
+ * yet it does not provide a detailed definition of that term.  To avoid   *
  * misunderstandings, we interpret that term as broadly as copyright law   *
  * allows.  For example, we consider an application to constitute a        *
- * "derivative work" for the purpose of this license if it does any of the *
- * following:                                                              *
- * o Integrates source code from Nmap                                      *
- * o Reads or includes Nmap copyrighted data files, such as                *
- *   nmap-os-db or nmap-service-probes.                                    *
- * o Executes Nmap and parses the results (as opposed to typical shell or  *
- *   execution-menu apps, which simply display raw Nmap output and so are  *
- *   not derivative works.)                                                *
- * o Integrates/includes/aggregates Nmap into a proprietary executable     *
- *   installer, such as those produced by InstallShield.                   *
- * o Links to a library or executes a program that does any of the above   *
+ * derivative work for the purpose of this license if it does any of the   *
+ * following with any software or content covered by this license          *
+ * ("Covered Software"):                                                   *
  *                                                                         *
- * The term "Nmap" should be taken to also include any portions or derived *
- * works of Nmap, as well as other software we distribute under this       *
- * license such as Zenmap, Ncat, and Nping.  This list is not exclusive,   *
- * but is meant to clarify our interpretation of derived works with some   *
- * common examples.  Our interpretation applies only to Nmap--we don't     *
- * speak for other people's GPL works.                                     *
+ * o Integrates source code from Covered Software.                         *
  *                                                                         *
- * If you have any questions about the GPL licensing restrictions on using *
- * Nmap in non-GPL works, we would be happy to help.  As mentioned above,  *
- * we also offer alternative license to integrate Nmap into proprietary    *
- * applications and appliances.  These contracts have been sold to dozens  *
- * of software vendors, and generally include a perpetual license as well  *
- * as providing for priority support and updates.  They also fund the      *
- * continued development of Nmap.  Please email sales@insecure.com for     *
- * further information.                                                    *
+ * o Reads or includes copyrighted data files, such as Nmap's nmap-os-db   *
+ * or nmap-service-probes.                                                 *
  *                                                                         *
- * As a special exception to the GPL terms, Insecure.Com LLC grants        *
+ * o Is designed specifically to execute Covered Software and parse the    *
+ * results (as opposed to typical shell or execution-menu apps, which will *
+ * execute anything you tell them to).                                     *
+ *                                                                         *
+ * o Includes Covered Software in a proprietary executable installer.  The *
+ * installers produced by InstallShield are an example of this.  Including *
+ * Nmap with other software in compressed or archival form does not        *
+ * trigger this provision, provided appropriate open source decompression  *
+ * or de-archiving software is widely available for no charge.  For the    *
+ * purposes of this license, an installer is considered to include Covered *
+ * Software even if it actually retrieves a copy of Covered Software from  *
+ * another source during runtime (such as by downloading it from the       *
+ * Internet).                                                              *
+ *                                                                         *
+ * o Links (statically or dynamically) to a library which does any of the  *
+ * above.                                                                  *
+ *                                                                         *
+ * o Executes a helper program, module, or script to do any of the above.  *
+ *                                                                         *
+ * This list is not exclusive, but is meant to clarify our interpretation  *
+ * of derived works with some common examples.  Other people may interpret *
+ * the plain GPL differently, so we consider this a special exception to   *
+ * the GPL that we apply to Covered Software.  Works which meet any of     *
+ * these conditions must conform to all of the terms of this license,      *
+ * particularly including the GPL Section 3 requirements of providing      *
+ * source code and allowing free redistribution of the work as a whole.    *
+ *                                                                         *
+ * As another special exception to the GPL terms, Insecure.Com LLC grants  *
  * permission to link the code of this program with any version of the     *
  * OpenSSL library which is distributed under a license identical to that  *
  * listed in the included docs/licenses/OpenSSL.txt file, and distribute   *
- * linked combinations including the two. You must obey the GNU GPL in all *
- * respects for all of the code used other than OpenSSL.  If you modify    *
- * this file, you may extend this exception to your version of the file,   *
- * but you are not obligated to do so.                                     *
+ * linked combinations including the two.                                  *
  *                                                                         *
- * If you received these files with a written license agreement or         *
- * contract stating terms other than the terms above, then that            *
- * alternative license agreement takes precedence over these comments.     *
+ * Any redistribution of Covered Software, including any derived works,    *
+ * must obey and carry forward all of the terms of this license, including *
+ * obeying all GPL rules and restrictions.  For example, source code of    *
+ * the whole work must be provided and free redistribution must be         *
+ * allowed.  All GPL references to "this License", are to be treated as    *
+ * including the terms and conditions of this license text as well.        *
+ *                                                                         *
+ * Because this license imposes special exceptions to the GPL, Covered     *
+ * Work may not be combined (even as part of a larger work) with plain GPL *
+ * software.  The terms, conditions, and exceptions of this license must   *
+ * be included as well.  This license is incompatible with some other open *
+ * source licenses as well.  In some cases we can relicense portions of    *
+ * Nmap or grant special permissions to use it in other open source        *
+ * software.  Please contact fyodor@nmap.org with any such requests.       *
+ * Similarly, we don't incorporate incompatible open source software into  *
+ * Covered Software without special permission from the copyright holders. *
+ *                                                                         *
+ * If you have any questions about the licensing restrictions on using     *
+ * Nmap in other works, are happy to help.  As mentioned above, we also    *
+ * offer alternative license to integrate Nmap into proprietary            *
+ * applications and appliances.  These contracts have been sold to dozens  *
+ * of software vendors, and generally include a perpetual license as well  *
+ * as providing for priority support and updates.  They also fund the      *
+ * continued development of Nmap.  Please email sales@nmap.com for further *
+ * information.                                                            *
+ *                                                                         *
+ * If you have received a written license agreement or contract for        *
+ * Covered Software stating terms other than these, you may choose to use  *
+ * and redistribute Covered Software under those terms instead of these.   *
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
@@ -66,8 +98,8 @@
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
- * to nmap-dev@insecure.org for possible incorporation into the main       *
- * distribution.  By sending these changes to Fyodor or one of the         *
+ * to the dev@nmap.org mailing list for possible incorporation into the    *
+ * main distribution.  By sending these changes to Fyodor or one of the    *
  * Insecure.Org development mailing lists, or checking them into the Nmap  *
  * source code repository, it is understood (unless you specify otherwise) *
  * that you are offering the Nmap Project (Insecure.Com LLC) the           *
@@ -81,18 +113,16 @@
  *                                                                         *
  * This program is distributed in the hope that it will be useful, but     *
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU       *
- * General Public License v2.0 for more details at                         *
- * http://www.gnu.org/licenses/gpl-2.0.html , or in the COPYING file       *
- * included with Nmap.                                                     *
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
+ * license file for more details (it's in a COPYING file included with     *
+ * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: ncat_listen.c 28192 2012-03-01 06:53:35Z fyodor $ */
+/* $Id: ncat_listen.c 33540 2014-08-16 02:45:47Z dmiller $ */
 
 #include "ncat.h"
 
-#include <assert.h>
 #include <errno.h>
 #include <signal.h>
 #include <stdio.h>
@@ -110,9 +140,21 @@
 #include <fcntl.h>
 #endif
 
+#if HAVE_SYS_UN_H
+#include <sys/un.h>
+#endif
+
 #ifdef HAVE_OPENSSL
 #include <openssl/ssl.h>
 #include <openssl/err.h>
+#endif
+
+#ifdef WIN32
+/* Define missing constant for shutdown(2).
+ * See:
+ * http://msdn.microsoft.com/en-us/library/windows/desktop/ms740481%28v=vs.85%29.aspx
+ */
+#define SHUT_WR SD_SEND
 #endif
 
 /* read_fds is the clients we are accepting data from. broadcast_fds is the
@@ -123,7 +165,7 @@
    from us, like a pending ssl negotiation. */
 static fd_set master_readfds, master_writefds, master_broadcastfds;
 #ifdef HAVE_OPENSSL
-/* sslpending_fds containts the list of ssl sockets that are waiting to complete
+/* sslpending_fds contains the list of ssl sockets that are waiting to complete
    the ssl handshake */
 static fd_set sslpending_fds;
 #endif
@@ -142,6 +184,7 @@ static int read_stdin(void);
 static int read_socket(int recv_fd);
 static void post_handle_connection(struct fdinfo sinfo);
 static void read_and_broadcast(int recv_socket);
+static void shutdown_sockets(int how);
 static int chat_announce_connect(int fd, const union sockaddr_u *su);
 static int chat_announce_disconnect(int fd);
 static char *chat_filter(char *buf, size_t size, int fd, int *nwritten);
@@ -155,7 +198,8 @@ static unsigned int conn_inc = 0;
 static volatile unsigned int conn_dec = 0;
 static volatile sig_atomic_t conn_dec_changed;
 
-static void decrease_conn_count(void) {
+static void decrease_conn_count(void)
+{
     conn_dec_changed = 1;
     conn_dec++;
 }
@@ -170,7 +214,7 @@ static int get_conn_count(void)
         conn_dec_changed = 0;
         count = conn_inc - conn_dec;
     } while (conn_dec_changed);
-    assert(count <= INT_MAX);
+    ncat_assert(count <= INT_MAX);
 
     return count;
 }
@@ -187,6 +231,9 @@ static int ncat_listen_stream(int proto)
 {
     int rc, i, fds_ready;
     fd_set listen_fds;
+    struct timeval tv;
+    struct timeval *tvp = NULL;
+    unsigned int num_sockets;
 
     /* clear out structs */
     FD_ZERO(&master_readfds);
@@ -222,25 +269,43 @@ static int ncat_listen_stream(int proto)
     for (i = 0; i < NUM_LISTEN_ADDRS; i++)
         listen_socket[i] = -1;
 
+    num_sockets = 0;
     for (i = 0; i < num_listenaddrs; i++) {
         /* setup the main listening socket */
-        listen_socket[i] = do_listen(SOCK_STREAM, proto, &listenaddrs[i]);
+        listen_socket[num_sockets] = do_listen(SOCK_STREAM, proto, &listenaddrs[i]);
+        if (listen_socket[num_sockets] == -1) {
+            if (o.debug > 0)
+                logdebug("do_listen(\"%s\"): %s\n", inet_ntop_ez(&listenaddrs[i].storage, sizeof(listenaddrs[i].storage)), socket_strerror(socket_errno()));
+            continue;
+        }
 
         /* Make our listening socket non-blocking because there are timing issues
          * which could cause us to block on accept() even though select() says it's
          * readable.  See UNPv1 2nd ed, p422 for more.
          */
-        unblock_socket(listen_socket[i]);
+        unblock_socket(listen_socket[num_sockets]);
 
         /* setup select sets and max fd */
-        FD_SET(listen_socket[i], &master_readfds);
-        add_fd(&client_fdlist, listen_socket[i]);
+        FD_SET(listen_socket[num_sockets], &master_readfds);
+        add_fd(&client_fdlist, listen_socket[num_sockets]);
 
-        FD_SET(listen_socket[i], &listen_fds);
+        FD_SET(listen_socket[num_sockets], &listen_fds);
+
+        num_sockets++;
     }
+    if (num_sockets == 0) {
+        if (num_listenaddrs == 1)
+            bye("Unable to open listening socket on %s: %s", inet_ntop_ez(&listenaddrs[0].storage, sizeof(listenaddrs[0].storage)), socket_strerror(socket_errno()));
+        else
+            bye("Unable to open any listening sockets.");
+    }
+
     add_fd(&client_fdlist, STDIN_FILENO);
 
     init_fdlist(&broadcast_fdlist, o.conn_limit);
+
+    if (o.idletimeout > 0)
+        tvp = &tv;
 
     while (1) {
         /* We pass these temporary descriptor sets to fselect, since fselect
@@ -254,10 +319,16 @@ static int ncat_listen_stream(int proto)
         if (o.debug > 1 && o.broker)
             logdebug("Broker connection count is %d\n", get_conn_count());
 
-        fds_ready = fselect(client_fdlist.fdmax + 1, &readfds, &writefds, NULL, NULL);
+        if (o.idletimeout > 0)
+            ms_to_timeval(tvp, o.idletimeout);
+
+        fds_ready = fselect(client_fdlist.fdmax + 1, &readfds, &writefds, NULL, tvp);
 
         if (o.debug > 1)
             logdebug("select returned %d fds ready\n", fds_ready);
+
+        if (fds_ready == 0)
+            bye("Idle timeout expired (%d ms).", o.idletimeout);
 
         /*
          * FIXME: optimize this loop to look only at the fds in the fd list,
@@ -279,7 +350,8 @@ static int ncat_listen_stream(int proto)
                 FD_CLR(i, &master_readfds);
                 FD_CLR(i, &master_writefds);
                 fdi = get_fdinfo(&client_fdlist, i);
-                switch(ssl_handshake(fdi)){
+                ncat_assert(fdi != NULL);
+                switch (ssl_handshake(fdi)) {
                 case NCAT_SSL_HANDSHAKE_COMPLETED:
                     /* Clear from sslpending_fds once ssl is established */
                     FD_CLR(i, &sslpending_fds);
@@ -312,22 +384,26 @@ static int ncat_listen_stream(int proto)
                 /* we have a new connection request */
                 handle_connection(i);
             } else if (i == STDIN_FILENO) {
-                if(o.broker) {
+                if (o.broker) {
                     read_and_broadcast(i);
-                }else {
+                } else {
                     /* Read from stdin and write to all clients. */
                     rc = read_stdin();
-                    if (rc == 0 && o.sendonly)
-                        /* There will be nothing more to send. If we're not
-                           receiving anything, we can quit here. */
-                        return 0;
+                    if (rc == 0) {
+                        if (o.proto != IPPROTO_TCP || (o.proto == IPPROTO_TCP && o.sendonly)) {
+                            /* There will be nothing more to send. If we're not
+                               receiving anything, we can quit here. */
+                            return 0;
+                        }
+                        shutdown_sockets(SHUT_WR);
+                    }
                     if (rc < 0)
                         return 1;
                 }
             } else if (!o.sendonly) {
-                if(o.broker) {
+                if (o.broker) {
                     read_and_broadcast(i);
-                }else {
+                } else {
                     /* Read from a client and write to stdout. */
                     rc = read_socket(i);
                     if (rc <= 0 && !o.keepopen)
@@ -353,8 +429,10 @@ static void handle_connection(int socket_accept)
     int conn_count;
 
     zmem(&s, sizeof(s));
+    zmem(&remoteaddr, sizeof(remoteaddr.storage));
 
     ss_len = sizeof(remoteaddr.storage);
+
     errno = 0;
     s.fd = accept(socket_accept, &remoteaddr.sockaddr, &ss_len);
 
@@ -367,13 +445,18 @@ static void handle_connection(int socket_accept)
     }
 
     if (o.verbose) {
+#if HAVE_SYS_UN_H
+        if (remoteaddr.sockaddr.sa_family == AF_UNIX)
+            loguser("Connection from a client on Unix domain socket.\n");
+        else
+#endif
         if (o.chat)
             loguser("Connection from %s on file descriptor %d.\n", inet_socktop(&remoteaddr), s.fd);
         else
             loguser("Connection from %s.\n", inet_socktop(&remoteaddr));
     }
 
-    if (!o.keepopen && !o.broker)  {
+    if (!o.keepopen && !o.broker) {
         int i;
         for (i = 0; i < num_listenaddrs; i++) {
             Close(listen_socket[i]);
@@ -382,8 +465,14 @@ static void handle_connection(int socket_accept)
         }
     }
 
-    if (o.verbose)
-        loguser("Connection from %s:%hu.\n", inet_socktop(&remoteaddr), inet_port(&remoteaddr));
+    if (o.verbose) {
+#if HAVE_SYS_UN_H
+        if (remoteaddr.sockaddr.sa_family == AF_UNIX)
+            loguser("Connection from %s.\n", remoteaddr.un.sun_path);
+        else
+#endif
+            loguser("Connection from %s:%hu.\n", inet_socktop(&remoteaddr), inet_port(&remoteaddr));
+    }
 
     /* Check conditions that might cause us to deny the connection. */
     conn_count = get_conn_count();
@@ -406,7 +495,7 @@ static void handle_connection(int socket_accept)
 
     unblock_socket(s.fd);
 
- #ifdef HAVE_OPENSSL
+#ifdef HAVE_OPENSSL
     if (o.ssl) {
         /* Add the socket to the necessary descriptor lists. */
         FD_SET(s.fd, &sslpending_fds);
@@ -416,7 +505,7 @@ static void handle_connection(int socket_accept)
         if (add_fdinfo(&client_fdlist, &s) < 0)
             bye("add_fdinfo() failed.");
     } else
- #endif
+#endif
         post_handle_connection(s);
 }
 
@@ -442,11 +531,11 @@ static void post_handle_connection(struct fdinfo sinfo)
             FD_SET(sinfo.fd, &master_readfds);
             /* add it to our list of fds for maintaining maxfd */
             if (add_fdinfo(&client_fdlist, &sinfo) < 0)
-                 bye("add_fdinfo() failed.");
+                bye("add_fdinfo() failed.");
         }
         FD_SET(sinfo.fd, &master_broadcastfds);
         if (add_fdinfo(&broadcast_fdlist, &sinfo) < 0)
-             bye("add_fdinfo() failed.");
+            bye("add_fdinfo() failed.");
 
         if (o.chat)
             chat_announce_connect(sinfo.fd, &sinfo.remoteaddr);
@@ -504,7 +593,7 @@ int read_socket(int recv_fd)
     int nbytes, pending;
 
     fdn = get_fdinfo(&client_fdlist, recv_fd);
-    assert(fdn != NULL);
+    ncat_assert(fdn != NULL);
 
     nbytes = 0;
     do {
@@ -546,17 +635,24 @@ int read_socket(int recv_fd)
  */
 static int ncat_listen_dgram(int proto)
 {
-    int sockfd[NUM_LISTEN_ADDRS];
+    struct {
+        int fd;
+        union sockaddr_u addr;
+    } sockfd[NUM_LISTEN_ADDRS];
     int i, fdn = -1;
-    int fdmax, nbytes, fds_ready;
-    char buf[DEFAULT_UDP_BUF_LEN] = {0};
+    int fdmax, nbytes, n, fds_ready;
+    char buf[DEFAULT_UDP_BUF_LEN] = { 0 };
     char *tempbuf = NULL;
     fd_set read_fds;
     union sockaddr_u remotess;
     socklen_t sslen = sizeof(remotess.storage);
+    struct timeval tv;
+    struct timeval *tvp = NULL;
+    unsigned int num_sockets;
 
     for (i = 0; i < NUM_LISTEN_ADDRS; i++) {
-        sockfd[i] = -1;
+        sockfd[i].fd = -1;
+        sockfd[i].addr.storage.ss_family = AF_UNSPEC;
     }
 
     FD_ZERO(&read_fds);
@@ -581,31 +677,50 @@ static int ncat_listen_dgram(int proto)
     FD_ZERO(&listen_fds);
     init_fdlist(&listen_fdlist, num_listenaddrs);
 
+    num_sockets = 0;
     for (i = 0; i < num_listenaddrs; i++) {
         /* create the UDP listen sockets */
-        sockfd[i] = do_listen(SOCK_DGRAM, proto, &listenaddrs[i]);
-        FD_SET(sockfd[i],&listen_fds);
-        add_fd(&listen_fdlist, sockfd[i]);
+        sockfd[num_sockets].fd = do_listen(SOCK_DGRAM, proto, &listenaddrs[i]);
+        if (sockfd[num_sockets].fd == -1) {
+            if (o.debug > 0)
+                logdebug("do_listen(\"%s\"): %s\n", inet_ntop_ez(&listenaddrs[i].storage, sizeof(listenaddrs[i].storage)), socket_strerror(socket_errno()));
+            continue;
+        }
+        FD_SET(sockfd[num_sockets].fd, &listen_fds);
+        add_fd(&listen_fdlist, sockfd[num_sockets].fd);
+        sockfd[num_sockets].addr = listenaddrs[i];
+        num_sockets++;
     }
+    if (num_sockets == 0) {
+        if (num_listenaddrs == 1)
+            bye("Unable to open listening socket on %s: %s", inet_ntop_ez(&listenaddrs[0].storage, sizeof(listenaddrs[0].storage)), socket_strerror(socket_errno()));
+        else
+            bye("Unable to open any listening sockets.");
+    }
+
+    if (o.idletimeout > 0)
+        tvp = &tv;
 
     while (1) {
         int i, j, conn_count, socket_n;
 
         if (fdn != -1) {
             /*remove socket descriptor which is burnt */
-            FD_CLR(sockfd[fdn], &listen_fds);
-            rm_fd(&listen_fdlist, sockfd[fdn]);
+            FD_CLR(sockfd[fdn].fd, &listen_fds);
+            rm_fd(&listen_fdlist, sockfd[fdn].fd);
 
             /* Rebuild the udp socket which got burnt */
-            sockfd[fdn] = do_listen(SOCK_DGRAM, proto, &listenaddrs[fdn]);
-            FD_SET(sockfd[fdn],&listen_fds);
-            add_fd(&listen_fdlist, sockfd[fdn]);
+            sockfd[fdn].fd = do_listen(SOCK_DGRAM, proto, &sockfd[fdn].addr);
+            if (sockfd[fdn].fd == -1)
+                bye("do_listen: %s", socket_strerror(socket_errno()));
+            FD_SET(sockfd[fdn].fd, &listen_fds);
+            add_fd(&listen_fdlist, sockfd[fdn].fd);
 
         }
         fdn = -1;
         socket_n = -1;
-            fd_set fds;
-            FD_ZERO(&fds);
+        fd_set fds;
+        FD_ZERO(&fds);
         while (1) {
             /*
              * We just select to get a list of sockets which we can talk to
@@ -613,26 +728,32 @@ static int ncat_listen_dgram(int proto)
             if (o.debug > 1)
                 logdebug("selecting, fdmax %d\n", listen_fdlist.fdmax);
             fds = listen_fds;
-            fds_ready = fselect(listen_fdlist.fdmax + 1, &fds, NULL, NULL, NULL);
+
+            if (o.idletimeout > 0)
+                ms_to_timeval(tvp, o.idletimeout);
+
+            fds_ready = fselect(listen_fdlist.fdmax + 1, &fds, NULL, NULL, tvp);
 
             if (o.debug > 1)
                 logdebug("select returned %d fds ready\n", fds_ready);
 
+            if (fds_ready == 0)
+                bye("Idle timeout expired (%d ms).", o.idletimeout);
 
             /*
              * Figure out which listening socket got a connection. This loop should
              * really call a function for each ready socket instead of breaking on
              * the first one.
              */
-            for (i = 0; i <= listen_fdlist.fdmax && fds_ready >0; i++) {
+            for (i = 0; i <= listen_fdlist.fdmax && fds_ready > 0; i++) {
                 /* Loop through descriptors until there is something ready */
                 if (!FD_ISSET(i, &fds))
                     continue;
 
                 /* Check each listening socket */
-                for (j = 0; j < num_listenaddrs; j++) {
-                    if (i == sockfd[j]) {
-                        if (o.debug >1)
+                for (j = 0; j < num_sockets; j++) {
+                    if (i == sockfd[j].fd) {
+                        if (o.debug > 1)
                             logdebug("Valid descriptor %d \n", i);
                         fdn = j;
                         socket_n = i;
@@ -655,8 +776,13 @@ static int ncat_listen_dgram(int proto)
              * We just peek so we can get the client connection details without
              * removing anything from the queue. Sigh.
              */
-            nbytes = Recvfrom(socket_n, buf, sizeof(buf), MSG_PEEK,
+            nbytes = recvfrom(socket_n, buf, sizeof(buf), MSG_PEEK,
                               &remotess.sockaddr, &sslen);
+            if (nbytes < 0) {
+                loguser("%s.\n", socket_strerror(socket_errno()));
+                close(socket_n);
+                return 1;
+            }
 
             /* Check conditions that might cause us to deny the connection. */
             conn_count = get_conn_count();
@@ -672,7 +798,13 @@ static int ncat_listen_dgram(int proto)
             }
 
             /* Dump the current datagram */
-            Recv(socket_n, buf, sizeof(buf), 0);
+            nbytes = recv(socket_n, buf, sizeof(buf), 0);
+            if (nbytes < 0) {
+                loguser("%s.\n", socket_strerror(socket_errno()));
+                close(socket_n);
+                return 1;
+            }
+            ncat_log_recv(buf, nbytes);
         }
 
         if (o.debug > 1)
@@ -714,7 +846,13 @@ static int ncat_listen_dgram(int proto)
             if (o.debug > 1)
                 logdebug("udp select'ing\n");
 
-            fds_ready = fselect(fdmax + 1, &fds, NULL, NULL, NULL);
+            if (o.idletimeout > 0)
+                ms_to_timeval(tvp, o.idletimeout);
+
+            fds_ready = fselect(fdmax + 1, &fds, NULL, NULL, tvp);
+
+            if (fds_ready == 0)
+                bye("Idle timeout expired (%d ms).", o.idletimeout);
 
             if (FD_ISSET(STDIN_FILENO, &fds)) {
                 nbytes = Read(STDIN_FILENO, buf, sizeof(buf));
@@ -728,9 +866,15 @@ static int ncat_listen_dgram(int proto)
                     fix_line_endings((char *) buf, &nbytes, &tempbuf, &crlf_state);
                 if (!o.recvonly) {
                     if (tempbuf != NULL)
-                        send(socket_n, tempbuf, nbytes, 0);
+                        n = send(socket_n, tempbuf, nbytes, 0);
                     else
-                        send(socket_n, buf, nbytes, 0);
+                        n = send(socket_n, buf, nbytes, 0);
+                    if (n < nbytes) {
+                        loguser("%s.\n", socket_strerror(socket_errno()));
+                        close(socket_n);
+                        return 1;
+                    }
+                    ncat_log_send(buf, nbytes);
                 }
                 if (tempbuf != NULL) {
                     free(tempbuf);
@@ -744,6 +888,7 @@ static int ncat_listen_dgram(int proto)
                     close(socket_n);
                     return 1;
                 }
+                ncat_log_recv(buf, nbytes);
                 if (!o.sendonly)
                     Write(STDOUT_FILENO, buf, nbytes);
             }
@@ -757,14 +902,24 @@ static int ncat_listen_dgram(int proto)
 
 int ncat_listen()
 {
+#if HAVE_SYS_UN_H
+    if (o.af == AF_UNIX)
+        if (o.proto == IPPROTO_UDP)
+            return ncat_listen_dgram(0);
+        else
+            return ncat_listen_stream(0);
+    else
+#endif
     if (o.httpserver)
         return ncat_http_server();
-    else if (o.udp)
-        return ncat_listen_dgram(IPPROTO_UDP);
-    else if (o.sctp)
-        return ncat_listen_stream(IPPROTO_SCTP);
+    else if (o.proto == IPPROTO_UDP)
+        return ncat_listen_dgram(o.proto);
+    else if (o.proto == IPPROTO_SCTP)
+        return ncat_listen_stream(o.proto);
+    else if (o.proto == IPPROTO_TCP)
+        return ncat_listen_stream(o.proto);
     else
-        return ncat_listen_stream(IPPROTO_TCP);
+        bye("Unknown o.proto %d\n", o.proto);
 
     /* unreached */
     return 1;
@@ -781,7 +936,7 @@ static void read_and_broadcast(int recv_fd)
     int pending;
 
     fdn = get_fdinfo(&client_fdlist, recv_fd);
-    assert(fdn);
+    ncat_assert(fdn != NULL);
 
     /* Loop while ncat_recv indicates data is pending. */
     do {
@@ -876,6 +1031,21 @@ static void read_and_broadcast(int recv_fd)
     } while (pending);
 }
 
+static void shutdown_sockets(int how)
+{
+    struct fdinfo *fdn;
+    int i;
+
+    for (i = 0; i <= broadcast_fdlist.fdmax; i++) {
+        if (!FD_ISSET(i, &master_broadcastfds))
+            continue;
+
+        fdn = get_fdinfo(&broadcast_fdlist, i);
+        ncat_assert(fdn != NULL);
+        shutdown(fdn->fd, how);
+    }
+}
+
 /* Announce the new connection and who is already connected. */
 static int chat_announce_connect(int fd, const union sockaddr_u *su)
 {
@@ -896,7 +1066,7 @@ static int chat_announce_connect(int fd, const union sockaddr_u *su)
             continue;
 
         if (getpeername(i, &su.sockaddr, &len) == -1)
-            bye("getpeername for sd %d failed: %s.", strerror(errno));
+            bye("getpeername for sd %d failed: %s.", i, strerror(errno));
 
         if (count > 0)
             strbuf_sprintf(&buf, &size, &offset, ", ");

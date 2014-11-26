@@ -1,10 +1,13 @@
+local stdnse = require "stdnse"
+local upnp = require "upnp"
+
 description = [[
 Attempts to extract system information from the UPnP service by sending a multicast query, then collecting, parsing, and displaying all responses.
 ]]
 
 ---
 -- @output
--- | broadcast-upnp-info: 
+-- | broadcast-upnp-info:
 -- |   1.2.3.50
 -- |       Debian/4.0 DLNADOC/1.50 UPnP/1.0 MiniDLNA/1.0
 -- |       Location:  http://1.2.3.50:8200/rootDesc.xml
@@ -30,21 +33,19 @@ author = "Patrik Karlsson"
 license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
 categories = {"broadcast", "safe"}
 
-require("shortport")
-require("upnp")
 
 prerule = function() return true end
 
 ---
--- Sends UPnP discovery packet to host, 
+-- Sends UPnP discovery packet to host,
 -- and extracts service information from results
 action = function()
-	local helper = upnp.Helper:new()
-	helper:setMulticast(true)
-	local status, result = helper:queryServices()
-	
-	if ( status ) then
-		return stdnse.format_output(true, result)
-	end
+  local helper = upnp.Helper:new()
+  helper:setMulticast(true)
+  local status, result = helper:queryServices()
+
+  if ( status ) then
+    return stdnse.format_output(true, result)
+  end
 end
 

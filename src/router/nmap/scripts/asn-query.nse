@@ -1,3 +1,10 @@
+local dns = require "dns"
+local ipOps = require "ipOps"
+local nmap = require "nmap"
+local stdnse = require "stdnse"
+local string = require "string"
+local table = require "table"
+
 description = [[
 Maps IP addresses to autonomous system (AS) numbers.
 
@@ -36,10 +43,6 @@ license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
 categories = {"discovery", "external", "safe"}
 
 
-local dns    = require "dns"
-local comm   = require "comm"
-local ipOps  = require "ipOps"
-local stdnse = require "stdnse"
 
 
 local mutex = nmap.mutex( "ASN" )
@@ -62,7 +65,7 @@ end
 
 ---
 -- Cached results are checked before sending a query for the target and extracting the
--- relevent information from the response.  Mutual exclusion is used so that results can be
+-- relevant information from the response.  Mutual exclusion is used so that results can be
 -- cached and so a single thread will be active at any time.
 -- @param host  Host table.
 -- @return      Formatted answers or <code>nil</code> on errors.
@@ -333,9 +336,9 @@ function process_answers( records, output, ip )
     elseif combined_records[record.cache_bgp].asn_type ~= record.asn_type then
       -- origin before peer.
       if record.asn_type == "Origin" then
-        combined_records[record.cache_bgp].asn = { unpack( record.asn ), unpack( combined_records[record.cache_bgp].asn ) }
+        combined_records[record.cache_bgp].asn = { table.unpack( record.asn ), table.unpack( combined_records[record.cache_bgp].asn ) }
       else
-        combined_records[record.cache_bgp].asn = { unpack( combined_records[record.cache_bgp].asn ), unpack( record.asn ) }
+        combined_records[record.cache_bgp].asn = { table.unpack( combined_records[record.cache_bgp].asn ), table.unpack( record.asn ) }
       end
     end
   end
@@ -401,6 +404,7 @@ function get_assignment( ip, prefix )
   local hostbits = string.sub( some_ip, prefix + 1 )
   hostbits = string.gsub( hostbits, "1", "0" )
   local first = string.sub( some_ip, 1, prefix ) .. hostbits
+  local last
   err = {}
   first, err[#err+1] = ipOps.bin_to_ip( first )
   last, err[#err+1] = ipOps.get_last_ip( ip, prefix )

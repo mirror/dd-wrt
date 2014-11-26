@@ -4,7 +4,7 @@
 -- The <code>nmap</code> module is an interface with Nmap's internal functions
 -- and data structures. The API provides target host details such as port
 -- states and version detection results. It also offers an interface to the
--- Nsock library for efficient network I/O. 
+-- Nsock library for efficient network I/O.
 -- @copyright Same as Nmap--See http://nmap.org/book/man-legal.html
 
 module "nmap"
@@ -18,7 +18,7 @@ function debugging()
 
 --- Determines whether Nmap was compiled with SSL support.
 --
--- This can be used to avoid sending SSL probes when SSL is not available. 
+-- This can be used to avoid sending SSL probes when SSL is not available.
 -- @return True if Nmap was compiled with SSL support, false otherwise.
 function have_ssl()
 
@@ -102,10 +102,10 @@ function get_interface()
 function get_interface_info(interface_name)
 
 --- Lists network interfaces
--- 
+--
 -- This script enumerates all network interfaces and returns a list of tables
--- containing information about every interface. 
--- 
+-- containing information about every interface.
+--
 -- Keys of each table:
 -- * <code>device</code> The interface name, can be an interface alias.
 -- * <code>shortname</code> A simple short name of the device.
@@ -116,17 +116,17 @@ function get_interface_info(interface_name)
 -- * <code>broadcast</code> The string representing the broadcast address assigned to the interface if the interface type is <code>"ethernet"</code> and if the used address is IPv4, otherwise it is <code>nil</code>.
 -- * <code>up</code> The state of the interface, possible values are <code>"up"</code> or <code>"down"</code>.
 -- * <code>mtu</code> The MTU size of the interface.
--- 
+--
 -- @return Array of tables containing information about every discovered interface.
 -- @usage local interfaces, err = nmap.list_interfaces()
 function list_interfaces()
 
 --- Returns the TTL (time to live) value selected by the --ttl option
 --
--- If there is no value specified or if the value specified with the --ttl 
+-- If there is no value specified or if the value specified with the --ttl
 -- option is out of the range 0 to 255 (inclusive) this function returns 64,
--- which is the default TTL for an IP packet. This function would be most 
--- useful in crafting packets, which we want to comply with the selected 
+-- which is the default TTL for an IP packet. This function would be most
+-- useful in crafting packets, which we want to comply with the selected
 -- Nmap TTL value.
 --
 -- @return A number containing the TTL value
@@ -143,8 +143,10 @@ function get_ttl()
 -- @usage local payload_length = nmap.get_payload_length
 function get_payload_length()
 
---- Searches for the specified file and returns a string containing its path if
--- it is found and readable (to the process).
+--- Searches for the specified file relative to Nmap's search paths and returns
+-- a string containing its path if it is found and readable (to the process).
+-- Absolute paths and paths relative to the current directory will not be
+-- searched.
 --
 -- If the file is not found, not readable, or is a directory, <code>nil</code>
 -- is returned.
@@ -232,8 +234,8 @@ function set_port_state(host, port, state)
 -- information to set. The version detection fields this function looks at are
 -- <code>name</code>, <code>product</code>, <code>version</code>,
 -- <code>extrainfo</code>, <code>hostname</code>, <code>ostype</code>,
--- <code>devicetype</code>, and <code>service_tunnel</code>. All these keys are
--- optional.
+-- <code>devicetype</code>, <code>service_tunnel</code>, and <code>cpe</code>.
+-- All these keys are optional.
 --
 -- The <code>probestate</code> argument describes the state in which the script
 -- completed. It is a string, one of: <code>"hardmatched"</code>,
@@ -368,7 +370,7 @@ function condvar(object)
 -- @param handler User cleanup function (optional).
 -- @usage
 -- local result, socket, try, catch
--- 
+--
 -- result = ""
 -- socket = nmap.new_socket()
 -- catch = function()
@@ -431,10 +433,10 @@ function bind(addr, port)
 -- <code>"tcp"</code>.
 --
 -- If <code>host</code> is a host table, it must contain at least one of the
--- keys <code>addr</code> or <code>targetname</code>. If <code>targetname</code>
+-- keys <code>ip</code> or <code>name</code>. If <code>name</code>
 -- is given, it is used to request the correct certificate in SSL connections.
--- Passing a string instead of a host table acts like <code>host.addr</code> and
--- <code>host.targetname</code> were set to the same value. If <code>port</code>
+-- Passing a string instead of a host table acts like <code>host.ip</code> and
+-- <code>host.name</code> were set to the same value. If <code>port</code>
 -- is a table, it must contain the <code>number</code> key.
 --
 -- On success the function returns a true value. On failure it returns a false
@@ -518,7 +520,7 @@ function send(data)
 -- * <code>"CANCELLED"</code>: The operation was cancelled.
 -- * <code>"KILL"</code>: For example the script scan is aborted due to a faulty script.
 -- * <code>"EOF"</code>: An EOF was read (probably will not occur for a send operation).
--- @param host The hostname or IP address to send to. 
+-- @param host The hostname or IP address to send to.
 -- @param port The port number to send to.
 -- @param data The data to send.
 -- @return Status (true or false).
@@ -606,6 +608,7 @@ function receive_bytes(n)
 -- @return Status (true or false).
 -- @return Data (if status is true) or error string (if status is false).
 -- @see new_socket
+-- @see match
 -- @usage local status, line = socket:receive_buf("\r?\n", false)
 function receive_buf(delimiter, keeppattern)
 
@@ -710,7 +713,7 @@ function pcap_close()
 --
 -- It also has the following member functions:
 --
--- * <code>digest(algorithm)</code> returns the digest of the certificate using the given digest algorithm, which is any of the strings returned by <code>openssl.supported_digests</code>, typicaly something like <code>"md5"</code> or <code>"sha1"</code>.
+-- * <code>digest(algorithm)</code> returns the digest of the certificate using the given digest algorithm, which is any of the strings returned by <code>openssl.supported_digests</code>, typically something like <code>"md5"</code> or <code>"sha1"</code>.
 --
 -- The <code>"subject"</code> and <code>"issuer"</code> fields hold each
 -- distinguished name. Fields with an unknown OID are represented as an array
@@ -773,15 +776,19 @@ function ethernet_close()
 -- @usage dnet:ip_open()
 function ip_open()
 
---- Sends a raw IPv4 packet.
+--- Sends a raw IPv4 or IPv6 packet.
 --
 -- The dnet object must be associated with a previously opened socket. The
 -- packet must begin with an IP header. If there was no previous valid call
 -- to <code>ip_open</code> an error is thrown.
 -- @param packet An IP packet to send.
+-- @param dst A destination address, as a host table or string. If omitted, the
+-- destination address is read from the packet; however this is deprecated, because
+-- the packet does not contain the scope ID required to send to certain IPv6
+-- addresses.
 -- @see new_dnet
--- @usage dnet:ip_send(packet)
-function ip_send(packet)
+-- @usage dnet:ip_send(packet, dst)
+function ip_send(packet, dst)
 
 --- Closes a raw IPv4 socket.
 -- @see new_dnet, ip_open

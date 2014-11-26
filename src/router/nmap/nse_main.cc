@@ -21,7 +21,6 @@
 #include "nse_debug.h"
 
 #define NSE_MAIN "NSE_MAIN" /* the main function */
-#define NSE_TRACEBACK "NSE_TRACEBACK"
 
 /* Script Scan phases */
 #define NSE_PRE_SCAN  "NSE_PRE_SCAN"
@@ -37,6 +36,9 @@
 #define NSE_SELECTED_BY_NAME "NSE_SELECTED_BY_NAME"
 #define NSE_CURRENT_HOSTS "NSE_CURRENT_HOSTS"
 
+#define NSE_FORMAT_TABLE "NSE_FORMAT_TABLE"
+#define NSE_FORMAT_XML "NSE_FORMAT_XML"
+
 #ifndef MAXPATHLEN
 #  define MAXPATHLEN 2048
 #endif
@@ -48,14 +50,14 @@ static ScriptResults script_scan_results;
 
 static int timedOut (lua_State *L)
 {
-  Target *target = get_target(L, 1);
+  Target *target = nseU_gettarget(L, 1);
   lua_pushboolean(L, target->timedOut(NULL));
   return 1;
 }
 
 static int startTimeOutClock (lua_State *L)
 {
-  Target *target = get_target(L, 1);
+  Target *target = nseU_gettarget(L, 1);
   if (!target->timeOutClockRunning())
     target->startTimeOutClock(NULL);
   return 0;
@@ -63,7 +65,7 @@ static int startTimeOutClock (lua_State *L)
 
 static int stopTimeOutClock (lua_State *L)
 {
-  Target *target = get_target(L, 1);
+  Target *target = nseU_gettarget(L, 1);
   if (target->timeOutClockRunning())
     target->stopTimeOutClock(NULL);
   return 0;
@@ -90,7 +92,7 @@ static int ports (lua_State *L)
     PORT_UNFILTERED,
     PORT_HIGHEST_STATE /* last one marks end */
   };
-  Target *target = get_target(L, 1);
+  Target *target = nseU_gettarget(L, 1);
   PortList *plist = &(target->ports);
   Port *current = NULL;
   Port port;
@@ -114,7 +116,11 @@ static int script_set_output (lua_State *L)
 {
   ScriptResult sr;
   sr.set_id(luaL_checkstring(L, 1));
-  sr.set_output(luaL_checkstring(L, 2));
+  sr.set_output_tab(L, 2);
+  if (!lua_isnil(L, 3)) {
+    lua_len(L, 3);
+    sr.set_output_str(luaL_checkstring(L, 3), luaL_checkint(L,-1));
+  }
   script_scan_results.push_back(sr);
   return 0;
 }
@@ -122,9 +128,13 @@ static int script_set_output (lua_State *L)
 static int host_set_output (lua_State *L)
 {
   ScriptResult sr;
-  Target *target = get_target(L, 1);
+  Target *target = nseU_gettarget(L, 1);
   sr.set_id(luaL_checkstring(L, 2));
-  sr.set_output(luaL_checkstring(L, 3));
+  sr.set_output_tab(L, 3);
+  if (!lua_isnil(L, 4)) {
+    lua_len(L, 4);
+    sr.set_output_str(luaL_checkstring(L, 4), luaL_checkint(L,-1));
+  }
   target->scriptResults.push_back(sr);
   return 0;
 }
@@ -134,26 +144,16 @@ static int port_set_output (lua_State *L)
   Port *p;
   Port port;
   ScriptResult sr;
-  Target *target = get_target(L, 1);
-  p = get_port(L, target, &port, 2);
+  Target *target = nseU_gettarget(L, 1);
+  p = nseU_getport(L, target, &port, 2);
   sr.set_id(luaL_checkstring(L, 3));
-  sr.set_output(luaL_checkstring(L, 4));
+  sr.set_output_tab(L, 4);
+  if (!lua_isnil(L, 5)) {
+    lua_len(L, 5);
+    sr.set_output_str(luaL_checkstring(L, 5), luaL_checkint(L,-1));
+  }
   target->ports.addScriptResult(p->portno, p->proto, sr);
-  /* increment host port script results*/
   target->ports.numscriptresults++;
-  return 0;
-}
-
-/* This must call the l_nsock_loop function defined in nse_nsock.cc.
- * That closure is created in luaopen_nsock in order to allow
- * l_nsock_loop to have access to the nsock library environment.
- */
-static int nsock_loop (lua_State *L)
-{
-  lua_settop(L, 1);
-  lua_getfield(L, LUA_REGISTRYINDEX, NSE_NSOCK_LOOP);
-  lua_pushvalue(L, 1);
-  lua_call(L, 1, 0);
   return 0;
 }
 
@@ -219,11 +219,8 @@ static int l_xml_start_tag(lua_State *L)
     lua_replace(L, 2);
   }
 
-  lua_pushnil(L);
-  while (lua_next(L, 2)) {
+  for (lua_pushnil(L); lua_next(L, 2); lua_pop(L, 1))
     xml_attribute(luaL_checkstring(L, -2), "%s", luaL_checkstring(L, -1));
-    lua_pop(L, 1);
-  }
 
   xml_close_start_tag();
 
@@ -254,13 +251,109 @@ static int l_xml_newline(lua_State *L)
   return 0;
 }
 
+static int l_protect_xml(lua_State *L)
+{
+  const char *text;
+  size_t len;
+  std::string output;
+
+  text = luaL_checklstring(L, 1, &len);
+  output = protect_xml(std::string(text, len));
+  lua_pushlstring(L, output.c_str(), output.size());
+
+  return 1;
+}
+
+static int nse_fetch (lua_State *L, int (*fetch)(char *, size_t, const char *))
+{
+  char path[MAXPATHLEN];
+  switch (fetch(path, sizeof(path), luaL_checkstring(L, 1)))
+  {
+    case 0: // no such path
+      lua_pushnil(L);
+      lua_pushfstring(L, "no path to file/directory: %s", lua_tostring(L, 1));
+      break;
+    case 1: // file returned
+      lua_pushliteral(L, "file");
+      lua_pushstring(L, path);
+      break;
+    case 2: // directory returned
+      lua_pushliteral(L, "directory");
+      lua_pushstring(L, path);
+      break;
+    default:
+      return luaL_error(L, "nse_fetch returned bad code");
+  }
+  return 2;
+}
+
+static bool filename_is_absolute(const char *file) {
+  if (file[0] == '/')
+    return true;
+#ifdef WIN32
+  if ((file[0] != '\0' && file[1] == ':') || file[0] == '\\')
+    return true;
+#endif
+  return false;
+}
+
+/* This is a modification of nmap_fetchfile that first looks for an
+ * absolute file name.
+ */
+static int nse_fetchfile_absolute(char *path, size_t path_len, const char *file) {
+  if (filename_is_absolute(file)) {
+    if (o.debugging > 1)
+      log_write(LOG_STDOUT, "%s: Trying absolute path %s\n", SCRIPT_ENGINE, file);
+    Strncpy(path, file, path_len);
+    return file_is_readable(file);
+  }
+
+  return nmap_fetchfile(path, path_len, file);
+}
+
+/* This is a modification of nmap_fetchfile specialized to look for files
+ * in the scripts subdirectory. If the path is absolute, it is always tried
+ * verbatim. Otherwise, the file is looked for under scripts/, and then finally
+ * in the current directory.
+ */
+static int nse_fetchscript(char *path, size_t path_len, const char *file) {
+  std::string scripts_path = std::string(SCRIPT_ENGINE_LUA_DIR) + std::string(file);
+  int type;
+
+  if (filename_is_absolute(file)) {
+    if (o.debugging > 1)
+      log_write(LOG_STDOUT, "%s: Trying absolute path %s\n", SCRIPT_ENGINE, file);
+    Strncpy(path, file, path_len);
+    return file_is_readable(file);
+  }
+
+  // lets look in <path>/scripts
+  type = nmap_fetchfile(path, path_len, scripts_path.c_str());
+
+  if (type == 0) {
+    // current directory
+    Strncpy(path, file, path_len);
+    return file_is_readable(file);
+  }
+
+  return type;
+}
+
+static int fetchscript (lua_State *L)
+{
+  return nse_fetch(L, nse_fetchscript);
+}
+
+static int fetchfile_absolute (lua_State *L)
+{
+  return nse_fetch(L, nse_fetchfile_absolute);
+}
+
 static void open_cnse (lua_State *L)
 {
   static const luaL_Reg nse[] = {
     {"fetchfile_absolute", fetchfile_absolute},
     {"fetchscript", fetchscript},
-    {"dir", nse_readdir},
-    {"nsock_loop", nsock_loop},
     {"key_was_pressed", key_was_pressed},
     {"scan_progress_meter", scan_progress_meter},
     {"timedOut", timedOut},
@@ -275,33 +368,99 @@ static void open_cnse (lua_State *L)
     {"xml_end_tag", l_xml_end_tag},
     {"xml_write_escaped", l_xml_write_escaped},
     {"xml_newline", l_xml_newline},
+    {"protect_xml", l_protect_xml},
     {NULL, NULL}
   };
 
-  /* create dir metatable */
-  luaopen_fs(L);
-
-  lua_newtable(L);
-  luaL_register(L, NULL, nse);
+  luaL_newlib(L, nse);
   /* Add some other fields */
-  setbfield(L, -1, "default", o.script == 1);
-  setbfield(L, -1, "scriptversion", o.scriptversion == 1);
-  setbfield(L, -1, "scriptupdatedb", o.scriptupdatedb == 1);
-  setbfield(L, -1, "scripthelp", o.scripthelp);
-  setsfield(L, -1, "script_dbpath", SCRIPT_ENGINE_DATABASE);
-  setsfield(L, -1, "scriptargs", o.scriptargs);
-  setsfield(L, -1, "scriptargsfile", o.scriptargsfile);
-  setsfield(L, -1, "NMAP_URL", NMAP_URL);
+  nseU_setbfield(L, -1, "default", o.script == 1);
+  nseU_setbfield(L, -1, "scriptversion", o.scriptversion == 1);
+  nseU_setbfield(L, -1, "scriptupdatedb", o.scriptupdatedb == 1);
+  nseU_setbfield(L, -1, "scripthelp", o.scripthelp);
+  nseU_setsfield(L, -1, "script_dbpath", SCRIPT_ENGINE_DATABASE);
+  nseU_setsfield(L, -1, "scriptargs", o.scriptargs);
+  nseU_setsfield(L, -1, "scriptargsfile", o.scriptargsfile);
+  nseU_setsfield(L, -1, "NMAP_URL", NMAP_URL);
+
 }
 
-void ScriptResult::set_output (const char *out)
+/* Global persistent Lua state used by the engine. */
+static lua_State *L_NSE = NULL;
+
+void ScriptResult::clear (void)
 {
-  output = std::string(out);
+  if (o.debugging > 3)
+    log_write(LOG_STDOUT, "ScriptResult::clear %d id %s\n", output_ref, get_id());
+  luaL_unref(L_NSE, LUA_REGISTRYINDEX, output_ref);
+  output_ref = LUA_NOREF;
 }
 
-const char *ScriptResult::get_output (void) const
+void ScriptResult::set_output_tab (lua_State *L, int pos)
 {
-  return output.c_str();
+  clear();
+  lua_pushvalue(L, pos);
+  output_ref = luaL_ref(L_NSE, LUA_REGISTRYINDEX);
+  if (o.debugging > 3)
+    log_write(LOG_STDOUT, "ScriptResult::set_output_tab %d id %s\n", output_ref, get_id());
+}
+
+void ScriptResult::set_output_str (const char *out)
+{
+  output_str = std::string(out);
+}
+
+void ScriptResult::set_output_str (const char *out, size_t len)
+{
+  output_str = std::string(out, len);
+}
+
+static std::string format_obj(lua_State *L, int pos)
+{
+  std::string output;
+
+  pos = lua_absindex(L, pos);
+
+  /* Look up the FORMAT_TABLE function from nse_main.lua and call it. */
+  lua_getfield(L, LUA_REGISTRYINDEX, NSE_FORMAT_TABLE);
+  if (lua_isnil(L, -1)) {
+    log_write(LOG_STDOUT, "%s: Cannot find function _R[\"%s\"] that should be in nse_main.lua\n",
+      SCRIPT_ENGINE, NSE_FORMAT_TABLE);
+    lua_pop(L, 1);
+    return output;
+  }
+
+  lua_pushvalue(L, pos);
+  if (lua_pcall(L, 1, 1, 0) != 0) {
+    if (o.debugging)
+      log_write(LOG_STDOUT, "%s: Error in FORMAT_TABLE: %s\n", SCRIPT_ENGINE, lua_tostring(L, -1));
+    lua_pop(L, 1);
+    return output;
+  }
+
+  lua_len(L, -1);
+  output = std::string(lua_tostring(L, -2), luaL_checkint(L, -1));
+  lua_pop(L, 1);
+
+  return output;
+}
+
+std::string ScriptResult::get_output_str (void) const
+{
+  std::string output;
+
+  /* Explicit string output? */
+  if (!output_str.empty())
+    return output_str;
+
+  /* Auto-formatted table output? */
+  lua_rawgeti(L_NSE, LUA_REGISTRYINDEX, output_ref);
+  if (!lua_isnil(L_NSE, -1))
+    output = format_obj(L_NSE, -1);
+
+  lua_pop(L_NSE, 1);
+
+  return output;
 }
 
 void ScriptResult::set_id (const char *ident)
@@ -319,6 +478,52 @@ ScriptResults *get_script_scan_results_obj (void)
   return &script_scan_results;
 }
 
+static void format_xml(lua_State *L, int pos)
+{
+  pos = lua_absindex(L, pos);
+
+  /* Look up the FORMAT_XML function from nse_main.lua and call it. */
+  lua_getfield(L, LUA_REGISTRYINDEX, NSE_FORMAT_XML);
+  if (lua_isnil(L, -1)) {
+    log_write(LOG_STDOUT, "%s: Cannot find function _R[\"%s\"] that should be in nse_main.lua\n",
+      SCRIPT_ENGINE, NSE_FORMAT_XML);
+    lua_pop(L, 1);
+    return;
+  }
+
+  lua_pushvalue(L, pos);
+  if (lua_pcall(L, 1, 1, 0) != 0) {
+    if (o.debugging)
+      log_write(LOG_STDOUT, "%s: Error in FORMAT_XML: %s\n", SCRIPT_ENGINE, lua_tostring(L, -1));
+    lua_pop(L, 1);
+    return;
+  }
+}
+
+void ScriptResult::write_xml() const
+{
+  std::string output_str;
+
+  xml_open_start_tag("script");
+  xml_attribute("id", "%s", get_id());
+
+  output_str = get_output_str();
+  if (!output_str.empty())
+    xml_attribute("output", "%s", protect_xml(output_str).c_str());
+
+  /* Any table output? */
+  lua_rawgeti(L_NSE, LUA_REGISTRYINDEX, output_ref);
+  if (!lua_isnil(L_NSE, -1)) {
+    xml_close_start_tag();
+    format_xml(L_NSE, -1);
+    xml_end_tag();
+  } else {
+    xml_close_empty_tag();
+  }
+
+  lua_pop(L_NSE, 1);
+}
+
 /* int panic (lua_State *L)
  *
  * Panic function set via lua_atpanic().
@@ -333,32 +538,21 @@ static int panic (lua_State *L)
 static void set_nmap_libraries (lua_State *L)
 {
   static const luaL_Reg libs[] = {
-    {NSE_PCRELIBNAME, luaopen_pcrelib}, // pcre library
-    {NSE_NMAPLIBNAME, luaopen_nmap}, // nmap bindings
+    {NSE_PCRELIBNAME, luaopen_pcrelib},
+    {NSE_NMAPLIBNAME, luaopen_nmap},
     {NSE_BINLIBNAME, luaopen_binlib},
-    {BITLIBNAME, luaopen_bit}, // bit library
+    {BITLIBNAME, luaopen_bit},
+    {LFSLIBNAME, luaopen_lfs},
 #ifdef HAVE_OPENSSL
-    {OPENSSLLIBNAME, luaopen_openssl}, // openssl bindings
+    {OPENSSLLIBNAME, luaopen_openssl},
 #endif
-    {NSE_STDNSELIBNAME, luaopen_stdnse_c},
     {NULL, NULL}
   };
 
-  /* Put our libraries in the package.preload */
-  lua_getglobal(L, "require"); /* the require function */
-  lua_getglobal(L, LUA_LOADLIBNAME);
-  lua_getfield(L, -1, "preload");
-  for (int i = 0; libs[i].name != NULL; i++)
-  {
-    lua_pushstring(L, libs[i].name);
-    lua_pushcclosure(L, libs[i].func, 0);
-    lua_settable(L, -3); /* set package.preload */
-
-    lua_pushvalue(L, -3); /* the require function */
-    lua_pushstring(L, libs[i].name);
-    lua_call(L, 1, 0); /* explicitly require it */
+  for (int i = 0; libs[i].name; i++) {
+    luaL_requiref(L, libs[i].name, libs[i].func, 1);
+    lua_pop(L, 1);
   }
-  lua_pop(L, 3); /* require, package, package.preload */
 }
 
 static int init_main (lua_State *L)
@@ -374,15 +568,6 @@ static int init_main (lua_State *L)
   lua_newtable(L);
   lua_setfield(L, LUA_REGISTRYINDEX, NSE_CURRENT_HOSTS);
 
-  /* Load debug.traceback for collecting any error tracebacks */
-  lua_settop(L, 0); /* clear the stack */
-  lua_getglobal(L, "debug");
-  lua_getfield(L, -1, "traceback");
-  lua_replace(L, 1); // debug.traceback stack position 1
-  lua_pushvalue(L, 1);
-  lua_setfield(L, LUA_REGISTRYINDEX, NSE_TRACEBACK); /* save copy */
-
-  /* Load main Lua code, stack position 2 */
   if (nmap_fetchfile(path, sizeof(path), "nse_main.lua") != 1)
     luaL_error(L, "could not locate nse_main.lua");
   if (luaL_loadfile(L, path) != 0)
@@ -392,21 +577,16 @@ static int init_main (lua_State *L)
    * library table which exposes certain necessary C functions to
    * the Lua engine.
    */
-  open_cnse(L); // stack index 3
+  open_cnse(L); /* first argument */
 
   /* The second argument is the script rules, including the
    * files/directories/categories passed as the userdata to this function.
    */
-  lua_createtable(L, rules->size(), 0); // stack index 4
-  for (std::vector<std::string>::iterator si = rules->begin();
-       si != rules->end(); si++)
-  {
-    lua_pushstring(L, si->c_str());
-    lua_rawseti(L, 4, lua_objlen(L, 4) + 1);
-  }
+  lua_createtable(L, rules->size(), 0); /* second argument */
+  for (std::vector<std::string>::iterator si = rules->begin(); si != rules->end(); si++)
+    nseU_appendfstr(L, -1, "%s", si->c_str());
 
-  /* Get Lua main function */
-  if (lua_pcall(L, 2, 1, 1) != 0) lua_error(L); /* we wanted a traceback */
+  lua_call(L, 2, 1); /* returns the NSE main function */
 
   lua_setfield(L, LUA_REGISTRYINDEX, NSE_MAIN);
   return 0;
@@ -417,69 +597,64 @@ static int run_main (lua_State *L)
   std::vector<Target *> *targets = (std::vector<Target*> *)
       lua_touserdata(L, 1);
 
-  lua_settop(L, 0);
-
   /* New host group */
   lua_newtable(L);
   lua_setfield(L, LUA_REGISTRYINDEX, NSE_CURRENT_HOSTS);
 
-  lua_getfield(L, LUA_REGISTRYINDEX, NSE_TRACEBACK); /* index 1 */
-
-  lua_getfield(L, LUA_REGISTRYINDEX, NSE_MAIN); /* index 2 */
+  lua_getfield(L, LUA_REGISTRYINDEX, NSE_MAIN);
   assert(lua_isfunction(L, -1));
 
-  /* The first and only argument to main is the list of targets.
-   * This has all the target names, 1-N, in a list.
+  /* The first argument to the NSE main function is the list of targets.  This
+   * has all the target names, 1-N, in a list.
    */
-  lua_createtable(L, targets->size(), 0); // stack index 3
-  lua_getfield(L, LUA_REGISTRYINDEX, NSE_CURRENT_HOSTS); /* index 4 */
-  for (std::vector<Target *>::iterator ti = targets->begin();
-       ti != targets->end(); ti++)
+  lua_createtable(L, targets->size(), 0);
+  int targets_table = lua_gettop(L);
+  lua_getfield(L, LUA_REGISTRYINDEX, NSE_CURRENT_HOSTS);
+  int current_hosts = lua_gettop(L);
+  for (std::vector<Target *>::iterator ti = targets->begin(); ti != targets->end(); ti++)
   {
     Target *target = (Target *) *ti;
     const char *TargetName = target->TargetName();
     const char *targetipstr = target->targetipstr();
     lua_newtable(L);
     set_hostinfo(L, target);
-    lua_rawseti(L, 3, lua_objlen(L, 3) + 1);
+    lua_rawseti(L, targets_table, lua_rawlen(L, targets_table) + 1);
     if (TargetName != NULL && strcmp(TargetName, "") != 0)
       lua_pushstring(L, TargetName);
     else
       lua_pushstring(L, targetipstr);
     lua_pushlightuserdata(L, target);
-    lua_rawset(L, 4); /* add to NSE_CURRENT_HOSTS */
+    lua_rawset(L, current_hosts); /* add to NSE_CURRENT_HOSTS */
   }
-  lua_pop(L, 1); /* pop NSE_CURRENT_HOSTS */
+  lua_settop(L, targets_table);
 
-  /* push script scan type phase */
+  /* Push script scan phase type. Second argument to NSE main function */
   switch (o.current_scantype)
   {
     case SCRIPT_PRE_SCAN:
-      lua_pushstring(L, NSE_PRE_SCAN);
+      lua_pushliteral(L, NSE_PRE_SCAN);
       break;
     case SCRIPT_SCAN:
-      lua_pushstring(L, NSE_SCAN);
+      lua_pushliteral(L, NSE_SCAN);
       break;
     case SCRIPT_POST_SCAN:
-      lua_pushstring(L, NSE_POST_SCAN);
+      lua_pushliteral(L, NSE_POST_SCAN);
       break;
     default:
       fatal("%s: failed to set the script scan phase.\n", SCRIPT_ENGINE);
   }
 
-  if (lua_pcall(L, 2, 0, 1) != 0) lua_error(L); /* we wanted a traceback */
+  lua_call(L, 2, 0);
+
   return 0;
 }
 
-/* Lua 5.2 compatibility macro */
-#define lua_yieldk(L,n,ctx,k)  lua_yield(L,n)
-
-/* int nse_yield (lua_State *L)                            [-?, +?, e]
+/* int nse_yield (lua_State *L, int ctx, lua_CFunction k)  [-?, +?, e]
  *
  * This function will yield the running thread back to NSE, even across script
  * auxiliary coroutines. All NSE initiated yields must use this function. The
  * correct and only way to call is as a tail call:
- *   return nse_yield(L);
+ *   return nse_yield(L, 0, NULL);
  */
 int nse_yield (lua_State *L, int ctx, lua_CFunction k)
 {
@@ -585,8 +760,6 @@ void nse_gettarget (lua_State *L, int index)
   lua_replace(L, -2);
 }
 
-static lua_State *L_NSE = NULL;
-
 void open_nse (void)
 {
   if (L_NSE == NULL)
@@ -598,20 +771,24 @@ void open_nse (void)
      */
     srand(get_random_uint());
 
+    const lua_Number *version = lua_version(NULL);
+    double major = (*version) / 100.0;
+    double minor = fmod(*version, 10.0);
+    if (o.debugging >= 1)
+      log_write(LOG_STDOUT, "%s: Using Lua %.0f.%.0f.\n", SCRIPT_ENGINE, major, minor);
+    if (*version < 502)
+      fatal("%s: This version of NSE only works with Lua 5.2 or greater.", SCRIPT_ENGINE);
     if ((L_NSE = luaL_newstate()) == NULL)
       fatal("%s: failed to open a Lua state!", SCRIPT_ENGINE);
     lua_atpanic(L_NSE, panic);
+    lua_settop(L_NSE, 0);
 
-#if 0
-    /* Lua 5.2 */
+    lua_pushcfunction(L_NSE, nseU_traceback);
     lua_pushcfunction(L_NSE, init_main);
     lua_pushlightuserdata(L_NSE, &o.chosenScripts);
-    if (lua_pcall(L_NSE, 1, 0, 0))
-#else
-    if (lua_cpcall(L_NSE, init_main, &o.chosenScripts))
-#endif
-      fatal("%s: failed to initialize the script engine:\n%s\n", SCRIPT_ENGINE, 
-          lua_tostring(L_NSE, -1));
+    if (lua_pcall(L_NSE, 1, 0, 1))
+      fatal("%s: failed to initialize the script engine:\n%s\n", SCRIPT_ENGINE, lua_tostring(L_NSE, -1));
+    lua_settop(L_NSE, 0);
   }
 }
 
@@ -622,16 +799,13 @@ void script_scan (std::vector<Target *> &targets, stype scantype)
   assert(L_NSE != NULL);
   lua_settop(L_NSE, 0); /* clear the stack */
 
-#if 0
-  /* Lua 5.2 */
+  lua_pushcfunction(L_NSE, nseU_traceback);
   lua_pushcfunction(L_NSE, run_main);
   lua_pushlightuserdata(L_NSE, &targets);
-  if (lua_pcall(L_NSE, 1, 0, 0))
-#else
-  if (lua_cpcall(L_NSE, run_main, &targets))
-#endif
+  if (lua_pcall(L_NSE, 1, 0, 1))
     error("%s: Script Engine Scan Aborted.\nAn error was thrown by the "
           "engine: %s", SCRIPT_ENGINE, lua_tostring(L_NSE, -1));
+  lua_settop(L_NSE, 0);
 }
 
 void close_nse (void)

@@ -4,62 +4,94 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2012 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
- * Foundation; Version 2 with the clarifications and exceptions described  *
- * below.  This guarantees your right to use, modify, and redistribute     *
- * this software under certain conditions.  If you wish to embed Nmap      *
- * technology into proprietary software, we sell alternative licenses      *
- * (contact sales@insecure.com).  Dozens of software vendors already       *
- * license Nmap technology such as host discovery, port scanning, OS       *
- * detection, version detection, and the Nmap Scripting Engine.            *
+ * Foundation; Version 2 ("GPL"), BUT ONLY WITH ALL OF THE CLARIFICATIONS  *
+ * AND EXCEPTIONS DESCRIBED HEREIN.  This guarantees your right to use,    *
+ * modify, and redistribute this software under certain conditions.  If    *
+ * you wish to embed Nmap technology into proprietary software, we sell    *
+ * alternative licenses (contact sales@nmap.com).  Dozens of software      *
+ * vendors already license Nmap technology such as host discovery, port    *
+ * scanning, OS detection, version detection, and the Nmap Scripting       *
+ * Engine.                                                                 *
  *                                                                         *
- * Note that the GPL places important restrictions on "derived works", yet *
- * it does not provide a detailed definition of that term.  To avoid       *
+ * Note that the GPL places important restrictions on "derivative works",  *
+ * yet it does not provide a detailed definition of that term.  To avoid   *
  * misunderstandings, we interpret that term as broadly as copyright law   *
  * allows.  For example, we consider an application to constitute a        *
- * "derivative work" for the purpose of this license if it does any of the *
- * following:                                                              *
- * o Integrates source code from Nmap                                      *
- * o Reads or includes Nmap copyrighted data files, such as                *
- *   nmap-os-db or nmap-service-probes.                                    *
- * o Executes Nmap and parses the results (as opposed to typical shell or  *
- *   execution-menu apps, which simply display raw Nmap output and so are  *
- *   not derivative works.)                                                *
- * o Integrates/includes/aggregates Nmap into a proprietary executable     *
- *   installer, such as those produced by InstallShield.                   *
- * o Links to a library or executes a program that does any of the above   *
+ * derivative work for the purpose of this license if it does any of the   *
+ * following with any software or content covered by this license          *
+ * ("Covered Software"):                                                   *
  *                                                                         *
- * The term "Nmap" should be taken to also include any portions or derived *
- * works of Nmap, as well as other software we distribute under this       *
- * license such as Zenmap, Ncat, and Nping.  This list is not exclusive,   *
- * but is meant to clarify our interpretation of derived works with some   *
- * common examples.  Our interpretation applies only to Nmap--we don't     *
- * speak for other people's GPL works.                                     *
+ * o Integrates source code from Covered Software.                         *
  *                                                                         *
- * If you have any questions about the GPL licensing restrictions on using *
- * Nmap in non-GPL works, we would be happy to help.  As mentioned above,  *
- * we also offer alternative license to integrate Nmap into proprietary    *
- * applications and appliances.  These contracts have been sold to dozens  *
- * of software vendors, and generally include a perpetual license as well  *
- * as providing for priority support and updates.  They also fund the      *
- * continued development of Nmap.  Please email sales@insecure.com for     *
- * further information.                                                    *
+ * o Reads or includes copyrighted data files, such as Nmap's nmap-os-db   *
+ * or nmap-service-probes.                                                 *
  *                                                                         *
- * As a special exception to the GPL terms, Insecure.Com LLC grants        *
+ * o Is designed specifically to execute Covered Software and parse the    *
+ * results (as opposed to typical shell or execution-menu apps, which will *
+ * execute anything you tell them to).                                     *
+ *                                                                         *
+ * o Includes Covered Software in a proprietary executable installer.  The *
+ * installers produced by InstallShield are an example of this.  Including *
+ * Nmap with other software in compressed or archival form does not        *
+ * trigger this provision, provided appropriate open source decompression  *
+ * or de-archiving software is widely available for no charge.  For the    *
+ * purposes of this license, an installer is considered to include Covered *
+ * Software even if it actually retrieves a copy of Covered Software from  *
+ * another source during runtime (such as by downloading it from the       *
+ * Internet).                                                              *
+ *                                                                         *
+ * o Links (statically or dynamically) to a library which does any of the  *
+ * above.                                                                  *
+ *                                                                         *
+ * o Executes a helper program, module, or script to do any of the above.  *
+ *                                                                         *
+ * This list is not exclusive, but is meant to clarify our interpretation  *
+ * of derived works with some common examples.  Other people may interpret *
+ * the plain GPL differently, so we consider this a special exception to   *
+ * the GPL that we apply to Covered Software.  Works which meet any of     *
+ * these conditions must conform to all of the terms of this license,      *
+ * particularly including the GPL Section 3 requirements of providing      *
+ * source code and allowing free redistribution of the work as a whole.    *
+ *                                                                         *
+ * As another special exception to the GPL terms, Insecure.Com LLC grants  *
  * permission to link the code of this program with any version of the     *
  * OpenSSL library which is distributed under a license identical to that  *
  * listed in the included docs/licenses/OpenSSL.txt file, and distribute   *
- * linked combinations including the two. You must obey the GNU GPL in all *
- * respects for all of the code used other than OpenSSL.  If you modify    *
- * this file, you may extend this exception to your version of the file,   *
- * but you are not obligated to do so.                                     *
+ * linked combinations including the two.                                  *
  *                                                                         *
- * If you received these files with a written license agreement or         *
- * contract stating terms other than the terms above, then that            *
- * alternative license agreement takes precedence over these comments.     *
+ * Any redistribution of Covered Software, including any derived works,    *
+ * must obey and carry forward all of the terms of this license, including *
+ * obeying all GPL rules and restrictions.  For example, source code of    *
+ * the whole work must be provided and free redistribution must be         *
+ * allowed.  All GPL references to "this License", are to be treated as    *
+ * including the terms and conditions of this license text as well.        *
+ *                                                                         *
+ * Because this license imposes special exceptions to the GPL, Covered     *
+ * Work may not be combined (even as part of a larger work) with plain GPL *
+ * software.  The terms, conditions, and exceptions of this license must   *
+ * be included as well.  This license is incompatible with some other open *
+ * source licenses as well.  In some cases we can relicense portions of    *
+ * Nmap or grant special permissions to use it in other open source        *
+ * software.  Please contact fyodor@nmap.org with any such requests.       *
+ * Similarly, we don't incorporate incompatible open source software into  *
+ * Covered Software without special permission from the copyright holders. *
+ *                                                                         *
+ * If you have any questions about the licensing restrictions on using     *
+ * Nmap in other works, are happy to help.  As mentioned above, we also    *
+ * offer alternative license to integrate Nmap into proprietary            *
+ * applications and appliances.  These contracts have been sold to dozens  *
+ * of software vendors, and generally include a perpetual license as well  *
+ * as providing for priority support and updates.  They also fund the      *
+ * continued development of Nmap.  Please email sales@nmap.com for further *
+ * information.                                                            *
+ *                                                                         *
+ * If you have received a written license agreement or contract for        *
+ * Covered Software stating terms other than these, you may choose to use  *
+ * and redistribute Covered Software under those terms instead of these.   *
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
@@ -68,8 +100,8 @@
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
- * to nmap-dev@insecure.org for possible incorporation into the main       *
- * distribution.  By sending these changes to Fyodor or one of the         *
+ * to the dev@nmap.org mailing list for possible incorporation into the    *
+ * main distribution.  By sending these changes to Fyodor or one of the    *
  * Insecure.Org development mailing lists, or checking them into the Nmap  *
  * source code repository, it is understood (unless you specify otherwise) *
  * that you are offering the Nmap Project (Insecure.Com LLC) the           *
@@ -83,10 +115,9 @@
  *                                                                         *
  * This program is distributed in the hope that it will be useful, but     *
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU       *
- * General Public License v2.0 for more details at                         *
- * http://www.gnu.org/licenses/gpl-2.0.html , or in the COPYING file       *
- * included with Nmap.                                                     *
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
+ * license file for more details (it's in a COPYING file included with     *
+ * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
  *                                                                         *
  ***************************************************************************/
 
@@ -137,7 +168,7 @@
 // http://www.hcsw.org
 
 /*
- * DNS Caching and ageing added by Eddie Bell ejlbell@gmail.com 2007
+ * DNS Caching and aging added by Eddie Bell ejlbell@gmail.com 2007
  */
 
 // TODO:
@@ -240,12 +271,12 @@ static int read_timeouts[][4] = {
 
 //------------------- Internal Structures ---------------------
 
-typedef struct dns_server_s dns_server;
-typedef struct request_s request;
-typedef struct host_elem_s host_elem;
+struct dns_server;
+struct request;
+struct host_elem;
 
-struct dns_server_s {
-  char *hostname;
+struct dns_server {
+  std::string hostname;
   sockaddr_storage addr;
   size_t addr_len;
   nsock_iod nsd;
@@ -257,7 +288,7 @@ struct dns_server_s {
   std::list<request *> in_process;
 };
 
-struct request_s {
+struct request {
   Target *targ;
   struct timeval timeout;
   int tries;
@@ -267,8 +298,8 @@ struct request_s {
   u16 id;
 };
 
-struct host_elem_s {
-  char *name;
+struct host_elem {
+  std::string name;
   u32 addr;
   u8 cache_hits;
 };
@@ -276,14 +307,14 @@ struct host_elem_s {
 
 //------------------- Globals ---------------------
 
-static std::list<dns_server *> servs;
+static std::list<dns_server> servs;
 static std::list<request *> new_reqs;
 static std::list<request *> cname_reqs;
 static int total_reqs;
 static nsock_pool dnspool=NULL;
 
 /* The DNS cache, not just for entries from /etc/hosts. */
-static std::list<host_elem *> etchosts[HASH_TABLE_SIZE];
+static std::list<host_elem> etchosts[HASH_TABLE_SIZE];
 
 static int stat_actual, stat_ok, stat_nx, stat_sf, stat_trans, stat_dropped, stat_cname;
 static struct timeval starttv;
@@ -297,7 +328,7 @@ static ScanProgressMeter *SPM;
 //------------------- Prototypes and macros ---------------------
 
 static void put_dns_packet_on_wire(request *req);
-static char *lookup_etchosts(u32 ip);
+static const char *lookup_etchosts(u32 ip);
 static void addto_etchosts(u32 ip, const char *hname);
 
 #define ACTION_FINISHED 0
@@ -322,19 +353,19 @@ static void output_summary() {
 static void check_capacities(dns_server *tpserv) {
   if (tpserv->capacity < CAPACITY_MIN) tpserv->capacity = CAPACITY_MIN;
   if (tpserv->capacity > CAPACITY_MAX) tpserv->capacity = CAPACITY_MAX;
-  if (o.debugging >= TRACE_DEBUG_LEVEL) log_write(LOG_STDOUT, "CAPACITY <%s> = %d\n", tpserv->hostname, tpserv->capacity);
+  if (o.debugging >= TRACE_DEBUG_LEVEL) log_write(LOG_STDOUT, "CAPACITY <%s> = %d\n", tpserv->hostname.c_str(), tpserv->capacity);
 }
 
 // Closes all nsis created in connect_dns_servers()
 static void close_dns_servers() {
-  std::list<dns_server *>::iterator serverI;
+  std::list<dns_server>::iterator serverI;
 
   for(serverI = servs.begin(); serverI != servs.end(); serverI++) {
-    if ((*serverI)->connected) {
-      nsi_delete((*serverI)->nsd, NSOCK_PENDING_SILENT);
-      (*serverI)->connected = 0;
-      (*serverI)->to_process.clear();
-      (*serverI)->in_process.clear();
+    if (serverI->connected) {
+      nsi_delete(serverI->nsd, NSOCK_PENDING_SILENT);
+      serverI->connected = 0;
+      serverI->to_process.clear();
+      serverI->in_process.clear();
     }
   }
 }
@@ -356,27 +387,24 @@ static int add_integer_to_dns_packet(char *packet, int c) {
 
 // Puts as many packets on the line as capacity will allow
 static void do_possible_writes() {
-  std::list<dns_server *>::iterator servI;
-  dns_server *tpserv;
+  std::list<dns_server>::iterator servI;
   request *tpreq;
 
   for(servI = servs.begin(); servI != servs.end(); servI++) {
-    tpserv = *servI;
-
-    if (tpserv->write_busy == 0 && tpserv->reqs_on_wire < tpserv->capacity) {
+    if (servI->write_busy == 0 && servI->reqs_on_wire < servI->capacity) {
       tpreq = NULL;
-      if (!tpserv->to_process.empty()) {
-        tpreq = tpserv->to_process.front();
-        tpserv->to_process.pop_front();
+      if (!servI->to_process.empty()) {
+        tpreq = servI->to_process.front();
+        servI->to_process.pop_front();
       } else if (!new_reqs.empty()) {
         tpreq = new_reqs.front();
-        tpreq->first_server = tpreq->curr_server = tpserv;
+        tpreq->first_server = tpreq->curr_server = &*servI;
         new_reqs.pop_front();
       }
 
       if (tpreq) {
         if (o.debugging >= TRACE_DEBUG_LEVEL)
-	   log_write(LOG_STDOUT, "mass_rdns: TRANSMITTING for <%s> (server <%s>)\n", tpreq->targ->targetipstr() , tpserv->hostname);
+           log_write(LOG_STDOUT, "mass_rdns: TRANSMITTING for <%s> (server <%s>)\n", tpreq->targ->targetipstr() , servI->hostname.c_str());
         stat_trans++;
         put_dns_packet_on_wire(tpreq);
       }
@@ -434,11 +462,10 @@ static void put_dns_packet_on_wire(request *req) {
 // Processes DNS packets that have timed out
 // Returns time until next read timeout
 static int deal_with_timedout_reads() {
-  std::list<dns_server *>::iterator servI;
-  std::list<dns_server *>::iterator servItemp;
+  std::list<dns_server>::iterator servI;
+  std::list<dns_server>::iterator servItemp;
   std::list<request *>::iterator reqI;
   std::list<request *>::iterator nextI;
-  dns_server *tpserv;
   request *tpreq;
   struct timeval now;
   int tp, min_timeout = INT_MAX;
@@ -449,10 +476,8 @@ static int deal_with_timedout_reads() {
     SPM->printStats((double) (stat_ok + stat_nx + stat_dropped) / stat_actual, &now);
 
   for(servI = servs.begin(); servI != servs.end(); servI++) {
-    tpserv = *servI;
-
-    nextI = tpserv->in_process.begin();
-    if (nextI == tpserv->in_process.end()) continue;
+    nextI = servI->in_process.begin();
+    if (nextI == servI->in_process.end()) continue;
 
     do {
       reqI = nextI++;
@@ -462,22 +487,22 @@ static int deal_with_timedout_reads() {
       if (tp > 0 && tp < min_timeout) min_timeout = tp;
 
       if (tp <= 0) {
-        tpserv->capacity = (int) (tpserv->capacity * CAPACITY_MINOR_DOWN_SCALE);
-        check_capacities(tpserv);
-        tpserv->in_process.erase(reqI);
-        tpserv->reqs_on_wire--;
+        servI->capacity = (int) (servI->capacity * CAPACITY_MINOR_DOWN_SCALE);
+        check_capacities(&*servI);
+        servI->in_process.erase(reqI);
+        servI->reqs_on_wire--;
 
         // If we've tried this server enough times, move to the next one
         if (read_timeouts[read_timeout_index][tpreq->tries] == -1) {
-          tpserv->capacity = (int) (tpserv->capacity * CAPACITY_MAJOR_DOWN_SCALE);
-          check_capacities(tpserv);
+          servI->capacity = (int) (servI->capacity * CAPACITY_MAJOR_DOWN_SCALE);
+          check_capacities(&*servI);
 
           servItemp = servI;
           servItemp++;
 
           if (servItemp == servs.end()) servItemp = servs.begin();
 
-          tpreq->curr_server = *servItemp;
+          tpreq->curr_server = &*servItemp;
           tpreq->tries = 0;
           tpreq->servers_tried++;
 
@@ -496,17 +521,17 @@ static int deal_with_timedout_reads() {
             delete tpreq;
 
             // **** OR We start at the back of this server's queue
-            //(*servItemp)->to_process.push_back(tpreq);
+            //servItemp->to_process.push_back(tpreq);
           } else {
-            (*servItemp)->to_process.push_back(tpreq);
+            servItemp->to_process.push_back(tpreq);
           }
         } else {
-          tpserv->to_process.push_back(tpreq);
+          servI->to_process.push_back(tpreq);
         }
 
     }
 
-    } while (nextI != tpserv->in_process.end());
+    } while (nextI != servI->in_process.end());
 
   }
 
@@ -519,15 +544,12 @@ static int deal_with_timedout_reads() {
 // looking for and update their results as necessary.
 // Returns non-zero if this matches a query we're looking for
 static int process_result(u32 ia, char *result, int action, u16 id) {
-  std::list<dns_server *>::iterator servI;
+  std::list<dns_server>::iterator servI;
   std::list<request *>::iterator reqI;
-  dns_server *tpserv;
   request *tpreq;
 
   for(servI = servs.begin(); servI != servs.end(); servI++) {
-    tpserv = *servI;
-
-    for(reqI = tpserv->in_process.begin(); reqI != tpserv->in_process.end(); reqI++) {
+    for(reqI = servI->in_process.begin(); reqI != servI->in_process.end(); reqI++) {
       tpreq = *reqI;
 
       if (id == tpreq->id) {
@@ -536,16 +558,16 @@ static int process_result(u32 ia, char *result, int action, u16 id) {
           continue;
 
         if (action == ACTION_CNAME_LIST || action == ACTION_FINISHED) {
-        tpserv->capacity += CAPACITY_UP_STEP;
-        check_capacities(tpserv);
+        servI->capacity += CAPACITY_UP_STEP;
+        check_capacities(&*servI);
 
         if (result) {
           tpreq->targ->setHostName(result);
           addto_etchosts(tpreq->targ->v4hostip()->s_addr, result);
         }
 
-        tpserv->in_process.remove(tpreq);
-        tpserv->reqs_on_wire--;
+        servI->in_process.remove(tpreq);
+        servI->reqs_on_wire--;
 
         total_reqs--;
 
@@ -559,7 +581,7 @@ static int process_result(u32 ia, char *result, int action, u16 id) {
         do_possible_writes();
 
         // Close DNS servers if we're all done so that we kill
-        // all events and return from nsock_loop immediatley
+        // all events and return from nsock_loop immediateley
         if (total_reqs == 0)
           close_dns_servers();
         return 1;
@@ -644,7 +666,7 @@ static int encoded_name_to_normal(const unsigned char *buf, char *output, int ou
 // Takes a pointer to the start of a DNS name inside a packet. It makes
 // sure that there is enough space in the name, deals with compression, etc.
 static int advance_past_dns_name(u8 *buf, int buflen, int curbuf,
-			  int *nameloc) {
+                          int *nameloc) {
   int compression=0;
 
   if (curbuf <= 0 || curbuf >= buflen) return -1;
@@ -812,30 +834,28 @@ static void connect_evt_handler(nsock_pool nsp, nsock_event evt, void *servers) 
 // Adds DNS servers to the dns_server list. They can be separated by
 // commas or spaces - NOTE this doesn't actually do any connecting!
 static void add_dns_server(char *ipaddrs) {
-  std::list<dns_server *>::iterator servI;
-  dns_server *tpserv;
+  std::list<dns_server>::iterator servI;
   char *hostname;
   struct sockaddr_storage addr;
   size_t addr_len = sizeof(addr);
 
   for (hostname = strtok(ipaddrs, " ,"); hostname != NULL; hostname = strtok(NULL, " ,")) {
 
-    if (!resolve(hostname, 0, 0, (struct sockaddr_storage *) &addr, &addr_len, PF_UNSPEC)) continue;
+    if (resolve(hostname, 0, (struct sockaddr_storage *) &addr, &addr_len, PF_UNSPEC) != 0)
+      continue;
 
     for(servI = servs.begin(); servI != servs.end(); servI++) {
-      tpserv = *servI;
-
       // Already added!
-      if (memcmp(&addr, &tpserv->addr, sizeof(addr)) == 0) break;
+      if (memcmp(&addr, &servI->addr, sizeof(addr)) == 0) break;
     }
 
     // If it hasn't already been added, add it!
     if (servI == servs.end()) {
-      tpserv = new dns_server;
+      dns_server tpserv;
 
-      tpserv->hostname = strdup(hostname);
-      memcpy(&tpserv->addr, &addr, sizeof(addr));
-      tpserv->addr_len = addr_len;
+      tpserv.hostname = hostname;
+      memcpy(&tpserv.addr, &addr, sizeof(addr));
+      tpserv.addr_len = addr_len;
 
       servs.push_front(tpserv);
 
@@ -846,62 +866,66 @@ static void add_dns_server(char *ipaddrs) {
 
 }
 
-void free_dns_servers() {
-  std::list<dns_server *>::iterator servI;
-  dns_server *tpserv;
-
-  for(servI = servs.begin(); servI != servs.end();servI++){
-    tpserv = *servI;
-    if(tpserv){
-      if(tpserv->hostname)
-        free(tpserv->hostname);
-      delete tpserv;
-    }
-  }
-  servs.clear();
-}
-
-
 // Creates a new nsi for each DNS server
 static void connect_dns_servers() {
-  std::list<dns_server *>::iterator serverI;
-  dns_server *s;
-
+  std::list<dns_server>::iterator serverI;
   for(serverI = servs.begin(); serverI != servs.end(); serverI++) {
-    s = *serverI;
-
-    s->nsd = nsi_new(dnspool, NULL);
+    serverI->nsd = nsi_new(dnspool, NULL);
     if (o.spoofsource) {
       struct sockaddr_storage ss;
       size_t sslen;
       o.SourceSockAddr(&ss, &sslen);
-      nsi_set_localaddr(s->nsd, &ss, sslen);
+      nsi_set_localaddr(serverI->nsd, &ss, sslen);
     }
     if (o.ipoptionslen)
-      nsi_set_ipoptions(s->nsd, o.ipoptions, o.ipoptionslen);
-    s->reqs_on_wire = 0;
-    s->capacity = CAPACITY_MIN;
-    s->write_busy = 0;
+      nsi_set_ipoptions(serverI->nsd, o.ipoptions, o.ipoptionslen);
+    serverI->reqs_on_wire = 0;
+    serverI->capacity = CAPACITY_MIN;
+    serverI->write_busy = 0;
 
-    nsock_connect_udp(dnspool, s->nsd, connect_evt_handler, NULL, (struct sockaddr *) &s->addr, s->addr_len, 53);
-    nsock_read(dnspool, s->nsd, read_evt_handler, -1, NULL);
-    s->connected = 1;
+    nsock_connect_udp(dnspool, serverI->nsd, connect_evt_handler, NULL, (struct sockaddr *) &serverI->addr, serverI->addr_len, 53);
+    nsock_read(dnspool, serverI->nsd, read_evt_handler, -1, NULL);
+    serverI->connected = 1;
   }
 
 }
 
 
 #ifdef WIN32
+static bool interface_is_known_by_guid(const char *guid) {
+  struct interface_info *iflist;
+  int i, n;
+
+  iflist = getinterfaces(&n, NULL, 0);
+  if (iflist == NULL)
+    return false;
+
+  for (i = 0; i < n; i++) {
+    char pcap_name[1024];
+    char *pcap_guid;
+
+    if (!DnetName2PcapName(iflist[i].devname, pcap_name, sizeof(pcap_name)))
+      continue;
+    pcap_guid = strchr(pcap_name, '{');
+    if (pcap_guid == NULL)
+      continue;
+    if (strcmp(guid, pcap_guid) == 0)
+      return true;
+  }
+
+  return false;
+}
+
 // Reads the Windows registry and adds all the nameservers found via the
 // add_dns_server() function.
-void win32_read_registry(char *controlset) {
+void win32_read_registry() {
   HKEY hKey;
   HKEY hKey2;
   char keybasebuf[2048];
   char buf[2048], keyname[2048], *p;
   DWORD sz, i;
 
-  Snprintf(keybasebuf, sizeof(keybasebuf), "SYSTEM\\%s\\Services\\Tcpip\\Parameters", controlset);
+  Snprintf(keybasebuf, sizeof(keybasebuf), "SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters");
   if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, keybasebuf,
                     0, KEY_READ, &hKey) != ERROR_SUCCESS) {
     if (firstrun) error("mass_dns: warning: Error opening registry to read DNS servers. Try using --system-dns or specify valid servers with --dns-servers");
@@ -918,14 +942,19 @@ void win32_read_registry(char *controlset) {
 
   RegCloseKey(hKey);
 
-  Snprintf(keybasebuf, sizeof(keybasebuf), "SYSTEM\\%s\\Services\\Tcpip\\Parameters\\Interfaces", controlset);
+  Snprintf(keybasebuf, sizeof(keybasebuf), "SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Interfaces");
   if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, keybasebuf,
                     0, KEY_ENUMERATE_SUB_KEYS, &hKey) == ERROR_SUCCESS) {
 
-    sz = sizeof(buf);
-    for (i=0; RegEnumKeyEx(hKey, i, buf, &sz, NULL, NULL, NULL, NULL) != ERROR_NO_MORE_ITEMS; i++) {
+    for (i=0; sz = sizeof(buf), RegEnumKeyEx(hKey, i, buf, &sz, NULL, NULL, NULL, NULL) != ERROR_NO_MORE_ITEMS; i++) {
 
-      Snprintf(keyname, sizeof(keyname), "SYSTEM\\%s\\Services\\Tcpip\\Parameters\\Interfaces\\%s", controlset, buf);
+      if (!interface_is_known_by_guid(buf)) {
+        if (o.debugging > 1)
+          log_write(LOG_PLAIN, "Interface %s is not known; ignoring its nameservers.\n", buf);
+        continue;
+      }
+
+      Snprintf(keyname, sizeof(keyname), "SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Interfaces\\%s", buf);
 
       if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, keyname,
                         0, KEY_READ, &hKey2) == ERROR_SUCCESS) {
@@ -940,8 +969,6 @@ void win32_read_registry(char *controlset) {
 
         RegCloseKey(hKey2);
       }
-
-      sz = sizeof(buf);
     }
 
     RegCloseKey(hKey);
@@ -967,8 +994,7 @@ static void parse_resolvdotconf() {
     return;
   }
 
-  /* Customize a sscanf format to sizeof(ipaddr). */
-  Snprintf(fmt, sizeof(fmt), "nameserver %%%us", (unsigned int) sizeof(ipaddr));
+  Snprintf(fmt, sizeof(fmt), "nameserver %%%us", INET6_ADDRSTRLEN-1);
 
   while (fgets(buf, sizeof(buf), fp)) {
     tp = buf;
@@ -1016,28 +1042,11 @@ static void parse_etchosts(const char *fname) {
   fclose(fp);
 }
 
-void free_etchosts() {
-  host_elem *he;
-  std::list<host_elem *>::iterator hi;
-  int i;
-
-  for(i=0; i < HASH_TABLE_SIZE; i++){
-    for(hi = etchosts[i].begin(); hi != etchosts[i].end(); hi++) {
-      he = *hi;
-      if(he) {
-        free(he->name);
-        delete he;
-      }
-    }
-    etchosts[i].clear();
-  }
-}
-
 /* Executed when the DNS cache is full, ages entries
  * and removes any with a cache hit of 0 (the least used) */
-bool remove_and_age(host_elem *host) {
-  if(host->cache_hits) {
-     host->cache_hits /=2;
+bool remove_and_age(host_elem &host) {
+  if(host.cache_hits) {
+     host.cache_hits /=2;
      return false;
   } else
      return true;
@@ -1048,8 +1057,8 @@ bool remove_and_age(host_elem *host) {
  * make more space. */
 static void addto_etchosts(u32 ip, const char *hname) {
   static u16 total_size = 0;
-  std::list<host_elem*>::iterator it;
-  host_elem *he;
+  std::list<host_elem>::iterator it;
+  host_elem he;
   int i;
 
   if(lookup_etchosts(ip) != NULL)
@@ -1066,26 +1075,23 @@ static void addto_etchosts(u32 ip, const char *hname) {
       }
     }
   }
-  he = new host_elem;
-  he->name = strdup(hname);
-  he->addr = ip;
-  he->cache_hits = 0;
+  he.name = hname;
+  he.addr = ip;
+  he.cache_hits = 0;
   etchosts[IP_HASH(ip)].push_back(he);
   total_size++;
 }
 
 /* Search for a hostname in the cache and increment
  * its cache hit counter if found */
-static char *lookup_etchosts(u32 ip) {
-  std::list<host_elem *>::iterator hostI;
-  host_elem *tpelem;
+static const char *lookup_etchosts(u32 ip) {
+  std::list<host_elem>::iterator hostI;
   int localIP_Hash = IP_HASH(ip);
   for(hostI = etchosts[localIP_Hash].begin(); hostI != etchosts[localIP_Hash].end(); hostI++) {
-    tpelem = *hostI;
-    if (tpelem->addr == ip) {
-      if(tpelem->cache_hits < UCHAR_MAX)
-        tpelem->cache_hits++;
-      return tpelem->name;
+    if (hostI->addr == ip) {
+      if(hostI->cache_hits < UCHAR_MAX)
+        hostI->cache_hits++;
+      return hostI->name.c_str();
     }
   }
   return NULL;
@@ -1147,7 +1153,7 @@ static void init_servs(void) {
 #ifndef WIN32
     parse_resolvdotconf();
 #else
-    win32_read_registry("CurrentControlSet");
+    win32_read_registry();
 #endif
   }
 }
@@ -1162,9 +1168,8 @@ static void nmap_mass_rdns_core(Target **targets, int num_targets) {
   std::list<request *>::iterator reqI;
   request *tpreq;
   int timeout;
-  char *tpname;
+  const char *tpname;
   int i;
-  bool lasttrace = false;
   char spmobuf[1024];
 
   // If necessary, set up the dns server list
@@ -1185,6 +1190,7 @@ static void nmap_mass_rdns_core(Target **targets, int num_targets) {
     if (!((*hostI)->flags & HOST_UP) && !o.resolve_all) continue;
 
     // See if it's in /etc/hosts or cached
+    assert((*hostI)->af() == AF_INET);
     tpname = lookup_etchosts((u32) (*hostI)->v4hostip()->s_addr);
     if (tpname) {
       (*hostI)->setHostName(tpname);
@@ -1210,8 +1216,13 @@ static void nmap_mass_rdns_core(Target **targets, int num_targets) {
   if ((dnspool = nsp_new(NULL)) == NULL)
     fatal("Unable to create nsock pool in %s()", __func__);
 
-  if ((lasttrace = o.packetTrace()))
-    nsp_settrace(dnspool, NULL, NSOCK_TRACE_LEVEL, o.getStartTime());
+  nsock_set_log_function(dnspool, nmap_nsock_stderr_logger);
+  nmap_adjust_loglevel(dnspool, o.packetTrace());
+
+  nsp_setdevice(dnspool, o.device);
+
+  if (o.proxy_chain)
+    nsp_set_proxychain(dnspool, o.proxy_chain);
 
   connect_dns_servers();
 
@@ -1230,12 +1241,8 @@ static void nmap_mass_rdns_core(Target **targets, int num_targets) {
     if (total_reqs <= 0) break;
 
     /* Because this can change with runtime interaction */
-    if (o.packetTrace() != lasttrace) {
-      lasttrace = !lasttrace;
-      if (lasttrace)
-	nsp_settrace(dnspool, NULL, NSOCK_TRACE_LEVEL, o.getStartTime());
-      else nsp_settrace(dnspool, NULL, 0, o.getStartTime());
-    }
+    nmap_adjust_loglevel(dnspool, o.packetTrace());
+
     nsock_loop(dnspool, timeout);
   }
 
@@ -1346,19 +1353,19 @@ void nmap_mass_rdns(Target **targets, int num_targets) {
   if (stat_actual > 0) {
     if (o.debugging || o.verbose >= 3) {
       if (o.mass_dns && o.af() == AF_INET) {
-	// #:  Number of DNS servers used
-	// OK: Number of fully reverse resolved queries
-	// NX: Number of confirmations of 'No such reverse domain eXists'
-	// DR: Dropped IPs (no valid responses were received)
-	// SF: Number of IPs that got 'Server Failure's
-	// TR: Total number of transmissions necessary. The number of domains is ideal, higher is worse
-	log_write(LOG_STDOUT, "DNS resolution of %d IPs took %.2fs. Mode: Async [#: %lu, OK: %d, NX: %d, DR: %d, SF: %d, TR: %d, CN: %d]\n",
-		  stat_actual, TIMEVAL_MSEC_SUBTRACT(now, starttv) / 1000.0,
-		  (unsigned long) servs.size(), stat_ok, stat_nx, stat_dropped, stat_sf, stat_trans, stat_cname);
+        // #:  Number of DNS servers used
+        // OK: Number of fully reverse resolved queries
+        // NX: Number of confirmations of 'No such reverse domain eXists'
+        // DR: Dropped IPs (no valid responses were received)
+        // SF: Number of IPs that got 'Server Failure's
+        // TR: Total number of transmissions necessary. The number of domains is ideal, higher is worse
+        log_write(LOG_STDOUT, "DNS resolution of %d IPs took %.2fs. Mode: Async [#: %lu, OK: %d, NX: %d, DR: %d, SF: %d, TR: %d, CN: %d]\n",
+                  stat_actual, TIMEVAL_MSEC_SUBTRACT(now, starttv) / 1000.0,
+                  (unsigned long) servs.size(), stat_ok, stat_nx, stat_dropped, stat_sf, stat_trans, stat_cname);
       } else {
-	log_write(LOG_STDOUT, "DNS resolution of %d IPs took %.2fs. Mode: System [OK: %d, ??: %d]\n",
-		  stat_actual, TIMEVAL_MSEC_SUBTRACT(now, starttv) / 1000.0,
-		  stat_ok, stat_actual - stat_ok);
+        log_write(LOG_STDOUT, "DNS resolution of %d IPs took %.2fs. Mode: System [OK: %d, ??: %d]\n",
+                  stat_actual, TIMEVAL_MSEC_SUBTRACT(now, starttv) / 1000.0,
+                  stat_ok, stat_actual - stat_ok);
       }
     }
   }
@@ -1375,10 +1382,10 @@ std::list<std::string> get_dns_servers() {
   // of servers.
   assert(o.mass_dns || servs.empty());
 
-  std::list<dns_server *>::iterator servI;
+  std::list<dns_server>::iterator servI;
   std::list<std::string> serverList;
   for(servI = servs.begin(); servI != servs.end(); servI++) {
-    serverList.push_back(inet_socktop((struct sockaddr_storage *) &(*servI)->addr));
+    serverList.push_back(inet_socktop((struct sockaddr_storage *) &servI->addr));
   }
   return serverList;
 }

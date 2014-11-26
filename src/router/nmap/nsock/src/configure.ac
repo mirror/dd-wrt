@@ -9,6 +9,15 @@ AC_PREREQ(2.13)
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(nsock_core.c)
 
+dnl Find the Nmap source for nbase, etc.
+if test "${top_nmap_srcdir+set}" != set; then
+  top_nmap_srcdir=../..
+  export top_nmap_srcdir
+fi
+
+dnl Generate these files
+AC_CONFIG_FILES([Makefile ../tests/Makefile])
+
 dnl use nsock_config.h instad of -D macros
 AC_CONFIG_HEADER(../include/nsock_config.h)
 
@@ -103,16 +112,65 @@ if test "$user_localdirs" = 1; then
    fi
 fi
 
-pcap_enabled=yes
-AC_ARG_WITH(pcap,
-  AC_HELP_STRING([--disable-pcap], [Disable pcap functions.]),
-  [ pcap_enabled="$withval" ])
+dnl Check whether libpcap is already available
+have_libpcap=no
 
-if test "$pcap_enabled" != "no"; then
-  AC_DEFINE(HAVE_PCAP)
+# By default, search for pcap library
+test "${with_libpcap+set}" != "set" && with_libpcap=yes
+
+AC_ARG_WITH(libpcap,
+AC_HELP_STRING([--with-libpcap=DIR], [Look for pcap headers in DIR/include.])
+AC_HELP_STRING([--with-libpcap=included], [Always use version included with Nmap])
+AC_HELP_STRING([--without-libpcap], [Disable pcap functions.]),
+[  case "$with_libpcap" in
+  yes)
+    AC_CHECK_HEADER(pcap.h,[
+      have_libpcap=yes
+      LIBPCAP_LIBS=-lpcap ])
+    ;;
+  included)
+    have_libpcap=no
+   ;;
+  no)
+    ;;
+  *)
+    _cppflags=$CPPFLAGS
+    _ldflags=$LDFLAGS
+
+    CPPFLAGS="-I$with_libpcap/include $CPPFLAGS"
+    LDFLAGS="-L$with_libpcap/lib $LDFLAGS"
+
+    AC_CHECK_HEADER(pcap.h,[
+      AC_CHECK_LIB(pcap, pcap_datalink,
+        [have_libpcap=yes
+        LIBPCAP_LIBS=-lpcap
+        LIBPCAP_INC=$with_libpcap/include
+        LIBPCAP_LIB=$with_libpcap/lib])])
+
+    LDFLAGS=$_ldflags
+    CPPFLAGS=$_cppflags
+    ;;
+  esac]
+)
+
+if test "$with_libpcap" != "no" -a "$have_libpcap" = "no"; then
+  LIBPCAP_INC=${top_nmap_srcdir}/libpcap
+  LIBPCAP_LIB=${top_nmap_srcdir}/libpcap
+  LIBPCAP_LIBS=${LIBPCAP_LIB}/libpcap.a
+  have_libpcap=yes
 fi
+if test "$have_libpcap" != "no"; then
+  AC_DEFINE(HAVE_PCAP)
+  if test "${LIBPCAP_INC+set}" = "set"; then
+    CPPFLAGS="-I$LIBPCAP_INC $CPPFLAGS"
+    LDFLAGS="-L$LIBPCAP_LIB $LDFLAGS"
+  fi
+fi
+AC_SUBST(LIBPCAP_LIBS)
 
-AC_CHECK_FUNCS(epoll_create epoll_ctl epoll_wait, [AC_DEFINE(HAVE_EPOLL)], )
+AX_HAVE_EPOLL([AC_DEFINE(HAVE_EPOLL)], )
+AX_HAVE_POLL([AC_DEFINE(HAVE_POLL)], )
+AC_CHECK_FUNCS(kqueue kevent, [AC_DEFINE(HAVE_KQUEUE)], )
 
 dnl Checks for programs.
 AC_PROG_CC
@@ -122,9 +180,6 @@ AC_PROG_CC
 AC_PROG_RANLIB
 dnl AC_PROG_INSTALL
 dnl AC_PATH_PROG(MAKEDEPEND, makedepend)
-
-AC_SUBST(COMPAT_OBJS)
-AC_SUBST(COMPAT_SRCS)
 
 dnl Checks for libraries.
 dnl AC_CHECK_LIB(m, pow)
@@ -138,7 +193,7 @@ AC_CHECK_FUNC(nanosleep, , AC_CHECK_LIB(posix4, nanosleep))
 
 dnl Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS(net/bpf.h sys/ioctl.h)
+AC_CHECK_HEADERS(net/bpf.h sys/ioctl.h sys/un.h netdb.h)
 
 # We test whether they specified openssl desires explicitly
 use_openssl="yes"
@@ -221,8 +276,10 @@ AC_ARG_WITH(libnbase,
     NBASEDIR="$with_libnbase"
     ;;
   esac],
-NBASEDIR="../../nbase"
+NBASEDIR="${top_nmap_srcdir}/nbase"
 )
+
+NSOCKTESTDIR="../tests"
 
 LDFLAGS="$LDFLAGS -L$NBASEDIR"
 CPPFLAGS="$CPPFLAGS -I$NBASEDIR"
@@ -230,7 +287,8 @@ LIBNBASE_LIBS="$LIBS -lnbase"
 
 AC_SUBST(LIBNBASE_LIBS)
 AC_SUBST(NBASEDIR)
+AC_SUBST(NSOCKTESTDIR)
 
 AC_SUBST(CFLAGS)
 
-AC_OUTPUT(Makefile)
+AC_OUTPUT()

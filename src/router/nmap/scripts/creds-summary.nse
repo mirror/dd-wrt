@@ -1,10 +1,12 @@
+local creds = require "creds"
+
 description = [[
 Lists all discovered credentials (e.g. from brute force and default password checking scripts) at end of scan.
 ]]
 
 ---
 --@output
--- | creds-summary: 
+-- | creds-summary:
 -- |   10.10.10.10
 -- |     22/ssh
 -- |       lisbon:jane - Account is valid
@@ -26,15 +28,14 @@ author = "Patrik Karlsson"
 license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
 categories = {"auth", "default", "safe"}
 
-require 'creds'
 
-postrule = function() 
-	local all = creds.Credentials:new(creds.ALL_DATA)
-	local tab = all:getTable()
-	if ( tab and #tab > 0 ) then return true end
+postrule = function()
+  local all = creds.Credentials:new(creds.ALL_DATA)
+  local tab = all:getTable()
+  if ( tab and #tab > 0 ) then return true end
 end
 
 action = function()
-	local all = creds.Credentials:new(creds.ALL_DATA)
-	return (all and tostring(all) or nil)
+  local all = creds.Credentials:new(creds.ALL_DATA)
+  return (all and tostring(all) or nil)
 end

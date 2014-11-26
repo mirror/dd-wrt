@@ -1,8 +1,17 @@
+local coroutine = require "coroutine"
+local http = require "http"
+local io = require "io"
+local nmap = require "nmap"
+local shortport = require "shortport"
+local stdnse = require "stdnse"
+local string = require "string"
+local table = require "table"
+
 description = [[
 Tries to obtain a list of installed WordPress plugins by brute force
 testing for known plugins.
 
-The script will brute force the /wp-content/plugins/ folder with a dictionnary
+The script will brute force the /wp-content/plugins/ folder with a dictionary
 of 14K (and counting) known WP plugins. Anything but a 404 means that a given
 plugin directory probably exists, so the plugin probably also does.
 
@@ -18,7 +27,7 @@ check the first 100 ones. Users can tweak this with an option (see below).
 -- Use this option with a number or "all" as an argument for a more comprehensive brute force.
 --
 -- @usage
--- nmap --script=http-wordpress-plugins --script-arg http-wordpress-plugins.root="/blog/",http-wordpress-plugins.search=500 <targets>
+-- nmap --script=http-wordpress-plugins --script-args http-wordpress-plugins.root="/blog/",http-wordpress-plugins.search=500 <targets>
 --
 --@output
 -- Interesting ports on my.woot.blog (123.123.123.123):
@@ -38,9 +47,6 @@ license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
 
 categories = {"discovery", "intrusive"}
 
-require 'http'
-require 'stdnse'
-require 'shortport'
 
 local DEFAULT_PLUGINS_SEARCH = 100
 
@@ -49,7 +55,7 @@ portrule = shortport.service("http")
 
 local function read_data_file(file)
   return coroutine.wrap(function()
-    for line in file:lines(file) do
+    for line in file:lines() do
       if not line:match("^%s*#") and not line:match("^%s*$") then
         coroutine.yield(line)
       end
@@ -157,7 +163,7 @@ action = function(host, port)
     result.name = "search amongst the " .. plugin_count .. " most popular plugins"
     return stdnse.format_output(true, result)
   else
-    return "nothing found amongst the " .. plugin_count .. " most popular plugins, use --script-arg http-wordpress-plugins.search=<number|all> for deeper analysis)\n"
+    return "nothing found amongst the " .. plugin_count .. " most popular plugins, use --script-args http-wordpress-plugins.search=<number|all> for deeper analysis)\n"
   end
 
 end

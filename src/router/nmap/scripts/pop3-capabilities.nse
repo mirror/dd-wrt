@@ -1,3 +1,9 @@
+local pop3 = require "pop3"
+local shortport = require "shortport"
+local stdnse = require "stdnse"
+local string = require "string"
+local table = require "table"
+
 description = [[
 Retrieves POP3 email server capabilities.
 
@@ -17,36 +23,26 @@ license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
 
 categories = {"default","discovery","safe"}
 
-require 'pop3'
-require 'shortport'
-require 'stdnse'
 
 portrule = shortport.port_or_service({110,995},{"pop3","pop3s"})
 
 action = function(host, port)
   local capa, err = pop3.capabilities(host, port)
   if type(capa) == "table" then
-     -- Convert the capabilities table into an array of strings.
-     local capstrings = {}
-     local cap, args
-     for cap, args in pairs(capa) do
-	local capstr = cap
-	if type(args) == "string" then capstr = capstr .. "(" .. args .. ")" end
-	if type(args) == "table" then
-	   local arg
-	   capstr = capstr .. "("
-	   for i, arg in ipairs(args) do
-	      capstr = capstr .. arg .. " "
-	   end
-	   capstr = string.sub(capstr, 1, #capstr - 1) .. ")"
-	end
-	table.insert(capstrings, capstr)
-     end
-     return stdnse.strjoin(" ", capstrings)
+    -- Convert the capabilities table into an array of strings.
+    local capstrings = {}
+    for cap, args in pairs(capa) do
+      if ( #args > 0 ) then
+        table.insert(capstrings, ("%s(%s)"):format(cap, stdnse.strjoin(" ", args)))
+      else
+        table.insert(capstrings, cap)
+      end
+    end
+    return stdnse.strjoin(" ", capstrings)
   elseif type(err) == "string" then
-     stdnse.print_debug(1, "%s: '%s' for %s", SCRIPT_NAME, err, host.ip)
-     return
+    stdnse.print_debug(1, "%s: '%s' for %s", SCRIPT_NAME, err, host.ip)
+    return
   else
-     return "server doesn't support CAPA"
+    return "server doesn't support CAPA"
   end
 end

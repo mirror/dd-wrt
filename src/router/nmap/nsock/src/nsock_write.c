@@ -4,7 +4,7 @@
  *                                                                         *
  ***********************IMPORTANT NSOCK LICENSE TERMS***********************
  *                                                                         *
- * The nsock parallel socket event library is (C) 1999-2012 Insecure.Com   *
+ * The nsock parallel socket event library is (C) 1999-2013 Insecure.Com   *
  * LLC This library is free software; you may redistribute and/or          *
  * modify it under the terms of the GNU General Public License as          *
  * published by the Free Software Foundation; Version 2.  This guarantees  *
@@ -33,17 +33,18 @@
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
- * to nmap-dev@insecure.org for possible incorporation into the main       *
- * distribution.  By sending these changes to Fyodor or one of the         *
- * Insecure.Org development mailing lists, it is assumed that you are      *
- * offering the Nmap Project (Insecure.Com LLC) the unlimited,             *
- * non-exclusive right to reuse, modify, and relicense the code.  Nmap     *
- * will always be available Open Source, but this is important because the *
- * inability to relicense code has caused devastating problems for other   *
- * Free Software projects (such as KDE and NASM).  We also occasionally    *
- * relicense the code to third parties as discussed above.  If you wish to *
- * specify special license conditions of your contributions, just say so   *
- * when you send them.                                                     *
+ * to the dev@nmap.org mailing list for possible incorporation into the    *
+ * main distribution.  By sending these changes to Fyodor or one of the    *
+ * Insecure.Org development mailing lists, or checking them into the Nmap  *
+ * source code repository, it is understood (unless you specify otherwise) *
+ * that you are offering the Nmap Project (Insecure.Com LLC) the           *
+ * unlimited, non-exclusive right to reuse, modify, and relicense the      *
+ * code.  Nmap will always be available Open Source, but this is important *
+ * because the inability to relicense code has caused devastating problems *
+ * for other Free Software projects (such as KDE and NASM).  We also       *
+ * occasionally relicense the code to third parties as discussed above.    *
+ * If you wish to specify special license conditions of your               *
+ * contributions, just say so when you send them.                          *
  *                                                                         *
  * This program is distributed in the hope that it will be useful, but     *
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
@@ -53,10 +54,12 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nsock_write.c 28190 2012-03-01 06:32:23Z fyodor $ */
+/* $Id: nsock_write.c 31562 2013-07-28 22:05:05Z fyodor $ */
 
 #include "nsock.h"
 #include "nsock_internal.h"
+#include "nsock_log.h"
+#include "netutils.h"
 
 #include <nbase.h>
 #include <stdarg.h>
@@ -76,14 +79,18 @@ nsock_event_id nsock_sendto(nsock_pool ms_pool, nsock_iod ms_iod, nsock_ev_handl
   nse = msevent_new(nsp, NSE_TYPE_WRITE, nsi, timeout_msecs, handler, userdata);
   assert(nse);
 
-  if (sin->sin_family == AF_INET) {
+  if (saddr->sa_family == AF_INET) {
     sin->sin_port = htons(port);
+#if HAVE_SYS_UN_H
+  } else if (saddr->sa_family == AF_INET6) {
+#else
   } else {
-      assert(sin->sin_family == AF_INET6);
+#endif
+    assert(saddr->sa_family == AF_INET6);
 #if HAVE_IPV6
     sin6->sin6_port = htons(port);
 #else
-    fatal("IPv6 address passed to nsock_connect_* call, but nsock was not compiled w/IPv6 support");
+    fatal("IPv6 address passed to %s call, but nsock was not compiled w/IPv6 support", __func__);
 #endif
   }
 
@@ -98,22 +105,18 @@ nsock_event_id nsock_sendto(nsock_pool ms_pool, nsock_iod ms_iod, nsock_ev_handl
   if (datalen < 0)
     datalen = (int) strlen(data);
 
-  if (nsp->tracelevel > 0) {
-    if (nsp->tracelevel > 1 && datalen < 80) {
-      memcpy(displaystr, ": ", 2);
-      memcpy(displaystr + 2, data, datalen);
-      displaystr[2 + datalen] = '\0';
-      replacenonprintable(displaystr + 2, datalen, '.');
-    } else {
-      displaystr[0] = '\0';
-    }
-    nsock_trace(nsp, "Sendto request for %d bytes to IOD #%li EID %li [%s:%hu]%s",
-                datalen, nsi->id, nse->id,
-                inet_ntop_ez(&nse->writeinfo.dest, nse->writeinfo.destlen), port,
-                displaystr);
+  if (nsp->loglevel == NSOCK_LOG_DBG_ALL && datalen < 80) {
+    memcpy(displaystr, ": ", 2);
+    memcpy(displaystr + 2, data, datalen);
+    displaystr[2 + datalen] = '\0';
+    replacenonprintable(displaystr + 2, datalen, '.');
+  } else {
+    displaystr[0] = '\0';
   }
+  nsock_log_debug(nsp, "Sendto request for %d bytes to IOD #%li EID %li [%s]%s",
+                  datalen, nsi->id, nse->id, get_peeraddr_string(nse->iod), displaystr);
 
-  fscat(&nse->iobuf, data, datalen);
+  fs_cat(&nse->iobuf, data, datalen);
 
   nsp_add_event(nsp, nse);
 
@@ -137,24 +140,21 @@ nsock_event_id nsock_write(nsock_pool ms_pool, nsock_iod ms_iod,
   nse->writeinfo.dest.ss_family = AF_UNSPEC;
 
   if (datalen < 0)
-    datalen = (int) strlen(data);
+    datalen = (int)strlen(data);
 
-  if (nsp->tracelevel > 0) {
-    if (nsp->tracelevel > 1 && datalen < 80) {
+    if (nsp->loglevel == NSOCK_LOG_DBG_ALL && datalen < 80) {
       memcpy(displaystr, ": ", 2);
       memcpy(displaystr + 2, data, datalen);
       displaystr[2 + datalen] = '\0';
       replacenonprintable(displaystr + 2, datalen, '.');
-    } else displaystr[0] = '\0';
-    if (nsi->peerlen > 0)
-      nsock_trace(nsp, "Write request for %d bytes to IOD #%li EID %li [%s:%d]%s", datalen, nsi->id,
-                  nse->id, inet_ntop_ez(&nsi->peer, nsi->peerlen), nsi_peerport(nsi), displaystr);
-    else
-      nsock_trace(nsp, "Write request for %d bytes to IOD #%li EID %li (peer unspecified)%s", datalen,
-                  nsi->id, nse->id, displaystr);
-  }
+    } else {
+      displaystr[0] = '\0';
+    }
 
-  fscat(&nse->iobuf, data, datalen);
+    nsock_log_debug(nsp, "Write request for %d bytes to IOD #%li EID %li [%s]%s",
+                    datalen, nsi->id, nse->id, get_peeraddr_string(nsi), displaystr);
+
+  fs_cat(&nse->iobuf, data, datalen);
 
   nsp_add_event(nsp, nse);
 
@@ -163,7 +163,7 @@ nsock_event_id nsock_write(nsock_pool ms_pool, nsock_iod ms_iod,
 
 /* Same as nsock_write except you can use a printf-style format and you can only use this for ASCII strings */
 nsock_event_id nsock_printf(nsock_pool ms_pool, nsock_iod ms_iod,
-          nsock_ev_handler handler, int timeout_msecs, void *userdata, char *format, ... ) {
+          nsock_ev_handler handler, int timeout_msecs, void *userdata, char *format, ...) {
   mspool *nsp = (mspool *)ms_pool;
   msiod *nsi = (msiod *)ms_iod;
   msevent *nse;
@@ -206,26 +206,21 @@ nsock_event_id nsock_printf(nsock_pool ms_pool, nsock_iod ms_iod,
       nse->event_done = 1;
       nse->status = NSE_STATUS_SUCCESS;
     } else {
-      fscat(&nse->iobuf, buf2, strlength);
+      fs_cat(&nse->iobuf, buf2, strlength);
     }
   }
 
-  if (nsp->tracelevel > 0) {
-    if (nsp->tracelevel > 1 && nse->status != NSE_STATUS_ERROR && strlength < 80) {
-      memcpy(displaystr, ": ", 2);
-      memcpy(displaystr + 2, buf2, strlength);
-      displaystr[2 + strlength] = '\0';
-      replacenonprintable(displaystr + 2, strlength, '.');
-    } else {
-      displaystr[0] = '\0';
-    }
-    if (nsi->peerlen > 0)
-      nsock_trace(nsp, "Write request for %d bytes to IOD #%li EID %li [%s:%d]%s", strlength, nsi->id,
-                  nse->id, inet_ntop_ez(&nsi->peer, nsi->peerlen), nsi_peerport(nsi), displaystr);
-    else
-      nsock_trace(nsp, "Write request for %d bytes to IOD #%li EID %li (peer unspecified)%s", strlength,
-                  nsi->id, nse->id, displaystr);
+  if (nsp->loglevel == NSOCK_LOG_DBG_ALL && nse->status != NSE_STATUS_ERROR && strlength < 80) {
+    memcpy(displaystr, ": ", 2);
+    memcpy(displaystr + 2, buf2, strlength);
+    displaystr[2 + strlength] = '\0';
+    replacenonprintable(displaystr + 2, strlength, '.');
+  } else {
+    displaystr[0] = '\0';
   }
+
+  nsock_log_debug(nsp, "Write request for %d bytes to IOD #%li EID %li [%s]%s",
+                  strlength, nsi->id, nse->id, get_peeraddr_string(nsi), displaystr);
 
   if (buf2 != buf)
     free(buf2);

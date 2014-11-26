@@ -1,4 +1,4 @@
-<refentry id="npìng-man">
+<refentry id="nping-man">
   <refmeta>
     <refentrytitle>nping</refentrytitle>
     <manvolnum>1</manvolnum>
@@ -2043,7 +2043,7 @@ SENT (4.0330s) TCP 192.168.0.21 &gt; 3.3.3.3:139
 
       <varlistentry>
         <term>          
-          <option>--md</option> (More Fragments)
+          <option>--mf</option> (More Fragments)
           <indexterm significance="preferred"><primary><option>--mf</option> (Nping option)</primary></indexterm>
         </term>
         <listitem>
@@ -3104,7 +3104,7 @@ SENT (4.0330s) TCP 192.168.0.21 &gt; 3.3.3.3:139
            are sent in one round. So if you specify <option>-c 100</option>, Nping will
            loop over the different target hosts and ports 100 times, sending
            a total of 256&thinsp;&times;&thinsp;2&thinsp;&times;&thinsp;100&nbsp;=&nbsp;51200 packets. By default Nping runs for
-           5 rounds. If a value of 0 is specified, Nping will run for 2<superscript>32</superscript> rounds.
+           5 rounds. If a value of 0 is specified, Nping will run continuously.
         </para>
         </listitem>
       </varlistentry>
@@ -3532,15 +3532,15 @@ NSOCK (1.0000s) Callback: TIMER SUCCESS for EID 12; tcpconnect_event_handler<con
     <primary><citetitle>nmap-dev</citetitle> mailing list</primary></indexterm>
     Read this full manual page as
     well.  If nothing comes out of this, mail a bug report to
-    <email>nmap-dev@insecure.org</email>.  Please include everything
+    <email>dev@nmap.org</email>.  Please include everything
     you have learned about the problem, as well as what version of
     Nping you are running and what operating system version it is
     running on.  Problem reports and Nping usage questions sent to
-    <email>nmap-dev@insecure.org</email> are far more likely to be answered than
+    <email>dev@nmap.org</email> are far more likely to be answered than
     those sent to Fyodor directly.  If you subscribe to the nmap-dev
     list before posting, your message will bypass moderation and get
     through more quickly.  Subscribe at
-    <ulink url="http://cgi.insecure.org/mailman/listinfo/nmap-dev"/>.</para>
+    <ulink url="http://nmap.org/mailman/listinfo/dev"/>.</para>
 
     <para>Code patches to fix bugs are even better than bug reports.
     Basic instructions for creating patch files with your changes are
@@ -3556,7 +3556,7 @@ NSOCK (1.0000s) Callback: TIMER SUCCESS for EID 12; tcpconnect_event_handler<con
 
     <para>Luis MartinGarcia <email>luis.mgarc@gmail.com</email> (<ulink url="http://aldabaknocking.com" />)</para>
 
-    <para>Fyodor <email>fyodor@insecure.org</email> (<ulink url="http://insecure.org" />)</para>
+    <para>Fyodor <email>fyodor@nmap.org</email> (<ulink url="http://insecure.org" />)</para>
 
   </refsect1>
 

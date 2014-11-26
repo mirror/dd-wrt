@@ -1,6 +1,6 @@
 ---
 -- Read and parse some of Nmap's data files: <code>nmap-protocols</code>,
--- <code>nmap-rpc</code>, <code>nmap-services</code>, and 
+-- <code>nmap-rpc</code>, <code>nmap-services</code>, and
 -- <code>nmap-mac-prefixes</code>.
 --
 -- The functions in this module return values appropriate for use with exception
@@ -10,9 +10,12 @@
 -- @author jah 08/2008
 -- @copyright Same as Nmap--See http://nmap.org/book/man-legal.html
 
-module(... or "datafiles", package.seeall)
-
+local io = require "io"
+local nmap = require "nmap"
 local stdnse = require "stdnse"
+local string = require "string"
+local table = require "table"
+_ENV = stdnse.module("datafiles", stdnse.seeall)
 
 
 ---
@@ -21,14 +24,28 @@ local stdnse = require "stdnse"
 -- @name common_files
 -- @see parse_file
 local common_files = {
-    ["nmap-rpc"]       = { [function(ln) return tonumber( ln:match( "^%s*[^%s#]+%s+(%d+)" ) ) end] = "^%s*([^%s#]+)%s+%d+" },
-    ["nmap-protocols"] = { [function(ln) return tonumber( ln:match( "^%s*[^%s#]+%s+(%d+)" ) ) end] = "^%s*([^%s#]+)%s+%d+" },
-    ["nmap-services"]  = { ["tcp"] = { [function(ln) return tonumber( ln:match( "^%s*[^%s#]+%s+(%d+)/tcp" ) ) end] = "^%s*([^%s#]+)%s+%d+/tcp" },
-                           ["udp"] = { [function(ln) return tonumber( ln:match( "^%s*[^%s#]+%s+(%d+)/udp" ) ) end] = "^%s*([^%s#]+)%s+%d+/udp" }
-    },
-	["nmap-mac-prefixes"]	= { [ "^%s*(%w+)%s+[^#]+" ] = "^%s*%w+%s+([^#]+)" }
+  ["nmap-rpc"]       = { [function(ln) return tonumber( ln:match( "^%s*[^%s#]+%s+(%d+)" ) ) end] = "^%s*([^%s#]+)%s+%d+" },
+  ["nmap-protocols"] = { [function(ln) return tonumber( ln:match( "^%s*[^%s#]+%s+(%d+)" ) ) end] = "^%s*([^%s#]+)%s+%d+" },
+  ["nmap-services"]  = { ["tcp"] = { [function(ln) return tonumber( ln:match( "^%s*[^%s#]+%s+(%d+)/tcp" ) ) end] = "^%s*([^%s#]+)%s+%d+/tcp" },
+    ["udp"] = { [function(ln) return tonumber( ln:match( "^%s*[^%s#]+%s+(%d+)/udp" ) ) end] = "^%s*([^%s#]+)%s+%d+/udp" }
+  },
+  ["nmap-mac-prefixes"] = { [ "^%s*(%w+)%s+[^#]+" ] = "^%s*%w+%s+([^#]+)" }
 
 }
+
+-- Helper for parse_* functions
+local parse_and_cache = function(filename)
+  nmap.registry.datafiles = nmap.registry.datafiles or {}
+  if not nmap.registry.datafiles[filename] then
+    local status
+    status, nmap.registry.datafiles[filename] = parse_file(filename)
+    if not status then
+      return false, string.format("Error parsing %s", filename)
+    end
+  end
+
+  return true, nmap.registry.datafiles[filename]
+end
 
 
 ---
@@ -40,12 +57,7 @@ local common_files = {
 -- @return Table (if status is true) or error string (if status is false).
 -- @see parse_file
 parse_protocols = function()
-  local status, protocols_table = parse_file("nmap-protocols")
-  if not status then
-    return false, "Error parsing nmap-protocols"
-  end
-
-  return true, protocols_table
+  return parse_and_cache("nmap-protocols")
 end
 
 
@@ -57,12 +69,7 @@ end
 -- @return Table (if status is true) or error string (if status is false).
 -- @see parse_file
 parse_rpc = function()
-  local status, rpc_table = parse_file("nmap-rpc")
-  if not status then
-    return false, "Error parsing nmap-rpc"
-  end
-
-  return true, rpc_table
+  return parse_and_cache("nmap-rpc")
 end
 
 
@@ -84,9 +91,25 @@ parse_services = function(protocol)
     return false, "Bad protocol for nmap-services: use tcp or udp"
   end
 
-  local status, services_table = parse_file("nmap-services", protocol)
-  if not status then
-    return false, "Error parsing nmap-services"
+  local services_table
+  nmap.registry.datafiles = nmap.registry.datafiles or {}
+  nmap.registry.datafiles.services = nmap.registry.datafiles.services or {}
+  if protocol then
+    if not nmap.registry.datafiles.services[protocol] then
+      local status
+      status, nmap.registry.datafiles.services[protocol] = parse_file("nmap-services", protocol)
+      if not status then
+        return false, "Error parsing nmap-services"
+      end
+    end
+    services_table = nmap.registry.datafiles.services[protocol]
+  else
+    local status
+    status, nmap.registry.datafiles.services = parse_file("nmap-services")
+    if not status then
+      return false, "Error parsing nmap-services"
+    end
+    services_table = nmap.registry.datafiles.services
   end
 
   return true, services_table
@@ -101,12 +124,7 @@ end
 -- @return Table (if status is true) or error string (if status is false).
 -- @see parse_file
 parse_mac_prefixes = function()
-  local status, mac_prefixes_table = parse_file("nmap-mac-prefixes")
-  if not status then
-    return false, "Error parsing nmap-mac-prefixes"
-  end
-
-  return true, mac_prefixes_table
+  return parse_and_cache("nmap-mac-prefixes")
 end
 
 
@@ -167,7 +185,7 @@ function parse_file(filename, ...)
     if not status then return false, ret[#ret] end
   end
 
-  return true, unpack( ret )
+  return true, table.unpack( ret )
 
 end
 
@@ -305,3 +323,5 @@ get_assoc_array = function(lines, i_pattern, v_pattern)
   end
   return ret
 end
+
+return _ENV;

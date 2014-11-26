@@ -4,62 +4,94 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2012 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
- * Foundation; Version 2 with the clarifications and exceptions described  *
- * below.  This guarantees your right to use, modify, and redistribute     *
- * this software under certain conditions.  If you wish to embed Nmap      *
- * technology into proprietary software, we sell alternative licenses      *
- * (contact sales@insecure.com).  Dozens of software vendors already       *
- * license Nmap technology such as host discovery, port scanning, OS       *
- * detection, version detection, and the Nmap Scripting Engine.            *
+ * Foundation; Version 2 ("GPL"), BUT ONLY WITH ALL OF THE CLARIFICATIONS  *
+ * AND EXCEPTIONS DESCRIBED HEREIN.  This guarantees your right to use,    *
+ * modify, and redistribute this software under certain conditions.  If    *
+ * you wish to embed Nmap technology into proprietary software, we sell    *
+ * alternative licenses (contact sales@nmap.com).  Dozens of software      *
+ * vendors already license Nmap technology such as host discovery, port    *
+ * scanning, OS detection, version detection, and the Nmap Scripting       *
+ * Engine.                                                                 *
  *                                                                         *
- * Note that the GPL places important restrictions on "derived works", yet *
- * it does not provide a detailed definition of that term.  To avoid       *
+ * Note that the GPL places important restrictions on "derivative works",  *
+ * yet it does not provide a detailed definition of that term.  To avoid   *
  * misunderstandings, we interpret that term as broadly as copyright law   *
  * allows.  For example, we consider an application to constitute a        *
- * "derivative work" for the purpose of this license if it does any of the *
- * following:                                                              *
- * o Integrates source code from Nmap                                      *
- * o Reads or includes Nmap copyrighted data files, such as                *
- *   nmap-os-db or nmap-service-probes.                                    *
- * o Executes Nmap and parses the results (as opposed to typical shell or  *
- *   execution-menu apps, which simply display raw Nmap output and so are  *
- *   not derivative works.)                                                *
- * o Integrates/includes/aggregates Nmap into a proprietary executable     *
- *   installer, such as those produced by InstallShield.                   *
- * o Links to a library or executes a program that does any of the above   *
+ * derivative work for the purpose of this license if it does any of the   *
+ * following with any software or content covered by this license          *
+ * ("Covered Software"):                                                   *
  *                                                                         *
- * The term "Nmap" should be taken to also include any portions or derived *
- * works of Nmap, as well as other software we distribute under this       *
- * license such as Zenmap, Ncat, and Nping.  This list is not exclusive,   *
- * but is meant to clarify our interpretation of derived works with some   *
- * common examples.  Our interpretation applies only to Nmap--we don't     *
- * speak for other people's GPL works.                                     *
+ * o Integrates source code from Covered Software.                         *
  *                                                                         *
- * If you have any questions about the GPL licensing restrictions on using *
- * Nmap in non-GPL works, we would be happy to help.  As mentioned above,  *
- * we also offer alternative license to integrate Nmap into proprietary    *
- * applications and appliances.  These contracts have been sold to dozens  *
- * of software vendors, and generally include a perpetual license as well  *
- * as providing for priority support and updates.  They also fund the      *
- * continued development of Nmap.  Please email sales@insecure.com for     *
- * further information.                                                    *
+ * o Reads or includes copyrighted data files, such as Nmap's nmap-os-db   *
+ * or nmap-service-probes.                                                 *
  *                                                                         *
- * As a special exception to the GPL terms, Insecure.Com LLC grants        *
+ * o Is designed specifically to execute Covered Software and parse the    *
+ * results (as opposed to typical shell or execution-menu apps, which will *
+ * execute anything you tell them to).                                     *
+ *                                                                         *
+ * o Includes Covered Software in a proprietary executable installer.  The *
+ * installers produced by InstallShield are an example of this.  Including *
+ * Nmap with other software in compressed or archival form does not        *
+ * trigger this provision, provided appropriate open source decompression  *
+ * or de-archiving software is widely available for no charge.  For the    *
+ * purposes of this license, an installer is considered to include Covered *
+ * Software even if it actually retrieves a copy of Covered Software from  *
+ * another source during runtime (such as by downloading it from the       *
+ * Internet).                                                              *
+ *                                                                         *
+ * o Links (statically or dynamically) to a library which does any of the  *
+ * above.                                                                  *
+ *                                                                         *
+ * o Executes a helper program, module, or script to do any of the above.  *
+ *                                                                         *
+ * This list is not exclusive, but is meant to clarify our interpretation  *
+ * of derived works with some common examples.  Other people may interpret *
+ * the plain GPL differently, so we consider this a special exception to   *
+ * the GPL that we apply to Covered Software.  Works which meet any of     *
+ * these conditions must conform to all of the terms of this license,      *
+ * particularly including the GPL Section 3 requirements of providing      *
+ * source code and allowing free redistribution of the work as a whole.    *
+ *                                                                         *
+ * As another special exception to the GPL terms, Insecure.Com LLC grants  *
  * permission to link the code of this program with any version of the     *
  * OpenSSL library which is distributed under a license identical to that  *
  * listed in the included docs/licenses/OpenSSL.txt file, and distribute   *
- * linked combinations including the two. You must obey the GNU GPL in all *
- * respects for all of the code used other than OpenSSL.  If you modify    *
- * this file, you may extend this exception to your version of the file,   *
- * but you are not obligated to do so.                                     *
+ * linked combinations including the two.                                  *
  *                                                                         *
- * If you received these files with a written license agreement or         *
- * contract stating terms other than the terms above, then that            *
- * alternative license agreement takes precedence over these comments.     *
+ * Any redistribution of Covered Software, including any derived works,    *
+ * must obey and carry forward all of the terms of this license, including *
+ * obeying all GPL rules and restrictions.  For example, source code of    *
+ * the whole work must be provided and free redistribution must be         *
+ * allowed.  All GPL references to "this License", are to be treated as    *
+ * including the terms and conditions of this license text as well.        *
+ *                                                                         *
+ * Because this license imposes special exceptions to the GPL, Covered     *
+ * Work may not be combined (even as part of a larger work) with plain GPL *
+ * software.  The terms, conditions, and exceptions of this license must   *
+ * be included as well.  This license is incompatible with some other open *
+ * source licenses as well.  In some cases we can relicense portions of    *
+ * Nmap or grant special permissions to use it in other open source        *
+ * software.  Please contact fyodor@nmap.org with any such requests.       *
+ * Similarly, we don't incorporate incompatible open source software into  *
+ * Covered Software without special permission from the copyright holders. *
+ *                                                                         *
+ * If you have any questions about the licensing restrictions on using     *
+ * Nmap in other works, are happy to help.  As mentioned above, we also    *
+ * offer alternative license to integrate Nmap into proprietary            *
+ * applications and appliances.  These contracts have been sold to dozens  *
+ * of software vendors, and generally include a perpetual license as well  *
+ * as providing for priority support and updates.  They also fund the      *
+ * continued development of Nmap.  Please email sales@nmap.com for further *
+ * information.                                                            *
+ *                                                                         *
+ * If you have received a written license agreement or contract for        *
+ * Covered Software stating terms other than these, you may choose to use  *
+ * and redistribute Covered Software under those terms instead of these.   *
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
@@ -68,8 +100,8 @@
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
- * to nmap-dev@insecure.org for possible incorporation into the main       *
- * distribution.  By sending these changes to Fyodor or one of the         *
+ * to the dev@nmap.org mailing list for possible incorporation into the    *
+ * main distribution.  By sending these changes to Fyodor or one of the    *
  * Insecure.Org development mailing lists, or checking them into the Nmap  *
  * source code repository, it is understood (unless you specify otherwise) *
  * that you are offering the Nmap Project (Insecure.Com LLC) the           *
@@ -83,10 +115,9 @@
  *                                                                         *
  * This program is distributed in the hope that it will be useful, but     *
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU       *
- * General Public License v2.0 for more details at                         *
- * http://www.gnu.org/licenses/gpl-2.0.html , or in the COPYING file       *
- * included with Nmap.                                                     *
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
+ * license file for more details (it's in a COPYING file included with     *
+ * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
  *                                                                         *
  ***************************************************************************/
 
@@ -374,19 +405,14 @@ after:
   return(d - data);
 }
 
-/* Tries to resolve the given name (or literal IP) into a sockaddr structure.
-   - Parameter "hostname" is the name to be resolved.
-   - Parameter "port" sets the port in each returned address structure
-     (you can safely pass 0 for the port if you don't care)
-   - Parameter "nodns": If set, it means that the supplied hostname is actually a
-     numeric IP address. The flag prevents any type of name resolution service
-     from being called. In 99% of the cases this should be 0.
-   Returns 1 on success or 0 if hostname could not be resolved. */
-int resolve(const char *hostname, u16 port, int nodns, struct sockaddr_storage *ss, size_t *sslen, int af){
+/* Internal helper for resolve and resolve_numeric. addl_flags is ored into
+   hints.ai_flags, so you can add AI_NUMERICHOST. */
+static int resolve_internal(const char *hostname, unsigned short port,
+  struct sockaddr_storage *ss, size_t *sslen, int af, int addl_flags) {
   struct addrinfo hints;
   struct addrinfo *result;
   char portbuf[16];
-  size_t rc=0;
+  int rc;
 
   assert(hostname);
   assert(ss);
@@ -395,21 +421,42 @@ int resolve(const char *hostname, u16 port, int nodns, struct sockaddr_storage *
   memset(&hints, 0, sizeof(hints));
   hints.ai_family = af;
   hints.ai_socktype = SOCK_DGRAM;
-  if (nodns)
-     hints.ai_flags |= AI_NUMERICHOST;
+  hints.ai_flags |= addl_flags;
 
   /* Make the port number a string to give to getaddrinfo. */
   rc = Snprintf(portbuf, sizeof(portbuf), "%hu", port);
-  assert(rc >= 0 && rc < sizeof(portbuf));
+  assert(rc >= 0 && (size_t) rc < sizeof(portbuf));
 
   rc = getaddrinfo(hostname, portbuf, &hints, &result);
-  if (rc != 0 || result == NULL)
-      return 0;
+  if (rc != 0)
+    return rc;
+  if (result == NULL)
+    return EAI_NONAME;
   assert(result->ai_addrlen > 0 && result->ai_addrlen <= (int) sizeof(struct sockaddr_storage));
   *sslen = result->ai_addrlen;
   memcpy(ss, result->ai_addr, *sslen);
   freeaddrinfo(result);
-  return 1;
+
+  return 0;
+}
+
+/* Resolves the given hostname or IP address with getaddrinfo, and stores the
+   first result (if any) in *ss and *sslen. The value of port will be set in the
+   appropriate place in *ss; set to 0 if you don't care. af may be AF_UNSPEC, in
+   which case getaddrinfo may return e.g. both IPv4 and IPv6 results; which one
+   is first depends on the system configuration. Returns 0 on success, or a
+   getaddrinfo return code (suitable for passing to gai_strerror) on failure.
+   *ss and *sslen are always defined when this function returns 0. */
+int resolve(const char *hostname, unsigned short port,
+  struct sockaddr_storage *ss, size_t *sslen, int af) {
+  return resolve_internal(hostname, port, ss, sslen, af, 0);
+}
+
+/* As resolve, but do not do DNS resolution of hostnames; the first argument
+   must be the string representation of a numeric IP address. */
+int resolve_numeric(const char *ip, unsigned short port,
+  struct sockaddr_storage *ss, size_t *sslen, int af) {
+  return resolve_internal(ip, port, ss, sslen, af, AI_NUMERICHOST);
 }
 
 /*
@@ -600,6 +647,7 @@ static int ipv6_is_extension_header(u8 type)
 static int ipv6_is_upperlayer(u8 type)
 {
   switch (type) {
+  case IP_PROTO_NONE:
   case IP_PROTO_TCP:
   case IP_PROTO_UDP:
   case IP_PROTO_ICMP:
@@ -682,8 +730,7 @@ static const void *ip_get_data_primitive(const void *packet, unsigned int *len,
     memcpy(&sin6->sin6_addr, &ip6->ip6_dst, IP6_ADDR_LEN);
 
     hdr->ttl = ip6->ip6_hlim;
-    /* abstract_hdr.ipid is limited to 16 bits. */
-    hdr->ipid = (u16) ntohl(ip6->ip6_flow & IP6_FLOWLABEL_MASK);
+    hdr->ipid = ntohl(ip6->ip6_flow & IP6_FLOWLABEL_MASK);
     return ipv6_get_data_primitive(ip6, len, &hdr->proto, upperlayer_only);
   }
 
@@ -797,7 +844,15 @@ unsigned short ipv4_pseudoheader_cksum(const struct in_addr *src,
   sum = ip_cksum_add(hstart, len, sum);
 
   /* Fold in the carry, take the complement, and return. */
-  return ip_cksum_carry(sum);
+  sum = ip_cksum_carry(sum);
+  /* RFC 768: "If the computed  checksum  is zero,  it is transmitted  as all
+   * ones (the equivalent  in one's complement  arithmetic).   An all zero
+   * transmitted checksum  value means that the transmitter  generated  no
+   * checksum" */
+  if (proto == IP_PROTO_UDP && sum == 0)
+    sum = 0xFFFF;
+
+  return sum;
 }
 
 /* Calculate the Internet checksum of some given data concatenated with the
@@ -821,6 +876,7 @@ u16 ipv6_pseudoheader_cksum(const struct in6_addr *src,
 
   sum = ip_cksum_add(&hdr, sizeof(hdr), 0);
   sum = ip_cksum_add(hstart, len, sum);
+  sum = ip_cksum_carry(sum);
   /* RFC 2460: "Unlike IPv4, when UDP packets are originated by an IPv6 node,
      the UDP checksum is not optional.  That is, whenever originating a UDP
      packet, an IPv6 node must compute a UDP checksum over the packet and the
@@ -829,7 +885,7 @@ u16 ipv6_pseudoheader_cksum(const struct in6_addr *src,
   if (nxt == IP_PROTO_UDP && sum == 0)
     sum = 0xFFFF;
 
-  return ip_cksum_carry(sum);
+  return sum;
 }
 
 void sethdrinclude(int sd) {
@@ -1096,7 +1152,7 @@ void tcppacketoptinfo(u8 *optp, int len, char *result, int bufsize) {
       q++;
       memcpy(&tmpshort, q, 2);
 
-      Snprintf(p, bufsize, "mss %u", ntohs(tmpshort));
+      Snprintf(p, bufsize, "mss %hu", (unsigned short) ntohs(tmpshort));
       bufsize -= strlen(p);
       p += strlen(p);
 
@@ -1162,8 +1218,8 @@ void tcppacketoptinfo(u8 *optp, int len, char *result, int bufsize) {
       memcpy(&tmpword1, q, 4);
       memcpy(&tmpword2, q + 4, 4);
 
-      Snprintf(p, bufsize, "timestamp %u %u", ntohl(tmpword1),
-               ntohl(tmpword2));
+      Snprintf(p, bufsize, "timestamp %lu %lu", (unsigned long) ntohl(tmpword1),
+               (unsigned long) ntohl(tmpword2));
       bufsize -= strlen(p);
       p += strlen(p);
 
@@ -1184,8 +1240,8 @@ void tcppacketoptinfo(u8 *optp, int len, char *result, int bufsize) {
 
 
 
-/* A trivial function used with qsort to sort the routes by netmask */
-static int nmaskcmp(const void *a, const void *b) {
+/* A trivial function used with qsort to sort the routes by netmask and metric */
+static int routecmp(const void *a, const void *b) {
   struct sys_route *r1 = (struct sys_route *) a;
   struct sys_route *r2 = (struct sys_route *) b;
   if (r1->dest.ss_family < r2->dest.ss_family)
@@ -1197,6 +1253,11 @@ static int nmaskcmp(const void *a, const void *b) {
     return 1;
   else if (r1->netmask_bits > r2->netmask_bits)
     return -1;
+
+  if (r1->metric < r2->metric)
+    return -1;
+  else if (r1->metric > r2->metric)
+    return 1;
 
   /* Compare addresses of equal elements to make the sort stable, as suggested
      by the Glibc manual. */
@@ -1266,7 +1327,11 @@ static int collect_dnet_interfaces(const struct intf_entry *entry, void *arg) {
     /* The first time through the loop we add the primary interface record.
        After that we add the aliases one at a time. */
     if (!primary_done) {
-      if (addr_ntos(&entry->intf_addr, (struct sockaddr *) &tmpss) == -1) {
+      if ( (addr_ntos(&entry->intf_addr, (struct sockaddr *) &tmpss) == -1)
+#ifdef AF_LINK
+              || (tmpss.ss_family == AF_LINK)
+#endif
+         ) {
         dcrn->ifaces[dcrn->numifaces].addr.ss_family = 0;
       } else {
         rc = canonicalize_address(&tmpss, &dcrn->ifaces[dcrn->numifaces].addr);
@@ -1275,7 +1340,11 @@ static int collect_dnet_interfaces(const struct intf_entry *entry, void *arg) {
       dcrn->ifaces[dcrn->numifaces].netmask_bits = entry->intf_addr.addr_bits;
       primary_done = true;
     } else if (num_aliases_done < entry->intf_alias_num) {
-      if (addr_ntos(&entry->intf_alias_addrs[num_aliases_done], (struct sockaddr *) &tmpss) == -1) {
+      if ( (addr_ntos(&entry->intf_alias_addrs[num_aliases_done], (struct sockaddr *) &tmpss) == -1)
+#ifdef AF_LINK
+              || (tmpss.ss_family == AF_LINK)
+#endif
+         ) {
         dcrn->ifaces[dcrn->numifaces].addr.ss_family = 0;
       } else {
         rc = canonicalize_address(&tmpss, &dcrn->ifaces[dcrn->numifaces].addr);
@@ -1292,7 +1361,7 @@ static int collect_dnet_interfaces(const struct intf_entry *entry, void *arg) {
       sizeof(dcrn->ifaces[dcrn->numifaces].devfullname));
 
     /* Interface type */
-    if (entry->intf_type == INTF_TYPE_ETH) {
+    if (entry->intf_type == INTF_TYPE_ETH && (entry->intf_flags & INTF_FLAG_NOARP) == 0) {
       dcrn->ifaces[dcrn->numifaces].device_type = devt_ethernet;
       /* Collect the MAC address since this is ethernet */
       memcpy(dcrn->ifaces[dcrn->numifaces].mac, &entry->intf_link_addr.addr_eth.data, 6);
@@ -1520,10 +1589,22 @@ static struct dnet_collector_route_nfo *sysroutes_dnet_find_interfaces(struct dn
   if( (ifaces=getinterfaces(&numifaces, NULL, 0))==NULL )
     return NULL;
   for (i = 0; i < dcrn->numroutes; i++) {
-    /* First we match up routes whose gateway address directly matches the
-       address of an interface. */
+    if (dcrn->routes[i].device != NULL)
+      continue;
+
+    /* First we match up routes whose gateway or destination address
+       directly matches the address of an interface. */
+    struct sys_route *route = &dcrn->routes[i];
+    struct sockaddr_storage *routeaddr;
+
+    /* First see if the gateway was set */
+    if (sockaddr_equal_zero(&route->gw))
+      routeaddr = &dcrn->routes[i].dest;
+    else
+      routeaddr = &dcrn->routes[i].gw;
+
     for (j = 0; j < numifaces; j++) {
-      if (sockaddr_equal_netmask(&ifaces[j].addr, &dcrn->routes[i].gw, ifaces[j].netmask_bits)) {
+      if (sockaddr_equal_netmask(&ifaces[j].addr, routeaddr, ifaces[j].netmask_bits)) {
         dcrn->routes[i].device = &ifaces[j];
         break;
       }
@@ -1590,10 +1671,11 @@ static int collect_dnet_routes(const struct route_entry *entry, void *arg) {
   }
 
   /* Now for the important business */
-  dcrn->routes[dcrn->numroutes].device = NULL;
   addr_ntos(&entry->route_dst, (struct sockaddr *) &dcrn->routes[dcrn->numroutes].dest);
   dcrn->routes[dcrn->numroutes].netmask_bits = entry->route_dst.addr_bits;
   addr_ntos(&entry->route_gw, (struct sockaddr *) &dcrn->routes[dcrn->numroutes].gw);
+  dcrn->routes[dcrn->numroutes].metric = entry->metric;
+  dcrn->routes[dcrn->numroutes].device = getInterfaceByName(entry->intf_name, dcrn->routes[dcrn->numroutes].dest.ss_family);
   dcrn->numroutes++;
 
   return 0;
@@ -1662,8 +1744,8 @@ struct sys_route *getsysroutes(int *howmany, char *errstr, size_t errstrlen) {
     return NULL;
   }else{
     numroutes = *howmany;
-    /* Ensure that the route array is sorted by netmask */
-    qsort(routes, numroutes, sizeof(routes[0]), nmaskcmp);
+    /* Ensure that the route array is sorted by netmask and metric */
+    qsort(routes, numroutes, sizeof(routes[0]), routecmp);
   }
   return routes;
 }
@@ -2085,7 +2167,7 @@ char *format_ip_options(const u8* ipopt, int ipoptlen) {
     	  }
     	  CHECK(pt+3);
 	  tint = (u32*)&ipopt[pt]; pt+=4;
-	  STRAPP("%u", ntohl(*tint));
+	  STRAPP("%lu", (unsigned long) ntohl(*tint));
 
     	  if(pt == option_end)
   	    STRAPP("%s",(pt-option_sta)==(option_pt-1)?"#":" ");
@@ -2103,7 +2185,7 @@ char *format_ip_options(const u8* ipopt, int ipoptlen) {
     	  CHECK(pt+1);
     	  sh = (u16*) &ipopt[pt]; pt+=2;
     	  option_pt  = ntohs(*sh);
-    	  STRAPP("id=%i", option_pt);
+    	  STRAPP("id=%hu", (unsigned short) option_pt);
     	  if(pt != option_end)
     	    BREAK();
 	}else BREAK();
@@ -2225,24 +2307,24 @@ const char *ippackethdrinfo(const u8 *packet, u32 len, int detail) {
 
     /* Create a string with information relevant to the specified level of detail */
     if (detail == LOW_DETAIL) {
-      Snprintf(ipinfo, sizeof(ipinfo), "ttl=%d id=%d iplen=%d%s %s%s%s",
-        ip->ip_ttl, ntohs(ip->ip_id), ntohs(ip->ip_len), fragnfo,
+      Snprintf(ipinfo, sizeof(ipinfo), "ttl=%d id=%hu iplen=%hu%s %s%s%s",
+        ip->ip_ttl, (unsigned short) ntohs(ip->ip_id), (unsigned short) ntohs(ip->ip_len), fragnfo,
         ip->ip_hl==5?"":"ipopts={",
         ip->ip_hl==5?"":format_ip_options((u8*) ip + sizeof(struct ip), MIN((unsigned)(ip->ip_hl-5)*4,len-sizeof(struct ip))),
         ip->ip_hl==5?"":"}");
     } else if (detail == MEDIUM_DETAIL) {
-      Snprintf(ipinfo, sizeof(ipinfo), "ttl=%d id=%d proto=%d csum=0x%04x iplen=%d%s %s%s%s",
-        ip->ip_ttl, ntohs(ip->ip_id),
+      Snprintf(ipinfo, sizeof(ipinfo), "ttl=%d id=%hu proto=%d csum=0x%04x iplen=%hu%s %s%s%s",
+        ip->ip_ttl, (unsigned short) ntohs(ip->ip_id),
         ip->ip_p, ntohs(ip->ip_sum),
-        ntohs(ip->ip_len), fragnfo,
+        (unsigned short) ntohs(ip->ip_len), fragnfo,
         ip->ip_hl==5?"":"ipopts={",
         ip->ip_hl==5?"":format_ip_options((u8*) ip + sizeof(struct ip), MIN((unsigned)(ip->ip_hl-5)*4,len-sizeof(struct ip))),
         ip->ip_hl==5?"":"}");
     } else if (detail == HIGH_DETAIL) {
-      Snprintf(ipinfo, sizeof(ipinfo), "ver=%d ihl=%d tos=0x%02x iplen=%d id=%d%s%s%s%s foff=%d%s ttl=%d proto=%d csum=0x%04x%s%s%s",
+      Snprintf(ipinfo, sizeof(ipinfo), "ver=%d ihl=%d tos=0x%02x iplen=%hu id=%hu%s%s%s%s foff=%d%s ttl=%d proto=%d csum=0x%04x%s%s%s",
         ip->ip_v, ip->ip_hl,
-        ip->ip_tos, ntohs(ip->ip_len),
-        ntohs(ip->ip_id),
+        ip->ip_tos, (unsigned short) ntohs(ip->ip_len),
+        (unsigned short) ntohs(ip->ip_id),
         (reserved_flag||dont_fragment||more_fragments) ? " flg=" : "",
         (reserved_flag)? "x" : "",
         (dont_fragment)? "D" : "",
@@ -2273,14 +2355,14 @@ const char *ippackethdrinfo(const u8 *packet, u32 len, int detail) {
 
     /* Create a string with information relevant to the specified level of detail */
     if (detail == LOW_DETAIL) {
-      Snprintf(ipinfo, sizeof(ipinfo), "hopl=%d flow=%x payloadlen=%d",
-        ip6->ip6_hlim, ip6_fl, ntohs(ip6->ip6_plen));
+      Snprintf(ipinfo, sizeof(ipinfo), "hopl=%d flow=%x payloadlen=%hu",
+        ip6->ip6_hlim, ip6_fl, (unsigned short) ntohs(ip6->ip6_plen));
     } else if (detail == MEDIUM_DETAIL) {
-      Snprintf(ipinfo, sizeof(ipinfo), "hopl=%d tclass=%d flow=%x payloadlen=%d",
-        ip6->ip6_hlim, ip6_tc, ip6_fl, ntohs(ip6->ip6_plen));
+      Snprintf(ipinfo, sizeof(ipinfo), "hopl=%d tclass=%d flow=%x payloadlen=%hu",
+        ip6->ip6_hlim, ip6_tc, ip6_fl, (unsigned short) ntohs(ip6->ip6_plen));
     } else if (detail==HIGH_DETAIL) {
-      Snprintf(ipinfo, sizeof(ipinfo), "ver=6, tclass=%x flow=%x payloadlen=%d nh=%s hopl=%d ",
-        ip6_tc, ip6_fl, ntohs(ip6->ip6_plen),
+      Snprintf(ipinfo, sizeof(ipinfo), "ver=6, tclass=%x flow=%x payloadlen=%hu nh=%s hopl=%d ",
+        ip6_tc, ip6_fl, (unsigned short) ntohs(ip6->ip6_plen),
         nexthdrtoa(ip6->ip6_nxt, 1), ip6->ip6_hlim);
     }
   }
@@ -2370,24 +2452,24 @@ const char *ippackethdrinfo(const u8 *packet, u32 len, int detail) {
         Snprintf(protoinfo, sizeof(protoinfo), "TCP %s:?? > %s:?? %s %s %s %s",
           srchost, dsthost, tflags, ipinfo, tcpinfo, tcpoptinfo);
       } else if (detail == MEDIUM_DETAIL) {
-        Snprintf(protoinfo, sizeof(protoinfo), "TCP %s:?? > %s:?? %s ack=%ul win=%hu %s IP [%s]",
+        Snprintf(protoinfo, sizeof(protoinfo), "TCP %s:?? > %s:?? %s ack=%lu win=%hu %s IP [%s]",
           srchost, dsthost, tflags,
-          ntohl(tcp->th_ack), ntohs(tcp->th_win),
+          (unsigned long) ntohl(tcp->th_ack), (unsigned short) ntohs(tcp->th_win),
           tcpoptinfo, ipinfo);
       } else if (detail == HIGH_DETAIL) {
         if (datalen >= 12) { /* We have at least bytes 8-20 */
-          Snprintf(protoinfo, sizeof(protoinfo), "TCP [%s:?? > %s:?? %s seq=%lu ack=%lu off=%d res=%d win=%hu csum=0x%04X urp=%d%s%s] IP [%s]",
+          Snprintf(protoinfo, sizeof(protoinfo), "TCP [%s:?? > %s:?? %s seq=%lu ack=%lu off=%d res=%d win=%hu csum=0x%04X urp=%hu%s%s] IP [%s]",
             srchost, dsthost, tflags,
             (unsigned long) ntohl(tcp->th_seq),
             (unsigned long) ntohl(tcp->th_ack),
-            (u8)tcp->th_off, (u8)tcp->th_x2, ntohs(tcp->th_win),
-            ntohs(tcp->th_sum), ntohs(tcp->th_urp),
+            (u8)tcp->th_off, (u8)tcp->th_x2, (unsigned short) ntohs(tcp->th_win),
+            ntohs(tcp->th_sum), (unsigned short) ntohs(tcp->th_urp),
             (tcpoptinfo[0]!='\0') ? " " : "",
             tcpoptinfo, ipinfo);
         } else { /* We only have bytes 8-16 */
-          Snprintf(protoinfo, sizeof(protoinfo), "TCP %s:?? > %s:?? %s ack=%ul win=%hu %s IP [%s]",
+          Snprintf(protoinfo, sizeof(protoinfo), "TCP %s:?? > %s:?? %s ack=%lu win=%hu %s IP [%s]",
             srchost, dsthost, tflags,
-            ntohl(tcp->th_ack), ntohs(tcp->th_win),
+            (unsigned long) ntohl(tcp->th_ack), (unsigned short) ntohs(tcp->th_win),
             tcpoptinfo, ipinfo);
         }
       }
@@ -2398,27 +2480,27 @@ const char *ippackethdrinfo(const u8 *packet, u32 len, int detail) {
     else if (datalen > 0 && datalen < 20) {
       /* We only have the first 32 bits: source and dst port */
       if (datalen >= 4 && datalen < 8) {
-        Snprintf(protoinfo, sizeof(protoinfo), "TCP %s:%d > %s:%d ?? (incomplete) %s",
-          srchost, ntohs(tcp->th_sport), dsthost, ntohs(tcp->th_dport), ipinfo);
+        Snprintf(protoinfo, sizeof(protoinfo), "TCP %s:%hu > %s:%hu ?? (incomplete) %s",
+          srchost, (unsigned short) ntohs(tcp->th_sport), dsthost, (unsigned short) ntohs(tcp->th_dport), ipinfo);
       }
 
       /* We only have the first 64 bits: ports and seq number */
       if (datalen >= 8 && datalen < 12) {
-        Snprintf(tcpinfo, sizeof(tcpinfo), "TCP %s:%d > %s:%d ?? seq=%lu (incomplete) %s",
-          srchost, ntohs(tcp->th_sport), dsthost,
-          ntohs(tcp->th_dport), (unsigned long) ntohl(tcp->th_seq), ipinfo);
+        Snprintf(tcpinfo, sizeof(tcpinfo), "TCP %s:%hu > %s:%hu ?? seq=%lu (incomplete) %s",
+          srchost, (unsigned short) ntohs(tcp->th_sport), dsthost,
+          (unsigned short) ntohs(tcp->th_dport), (unsigned long) ntohl(tcp->th_seq), ipinfo);
       }
 
       /* We only have the first 96 bits: ports, seq and ack number */
       if (datalen >= 12 && datalen < 16) {
         if (detail == LOW_DETAIL) { /* We don't print ACK in low detail */
-          Snprintf(tcpinfo, sizeof(tcpinfo), "TCP %s:%d > %s:%d seq=%lu (incomplete), %s",
-            srchost, ntohs(tcp->th_sport), dsthost,
-            ntohs(tcp->th_dport), (unsigned long) ntohl(tcp->th_seq), ipinfo);
+          Snprintf(tcpinfo, sizeof(tcpinfo), "TCP %s:%hu > %s:%hu seq=%lu (incomplete), %s",
+            srchost, (unsigned short) ntohs(tcp->th_sport), dsthost,
+            (unsigned short) ntohs(tcp->th_dport), (unsigned long) ntohl(tcp->th_seq), ipinfo);
         } else {
-          Snprintf(tcpinfo, sizeof(tcpinfo), "TCP [%s:%d > %s:%d seq=%lu ack=%lu (incomplete)] IP [%s]",
-            srchost, ntohs(tcp->th_sport), dsthost,
-            ntohs(tcp->th_dport), (unsigned long) ntohl(tcp->th_seq),
+          Snprintf(tcpinfo, sizeof(tcpinfo), "TCP [%s:%hu > %s:%hu seq=%lu ack=%lu (incomplete)] IP [%s]",
+            srchost, (unsigned short) ntohs(tcp->th_sport), dsthost,
+            (unsigned short) ntohs(tcp->th_dport), (unsigned long) ntohl(tcp->th_seq),
             (unsigned long) ntohl(tcp->th_ack), ipinfo);
         }
       }
@@ -2452,23 +2534,23 @@ const char *ippackethdrinfo(const u8 *packet, u32 len, int detail) {
 
         /* Create a string with TCP information relevant to the specified level of detail */
         if (detail == LOW_DETAIL) { /* We don't print ACK in low detail */
-          Snprintf(protoinfo, sizeof(protoinfo), "TCP %s:%d > %s:%d %s %s seq=%lu win=%hu (incomplete)",
-            srchost, ntohs(tcp->th_sport), dsthost, ntohs(tcp->th_dport),
+          Snprintf(protoinfo, sizeof(protoinfo), "TCP %s:%hu > %s:%hu %s %s seq=%lu win=%hu (incomplete)",
+            srchost, (unsigned short) ntohs(tcp->th_sport), dsthost, (unsigned short) ntohs(tcp->th_dport),
             tflags, ipinfo, (unsigned long) ntohl(tcp->th_seq),
-            ntohs(tcp->th_win));
+            (unsigned short) ntohs(tcp->th_win));
         } else if (detail == MEDIUM_DETAIL) {
-          Snprintf(protoinfo, sizeof(protoinfo), "TCP [%s:%d > %s:%d %s seq=%lu ack=%lu win=%hu (incomplete)] IP [%s]",
-            srchost, ntohs(tcp->th_sport), dsthost, ntohs(tcp->th_dport),
+          Snprintf(protoinfo, sizeof(protoinfo), "TCP [%s:%hu > %s:%hu %s seq=%lu ack=%lu win=%hu (incomplete)] IP [%s]",
+            srchost, (unsigned short) ntohs(tcp->th_sport), dsthost, (unsigned short) ntohs(tcp->th_dport),
             tflags,  (unsigned long) ntohl(tcp->th_seq),
             (unsigned long) ntohl(tcp->th_ack),
-            ntohs(tcp->th_win), ipinfo);
+            (unsigned short) ntohs(tcp->th_win), ipinfo);
         } else if (detail == HIGH_DETAIL) {
-          Snprintf(protoinfo, sizeof(protoinfo), "TCP [%s:%d > %s:%d %s seq=%lu ack=%lu off=%d res=%d win=%hu (incomplete)] IP [%s]",
-            srchost, ntohs(tcp->th_sport),
-            dsthost, ntohs(tcp->th_dport),
+          Snprintf(protoinfo, sizeof(protoinfo), "TCP [%s:%hu > %s:%hu %s seq=%lu ack=%lu off=%d res=%d win=%hu (incomplete)] IP [%s]",
+            srchost, (unsigned short) ntohs(tcp->th_sport),
+            dsthost, (unsigned short) ntohs(tcp->th_dport),
             tflags, (unsigned long) ntohl(tcp->th_seq),
             (unsigned long) ntohl(tcp->th_ack),
-            (u8)tcp->th_off, (u8)tcp->th_x2, ntohs(tcp->th_win),
+            (u8)tcp->th_off, (u8)tcp->th_x2, (unsigned short) ntohs(tcp->th_win),
             ipinfo);
         }
       }
@@ -2516,25 +2598,25 @@ const char *ippackethdrinfo(const u8 *packet, u32 len, int detail) {
 
       /* Rest of header fields */
       if (detail == LOW_DETAIL) {
-        Snprintf(protoinfo, sizeof(protoinfo), "TCP %s:%d > %s:%d %s %s seq=%lu win=%hu %s",
-          srchost, ntohs(tcp->th_sport), dsthost, ntohs(tcp->th_dport),
+        Snprintf(protoinfo, sizeof(protoinfo), "TCP %s:%hu > %s:%hu %s %s seq=%lu win=%hu %s",
+          srchost, (unsigned short) ntohs(tcp->th_sport), dsthost, (unsigned short) ntohs(tcp->th_dport),
           tflags, ipinfo, (unsigned long) ntohl(tcp->th_seq),
-          ntohs(tcp->th_win), tcpoptinfo);
+          (unsigned short) ntohs(tcp->th_win), tcpoptinfo);
       } else if (detail == MEDIUM_DETAIL) {
-        Snprintf(protoinfo, sizeof(protoinfo), "TCP [%s:%d > %s:%d %s seq=%lu win=%hu csum=0x%04X%s%s] IP [%s]",
-          srchost, ntohs(tcp->th_sport), dsthost, ntohs(tcp->th_dport),
+        Snprintf(protoinfo, sizeof(protoinfo), "TCP [%s:%hu > %s:%hu %s seq=%lu win=%hu csum=0x%04X%s%s] IP [%s]",
+          srchost, (unsigned short) ntohs(tcp->th_sport), dsthost, (unsigned short) ntohs(tcp->th_dport),
           tflags, (unsigned long) ntohl(tcp->th_seq),
-          ntohs(tcp->th_win),  ntohs(tcp->th_sum),
+          (unsigned short) ntohs(tcp->th_win),  (unsigned short) ntohs(tcp->th_sum),
           (tcpoptinfo[0]!='\0') ? " " : "",
           tcpoptinfo, ipinfo);
       } else if (detail == HIGH_DETAIL) {
-        Snprintf(protoinfo, sizeof(protoinfo), "TCP [%s:%d > %s:%d %s seq=%lu ack=%lu off=%d res=%d win=%hu csum=0x%04X urp=%d%s%s] IP [%s]",
-          srchost, ntohs(tcp->th_sport),
-          dsthost, ntohs(tcp->th_dport),
+        Snprintf(protoinfo, sizeof(protoinfo), "TCP [%s:%hu > %s:%hu %s seq=%lu ack=%lu off=%d res=%d win=%hu csum=0x%04X urp=%hu%s%s] IP [%s]",
+          srchost, (unsigned short) ntohs(tcp->th_sport),
+          dsthost, (unsigned short) ntohs(tcp->th_dport),
           tflags, (unsigned long) ntohl(tcp->th_seq),
           (unsigned long) ntohl(tcp->th_ack),
-          (u8)tcp->th_off, (u8)tcp->th_x2, ntohs(tcp->th_win),
-          ntohs(tcp->th_sum), ntohs(tcp->th_urp),
+          (u8)tcp->th_off, (u8)tcp->th_x2, (unsigned short) ntohs(tcp->th_win),
+          ntohs(tcp->th_sum), (unsigned short) ntohs(tcp->th_urp),
           (tcpoptinfo[0]!='\0') ? " " : "",
           tcpoptinfo, ipinfo);
       }
@@ -2554,17 +2636,17 @@ const char *ippackethdrinfo(const u8 *packet, u32 len, int detail) {
     /* TODO: See if we can segfault if we receive a fragmented packet whose IP packet does not say a thing about fragmentation */
 
     if (detail == LOW_DETAIL) {
-      Snprintf(protoinfo, sizeof(protoinfo), "UDP %s:%d > %s:%d %s",
-          srchost, ntohs(udp->uh_sport), dsthost, ntohs(udp->uh_dport),
+      Snprintf(protoinfo, sizeof(protoinfo), "UDP %s:%hu > %s:%hu %s",
+          srchost, (unsigned short) ntohs(udp->uh_sport), dsthost, (unsigned short) ntohs(udp->uh_dport),
           ipinfo);
     } else if (detail == MEDIUM_DETAIL) {
-      Snprintf(protoinfo, sizeof(protoinfo), "UDP [%s:%d > %s:%d csum=0x%04X] IP [%s]",
-        srchost, ntohs(udp->uh_sport), dsthost, ntohs(udp->uh_dport), ntohs(udp->uh_sum),
+      Snprintf(protoinfo, sizeof(protoinfo), "UDP [%s:%hu > %s:%hu csum=0x%04X] IP [%s]",
+        srchost, (unsigned short) ntohs(udp->uh_sport), dsthost, (unsigned short) ntohs(udp->uh_dport), ntohs(udp->uh_sum),
         ipinfo);
     } else if (detail == HIGH_DETAIL) {
-      Snprintf(protoinfo, sizeof(protoinfo), "UDP [%s:%d > %s:%d len=%d csum=0x%04X] IP [%s]",
-        srchost, ntohs(udp->uh_sport), dsthost, ntohs(udp->uh_dport),
-        ntohs(udp->uh_ulen), ntohs(udp->uh_sum),
+      Snprintf(protoinfo, sizeof(protoinfo), "UDP [%s:%hu > %s:%hu len=%hu csum=0x%04X] IP [%s]",
+        srchost, (unsigned short) ntohs(udp->uh_sport), dsthost, (unsigned short) ntohs(udp->uh_dport),
+        (unsigned short) ntohs(udp->uh_ulen), ntohs(udp->uh_sum),
         ipinfo);
     }
 
@@ -2576,17 +2658,17 @@ const char *ippackethdrinfo(const u8 *packet, u32 len, int detail) {
     sctp = (struct sctp_hdr *) data;
 
     if (detail == LOW_DETAIL) {
-      Snprintf(protoinfo, sizeof(protoinfo), "SCTP %s:%d > %s:%d %s",
-        srchost, ntohs(sctp->sh_sport), dsthost, ntohs(sctp->sh_dport),
+      Snprintf(protoinfo, sizeof(protoinfo), "SCTP %s:%hu > %s:%hu %s",
+        srchost, (unsigned short) ntohs(sctp->sh_sport), dsthost, (unsigned short) ntohs(sctp->sh_dport),
         ipinfo);
     } else if (detail == MEDIUM_DETAIL) {
-      Snprintf(protoinfo, sizeof(protoinfo), "SCTP [%s:%d > %s:%d csum=0x%04x] IP [%s]",
-        srchost, ntohs(sctp->sh_sport), dsthost, ntohs(sctp->sh_dport), ntohl(sctp->sh_sum),
+      Snprintf(protoinfo, sizeof(protoinfo), "SCTP [%s:%hu > %s:%hu csum=0x%08x] IP [%s]",
+        srchost, (unsigned short) ntohs(sctp->sh_sport), dsthost, (unsigned short) ntohs(sctp->sh_dport), ntohl(sctp->sh_sum),
         ipinfo);
     } else if (detail == HIGH_DETAIL) {
-      Snprintf(protoinfo, sizeof(protoinfo), "SCTP [%s:%d > %s:%d vtag=%ul csum=0x%08x] IP [%s]",
-        srchost, ntohs(sctp->sh_sport), dsthost, ntohs(sctp->sh_dport),
-        ntohl(sctp->sh_sum), ntohl(sctp->sh_vtag),
+      Snprintf(protoinfo, sizeof(protoinfo), "SCTP [%s:%hu > %s:%hu vtag=%lu csum=0x%08x] IP [%s]",
+        srchost, (unsigned short) ntohs(sctp->sh_sport), dsthost, (unsigned short) ntohs(sctp->sh_dport),
+        (unsigned long) ntohl(sctp->sh_vtag), ntohl(sctp->sh_sum),
         ipinfo);
     }
 
@@ -2667,7 +2749,7 @@ const char *ippackethdrinfo(const u8 *packet, u32 len, int detail) {
       /* Echo Reply **************************/
       case 0:
         strcpy(icmptype, "Echo reply");
-        Snprintf(icmpfields, sizeof(icmpfields), "id=%u seq=%u", ntohs(ping->id), ntohs(ping->seq));
+        Snprintf(icmpfields, sizeof(icmpfields), "id=%hu seq=%hu", (unsigned short) ntohs(ping->id), (unsigned short) ntohs(ping->seq));
         break;
 
         /* Destination Unreachable *************/
@@ -2726,11 +2808,11 @@ const char *ippackethdrinfo(const u8 *packet, u32 len, int detail) {
           case 3:
             if (pktlen + 8 < datalen) {
               if (ip2->ip_p == IPPROTO_UDP && udp)
-                Snprintf(icmptype, sizeof icmptype, "Port %u unreachable", ntohs(udp->uh_dport));
+                Snprintf(icmptype, sizeof icmptype, "Port %hu unreachable", (unsigned short) ntohs(udp->uh_dport));
               else if (ip2->ip_p == IPPROTO_TCP && tcp)
-                Snprintf(icmptype, sizeof icmptype, "Port %u unreachable", ntohs(tcp->th_dport));
+                Snprintf(icmptype, sizeof icmptype, "Port %hu unreachable", (unsigned short) ntohs(tcp->th_dport));
               else if (ip2->ip_p == IPPROTO_SCTP && sctp)
-                Snprintf(icmptype, sizeof icmptype, "Port %u unreachable", ntohs(sctp->sh_dport));
+                Snprintf(icmptype, sizeof icmptype, "Port %hu unreachable", (unsigned short) ntohs(sctp->sh_dport));
               else
                 Snprintf(icmptype, sizeof icmptype, "Port unreachable (unknown protocol %u)", ip2->ip_p);
             }
@@ -2741,7 +2823,7 @@ const char *ippackethdrinfo(const u8 *packet, u32 len, int detail) {
           case 4:
             strcpy(icmptype, "Fragmentation required");
             nextmtu = (u16 *)(&(icmppkt->data[6]));
-            Snprintf(icmpfields, sizeof(icmpfields), "Next-Hop-MTU=%u", ntohs(*nextmtu));
+            Snprintf(icmpfields, sizeof(icmpfields), "Next-Hop-MTU=%hu", (unsigned short) ntohs(*nextmtu));
             break;
 
           case 5:
@@ -2816,7 +2898,7 @@ const char *ippackethdrinfo(const u8 *packet, u32 len, int detail) {
         /* Echo Request ************************/
       case 8:
         strcpy(icmptype, "Echo request");
-        Snprintf(icmpfields, sizeof(icmpfields), "id=%u seq=%u", ntohs(ping->id), ntohs(ping->seq));
+        Snprintf(icmpfields, sizeof(icmpfields), "id=%hu seq=%hu", (unsigned short) ntohs(ping->id), (unsigned short) ntohs(ping->seq));
         break;
 
         /* Router Advertisement ****************/
@@ -2826,10 +2908,10 @@ const char *ippackethdrinfo(const u8 *packet, u32 len, int detail) {
         else
           strcpy(icmptype, "Router advertisement");
         icmprouter = (struct icmp_router *) icmppkt;
-        Snprintf(icmpfields, sizeof(icmpfields), "addrs=%u addrlen=%u lifetime=%d",
+        Snprintf(icmpfields, sizeof(icmpfields), "addrs=%u addrlen=%u lifetime=%hu",
           icmprouter->addrs,
           icmprouter->addrlen,
-          ntohs(icmprouter->lifetime));
+          (unsigned short) ntohs(icmprouter->lifetime));
         break;
 
         /* Router Solicitation *****************/
@@ -2866,23 +2948,23 @@ const char *ippackethdrinfo(const u8 *packet, u32 len, int detail) {
       case 14:
         Snprintf(icmptype, sizeof(icmptype), "Timestamp %s", (icmppkt->type == 13)? "request" : "reply");
         icmptstamp = (struct icmp_tstamp *) icmppkt;
-        Snprintf(icmpfields, sizeof(icmpfields), "id=%u seq=%u orig=%lu recv=%lu trans=%lu",
-          ntohs(icmptstamp->id), ntohs(icmptstamp->seq),
-          (unsigned long)ntohl(icmptstamp->orig),
-          (unsigned long)ntohl(icmptstamp->recv),
-          (unsigned long)ntohl(icmptstamp->trans));
+        Snprintf(icmpfields, sizeof(icmpfields), "id=%hu seq=%hu orig=%lu recv=%lu trans=%lu",
+          (unsigned short) ntohs(icmptstamp->id), (unsigned short) ntohs(icmptstamp->seq),
+          (unsigned long) ntohl(icmptstamp->orig),
+          (unsigned long) ntohl(icmptstamp->recv),
+          (unsigned long) ntohl(icmptstamp->trans));
         break;
 
         /* Information Request *****************/
       case 15:
         strcpy(icmptype, "Information request");
-        Snprintf(icmpfields, sizeof(icmpfields), "id=%u seq=%u", ntohs(ping->id), ntohs(ping->seq));
+        Snprintf(icmpfields, sizeof(icmpfields), "id=%hu seq=%hu", (unsigned short) ntohs(ping->id), (unsigned short) ntohs(ping->seq));
         break;
 
         /* Information Reply *******************/
       case 16:
         strcpy(icmptype, "Information reply");
-        Snprintf(icmpfields, sizeof(icmpfields), "id=%u seq=%u", ntohs(ping->id), ntohs(ping->seq));
+        Snprintf(icmpfields, sizeof(icmpfields), "id=%hu seq=%hu", (unsigned short) ntohs(ping->id), (unsigned short) ntohs(ping->seq));
         break;
 
         /* Netmask Request/Reply ***************/
@@ -2892,7 +2974,7 @@ const char *ippackethdrinfo(const u8 *packet, u32 len, int detail) {
         icmpmask = (struct icmp_amask *) icmppkt;
         inet_ntop(AF_INET, &icmpmask->mask, auxbuff, sizeof(auxbuff));
         Snprintf(icmpfields, sizeof(icmpfields), "id=%u seq=%u mask=%s",
-            ntohs(ping->id), ntohs(ping->seq), auxbuff);
+            (unsigned short) ntohs(ping->id), (unsigned short) ntohs(ping->seq), auxbuff);
         break;
 
         /* Traceroute **************************/
@@ -2936,13 +3018,8 @@ icmpbad:
       else
         strncpy(icmpinfo,"type=?/code=?", sizeof(icmpinfo));
 
-      if (detail == LOW_DETAIL) {
-        Snprintf(protoinfo, sizeof(protoinfo), "ICMP %s > %s %s (%s) %s",
-          srchost, dsthost, icmptype, icmpinfo, ipinfo);
-      } else {
-        Snprintf(protoinfo, sizeof(protoinfo), "ICMP [%s > %s %s (%s) %s] IP [%s]",
-          srchost, dsthost, icmptype, icmpinfo, icmpfields, ipinfo);
-      }
+      Snprintf(protoinfo, sizeof(protoinfo), "ICMP [%s > %s %s (%s) %s] IP [%s]",
+        srchost, dsthost, icmptype, icmpinfo, icmpfields, ipinfo);
     }
 
     /* UNKNOWN PROTOCOL **********************************************************/
@@ -2990,6 +3067,72 @@ static int set_sockaddr(struct sockaddr_storage *ss, int af, void *data) {
   return 0;
 }
 
+/* Add rtattrs to a netlink message specifying a source or destination address.
+   rta_type must be RTA_SRC or RTA_DST. This function adds either 1 or 2
+   rtattrs: it always adds either an RTA_SRC or RTA_DST, depending on rta_type.
+   If ifindex is not 0, it is the index of the interface to use. The function
+   adds either RTA_OIF if rta_type is RTA_DST, and either of ifindex and
+   sin6_scope_id is nonzero. */
+static void add_rtattr_addr(struct nlmsghdr *nlmsg,
+                            struct rtattr **rtattr, unsigned int *len,
+                            unsigned char rta_type,
+                            const struct sockaddr_storage *ss,
+                            int ifindex) {
+  struct rtmsg *rtmsg;
+  const void *addr;
+  size_t addrlen;
+
+  assert(rta_type == RTA_SRC || rta_type == RTA_DST);
+
+  if (rta_type == RTA_SRC) {
+    /* Ignore the interface specification if we are setting an RTA_SRC attribute
+       (it may still get set by the scope_id below). */
+    ifindex = 0;
+  }
+
+  if (ss->ss_family == AF_INET) {
+    addr = &((struct sockaddr_in *) ss)->sin_addr.s_addr;
+    addrlen = IP_ADDR_LEN;
+  } else if (ss->ss_family == AF_INET6) {
+    const struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *) ss;
+
+    addr = sin6->sin6_addr.s6_addr;
+    addrlen = IP6_ADDR_LEN;
+    if (ifindex == 0)
+      ifindex = sin6->sin6_scope_id;
+  } else {
+    netutil_fatal("%s: unknown address family %d", __func__, ss->ss_family);
+  }
+
+  rtmsg = (struct rtmsg *) (nlmsg + 1);
+  if (rta_type == RTA_SRC)
+    rtmsg->rtm_src_len = addrlen * 8;
+  else
+    rtmsg->rtm_dst_len = addrlen * 8;
+
+  /* Add an rtattr for the address. */
+  (*rtattr)->rta_type = rta_type;
+  (*rtattr)->rta_len = RTA_LENGTH(addrlen);
+  assert(RTA_OK(*rtattr, *len));
+  memcpy(RTA_DATA(*rtattr), addr, addrlen);
+  nlmsg->nlmsg_len = NLMSG_ALIGN(nlmsg->nlmsg_len) + (*rtattr)->rta_len;
+  *rtattr = RTA_NEXT(*rtattr, *len);
+
+  /* Specific interface (sin6_scope_id) requested? */
+  if (ifindex > 0) {
+    /* Add an rtattr for the interface. */
+    if (rta_type == RTA_SRC)
+      (*rtattr)->rta_type = RTA_IIF;
+    else
+      (*rtattr)->rta_type = RTA_OIF;
+    (*rtattr)->rta_len = RTA_LENGTH(sizeof(uint32_t));
+    assert(RTA_OK(*rtattr, *len));
+    *(uint32_t *) RTA_DATA(*rtattr) = ifindex;
+    nlmsg->nlmsg_len = NLMSG_ALIGN(nlmsg->nlmsg_len) + (*rtattr)->rta_len;
+    *rtattr = RTA_NEXT(*rtattr, *len);
+  }
+}
+
 /* Does route_dst using the Linux-specific rtnetlink interface. See rtnetlink(3)
    and rtnetlink(7). */
 static int route_dst_netlink(const struct sockaddr_storage *dst,
@@ -3001,26 +3144,10 @@ static int route_dst_netlink(const struct sockaddr_storage *dst,
   struct nlmsghdr *nlmsg;
   struct rtmsg *rtmsg;
   struct rtattr *rtattr;
+  int intf_index;
   unsigned char buf[512];
-  const void *addr;
-  size_t addrlen;
-  int ifindex;
-  int fd, rc, len;
-
-  ifindex = 0;
-
-  if (dst->ss_family == AF_INET) {
-    addr = &((struct sockaddr_in *) dst)->sin_addr.s_addr;
-    addrlen = IP_ADDR_LEN;
-  } else if (dst->ss_family == AF_INET6) {
-    const struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *) dst;
-
-    addr = sin6->sin6_addr.s6_addr;
-    addrlen = IP6_ADDR_LEN;
-    ifindex = sin6->sin6_scope_id;
-  } else {
-    netutil_fatal("%s: unknown address family %d", __func__, dst->ss_family);
-  }
+  unsigned int len;
+  int fd, rc;
 
   fd = socket(AF_NETLINK, SOCK_RAW, NETLINK_ROUTE);
   if (fd == -1)
@@ -3033,6 +3160,16 @@ static int route_dst_netlink(const struct sockaddr_storage *dst,
   if (rc == -1)
     netutil_fatal("%s: cannot bind AF_NETLINK socket: %s", __func__, strerror(errno));
 
+  struct interface_info *ii;
+  ii = NULL;
+  intf_index = 0;
+  if (device != NULL && device[0] != '\0') {
+    ii = getInterfaceByName(device, dst->ss_family);
+    if (ii == NULL)
+      netutil_fatal("Could not find interface %s which was specified by -e", device);
+    intf_index = ii->ifindex;
+  }
+
   memset(buf, 0, sizeof(buf));
 
   nlmsg = (struct nlmsghdr *) buf;
@@ -3044,27 +3181,15 @@ static int route_dst_netlink(const struct sockaddr_storage *dst,
 
   rtmsg = (struct rtmsg *) (nlmsg + 1);
   rtmsg->rtm_family = dst->ss_family;
-  rtmsg->rtm_dst_len = addrlen * 8;
 
   rtattr = RTM_RTA(rtmsg);
-  len = sizeof(buf) - ((unsigned char *) rtattr - buf);
+  len = sizeof(buf) - ((unsigned char *) RTM_RTA(rtmsg) - buf);
 
-  /* Add an rtattr for destination address. */
-  rtattr->rta_type = RTA_DST;
-  rtattr->rta_len = RTA_LENGTH(addrlen);
-  assert(RTA_OK(rtattr, len));
-  memcpy(RTA_DATA(rtattr), addr, addrlen);
-  nlmsg->nlmsg_len = NLMSG_ALIGN(nlmsg->nlmsg_len) + rtattr->rta_len;
-
-  /* Specific interface (sin6_scope_id) requested? */
-  if (ifindex > 0) {
-    /* Add an rtattr for outgoing interface. */
-    rtattr = RTA_NEXT(rtattr, len);
-    rtattr->rta_type = RTA_OIF;
-    rtattr->rta_len = RTA_LENGTH(sizeof(uint32_t));
-    assert(RTA_OK(rtattr, len));
-    *(uint32_t *) RTA_DATA(rtattr) = ifindex;
-    nlmsg->nlmsg_len = NLMSG_ALIGN(nlmsg->nlmsg_len) + rtattr->rta_len;
+  /* Add rtattrs for destination address and interface. */
+  add_rtattr_addr(nlmsg, &rtattr, &len, RTA_DST, dst, intf_index);
+  if (spoofss != NULL) {
+    /* Add rtattrs for source address and interface. */
+    add_rtattr_addr(nlmsg, &rtattr, &len, RTA_SRC, spoofss, intf_index);
   }
 
   iov.iov_base = nlmsg;
@@ -3093,6 +3218,10 @@ static int route_dst_netlink(const struct sockaddr_storage *dst,
     netutil_fatal("%s: wrong size reply in recvmsg", __func__);
   len -= NLMSG_LENGTH(sizeof(*nlmsg));
 
+  /* See rtnetlink(7). Anything matching this route is actually unroutable. */
+  if (rtmsg->rtm_type == RTN_UNREACHABLE)
+    return 0;
+
   /* Default values to be possibly overridden. */
   rnfo->direct_connect = 1;
   rnfo->nexthop.ss_family = AF_UNSPEC;
@@ -3100,19 +3229,11 @@ static int route_dst_netlink(const struct sockaddr_storage *dst,
   if (spoofss != NULL)
     rnfo->srcaddr = *spoofss;
 
-  struct interface_info *ii;
-  ii = NULL;
-  if (device != NULL && device[0] != '\0') {
-    ii = getInterfaceByName(device, rtmsg->rtm_family);
-    if (ii == NULL)
-      netutil_fatal("Could not find interface %s which was specified by -e", device);
-  }
-
   for (rtattr = RTM_RTA(rtmsg); RTA_OK(rtattr, len); rtattr = RTA_NEXT(rtattr, len)) {
     if (rtattr->rta_type == RTA_GATEWAY) {
-      rc = set_sockaddr(&rnfo->nexthop, rtmsg->rtm_family, RTA_DATA(rtattr));
+      rc = set_sockaddr(&rnfo->nexthop, dst->ss_family, RTA_DATA(rtattr));
       assert(rc != -1);
-      /* Don't consider it directly connected if nexthop == dst. */
+      /* Don't consider it directly connected if nexthop != dst. */
       if (!sockaddr_storage_equal(dst, &rnfo->nexthop))
         rnfo->direct_connect = 0;
     } else if (rtattr->rta_type == RTA_OIF && ii == NULL) {
@@ -3123,11 +3244,13 @@ static int route_dst_netlink(const struct sockaddr_storage *dst,
       intf_index = *(int *) RTA_DATA(rtattr);
       p = if_indextoname(intf_index, namebuf);
       assert(p != NULL);
-      ii = getInterfaceByName(namebuf, rtmsg->rtm_family);
+      ii = getInterfaceByName(namebuf, dst->ss_family);
+      if (ii == NULL)
+        ii = getInterfaceByName(namebuf, AF_UNSPEC);
       if (ii == NULL)
         netutil_fatal("%s: can't find interface \"%s\"", __func__, namebuf);
     } else if (rtattr->rta_type == RTA_PREFSRC && rnfo->srcaddr.ss_family == AF_UNSPEC) {
-      rc = set_sockaddr(&rnfo->srcaddr, rtmsg->rtm_family, RTA_DATA(rtattr));
+      rc = set_sockaddr(&rnfo->srcaddr, dst->ss_family, RTA_DATA(rtattr));
       assert(rc != -1);
     }
   }
@@ -3179,7 +3302,7 @@ static int get_srcaddr(const struct sockaddr_storage *dst,
     sin6->sin6_port = htons(DUMMY_PORT);
     dst_dummy_len = sizeof(*sin6);
   } else {
-    return -1;
+    goto bail;
   }
 
   rc = connect(fd, (struct sockaddr *) &dst_dummy, dst_dummy_len);
@@ -3190,7 +3313,7 @@ static int get_srcaddr(const struct sockaddr_storage *dst,
       if (sin6->sin6_scope_id == 0)
         netutil_error("Do you need an IPv6 zone ID suffix (e.g. %%eth0 or %%1)?");
     }
-    return -1;
+    goto bail;
   }
 
   len = sizeof(*src);
@@ -3199,8 +3322,11 @@ static int get_srcaddr(const struct sockaddr_storage *dst,
     netutil_fatal("%s: can't getsockname: %s", __func__, socket_strerror(socket_errno()));
 
   close(fd);
-
   return 0;
+
+bail:
+  close(fd);
+  return -1;
 }
 
 static char *lookup_ifindex(unsigned int index, int af, char *namebuf, size_t len) {
@@ -3277,8 +3403,6 @@ static int route_dst_generic(const struct sockaddr_storage *dst,
 
     if (!sockaddr_equal(dst, &ifaces[i].addr))
       continue;
-    if (iface != NULL && strcmp(ifaces[i].devname, iface->devname) != 0)
-      continue;
 
     if (ifaces[i].device_type == devt_loopback)
       loopback = &ifaces[i];
@@ -3288,12 +3412,18 @@ static int route_dst_generic(const struct sockaddr_storage *dst,
       /* Hmmm ... no localhost -- move on to the routing table. */
       break;
 
+    if (iface != NULL && strcmp(loopback->devname, iface->devname) != 0)
+      continue;
+
+    if (iface == NULL && !loopback->device_up)
+      continue;
+
     rnfo->ii = *loopback;
     rnfo->direct_connect = 1;
     /* But the source address we want to use is the target address. */
     if (!spoofss) {
       if (get_srcaddr(dst, &rnfo->srcaddr) == -1)
-        rnfo->srcaddr = ifaces[i].addr;
+        rnfo->srcaddr = rnfo->ii.addr;
     }
 
     return 1;
@@ -3308,6 +3438,9 @@ static int route_dst_generic(const struct sockaddr_storage *dst,
     if (iface != NULL && strcmp(routes[i].device->devname, iface->devname) != 0)
       continue;
 
+    if (iface == NULL && !routes[i].device->device_up)
+      continue;
+
     rnfo->ii = *routes[i].device;
     /* At this point we don't whether this route is direct or indirect ("G" flag
        in netstat). We guess that a route is direct when the gateway address is
@@ -3318,7 +3451,7 @@ static int route_dst_generic(const struct sockaddr_storage *dst,
       sockaddr_equal(&routes[i].gw, dst));
     if (!spoofss) {
       if (get_srcaddr(dst, &rnfo->srcaddr) == -1)
-        rnfo->srcaddr = ifaces[i].addr;
+        rnfo->srcaddr = rnfo->ii.addr;
     }
     rnfo->nexthop = routes[i].gw;
 
@@ -3332,11 +3465,14 @@ static int route_dst_generic(const struct sockaddr_storage *dst,
     if (iface != NULL && strcmp(ifaces[i].devname, iface->devname) != 0)
       continue;
 
+    if (iface == NULL && !ifaces[i].device_up)
+      continue;
+
     rnfo->ii = ifaces[i];
     rnfo->direct_connect = 1;
     if (!spoofss) {
       if (get_srcaddr(dst, &rnfo->srcaddr) == -1)
-        rnfo->srcaddr = ifaces[i].addr;
+        rnfo->srcaddr = rnfo->ii.addr;
     }
 
     return 1;
@@ -4448,7 +4584,7 @@ size_t read_host_from_file(FILE *fp, char *buf, size_t n)
 /* Return next target host specification from the supplied stream.
  * if parameter "random" is set to true, then the function will
  * return a random, non-reserved, IP address in decimal-dot notation */
-char *grab_next_host_spec(FILE *inputfd, bool random, int argc, char **fakeargv) {
+const char *grab_next_host_spec(FILE *inputfd, bool random, int argc, const char **argv) {
   static char host_spec[1024];
   struct in_addr ip;
   size_t n;
@@ -4459,7 +4595,7 @@ char *grab_next_host_spec(FILE *inputfd, bool random, int argc, char **fakeargv)
     } while (ip_is_reserved(&ip));
     Strncpy(host_spec, inet_ntoa(ip), sizeof(host_spec));
   } else if (!inputfd) {
-    return( (optind < argc)?  fakeargv[optind++] : NULL);
+    return( (optind < argc)?  argv[optind++] : NULL);
   } else { 
     n = read_host_from_file(inputfd, host_spec, sizeof(host_spec));
     if (n == 0)

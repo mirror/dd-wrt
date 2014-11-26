@@ -1,3 +1,9 @@
+local rpc = require "rpc"
+local shortport = require "shortport"
+local stdnse = require "stdnse"
+local table = require "table"
+local string = require "string"
+
 description = [[
 Shows NFS exports, like the <code>showmount -e</code> command.
 ]]
@@ -6,7 +12,7 @@ Shows NFS exports, like the <code>showmount -e</code> command.
 -- @output
 -- PORT    STATE SERVICE
 -- 111/tcp open  rpcbind
--- | nfs-showmount:  
+-- | nfs-showmount:
 -- |   /home/storage/backup 10.46.200.0/255.255.255.0
 -- |_  /home 1.2.3.4/255.255.255.255 10.46.200.0/255.255.255.0
 --
@@ -25,19 +31,53 @@ Shows NFS exports, like the <code>showmount -e</code> command.
 author = "Patrik Karlsson"
 license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
 categories = {"discovery", "safe"}
+dependencies = {"rpc-grind"}
 
-require("stdnse")
-require("shortport")
-require("rpc")
 
-portrule = shortport.port_or_service(111, "rpcbind", {"tcp", "udp"} )
+portrule = shortport.port_or_service(111, {"rpcbind", "mountd"}, {"tcp", "udp"} )
+
+local function get_exports(host, port)
+  local mnt = rpc.Mount:new()
+  local mountver
+  if host.registry.nfs then
+    mountver = host.registry.nfs.mountver
+  else
+    host.registry.nfs = {}
+  end
+  if mountver == nil then
+    local low, high = string.match(port.version.version, "(%d)%-(%d)")
+    if high == nil then
+      mountver = tonumber(port.version.version)
+    else
+      mountver = tonumber(high)
+    end
+  end
+  local mnt_comm = rpc.Comm:new('mountd', mountver)
+  local status, result = mnt_comm:Connect(host, port)
+  if ( not(status) ) then
+    stdnse.print_debug(4, "get_exports: %s", result)
+    return false, result
+  end
+  host.registry.nfs.mountver = mountver
+  host.registry.nfs.mountport = port
+  local status, mounts = mnt:Export(mnt_comm)
+  mnt_comm:Disconnect()
+  if ( not(status) ) then
+    stdnse.print_debug(4, "get_exports: %s", mounts)
+  end
+  return status, mounts
+end
 
 action = function(host, port)
 
-    local status, mounts, proto 
+    local status, mounts, proto
     local result = {}
-    
-    status, mounts = rpc.Helper.ShowMounts( host, port )
+
+    if port.service == "mountd" then
+      status, mounts = get_exports( host, port )
+    else
+      status, mounts = rpc.Helper.ShowMounts( host, port )
+    end
 
     if not status or mounts == nil then
         return stdnse.format_output(false, mounts)
@@ -48,7 +88,7 @@ action = function(host, port)
         entry = entry .. " " .. stdnse.strjoin(" ", v)
         table.insert( result, entry )
     end
-    
+
     return stdnse.format_output( true, result )
-    
+
 end

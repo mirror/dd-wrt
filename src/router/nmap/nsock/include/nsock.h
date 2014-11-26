@@ -4,7 +4,7 @@
  *                                                                         *
  ***********************IMPORTANT NSOCK LICENSE TERMS***********************
  *                                                                         *
- * The nsock parallel socket event library is (C) 1999-2012 Insecure.Com   *
+ * The nsock parallel socket event library is (C) 1999-2013 Insecure.Com   *
  * LLC This library is free software; you may redistribute and/or          *
  * modify it under the terms of the GNU General Public License as          *
  * published by the Free Software Foundation; Version 2.  This guarantees  *
@@ -33,17 +33,18 @@
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
- * to nmap-dev@insecure.org for possible incorporation into the main       *
- * distribution.  By sending these changes to Fyodor or one of the         *
- * Insecure.Org development mailing lists, it is assumed that you are      *
- * offering the Nmap Project (Insecure.Com LLC) the unlimited,             *
- * non-exclusive right to reuse, modify, and relicense the code.  Nmap     *
- * will always be available Open Source, but this is important because the *
- * inability to relicense code has caused devastating problems for other   *
- * Free Software projects (such as KDE and NASM).  We also occasionally    *
- * relicense the code to third parties as discussed above.  If you wish to *
- * specify special license conditions of your contributions, just say so   *
- * when you send them.                                                     *
+ * to the dev@nmap.org mailing list for possible incorporation into the    *
+ * main distribution.  By sending these changes to Fyodor or one of the    *
+ * Insecure.Org development mailing lists, or checking them into the Nmap  *
+ * source code repository, it is understood (unless you specify otherwise) *
+ * that you are offering the Nmap Project (Insecure.Com LLC) the           *
+ * unlimited, non-exclusive right to reuse, modify, and relicense the      *
+ * code.  Nmap will always be available Open Source, but this is important *
+ * because the inability to relicense code has caused devastating problems *
+ * for other Free Software projects (such as KDE and NASM).  We also       *
+ * occasionally relicense the code to third parties as discussed above.    *
+ * If you wish to specify special license conditions of your               *
+ * contributions, just say so when you send them.                          *
  *                                                                         *
  * This program is distributed in the hope that it will be useful, but     *
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
@@ -53,7 +54,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nsock.h 28195 2012-03-01 09:05:02Z henri $ */
+/* $Id: nsock.h 32741 2014-02-20 18:44:12Z dmiller $ */
 
 #ifndef NSOCK_H
 #define NSOCK_H
@@ -74,7 +75,19 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/time.h>
+#else
+#include <winsock2.h>   /* for struct timeval... */
 #endif
+
+#if HAVE_SYS_UN_H
+#include <sys/un.h>
+
+#ifndef SUN_LEN
+#include <string.h>
+#define SUN_LEN(ptr) ((sizeof(*(ptr)) - sizeof((ptr)->sun_path))    \
+                      + strlen((ptr)->sun_path))
+#endif
+#endif  /* HAVE_SYS_UN_H */
 
 #ifdef __cplusplus
 extern "C" {
@@ -118,6 +131,45 @@ typedef void *nsock_ssl_session;
 typedef void *nsock_ssl_ctx;
 typedef void *nsock_ssl;
 
+typedef void *nsock_proxychain;
+
+
+/* Logging-related data structures */
+
+typedef enum {
+  /* --
+   * Actual message priority values */
+  NSOCK_LOG_DBG_ALL,
+  NSOCK_LOG_DBG,
+  NSOCK_LOG_INFO,
+  NSOCK_LOG_ERROR,
+  /* --
+   * No messages are issued by nsock with this value.
+   * Users can therefore set loglevel to NSOCK_LOG_NONE
+   * to disable logging */
+  NSOCK_LOG_NONE
+} nsock_loglevel_t;
+
+struct nsock_log_rec {
+  /* Message emission time */
+  struct timeval time;
+  /* Message log level */
+  nsock_loglevel_t level;
+  /* Source file */
+  const char *file;
+  /* Statement line in nsock source */
+  int line;
+  /* Function that emitted the message */
+  const char *func;
+  /* Actual log message */
+  char *msg;
+};
+
+/* Nsock logging function. This function receives all nsock log records whose
+ * level is greater than or equal to nsp loglevel. The rec structure is
+ * allocated and freed by nsock. */
+typedef void (*nsock_logger_t)(nsock_pool nsp, const struct nsock_log_rec *rec);
+
 
 /* ------------------- PROTOTYPES ------------------- */
 
@@ -136,7 +188,6 @@ enum nsock_loopstatus {
   NSOCK_LOOP_ERROR,
   NSOCK_LOOP_QUIT
 };
-
 
 enum nsock_loopstatus nsock_loop(nsock_pool nsp, int msec_timeout);
 
@@ -169,19 +220,13 @@ void nsp_setud(nsock_pool nsp, void *data);
  * retrieve that data ... */
 void *nsp_getud(nsock_pool nsp);
 
-/* Sets a trace/debug level and stream.  A level of 0 (the default) turns
- * tracing off, while higher numbers are more verbose.  If the stream given is
- * NULL, it defaults to stdout.  This is generally only used for debugging
- * purposes. A level of 1 or 2 is usually sufficient, but 10 will ensure you get
- * everything.  The basetime can be NULL to print trace lines with the current
- * time, otherwise the difference between the current time and basetime will be
- * used (the time program execution starts would be a good candidate) */
-void nsp_settrace(nsock_pool nsp, FILE *file, int level, const struct timeval *basetime);
-
 /* Turns on or off broadcast support on new sockets. Default is off (0, false)
  * set in nsp_new(). Any non-zero (true) value sets SO_BROADCAST on all new
  * sockets (value of optval will be used directly in the setsockopt() call). */
 void nsp_setbroadcast(nsock_pool nsp, int optval);
+
+/* Sets the name of the interface for new sockets to bind to. */
+void nsp_setdevice(nsock_pool nsp, const char *device);
 
 /* Initializes an Nsock pool to create SSL connections. This sets an internal
  * SSL_CTX, which is like a template that sets options for all connections that
@@ -198,8 +243,13 @@ nsock_ssl_ctx nsp_ssl_init_max_speed(nsock_pool ms_pool);
  * strup()'ed by the library. No validity check is performed by this function,
  * beware nsp_new() will fatal() if an invalid/unavailable engine name was
  * supplied before.
- * Pass NULL to reset to default (use most efficient engine available). */
-void nsock_set_default_engine(char *engine);
+ * Pass NULL to reset to default (use most efficient engine available).
+ *
+ * Function returns 0 on success and -1 on error. */
+int nsock_set_default_engine(char *engine);
+
+/* Get a comma-separated list of available engines. */
+const char *nsock_list_engines(void);
 
 /* And here is how you create an nsock_pool.  This allocates, initializes, and
  * returns an nsock_pool event aggregator.  In the case of error, NULL will be
@@ -212,6 +262,29 @@ nsock_pool nsp_new(void *userdata);
  * longer be used.  Any pending events are sent an NSE_STATUS_KILL callback and
  * all outstanding iods are deleted. */
 void nsp_delete(nsock_pool nsp);
+
+/* Logging subsystem: set custom logging function.
+ * (See nsock_logger_t type definition). */
+void nsock_set_log_function(nsock_pool nsp, nsock_logger_t logger);
+
+nsock_loglevel_t nsock_get_loglevel(nsock_pool nsp);
+void nsock_set_loglevel(nsock_pool nsp, nsock_loglevel_t loglevel);
+
+/* Parse a proxy chain description string and build a nsock_proxychain object
+ * accordingly. If the optional nsock_pool parameter is passed in, it gets
+ * associated to the chain object. The alternative is to pass nsp=NULL and call
+ * nsp_set_proxychain() manually. Whatever is done, the chain object has to be
+ * deleted by the caller, using proxychain_delete(). */
+int nsock_proxychain_new(const char *proxystr, nsock_proxychain *chain, nsock_pool nspool);
+
+/* If nsock_proxychain_new() returned success, caller has to free the chain
+ * object using this function. */
+void nsock_proxychain_delete(nsock_proxychain chain);
+
+/* Assign a previously created proxychain object to a nsock pool. After this,
+ * new connections requests will be issued through the chain of proxies (if
+ * possible). */
+int nsp_set_proxychain(nsock_pool nspool, nsock_proxychain chain);
 
 /* nsock_event handles a single event.  Its ID is generally returned when the
  * event is created, and the event itself is included in callbacks
@@ -249,8 +322,9 @@ enum nse_status {
                            nspool is being deleted -- you should free up any
                            resources you have allocated and exit.  Don't you
                            dare make any more async nsock calls!  */
-  NSE_STATUS_EOF        /* We got EOF and NO DATA -- if we got data first,
+  NSE_STATUS_EOF,       /* We got EOF and NO DATA -- if we got data first,
                            SUCCESS is reported (see nse_eof()). */
+  NSE_STATUS_PROXYERROR
 };
 
 enum nse_status nse_status(nsock_event nse);
@@ -306,11 +380,14 @@ nsock_iod nsi_new2(nsock_pool nsockp, int sd, void *userdata);
  * pending on this nsock_iod.  This can be NSOCK_PENDING_NOTIFY (send a KILL
  * notification to each event), NSOCK_PENDING_SILENT (do not send notification
  * to the killed events), or NSOCK_PENDING_ERROR (print an error message and
- * quiit the program) */
-#define NSOCK_PENDING_NOTIFY 1
-#define NSOCK_PENDING_SILENT 2
-#define NSOCK_PENDING_ERROR 4
-void nsi_delete(nsock_iod nsockiod, int pending_response);
+ * quit the program) */
+enum nsock_del_mode {
+  NSOCK_PENDING_NOTIFY,
+  NSOCK_PENDING_SILENT,
+  NSOCK_PENDING_ERROR,
+};
+
+void nsi_delete(nsock_iod nsockiod, enum nsock_del_mode pending_response);
 
 /* Sometimes it is useful to store a pointer to information inside
  * the nsiod so you can retrieve it during a callback. */
@@ -415,6 +492,24 @@ typedef void (*nsock_ev_handler)(nsock_pool, nsock_event, void *);
 /* Initialize an unconnected UDP socket. */
 int nsock_setup_udp(nsock_pool nsp, nsock_iod ms_iod, int af);
 
+#if HAVE_SYS_UN_H
+
+/* Request a UNIX domain sockets connection to the same system (by path to socket).
+ * This function connects to the socket of type SOCK_STREAM.  ss should be a
+ * sockaddr_storage, sockaddr_un as appropriate (just like what you would pass to
+ * connect).  sslen should be the sizeof the structure you are passing in. */
+nsock_event_id nsock_connect_unixsock_stream(nsock_pool nsp, nsock_iod nsiod, nsock_ev_handler handler,
+                                             int timeout_msecs, void *userdata, struct sockaddr *ss,
+                                             size_t sslen);
+
+/* Request a UNIX domain sockets connection to the same system (by path to socket).
+ * This function connects to the socket of type SOCK_DGRAM.  ss should be a
+ * sockaddr_storage, sockaddr_un as appropriate (just like what you would pass to
+ * connect).  sslen should be the sizeof the structure you are passing in. */
+nsock_event_id nsock_connect_unixsock_datagram(nsock_pool nsp, nsock_iod nsiod, nsock_ev_handler handler,
+                                               void *userdata, struct sockaddr *ss, size_t sslen);
+#endif /* HAVE_SYS_UN_H */
+
 /* Request a TCP connection to another system (by IP address).  The in_addr is
  * normal network byte order, but the port number should be given in HOST BYTE
  * ORDER.  ss should be a sockaddr_storage, sockaddr_in6, or sockaddr_in as
@@ -422,6 +517,10 @@ int nsock_setup_udp(nsock_pool nsp, nsock_iod ms_iod, int af);
  * sizeof the structure you are passing in. */
 nsock_event_id nsock_connect_tcp(nsock_pool nsp, nsock_iod nsiod, nsock_ev_handler handler, int timeout_msecs,
                                  void *userdata, struct sockaddr *ss, size_t sslen, unsigned short port);
+
+nsock_event_id nsock_connect_tcp_direct(nsock_pool nsp, nsock_iod nsiod, nsock_ev_handler handler,
+                                        int timeout_msecs, void *userdata, struct sockaddr *ss,
+                                        size_t sslen, unsigned short port);
 
 /* Request an SCTP association to another system (by IP address). The in_addr is
  * normal network byte order, but the port number should be given in HOST BYTE
@@ -468,7 +567,7 @@ nsock_event_id nsock_reconnect_ssl(nsock_pool nsp, nsock_iod nsiod,
 
 /* Read up to nlines lines (terminated with \n, which of course inclues \r\n),
  * or until EOF, or until the timeout, whichever comes first.  Note that
- * NSE_STATUS_SUCCESS will be returned in the case of EOF or tiemout if at least
+ * NSE_STATUS_SUCCESS will be returned in the case of EOF or timeout if at least
  * 1 char has been read.  Also note that you may get more than 'nlines' back --
  * we just stop once "at least" 'nlines' is read */
 nsock_event_id nsock_readlines(nsock_pool nsp, nsock_iod nsiod,
@@ -526,13 +625,16 @@ const struct timeval *nsock_gettimeofday();
  *   promisc: whether to open device in promiscuous mode
  *   bpf_fmt: berkeley filter
  *
- * return value: NULL if everything was okay, or error string if error occurred
- * [sorry Fyodor for breaking the API, but it's just simpler]
+ * return value: 0 if everything was okay, or error code if error occurred.
  * */
-char *nsock_pcap_open(nsock_pool nsp, nsock_iod nsiod, const char *pcap_device, int snaplen, int promisc, const char *bpf_fmt, ...);
+int nsock_pcap_open(nsock_pool nsp, nsock_iod nsiod, const char *pcap_device,
+                    int snaplen, int promisc, const char *bpf_fmt, ...);
 
-/* Requests exactly one packet to be captured.from pcap.See nsock_read() for parameters description. */
-nsock_event_id nsock_pcap_read_packet(nsock_pool nsp, nsock_iod nsiod, nsock_ev_handler handler, int timeout_msecs, void *userdata);
+/* Requests exactly one packet to be captured.from pcap.
+ * See nsock_read() for parameters description. */
+nsock_event_id nsock_pcap_read_packet(nsock_pool nsp, nsock_iod nsiod,
+                                      nsock_ev_handler handler,
+                                      int timeout_msecs, void *userdata);
 
 /* Gets packet data. This should be called after successful receipt of packet
  * to get packet.  If you're not interested in some values, just pass NULL
@@ -544,7 +646,8 @@ nsock_event_id nsock_pcap_read_packet(nsock_pool nsp, nsock_iod nsiod, nsock_ev_
  * As a result you'll get longer times than you should, but it's safer to
  * think that host is a bit further.
  * */
-void nse_readpcap(nsock_event nsee, const unsigned char **l2_data, size_t *l2_len, const unsigned char **l3_data, size_t *l3_len,
+void nse_readpcap(nsock_event nsee, const unsigned char **l2_data,
+                  size_t *l2_len, const unsigned char **l3_data, size_t *l3_len,
                   size_t *packet_len, struct timeval *ts);
 
 /* Well. Just pcap-style datalink. Like DLT_EN10MB or DLT_SLIP. Check in pcap(3) manpage. */

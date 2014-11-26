@@ -39,17 +39,16 @@
 
 /* From svn_auth.c. */
 svn_error_t *
-nmap_update_svn_cmdline_create_auth_baton(svn_auth_baton_t **ab,
-                              svn_boolean_t non_interactive,
-                              const char *auth_username,
-                              const char *auth_password,
-                              const char *config_dir,
-                              svn_boolean_t no_auth_cache,
-                              svn_boolean_t trust_server_cert,
-                              svn_config_t *cfg,
-                              svn_cancel_func_t cancel_func,
-                              void *cancel_baton,
-                              apr_pool_t *pool);
+nmap_update_svn_cmdline_setup_auth_baton(svn_auth_baton_t **ab,
+                             svn_boolean_t non_interactive,
+                             const char *auth_username,
+                             const char *auth_password,
+                             const char *config_dir,
+                             svn_boolean_t no_auth_cache,
+                             svn_config_t *cfg,
+                             svn_cancel_func_t cancel_func,
+                             void *cancel_baton,
+                             apr_pool_t *pool);
 
 #include "default_channel.h"
 
@@ -693,7 +692,7 @@ Updates system-independent Nmap files. By default the new files are installed to
   -r, --repo REPO      use REPO as SVN repository and path (default %s).\n\
   -v, --verbose        be more verbose.\n\
   --username USERNAME  use this username.\n\
-  --password PASSWORE  use this password.\n\
+  --password PASSWORD  use this password.\n\
 ", program_name, install_dir, install_dir, DEFAULT_SVN_REPO);
 	free(install_dir);
 }

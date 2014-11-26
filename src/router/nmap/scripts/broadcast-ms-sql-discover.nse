@@ -1,10 +1,16 @@
+local mssql = require "mssql"
+local stdnse = require "stdnse"
+local string = require "string"
+local table = require "table"
+local target = require "target"
+
 -- -*- mode: lua -*-
 -- vim: set filetype=lua :
 
 description = [[
 Discovers Microsoft SQL servers in the same broadcast domain.
 
-SQL Server credentials required: No (will not benefit from 
+SQL Server credentials required: No (will not benefit from
 <code>mssql.username</code> & <code>mssql.password</code>).
 
 The script attempts to discover SQL Server instances in the same broadcast
@@ -17,7 +23,7 @@ broadcast version will only use the SQL Server Browser service discovery method.
 ]]
 
 ---
--- @usage 
+-- @usage
 -- nmap --script broadcast-ms-sql-discover
 -- nmap --script broadcast-ms-sql-discover,ms-sql-info --script-args=newtargets
 --
@@ -47,65 +53,62 @@ author = "Patrik Karlsson"
 license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
 categories = {"broadcast", "safe"}
 
-require 'mssql'
-require 'target'
-require 'stdnse'
 
 prerule = function() return true end
 
 
 --- Adds a label and value to an output table. If the value is a boolean, it is
---  converted to Yes/No; if the value is nil, nothing is added to the table. 
+--  converted to Yes/No; if the value is nil, nothing is added to the table.
 local function add_to_output_table( outputTable, outputLabel, outputData )
 
-	if outputData ~= nil then
-		if outputData == true then
-			outputData = "Yes"
-		elseif outputData == false then
-			outputData = "No"
-		end
-		
-		table.insert(outputTable, string.format( "%s: %s", outputLabel, outputData ) )
-	end
+  if outputData ~= nil then
+    if outputData == true then
+      outputData = "Yes"
+    elseif outputData == false then
+      outputData = "No"
+    end
+
+    table.insert(outputTable, string.format( "%s: %s", outputLabel, outputData ) )
+  end
 
 end
 
 --- Returns formatted output for the given instance
 local function create_instance_output_table( instance )
 
-	local instanceOutput = {}
+  local instanceOutput = {}
 
-	instanceOutput["name"] = string.format( "[%s]", instance:GetName() )
-	add_to_output_table( instanceOutput, "Name", instance.instanceName )
-	if instance.version then add_to_output_table( instanceOutput, "Product", instance.version.productName ) end
-	if instance.port then add_to_output_table( instanceOutput, "TCP port", instance.port.number ) end
-	add_to_output_table( instanceOutput, "Named pipe", instance.pipeName )
+  instanceOutput["name"] = string.format( "[%s]", instance:GetName() )
+  add_to_output_table( instanceOutput, "Name", instance.instanceName )
+  if instance.version then add_to_output_table( instanceOutput, "Product", instance.version.productName ) end
+  if instance.port then add_to_output_table( instanceOutput, "TCP port", instance.port.number ) end
+  add_to_output_table( instanceOutput, "Named pipe", instance.pipeName )
 
-	return instanceOutput
+  return instanceOutput
 
 end
 
 action = function()
-	
-	local host = { ip = "255.255.255.255" }
-	local port = { number = 1434, protocol = "udp" }
-	
-	local status, result = mssql.Helper.DiscoverBySsrp(host, port, true)
-	if ( not(status) ) then return end
 
-	local scriptOutput = {}
-	for ip, instanceList in pairs(result) do
-		local serverOutput, serverName = {}, nil
-		target.add( ip )
-		for _, instance in ipairs( instanceList ) do
-			serverName = serverName or instance.serverName
-			local instanceOutput = create_instance_output_table( instance )
-			table.insert(serverOutput, instanceOutput)
-		end
-		serverOutput.name = string.format( "%s (%s)", ip, serverName )
-		table.insert( scriptOutput, serverOutput )
-	end
-	
-	return stdnse.format_output( true, scriptOutput )
-	
+  local host = { ip = "255.255.255.255" }
+  local port = { number = 1434, protocol = "udp" }
+
+  local status, result = mssql.Helper.DiscoverBySsrp(host, port, true)
+  if ( not(status) ) then return end
+
+  local scriptOutput = {}
+  for ip, instanceList in pairs(result) do
+    local serverOutput, serverName = {}, nil
+    target.add( ip )
+    for _, instance in ipairs( instanceList ) do
+      serverName = serverName or instance.serverName
+      local instanceOutput = create_instance_output_table( instance )
+      table.insert(serverOutput, instanceOutput)
+    end
+    serverOutput.name = string.format( "%s (%s)", ip, serverName )
+    table.insert( scriptOutput, serverOutput )
+  end
+
+  return stdnse.format_output( true, scriptOutput )
+
 end

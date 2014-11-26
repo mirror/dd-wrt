@@ -1,4 +1,10 @@
-description = [[ 
+local citrixxml = require "citrixxml"
+local nmap = require "nmap"
+local shortport = require "shortport"
+local stdnse = require "stdnse"
+local table = require "table"
+
+description = [[
 Extracts a list of applications, ACLs, and settings from the Citrix XML
 service.
 
@@ -12,14 +18,14 @@ The script returns more output with higher verbosity.
 -- @output
 -- PORT     STATE SERVICE
 -- 8080/tcp open  http-proxy
--- | citrix-enum-apps-xml:  
+-- | citrix-enum-apps-xml:
 -- |   Application: Notepad; Users: Anonymous
 -- |   Application: iexplorer; Users: Anonymous
 -- |_  Application: registry editor; Users: WIN-B4RL0SUCJ29\Joe; Groups: WIN-B4RL0SUCJ29\HR, *CITRIX_BUILTIN*\*CITRIX_ADMINISTRATORS*
 --
 -- PORT     STATE SERVICE
 -- 8080/tcp open  http-proxy
--- | citrix-enum-apps-xml:  
+-- | citrix-enum-apps-xml:
 -- |   Application: Notepad
 -- |     Disabled: false
 -- |     Desktop: false
@@ -60,9 +66,6 @@ author = "Patrik Karlsson"
 license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
 categories = {"discovery", "safe"}
 
-require "comm"
-require 'shortport'
-require 'citrixxml'
 
 portrule = shortport.portnumber({8080,80,443}, "tcp")
 
@@ -73,75 +76,75 @@ portrule = shortport.portnumber({8080,80,443}, "tcp")
 -- @return table suitable for stdnse.format_output
 function format_output(appdata, mode)
 
-		local result = {}
-		local setting_titles = { {appisdisabled="Disabled"}, {appisdesktop="Desktop"}, {AppOnDesktop="On Desktop"}, 
-									{Encryption="Encryption"}, {AppInStartmenu="In start menu"},
-									{PublisherName="Publisher"}, {SSLEnabled="SSL"}, {RemoteAccessEnabled="Remote Access"} }
+  local result = {}
+  local setting_titles = { {appisdisabled="Disabled"}, {appisdesktop="Desktop"}, {AppOnDesktop="On Desktop"},
+    {Encryption="Encryption"}, {AppInStartmenu="In start menu"},
+    {PublisherName="Publisher"}, {SSLEnabled="SSL"}, {RemoteAccessEnabled="Remote Access"} }
 
 
-		if mode == "short" then
-			for app_name, AppData in ipairs(appdata) do
-				local line = "Application: " .. AppData.FName
+  if mode == "short" then
+    for app_name, AppData in ipairs(appdata) do
+      local line = "Application: " .. AppData.FName
 
-				if AppData.AccessList then
+      if AppData.AccessList then
 
-					if AppData.AccessList.User then			
-						line = line .. "; Users: " ..  stdnse.strjoin(", ", AppData.AccessList.User)
-					end
+        if AppData.AccessList.User then
+          line = line .. "; Users: " ..  stdnse.strjoin(", ", AppData.AccessList.User)
+        end
 
-					if AppData.AccessList.Group then
-						line = line .. "; Groups: " .. stdnse.strjoin(", ", AppData.AccessList.Group)
-					end
+        if AppData.AccessList.Group then
+          line = line .. "; Groups: " .. stdnse.strjoin(", ", AppData.AccessList.Group)
+        end
 
-					table.insert(result, line)
-				end
-			end
+        table.insert(result, line)
+      end
+    end
 
-		else
+  else
 
-			for app_name, AppData in ipairs(appdata) do
-				local result_part = {}
-				
-				result_part.name = "Application: " .. AppData.FName
-				
-				local settings = AppData.Settings
+    for app_name, AppData in ipairs(appdata) do
+      local result_part = {}
 
-				for _, setting_pairs in ipairs(setting_titles) do
-					for setting_key, setting_title in pairs(setting_pairs) do
-						local setting_value = settings[setting_key] and settings[setting_key] or ""
-						table.insert(result_part, setting_title .. ": " .. setting_value )
-					end
-				end
+      result_part.name = "Application: " .. AppData.FName
+
+      local settings = AppData.Settings
+
+      for _, setting_pairs in ipairs(setting_titles) do
+        for setting_key, setting_title in pairs(setting_pairs) do
+          local setting_value = settings[setting_key] and settings[setting_key] or ""
+          table.insert(result_part, setting_title .. ": " .. setting_value )
+        end
+      end
 
 
-				if AppData.AccessList then
-					if AppData.AccessList.User then
-						table.insert(result_part, "Users: " .. stdnse.strjoin(", ", AppData.AccessList.User) )
-					end	
-			
-					if AppData.AccessList.Group then 
-						table.insert(result_part, "Groups: " .. stdnse.strjoin(", ", AppData.AccessList.Group) )
-					end
-				
-					table.insert(result, result_part)
-				end
-				
-			end
+      if AppData.AccessList then
+        if AppData.AccessList.User then
+          table.insert(result_part, "Users: " .. stdnse.strjoin(", ", AppData.AccessList.User) )
+        end
 
-		end
+        if AppData.AccessList.Group then
+          table.insert(result_part, "Groups: " .. stdnse.strjoin(", ", AppData.AccessList.Group) )
+        end
 
-		return result
+        table.insert(result, result_part)
+      end
 
-	end
-	
-	
-action = function(host,port)		
+    end
 
-		local response = citrixxml.request_appdata(host.ip, port.number, {ServerAddress="",attr={addresstype="dot"},DesiredDetails={"all","access-list"} }) 
-		local appdata = citrixxml.parse_appdata_response(response)
-	
-		local response = format_output(appdata, (nmap.verbosity() > 1 and "long" or "short"))
-	
-		return stdnse.format_output(true, response)
+  end
+
+  return result
+
+end
+
+
+action = function(host,port)
+
+  local response = citrixxml.request_appdata(host.ip, port.number, {ServerAddress="",attr={addresstype="dot"},DesiredDetails={"all","access-list"} })
+  local appdata = citrixxml.parse_appdata_response(response)
+
+  local response = format_output(appdata, (nmap.verbosity() > 1 and "long" or "short"))
+
+  return stdnse.format_output(true, response)
 
 end

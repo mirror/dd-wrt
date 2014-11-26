@@ -3,62 +3,94 @@
 
 # ***********************IMPORTANT NMAP LICENSE TERMS************************
 # *                                                                         *
-# * The Nmap Security Scanner is (C) 1996-2012 Insecure.Com LLC. Nmap is    *
+# * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
 # * also a registered trademark of Insecure.Com LLC.  This program is free  *
 # * software; you may redistribute and/or modify it under the terms of the  *
 # * GNU General Public License as published by the Free Software            *
-# * Foundation; Version 2 with the clarifications and exceptions described  *
-# * below.  This guarantees your right to use, modify, and redistribute     *
-# * this software under certain conditions.  If you wish to embed Nmap      *
-# * technology into proprietary software, we sell alternative licenses      *
-# * (contact sales@insecure.com).  Dozens of software vendors already       *
-# * license Nmap technology such as host discovery, port scanning, OS       *
-# * detection, version detection, and the Nmap Scripting Engine.            *
+# * Foundation; Version 2 ("GPL"), BUT ONLY WITH ALL OF THE CLARIFICATIONS  *
+# * AND EXCEPTIONS DESCRIBED HEREIN.  This guarantees your right to use,    *
+# * modify, and redistribute this software under certain conditions.  If    *
+# * you wish to embed Nmap technology into proprietary software, we sell    *
+# * alternative licenses (contact sales@nmap.com).  Dozens of software      *
+# * vendors already license Nmap technology such as host discovery, port    *
+# * scanning, OS detection, version detection, and the Nmap Scripting       *
+# * Engine.                                                                 *
 # *                                                                         *
-# * Note that the GPL places important restrictions on "derived works", yet *
-# * it does not provide a detailed definition of that term.  To avoid       *
+# * Note that the GPL places important restrictions on "derivative works",  *
+# * yet it does not provide a detailed definition of that term.  To avoid   *
 # * misunderstandings, we interpret that term as broadly as copyright law   *
 # * allows.  For example, we consider an application to constitute a        *
-# * "derivative work" for the purpose of this license if it does any of the *
-# * following:                                                              *
-# * o Integrates source code from Nmap                                      *
-# * o Reads or includes Nmap copyrighted data files, such as                *
-# *   nmap-os-db or nmap-service-probes.                                    *
-# * o Executes Nmap and parses the results (as opposed to typical shell or  *
-# *   execution-menu apps, which simply display raw Nmap output and so are  *
-# *   not derivative works.)                                                *
-# * o Integrates/includes/aggregates Nmap into a proprietary executable     *
-# *   installer, such as those produced by InstallShield.                   *
-# * o Links to a library or executes a program that does any of the above   *
+# * derivative work for the purpose of this license if it does any of the   *
+# * following with any software or content covered by this license          *
+# * ("Covered Software"):                                                   *
 # *                                                                         *
-# * The term "Nmap" should be taken to also include any portions or derived *
-# * works of Nmap, as well as other software we distribute under this       *
-# * license such as Zenmap, Ncat, and Nping.  This list is not exclusive,   *
-# * but is meant to clarify our interpretation of derived works with some   *
-# * common examples.  Our interpretation applies only to Nmap--we don't     *
-# * speak for other people's GPL works.                                     *
+# * o Integrates source code from Covered Software.                         *
 # *                                                                         *
-# * If you have any questions about the GPL licensing restrictions on using *
-# * Nmap in non-GPL works, we would be happy to help.  As mentioned above,  *
-# * we also offer alternative license to integrate Nmap into proprietary    *
-# * applications and appliances.  These contracts have been sold to dozens  *
-# * of software vendors, and generally include a perpetual license as well  *
-# * as providing for priority support and updates.  They also fund the      *
-# * continued development of Nmap.  Please email sales@insecure.com for     *
-# * further information.                                                    *
+# * o Reads or includes copyrighted data files, such as Nmap's nmap-os-db   *
+# * or nmap-service-probes.                                                 *
 # *                                                                         *
-# * As a special exception to the GPL terms, Insecure.Com LLC grants        *
+# * o Is designed specifically to execute Covered Software and parse the    *
+# * results (as opposed to typical shell or execution-menu apps, which will *
+# * execute anything you tell them to).                                     *
+# *                                                                         *
+# * o Includes Covered Software in a proprietary executable installer.  The *
+# * installers produced by InstallShield are an example of this.  Including *
+# * Nmap with other software in compressed or archival form does not        *
+# * trigger this provision, provided appropriate open source decompression  *
+# * or de-archiving software is widely available for no charge.  For the    *
+# * purposes of this license, an installer is considered to include Covered *
+# * Software even if it actually retrieves a copy of Covered Software from  *
+# * another source during runtime (such as by downloading it from the       *
+# * Internet).                                                              *
+# *                                                                         *
+# * o Links (statically or dynamically) to a library which does any of the  *
+# * above.                                                                  *
+# *                                                                         *
+# * o Executes a helper program, module, or script to do any of the above.  *
+# *                                                                         *
+# * This list is not exclusive, but is meant to clarify our interpretation  *
+# * of derived works with some common examples.  Other people may interpret *
+# * the plain GPL differently, so we consider this a special exception to   *
+# * the GPL that we apply to Covered Software.  Works which meet any of     *
+# * these conditions must conform to all of the terms of this license,      *
+# * particularly including the GPL Section 3 requirements of providing      *
+# * source code and allowing free redistribution of the work as a whole.    *
+# *                                                                         *
+# * As another special exception to the GPL terms, Insecure.Com LLC grants  *
 # * permission to link the code of this program with any version of the     *
 # * OpenSSL library which is distributed under a license identical to that  *
 # * listed in the included docs/licenses/OpenSSL.txt file, and distribute   *
-# * linked combinations including the two. You must obey the GNU GPL in all *
-# * respects for all of the code used other than OpenSSL.  If you modify    *
-# * this file, you may extend this exception to your version of the file,   *
-# * but you are not obligated to do so.                                     *
+# * linked combinations including the two.                                  *
 # *                                                                         *
-# * If you received these files with a written license agreement or         *
-# * contract stating terms other than the terms above, then that            *
-# * alternative license agreement takes precedence over these comments.     *
+# * Any redistribution of Covered Software, including any derived works,    *
+# * must obey and carry forward all of the terms of this license, including *
+# * obeying all GPL rules and restrictions.  For example, source code of    *
+# * the whole work must be provided and free redistribution must be         *
+# * allowed.  All GPL references to "this License", are to be treated as    *
+# * including the terms and conditions of this license text as well.        *
+# *                                                                         *
+# * Because this license imposes special exceptions to the GPL, Covered     *
+# * Work may not be combined (even as part of a larger work) with plain GPL *
+# * software.  The terms, conditions, and exceptions of this license must   *
+# * be included as well.  This license is incompatible with some other open *
+# * source licenses as well.  In some cases we can relicense portions of    *
+# * Nmap or grant special permissions to use it in other open source        *
+# * software.  Please contact fyodor@nmap.org with any such requests.       *
+# * Similarly, we don't incorporate incompatible open source software into  *
+# * Covered Software without special permission from the copyright holders. *
+# *                                                                         *
+# * If you have any questions about the licensing restrictions on using     *
+# * Nmap in other works, are happy to help.  As mentioned above, we also    *
+# * offer alternative license to integrate Nmap into proprietary            *
+# * applications and appliances.  These contracts have been sold to dozens  *
+# * of software vendors, and generally include a perpetual license as well  *
+# * as providing for priority support and updates.  They also fund the      *
+# * continued development of Nmap.  Please email sales@nmap.com for further *
+# * information.                                                            *
+# *                                                                         *
+# * If you have received a written license agreement or contract for        *
+# * Covered Software stating terms other than these, you may choose to use  *
+# * and redistribute Covered Software under those terms instead of these.   *
 # *                                                                         *
 # * Source is provided to this software because we believe users have a     *
 # * right to know exactly what a program is going to do before they run it. *
@@ -67,8 +99,8 @@
 # *                                                                         *
 # * Source code also allows you to port Nmap to new platforms, fix bugs,    *
 # * and add new features.  You are highly encouraged to send your changes   *
-# * to nmap-dev@insecure.org for possible incorporation into the main       *
-# * distribution.  By sending these changes to Fyodor or one of the         *
+# * to the dev@nmap.org mailing list for possible incorporation into the    *
+# * main distribution.  By sending these changes to Fyodor or one of the    *
 # * Insecure.Org development mailing lists, or checking them into the Nmap  *
 # * source code repository, it is understood (unless you specify otherwise) *
 # * that you are offering the Nmap Project (Insecure.Com LLC) the           *
@@ -82,10 +114,9 @@
 # *                                                                         *
 # * This program is distributed in the hope that it will be useful, but     *
 # * WITHOUT ANY WARRANTY; without even the implied warranty of              *
-# * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU       *
-# * General Public License v2.0 for more details at                         *
-# * http://www.gnu.org/licenses/gpl-2.0.html , or in the COPYING file       *
-# * included with Nmap.                                                     *
+# * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
+# * license file for more details (it's in a COPYING file included with     *
+# * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
 # *                                                                         *
 # ***************************************************************************/
 
@@ -95,10 +126,16 @@ import pango
 import os
 import os.path
 import sys
+
+# Prevent loading PyXML
+import xml
+xml.__path__ = [x for x in xml.__path__ if "_xmlplus" not in x]
+
 import xml.sax
 
 from zenmapGUI.higwidgets.higdialogs import HIGAlertDialog, HIGDialog
-from zenmapGUI.higwidgets.higboxes import HIGVBox, HIGHBox, hig_box_space_holder
+from zenmapGUI.higwidgets.higboxes import HIGVBox, HIGHBox, \
+        hig_box_space_holder
 from zenmapGUI.higwidgets.higlabels import HIGSectionLabel
 from zenmapGUI.higwidgets.higtables import HIGTable
 from zenmapGUI.higwidgets.higbuttons import HIGButton
@@ -112,6 +149,7 @@ from zenmapGUI.FileChoosers import ResultsFileSingleChooserDialog
 
 # In milliseconds.
 NDIFF_CHECK_TIMEOUT = 200
+
 
 class ScanChooser(HIGVBox):
     """This class allows the selection of scan results from the list of open
@@ -162,7 +200,7 @@ class ScanChooser(HIGVBox):
     def get_buffer(self):
         return self.txt_scan_result.get_buffer()
 
-    def show_scan (self, widget):
+    def show_scan(self, widget):
         nmap_output = self.get_nmap_output()
         if nmap_output is not None:
             self.txt_scan_result.get_buffer().set_text(nmap_output)
@@ -170,14 +208,15 @@ class ScanChooser(HIGVBox):
     def normalize_output(self, output):
         return "\n".join(output.split("\\n"))
 
-    def _pack_hbox (self):
+    def _pack_hbox(self):
         self.hbox._pack_noexpand_nofill(hig_box_space_holder())
         self.hbox._pack_expand_fill(self.table)
 
-    def _attaching_widgets (self):
-        self.table.attach(self.combo_scan, 0,1,0,1, yoptions=0)
-        self.table.attach(self.btn_open_scan, 1,2,0,1, yoptions=0, xoptions=0)
-        self.table.attach(self.exp_scan, 0,2,1,2)
+    def _attaching_widgets(self):
+        self.table.attach(self.combo_scan, 0, 1, 0, 1, yoptions=0)
+        self.table.attach(
+                self.btn_open_scan, 1, 2, 0, 1, yoptions=0, xoptions=0)
+        self.table.attach(self.exp_scan, 0, 2, 1, 2)
 
     def _set_scrolled(self):
         self.scrolled.set_border_width(5)
@@ -192,19 +231,20 @@ class ScanChooser(HIGVBox):
         # Setting scrolled window
         self.scrolled.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
 
-    def _set_text_view (self):
+    def _set_text_view(self):
         self.txg_table = self.txt_scan_result.get_buffer().get_tag_table()
         self.txg_table.add(self.txg_tag)
         self.txg_tag.set_property("family", "Monospace")
 
         self.txt_scan_result.set_wrap_mode(gtk.WRAP_WORD)
         self.txt_scan_result.set_editable(False)
-        self.txt_scan_result.get_buffer().connect("changed", self._text_changed_cb)
+        self.txt_scan_result.get_buffer().connect(
+                "changed", self._text_changed_cb)
 
-    def _set_open_button (self):
+    def _set_open_button(self):
         self.btn_open_scan.connect('clicked', self.open_file)
 
-    def open_file (self, widget):
+    def open_file(self, widget):
         file_chooser = ResultsFileSingleChooserDialog(_("Select Scan Result"))
 
         response = file_chooser.run()
@@ -217,15 +257,19 @@ class ScanChooser(HIGVBox):
             except xml.sax.SAXParseException, e:
                 alert = HIGAlertDialog(
                     message_format='<b>%s</b>' % _('Error parsing file'),
-                    secondary_text=_("The file is not an Nmap XML output file. \
-The parsing error that occurred was\n%s") % str(e))
+                    secondary_text=_(
+                        "The file is not an Nmap XML output file. "
+                        "The parsing error that occurred was\n%s") % str(e))
                 alert.run()
                 alert.destroy()
                 return False
             except Exception, e:
                 alert = HIGAlertDialog(
-                        message_format='<b>%s</b>' % _('Cannot open selected file'),
-                        secondary_text=_("This error occurred while trying to open the file:\n%s") % str(e))
+                        message_format='<b>%s</b>' % _(
+                            'Cannot open selected file'),
+                        secondary_text=_("""\
+                            This error occurred while trying to open the file:
+                            %s""") % str(e))
                 alert.run()
                 alert.destroy()
                 return False
@@ -245,26 +289,21 @@ The parsing error that occurred was\n%s") % str(e))
         self.list_scan.append([new_scan_name])
         self.scan_dict[new_scan_name] = parser
 
-    def _text_changed_cb (self, widget):
-        buff = self.txt_scan_result.get_buffer ()
-        buff.apply_tag(self.txg_tag, buff.get_start_iter(), buff.get_end_iter())
+    def _text_changed_cb(self, widget):
+        buff = self.txt_scan_result.get_buffer()
+        buff.apply_tag(
+                self.txg_tag, buff.get_start_iter(), buff.get_end_iter())
 
     def get_parsed_scan(self):
         """Return the currently selected scan's parsed output as an NmapParser
         object, or None if no valid scan is selected."""
         selected_scan = self.combo_scan.child.get_text()
-        if selected_scan in self.scan_dict:
-            return self.scan_dict[selected_scan]
-        # What's typed in the entry doesn't match a registered scan.
-        return None
+        return self.scan_dict.get(selected_scan)
 
     def get_nmap_output(self):
         """Return the currently selected scan's output as a string, or None if
         no valid scan is selected."""
-        parsed = self.parsed_scan
-        if parsed is not None:
-            return parsed.nmap_output
-        return None
+        return self.parsed_scan.get_nmap_output()
 
     nmap_output = property(get_nmap_output)
     parsed_scan = property(get_parsed_scan)
@@ -275,9 +314,10 @@ class DiffWindow(gtk.Window):
         gtk.Window.__init__(self)
         self.set_title(_("Compare Results"))
         self.ndiff_process = None
-        # We allow the user to start a new diff before the old one has finished.
-        # We have to keep references to old processes until they finish to avoid
-        # problems when tearing down the Python interpreter at program exit.
+        # We allow the user to start a new diff before the old one has
+        # finished.  We have to keep references to old processes until they
+        # finish to avoid problems when tearing down the Python interpreter at
+        # program exit.
         self.old_processes = []
         self.timer_id = None
 
@@ -327,12 +367,13 @@ class DiffWindow(gtk.Window):
         self.scan_chooser_a.connect('changed', self.refresh_diff)
         self.scan_chooser_b.connect('changed', self.refresh_diff)
 
-    def refresh_diff (self, widget):
+    def refresh_diff(self, widget):
         """This method is called whenever the diff output might have changed,
         such as when a different scan was selected in one of the choosers."""
         log.debug("Refresh diff.")
 
-        if self.ndiff_process is not None and self.ndiff_process.poll() is None:
+        if (self.ndiff_process is not None and
+                self.ndiff_process.poll() is None):
             # Put this in the list of old processes we keep track of.
             self.old_processes.append(self.ndiff_process)
             self.ndiff_process = None
@@ -347,14 +388,17 @@ class DiffWindow(gtk.Window):
                 self.ndiff_process = zenmapCore.Diff.ndiff(scan_a, scan_b)
             except OSError, e:
                 alert = HIGAlertDialog(
-                    message_format = _("Error running ndiff"),
-                    secondary_text = _("There was an error running the ndiff program.\n\n") + str(e).decode(sys.getdefaultencoding(), "replace"))
+                    message_format=_("Error running ndiff"),
+                    secondary_text=_(
+                        "There was an error running the ndiff program.\n\n"
+                        ) + str(e).decode(sys.getdefaultencoding(), "replace"))
                 alert.run()
                 alert.destroy()
             else:
                 self.progress.show()
                 if self.timer_id is None:
-                    self.timer_id = gobject.timeout_add(NDIFF_CHECK_TIMEOUT, self.check_ndiff_process)
+                    self.timer_id = gobject.timeout_add(
+                            NDIFF_CHECK_TIMEOUT, self.check_ndiff_process)
 
     def check_ndiff_process(self):
         """Check if the ndiff subprocess is done and show the diff if it is.
@@ -381,21 +425,23 @@ class DiffWindow(gtk.Window):
                     diff = self.ndiff_process.get_scan_diff()
                 except zenmapCore.Diff.NdiffParseException, e:
                     alert = HIGAlertDialog(
-                        message_format = _("Error parsing ndiff output"),
-                        secondary_text = str(e))
+                        message_format=_("Error parsing ndiff output"),
+                        secondary_text=str(e))
                     alert.run()
                     alert.destroy()
                 else:
                     self.diff_view.show_diff(diff)
             else:
                 # Unsuccessful completion.
-                error_text = _("The ndiff process terminated with status code %d.") % status
+                error_text = _(
+                        "The ndiff process terminated with status code %d."
+                        ) % status
                 stderr = self.ndiff_process.stderr.read()
                 if len(stderr) > 0:
                     error_text += "\n\n" + stderr
                 alert = HIGAlertDialog(
-                    message_format = _("Error running ndiff"),
-                    secondary_text = error_text)
+                    message_format=_("Error running ndiff"),
+                    secondary_text=error_text)
                 alert.run()
                 alert.destroy()
 
@@ -414,6 +460,7 @@ class DiffWindow(gtk.Window):
     def close(self, widget=None, extra=None):
         self.destroy()
 
+
 class DiffView(gtk.TextView):
     REMOVE_COLOR = "#ffaaaa"
     ADD_COLOR = "#ccffcc"
@@ -425,9 +472,10 @@ class DiffView(gtk.TextView):
 
         buff = self.get_buffer()
         # Create text markup tags.
-        buff.create_tag("=", font = "Monospace")
-        buff.create_tag("-", font = "Monospace", background = self.REMOVE_COLOR)
-        buff.create_tag("+", font = "Monospace", background = self.ADD_COLOR)
+        buff.create_tag("=", font="Monospace")
+        buff.create_tag(
+                "-", font="Monospace", background=self.REMOVE_COLOR)
+        buff.create_tag("+", font="Monospace", background=self.ADD_COLOR)
 
     def clear(self):
         self.get_buffer().set_text(u"")
@@ -463,6 +511,6 @@ if __name__ == "__main__":
                      "Parsed 4": parsed4})
 
     dw.show_all()
-    dw.connect("delete-event", lambda x,y: gtk.main_quit())
+    dw.connect("delete-event", lambda x, y: gtk.main_quit())
 
     gtk.main()

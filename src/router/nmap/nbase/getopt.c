@@ -9,10 +9,10 @@
  *  modify, merge, publish, distribute, sublicense, and/or sell copies
  *  of the Software, and to permit persons to whom the Software is
  *  furnished to do so, subject to the following conditions:
- *  
+ *
  *  The above copyright notice and this permission notice shall be
  *  included in all copies or substantial portions of the Software.
- *  
+ *
  *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
  *  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
  *  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -22,6 +22,8 @@
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  *  DEALINGS IN THE SOFTWARE.
  */
+
+/* $Id: getopt.c 32741 2014-02-20 18:44:12Z dmiller $ */
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -53,7 +55,7 @@ int getopt_reset(void)
 
 /* this is the plain old UNIX getopt, with GNU-style extensions. */
 /* if you're porting some piece of UNIX software, this is all you need. */
-/* this supports GNU-style permution and optional arguments */
+/* this supports GNU-style permutation and optional arguments */
 
 static int _getopt(int argc, char * argv[], const char *opts)
 {
@@ -207,7 +209,7 @@ int _getopt_internal(int argc, char * argv[], const char *shortopts,
 
     if(((optopt = argv[optind][1]) != '-') && ! argv[optind][2]) {
       int c;
-      
+
       ind = shortoff;
       while((c = shortopts[ind++])) {
         if(((shortopts[ind] == ':') ||
@@ -278,7 +280,7 @@ int _getopt_internal(int argc, char * argv[], const char *shortopts,
 }
 
 /* This function is kinda problematic because most getopt() nowadays
-  seem to use char * const argv[] (they DON'T permute the options list), 
+  seem to use char * const argv[] (they DON'T permute the options list),
   but this one does.  So we remove it as long as HAVE_GETOPT is define, so
   people can use the version from their platform instead */
 

