@@ -39,6 +39,8 @@
 
 -- DEPENDENCIES --
 
+local stdnse = require "stdnse"
+local table = require "table"
 local getmetatable = getmetatable;
 local setmetatable = setmetatable;
 local type = type;
@@ -47,10 +49,9 @@ local ipairs = ipairs;
 local pairs = pairs;
 local concat = table.concat;
 
+_ENV = stdnse.module("strbuf", stdnse.seeall)
 
-module(... or "strbuf");
-
--- String buffer functions. Concatenation is not efficient in 
+-- String buffer functions. Concatenation is not efficient in
 -- lua as strings are immutable. If a large amount of '..' sequential
 -- operations are needed a string buffer should be used instead
 -- e.g. for i = 1, 10 do s = s..i end
@@ -136,3 +137,5 @@ local mt = {
 function new(...)
   return setmetatable({...}, mt);
 end
+
+return _ENV;

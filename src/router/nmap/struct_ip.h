@@ -2,7 +2,7 @@
    something else in <netinet/ip.h>:
 
 struct ip {
-	struct	ip_firstfour ip_ff;
+        struct	ip_firstfour ip_ff;
 #define	ip_v	ip_ff.ip_fv
 #define	ip_hl	ip_ff.ip_fhl
 #define	ip_vhl	ip_ff.ip_fvhl
@@ -55,7 +55,7 @@ struct ip {
 #define HAVE_STRUCT_IP
 
 /* From Linux glibc, which apparently borrowed it from
-   BSD code.  Slightly modified for portability --fyodor@insecure.org */
+   BSD code.  Slightly modified for portability --fyodor@nmap.org */
 /*
  * Structure of an internet header, naked of options.
  */
@@ -66,14 +66,14 @@ struct ip
     u_int8_t ip_hl:4;                   /* header length */
 #else
     u_int8_t ip_hl:4;                   /* header length */
-    u_int8_t ip_v:4;                    /* version */ 
+    u_int8_t ip_v:4;                    /* version */
 #endif
     u_int8_t ip_tos;                    /* type of service */
     u_short ip_len;                     /* total length */
     u_short ip_id;                      /* identification */
     u_short ip_off;                     /* fragment offset field */
 #define IP_RF 0x8000                    /* reserved fragment flag */
-#define IP_DF 0x4000                    /* dont fragment flag */
+#define IP_DF 0x4000                    /* don't fragment flag */
 #define IP_MF 0x2000                    /* more fragments flag */
 #define IP_OFFMASK 0x1fff               /* mask for fragmenting bits */
     u_int8_t ip_ttl;                    /* time to live */

@@ -1,3 +1,13 @@
+local bin = require "bin"
+local datafiles = require "datafiles"
+local math = require "math"
+local nmap = require "nmap"
+local os = require "os"
+local shortport = require "shortport"
+local stdnse = require "stdnse"
+local string = require "string"
+local table = require "table"
+
 description = [[
 Enumerates TFTP (trivial file transfer protocol) filenames by testing
 for a list of common ones.
@@ -31,10 +41,6 @@ author = "Alexander Rudakov"
 license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
 categories = { "discovery", "intrusive" }
 
-require'bin'
-require'stdnse'
-require'shortport'
-require'datafiles'
 
 local REQUEST_ERROR = -1
 local FILE_FOUND = 1
@@ -92,7 +98,7 @@ local create_tftp_file_request = function(filename)
 end
 
 local check_file_present = function(host, port, filename)
-  stdnse.print_debug(1, ("checking file %s"):format(filename))
+  stdnse.print_debug(1, "checking file %s", filename)
 
   local file_request = create_tftp_file_request(filename)
 
@@ -103,14 +109,14 @@ local check_file_present = function(host, port, filename)
 
 
   if (not (status)) then
-    stdnse.print_debug(1, ("error %s"):format(lhost))
+    stdnse.print_debug(1, "error %s", lhost)
     socket:close()
     return REQUEST_ERROR
   end
 
 
   local bind_socket = nmap.new_socket("udp")
-  stdnse.print_debug(1, ("local port = %d"):format(lport))
+  stdnse.print_debug(1, "local port = %d", lport)
 
   socket:send(file_request)
   socket:close()
@@ -121,7 +127,7 @@ local check_file_present = function(host, port, filename)
   stdnse.print_debug(1, "starting listener")
 
   if (not (bindOK)) then
-    stdnse.print_debug(1, ("Error in bind %s"):format(error))
+    stdnse.print_debug(1, "Error in bind %s", error)
     bind_socket:close()
     return REQUEST_ERROR
   end
@@ -130,7 +136,7 @@ local check_file_present = function(host, port, filename)
   local recvOK, data = bind_socket:receive()
 
   if (not (recvOK)) then
-    stdnse.print_debug(1, ("Error in receive %s"):format(data))
+    stdnse.print_debug(1, "Error in receive %s", data)
     bind_socket:close()
     return REQUEST_ERROR
   end
@@ -194,7 +200,6 @@ action = function(host, port)
 
   if (not (check_open_tftp(host, port))) then
     stdnse.print_debug(1, "tftp seems not active")
-    nmap.set_port_state(host, port, "closed")
     return
   end
 
@@ -203,7 +208,7 @@ action = function(host, port)
   nmap.set_port_state(host, port, "open")
 
   local results = {}
-  filenames = generate_filenames(host)
+  local filenames = generate_filenames(host)
 
   for i, filename in ipairs(filenames) do
     local request_status = check_file_present(host, port, filename)

@@ -1,3 +1,10 @@
+local nmap = require "nmap"
+local packet = require "packet"
+local stdnse = require "stdnse"
+local string = require "string"
+local table = require "table"
+local target = require "target"
+
 -- -*- mode: lua -*-:
 -- vim: set filetype=lua :
 
@@ -32,11 +39,6 @@ author = "Nick Nikolaou"
 categories = {"broadcast", "discovery", "safe"}
 license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
 
-require("stdnse")
-require("target")
-require("nmap")
-require("packet")
-require("bin")
 
 local interface_info
 local all_addresses= {}
@@ -47,32 +49,38 @@ local function check_if_valid(address)
   local broadcast = interface_info.broadcast
   local local_address = interface_info.address
 
-  if address == local_address or address == broadcast or address == "255.255.255.255" then
+  if address == local_address
+    or address == broadcast or address == "255.255.255.255"
+    or address:match('^ff') --IPv6 Multicast addrs
+    then
     return false
   else
     return true end
 end
 
+-- Returns an array of address strings.
 local function get_ip_addresses(layer3)
   local ip = packet.Packet:new(layer3, layer3:len())
-  return packet.toip(ip.ip_bin_src),packet.toip(ip.ip_bin_dst)
+  if ip.ip_v == 4 then
+    return { packet.toip(ip.ip_bin_src), packet.toip(ip.ip_bin_dst) }
+  elseif ip.ip_v == 6 then
+    return { packet.toipv6(ip.ip_bin_src), packet.toipv6(ip.ip_bin_dst) }
+  end
 end
 
 prerule =  function()
   return nmap.is_privileged() and
-	(stdnse.get_script_args("targets-sniffer.iface") or nmap.get_interface())
+    (stdnse.get_script_args("targets-sniffer.iface") or nmap.get_interface())
 end
 
 
 action = function()
 
   local sock = nmap.new_socket()
-  local ip_src,ip_dst
   local packet_counter = 0
   local ip_counter = 0
-  local DEFAULT_TIMEOUT_SEC = 10 -- Default timeout value in seconds if the timeout argument is not specified
-  local timeoutstr =  stdnse.get_script_args("targets-sniffer.timeout") or tostring(DEFAULT_TIMEOUT_SEC)
-  local timeout = (stdnse.parse_timespec(timeoutstr) * 1000)
+  local timeout = stdnse.parse_timespec(stdnse.get_script_args("targets-sniffer.timeout"))
+  timeout = (timeout or 10) * 1000
   local interface = stdnse.get_script_args("targets-sniffer.iface") or nmap.get_interface()
   interface_info = nmap.get_interface_info(interface)
 
@@ -86,7 +94,7 @@ action = function()
     stdnse.print_debug(1,"Error - unable to open socket using interface %s",interface)
     return
   else
-    sock:pcap_open(interface, 104, true, "ip")
+    sock:pcap_open(interface, 104, true, "ip or ip6")
     stdnse.print_debug(1, "Will sniff for %s seconds on interface %s.", (timeout/1000),interface)
 
     repeat
@@ -96,23 +104,18 @@ action = function()
       local status, _, _, layer3 = sock:pcap_receive()
 
       if status then
+        local addresses
 
         packet_counter=packet_counter+1
-        ip_src,ip_dst = get_ip_addresses(layer3)
-        stdnse.print_debug(1,"Got IP addresses %s and %s",ip_src,ip_dst)
+        addresses = get_ip_addresses(layer3)
+        stdnse.print_debug(1, "Got IP addresses %s", stdnse.strjoin(" ", addresses))
 
-        if check_if_valid(ip_src) == true then
-          if not unique_addresses[ip_src] then
-            unique_addresses[ip_src] = true
-            table.insert(all_addresses,ip_src)
-          end
-        end
-
-
-        if check_if_valid(ip_dst) == true then
-          if not unique_addresses[ip_dst] then
-            unique_addresses[ip_dst] = true
-            table.insert(all_addresses,ip_dst)
+        for _, addr in ipairs(addresses) do
+          if check_if_valid(addr) == true then
+            if not unique_addresses[addr] then
+              unique_addresses[addr] = true
+              table.insert(all_addresses, addr)
+            end
           end
         end
 
@@ -126,11 +129,21 @@ action = function()
   end
 
   if target.ALLOW_NEW_TARGETS == true then
-    for _,v in pairs(all_addresses) do
-      target.add(v)
-   end
+    if nmap.address_family() == 'inet6' then
+      for _,v in pairs(all_addresses) do
+        if v:match(':') then
+          target.add(v)
+        end
+      end
     else
-      stdnse.print_debug(1,"Not adding targets to newtargets. If you want to do that use the 'newtargets' script argument.")
+      for _,v in pairs(all_addresses) do
+        if not v:match(':') then
+          target.add(v)
+        end
+      end
+    end
+  else
+    stdnse.print_debug(1,"Not adding targets to newtargets. If you want to do that use the 'newtargets' script argument.")
   end
 
   if #all_addresses>0 then

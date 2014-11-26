@@ -1,3 +1,9 @@
+local creds = require "creds"
+local nmap = require "nmap"
+local rpcap = require "rpcap"
+local shortport = require "shortport"
+local stdnse = require "stdnse"
+
 description = [[
 Connects to the rpcap service (provides remote sniffing capabilities
 through WinPcap) and retrieves interface information. The service can either be
@@ -12,7 +18,7 @@ setup to require authentication or not and also supports IP restrictions.
 -- @output
 -- PORT     STATE SERVICE REASON
 -- 2002/tcp open  rpcap   syn-ack
--- | rpcap-info: 
+-- | rpcap-info:
 -- |   \Device\NPF_{0D5D1364-1F1F-4892-8AC3-B838258F9BB8}
 -- |     Intel(R) PRO/1000 MT Desktop Adapter
 -- |     Addresses
@@ -31,9 +37,6 @@ license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
 categories = {"discovery", "safe"}
 dependencies = {"rpcap-brute"}
 
-require 'creds'
-require 'rpcap'
-require 'shortport'
 
 portrule = shortport.port_or_service(2002, "rpcap", "tcp")
 
@@ -41,50 +44,50 @@ local function fail(err) return ("\n  ERROR: %s"):format(err or "") end
 
 local function getInfo(host, port, username, password)
 
-	local helper = rpcap.Helper:new(host, port)
-	local status, resp = helper:connect()
-	if ( not(status) ) then
-		return false, "Failed to connect to server"
-	end
-	status, resp = helper:login(username, password)
-		
-	if ( not(status) ) then
-		return false, resp
-	end
+  local helper = rpcap.Helper:new(host, port)
+  local status, resp = helper:connect()
+  if ( not(status) ) then
+    return false, "Failed to connect to server"
+  end
+  status, resp = helper:login(username, password)
 
-	status, resp = helper:findAllInterfaces()
-	helper:close()
-	if ( not(status) ) then
-		return false, resp
-	end
-	
-	port.version.name = "rpcap"
-	port.version.product = "WinPcap remote packet capture daemon"
-	nmap.set_port_version(host, port, "hardmatched")
-	
-	return true, resp
+  if ( not(status) ) then
+    return false, resp
+  end
+
+  status, resp = helper:findAllInterfaces()
+  helper:close()
+  if ( not(status) ) then
+    return false, resp
+  end
+
+  port.version.name = "rpcap"
+  port.version.product = "WinPcap remote packet capture daemon"
+  nmap.set_port_version(host, port)
+
+  return true, resp
 end
 
 action = function(host, port)
 
-	-- patch-up the service name, so creds.rpcap will work, ugly but needed as
-	-- tcp 2002 is registered to the globe service in nmap-services ...
-	port.service = "rpcap"
-	
-	local c = creds.Credentials:new(creds.ALL_DATA, host, port)
-	local states = creds.State.VALID + creds.State.PARAM
-	local status, resp = getInfo(host, port)
-	
-	if ( status ) then
-		return stdnse.format_output(true, resp)
-	end
+  -- patch-up the service name, so creds.rpcap will work, ugly but needed as
+  -- tcp 2002 is registered to the globe service in nmap-services ...
+  port.service = "rpcap"
 
-	for cred in c:getCredentials(states) do
-		status, resp = getInfo(host, port, cred.user, cred.pass)
-		if ( status ) then
-			return stdnse.format_output(true, resp)
-		end
-	end
+  local c = creds.Credentials:new(creds.ALL_DATA, host, port)
+  local states = creds.State.VALID + creds.State.PARAM
+  local status, resp = getInfo(host, port)
 
-	return fail(resp)
+  if ( status ) then
+    return stdnse.format_output(true, resp)
+  end
+
+  for cred in c:getCredentials(states) do
+    status, resp = getInfo(host, port, cred.user, cred.pass)
+    if ( status ) then
+      return stdnse.format_output(true, resp)
+    end
+  end
+
+  return fail(resp)
 end

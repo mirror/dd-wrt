@@ -1,3 +1,8 @@
+local brute = require "brute"
+local creds = require "creds"
+local shortport = require "shortport"
+local socks = require "socks"
+
 description = [[
 Performs brute force password auditing against SOCKS 5 proxy servers.
 ]]
@@ -9,7 +14,7 @@ Performs brute force password auditing against SOCKS 5 proxy servers.
 -- @output
 -- PORT     STATE SERVICE
 -- 1080/tcp open  socks
--- | socks-brute: 
+-- | socks-brute:
 -- |   Accounts
 -- |     patrik:12345 - Valid credentials
 -- |   Statistics
@@ -20,79 +25,77 @@ author = "Patrik Karlsson"
 license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
 categories = {"brute", "intrusive"}
 
-require 'brute'
-require 'shortport'
-require 'socks'
 
 portrule = shortport.port_or_service({1080, 9050}, {"socks", "socks5", "tor-socks"})
 
 Driver = {
-	
-	new = function (self, host, port)
-		local o = { host = host, port = port }
-		setmetatable (o,self)
-		self.__index = self
-		return o
-	end,
 
-	connect = function ( self )
-		self.helper = socks.Helper:new(self.host, self.port, { timeout = 10000 })
-		return self.helper:connect()
-	end,
-	
-	login = function( self, username, password )
-		local status, err = self.helper:authenticate({username=username, password=password})
+  new = function (self, host, port)
+    local o = { host = host, port = port }
+    setmetatable (o,self)
+    self.__index = self
+    return o
+  end,
 
-		if (not(status)) then
-			-- the login failed
-			if ( "Authentication failed" == err ) then
-				return false, brute.Error:new( "Login failed" )
-			end
-			
-			-- something else happend, let's retry
-			local err = brute.Error:new( err )
-			err:setRetry( true )
-			return false, err
-		end
+  connect = function ( self )
+    self.helper = socks.Helper:new(self.host, self.port, { timeout = 10000 })
+    return self.helper:connect()
+  end,
 
-		return true, brute.Account:new(username, password, creds.State.VALID)
-	end,
-	
-	disconnect = function( self )
-		return self.helper:close()
-	end,	
+  login = function( self, username, password )
+    local status, err = self.helper:authenticate({username=username, password=password})
+
+    if (not(status)) then
+      -- the login failed
+      if ( "Authentication failed" == err ) then
+        return false, brute.Error:new( "Login failed" )
+      end
+
+      -- something else happened, let's retry
+      local err = brute.Error:new( err )
+      err:setRetry( true )
+      return false, err
+    end
+
+    return true, brute.Account:new(username, password, creds.State.VALID)
+  end,
+
+  disconnect = function( self )
+    return self.helper:close()
+  end,
 }
 
 local function checkAuth(host, port)
 
-	local helper = socks.Helper:new(host, port)
-	local status, response = helper:connect()
-	if ( not(status) ) then
-		return false, response
-	end
-	
-	if ( response.method == socks.AuthMethod.NONE ) then
-		return false, "\n  No authentication required"
-	end
-	
-	local status, err = helper:authenticate({username="nmap", password="nmapbruteprobe"})
-	if ( err ~= "Authentication failed" ) then
-		return false, ("\n  ERROR: %s"):format(err)
-	end
+  local helper = socks.Helper:new(host, port)
+  local status, response = helper:connect()
+  if ( not(status) ) then
+    return false, response
+  end
 
-	helper:close()
-	return true
+  if ( response.method == socks.AuthMethod.NONE ) then
+    return false, "\n  No authentication required"
+  end
+
+  local status, err = helper:authenticate({username="nmap", password="nmapbruteprobe"})
+  if ( err ~= "Authentication failed" ) then
+    return false, ("\n  ERROR: %s"):format(err)
+  end
+
+  helper:close()
+  return true
 end
 
 action = function(host, port)
 
-	local status, response = checkAuth(host, port)
-	if ( not(status) ) then
-		return response
-	end
+  local status, response = checkAuth(host, port)
+  if ( not(status) ) then
+    return response
+  end
 
-	local engine = brute.Engine:new(Driver, host, port)
-	engine.options.script_name = SCRIPT_NAME
-	status, result = engine:start()
-	return result
+  local engine = brute.Engine:new(Driver, host, port)
+  engine.options.script_name = SCRIPT_NAME
+  local result
+  status, result = engine:start()
+  return result
 end

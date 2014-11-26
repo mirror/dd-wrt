@@ -6,62 +6,94 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2012 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
- * Foundation; Version 2 with the clarifications and exceptions described  *
- * below.  This guarantees your right to use, modify, and redistribute     *
- * this software under certain conditions.  If you wish to embed Nmap      *
- * technology into proprietary software, we sell alternative licenses      *
- * (contact sales@insecure.com).  Dozens of software vendors already       *
- * license Nmap technology such as host discovery, port scanning, OS       *
- * detection, version detection, and the Nmap Scripting Engine.            *
+ * Foundation; Version 2 ("GPL"), BUT ONLY WITH ALL OF THE CLARIFICATIONS  *
+ * AND EXCEPTIONS DESCRIBED HEREIN.  This guarantees your right to use,    *
+ * modify, and redistribute this software under certain conditions.  If    *
+ * you wish to embed Nmap technology into proprietary software, we sell    *
+ * alternative licenses (contact sales@nmap.com).  Dozens of software      *
+ * vendors already license Nmap technology such as host discovery, port    *
+ * scanning, OS detection, version detection, and the Nmap Scripting       *
+ * Engine.                                                                 *
  *                                                                         *
- * Note that the GPL places important restrictions on "derived works", yet *
- * it does not provide a detailed definition of that term.  To avoid       *
+ * Note that the GPL places important restrictions on "derivative works",  *
+ * yet it does not provide a detailed definition of that term.  To avoid   *
  * misunderstandings, we interpret that term as broadly as copyright law   *
  * allows.  For example, we consider an application to constitute a        *
- * "derivative work" for the purpose of this license if it does any of the *
- * following:                                                              *
- * o Integrates source code from Nmap                                      *
- * o Reads or includes Nmap copyrighted data files, such as                *
- *   nmap-os-db or nmap-service-probes.                                    *
- * o Executes Nmap and parses the results (as opposed to typical shell or  *
- *   execution-menu apps, which simply display raw Nmap output and so are  *
- *   not derivative works.)                                                *
- * o Integrates/includes/aggregates Nmap into a proprietary executable     *
- *   installer, such as those produced by InstallShield.                   *
- * o Links to a library or executes a program that does any of the above   *
+ * derivative work for the purpose of this license if it does any of the   *
+ * following with any software or content covered by this license          *
+ * ("Covered Software"):                                                   *
  *                                                                         *
- * The term "Nmap" should be taken to also include any portions or derived *
- * works of Nmap, as well as other software we distribute under this       *
- * license such as Zenmap, Ncat, and Nping.  This list is not exclusive,   *
- * but is meant to clarify our interpretation of derived works with some   *
- * common examples.  Our interpretation applies only to Nmap--we don't     *
- * speak for other people's GPL works.                                     *
+ * o Integrates source code from Covered Software.                         *
  *                                                                         *
- * If you have any questions about the GPL licensing restrictions on using *
- * Nmap in non-GPL works, we would be happy to help.  As mentioned above,  *
- * we also offer alternative license to integrate Nmap into proprietary    *
- * applications and appliances.  These contracts have been sold to dozens  *
- * of software vendors, and generally include a perpetual license as well  *
- * as providing for priority support and updates.  They also fund the      *
- * continued development of Nmap.  Please email sales@insecure.com for     *
- * further information.                                                    *
+ * o Reads or includes copyrighted data files, such as Nmap's nmap-os-db   *
+ * or nmap-service-probes.                                                 *
  *                                                                         *
- * As a special exception to the GPL terms, Insecure.Com LLC grants        *
+ * o Is designed specifically to execute Covered Software and parse the    *
+ * results (as opposed to typical shell or execution-menu apps, which will *
+ * execute anything you tell them to).                                     *
+ *                                                                         *
+ * o Includes Covered Software in a proprietary executable installer.  The *
+ * installers produced by InstallShield are an example of this.  Including *
+ * Nmap with other software in compressed or archival form does not        *
+ * trigger this provision, provided appropriate open source decompression  *
+ * or de-archiving software is widely available for no charge.  For the    *
+ * purposes of this license, an installer is considered to include Covered *
+ * Software even if it actually retrieves a copy of Covered Software from  *
+ * another source during runtime (such as by downloading it from the       *
+ * Internet).                                                              *
+ *                                                                         *
+ * o Links (statically or dynamically) to a library which does any of the  *
+ * above.                                                                  *
+ *                                                                         *
+ * o Executes a helper program, module, or script to do any of the above.  *
+ *                                                                         *
+ * This list is not exclusive, but is meant to clarify our interpretation  *
+ * of derived works with some common examples.  Other people may interpret *
+ * the plain GPL differently, so we consider this a special exception to   *
+ * the GPL that we apply to Covered Software.  Works which meet any of     *
+ * these conditions must conform to all of the terms of this license,      *
+ * particularly including the GPL Section 3 requirements of providing      *
+ * source code and allowing free redistribution of the work as a whole.    *
+ *                                                                         *
+ * As another special exception to the GPL terms, Insecure.Com LLC grants  *
  * permission to link the code of this program with any version of the     *
  * OpenSSL library which is distributed under a license identical to that  *
  * listed in the included docs/licenses/OpenSSL.txt file, and distribute   *
- * linked combinations including the two. You must obey the GNU GPL in all *
- * respects for all of the code used other than OpenSSL.  If you modify    *
- * this file, you may extend this exception to your version of the file,   *
- * but you are not obligated to do so.                                     *
+ * linked combinations including the two.                                  *
  *                                                                         *
- * If you received these files with a written license agreement or         *
- * contract stating terms other than the terms above, then that            *
- * alternative license agreement takes precedence over these comments.     *
+ * Any redistribution of Covered Software, including any derived works,    *
+ * must obey and carry forward all of the terms of this license, including *
+ * obeying all GPL rules and restrictions.  For example, source code of    *
+ * the whole work must be provided and free redistribution must be         *
+ * allowed.  All GPL references to "this License", are to be treated as    *
+ * including the terms and conditions of this license text as well.        *
+ *                                                                         *
+ * Because this license imposes special exceptions to the GPL, Covered     *
+ * Work may not be combined (even as part of a larger work) with plain GPL *
+ * software.  The terms, conditions, and exceptions of this license must   *
+ * be included as well.  This license is incompatible with some other open *
+ * source licenses as well.  In some cases we can relicense portions of    *
+ * Nmap or grant special permissions to use it in other open source        *
+ * software.  Please contact fyodor@nmap.org with any such requests.       *
+ * Similarly, we don't incorporate incompatible open source software into  *
+ * Covered Software without special permission from the copyright holders. *
+ *                                                                         *
+ * If you have any questions about the licensing restrictions on using     *
+ * Nmap in other works, are happy to help.  As mentioned above, we also    *
+ * offer alternative license to integrate Nmap into proprietary            *
+ * applications and appliances.  These contracts have been sold to dozens  *
+ * of software vendors, and generally include a perpetual license as well  *
+ * as providing for priority support and updates.  They also fund the      *
+ * continued development of Nmap.  Please email sales@nmap.com for further *
+ * information.                                                            *
+ *                                                                         *
+ * If you have received a written license agreement or contract for        *
+ * Covered Software stating terms other than these, you may choose to use  *
+ * and redistribute Covered Software under those terms instead of these.   *
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
@@ -70,8 +102,8 @@
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
- * to nmap-dev@insecure.org for possible incorporation into the main       *
- * distribution.  By sending these changes to Fyodor or one of the         *
+ * to the dev@nmap.org mailing list for possible incorporation into the    *
+ * main distribution.  By sending these changes to Fyodor or one of the    *
  * Insecure.Org development mailing lists, or checking them into the Nmap  *
  * source code repository, it is understood (unless you specify otherwise) *
  * that you are offering the Nmap Project (Insecure.Com LLC) the           *
@@ -85,14 +117,13 @@
  *                                                                         *
  * This program is distributed in the hope that it will be useful, but     *
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU       *
- * General Public License v2.0 for more details at                         *
- * http://www.gnu.org/licenses/gpl-2.0.html , or in the COPYING file       *
- * included with Nmap.                                                     *
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
+ * license file for more details (it's in a COPYING file included with     *
+ * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: tcpip.h 28208 2012-03-04 07:26:16Z batrick $ */
+/* $Id: tcpip.h 33540 2014-08-16 02:45:47Z dmiller $ */
 
 
 #ifndef TCPIP_H
@@ -200,6 +231,7 @@ extern "C" {
 #define INET_ADDRSTRLEN 16
 #endif
 
+int nmap_raw_socket();
 
 /* Used for tracing all packets sent or received (eg the
    --packet-trace option) */
@@ -215,15 +247,15 @@ class PacketTrace {
      makes this function slightly more efficient by avoiding a gettimeofday()
      call. */
   static void trace(pdirection pdir, const u8 *packet, u32 len,
-		    struct timeval *now=NULL);
+                    struct timeval *now=NULL);
 /* Adds a trace entry when a connect() is attempted if packet tracing
    is enabled.  Pass IPPROTO_TCP or IPPROTO_UDP as the protocol.  The
    sock may be a sockaddr_in or sockaddr_in6.  The return code of
    connect is passed in connectrc.  If the return code is -1, get the
    errno and pass that as connect_errno. */
-  static void traceConnect(u8 proto, const struct sockaddr *sock, 
-			   int socklen, int connectrc, int connect_errno,
-			   const struct timeval *now);
+  static void traceConnect(u8 proto, const struct sockaddr *sock,
+                           int socklen, int connectrc, int connect_errno,
+                           const struct timeval *now);
   /* Takes an ARP PACKET (including ethernet header) and prints it if
      packet tracing is enabled.  'frame' must point to the 14-byte
      ethernet header (e.g. starting with destination addr). The
@@ -231,7 +263,7 @@ class PacketTrace {
      Optional 'now' argument makes this function slightly more
      efficient by avoiding a gettimeofday() call. */
   static void traceArp(pdirection pdir, const u8 *frame, u32 len,
-				    struct timeval *now);
+                                    struct timeval *now);
   static void traceND(pdirection pdir, const u8 *frame, u32 len,
                                     struct timeval *now);
 };
@@ -244,7 +276,7 @@ class PacketCounter {
 #else
   unsigned long long
 #endif
-	  sendPackets, sendBytes, recvPackets, recvBytes;
+          sendPackets, sendBytes, recvPackets, recvBytes;
 };
 
 
@@ -256,7 +288,7 @@ class PacketCounter {
 /* Prototypes */
 /* Converts an IP address given in a sockaddr_storage to an IPv4 or
    IPv6 IP address string.  Since a static buffer is returned, this is
-   not thread-safe and can only be used once in calls like printf() 
+   not thread-safe and can only be used once in calls like printf()
 */
 const char *inet_socktop(struct sockaddr_storage *ss);
 
@@ -288,17 +320,17 @@ int send_ip_packet(int sd, const struct eth_nfo *eth,
    actually sent by this function.  Caller must delete the buffer when
    finished with the packet.  The packet length is returned in
    packetlen, which must be a valid int pointer. */
-u8 *build_ip_raw(const struct in_addr *source, const struct in_addr *victim, 
-		 u8 proto,
-		 int ttl, u16 ipid, u8 tos, bool df,
-		 const u8* ipopt, int ipoptlen,
-		 const char *data, u16 datalen,
-		 u32 *packetlen);
+u8 *build_ip_raw(const struct in_addr *source, const struct in_addr *victim,
+                 u8 proto,
+                 int ttl, u16 ipid, u8 tos, bool df,
+                 const u8* ipopt, int ipoptlen,
+                 const char *data, u16 datalen,
+                 u32 *packetlen);
 
 u8 *build_ipv6_raw(const struct in6_addr *source,
                    const struct in6_addr *victim, u8 tc, u32 flowlabel,
                    u8 nextheader, int hoplimit,
-                   char *data, u16 datalen, u32 *outpacketlen);
+                   const char *data, u16 datalen, u32 *outpacketlen);
 
 /* Builds a TCP packet (including an IP header) by packing the fields
    with the given information.  It allocates a new buffer to store the
@@ -307,40 +339,40 @@ u8 *build_ipv6_raw(const struct in6_addr *source,
    finished with the packet.  The packet length is returned in
    packetlen, which must be a valid int pointer. */
 u8 *build_tcp_raw(const struct in_addr *source, const struct in_addr *victim,
-		  int ttl, u16 ipid, u8 tos, bool df,
-		  const u8* ipopt, int ipoptlen,
-		  u16 sport, u16 dport,
-		  u32 seq, u32 ack, u8 reserved, u8 flags, u16 window, u16 urp,
-		  const u8 *options, int optlen,
-		  char *data, u16 datalen,
-		  u32 *packetlen);
+                  int ttl, u16 ipid, u8 tos, bool df,
+                  const u8* ipopt, int ipoptlen,
+                  u16 sport, u16 dport,
+                  u32 seq, u32 ack, u8 reserved, u8 flags, u16 window, u16 urp,
+                  const u8 *options, int optlen,
+                  const char *data, u16 datalen,
+                  u32 *packetlen);
 
 u8 *build_tcp_raw_ipv6(const struct in6_addr *source,
                        const struct in6_addr *victim, u8 tc, u32 flowlabel,
                        u8 hoplimit, u16 sport, u16 dport, u32 seq, u32 ack,
                        u8 reserved, u8 flags, u16 window, u16 urp,
-                       const u8 *tcpopt, int tcpoptlen, char *data,
+                       const u8 *tcpopt, int tcpoptlen, const char *data,
                        u16 datalen, u32 *packetlen);
 
 /* Build and send a raw tcp packet.  If TTL is -1, a partially random
    (but likely large enough) one is chosen */
 int send_tcp_raw( int sd, const struct eth_nfo *eth,
-		  const struct in_addr *source, const struct in_addr *victim, 
-		  int ttl, bool df,
-		  u8* ipopt, int ipoptlen,
-		  u16 sport, u16 dport,
-		  u32 seq, u32 ack, u8 reserved, u8 flags, u16 window, u16 urp,
-		  u8 *options, int optlen,
-		  char *data, u16 datalen);
+                  const struct in_addr *source, const struct in_addr *victim,
+                  int ttl, bool df,
+                  u8* ipopt, int ipoptlen,
+                  u16 sport, u16 dport,
+                  u32 seq, u32 ack, u8 reserved, u8 flags, u16 window, u16 urp,
+                  u8 *options, int optlen,
+                  const char *data, u16 datalen);
 
-int send_tcp_raw_decoys( int sd, const struct eth_nfo *eth, 
-			 const struct in_addr *victim,
-			 int ttl, bool df, 
-			 u8* ipopt, int ipoptlen,
-			 u16 sport, u16 dport,
-			 u32 seq, u32 ack, u8 reserved, u8 flags, u16 window, u16 urp,
-			 u8 *options, int optlen,
-			 char *data, u16 datalen);
+int send_tcp_raw_decoys( int sd, const struct eth_nfo *eth,
+                         const struct in_addr *victim,
+                         int ttl, bool df,
+                         u8* ipopt, int ipoptlen,
+                         u16 sport, u16 dport,
+                         u32 seq, u32 ack, u8 reserved, u8 flags, u16 window, u16 urp,
+                         u8 *options, int optlen,
+                         const char *data, u16 datalen);
 
 /* Builds a UDP packet (including an IP header) by packing the fields
    with the given information.  It allocates a new buffer to store the
@@ -349,30 +381,30 @@ int send_tcp_raw_decoys( int sd, const struct eth_nfo *eth,
    finished with the packet.  The packet length is returned in
    packetlen, which must be a valid int pointer. */
 u8 *build_udp_raw(const struct in_addr *source, const struct in_addr *victim,
- 		  int ttl, u16 ipid, u8 tos, bool df,
-		  u8* ipopt, int ipoptlen,
- 		  u16 sport, u16 dport, 
- 		  const char *data, u16 datalen,
- 		  u32 *packetlen);
+       int ttl, u16 ipid, u8 tos, bool df,
+                  u8* ipopt, int ipoptlen,
+       u16 sport, u16 dport,
+       const char *data, u16 datalen,
+       u32 *packetlen);
 
 u8 *build_udp_raw_ipv6(const struct in6_addr *source,
                        const struct in6_addr *victim, u8 tc, u32 flowlabel,
                        u8 hoplimit, u16 sport, u16 dport,
-                       char *data, u16 datalen, u32 *packetlen);
+                       const char *data, u16 datalen, u32 *packetlen);
 
 int send_udp_raw( int sd, const struct eth_nfo *eth,
-		  struct in_addr *source, const struct in_addr *victim,
-		  int ttl, u16 ipid,
-		  u8* ipopt, int ipoptlen,
-		  u16 sport, u16 dport,
-		  char *data, u16 datalen);
+                  struct in_addr *source, const struct in_addr *victim,
+                  int ttl, u16 ipid,
+                  u8* ipopt, int ipoptlen,
+                  u16 sport, u16 dport,
+                  const char *data, u16 datalen);
 
-int send_udp_raw_decoys( int sd, const struct eth_nfo *eth, 
-			 const struct in_addr *victim,
-			 int ttl, u16 ipid,
-			 u8* ipops, int ip,
-			 u16 sport, u16 dport,
-			 char *data, u16 datalen);
+int send_udp_raw_decoys( int sd, const struct eth_nfo *eth,
+                         const struct in_addr *victim,
+                         int ttl, u16 ipid,
+                         u8* ipops, int ip,
+                         u16 sport, u16 dport,
+                         const char *data, u16 datalen);
 
 /* Builds an SCTP packet (including an IP header) by packing the fields
    with the given information.  It allocates a new buffer to store the
@@ -381,17 +413,17 @@ int send_udp_raw_decoys( int sd, const struct eth_nfo *eth,
    finished with the packet.  The packet length is returned in
    packetlen, which must be a valid int pointer. */
 u8 *build_sctp_raw(const struct in_addr *source, const struct in_addr *victim,
-		   int ttl, u16 ipid, u8 tos, bool df,
-		   u8* ipopt, int ipoptlen,
-		   u16 sport, u16 dport,
-		   u32 vtag, char *chunks, int chunkslen,
-		   char *data, u16 datalen,
-		   u32 *packetlen);
+                   int ttl, u16 ipid, u8 tos, bool df,
+                   u8* ipopt, int ipoptlen,
+                   u16 sport, u16 dport,
+                   u32 vtag, char *chunks, int chunkslen,
+                   const char *data, u16 datalen,
+                   u32 *packetlen);
 
 u8 *build_sctp_raw_ipv6(const struct in6_addr *source,
                         const struct in6_addr *victim, u8 tc, u32 flowlabel,
                         u8 hoplimit, u16 sport, u16 dport, u32 vtag,
-                        char *chunks, int chunkslen, char *data, u16 datalen,
+                        char *chunks, int chunkslen, const char *data, u16 datalen,
                         u32 *packetlen);
 
 /* Builds an ICMP packet (including an IP header) by packing the
@@ -402,16 +434,16 @@ u8 *build_sctp_raw_ipv6(const struct in6_addr *source,
    returned in packetlen, which must be a valid int pointer. The
    id/seq will be converted to network byte order (if it differs from
    HBO) */
-u8 *build_icmp_raw(const struct in_addr *source, const struct in_addr *victim, 
-		   int ttl, u16 ipid, u8 tos, bool df,
-		   u8* ipopt, int ipoptlen,
-		   u16 seq, unsigned short id, u8 ptype, u8 pcode,
-		   char *data, u16 datalen, u32 *packetlen);
+u8 *build_icmp_raw(const struct in_addr *source, const struct in_addr *victim,
+                   int ttl, u16 ipid, u8 tos, bool df,
+                   u8* ipopt, int ipoptlen,
+                   u16 seq, unsigned short id, u8 ptype, u8 pcode,
+                   const char *data, u16 datalen, u32 *packetlen);
 
 u8 *build_icmpv6_raw(const struct in6_addr *source,
                      const struct in6_addr *victim, u8 tc, u32 flowlabel,
                      u8 hoplimit, u16 seq, u16 id, u8 ptype, u8 pcode,
-                     char *data, u16 datalen, u32 *packetlen);
+                     const char *data, u16 datalen, u32 *packetlen);
 
 /* Builds an IGMP packet (including an IP header) by packing the fields
    with the given information.  It allocates a new buffer to store the
@@ -420,14 +452,14 @@ u8 *build_icmpv6_raw(const struct in6_addr *source,
    finished with the packet.  The packet length is returned in packetlen,
    which must be a valid int pointer.
  */
-u8 *build_igmp_raw(const struct in_addr *source, const struct in_addr *victim, 
-		   int ttl, u16 ipid, u8 tos, bool df,
-		   u8* ipopt, int ipoptlen,
-		   u8 ptype, u8 pcode,
-		   char *data, u16 datalen, u32 *packetlen);
+u8 *build_igmp_raw(const struct in_addr *source, const struct in_addr *victim,
+                   int ttl, u16 ipid, u8 tos, bool df,
+                   u8* ipopt, int ipoptlen,
+                   u8 ptype, u8 pcode,
+                   const char *data, u16 datalen, u32 *packetlen);
 
 
-// Returns whether the packet receive time value obtaned from libpcap
+// Returns whether the packet receive time value obtained from libpcap
 // (and thus by readip_pcap()) should be considered valid.  When
 // invalid (Windows and Amiga), readip_pcap returns the time you called it.
 bool pcap_recv_timeval_valid();
@@ -465,7 +497,7 @@ char *getFinalPacketStats(char *buf, int buflen);
       directly connected to the src host running Nmap.  If it is, set the MAC.
 
    This function returns 0 if it ends up setting the MAC, nonzero otherwise
-*/  
+*/
 
 int setTargetMACIfAvailable(Target *target, struct link_header *linkhdr,
                             const struct sockaddr_storage *src, int overwrite);
@@ -480,7 +512,7 @@ int setTargetMACIfAvailable(Target *target, struct link_header *linkhdr,
 bool setTargetNextHopMAC(Target *target);
 
 bool getNextHopMAC(const char *iface, const u8 *srcmac, const struct sockaddr_storage *srcss,
-		   const struct sockaddr_storage *dstss, u8 *dstmac);
+                   const struct sockaddr_storage *dstss, u8 *dstmac);
 
 
 
@@ -488,9 +520,9 @@ bool getNextHopMAC(const char *iface, const u8 *srcmac, const struct sockaddr_st
 int get_link_offset(char *device);
 /* If rcvdtime is non-null and a packet is returned, rcvd will be
    filled with the time that packet was captured from the wire by
-   pcap.  If linknfo is not NULL, lnknfo->headerlen and
+   pcap.  If linknfo is not NULL, lnkinfo->headerlen and
    lnkinfo->header will be filled with the appropriate values. */
-char *readipv4_pcap(pcap_t *pd, unsigned int *len, long to_usec, 
+char *readipv4_pcap(pcap_t *pd, unsigned int *len, long to_usec,
                     struct timeval *rcvdtime, struct link_header *linknfo, bool validate);
 
 char *readip_pcap(pcap_t *pd, unsigned int *len, long to_usec,
@@ -505,9 +537,9 @@ int read_na_pcap(pcap_t *pd, u8 *sendermac, struct sockaddr_in6 *senderIP, long 
    and returns 1.  If it times out and reads no arp requests, returns
    0.  to_usec is the timeout period in microseconds.  Use 0 to avoid
    blocking to the extent possible, and -1 to block forever.  Returns
-   -1 or exits if ther is an error. */
+   -1 or exits if there is an error. */
 int read_arp_reply_pcap(pcap_t *pd, u8 *sendermac, struct in_addr *senderIP,
-		       long to_usec, struct timeval *rcvdtime);
+                       long to_usec, struct timeval *rcvdtime);
 
 /* Examines the given tcp packet and obtains the TCP timestamp option
    information if available.  Note that the CALLER must ensure that
@@ -531,14 +563,12 @@ void broadcast_socket(int sd);
    len) into buf .  Give up after 'seconds'.  Returns the number of
    bytes read (or -1 in the case of an error.  It only does one recv
    (it will not keep going until len bytes are read).  If timedout is
-   not NULL, it will be set to zero (no timeout occured) or 1 (it
+   not NULL, it will be set to zero (no timeout occurred) or 1 (it
    did). */
 int recvtime(int sd, char *buf, int len, int seconds, int *timedout);
 
 /* Sets a pcap filter function -- makes SOCK_RAW reads easier */
-#ifndef WINIP_H
 void set_pcap_filter(const char *device, pcap_t *pd, const char *bpf, ...);
-#endif
 
 #endif /*TCPIP_H*/
 

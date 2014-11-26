@@ -1,3 +1,10 @@
+local mssql = require "mssql"
+local nmap = require "nmap"
+local smb = require "smb"
+local stdnse = require "stdnse"
+local string = require "string"
+local table = require "table"
+
 -- -*- mode: lua -*-
 -- vim: set filetype=lua :
 
@@ -5,7 +12,7 @@ description = [[
 Attempts to determine configuration and version information for Microsoft SQL
 Server instances.
 
-SQL Server credentials required: No (will not benefit from 
+SQL Server credentials required: No (will not benefit from
 <code>mssql.username</code> & <code>mssql.password</code>).
 Run criteria:
 * Host script: Will always run.
@@ -20,11 +27,11 @@ The script uses two means of getting version information for SQL Server instance
 * Querying the SQL Server Browser service, which runs by default on UDP port
 1434 on servers that have SQL Server 2000 or later installed. However, this
 service may be disabled without affecting the functionality of the instances.
-Additionally, it provides imprecise version information. 
+Additionally, it provides imprecise version information.
 * Sending a probe to the instance, causing the instance to respond with
 information including the exact version number. This is the same method that
-Nmap uses for service versioning; however, this script can also do the same for 
-instances accessiable via Windows named pipes, and can target all of the
+Nmap uses for service versioning; however, this script can also do the same for
+instances accessible via Windows named pipes, and can target all of the
 instances listed by the SQL Server Browser service.
 
 In the event that the script can connect to the SQL Server Browser service
@@ -98,7 +105,7 @@ be disabled using the <code>mssql.scanned-ports-only</code> script argument.
 --                       added script arg to prevent script from connecting to ports that
 --                         weren't in original Nmap scan <chris3E3@gmail.com>)
 -- rev 1.5 (2011-02-01 - Moved discovery functionality into ms-sql-discover.nse and
---						   broadcast-ms-sql-discovery.nse <chris3E3@gmail.com>)
+--               broadcast-ms-sql-discovery.nse <chris3E3@gmail.com>)
 
 author = "Chris Woodbury, Thomas Buchanan"
 
@@ -106,154 +113,152 @@ license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
 
 categories = {"default", "discovery", "safe"}
 
-require("shortport")
-require("mssql")
 
 hostrule = function(host)
-	if ( mssql.Helper.WasDiscoveryPerformed( host ) ) then
-		return mssql.Helper.GetDiscoveredInstances( host ) ~= nil
-	else
-		local sqlDefaultPort = nmap.get_port_state( host, {number = 1433, protocol = "tcp"} )
-		local sqlBrowserPort = nmap.get_port_state( host, {number = 1434, protocol = "udp"} )
-		-- smb.get_port() will return nil if no SMB port was scanned OR if SMB ports were scanned but none was open
-		local smbPortNumber = smb.get_port( host )
-		
-		if ( (stdnse.get_script_args( {"mssql.instance-all", "mssql.instance-name", "mssql.instance-port"} ) ~= nil) or
-				(sqlBrowserPort and (sqlBrowserPort.state == "open" or sqlBrowserPort.state == "open|filtered")) or
-				(sqlDefaultPort and (sqlDefaultPort.state == "open" or sqlDefaultPort.state == "open|filtered")) or
-				(smbPortNumber ~= nil)  ) then
-			return true
-		end
-	end
+  if ( mssql.Helper.WasDiscoveryPerformed( host ) ) then
+    return mssql.Helper.GetDiscoveredInstances( host ) ~= nil
+  else
+    local sqlDefaultPort = nmap.get_port_state( host, {number = 1433, protocol = "tcp"} )
+    local sqlBrowserPort = nmap.get_port_state( host, {number = 1434, protocol = "udp"} )
+    -- smb.get_port() will return nil if no SMB port was scanned OR if SMB ports were scanned but none was open
+    local smbPortNumber = smb.get_port( host )
+
+    if ( (stdnse.get_script_args( {"mssql.instance-all", "mssql.instance-name", "mssql.instance-port"} ) ~= nil) or
+        (sqlBrowserPort and (sqlBrowserPort.state == "open" or sqlBrowserPort.state == "open|filtered")) or
+        (sqlDefaultPort and (sqlDefaultPort.state == "open" or sqlDefaultPort.state == "open|filtered")) or
+        (smbPortNumber ~= nil)  ) then
+      return true
+    end
+  end
 end
 
 
 --- Adds a label and value to an output table. If the value is a boolean, it is
---  converted to Yes/No; if the value is nil, nothing is added to the table. 
+--  converted to Yes/No; if the value is nil, nothing is added to the table.
 local function add_to_output_table( outputTable, outputLabel, outputData )
-	if outputData == nil then return end
-	
-	if outputData == true then
-		outputData = "Yes"
-	elseif outputData == false then
-		outputData = "No"
-	end
-	
-	table.insert(outputTable, string.format( "%s: %s", outputLabel, outputData ) )
+  if outputData == nil then return end
+
+  if outputData == true then
+    outputData = "Yes"
+  elseif outputData == false then
+    outputData = "No"
+  end
+
+  table.insert(outputTable, string.format( "%s: %s", outputLabel, outputData ) )
 end
 
 
 --- Returns formatted output for the given version data
 local function create_version_output_table( versionInfo )
-	local versionOutput = {}
-	
-	versionOutput["name"] = "Version: " .. versionInfo:ToString()
-	if ( versionInfo.source ~= "SSRP" ) then
-		add_to_output_table( versionOutput, "Version number", versionInfo.versionNumber )
-	end
-	add_to_output_table( versionOutput, "Product", versionInfo.productName )
-	add_to_output_table( versionOutput, "Service pack level", versionInfo.servicePackLevel )
-	add_to_output_table( versionOutput, "Post-SP patches applied", versionInfo.patched )
-	
-	return versionOutput
+  local versionOutput = {}
+
+  versionOutput["name"] = "Version: " .. versionInfo:ToString()
+  if ( versionInfo.source ~= "SSRP" ) then
+    add_to_output_table( versionOutput, "Version number", versionInfo.versionNumber )
+  end
+  add_to_output_table( versionOutput, "Product", versionInfo.productName )
+  add_to_output_table( versionOutput, "Service pack level", versionInfo.servicePackLevel )
+  add_to_output_table( versionOutput, "Post-SP patches applied", versionInfo.patched )
+
+  return versionOutput
 end
 
 
 --- Returns formatted output for the given instance
 local function create_instance_output_table( instance )
 
-	-- if we didn't get anything useful (due to errors or the port not actually
-	-- being SQL Server), don't report anything
-	if not ( instance.instanceName or instance.version ) then return nil end
+  -- if we didn't get anything useful (due to errors or the port not actually
+  -- being SQL Server), don't report anything
+  if not ( instance.instanceName or instance.version ) then return nil end
 
-	local instanceOutput = {}
-	instanceOutput["name"] = string.format( "[%s]", instance:GetName() )
-	
-	add_to_output_table( instanceOutput, "Instance name", instance.instanceName )
-	if instance.version then
-		local versionOutput = create_version_output_table( instance.version )
-		table.insert( instanceOutput, versionOutput )
-	end
-	if instance.port then add_to_output_table( instanceOutput, "TCP port", instance.port.number ) end
-	add_to_output_table( instanceOutput, "Named pipe", instance.pipeName )
-	add_to_output_table( instanceOutput, "Clustered", instance.isClustered )
+  local instanceOutput = {}
+  instanceOutput["name"] = string.format( "[%s]", instance:GetName() )
 
-	return instanceOutput
+  add_to_output_table( instanceOutput, "Instance name", instance.instanceName )
+  if instance.version then
+    local versionOutput = create_version_output_table( instance.version )
+    table.insert( instanceOutput, versionOutput )
+  end
+  if instance.port then add_to_output_table( instanceOutput, "TCP port", instance.port.number ) end
+  add_to_output_table( instanceOutput, "Named pipe", instance.pipeName )
+  add_to_output_table( instanceOutput, "Clustered", instance.isClustered )
+
+  return instanceOutput
 
 end
 
 
 --- Processes a single instance, attempting to determine its version, etc.
 local function process_instance( instance )
-	
-	local foundVersion = false
-	local ssnetlibVersion
-	
-	-- If possible and allowed (see 'mssql.scanned-ports-only' argument), we'll
-	-- connect to the instance to get an accurate version number
-	if ( instance:HasNetworkProtocols() ) then
-		local ssnetlibVersion
-		foundVersion, ssnetlibVersion = mssql.Helper.GetInstanceVersion( instance )
-		if ( foundVersion ) then
-			instance.version = ssnetlibVersion
-			stdnse.print_debug( 1, "%s: Retrieved SSNetLib version for %s.", SCRIPT_NAME, instance:GetName() )
-		else
-			stdnse.print_debug( 1, "%s: Could not retrieve SSNetLib version for %s.", SCRIPT_NAME, instance:GetName() )
-		end
-	end
-	
-	-- If we didn't get a version from SSNetLib, give the user some detail as to why
-	if ( not foundVersion ) then
-		if ( not instance:HasNetworkProtocols() ) then
-			stdnse.print_debug( 1, "%s: %s has no network protocols enabled.", SCRIPT_NAME, instance:GetName() )
-		end
-		if ( instance.version ) then
-			stdnse.print_debug( 1, "%s: Using version number from SSRP response for %s.", SCRIPT_NAME, instance:GetName() )
-		else
-			stdnse.print_debug( 1, "%s: Version info could not be retrieved for %s.", SCRIPT_NAME, instance:GetName() )
-		end
-	end
-	
-	-- Give some version info back to Nmap
-	if ( instance.port and instance.version ) then
-		instance.version:PopulateNmapPortVersion( instance.port )
-		nmap.set_port_version( instance.host, instance.port, "hardmatched" )
-	end
+
+  local foundVersion = false
+  local ssnetlibVersion
+
+  -- If possible and allowed (see 'mssql.scanned-ports-only' argument), we'll
+  -- connect to the instance to get an accurate version number
+  if ( instance:HasNetworkProtocols() ) then
+    local ssnetlibVersion
+    foundVersion, ssnetlibVersion = mssql.Helper.GetInstanceVersion( instance )
+    if ( foundVersion ) then
+      instance.version = ssnetlibVersion
+      stdnse.print_debug( 1, "%s: Retrieved SSNetLib version for %s.", SCRIPT_NAME, instance:GetName() )
+    else
+      stdnse.print_debug( 1, "%s: Could not retrieve SSNetLib version for %s.", SCRIPT_NAME, instance:GetName() )
+    end
+  end
+
+  -- If we didn't get a version from SSNetLib, give the user some detail as to why
+  if ( not foundVersion ) then
+    if ( not instance:HasNetworkProtocols() ) then
+      stdnse.print_debug( 1, "%s: %s has no network protocols enabled.", SCRIPT_NAME, instance:GetName() )
+    end
+    if ( instance.version ) then
+      stdnse.print_debug( 1, "%s: Using version number from SSRP response for %s.", SCRIPT_NAME, instance:GetName() )
+    else
+      stdnse.print_debug( 1, "%s: Version info could not be retrieved for %s.", SCRIPT_NAME, instance:GetName() )
+    end
+  end
+
+  -- Give some version info back to Nmap
+  if ( instance.port and instance.version ) then
+    instance.version:PopulateNmapPortVersion( instance.port )
+    nmap.set_port_version( instance.host, instance.port)
+  end
 
 end
 
 
 action = function( host )
-	local scriptOutput = {}
-	
-	local status, instanceList = mssql.Helper.GetTargetInstances( host )
-	-- if no instances were targeted, then display info on all
-	if ( not status ) then
-		if ( not mssql.Helper.WasDiscoveryPerformed( host ) ) then
-			mssql.Helper.Discover( host )
-		end
-		instanceList = mssql.Helper.GetDiscoveredInstances( host )
-	end
-	
-	
-	if ( not instanceList ) then
-		return stdnse.format_output( false, instanceList or "" )
-	else
-		for _, instance in ipairs( instanceList ) do
-			if instance.serverName then
-				table.insert(scriptOutput, string.format( "Windows server name: %s", instance.serverName ))
-				break
-			end
-		end
-		for _, instance in pairs( instanceList ) do
-			process_instance( instance )
-			local instanceOutput = create_instance_output_table( instance )
-			if instanceOutput then
-				table.insert( scriptOutput, instanceOutput )
-			end
-		end
-	end
-	
-	return stdnse.format_output( true, scriptOutput )
+  local scriptOutput = {}
+
+  local status, instanceList = mssql.Helper.GetTargetInstances( host )
+  -- if no instances were targeted, then display info on all
+  if ( not status ) then
+    if ( not mssql.Helper.WasDiscoveryPerformed( host ) ) then
+      mssql.Helper.Discover( host )
+    end
+    instanceList = mssql.Helper.GetDiscoveredInstances( host )
+  end
+
+
+  if ( not instanceList ) then
+    return stdnse.format_output( false, instanceList or "" )
+  else
+    for _, instance in ipairs( instanceList ) do
+      if instance.serverName then
+        table.insert(scriptOutput, string.format( "Windows server name: %s", instance.serverName ))
+        break
+      end
+    end
+    for _, instance in pairs( instanceList ) do
+      process_instance( instance )
+      local instanceOutput = create_instance_output_table( instance )
+      if instanceOutput then
+        table.insert( scriptOutput, instanceOutput )
+      end
+    end
+  end
+
+  return stdnse.format_output( true, scriptOutput )
 end
 

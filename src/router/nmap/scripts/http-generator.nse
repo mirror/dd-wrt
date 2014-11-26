@@ -1,3 +1,8 @@
+local http = require "http"
+local shortport = require "shortport"
+local stdnse = require "stdnse"
+local string = require "string"
+
 description = [[
 Displays the contents of the "generator" meta tag of a web page (default: /) if there is one.
 ]]
@@ -41,41 +46,39 @@ categories = {"default", "discovery", "safe"}
 -- TODO:
 -- more generic generator pattern
 
-require('http')
-require('shortport')
-require('stdnse')
 
 -- helper function
 local follow_redirects = function(host, port, path, n)
-   local pattern = "^[hH][tT][tT][pP]/1.[01] 30[12]"
-   local response = http.get(host, port, path)
+  local pattern = "^[hH][tT][tT][pP]/1.[01] 30[12]"
+  local response = http.get(host, port, path)
 
-   while (response['status-line'] or ""):match(pattern) and n > 0 do
-      n = n - 1
-      loc = response.header['location']
-      response = http.get_url(loc)
-   end
+  while (response['status-line'] or ""):match(pattern) and n > 0 do
+    n = n - 1
+    local loc = response.header['location']
+    response = http.get_url(loc)
+  end
 
-   return response
+  return response
 end
 
 portrule = shortport.http
 
 action = function(host, port)
-   local response, loc, generator
-   local path = stdnse.get_script_args('http-generator.path') or '/'
-   local redirects = tonumber(stdnse.get_script_args('http-generator.redirects')) or 3
+  local response, loc, generator
+  local path = stdnse.get_script_args('http-generator.path') or '/'
+  local redirects = tonumber(stdnse.get_script_args('http-generator.redirects')) or 3
 
-   -- Worst case: <meta name=Generator content="Microsoft Word 11">
-   local pattern = '<meta name="?generator"? content="([^\"]*)" ?/?>'
+  -- Worst case: <meta name=Generator content="Microsoft Word 11">
+  local pattern = '<meta name="?generator"? content="([^\"]*)" ?/?>'
 
-   -- make pattern case-insensitive
-   pattern = pattern:gsub("%a", function (c)
-               return string.format("[%s%s]", string.lower(c),
-                                              string.upper(c))
-             end)
+  -- make pattern case-insensitive
+  pattern = pattern:gsub("%a", function (c)
+      return string.format("[%s%s]", string.lower(c),
+        string.upper(c))
+    end)
 
-   response = follow_redirects(host, port, path, redirects)
-   return response.body:match(pattern)
-
+  response = follow_redirects(host, port, path, redirects)
+  if ( response and response.body ) then
+    return response.body:match(pattern)
+  end
 end

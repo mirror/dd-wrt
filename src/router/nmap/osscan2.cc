@@ -6,62 +6,94 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2012 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
- * Foundation; Version 2 with the clarifications and exceptions described  *
- * below.  This guarantees your right to use, modify, and redistribute     *
- * this software under certain conditions.  If you wish to embed Nmap      *
- * technology into proprietary software, we sell alternative licenses      *
- * (contact sales@insecure.com).  Dozens of software vendors already       *
- * license Nmap technology such as host discovery, port scanning, OS       *
- * detection, version detection, and the Nmap Scripting Engine.            *
+ * Foundation; Version 2 ("GPL"), BUT ONLY WITH ALL OF THE CLARIFICATIONS  *
+ * AND EXCEPTIONS DESCRIBED HEREIN.  This guarantees your right to use,    *
+ * modify, and redistribute this software under certain conditions.  If    *
+ * you wish to embed Nmap technology into proprietary software, we sell    *
+ * alternative licenses (contact sales@nmap.com).  Dozens of software      *
+ * vendors already license Nmap technology such as host discovery, port    *
+ * scanning, OS detection, version detection, and the Nmap Scripting       *
+ * Engine.                                                                 *
  *                                                                         *
- * Note that the GPL places important restrictions on "derived works", yet *
- * it does not provide a detailed definition of that term.  To avoid       *
+ * Note that the GPL places important restrictions on "derivative works",  *
+ * yet it does not provide a detailed definition of that term.  To avoid   *
  * misunderstandings, we interpret that term as broadly as copyright law   *
  * allows.  For example, we consider an application to constitute a        *
- * "derivative work" for the purpose of this license if it does any of the *
- * following:                                                              *
- * o Integrates source code from Nmap                                      *
- * o Reads or includes Nmap copyrighted data files, such as                *
- *   nmap-os-db or nmap-service-probes.                                    *
- * o Executes Nmap and parses the results (as opposed to typical shell or  *
- *   execution-menu apps, which simply display raw Nmap output and so are  *
- *   not derivative works.)                                                *
- * o Integrates/includes/aggregates Nmap into a proprietary executable     *
- *   installer, such as those produced by InstallShield.                   *
- * o Links to a library or executes a program that does any of the above   *
+ * derivative work for the purpose of this license if it does any of the   *
+ * following with any software or content covered by this license          *
+ * ("Covered Software"):                                                   *
  *                                                                         *
- * The term "Nmap" should be taken to also include any portions or derived *
- * works of Nmap, as well as other software we distribute under this       *
- * license such as Zenmap, Ncat, and Nping.  This list is not exclusive,   *
- * but is meant to clarify our interpretation of derived works with some   *
- * common examples.  Our interpretation applies only to Nmap--we don't     *
- * speak for other people's GPL works.                                     *
+ * o Integrates source code from Covered Software.                         *
  *                                                                         *
- * If you have any questions about the GPL licensing restrictions on using *
- * Nmap in non-GPL works, we would be happy to help.  As mentioned above,  *
- * we also offer alternative license to integrate Nmap into proprietary    *
- * applications and appliances.  These contracts have been sold to dozens  *
- * of software vendors, and generally include a perpetual license as well  *
- * as providing for priority support and updates.  They also fund the      *
- * continued development of Nmap.  Please email sales@insecure.com for     *
- * further information.                                                    *
+ * o Reads or includes copyrighted data files, such as Nmap's nmap-os-db   *
+ * or nmap-service-probes.                                                 *
  *                                                                         *
- * As a special exception to the GPL terms, Insecure.Com LLC grants        *
+ * o Is designed specifically to execute Covered Software and parse the    *
+ * results (as opposed to typical shell or execution-menu apps, which will *
+ * execute anything you tell them to).                                     *
+ *                                                                         *
+ * o Includes Covered Software in a proprietary executable installer.  The *
+ * installers produced by InstallShield are an example of this.  Including *
+ * Nmap with other software in compressed or archival form does not        *
+ * trigger this provision, provided appropriate open source decompression  *
+ * or de-archiving software is widely available for no charge.  For the    *
+ * purposes of this license, an installer is considered to include Covered *
+ * Software even if it actually retrieves a copy of Covered Software from  *
+ * another source during runtime (such as by downloading it from the       *
+ * Internet).                                                              *
+ *                                                                         *
+ * o Links (statically or dynamically) to a library which does any of the  *
+ * above.                                                                  *
+ *                                                                         *
+ * o Executes a helper program, module, or script to do any of the above.  *
+ *                                                                         *
+ * This list is not exclusive, but is meant to clarify our interpretation  *
+ * of derived works with some common examples.  Other people may interpret *
+ * the plain GPL differently, so we consider this a special exception to   *
+ * the GPL that we apply to Covered Software.  Works which meet any of     *
+ * these conditions must conform to all of the terms of this license,      *
+ * particularly including the GPL Section 3 requirements of providing      *
+ * source code and allowing free redistribution of the work as a whole.    *
+ *                                                                         *
+ * As another special exception to the GPL terms, Insecure.Com LLC grants  *
  * permission to link the code of this program with any version of the     *
  * OpenSSL library which is distributed under a license identical to that  *
  * listed in the included docs/licenses/OpenSSL.txt file, and distribute   *
- * linked combinations including the two. You must obey the GNU GPL in all *
- * respects for all of the code used other than OpenSSL.  If you modify    *
- * this file, you may extend this exception to your version of the file,   *
- * but you are not obligated to do so.                                     *
+ * linked combinations including the two.                                  *
  *                                                                         *
- * If you received these files with a written license agreement or         *
- * contract stating terms other than the terms above, then that            *
- * alternative license agreement takes precedence over these comments.     *
+ * Any redistribution of Covered Software, including any derived works,    *
+ * must obey and carry forward all of the terms of this license, including *
+ * obeying all GPL rules and restrictions.  For example, source code of    *
+ * the whole work must be provided and free redistribution must be         *
+ * allowed.  All GPL references to "this License", are to be treated as    *
+ * including the terms and conditions of this license text as well.        *
+ *                                                                         *
+ * Because this license imposes special exceptions to the GPL, Covered     *
+ * Work may not be combined (even as part of a larger work) with plain GPL *
+ * software.  The terms, conditions, and exceptions of this license must   *
+ * be included as well.  This license is incompatible with some other open *
+ * source licenses as well.  In some cases we can relicense portions of    *
+ * Nmap or grant special permissions to use it in other open source        *
+ * software.  Please contact fyodor@nmap.org with any such requests.       *
+ * Similarly, we don't incorporate incompatible open source software into  *
+ * Covered Software without special permission from the copyright holders. *
+ *                                                                         *
+ * If you have any questions about the licensing restrictions on using     *
+ * Nmap in other works, are happy to help.  As mentioned above, we also    *
+ * offer alternative license to integrate Nmap into proprietary            *
+ * applications and appliances.  These contracts have been sold to dozens  *
+ * of software vendors, and generally include a perpetual license as well  *
+ * as providing for priority support and updates.  They also fund the      *
+ * continued development of Nmap.  Please email sales@nmap.com for further *
+ * information.                                                            *
+ *                                                                         *
+ * If you have received a written license agreement or contract for        *
+ * Covered Software stating terms other than these, you may choose to use  *
+ * and redistribute Covered Software under those terms instead of these.   *
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
@@ -70,8 +102,8 @@
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
- * to nmap-dev@insecure.org for possible incorporation into the main       *
- * distribution.  By sending these changes to Fyodor or one of the         *
+ * to the dev@nmap.org mailing list for possible incorporation into the    *
+ * main distribution.  By sending these changes to Fyodor or one of the    *
  * Insecure.Org development mailing lists, or checking them into the Nmap  *
  * source code repository, it is understood (unless you specify otherwise) *
  * that you are offering the Nmap Project (Insecure.Com LLC) the           *
@@ -85,14 +117,13 @@
  *                                                                         *
  * This program is distributed in the hope that it will be useful, but     *
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU       *
- * General Public License v2.0 for more details at                         *
- * http://www.gnu.org/licenses/gpl-2.0.html , or in the COPYING file       *
- * included with Nmap.                                                     *
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
+ * license file for more details (it's in a COPYING file included with     *
+ * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: osscan2.cc 28192 2012-03-01 06:53:35Z fyodor $ */
+/* $Id: osscan2.cc 33540 2014-08-16 02:45:47Z dmiller $ */
 
 #include "osscan.h"
 #include "osscan2.h"
@@ -107,7 +138,6 @@
 
 #include <list>
 
-using namespace std;
 extern NmapOps o;
 
 /* 8 options:
@@ -163,11 +193,12 @@ struct scan_performance_vars perf;
    test result should be omitted, the function returns NULL and doesn't modify
    *av. Otherwise, it returns av after filling in the information. */
 static struct AVal *make_aval_ipid_seq(struct AVal *av, const char *attribute,
-                                       int ipid_seqclass, int ipids[NUM_SEQ_SAMPLES]) {
+                                       int ipid_seqclass, u32 ipids[NUM_SEQ_SAMPLES]) {
   switch (ipid_seqclass) {
   case IPID_SEQ_CONSTANT:
     av->value = string_pool_sprintf("%X", ipids[0]);
     break;
+  case IPID_SEQ_INCR_BY_2:
   case IPID_SEQ_INCR:
     av->value = "I";
     break;
@@ -213,40 +244,13 @@ int get_initial_ttl_guess(u8 ttl) {
 
 
 /* This function takes an array of "numSamples" IP IDs and analyzes
- them to determine their sequenceability classification.  It returns
+ them to determine their sequence classification.  It returns
  one of the IPID_SEQ_* classifications defined in nmap.h .  If the
  function cannot determine the sequence, IPID_SEQ_UNKNOWN is returned.
  This islocalhost argument is a boolean specifying whether these
- numbers were generated by scanning localhost.  NOTE: the "ipids" argument
- may be modified if localhost is set to true. */
-int get_ipid_sequence(int numSamples, int *ipids, int islocalhost) {
-  u16 ipid_diffs[32];
-  int i, j, k;
-  int allipideqz = 1;  /* Flag that means "All IP.IDs returned during sequencing
-                        * are zero. This is unset if we find a nonzero */
-
-  assert(numSamples < (int) (sizeof(ipid_diffs) / 2));
-  if (numSamples < 2)
-    return IPID_SEQ_UNKNOWN;
-
-  for (i = 1; i < numSamples; i++) {
-    if (ipids[i - 1] != 0 || ipids[i] != 0)
-      allipideqz = 0; /* All IP.ID values do *NOT* equal zero */
-
-    if (ipids[i - 1] <= ipids[i]) {
-        ipid_diffs[i - 1] = ipids[i] - ipids[i - 1];
-    } else {
-        ipid_diffs[i - 1] = (u16) (ipids[i] - ipids[i - 1] + 65536);
-    }
-
-  /* Random */
-  if (numSamples > 2 && ipid_diffs[i - 1] > 20000)
-      return IPID_SEQ_RD;
-  }
-
-  /* ZERO */
-  if (allipideqz)
-    return IPID_SEQ_ZERO;
+ numbers were generated by scanning localhost. */
+int identify_sequence(int numSamples, u32 *ipid_diffs, int islocalhost) {
+  int i, j, k, l;
 
   if (islocalhost) {
     int allgto = 1; /* ALL diffs greater than one */
@@ -291,9 +295,14 @@ int get_ipid_sequence(int numSamples, int *ipids, int islocalhost) {
   j = 1; /* j is a flag meaning "all differences seen are < 10" */
   k = 1; /* k is a flag meaning "all difference seen are multiples of 256 and
           * no greater than 5120" */
+  l = 1; /* l is a flag meaning "all differences are multiples of 2" */
   for (i = 0; i < numSamples - 1; i++) {
     if (k && (ipid_diffs[i] > 5120 || ipid_diffs[i] % 256 != 0)) {
       k = 0;
+    }
+
+    if (l && ipid_diffs[i] % 2 != 0) {
+      l = 0;
     }
 
     if (j && ipid_diffs[i] > 9) {
@@ -306,17 +315,85 @@ int get_ipid_sequence(int numSamples, int *ipids, int islocalhost) {
     return IPID_SEQ_BROKEN_INCR;
   }
 
-  /* Incremental */
+  /* Incrementing by 2 */
+  if (l == 1)
+    return IPID_SEQ_INCR_BY_2;
+
+  /* Incremental by 1 */
   if (j == 1)
     return IPID_SEQ_INCR;
 
   return IPID_SEQ_UNKNOWN;
 }
 
+/* Calculate the distances between the ipids and write them
+   into the ipid_diffs array. If the sequence class can be determined
+   immediately, return it; otherwise return -1 */
+int get_diffs(u32 *ipid_diffs, int numSamples, u32 *ipids, int islocalhost) {
+  int i;
+  bool allipideqz = true;
+
+  if (numSamples < 2)
+    return IPID_SEQ_UNKNOWN;
+
+  for (i = 1; i < numSamples; i++) {
+    if (ipids[i - 1] != 0 || ipids[i] != 0)
+      allipideqz = false; /* All IP.ID values do *NOT* equal zero */
+
+    ipid_diffs[i - 1] = ipids[i] - ipids[i - 1];
+
+    /* Random */
+    if (numSamples > 2 && ipid_diffs[i - 1] > 20000)
+      return IPID_SEQ_RD;
+  }
+
+  if (allipideqz) {
+    return IPID_SEQ_ZERO;
+  }
+  else {
+    return -1;
+  }
+
+}
+
+/* Indentify the ipid sequence for 32-bit IPID values (IPv6) */
+int get_ipid_sequence_32(int numSamples, u32 *ipids, int islocalhost) {
+  int ipid_seq = IPID_SEQ_UNKNOWN;
+  u32 ipid_diffs[32];
+  assert(numSamples < (int) (sizeof(ipid_diffs) / 2));
+  ipid_seq = get_diffs(ipid_diffs, numSamples, ipids, islocalhost);
+  if (ipid_seq < 0) {
+    return identify_sequence(numSamples, ipid_diffs, islocalhost);
+  }
+  else {
+    return ipid_seq;
+  }
+}
+
+/* Indentify the ipid sequence for 16-bit IPID values (IPv4) */
+int get_ipid_sequence_16(int numSamples, u32 *ipids, int islocalhost) {
+  int i;
+  int ipid_seq = IPID_SEQ_UNKNOWN;
+  u32 ipid_diffs[32];
+  assert(numSamples < (int) (sizeof(ipid_diffs) / 2));
+  ipid_seq = get_diffs(ipid_diffs, numSamples, ipids, islocalhost);
+  /* AND with 0xffff so that in case the 16 bit counter was
+   * flipped over we still have a continuous sequence */
+  for (i = 0; i < numSamples; i++) {
+    ipid_diffs[i] = ipid_diffs[i] & 0xffff;
+  }
+  if (ipid_seq < 0) {
+    return identify_sequence(numSamples, ipid_diffs, islocalhost);
+  }
+  else {
+    return ipid_seq;
+  }
+}
+
 
 /* Start the timeout clocks of any targets that aren't already timedout */
 static void startTimeOutClocks(OsScanInfo *OSI) {
-  list<HostOsScanInfo *>::iterator hostI;
+  std::list<HostOsScanInfo *>::iterator hostI;
 
   gettimeofday(&now, NULL);
   for (hostI = OSI->incompleteHosts.begin();
@@ -329,7 +406,7 @@ static void startTimeOutClocks(OsScanInfo *OSI) {
 
 /** Sets up the pcap descriptor in HOS (obtains a descriptor and sets the
  * appropriate BPF filter, based on the supplied list of targets). */
-static void begin_sniffer(HostOsScan *HOS, vector<Target *> &Targets) {
+static void begin_sniffer(HostOsScan *HOS, std::vector<Target *> &Targets) {
   char pcap_filter[2048];
   /* 20 IPv6 addresses is max (45 byte addy + 14 (" or src host ")) * 20 == 1180 */
   char dst_hosts[1200];
@@ -385,7 +462,7 @@ static void begin_sniffer(HostOsScan *HOS, vector<Target *> &Targets) {
  * reinitializing some variables of the supplied objects and deleting
  * some old information. */
 static void startRound(OsScanInfo *OSI, HostOsScan *HOS, int roundNum) {
-  list<HostOsScanInfo *>::iterator hostI;
+  std::list<HostOsScanInfo *>::iterator hostI;
   HostOsScanInfo *hsi = NULL;
 
   /* Reinitial some parameters of the scan system. */
@@ -403,7 +480,7 @@ static void startRound(OsScanInfo *OSI, HostOsScan *HOS, int roundNum) {
 
 /* Run the sequence generation tests (6 TCP probes sent 100ms apart) */
 static void doSeqTests(OsScanInfo *OSI, HostOsScan *HOS) {
-  list<HostOsScanInfo *>::iterator hostI;
+  std::list<HostOsScanInfo *>::iterator hostI;
   HostOsScanInfo *hsi = NULL;
   HostOsScanStats *hss = NULL;
   unsigned int unableToSend = 0;  /* # of times in a row that hosts were unable to send probe */
@@ -569,7 +646,7 @@ static void doSeqTests(OsScanInfo *OSI, HostOsScan *HOS) {
 
 /* TCP, UDP, ICMP Tests */
 static void doTUITests(OsScanInfo *OSI, HostOsScan *HOS) {
-  list<HostOsScanInfo *>::iterator hostI;
+  std::list<HostOsScanInfo *>::iterator hostI;
   HostOsScanInfo *hsi = NULL;
   HostOsScanStats *hss = NULL;
   unsigned int unableToSend; /* # of times in a row that hosts were unable to send probe */
@@ -738,7 +815,7 @@ static void doTUITests(OsScanInfo *OSI, HostOsScan *HOS) {
 
 
 static void endRound(OsScanInfo *OSI, HostOsScan *HOS, int roundNum) {
-  list<HostOsScanInfo *>::iterator hostI;
+  std::list<HostOsScanInfo *>::iterator hostI;
   HostOsScanInfo *hsi = NULL;
   int distance = -1;
   enum dist_calc_method distance_calculation_method = DIST_METHOD_NONE;
@@ -761,7 +838,7 @@ static void endRound(OsScanInfo *OSI, HostOsScan *HOS, int roundNum) {
       memcpy(&(hsi->target->seq), &hsi->hss->si, sizeof(struct seq_info));
       if (roundNum > 0) {
         if (o.verbose)
-          log_write(LOG_STDOUT, "WARNING:  OS didn't match until try #%d\n", roundNum + 1);
+          log_write(LOG_STDOUT, "WARNING: OS didn't match until try #%d\n", roundNum + 1);
       }
       match_fingerprint(hsi->FPR->FPs[roundNum], hsi->FPR,
                         o.reference_FPs, OSSCAN_GUESS_THRESHOLD);
@@ -791,7 +868,7 @@ static void endRound(OsScanInfo *OSI, HostOsScan *HOS, int roundNum) {
 
 
 static void findBestFPs(OsScanInfo *OSI) {
-  list<HostOsScanInfo *>::iterator hostI;
+  std::list<HostOsScanInfo *>::iterator hostI;
   HostOsScanInfo *hsi = NULL;
   int i;
 
@@ -826,7 +903,7 @@ static void findBestFPs(OsScanInfo *OSI) {
 
 
 static void printFP(OsScanInfo *OSI) {
-  list<HostOsScanInfo *>::iterator hostI;
+  std::list<HostOsScanInfo *>::iterator hostI;
   HostOsScanInfo *hsi = NULL;
   FingerPrintResultsIPv4 *FPR;
 
@@ -851,8 +928,8 @@ static void printFP(OsScanInfo *OSI) {
    the maximum number of OS detection tries allowed for it without
    matching, it is transferred to the passed in unMatchedHosts list.
    Returns the number of hosts moved to unMatchedHosts. */
-static int expireUnmatchedHosts(OsScanInfo *OSI, list<HostOsScanInfo *> *unMatchedHosts) {
-  list<HostOsScanInfo *>::iterator hostI, nextHost;
+static int expireUnmatchedHosts(OsScanInfo *OSI, std::list<HostOsScanInfo *> *unMatchedHosts) {
+  std::list<HostOsScanInfo *>::iterator hostI, nextHost;
   int hostsRemoved = 0;
   HostOsScanInfo *HOS;
 
@@ -864,7 +941,7 @@ static int expireUnmatchedHosts(OsScanInfo *OSI, list<HostOsScanInfo *> *unMatch
 
     int max_tries = o.maxOSTries(); /* The amt. if print is suitable for submission */
     if (HOS->target->FPR->OmitSubmissionFP())
-      max_tries = min(max_tries, STANDARD_OS2_TRIES);
+      max_tries = MIN(max_tries, STANDARD_OS2_TRIES);
 
     if (HOS->FPR->numFPs >= max_tries) {
       /* We've done all the OS2 tries we're going to do ... move this
@@ -1123,7 +1200,7 @@ void HostOsScanStats::addNewProbe(OFProbeType type, int subid) {
 
 
 /* Remove a probe from the probesActive. */
-void HostOsScanStats::removeActiveProbe(list<OFProbe *>::iterator probeI) {
+void HostOsScanStats::removeActiveProbe(std::list<OFProbe *>::iterator probeI) {
   OFProbe *probe = *probeI;
   probesActive.erase(probeI);
   delete probe;
@@ -1132,8 +1209,8 @@ void HostOsScanStats::removeActiveProbe(list<OFProbe *>::iterator probeI) {
 
 /* Get an active probe from active probe list identified by probe type
    and subid.  Returns probesActive.end() if there isn't one */
-list<OFProbe *>::iterator HostOsScanStats::getActiveProbe(OFProbeType type, int subid) {
-  list<OFProbe *>::iterator probeI;
+std::list<OFProbe *>::iterator HostOsScanStats::getActiveProbe(OFProbeType type, int subid) {
+  std::list<OFProbe *>::iterator probeI;
   OFProbe *probe = NULL;
 
   for (probeI = probesActive.begin(); probeI != probesActive.end(); probeI++) {
@@ -1154,14 +1231,14 @@ list<OFProbe *>::iterator HostOsScanStats::getActiveProbe(OFProbeType type, int 
 
 
 /* Move a probe from probesToSend to probesActive. */
-void HostOsScanStats::moveProbeToActiveList(list<OFProbe *>::iterator probeI) {
+void HostOsScanStats::moveProbeToActiveList(std::list<OFProbe *>::iterator probeI) {
   probesActive.push_back(*probeI);
   probesToSend.erase(probeI);
 }
 
 
 /* Move a probe from probesActive to probesToSend. */
-void HostOsScanStats::moveProbeToUnSendList(list<OFProbe *>::iterator probeI) {
+void HostOsScanStats::moveProbeToUnSendList(std::list<OFProbe *>::iterator probeI) {
   probesToSend.push_back(*probeI);
   probesActive.erase(probeI);
 }
@@ -1193,7 +1270,7 @@ double HostOsScanStats::timingRatio() {
 bool HostOsScan::nextTimeout(HostOsScanStats *hss, struct timeval *when) {
   assert(hss);
   struct timeval probe_to, earliest_to;
-  list<OFProbe *>::iterator probeI;
+  std::list<OFProbe *>::iterator probeI;
   bool firstgood = true;
 
   assert(when);
@@ -1268,17 +1345,13 @@ HostOsScan::HostOsScan(Target *t) {
       fatal("%s: Failed to open ethernet device (%s)", __func__, t->deviceName());
     rawsd = -1;
   } else {
-    /* Init our raw socket */
 #ifdef WIN32
     win32_fatal_raw_sockets(t->deviceName());
 #endif
-    if ((rawsd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0 )
+    rawsd = nmap_raw_socket();
+    if (rawsd < 0)
       pfatal("socket troubles in %s", __func__);
     unblock_socket(rawsd);
-    broadcast_socket(rawsd);
-#ifndef WIN32
-    sethdrinclude(rawsd);
-#endif
     ethsd = NULL;
   }
 
@@ -1299,13 +1372,7 @@ HostOsScan::~HostOsScan() {
     pcap_close(pd);
     pd = NULL;
   }
-  /*
-   * No need to close ethsd due to caching
-   * if (ethsd) {
-   *   eth_close(ethsd);
-   *   ethsd = NULL;
-   * }
-   */
+  /* No need to close ethsd due to caching. */
   delete stats;
 }
 
@@ -1338,7 +1405,7 @@ void HostOsScan::buildSeqProbeList(HostOsScanStats *hss) {
  * timed out. */
 void HostOsScan::updateActiveSeqProbes(HostOsScanStats *hss) {
   assert(hss);
-  list<OFProbe *>::iterator probeI, nxt;
+  std::list<OFProbe *>::iterator probeI, nxt;
   OFProbe *probe = NULL;
 
   for (probeI = hss->probesActive.begin(); probeI != hss->probesActive.end(); probeI = nxt) {
@@ -1420,7 +1487,7 @@ void HostOsScan::buildTUIProbeList(HostOsScanStats *hss) {
  * 2) Move timedout probes to probeNeedToSend; */
 void HostOsScan::updateActiveTUIProbes(HostOsScanStats *hss) {
   assert(hss);
-  list<OFProbe *>::iterator probeI, nxt;
+  std::list<OFProbe *>::iterator probeI, nxt;
   OFProbe *probe = NULL;
 
   for (probeI = hss->probesActive.begin(); probeI != hss->probesActive.end(); probeI = nxt) {
@@ -1451,7 +1518,7 @@ void HostOsScan::updateActiveTUIProbes(HostOsScanStats *hss) {
  * return true. */
 bool HostOsScan::hostSendOK(HostOsScanStats *hss, struct timeval *when) {
   assert(hss);
-  list<OFProbe *>::iterator probeI;
+  std::list<OFProbe *>::iterator probeI;
   int packTime;
   struct timeval probe_to, earliest_to, sendTime;
   long tdiff;
@@ -1520,7 +1587,7 @@ bool HostOsScan::hostSendOK(HostOsScanStats *hss, struct timeval *when) {
  * false; else, fill it with now and return true. */
 bool HostOsScan::hostSeqSendOK(HostOsScanStats *hss, struct timeval *when) {
   assert(hss);
-  list<OFProbe *>::iterator probeI;
+  std::list<OFProbe *>::iterator probeI;
   int packTime = 0, maxWait = 0;
   struct timeval probe_to, earliest_to, sendTime;
   long tdiff;
@@ -1601,7 +1668,7 @@ unsigned long HostOsScan::timeProbeTimeout(HostOsScanStats *hss) {
 
 void HostOsScan::sendNextProbe(HostOsScanStats *hss) {
   assert(hss);
-  list<OFProbe *>::iterator probeI;
+  std::list<OFProbe *>::iterator probeI;
   OFProbe *probe = NULL;
 
   if (hss->probesToSend.empty())
@@ -1806,7 +1873,7 @@ bool HostOsScan::processResp(HostOsScanStats *hss, struct ip *ip, unsigned int l
   struct icmp *icmp;
   int testno;
   bool isPktUseful = false;
-  list<OFProbe *>::iterator probeI;
+  std::list<OFProbe *>::iterator probeI;
   OFProbe *probe;
 
   if (len < 20 || len < (4 * ip->ip_hl) + 4U)
@@ -1984,9 +2051,10 @@ void HostOsScan::makeFP(HostOsScanStats *hss) {
 
             if (hss->distance != -1) {
                 /* We've gotten response for the UDP probe and thus have
-                   the "true" hop count. Add the received TTL to the hop
-                   count to get the initial TTL. */
-                it->value = string_pool_sprintf("%hX", ttl + hss->distance);
+                   the "true" hop count. Add the number of hops between
+                   us and the target (hss->distance - 1) to the received
+                   TTL to get the initial TTL. */
+                it->value = string_pool_sprintf("%hX", ttl + hss->distance - 1);
             } else {
                 /* Guess the initial TTL value */
                 it->attribute = "TG";
@@ -2186,6 +2254,28 @@ bool ScanStats::sendOK() {
  * Implementation of class HostOsScan                                         *
  ******************************************************************************/
 
+static unsigned int gcd_n_uint(int nvals, unsigned int *val) {
+  unsigned int a, b, c;
+
+  if (!nvals)
+    return 1;
+  a = *val;
+  for (nvals--; nvals; nvals--) {
+    b = *++val;
+    if (a < b) {
+      c = a;
+      a = b;
+      b = c;
+    }
+    while (b) {
+      c = a % b;
+      a = b;
+      b = c;
+    }
+  }
+  return a;
+}
+
 void HostOsScan::makeTSeqFP(HostOsScanStats *hss) {
   int i, j;
   u32 seq_diffs[NUM_SEQ_SAMPLES];
@@ -2308,21 +2398,21 @@ void HostOsScan::makeTSeqFP(HostOsScanStats *hss) {
   good_icmp_ipid_num = 0;
 
   for (i = 0; i < NUM_SEQ_SAMPLES; i++) {
-    if (hss->ipid.tcp_ipids[i] != -1) {
+    if (hss->ipid.tcp_ipids[i] != 0xffffffff) {
       if (good_tcp_ipid_num < i) {
         hss->ipid.tcp_ipids[good_tcp_ipid_num] = hss->ipid.tcp_ipids[i];
       }
       good_tcp_ipid_num++;
     }
 
-    if (hss->ipid.tcp_closed_ipids[i] != -1) {
+    if (hss->ipid.tcp_closed_ipids[i] != 0xffffffff) {
       if (good_tcp_closed_ipid_num < i) {
         hss->ipid.tcp_closed_ipids[good_tcp_closed_ipid_num] = hss->ipid.tcp_closed_ipids[i];
       }
       good_tcp_closed_ipid_num++;
     }
 
-    if (hss->ipid.icmp_ipids[i] != -1) {
+    if (hss->ipid.icmp_ipids[i] != 0xffffffff) {
       if (good_icmp_ipid_num < i) {
         hss->ipid.icmp_ipids[good_icmp_ipid_num] = hss->ipid.icmp_ipids[i];
       }
@@ -2331,7 +2421,7 @@ void HostOsScan::makeTSeqFP(HostOsScanStats *hss) {
   }
 
   if (good_tcp_ipid_num >= 3) {
-    tcp_ipid_seqclass = get_ipid_sequence(good_tcp_ipid_num, hss->ipid.tcp_ipids, islocalhost(hss->target->TargetSockAddr()));
+    tcp_ipid_seqclass = get_ipid_sequence_16(good_tcp_ipid_num, hss->ipid.tcp_ipids, islocalhost(hss->target->TargetSockAddr()));
   } else {
     tcp_ipid_seqclass = IPID_SEQ_UNKNOWN;
   }
@@ -2339,13 +2429,13 @@ void HostOsScan::makeTSeqFP(HostOsScanStats *hss) {
   hss->si.ipid_seqclass = tcp_ipid_seqclass;
 
   if (good_tcp_closed_ipid_num >= 2) {
-    tcp_closed_ipid_seqclass = get_ipid_sequence(good_tcp_closed_ipid_num, hss->ipid.tcp_closed_ipids, islocalhost(hss->target->TargetSockAddr()));
+    tcp_closed_ipid_seqclass = get_ipid_sequence_16(good_tcp_closed_ipid_num, hss->ipid.tcp_closed_ipids, islocalhost(hss->target->TargetSockAddr()));
   } else {
     tcp_closed_ipid_seqclass = IPID_SEQ_UNKNOWN;
   }
 
   if (good_icmp_ipid_num >= 2) {
-    icmp_ipid_seqclass = get_ipid_sequence(good_icmp_ipid_num, hss->ipid.icmp_ipids, islocalhost(hss->target->TargetSockAddr()));
+    icmp_ipid_seqclass = get_ipid_sequence_16(good_icmp_ipid_num, hss->ipid.icmp_ipids, islocalhost(hss->target->TargetSockAddr()));
   } else {
     icmp_ipid_seqclass = IPID_SEQ_UNKNOWN;
   }
@@ -2368,7 +2458,7 @@ void HostOsScan::makeTSeqFP(HostOsScanStats *hss) {
     /* Both are incremental. Thus we have "SS" test. Check if they
        are in the same sequence. */
     AV.attribute = "SS";
-    int avg = (hss->ipid.tcp_ipids[good_tcp_ipid_num - 1] - hss->ipid.tcp_ipids[0]) / (good_tcp_ipid_num - 1);
+    u32 avg = (hss->ipid.tcp_ipids[good_tcp_ipid_num - 1] - hss->ipid.tcp_ipids[0]) / (good_tcp_ipid_num - 1);
     if ( hss->ipid.icmp_ipids[0] < hss->ipid.tcp_ipids[good_tcp_ipid_num - 1] + 3 * avg) {
       AV.value = "S";
     } else {
@@ -2417,7 +2507,7 @@ void HostOsScan::makeTSeqFP(HostOsScanStats *hss) {
     if (lastboot != 0.0 && (hss->seq_send_times[0].tv_sec - lastboot > 63072000)) {
       /* Up 2 years?  Perhaps, but they're probably lying. */
       if (o.debugging) {
-        log_write(LOG_STDOUT, "Ignoring claimed %s uptime of %lu days",
+        log_write(LOG_STDOUT, "Ignoring claimed %s uptime of %lu days\n",
         hss->target->targetipstr(), (hss->seq_send_times[0].tv_sec - hss->si.lastboot) / 86400);
       }
       lastboot = 0;
@@ -2554,7 +2644,7 @@ bool HostOsScan::processTSeqResp(HostOsScanStats *hss, struct ip *ip, int replyN
 
   if ((tcp->th_flags & TH_RST)) {
     if (hss->si.responses == 0) {
-      error("WARNING:  RST from %s port %d -- is this port really open?",
+      error("WARNING: RST from %s port %d -- is this port really open?",
               hss->target->targetipstr(), hss->openTCPPort);
     }
     return false;
@@ -2605,7 +2695,7 @@ bool HostOsScan::processTSeqResp(HostOsScanStats *hss, struct ip *ip, int replyN
 
 
 bool HostOsScan::processTOpsResp(HostOsScanStats *hss, struct tcp_hdr *tcp, int replyNo) {
-  assert(replyNo >= 0 || replyNo < 6);
+  assert(replyNo >= 0 && replyNo < 6);
   char ops_buf[256];
   bool opsParseResult;
 
@@ -2650,7 +2740,7 @@ bool HostOsScan::processTOpsResp(HostOsScanStats *hss, struct tcp_hdr *tcp, int 
 
 
 bool HostOsScan::processTWinResp(HostOsScanStats *hss, struct tcp_hdr *tcp, int replyNo) {
-  assert(replyNo >= 0 || replyNo < 6);
+  assert(replyNo >= 0 && replyNo < 6);
 
   if (hss->FP_TWin || hss->TWin_AVs[replyNo])
     return false;
@@ -3119,7 +3209,7 @@ bool HostOsScan::processTIcmpResp(HostOsScanStats *hss, struct ip *ip, int reply
     hss->storedIcmpReply = replyNo;
     return true;
   } else if (hss->storedIcmpReply == replyNo) {
-    /* This is a dunplicated icmp reply. */
+    /* This is a duplicated icmp reply. */
     return false;
   }
 
@@ -3217,7 +3307,7 @@ bool HostOsScan::get_tcpopt_string(struct tcp_hdr *tcp, int mss, char *result, i
    *   MSS, Sack Permitted, Timestamp with both value not zero, Nop, WScale with value 2
    */
 
-  /* Be aware of the max increament value for p in parsing,
+  /* Be aware of the max increment value for p in parsing,
    * now is 5 = strlen("Mxxxx") <-> MSS Option
    */
   while (length > 0 && (p - result) < (maxlen - 5)) {
@@ -3299,7 +3389,7 @@ HostOsScanInfo::HostOsScanInfo(Target *t, OsScanInfo *OsSI) {
   OSI = OsSI;
 
   FPs = (FingerPrint **) safe_zalloc(o.maxOSTries() * sizeof(FingerPrint *));
-  FP_matches = (FingerPrintResultsIPv4 *) safe_zalloc(o.maxOSTries() * sizeof(FingerPrintResultsIPv4));
+  FP_matches = new FingerPrintResultsIPv4[o.maxOSTries()];
   timedOut = false;
   isCompleted = false;
 
@@ -3316,7 +3406,7 @@ HostOsScanInfo::HostOsScanInfo(Target *t, OsScanInfo *OsSI) {
 HostOsScanInfo::~HostOsScanInfo() {
   delete hss;
   free(FPs);
-  free(FP_matches);
+  delete[] FP_matches;
 }
 
 
@@ -3324,7 +3414,7 @@ HostOsScanInfo::~HostOsScanInfo() {
  * Implementation of class OsScanInfo                                         *
  ******************************************************************************/
 
-OsScanInfo::OsScanInfo(vector<Target *> &Targets) {
+OsScanInfo::OsScanInfo(std::vector<Target *> &Targets) {
   unsigned int targetno;
   HostOsScanInfo *hsi;
   int num_timedout = 0;
@@ -3383,7 +3473,7 @@ OsScanInfo::~OsScanInfo()
 /* Find a HostScanStats by IP its address in the incomplete list.  Returns NULL if
    none are found. */
 HostOsScanInfo *OsScanInfo::findIncompleteHost(struct sockaddr_storage *ss) {
-  list<HostOsScanInfo *>::iterator hostI;
+  std::list<HostOsScanInfo *>::iterator hostI;
   struct sockaddr_in *sin = (struct sockaddr_in *) ss;
 
   if (sin->sin_family != AF_INET)
@@ -3419,7 +3509,7 @@ HostOsScanInfo *OsScanInfo::nextIncompleteHost() {
 /* Removes any hosts that have completed their scans from the incompleteHosts
    list.  Returns the number of hosts removed. */
 int OsScanInfo::removeCompletedHosts() {
-  list<HostOsScanInfo *>::iterator hostI, nxt;
+  std::list<HostOsScanInfo *>::iterator hostI, nxt;
   HostOsScanInfo *hsi = NULL;
   int hostsRemoved = 0;
   bool timedout = false;
@@ -3484,10 +3574,10 @@ void OSScan::reset() {
  * too many to be processed at the same time. The threshold is based on Nmap's
  * timing level (when timing level is above 4, no chunking is performed).
  * The reason targets are processed in smaller groups is to improve accuracy. */
-int OSScan::chunk_and_do_scan(vector<Target *> &Targets, int family) {
+int OSScan::chunk_and_do_scan(std::vector<Target *> &Targets, int family) {
   unsigned int max_os_group_sz = 20;
   double fudgeratio = 1.2; /* Allow a slightly larger final group rather than finish with a tiny one */
-  vector<Target *> tmpTargets;
+  std::vector<Target *> tmpTargets;
   unsigned int startidx = 0;
 
   if (o.timing_level == 4)
@@ -3521,11 +3611,11 @@ int OSScan::chunk_and_do_scan(vector<Target *> &Targets, int family) {
 /* Performs the OS detection for IPv4 hosts. This method should not be called
  * directly. os_scan() should be used instead, as it handles chunking so
  * you don't do too many targets in parallel */
-int OSScan::os_scan_ipv4(vector<Target *> &Targets) {
+int OSScan::os_scan_ipv4(std::vector<Target *> &Targets) {
   int itry = 0;
   /* Hosts which haven't matched and have been removed from incompleteHosts because
    * they have exceeded the number of retransmissions the host is allowed. */
-  list<HostOsScanInfo *> unMatchedHosts;
+  std::list<HostOsScanInfo *> unMatchedHosts;
 
   /* Check we have at least one target*/
   if (Targets.size() == 0) {
@@ -3555,7 +3645,7 @@ int OSScan::os_scan_ipv4(vector<Target *> &Targets) {
       char targetstr[128];
       bool plural = (OSI.numIncompleteHosts() != 1);
       if (!plural) {
-	(*(OSI.incompleteHosts.begin()))->target->NameIP(targetstr, sizeof(targetstr));
+        (*(OSI.incompleteHosts.begin()))->target->NameIP(targetstr, sizeof(targetstr));
       } else Snprintf(targetstr, sizeof(targetstr), "%d hosts", (int) OSI.numIncompleteHosts());
       log_write(LOG_STDOUT, "%s OS detection (try #%d) against %s\n", (itry == 0)? "Initiating" : "Retrying", itry + 1, targetstr);
       log_flush_all();
@@ -3587,7 +3677,7 @@ int OSScan::os_scan_ipv4(vector<Target *> &Targets) {
 /* Performs the OS detection for IPv6 hosts. This method should not be called
  * directly. os_scan() should be used instead, as it handles chunking so
  * you don't do too many targets in parallel */
-int OSScan::os_scan_ipv6(vector<Target *> &Targets) {
+int OSScan::os_scan_ipv6(std::vector<Target *> &Targets) {
 
   /* Object instantiation */
   FPEngine6 fp6;
@@ -3605,9 +3695,9 @@ int OSScan::os_scan_ipv6(vector<Target *> &Targets) {
  * targets and classifies it into two groups: IPv4 and IPv6 targets. Then,
  * OS detection is carried out for those two separate groups. It returns
  * OP_SUCCESS on success or OP_FAILURE in case of error. */
-int OSScan::os_scan(vector<Target *> &Targets) {
-  vector<Target *> ip4_targets;
-  vector<Target *> ip6_targets;
+int OSScan::os_scan(std::vector<Target *> &Targets) {
+  std::vector<Target *> ip4_targets;
+  std::vector<Target *> ip6_targets;
   int res4 = OP_SUCCESS, res6 = OP_SUCCESS;
 
   /* Make sure we have at least one target */
@@ -3630,7 +3720,7 @@ int OSScan::os_scan(vector<Target *> &Targets) {
   if (ip6_targets.size() > 0)
       res6 = this->os_scan_ipv6(ip6_targets);
 
-  /* If both scans were succesful, return OK */
+  /* If both scans were successful, return OK */
   if (res4 == OP_SUCCESS && res6 == OP_SUCCESS)
     return OP_SUCCESS;
   else

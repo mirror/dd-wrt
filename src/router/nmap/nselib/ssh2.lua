@@ -4,12 +4,13 @@
 -- @author Sven Klemm <sven@c3d2.de>
 -- @copyright Same as Nmap--See http://nmap.org/book/man-legal.html
 
-module(... or "ssh2",package.seeall)
-
-require "bin"
-require "base64"
-require "openssl"
-require "stdnse"
+local base64 = require "base64"
+local bin = require "bin"
+local nmap = require "nmap"
+local openssl = require "openssl"
+local stdnse = require "stdnse"
+local string = require "string"
+_ENV = stdnse.module("ssh2", stdnse.seeall)
 
 -- table holding transport layer functions
 transport = {}
@@ -19,7 +20,7 @@ local SSH2
 
 --- Retrieve the size of the packet that is being received
 --  and checks if it is fully received
--- 
+--
 --  This function is very similar to the function generated
 --  with match.numbytes(num) function, except that this one
 --  will check for the number of bytes on-the-fly, based on
@@ -75,7 +76,7 @@ transport.build = function( payload )
 end
 
 --- Extract the payload from a received SSH-2 packet.
--- @param packet Peceived SSH-2 packet.
+-- @param packet Received SSH-2 packet.
 -- @return Payload of the SSH-2 packet.
 transport.payload = function( packet )
   local packet_length, padding_length, payload_length, payload, offset
@@ -121,7 +122,7 @@ end
 --- Parse a <code>kexinit</code> package.
 --
 -- Returns an empty table in case of an error
-transport.parse_kex_init = function( payload ) 
+transport.parse_kex_init = function( payload )
   local _, offset, msg_code, parsed, fields, fieldname
   parsed = {}
 
@@ -214,11 +215,20 @@ fetch_host_key = function( host, port, key_type )
     local n
     _, _, _, n = bin.unpack( ">aaa", public_host_key )
     bits = openssl.bignum_bin2bn( n ):num_bits()
+  elseif key_type == 'ecdsa-sha2-nistp256' then
+    algorithm = "ECDSA"
+    bits = "256"
+  elseif key_type == 'ecdsa-sha2-nistp384' then
+    algorithm = "ECDSA"
+    bits = "384"
+  elseif key_type == 'ecdsa-sha2-nistp521' then
+    algorithm = "ECDSA"
+    bits = "521"
   else
     stdnse.print_debug( "Unsupported key type: %s", key_type )
   end
 
-  return { key=public_host_key, key_type=key_type, fp_input=public_host_key, bits=bits,
+  return { key=base64.enc(public_host_key), key_type=key_type, fp_input=public_host_key, bits=bits,
            full_key=('%s %s'):format(key_type,base64.enc(public_host_key)),
            algorithm=algorithm, fingerprint=openssl.md5(public_host_key) }
 end
@@ -238,3 +248,5 @@ SSH2 = {
   SSH_MSG_KEXDH_REPLY = 31,
 }
 
+
+return _ENV;

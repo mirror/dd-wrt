@@ -2,62 +2,94 @@
 
 # ***********************IMPORTANT NMAP LICENSE TERMS************************
 # *                                                                         *
-# * The Nmap Security Scanner is (C) 1996-2012 Insecure.Com LLC. Nmap is    *
+# * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
 # * also a registered trademark of Insecure.Com LLC.  This program is free  *
 # * software; you may redistribute and/or modify it under the terms of the  *
 # * GNU General Public License as published by the Free Software            *
-# * Foundation; Version 2 with the clarifications and exceptions described  *
-# * below.  This guarantees your right to use, modify, and redistribute     *
-# * this software under certain conditions.  If you wish to embed Nmap      *
-# * technology into proprietary software, we sell alternative licenses      *
-# * (contact sales@insecure.com).  Dozens of software vendors already       *
-# * license Nmap technology such as host discovery, port scanning, OS       *
-# * detection, version detection, and the Nmap Scripting Engine.            *
+# * Foundation; Version 2 ("GPL"), BUT ONLY WITH ALL OF THE CLARIFICATIONS  *
+# * AND EXCEPTIONS DESCRIBED HEREIN.  This guarantees your right to use,    *
+# * modify, and redistribute this software under certain conditions.  If    *
+# * you wish to embed Nmap technology into proprietary software, we sell    *
+# * alternative licenses (contact sales@nmap.com).  Dozens of software      *
+# * vendors already license Nmap technology such as host discovery, port    *
+# * scanning, OS detection, version detection, and the Nmap Scripting       *
+# * Engine.                                                                 *
 # *                                                                         *
-# * Note that the GPL places important restrictions on "derived works", yet *
-# * it does not provide a detailed definition of that term.  To avoid       *
+# * Note that the GPL places important restrictions on "derivative works",  *
+# * yet it does not provide a detailed definition of that term.  To avoid   *
 # * misunderstandings, we interpret that term as broadly as copyright law   *
 # * allows.  For example, we consider an application to constitute a        *
-# * "derivative work" for the purpose of this license if it does any of the *
-# * following:                                                              *
-# * o Integrates source code from Nmap                                      *
-# * o Reads or includes Nmap copyrighted data files, such as                *
-# *   nmap-os-db or nmap-service-probes.                                    *
-# * o Executes Nmap and parses the results (as opposed to typical shell or  *
-# *   execution-menu apps, which simply display raw Nmap output and so are  *
-# *   not derivative works.)                                                *
-# * o Integrates/includes/aggregates Nmap into a proprietary executable     *
-# *   installer, such as those produced by InstallShield.                   *
-# * o Links to a library or executes a program that does any of the above   *
+# * derivative work for the purpose of this license if it does any of the   *
+# * following with any software or content covered by this license          *
+# * ("Covered Software"):                                                   *
 # *                                                                         *
-# * The term "Nmap" should be taken to also include any portions or derived *
-# * works of Nmap, as well as other software we distribute under this       *
-# * license such as Zenmap, Ncat, and Nping.  This list is not exclusive,   *
-# * but is meant to clarify our interpretation of derived works with some   *
-# * common examples.  Our interpretation applies only to Nmap--we don't     *
-# * speak for other people's GPL works.                                     *
+# * o Integrates source code from Covered Software.                         *
 # *                                                                         *
-# * If you have any questions about the GPL licensing restrictions on using *
-# * Nmap in non-GPL works, we would be happy to help.  As mentioned above,  *
-# * we also offer alternative license to integrate Nmap into proprietary    *
-# * applications and appliances.  These contracts have been sold to dozens  *
-# * of software vendors, and generally include a perpetual license as well  *
-# * as providing for priority support and updates.  They also fund the      *
-# * continued development of Nmap.  Please email sales@insecure.com for     *
-# * further information.                                                    *
+# * o Reads or includes copyrighted data files, such as Nmap's nmap-os-db   *
+# * or nmap-service-probes.                                                 *
 # *                                                                         *
-# * As a special exception to the GPL terms, Insecure.Com LLC grants        *
+# * o Is designed specifically to execute Covered Software and parse the    *
+# * results (as opposed to typical shell or execution-menu apps, which will *
+# * execute anything you tell them to).                                     *
+# *                                                                         *
+# * o Includes Covered Software in a proprietary executable installer.  The *
+# * installers produced by InstallShield are an example of this.  Including *
+# * Nmap with other software in compressed or archival form does not        *
+# * trigger this provision, provided appropriate open source decompression  *
+# * or de-archiving software is widely available for no charge.  For the    *
+# * purposes of this license, an installer is considered to include Covered *
+# * Software even if it actually retrieves a copy of Covered Software from  *
+# * another source during runtime (such as by downloading it from the       *
+# * Internet).                                                              *
+# *                                                                         *
+# * o Links (statically or dynamically) to a library which does any of the  *
+# * above.                                                                  *
+# *                                                                         *
+# * o Executes a helper program, module, or script to do any of the above.  *
+# *                                                                         *
+# * This list is not exclusive, but is meant to clarify our interpretation  *
+# * of derived works with some common examples.  Other people may interpret *
+# * the plain GPL differently, so we consider this a special exception to   *
+# * the GPL that we apply to Covered Software.  Works which meet any of     *
+# * these conditions must conform to all of the terms of this license,      *
+# * particularly including the GPL Section 3 requirements of providing      *
+# * source code and allowing free redistribution of the work as a whole.    *
+# *                                                                         *
+# * As another special exception to the GPL terms, Insecure.Com LLC grants  *
 # * permission to link the code of this program with any version of the     *
 # * OpenSSL library which is distributed under a license identical to that  *
 # * listed in the included docs/licenses/OpenSSL.txt file, and distribute   *
-# * linked combinations including the two. You must obey the GNU GPL in all *
-# * respects for all of the code used other than OpenSSL.  If you modify    *
-# * this file, you may extend this exception to your version of the file,   *
-# * but you are not obligated to do so.                                     *
+# * linked combinations including the two.                                  *
 # *                                                                         *
-# * If you received these files with a written license agreement or         *
-# * contract stating terms other than the terms above, then that            *
-# * alternative license agreement takes precedence over these comments.     *
+# * Any redistribution of Covered Software, including any derived works,    *
+# * must obey and carry forward all of the terms of this license, including *
+# * obeying all GPL rules and restrictions.  For example, source code of    *
+# * the whole work must be provided and free redistribution must be         *
+# * allowed.  All GPL references to "this License", are to be treated as    *
+# * including the terms and conditions of this license text as well.        *
+# *                                                                         *
+# * Because this license imposes special exceptions to the GPL, Covered     *
+# * Work may not be combined (even as part of a larger work) with plain GPL *
+# * software.  The terms, conditions, and exceptions of this license must   *
+# * be included as well.  This license is incompatible with some other open *
+# * source licenses as well.  In some cases we can relicense portions of    *
+# * Nmap or grant special permissions to use it in other open source        *
+# * software.  Please contact fyodor@nmap.org with any such requests.       *
+# * Similarly, we don't incorporate incompatible open source software into  *
+# * Covered Software without special permission from the copyright holders. *
+# *                                                                         *
+# * If you have any questions about the licensing restrictions on using     *
+# * Nmap in other works, are happy to help.  As mentioned above, we also    *
+# * offer alternative license to integrate Nmap into proprietary            *
+# * applications and appliances.  These contracts have been sold to dozens  *
+# * of software vendors, and generally include a perpetual license as well  *
+# * as providing for priority support and updates.  They also fund the      *
+# * continued development of Nmap.  Please email sales@nmap.com for further *
+# * information.                                                            *
+# *                                                                         *
+# * If you have received a written license agreement or contract for        *
+# * Covered Software stating terms other than these, you may choose to use  *
+# * and redistribute Covered Software under those terms instead of these.   *
 # *                                                                         *
 # * Source is provided to this software because we believe users have a     *
 # * right to know exactly what a program is going to do before they run it. *
@@ -66,8 +98,8 @@
 # *                                                                         *
 # * Source code also allows you to port Nmap to new platforms, fix bugs,    *
 # * and add new features.  You are highly encouraged to send your changes   *
-# * to nmap-dev@insecure.org for possible incorporation into the main       *
-# * distribution.  By sending these changes to Fyodor or one of the         *
+# * to the dev@nmap.org mailing list for possible incorporation into the    *
+# * main distribution.  By sending these changes to Fyodor or one of the    *
 # * Insecure.Org development mailing lists, or checking them into the Nmap  *
 # * source code repository, it is understood (unless you specify otherwise) *
 # * that you are offering the Nmap Project (Insecure.Com LLC) the           *
@@ -81,10 +113,9 @@
 # *                                                                         *
 # * This program is distributed in the hope that it will be useful, but     *
 # * WITHOUT ANY WARRANTY; without even the implied warranty of              *
-# * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU       *
-# * General Public License v2.0 for more details at                         *
-# * http://www.gnu.org/licenses/gpl-2.0.html , or in the COPYING file       *
-# * included with Nmap.                                                     *
+# * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
+# * license file for more details (it's in a COPYING file included with     *
+# * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
 # *                                                                         *
 # ***************************************************************************/
 
@@ -108,9 +139,9 @@ from radialnet.gui.Image import Icons, get_pixels_for_cairo_image_surface
 from zenmapCore.BasePaths import fs_enc
 
 REGION_COLORS = [(1.0, 0.0, 0.0), (1.0, 1.0, 0.0), (0.0, 1.0, 0.0)]
-REGION_RED    = 0
+REGION_RED = 0
 REGION_YELLOW = 1
-REGION_GREEN  = 2
+REGION_GREEN = 2
 
 SQUARE_TYPES = ['router', 'switch', 'wap']
 
@@ -120,19 +151,19 @@ ICON_DICT = {'router':      'router',
              'firewall':    'firewall'}
 
 POINTER_JUMP_TO = 0
-POINTER_INFO    = 1
-POINTER_GROUP   = 2
-POINTER_FILL    = 3
+POINTER_INFO = 1
+POINTER_GROUP = 2
+POINTER_FILL = 3
 
 LAYOUT_SYMMETRIC = 0
-LAYOUT_WEIGHTED  = 1
+LAYOUT_WEIGHTED = 1
 
 INTERPOLATION_CARTESIAN = 0
-INTERPOLATION_POLAR     = 1
+INTERPOLATION_POLAR = 1
 
 FILE_TYPE_PDF = 1
 FILE_TYPE_PNG = 2
-FILE_TYPE_PS  = 3
+FILE_TYPE_PS = 3
 FILE_TYPE_SVG = 4
 
 
@@ -158,11 +189,12 @@ class RadialNet(gtk.DrawingArea):
         self.__interpolation_slow_in_out = True
 
         self.__animating = False
-        self.__animation_rate = 1000 / 60 # 60Hz (human perception factor)
+        self.__animation_rate = 1000 / 60  # 60Hz (human perception factor)
         self.__number_of_frames = 60
 
         self.__scale = 1.0
-        self.__rotate = 225 # rotated so that single-host traceroute doesn't have overlapping hosts
+        # rotated so that single-host traceroute doesn't have overlapping hosts
+        self.__rotate = 225
         self.__translation = (0, 0)
 
         self.__button1_press = False
@@ -220,7 +252,6 @@ class RadialNet(gtk.DrawingArea):
         self.set_flags(gtk.CAN_FOCUS)
         self.grab_focus()
 
-
     def graph_is_not_empty(function):
         """
         Decorator function to prevent the execution when graph not is set
@@ -228,12 +259,11 @@ class RadialNet(gtk.DrawingArea):
         @param function: Protected function
         """
         def check_graph_status(*args):
-            if args[0].__graph == None:
+            if args[0].__graph is None:
                 return False
             return function(*args)
 
         return check_graph_status
-
 
     def not_is_in_animation(function):
         """
@@ -242,12 +272,11 @@ class RadialNet(gtk.DrawingArea):
         @param function: Protected function
         """
         def check_animation_status(*args):
-            if args[0].__animating == True:
+            if args[0].__animating:
                 return False
             return function(*args)
 
         return check_animation_status
-
 
     def save_drawing_to_file(self, file, type=FILE_TYPE_PNG):
         """
@@ -271,7 +300,7 @@ class RadialNet(gtk.DrawingArea):
                     allocation.width,
                     allocation.height)
         else:
-            raise TypeError, 'unknown surface type'
+            raise TypeError('unknown surface type')
 
         context = cairo.Context(self.surface)
 
@@ -291,36 +320,30 @@ class RadialNet(gtk.DrawingArea):
 
         return True
 
-
     def get_slow_inout(self):
         """
         """
         return self.__interpolation_slow_in_out
-
 
     def set_slow_inout(self, value):
         """
         """
         self.__interpolation_slow_in_out = value
 
-
     def get_region_color(self):
         """
         """
         return self.__region_color
-
 
     def set_region_color(self, value):
         """
         """
         self.__region_color = value
 
-
     def get_show_region(self):
         """
         """
         return self.__show_region
-
 
     def set_show_region(self, value):
         """
@@ -328,36 +351,30 @@ class RadialNet(gtk.DrawingArea):
         self.__show_region = value
         self.queue_draw()
 
-
     def get_pointer_status(self):
         """
         """
         return self.__pointer_status
-
 
     def set_pointer_status(self, pointer_status):
         """
         """
         self.__pointer_status = pointer_status
 
-
     def get_show_address(self):
         """
         """
         return self.__show_address
-
 
     def get_show_hostname(self):
         """
         """
         return self.__show_hostname
 
-
     def get_show_ring(self):
         """
         """
         return self.__show_ring
-
 
     def set_show_address(self, value):
         """
@@ -365,13 +382,11 @@ class RadialNet(gtk.DrawingArea):
         self.__show_address = value
         self.queue_draw()
 
-
     def set_show_hostname(self, value):
         """
         """
         self.__show_hostname = value
         self.queue_draw()
-
 
     def set_show_ring(self, value):
         """
@@ -379,12 +394,10 @@ class RadialNet(gtk.DrawingArea):
         self.__show_ring = value
         self.queue_draw()
 
-
     def get_min_ring_gap(self):
         """
         """
         return self.__min_ring_gap
-
 
     @graph_is_not_empty
     @not_is_in_animation
@@ -401,12 +414,10 @@ class RadialNet(gtk.DrawingArea):
 
         return True
 
-
     def get_number_of_frames(self):
         """
         """
         return self.__number_of_frames
-
 
     @not_is_in_animation
     def set_number_of_frames(self, number_of_frames):
@@ -420,7 +431,6 @@ class RadialNet(gtk.DrawingArea):
         self.__number_of_frames = 3
         return False
 
-
     @not_is_in_animation
     def update_layout(self):
         """
@@ -431,7 +441,6 @@ class RadialNet(gtk.DrawingArea):
         self.__calc_interpolation(self.__graph.get_main_node())
         self.__livens_up()
 
-
     @not_is_in_animation
     def set_layout(self, layout):
         """
@@ -440,7 +449,7 @@ class RadialNet(gtk.DrawingArea):
 
             self.__layout = layout
 
-            if self.__graph != None:
+            if self.__graph is not None:
 
                 self.__animating = True
                 self.__calc_interpolation(self.__graph.get_main_node())
@@ -450,12 +459,10 @@ class RadialNet(gtk.DrawingArea):
 
         return False
 
-
     def get_layout(self):
         """
         """
         return self.__layout
-
 
     @not_is_in_animation
     def set_interpolation(self, interpolation):
@@ -465,42 +472,35 @@ class RadialNet(gtk.DrawingArea):
 
         return True
 
-
     def get_interpolation(self):
         """
         """
         return self.__interpolation
-
 
     def get_number_of_rings(self):
         """
         """
         return self.__number_of_rings
 
-
     def get_fisheye_ring(self):
         """
         """
         return self.__fisheye_ring
-
 
     def get_fisheye_interest(self):
         """
         """
         return self.__fisheye_interest
 
-
     def get_fisheye_spread(self):
         """
         """
         return self.__fisheye_spread
 
-
     def get_fisheye(self):
         """
         """
         return self.__fisheye
-
 
     def set_fisheye(self, enable):
         """
@@ -509,7 +509,6 @@ class RadialNet(gtk.DrawingArea):
 
         self.__update_nodes_positions()
         self.queue_draw()
-
 
     def set_fisheye_ring(self, value):
         """
@@ -520,7 +519,6 @@ class RadialNet(gtk.DrawingArea):
         self.__update_nodes_positions()
         self.queue_draw()
 
-
     def set_fisheye_interest(self, value):
         """
         """
@@ -528,7 +526,6 @@ class RadialNet(gtk.DrawingArea):
 
         self.__update_nodes_positions()
         self.queue_draw()
-
 
     def set_fisheye_spread(self, value):
         """
@@ -538,12 +535,10 @@ class RadialNet(gtk.DrawingArea):
         self.__update_nodes_positions()
         self.queue_draw()
 
-
     def get_show_icon(self):
         """
         """
         return self.__show_icon
-
 
     def set_show_icon(self, value):
         """
@@ -551,12 +546,10 @@ class RadialNet(gtk.DrawingArea):
         self.__show_icon = value
         self.queue_draw()
 
-
     def get_show_latency(self):
         """
         """
         return self.__show_latency
-
 
     def set_show_latency(self, value):
         """
@@ -564,18 +557,15 @@ class RadialNet(gtk.DrawingArea):
         self.__show_latency = value
         self.queue_draw()
 
-
     def get_scale(self):
         """
         """
         return self.__scale
 
-
     def get_zoom(self):
         """
         """
         return int(round(self.__scale * 100))
-
 
     def set_scale(self, scale):
         """
@@ -585,21 +575,18 @@ class RadialNet(gtk.DrawingArea):
             self.__scale = scale
             self.queue_draw()
 
-
     def set_zoom(self, zoom):
         """
         """
         if float(zoom) >= 1:
 
-            self.set_scale( float(zoom) / 100.0 )
+            self.set_scale(float(zoom) / 100.0)
             self.queue_draw()
-
 
     def get_ring_gap(self):
         """
         """
         return self.__ring_gap
-
 
     @not_is_in_animation
     def set_ring_gap(self, ring_gap):
@@ -611,7 +598,6 @@ class RadialNet(gtk.DrawingArea):
             self.__update_nodes_positions()
             self.queue_draw()
 
-
     def scroll_event(self, widget, event):
         """
         """
@@ -622,7 +608,6 @@ class RadialNet(gtk.DrawingArea):
             self.set_scale(self.__scale - 0.01)
 
         self.queue_draw()
-
 
     @graph_is_not_empty
     @not_is_in_animation
@@ -646,7 +631,6 @@ class RadialNet(gtk.DrawingArea):
         self.queue_draw()
 
         return True
-
 
     @graph_is_not_empty
     def key_release(self, widget, event):
@@ -676,7 +660,6 @@ class RadialNet(gtk.DrawingArea):
 
         return True
 
-
     @graph_is_not_empty
     @not_is_in_animation
     def enter_notify(self, widget, event):
@@ -685,19 +668,17 @@ class RadialNet(gtk.DrawingArea):
         self.grab_focus()
         return False
 
-
     @graph_is_not_empty
     @not_is_in_animation
     def leave_notify(self, widget, event):
         """
         """
         for node in self.__graph.get_nodes():
-            node.set_draw_info({'over':False})
+            node.set_draw_info({'over': False})
 
         self.queue_draw()
 
         return False
-
 
     @graph_is_not_empty
     def button_press(self, widget, event):
@@ -712,26 +693,28 @@ class RadialNet(gtk.DrawingArea):
         """
         result = self.__get_node_by_coordinate(self.get_pointer())
 
-        if event.button == 1: self.__button1_press = True
+        if event.button == 1:
+            self.__button1_press = True
 
         # animate if node is pressed
         if self.__pointer_status == POINTER_JUMP_TO and event.button == 1:
 
             # prevent double animation
-            if self.__animating == True: return False
+            if self.__animating:
+                return False
 
-            if result != None:
+            if result is not None:
 
                 node, point = result
                 main_node = self.__graph.get_main_node()
 
                 if node != main_node:
 
-                    if node.get_draw_info('group') == True:
+                    if node.get_draw_info('group'):
 
-                        node.set_draw_info({'group':False})
-                        node.set_subtree_info({'grouped':False,
-                                               'group_node':None})
+                        node.set_draw_info({'group': False})
+                        node.set_subtree_info({'grouped': False,
+                                               'group_node': None})
 
                     self.__animating = True
                     self.__calc_interpolation(node)
@@ -741,28 +724,29 @@ class RadialNet(gtk.DrawingArea):
         elif self.__pointer_status == POINTER_GROUP and event.button == 1:
 
             # prevent group on animation
-            if self.__animating == True: return False
+            if self.__animating:
+                return False
 
-            if result != None:
+            if result is not None:
 
                 node, point = result
                 main_node = self.__graph.get_main_node()
 
                 if node != main_node:
 
-                    if node.get_draw_info('group') == True:
+                    if node.get_draw_info('group'):
 
-                        node.set_draw_info({'group':False})
-                        node.set_subtree_info({'grouped':False,
-                                               'group_node':None})
+                        node.set_draw_info({'group': False})
+                        node.set_subtree_info({'grouped': False,
+                                               'group_node': None})
 
                     else:
 
                         self.__last_group_node = node
 
-                        node.set_draw_info({'group':True})
-                        node.set_subtree_info({'grouped':True,
-                                               'group_node':node})
+                        node.set_draw_info({'group': True})
+                        node.set_subtree_info({'grouped': True,
+                                               'group_node': node})
 
                 self.__animating = True
                 self.__calc_interpolation(self.__graph.get_main_node())
@@ -771,7 +755,7 @@ class RadialNet(gtk.DrawingArea):
         # setting to show node's region
         elif self.__pointer_status == POINTER_FILL and event.button == 1:
 
-            if result != None:
+            if result is not None:
 
                 node, point = result
 
@@ -789,7 +773,7 @@ class RadialNet(gtk.DrawingArea):
             if event.button == 3:
                 self.__button3_press = True
 
-            if result != None:
+            if result is not None:
 
                 xw, yw = self.window.get_origin()
                 node, point = result
@@ -802,15 +786,16 @@ class RadialNet(gtk.DrawingArea):
                 elif node.get_draw_info('scanned'):
 
                     view = NodeWindow(node, (int(xw + x), int(yw + y)))
+
                     def close_view(view, event, node):
                         view.destroy()
                         del self.__node_views[node]
+
                     view.connect("delete-event", close_view, node)
                     view.show_all()
                     self.__node_views[node] = view
 
         return False
-
 
     @graph_is_not_empty
     def button_release(self, widget, event):
@@ -836,7 +821,6 @@ class RadialNet(gtk.DrawingArea):
 
         return False
 
-
     @graph_is_not_empty
     def motion_notify(self, widget, event):
         """
@@ -852,14 +836,14 @@ class RadialNet(gtk.DrawingArea):
         pointer = self.get_pointer()
 
         for node in self.__graph.get_nodes():
-            node.set_draw_info({'over':False})
+            node.set_draw_info({'over': False})
 
         result = self.__get_node_by_coordinate(self.get_pointer())
 
-        if result != None:
-            result[0].set_draw_info({'over':True})
+        if result is not None:
+            result[0].set_draw_info({'over': True})
 
-        elif self.__button1_press == True and self.__last_motion_point != None:
+        elif self.__button1_press and self.__last_motion_point is not None:
 
             ax, ay = pointer
             ox, oy = self.__last_motion_point
@@ -873,7 +857,6 @@ class RadialNet(gtk.DrawingArea):
         self.queue_draw()
 
         return False
-
 
     def expose(self, widget, event):
         """
@@ -896,7 +879,6 @@ class RadialNet(gtk.DrawingArea):
         self.__draw(context)
 
         return False
-
 
     @graph_is_not_empty
     def __draw(self, context):
@@ -939,7 +921,7 @@ class RadialNet(gtk.DrawingArea):
 
                 not_grouped = not node.get_draw_info('grouped')
 
-                if node.get_draw_info('region') != None and not_grouped:
+                if node.get_draw_info('region') is not None and not_grouped:
 
                     x, y = node.get_cartesian_coordinate()
                     xc, yc = self.__center_of_widget
@@ -969,22 +951,26 @@ class RadialNet(gtk.DrawingArea):
                         context.set_source_rgb(r, g, b)
                         context.set_line_width(1)
 
-                        xa, ya = PolarCoordinate(i_radius, final).to_cartesian()
-                        xb, yb = PolarCoordinate(f_radius, final).to_cartesian()
+                        xa, ya = PolarCoordinate(
+                                i_radius, final).to_cartesian()
+                        xb, yb = PolarCoordinate(
+                                f_radius, final).to_cartesian()
 
                         context.move_to(xc + xa, yc - ya)
                         context.line_to(xc + xb, yc - yb)
                         context.stroke()
 
-                        xa, ya = PolarCoordinate(i_radius, start).to_cartesian()
-                        xb, yb = PolarCoordinate(f_radius, start).to_cartesian()
+                        xa, ya = PolarCoordinate(
+                                i_radius, start).to_cartesian()
+                        xb, yb = PolarCoordinate(
+                                f_radius, start).to_cartesian()
 
                         context.move_to(xc + xa, yc - ya)
                         context.line_to(xc + xb, yc - yb)
                         context.stroke()
 
         # drawing network rings
-        if self.__show_ring == True and self.__animating != True:
+        if self.__show_ring and not self.__animating:
 
             for i in range(1, self.__number_of_rings):
 
@@ -1016,12 +1002,13 @@ class RadialNet(gtk.DrawingArea):
             last_group = self.__last_group_node
             groups = [a_group, b_group]
 
-            if last_group in groups and last_group != None:
+            if last_group in groups and last_group is not None:
                 self.__draw_edge(context, edge)
 
             elif not a_is_grouped or not b_is_grouped:
 
-                if not (a_is_group and b_is_child or b_is_group and a_is_child):
+                if not (a_is_group and b_is_child or
+                        b_is_group and a_is_child):
                     self.__draw_edge(context, edge)
 
             elif a_group != b_group:
@@ -1035,7 +1022,6 @@ class RadialNet(gtk.DrawingArea):
 
             if group == self.__last_group_node or not grouped:
                 self.__draw_node(context, node)
-
 
     def __draw_edge(self, context, edge):
         """
@@ -1065,7 +1051,7 @@ class RadialNet(gtk.DrawingArea):
             context.set_source_rgba(0.1, 0.5, 1.0, 0.8)
 
         # calculating line thickness by latency
-        if latency != None:
+        if latency is not None:
 
             min = self.__graph.get_min_edge_mean_weight()
             max = self.__graph.get_max_edge_mean_weight()
@@ -1091,7 +1077,7 @@ class RadialNet(gtk.DrawingArea):
 
         if not self.__animating and self.__show_latency:
 
-            if latency != None:
+            if latency is not None:
 
                 context.set_font_size(8)
                 context.set_line_width(1)
@@ -1100,12 +1086,11 @@ class RadialNet(gtk.DrawingArea):
                 context.show_text(str(round(latency, 2)))
                 context.stroke()
 
-
     def __draw_node(self, context, node):
         """
-        Draw nodes and your informations
+        Draw nodes and your information
         @type  : NetNode
-        @param : The node will be draw
+        @param : The node to be drawn
         """
         x, y = node.get_cartesian_coordinate()
         xc, yc = self.__center_of_widget
@@ -1118,7 +1103,7 @@ class RadialNet(gtk.DrawingArea):
         y_gap = 0
 
         # draw group indication
-        if node.get_draw_info('group') == True:
+        if node.get_draw_info('group'):
 
             x_gap += 5
 
@@ -1144,7 +1129,7 @@ class RadialNet(gtk.DrawingArea):
             context.stroke()
 
         # draw over node
-        if node.get_draw_info('over') == True:
+        if node.get_draw_info('over'):
 
             context.set_line_width(0)
 
@@ -1223,15 +1208,14 @@ class RadialNet(gtk.DrawingArea):
 
             hostname = node.get_info('hostname')
 
-            if hostname != None and self.__show_hostname:
+            if hostname is not None and self.__show_hostname:
                 context.show_text(hostname)
 
-            elif node.get_info('ip') != None:
+            elif node.get_info('ip') is not None:
                 context.show_text(node.get_info('ip'))
 
         context.set_line_width(1)
         context.stroke()
-
 
     def __check_fisheye_ring(self):
         """
@@ -1239,28 +1223,25 @@ class RadialNet(gtk.DrawingArea):
         if self.__fisheye_ring >= self.__number_of_rings:
             self.__fisheye_ring = self.__number_of_rings - 1
 
-
     def __set_number_of_rings(self, value):
         """
         """
         self.__number_of_rings = value
         self.__check_fisheye_ring()
 
-
     def __fisheye_function(self, ring):
         """
         """
         distance = abs(self.__fisheye_ring - ring)
         level_of_detail = self.__ring_gap * self.__fisheye_interest
-        spreaded_distance = distance - distance * self.__fisheye_spread
+        spread_distance = distance - distance * self.__fisheye_spread
 
-        value = level_of_detail / (spreaded_distance + 1)
+        value = level_of_detail / (spread_distance + 1)
 
         if value < self.__min_ring_gap:
             value = self.__min_ring_gap
 
         return value
-
 
     @graph_is_not_empty
     @not_is_in_animation
@@ -1269,12 +1250,12 @@ class RadialNet(gtk.DrawingArea):
         """
         for node in self.__sorted_nodes:
 
-            if node.get_draw_info('grouped') == True:
+            if node.get_draw_info('grouped'):
 
                 # deep group check
                 group = node.get_draw_info('group_node')
 
-                while group.get_draw_info('group_node') != None:
+                while group.get_draw_info('group_node') is not None:
                     group = group.get_draw_info('group_node')
 
                 ring = group.get_draw_info('ring')
@@ -1284,7 +1265,6 @@ class RadialNet(gtk.DrawingArea):
                 ring = node.get_draw_info('ring')
                 node.set_coordinate_radius(self.__calc_radius(ring))
 
-
     @graph_is_not_empty
     def __get_node_by_coordinate(self, point):
         """
@@ -1293,7 +1273,7 @@ class RadialNet(gtk.DrawingArea):
 
         for node in self.__graph.get_nodes():
 
-            if node.get_draw_info('grouped') == True:
+            if node.get_draw_info('grouped'):
                 continue
 
             ax, ay = self.__translation
@@ -1305,15 +1285,14 @@ class RadialNet(gtk.DrawingArea):
             type = node.get_info('device_type')
 
             if type in SQUARE_TYPES:
-                if geometry.is_in_square(point, radius, center) == True:
+                if geometry.is_in_square(point, radius, center):
                     return node, center
 
             else:
-                if geometry.is_in_circle(point, radius, center) == True:
+                if geometry.is_in_circle(point, radius, center):
                     return node, center
 
         return None
-
 
     def __calc_radius(self, ring):
         """
@@ -1331,7 +1310,6 @@ class RadialNet(gtk.DrawingArea):
             radius = ring * self.__ring_gap
 
         return radius
-
 
     @graph_is_not_empty
     def __arrange_nodes(self):
@@ -1354,10 +1332,11 @@ class RadialNet(gtk.DrawingArea):
                 old_nodes.add(node)
 
                 # set ring location
-                node.set_draw_info({'ring':ring})
+                node.set_draw_info({'ring': ring})
 
                 # check group constraints
-                if node.get_draw_info('group') or node.get_draw_info('grouped'):
+                if (node.get_draw_info('group') or
+                        node.get_draw_info('grouped')):
                     children = node.get_draw_info('children')
 
                 else:
@@ -1373,15 +1352,16 @@ class RadialNet(gtk.DrawingArea):
 
                 # setting father foreign
                 for child in children:
-                    child.set_draw_info({'father':node})
+                    child.set_draw_info({'father': node})
 
-                node.set_draw_info({'children':misc.sort_children(children, node)})
+                node.set_draw_info(
+                        {'children': misc.sort_children(children, node)})
                 tmp_nodes.update(children)
 
             # check group influence in number of rings
             for node in tmp_nodes:
 
-                if node.get_draw_info('grouped') != True:
+                if not node.get_draw_info('grouped'):
 
                     number_of_needed_rings += 1
                     break
@@ -1394,12 +1374,11 @@ class RadialNet(gtk.DrawingArea):
 
         self.__set_number_of_rings(number_of_needed_rings)
 
-
     def __weighted_layout(self):
         """
         """
         # calculating the space needed by each node
-        self.__graph.get_main_node().set_draw_info({'range':(0, 360)})
+        self.__graph.get_main_node().set_draw_info({'range': (0, 360)})
         new_nodes = set([self.__graph.get_main_node()])
 
         self.__graph.get_main_node().calc_needed_space()
@@ -1412,7 +1391,7 @@ class RadialNet(gtk.DrawingArea):
             children = set()
             for child in node.get_draw_info('children'):
 
-                if child.get_draw_info('grouped') != True:
+                if not child.get_draw_info('grouped'):
                     children.add(child)
                     new_nodes.add(child)
 
@@ -1431,15 +1410,14 @@ class RadialNet(gtk.DrawingArea):
                     theta = child_total / 2 + min + self.__rotate
 
                     child.set_coordinate_theta(theta)
-                    child.set_draw_info({'range':(min, min + child_total)})
+                    child.set_draw_info({'range': (min, min + child_total)})
 
                     min += child_total
-
 
     def __symmetric_layout(self):
         """
         """
-        self.__graph.get_main_node().set_draw_info({'range':(0, 360)})
+        self.__graph.get_main_node().set_draw_info({'range': (0, 360)})
         new_nodes = set([self.__graph.get_main_node()])
 
         while len(new_nodes) > 0:
@@ -1450,7 +1428,7 @@ class RadialNet(gtk.DrawingArea):
             children = set()
             for child in node.get_draw_info('children'):
 
-                if child.get_draw_info('grouped') != True:
+                if not child.get_draw_info('grouped'):
                     children.add(child)
                     new_nodes.add(child)
 
@@ -1464,10 +1442,9 @@ class RadialNet(gtk.DrawingArea):
                     theta = factor / 2 + min + self.__rotate
 
                     child.set_coordinate_theta(theta)
-                    child.set_draw_info({'range':(min, min + factor)})
+                    child.set_draw_info({'range': (min, min + factor)})
 
                     min += factor
-
 
     @graph_is_not_empty
     def __calc_layout(self, reference):
@@ -1481,7 +1458,7 @@ class RadialNet(gtk.DrawingArea):
             self.__weighted_layout()
 
         # rotating focus' children to keep orientation
-        if reference != None:
+        if reference is not None:
 
             father, angle = reference
             theta = father.get_coordinate_theta()
@@ -1493,8 +1470,7 @@ class RadialNet(gtk.DrawingArea):
                 node.set_coordinate_theta(theta - factor)
 
                 a, b = node.get_draw_info('range')
-                node.set_draw_info({'range':(a - factor, b - factor)})
-
+                node.set_draw_info({'range': (a - factor, b - factor)})
 
     @graph_is_not_empty
     def __calc_node_positions(self, reference=None):
@@ -1513,7 +1489,6 @@ class RadialNet(gtk.DrawingArea):
         # set nodes' coordinate theta
         self.__calc_layout(reference)
 
-
     def __calc_interpolation(self, focus):
         """
         """
@@ -1529,12 +1504,12 @@ class RadialNet(gtk.DrawingArea):
             elif self.__interpolation == INTERPOLATION_CARTESIAN:
                 coordinate = node.get_cartesian_coordinate()
 
-            node.set_draw_info({'start_coordinate':coordinate})
+            node.set_draw_info({'start_coordinate': coordinate})
 
         father = focus.get_draw_info('father')
 
         # calculate nodes positions (and father orientation)?
-        if father != None:
+        if father is not None:
 
             xa, ya = father.get_cartesian_coordinate()
             xb, yb = focus.get_cartesian_coordinate()
@@ -1559,7 +1534,7 @@ class RadialNet(gtk.DrawingArea):
             l2di = Linear2DInterpolator()
 
             # change grouped nodes coordinate
-            if node.get_draw_info('grouped') == True:
+            if node.get_draw_info('grouped'):
 
                 group_node = node.get_draw_info('group_node')
                 a, b = group_node.get_draw_info('final_coordinate')
@@ -1574,7 +1549,7 @@ class RadialNet(gtk.DrawingArea):
             if self.__interpolation == INTERPOLATION_POLAR:
 
                 coordinate = node.get_polar_coordinate()
-                node.set_draw_info({'final_coordinate':coordinate})
+                node.set_draw_info({'final_coordinate': coordinate})
 
                 # adjusting polar coordinates
                 ri, ti = node.get_draw_info('start_coordinate')
@@ -1588,18 +1563,20 @@ class RadialNet(gtk.DrawingArea):
                 ti, tf = geometry.calculate_short_path(ti, tf)
 
                 # main node goes direct to center (no arc)
-                if node == self.__graph.get_main_node(): tf = ti
+                if node == self.__graph.get_main_node():
+                    tf = ti
 
                 # old main node goes direct to new position (no arc)
-                if node == old_main_node: ti = tf
+                if node == old_main_node:
+                    ti = tf
 
-                node.set_draw_info({'start_coordinate':(ri, ti)})
-                node.set_draw_info({'final_coordinate':(rf, tf)})
+                node.set_draw_info({'start_coordinate': (ri, ti)})
+                node.set_draw_info({'final_coordinate': (rf, tf)})
 
             elif self.__interpolation == INTERPOLATION_CARTESIAN:
 
                 coordinate = node.get_cartesian_coordinate()
-                node.set_draw_info({'final_coordinate':coordinate})
+                node.set_draw_info({'final_coordinate': coordinate})
 
             # calculate interpolated points
             ai, bi = node.get_draw_info('start_coordinate')
@@ -1609,15 +1586,15 @@ class RadialNet(gtk.DrawingArea):
             l2di.set_final_point(af, bf)
 
             if self.__interpolation_slow_in_out:
-                points = l2di.get_weighed_points(self.__number_of_frames, steps)
+                points = l2di.get_weighed_points(
+                        self.__number_of_frames, steps)
 
             else:
                 points = l2di.get_points(self.__number_of_frames)
 
-            node.set_draw_info({'interpolated_coordinate':points})
+            node.set_draw_info({'interpolated_coordinate': points})
 
         return True
-
 
     def __livens_up(self, index=0):
         """
@@ -1665,15 +1642,14 @@ class RadialNet(gtk.DrawingArea):
 
         # animation continue condition
         if index < self.__number_of_frames - 1:
-            gobject.timeout_add(self.__animation_rate, # time to recall
-                                self.__livens_up,      # recursive call
-                                index + 1)             # next iteration
+            gobject.timeout_add(self.__animation_rate,  # time to recall
+                                self.__livens_up,       # recursive call
+                                index + 1)              # next iteration
         else:
             self.__last_group_node = None
             self.__animating = False
 
         return False
-
 
     @not_is_in_animation
     def set_graph(self, graph):
@@ -1692,7 +1668,6 @@ class RadialNet(gtk.DrawingArea):
         else:
             self.__graph = None
 
-
     def get_scanned_nodes(self):
         """
         """
@@ -1707,12 +1682,10 @@ class RadialNet(gtk.DrawingArea):
 
         return nodes
 
-
     def get_graph(self):
         """
         """
         return self.__graph
-
 
     def set_empty(self):
         """
@@ -1722,12 +1695,10 @@ class RadialNet(gtk.DrawingArea):
 
         self.queue_draw()
 
-
     def get_rotation(self):
         """
         """
         return self.__rotate
-
 
     @graph_is_not_empty
     def set_rotation(self, angle):
@@ -1743,12 +1714,10 @@ class RadialNet(gtk.DrawingArea):
 
         self.queue_draw()
 
-
     def get_translation(self):
         """
         """
         return self.__translation
-
 
     @graph_is_not_empty
     def set_translation(self, translation):
@@ -1757,28 +1726,21 @@ class RadialNet(gtk.DrawingArea):
         self.__translation = translation
         self.queue_draw()
 
-
     def is_empty(self):
         """
         """
-        if self.__graph == None:
-            return True
-
-        return False
-
+        return self.__graph is None
 
     def is_in_animation(self):
         """
         """
         return self.__animating
 
-
     def calc_sorted_nodes(self):
         """
         """
         self.__sorted_nodes = list(self.__graph.get_nodes())
-        self.__sorted_nodes.sort(key = lambda n: n.get_draw_info('ring'))
-
+        self.__sorted_nodes.sort(key=lambda n: n.get_draw_info('ring'))
 
 
 class NetNode(Node):
@@ -1794,20 +1756,17 @@ class NetNode(Node):
 
         super(NetNode, self).__init__()
 
-
     def get_host(self):
         """
         Set the HostInfo that this node represents
         """
         return self.get_data()
 
-
     def set_host(self, host):
         """
         Set the HostInfo that this node represents
         """
         self.set_data(host)
-
 
     def get_info(self, info):
         """Return various information extracted from the host set with
@@ -1868,7 +1827,7 @@ class NetNode(Node):
                 if len(host.osmatches) > 0 and \
                    host.osmatches[0]["accuracy"] != "" and \
                    host.osmatches[0]["name"] != "":
-                    if os == None:
+                    if os is None:
                         os = {}
                     os["matches"] = host.osmatches
                     os["matches"][0]["db_line"] = 0     # not supported
@@ -1879,7 +1838,6 @@ class NetNode(Node):
 
                         os_class["type"] = osclass.get("type", "")
                         os_class["vendor"] = osclass.get("vendor", "")
-                        #os_class["accuracy"] = int(osclass.get("accuracy", ""))
                         os_class["accuracy"] = osclass.get("accuracy", "")
                         os_class["os_family"] = osclass.get("osfamily", "")
                         os_class["os_gen"] = osclass.get("osgen", "")
@@ -1889,7 +1847,7 @@ class NetNode(Node):
 
                 # ports_used
                 if len(host.ports_used) > 0:
-                    if os == None:
+                    if os is None:
                         os = {}
                     os_portsused = []
 
@@ -1910,30 +1868,38 @@ class NetNode(Node):
             elif info == "sequences":
                 # getting sequences information
                 sequences = {}
-                # If all fields are empty, we don't put it into the sequences list
-                if reduce(lambda x,y: x + y, host.tcpsequence.values(), "") != "":
+                # If all fields are empty, we don't put it into the sequences
+                # list
+                if reduce(lambda x, y: x + y,
+                        host.tcpsequence.values(), "") != "":
                     tcp = {}
                     if host.tcpsequence.get("index", "") != "":
                         tcp["index"] = int(host.tcpsequence["index"])
                     else:
                         tcp["index"] = 0
                     tcp["class"] = ""   # not supported
-                    tcp["values"] = host.tcpsequence.get("values", "").split(",")
+                    tcp["values"] = host.tcpsequence.get(
+                            "values", "").split(",")
                     tcp["difficulty"] = host.tcpsequence.get("difficulty", "")
                     sequences["tcp"] = tcp
-                if reduce(lambda x,y: x + y, host.ipidsequence.values(), "") != "":
+                if reduce(lambda x, y: x + y,
+                        host.ipidsequence.values(), "") != "":
                     ip_id = {}
                     ip_id["class"] = host.ipidsequence.get("class", "")
-                    ip_id["values"] = host.ipidsequence.get("values", "").split(",")
+                    ip_id["values"] = host.ipidsequence.get(
+                            "values", "").split(",")
                     sequences["ip_id"] = ip_id
-                if reduce(lambda x,y: x + y, host.tcptssequence.values(), "") != "":
+                if reduce(lambda x, y: x + y,
+                        host.tcptssequence.values(), "") != "":
                     tcp_ts = {}
                     tcp_ts["class"] = host.tcptssequence.get("class", "")
-                    tcp_ts["values"] = host.tcptssequence.get("values", "").split(",")
+                    tcp_ts["values"] = host.tcptssequence.get(
+                            "values", "").split(",")
                     sequences["tcp_ts"] = tcp_ts
                 return sequences
             elif info == "filtered":
-                if len(host.extraports) > 0 and host.extraports[0]["state"] == "filtered":
+                if (len(host.extraports) > 0 and
+                        host.extraports[0]["state"] == "filtered"):
                     return True
                 else:
                     for port in host.ports:
@@ -1961,7 +1927,8 @@ class NetNode(Node):
                     service["method"] = host_port.get("service_method", "")
                     service["version"] = host_port.get("service_version", "")
                     service["product"] = host_port.get("service_product", "")
-                    service["extrainfo"] = host_port.get("service_extrainfo", "")
+                    service["extrainfo"] = host_port.get(
+                            "service_extrainfo", "")
 
                     port["state"] = state
                     port["scripts"] = None      # not supported
@@ -2001,35 +1968,30 @@ class NetNode(Node):
                     trace["protocol"] = host.trace.get("proto", "")
 
                     return trace
-        else: # host is None
+        else:  # host is None
             pass
 
         return None
-
 
     def get_coordinate_theta(self):
         """
         """
         return self.__coordinate.get_theta()
 
-
     def get_coordinate_radius(self):
         """
         """
         return self.__coordinate.get_radius()
-
 
     def set_coordinate_theta(self, value):
         """
         """
         self.__coordinate.set_theta(value)
 
-
     def set_coordinate_radius(self, value):
         """
         """
         self.__coordinate.set_radius(value)
-
 
     def set_polar_coordinate(self, r, t):
         """
@@ -2041,7 +2003,6 @@ class NetNode(Node):
         """
         self.__coordinate.set_coordinate(r, t)
 
-
     def get_polar_coordinate(self):
         """
         Get cartesian coordinate
@@ -2049,7 +2010,6 @@ class NetNode(Node):
         @return: Cartesian coordinates (x, y)
         """
         return self.__coordinate.get_coordinate()
-
 
     def set_cartesian_coordinate(self, x, y):
         """
@@ -2060,7 +2020,6 @@ class NetNode(Node):
 
         self.set_polar_coordinate(r, math.degrees(t))
 
-
     def get_cartesian_coordinate(self):
         """
         Get cartesian coordinate
@@ -2068,7 +2027,6 @@ class NetNode(Node):
         @return: Cartesian coordinates (x, y)
         """
         return self.__coordinate.to_cartesian()
-
 
     def get_draw_info(self, info=None):
         """
@@ -2078,14 +2036,10 @@ class NetNode(Node):
         @rtype: mixed
         @return: The requested information
         """
-        if info == None:
+        if info is None:
             return self.__draw_info
 
-        if self.__draw_info.has_key(info):
-            return self.__draw_info[info]
-
-        return None
-
+        return self.__draw_info.get(info)
 
     def set_draw_info(self, info):
         """
@@ -2095,7 +2049,6 @@ class NetNode(Node):
         """
         for key in info:
             self.__draw_info[key] = info[key]
-
 
     def deep_search_child(self, node):
         """
@@ -2110,7 +2063,6 @@ class NetNode(Node):
 
         return False
 
-
     def set_subtree_info(self, info):
         """
         """
@@ -2118,9 +2070,8 @@ class NetNode(Node):
 
             child.set_draw_info(info)
 
-            if child.get_draw_info('group') != True:
+            if not child.get_draw_info('group'):
                 child.set_subtree_info(info)
-
 
     def calc_needed_space(self):
         """
@@ -2130,7 +2081,7 @@ class NetNode(Node):
         sum_angle = 0
         own_angle = 0
 
-        if number_of_children > 0 and self.get_draw_info('group') != True:
+        if number_of_children > 0 and not self.get_draw_info('group'):
 
             for child in self.get_draw_info('children'):
 
@@ -2141,6 +2092,5 @@ class NetNode(Node):
         size = self.get_draw_info('radius') * 2
         own_angle = geometry.angle_from_object(distance, size)
 
-        self.set_draw_info({'children_need':sum_angle})
-        self.set_draw_info({'space_need':max(sum_angle, own_angle)})
-
+        self.set_draw_info({'children_need': sum_angle})
+        self.set_draw_info({'space_need': max(sum_angle, own_angle)})

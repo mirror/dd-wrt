@@ -6,62 +6,94 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2012 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
- * Foundation; Version 2 with the clarifications and exceptions described  *
- * below.  This guarantees your right to use, modify, and redistribute     *
- * this software under certain conditions.  If you wish to embed Nmap      *
- * technology into proprietary software, we sell alternative licenses      *
- * (contact sales@insecure.com).  Dozens of software vendors already       *
- * license Nmap technology such as host discovery, port scanning, OS       *
- * detection, version detection, and the Nmap Scripting Engine.            *
+ * Foundation; Version 2 ("GPL"), BUT ONLY WITH ALL OF THE CLARIFICATIONS  *
+ * AND EXCEPTIONS DESCRIBED HEREIN.  This guarantees your right to use,    *
+ * modify, and redistribute this software under certain conditions.  If    *
+ * you wish to embed Nmap technology into proprietary software, we sell    *
+ * alternative licenses (contact sales@nmap.com).  Dozens of software      *
+ * vendors already license Nmap technology such as host discovery, port    *
+ * scanning, OS detection, version detection, and the Nmap Scripting       *
+ * Engine.                                                                 *
  *                                                                         *
- * Note that the GPL places important restrictions on "derived works", yet *
- * it does not provide a detailed definition of that term.  To avoid       *
+ * Note that the GPL places important restrictions on "derivative works",  *
+ * yet it does not provide a detailed definition of that term.  To avoid   *
  * misunderstandings, we interpret that term as broadly as copyright law   *
  * allows.  For example, we consider an application to constitute a        *
- * "derivative work" for the purpose of this license if it does any of the *
- * following:                                                              *
- * o Integrates source code from Nmap                                      *
- * o Reads or includes Nmap copyrighted data files, such as                *
- *   nmap-os-db or nmap-service-probes.                                    *
- * o Executes Nmap and parses the results (as opposed to typical shell or  *
- *   execution-menu apps, which simply display raw Nmap output and so are  *
- *   not derivative works.)                                                *
- * o Integrates/includes/aggregates Nmap into a proprietary executable     *
- *   installer, such as those produced by InstallShield.                   *
- * o Links to a library or executes a program that does any of the above   *
+ * derivative work for the purpose of this license if it does any of the   *
+ * following with any software or content covered by this license          *
+ * ("Covered Software"):                                                   *
  *                                                                         *
- * The term "Nmap" should be taken to also include any portions or derived *
- * works of Nmap, as well as other software we distribute under this       *
- * license such as Zenmap, Ncat, and Nping.  This list is not exclusive,   *
- * but is meant to clarify our interpretation of derived works with some   *
- * common examples.  Our interpretation applies only to Nmap--we don't     *
- * speak for other people's GPL works.                                     *
+ * o Integrates source code from Covered Software.                         *
  *                                                                         *
- * If you have any questions about the GPL licensing restrictions on using *
- * Nmap in non-GPL works, we would be happy to help.  As mentioned above,  *
- * we also offer alternative license to integrate Nmap into proprietary    *
- * applications and appliances.  These contracts have been sold to dozens  *
- * of software vendors, and generally include a perpetual license as well  *
- * as providing for priority support and updates.  They also fund the      *
- * continued development of Nmap.  Please email sales@insecure.com for     *
- * further information.                                                    *
+ * o Reads or includes copyrighted data files, such as Nmap's nmap-os-db   *
+ * or nmap-service-probes.                                                 *
  *                                                                         *
- * As a special exception to the GPL terms, Insecure.Com LLC grants        *
+ * o Is designed specifically to execute Covered Software and parse the    *
+ * results (as opposed to typical shell or execution-menu apps, which will *
+ * execute anything you tell them to).                                     *
+ *                                                                         *
+ * o Includes Covered Software in a proprietary executable installer.  The *
+ * installers produced by InstallShield are an example of this.  Including *
+ * Nmap with other software in compressed or archival form does not        *
+ * trigger this provision, provided appropriate open source decompression  *
+ * or de-archiving software is widely available for no charge.  For the    *
+ * purposes of this license, an installer is considered to include Covered *
+ * Software even if it actually retrieves a copy of Covered Software from  *
+ * another source during runtime (such as by downloading it from the       *
+ * Internet).                                                              *
+ *                                                                         *
+ * o Links (statically or dynamically) to a library which does any of the  *
+ * above.                                                                  *
+ *                                                                         *
+ * o Executes a helper program, module, or script to do any of the above.  *
+ *                                                                         *
+ * This list is not exclusive, but is meant to clarify our interpretation  *
+ * of derived works with some common examples.  Other people may interpret *
+ * the plain GPL differently, so we consider this a special exception to   *
+ * the GPL that we apply to Covered Software.  Works which meet any of     *
+ * these conditions must conform to all of the terms of this license,      *
+ * particularly including the GPL Section 3 requirements of providing      *
+ * source code and allowing free redistribution of the work as a whole.    *
+ *                                                                         *
+ * As another special exception to the GPL terms, Insecure.Com LLC grants  *
  * permission to link the code of this program with any version of the     *
  * OpenSSL library which is distributed under a license identical to that  *
  * listed in the included docs/licenses/OpenSSL.txt file, and distribute   *
- * linked combinations including the two. You must obey the GNU GPL in all *
- * respects for all of the code used other than OpenSSL.  If you modify    *
- * this file, you may extend this exception to your version of the file,   *
- * but you are not obligated to do so.                                     *
+ * linked combinations including the two.                                  *
  *                                                                         *
- * If you received these files with a written license agreement or         *
- * contract stating terms other than the terms above, then that            *
- * alternative license agreement takes precedence over these comments.     *
+ * Any redistribution of Covered Software, including any derived works,    *
+ * must obey and carry forward all of the terms of this license, including *
+ * obeying all GPL rules and restrictions.  For example, source code of    *
+ * the whole work must be provided and free redistribution must be         *
+ * allowed.  All GPL references to "this License", are to be treated as    *
+ * including the terms and conditions of this license text as well.        *
+ *                                                                         *
+ * Because this license imposes special exceptions to the GPL, Covered     *
+ * Work may not be combined (even as part of a larger work) with plain GPL *
+ * software.  The terms, conditions, and exceptions of this license must   *
+ * be included as well.  This license is incompatible with some other open *
+ * source licenses as well.  In some cases we can relicense portions of    *
+ * Nmap or grant special permissions to use it in other open source        *
+ * software.  Please contact fyodor@nmap.org with any such requests.       *
+ * Similarly, we don't incorporate incompatible open source software into  *
+ * Covered Software without special permission from the copyright holders. *
+ *                                                                         *
+ * If you have any questions about the licensing restrictions on using     *
+ * Nmap in other works, are happy to help.  As mentioned above, we also    *
+ * offer alternative license to integrate Nmap into proprietary            *
+ * applications and appliances.  These contracts have been sold to dozens  *
+ * of software vendors, and generally include a perpetual license as well  *
+ * as providing for priority support and updates.  They also fund the      *
+ * continued development of Nmap.  Please email sales@nmap.com for further *
+ * information.                                                            *
+ *                                                                         *
+ * If you have received a written license agreement or contract for        *
+ * Covered Software stating terms other than these, you may choose to use  *
+ * and redistribute Covered Software under those terms instead of these.   *
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
@@ -70,8 +102,8 @@
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
- * to nmap-dev@insecure.org for possible incorporation into the main       *
- * distribution.  By sending these changes to Fyodor or one of the         *
+ * to the dev@nmap.org mailing list for possible incorporation into the    *
+ * main distribution.  By sending these changes to Fyodor or one of the    *
  * Insecure.Org development mailing lists, or checking them into the Nmap  *
  * source code repository, it is understood (unless you specify otherwise) *
  * that you are offering the Nmap Project (Insecure.Com LLC) the           *
@@ -85,10 +117,9 @@
  *                                                                         *
  * This program is distributed in the hope that it will be useful, but     *
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU       *
- * General Public License v2.0 for more details at                         *
- * http://www.gnu.org/licenses/gpl-2.0.html , or in the COPYING file       *
- * included with Nmap.                                                     *
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
+ * license file for more details (it's in a COPYING file included with     *
+ * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
  *                                                                         *
  ***************************************************************************/
 /* This code was originally part of the Nping tool.                        */
@@ -192,7 +223,74 @@ int ICMPv6Header::validate(){
   * header in the chain (if there is any).
   * @return OP_SUCCESS on success and OP_FAILURE in case of error. */
 int ICMPv6Header::print(FILE *output, int detail) const {
-  fprintf(output, "ICMPv6[]");
+  u8 type=this->getType();
+  u8 code=this->getCode();
+  const char *typestr=this->type2string(type, code);
+
+  fprintf(output, "ICMPv6[%s", typestr);
+  if(detail>=PRINT_DETAIL_MED)
+    fprintf(output, " (type=%u/code=%u)", type, code);
+
+  switch(type) {
+    
+    case ICMPv6_UNREACH:
+    case ICMPv6_TIMXCEED:
+      if(detail>=PRINT_DETAIL_HIGH)
+        fprintf(output, " unused=%lu", (long unsigned int)this->getUnused());
+    break;
+    
+    case ICMPv6_ROUTERSOLICIT:
+      if(detail>=PRINT_DETAIL_HIGH)
+        fprintf(output, " reserved=%lu", (long unsigned int)this->getReserved());
+    break;
+  
+    case ICMPv6_PKTTOOBIG:
+      fprintf(output, " mtu=%lu", (long unsigned int)this->getMTU());
+    break;
+    
+    case ICMPv6_PARAMPROB:
+      fprintf(output, " pointer=%lu", (long unsigned int)this->getPointer());
+    break;
+    
+    case ICMPv6_ECHO:
+    case ICMPv6_ECHOREPLY:
+      fprintf(output, " id=%u seq=%u", this->getIdentifier(), this->getSequence());
+    break;
+    
+    case ICMPv6_NODEINFOQUERY:
+    case ICMPv6_NODEINFORESP:
+      if(this->getNodeInfoFlags()!=0){
+        fprintf(output, " flags=");
+        if(this->getNodeInfoFlags() & ICMPv6_NI_FLAG_T)
+          fprintf(output, "T");
+        if(this->getNodeInfoFlags() & ICMPv6_NI_FLAG_A)
+          fprintf(output, "A");
+        if(this->getNodeInfoFlags() & ICMPv6_NI_FLAG_C)
+          fprintf(output, "C");
+        if(this->getNodeInfoFlags() & ICMPv6_NI_FLAG_L)
+          fprintf(output, "L");
+        if(this->getNodeInfoFlags() & ICMPv6_NI_FLAG_G)
+          fprintf(output, "G");
+        if(this->getNodeInfoFlags() & ICMPv6_NI_FLAG_S)
+          fprintf(output, "S");
+        }
+      if(detail>=PRINT_DETAIL_HIGH){
+        #ifdef WIN32
+          fprintf(output, " nonce=%I64u",  (long long unsigned int)this->getNonce());
+        #else
+          fprintf(output, " nonce=%llu",  (long long unsigned int)this->getNonce());
+        #endif
+      }
+    break;
+
+    default:
+        /* Print nothing */
+    break;
+  }
+
+  if(detail>=PRINT_DETAIL_HIGH)
+      fprintf(output, " csum=0x%04X", ntohs(this->getSum()));
+  fprintf(output, "]");
   if(this->next!=NULL){
     print_separator(output, detail);
     next->print(output, detail);
@@ -385,7 +483,7 @@ int ICMPv6Header::setSum(u16 s){
 /** Returns the value of the checksum field.
  *  @warning The returned value is in NETWORK byte order, no conversion is
  *  performed */
-u16 ICMPv6Header::getSum(){
+u16 ICMPv6Header::getSum() const{
   return this->h.checksum;
 } /* End of getSum() */
 
@@ -448,7 +546,7 @@ int ICMPv6Header::setReserved(u32 val){
 
 
 /** @warning Returned value is in host byte order */
-u32 ICMPv6Header::getReserved(){
+u32 ICMPv6Header::getReserved() const {
   u32 aux32=0;
   u8 *auxpnt=(u8 *)&aux32;
 
@@ -506,7 +604,7 @@ int ICMPv6Header::setUnused(u32 val){
 } /* End of setUnused() */
 
 
-u32 ICMPv6Header::getUnused(){
+u32 ICMPv6Header::getUnused() const {
   return this->getReserved();
 } /* End of getUnused() */
 
@@ -549,7 +647,7 @@ int ICMPv6Header::setFlags(u8 val){
 } /* End of setFlags() */
 
 
-u8 ICMPv6Header::getFlags(){
+u8 ICMPv6Header::getFlags() const {
   switch(this->h.type){
 
     case ICMPv6_ROUTERADVERT:
@@ -598,7 +696,7 @@ int ICMPv6Header::setMTU(u32 mtu){
   return OP_SUCCESS;
 } /* End of setMTU() */
 
-u32 ICMPv6Header::getMTU(){
+u32 ICMPv6Header::getMTU() const {
   return ntohl(this->h_ptb->mtu);
 } /* End of getMTU() */
 
@@ -615,7 +713,7 @@ int ICMPv6Header::setPointer(u32 pnt){
 } /* End of setPointer() */
 
 
-u32 ICMPv6Header::getPointer(){
+u32 ICMPv6Header::getPointer() const {
   return ntohl(this->h_pp->pointer);
 } /* End of getPointer() */
 
@@ -628,7 +726,7 @@ int ICMPv6Header::setIdentifier(u16 val){
 } /* End of setIdentifier() */
 
 
-u16 ICMPv6Header::getIdentifier(){
+u16 ICMPv6Header::getIdentifier() const{
   return ntohs(this->h_e->id);
 } /* End of getIdentifier() */
 
@@ -671,7 +769,7 @@ int ICMPv6Header::setSequence(u32 val){
 } /* End of setSequence() */
 
 
-u32 ICMPv6Header::getSequence(){
+u32 ICMPv6Header::getSequence() const{
   switch(this->h.type){
     case ICMPv6_RTRRENUM:
         return ntohl(this->h_rr->seq);
@@ -679,7 +777,7 @@ u32 ICMPv6Header::getSequence(){
 
     case ICMPv6_ECHO:
     case ICMPv6_ECHOREPLY:
-        return ntohl( ((u32)this->h_e->seq) );
+        return (u32)ntohs(this->h_e->seq);
     break;
   }
   return 0;
@@ -694,7 +792,7 @@ int ICMPv6Header::setCurrentHopLimit(u8 val){
   return OP_SUCCESS;
 } /* End of setCurrentHopLimit() */
 
-u8 ICMPv6Header::getCurrentHopLimit(){
+u8 ICMPv6Header::getCurrentHopLimit() const {
   return this->h_ra->current_hop_limit;
 } /* End of getCurrentHopLimit() */
 
@@ -703,7 +801,7 @@ int ICMPv6Header::setRouterLifetime(u16 val){
   return OP_SUCCESS;
 } /* End of setRouterLifetime() */
 
-u16 ICMPv6Header::getRouterLifetime(){
+u16 ICMPv6Header::getRouterLifetime() const {
   return this->h_ra->router_lifetime;
 } /* End of getRouterLifetime() */
 
@@ -712,7 +810,7 @@ int ICMPv6Header::setReachableTime(u32 val){
   return OP_SUCCESS;
 } /* End of setReachableTime() */
 
-u32 ICMPv6Header::getReachableTime(){
+u32 ICMPv6Header::getReachableTime() const {
     return this->h_ra->reachable_time;
 } /* End of getReachableTime() */
 
@@ -721,7 +819,7 @@ int ICMPv6Header::setRetransmissionTimer(u32 val){
   return OP_SUCCESS;
 } /* End of setRetransmissionTimer() */
 
-u32 ICMPv6Header::getRetransmissionTimer(){
+u32 ICMPv6Header::getRetransmissionTimer() const {
   return this->h_ra->retransmission_timer;
 } /* End of getRetransmissionTimer() */
 
@@ -755,7 +853,7 @@ int ICMPv6Header::setTargetAddress(struct in6_addr addr){
 } /* End of setTargetAddress() */
 
 
-struct in6_addr ICMPv6Header::getTargetAddress(){
+struct in6_addr ICMPv6Header::getTargetAddress() const {
   struct in6_addr addr;
   memset(&addr, 0, sizeof(struct in6_addr));
 
@@ -790,7 +888,7 @@ int ICMPv6Header::setDestinationAddress(struct in6_addr addr){
 } /* End of setDestinationAddress() */
 
 
-struct in6_addr ICMPv6Header::getDestinationAddress(){
+struct in6_addr ICMPv6Header::getDestinationAddress() const {
   struct in6_addr addr;
   memset(&addr, 0, sizeof(struct in6_addr));
 
@@ -819,7 +917,7 @@ int ICMPv6Header::setSegmentNumber(u8 val){
   return OP_SUCCESS;
 } /* End of setSegmentNumber() */
 
-u8 ICMPv6Header::getSegmentNumber(){
+u8 ICMPv6Header::getSegmentNumber() const {
   return this->h_rr->segment_number;
 } /* End of getSegmentNumber() */
 
@@ -844,7 +942,7 @@ int ICMPv6Header::setMaxDelay(u16 val){
 } /* End of setMaxDelay() */
 
 
-u16 ICMPv6Header::getMaxDelay(){
+u16 ICMPv6Header::getMaxDelay() const {
   switch(this->h.type){
     case ICMPv6_RTRRENUM:
       return ntohs(this->h_rr->max_delay);
@@ -875,7 +973,7 @@ int ICMPv6Header::setQtype(u16 val){
 
 
 /** Returns NI Qtype */
-u16 ICMPv6Header::getQtype(){
+u16 ICMPv6Header::getQtype() const {
   return ntohs(this->h_ni->qtype);
 } /* End of getQtype() */
 
@@ -888,7 +986,7 @@ int ICMPv6Header::setNodeInfoFlags(u16 val){
 
 
 /** Returns NI Flags */
-u16 ICMPv6Header::getNodeInfoFlags(){
+u16 ICMPv6Header::getNodeInfoFlags() const {
   return ntohs(this->h_ni->flags);
 } /* End of getNodeInfoFlags() */
 
@@ -911,7 +1009,7 @@ int ICMPv6Header::setG(bool flag_value){
 
 
 /* Get NI Flag G */
-bool ICMPv6Header::getG(){
+bool ICMPv6Header::getG() const {
   return this->getNodeInfoFlags() & 0x0020;
 } /* End of getG() */
 
@@ -929,7 +1027,7 @@ int ICMPv6Header::setS(bool flag_value){
 
 
 /* Get NI Flag  S */
-bool ICMPv6Header::getS(){
+bool ICMPv6Header::getS() const {
   return this->getNodeInfoFlags() & 0x0010;
 } /* End of getS() */
 
@@ -947,7 +1045,7 @@ int ICMPv6Header::setL(bool flag_value){
 
 
 /* Get NI Flag L */
-bool ICMPv6Header::getL(){
+bool ICMPv6Header::getL() const {
   return this->getNodeInfoFlags() & 0x0008;
 } /* End of getL() */
 
@@ -965,7 +1063,7 @@ int ICMPv6Header::setC(bool flag_value){
 
 
 /* Get NI Flag C */
-bool ICMPv6Header::getC(){
+bool ICMPv6Header::getC() const {
   return this->getNodeInfoFlags() & 0x0004;
 } /* End of getC() */
 
@@ -983,7 +1081,7 @@ int ICMPv6Header::setA(bool flag_value){
 
 
 /* Get NI Flag A */
-bool ICMPv6Header::getA(){
+bool ICMPv6Header::getA() const {
   return this->getNodeInfoFlags() & 0x0002;
 } /* End of getA() */
 
@@ -1001,9 +1099,16 @@ int ICMPv6Header::setT(bool flag_value){
 
 
 /* Get NI Flag T */
-bool ICMPv6Header::getT(){
+bool ICMPv6Header::getT() const {
   return this->getNodeInfoFlags() & 0x0001;
 } /* End of getT() */
+
+
+/* Set the Nonce field. */
+int ICMPv6Header::setNonce(u64 nonce_value){
+  this->h_ni->nonce=nonce_value;
+  return OP_SUCCESS;
+} /* End of setNonce() */
 
 
 /* Set the Nonce field.
@@ -1011,7 +1116,7 @@ bool ICMPv6Header::getT(){
 int ICMPv6Header::setNonce(const u8 *nonce){
   if(nonce==NULL)
     return OP_FAILURE;
-  memcpy(this->h_ni->nonce, nonce, NI_NONCE_LEN);
+  memcpy(&(this->h_ni->nonce), nonce, NI_NONCE_LEN);
   return OP_SUCCESS;
 } /* End of setNonce() */
 
@@ -1019,7 +1124,7 @@ int ICMPv6Header::setNonce(const u8 *nonce){
 /* Returns a pointer to the nonce buffer.
  * @warning: The returned pointer is guaranteed to point to an 8-byte buffer.
  * However, what comes after the 8th byte is unspecified. */
-u8 *ICMPv6Header::getNonce(){
+u64 ICMPv6Header::getNonce() const {
   return this->h_ni->nonce;
 } /* End of getNonce() */
 
@@ -1045,7 +1150,7 @@ int ICMPv6Header::setMulticastAddress(struct in6_addr addr){
 } /* End of setMulticastAddress() */
 
 
-struct in6_addr ICMPv6Header::getMulticastAddress(){
+struct in6_addr ICMPv6Header::getMulticastAddress() const {
   struct in6_addr addr;
   memset(&addr, 0, sizeof(struct in6_addr));
 
@@ -1071,7 +1176,7 @@ struct in6_addr ICMPv6Header::getMulticastAddress(){
   * bytes but then the packet may contain ICMPv6 options. We only return 40
   * because we don't know in advance the total number of bytes for the message.
   * Same applies to the rest of types. */
-int ICMPv6Header::getHeaderLengthFromType(u8 type){
+int ICMPv6Header::getHeaderLengthFromType(u8 type) const {
 
   switch( type ){
     case ICMPv6_UNREACH:
@@ -1156,6 +1261,163 @@ bool ICMPv6Header::isError() const {
     break;
   }
 } /* End of isError() */
+
+
+const char *ICMPv6Header::type2string(int type, int code) const {
+  switch(type) {
+
+    case ICMPv6_UNREACH:
+      switch(code) {
+        case ICMPv6_UNREACH_NO_ROUTE: return "Network unreachable"; break;
+        case ICMPv6_UNREACH_PROHIBITED: return "Comm prohibited"; break;
+        case ICMPv6_UNREACH_BEYOND_SCOPE: return "Beyond scope"; break;
+        case ICMPv6_UNREACH_ADDR_UNREACH: return "Address unreachable"; break;
+        case ICMPv6_UNREACH_PORT_UNREACH: return "Port unreachable"; break;
+        case ICMPv6_UNREACH_SRC_ADDR_FAILED: return "Source address failed"; break;
+        case ICMPv6_UNREACH_REJECT_ROUTE: return "Reject route"; break;
+        default: return "Destination unreachable (unknown code)"; break;
+      }
+    break;   
+    
+    case ICMPv6_PKTTOOBIG:
+      return "Packet too big"; 
+    break;
+
+    case ICMPv6_TIMXCEED:
+      switch(code){
+        case ICMPv6_TIMXCEED_HOP_EXCEEDED: return "HopLimit=0 in transit"; break;
+        case ICMPv6_TIMXCEED_REASS_EXCEEDED: return "Reassembly time exceeded"; break;
+        default: return "Time exceeded (unknown code)"; break;
+      }
+    break;
+    
+    case ICMPv6_PARAMPROB:
+      switch(code){
+        case ICMPv6_PARAMPROB_FIELD: return "Parameter problem (bad field)"; break;
+        case ICMPv6_PARAMPROB_NEXT_HDR: return "Parameter problem (next header unknown)"; break;
+        case ICMPv6_PARAMPROB_OPTION: return "Parameter problem (bad option)"; break;
+        default: return "Parameter problem (unknown code)"; break;
+      }
+    break;
+
+    case ICMPv6_ECHO:
+      return "Echo request"; 
+    break;
+    case ICMPv6_ECHOREPLY:
+      return "Echo reply"; 
+    break;
+    case ICMPv6_GRPMEMBQUERY:
+      return "Group membership query"; 
+    break;
+    case ICMPv6_GRPMEMBREP:
+      return "Group membership report"; 
+    break;
+    case ICMPv6_GRPMEMBRED:
+      return "Group membership reduction"; 
+    break;
+    case ICMPv6_ROUTERSOLICIT:
+      return "Router sol"; 
+    break;
+    case ICMPv6_ROUTERADVERT:
+      return "Router advert"; 
+    break;
+    case ICMPv6_NGHBRSOLICIT:
+      return "Neighbor sol"; 
+    break;
+    case ICMPv6_NGHBRADVERT:
+      return "Neighbor advert"; 
+    break;
+    case ICMPv6_REDIRECT:
+      return "Redirect"; 
+    break;
+    case ICMPv6_RTRRENUM:
+      switch(code){
+        case ICMPv6_RTRRENUM_COMMAND: return "Renumbering command"; break;
+        case ICMPv6_RTRRENUM_RESULT: return "Renumbering result"; break;
+        case ICMPv6_RTRRENUM_SEQ_RESET: return "Renumbering reset"; break;
+        default: return "Router Renumbering (unknown code)"; break;
+      }
+    break;
+    case ICMPv6_NODEINFOQUERY:
+      switch(code){
+        case ICMPv6_NODEINFOQUERY_IPv6ADDR: return "Node info query (IPv6 addr)"; break;
+        case ICMPv6_NODEINFOQUERY_NAME: return "Node info query (name)"; break;
+        case ICMPv6_NODEINFOQUERY_IPv4ADDR: return "Node info query (IPv4 addr)"; break;
+        default: return "Node info query (unknown code)"; break;
+      }
+    break;
+
+    case ICMPv6_NODEINFORESP:
+      switch(code){
+        case ICMPv6_NODEINFORESP_SUCCESS: return "Node info reply (success)"; break;
+        case ICMPv6_NODEINFORESP_REFUSED: return "Node info reply (refused)"; break;
+        case ICMPv6_NODEINFORESP_UNKNOWN: return "Node info reply (qtype unknown)"; break;
+        default: return "Node info reply (unknown code)"; break;
+      }
+    break;
+
+    case ICMPv6_INVNGHBRSOLICIT:
+      return "Inverse neighbor sol"; 
+    break;
+
+    case ICMPv6_INVNGHBRADVERT:
+      return "Inverse neighbor advert"; 
+    break;
+
+    case ICMPv6_MLDV2:
+      return "MLDv2 report"; 
+    break;
+
+    case ICMPv6_AGENTDISCOVREQ:
+      return "Home agent request"; 
+    break;
+
+    case ICMPv6_AGENTDISCOVREPLY:
+      return "Home agent reply"; 
+    break;
+
+    case ICMPv6_MOBPREFIXSOLICIT:
+      return "Prefix sol"; 
+    break;
+
+    case ICMPv6_MOBPREFIXADVERT:
+      return "Prefix advert"; 
+    break;
+
+    case ICMPv6_CERTPATHSOLICIT:
+      return "Cert path sol"; 
+    break;
+
+    case ICMPv6_CERTPATHADVERT:
+      return "Cert path advert"; 
+    break;
+
+    case ICMPv6_EXPMOBILITY:
+      return "Experimental mobility"; 
+    break;
+
+    case ICMPv6_MRDADVERT:
+      return "Multicast router advert"; 
+    break;
+
+    case ICMPv6_MRDSOLICIT:
+      return "Multicast router sol"; 
+    break;
+
+    case ICMPv6_MRDTERMINATE:
+      return "Multicast router term"; 
+    break;
+
+    case ICMPv6_FMIPV6:
+      return "FMIPv6"; 
+    break;
+         
+    default:
+      return "Unknown ICMPv6 type";
+    break;
+  } /* End of ICMP Type switch */
+  return "Unknown ICMPv6 type";
+} /* End of type2string() */
 
 
 

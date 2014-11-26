@@ -1,3 +1,10 @@
+local _G = require "_G"
+local mysql = require "mysql"
+local nmap = require "nmap"
+local shortport = require "shortport"
+local stdnse = require "stdnse"
+local table = require "table"
+
 description = [[
 Audits MySQL database server security configuration against parts of
 the CIS MySQL v1.0.2 benchmark (the engine can be used for other MySQL
@@ -8,7 +15,7 @@ audits by creating appropriate audit files).
 ---
 -- @usage
 -- nmap -p 3306 --script mysql-audit --script-args "mysql-audit.username='root', \
--- 	mysql-audit.password='foobar',mysql-audit.filename='nselib/data/mysql-cis.audit'"
+--   mysql-audit.password='foobar',mysql-audit.filename='nselib/data/mysql-cis.audit'"
 --
 -- @args mysql-audit.username the username with which to connect to the database
 -- @args mysql-audit.password the password with which to connect to the database
@@ -17,7 +24,7 @@ audits by creating appropriate audit files).
 -- @output
 -- PORT     STATE SERVICE
 -- 3306/tcp open  mysql
--- | mysql-audit: 
+-- | mysql-audit:
 -- |   CIS MySQL Benchmarks v1.0.2
 -- |       3.1: Skip symbolic links => PASS
 -- |       3.2: Logs not on system partition => PASS
@@ -72,7 +79,7 @@ audits by creating appropriate audit files).
 -- |       6.8: Skip networking => FAIL
 -- |       6.9: Safe user create => FAIL
 -- |       6.10: Skip symbolic links => FAIL
--- |       
+-- |
 -- |_      The audit was performed using the db-account: root
 
 -- Version 0.1
@@ -82,91 +89,94 @@ author = "Patrik Karlsson"
 license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
 categories = {"discovery", "safe"}
 
-require 'shortport'
-require 'mysql'
 
 portrule = shortport.port_or_service(3306, "mysql")
-local TEMPLATE_NAME = ""
+local TEMPLATE_NAME, ADMIN_ACCOUNTS = "", ""
 
 local function loadAuditRulebase( filename )
+  local rules = {}
 
-	local file, err = loadfile(filename)
-	local rules = {}
+  local env = setmetatable({
+    test = function(t) table.insert(rules, t) end;
+  }, {__index = _G})
 
-	if ( not(file) ) then
-		return false, ("ERROR: Failed to load rulebase:\n%s"):format(err)
-	end
-	
-	setfenv(file, setmetatable({
-		test = function(t) table.insert(rules, t) end;
-	}, {__index = _G}))
-	
-	file()
-	TEMPLATE_NAME = getfenv(file)["TEMPLATE_NAME"]
-	return true, rules
+  local file, err = loadfile(filename, "t", env)
+
+  if ( not(file) ) then
+    return false, ("ERROR: Failed to load rulebase:\n%s"):format(err)
+  end
+
+
+  file()
+  TEMPLATE_NAME = env.TEMPLATE_NAME
+  ADMIN_ACCOUNTS = env.ADMIN_ACCOUNTS
+  return true, rules
 end
 
 action = function( host, port )
 
-	local username = stdnse.get_script_args("mysql-audit.username")
-	local password = stdnse.get_script_args("mysql-audit.password")
-	local filename = stdnse.get_script_args("mysql-audit.filename")
+  local username = stdnse.get_script_args("mysql-audit.username")
+  local password = stdnse.get_script_args("mysql-audit.password")
+  local filename = stdnse.get_script_args("mysql-audit.filename")
 
-	if ( not(filename) ) then
-		return "\n  No audit rulebase file was supplied (see mysql-audit.filename)"
-	end
+  if ( not(filename) ) then
+    return "\n  No audit rulebase file was supplied (see mysql-audit.filename)"
+  end
 
-	if ( not(username) ) then
-		return "\n  No username was supplied (see mysql-audit.username)"
-	end
+  if ( not(username) ) then
+    return "\n  No username was supplied (see mysql-audit.username)"
+  end
 
-	local status, tests = loadAuditRulebase( filename )
-	if( not(status) ) then return rules end
+  local status, tests = loadAuditRulebase( filename )
+  if( not(status) ) then return tests end
 
-	local socket = nmap.new_socket()
-	status = socket:connect(host, port)
+  local socket = nmap.new_socket()
+  status = socket:connect(host, port)
 
-	local response
-	status, response = mysql.receiveGreeting( socket )
-	if ( not(status) ) then return response end
-	
-	status, response = mysql.loginRequest( socket, { authversion = "post41", charset = response.charset }, username, password, response.salt )
+  local response
+  status, response = mysql.receiveGreeting( socket )
+  if ( not(status) ) then return response end
 
-	if ( not(status) ) then return "ERROR: Failed to authenticate" end
-	local results = {}
+  status, response = mysql.loginRequest( socket, { authversion = "post41", charset = response.charset }, username, password, response.salt )
 
-	for _, test in ipairs(tests) do
-		local queries = ( "string" == type(test.sql) ) and { test.sql } or test.sql
-		local rowstab = {}
-		
-		for _, query in ipairs(queries) do
-			local row
-			status, row = mysql.sqlQuery( socket, query )
-			if ( not(status) ) then
-				table.insert( results, { ("%s: ERROR: Failed to execute SQL statement"):format(test.id) } )
-			else
-				table.insert(rowstab, row)
-			end
-		end
-		
-		if ( #rowstab > 0 ) then
-			local result_part = {}
-			local res = test.check(rowstab)
-			local status, data = res.status, res.result
-			status = ( res.review and "REVIEW" ) or (status and "PASS" or "FAIL")
-			
-			table.insert( result_part, ("%s: %s => %s"):format(test.id, test.desc, status) )
-			if ( data ) then
-				table.insert(result_part, { data } )
-			end
-			table.insert( results, result_part )
-		end
-	end
+  if ( not(status) ) then return "ERROR: Failed to authenticate" end
+  local results = {}
 
-	socket:close()
-	results.name = TEMPLATE_NAME
+  for _, test in ipairs(tests) do
+    local queries = ( "string" == type(test.sql) ) and { test.sql } or test.sql
+    local rowstab = {}
 
-	table.insert(results, {"", ("The audit was performed using the db-account: %s"):format(username)})
+    for _, query in ipairs(queries) do
+      local row
+      status, row = mysql.sqlQuery( socket, query )
+      if ( not(status) ) then
+        table.insert( results, { ("%s: ERROR: Failed to execute SQL statement"):format(test.id) } )
+      else
+        table.insert(rowstab, row)
+      end
+    end
 
-	return stdnse.format_output(true, { results })
+    if ( #rowstab > 0 ) then
+      local result_part = {}
+      local res = test.check(rowstab)
+      local status, data = res.status, res.result
+      status = ( res.review and "REVIEW" ) or (status and "PASS" or "FAIL")
+
+      table.insert( result_part, ("%s: %s => %s"):format(test.id, test.desc, status) )
+      if ( data ) then
+        table.insert(result_part, { data } )
+      end
+      table.insert( results, result_part )
+    end
+  end
+
+  socket:close()
+  results.name = TEMPLATE_NAME
+
+  table.insert(results, "")
+  table.insert(results, {name = "Additional information", ("The audit was performed using the db-account: %s"):format(username),
+    ("The following admin accounts were excluded from the audit: %s"):format(stdnse.strjoin(",", ADMIN_ACCOUNTS))
+  })
+
+return stdnse.format_output(true, { results })
 end

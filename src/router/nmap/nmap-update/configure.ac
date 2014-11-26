@@ -12,6 +12,13 @@ AC_PROG_CC
 AC_PROG_INSTALL
 AC_PATH_TOOL([STRIP], [strip], [/bin/true])
 
+# GCC-specific flags
+if test -n "$GCC"; then
+  # -Wno-deprecated-declarations is because we use an older version of the
+  # Subversion API for compatibility.
+  CFLAGS="$CFLAGS -Wall -Wno-deprecated-declarations"
+fi
+
 APR_FIND_APR(, , 1, 1)
 if test "$apr_found" = "no"; then
   AC_MSG_ERROR([libapr is required to build nmap-update.])

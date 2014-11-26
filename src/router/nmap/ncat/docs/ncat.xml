@@ -117,6 +117,22 @@
 
       <varlistentry>
         <term>
+          <option>-U</option>,
+          <option>--unixsock</option> (Use Unix domain sockets)
+          <indexterm><primary><option>--unixsock</option> (Ncat option)</primary><see><option>-U</option></see></indexterm>
+          <indexterm><primary><option>-U</option> (Ncat option)</primary></indexterm>
+        </term>
+        <listitem>
+          <para>Use Unix domain sockets rather than network sockets.
+          This option may be used on its own for stream sockets, or
+          combined with <option>--udp</option> for datagram sockets.
+          A description of <option>-U</option> mode is in
+          <xref linkend="ncat-man-unixsock"/>.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
           <option>-u</option>,
           <option>--udp</option> (Use UDP)
           <indexterm><primary><option>-u</option> (Ncat option)</primary><see><option>--udp</option></see></indexterm>
@@ -226,7 +242,7 @@
         </term>
         <listitem>
           <para>The maximum number of simultaneous connections accepted by an Ncat
-          instance. 100 is the default.</para>
+          instance. 100 is the default (60 on Windows).</para>
         </listitem>
       </varlistentry>
 
@@ -445,7 +461,7 @@
           specified port/application like inetd. Ncat will only
           accept a maximum, definable, number of simultaneous connections
           controlled by the <option>-m</option> option. By default this is set
-          to 100.</para>
+          to 100 (60 on Windows).</para>
         </listitem>
       </varlistentry>
 
@@ -463,8 +479,51 @@
           like environment variables are available.</para>
         </listitem>
       </varlistentry>
+
+      <varlistentry>
+        <term>
+          <option>--lua-exec <replaceable>file</replaceable></option> (Execute a .lua script)
+          <indexterm><primary><option>--lua-exec</option> (Ncat option)</primary></indexterm>
+        </term>
+        <listitem>
+          <para>Runs the specified file as a Lua script after a connection has been
+          established, using a built-in interpreter. Both the script's standard input and
+          the standard output are redirected to the connection data streams.</para>
+        </listitem>
+      </varlistentry>
+
     </variablelist>
 
+    <para>All exec options add the following variables to the child's environment:</para>
+    <variablelist>
+    <varlistentry>
+      <term><envar>NCAT_REMOTE_ADDR</envar></term><indexterm><primary><envar>NCAT_REMOTE_ADDR></envar> environment variable</primary></indexterm>
+      <term><envar>NCAT_REMOTE_PORT</envar></term><indexterm><primary><envar>NCAT_REMOTE_PORT></envar> environment variable</primary></indexterm>
+      <listitem>
+      <para>
+      The IP address and port number of the remote host. In connect mode, it's
+      the target's address; in listen mode, it's the client's address.
+      </para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term><envar>NCAT_LOCAL_ADDR</envar></term><indexterm><primary><envar>NCAT_LOCAL_ADDR></envar> environment variable</primary></indexterm>
+      <term><envar>NCAT_LOCAL_PORT</envar></term><indexterm><primary><envar>NCAT_LOCAL_PORT></envar> environment variable</primary></indexterm>
+      <listitem>
+      <para>
+      The IP address and port number of the local end of the connection.
+      </para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term><envar>NCAT_PROTO</envar></term><indexterm><primary><envar>NCAT_PROTO></envar> environment variable</primary></indexterm>
+      <listitem>
+      <para>
+      The protocol in use: one of <code>TCP</code>, <code>UDP</code>, and <code>SCTP</code>.
+      </para>
+      </listitem>
+    </varlistentry>
+    </variablelist>
   </refsect1>
 
   <refsect1 id="ncat-man-access-options">
@@ -508,7 +567,7 @@
           <para>Issue Ncat with a list of hosts that will not be allowed to connect
           to the listening Ncat process. Specified hosts will have their session
           silently terminated if they try to connect.
-          be disconnected. In case of a conflict between
+          In case of a conflict between
           <option>--allow</option> and <option>--deny</option>,
           <option>--allow</option> takes precedence. Host
           specifications follow the same syntax used by Nmap.</para>
@@ -606,8 +665,7 @@
           <indexterm><primary><option>-x</option> (Ncat option)</primary><see><option>--hex-dump</option></see></indexterm>
         </term>
         <listitem>
-          <para>Dump session data in hex to a file. This can be used to
-          <quote>replay</quote> sessions.</para>
+          <para>Dump session data in hex to a file.</para>
         </listitem>
       </varlistentry>
 
@@ -634,8 +692,8 @@
         <listitem>
           <para>Issue Ncat with <option>-v</option> and it will be verbose and
           display all kinds of useful connection based information. Use more
-          than once (<option>-vv</option>, <option>-vvv</option>) for greater
-          verbosity. <option>-vvv</option> is the maximum level.</para>
+          than once (<option>-vv</option>, <option>-vvv</option>...) for greater
+          verbosity.</para>
         </listitem>
       </varlistentry>
     </variablelist>
@@ -726,6 +784,39 @@
       </varlistentry>
 
     </variablelist>
+  </refsect1>
+
+  <refsect1 id="ncat-man-unixsock">
+    <title>Unix Domain Sockets</title>
+
+    <para>
+    The <option>-U</option> option (same as <option>--unixsock</option>)
+    causes Ncat to use Unix domain sockets rather than network sockets.
+    Unix domain sockets exist as an entry in the filesystem. You must
+    give the name of a socket to connect to or to listen on. For
+    example, to make a connection,
+    </para>
+    <para><command>ncat -U ~/unixsock</command></para>
+    <para>
+    To listen on a socket:
+    </para>
+    <para><command>ncat -l -U ~/unixsock</command></para>
+    <para>
+    Listen mode will create the socket if it doesn't exist. The socket
+    will continue to exist after the program ends.
+    </para>
+
+    <para>
+    Both stream and datagram domain sockets are supported. Use
+    <option>-U</option> on its own for stream sockets, or
+    combine it with <option>--udp</option> for datagram sockets.
+    Datagram sockets require a source socket to connect from. By
+    default, a source socket with a random filename will be created as
+    needed, and deleted when the program ends. Use the
+    <option>--source</option> with a path to use a source socket with a
+    specific name.
+    </para>
+
   </refsect1>
 
   <refsect1 id="ncat-man-examples">
@@ -839,11 +930,11 @@
     <indexterm><primary><citetitle>nmap-dev</citetitle> mailing list</primary></indexterm>
     Read this full manual page as
     well.  If nothing comes of this, mail a bug report to
-    <email>nmap-dev@insecure.org</email>.  Please include everything
+    <email>dev@nmap.org</email>.  Please include everything
     you have learned about the problem, as well as what version of
     Ncat you are running and what operating system version it is
     running on.  Problem reports and Ncat usage questions sent to
-    nmap-dev@insecure.org are far more likely to be answered than
+    dev@nmap.org are far more likely to be answered than
     those sent to Fyodor directly.</para>
 
     <para>Code patches to fix bugs are even better than bug reports.
@@ -867,7 +958,7 @@
         <para>Mixter <email>mixter@gmail.com</email></para>
       </listitem>
       <listitem>
-        <para>Fyodor <email>fyodor@insecure.org</email>
+        <para>Fyodor <email>fyodor@nmap.org</email>
         (<ulink url="http://insecure.org" />)</para>
       </listitem>
     </itemizedlist>
@@ -878,5 +969,101 @@
     other implementation), Ncat is most definitely based on Netcat in spirit
     and functionality.</para>
   </refsect1>
+
+  <refsect1 id='ncat-man-legal'>
+  <title>Legal Notices</title>
+
+<refsect2 id="ncat-copyright">
+  <title>Ncat Copyright and Licensing</title>
+  <indexterm><primary>copyright</primary></indexterm>
+  <indexterm><primary>GNU General Public License</primary></indexterm>
+
+
+  <para>Ncat is (C) 2005&ndash;2012 Insecure.Com LLC. It is distributed
+  as free and open source software under the same license terms as our
+  Nmap software.  Precise terms and further details are available 
+  <man>from <ulink url="http://nmap.org/man/man-legal.html"/>.</man>
+  <notman>in <xref linkend="nmap-copyright"/>.</notman></para>
+</refsect2>
+
+<refsect2 id="ncat-man-copyright">
+  <title>Creative Commons License for this Ncat Guide</title>
+  <para>This <citetitle>Ncat Reference Guide</citetitle> is (C) 2005&ndash;2012 Insecure.Com LLC. It is
+   hereby placed under version 3.0 of the <ulink
+   url="http://creativecommons.org/licenses/by/3.0/">Creative Commons
+   Attribution License</ulink>.  This allows you redistribute and modify
+   the work as you desire, as long as you credit the original source.
+   Alternatively, you may choose to treat this document as falling under
+   the same license as Ncap itself (discussed previously).</para>
+</refsect2>
+
+<refsect2 id="ncat-source-contrib">
+  <title>Source Code Availability and Community Contributions</title>
+
+<para>Source is provided to this software because we believe users
+have a right to know exactly what a program is going to do before they
+run it. This also allows you to audit the software for security holes
+(none have been found so far).</para>
+
+<para>Source code also allows you to port Nmap (which includes Ncat)
+to new platforms, fix bugs, and add new features.  You are highly
+encouraged to send your changes to
+<email>dev@nmap.org</email> for possible incorporation into
+the main distribution.  By sending these changes to Fyodor or one of
+the Insecure.Org development mailing lists, it is assumed that you are
+offering the Nmap Project (Insecure.Com LLC) the unlimited,
+non-exclusive right to reuse, modify, and relicense the code.  Nmap
+will always be available open source,<indexterm><primary>open
+source</primary></indexterm> but this is important because the
+inability to relicense code has caused devastating problems for other
+Free Software projects (such as KDE and NASM).  We also occasionally
+relicense the code to third parties as discussed in the Nmap man page.
+If you wish to specify special license conditions of your
+contributions, just say so when you send them.</para>
+
+</refsect2>
+
+<refsect2 id="ncat-no-warranty"><title>No Warranty<indexterm><primary>warranty (lack of)</primary></indexterm></title>
+
+<para>This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+General Public License v2.0 for more details at <ulink
+url="http://www.gnu.org/licenses/gpl-2.0.html" />, or in the <filename>COPYING</filename> file
+included with Nmap.</para>
+</refsect2>
+
+<refsect2 id="ncat-inappropriate-usage"><title>Inappropriate Usage</title>
+<para>Ncat should never be installed with special privileges
+(e.g. suid root).<indexterm><primary>suid</primary><see>setuid</see></indexterm>
+That would open up a major security vulnerability as other users on the
+system (or attackers) could use it for privilege escalation.
+</para>
+</refsect2>
+
+<refsect2 id="ncat-third-party-soft"><title>Third-Party Software</title>
+
+<para>This product includes software developed by
+the <ulink role="hidepdf" url="http://www.apache.org">Apache Software
+Foundation</ulink>.  A modified version of the <ulink role="hidepdf"
+url="http://www.tcpdump.org">Libpcap portable packet capture
+library</ulink><indexterm><primary>libpcap</primary></indexterm>
+is distributed along with Ncat.
+The Windows version of Ncat utilized the Libpcap-derived
+<ulink role="hidepdf" url="http://www.winpcap.org">WinPcap library</ulink><indexterm><primary>WinPcap</primary></indexterm>
+instead.
+Certain raw networking functions use the
+<ulink role="hidepdf" url="http://libdnet.sourceforge.net">Libdnet</ulink><indexterm><primary>libdnet</primary></indexterm>
+networking library, which was written by Dug Song.<indexterm><primary>Song, Dug</primary></indexterm>
+A modified version is distributed with Ncat.
+Ncat can optionally link with the
+<ulink role="hidepdf" url="http://www.openssl.org">OpenSSL
+cryptography toolkit</ulink><indexterm><primary>OpenSSL</primary></indexterm>
+for SSL version detection support.
+All of the third-party software described in this paragraph is freely
+redistributable under BSD-style software licenses.</para>
+</refsect2>
+</refsect1>
+
 </refentry>
 
