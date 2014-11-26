@@ -167,6 +167,7 @@ char *stpcpy(char * s1, const char * s2)
  * @return a newly allocated string, or NULL if @str is NULL.  This will also
  * return NULL and set errno to ENOMEM if memory is exhausted.
  */
+#if 0
 char *string_concat(const char *str, ...)
 {
 	size_t len;
@@ -210,7 +211,6 @@ char *string_concat(const char *str, ...)
 
 	return result;
 }
-
 void buffer_read_from_filename(const char *filename, char **buffer, uint64_t *length)
 {
 	FILE *f;
@@ -298,7 +298,7 @@ int plist_write_to_filename(plist_t plist, const char *filename, enum plist_form
 
 	return 1;
 }
-
+#endif
 void get_tick_count(struct timeval * tv)
 {
 	struct timespec ts;
