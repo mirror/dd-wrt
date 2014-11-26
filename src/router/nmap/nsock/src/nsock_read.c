@@ -4,7 +4,7 @@
  *                                                                         *
  ***********************IMPORTANT NSOCK LICENSE TERMS***********************
  *                                                                         *
- * The nsock parallel socket event library is (C) 1999-2012 Insecure.Com   *
+ * The nsock parallel socket event library is (C) 1999-2013 Insecure.Com   *
  * LLC This library is free software; you may redistribute and/or          *
  * modify it under the terms of the GNU General Public License as          *
  * published by the Free Software Foundation; Version 2.  This guarantees  *
@@ -33,17 +33,18 @@
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
- * to nmap-dev@insecure.org for possible incorporation into the main       *
- * distribution.  By sending these changes to Fyodor or one of the         *
- * Insecure.Org development mailing lists, it is assumed that you are      *
- * offering the Nmap Project (Insecure.Com LLC) the unlimited,             *
- * non-exclusive right to reuse, modify, and relicense the code.  Nmap     *
- * will always be available Open Source, but this is important because the *
- * inability to relicense code has caused devastating problems for other   *
- * Free Software projects (such as KDE and NASM).  We also occasionally    *
- * relicense the code to third parties as discussed above.  If you wish to *
- * specify special license conditions of your contributions, just say so   *
- * when you send them.                                                     *
+ * to the dev@nmap.org mailing list for possible incorporation into the    *
+ * main distribution.  By sending these changes to Fyodor or one of the    *
+ * Insecure.Org development mailing lists, or checking them into the Nmap  *
+ * source code repository, it is understood (unless you specify otherwise) *
+ * that you are offering the Nmap Project (Insecure.Com LLC) the           *
+ * unlimited, non-exclusive right to reuse, modify, and relicense the      *
+ * code.  Nmap will always be available Open Source, but this is important *
+ * because the inability to relicense code has caused devastating problems *
+ * for other Free Software projects (such as KDE and NASM).  We also       *
+ * occasionally relicense the code to third parties as discussed above.    *
+ * If you wish to specify special license conditions of your               *
+ * contributions, just say so when you send them.                          *
  *                                                                         *
  * This program is distributed in the hope that it will be useful, but     *
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
@@ -53,17 +54,20 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nsock_read.c 28190 2012-03-01 06:32:23Z fyodor $ */
+/* $Id: nsock_read.c 32741 2014-02-20 18:44:12Z dmiller $ */
 
 #include "nsock_internal.h"
+#include "nsock_log.h"
+#include "netutils.h"
 
 
 /* Read up to nlines lines (terminated with \n, which of course includes \r\n),
  * or until EOF, or until the timeout, whichever comes first.  Note that
- * NSE_STATUS_SUCCESS will be returned in the case of EOF or tiemout if at least
+ * NSE_STATUS_SUCCESS will be returned in the case of EOF or timeout if at least
  * 1 char has been read.  Also note that you may get more than 'nlines' back --
  * we just stop once "at least" 'nlines' is read */
-nsock_event_id nsock_readlines(nsock_pool nsp, nsock_iod ms_iod, nsock_ev_handler handler, int timeout_msecs,
+nsock_event_id nsock_readlines(nsock_pool nsp, nsock_iod ms_iod,
+                               nsock_ev_handler handler, int timeout_msecs,
                                void *userdata, int nlines) {
   msiod *nsi = (msiod *)ms_iod;
   mspool *ms = (mspool *)nsp;
@@ -72,14 +76,8 @@ nsock_event_id nsock_readlines(nsock_pool nsp, nsock_iod ms_iod, nsock_ev_handle
   nse = msevent_new(ms, NSE_TYPE_READ, nsi, timeout_msecs, handler, userdata);
   assert(nse);
 
-  if (ms->tracelevel > 0) {
-    if (nsi->peerlen > 0)
-      nsock_trace(ms, "Read request for %d lines from IOD #%li [%s:%d] EID %li",
-                  nlines, nsi->id, inet_ntop_ez(&nsi->peer, nsi->peerlen), nsi_peerport(nsi), nse->id);
-    else
-      nsock_trace(ms, "Read request for %d lines from IOD #%li (peer unspecified) EID %li",
-                  nlines, nsi->id, nse->id);
-  }
+  nsock_log_info(ms, "Read request for %d lines from IOD #%li [%s] EID %li",
+                 nlines, nsi->id, get_peeraddr_string(nsi), nse->id);
 
   nse->readinfo.read_type = NSOCK_READLINES;
   nse->readinfo.num = nlines;
@@ -90,7 +88,8 @@ nsock_event_id nsock_readlines(nsock_pool nsp, nsock_iod ms_iod, nsock_ev_handle
 }
 
 /* Same as above, except it tries to read at least 'nbytes' instead of 'nlines'. */
-nsock_event_id nsock_readbytes(nsock_pool nsp, nsock_iod ms_iod, nsock_ev_handler handler, int timeout_msecs,
+nsock_event_id nsock_readbytes(nsock_pool nsp, nsock_iod ms_iod,
+                               nsock_ev_handler handler, int timeout_msecs,
                                void *userdata, int nbytes) {
 
   msiod *nsi = (msiod *)ms_iod;
@@ -100,14 +99,8 @@ nsock_event_id nsock_readbytes(nsock_pool nsp, nsock_iod ms_iod, nsock_ev_handle
   nse = msevent_new(ms, NSE_TYPE_READ, nsi, timeout_msecs, handler, userdata);
   assert(nse);
 
-  if (ms->tracelevel > 0) {
-    if (nsi->peerlen > 0)
-      nsock_trace(ms, "Read request for %d bytes from IOD #%li [%s:%d] EID %li",
-                  nbytes, nsi->id, inet_ntop_ez(&nsi->peer, nsi->peerlen), nsi_peerport(nsi), nse->id);
-    else
-      nsock_trace(ms, "Read request for %d bytes from IOD #%li (peer unspecified) EID %li",
-                  nbytes, nsi->id, nse->id);
-  }
+  nsock_log_info(ms, "Read request for %d bytes from IOD #%li [%s] EID %li",
+                 nbytes, nsi->id, get_peeraddr_string(nsi), nse->id);
 
   nse->readinfo.read_type = NSOCK_READBYTES;
   nse->readinfo.num = nbytes;
@@ -120,7 +113,9 @@ nsock_event_id nsock_readbytes(nsock_pool nsp, nsock_iod ms_iod, nsock_ev_handle
 
 /* The simplest read function -- returns NSE_STATUS_SUCCESS when it
  * reads anything, otherwise it returns timeout, eof, or error as appropriate */
-nsock_event_id nsock_read(nsock_pool nsp, nsock_iod ms_iod, nsock_ev_handler handler, int timeout_msecs, void *userdata) {
+nsock_event_id nsock_read(nsock_pool nsp, nsock_iod ms_iod,
+                          nsock_ev_handler handler, int timeout_msecs,
+                          void *userdata) {
   msiod *nsi = (msiod *)ms_iod;
   mspool *ms = (mspool *)nsp;
   msevent *nse;
@@ -128,14 +123,8 @@ nsock_event_id nsock_read(nsock_pool nsp, nsock_iod ms_iod, nsock_ev_handler han
   nse = msevent_new(ms, NSE_TYPE_READ, nsi, timeout_msecs, handler, userdata);
   assert(nse);
 
-  if (ms->tracelevel > 0) {
-    if (nsi->peerlen > 0)
-      nsock_trace(ms, "Read request from IOD #%li [%s:%d] (timeout: %dms) EID %li",
-                  nsi->id, inet_ntop_ez(&nsi->peer, nsi->peerlen), nsi_peerport(nsi), timeout_msecs, nse->id);
-    else
-      nsock_trace(ms, "Read request from IOD #%li (peer unspecified) (timeout: %dms) EID %li",
-                  nsi->id, timeout_msecs, nse->id);
-  }
+  nsock_log_info(ms, "Read request from IOD #%li [%s] (timeout: %dms) EID %li",
+                 nsi->id, get_peeraddr_string(nsi), timeout_msecs, nse->id);
 
   nse->readinfo.read_type = NSOCK_READ;
 

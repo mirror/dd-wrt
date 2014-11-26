@@ -19,13 +19,24 @@ extern "C" {
 class ScriptResult
 {
   private:
-    std::string output;
     std::string id;
+    /* Structured output table, an integer ref in L_NSE[LUA_REGISTRYINDEX]. */
+    int output_ref;
+    /* Unstructured output string, for scripts that do not return a structured
+       table, or return a string in addition to a table. */
+    std::string output_str;
   public:
-    void set_output (const char *);
-    const char *get_output (void) const;
+    ScriptResult() {
+      output_ref = LUA_NOREF;
+    }
+    void clear (void);
+    void set_output_tab (lua_State *, int);
+    void set_output_str (const char *);
+    void set_output_str (const char *, size_t);
+    std::string get_output_str (void) const;
     void set_id (const char *);
     const char *get_id (void) const;
+    void write_xml() const;
 };
 
 typedef std::list<ScriptResult> ScriptResults;

@@ -1,3 +1,9 @@
+local proxy = require "proxy"
+local shortport = require "shortport"
+local stdnse = require "stdnse"
+local string = require "string"
+local url = require "url"
+
 description=[[
 Checks if an HTTP proxy is open.
 
@@ -10,12 +16,16 @@ the target to retrieve a web page from www.google.com.
 ---
 -- @args proxy.url Url that will be requested to the proxy
 -- @args proxy.pattern Pattern that will be searched inside the request results
+--
+-- @usage
+-- nmap --script http-open-proxy.nse \
+--      --script-args proxy.url=<url>,proxy.pattern=<pattern>
 -- @output
 -- Interesting ports on scanme.nmap.org (64.13.134.52):
 -- PORT     STATE SERVICE
 -- 8080/tcp open  http-proxy
 -- |  proxy-open-http: Potentially OPEN proxy.
--- |_ Methods succesfully tested: GET HEAD CONNECT
+-- |_ Methods successfully tested: GET HEAD CONNECT
 
 -- Arturo 'Buanzo' Busleiman <buanzo@buanzo.com.ar> / www.buanzo.com.ar / linux-consulting.buanzo.com.ar
 -- Changelog: Added explode() function. Header-only matching now works.
@@ -29,26 +39,17 @@ the target to retrieve a web page from www.google.com.
 --   * Included url and pattern arguments
 --   * Script now checks for http response status code, when url is used
 --   * If google is used, script checks for Server: gws
--- 
--- @usage
--- nmap --script http-open-proxy.nse \
---      --script-args proxy.url=<url>,proxy.pattern=<pattern>
 
 author = "Arturo 'Buanzo' Busleiman"
 license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
 categories = {"default", "discovery", "external", "safe"}
-require "comm"
-require "shortport"
-require "stdnse"
-require "url"
-require "proxy"
 
---- Performs the custom test, with user's arguments 
+--- Performs the custom test, with user's arguments
 -- @param host The host table
 -- @param port The port table
 -- @param test_url The url te send the request
 -- @param pattern The pattern to check for valid result
--- @return status (if any request was succeded
+-- @return status if any request succeeded
 -- @return response String with supported methods
 function custom_test(host, port, test_url, pattern)
   local lstatus = false
@@ -57,7 +58,7 @@ function custom_test(host, port, test_url, pattern)
   -- otherwise it is pattern check result.
 
   -- strip hostname
-  if not string.match(test_url, "^http://.*") then 
+  if not string.match(test_url, "^http://.*") then
     test_url = "http://" .. test_url
     stdnse.print_debug("URL missing scheme. URL concatenated to http://")
   end
@@ -88,14 +89,14 @@ end
 -- Seconde: Request to wikipedia.org and checks for wikimedia pattern
 -- Third: Request to computerhistory.org and checks for museum pattern
 --
--- If any of the requests is succesful, the proxy is considered open
+-- If any of the requests is successful, the proxy is considered open
 -- If all get requests return the same result, the user is alerted that
 -- the proxy might be redirecting his requests (very common on wi-fi
 -- connections at airports, cafes, etc.)
 --
 -- @param host The host table
 -- @param port The port table
--- @return status (if any request was succeded
+-- @return status if any request succeeded
 -- @return response String with supported methods
 function default_test(host, port)
   local fstatus = false
@@ -106,11 +107,12 @@ function default_test(host, port)
   local get_cstatus, head_cstatus
 
   -- Start test n1 -> google.com
-  -- making requests	
+  -- making requests
   local test_url = "http://www.google.com"
   local hostname = "www.google.com"
   local pattern  = "^server: gws"
   get_status, get_r1, get_cstatus = proxy.test_get(host, port, "http", test_url, hostname, pattern)
+  local _
   head_status, _, head_cstatus = proxy.test_head(host, port, "http", test_url, hostname, pattern)
   conn_status = proxy.test_connect(host, port, "http", hostname)
 
@@ -129,7 +131,7 @@ function default_test(host, port)
   -- if proxy is open, return it!
   if fstatus then return fstatus, "Methods supported: " .. response end
 
-  -- if we receive a invalid response, but with a valid 
+  -- if we receive a invalid response, but with a valid
   -- response code, we should make a next attempt.
   -- if we do not receive any valid status code,
   -- there is no reason to keep testing... the proxy is probably not open
@@ -145,7 +147,7 @@ function default_test(host, port)
 
   if get_status then fstatus = true; response = response .. " GET" end
   if head_status then fstatus = true; response = response .. " HEAD" end
-  if conn_status then 
+  if conn_status then
     if not cstatus then response = response .. " CONNECTION" end
     cstatus = true
   end
@@ -167,7 +169,7 @@ function default_test(host, port)
     if not cstatus then response = response .. " CONNECTION" end
     cstatus = true
   end
- 
+
   if fstatus then return fstatus, "Methods supported:" .. response end
   if not get_cstatus then
     stdnse.print_debug("Test 3 - Computer History\nReceived valid status codes, but pattern does not match")
@@ -188,19 +190,19 @@ end
 portrule = shortport.port_or_service({8123,3128,8000,8080},{'polipo','squid-http','http-proxy'})
 
 action = function(host, port)
-  local supported_methods = "\nMethods succesfully tested: "
+  local supported_methods = "\nMethods successfully tested: "
   local fstatus = false
   local def_test = true
   local test_url, pattern
 
-  test_url, pattern = proxy.return_args() 
- 
+  test_url, pattern = proxy.return_args()
+
   if(test_url) then def_test = false end
   if(pattern) then pattern = ".*" .. pattern .. ".*" end
 
-  if def_test 
-    then fstatus, supported_methods = default_test(host, port)	
-    else fstatus, supported_methods = custom_test(host, port, test_url, pattern);	
+  if def_test
+    then fstatus, supported_methods = default_test(host, port)
+    else fstatus, supported_methods = custom_test(host, port, test_url, pattern);
   end
 
   -- If any of the tests were OK, then the proxy is potentially open

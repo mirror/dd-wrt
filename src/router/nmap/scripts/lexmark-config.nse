@@ -1,3 +1,9 @@
+local dns = require "dns"
+local nmap = require "nmap"
+local shortport = require "shortport"
+local stdnse = require "stdnse"
+local table = require "table"
+
 description = [[
 Retrieves configuration information from a Lexmark S300-S400 printer.
 
@@ -11,11 +17,13 @@ http://www.lexmark.com/vgn/images/portal/Security%20Features%20of%20Lexmark%20MF
 
 
 ---
+--@usage
+-- nmap -sU -p 9100 --script=lexmark-config <target>
 --@output
 -- Interesting ports on 192.168.1.111:
 -- PORT     STATE   SERVICE REASON
 -- 9100/udp unknown unknown unknown-response
--- | lexmark-config:  
+-- | lexmark-config:
 -- |   IPADDRESS: 10.46.200.170
 -- |   IPNETMASK: 255.255.255.0
 -- |   IPGATEWAY: 10.46.200.2
@@ -44,41 +52,37 @@ author = "Patrik Karlsson"
 license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
 categories = {"discovery", "safe"}
 
-require 'shortport'
-require 'stdnse'
-require 'dns'
 
 portrule = shortport.portnumber({5353,9100}, "udp")
 
 action = function( host, port )
-			
-	
-	local catch = function()
-		stdnse.print_debug("lexmark-config failed to retrieve configuration")
-	end
 
-	local try = nmap.new_try(catch)
+  local result = {}
+  local status, response = dns.query( "", { port = port.number, host = host.ip, dtype="PTR", retPkt=true} )
+  if ( not(status) ) then
+    return
+  end
+  local status, txtrecords = dns.findNiceAnswer( dns.types.TXT, response, true )
+  if ( not(status) ) then
+    return
+  end
 
-	local result = {}	
-	local response = try( dns.query( "", { port = port.number, host = host.ip, dtype="PTR", retPkt=true} ) )
-	local txtrecords = try( dns.findNiceAnswer( dns.types.TXT, response, true ) )
-	
-	for _, v in ipairs( txtrecords ) do
-		if ( v:len() > 0 ) then
-			if v:find("PRINTERVIDPID") then
-				port.version.name="hbn3"
-			end
-			if not v:find("product=") then					
-				v = v:gsub(" ", ": ", 1)
-			end	
-			table.insert( result, v )
-		end
-	end
-	
-	-- set port to open
-	nmap.set_port_state(host, port, "open")
-	nmap.set_port_version(host, port, "hardmatched")
-	
-	return stdnse.format_output(true, result)
+  for _, v in ipairs( txtrecords ) do
+    if ( v:len() > 0 ) then
+      if v:find("PRINTERVIDPID") then
+        port.version.name="hbn3"
+      end
+      if not v:find("product=") then
+        v = v:gsub(" ", ": ", 1)
+      end
+      table.insert( result, v )
+    end
+  end
+
+  -- set port to open
+  nmap.set_port_state(host, port, "open")
+  nmap.set_port_version(host, port)
+
+  return stdnse.format_output(true, result)
 end
 

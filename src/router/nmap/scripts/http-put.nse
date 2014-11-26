@@ -1,3 +1,8 @@
+local http = require "http"
+local io = require "io"
+local shortport = require "shortport"
+local stdnse = require "stdnse"
+
 description = [[
 Uploads a local file to a remote web server using the HTTP PUT method. You must specify the filename and URL path with NSE arguments.
 ]]
@@ -27,31 +32,28 @@ author = "Patrik Karlsson"
 license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
 categories = {"discovery", "intrusive"}
 
-require 'shortport'
-require 'stdnse'
-require 'http'
 
 portrule = shortport.port_or_service( {80, 443}, {"http", "https"}, "tcp", "open")
 
 action = function( host, port )
 
-	local fname, url = stdnse.get_script_args('http-url.file', 'http-put.url')
-	if ( not(fname) or not(url) ) then
-		 return
-	end 
+  local fname, url = stdnse.get_script_args('http-put.file', 'http-put.url')
+  if ( not(fname) or not(url) ) then
+    return
+  end
 
-	local f = io.open(fname, "r")
-	if ( not(f) ) then
-		return stdnse.format_output(true, ("ERROR: Failed to open file: %s"):format(fname))
-	end
-	local content = f:read("*all")
-	f:close()
+  local f = io.open(fname, "r")
+  if ( not(f) ) then
+    return stdnse.format_output(true, ("ERROR: Failed to open file: %s"):format(fname))
+  end
+  local content = f:read("*all")
+  f:close()
 
-	local response = http.put(host, port, url,  nil, content)
-	
-	if ( response.status == 200 or response.status == 204 ) then
-		return stdnse.format_output(true, ("%s was successfully created"):format(url))
-	end
+  local response = http.put(host, port, url,  nil, content)
 
-	return stdnse.format_output(true, ("ERROR: %s could not be created"):format(url))
+  if ( response.status == 200 or response.status == 204 ) then
+    return stdnse.format_output(true, ("%s was successfully created"):format(url))
+  end
+
+  return stdnse.format_output(true, ("ERROR: %s could not be created"):format(url))
 end

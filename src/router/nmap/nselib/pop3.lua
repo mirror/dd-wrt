@@ -3,27 +3,23 @@
 --
 -- @copyright Same as Nmap--See http://nmap.org/book/man-legal.html
 
-module(... or "pop3",package.seeall)
+local base64 = require "base64"
+local comm = require "comm"
+local nmap = require "nmap"
+local stdnse = require "stdnse"
+local string = require "string"
+local table = require "table"
+_ENV = stdnse.module("pop3", stdnse.seeall)
 
-local HAVE_SSL = false
-
-require 'base64'
-require 'bit'
-require 'stdnse'
-require 'comm'
-
-if pcall(require,'openssl') then
-  HAVE_SSL = true
-end
-  
+local HAVE_SSL, openssl = pcall(require,'openssl')
 
 
 err = {
-   none = 0,
-   userError = 1,
-   pwError = 2,
-   informationMissing = 3,
-   OpenSSLMissing = 4,
+  none = 0,
+  userError = 1,
+  pwError = 2,
+  informationMissing = 3,
+  OpenSSLMissing = 4,
 }
 
 ---
@@ -31,7 +27,7 @@ err = {
 -- @param line First line returned from an POP3 request.
 -- @return The string <code>"+OK"</code> if found or <code>nil</code> otherwise.
 function stat(line)
-   return string.match(line, "+OK")
+  return string.match(line, "+OK")
 end
 
 
@@ -44,16 +40,16 @@ end
 -- @return Status (true or false).
 -- @return Error code if status is false.
 function login_user(socket, user, pw)
-   socket:send("USER " .. user .. "\r\n")
-   local status, line = socket:receive_lines(1)
-   if not stat(line) then return false, err.user_error end
-   socket:send("PASS " .. pw .. "\r\n")
-      
-   status, line = socket:receive_lines(1)
-      
-   if stat(line) then return true, err.none 
-   else return false, err.pwError
-   end
+  socket:send("USER " .. user .. "\r\n")
+  local status, line = socket:receive_lines(1)
+  if not stat(line) then return false, err.user_error end
+  socket:send("PASS " .. pw .. "\r\n")
+
+  status, line = socket:receive_lines(1)
+
+  if stat(line) then return true, err.none
+  else return false, err.pwError
+  end
 end
 
 
@@ -65,17 +61,17 @@ end
 -- @return Status (true or false).
 -- @return Error code if status is false.
 function login_sasl_plain(socket, user, pw)
-   
-   local auth64 = base64.enc(user .. "\0" .. user .. "\0" .. pw)
-   socket:send("AUTH PLAIN " .. auth64 .. "\r\n")
-   
-   local status, line = socket:receive_lines(1)
-   
-   if stat(line) then 
-      return true, err.none
-   else 
-      return false, err.pwError
-   end
+
+  local auth64 = base64.enc(user .. "\0" .. user .. "\0" .. pw)
+  socket:send("AUTH PLAIN " .. auth64 .. "\r\n")
+
+  local status, line = socket:receive_lines(1)
+
+  if stat(line) then
+    return true, err.none
+  else
+    return false, err.pwError
+  end
 end
 
 ---
@@ -87,34 +83,34 @@ end
 -- @return Error code if status is false.
 function login_sasl_login(socket, user, pw)
 
-   local user64 = base64.enc(user)
-   
-   local pw64 = base64.enc(pw)
+  local user64 = base64.enc(user)
 
-   socket:send("AUTH LOGIN\r\n")
-      
-   local status, line = socket:receive_lines(1)
-   if not base64.dec(string.sub(line, 3)) == "User Name:" then 
-      return false, err.userError 
-   end
+  local pw64 = base64.enc(pw)
 
-   socket:send(user64)
-      
-   local status, line = socket:receive_lines(1)
+  socket:send("AUTH LOGIN\r\n")
 
-   if not base64.dec(string.sub(line, 3)) == "Password:" then 
-      return false, err.userError
-   end
+  local status, line = socket:receive_lines(1)
+  if not base64.dec(string.sub(line, 3)) == "User Name:" then
+    return false, err.userError
+  end
 
-   socket:send(pw64)
-      
-   local status, line = socket:receive_lines(1)
-    
-   if stat(line) then
-      return true, err.none
-   else
-      return false, err.pwError
-   end
+  socket:send(user64)
+
+  local status, line = socket:receive_lines(1)
+
+  if not base64.dec(string.sub(line, 3)) == "Password:" then
+    return false, err.userError
+  end
+
+  socket:send(pw64)
+
+  local status, line = socket:receive_lines(1)
+
+  if stat(line) then
+    return true, err.none
+  else
+    return false, err.pwError
+  end
 end
 
 ---
@@ -126,18 +122,18 @@ end
 -- @return Status (true or false).
 -- @return Error code if status is false.
 function login_apop(socket, user, pw, challenge)
-   if type(challenge) ~= "string" then return false, err.informationMissing end
+  if type(challenge) ~= "string" then return false, err.informationMissing end
 
-   local apStr = stdnse.tohex(openssl.md5(challenge .. pw))
-   socket:send(("APOP %s %s\r\n"):format(user, apStr))
-      
-   local status, line = socket:receive_lines(1)
-   
-   if (stat(line)) then 
-      return true, err.none
-   else
-      return false, err.pwError
-   end
+  local apStr = stdnse.tohex(openssl.md5(challenge .. pw))
+  socket:send(("APOP %s %s\r\n"):format(user, apStr))
+
+  local status, line = socket:receive_lines(1)
+
+  if (stat(line)) then
+    return true, err.none
+  else
+    return false, err.pwError
+  end
 end
 
 ---
@@ -149,45 +145,50 @@ end
 -- @return Table containing capabilities or nil on error.
 -- @return nil or String error message.
 function capabilities(host, port)
-   local socket = nmap.new_socket()
-   local capas = {}
-   local opts = {timeout=10000, recv_before=true}
-   local i = 1
 
-   local socket, line, bopt, first_line = comm.tryssl(host, port, "CAPA\r\n" , opts)
-   if not socket then return nil, "Could Not Connect" end
-   if not stat(first_line) then return nil, "No Response" end
-  
-   if string.find(first_line, "<[%p%w]+>") then capas.APOP = true end
-   
-   local lines = stdnse.strsplit("\r\n",line)
-   local line = lines[1]
+  local socket, line, bopt, first_line = comm.tryssl(host, port, "" , {timeout=10000, recv_before=true})
+  if not socket then
+    return nil, "Could Not Connect"
+  end
+  if not stat(first_line) then
+    return nil, "No Response"
+  end
 
-   if not stat(line) then 
-      capas.capa = false
-   else 
-      while line do
-	 if line ~= "." then
-	    local capability = string.sub(line, string.find(line, "[%w-]+"))
-	    line = string.sub(line, #capability + 1)
-	    capas[capability] = true
-	    local args = {}
-	    local w
-	    for w in string.gmatch(line, "[%w-]+") do
-	       table.insert(args, w)
-	    end
-	    if #args == 1 then capas[capability] = args[1]
-	    else if #args > 1 then capas[capability] = args 
-	    end end
-	 else
-	    break 
-	 end
-	 line = lines[i]
-	 i = i + 1
+  local capas = {}
+  if string.find(first_line, "<[%p%w]+>") then
+    capas.APOP = {}
+  end
+
+  local status = socket:send("CAPA\r\n")
+  if( not(status) ) then
+    return nil, "Failed to send"
+  end
+
+  status, line = socket:receive_buf("%.", false)
+  if( not(status) ) then
+    return nil, "Failed to receive"
+  end
+  socket:close()
+
+  local lines = stdnse.strsplit("\r\n",line)
+  if not stat(table.remove(lines,1)) then
+    capas.capa = false
+    return capas
+  end
+
+  for _, line in ipairs(lines) do
+    if ( line and #line>0 ) then
+      local capability = line:sub(line:find("[%w-]+"))
+      line = line:sub(#capability + 2)
+      if ( line ~= "" ) then
+        capas[capability] = stdnse.strsplit(" ", line)
+      else
+        capas[capability] = {}
       end
-   end
-   socket:close()
-   return capas
+    end
+  end
+
+  return capas
 end
 
 ---
@@ -199,23 +200,23 @@ end
 -- @return Error code if status is false.
 function login_sasl_crammd5(socket, user, pw)
 
-   socket:send("AUTH CRAM-MD5\r\n")
-   
-   local status, line = socket:receive_lines(1)
-   
-   local challenge = base64.dec(string.sub(line, 3))
+  socket:send("AUTH CRAM-MD5\r\n")
 
-   local digest = stdnse.tohex(openssl.hmac('md5', pw, challenge))
-   local authStr = base64.enc(user .. " " .. digest)
-   socket:send(authStr .. "\r\n")
-      
-   local status, line = socket:receive_lines(1)
-   
-   if stat(line) then 
-      return true, err.none
-   else 
-      return false, err.pwError
-   end
+  local status, line = socket:receive_lines(1)
+
+  local challenge = base64.dec(string.sub(line, 3))
+
+  local digest = stdnse.tohex(openssl.hmac('md5', pw, challenge))
+  local authStr = base64.enc(user .. " " .. digest)
+  socket:send(authStr .. "\r\n")
+
+  local status, line = socket:receive_lines(1)
+
+  if stat(line) then
+    return true, err.none
+  else
+    return false, err.pwError
+  end
 end
 
 -- Overwrite functions requiring OpenSSL if we got no OpenSSL.
@@ -229,3 +230,5 @@ if not HAVE_SSL then
   login_sasl_crammd5 = no_ssl
 end
 
+
+return _ENV;

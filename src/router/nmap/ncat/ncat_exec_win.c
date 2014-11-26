@@ -2,62 +2,94 @@
  * ncat_exec_win.c -- Windows-specific subprocess execution.               *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2012 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
- * Foundation; Version 2 with the clarifications and exceptions described  *
- * below.  This guarantees your right to use, modify, and redistribute     *
- * this software under certain conditions.  If you wish to embed Nmap      *
- * technology into proprietary software, we sell alternative licenses      *
- * (contact sales@insecure.com).  Dozens of software vendors already       *
- * license Nmap technology such as host discovery, port scanning, OS       *
- * detection, version detection, and the Nmap Scripting Engine.            *
+ * Foundation; Version 2 ("GPL"), BUT ONLY WITH ALL OF THE CLARIFICATIONS  *
+ * AND EXCEPTIONS DESCRIBED HEREIN.  This guarantees your right to use,    *
+ * modify, and redistribute this software under certain conditions.  If    *
+ * you wish to embed Nmap technology into proprietary software, we sell    *
+ * alternative licenses (contact sales@nmap.com).  Dozens of software      *
+ * vendors already license Nmap technology such as host discovery, port    *
+ * scanning, OS detection, version detection, and the Nmap Scripting       *
+ * Engine.                                                                 *
  *                                                                         *
- * Note that the GPL places important restrictions on "derived works", yet *
- * it does not provide a detailed definition of that term.  To avoid       *
+ * Note that the GPL places important restrictions on "derivative works",  *
+ * yet it does not provide a detailed definition of that term.  To avoid   *
  * misunderstandings, we interpret that term as broadly as copyright law   *
  * allows.  For example, we consider an application to constitute a        *
- * "derivative work" for the purpose of this license if it does any of the *
- * following:                                                              *
- * o Integrates source code from Nmap                                      *
- * o Reads or includes Nmap copyrighted data files, such as                *
- *   nmap-os-db or nmap-service-probes.                                    *
- * o Executes Nmap and parses the results (as opposed to typical shell or  *
- *   execution-menu apps, which simply display raw Nmap output and so are  *
- *   not derivative works.)                                                *
- * o Integrates/includes/aggregates Nmap into a proprietary executable     *
- *   installer, such as those produced by InstallShield.                   *
- * o Links to a library or executes a program that does any of the above   *
+ * derivative work for the purpose of this license if it does any of the   *
+ * following with any software or content covered by this license          *
+ * ("Covered Software"):                                                   *
  *                                                                         *
- * The term "Nmap" should be taken to also include any portions or derived *
- * works of Nmap, as well as other software we distribute under this       *
- * license such as Zenmap, Ncat, and Nping.  This list is not exclusive,   *
- * but is meant to clarify our interpretation of derived works with some   *
- * common examples.  Our interpretation applies only to Nmap--we don't     *
- * speak for other people's GPL works.                                     *
+ * o Integrates source code from Covered Software.                         *
  *                                                                         *
- * If you have any questions about the GPL licensing restrictions on using *
- * Nmap in non-GPL works, we would be happy to help.  As mentioned above,  *
- * we also offer alternative license to integrate Nmap into proprietary    *
- * applications and appliances.  These contracts have been sold to dozens  *
- * of software vendors, and generally include a perpetual license as well  *
- * as providing for priority support and updates.  They also fund the      *
- * continued development of Nmap.  Please email sales@insecure.com for     *
- * further information.                                                    *
+ * o Reads or includes copyrighted data files, such as Nmap's nmap-os-db   *
+ * or nmap-service-probes.                                                 *
  *                                                                         *
- * As a special exception to the GPL terms, Insecure.Com LLC grants        *
+ * o Is designed specifically to execute Covered Software and parse the    *
+ * results (as opposed to typical shell or execution-menu apps, which will *
+ * execute anything you tell them to).                                     *
+ *                                                                         *
+ * o Includes Covered Software in a proprietary executable installer.  The *
+ * installers produced by InstallShield are an example of this.  Including *
+ * Nmap with other software in compressed or archival form does not        *
+ * trigger this provision, provided appropriate open source decompression  *
+ * or de-archiving software is widely available for no charge.  For the    *
+ * purposes of this license, an installer is considered to include Covered *
+ * Software even if it actually retrieves a copy of Covered Software from  *
+ * another source during runtime (such as by downloading it from the       *
+ * Internet).                                                              *
+ *                                                                         *
+ * o Links (statically or dynamically) to a library which does any of the  *
+ * above.                                                                  *
+ *                                                                         *
+ * o Executes a helper program, module, or script to do any of the above.  *
+ *                                                                         *
+ * This list is not exclusive, but is meant to clarify our interpretation  *
+ * of derived works with some common examples.  Other people may interpret *
+ * the plain GPL differently, so we consider this a special exception to   *
+ * the GPL that we apply to Covered Software.  Works which meet any of     *
+ * these conditions must conform to all of the terms of this license,      *
+ * particularly including the GPL Section 3 requirements of providing      *
+ * source code and allowing free redistribution of the work as a whole.    *
+ *                                                                         *
+ * As another special exception to the GPL terms, Insecure.Com LLC grants  *
  * permission to link the code of this program with any version of the     *
  * OpenSSL library which is distributed under a license identical to that  *
  * listed in the included docs/licenses/OpenSSL.txt file, and distribute   *
- * linked combinations including the two. You must obey the GNU GPL in all *
- * respects for all of the code used other than OpenSSL.  If you modify    *
- * this file, you may extend this exception to your version of the file,   *
- * but you are not obligated to do so.                                     *
+ * linked combinations including the two.                                  *
  *                                                                         *
- * If you received these files with a written license agreement or         *
- * contract stating terms other than the terms above, then that            *
- * alternative license agreement takes precedence over these comments.     *
+ * Any redistribution of Covered Software, including any derived works,    *
+ * must obey and carry forward all of the terms of this license, including *
+ * obeying all GPL rules and restrictions.  For example, source code of    *
+ * the whole work must be provided and free redistribution must be         *
+ * allowed.  All GPL references to "this License", are to be treated as    *
+ * including the terms and conditions of this license text as well.        *
+ *                                                                         *
+ * Because this license imposes special exceptions to the GPL, Covered     *
+ * Work may not be combined (even as part of a larger work) with plain GPL *
+ * software.  The terms, conditions, and exceptions of this license must   *
+ * be included as well.  This license is incompatible with some other open *
+ * source licenses as well.  In some cases we can relicense portions of    *
+ * Nmap or grant special permissions to use it in other open source        *
+ * software.  Please contact fyodor@nmap.org with any such requests.       *
+ * Similarly, we don't incorporate incompatible open source software into  *
+ * Covered Software without special permission from the copyright holders. *
+ *                                                                         *
+ * If you have any questions about the licensing restrictions on using     *
+ * Nmap in other works, are happy to help.  As mentioned above, we also    *
+ * offer alternative license to integrate Nmap into proprietary            *
+ * applications and appliances.  These contracts have been sold to dozens  *
+ * of software vendors, and generally include a perpetual license as well  *
+ * as providing for priority support and updates.  They also fund the      *
+ * continued development of Nmap.  Please email sales@nmap.com for further *
+ * information.                                                            *
+ *                                                                         *
+ * If you have received a written license agreement or contract for        *
+ * Covered Software stating terms other than these, you may choose to use  *
+ * and redistribute Covered Software under those terms instead of these.   *
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
@@ -66,8 +98,8 @@
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
- * to nmap-dev@insecure.org for possible incorporation into the main       *
- * distribution.  By sending these changes to Fyodor or one of the         *
+ * to the dev@nmap.org mailing list for possible incorporation into the    *
+ * main distribution.  By sending these changes to Fyodor or one of the    *
  * Insecure.Org development mailing lists, or checking them into the Nmap  *
  * source code repository, it is understood (unless you specify otherwise) *
  * that you are offering the Nmap Project (Insecure.Com LLC) the           *
@@ -81,16 +113,13 @@
  *                                                                         *
  * This program is distributed in the hope that it will be useful, but     *
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU       *
- * General Public License v2.0 for more details at                         *
- * http://www.gnu.org/licenses/gpl-2.0.html , or in the COPYING file       *
- * included with Nmap.                                                     *
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
+ * license file for more details (it's in a COPYING file included with     *
+ * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
  *                                                                         *
  ***************************************************************************/
 
 /* $Id$ */
-
-#include <assert.h>
 
 #include "ncat.h"
 
@@ -185,25 +214,48 @@ void netexec(struct fdinfo *fdn, char *cmdexec)
    child process dies. This is only used on Windows. */
 extern void set_pseudo_sigchld_handler(void (*handler)(void))
 {
+    DWORD rc;
+
     if (pseudo_sigchld_mutex == NULL) {
         pseudo_sigchld_mutex = CreateMutex(NULL, FALSE, NULL);
-        assert(pseudo_sigchld_mutex != NULL);
+        ncat_assert(pseudo_sigchld_mutex != NULL);
     }
-    assert(WaitForSingleObject(pseudo_sigchld_mutex, INFINITE) == WAIT_OBJECT_0);
+    rc = WaitForSingleObject(pseudo_sigchld_mutex, INFINITE);
+    ncat_assert(rc == WAIT_OBJECT_0);
     pseudo_sigchld_handler = handler;
-    assert(ReleaseMutex(pseudo_sigchld_mutex) != 0);
+    rc = ReleaseMutex(pseudo_sigchld_mutex);
+    ncat_assert(rc != 0);
+}
+
+int setenv_portable(const char *name, const char *value)
+{
+    char *var;
+    int ret;
+    size_t len;
+    len = strlen(name) + strlen(value) + 2; /* 1 for '\0', 1 for =. */
+    var = (char *) safe_malloc(len);
+    Snprintf(var, len, "%s=%s", name, value);
+    /* _putenv was chosen over SetEnvironmentVariable because variables set
+       with the latter seem to be invisible to getenv() calls and Lua uses
+       these in the 'os' module. */
+    ret = _putenv(var) == 0;
+    free(var);
+    return ret;
 }
 
 /* Run a command and redirect its input and output handles to a pair of
    anonymous pipes.  The process handle and pipe handles are returned in the
    info struct. Returns the PID of the new process, or -1 on error. */
-static int run_command_redirected(char *cmdexec, struct subprocess_info *info) {
+static int run_command_redirected(char *cmdexec, struct subprocess_info *info)
+{
     /* Each named pipe we create has to have a unique name. */
     static int pipe_serial_no = 0;
     char pipe_name[32];
     SECURITY_ATTRIBUTES sa;
     STARTUPINFO si;
     PROCESS_INFORMATION pi;
+
+    setup_environment(&info->fdn);
 
     /* Make the pipe handles inheritable. */
     sa.nLength = sizeof(sa);
@@ -218,7 +270,8 @@ static int run_command_redirected(char *cmdexec, struct subprocess_info *info) {
     }
 
     /* Pipe names must have this special form. */
-    Snprintf(pipe_name, sizeof(pipe_name), "\\\\.\\pipe\\ncat-%d", pipe_serial_no);
+    Snprintf(pipe_name, sizeof(pipe_name), "\\\\.\\pipe\\ncat-%d-%d",
+        GetCurrentProcessId(), pipe_serial_no);
     if (o.debug > 1)
         logdebug("Creating named pipe \"%s\"\n", pipe_name);
 
@@ -312,7 +365,7 @@ static int start_subprocess(char *cmdexec, struct subprocess_info *info)
     char *cmdbuf;
     int pid;
 
-    if (o.shellexec) {
+    if (o.execmode == EXEC_SHELL) {
         /* Run with cmd.exe. */
         const char *shell;
         size_t cmdlen;
@@ -321,6 +374,32 @@ static int start_subprocess(char *cmdexec, struct subprocess_info *info)
         cmdlen = strlen(shell) + strlen(cmdexec) + 32;
         cmdbuf = (char *) safe_malloc(cmdlen);
         Snprintf(cmdbuf, cmdlen, "%s /C %s", shell, cmdexec);
+#ifdef HAVE_LUA
+    } else if (o.execmode == EXEC_LUA) {
+        char exepath[8192];
+        char *cmdexec_escaped, *exepath_escaped;
+        int n;
+
+        n = GetModuleFileName(GetModuleHandle(0), exepath, sizeof(exepath));
+        if (n == 0 || n == sizeof(exepath))
+            return -1;
+
+        cmdexec_escaped = escape_windows_command_arg(cmdexec);
+        if (cmdexec_escaped == NULL)
+            return -1;
+
+        exepath_escaped = escape_windows_command_arg(exepath);
+        if (exepath_escaped == NULL) {
+            free(cmdexec_escaped);
+            return -1;
+        }
+
+        n = asprintf(&cmdbuf, "%s --lua-exec-internal %s", exepath_escaped, cmdexec_escaped);
+        free(cmdexec_escaped);
+        free(exepath_escaped);
+        if (n < 0)
+            return -1;
+#endif
     } else {
         cmdbuf = cmdexec;
     }
@@ -361,12 +440,13 @@ static int start_subprocess(char *cmdexec, struct subprocess_info *info)
    called directly to simulate exec. It frees the subprocess_info struct and
    closes the socket and pipe handles before returning. Returns the exit code
    of the subprocess. */
-static DWORD WINAPI subprocess_thread_func(void *data) {
+static DWORD WINAPI subprocess_thread_func(void *data)
+{
     struct subprocess_info *info;
     char pipe_buffer[BUFSIZ];
     OVERLAPPED overlap = { 0 };
     HANDLE events[3];
-    DWORD ret;
+    DWORD ret, rc;
     int crlf_state = 0;
 
     info = (struct subprocess_info *) data;
@@ -384,8 +464,8 @@ static DWORD WINAPI subprocess_thread_func(void *data) {
 
     /* Loop until EOF or error. */
     for (;;) {
-        DWORD n, nwritten;
-        int i;
+        DWORD n_r, n_w;
+        int i, n;
 
         i = WaitForMultipleObjects(3, events, FALSE, INFINITE);
         if (i == WAIT_OBJECT_0) {
@@ -398,22 +478,22 @@ static DWORD WINAPI subprocess_thread_func(void *data) {
                 n = ncat_recv(&info->fdn, buffer, sizeof(buffer), &pending);
                 if (n <= 0)
                     goto loop_end;
-                if (WriteFile(info->child_in_w, buffer, n, &nwritten, NULL) == 0)
+                n_r = n;
+                if (WriteFile(info->child_in_w, buffer, n_r, &n_w, NULL) == 0)
                     break;
-                if (nwritten != n)
+                if (n_w != n)
                     goto loop_end;
             } while (pending);
         } else if (i == WAIT_OBJECT_0 + 1) {
             char *crlf = NULL, *wbuf;
             /* Read from process, write to socket. */
-            if (GetOverlappedResult(info->child_out_r, &overlap, &n, FALSE)) {
-                int n_r;
-
+            if (GetOverlappedResult(info->child_out_r, &overlap, &n_r, FALSE)) {
                 wbuf = pipe_buffer;
-                n_r = n;
                 if (o.crlf) {
-                    if (fix_line_endings((char *) pipe_buffer, &n_r, &crlf, &crlf_state))
+                    n = n_r;
+                    if (fix_line_endings((char *) pipe_buffer, &n, &crlf, &crlf_state))
                         wbuf = crlf;
+                    n_r = n;
                 }
                 /* The above call to WSAEventSelect puts the socket in
                    non-blocking mode, but we want this send to block, not
@@ -421,14 +501,14 @@ static DWORD WINAPI subprocess_thread_func(void *data) {
                    first we must clear out the select event. */
                 WSAEventSelect(info->fdn.fd, events[0], 0);
                 block_socket(info->fdn.fd);
-                nwritten = ncat_send(&info->fdn, wbuf, n_r);
+                n = ncat_send(&info->fdn, wbuf, n_r);
                 if (crlf != NULL)
                     free(crlf);
-                if (nwritten != n_r)
+                if (n != n_r)
                     break;
                 /* Restore the select event (and non-block the socket again.) */
                 WSAEventSelect(info->fdn.fd, events[0], FD_READ | FD_CLOSE);
-                /* Queue another ansychronous read. */
+                /* Queue another asychronous read. */
                 ReadFile(info->child_out_r, pipe_buffer, sizeof(pipe_buffer), NULL, &overlap);
             } else {
                 if (GetLastError() != ERROR_IO_PENDING)
@@ -449,12 +529,11 @@ loop_end:
 
     WSACloseEvent(events[0]);
 
-    assert(unregister_subprocess(info->proc) != -1);
+    rc = unregister_subprocess(info->proc);
+    ncat_assert(rc != -1);
 
     GetExitCodeProcess(info->proc, &ret);
     if (ret == STILL_ACTIVE) {
-        DWORD rc;
-
         if (o.debug > 1)
             logdebug("Subprocess still running, terminating it.\n");
         rc = TerminateProcess(info->proc, 0);
@@ -471,10 +550,12 @@ loop_end:
     subprocess_info_close(info);
     free(info);
 
-    assert(WaitForSingleObject(pseudo_sigchld_mutex, INFINITE) == WAIT_OBJECT_0);
+    rc = WaitForSingleObject(pseudo_sigchld_mutex, INFINITE);
+    ncat_assert(rc == WAIT_OBJECT_0);
     if (pseudo_sigchld_handler != NULL)
         pseudo_sigchld_handler();
-    assert(ReleaseMutex(pseudo_sigchld_mutex) != 0);
+    rc = ReleaseMutex(pseudo_sigchld_mutex);
+    ncat_assert(rc != 0);
 
     return ret;
 }
@@ -486,14 +567,15 @@ loop_end:
 static int get_subprocess_slot(void)
 {
     int i, free_index, max_index;
+    DWORD rc;
 
-    assert(WaitForSingleObject(subprocesses_mutex, INFINITE) == WAIT_OBJECT_0);
+    rc = WaitForSingleObject(subprocesses_mutex, INFINITE);
+    ncat_assert(rc == WAIT_OBJECT_0);
 
     free_index = -1;
     max_index = 0;
     for (i = 0; i < subprocess_max_index; i++) {
         HANDLE proc = subprocesses[i];
-        DWORD ret;
 
         if (proc == NULL) {
             if (free_index == -1)
@@ -507,7 +589,8 @@ static int get_subprocess_slot(void)
         free_index = max_index++;
     subprocess_max_index = max_index;
 
-    assert(ReleaseMutex(subprocesses_mutex) != 0);
+    rc = ReleaseMutex(subprocesses_mutex);
+    ncat_assert(rc != 0);
 
     return free_index;
 }
@@ -518,18 +601,20 @@ static int get_subprocess_slot(void)
    error. */
 static int register_subprocess(HANDLE proc)
 {
-    int i, rc;
+    int i;
+    DWORD rc;
 
     if (subprocesses_mutex == NULL) {
         subprocesses_mutex = CreateMutex(NULL, FALSE, NULL);
-        assert(subprocesses_mutex != NULL);
+        ncat_assert(subprocesses_mutex != NULL);
     }
     if (pseudo_sigchld_mutex == NULL) {
         pseudo_sigchld_mutex = CreateMutex(NULL, FALSE, NULL);
-        assert(pseudo_sigchld_mutex != NULL);
+        ncat_assert(pseudo_sigchld_mutex != NULL);
     }
 
-    assert(WaitForSingleObject(subprocesses_mutex, INFINITE) == WAIT_OBJECT_0);
+    rc = WaitForSingleObject(subprocesses_mutex, INFINITE);
+    ncat_assert(rc == WAIT_OBJECT_0);
 
     i = get_subprocess_slot();
     if (i == -1) {
@@ -550,7 +635,8 @@ static int register_subprocess(HANDLE proc)
         }
     }
 
-    assert(ReleaseMutex(subprocesses_mutex) != 0);
+    rc = ReleaseMutex(subprocesses_mutex);
+    ncat_assert(rc != 0);
 
     return i;
 }
@@ -560,8 +646,10 @@ static int register_subprocess(HANDLE proc)
 static int unregister_subprocess(HANDLE proc)
 {
     int i;
+    DWORD rc;
 
-    assert(WaitForSingleObject(subprocesses_mutex, INFINITE) == WAIT_OBJECT_0);
+    rc = WaitForSingleObject(subprocesses_mutex, INFINITE);
+    ncat_assert(rc == WAIT_OBJECT_0);
 
     for (i = 0; i < subprocess_max_index; i++) {
         if (proc == subprocesses[i])
@@ -575,7 +663,8 @@ static int unregister_subprocess(HANDLE proc)
         i = -1;
     }
 
-    assert(ReleaseMutex(subprocesses_mutex) != 0);
+    rc = ReleaseMutex(subprocesses_mutex);
+    ncat_assert(rc != 0);
 
     return i;
 }
@@ -583,11 +672,13 @@ static int unregister_subprocess(HANDLE proc)
 static void terminate_subprocesses(void)
 {
     int i;
+    DWORD rc;
 
     if (o.debug)
         logdebug("Terminating subprocesses\n");
 
-    assert(WaitForSingleObject(subprocesses_mutex, INFINITE) == WAIT_OBJECT_0);
+    rc = WaitForSingleObject(subprocesses_mutex, INFINITE);
+    ncat_assert(rc == WAIT_OBJECT_0);
 
     if (o.debug > 1)
         logdebug("max_index %d\n", subprocess_max_index);
@@ -606,7 +697,8 @@ static void terminate_subprocesses(void)
         subprocesses[i] = NULL;
     }
 
-    assert(ReleaseMutex(subprocesses_mutex) != 0);
+    rc = ReleaseMutex(subprocesses_mutex);
+    ncat_assert(rc != 0);
 }
 
 static void sigint_handler(int s)

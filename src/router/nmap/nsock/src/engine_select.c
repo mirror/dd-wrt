@@ -3,7 +3,7 @@
  *                                                                         *
  ***********************IMPORTANT NSOCK LICENSE TERMS***********************
  *                                                                         *
- * The nsock parallel socket event library is (C) 1999-2012 Insecure.Com   *
+ * The nsock parallel socket event library is (C) 1999-2013 Insecure.Com   *
  * LLC This library is free software; you may redistribute and/or          *
  * modify it under the terms of the GNU General Public License as          *
  * published by the Free Software Foundation; Version 2.  This guarantees  *
@@ -32,17 +32,18 @@
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
- * to nmap-dev@insecure.org for possible incorporation into the main       *
- * distribution.  By sending these changes to Fyodor or one of the         *
- * Insecure.Org development mailing lists, it is assumed that you are      *
- * offering the Nmap Project (Insecure.Com LLC) the unlimited,             *
- * non-exclusive right to reuse, modify, and relicense the code.  Nmap     *
- * will always be available Open Source, but this is important because the *
- * inability to relicense code has caused devastating problems for other   *
- * Free Software projects (such as KDE and NASM).  We also occasionally    *
- * relicense the code to third parties as discussed above.  If you wish to *
- * specify special license conditions of your contributions, just say so   *
- * when you send them.                                                     *
+ * to the dev@nmap.org mailing list for possible incorporation into the    *
+ * main distribution.  By sending these changes to Fyodor or one of the    *
+ * Insecure.Org development mailing lists, or checking them into the Nmap  *
+ * source code repository, it is understood (unless you specify otherwise) *
+ * that you are offering the Nmap Project (Insecure.Com LLC) the           *
+ * unlimited, non-exclusive right to reuse, modify, and relicense the      *
+ * code.  Nmap will always be available Open Source, but this is important *
+ * because the inability to relicense code has caused devastating problems *
+ * for other Free Software projects (such as KDE and NASM).  We also       *
+ * occasionally relicense the code to third parties as discussed above.    *
+ * If you wish to specify special license conditions of your               *
+ * contributions, just say so when you send them.                          *
  *                                                                         *
  * This program is distributed in the hope that it will be useful, but     *
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
@@ -52,7 +53,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: engine_select.c 28415 2012-04-07 08:16:08Z david $ */
+/* $Id: engine_select.c 32685 2014-01-30 19:02:57Z henri $ */
 
 #ifndef WIN32
 #include <sys/select.h>
@@ -61,39 +62,10 @@
 #include <errno.h>
 
 #include "nsock_internal.h"
+#include "nsock_log.h"
 
 #if HAVE_PCAP
 #include "nsock_pcap.h"
-#endif
-
-#ifdef WIN32
-#define CHECKED_FD_SET FD_SET
-#else
-#define CHECKED_FD_SET(fd, set) \
-  do { \
-    if ((fd) < FD_SETSIZE) { \
-      FD_SET((fd), (set)); \
-    } else { \
-      fatal("%s:%ld: Attempt to FD_SET fd %d, which is not less than" \
-        " FD_SETSIZE (%d). Try using a lower parallelism.", \
-        __FILE__, __LINE__, (fd), FD_SETSIZE); \
-    } \
-  } while (0)
-#endif
-
-#ifdef WIN32
-#define CHECKED_FD_CLR FD_CLR
-#else
-#define CHECKED_FD_CLR(fd, set) \
-  do { \
-    if ((fd) < FD_SETSIZE) { \
-      FD_CLR((fd), (set)); \
-    } else { \
-      fatal("%s:%ld: Attempt to FD_CLR fd %d, which is not less than" \
-        " FD_SETSIZE (%d). Try using a lower parallelism.", \
-        __FILE__, __LINE__, (fd), FD_SETSIZE); \
-    } \
-  } while (0)
 #endif
 
 
@@ -122,11 +94,14 @@ struct io_engine engine_select = {
 static void iterate_through_event_lists(mspool *nsp);
 
 /* defined in nsock_core.c */
-void process_event(mspool *nsp, gh_list *evlist, msevent *nse, int ev);
+void process_event(mspool *nsp, gh_list_t *evlist, msevent *nse, int ev);
 void process_iod_events(mspool *nsp, msiod *nsi, int ev);
+void process_expired_events(mspool *nsp);
 
 #if HAVE_PCAP
+#ifndef PCAP_CAN_DO_SELECT
 int pcap_read_on_nonselect(mspool *nsp);
+#endif
 #endif
 
 /* defined in nsock_event.c */
@@ -200,16 +175,18 @@ int select_iod_unregister(mspool *nsp, msiod *iod) {
     if (iod->pcap) {
       int sd = ((mspcap *)iod->pcap)->pcap_desc;
       if (sd >= 0) {
-        CHECKED_FD_CLR(sd, &sinfo->fds_master_r);
-        CHECKED_FD_CLR(sd, &sinfo->fds_results_r);
+        checked_fd_clr(sd, &sinfo->fds_master_r);
+        checked_fd_clr(sd, &sinfo->fds_results_r);
       }
     } else
 #endif
     {
-      CHECKED_FD_CLR(iod->sd, &sinfo->fds_master_r);
-      CHECKED_FD_CLR(iod->sd, &sinfo->fds_master_w);
-      CHECKED_FD_CLR(iod->sd, &sinfo->fds_results_r);
-      CHECKED_FD_CLR(iod->sd, &sinfo->fds_results_w);
+      checked_fd_clr(iod->sd, &sinfo->fds_master_r);
+      checked_fd_clr(iod->sd, &sinfo->fds_master_w);
+      checked_fd_clr(iod->sd, &sinfo->fds_master_x);
+      checked_fd_clr(iod->sd, &sinfo->fds_results_r);
+      checked_fd_clr(iod->sd, &sinfo->fds_results_w);
+      checked_fd_clr(iod->sd, &sinfo->fds_results_x);
     }
 
     if (sinfo->max_sd == iod->sd)
@@ -233,23 +210,23 @@ int select_iod_modify(mspool *nsp, msiod *iod, int ev_set, int ev_clr) {
 
   /* -- set events -- */
   if (ev_set & EV_READ)
-    CHECKED_FD_SET(sd, &sinfo->fds_master_r);
+    checked_fd_set(sd, &sinfo->fds_master_r);
 
   if (ev_set & EV_WRITE)
-    CHECKED_FD_SET(sd, &sinfo->fds_master_w);
+    checked_fd_set(sd, &sinfo->fds_master_w);
 
   if (ev_set & EV_EXCEPT)
-    CHECKED_FD_SET(sd, &sinfo->fds_master_x);
+    checked_fd_set(sd, &sinfo->fds_master_x);
 
   /* -- clear events -- */
   if (ev_clr & EV_READ)
-    CHECKED_FD_CLR(sd, &sinfo->fds_master_r);
+    checked_fd_clr(sd, &sinfo->fds_master_r);
 
   if (ev_clr & EV_WRITE)
-    CHECKED_FD_CLR(sd, &sinfo->fds_master_w);
+    checked_fd_clr(sd, &sinfo->fds_master_w);
 
   if (ev_clr & EV_EXCEPT)
-    CHECKED_FD_CLR(sd, &sinfo->fds_master_x);
+    checked_fd_clr(sd, &sinfo->fds_master_x);
 
 
   /* -- update max_sd -- */
@@ -276,19 +253,21 @@ int select_loop(mspool *nsp, int msec_timeout) {
     return 0; /* No need to wait on 0 events ... */
 
   do {
-    if (nsp->tracelevel > 6)
-      nsock_trace(nsp, "wait_for_events");
+    msevent *nse;
 
-    if (nsp->next_ev.tv_sec == 0)
+    nsock_log_debug_all(nsp, "wait for events");
+
+    nse = next_expirable_event(nsp);
+    if (!nse)
       event_msecs = -1; /* None of the events specified a timeout */
     else
-      event_msecs = MAX(0, TIMEVAL_MSEC_SUBTRACT(nsp->next_ev, nsock_tod));
+      event_msecs = MAX(0, TIMEVAL_MSEC_SUBTRACT(nse->timeout, nsock_tod));
 
 #if HAVE_PCAP
 #ifndef PCAP_CAN_DO_SELECT
     /* Force a low timeout when capturing packets on systems where
      * the pcap descriptor is not select()able. */
-    if (GH_LIST_COUNT(&nsp->pcap_read_events))
+    if (gh_list_count(&nsp->pcap_read_events))
       if (event_msecs > PCAP_POLL_INTERVAL)
         event_msecs = PCAP_POLL_INTERVAL;
 #endif
@@ -313,11 +292,13 @@ int select_loop(mspool *nsp, int msec_timeout) {
     }
 
 #if HAVE_PCAP
+#ifndef PCAP_CAN_DO_SELECT
     /* do non-blocking read on pcap devices that doesn't support select()
      * If there is anything read, just leave this loop. */
     if (pcap_read_on_nonselect(nsp)) {
       /* okay, something was read. */
     } else
+#endif
 #endif
     {
       /* Set up the descriptors for select */
@@ -336,7 +317,7 @@ int select_loop(mspool *nsp, int msec_timeout) {
   } while (results_left == -1 && sock_err == EINTR); /* repeat only if signal occurred */
 
   if (results_left == -1 && sock_err != EINTR) {
-    nsock_trace(nsp, "nsock_loop error %d: %s", sock_err, socket_strerror(sock_err));
+    nsock_log_error(nsp, "nsock_loop error %d: %s", sock_err, socket_strerror(sock_err));
     nsp->errnum = sock_err;
     return -1;
   }
@@ -349,7 +330,7 @@ int select_loop(mspool *nsp, int msec_timeout) {
 
 /* ---- INTERNAL FUNCTIONS ---- */
 
-static int get_evmask(const mspool *nsp, const msiod *nsi) {
+static inline int get_evmask(const mspool *nsp, const msiod *nsi) {
   struct select_engine_info *sinfo = (struct select_engine_info *)nsp->engine_data;
   int sd, evmask;
 
@@ -358,7 +339,7 @@ static int get_evmask(const mspool *nsp, const msiod *nsi) {
 #if HAVE_PCAP
 #ifndef PCAP_CAN_DO_SELECT
   if (nsi->pcap) {
-    /* Always assume readable for a non-blocking read. We can't check FD_ISSET
+    /* Always assume readable for a non-blocking read. We can't check checked_fd_isset
        because we don't have a pcap_desc. */
     evmask |= EV_READ;
     return evmask;
@@ -375,11 +356,11 @@ static int get_evmask(const mspool *nsp, const msiod *nsi) {
 
   assert(sd >= 0);
 
-  if (FD_ISSET(sd, &sinfo->fds_results_r))
+  if (checked_fd_isset(sd, &sinfo->fds_results_r))
     evmask |= EV_READ;
-  if (FD_ISSET(sd, &sinfo->fds_results_w))
+  if (checked_fd_isset(sd, &sinfo->fds_results_w))
     evmask |= EV_WRITE;
-  if (FD_ISSET(sd, &sinfo->fds_results_x))
+  if (checked_fd_isset(sd, &sinfo->fds_results_x))
     evmask |= EV_EXCEPT;
 
   return evmask;
@@ -389,39 +370,25 @@ static int get_evmask(const mspool *nsp, const msiod *nsi) {
  * timer_events, etc) and take action for those that have completed (due to
  * timeout, i/o, etc) */
 void iterate_through_event_lists(mspool *nsp) {
-  gh_list_elem *current, *next, *last, *timer_last;
+  gh_lnode_t *current, *next, *last;
 
-  /* Clear it -- We will find the next event as we go through the list */
-  nsp->next_ev.tv_sec = 0;
+  last = gh_list_last_elem(&nsp->active_iods);
 
-  last = GH_LIST_LAST_ELEM(&nsp->active_iods);
-  timer_last = GH_LIST_LAST_ELEM(&nsp->timer_events);
+  for (current = gh_list_first_elem(&nsp->active_iods);
+       current != NULL && gh_lnode_prev(current) != last;
+       current = next) {
+    msiod *nsi = container_of(current, msiod, nodeq);
 
-  for (current = GH_LIST_FIRST_ELEM(&nsp->active_iods);
-       current != NULL && GH_LIST_ELEM_PREV(current) != last; current = next) {
-    msiod *nsi = (msiod *)GH_LIST_ELEM_DATA(current);
-    
     if (nsi->state != NSIOD_STATE_DELETED && nsi->events_pending)
       process_iod_events(nsp, nsi, get_evmask(nsp, nsi));
 
-    next = GH_LIST_ELEM_NEXT(current);
+    next = gh_lnode_next(current);
     if (nsi->state == NSIOD_STATE_DELETED) {
-      gh_list_remove_elem(&nsp->active_iods, current);
-      gh_list_prepend(&nsp->free_iods, nsi);
+      gh_list_remove(&nsp->active_iods, current);
+      gh_list_prepend(&nsp->free_iods, current);
     }
   }
 
-  /* iterate through timers */
-  for (current = GH_LIST_FIRST_ELEM(&nsp->timer_events);
-       current != NULL && GH_LIST_ELEM_PREV(current) != timer_last; current = next) {
-
-    msevent *nse = (msevent *)GH_LIST_ELEM_DATA(current);
-
-    process_event(nsp, &nsp->timer_events, nse, EV_NONE);
-
-    next = GH_LIST_ELEM_NEXT(current);
-    if (nse->event_done)
-      gh_list_remove_elem(&nsp->timer_events, current);
-  }
+  /* iterate through timers and expired events */
+  process_expired_events(nsp);
 }
-

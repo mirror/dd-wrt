@@ -1,3 +1,14 @@
+local bin = require "bin"
+local bit = require "bit"
+local ipOps = require "ipOps"
+local math = require "math"
+local nmap = require "nmap"
+local packet = require "packet"
+local shortport = require "shortport"
+local stdnse = require "stdnse"
+local string = require "string"
+local table = require "table"
+
 author = "jah"
 license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
 categories = {"discovery", "intrusive"}
@@ -28,8 +39,8 @@ the NTP service.
 It should be noted that the very nature of the NTP monitor data means that the
 Mode 7 commands sent by this script are recorded by the target (and will often
 appear in these results). Since the monitor data is a MRU list, it is probable
-that you can overwrite the record of the Mode 7 command by sending an innoccuous
-looking Client Mode request. This can be acheived easily using Nmap:
+that you can overwrite the record of the Mode 7 command by sending an innocuous
+looking Client Mode request. This can be achieved easily using Nmap:
 <code>nmap -sU -pU:123 -Pn -n --max-retries=0 <target></code>
 
 Notes:
@@ -79,18 +90,11 @@ local MAX_RECORDS  = 1200
 
 local TIMEOUT      = 5000 -- ms
 
-local bin    = require 'bin'
-local bit    = require 'bit'
-local nmap   = require 'nmap'
-local ipOps  = require 'ipOps'
-local packet = require 'packet'
-local stdnse = require 'stdnse'
-local short  = require 'shortport'
 
 ---
 -- ntp-monlist will run against the ntp service which only runs on UDP 123
 --
-portrule = short.port_or_service(123, 'ntp', {'udp'})
+portrule = shortport.port_or_service(123, 'ntp', {'udp'})
 
 ---
 -- Send an NTPv2 Mode 7 'monlist' command to the target, receive any responses
@@ -403,7 +407,7 @@ function check(status, response, track)
     -- NoOp
   elseif err == 1 then
     fail = true
-    msg = 'Incompatable Implementation Number'
+    msg = 'Incompatible Implementation Number'
   elseif err == 2 then
     fail = true
     msg = 'Unimplemented Request Code'
@@ -505,7 +509,7 @@ function check(status, response, track)
   else -- seq <= hseq !duplicate!
     track.evil_pkts = track.evil_pkts+1
     stdnse.print_debug(1,
-      'Response from %s had a duplcate sequence number - dropping it.',
+      'Response from %s had a duplicate sequence number - dropping it.',
       track.target
     )
     return nil
@@ -613,7 +617,7 @@ function parse_monlist_1(pkt, recs)
     if #recs + #recs.peerlist >= MAX_RECORDS then
       return remaining
     end
-    pos = off + isize * (i-1) -- beginning of item
+    local pos = off + isize * (i-1) -- beginning of item
     local t = {}
 
     -- src and dst addresses
@@ -681,7 +685,7 @@ function parse_peerlist(pkt, recs)
     if #recs + #recs.peerlist >= MAX_RECORDS then
       return remaining
     end
-    pos = off + (i * isize) -- beginning of item
+    local pos = off + (i * isize) -- beginning of item
     local t = {}
 
     -- src address
@@ -1065,7 +1069,7 @@ function output_ips(t)
   local i = 1
   local limit = #t['6']
   while i <= limit do
-    work = {}
+    local work = {}
     local len = 0
     local j = i
     repeat

@@ -1,3 +1,10 @@
+local http = require "http"
+local io = require "io"
+local nmap = require "nmap"
+local shortport = require "shortport"
+local stdnse = require "stdnse"
+local string = require "string"
+
 description = [[
 Enumerates usernames in Wordpress blog/CMS installations by exploiting an information disclosure vulnerability existing in versions 2.6, 3.1, 3.1.1, 3.1.3 and 3.2-beta2 and possibly others.
 
@@ -13,7 +20,7 @@ Original advisory:
 -- @output
 -- PORT   STATE SERVICE REASON
 -- 80/tcp open  http    syn-ack
--- | http-wordpress-enum: 
+-- | http-wordpress-enum:
 -- | Username found: admin
 -- | Username found: mauricio
 -- | Username found: cesar
@@ -21,18 +28,16 @@ Original advisory:
 -- | Username found: alex
 -- | Username found: ricardo
 -- |_Search stopped at ID #25. Increase the upper limit if necessary with 'http-wordpress-enum.limit'
--- 
+--
 -- @args http-wordpress-enum.limit Upper limit for ID search. Default: 25
 -- @args http-wordpress-enum.basepath Base path to Wordpress. Default: /
 -- @args http-wordpress-enum.out If set it saves the username list in this file.
 ---
 
-author = "Paulino Calderon"
+author = "Paulino Calderon <calderon@websec.mx>"
 license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
 categories = {"auth", "intrusive", "vuln"}
 
-require "shortport"
-require "http"
 
 portrule = shortport.http
 
@@ -133,7 +138,7 @@ action = function(host, port)
       output[#output+1] = string.format("Error saving %s: %s\n", filewrite, err)
     end
   end
- 
+
   if #output > 1 then
     output[#output+1] = string.format("Search stopped at ID #%s. Increase the upper limit if necessary with 'http-wordpress-enum.limit'", limit)
     return stdnse.strjoin("\n", output)

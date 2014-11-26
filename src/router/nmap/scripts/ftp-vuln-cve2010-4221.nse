@@ -1,3 +1,9 @@
+local ftp = require "ftp"
+local shortport = require "shortport"
+local stdnse = require "stdnse"
+local string = require "string"
+local vulns = require "vulns"
+
 description = [[
 Checks for a stack-based buffer overflow in the ProFTPD server, version
 between 1.3.2rc3 and 1.3.3b. By sending a large number of TELNET_IAC escape
@@ -19,7 +25,7 @@ Reference:
 -- @output
 -- PORT   STATE SERVICE
 -- 21/tcp open  ftp
--- | ftp-vuln-cve2010-4221: 
+-- | ftp-vuln-cve2010-4221:
 -- |   VULNERABLE:
 -- |   ProFTPD server TELNET IAC stack overflow
 -- |     State: VULNERABLE
@@ -28,7 +34,7 @@ Reference:
 -- |     Description:
 -- |       ProFTPD server (version 1.3.2rc3 through 1.3.3b) is vulnerable to
 -- |       stack-based buffer overflow. By sending a large number of TELNET_IAC
--- |       escape sequence, a remote attacker will be able to corrup the stack and
+-- |       escape sequence, a remote attacker will be able to corrupt the stack and
 -- |       execute arbitrary code.
 -- |     Disclosure date: 2010-11-02
 -- |     References:
@@ -43,10 +49,6 @@ author = "Djalal Harouni"
 license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
 categories = {"intrusive", "vuln"}
 
-require "ftp"
-require "shortport"
-require "stdnse"
-require "vulns"
 
 portrule = function (host, port)
   if port.version.product ~= nil and port.version.product ~= "ProFTPD" then
@@ -74,7 +76,7 @@ end
 -- Returns true if the provided version is vulnerable
 local function is_version_vulnerable(version)
   local vers = stdnse.strsplit("%.", version)
-  
+
   if #vers > 0 and vers[3] then
     local relnum = string.sub(vers[3], 1, 1)
     local extra = string.sub(vers[3], 2)
@@ -103,7 +105,7 @@ end
 local function kill_proftpd(socket)
   local killed = false
   local TELNET_KILL = '\000'..'\255' -- TELNET_DUMMY..TELNET_IAC
-  
+
   stdnse.print_debug(2, "%s: sending evil TELNET_IAC commands.",
                         SCRIPT_NAME)
   local st, ret = socket:send(string.rep(TELNET_KILL, 4069)..
@@ -178,7 +180,7 @@ action = function(host, port)
       description = [[
 ProFTPD server (version 1.3.2rc3 through 1.3.3b) is vulnerable to
 stack-based buffer overflow. By sending a large number of TELNET_IAC
-escape sequence, a remote attacker will be able to corrup the stack and
+escape sequence, a remote attacker will be able to corrupt the stack and
 execute arbitrary code.]],
       references = {
 'http://bugs.proftpd.org/show_bug.cgi?id=3521',

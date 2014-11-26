@@ -3,62 +3,94 @@
 
 # ***********************IMPORTANT NMAP LICENSE TERMS************************
 # *                                                                         *
-# * The Nmap Security Scanner is (C) 1996-2012 Insecure.Com LLC. Nmap is    *
+# * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
 # * also a registered trademark of Insecure.Com LLC.  This program is free  *
 # * software; you may redistribute and/or modify it under the terms of the  *
 # * GNU General Public License as published by the Free Software            *
-# * Foundation; Version 2 with the clarifications and exceptions described  *
-# * below.  This guarantees your right to use, modify, and redistribute     *
-# * this software under certain conditions.  If you wish to embed Nmap      *
-# * technology into proprietary software, we sell alternative licenses      *
-# * (contact sales@insecure.com).  Dozens of software vendors already       *
-# * license Nmap technology such as host discovery, port scanning, OS       *
-# * detection, version detection, and the Nmap Scripting Engine.            *
+# * Foundation; Version 2 ("GPL"), BUT ONLY WITH ALL OF THE CLARIFICATIONS  *
+# * AND EXCEPTIONS DESCRIBED HEREIN.  This guarantees your right to use,    *
+# * modify, and redistribute this software under certain conditions.  If    *
+# * you wish to embed Nmap technology into proprietary software, we sell    *
+# * alternative licenses (contact sales@nmap.com).  Dozens of software      *
+# * vendors already license Nmap technology such as host discovery, port    *
+# * scanning, OS detection, version detection, and the Nmap Scripting       *
+# * Engine.                                                                 *
 # *                                                                         *
-# * Note that the GPL places important restrictions on "derived works", yet *
-# * it does not provide a detailed definition of that term.  To avoid       *
+# * Note that the GPL places important restrictions on "derivative works",  *
+# * yet it does not provide a detailed definition of that term.  To avoid   *
 # * misunderstandings, we interpret that term as broadly as copyright law   *
 # * allows.  For example, we consider an application to constitute a        *
-# * "derivative work" for the purpose of this license if it does any of the *
-# * following:                                                              *
-# * o Integrates source code from Nmap                                      *
-# * o Reads or includes Nmap copyrighted data files, such as                *
-# *   nmap-os-db or nmap-service-probes.                                    *
-# * o Executes Nmap and parses the results (as opposed to typical shell or  *
-# *   execution-menu apps, which simply display raw Nmap output and so are  *
-# *   not derivative works.)                                                *
-# * o Integrates/includes/aggregates Nmap into a proprietary executable     *
-# *   installer, such as those produced by InstallShield.                   *
-# * o Links to a library or executes a program that does any of the above   *
+# * derivative work for the purpose of this license if it does any of the   *
+# * following with any software or content covered by this license          *
+# * ("Covered Software"):                                                   *
 # *                                                                         *
-# * The term "Nmap" should be taken to also include any portions or derived *
-# * works of Nmap, as well as other software we distribute under this       *
-# * license such as Zenmap, Ncat, and Nping.  This list is not exclusive,   *
-# * but is meant to clarify our interpretation of derived works with some   *
-# * common examples.  Our interpretation applies only to Nmap--we don't     *
-# * speak for other people's GPL works.                                     *
+# * o Integrates source code from Covered Software.                         *
 # *                                                                         *
-# * If you have any questions about the GPL licensing restrictions on using *
-# * Nmap in non-GPL works, we would be happy to help.  As mentioned above,  *
-# * we also offer alternative license to integrate Nmap into proprietary    *
-# * applications and appliances.  These contracts have been sold to dozens  *
-# * of software vendors, and generally include a perpetual license as well  *
-# * as providing for priority support and updates.  They also fund the      *
-# * continued development of Nmap.  Please email sales@insecure.com for     *
-# * further information.                                                    *
+# * o Reads or includes copyrighted data files, such as Nmap's nmap-os-db   *
+# * or nmap-service-probes.                                                 *
 # *                                                                         *
-# * As a special exception to the GPL terms, Insecure.Com LLC grants        *
+# * o Is designed specifically to execute Covered Software and parse the    *
+# * results (as opposed to typical shell or execution-menu apps, which will *
+# * execute anything you tell them to).                                     *
+# *                                                                         *
+# * o Includes Covered Software in a proprietary executable installer.  The *
+# * installers produced by InstallShield are an example of this.  Including *
+# * Nmap with other software in compressed or archival form does not        *
+# * trigger this provision, provided appropriate open source decompression  *
+# * or de-archiving software is widely available for no charge.  For the    *
+# * purposes of this license, an installer is considered to include Covered *
+# * Software even if it actually retrieves a copy of Covered Software from  *
+# * another source during runtime (such as by downloading it from the       *
+# * Internet).                                                              *
+# *                                                                         *
+# * o Links (statically or dynamically) to a library which does any of the  *
+# * above.                                                                  *
+# *                                                                         *
+# * o Executes a helper program, module, or script to do any of the above.  *
+# *                                                                         *
+# * This list is not exclusive, but is meant to clarify our interpretation  *
+# * of derived works with some common examples.  Other people may interpret *
+# * the plain GPL differently, so we consider this a special exception to   *
+# * the GPL that we apply to Covered Software.  Works which meet any of     *
+# * these conditions must conform to all of the terms of this license,      *
+# * particularly including the GPL Section 3 requirements of providing      *
+# * source code and allowing free redistribution of the work as a whole.    *
+# *                                                                         *
+# * As another special exception to the GPL terms, Insecure.Com LLC grants  *
 # * permission to link the code of this program with any version of the     *
 # * OpenSSL library which is distributed under a license identical to that  *
 # * listed in the included docs/licenses/OpenSSL.txt file, and distribute   *
-# * linked combinations including the two. You must obey the GNU GPL in all *
-# * respects for all of the code used other than OpenSSL.  If you modify    *
-# * this file, you may extend this exception to your version of the file,   *
-# * but you are not obligated to do so.                                     *
+# * linked combinations including the two.                                  *
 # *                                                                         *
-# * If you received these files with a written license agreement or         *
-# * contract stating terms other than the terms above, then that            *
-# * alternative license agreement takes precedence over these comments.     *
+# * Any redistribution of Covered Software, including any derived works,    *
+# * must obey and carry forward all of the terms of this license, including *
+# * obeying all GPL rules and restrictions.  For example, source code of    *
+# * the whole work must be provided and free redistribution must be         *
+# * allowed.  All GPL references to "this License", are to be treated as    *
+# * including the terms and conditions of this license text as well.        *
+# *                                                                         *
+# * Because this license imposes special exceptions to the GPL, Covered     *
+# * Work may not be combined (even as part of a larger work) with plain GPL *
+# * software.  The terms, conditions, and exceptions of this license must   *
+# * be included as well.  This license is incompatible with some other open *
+# * source licenses as well.  In some cases we can relicense portions of    *
+# * Nmap or grant special permissions to use it in other open source        *
+# * software.  Please contact fyodor@nmap.org with any such requests.       *
+# * Similarly, we don't incorporate incompatible open source software into  *
+# * Covered Software without special permission from the copyright holders. *
+# *                                                                         *
+# * If you have any questions about the licensing restrictions on using     *
+# * Nmap in other works, are happy to help.  As mentioned above, we also    *
+# * offer alternative license to integrate Nmap into proprietary            *
+# * applications and appliances.  These contracts have been sold to dozens  *
+# * of software vendors, and generally include a perpetual license as well  *
+# * as providing for priority support and updates.  They also fund the      *
+# * continued development of Nmap.  Please email sales@nmap.com for further *
+# * information.                                                            *
+# *                                                                         *
+# * If you have received a written license agreement or contract for        *
+# * Covered Software stating terms other than these, you may choose to use  *
+# * and redistribute Covered Software under those terms instead of these.   *
 # *                                                                         *
 # * Source is provided to this software because we believe users have a     *
 # * right to know exactly what a program is going to do before they run it. *
@@ -67,8 +99,8 @@
 # *                                                                         *
 # * Source code also allows you to port Nmap to new platforms, fix bugs,    *
 # * and add new features.  You are highly encouraged to send your changes   *
-# * to nmap-dev@insecure.org for possible incorporation into the main       *
-# * distribution.  By sending these changes to Fyodor or one of the         *
+# * to the dev@nmap.org mailing list for possible incorporation into the    *
+# * main distribution.  By sending these changes to Fyodor or one of the    *
 # * Insecure.Org development mailing lists, or checking them into the Nmap  *
 # * source code repository, it is understood (unless you specify otherwise) *
 # * that you are offering the Nmap Project (Insecure.Com LLC) the           *
@@ -82,10 +114,9 @@
 # *                                                                         *
 # * This program is distributed in the hope that it will be useful, but     *
 # * WITHOUT ANY WARRANTY; without even the implied warranty of              *
-# * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU       *
-# * General Public License v2.0 for more details at                         *
-# * http://www.gnu.org/licenses/gpl-2.0.html , or in the COPYING file       *
-# * included with Nmap.                                                     *
+# * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
+# * license file for more details (it's in a COPYING file included with     *
+# * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
 # *                                                                         *
 # ***************************************************************************/
 
@@ -94,6 +125,11 @@ import gtk
 import sys
 import os
 from os.path import split, isfile, join, abspath, exists
+
+# Prevent loading PyXML
+import xml
+xml.__path__ = [x for x in xml.__path__ if "_xmlplus" not in x]
+
 import xml.sax.saxutils
 
 from time import time
@@ -128,6 +164,7 @@ hildon = None
 
 if is_maemo():
     import hildon
+
     class UmitScanWindow(hildon.Window):
         def __init__(self):
             hildon.Window.__init__(self)
@@ -143,15 +180,17 @@ else:
             HIGMainWindow.__init__(self)
             self.vbox = gtk.VBox()
 
+
 def can_print():
-    """Return true if we have printing operations (PyGTK 2.10 or later) or false
-    otherwise."""
+    """Return true if we have printing operations (PyGTK 2.10 or later) or
+    false otherwise."""
     try:
         gtk.PrintOperation
     except AttributeError:
         return False
     else:
         return True
+
 
 class ScanWindow(UmitScanWindow):
     def __init__(self):
@@ -168,7 +207,7 @@ class ScanWindow(UmitScanWindow):
         # self.vbox is a container for the menubar and the scan interface
         self.add(self.vbox)
 
-        self.connect ('delete-event', self._exit_cb)
+        self.connect('delete-event', self._exit_cb)
         self._create_ui_manager()
         self._create_menubar()
         self._create_scan_interface()
@@ -402,25 +441,29 @@ class ScanWindow(UmitScanWindow):
 
     def _search_scan_result(self, widget):
         """Displays a search window."""
-        search_window = SearchWindow(self._load_search_result, self._append_search_result)
+        search_window = SearchWindow(
+                self._load_search_result, self._append_search_result)
         search_window.show_all()
 
     def _filter_cb(self, widget):
         self.scan_interface.toggle_filter_bar()
 
     def _load_search_result(self, results):
-        """This function is passed as an argument to the SearchWindow.__init__ method.
-        When the user selects scans in the search window and clicks on \"Open\", this
-        function is called to load each of the selected scans into a new window."""
+        """This function is passed as an argument to the SearchWindow.__init__
+        method.  When the user selects scans in the search window and clicks on
+        "Open", this function is called to load each of the selected scans into
+        a new window."""
         for result in results:
-            self._load(self.get_empty_interface(), parsed_result = results[result][1])
+            self._load(self.get_empty_interface(),
+                    parsed_result=results[result][1])
 
     def _append_search_result(self, results):
-        """This function is passed as an argument to the SearchWindow.__init__ method.
-        When the user selects scans in the search window and clicks on \"Append\", this
-        function is called to append the selected scans into the current window."""
+        """This function is passed as an argument to the SearchWindow.__init__
+        method.  When the user selects scans in the search window and clicks on
+        "Append", this function is called to append the selected scans into the
+        current window."""
         for result in results:
-            self._load(self.scan_interface, parsed_result = results[result][1])
+            self._load(self.scan_interface, parsed_result=results[result][1])
 
     def store_result(self, scan_interface):
         """Stores the network inventory into the database."""
@@ -428,23 +471,28 @@ class ScanWindow(UmitScanWindow):
         try:
             scan_interface.inventory.save_to_db()
         except Exception, e:
-            alert = HIGAlertDialog(message_format = _("Can't save to database"),
-                secondary_text = _("Can't store unsaved scans to the recent scans database:\n%s") % str(e))
+            alert = HIGAlertDialog(
+                    message_format=_("Can't save to database"),
+                    secondary_text=_("Can't store unsaved scans to the "
+                        "recent scans database:\n%s") % str(e))
             alert.run()
             alert.destroy()
             log.debug(">>> Can't save result to database: %s." % str(e))
 
     def get_recent_scans(self):
-        """Gets seven most recent scans and appends them to the default UI definition."""
+        """Gets seven most recent scans and appends them to the default UI
+        definition."""
         r_scans = recent_scans.get_recent_scans_list()
         new_rscan_xml = ''
 
         for scan in r_scans[:7]:
-            scan = scan.replace('\n','')
-            if os.access(split(scan)[0],os.R_OK) and isfile(scan):
-                scan = scan.replace('\n','')
-                new_rscan = (scan, None, scan, None, scan, self._load_recent_scan)
-                new_rscan_xml += "<menuitem action=%s/>\n" % xml.sax.saxutils.quoteattr(scan)
+            scan = scan.replace('\n', '')
+            if os.access(split(scan)[0], os.R_OK) and isfile(scan):
+                scan = scan.replace('\n', '')
+                new_rscan = (
+                        scan, None, scan, None, scan, self._load_recent_scan)
+                new_rscan_xml += "<menuitem action=%s/>\n" % (
+                        xml.sax.saxutils.quoteattr(scan))
 
                 self.main_actions.append(new_rscan)
         else:
@@ -470,16 +518,19 @@ class ScanWindow(UmitScanWindow):
         self.menubar.show_all()
 
     def _create_scan_interface(self):
-        self.scan_interface.scan_result.scan_result_notebook.scans_list.append_button.connect("clicked", self._append_scan_results_cb)
-        self.scan_interface.scan_result.scan_result_notebook.nmap_output.connect("changed", self._displayed_scan_change_cb)
+        notebook = self.scan_interface.scan_result.scan_result_notebook
+        notebook.scans_list.append_button.connect(
+                "clicked", self._append_scan_results_cb)
+        notebook.nmap_output.connect("changed", self._displayed_scan_change_cb)
         self._displayed_scan_change_cb(None)
         self.scan_interface.show_all()
         self.vbox.pack_start(self.scan_interface, True, True, 0)
 
-    def show_open_dialog(self, title = None):
+    def show_open_dialog(self, title=None):
         """Show a load file chooser and return the filename chosen."""
         if self._results_filechooser_dialog is None:
-            self._results_filechooser_dialog = ResultsFileChooserDialog(title = title)
+            self._results_filechooser_dialog = ResultsFileChooserDialog(
+                    title=title)
 
         filename = None
         response = self._results_filechooser_dialog.run()
@@ -488,8 +539,9 @@ class ScanWindow(UmitScanWindow):
         elif response == RESPONSE_OPEN_DIRECTORY:
             filename = self._results_filechooser_dialog.get_filename()
 
-            # Check if the selected filename is a directory. If not, we take only the
-            # directory part of the path, omitting the actual name of the selected file.
+            # Check if the selected filename is a directory. If not, we take
+            # only the directory part of the path, omitting the actual name of
+            # the selected file.
             if filename is not None and not os.path.isdir(filename):
                 filename = os.path.dirname(filename)
 
@@ -497,8 +549,9 @@ class ScanWindow(UmitScanWindow):
         return filename
 
     def _load_scan_results_cb(self, p):
-        """'Open Scan' callback function. Displays a file chooser dialog and loads the
-        scan from the selected file or from the selected directory."""
+        """'Open Scan' callback function. Displays a file chooser dialog and
+        loads the scan from the selected file or from the selected
+        directory."""
         filename = self.show_open_dialog(p.get_name())
         if filename is not None:
             scan_interface = self.get_empty_interface()
@@ -508,8 +561,8 @@ class ScanWindow(UmitScanWindow):
                 self._load(scan_interface, filename)
 
     def _append_scan_results_cb(self, p):
-        """'Append Scan' callback function. Displays a file chooser dialog and appends the
-        scan from the selected file into the current window."""
+        """'Append Scan' callback function. Displays a file chooser dialog and
+        appends the scan from the selected file into the current window."""
         filename = self.show_open_dialog(p.get_name())
         if filename is not None:
             if os.path.isdir(filename):
@@ -528,7 +581,8 @@ class ScanWindow(UmitScanWindow):
         widget.set_sensitive(entry is not None)
 
     def _load_recent_scan(self, widget):
-        """A helper function for loading a recent scan directly from the menu."""
+        """A helper function for loading a recent scan directly from the
+        menu."""
         self._load(self.get_empty_interface(), widget.get_name())
 
     def _load(self, scan_interface, filename=None, parsed_result=None):
@@ -556,54 +610,59 @@ class ScanWindow(UmitScanWindow):
 
     def _load_directory(self, scan_interface, directory):
         for file in os.listdir(directory):
-            if os.path.isdir(os.path.join(directory,file)):
+            if os.path.isdir(os.path.join(directory, file)):
                 continue
-            self._load(scan_interface, filename = os.path.join(directory, file))
+            self._load(scan_interface, filename=os.path.join(directory, file))
 
     def _save_scan_results_cb(self, widget):
-        """'Save Scan' callback function. If it's OK to save the scan, it displays a
-        'Save File' dialog and saves the scan. If not, it displays an appropriate
-        alert dialog."""
+        """'Save Scan' callback function. If it's OK to save the scan, it
+        displays a 'Save File' dialog and saves the scan. If not, it displays
+        an appropriate alert dialog."""
         num_scans = len(self.scan_interface.inventory.get_scans())
         if num_scans == 0:
-            alert = HIGAlertDialog(message_format=_('Nothing to save'),
-                                   secondary_text=_("""\
-There are no scans with results to be saved. Run a scan with the "Scan" button \
-first."""))
+            alert = HIGAlertDialog(
+                    message_format=_('Nothing to save'),
+                    secondary_text=_(
+                        'There are no scans with results to be saved. '
+                        'Run a scan with the "Scan" button first.'))
             alert.run()
             alert.destroy()
             return
         num_scans_running = self.scan_interface.num_scans_running()
         if num_scans_running > 0:
             if num_scans_running == 1:
-                text = _("There is a scan still running. Wait until it finishes and then save.")
+                text = _("There is a scan still running. "
+                        "Wait until it finishes and then save.")
             else:
-                text = _("There are %u scans still running. Wait until they finish and then save.")\
-                       % num_scans_running
+                text = _("There are %u scans still running. Wait until they "
+                        "finish and then save.") % num_scans_running
             alert = HIGAlertDialog(message_format=_('Scan is running'),
                                    secondary_text=text)
             alert.run()
             alert.destroy()
             return
 
-        # If there's more than one scan in the inventory, display a warning dialog saying
-        # that only the most recent scan will be saved
+        # If there's more than one scan in the inventory, display a warning
+        # dialog saying that only the most recent scan will be saved
         selected = 0
         if num_scans > 1:
-            #text = _("You have %u scans loaded in the current view. Only the most recent scan " \
-            #         "will be saved." % num_scans)
-            #alert = HIGAlertDialog(message_format=_("More than one scan loaded"),
-            #                       secondary_text=text)
+            #text = _("You have %u scans loaded in the current view. "
+            #        "Only the most recent scan will be saved." % num_scans)
+            #alert = HIGAlertDialog(
+            #        message_format=_("More than one scan loaded"),
+            #       secondary_text=text)
             #alert.run()
             #alert.destroy()
-            dlg = HIGDialog(title="Choose a scan to save",
-                            parent=self,
-                            flags=gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
-                            buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
-                                     gtk.STOCK_SAVE, gtk.RESPONSE_OK))
-            dlg.vbox.pack_start(gtk.Label("You have %u scans loaded in the current view.\n" \
-                                          "Select the scan which you would like to save." \
-                                          % num_scans), False)
+            dlg = HIGDialog(
+                    title="Choose a scan to save",
+                    parent=self,
+                    flags=gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                    buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                        gtk.STOCK_SAVE, gtk.RESPONSE_OK))
+            dlg.vbox.pack_start(gtk.Label(
+                "You have %u scans loaded in the current view.\n"
+                "Select the scan which you would like to save." % num_scans),
+                False)
             scan_combo = gtk.combo_box_new_text()
             for scan in self.scan_interface.inventory.get_scans():
                 scan_combo.append_text(scan.nmap_command)
@@ -622,7 +681,8 @@ first."""))
             SaveResultsFileChooserDialog(title=_('Save Scan'))
         # Supply a default file name if this scan was previously saved.
         if self.scan_interface.saved_filename:
-            self._save_results_filechooser_dialog.set_filename(self.scan_interface.saved_filename)
+            self._save_results_filechooser_dialog.set_filename(
+                    self.scan_interface.saved_filename)
 
         response = self._save_results_filechooser_dialog.run()
 
@@ -649,27 +709,35 @@ This scan has not been run yet. Start the scan with the "Scan" button first.'))
         num_scans_running = self.scan_interface.num_scans_running()
         if num_scans_running > 0:
             if num_scans_running == 1:
-                text = _("There is a scan still running. Wait until it finishes and then save.")
+                text = _("There is a scan still running. "
+                        "Wait until it finishes and then save.")
             else:
-                text = _("There are %u scans still running. Wait until they finish and then save.")\
-                       % num_scans_running
+                text = _("There are %u scans still running. Wait until they "
+                        "finish and then save.") % num_scans_running
             alert = HIGAlertDialog(message_format=_('Scan is running'),
                                    secondary_text=text)
             alert.run()
             alert.destroy()
             return
 
-        # We have multiple scans in our network inventory, so we need to display a directory
-        # chooser dialog
-        dir_chooser = SaveToDirectoryChooserDialog(title=_("Choose a directory to save scans into"))
+        # We have multiple scans in our network inventory, so we need to
+        # display a directory chooser dialog
+        dir_chooser = SaveToDirectoryChooserDialog(
+                title=_("Choose a directory to save scans into"))
         if dir_chooser.run() == gtk.RESPONSE_OK:
             self._save_all(self.scan_interface, dir_chooser.get_filename())
         dir_chooser.destroy()
 
+    def _about_cb_response(self, dialog, response_id):
+        if response_id == gtk.RESPONSE_DELETE_EVENT:
+            self._about_dialog = None
+        else:
+            self._about_dialog.hide()
+
     def _show_about_cb(self, widget):
         if self._about_dialog is None:
             self._about_dialog = About()
-            self._about_dialog.connect("response", lambda dialog, response: dialog.hide())
+            self._about_dialog.connect("response", self._about_cb_response)
         self._about_dialog.present()
 
     def _save_all(self, scan_interface, directory):
@@ -692,16 +760,20 @@ This scan has not been run yet. Start the scan with the "Scan" button first.'))
                 recent_scans.add_recent_scan(filename)
             recent_scans.save()
 
-    def _save(self, scan_interface, saved_filename, selected_index, format = "xml"):
+    def _save(self, scan_interface, saved_filename, selected_index,
+            format="xml"):
         """Saves the scan into a file with a given filename. Displays an alert
         dialog if the save fails."""
         log.debug(">>> File being saved: %s" % saved_filename)
         try:
-            scan_interface.inventory.save_to_file(saved_filename, selected_index, format)
-            scan_interface.inventory.get_scans()[selected_index].unsaved = False
+            scan_interface.inventory.save_to_file(
+                    saved_filename, selected_index, format)
+            scan_interface.inventory.get_scans()[selected_index].unsaved = \
+                    False
         except (OSError, IOError), e:
-            alert = HIGAlertDialog(message_format=_('Can\'t save file'),
-                        secondary_text=_('Can\'t open file to write.\n%s') % str(e))
+            alert = HIGAlertDialog(
+                    message_format=_("Can't save file"),
+                    secondary_text=_("Can't open file to write.\n%s") % str(e))
             alert.run()
             alert.destroy()
         else:
@@ -729,12 +801,16 @@ This scan has not been run yet. Start the scan with the "Scan" button first.'))
         return w
 
     def _new_scan_profile_cb(self, p):
-        pe = ProfileEditor(command=self.scan_interface.command_toolbar.command, deletable=False)
+        pe = ProfileEditor(
+                command=self.scan_interface.command_toolbar.command,
+                deletable=False)
         pe.set_scan_interface(self.scan_interface)
         pe.show_all()
 
     def _edit_scan_profile_cb(self, p):
-        pe = ProfileEditor(profile_name=self.scan_interface.toolbar.selected_profile,deletable=True,overwrite=True)
+        pe = ProfileEditor(
+                profile_name=self.scan_interface.toolbar.selected_profile,
+                deletable=True, overwrite=True)
         pe.set_scan_interface(self.scan_interface)
         pe.show_all()
 
@@ -742,18 +818,20 @@ This scan has not been run yet. Start the scan with the "Scan" button first.'))
         show_help()
 
     def _exit_cb(self, *args):
-        """Closes the window, prompting for confirmation if necessary. If one of
-        the tabs couldn't be closed, the function returns True and doesn't exit
-        the application."""
+        """Closes the window, prompting for confirmation if necessary. If one
+        of the tabs couldn't be closed, the function returns True and doesn't
+        exit the application."""
         if self.scan_interface.changed:
             log.debug("Found changes on closing window")
-            dialog = HIGDialog(buttons=(_('Close anyway').encode('utf-8'), gtk.RESPONSE_CLOSE,
-                            gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL))
+            dialog = HIGDialog(
+                    buttons=(_('Close anyway').encode('utf-8'),
+                        gtk.RESPONSE_CLOSE, gtk.STOCK_CANCEL,
+                        gtk.RESPONSE_CANCEL))
 
             alert = HIGEntryLabel('<b>%s</b>' % _("Unsaved changes"))
 
-            text = HIGEntryLabel(_('The given scan has unsaved changes.\n\
-What do you want to do?'))
+            text = HIGEntryLabel(_("The given scan has unsaved changes.\n"
+                "What do you want to do?"))
             hbox = HIGHBox()
             hbox.set_border_width(5)
             hbox.set_spacing(12)
@@ -763,7 +841,8 @@ What do you want to do?'))
             vbox.set_spacing(12)
 
             image = gtk.Image()
-            image.set_from_stock(gtk.STOCK_DIALOG_QUESTION,gtk.ICON_SIZE_DIALOG)
+            image.set_from_stock(
+                    gtk.STOCK_DIALOG_QUESTION, gtk.ICON_SIZE_DIALOG)
 
             vbox.pack_start(alert)
             vbox.pack_start(text)
@@ -785,13 +864,16 @@ What do you want to do?'))
 
         elif self.scan_interface.num_scans_running() > 0:
             log.debug("Trying to close a window with a running scan")
-            dialog = HIGDialog(buttons=(_('Close anyway').encode('utf-8'), gtk.RESPONSE_CLOSE,
-                                        gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL))
+            dialog = HIGDialog(
+                    buttons=(_('Close anyway').encode('utf-8'),
+                        gtk.RESPONSE_CLOSE, gtk.STOCK_CANCEL,
+                        gtk.RESPONSE_CANCEL))
 
             alert = HIGEntryLabel('<b>%s</b>' % _("Trying to close"))
 
-            text = HIGEntryLabel(_('The window you are trying to close has a scan \
-running at the background.\nWhat do you want to do?'))
+            text = HIGEntryLabel(_(
+                "The window you are trying to close has a scan running in "
+                "the background.\nWhat do you want to do?"))
             hbox = HIGHBox()
             hbox.set_border_width(5)
             hbox.set_spacing(12)
@@ -801,7 +883,8 @@ running at the background.\nWhat do you want to do?'))
             vbox.set_spacing(12)
 
             image = gtk.Image()
-            image.set_from_stock(gtk.STOCK_DIALOG_WARNING, gtk.ICON_SIZE_DIALOG)
+            image.set_from_stock(
+                    gtk.STOCK_DIALOG_WARNING, gtk.ICON_SIZE_DIALOG)
 
             vbox.pack_start(alert)
             vbox.pack_start(text)
@@ -828,7 +911,8 @@ running at the background.\nWhat do you want to do?'))
         entry = self.scan_interface.scan_result.scan_result_notebook.nmap_output.get_active_entry()
         if entry is None:
             return False
-        zenmapGUI.Print.run_print_operation(self.scan_interface.inventory, entry)
+        zenmapGUI.Print.run_print_operation(
+                self.scan_interface.inventory, entry)
 
     def _quit_cb(self, *args):
         """Close all open windows."""
@@ -837,11 +921,14 @@ running at the background.\nWhat do you want to do?'))
             if window._exit_cb():
                 break
 
-    def _load_diff_compare_cb (self, widget=None, extra=None):
-        """Loads all active scans into a dictionary, passes it to the DiffWindow
-        constructor, and then displays the 'Compare Results' window."""
-        self.diff_window = DiffWindow(self.scan_interface.inventory.get_scans())
+    def _load_diff_compare_cb(self, widget=None, extra=None):
+        """Loads all active scans into a dictionary, passes it to the
+        DiffWindow constructor, and then displays the 'Compare Results'
+        window."""
+        self.diff_window = DiffWindow(
+                self.scan_interface.inventory.get_scans())
         self.diff_window.show_all()
+
 
 def show_help():
     import urllib

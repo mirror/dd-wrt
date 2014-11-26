@@ -1,10 +1,18 @@
+local http = require "http"
+local nmap = require "nmap"
+local shortport = require "shortport"
+local stdnse = require "stdnse"
+local string = require "string"
+local table = require "table"
+local target = require "target"
+
 description = [[
 Retrieves information from an Apache HBase (Hadoop database) master HTTP status page.
 
 Information gathered:
  * Hbase version
  * Hbase compile date
- * Hbase root eirectory
+ * Hbase root directory
  * Hadoop version
  * Hadoop compile date
  * Average load
@@ -40,93 +48,92 @@ author = "John R. Bond"
 license = "Simplified (2-clause) BSD license--See http://nmap.org/svn/docs/licenses/BSD-simplified"
 categories = {"default", "discovery", "safe"}
 
-require ("shortport")
-require ("http")
-require ("target")
 
 portrule = function(host, port)
-	-- Run for the special port number, or for any HTTP-like service that is
-	-- not on a usual HTTP port.
-	return shortport.port_or_service ({60010}, "hbase-master")(host, port)
-		or (shortport.service(shortport.LIKELY_HTTP_SERVICES)(host, port) and not shortport.portnumber(shortport.LIKELY_HTTP_PORTS)(host, port))
+  -- Run for the special port number, or for any HTTP-like service that is
+  -- not on a usual HTTP port.
+  return shortport.port_or_service ({60010}, "hbase-master")(host, port)
+    or (shortport.service(shortport.LIKELY_HTTP_SERVICES)(host, port) and not shortport.portnumber(shortport.LIKELY_HTTP_PORTS)(host, port))
 end
 
 action = function( host, port )
 
-	local result = {}
-	local region_servers = {}
-	local uri = "/master.jsp"
-	stdnse.print_debug(1, ("%s:HTTP GET %s:%s%s"):format(SCRIPT_NAME, host.targetname or host.ip, port.number, uri))
-	local response = http.get( host.targetname or host.ip, port.number, uri )
-	stdnse.print_debug(1, ("%s: Status %s"):format(SCRIPT_NAME,response['status-line'] or "No Response"))
-	if response['status-line'] and response['status-line']:match("200%s+OK") and response['body']  then
-		local body = response['body']:gsub("%%","%%%%")
-		stdnse.print_debug(2, ("%s: Body %s\n"):format(SCRIPT_NAME,body))
-		port.version.name = "hbase-master"
-		port.version.product = "Apache Hadoop Hbase"
-		if body:match("HBase%s+Version</td><td>([^][<]+)") then
-			local version = body:match("HBase%s+Version</td><td>([^][<]+)"):gsub("%s+", " ")
-			stdnse.print_debug(1, ("%s:Hbase  Version %s"):format(SCRIPT_NAME,version))
-			table.insert(result, ("Hbase Version: %s"):format(version))
-			port.version.version = version
-		end
-		if body:match("HBase%s+Compiled</td><td>([^][<]+)") then
-			local compiled = body:match("HBase%s+Compiled</td><td>([^][<]+)"):gsub("%s+", " ")
-			stdnse.print_debug(1, ("%s: Hbase Compiled %s"):format(SCRIPT_NAME,compiled))
-			table.insert(result, ("Hbase Compiled: %s"):format(compiled))
-		end
-		if body:match("Directory</td><td>([^][<]+)") then
-			local compiled = body:match("Directory</td><td>([^][<]+)"):gsub("%s+", " ")
-			stdnse.print_debug(1, ("%s: HBase RootDirectory %s"):format(SCRIPT_NAME,compiled))
-			table.insert(result, ("HBase Root Directory: %s"):format(compiled))
-		end
-		if body:match("Hadoop%s+Version</td><td>([^][<]+)") then
-			local version = body:match("Hadoop%s+Version</td><td>([^][<]+)"):gsub("%s+", " ")
-			stdnse.print_debug(1, ("%s: Hadoop Version %s"):format(SCRIPT_NAME,version))
-			table.insert(result, ("Hadoop Version: %s"):format(version))
-		end
-		if body:match("Hadoop%s+Compiled</td><td>([^][<]+)") then
-			local compiled = body:match("Hadoop%s+Compiled</td><td>([^][<]+)"):gsub("%s+", " ")
-			stdnse.print_debug(1, ("%s: Hadoop Compiled %s"):format(SCRIPT_NAME,compiled))
-			table.insert(result, ("Hadoop Compiled: %s"):format(compiled))
-		end
-		if body:match("average</td><td>([^][<]+)") then
-			local average = body:match("average</td><td>([^][<]+)"):gsub("%s+", " ")
-			stdnse.print_debug(1, ("%s: Average Load %s"):format(SCRIPT_NAME,average))
-			table.insert(result, ("Average Load: %s"):format(average))
-		end
-		if body:match("Quorum</td><td>([^][<]+)") then
-			local quorum = body:match("Quorum</td><td>([^][<]+)"):gsub("%s+", " ")
-			stdnse.print_debug(1, ("%s: Zookeeper Quorum %s"):format(SCRIPT_NAME,quorum))
-			table.insert(result, ("Zookeeper Quorum: %s"):format(quorum))
-			if target.ALLOW_NEW_TARGETS then
-				if quorum:match("([%w%.]+)") then
-					local newtarget = quorum:match("([%w%.]+)")
-					stdnse.print_debug(1, ("%s: Added target: %s"):format(SCRIPT_NAME, newtarget))
-					local status,err = target.add(newtarget)
-				 end
-			end
-		end
-		for line in string.gmatch(body, "[^\n]+") do
-			stdnse.print_debug(3, ("%s: Line %s\n"):format(SCRIPT_NAME,line))
-			if line:match("maxHeap") then
-				local region_server=  line:match("\">([^][<]+)</a>")
-				stdnse.print_debug(1, ("%s: Region Server %s"):format(SCRIPT_NAME,region_server))
-				table.insert(region_servers, region_server)
-				if target.ALLOW_NEW_TARGETS then
-					if region_server:match("([%w%.]+)") then
-						local newtarget = region_server:match("([%w%.]+)")
-						stdnse.print_debug(1, ("%s: Added target: %s"):format(SCRIPT_NAME, newtarget))
-						local status,err = target.add(newtarget)
-					end
-				end
-			end
-		end
-		nmap.set_port_version(host, port, "hardmatched")
-		if next(region_servers) then
-			table.insert(result,"Region Servers:")
-			table.insert(result,region_servers)
-		end
-		return stdnse.format_output(true, result)
-	end
+  local result = {}
+  local region_servers = {}
+  local uri = "/master.jsp"
+  stdnse.print_debug(1, "%s:HTTP GET %s:%s%s", SCRIPT_NAME, host.targetname or host.ip, port.number, uri)
+  local response = http.get( host, port, uri )
+  stdnse.print_debug(1, "%s: Status %s", SCRIPT_NAME,response['status-line'] or "No Response")
+  if response['status-line'] and response['status-line']:match("200%s+OK") and response['body']  then
+    local body = response['body']:gsub("%%","%%%%")
+    stdnse.print_debug(2, "%s: Body %s\n", SCRIPT_NAME,body)
+    if body:match("HBase%s+Version</td><td>([^][<]+)") then
+      local version = body:match("HBase%s+Version</td><td>([^][<]+)"):gsub("%s+", " ")
+      stdnse.print_debug(1, "%s:Hbase  Version %s", SCRIPT_NAME,version)
+      table.insert(result, ("Hbase Version: %s"):format(version))
+      port.version.version = version
+    end
+    if body:match("HBase%s+Compiled</td><td>([^][<]+)") then
+      local compiled = body:match("HBase%s+Compiled</td><td>([^][<]+)"):gsub("%s+", " ")
+      stdnse.print_debug(1, "%s: Hbase Compiled %s", SCRIPT_NAME,compiled)
+      table.insert(result, ("Hbase Compiled: %s"):format(compiled))
+    end
+    if body:match("Directory</td><td>([^][<]+)") then
+      local compiled = body:match("Directory</td><td>([^][<]+)"):gsub("%s+", " ")
+      stdnse.print_debug(1, "%s: HBase RootDirectory %s", SCRIPT_NAME,compiled)
+      table.insert(result, ("HBase Root Directory: %s"):format(compiled))
+    end
+    if body:match("Hadoop%s+Version</td><td>([^][<]+)") then
+      local version = body:match("Hadoop%s+Version</td><td>([^][<]+)"):gsub("%s+", " ")
+      stdnse.print_debug(1, "%s: Hadoop Version %s", SCRIPT_NAME,version)
+      table.insert(result, ("Hadoop Version: %s"):format(version))
+    end
+    if body:match("Hadoop%s+Compiled</td><td>([^][<]+)") then
+      local compiled = body:match("Hadoop%s+Compiled</td><td>([^][<]+)"):gsub("%s+", " ")
+      stdnse.print_debug(1, "%s: Hadoop Compiled %s", SCRIPT_NAME,compiled)
+      table.insert(result, ("Hadoop Compiled: %s"):format(compiled))
+    end
+    if body:match("average</td><td>([^][<]+)") then
+      local average = body:match("average</td><td>([^][<]+)"):gsub("%s+", " ")
+      stdnse.print_debug(1, "%s: Average Load %s", SCRIPT_NAME,average)
+      table.insert(result, ("Average Load: %s"):format(average))
+    end
+    if body:match("Quorum</td><td>([^][<]+)") then
+      local quorum = body:match("Quorum</td><td>([^][<]+)"):gsub("%s+", " ")
+      stdnse.print_debug(1, "%s: Zookeeper Quorum %s", SCRIPT_NAME,quorum)
+      table.insert(result, ("Zookeeper Quorum: %s"):format(quorum))
+      if target.ALLOW_NEW_TARGETS then
+        if quorum:match("([%w%.]+)") then
+          local newtarget = quorum:match("([%w%.]+)")
+          stdnse.print_debug(1, "%s: Added target: %s", SCRIPT_NAME, newtarget)
+          local status,err = target.add(newtarget)
+        end
+      end
+    end
+    for line in string.gmatch(body, "[^\n]+") do
+      stdnse.print_debug(3, "%s: Line %s\n", SCRIPT_NAME,line)
+      if line:match("maxHeap") then
+        local region_server=  line:match("\">([^][<]+)</a>")
+        stdnse.print_debug(1, "%s: Region Server %s", SCRIPT_NAME,region_server)
+        table.insert(region_servers, region_server)
+        if target.ALLOW_NEW_TARGETS then
+          if region_server:match("([%w%.]+)") then
+            local newtarget = region_server:match("([%w%.]+)")
+            stdnse.print_debug(1, "%s: Added target: %s", SCRIPT_NAME, newtarget)
+            local status,err = target.add(newtarget)
+          end
+        end
+      end
+    end
+    if next(region_servers) then
+      table.insert(result,"Region Servers:")
+      table.insert(result,region_servers)
+    end
+    if #result > 0 then
+      port.version.name = "hbase-master"
+      port.version.product = "Apache Hadoop Hbase"
+      nmap.set_port_version(host, port)
+    end
+    return stdnse.format_output(true, result)
+  end
 end

@@ -1,4 +1,4 @@
-# $Id: nmap-rpc 22721 2011-03-24 02:57:02Z david $ -*- mode: fundamental; -*-
+# $Id: nmap-rpc 30348 2012-12-06 02:25:46Z david $ -*- mode: fundamental; -*-
 #
 # /***************************************************************************
 # * nmap-rpc -- Known RPC numbers.  Nmap uses them for RPC grinding.        *
@@ -71,8 +71,8 @@
 # *                                                                         *
 # * Source code also allows you to port Nmap to new platforms, fix bugs,    *
 # * and add new features.  You are highly encouraged to send your changes   *
-# * to nmap-dev@insecure.org for possible incorporation into the main       *
-# * distribution.  By sending these changes to Fyodor or one of the         *
+# * to the dev@nmap.org mailing list for possible incorporation into the    *
+# * main distribution.  By sending these changes to Fyodor or one of the    *
 # * Insecure.Org development mailing lists, it is assumed that you are      *
 # * offering the Nmap Project (Insecure.Com LLC) the unlimited,             *
 # * non-exclusive right to reuse, modify, and relicense the code.  Nmap     *
@@ -1883,7 +1883,7 @@ dmispd		805306368	# Sun Solstice Enterprise DMI Service Provider
 sql_disp	805310465	# GNU SQL Server
 rdict		805898569	# "Internetworking with TCP/IP Vol 3"
 piktc_svc	806422610	# PIKT: Problem Informant/Killer Tool
-		822084608	# OLD - Inter-Language Unification (ILU)
+ilu		822084608	# OLD - Inter-Language Unification (ILU)
 #
 # LIGO Global Diagnostics System (GDS) - Diagnostics Test Tool (DTT)
 #

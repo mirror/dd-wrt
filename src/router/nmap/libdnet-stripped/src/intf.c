@@ -64,9 +64,10 @@
 #endif
 
 #ifdef HAVE_SOCKADDR_SA_LEN
-# define NEXTIFR(i)	((struct ifreq *)((u_char *)&i->ifr_addr + \
-				(i->ifr_addr.sa_len ? i->ifr_addr.sa_len : \
-				 sizeof(i->ifr_addr))))
+# define max(a, b) ((a) > (b) ? (a) : (b))
+# define NEXTIFR(i)	((struct ifreq *) \
+				max((u_char *)i + sizeof(struct ifreq), \
+				(u_char *)&i->ifr_addr + i->ifr_addr.sa_len))
 #else
 # define NEXTIFR(i)	(i + 1)
 #endif
@@ -76,7 +77,13 @@
 /* XXX - superset of ifreq, for portable SIOC{A,D}IFADDR */
 struct dnet_ifaliasreq {
 	char		ifra_name[IFNAMSIZ];
-	struct sockaddr ifra_addr;
+	union {
+		struct sockaddr ifrau_addr;
+		int             ifrau_align;
+	} ifra_ifrau;
+#ifndef ifra_addr
+#define ifra_addr      ifra_ifrau.ifrau_addr
+#endif
 	struct sockaddr ifra_brdaddr;
 	struct sockaddr ifra_mask;
 	int		ifra_cookie;	/* XXX - IRIX!@#$ */
@@ -307,7 +314,7 @@ intf_set(intf_t *intf, const struct intf_entry *entry)
 	}
 	/* Set interface address. */
 	if (entry->intf_addr.addr_type == ADDR_TYPE_IP) {
-#ifdef BSD
+#if defined(BSD) && !defined(__OPENBSD__)
 		/* XXX - why must this happen before SIOCSIFADDR? */
 		if (addr_btos(entry->intf_addr.addr_bits,
 		    &ifr.ifr_addr) == 0) {
@@ -954,9 +961,11 @@ intf_loop(intf_t *intf, intf_handler callback, void *arg)
 			;
 		else
 			return (-1);
+#ifdef IFF_IPMP
 		if (lifr->lifr_flags & IFF_IPMP) {
 			continue;
 		}
+#endif
 		
 		if (_intf_get_noalias(intf, entry) < 0)
 			return (-1);

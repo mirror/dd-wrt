@@ -1,3 +1,9 @@
+local http = require "http"
+local shortport = require "shortport"
+local stdnse = require "stdnse"
+local string = require "string"
+local table = require "table"
+
 description = [[
 Retrieves the authentication scheme and realm of a web service that requires
 authentication.
@@ -10,12 +16,29 @@ authentication.
 -- @output
 -- PORT   STATE SERVICE REASON
 -- 80/tcp open  http    syn-ack
--- | http-auth: 
+-- | http-auth:
 -- | HTTP/1.1 401 Unauthorized
 -- |   Negotiate
 -- |   NTLM
 -- |   Digest charset=utf-8 nonce=+Upgraded+v1e4e256b4afb7f89be014e...968ccd60affb7c qop=auth algorithm=MD5-sess realm=example.com
 -- |_  Basic realm=example.com
+--
+-- @xmloutput
+-- <table>
+--   <elem key="scheme">Basic</elem>
+--   <table key="params">
+--     <elem key="realm">Router</elem>
+--   </table>
+-- </table>
+-- <elem key="scheme">Digest</elem>
+--   <table key="params">
+--     <elem key="nonce">np9qe4zJBAA=1f3ae82f536e70a806241b3358f571507a3a4d67</elem>
+--     <elem key="realm">Router</elem>
+--     <elem key="algorithm">MD5</elem>
+--     <elem key="qop">auth</elem>
+--     <elem key="domain">secret</elem>
+--   </table>
+-- </table>
 --
 -- @args http-auth.path  Define the request path
 
@@ -35,8 +58,6 @@ license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
 
 categories = {"default", "auth", "safe"}
 
-require "shortport"
-require "http"
 
 portrule = shortport.http
 
@@ -78,5 +99,5 @@ action = function(host, port)
     table.insert(result, line)
   end
 
-  return stdnse.format_output(true, result)
+  return challenges, stdnse.format_output(true, result)
 end

@@ -1,3 +1,10 @@
+local dns = require "dns"
+local math = require "math"
+local nmap = require "nmap"
+local shortport = require "shortport"
+local stdnse = require "stdnse"
+local string = require "string"
+
 description = [[
 Performs DNS cache snooping against a DNS server.
 
@@ -47,11 +54,6 @@ different list.
 -- | www.google.co.uk
 -- |_www.linkedin.com
 
-require("shortport")
-require("dns")
-require("stdnse")
-require("nmap")
-require("math")
 
 author = "Eugene V. Alexeev"
 
@@ -74,58 +76,58 @@ local TIMED_NUM_SAMPLES = 25
 local TIMED_MULTIPLIER = 1.0
 
 -- This list is the first 50 entries of
--- http://s3.amazonaws.com/alexa-static/top-1m.csv.zip on 2010-06-11.
+-- http://s3.amazonaws.com/alexa-static/top-1m.csv.zip on 2013-08-08.
 local ALEXA_DOMAINS = {
-	"google.com",
-	"facebook.com",
-	"youtube.com",
-	"yahoo.com",
-	"live.com",
-	"wikipedia.org",
-	"baidu.com",
-	"blogger.com",
-	"msn.com",
-	"qq.com",
-	"twitter.com",
-	"yahoo.co.jp",
-	"google.co.in",
-	"taobao.com",
-	"google.de",
-	"google.com.hk",
-	"wordpress.com",
-	"amazon.com",
-	"sina.com.cn",
-	"google.co.uk",
-	"microsoft.com",
-	"bing.com",
-	"google.fr",
-	"ebay.com",
-	"myspace.com",
-	"yandex.ru",
-	"google.co.jp",
-	"linkedin.com",
-	"163.com",
-	"google.com.br",
-	"mail.ru",
-	"flickr.com",
-	"craigslist.org",
-	"google.it",
-	"fc2.com",
-	"conduit.com",
-	"rapidshare.com",
-	"vkontakte.ru",
-	"google.es",
-	"googleusercontent.com",
-	"bbc.co.uk",
-	"imdb.com",
-	"soso.com",
-	"doubleclick.com",
-	"go.com",
-	"livejasmin.com",
-	"apple.com",
-	"aol.com",
-	"bp.blogspot.com",
-	"youku.com",
+  "google.com",
+  "facebook.com",
+  "youtube.com",
+  "yahoo.com",
+  "baidu.com",
+  "wikipedia.org",
+  "amazon.com",
+  "qq.com",
+  "live.com",
+  "linkedin.com",
+  "twitter.com",
+  "blogspot.com",
+  "taobao.com",
+  "google.co.in",
+  "bing.com",
+  "yahoo.co.jp",
+  "yandex.ru",
+  "wordpress.com",
+  "sina.com.cn",
+  "vk.com",
+  "ebay.com",
+  "google.de",
+  "tumblr.com",
+  "msn.com",
+  "google.co.uk",
+  "googleusercontent.com",
+  "ask.com",
+  "mail.ru",
+  "google.com.br",
+  "163.com",
+  "google.fr",
+  "pinterest.com",
+  "google.com.hk",
+  "hao123.com",
+  "microsoft.com",
+  "google.co.jp",
+  "xvideos.com",
+  "google.ru",
+  "weibo.com",
+  "craigslist.org",
+  "paypal.com",
+  "instagram.com",
+  "amazon.co.jp",
+  "google.it",
+  "imdb.com",
+  "blogger.com",
+  "google.es",
+  "apple.com",
+  "conduit.com",
+  "sohu.com",
 }
 
 -- Construct the default list of domains.

@@ -2,69 +2,101 @@
 /***************************************************************************
  * output.cc -- Handles the Nmap output system.  This currently involves   *
  * console-style human readable output, XML output, Script |<iddi3         *
- * output, and the legacy greppable output (used to be called "machine     *
+ * output, and the legacy grepable output (used to be called "machine      *
  * readable").  I expect that future output forms (such as HTML) may be    *
  * created by a different program, library, or script using the XML        *
  * output.                                                                 *
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2012 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
- * Foundation; Version 2 with the clarifications and exceptions described  *
- * below.  This guarantees your right to use, modify, and redistribute     *
- * this software under certain conditions.  If you wish to embed Nmap      *
- * technology into proprietary software, we sell alternative licenses      *
- * (contact sales@insecure.com).  Dozens of software vendors already       *
- * license Nmap technology such as host discovery, port scanning, OS       *
- * detection, version detection, and the Nmap Scripting Engine.            *
+ * Foundation; Version 2 ("GPL"), BUT ONLY WITH ALL OF THE CLARIFICATIONS  *
+ * AND EXCEPTIONS DESCRIBED HEREIN.  This guarantees your right to use,    *
+ * modify, and redistribute this software under certain conditions.  If    *
+ * you wish to embed Nmap technology into proprietary software, we sell    *
+ * alternative licenses (contact sales@nmap.com).  Dozens of software      *
+ * vendors already license Nmap technology such as host discovery, port    *
+ * scanning, OS detection, version detection, and the Nmap Scripting       *
+ * Engine.                                                                 *
  *                                                                         *
- * Note that the GPL places important restrictions on "derived works", yet *
- * it does not provide a detailed definition of that term.  To avoid       *
+ * Note that the GPL places important restrictions on "derivative works",  *
+ * yet it does not provide a detailed definition of that term.  To avoid   *
  * misunderstandings, we interpret that term as broadly as copyright law   *
  * allows.  For example, we consider an application to constitute a        *
- * "derivative work" for the purpose of this license if it does any of the *
- * following:                                                              *
- * o Integrates source code from Nmap                                      *
- * o Reads or includes Nmap copyrighted data files, such as                *
- *   nmap-os-db or nmap-service-probes.                                    *
- * o Executes Nmap and parses the results (as opposed to typical shell or  *
- *   execution-menu apps, which simply display raw Nmap output and so are  *
- *   not derivative works.)                                                *
- * o Integrates/includes/aggregates Nmap into a proprietary executable     *
- *   installer, such as those produced by InstallShield.                   *
- * o Links to a library or executes a program that does any of the above   *
+ * derivative work for the purpose of this license if it does any of the   *
+ * following with any software or content covered by this license          *
+ * ("Covered Software"):                                                   *
  *                                                                         *
- * The term "Nmap" should be taken to also include any portions or derived *
- * works of Nmap, as well as other software we distribute under this       *
- * license such as Zenmap, Ncat, and Nping.  This list is not exclusive,   *
- * but is meant to clarify our interpretation of derived works with some   *
- * common examples.  Our interpretation applies only to Nmap--we don't     *
- * speak for other people's GPL works.                                     *
+ * o Integrates source code from Covered Software.                         *
  *                                                                         *
- * If you have any questions about the GPL licensing restrictions on using *
- * Nmap in non-GPL works, we would be happy to help.  As mentioned above,  *
- * we also offer alternative license to integrate Nmap into proprietary    *
- * applications and appliances.  These contracts have been sold to dozens  *
- * of software vendors, and generally include a perpetual license as well  *
- * as providing for priority support and updates.  They also fund the      *
- * continued development of Nmap.  Please email sales@insecure.com for     *
- * further information.                                                    *
+ * o Reads or includes copyrighted data files, such as Nmap's nmap-os-db   *
+ * or nmap-service-probes.                                                 *
  *                                                                         *
- * As a special exception to the GPL terms, Insecure.Com LLC grants        *
+ * o Is designed specifically to execute Covered Software and parse the    *
+ * results (as opposed to typical shell or execution-menu apps, which will *
+ * execute anything you tell them to).                                     *
+ *                                                                         *
+ * o Includes Covered Software in a proprietary executable installer.  The *
+ * installers produced by InstallShield are an example of this.  Including *
+ * Nmap with other software in compressed or archival form does not        *
+ * trigger this provision, provided appropriate open source decompression  *
+ * or de-archiving software is widely available for no charge.  For the    *
+ * purposes of this license, an installer is considered to include Covered *
+ * Software even if it actually retrieves a copy of Covered Software from  *
+ * another source during runtime (such as by downloading it from the       *
+ * Internet).                                                              *
+ *                                                                         *
+ * o Links (statically or dynamically) to a library which does any of the  *
+ * above.                                                                  *
+ *                                                                         *
+ * o Executes a helper program, module, or script to do any of the above.  *
+ *                                                                         *
+ * This list is not exclusive, but is meant to clarify our interpretation  *
+ * of derived works with some common examples.  Other people may interpret *
+ * the plain GPL differently, so we consider this a special exception to   *
+ * the GPL that we apply to Covered Software.  Works which meet any of     *
+ * these conditions must conform to all of the terms of this license,      *
+ * particularly including the GPL Section 3 requirements of providing      *
+ * source code and allowing free redistribution of the work as a whole.    *
+ *                                                                         *
+ * As another special exception to the GPL terms, Insecure.Com LLC grants  *
  * permission to link the code of this program with any version of the     *
  * OpenSSL library which is distributed under a license identical to that  *
  * listed in the included docs/licenses/OpenSSL.txt file, and distribute   *
- * linked combinations including the two. You must obey the GNU GPL in all *
- * respects for all of the code used other than OpenSSL.  If you modify    *
- * this file, you may extend this exception to your version of the file,   *
- * but you are not obligated to do so.                                     *
+ * linked combinations including the two.                                  *
  *                                                                         *
- * If you received these files with a written license agreement or         *
- * contract stating terms other than the terms above, then that            *
- * alternative license agreement takes precedence over these comments.     *
+ * Any redistribution of Covered Software, including any derived works,    *
+ * must obey and carry forward all of the terms of this license, including *
+ * obeying all GPL rules and restrictions.  For example, source code of    *
+ * the whole work must be provided and free redistribution must be         *
+ * allowed.  All GPL references to "this License", are to be treated as    *
+ * including the terms and conditions of this license text as well.        *
+ *                                                                         *
+ * Because this license imposes special exceptions to the GPL, Covered     *
+ * Work may not be combined (even as part of a larger work) with plain GPL *
+ * software.  The terms, conditions, and exceptions of this license must   *
+ * be included as well.  This license is incompatible with some other open *
+ * source licenses as well.  In some cases we can relicense portions of    *
+ * Nmap or grant special permissions to use it in other open source        *
+ * software.  Please contact fyodor@nmap.org with any such requests.       *
+ * Similarly, we don't incorporate incompatible open source software into  *
+ * Covered Software without special permission from the copyright holders. *
+ *                                                                         *
+ * If you have any questions about the licensing restrictions on using     *
+ * Nmap in other works, are happy to help.  As mentioned above, we also    *
+ * offer alternative license to integrate Nmap into proprietary            *
+ * applications and appliances.  These contracts have been sold to dozens  *
+ * of software vendors, and generally include a perpetual license as well  *
+ * as providing for priority support and updates.  They also fund the      *
+ * continued development of Nmap.  Please email sales@nmap.com for further *
+ * information.                                                            *
+ *                                                                         *
+ * If you have received a written license agreement or contract for        *
+ * Covered Software stating terms other than these, you may choose to use  *
+ * and redistribute Covered Software under those terms instead of these.   *
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
@@ -73,8 +105,8 @@
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
- * to nmap-dev@insecure.org for possible incorporation into the main       *
- * distribution.  By sending these changes to Fyodor or one of the         *
+ * to the dev@nmap.org mailing list for possible incorporation into the    *
+ * main distribution.  By sending these changes to Fyodor or one of the    *
  * Insecure.Org development mailing lists, or checking them into the Nmap  *
  * source code repository, it is understood (unless you specify otherwise) *
  * that you are offering the Nmap Project (Insecure.Com LLC) the           *
@@ -88,14 +120,13 @@
  *                                                                         *
  * This program is distributed in the hope that it will be useful, but     *
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU       *
- * General Public License v2.0 for more details at                         *
- * http://www.gnu.org/licenses/gpl-2.0.html , or in the COPYING file       *
- * included with Nmap.                                                     *
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
+ * license file for more details (it's in a COPYING file included with     *
+ * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: output.cc 28544 2012-05-08 05:49:51Z david $ */
+/* $Id: output.cc 33540 2014-08-16 02:45:47Z dmiller $ */
 
 #include "nmap.h"
 #include "output.h"
@@ -105,7 +136,6 @@
 #include "MACLookup.h"
 #include "portreasons.h"
 #include "protocols.h"
-#include "nmap_rpc.h"
 #include "Target.h"
 #include "utils.h"
 #include "xml.h"
@@ -118,16 +148,6 @@
 #include <vector>
 #include <list>
 #include <sstream>
-
-#ifdef RAISENTINET3
-/* sentinet3 */
-risultatoScan *risultatoHost;
-
-
-#endif /* RAISENTINET3 */
-/* Workaround for lack of namespace std on HP-UX 11.00 */
-namespace std {};
-using namespace std;
 
 extern NmapOps o;
 static const char *logtypes[LOG_NUM_FILES] = LOG_NAMES;
@@ -240,13 +260,6 @@ static void print_xml_service(const struct serviceDeductions *sd) {
   xml_attribute("method", "%s", (sd->dtype == SERVICE_DETECTION_TABLE) ? "table" : "probed");
   xml_attribute("conf", "%i", sd->name_confidence);
 
-  if (sd->rpc_status == RPC_STATUS_GOOD_PROG) {
-    xml_attribute("rpcnum", "%li", sd->rpc_program);
-    xml_attribute("lowver", "%i", sd->rpc_lowver);
-    xml_attribute("highver", "%i", sd->rpc_highver);
-    xml_attribute("proto", "rpc");
-  }
-
   if (sd->cpe.empty()) {
     xml_close_empty_tag();
   } else {
@@ -266,10 +279,16 @@ static void print_xml_service(const struct serviceDeductions *sd) {
 /* Show a fatal error explaining that an interface is not Ethernet and won't
    work on Windows. Do nothing if --send-ip (PACKET_SEND_IP_STRONG) was used. */
 void win32_fatal_raw_sockets(const char *devname) {
-  if ((o.sendpref & PACKET_SEND_IP_STRONG) == 0) {
+  if ((o.sendpref & PACKET_SEND_IP_STRONG) != 0)
+    return;
+
+  if (devname != NULL) {
     fatal("Only ethernet devices can be used for raw scans on Windows, and\n"
           "\"%s\" is not an ethernet device. Use the --unprivileged option\n"
-	  "for this scan.", devname);
+          "for this scan.", devname);
+  } else {
+    fatal("Only ethernet devices can be used for raw scans on Windows. Use\n"
+          "the --unprivileged option for this scan.");
   }
 }
 
@@ -281,8 +300,8 @@ void win32_fatal_raw_sockets(const char *devname) {
 static void print_iflist_pcap_mapping(const struct interface_info *iflist,
                                       int numifs) {
   pcap_if_t *pcap_ifs;
-  list<const pcap_if_t *> leftover_pcap_ifs;
-  list<const pcap_if_t *>::iterator leftover_p;
+  std::list<const pcap_if_t *> leftover_pcap_ifs;
+  std::list<const pcap_if_t *>::iterator leftover_p;
   int i;
 
   /* Build a list of "leftover" libpcap interfaces. Initially it contains all
@@ -303,7 +322,7 @@ static void print_iflist_pcap_mapping(const struct interface_info *iflist,
 
       if (DnetName2PcapName(iflist[i].devname, pcap_name, sizeof(pcap_name))) {
         /* We got a name. Remove it from the list of leftovers. */
-        list<const pcap_if_t *>::iterator next;
+        std::list<const pcap_if_t *>::iterator next;
         for (leftover_p = leftover_pcap_ifs.begin();
              leftover_p != leftover_pcap_ifs.end(); leftover_p = next) {
           next = leftover_p;
@@ -345,10 +364,11 @@ int print_iflist(void) {
   struct sys_route *routes;
   NmapOutputTable *Tbl = NULL;
   char errstr[256];
+  const char *address = NULL;
   errstr[0]='\0';
-  
+
   iflist = getinterfaces(&numifs, errstr, sizeof(errstr));
- 
+
   int i;
   /* First let's handle interfaces ... */
   if (iflist==NULL || numifs<=0) {
@@ -369,8 +389,9 @@ int print_iflist(void) {
       Tbl->addItem(i + 1, devcol, false, iflist[i].devfullname);
       Tbl->addItemFormatted(i + 1, shortdevcol, false, "(%s)",
                             iflist[i].devname);
+      address = inet_ntop_ez(&(iflist[i].addr), sizeof(iflist[i].addr));
       Tbl->addItemFormatted(i + 1, ipcol, false, "%s/%d",
-                            inet_ntop_ez(&(iflist[i].addr), sizeof(iflist[i].addr)),
+                            address == NULL ? "(none)" : address,
                             iflist[i].netmask_bits);
       if (iflist[i].device_type == devt_ethernet) {
         Tbl->addItem(i + 1, typecol, false, "ethernet");
@@ -409,16 +430,18 @@ int print_iflist(void) {
     if (o.debugging)
       log_write(LOG_STDOUT, "Reason: %s\n", errstr);
   } else {
-    int dstcol = 0, devcol = 1, gwcol = 2;
-    Tbl = new NmapOutputTable(numroutes + 1, 3);
+    int dstcol = 0, devcol = 1, metcol = 2, gwcol = 3;
+    Tbl = new NmapOutputTable(numroutes + 1, 4);
     Tbl->addItem(0, dstcol, false, "DST/MASK", 8);
     Tbl->addItem(0, devcol, false, "DEV", 3);
+    Tbl->addItem(0, metcol, false, "METRIC", 6);
     Tbl->addItem(0, gwcol, false, "GATEWAY", 7);
     for (i = 0; i < numroutes; i++) {
       nbits = routes[i].netmask_bits;
       Tbl->addItemFormatted(i + 1, dstcol, false, "%s/%d",
       	inet_ntop_ez(&routes[i].dest, sizeof(routes[i].dest)), nbits);
       Tbl->addItem(i + 1, devcol, false, routes[i].device->devfullname);
+      Tbl->addItemFormatted(i + 1, metcol, false, "%d", routes[i].metric);
       if (!sockaddr_equal_zero(&routes[i].gw))
         Tbl->addItem(i + 1, gwcol, true, inet_ntop_ez(&routes[i].gw, sizeof(routes[i].gw)));
     }
@@ -431,16 +454,52 @@ int print_iflist(void) {
 }
 
 #ifndef NOLUA
+/* Escape control characters to make a string safe to display on a terminal. */
+static std::string escape_for_screen(const std::string s) {
+  std::string r;
+
+  for (unsigned int i = 0; i < s.size(); i++) {
+    char buf[5];
+    unsigned char c = s[i];
+    if (c == '\t' || c == '\r' || c == '\n' || (0x20 <= c && c <= 0x7e)) {
+      r += c;
+    } else {
+      Snprintf(buf, sizeof(buf), "\\x%02X", c);
+      r += buf;
+    }
+  }
+
+  return r;
+}
+
+/* Do something to protect characters that can't appear in XML. This is not a
+   reversible transform, more a last-ditch effort to write readable XML with
+   characters that shouldn't be part of regular output anyway. The escaping that
+   xml_write_escaped is not enough; some characters are not allowed to appear in
+   XML, not even escaped. */
+std::string protect_xml(const std::string s) {
+  /* escape_for_screen is good enough. */
+  return escape_for_screen(s);
+}
+
+/* This is a helper function to determine the ordering of the script results
+   based on their id. */
+static bool scriptid_lessthan(ScriptResult a, ScriptResult b) {
+  return strcmp(a.get_id(), b.get_id()) < 0;
+}
+
 static char *formatScriptOutput(ScriptResult sr) {
   std::vector<std::string> lines;
 
-  const char *c_output;
+  std::string c_output;
   const char *p, *q;
   std::string result;
   unsigned int i;
 
-  c_output = sr.get_output();
-  p = c_output;
+  c_output = escape_for_screen(sr.get_output_str());
+  if (c_output.empty())
+    return NULL;
+  p = c_output.c_str();
 
   while (*p != '\0') {
     q = strchr(p, '\n');
@@ -472,23 +531,16 @@ static char *formatScriptOutput(ScriptResult sr) {
 #endif /* NOLUA */
 
 /* Prints the familiar Nmap tabular output showing the "interesting"
-   ports found on the machine.  It also handles the Machine/Greppable
+   ports found on the machine.  It also handles the Machine/Grepable
    output and the XML output.  It is pretty ugly -- in particular I
    should write helper functions to handle the table creation */
-#ifndef RAISENTINET3
 void printportoutput(Target *currenths, PortList *plist) {
-#else /* RAISENTINET3 */
-void printportoutput(Target *currenths, PortList *plist, risultatoScan *risultatoHost) {
-#endif /* RAISENTINET3 */
   char protocol[MAX_IPPROTOSTRLEN + 1];
-  char rpcinfo[64];
-  char rpcmachineinfo[64];
   char portinfo[64];
   char grepvers[256];
   char *p;
   const char *state;
   char serviceinfo[64];
-  char *name = NULL;
   int i;
   int first = 1;
   struct protoent *proto;
@@ -508,7 +560,7 @@ void printportoutput(Target *currenths, PortList *plist, risultatoScan *risultat
   int numignoredports = plist->numIgnoredPorts();
   int numports = plist->numPorts();
 
-  vector<const char *> saved_servicefps;
+  std::vector<const char *> saved_servicefps;
 
   if (o.noportscan)
     return;
@@ -599,10 +651,6 @@ void printportoutput(Target *currenths, PortList *plist, risultatoScan *risultat
     log_write(LOG_PLAIN, "%d %s %s", plist->getStateCounts(istate),
               statenum2str(istate), desc);
     prevstate = istate;
-#ifdef RAISENTINET3
-
-    printf(" # ");
-#endif /* RAISENTINET3 */
   }
 
   if (prevstate != PORT_UNKNOWN)
@@ -661,7 +709,7 @@ void printportoutput(Target *currenths, PortList *plist, risultatoScan *risultat
         if (o.reason)
           Tbl->addItem(rowno, reasoncol, true, port_reason_str(current->reason));
         state = statenum2str(current->state);
-        proto = nmap_getprotbynum(htons(current->portno));
+        proto = nmap_getprotbynum(current->portno);
         Snprintf(portinfo, sizeof(portinfo), "%s", proto ? proto->p_name : "unknown");
         Tbl->addItemFormatted(rowno, portcol, false, "%d", current->portno);
         Tbl->addItem(rowno, statecol, true, state);
@@ -676,8 +724,11 @@ void printportoutput(Target *currenths, PortList *plist, risultatoScan *risultat
         xml_attribute("state", "%s", state);
         xml_attribute("reason", "%s", reason_str(current->reason.reason_id, SINGULAR));
         xml_attribute("reason_ttl", "%d", current->reason.ttl);
-        if (current->reason.ip_addr.ss_family != AF_UNSPEC)
-          xml_attribute("reason_ip", "%s", inet_ntop_ez(&current->reason.ip_addr, sizeof(current->reason.ip_addr)));
+        if (current->reason.ip_addr.sockaddr.sa_family != AF_UNSPEC) {
+          struct sockaddr_storage ss;
+          memcpy(&ss, &current->reason.ip_addr, sizeof(current->reason.ip_addr));
+          xml_attribute("reason_ip", "%s", inet_ntop_ez(&ss, sizeof(ss)));
+        }
         xml_close_empty_tag();
 
         if (proto && proto->p_name && *proto->p_name) {
@@ -710,41 +761,7 @@ void printportoutput(Target *currenths, PortList *plist, risultatoScan *risultat
         if (sd.service_fp && saved_servicefps.size() <= 8)
           saved_servicefps.push_back(sd.service_fp);
 
-        switch (sd.rpc_status) {
-        case RPC_STATUS_UNTESTED:
-          rpcinfo[0] = '\0';
-          strcpy(rpcmachineinfo, "");
-          break;
-        case RPC_STATUS_UNKNOWN:
-          strcpy(rpcinfo, "(RPC (Unknown Prog #))");
-          strcpy(rpcmachineinfo, "R");
-          break;
-        case RPC_STATUS_NOT_RPC:
-          rpcinfo[0] = '\0';
-          strcpy(rpcmachineinfo, "N");
-          break;
-        case RPC_STATUS_GOOD_PROG:
-          name = nmap_getrpcnamebynum(sd.rpc_program);
-          Snprintf(rpcmachineinfo, sizeof(rpcmachineinfo),
-                   "(%s:%li*%i-%i)", (name) ? name : "", sd.rpc_program,
-                   sd.rpc_lowver, sd.rpc_highver);
-          if (!name) {
-            Snprintf(rpcinfo, sizeof(rpcinfo), "(#%li (unknown) V%i-%i)",
-                     sd.rpc_program, sd.rpc_lowver, sd.rpc_highver);
-          } else {
-            if (sd.rpc_lowver == sd.rpc_highver) {
-              Snprintf(rpcinfo, sizeof(rpcinfo), "(%s V%i)", name,
-                       sd.rpc_lowver);
-            } else
-              Snprintf(rpcinfo, sizeof(rpcinfo), "(%s V%i-%i)", name,
-                       sd.rpc_lowver, sd.rpc_highver);
-          }
-          break;
-        default:
-          fatal("Unknown rpc_status %d", sd.rpc_status);
-          break;
-        }
-        current->getNmapServiceName(serviceinfo, sizeof(serviceinfo), rpcinfo);
+        current->getNmapServiceName(serviceinfo, sizeof(serviceinfo));
 
         Tbl->addItem(rowno, portcol, true, portinfo);
         Tbl->addItem(rowno, statecol, false, state);
@@ -753,14 +770,14 @@ void printportoutput(Target *currenths, PortList *plist, risultatoScan *risultat
           Tbl->addItem(rowno, reasoncol, true, port_reason_str(current->reason));
 
         sd.populateFullVersionString(fullversion, sizeof(fullversion));
-        if (*fullversion)
+        if (*fullversion && versioncol > 0)
           Tbl->addItem(rowno, versioncol, true, fullversion);
 
         // How should we escape illegal chars in grepable output?
         // Well, a reasonably clean way would be backslash escapes
         // such as \/ and \\ .  // But that makes it harder to pick
         // out fields with awk, cut, and such.  So I'm gonna use the
-        // ugly hat (fitting to grepable output) or replacing the '/'
+        // ugly hack (fitting to grepable output) of replacing the '/'
         // character with '|' in the version field.
         Strncpy(grepvers, fullversion, sizeof(grepvers) / sizeof(*grepvers));
         p = grepvers;
@@ -777,8 +794,8 @@ void printportoutput(Target *currenths, PortList *plist, risultatoScan *risultat
             p++;
           }
         }
-        log_write(LOG_MACHINE, "%d/%s/%s//%s/%s/%s/", current->portno,
-                  state, protocol, serviceinfo, rpcmachineinfo, grepvers);
+        log_write(LOG_MACHINE, "%d/%s/%s//%s//%s/", current->portno,
+                  state, protocol, serviceinfo, grepvers);
 
         xml_open_start_tag("port");
         xml_attribute("protocol", "%s", protocol);
@@ -788,8 +805,11 @@ void printportoutput(Target *currenths, PortList *plist, risultatoScan *risultat
         xml_attribute("state", "%s", state);
         xml_attribute("reason", "%s", reason_str(current->reason.reason_id, SINGULAR));
         xml_attribute("reason_ttl", "%d", current->reason.ttl);
-        if (current->reason.ip_addr.ss_family != AF_UNSPEC)
-          xml_attribute("reason_ip", "%s", inet_ntop_ez(&current->reason.ip_addr, sizeof(current->reason.ip_addr)));
+        if (current->reason.ip_addr.sockaddr.sa_family != AF_UNSPEC) {
+          struct sockaddr_storage ss;
+          memcpy(&ss, &current->reason.ip_addr, sizeof(current->reason.ip_addr));
+          xml_attribute("reason_ip", "%s", inet_ntop_ez(&ss, sizeof(ss)));
+        }
         xml_close_empty_tag();
 
         if (sd.name || sd.service_fp || sd.service_tunnel != SERVICE_TUNNEL_NONE)
@@ -799,17 +819,17 @@ void printportoutput(Target *currenths, PortList *plist, risultatoScan *risultat
 #ifndef NOLUA
         if (o.script) {
           ScriptResults::const_iterator ssr_iter;
-
+          //Sort the results before outputting them on the screen
+          current->scriptResults.sort(scriptid_lessthan);
           for (ssr_iter = current->scriptResults.begin();
                ssr_iter != current->scriptResults.end(); ssr_iter++) {
-            xml_open_start_tag("script");
-            xml_attribute("id", "%s", ssr_iter->get_id());
-            xml_attribute("output", "%s", ssr_iter->get_output());
-            xml_close_empty_tag();
+            ssr_iter->write_xml();
 
             char *script_output = formatScriptOutput((*ssr_iter));
-            Tbl->addItem(rowno, 0, true, true, script_output);
-            free(script_output);
+            if (script_output != NULL) {
+              Tbl->addItem(rowno, 0, true, true, script_output);
+              free(script_output);
+            }
             rowno++;
           }
 
@@ -835,14 +855,6 @@ void printportoutput(Target *currenths, PortList *plist, risultatoScan *risultat
 
   // Now we write the table for the user
   log_write(LOG_PLAIN, "%s", Tbl->printableTable(NULL));
-#ifdef RAISENTINET3
-
-  risultatoHost->OpenPort = (char *)malloc((strlen(Tbl->printableTable(NULL))+1)*sizeof(char));  
-  sprintf(risultatoHost->OpenPort,"%s",Tbl->printableTable(NULL));
-  
-  //printf("\n--->\n%s<---\n", Tbl->printableTable(NULL));
-  
-#endif /* RAISENTINET3 */
   delete Tbl;
 
   // There may be service fingerprints I would like the user to submit
@@ -928,11 +940,9 @@ char *logfilename(const char *str, struct tm *tm) {
 }
 
 /* This is the workhorse of the logging functions.  Usually it is
-   called through log_write(), but it can be called directly if you
-   are dealing with a vfprintf-style va_list.  Unlike log_write, YOU
-   CAN ONLY CALL THIS WITH ONE LOG TYPE (not a bitmask full of them).
-   In addition, YOU MUST SANDWHICH EACH EXECUTION IF THIS CALL BETWEEN
-   va_start() AND va_end() calls. */
+   called through log_write(), but it can be called directly if you are dealing
+   with a vfprintf-style va_list. YOU MUST SANDWICH EACH EXECUTION OF THIS CALL
+   BETWEEN va_start() AND va_end() calls. */
 void log_vwrite(int logt, const char *fmt, va_list ap) {
   char *writebuf;
   bool skid_noxlate = false;
@@ -940,51 +950,64 @@ void log_vwrite(int logt, const char *fmt, va_list ap) {
   int len;
   int fileidx = 0;
   int l;
+  int logtype;
   va_list apcopy;
 
-  if (logt == LOG_SKID_NOXLT) {
-    logt = LOG_SKID;
-    skid_noxlate = true;
-  }
+  for (logtype = 1; logtype <= LOG_MAX; logtype <<= 1) {
 
-  switch (logt) {
-  case LOG_STDOUT:
-    vfprintf(o.nmap_stdout, fmt, ap);
-    break;
+    if (!(logt & logtype))
+      continue;
 
-  case LOG_STDERR:
-    fflush(stdout); // Otherwise some systems will print stderr out of order
-    vfprintf(stderr, fmt, ap);
-    break;
+    switch (logtype) {
+      case LOG_STDOUT:
+        vfprintf(o.nmap_stdout, fmt, ap);
+        break;
 
-  case LOG_NORMAL:
-  case LOG_MACHINE:
-  case LOG_SKID:
-  case LOG_XML:
-    len = alloc_vsprintf(&writebuf, fmt, ap);
-    if (writebuf == NULL)
-      fatal("%s: alloc_vsprintf failed.", __func__);
-    l = logt;
-    fileidx = 0;
-    while ((l & 1) == 0) {
-      fileidx++;
-      l >>= 1;
+      case LOG_STDERR:
+        fflush(stdout); // Otherwise some systems will print stderr out of order
+        vfprintf(stderr, fmt, ap);
+        break;
+
+      case LOG_SKID_NOXLT:
+        skid_noxlate = true;
+        /* no break */
+      case LOG_NORMAL:
+      case LOG_MACHINE:
+      case LOG_SKID:
+      case LOG_XML:
+        len = alloc_vsprintf(&writebuf, fmt, ap);
+        if (writebuf == NULL)
+          fatal("%s: alloc_vsprintf failed.", __func__);
+        if (logtype == LOG_SKID_NOXLT)
+            l = LOG_SKID;
+        else
+            l = logtype;
+        fileidx = 0;
+        while ((l & 1) == 0) {
+          fileidx++;
+          l >>= 1;
+        }
+        assert(fileidx < LOG_NUM_FILES);
+        if (o.logfd[fileidx] && len) {
+          if ((logtype & (LOG_SKID|LOG_SKID_NOXLT)) && !skid_noxlate)
+            skid_output(writebuf);
+
+          rc = fwrite(writebuf, len, 1, o.logfd[fileidx]);
+          if (rc != 1) {
+            fatal("Failed to write %d bytes of data to (logt==%d) stream. fwrite returned %d.  Quitting.", len, logtype, rc);
+          }
+          va_end(apcopy);
+        }
+        free(writebuf);
+        break;
+
+      default:
+        /* Unknown log type.
+         * ---
+         * Note that we're not calling fatal() here to avoid infinite call loop
+         * between fatal() and this log_vwrite() function. */
+        assert(0); /* We want people to report it. */
     }
-    assert(fileidx < LOG_NUM_FILES);
-    if (o.logfd[fileidx]) {
-      if (logt == LOG_SKID && !skid_noxlate)
-        skid_output(writebuf);
-      rc = fwrite(writebuf, len, 1, o.logfd[fileidx]);
-      if (rc != 1) {
-        fatal("Failed to write %d bytes of data to (logt==%d) stream. fwrite returned %d.  Quitting.", len, logt, rc);
-      }
-      va_end(apcopy);
-    }
-    free(writebuf);
-    break;
-
-  default:
-    fatal("%s(): Passed unknown log type (%d).  Note that this function, unlike log_write, can only handle one log type at a time (no bitmasks)", __func__, logt);
   }
 
   return;
@@ -1097,25 +1120,20 @@ int log_open(int logt, int append, char *filename) {
    rangelist to the log stream given (such as LOG_MACHINE or LOG_XML) */
 static void output_rangelist_given_ports(int logt, unsigned short *ports,
                                          int numports) {
-  int i, previous_port = -2, range_start = -2, port;
-  char outpbuf[128];
+  int start, end;
 
-  for (i = 0; i <= numports; i++) {
-    port = (i < numports) ? ports[i] : 0xABCDE;
-    if (port != previous_port + 1) {
-      outpbuf[0] = '\0';
-      if (range_start != previous_port && range_start != -2)
-        sprintf(outpbuf, "-%hu", previous_port);
-      if (port != 0xABCDE) {
-        if (range_start != -2)
-          strcat(outpbuf, ",");
-        sprintf(outpbuf + strlen(outpbuf), "%hu", port);
-      }
-      if (*outpbuf)
-        log_write(logt, "%s", outpbuf);
-      range_start = port;
-    }
-    previous_port = port;
+  start = 0;
+  while (start < numports) {
+    end = start;
+    while (end + 1 < numports && ports[end + 1] == ports[end] + 1)
+      end++;
+    if (start > 0)
+      log_write(logt, ",");
+    if (start == end)
+      log_write(logt, "%hu", ports[start]);
+    else
+      log_write(logt, "%hu-%hu", ports[start], ports[end]);
+    start = end + 1;
   }
 }
 
@@ -1160,7 +1178,7 @@ static void doscanflags() {
   };
 
   if (o.scanflags != -1) {
-    string flagstring;
+    std::string flagstring;
 
     for (unsigned int i = 0; i < sizeof(flags) / sizeof(flags[0]); i++) {
       if (o.scanflags & flags[i].flag)
@@ -1281,6 +1299,7 @@ static void write_xml_initial_hostinfo(Target *currenths,
   xml_open_start_tag("status");
   xml_attribute("state", "%s", status);
   xml_attribute("reason", "%s", reason_str(currenths->reason.reason_id, SINGULAR));
+  xml_attribute("reason_ttl", "%d", currenths->reason.ttl);
   xml_close_empty_tag();
   xml_newline();
   xml_open_start_tag("address");
@@ -1381,7 +1400,7 @@ static char *num_to_string_sigdigits(double d, int digits) {
 
   return buf;
 }
- 
+
 /* Writes a heading for a full scan report ("Nmap scan report for..."),
    including host status and DNS records. */
 void write_host_header(Target *currenths) {
@@ -1395,11 +1414,7 @@ void write_host_header(Target *currenths) {
       log_write(LOG_PLAIN, "]\n");
     }
   }
-#ifndef RAISENTINET3
   write_host_status(currenths);
-#else /* RAISENTINET3 */
-  write_host_status(currenths, NULL);
-#endif /* RAISENTINET3 */
   if (currenths->TargetName() != NULL
       && currenths->resolved_addrs.size() > 1) {
     std::list<struct sockaddr_storage>::iterator it;
@@ -1424,11 +1439,7 @@ void write_host_header(Target *currenths) {
 /* Writes host status info to the log streams (including STDOUT).  An
    example is "Host: 10.11.12.13 (foo.bar.example.com)\tStatus: Up\n" to
    machine log. */
-#ifndef RAISENTINET3
 void write_host_status(Target *currenths) {
-#else /* RAISENTINET3 */
-void write_host_status(Target *currenths, risultatoScan *risultatoHost) {
-#endif /* RAISENTINET3 */
   if (o.listscan) {
     /* write "unknown" to machine and xml */
     log_write(LOG_MACHINE, "Host: %s (%s)\tStatus: Unknown\n",
@@ -1472,16 +1483,6 @@ void write_host_status(Target *currenths, risultatoScan *risultatoHost) {
 
       log_write(LOG_MACHINE, "Host: %s (%s)\tStatus: Up\n",
                 currenths->targetipstr(), currenths->HostName());
-#ifdef RAISENTINET3
-
-	if (risultatoHost != NULL) {
-		//risultatoHost = (risultatoScan*)malloc(sizeof(risultatoScan));
-		risultatoHost->Dns = (char *)malloc((strlen((strcmp(currenths->HostName(),"") == 0)? "noDNS" : currenths->HostName())+1)*sizeof(char));
-		sprintf(risultatoHost->Ip,"%s",currenths->targetipstr());
-		sprintf(risultatoHost->Dns,"%s",((strcmp(currenths->HostName(),"") == 0)? "noDNS" : currenths->HostName()));
-		//printf("\n---Ip=%s HostName=%s\n", currenths->targetipstr(), (strcmp(currenths->HostName(),"") == 0)? "noDNS" : currenths->HostName());
-	}
-#endif /* RAISENTINET3 */
     } else if (currenths->flags & HOST_DOWN) {
       log_write(LOG_MACHINE, "Host: %s (%s)\tStatus: Down\n",
                 currenths->targetipstr(), currenths->HostName());
@@ -1526,7 +1527,7 @@ static void printosclassificationoutput(const struct
   const char *cpes[MAX_OS_CLASSMEMBERS];
   char fullfamily[MAX_OS_CLASSMEMBERS][128];    // "[vendor] [os family]"
   double familyaccuracy[MAX_OS_CLASSMEMBERS];   // highest accuracy for this fullfamily
-  char familygenerations[MAX_OS_CLASSMEMBERS][48];      // example: "4.X|5.X|6.X"
+  char familygenerations[MAX_OS_CLASSMEMBERS][96];      // example: "4.X|5.X|6.X"
   int numtypes = 0, numcpes = 0, numfamilies = 0;
   char tmpbuf[1024];
 
@@ -1639,11 +1640,7 @@ static void printosclassificationoutput(const struct
    network.  This only prints to human output -- XML is handled by a
    separate call ( print_MAC_XML_Info ) because it needs to be printed
    in a certain place to conform to DTD. */
-#ifndef RAISENTINET3
 void printmacinfo(Target *currenths) {
-#else /* RAISENTINET3 */
-void printmacinfo(Target *currenths, risultatoScan *risultatoHost) {
-#endif /* RAISENTINET3 */
   const u8 *mac = currenths->MACAddress();
   char macascii[32];
 
@@ -1653,19 +1650,6 @@ void printmacinfo(Target *currenths, risultatoScan *risultatoHost) {
              mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
     log_write(LOG_PLAIN, "MAC Address: %s (%s)\n", macascii,
               macvendor ? macvendor : "Unknown");
-#ifdef RAISENTINET3
-
-    risultatoHost->Mac = (char *)malloc((strlen(macascii)+1)*sizeof(char));
-    risultatoHost->MacVendor = (char *)malloc((strlen(macvendor? macvendor : "Unknown")+1)*sizeof(char));
-    sprintf(risultatoHost->Mac,"%s",macascii);
-    sprintf(risultatoHost->MacVendor,"%s",(macvendor? macvendor : "Unknown"));
-    //printf("###--- %s %s \n",risultatoHost->Mac,risultatoHost->MacVendor);
-  } else {
-    risultatoHost->Mac = (char *)malloc(2*sizeof(char));
-    risultatoHost->MacVendor = (char *)malloc(2*sizeof(char));
-    sprintf(risultatoHost->Mac,"%s","-");
-    sprintf(risultatoHost->MacVendor,"%s","-");
-#endif /* RAISENTINET3 */
   }
 }
 
@@ -1859,11 +1843,7 @@ static void write_merged_fpr(const FingerPrintResults *FPR,
 
 /* Prints the formatted OS Scan output to stdout, logfiles, etc (but only
    if an OS Scan was performed).*/
-#ifndef RAISENTINET3
 void printosscanoutput(Target *currenths) {
-#else /* RAISENTINET3 */
-void printosscanoutput(Target *currenths, risultatoScan *risultatoHost) {
-#endif /* RAISENTINET3 */
   int i;
   char numlst[512];             /* For creating lists of numbers */
   char *p;                      /* Used in manipulating numlst above */
@@ -1924,12 +1904,6 @@ void printosscanoutput(Target *currenths, risultatoScan *risultatoHost) {
       for (i = 1; i < FPR->num_perfect_matches; i++)
         log_write(LOG_MACHINE, "|%s", FPR->matches[i]->OS_name);
 
-#ifdef RAISENTINET3
-      risultatoHost->OS = (char *)malloc((strlen(FPR->matches[0]->OS_name)+1)*sizeof(char));
-      sprintf(risultatoHost->OS,"%s",FPR->matches[0]->OS_name);
-      //printf("---OS details: %s\n", FPR->matches[0]->OS_name);
-
-#endif /* RAISENTINET3 */
       log_write(LOG_PLAIN, "OS details: %s", FPR->matches[0]->OS_name);
       for (i = 1; i < FPR->num_perfect_matches; i++)
         log_write(LOG_PLAIN, ", %s", FPR->matches[i]->OS_name);
@@ -1943,11 +1917,11 @@ void printosscanoutput(Target *currenths, risultatoScan *risultatoHost) {
         log_write(LOG_NORMAL | LOG_SKID_NOXLT | LOG_STDOUT,
                   "OS fingerprint not ideal because: %s\n", reason);
 
+      for (i = 0; i < 10 && i < FPR->num_matches && FPR->accuracy[i] > FPR->accuracy[0] - 0.10; i++)
+        write_xml_osmatch(FPR->matches[i], FPR->accuracy[i]);
+
       if ((o.osscan_guess || reason) && FPR->num_matches > 0) {
         /* Print the best guesses available */
-        for (i = 0; i < 10 && i < FPR->num_matches && FPR->accuracy[i] > FPR->accuracy[0] - 0.10; i++)
-          write_xml_osmatch(FPR->matches[i], FPR->accuracy[i]);
-
         log_write(LOG_PLAIN, "Aggressive OS guesses: %s (%.f%%)",
                   FPR->matches[0]->OS_name, floor(FPR->accuracy[0] * 100));
         for (i = 1; i < 10 && FPR->num_matches > i && FPR->accuracy[i] > FPR->accuracy[0] - 0.10; i++)
@@ -1956,11 +1930,6 @@ void printosscanoutput(Target *currenths, risultatoScan *risultatoHost) {
         log_write(LOG_PLAIN, "\n");
       }
 
-#ifdef RAISENTINET3
-      risultatoHost->OS = (char *)malloc((strlen(FPR->matches[0]->OS_name)+1)*sizeof(char));
-      sprintf(risultatoHost->OS,"%s",FPR->matches[0]->OS_name);
-
-#endif /* RAISENTINET3 */
       if (!reason) {
         log_write(LOG_NORMAL | LOG_SKID_NOXLT | LOG_STDOUT,
                   "No exact OS matches for host (If you know what OS is running on it, see http://nmap.org/submit/ ).\n");
@@ -2032,7 +2001,7 @@ void printosscanoutput(Target *currenths, risultatoScan *risultatoHost) {
     p = numlst;
     for (i = 0; i < currenths->seq.responses; i++) {
       if (p - numlst > (int) (sizeof(numlst) - 15))
-        fatal("STRANGE ERROR #3877 -- please report to fyodor@insecure.org\n");
+        fatal("STRANGE ERROR #3877 -- please report to fyodor@nmap.org\n");
       if (p != numlst)
         *p++ = ',';
       sprintf(p, "%X", currenths->seq.seqs[i]);
@@ -2056,7 +2025,7 @@ void printosscanoutput(Target *currenths, risultatoScan *risultatoHost) {
     p = numlst;
     for (i = 0; i < currenths->seq.responses; i++) {
       if (p - numlst > (int) (sizeof(numlst) - 15))
-        fatal("STRANGE ERROR #3876 -- please report to fyodor@insecure.org\n");
+        fatal("STRANGE ERROR #3876 -- please report to fyodor@nmap.org\n");
       if (p != numlst)
         *p++ = ',';
       sprintf(p, "%hX", currenths->seq.ipids[i]);
@@ -2077,7 +2046,7 @@ void printosscanoutput(Target *currenths, risultatoScan *risultatoHost) {
     p = numlst;
     for (i = 0; i < currenths->seq.responses; i++) {
       if (p - numlst > (int) (sizeof(numlst) - 15))
-        fatal("STRANGE ERROR #3877 -- please report to fyodor@insecure.org\n");
+        fatal("STRANGE ERROR #3878 -- please report to fyodor@nmap.org\n");
       if (p != numlst)
         *p++ = ',';
       sprintf(p, "%X", currenths->seq.timestamps[i]);
@@ -2123,7 +2092,7 @@ void printserviceinfooutput(Target *currenths) {
 
     // The following 2 lines (from portlist.h) tell us that we don't need to
     // worry about free()ing anything in the serviceDeductions struct. pass in
-    // an allocated struct serviceDeductions (don't wory about initializing, and
+    // an allocated struct serviceDeductions (don't worry about initializing, and
     // you don't have to free any internal ptrs.
     currenths->ports.getServiceDeductions(p->portno, p->proto, &sd);
 
@@ -2242,25 +2211,21 @@ void printscriptresults(ScriptResults *scriptResults, stype scantype) {
   char *script_output;
 
   if (scriptResults->size() > 0) {
+    scriptResults->sort(scriptid_lessthan);
     if (scantype == SCRIPT_PRE_SCAN) {
       xml_start_tag("prescript");
       log_write(LOG_PLAIN, "Pre-scan script results:\n");
-    }
-    else {
+    } else {
       xml_start_tag("postscript");
       log_write(LOG_PLAIN, "Post-scan script results:\n");
-    }               
-
-    for (iter = scriptResults->begin();
-         iter != scriptResults->end();
-         iter++) {
-      xml_open_start_tag("script");
-      xml_attribute("id", "%s", iter->get_id());
-      xml_attribute("output", "%s", iter->get_output());
-      xml_close_empty_tag();
+    }
+    for (iter = scriptResults->begin(); iter != scriptResults->end(); iter++) {
+      iter->write_xml();
       script_output = formatScriptOutput((*iter));
-      log_write(LOG_PLAIN, "%s\n", script_output);
-      free(script_output);
+      if (script_output != NULL) {
+        log_write(LOG_PLAIN, "%s\n", script_output);
+        free(script_output);
+      }
     }
     xml_end_tag();
   }
@@ -2271,18 +2236,19 @@ void printhostscriptresults(Target *currenths) {
   char *script_output;
 
   if (currenths->scriptResults.size() > 0) {
+    currenths->scriptResults.sort(scriptid_lessthan);
     xml_start_tag("hostscript");
     log_write(LOG_PLAIN, "\nHost script results:\n");
     for (iter = currenths->scriptResults.begin();
          iter != currenths->scriptResults.end();
          iter++) {
-      xml_open_start_tag("script");
-      xml_attribute("id", "%s", iter->get_id());
-      xml_attribute("output", "%s", iter->get_output());
-      xml_close_empty_tag();
+      iter->write_xml();
+
       script_output = formatScriptOutput((*iter));
-      log_write(LOG_PLAIN, "%s\n", script_output);
-      free(script_output);
+      if (script_output != NULL) {
+        log_write(LOG_PLAIN, "%s\n", script_output);
+        free(script_output);
+      }
     }
     xml_end_tag();
   }
@@ -2294,7 +2260,7 @@ static void printtraceroute_normal(Target *currenths) {
   static const int HOP_COL = 0, RTT_COL = 1, HOST_COL = 2;
   NmapOutputTable Tbl(currenths->traceroute_hops.size() + 1, 3);
   struct probespec probe;
-  list<TracerouteHop>::iterator it;
+  std::list<TracerouteHop>::iterator it;
   int row;
 
   /* No trace, must be localhost. */
@@ -2314,7 +2280,7 @@ static void printtraceroute_normal(Target *currenths) {
     log_write(LOG_PLAIN, "TRACEROUTE (using port %d/%s)\n",
               probe.pd.sctp.dport, proto2ascii_lowercase(probe.proto));
   } else if (probe.type == PS_ICMP || probe.type == PS_ICMPV6 || probe.type == PS_PROTO) {
-    struct protoent *proto = nmap_getprotbynum(htons(probe.proto));
+    struct protoent *proto = nmap_getprotbynum(probe.proto);
     log_write(LOG_PLAIN, "TRACEROUTE (using proto %d/%s)\n",
               probe.proto, proto ? proto->p_name : "unknown");
   } else if (probe.type == PS_NONE) {
@@ -2401,7 +2367,7 @@ static void printtraceroute_normal(Target *currenths) {
 
 static void printtraceroute_xml(Target *currenths) {
   struct probespec probe;
-  list<TracerouteHop>::iterator it;
+  std::list<TracerouteHop>::iterator it;
 
   /* No trace, must be localhost. */
   if (currenths->traceroute_hops.size() == 0)
@@ -2421,7 +2387,7 @@ static void printtraceroute_xml(Target *currenths) {
     xml_attribute("port", "%d", probe.pd.sctp.dport);
     xml_attribute("proto", "%s", proto2ascii_lowercase(probe.proto));
   } else if (probe.type == PS_ICMP || probe.type == PS_PROTO) {
-    struct protoent *proto = nmap_getprotbynum(htons(probe.proto));
+    struct protoent *proto = nmap_getprotbynum(probe.proto);
     if (proto == NULL)
       xml_attribute("proto", "%d", probe.proto);
     else
@@ -2680,3 +2646,43 @@ void printdatafilepaths() {
     }
   }
 }
+
+static inline const char *nslog2str(nsock_loglevel_t loglevel) {
+  switch(loglevel) {
+    case NSOCK_LOG_DBG_ALL:
+      return "DEBUG FULL";
+    case NSOCK_LOG_DBG:
+      return "DEBUG";
+    case NSOCK_LOG_INFO:
+      return "INFO";
+    case NSOCK_LOG_ERROR:
+      return "ERROR";
+    default:
+      return "???";
+  };
+}
+
+void nmap_adjust_loglevel(nsock_pool nsp, bool trace) {
+  nsock_loglevel_t nsock_loglevel;
+
+  if (o.debugging >= 7)
+    nsock_loglevel = NSOCK_LOG_DBG_ALL;
+  else if (o.debugging >= 4)
+    nsock_loglevel = NSOCK_LOG_DBG;
+  else if (trace || o.debugging >= 2)
+    nsock_loglevel = NSOCK_LOG_INFO;
+  else
+    nsock_loglevel = NSOCK_LOG_ERROR;
+
+  nsock_set_loglevel(nsp, nsock_loglevel);
+}
+
+void nmap_nsock_stderr_logger(nsock_pool nsp, const struct nsock_log_rec *rec) {
+  int elapsed_time;
+
+  elapsed_time = TIMEVAL_MSEC_SUBTRACT(rec->time, *(o.getStartTime()));
+
+  log_write(LOG_STDERR, "NSOCK %s [%.4fs] %s(): %s\n", nslog2str(rec->level),
+            elapsed_time/1000.0, rec->func, rec->msg);
+}
+

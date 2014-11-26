@@ -13,7 +13,7 @@
 --
 -- A few notes about the safety of the engine, that is, the ability for
 -- a script developer to crash or otherwise stall NSE. The purpose of noting
--- these attack vectors is more to show the difficulty in accidently
+-- these attack vectors is more to show the difficulty in accidentally
 -- breaking the system than to indicate a user may wish to break the
 -- system through these means.
 --  - A script writer can use the undocumented Lua function newproxy
@@ -30,6 +30,12 @@
 --    cause the system to stall through improper use.
 --  - Of course the os and io library can cause the system to also break.
 
+local _VERSION = _VERSION;
+local MAJOR, MINOR = assert(_VERSION:match "^Lua (%d+).(%d+)$");
+if tonumber(MAJOR.."."..MINOR) < 5.2 then
+  error "NSE requires Lua 5.2 or newer. It looks like you're using an older version of nmap."
+end
+
 local NAME = "NSE";
 
 -- Script Scan phases.
@@ -43,6 +49,8 @@ local BASE = "NSE_BASE";
 local WAITING_TO_RUNNING = "NSE_WAITING_TO_RUNNING";
 local DESTRUCTOR = "NSE_DESTRUCTOR";
 local SELECTED_BY_NAME = "NSE_SELECTED_BY_NAME";
+local FORMAT_TABLE = "NSE_FORMAT_TABLE";
+local FORMAT_XML = "NSE_FORMAT_XML";
 
 -- This is a limit on the number of script instance threads running at once. It
 -- exists only to limit memory use when there are many open ports. It doesn't
@@ -57,14 +65,16 @@ local NSE_SCRIPT_RULES = {
   postrule = "postrule",
 };
 
+local cnse, rules = ...; -- The NSE C library and Script Rules
+
 local _G = _G;
 
 local assert = assert;
 local collectgarbage = collectgarbage;
 local error = error;
 local ipairs = ipairs;
+local load = load;
 local loadfile = loadfile;
-local loadstring = loadstring;
 local next = next;
 local pairs = pairs;
 local pcall = pcall;
@@ -72,12 +82,10 @@ local rawget = rawget;
 local rawset = rawset;
 local require = require;
 local select = select;
-local setfenv = setfenv;
 local setmetatable = setmetatable;
 local tonumber = tonumber;
 local tostring = tostring;
 local type = type;
-local unpack = unpack;
 
 local coroutine = require "coroutine";
 local create = coroutine.create;
@@ -91,6 +99,7 @@ local traceback = debug.traceback;
 local _R = debug.getregistry();
 
 local io = require "io";
+local lines = io.lines;
 local open = io.open;
 
 local math = require "math";
@@ -112,14 +121,11 @@ local concat = table.concat;
 local insert = table.insert;
 local remove = table.remove;
 local sort = table.sort;
-
-local nmap = require "nmap";
-
-local cnse, rules = ...; -- The NSE C library and Script Rules
+local unpack = table.unpack;
 
 do -- Add loader to look in nselib/?.lua (nselib/ can be in multiple places)
   local function loader (lib)
-    lib = lib:gsub("%.", "/"); -- change Lua "module seperator" to directory separator
+    lib = lib:gsub("%.", "/"); -- change Lua "module separator" to directory separator
     local name = "nselib/"..lib..".lua";
     local type, path = cnse.fetchfile_absolute(name);
     if type == "file" then
@@ -128,17 +134,25 @@ do -- Add loader to look in nselib/?.lua (nselib/ can be in multiple places)
       return "\n\tNSE failed to find "..name.." in search paths.";
     end
   end
-  insert(package.loaders, 1, loader);
+  insert(package.searchers, 1, loader);
 end
+
+local nmap = require "nmap";
+local lfs = require "lfs";
+
+local socket = require "nmap.socket";
+local loop = socket.loop;
+
+local stdnse = require "stdnse";
+
+local strict = require "strict";
+assert(_ENV == _G);
+strict(_ENV);
 
 local script_database_type, script_database_path =
     cnse.fetchfile_absolute(cnse.script_dbpath);
 local script_database_update = cnse.scriptupdatedb;
 local script_help = cnse.scripthelp;
-
-local stdnse = require "stdnse";
-
-(require "strict")() -- strict global checking
 
 -- NSE_YIELD_VALUE
 -- This is the table C uses to yield a thread with a unique value to
@@ -148,7 +162,7 @@ local NSE_YIELD_VALUE = {};
 do
   -- This is the method by which we allow a script to have nested
   -- coroutines. If a sub-thread yields in an NSE function such as
-  -- nsock.connect, then we propogate the yield up. These replacements
+  -- nsock.connect, then we propagate the yield up. These replacements
   -- to the coroutine library are used only by Script Threads, not the engine.
 
   local function handle (co, status, ...)
@@ -205,6 +219,22 @@ local function table_size (t)
   local n = 0; for _ in pairs(t) do n = n + 1; end return n;
 end
 
+local function loadscript (filename)
+  local source = "@"..filename;
+  local function ld ()
+    -- header for scripts to allow setting the environment
+    yield [[return function (_ENV) return function (...)]];
+    -- actual script
+    for line in lines(filename, 2^15) do
+      yield(line);
+    end
+    -- footer...
+    yield [[ end end]];
+    return nil;
+  end
+  return assert(load(wrap(ld), source, "t"))();
+end
+
 -- recursively copy a table, for host/port tables
 -- not very rigorous, but it doesn't need to be
 local function tcopy (t)
@@ -231,46 +261,98 @@ rawset(stdnse, "silent_require", function (...)
   local status, mod = pcall(require, ...);
   if not status then
     print_debug(1, "%s", traceback(mod));
-    yield(REQUIRE_ERROR); -- use script yield
-    error(mod);
+    error(REQUIRE_ERROR)
   else
     return mod;
   end
 end);
 
-local Script = {}; -- The Script Class, its constructor is Script.new.
-local Thread = {}; -- The Thread Class, its constructor is Script:new_thread.
+-- Gets a string containing as much of a host's name, IP, and port as are
+-- available.
+local function against_name(host, port)
+  local targetname, ip, portno, ipport, against;
+  if host then
+    targetname = host.targetname;
+    ip = host.ip;
+  end
+  if port then
+    portno = port.number;
+  end
+  if ip and portno then
+    ipport = ip..":"..portno;
+  elseif ip then
+    ipport = ip;
+  end
+  if targetname and ipport then
+    against = targetname.." ("..ipport..")";
+  elseif targetname then
+    against = targetname;
+  elseif ipport then
+    against = ipport;
+  end
+  if against then
+    return " against "..against
+  else
+    return ""
+  end
+end
+
+-- The Script Class, its constructor is Script.new.
+local Script = {};
+-- The Thread Class, its constructor is Script:new_thread.
+local Thread = {};
+-- The Worker Class, it's a subclass of Thread. Its constructor is
+-- Thread:new_worker. It (currently) has no methods.
+local Worker = {};
 do
+  -- Workers reference data from parent thread.
+  function Worker:__index (key)
+    return Worker[key] or self.parent[key]
+  end
+
   -- Thread:d()
   -- Outputs debug information at level 1 or higher.
   -- Changes "%THREAD" with an appropriate identifier for the debug level
   function Thread:d (fmt, ...)
-    local against;
-    if self.host and self.port then
-      against = " against "..self.host.ip..":"..self.port.number;
-    elseif self.host then
-      against = " against "..self.host.ip;
-    else
-      against = "";
+    local against = against_name(self.host, self.port);
+    local function replace(fmt, pattern, repl)
+      -- Escape each % twice: once for gsub, and once for print_debug.
+      local r = gsub(repl, "%%", "%%%%%%%%")
+      return gsub(fmt, pattern, r);
     end
     if debugging() > 1 then
-      fmt = gsub(fmt, "%%THREAD_AGAINST", self.info..against);
-      fmt = gsub(fmt, "%%THREAD", self.info);
+      fmt = replace(fmt, "%%THREAD_AGAINST", self.info..against);
+      fmt = replace(fmt, "%%THREAD", self.info);
     else
-      fmt = gsub(fmt, "%%THREAD_AGAINST", self.short_basename..against);
-      fmt = gsub(fmt, "%%THREAD", self.short_basename);
+      fmt = replace(fmt, "%%THREAD_AGAINST", self.short_basename..against);
+      fmt = replace(fmt, "%%THREAD", self.short_basename);
     end
     print_debug(1, fmt, ...);
   end
 
-  -- Sets scripts output. Variable result is a string.
-  function Thread:set_output(result)
-    if self.type == "prerule" or self.type == "postrule" then
-      cnse.script_set_output(self.id, result);
-    elseif self.type == "hostrule" then
-      cnse.host_set_output(self.host, self.id, result);
-    elseif self.type == "portrule" then
-      cnse.port_set_output(self.host, self.port, self.id, result);
+  -- Sets script output. r1 and r2 are the (as many as two) return values.
+  function Thread:set_output(r1, r2)
+    if not self.worker then
+      -- Structure table and unstructured string outputs.
+      local tab, str
+
+      if r2 then
+        tab, str = r1, tostring(r2);
+      elseif type(r1) == "string" then
+        tab, str = nil, r1;
+      elseif r1 == nil then
+        return
+      else
+        tab, str = r1, nil;
+      end
+
+      if self.type == "prerule" or self.type == "postrule" then
+        cnse.script_set_output(self.id, tab, str);
+      elseif self.type == "hostrule" then
+        cnse.host_set_output(self.host, self.id, tab, str);
+      elseif self.type == "portrule" then
+        cnse.port_set_output(self.host, self.port, self.id, tab, str);
+      end
     end
   end
 
@@ -333,7 +415,7 @@ do
   function Script:new_thread (rule, ...)
     local script_type = assert(NSE_SCRIPT_RULES[rule]);
     if not self[rule] then return nil end -- No rule for this script?
-    local file_closure = self.file_closure;
+    local script_closure_generator = self.script_closure_generator;
     -- Rebuild the environment for the running thread.
     local env = {
         SCRIPT_PATH = self.filename,
@@ -341,36 +423,34 @@ do
         SCRIPT_TYPE = script_type,
     };
     setmetatable(env, {__index = _G});
-    setfenv(file_closure, env);
+    local script_closure = script_closure_generator(env);
     local unique_value = {}; -- to test valid yield
-    local function main (...)
-      file_closure(); -- loads script globals
-      return env.action(yield(unique_value, env[rule](...)));
+    local function main (_ENV, ...)
+      script_closure(); -- loads script globals
+      return action(yield(unique_value, _ENV[rule](...)));
     end
-    setfenv(main, env);
     -- This thread allows us to load the script's globals in the
     -- same Lua thread the action and rule functions will execute in.
     local co = create(main);
-    local s, value, rule_return = resume(co, ...);
-    setfenv(file_closure, _G); -- reset the environment
+    local s, value, rule_return = resume(co, env, ...);
     if s and value ~= unique_value then
       print_debug(1,
     "A thread for %s yielded unexpectedly in the file or %s function:\n%s\n",
           self.filename, rule, traceback(co));
     elseif s and (rule_return or self.forced_to_run) then
       local thread = {
+        close_handlers = {},
         co = co,
         env = env,
         identifier = tostring(co),
         info = format("'%s' (%s)", self.short_basename, tostring(co));
+        parent = nil, -- placeholder
+        script = self,
         type = script_type,
-        close_handlers = {},
+        worker = false,
       };
-      setmetatable(thread, {
-        __metatable = Thread,
-        __index = function (thread, k) return Thread[k] or self[k] end
-      }); -- Access to the parent Script
-      thread.parent = thread; -- itself
+      thread.parent = thread;
+      setmetatable(thread, Thread)
       return thread;
     elseif not s then
       log_error("A thread for %s failed to load in %s function:\n%s\n",
@@ -379,8 +459,34 @@ do
     return nil;
   end
 
+  function Thread:new_worker (main, ...)
+    local co = create(main);
+    print_debug(2, "%s spawning new thread (%s).", self.parent.info, tostring(co));
+    local thread = {
+      args = {n = select("#", ...), ...},
+      close_handlers = {},
+      co = co,
+      info = format("'%s' worker (%s)", self.short_basename, tostring(co));
+      parent = self,
+      worker = true,
+    };
+    setmetatable(thread, Worker)
+    local function info ()
+      return status(co), rawget(thread, "error");
+    end
+    return thread, info;
+  end
+
+  function Thread:resume ()
+    return resume(self.co, unpack(self.args, 1, self.args.n));
+  end
+
+  function Thread:__index (key)
+    return Thread[key] or self.script[key]
+  end
+
+  -- Script.new provides defaults for some of these.
   local required_fields = {
-    description = "string",
     action = "function",
     categories = "table",
     dependencies = "table",
@@ -423,27 +529,28 @@ do
 
     print_debug(2, "Script %s was selected by %s%s.",
         basename,
-        script_params.selection and
         script_params.selection or "(unknown)",
         script_params.forced and " and forced to run" or "");
-    local file_closure = assert(loadfile(filename));
+    local script_closure_generator = loadscript(filename);
     -- Give the closure its own environment, with global access
     local env = {
       SCRIPT_PATH = filename,
       SCRIPT_NAME = short_basename,
+      categories = {},
       dependencies = {},
     };
     setmetatable(env, {__index = _G});
-    setfenv(file_closure, env);
-    local co = create(file_closure); -- Create a garbage thread
+    local script_closure = script_closure_generator(env);
+    local co = create(script_closure); -- Create a garbage thread
     local status, e = resume(co); -- Get the globals it loads in env
     if not status then
-      log_error("Failed to load %s:\n%s", filename, traceback(co, e));
-      error("could not load script");
-    end
-    if quiet_errors[e] then
-      print_verbose(1, "Failed to load '%s'.", filename);
-      return nil;
+      if quiet_errors[e] then
+        print_verbose(1, "Failed to load '%s'.", filename);
+        return nil;
+      else
+        log_error("Failed to load %s:\n%s", filename, traceback(co, e));
+        error("could not load script");
+      end
     end
     -- Check that all the required fields were set
     for f, t in pairs(required_fields) do
@@ -470,12 +577,12 @@ do
     local postrule = rules.postrule;
     -- Assert that categories is an array of strings
     for i, category in ipairs(rawget(env, "categories")) do
-      assert(type(category) == "string", 
+      assert(type(category) == "string",
         filename.." has non-string entries in the 'categories' array");
     end
     -- Assert that dependencies is an array of strings
     for i, dependency in ipairs(rawget(env, "dependencies")) do
-      assert(type(dependency) == "string", 
+      assert(type(dependency) == "string",
         filename.." has non-string entries in the 'dependencies' array");
     end
     -- Return the script
@@ -484,7 +591,7 @@ do
       basename = basename,
       short_basename = short_basename,
       id = match(filename, "^.-[/\\]([^\\/]-)%.nse$") or short_basename,
-      file_closure = file_closure,
+      script_closure_generator = script_closure_generator,
       prerule = prerule,
       hostrule = hostrule,
       portrule = portrule,
@@ -500,8 +607,10 @@ do
       selected_by_name = not not script_params.verbosity,
       forced_to_run = not not script_params.forced,
     };
-    return setmetatable(script, {__index = Script, __metatable = Script});
+    return setmetatable(script, Script)
   end
+
+  Script.__index = Script;
 end
 
 -- check_rules(rules)
@@ -520,11 +629,12 @@ end
 -- Arguments:
 --   rules  The array of rules to use for loading scripts.
 -- Returns:
---   chosen_scripts  The array of scripts loaded for the given rules. 
+--   chosen_scripts  The array of scripts loaded for the given rules.
 local function get_chosen_scripts (rules)
   check_rules(rules);
 
-  local db_closure = assert(loadfile(script_database_path),
+  local db_env = {Entry = nil};
+  local db_closure = assert(loadfile(script_database_path, "t", db_env),
     "database appears to be corrupt or out of date;\n"..
     "\tplease update using: nmap --script-updatedb");
 
@@ -567,11 +677,14 @@ local function get_chosen_scripts (rules)
     local forced, rule = is_forced_set(rule);
     used_rules[rule] = false; -- has not been used yet
     forced_rules[rule] = forced;
+    -- Here we escape backslashes which might appear in Windows filenames.
+    rule = gsub(rule, "\\([^\\])", "\\\\%1");
     -- Globalize all `names`, all visible characters not ',', '(', ')', and ';'
     local globalized_rule =
         gsub(rule, "[\033-\039\042-\043\045-\058\060-\126]+", globalize);
     -- Precompile the globalized rule
-    local compiled_rule, err = loadstring("return "..globalized_rule, "rule");
+    local env = {m = nil};
+    local compiled_rule, err = load("return "..globalized_rule, "rule", "t", env);
     if not compiled_rule then
       err = err:match("rule\"]:%d+:(.+)$"); -- remove (luaL_)where in code
       error("Bad script rule:\n\t"..original_rule.." -> "..err);
@@ -580,12 +693,13 @@ local function get_chosen_scripts (rules)
     entry_rules[globalized_rule] = {
       original_rule = rule,
       compiled_rule = compiled_rule,
+      env = env,
     };
   end
 
   -- Checks if a given script, script_entry, should be loaded. A script_entry
   -- should be in the form: { filename = "name.nse", categories = { ... } }
-  local function entry (script_entry)
+  function db_env.Entry (script_entry)
     local categories, filename = script_entry.categories, script_entry.filename;
     assert(type(categories) == "table" and type(filename) == "string",
         "script database appears corrupt, try `nmap --script-updatedb`");
@@ -625,18 +739,18 @@ local function get_chosen_scripts (rules)
 
       return false;
     end
-    local env = {m = m};
 
     for globalized_rule, rule_table in pairs(entry_rules) do
       -- Clear and set the environment of the compiled script rule
-      local compiled_rule = setfenv(rule_table.compiled_rule, env)
-      local status, found = pcall(compiled_rule)
+      rule_table.env.m = m;
+      local status, found = pcall(rule_table.compiled_rule)
+      rule_table.env.m = nil;
       if not status then
         error("Bad script rule:\n\t"..rule_table.original_rule..
               " -> script rule expression not supported.");
       end
       -- The script rule matches a category or a pattern
-      if found then 
+      if found then
         used_rules[rule_table.original_rule] = true;
         script_params.forced = not not forced_rules[rule_table.original_rule];
         local t, path = cnse.fetchscript(filename);
@@ -655,7 +769,6 @@ local function get_chosen_scripts (rules)
     end
   end
 
-  setfenv(db_closure, {Entry = entry});
   db_closure(); -- Load the scripts
 
   -- Now load any scripts listed by name rather than by category.
@@ -676,11 +789,11 @@ local function get_chosen_scripts (rules)
         chosen_scripts[#chosen_scripts+1] = script;
         files_loaded[path] = true;
       elseif t == "directory" then
-        for f in cnse.dir(path) do
+        for f in lfs.dir(path) do
           local file = path .."/".. f
-          if find(f, "%.nse$") and not files_loaded[file] then
+          if find(file, "%.nse$") and not files_loaded[file] then
             script_params.selection = "directory";
-            local script = Script.new(path, script_params);
+            local script = Script.new(file, script_params);
             chosen_scripts[#chosen_scripts+1] = script;
             files_loaded[file] = true;
           end
@@ -698,7 +811,7 @@ local function get_chosen_scripts (rules)
   local chain = {}; -- chain of script names
   local function calculate_runlevel (script)
     chain[#chain+1] = script.short_basename;
-    if script.runlevel == false then -- circular dependency 
+    if script.runlevel == false then -- circular dependency
       error("circular dependency in chain `"..concat(chain, "->").."`");
     else
       script.runlevel = false; -- placeholder
@@ -747,7 +860,7 @@ local function run (threads_iter, hosts)
     return NSE_YIELD_VALUE; -- return NSE_YIELD_VALUE
   end
   _R[BASE] = function ()
-    return current.co;
+    return current and current.co;
   end
   -- _R[WAITING_TO_RUNNING] is called by nse_restore in nse_main.cc
   _R[WAITING_TO_RUNNING] = function (co, ...)
@@ -780,34 +893,17 @@ local function run (threads_iter, hosts)
   end
   rawset(stdnse, "new_thread", function (main, ...)
     assert(type(main) == "function", "function expected");
-    local co = create(function(...) main(...) end); -- do not return results
-    print_debug(2, "%s spawning new thread (%s).",
-        current.parent.info, tostring(co));
-    local thread = {
-      co = co,
-      id = current.id,
-      args = {n = select("#", ...), ...},
-      host = current.host,
-      port = current.port,
-      type = current.type,
-      parent = current.parent,
-      info = format("'%s' worker (%s)", current.short_basename, tostring(co));
-      close_handlers = {},
-      -- d = function(...) end, -- output no debug information
-    };
-    local thread_mt = {
-      __metatable = Thread,
-      __index = current,
-    };
-    setmetatable(thread, thread_mt);
-    total, all[co], pending[co] = total+1, thread, thread;
-    local function info ()
-      return status(co), rawget(thread, "error");
+    if current == nil then
+      error "stdnse.new_thread can only be run from an active script"
     end
-    return co, info;
+    local worker, info = current:new_worker(main, ...);
+    total, all[worker.co], pending[worker.co], num_threads = total+1, worker, worker, num_threads+1;
+    worker:start(timeouts);
+    return worker.co, info;
   end);
+
   rawset(stdnse, "base", function ()
-    return current.co;
+    return current and current.co;
   end);
 
   while threads_iter and num_threads < CONCURRENCY_LIMIT do
@@ -879,14 +975,18 @@ local function run (threads_iter, hosts)
       current, running[co] = thread, nil;
       thread:start_time_out_clock();
 
-      local s, result = resume(co, unpack(thread.args, 1, thread.args.n));
+      -- Threads may have zero, one, or two return values.
+      local s, r1, r2 = thread:resume();
       if not s then -- script error...
         all[co], num_threads = nil, num_threads-1;
-        thread:d("%THREAD_AGAINST threw an error!\n%s\n",
-            traceback(co, tostring(result)));
-        thread:close(timeouts, result);
+        if debugging() > 0 then
+          thread:d("%THREAD_AGAINST threw an error!\n%s\n", traceback(co, tostring(r1)));
+        else
+          thread:set_output("ERROR: Script execution failed (use -d to debug)");
+        end
+        thread:close(timeouts, r1);
       elseif status(co) == "suspended" then
-        if result == NSE_YIELD_VALUE then
+        if r1 == NSE_YIELD_VALUE then
           waiting[co] = thread;
         else
           all[co], num_threads = nil, num_threads-1;
@@ -895,22 +995,14 @@ local function run (threads_iter, hosts)
         end
       elseif status(co) == "dead" then
         all[co], num_threads = nil, num_threads-1;
-        if type(result) == "string" then
-          -- Escape any character outside the range 32-126 except for tab,
-          -- carriage return, and line feed. This makes the string safe for
-          -- screen display as well as XML (see section 2.2 of the XML spec).
-          result = gsub(result, "[^\t\r\n\032-\126]", function(a)
-            return format("\\x%02X", byte(a));
-          end);
-          thread:set_output(result);
-        end
+        thread:set_output(r1, r2);
         thread:d("Finished %THREAD_AGAINST.");
         thread:close(timeouts);
       end
       current = nil;
     end
 
-    cnse.nsock_loop(50); -- Allow nsock to perform any pending callbacks
+    loop(50); -- Allow nsock to perform any pending callbacks
     -- Move pending threads back to running.
     for co, thread in pairs(pending) do
       pending[co], running[co] = nil, thread;
@@ -921,6 +1013,75 @@ local function run (threads_iter, hosts)
 
   progress "endTask";
 end
+
+-- This function does the automatic formatting of Lua objects into strings, for
+-- normal output and for the XML @output attribute. Each nested table is
+-- indented by two spaces. Tables having a __tostring metamethod are converted
+-- using tostring. Otherwise, integer keys are listed first and only their
+-- value is shown; then string keys are shown prefixed by the key and a colon.
+-- Any other kinds of keys. Anything that is not a table is converted to a
+-- string with tostring.
+local function format_table(obj, indent)
+  indent = indent or "  ";
+  if type(obj) == "table" then
+    local mt = getmetatable(obj)
+    if mt and mt["__tostring"] then
+      -- Table obeys tostring, so use that.
+      return tostring(obj)
+    end
+
+    local lines = {};
+    -- Do integer keys.
+    for _, v in ipairs(obj) do
+      lines[#lines + 1] = indent .. format_table(v, indent .. "  ");
+    end
+    -- Do string keys.
+    for k, v in pairs(obj) do
+      if type(k) == "string" then
+        lines[#lines + 1] = indent .. k .. ": " .. format_table(v, indent .. "  ");
+      end
+    end
+    return "\n" .. concat(lines, "\n");
+  else
+    return tostring(obj);
+  end
+end
+_R[FORMAT_TABLE] = format_table
+
+local format_xml
+local function format_xml_elem(obj, key)
+  if key then
+    key = cnse.protect_xml(tostring(key));
+  end
+  if type(obj) == "table" then
+    cnse.xml_start_tag("table", {key=key});
+    cnse.xml_newline();
+  else
+    cnse.xml_start_tag("elem", {key=key});
+  end
+  format_xml(obj);
+  cnse.xml_end_tag();
+  cnse.xml_newline();
+end
+
+-- This function writes an XML representation of a Lua object to the XML stream.
+function format_xml(obj, key)
+  if type(obj) == "table" then
+    -- Do integer keys.
+    for _, v in ipairs(obj) do
+      format_xml_elem(v);
+    end
+    -- Do string keys.
+    for k, v in pairs(obj) do
+      if type(k) == "string" then
+        format_xml_elem(v, k);
+      end
+    end
+  else
+    cnse.xml_write_escaped(cnse.protect_xml(tostring(obj)));
+  end
+end
+_R[FORMAT_XML] = format_xml
 
 -- Format NSEDoc markup (e.g., including bullet lists and <code> sections) into
 -- a display string at the given indentation level. Currently this only indents
@@ -942,7 +1103,9 @@ local function script_help_normal(chosen_scripts)
     log_write_raw("stdout", format("%s\n", script.id));
     log_write_raw("stdout", format("Categories: %s\n", concat(script.categories, " ")));
     log_write_raw("stdout", format("%s\n", nsedoc_url(script.id)));
-    log_write_raw("stdout", format_nsedoc(script.description, "  "));
+    if script.description then
+      log_write_raw("stdout", format_nsedoc(script.description, "  "));
+    end
   end
 end
 
@@ -975,10 +1138,12 @@ local function script_help_xml(chosen_scripts)
     cnse.xml_end_tag();
     cnse.xml_newline();
 
-    cnse.xml_start_tag("description");
-    cnse.xml_write_escaped(script.description);
-    cnse.xml_end_tag();
-    cnse.xml_newline();
+    if script.description then
+      cnse.xml_start_tag("description");
+      cnse.xml_write_escaped(script.description);
+      cnse.xml_end_tag();
+      cnse.xml_newline();
+    end
 
     -- script
     cnse.xml_end_tag();
@@ -992,6 +1157,7 @@ end
 
 do -- Load script arguments (--script-args)
   local args = cnse.scriptargs or "";
+  print_debug(1, "Script Arguments seen from CLI: %s", args);
 
   -- Parse a string in 'str' at 'start'.
   local function parse_string (str, start)
@@ -1010,10 +1176,10 @@ do -- Load script arguments (--script-args)
       return "", eqj-1;
     else
       error("Value around '"..sub(str, start, start+10)..
-          "' is invalid or is unterminated by a valid seperator");
+          "' is invalid or is unterminated by a valid separator");
     end
   end
-  -- Takes 'str' at index 'start' and parses a table. 
+  -- Takes 'str' at index 'start' and parses a table.
   -- Returns the table and the place in the string it finished reading.
   local function parse_table (str, start)
     local _, j = find(str, "^%s*{", start);
@@ -1064,6 +1230,11 @@ do -- Load script arguments (--script-args)
     end
     nmap.registry.args = tmpargs
   end
+  if debugging() >= 2 then
+    local out = {}
+    rawget(stdnse, "pretty_printer")(nmap.registry.args, function (s) out[#out+1] = s end)
+    print_debug(2, "%s", concat(out))
+  end
 end
 
 -- Update Missing Script Database?
@@ -1079,7 +1250,7 @@ if script_database_update then
   script_database_path = path.."script.db";
   local db = assert(open(script_database_path, 'w'));
   local scripts = {};
-  for f in cnse.dir(path) do
+  for f in lfs.dir(path) do
     if match(f, '%.nse$') then
       scripts[#scripts+1] = path.."/"..f;
     end
@@ -1087,13 +1258,15 @@ if script_database_update then
   sort(scripts);
   for i, script in ipairs(scripts) do
     script = Script.new(script);
-    sort(script.categories);
-    db:write('Entry { filename = "', script.basename, '", ');
-    db:write('categories = {');
-    for j, category in ipairs(script.categories) do
-      db:write(' "', lower(category), '",');
+    if ( script ) then
+      sort(script.categories);
+      db:write('Entry { filename = "', script.basename, '", ');
+      db:write('categories = {');
+      for j, category in ipairs(script.categories) do
+        db:write(' "', lower(category), '",');
+      end
+      db:write(' } }\n');
     end
-    db:write(' } }\n');
   end
   db:close();
   log_write("stdout", "Script Database updated successfully.");
@@ -1135,13 +1308,13 @@ local function main (hosts, scantype)
   --  parent  A table that contains the parent thread table (it self).
   --  close_handlers
   --          A table that contains the thread destructor handlers.
-  --  info    A string that contains the script name and the thread 
+  --  info    A string that contains the script name and the thread
   --            debug information.
-  --  args    A table that contains the arguments passed to scripts, 
+  --  args    A table that contains the arguments passed to scripts,
   --            arguments can be host and port tables.
   --  env     A table that contains the global script environment:
   --            categories, description, author, license, nmap table,
-  --            action function, rule functions, SCRIPT_PATH, 
+  --            action function, rule functions, SCRIPT_PATH,
   --            SCRIPT_NAME, SCRIPT_TYPE (pre|host|port|post rule).
   --  identifier
   --          A string to identify the thread address.
@@ -1167,6 +1340,10 @@ local function main (hosts, scantype)
   elseif scantype == NSE_POST_SCAN then
     print_verbose(1, "Script Post-scanning.");
   end
+
+  -- These functions do not exist until we are executing action functions.
+  rawset(stdnse, "new_thread", nil)
+  rawset(stdnse, "base", nil)
 
   for runlevel, scripts in ipairs(runlevels) do
     -- This iterator is passed to the run function. It returns one new script

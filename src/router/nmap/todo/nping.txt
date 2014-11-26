@@ -41,7 +41,7 @@
 
   Questions, comments and patches should be sent to the Nmap development
   mailing list (nmap-dev). To suscribe:
-  <http://insecure.org/mailman/listinfo/nmap-dev>
+  <http://nmap.org/mailman/listinfo/dev>
 
 
 /*****************************************************************************
@@ -59,6 +59,23 @@
 * Consider using Nmap's proto-dependant payloads for UDP packets. According
   to David's tests, better results are obtained when sending UDP probes with a
   payload specific to the protocol.
+
+* Consider adding the possibility to see the RTT in the RECV line. Something 
+  similar to the way the traditional ping tool prints the RTT (time=XXX ms)
+
+    $ ping nmap.org
+    PING nmap.org (173.255.243.189) 56(84) bytes of data.
+    64 bytes from nmap.org (173.255.243.189): icmp_req=1 ttl=48 time=169 ms
+    64 bytes from nmap.org (173.255.243.189): icmp_req=2 ttl=48 time=177 ms
+    64 bytes from nmap.org (173.255.243.189): icmp_req=3 ttl=48 time=179 ms
+    ^C
+    --- nmap.org ping statistics ---
+    3 packets transmitted, 3 received, 0% packet loss, time 2000ms
+    rtt min/avg/max/mdev = 169.097/175.137/179.152/4.347 ms
+
+
+  This was requested by Jacek Wielemborek. More info: 
+  http://seclists.org/nmap-dev/2013/q3/533
 
 * Currently, Nping determines the maximum number of open descriptors 
   (in TCP connect and UDP unprivileged modes), from the value returned
@@ -167,6 +184,18 @@
    does the IP doesn't reverse resolve) is specified on the command
    line, should we use that version, or the official rDNS, if any?
  - Some more discussion on this topic on nmap-dev may be warranted.
+ 
+* Improve output for negative verbosity levels. Currently, one can't 
+  even tell how many hosts replied, just how many responses were 
+  received, which could be all from the same host. If there is only
+  one target, then the current behavior is fine. However, when pinging
+  more targets, we should be able to provide a better output; at least
+  how many hosts were alive. This was suggested by Dan Farmer.
+  
+* Consider adding more examples of setting fields/payloads to the man
+  page. This was suggested by Dan Farmer.
+  
+* Consider adding support for XML output.
  
 * From: David Lam <david@thedavid.net>, "Some general questions about 
   Nping/Ncat"

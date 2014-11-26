@@ -1,135 +1,97 @@
 TODO $Id: TODO 11866 2009-01-24 23:10:05Z fyodor $ -*-text-*-
 
-o Create CHANGELOG
+o We should improve the Windows build process for Ndiff, since it
+  works differently now that it is modularized.  To build the Nmap
+  6.45 release, we (as a temporary hack, not in SVN):
+  - Added 'ndiff' to zenmap/setup.py 'packages' list in
+    COMMON_SETUP_ARGS
+  - Created a zenmap/ndiff subdir and put ndiff.py there during build.
+    We should find a more elegant solution and check it into SVN.  The
+    fundamental issue is that the ndiff.exe we generate needs to be
+    able to access the new ndiff.py module.
+  Also, we need to make sure the -win32.zip Nmap distribution works
+  properly.
 
-o Make stable release candidate branch
+o Our "make uninstall" should uninstall ndiff if it was installed too.
+  We should probably do it in pretty much the same way we handle
+  Zenmap (configure.ac, Makefile.in, and ndiff/setup.pl)
 
-o Make at least one more test release from the candidate branch
+o We should probably update our included libpcap.  We currently
+  include version 1.2.1 (we upgraded to that in April 2012) while the
+  latest version on tcpdump.org is 1.5.2.  We make minor changes to
+  libpcap that we ship, and instructions for upgrading are in
+  libpcap/NMAP_MODIFICATIONS.
 
-o Write and send GSoC 2011 results email
+o Fix a segmentation fault in Ncat when scanned with the SSL NSE
+  scripts.  I was able to reproduce this on 2013-09-27 with latest SVN
+  by running:
+  Ncat: ncat -v -k --ssl -l localhost
+  Nmap: ./nmap --script-trace --script '+ssl*' localhost -p 31337
+  This was initially reported by Timo Juhani Lindfors on the Debian
+  bug tracker: http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=724580
 
-o Prepare release notes, web page, etc.
+o Adopt an issue tracking system for Nmap and related tools.  We
+  should probably look at our needs and options and then decide on and
+  either install it on our own infrastructure or use it hosted elsewhere.
+  - David notes that Trac seems to work well for Tor -- see
+  https://trac.torproject.org/projects/tor
+  - One thing which can be nice is being able to interact with the
+    system through email.  Like for bugs people file on the Nmap package
+    in Debian, I can just reply to the mail and it gets added in the tracker.
 
-o Make the release
+o When scanning your own IP from Windows, Nmap currently recognizes
+  the problem (can't do a raw scan like that on Windows) and skips the
+  SYN scan, leading to Nmap printing a bunch of ports in "unknown"
+  state at the end.  Nmap should probably act like unprivileged mode
+  in this case (e.g. do a connect scan, etc.).  See
+  http://seclists.org/nmap-dev/2013/q3/519
 
-==Things needed for next STABLE release go ABOVE THIS LINE==
+o Web: We should probably distribute RapidSSL intermediate certificate
+  on SecWiki so it is trusted even if browsers don't have that cert
+  cached.  Here's a page nothing the issue:
+  https://www.ssllabs.com/ssltest/analyze.html?d=secwiki.org
+  - We probably need to add an entry in apache conf after
+  SSLCertificateFile which looks something like:
+  SSLCertificateChainFile /etc/apache2/rapidssl.pem
 
-o We should probably remove the intl.dll mv command from
-  zenmap/install_scripts/windows/copy_and_compile.bat for the reasons
-  described at http://seclists.org/nmap-dev/2012/q1/430.
+o Make CONCURRENCY_LIMIT in nse_main.lua at least the min-parallelism.
+  Otherwise NSE is limited to 1000 socket-using threads even if you've
+  requested more.
 
-o [NSE] host.os should not just be a list of strings which can contain
-  human-readible strings and/or CPE info.  It should probably be list
-  of host.os tables which can contain:
-  host.os[].name <-- human readible name
-  host.os[].class[].vendor
-  host.os[].class[].osfamily
-  host.os[].class[].osgen
-  host.os[].class[].devicetype
-  host.os[].class[].cpe[] <-- array of cpe:/ strings
-  So host.os[1].class[1].cpe[1] is the first CPE entry for the first
-  classification of the first OS match for the target system.
-  The host.os entry docs/scripting.xml would have to be updated too.
+o INFRASTRUCTURE: Add IPv6 support to secwiki
+ - We probably just have to designate a new IPv6 address for it and
+   add it to Apache config.
 
-o [NPING] Nping should probably give you an error or warning when you
-  do: "nmap -p80 google.com" since it is ignoring the port specifier.
-  The user probably wants to add --tcp.
+o INFRASTRUCTURE: Consider updating our svn-mailer.py (and conf file)
+  to the latest official version.  First check whether there is a
+  later official version and whether it has material changes.  We're
+  currently using one from
+  subversion-1.4.2/tools/hook-scripts/mailer/mailer.py.
 
-o [NPING] At least on my (Fyodor) system, I get errors like "READ-PCAP
-  killed: Resource temporarily unavailable" with some commands.
-  Example:
-  # nping --tcp -p80 -c1 scanme.nmap.org
+o Investigate how we're ending up with OS fingerprints in nmap-os-db
+  with attribute names like W0 and W8 when according to the docs they
+  are only supposed to be W1 - W6 (and plain W).
+  http://nmap.org/book/osdetect-methods.html#osdetect-w.  See also
+  http://seclists.org/nmap-dev/2013/q4/68.  Need to determine how
+  these are getting into the file (from Nmap itself or our
+  integration/merge tools) and fix that then remove them from the
+  file.
 
-  Starting Nping 0.5.61TEST4 ( http://nmap.org/nping ) at 2012-02-16 17:52 PST
-  SENT (0.3307s) TCP 192.168.0.5:42005 > 74.207.244.221:80 S ttl=64 id=23109 iplen=40  seq=1015357225 win=1480
-  RCVD (0.3524s) TCP 74.207.244.221:80 > 192.168.0.5:42005 SA ttl=51 id=0 iplen=44  seq=3197025741 win=14600 <mss 1460>
-  nping_event_handler(): READ-PCAP killed: Resource temporarily unavailable
-  nping_event_handler(): TIMER killed: Resource temporarily unavailable
-  [...]
-
-o Migrate web.insecure.org to a RHEL-6 derived distro (probably CENTOS
-  6, since Linode doesn't currently offer ScientificLinux images).
-
-o Solve "spurious closed port detection" issue discovered by David:
-  http://seclists.org/nmap-dev/2012/q1/62
-
-o Revive the Nmap Public Source License project (need to find an open
-  source attorney to review it).  http://nmap.org/npsl/
-  o Also take close look at Mozilla's license modernization project:
-    http://mpl.mozilla.org/scope/
-
-o Nmap Network Scanning, 2nd Edition work [placeholder]
-
-o Update more web content in real time (or near real-time, or at least
-  on an automated basis rather than requiring manual checkin and
-  update).  In particular:
-  o NSEDoc generation
-  o SVN dir (http://nmap.org/svn/) should be removed and a redirect
-    added to https svn server.
-  o Maybe Nmap book building
-  o Maybe the generated files in nmap.org/data/
-
-o ssl-google-cert-catalog should not require that the user specify
-  ssl-cert in order to run.  Instead, they should probably both call a
-  library which obtains the certificate (and caches it so that it
-  doesn't happen twice if both scripts are run).  In general, we want
-  to avoid having any scripts tell the user "this script only works if
-  you specify this other script too".  If we really find we need that
-  functionality, we should add a "strong dependencies" feature so that
-  scripts can tell Nmap what other scripts they require.
-
-o Investigate increasing FD_SETSIZE on Windows to allow us to
-  multiplex more sockets.  See Henri's email:
-  http://seclists.org/nmap-dev/2012/q1/267
-
-o Investigate ways to limit Winpcap privileges so that only
-  administrative users or a certain accounts can sniff.  Maybe there
-  is a solution people use for Wireshark or does it always cause this
-  issue (allowing any user to sniff the network) when it is installed?
-  - CACE says they will add a feature to do this.  See this thread:
-  http://seclists.org/nmap-dev/2010/q3/826
-
-o Clean up the Nmap repo to remove some bloat we've allowed to creep
-  in.  Should do a more thorough search, but for now here are two
-  obvious candidates:
-  - /nmap/mswin32 should be moved outside of /nmap so that people just
-    wanting to review Nmap source code or compile on UNIX don't get
-    saddled with this.  Of course we'll then have to update the
-    Windows build config/scripts and also the Windows build instructions
-    in install chapter to match the change.  This may also enable us
-    to check in GTK, Glib, etc. so that building on Windows doesn't
-    require installing so many other packages first.
-  - [done] Remove the 5MB of XSL in nping/docs/xsl
-
-o Maybe we should add an analysis or reporting or intelligence (or
-  different name) for our NSE scripts which don't send any packets, but
-  simply analyze Nmap's existing data and report when useful.
-
-o We should add fields to the service submitter
-  (http://insecure.org/cgi-bin/submit.cgi?new-service) for the
-  application name and version.
-
-o Make sure we update everywhere relevant (e.g. refguide, etc.) to
-  note the addition in Nmap of the Liblinear library for large linear
-  classification (http://www.csie.ntu.edu.tw/~cjlin/liblinear/). It
-  uses a three-clause BSD license:
-  http://www.csie.ntu.edu.tw/~cjlin/liblinear/COPYRIGHT
-  - David has added it to 3rd-party-licenses.txt
-
-o Change the interface of nmap.send_ip to take an explicit destination
-  address. It currently extracts the destination from the packet buffer,
-  which does not have enough information to reconstruct link-local
-  addresses. See r26621 for a similar change that was made to Nmap 
-  internals.
-
-o Install some sort of svnview webapp for svn.nmap.org which is
-  wrapped in Insecure chrome, allows people to click link for direct
-  file download, probably shows revision history and allows users to
-  see older versions, etc.
-
-o Process Nmap survey and send out results [Fyodor]
-
-o Add many more CPE entries to OS and version detection databases
+o Add IPv6 subnet/pattern support like we offer for IPv4.
+  o Obviously we can't go scanning a /48 in IPv6, but small subnets do
+    make sense in some cases.  For example, the VPS hosting company
+    Linode assigns only one IPv6 address per user (unless they pay)
+    and you can find many Linode machines by scanning certain /112's.
+    And patterns might be useful because people assigned /64's might
+    still put their machines at ::1, ::2, etc.
+     o David says: "We need to design a new way to iterate over host
+       specifications (i.e., different than nexthost). Because the new
+       host discovery code is sometimes going to want whole netblocks
+       and sometimes individual hosts. So I'm thinking of a two-stage
+       model, where the iterator will received (parsed) specifications
+       like AAAA::1/48, and then it can decide whether to further
+       iterate that into individual addresses, or pass the block off
+       to some specialized discovery routine."
 
 o Move advanced IPv6 host discovery features from NSE into core Nmap.
   We'll probably add the functionality of
@@ -139,12 +101,171 @@ o Move advanced IPv6 host discovery features from NSE into core Nmap.
     target specification and sees that it is local so can be multicast
     pinged.
 
-o We should document Ron's sample script
-  (http://nmap.org/svn/docs/sample-script.nse) in docs/scripting.xml so
-  that new script writers know about it.
+o We should figure out why (at least with Nping) raw ethernet frame
+  sends seem to be taking significantly longer than raw socket sends
+  (e.g. using --send-ip or the OS-provided ping utility).  This has
+  been reproduced on Linux and Windows.  Here's a thread:
+  http://seclists.org/nmap-dev/2012/q4/424
+  o Note that David and I tried to reproduce this on his machine and
+  on 'web' and 'research' machines and could not reproduce.  Still
+  happens with Fyodor's machine connected with WiFi.  Fyodor should
+  test on the same machine using wired and see if that changes anything.
 
-o Review NSE-based port scanning and RST idle scan.
-  http://seclists.org/nmap-dev/2011/q2/307.
+o Consider a continuous integration system for automating tests of
+  Nmap on various platforms to detect and resolve issues more quickly.
+  Things to look at include the Supercell cluster (provides VMs of
+  various hardware/software for testing) and projects like Buildbot,
+  Travis, Hudson, Jenkins, etc.
+
+o When Ncat is compiled without OpenSSL, we should still accept the
+  --ssl argument and just give an error message noting that SSL was not
+  compiled in.  This reduces confusion for users
+  (e.g. http://seclists.org/nmap-dev/2013/q3/579)
+
+o Our http library should allow the client to specify a max size in
+  advance and should probably enforce some sort of maximum by default
+  (unless turned off by the script).  That way sites can't DoS Nmap by
+  feeding enormous files.
+
+o NSE digest auth should use the more robust parsing from
+  http.parse_www_authenticate as described at
+  http://seclists.org/nmap-dev/2012/q3/868
+ 
+o Treat the input to the escape function in xml.cc as UTF-8, not just
+  ASCII. Good UTF-8 should survive into the output; i.e., "\xe2\x98\xbb"
+  should become "\xe2\x98\xbb" in the output, not "&#xe2;&#x98;&#xbb;".
+  If the input happens not to be UTF-8, (like the file name in
+  http://seclists.org/nmap-dev/2013/q1/180), I suppose we can
+  individually encode each byte of each invalid sequence: "\xba\xda\xbf"
+  becomes "&#xba;&#xda;&#xbf;". Can probably do this with simple
+  byte->rune and rune->byte functions as in
+  http://plan9.bell-labs.com/sys/doc/utf.html.
+
+o We should probably redo the Nmap header (e.g. on http://nmap.org) to
+  make it more attractive.  Or, at a minimum we should update the
+  screenshots and think about which links we really need (some of those
+  pages aren't really updated any more).
+
+o Nmap Network Scanning, 2nd Edition work [placeholder]
+
+o Investigate ways to limit Winpcap privileges so that only
+  administrative users or a certain accounts can sniff.  Maybe there
+  is a solution people use for Wireshark or does it always cause this
+  issue (allowing any user to sniff the network) when it is installed?
+  - CACE says they will add a feature to do this.  See this thread:
+  http://seclists.org/nmap-dev/2010/q3/826 [ This might be a good one
+  for Sean or James if they feel that they have the low-level Windows
+  driver programming experience.  The idea is to produce a patch that
+  we can then try to convince the WinPcap folks to apply ]
+
+o Consider using a binary decision diagram for --exclude list to make
+  it more efficient for large exclude lists.  See
+  http://seclists.org/nmap-dev/2012/q4/420.
+
+o Test a hierarchical classifier for IPv6 OS detection. Our classifier
+  currently treats, for example, some localhost Linux fingerprints as
+  separate classes from remote Linux fingerprints, simply because we
+  lose precision if we lump them together (for example TCP window size
+  differs across certain Linux versions when measured remotely, but
+  not on localhost). This leads to the linear classifier having to use
+  narrow margins between fingerprints that are really very similar. I
+  want to try a tree of classification where each non-leaf node is a
+  separately trained classifier and each leaf node is a final
+  classification. The first layer of the hierarchy would be something
+  like
+      (linux windows solaris aix ... other)
+  where "linux" would contain *all* the Linux fingerprints in a single
+  class. Lower levels would be like
+      (linux-2.4 linux-2.6)
+      (windows-xp windows-vista windows-7)
+  Lower levels will include only those fingerprints in their parent
+  class, so we don't even think about Windows when classifying
+  Linux. Probably three or four levels will be sufficient. There may
+  be a principled or automatic way to build this hierarchy, but I
+  suspect playing it by ear will be sufficient. Talk to David for more
+  of his thinking on this topic.
+
+o Test Ncat's TLS hostname validation using the TLSPretense tool.
+  https://www.isecpartners.com/news-events/news/2012/october/the-lurking-menace-of-broken-tls-validation.aspx
+
+o [INFRASTRUCTURE] Improve our main web server http configuration to
+  better handle high load situations and DoS attacks.  As part of
+  this, we may have to raise the max client limits.  But then there is
+  a risk of running out of RAM, which can be even worse.  So we need
+  to figure out a good balance.
+
+o Maybe we should rename dns-brute to dns-brute-enum since it is so different
+  from our traditional brute force authentication cracking -brute scripts?
+
+o Investigate WinPcap support for NDIS 6.
+  - Preferably the CACE/WinPcap folks will do this
+  - We need to retain support for Windows back to Windows XP SP3 --
+    I'm not sure what Windows releases support NDIS 6 or what the
+    backward compatability is like.
+
+o Consider re-architecting Nmap to have more of a scanning pipeline
+approach rather than fixed sets of hosts which start and finish one
+phase and then move into the next in parallel.  This could potentially
+allow us to add hosts one by one to a phase as other hosts finish that
+phase and, ideally, the phases could run in parallel too.
+
+o NSE WORK (note that this is mostly infrastructure because script
+  ideas are generally put on the script ideas page instead:
+  https://secwiki.org/w/Nmap_Script_Ideas)
+  o Review NSE-based port scanning and RST idle scan.
+    http://seclists.org/nmap-dev/2011/q2/307. [Henri and Hani?]
+
+o Revive the Nmap Public Source License project (need to find an open
+  source attorney to review it).  http://nmap.org/npsl/
+  o Also take close look at Mozilla's license modernization project:
+    http://mpl.mozilla.org/scope/
+
+o Implement some improvements to dns-ip6-arpa.nse, as describe at
+  http://seclists.org/nmap-dev/2012/q2/45.
+  - Also consider a move to "fire and forget" logic.  Just blast out
+  the queries that we know we have to make, and then read any replies
+  that may happen to come back. (but still try not to introduce
+  inaccuracy (missed hosts) by flooding the network.
+
+o Consider making a version of Nmap for Apple's official Mac App
+  Store.  A particular concern with the downloadable Mac version of
+  Nmap is that Apple's new "Mountain Lion" release may require users
+  to jump through hoops to install unsigned non-app-store content per
+  their "Gatekeeper" "feature".  Though maybe signing the app will be
+  enough.  There may also be an issue with the "Sandboxing"
+  requirement for App Store apps starting June 2012.  Will Nmap be
+  able to request all the permissions it needs?  Ignoring the
+  technical challenges for the moment, what will users prefer?
+
+o Migrate web.insecure.org to a RHEL-6 derived distro (probably CENTOS
+  6, since Linode doesn't currently offer ScientificLinux images).
+  o Actually, if we can wait until "second half of 2013", we might be
+    able to jump straight to RHEL 7.  And RHEL 5 support looks like it
+    will go on for many more years for critical/security patches.
+  o Maybe start with svn server, since we've had reports of our
+    current one giving people unexpected password prompts.  There is a
+    thread about that at http://seclists.org/nmap-dev/2012/q2/17
+    o UPDATE on this - adding read-only rights (rather than no rights)
+      to the root of the svn repo seems to have solved this problem.
+
+o Maybe we should add an analysis or reporting or intelligence (or
+  different name) for our NSE scripts which don't send any packets, but
+  simply analyze Nmap's existing data and report when useful.
+
+o Install some sort of svnview webapp for svn.nmap.org which is
+  wrapped in Insecure chrome, allows people to click link for direct
+  file download, probably shows revision history and allows users to
+  see older versions, etc.
+
+o Process Nmap survey and send out results [Fyodor]
+
+o Nping (we think) will stop after 2^32 rounds even when "-c 0" is
+  given.  We should probably make this a 64-bit integrer so that "-c
+  0" will go essentially forever and so that users can give values
+  higher than 4 billion.
+
+o Add CPE entries to the service detection DB entries which don't yet
+  have them.
 
 o [UPDATER] Create a way to send an error message to the user
   (e.g. "your account has expired" or "updates denied due to
@@ -165,45 +286,6 @@ o [UPDATER] When it runs, it should give user more status about what
   (e.g. /home/fyodor/.nmap/updates/5.61TEST4).  And if there are no
   updates available, it should say so.
 
-o Raw scans from Mac OS X seems not to retrieve the MAC address or do
-  ARP ping, except when scanning the router on an interface. For
-  example, scanning 192.168.0.1-5 sends ARP pings to 192.168.0.1, but
-  the normal four-probe combination to the other addresses. The "MAC
-  address:" line appears in the output for .1 but not for the others.
-
-o To avoid Nmap memory usage bloat, find a way for NSE scripts to
-  store information about a host which expires after Nmap is done
-  scanning that host (e.g. when the hostgroup containing that host is
-  finished).  Right now scripts store such information in the registry
-  and it persists forever.  For example, a web spidering
-  script/library could store information about the web structure and
-  even page contents so that other scripts can use that information
-  without spidering the target again, but ensuring that the memory
-  will be freed after the hostgroup finishes so there is room to store
-  the web information for the next group of systems.  One idea would
-  be to make a host.registry member which contains a registry specific
-  to a specific target.  Scripts could store temporary information
-  there, but still use the global registry for information which must
-  persist (e.g. to be used by postrules, etc.)
-
-o Add CPE support to IPv6 OS detection
-
-o Add IPv6 subnet/pattern support like we offer for IPv4.
- o Obviously we can't go scanning a /48 in IPv6, but small subnets do
- make sense in some cases.  For example, the VPS hosting company
- Linode assigns only one IPv6 address per user (unless they pay) and
- you can find many Linode machines by scanning certain /112's.  And
- patterns might be useful because people assigned /64's might still
- put their machines at ::1, ::2, etc.
- o David says: "We need to design a new way to iterate over host
-   specifications (i.e., different than nexthost). Because the new
-   host discovery code is sometimes going to want whole netblocks and
-   sometimes individual hosts. So I'm thinking of a two-stage model,
-   where the iterator will received (parsed) specifications like
-   AAAA::1/48, and then it can decide whether to further iterate that
-   into individual addresses, or pass the block off to some
-   specialized discovery routine."
-
 o Investigate report of Nmap ARP discovery using the wrong target MAC
   address field in ARP requests (it is correct in the ethernet frame
   itself).  See this thread: http://seclists.org/nmap-dev/2011/q3/547
@@ -211,29 +293,16 @@ o Investigate report of Nmap ARP discovery using the wrong target MAC
 o Nscan work [placeholder]
  - Hosted Nmap system
 
-o Nmap should have a better way to handle XML script output.
- o We currently just stick the current script output text into an XML tag.
- o Daniel Miller is working on an implementation:
-   http://seclists.org/nmap-dev/2011/q2/263.
-
-o Finish sv-tidy - a program to canonicalize and tidy nmap-service-probes.
-  o Check for the same reference (like $1) being used in unrelated fields
-    (where related fields are the pairs (p, cpe:), (v, cpe:), (i, cpe:),
-    (o, cpe:)).
-    For example if we have v/$1/ h/$1/ it is a bug.
-  o Check for e.g. i/French/ without :fr in cpe:/a, and vice versa.
-  o Check a list of common product names that should only appear in p//,
-    not in i//. We still have entries that are like this:
-      p/Foobar 2000 ADSL router/ i/micro_httpd web server/
-    that should rather be written this way:
-      p/micro_httpd/ i/Foobar 2000 ADSL router/
-  o Warn when a match template contains '.' but not the 's' flag.
-    (Maybe only when there are non-ASCII literal characters in the
-    template.)
-  o [DONE] Check that used references start at 1 and are
-    contiguous. If $1 and $3 are used but not $2, it's probably a bug.
-    Maybe you can even find out how many there should be by inspecting
-    the regular expression.
+o Add CPE entries to OS fingerpting DB entries which still lack them.
+  This is a gradual process since almost all of the missing ones
+  aren't in the official CPE dictionary either and it can take a lot
+  of research to decide on an appropriate entry.  Milestones so far:
+  - 3/21/12: We have entries for 2,601 of 3,572 fingerprints (971
+    missing; 73% coverage)
+  - 11/5/12: We have entries for 3,285 of 3,907 fingerpritns (622
+    missing; 84% coverage)
+  - 11/12/12: We have entries for 3,558 of 3,946 fingerprints (388
+    missing; 90% coverage).
 
 o [Zenmap] should actually parse and use script results. See
    http://seclists.org/nmap-dev/2010/q1/1108
@@ -354,10 +423,22 @@ o Create new default username list:
     and also a general list which we obtain from spidering from
     emails, etc.
 
-o Add IPv6 support to Nping, including raw packet mode (hopefully
-  sharing as much code with Nmap as possible, though Nping's packet code
-  is a bit different), and also including echo mode server and client
-  support.
+o Improve Nsock proxies system
+ - Add SSL support
+ - Add proxy authentication
+ - Switch Ncat to using Nsock proxy system rather than it's own
+   built-in support.
+ - Move the code which is shared with ncat to nbase (URL parsing code,
+   for instance).
+ - Add socks4a/socks5 support. This requires to figure out how to
+   enter the nsock proxy code w/o having the target IP address. No huge
+   technical blocker there though, only design choices to make.
+ - Nping could potentially use it as well (could be useful for
+   measuring latency and reliability of a given proxy chain, for
+   example).
+
+ - Add proxy support to connect() scan.  This would mean moving
+   connect scan to nsock.
 
 o [NCAT] Send one line at a time when --delay is in effect. This is
   cumbersome to do until Nsock supports buffered reading.
@@ -369,6 +450,9 @@ o [NCAT] Drop privileges once it has started up, bound the ports it
   needs to, etc.
 
 o [NCAT] Work as a SOCKS4a/SOCKSv5 proxy.
+
+o [NCAT] Resolve names through the proxy when possible.
+  http://seclists.org/nmap-dev/2012/q2/768
 
 o [NSE] Script writing contest (something to think about)
 
@@ -385,8 +469,6 @@ o Move Zenmap man page from nmap/docs/ to nmap/zenmap/docs to match
  o Don't break the system for posting html to web site. 
  o Consider standardizing names for nping and ncrack man pages as well.
  [Fyodor]
-
-o [Web] Add a page with the Nmap related videos we do have already
 
 o [NSE] MSRPC - Improve domain support all around -- in particular,
   let the user give the domain in the format DOMAIN\username or
@@ -568,15 +650,6 @@ o [NSE] Consider whether we should include some sort of NSE debugger.  Or we
   in error.  For some inspiration/ideas, look at Diman's NSE
   debugger (http://seclists.org/nmap-dev/2008/q1/0228.html).
 
-o [NSE] We may want to consider a better exception handling method --
-  one which doesn't require wrapping every I/O line in its own try
-  function call.  David says "Lua has an internal "exception handling"
-  mechanism based on a function called pcall, which is implemented
-  with setjmp/longjmp.  You can wrap a function call in it and the
-  function will return there whenever there's an unhandled error.
-  Something based on that would be better [than the current system], I
-  think."
-
 o [NSE] Support routing http requests through proxies.
 
 o Consider offering a way to link Winpcap DLLs so that they start the
@@ -669,6 +742,8 @@ o Nmaprc-related - Create a system to store Nmap defaults/preferences
     o should be a way to specify your own .nmaprc
     o Maybe lets you add a directory and template for saving all
      scans. 
+    o Maybe let you define "scan profiles" like is done with Zenmap.
+      There would then be a command-line option to select the profile used.
 
 o Search for nmap on google news, on google web, and add appropriate
   links to press page and the like.
@@ -722,6 +797,511 @@ o Nmap / Nmap-hackers FAQ
 o random tip database
 
 DONE:
+
+o We should update our OpenSSL Windows binaries from version 1.0.1c to
+  something newer, like 1.01f
+
+o Web: figure out why autogeneration of nmap.org/nsedoc/ doesn't seem
+  to be working.  I think we had a cron job which was supposed to be
+  doing it.
+  - hb system was still running crontab files from old web vm in its
+    rc.local.  Fixed.
+
+o Add a W3C XML Schema Definition (XSD) for Nmap XML output. Keeping the DTD
+  around is also helpful, but XSD is widely supported and could help improve
+  support for Nmap XML in other tools.
+  o We're going to discuss this on mailing list before deciding
+    whether to 1) switch from DTD to XSD, 2) stick with just a DTD, or
+    3) try to support both.
+
+o Update copyright year to 2013 in the Nmap copyright header files
+
+o Update CHANGELOG for new release
+
+o New Nmap Release
+
+o Nping in ICMP mode (default) must not be checking the icmp IDs or
+  returned packets or something, because if I have two separate 'nping
+  scanme.nmap.org' running at the same time, each nping sees the replies
+  from the other nping (as well as its own) and it screws up the timing
+  stats too.
+
+o Process Nmap OS service detection submissions
+ - New fingerprints + corrections
+ - Last done November 2012: http://seclists.org/nmap-dev/2012/q4/222
+
+o Process Nmap IPv6 OS detection submissions
+ - New fingerprints + corrections
+
+o Process Nmap IPv4 OS detection submissions
+ - New fingerprints + corrections
+ - Last done in November 2012: http://seclists.org/nmap-dev/2012/q4/221
+
+o Make Ncat reset the signal handler for SIGPIPE to SIG_DFL before
+  execing a program with --exec and friends. A "broken pipe" error in
+  a subprocess should kill the subprocess. Lack of default SIGPIPE
+  handling is what prevents a trivial Lua chargen script--it loops
+  forever after the socket disconnects because none of its writes
+  fail. Cf. http://www.chiark.greenend.org.uk/ucgi/~cjwatson/blosxom/2009-07-02-python-sigpipe.html.
+
+o [Nping] In '-q' mode, Nping should keep the line giving the min/max/avg rtt
+  times.  That way people can avoid seeing each individual packet but
+  still see the stats which are similar to what normal ping gives
+  them.
+
+o [Nping] Remove the lines starting with 'Tx time' and 'Rx time' by
+  default (and of course quieter modes), but leave them for cases at
+  least one level of -v.
+
+o Nping/Nmap should probably show ICMP ping sequence values by default
+  in packet trace mode.  This would be nice for Nping since that is
+  the default ping it sends and is the main way to distinguish the
+  packets since the IPIDs are the same.
+
+o Complete migration away from Syn colocated machine
+ - [Done - actually was already on web] Move submission CGIs to web
+   - Make sure notification still works
+ - [Done] Mailman
+   - [Done] Install mailman software on web, including CGIs
+   - Migrate mailing lists to web
+
+o Remove the -q/FAKE_ARGV stuff from Nmap, since I don't think people
+  use that any more.
+
+o We should document Ron's sample script
+  (http://nmap.org/svn/docs/sample-script.nse) in docs/scripting.xml
+  so that new script writers know about it.
+  - Decided to remove it instead.  Justification: "It is a great idea,
+    but nobody seems to use it (for example, there were no replies to
+    usage inquiry here: http://seclists.org/nmap-dev/2012/q4/379).  I
+    think there are two main uses for this script, both of which are
+    being served by other resources.  1) as a template for new
+    scripts.  Users instead seem to pick a script that is most similar
+    to the one they want to write and start with that.  2) As a way to
+    learn more about the format of an NSE script.  Users instead seem
+    to use our documentation
+    (http://nmap.org/book/nse-script-format.html).  So I'm deleting it
+    for now.  But if folks miss it, they're welcome and encouraged to
+    say so on dev@nmap.org and we could consider putting it back
+    and/or improving it"
+
+o Upgrade Mac Mini to Mac OS X 10.8 (Mountain Lion) and test building
+  as well as testing usage of our normal builds (which we currently
+  build on 10.6).
+
+o Make a branch from the 6.20BETA1 release (r30266) for new stable
+  release, apply any important bugfix patches from the meantime and then
+  release it after Thanksgiving as new Stable release.
+
+o [NSE] We may want to consider a better exception handling method --
+  one which doesn't require wrapping every I/O line in its own try
+  function call.  David says "Lua has an internal "exception handling"
+  mechanism based on a function called pcall, which is implemented
+  with setjmp/longjmp.  You can wrap a function call in it and the
+  function will return there whenever there's an unhandled error.
+  Something based on that would be better [than the current system], I
+  think."
+  - This one is obsolete as the Lua 5.2 now lets you do a Lua yield
+    across C function calls.
+
+o Add IPv6 support to Nping, including raw packet mode (hopefully
+  sharing as much code with Nmap as possible, though Nping's packet code
+  is a bit different), and also including echo mode server and client
+  support.
+
+o Make sure we update everywhere relevant (e.g. refguide, etc.) to
+  note the addition in Nmap of the Liblinear library for large linear
+  classification (http://www.csie.ntu.edu.tw/~cjlin/liblinear/). It
+  uses a three-clause BSD license:
+  http://www.csie.ntu.edu.tw/~cjlin/liblinear/COPYRIGHT
+  - David has added it to 3rd-party-licenses.txt
+  - Fyodor moved it into the refguide
+
+o Consider including OpenSSL in our Nmap tarball
+ - Need to check the size, etc.
+ - OK, we're counting this as done because we took all the Win
+   binaries out of the tarball and put them in an nmap-mswin32-aux svn
+   directory which users check out to compile Nmap on Windows, and
+   OpenSSL is included in this.
+
+o Update the Nmap CHANGELOG for latest improvements
+
+o Do an Nmap dev release.  Last release was Nmap 6.01 June 22.
+  o Update Nmap version number and auto-generated files for release.
+
+o Process latest Nmap OS submissions and corrections (IPv4 and IPv6).
+  Last done (for IPv4 anyway) in February 2012.
+
+o Review and consider integrating Tomas Hozza's UNIX-domain socket
+  support patch for nsock/ncat: http://seclists.org/nmap-dev/2012/q4/24.
+
+o Improve CPE coverage in OS detection DB from 84% to 90% (see CPE
+  entry a ways down for more on this).
+
+o Process latest service detection submissions.  They were last done
+  in February 2012.
+
+o Integrate Henri's new kqueue/poll nsock-engines support.
+
+o If it is trivial to add, it would be nice if the "New VA Module
+  Alert Service" also gave the Author field for NSE scripts so everyone
+  knows which hero(es) wrote it.
+
+o Clean up the Nmap repo to remove some bloat we've allowed to creep
+  in.  Should do a more thorough search, but for now here are two
+  obvious candidates:
+  - Create publicly readable /nmap-mswin32-aux in svn
+  - Files not needed for compiling Nmap itself (e.g. only needed for
+    creating or including in Nmap packages), particularly including the
+    vcredist files, should be moved to new /nmap-mswin32-aux
+  - The /nmap-mswin32-aux files won't be included in Nmap tarballs
+    either
+  - Add the gtk, glib, etc. Windows dependencies to /nmap-mswin32-aux
+    so users don't have to all install those in order to compile Zenmap
+    and make Nmap packages.
+  - move the nmap-private-dev/mswin32 stuff into /nmap-mswin32-aux
+  - Update nmap-install.xml for new changes.  Such as noting need to
+    checkout this new directory for building packages, removing the
+    need to install your own gtk, glib, etc.
+  - [done] Remove the 5MB of XSL in nping/docs/xsl
+
+o Update our mswin32/OpenSSL to newest version (previous update was
+  September 2010 to 1.0.0a).
+
+o Nmap should have a better way to handle XML script output.
+ o done: http://nmap.org/book/nse-api.html#nse-structured-output
+ o We currently just stick the current script output text into an XML tag.
+ o Daniel Miller is working on an implementation:
+   https://secwiki.org/w/Nmap/Structured_Script_Output
+
+o Update more web content in real time (or near real-time, or at least
+  on an automated basis rather than requiring manual checkin and
+  update).  In particular:
+  o NSEDoc generation
+  o [done] SVN dir (http://nmap.org/svn/) should be removed and a redirect
+    added to https svn server.
+  o Maybe Nmap book building
+  o Maybe the generated files in nmap.org/data/
+
+o Update web.insecure.org so that rather than requiring us to build
+  nsedoc on other machines, check it into svn, and then update svn on
+  web, it is done by a script on web which could be run through cron
+  (and potentially from a simple svn commit hook) to build them on the
+  web server directly.
+  - There are other similar things we might want to automate later,
+    such as book rebuilding when the XML files are changed.
+
+o Investigate/fix potential routing-related issue.  See emails from
+  Djalal and others: http://seclists.org/nmap-dev/2012/q3/116,
+  http://seclists.org/nmap-dev/2012/q3/4,
+  http://seclists.org/nmap-dev/2012/q2/449
+
+o Even without the --osscan-guess flag, Nmap should show the closest
+  matches (if they pass our threshold) in the XML output.  We omit
+  them from the normal output in large part to encourage people to
+  submit fingerprints, but that argument doesn't apply so well to XML
+  output users.  Normal output users who really want to see the Nmap
+  guesses could still use --osscan-guess as before.
+
+o Change the interface of nmap.ip_send to take an explicit
+  destination address. It currently extracts the destination from
+  the packet buffer, which does not have enough information to
+  reconstruct link-local addresses. See r26621 for a similar change
+  that was made to Nmap internals.
+
+o [Zenmap] Install higher-resolution icons (at least 64x64 and maybe
+  up to 512x512). Here is a screenshot of the current 48x48 icon on
+  GNOME 3: http://seclists.org/nmap-dev/2012/q2/395.
+  o Sean did Windows and Linux icons, and David did the Mac
+    one.
+
+
+o [NPING] At least on my (Fyodor) system, I get errors like "READ-PCAP
+  killed: Resource temporarily unavailable" with some commands.
+  Example:
+  # nping --tcp -p80 -c1 scanme.nmap.org
+
+  Starting Nping 0.5.61TEST4 ( http://nmap.org/nping ) at 2012-02-16 17:52 PST
+  SENT (0.3307s) TCP 192.168.0.5:42005 > 74.207.244.221:80 S ttl=64 id=23109 iplen=40  seq=1015357225 win=1480
+  RCVD (0.3524s) TCP 74.207.244.221:80 > 192.168.0.5:42005 SA ttl=51 id=0 iplen=44  seq=3197025741 win=14600 <mss 1460>
+  nping_event_handler(): READ-PCAP killed: Resource temporarily unavailable
+  nping_event_handler(): TIMER killed: Resource temporarily unavailable
+  [...]
+
+o [NPING] Nping should probably give you an error or warning when you
+  do: "nping -p80 google.com" since it is ignoring the port specifier.
+  The user probably wants to add --tcp.
+
+o Investigate why http pipelining so often doesn't work in NSE
+  scripts, and often NSE ends up reverting to one request at a time.
+  Scripts may not be using it correctly, and also we wish it were more
+  transparent and there wasn't this big API divide between pipeline
+  and non-pipeline.  We just want it send requests as fast as it can,
+  and get a callback when there's a response.  Maybe the http library
+  buffers them, or pipelines them, or blocks the http.get call until
+  there's more room.  It just seems to always degenerate to 1 request
+  at a time.  For example:
+  sudo nmap --script=http-enum bamsoftware.com -p80 -d2
+  quickly (within a few seconds) gives:
+    NSE: http-enum: Searching for entries under path '' (change with 'http-enum.basepath' argument)
+    NSE: Total number of pipelined requests: 2081
+    NSE: Number of requests allowed by pipeline: 100
+    NSE: Received only 41 of 100 expected responses.
+    Decreasing max pipelined requests to 41.
+    NSE: Received only 1 of 41 expected responses.
+    Decreasing max pipelined requests to 1.
+  100 may a wildly high number of requests to attempt to pipeline.
+  And then something else probably goes wrong after it decides 41 is okay.
+  - Related: Does caching work with pipeleined requests?  We should
+    make sure it does.
+ [ OK, the main part of this todo item is done.  Though there is a
+  patch pending from Piotr which changes how pipelining works that
+  is worth considering.  We did fix the underlying pipelining bug, but
+  (just as with most browsers), it isn't enabled by default.  Also, it
+  doesn't support caching. See
+  http://seclists.org/nmap-dev/2012/q3/616. ]
+
+o Make Nmap from a clean start (e.g. after make clean or whatever, so
+  it compiles everything) and research all the compile warnings to see
+  which ones can be fixed/removed.  Of course caution is needed to
+  make sure we don't cause problems.  For example, an unused variable
+  on one platform might not be unused on another, so we can't just
+  remove it.  May have to surround it by ifdefs though.
+
+o Solve "spurious closed port detection" issue discovered by David:
+  http://seclists.org/nmap-dev/2012/q1/62 .  So we need to figure out
+  what is going on here and then how to fix it.  Note that this
+  doesn't seem to happen when you do ICMP host discovery first (-PE),
+  so it probably relates to the ACK packet that Nmap sends to port 80
+  on the target by default.
+
+o Add real headers for more protocol types in -6 -sO scan. Dario
+  Ciccarone provided some packet captures for
+      0x00: hop-by-hop
+      0x2b: routing
+      0x2c: fragment
+      0x3c: destination
+  (http://seclists.org/nmap-dev/2011/q2/1003). We also have examples
+   of crafting some of these in FPEngine.cc. [Sean and David]
+
+
+o Investigate increasing FD_SETSIZE on Windows to allow us to
+  multiplex more sockets.  See Henri's email:
+  http://seclists.org/nmap-dev/2012/q1/267 
+  [James Rogers did some investigative work on this in July 2012, but
+  we weren't able to find a great solution.  Maybe we should
+  investigate this more in the future, and also investigate other
+  Windows socket APIs such as completion ports. ]
+
+o Finish sv-tidy - a program to canonicalize and tidy nmap-service-probes.
+    o Check for the same reference (like $1) being used in unrelated fields
+      (where related fields are the pairs (p, cpe:), (v, cpe:), (i, cpe:),
+      (o, cpe:)).
+      For example if we have v/$1/ h/$1/ it is a bug.
+    o Check a list of common product names that should only appear in p//,
+      not in i//. We still have entries that are like this:
+        p/Foobar 2000 ADSL router/ i/micro_httpd web server/
+      that should rather be written this way:
+        p/micro_httpd/ i/Foobar 2000 ADSL router/
+    o [Done] Check for e.g. i/French/ without :fr in cpe:/a, and vice versa.
+    [Sean and David?]
+
+o Remove Nmap's --log-errors feature and make its behavior the
+  default.  A few notes:
+  - Nmap should just ignore --log-errors if it sees it
+  - Remember to remove it from the documentation
+
+o We should probably sort script output (for port output and host
+  output) by script name or something so that it comes in a
+  deterministic order.  If the same three scripts produce output in
+  two different scans, they should be listed in the same order.  Right
+  now the order can vary, at least for host output.
+  [Sean]
+
+o Add a function such as --disable-arp-ping which prevents hosts from
+  being automatically detected as 'up' just because they responded to
+  ARP.  Instead, Nmap will actually send the requested host discovery
+  probes (ICMP ping packets, SYN packets, etc.) and only mark the host
+  as up if it responds on an IP level.  This is how machines are
+  already treated if they're not on the local network (e.g. if ARP
+  discovery is unavailable).  This technique is a bit slower and more
+  likely to miss hosts (e.g. if they're heavily firewalled) than ARP
+  discovery, but the option is needed to handle local networks which use
+  proxy ARP, which would otherwise cause all IPs to appear to be up.
+
+o We should add fields to the service submitter [James is working on this]
+  (http://insecure.org/cgi-bin/submit.cgi?new-service) for the
+  application name and version.
+  o We also need to ensure all fields of /cgi-bin/submit.cgi have
+    proper escapting to prevent possible reflected XSS attacks
+    reported by Maxim Rupp (@mmrupp).  The risk is low, if any, since
+    we don't give authentication cookies for bad guys to steal, but is
+    still better to properly escape.
+    o If we get a chance, would be interesting to run our XSS-testing
+      NSE scripts against this and see if they locate the problems.
+ o Also, need to change the font family in there from "Lucida Grand"
+   to "Lucida Grande"?  Just a typo.  And fix "WIkipedai".  We should
+   just spell-check all the output
+
+o Make Nmap 6.01 release containing (among possibly other little
+fixes)
+ - Python upgrade 
+ - [done] Zenmap 10.7 hang fix (done in trunk)
+ - [done] Zenmap crash when filtering hosts (done in trunk)
+ - [done] get_srcaddr fix (done in trunk)
+
+o Upgrade Python on build machines to try and resolve Python 2.7
+  security warning (it doesn't affect us, but can worry users).  See
+  this thread: http://seclists.org/nmap-dev/2012/q2/621
+
+o Fix get_srcaddr error happening on Windows XP
+
+o [Web] Add a page with the Nmap related videos we do have already
+ - We have a page on Secwiki now: https://secwiki.org/w/Nmap/Presentations
+
+o Zenmap hang on OS X 10.7
+
+o For many years, the Nmap man page and online documentation has had
+  an "Inappropriate Usage" section which notes that "Nmap should never
+  be installed with special privileges (e.g. suid root) for security
+  reasons".  And of course Nmap's official installer would never
+  install Nmap that way.  While one would thinks that would be enough,
+  we might want to go even further and have Nmap detect when it is run
+  suid and print a security warning.
+
+o Prepare release notes, web page, etc.
+
+o Do private beta release
+
+o Make the release
+
+o In Nmap XML output, osclass (OS Classification) tags should be
+  children of osmatch (the human readable OS name line) rather than
+  having Nmap deduplicate all the osclasses and put them in as
+  siblings.  But this change might break some systems which utilize
+  Nmap XML output, so, along with this change, we need to introduce an
+  option such as --deprecated-osclass-xml to return the old behavior.
+  That option only needs to be documented in the CHANGELOG entry
+  referring to this change, and it should note that we're likely to
+  remove this option in a year or two.
+
+o Right now, when an IPv4 or IPv6 address seems bogus (such as 1.2.3
+  or 2001::0 in IPv4 mode), we give a fatal error and abort the scan.
+  But since that might just be one bad target in a long list of hosts to
+  be scanned, it is probably better to just print a warning and
+  continue.  Some sort of warning or host element should be included in
+  the XML to explain what happened too.  This should also happen if
+  we're unable to resolve a DNS name.
+
+o In sv-tidy, check that used references start at 1 and are
+  contiguous. If $1 and $3 are used but not $2, it's probably a bug.
+  Maybe you can even find out how many there should be by inspecting
+  the regular expression.
+
+o Raw scans from Mac OS X seems not to retrieve the MAC address or do
+  ARP ping, except when scanning the router on an interface. For
+  example, scanning 192.168.0.1-5 sends ARP pings to 192.168.0.1, but
+  the normal four-probe combination to the other addresses. The "MAC
+  address:" line appears in the output for .1 but not for the others.
+
+o To avoid Nmap memory usage bloat, find a way for NSE scripts to
+  store information about a host which expires after Nmap is done
+  scanning that host (e.g. when the hostgroup containing that host is
+  finished).  Right now scripts store such information in the registry
+  and it persists forever.  For example, a web spidering
+  script/library could store information about the web structure and
+  even page contents so that other scripts can use that information
+  without spidering the target again, but ensuring that the memory
+  will be freed after the hostgroup finishes so there is room to store
+  the web information for the next group of systems.  One idea would
+  be to make a host.registry member which contains a registry specific
+  to a specific target.  Scripts could store temporary information
+  there, but still use the global registry for information which must
+  persist (e.g. to be used by postrules, etc.)
+
+o Add CPE support to IPv6 OS detection
+
+o Use BPF libpcap logic on Solaris 11, otherwise packet capture doesn't
+  work at all. http://seclists.org/nmap-dev/2012/q1/613
+
+o [NSE] host.os should not just be a list of strings which can contain
+  human-readible strings and/or CPE info.  It should probably be list
+  of host.os tables which can contain:
+  host.os[].name <-- human readible name
+  host.os[].class[].vendor
+  host.os[].class[].osfamily
+  host.os[].class[].osgen
+  host.os[].class[].devicetype
+  host.os[].class[].cpe[] <-- array of cpe:/ strings
+  So host.os[1].class[1].cpe[1] is the first CPE entry for the first
+  classification of the first OS match for the target system.
+  The host.os entry docs/scripting.xml would have to be updated too.
+
+o We should probably go through the nmap-os-db (and IPv6 version)
+  entries and, where the fingerprint line specifies a service pack
+  number (or even two of them), ensure that we have sp-qualified CPE
+  entries like "cpe:/o:microsoft:windows_xp::sp2".  Right now we
+  sometimes include the qualification, and sometimes not.
+  o This is best done with cpeify-os.py, if possible.
+
+o Zenmap no longer ads the installed module directory to its module
+  search path because some distributors first install in a world
+  writeable directory (like /tmp) and then put those files into their
+  packages which they distribute to users.  But this change can lead
+  to Zenmap not working for users who install in nonsystem areas like
+  their home directory (e.g. --prefix /home/fyodor) unless they have
+  their PYTHONPATH set to find them.  We should implement a solution,
+  such as making sure Zenmap catches the missing modules error and
+  suggest that the user set their PYTHONPATH or something.
+
+o Scans from Mac OS X tend to use raw IP packets rather than ethernet
+  frames even on the local network because Dnet does not seem to be
+  retrieving the routing table properly -- so the LAN doesn't even
+  show up in --iflist.  Patrik can reproduce this on all 3 of his
+  MACs (OS X versions 10.7.3).  Comparing the code in DNet route-bsd.c
+  to Apple's own routing table code discovered by Patrik suggests that
+  the Dnet code may be incorrect.
+
+o ssl-google-cert-catalog should not require that the user specify
+  ssl-cert in order to run.  Instead, they should probably both call a
+  library which obtains the certificate (and caches it so that it
+  doesn't happen twice if both scripts are run).  In general, we want
+  to avoid having any scripts tell the user "this script only works if
+  you specify this other script too".  If we really find we need that
+  functionality, we should add a "strong dependencies" feature so that
+  scripts can tell Nmap what other scripts they require.
+  [Patrik did this by adding an ssl cert library]
+
+o Our targets-ipv6-multicast-slaac.nse should probably send the router
+  advertisements with low priority to reduce the chances of any
+  negative impacts on clients, if we're not doing that already.  See
+  http://lists.si6networks.com/pipermail/ipv6hackers/2012-March/000503.html.
+  - Actually, I think we already do this.  Marking as done.
+
+o Deal with the issue of timeouts happening too soon due to global
+  congestion control in some cases.  For example, if Nmap sends host
+  discovery probes to two hosts, and one comes back extremely quickly,
+  it can cause the global congestion control to use a very low timeout
+  and cause the 2nd host (which doesn't have any host-based congestion
+  control values yet) to timeout arguably too quickly.  We should look
+  at potential algorithm changes to improve this.
+    David: I think I was wrong about the cause of this. Even when
+    replies come back very quickly, the timeout is by default limited
+    to 100000 microseconds, much higher than the straightforward
+    calculation would give. What I think is really happening is that
+    select is not working reliably on this platform (Solaris 10 x86).
+    In the loop in read_arp_reply_pcap, pcap_select returns 1, then a
+    pcap_next is done. Then pcap_select returns 0, but if I insert
+    another pcap_next after that, the pcap_next finds another packet
+    without blocking (the first time, anyway; after that it blocks).
+
+o Create CHANGELOG
+
+o Make stable release candidate branch
+
+o Make at least one more test release from the candidate branch
+
+o Write and send GSoC 2011 results email
 
 o Document the nsearg format changes made by Paulino (how you can
   preface an argument with a script to make it more specific, or make it

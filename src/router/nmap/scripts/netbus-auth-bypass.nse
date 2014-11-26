@@ -1,3 +1,7 @@
+local nmap = require "nmap"
+local shortport = require "shortport"
+local stdnse = require "stdnse"
+
 description = [[
 Checks if a NetBus server is vulnerable to an authentication bypass
 vulnerability which allows full access without knowing the password.
@@ -20,9 +24,6 @@ author = "Toni Ruottu"
 license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
 categories = {"auth", "safe", "vuln"}
 
-require("nmap")
-require("stdnse")
-require("shortport")
 
 dependencies = {"netbus-version", "netbus-brute", "netbus-info"}
 
@@ -30,28 +31,28 @@ portrule = shortport.port_or_service (12345, "netbus", {"tcp"})
 
 action = function( host, port )
 
-	local socket = nmap.new_socket()
-	local status, err = socket:connect(host.ip, port.number)
-	if not status then
-		return
-	end
-	local buffer, _ = stdnse.make_buffer(socket, "\r")
-	buffer() --discard banner
+  local socket = nmap.new_socket()
+  local status, err = socket:connect(host.ip, port.number)
+  if not status then
+    return
+  end
+  local buffer, _ = stdnse.make_buffer(socket, "\r")
+  buffer() --discard banner
 
-	-- The first argument of Password is the super-login bit.
-	-- On vulnerable servers any password will do as long as
-	-- we send the super-login bit. Regular NetBus has only
-	-- one password. Thus, if we can login with two different
-	-- passwords using super-login, the server is vulnerable.
+  -- The first argument of Password is the super-login bit.
+  -- On vulnerable servers any password will do as long as
+  -- we send the super-login bit. Regular NetBus has only
+  -- one password. Thus, if we can login with two different
+  -- passwords using super-login, the server is vulnerable.
 
-	socket:send("Password;1;\r") --password: empty
-	if buffer() ~= "Access;1" then
-		return
-	end
-	socket:send("Password;1; \r") --password: space
-	if buffer() == "Access;1" then
-		return "Vulnerable"
-	end
-	return "Not vulnerable, but password is empty"
+  socket:send("Password;1;\r") --password: empty
+  if buffer() ~= "Access;1" then
+    return
+  end
+  socket:send("Password;1; \r") --password: space
+  if buffer() == "Access;1" then
+    return "Vulnerable"
+  end
+  return "Not vulnerable, but password is empty"
 end
 
