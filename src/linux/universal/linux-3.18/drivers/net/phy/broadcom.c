@@ -17,6 +17,7 @@
 #include <linux/module.h>
 #include <linux/phy.h>
 #include <linux/brcmphy.h>
+#include <linux/delay.h>
 
 
 #define BRCM_PHY_MODEL(phydev) \
@@ -363,6 +364,28 @@ static int bcm54xx_config_intr(struct phy_device *phydev)
 	return err;
 }
 
+static int bcm5481_config_init(struct phy_device *phydev)
+{
+    bcm54xx_config_init(phydev);
+    printk(KERN_INFO "fixup laguna phy\n");
+		u16 reg;
+		printk(KERN_EMERG "workaround for laguna\n");
+		reg = phy_read(phydev, 0); // reset phy
+		reg |= (1 << 15);
+		phy_write(phydev, 0, reg);
+		udelay(10);
+		phy_write(phydev, 0x18, 0xf1e7);
+		phy_write(phydev, 0x1c, 0x8e00);
+
+		phy_write(phydev, 0x10, 0x20);
+		phy_write(phydev, 0x1c, 0xa41f);
+		phy_write(phydev, 0x1c, 0xb41a);
+		phy_write(phydev, 0x1c, 0xb863);
+		phy_write(phydev, 0x17, 0xf04);
+		phy_write(phydev, 0x15, 0x1);
+		phy_write(phydev, 0x17, 0x0);
+}
+
 static int bcm5481_config_aneg(struct phy_device *phydev)
 {
 	int ret;
@@ -373,6 +396,7 @@ static int bcm5481_config_aneg(struct phy_device *phydev)
 	/* Then we can set up the delay. */
 	if (phydev->interface == PHY_INTERFACE_MODE_RGMII_RXID) {
 		u16 reg;
+		printk(KERN_EMERG "no workaround for laguna\n");
 
 		/*
 		 * There is no BCM5481 specification available, so down
@@ -394,12 +418,23 @@ static int bcm5481_config_aneg(struct phy_device *phydev)
 		reg |= (1 << 15);
 		phy_write(phydev, 0x18, reg);
 	} else {
+		u16 reg;
+		printk(KERN_EMERG "workaround for laguna\n");
+		reg = phy_read(phydev, 0); // reset phy
+		reg |= (1 << 15);
+		phy_write(phydev, 0, reg);
+		udelay(10);
 		phy_write(phydev, 0x18, 0xf1e7);
 		phy_write(phydev, 0x1c, 0x8e00);
 
+		phy_write(phydev, 0x10, 0x20);
 		phy_write(phydev, 0x1c, 0xa41f);
+		phy_write(phydev, 0x1c, 0xb41a);
+		phy_write(phydev, 0x1c, 0xb863);
+		phy_write(phydev, 0x17, 0xf04);
+		phy_write(phydev, 0x15, 0x1);
+		phy_write(phydev, 0x17, 0x0);
 	}
-
 	return ret;
 }
 
@@ -573,7 +608,7 @@ static struct phy_driver broadcom_drivers[] = {
 	.features	= PHY_GBIT_FEATURES |
 			  SUPPORTED_Pause | SUPPORTED_Asym_Pause,
 	.flags		= PHY_HAS_MAGICANEG | PHY_HAS_INTERRUPT,
-	.config_init	= bcm54xx_config_init,
+	.config_init	= bcm5481_config_init,
 	.config_aneg	= bcm5481_config_aneg,
 	.read_status	= genphy_read_status,
 	.ack_interrupt	= bcm54xx_ack_interrupt,
