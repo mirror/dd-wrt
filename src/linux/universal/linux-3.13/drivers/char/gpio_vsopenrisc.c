@@ -985,11 +985,11 @@ static const struct file_operations gpio_fops_data = {
 	.llseek = default_llseek,
 };
 
+struct proc_dir_entry *openriscdir;
 
 INIT_RET_TYPE gpio_init(void)
 {
 	int i;
-	static struct proc_dir_entry *dir;
 
 	printk(KERN_INFO "gpio_vsopenrisc: GPIO driver.\n");
 
@@ -1025,17 +1025,18 @@ INIT_RET_TYPE gpio_init(void)
 #if LINUX_VERSION_CODE < 0x020100
 	register_symtab(&gpio_syms);
 #endif
-	dir = proc_mkdir("vsopenrisc", NULL);
+	if (!openriscdir)
+	    openriscdir = proc_mkdir("vsopenrisc", NULL);
 
-	proc_create_data(PROC_NAME_BTN_RST, 0644, dir, &rst_fops_data, NULL);
-	proc_create_data(PROC_NAME_BTN_WLAN, 0644, dir, &wlan_fops_data, NULL);
-	proc_create_data(PROC_NAME_LEDS, 0644, dir, &leds_fops_data, NULL);
-	proc_create_data(PROC_NAME_BUZZER, 0644, dir, &buzzer_fops_data, NULL);
-	proc_create_data(PROC_NAME_BUZZER_FRQ, 0644, dir, &buzzer_frq_fops_data, NULL);
+	proc_create_data(PROC_NAME_BTN_RST, 0644, openriscdir, &rst_fops_data, NULL);
+	proc_create_data(PROC_NAME_BTN_WLAN, 0644, openriscdir, &wlan_fops_data, NULL);
+	proc_create_data(PROC_NAME_LEDS, 0644, openriscdir, &leds_fops_data, NULL);
+	proc_create_data(PROC_NAME_BUZZER, 0644, openriscdir, &buzzer_fops_data, NULL);
+	proc_create_data(PROC_NAME_BUZZER_FRQ, 0644, openriscdir, &buzzer_frq_fops_data, NULL);
 
 	for (i = 0; i < GPIO_VAL_MAX; i++)
 	{
-	    	proc_create_data(table_proc_name[i], 0644, dir, &gpio_fops_data, (void*)i);
+	    	proc_create_data(table_proc_name[i], 0644, openriscdir, &gpio_fops_data, (void*)i);
 
 	}
 
