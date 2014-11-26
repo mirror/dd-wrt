@@ -319,7 +319,7 @@ void uart_console_write(struct uart_port *port, const char *s,
 /*
  * /proc functions for EPLD
  */
-#define PROC_NAME_EPLD	"vsopenrisc/epld_ttyS"
+#define PROC_NAME_EPLD	"epld_ttyS"
 
 ssize_t proc_epld_read(struct file *file, char __user * buffer, size_t size, loff_t * ppos);
 ssize_t proc_epld_write(struct file *file, const char __user * buffer, size_t count, loff_t * ppos);
