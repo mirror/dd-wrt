@@ -104,7 +104,7 @@ OBJS = charpool.o FingerPrintResults.o FPEngine.o FPModel.o idle_scan.o MACLooku
 
 # %.o : %.cc -- nope this is a GNU extension
 .cc.o:
-	$(CXX) -c $(CPPFLAGS) $(CXXFLAGS) $< -o $@
+	$(CXX) -c $(CPPFLAGS) $(CXXFLAGS) $(SENTINEL_FLAGS) $< -o $@
 
 # FPModel.cc contains large numeric tables that exceed the capacity of
 # debugging output with GCC 4.6.0 on AIX, causing "Error: value of 121716 too
