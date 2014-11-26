@@ -40,6 +40,9 @@ struct plat_serial8250_port {
 	void		(*pm)(struct uart_port *, unsigned int state,
 			      unsigned old);
 	void		(*handle_break)(struct uart_port *);
+#if defined(CONFIG_MACH_KS8695_VSOPENRISC)
+	unsigned short epld_capabilities;		/* EPLD capabilities */
+#endif
 };
 
 /*

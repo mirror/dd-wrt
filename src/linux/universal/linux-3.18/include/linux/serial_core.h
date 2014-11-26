@@ -38,6 +38,10 @@
 #define uart_console(port)      (0)
 #endif
 
+#if defined(CONFIG_MACH_KS8695_VSOPENRISC)
+#include <linux/vsopenrisc.h>
+#endif
+
 struct uart_port;
 struct serial_struct;
 struct device;
@@ -112,6 +116,14 @@ struct uart_icount {
 
 typedef unsigned int __bitwise__ upf_t;
 typedef unsigned int __bitwise__ upstat_t;
+
+#if defined(CONFIG_MACH_KS8695_VSOPENRISC)
+/* values for the 16C950 specific baudrate generation registers TCR and CPR */
+struct uart16C950_speed_regs{
+	unsigned tcr;
+	unsigned cpr;
+};
+#endif
 
 struct uart_port {
 	spinlock_t		lock;			/* port lock */
@@ -217,6 +229,11 @@ struct uart_port {
 	struct attribute_group	*attr_group;		/* port specific attributes */
 	const struct attribute_group **tty_groups;	/* all attributes (serial core use only) */
 	void			*private_data;		/* generic platform data pointer */
+#if defined(CONFIG_MACH_KS8695_VSOPENRISC)
+	struct epld_struct epld;
+	unsigned short epld_capabilities;		/* EPLD capabilities */
+	struct uart16C950_speed_regs speed_regs;	/* values for TCR and CPR registers */
+#endif
 };
 
 static inline int serial_port_in(struct uart_port *up, int offset)
@@ -334,6 +351,27 @@ struct tty_driver *uart_console_device(struct console *co, int *index);
 void uart_console_write(struct uart_port *port, const char *s,
 			unsigned int count,
 			void (*putchar)(struct uart_port *, int));
+
+#if defined(CONFIG_MACH_KS8695_VSOPENRISC)
+/*
+ * /proc functions for EPLD
+ */
+#define PROC_NAME_EPLD	"vsopenrisc/epld_ttyS"
+
+ssize_t proc_epld_read(struct file *file, char __user * buffer, size_t size, loff_t * ppos);
+ssize_t proc_epld_write(struct file *file, const char __user * buffer, size_t count, loff_t * ppos);
+
+
+/*
+ * EPLD IOCTLs
+ */
+int ioctl_epld(struct uart_port *port, struct epld_struct *epld, unsigned int cmd);
+
+/*
+ * custom divisor calculation
+ */
+int serial16C950_get_divisors(unsigned long baudbase, unsigned long baud, unsigned *TCR, unsigned *CPR, unsigned short *Divisor);
+#endif
 
 /*
  * Port/driver registration/removal

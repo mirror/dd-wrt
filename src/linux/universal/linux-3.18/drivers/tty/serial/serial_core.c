@@ -36,7 +36,17 @@
 #include <linux/mutex.h>
 
 #include <asm/irq.h>
+#include <asm/io.h>
 #include <asm/uaccess.h>
+
+/* enable EPLD for VS OpenRISC devices */
+#if defined(CONFIG_MACH_KS8695_VSOPENRISC)
+#define CONFIG_SERIAL_NETCOM_EPLD
+#define ENABLE_16C950_BAUD_GENERATION_FEATURES
+#include <linux/vsopenrisc.h>
+#include <linux/ctype.h>
+#endif
+
 
 /*
  * This is used to lock changes in serial line configuration.
@@ -426,10 +436,58 @@ uart_get_divisor(struct uart_port *port, unsigned int baud)
 	/*
 	 * Old custom speed handling.
 	 */
-	if (baud == 38400 && (port->flags & UPF_SPD_MASK) == UPF_SPD_CUST)
+	if (baud == 38400 && (port->flags & UPF_SPD_MASK) == UPF_SPD_CUST) {
 		quot = port->custom_divisor;
-	else
+
+#ifdef ENABLE_16C950_BAUD_GENERATION_FEATURES
+		if(port->custom_divisor & 0x80000000)
+		{
+			/* calculate TCR, CPR and quot for 16C950 UART */
+			if(port->type == PORT_16C950)
+			{
+				if(serial16C950_get_divisors((port->uartclk / 16),
+							abs(port->custom_divisor),
+						       	&port->speed_regs.tcr,
+							&port->speed_regs.cpr,
+							(unsigned short *) &quot) == 0)
+				{
+					port->speed_regs.tcr = 0;
+					port->speed_regs.cpr = 8;
+					quot = (port->uartclk / 16) / 9600; /* baudbase / 9600 */
+				}
+				quot &= 0x0000FFFF;
+			} /* end of 16C950 section */
+		}
+		else
+		{
+			/* set TCR and CPR to default values for compatibility issues */
+			if(port->type == PORT_16C950)
+			{
+				port->speed_regs.tcr = 0;
+				port->speed_regs.cpr = 8;
+			}
+		}
+#endif
+	} else {
+
+#ifdef ENABLE_16C950_BAUD_GENERATION_FEATURES
+		if(port->type == PORT_16C950)
+		{
+			if(serial16C950_get_divisors((port->uartclk / 16),
+						baud, &port->speed_regs.tcr,
+						&port->speed_regs.cpr,
+						(unsigned short *) &quot) == 0)
+			{
+				port->speed_regs.tcr = 0;
+				port->speed_regs.cpr = 8;
+				quot = (port->uartclk / 16) / 9600; /* baudbase / 9600 */
+			}
+			quot &= 0x0000FFFF;
+		} /* end of 16C950 section */
+		else
+#endif
 		quot = DIV_ROUND_CLOSEST(port->uartclk, 16 * baud);
+	}
 
 	return quot;
 }
@@ -1151,6 +1209,159 @@ static int uart_get_icount(struct tty_struct *tty,
 	return 0;
 }
 
+#if defined(CONFIG_SERIAL_NETCOM_EPLD)
+static struct
+{
+	unsigned char value;
+	char name[32];
+	unsigned short caps_flag;
+} epld_str_tab[] =
+{
+	 { EPLD_RS232, "rs232", CAP_EPLD_RS232 }
+	,{ EPLD_RS422, "rs422", CAP_EPLD_RS422 }
+	,{ EPLD_RS485_ART_4W, "rs485byart-4-wire", CAP_EPLD_RS485_ART_4W }
+	,{ EPLD_RS485_ART_2W, "rs485byart-2-wire-noecho", CAP_EPLD_RS485_ART_2W }
+	,{ EPLD_RS485_ART_ECHO, "rs485byart-2-wire-echo", CAP_EPLD_RS485_ART_ECHO }
+	,{ EPLD_RS485_RTS_4W, "rs485byrts-4-wire", CAP_EPLD_RS485_RTS_4W }
+	,{ EPLD_RS485_RTS_2W, "rs485byrts-2-wire-noecho", CAP_EPLD_RS485_RTS_2W }
+	,{ EPLD_RS485_RTS_ECHO, "rs485byrts-2-wire-echo", CAP_EPLD_RS485_RTS_ECHO }
+	,{ EPLD_CAN, "can", CAP_EPLD_CAN }
+	,{ EPLD_PORTOFF, "inactive", CAP_EPLD_PORTOFF }
+};
+static int epld_str_tab_size = sizeof(epld_str_tab) / sizeof(epld_str_tab[0]);
+
+int check_epld_capabilities(unsigned char value, struct uart_port *port)
+{
+	int i;
+
+	for(i = 0; i < epld_str_tab_size; i++)
+	{
+		if((value == epld_str_tab[i].value) && port->epld_capabilities & epld_str_tab[i].caps_flag)
+			return 0;
+	}
+
+	return -1;
+}
+
+int ioctl_epld(struct uart_port *port, struct epld_struct *epld, unsigned int cmd)
+{
+	if (cmd == TIOCGEPLD)
+	{
+		if (!port->epld.port)
+			return -EIO;
+
+		port->epld.value = (0x0f & inb(port->epld.port));
+		if ((unsigned long)epld & 0x80000000UL)	// variable in kernel space (macro anywhere?)
+			memcpy(epld, &port->epld, sizeof(struct epld_struct));
+		else
+			return copy_to_user(epld, &port->epld, sizeof(struct epld_struct));
+		return 0;
+	}
+	else
+	{
+		unsigned char value;
+
+		if ((unsigned long)epld & 0x80000000UL)	// variable in kernel space (macro anywhere?)
+			value = epld->value;
+		else
+			if (copy_from_user(&value, &epld->value, sizeof(value)))
+				return -EFAULT;
+		if(check_epld_capabilities(value, port) < 0)
+			return -EINVAL;
+
+		if(check_dev_open_status(port->line, DRV_IN_USE_CAN) < 0)
+			return -EBUSY;
+
+		if (!port->epld.port)
+			return -EIO;
+		outb(value, port->epld.port);
+		return 0;
+	}
+	return -EFAULT;
+}
+
+ssize_t proc_epld_read(struct file *file, char __user * buffer, size_t size, loff_t * ppos)
+{
+	struct uart_port *uartport = (struct uart_port*) PDE_DATA(file_inode(file));
+	struct epld_struct epld;
+	int i, j, ret = 0, port = uartport->line;
+	char buf[128];
+	
+	if (!*ppos)
+	{
+		ret = sprintf(buf, "inactive\n");
+		if (ioctl_epld(uartport, &epld, TIOCGEPLD) < 0)
+			printk(KERN_ERR "proc: Reading the epld info for serial port %d failed!\n", port);
+		else
+		{
+			for (i = 0; i < epld_str_tab_size; i++)
+			{
+				if (uartport->epld.value == epld_str_tab[i].value)
+				{
+					ret = sprintf(buf, "%s\n\nPossible Values:\n----------------\n", epld_str_tab[i].name);
+					for (j = 0; j < epld_str_tab_size; j++)
+						if(epld_str_tab[j].caps_flag & uartport->epld_capabilities)
+							ret += sprintf(&buf[ret], "%s\n", epld_str_tab[j].name);
+					break;
+				}
+			}
+		}
+	}
+
+	return simple_read_from_buffer(buffer, size, ppos, buf, sizeof(buf));
+}
+
+ssize_t proc_epld_write(struct file *file, const char __user * buffer, size_t count, loff_t * ppos)
+{
+	struct uart_port *uartport = (struct uart_port*) PDE_DATA(file_inode(file));
+	struct epld_struct epld;
+	char temp[32];
+	int i, ret = -1, port = uartport->line, size = sizeof(temp) - 1;
+
+	/* write data to the buffer */
+	if (copy_from_user(temp, buffer, size)) {
+		return -EFAULT;
+	}
+
+	if (count < size)
+		size = count;
+
+	if (temp[size - 1] == '\n')
+		size--;
+	temp[size] = '\0';
+
+	for (i = 0; i < size; i++)
+		temp[i] = __tolower(temp[i]);
+
+	for (i = 0; i < epld_str_tab_size; i++)
+	{
+		if (!strcmp(epld_str_tab[i].name, temp))
+		{
+			epld.value = epld_str_tab[i].value;
+			ret = ioctl_epld(uartport, &epld, TIOCSEPLD);
+			if (ret < 0)
+			{
+				if(ret == -EINVAL)
+					printk(KERN_ERR "proc: Mode \"%s\" is not supported\n", epld_str_tab[i].name);
+				else if(ret == -EBUSY)
+					printk(KERN_ERR "proc: Device or resource busy\n");
+				else
+					printk(KERN_ERR "proc: Writing the epld info for serial port %d failed!\n", port);
+				return ret;
+			}
+			break;
+		}
+	}
+	if (i == epld_str_tab_size)
+	{
+		printk(KERN_ERR "proc: Wrong value set for serial port %d (%s)\n", port, temp);
+		return -EINVAL;
+	}
+
+	return count;
+}
+#endif
+
 /*
  * Called via sys_ioctl.  We can use spin_lock_irq() here.
  */
@@ -1184,6 +1395,12 @@ uart_ioctl(struct tty_struct *tty, unsigned int cmd,
 	case TIOCSERSWILD: /* obsolete */
 		ret = 0;
 		break;
+#if defined(CONFIG_SERIAL_NETCOM_EPLD)
+	case TIOCGEPLD:
+	case TIOCSEPLD:
+		return ioctl_epld(state->uart_port, (struct epld_struct*)arg, cmd);
+		break;
+#endif
 	}
 
 	if (ret != -ENOIOCTLCMD)
@@ -2840,6 +3057,109 @@ void uart_insert_char(struct uart_port *port, unsigned int status,
 		if (tty_insert_flip_char(tport, 0, TTY_OVERRUN) == 0)
 			++port->icount.buf_overrun;
 }
+#ifdef ENABLE_16C950_BAUD_GENERATION_FEATURES
+/**
+ * serial16C950_get_divisors - return TCR, CPR and divisor values for 16C950 UART
+ * @baudbase: baud base
+ * @baud: desired baud rate in decimal
+ * @TCR: times clock register value
+ * @CPR: clock prescaler register value
+ * @Divisor: 16-bit divisor value for DLL and DLM registers
+ *
+ * Search for the valid values of the TCR, CPR and divisor. According to the datasheet
+ * the crystal clock applied to the 16C950 can't be greater than 60MHz.
+ *
+ * The baud rates smaller than 1000bit/s can be calculated immediately. For the greater baud rates
+ * TCR, CPR and divisor values will be tried to find the first combination generating the
+ * baud rate with an error smaller than 3 per mil, but we also accept the baudr rates with an error
+ * smaller than 2%.
+ *
+ * If no suitable combination is found, 0 is returned. Otherwise 1 will be returned.
+ */
+int serial16C950_get_divisors(unsigned long baudbase, unsigned long baud, unsigned *TCR, unsigned *CPR, unsigned short *Divisor)
+{
+	unsigned long crystal8, Error, maxerr, e03p, e20p, div = 0;
+	long long tmp;
+	int iCPR, iTCR, ret;
+
+	ret = 0;
+	crystal8 = baudbase * 16 * 8; // crystal speed (max = 60MHz * 8)
+	*TCR = 0;
+	*CPR = 8;
+	*Divisor = 96;
+	iTCR = 16;
+	if (baud > baudbase * (16 / 4))
+		return ret;
+
+	if(baud < 1000)
+	{
+		iCPR = ((baudbase*8)/65535) + 1;
+		*Divisor = ((baudbase*8) / iCPR)/baud;
+		*CPR = iCPR;
+		*TCR = iTCR;
+		ret = 1;
+		goto DoubleBreak;
+	}
+
+	e03p = (baud * 3) / 1000; // 3 per mil
+	e20p = (baud * 2) / 100; // 2%
+	maxerr = baud;
+
+	do
+	{
+		iCPR = 8;
+
+		do
+		{
+			tmp = iTCR*iCPR*baud;
+
+			// check if we get division overflow
+			if (tmp < 2* crystal8)
+			{
+				// calculate actual divisor
+				div = (crystal8 + ((unsigned long)tmp/2))
+						/ (unsigned long)(tmp);
+
+				// divisor must fit into 16 bit
+				if (div < 0x10000)
+				{
+					// calculate possible error
+					Error = abs(baud - (crystal8) / (iTCR*iCPR*div));
+					if (Error < maxerr)
+					{
+						maxerr = Error;
+						*Divisor = div;
+						*CPR = iCPR;
+						*TCR = iTCR;
+					}
+				}
+			}
+
+			// if error is smaller than 2% we have a valid result
+			if (maxerr <= e20p)
+				ret = 1;
+			// exact result
+			if (maxerr == 0)
+				goto DoubleBreak;
+			if ((iTCR >= 14) && (maxerr <= e03p))
+				goto DoubleBreak;
+			if ((iTCR < 14) && (maxerr <= e20p))
+				goto DoubleBreak;
+			if (div == 0)
+				break;
+			else
+				iCPR++;
+		} while (iCPR <= 255);
+		iTCR--;
+	} while (iTCR >= 4);
+
+DoubleBreak:
+	*TCR &= 0x0F;
+	return ret;
+}
+#endif
+
+
 EXPORT_SYMBOL_GPL(uart_insert_char);
 
 EXPORT_SYMBOL(uart_write_wakeup);
@@ -2849,6 +3169,13 @@ EXPORT_SYMBOL(uart_suspend_port);
 EXPORT_SYMBOL(uart_resume_port);
 EXPORT_SYMBOL(uart_add_one_port);
 EXPORT_SYMBOL(uart_remove_one_port);
+#if defined(CONFIG_SERIAL_NETCOM_EPLD)
+EXPORT_SYMBOL(proc_epld_read);
+EXPORT_SYMBOL(proc_epld_write);
+#endif
+#ifdef ENABLE_16C950_BAUD_GENERATION_FEATURES
+EXPORT_SYMBOL(serial16C950_get_divisors);
+#endif
 
 MODULE_DESCRIPTION("Serial driver core");
 MODULE_LICENSE("GPL");
