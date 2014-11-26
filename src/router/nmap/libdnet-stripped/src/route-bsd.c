@@ -35,6 +35,7 @@
 #define route_t	oroute_t	/* XXX - unixware */
 #include <net/route.h>
 #undef route_t
+#include <net/if.h>
 #include <netinet/in.h>
 
 #include <errno.h>
@@ -46,8 +47,14 @@
 
 #include "dnet.h"
 
+#ifdef RT_ROUNDUP
+/* NetBSD defines this macro rounding to 64-bit boundaries.
+   http://fxr.watson.org/fxr/ident?v=NETBSD;i=RT_ROUNDUP */
+#define ROUNDUP(a) RT_ROUNDUP(a)
+#else
 #define ROUNDUP(a) \
 	((a) > 0 ? (1 + (((a) - 1) | (RT_MSGHDR_ALIGNMENT - 1))) : RT_MSGHDR_ALIGNMENT)
+#endif
 
 #ifdef HAVE_SOCKADDR_SA_LEN
 #define NEXTSA(s) \
@@ -76,7 +83,7 @@ route_msg_print(struct rt_msghdr *rtm)
 #endif
 
 static int
-route_msg(route_t *r, int type, struct addr *dst, struct addr *gw)
+route_msg(route_t *r, int type, char intf_name[INTF_NAME_LEN], struct addr *dst, struct addr *gw)
 {
 	struct addr net;
 	struct rt_msghdr *rtm;
@@ -153,6 +160,16 @@ route_msg(route_t *r, int type, struct addr *dst, struct addr *gw)
 			errno = ESRCH;
 			return (-1);
 		}
+
+		if (intf_name != NULL) {
+			char namebuf[IF_NAMESIZE];
+
+			if (if_indextoname(rtm->rtm_index, namebuf) == NULL) {
+				errno = ESRCH;
+				return (-1);
+			}
+			strlcpy(intf_name, namebuf, sizeof(intf_name));
+		}
 	}
 	return (0);
 }
@@ -185,7 +202,7 @@ route_add(route_t *r, const struct route_entry *entry)
 	
 	memcpy(&rtent, entry, sizeof(rtent));
 	
-	if (route_msg(r, RTM_ADD, &rtent.route_dst, &rtent.route_gw) < 0)
+	if (route_msg(r, RTM_ADD, NULL, &rtent.route_dst, &rtent.route_gw) < 0)
 		return (-1);
 	
 	return (0);
@@ -201,7 +218,7 @@ route_delete(route_t *r, const struct route_entry *entry)
 	if (route_get(r, &rtent) < 0)
 		return (-1);
 	
-	if (route_msg(r, RTM_DELETE, &rtent.route_dst, &rtent.route_gw) < 0)
+	if (route_msg(r, RTM_DELETE, NULL, &rtent.route_dst, &rtent.route_gw) < 0)
 		return (-1);
 	
 	return (0);
@@ -210,8 +227,10 @@ route_delete(route_t *r, const struct route_entry *entry)
 int
 route_get(route_t *r, struct route_entry *entry)
 {
-	if (route_msg(r, RTM_GET, &entry->route_dst, &entry->route_gw) < 0)
+	if (route_msg(r, RTM_GET, entry->intf_name, &entry->route_dst, &entry->route_gw) < 0)
 		return (-1);
+	entry->intf_name[0] = '\0';
+	entry->metric = 0;
 	
 	return (0);
 }
@@ -315,8 +334,13 @@ route_loop(route_t *r, route_handler callback, void *arg)
 	 * values, 1, 2, and 4 respectively. Cf. Unix Network Programming,
 	 * p. 494, function get_rtaddrs. */
 	for (ret = 0; next < lim; next += rtm->rtm_msglen) {
+		char namebuf[IF_NAMESIZE];
 		rtm = (struct rt_msghdr *)next;
 		sa = (struct sockaddr *)(rtm + 1);
+
+		if (if_indextoname(rtm->rtm_index, namebuf) == NULL)
+			continue;
+		strlcpy(entry.intf_name, namebuf, sizeof(entry.intf_name));
 
 		if ((rtm->rtm_addrs & RTA_DST) == 0)
 			/* Need a destination. */
@@ -341,6 +365,8 @@ route_loop(route_t *r, route_handler callback, void *arg)
 			if (addr_stob(sa, &entry.route_dst.addr_bits) < 0)
 				continue;
 		}
+
+		entry.metric = 0;
 
 		if ((ret = callback(&entry, arg)) != 0)
 			break;
@@ -443,6 +469,8 @@ route_loop(route_t *r, route_handler callback, void *arg)
 				    rt->ipRouteNextHop == IP_ADDR_ANY)
 					continue;
 				
+				entry.intf_name[0] = '\0';
+
 				sin.sin_addr.s_addr = rt->ipRouteNextHop;
 				addr_ston((struct sockaddr *)&sin,
 				    &entry.route_gw);
@@ -454,6 +482,8 @@ route_loop(route_t *r, route_handler callback, void *arg)
 				sin.sin_addr.s_addr = rt->ipRouteMask;
 				addr_stob((struct sockaddr *)&sin,
 				    &entry.route_dst.addr_bits);
+
+				entry.metric = 0;
 				
 				if ((ret = callback(&entry, arg)) != 0)
 					return (ret);
@@ -535,6 +565,8 @@ route_loop(route_t *r, route_handler callback, void *arg)
 				    memcmp(&rt->ipv6RouteNextHop, IP6_ADDR_UNSPEC, IP6_ADDR_LEN) == 0)
 					continue;
 				
+				entry.intf_name[0] = '\0';
+
 				sin6.sin6_addr = rt->ipv6RouteNextHop;
 				addr_ston((struct sockaddr *)&sin6,
 				    &entry.route_gw);
@@ -576,6 +608,7 @@ _radix_walk(int fd, struct radix_node *rn, route_handler callback, void *arg)
 	_kread(fd, rn, &rnode, sizeof(rnode));
 	if (rnode.rn_b < 0) {
 		if (!(rnode.rn_flags & RNF_ROOT)) {
+			entry.intf_name[0] = '\0';
 			_kread(fd, rn, &rt, sizeof(rt));
 			_kread(fd, rt_key(&rt), &sin, sizeof(sin));
 			addr_ston((struct sockaddr *)&sin, &entry.route_dst);
@@ -586,6 +619,7 @@ _radix_walk(int fd, struct radix_node *rn, route_handler callback, void *arg)
 			}
 			_kread(fd, rt.rt_gateway, &sin, sizeof(sin));
 			addr_ston((struct sockaddr *)&sin, &entry.route_gw);
+			entry.metric = 0;
 			if ((ret = callback(&entry, arg)) != 0)
 				return (ret);
 		}

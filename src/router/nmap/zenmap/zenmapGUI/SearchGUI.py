@@ -3,62 +3,94 @@
 
 # ***********************IMPORTANT NMAP LICENSE TERMS************************
 # *                                                                         *
-# * The Nmap Security Scanner is (C) 1996-2012 Insecure.Com LLC. Nmap is    *
+# * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
 # * also a registered trademark of Insecure.Com LLC.  This program is free  *
 # * software; you may redistribute and/or modify it under the terms of the  *
 # * GNU General Public License as published by the Free Software            *
-# * Foundation; Version 2 with the clarifications and exceptions described  *
-# * below.  This guarantees your right to use, modify, and redistribute     *
-# * this software under certain conditions.  If you wish to embed Nmap      *
-# * technology into proprietary software, we sell alternative licenses      *
-# * (contact sales@insecure.com).  Dozens of software vendors already       *
-# * license Nmap technology such as host discovery, port scanning, OS       *
-# * detection, version detection, and the Nmap Scripting Engine.            *
+# * Foundation; Version 2 ("GPL"), BUT ONLY WITH ALL OF THE CLARIFICATIONS  *
+# * AND EXCEPTIONS DESCRIBED HEREIN.  This guarantees your right to use,    *
+# * modify, and redistribute this software under certain conditions.  If    *
+# * you wish to embed Nmap technology into proprietary software, we sell    *
+# * alternative licenses (contact sales@nmap.com).  Dozens of software      *
+# * vendors already license Nmap technology such as host discovery, port    *
+# * scanning, OS detection, version detection, and the Nmap Scripting       *
+# * Engine.                                                                 *
 # *                                                                         *
-# * Note that the GPL places important restrictions on "derived works", yet *
-# * it does not provide a detailed definition of that term.  To avoid       *
+# * Note that the GPL places important restrictions on "derivative works",  *
+# * yet it does not provide a detailed definition of that term.  To avoid   *
 # * misunderstandings, we interpret that term as broadly as copyright law   *
 # * allows.  For example, we consider an application to constitute a        *
-# * "derivative work" for the purpose of this license if it does any of the *
-# * following:                                                              *
-# * o Integrates source code from Nmap                                      *
-# * o Reads or includes Nmap copyrighted data files, such as                *
-# *   nmap-os-db or nmap-service-probes.                                    *
-# * o Executes Nmap and parses the results (as opposed to typical shell or  *
-# *   execution-menu apps, which simply display raw Nmap output and so are  *
-# *   not derivative works.)                                                *
-# * o Integrates/includes/aggregates Nmap into a proprietary executable     *
-# *   installer, such as those produced by InstallShield.                   *
-# * o Links to a library or executes a program that does any of the above   *
+# * derivative work for the purpose of this license if it does any of the   *
+# * following with any software or content covered by this license          *
+# * ("Covered Software"):                                                   *
 # *                                                                         *
-# * The term "Nmap" should be taken to also include any portions or derived *
-# * works of Nmap, as well as other software we distribute under this       *
-# * license such as Zenmap, Ncat, and Nping.  This list is not exclusive,   *
-# * but is meant to clarify our interpretation of derived works with some   *
-# * common examples.  Our interpretation applies only to Nmap--we don't     *
-# * speak for other people's GPL works.                                     *
+# * o Integrates source code from Covered Software.                         *
 # *                                                                         *
-# * If you have any questions about the GPL licensing restrictions on using *
-# * Nmap in non-GPL works, we would be happy to help.  As mentioned above,  *
-# * we also offer alternative license to integrate Nmap into proprietary    *
-# * applications and appliances.  These contracts have been sold to dozens  *
-# * of software vendors, and generally include a perpetual license as well  *
-# * as providing for priority support and updates.  They also fund the      *
-# * continued development of Nmap.  Please email sales@insecure.com for     *
-# * further information.                                                    *
+# * o Reads or includes copyrighted data files, such as Nmap's nmap-os-db   *
+# * or nmap-service-probes.                                                 *
 # *                                                                         *
-# * As a special exception to the GPL terms, Insecure.Com LLC grants        *
+# * o Is designed specifically to execute Covered Software and parse the    *
+# * results (as opposed to typical shell or execution-menu apps, which will *
+# * execute anything you tell them to).                                     *
+# *                                                                         *
+# * o Includes Covered Software in a proprietary executable installer.  The *
+# * installers produced by InstallShield are an example of this.  Including *
+# * Nmap with other software in compressed or archival form does not        *
+# * trigger this provision, provided appropriate open source decompression  *
+# * or de-archiving software is widely available for no charge.  For the    *
+# * purposes of this license, an installer is considered to include Covered *
+# * Software even if it actually retrieves a copy of Covered Software from  *
+# * another source during runtime (such as by downloading it from the       *
+# * Internet).                                                              *
+# *                                                                         *
+# * o Links (statically or dynamically) to a library which does any of the  *
+# * above.                                                                  *
+# *                                                                         *
+# * o Executes a helper program, module, or script to do any of the above.  *
+# *                                                                         *
+# * This list is not exclusive, but is meant to clarify our interpretation  *
+# * of derived works with some common examples.  Other people may interpret *
+# * the plain GPL differently, so we consider this a special exception to   *
+# * the GPL that we apply to Covered Software.  Works which meet any of     *
+# * these conditions must conform to all of the terms of this license,      *
+# * particularly including the GPL Section 3 requirements of providing      *
+# * source code and allowing free redistribution of the work as a whole.    *
+# *                                                                         *
+# * As another special exception to the GPL terms, Insecure.Com LLC grants  *
 # * permission to link the code of this program with any version of the     *
 # * OpenSSL library which is distributed under a license identical to that  *
 # * listed in the included docs/licenses/OpenSSL.txt file, and distribute   *
-# * linked combinations including the two. You must obey the GNU GPL in all *
-# * respects for all of the code used other than OpenSSL.  If you modify    *
-# * this file, you may extend this exception to your version of the file,   *
-# * but you are not obligated to do so.                                     *
+# * linked combinations including the two.                                  *
 # *                                                                         *
-# * If you received these files with a written license agreement or         *
-# * contract stating terms other than the terms above, then that            *
-# * alternative license agreement takes precedence over these comments.     *
+# * Any redistribution of Covered Software, including any derived works,    *
+# * must obey and carry forward all of the terms of this license, including *
+# * obeying all GPL rules and restrictions.  For example, source code of    *
+# * the whole work must be provided and free redistribution must be         *
+# * allowed.  All GPL references to "this License", are to be treated as    *
+# * including the terms and conditions of this license text as well.        *
+# *                                                                         *
+# * Because this license imposes special exceptions to the GPL, Covered     *
+# * Work may not be combined (even as part of a larger work) with plain GPL *
+# * software.  The terms, conditions, and exceptions of this license must   *
+# * be included as well.  This license is incompatible with some other open *
+# * source licenses as well.  In some cases we can relicense portions of    *
+# * Nmap or grant special permissions to use it in other open source        *
+# * software.  Please contact fyodor@nmap.org with any such requests.       *
+# * Similarly, we don't incorporate incompatible open source software into  *
+# * Covered Software without special permission from the copyright holders. *
+# *                                                                         *
+# * If you have any questions about the licensing restrictions on using     *
+# * Nmap in other works, are happy to help.  As mentioned above, we also    *
+# * offer alternative license to integrate Nmap into proprietary            *
+# * applications and appliances.  These contracts have been sold to dozens  *
+# * of software vendors, and generally include a perpetual license as well  *
+# * as providing for priority support and updates.  They also fund the      *
+# * continued development of Nmap.  Please email sales@nmap.com for further *
+# * information.                                                            *
+# *                                                                         *
+# * If you have received a written license agreement or contract for        *
+# * Covered Software stating terms other than these, you may choose to use  *
+# * and redistribute Covered Software under those terms instead of these.   *
 # *                                                                         *
 # * Source is provided to this software because we believe users have a     *
 # * right to know exactly what a program is going to do before they run it. *
@@ -67,8 +99,8 @@
 # *                                                                         *
 # * Source code also allows you to port Nmap to new platforms, fix bugs,    *
 # * and add new features.  You are highly encouraged to send your changes   *
-# * to nmap-dev@insecure.org for possible incorporation into the main       *
-# * distribution.  By sending these changes to Fyodor or one of the         *
+# * to the dev@nmap.org mailing list for possible incorporation into the    *
+# * main distribution.  By sending these changes to Fyodor or one of the    *
 # * Insecure.Org development mailing lists, or checking them into the Nmap  *
 # * source code repository, it is understood (unless you specify otherwise) *
 # * that you are offering the Nmap Project (Insecure.Com LLC) the           *
@@ -82,10 +114,9 @@
 # *                                                                         *
 # * This program is distributed in the hope that it will be useful, but     *
 # * WITHOUT ANY WARRANTY; without even the implied warranty of              *
-# * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU       *
-# * General Public License v2.0 for more details at                         *
-# * http://www.gnu.org/licenses/gpl-2.0.html , or in the COPYING file       *
-# * included with Nmap.                                                     *
+# * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
+# * license file for more details (it's in a COPYING file included with     *
+# * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
 # *                                                                         *
 # ***************************************************************************/
 
@@ -97,8 +128,10 @@ import copy
 from zenmapGUI.higwidgets.higwindows import HIGWindow
 from zenmapGUI.higwidgets.higboxes import HIGVBox
 from zenmapGUI.higwidgets.higbuttons import HIGButton, HIGToggleButton
-from zenmapGUI.higwidgets.higboxes import HIGVBox, HIGHBox, HIGSpacer, hig_box_space_holder
-from zenmapGUI.higwidgets.higlabels import HIGSectionLabel, HIGEntryLabel, HintWindow
+from zenmapGUI.higwidgets.higboxes import HIGVBox, HIGHBox, HIGSpacer,\
+        hig_box_space_holder
+from zenmapGUI.higwidgets.higlabels import HIGSectionLabel, HIGEntryLabel,\
+        HintWindow
 from zenmapGUI.higwidgets.higtables import HIGTable
 from zenmapGUI.higwidgets.higdialogs import HIGAlertDialog
 
@@ -130,14 +163,16 @@ class SearchParser(object):
         self.search_gui = search_gui
         self.search_dict = search_gui.search_dict
 
-        # We need to make an operator->searchkey mapping, since the search entry
-        # field and the search classes have different syntax.
+        # We need to make an operator->searchkey mapping, since the search
+        # entry field and the search classes have different syntax.
         #
-        # NOTE: if you want to add a new search key not handled by the SearchResult
-        # class, you should add a new method match_CRITERIANAME to the SearchResult class.
-        # For example, if you'd like a "noodles" criteria, you need to create the method
-        # SearchResult.match_noodles(self, noodles_string). To see how searches are
-        # actually performed, start reading from the SearchResult.search() method.
+        # NOTE: if you want to add a new search key not handled by the
+        # SearchResult class, you should add a new method match_CRITERIANAME to
+        # the SearchResult class.  For example, if you'd like a "noodles"
+        # criteria, you need to create the method
+        # SearchResult.match_noodles(self, noodles_string). To see how searches
+        # are actually performed, start reading from the SearchResult.search()
+        # method.
         self.ops2keys = copy.deepcopy(search_keywords)
 
         # This is not really an operator (see below)
@@ -167,15 +202,17 @@ class SearchParser(object):
                 else:
                     self.search_dict["keyword"] = [word]
 
-        # Check if we have any dir: operators in our map, and if so, add them to the
-        # search_gui object and remove them from the map. The dir: operator isn't a real
-        # operator, in a sense that it doesn't need to be processed by the
-        # SearchResult.search() function. It is needed only to create a new SearchDir
-        # object, which is then used to perform the actual search().
+        # Check if we have any dir: operators in our map, and if so, add them
+        # to the search_gui object and remove them from the map. The dir:
+        # operator isn't a real operator, in a sense that it doesn't need to be
+        # processed by the SearchResult.search() function. It is needed only to
+        # create a new SearchDir object, which is then used to perform the
+        # actual search().
         if "dir" in self.search_dict:
             self.search_gui.init_search_dirs(self.search_dict["dir"])
         else:
             self.search_gui.init_search_dirs([])
+
 
 class SearchGUI(gtk.VBox, object):
     """This class is a VBox that holds the search entry field and buttons on
@@ -199,25 +236,28 @@ class SearchGUI(gtk.VBox, object):
         self.id = 0
         self.search_window = search_window
 
-        # The Search* objects are created once per Search Window invocation, so that
-        # they get a list of scans only once, not whenever the search conditions change
+        # The Search* objects are created once per Search Window invocation, so
+        # that they get a list of scans only once, not whenever the search
+        # conditions change
         if self.options["search_db"]:
             try:
                 self.search_db = SearchDB()
             except ImportError, e:
                 self.search_db = SearchDummy()
                 self.no_db_warning.show()
-                self.no_db_warning.set_text("""\
-Warning: The database of saved scans is not available. (%s.) Use \
-"Include Directory" under "Expressions" to search a directory.\
-""" % str(e))
+                self.no_db_warning.set_text(
+                        'Warning: The database of saved scans is not '
+                        'available. (%s.) Use "Include Directory" under '
+                        '"Expressions" to search a directory.' % str(e))
 
-        # Search directories can be added via the "dir:" operator, so it needs to be a map
+        # Search directories can be added via the "dir:" operator, so it needs
+        # to be a map
         self.search_dirs = {}
         self.init_search_dirs()
 
         # We create an empty search dictionary, since SearchParser will fill it
-        # with keywords as it encounters different operators in the search string.
+        # with keywords as it encounters different operators in the search
+        # string.
         self.search_dict = dict()
         # We need to define our own keyword search dictionary
         search_keywords = dict()
@@ -255,42 +295,48 @@ Warning: The database of saved scans is not available. (%s.) Use \
         search_keywords["ir"] = "in_route"
         self.search_parser = SearchParser(self, search_keywords)
 
-        # This list holds the (operator, argument) tuples, parsed from the GUI criteria rows
+        # This list holds the (operator, argument) tuples, parsed from the GUI
+        # criteria rows
         self.gui_criteria_list = []
 
-        # Do an initial "empty" search, so that the results window initially holds
-        # all scans in the database
+        # Do an initial "empty" search, so that the results window initially
+        # holds all scans in the database
         self.search_parser.update("")
         self.start_search()
 
-    def init_search_dirs(self, dirs = []):
+    def init_search_dirs(self, dirs=[]):
         # Start fresh
         self.search_dirs.clear()
 
-        # If specified, add the search directory from the Zenmap config file to the map
+        # If specified, add the search directory from the Zenmap config file to
+        # the map
         conf_dir = self.options["directory"]
         if conf_dir:
-            self.search_dirs[conf_dir] = SearchDir(conf_dir, self.options["file_extension"])
+            self.search_dirs[conf_dir] = SearchDir(
+                    conf_dir, self.options["file_extension"])
 
         # Process any other dirs (as added by the dir: operator)
         for dir in dirs:
-            self.search_dirs[dir] = SearchDir(dir, self.options["file_extension"])
+            self.search_dirs[dir] = SearchDir(
+                    dir, self.options["file_extension"])
 
     def _create_widgets(self):
         # Search box and buttons
         self.search_top_hbox = HIGHBox()
         self.search_label = HIGSectionLabel(_("Search:"))
         self.search_entry = gtk.Entry()
-        self.expressions_btn = HIGToggleButton(_("Expressions "), gtk.STOCK_EDIT)
+        self.expressions_btn = HIGToggleButton(
+                _("Expressions "), gtk.STOCK_EDIT)
 
         # The quick reference tooltip button
         self.search_tooltip_btn = HIGButton(" ", gtk.STOCK_INFO)
 
-        # The expression VBox. This is only visible once the user clicks on "Expressions"
+        # The expression VBox. This is only visible once the user clicks on
+        # "Expressions"
         self.expr_vbox = gtk.VBox()
 
         # Results section
-        self.result_list = gtk.ListStore(str, str, int) # title, date, id
+        self.result_list = gtk.ListStore(str, str, int)  # title, date, id
         self.result_view = gtk.TreeView(self.result_list)
         self.result_scrolled = gtk.ScrolledWindow()
         self.result_title_column = gtk.TreeViewColumn(_("Scan"))
@@ -310,13 +356,14 @@ Warning: The database of saved scans is not available. (%s.) Use \
         self.search_top_hbox.pack_start(self.expressions_btn, False)
         self.search_top_hbox.pack_start(self.search_tooltip_btn, False)
 
-        # The expressions (if any) should be tightly packed so that they don't take
-        # too much screen real-estate
+        # The expressions (if any) should be tightly packed so that they don't
+        # take too much screen real-estate
         self.expr_vbox.set_spacing(0)
 
         # Packing the result section
         self.result_scrolled.add(self.result_view)
-        self.result_scrolled.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+        self.result_scrolled.set_policy(
+                gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
 
         # Packing it all together
         self.set_spacing(4)
@@ -335,21 +382,24 @@ Warning: The database of saved scans is not available. (%s.) Use \
         hint_window.show_all()
 
     def expressions_clicked(self, widget=None, extra=None):
-        if len(self.expr_vbox.get_children()) == 0 and self.search_entry.get_text() == "":
+        if (len(self.expr_vbox.get_children()) == 0 and
+                self.search_entry.get_text() == ""):
             # This is the first time the user has clicked on "Show Expressions"
-            # and the search entry box is empty, so we add a single Criterion row
+            # and the search entry box is empty, so we add a single Criterion
+            # row
             self.expr_vbox.pack_start(Criterion(self))
 
         if self.expressions_btn.get_active():
-            # The Expressions GUI is about to be displayed. It needs to reflect all the
-            # conditions in the search entry field, so a comparison between the entry field
-            # and the GUI needs to be performed.
+            # The Expressions GUI is about to be displayed. It needs to reflect
+            # all the conditions in the search entry field, so a comparison
+            # between the entry field and the GUI needs to be performed.
 
-            # Make the search entry field insensitive while expressions are visible
+            # Make the search entry field insensitive while expressions are
+            # visible
             self.search_entry.set_sensitive(False)
 
-            # Get a map of operator => argument from the Expressions GUI so that
-            # we can compare them with the ones in the search entry field
+            # Get a map of operator => argument from the Expressions GUI so
+            # that we can compare them with the ones in the search entry field
             gui_ops = {}
             for criterion in self.expr_vbox.get_children():
                 if criterion.operator in gui_ops:
@@ -358,19 +408,22 @@ Warning: The database of saved scans is not available. (%s.) Use \
                     gui_ops[criterion.operator] = [criterion.argument]
 
             # We compare the search entry field to the Expressions GUI. Every
-            # (operator, value) pair must be present in the GUI after this loop is done.
+            # (operator, value) pair must be present in the GUI after this loop
+            # is done.
             for op, args in self.search_dict.iteritems():
                 for arg in args:
                     if (op not in gui_ops) or (arg not in gui_ops[op]):
                         # We need to add this pair to the GUI
-                        self.expr_vbox.pack_start(Criterion(self, op, arg), False)
+                        self.expr_vbox.pack_start(
+                                Criterion(self, op, arg), False)
 
-            # Now we check if there are any leftover criterion rows that aren't present
-            # in the search_dict (for example, if a user has deleted something from the
-            # search entry field)
+            # Now we check if there are any leftover criterion rows that aren't
+            # present in the search_dict (for example, if a user has deleted
+            # something from the search entry field)
             for criterion in self.expr_vbox.get_children():
-                if criterion.operator not in self.search_dict or \
-                   criterion.argument not in self.search_dict[criterion.operator]:
+                if (criterion.operator not in self.search_dict or
+                        criterion.argument not in self.search_dict[
+                            criterion.operator]):
                     criterion.destroy()
             # If we have deleted all rows, add an empty one
             if len(self.expr_vbox.get_children()) == 0:
@@ -379,13 +432,14 @@ Warning: The database of saved scans is not available. (%s.) Use \
             # Display all elements
             self.expr_vbox.show_all()
         else:
-            # The Expressions GUI is about to be hidden. No updates to the search entry field
-            # are necessary, since it gets updated on every change in one of the criterion rows.
+            # The Expressions GUI is about to be hidden. No updates to the
+            # search entry field are necessary, since it gets updated on every
+            # change in one of the criterion rows.
             self.expr_vbox.hide_all()
             self.search_entry.set_sensitive(True)
 
     def close(self):
-        if self.expr_window != None:
+        if self.expr_window is not None:
             self.expr_window.close()
 
     def add_criterion(self, caller):
@@ -419,7 +473,8 @@ Warning: The database of saved scans is not available. (%s.) Use \
 
     def add_search_dir(self, dir):
         if dir not in self.search_dirs:
-            self.search_dirs[dir] = SearchDir(dir, self.options["file_extension"])
+            self.search_dirs[dir] = SearchDir(
+                    dir, self.options["file_extension"])
 
     def update_search_entry(self, widget, extra=None):
         """Called when the search entry field is modified."""
@@ -428,10 +483,14 @@ Warning: The database of saved scans is not available. (%s.) Use \
 
     def start_search(self):
         if not self.options["search_db"] and not self.options["directory"]:
-            d = HIGAlertDialog(message_format=_("No search method selected!"),
-                               secondary_text=_("%s can search results on directories or \
-inside it's own database. Please, select a method by choosing a directory or by checking \
-the search data base option at the 'Search options' tab before start the search") % APP_DISPLAY_NAME)
+            d = HIGAlertDialog(
+                    message_format=_("No search method selected!"),
+                    secondary_text=_(
+                        "%s can search results on directories or inside its "
+                        "own database. Please select a method by choosing a "
+                        "directory or by checking the search data base option "
+                        "in the 'Search options' tab before starting a search"
+                        ) % APP_DISPLAY_NAME)
             d.run()
             d.destroy()
             return
@@ -457,8 +516,9 @@ the search data base option at the 'Search options' tab before start the search"
         #    self.append_result(result)
         #    matched += 1
 
-        self.search_window.set_label_text("Matched <b>%s</b> out of <b>%s</b> scans." % \
-                                         (str(matched), str(total)))
+        self.search_window.set_label_text(
+                "Matched <b>%s</b> out of <b>%s</b> scans." % (
+                    str(matched), str(total)))
 
     def clear_result_list(self):
         for i in range(len(self.result_list)):
@@ -473,7 +533,6 @@ the search data base option at the 'Search options' tab before start the search"
             date_field = date.strftime("%Y-%m-%d %H:%M")
         except ValueError:
             date_field = _("Unknown")
-
 
         self.parsed_results[self.id] = [title, parsed_result]
         self.result_list.append([title, date_field, self.id])
@@ -523,11 +582,11 @@ the search data base option at the 'Search options' tab before start the search"
 
 
 class Criterion(gtk.HBox):
-    """This class holds one criterion row, represented as an HBox.
-    It holds a ComboBox and a Subcriterion's subclass instance, depending on the
-    selected entry in the ComboBox. For example, when the 'Target' option is
-    selected, a SimpleSubcriterion widget is displayed, but when the 'Date'
-    operator is selected, a DateSubcriterion widget is displayed."""
+    """This class holds one criterion row, represented as an HBox.  It holds a
+    ComboBox and a Subcriterion's subclass instance, depending on the selected
+    entry in the ComboBox. For example, when the 'Target' option is selected, a
+    SimpleSubcriterion widget is displayed, but when the 'Date' operator is
+    selected, a DateSubcriterion widget is displayed."""
 
     def __init__(self, search_window, operator="keyword", argument=""):
         """A reference to the search window is passed so that we can call
@@ -540,17 +599,18 @@ class Criterion(gtk.HBox):
 
         # We need this as a map, so that we can pass the operator into
         # the SimpleSubcriterion instance
-        self.combo_entries = {"Keyword" : ["keyword"],
-                              "Profile Name" : ["profile"],
-                              "Target" : ["target"],
-                              "Options" : ["option"],
-                              "Date" : ["date", "after", "before"],
-                              "Operating System" : ["os"],
-                              "Port" : ["open", "scanned", "closed", "filtered",
-                                        "unfiltered", "open_filtered", "closed_filtered"],
-                              "Service" : ["service"],
-                              "Host In Route" : ["inroute"],
-                              "Include Directory" : ["dir"]}
+        self.combo_entries = {"Keyword": ["keyword"],
+                              "Profile Name": ["profile"],
+                              "Target": ["target"],
+                              "Options": ["option"],
+                              "Date": ["date", "after", "before"],
+                              "Operating System": ["os"],
+                              "Port": ["open", "scanned", "closed", "filtered",
+                                  "unfiltered", "open_filtered",
+                                  "closed_filtered"],
+                              "Service": ["service"],
+                              "Host In Route": ["inroute"],
+                              "Include Directory": ["dir"]}
 
         self._create_widgets()
         self._pack_widgets()
@@ -560,7 +620,8 @@ class Criterion(gtk.HBox):
         # A ComboBox containing the list of operators
         self.operator_combo = gtk.combo_box_new_text()
 
-        # Sort all the keys from combo_entries and make an entry for each of them
+        # Sort all the keys from combo_entries and make an entry for each of
+        # them
         sorted_entries = self.combo_entries.keys()
         sorted_entries.sort()
         for name in sorted_entries:
@@ -574,7 +635,8 @@ class Criterion(gtk.HBox):
                     break
 
         # Create a subcriterion
-        self.subcriterion = self.new_subcriterion(self.default_operator, self.default_argument)
+        self.subcriterion = self.new_subcriterion(
+                self.default_operator, self.default_argument)
 
         # The "add" and "remove" buttons
         self.add_btn = HIGButton(" ", gtk.STOCK_ADD)
@@ -643,6 +705,7 @@ class Criterion(gtk.HBox):
     operator = property(get_operator)
     argument = property(get_argument)
 
+
 class Subcriterion(gtk.HBox):
     """This class is a base class for all subcriterion types. Depending on the
     criterion selected in the Criterion's ComboBox, a subclass of Subcriterion
@@ -654,8 +717,10 @@ class Subcriterion(gtk.HBox):
         self.argument = ""
 
     def value_changed(self):
-        """Propagates the operator and the argument up to the Criterion parent."""
+        """Propagates the operator and the argument up to the Criterion
+        parent."""
         self.get_parent().value_changed(self.operator, self.argument)
+
 
 class SimpleSubcriterion(Subcriterion):
     """This class represents all 'simple' criterion types that need only an
@@ -685,6 +750,7 @@ class SimpleSubcriterion(Subcriterion):
         self.argument = widget.get_text()
         self.value_changed()
 
+
 class PortSubcriterion(Subcriterion):
     """This class shows the port criterion GUI."""
     def __init__(self, operator="open", argument=""):
@@ -705,11 +771,12 @@ class PortSubcriterion(Subcriterion):
         self.label = gtk.Label("  is  ")
 
         self.port_state_combo = gtk.combo_box_new_text()
-        states = ["open", "scanned", "closed", "filtered", "unfiltered", "open|filtered",
-                  "closed|filtered"]
+        states = ["open", "scanned", "closed", "filtered", "unfiltered",
+                "open|filtered", "closed|filtered"]
         for state in states:
             self.port_state_combo.append_text(state)
-        self.port_state_combo.set_active(states.index(self.operator.replace("_", "|")))
+        self.port_state_combo.set_active(
+                states.index(self.operator.replace("_", "|")))
 
     def _pack_widgets(self):
         self.pack_start(self.entry, True)
@@ -727,6 +794,7 @@ class PortSubcriterion(Subcriterion):
     def port_criterion_changed(self, widget=None, extra=None):
         self.operator = widget.get_active_text()
         self.value_changed()
+
 
 class DirSubcriterion(Subcriterion):
     def __init__(self, operator="dir", argument=""):
@@ -766,13 +834,14 @@ class DirSubcriterion(Subcriterion):
         self.argument = widget.get_text()
         self.value_changed()
 
+
 class DateSubcriterion(Subcriterion):
     def __init__(self, operator="date", argument=""):
         Subcriterion.__init__(self)
 
-        self.text2op = {"is" : "date",
-                        "after" : "after",
-                        "before" : "before"}
+        self.text2op = {"is": "date",
+                        "after": "after",
+                        "before": "before"}
 
         self.operator = operator
 
@@ -780,19 +849,22 @@ class DateSubcriterion(Subcriterion):
         self._pack_widgets()
         self._connect_widgets()
 
-        # Count the fuzzy operators, so that we can append them to the argument later
+        # Count the fuzzy operators, so that we can append them to the argument
+        # later
         self.fuzzies = argument.count("~")
         argument = argument.replace("~", "")
         self.minus_notation = False
-        if re.match("\d\d\d\d-\d\d-\d\d$", argument) != None:
+        if re.match("\d\d\d\d-\d\d-\d\d$", argument) is not None:
             year, month, day = argument.split("-")
             self.date = datetime.date(int(year), int(month), int(day))
             self.argument = argument
-        elif re.match("[-|\+]\d+$", argument) != None:
+        elif re.match("[-|\+]\d+$", argument) is not None:
             # Convert the date from the "-n" notation into YYYY-MM-DD
-            parsed_date = datetime.date.fromordinal(datetime.date.today().toordinal() + int(argument))
+            parsed_date = datetime.date.fromordinal(
+                    datetime.date.today().toordinal() + int(argument))
             self.argument = argument
-            self.date = datetime.date(parsed_date.year, parsed_date.month, parsed_date.day)
+            self.date = datetime.date(
+                    parsed_date.year, parsed_date.month, parsed_date.day)
 
             self.minus_notation = True
         else:
@@ -820,7 +892,8 @@ class DateSubcriterion(Subcriterion):
         self.pack_start(self.date_button, True)
 
     def _connect_widgets(self):
-        self.date_criterion_combo.connect("changed", self.date_criterion_changed)
+        self.date_criterion_combo.connect(
+                "changed", self.date_criterion_changed)
         self.date_button.connect("clicked", self.show_calendar)
 
     def date_criterion_changed(self, widget=None, extra=None):
@@ -866,6 +939,7 @@ class DateSubcriterion(Subcriterion):
     date = property(get_date, set_date)
     _date = datetime.date.today()
 
+
 class DateCalendar(gtk.Window, object):
     def __init__(self):
         gtk.Window.__init__(self, gtk.WINDOW_POPUP)
@@ -875,7 +949,7 @@ class DateCalendar(gtk.Window, object):
         self.add(self.calendar)
 
     def connect_calendar(self, update_button_cb):
-        self.calendar.connect("day-selected-double-click", \
+        self.calendar.connect("day-selected-double-click",
                               self.kill_calendar, update_button_cb)
 
     def kill_calendar(self, widget, method):

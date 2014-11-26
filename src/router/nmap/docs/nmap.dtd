@@ -1,7 +1,7 @@
 <!--
     nmap.dtd
     This is the DTD for Nmap's XML output (-oX) format.
-    $Id: nmap.dtd 28544 2012-05-08 05:49:51Z david $
+    $Id: nmap.dtd 29570 2012-08-14 16:36:25Z david $
 
     Originally written by:
     William McVey <wam@cisco.com> <wam+nmap@wamber.net>
@@ -153,7 +153,8 @@
 <!-- these elements are written by output.c:write_xml_initial_hostinfo() -->
 <!ELEMENT status	EMPTY >
 <!ATTLIST status	state		%host_states;	#REQUIRED 
-		  reason	CDATA		#REQUIRED 
+		  reason	    CDATA	#REQUIRED 
+		  reason_ttl	CDATA	#REQUIRED			
  >
 
 <!ELEMENT address	EMPTY >
@@ -229,10 +230,20 @@
 
 <!ELEMENT cpe (#PCDATA)>
 
-<!ELEMENT script	EMPTY >
+<!ELEMENT script	(table|elem)* >
 <!ATTLIST script	
 	id	CDATA	#REQUIRED
 	output	CDATA	#REQUIRED
+>
+
+<!ELEMENT table	(table|elem)* >
+<!ATTLIST table
+    key CDATA #IMPLIED
+>
+
+<!ELEMENT elem	(#PCDATA)>
+<!ATTLIST elem
+    key CDATA #IMPLIED
 >
 
 <!ELEMENT os		( portused* , osmatch*, osfingerprint* ) >

@@ -2,12 +2,12 @@
 .\"     Title: nping
 .\"    Author: [see the "Authors" section]
 .\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 06/13/2012
+.\"      Date: 08/13/2014
 .\"    Manual: Nping Reference Guide
 .\"    Source: Nping
 .\"  Language: English
 .\"
-.TH "NPING" "1" "06/13/2012" "Nping" "Nping Reference Guide"
+.TH "NPING" "1" "08/13/2014" "Nping" "Nping Reference Guide"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -1108,7 +1108,7 @@ must be a number in the range [0\(en65535]\&.
 Sets the Don\*(Aqt Fragment bit in sent packets\&. When an IP datagram has its DF flag set, intermediate devices are not allowed to fragment it so if it needs to travel across a network with a MTU smaller that datagram length the datagram will have to be dropped\&. Normally an ICMP Destination Unreachable message is generated and sent back to the sender\&.
 .RE
 .PP
-\fB\-\-md\fR (More Fragments) .\" --mf (Nping option)
+\fB\-\-mf\fR (More Fragments) .\" --mf (Nping option)
 .RS 4
 Sets the More Fragments bit in sent packets\&. The MF flag is set to indicate the receiver that the current datagram is a fragment of some larger datagram\&. When set to zero it indicates that the current datagram is either the last fragment in the set or that it is the only fragment\&.
 .RE
@@ -1586,8 +1586,7 @@ Displays the program\*(Aqs version number and quits\&.
 .RS 4
 This option lets you specify the number of times that Nping should loop over target hosts (and in some cases target ports)\&. Nping calls these
 \(lqrounds\(rq\&. In a basic execution with only one target (and only one target port in TCP/UDP modes), the number of rounds matches the number of probes sent to the target host\&. However, in more complex executions where Nping is run against multiple targets and multiple ports, the number of rounds is the number of times that Nping sends a complete set of probes that covers all target IPs and all target ports\&. For example, if Nping is asked to send TCP SYN packets to hosts 192\&.168\&.1\&.0\-255 and ports 80 and 433, then 256 \(mu 2\ \&=\ \&512 packets are sent in one round\&. So if you specify
-\fB\-c 100\fR, Nping will loop over the different target hosts and ports 100 times, sending a total of 256 \(mu 2 \(mu 100\ \&=\ \&51200 packets\&. By default Nping runs for 5 rounds\&. If a value of 0 is specified, Nping will run for 232
-rounds\&.
+\fB\-c 100\fR, Nping will loop over the different target hosts and ports 100 times, sending a total of 256 \(mu 2 \(mu 100\ \&=\ \&51200 packets\&. By default Nping runs for 5 rounds\&. If a value of 0 is specified, Nping will run continuously\&.
 .RE
 .PP
 \fB\-e \fR\fB\fIname\fR\fR, \fB\-\-interface \fR\fB\fIname\fR\fR (Set the network interface to be used) .\" --interface (Nping option) .\" -e (Nping option)
@@ -1782,10 +1781,10 @@ nmap\-dev
 archives at
 \m[blue]\fB\%http://seclists.org/\fR\m[].\" nmap-dev mailing list
 Read this full manual page as well\&. If nothing comes out of this, mail a bug report to
-nmap\-dev@insecure\&.org\&. Please include everything you have learned about the problem, as well as what version of Nping you are running and what operating system version it is running on\&. Problem reports and Nping usage questions sent to
-nmap\-dev@insecure\&.org
+dev@nmap\&.org\&. Please include everything you have learned about the problem, as well as what version of Nping you are running and what operating system version it is running on\&. Problem reports and Nping usage questions sent to
+dev@nmap\&.org
 are far more likely to be answered than those sent to Fyodor directly\&. If you subscribe to the nmap\-dev list before posting, your message will bypass moderation and get through more quickly\&. Subscribe at
-\m[blue]\fB\%http://cgi.insecure.org/mailman/listinfo/nmap-dev\fR\m[]\&.
+\m[blue]\fB\%http://nmap.org/mailman/listinfo/dev\fR\m[]\&.
 .PP
 Code patches to fix bugs are even better than bug reports\&. Basic instructions for creating patch files with your changes are available at
 \m[blue]\fB\%https://svn.nmap.org/nmap/HACKING\fR\m[]\&. Patches may be sent to
@@ -1798,7 +1797,7 @@ luis\&.mgarc@gmail\&.com
 (\m[blue]\fB\%http://aldabaknocking.com\fR\m[])
 .PP
 Fyodor
-fyodor@insecure\&.org
+fyodor@nmap\&.org
 (\m[blue]\fB\%http://insecure.org\fR\m[])
 .SH "NOTES"
 .IP " 1." 4

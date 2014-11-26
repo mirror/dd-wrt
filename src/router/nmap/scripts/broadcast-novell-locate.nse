@@ -1,3 +1,9 @@
+local bin = require "bin"
+local ipOps = require "ipOps"
+local srvloc = require "srvloc"
+local stdnse = require "stdnse"
+local table = require "table"
+
 description = [[
 Attempts to use the Service Location Protocol to discover Novell NetWare Core Protocol (NCP) servers.
 ]]
@@ -6,7 +12,7 @@ Attempts to use the Service Location Protocol to discover Novell NetWare Core Pr
 --
 --@output
 -- Pre-scan script results:
--- | broadcast-novell-locate: 
+-- | broadcast-novell-locate:
 -- |   Tree name: CQURE-LABTREE
 -- |   Server name: linux-l84t
 -- |   Addresses
@@ -21,55 +27,53 @@ author = "Patrik Karlsson"
 license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
 categories = {"broadcast", "safe"}
 
-require 'srvloc'
-require 'ipOps'
 
 prerule = function() return true end
 
 function action()
 
-	local helper = srvloc.Helper:new()
-	
-	local status, bindery = helper:ServiceRequest("bindery.novell", "DEFAULT")
-	if ( not(status) or not(bindery) ) then
-		helper:close()
-		return
-	end
-	bindery = bindery[1]
-	local srvname = bindery:match("%/%/%/(.*)$")
-	
-	local status, attrib = helper:AttributeRequest(bindery, "DEFAULT", "svcaddr-ws")
-	helper:close()
-	attrib = attrib:match("^%(svcaddr%-ws=(.*)%)$")
-	if ( not(attrib) ) then return end
+  local helper = srvloc.Helper:new()
 
-	local attribs = stdnse.strsplit(",", attrib)
-	if ( not(attribs) ) then return end
+  local status, bindery = helper:ServiceRequest("bindery.novell", "DEFAULT")
+  if ( not(status) or not(bindery) ) then
+    helper:close()
+    return
+  end
+  bindery = bindery[1]
+  local srvname = bindery:match("%/%/%/(.*)$")
 
-	local addrs = { name = "Addresses"}
-	local ips = {}
-	for _, attr in ipairs(attribs) do
-		local addr = attr:match("^%d*%-%d*%-%d*%-(........)")
-		if ( addr ) then
-			local pos, dw_addr = bin.unpack( "<I", bin.pack("H", addr) )
-			local ip = ipOps.fromdword(dw_addr)
-			
-			if ( not(ips[ip]) ) then
-				table.insert(addrs, ip)
-				ips[ip] = ip
-			end
-		end
-	end
+  local status, attrib = helper:AttributeRequest(bindery, "DEFAULT", "svcaddr-ws")
+  helper:close()
+  attrib = attrib:match("^%(svcaddr%-ws=(.*)%)$")
+  if ( not(attrib) ) then return end
 
-	local output = {}
-	local status, treename = helper:ServiceRequest("ndap.novell", "DEFAULT")
-	if ( status ) then 
-		treename = treename[1]
-		treename = treename:match("%/%/%/(.*)%.$")
-		table.insert(output, ("Tree name: %s"):format(treename))
-	end
-	table.insert(output, ("Server name: %s"):format(srvname))
-	table.insert(output, addrs)
-		
-	return stdnse.format_output(true, output)
+  local attribs = stdnse.strsplit(",", attrib)
+  if ( not(attribs) ) then return end
+
+  local addrs = { name = "Addresses"}
+  local ips = {}
+  for _, attr in ipairs(attribs) do
+    local addr = attr:match("^%d*%-%d*%-%d*%-(........)")
+    if ( addr ) then
+      local pos, dw_addr = bin.unpack( "<I", bin.pack("H", addr) )
+      local ip = ipOps.fromdword(dw_addr)
+
+      if ( not(ips[ip]) ) then
+        table.insert(addrs, ip)
+        ips[ip] = ip
+      end
+    end
+  end
+
+  local output = {}
+  local status, treename = helper:ServiceRequest("ndap.novell", "DEFAULT")
+  if ( status ) then
+    treename = treename[1]
+    treename = treename:match("%/%/%/(.*)%.$")
+    table.insert(output, ("Tree name: %s"):format(treename))
+  end
+  table.insert(output, ("Server name: %s"):format(srvname))
+  table.insert(output, addrs)
+
+  return stdnse.format_output(true, output)
 end

@@ -54,13 +54,13 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>.;..;..\mswin32;../nbase;winip;..\nsock\include;..\mswin32\pcap-include;..\libdnet-stripped\include;..\mswin32\OpenSSL\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;..;..\mswin32;../nbase;..\nsock\include;..\mswin32\pcap-include;..\libdnet-stripped\include;..\..\nmap-mswin32-aux\OpenSSL\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessToFile>false</PreprocessToFile>
       <PreprocessSuppressLineNumbers>false</PreprocessSuppressLineNumbers>
       <PreprocessKeepComments>false</PreprocessKeepComments>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <PrecompiledHeaderOutputFile>.\Debug/nmap.pch</PrecompiledHeaderOutputFile>
@@ -76,7 +76,7 @@
       <AdditionalDependencies>nsock.lib;nbase.lib;libdnet-stripped.lib;ws2_32.lib;IPHlpAPI.Lib;wpcap.lib;packet.lib;advapi32.lib;libeay32.lib;ssleay32.lib;shell32.lib;libnetutil.lib</AdditionalDependencies>
       <OutputFile>.\Debug\nping.exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>..\mswin32\lib;..\nsock;..\nbase;..\libdnet-stripped;../libnetutil;..\mswin32\OpenSSL\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\mswin32\lib;..\nsock;..\nbase;..\libdnet-stripped;../libnetutil;..\..\nmap-mswin32-aux\OpenSSL\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <DelayLoadDLLs>wpcap.dll;iphlpapi.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -88,7 +88,7 @@
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "..\mswin32\OpenSSL\bin\*.dll" "$(SolutionDir)\$(Configuration)\" /y </Command>
+      <Command>xcopy "..\..\nmap-mswin32-aux\OpenSSL\bin\*.dll" "$(SolutionDir)\$(Configuration)\" /y </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -100,10 +100,9 @@
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>.;..;..\mswin32;../nbase;winip;..\nsock\include;..\mswin32\pcap-include;..\libdnet-stripped\include;..\mswin32\OpenSSL\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;..;..\mswin32;../nbase;..\nsock\include;..\mswin32\pcap-include;..\libdnet-stripped\include;..\..\nmap-mswin32-aux\OpenSSL\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <PrecompiledHeader>
       </PrecompiledHeader>
@@ -118,7 +117,7 @@
       <AdditionalDependencies>nsock.lib;nbase.lib;libdnet-stripped.lib;ws2_32.lib;IPHlpAPI.Lib;wpcap.lib;packet.lib;advapi32.lib;libeay32.lib;ssleay32.lib;shell32.lib;libnetutil.lib</AdditionalDependencies>
       <OutputFile>.\Release/nping.exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>..\mswin32\lib;..\nsock;..\nbase;..\libdnet-stripped;../libnetutil;..\mswin32\OpenSSL\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\mswin32\lib;..\nsock;..\nbase;..\libdnet-stripped;../libnetutil;..\..\nmap-mswin32-aux\OpenSSL\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <DelayLoadDLLs>wpcap.dll;iphlpapi.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
       <ProgramDatabaseFile>.\Release/nping.pdb</ProgramDatabaseFile>
@@ -128,7 +127,7 @@
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(SolutionDir)\OpenSSL\bin\*.dll" "$(SolutionDir)\$(Configuration)\" /y </Command>
+      <Command>xcopy "..\..\nmap-mswin32-aux\OpenSSL\bin\*.dll" "$(SolutionDir)\$(Configuration)\" /y </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -174,29 +173,6 @@
     <ClInclude Include="utils_net.h" />
     <ClInclude Include="winclude.h" />
     <ClInclude Include="winfix.h" />
-    <ClInclude Include="..\mswin32\pcap-include\bittypes.h" />
-    <ClInclude Include="..\mswin32\pcap-include\bucket_lookup.h" />
-    <ClInclude Include="..\mswin32\pcap-include\count_packets.h" />
-    <ClInclude Include="..\mswin32\pcap-include\Devioctl.h" />
-    <ClInclude Include="..\mswin32\pcap-include\Gnuc.h" />
-    <ClInclude Include="..\mswin32\pcap-include\ip6_misc.h" />
-    <ClInclude Include="..\mswin32\pcap-include\memory_t.h" />
-    <ClInclude Include="..\mswin32\pcap-include\normal_lookup.h" />
-    <ClInclude Include="..\mswin32\pcap-include\Ntddndis.h" />
-    <ClInclude Include="..\mswin32\pcap-include\Ntddpack.h" />
-    <ClInclude Include="..\mswin32\pcap-include\Packet32.h" />
-    <ClInclude Include="..\mswin32\pcap-include\pcap-bpf.h" />
-    <ClInclude Include="..\mswin32\pcap-include\pcap-int.h" />
-    <ClInclude Include="..\mswin32\pcap-include\pcap-stdinc.h" />
-    <ClInclude Include="..\mswin32\pcap-include\pcap.h" />
-    <ClInclude Include="..\mswin32\pcap-include\pthread.h" />
-    <ClInclude Include="..\mswin32\pcap-include\remote-ext.h" />
-    <ClInclude Include="..\mswin32\pcap-include\sched.h" />
-    <ClInclude Include="..\mswin32\pcap-include\semaphore.h" />
-    <ClInclude Include="..\mswin32\pcap-include\tcp_session.h" />
-    <ClInclude Include="..\mswin32\pcap-include\time_calls.h" />
-    <ClInclude Include="..\mswin32\pcap-include\tme.h" />
-    <ClInclude Include="..\mswin32\pcap-include\Win32-Extensions.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\libdnet-stripped\libdnet-stripped.vcxproj">

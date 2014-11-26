@@ -1,3 +1,10 @@
+local nmap = require "nmap"
+local rmi = require "rmi"
+local shortport = require "shortport"
+local stdnse = require "stdnse"
+local string = require "string"
+local table = require "table"
+
 description = [[
 Connects to a remote RMI registry and attempts to dump all of its objects.
 
@@ -12,7 +19,7 @@ on it.
 It also gives information about where the objects are located, (marked
 with @<ip>:port in the output).
 
-Some apps give away the classpath, which this scripts catches in so-called "Custom data". 
+Some apps give away the classpath, which this scripts catches in so-called "Custom data".
 ]]
 
 ---
@@ -20,7 +27,7 @@ Some apps give away the classpath, which this scripts catches in so-called "Cust
 -- @output
 -- PORT     STATE SERVICE  REASON
 -- 1099/tcp open  java-rmi syn-ack
--- | rmi-dumpregistry:  
+-- | rmi-dumpregistry:
 -- |   jmxrmi
 -- |     javax.management.remote.rmi.RMIServerImpl_Stub
 -- |     @127.0.1.1:40353
@@ -32,7 +39,7 @@ Some apps give away the classpath, which this scripts catches in so-called "Cust
 -- @output
 -- PORT     STATE SERVICE  REASON
 -- 1099/tcp open  java-rmi syn-ack
--- | rmi-dumpregistry:  
+-- | rmi-dumpregistry:
 -- |   cfassembler/default
 -- |     coldfusion.flex.rmi.DataServicesCFProxyServer_Stub
 -- |     @192.168.0.3:1271
@@ -143,89 +150,87 @@ author = "Martin Holst Swende"
 license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
 categories = {"default", "discovery", "safe"}
 
-require "shortport"
-require "rmi"
 portrule = shortport.port_or_service({1098, 1099, 1090, 8901, 8902, 8903}, {"java-rmi", "rmiregistry"})
 
 -- Some lazy shortcuts
 
 local function dbg(str,...)
-	stdnse.print_debug(3,"RMI-DUMPREG:"..str, unpack(arg))
+  stdnse.print_debug(3,"RMI-DUMPREG:"..str, ...)
 end
 
 local function dbg_err(str, ... )
-	stdnse.print_debug("RMI-DUMPREG-ERR:"..str, unpack(arg))
+  stdnse.print_debug("RMI-DUMPREG-ERR:"..str, ...)
 end
 
 -- Function to split a string
 local function split(str, sep)
-         local sep, fields = sep or "; ", {}
-         local pattern = string.format("([^%s]+)", sep)
-         str:gsub(pattern, function(c) fields[#fields+1] = c end)
-         return fields
- end
+  local sep, fields = sep or "; ", {}
+  local pattern = string.format("([^%s]+)", sep)
+  str:gsub(pattern, function(c) fields[#fields+1] = c end)
+  return fields
+end
 
 
---This is a customData formatter. In some cases, the RMI library finds 'custom data' which belongs to an object. 
+--This is a customData formatter. In some cases, the RMI library finds 'custom data' which belongs to an object.
 -- This data is not handled correctly, instead, the data is dumped in the objects customData field (which is a table with strings)
 -- The RMI library does not do anything more than that - however, here in the land of rmi-dumpregistry land, we may have
--- more knowledge about how to interpret that data. 
--- In the wild, coldfusion.flex.rmi.DataServicesCFProxyServer_Stub e.g discloses the classpath in this variable. This method looks at 
+-- more knowledge about how to interpret that data.
+-- In the wild, coldfusion.flex.rmi.DataServicesCFProxyServer_Stub e.g discloses the classpath in this variable. This method looks at
 -- the contents of the custom data. if it looks like a class path, we display it as such. This method is passed to the toTable() method
--- of the returned RMI object.  
+-- of the returned RMI object.
 -- @return title, data
 function customDataFormatter(className, customData)
-	if customData == nil then return nil end
-	if #customData ==0 then return nil end
-	
-	local retData = {}
-	for k,v in ipairs(customData) do
-		if v:find("file:/") == 1 then
-			-- This is a classpath
-			cp = split(v, "; ") -- Splits into table
-			table.insert(retData, "Classpath")
-			table.insert(retData, cp)
-		else
-			table.insert(retData[v])
-		end
-	end
-	
-	return "Custom data", retData
+  if customData == nil then return nil end
+  if #customData ==0 then return nil end
+
+  local retData = {}
+  for k,v in ipairs(customData) do
+    if v:find("file:/") == 1 then
+      -- This is a classpath
+      local cp = split(v, "; ") -- Splits into table
+      table.insert(retData, "Classpath")
+      table.insert(retData, cp)
+    else
+      table.insert(retData[v])
+    end
+  end
+
+  return "Custom data", retData
 end
 
 
 function action(host,port, args)
-	
-	local registry= rmi.Registry:new( host.ip, port.number)
 
-	
-	local status, j_array = registry:list()
-	local output = {}
-	if not status then 
-		return false, ("Registry listing failed (%s)"):format(tostring(j_array))
-	end
-	-- It's definitely RMI!
-	port.version.name ='java-rmi'
-	port.version.product='Java RMI Registry'
-	nmap.set_port_version(host,port,'hardmatched')
-	
-	-- Monkey patch the java-class in rmi, to set our own custom data formatter 
-	-- for classpaths
-	rmi.JavaClass.customDataFormatter = customDataFormatter
-	
-	-- We expect an array of strings to be the return data
-	local data = j_array:getValues()
-	for i,name in ipairs( data ) do
-		--print(data)
-		table.insert(output, name)
-		dbg("Querying object %s", name)
-		local status, j_object= registry:lookup(name)
+  local registry= rmi.Registry:new( host.ip, port.number)
 
-		if status then
-			table.insert(output, j_object:toTable())
-		end
 
-		
-	end
-	return stdnse.format_output(true, output)
+  local status, j_array = registry:list()
+  local output = {}
+  if not status then
+    return false, ("Registry listing failed (%s)"):format(tostring(j_array))
+  end
+  -- It's definitely RMI!
+  port.version.name ='java-rmi'
+  port.version.product='Java RMI Registry'
+  nmap.set_port_version(host,port)
+
+  -- Monkey patch the java-class in rmi, to set our own custom data formatter
+  -- for classpaths
+  rmi.JavaClass.customDataFormatter = customDataFormatter
+
+  -- We expect an array of strings to be the return data
+  local data = j_array:getValues()
+  for i,name in ipairs( data ) do
+    --print(data)
+    table.insert(output, name)
+    dbg("Querying object %s", name)
+    local status, j_object= registry:lookup(name)
+
+    if status then
+      table.insert(output, j_object:toTable())
+    end
+
+
+  end
+  return stdnse.format_output(true, output)
 end

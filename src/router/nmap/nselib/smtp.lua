@@ -3,13 +3,14 @@
 --
 -- @copyright Same as Nmap--See http://nmap.org/book/man-legal.html
 
-module(... or "smtp", package.seeall)
-
-local comm    = require 'comm'
-local nmap    = require 'nmap'
-local stdnse  = require 'stdnse'
-local base64  = require 'base64'
-local sasl    = require 'sasl'
+local base64 = require "base64"
+local comm = require "comm"
+local nmap = require "nmap"
+local sasl = require "sasl"
+local stdnse = require "stdnse"
+local string = require "string"
+local table = require "table"
+_ENV = stdnse.module("smtp", stdnse.seeall)
 
 local ERROR_MESSAGES = {
   ["EOF"]     = "connection closed",
@@ -157,12 +158,13 @@ local SMTP_CMD = {
     },
   },
 }
-
--- Returns a domain to be used in the SMTP commands that need it. If the
--- user specified one through the script argument <code>smtp.domain</code>
--- this function will return it. Otherwise it will try to find the domain
--- from the typed hostname and from the rDNS name. If it still can't find 
--- one it will return the nmap.scanme.org by default.
+---
+-- Returns a domain to be used in the SMTP commands that need it.
+--
+-- If the user specified one through the script argument
+-- <code>smtp.domain</code> this function will return it. Otherwise it will try
+-- to find the domain from the typed hostname and from the rDNS name. If it
+-- still can't find one it will return the nmap.scanme.org by default.
 --
 -- @param host The host table
 -- @return The hostname to be used by the different SMTP commands.
@@ -194,7 +196,7 @@ get_auth_mech = function(response)
   local list = {}
 
   for _, line in pairs(stdnse.strsplit("\r?\n", response)) do
-    local authstr = line:match("%d+\-AUTH%s(.*)$")
+    local authstr = line:match("%d+%-AUTH%s(.*)$")
     if authstr then
       for mech in authstr:gmatch("[^%s]+") do
         table.insert(list, mech)
@@ -289,7 +291,7 @@ connect = function(host, port, opts)
   if opts.ssl then
     local socket, _, _, ret = comm.tryssl(host, port, '', opts)
     if not socket then
-      return socket, (ERROR_MESSAGES[ret] or 'unspecified error') 
+      return socket, (ERROR_MESSAGES[ret] or 'unspecified error')
     end
     return socket, ret
   else
@@ -323,7 +325,7 @@ end
 
 --- Switches the plain text connection to be protected by the TLS protocol
 -- by using the SMTP STARTTLS command.
--- 
+--
 -- The socket will be reconnected by using SSL. On network errors or if the
 -- SMTP command fails, the connection will be closed and the socket cleared.
 --
@@ -333,7 +335,7 @@ end
 --         to the client's STARTTLS command, or an error message on failures.
 starttls = function(socket)
   local st, reply, ret
-  
+
   st, reply = query(socket, "STARTTLS")
   if not st then
     return st, reply
@@ -355,13 +357,13 @@ starttls = function(socket)
 end
 
 --- Sends the EHLO command to the SMTP server.
--- 
+--
 -- On network errors or if the SMTP command fails, the connection
 -- will be closed and the socket cleared.
 --
 -- @param socket connected to server
 -- @param domain to use in the EHLO command.
--- @return true on sucess, or false on failures.
+-- @return true on success, or false on failures.
 -- @return response returned by the SMTP server on success, or an
 --         error message on failures.
 ehlo = function(socket, domain)
@@ -381,7 +383,7 @@ ehlo = function(socket, domain)
 end
 
 --- Sends the HELP command to the SMTP server.
--- 
+--
 -- On network errors or if the SMTP command fails, the connection
 -- will be closed and the socket cleared.
 --
@@ -564,7 +566,7 @@ end
 verify = function(socket, mailbox)
   local st, ret, response
   st, response = query(socket, "VRFY", mailbox)
-  
+
   st, ret = check_reply("VRFY", response)
   if not st then
     quit(socket)
@@ -583,79 +585,92 @@ quit = function(socket)
   socket:close()
 end
 
+--- Attempts to authenticate with the SMTP server. The supported authentication
+--  mechanisms are: LOGIN, PLAIN, CRAM-MD5, DIGEST-MD5 and NTLM.
+--
+-- @param socket connected to server.
+-- @param username SMTP username.
+-- @param password SMTP password.
+-- @param mech Authentication mechanism.
+-- @return true on success, or false on failures.
+-- @return response returned by the SMTP server on success, or an
+--         error message on failures.
+
 login = function(socket, username, password, mech)
-	assert(mech == "LOGIN" or mech == "PLAIN" or mech == "CRAM-MD5" 
-			or mech == "DIGEST-MD5" or mech == "NTLM",
-			("Unsupported authentication mechanism (%s)"):format(mech or "nil"))
-	local status, response = query(socket, "AUTH", mech)
-	if ( not(status) ) then
-		return false, "ERROR: Failed to send AUTH to server"
-	end
+  assert(mech == "LOGIN" or mech == "PLAIN" or mech == "CRAM-MD5"
+    or mech == "DIGEST-MD5" or mech == "NTLM",
+    ("Unsupported authentication mechanism (%s)"):format(mech or "nil"))
+  local status, response = query(socket, "AUTH", mech)
+  if ( not(status) ) then
+    return false, "ERROR: Failed to send AUTH to server"
+  end
 
-	if ( mech == "LOGIN" ) then
-		local tmp = response:match("334 (.*)")
-		if ( not(tmp) ) then
-			return false, "ERROR: Failed to decode LOGIN response"
-		end
-		tmp = base64.dec(tmp):lower()
-		if ( not(tmp:match("^username")) ) then
-			return false, ("ERROR: Expected \"Username\", but received (%s)"):format(tmp)
-		end
-		status, response = query(socket, base64.enc(username))
-		if ( not(status) ) then
-			return false, "ERROR: Failed to read LOGIN response"
-		end
-		tmp = response:match("334 (.*)")
-		if ( not(tmp) ) then
-			return false, "ERROR: Failed to decode LOGIN response"
-		end
-		tmp = base64.dec(tmp):lower()
-		if ( not(tmp:match("^password")) ) then
-			return false, ("ERROR: Expected \"password\", but received (%s)"):format(tmp)
-		end
-		status, response = query(socket, base64.enc(password))
-		if ( not(status) ) then
-			return false, "ERROR: Failed to read LOGIN response"
-		end
-		if ( response:match("^235") ) then
-			return true, "Login success"
-		end
-		return false, response
-	end
-	
-	
-	if ( mech == "NTLM" ) then
-		-- sniffed of the wire, seems to always be the same
-		-- decodes to some NTLMSSP blob greatness
-		status, response = query(socket, "TlRMTVNTUAABAAAAB7IIogYABgA3AAAADwAPACgAAAAFASgKAAAAD0FCVVNFLUFJUi5MT0NBTERPTUFJTg==")
-		if ( not(status) ) then return false, "ERROR: Failed to receieve NTLM challenge" end 
-	end
-	
-	
-	local chall = response:match("^334 (.*)")
-	chall = (chall and base64.dec(chall))
-	if (not(chall)) then return false, "ERROR: Failed to retrieve challenge" end
+  if ( mech == "LOGIN" ) then
+    local tmp = response:match("334 (.*)")
+    if ( not(tmp) ) then
+      return false, "ERROR: Failed to decode LOGIN response"
+    end
+    tmp = base64.dec(tmp):lower()
+    if ( not(tmp:match("^username")) ) then
+      return false, ("ERROR: Expected \"Username\", but received (%s)"):format(tmp)
+    end
+    status, response = query(socket, base64.enc(username))
+    if ( not(status) ) then
+      return false, "ERROR: Failed to read LOGIN response"
+    end
+    tmp = response:match("334 (.*)")
+    if ( not(tmp) ) then
+      return false, "ERROR: Failed to decode LOGIN response"
+    end
+    tmp = base64.dec(tmp):lower()
+    if ( not(tmp:match("^password")) ) then
+      return false, ("ERROR: Expected \"password\", but received (%s)"):format(tmp)
+    end
+    status, response = query(socket, base64.enc(password))
+    if ( not(status) ) then
+      return false, "ERROR: Failed to read LOGIN response"
+    end
+    if ( response:match("^235") ) then
+      return true, "Login success"
+    end
+    return false, response
+  end
 
-	-- All mechanisms expect username and pass
-	-- add the otheronce for those who need them
-	local mech_params = { username, password, chall, "smtp" }
-	local auth_data = sasl.Helper:new(mech):encode(unpack(mech_params))
-	auth_data = base64.enc(auth_data)
-	
-	status, response = query(socket, auth_data)
-	if ( not(status) ) then
-		return false, ("ERROR: Failed to authenticate using SASL %s"):format(mech)
-	end
-	
-	if ( mech == "DIGEST-MD5" ) then
-		local rspauth = response:match("^334 (.*)")
-		if ( rspauth ) then
-			rspauth = base64.dec(rspauth)
-			status, response = query(socket,"")
-		end
-	end
-	
-	if ( response:match("^235") ) then return true, "Login success"	end
-		
-	return false, response
+
+  if ( mech == "NTLM" ) then
+    -- sniffed of the wire, seems to always be the same
+    -- decodes to some NTLMSSP blob greatness
+    status, response = query(socket, "TlRMTVNTUAABAAAAB7IIogYABgA3AAAADwAPACgAAAAFASgKAAAAD0FCVVNFLUFJUi5MT0NBTERPTUFJTg==")
+    if ( not(status) ) then return false, "ERROR: Failed to receive NTLM challenge" end
+  end
+
+
+  local chall = response:match("^334 (.*)")
+  chall = (chall and base64.dec(chall))
+  if (not(chall)) then return false, "ERROR: Failed to retrieve challenge" end
+
+  -- All mechanisms expect username and pass
+  -- add the otheronce for those who need them
+  local mech_params = { username, password, chall, "smtp" }
+  local auth_data = sasl.Helper:new(mech):encode(table.unpack(mech_params))
+  auth_data = base64.enc(auth_data)
+
+  status, response = query(socket, auth_data)
+  if ( not(status) ) then
+    return false, ("ERROR: Failed to authenticate using SASL %s"):format(mech)
+  end
+
+  if ( mech == "DIGEST-MD5" ) then
+    local rspauth = response:match("^334 (.*)")
+    if ( rspauth ) then
+      rspauth = base64.dec(rspauth)
+      status, response = query(socket,"")
+    end
+  end
+
+  if ( response:match("^235") ) then return true, "Login success" end
+
+  return false, response
 end
+
+return _ENV;

@@ -133,7 +133,7 @@ static int l_unpack(lua_State *L) 		/** unpack(f,s, [init]) */
  {
   int c=*f++;
   int N=1;
-  if (isdigit((int) (unsigned char) *f)) 
+  if (isdigit((int) (unsigned char) *f))
   {
    N=0;
    while (isdigit((int) (unsigned char) *f)) N=10*N+(*f++)-'0';
@@ -192,15 +192,15 @@ static int l_unpack(lua_State *L) 		/** unpack(f,s, [init]) */
        N++;
        if (i+N > len) {done = 1; break;}
        for (unsigned int ii = i; ii < i+N; ii++) {
-	 sbyte = 0x80;
-	 for (int ij = 0; ij < 8; ij++) {
-	   if (s[ii] & sbyte) {
-	     luaL_addlstring(&buf, "1", 1);
-	   } else {
-	     luaL_addlstring(&buf, "0", 1);
-	   }
-	   sbyte = sbyte >> 1;
-	 }
+         sbyte = 0x80;
+         for (int ij = 0; ij < 8; ij++) {
+           if (s[ii] & sbyte) {
+             luaL_addlstring(&buf, "1", 1);
+           } else {
+             luaL_addlstring(&buf, "0", 1);
+           }
+           sbyte = sbyte >> 1;
+         }
        }
        luaL_pushresult(&buf);
        n++;
@@ -218,14 +218,14 @@ static int l_unpack(lua_State *L) 		/** unpack(f,s, [init]) */
        N++;
        if (i+N > len) {done = 1; break;}
        for (unsigned int ii = i; ii < i+N; ii++) {
-	 val = s[ii] & 0xF0;
-	 val = val >> 4;
-	 hdigit = HEXDIGITS(val);
-	 luaL_addlstring(&buf, &hdigit, 1);
+         val = s[ii] & 0xF0;
+         val = val >> 4;
+         hdigit = HEXDIGITS(val);
+         luaL_addlstring(&buf, &hdigit, 1);
 
-	 val = s[ii] & 0x0F;
-	 hdigit = HEXDIGITS(val);
-	 luaL_addlstring(&buf, &hdigit, 1);
+         val = s[ii] & 0x0F;
+         hdigit = HEXDIGITS(val);
+         luaL_addlstring(&buf, &hdigit, 1);
        }
        luaL_pushresult(&buf);
        n++;
@@ -283,7 +283,7 @@ static int l_pack(lua_State *L) 		/** pack(f,...) */
  {
   int c=*f++;
   int N=1;
-  if (isdigit((int) (unsigned char) *f)) 
+  if (isdigit((int) (unsigned char) *f))
   {
    N=0;
    while (isdigit((int) (unsigned char) *f)) N=10*N+(*f++)-'0';
@@ -327,29 +327,29 @@ static int l_pack(lua_State *L) 		/** pack(f,...) */
        unsigned int ii = 0, ia = 0;
        const char *a = luaL_checklstring(L, i++, &l);
        for (ia = 0; ia < l; ia+= 8) {
-	 sbyte = 0;
-	 for (ii = 0; ii+ia < l && ii < 8; ii++) {
-	   sbyte = sbyte << 1;
-	   if (a[ii+ia] != '0') {
-	     sbyte++;
-	   }
-	 }
-	 for (; ii < 8; ii++) {
-	   sbyte = sbyte << 1;
-	 }
-	 luaL_addlstring(&b, (char *) &sbyte, 1);
+         sbyte = 0;
+         for (ii = 0; ii+ia < l && ii < 8; ii++) {
+           sbyte = sbyte << 1;
+           if (a[ii+ia] != '0') {
+             sbyte++;
+           }
+         }
+         for (; ii < 8; ii++) {
+           sbyte = sbyte << 1;
+         }
+         luaL_addlstring(&b, (char *) &sbyte, 1);
        }
        break;
      }
-   
+
   case OP_NULL:
     {
       char nullbyte = 0;
       luaL_addlstring(&b, &nullbyte, 1);
       break;
     }
-    
-  case OP_HEX: 
+
+  case OP_HEX:
     { // doing digit parsing the lpack way
       unsigned char sbyte = 0;
       size_t l;
@@ -357,32 +357,32 @@ static int l_pack(lua_State *L) 		/** pack(f,...) */
       int odd = 0;
       const char *a = luaL_checklstring(L, i++, &l);
       for (ii = 0; ii < l; ii++) {
-	if (isxdigit((int) (unsigned char) a[ii])) {
-	  if (isdigit((int) (unsigned char) a[ii])) {
-	    sbyte += a[ii] - '0';
-	    odd++;
-	  } else if (a[ii] >= 'A' && a[ii] <= 'F') {
-	    sbyte += a[ii] - 'A' + 10;
-	    odd++;
-	  } else if (a[ii] >= 'a' && a[ii] <= 'f') {
-	    sbyte += a[ii] - 'a' + 10;
-	    odd++;
-	  }	  
-	  if (odd == 1) {
-	    sbyte = sbyte << 4;
-	  } else if (odd == 2) {
-	    luaL_addlstring(&b, (char *) &sbyte, 1);
-	    sbyte = 0;
-	    odd = 0;
-	  }
-	} else if (isspace(a[ii])) {
-	  /* ignore */
-	} else {
-	  /* err ... ignore too*/
-	}
+        if (isxdigit((int) (unsigned char) a[ii])) {
+          if (isdigit((int) (unsigned char) a[ii])) {
+            sbyte += a[ii] - '0';
+            odd++;
+          } else if (a[ii] >= 'A' && a[ii] <= 'F') {
+            sbyte += a[ii] - 'A' + 10;
+            odd++;
+          } else if (a[ii] >= 'a' && a[ii] <= 'f') {
+            sbyte += a[ii] - 'a' + 10;
+            odd++;
+          }
+          if (odd == 1) {
+            sbyte = sbyte << 4;
+          } else if (odd == 2) {
+            luaL_addlstring(&b, (char *) &sbyte, 1);
+            sbyte = 0;
+            odd = 0;
+          }
+        } else if (isspace(a[ii])) {
+          /* ignore */
+        } else {
+          /* err ... ignore too*/
+        }
       }
       if (odd == 1) {
-	luaL_addlstring(&b, (char *) &sbyte, 1);
+        luaL_addlstring(&b, (char *) &sbyte, 1);
       }
       break;
     }
@@ -397,18 +397,18 @@ static int l_pack(lua_State *L) 		/** pack(f,...) */
  return 1;
 }
 
-static const luaL_reg binlib[] =
+static const luaL_Reg binlib[] =
 {
-	{"pack",	l_pack},
-	{"unpack",	l_unpack},
-	{NULL,	NULL}
+        {"pack",	l_pack},
+        {"unpack",	l_unpack},
+        {NULL,	NULL}
 };
 
 /*
 ** Open bin library
 */
 LUALIB_API int luaopen_binlib (lua_State *L) {
-  luaL_register(L, NSE_BINLIBNAME, binlib);
+  luaL_newlib(L, binlib);
   return 1;
 }
 

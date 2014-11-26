@@ -1,3 +1,11 @@
+local os = require "os"
+local shortport = require "shortport"
+local stdnse = require "stdnse"
+local tab = require "tab"
+local target = require "target"
+
+local bitcoin = stdnse.silent_require "bitcoin"
+
 description = [[
 Queries a Bitcoin server for a list of known Bitcoin nodes
 ]]
@@ -9,7 +17,7 @@ Queries a Bitcoin server for a list of known Bitcoin nodes
 -- @output
 -- PORT     STATE SERVICE
 -- 8333/tcp open  unknown
--- | bitcoin-getaddr: 
+-- | bitcoin-getaddr:
 -- |   ip                    timestamp
 -- |   10.10.10.10:8333      11/09/11 17:38:00
 -- |   10.10.10.11:8333      11/09/11 17:42:39
@@ -21,51 +29,46 @@ author = "Patrik Karlsson"
 license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
 categories = {"discovery", "safe"}
 
-require 'shortport'
-require 'tab'
-require 'target'
-require 'stdnse'
-stdnse.silent_require('bitcoin')
 
 --
 -- Version 0.1
--- 
+--
 -- Created 11/09/2011 - v0.1 - created by Patrik Karlsson <patrik@cqure.net>
 --
 
 portrule = shortport.port_or_service(8333, "bitcoin", "tcp" )
 
 action = function(host, port)
-	
-	local bcoin = bitcoin.Helper:new(host, port, { timeout = 20000 })
-	local status = bcoin:connect()
 
-	if ( not(status) ) then
-		return "\n  ERROR: Failed to connect to server"
-	end
-	
-	local status, ver = bcoin:exchVersion()
-	if ( not(status) ) then
-		return "\n  ERROR: Failed to extract version information"
-	end
-	
-	local status, nodes = bcoin:getNodes()
-	if ( not(status) ) then
-		return "\n  ERROR: Failed to extract address information"
-	end
-	bcoin:close()
+  local bcoin = bitcoin.Helper:new(host, port, { timeout = 20000 })
+  local status = bcoin:connect()
 
-	local response = tab.new(2)
-	tab.addrow(response, "ip", "timestamp")
+  if ( not(status) ) then
+    return "\n  ERROR: Failed to connect to server"
+  end
 
-	for _, node in ipairs(nodes.addresses or {}) do
-		if ( target.ALLOW_NEW_TARGETS ) then
-			target.add(node.address.host)
-		end
-		tab.addrow(response, ("%s:%d"):format(node.address.host, node.address.port), os.date("%x %X", node.ts))
-	end
+  local status, ver = bcoin:exchVersion()
+  if ( not(status) ) then
+    return "\n  ERROR: Failed to extract version information"
+  end
 
-	if ( #response > 1 ) then
-		return stdnse.format_output(true, tab.dump(response) )
-	end
+  local status, nodes = bcoin:getNodes()
+  if ( not(status) ) then
+    return "\n  ERROR: Failed to extract address information"
+  end
+  bcoin:close()
+
+  local response = tab.new(2)
+  tab.addrow(response, "ip", "timestamp")
+
+  for _, node in ipairs(nodes.addresses or {}) do
+    if ( target.ALLOW_NEW_TARGETS ) then
+      target.add(node.address.host)
+    end
+    tab.addrow(response, ("%s:%d"):format(node.address.host, node.address.port), os.date("%x %X", node.ts))
+  end
+
+  if ( #response > 1 ) then
+    return stdnse.format_output(true, tab.dump(response) )
+  end
 end

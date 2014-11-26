@@ -14,7 +14,7 @@ CCOPT =
 DEFS = @DEFS@ -DNSOCK_VERSION=\"$(NSOCK_VERSION)\"
 # With GCC, add extra security checks to source code.
 DEFS += -D_FORTIFY_SOURCE=2
-INCLS = -I../include -I../../libpcap
+INCLS = -I../include
 CFLAGS = @CFLAGS@ $(CCOPT)
 # CFLAGS = -g -Wall $(DEFS) $(INCLS)
 CPPFLAGS = @CPPFLAGS@ $(DEFS) $(INCLS)
@@ -24,14 +24,25 @@ INSTALL = $(SHTOOL) install
 MAKEDEPEND = @MAKEDEPEND@
 RPMTDIR=$(HOME)/rpmdir
 NBASEDIR=@NBASEDIR@
+NSOCKTESTDIR=@NSOCKTESTDIR@
 
 TARGET = libnsock.a
 
-SRCS = error.c filespace.c gh_list.c nsock_connect.c nsock_core.c nsock_iod.c nsock_read.c nsock_timers.c nsock_write.c nsock_ssl.c nsock_event.c nsock_pool.c netutils.c nsock_pcap.c nsock_engines.c engine_select.c engine_epoll.c @COMPAT_SRCS@
+SRCS = 	error.c filespace.c gh_heap.c nsock_connect.c nsock_core.c \
+	nsock_iod.c nsock_read.c nsock_timers.c nsock_write.c \
+	nsock_ssl.c nsock_event.c nsock_pool.c netutils.c nsock_pcap.c \
+	nsock_engines.c engine_select.c engine_epoll.c engine_kqueue.c \
+	engine_poll.c nsock_proxy.c nsock_log.c proxy_http.c proxy_socks4.c
 
-OBJS = error.o filespace.o gh_list.o nsock_connect.o nsock_core.o nsock_iod.o nsock_read.o nsock_timers.o nsock_write.o nsock_ssl.o nsock_event.o nsock_pool.o netutils.o nsock_pcap.o nsock_engines.o engine_select.o engine_epoll.o @COMPAT_OBJS@
+OBJS =	error.o filespace.o gh_heap.o nsock_connect.o nsock_core.o \
+	nsock_iod.o nsock_read.o nsock_timers.o nsock_write.o \
+	nsock_ssl.o nsock_event.o nsock_pool.o netutils.o nsock_pcap.o \
+	nsock_engines.o engine_select.o engine_epoll.o engine_kqueue.o \
+	engine_poll.o nsock_proxy.o nsock_log.o proxy_http.o proxy_socks4.o
 
-DEPS = error.h filespace.h gh_list.h nsock_internal.h netutils.h nsock_pcap.h ../include/nsock.h $(NBASEDIR)/libnbase.a
+DEPS =	error.h filespace.h gh_list.h nsock_internal.h netutils.h nsock_pcap.h \
+	nsock_log.h nsock_proxy.h gh_heap.h ../include/nsock.h \
+	$(NBASEDIR)/libnbase.a
 
 .c.o:
 	$(CC) -c $(CPPFLAGS) $(CFLAGS) $< -o $@
@@ -46,14 +57,20 @@ $(TARGET): $(DEPS) $(OBJS)
 $(NBASEDIR)/libnbase.a: $(NBASEDIR)/Makefile
 	cd $(NBASEDIR) && $(MAKE)
 
-clean:
-	rm -f $(OBJS) $(TARGET) makefile.dep
+clean-test:
+	cd $(NSOCKTESTDIR) && $(MAKE) clean
+
+clean: clean-test
+	rm -f $(OBJS) $(TARGET)
 
 distclean: clean
-	rm -f Makefile config.log config.status nsock_config.h
+	rm -f Makefile makefile.dep config.log config.status ../include/nsock_config.h
 
 depend:
 	$(MAKEDEPEND) $(INCLS) -s "# DO NOT DELETE" -- $(DEFS) -- $(SRCS)
+
+check:
+	cd $(NSOCKTESTDIR) && $(MAKE) && ./run_tests.sh
 
 ${srcdir}/configure: configure.ac 
 	cd ${srcdir} && autoconf

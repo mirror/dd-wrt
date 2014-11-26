@@ -1,3 +1,8 @@
+local rpc = require "rpc"
+local shortport = require "shortport"
+local stdnse = require "stdnse"
+local table = require "table"
+
 description = [[
 Connects to portmapper and fetches a list of all registered programs.  It then prints out a table including (for each program) the RPC program number, supported version numbers, port number and protocol, and program name.
 ]]
@@ -6,7 +11,7 @@ Connects to portmapper and fetches a list of all registered programs.  It then p
 -- @output
 -- PORT    STATE SERVICE
 -- 111/tcp open  rpcbind
--- | rpcinfo: 
+-- | rpcinfo:
 -- |   program version   port/proto  service
 -- |   100000  2,3,4        111/tcp  rpcbind
 -- |   100000  2,3,4        111/udp  rpcbind
@@ -33,38 +38,68 @@ Connects to portmapper and fetches a list of all registered programs.  It then p
 -- |   300598  1          32783/udp  dmispd
 -- |   805306368 1          32782/tcp  dmispd
 -- |_  805306368 1          32783/udp  dmispd
+--@xmloutput
+--<table>
+--  <table key="100003">
+--    <table key="tcp">
+--      <elem key="port">2049</elem>
+--      <table key="version">
+--        <elem>2</elem> <elem>3</elem> <elem>4</elem>
+--      </table>
+--    </table>
+--    <table key="udp">
+--      <elem key="port">2049</elem>
+--      <table key="version">
+--        <elem>2</elem> <elem>3</elem> <elem>4</elem>
+--      </table>
+--    </table>
+--  </table>
+--  <table key="100000">
+--    <table key="tcp">
+--      <elem key="port">111</elem>
+--      <table key="version">
+--        <elem>2</elem> <elem>3</elem> <elem>4</elem>
+--      </table>
+--    </table>
+--    <table key="udp">
+--      <elem key="port">111</elem>
+--      <table key="version">
+--        <elem>2</elem> <elem>3</elem> <elem>4</elem>
+--      </table>
+--    </table>
+--  </table>
+--</table>
 
 author = "Patrik Karlsson"
 license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
 categories = {"discovery", "default", "safe"}
 
-require 'stdnse'
-require 'shortport'
-require 'rpc'
 
 portrule = shortport.port_or_service(111, "rpcbind", {"tcp", "udp"} )
 
 action = function(host, port)
 
     local result = {}
-    local status, rpcinfo = rpc.Helper.RpcInfo( host, port )    
-    
+    local status, rpcinfo = rpc.Helper.RpcInfo( host, port )
+    local xmlout = {}
+
     if ( not(status) ) then
         return stdnse.format_output(false, rpcinfo)
     end
-    
+
     for progid, v in pairs(rpcinfo) do
+        xmlout[tostring(progid)] = v
         for proto, v2 in pairs(v) do
             table.insert( result, ("%-7d %-10s %5d/%s  %s"):format(progid, stdnse.strjoin(",", v2.version), v2.port, proto, rpc.Util.ProgNumberToName(progid) or "") )
         end
     end
-    
+
     table.sort(result)
 
     if (#result > 0) then
         table.insert(result, 1, "program version   port/proto  service")
     end
 
-    return stdnse.format_output( true, result )
-    
+    return xmlout, stdnse.format_output( true, result )
+
 end

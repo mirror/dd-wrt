@@ -1,3 +1,7 @@
+local ndmp = require "ndmp"
+local shortport = require "shortport"
+local tab = require "tab"
+
 description = [[
 Lists remote file systems by querying the remote device using the Network
 Data Management Protocol (ndmp). NDMP is a protocol intended to transport
@@ -23,7 +27,7 @@ to support the protocol:
 -- @output
 -- PORT      STATE SERVICE REASON  VERSION
 -- 10000/tcp open  ndmp    syn-ack Symantec/Veritas Backup Exec ndmp
--- | ndmp-fs-info: 
+-- | ndmp-fs-info:
 -- | FS       Logical device          Physical device
 -- | NTFS     C:                      Device0000
 -- | NTFS     E:                      Device0000
@@ -36,9 +40,6 @@ author = "Patrik Karlsson"
 license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
 categories = {"discovery", "safe"}
 
-require 'shortport'
-require 'ndmp'
-require 'tab'
 
 portrule = shortport.port_or_service(10000, "ndmp", "tcp")
 
@@ -46,24 +47,24 @@ local function fail(err) return ("\n  ERROR: %s"):format(err or "") end
 
 action = function(host, port)
 
-	local helper = ndmp.Helper:new(host, port)
-	local status, msg = helper:connect()
-	if ( not(status) ) then	return fail("Failed to connect to server") end
-	
-	status, msg = helper:getFsInfo()
-	if ( not(status) ) then return fail("Failed to get filesystem information from server") end
-	helper:close()
-	
-	local result = tab.new(3)
-	tab.addrow(result, "FS", "Logical device", "Physical device")
-	
-	for _, item in ipairs(msg.fsinfo) do
-		if ( item.fs_logical_device and #item.fs_logical_device ~= 0 ) then
-			if ( item and item.fs_type and item.fs_logical_device and item.fs_physical_device ) then
-				tab.addrow(result, item.fs_type, item.fs_logical_device:gsub("?", " "), item.fs_physical_device)
-			end
-		end
-	end
+  local helper = ndmp.Helper:new(host, port)
+  local status, msg = helper:connect()
+  if ( not(status) ) then return fail("Failed to connect to server") end
 
-	return "\n" .. tab.dump(result)
+  status, msg = helper:getFsInfo()
+  if ( not(status) ) then return fail("Failed to get filesystem information from server") end
+  helper:close()
+
+  local result = tab.new(3)
+  tab.addrow(result, "FS", "Logical device", "Physical device")
+
+  for _, item in ipairs(msg.fsinfo) do
+    if ( item.fs_logical_device and #item.fs_logical_device ~= 0 ) then
+      if ( item and item.fs_type and item.fs_logical_device and item.fs_physical_device ) then
+        tab.addrow(result, item.fs_type, item.fs_logical_device:gsub("?", " "), item.fs_physical_device)
+      end
+    end
+  end
+
+  return "\n" .. tab.dump(result)
 end

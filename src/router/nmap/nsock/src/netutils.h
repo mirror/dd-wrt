@@ -4,7 +4,7 @@
  *                                                                         *
  ***********************IMPORTANT NSOCK LICENSE TERMS***********************
  *                                                                         *
- * The nsock parallel socket event library is (C) 1999-2012 Insecure.Com   *
+ * The nsock parallel socket event library is (C) 1999-2013 Insecure.Com   *
  * LLC This library is free software; you may redistribute and/or          *
  * modify it under the terms of the GNU General Public License as          *
  * published by the Free Software Foundation; Version 2.  This guarantees  *
@@ -33,17 +33,18 @@
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
- * to nmap-dev@insecure.org for possible incorporation into the main       *
- * distribution.  By sending these changes to Fyodor or one of the         *
- * Insecure.Org development mailing lists, it is assumed that you are      *
- * offering the Nmap Project (Insecure.Com LLC) the unlimited,             *
- * non-exclusive right to reuse, modify, and relicense the code.  Nmap     *
- * will always be available Open Source, but this is important because the *
- * inability to relicense code has caused devastating problems for other   *
- * Free Software projects (such as KDE and NASM).  We also occasionally    *
- * relicense the code to third parties as discussed above.  If you wish to *
- * specify special license conditions of your contributions, just say so   *
- * when you send them.                                                     *
+ * to the dev@nmap.org mailing list for possible incorporation into the    *
+ * main distribution.  By sending these changes to Fyodor or one of the    *
+ * Insecure.Org development mailing lists, or checking them into the Nmap  *
+ * source code repository, it is understood (unless you specify otherwise) *
+ * that you are offering the Nmap Project (Insecure.Com LLC) the           *
+ * unlimited, non-exclusive right to reuse, modify, and relicense the      *
+ * code.  Nmap will always be available Open Source, but this is important *
+ * because the inability to relicense code has caused devastating problems *
+ * for other Free Software projects (such as KDE and NASM).  We also       *
+ * occasionally relicense the code to third parties as discussed above.    *
+ * If you wish to specify special license conditions of your               *
+ * contributions, just say so when you send them.                          *
  *                                                                         *
  * This program is distributed in the hope that it will be useful, but     *
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
@@ -53,7 +54,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: netutils.h 28190 2012-03-01 06:32:23Z fyodor $ */
+/* $Id: netutils.h 31562 2013-07-28 22:05:05Z fyodor $ */
 
 #ifndef NETUTILS_H
 #define NETUTILS_H
@@ -63,10 +64,20 @@
 #include "nbase_config.h"
 #endif
 
+#if HAVE_NETINET_IN_H
+#include <netinet/in.h>
+#endif
+
+#include "nsock_internal.h"
+
 #ifdef WIN32
 #include "nbase_winconfig.h"
 /* nbase_winunix.h somehow reason.h to get included */
 #include "nbase_winunix.h"
+#endif
+
+#if HAVE_SYS_UN_H
+#include <sys/un.h>
 #endif
 
 /* Maximize the number of file descriptors (including sockets) allowed for this
@@ -74,6 +85,17 @@
  * this many -- stdin, stdout, other files opened by libraries you use, etc. all
  * count toward this limit.  Leave a little slack */
 int maximize_fdlimit(void);
+
+/* Get the UNIX domain socket path or empty string if the address family != AF_UNIX. */
+const char *get_unixsock_path(const struct sockaddr_storage *addr);
+
+/* Get the peer address string. In case of a Unix domain socket, returns the
+ * path to UNIX socket, otherwise it returns string containing
+ * "<address>:<port>". */
+char *get_peeraddr_string(const msiod *iod);
+
+/* Get the local bind address string. */
+char *get_localaddr_string(const msiod *iod);
 
 #endif /* NETUTILS_H */
 

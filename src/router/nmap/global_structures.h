@@ -5,62 +5,94 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2012 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
- * Foundation; Version 2 with the clarifications and exceptions described  *
- * below.  This guarantees your right to use, modify, and redistribute     *
- * this software under certain conditions.  If you wish to embed Nmap      *
- * technology into proprietary software, we sell alternative licenses      *
- * (contact sales@insecure.com).  Dozens of software vendors already       *
- * license Nmap technology such as host discovery, port scanning, OS       *
- * detection, version detection, and the Nmap Scripting Engine.            *
+ * Foundation; Version 2 ("GPL"), BUT ONLY WITH ALL OF THE CLARIFICATIONS  *
+ * AND EXCEPTIONS DESCRIBED HEREIN.  This guarantees your right to use,    *
+ * modify, and redistribute this software under certain conditions.  If    *
+ * you wish to embed Nmap technology into proprietary software, we sell    *
+ * alternative licenses (contact sales@nmap.com).  Dozens of software      *
+ * vendors already license Nmap technology such as host discovery, port    *
+ * scanning, OS detection, version detection, and the Nmap Scripting       *
+ * Engine.                                                                 *
  *                                                                         *
- * Note that the GPL places important restrictions on "derived works", yet *
- * it does not provide a detailed definition of that term.  To avoid       *
+ * Note that the GPL places important restrictions on "derivative works",  *
+ * yet it does not provide a detailed definition of that term.  To avoid   *
  * misunderstandings, we interpret that term as broadly as copyright law   *
  * allows.  For example, we consider an application to constitute a        *
- * "derivative work" for the purpose of this license if it does any of the *
- * following:                                                              *
- * o Integrates source code from Nmap                                      *
- * o Reads or includes Nmap copyrighted data files, such as                *
- *   nmap-os-db or nmap-service-probes.                                    *
- * o Executes Nmap and parses the results (as opposed to typical shell or  *
- *   execution-menu apps, which simply display raw Nmap output and so are  *
- *   not derivative works.)                                                *
- * o Integrates/includes/aggregates Nmap into a proprietary executable     *
- *   installer, such as those produced by InstallShield.                   *
- * o Links to a library or executes a program that does any of the above   *
+ * derivative work for the purpose of this license if it does any of the   *
+ * following with any software or content covered by this license          *
+ * ("Covered Software"):                                                   *
  *                                                                         *
- * The term "Nmap" should be taken to also include any portions or derived *
- * works of Nmap, as well as other software we distribute under this       *
- * license such as Zenmap, Ncat, and Nping.  This list is not exclusive,   *
- * but is meant to clarify our interpretation of derived works with some   *
- * common examples.  Our interpretation applies only to Nmap--we don't     *
- * speak for other people's GPL works.                                     *
+ * o Integrates source code from Covered Software.                         *
  *                                                                         *
- * If you have any questions about the GPL licensing restrictions on using *
- * Nmap in non-GPL works, we would be happy to help.  As mentioned above,  *
- * we also offer alternative license to integrate Nmap into proprietary    *
- * applications and appliances.  These contracts have been sold to dozens  *
- * of software vendors, and generally include a perpetual license as well  *
- * as providing for priority support and updates.  They also fund the      *
- * continued development of Nmap.  Please email sales@insecure.com for     *
- * further information.                                                    *
+ * o Reads or includes copyrighted data files, such as Nmap's nmap-os-db   *
+ * or nmap-service-probes.                                                 *
  *                                                                         *
- * As a special exception to the GPL terms, Insecure.Com LLC grants        *
+ * o Is designed specifically to execute Covered Software and parse the    *
+ * results (as opposed to typical shell or execution-menu apps, which will *
+ * execute anything you tell them to).                                     *
+ *                                                                         *
+ * o Includes Covered Software in a proprietary executable installer.  The *
+ * installers produced by InstallShield are an example of this.  Including *
+ * Nmap with other software in compressed or archival form does not        *
+ * trigger this provision, provided appropriate open source decompression  *
+ * or de-archiving software is widely available for no charge.  For the    *
+ * purposes of this license, an installer is considered to include Covered *
+ * Software even if it actually retrieves a copy of Covered Software from  *
+ * another source during runtime (such as by downloading it from the       *
+ * Internet).                                                              *
+ *                                                                         *
+ * o Links (statically or dynamically) to a library which does any of the  *
+ * above.                                                                  *
+ *                                                                         *
+ * o Executes a helper program, module, or script to do any of the above.  *
+ *                                                                         *
+ * This list is not exclusive, but is meant to clarify our interpretation  *
+ * of derived works with some common examples.  Other people may interpret *
+ * the plain GPL differently, so we consider this a special exception to   *
+ * the GPL that we apply to Covered Software.  Works which meet any of     *
+ * these conditions must conform to all of the terms of this license,      *
+ * particularly including the GPL Section 3 requirements of providing      *
+ * source code and allowing free redistribution of the work as a whole.    *
+ *                                                                         *
+ * As another special exception to the GPL terms, Insecure.Com LLC grants  *
  * permission to link the code of this program with any version of the     *
  * OpenSSL library which is distributed under a license identical to that  *
  * listed in the included docs/licenses/OpenSSL.txt file, and distribute   *
- * linked combinations including the two. You must obey the GNU GPL in all *
- * respects for all of the code used other than OpenSSL.  If you modify    *
- * this file, you may extend this exception to your version of the file,   *
- * but you are not obligated to do so.                                     *
+ * linked combinations including the two.                                  *
  *                                                                         *
- * If you received these files with a written license agreement or         *
- * contract stating terms other than the terms above, then that            *
- * alternative license agreement takes precedence over these comments.     *
+ * Any redistribution of Covered Software, including any derived works,    *
+ * must obey and carry forward all of the terms of this license, including *
+ * obeying all GPL rules and restrictions.  For example, source code of    *
+ * the whole work must be provided and free redistribution must be         *
+ * allowed.  All GPL references to "this License", are to be treated as    *
+ * including the terms and conditions of this license text as well.        *
+ *                                                                         *
+ * Because this license imposes special exceptions to the GPL, Covered     *
+ * Work may not be combined (even as part of a larger work) with plain GPL *
+ * software.  The terms, conditions, and exceptions of this license must   *
+ * be included as well.  This license is incompatible with some other open *
+ * source licenses as well.  In some cases we can relicense portions of    *
+ * Nmap or grant special permissions to use it in other open source        *
+ * software.  Please contact fyodor@nmap.org with any such requests.       *
+ * Similarly, we don't incorporate incompatible open source software into  *
+ * Covered Software without special permission from the copyright holders. *
+ *                                                                         *
+ * If you have any questions about the licensing restrictions on using     *
+ * Nmap in other works, are happy to help.  As mentioned above, we also    *
+ * offer alternative license to integrate Nmap into proprietary            *
+ * applications and appliances.  These contracts have been sold to dozens  *
+ * of software vendors, and generally include a perpetual license as well  *
+ * as providing for priority support and updates.  They also fund the      *
+ * continued development of Nmap.  Please email sales@nmap.com for further *
+ * information.                                                            *
+ *                                                                         *
+ * If you have received a written license agreement or contract for        *
+ * Covered Software stating terms other than these, you may choose to use  *
+ * and redistribute Covered Software under those terms instead of these.   *
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
@@ -69,8 +101,8 @@
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
- * to nmap-dev@insecure.org for possible incorporation into the main       *
- * distribution.  By sending these changes to Fyodor or one of the         *
+ * to the dev@nmap.org mailing list for possible incorporation into the    *
+ * main distribution.  By sending these changes to Fyodor or one of the    *
  * Insecure.Org development mailing lists, or checking them into the Nmap  *
  * source code repository, it is understood (unless you specify otherwise) *
  * that you are offering the Nmap Project (Insecure.Com LLC) the           *
@@ -84,14 +116,13 @@
  *                                                                         *
  * This program is distributed in the hope that it will be useful, but     *
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU       *
- * General Public License v2.0 for more details at                         *
- * http://www.gnu.org/licenses/gpl-2.0.html , or in the COPYING file       *
- * included with Nmap.                                                     *
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
+ * license file for more details (it's in a COPYING file included with     *
+ * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: global_structures.h 28192 2012-03-01 06:53:35Z fyodor $ */
+/* $Id: global_structures.h 33540 2014-08-16 02:45:47Z dmiller $ */
 
 
 #ifndef GLOBAL_STRUCTURES_H
@@ -107,7 +138,7 @@ struct portinfo {
    unsigned long portno; /* TCP/UDP/SCTP port or RPC program id or IP protocool */
    short trynum;
    int sd[3]; /* Socket descriptors for connect_scan */
-   struct timeval sent[3]; 
+   struct timeval sent[3];
    int state;
    int next; /* not struct portinfo * for historical reasons */
    int prev;
@@ -131,32 +162,23 @@ struct udpprobeinfo {
   struct in_addr target;
 };
 
-/* The runtime statistics used to decide how fast to proced and how
+/* The runtime statistics used to decide how fast to proceed and how
    many ports we can try at once */
 struct scanstats {
   int packet_incr;
-  int initial_packet_width; /* Number of queries in parallel we should 
-			       start with */
+  int initial_packet_width; /* Number of queries in parallel we should
+                               start with */
   double fallback_percent;
   int numqueries_outstanding; /* How many unexpired queries are on the 'net
-				 right now? */
+                                 right now? */
   double numqueries_ideal; /* How many do we WANT to be on the 'net right now? */
-  int max_width; /* What is the MOST we will tolerate at once.  Can be 
-		    modified via --max_parallelism */
-  int min_width; /* We must always allow at least this many at once.  Can 
-		    be modified via --min_parallelism*/
+  int max_width; /* What is the MOST we will tolerate at once.  Can be
+                    modified via --max_parallelism */
+  int min_width; /* We must always allow at least this many at once.  Can
+                    be modified via --min_parallelism*/
   int ports_left;
   int changed; /* Has anything changed since last round? */
   int alreadydecreasedqueries;
-};
-
-struct ftpinfo {
-  char user[64];
-  char pass[256]; /* methinks you're paranoid if you need this much space */
-  char server_name[MAXHOSTNAMELEN + 1];
-  struct in_addr server;
-  u16 port;
-  int sd; /* socket descriptor */
 };
 
 struct AVal {
@@ -192,8 +214,6 @@ struct FingerMatch {
 struct FingerTest {
   const char *name;
   std::vector<struct AVal> results;
-  const struct AVal *getattrbyname(const char *name) const;
-
   bool operator<(const FingerTest& other) const {
     return strcmp(name, other.name) < 0;
   }
@@ -202,7 +222,6 @@ struct FingerTest {
 struct FingerPrint {
   FingerMatch match;
   std::vector<FingerTest> tests;
-  const FingerTest *gettestbyname(const char *name) const;
   FingerPrint();
   void sort();
 };
@@ -221,7 +240,7 @@ struct FingerPrintDB {
 struct ultra_timing_vals {
   double cwnd; /* Congestion window - in probes */
   int ssthresh; /* The threshold above which mode is changed from slow start
-		   to congestion avoidance */
+                   to congestion avoidance */
   /* The number of replies we would expect if every probe produced a reply. This
      is almost like the total number of probes sent but it is not incremented
      until a reply is received or a probe times out. This and
@@ -250,20 +269,20 @@ struct scan_performance_vars {
   int host_initial_cwnd; /* Initial congestion window for ind. hosts */
   int group_initial_cwnd; /* Initial congestion window for all hosts as a group */
   int max_cwnd; /* I should never have more than this many probes
-		   outstanding */
+                   outstanding */
   int slow_incr; /* How many probes are incremented for each response
-		    in slow start mode */
-  int ca_incr; /* How many probes are incremented per (roughly) rtt in 
-		  congestion avoidance mode */
+                    in slow start mode */
+  int ca_incr; /* How many probes are incremented per (roughly) rtt in
+                  congestion avoidance mode */
   int cc_scale_max; /* The maximum scaling factor for congestion window
-		       increments. */
+                       increments. */
   int initial_ssthresh;
   double group_drop_cwnd_divisor; /* all-host group cwnd divided by this
-				     value if any packet drop occurs */
+                                     value if any packet drop occurs */
   double group_drop_ssthresh_divisor; /* used to drop the group ssthresh when
-					 any drop occurs */
+                                         any drop occurs */
   double host_drop_ssthresh_divisor; /* used to drop the host ssthresh when
-					 any drop occurs */
+                                         any drop occurs */
 
   /* Do initialization after the global NmapOps table has been filled in. */
   void init();
@@ -288,38 +307,38 @@ struct seq_info {
 
 /* Different kinds of Ipids. */
 struct ipid_info {
-  int tcp_ipids[NUM_SEQ_SAMPLES];
-  int tcp_closed_ipids[NUM_SEQ_SAMPLES];
-  int icmp_ipids[NUM_SEQ_SAMPLES];
+  u32 tcp_ipids[NUM_SEQ_SAMPLES];
+  u32 tcp_closed_ipids[NUM_SEQ_SAMPLES];
+  u32 icmp_ipids[NUM_SEQ_SAMPLES];
 };
 
 /* The various kinds of port/protocol scans we can have
  * Each element is to point to an array of port/protocol numbers
  */
 struct scan_lists {
-	/* The "synprobes" are also used when doing a connect() ping */
-	unsigned short *syn_ping_ports;
-	unsigned short *ack_ping_ports;
-	unsigned short *udp_ping_ports;
-	unsigned short *sctp_ping_ports;
-	unsigned short *proto_ping_ports;
-	int syn_ping_count;
-	int ack_ping_count;
-	int udp_ping_count;
-	int sctp_ping_count;
-	int proto_ping_count;
-	//the above fields are only used for host discovery
-	//the fields below are only used for port scanning
-	unsigned short *tcp_ports;
-	int tcp_count;
-	unsigned short *udp_ports;
-	int udp_count;
-	unsigned short *sctp_ports;
-	int sctp_count;
-	unsigned short *prots;
-	int prot_count;
+        /* The "synprobes" are also used when doing a connect() ping */
+        unsigned short *syn_ping_ports;
+        unsigned short *ack_ping_ports;
+        unsigned short *udp_ping_ports;
+        unsigned short *sctp_ping_ports;
+        unsigned short *proto_ping_ports;
+        int syn_ping_count;
+        int ack_ping_count;
+        int udp_ping_count;
+        int sctp_ping_count;
+        int proto_ping_count;
+        //the above fields are only used for host discovery
+        //the fields below are only used for port scanning
+        unsigned short *tcp_ports;
+        int tcp_count;
+        unsigned short *udp_ports;
+        int udp_count;
+        unsigned short *sctp_ports;
+        int sctp_count;
+        unsigned short *prots;
+        int prot_count;
 };
 
-typedef enum { STYPE_UNKNOWN, HOST_DISCOVERY, ACK_SCAN, SYN_SCAN, FIN_SCAN, XMAS_SCAN, UDP_SCAN, CONNECT_SCAN, NULL_SCAN, WINDOW_SCAN, SCTP_INIT_SCAN, SCTP_COOKIE_ECHO_SCAN, RPC_SCAN, MAIMON_SCAN, IPPROT_SCAN, PING_SCAN, PING_SCAN_ARP, IDLE_SCAN, BOUNCE_SCAN, SERVICE_SCAN, OS_SCAN, SCRIPT_PRE_SCAN, SCRIPT_SCAN, SCRIPT_POST_SCAN, TRACEROUTE, PING_SCAN_ND }stype;
+typedef enum { STYPE_UNKNOWN, HOST_DISCOVERY, ACK_SCAN, SYN_SCAN, FIN_SCAN, XMAS_SCAN, UDP_SCAN, CONNECT_SCAN, NULL_SCAN, WINDOW_SCAN, SCTP_INIT_SCAN, SCTP_COOKIE_ECHO_SCAN, MAIMON_SCAN, IPPROT_SCAN, PING_SCAN, PING_SCAN_ARP, IDLE_SCAN, BOUNCE_SCAN, SERVICE_SCAN, OS_SCAN, SCRIPT_PRE_SCAN, SCRIPT_SCAN, SCRIPT_POST_SCAN, TRACEROUTE, PING_SCAN_ND }stype;
 
 #endif /*GLOBAL_STRUCTURES_H */

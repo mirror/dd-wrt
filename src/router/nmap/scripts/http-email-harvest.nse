@@ -1,3 +1,8 @@
+local httpspider = require "httpspider"
+local shortport = require "shortport"
+local stdnse = require "stdnse"
+local table = require "table"
+
 description = [[
 Spiders a web site and collects e-mail addresses.
 ]]
@@ -9,7 +14,7 @@ Spiders a web site and collects e-mail addresses.
 -- @output
 -- PORT   STATE SERVICE REASON
 -- 80/tcp open  http    syn-ack
--- | http-email-harvest: 
+-- | http-email-harvest:
 -- | Spidering limited to: maxdepth=3; maxpagecount=20
 -- |   root@examplec.com
 -- |_  postmaster@example.com
@@ -32,52 +37,52 @@ author = "Patrik Karlsson"
 license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
 categories = {"discovery", "safe"}
 
-require "httpspider"
-require "shortport"
 
 portrule = shortport.http
 
 function action(host, port)
-	local EMAIL_PATTERN = "[A-Za-z0-9%.%%%+%-]+@[A-Za-z0-9%.%%%+%-]+%.%w%w%w?%w?"
-	
-	local crawler = httpspider.Crawler:new(host, port, nil, { 
-			scriptname = SCRIPT_NAME
-		}
-	)
+  local EMAIL_PATTERN = "[A-Za-z0-9%.%%%+%-]+@[A-Za-z0-9%.%%%+%-]+%.%w%w%w?%w?"
 
-	if ( not(crawler) ) then
-		return
-	end
-	crawler:set_timeout(10000)
+  local crawler = httpspider.Crawler:new(host, port, nil, {
+    scriptname = SCRIPT_NAME
+  }
+  )
 
-	local emails = {}
-	while(true) do
-		local status, r = crawler:crawl()
-		-- if the crawler fails it can be due to a number of different reasons
-		-- most of them are "legitimate" and should not be reason to abort
-		if ( not(status) ) then
-			if ( r.err ) then
-				return stdnse.format_output(true, ("ERROR: %s"):format(r.reason))
-			else
-				break
-			end
-		end
-		
-		-- Collect each e-mail address and build a unique index of them
-   		for email in r.response.body:gmatch(EMAIL_PATTERN) do
-      		emails[email] = true
-		end
-	end
+  if ( not(crawler) ) then
+    return
+  end
+  crawler:set_timeout(10000)
 
-	-- if no email addresses were collected abort
-	if ( not(emails) ) then	return end
+  local emails = {}
+  while(true) do
+    local status, r = crawler:crawl()
+    -- if the crawler fails it can be due to a number of different reasons
+    -- most of them are "legitimate" and should not be reason to abort
+    if ( not(status) ) then
+      if ( r.err ) then
+        return stdnse.format_output(true, ("ERROR: %s"):format(r.reason))
+      else
+        break
+      end
+    end
 
-	local results = {}
-	for email, _ in pairs(emails) do
-		table.insert(results, email)
-  	end
+    -- Collect each e-mail address and build a unique index of them
+    if r.response.body then
+      for email in r.response.body:gmatch(EMAIL_PATTERN) do
+        emails[email] = true
+      end
+    end
+  end
 
-	results.name = crawler:getLimitations()
-	
-	return stdnse.format_output(true, results)
+  -- if no email addresses were collected abort
+  if ( not(emails) ) then return end
+
+  local results = {}
+  for email, _ in pairs(emails) do
+    table.insert(results, email)
+  end
+
+  results.name = crawler:getLimitations()
+
+  return stdnse.format_output(true, results)
 end

@@ -5,17 +5,22 @@
 -- @author Sven Klemm <sven@c3d2.de>
 -- @copyright Same as Nmap--See http://nmap.org/book/man-legal.html
 
-module(... or "ssh1",package.seeall)
 
-require "bin"
-require "bit"
-require "math"
-require "stdnse"
-require "openssl"
+local bin = require "bin"
+local bit = require "bit"
+local io = require "io"
+local math = require "math"
+local nmap = require "nmap"
+local os = require "os"
+local stdnse = require "stdnse"
+local string = require "string"
+local table = require "table"
+local openssl = stdnse.silent_require "openssl"
+_ENV = stdnse.module("ssh1", stdnse.seeall)
 
 --- Retrieve the size of the packet that is being received
 --  and checks if it is fully received
--- 
+--
 --  This function is very similar to the function generated
 --  with match.numbytes(num) function, except that this one
 --  will check for the number of bytes on-the-fly, based on
@@ -174,10 +179,10 @@ fingerprint_visual = function( fingerprint, algorithm, bits )
   local x, y = math.ceil(fieldsize_x/2), math.ceil(fieldsize_y/2)
   field[x][y] = #characters - 1;
 
-  -- iterate over fingerprint 
+  -- iterate over fingerprint
   for i=1,#fingerprint do
     input = fingerprint:byte(i)
-    -- each byte conveys four 2-bit move commands 
+    -- each byte conveys four 2-bit move commands
     for j=1,4 do
       if bit.band( input, 1) == 1 then x = x + 1 else x = x - 1 end
       if bit.band( input, 2) == 2 then y = y + 1 else y = y - 1 end
@@ -206,3 +211,53 @@ fingerprint_visual = function( fingerprint, algorithm, bits )
   return s
 end
 
+-- A lazy parsing function for known_hosts_file.
+-- The script checks for the known_hosts file in this order:
+--
+-- (1) If known_hosts is specified in a script arg, use that. If turned
+-- off (false), then don't do any known_hosts checking.
+-- (2) Look at ~/.ssh/config to see if user known_hosts is in an
+-- alternate location*. Look for "UserKnownHostsFile". If
+-- UserKnownHostsFile is specified, open that known_hosts.
+-- (3) Otherwise, open ~/.ssh/known_hosts.
+parse_known_hosts_file = function(path)
+    local common_paths = {}
+    local f, knownhostspath
+
+    if path and io.open(path) then
+        knownhostspath = path
+    end
+
+    if not knownhostspath then
+        for l in io.lines(os.getenv("HOME") .. "/.ssh/config") do
+            if l and string.find(l, "UserKnownHostsFile") then
+                knownhostspath = string.match(l, "UserKnownHostsFile%s(.*)")
+                if string.sub(knownhostspath,1,1)=="~" then
+                    knownhostspath = os.getenv("HOME") .. string.sub(knownhostspath, 2)
+                end
+            end
+        end
+    end
+
+    if not knownhostspath then
+        knownhostspath = os.getenv("HOME") .."/.ssh/known_hosts"
+    end
+
+    if not knownhostspath then
+        return
+    end
+
+    local known_host_entries = {}
+    local lnumber = 0
+
+    for l in io.lines(knownhostspath) do
+        lnumber = lnumber + 1
+        if l and string.sub(l, 1, 1) ~= "#" then
+            local parts = stdnse.strsplit(" ", l)
+            table.insert(known_host_entries, {entry=parts, linenumber=lnumber})
+        end
+    end
+    return known_host_entries
+end
+
+return _ENV;

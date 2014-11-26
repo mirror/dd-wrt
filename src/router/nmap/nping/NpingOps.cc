@@ -5,62 +5,94 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2012 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
- * Foundation; Version 2 with the clarifications and exceptions described  *
- * below.  This guarantees your right to use, modify, and redistribute     *
- * this software under certain conditions.  If you wish to embed Nmap      *
- * technology into proprietary software, we sell alternative licenses      *
- * (contact sales@insecure.com).  Dozens of software vendors already       *
- * license Nmap technology such as host discovery, port scanning, OS       *
- * detection, version detection, and the Nmap Scripting Engine.            *
+ * Foundation; Version 2 ("GPL"), BUT ONLY WITH ALL OF THE CLARIFICATIONS  *
+ * AND EXCEPTIONS DESCRIBED HEREIN.  This guarantees your right to use,    *
+ * modify, and redistribute this software under certain conditions.  If    *
+ * you wish to embed Nmap technology into proprietary software, we sell    *
+ * alternative licenses (contact sales@nmap.com).  Dozens of software      *
+ * vendors already license Nmap technology such as host discovery, port    *
+ * scanning, OS detection, version detection, and the Nmap Scripting       *
+ * Engine.                                                                 *
  *                                                                         *
- * Note that the GPL places important restrictions on "derived works", yet *
- * it does not provide a detailed definition of that term.  To avoid       *
+ * Note that the GPL places important restrictions on "derivative works",  *
+ * yet it does not provide a detailed definition of that term.  To avoid   *
  * misunderstandings, we interpret that term as broadly as copyright law   *
  * allows.  For example, we consider an application to constitute a        *
- * "derivative work" for the purpose of this license if it does any of the *
- * following:                                                              *
- * o Integrates source code from Nmap                                      *
- * o Reads or includes Nmap copyrighted data files, such as                *
- *   nmap-os-db or nmap-service-probes.                                    *
- * o Executes Nmap and parses the results (as opposed to typical shell or  *
- *   execution-menu apps, which simply display raw Nmap output and so are  *
- *   not derivative works.)                                                *
- * o Integrates/includes/aggregates Nmap into a proprietary executable     *
- *   installer, such as those produced by InstallShield.                   *
- * o Links to a library or executes a program that does any of the above   *
+ * derivative work for the purpose of this license if it does any of the   *
+ * following with any software or content covered by this license          *
+ * ("Covered Software"):                                                   *
  *                                                                         *
- * The term "Nmap" should be taken to also include any portions or derived *
- * works of Nmap, as well as other software we distribute under this       *
- * license such as Zenmap, Ncat, and Nping.  This list is not exclusive,   *
- * but is meant to clarify our interpretation of derived works with some   *
- * common examples.  Our interpretation applies only to Nmap--we don't     *
- * speak for other people's GPL works.                                     *
+ * o Integrates source code from Covered Software.                         *
  *                                                                         *
- * If you have any questions about the GPL licensing restrictions on using *
- * Nmap in non-GPL works, we would be happy to help.  As mentioned above,  *
- * we also offer alternative license to integrate Nmap into proprietary    *
- * applications and appliances.  These contracts have been sold to dozens  *
- * of software vendors, and generally include a perpetual license as well  *
- * as providing for priority support and updates.  They also fund the      *
- * continued development of Nmap.  Please email sales@insecure.com for     *
- * further information.                                                    *
+ * o Reads or includes copyrighted data files, such as Nmap's nmap-os-db   *
+ * or nmap-service-probes.                                                 *
  *                                                                         *
- * As a special exception to the GPL terms, Insecure.Com LLC grants        *
+ * o Is designed specifically to execute Covered Software and parse the    *
+ * results (as opposed to typical shell or execution-menu apps, which will *
+ * execute anything you tell them to).                                     *
+ *                                                                         *
+ * o Includes Covered Software in a proprietary executable installer.  The *
+ * installers produced by InstallShield are an example of this.  Including *
+ * Nmap with other software in compressed or archival form does not        *
+ * trigger this provision, provided appropriate open source decompression  *
+ * or de-archiving software is widely available for no charge.  For the    *
+ * purposes of this license, an installer is considered to include Covered *
+ * Software even if it actually retrieves a copy of Covered Software from  *
+ * another source during runtime (such as by downloading it from the       *
+ * Internet).                                                              *
+ *                                                                         *
+ * o Links (statically or dynamically) to a library which does any of the  *
+ * above.                                                                  *
+ *                                                                         *
+ * o Executes a helper program, module, or script to do any of the above.  *
+ *                                                                         *
+ * This list is not exclusive, but is meant to clarify our interpretation  *
+ * of derived works with some common examples.  Other people may interpret *
+ * the plain GPL differently, so we consider this a special exception to   *
+ * the GPL that we apply to Covered Software.  Works which meet any of     *
+ * these conditions must conform to all of the terms of this license,      *
+ * particularly including the GPL Section 3 requirements of providing      *
+ * source code and allowing free redistribution of the work as a whole.    *
+ *                                                                         *
+ * As another special exception to the GPL terms, Insecure.Com LLC grants  *
  * permission to link the code of this program with any version of the     *
  * OpenSSL library which is distributed under a license identical to that  *
  * listed in the included docs/licenses/OpenSSL.txt file, and distribute   *
- * linked combinations including the two. You must obey the GNU GPL in all *
- * respects for all of the code used other than OpenSSL.  If you modify    *
- * this file, you may extend this exception to your version of the file,   *
- * but you are not obligated to do so.                                     *
+ * linked combinations including the two.                                  *
  *                                                                         *
- * If you received these files with a written license agreement or         *
- * contract stating terms other than the terms above, then that            *
- * alternative license agreement takes precedence over these comments.     *
+ * Any redistribution of Covered Software, including any derived works,    *
+ * must obey and carry forward all of the terms of this license, including *
+ * obeying all GPL rules and restrictions.  For example, source code of    *
+ * the whole work must be provided and free redistribution must be         *
+ * allowed.  All GPL references to "this License", are to be treated as    *
+ * including the terms and conditions of this license text as well.        *
+ *                                                                         *
+ * Because this license imposes special exceptions to the GPL, Covered     *
+ * Work may not be combined (even as part of a larger work) with plain GPL *
+ * software.  The terms, conditions, and exceptions of this license must   *
+ * be included as well.  This license is incompatible with some other open *
+ * source licenses as well.  In some cases we can relicense portions of    *
+ * Nmap or grant special permissions to use it in other open source        *
+ * software.  Please contact fyodor@nmap.org with any such requests.       *
+ * Similarly, we don't incorporate incompatible open source software into  *
+ * Covered Software without special permission from the copyright holders. *
+ *                                                                         *
+ * If you have any questions about the licensing restrictions on using     *
+ * Nmap in other works, are happy to help.  As mentioned above, we also    *
+ * offer alternative license to integrate Nmap into proprietary            *
+ * applications and appliances.  These contracts have been sold to dozens  *
+ * of software vendors, and generally include a perpetual license as well  *
+ * as providing for priority support and updates.  They also fund the      *
+ * continued development of Nmap.  Please email sales@nmap.com for further *
+ * information.                                                            *
+ *                                                                         *
+ * If you have received a written license agreement or contract for        *
+ * Covered Software stating terms other than these, you may choose to use  *
+ * and redistribute Covered Software under those terms instead of these.   *
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
@@ -69,8 +101,8 @@
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
- * to nmap-dev@insecure.org for possible incorporation into the main       *
- * distribution.  By sending these changes to Fyodor or one of the         *
+ * to the dev@nmap.org mailing list for possible incorporation into the    *
+ * main distribution.  By sending these changes to Fyodor or one of the    *
  * Insecure.Org development mailing lists, or checking them into the Nmap  *
  * source code repository, it is understood (unless you specify otherwise) *
  * that you are offering the Nmap Project (Insecure.Com LLC) the           *
@@ -84,10 +116,9 @@
  *                                                                         *
  * This program is distributed in the hope that it will be useful, but     *
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU       *
- * General Public License v2.0 for more details at                         *
- * http://www.gnu.org/licenses/gpl-2.0.html , or in the COPYING file       *
- * included with Nmap.                                                     *
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
+ * license file for more details (it's in a COPYING file included with     *
+ * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
  *                                                                         *
  ***************************************************************************/
 
@@ -135,11 +166,8 @@ NpingOps::NpingOps() {
     sendpref=0;
     sendpref_set=false;
 
-    send_eth=0;
+    send_eth=false;
     send_eth_set=false;
-
-    host_timeout=0;
-    host_timeout_set=false;
 
     delay=0;
     delay_set=false;
@@ -150,7 +178,7 @@ NpingOps::NpingOps() {
     spoofsource=false;
     spoofsource_set=false;
 
-    bpf_filter_spec=0;
+    bpf_filter_spec=NULL;
     bpf_filter_spec_set=false;
 
     current_round=0;
@@ -161,11 +189,11 @@ NpingOps::NpingOps() {
     disable_packet_capture_set=false;
 
     /* Privileges */
-    isr00t=0;
+    isr00t=false;
     isr00t_set=false;
 
     /* Payloads */
-    payload_type=0;
+    payload_type=PL_NONE;
     payload_type_set=false;
 
     payload_buff=NULL;
@@ -173,12 +201,6 @@ NpingOps::NpingOps() {
 
     payload_len=0;
     payload_len_set=false;
-
-    payload_file=NULL;
-    payload_file_set=false;
-
-    payload_file_fd=0;
-    payload_file_fd_set=false;
 
     /* Roles */
     role=0;
@@ -244,15 +266,6 @@ NpingOps::NpingOps() {
 
     tcpwin=0;
     tcpwin_set=false;
-
-    tcpmss=0;
-    tcpmss_set=false;
-
-    //ws
-    tcpws_set=false;
-
-    //ts
-    tcpts_set=false;
 
     badsum=false;
     badsum_set=false;
@@ -492,7 +505,7 @@ bool NpingOps::issetTraceroute(){
  *  @return OP_SUCCESS on success and OP_FAILURE in case of error.           */
 int NpingOps::setVerbosity(int level){
    if( level < -4 || level > 4 ){
-        outFatal(QT_3,"setVerbosity(): Invalid verbosity level supplied\n");
+        nping_fatal(QT_3,"setVerbosity(): Invalid verbosity level supplied\n");
         return OP_FAILURE;
    }else{
         switch(level){
@@ -506,7 +519,7 @@ int NpingOps::setVerbosity(int level){
             case  3:  vb=VB_3;  break;
             case  4:  vb=VB_4;  break;
             default:
-                outFatal(QT_3,"setVerbosity():2: Invalid verbosity level supplied\n");
+                nping_fatal(QT_3,"setVerbosity():2: Invalid verbosity level supplied\n");
             break;
         }
     }
@@ -561,7 +574,7 @@ int NpingOps::decreaseVerbosity(){
  *  @return OP_SUCCESS on success and OP_FAILURE in case of error.           */
 int NpingOps::setDebugging(int level){
   if( level < 0 || level > 9){
-    outFatal(QT_3,"setDebugging(): Invalid debugging level supplied\n");
+    nping_fatal(QT_3,"setDebugging(): Invalid debugging level supplied\n");
     return OP_FAILURE;
   }else{
     this->dbg= DBG_0  + level;
@@ -577,7 +590,7 @@ int NpingOps::getDebugging(){
 } /* End of getDebugging() */
 
 
-/** Increments debugginh level by one. (When it reaches DBG_9 it stops
+/** Increments debugging level by one. (When it reaches DBG_9 it stops
   * getting incremented)
   *   * @return previous verbosity level */
 int NpingOps::increaseDebugging(){
@@ -629,7 +642,7 @@ bool NpingOps::issetShowSentPackets(){
 int NpingOps::setPacketCount(u32 val){
   /* If zero is supplied, set highest value */
   if( val==0 )
-    pcount=4294967295u;
+    this->pcount=0xFFFFFFFF;
   else
     pcount=val;
   this->pcount_set=true;
@@ -660,7 +673,7 @@ int NpingOps::setSendPreference(int v){
        v!=PACKET_SEND_ETH_STRONG && v!=PACKET_SEND_ETH &&
        v!=PACKET_SEND_IP_WEAK && v!=PACKET_SEND_IP_STRONG &&
        v!=PACKET_SEND_IP ){
-        outFatal(QT_3,"setSendPreference(): Invalid value supplied\n");
+        nping_fatal(QT_3,"setSendPreference(): Invalid value supplied\n");
         return OP_FAILURE;
     }else{
         sendpref=v;
@@ -729,35 +742,6 @@ bool NpingOps::issetSendEth(){
 } /* End of issetSendEth() */
 
 
-/** Sets host timeout. Supplied parameter must be a long integer greater than
- *  zero.
- *  @warning timeout is assumed to be in milliseconds. Use tval2msecs() from
- *           nbase to obtain a proper value.
- *  @return OP_SUCCESS on success and OP_FAILURE in case of error.           */
-int NpingOps::setHostTimeout(long t){
-  if( t < 0 ){
-    outFatal(QT_3,"setHostTimeout(): Invalid time supplied\n");
-    return OP_FAILURE;
-  }else{
-    this->host_timeout=t;
-  }
-  this->host_timeout_set=true;
-  return OP_SUCCESS;
-} /* End of setHostTimeout() */
-
-
-/** Returns value of attribute host_timeout */
-long NpingOps::getHostTimeout(){
-  return this->host_timeout;
-} /* End of getHostTimeout() */
-
-
-/* Returns true if option has been set */
-bool NpingOps::issetHostTimeout(){
-  return this->host_timeout_set;
-} /* End of issetHostTimeout() */
-
-
 /** Sets inter-probe delay. Supplied parameter is assumed to be in milliseconds
  *  and must be a long integer greater than zero.
  *  @warning timeout is assumed to be in milliseconds. Use tval2msecs() from
@@ -765,7 +749,7 @@ bool NpingOps::issetHostTimeout(){
  *  @return OP_SUCCESS on success and OP_FAILURE in case of error.           */
 int NpingOps::setDelay(long t){
   if( t < 0 )
-    outFatal(QT_3,"setDelay(): Invalid time supplied\n");
+    nping_fatal(QT_3,"setDelay(): Invalid time supplied\n");
   this->delay=t;
   this->delay_set=true;
   return OP_SUCCESS;
@@ -789,7 +773,7 @@ bool NpingOps::issetDelay(){
  *  @return OP_SUCCESS on success and OP_FAILURE in case of error.           */
 int NpingOps::setDevice(char *n){
   if( n==NULL ){
-    outFatal(QT_3,"setDevice(): Invalid value supplied\n");
+    nping_fatal(QT_3,"setDevice(): Invalid value supplied\n");
   }else{
     Strncpy(this->device, n, MAX_DEV_LEN-1);
   }
@@ -809,7 +793,7 @@ bool NpingOps::issetDevice(){
 } /* End of issetDevice() */
 
 
-/** Returns true if user requested explicitely that he wants IP source
+/** Returns true if user requested explicitly that he wants IP source
  *  spoofing */
 bool NpingOps::spoofSource(){
   return this->spoofsource;
@@ -905,7 +889,7 @@ bool NpingOps::issetDisablePacketCapture(){
  *  @return OP_SUCCESS on success and OP_FAILURE in case of error.           */
 int NpingOps::setIPVersion(u8 val){
   if( val!=IP_VERSION_4 && val!=IP_VERSION_6 ){
-    outFatal(QT_3,"setIPVersion(): Invalid value supplied\n");
+    nping_fatal(QT_3,"setIPVersion(): Invalid value supplied\n");
     return OP_FAILURE;
   }else{
     this-> ipversion=val;
@@ -1010,7 +994,7 @@ bool NpingOps::issetIsRoot(){
  *  @return OP_SUCCESS on success and OP_FAILURE in case of error.           */
 int NpingOps::setPayloadType(int t){
   if( t!=PL_RAND && t!=PL_HEX && t!=PL_FILE && t!=PL_STRING){
-    outFatal(QT_3,"setPayloadType(): Invalid value supplied\n");
+    nping_fatal(QT_3,"setPayloadType(): Invalid value supplied\n");
     return OP_FAILURE;
   }else{
     payload_type=t;
@@ -1037,7 +1021,7 @@ bool NpingOps::issetPayloadType(){
  *  @return OP_SUCCESS on success and OP_FAILURE in case of error.           */
 int NpingOps::setPayloadBuffer(u8 *p, int len){
   if( p==NULL || len < 0 ){
-    outFatal(QT_3,"setPayloadBuffer(): Invalid value supplied\n");
+    nping_fatal(QT_3,"setPayloadBuffer(): Invalid value supplied\n");
     return OP_FAILURE;
   }else{
     this->payload_buff=p;
@@ -1073,30 +1057,6 @@ bool NpingOps::issetPayloadLen(){
 } /* End of issetPayloadLen() */
 
 
-int NpingOps::setPayloadFilename(char *name){
-  if( name==NULL ){
-    outFatal(QT_3,"setPayloadFile(): Invalid value supplied\n");
-    return OP_FAILURE;
-  }else{
-    this->payload_file= strdup(name);
-  }
-  this->payload_file_set=true;
-  return OP_SUCCESS;
-} /* End of setPayloadFile() */
-
-
-char *NpingOps::getPayloadFilename(){
-  return this->payload_file;
-} /* End of getPayloadFilename() */
-
-
-/* Returns true if option has been set */
-bool NpingOps::issetPayloadFilename(){
-  return this->payload_file_set;
-} /* End of issetPayloadFilename() */
-
-
-
 /******************************************************************************
  *  Roles (normal, client, server... )                                        *
  ******************************************************************************/
@@ -1108,7 +1068,7 @@ bool NpingOps::issetPayloadFilename(){
 int NpingOps::setRole(int r){
   int prev = this->role;
   if (r!=ROLE_NORMAL && r!=ROLE_CLIENT && r!=ROLE_SERVER){
-    outError(QT_2,"setRoleClient(): Invalid role supplied");
+    nping_warning(QT_2,"setRoleClient(): Invalid role supplied");
     return OP_FAILURE;
   }
   else
@@ -1292,7 +1252,7 @@ bool NpingOps::issetDF(){
  *  @return OP_SUCCESS on success and OP_FAILURE in case of error.           */
 int NpingOps::setMTU(u32 t){
   if(t==0 || (t%8)!=0){
-    outFatal(QT_3,"setMTU(): Invalid mtu supplied\n");
+    nping_fatal(QT_3,"setMTU(): Invalid mtu supplied\n");
   }else{
     this->mtu=t;
     this->mtu_set=true;
@@ -1370,7 +1330,7 @@ bool NpingOps::issetIPv4SourceAddress(){
  *  be free()ed by the NpingOps destructor.                                  */
 int NpingOps::setIPOptions(char *txt){
   if (txt==NULL)
-    outFatal(QT_3,"setIPOptions(): NULL pointer supplied\n");
+    nping_fatal(QT_3,"setIPOptions(): NULL pointer supplied\n");
   this->ip_options=strdup(txt) ;
   this->ip_options_set=true;
   return OP_SUCCESS;
@@ -1435,7 +1395,7 @@ bool NpingOps::issetFlowLabel(){
 
 int NpingOps::setIPv6SourceAddress(u8 *val){
   if(val==NULL)
-    outFatal(QT_3,"setIPv6SourceAddress(): NULL pointer supplied\n");
+    nping_fatal(QT_3,"setIPv6SourceAddress(): NULL pointer supplied\n");
   memcpy(this->ipv6_src_address.s6_addr, val, 16);
   this->ipv6_src_address_set=true;
   return OP_SUCCESS;
@@ -1500,7 +1460,7 @@ struct sockaddr_storage *NpingOps::getSourceSockAddr(struct sockaddr_storage *ss
     else
         s6->sin6_port=0;
   }else{
-    outFatal(QT_3, "NpingOps::getSourceSockAddr(): IP version unset.");
+    nping_fatal(QT_3, "NpingOps::getSourceSockAddr(): IP version unset.");
   }
   return ss;
 } /* End of getSourceSockAddr() */
@@ -1524,7 +1484,7 @@ u16 *NpingOps::getTargetPorts( int *len ){
 /** @warning ports in the supplied array must be in HOST byte order */
 int NpingOps::setTargetPorts( u16 *pnt, int n ){
   if(this->tportcount>65536 || this->tportcount<0)
-    outFatal(QT_3, "setTargetPorts():: Invalid number of ports supplied.");
+    nping_fatal(QT_3, "setTargetPorts():: Invalid number of ports supplied.");
   this->target_ports=pnt;
   this->tportcount=n;
   this->target_ports_set=true;
@@ -1537,6 +1497,10 @@ bool NpingOps::issetTargetPorts(){
   return this->target_ports_set;
 } /* End of issetTargetPorts() */
 
+/*Returns true if the scan type can use the -p option*/
+bool NpingOps::scan_mode_uses_target_ports(int mode){
+    return (mode==TCP_CONNECT || mode==TCP || mode == UDP || mode == UDP_UNPRIV);
+} /*End of scan_mode_uses_target_ports*/
 
 /** Sets TCP/UPD source port. Supplied parameter must be an integer >=0 &&
  * <=65535
@@ -1606,7 +1570,7 @@ bool NpingOps::issetTCPAck(){
 
 int NpingOps::setFlagTCP(int flag){
   if (flag < FLAG_CWR || flag > FLAG_FIN)
-    outFatal(QT_3,"setFlagTCP(): Invalid flag supplied\n");
+    nping_fatal(QT_3,"setFlagTCP(): Invalid flag supplied\n");
   else
     this->tcpflags[flag]=1;
   this->tcpflags_set=true;
@@ -1632,7 +1596,7 @@ int NpingOps::unsetAllFlagsTCP(){
 
 int NpingOps::getFlagTCP(int flag){
   if (flag < FLAG_CWR || flag > FLAG_FIN)
-    outFatal(QT_3,"setFlagTCP(): Invalid flag supplied\n");
+    nping_fatal(QT_3,"setFlagTCP(): Invalid flag supplied\n");
   return this->tcpflags[flag];
 } /* End of getFlagTCP() */
 
@@ -1984,9 +1948,9 @@ int NpingOps::addICMPAdvertEntry(struct in_addr addr, u32 pref ){
  *  0 <= num < getICMPAdvertEntryCount() */
 int NpingOps::getICMPAdvertEntry(int num, struct in_addr *addr, u32 *pref){
   if( num<0 || num>=icmp_advert_entry_count )
-    outFatal(QT_3,"getICMPAdvertEntry(): Supplied index is out of bounds.\n");
+    nping_fatal(QT_3,"getICMPAdvertEntry(): Supplied index is out of bounds.\n");
   if( addr==NULL || pref==NULL)
-    outFatal(QT_3,"getICMPAdvertEntry(): NULL pointer supplied\n");
+    nping_fatal(QT_3,"getICMPAdvertEntry(): NULL pointer supplied\n");
   *addr =  this->icmp_advert_entry_addr[num];
   *pref =  this->icmp_advert_entry_pref[num];
   return OP_SUCCESS;
@@ -2323,7 +2287,7 @@ void NpingOps::validateOptions() {
 const char *privreq = "root privileges";
 #ifdef WIN32
     //if (!this->have_pcap)
-        privreq = "that WinPcap version 3.1 or higher and iphlpapi.dll be installed. You seem to be missing one or both of these.  Winpcap is available from http://www.winpcap.org.  iphlpapi.dll comes with Win98 and later operating sytems and NT 4.0 with SP4 or greater.  For previous windows versions, you may be able to take iphlpapi.dll from another system and place it in your system32 dir (e.g. c:\\windows\\system32)";
+        privreq = "that WinPcap version 3.1 or higher and iphlpapi.dll be installed. You seem to be missing one or both of these.  Winpcap is available from http://www.winpcap.org.  iphlpapi.dll comes with Win98 and later operating systems and NT 4.0 with SP4 or greater.  For previous Windows versions, you may be able to take iphlpapi.dll from another system and place it in your system32 dir (e.g. c:\\windows\\system32)";
 #endif
 /* If user did not specify --privileged or --unprivileged explicitly, try to
  * determine if has root privileges. */
@@ -2343,9 +2307,9 @@ if( !this->issetIsRoot() ){
 
 if (this->havePcap()==false){
     #ifdef WIN32
-        outFatal(QT_3, "Nping requires %s", privreq);
+        nping_fatal(QT_3, "Nping requires %s", privreq);
     #else
-        outFatal(QT_3, "Nping requires libpcap to be installed on your system.");
+        nping_fatal(QT_3, "Nping requires libpcap to be installed on your system.");
     #endif
 }
 
@@ -2360,10 +2324,10 @@ if (this->havePcap()==false){
   /* Check if user entered at least one target spec */
   if( this->getRole() == ROLE_NORMAL ){
     if ( this->targets.getTargetSpecCount() <= 0 )
-        outFatal(QT_3,"WARNING: No targets were specified, so 0 hosts pinged.");
+        nping_fatal(QT_3,"WARNING: No targets were specified, so 0 hosts pinged.");
   }else if( this->getRole() == ROLE_CLIENT ){
     if ( this->targets.getTargetSpecCount() <= 0 )
-        outFatal(QT_3,"No echo server was specified.");
+        nping_fatal(QT_3,"No echo server was specified.");
   }
 
 /** IP VERSION ***************************************************************/
@@ -2408,11 +2372,11 @@ if (this->havePcap()==false){
 
 /** CHECK PRIVILEGES FOR CURRENT ROLE ****************************************/
   if( !this->isRoot() && (this->getRole()==ROLE_SERVER || this->getRole()==ROLE_CLIENT) )
-    outFatal(QT_3,"Echo mode requires %s.", privreq);
+    nping_fatal(QT_3,"Echo mode requires %s.", privreq);
 
 /** CHECK PRIVILEGES FOR CURRENT MODE ****************************************/
   if( !this->isRoot() && this->getMode()!=UDP_UNPRIV && this->getMode()!=TCP_CONNECT )
-    outFatal(QT_3,"Mode %s requires %s.", this->mode2Ascii( this->getMode() ), privreq);
+    nping_fatal(QT_3,"Mode %s requires %s.", this->mode2Ascii( this->getMode() ), privreq);
 
 
 /** DEFAULT HEADER PARAMETERS *************************************************/
@@ -2420,26 +2384,26 @@ if (this->havePcap()==false){
 
 /** ARP MODE RELATED PARAMETERS *********************************************/
   if(this->getMode()==ARP && this->ipv6()) {
-    outFatal(QT_3, "Sorry, ARP does not support IPv6 and Nping does not yet support NDP.");
+    nping_fatal(QT_3, "Sorry, ARP does not support IPv6 and Nping does not yet support NDP.");
   }
 
 /** TCP CONNECT RELATED PARAMETERS *********************************************/
   if(this->getMode()==TCP_CONNECT) {
-      if(this->issetPayloadBuffer() || this->issetPayloadFilename())
-        outPrint(VB_0, "Warning: Payload supplied in TCP Connect mode. Payload will be ignored.");
+      if(this->issetPayloadBuffer())
+        nping_print(VB_0, "Warning: Payload supplied in TCP Connect mode. Payload will be ignored.");
   }
 
 /** SOURCE IP, SOURCE MAC and NETWORK DEVICE *********************************/
 /* If we are in a mode where we need to craft IP packets, then we need to
  * obtain a network interface name and a source IP address. There are three
- * different posibilities:
+ * different possibilities:
  *  1. User did NOT specify both network interface and source IP address.
  *  2. User did specify a network interface but not a source IP address.
  *  3. User did actually supply a source IP but not a network interface name
  *
  * I know the following code is ugly but the thing is that we want to determine
  * interface and source IP without user intervention, so we try in many ways
- * until either we succeed or we run out of possibilites and fatal().
+ * until either we succeed or we run out of possibilities and fatal().
  */
 if( this->getMode()!=TCP_CONNECT && this->getMode()!=UDP_UNPRIV && this->getRole()!=ROLE_SERVER){
 
@@ -2464,7 +2428,7 @@ if( this->getMode()!=TCP_CONNECT && this->getMode()!=UDP_UNPRIV && this->getRole
                 if( this->targets.getNextTargetAddressAndName(&ss, &ss_len, hostname, sizeof(hostname)) == OP_SUCCESS )
                     break;
                 else if( z>=(this->targets.getTargetSpecCount()-1) )
-                    outFatal(QT_3,"Cannot find a valid target. Please make sure the specified hosts are either IP addresses in standard notation or hostnames that can be resolved with DNS");
+                    nping_fatal(QT_3,"Cannot find a valid target. Please make sure the specified hosts are either IP addresses in standard notation or hostnames that can be resolved with DNS");
              }
              this->targets.rewind();
 
@@ -2473,15 +2437,15 @@ if( this->getMode()!=TCP_CONNECT && this->getMode()!=UDP_UNPRIV && this->getRole
                 /* If that didn't work, ask libpcap */
                 char errbuf[PCAP_ERRBUF_SIZE];
                 if ( (dev = pcap_lookupdev(errbuf)) == NULL)
-                    outFatal(QT_3, "Cannot obtain device for packet capture --> %s", errbuf);
+                    nping_fatal(QT_3, "Cannot obtain device for packet capture --> %s", errbuf);
                 else
                     this->setDevice( dev );
                 /* Libpcap gave us a device name, try to obtain it's IP */
                 if ( devname2ipaddr_alt(this->getDevice(), &ifaddr) != 0 ){
                     if( this->isRoot() )
-                        outFatal(QT_3,"Cannot figure out what source address to use for device %s, does it even exist?", this->getDevice());
+                        nping_fatal(QT_3,"Cannot figure out what source address to use for device %s, does it even exist?", this->getDevice());
                     else
-                        outFatal(QT_3,"Cannot figure out what source address to use for device %s, are you root?", this->getDevice());
+                        nping_fatal(QT_3,"Cannot figure out what source address to use for device %s, are you root?", this->getDevice());
                 }
                 else{
                     if( s4->sin_family==AF_INET )
@@ -2495,23 +2459,23 @@ if( this->getMode()!=TCP_CONNECT && this->getMode()!=UDP_UNPRIV && this->getRole
         }else{ /* In IPv6 we just select one in libpcap and hope is the right one */
             char *selected_iface=this->select_network_iface();
             if(selected_iface==NULL)
-                outFatal(QT_3, "Error trying to find a suitable network interface ");
+                nping_fatal(QT_3, "Error trying to find a suitable network interface ");
             else
                 this->setDevice( selected_iface );
         }
     } /* CASE 2: User did actually supply a device name */
     else{
-        outPrint(DBG_2, "Using network interface \"%s\"", this->getDevice() );
+        nping_print(DBG_2, "Using network interface \"%s\"", this->getDevice() );
     }
 
 /* The echo server needs to find out a network interface*/
 }else if (this->getRole()==ROLE_SERVER && this->issetDevice()==false){
   char *selected_iface=this->select_network_iface();
   if(selected_iface==NULL)
-    outFatal(QT_3, "Error trying to find a suitable network interface ");
+    nping_fatal(QT_3, "Error trying to find a suitable network interface ");
   else
     this->setDevice( selected_iface );
-  outPrint(DBG_2, "Using network interface \"%s\"", this->getDevice() );
+  nping_print(DBG_2, "Using network interface \"%s\"", this->getDevice() );
 }
 
 /** RAW IP AND RAW ETHERNET TRANSMISSION MODES *******************************/
@@ -2546,7 +2510,7 @@ if(this->getRole()!=ROLE_SERVER){
             this->setSendEth(true);
             this->setSendPreference( PACKET_SEND_ETH_STRONG );
         }else{
-            outFatal(QT_3, "If you want to control some of the fields"
+            nping_fatal(QT_3, "If you want to control some of the fields"
                          " in the IPv6 header you also have to supply source and"
                          " destination MAC address. However, you can always"
                          " choose to let the kernel create the IPv6  header"
@@ -2576,11 +2540,11 @@ if(this->getRole()!=ROLE_SERVER){
 
     if( this->getMode()==ARP && !this->sendPreferenceEthernet() ){
         this->setSendEth(true);
-        outError(QT_2, "Warning: ARP mode requieres raw ethernet frame transmission. Specified preference will be ignored.");
+        nping_warning(QT_2, "Warning: ARP mode requires raw ethernet frame transmission. Specified preference will be ignored.");
     }
     else if( this->ipv6() ){
 
-        /* CASE 1: User requested ethernet explicitely and supplied all
+        /* CASE 1: User requested ethernet explicitly and supplied all
          * necessary options. */
         if( this->sendPreferenceEthernet() && this->canDoIPv6Ethernet() ){
             this->setSendEth(true);
@@ -2588,7 +2552,7 @@ if(this->getRole()!=ROLE_SERVER){
         /* CASE 2: User requested Ethernet but did not really supplied all
          * the information we need */
         }else if( this->sendPreferenceEthernet() && !this->canDoIPv6Ethernet() ){
-            outFatal(QT_3, "You requested raw ethernet level transmission and IPv6."
+            nping_fatal(QT_3, "You requested raw ethernet level transmission and IPv6."
                     " In this case, you need to supply source MAC address,"
                     " destination MAC address and IPv6 source address.");
 
@@ -2600,7 +2564,7 @@ if(this->getRole()!=ROLE_SERVER){
         /* CASE 4: User requested raw IP transmission but also wanted to
          * set custom IPv6 header field values. */
         }else if (this->sendPreferenceIP() && !this->canDoIPv6ThroughSocket()){
-            outFatal(QT_3, "You requested raw IP transmission mode for IPv6."
+            nping_fatal(QT_3, "You requested raw IP transmission mode for IPv6."
                          " Nping does not currently allow IPv6 header manipulation"
                          " when sending packets at raw IP level due to the limitations"
                          " on raw IPv6 sockets, imposed by RFC 2292. Please"
@@ -2616,9 +2580,9 @@ if(this->getRole()!=ROLE_SERVER){
     }
  }
  if( this->getMode()==TCP_CONNECT || this->getMode()==UDP_UNPRIV )
-    outPrint(DBG_2,"Nping will send packets in unprivileged mode using regular system calls");
+    nping_print(DBG_2,"Nping will send packets in unprivileged mode using regular system calls");
  else
-    outPrint(DBG_2,"Nping will send packets at %s",  this->sendEth() ? "raw ethernet level" : "raw IP level" );
+    nping_print(DBG_2,"Nping will send packets at %s",  this->sendEth() ? "raw ethernet level" : "raw IP level" );
 }
 
 /** ECHO MODE ************************************************************/
@@ -2632,9 +2596,9 @@ if(this->getRole()!=ROLE_SERVER){
     if(this->getMode()==TCP){
         for(int i=0; i<tportcount; i++){
             if( this->target_ports[i]==this->getEchoPort())
-                outFatal(QT_3, "Packets can't be sent to the same port that is used to connect to the echo server (%d)", this->getEchoPort());
+                nping_fatal(QT_3, "Packets can't be sent to the same port that is used to connect to the echo server (%d)", this->getEchoPort());
             else if(this->getSourcePort()==this->getEchoPort())
-                outFatal(QT_3, "Packets can't be sent from the same port that is used to connect to the echo server (%d)", this->getEchoPort());
+                nping_fatal(QT_3, "Packets can't be sent from the same port that is used to connect to the echo server (%d)", this->getEchoPort());
         }
     }
 
@@ -2646,14 +2610,14 @@ if(this->getRole()!=ROLE_SERVER){
         break;
 
         default:
-            outFatal(QT_3, "The echo client can't be run with protocols other than TCP, UDP or ICMP.");
+            nping_fatal(QT_3, "The echo client can't be run with protocols other than TCP, UDP or ICMP.");
         break;
     }
   }
   #ifndef HAVE_OPENSSL
   if(this->getRole()==ROLE_CLIENT || this->getRole()==ROLE_SERVER ){
     if( this->doCrypto()==true  ){
-        outFatal(QT_3, "Nping was compiled without OpenSSL so authentications need to be transmitted as cleartext. If you wish to continue, please specify --no-crypto.");
+        nping_fatal(QT_3, "Nping was compiled without OpenSSL so authentications need to be transmitted as cleartext. If you wish to continue, please specify --no-crypto.");
     }
   }
   #endif
@@ -2669,57 +2633,6 @@ if(this->getRole()!=ROLE_SERVER){
 if( this->issetSourcePort() && this->getMode()==TCP_CONNECT && this->getPacketCount()>1 )
     error("Warning: Setting a source port in TCP-Connect mode with %d rounds may not work after the first round. You may want to do just one round (use --count 1).", this->getPacketCount() );
 } /* End of validateOptions() */
-
-
-/** Print the contents of the NpingOps class to stdout
- *  @warning this is old and will not print all NpingOps attributes. */
-int NpingOps::printNpingOps(){
-  int i=0;
-    printf("Mode::%d\n", getMode() );
-    printf("Traceroute::%d\n", getTraceroute() );
-    printf("Verbosity:: %d\n", getVerbosity() );
-    printf("Debugging:: %d\n", getDebugging() );
-    printf("Packet count:: %d\n", getPacketCount() );
-    printf("Send preference:: %d\n", getSendPreference() );
-    printf("Host timeout:: %ld\n", getHostTimeout() );
-    printf("Delay:: %ld\n", getDelay() );
-    printf("Device::%s\n", getDevice());
-    printf("Is root?:: %d\n", isRoot() );
-    printf("Payload type:: %d\n", getPayloadType() );
-    printf("Payload buffer:: %p\n", getPayloadBuffer() );
-    printf("Payload length:: %d\n", getPayloadLen() );
-    printf("Payload file:: %s\n", getPayloadFilename() );
-    printf("Role:: %d\n", getRole() );
-    printf("IP TTL:: %d\n", getTTL() );
-    printf("IP TOS:: %d\n", getTOS() );
-    printf("IP Identification:: %d\n", getIdentification() );
-    printf("IP MF flag:: %d\n", getMF() );
-    printf("IP DF flag:: %d\n", getDF() );
-    printf("MTU:: %d\n", getMTU() );
-    printf("Badsum IP?:: %d\n", getBadsumIP() );
-    printf("IP version:: %d\n", getIPVersion() );
-    printf("IPv4 Source Addr:: %s\n",  IPtoa( getIPv4SourceAddress() ));
-    printf("IPv6 Source Addr:: %p\n", IPtoa( getIPv6SourceAddress() ) );
-
-    printf("\n");
-    printf("/* TCP / UDP */ \n");
-    printf("u16 target_ports[65535]:: %p\n", getTargetPorts(&i) );
-    printf("int tportcount:: %d\n", i);
-    printf("int source_port:: %d\n", getSourcePort() );
-    printf("int flags[8]:: %s%s%s%s%s%s%s%s\n",
-            (this->getFlagTCP(FLAG_CWR)==1)?"CWR ":"",
-            (this->getFlagTCP(FLAG_ECN)==1)?"ECN ":"",
-            (this->getFlagTCP(FLAG_URG)==1)?"URG ":"",
-            (this->getFlagTCP(FLAG_ACK)==1)?"ACK ":"",
-            (this->getFlagTCP(FLAG_PSH)==1)?"PSH ":"",
-            (this->getFlagTCP(FLAG_RST)==1)?"RST ":"",
-            (this->getFlagTCP(FLAG_SYN)==1)?"SYN ":"",
-            (this->getFlagTCP(FLAG_FIN)==1)?"FIN ":""
-          );
-
-    printf("bool badsum:: %d\n", getBadsum() );
-    return OP_SUCCESS;
-} /* End of printNpingOps()*/
 
 
 /** Returns true if requested mode is a simple TCP connect probe mode */
@@ -2776,19 +2689,19 @@ bool NpingOps::canDoIPv6Ethernet(){
 
 
 /******************************************************************************
- *  Miscellanious                                                             *
+ *  Miscellaneous                                                             *
  ******************************************************************************/
 
 void NpingOps::displayNpingDoneMsg(){
 
   if( this->getRole()==ROLE_SERVER ){
-      outPrint(QT_1, "Nping done: %lu %s served in %.2f seconds",
+      nping_print(QT_1, "Nping done: %lu %s served in %.2f seconds",
                (unsigned long)this->stats.getEchoClientsServed(),
                (this->stats.getEchoClientsServed() == 1)? "client" : "clients",
                this->stats.elapsedRuntime()
               );
   }else{
-      outPrint(QT_1, "Nping done: %lu %s pinged in %.2f seconds",
+      nping_print(QT_1, "Nping done: %lu %s pinged in %.2f seconds",
                this->targets.getTargetsFetched(),
                (this->targets.getTargetsFetched() == 1)? "IP address" : "IP addresses",
                this->stats.elapsedRuntime()
@@ -2804,7 +2717,7 @@ void NpingOps::displayStatistics(){
   NpingTarget *target=NULL;
   this->targets.rewind();
 
-  outPrint(VB_0," "); /* Print newline */
+  nping_print(VB_0," "); /* Print newline */
 
     /* Per-target statistics */
     if( this->targets.getTargetsFetched() > 1){
@@ -2819,87 +2732,87 @@ void NpingOps::displayStatistics(){
 #ifdef WIN32
       /* Sent/Recv/Echoed Packets */
       if(this->getRole()==ROLE_CLIENT){
-          outPrint(QT_1|NO_NEWLINE, "Raw packets sent: %I64u ", this->stats.getSentPackets() );
-          outPrint(QT_1|NO_NEWLINE, "(%s) ", format_bytecount(this->stats.getSentBytes(), auxbuff, 256));
-          outPrint(QT_1|NO_NEWLINE,"| Rcvd: %I64u ", this->stats.getRecvPackets() );
-          outPrint(QT_1|NO_NEWLINE,"(%s) ", format_bytecount(this->stats.getRecvBytes(), auxbuff, 256));
-          outPrint(QT_1|NO_NEWLINE,"| Lost: %I64u ", this->stats.getLostPackets() );
-          outPrint(QT_1|NO_NEWLINE,"(%.2lf%%)", this->stats.getLostPacketPercentage100() );
-          outPrint(QT_1|NO_NEWLINE,"| Echoed: %I64u ", this->stats.getEchoedPackets() );
-          outPrint(QT_1,"(%s) ", format_bytecount(this->stats.getEchoedBytes(), auxbuff, 256));
+          nping_print(QT_1|NO_NEWLINE, "Raw packets sent: %I64u ", this->stats.getSentPackets() );
+          nping_print(QT_1|NO_NEWLINE, "(%s) ", format_bytecount(this->stats.getSentBytes(), auxbuff, 256));
+          nping_print(QT_1|NO_NEWLINE,"| Rcvd: %I64u ", this->stats.getRecvPackets() );
+          nping_print(QT_1|NO_NEWLINE,"(%s) ", format_bytecount(this->stats.getRecvBytes(), auxbuff, 256));
+          nping_print(QT_1|NO_NEWLINE,"| Lost: %I64u ", this->stats.getLostPackets() );
+          nping_print(QT_1|NO_NEWLINE,"(%.2lf%%)", this->stats.getLostPacketPercentage100() );
+          nping_print(QT_1|NO_NEWLINE,"| Echoed: %I64u ", this->stats.getEchoedPackets() );
+          nping_print(QT_1,"(%s) ", format_bytecount(this->stats.getEchoedBytes(), auxbuff, 256));
       }else if(this->getRole()==ROLE_SERVER){
-          outPrint(QT_1|NO_NEWLINE, "Raw packets captured: %I64u ", this->stats.getRecvPackets() );
-          outPrint(QT_1|NO_NEWLINE, "(%s) ", format_bytecount(this->stats.getRecvBytes(), auxbuff, 256));
-          outPrint(QT_1|NO_NEWLINE,"| Echoed: %I64u ", this->stats.getEchoedPackets() );
-          outPrint(QT_1|NO_NEWLINE,"(%s) ", format_bytecount(this->stats.getEchoedBytes(), auxbuff, 256));
-          outPrint(QT_1|NO_NEWLINE,"| Not Matched: %I64u ", this->stats.getUnmatchedPackets() );
-          outPrint(QT_1|NO_NEWLINE,"(%s) ", format_bytecount(this->stats.getRecvBytes()-this->stats.getEchoedBytes(), auxbuff, 256));
-          outPrint(QT_1,"(%.2lf%%)", this->stats.getUnmatchedPacketPercentage100() );
+          nping_print(QT_1|NO_NEWLINE, "Raw packets captured: %I64u ", this->stats.getRecvPackets() );
+          nping_print(QT_1|NO_NEWLINE, "(%s) ", format_bytecount(this->stats.getRecvBytes(), auxbuff, 256));
+          nping_print(QT_1|NO_NEWLINE,"| Echoed: %I64u ", this->stats.getEchoedPackets() );
+          nping_print(QT_1|NO_NEWLINE,"(%s) ", format_bytecount(this->stats.getEchoedBytes(), auxbuff, 256));
+          nping_print(QT_1|NO_NEWLINE,"| Not Matched: %I64u ", this->stats.getUnmatchedPackets() );
+          nping_print(QT_1|NO_NEWLINE,"(%s) ", format_bytecount(this->stats.getRecvBytes()-this->stats.getEchoedBytes(), auxbuff, 256));
+          nping_print(QT_1,"(%.2lf%%)", this->stats.getUnmatchedPacketPercentage100() );
       }else if(this->getMode()==TCP_CONNECT){
-          outPrint(QT_1|NO_NEWLINE, "TCP connection attempts: %I64u ", this->stats.getSentPackets() );
-          outPrint(QT_1|NO_NEWLINE,"| Successful connections: %I64u ", this->stats.getRecvPackets() );
-          outPrint(QT_1|NO_NEWLINE,"| Failed: %I64u ", this->stats.getLostPackets() );
-          outPrint(QT_1,"(%.2lf%%)", this->stats.getLostPacketPercentage100() );
+          nping_print(QT_1|NO_NEWLINE, "TCP connection attempts: %I64u ", this->stats.getSentPackets() );
+          nping_print(QT_1|NO_NEWLINE,"| Successful connections: %I64u ", this->stats.getRecvPackets() );
+          nping_print(QT_1|NO_NEWLINE,"| Failed: %I64u ", this->stats.getLostPackets() );
+          nping_print(QT_1,"(%.2lf%%)", this->stats.getLostPacketPercentage100() );
       } else if (this->getMode()==UDP_UNPRIV){
-          outPrint(QT_1|NO_NEWLINE, "UDP packets sent: %I64u ", this->stats.getSentPackets() );
-          outPrint(QT_1|NO_NEWLINE,"| Rcvd: %I64u ", this->stats.getRecvPackets() );
-          outPrint(QT_1|NO_NEWLINE,"| Lost: %I64u ", this->stats.getLostPackets() );
-          outPrint(QT_1,"(%.2lf%%)", this->stats.getLostPacketPercentage100() );
+          nping_print(QT_1|NO_NEWLINE, "UDP packets sent: %I64u ", this->stats.getSentPackets() );
+          nping_print(QT_1|NO_NEWLINE,"| Rcvd: %I64u ", this->stats.getRecvPackets() );
+          nping_print(QT_1|NO_NEWLINE,"| Lost: %I64u ", this->stats.getLostPackets() );
+          nping_print(QT_1,"(%.2lf%%)", this->stats.getLostPacketPercentage100() );
       } else{
-          outPrint(QT_1|NO_NEWLINE, "Raw packets sent: %I64u ", this->stats.getSentPackets() );
-          outPrint(QT_1|NO_NEWLINE, "(%s) ", format_bytecount(this->stats.getSentBytes(), auxbuff, 256));
-          outPrint(QT_1|NO_NEWLINE,"| Rcvd: %I64u ", this->stats.getRecvPackets() );
-          outPrint(QT_1|NO_NEWLINE,"(%s) ", format_bytecount(this->stats.getRecvBytes(), auxbuff, 256));
-          outPrint(QT_1|NO_NEWLINE,"| Lost: %I64u ", this->stats.getLostPackets() );
-          outPrint(QT_1,"(%.2lf%%)", this->stats.getLostPacketPercentage100() );
+          nping_print(QT_1|NO_NEWLINE, "Raw packets sent: %I64u ", this->stats.getSentPackets() );
+          nping_print(QT_1|NO_NEWLINE, "(%s) ", format_bytecount(this->stats.getSentBytes(), auxbuff, 256));
+          nping_print(QT_1|NO_NEWLINE,"| Rcvd: %I64u ", this->stats.getRecvPackets() );
+          nping_print(QT_1|NO_NEWLINE,"(%s) ", format_bytecount(this->stats.getRecvBytes(), auxbuff, 256));
+          nping_print(QT_1|NO_NEWLINE,"| Lost: %I64u ", this->stats.getLostPackets() );
+          nping_print(QT_1,"(%.2lf%%)", this->stats.getLostPacketPercentage100() );
      }
 #else
       /* Sent/Recv/Echoed Packets */
       if(this->getRole()==ROLE_CLIENT){
-          outPrint(QT_1|NO_NEWLINE, "Raw packets sent: %llu ", this->stats.getSentPackets() );
-          outPrint(QT_1|NO_NEWLINE, "(%s) ", format_bytecount(this->stats.getSentBytes(), auxbuff, 256));
-          outPrint(QT_1|NO_NEWLINE,"| Rcvd: %llu ", this->stats.getRecvPackets() );
-          outPrint(QT_1|NO_NEWLINE,"(%s) ", format_bytecount(this->stats.getRecvBytes(), auxbuff, 256));
-          outPrint(QT_1|NO_NEWLINE,"| Lost: %llu ", this->stats.getLostPackets() );
-          outPrint(QT_1|NO_NEWLINE,"(%.2lf%%)", this->stats.getLostPacketPercentage100() );
-          outPrint(QT_1|NO_NEWLINE,"| Echoed: %llu ", this->stats.getEchoedPackets() );
-          outPrint(QT_1,"(%s) ", format_bytecount(this->stats.getEchoedBytes(), auxbuff, 256));
+          nping_print(QT_1|NO_NEWLINE, "Raw packets sent: %llu ", this->stats.getSentPackets() );
+          nping_print(QT_1|NO_NEWLINE, "(%s) ", format_bytecount(this->stats.getSentBytes(), auxbuff, 256));
+          nping_print(QT_1|NO_NEWLINE,"| Rcvd: %llu ", this->stats.getRecvPackets() );
+          nping_print(QT_1|NO_NEWLINE,"(%s) ", format_bytecount(this->stats.getRecvBytes(), auxbuff, 256));
+          nping_print(QT_1|NO_NEWLINE,"| Lost: %llu ", this->stats.getLostPackets() );
+          nping_print(QT_1|NO_NEWLINE,"(%.2lf%%)", this->stats.getLostPacketPercentage100() );
+          nping_print(QT_1|NO_NEWLINE,"| Echoed: %llu ", this->stats.getEchoedPackets() );
+          nping_print(QT_1,"(%s) ", format_bytecount(this->stats.getEchoedBytes(), auxbuff, 256));
       }else if(this->getRole()==ROLE_SERVER){
-          outPrint(QT_1|NO_NEWLINE, "Raw packets captured: %llu ", this->stats.getRecvPackets() );
-          outPrint(QT_1|NO_NEWLINE, "(%s) ", format_bytecount(this->stats.getRecvBytes(), auxbuff, 256));
-          outPrint(QT_1|NO_NEWLINE,"| Echoed: %llu ", this->stats.getEchoedPackets() );
-          outPrint(QT_1|NO_NEWLINE,"(%s) ", format_bytecount(this->stats.getEchoedBytes(), auxbuff, 256));
-          outPrint(QT_1|NO_NEWLINE,"| Not Matched: %llu ", this->stats.getUnmatchedPackets() );
-          outPrint(QT_1|NO_NEWLINE,"(%s) ", format_bytecount(this->stats.getRecvBytes()-this->stats.getEchoedBytes(), auxbuff, 256));
-          outPrint(QT_1,"(%.2lf%%)", this->stats.getUnmatchedPacketPercentage100() );
+          nping_print(QT_1|NO_NEWLINE, "Raw packets captured: %llu ", this->stats.getRecvPackets() );
+          nping_print(QT_1|NO_NEWLINE, "(%s) ", format_bytecount(this->stats.getRecvBytes(), auxbuff, 256));
+          nping_print(QT_1|NO_NEWLINE,"| Echoed: %llu ", this->stats.getEchoedPackets() );
+          nping_print(QT_1|NO_NEWLINE,"(%s) ", format_bytecount(this->stats.getEchoedBytes(), auxbuff, 256));
+          nping_print(QT_1|NO_NEWLINE,"| Not Matched: %llu ", this->stats.getUnmatchedPackets() );
+          nping_print(QT_1|NO_NEWLINE,"(%s) ", format_bytecount(this->stats.getRecvBytes()-this->stats.getEchoedBytes(), auxbuff, 256));
+          nping_print(QT_1,"(%.2lf%%)", this->stats.getUnmatchedPacketPercentage100() );
       }else if(this->getMode()==TCP_CONNECT){
-          outPrint(QT_1|NO_NEWLINE, "TCP connection attempts: %llu ", this->stats.getSentPackets() );
-          outPrint(QT_1|NO_NEWLINE,"| Successful connections: %llu ", this->stats.getRecvPackets() );
-          outPrint(QT_1|NO_NEWLINE,"| Failed: %llu ", this->stats.getLostPackets() );
-          outPrint(QT_1,"(%.2lf%%)", this->stats.getLostPacketPercentage100() );
+          nping_print(QT_1|NO_NEWLINE, "TCP connection attempts: %llu ", this->stats.getSentPackets() );
+          nping_print(QT_1|NO_NEWLINE,"| Successful connections: %llu ", this->stats.getRecvPackets() );
+          nping_print(QT_1|NO_NEWLINE,"| Failed: %llu ", this->stats.getLostPackets() );
+          nping_print(QT_1,"(%.2lf%%)", this->stats.getLostPacketPercentage100() );
       } else if (this->getMode()==UDP_UNPRIV){
-          outPrint(QT_1|NO_NEWLINE, "UDP packets sent: %llu ", this->stats.getSentPackets() );
-          outPrint(QT_1|NO_NEWLINE,"| Rcvd: %llu ", this->stats.getRecvPackets() );
-          outPrint(QT_1|NO_NEWLINE,"| Lost: %llu ", this->stats.getLostPackets() );
-          outPrint(QT_1,"(%.2lf%%)", this->stats.getLostPacketPercentage100() );
+          nping_print(QT_1|NO_NEWLINE, "UDP packets sent: %llu ", this->stats.getSentPackets() );
+          nping_print(QT_1|NO_NEWLINE,"| Rcvd: %llu ", this->stats.getRecvPackets() );
+          nping_print(QT_1|NO_NEWLINE,"| Lost: %llu ", this->stats.getLostPackets() );
+          nping_print(QT_1,"(%.2lf%%)", this->stats.getLostPacketPercentage100() );
       } else{
-          outPrint(QT_1|NO_NEWLINE, "Raw packets sent: %llu ", this->stats.getSentPackets() );
-          outPrint(QT_1|NO_NEWLINE, "(%s) ", format_bytecount(this->stats.getSentBytes(), auxbuff, 256));
-          outPrint(QT_1|NO_NEWLINE,"| Rcvd: %llu ", this->stats.getRecvPackets() );
-          outPrint(QT_1|NO_NEWLINE,"(%s) ", format_bytecount(this->stats.getRecvBytes(), auxbuff, 256));
-          outPrint(QT_1|NO_NEWLINE,"| Lost: %llu ", this->stats.getLostPackets() );
-          outPrint(QT_1,"(%.2lf%%)", this->stats.getLostPacketPercentage100() );
+          nping_print(QT_1|NO_NEWLINE, "Raw packets sent: %llu ", this->stats.getSentPackets() );
+          nping_print(QT_1|NO_NEWLINE, "(%s) ", format_bytecount(this->stats.getSentBytes(), auxbuff, 256));
+          nping_print(QT_1|NO_NEWLINE,"| Rcvd: %llu ", this->stats.getRecvPackets() );
+          nping_print(QT_1|NO_NEWLINE,"(%s) ", format_bytecount(this->stats.getRecvBytes(), auxbuff, 256));
+          nping_print(QT_1|NO_NEWLINE,"| Lost: %llu ", this->stats.getLostPackets() );
+          nping_print(QT_1,"(%.2lf%%)", this->stats.getLostPacketPercentage100() );
      }
 #endif
 
       /* Transmission times & rates */
-      outPrint(QT_1|NO_NEWLINE,"Tx time: %.5lfs ", this->stats.elapsedTx() );
-      outPrint(QT_1|NO_NEWLINE,"| Tx bytes/s: %.2lf ", this->stats.getOverallTxByteRate() );
-      outPrint(QT_1,"| Tx pkts/s: %.2lf", this->stats.getOverallTxPacketRate() );
+      nping_print(VB_1|NO_NEWLINE,"Tx time: %.5lfs ", this->stats.elapsedTx() );
+      nping_print(VB_1|NO_NEWLINE,"| Tx bytes/s: %.2lf ", this->stats.getOverallTxByteRate() );
+      nping_print(VB_1,"| Tx pkts/s: %.2lf", this->stats.getOverallTxPacketRate() );
+      nping_print(VB_1|NO_NEWLINE,"Rx time: %.5lfs ", this->stats.elapsedRx() );
+      nping_print(VB_1|NO_NEWLINE,"| Rx bytes/s: %.2lf ", this->stats.getOverallRxByteRate() );
+      nping_print(VB_1,"| Rx pkts/s: %.2lf", this->stats.getOverallRxPacketRate() );
 
-      outPrint(QT_1|NO_NEWLINE,"Rx time: %.5lfs ", this->stats.elapsedRx() );
-      outPrint(QT_1|NO_NEWLINE,"| Rx bytes/s: %.2lf ", this->stats.getOverallRxByteRate() );
-      outPrint(QT_1,"| Rx pkts/s: %.2lf", this->stats.getOverallRxPacketRate() );
 } /* End of displayStatistics() */
 
 
@@ -2935,7 +2848,7 @@ char *NpingOps::select_network_iface(){
 
     /* Ask libpcap for a list of network interfaces */
     if( pcap_findalldevs(&pcap_ifaces, errbuf) != 0 )
-        outFatal(QT_3, "Cannot obtain device for packet capture --> %s. You may want to specify one explicitly using option -e", errbuf);
+        nping_fatal(QT_3, "Cannot obtain device for packet capture --> %s. You may want to specify one explicitly using option -e", errbuf);
 
     /* Iterate over the interface list and select the best one */
     for(curr=pcap_ifaces; curr!=NULL; curr=curr->next){
@@ -3137,7 +3050,7 @@ struct timeval NpingOps::getLastPacketSentTime(){
 /** Sets the RCVD output to be delayed. The supplied string is strdup()ed, so
   * the caller may safely free() it or modify after calling this function.
   * The "id" parameter is the nsock timer event scheduled for the output of
-  * the RCVD string (usially scheduled by ProbeMode). It is provided to allow
+  * the RCVD string (usually scheduled by ProbeMode). It is provided to allow
   * other objects (like EchoClient) to cancel the event if they take care of
   * printing the RCVD string before the timer goes off.*/
 int NpingOps::setDelayedRcvd(const char *str, nsock_event_id id){
@@ -3197,6 +3110,7 @@ bool NpingOps::echoPayload(){
  * or false to disable. */
 int NpingOps::echoPayload(bool value){
   this->echo_payload=value;
+  this->echo_payload_set=true;
   return OP_SUCCESS;
 }
 
@@ -3238,7 +3152,7 @@ Initialization for NpingOps::NpingOps()
  *  @return OP_SUCCESS on success and OP_FAILURE in case of error.           */
 /*int NpingOps::setMETHNAME(TYPE val){
    if( 0 ){
-        outFatal(QT_3,"setMETHNAME(): Invalid value supplied\n");
+        nping_fatal(QT_3,"setMETHNAME(): Invalid value supplied\n");
         return OP_FAILURE;
     }else{
         ATTRNAME=val;

@@ -1,13 +1,22 @@
 '\" t
 .\"     Title: nmap
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
-.\"      Date: 09/30/2010
+.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
+.\"      Date: 12/09/2012
 .\"    Manual: [FIXME: manual]
 .\"    Source: [FIXME: source]
 .\"  Language: English
 .\"
-.TH "NMAP" "1" "09/30/2010" "[FIXME: source]" "[FIXME: manual]"
+.TH "NMAP" "1" "12/09/2012" "[FIXME: source]" "[FIXME: manual]"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -132,7 +141,7 @@ PORT SPECIFICATION AND SCAN ORDER:
   \-p <port ranges>: Only scan specified ports
     Ex: \-p22; \-p1\-65535; \-p U:53,111,137,T:21\-25,80,139,8080
   \-F: Fast \- Scan only the ports listed in the nmap\-services file)
-  \-r: Scan ports consecutively \- don\'t randomize
+  \-r: Scan ports consecutively \- don\*(Aqt randomize
 SERVICE/VERSION DETECTION:
   \-sV: Probe open ports to determine service/version info
   \-\-version\-light: Limit to most likely probes for faster identification
@@ -383,7 +392,7 @@ unfiltered(未被过滤的)
 .PP
 open|filtered(开放或者被过滤的)
 .RS 4
-当无法确定端口是开放还是被过滤的，Namp就把该端口划分成 这种状态。开放的端口不响应就是一个例子。没有响应也可能意味着报文过滤器丢弃 了探测报文或者它引发的任何响应。因此Nmap无法确定该端口是开放的还是被过滤的。 UDP，IP协议， FIN，Null，和Xmas扫描可能把端口归入此类。
+当无法确定端口是开放还是被过滤的，Nmap就把该端口划分成 这种状态。开放的端口不响应就是一个例子。没有响应也可能意味着报文过滤器丢弃 了探测报文或者它引发的任何响应。因此Nmap无法确定该端口是开放的还是被过滤的。 UDP，IP协议， FIN，Null，和Xmas扫描可能把端口归入此类。
 .RE
 .PP
 closed|filtered(关闭或者被过滤的)
@@ -394,7 +403,7 @@ closed|filtered(关闭或者被过滤的)
 .PP
 作为一个修车新手，我可能折腾几个小时来摸索怎样把基本工具(锤子，胶带，扳子等) 用于手头的任务。当我惨痛地失败，把我的老爷车拖到一个真正的技师那儿的时候 ，他总是在他的工具箱里翻来翻去，直到拽出一个完美的工具然后似乎不费吹灰之力搞定它。 端口扫描的艺术和这个类似。专家理解成打的扫描技术，选择最适合的一种 (或者组合)来完成给定的 任务。 另一方面，没有经验的用户和刚入门者总是用默认的SYN扫描解决每个问题。 既然Nmap是免费的，掌握端口扫描的唯一障碍就是知识。这当然是汽车世界所不能比的， 在那里，可能需要高超的技巧才能确定您需要一个压杆弹簧压缩机，接着您还得为它付数千美金。
 .PP
-大部分扫描类型只对特权用户可用。 这是因为他们发送接收原始报文，这在Unix系统需要root权限。 在Windows上推荐使用administrator账户，但是当WinPcap已经被加载到操作系统时， 非特权用户也可以正常使用Nmap。当Namp在1997年发布时，需要root权限是一个严重的 局限，因为很多用户只有共享的shell账户。现在，世界变了，计算机便宜了，更多人拥有互联网连接 ，桌面UNIX系统 (包括Linux和MAC OS X)很普遍了。Windows版本的Nmap现在也有了，这使它可以运行在更多的桌面上。 由于所有这些原因，用户不再需要用有限的共享shell账户运行Nmap。 这是很幸运的，因为特权选项让Nmap强大得多也灵活得多。
+大部分扫描类型只对特权用户可用。 这是因为他们发送接收原始报文，这在Unix系统需要root权限。 在Windows上推荐使用administrator账户，但是当WinPcap已经被加载到操作系统时， 非特权用户也可以正常使用Nmap。当Nmap在1997年发布时，需要root权限是一个严重的 局限，因为很多用户只有共享的shell账户。现在，世界变了，计算机便宜了，更多人拥有互联网连接 ，桌面UNIX系统 (包括Linux和MAC OS X)很普遍了。Windows版本的Nmap现在也有了，这使它可以运行在更多的桌面上。 由于所有这些原因，用户不再需要用有限的共享shell账户运行Nmap。 这是很幸运的，因为特权选项让Nmap强大得多也灵活得多。
 .PP
 虽然Nmap努力产生正确的结果，但请记住所有结果都是基于目标机器(或者它们前面的防火墙)返回的报文的。 。这些主机也许是不值得信任的，它们可能响应以迷惑或误导Nmap的报文。 更普遍的是非RFC兼容的主机以不正确的方式响应Nmap探测。FIN，Null和Xmas扫描 特别容易遇到这个问题。这些是特定扫描类型的问题，因此我们在个别扫描类型里讨论它们。
 .PP
@@ -700,7 +709,7 @@ Nmap使用一个运行超时值来确定等待探测报文响应的时间，随�
 \fB\-\-initial\-rtt\-timeout\fR设成这个时间的2倍，\fB\-\-max\-rtt\-timeout\fR
 可设成这个时间值的3倍或4倍。通常，不管ping的时间是多少，最大的rtt值不得小于100ms， 不能超过1000ms。
 .sp
-\fB\-\-min\-rtt\-timeout\fR这个选项很少使用，当网络不可靠时， Nmap的默认值也显得过于强烈，这时这个选项可起作用。当网络看起来不可靠时，Nmap仅将 超时时间降至最小值，这个情况是不正常的，需要向namp\-dev邮件列表报告bug。
+\fB\-\-min\-rtt\-timeout\fR这个选项很少使用，当网络不可靠时， Nmap的默认值也显得过于强烈，这时这个选项可起作用。当网络看起来不可靠时，Nmap仅将 超时时间降至最小值，这个情况是不正常的，需要向nmap\-dev邮件列表报告bug。
 .RE
 .PP
 \fB\-\-host\-timeout <milliseconds>\fR (放弃低速目标主机)
@@ -758,7 +767,7 @@ Nmap不提供检测和破坏防火墙及IDS系统的魔弹(或Nmap选项)，它�
 为使诱饵扫描起作用，需要使远程主机认为是诱饵在扫描目标网络。 IDS可能会报个某个IP的5\-10个端口扫描，但并不知道哪个IP在扫描以及 哪些不是诱饵。但这种方式可以通过路由跟踪、响应丢弃以及其它主动 机制在解决。这是一种常用的隐藏自身IP地址的有效技术。
 .sp
 使用逗号分隔每个诱饵主机，也可用自己的真实IP作为诱饵，这时可使用
-ME选项说明。如果在第6个位置或 更后的位置使用ME选项，一些常用 端口扫描检测器(如Solar Designer\'s excellent scanlogd)就不会报告 这个真实IP。如果不使用ME选项，Nmap 将真实IP放在一个随机的位置
+ME选项说明。如果在第6个位置或 更后的位置使用ME选项，一些常用 端口扫描检测器(如Solar Designer\*(Aqs excellent scanlogd)就不会报告 这个真实IP。如果不使用ME选项，Nmap 将真实IP放在一个随机的位置
 .sp
 注意，作为诱饵的主机须在工作状态，否则会导致目标主机的SYN洪水攻击。 如果在网络中只有一个主机在工作，那就很容易确定哪个主机在扫描。也可 使用IP地址代替主机名(被诱骗的网络就不可能在名字服务器日志中发现)。
 .sp
@@ -861,7 +870,7 @@ XML输出引用了一个XSL样式表，用于格式化输出结果，类似于 H
 .PP
 \fB\-oS <filespec>\fR (ScRipT KIdd|3 oUTpuT)
 .RS 4
-脚本小子输出类似于交互工具输出，这是一个事后处理，适合于 \'l33t HaXXorZ， 由于原来全都是大写的Nmap输出。这个选项和脚本小子开了玩笑，看上去似乎是为了
+脚本小子输出类似于交互工具输出，这是一个事后处理，适合于 \*(Aql33t HaXXorZ， 由于原来全都是大写的Nmap输出。这个选项和脚本小子开了玩笑，看上去似乎是为了
 \(lq帮助他们\(rq。
 .RE
 .PP
@@ -906,7 +915,7 @@ on Windows。
 当详细模式也不能为用户提供足够的数据时，使用调试可以得到更 多的信息。使用细节选项(\fB\-v\fR)时，可启用命令行参数 (\fB\-d\fR)，多次使用可提高调试级别。也可在\fB\-d\fR
 后面使用参数设置调试级别。例如，\fB\-d9\fR设定级别9。这是 最高的级别，将会产生上千行的输出，除非只对很少的端口和目标进行简单扫描。
 .sp
-如果Nmap因为Bug而挂起或者对Namp的工作及原理有疑问，调试输出 非常有效。主要是开发人员用这个选项，调试行不具备自我解释的特点。 例如，Timeoutvals: srtt: \-1 rttvar: \-1 to: 1000000 delta 14987 ==> srtt: 14987 rttvar: 14987 to: 100000。如果对某行输出不明白， 可以忽略、查看源代码或向开发列表(nmap\-dev)求助。有些输出行会有自 我解释的特点，但随着调试级别的升高，会越来越含糊。
+如果Nmap因为Bug而挂起或者对Nmap的工作及原理有疑问，调试输出 非常有效。主要是开发人员用这个选项，调试行不具备自我解释的特点。 例如，Timeoutvals: srtt: \-1 rttvar: \-1 to: 1000000 delta 14987 ==> srtt: 14987 rttvar: 14987 to: 100000。如果对某行输出不明白， 可以忽略、查看源代码或向开发列表(nmap\-dev)求助。有些输出行会有自 我解释的特点，但随着调试级别的升高，会越来越含糊。
 .RE
 .PP
 \fB\-\-packet\-trace\fR (跟踪发送和接收的报文)
@@ -1076,14 +1085,14 @@ scanme3\&.nmap\&.org等等，虽然这些 主机目前还不存在。
 .SH "BUGS"
 .PP
 和作者一样，Nmap也不是完美的，但可以通过发送Bug报告甚至编写 补丁使其更加完善。如果Nmap不能满足要求，首先从\m[blue]\fB\%http://www.insecure.org/nmap/\fR\m[]
-升级最新版本。如果总问题仍然存在，需要进行调查以确定问题是否 已经被解决。在\m[blue]\fB\%http://seclists.org/\fR\m[]尝试搜索出错消息或 浏览Nmap\-dev档案，以及仔细阅读使用手册。如果问题还是不能解决，发送 Bug报告至nmap\-dev@insecure\&.org。在报告中包含所有 有关问题的信息，以及所使用的Nmap版本、操作系统版本。问题报告以及 Nmap的使用问题发送给nmap\-dev@insecure\&.org比直接发送给Gyodor能更好回答。
+升级最新版本。如果总问题仍然存在，需要进行调查以确定问题是否 已经被解决。在\m[blue]\fB\%http://seclists.org/\fR\m[]尝试搜索出错消息或 浏览Nmap\-dev档案，以及仔细阅读使用手册。如果问题还是不能解决，发送 Bug报告至dev@nmap\&.org。在报告中包含所有 有关问题的信息，以及所使用的Nmap版本、操作系统版本。问题报告以及 Nmap的使用问题发送给dev@nmap\&.org比直接发送给Gyodor能更好回答。
 .PP
 解决Bug的代码补丁比Bug报告更受欢迎，在\m[blue]\fB\%http://www.insecure.org/nmap/data/HACKING\fR\m[]
 可获得建立补丁文件的基本指令。补丁可发送给nmap\-dev(建议) 或直接发给Fyodor。
 .SH "作者"
 .PP
 Fyodor
-fyodor@insecure\&.org
+fyodor@nmap\&.org
 (\m[blue]\fB\%http://www.insecure.org\fR\m[])
 .PP
 译者：Fei Yang
@@ -1162,7 +1171,7 @@ nmap\-service\-probes\&.
 .sp -1
 .IP \(bu 2.3
 .\}
-将Namp链接到进行上述工作的库或程序中。
+将Nmap链接到进行上述工作的库或程序中。
 .RE
 .PP
 名词\(lqNmap\(rq包含了Nmap的任何部分以及衍生工作，因此不仅限于上述 内容。上述内容使用了一些常见的例子来说明衍生工作。这些限制仅适 用于真正重新发布Nmap时。例如，不禁止开发和销售Nmap的前端，可以任意发布， 但必须说明从\m[blue]\fB\%http://www.insecure.org/nmap/\fR\m[]下载Nmap。
@@ -1178,7 +1187,7 @@ nmap\-service\-probes\&.
 .PP
 Nmap软件提供源代码，这是因为我们认为用户有权在运行之前知道程序的工作 内容，同时也使用户可以检查软件的漏洞(目前还未发现)。
 .PP
-源代码还允许被移植到新的平台、修改Bug以及增加新功能。鼓励用户 向fyodor@insecure\&.org
+源代码还允许被移植到新的平台、修改Bug以及增加新功能。鼓励用户 向fyodor@nmap\&.org
 发送更新，以并入正式的发布中。 发送这些更新至Fyodor或Insecure\&.Org开发列表，表明允许Fyodor和Insecure\&.Com LLC 具有无限止的、非独有的权限来使用、修改和重新定义这些代码的许可证。 Nmap将一直以开放代码的方式提供，由于无法进行代码的许可证重新定义从而可能 导致了对其它开放软件项目的破坏问题(如KDEt NASM)，这一点很重要。 偶尔我们会向第三方提供重新定义的代码许可证。如果希望为自己的贡献说明 一个特定的许可证条件，在发送时指明。
 .PP
 本程序的发布只是为了应用，不提供任何担保，也不隐含任何有关 特定目的的商业或适用性担保。在\m[blue]\fB\%http://www.gnu.org/copyleft/gpl.html\fR\m[]

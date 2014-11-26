@@ -14,6 +14,7 @@
 #include <sys/uio.h>
 
 #include <asm/types.h>
+#include <net/if.h>
 #include <netinet/in.h>
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
@@ -192,18 +193,31 @@ route_get(route_t *r, struct route_entry *entry)
 	
 	i -= NLMSG_LENGTH(sizeof(*nmsg));
 	
-	while (RTA_OK(rta, i)) {
+	entry->route_gw.addr_type = ADDR_TYPE_NONE;
+	entry->intf_name[0] = '\0';
+	for (rta = RTM_RTA(rmsg); RTA_OK(rta, i); rta = RTA_NEXT(rta, i)) {
 		if (rta->rta_type == RTA_GATEWAY) {
 			entry->route_gw.addr_type = entry->route_dst.addr_type;
 			memcpy(entry->route_gw.addr_data8, RTA_DATA(rta), alen);
 			entry->route_gw.addr_bits = alen * 8;
-			return (0);
+		} else if (rta->rta_type == RTA_OIF) {
+			char ifbuf[IFNAMSIZ];
+			char *p;
+			int intf_index;
+
+			intf_index = *(int *) RTA_DATA(rta);
+			p = if_indextoname(intf_index, ifbuf);
+			if (p == NULL)
+				return (-1);
+			strlcpy(entry->intf_name, ifbuf, sizeof(entry->intf_name));
 		}
-		rta = RTA_NEXT(rta, i);
 	}
-	errno = ESRCH;
+	if (entry->route_gw.addr_type == ADDR_TYPE_NONE) {
+		errno = ESRCH;
+		return (-1);
+	}
 	
-	return (-1);
+	return (0);
 }
 
 int
@@ -212,22 +226,24 @@ route_loop(route_t *r, route_handler callback, void *arg)
 	FILE *fp;
 	struct route_entry entry;
 	char buf[BUFSIZ];
+	char ifbuf[16];
 	int ret = 0;
 
 	if ((fp = fopen(PROC_ROUTE_FILE, "r")) != NULL) {
-		char ifbuf[16];
 		int i, iflags, refcnt, use, metric, mss, win, irtt;
 		uint32_t mask;
 		
 		while (fgets(buf, sizeof(buf), fp) != NULL) {
-			i = sscanf(buf, "%16s %X %X %X %d %d %d %X %d %d %d\n",
+			i = sscanf(buf, "%15s %X %X %X %d %d %d %X %d %d %d\n",
 			    ifbuf, &entry.route_dst.addr_ip,
 			    &entry.route_gw.addr_ip, &iflags, &refcnt, &use,
 			    &metric, &mask, &mss, &win, &irtt);
 			
-			if (i < 10 || !(iflags & RTF_UP))
+			if (i < 11 || !(iflags & RTF_UP))
 				continue;
 		
+			strlcpy(entry.intf_name, ifbuf, sizeof(entry.intf_name));
+
 			entry.route_dst.addr_type = entry.route_gw.addr_type =
 			    ADDR_TYPE_IP;
 		
@@ -236,6 +252,7 @@ route_loop(route_t *r, route_handler callback, void *arg)
 				continue;
 			
 			entry.route_gw.addr_bits = IP_ADDR_BITS;
+			entry.metric = metric;
 			
 			if ((ret = callback(&entry, arg)) != 0)
 				break;
@@ -244,14 +261,23 @@ route_loop(route_t *r, route_handler callback, void *arg)
 	}
 	if (ret == 0 && (fp = fopen(PROC_IPV6_ROUTE_FILE, "r")) != NULL) {
 		char s[33], d[8][5], n[8][5];
+		int i, iflags, metric;
 		u_int slen, dlen;
 		
 		while (fgets(buf, sizeof(buf), fp) != NULL) {
-			sscanf(buf, "%04s%04s%04s%04s%04s%04s%04s%04s %02x "
-			    "%32s %02x %04s%04s%04s%04s%04s%04s%04s%04s ",
+			i = sscanf(buf, "%04s%04s%04s%04s%04s%04s%04s%04s %02x "
+			    "%32s %02x %04s%04s%04s%04s%04s%04s%04s%04s "
+			    "%x %*x %*x %x %15s",
 			    d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7],
 			    &dlen, s, &slen,
-			    n[0], n[1], n[2], n[3], n[4], n[5], n[6], n[7]);
+			    n[0], n[1], n[2], n[3], n[4], n[5], n[6], n[7],
+			    &metric, &iflags, ifbuf);
+			
+			if (i < 21 || !(iflags & RTF_UP))
+				continue;
+
+			strlcpy(entry.intf_name, ifbuf, sizeof(entry.intf_name));
+
 			snprintf(buf, sizeof(buf), "%s:%s:%s:%s:%s:%s:%s:%s/%d",
 			    d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7],
 			    dlen);
@@ -260,6 +286,7 @@ route_loop(route_t *r, route_handler callback, void *arg)
 			    n[0], n[1], n[2], n[3], n[4], n[5], n[6], n[7],
 			    IP6_ADDR_BITS);
 			addr_aton(buf, &entry.route_gw);
+			entry.metric = metric;
 			
 			if ((ret = callback(&entry, arg)) != 0)
 				break;

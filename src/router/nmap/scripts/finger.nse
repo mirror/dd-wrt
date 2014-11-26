@@ -1,3 +1,7 @@
+local comm = require "comm"
+local nmap = require "nmap"
+local shortport = require "shortport"
+
 description = [[
 Attempts to retrieve a list of usernames using the finger service.
 ]]
@@ -22,14 +26,12 @@ categories = {"default", "discovery", "safe"}
 -- | Gutek      Ange Gutek           *pts/0       -     Thu 00:41
 -- |_Gutek      Ange Gutek           *pts/4       3     Thu 01:06
 
-require "comm"
-require "shortport"
 
 portrule = shortport.port_or_service(79, "finger")
 
 action = function(host, port)
-	local try = nmap.new_try()
+  local try = nmap.new_try()
 
-	return try(comm.exchange(host, port, "\r\n",
-        	{lines=100, proto=port.protocol, timeout=5000}))
+  return try(comm.exchange(host, port, "\r\n",
+    {lines=100, proto=port.protocol, timeout=5000}))
 end

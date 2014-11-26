@@ -1,3 +1,9 @@
+local bit = require "bit"
+local comm = require "comm"
+local nmap = require "nmap"
+local shortport = require "shortport"
+local string = require "string"
+
 description = [[
 Checks if a DNS server allows queries for third-party names. It is
 expected that recursion will be enabled on your own internal
@@ -5,6 +11,8 @@ nameservers.
 ]]
 
 ---
+-- @usage
+-- nmap -sU -p 53 --script=dns-recursion <target>
 -- @output
 -- PORT   STATE SERVICE REASON
 -- 53/udp open  domain  udp-response
@@ -16,9 +24,6 @@ license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
 
 categories = {"default", "safe"}
 
-require "bit"
-require "comm"
-require "shortport"
 
 portrule = shortport.portnumber(53, "udp")
 

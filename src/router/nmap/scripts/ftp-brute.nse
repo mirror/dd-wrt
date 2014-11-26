@@ -1,206 +1,125 @@
+local brute = require "brute"
+local creds = require "creds"
+local nmap = require "nmap"
+local shortport = require "shortport"
+local stdnse = require "stdnse"
+local string = require "string"
+
 description = [[
 Performs brute force password auditing against FTP servers.
 
-This uses the standard unpwdb username/password list. However, in tests FTP servers are 
-significantly slower than other servers when responding, so the number of usernames/passwords
-can be artificially limited using script arguments.
+Based on old ftp-brute.nse script by Diman Todorov, Vlatko Kosturjak and Ron Bowes.
 ]]
 
 ---
+-- @usage
+-- nmap --script ftp-brute -p 21 <host>
+--
+-- This script uses brute library to perform password
+-- guessing.
+--
 -- @output
--- PORT   STATE SERVICE REASON
--- 21/tcp open  ftp     syn-ack
--- |  ftp-brute:
--- |  |  anonymous: IEUser@
--- |_ |_ test: password
+-- PORT   STATE SERVICE
+-- 21/tcp open  ftp
+-- | my-ftp-brute:
+-- |   Accounts
+-- |     root:root - Valid credentials
+-- |   Statistics
+-- |_    Performed 510 guesses in 610 seconds, average tps: 0
 --
--- @args userlimit The number of user accounts to try (default: unlimited).
--- @args passlimit The number of passwords to try (default: unlimited).
--- @args limit     Set <code>userlimlt</code> and <code>passlimit</code> at the same time.
+-- @args ftp-brute.timeout the amount of time to wait for a response on the socket.
+--       Lowering this value may result in a higher throughput for servers
+--       having a delayed response on incorrect login attempts. (default: 5s)
 
--- 2008-11-06 Vlatko Kosturjak <kost@linux.hr>
--- Modified xampp-default-auth script to generic ftp-brute script
---
--- 2009-09-18 Ron Bowes <ron@skullsecurity.net>
--- Made into an actual bruteforce script (previously, it only tried one username/password). 
-
-author = "Diman Todorov, Vlatko Kosturjak, Ron Bowes"
-
+author = "Aleksandar Nikolic"
 license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
-
-categories = {"brute", "intrusive"}
-
-require "shortport"
-require "stdnse"
-require "unpwdb"
+categories = {"intrusive", "brute"}
 
 portrule = shortport.port_or_service(21, "ftp")
 
-local function get_limits()
-	local userlimit = -1
-	local passlimit = -1
+local arg_timeout = stdnse.parse_timespec(stdnse.get_script_args(SCRIPT_NAME .. ".timeout"))
+arg_timeout = (arg_timeout or 5) * 1000
 
-	if(nmap.registry.args.userlimit) then
-		userlimit = tonumber(nmap.registry.args.userlimit)
-	end
+Driver = {
 
-	if(nmap.registry.args.passlimit) then
-		passlimit = tonumber(nmap.registry.args.passlimit)
-	end
+  new = function(self, host, port)
+    local o = {}
+    setmetatable(o, self)
+    self.__index = self
+    o.host = host
+    o.port = port
+    return o
+  end,
 
-	if(nmap.registry.args.limit) then
-		userlimit = tonumber(nmap.registry.args.limit)
-		passlimit = tonumber(nmap.registry.args.limit)
-	end
+  connect = function( self )
+    self.socket = nmap.new_socket()
+    local status, err = self.socket:connect(self.host, self.port)
+    self.socket:set_timeout(arg_timeout)
+    if(not(status)) then
+      return false, brute.Error:new( "Couldn't connect to host: " .. err )
+    end
+    return true
+  end,
 
-	return userlimit, passlimit
+  login = function (self, user, pass)
+    local status, err
+    local res = ""
+
+
+    status, err = self.socket:send("USER " .. user .. "\r\n")
+    if(not(status)) then
+      return false, brute.Error:new("Couldn't send login: " .. err)
+    end
+
+    status, err = self.socket:send("PASS " .. pass .. "\n\n")
+    if(not(status)) then
+      return false, brute.Error:new("Couldn't send login: " .. err)
+    end
+
+    -- Create a buffer and receive the first line
+    local buffer = stdnse.make_buffer(self.socket, "\r?\n")
+    local line = buffer()
+
+    -- Loop over the lines
+    while(line)do
+      stdnse.print_debug("Received: %s", line)
+      if(string.match(line, "^230")) then
+        stdnse.print_debug(1, "ftp-brute: Successful login: %s/%s", user, pass)
+        return true, brute.Account:new( user, pass, creds.State.VALID)
+      elseif(string.match(line, "^530")) then
+        return false,  brute.Error:new( "Incorrect password" )
+      elseif(string.match(line, "^220")) then
+      elseif(string.match(line, "^331")) then
+      else
+        stdnse.print_debug(1, "ftp-brute: WARNING: Unhandled response: %s", line)
+        local err = brute.Error:new("Unhandled response")
+        err:setRetry(true)
+        return false, err
+      end
+
+      line = buffer()
+    end
+
+
+    return false, brute.Error:new("Login didn't return a proper response")
+  end,
+
+  disconnect = function( self )
+    self.socket:close()
+    return true
+  end
+
+
+}
+
+action = function( host, port )
+
+  local status, result
+  local engine = brute.Engine:new(Driver, host, port)
+  engine.options.script_name = SCRIPT_NAME
+
+
+  status, result = engine:start()
+
+  return result
 end
-
-local function login(host, port, user, pass)
-	local status, err
-	local res = ""
-
-	-- Create a new socket
-	local socket = nmap.new_socket()
-	status, err = socket:connect(host, port)
-	if(not(status)) then
-		socket:close()
-		return false, "Couldn't connect to host: " .. err
-	end
-
-	status, err = socket:send("USER " .. user .. "\r\n")
-	if(not(status)) then
-		socket:close()
-		return false, "Couldn't send login: " .. err
-	end
-
-	status, err = socket:send("PASS " .. pass .. "\n\n")
-	if(not(status)) then
-		socket:close()
-		return false, "Couldn't send login: " .. err
-	end
-
-	-- Create a buffer and receive the first line
-	local buffer = stdnse.make_buffer(socket, "\r?\n")
-	local line = buffer()
-
-	-- Loop over the lines
-	while(line)do
-		stdnse.print_debug("Received: %s", line)
-		if(string.match(line, "^230")) then
-			stdnse.print_debug(1, "ftp-brute: Successful login: %s/%s", user, pass)
-			socket:close()
-			return true, true
-		elseif(string.match(line, "^530")) then
-			socket:close()
-			return true, false
-		elseif(string.match(line, "^220")) then
-		elseif(string.match(line, "^331")) then
-		else
-			stdnse.print_debug(1, "ftp-brute: WARNING: Unhandled response: %s", line)
-		end
-
-		line = buffer()
-	end
-
-	socket:close()
-	return false, "Login didn't return a proper response"
-end
-
-local function go(host, port)
-	local status, err
-	local result
-	local userlimit, passlimit = get_limits()
-	local authcombinations = { 
-		{user="anonymous", password="IEUser@"}, -- Anonymous user
-		{user="nobody", password="xampp"}       -- XAMPP default ftp
-	}
-
-	-- Load accounts from unpwdb
-	local usernames, username, passwords, password
-
-	-- Load the usernames
-	status, usernames = unpwdb.usernames()
-	if(not(status)) then
-		return false, "Couldn't load username list: " .. usernames
-	end
-
-	-- Load the passwords
-	status, passwords = unpwdb.passwords()
-	if(not(status)) then
-		return false, "Couldn't load password list: " .. usernames
-	end
-
-	-- Figure out how many 
-	local i = 0
-	local j = 0
-
-	-- Add the passwords to the authcombinations table
-	password = passwords()
-	while (password) do
-		-- Limit the passwords
-		i = i + 1
-		if(passlimit > 0 and i > passlimit) then
-			break
-		end
-
-		j = 0
-		username = usernames()
-		while(username) do
-			-- Limit the usernames
-			j = j + 1
-			if(userlimit > 0 and j > userlimit) then
-				break
-			end
-
-			table.insert(authcombinations, {user=username, password=password})
-			username = usernames()
-		end
-
-		usernames('reset')
-		password = passwords()
-	end
-
-	stdnse.print_debug(1, "ftp-brute: Loaded %d username/password pairs", #authcombinations)
-
-	local results = {}
-	for _, combination in ipairs(authcombinations) do
-
-
-		-- Attempt a login
-		status, result = login(host, port, combination.user, combination.password)
-
-		-- Check for an error
-		if(not(status)) then
-			return false, result
-		end
-
-		-- Check for a success
-		if(status and result) then
-			table.insert(results, combination)
-		end
-	end
-
-
-	return true, results
-end
-
-action = function(host, port)
-	local response = {}
-	local status, results = go(host, port)
-
-	if(not(status)) then
-		return stdnse.format_output(false, results)
-	end
-
-	if(#results == 0) then
-		return stdnse.format_output(false, "No accounts found")
-	end
-
-	for i, v in ipairs(results) do
-		table.insert(response, string.format("%s: %s\n", v.user, v.password))
-	end
-
-	return stdnse.format_output(true, response)
-end
-

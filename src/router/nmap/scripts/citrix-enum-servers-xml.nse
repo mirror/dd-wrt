@@ -1,3 +1,8 @@
+local citrixxml = require "citrixxml"
+local shortport = require "shortport"
+local stdnse = require "stdnse"
+local table = require "table"
+
 description = [[
 Extracts the name of the server farm and member servers from Citrix XML
 service.
@@ -10,7 +15,7 @@ service.
 -- @output
 -- PORT     STATE SERVICE    REASON
 -- 8080/tcp open  http-proxy syn-ack
--- | citrix-enum-servers-xml:  
+-- | citrix-enum-servers-xml:
 -- |   CITRIX-SRV01
 -- |_  CITRIX-SRV01
 
@@ -23,23 +28,20 @@ author = "Patrik Karlsson"
 license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
 categories = {"discovery", "safe"}
 
-require "comm"
-require 'shortport'
-require 'citrixxml'
 
-portrule = shortport.portnumber({8080,80,443}, "tcp") 
+portrule = shortport.portnumber({8080,80,443}, "tcp")
 
 
 action = function(host, port)
 
-	local xmldata = citrixxml.request_server_data(host.ip, port.number)
-	local servers = citrixxml.parse_server_data_response(xmldata)
-	local response = {}
-					
-	for _, srv in ipairs(servers) do
-		table.insert(response, srv)
-	end
-	
-	return stdnse.format_output(true, response)
+  local xmldata = citrixxml.request_server_data(host.ip, port.number)
+  local servers = citrixxml.parse_server_data_response(xmldata)
+  local response = {}
+
+  for _, srv in ipairs(servers) do
+    table.insert(response, srv)
+  end
+
+  return stdnse.format_output(true, response)
 
 end

