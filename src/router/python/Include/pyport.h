@@ -801,17 +801,19 @@ extern pid_t forkpty(int *, char *, struct termios *, struct winsize *);
 #define LONG_MIN (-LONG_MAX-1)
 #endif
 
-#ifndef LONG_BIT
+#undef LONG_BIT
 #define LONG_BIT (8 * SIZEOF_LONG)
-#endif
+
+
 
 #if LONG_BIT != 8 * SIZEOF_LONG
+
 /* 04-Oct-2000 LONG_BIT is apparently (mis)defined as 64 on some recent
  * 32-bit platforms using gcc.  We try to catch that here at compile-time
  * rather than waiting for integer multiplication to trigger bogus
  * overflows.
  */
-#error "LONG_BIT definition appears wrong for platform (bad gcc/glibc config?)."
+#error "LONG_BIT definition appears wrong for platform (bad gcc/glibc config?)." LONG_BIT
 #endif
 
 #ifdef __cplusplus
