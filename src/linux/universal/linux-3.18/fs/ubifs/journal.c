@@ -574,10 +574,10 @@ int ubifs_jnl_update(struct ubifs_info *c, const struct inode *dir,
 	len = aligned_dlen + aligned_ilen + UBIFS_INO_NODE_SZ;
 	if (xent) {
 		/*
-		 * Make sure to account for dir_ui->data_len in
+		 * Make sure to account for host_ui->data_len in
 		 * length calculation in case there is extended attribute.
 		 */
-		len += dir_ui->data_len;
+		len += host_ui->data_len;
 	}
 	dent = kmalloc(len, GFP_NOFS);
 	if (!dent)
@@ -656,7 +656,7 @@ int ubifs_jnl_update(struct ubifs_info *c, const struct inode *dir,
 	ino_key_init(c, &ino_key, dir->i_ino);
 	ino_offs += aligned_ilen;
 	err = ubifs_tnc_add(c, &ino_key, lnum, ino_offs,
-			    UBIFS_INO_NODE_SZ + dir_ui->data_len);
+			    UBIFS_INO_NODE_SZ + host_ui->data_len);
 	if (err)
 		goto out_ro;
 
