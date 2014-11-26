@@ -378,7 +378,11 @@ void start_openvpn(void)
 			fprintf(fp, "key /tmp/openvpncl/client.key\n");
 	}
 	fprintf(fp,
+#ifdef HAVE_ERC
+		"management 127.0.0.1 5001\n"
+else
 		"management 127.0.0.1 16\n"
+#endif
 		"management-log-cache 100\n" "verb 3\n" "mute 3\n" "syslog\n" "writepid /var/run/openvpncl.pid\n" "client\n" "resolv-retry infinite\n" "nobind\n" "persist-key\n" "persist-tun\n" "script-security 2\n");
 	fprintf(fp, "dev %s1\n", nvram_safe_get("openvpncl_tuntap"));
 	fprintf(fp, "proto %s\n", nvram_safe_get("openvpncl_proto"));
@@ -447,30 +451,35 @@ void start_openvpn(void)
 	}
 #endif
 	//bridge tap interface to br0 when choosen
+	char ovpniface[10];
+#ifdef HAVE_ERC
+	sprintf(ovpniface,"%s0",nvram_safe_get("openvpncl_tuntap"));
+#else
+	sprintf(ovpniface,"%s1",nvram_safe_get("openvpncl_tuntap"));
+#endif
 	if (nvram_match("openvpncl_tuntap", "tap")
 	    && nvram_match("openvpncl_bridge", "1")
 	    && nvram_match("openvpncl_nat", "0")) {
-		fprintf(fp, "brctl addif br0 tap1\n" "ifconfig tap1 0.0.0.0 up\n");	//non promisc for performance reasons
-	} else {
+		fprintf(fp, "brctl addif br0 %s\n" "ifconfig %s 0.0.0.0 up\n",ovpniface,ovpniface);	//non promisc for performance reasons
 		if (nvram_match("openvpncl_tuntap", "tap")
 		    && strlen(nvram_safe_get("openvpncl_ip")) > 0)
-			fprintf(fp, "ifconfig tap1 %s netmask %s up\n", nvram_safe_get("openvpncl_ip"), nvram_safe_get("openvpncl_mask"));
+			fprintf(fp, "ifconfig %s %s netmask %s up\n",ovpniface , nvram_safe_get("openvpncl_ip"), nvram_safe_get("openvpncl_mask"));
 	}
 	if (nvram_match("openvpncl_nat", "1"))
-		fprintf(fp, "iptables -D POSTROUTING -t nat -o %s1 -j MASQUERADE\n" "iptables -I POSTROUTING -t nat -o %s1 -j MASQUERADE\n", nvram_safe_get("openvpncl_tuntap"), nvram_safe_get("openvpncl_tuntap"));
+		fprintf(fp, "iptables -D POSTROUTING -t nat -o %s -j MASQUERADE\n" "iptables -I POSTROUTING -t nat -o %s -j MASQUERADE\n", ovpniface, ovpniface);
 	if (nvram_match("openvpncl_sec", "0"))
-		fprintf(fp, "iptables -D INPUT -i %s1 -j ACCEPT\n" "iptables -I INPUT -i %s1 -j ACCEPT\n", nvram_safe_get("openvpncl_tuntap"), nvram_safe_get("openvpncl_tuntap"));
+		fprintf(fp, "iptables -D INPUT -i %s -j ACCEPT\n" "iptables -I INPUT -i %s -j ACCEPT\n", ovpniface, ovpniface);
 	else {
 		if (nvram_match("openvpncl_tuntap", "tun"))	//only needed with tun
 			fprintf(fp,
-				"iptables -D INPUT -i %s1 -j ACCEPT\n"
-				"iptables -D FORWARD -i %s1 -j ACCEPT\n"
-				"iptables -D FORWARD -o %s1 -j ACCEPT\n"
-				"iptables -I INPUT -i %s1 -j ACCEPT\n"
-				"iptables -I FORWARD -i %s1 -j ACCEPT\n"
-				"iptables -I FORWARD -o %s1 -j ACCEPT\n",
-				nvram_safe_get("openvpncl_tuntap"), nvram_safe_get("openvpncl_tuntap"),
-				nvram_safe_get("openvpncl_tuntap"), nvram_safe_get("openvpncl_tuntap"), nvram_safe_get("openvpncl_tuntap"), nvram_safe_get("openvpncl_tuntap"));
+				"iptables -D INPUT -i %s -j ACCEPT\n"
+				"iptables -D FORWARD -i %s -j ACCEPT\n"
+				"iptables -D FORWARD -o %s -j ACCEPT\n"
+				"iptables -I INPUT -i %s -j ACCEPT\n"
+				"iptables -I FORWARD -i %s -j ACCEPT\n"
+				"iptables -I FORWARD -o %s -j ACCEPT\n",
+				ovpniface, ovpniface, ovpniface, 
+				ovpniface, ovpniface, ovpniface);
 	}
 	if (strlen(nvram_safe_get("openvpncl_route")) > 0) {	//policy based routing
 		write_nvram("/tmp/openvpncl/policy_ips", "openvpncl_route");
@@ -488,7 +497,7 @@ void start_openvpn(void)
 		fprintf(fp, "insmod ebtables\n" "insmod ebtable_filter\n" "insmod ebtable_nat\n" "insmod ebt_pkttype\n"
 //                      "ebtables -I FORWARD -o tap1 --pkttype-type multicast -j DROP\n"
 //                      "ebtables -I OUTPUT -o tap1 --pkttype-type multicast -j DROP\n"
-			"ebtables -t nat -D POSTROUTING -o tap1 --pkttype-type multicast -j DROP\n" "ebtables -t nat -I POSTROUTING -o tap1 --pkttype-type multicast -j DROP\n");
+			"ebtables -t nat -D POSTROUTING -o %s --pkttype-type multicast -j DROP\n" "ebtables -t nat -I POSTROUTING -o %s --pkttype-type multicast -j DROP\n",ovpniface, ovpniface);
 	}
 /*	if (nvram_match("wshaper_enable", "1"))
 		fprintf(fp, "stopservice wshaper\n" "startservice wshaper\n");*/
@@ -510,16 +519,16 @@ void start_openvpn(void)
 	if (nvram_match("openvpncl_tuntap", "tap")
 	    && nvram_match("openvpncl_bridge", "1")
 	    && nvram_match("openvpncl_nat", "0"))
-		fprintf(fp, "brctl delif br0 tap1\n" "ifconfig tap1 down\n");
+		fprintf(fp, "brctl delif br0 %s\n" "ifconfig %s down\n",ovpniface, ovpniface);
 	else if (nvram_match("openvpncl_tuntap", "tap")
 		 && strlen(nvram_safe_get("openvpncl_ip")) > 0)
-		fprintf(fp, "ifconfig tap1 down\n");
+		fprintf(fp, "ifconfig %s down\n",ovpniface);
 	if (nvram_match("openvpncl_nat", "1"))
-		fprintf(fp, "iptables -D INPUT -i %s1 -j ACCEPT\n" "iptables -D POSTROUTING -t nat -o %s1 -j MASQUERADE\n", nvram_safe_get("openvpncl_tuntap"), nvram_safe_get("openvpncl_tuntap"));
+		fprintf(fp, "iptables -D INPUT -i %s -j ACCEPT\n" "iptables -D POSTROUTING -t nat -o %s -j MASQUERADE\n", ovpniface, ovpniface);
 	else {
 		fprintf(fp,
-			"iptables -D INPUT -i %s1 -j ACCEPT\n"
-			"iptables -D FORWARD -i %s1 -j ACCEPT\n" "iptables -D FORWARD -o %s1 -j ACCEPT\n", nvram_safe_get("openvpncl_tuntap"), nvram_safe_get("openvpncl_tuntap"), nvram_safe_get("openvpncl_tuntap"));
+			"iptables -D INPUT -i %s -j ACCEPT\n"
+			"iptables -D FORWARD -i %s -j ACCEPT\n" "iptables -D FORWARD -o %s -j ACCEPT\n", ovpniface, ovpniface, ovpniface);
 	}
 	if (strlen(nvram_safe_get("openvpncl_route")) > 0) {	//policy based routing
 		write_nvram("/tmp/openvpncl/policy_ips", "openvpncl_route");
@@ -529,10 +538,10 @@ void start_openvpn(void)
 		&& nvram_match("openvpncl_tuntap", "tap")
 		&& nvram_match("openvpncl_bridge", "1")) {
 		fprintf(fp, 
--			"ebtables -t nat -D POSTROUTING -o tap1 --pkttype-type multicast -j DROP\n"
--			"ebtables -t nat -D PREROUTING -i tap1 --pkttype-type multicast -j DROP\n"
+-			"ebtables -t nat -D POSTROUTING -o %s --pkttype-type multicast -j DROP\n"
+-			"ebtables -t nat -D PREROUTING -i %s --pkttype-type multicast -j DROP\n"
 			"if [ `ebtables -t nat -L|grep -e '-j' -c` -ne 0 ]\n"
-			"then rmmod ebtable_nat\n" "\t rmmod ebtables\n");
+			"then rmmod ebtable_nat\n" "\t rmmod ebtables\n", ovpniface, ovpniface);
 		} */
 	fclose(fp);
 
