@@ -515,6 +515,11 @@ static int bcm5481_config_aneg(struct phy_device *phydev)
 		/* Write bits 14:0. */
 		reg |= (1 << 15);
 		phy_write(phydev, 0x18, reg);
+	} else {
+		phy_write(phydev, 0x18, 0xf1e7);
+		phy_write(phydev, 0x1c, 0x8e00);
+
+		phy_write(phydev, 0x1c, 0xa41f);
 	}
 
 	return ret;
