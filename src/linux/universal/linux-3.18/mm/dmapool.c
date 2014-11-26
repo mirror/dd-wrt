@@ -168,6 +168,9 @@ struct dma_pool *dma_pool_create(const char *name, struct device *dev,
 	retval->size = size;
 	retval->boundary = boundary;
 	retval->allocation = allocation;
+
+	INIT_LIST_HEAD(&retval->pools);
+
 	/*
 	 * pools_lock ensures that the ->dma_pools list does not get corrupted.
 	 * pools_reg_lock ensures that there is not a race between
@@ -176,25 +179,26 @@ struct dma_pool *dma_pool_create(const char *name, struct device *dev,
 	 * device_create_file() and the second assumes that it has been done (I
 	 * know it is a short window).
 	 */
-	if (dev) {
-		int ret;
+	mutex_lock(&pools_reg_lock);
+	mutex_lock(&pools_lock);
+	if (list_empty(&dev->dma_pools))
+		empty = true;
+	list_add(&retval->pools, &dev->dma_pools);
+	mutex_unlock(&pools_lock);
+	if (empty) {
+		int err;
 
-		mutex_lock(&pools_lock);
-		if (list_empty(&dev->dma_pools))
-			ret = device_create_file(dev, &dev_attr_pools);
-		else
-			ret = 0;
-		/* note:  not currently insisting "name" be unique */
-		if (!ret)
-			list_add(&retval->pools, &dev->dma_pools);
-		else {
+		err = device_create_file(dev, &dev_attr_pools);
+		if (err) {
+			mutex_lock(&pools_lock);
+			list_del(&retval->pools);
+			mutex_unlock(&pools_lock);
+			mutex_unlock(&pools_reg_lock);
 			kfree(retval);
-			retval = NULL;
+			return NULL;
 		}
-		mutex_unlock(&pools_lock);
-	} else
-		INIT_LIST_HEAD(&retval->pools);
-
+	}
+	mutex_unlock(&pools_reg_lock);
 	return retval;
 }
 EXPORT_SYMBOL(dma_pool_create);
