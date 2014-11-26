@@ -24,3 +24,5 @@ nmap-clean:
 nmap-install:
 	make -C nmap install DESTDIR=$(INSTALLDIR)/nmap
 	rm -rf $(INSTALLDIR)/nmap/usr/share/man
+	rm -rf $(INSTALLDIR)/nmap/usr/share/zenmap/docs
+	rm -rf $(INSTALLDIR)/nmap/usr/share/applications
