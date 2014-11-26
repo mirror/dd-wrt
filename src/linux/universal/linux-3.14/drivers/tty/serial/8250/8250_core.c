@@ -3194,12 +3194,13 @@ void serial8250_resume_port(int line)
 	}
 	uart_resume_port(&serial8250_reg, port);
 }
+#if defined(CONFIG_MACH_KS8695_VSOPENRISC)
 static const struct file_operations fops_info = {
 	.read =  proc_epld_read,
 	.write = proc_epld_write,
 	.llseek = default_llseek,
 };
-
+#endif
 /*
  * Register a set of serial devices attached to a platform device.  The
  * list is terminated with a zero flags entry, which means we expect
