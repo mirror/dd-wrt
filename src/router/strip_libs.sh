@@ -8,12 +8,14 @@ export ARCH=$1
 ./sstrip/sstrip $ARCH-uclibc/target/sbin/*
 # strip libraries
 ./sstrip/sstrip $ARCH-uclibc/target/usr/lib/*
+./sstrip/sstrip $ARCH-uclibc/target/usr/lib/python3.4/lib-dynload/*
 ./sstrip/sstrip $ARCH-uclibc/target/usr/lib/iptables/*
 ./sstrip/sstrip $ARCH-uclibc/target/usr/lib/l2tp/*
 ./sstrip/sstrip $ARCH-uclibc/target/usr/lib/ser/modules/*
 ./sstrip/sstrip $ARCH-uclibc/target/usr/lib/openser/modules/*
 ./sstrip/sstrip $ARCH-uclibc/target/usr/lib/asterisk/modules/*
 ./sstrip/sstrip $ARCH-uclibc/target/usr/lib/l2tp/*
+./sstrip/sstrip $ARCH-uclibc/target/sub/*
 ./sstrip/sstrip $ARCH-uclibc/target/lib/*.so
 ./sstrip/sstrip $ARCH-uclibc/target/lib/*.so.1
 ./sstrip/sstrip $ARCH-uclibc/target/lib/*.so.0
