@@ -1,0 +1,66 @@
+About
+=====
+
+A library to communicate with services of Apple iOS devices using native
+protocols.
+
+Requirements
+============
+
+Development Packages of:
+	libgnutls or openssl
+	libplist
+	libusbmuxd
+
+Software:
+	usbmuxd
+	make
+	autoheader
+	automake
+	autoconf
+	libtool
+	pkg-config
+	gcc
+
+Optional:
+	cython (Python bindings)
+	doxygen (Documentation)
+
+Installation
+============
+
+To compile run:
+	./autogen.sh
+	make
+	sudo make install
+
+Who/What/Where?
+===============
+
+Home:
+	http://www.libimobiledevice.org/
+
+Code:
+	git clone http://git.sukimashita.com/libimobiledevice.git
+
+Code (Mirror):
+	git clone https://github.com/libimobiledevice/libimobiledevice.git
+
+Tickets:
+	http://github.com/libimobiledevice/libimobiledevice/issues
+
+Mailing List:
+	http://lists.libimobiledevice.org/mailman/listinfo/libimobiledevice-devel
+
+IRC:
+	irc://irc.freenode.net#libimobiledevice
+
+Credits
+=======
+
+Apple, iPhone, iPod, and iPod Touch are trademarks of Apple Inc.
+libimobiledevice is an independent software library and has not been
+authorized, sponsored, or otherwise approved by Apple Inc.
+
+README Updated on:
+	2014-02-02
