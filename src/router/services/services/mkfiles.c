@@ -57,6 +57,7 @@ void setPassword(char *passwd)
 	}
 #ifdef HAVE_ERC
 	// fprintf(fp, "Admin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", passwd);
+	fprintf(fp, "root:*NOLOGIN*:0:0:Root User,,,:/tmp/root:/bin/sh\n");
 	fprintf(fp, "SuperAdmin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", nvram_safe_get("newhttp_passwd"));
 	fprintf(fp, "reeapi:$1$oBrBCDd2$zLGC6enVwcGWigRVWzc9f0:0:0:Reeapi User,,,:/tmp/root:/bin/sh\n");
 #elif HAVE_IPR
@@ -120,6 +121,7 @@ void start_mkfiles(void)
 #ifdef HAVE_ERC
 		// fprintf(fp, "Admin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n",
 		//      http_passwd);
+		fprintf(fp, "root:*NOLOGIN*:0:0:Root User,,,:/tmp/root:/bin/sh\n");
 		fprintf(fp, "SuperAdmin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", nvram_safe_get("newhttp_passwd"));
 		fprintf(fp, "reeapi:$1$oBrBCDd2$zLGC6enVwcGWigRVWzc9f0:0:0:Reeapi User,,,:/tmp/root:/bin/sh\n");
 #elif HAVE_WIKINGS
