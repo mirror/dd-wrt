@@ -985,8 +985,9 @@ static const struct file_operations gpio_fops_data = {
 	.llseek = default_llseek,
 };
 
-struct proc_dir_entry *openriscdir;
+struct proc_dir_entry *openriscdir = NULL;
 
+EXPORT_SYMBOL(openriscdir);
 INIT_RET_TYPE gpio_init(void)
 {
 	int i;
