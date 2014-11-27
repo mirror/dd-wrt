@@ -1,0 +1,5 @@
+#!/bin/bash
+while true
+do
+	sudo arpsend -i lo -o 1 -S 00:90:04:8f:c4:f8 -t 192.34.45.6 -E 00:90:04:8f:c4:f8 -e 00:0c:6e:6c:38:de
+done

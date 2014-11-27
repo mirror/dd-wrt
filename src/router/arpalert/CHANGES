@@ -1,0 +1,231 @@
+2.0.11  * Jan Wagner waja<at>cyconet<dot>org
+          Don't erase configure when make mrproper is called
+          Update error in man
+        * info<at>arpalert<dot>org
+          minor orthographic correction in doc
+
+2.0.10  * info<at>arpalert<dot>org
+          bug into leases file reading
+          new script in contribs by mikuskuikku
+          (found here: http://ubuntuforums.org/showthread.php?t=464883)
+			 this script send a zenity alert on Ubuntu.
+
+2.0.9   * info<at>arpalert<dot>org
+          fix an error message
+          update script API documentation
+          API documentation
+          new API functions : mod conf
+          set lockfile optional
+
+2.0.8   * info<at>arpalert<dot>org
+          install API include
+          close and reopen the logfile on sighup
+          add graphic module
+          change type of ip arg passed to module
+          bug with module options
+
+2.0.7   * info<at>arpalert<dot>org
+          minor openbsd bugfix (thanks Andy)
+          very minor code optimization
+          check string representation of mac adress memory size
+          allocate static memory for many buffers
+          openbsd Makefile compatibility
+          little error in Makefile.in
+
+2.0.6   * info<at>arpalert<dot>org
+          default config file syntax correction and comments
+          display list of mac vendor loaded only in debug compil mode
+
+        * brmichel<at>free<dot>fr
+          add vim syntax file
+
+        * Joost van Baal
+          would not require manually editing the script to fix
+          the sender and receiver's email adress.
+
+2.0.5   * info<at>arpalert<dot>org
+          bugfix in arp selftest detection
+          bugfix in scheduler
+          code cleanup
+
+2.0.4   * info<at>arpalert<dot>org 
+          segfault when config is dumped
+          compilation error on ppc processors (sign error)
+
+2.0.3   * Jan Wagner waja<at>cyconet<dot>org
+BETA      man corrections
+        * info<at>arpalert<dot>org 
+          arpalert don't quit if the leases file is not found
+			        at start. just send an notice.
+          variable type correction					  
+          alerts identifiers defined
+          alert bug in "reference" field
+          put also mac address without ip in leases file
+
+2.0.2   * info<at>arpalert<dot>org
+BETA      serialization of sigchld signal and sigkill, sighup
+          option for force run in foreground
+          maj man
+
+2.0.1   * info<at>arpalert<dot>org
+BETA      retrieve mac vendor name
+          load leases files and remember the mac already discovered
+          port on solaris8 ultrasparc IIi
+          reload "white list", "black list", "authorizations"
+                 and "oui.txt" when a sighup is received
+          generalise use of errno
+          code cleaning
+          change install system
+          generate default config
+          scheduler bug in dump leases time
+          launch a laeses file dump before quit
+
+2.0.0   * info<at>arpalert<dot>org
+BETA      permit to listen more than one interface
+          port on solaris10
+          analyse arp reply (usefull if the arpalert is
+                             running on router)
+          format of config files updated for use of the ethernet 
+                   interfaces name
+          the option "ignore me" is only used for the "unauth_rq" alerts
+          new debug format (like tcpdump trace)
+          new core sheduler for more speed
+          all internal times in µseconds (in place of seconds)
+          change internal storage structurs for more speed
+          clean configure.in file
+          new defines for more code readability
+
+1.1.3   * info<at>arpalert<dot>org
+          minor bugfix: harmonie of file arpalert.lock
+          minor change in arpalert.8
+
+1.1.2   * info<at>arpalert<dot>org
+          bug in config whith "" file notation
+
+1.1.1   * info<at>arpalert<dot>org
+          little bug in syntax of config file
+
+1.1.0   * info<at>arpalert<dot>org
+          new function: permit to lesson only ARP traffic (alert new_mac disabled)
+          new function: permit to call a .so extension
+          normalize code with use "struct in_addr" for the ip address
+          normalize code with use "struct ether_header" for the mac address
+          normalize code with use "struct arphdr" for decoding ethernet header
+          changing hash algoritm for homogeneously reparttion of mac adresses
+          normalize macro case
+          change test for testing bitfield
+          flood alert: remove parameter
+          mac change alert: add parameter
+          add api for mod alerts
+          clean code
+
+1.0.3   * info<at>arpalert<dot>org
+          add option -V to return arpalert version
+          syntax updates in man
+          change condition order in alert detection routine
+          change log syntax for the loading file function
+          bug in parsing of config file
+          bug in mac change detection
+          bug in ip change detection
+
+1.0.2   * info<at>arpalert<dot>org
+          complete inline help
+          minor security fix: changes from sprintf to snprintf in data.c
+          minor bugfix in compilation in debug code
+          add header at file arpalert.h
+          add header at sens_timeouts.c (for mac OS X)
+          add copyright informations at file arpalert.h
+
+1.0.1   * info<at>arpalert<dot>org:
+          error in log format for "unknow_address" alert
+          error in pid structur initialization
+
+1.0.0:  * info<at>arpalert<dot>org:
+          rewrite detection code.
+          rewrite data storage code.
+          rewrite pid gestion code.
+          possibility to write comments in allow / deny files.
+          possibility to ignore mac only new detection
+          possibility to ignore certains types of detection by mac address
+            (solution for ip alias)
+          for developpers:
+          function "make pdf" makes a sources pdf files with syntax color.
+          for fun: "make stats" returns the total number of line code (only .c and .h).
+          "make dependencies" generate dependencies for header file (for writing correctly the Makefile)
+
+        * marco.crotta<at>urmetcns<dot>it
+          add new detection function: detect mac change
+
+        * benoit.leroux<at>gmail<dot>com
+          Add exemple mail alert script.
+
+        * pterjan<at>linuxfr<dot>org
+          Add DESTDIR variable in Makefile.
+
+        * robert<dot>perriero<at>gmail<dot>com
+          Add suse start script
+          Add FC4 start script
+          Add 2 management scripts
+
+0.4.15-2: bugfix: bug zombies
+
+0.4.15-1: bugfix: new mac detection error
+
+0.4.15: bugfix: probleme in function data_cmp
+        rewrite many parts of code.
+
+0.4.14: Anti flood system for unauthorized detection by couple 
+        mac sender / ip requested. This system permit to watch all alerts.
+        Anti flood system only by mac sender is also available.
+        Unauthorized request configuration file format change. Now accept the
+        syntax with network mask.
+
+0.4.13: command line errors more verbose
+        bugfix: Command line bug with -f parameter corrected
+
+0.4.12: unauthorized request detection: possibility to ignore self request 
+           generated by windows dhcp client
+        unauthorized request file support comment every where
+        when the program is not running in deamon mode, the logs are displayed
+           on standard output
+        bugfix: segfault problem in sens_hash 
+        bugfix: segfault in debug message
+        bugfix: error in log function
+
+0.4.11: Use priveleges separation
+        Use chroot
+        Apply mask on files
+        Port on openbsd, freebsd, netbsd
+
+0.4.10: I Write the man file
+
+0.4.9:  Reload the authorized_request list if the SIGHUP is send
+
+0.4.8:  Don't quit the program with if the link is down ... they're attempt to reconnect
+
+0.4.7:  Send an alert code 8 if the new mac adress is detected whithout his ip address
+
+0.4.6:  launched floods alerts scripts also if the numbers of launched scripts are excedant
+        detect global flood
+        min time from two sames alert (mac source, type of alert)
+        don't alert if the mac adress is the mac of the lessoning interface
+
+0.4.5:  invalid mac adress detection by ethernet arp
+        different adress in ethernet header and arp request detection
+
+0.4.4:  use mac adress in place of ip adress in request detection
+
+0.4.3:  permit to ignore a machine in request detection
+
+0.4.2:  add specific request detection
+
+0.4.1:  Bug patch
+
+0.4.0:  More configuration option added
+        Many bugs patched
+        Security fail patched
+
+03b:    FUNCTION: the use of autoconf / automake is now avalaible
+        BUG: The soft not inform th user when the config file is not accessible.
+
+02b:    FUNCTION: The config is choosable by the command line (-f /config/file)

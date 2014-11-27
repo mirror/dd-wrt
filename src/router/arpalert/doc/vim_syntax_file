@@ -1,0 +1,6 @@
+Howto use:
+
+- copuy the file arpalert.vim in $HOME/.vim/syntax/ directory
+- add the following line in file $HOME/.vimrc
+  or create file $HOME/.vim/ftdetect/arpalert.vim with :
+au BufRead,BufNewFile arpalert.conf* set ft=arpalert 

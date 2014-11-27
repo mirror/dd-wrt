@@ -1,0 +1,80 @@
+#!/bin/sh
+#
+# Copyright (c) 2005-2010 Thierry FOURNIER
+# $Id: Makefile.in 374 2006-10-25 17:32:21Z thierry $
+# 
+
+prefix="@prefix@"
+exec_prefix="@exec_prefix@"
+bindir="@bindir@"
+sbindir="@sbindir@"
+libexecdir="@libexecdir@"
+datadir="@datadir@"
+sysconfdir="@sysconfdir@"
+sharedstatedir="@sharedstatedir@"
+localstatedir="@localstatedir@"
+libdir="@libdir@"
+infodir="@infodir@"
+mandir="@mandir@"
+includedir="@includedir@"
+config_dir="@sysconfdir@/arpalert"
+leases_dir="@localstatedir@/lib/arpalert"
+lock_dir="@localstatedir@/run"
+log_dir="@localstatedir@/log"
+includedir="@includedir@/"
+
+# make all directories
+mkdir -p ${DESTDIR}${sbindir}
+mkdir -p ${DESTDIR}${leases_dir}
+mkdir -p ${DESTDIR}${lock_dir}
+mkdir -p ${DESTDIR}${log_dir}
+mkdir -p ${DESTDIR}${config_dir} 
+mkdir -p ${DESTDIR}${includedir} 
+mkdir -p ${DESTDIR}${mandir}/man8
+
+# install man
+cp -f doc/arpalert.8 ${DESTDIR}${mandir}/man8
+
+# copy oui list
+cp -f etc/oui.txt ${DESTDIR}${config_dir}
+
+# copy API
+cp -f api/arpalert.h ${DESTDIR}${includedir}
+
+# insall binary
+cp -f arpalert ${DESTDIR}${sbindir}
+
+# if doesn't exist conf
+if [ ! -f ${DESTDIR}${config_dir}/arpalert.conf ]; then
+	
+	# create maclist.allow
+	if [ ! -f ${DESTDIR}${config_dir}/maclist.allow ]; then
+		> ${DESTDIR}${config_dir}/maclist.allow || /bin/true
+	fi
+
+	# create maclist.deny
+	if [ ! -f ${DESTDIR}${config_dir}/maclist.deny ]; then
+		> ${DESTDIR}${config_dir}/maclist.deny  || /bin/true
+	fi
+
+	# dest file
+	CONF="${DESTDIR}${config_dir}/arpalert.conf"
+
+else
+
+	# default dest file
+	CONF="${DESTDIR}${config_dir}/arpalert.conf.default.`cat VERSION`"
+fi
+
+# gen conf file
+config_dir=`echo "${config_dir}" | tr '/' '@' | sed -e 's/@/\\\\\\//g'`
+leases_dir=`echo "${leases_dir}" | tr '/' '@' | sed -e 's/@/\\\\\\//g'`
+lock_dir=`echo "${lock_dir}" | tr '/' '@' | sed -e 's/@/\\\\\\//g'`
+log_dir=`echo "${log_dir}" | tr '/' '@' | sed -e 's/@/\\\\\\//g'`
+sed -e "
+	s/@config_dir@/${config_dir}/g;
+	s/@leases_dir@/${leases_dir}/g;
+	s/@lock_dir@/${lock_dir}/g;
+	s/@log_dir@/${log_dir}/g;
+" < etc/arpalert.conf.in > ${CONF}
+
