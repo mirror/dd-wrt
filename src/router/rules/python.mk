@@ -27,4 +27,6 @@ python-install:
 	rm -rf $(INSTALLDIR)/python/usr/include
 	rm -rf $(INSTALLDIR)/python/usr/share
 	rm -f $(INSTALLDIR)/python/usr/lib/python3.4/config-3.4m/*.a
+#18M...
+	rm -rf $(INSTALLDIR)/python/usr/lib/python3.4/test
 
