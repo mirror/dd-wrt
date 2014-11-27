@@ -754,7 +754,7 @@ $(GRAMMAR_C): $(GRAMMAR_H) $(GRAMMAR_INPUT) $(PGENSRCS)
 		touch $(GRAMMAR_C)
 
 $(PGEN):	$(PGENOBJS)
-		gcc -DNDEBUG $(PY_CPPFLAGS) $(PY_LDFLAGS) $(PGENSRCS) $(LIBS) -o $(PGEN)
+		gcc -DNDEBUG -I. -IInclude $(PGENSRCS) $(LIBS) -o $(PGEN)
 
 Parser/grammar.o:	$(srcdir)/Parser/grammar.c \
 				$(srcdir)/Include/token.h \
