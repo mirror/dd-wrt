@@ -1,0 +1,145 @@
+#
+# Copyright (c) 2005-2010 Thierry FOURNIER
+# $Id: configure.ac 96 2006-05-09 20:32:19Z thierry $
+#
+
+#AC_SUBST(VERSION)
+
+# Process this file with autoconf to produce a configure script.
+AC_INIT(arpalert, 2.0.11)
+AC_PREREQ(2.59)
+
+# get OS type
+OS=`uname -s`
+
+# default install path
+AC_PREFIX_DEFAULT(/opt/arpalert)
+
+# Checks for programs.
+echo
+echo "======================================================="
+echo " = Check for programs"
+echo "======================================================="
+AC_PROG_CC
+AC_PROG_AWK
+AC_PROG_GCC_TRADITIONAL
+
+# Checks for header files.
+echo
+echo "======================================================="
+echo " = Check for header files"
+echo "======================================================="
+AC_HEADER_STDBOOL
+AC_HEADER_SYS_WAIT
+AC_HEADER_TIME
+AC_STRUCT_TM
+AC_TYPE_UID_T
+AC_CHECK_HEADERS(syslog.h, forcesyslogno=0, forcesyslogno=1)
+AC_CHECK_HEADERS(arpa/inet.h, , echo "didn't find arpa/inet.h"; exit 1)
+AC_CHECK_HEADERS(dlfcn.h, , echo "didn't find dlfcn.h"; exit 1)
+AC_CHECK_HEADERS(errno.h, , echo "didn't find errno.h"; exit 1)
+AC_CHECK_HEADERS(fcntl.h, , echo "didn't find fcntl.h"; exit 1)
+AC_CHECK_HEADERS(grp.h, , echo "didn't find grp.h"; exit 1)
+if test "x${OS}" = "xFreeBSD" || \
+   test "x${OS}" = "xOpenBSD" || \
+   test "x${OS}" = "xNetBSD"; then
+	AC_CHECK_HEADERS(net/if_dl.h, , echo "didn't find net/if_dl.h"; exit 1)
+fi
+AC_CHECK_HEADERS(netinet/in.h, , echo "didn't find netinet/in.h"; exit 1)
+AC_CHECK_HEADERS(pcap.h, , echo "didn't find pcap.h"; exit 1)
+AC_CHECK_HEADERS(pwd.h, , echo "didn't find pwd.h"; exit 1)
+AC_CHECK_HEADERS(signal.h, , echo "didn't find signal.h"; exit 1)
+AC_CHECK_HEADERS(stdarg.h, , echo "didn't find stdarg.h"; exit 1)
+AC_CHECK_HEADERS(stdio.h, , echo "didn't find stdio.h"; exit 1)
+AC_CHECK_HEADERS(stdlib.h, , echo "didn't find stdlib.h"; exit 1)
+AC_CHECK_HEADERS(string.h, , echo "didn't find string.h"; exit 1)
+AC_CHECK_HEADERS(strings.h, , echo "didn't find strings.h"; exit 1)
+AC_CHECK_HEADERS(sys/ioctl.h, , echo "didn't find sys/ioctl.h"; exit 1)
+AC_CHECK_HEADERS(sys/param.h, , echo "didn't find sys/param.h"; exit 1)
+AC_CHECK_HEADERS(sys/select.h, , echo "didn't find sys/select.h"; exit 1)
+AC_CHECK_HEADERS(sys/socket.h, , echo "didn't find sys/socket.h"; exit 1)
+AC_CHECK_HEADERS(sys/stat.h, , echo "didn't find sys/stat.h"; exit 1)
+if test "x${OS}" = "xLinux"; then
+	AC_CHECK_HEADERS(net/if_arp.h, , echo "didn't find net/if_arp.h"; exit 1)
+	AC_CHECK_HEADERS(netinet/if_ether.h, , echo "didn't find netinet/if_ether.h"; exit 1)
+fi
+if test "x${OS}" = "xLinux"; then
+	AC_CHECK_HEADERS(net/if.h, , echo "didn't find net/if.h"; exit 1)
+fi
+if test "x${OS}" = "xFreeBsd" ||
+   test "x${OS}" = "xLinux"; then
+	AC_CHECK_HEADERS(sys/sysctl.h, , echo "didn't find sys/sysctl.h"; exit 1)
+fi
+AC_CHECK_HEADERS(sys/time.h, , echo "didn't find sys/time.h"; exit 1)
+AC_CHECK_HEADERS(sys/types.h, , echo "didn't find sys/types.h"; exit 1)
+AC_CHECK_HEADERS(sys/wait.h, , echo "didn't find sys/wait.h"; exit 1)
+AC_CHECK_HEADERS(time.h, , echo "didn't find time.h"; exit 1)
+AC_CHECK_HEADERS(unistd.h, , echo "didn't find unistd.h"; exit 1)
+
+# Checks for libraries.
+echo
+echo "======================================================="
+echo " = Check for libraries"
+echo "======================================================="
+if test "x${OS}" == "xSunOS"; then
+	AC_CHECK_LIB(nsl, inet_ntoa)
+	AC_CHECK_LIB(socket, socket)
+fi
+AC_CHECK_LIB(pcap, pcap_lookupdev)
+AC_CHECK_LIB(dl, dlopen)
+
+# check functions
+echo
+echo "======================================================="
+echo " = Check for functions"
+echo "======================================================="
+AC_CHECK_FUNCS([endgrent])
+AC_CHECK_FUNCS([endpwent])
+AC_CHECK_FUNCS([memset])
+AC_CHECK_FUNCS([socket])
+AC_CHECK_FUNCS([strerror])
+AC_CHECK_FUNCS([bzero])
+AC_CHECK_FUNCS([gettimeofday])
+AC_CHECK_FUNCS([inet_ntoa])
+AC_CHECK_FUNCS([select])
+AC_CHECK_FUNCS([strdup])
+AC_C_CONST
+AC_FUNC_FORK
+AC_FUNC_MALLOC
+AC_FUNC_SELECT_ARGTYPES
+AC_FUNC_STAT
+AC_FUNC_MEMCMP
+
+##############################################################
+# compilation options
+##############################################################
+
+# Enable syslog system
+AC_ARG_WITH(syslog, [  --with-syslog	Turn on Syslog support (default=yes)], with_syslog=$withval, with_syslog=yes)
+if test "x$with_syslog" != "xno"; then
+	if test $forcesyslogno = 0; then
+		AC_DEFINE(USE_SYSLOG, 1, [Whether we have SYSLOG])
+	fi
+fi
+
+# debug definitions
+AC_ARG_ENABLE(debug,
+              [  --enable-debug          Turn on debug system (default=no)],
+              enable_debug=$enableval, enable_debug=no)
+if test "x$enable_debug" != "xno"; then
+	AC_DEFINE(DEBUG, 1, [If is debug compilation])
+fi
+
+# Generate files
+echo
+echo "======================================================="
+echo " = Generate files"
+echo "======================================================="
+AC_CONFIG_FILES(Makefile)
+AC_CONFIG_FILES(install.sh)
+AC_CONFIG_FILES(scripts/start/arpalert-debian)
+AC_CONFIG_FILES(scripts/start/arpalert-fc4)
+AC_CONFIG_FILES(scripts/start/arpalert-suse)
+AC_CONFIG_HEADER(config.h)
+
+AC_OUTPUT
