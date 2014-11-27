@@ -233,6 +233,7 @@ obj-$(CONFIG_POLARSSL) += polarssl
 obj-$(CONFIG_MSTP) += mstp
 obj-$(CONFIG_PYTHON) += python
 obj-$(CONFIG_NMAP) += nmap
+obj-$(CONFIG_ARPALERT) += arpalert
 obj-$(CONFIG_IPETH) += ipeth
 obj-$(CONFIG_IAS) += dns_responder
 obj-$(CONFIG_MINIDLNA) += minidlna

@@ -270,6 +270,7 @@ include rules/emf.mk
 include rules/softflowd.mk
 include rules/python.mk
 include rules/nmap.mk
+include rules/arpalert.mk
 
 #
 # Generic rules
