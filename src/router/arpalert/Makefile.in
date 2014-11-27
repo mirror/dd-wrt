@@ -49,7 +49,7 @@ OBJECT_LIST = \
 	$(src_dir)/alertes.o \
 	$(src_dir)/capture.o
 
-arpalert: $(OBJECT_LIST) build_module_example
+arpalert: $(OBJECT_LIST)
 	$(CC) $(LDFLAGS) -o arpalert $(OBJECT_LIST) $(LIBS)
 
 loadmodule.o: loadmodule.c config.h log.h loadmodule.h loadconfig.h
