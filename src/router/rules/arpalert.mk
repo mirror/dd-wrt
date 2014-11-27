@@ -11,7 +11,7 @@ arpalert-install:
 	$(MAKE) -C arpalert install DESTDIR=$(INSTALLDIR)/arpalert
 	rm -rf $(INSTALLDIR)/arpalert/usr/share
 	rm -rf $(INSTALLDIR)/arpalert/usr/include
-	rm -rf $(INSTALLDIR)/arpalert/usr/var
+	rm -rf $(INSTALLDIR)/arpalert/var
 	rm -rf $(INSTALLDIR)/arpalert/etc/arpalert/arpalert.conf*
 	rm -rf $(INSTALLDIR)/arpalert/etc/arpalert/maclist.*
 	ln -sf /tmp/arpalert.conf $(INSTALLDIR)/arpalert/etc/arpalert/arpalert.conf
