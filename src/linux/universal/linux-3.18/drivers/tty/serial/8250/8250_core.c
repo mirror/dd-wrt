@@ -3211,7 +3211,7 @@ static void __init serial8250_isa_init_ports(void)
 		struct uart_port *port = &up->port;
 
 #if defined(CONFIG_MACH_KS8695_VSOPENRISC)
-		up->port.line = i + 1;
+		up->port.line = i + 2;
 #else
 		up->port.line = i;
 #endif
@@ -3532,6 +3532,8 @@ static int serial8250_probe(struct platform_device *dev)
 	char proc_name_epld[32];
 	struct proc_dir_entry *proc_epld;
 #endif
+	if(!p)
+		return 0;
 
 	memset(&uart, 0, sizeof(uart));
 
@@ -3587,7 +3589,7 @@ static int serial8250_probe(struct platform_device *dev)
 	for (i = 0; i < nr_uarts; i++) {
 		struct uart_8250_port *up = &serial8250_ports[i];
 
-		if(up->port.membase == NULL)
+		if(up->port.membase == 0)
 		{
 			continue;
 		}
@@ -3602,14 +3604,15 @@ static int serial8250_probe(struct platform_device *dev)
 		}
 		else
 		{
+			printk(KERN_EMERG "try to configure %d iobase %lX membase %p mapbase %X\n",i,up->port.iobase,up->port.membase,up->port.mapbase);
 			/* set up EPLD structure i.e. define EPLD address and get current value */
 			up->port.epld.reg_shift = 2;
 			up->port.epld.port = (unsigned long)up->port.membase - (0x08 << 2);
-			up->port.epld.value = inb(up->port.epld.port);
+			up->port.epld.value = readl(up->port.membase - (0x08 << 2));
 
 			/* set EPLD to rs232 mode */
 			if (!strstr(saved_command_line, "rsoff"))
-				outb(EPLD_RS232, (unsigned long)(up->port.membase - (0x08 << 2)));
+				writel(EPLD_RS232, up->port.membase - (0x08 << 2));
 
 			/* set up /proc entries and read/write functions */
 			sprintf(proc_name_epld, PROC_NAME_EPLD"%d", up->port.line);
