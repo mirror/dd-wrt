@@ -1,0 +1,125 @@
+#
+# Copyright (c) 2005-2010 Thierry FOURNIER
+# $Id: Makefile.in 690 2008-03-31 18:36:43Z  $
+# 
+
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+bindir = @bindir@
+sbindir = @sbindir@
+libexecdir = @libexecdir@
+datadir = @datadir@
+sysconfdir = @sysconfdir@
+sharedstatedir = @sharedstatedir@
+localstatedir = @localstatedir@
+libdir = @libdir@
+infodir = @infodir@
+mandir = @mandir@
+includedir = @includedir@
+config_dir = @sysconfdir@/arpalert
+leases_dir = @localstatedir@/lib/arpalert
+lock_dir = @localstatedir@/run
+log_dir = @localstatedir@/log
+includedir = @includedir@
+src_dir = .
+
+CC = @CC@
+CFLAGS += @CFLAGS@ \
+          -Wall -O2  \
+          -DCONFIG_FILE=\"$(config_dir)/arpalert.conf\" \
+          -DPID_FILE=\"$(lock_dir)/arpalert.pid\"
+LDFLAGS = -Wl,--export-dynamic
+LIBS = @LIBS@
+OBJECT_LIST = \
+	$(src_dir)/arpalert.o \
+	$(src_dir)/loadconfig.o \
+	$(src_dir)/loadmodule.o \
+	$(src_dir)/log.o \
+	$(src_dir)/data.o \
+	$(src_dir)/maclist.o \
+	$(src_dir)/serveur.o \
+	$(src_dir)/alerte.o \
+	$(src_dir)/sens.o \
+	$(src_dir)/sens_timeouts.o \
+	$(src_dir)/func_time.o \
+	$(src_dir)/func_str.o \
+	$(src_dir)/macname.o \
+	$(src_dir)/logalert.o \
+	$(src_dir)/signals.o \
+	$(src_dir)/alertes.o \
+	$(src_dir)/capture.o
+
+arpalert: $(OBJECT_LIST) build_module_example
+	$(CC) $(LDFLAGS) -o arpalert $(OBJECT_LIST) $(LIBS)
+
+loadmodule.o: loadmodule.c config.h log.h loadmodule.h loadconfig.h
+	$(CC) $(CFLAGS) -c -o loadmodule.o $(src_dir)/loadmodule.c
+
+alertes.o: alertes.c
+	$(CC) $(CFLAGS) -c -o alertes.o $(src_dir)/alertes.c
+
+logalert.o: logalert.c config.h loadconfig.h log.h
+	$(CC) $(CFLAGS) -c -o logalert.o $(src_dir)/logalert.c
+
+signals.o: signals.c config.h log.h data.h maclist.h alerte.h \
+           sens.h loadmodule.h macname.h
+	$(CC) $(CFLAGS) -c -o signals.o $(src_dir)/signals.c
+
+macname.o: macname.c config.h loadconfig.h log.h func_str.h
+	$(CC) $(CFLAGS) -c -o macname.o $(src_dir)/macname.c
+
+func_str.o: func_str.c config.h
+	$(CC) $(CFLAGS) -c -o func_str.o $(src_dir)/func_str.c
+
+func_time.o: func_time.c config.h
+	$(CC) $(CFLAGS) -c -o func_time.o $(src_dir)/func_time.c
+
+alerte.o: alerte.c config.h alerte.h log.h loadconfig.h serveur.h
+	$(CC) $(CFLAGS) -c -o alerte.o $(src_dir)/alerte.c
+
+arpalert.o: arpalert.c config.h loadconfig.h log.h data.h maclist.h \
+            capture.h serveur.h alerte.h sens.h sens_timeouts.h
+	$(CC) $(CFLAGS) -c -o arpalert.o $(src_dir)/arpalert.c
+
+capture.o: capture.c config.h capture.h sens.h log.h loadconfig.h data.h \
+           alerte.h sens_timeouts.h
+	$(CC) $(CFLAGS) -c -o capture.o $(src_dir)/capture.c
+
+data.o: data.c config.h data.h log.h loadconfig.h
+	$(CC) $(CFLAGS) -c -o data.o $(src_dir)/data.c
+
+loadconfig.o: loadconfig.c loadconfig.h config.h log.h
+	$(CC) $(CFLAGS) -c -o loadconfig.o $(src_dir)/loadconfig.c
+
+log.o: log.c log.h config.h loadconfig.h
+	$(CC) $(CFLAGS) -c -o log.o $(src_dir)/log.c $(DEFS)
+
+maclist.o: maclist.c maclist.h config.h data.h loadconfig.h log.h
+	$(CC) $(CFLAGS) -c -o maclist.o $(src_dir)/maclist.c
+
+sens.o: sens.c sens.h config.h loadconfig.h data.h log.h
+	$(CC) $(CFLAGS) -c -o sens.o $(src_dir)/sens.c
+
+sens_timeouts.o: sens_timeouts.c sens_timeouts.h config.h data.h log.h \
+                 loadconfig.h
+	$(CC) $(CFLAGS) -c -o sens_timeouts.o $(src_dir)/sens_timeouts.c
+
+serveur.o: serveur.c serveur.h config.h log.h loadconfig.h
+	$(CC) $(CFLAGS) -c -o serveur.o $(src_dir)/serveur.c
+
+build_module_example:
+	@cd module_example; make; cd ..
+
+mrproper: clean
+	-@rm -rf arpalert-sources.pdf autom4te.cache Makefile \
+	         scripts/start/arpalert-debian scripts/start/arpalert-fc4 \
+	         scripts/start/arpalert-suse config.h install.sh \
+	         configure.scan autoscan.log
+
+clean:
+	-@rm -f *~ *.o config.log config.status arpalert
+	-@cd module_example; make clean; cd ..
+	
+install:
+	/bin/sh -x install.sh
+

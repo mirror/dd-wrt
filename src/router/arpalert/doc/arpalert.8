@@ -1,0 +1,306 @@
+.\"
+.\" Copyright (c) 2005-2010 Thierry FOURNIER
+.\" $Id: arpalert.8 690 2008-03-31 18:36:43Z  $
+.\"
+.TH ARPALERT 8 2006-05-09 "" "arp traffic monitoring"
+.SH NAME
+arpalert \- ARP traffic monitoring
+.SH DESCRIPTION
+Arpalert uses ARP protocol monitoring to prevent unauthorized connections on the local network. 
+If an illegal connection is detected, a program or script could be launched, which could be used to send an alert message, for example.
+.SH COMMAND LINE
+.TP
+\fB\-f config_file\fR
+Specify the config file.
+.TP
+\fB\-i interface\fR 
+Comma separated network interfaces listen to.
+.TP
+\fB\-p pid_file\fR
+Use this pid file. this file containis a pid number of the arpalert session. If the file exist and his locked, the deamon do not run.
+.TP
+\fB\-e exec_script\fR
+Script launched when an alert is send.
+.TP
+\fB\-D log_level\fR
+The level logged. The levels are between 0 (emergency) and 7 (debug). If 3 is selected all levels bitween 0 and 3 are logged.
+.TP
+\fB\-l leases_file\fR
+This file contain a dump of the mac address in memory (see config file).
+.TP
+\fB\-m module file\fR
+Specify a module file to load
+.TP
+\fB\-d\fR
+Run as daemon.
+.TP
+\fB\-F\fR
+Run in foreground.
+.TP
+\fB\-v\fR
+Watch on screen all the option selected (the options specified in config file and the default options)
+.TP
+\fB\-h\fR
+The help command line.
+.TP
+\fB\-w\fR
+Debug option: print a dump of packets captured.
+.TP
+\fB\-P\fR
+Set the interface in promiscuous mode (don't set this if only the arp analyse is used).
+.TP
+\fB\-V\fR
+Print version and quit.
+.\"
+.\" CONFIG FILE
+.\"
+.SH CONFIGURATION FILE
+The config file contains 3 types of data: integer, string and boolean. The boolean type can take values 'oui', 'true', 'yes', '1'
+for the true values or 'non', 'no', 'false', '0' for the falses values.
+.TP
+\fBuser\fR = arpalert
+Use privileges separation with this user
+.TP
+\fBumask\fR = 177
+Uses this umask for file creation.
+.TP
+\fBchroot dir\fR = /home/thierry/arp_test/
+Use this directory for program jail
+.br
+If this option is commented out, the program does not use chroot.
+.br
+The program read the config file and open the syslog socket before the chroot:
+.br
+The kill -HUP does not work with chroot.
+.br
+If the syslog program is restarted, the socket change and the arpalert syslog system can't be connect to the new socket:
+the logs with syslog are disabled. Prefere to use the log file.
+.br
+The file pathes are relative to the chroot dir (except the config file)
+.TP
+\fBlog file\fR = /var/log/arpalert.log
+The program log into this file
+.br
+If this option is commented out, the internal system log is not used.
+.br
+The internal system logs can be used in same time that syslog.
+.TP
+\fBlog level\fR = 6
+The level logged. The levels are between 0 (emergency) and 7 (debug). If 3 is selected all levels between 0 and 3 are logged.
+.TP
+\fBuse syslog\fR = true
+If this option is false, the syslog system is disabled
+.TP
+\fBmaclist file\fR = /etc/arpalert/maclist.allow
+White list
+.TP
+\fBmaclist alert file\fR = /etc/arpalert/maclist.deny
+Black list
+.TP
+\fBmaclist leases file\fR = /var/lib/arpalert/arpalert.leases
+Dump file
+.TP
+\fBdump inter\fR = 5
+Minimun time to wait between two leases dump
+.TP
+\fBauth request file\fR = /etc/arpalert/authrq.conf
+List of authorized request
+.TP
+\fBlock file\fR = /var/run/arpalert.pid
+pid file
+.TP
+\fBdump packet\fR = false
+Only for debugging: this dump packet received on standard output. The syntax "\fBdump paquet\fR" is also avalaible, but is deprecated
+.TP
+\fBdaemon\fR = false
+If is set to true, run the program as daemon
+.TP
+\fBinterface\fR = ""
+Comma separated network interfaces leisten to. If this value is not specified, the soft select the first interface.
+.TP
+\fBcatch only arp\fR = TRUE
+Configure the network for catch only arp request.
+The detection type "new_mac" is deactived.
+This mode is used for CPU saving if Arpalert is running on a router
+.TP
+\fBmod on detect\fR = ""
+Module file loaded by arpalert. This module is launched on each valid alert.
+This system permit to avoid a costly fork/exec
+.TP
+\fBmod config\fR = ""
+This chain is transfered to the init function of module loaded
+.TP
+\fBaction on detect\fR = ""
+Script launched on each detection. Parameters are: 
+.br
+ - \fBmac address of requestor\fR,
+.br
+ - \fBip of requestor\fR,
+.br
+ - \fBsupp. parm.\fR,
+.br
+ - \fBethernet device listening on\fR
+.br
+ - \fBtype of alert\fR,
+.br
+ - optional: \fBethernet vendor\fR
+.IP
+type of alert:
+.br
+\fB0:\fR IP change
+.br
+\fB1:\fR Mac address already detected but not in white list
+.br
+\fB2:\fR Mac address in black list
+.br
+\fB3:\fR New mac address
+.br
+\fB4:\fR Unauthorized arp request
+.br
+\fB5:\fR Abusive number of arp request detected
+.br
+\fB6:\fR Ethernet mac address different from arp mac address
+.br
+\fB7:\fR Flood detected
+.br
+\fB8:\fR New mac address whithout ip address
+.TP
+\fBexecution timeout\fR = 10
+Script execution timeout (seconds)
+.TP
+\fBmax alert\fR = 20
+Maximun simultaneous lanched script
+.TP
+\fBdump black list\fR = false
+Dump the black listed mac address in leases file
+.TP
+\fBdump white list\fR = false
+Dump the white listed mac address in leases file
+.TP
+\fBdump new address\fR = true
+Dump the new mac address in leases file
+.TP
+\fBmac timeout\fR = 259200
+After this time a mac address is removed from memory (seconds) (default 1 month)
+.TP
+\fBmax entry\fR = 1000000
+After this limit the memory hash is cleaned (protect to arp flood)
+.TP
+\fBanti flood interval\fR = 10
+This permit to send only one mismatch alert in this time (in seconds)
+.TP
+\fBanti flood global\fR = 50
+If the number of arp request in seconds exceeds this value, all alerts are ignored for
+"anti flood interval" time
+.TP
+\fBmac vendor file\fR = ""
+This file contain the association from mac address to vendor name. This file can be
+downloaded here: http://standards.ieee.org/regauth/oui/oui.txt
+.TP
+\fBlog mac vendor\fR = false
+Log vendor name
+.TP
+\fBalert mac vendor\fR = false
+Give vendor name to script
+.TP
+\fBmod mac vendor\fR = false
+Give vendor name to module
+.TP
+\fBlog referenced address\fR, \fBalert on referenced address\fR, \fBmod on referenced address\fR = false
+Log/launch script/call module if the address is referenced in hash but is not in white list
+.TP
+\fBlog deny address\fR, \fBalert on deny address\fR, \fBmod on deny address\fR = true
+Log/launch script/call module if the mac address is in black list
+.TP
+\fBlog new address\fR, \fBalert on new address\fR, \fBmod on new address\fR = true
+Log/launch script/call module if the address isn't referenced
+.TP
+\fBlog mac change\fR, \fBalert on mac change\fR, \fBmod on mac change\fR = true
+Log/launch script/call module if the mac address is different from the last arp request with the same ip address
+.TP
+\fBlog ip change\fR, \fBalert on ip change\fR, \fBmod on ip change\fR = true
+Log/launch script/call module if the ip address is different from the last arp request with the same mac address
+.TP
+\fBlog unauth request\fR, \fBalert on unauth request\fR, \fBmod on unauth request\fR = true
+Unauthorized arp request: launch if the request is not authorized in auth file
+.TP
+\fBignore unknown sender\fR = true
+Dont analyse arp request for unknow hosts (not in white list)
+.TP
+\fBignore self test\fR = true
+Ignore ARP self test generated by windows dhcp for unauthorized request detection
+.TP
+\fBignore me\fR = true
+Ignore arp request with mac addresse of the listing interfaces for the authorizations checks
+.TP
+\fBunauth ignore time method\fR = 2
+Select suspend time method:
+.br
+1: ignore all unauth alerts during "anti flood interval" time
+.br
+2: ignore only tuple (mac address, ip address) during "anti flood interval" time
+.TP
+\fBlog request abus\fR, \fBalert on request abus\fR, \fBmod on request abus\fR = true
+Log/launch script/call module if the number of request per seconds are > "max request"
+.TP
+\fBmax request\fR = 1000000
+Maximun request authorized by second
+.TP
+\fBlog mac error\fR, \fBalert on mac error\fR, \fBmod on mac error\fR = true
+Log/launch script/call module if the ethernet mac address is different than the arp mac address (only for requestor)
+.TP
+\fBlog flood\fR = true
+\fBalert on flood\fR = true
+\fBmod on flood\fR = true
+Log/launch script/call module if have too many arp request per seconds
+.\"
+.\" CONFIG FILE
+.\"
+.SH DATA FILES FORMATS
+.TP
+\fB/etc/arpalert/maclist.allow\fR and \fB/etc/arpalert/maclist.deny\fR:
+All the line with # as a \fBfirst\fR caracter are ignored
+.br
+The data on this file take this form
+.br
+<MAC_ADRESS> <IP_ADDRESS> <DEVICE> [<FLAG> <FLAG> <FLAG> ...]
+.br
+The available flags are:
+.br
+\fBip_change:\fR Ignore ip change alert for this mac address
+.br
+\fBblack_listed:\fR Ignore black list alerts for this mac address
+.br
+\fBunauth_rq:\fR Ignore unauthorized requests for this mac address
+.br
+\fBrq_abus:\fR Ignore request abuse for this mac address
+.br
+\fBmac_error:\fR Ignore mac error for this mac address
+.br
+\fBmac_change:\fR Ignore mac change for this mac address
+.TP
+\fB/etc/arpalert/authrq.conf\fR:
+All the words after # character are ignored
+.br
+All the blank characters are ignored
+.br
+The authorisations list for one mac address begins by the mac address into brackets
+.br
+All the next values are ip hosts addresses or ip networks addresses (with /xx notion)
+.br
+[<MAC_ADRESS> <DEVICE>] <IP_ADRESS>
+.br
+<IP_ADRESS>/<BITS>
+.br
+.\"
+.\" CONFIG FILE
+.\"
+.SH FILES
+\fBsbin/arpalert\fR: binary file
+.br
+\fBetc/arpalert/arpalert.conf\fR: default config file
+.br
+\fBvar/run/arpalert.pid\fR: pid file
+.br
+\fBvar/state/arpalert.leases\fR: leases file
+.br

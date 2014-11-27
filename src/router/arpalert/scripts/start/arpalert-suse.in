@@ -1,0 +1,74 @@
+#!/bin/bash
+#
+# Startup script for arpalert. This script points
+# to the standard arpalert location in /usr/local/arpalert# This can be changed at the variable ARPALERTHOME.
+# Author: Robert Perriero (robert.perriero@gmail.com)
+# Date: 03/28/06
+#
+# Changelog
+#  03/28/06 - File Created
+#  03/28/06 - File Modified
+#       o       Revision 0.1.suse created for SLES 8
+#  09/05/06 - File added
+#       o       The script is added at standard arpalert package
+#
+
+### BEGIN INIT INFO
+# Provides: arpalert
+# Required-Start: $network
+# Required-Stop: $network
+# Default-Start: 3 5
+# Default-Stop: 0 1 2 6
+# Description: Start the arpalert daemon
+### END INIT INFO
+
+
+# Source SuSE config
+. /etc/rc.status
+
+ARPALERT_BIN="@sbindir@/arpalert"
+test -x $ARPALERT_BIN || exit 5
+
+DEFAULT_PID_FILE="@localstatedir@/run/arpalert.pid"
+
+. /etc/rc.status
+rc_reset
+
+ARPALERTHOME="@prefix@"
+REVISION="0.1.suse"
+
+start() {
+        echo -n "Starting Arpalert Service"
+        startproc $ARPALERT_BIN
+        rc_status -v
+}
+
+stop() {
+        echo -n "Stopping Arpalert Service"
+        killproc -TERM $ARPALERT_BIN
+        rm -rf $DEFAULT_PID_FILE
+        rc_status -v
+}
+
+
+restart() {
+        $0 stop
+        $0 start
+}
+
+case "$1" in    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    restart)
+        restart
+        ;;
+    *)
+        echo "Usage:  {start|stop|restart}"
+        exit 1
+        ;;
+esac
+exit $?
+

@@ -1,0 +1,57 @@
+#!/bin/bash
+#
+# Startup script for arpalert. This script points
+# to the standard arpalert location in /usr/local/arpalert
+# This can be changed at the variable ARPALERTHOME.
+# Author: Robert Perriero (robert.perriero@gmail.com)
+# Date: 03/28/06
+# Date: 09/05/06 : Thierry FOURNIER :
+#  Include the script in the standard package
+#
+
+# Source function library.
+. /etc/init.d/functions
+
+ARPALERTHOME="@prefix@"
+prog="arpalert"
+DEFAULT_PID_FILE="@localstatedir@/run/arpalert.pid"
+
+start() {
+        if [ ! -f $DEFAULT_PID_FILE ]; then
+            echo -n $"Starting $prog: "
+            daemon $ARPALERTHOME/sbin/arpalert
+            RETVAL=$?
+            [ $RETVAL -eq 0 ] && touch "$DEFAULT_PID_FILE"
+            echo
+        fi
+        return $RETVAL
+}
+
+stop() {
+        if test "x`pidof arpalert`" != x; then
+                echo -n $"Stopping $prog: "
+                killproc arpalert
+                echo
+        fi
+        RETVAL=$?
+        [ $RETVAL = 0 ] && rm -rf "$DEFAULT_PID_FILE"
+        return $RETVAL
+}
+
+case "$1" in    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    restart)
+        stop
+        start
+        ;;
+    *)
+        echo "Usage:  {start|stop|restart[|probe]"
+        exit 1
+        ;;
+esac
+exit $?
+
