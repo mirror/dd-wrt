@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2005-2010 Thierry FOURNIER
+ * $Id: config.h.in 690 2008-03-31 18:36:43Z  $
+ *
+ */
+
+// infos
+#undef PACKAGE_VERSION
+
+// debug code
+#undef DEBUG
+#undef DEBUG_DUMP
+#undef DEBUG_DETECT
+
+// options
+#undef USE_SYSLOG

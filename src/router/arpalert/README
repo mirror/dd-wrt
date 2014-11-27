@@ -1,0 +1,66 @@
+# pour AIX
+CC=/usr/vac/bin/gxlc CFLAG=-I/home/x047400/ ./configure
+
+# a trduire
+
+Les options de la ligne de commande
+prennent le pas sur le options des fichiers
+
+options ligne de commande
+
+-f config_file: force un fichier de configuration
+-i network_interface: force une interface reseau 'all' pour tout sniffer
+-p pid_file: force un fichier de pid
+-e exec_script: force un script d'interpretation
+-D log_level: force le nieau de log
+-l leases_file: force le fichier de leases
+-d execute en demon
+-v dump de la config
+-h message d'aide
+
+
+option du fichier de config: (les valeur par defaut sont affichees)
+
+maclist file = ""			liste des adresses authorisés
+log file = "/var/log/mac.log"		fichier de log (utilise si compile sans syslog)
+action on detect = ""			script a executer en cas de detection
+lock file = "/var/run/mac.lock"		fichier de pid
+daemon = FALSE				mode de focntionnement en demon
+reload interval = 600			obsolete
+log level = 6				niveau de log
+execution timeout = 10			temps laisse au script d'alerte pour s'executer
+max alert = 20				nombre maximun de scripts d'alertes simultanés
+maclist alert file = ""			black list
+maclist leases file = ""		fichier de leases (cf dump xxx)
+interface = ""				interface d'ecoute 'all' = toutes, non renseignée = premiere dispo
+max request = 200000000			nombre maximun de requete / seconde avant alarme
+max entry = 1048576			nombre maximun d'adresses memorisées (previent les debordement memoires)
+dump white list = FALSE			copie les adresses authorisés dans le leases
+dump black list = FALSE			copie les adresses non authorisées dans le leases
+dump new address = TRUE			copie les nouvelles adresses dans le leases
+mac timeout = 2592000			efface l'adresse de la liste de leases et de la memoire si elle ne s'est pas faite entendre depuis x secondes (1 mois)
+log referenced address = FALSE		loggue les adresses deja detectées
+alert on referenced address = FALSE	alerte sur les adresses deja detectées
+log deny address = TRUE			loggue les adresses de la black list
+alert on deny address = TRUE		alerte sur les adresses de la balck list
+log new address = TRUE			loggue les nouvelles adresses
+alert on new address = TRUE		alerte sur le nouvelles adresses
+alert on ip change = TRUE		loggue sur les changement d'ip
+log ip change = TRUE			alerte sur les changement d'ip
+
+Detection de requetes interdites
+auth request file = ""			fichier contenant les requettes authorisés par adresses
+log unauth request = TRUE		logger les requetes non authorisées
+alert on unauth request = TRUE		alerte sur les requetes non authorisées
+
+arpalert passe en argument au script:
+
+script mac_address ip_adress alert_type
+
+alert_type:
+0: changement d'ip
+1: adresse deja referencée
+2: adresse reference dans la liste non authorisée
+3: adresse non reference
+4: requete non authorisée
+
