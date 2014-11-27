@@ -1556,6 +1556,11 @@ static void uart_close(struct tty_struct *tty, struct file *filp)
 
 	pr_debug("uart_close(%d) called\n", uport ? uport->line : -1);
 
+#if defined(CONFIG_MACH_KS8695_VSOPENRISC)
+	if(uport->line != 0)
+		clear_dev_open_status(uport->line, DRV_IN_USE_CAN);
+#endif
+
 	if (!port->count || tty_port_close_start(port, tty, filp) == 0)
 		return;
 
