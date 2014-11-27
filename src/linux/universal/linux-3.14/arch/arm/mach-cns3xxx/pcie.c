@@ -71,7 +71,7 @@ static void __iomem *cns3xxx_pci_cfg_base(struct pci_bus *bus,
 	void __iomem *base;
 
 	/* If there is no link, just show the CNS PCI bridge. */
-	if (!cnspci->linked && (busno > 0 || slot > 0))
+	if (!cnspci->linked && (busno > 0))
 		return NULL;
 
 	/*
@@ -80,15 +80,19 @@ static void __iomem *cns3xxx_pci_cfg_base(struct pci_bus *bus,
 	 * the first device on the same bus as the CNS PCI bridge.
 	 */
 	if (busno == 0) {
-		if (slot > 1)
+		type = CNS3XXX_HOST_TYPE;
+		if (devfn)
 			return NULL;
-		type = slot;
+	} else if (busno == 1) {
+		type = CNS3XXX_CFG0_TYPE;
+		if (slot)
+			return NULL;
 	} else {
 		type = CNS3XXX_CFG1_TYPE;
 	}
 
 	base = (void __iomem *)cnspci->cfg_bases[type].virtual;
-	offset = ((busno & 0xf) << 20) | (devfn << 12) | (where & 0xffc);
+	offset = (devfn << 12) | (where & 0xffc);
 
 	return base + offset;
 }
@@ -256,7 +260,7 @@ struct pci_ops cns3xxx_pcie_ops = {
 static int cns3xxx_pcie_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 {
 	struct cns3xxx_pcie *cnspci = pdev_to_cnspci(dev);
-	int irq = cnspci->irqs[slot+pin-1];
+	int irq = cnspci->irqs[!!dev->bus->number+pin-1];
 
 	pr_info("PCIe map irq: %04d:%02x:%02x.%02x slot %d, pin %d, irq: %d\n",
 		pci_domain_nr(dev->bus), dev->bus->number, PCI_SLOT(dev->devfn),

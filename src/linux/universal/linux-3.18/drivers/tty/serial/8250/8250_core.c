@@ -3515,7 +3515,7 @@ static const struct file_operations fops_info = {
 #endif
 
 
-+extern struct proc_dir_entry *openriscdir;
+extern struct proc_dir_entry *openriscdir;
 
 /*
  * Register a set of serial devices attached to a platform device.  The
