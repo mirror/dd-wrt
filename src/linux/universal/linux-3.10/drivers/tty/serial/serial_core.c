@@ -1241,7 +1241,7 @@ int ioctl_epld(struct uart_port *port, struct epld_struct *epld, unsigned int cm
 		if (!port->epld.port)
 			return -EIO;
 
-		port->epld.value = (0x0f & inb(port->epld.port));
+		port->epld.value = (0x0f & readl(port->epld.port));
 		if ((unsigned long)epld & 0x80000000UL)	// variable in kernel space (macro anywhere?)
 			memcpy(epld, &port->epld, sizeof(struct epld_struct));
 		else
@@ -1265,7 +1265,7 @@ int ioctl_epld(struct uart_port *port, struct epld_struct *epld, unsigned int cm
 
 		if (!port->epld.port)
 			return -EIO;
-		outb(value, port->epld.port);
+		writel(value, port->epld.port);
 		return 0;
 	}
 	return -EFAULT;
@@ -1547,6 +1547,11 @@ static void uart_close(struct tty_struct *tty, struct file *filp)
 
 	pr_debug("uart_close(%d) called\n", uport->line);
 
+#if defined(CONFIG_MACH_KS8695_VSOPENRISC)
+	if(uport->line != 0)
+		clear_dev_open_status(uport->line, DRV_IN_USE_CAN);
+#endif
+
 	if (tty_port_close_start(port, tty, filp) == 0)
 		return;
 
@@ -1758,6 +1763,16 @@ static int uart_open(struct tty_struct *tty, struct file *filp)
 
 	pr_debug("uart_open(%d) called\n", line);
 
+#if defined(CONFIG_MACH_KS8695_VSOPENRISC)
+	/* sync serial and CAN interfaces with each other */
+	if(line != 0)
+	{
+		retval = check_and_set_dev_open_status(line, DRV_IN_USE_CAN);
+		if(retval != 0)
+			return retval;
+	}
+#endif
+
 	/*
 	 * We take the semaphore here to guarantee that we won't be re-entered
 	 * while allocating the state structure, or while we request any IRQs
@@ -1818,6 +1833,10 @@ end:
 err_dec_count:
 	port->count--;
 	mutex_unlock(&port->mutex);
+#if defined(CONFIG_MACH_KS8695_VSOPENRISC)
+	if(line != 0 && retval != 0)
+		clear_dev_open_status(line, DRV_IN_USE_CAN);
+#endif
 	goto end;
 }
 
