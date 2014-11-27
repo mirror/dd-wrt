@@ -480,7 +480,7 @@ endif
 	cat $(ARCH)-uclibc/dd-wrt.jffs2>>$(ARCH)-uclibc/gateworx-firmware.raw1
 	cat $(ARCH)-uclibc/root.fs>>$(ARCH)-uclibc/gateworx-firmware.raw2
 	-./tools/trx_n -m 36000000 -o $(ARCH)-uclibc/gateworks-firmware-jffs.bin $(ARCH)-uclibc/gateworx-firmware.raw1
-	./tools/trx_n -m 30000000 -o $(ARCH)-uclibc/gateworks-firmware-squashfs.bin $(ARCH)-uclibc/gateworx-firmware.raw2
+	./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/gateworks-firmware-squashfs.bin $(ARCH)-uclibc/gateworx-firmware.raw2
 	./tools/mkcramfs -i armeb-uclibc/gateworx-firmware.raw2 -n WG302 dummy armeb-uclibc/wg302.rmt
 	cp $(ARCH)-uclibc/root.fs tools/wrt300n
 	cp $(LINUXDIR)/arch/arm/boot/zImage tools/wrt300n
