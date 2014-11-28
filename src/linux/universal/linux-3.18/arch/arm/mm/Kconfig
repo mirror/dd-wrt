@@ -358,7 +358,7 @@ config CPU_PJ4B
 
 # ARMv6
 config CPU_V6
-	bool "Support ARM V6 processor" if ARCH_INTEGRATOR || MACH_REALVIEW_EB || MACH_REALVIEW_PBX 
+	bool "Support ARM V6 processor" if ARCH_INTEGRATOR || MACH_REALVIEW_EB || MACH_REALVIEW_PBX
 	select CPU_32v6
 	select CPU_ABRT_EV6
 	select CPU_CACHE_V6
@@ -519,16 +519,6 @@ config CPU_CACHE_VIPT
 config CPU_CACHE_FA
 	bool
 
-config CPU_NO_CACHE_BCAST
-	bool
-	depends on SMP
-	default y
-
-config CPU_NO_CACHE_BCAST_DEBUG
-	bool
-	depends on SMP
-	default y if CPU_V6
-
 if MMU
 # The copy-page model
 config CPU_COPY_V4WT
@@ -666,8 +656,9 @@ config ARM_THUMBEE
 	  make use of it. Say N for code that can run on CPUs without ThumbEE.
 
 config ARM_VIRT_EXT
-	bool "Native support for the ARM Virtualization Extensions"
-	depends on MMU && CPU_V7
+	bool
+	depends on MMU
+	default y if CPU_V7
 	help
 	  Enable the kernel to make use of the ARM Virtualization
 	  Extensions to install hypervisors without run-time firmware
@@ -910,80 +901,6 @@ config CACHE_L2X0
 	help
 	  This option enables the L2x0 PrimeCell.
 
-choice
-	prompt "L2 Cache Size"
-	depends on CACHE_L2X0
-	default CACHE_L2X0_1MB
-
-config CACHE_L2X0_128KB
-	bool "128KB"
-	help
-	  16KB/way, 8-way, evmon/parity/share enabled
-
-config CACHE_L2X0_256KB
-	bool "256KB"
-	help
-	  32KB/way, 8-way, evmon/parity/share enabled
-
-config CACHE_L2X0_512KB
-	bool "512KB"
-	help
-	  64KB/way, 8-way, evmon/parity/share enabled
-
-config CACHE_L2X0_1MB
-	bool "1MB"
-	help
-	  128KB/way, 8-way, evmon/parity/share enabled
-endchoice
-
-config CACHE_L2CC
-	bool "Enable the L2 outer cache controller"
-	depends on ARCH_CNS3XXX
-	default n
-	select OUTER_CACHE
-	help
-	  This option enables the L2 cache controller.
-
-choice
-	prompt "L2 Cache Size"
-	depends on CACHE_L2CC
-	default CACHE_L2CC_256KB
-
-config CACHE_L2CC_32KB
-	bool "32KB"
-	help
-	  4KB/way, 8-way, evmon/share enabled
-
-config CACHE_L2CC_64KB
-	bool "64KB"
-	help
-	  8KB/way, 8-way, evmon/share enabled
-
-config CACHE_L2CC_96KB
-	bool "96KB"
-	help
-	  12KB/way, 8-way, evmon/share enabled
-
-config CACHE_L2CC_128KB
-	bool "128KB"
-	help
-	  16KB/way, 8-way, evmon/share enabled
-
-config CACHE_L2CC_256KB 
-	bool "256KB"
-	help
-	  32KB/way, 8-way, evmon/share enabled
-
-endchoice
-
-config CACHE_L2_I_PREFETCH
-	bool "Enable the L2 instruction prefetching"
-	depends on CACHE_L2CC
-	default y
-	help
-	  This option enables instruction prefetching.
-
-
 if CACHE_L2X0
 
 config CACHE_PL310
@@ -1074,7 +991,7 @@ config ARM_L1_CACHE_SHIFT
 config ARM_DMA_MEM_BUFFERABLE
 	bool "Use non-cacheable memory for DMA" if (CPU_V6 || CPU_V6K) && !CPU_V7
 	depends on !(MACH_REALVIEW_PB1176 || REALVIEW_EB_ARM11MP || \
-		     MACH_REALVIEW_PB11MP || ARCH_CNS3XXX)
+		     MACH_REALVIEW_PB11MP)
 	default y if CPU_V6 || CPU_V6K || CPU_V7
 	help
 	  Historically, the kernel has used strongly ordered mappings to
