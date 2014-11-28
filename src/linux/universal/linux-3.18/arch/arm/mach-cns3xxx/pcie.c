@@ -24,16 +24,11 @@
 #include <mach/cns3xxx.h>
 #include "core.h"
 
-enum cns3xxx_access_type {
-	CNS3XXX_HOST_TYPE = 0,
-	CNS3XXX_CFG0_TYPE,
-	CNS3XXX_CFG1_TYPE,
-	CNS3XXX_NUM_ACCESS_TYPES,
-};
-
 struct cns3xxx_pcie {
-	struct map_desc cfg_bases[CNS3XXX_NUM_ACCESS_TYPES];
-	unsigned int irqs[6];
+	void __iomem *host_regs; /* PCI config registers for host bridge */
+	void __iomem *cfg0_regs; /* PCI Type 0 config registers */
+	void __iomem *cfg1_regs; /* PCI Type 1 config registers */
+	unsigned int irqs[5];
 	struct resource res_io;
 	struct resource res_mem;
 	struct hw_pci hw_pci;
@@ -66,12 +61,10 @@ static void __iomem *cns3xxx_pci_cfg_base(struct pci_bus *bus,
 	struct cns3xxx_pcie *cnspci = pbus_to_cnspci(bus);
 	int busno = bus->number;
 	int slot = PCI_SLOT(devfn);
-	int offset;
-	enum cns3xxx_access_type type;
 	void __iomem *base;
 
 	/* If there is no link, just show the CNS PCI bridge. */
-	if (!cnspci->linked && (busno > 0))
+	if (!cnspci->linked && busno > 0)
 		return NULL;
 
 	/*
@@ -79,22 +72,21 @@ static void __iomem *cns3xxx_pci_cfg_base(struct pci_bus *bus,
 	 * we still want to access it. For this to work, we must place
 	 * the first device on the same bus as the CNS PCI bridge.
 	 */
-	if (busno == 0) {
-		type = CNS3XXX_HOST_TYPE;
-		if (devfn)
-			return NULL;
-	} else if (busno == 1) {
-		type = CNS3XXX_CFG0_TYPE;
-		if (slot)
-			return NULL;
-	} else {
-		type = CNS3XXX_CFG1_TYPE;
-	}
+	if (busno == 0) { /* internal PCIe bus, host bridge device */
+		if (devfn == 0) /* device# and function# are ignored by hw */
+			base = cnspci->host_regs;
+		else
+			return NULL; /* no such device */
 
-	base = (void __iomem *)cnspci->cfg_bases[type].virtual;
-	offset = (devfn << 12) | (where & 0xffc);
+	} else if (busno == 1) { /* directly connected PCIe device */
+		if (slot == 0) /* device# is ignored by hw */
+			base = cnspci->cfg0_regs;
+		else
+			return NULL; /* no such device */
+	} else /* remote PCI bus */
+		base = cnspci->cfg1_regs + ((busno & 0xf) << 20);
 
-	return base + offset;
+	return base + (where & 0xffc) + (devfn << 12);
 }
 
 static inline int check_master_abort(struct pci_bus *bus, unsigned int devfn, int where)
@@ -103,9 +95,10 @@ static inline int check_master_abort(struct pci_bus *bus, unsigned int devfn, in
 
   /* check PCI-compatible status register after access */
 	if (cnspci->linked) {
-		u32 host_base, sreg, ereg;
+		void __iomem *host_base;
+		u32 sreg, ereg;
 
-		host_base = cnspci->cfg_bases[CNS3XXX_HOST_TYPE].virtual;
+		host_base = (void __iomem *) cnspci->host_regs;
 		sreg = __raw_readw(host_base + 0x6) & 0xF900;
 		ereg = __raw_readl(host_base + 0x104); // Uncorrectable Error Status Reg
 
@@ -133,25 +126,27 @@ static inline int check_master_abort(struct pci_bus *bus, unsigned int devfn, in
 			 * TODO: see Documentation/pci-error-recovery.txt
 			 *    implement error_detected handler
 			 */
-			printk(KERN_ERR "pci error: %04d:%02x:%02x.%02x sreg=0x%04x ereg=0x%08x", pci_domain_nr(bus), bus->number, PCI_SLOT(devfn), PCI_FUNC(devfn), sreg, ereg);
-			if (sreg & BIT(15)) printk(" <PERR"); 
-			if (sreg & BIT(14)) printk(" >SERR"); 
-			if (sreg & BIT(13)) printk(" <MABRT"); 
-			if (sreg & BIT(12)) printk(" <TABRT"); 
-			if (sreg & BIT(11)) printk(" >TABRT"); 
-			if (sreg & BIT( 8)) printk(" MPERR"); 
+/*
+			printk("pci error: %04d:%02x:%02x.%02x sreg=0x%04x ereg=0x%08x", pci_domain_nr(bus), bus->number, PCI_SLOT(devfn), PCI_FUNC(devfn), sreg, ereg);
+			if (sreg & BIT(15)) printk(" <PERR");
+			if (sreg & BIT(14)) printk(" >SERR");
+			if (sreg & BIT(13)) printk(" <MABRT");
+			if (sreg & BIT(12)) printk(" <TABRT");
+			if (sreg & BIT(11)) printk(" >TABRT");
+			if (sreg & BIT( 8)) printk(" MPERR");
 
-			if (ereg & BIT(20)) printk(" Unsup"); 
-			if (ereg & BIT(19)) printk(" ECRC"); 
-			if (ereg & BIT(18)) printk(" MTLP"); 
-			if (ereg & BIT(17)) printk(" OFLOW"); 
-			if (ereg & BIT(16)) printk(" Unex"); 
-			if (ereg & BIT(15)) printk(" ABRT"); 
-			if (ereg & BIT(14)) printk(" COMPTO"); 
-			if (ereg & BIT(13)) printk(" FLOW"); 
-			if (ereg & BIT(12)) printk(" PTLP"); 
-			if (ereg & BIT( 4)) printk(" DLINK"); 
+			if (ereg & BIT(20)) printk(" Unsup");
+			if (ereg & BIT(19)) printk(" ECRC");
+			if (ereg & BIT(18)) printk(" MTLP");
+			if (ereg & BIT(17)) printk(" OFLOW");
+			if (ereg & BIT(16)) printk(" Unex");
+			if (ereg & BIT(15)) printk(" ABRT");
+			if (ereg & BIT(14)) printk(" COMPTO");
+			if (ereg & BIT(13)) printk(" FLOW");
+			if (ereg & BIT(12)) printk(" PTLP");
+			if (ereg & BIT( 4)) printk(" DLINK");
 			printk("\n");
+*/
 			pr_debug("%s failed port%d sreg=0x%04x\n", __func__,
 				cnspci->hw_pci.domain, sreg);
 
@@ -184,10 +179,9 @@ static int cns3xxx_pci_read_config(struct pci_bus *bus, unsigned int devfn,
 	v = __raw_readl(base);
 
 	if (check_master_abort(bus, devfn, where)) {
-		printk("<<%04d:%02x:%02x.%02x %02x(%d)= master_abort on read\n", pci_domain_nr(bus), bus->number, PCI_SLOT(devfn), PCI_FUNC(devfn), where, size);
+		printk(KERN_ERR "pci error: %04d:%02x:%02x.%02x %02x(%d)= master_abort on read\n", pci_domain_nr(bus), bus->number, PCI_SLOT(devfn), PCI_FUNC(devfn), where, size);
 		return PCIBIOS_DEVICE_NOT_FOUND;
 	}
-
 
 	if (bus->number == 0 && devfn == 0 &&
 			(where & 0xffc) == PCI_CLASS_REVISION) {
@@ -218,9 +212,8 @@ static int cns3xxx_pci_write_config(struct pci_bus *bus, unsigned int devfn,
 		return PCIBIOS_SUCCESSFUL;
 
 	v = __raw_readl(base);
-
 	if (check_master_abort(bus, devfn, where)) {
-		printk("<<%04d:%02x:%02x.%02x %02x(%d)= master_abort on read\n", pci_domain_nr(bus), bus->number, PCI_SLOT(devfn), PCI_FUNC(devfn), where, size);
+		printk(KERN_ERR "pci error: %04d:%02x:%02x.%02x %02x(%d)=0x%08x master_abort on read\n", pci_domain_nr(bus), bus->number, PCI_SLOT(devfn), PCI_FUNC(devfn), where, size, val);
 		return PCIBIOS_DEVICE_NOT_FOUND;
 	}
 
@@ -228,9 +221,8 @@ static int cns3xxx_pci_write_config(struct pci_bus *bus, unsigned int devfn,
 	v |= (val & mask) << shift;
 
 	__raw_writel(v, base);
-
 	if (check_master_abort(bus, devfn, where)) {
-		printk(">>%04d:%02x:%02x.%02x %02x(%d)=0x%08x master_abort on write\n", pci_domain_nr(bus), bus->number, PCI_SLOT(devfn), PCI_FUNC(devfn), where, size, val);
+		printk(KERN_ERR "pci error: %04d:%02x:%02x.%02x %02x(%d)=0x%08x master_abort on write\n", pci_domain_nr(bus), bus->number, PCI_SLOT(devfn), PCI_FUNC(devfn), where, size, val);
 		return PCIBIOS_DEVICE_NOT_FOUND;
 	}
 
@@ -252,7 +244,7 @@ static int cns3xxx_pci_setup(int nr, struct pci_sys_data *sys)
 	return 1;
 }
 
-struct pci_ops cns3xxx_pcie_ops = {
+static struct pci_ops cns3xxx_pcie_ops = {
 	.read = cns3xxx_pci_read_config,
 	.write = cns3xxx_pci_write_config,
 };
@@ -260,7 +252,7 @@ struct pci_ops cns3xxx_pcie_ops = {
 static int cns3xxx_pcie_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 {
 	struct cns3xxx_pcie *cnspci = pdev_to_cnspci(dev);
-	int irq = cnspci->irqs[!!dev->bus->number+pin-1];
+	int irq = cnspci->irqs[!!dev->bus->number + pin - 1];
 
 	pr_info("PCIe map irq: %04d:%02x:%02x.%02x slot %d, pin %d, irq: %d\n",
 		pci_domain_nr(dev->bus), dev->bus->number, PCI_SLOT(dev->devfn),
@@ -271,36 +263,19 @@ static int cns3xxx_pcie_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 
 static struct cns3xxx_pcie cns3xxx_pcie[] = {
 	[0] = {
-		.cfg_bases = {
-			[CNS3XXX_HOST_TYPE] = {
-				.virtual = CNS3XXX_PCIE0_HOST_BASE_VIRT,
-				.pfn = __phys_to_pfn(CNS3XXX_PCIE0_HOST_BASE),
-				.length = SZ_16M,
-				.type = MT_DEVICE,
-			},
-			[CNS3XXX_CFG0_TYPE] = {
-				.virtual = CNS3XXX_PCIE0_CFG0_BASE_VIRT,
-				.pfn = __phys_to_pfn(CNS3XXX_PCIE0_CFG0_BASE),
-				.length = SZ_16M,
-				.type = MT_DEVICE,
-			},
-			[CNS3XXX_CFG1_TYPE] = {
-				.virtual = CNS3XXX_PCIE0_CFG1_BASE_VIRT,
-				.pfn = __phys_to_pfn(CNS3XXX_PCIE0_CFG1_BASE),
-				.length = SZ_16M,
-				.type = MT_DEVICE,
-			},
-		},
+		.host_regs = (void __iomem *)CNS3XXX_PCIE0_HOST_BASE_VIRT,
+		.cfg0_regs = (void __iomem *)CNS3XXX_PCIE0_CFG0_BASE_VIRT,
+		.cfg1_regs = (void __iomem *)CNS3XXX_PCIE0_CFG1_BASE_VIRT,
 		.res_io = {
 			.name = "PCIe0 I/O space",
 			.start = CNS3XXX_PCIE0_IO_BASE,
-			.end = CNS3XXX_PCIE0_IO_BASE + SZ_16M - 1,
+			.end = CNS3XXX_PCIE0_CFG0_BASE - 1, /* 16 MiB */
 			.flags = IORESOURCE_IO,
 		},
 		.res_mem = {
 			.name = "PCIe0 non-prefetchable",
 			.start = CNS3XXX_PCIE0_MEM_BASE,
-			.end = CNS3XXX_PCIE0_MEM_BASE + SZ_16M - 1,
+			.end = CNS3XXX_PCIE0_HOST_BASE - 1, /* 176 MiB */
 			.flags = IORESOURCE_MEM,
 		},
 		.irqs = { IRQ_CNS3XXX_PCIE0_RC,
@@ -318,36 +293,19 @@ static struct cns3xxx_pcie cns3xxx_pcie[] = {
 		},
 	},
 	[1] = {
-		.cfg_bases = {
-			[CNS3XXX_HOST_TYPE] = {
-				.virtual = CNS3XXX_PCIE1_HOST_BASE_VIRT,
-				.pfn = __phys_to_pfn(CNS3XXX_PCIE1_HOST_BASE),
-				.length = SZ_16M,
-				.type = MT_DEVICE,
-			},
-			[CNS3XXX_CFG0_TYPE] = {
-				.virtual = CNS3XXX_PCIE1_CFG0_BASE_VIRT,
-				.pfn = __phys_to_pfn(CNS3XXX_PCIE1_CFG0_BASE),
-				.length = SZ_16M,
-				.type = MT_DEVICE,
-			},
-			[CNS3XXX_CFG1_TYPE] = {
-				.virtual = CNS3XXX_PCIE1_CFG1_BASE_VIRT,
-				.pfn = __phys_to_pfn(CNS3XXX_PCIE1_CFG1_BASE),
-				.length = SZ_16M,
-				.type = MT_DEVICE,
-			},
-		},
+		.host_regs = (void __iomem *)CNS3XXX_PCIE1_HOST_BASE_VIRT,
+		.cfg0_regs = (void __iomem *)CNS3XXX_PCIE1_CFG0_BASE_VIRT,
+		.cfg1_regs = (void __iomem *)CNS3XXX_PCIE1_CFG1_BASE_VIRT,
 		.res_io = {
 			.name = "PCIe1 I/O space",
 			.start = CNS3XXX_PCIE1_IO_BASE,
-			.end = CNS3XXX_PCIE1_IO_BASE + SZ_16M - 1,
+			.end = CNS3XXX_PCIE1_CFG0_BASE - 1, /* 16 MiB */
 			.flags = IORESOURCE_IO,
 		},
 		.res_mem = {
 			.name = "PCIe1 non-prefetchable",
 			.start = CNS3XXX_PCIE1_MEM_BASE,
-			.end = CNS3XXX_PCIE1_MEM_BASE + SZ_16M - 1,
+			.end = CNS3XXX_PCIE1_HOST_BASE - 1, /* 176 MiB */
 			.flags = IORESOURCE_MEM,
 		},
 		.irqs = {
@@ -409,17 +367,14 @@ static void __init cns3xxx_pcie_hw_init(struct cns3xxx_pcie *cnspci)
 		.ops = &cns3xxx_pcie_ops,
 		.sysdata = &sd,
 	};
-	u32 io_base = cnspci->res_io.start >> 16;
-	u32 mem_base = cnspci->res_mem.start >> 16;
-	u32 host_base = cnspci->cfg_bases[CNS3XXX_HOST_TYPE].pfn;
-	u32 cfg0_base = cnspci->cfg_bases[CNS3XXX_CFG0_TYPE].pfn;
+	u16 mem_base  = cnspci->res_mem.start >> 16;
+	u16 mem_limit = cnspci->res_mem.end   >> 16;
+	u16 io_base   = cnspci->res_io.start  >> 16;
+	u16 io_limit  = cnspci->res_io.end    >> 16;
 	u32 devfn = 0;
-	u8 tmp8,cp,u8tmp;
-	u16 pos,u16tmp;
+	u8 tmp8;
+	u16 pos;
 	u16 dc;
-
-	host_base = (__pfn_to_phys(host_base) - 1) >> 16;
-	cfg0_base = (__pfn_to_phys(cfg0_base) - 1) >> 16;
 
 	pci_bus_write_config_byte(&bus, devfn, PCI_PRIMARY_BUS, 0);
 	pci_bus_write_config_byte(&bus, devfn, PCI_SECONDARY_BUS, 1);
@@ -430,28 +385,12 @@ static void __init cns3xxx_pcie_hw_init(struct cns3xxx_pcie *cnspci)
 	pci_bus_read_config_byte(&bus, devfn, PCI_SUBORDINATE_BUS, &tmp8);
 
 	pci_bus_write_config_word(&bus, devfn, PCI_MEMORY_BASE, mem_base);
-	pci_bus_write_config_word(&bus, devfn, PCI_MEMORY_LIMIT, host_base);
+	pci_bus_write_config_word(&bus, devfn, PCI_MEMORY_LIMIT, mem_limit);
 	pci_bus_write_config_word(&bus, devfn, PCI_IO_BASE_UPPER16, io_base);
-	pci_bus_write_config_word(&bus, devfn, PCI_IO_LIMIT_UPPER16, cfg0_base);
-
-	pci_bus_read_config_byte(&bus, devfn, PCI_CAPABILITY_LIST, &cp);
-	while (cp != 0) {
-		pci_bus_read_config_byte(&bus, devfn, cp, &u8tmp);
-		// Read Next ID
-		pci_bus_read_config_word(&bus, devfn, cp, &u16tmp);
-		cp = (u16tmp & 0xFF00) >> 8;
-	}
+	pci_bus_write_config_word(&bus, devfn, PCI_IO_LIMIT_UPPER16, io_limit);
 
 	if (!cnspci->linked)
 		return;
-
-	pci_bus_read_config_byte(&bus, devfn, PCI_CAPABILITY_LIST, &cp);
-	while (cp != 0) {
-		pci_bus_read_config_byte(&bus, devfn, cp, &u8tmp);
-		// Read Next ID
-		pci_bus_read_config_word(&bus, devfn, cp, &u16tmp);
-		cp = (u16tmp & 0xFF00) >> 8;
-	}
 
 	/* Set Device Max_Read_Request_Size to 128 byte */
 	bus.number = 1; /* directly connected PCIe device */
@@ -485,38 +424,31 @@ static int cns3xxx_pcie_abort_handler(unsigned long addr, unsigned int fsr,
 	return 0;
 }
 
-int __init cns3xxx_pcie_init(int *pcie0_irqs, int *pcie1_irqs)
+void __init cns3xxx_pcie_set_irqs(int bus, int *irqs)
+{
+	int i;
+
+	for (i = 0; i < 4; i++)
+		cns3xxx_pcie[bus].irqs[i + 1] = irqs[i];
+}
+
+void __init cns3xxx_pcie_init_late(void)
 {
 	int i;
 
 	pcibios_min_io = 0;
 	pcibios_min_mem = 0;
 
-	if (pcie0_irqs) {
-		for (i = 0; i < 4; i++)
-			cns3xxx_pcie[0].irqs[i+1] = pcie0_irqs[i];
-	}
-	if (pcie1_irqs) {
-		for (i = 0; i < 4; i++)
-			cns3xxx_pcie[1].irqs[i+1] = pcie1_irqs[i];
-	}
-
 	hook_fault_code(16 + 6, cns3xxx_pcie_abort_handler, SIGBUS, 0,
 			"imprecise external abort");
 
 	for (i = 0; i < ARRAY_SIZE(cns3xxx_pcie); i++) {
-
-		iotable_init(cns3xxx_pcie[i].cfg_bases,
-			     ARRAY_SIZE(cns3xxx_pcie[i].cfg_bases));
 		cns3xxx_pcie_check_link(&cns3xxx_pcie[i]);
-		if (cns3xxx_pcie[i].linked) {
-			cns3xxx_pcie_hw_init(&cns3xxx_pcie[i]);
-			pci_common_init(&cns3xxx_pcie[i].hw_pci);
-		}
+		if (!cns3xxx_pcie[i].linked)
+			continue;
+		cns3xxx_pcie_hw_init(&cns3xxx_pcie[i]);
+		pci_common_init(&cns3xxx_pcie[i].hw_pci);
 	}
 
 	pci_assign_unassigned_resources();
-
-	return 0;
 }
-

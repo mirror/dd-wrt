@@ -115,6 +115,7 @@ static void l2c_enable(void __iomem *base, u32 aux, unsigned num_lock)
 	unsigned long flags;
 
 	l2c_write_sec(aux, base, L2X0_AUX_CTRL);
+
 	l2c_unlock(base, num_lock);
 
 	local_irq_save(flags);
