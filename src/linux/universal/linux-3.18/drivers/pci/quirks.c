@@ -1952,9 +1952,7 @@ static void fixup_rev1_53c810(struct pci_dev *dev)
 	}
 }
 DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_NCR, PCI_DEVICE_ID_NCR_53C810, fixup_rev1_53c810);
-#endif /* !CONFIG_PCI_DISABLE_COMMON_QUIRKS */
 
-#ifndef CONFIG_PCI_DISABLE_COMMON_QUIRKS
 /* Enable 1k I/O space granularity on the Intel P64H2 */
 static void quirk_p64h2_1k_io(struct pci_dev *dev)
 {

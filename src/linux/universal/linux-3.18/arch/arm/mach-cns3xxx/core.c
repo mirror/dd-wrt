@@ -27,8 +27,8 @@
 
 static struct map_desc cns3xxx_io_desc[] __initdata = {
 	{
-		.virtual	= CNS3XXX_TC11MP_TWD_BASE_VIRT,
-		.pfn		= __phys_to_pfn(CNS3XXX_TC11MP_TWD_BASE),
+		.virtual	= CNS3XXX_TC11MP_SCU_BASE_VIRT,
+		.pfn		= __phys_to_pfn(CNS3XXX_TC11MP_SCU_BASE),
 		.length		= SZ_8K,
 		.type		= MT_DEVICE,
 	}, {
@@ -56,20 +56,50 @@ static struct map_desc cns3xxx_io_desc[] __initdata = {
 		.pfn		= __phys_to_pfn(CNS3XXX_PM_BASE),
 		.length		= SZ_4K,
 		.type		= MT_DEVICE,
-	}, {
-		.virtual	= CNS3XXX_SWITCH_BASE_VIRT,
-		.pfn		= __phys_to_pfn(CNS3XXX_SWITCH_BASE),
-		.length		= SZ_4K,
-		.type		= MT_DEVICE,
+//	}, {
+//		.virtual	= CNS3XXX_SWITCH_BASE_VIRT,
+//		.pfn		= __phys_to_pfn(CNS3XXX_SWITCH_BASE),
+//		.length		= SZ_4K,
+//		.type		= MT_DEVICE,
 	}, {
 		.virtual	= CNS3XXX_SSP_BASE_VIRT,
 		.pfn		= __phys_to_pfn(CNS3XXX_SSP_BASE),
 		.length		= SZ_4K,
 		.type		= MT_DEVICE,
+//	}, {
+//		.virtual	= CNS3XXX_L2C_BASE_VIRT,
+//		.pfn		= __phys_to_pfn(CNS3XXX_L2C_BASE),
+//		.length		= SZ_4K,
+//		.type		= MT_DEVICE,
 	}, {
-		.virtual	= CNS3XXX_L2C_BASE_VIRT,
-		.pfn		= __phys_to_pfn(CNS3XXX_L2C_BASE),
+		.virtual	= CNS3XXX_PCIE0_HOST_BASE_VIRT,
+		.pfn		= __phys_to_pfn(CNS3XXX_PCIE0_HOST_BASE),
 		.length		= SZ_4K,
+		.type		= MT_DEVICE,
+	}, {
+		.virtual	= CNS3XXX_PCIE0_CFG0_BASE_VIRT,
+		.pfn		= __phys_to_pfn(CNS3XXX_PCIE0_CFG0_BASE),
+		.length		= SZ_64K, /* really 4 KiB at offset 32 KiB */
+		.type		= MT_DEVICE,
+	}, {
+		.virtual	= CNS3XXX_PCIE0_CFG1_BASE_VIRT,
+		.pfn		= __phys_to_pfn(CNS3XXX_PCIE0_CFG1_BASE),
+		.length		= SZ_16M,
+		.type		= MT_DEVICE,
+	}, {
+		.virtual	= CNS3XXX_PCIE1_HOST_BASE_VIRT,
+		.pfn		= __phys_to_pfn(CNS3XXX_PCIE1_HOST_BASE),
+		.length		= SZ_4K,
+		.type		= MT_DEVICE,
+	}, {
+		.virtual	= CNS3XXX_PCIE1_CFG0_BASE_VIRT,
+		.pfn		= __phys_to_pfn(CNS3XXX_PCIE1_CFG0_BASE),
+		.length		= SZ_64K, /* really 4 KiB at offset 32 KiB */
+		.type		= MT_DEVICE,
+	}, {
+		.virtual	= CNS3XXX_PCIE1_CFG1_BASE_VIRT,
+		.pfn		= __phys_to_pfn(CNS3XXX_PCIE1_CFG1_BASE),
+		.length		= SZ_16M,
 		.type		= MT_DEVICE,
 	}, {
 		.virtual	= CNS3XXX_PCIE0_IO_BASE_VIRT,
@@ -88,23 +118,70 @@ static DEFINE_TWD_LOCAL_TIMER(twd_local_timer,
 			      CNS3XXX_TC11MP_TWD_BASE,
 			      IRQ_LOCALTIMER);
 
+#ifdef CONFIG_CACHE_L2X0
+static int cns3xxx_l2x0_enable = 1;
+
+static int __init cns3xxx_l2x0_disable(char *s)
+{
+	cns3xxx_l2x0_enable = 0;
+	return 1;
+}
+__setup("nol2x0", cns3xxx_l2x0_disable);
+
+
+static int __init cns3xxx_l2x0_init(void)
+{
+	void __iomem *base;
+	u32 val;
+
+	if (!cns3xxx_l2x0_enable)
+		return 0;
+
+	base = ioremap(CNS3XXX_L2C_BASE, SZ_4K);
+	if (WARN_ON(!base))
+		return;
+
+	/*
+	 * Tag RAM Control register
+	 *
+	 * bit[10:8]	- 1 cycle of write accesses latency
+	 * bit[6:4]	- 1 cycle of read accesses latency
+	 * bit[3:0]	- 1 cycle of setup latency
+	 *
+	 * 1 cycle of latency for setup, read and write accesses
+	 */
+	val = readl(base + L310_TAG_LATENCY_CTRL);
+	val &= 0xfffff888;
+	writel(val, base + L310_TAG_LATENCY_CTRL);
+
+	/*
+	 * Data RAM Control register
+	 *
+	 * bit[10:8]	- 1 cycles of write accesses latency
+	 * bit[6:4]	- 1 cycles of read accesses latency
+	 * bit[3:0]	- 1 cycle of setup latency
+	 *
+	 * 1 cycle of latency for setup, read and write accesses
+	 */
+	val = readl(base + L310_DATA_LATENCY_CTRL);
+	val &= 0xfffff888;
+	writel(val, base + L310_DATA_LATENCY_CTRL);
+
+	/* 32 KiB, 8-way, parity disable */
+	l2x0_init(base, 0x00500000, 0xfe0f0fff);
+}
+
+arch_initcall(cns3xxx_l2x0_init);
+#endif
+
+
 void __init cns3xxx_common_init(void)
 {
 	iotable_init(cns3xxx_io_desc, ARRAY_SIZE(cns3xxx_io_desc));
-#ifdef CONFIG_CACHE_L2X0
-	void __iomem *l2x0_base = (void __iomem *) CNS3XXX_L2C_BASE_VIRT;
-
-	/* set RAM latencies to 1 cycle for this core tile. */
-	writel(0, l2x0_base + L2X0_TAG_LATENCY_CTRL);
-	writel(0, l2x0_base + L2X0_DATA_LATENCY_CTRL);
-
-	l2x0_init(l2x0_base, 0x00400000, 0xfe0fffff);
-#endif
 #ifdef CONFIG_CACHE_L2CC
 	l2cc_init((void __iomem *) CNS3XXX_L2C_BASE_VIRT);
 #endif
 }
-
 /* used by entry-macro.S */
 void __init cns3xxx_init_irq(void)
 {
@@ -134,7 +211,7 @@ static void __iomem *cns3xxx_tmr1;
 static void cns3xxx_timer_set_mode(enum clock_event_mode mode,
 				   struct clock_event_device *clk)
 {
-	unsigned long ctrl = readl(cns3xxx_tmr1 + TIMER1_2_CONTROL_OFFSET);
+unsigned long ctrl = readl(cns3xxx_tmr1 + TIMER1_2_CONTROL_OFFSET);
 	int pclk = cns3xxx_cpu_clock() / 8;
 	int reload;
 
@@ -291,44 +368,3 @@ void __init cns3xxx_timer_init(void)
 	__cns3xxx_timer_init(IRQ_CNS3XXX_TIMER0);
 }
 
-#ifdef CONFIG_CACHE_L2X0
-
-void __init cns3xxx_l2x0_init(void)
-{
-	void __iomem *base = ioremap(CNS3XXX_L2C_BASE, SZ_4K);
-	u32 val;
-
-	if (WARN_ON(!base))
-		return;
-
-	/*
-	 * Tag RAM Control register
-	 *
-	 * bit[10:8]	- 1 cycle of write accesses latency
-	 * bit[6:4]	- 1 cycle of read accesses latency
-	 * bit[3:0]	- 1 cycle of setup latency
-	 *
-	 * 1 cycle of latency for setup, read and write accesses
-	 */
-	val = readl(base + L310_TAG_LATENCY_CTRL);
-	val &= 0xfffff888;
-	writel(val, base + L310_TAG_LATENCY_CTRL);
-
-	/*
-	 * Data RAM Control register
-	 *
-	 * bit[10:8]	- 1 cycles of write accesses latency
-	 * bit[6:4]	- 1 cycles of read accesses latency
-	 * bit[3:0]	- 1 cycle of setup latency
-	 *
-	 * 1 cycle of latency for setup, read and write accesses
-	 */
-	val = readl(base + L310_DATA_LATENCY_CTRL);
-	val &= 0xfffff888;
-	writel(val, base + L310_DATA_LATENCY_CTRL);
-
-	/* 32 KiB, 8-way, parity disable */
-	l2x0_init(base, 0x00500000, 0xfe0f0fff);
-}
-
-#endif /* CONFIG_CACHE_L2X0 */

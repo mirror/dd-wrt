@@ -446,33 +446,31 @@ static struct resource laguna_uart_resources[] = {
 
 static struct plat_serial8250_port laguna_uart_data[] = {
 	{
-		.membase        = (char*) (CNS3XXX_UART0_BASE_VIRT),
 		.mapbase        = (CNS3XXX_UART0_BASE),
 		.irq            = IRQ_CNS3XXX_UART0,
 		.iotype         = UPIO_MEM,
-		.flags          = UPF_BOOT_AUTOCONF | UPF_FIXED_TYPE | UPF_NO_TXEN_TEST,
+		.flags          = UPF_BOOT_AUTOCONF | UPF_FIXED_TYPE | UPF_NO_TXEN_TEST | UPF_IOREMAP,
 		.regshift       = 2,
 		.uartclk        = 24000000,
 		.type           = PORT_16550A,
 	},{
-		.membase        = (char*) (CNS3XXX_UART1_BASE_VIRT),
 		.mapbase        = (CNS3XXX_UART1_BASE),
 		.irq            = IRQ_CNS3XXX_UART1,
 		.iotype         = UPIO_MEM,
-		.flags          = UPF_BOOT_AUTOCONF | UPF_FIXED_TYPE | UPF_NO_TXEN_TEST,
+		.flags          = UPF_BOOT_AUTOCONF | UPF_FIXED_TYPE | UPF_NO_TXEN_TEST | UPF_IOREMAP,
 		.regshift       = 2,
 		.uartclk        = 24000000,
 		.type           = PORT_16550A,
 	},{
-		.membase        = (char*) (CNS3XXX_UART2_BASE_VIRT),
 		.mapbase        = (CNS3XXX_UART2_BASE),
 		.irq            = IRQ_CNS3XXX_UART2,
 		.iotype         = UPIO_MEM,
-		.flags          = UPF_BOOT_AUTOCONF | UPF_FIXED_TYPE | UPF_NO_TXEN_TEST,
+		.flags          = UPF_BOOT_AUTOCONF | UPF_FIXED_TYPE | UPF_NO_TXEN_TEST | UPF_IOREMAP,
 		.regshift       = 2,
 		.uartclk        = 24000000,
 		.type           = PORT_16550A,
 	},
+	{ },
 };
 
 static struct platform_device laguna_uart = {
@@ -694,32 +692,21 @@ static struct i2c_board_info __initdata laguna_i2c_devices[] = {
  * Watchdog
  */
 
-static struct resource laguna_watchdog_resource[] = {
-	{
-		.start = CNS3XXX_TC11MP_TWD_BASE,
-		.end = CNS3XXX_TC11MP_TWD_BASE + 0x100 - 1,
-		.flags = IORESOURCE_MEM,
-	},{
-		.start = IRQ_LOCALWDOG,
-		.end = IRQ_LOCALWDOG,
-		.flags = IORESOURCE_IRQ,
-	}
+static struct resource laguna_watchdog_resources[] = {
+	[0] = {
+		.start	= CNS3XXX_TC11MP_TWD_BASE + 0x100, // CPU0 watchdog
+		.end	= CNS3XXX_TC11MP_TWD_BASE + SZ_4K - 1,
+		.flags	= IORESOURCE_MEM,
+	},
 };
-
 
 static struct platform_device laguna_watchdog = {
-	.name = "mpcore_wdt",
-	.id = -1,
-	.num_resources = ARRAY_SIZE(laguna_watchdog_resource),
-	.resource = laguna_watchdog_resource,
+	.name		= "mpcore_wdt",
+	.id		= -1,
+	.num_resources	= ARRAY_SIZE(laguna_watchdog_resources),
+	.resource	= laguna_watchdog_resources,
 };
 
-static struct platform_device cns3xxx_watchdog_device = {
-	.name		= "cns3xxx-wdt",
-	.id		= -1,
-	.num_resources	= ARRAY_SIZE(laguna_watchdog_resource),
-	.resource	= laguna_watchdog_resource,
-};
 
 
 /*
@@ -877,7 +864,6 @@ static struct gpio laguna_gpio_gw2380[] = {
 static void __init laguna_init(void)
 {
 	platform_device_register(&laguna_watchdog);
-	platform_device_register(&cns3xxx_watchdog_device);
 
 	platform_device_register(&laguna_i2c_controller);
 
@@ -892,16 +878,6 @@ static struct map_desc laguna_io_desc[] __initdata = {
 	{
 		.virtual	= CNS3XXX_UART0_BASE_VIRT,
 		.pfn		= __phys_to_pfn(CNS3XXX_UART0_BASE),
-		.length		= SZ_4K,
-		.type		= MT_DEVICE,
-	},{
-		.virtual	= CNS3XXX_UART1_BASE_VIRT,
-		.pfn		= __phys_to_pfn(CNS3XXX_UART1_BASE),
-		.length		= SZ_4K,
-		.type		= MT_DEVICE,
-	},{
-		.virtual	= CNS3XXX_UART2_BASE_VIRT,
-		.pfn		= __phys_to_pfn(CNS3XXX_UART2_BASE),
 		.length		= SZ_4K,
 		.type		= MT_DEVICE,
 	},
@@ -954,17 +930,17 @@ static int laguna_register_gpio(struct gpio *array, size_t num)
 #define SPI_TRANSMIT_BUFFER_REG_ADDR		(CNS3XXX_SSP_BASE +0x50)
 #define SPI_RECEIVE_BUFFER_REG_ADDR		(CNS3XXX_SSP_BASE +0x58)
 
+
 /* allow disabling of external isolated PCIe IRQs */
 static int cns3xxx_pciextirq = 1;
 static int __init cns3xxx_pciextirq_disable(char *s)
 {
-        cns3xxx_pciextirq = 0;
-        return 1;
+      cns3xxx_pciextirq = 0;
+      return 1;
 }
 __setup("noextirq", cns3xxx_pciextirq_disable);
 
-
-static void __init laguna_pcie_init(void)
+static int __init laguna_pcie_init_irq(void)
 {
 	u32 __iomem *mem = (void __iomem *)(CNS3XXX_GPIOB_BASE_VIRT + 0x0004);
 	u32 reg = (__raw_readl(mem) >> 26) & 0xf;
@@ -986,13 +962,13 @@ static void __init laguna_pcie_init(void)
 		printk("laguna: using isolated PCI interrupts:"
 		       " irq%d/irq%d/irq%d/irq%d\n",
 		       irqs[0], irqs[1], irqs[2], irqs[3]);
-		cns3xxx_pcie_init(irqs, NULL);
-		return;
+		cns3xxx_pcie_set_irqs(0, irqs);
+	} else {
+		printk("laguna: using shared PCI interrupts: irq%d\n",
+		       IRQ_CNS3XXX_PCIE0_DEVICE);
 	}
-	printk("laguna: using shared PCI interrupts: irq%d\n",
-	       IRQ_CNS3XXX_PCIE0_DEVICE);
-	cns3xxx_pcie_init(NULL, NULL);
-	return;
+
+	return 0;
 }
 
 extern void __init cns3xxx_gpio_init(int gpio_base, int ngpio,
@@ -1341,11 +1317,11 @@ late_initcall(laguna_model_setup);
 MACHINE_START(GW2388, "Gateworks Corporation Laguna Platform")
 	.atag_offset	= 0x100,
 	.smp		= smp_ops(cns3xxx_smp_ops),
-	.nr_irqs	= NR_IRQS_CNS3XXX,
+//	.nr_irqs	= NR_IRQS_CNS3XXX,
 	.map_io		= laguna_map_io,
 	.init_irq	= cns3xxx_init_irq,
 	.init_time	= cns3xxx_timer_init,
 	.init_machine	= laguna_init,
-	.init_late	= laguna_pcie_init,
+	.init_late      = cns3xxx_pcie_init_late,
 	.restart	= cns3xxx_restart,
 MACHINE_END

@@ -4036,13 +4036,9 @@ int pcie_set_readrq(struct pci_dev *dev, int rq)
 {
 	u16 v;
 
-#ifdef	CONFIG_ARCH_CNS3XXX
-	if (rq != 128)
-		rq = 128;
-#else
 	if (rq < 128 || rq > 4096 || !is_power_of_2(rq))
 		return -EINVAL;
-#endif
+
 	/*
 	 * If using the "performance" PCIe config, we clamp the
 	 * read rq size to the max packet size to prevent the
