@@ -3154,7 +3154,11 @@ static void save_prefix(webs_t wp, char *prefix)
 			copytonv(wp, n);
 			char *value = websGetVar(wp, n, "");
 			if (!strcmp(prefix, "wl0"))
+#ifndef HAVE_MADWIFI
+				convert_wl_gmode(value, "wl0");
+#else
 				convert_wl_gmode(value, "wl");
+#endif				
 			else
 				convert_wl_gmode(value, prefix);
 		}
