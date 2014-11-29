@@ -10,6 +10,7 @@ iperf-clean:
 
 iperf-install:
 	make -C iperf install-exec DESTDIR=$(INSTALLDIR)/iperf
+	-mv $(INSTALLDIR)/iperf/usr/lib64/* $(INSTALLDIR)/iperf/usr/lib
 	rm -f $(INSTALLDIR)/iperf/usr/lib/*.a
 	rm -f $(INSTALLDIR)/iperf/usr/lib/*.la
 
