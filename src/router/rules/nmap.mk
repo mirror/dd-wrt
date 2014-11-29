@@ -9,6 +9,7 @@ nmap-configure:
 		--with-libpcre=included \
 		--with-libpcap="../libpcap_noring" \
 		--without-liblua \
+		--without-zenmap \
 		CPPFLAGS="-I$(TOP)/libpcap_noring -I$(TOP)/openssl/include $(COPTS) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		CFLAGS="-I$(TOP)/libpcap_noring -I$(TOP)/openssl/include $(COPTS) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		CXXFLAGS="-I$(TOP)/libpcap_noring -I$(TOP)/openssl/include $(COPTS) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
