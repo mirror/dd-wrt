@@ -1112,13 +1112,13 @@ float wifi_getrate(char *ifname)
 	    && (nvram_nmatch("ap", "%s_mode", ifname)
 		|| nvram_nmatch("wdsap", "%s_mode", ifname))) {
 		if (nvram_nmatch("b-only", "%s_net_mode", ifname))
-			return 11.0;
+			return 11.0 * MEGA;
 		if (nvram_nmatch("g-only", "%s_net_mode", ifname))
-			return 54.0;
+			return 54.0 * MEGA;
 		if (nvram_nmatch("a-only", "%s_net_mode", ifname))
-			return 54.0;
+			return 54.0 * MEGA;
 		if (nvram_nmatch("bg-mixed", "%s_net_mode", ifname))
-			return 54.0;
+			return 54.0 * MEGA;
 		if (nvram_nmatch("2040", "%s_channelbw", ifname)
 		    || nvram_nmatch("40", "%s_channelbw", ifname)) {
 			return (float)(HTTxRate40_400(mac80211_get_maxmcs(ifname))) * MEGA;
