@@ -121,7 +121,7 @@ static void netlink_process_link(struct nlmsghdr *h)
   iface = if_ifwithindex(ifi->ifi_index);
   oif = NULL;
 
-  if (iface == NULL && (ifi->ifi_flags & (IFF_UP|IFF_RUNNING)) == (IFF_UP|IFF_RUNNING)) {
+  if (iface == NULL && (ifi->ifi_flags & IFF_UP) == IFF_UP) {
     if (if_indextoname(ifi->ifi_index, namebuffer)) {
       if ((oif = olsrif_ifwithname(namebuffer)) != NULL) {
         /* try to take interface up, will trigger ifchange */
@@ -136,10 +136,10 @@ static void netlink_process_link(struct nlmsghdr *h)
 
   if (iface == NULL && oif == NULL) {
     /* this is not an OLSR interface */
-    if ((ifi->ifi_flags & IFF_UP) != 0 && (ifi->ifi_flags & IFF_RUNNING) != 0) {
+    if ((ifi->ifi_flags & IFF_UP) != 0) {
       olsr_trigger_ifchange(ifi->ifi_index, NULL, IFCHG_IF_ADD);
     }
-    else if ((ifi->ifi_flags & IFF_UP) == 0 && (ifi->ifi_flags & IFF_RUNNING) == 0){
+    else if ((ifi->ifi_flags & IFF_UP) == 0){
       olsr_trigger_ifchange(ifi->ifi_index, NULL, IFCHG_IF_REMOVE);
     }
   }
@@ -450,7 +450,7 @@ void olsr_os_niit_6to4_route(const struct olsr_ip_prefix *dst_v6, bool set) {
   if (olsr_new_netlink_route(AF_INET6,
       ip_prefix_is_mappedv4_inetgw(dst_v6) ? olsr_cnf->rt_table_default : olsr_cnf->rt_table,
       olsr_cnf->niit6to4_if_index,
-      RT_METRIC_DEFAULT, olsr_cnf->rt_proto, NULL, NULL, dst_v6, set, false)) {
+      olsr_cnf->fib_metric_default, olsr_cnf->rt_proto, NULL, NULL, dst_v6, set, false)) {
     olsr_syslog(OLSR_LOG_ERR, ". error while %s static niit route to %s",
         set ? "setting" : "removing", olsr_ip_prefix_to_string(dst_v6));
   }
@@ -460,7 +460,7 @@ void olsr_os_niit_4to6_route(const struct olsr_ip_prefix *dst_v4, bool set) {
   if (olsr_new_netlink_route(AF_INET,
       ip_prefix_is_v4_inetgw(dst_v4) ? olsr_cnf->rt_table_default : olsr_cnf->rt_table,
       olsr_cnf->niit4to6_if_index,
-      RT_METRIC_DEFAULT, olsr_cnf->rt_proto, NULL, NULL, dst_v4, set, false)) {
+      olsr_cnf->fib_metric_default, olsr_cnf->rt_proto, NULL, NULL, dst_v4, set, false)) {
     olsr_syslog(OLSR_LOG_ERR, ". error while %s niit route to %s",
         set ? "setting" : "removing", olsr_ip_prefix_to_string(dst_v4));
   }
@@ -474,7 +474,7 @@ void olsr_os_inetgw_tunnel_route(uint32_t if_idx, bool ipv4, bool set, uint8_t t
   dst = ipv4 ? &ipv4_internet_route : &ipv6_internet_route;
 
   if (olsr_new_netlink_route(ipv4 ? AF_INET : AF_INET6, table,
-      if_idx, RT_METRIC_DEFAULT, olsr_cnf->rt_proto, NULL, NULL, dst, set, false)) {
+      if_idx, olsr_cnf->fib_metric_default, olsr_cnf->rt_proto, NULL, NULL, dst, set, false)) {
     olsr_syslog(OLSR_LOG_ERR, ". error while %s inetgw tunnel route to %s for if %d",
         set ? "setting" : "removing", olsr_ip_prefix_to_string(dst), if_idx);
   }
@@ -489,7 +489,7 @@ static int olsr_os_process_rt_entry(int af_family, const struct rt_entry *rt, bo
 
   /* calculate metric */
   if (FIBM_FLAT == olsr_cnf->fib_metric) {
-    metric = RT_METRIC_DEFAULT;
+    metric = olsr_cnf->fib_metric_default;
   }
   else {
     metric = set ? rt->rt_best->rtp_metric.hops : rt->rt_metric.hops;

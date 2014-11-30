@@ -46,6 +46,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <limits.h>
 
 
 static int autobuf_enlarge(struct autobuf *autobuf, int new_size);
@@ -83,6 +84,11 @@ static int
 autobuf_enlarge(struct autobuf *autobuf, int new_size)
 {
   new_size++;
+
+  if (autobuf->size >= INT_MAX) {
+    return -1;
+  }
+
   if (new_size > autobuf->size) {
     char *p;
     int roundUpSize = ROUND_UP_TO_POWER_OF_2(new_size, AUTOBUFCHUNK);

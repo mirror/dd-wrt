@@ -89,6 +89,9 @@ set_plugin_ipaddress(const char *value, void *data, set_plugin_parameter_addon a
   return 0;
 }
 
+/**
+ * CAREFUL: this functions sets a boolean in an integer!!!
+ */
 int
 set_plugin_boolean(const char *value, void *data, set_plugin_parameter_addon addon __attribute__ ((unused)))
 {

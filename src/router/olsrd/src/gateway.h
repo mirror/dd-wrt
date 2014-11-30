@@ -13,6 +13,7 @@
 #include "defs.h"
 #include "olsr.h"
 #include "scheduler.h"
+#include "gateway_list.h"
 
 /** used to signal to olsr_delete_gateway_entry to force deletion */
 #define FORCE_DELETE_GW_ENTRY 255
@@ -53,6 +54,7 @@ struct gateway_entry {
     struct olsr_ip_prefix external_prefix;
     uint32_t uplink;
     uint32_t downlink;
+    int64_t path_cost; /**< the gateway path costs */
     bool ipv4;
     bool ipv4nat;
     bool ipv6;
@@ -83,6 +85,12 @@ AVLNODE2STRUCT(node2gateway, struct gateway_entry, node);
 /** the gateway tree */
 extern struct avl_tree gateway_tree;
 
+/** the list IPv4 gateways */
+extern struct gw_list gw_list_ipv4;
+
+/** the list IPv6 gateways */
+extern struct gw_list gw_list_ipv6;
+
 /**
  * Function pointer table for gateway plugin hooks.
  */
@@ -108,7 +116,7 @@ struct olsr_gw_handler {
      * @param gw the gateway
      * @return the costs
      */
-    uint64_t (*getcosts)(struct gateway_entry *gw);
+    int64_t (*getcosts)(struct gateway_entry *gw);
 
     /**
      * Called when a new gateway must be chosen.
@@ -173,7 +181,7 @@ void olsr_trigger_gatewayloss_check(void);
  * Gateway Plugin Functions
  */
 
-bool olsr_set_inet_gateway(union olsr_ip_addr *originator, uint64_t path_cost, bool ipv4, bool ipv6);
+bool olsr_set_inet_gateway(struct gateway_entry * chosen_gw, bool ipv4, bool ipv6);
 struct gateway_entry *olsr_get_inet_gateway(bool ipv6);
 
 #endif /* GATEWAY_H_ */
