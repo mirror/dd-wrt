@@ -50,11 +50,13 @@
 #include <ws2tcpip.h>
 #undef interface
 
+#if !defined(MINGW_VERSION) || MINGW_VERSION < 40600
 #ifndef InetNtopA
 int inet_aton(const char *cp, struct in_addr *addr);
 int inet_pton(int af, const char *src, void *dst);
 char *inet_ntop(int af, const void *src, char *dst, int size);
-#endif
+#endif /* InetNtopA */
+#endif /* !defined(MINGW_VERSION) || MINGW_VERSION < 40600 */
 
 #endif /* !defined TL_ARPA_INET_H_INCLUDED */
 

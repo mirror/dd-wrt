@@ -93,6 +93,7 @@ random(void)
   return (RandState ^ (RandState >> 16)) & RAND_MAX;
 }
 
+#if !defined(MINGW_VERSION) || MINGW_VERSION < 40600
 int
 nanosleep(struct timespec *Req, struct timespec *Rem)
 {
@@ -122,6 +123,7 @@ gettimeofday(struct timeval *TVal, void *TZone __attribute__ ((unused)))
   TVal->tv_usec = (unsigned int)(Ticks % 10000000) / 10;
   return 0;
 }
+#endif /* !defined(MINGW_VERSION) || MINGW_VERSION < 40600 */
 
 long
 times(struct tms *Dummy __attribute__ ((unused)))
@@ -129,6 +131,7 @@ times(struct tms *Dummy __attribute__ ((unused)))
   return (long)GetTickCount();
 }
 
+#if !defined(MINGW_VERSION) || MINGW_VERSION < 40600
 int
 inet_aton(const char *AddrStr, struct in_addr *Addr)
 {
@@ -136,6 +139,7 @@ inet_aton(const char *AddrStr, struct in_addr *Addr)
 
   return 1;
 }
+#endif /* !defined(MINGW_VERSION) || MINGW_VERSION < 40600 */
 
 char *
 StrError(unsigned int ErrNo)
