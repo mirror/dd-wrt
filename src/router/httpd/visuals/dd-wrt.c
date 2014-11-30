@@ -4892,12 +4892,12 @@ void ej_show_wireless(webs_t wp, int argc, char_t ** argv)
 	char wl_regdomain[16];
 
 	sprintf(wl_regdomain, "wl_regdomain");
-	websWrite(wp, "<h2><script type=\"text/javascript\">Capture(wl_basic.country_settings)</script></h2>");
+	websWrite(wp, "<h2><script type=\"text/javascript\">Capture(wl_basic.country_settings)</script></h2>\n");
 	websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(wl_basic.regdom)</script></legend>\n");
 	websWrite(wp, "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.regdom)</script></div>\n");
 	char *list = getCountryList();
 	showOptions(wp, wl_regdomain, list, nvram_default_get("wl_regdomain", "EUROPE"));
-
+	websWrite(wp, "</div>\n");
 	websWrite(wp, "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.regmode)</script></div>\n");
 
 	char *wl_regmode = nvram_default_get("wl_reg_mode", "off");
@@ -4908,7 +4908,7 @@ void ej_show_wireless(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "document.write(\"<option value=\\\"h_strict\\\" %s >802.11h Strict</option>\");\n", !strcmp(wl_regmode, "h_strict") ? "selected=\\\"selected\\\"" : "");
 	websWrite(wp, "document.write(\"<option value=\\\"d\\\" %s >802.11d</option>\");\n", !strcmp(wl_regmode, "d") ? "selected=\\\"selected\\\"" : "");
 	websWrite(wp, "//]]>\n</script>\n</select>\n");
-
+	websWrite(wp, "</div>\n"); 
 	websWrite(wp, "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.tpcdb)</script></div>\n");
 
 	char *wl_tpcdb = nvram_default_get("wl_tpc_db", "off");
@@ -4919,7 +4919,7 @@ void ej_show_wireless(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "document.write(\"<option value=\\\"3\\\" %s >3</option>\");\n", !strcmp(wl_tpcdb, "3") ? "selected=\\\"selected\\\"" : "");
 	websWrite(wp, "document.write(\"<option value=\\\"4\\\" %s >4\");\n", !strcmp(wl_tpcdb, "4") ? "selected=\\\"selected\\\"" : "");
 	websWrite(wp, "//]]>\n</script>\n</select>\n");
-	websWrite(wp, "</div></fieldset><br />\n");
+	websWrite(wp, "</div>\n</fieldset><br />\n");
 
 #endif
 
