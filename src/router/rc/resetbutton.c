@@ -132,7 +132,8 @@ int getbuttonstate()
 #elif defined(HAVE_VENTANA)
 int getbuttonstate()
 {
-	int ret = get_gpio(240);
+//	int ret = get_gpio(240);
+	int ret = get_gpio(496);
 	if (ret == 1)
 		return 0;
 	return 1;
