@@ -30,7 +30,7 @@ See http://www.olsr.org/ for more info.
 # description: This script starts OLSRD (Ad Hoc routing protocol)
 #
 # processname: olsrd
-# config: %{_sysconfdir}/olsrd.conf
+# config: %{_sysconfdir}/olsrd/olsrd.conf
 # pidfile: %{_localstatedir}/run/olsrd.pid
 
 source %{_initrddir}/functions
@@ -40,7 +40,7 @@ source %{_sysconfdir}/sysconfig/network
 [ ${NETWORKING} = "no" ] && exit 0
 
 [ -x %{_sbindir}/olsrd ] || exit 1
-[ -r %{_sysconfdir}/olsrd.conf ] || exit 1
+[ -r %{_sysconfdir}/olsrd/olsrd.conf ] || exit 1
 
 RETVAL=0
 prog="olsrd"
@@ -132,7 +132,7 @@ rm -rf %{buildroot}
 #/sbin/chkconfig --add olsrd
 # Default to not start olsrd automatic
 /sbin/chkconfig olsrd off
-echo "Now please edit /etc/olsrd.conf and run 'service olsrd start' or '/etc/init.d/olsrd start' to start olsrd"
+echo "Now please edit /etc/olsrd/olsrd.conf and run 'service olsrd start' or '/etc/init.d/olsrd start' to start olsrd"
 echo "Run 'chkconfig olsrd on' to enable automatic starting of olsrd"
 
 %files
@@ -140,7 +140,7 @@ echo "Run 'chkconfig olsrd on' to enable automatic starting of olsrd"
 %doc README CHANGELOG
 %doc lib/*/*README*
 
-%config(noreplace) %{_sysconfdir}/olsrd.conf
+%config(noreplace) %{_sysconfdir}/olsrd/olsrd.conf
 %config %{_initrddir}/olsrd
 /usr/sbin/olsrd
 # Wildchar to cover all installed plugins

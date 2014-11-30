@@ -99,7 +99,7 @@ zebra_addroute(const struct rt_entry *r)
   }
 
   retval = zclient_write(zpacket_route(olsr_cnf->ip_version == AF_INET ? ZEBRA_IPV4_ROUTE_ADD : ZEBRA_IPV6_ROUTE_ADD, &route));
-  if(!retval && zebra.options & OPTION_ROUTE_ADDITIONAL)
+  if(!retval && (zebra.options & OPTION_ROUTE_ADDITIONAL))
     retval = olsr_cnf->ip_version == AF_INET ? zebra.orig_addroute_function(r) : zebra.orig_addroute6_function(r);
 
   free(route.ifindex);
@@ -154,7 +154,7 @@ zebra_delroute(const struct rt_entry *r)
   }
 
   retval = zclient_write(zpacket_route(olsr_cnf->ip_version == AF_INET ? ZEBRA_IPV4_ROUTE_DELETE : ZEBRA_IPV6_ROUTE_DELETE, &route));
-  if(!retval && zebra.options & OPTION_ROUTE_ADDITIONAL)
+  if(!retval && (zebra.options & OPTION_ROUTE_ADDITIONAL))
     retval = olsr_cnf->ip_version == AF_INET ? zebra.orig_delroute_function(r) : zebra.orig_delroute6_function(r);
 
   free(route.ifindex);

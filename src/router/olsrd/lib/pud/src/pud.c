@@ -154,6 +154,7 @@ bool packetReceivedFromOlsr(union olsr_message *olsrMessage,
 	}
 
 	transmitStringLength = gpsFromOlsr(olsrMessage, &buffer[0], sizeof(buffer));
+	assert(transmitStringLength <= sizeof(buffer));
 	if (unlikely(transmitStringLength == 0)) {
 		return false;
 	}

@@ -15,7 +15,7 @@ bool readUC(const char * parameterName, const char * str, unsigned char * dst);
 
 bool readUS(const char * parameterName, const char * str, unsigned short * dst);
 
-bool readULL(const char * parameterName, const char * str, unsigned long long * dst);
+bool readULL(const char * parameterName, const char * str, unsigned long long * dst, int base);
 
 bool readDouble(const char * parameterName, const char * str, double * dst);
 

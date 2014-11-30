@@ -64,6 +64,7 @@ union olsr_ip_addr txtinfo_accept_ip;
 union olsr_ip_addr txtinfo_listen_ip;
 int ipc_port;
 int nompr;
+int txtinfo_ipv6_only;
 
 static void my_init(void) __attribute__ ((constructor));
 static void my_fini(void) __attribute__ ((destructor));
@@ -79,6 +80,8 @@ my_init(void)
 
   /* defaults for parameters */
   ipc_port = 2006;
+  txtinfo_ipv6_only = false;
+
   if (olsr_cnf->ip_version == AF_INET) {
     txtinfo_accept_ip.v4.s_addr = htonl(INADDR_LOOPBACK);
     txtinfo_listen_ip.v4.s_addr = htonl(INADDR_ANY);
@@ -116,6 +119,7 @@ static const struct olsrd_plugin_parameters plugin_parameters[] = {
   {.name = "port",.set_plugin_parameter = &set_plugin_port,.data = &ipc_port},
   {.name = "accept",.set_plugin_parameter = &set_plugin_ipaddress,.data = &txtinfo_accept_ip},
   {.name = "listen",.set_plugin_parameter = &set_plugin_ipaddress,.data = &txtinfo_listen_ip},
+  {.name = "ipv6only", .set_plugin_parameter = &set_plugin_boolean, .data = &txtinfo_ipv6_only},
 };
 
 void

@@ -1,46 +1,53 @@
 LoadPlugin "<olsrd plugin library path>/olsrd_pud.so.1.1.0"
 {
-    # nodeIdType is used to indicate the type of the nodeId field and is a
-    #            number in the range 0-255, with the following meaning:
+    # nodeId contains the node identification. It first describes the semantics
+    #        (meaning/code) of the identification and then specifies the node
+    #        identification itself.
+    #        For some codes the identification itself is not relevant and
+    #        therefore ignored (specified if so).
     #
-    #        0 : MAC address of sending interface
-    #            (nodeId is not relevant)
-    #        1 : an MSISDN number with 15 digits
-    #        2 : a Tetra number with 17 digits
-    #        3 : a DNS name
-    #        4 : IPv4 address (OLSR main address) of the sending node
-    #            (nodeId is not relevant)
-    #        6 : IPv6 address (OLSR main address) of the sending node
-    #            (nodeId is not relevant)
-    #        7 : an AIS MMSI number with 9 digits
-    #        8 : a URN number with 8 digits
-    #      192 : a 7 digit number conforming to 'Nationaal Nummerplan
-    #            Brandweer Nederland'
-    #      193 : a 6 digit number conforming to 'Nationaal Nummerplan
-    #            Ambulancezorg Nederland'
-    #      194 : a 4 digit number in the range [1, 8191]
+    #        The format is "number,identification"
     #
-    #      other numbers are reserved 
+    #        "Number" is a number in the range 0-255, with the following
+    #        meaning:
+    #           0 : MAC address of sending interface
+    #               (identification is not relevant)
+    #           1 : an MSISDN number with 15 digits
+    #           2 : a Tetra number with 17 digits
+    #           3 : a DNS name
+    #               (identification can be empty, in which case the hostname is
+    #                used)
+    #           4 : IPv4 address (OLSR main address) of the sending node
+    #               (identification is not relevant)
+    #           5 : an UUID number with 32 hexadecimal digits
+    #           6 : IPv6 address (OLSR main address) of the sending node
+    #               (identification is not relevant)
+    #           7 : an AIS MMSI number with 9 digits
+    #           8 : a URN number (a plain 24 bits number) with 8 digits. See
+    #               http://www.dtic.mil/cjcs_directives/cdata/unlimit/3156_01.pdf
+    #           9 : a MIP OID number with 20 digits. See
+    #               http://www.mip-site.org/publicsite (IR Annex D – DMWG,
+    #               20081211, Edition 3.7, Annex D Key Management for the MIP
+    #               Data Model, (MIR Annex D - Key Management-JC3IEDM-3.0.9.pdf)
+    #         192 : a 7 digit number conforming to 'Nationaal Nummerplan
+    #               Brandweer Nederland'
+    #         193 : a 6 digit number conforming to 'Nationaal Nummerplan
+    #               Ambulancezorg Nederland'
+    #         194 : a 4 digit number in the range [1, 8191]
     #
-    # Note: setting 4 or 6 is the same for olsrd: both mean 'use the main
-    #       IP address, which is either an IPv4 or an IPv6 address, depending
-    #       on the IP version under which olsrd is run.
+    #         other numbers are reserved
     #
-    # Default: 4 or 6, depending on the IP version olsrd is using
+    # Note: setting "number" to 4 or 6 is the same for olsrd: both mean 'use
+    #       the main IP address, which is either an IPv4 or an IPv6 address,
+    #       depending on the IP version under which olsrd is run.
     #
-    #PlParam     "nodeIdType"                   "4"
-
-    # nodeId is the node identification with the meaning as indicated by the
-    #        nodeIdType parameter. When not set AND the nodeIdType is 3 (DNS
-    #        name) then the hostname is used.
+    # Note: Both the number and the identification are transported over OLSR,
+    #       so care must be taken to keep the size of the identification down.
     #
-    # Note: Both the nodeIdType and nodeId fields are transported over
-    #       OLSR, so care must be taken to keep the size of the nodeId
-    #       parameter down.
+    # Default: "4" (when olsrd is run under IPv4)
+    #          "6" (when olsrd is run under IPv6)
     #
-    # Default: none
-    #
-    #PlParam     "nodeId"                       ""
+    #PlParam     "nodeId"                       "4"
 
 
     #
@@ -177,7 +184,8 @@ LoadPlugin "<olsrd plugin library path>/olsrd_pud.so.1.1.0"
     #
 
     # olsrTtl is the TTL that is used when sending messages over the OLSR
-    #         networks
+    #         networks. Setting this to 0 (zero) will disable distribution
+    #         of position updates over the OLSR networks.
     #
     # Default: 64
     #

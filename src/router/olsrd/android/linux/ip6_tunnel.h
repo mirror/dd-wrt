@@ -2,6 +2,7 @@
 #define _IP6_TUNNEL_H
 
 #include <linux/types.h>
+#include <net/if.h>
 
 #define IPV6_TLV_TNL_ENCAP_LIMIT 4
 #define IPV6_DEFAULT_TNL_ENCAP_LIMIT 4

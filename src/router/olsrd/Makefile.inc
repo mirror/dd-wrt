@@ -22,6 +22,8 @@ MUDFLAP ?= 0
 # shows full compiler/linker calls if activated
 VERBOSE ?= 0
 
+SANITIZE_ADDRESS ?= 0
+
 ifeq ($(VERBOSE),0)
 MAKECMDPREFIX = @
 else
@@ -59,7 +61,7 @@ TAGCMD ?=	etags
 
 # target directories and names
 DESTDIR  ?=
-ETCDIR   ?= $(DESTDIR)/etc
+ETCDIR   ?= $(DESTDIR)/etc/olsrd
 USRDIR   ?= $(DESTDIR)/usr
 INCLUDEDIR ?= $(DESTDIR)/usr/include
 LIBDIR   ?= $(USRDIR)/lib
@@ -100,7 +102,9 @@ WARNINGS +=	-Wendif-labels
 WARNINGS +=	-Wwrite-strings
 WARNINGS +=	-Wbad-function-cast
 WARNINGS +=	-Wpointer-arith
+ifneq ($(OS),win32)
 WARNINGS +=	-Wcast-qual
+endif
 WARNINGS +=	-Wshadow
 WARNINGS +=	-Wformat
 WARNINGS +=	-Wsequence-point
@@ -188,6 +192,13 @@ ifneq ($(MUDFLAP),0)
 LIBS +=		-lmudflapth
 endif
 
+ifeq ($(OS),linux)
+  ifneq ($(SANITIZE_ADDRESS),0)
+    CFLAGS  += -fsanitize=address -fno-omit-frame-pointer
+    LDFLAGS += -fsanitize=address -static-libasan
+  endif
+endif
+
 # extra options from the outside
 CPPFLAGS +=	$(EXTRA_CPPFLAGS)
 
@@ -232,6 +243,9 @@ OBJS +=		$(SRCS:%.c=%.o)
 ifeq ($(DEBUG),1)
 CPPFLAGS +=	-DDEBUG -DNEED_PRINTF
 CFLAGS +=	-g
+ifeq ($(OS),linux)
+LDFLAGS  += -rdynamic
+endif
 else
 CPPFLAGS +=	-DNDEBUG
 ifeq ($(OPTIMIZE),)

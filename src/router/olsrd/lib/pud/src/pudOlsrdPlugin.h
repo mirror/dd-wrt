@@ -20,7 +20,6 @@
  */
 static const struct olsrd_plugin_parameters plugin_parameters[] = {
 	/* ID */
-	{	.name = PUD_NODE_ID_TYPE_NAME, .set_plugin_parameter = &setNodeIdType, .data = NULL},
 	{	.name = PUD_NODE_ID_NAME, .set_plugin_parameter = &setNodeId, .data = NULL},
 
 	/* OLSR */

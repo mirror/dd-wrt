@@ -77,6 +77,12 @@ define Package/olsrd-stable-git-mod-httpinfo
   TITLE:=Small informative web server plugin
 endef
 
+define Package/olsrd-stable-git-mod-jsoninfo
+  $(call Package/olsrd-stable-git/template)
+  DEPENDS:=olsrd-stable-git
+  TITLE:=json output information plugin
+endef
+
 define Package/olsrd-stable-git-mod-mdns
   $(call Package/olsrd-stable-git/template)
   DEPENDS:=olsrd-stable-git
@@ -129,9 +135,11 @@ MAKE_FLAGS+= \
 	DESTDIR="$(PKG_INSTALL_DIR)" \
 	STRIP="true" \
 	INSTALL_LIB="true" \
-	SUBDIRS="arprefresh bmf dot_draw dyn_gw dyn_gw_plain httpinfo mdns nameservice quagga secure txtinfo watchdog"
+	SUBDIRS="arprefresh bmf dot_draw dyn_gw dyn_gw_plain httpinfo jsoninfo mdns nameservice quagga secure txtinfo watchdog"
 
 define Build/Compile
+	$(call Build/Compile/Default,clean)
+	$(call Build/Compile/Default,clean_libs)
 	$(call Build/Compile/Default,all)
 	$(call Build/Compile/Default,libs)
 endef
@@ -180,6 +188,11 @@ define Package/olsrd-stable-git-mod-httpinfo/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/lib/httpinfo/olsrd_httpinfo.so.* $(1)/usr/lib/
 endef
 
+define Package/olsrd-stable-git-mod-jsoninfo/install
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/lib/jsoninfo/olsrd_jsoninfo.so.* $(1)/usr/lib/
+endef
+
 define Package/olsrd-stable-git-mod-mdns/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/lib/mdns/olsrd_mdns.so.* $(1)/usr/lib/
@@ -219,6 +232,7 @@ $(eval $(call BuildPackage,olsrd-stable-git-mod-bmf))
 $(eval $(call BuildPackage,olsrd-stable-git-mod-dyn-gw))
 $(eval $(call BuildPackage,olsrd-stable-git-mod-dyn-gw-plain))
 $(eval $(call BuildPackage,olsrd-stable-git-mod-httpinfo))
+$(eval $(call BuildPackage,olsrd-stable-git-mod-jsoninfo))
 $(eval $(call BuildPackage,olsrd-stable-git-mod-mdns))
 $(eval $(call BuildPackage,olsrd-stable-git-mod-nameservice))
 $(eval $(call BuildPackage,olsrd-stable-git-mod-quagga))

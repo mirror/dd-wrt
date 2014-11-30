@@ -33,6 +33,7 @@ So what commands does the txtinfo plugin accept?
     * Topology: "/topo" -> send_what=SIW_TOPO
     * 2-hop neighbors: "/2hop" -> send_what=SIW_2HOP
     * Version: "/ver" -> send_what=version of olsrd
+    * (Smart) Gateway Information: "/sgw" -> send_what=information on all active (smart) gateways
 
 This is the same as the "/neigh" and "/link" commands combined:
 
@@ -61,6 +62,10 @@ LoadPlugin "olsrd_txtinfo.so.0.1"
     # txtinfo. If no address is specified, then localhost (127.0.0.1)
     # is allowed by default.  txtinfo will only use the first "accept"
     # parameter specified and will ignore the rest.
+
+    # Set this parameter to activate the IPV6_V6ONLY flag for the plugin
+    # to prevent it from receiving IPv4 messages
+    #PlParam     "ipv6only"   "false"
 
     # to allow a specific host:
     #PlParam      "accept" "172.29.44.23"

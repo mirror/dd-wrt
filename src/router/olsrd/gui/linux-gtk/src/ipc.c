@@ -36,6 +36,7 @@
 #endif /* _WIN32 */
 
 int ipc_socket = 0;
+int connected;
 
 int
 ipc_close(void)

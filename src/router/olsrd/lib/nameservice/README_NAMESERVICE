@@ -66,8 +66,8 @@ PlParam "interval" "SEC"
 	(default: 120 - 2 minutes)
 
 PlParam "timeout" "SEC"
-	validity time for received NAME messages in seconds.
-	(default: 3600 - 1 hour)
+	validity time for transmitted NAME messages in seconds.
+	(default: 1800 - 30 minutes)
 
 PlParam "lat" "12.123"
 	Float: Decimal latitude for this node to be flooded in the mesh
@@ -142,7 +142,7 @@ PlParam "macs-change-script" "/path/to/script"
 SAMPLE CONFIG
 ---------------------------------------------------------------------
 
-add in /etc/olsrd.conf:
+add in /etc/olsrd/olsrd.conf:
 
 LoadPlugin "olsrd_nameservice.so.0.2"
 {

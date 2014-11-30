@@ -20,9 +20,12 @@
 /.project
 /.settings
 /build-stamp
+/builddata.txt
 /configure-stamp
+/debian/
 /olsrd
 /olsrd.exe
 /olsr_switch
 /olsr_switch.exe
 /olsr-setup.exe
+/src/cfgparser/olsrd_cfgparser

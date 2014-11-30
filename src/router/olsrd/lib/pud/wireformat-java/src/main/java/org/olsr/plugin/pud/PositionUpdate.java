@@ -48,19 +48,14 @@ public class PositionUpdate extends UplinkMessage {
 	public native int getPositionUpdateVersion();
 
 	/**
-	 * @return the validity time (in seconds) the position update message
+	 * @return the validity time (in seconds) of the position update message
 	 */
 	public native long getPositionUpdateValidityTime();
 
 	/**
-	 * @return the content mask the position update message
+	 * @return the presence field of the position update message
 	 */
-	public native int getPositionUpdateSMask();
-
-	/**
-	 * @return the content flags the position update message
-	 */
-	public native int getPositionUpdateFlags();
+	public native long getPositionUpdatePresent();
 
 	/*
 	 * GpsInfo
@@ -95,7 +90,7 @@ public class PositionUpdate extends UplinkMessage {
 	public native long getPositionUpdateAltitude();
 
 	/**
-	 * @return the speed (in kph) of the the position update message
+	 * @return the speed (in kph) of the position update message
 	 */
 	public native long getPositionUpdateSpeed();
 

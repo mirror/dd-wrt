@@ -158,7 +158,7 @@ static void txToAllOlsrInterfaces(TimedTxInterface interfaces) {
 	/*
 	 * push out to all OLSR interfaces
 	 */
-	if (((interfaces & TX_INTERFACE_OLSR) != 0) && (pu_size > 0)) {
+	if (((interfaces & TX_INTERFACE_OLSR) != 0) && getOlsrTtl() && (pu_size > 0)) {
 		int r;
 		struct interface *ifn;
 		for (ifn = ifnet; ifn; ifn = ifn->int_next) {
@@ -795,7 +795,7 @@ bool startReceiver(void) {
 
 	transmitGpsInformation.txGateway = olsr_cnf->main_addr;
 	transmitGpsInformation.positionUpdated = false;
-	transmitGpsInformation.nodeId = getNodeId();
+	transmitGpsInformation.nodeId = getNodeId(NULL);
 
 #ifdef HTTPINFO_PUD
 	olsr_cnf->pud_position = &transmitGpsInformation;
@@ -842,6 +842,4 @@ void stopReceiver(void) {
 	nmea_zero_INFO(&transmitGpsInformation.txPosition.nmeaInfo);
 	transmitGpsInformation.txGateway = olsr_cnf->main_addr;
 	transmitGpsInformation.positionUpdated = false;
-
-	nmea_parser_destroy(&nmeaParser);
 }
