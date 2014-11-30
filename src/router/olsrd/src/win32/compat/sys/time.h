@@ -40,6 +40,8 @@
 
 #ifdef _WIN32
 
+#if !defined(MINGW_VERSION) || MINGW_VERSION < 40600
+
 #if !defined TL_SYS_TIME_H_INCLUDED
 
 #define TL_SYS_TIME_H_INCLUDED
@@ -97,6 +99,8 @@ int nanosleep(struct timespec *Req, struct timespec *Rem);
 int gettimeofday(struct timeval *TVal, void *TZone);
 
 #endif /* !defined TL_SYS_TIME_H_INCLUDED */
+
+#endif /* !defined(MINGW_VERSION) || MINGW_VERSION < 40600 */
 
 #endif /* _WIN32 */
 
