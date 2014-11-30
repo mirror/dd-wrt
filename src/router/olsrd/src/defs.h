@@ -53,6 +53,10 @@
 #include <errno.h>
 #include <time.h>
 
+#ifdef _WIN32
+#include "compat.h"
+#endif /* _WIN32 */
+
 #include "olsr_protocol.h"
 #include "olsr_cfg.h"
 

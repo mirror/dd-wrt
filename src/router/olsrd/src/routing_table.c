@@ -395,7 +395,7 @@ olsr_hopcount_change(const struct rt_metric * met1, const struct rt_metric * met
 /**
  * Depending if flat_metric is configured and the kernel fib operation
  * return the hopcount metric of a route.
- * For adds this is the metric of best rour after olsr_rt_best() election,
+ * For adds this is the metric of best route after olsr_rt_best() election,
  * for deletes this is the metric of the route that got stored in the rt_entry,
  * during route installation.
  */
@@ -405,7 +405,7 @@ olsr_fib_metric(const struct rt_metric * met)
   if (FIBM_CORRECT == olsr_cnf->fib_metric) {
     return met->hops;
   }
-  return RT_METRIC_DEFAULT;
+  return olsr_cnf->fib_metric_default;
 }
 
 /**

@@ -239,9 +239,17 @@ default_lq_ff_timer(void __attribute__ ((unused)) * context)
       // start with link-loss-factor
       ratio = fpmidiv(itofpm(link->loss_link_multiplier), LINK_LOSS_MULTIPLIER);
 
-      /* keep missed hello periods in mind (round up hello interval to seconds) */
+      /* don't forget missing hellos */
       if (tlq->missed_hellos > 1) {
-        received = received - received * tlq->missed_hellos * link->inter->hello_etime/1000 / LQ_FF_WINDOW;
+        uint32_t interval;
+
+        interval = tlq->missed_hellos * link->loss_helloint / 1000;
+        if (interval > LQ_FF_WINDOW) {
+          received = 0;
+        }
+        else {
+          received = (received * (LQ_FF_WINDOW - interval)) / LQ_FF_WINDOW;
+        }
       }
 
       // calculate received/total factor

@@ -120,7 +120,7 @@ ohs_cmd_olsrd(const char *args)
     if (!strlen(tok_buf))
       goto print_usage;
 
-    if (!inet_aton(tok_buf, &iaddr)) {
+    if (!inet_pton(AF_INET, tok_buf, &iaddr)) {
       printf("Invalid IP %s\n", tok_buf);
       goto print_usage;
     }
@@ -161,7 +161,7 @@ ohs_cmd_olsrd(const char *args)
     if (!strlen(tok_buf))
       goto print_usage;
 
-    if (!inet_aton(tok_buf, &iaddr)) {
+    if (!inet_pton(AF_INET, tok_buf, &iaddr)) {
       printf("Invalid IP %s\n", tok_buf);
       goto print_usage;
     }
@@ -245,7 +245,7 @@ ohs_cmd_link(const char *args)
     wildc_src = 1;
     src = ohs_conns;
   } else {
-    if (!inet_aton(tok_buf, &iaddr)) {
+    if (!inet_pton(AF_INET, tok_buf, &iaddr)) {
       printf("Invalid src IP %s\n", tok_buf);
       return -1;
     }
@@ -268,7 +268,7 @@ ohs_cmd_link(const char *args)
     wildc_dst = 1;
     dst = ohs_conns;
   } else {
-    if (!inet_aton(tok_buf, &iaddr)) {
+    if (!inet_pton(AF_INET, tok_buf, &iaddr)) {
       printf("Invalid src IP %s\n", tok_buf);
       return -1;
     }

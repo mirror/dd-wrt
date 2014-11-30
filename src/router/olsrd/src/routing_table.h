@@ -57,12 +57,6 @@
 #define NETMASK_HOST 0xffffffff
 #define NETMASK_DEFAULT 0x0
 
-/*
- * the kernel FIB does not need to know the metric of a route.
- * this saves us from enqueuing/dequeueing hopcount only changes.
- */
-#define RT_METRIC_DEFAULT 2
-
 /* a composite metric is used for path selection */
 struct rt_metric {
   olsr_linkcost cost;

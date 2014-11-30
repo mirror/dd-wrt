@@ -206,13 +206,39 @@ add_del_route(const struct rt_entry *rt, int add)
 
   rtm->rtm_msglen = (unsigned short)(walker - buff);
   len = write(olsr_cnf->rts, buff, rtm->rtm_msglen);
-  if (0 != rtm->rtm_errno || len < rtm->rtm_msglen) {
-    fprintf(stderr, "\nCannot write to routing socket: (rtm_errno= 0x%x) (last error message: %s)\n",
-              rtm->rtm_errno,strerror(errno));
-    if (add) {
-      fprintf(stderr, " Failed on Adding %s\n", olsr_rtp_to_string(rt->rt_best));
-    } else {
-      fprintf(stderr, " Failed on Deleting %s\n",olsr_rt_to_string(rt));
+  if (len < 0 && !(errno == EEXIST || errno == ESRCH)) {
+    fprintf(stderr, "cannot write to routing socket: %s\n", strerror(errno));
+  }
+
+  /*
+   * If we get an EEXIST error while adding, delete and retry.
+   */
+  if (len < 0 && errno == EEXIST && rtm->rtm_type == RTM_ADD) {
+    struct rt_msghdr *drtm;
+    unsigned char dbuff[512];
+
+    memset(dbuff, 0, sizeof(dbuff));
+    drtm = (struct rt_msghdr *)dbuff;
+    drtm->rtm_version = RTM_VERSION;
+    drtm->rtm_type = RTM_DELETE;
+    drtm->rtm_index = 0;
+    drtm->rtm_flags = olsr_rt_flags(rt, add);
+    drtm->rtm_seq = ++seq;
+
+    walker = dbuff + sizeof(struct rt_msghdr);
+    sin4.sin_addr = rt->rt_dst.prefix.v4;
+    memcpy(walker, &sin4, sizeof(sin4));
+    walker += sin_size;
+    drtm->rtm_addrs = RTA_DST;
+    drtm->rtm_msglen = (unsigned short)(walker - dbuff);
+    len = write(olsr_cnf->rts, dbuff, drtm->rtm_msglen);
+    if (len < 0) {
+      fprintf(stderr, "cannot delete route: %s\n", strerror(errno));
+    }
+    rtm->rtm_seq = ++seq;
+    len = write(olsr_cnf->rts, buff, rtm->rtm_msglen);
+    if (len < 0) {
+      fprintf(stderr, "still cannot add route: %s\n", strerror(errno));
     }
   }
   return 0;

@@ -65,6 +65,12 @@
 extern FILE *yyin;
 extern int yyparse(void);
 
+#define valueInRange(value, low, high) ((low <= value) && (value <= high))
+
+#define rangesOverlap(low1, high1, low2, high2) ( \
+            valueInRange(low1 , low2, high2) || valueInRange(high1, low2, high2) || \
+            valueInRange(low2,  low1, high1) || valueInRange(high2, low1, high1))
+
 static char interface_defaults_name[] = "[InterfaceDefaults]";
 
 const char *FIB_METRIC_TXT[] = {
@@ -100,17 +106,17 @@ struct olsrd_config *olsr_cnf;         /* The global configuration */
 int
 main(int argc, char *argv[])
 {
-  struct olsrd_config *cnf;
-
   if (argc == 1) {
     fprintf(stderr, "Usage: olsrd_cfgparser [filename] -print\n\n");
     exit(EXIT_FAILURE);
   }
 
-  if ((cnf = olsrd_parse_cnf(argv[1])) == 0) {
+  olsr_cnf = olsrd_get_default_cnf();
+
+  if (olsrd_parse_cnf(argv[1]) == 0) {
     if ((argc > 2) && (!strcmp(argv[2], "-print"))) {
-      olsrd_print_cnf(cnf);
-      olsrd_write_cnf(cnf, "./out.conf");
+      olsrd_print_cnf(olsr_cnf);
+      olsrd_write_cnf(olsr_cnf, "./out.conf");
     } else
       printf("Use -print to view parsed values\n");
     printf("Configfile parsed OK\n");
@@ -119,6 +125,10 @@ main(int argc, char *argv[])
   }
 
   return 0;
+}
+
+void
+olsr_startup_sleep(int seconds __attribute__((unused))) {
 }
 
 #else /* MAKEBIN */
@@ -219,55 +229,55 @@ static int olsrd_sanity_check_rtpolicy(struct olsrd_config *cnf) {
   if (!cnf->smart_gw_active) {
     /* default is "no policy rules" and "everything into the main table" */
     if (cnf->rt_table == DEF_RT_AUTO) {
-      cnf->rt_table = 254;
+      cnf->rt_table = DEF_RT_TABLE_NR;
     }
     if (cnf->rt_table_default == DEF_RT_AUTO) {
-      cnf->rt_table_default = cnf->rt_table;
+      cnf->rt_table_default = DEF_RT_TABLE_DEFAULT_NR;
     }
     if (cnf->rt_table_tunnel != DEF_RT_AUTO) {
       fprintf(stderr, "Warning, setting a table for tunnels without SmartGW does not make sense.\n");
     }
-    cnf->rt_table_tunnel = cnf->rt_table_default;
+    cnf->rt_table_tunnel = DEF_RT_TABLE_TUNNEL_NR;
 
     /* priority rules default is "none" */
     if (cnf->rt_table_pri == DEF_RT_AUTO) {
-      cnf->rt_table_pri = DEF_RT_NONE;
+      cnf->rt_table_pri = DEF_RT_TABLE_PRI;
     }
     if (cnf->rt_table_defaultolsr_pri == DEF_RT_AUTO) {
-      cnf->rt_table_defaultolsr_pri = DEF_RT_NONE;
+      cnf->rt_table_defaultolsr_pri = DEF_RT_TABLE_DEFAULTOLSR_PRI;
     }
     if (cnf->rt_table_tunnel_pri == DEF_RT_AUTO) {
-      cnf->rt_table_tunnel_pri = DEF_RT_NONE;
+      cnf->rt_table_tunnel_pri = DEF_RT_TABLE_TUNNEL_PRI;
     }
     if (cnf->rt_table_default_pri == DEF_RT_AUTO) {
-      cnf->rt_table_default_pri = DEF_RT_NONE;
+      cnf->rt_table_default_pri = DEF_RT_TABLE_DEFAULT_PRI;
     }
   }
   else {
     /* default is "policy rules" and "everything into separate tables (254, 223, 224)" */
     if (cnf->rt_table == DEF_RT_AUTO) {
-      cnf->rt_table = 254;
+      cnf->rt_table = DEF_SGW_RT_TABLE_NR;
     }
     if (cnf->rt_table_default == DEF_RT_AUTO) {
-      cnf->rt_table_default = 223;
+      cnf->rt_table_default = DEF_SGW_RT_TABLE_DEFAULT_NR;
     }
     if (cnf->rt_table_tunnel == DEF_RT_AUTO) {
-      cnf->rt_table_tunnel = 224;
+      cnf->rt_table_tunnel = DEF_SGW_RT_TABLE_TUNNEL_NR;
     }
 
     /* default for "rt_table_pri" is none (main table already has a policy rule */
-    prio = 32766;
+    prio = DEF_SGW_RT_TABLE_PRI_BASE;
     if (cnf->rt_table_pri > 0) {
       prio = cnf->rt_table_pri;
     }
     else if (cnf->rt_table_pri == DEF_RT_AUTO) {
       /* choose default */
-      olsr_cnf->rt_table_pri = DEF_RT_NONE;
+      olsr_cnf->rt_table_pri = DEF_SGW_RT_TABLE_PRI;
       fprintf(stderr, "No policy rule for rt_table_pri\n");
     }
 
     /* default for "rt_table_defaultolsr_pri" is +10 */
-    prio += 10;
+    prio += DEF_SGW_RT_TABLE_DEFAULTOLSR_PRI_ADDER;
     if (cnf->rt_table_defaultolsr_pri > 0) {
       prio = cnf->rt_table_defaultolsr_pri;
     }
@@ -276,7 +286,7 @@ static int olsrd_sanity_check_rtpolicy(struct olsrd_config *cnf) {
       fprintf(stderr, "Choose priority %u for rt_table_defaultolsr_pri\n", prio);
     }
 
-    prio += 10;
+    prio += DEF_SGW_RT_TABLE_TUNNEL_PRI_ADDER;
     if (cnf->rt_table_tunnel_pri > 0) {
       prio = cnf->rt_table_tunnel_pri;
     }
@@ -285,8 +295,11 @@ static int olsrd_sanity_check_rtpolicy(struct olsrd_config *cnf) {
       fprintf(stderr, "Choose priority %u for rt_table_tunnel_pri\n", prio);
     }
 
-    prio += 10;
-    if (cnf->rt_table_default_pri == DEF_RT_AUTO) {
+    prio += DEF_SGW_RT_TABLE_DEFAULT_PRI_ADDER;
+    if (cnf->rt_table_default_pri > 0) {
+      prio = cnf->rt_table_default_pri;
+    }
+    else if (cnf->rt_table_default_pri == DEF_RT_AUTO) {
       olsr_cnf->rt_table_default_pri = prio;
       fprintf(stderr, "Choose priority %u for rt_table_default_pri\n", prio);
     }
@@ -564,6 +577,12 @@ olsrd_sanity_check_cnf(struct olsrd_config *cnf)
   if (cnf->smart_gw_use_count > 1) {
     struct sgw_egress_if * sgwegressif = cnf->smart_gw_egress_interfaces;
 
+    /* check that we're in IPv4 */
+    if (cnf->ip_version != AF_INET) {
+      fprintf(stderr, "Error, multi smart gateway mode is only supported for IPv4\n");
+      return -1;
+    }
+
 	/* check that the sgw takedown percentage is in the range [0, 100] */
 	if (/*(cnf->smart_gw_takedown_percentage < 0) ||*/ (cnf->smart_gw_takedown_percentage > 100)) {
 	  fprintf(stderr, "Error, smart gateway takedown percentage (%u) is not in the range [0, 100]\n",
@@ -607,9 +626,19 @@ olsrd_sanity_check_cnf(struct olsrd_config *cnf)
       return -1;
     }
 
-    /* an egress interface must not be an OLSR interface */
     while (sgwegressif) {
-      struct olsr_if * olsrif = cnf->interfaces;
+      struct olsr_if * olsrif;
+
+      /* an egress interface must have a valid length */
+      size_t len = sgwegressif->name ? strlen(sgwegressif->name) : 0;
+      if ((len < 1) || (len > IFNAMSIZ)) {
+        fprintf(stderr, "Error, egress interface '%s' has an invalid length of %lu, allowed: [1, %u]\n", sgwegressif->name, (long unsigned int) len,
+            (unsigned int) IFNAMSIZ);
+        return -1;
+      }
+
+      /* an egress interface must not be an OLSR interface */
+      olsrif = cnf->interfaces;
       while (olsrif) {
         if (!strcmp(olsrif->name, sgwegressif->name)) {
           fprintf(stderr, "Error, egress interface %s already is an OLSR interface\n", sgwegressif->name);
@@ -628,34 +657,76 @@ olsrd_sanity_check_cnf(struct olsrd_config *cnf)
     }
 
     {
-      uint8_t egressLow = cnf->smart_gw_mark_offset_egress;
-      uint8_t egressHigh = egressLow + cnf->smart_gw_egress_interfaces_count - 1;
-      uint8_t tunnelsLow = cnf->smart_gw_mark_offset_tunnels;
-      uint8_t tunnelsHigh = tunnelsLow + cnf->smart_gw_use_count - 1;
-      bool overlap = false;
+      uint32_t nrOfTables = 1 + cnf->smart_gw_egress_interfaces_count + cnf->smart_gw_use_count;
 
-      /* check that the egress interface marks range does not overflow */
-      if (egressLow > (UINT8_MAX - cnf->smart_gw_egress_interfaces_count)) {
-        fprintf(stderr, "Error, egress interface mark offset %u together with egress interface count %u overflows range [0, %u]\n",
-            egressLow, cnf->smart_gw_egress_interfaces_count, UINT8_MAX);
+      uint32_t nrOfBypassRules = cnf->smart_gw_egress_interfaces_count + getNrOfOlsrInterfaces(olsr_cnf);
+      uint32_t nrOfTableRules = nrOfTables;
+      uint32_t nrOfRules = nrOfBypassRules + nrOfTableRules;
+
+      uint32_t tablesLow;
+      uint32_t tablesHigh;
+      uint32_t tablesLowMax = ((1 << 31) - nrOfTables + 1);
+
+      uint32_t rulesLow;
+      uint32_t rulesHigh;
+      uint32_t rulesLowMax = UINT32_MAX - nrOfRules;
+
+      /* setup tables low/high */
+      tablesLow = cnf->smart_gw_offset_tables;
+      tablesHigh = cnf->smart_gw_offset_tables + nrOfTables;
+
+      /*
+       * tablesLow  >  0
+       * tablesLow  >  0
+       * tablesHigh <= 2^31
+       * [tablesLow, tablesHigh] no overlap with [253, 255]
+       */
+      if (!tablesLow) {
+        fprintf(stderr, "Error, smart gateway tables offset can't be zero.\n");
         return -1;
       }
 
-      /* check that the tunnel interface marks range does not overflow */
-      if (tunnelsLow > (UINT8_MAX - cnf->smart_gw_use_count)) {
-        fprintf(stderr, "Error, tunnel interface mark offset %u together with use count %u overflows range [0, %u]\n",
-            tunnelsLow, cnf->smart_gw_use_count, UINT8_MAX);
+      if (tablesLow > tablesLowMax) {
+        fprintf(stderr, "Error, smart gateway tables offset too large, maximum is %ul.\n", tablesLowMax);
         return -1;
       }
 
-      /* check that the egress and tunnel marks ranges do not overlap */
-      overlap =            ((tunnelsLow <= egressLow)   && (egressLow   <= tunnelsHigh));
-      overlap = overlap || ((tunnelsLow <= egressHigh)  && (egressHigh  <= tunnelsHigh));
-      overlap = overlap || ((egressLow  <= tunnelsLow)  && (tunnelsLow  <= egressHigh));
-      overlap = overlap || ((egressLow  <= tunnelsHigh) && (tunnelsHigh <= egressHigh));
-      if (overlap) {
-        fprintf(stderr, "Error, egress interface mark range [%u, %u] overlaps with tunnel interface mark range [%u, %u]\n",
-            egressLow, egressHigh, tunnelsLow, tunnelsHigh);
+      if (rangesOverlap(tablesLow, tablesHigh, 253, 255)) {
+        fprintf(stderr, "Error, smart gateway tables range [%u, %u] overlaps with routing tables [253, 255].\n", tablesLow, tablesHigh);
+        return -1;
+      }
+
+      /* set default for rules offset if needed */
+      if (cnf->smart_gw_offset_rules == 0) {
+        if (valueInRange(tablesLow, 1, nrOfBypassRules)) {
+          fprintf(stderr, "Error, smart gateway table offset is too low: %u bypass rules won't fit between it and zero.\n", nrOfBypassRules);
+          return -1;
+        }
+
+        cnf->smart_gw_offset_rules = tablesLow - nrOfBypassRules;
+      }
+
+      /* setup rules low/high */
+      rulesLow = cnf->smart_gw_offset_rules;
+      rulesHigh = cnf->smart_gw_offset_rules + nrOfRules;
+
+      /*
+       * rulesLow  > 0
+       * rulesHigh < 2^32
+       * [rulesLow, rulesHigh] no overlap with [32766, 32767]
+       */
+      if (!rulesLow) {
+        fprintf(stderr, "Error, smart gateway rules offset can't be zero.\n");
+        return -1;
+      }
+
+      if (rulesLow > rulesLowMax) {
+        fprintf(stderr, "Error, smart gateway rules offset too large, maximum is %ul.\n", rulesLowMax);
+        return -1;
+      }
+
+      if (rangesOverlap(rulesLow, rulesHigh, 32766, 32767)) {
+        fprintf(stderr, "Error, smart gateway rules range [%u, %u] overlaps with rules [32766, 32767].\n", rulesLow, rulesHigh);
         return -1;
       }
     }
@@ -866,6 +937,7 @@ set_default_cnf(struct olsrd_config *cnf)
   cnf->willingness = DEF_WILLINGNESS;
   cnf->ipc_connections = DEF_IPC_CONNECTIONS;
   cnf->fib_metric = DEF_FIB_METRIC;
+  cnf->fib_metric_default = DEF_FIB_METRIC_DEFAULT;
 
   cnf->use_hysteresis = DEF_USE_HYST;
   cnf->hysteresis_param.scaling = HYST_SCALING;
@@ -901,8 +973,8 @@ set_default_cnf(struct olsrd_config *cnf)
   cnf->smart_gw_policyrouting_script = NULL;
   cnf->smart_gw_egress_interfaces = NULL;
   cnf->smart_gw_egress_interfaces_count = 0;
-  cnf->smart_gw_mark_offset_egress = DEF_GW_MARK_OFFSET_EGRESS;
-  cnf->smart_gw_mark_offset_tunnels = DEF_GW_MARK_OFFSET_TUNNELS;
+  cnf->smart_gw_offset_tables = DEF_GW_OFFSET_TABLES;
+  cnf->smart_gw_offset_rules = DEF_GW_OFFSET_RULES;
   cnf->smart_gw_allow_nat = DEF_GW_ALLOW_NAT;
   cnf->smart_gw_period = DEF_GW_PERIOD;
   cnf->smart_gw_stablecount = DEF_GW_STABLE_COUNT;
@@ -1049,9 +1121,9 @@ olsrd_print_cnf(struct olsrd_config *cnf)
   }
   printf("\n");
 
-  printf("SmGw. Mark Egress: %u\n", cnf->smart_gw_mark_offset_egress);
+  printf("SmGw. Offst Tabls: %u\n", cnf->smart_gw_offset_tables);
 
-  printf("SmGw. Mark Tunnel: %u\n", cnf->smart_gw_mark_offset_tunnels);
+  printf("SmGw. Offst Rules: %u\n", cnf->smart_gw_offset_rules);
 
   printf("SmGw. Allow NAT  : %s\n", cnf->smart_gw_allow_nat ? "yes" : "no");
 

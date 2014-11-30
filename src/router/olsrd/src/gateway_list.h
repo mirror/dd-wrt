@@ -62,7 +62,6 @@ struct gw_list {
 struct gw_container_entry {
 		struct gateway_entry * gw; /**< the gateway entry */
 		struct olsr_iptunnel_entry * tunnel; /**< the gateway tunnel */
-		uint64_t path_cost; /**< the gateway path costs */
 		struct list_node list_node; /**< the list node */
 };
 
@@ -144,8 +143,7 @@ static inline struct gw_container_entry * olsr_gw_list_get_worst_entry(struct gw
 
 struct gw_container_entry * olsr_gw_list_find(struct gw_list * list, struct gateway_entry * entry);
 struct gw_container_entry * olsr_gw_list_add(struct gw_list * list, struct gw_container_entry * entry);
-struct gw_container_entry * olsr_gw_list_update(struct gw_list * list, struct gw_container_entry * entry,
-		uint64_t gw_path_cost);
+struct gw_container_entry * olsr_gw_list_update(struct gw_list * list, struct gw_container_entry * entry);
 struct gw_container_entry * olsr_gw_list_remove(struct gw_list * list, struct gw_container_entry * entry);
 
 #endif /* __linux__ */

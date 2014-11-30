@@ -23,7 +23,7 @@ void olsr_os_cleanup_iptunnel(const char * name __attribute__((unused))) {
 }
 
 struct olsr_iptunnel_entry *olsr_os_add_ipip_tunnel(union olsr_ip_addr *target __attribute__ ((unused)),
-    bool transportV4 __attribute__ ((unused)), char *name) {
+    bool transportV4 __attribute__ ((unused)), char *name __attribute__((unused))) {
   return NULL;
 }
 
