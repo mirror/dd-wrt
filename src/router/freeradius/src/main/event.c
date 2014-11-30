@@ -1,7 +1,7 @@
 /*
  * event.c	Server event handling
  *
- * Version:	$Id: 44089021565f5d5a8d0032d39d3958f50bbd20a8 $
+ * Version:	$Id: c889bf23b14dbaeccb01566b31e44c19cd4b8181 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: 44089021565f5d5a8d0032d39d3958f50bbd20a8 $")
+RCSID("$Id: c889bf23b14dbaeccb01566b31e44c19cd4b8181 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -2631,14 +2631,11 @@ static void received_retransmit(REQUEST *request, const RADCLIENT *client)
 	switch (request->child_state) {
 	case REQUEST_QUEUED:
 	case REQUEST_RUNNING:
-#ifdef WITH_PROXY
-	discard:
-#endif
 		radlog(L_ERR, "Discarding duplicate request from "
-		       "client %s port %d - ID: %u due to unfinished request %u",
+		       "client %s port %d - ID: %u due to unfinished request %u in component %s module %s.",
 		       client->shortname,
 		       request->packet->src_port,request->packet->id,
-		       request->number);
+		       request->number, request->component, request->module);
 		break;
 
 #ifdef WITH_PROXY
@@ -2663,7 +2660,12 @@ static void received_retransmit(REQUEST *request, const RADCLIENT *client)
 		 *	packets, this logic has to be fixed.
 		 */
 		if (request->packet->code != PW_AUTHENTICATION_REQUEST) {
-			goto discard;
+			radlog(L_ERR, "Discarding duplicate request from "
+			       "client %s port %d - ID: %u due to unfinished proxied request %u",
+			       client->shortname,
+			       request->packet->src_port,request->packet->id,
+			       request->number);
+			break;
 		}
 
 		check_for_zombie_home_server(request);

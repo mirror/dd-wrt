@@ -1,7 +1,7 @@
 /*
  * rlm_expiration.c
  *
- * Version:  $Id: ed09c02a1e33bd747693f4d1fce6bada5858145c $
+ * Version:  $Id: a76ffb3e8a95cbbfc4e76c3a24f60ac5bc442d2b $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: ed09c02a1e33bd747693f4d1fce6bada5858145c $")
+RCSID("$Id: a76ffb3e8a95cbbfc4e76c3a24f60ac5bc442d2b $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -211,6 +211,6 @@ module_t rlm_expiration = {
 		NULL,			/* checksimul */
 		NULL,			/* pre-proxy */
 		NULL,			/* post-proxy */
-		NULL			/* post-auth */
+		expiration_authorize   	/* post-auth */
 	},
 };

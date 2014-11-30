@@ -1,7 +1,7 @@
 /*
  * dhcp.c	Functions to send/receive dhcp packets.
  *
- * Version:	$Id: dd8553bb1497a1a2974d95049b05ebf7127c3854 $
+ * Version:	$Id: 9af6a5fc85caa45db793d1acf4e66873667a384b $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -22,7 +22,7 @@
  */
 
 #include	<freeradius-devel/ident.h>
-RCSID("$Id: dd8553bb1497a1a2974d95049b05ebf7127c3854 $")
+RCSID("$Id: 9af6a5fc85caa45db793d1acf4e66873667a384b $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/udpfromto.h>
@@ -339,7 +339,7 @@ RADIUS_PACKET *fr_dhcp_recv(int sockfd)
 	if (getsockname(sockfd, (struct sockaddr *) &dst, &sizeof_dst) < 0) {
 		fr_strerror_printf("getsockname failed: %s", strerror(errno));
 		rad_free(&packet);
-		return NULL;	
+		return NULL;
 	}
 #endif
 
@@ -582,11 +582,14 @@ ssize_t fr_dhcp_decode_options(uint8_t *data, size_t len, VALUE_PAIR **head)
 	while (next < (data + len)) {
 		int num_entries, alen;
 		DICT_ATTR *da;
-		
+
 		p = next;
 
-		if (*p == 0) break;
-		if (*p == 255) break; /* end of options signifier */
+		if (*p == 0) {		/* 0x00 - Padding option */
+			next++;
+			continue;
+		}
+		if (*p == 255) break;	/* 0xff - End of options signifier */
 		if ((p + 2) > (data + len)) break;
 
 		next = p + 2 + p[1];
@@ -673,7 +676,7 @@ ssize_t fr_dhcp_decode_options(uint8_t *data, size_t len, VALUE_PAIR **head)
 			p += alen;
 		} /* loop over array entries */
 	} /* loop over the entire packet */
-	
+
 	return next - data;
 }
 
@@ -781,15 +784,15 @@ int fr_dhcp_decode(RADIUS_PACKET *packet)
 	/*
 	 *	Loop over the options.
 	 */
-	 
+
 	/*
-	 * 	Nothing uses tail after this call, if it does in the future 
+	 * 	Nothing uses tail after this call, if it does in the future
 	 *	it'll need to find the new tail...
 	 *	FIXME: This should also check sname && file fields.
 	 *	See the dhcp_get_option() function above.
 	 */
 	if (fr_dhcp_decode_options(packet->data + 240, packet->data_len - 240,
-				   tail) < 0) { 
+				   tail) < 0) {
 		return -1;
 	}
 
@@ -1140,7 +1143,7 @@ int fr_dhcp_encode(RADIUS_PACKET *packet)
 	} else {
 		*p++ = 1;	/* client message */
 	}
-	
+
 	/* DHCP-Hardware-Type */
 	if ((vp = pairfind(packet->vps, DHCP2ATTR(257)))) {
 		*p++ = vp->vp_integer & 0xFF;
@@ -1201,9 +1204,6 @@ int fr_dhcp_encode(RADIUS_PACKET *packet)
 
 	/* DHCP-Server-IP-Address */
 	vp = pairfind(packet->vps, DHCP2ATTR(265));
-
-	/* DHCP-DHCP-Server-Identifier */
-	if (!vp) vp = pairfind(packet->vps, DHCP2ATTR(54));
 	if (vp) {
 		lvalue = vp->vp_ipaddr;
 	} else {
@@ -1253,7 +1253,7 @@ int fr_dhcp_encode(RADIUS_PACKET *packet)
 	 *	instead of being placed verbatim in the filename field.
 	 */
 
-	/* DHCP-Boot-Filename */	
+	/* DHCP-Boot-Filename */
 	if ((vp = pairfind(packet->vps, DHCP2ATTR(269)))) {
 		if (vp->length > DHCP_FILE_LEN) {
 			memcpy(p, vp->vp_strvalue, DHCP_FILE_LEN);
@@ -1557,7 +1557,7 @@ int fr_dhcp_add_arp_entry(int fd, const char *interface,
 	interface = interface;
 	macaddr = macaddr;
 	ip = ip;
-	
+
 	fr_strerror_printf("Adding ARP entry is unsupported on this system");
 	return -1;
 #endif

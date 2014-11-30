@@ -1,7 +1,7 @@
 /*
  * dhcp.c	DHCP processing.
  *
- * Version:	$Id: 4a621cb9680e08703d485dd7b53d190733df4801 $
+ * Version:	$Id: 350c647449a94d7a20ec8637dabcce337b39556a $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -422,7 +422,7 @@ static int dhcp_process(REQUEST *request)
 	 *	identifier, use it.
 	 */
 	if (request->reply->src_ipaddr.ipaddr.ip4addr.s_addr == INADDR_ANY) {
-		vp = pairfind(request->reply->vps, DHCP2ATTR(265)); /* DHCP-Server-IP-Address */
+		vp = pairfind(request->reply->vps, PW_PACKET_SRC_IP_ADDRESS);
 		if (!vp) vp = pairfind(request->reply->vps, DHCP2ATTR(54)); /* DHCP-DHCP-Server-Identifier */
 		if (vp) {
 			request->reply->src_ipaddr.ipaddr.ip4addr.s_addr = vp->vp_ipaddr;
