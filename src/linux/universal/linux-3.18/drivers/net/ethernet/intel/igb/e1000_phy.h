@@ -61,8 +61,8 @@ s32  igb_phy_has_link(struct e1000_hw *hw, u32 iterations,
 void igb_power_up_phy_copper(struct e1000_hw *hw);
 void igb_power_down_phy_copper(struct e1000_hw *hw);
 s32  igb_phy_init_script_igp3(struct e1000_hw *hw);
-s32  igb_read_phy_reg_mdic(struct e1000_hw *hw, u32 offset, u16 *data);
-s32  igb_write_phy_reg_mdic(struct e1000_hw *hw, u32 offset, u16 data);
+s32  igb_read_phy_reg_mdic(struct e1000_hw *hw, u8 addr, u32 offset, u16 *data);
+s32  igb_write_phy_reg_mdic(struct e1000_hw *hw, u8 addr, u32 offset, u16 data);
 s32  igb_read_phy_reg_i2c(struct e1000_hw *hw, u32 offset, u16 *data);
 s32  igb_write_phy_reg_i2c(struct e1000_hw *hw, u32 offset, u16 data);
 s32  igb_read_sfp_data_byte(struct e1000_hw *hw, u16 offset, u8 *data);
@@ -72,6 +72,8 @@ s32  igb_phy_force_speed_duplex_82580(struct e1000_hw *hw);
 s32  igb_get_cable_length_82580(struct e1000_hw *hw);
 s32  igb_read_phy_reg_gs40g(struct e1000_hw *hw, u32 offset, u16 *data);
 s32  igb_write_phy_reg_gs40g(struct e1000_hw *hw, u32 offset, u16 data);
+s32  igb_read_reg_gs40g(struct e1000_hw *hw, u8 addr, u32 offset, u16 *data);
+s32  igb_write_reg_gs40g(struct e1000_hw *hw, u8 addr, u32 offset, u16 data);
 s32  igb_check_polarity_m88(struct e1000_hw *hw);
 
 /* IGP01E1000 Specific Registers */

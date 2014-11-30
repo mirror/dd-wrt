@@ -27,6 +27,7 @@ obj-$(CONFIG_NATIONAL_PHY)	+= national.o
 obj-$(CONFIG_DP83640_PHY)	+= dp83640.o
 obj-$(CONFIG_STE10XP)		+= ste10Xp.o
 obj-$(CONFIG_MICREL_PHY)	+= micrel.o
+obj-$(CONFIG_GATEWORKS_GW16083)	+= gw16083.o
 obj-$(CONFIG_MDIO_OCTEON)	+= mdio-octeon.o
 obj-$(CONFIG_AR8216_PHY)	+= ar8216.o
 obj-$(CONFIG_RTL8306_PHY)	+= rtl8306.o
