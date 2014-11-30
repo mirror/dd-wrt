@@ -8,7 +8,7 @@
 #
 ##############################################################################
 #
-#	$Id: 570c3abb8262b5d9909dc4769620f39735fce162 $
+#	$Id: 531d3f1459b0928c1277fffb37faacaf0d9dc745 $
 #
 ##############################################################################
 
@@ -403,6 +403,5 @@ ATTRIBUTE	WiMAX-vDHCP-RK-Key-ID			76	integer
 ATTRIBUTE	WiMAX-vDHCP-RK-Lifetime			77	integer
 
 # About 10 more attributes in 1.3
-
 
 END-VENDOR	WiMAX

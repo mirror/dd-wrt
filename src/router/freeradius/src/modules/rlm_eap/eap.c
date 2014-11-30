@@ -1,7 +1,7 @@
 /*
  * eap.c    rfc2284 & rfc2869 implementation
  *
- * Version:     $Id: e63be5153452a943bc04521eae886ee1c45c6eae $
+ * Version:     $Id: c207151fca60b54edf1ceac5ce01df8079334927 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -55,7 +55,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: e63be5153452a943bc04521eae886ee1c45c6eae $")
+RCSID("$Id: c207151fca60b54edf1ceac5ce01df8079334927 $")
 
 #include "rlm_eap.h"
 
@@ -1029,7 +1029,8 @@ EAP_HANDLER *eap_handler(rlm_eap_t *inst, eap_packet_t **eap_packet_p,
 			*/
                        if (strncmp(handler->identity, vp->vp_strvalue,
 				   MAX_STRING_LEN) != 0) {
-                               RDEBUG("Identity does not match User-Name.  Authentication failed.");
+                               RDEBUG("Identity (%s) does not match User-Name (%s).  Authentication failed.",
+				      handler->identity, vp->vp_strvalue);
                                free(*eap_packet_p);
                                *eap_packet_p = NULL;
                                return NULL;
@@ -1085,7 +1086,8 @@ EAP_HANDLER *eap_handler(rlm_eap_t *inst, eap_packet_t **eap_packet_p,
 			*/
                        if (strncmp(handler->identity, vp->vp_strvalue,
 				   MAX_STRING_LEN) != 0) {
-                               RDEBUG("Identity does not match User-Name, setting from EAP Identity.");
+                               RDEBUG("Identity (%s) does not match User-Name (%s).  Authentication failed.",
+				      handler->identity, vp->vp_strvalue);
                                free(*eap_packet_p);
                                *eap_packet_p = NULL;
                                eap_handler_free(inst, handler);

@@ -1,7 +1,7 @@
 /*
  * rlm_eap_tls.c  contains the interfaces that are called from eap
  *
- * Version:     $Id: 04640e9a8f26e638d8815992ec8db73a530012cc $
+ * Version:     $Id: 784fc42248393d7614674326d412c4c42e1d513e $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: 04640e9a8f26e638d8815992ec8db73a530012cc $")
+RCSID("$Id: 784fc42248393d7614674326d412c4c42e1d513e $")
 
 #include <freeradius-devel/autoconf.h>
 
@@ -138,6 +138,15 @@ static CONF_PARSER module_config[] = {
 	{ "ecdh_curve", PW_TYPE_STRING_PTR,
 	  offsetof(EAP_TLS_CONF, ecdh_curve), NULL, "prime256v1"},
 #endif
+#endif
+
+#ifdef SSL_OP_NO_TLSv1_1
+	{ "disable_tlsv1_1", PW_TYPE_BOOLEAN,
+	  offsetof(EAP_TLS_CONF, disable_tlsv1_1), NULL, NULL },
+#endif
+#ifdef SSL_OP_NO_TLSv1_2
+	{ "disable_tlsv1_2", PW_TYPE_BOOLEAN,
+	  offsetof(EAP_TLS_CONF, disable_tlsv1_2), NULL, NULL },
 #endif
 
 	{ "cache", PW_TYPE_SUBSECTION, 0, NULL, (const void *) cache_config },
@@ -354,7 +363,15 @@ static int ocsp_check(X509_STORE *store, X509 *issuer_cert, X509 *client_cert,
 	/* Setup BIO socket to OCSP responder */
 	cbio = BIO_new_connect(host);
 
-	bio_out = BIO_new_fp(stdout, BIO_NOCLOSE);
+	/*
+	 *	Only print debugging information if we're in debugging
+	 *	mode.
+	 */
+	if (debug_flag) {
+		bio_out = BIO_new_fp(stdout, BIO_NOCLOSE);
+	} else {
+		bio_out = NULL;
+	}
 
 	BIO_set_conn_port(cbio, port);
 #if OPENSSL_VERSION_NUMBER < 0x1000003f
@@ -436,17 +453,22 @@ static int ocsp_check(X509_STORE *store, X509 *issuer_cert, X509 *client_cert,
 	}
 
 	if (!OCSP_check_validity(thisupd, nextupd, nsec, maxage)) {
-		BIO_puts(bio_out, "WARNING: Status times invalid.\n");
-		ERR_print_errors(bio_out);
+		if (bio_out) {
+			BIO_puts(bio_out, "WARNING: Status times invalid.\n");
+			ERR_print_errors(bio_out);
+		}
 		goto ocsp_end;
 	}
-	BIO_puts(bio_out, "\tThis Update: ");
-        ASN1_GENERALIZEDTIME_print(bio_out, thisupd);
-        BIO_puts(bio_out, "\n");
-	if (nextupd) {
-		BIO_puts(bio_out, "\tNext Update: ");
-		ASN1_GENERALIZEDTIME_print(bio_out, nextupd);
+
+	if (bio_out) {
+		BIO_puts(bio_out, "\tThis Update: ");
+		ASN1_GENERALIZEDTIME_print(bio_out, thisupd);
 		BIO_puts(bio_out, "\n");
+		if (nextupd) {
+			BIO_puts(bio_out, "\tNext Update: ");
+			ASN1_GENERALIZEDTIME_print(bio_out, nextupd);
+			BIO_puts(bio_out, "\n");
+		}
 	}
 
 	switch (status) {
@@ -460,9 +482,12 @@ static int ocsp_check(X509_STORE *store, X509 *issuer_cert, X509 *client_cert,
 		DEBUG2("[ocsp] --> Cert status: %s",OCSP_cert_status_str(status));
                 if (reason != -1)
 			DEBUG2("[ocsp] --> Reason: %s", OCSP_crl_reason_str(reason));
-                BIO_puts(bio_out, "\tRevocation Time: ");
-                ASN1_GENERALIZEDTIME_print(bio_out, rev);
-                BIO_puts(bio_out, "\n");
+
+		if (bio_out) {
+			BIO_puts(bio_out, "\tRevocation Time: ");
+			ASN1_GENERALIZEDTIME_print(bio_out, rev);
+			BIO_puts(bio_out, "\n");
+		}
 		break;
 	}
 
@@ -474,6 +499,7 @@ ocsp_end:
 	free(port);
 	free(path);
 	BIO_free_all(cbio);
+	if (bio_out) BIO_free(bio_out);
 	OCSP_BASICRESP_free(bresp);
 
 ocsp_skip:
@@ -830,10 +856,11 @@ static int cbtls_verify(int ok, X509_STORE_CTX *ctx)
 #ifdef HAVE_OPENSSL_OCSP_H
 		if (my_ok && conf->ocsp_enable){
 			RDEBUG2("--> Starting OCSP Request");
-			if(X509_STORE_CTX_get1_issuer(&issuer_cert, ctx, client_cert)!=1) {
+			if (X509_STORE_CTX_get1_issuer(&issuer_cert, ctx, client_cert) != 1) {
 				radlog(L_ERR, "Error: Couldn't get issuer_cert for %s", common_name);
+			} else {
+				my_ok = ocsp_check(ocsp_store, issuer_cert, client_cert, conf);
 			}
-			my_ok = ocsp_check(ocsp_store, issuer_cert, client_cert, conf);
 		}
 #endif
 
@@ -1014,7 +1041,7 @@ static SSL_CTX *init_tls_ctx(EAP_TLS_CONF *conf)
 	EVP_add_digest(EVP_sha256());
 #endif
 
-	meth = TLSv1_method();
+	meth = SSLv23_method();	/* which is really "all known SSL / TLS methods".  Idiots. */
 	ctx = SSL_CTX_new(meth);
 
 	/*
@@ -1127,6 +1154,14 @@ static SSL_CTX *init_tls_ctx(EAP_TLS_CONF *conf)
 	 */
 	ctx_options |= SSL_OP_NO_SSLv2;
    	ctx_options |= SSL_OP_NO_SSLv3;
+
+#ifdef SSL_OP_NO_TLSv1_1
+	if (conf->disable_tlsv1_1) ctx_options |= SSL_OP_NO_TLSv1_1;
+#endif
+#ifdef SSL_OP_NO_TLSv1_2
+	if (conf->disable_tlsv1_2) ctx_options |= SSL_OP_NO_TLSv1_2;
+#endif
+
 #ifdef SSL_OP_NO_TICKET
 	ctx_options |= SSL_OP_NO_TICKET ;
 #endif

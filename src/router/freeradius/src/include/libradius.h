@@ -5,7 +5,7 @@
  * libradius.h	Structures and prototypes
  *		for the radius library.
  *
- * Version:	$Id: a8e3a2fd95e1e9625de7e0629ce2319d5563bda4 $
+ * Version:	$Id: b598f74ef948b65b60d116d2ed5c947372ef4b0e $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -25,7 +25,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSIDH(libradius_h, "$Id: a8e3a2fd95e1e9625de7e0629ce2319d5563bda4 $")
+RCSIDH(libradius_h, "$Id: b598f74ef948b65b60d116d2ed5c947372ef4b0e $")
 
 #include <freeradius-devel/missing.h>
 
@@ -69,6 +69,10 @@ RCSIDH(libradius_h, "$Id: a8e3a2fd95e1e9625de7e0629ce2319d5563bda4 $")
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#ifndef HAVE_SIG_T
+typedef void (*sig_t)(int);
 #endif
 
 #define EAP_START               2

@@ -1,7 +1,7 @@
 /*
  * rlm_eap_ttls.c  contains the interfaces that are called from eap
  *
- * Version:     $Id: fc31fffab2c031662d89c7f1447a0a1769a45ce2 $
+ * Version:     $Id: e81843ad9cd0f69e4f2d997390a825575f8f4ed3 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: fc31fffab2c031662d89c7f1447a0a1769a45ce2 $")
+RCSID("$Id: e81843ad9cd0f69e4f2d997390a825575f8f4ed3 $")
 
 #include "eap_ttls.h"
 
@@ -816,8 +816,8 @@ static int eapttls_postproxy(EAP_HANDLER *handler, void *data)
 			fprintf(fr_log_fp, "} # server %s\n",
 				(fake->server == NULL) ? "" : fake->server);
 			
-			RDEBUG("Final reply from tunneled session code %d",
-			       fake->reply->code);
+			RDEBUG("Final reply from tunneled session code %s",
+			       fr_packet_codes[fake->reply->code]);
 			debug_pair_list(fake->reply->vps);
 		}
 
@@ -1164,7 +1164,8 @@ int eapttls_process(EAP_HANDLER *handler, tls_session_t *tls_session)
 		fprintf(fr_log_fp, "} # server %s\n",
 			(fake->server == NULL) ? "" : fake->server);
 
-		RDEBUG("Got tunneled reply code %d", fake->reply->code);
+		RDEBUG("Got tunneled reply code %s",
+		       fr_packet_codes[fake->reply->code]);
 		
 		debug_pair_list(fake->reply->vps);
 	}
