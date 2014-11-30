@@ -598,13 +598,25 @@ static s32 igb_get_invariants_82575(struct e1000_hw *hw)
 	switch (link_mode) {
 	case E1000_CTRL_EXT_LINK_MODE_1000BASE_KX:
 		hw->phy.media_type = e1000_media_type_internal_serdes;
+		if (igb_sgmii_uses_mdio_82575(hw)) {
+			u32 mdicnfg = rd32(E1000_MDICNFG);
+			mdicnfg &= E1000_MDICNFG_PHY_MASK;
+			hw->phy.addr = mdicnfg >> E1000_MDICNFG_PHY_SHIFT;
+			hw_dbg("1000BASE_KX w/ external MDIO device at 0x%x\n",
+			       hw->phy.addr);
+		} else {
+			hw_dbg("1000BASE_KX");
+		}
 		break;
 	case E1000_CTRL_EXT_LINK_MODE_SGMII:
 		/* Get phy control interface type set (MDIO vs. I2C)*/
 		if (igb_sgmii_uses_mdio_82575(hw)) {
 			hw->phy.media_type = e1000_media_type_copper;
 			dev_spec->sgmii_active = true;
+			hw_dbg("SGMII with external MDIO PHY");
 			break;
+		} else {
+			hw_dbg("SGMII with external I2C PHY");
 		}
 		/* fall through for I2C based SGMII */
 	case E1000_CTRL_EXT_LINK_MODE_PCIE_SERDES:
@@ -621,8 +633,11 @@ static s32 igb_get_invariants_82575(struct e1000_hw *hw)
 				hw->phy.media_type = e1000_media_type_copper;
 				dev_spec->sgmii_active = true;
 			}
+			hw_dbg("SERDES with external SFP");
 
 			break;
+		} else {
+			hw_dbg("SERDES");
 		}
 
 		/* do not change link mode for 100BaseFX */
@@ -2129,7 +2144,7 @@ static s32 igb_read_phy_reg_82580(struct e1000_hw *hw, u32 offset, u16 *data)
 	if (ret_val)
 		goto out;
 
-	ret_val = igb_read_phy_reg_mdic(hw, offset, data);
+	ret_val = igb_read_phy_reg_mdic(hw, hw->phy.addr, offset, data);
 
 	hw->phy.ops.release(hw);
 
@@ -2154,7 +2169,7 @@ static s32 igb_write_phy_reg_82580(struct e1000_hw *hw, u32 offset, u16 data)
 	if (ret_val)
 		goto out;
 
-	ret_val = igb_write_phy_reg_mdic(hw, offset, data);
+	ret_val = igb_write_phy_reg_mdic(hw, hw->phy.addr, offset, data);
 
 	hw->phy.ops.release(hw);
 

@@ -489,6 +489,9 @@ int __init dw_pcie_host_init(struct pcie_port *pp)
 	if (pp->ops->host_init)
 		pp->ops->host_init(pp);
 
+	if (pp->swizzle)
+		dw_pci.swizzle = pp->swizzle;
+
 	dw_pcie_wr_own_conf(pp, PCI_BASE_ADDRESS_0, 4, 0);
 
 	/* program correct class for RC */
@@ -738,27 +741,13 @@ static struct pci_bus *dw_pcie_scan_bus(int nr, struct pci_sys_data *sys)
 static int dw_pcie_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 {
 	struct pcie_port *pp = sys_to_pcie(dev->bus->sysdata);
+	int irq;
 
-	/* TI XIO2001 PCIe-to-PCI bridge IRQs are flipped it seems */
-	if ( dev->bus && dev->bus->self
-	 && (dev->bus->self->vendor == 0x104c)
-	 && (dev->bus->self->device == 0x8240)) {
-		switch (pin) {
-		case 1: return pp->irq - 3;
-		case 2: return pp->irq - 2;
-		case 3: return pp->irq - 1;
-		case 4: return pp->irq;
-		default: return -1;
-		}
-	} else {
-		switch (pin) {
-		case 1: return pp->irq;
-		case 2: return pp->irq - 1;
-		case 3: return pp->irq - 2;
-		case 4: return pp->irq - 3;
-		default: return -1;
-		}
-	}
+	irq = of_irq_parse_and_map_pci(dev, slot, pin);
+	if (!irq)
+		irq = pp->irq;
+
+	return irq;
 }
 
 static void dw_pcie_add_bus(struct pci_bus *bus)

@@ -279,6 +279,14 @@ config MDIO_BCM_UNIMAC
 	  controllers as well as some Broadcom Ethernet switches such as the
 	  Starfighter 2 switches.
 
+config GATEWORKS_GW16083
+	tristate "Gateworks GW16083 Ethernet Expansion Mezzanine"
+	---help---
+	  The Gateworks GW16083 Ethernet Expansion Mezzanine connects to a
+	  Gateworks Ventana baseboard and provides a 7-port GbE managed
+	  Ethernet switch with 4 dedicated GbE RJ45 ports, and 2 Gbe/SFP
+	  ports"
+
 endif # PHYLIB
 
 config MICREL_KS8995MA
