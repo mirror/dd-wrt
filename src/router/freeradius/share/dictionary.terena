@@ -5,13 +5,13 @@
 #	The reference for these values is:
 #       http://www.terena.org/activities/tf-emc2/oid.html
 #
-#       $Id: 6b73b8059ad8d5011d01159a0bfac5bc5b0ef84a $
+#       $Id: b5725468c45505cad2e66189c6a400e735a8224d $
 #
-VENDOR          TERENA                          25178
+VENDOR		TERENA				25178
 
-BEGIN-VENDOR    TERENA
+BEGIN-VENDOR	TERENA
 
-ATTRIBUTE       eduroam-SP-Country                      10      string
-ATTRIBUTE       eduroam-Monitoring-Inflate              11      string
+ATTRIBUTE	eduroam-SP-Country			10	string
+ATTRIBUTE	eduroam-Monitoring-Inflate		11	string
 
 END-VENDOR      TERENA

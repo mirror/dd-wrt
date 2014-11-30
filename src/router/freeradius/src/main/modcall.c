@@ -1,7 +1,7 @@
 /*
  * modcall.c
  *
- * Version:	$Id: df384cada17e5c27f089349c81db670ec8b1bb11 $
+ * Version:	$Id: 51b977ab7a2de4418bb355bbb85ca917a4a1f9c0 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: df384cada17e5c27f089349c81db670ec8b1bb11 $")
+RCSID("$Id: 51b977ab7a2de4418bb355bbb85ca917a4a1f9c0 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modpriv.h>
@@ -728,10 +728,13 @@ redo:
 				modcall_child(request, component,
 					      depth + 1, entry, found,
 					      &result);
-				if (c->actions[result] == MOD_ACTION_RETURN) {
+				if (found->actions[result] == MOD_ACTION_RETURN) {
 					priority = -1;
 					break;
 				}
+
+				found = found->next;
+				if (!found) found = g->children;
 			}
 		}
 		MOD_LOG_CLOSE_BRACE();

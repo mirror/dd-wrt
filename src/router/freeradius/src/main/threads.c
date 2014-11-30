@@ -1,7 +1,7 @@
 /*
  * threads.c	request threading support
  *
- * Version:	$Id: 72d849fc03778864fef29e8f90323ccfa21a3b55 $
+ * Version:	$Id: d4de4ff436e4b485aeed76fc3c76a5daf966a143 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: 72d849fc03778864fef29e8f90323ccfa21a3b55 $")
+RCSID("$Id: d4de4ff436e4b485aeed76fc3c76a5daf966a143 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -1142,6 +1142,7 @@ pid_t rad_fork(void)
 	/*
 	 *	Fork & save the PID for later reaping.
 	 */
+	pthread_mutex_lock(&thread_pool.wait_mutex);
 	child_pid = fork();
 	if (child_pid > 0) {
 		int rcode;
@@ -1152,15 +1153,19 @@ pid_t rad_fork(void)
 
 		tf->pid = child_pid;
 
-		pthread_mutex_lock(&thread_pool.wait_mutex);
 		rcode = fr_hash_table_insert(thread_pool.waiters, tf);
-		pthread_mutex_unlock(&thread_pool.wait_mutex);
 
 		if (!rcode) {
 			radlog(L_ERR, "Failed to store PID, creating what will be a zombie process %d",
 			       (int) child_pid);
 			free(tf);
 		}
+	}
+	/*
+	 *	Do not unlock in child process
+	 */
+	if(child_pid != 0 ) {
+		pthread_mutex_unlock(&thread_pool.wait_mutex);
 	}
 
 	/*

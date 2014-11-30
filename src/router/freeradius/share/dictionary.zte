@@ -3,7 +3,7 @@
 #
 #       For ZTE.
 #
-#       $Id: a826c0f92b26003ac389bd18653d23095822e31d $
+#       $Id: b4eae0addea41dce5d9dbc2f968e9e29fd8abd45 $
 #
 # QoS attributes Mostly derived from:
 # http://wwwen.zte.com.cn/en/products/bearer/201308/P020130828522349526032.pdf
@@ -51,8 +51,8 @@ ATTRIBUTE	ZTE-VPN-ID				190	string
 # 0 (lowest) - 15 (highest) privilege level
 #ATTRIBUTE	ZTE-SW-Privilege			191	integer
 
-ATTRIBUTE	ZTE_Rate-Bust-DPIR              	191     integer
-ATTRIBUTE	ZTE_Rate-Bust-UPIR             	 	192     integer
+ATTRIBUTE	ZTE_Rate-Bust-DPIR			191	integer
+ATTRIBUTE	ZTE_Rate-Bust-UPIR			192	integer
 
 ATTRIBUTE	ZTE-Rate-Ctrl-PBS-Down			202	integer
 ATTRIBUTE	ZTE-Rate-Ctrl-PBS-Up			203	integer

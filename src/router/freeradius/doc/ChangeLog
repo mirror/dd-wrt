@@ -1,3 +1,24 @@
+FreeRADIUS 2.2.6 Tuesday 18 Nov 2014 15:00:00 EST, urgency=medium
+	Feature improvements
+	* When supported by OpenSSL, allow TLS 1.1 and TLS 1.2
+	  in EAP methods.
+
+	Bug fixes
+	* Fix redundant-load-balance blocks to try other modules in
+	  the group if one fails.
+	* Fix potential read into uninitialised memory in rlm_pap
+	  when normalising octet type attributes containing password
+	  hashes. This is very unlikely to happen in the wild.
+	* Don't stop decoding DHCP options if we find a padding
+	  option.
+	* Define sig_t on systems which don't have it.  Closes #765
+	* When clients are loaded from SQL, allow them to be tied
+	  to a virtual server.
+	* Prevent race conditions between fork and wait for child.
+	  Patch from James Rouzier.
+	* Allow UTF-8 characters in SQL.
+	* Back-port udpfromto fixes from v3
+
 FreeRADIUS 2.2.5 Monday 28 Apr 2014 15:20:00 EDT, urgency=medium
 	Feature improvements
 	* Update dictionary.terena.
