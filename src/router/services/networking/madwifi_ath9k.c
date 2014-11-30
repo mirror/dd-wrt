@@ -630,7 +630,6 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	sprintf(fstr, "/tmp/%s_hostap.conf", maininterface);
 	if (isfirst) {
 		fp = fopen(fstr, "wb");
-		fprintf(stderr, "%d:%s\n", __LINE__, maininterface);
 		setupHostAP_generic_ath9k(maininterface, fp, isrepeater, aoss);
 		fprintf(fp, "interface=%s\n", ifname);
 	} else {
