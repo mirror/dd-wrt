@@ -1,7 +1,7 @@
 # -*- text -*-
 # Copyright (C) 2011 The FreeRADIUS Server project and contributors
 #
-# Version $Id: 9d053af933010d5ea95f7df13e3f90a8394e174c $
+# Version $Id: 0b383ebfe40192e004a0eff4645bfb35a869b1a4 $
 #
 #	DO NOT EDIT THE FILES IN THIS DIRECTORY
 #
@@ -36,7 +36,7 @@
 #	byte    - 8 bit unsigned integer
 #	ether   - 6 octets of hh:hh:hh:hh:hh:hh
 #		  where 'h' is hex digits, upper or lowercase.
-#	short   - 16-bit unsigned integer 
+#	short   - 16-bit unsigned integer
 #	octets  - raw octets, printed and input as hex strings.
 #		  e.g.: 0x123456789abcdef
 #	tlv	- type-length-value (only for certain WiMAX attributes)
@@ -94,6 +94,8 @@ $INCLUDE dictionary.rfc6572
 $INCLUDE dictionary.rfc6677
 $INCLUDE dictionary.rfc6911
 $INCLUDE dictionary.rfc6930
+$INCLUDE dictionary.rfc7055
+$INCLUDE dictionary.rfc7268
 
 #
 #	Include vendor dictionaries after the standard ones.
@@ -115,6 +117,7 @@ $INCLUDE dictionary.azaire
 $INCLUDE dictionary.ascend
 $INCLUDE dictionary.bay
 $INCLUDE dictionary.bintec
+$INCLUDE dictionary.bluecoat
 $INCLUDE dictionary.broadsoft
 $INCLUDE dictionary.brocade
 $INCLUDE dictionary.bskyb
@@ -131,18 +134,22 @@ $INCLUDE dictionary.cisco
 #$INCLUDE dictionary.cisco.vpn3000
 $INCLUDE dictionary.cisco.vpn5000
 $INCLUDE dictionary.cisco.bbsm
+$INCLUDE dictionary.citrix
 $INCLUDE dictionary.clavister
 $INCLUDE dictionary.colubris
+$INCLUDE dictionary.compatible
 $INCLUDE dictionary.cosine
 $INCLUDE dictionary.dante
 $INCLUDE dictionary.dhcp
 $INCLUDE dictionary.dlink
 $INCLUDE dictionary.digium
+$INCLUDE dictionary.dragonwave
 $INCLUDE dictionary.efficientip
 $INCLUDE dictionary.eltex
 $INCLUDE dictionary.epygi
 $INCLUDE dictionary.erx
 $INCLUDE dictionary.ericsson
+$INCLUDE dictionary.ericsson.packet.core.networks
 $INCLUDE dictionary.extreme
 $INCLUDE dictionary.f5
 $INCLUDE dictionary.fdxtended
@@ -202,8 +209,10 @@ $INCLUDE dictionary.quiconnect
 $INCLUDE dictionary.quintum
 $INCLUDE dictionary.redback
 $INCLUDE dictionary.redcreek
+$INCLUDE dictionary.riverbed
 $INCLUDE dictionary.riverstone
 $INCLUDE dictionary.roaringpenguin
+$INCLUDE dictionary.ruckus
 $INCLUDE dictionary.shasta
 $INCLUDE dictionary.sg
 $INCLUDE dictionary.shiva
@@ -267,12 +276,12 @@ VALUE	NAS-Port-Type			Wireless-UMTS		23
 VALUE	NAS-Port-Type			Wireless-1X-EV		24
 VALUE	NAS-Port-Type			IAPP			25
 
-VALUE   NAS-Port-Type                   FTTP                    26
-VALUE   NAS-Port-Type                   Wireless-802.16         27
-VALUE   NAS-Port-Type                   Wireless-802.20         28
-VALUE   NAS-Port-Type                   Wireless-802.22         29
+VALUE	NAS-Port-Type			FTTP			26
+VALUE	NAS-Port-Type			Wireless-802.16		27
+VALUE	NAS-Port-Type			Wireless-802.20		28
+VALUE	NAS-Port-Type			Wireless-802.22		29
 
-VALUE   NAS-Port-Type                   xPON                    35
-VALUE   NAS-Port-Type                   Wireless-XGP            36
+VALUE	NAS-Port-Type			xPON			35
+VALUE	NAS-Port-Type			Wireless-XGP		36
 
 VALUE	Framed-Protocol			PPTP			9

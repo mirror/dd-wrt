@@ -52,43 +52,6 @@ dnl #############################################################
 dnl Get system information
 AC_CANONICAL_SYSTEM
 
-dnl #
-dnl #  As of OSX 10.9 (Mavericks), /usr is no longer populated with the
-dnl #  standard set of headers and libraries, instead were meant to use
-dnl #  one of the SDKs which contains system headers and libraries for
-dnl #  different versions of OSX and iOS.
-dnl #
-case "$host" in
-  *-darwin*)
-    dnl #
-    dnl #  The version of GCC apple ships with Mavericks works out of the
-    dnl #  box, and presumably selects the highest version SDK for OSX.
-    dnl #
-    AC_MSG_CHECKING([if cc is apple llvm])
-    if ! $CC --version 2>&1 | grep -I 'Apple LLVM' > /dev/null; then
-      AC_MSG_RESULT(no)
-      AC_CHECK_PROG(SW_VERS, sw_vers, yes, no)
-      AC_CHECK_PROG(XCODEBUILD, xcodebuild, yes, no)
-
-      if test "x$SW_VERS" = "xyes" && test "x$XCODEBUILD" = "xyes"; then
-        AC_MSG_NOTICE([determining OSX SDK path])
-        osx_sdk_path=$(xcodebuild -version -sdk macosx$(sw_vers -productVersion |  egrep -o '^[[0-9]]+\.[[0-9]]+') Path)
-        AC_MSG_RESULT([$osx_sdk_path])
-
-        dnl #
-        dnl #  We need to export these, else the child configure scripts all fail
-        dnl #  their compiler checks.
-        dnl #
-        export CFLAGS="$CFLAGS --sysroot=$osx_sdk_path "
-        export CPPFLAGS="$CPPFLAGS --sysroot=$osx_sdk_path "
-        export LDFLAGS="$LDFLAGS -L$osx_sdk_path/usr/lib/ "
-      fi
-    else
-      AC_MSG_RESULT(yes)
-    fi
-    ;;
-esac
-
 dnl Check for GNU cc
 AC_PROG_CC
 AC_PROG_CXX
@@ -659,6 +622,7 @@ case "$host" in
 *-darwin*)
 	CFLAGS="$CFLAGS -DDARWIN"
 	LIBS="-framework DirectoryService $LIBS"
+	AC_DEFINE([__APPLE_USE_RFC_3542], 1, [Force OSX >= 10.7 Lion to use RFC2292 IPv6 socket options])
 	;;
 esac
 
@@ -922,14 +886,11 @@ FR_CHECK_TYPE_INCLUDE([
 #endif
 ],uint32_t, unsigned int, [uint32_t should be the canonical 'network integer])
 
-FR_CHECK_TYPE_INCLUDE(
-  [
+AC_CHECK_TYPE(sig_t, AC_DEFINE(HAVE_SIG_T, 1, [signal action callback function]), [], [
     #ifdef HAVE_SIGNAL_H
     #  include <signal.h>
     #endif
-  ],
-  sig_t, void(*sig_t)(int), [signal action callback function]
-)
+])
 
 AC_CHECK_TYPE(struct in6_addr, AC_DEFINE(HAVE_STRUCT_IN6_ADDR, 1, [IPv6 address structure]), [], [
 #ifdef HAVE_NETINET_IN_H
