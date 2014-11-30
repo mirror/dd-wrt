@@ -1968,5 +1968,5 @@ struct ethtool_ops iegbe_ethtool_ops = {
 
 void set_ethtool_ops(struct net_device *netdev)
 {
-    SET_ETHTOOL_OPS(netdev, &iegbe_ethtool_ops);
+    netdev->ethtool_ops = &iegbe_ethtool_ops;
 }

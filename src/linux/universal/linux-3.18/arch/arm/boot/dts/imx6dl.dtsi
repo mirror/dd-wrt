@@ -114,8 +114,3 @@
 		      "di0_sel", "di1_sel",
 		      "di0", "di1";
 };
-
-&hdmi {
-	compatible = "fsl,imx6dl-hdmi";
-	crtcs = <&ipu1 0>, <&ipu1 1>;
-};
