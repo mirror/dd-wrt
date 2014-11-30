@@ -196,6 +196,7 @@ static int add_ipv6_addr(YYSTYPE ipaddr_arg, YYSTYPE prefixlen_arg)
 %token TOK_WILLINGNESS
 %token TOK_IPCCON
 %token TOK_FIBMETRIC
+%token TOK_FIBMETRICDEFAULT
 %token TOK_USEHYST
 %token TOK_HYSTSCALE
 %token TOK_HYSTUPPER
@@ -221,8 +222,8 @@ static int add_ipv6_addr(YYSTYPE ipaddr_arg, YYSTYPE prefixlen_arg)
 %token TOK_SMART_GW_TAKEDOWN_PERCENTAGE
 %token TOK_SMART_GW_POLICYROUTING_SCRIPT
 %token TOK_SMART_GW_EGRESS_IFS
-%token TOK_SMART_GW_MARK_OFFSET_EGRESS
-%token TOK_SMART_GW_MARK_OFFSET_TUNNELS
+%token TOK_SMART_GW_OFFSET_TABLES
+%token TOK_SMART_GW_OFFSET_RULES
 %token TOK_SMART_GW_ALLOW_NAT
 %token TOK_SMART_GW_PERIOD
 %token TOK_SMART_GW_STABLECOUNT
@@ -279,6 +280,7 @@ conf:
 stmt:       idebug
           | iipversion
           | fibmetric
+          | afibmetricdefault
           | bnoint
           | atos
           | aolsrport
@@ -314,8 +316,8 @@ stmt:       idebug
           | ismart_gw_use_count
           | ismart_gw_takedown_percentage
           | ssmart_gw_policyrouting_script
-          | ismart_gw_mark_offset_egress
-          | ismart_gw_mark_offset_tunnels
+          | ismart_gw_offset_tables
+          | ismart_gw_offset_rules
           | bsmart_gw_allow_nat
           | ismart_gw_period
           | asmart_gw_stablecount
@@ -481,7 +483,7 @@ ipchost: TOK_HOSTLABEL TOK_IPV4_ADDR
   union olsr_ip_addr ipaddr;
   PARSER_DEBUG_PRINTF("\tIPC host: %s\n", $2->string);
   
-  if (inet_aton($2->string, &ipaddr.v4) == 0) {
+  if (inet_pton(AF_INET, $2->string, &ipaddr.v4) == 0) {
     fprintf(stderr, "Failed converting IP address IPC %s\n", $2->string);
     YYABORT;
   }
@@ -585,7 +587,7 @@ isetipv4mc: TOK_IPV4_ADDR
 
   PARSER_DEBUG_PRINTF("\tIPv4 broadcast: %s\n", $1->string);
 
-  if (inet_aton($1->string, &in) == 0) {
+  if (inet_pton(AF_INET, $1->string, &in) == 0) {
     fprintf(stderr, "isetipv4br: Failed converting IP address %s\n", $1->string);
     YYABORT;
   }
@@ -625,7 +627,7 @@ isetipv4src: TOK_IPV4SRC TOK_IPV4_ADDR
 
   PARSER_DEBUG_PRINTF("\tIPv4 src: %s\n", $2->string);
 
-  if (inet_aton($2->string, &in) == 0) {
+  if (inet_pton(AF_INET, $2->string, &in) == 0) {
     fprintf(stderr, "isetipv4src: Failed converting IP address %s\n", $2->string);
     YYABORT;
   }
@@ -858,6 +860,14 @@ fibmetric:    TOK_FIBMETRIC TOK_STRING
   }
   free($1);
   free($2->string);
+  free($2);
+}
+;
+
+afibmetricdefault: TOK_FIBMETRICDEFAULT TOK_INTEGER
+{
+  PARSER_DEBUG_PRINTF("FIBMetricDefault: %d\n", $2->integer);
+  olsr_cnf->fib_metric_default = $2->integer;
   free($2);
 }
 ;
@@ -1359,7 +1369,7 @@ sgw_egress_ifs:   | sgw_egress_ifs sgw_egress_if
 
 sgw_egress_if: TOK_STRING
 {
-  struct sgw_egress_if *in, *last;
+  struct sgw_egress_if *in, *previous, *last;
   char * str = $1->string;
   char *end;
 
@@ -1383,26 +1393,28 @@ sgw_egress_if: TOK_STRING
     PARSER_DEBUG_PRINTF("Smart gateway egress interface: %s\n", str);
 
     in = olsr_cnf->smart_gw_egress_interfaces;
-    last = NULL;
+    previous = NULL;
     while (in != NULL) {
       if (strcmp(in->name, str) == 0) {
         free ($1->string);
         break;
       }
-      last = in;
+      previous = in;
       in = in->next;
     }
 
     if (in != NULL) {
-      /* remove old interface from list to add it later at the beginning */
-      if (last) {
-        last->next = in->next;
+      /* remove old interface from list to add it later at the end */
+      if (previous) {
+        previous->next = in->next;
       }
       else {
         olsr_cnf->smart_gw_egress_interfaces = in->next;
       }
+      in->next = NULL;
     }
     else {
+      /* interface in not in the list: create a new entry to add it later at the end */
       in = malloc(sizeof(*in));
       if (in == NULL) {
         fprintf(stderr, "Out of memory(ADD IF)\n");
@@ -1412,26 +1424,35 @@ sgw_egress_if: TOK_STRING
 
       in->name = str;
     }
-    /* Queue */
-    in->next = olsr_cnf->smart_gw_egress_interfaces;
-    olsr_cnf->smart_gw_egress_interfaces = in;
+
+    last = olsr_cnf->smart_gw_egress_interfaces;
+    while (last && last->next) {
+      last = last->next;
+    }
+
+    /* Add to the end of the list */
+    if (!last) {
+      olsr_cnf->smart_gw_egress_interfaces = in;
+    } else {
+      last->next = in;
+    }
     free($1);
   }
 }
 ;
 
-ismart_gw_mark_offset_egress: TOK_SMART_GW_MARK_OFFSET_EGRESS TOK_INTEGER
+ismart_gw_offset_tables: TOK_SMART_GW_OFFSET_TABLES TOK_INTEGER
 {
-  PARSER_DEBUG_PRINTF("Smart gateway mark offset egress interfaces: %d\n", $2->integer);
-  olsr_cnf->smart_gw_mark_offset_egress = $2->integer;
+  PARSER_DEBUG_PRINTF("Smart gateway tables offset: %d\n", $2->integer);
+  olsr_cnf->smart_gw_offset_tables = $2->integer;
   free($2);
 }
 ;
 
-ismart_gw_mark_offset_tunnels: TOK_SMART_GW_MARK_OFFSET_TUNNELS TOK_INTEGER
+ismart_gw_offset_rules: TOK_SMART_GW_OFFSET_RULES TOK_INTEGER
 {
-  PARSER_DEBUG_PRINTF("Smart gateway mark offset tunnel interfaces: %d\n", $2->integer);
-  olsr_cnf->smart_gw_mark_offset_tunnels = $2->integer;
+  PARSER_DEBUG_PRINTF("Smart gateway rules offset: %d\n", $2->integer);
+  olsr_cnf->smart_gw_offset_rules = $2->integer;
   free($2);
 }
 ;

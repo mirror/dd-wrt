@@ -38,6 +38,7 @@
  *
  */
 
+#include <arpa/inet.h>
 #include <unistd.h>
 #include <signal.h>
 #include <sys/stat.h>
@@ -336,7 +337,7 @@ int main(int argc, char *argv[]) {
       olsrd_version, build_date, build_host);
 
   if (argc == 2) {
-    if (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "/?") == 0) {
+    if ((strcmp(argv[1], "-h") == 0) || (strcmp(argv[1], "/?") == 0)) {
       print_usage(false);
       exit(0);
     }
@@ -1015,7 +1016,7 @@ static int olsr_process_arguments(int argc, char *argv[],
       NEXT_ARG;
       CHECK_ARGC;
 
-      if (inet_aton(*argv, &in) == 0) {
+      if (inet_pton(AF_INET, *argv, &in) == 0) {
         printf("Invalid broadcast address! %s\nSkipping it!\n", *argv);
         continue;
       }

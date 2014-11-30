@@ -68,6 +68,7 @@
 #define DEF_IPC_CONNECTIONS  0
 #define DEF_USE_HYST         false
 #define DEF_FIB_METRIC       FIBM_FLAT
+#define DEF_FIB_METRIC_DEFAULT            2
 #define DEF_LQ_LEVEL         2
 #define DEF_LQ_ALGORITHM     "etx_ff"
 #define DEF_LQ_FISH          1
@@ -78,14 +79,34 @@
 #define DEF_RTPROTO          0 /* 0 means OS-specific default */
 #define DEF_RT_NONE          -1
 #define DEF_RT_AUTO          0
+
+#define DEF_RT_TABLE_NR                   254
+#define DEF_RT_TABLE_DEFAULT_NR           254
+#define DEF_RT_TABLE_TUNNEL_NR            254
+
+#define DEF_SGW_RT_TABLE_NR               254
+#define DEF_SGW_RT_TABLE_DEFAULT_NR       223
+#define DEF_SGW_RT_TABLE_TUNNEL_NR        224
+
+#define DEF_RT_TABLE_PRI                  DEF_RT_NONE
+#define DEF_RT_TABLE_DEFAULTOLSR_PRI      DEF_RT_NONE
+#define DEF_RT_TABLE_TUNNEL_PRI           DEF_RT_NONE
+#define DEF_RT_TABLE_DEFAULT_PRI          DEF_RT_NONE
+
+#define DEF_SGW_RT_TABLE_PRI                    DEF_RT_NONE
+#define DEF_SGW_RT_TABLE_PRI_BASE               32766
+#define DEF_SGW_RT_TABLE_DEFAULTOLSR_PRI_ADDER  10
+#define DEF_SGW_RT_TABLE_TUNNEL_PRI_ADDER       10
+#define DEF_SGW_RT_TABLE_DEFAULT_PRI_ADDER      10
+
 #define DEF_MIN_TC_VTIME     0.0
 #define DEF_USE_NIIT         true
 #define DEF_SMART_GW         false
 #define DEF_SMART_GW_ALWAYS_REMOVE_SERVER_TUNNEL  false
 #define DEF_GW_USE_COUNT     1
 #define DEF_GW_TAKEDOWN_PERCENTAGE 25
-#define DEF_GW_MARK_OFFSET_EGRESS   91
-#define DEF_GW_MARK_OFFSET_TUNNELS 101
+#define DEF_GW_OFFSET_TABLES 90
+#define DEF_GW_OFFSET_RULES  0
 #define DEF_GW_PERIOD        10*1000
 #define DEF_GW_STABLE_COUNT  6
 #define DEF_GW_ALLOW_NAT     true
@@ -243,7 +264,6 @@ struct plugin_entry {
 
 struct sgw_egress_if {
   char *name;
-  uint8_t mark;
   struct sgw_egress_if *next;
 };
 
@@ -269,6 +289,7 @@ struct olsrd_config {
   int ipc_connections;
   bool use_hysteresis;
   olsr_fib_metric_options fib_metric;
+  int fib_metric_default;
   struct hyst_param hysteresis_param;
   struct plugin_entry *plugins;
   struct ip_prefix_list *hna_entries;
@@ -298,15 +319,15 @@ struct olsrd_config {
   char *smart_gw_policyrouting_script;
   struct sgw_egress_if * smart_gw_egress_interfaces;
   uint8_t smart_gw_egress_interfaces_count;
-  uint8_t smart_gw_mark_offset_egress;
-  uint8_t smart_gw_mark_offset_tunnels;
+  uint32_t smart_gw_offset_tables;
+  uint32_t smart_gw_offset_rules;
   uint32_t smart_gw_period;
   uint8_t smart_gw_stablecount;
   uint8_t smart_gw_thresh;
   uint8_t smart_gw_weight_exitlink_up;
   uint8_t smart_gw_weight_exitlink_down;
   uint8_t smart_gw_weight_etx;
-  uint8_t smart_gw_divider_etx;
+  uint32_t smart_gw_divider_etx;
   enum smart_gw_uplinktype smart_gw_type;
   uint32_t smart_gw_uplink, smart_gw_downlink;
   struct olsr_ip_prefix smart_gw_prefix;
@@ -356,6 +377,20 @@ extern "C" {
 /*
  * List functions
  */
+
+  /**
+   * Count the number of olsr interfaces
+   *
+   * @return the number of olsr interfaces
+   */
+  static inline unsigned int getNrOfOlsrInterfaces(struct olsrd_config * cfg) {
+    struct olsr_if * ifn;
+    unsigned int i = 0;
+
+      for (ifn = cfg->interfaces; ifn; ifn = ifn->next, i++) {}
+      return i;
+  }
+
 
   void ip_prefix_list_add(struct ip_prefix_list **, const union olsr_ip_addr *, uint8_t);
 

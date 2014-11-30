@@ -388,7 +388,7 @@ olsr_print_neighbor_table(void)
 
   OLSR_PRINTF(1,
               "\n--- %s ------------------------------------------------ NEIGHBORS\n\n"
-              "%*s  LQ     NLQ    SYM   MPR   MPRS  will\n", olsr_wallclock_string(),
+              "%*s\tHyst\tLQ\tETX\tSYM   MPR   MPRS  will\n", olsr_wallclock_string(),
               iplen, "IP address");
 
   for (idx = 0; idx < HASHSIZE; idx++) {
@@ -397,9 +397,15 @@ olsr_print_neighbor_table(void)
       struct link_entry *lnk = get_best_link_to_neighbor(&neigh->neighbor_main_addr);
       if (lnk) {
         struct ipaddr_str buf;
-        OLSR_PRINTF(1, "%-*s  %5.3f  %s  %s  %s  %d\n", iplen, olsr_ip_to_string(&buf, &neigh->neighbor_main_addr),
-                    (double)lnk->L_link_quality, neigh->status == SYM ? "YES " : "NO  ",
-                    neigh->is_mpr ? "YES " : "NO  ", olsr_lookup_mprs_set(&neigh->neighbor_main_addr) == NULL ? "NO  " : "YES ",
+        struct lqtextbuffer lqbuffer1, lqbuffer2;
+
+        OLSR_PRINTF(1, "%-*s\t%5.3f\t%s\t%s\t%s  %s  %s  %d\n", iplen, olsr_ip_to_string(&buf, &neigh->neighbor_main_addr),
+                    (double)lnk->L_link_quality,
+                    get_link_entry_text(lnk, '/', &lqbuffer1),
+                    get_linkcost_text(lnk->linkcost,false, &lqbuffer2),
+                    neigh->status == SYM ? "YES " : "NO  ",
+                    neigh->is_mpr ? "YES " : "NO  ",
+                    olsr_lookup_mprs_set(&neigh->neighbor_main_addr) == NULL ? "NO  " : "YES ",
                     neigh->willingness);
       }
     }
