@@ -1,0 +1,28 @@
+
+If you want to build the Debian packages from the latest git source, here is
+how to do it:
+
+First, get the latest debian/ folder from Subversion, which contains all the
+files needed to build the Debian package, then run dpkg-buildpackage:
+
+  sudo apt-get install build-essential dpkg-dev
+  git clone http://olsr.org/git/olsrd.git
+  cd olsrd
+  svn checkout svn://svn.debian.org/svn/collab-maint/deb-maint/olsrd/trunk/debian
+  echo "1.0" > debian/source/format
+  dpkg-buildpackage -uc -us
+  ls -l ../olsrd*.*
+
+If you want the package to have the proper version, then you'll need to edit
+the debian/changelog file.  Just change the version number on the top-most
+line of debian/changelog.
+
+You can also find the latest tarballs of the debian/ folder here, look on the
+right column under "Download Source Package olsrd":
+http://packages.debian.org/source/sid/olsrd
+
+e.g.
+http://ftp.debian.org/debian/pool/main/o/olsrd/olsrd_0.6.3-6.debian.tar.gz
+
+You can find complete developer info here:
+http://packages.qa.debian.org/o/olsrd.html
