@@ -46,8 +46,7 @@ unsigned int gpsFromOlsr(union olsr_message *olsrMessage,
 	char speedString[PUD_TX_SPEED_DIGITS];
 	char trackString[PUD_TX_TRACK_DIGITS];
 	char hdopString[PUD_TX_HDOP_DIGITS];
-	uint8_t smask;
-	uint8_t flags;
+	uint32_t present;
 	char gateway[2] = { '0', '\0' };
 
 	char nodeIdTypeString[PUD_TX_NODEIDTYPE_DIGITS];
@@ -78,18 +77,16 @@ unsigned int gpsFromOlsr(union olsr_message *olsrMessage,
 
 	validityTime = getValidityTime(&olsrGpsMessage->validityTime);
 
-	smask = getPositionUpdateSmask(olsrGpsMessage);
+	present = getPositionUpdatePresent(olsrGpsMessage);
 
-	flags = getPositionUpdateFlags(olsrGpsMessage);
-
-	if (flags & PUD_FLAGS_GATEWAY) {
+	if (present & PUD_PRESENT_GATEWAY) {
 		gateway[0] = '1';
 	}
 
 	/* time is ALWAYS present so we can just use it */
 	getPositionUpdateTime(olsrGpsMessage, time(NULL), &timeStruct);
 
-	if (likely(nmea_INFO_is_present_smask(smask, LAT))) {
+	if (likely(nmea_INFO_is_present(present, LAT))) {
 		double latitude = getPositionUpdateLatitude(olsrGpsMessage);
 
 		if (latitude >= 0) {
@@ -106,7 +103,7 @@ unsigned int gpsFromOlsr(union olsr_message *olsrMessage,
 		latitudeString[0] = '\0';
 	}
 
-	if (likely(nmea_INFO_is_present_smask(smask, LON))) {
+	if (likely(nmea_INFO_is_present(present, LON))) {
 		double longitude = getPositionUpdateLongitude(olsrGpsMessage);
 
 		if (longitude >= 0) {
@@ -123,25 +120,25 @@ unsigned int gpsFromOlsr(union olsr_message *olsrMessage,
 		longitudeString[0] = '\0';
 	}
 
-	if (likely(nmea_INFO_is_present_smask(smask, ELV))) {
+	if (likely(nmea_INFO_is_present(present, ELV))) {
 		snprintf(&altitudeString[0], PUD_TX_ALTITUDE_DIGITS, "%ld", getPositionUpdateAltitude(olsrGpsMessage));
 	} else {
 		altitudeString[0] = '\0';
 	}
 
-	if (likely(nmea_INFO_is_present_smask(smask, SPEED))) {
+	if (likely(nmea_INFO_is_present(present, SPEED))) {
 		snprintf(&speedString[0], PUD_TX_SPEED_DIGITS, "%lu", getPositionUpdateSpeed(olsrGpsMessage));
 	} else {
 		speedString[0] = '\0';
 	}
 
-	if (likely(nmea_INFO_is_present_smask(smask, TRACK))) {
+	if (likely(nmea_INFO_is_present(present, TRACK))) {
 		snprintf(&trackString[0], PUD_TX_TRACK_DIGITS, "%lu", getPositionUpdateTrack(olsrGpsMessage));
 	} else {
 		trackString[0] = '\0';
 	}
 
-	if (likely(nmea_INFO_is_present_smask(smask, HDOP))) {
+	if (likely(nmea_INFO_is_present(present, HDOP))) {
 		snprintf(&hdopString[0], PUD_TX_HDOP_DIGITS, "%." PUD_TX_HDOP_DECIMALS "f",
 				nmea_meters2dop(getPositionUpdateHdop(olsrGpsMessage)));
 	} else {
@@ -229,9 +226,7 @@ unsigned int gpsToOlsr(nmeaINFO *nmeaInfo, union olsr_message *olsrMessage,
 
 	setPositionUpdateVersion(olsrGpsMessage, PUD_WIRE_FORMAT_VERSION);
 	setValidityTime(&olsrGpsMessage->validityTime, validityTime);
-	setPositionUpdateSmask(olsrGpsMessage, nmeaInfo->smask);
-	setPositionUpdateFlags(olsrGpsMessage,
-			getPositionUpdateFlags(olsrGpsMessage) & ~PUD_FLAGS_GATEWAY);
+	setPositionUpdatePresent(olsrGpsMessage, nmeaInfo->present & ~PUD_PRESENT_GATEWAY);
 
 	/* utc is always present, we make sure of that elsewhere, so just use it */
 	setPositionUpdateTime(olsrGpsMessage, nmeaInfo->utc.hour, nmeaInfo->utc.min,

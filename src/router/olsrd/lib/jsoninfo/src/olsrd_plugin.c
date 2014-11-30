@@ -65,6 +65,7 @@ union olsr_ip_addr jsoninfo_listen_ip;
 int ipc_port;
 int nompr;
 bool http_headers;
+int jsoninfo_ipv6_only;
 
 static void my_init(void) __attribute__ ((constructor));
 static void my_fini(void) __attribute__ ((destructor));
@@ -81,6 +82,8 @@ my_init(void)
   /* defaults for parameters */
   ipc_port = 9090;
   http_headers = false;
+  jsoninfo_ipv6_only = false;
+
   if (olsr_cnf->ip_version == AF_INET) {
     jsoninfo_accept_ip.v4.s_addr = htonl(INADDR_LOOPBACK);
     jsoninfo_listen_ip.v4.s_addr = htonl(INADDR_ANY);
@@ -142,6 +145,7 @@ static const struct olsrd_plugin_parameters plugin_parameters[] = {
   {.name = "listen",.set_plugin_parameter = &set_plugin_ipaddress,.data = &jsoninfo_listen_ip},
   {.name = "uuidfile",.set_plugin_parameter = &store_string,.data = uuidfile},
   {.name = "httpheaders",.set_plugin_parameter = &store_boolean,.data = &http_headers},
+  {.name = "ipv6only", .set_plugin_parameter = &set_plugin_boolean, .data = &jsoninfo_ipv6_only},
 };
 
 void

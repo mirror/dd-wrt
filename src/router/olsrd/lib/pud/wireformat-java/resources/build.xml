@@ -32,6 +32,11 @@
 	-->
 
 	<target name="getgitcommit" description="Retrieve the Git Commit SHA1">
+		<exec dir="${basedir}" executable="git" outputproperty="git.commit.descriptor" failonerror="false" error="/dev/null">
+			<arg value="describe" />
+			<arg value="--dirty" />
+			<arg value="--always" />
+		</exec>
 		<exec dir="${basedir}" executable="git" outputproperty="git.commit.sha" failonerror="false" error="/dev/null">
 			<arg value="rev-parse" />
 			<arg value="HEAD" />
@@ -59,7 +64,8 @@
 			<manifest>
 				<attribute name="Class-Path" value="." />
 				<attribute name="Version" value="${version}" />
-				<attribute name="Git-SHA1" value="${git.commit.sha}" />
+				<attribute name="Git-Descriptor" value="${git.commit.descriptor}" />
+				<attribute name="Git-SHA" value="${git.commit.sha}" />
 			</manifest>
 		</jar>
 	</target>

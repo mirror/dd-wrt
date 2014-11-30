@@ -39,7 +39,7 @@ Usage:
            run "make" and "make install"
 	   This will create the "olsrd_pgraph.so.1.1" file and install it. 
 
-	3) Modify the "/etc/olsrd.conf" file of the system you wish to
+	3) Modify the "/etc/olsrd/olsrd.conf" file of the system you wish to
 	   monitor from to load the plugin. 
 	   Add the line: "LoadPlugin "olsrd_pgraph.so.1.1" {}"
 
@@ -51,7 +51,7 @@ Usage:
            # By default only localhost will be able to connect to the IPC
 	   # system of the olsrd process so if you are not going to be 
 	   # running pgraph locally, modify the "Host" variable of the 
-	   # "IpcConnect" structure in the "/etc/olsrd.conf" file to 
+	   # "IpcConnect" structure in the "/etc/olsrd/olsrd.conf" file to
 	   # reflect the IP address of the host you will be connecting from. 
 
 	5) Start olsrd and make sure that the plugin has loaded correctly.

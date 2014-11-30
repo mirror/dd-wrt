@@ -175,25 +175,28 @@ bool readUS(const char * parameterName, const char * str, unsigned short * dst) 
  @param dst
  A pointer to the location where to store the number upon successful conversion
  Not touched when errors are reported.
+ @param base
+ The base of the number conversion: 10 for decimal, 16 for hexadecimal
 
  @return
  - true on success
  - false otherwise
  */
-bool readULL(const char * parameterName, const char * str, unsigned long long * dst) {
+bool readULL(const char * parameterName, const char * str, unsigned long long * dst, int base) {
 	char * endPtr = NULL;
 	unsigned long long value;
 
 	assert(parameterName != NULL);
 	assert(str != NULL);
 	assert(dst != NULL);
+	assert(base > 1);
 
 	errno = 0;
-	value = strtoull(str, &endPtr, 10);
+	value = strtoull(str, &endPtr, base);
 
 	if (!((endPtr != str) && (*str != '\0') && (*endPtr == '\0'))) {
 		/* invalid conversion */
-		pudError(false, "Value of parameter %s (%s) could not be converted to a number", parameterName, str);
+		pudError(false, "Value of parameter %s (%s) could not be converted to a number (base %d)", parameterName, str, base);
 		return false;
 	}
 

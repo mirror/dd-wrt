@@ -24,7 +24,7 @@ PlParam "test" "anything"
 SAMPLE CONFIG
 ---------------------------------------------------------------------
 
-add in /etc/olsrd.conf:
+add in /etc/olsrd/olsrd.conf:
 
 LoadPlugin "olsrd_mini.so.0.1"
 {

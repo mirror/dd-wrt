@@ -99,6 +99,7 @@ int AddUdpDestPort(const char *value, void *data __attribute__ ((unused)), set_p
 bool InUdpDestPortList(int ip_version, union olsr_ip_addr *addr, uint16_t port);
 int SetP2pdTtl(const char *value, void *data __attribute__ ((unused)), set_plugin_parameter_addon addon __attribute__ ((unused)));
 int SetP2pdUseHashFilter(const char *value, void *data __attribute__ ((unused)), set_plugin_parameter_addon addon __attribute__ ((unused)));
+int SetP2pdUseTtlDecrement(const char *value, void *data __attribute__ ((unused)), set_plugin_parameter_addon addon __attribute__ ((unused)));
 bool p2pd_message_seen(struct node **head, struct node **tail, union olsr_message *m);
 void p2pd_store_message(struct node **head, struct node **tail, union olsr_message *m);
 bool p2pd_is_duplicate_message(union olsr_message *msg);

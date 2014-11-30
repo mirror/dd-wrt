@@ -43,14 +43,14 @@ endif
 
 install: all
 	$(INSTALL_LIB)
-	mkdir -p "$(DOCDIR_OLSRD)"
-	cp "$(RESOURCESDIR)/olsrd.sgw.speed.conf" "$(DOCDIR_OLSRD)"
+	mkdir -p "$(ETCDIR)"
+	cp "$(RESOURCESDIR)/olsrd.sgw.speed.conf" "$(ETCDIR)"
 	$(STRIP) "$(LIBDIR)/$(PLUGIN_FULLNAME)"
 
 uninstall:
-	rm -f "$(LIBDIR)/lib$(PLUGIN_NAME).so" "$(LIBDIR)/$(PLUGIN_NAME)" "$(DOCDIR_OLSRD)/olsrd.sgw.speed.conf"
+	rm -f "$(LIBDIR)/lib$(PLUGIN_NAME).so" "$(LIBDIR)/$(PLUGIN_NAME)" "$(ETCDIR)/olsrd.sgw.speed.conf"
 	$(UNINSTALL_LIB)
-	rmdir -v -p --ignore-fail-on-non-empty "$(LIBDIR)" "$(DOCDIR_OLSRD)"
+	rmdir -v -p --ignore-fail-on-non-empty "$(LIBDIR)" "$(ETCDIR)"
 
 clean:
 ifeq ($(VERBOSE),0)

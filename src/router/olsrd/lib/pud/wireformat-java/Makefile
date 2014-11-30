@@ -306,6 +306,8 @@ endif
 	$(MAKECMDPREFIX)rm -fr "$(BUILD_DIR)" "$(LIBDIR_BUILD)" \
 	        build.xml \
 	        "$(SRC_DIR_C)/$(JAVA_PKG_UNDER)_PositionUpdate.h" \
+	        "$(SRC_DIR_C)/$(JAVA_PKG_UNDER)_ClusterLeader.h" \
+	        "$(SRC_DIR_C)/$(JAVA_PKG_UNDER)_UplinkMessage.h" \
 	        "$(JAVASRC)/$(JAVA_PKG_DIR)/WireFormatConstants.java"
 
 doc: build.xml

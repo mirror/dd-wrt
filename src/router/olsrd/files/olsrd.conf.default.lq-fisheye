@@ -119,21 +119,19 @@
 
 # SmartGatewayEgressInterfaces ""
 
-# Determines the offset of the smart gateway egress interfaces mark that are
-# used in the policy routing rules in a multi-gateway setup. Only relevant
-# when a multi-gateway setup is used.
-# (default is 91)
+# Determines the routing tables offset for multi-gateway policy routing tables
+# See the policy routing script for an explanation.
+# (default is 90)
 
-# SmartGatewayMarkOffsetEgress 91
+# SmartGatewayTablesOffset 90
 
-# Determines the offset of the smart gateway tunnel interfaces mark that are
-# used in the policy routing rules in a multi-gateway setup. Only relevant
-# when a multi-gateway setup is used.
-# The ranges [egress offset, egress offset + egress count] and
-# [tunnel offset, tunnel offset + use count] are not allowed to overlap.
-# (default is 101)
+# Determines the policy routing rules offset for multi-gateway policy routing
+# rules. See the policy routing script for an explanation.
+# (default is 0, which indicates that the rules and tables should be aligned and
+# puts this value at SmartGatewayTablesOffset - # egress interfaces -
+# # olsr interfaces)
 
-# SmartGatewayMarkOffsetTunnels 101
+# SmartGatewayRulesOffset 87
 
 # Allows the selection of a smartgateway with NAT (only for IPv4)
 # (default is "yes")

@@ -54,6 +54,7 @@
 #include "scheduler.h"
 #include "log.h"
 #include "routing_table.h"
+#include "olsr_cfg.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -468,7 +469,7 @@ update_routing(void)
       continue;
     }
     
-    if ((iflags & RTF_UP) && (metric != RT_METRIC_DEFAULT)) {
+    if ((iflags & RTF_UP) && (metric != olsr_cnf->fib_metric_default)) {
       hna->checked = true;
     }
   }

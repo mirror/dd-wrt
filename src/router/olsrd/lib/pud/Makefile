@@ -82,16 +82,16 @@ install: all
 	$(MAKECMDPREFIX)$(MAKE) -C "$(NMEALIB_PATH)" DESTDIR="$(DESTDIR)" install
 	$(MAKECMDPREFIX)$(MAKE) -C "$(LIBRARY_PATH)" DESTDIR="$(DESTDIR)" install
 	$(INSTALL_LIB)
-	mkdir -p "$(DOCDIR_OLSRD)"
-	cp "$(RESOURCESDIR)/olsrd.pud.position.conf" "$(DOCDIR_OLSRD)"
+	mkdir -p "$(ETCDIR)"
+	cp "$(RESOURCESDIR)/olsrd.pud.position.conf" "$(ETCDIR)"
 	$(STRIP) "$(LIBDIR)/$(PLUGIN_FULLNAME)"
 
 uninstall:
 	$(MAKECMDPREFIX)$(MAKE) -C "$(NMEALIB_PATH)" DESTDIR="$(DESTDIR)" uninstall
 	$(MAKECMDPREFIX)$(MAKE) -C "$(LIBRARY_PATH)" DESTDIR="$(DESTDIR)" uninstall
-	rm -f "$(LIBDIR)/lib$(PLUGIN_NAME).so" "$(LIBDIR)/$(PLUGIN_NAME)" "$(DOCDIR_OLSRD)/olsrd.pud.position.conf"
+	rm -f "$(LIBDIR)/lib$(PLUGIN_NAME).so" "$(LIBDIR)/$(PLUGIN_NAME)" "$(ETCDIR)/olsrd.pud.position.conf"
 	$(UNINSTALL_LIB)
-	rmdir -v -p --ignore-fail-on-non-empty "$(LIBDIR)" "$(DOCDIR_OLSRD)"
+	rmdir -v -p --ignore-fail-on-non-empty "$(LIBDIR)" "$(ETCDIR)"
 
 clean:
 ifeq ($(VERBOSE),0)

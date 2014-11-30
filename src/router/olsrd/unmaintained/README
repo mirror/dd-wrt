@@ -361,7 +361,7 @@ Optionally, to clean all generated files:
  make uberclean
 
 Before running olsrd you must edit the default configuration file 
-/etc/olsrd.conf adding at least what interfaces olsrd is to run on. 
+/etc/olsrd/olsrd.conf adding at least what interfaces olsrd is to run on.
 Options in the config file can also be overridden by command line 
 options. See the manual pages olsrd(8) and olsrd.conf(5) for details.
 The binary is named 'olsrd' and is installed in (PREFIX)/usr/sbin. 

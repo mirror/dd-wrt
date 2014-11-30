@@ -12,7 +12,7 @@
 #    sudo make OS=android DEBUG=0 install_all
 #    which creates a /data directory on your PC.
 #
-# 4) Change /data/local/etc/olsrd.conf. You need
+# 4) Change /data/local/etc/olsrd/olsrd.conf. You need
 #    to adapt the 'Interfaces' line, e.g. to use
 #    the eth0 on your android mobile. Also, the
 #    LoadPlugin lines needs adaption, e.g. you
@@ -29,7 +29,7 @@
 DESTDIR ?=
 prefix ?=
 sbindir ?= $(prefix)/bin
-etcdir ?= $(prefix)/etc
+etcdir ?= $(prefix)/etc/olsrd
 libdir ?= $(prefix)/lib
 datarootdir ?= $(prefix)/usr/share
 
@@ -93,17 +93,21 @@ UNINSTALL_LIB =	rm -f $(LIBDIR)/$(PLUGIN_FULLNAME); \
 		/sbin/ldconfig -n $(LIBDIR)
 
 # Android NDK setup
-HOST = arm-linux-androideabi
 NDK_BASE ?= /opt/android-ndk
 NDK_PLATFORM_LEVEL ?= 4
+NDK_ARCH=$(shell uname -m)
+ifneq ($(NDK_ARCH),x86_64)
+NDK_ARCH=x86
+endif
 NDK_ABI=arm
+NDK_ABIDIR=linux-androideabi
 NDK_SYSROOT=$(NDK_BASE)/platforms/android-$(NDK_PLATFORM_LEVEL)/arch-$(NDK_ABI)
 NDK_UNAME=$(shell uname -s | tr '[A-Z]' '[a-z]')
 # if you are using NDK older than r8, you must use 4.4.3:
 #NDK_COMPILER_VERSION=4.4.3
 NDK_COMPILER_VERSION=4.6
-NDK_TOOLCHAIN=$(NDK_BASE)/toolchains/$(NDK_ABI)-linux-androideabi-$(NDK_COMPILER_VERSION)/prebuilt/$(NDK_UNAME)-x86
-CROSS_COMPILE = $(NDK_TOOLCHAIN)/bin/$(HOST)-
+NDK_TOOLCHAIN=$(NDK_BASE)/toolchains/$(NDK_ABI)-$(NDK_ABIDIR)-$(NDK_COMPILER_VERSION)/prebuilt/$(NDK_UNAME)-$(NDK_ARCH)
+CROSS_COMPILE = $(NDK_TOOLCHAIN)/bin/$(NDK_ABI)-$(NDK_ABIDIR)-
 
 CC = $(CROSS_COMPILE)gcc --sysroot="$(NDK_SYSROOT)"
 LD = $(CROSS_COMPILE)ld

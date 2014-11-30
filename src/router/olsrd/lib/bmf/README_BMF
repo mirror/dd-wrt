@@ -44,7 +44,7 @@ Set permissions, e.g.:
 
   chmod 0700 /dev/net/tun
 
-To configure BMF in OLSR, you must edit the file /etc/olsrd.conf
+To configure BMF in OLSR, you must edit the file /etc/olsrd/olsrd.conf
 to load the BMF plugin. For example, add the following lines:
 
   LoadPlugin "olsrd_bmf.so.1.7.0"
@@ -184,7 +184,7 @@ the forwarding towards non-OLSR enabled hosts are omitted):
 -------------------------
 
 All configuration of BMF is done via the "LoadPlugin" section in
-the /etc/olsrd.conf file.
+the /etc/olsrd/olsrd.conf file.
 
 The following gives an overview of all plugin parameters that can be
 configured. Unless otherwise stated, settings may differ for each node in the
@@ -354,7 +354,7 @@ non-OLSR interfaces.
 If you have network interfaces on which OLSR is *not* running, but you *do*
 want to forward multicast and local-broadcast IP packets, specify these
 interfaces one by one as "NonOlsrIf" parameters in the BMF plugin section
-of /etc/olsrd.conf. For example:
+of /etc/olsrd/olsrd.conf. For example:
 
   LoadPlugin "olsrd_bmf.so.1.7.0"
   {
@@ -374,7 +374,7 @@ as an OLSR-enabled interface.
 In a typical interworking configuration there is a network of OLSR hosts
 in which one host acts as a gateway to a fixed infrastructure network.
 Usually that host will be advertising a default route via the HNA
-mechanism, e.g. by adding the following lines to its /etc/olsrd.conf
+mechanism, e.g. by adding the following lines to its /etc/olsrd/olsrd.conf
 file:
 
   Hna4
@@ -411,7 +411,7 @@ add the following line /etc/mrouted.conf :
 
 Finally, mrouted does not accept interfaces with prefix length 32.
 Therefore, override the default IP address and prefix length of
-the BMF network interface, by editing the /etc/olsrd.conf file.
+the BMF network interface, by editing the /etc/olsrd/olsrd.conf file.
 For example:
 
   LoadPlugin "olsrd_bmf.so.1.7.0"
