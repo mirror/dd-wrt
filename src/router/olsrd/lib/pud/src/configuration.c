@@ -9,12 +9,16 @@
 
 /* OLSR includes */
 #include <olsr_protocol.h>
+#include <olsr.h>
 
 /* System includes */
 #include <unistd.h>
 #include <nmea/parse.h>
 #include <OlsrdPudWireFormat/nodeIdConversion.h>
 #include <limits.h>
+
+/* forward declarations */
+static bool setupNodeIdBinaryAndValidate(NodeIdType nodeIdTypeNumber);
 
 /*
  * Note:
@@ -36,17 +40,15 @@ NodeIdType getNodeIdTypeNumber(void) {
 	return nodeIdType;
 }
 
-int setNodeIdType(const char *value, void *data __attribute__ ((unused)),
-		set_plugin_parameter_addon addon __attribute__ ((unused))) {
-	static const char * valueName = PUD_NODE_ID_TYPE_NAME;
+static int setNodeIdType(const char *value, const char * valueName) {
 	unsigned long long nodeIdTypeNew;
 
-	if (!readULL(valueName, value, &nodeIdTypeNew)) {
+	if (!readULL(valueName, value, &nodeIdTypeNew, 10)) {
 		return true;
 	}
 
 	if (!isValidNodeIdType(nodeIdTypeNew)) {
-		pudError(false, "Value of parameter %s (%llu) is reserved", valueName,
+		pudError(false, "Value in parameter %s (%llu) is reserved", valueName,
 				nodeIdTypeNew);
 		return true;
 	}
@@ -73,14 +75,6 @@ static bool nodeIdSet = false;
 static nodeIdBinaryType nodeIdBinary;
 
 /**
- @return
- The node ID
- */
-unsigned char * getNodeId(void) {
-	return getNodeIdWithLength(NULL);
-}
-
-/**
  Get the nodeId and its length
 
  @param length
@@ -90,7 +84,7 @@ unsigned char * getNodeId(void) {
  @return
  The node ID
  */
-unsigned char * getNodeIdWithLength(size_t *length) {
+unsigned char * getNodeId(size_t *length) {
 	if (!nodeIdSet) {
 		setNodeId("", NULL, (set_plugin_parameter_addon) {.pc = NULL});
 	}
@@ -118,23 +112,79 @@ nodeIdBinaryType * getNodeIdBinary(void) {
 
 int setNodeId(const char *value, void *data __attribute__ ((unused)), set_plugin_parameter_addon addon __attribute__ ((unused))) {
 	size_t valueLength;
+	char * number;
+	char * identification;
 
 	assert (value != NULL);
 
+  nodeId[0] = '\0';
+  nodeIdLength = 0;
+  nodeIdSet = false;
+  nodeIdBinary.set = false;
+
 	valueLength = strlen(value);
-	if (valueLength > (PUD_TX_NODEID_BUFFERSIZE - 1)) {
-		pudError(false, "Value of parameter %s is too long, maximum length is"
-			" %u, current length is %lu", PUD_NODE_ID_NAME, (PUD_TX_NODEID_BUFFERSIZE - 1),
-				(unsigned long) valueLength);
-		return true;
-	}
+  number = olsr_malloc(valueLength + 1, "setNodeId");
+  strcpy(number, value);
 
-	strcpy((char *) &nodeId[0], value);
-	nodeIdLength = valueLength;
-	nodeIdSet = true;
-	nodeIdBinary.set = false;
+  /* split "number,identification" */
+  identification = strchr(number, ',');
+  if (identification) {
+    *identification = '\0';
+    identification++;
+  }
 
-	return false;
+  /* parse number into nodeIdType (if present) */
+  valueLength = strlen(number);
+  if (valueLength && setNodeIdType(number, PUD_NODE_ID_NAME)) {
+    free(number);
+    return true;
+  }
+
+  /* copy identification into nodeId (if present) */
+  if (identification) {
+    valueLength = strlen(identification);
+    if (valueLength > (PUD_TX_NODEID_BUFFERSIZE - 1)) {
+      pudError(false, "Value in parameter %s is too long, maximum length is"
+        " %u, current length is %lu", PUD_NODE_ID_NAME, (PUD_TX_NODEID_BUFFERSIZE - 1),
+          (unsigned long) valueLength);
+      free(number);
+      return true;
+    }
+
+    if (valueLength) {
+      strcpy((char *) &nodeId[0], identification);
+      nodeIdLength = valueLength;
+      nodeIdSet = true;
+    }
+  }
+
+  free(number);
+
+  /* fill in automatic values */
+  if (!nodeIdSet) {
+    if (nodeIdType == PUD_NODEIDTYPE_DNS) {
+      memset(nodeId, 0, sizeof(nodeId));
+      errno = 0;
+      if (gethostname((char *)&nodeId[0], sizeof(nodeId) - 1) < 0) {
+        pudError(true, "Could not get the host name");
+        return true;
+      }
+
+      nodeIdLength = strlen((char *)nodeId);
+      nodeIdSet = true;
+    } else if ((nodeIdType != PUD_NODEIDTYPE_MAC) && (nodeIdType != PUD_NODEIDTYPE_IPV4)
+        && (nodeIdType != PUD_NODEIDTYPE_IPV6)) {
+      pudError(false, "No node ID set while one is required for nodeId type %u", nodeIdType);
+      return true;
+    }
+  }
+
+  if (!setupNodeIdBinaryAndValidate(nodeIdType)) {
+    pudError(false, "nodeId (type %u) is incorrectly configured", nodeIdType);
+    return true;
+  }
+
+  return false;
 }
 
 /*
@@ -174,19 +224,106 @@ static bool intSetupNodeIdBinaryMAC(void) {
  - false on failure
  */
 static bool intSetupNodeIdBinaryLongLong(unsigned long long min,
-		unsigned long long max, unsigned int bytes) {
-	unsigned long long longValue = 0;
-	if (!readULL(PUD_NODE_ID_NAME, (char *) getNodeId(), &longValue)) {
-		return false;
+    unsigned long long max, unsigned int bytes) {
+  unsigned long long longValue = 0;
+  if (!readULL(PUD_NODE_ID_NAME, (char *) getNodeId(NULL), &longValue, 10)) {
+    return false;
+  }
+
+  if ((longValue < min) || (longValue > max)) {
+    pudError(false, "%s value %llu is out of range [%llu,%llu]",
+        PUD_NODE_ID_NAME, longValue, min, max);
+    return false;
+  }
+
+  return setupNodeIdBinaryLongLong(&nodeIdBinary, longValue, bytes);
+}
+
+/**
+ Validate whether the configured nodeId is valid w.r.t. the configured
+ nodeIdType, for types that fit in a double unsigned long long (128 bits) with
+ a certain split that defined by chars1
+
+ @param chars1
+ the number of characters of the first part
+ @param min1
+ the minimum value of the first part
+ @param max1
+ the maximum value of the first part
+ @param bytes1
+ the number of bytes of the first part in the buffer
+ @param min2
+ the minimum value of the second part
+ @param max2
+ the maximum value of the second part
+ @param bytes2
+ the number of bytes of the second part in the buffer
+ @param base
+ the base of the number conversion: 10 for decimal, 16 for hexadecimal
+
+ @return
+ - true when ok
+ - false on failure
+ */
+static bool intSetupNodeIdBinaryDoubleLongLong(
+    unsigned char * dst,
+    unsigned int chars1,
+    unsigned long long min1, unsigned long long max1,
+    unsigned int bytes1,
+		unsigned long long min2, unsigned long long max2,
+		unsigned int bytes2,
+		int base) {
+	unsigned long long longValue1 = 0;
+	unsigned long long longValue2 = 0;
+
+	unsigned char * node_id = getNodeId(NULL);
+	size_t node_id_len = strlen((char *)node_id);
+
+	assert(chars1 > 0);
+	assert(bytes1 > 0);
+	assert(bytes2 > 0);
+
+  /* part 1 */
+	if (node_id_len > 0) {
+    unsigned char first[chars1 + 1];
+    int cpylen = node_id_len < chars1 ? node_id_len : chars1;
+
+    memcpy(first, node_id, cpylen);
+    first[cpylen] = '\0';
+
+    if (!readULL(PUD_NODE_ID_NAME, (char *)first, &longValue1, base)) {
+      return false;
+    }
+
+    if ((longValue1 < min1) || (longValue1 > max1)) {
+      pudError(false, "First %u character(s) of %s value %llu are out of range [%llu,%llu]",
+          cpylen, PUD_NODE_ID_NAME, longValue1, min1, max1);
+      return false;
+    }
 	}
 
-	if ((longValue < min) || (longValue > max)) {
-		pudError(false, "%s value %llu is out of range [%llu,%llu]",
-				PUD_NODE_ID_NAME, longValue, min, max);
-		return false;
-	}
+  /* part 2 */
+	if (node_id_len > chars1) {
+    if (!readULL(PUD_NODE_ID_NAME, (char *)&node_id[chars1], &longValue2, base)) {
+      return false;
+    }
 
-	return setupNodeIdBinaryLongLong(&nodeIdBinary, longValue, bytes);
+    if ((longValue2 < min2) || (longValue2 > max2)) {
+      pudError(false, "Last %u character(s) of %s value %llu are out of range [%llu,%llu]",
+          (unsigned int)(node_id_len - chars1), PUD_NODE_ID_NAME, longValue2, min2, max2);
+      return false;
+    }
+  } else {
+    /* longvalue1 is the only value, so it is the least significant value:
+     * exchange the 2 values */
+    unsigned long long tmp = longValue1;
+    longValue1 = longValue2;
+    longValue2 = tmp;
+  }
+
+	return setupNodeIdBinaryDoubleLongLong(&nodeIdBinary,
+	    longValue1, &dst[0], bytes1,
+	    longValue2, &dst[bytes1], bytes2);
 }
 
 /**
@@ -198,21 +335,25 @@ static bool intSetupNodeIdBinaryLongLong(unsigned long long min,
  - false on failure
  */
 static bool intSetupNodeIdBinaryString(void) {
-	char report[256];
-	size_t nodeidlength;
-	char * nodeid = (char *)getNodeIdWithLength(&nodeidlength);
+  const char * invalidCharName;
+  size_t nodeidlength;
+  char * nodeid = (char *) getNodeId(&nodeidlength);
 
-	if (nmea_parse_sentence_has_invalid_chars(nodeid, nodeidlength, PUD_NODE_ID_NAME, &report[0], sizeof(report))) {
-		pudError(false, "%s", &report[0]);
-		return false;
-	}
+  invalidCharName = nmea_parse_sentence_has_invalid_chars(nodeid, nodeidlength);
+  if (invalidCharName) {
+    char report[256];
+    snprintf(report, sizeof(report), "Configured %s (%s),"
+        " contains invalid NMEA characters (%s)", PUD_NODE_ID_NAME, nodeid, invalidCharName);
+    pudError(false, "%s", &report[0]);
+    return false;
+  }
 
-	if (nodeidlength > (PUD_TX_NODEID_BUFFERSIZE - 1)) {
-		pudError(false, "Length of parameter %s (%s) is too great", PUD_NODE_ID_NAME, &nodeid[0]);
-		return false;
-	}
+  if (nodeidlength > (PUD_TX_NODEID_BUFFERSIZE - 1)) {
+    pudError(false, "Length of parameter %s (%s) is too great", PUD_NODE_ID_NAME, &nodeid[0]);
+    return false;
+  }
 
-	return setupNodeIdBinaryString(&nodeIdBinary, nodeid, nodeidlength);
+  return setupNodeIdBinaryString(&nodeIdBinary, nodeid, nodeidlength);
 }
 
 /**
@@ -261,6 +402,20 @@ static bool setupNodeIdBinaryAndValidate(NodeIdType nodeIdTypeNumber) {
 		case PUD_NODEIDTYPE_DNS: /* DNS name */
 			return intSetupNodeIdBinaryString();
 
+		case PUD_NODEIDTYPE_IPV4: /* IPv4 address */
+		case PUD_NODEIDTYPE_IPV6: /* IPv6 address */
+			return intSetupNodeIdBinaryIp();
+
+		case PUD_NODEIDTYPE_UUID: /* a UUID number */
+			return intSetupNodeIdBinaryDoubleLongLong(
+			    &nodeIdBinary.buffer.uuid[0],
+			    PUD_NODEIDTYPE_UUID_CHARS1,
+			    PUD_NODEIDTYPE_UUID_MIN1, PUD_NODEIDTYPE_UUID_MAX1,
+			    PUD_NODEIDTYPE_UUID_BYTES1,
+			    PUD_NODEIDTYPE_UUID_MIN2, PUD_NODEIDTYPE_UUID_MAX2,
+			    PUD_NODEIDTYPE_UUID_BYTES - PUD_NODEIDTYPE_UUID_BYTES1,
+			    16);
+
 		case PUD_NODEIDTYPE_MMSI: /* an AIS MMSI number */
 			return intSetupNodeIdBinaryLongLong(PUD_NODEIDTYPE_MMSI_MIN,
 				PUD_NODEIDTYPE_MMSI_MAX, PUD_NODEIDTYPE_MMSI_BYTES);
@@ -268,6 +423,16 @@ static bool setupNodeIdBinaryAndValidate(NodeIdType nodeIdTypeNumber) {
 		case PUD_NODEIDTYPE_URN: /* a URN number */
 			return intSetupNodeIdBinaryLongLong(PUD_NODEIDTYPE_URN_MIN,
 				PUD_NODEIDTYPE_URN_MAX, PUD_NODEIDTYPE_URN_BYTES);
+
+		case PUD_NODEIDTYPE_MIP: /* a MIP OID number */
+			return intSetupNodeIdBinaryDoubleLongLong(
+			    &nodeIdBinary.buffer.mip[0],
+			    PUD_NODEIDTYPE_MIP_CHARS1,
+			    PUD_NODEIDTYPE_MIP_MIN1, PUD_NODEIDTYPE_MIP_MAX1,
+			    PUD_NODEIDTYPE_MIP_BYTES1,
+			    PUD_NODEIDTYPE_MIP_MIN2, PUD_NODEIDTYPE_MIP_MAX2,
+			    PUD_NODEIDTYPE_MIP_BYTES - PUD_NODEIDTYPE_MIP_BYTES1,
+			    10);
 
 		case PUD_NODEIDTYPE_192:
 			return intSetupNodeIdBinaryLongLong(PUD_NODEIDTYPE_192_MIN,
@@ -281,10 +446,9 @@ static bool setupNodeIdBinaryAndValidate(NodeIdType nodeIdTypeNumber) {
 			return intSetupNodeIdBinaryLongLong(PUD_NODEIDTYPE_194_MIN,
 				PUD_NODEIDTYPE_194_MAX, PUD_NODEIDTYPE_194_BYTES);
 
-		case PUD_NODEIDTYPE_IPV4: /* IPv4 address */
-		case PUD_NODEIDTYPE_IPV6: /* IPv6 address */
-		default: /* unsupported */
-			return intSetupNodeIdBinaryIp();
+		default:
+		  pudError(false, "nodeId type %u is not supported", nodeIdTypeNumber);
+		  return false;
 	}
 
 	return false;
@@ -597,7 +761,7 @@ int setPositionFilePeriod(const char *value, void *data __attribute__ ((unused))
 
 	assert(value != NULL);
 
-	if (!readULL(valueName, value, &positionFilePeriodNew)) {
+	if (!readULL(valueName, value, &positionFilePeriodNew, 10)) {
 		return true;
 	}
 
@@ -816,9 +980,9 @@ unsigned char * getTxNmeaMessagePrefix(void) {
 
 int setTxNmeaMessagePrefix(const char *value, void *data __attribute__ ((unused)),
 		set_plugin_parameter_addon addon __attribute__ ((unused))) {
+	const char * invalidCharName;
 	static const char * valueName = PUD_TX_NMEAMESSAGEPREFIX_NAME;
 	size_t valueLength;
-	char report[256];
 
 	assert (value != NULL);
 
@@ -829,10 +993,14 @@ int setTxNmeaMessagePrefix(const char *value, void *data __attribute__ ((unused)
 		return true;
 	}
 
-	if (nmea_parse_sentence_has_invalid_chars(value, valueLength, valueName, &report[0], sizeof(report))) {
-		pudError(false, "%s", &report[0]);
-		return true;
-	}
+  invalidCharName = nmea_parse_sentence_has_invalid_chars(value, valueLength);
+  if (invalidCharName) {
+    char report[256];
+    snprintf(report, sizeof(report), "Configured %s (%s),"
+        " contains invalid NMEA characters (%s)", valueName, value, invalidCharName);
+    pudError(false, "%s", report);
+    return true;
+  }
 
 	if ((strchr(value, ' ') != NULL) || (strchr(value, '\t') != NULL)) {
 		pudError(false, "Value of parameter %s (%s) can not contain whitespace",
@@ -972,12 +1140,6 @@ int setOlsrTtl(const char *value, void *data __attribute__ ((unused)), set_plugi
 		return true;
 	}
 
-	if ((olsrTtl < 1) /* || (olsrTtl > MAX_TTL) */) {
-		pudError(false, "Value of parameter %s (%u) is outside of valid range 1-%u",
-				valueName, olsrTtl, MAX_TTL);
-		return true;
-	}
-
 	return false;
 }
 
@@ -1000,7 +1162,7 @@ int setUpdateIntervalStationary(const char *value, void *data __attribute__ ((un
 		set_plugin_parameter_addon addon __attribute__ ((unused))) {
 	static const char * valueName = PUD_UPDATE_INTERVAL_STATIONARY_NAME;
 
-	if (!readULL(valueName, value, &updateIntervalStationary)) {
+	if (!readULL(valueName, value, &updateIntervalStationary, 10)) {
 		return true;
 	}
 
@@ -1031,7 +1193,7 @@ int setUpdateIntervalMoving(const char *value, void *data __attribute__ ((unused
 		set_plugin_parameter_addon addon __attribute__ ((unused))) {
 	static const char * valueName = PUD_UPDATE_INTERVAL_MOVING_NAME;
 
-	if (!readULL(valueName, value, &updateIntervalMoving)) {
+	if (!readULL(valueName, value, &updateIntervalMoving, 10)) {
 		return true;
 	}
 
@@ -1062,7 +1224,7 @@ int setUplinkUpdateIntervalStationary(const char *value, void *data __attribute_
 		set_plugin_parameter_addon addon __attribute__ ((unused))) {
 	static const char * valueName = PUD_UPLINK_UPDATE_INTERVAL_STATIONARY_NAME;
 
-	if (!readULL(valueName, value, &uplinkUpdateIntervalStationary)) {
+	if (!readULL(valueName, value, &uplinkUpdateIntervalStationary, 10)) {
 		return true;
 	}
 
@@ -1093,7 +1255,7 @@ int setUplinkUpdateIntervalMoving(const char *value, void *data __attribute__ ((
 		set_plugin_parameter_addon addon __attribute__ ((unused))) {
 	static const char * valueName = PUD_UPLINK_UPDATE_INTERVAL_MOVING_NAME;
 
-	if (!readULL(valueName, value, &uplinkUpdateIntervalMoving)) {
+	if (!readULL(valueName, value, &uplinkUpdateIntervalMoving, 10)) {
 		return true;
 	}
 
@@ -1124,7 +1286,7 @@ int setGatewayDeterminationInterval(const char *value, void *data __attribute__ 
 		set_plugin_parameter_addon addon __attribute__ ((unused))) {
 	static const char * valueName = PUD_GATEWAY_DETERMINATION_INTERVAL_NAME;
 
-	if (!readULL(valueName, value, &gatewayDeterminationInterval)) {
+	if (!readULL(valueName, value, &gatewayDeterminationInterval, 10)) {
 		return true;
 	}
 
@@ -1153,7 +1315,7 @@ unsigned long long getMovingSpeedThreshold(void) {
 
 int setMovingSpeedThreshold(const char *value, void *data __attribute__ ((unused)),
 		set_plugin_parameter_addon addon __attribute__ ((unused))) {
-	return !readULL(PUD_MOVING_SPEED_THRESHOLD_NAME, value, &movingSpeedThreshold);
+	return !readULL(PUD_MOVING_SPEED_THRESHOLD_NAME, value, &movingSpeedThreshold, 10);
 }
 
 /*
@@ -1173,7 +1335,7 @@ unsigned long long getMovingDistanceThreshold(void) {
 
 int setMovingDistanceThreshold(const char *value, void *data __attribute__ ((unused)),
 		set_plugin_parameter_addon addon __attribute__ ((unused))) {
-	return !readULL(PUD_MOVING_DISTANCE_THRESHOLD_NAME, value, &movingDistanceThreshold);
+	return !readULL(PUD_MOVING_DISTANCE_THRESHOLD_NAME, value, &movingDistanceThreshold, 10);
 }
 
 /*
@@ -1213,7 +1375,7 @@ unsigned long long getDefaultHdop(void) {
 
 int setDefaultHdop(const char *value, void *data __attribute__ ((unused)),
 		set_plugin_parameter_addon addon __attribute__ ((unused))) {
-	return !readULL(PUD_DEFAULT_HDOP_NAME, value, &defaultHdop);
+	return !readULL(PUD_DEFAULT_HDOP_NAME, value, &defaultHdop, 10);
 }
 
 /*
@@ -1233,7 +1395,7 @@ unsigned long long getDefaultVdop(void) {
 
 int setDefaultVdop(const char *value, void *data __attribute__ ((unused)),
 		set_plugin_parameter_addon addon __attribute__ ((unused))) {
-	return !readULL(PUD_DEFAULT_VDOP_NAME, value, &defaultVdop);
+	return !readULL(PUD_DEFAULT_VDOP_NAME, value, &defaultVdop, 10);
 }
 
 /*
@@ -1255,7 +1417,7 @@ int setAverageDepth(const char *value, void *data __attribute__ ((unused)),
 		set_plugin_parameter_addon addon __attribute__ ((unused))) {
 	static const char * valueName = PUD_AVERAGE_DEPTH_NAME;
 
-	if (!readULL(valueName, value, &averageDepth)) {
+	if (!readULL(valueName, value, &averageDepth, 10)) {
 		return true;
 	}
 
@@ -1284,7 +1446,7 @@ unsigned long long getHysteresisCountToStationary(void) {
 
 int setHysteresisCountToStationary(const char *value, void *data __attribute__ ((unused)),
 		set_plugin_parameter_addon addon __attribute__ ((unused))) {
-	return !readULL(PUD_HYSTERESIS_COUNT_2STAT_NAME, value, &hysteresisCountToStationary);
+	return !readULL(PUD_HYSTERESIS_COUNT_2STAT_NAME, value, &hysteresisCountToStationary, 10);
 }
 
 /*
@@ -1304,7 +1466,7 @@ unsigned long long getHysteresisCountToMoving(void) {
 
 int setHysteresisCountToMoving(const char *value, void *data __attribute__ ((unused)),
 		set_plugin_parameter_addon addon __attribute__ ((unused))) {
-	return !readULL(PUD_HYSTERESIS_COUNT_2MOV_NAME, value, &hysteresisCountToMoving);
+	return !readULL(PUD_HYSTERESIS_COUNT_2MOV_NAME, value, &hysteresisCountToMoving, 10);
 }
 
 /*
@@ -1324,7 +1486,7 @@ unsigned long long getGatewayHysteresisCountToStationary(void) {
 
 int setGatewayHysteresisCountToStationary(const char *value, void *data __attribute__ ((unused)),
 		set_plugin_parameter_addon addon __attribute__ ((unused))) {
-	return !readULL(PUD_GAT_HYSTERESIS_COUNT_2STAT_NAME, value, &gatewayHysteresisCountToStationary);
+	return !readULL(PUD_GAT_HYSTERESIS_COUNT_2STAT_NAME, value, &gatewayHysteresisCountToStationary, 10);
 }
 
 /*
@@ -1344,7 +1506,7 @@ unsigned long long getGatewayHysteresisCountToMoving(void) {
 
 int setGatewayHysteresisCountToMoving(const char *value, void *data __attribute__ ((unused)),
 		set_plugin_parameter_addon addon __attribute__ ((unused))) {
-	return !readULL(PUD_GAT_HYSTERESIS_COUNT_2MOV_NAME, value, &gatewayHysteresisCountToMoving);
+	return !readULL(PUD_GAT_HYSTERESIS_COUNT_2MOV_NAME, value, &gatewayHysteresisCountToMoving, 10);
 }
 
 /*
@@ -1384,7 +1546,7 @@ unsigned long long getDeDupDepth(void) {
 
 int setDeDupDepth(const char *value, void *data __attribute__ ((unused)),
 		set_plugin_parameter_addon addon __attribute__ ((unused))) {
-	return !readULL(PUD_DEDUP_DEPTH_NAME, value, &deDupDepth);
+	return !readULL(PUD_DEDUP_DEPTH_NAME, value, &deDupDepth, 10);
 }
 
 /*
@@ -1428,31 +1590,6 @@ unsigned int checkConfig(void) {
 
 	if (txNonOlsrInterfaceCount == 0) {
 		pudError(false, "No transmit non-OLSR interfaces configured");
-		retval = false;
-	}
-
-	if (!nodeIdSet) {
-		if (nodeIdType == PUD_NODEIDTYPE_DNS) {
-			char name[PUD_TX_NODEID_BUFFERSIZE];
-
-			errno = 0;
-			if (gethostname(&name[0], sizeof(name)) < 0) {
-				pudError(true, "Could not get the host name");
-				retval = false;
-			} else {
-				setNodeId(&name[0], NULL,
-						(set_plugin_parameter_addon) {.pc = NULL});
-			}
-			name[PUD_TX_NODEID_BUFFERSIZE - 1] = '\0';
-		} else if ((nodeIdType != PUD_NODEIDTYPE_MAC) && (nodeIdType
-				!= PUD_NODEIDTYPE_IPV4) && (nodeIdType != PUD_NODEIDTYPE_IPV6)) {
-			pudError(false, "No node ID set while one is required for"
-				" node type %u", nodeIdType);
-			retval = false;
-		}
-	}
-
-	if (!setupNodeIdBinaryAndValidate(nodeIdType)) {
 		retval = false;
 	}
 

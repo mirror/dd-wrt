@@ -36,7 +36,7 @@ II. How to use
 --------------
 
 The Fish Eye algorithm can be enabled in the configuration file
-/etc/olsrd.conf with the following lines:
+/etc/olsrd/olsrd.conf with the following lines:
 
 	# Fish Eye mechanism for TC messages 0 = off, 1 = on
 
@@ -120,7 +120,7 @@ also critical to have MPR information in sync if the MPR algorithm is
 used, but in the author's opinion this optimization doesn't do any
 good anyway. The MPR algorithm introduces a new source of failure and
 reduces TC message redundancy, so it should be switched off in the
-configuration file /etc/olsrd.conf with these lines:
+configuration file /etc/olsrd/olsrd.conf with these lines:
 
         TcRedundancy 2
         MprCoverage  7

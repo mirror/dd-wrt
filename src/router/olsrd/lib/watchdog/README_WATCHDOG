@@ -21,7 +21,7 @@ PlParam "interval" "5"
 SAMPLE CONFIG
 ---------------------------------------------------------------------
 
-add in /etc/olsrd.conf:
+add in /etc/olsrd/olsrd.conf:
 
 LoadPlugin "olsrd_watchdog.so.0.1"
 {

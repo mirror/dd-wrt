@@ -46,10 +46,10 @@ struct route_entry {
 };
 
 /* List */
-struct route_entry route_set;
+extern struct route_entry route_set;
 
 /* Counter */
-olsr_u32_t route_count;
+extern olsr_u32_t route_count;
 
 /* Functions */
 

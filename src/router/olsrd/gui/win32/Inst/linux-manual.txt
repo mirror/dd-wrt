@@ -24,8 +24,8 @@ DESCRIPTION
        it with some debug output which is directed to STDOUT.
 
 
-       This  manual page only lists the command line arguments. For details of
-       the configuration file see the comments  included  in  /etc/olsrd.conf.
+       This  manual page only lists command line arguments. For details of the
+       configuration file see the comments  included in /etc/olsrd/olsrd.conf.
        Note  that  none  of these options need to be set at the command line -
        all these options and others can be set in the configuration file.
 
@@ -41,7 +41,7 @@ OPTIONS
 
        -f configfile
                    This option overrides the default configuration  file  path
-                   used by olsrd - /etc/olsrd.conf
+                   used by olsrd - /etc/olsrd/olsrd.conf
 
        -d debuglevel
                    This option specifies the amount of debug information olsrd
@@ -118,7 +118,7 @@ OPTIONS
 
 
 
-       FILES  /etc/olsrd.conf
+       FILES  /etc/olsrd/olsrd.conf
 
 SEE ALSO
        iwconfig(8) route(8).

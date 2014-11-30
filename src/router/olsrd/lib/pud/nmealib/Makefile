@@ -55,9 +55,6 @@ ifeq ($(VERBOSE),0)
 endif
 	$(MAKECMDPREFIX)$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
-samples: all
-	$(MAKECMDPREFIX)$(MAKE) -C samples all
-
 
 #
 # Phony Targets
@@ -70,7 +67,6 @@ all-before:
 
 clean:
 	$(MAKECMDPREFIX)$(MAKE) -C doc clean
-	$(MAKECMDPREFIX)$(MAKE) -C samples clean
 	$(MAKECMDPREFIX)rm -frv build lib
 
 doc:

@@ -16,6 +16,10 @@ bool setupNodeIdBinaryMAC(nodeIdBinaryType * nodeIdBinary, unsigned char * mac);
 bool setupNodeIdBinaryLongLong(nodeIdBinaryType * nodeIdBinary,
 		unsigned long long longValue, size_t bytes);
 
+bool setupNodeIdBinaryDoubleLongLong(nodeIdBinaryType * nodeIdBinary,
+    unsigned long long value1, unsigned char * dst1, size_t bytes1,
+    unsigned long long value2, unsigned char * dst2, size_t bytes2);
+
 bool setupNodeIdBinaryString(nodeIdBinaryType * nodeIdBinary, char * nodeId,
 		size_t nodeIdLength);
 

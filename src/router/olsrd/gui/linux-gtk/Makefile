@@ -5,7 +5,7 @@ include $(TOPDIR)/Makefile.inc
 CFLAGS += $(shell pkg-config --cflags gtk+-2.0) -fPIE -Wno-strict-prototypes \
           -Wno-cast-qual
 CPPFLAGS += $(shell pkg-config --cflags gtk+-2.0)
-LDFLAGS = -pie
+LDFLAGS += -pie
 #LDFLAGS +=	-Wl,--warn-common
 
 

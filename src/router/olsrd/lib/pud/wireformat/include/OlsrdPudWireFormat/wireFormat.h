@@ -19,17 +19,22 @@
  */
 
 /** The version of the wire format */
-#define PUD_WIRE_FORMAT_VERSION		2
+#define PUD_WIRE_FORMAT_VERSION		3
 
 /*
  * Flags
  */
 
-/** Flags that the GPS information contains the nodeId */
-#define PUD_FLAGS_ID				0x80
+/**
+ * Bitmask used in the GPS information present field to signal nodeId presence
+ */
+#define PUD_PRESENT_ID          0x80000000
 
-/** Flags that the GPS information is originating from a gateway */
-#define PUD_FLAGS_GATEWAY			0x40
+/**
+ * Bitmask used in the GPS information present field to signal that it's
+ * originating from a gateway
+ */
+#define PUD_PRESENT_GATEWAY     0x40000000
 
 /*
  * Time
@@ -148,8 +153,8 @@ typedef enum _NodeIdType {
 	/** IPv4 address, 32 bits, 4 bytes */
 	PUD_NODEIDTYPE_IPV4 = 4,
 
-	/** gap 1 */
-	PUD_NODEIDTYPE_GAP1 = 5,
+	/** UUID, 32 hexadecimal digits, 128 bits, 16 bytes */
+	PUD_NODEIDTYPE_UUID = 5,
 
 	/** IPv6 address, 128 bits, 16 bytes */
 	PUD_NODEIDTYPE_IPV6 = 6,
@@ -160,8 +165,11 @@ typedef enum _NodeIdType {
 	/** URN number, 24 bits, 3 bytes */
 	PUD_NODEIDTYPE_URN = 8,
 
+	/** MIP OID number, 67 bits, 9 bytes */
+	PUD_NODEIDTYPE_MIP = 9,
+
 	/** the last id of the globally unique node type IDs */
-	PUD_NODEIDTYPE_GLOBAL_LAST = PUD_NODEIDTYPE_URN,
+	PUD_NODEIDTYPE_GLOBAL_LAST = PUD_NODEIDTYPE_MIP,
 
 	/** the first id of the locally unique node type IDs */
 	PUD_NODEIDTYPE_LOCAL_FIRST = 192,
@@ -184,38 +192,62 @@ typedef enum _NodeIdType {
 
 /** the number of nodeId bytes for PUD_NODEIDTYPE_MSISDN */
 #define PUD_NODEIDTYPE_MSISDN_BYTES		7
-#define PUD_NODEIDTYPE_MSISDN_MIN		0LL
-#define PUD_NODEIDTYPE_MSISDN_MAX		999999999999999LL
+#define PUD_NODEIDTYPE_MSISDN_MIN		0LLU
+#define PUD_NODEIDTYPE_MSISDN_MAX		999999999999999LLU
 
 /** the number of nodeId bytes for PUD_NODEIDTYPE_TETRA */
 #define PUD_NODEIDTYPE_TETRA_BYTES		8
-#define PUD_NODEIDTYPE_TETRA_MIN		0LL
-#define PUD_NODEIDTYPE_TETRA_MAX		99999999999999999LL
+#define PUD_NODEIDTYPE_TETRA_MIN		0LLU
+#define PUD_NODEIDTYPE_TETRA_MAX		99999999999999999LLU
+
+/** the number of nodeId bytes for PUD_NODEIDTYPE_UUID */
+#define PUD_NODEIDTYPE_UUID_BYTES   16
+#define PUD_NODEIDTYPE_UUID_BYTES1  8
+#define PUD_NODEIDTYPE_UUID_BYTES2  (PUD_NODEIDTYPE_UUID_BYTES - PUD_NODEIDTYPE_UUID_BYTES1)
+#define PUD_NODEIDTYPE_UUID_CHARS   32
+#define PUD_NODEIDTYPE_UUID_CHARS1  16
+#define PUD_NODEIDTYPE_UUID_CHARS2  (PUD_NODEIDTYPE_UUID_CHARS - PUD_NODEIDTYPE_UUID_CHARS1)
+#define PUD_NODEIDTYPE_UUID_MIN1    0LLU
+#define PUD_NODEIDTYPE_UUID_MAX1    0xFFFFFFFFFFFFFFFFLLU
+#define PUD_NODEIDTYPE_UUID_MIN2    0LLU
+#define PUD_NODEIDTYPE_UUID_MAX2    0xFFFFFFFFFFFFFFFFLLU
 
 /** the number of nodeId bytes for PUD_NODEIDTYPE_MMSI */
 #define PUD_NODEIDTYPE_MMSI_BYTES		4
-#define PUD_NODEIDTYPE_MMSI_MIN			0LL
-#define PUD_NODEIDTYPE_MMSI_MAX			999999999LL
+#define PUD_NODEIDTYPE_MMSI_MIN			0LLU
+#define PUD_NODEIDTYPE_MMSI_MAX			999999999LLU
 
 /** the number of nodeId bytes for PUD_NODEIDTYPE_URN */
 #define PUD_NODEIDTYPE_URN_BYTES		3
-#define PUD_NODEIDTYPE_URN_MIN			0LL
-#define PUD_NODEIDTYPE_URN_MAX			16777215LL
+#define PUD_NODEIDTYPE_URN_MIN			0LLU
+#define PUD_NODEIDTYPE_URN_MAX			16777215LLU
+
+/** the number of nodeId bytes for PUD_NODEIDTYPE_MIP */
+#define PUD_NODEIDTYPE_MIP_BYTES    9
+#define PUD_NODEIDTYPE_MIP_BYTES1   1
+#define PUD_NODEIDTYPE_MIP_BYTES2   (PUD_NODEIDTYPE_MIP_BYTES - PUD_NODEIDTYPE_MIP_BYTES1)
+#define PUD_NODEIDTYPE_MIP_CHARS    20
+#define PUD_NODEIDTYPE_MIP_CHARS1   1
+#define PUD_NODEIDTYPE_MIP_CHARS2   (PUD_NODEIDTYPE_MIP_CHARS - PUD_NODEIDTYPE_MIP_CHARS1)
+#define PUD_NODEIDTYPE_MIP_MIN1     0LLU
+#define PUD_NODEIDTYPE_MIP_MAX1     9LLU
+#define PUD_NODEIDTYPE_MIP_MIN2     0LLU
+#define PUD_NODEIDTYPE_MIP_MAX2     9999999999999999999LLU
 
 /** the number of nodeId bytes for PUD_NODEIDTYPE_192 */
 #define PUD_NODEIDTYPE_192_BYTES		3
-#define PUD_NODEIDTYPE_192_MIN			0LL
-#define PUD_NODEIDTYPE_192_MAX			9999999LL
+#define PUD_NODEIDTYPE_192_MIN			0LLU
+#define PUD_NODEIDTYPE_192_MAX			9999999LLU
 
 /** the number of nodeId bytes for PUD_NODEIDTYPE_193 */
 #define PUD_NODEIDTYPE_193_BYTES		3
-#define PUD_NODEIDTYPE_193_MIN			0LL
-#define PUD_NODEIDTYPE_193_MAX			999999LL
+#define PUD_NODEIDTYPE_193_MIN			0LLU
+#define PUD_NODEIDTYPE_193_MAX			999999LLU
 
 /** the number of nodeId bytes for PUD_NODEIDTYPE_194 */
 #define PUD_NODEIDTYPE_194_BYTES		2
-#define PUD_NODEIDTYPE_194_MIN			1LL
-#define PUD_NODEIDTYPE_194_MAX			8191LL
+#define PUD_NODEIDTYPE_194_MIN			1LLU
+#define PUD_NODEIDTYPE_194_MAX			8191LLU
 
 /** the number of nodeId bytes for PUD_NODEIDTYPE_IPV4 (sizeof(struct in_addr)) */
 #define PUD_NODEIDTYPE_IPV4_BYTES		4
@@ -245,6 +277,8 @@ typedef struct _nodeIdBinaryType {
 				union olsr_ip_addr ip;
 				unsigned long long longValue;
 				unsigned char stringValue[PUD_TX_NODEID_BUFFERSIZE];
+				unsigned char uuid[PUD_NODEIDTYPE_UUID_BYTES];
+				unsigned char mip[PUD_NODEIDTYPE_MIP_BYTES];
 		} buffer;
 } nodeIdBinaryType;
 
@@ -269,12 +303,11 @@ typedef struct _NodeInfo {
 	unsigned char nodeId; /**< placeholder for variable length nodeId string */
 }__attribute__((__packed__)) NodeInfo;
 
-/** Complete format, 8+8+8+120+(8+variable) bits =  18+(1+variable) bytes*/
+/** Complete format, 8+8+32+120+(8+variable) bits =  21+(1+variable) bytes*/
 typedef struct _PudOlsrPositionUpdate {
 	uint8_t version; /**< the version of the sentence */
 	uint8_t validityTime; /**< the validity time of the sentence */
-	uint8_t smask; /**< mask signaling the contents of the sentence */
-	uint8_t flags; /**< mask signaling extra contents of the sentence */
+	uint32_t present; /**< mask signaling the contents of gpsInfo */
 	GpsInfo gpsInfo; /**< the GPS information (MANDATORY) */
 	NodeInfo nodeInfo; /**< placeholder for node information (OPTIONAL) */
 }__attribute__((__packed__)) PudOlsrPositionUpdate;
@@ -366,10 +399,8 @@ PudOlsrPositionUpdate * getOlsrMessagePayload(int ipVersion, union olsr_message 
  */
 uint8_t getPositionUpdateVersion(PudOlsrPositionUpdate * olsrGpsMessage);
 void setPositionUpdateVersion(PudOlsrPositionUpdate * olsrGpsMessage, uint8_t version);
-uint8_t getPositionUpdateSmask(PudOlsrPositionUpdate * olsrGpsMessage);
-void setPositionUpdateSmask(PudOlsrPositionUpdate * olsrGpsMessage, uint8_t smask);
-uint8_t getPositionUpdateFlags(PudOlsrPositionUpdate * olsrGpsMessage);
-void setPositionUpdateFlags(PudOlsrPositionUpdate * olsrGpsMessage, uint8_t flags);
+uint32_t getPositionUpdatePresent(PudOlsrPositionUpdate * olsrGpsMessage);
+void setPositionUpdatePresent(PudOlsrPositionUpdate * olsrGpsMessage, uint32_t present);
 
 /*
  * GpsInfo

@@ -29,7 +29,7 @@ static const char * regexCommentString = "^([[:space:]]*|[[:space:]#]+.*)$";
 
 /** regular expression describing a key/value pair */
 static const char * regexNameValueString =
-		"^[[:space:]]*([^[:space:]]+)[[:space:]]*=[[:space:]]*([[:digit:]]+)[[:space:]]*$";
+		"^[[:space:]]*([^[:space:]]+)[[:space:]]*=[[:space:]]*(.*?)[[:space:]]*$";
 
 /** the number of matches in regexNameValueString */
 static const size_t regexNameValuematchCount = 3;
@@ -85,6 +85,20 @@ static bool readUL(const char * valueName, const char * value, unsigned long * v
 	*valueNumber = valueNew;
 
 	return true;
+}
+
+/**
+ * Strip EOL characters from a string
+ *
+ * @param str the string to strip
+ * @param endindex the index of the \0 string terminator (end-of-string/strlen)
+ */
+static void stripEols(char * str, regoff_t endindex) {
+  regoff_t len = endindex;
+  while ((len > 0) && ((str[len - 1] == '\n') || (str[len - 1] == '\r'))) {
+    len--;
+  }
+  str[len] = '\0';
 }
 
 /**
@@ -154,6 +168,8 @@ static bool regexMatch(regex_t * regex, char * line, size_t nmatch, regmatch_t p
 /** the buffer in which to store a line read from the file */
 static char line[LINE_LENGTH];
 
+static bool reportedErrorsPrevious = false;
+
 /**
  * Read the speed file
  * @param fileName the filename
@@ -169,6 +185,7 @@ void readSpeedFile(char * fileName) {
 	unsigned long downlink = DEF_DOWNLINK_SPEED;
 	bool uplinkSet = false;
 	bool downlinkSet = false;
+	bool reportedErrors = false;
 
 	fd = open(fileName, O_RDONLY);
 	if (fd < 0) {
@@ -203,10 +220,12 @@ void readSpeedFile(char * fileName) {
 		}
 
 		if (!regexMatch(&regexNameValue, line, regexNameValuematchCount, pmatch)) {
-			sgwDynSpeedError(false, "Gateway speed file \"%s\", line %d uses invalid syntax: %s", fileName, lineNumber,
+			sgwDynSpeedError(false, "Gateway speed file \"%s\", line %d uses invalid syntax: ignored (%s)", fileName, lineNumber,
 					line);
-			goto out;
+			continue;
 		}
+
+		stripEols(line, pmatch[2].rm_eo);
 
 		/* determine name/value */
 		name = &line[pmatch[1].rm_so];
@@ -216,20 +235,30 @@ void readSpeedFile(char * fileName) {
 
 		if (!strncasecmp(SPEED_UPLINK_NAME, name, sizeof(line))) {
 			if (!readUL(SPEED_UPLINK_NAME, value, &uplink)) {
-				goto out;
+				sgwDynSpeedError(false, "Gateway speed file \"%s\", line %d: %s value \"%s\" is not a valid number: ignored",
+					fileName, lineNumber, SPEED_UPLINK_NAME, value);
+				reportedErrors = true;
+			} else {
+				uplinkSet = true;
 			}
-			uplinkSet = true;
 		} else if (!strncasecmp(SPEED_DOWNLINK_NAME, name, sizeof(line))) {
 			if (!readUL(SPEED_DOWNLINK_NAME, value, &downlink)) {
-				goto out;
+				sgwDynSpeedError(false, "Gateway speed file \"%s\", line %d: %s value \"%s\" is not a valid number: ignored",
+					fileName, lineNumber, SPEED_DOWNLINK_NAME, value);
+				reportedErrors = true;
+			} else {
+				downlinkSet = true;
 			}
-			downlinkSet = true;
 		} else {
-			sgwDynSpeedError(false, "Gateway speed file \"%s\", line %d uses an invalid option \"%s\","
-					" valid options are [%s|%s]", fileName, lineNumber, name, SPEED_UPLINK_NAME, SPEED_DOWNLINK_NAME);
-			goto out;
+		  if (!reportedErrorsPrevious) {
+		    sgwDynSpeedError(false, "Gateway speed file \"%s\", line %d specifies an unknown option \"%s\": ignored",
+		        fileName, lineNumber, name);
+		    reportedErrors = true;
+		  }
 		}
 	}
+
+	reportedErrorsPrevious = reportedErrors;
 
 	fclose(fp);
 	fp = NULL;
@@ -244,11 +273,7 @@ void readSpeedFile(char * fileName) {
 	  refresh_smartgw_netmask();
 	}
 
-	out: if (fp) {
-		fclose(fp);
-	}
-	if (fd >= 0) {
+	out: if (fd >= 0) {
 		close(fd);
 	}
-	return;
 }
