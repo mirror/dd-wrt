@@ -58,7 +58,7 @@ PlParam "Version" "<version>"
 SAMPLE CONFIG
 ---------------------------------------------------------------------
 
-add in /usr/local/etc/olsrd.conf:
+add in /etc/olsrd/olsrd.conf:
 
 LoadPlugin "olsrd_quagga.so.0.2.2"
 {

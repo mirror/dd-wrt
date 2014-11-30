@@ -31,6 +31,9 @@
 
 #include "routes.h"
 
+struct route_entry route_set;
+olsr_u32_t route_count;
+
 int
 init_route_entries(void)
 {

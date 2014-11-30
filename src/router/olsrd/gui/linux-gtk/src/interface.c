@@ -28,6 +28,20 @@
 
 /* Global widgets */
 
+GtkWidget *net_label;
+GtkWidget *info_label;
+GtkTextBuffer *textBuffer;
+GtkWidget *connect_button;
+GtkWidget *packet_list;
+GtkWidget *packet_content_list;
+GtkWidget *packet_button;
+GtkWidget *packet_disp_button;
+GtkWidget *node_list;
+GtkWidget *mid_list;
+GtkWidget *mpr_list;
+GtkWidget *hna_list;
+GtkWidget *route_list;
+
 /* GtkWidget *text1; */
 
 GdkBitmap *mask;

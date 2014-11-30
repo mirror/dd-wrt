@@ -14,8 +14,8 @@ public class WireFormatConstants {
 
 	public static final int VERSION = PUD_WIRE_FORMAT_VERSION;
 
-	public static final int FLAGS_ID = PUD_FLAGS_ID;
-	public static final int FLAGS_GATEWAY = PUD_FLAGS_GATEWAY;
+	public static final int PRESENT_ID = PUD_PRESENT_ID;
+	public static final int PRESENT_GATEWAY = PUD_PRESENT_GATEWAY;
 
 	public static final int TIME_BITS = PUD_TIME_BITS;
 
@@ -48,8 +48,20 @@ public class WireFormatConstants {
 	public static final int NODEIDTYPE_MAC_BYTES = PUD_NODEIDTYPE_MAC_BYTES;
 	public static final int NODEIDTYPE_MSISDN_BYTES = PUD_NODEIDTYPE_MSISDN_BYTES;
 	public static final int NODEIDTYPE_TETRA_BYTES = PUD_NODEIDTYPE_TETRA_BYTES;
+	public static final int NODEIDTYPE_UUID_BYTES  = PUD_NODEIDTYPE_UUID_BYTES;
+	public static final int NODEIDTYPE_UUID_BYTES1 = PUD_NODEIDTYPE_UUID_BYTES1;
+	public static final int NODEIDTYPE_UUID_BYTES2 = PUD_NODEIDTYPE_UUID_BYTES2;
+	public static final int NODEIDTYPE_UUID_CHARS  = PUD_NODEIDTYPE_UUID_CHARS;
+	public static final int NODEIDTYPE_UUID_CHARS1 = PUD_NODEIDTYPE_UUID_CHARS1;
+	public static final int NODEIDTYPE_UUID_CHARS2 = PUD_NODEIDTYPE_UUID_CHARS2;
 	public static final int NODEIDTYPE_MMSI_BYTES = PUD_NODEIDTYPE_MMSI_BYTES;
 	public static final int NODEIDTYPE_URN_BYTES = PUD_NODEIDTYPE_URN_BYTES;
+	public static final int NODEIDTYPE_MIP_BYTES  = PUD_NODEIDTYPE_MIP_BYTES;
+	public static final int NODEIDTYPE_MIP_BYTES1 = PUD_NODEIDTYPE_MIP_BYTES1;
+	public static final int NODEIDTYPE_MIP_BYTES2 = PUD_NODEIDTYPE_MIP_BYTES2;
+	public static final int NODEIDTYPE_MIP_CHARS  = PUD_NODEIDTYPE_MIP_CHARS;
+	public static final int NODEIDTYPE_MIP_CHARS1 = PUD_NODEIDTYPE_MIP_CHARS1;
+	public static final int NODEIDTYPE_MIP_CHARS2 = PUD_NODEIDTYPE_MIP_CHARS2;
 	public static final int NODEIDTYPE_192_BYTES = PUD_NODEIDTYPE_192_BYTES;
 	public static final int NODEIDTYPE_193_BYTES = PUD_NODEIDTYPE_193_BYTES;
 	public static final int NODEIDTYPE_194_BYTES = PUD_NODEIDTYPE_194_BYTES;

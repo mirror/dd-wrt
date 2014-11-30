@@ -70,6 +70,37 @@ static char *getNodeIdNumberFromOlsr(unsigned char * buffer,
 }
 
 /**
+ Get a nodeId hexadecimal number (in string representation), using a certain
+ number of bytes, from the message of an OLSR message.
+
+ @param buffer
+ A pointer to the buffer that holds the nodeId
+ @param bufferSize
+ The number of bytes used by the number in the buffer
+ @param nodeIdBuffer
+ The buffer in which to place the nodeId number in string representation
+ @param nodeIdBufferSize
+ The size of the nodeIdbuffer
+
+ @return
+ A pointer to the nodeId string representation (&nodeIdBuffer[0])
+ */
+static char *getNodeIdHexNumberFromOlsr(unsigned char * buffer,
+		unsigned int bufferSize, char *nodeIdBuffer, socklen_t nodeIdBufferSize) {
+	unsigned long long val = 0;
+	unsigned int i = 0;
+
+	while (i < bufferSize) {
+		val <<= 8;
+		val += buffer[i];
+		i++;
+	}
+
+	snprintf(nodeIdBuffer, nodeIdBufferSize, "%llx", val);
+	return &nodeIdBuffer[0];
+}
+
+/**
  Convert the nodeId of an OLSR message into a string.
 
  @param ipVersion
@@ -121,7 +152,12 @@ void getNodeIdStringFromOlsr(int ipVersion, union olsr_message *olsrMessage,
 		break;
 
 	case PUD_NODEIDTYPE_DNS: /* DNS name */
-		*nodeIdStr = (char *) nodeId;
+		if (nodeIdSize >= nodeIdStrBufferSize) {
+		  nodeIdSize = nodeIdStrBufferSize - 1;
+		}
+		memcpy(nodeIdStrBuffer, nodeId, nodeIdSize);
+		nodeIdStrBuffer[nodeIdSize] = '\0';
+		*nodeIdStr = &nodeIdStrBuffer[0];
 		break;
 
 	case PUD_NODEIDTYPE_MSISDN: /* an MSISDN number */
@@ -134,6 +170,32 @@ void getNodeIdStringFromOlsr(int ipVersion, union olsr_message *olsrMessage,
 		*nodeIdStr = getNodeIdNumberFromOlsr(nodeId, nodeIdSize,
 				nodeIdStrBuffer, nodeIdStrBufferSize);
 		break;
+
+	case PUD_NODEIDTYPE_UUID: /* a UUID number */
+	  *nodeIdStr = getNodeIdHexNumberFromOlsr(
+	      &nodeId[0],
+	      PUD_NODEIDTYPE_UUID_BYTES1,
+	      &nodeIdStrBuffer[0],
+	      PUD_NODEIDTYPE_UUID_CHARS1 + 1);
+	  getNodeIdHexNumberFromOlsr(
+	      &nodeId[PUD_NODEIDTYPE_UUID_BYTES1],
+	      nodeIdSize - PUD_NODEIDTYPE_UUID_BYTES1,
+	      &nodeIdStrBuffer[PUD_NODEIDTYPE_UUID_CHARS1],
+	      nodeIdStrBufferSize - PUD_NODEIDTYPE_UUID_CHARS1);
+		break;
+
+	case PUD_NODEIDTYPE_MIP: /* a MIP OID number */
+	  *nodeIdStr = getNodeIdNumberFromOlsr(
+	      &nodeId[0],
+	      PUD_NODEIDTYPE_MIP_BYTES1,
+	      &nodeIdStrBuffer[0],
+	      PUD_NODEIDTYPE_MIP_CHARS1 + 1);
+	  getNodeIdNumberFromOlsr(
+	      &nodeId[PUD_NODEIDTYPE_MIP_BYTES1],
+	      nodeIdSize - PUD_NODEIDTYPE_MIP_BYTES1,
+	      &nodeIdStrBuffer[PUD_NODEIDTYPE_MIP_CHARS1],
+	      nodeIdStrBufferSize - PUD_NODEIDTYPE_MIP_CHARS1);
+	  break;
 
 	case PUD_NODEIDTYPE_IPV4: /* IPv4 address */
 	case PUD_NODEIDTYPE_IPV6: /* IPv6 address */
@@ -195,6 +257,56 @@ bool setupNodeIdBinaryLongLong(nodeIdBinaryType * nodeIdBinary,
 	assert(longValue == 0);
 
 	nodeIdBinary->length = bytes;
+	nodeIdBinary->set = true;
+	return true;
+}
+
+/**
+ Convert two given unsigned long longs to the binary/wireformat representation
+ of them.
+
+ @param nodeIdBinary
+ a pointer to the buffer in which to store the binary/wireformat representation
+ @param value1
+ the first value to convert (in machine byte-order)
+ @param dst1
+ A pointer where to store the conversion of value1
+ @param bytes1
+ the number of bytes used by value1
+ @param value2
+ the second value to convert (in machine byte-order)
+ @param dst2
+ A pointer where to store the conversion of value2
+ @param bytes2
+ the number of bytes used by value2
+
+ @return
+ - true when ok
+ - false on failure
+ */
+bool setupNodeIdBinaryDoubleLongLong(nodeIdBinaryType * nodeIdBinary,
+    unsigned long long value1, unsigned char * dst1, size_t bytes1,
+    unsigned long long value2, unsigned char * dst2, size_t bytes2) {
+	unsigned long long longValue1 = value1;
+	unsigned long long longValue2 = value2;
+	int i1 = bytes1 - 1;
+	int i2 = bytes2 - 1;
+
+	while (i1 >= 0) {
+		dst1[i1] = longValue1 & 0xff;
+		longValue1 >>= 8;
+		i1--;
+	}
+	assert(longValue1 == 0);
+
+	while (i2 >= 0) {
+		dst2[i2] = longValue2 & 0xff;
+		longValue2 >>= 8;
+		i2--;
+	}
+	assert(longValue2 == 0);
+
+	nodeIdBinary->length = bytes1 + bytes2;
 	nodeIdBinary->set = true;
 	return true;
 }

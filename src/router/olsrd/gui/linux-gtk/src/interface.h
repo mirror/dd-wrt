@@ -34,19 +34,19 @@
 #include <gdk/gdk.h>
 #include <gdk/gdkkeysyms.h>
 
-GtkWidget *net_label;
-GtkWidget *info_label;
-GtkTextBuffer *textBuffer;
-GtkWidget *connect_button;
-GtkWidget *packet_list;
-GtkWidget *packet_content_list;
-GtkWidget *packet_button;
-GtkWidget *packet_disp_button;
-GtkWidget *node_list;
-GtkWidget *mid_list;
-GtkWidget *mpr_list;
-GtkWidget *hna_list;
-GtkWidget *route_list;
+extern GtkWidget *net_label;
+extern GtkWidget *info_label;
+extern GtkTextBuffer *textBuffer;
+extern GtkWidget *connect_button;
+extern GtkWidget *packet_list;
+extern GtkWidget *packet_content_list;
+extern GtkWidget *packet_button;
+extern GtkWidget *packet_disp_button;
+extern GtkWidget *node_list;
+extern GtkWidget *mid_list;
+extern GtkWidget *mpr_list;
+extern GtkWidget *hna_list;
+extern GtkWidget *route_list;
 
 void fill_clist(GtkCList *);
 

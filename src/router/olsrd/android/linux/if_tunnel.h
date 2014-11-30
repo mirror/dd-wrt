@@ -3,6 +3,7 @@
 
 #include <linux/types.h>
 #include <asm/byteorder.h>
+#include <net/if.h>
 
 #ifdef __KERNEL__
 #include <linux/ip.h>

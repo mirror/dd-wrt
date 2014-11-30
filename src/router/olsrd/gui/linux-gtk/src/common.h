@@ -47,17 +47,17 @@ extern struct timeval hold_time_nodes; /* Timeout for all nodes */
 extern struct timeval now;
 
 /* Our address */
-union olsr_ip_addr main_addr;
-union olsr_ip_addr null_addr;
+extern union olsr_ip_addr main_addr;
+extern union olsr_ip_addr null_addr;
 
-int ipversion;
-int ipsize;
-char ipv6_buf[100];                    /* buffer for IPv6 inet_htop */
+extern int ipversion;
+extern int ipsize;
+extern char ipv6_buf[100];                    /* buffer for IPv6 inet_htop */
 
-int nodes_timeout;
+extern int nodes_timeout;
 
-int freeze_packets;
-int display_dec;
+extern int freeze_packets;
+extern int display_dec;
 extern int timeouts;
 
 /*

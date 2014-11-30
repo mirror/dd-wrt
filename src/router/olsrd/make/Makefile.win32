@@ -46,6 +46,14 @@ OS_LIB_DYNLOAD =
 #   make clean_all
 #   CC=i586-mingw32msvc-gcc make build_all OS=win32
 
+MINGW_VERSION = $(shell "$(TOPDIR)/make/getmingwversion.bash" "$(CC)")
+
+MINGW_VERSION_OK := $(shell expr "$(MINGW_VERSION)" \>= 40600)
+ifneq "$(MINGW_VERSION_OK)" "1"
+  CFLAGS += -I$(TOPDIR)/src/win32/compat
+endif
+
+CFLAGS += -DMINGW_VERSION=$(MINGW_VERSION)
 
 # Notes for compiling olsrd.exe under Windows using Cygwin
 # ----------------------------------------------------

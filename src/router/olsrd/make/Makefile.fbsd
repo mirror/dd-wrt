@@ -4,7 +4,7 @@
 
 PREFIX ?= /usr/local
 SBINDIR = $(PREFIX)/sbin
-ETCDIR = $(PREFIX)/etc
+ETCDIR = $(PREFIX)/etc/olsrd
 LIBDIR = $(PREFIX)/lib
 DOCDIR = $(PREFIX)/share/doc
 MANDIR = $(PREFIX)/man

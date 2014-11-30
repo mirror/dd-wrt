@@ -27,10 +27,9 @@
 unsigned char * getHardwareAddress(const char * ifName, int family,
 		struct ifreq *ifr) {
 	int fd;
-	int cpySize;
 
 	assert(ifName != NULL);
-	assert(strlen(ifName) <= IFNAMSIZ);
+	assert(strlen(ifName) <= sizeof(ifr->ifr_name));
 	assert((family == AF_INET) || (family == AF_INET6));
 	assert(ifr != NULL);
 
@@ -42,9 +41,7 @@ unsigned char * getHardwareAddress(const char * ifName, int family,
 
 	ifr->ifr_addr.sa_family = family;
 	memset(ifr->ifr_name, 0, sizeof(ifr->ifr_name));
-	cpySize = (strlen(ifName) < sizeof(ifr->ifr_name)) ? strlen(ifName)
-			: sizeof(ifr->ifr_name);
-	strncpy(ifr->ifr_name, ifName, cpySize);
+	strncpy(ifr->ifr_name, ifName, sizeof(ifr->ifr_name));
 
 	errno = 0;
 	if (ioctl(fd, SIOCGIFHWADDR, ifr) < 0) {
@@ -72,10 +69,9 @@ unsigned char * getHardwareAddress(const char * ifName, int family,
  */
 struct in_addr * getIPv4Address(const char * ifName, struct ifreq *ifr) {
 	int fd;
-	int cpySize;
 
 	assert(ifName != NULL);
-	assert(strlen(ifName) <= IFNAMSIZ);
+	assert(strlen(ifName) <= sizeof(ifr->ifr_name));
 	assert(ifr != NULL);
 
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -86,9 +82,7 @@ struct in_addr * getIPv4Address(const char * ifName, struct ifreq *ifr) {
 
 	ifr->ifr_addr.sa_family = AF_INET;
 	memset(ifr->ifr_name, 0, sizeof(ifr->ifr_name));
-	cpySize = (strlen(ifName) < sizeof(ifr->ifr_name)) ? strlen(ifName)
-			: sizeof(ifr->ifr_name);
-	strncpy(ifr->ifr_name, ifName, cpySize);
+	strncpy(ifr->ifr_name, ifName, sizeof(ifr->ifr_name));
 
 	errno = 0;
 	if (ioctl(fd, SIOCGIFADDR, ifr) < 0) {

@@ -81,42 +81,22 @@ JNIEXPORT jlong JNICALL Java_org_olsr_plugin_pud_PositionUpdate_getPositionUpdat
 
 /*
  * Class:     org_olsr_plugin_pud_PositionUpdate
- * Method:    getPositionUpdateSMask
- * Signature: ()I
+ * Method:    getPositionUpdatePresent
+ * Signature: ()L
  */
-JNIEXPORT jint JNICALL Java_org_olsr_plugin_pud_PositionUpdate_getPositionUpdateSMask
+JNIEXPORT jlong JNICALL Java_org_olsr_plugin_pud_PositionUpdate_getPositionUpdatePresent
   (JNIEnv * env, jobject this) {
 	jobject dataObject;
 	jboolean isCopy;
 	UplinkMessage * uplinkMessage = getUplinkMessage(env, this, &dataObject,
 			&isCopy);
 
-	uint8_t smask = getPositionUpdateSmask(
+	uint32_t present = getPositionUpdatePresent(
 			getPositionUpdateMessage(uplinkMessage));
 
 	releaseUplinkMessage(env, uplinkMessage, dataObject, isCopy, JNI_ABORT);
 
-	return (jint) smask;
-}
-
-/*
- * Class:     org_olsr_plugin_pud_PositionUpdate
- * Method:    getPositionUpdateFlags
- * Signature: ()I
- */
-JNIEXPORT jint JNICALL Java_org_olsr_plugin_pud_PositionUpdate_getPositionUpdateFlags
-(JNIEnv * env, jobject this) {
-	jobject dataObject;
-	jboolean isCopy;
-	UplinkMessage * uplinkMessage = getUplinkMessage(env, this, &dataObject,
-			&isCopy);
-
-	uint8_t flags = getPositionUpdateFlags(
-			getPositionUpdateMessage(uplinkMessage));
-
-	releaseUplinkMessage(env, uplinkMessage, dataObject, isCopy, JNI_ABORT);
-
-	return (jint) flags;
+	return (jlong) present;
 }
 
 /*

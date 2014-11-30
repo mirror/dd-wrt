@@ -385,6 +385,14 @@ plugin_ipc_init(void)
       return 0;
     }
 #endif /* (defined __FreeBSD__ || defined __FreeBSD_kernel__) && defined SO_NOSIGPIPE */
+#if defined linux
+    if (jsoninfo_ipv6_only && olsr_cnf->ip_version == AF_INET6) {
+      if (setsockopt(ipc_socket, IPPROTO_IPV6, IPV6_V6ONLY, (char *)&yes, sizeof(yes)) < 0) {
+        perror("IPV6_V6ONLY failed");
+        return 0;
+      }
+    }
+#endif /* defined linux */
     /* Bind the socket */
 
     /* complete the socket structure */
@@ -1028,8 +1036,8 @@ ipc_print_config(struct autobuf *abuf)
       abuf_json_string(abuf, "smartGatewayEgressInterfaces", egressbuf.buf);
       abuf_free(&egressbuf);
     }
-    abuf_json_int(abuf, "smartGatewayMarkOffsetEgress", olsr_cnf->smart_gw_mark_offset_egress);
-    abuf_json_int(abuf, "smartGatewayMarkOffsetTunnels", olsr_cnf->smart_gw_mark_offset_tunnels);
+    abuf_json_int(abuf, "smartGatewayTablesOffset", olsr_cnf->smart_gw_offset_tables);
+    abuf_json_int(abuf, "smartGatewayRulesOffset", olsr_cnf->smart_gw_offset_rules);
     abuf_json_boolean(abuf, "smartGatewayAllowNat", olsr_cnf->smart_gw_allow_nat);
     abuf_json_boolean(abuf, "smartGatewayUplinkNat", olsr_cnf->smart_gw_uplink_nat);
     abuf_json_int(abuf, "smartGatewayPeriod", olsr_cnf->smart_gw_period);
@@ -1328,9 +1336,9 @@ send_info(unsigned int send_what, int the_socket)
   if (send_what & SIW_ALL) {
     abuf_json_int(&abuf, "systemTime", time(NULL));
     abuf_json_int(&abuf, "timeSinceStartup", now_times);
-    if(*uuid != 0)
+    if (*uuid != 0)
       abuf_json_string(&abuf, "uuid", uuid);
-      abuf_puts(&abuf, "}\n");
+    abuf_puts(&abuf, "}\n");
   }
 
   /* this outputs the olsrd.conf text directly, not JSON */

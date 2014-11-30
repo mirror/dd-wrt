@@ -173,75 +173,75 @@ static void updateCounters(PositionAverageList * positionAverageList,
 	int amount = (add ? 1 : -1);
 
 	/* present */
-	if ((present & SMASK) != 0) {
+	if (nmea_INFO_is_present(present, SMASK)) {
 		assert(add ? (counters->smask < maxCount):(counters->smask > 0));
 		counters->smask += amount;
 	}
-	if ((present & UTCDATE) != 0) {
+	if (nmea_INFO_is_present(present, UTCDATE)) {
 		assert(add ? (counters->utcdate < maxCount):(counters->utcdate > 0));
 		counters->utcdate += amount;
 	}
-	if ((present & UTCTIME) != 0) {
+	if (nmea_INFO_is_present(present, UTCTIME)) {
 		assert(add ? (counters->utctime < maxCount):(counters->utctime > 0));
 		counters->utctime += amount;
 	}
-	if ((present & SIG) != 0) {
+	if (nmea_INFO_is_present(present, SIG)) {
 		assert(add ? (counters->sig < maxCount):(counters->sig > 0));
 		counters->sig += amount;
 	}
-	if ((present & FIX) != 0) {
+	if (nmea_INFO_is_present(present, FIX)) {
 		assert(add ? (counters->fix < maxCount):(counters->fix > 0));
 		counters->fix += amount;
 	}
-	if ((present & PDOP) != 0) {
+	if (nmea_INFO_is_present(present, PDOP)) {
 		assert(add ? (counters->pdop < maxCount):(counters->pdop > 0));
 		counters->pdop += amount;
 	}
-	if ((present & HDOP) != 0) {
+	if (nmea_INFO_is_present(present, HDOP)) {
 		assert(add ? (counters->hdop < maxCount):(counters->hdop > 0));
 		counters->hdop += amount;
 	}
-	if ((present & VDOP) != 0) {
+	if (nmea_INFO_is_present(present, VDOP)) {
 		assert(add ? (counters->vdop < maxCount):(counters->vdop > 0));
 		counters->vdop += amount;
 	}
-	if ((present & LAT) != 0) {
+	if (nmea_INFO_is_present(present, LAT)) {
 		assert(add ? (counters->lat < maxCount):(counters->lat > 0));
 		counters->lat += amount;
 	}
-	if ((present & LON) != 0) {
+	if (nmea_INFO_is_present(present, LON)) {
 		assert(add ? (counters->lon < maxCount):(counters->lon > 0));
 		counters->lon += amount;
 	}
-	if ((present & ELV) != 0) {
+	if (nmea_INFO_is_present(present, ELV)) {
 		assert(add ? (counters->elv < maxCount):(counters->elv > 0));
 		counters->elv += amount;
 	}
-	if ((present & SPEED) != 0) {
+	if (nmea_INFO_is_present(present, SPEED)) {
 		assert(add ? (counters->speed < maxCount):(counters->speed > 0));
 		counters->speed += amount;
 	}
-	if ((present & TRACK) != 0) {
+	if (nmea_INFO_is_present(present, TRACK)) {
 		assert(add ? (counters->track < maxCount):(counters->track > 0));
 		counters->track += amount;
 	}
-	if ((present & MTRACK) != 0) {
+	if (nmea_INFO_is_present(present, MTRACK)) {
 		assert(add ? (counters->mtrack < maxCount):(counters->mtrack > 0));
 		counters->mtrack += amount;
 	}
-	if ((present & MAGVAR) != 0) {
+	if (nmea_INFO_is_present(present, MAGVAR)) {
 		assert(add ? (counters->magvar < maxCount):(counters->magvar > 0));
 		counters->magvar += amount;
 	}
-	if ((present & SATINUSECOUNT) != 0) {
+	if (nmea_INFO_is_present(present, SATINUSECOUNT)) {
 		assert(add ? (counters->satinusecount < maxCount):(counters->satinusecount > 0));
 		counters->satinusecount += amount;
 	}
-	if ((present & SATINUSE) != 0) {
+	if (nmea_INFO_is_present(present, SATINUSE)) {
 		assert(add ? (counters->satinuse < maxCount):(counters->satinuse > 0));
 		counters->satinuse += amount;
 	}
-	if ((present & SATINVIEW) != 0) {
+	if (nmea_INFO_is_present(present, SATINVIEW)) {
 		assert(add ? (counters->satinview < maxCount):(counters->satinview > 0));
 		counters->satinview += amount;
 	}
@@ -321,58 +321,58 @@ static void determineCumulativePresentSmaskSigFix(
 	cumulative->nmeaInfo.present = 0;
 
 	if (counters->smask >= count) {
-		cumulative->nmeaInfo.present |= SMASK;
+	  nmea_INFO_set_present(&cumulative->nmeaInfo.present, SMASK);
 	}
 	if (counters->utcdate >= count) {
-		cumulative->nmeaInfo.present |= UTCDATE;
+	  nmea_INFO_set_present(&cumulative->nmeaInfo.present, UTCDATE);
 	}
 	if (counters->utctime >= count) {
-		cumulative->nmeaInfo.present |= UTCTIME;
+	  nmea_INFO_set_present(&cumulative->nmeaInfo.present, UTCTIME);
 	}
 	if (counters->sig >= count) {
-		cumulative->nmeaInfo.present |= SIG;
+	  nmea_INFO_set_present(&cumulative->nmeaInfo.present, SIG);
 	}
 	if (counters->fix >= count) {
-		cumulative->nmeaInfo.present |= FIX;
+	  nmea_INFO_set_present(&cumulative->nmeaInfo.present, FIX);
 	}
 	if (counters->pdop >= count) {
-		cumulative->nmeaInfo.present |= PDOP;
+	  nmea_INFO_set_present(&cumulative->nmeaInfo.present, PDOP);
 	}
 	if (counters->hdop >= count) {
-		cumulative->nmeaInfo.present |= HDOP;
+	  nmea_INFO_set_present(&cumulative->nmeaInfo.present, HDOP);
 	}
 	if (counters->vdop >= count) {
-		cumulative->nmeaInfo.present |= VDOP;
+	  nmea_INFO_set_present(&cumulative->nmeaInfo.present, VDOP);
 	}
 	if (counters->lat >= count) {
-		cumulative->nmeaInfo.present |= LAT;
+	  nmea_INFO_set_present(&cumulative->nmeaInfo.present, LAT);
 	}
 	if (counters->lon >= count) {
-		cumulative->nmeaInfo.present |= LON;
+	  nmea_INFO_set_present(&cumulative->nmeaInfo.present, LON);
 	}
 	if (counters->elv >= count) {
-		cumulative->nmeaInfo.present |= ELV;
+	  nmea_INFO_set_present(&cumulative->nmeaInfo.present, ELV);
 	}
 	if (counters->speed >= count) {
-		cumulative->nmeaInfo.present |= SPEED;
+	  nmea_INFO_set_present(&cumulative->nmeaInfo.present, SPEED);
 	}
 	if (counters->track >= count) {
-		cumulative->nmeaInfo.present |= TRACK;
+	  nmea_INFO_set_present(&cumulative->nmeaInfo.present, TRACK);
 	}
 	if (counters->mtrack >= count) {
-		cumulative->nmeaInfo.present |= MTRACK;
+	  nmea_INFO_set_present(&cumulative->nmeaInfo.present, MTRACK);
 	}
 	if (counters->magvar >= count) {
-		cumulative->nmeaInfo.present |= MAGVAR;
+	  nmea_INFO_set_present(&cumulative->nmeaInfo.present, MAGVAR);
 	}
 	if (counters->satinusecount >= count) {
-		cumulative->nmeaInfo.present |= SATINUSECOUNT;
+	  nmea_INFO_set_present(&cumulative->nmeaInfo.present, SATINUSECOUNT);
 	}
 	if (counters->satinuse >= count) {
-		cumulative->nmeaInfo.present |= SATINUSE;
+	  nmea_INFO_set_present(&cumulative->nmeaInfo.present, SATINUSE);
 	}
 	if (counters->satinview >= count) {
-		cumulative->nmeaInfo.present |= SATINVIEW;
+	  nmea_INFO_set_present(&cumulative->nmeaInfo.present, SATINVIEW);
 	}
 
 	/* smask */

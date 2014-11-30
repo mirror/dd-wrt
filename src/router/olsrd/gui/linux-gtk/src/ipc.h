@@ -38,7 +38,7 @@
 #define IPC_NET 12              /* IPC to front end net-info */
 
 //int ipc_socket;
-int connected;
+extern int connected;
 
 /*
  *AND:

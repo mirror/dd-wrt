@@ -67,6 +67,8 @@ PlParam     "P2pdTtl"     "5"
 PlParam     "UdpDestPort" "255.255.255.255 1211"
 #   MDNS multicast (draft-cheshire-dnsext-multicastdns)
 PlParam     "UdpDestPort" "224.0.0.251 5353"
+# Set to 1 to decrement the TTL on the packet going into the OLSR network (default 0)
+#PlParam     "UseTTLDecrement" "0"
 }
 
 Where eth0 and eth1 are the names of the interfaces where you want to capture

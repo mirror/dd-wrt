@@ -13,10 +13,6 @@ bool isValidNodeIdType(unsigned long long nodeIdType) {
 			(/* (nodeIdType >= PUD_NODEIDTYPE_GLOBAL_FIRST) && */ (nodeIdType <= PUD_NODEIDTYPE_GLOBAL_LAST)) ||
 			(   (nodeIdType >= PUD_NODEIDTYPE_LOCAL_FIRST ) &&    (nodeIdType <= PUD_NODEIDTYPE_LOCAL_LAST ))
 		)
-		&&
-		(
-			(nodeIdType != PUD_NODEIDTYPE_GAP1)
-		)
 	);
 }
 
@@ -261,55 +257,29 @@ void setPositionUpdateVersion(
 }
 
 /**
- Get the smask of the position update message
+ Get the presence field of the position update message
 
  @param olsrGpsMessage
  A pointer to the position update message
  @return
- The smask of the position update message
+ The presence field of the position update message
  */
-uint8_t getPositionUpdateSmask(
+uint32_t getPositionUpdatePresent(
 		PudOlsrPositionUpdate * olsrGpsMessage) {
-	return olsrGpsMessage->smask;
+	return ntohl(olsrGpsMessage->present);
 }
 
 /**
- Set the smask of the position update message
+ Set the presence field of the position update message
 
  @param olsrGpsMessage
  A pointer to the position update message
- @param smask
- The smask of the position update message
+ @param present
+ The presence field of the position update message
  */
-void setPositionUpdateSmask(
-		PudOlsrPositionUpdate * olsrGpsMessage, uint8_t smask) {
-	olsrGpsMessage->smask = smask;
-}
-
-/**
- Get the flags of the position update message
-
- @param olsrGpsMessage
- A pointer to the position update message
- @return
- The flags of the position update message
- */
-uint8_t getPositionUpdateFlags(
-		PudOlsrPositionUpdate * olsrGpsMessage) {
-	return olsrGpsMessage->flags;
-}
-
-/**
- Set the flags of the position update message
-
- @param olsrGpsMessage
- A pointer to the position update message
- @param flags
- The flags of the position update message
- */
-void setPositionUpdateFlags(
-		PudOlsrPositionUpdate * olsrGpsMessage, uint8_t flags) {
-	olsrGpsMessage->flags = flags;
+void setPositionUpdatePresent(
+		PudOlsrPositionUpdate * olsrGpsMessage, uint32_t present) {
+	olsrGpsMessage->present = htonl(present);
 }
 
 /*
@@ -660,7 +630,7 @@ void setPositionUpdateHdop(PudOlsrPositionUpdate * olsrGpsMessage,
  */
 NodeIdType getPositionUpdateNodeIdType(int ipVersion,
 		PudOlsrPositionUpdate * olsrGpsMessage) {
-	if (getPositionUpdateFlags(olsrGpsMessage) & PUD_FLAGS_ID) {
+	if (getPositionUpdatePresent(olsrGpsMessage) & PUD_PRESENT_ID) {
 		return olsrGpsMessage->nodeInfo.nodeIdType;
 	}
 
@@ -715,10 +685,20 @@ void getPositionUpdateNodeId(int ipVersion, union olsr_message * olsrMessage,
 		break;
 
 	case PUD_NODEIDTYPE_DNS: /* DNS name */
-		*nodeIdSize = strlen((char *) *nodeId);
-		/* FIXME for no '\0' at the end, need to scan from the end until
-		 * encountering a non-zero byte: end of string address and
-		 * subtract the string start address */
+	  {
+	    unsigned int len = 0;
+	    unsigned char * idx = *nodeId;
+	    unsigned char * lastPayloadByte = &((unsigned char *)olsrMessage)[getOlsrMessageSize(ipVersion, olsrMessage) - 1];
+	    while ((*idx != '\0') && (idx <= lastPayloadByte)) {
+	      idx++;
+	      len++;
+	    }
+	    *nodeIdSize = len;
+	  }
+		break;
+
+	case PUD_NODEIDTYPE_UUID: /* a UUID number */
+		*nodeIdSize = PUD_NODEIDTYPE_UUID_BYTES;
 		break;
 
 	case PUD_NODEIDTYPE_MMSI: /* an AIS MMSI number */
@@ -727,6 +707,10 @@ void getPositionUpdateNodeId(int ipVersion, union olsr_message * olsrMessage,
 
 	case PUD_NODEIDTYPE_URN: /* a URN number */
 		*nodeIdSize = PUD_NODEIDTYPE_URN_BYTES;
+		break;
+
+	case PUD_NODEIDTYPE_MIP: /* a MIP OID number */
+		*nodeIdSize = PUD_NODEIDTYPE_MIP_BYTES;
 		break;
 
 	case PUD_NODEIDTYPE_192:
@@ -781,7 +765,7 @@ void setPositionUpdateNodeId(
 /**
  Convert the node information to the node information for an OLSR message and
  put it in the PUD message in the OLSR message. Also updates the PUD message
- smask.
+ presence field to signal whether or not an ID is in the message.
 
  @param ipVersion
  The IP version (AF_INET or AF_INET6)
@@ -810,8 +794,10 @@ size_t setPositionUpdateNodeInfo(int ipVersion,
 	case PUD_NODEIDTYPE_MAC: /* hardware address */
 	case PUD_NODEIDTYPE_MSISDN: /* an MSISDN number */
 	case PUD_NODEIDTYPE_TETRA: /* a Tetra number */
+	case PUD_NODEIDTYPE_UUID: /* a UUID number */
 	case PUD_NODEIDTYPE_MMSI: /* an AIS MMSI number */
 	case PUD_NODEIDTYPE_URN: /* a URN number */
+	case PUD_NODEIDTYPE_MIP: /* a MIP OID number */
 	case PUD_NODEIDTYPE_192:
 	case PUD_NODEIDTYPE_193:
 	case PUD_NODEIDTYPE_194:
@@ -830,6 +816,7 @@ size_t setPositionUpdateNodeInfo(int ipVersion,
 			length = charsAvailable;
 		}
 
+		// FIXME do not pad with a null byte (compatibility breaking change!)
 		setPositionUpdateNodeId(olsrGpsMessage, nodeId, length, true);
 	}
 		break;
@@ -849,8 +836,8 @@ size_t setPositionUpdateNodeInfo(int ipVersion,
 		return 0;
 	}
 
-	setPositionUpdateFlags(olsrGpsMessage,
-			getPositionUpdateFlags(olsrGpsMessage) | PUD_FLAGS_ID);
+	setPositionUpdatePresent(olsrGpsMessage,
+			getPositionUpdatePresent(olsrGpsMessage) | PUD_PRESENT_ID);
 	return ((sizeof(NodeInfo)
 			- (sizeof(olsrGpsMessage->nodeInfo.nodeId) /* nodeId placeholder */))
 			+ length);
