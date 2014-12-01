@@ -1220,11 +1220,7 @@ else
 ifeq ($(CONFIG_IPR),y)
 	./gencert_ipr.sh
 else
-ifeq ($(CONFIG_MATRIXSSL),y)
-	./gencert_matrixssl.sh
-else
 	./gencert.sh
-endif
 endif
 endif
 endif
