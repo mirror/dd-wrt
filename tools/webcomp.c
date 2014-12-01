@@ -90,7 +90,7 @@ static int compile(char_t *fileList, char_t *prefix, FILE *stdout2, FILE *www)
 	char_t			file[1024];
 	char_t			*cp, *sl;
 	char			buf[512];
-	unsigned char	*p;
+	char	*p;
 	int				j, i, len, fd, nFile;
 
 /*
@@ -205,7 +205,7 @@ static int compile(char_t *fileList, char_t *prefix, FILE *stdout2, FILE *www)
 			continue;
 		}*/
 		
-		fprintf(stdout2, "    { \"%s\", %d },\n", cp, 
+		fprintf(stdout2, "    { \"%s\", %d + WEBSOFFSET },\n", cp, 
 			sbuf.st_size);
 		offset+=sbuf.st_size;
 		nFile++;
