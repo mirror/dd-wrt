@@ -35,25 +35,25 @@ static int ap91_pci_plat_dev_init(struct pci_dev *dev)
 	return 0;
 }
 
-__init void ap91_pci_setup_wmac_led_pin(int pin)
+void ap91_pci_setup_wmac_led_pin(int pin)
 {
 	wmac_data.led_pin = pin;
 }
 
-__init void ap91_pci_setup_wmac_gpio(u32 mask, u32 val)
+void ap91_pci_setup_wmac_gpio(u32 mask, u32 val)
 {
 	wmac_data.gpio_mask = mask;
 	wmac_data.gpio_val = val;
 }
 
-__init void ap91_set_tx_gain_buffalo(void)
+void ap91_set_tx_gain_buffalo(void)
 {
 	wmac_data.tx_gain_buffalo = true;
 }
 
-int __init pcibios_init(void);
+int pcibios_init(void);
 
-void __init ap91_pci_init(u8 *cal_data, u8 *mac_addr)
+void ap91_pci_init(u8 *cal_data, u8 *mac_addr)
 {
 #ifndef CONFIG_ARCHERC7
 	if (cal_data)
