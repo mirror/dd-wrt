@@ -109,6 +109,11 @@ static unsigned int kallsyms_expand_symbol(unsigned int off,
 	 * For every byte on the compressed symbol data, copy the table
 	 * entry for that byte.
 	 */
+#ifdef CONFIG_KALLSYMS_UNCOMPRESSED
+	memcpy(result, data + 1, len - 1);
+	result += len - 1;
+	len = 0;
+#endif
 	while (len) {
 		tptr = &kallsyms_token_table[kallsyms_token_index[*data]];
 		data++;
@@ -141,6 +146,9 @@ tail:
  */
 static char kallsyms_get_symbol_type(unsigned int off)
 {
+#ifdef CONFIG_KALLSYMS_UNCOMPRESSED
+	return kallsyms_names[off + 1];
+#endif
 	/*
 	 * Get just the first code, look it up in the token table,
 	 * and return the first char from this token.
