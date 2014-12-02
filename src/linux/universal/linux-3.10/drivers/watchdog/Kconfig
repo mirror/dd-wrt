@@ -1129,6 +1129,13 @@ config RALINK_WDT_OPENWRT
 	help
 	  Hardware driver for the Ralink SoC Watchdog Timer.
 
+config MT7621_WDT
+	tristate "Mediatek SoC watchdog"
+	select WATCHDOG_CORE
+	depends on SOC_MT7620 || SOC_MT7621
+	help
+	  Hardware driver for the Ralink SoC Watchdog Timer.
+
 # PARISC Architecture
 
 # POWERPC Architecture
