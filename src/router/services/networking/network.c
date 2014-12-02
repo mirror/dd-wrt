@@ -511,7 +511,7 @@ static int wlconf_up(char *name)
 			eval("wl", "-i", name, "vht_features", "1");
 	}
 #endif
-#if defined(HAVE_NORTHSTAR) || defined(HAVE_80211AC) && !defined(HAVE_BUFFALO)
+#if (defined(HAVE_NORTHSTAR) || defined(HAVE_80211AC)) && !defined(HAVE_BUFFALO)
 	setRegulationDomain(nvram_safe_get("wl_regdomain"));
 #endif
 
