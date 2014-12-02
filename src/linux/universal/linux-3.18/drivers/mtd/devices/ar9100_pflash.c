@@ -91,7 +91,7 @@ ar9100_flash_geom_t flash_geom_tbl[] = {
     {0xffff, 0xffff, NULL, 0, 0}	/* end list */
 };
 
-static int ar9100_flash_probe()
+static int ar9100_flash_probe(void)
 {
     uint16_t venid, devid, i;
 

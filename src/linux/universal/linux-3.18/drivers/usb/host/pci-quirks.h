@@ -28,6 +28,14 @@ struct pci_dev;
 static inline void usb_amd_quirk_pll_disable(void) {}
 static inline void usb_amd_quirk_pll_enable(void) {}
 static inline void usb_amd_dev_put(void) {}
+static inline bool usb_amd_hang_symptom_quirk(void)
+{
+	return false;
+}
+static inline bool usb_amd_prefetch_quirk(void)
+{
+	return false;
+}
 #endif
 
 #endif  /*  __LINUX_USB_PCI_QUIRKS_H  */
