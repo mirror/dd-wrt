@@ -1731,6 +1731,7 @@ void convert_wl_gmode(char *value, char *prefix)
 		nvram_nset(value, "%s_net_mode", prefix);
 		nvram_nset("1", "%s_gmode", prefix);
 		nvram_nset("-1", "%s_nmode", prefix);
+		nvram_nset("none", "%s_nctrlsb", prefix);
 		nvram_nset("auto", "%s_afterburner", prefix);
 		nvram_nset("default", "%s_rateset", prefix);
 		nvram_nset("on", "%s_frameburst", prefix);
@@ -1746,6 +1747,7 @@ void convert_wl_gmode(char *value, char *prefix)
 	} else if (!strcmp(value, "bg-mixed")) {
 		nvram_nset(value, "%s_net_mode", prefix);
 		nvram_nset("1", "%s_gmode", prefix);
+		nvram_nset("none", "%s_nctrlsb", prefix);
 		nvram_nset("auto", "%s_afterburner", prefix);
 		nvram_nset("default", "%s_rateset", prefix);
 		nvram_nset("on", "%s_frameburst", prefix);
@@ -1759,6 +1761,7 @@ void convert_wl_gmode(char *value, char *prefix)
 	} else if (!strcmp(value, "g-only")) {
 		nvram_nset(value, "%s_net_mode", prefix);
 		nvram_nset("0", "%s_nmode", prefix);
+		nvram_nset("none", "%s_nctrlsb", prefix);
 		nvram_nset("2", "%s_gmode", prefix);
 		if (!has_mimo(prefix))
 			nvram_nset("g", "%s_phytype", prefix);
@@ -1777,6 +1780,7 @@ void convert_wl_gmode(char *value, char *prefix)
 	} else if (!strcmp(value, "b-only")) {
 		nvram_nset(value, "%s_net_mode", prefix);
 		nvram_nset("0", "%s_gmode", prefix);
+		nvram_nset("none", "%s_nctrlsb", prefix);
 		nvram_nset("0", "%s_nmode", prefix);
 		nvram_nset("off", "%s_afterburner", prefix);
 		nvram_nset("default", "%s_rateset", prefix);
