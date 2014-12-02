@@ -79,6 +79,7 @@ static const u32 fe_reg_table_default[FE_REG_COUNT] = {
 	[FE_REG_FE_INT_STATUS] = FE_FE_INT_STATUS,
 	[FE_REG_FE_DMA_VID_BASE] = FE_DMA_VID0,
 	[FE_REG_FE_COUNTER_BASE] = FE_GDMA1_TX_GBCNT,
+	[FE_REG_FE_RST_GL] = FE_FE_RST_GL,
 };
 
 static const u32 *fe_reg_table = fe_reg_table_default;
@@ -352,18 +353,33 @@ void fe_stats_update(struct fe_priv *priv)
 
 	u64_stats_update_begin(&hwstats->syncp);
 
-	hwstats->tx_bytes			+= fe_r32(base);
-	hwstats->tx_packets			+= fe_r32(base + 0x04);
-	hwstats->tx_skip			+= fe_r32(base + 0x08);
-	hwstats->tx_collisions			+= fe_r32(base + 0x0c);
-	hwstats->rx_bytes			+= fe_r32(base + 0x20);
-	hwstats->rx_packets			+= fe_r32(base + 0x24);
-	hwstats->rx_overflow			+= fe_r32(base + 0x28);
-	hwstats->rx_fcs_errors			+= fe_r32(base + 0x2c);
-	hwstats->rx_short_errors		+= fe_r32(base + 0x30);
-	hwstats->rx_long_errors			+= fe_r32(base + 0x34);
-	hwstats->rx_checksum_errors		+= fe_r32(base + 0x38);
-	hwstats->rx_flow_control_packets	+= fe_r32(base + 0x3c);
+	if (IS_ENABLED(CONFIG_SOC_MT7621_OPENWRT)) {
+		hwstats->rx_bytes			+= fe_r32(base);
+		hwstats->rx_packets			+= fe_r32(base + 0x08);
+		hwstats->rx_overflow			+= fe_r32(base + 0x10);
+		hwstats->rx_fcs_errors			+= fe_r32(base + 0x14);
+		hwstats->rx_short_errors		+= fe_r32(base + 0x18);
+		hwstats->rx_long_errors			+= fe_r32(base + 0x1c);
+		hwstats->rx_checksum_errors		+= fe_r32(base + 0x20);
+		hwstats->rx_flow_control_packets	+= fe_r32(base + 0x24);
+		hwstats->tx_skip			+= fe_r32(base + 0x28);
+		hwstats->tx_collisions			+= fe_r32(base + 0x2c);
+		hwstats->tx_bytes			+= fe_r32(base + 0x30);
+		hwstats->tx_packets			+= fe_r32(base + 0x38);
+	} else {
+		hwstats->tx_bytes			+= fe_r32(base);
+		hwstats->tx_packets			+= fe_r32(base + 0x04);
+		hwstats->tx_skip			+= fe_r32(base + 0x08);
+		hwstats->tx_collisions			+= fe_r32(base + 0x0c);
+		hwstats->rx_bytes			+= fe_r32(base + 0x20);
+		hwstats->rx_packets			+= fe_r32(base + 0x24);
+		hwstats->rx_overflow			+= fe_r32(base + 0x28);
+		hwstats->rx_fcs_errors			+= fe_r32(base + 0x2c);
+		hwstats->rx_short_errors		+= fe_r32(base + 0x30);
+		hwstats->rx_long_errors			+= fe_r32(base + 0x34);
+		hwstats->rx_checksum_errors		+= fe_r32(base + 0x38);
+		hwstats->rx_flow_control_packets	+= fe_r32(base + 0x3c);
+	}
 
 	u64_stats_update_end(&hwstats->syncp);
 }
@@ -410,6 +426,54 @@ static struct rtnl_link_stats64 *fe_get_stats64(struct net_device *dev,
 	return storage;
 }
 
+static int fe_vlan_rx_add_vid(struct net_device *dev,
+		__be16 proto, u16 vid)
+{
+	struct fe_priv *priv = netdev_priv(dev);
+	u32 idx = (vid & 0xf);
+	u32 vlan_cfg;
+
+	if (!((fe_reg_table[FE_REG_FE_DMA_VID_BASE]) &&
+			(dev->features | NETIF_F_HW_VLAN_CTAG_TX)))
+		return 0;
+
+	if (test_bit(idx, &priv->vlan_map)) {
+		netdev_warn(dev, "disable tx vlan offload\n");
+		dev->wanted_features &= ~NETIF_F_HW_VLAN_CTAG_TX;
+		netdev_update_features(dev);
+	} else {
+		vlan_cfg = fe_r32(fe_reg_table[FE_REG_FE_DMA_VID_BASE] +
+				((idx >> 1) << 2));
+		if (idx & 0x1) {
+			vlan_cfg &= 0xffff;
+			vlan_cfg |= (vid << 16);
+		} else {
+			vlan_cfg &= 0xffff0000;
+			vlan_cfg |= vid;
+		}
+		fe_w32(vlan_cfg, fe_reg_table[FE_REG_FE_DMA_VID_BASE] +
+				((idx >> 1) << 2));
+		set_bit(idx, &priv->vlan_map);
+	}
+
+	return 0;
+}
+
+static int fe_vlan_rx_kill_vid(struct net_device *dev,
+		__be16 proto, u16 vid)
+{
+	struct fe_priv *priv = netdev_priv(dev);
+	u32 idx = (vid & 0xf);
+
+	if (!((fe_reg_table[FE_REG_FE_DMA_VID_BASE]) &&
+				(dev->features | NETIF_F_HW_VLAN_CTAG_TX)))
+		return 0;
+
+	clear_bit(idx, &priv->vlan_map);
+
+	return 0;
+}
+
 static int fe_tx_map_dma(struct sk_buff *skb, struct net_device *dev,
 		int idx)
 {
@@ -441,9 +505,12 @@ static int fe_tx_map_dma(struct sk_buff *skb, struct net_device *dev,
 
 	/* VLAN header offload */
 	if (vlan_tx_tag_present(skb)) {
-		txd->txd4 |= TX_DMA_INS_VLAN |
-			((vlan_tx_tag_get(skb) >> VLAN_PRIO_SHIFT) << 4) |
-			(vlan_tx_tag_get(skb) & 0xF);
+		if (IS_ENABLED(CONFIG_SOC_MT7621_OPENWRT))
+			txd->txd4 |= TX_DMA_INS_VLAN_MT7621 | vlan_tx_tag_get(skb);
+		else
+			txd->txd4 |= TX_DMA_INS_VLAN |
+				((vlan_tx_tag_get(skb) >> VLAN_PRIO_SHIFT) << 4) |
+				(vlan_tx_tag_get(skb) & 0xF);
 	}
 
 	/* TSO: fill MSS info in tcp checksum field */
@@ -855,6 +922,18 @@ static irqreturn_t fe_handle_irq(int irq, void *dev)
 	return IRQ_HANDLED;
 }
 
+#ifdef CONFIG_NET_POLL_CONTROLLER
+static void fe_poll_controller(struct net_device *dev)
+{
+	struct fe_priv *priv = netdev_priv(dev);
+	u32 dly_int = priv->soc->tx_dly_int | priv->soc->rx_dly_int;
+
+	fe_int_disable(dly_int);
+	fe_handle_irq(dev->irq, dev);
+	fe_int_enable(dly_int);
+}
+#endif
+
 int fe_set_clock_cycle(struct fe_priv *priv)
 {
 	unsigned long sysclk = priv->sysclk;
@@ -951,8 +1030,10 @@ static int fe_hw_init(struct net_device *dev)
 	if (priv->soc->fwd_config(priv))
 		netdev_err(dev, "unable to get clock\n");
 
-	fe_w32(1, FE_FE_RST_GL);
-	fe_w32(0, FE_FE_RST_GL);
+	if (fe_reg_table[FE_REG_FE_RST_GL]) {
+		fe_reg_w32(1, FE_REG_FE_RST_GL);
+		fe_reg_w32(0, FE_REG_FE_RST_GL);
+	}
 
 	return 0;
 }
@@ -1098,6 +1179,10 @@ static int fe_do_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 	struct fe_priv *priv = netdev_priv(dev);
 	esw_reg reg;
 
+	if (!priv->phy_dev)
+		return -ENODEV;
+
+ 
 #if defined(CONFIG_SOC_RT305X_OPENWRT) 
 #define REG_ESW_MAX			0x16C
 #elif defined (CONFIG_SOC_MT7620_OPENWRT)
@@ -1117,18 +1202,13 @@ static int fe_do_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 #define RALINK_ETH_SW_BASE		0xB0110000
 #define _ESW_REG(x)	(*((volatile u32 *)(RALINK_ETH_SW_BASE + x)))
 
-
 	switch (cmd) {
 	case SIOCETHTOOL:
-		if (!priv->phy_dev)
-			return -ENODEV;
 		return phy_ethtool_ioctl(priv->phy_dev,
 				(void *) ifr->ifr_data);
 	case SIOCGMIIPHY:
 	case SIOCGMIIREG:
 	case SIOCSMIIREG:
-		if (!priv->phy_dev)
-			return -ENODEV;
 		return phy_mii_ioctl(priv->phy_dev, ifr, cmd);
 	case RAETH_ESW_REG_READ:
 			copy_from_user(&reg, ifr->ifr_data, sizeof(reg));
@@ -1197,8 +1277,6 @@ static int fe_change_mtu(struct net_device *dev, int new_mtu)
 	return fe_open(dev);
 }
 
-
-
 static const struct net_device_ops fe_netdev_ops = {
 	.ndo_init		= fe_init,
 	.ndo_uninit		= fe_uninit,
@@ -1211,6 +1289,11 @@ static const struct net_device_ops fe_netdev_ops = {
 	.ndo_change_mtu		= fe_change_mtu,
 	.ndo_tx_timeout		= fe_tx_timeout,
 	.ndo_get_stats64        = fe_get_stats64,
+	.ndo_vlan_rx_add_vid	= fe_vlan_rx_add_vid,
+	.ndo_vlan_rx_kill_vid	= fe_vlan_rx_kill_vid,
+#ifdef CONFIG_NET_POLL_CONTROLLER
+	.ndo_poll_controller	= fe_poll_controller,
+#endif
 };
 
 static int fe_probe(struct platform_device *pdev)
@@ -1265,6 +1348,10 @@ static int fe_probe(struct platform_device *pdev)
 	netdev->vlan_features = netdev->hw_features &
 		~(NETIF_F_HW_VLAN_CTAG_TX | NETIF_F_HW_VLAN_CTAG_RX);
 	netdev->features |= netdev->hw_features;
+
+	/* fake rx vlan filter func. to support tx vlan offload func */
+	if (fe_reg_table[FE_REG_FE_DMA_VID_BASE])
+		netdev->features |= NETIF_F_HW_VLAN_CTAG_FILTER;
 
 	priv = netdev_priv(netdev);
 	spin_lock_init(&priv->page_lock);
