@@ -51,6 +51,9 @@ SECTIONS
 	/* read-only */
 	_text = .;	/* Text and read-only data */
 	.text : {
+#ifdef CONFIG_SOC_MT7621_OPENWRT
+		/*. = . + 0x8000; */
+#endif
 		TEXT_TEXT
 		SCHED_TEXT
 		LOCK_TEXT
