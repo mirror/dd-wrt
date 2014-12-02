@@ -1,0 +1,15 @@
+config SND_MT7620_SOC_I2S
+	depends on SOC_MT7620_OPENWRT && SND_SOC
+	select SND_SOC_GENERIC_DMAENGINE_PCM
+	tristate "SoC Audio (I2S protocol) for Ralink MT7620 SoC"
+	help
+	  Say Y if you want to use I2S protocol and I2S codec on Ingenic MT7620
+	  based boards.
+
+config SND_MT7620_SOC_WM8960
+	tristate "SoC Audio support for Ralink WM8960"
+	select SND_MT7620_SOC_I2S
+	select SND_SOC_WM8960
+	help
+	  Say Y if you want to add support for ASoC audio on the Qi LB60 board
+	  a.k.a Qi Ben NanoNote.

@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 3.10.57-rc1 Kernel Configuration
+# Linux/arm 3.10.61 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_SYS_SUPPORTS_APM_EMULATION=y
@@ -1186,7 +1186,6 @@ CONFIG_WL_HIGH="wlconfig_lx_router_high"
 CONFIG_WL_ALL_PASSIVE_RUNTIME=y
 # CONFIG_DPSTA is not set
 # CONFIG_EMF is not set
-# CONFIG_IGS is not set
 # CONFIG_PLC is not set
 # CONFIG_PROXYARP is not set
 # CONFIG_IFB is not set

@@ -191,3 +191,4 @@ obj-$(CONFIG_AR2315_WDT) += ar2315_wdt.o
 ifeq ($(CONFIG_RALINK_DEVICE),y)
 obj-y += ralink_wdt.o
 endif
+obj-$(CONFIG_MT7621_WDT) += mt7621_wdt.o

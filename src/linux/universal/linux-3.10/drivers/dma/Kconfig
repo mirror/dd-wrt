@@ -312,6 +312,12 @@ config MMP_PDMA
 	help
 	  Support the MMP PDMA engine for PXA and MMP platfrom.
 
+config DMA_RALINK
+	tristate "RALINK DMA support"
+	depends on RALINK && SOC_MT7620_OPENWRT
+	select DMA_ENGINE
+	select DMA_VIRTUAL_CHANNELS
+
 config DMA_ENGINE
 	bool
 
