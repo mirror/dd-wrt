@@ -19,6 +19,10 @@
 #define GIC_TRIG_EDGE			1
 #define GIC_TRIG_LEVEL			0
 
+#ifdef CONFIG_SOC_MT7621_OPENWRT
+#define GIC_NUM_INTRS			64
+#endif
+
 #ifndef GIC_NUM_INTRS
 #define GIC_NUM_INTRS			(24 + NR_CPUS * 2)
 #endif
