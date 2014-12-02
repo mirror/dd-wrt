@@ -163,7 +163,7 @@
   else
   {
      document.write('\
-  <table cellpadding="20" cellspacing="10" border="0" width="100%">\
+  <table cellpadding="20" cellspacing="0" border="0" width="100%">\
     <tr> \
       <td class="status"> \
         BLOCKED \

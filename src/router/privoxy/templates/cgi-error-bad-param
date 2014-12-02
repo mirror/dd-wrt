@@ -80,9 +80,9 @@
 
 <body>
 
-  <table cellpadding="20" cellspacing="10" border="0" width="100%">
+  <table cellpadding="20" cellspacing="0" border="0" width="100%">
     <tr>
-      <td class="title">
+      <td class="title"><a id="logo" href="http://config.privoxy.org">P</a>
 
 #include mod-title
 

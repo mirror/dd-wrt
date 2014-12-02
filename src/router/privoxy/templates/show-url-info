@@ -131,9 +131,9 @@
 
 <body>
 
-  <table summary="" cellpadding="20" cellspacing="10" border="0" width="100%">
+  <table summary="" cellpadding="20" cellspacing="0" border="0" width="100%">
     <tr>
-      <td class="title">
+      <td class="title"><a id="logo" href="http://config.privoxy.org">P</a>
 
 #include mod-title
 
@@ -252,7 +252,7 @@
         <h2>Look up the actions for a
 <!-- @if-url-given-start -->new<!-- if-url-given-end@ -->
           URL:</h2>
-        <form method="GET" action="@default-cgi@show-url-info">
+        <form method="GET" action="@default-cgi@show-url-info" class="search">
           <p>
             <input type="text" name="url" size="80" value="@url@" class="url">
             <input type="submit" value="Go">
