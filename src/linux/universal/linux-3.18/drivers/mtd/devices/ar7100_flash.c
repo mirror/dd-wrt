@@ -87,7 +87,7 @@ ar7100_flash_geom_t flash_geom_tbl[AR7100_FLASH_MAX_BANKS] = {
 	 .pgsize = AR7100_FLASH_PG_SIZE_256B}
 };
 
-static int ar7100_flash_probe()
+static int ar7100_flash_probe(void)
 {
 	return 0;
 }

@@ -255,7 +255,7 @@ static struct mtd_partition dir_parts[] = {
 
           
 static int
-ar7100_flash_probe()
+ar7100_flash_probe(void)
 {
     return 0;
 }

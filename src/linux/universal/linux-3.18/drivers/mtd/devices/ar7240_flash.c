@@ -88,7 +88,7 @@ ar7240_flash_geom_t flash_geom_tbl[AR7240_FLASH_MAX_BANKS] = {
 	 .pgsize = AR7240_FLASH_PG_SIZE_256B}
 };
 
-static int ar7240_flash_probe()
+static int ar7240_flash_probe(void)
 {
 	return 0;
 }
