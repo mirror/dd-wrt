@@ -120,6 +120,16 @@ static void *__kmap_pgprot(struct page *page, unsigned long addr, pgprot_t prot)
 	return (void*) vaddr;
 }
 
+void *kmap_coherent(struct page *page, unsigned long addr)
+{
+	return __kmap_pgprot(page, addr, PAGE_KERNEL);
+}
+
+void *kmap_noncoherent(struct page *page, unsigned long addr)
+{
+	return __kmap_pgprot(page, addr, PAGE_KERNEL_NC);
+}
+
 void kunmap_coherent(void)
 {
 	unsigned int wired;

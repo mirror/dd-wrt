@@ -10,6 +10,7 @@
 #include <asm/scatterlist.h>
 #include <asm/dma-coherence.h>
 #include <asm/cache.h>
+#include <asm/cpu-type.h>
 #include <asm-generic/dma-coherent.h>
 
 #ifndef CONFIG_SGI_IP27 /* Kludge to fix 2.6.39 build for IP27 */
@@ -17,7 +18,6 @@
 #endif
 
 extern struct dma_map_ops *mips_dma_map_ops;
-
 
 void __dma_sync(struct page *page, unsigned long offset, size_t size,
 		enum dma_data_direction direction);
@@ -137,7 +137,7 @@ static inline int dma_map_sg_attrs(struct device *dev, struct scatterlist *sg,
 			if (!plat_device_is_coherent(dev))
 				__dma_sync(page, s->offset, s->length, dir);
 #ifdef CONFIG_NEED_SG_DMA_LENGTH
-			sg->dma_length = sg->length;
+			s->dma_length = s->length;
 #endif
 			s->dma_address =
 				plat_map_dma_mem_page(dev, page) + s->offset;
@@ -345,14 +345,6 @@ dma_mmap_attrs(struct device *dev, struct vm_area_struct *vma, void *cpu_addr,
 }
 
 #define dma_mmap_coherent(d, v, c, h, s) dma_mmap_attrs(d, v, c, h, s, NULL)
-
-static inline int dma_mmap_writecombine(struct device *dev, struct vm_area_struct *vma,
-		      void *cpu_addr, dma_addr_t dma_addr, size_t size)
-{
-	DEFINE_DMA_ATTRS(attrs);
-	dma_set_attr(DMA_ATTR_WRITE_COMBINE, &attrs);
-	return dma_mmap_attrs(dev, vma, cpu_addr, dma_addr, size, &attrs);
-}
 
 int
 dma_common_get_sgtable(struct device *dev, struct sg_table *sgt,
