@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.18.0-rc6 Kernel Configuration
+# Linux/mips 3.18.0-rc7 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -119,6 +119,7 @@ CONFIG_CPU_GENERIC_DUMP_TLB=y
 CONFIG_CPU_R4K_FPU=y
 CONFIG_CPU_R4K_CACHE_TLB=y
 # CONFIG_ARCH_PHYS_ADDR_T_64BIT is not set
+CONFIG_CPU_NEEDS_NO_SMARTMIPS_OR_MICROMIPS=y
 CONFIG_CPU_HAS_SYNC=y
 CONFIG_HIGHMEM=y
 CONFIG_CPU_SUPPORTS_HIGHMEM=y
