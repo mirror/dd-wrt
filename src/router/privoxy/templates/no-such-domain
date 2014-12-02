@@ -92,12 +92,12 @@
 
 <body>
 
-  <table summary="" cellpadding="20" cellspacing="10" border="0" width="100%">
+  <table summary="" cellpadding="20" cellspacing="0" border="0" width="100%">
     <tr>
       <td class="status">
         404
       </td>
-      <td class="title" style="width: 100%">
+      <td class="title" style="width: 100%"><a id="logo" href="http://config.privoxy.org">P</a><a id="logo" href="http://config.privoxy.org">P</a>
 
 #include mod-title
 
