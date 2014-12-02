@@ -37,6 +37,18 @@
  * We know that all SMP capable CPUs have cycle counters.
  */
 
+typedef unsigned int cycles_t;
+
+/*
+ * On R4000/R4400 before version 5.0 an erratum exists such that if the
+ * cycle counter is read in the exact moment that it is matching the
+ * compare register, no interrupt will be generated.
+ *
+ * There is a suggested workaround and also the erratum can't strike if
+ * the compare interrupt isn't being used as the clock source device.
+ * However for now the implementaton of this function doesn't get these
+ * fine details right.
+ */
 static inline int can_use_mips_counter(unsigned int prid)
 {
 	int comp = (prid & PRID_COMP_MASK) != PRID_COMP_LEGACY;
@@ -76,14 +88,14 @@ static inline unsigned long random_get_entropy(void)
 {
 	unsigned int prid = read_c0_prid();
 	unsigned int imp = prid & PRID_IMP_MASK;
- 
+
 	if (can_use_mips_counter(prid))
 		return read_c0_count();
 	else if (likely(imp != PRID_IMP_R6000 && imp != PRID_IMP_R6000A))
 		return read_c0_random();
 	else
 		return 0;	/* no usable register */
- }
+}
 #define random_get_entropy random_get_entropy
 
 #endif /* __KERNEL__ */
