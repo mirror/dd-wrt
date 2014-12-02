@@ -1,7 +1,7 @@
 #
 # Ralink SoC common stuff
 #
-core-$(CONFIG_RALINK_OPENWRT)		+= arch/mips/ralink/
+core-$(CONFIG_RALINK_OPENWRT)		+= arch/mips/ralink-openwrt/
 cflags-$(CONFIG_RALINK_OPENWRT)		+= -I$(srctree)/arch/mips/include/asm/mach-ralink-openwrt
 
 #
