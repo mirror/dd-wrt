@@ -391,7 +391,7 @@ dma_set_mask(struct device *dev, u64 mask)
 	if(!dev->dma_mask || !dma_supported(dev, mask))
 		return -EIO;
 
-	if (ops->set_dma_mask)
+	if (ops && ops->set_dma_mask)
 		return ops->set_dma_mask(dev, mask);
 
 	*dev->dma_mask = mask;
