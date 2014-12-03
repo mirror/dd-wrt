@@ -422,7 +422,6 @@ extern void show_registers(struct pt_regs *regs);
 		: "r" (value), "r" (addr), "i" (-EFAULT));
 #endif
 
-
 static void emulate_load_store_insn(struct pt_regs *regs,
 	void __user *addr, unsigned int __user *pc)
 {
