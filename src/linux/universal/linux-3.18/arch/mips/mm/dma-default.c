@@ -26,7 +26,7 @@
 
 #ifdef CONFIG_DMA_MAYBE_COHERENT
 int coherentio = 0;	/* User defined DMA coherency from command line. */
-EXPORT_SYMBOL_GPL(coherentio);
+EXPORT_SYMBOL(coherentio);
 int hw_coherentio = 0;	/* Actual hardware supported DMA coherency setting. */
 
 static int __init setcoherentio(char *str)
@@ -225,7 +225,6 @@ void __dma_sync(struct page *page, unsigned long offset, size_t size,
 		left -= len;
 	} while (left);
 }
-
 EXPORT_SYMBOL(__dma_sync);
 
 void dma_cache_sync(struct device *dev, void *vaddr, size_t size,
