@@ -1,5 +1,5 @@
 /* iksemel (XML parser for Jabber)
-** Copyright (C) 2000-2003 Gurer Ozen <madcat@e-kolay.net>
+** Copyright (C) 2000-2003 Gurer Ozen
 ** This code is free software; you can redistribute it and/or
 ** modify it under the terms of GNU Lesser General Public License.
 */
@@ -173,8 +173,8 @@ iks_make_auth (iksid *id, const char *pass, const char *sid)
 		char buf[41];
 		iksha *sha;
 		sha = iks_sha_new ();
-		iks_sha_hash (sha, sid, strlen (sid), 0);
-		iks_sha_hash (sha, pass, strlen (pass), 1);
+		iks_sha_hash (sha, (const unsigned char*)sid, strlen (sid), 0);
+		iks_sha_hash (sha, (const unsigned char*)pass, strlen (pass), 1);
 		iks_sha_print (sha, buf);
 		iks_sha_delete (sha);
 		iks_insert_cdata (iks_insert (y, "digest"), buf, 40);

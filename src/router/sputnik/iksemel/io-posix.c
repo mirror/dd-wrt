@@ -1,5 +1,5 @@
 /* iksemel (XML parser for Jabber)
-** Copyright (C) 2004 Gurer Ozen <madcat@e-kolay.net>
+** Copyright (C) 2004 Gurer Ozen
 ** This code is free software; you can redistribute it and/or
 ** modify it under the terms of GNU Lesser General Public License.
 */
@@ -7,6 +7,7 @@
 #include "common.h"
 #include "iksemel.h"
 
+#include <errno.h>
 #ifdef _WIN32
 #include <winsock.h>
 #else
@@ -19,7 +20,7 @@
 static void
 io_close (void *socket)
 {
-	long sock = (long) socket;
+	int sock = (int) socket;
 #ifdef _WIN32
 	closesocket (sock);
 #else
@@ -30,12 +31,13 @@ io_close (void *socket)
 static int
 io_connect (iksparser *prs, void **socketptr, const char *server, int port)
 {
-	long sock = -1;
+	int sock = -1;
 	int tmp;
 #ifdef HAVE_GETADDRINFO
 	struct addrinfo hints;
 	struct addrinfo *addr_res, *addr_ptr;
 	char port_str[6];
+	int err = 0;
 
 	hints.ai_flags = AI_CANONNAME;
 	hints.ai_family = PF_UNSPEC;
@@ -52,14 +54,20 @@ io_connect (iksparser *prs, void **socketptr, const char *server, int port)
 
 	addr_ptr = addr_res;
 	while (addr_ptr) {
+		err = IKS_NET_NOSOCK;
 		sock = socket (addr_ptr->ai_family, addr_ptr->ai_socktype, addr_ptr->ai_protocol);
-		if (sock != -1) break;
+		if (sock != -1) {
+			err = IKS_NET_NOCONN;
+			tmp = connect (sock, addr_ptr->ai_addr, addr_ptr->ai_addrlen);
+			if (tmp == 0) break;
+			io_close ((void *) sock);
+			sock = -1;
+		}
 		addr_ptr = addr_ptr->ai_next;
 	}
-	if (sock == -1) return IKS_NET_NOSOCK;
-
-	tmp = connect (sock, addr_ptr->ai_addr, addr_ptr->ai_addrlen);
 	freeaddrinfo (addr_res);
+
+	if (sock == -1) return err;
 #else
 	struct hostent *host;
 	struct sockaddr_in sin;
@@ -74,11 +82,11 @@ io_connect (iksparser *prs, void **socketptr, const char *server, int port)
 	if (sock == -1) return IKS_NET_NOSOCK;
 
 	tmp = connect (sock, (struct sockaddr *)&sin, sizeof (struct sockaddr_in));
-#endif
 	if (tmp != 0) {
 		io_close ((void *) sock);
 		return IKS_NET_NOCONN;
 	}
+#endif
 
 	*socketptr = (void *) sock;
 
@@ -88,16 +96,30 @@ io_connect (iksparser *prs, void **socketptr, const char *server, int port)
 static int
 io_send (void *socket, const char *data, size_t len)
 {
-	long sock = (long) socket;
+	int sock = (int) socket;
+	int ret;
 
-	if (send (sock, data, len, 0) == -1) return IKS_NET_RWERR;
+	while (len > 0) {
+		ret = send (sock, data, len, 0);
+		if (ret == -1) {
+			if (errno == EAGAIN || errno == EINTR) {
+				// Signalled, try again
+				continue;
+			}
+			// Real error
+			return IKS_NET_RWERR;
+		} else {
+			len -= ret;
+			data += ret;
+		}
+	}
 	return IKS_OK;
 }
 
 static int
 io_recv (void *socket, char *buffer, size_t buf_len, int timeout)
 {
-	long sock = (long) socket;
+	int sock = (int) socket;
 	fd_set fds;
 	struct timeval tv, *tvptr;
 	int len;
@@ -110,7 +132,9 @@ io_recv (void *socket, char *buffer, size_t buf_len, int timeout)
 	tv.tv_sec = timeout;
 	if (timeout != -1) tvptr = &tv; else tvptr = NULL;
 	if (select (sock + 1, &fds, NULL, NULL, tvptr) > 0) {
-		len = recv (sock, buffer, buf_len, 0);
+		do {
+			len = recv (sock, buffer, buf_len, 0);
+		} while (len == -1 && (errno == EAGAIN || errno == EINTR));
 		if (len > 0) {
 			return len;
 		} else if (len <= 0) {
