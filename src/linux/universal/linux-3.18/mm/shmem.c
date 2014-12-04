@@ -848,7 +848,6 @@ redirty:
 	unlock_page(page);
 	return 0;
 }
-#error "check"
 #ifdef CONFIG_NUMA
 #ifdef CONFIG_TMPFS
 static void shmem_show_mpol(struct seq_file *seq, struct mempolicy *mpol)
