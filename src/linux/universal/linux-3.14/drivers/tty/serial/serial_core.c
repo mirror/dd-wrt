@@ -1271,7 +1271,7 @@ ssize_t proc_epld_read(struct file *file, char __user * buffer, size_t size, lof
 	struct epld_struct epld;
 	int i, j, ret = 0, port = uartport->line;
 	char buf[512];
-	
+	memset(buf,0,sizeof(buf));
 	if (!*ppos)
 	{
 		ret = sprintf(buf, "inactive\n");
@@ -1293,7 +1293,7 @@ ssize_t proc_epld_read(struct file *file, char __user * buffer, size_t size, lof
 		}
 	}
 
-	return simple_read_from_buffer(buffer, size, ppos, buf, sizeof(buf));
+	return simple_read_from_buffer(buffer, size, ppos, buf, strlen(buf) + 1);
 }
 
 ssize_t proc_epld_write(struct file *file, const char __user * buffer, size_t count, loff_t * ppos)
