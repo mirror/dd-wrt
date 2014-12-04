@@ -2396,6 +2396,7 @@ static void mangle_table(void)
 		insmod("xt_mark");
 		insmod("ipt_CONNMARK");
 		insmod("xt_CONNMARK");
+		insmod("xt_connmark");
 
 		save2file("-A PREROUTING -i ! %s -d %s -j MARK --set-mark %s\n", get_wan_face(), get_wan_ipaddr(), get_NFServiceMark("FORWARD", 1));
 
@@ -2656,6 +2657,23 @@ void start_firewall6(void)
 
 }
 
+
+void start_loadfwmodules(void)
+{
+insmod("nf_conntrack_h323 xt_NFLOG xt_length"
+"xt_REDIRECT xt_limit xt_TCPMSS"
+"xt_connbytes xt_connlimit xt_physdev"
+"xt_CLASSIFY xt_recent"
+"xt_DSCP xt_conntrack xt_state"
+"xt_IMQ xt_dscp xt_string"
+"xt_LOG xt_iprange xt_tcpmss"
+"xt_NETMAP compat_xtables"
+"ipt_MASQUERADE iptable_filter nf_reject_ipv4"
+"ipt_REJECT nf_nat_h323"
+"ipt_TRIGGER nf_nat_masquerade_ipv4 ipt_ah");
+
+}
+
 #ifdef DEVELOPE_ENV
 int main(void)
 #else
@@ -2668,6 +2686,7 @@ void start_firewall(void)
 	char name[NAME_MAX];
 	struct stat statbuff;
 	int log_level = 0;
+	start_loadfwmodules();
 	system("cat /proc/net/ip_conntrack_flush");
 
 #ifndef	HAVE_80211AC
