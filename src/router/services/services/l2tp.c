@@ -108,6 +108,7 @@ void start_l2tp(int status)
 	snprintf(passwd, sizeof(passwd), "%s", nvram_safe_get("ppp_passwd"));
 
 	if (status != REDIAL) {
+		start_pppmodules();
 		insmod("ipv6");
 		insmod("udp_tunnel"); // 3.18
 		insmod("l2tp_core");

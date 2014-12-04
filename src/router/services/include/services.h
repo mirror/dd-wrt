@@ -21,6 +21,9 @@ extern void stop_tftpd(void);
 extern void start_cron(void);
 extern void stop_cron(void);
 
+extern void start_pppmodules(void);
+extern void stop_pppmodules(void);
+
 extern void start_zebra(void);
 extern void stop_zebra(void);
 

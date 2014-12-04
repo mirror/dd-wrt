@@ -254,6 +254,7 @@ void start_pptpd(void)
 
 	chmod("/tmp/pptpd/chap-secrets", 0600);
 
+	start_pppmodules();
 	// Execute pptpd daemon
 	ret = eval("pptpd", "-c", "/tmp/pptpd/pptpd.conf", "-o", "/tmp/pptpd/options.pptpd");
 

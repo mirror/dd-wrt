@@ -150,7 +150,7 @@ void start_pptp(int status)
 		NULL
 	};
 	char username[80], passwd[80];
-
+	
 	stop_dhcpc();
 #ifdef HAVE_PPPOE
 	stop_pppoe();
@@ -161,6 +161,7 @@ void start_pptp(int status)
 	snprintf(passwd, sizeof(passwd), "%s", nvram_safe_get("ppp_passwd"));
 
 	if (status != REDIAL) {
+		start_pppmodules();
 		create_pptp_config(nvram_safe_get("pptp_server_name"), username);
 		/*
 		 * Generate pap-secrets file 

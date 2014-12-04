@@ -239,6 +239,7 @@ void start_pppoe(int pppoe_num)
 	unlink("/tmp/ppp/options.pppoe");
 	unlink("/tmp/ppp/connect-errors");
 
+	start_pppmodules();
 	_evalpid(pppoe_argv, NULL, 0, &pid);
 
 	if (nvram_match(ppp_demand[pppoe_num], "1")) {
