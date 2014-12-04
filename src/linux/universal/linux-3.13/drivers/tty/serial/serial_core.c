@@ -1270,7 +1270,7 @@ ssize_t proc_epld_read(struct file *file, char __user * buffer, size_t size, lof
 	struct uart_port *uartport = (struct uart_port*) PDE_DATA(file_inode(file));
 	struct epld_struct epld;
 	int i, j, ret = 0, port = uartport->line;
-	char buf[128];
+	char buf[512];
 	
 	if (!*ppos)
 	{
@@ -1285,8 +1285,8 @@ ssize_t proc_epld_read(struct file *file, char __user * buffer, size_t size, lof
 				{
 					ret = sprintf(buf, "%s\n\nPossible Values:\n----------------\n", epld_str_tab[i].name);
 					for (j = 0; j < epld_str_tab_size; j++)
-						if(epld_str_tab[j].caps_flag & uartport->epld_capabilities)
-							ret += sprintf(&buf[ret], "%s\n", epld_str_tab[j].name);
+						if(epld_str_tab[j].caps_flag & uartport->epld_capabilities && ret < sizeof(buf))
+							ret += snprintf(&buf[ret],sizeof(buf)-ret, "%s\n", epld_str_tab[j].name);
 					break;
 				}
 			}
