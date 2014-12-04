@@ -1,5 +1,5 @@
 /* iksemel (XML parser for Jabber)
-** Copyright (C) 2000-2003 Gurer Ozen <madcat@e-kolay.net>
+** Copyright (C) 2000-2003 Gurer Ozen
 ** This code is free software; you can redistribute it and/or
 ** modify it under the terms of GNU Lesser General Public License.
 */
@@ -43,7 +43,7 @@ struct iksmd5_struct {
 	unsigned char blen;
 };
 
-static unsigned long int T[] =
+static const unsigned long int T[] =
 	{ 0xd76aa478, 0xe8c7b756, 0x242070db, 0xc1bdceee,
 	  0xf57c0faf, 0x4787c62a, 0xa8304613, 0xfd469501,
 	  0x698098d8, 0x8b44f7af, 0xffff5bb1, 0x895cd7be,
@@ -74,7 +74,7 @@ void iks_md5_reset(iksmd5 *md5)
 
 iksmd5 *iks_md5_new(void)
 {
-	iksmd5 *md5 = malloc(sizeof(iksmd5));
+	iksmd5 *md5 = iks_malloc(sizeof(iksmd5));
 
 	if (!md5)
 		return NULL;
@@ -124,7 +124,7 @@ void iks_md5_hash(iksmd5 *md5, const unsigned char *data, size_t slen, int finis
 
 void iks_md5_delete(iksmd5 *md5)
 {
-	free(md5);
+	iks_free(md5);
 }
 
 void iks_md5_digest(iksmd5 *md5, unsigned char *digest)
@@ -137,7 +137,7 @@ void iks_md5_digest(iksmd5 *md5, unsigned char *digest)
 
 void iks_md5_print(iksmd5 *md5, char *buf)
 {
-  int i;
+	int i;
 	unsigned char digest[16];
 
 	iks_md5_digest(md5, digest);
@@ -151,7 +151,7 @@ void iks_md5(const char *data, char *buf)
 {
 	iksmd5 *md5 = iks_md5_new();
 
-	iks_md5_hash(md5, data, strlen(data), 1);
+	iks_md5_hash(md5, (const unsigned char*)data, strlen(data), 1);
 	iks_md5_print(md5, buf);
 	iks_md5_delete(md5);
 }
@@ -186,4 +186,3 @@ static void iks_md5_compute(iksmd5 *md5)
 	for (i = 0; i < 4; ++i)
 		md5->state[i] += R[i];
 }
-

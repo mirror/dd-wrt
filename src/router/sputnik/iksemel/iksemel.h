@@ -1,5 +1,5 @@
 /* iksemel (XML parser for Jabber)
-** Copyright (C) 2000-2004 Gurer Ozen <madcat@e-kolay.net>
+** Copyright (C) 2000-2007 Gurer Ozen
 ** This code is free software; you can redistribute it and/or
 ** modify it under the terms of GNU Lesser General Public License.
 */
@@ -60,6 +60,10 @@ iks *iks_insert (iks *x, const char *name);
 iks *iks_insert_cdata (iks *x, const char *data, size_t len);
 iks *iks_insert_attrib (iks *x, const char *name, const char *value);
 iks *iks_insert_node (iks *x, iks *y);
+iks *iks_append (iks *x, const char *name);
+iks *iks_prepend (iks *x, const char *name);
+iks *iks_append_cdata (iks *x, const char *data, size_t len);
+iks *iks_prepend_cdata (iks *x, const char *data, size_t len);
 void iks_hide (iks *x);
 void iks_delete (iks *x);
 iks *iks_next (iks *x);
@@ -206,12 +210,12 @@ iksparser *iks_stream_new (char *name_space, void *user_data, iksStreamHook *str
 void *iks_stream_user_data (iksparser *prs);
 void iks_set_log_hook (iksparser *prs, iksLogHook *logHook);
 int iks_connect_tcp (iksparser *prs, const char *server, int port);
-int iks_connect_fd (iksparser *prs, long fd);
+int iks_connect_fd (iksparser *prs, int fd);
 int iks_connect_via (iksparser *prs, const char *server, int port, const char *server_name);
 int iks_connect_with (iksparser *prs, const char *server, int port, const char *server_name, ikstransport *trans);
 int iks_connect_async (iksparser *prs, const char *server, int port, void *notify_data, iksAsyncNotify *notify_func);
 int iks_connect_async_with (iksparser *prs, const char *server, int port, const char *server_name, ikstransport *trans, void *notify_data, iksAsyncNotify *notify_func);
-long iks_fd (iksparser *prs);
+int iks_fd (iksparser *prs);
 int iks_recv (iksparser *prs, int timeout);
 int iks_send_header (iksparser *prs, const char *to);
 int iks_send (iksparser *prs, iks *x);
