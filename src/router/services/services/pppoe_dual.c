@@ -278,6 +278,7 @@ void start_pppoe_dual(int status)
 	stop_pptp();
 #endif
 	stop_process("pppd", "PPP daemon");
+	start_pppmodules();
 	eval("pppd", "file", "/tmp/ppp/options.pppoe");
 
 	if (status != REDIAL) {

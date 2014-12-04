@@ -3530,6 +3530,7 @@ void start_wan(int status)
 			fprintf(fp, "%s\n", nvram_safe_get("3gdata"));
 
 			fclose(fp);
+			start_pppmodules();
 
 			eval("pppd", "file", "/tmp/ppp/options.pppoe");
 
@@ -3802,6 +3803,7 @@ void start_wan(int status)
 		stop_pptp();
 #endif
 		stop_process("pppd", "PPP daemon");
+		start_pppmodules();
 		eval("pppd", "file", "/tmp/ppp/options.pppoe");
 
 		// This is horrible.
@@ -3994,6 +3996,7 @@ void start_wan(int status)
 		stop_pptp();
 #endif
 		stop_process("pppd", "PPP daemon");
+		start_pppmodules();
 		eval("pppd", "file", "/tmp/ppp/options.pppoa");
 
 		/*

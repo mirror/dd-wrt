@@ -218,6 +218,31 @@ void stop_3g(void)
 
 #endif
 
+
+void start_pppmodules(void)
+{
+	insmod("slhc");
+	insmod("ppp_generic");
+	insmod("bsd_comp");
+	insmod("ppp_deflate");
+	insmod("ppp_async");
+	insmod("ppp_synctty");
+	insmod("ppp_mppe");
+	insmod("pppox");
+	insmod("pppoe");
+}
+void stop_pppmodules(void)
+{
+	insmod("pppoe");
+	insmod("pppox");
+	insmod("ppp_mppe");
+	insmod("ppp_synctty");
+	insmod("ppp_async");
+	insmod("ppp_deflate");
+	insmod("bsd_comp");
+	insmod("ppp_generic");
+	insmod("slhc");
+}
 void stop_dhcpc(void)
 {
 	FILE *fp = fopen("/var/run/udhcpc.pid", "rb");
