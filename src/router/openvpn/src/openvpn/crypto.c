@@ -606,7 +606,7 @@ check_replay_iv_consistency (const struct key_type *kt, bool packet_id, bool use
 {
   ASSERT(kt);
 
-  if (cipher_kt_mode_ofb_cfb(kt->cipher) && !(packet_id && use_iv))
+  if (kt->cipher && cipher_kt_mode_ofb_cfb(kt->cipher) && !(packet_id && use_iv))
     msg (M_FATAL, "--no-replay or --no-iv cannot be used with a CFB or OFB mode cipher");
 }
 
