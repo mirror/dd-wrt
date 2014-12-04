@@ -767,6 +767,12 @@ void start_wshaper(void)
 	insmod("imq");
 	insmod("ipt_IMQ");
 	insmod("xt_IMQ");
+	insmod("sch_red");
+	insmod("sch_hfsc");
+	insmod("sch_htb");
+	insmod("sch_sfq");
+	insmod("sch_tbf");
+	insmod("sch_cbq");
 
 #ifdef HAVE_CODEL
 	if (!strcmp(aqd, "codel"))
@@ -1067,6 +1073,12 @@ void stop_wshaper(void)
 	rmmod("sch_codel");
 	rmmod("sch_fq_codel");
 //      rmmod("ebtables");
+	rmmod("sch_red");
+	rmmod("sch_hfsc");
+	rmmod("sch_htb");
+	rmmod("sch_sfq");
+	rmmod("sch_tbf");
+	rmmod("sch_cbq");
 
 	return;
 }
