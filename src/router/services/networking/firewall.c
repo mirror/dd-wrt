@@ -2660,7 +2660,7 @@ void start_firewall6(void)
 
 void start_loadfwmodules(void)
 {
-insmod("iptable_raw nf_conntrack_h323 xt_NFLOG"
+insmod("iptable_raw iptable_mangle nf_conntrack_h323 xt_NFLOG"
 " xt_length xt_REDIRECT xt_limit xt_TCPMSS"
 " xt_connbytes xt_connlimit xt_physdev"
 " xt_CLASSIFY xt_recent"
