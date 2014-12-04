@@ -354,6 +354,12 @@ void start_openvpn(void)
 	chmod("/tmp/openvpn/client.key", 0600);
 
 	FILE *fp;
+	char ovpniface[10];
+#ifdef HAVE_ERC
+	sprintf(ovpniface,"%s0",nvram_safe_get("openvpncl_tuntap"));
+#else
+	sprintf(ovpniface,"%s1",nvram_safe_get("openvpncl_tuntap"));
+#endif
 
 	if (nvram_match("openvpncl_upauth", "1")) {
 		fp = fopen("/tmp/openvpncl/credentials", "wb");
@@ -384,7 +390,7 @@ void start_openvpn(void)
 		"management 127.0.0.1 16\n"
 #endif
 		"management-log-cache 100\n" "verb 3\n" "mute 3\n" "syslog\n" "writepid /var/run/openvpncl.pid\n" "client\n" "resolv-retry infinite\n" "nobind\n" "persist-key\n" "persist-tun\n" "script-security 2\n");
-	fprintf(fp, "dev %s1\n", nvram_safe_get("openvpncl_tuntap"));
+	fprintf(fp, "dev %s1\n", ovpniface);
 	fprintf(fp, "proto %s\n", nvram_safe_get("openvpncl_proto"));
 	fprintf(fp, "cipher %s\n", nvram_safe_get("openvpncl_cipher"));
 	fprintf(fp, "auth %s\n", nvram_safe_get("openvpncl_auth"));
@@ -451,12 +457,6 @@ void start_openvpn(void)
 	}
 #endif
 	//bridge tap interface to br0 when choosen
-	char ovpniface[10];
-#ifdef HAVE_ERC
-	sprintf(ovpniface,"%s0",nvram_safe_get("openvpncl_tuntap"));
-#else
-	sprintf(ovpniface,"%s1",nvram_safe_get("openvpncl_tuntap"));
-#endif
 	if (nvram_match("openvpncl_tuntap", "tap")
 	    && nvram_match("openvpncl_bridge", "1")
 	    && nvram_match("openvpncl_nat", "0")) {
