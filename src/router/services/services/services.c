@@ -221,6 +221,8 @@ void stop_3g(void)
 
 void start_pppmodules(void)
 {
+	insmod("zlib_inflate");
+	insmod("zlib_deflate");
 	insmod("slhc");
 	insmod("ppp_generic");
 	insmod("bsd_comp");
@@ -233,15 +235,15 @@ void start_pppmodules(void)
 }
 void stop_pppmodules(void)
 {
-	insmod("pppoe");
-	insmod("pppox");
-	insmod("ppp_mppe");
-	insmod("ppp_synctty");
-	insmod("ppp_async");
-	insmod("ppp_deflate");
-	insmod("bsd_comp");
-	insmod("ppp_generic");
-	insmod("slhc");
+	rmmod("pppoe");
+	rmmod("pppox");
+	rmmod("ppp_mppe");
+	rmmod("ppp_synctty");
+	rmmod("ppp_async");
+	rmmod("ppp_deflate");
+	rmmod("bsd_comp");
+	rmmod("ppp_generic");
+	rmmod("slhc");
 }
 void stop_dhcpc(void)
 {
