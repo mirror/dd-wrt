@@ -6007,12 +6007,24 @@ int getMTD(char *name)
 
 int insmod(char *module)
 {
-	return eval("insmod", module);
+	static char word[256];
+	char *next, *wordlist;
+	int ret;
+	wordlist = module;
+	foreach(word, wordlist, next) {
+	    ret |= eval("insmod", word);
+	}
+	return ret;
 }
 
 void rmmod(char *module)
 {
-	eval("rmmod", module);
+	static char word[256];
+	char *next, *wordlist;
+	wordlist = module;
+	foreach(word, wordlist, next) {
+	    eval("rmmod", word);
+	}
 }
 
 #include "revision.h"
