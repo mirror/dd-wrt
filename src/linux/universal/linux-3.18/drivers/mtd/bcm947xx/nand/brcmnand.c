@@ -492,6 +492,8 @@ brcmnand_read_page_raw(struct mtd_info *mtd, struct nand_chip *chip,
 {
 	return _brcmnand_read_page_do(mtd, chip, buf, page, TRUE);
 }
+#define NAND_MAX_OOBSIZE	640
+#define NAND_MAX_PAGESIZE	8192
 
 /*
  * INTERNAL - do page write, with or without ECC generation enabled

@@ -254,8 +254,8 @@ nflash_mtd_write(struct mtd_info *mtd, loff_t to, size_t len, size_t *retlen, co
 	loff_t from = to;
 	u_char *write_ptr;
 	int docopy = 1;
-	uint r_blocksize, part_blk_start, part_blk_end;
-
+	uint part_blk_start, part_blk_end;
+	struct reciprocal_value r_blocksize;
 	/* Locate the part */
 	for (i = 0; nflash_parts[i].name; i++) {
 		if (to >= nflash_parts[i].offset &&
@@ -390,7 +390,7 @@ nflash_mtd_erase(struct mtd_info *mtd, struct erase_info *erase)
 	uint addr, len, blocksize;
 	uint part_start_blk, part_end_blk;
 	uint blknum, new_addr, erase_blknum;
-	uint reciprocal_blocksize;
+	struct reciprocal_value reciprocal_blocksize;
 
 	addr = erase->addr;
 	len = erase->len;
