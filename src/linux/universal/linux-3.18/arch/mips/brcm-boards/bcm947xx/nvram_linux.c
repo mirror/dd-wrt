@@ -201,7 +201,7 @@ static int early_nvram_init(void)
 				continue;
 			if (nvram_calc_crc(header) == (uint8) header->crc_ver_init) {
 				int c;
-				int *sstr = "model_sku=EA2700";
+				char *sstr = "model_sku=EA2700";
 				int slen = strlen(sstr);
 				char *checkp = (char*)header;
 				for (c=0;c<0x8000-slen;c++) {
