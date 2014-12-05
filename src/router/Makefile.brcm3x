@@ -257,6 +257,7 @@ endif
 		awk '$$1 == "U" { print $$2 } ' | \
 		sort -u > $(LINUXDIR)/mod_symtab.txt
 	$(ARCH)-linux-nm -n $(LINUXDIR)/vmlinux.o | grep ' r __ksymtab' | sed -e 's,........ r __ksymtab_,,' > $(LINUXDIR)/kernel_symtab.txt
+	$(ARCH)-linux-nm -n $(LINUXDIR)/vmlinux.o | grep ' R __ksymtab' | sed -e 's,........ R __ksymtab_,,' >> $(LINUXDIR)/kernel_symtab.txt
 	grep -f $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_include.txt
 	grep -vf $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_exclude.txt
 	( \
@@ -676,8 +677,8 @@ endif
 	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K3-nandboot.trx $(ARCH)-uclibc/lzma_vmlinuz  -a 1024 $(ARCH)-uclibc/rootfs.squashfs
 #	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K26.trx $(ARCH)-uclibc/vmlinus.gzip  -a 1024 $(ARCH)-uclibc/rootfs.squashfs
 	../../opt/asus/asustrx-rt66u -p RT-AC66U -v 3.0.0.1 -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K3_RT-AC66U.trx $(ARCH)-uclibc/lzma_vmlinuz -a 1024 $(ARCH)-uclibc/rootfs.squashfs
-ifeq ($(CONFIG_NOAC),y)
 	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K3.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz  -a 1024 $(ARCH)-uclibc/rootfs.squashfs
+ifeq ($(CONFIG_NOAC),y)
 
 #	../../opt/asus/asustrx-rt66u -p RT-AC66U -v 3.0.0.1 -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K26_RT-AC66U.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz $(ARCH)-uclibc/rootfs.squashfs
 #	../../opt/asus/asustrx-rt66u -p RT-AC66U -v 3.0.0.1 -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K26_RT-AC66U.trx $(ARCH)-uclibc/lzma_vmlinuz $(ARCH)-uclibc/rootfs.squashfs
@@ -824,6 +825,7 @@ ifeq ($(CONFIG_NOAC),y)
 	../../opt/tools/addpattern -4 -p NV64 -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K3.trx -o $(ARCH)-uclibc/dd-wrt.v24-K3_nv64k.bin -g
 #endif
 endif
+	-tools/ubnt/src/mkfwimage -v BZ.bcm4706.v6.0.0.3000.150000.1500 -o mipsel-uclibc/UNIFIAC.dd-wrt.bin -i tools/ubnt/unifiac-ddwrt.txt
 	./netgear/lzma e  $(ARCH)-uclibc/vmlinux.bin  $(ARCH)-uclibc/vmlinux_netgear.lzma
 	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K3_R6300.trx $(ARCH)-uclibc/vmlinux_netgear.lzma  -a 4096 $(ARCH)-uclibc/rootfs.squashfs
 	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K3_R6300.trx -f netgear/emptyfile -b netgear/comp-r6300.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-r6300.h && cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K3_R6300.chk 
