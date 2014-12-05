@@ -34,8 +34,7 @@
 extern asmlinkage void brcmIRQ(void);
 extern asmlinkage unsigned int do_IRQ(int irq, struct pt_regs *regs);
 
-void
-plat_irq_dispatch(struct pt_regs *regs)
+asmlinkage void plat_irq_dispatch(void)
 {
 	u32 cause;
 
