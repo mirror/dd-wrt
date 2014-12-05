@@ -32,10 +32,7 @@
 void start_wifidog(void)
 {
 	if (nvram_match("wd_enable", "1")) {
-		insmod("ipt_mark");
-		insmod("ipt_mac");
-		insmod("xt_mark");
-		insmod("xt_mac");
+		insmod("ipt_mark ipt_mac xt_mark xt_mac");
 		mkdir("/tmp/wifidog/", 0744);
 		FILE *fp = fopen("/tmp/wifidog/wifidog.conf", "wb");
 
