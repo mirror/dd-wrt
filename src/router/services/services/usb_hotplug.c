@@ -249,8 +249,7 @@ static int usb_process_path(char *path, char *fs, char *target)
 		insmod("xfs");
 	}
 	if (!strcmp(fs, "udf")) {
-		insmod("crc-itu-t");
-		insmod("udf");
+		insmod("crc-itu-t udf");
 	}
 	if (!strcmp(fs, "iso9660")) {
 		insmod("isofs");

@@ -2768,77 +2768,26 @@ void start_drivers(void)
 		led_control(LED_USB, LED_ON);
 		led_control(LED_USB1, LED_ON);
 
-		insmod("nls_base");
-		insmod("usb-common");
-		cprintf("loading usbcore\n");
-		insmod("usbcore");
-
-		cprintf("loading usb2 module\n");
-		insmod("ehci-hcd");
-		insmod("ehci-platform");
-		insmod("ehci-pci");
-
-		cprintf("loading usb-uhci\n");
-		insmod("usb-uhci");
-		insmod("uhci-hcd");
-
-		cprintf("loading usb-ohci\n");
-		insmod("usb-ohci");
-		insmod("ohci-hcd");
-
-		insmod("xhci-hcd");
-		insmod("dwc_otg");	// usb
-		insmod("usb-libusual");
-
-		insmod("fsl-mph-dr-of");
-		insmod("phy-mxs-usb");
-		insmod("ci_hdrc");
-		insmod("ci13xxx_imx");
-		insmod("usbmisc_imx");
-		insmod("ci_hdrc_imx");
+		insmod("nls_base usb-common usbcore ehci-hcd ehci-platform ehci-pci usb-uhci uhci-hcd usb-ohci ohci-hcd xhci-hcd dwc_otg usb-libusual fsl-mph-dr-of phy-mxs-usb ci_hdrc ci13xxx_imx usbmisc_imx ci_hdrc_imx");
 
 		if (nvram_match("usb_storage", "1")) {
-			cprintf("loading scsi_mod\n");
-			insmod("scsi_mod");
-			insmod("scsi_wait_scan");
-			cprintf("loading sd_mod\n");
-			insmod("sd_mod");
-			cprintf("loading cdrom drivers\n");
-			insmod("cdrom");
-			insmod("sr_mod");
-			cprintf("loading usb-storage\n");
-			insmod("usb-storage");
+			insmod("scsi_mod scsi_wait_scan sd_mod cdrom sr_mod usb-storage");
 		}
 
 		if (nvram_match("usb_printer", "1")) {
 			cprintf("loading printer\n");
-			insmod("printer");
-			insmod("usblp");
+			insmod("printer usblp");
 		}
 #ifdef HAVE_USBIP
 		if (nvram_match("usb_ip", "1")) {
 			cprintf("loading usb over ip drivers\n");
-			insmod("usbip_common_mod");
-			insmod("usbip");
-
-			insmod("usbip-core");
-			insmod("usbip-host");
+			insmod("usbip_common_mod usbip usbip-core usbip-host");
 			eval("usbipd", "-D");
 		}
 #endif
 
 //ahci
-		insmod("libata");
-		insmod("libahci");
-		insmod("ahci");
-		insmod("ahci_platforms");
-		insmod("ahci_imx");
-//mmc
-		insmod("mmc_core");
-		insmod("mmc_block");
-		insmod("sdhci");
-		insmod("sdhci-pltfm");
-		insmod("sdhci-esdhc-imx");
+		insmod("libata libahci ahci ahci_platforms ahci_imx mmc_core mmc_block sdhci sdhci-pltfm sdhci-esdhc-imx");
 
 		mount("devpts", "/proc/bus/usb", "usbfs", MS_MGC_VAL, NULL);
 //   Mounting is done by hotplug event!         
