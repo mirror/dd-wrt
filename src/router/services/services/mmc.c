@@ -36,8 +36,7 @@ void start_mmc(void)
 
 		if (!res) {
 			// device detected
-			insmod("mbcache");
-			insmod("ext2");
+			insmod("mbcache ext2");
 
 			if (mount("/dev/mmc", "/mmc", "ext2", MS_MGC_VAL, NULL)) {
 				// device not formated
