@@ -252,10 +252,7 @@ void start_splashd(void)
 	 */
 	if (!strcmp(get_wan_ipaddr(), "0.0.0.0"))
 		return;
-	insmod("ipt_mark");
-	insmod("ipt_mac");
-	insmod("xt_mark");
-	insmod("xt_mac");
+	insmod("ipt_mark ipt_mac xt_mark xt_mac");
 	stop_firewall();	// evil
 	stop_wland();
 	stop_wshaper();
