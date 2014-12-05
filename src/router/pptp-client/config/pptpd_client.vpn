@@ -17,6 +17,7 @@ case $1 in
 
  "go"  )
   echo "Waiting......."
+  startservice pppmodules
   sleep 10
   PIDFILE="/var/run/vpn.pid"
   if [ -f "${PIDFILE}" ];
