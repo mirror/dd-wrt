@@ -269,60 +269,29 @@ static bool usb_load_modules(char *fs)
 		insmod("fuse");
 #endif
 	if (!strcmp(fs, "ext2")) {
-		insmod("mbcache");
-		insmod("ext2");
+		insmod("mbcache ext2");
 	}
 #ifdef HAVE_USB_ADVANCED
 	if (!strcmp(fs, "ext3")) {
-		insmod("mbcache");
-		insmod("ext2");
-		insmod("jbd");
-		insmod("ext3");
+		insmod("mbcache ext2 jbd ext3");
 	}
 	if (!strcmp(fs, "ext4")) {
-		insmod("crc16");
-		insmod("mbcache");
-		insmod("jbd2");
-		insmod("ext4");
+		insmod("crc16 mbcache jbd2 ext4");
 	}
 	if (!strcmp(fs, "btrfs")) {
-		insmod("libcrc32c");
-		insmod("lzo_compress");
-		insmod("lzo_decompress");
-		insmod("btrfs");
+		insmod("libcrc32c lzo_compress lzo_decompress raid6_pq xor btrfs");
 	}
 	if (!strcmp(fs, "hfs")) {
-		insmod("nls_base");
-		insmod("nls_cp932");
-		insmod("nls_cp936");
-		insmod("nls_cp950");
-		insmod("nls_cp437");
-		insmod("nls_iso8859-1");
-		insmod("nls_iso8859-2");
-		insmod("nls_utf8");
+		insmod("nls_base nls_cp932 nls_cp936 nls_cp950 nls_cp437 nls_iso8859-1 nls_iso8859-2 nls_utf8");
 		insmod("hfs");
 	}
 	if (!strcmp(fs, "hfsplus")) {
-		insmod("nls_base");
-		insmod("nls_cp932");
-		insmod("nls_cp936");
-		insmod("nls_cp950");
-		insmod("nls_cp437");
-		insmod("nls_iso8859-1");
-		insmod("nls_iso8859-2");
-		insmod("nls_utf8");
+		insmod("nls_base nls_cp932 nls_cp936 nls_cp950 nls_cp437 nls_iso8859-1 nls_iso8859-2 nls_utf8");
 		insmod("hfsplus");
 	}
 #endif
 	if (!strcmp(fs, "vfat")) {
-		insmod("nls_base");
-		insmod("nls_cp932");
-		insmod("nls_cp936");
-		insmod("nls_cp950");
-		insmod("nls_cp437");
-		insmod("nls_iso8859-1");
-		insmod("nls_iso8859-2");
-		insmod("nls_utf8");
+		insmod("nls_base nls_cp932 nls_cp936 nls_cp950 nls_cp437 nls_iso8859-1 nls_iso8859-2 nls_utf8");
 		insmod("fat");
 		insmod("vfat");
 		insmod("msdos");
