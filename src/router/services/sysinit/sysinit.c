@@ -2347,6 +2347,7 @@ void start_restore_defaults(void)
 			nvram_set("vlan1ports", "0 1 2 3 8*");
 			nvram_set("vlan2ports", "4 8");
 		}
+		break;
 	case ROUTER_UBNT_UNIFIAC:
 		nvram_set("vlan1ports", "0 8*");
 		nvram_set("vlan2ports", "1 8");
