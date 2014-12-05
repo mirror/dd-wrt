@@ -44,14 +44,6 @@ DEFINE_PER_CPU(int, __kmap_atomic_idx);
  */
 #ifdef CONFIG_HIGHMEM
 
-#ifndef ARCH_PKMAP_COLORING
-#define     set_pkmap_color(pg,cl)          /* */
-#define     get_last_pkmap_nr(p,cl)         (p)
-#define     get_next_pkmap_nr(p,cl)         ((p + 1) & LAST_PKMAP_MASK)
-#define     is_no_more_pkmaps(p,cl)         (!p)
-#define     get_next_pkmap_counter(c,cl)    (c - 1)
-#endif
-
 /*
  * Architecture with aliasing data cache may define the following family of
  * helper functions in its asm/highmem.h to control cache color of virtual
@@ -228,7 +220,7 @@ static inline unsigned long map_new_virtual(struct page *page)
 	int count;
 	unsigned int last_pkmap_nr;
 	unsigned int color = get_pkmap_color(page);
-	
+
 start:
 	count = get_pkmap_entries_count(color);
 	/* Find an empty entry */
