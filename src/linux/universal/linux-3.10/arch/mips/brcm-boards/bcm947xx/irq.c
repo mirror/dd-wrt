@@ -170,7 +170,7 @@ end_brcm_irq2(struct irq_data *d)
  * re-entered as soon as the IE is re-enabled in function
  * handle_IRQ_envet().
  */
-asmlinkage void plat_irq_dispatch(struct pt_regs *regs)
+asmlinkage void plat_irq_dispatch(void)
 {
 	u32 pending, ipvec;
 	unsigned long flags = 0;
