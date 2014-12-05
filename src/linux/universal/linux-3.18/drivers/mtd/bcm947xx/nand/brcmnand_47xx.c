@@ -59,7 +59,7 @@ extern struct mtd_partition * init_brcmnand_mtd_partitions(struct mtd_info *mtd,
 #endif
 
 static int nflash_lock = 0;
-extern struct nand_hw_control *nand_hwcontrol_lock_init();
+extern struct nand_hw_control *nand_hwcontrol_lock_init(void);
 
 
 #ifdef	__mips__
@@ -1041,6 +1041,9 @@ static int brcmnand_posted_write_cache(struct mtd_info *mtd, struct nand_chip *c
 out:
 	return (ret);
 }
+
+#define NAND_MAX_OOBSIZE	640
+#define NAND_MAX_PAGESIZE	8192
 
 /**
  * brcmnand_write_page_hwecc - [REPLACABLE] hardware ecc based page write function
@@ -2492,7 +2495,7 @@ brcmnand_mtd_init(void)
 	 * FLASH.
 	 */
 	if (!(chip->options & NAND_NO_SUBPAGE_WRITE) &&
-	    !(chip->cellinfo & NAND_CI_CELLTYPE_MSK)) {
+	    !(chip->bits_per_cell-1)) {
 		switch (chip->ecc.steps) {
 		case 2:
 			mtd->subpage_sft = 1;

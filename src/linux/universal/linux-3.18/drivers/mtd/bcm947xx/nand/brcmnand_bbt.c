@@ -443,14 +443,10 @@ static int brcmnand_create_bbt(struct mtd_info *mtd, uint8_t *buf,
 
 	printk(KERN_INFO "Scanning device for bad blocks\n");
 
-	if (bd->options & NAND_BBT_SCANALLPAGES)
-		len = 1 << (this->bbt_erase_shift - this->page_shift);
-	else {
-		if (bd->options & NAND_BBT_SCAN2NDPAGE)
-			len = 2;
-		else
-			len = 1;
-	}
+	if (bd->options & NAND_BBT_SCAN2NDPAGE)
+		len = 2;
+	else
+		len = 1;
 
 	scanlen = 0;
 	readlen = bd->len;
@@ -476,12 +472,7 @@ static int brcmnand_create_bbt(struct mtd_info *mtd, uint8_t *buf,
 
 	for (i = startblock; i < numblocks;) {
 		int ret;
-
-		if (bd->options & NAND_BBT_SCANALLPAGES)
-			ret = brcmnand_scan_block_full(mtd, bd, from, buf, readlen,
-				scanlen, len);
-		else
-			ret = brcmnand_scan_block_fast(mtd, bd, from, buf, len);
+		ret = brcmnand_scan_block_fast(mtd, bd, from, buf, len);
 
 		if (ret < 0)
 			return ret;
@@ -1173,7 +1164,6 @@ static struct nand_bbt_descr bch4_flashbased = {
 static uint8_t scan_agand_pattern[] = { 0x1C, 0x71, 0xC7, 0x1C, 0x71, 0xC7 };
 
 static struct nand_bbt_descr agand_flashbased = {
-	.options = NAND_BBT_SCANALLPAGES,
 	.offs = 0x20,
 	.len = 6,
 	.pattern = scan_agand_pattern
@@ -1337,7 +1327,7 @@ int brcmnand_default_bbt(struct mtd_info *mtd)
 					&largepage_flashbased : &smallpage_flashbased;
 			}
 		} else {
-			if(this->cellinfo & NAND_CI_CELLTYPE_MSK) {
+			if((this->bits_per_cell-1)) {
 				if (!this->bbt_td) {
 					this->bbt_td = &bbt_bch4_main_descr;
 					this->bbt_md = &bbt_bch4_mirror_descr;
