@@ -138,7 +138,7 @@ int __init pcibios_init(void)
 
 	bcm947xxcontroller.io_map_base = (unsigned long)ioremap_nocache(SI_PCI_MEM, 0x04000000);
 	set_io_port_base(bcm947xxcontroller.io_map_base);
-	mdelay(10);
+	mdelay(300);
 
 	/* Scan the SB bus */
 	printk(KERN_INFO "PCI: scanning bus %x\n", 0);

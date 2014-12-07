@@ -478,6 +478,7 @@ static void ag71xx_hw_init(struct ag71xx *ag)
 	ag71xx_sb(ag, AG71XX_REG_MAC_CFG1, MAC_CFG1_SR);
 	udelay(20);
 
+
 	ar71xx_device_stop(reset_mask);
 	mdelay(100);
 	ar71xx_device_start(reset_mask);
@@ -901,11 +902,12 @@ static int ag71xx_tx_packets(struct ag71xx *ag)
 	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
 	int sent = 0;
 	int bytes_compl = 0;
+	int n = 0;
 
 	DBG("%s: processing TX ring\n", ag->dev->name);
 
-	while (ring->dirty != ring->curr) {
-		unsigned int i = ring->dirty % ring->size;
+	while (ring->dirty + n != ring->curr) {
+		unsigned int i = (ring->dirty + n) % ring->size;
 		struct ag71xx_desc *desc = ring->buf[i].desc;
 		struct sk_buff *skb = ring->buf[i].skb;
 
@@ -916,17 +918,22 @@ static int ag71xx_tx_packets(struct ag71xx *ag)
 			break;
 		}
 
-		ag71xx_wr(ag, AG71XX_REG_TX_STATUS, TX_STATUS_PS);
+		n++;
+		if (!skb)
+			continue;
 
-		if (skb) {
-			dev_kfree_skb_any(skb);
-			ring->buf[i].skb = NULL;
+		dev_kfree_skb_any(skb);
+		ring->buf[i].skb = NULL;
 
-			bytes_compl += ring->buf[i].len;
-			sent++;
+		bytes_compl += ring->buf[i].len;
+
+		sent++;
+		ring->dirty += n;
+
+		while (n > 0) {
+			ag71xx_wr(ag, AG71XX_REG_TX_STATUS, TX_STATUS_PS);
+			n--;
 		}
-
-		ring->dirty++;
 	}
 
 	DBG("%s: %d packets sent out\n", ag->dev->name, sent);
@@ -1183,7 +1190,6 @@ static const char *ag71xx_get_phy_if_mode_name(phy_interface_t mode)
 }
 
 
-
 static int ag71xx_probe(struct platform_device *pdev)
 {
 	struct net_device *dev;
@@ -1200,7 +1206,7 @@ static int ag71xx_probe(struct platform_device *pdev)
 	}
 
 	if (pdata->mii_bus_dev == NULL && pdata->phy_mask) {
-		printk(KERN_INFO "no MII bus device specified\n");
+		dev_err(&pdev->dev, "no MII bus device specified\n");
 		err = -EINVAL;
 		goto err_out;
 	}
@@ -1212,11 +1218,8 @@ static int ag71xx_probe(struct platform_device *pdev)
 		goto err_out;
 	}
 
-	if (!pdata->max_frame_len || !pdata->desc_pktlen_mask) {
-		printk(KERN_INFO "bad frame len, fix it\n");
-		pdata->max_frame_len = 1540;
-		pdata->desc_pktlen_mask = 0xfff;
-	}
+	if (!pdata->max_frame_len || !pdata->desc_pktlen_mask)
+		return -EINVAL;
 
 	SET_NETDEV_DEV(dev, &pdev->dev);
 
