@@ -488,7 +488,8 @@ void start_openvpn(void)
 /*		if (nvram_match("openvpncl_tuntap", "tap"))
 			fprintf(fp, "ip route add default via $route_vpn_gateway table 10\n"); //needs investigation cause in TAP mode no gateway is received
 		else */
-		fprintf(fp, "ip route add default via $route_vpn_gateway table 10\n");
+		if (!nvram_match("openvpncl_tuntap", "tap"))		
+			fprintf(fp, "ip route add default via $route_vpn_gateway table 10\n");
 		fprintf(fp, "ip route flush cache\n" "echo $ifconfig_remote >>/tmp/gateway.txt\n" "echo $route_vpn_gateway >>/tmp/gateway.txt\n" "echo $ifconfig_local >>/tmp/gateway.txt\n");
 	}
 	if (nvram_match("block_multicast", "0")	//block multicast on bridged vpns, when wan multicast is enabled
