@@ -122,6 +122,9 @@ endif
 ifeq ($(CONFIG_EAD),y)
 CFLAGS_EXTRA += -DHAVE_EAD
 endif
+ifeq ($(CONFIG_HOTSPOT20),y)
+CFLAGS_EXTRA += -DHAVE_HOTSPOT20
+endif
 ifeq ($(CONFIG_ALFANX),y)
 CFLAGS_EXTRA += -DHAVE_ALFANX
 endif
