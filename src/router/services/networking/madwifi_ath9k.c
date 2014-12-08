@@ -821,7 +821,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		// fprintf (fp, "jumpstart_p1=1\n");
 	}
 #ifdef HAVE_HOTSPOT20
-	setupHS20(fp, prefix);
+	setupHS20(fp, ifname);
 #endif
 	fprintf(fp, "\n");
 
