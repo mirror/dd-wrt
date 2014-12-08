@@ -1397,9 +1397,7 @@ char *get3GControlDevice(void)
 
 #if defined(HAVE_LIBQMI) || defined(HAVE_UQMI)
 			if ((devicelist[devicecount].modeswitch & QMI)) {
-				insmod("cdc-wdm");
-				insmod("usbnet");
-				insmod("qmi_wwan");
+				insmod("cdc-wdm usbnet qmi_wwan");
 				//start custom setup, if defined
 				if (devicelist[devicecount].customsetup) {
 					fprintf(stderr, "customsetup QMI\n");
@@ -1412,11 +1410,7 @@ char *get3GControlDevice(void)
 			}
 #endif
 			if (devicelist[devicecount].driver) {
-				insmod("usbserial");
-				insmod("usb_wwan");
-				insmod("cdc-wdm");
-				insmod("usbnet");
-				insmod("qmi_wwan");
+				insmod("usbserial usb_wwan cdc-wdm usbnet qmi_wwan");
 				insmod(devicelist[devicecount].driver);
 			}
 			if (devicelist[devicecount].datadevice) {
@@ -1428,10 +1422,7 @@ char *get3GControlDevice(void)
 						sprintf(data, "/dev/ttyACM%s", devicelist[devicecount].datadevice);
 					} else if ((devicelist[devicecount].modeswitch & GENERIC)) {
 						sysprintf("echo %04x %04x > /sys/bus/usb-serial/drivers/option1/new_id", devicelist[devicecount].vendor, devicelist[devicecount].product);
-						insmod("usb_wwan");
-						insmod("cdc-wdm");
-						insmod("usbnet");
-						insmod("qmi_wwan");
+						insmod("usb_wwan cdc-wdm usbnet qmi_wwan");
 						sprintf(data, "/dev/usb/tts/%s", devicelist[devicecount].datadevice);
 					} else
 						sprintf(data, "/dev/usb/tts/%s", devicelist[devicecount].datadevice);
@@ -1466,10 +1457,7 @@ char *get3GControlDevice(void)
 				sprintf(control, "/dev/ttyACM%s", devicelist[devicecount].controldevice);
 			} else if ((devicelist[devicecount].modeswitch & GENERIC)) {
 				sysprintf("echo %04x %04x > /sys/bus/usb-serial/drivers/option1/new_id", devicelist[devicecount].vendor, devicelist[devicecount].product);
-				insmod("usb_wwan");
-				insmod("cdc-wdm");
-				insmod("usbnet");
-				insmod("qmi_wwan");
+				insmod("usb_wwan cdc-wdm usbnet qmi_wwan");
 				sprintf(control, "/dev/usb/tts/%s", devicelist[devicecount].controldevice);
 			} else
 				sprintf(control, "/dev/usb/tts/%s", devicelist[devicecount].controldevice);
@@ -1478,14 +1466,7 @@ char *get3GControlDevice(void)
 		devicecount++;
 	}
 	//not found, use generic implementation (all drivers)
-	insmod("cdc-acm");
-	insmod("cdc-wdm");
-	insmod("usbnet");
-	insmod("qmi_wwan");
-	insmod("usbserial");
-	insmod("usb_wwan");
-	insmod("sierra");
-	insmod("option");
+	insmod("cdc-acm cdc-wdm usbnet qmi_wwan usbserial usb_wwan sierra option");
 	return ttsdevice;
 }
 
