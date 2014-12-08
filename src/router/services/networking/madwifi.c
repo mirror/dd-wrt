@@ -211,6 +211,7 @@ void setupKey(char *prefix)
 /*
  * MADWIFI Encryption Setup 
  */
+
 void setupSupplicant(char *prefix, char *ssidoverride)
 {
 #ifdef HAVE_REGISTER
@@ -712,6 +713,79 @@ void get_uuid(char *uuid_str)
 
 #endif
 
+#ifdef HAVE_HOTSPOT20
+void setupHS20(FILE * fp, char *prefix)
+{
+	if (nvram_nmatch("1", "%s_hs20", prefix)) {
+		fprintf(fp, "hs20=1\n");
+		if (nvram_nmatch("1", "%s_disable_dgaf", prefix))
+			fprintf(fp, "disable_dgaf=1\n");
+		else
+			fprintf(fp, "disable_dgaf=0\n");
+		if (nvram_nmatch("1", "%s_osen,prefix"))
+			fprintf(fp, "osen=1\n");
+		else
+			fprintf(fp, "osen=0\n");
+
+		if (nvram_nmatch("", "%s_anqp_domain_id", prefix))
+			fprintf(fp, "anqp_domain_id=1234\n");
+		else
+			fprintf(fp, "anqp_domain_id=%s\n", nvram_nget("%s_anqp_domain_id", prefix));
+
+		if (nvram_nmatch("", "%s_hs20_deauth_req_timeout", prefix))
+			fprintf(fp, "hs20_deauth_req_timeout=60\n");
+		else
+			fprintf(fp, "hs20_deauth_req_timeout=%s\n", nvram_nget("%s_hs20_deauth_req_timeout", prefix));
+
+		int i;
+		for (i = 0; i < 10; i++) {
+			if (nvram_nmatch("", "%s_hs20_oper_friendly_name%d", prefix, i))
+				continue;
+			fprintf(fp, "hs20_oper_friendly_name=%s\n", nvram_nget("%s_hs20_oper_friendly_name%d", prefix, i));
+		}
+
+		for (i = 0; i < 10; i++) {
+			if (nvram_nmatch("", "%s_hs20_conn_capab%d", prefix, i))
+				continue;
+			fprintf(fp, "hs20_conn_capab=%s\n", nvram_nget("%s_hs20_conn_capab%d", prefix, i));
+		}
+		if (nvram_nmatch("", "%s_hs20_wan_metrics", prefix))
+			fprintf(fp, "hs20_wan_metrics=01:50000:50000:80:240:0\n");
+		else
+			fprintf(fp, "hs20_wan_metrics=%s\n", nvram_nget("%s_hs20_wan_metrics", prefix));
+
+		if (nvram_nmatch("", "%s_hs20_operating_class", prefix))
+			fprintf(fp, "hs20_operating_class=5173\n");
+		else
+			fprintf(fp, "hs20_operating_class=%s\n", nvram_nget("%s_hs20_operating_class", prefix));
+
+		if (!nvram_nmatch("", "%s_osu_ssid", prefix))
+			fprintf(fp, "osu_ssid=\"%s\"\n", nvram_nget("%s_osu_ssid", prefix));
+
+		if (nvram_nmatch("", "%s_osu_server_uri", prefix, i))
+			fprintf(fp, "osu_server_uri=%s\n", nvram_nget("%s_osu_server_uri", prefix));
+
+		for (i = 0; i < 10; i++) {
+			if (nvram_nmatch("", "%s_osu_friendly_name%d", prefix, i))
+				continue;
+			fprintf(fp, "osu_friendly_name=%s\n", nvram_nget("%s_osu_friendly_name%d", prefix, i));
+		}
+		if (nvram_nmatch("", "%s_nai", prefix, i))
+			fprintf(fp, "osu_nai=%s\n", nvram_nget("%s_osu_nai", prefix));
+
+		if (nvram_nmatch("", "%s_osu_method_list", prefix, i))
+			fprintf(fp, "osu_method_list=%s\n", nvram_nget("%s_osu_method_list", prefix));
+		for (i = 0; i < 10; i++) {
+			if (nvram_nmatch("", "%s_osu_service_desc%d", prefix, i))
+				continue;
+			fprintf(fp, "osu_service_desc=%s\n", nvram_nget("%s_osu_service_desc%d", prefix, i));
+		}
+
+	}
+
+}
+#endif
+
 void addWPS(FILE * fp, char *prefix, int configured)
 {
 #ifdef HAVE_WPS
@@ -894,6 +968,9 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 		}
 		fprintf(fp, "wep_default_key=%d\n", atoi(nvram_nget("%s_key", prefix)) - 1);
 		addWPS(fp, prefix, 1);
+#ifdef HAVE_HOTSPOT20
+		setupHS20(fp, prefix);
+#endif
 		fclose(fp);
 		do_hostapd(fstr, prefix);
 
@@ -991,6 +1068,9 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 			fprintf(fp, "wpa_group_rekey=%s\n", nvram_nget("%s_wpa_gtk_rekey", prefix));
 		}
 		// fprintf (fp, "jumpstart_p1=1\n");
+#ifdef HAVE_HOTSPOT20
+		setupHS20(fp, prefix);
+#endif
 		fclose(fp);
 		do_hostapd(fstr, prefix);
 

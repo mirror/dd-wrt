@@ -457,8 +457,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 #ifdef HAVE_ATH10K
 	if (is_ath10k(prefix)) {
 		if ((!strcmp(netmode, "mixed") ||	//
-		     !strcmp(netmode, "ac-only") || 
-		     !strcmp(netmode, "acn-mixed"))) {
+		     !strcmp(netmode, "ac-only") || !strcmp(netmode, "acn-mixed"))) {
 			caps = mac80211_get_vhtcaps(prefix);
 			fprintf(fp, "vht_capab=%s\n", caps);
 			free(caps);
@@ -589,6 +588,8 @@ static int ieee80211_aton(char *str, unsigned char mac[6])
 
 extern char *hostapd_eap_get_types(void);
 extern void addWPS(FILE * fp, char *prefix, int configured);
+extern void setupHS20(FILE * fp, char *prefix);
+
 void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 {
 #ifdef HAVE_REGISTER
@@ -819,7 +820,11 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		}
 		// fprintf (fp, "jumpstart_p1=1\n");
 	}
+#ifdef HAVE_HOTSPOT20
+	setupHS20(fp, prefix);
+#endif
 	fprintf(fp, "\n");
+
 	fclose(fp);
 }
 
