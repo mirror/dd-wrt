@@ -56,7 +56,7 @@
 #endif
 
 #include <asm/hardirq.h>
-#include <asm/system.h>
+//#include <asm/system.h>
 
 #include "IxOsalOsOem.h"
 
