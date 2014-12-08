@@ -70,13 +70,7 @@ void start_stabridge(void)
 		writeproc("/proc/sys/net/bridge/bridge-nf-call-arptables", "1");
 		writeproc("/proc/sys/net/bridge/bridge-nf-call-ip6tables", "1");
 		writeproc("/proc/sys/net/bridge/bridge-nf-call-iptables", "1");
-		insmod("ebtables");
-		insmod("ebtables");
-		insmod("ebtable_filter");
-		insmod("ebtable_nat");
-		insmod("ebtable_broute");
-		insmod("ebt_arpnat");
-		insmod("ebt_broute");
+		insmod("ebtables ebtables ebtable_filter ebtable_nat ebtable_broute ebt_arpnat ebt_broute");
 		eval("ebtables", "-t", "nat", "-A", "PREROUTING", "--in-interface", getWET(), "-j", "arpnat", "--arpnat-target", "ACCEPT");
 		eval("ebtables", "-t", "nat", "-A", "POSTROUTING", "--out-interface", getWET(), "-j", "arpnat", "--arpnat-target", "ACCEPT");
 		eval("ebtables", "-t", "broute", "-A", "BROUTING", "--protocol", "0x888e", "--in-interface", getWET(), "-j", "DROP");
@@ -100,12 +94,7 @@ void stop_stabridge(void)
 	// remove the modules (..if rules are in?).
 	eval("ebtables", "-t", "broute", "-F");
 	eval("ebtables", "-t", "nat", "-F");
-	rmmod("ebt_broute");
-	rmmod("ebt_arpnat");
-	rmmod("ebtable_broute");
-	rmmod("ebtable_nat");
-	rmmod("ebtable_filter");
-	rmmod("ebtables");
+	rmmod("ebt_broute ebt_arpnat ebtable_broute ebtable_nat ebtable_filter ebtables");
 	// don't let packages pass to iptables without ebtables loaded
 	writeproc("/proc/sys/net/bridge/bridge-nf-call-arptables", "0");
 	writeproc("/proc/sys/net/bridge/bridge-nf-call-ip6tables", "0");

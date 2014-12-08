@@ -1109,8 +1109,7 @@ static void macgrp_chain(int seq, unsigned int mark, int urlenable)
 	if (strcmp(wordlist, "") == 0)
 		return;
 
-	insmod("ipt_mac");
-	insmod("xt_mac");
+	insmod("ipt_mac xt_mac");
 
 	if (mark == MARK_DROP) {
 		foreach(var, wordlist, next) {
@@ -1367,8 +1366,7 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 
 				for (i = 0; i < strlen(realname); i++)
 					realname[i] = tolower(realname[i]);
-				insmod("ipt_layer7");
-				insmod("xt_layer7");
+				insmod("ipt_layer7 xt_layer7");
 
 				save2file("-A advgrp_%d -m layer7 --l7proto %s -j %s\n", seq, realname, log_drop);
 			}
@@ -1410,8 +1408,7 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 					proto = "xdcc";
 				if (proto)	//avoid null pointer, if realname isnt matched
 				{
-					insmod("ipt_ipp2p");
-					insmod("xt_ipp2p");
+					insmod("ipt_ipp2p xt_ipp2p");
 					save2file("-A advgrp_%d -m ipp2p --%s -j %s\n", seq, proto, log_drop);
 					if (!strcmp(proto, "bit")) {
 						/* bittorrent detection enhanced */
@@ -1419,8 +1416,7 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 						insmod("/lib/opendpi/xt_opendpi.ko");
 						save2file("-A advgrp_%d -m ndpi --bittorrent -j %s\n", seq, log_drop);
 #else
-						insmod("ipt_layer7");
-						insmod("xt_layer7");
+						insmod("ipt_layer7 xt_layer7");
 #ifdef HAVE_MICRO
 						save2file("-A advgrp_%d -m layer7 --l7proto bt -j %s\n", seq, log_drop);
 #else
@@ -1439,10 +1435,7 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 	 * p2p catchall 
 	 */
 	if (nvram_nmatch("1", "filter_p2p_grp%d", seq)) {
-		insmod("ipt_layer7");
-		insmod("xt_layer7");
-		insmod("ipt_ipp2p");
-		insmod("xt_ipp2p");
+		insmod("ipt_layer7 xt_layer7 ipt_ipp2p xt_ipp2p");
 		save2file("-A advgrp_%d -m ipp2p --edk -j %s\n", seq, log_drop);
 		save2file("-A advgrp_%d -m ipp2p --dc -j %s\n", seq, log_drop);
 		save2file("-A advgrp_%d -m ipp2p --gnu -j %s\n", seq, log_drop);
@@ -2392,11 +2385,7 @@ static void mangle_table(void)
 	save2file("*mangle\n" ":PREROUTING ACCEPT [0:0]\n" ":OUTPUT ACCEPT [0:0]\n");
 
 	if (wanactive() && nvram_match("block_loopback", "0")) {
-		insmod("ipt_mark");
-		insmod("xt_mark");
-		insmod("ipt_CONNMARK");
-		insmod("xt_CONNMARK");
-		insmod("xt_connmark");
+		insmod("ipt_mark xt_mark ipt_CONNMARK xt_CONNMARK xt_connmark");
 
 		save2file("-A PREROUTING -i ! %s -d %s -j MARK --set-mark %s\n", get_wan_face(), get_wan_ipaddr(), get_NFServiceMark("FORWARD", 1));
 
@@ -2607,10 +2596,7 @@ void start_firewall6(void)
 	
 	fprintf(stderr, "start firewall6\n");
 	
-	insmod("nf_defrag_ipv6");
-	insmod("ip6_tables");
-	insmod("nf_conntrack_ipv6");
-	insmod("ip6table_filter");
+	insmod("nf_defrag_ipv6 ip6_tables nf_conntrack_ipv6 ip6table_filter");
 
 	eval("ip6tables", "-F", "INPUT");
 	eval("ip6tables", "-F", "FORWARD");
