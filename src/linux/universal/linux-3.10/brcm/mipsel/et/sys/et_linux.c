@@ -294,7 +294,9 @@ static void et_sendup(et_info_t *et, struct sk_buff *skb);
 #ifdef BCMDBG
 static void et_dumpet(et_info_t *et, struct bcmstrbuf *b);
 #endif /* BCMDBG */
-
+#ifndef HAVE_NET_DEVICE_OPS
+#define HAVE_NET_DEVICE_OPS
+#endif
 #ifdef HAVE_NET_DEVICE_OPS
 static const struct net_device_ops et_netdev_ops = {
 	.ndo_open = et_open,
