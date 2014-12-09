@@ -54,6 +54,9 @@ struct ar8xxx_priv;
 
 #define AR8XXX_NUM_PHYS 	5
 
+static void ar8216_set_mirror_regs(struct ar8xxx_priv *priv);
+static void ar8327_set_mirror_regs(struct ar8xxx_priv *priv);
+
 enum {
 	AR8XXX_VER_AR8216 = 0x01,
 	AR8XXX_VER_AR8236 = 0x03,
@@ -70,6 +73,12 @@ struct ar8xxx_mib_desc {
 
 struct ar8xxx_chip {
 	unsigned long caps;
+	bool config_at_probe;
+	bool mii_lo_first;
+
+	/* parameters to calculate REG_PORT_STATS_BASE */
+	unsigned reg_port_stats_start;
+	unsigned reg_port_stats_length;
 
 	int (*hw_init)(struct ar8xxx_priv *priv);
 	void (*cleanup)(struct ar8xxx_priv *priv);
@@ -82,9 +91,11 @@ struct ar8xxx_chip {
 	void (*vtu_flush)(struct ar8xxx_priv *priv);
 	void (*vtu_load_vlan)(struct ar8xxx_priv *priv, u32 vid, u32 port_mask);
 	void (*phy_fixup)(struct ar8xxx_priv *priv, int phy);
+	void (*set_mirror_regs)(struct ar8xxx_priv *priv);
 
 	const struct ar8xxx_mib_desc *mib_decs;
 	unsigned num_mibs;
+	unsigned mib_func;
 };
 
 enum ar8327_led_pattern {
@@ -140,15 +151,12 @@ struct ar8xxx_priv {
 	u8 chip_ver;
 	u8 chip_rev;
 	const struct ar8xxx_chip *chip;
-	union {
-		struct ar8327_data ar8327;
-	} chip_data;
+	void *chip_data;
 	bool initialized;
 	bool port4_phy;
 	char buf[2048];
 
 	bool init;
-	bool mii_lo_first;
 
 	struct mutex mib_lock;
 	struct delayed_work mib_work;
@@ -424,7 +432,7 @@ ar8xxx_mii_write(struct ar8xxx_priv *priv, int reg, u32 val)
 
 	bus->write(bus, 0x18, 0, r3);
 	usleep_range(1000, 2000); /* wait for the page switch to propagate */
-	if (priv->mii_lo_first) {
+	if (priv->chip->mii_lo_first) {
 		bus->write(bus, 0x10 | r2, r1, lo);
 		bus->write(bus, 0x10 | r2, r1 + 1, hi);
 	} else {
@@ -460,7 +468,7 @@ ar8xxx_mii_rmw(struct ar8xxx_priv *priv, int reg, u32 mask, u32 val)
 	lo = ret & 0xffff;
 	hi = (u16) (ret >> 16);
 
-	if (priv->mii_lo_first) {
+	if (priv->chip->mii_lo_first) {
 		bus->write(bus, 0x10 | r2, r1, lo);
 		bus->write(bus, 0x10 | r2, r1 + 1, hi);
 	} else {
@@ -531,15 +539,10 @@ ar8xxx_reg_wait(struct ar8xxx_priv *priv, u32 reg, u32 mask, u32 val,
 static int
 ar8xxx_mib_op(struct ar8xxx_priv *priv, u32 op)
 {
-	unsigned mib_func;
+	unsigned mib_func = priv->chip->mib_func;
 	int ret;
 
 	lockdep_assert_held(&priv->mib_lock);
-
-	if (chip_is_ar8327(priv) || chip_is_ar8337(priv))
-		mib_func = AR8327_REG_MIB_FUNC;
-	else
-		mib_func = AR8216_REG_MIB_FUNC;
 
 	/* Capture the hardware statistics for all ports */
 	ar8xxx_rmw(priv, mib_func, AR8216_MIB_FUNC, (op << AR8216_MIB_FUNC_S));
@@ -578,13 +581,8 @@ ar8xxx_mib_fetch_port_stat(struct ar8xxx_priv *priv, int port, bool flush)
 
 	lockdep_assert_held(&priv->mib_lock);
 
-	if (chip_is_ar8327(priv) || chip_is_ar8337(priv))
-		base = AR8327_REG_PORT_STATS_BASE(port);
-	else if (chip_is_ar8236(priv) ||
-		 chip_is_ar8316(priv))
-		base = AR8236_REG_PORT_STATS_BASE(port);
-	else
-		base = AR8216_REG_PORT_STATS_BASE(port);
+	base = priv->chip->reg_port_stats_start +
+	       priv->chip->reg_port_stats_length * port;
 
 	mib_stats = &priv->mib_stats[port * priv->chip->num_mibs];
 	for (i = 0; i < priv->chip->num_mibs; i++) {
@@ -886,6 +884,9 @@ ar8216_init_port(struct ar8xxx_priv *priv, int port)
 static const struct ar8xxx_chip ar8216_chip = {
 	.caps = AR8XXX_CAP_MIB_COUNTERS,
 
+	.reg_port_stats_start = 0x19000,
+	.reg_port_stats_length = 0xa0,
+
 	.hw_init = ar8216_hw_init,
 	.init_globals = ar8216_init_globals,
 	.init_port = ar8216_init_port,
@@ -894,9 +895,11 @@ static const struct ar8xxx_chip ar8216_chip = {
 	.atu_flush = ar8216_atu_flush,
 	.vtu_flush = ar8216_vtu_flush,
 	.vtu_load_vlan = ar8216_vtu_load_vlan,
+	.set_mirror_regs = ar8216_set_mirror_regs,
 
 	.num_mibs = ARRAY_SIZE(ar8216_mibs),
 	.mib_decs = ar8216_mibs,
+	.mib_func = AR8216_REG_MIB_FUNC
 };
 
 static void
@@ -952,6 +955,10 @@ ar8236_init_globals(struct ar8xxx_priv *priv)
 
 static const struct ar8xxx_chip ar8236_chip = {
 	.caps = AR8XXX_CAP_MIB_COUNTERS,
+
+	.reg_port_stats_start = 0x20000,
+	.reg_port_stats_length = 0x100,
+
 	.hw_init = ar8216_hw_init,
 	.init_globals = ar8236_init_globals,
 	.init_port = ar8216_init_port,
@@ -960,9 +967,11 @@ static const struct ar8xxx_chip ar8236_chip = {
 	.atu_flush = ar8216_atu_flush,
 	.vtu_flush = ar8216_vtu_flush,
 	.vtu_load_vlan = ar8216_vtu_load_vlan,
+	.set_mirror_regs = ar8216_set_mirror_regs,
 
 	.num_mibs = ARRAY_SIZE(ar8236_mibs),
 	.mib_decs = ar8236_mibs,
+	.mib_func = AR8216_REG_MIB_FUNC
 };
 
 static int
@@ -1035,6 +1044,10 @@ ar8316_init_globals(struct ar8xxx_priv *priv)
 
 static const struct ar8xxx_chip ar8316_chip = {
 	.caps = AR8XXX_CAP_GIGE | AR8XXX_CAP_MIB_COUNTERS,
+
+	.reg_port_stats_start = 0x20000,
+	.reg_port_stats_length = 0x100,
+
 	.hw_init = ar8316_hw_init,
 	.init_globals = ar8316_init_globals,
 	.init_port = ar8216_init_port,
@@ -1043,9 +1056,11 @@ static const struct ar8xxx_chip ar8316_chip = {
 	.atu_flush = ar8216_atu_flush,
 	.vtu_flush = ar8216_vtu_flush,
 	.vtu_load_vlan = ar8216_vtu_load_vlan,
+	.set_mirror_regs = ar8216_set_mirror_regs,
 
 	.num_mibs = ARRAY_SIZE(ar8236_mibs),
 	.mib_decs = ar8236_mibs,
+	.mib_func = AR8216_REG_MIB_FUNC
 };
 
 static u32
@@ -1405,7 +1420,7 @@ static int
 ar8327_led_create(struct ar8xxx_priv *priv,
 		  const struct ar8327_led_info *led_info)
 {
-	struct ar8327_data *data = &priv->chip_data.ar8327;
+	struct ar8327_data *data = priv->chip_data;
 	struct ar8327_led *aled;
 	int ret;
 
@@ -1466,13 +1481,11 @@ ar8327_led_destroy(struct ar8327_led *aled)
 static void
 ar8327_leds_init(struct ar8xxx_priv *priv)
 {
-	struct ar8327_data *data;
+	struct ar8327_data *data = priv->chip_data;
 	unsigned i;
 
 	if (!IS_ENABLED(CONFIG_AR8216_PHY_LEDS))
 		return;
-
-	data = &priv->chip_data.ar8327;
 
 	for (i = 0; i < data->num_leds; i++) {
 		struct ar8327_led *aled;
@@ -1491,7 +1504,7 @@ ar8327_leds_init(struct ar8xxx_priv *priv)
 static void
 ar8327_leds_cleanup(struct ar8xxx_priv *priv)
 {
-	struct ar8327_data *data = &priv->chip_data.ar8327;
+	struct ar8327_data *data = priv->chip_data;
 	unsigned i;
 
 	if (!IS_ENABLED(CONFIG_AR8216_PHY_LEDS))
@@ -1512,7 +1525,7 @@ ar8327_hw_config_pdata(struct ar8xxx_priv *priv,
 		       struct ar8327_platform_data *pdata)
 {
 	struct ar8327_led_cfg *led_cfg;
-	struct ar8327_data *data;
+	struct ar8327_data *data = priv->chip_data;
 	u32 pos, new_pos;
 	u32 t;
 
@@ -1520,8 +1533,6 @@ ar8327_hw_config_pdata(struct ar8xxx_priv *priv,
 		return -EINVAL;
 
 	priv->get_port_link = pdata->get_port_link;
-
-	data = &priv->chip_data.ar8327;
 
 	data->port0_status = ar8327_get_port_init_status(&pdata->port0_cfg);
 	data->port6_status = ar8327_get_port_init_status(&pdata->port6_cfg);
@@ -1595,6 +1606,7 @@ ar8327_hw_config_pdata(struct ar8xxx_priv *priv,
 static int
 ar8327_hw_config_of(struct ar8xxx_priv *priv, struct device_node *np)
 {
+	struct ar8327_data *data = priv->chip_data;
 	const __be32 *paddr;
 	int len;
 	int i;
@@ -1614,10 +1626,10 @@ ar8327_hw_config_of(struct ar8xxx_priv *priv, struct device_node *np)
 
 		switch (reg) {
 		case AR8327_REG_PORT_STATUS(0):
-			priv->chip_data.ar8327.port0_status = val;
+			data->port0_status = val;
 			break;
 		case AR8327_REG_PORT_STATUS(6):
-			priv->chip_data.ar8327.port6_status = val;
+			data->port6_status = val;
 			break;
 		default:
 			priv->write(priv, reg, val);
@@ -1639,6 +1651,10 @@ static int
 ar8327_hw_init(struct ar8xxx_priv *priv)
 {
 	int ret;
+
+	priv->chip_data = kzalloc(sizeof(struct ar8327_data), GFP_KERNEL);
+	if (!priv->chip_data)
+		return -ENOMEM;
 
 	if (priv->phy->dev.of_node)
 		ret = ar8327_hw_config_of(priv, priv->phy->dev.of_node);
@@ -1699,12 +1715,13 @@ ar8327_init_globals(struct ar8xxx_priv *priv)
 static void
 ar8327_init_port(struct ar8xxx_priv *priv, int port)
 {
+	struct ar8327_data *data = priv->chip_data;
 	u32 t;
 
 	if (port == AR8216_PORT_CPU)
-		t = priv->chip_data.ar8327.port0_status;
+		t = data->port0_status;
 	else if (port == 6)
-		t = priv->chip_data.ar8327.port6_status;
+		t = data->port6_status;
 	else
 		t = AR8216_PORT_STATUS_LINK_AUTO;
 
@@ -1821,6 +1838,12 @@ ar8327_setup_port(struct ar8xxx_priv *priv, int port, u32 members)
 
 static const struct ar8xxx_chip ar8327_chip = {
 	.caps = AR8XXX_CAP_GIGE | AR8XXX_CAP_MIB_COUNTERS,
+	.config_at_probe = true,
+	.mii_lo_first = true,
+
+	.reg_port_stats_start = 0x1000,
+	.reg_port_stats_length = 0x100,
+
 	.hw_init = ar8327_hw_init,
 	.cleanup = ar8327_cleanup,
 	.init_globals = ar8327_init_globals,
@@ -1831,9 +1854,11 @@ static const struct ar8xxx_chip ar8327_chip = {
 	.vtu_flush = ar8327_vtu_flush,
 	.vtu_load_vlan = ar8327_vtu_load_vlan,
 	.phy_fixup = ar8327_phy_fixup,
+	.set_mirror_regs = ar8327_set_mirror_regs,
 
 	.num_mibs = ARRAY_SIZE(ar8236_mibs),
 	.mib_decs = ar8236_mibs,
+	.mib_func = AR8327_REG_MIB_FUNC
 };
 
 static int
@@ -2091,16 +2116,6 @@ ar8216_set_mirror_regs(struct ar8xxx_priv *priv)
 			   AR8216_PORT_CTRL_MIRROR_TX);
 }
 
-static void
-ar8xxx_set_mirror_regs(struct ar8xxx_priv *priv)
-{
-	if (chip_is_ar8327(priv) || chip_is_ar8337(priv)) {
-		ar8327_set_mirror_regs(priv);
-	} else {
-		ar8216_set_mirror_regs(priv);
-	}
-}
-
 static int
 ar8xxx_sw_hw_apply(struct switch_dev *dev)
 {
@@ -2148,7 +2163,7 @@ ar8xxx_sw_hw_apply(struct switch_dev *dev)
 		priv->chip->setup_port(priv, i, portmask[i]);
 	}
 
-	ar8xxx_set_mirror_regs(priv);
+	priv->chip->set_mirror_regs(priv);
 
 	mutex_unlock(&priv->reg_mutex);
 	return 0;
@@ -2220,7 +2235,7 @@ ar8xxx_sw_set_mirror_rx_enable(struct switch_dev *dev,
 
 	mutex_lock(&priv->reg_mutex);
 	priv->mirror_rx = !!val->value.i;
-	ar8xxx_set_mirror_regs(priv);
+	priv->chip->set_mirror_regs(priv);
 	mutex_unlock(&priv->reg_mutex);
 
 	return 0;
@@ -2245,7 +2260,7 @@ ar8xxx_sw_set_mirror_tx_enable(struct switch_dev *dev,
 
 	mutex_lock(&priv->reg_mutex);
 	priv->mirror_tx = !!val->value.i;
-	ar8xxx_set_mirror_regs(priv);
+	priv->chip->set_mirror_regs(priv);
 	mutex_unlock(&priv->reg_mutex);
 
 	return 0;
@@ -2270,7 +2285,7 @@ ar8xxx_sw_set_mirror_monitor_port(struct switch_dev *dev,
 
 	mutex_lock(&priv->reg_mutex);
 	priv->monitor_port = val->value.i;
-	ar8xxx_set_mirror_regs(priv);
+	priv->chip->set_mirror_regs(priv);
 	mutex_unlock(&priv->reg_mutex);
 
 	return 0;
@@ -2295,7 +2310,7 @@ ar8xxx_sw_set_mirror_source_port(struct switch_dev *dev,
 
 	mutex_lock(&priv->reg_mutex);
 	priv->source_port = val->value.i;
-	ar8xxx_set_mirror_regs(priv);
+	priv->chip->set_mirror_regs(priv);
 	mutex_unlock(&priv->reg_mutex);
 
 	return 0;
@@ -2596,11 +2611,9 @@ ar8xxx_id_chip(struct ar8xxx_priv *priv)
 		priv->chip = &ar8316_chip;
 		break;
 	case AR8XXX_VER_AR8327:
-		priv->mii_lo_first = true;
 		priv->chip = &ar8327_chip;
 		break;
 	case AR8XXX_VER_AR8337:
-		priv->mii_lo_first = true;
 		priv->chip = &ar8327_chip;
 		break;
 	default:
@@ -2700,6 +2713,7 @@ ar8xxx_free(struct ar8xxx_priv *priv)
 	if (priv->chip && priv->chip->cleanup)
 		priv->chip->cleanup(priv);
 
+	kfree(priv->chip_data);
 	kfree(priv->mib_stats);
 	kfree(priv);
 }
@@ -2797,7 +2811,7 @@ ar8xxx_phy_config_init(struct phy_device *phydev)
 	if (WARN_ON(!priv))
 		return -ENODEV;
 
-	if (chip_is_ar8327(priv) || chip_is_ar8337(priv))
+	if (priv->chip->config_at_probe)
 		return ar8xxx_phy_check_aneg(phydev);
 
 	priv->phy = phydev;
@@ -2973,7 +2987,7 @@ found:
 			phydev->advertising = ADVERTISED_100baseT_Full;
 		}
 
-		if (chip_is_ar8327(priv) || chip_is_ar8337(priv)) {
+		if (priv->chip->config_at_probe) {
 			priv->phy = phydev;
 
 			ret = ar8xxx_start(priv);
@@ -3043,7 +3057,7 @@ ar8xxx_phy_remove(struct phy_device *phydev)
 	ar8xxx_free(priv);
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,16,0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0)
 static int
 ar8xxx_phy_soft_reset(struct phy_device *phydev)
 {
@@ -3063,7 +3077,7 @@ static struct phy_driver ar8xxx_phy_driver = {
 	.config_init	= ar8xxx_phy_config_init,
 	.config_aneg	= ar8xxx_phy_config_aneg,
 	.read_status	= ar8xxx_phy_read_status,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,16,0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0)
 	.soft_reset	= ar8xxx_phy_soft_reset,
 #endif
 	.driver		= { .owner = THIS_MODULE },
