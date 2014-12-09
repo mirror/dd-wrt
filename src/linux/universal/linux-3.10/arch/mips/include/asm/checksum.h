@@ -107,25 +107,25 @@ static inline __sum16 ip_fast_csum(const void *iph, unsigned int ihl)
 	int carry;
 	unsigned int w;
 
-	csum = __get_unaligned_cpu32(word++);
+	csum = net_hdr_word(word++);
 
-	w = __get_unaligned_cpu32(word++);
+	w = net_hdr_word(word++);
 	csum += w;
 	carry = (csum < w);
 	csum += carry;
 
-	w = __get_unaligned_cpu32(word++);
+	w = net_hdr_word(word++);
 	csum += w;
 	carry = (csum < w);
 	csum += carry;
 
-	w = __get_unaligned_cpu32(word++);
+	w = net_hdr_word(word++);
 	csum += w;
 	carry = (csum < w);
 	csum += carry;
 
 	do {
-		w = __get_unaligned_cpu32(word++);
+		w = net_hdr_word(word++);
 		csum += w;
 		carry = (csum < w);
 		csum += carry;
