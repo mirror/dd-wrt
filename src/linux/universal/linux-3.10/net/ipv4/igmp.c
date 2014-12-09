@@ -470,7 +470,7 @@ static struct sk_buff *add_grec(struct sk_buff *skb, struct ip_mc_list *pmc,
 		if (!skb)
 			return NULL;
 		psrc = (__be32 *)skb_put(skb, sizeof(__be32));
-		*psrc = psf->sf_inaddr;
+		net_hdr_word(psrc) = psf->sf_inaddr;
 		scount++; stotal++;
 		if ((type == IGMPV3_ALLOW_NEW_SOURCES ||
 		     type == IGMPV3_BLOCK_OLD_SOURCES) && psf->sf_crcount) {
