@@ -137,25 +137,25 @@ static inline __sum16 ip_fast_csum(const void *iph, unsigned int ihl)
 	int carry;
 	unsigned int w;
 
-	csum = __get_unaligned_cpu32(word++);
+	csum = net_hdr_word(word++);
 
-	w = __get_unaligned_cpu32(word++);
+	w = net_hdr_word(word++);
 	csum += w;
 	carry = (csum < w);
 	csum += carry;
 
-	w = __get_unaligned_cpu32(word++);
+	w = net_hdr_word(word++);
 	csum += w;
 	carry = (csum < w);
 	csum += carry;
 
-	w = __get_unaligned_cpu32(word++);
+	w = net_hdr_word(word++);
 	csum += w;
 	carry = (csum < w);
 	csum += carry;
 
 	do {
-		w = __get_unaligned_cpu32(word++);
+		w = net_hdr_word(word++);
 		csum += w;
 		carry = (csum < w);
 		csum += carry;
@@ -226,70 +226,3 @@ static inline __sum16 ip_compute_csum(const void *buff, int len)
 {
 	return csum_fold(csum_partial(buff, len, 0));
 }
-
-#define _HAVE_ARCH_IPV6_CSUM
-static __inline__ __sum16 csum_ipv6_magic(const struct in6_addr *saddr,
-					  const struct in6_addr *daddr,
-					  __u32 len, unsigned short proto,
-					  __wsum sum)
-{
-	__asm__(
-	"	.set	push		# csum_ipv6_magic\n"
-	"	.set	noreorder	\n"
-	"	.set	noat		\n"
-	"	addu	%0, %5		# proto (long in network byte order)\n"
-	"	sltu	$1, %0, %5	\n"
-	"	addu	%0, $1		\n"
-
-	"	addu	%0, %6		# csum\n"
-	"	sltu	$1, %0, %6	\n"
-	"	lw	%1, 0(%2)	# four words source address\n"
-	"	addu	%0, $1		\n"
-	"	addu	%0, %1		\n"
-	"	sltu	$1, %0, %1	\n"
-
-	"	lw	%1, 4(%2)	\n"
-	"	addu	%0, $1		\n"
-	"	addu	%0, %1		\n"
-	"	sltu	$1, %0, %1	\n"
-
-	"	lw	%1, 8(%2)	\n"
-	"	addu	%0, $1		\n"
-	"	addu	%0, %1		\n"
-	"	sltu	$1, %0, %1	\n"
-
-	"	lw	%1, 12(%2)	\n"
-	"	addu	%0, $1		\n"
-	"	addu	%0, %1		\n"
-	"	sltu	$1, %0, %1	\n"
-
-	"	lw	%1, 0(%3)	\n"
-	"	addu	%0, $1		\n"
-	"	addu	%0, %1		\n"
-	"	sltu	$1, %0, %1	\n"
-
-	"	lw	%1, 4(%3)	\n"
-	"	addu	%0, $1		\n"
-	"	addu	%0, %1		\n"
-	"	sltu	$1, %0, %1	\n"
-
-	"	lw	%1, 8(%3)	\n"
-	"	addu	%0, $1		\n"
-	"	addu	%0, %1		\n"
-	"	sltu	$1, %0, %1	\n"
-
-	"	lw	%1, 12(%3)	\n"
-	"	addu	%0, $1		\n"
-	"	addu	%0, %1		\n"
-	"	sltu	$1, %0, %1	\n"
-
-	"	addu	%0, $1		# Add final carry\n"
-	"	.set	pop"
-	: "=r" (sum), "=r" (proto)
-	: "r" (saddr), "r" (daddr),
-	  "0" (htonl(len)), "1" (htonl(proto)), "r" (sum));
-
-	return csum_fold(sum);
-}
-
-#endif /* _ASM_CHECKSUM_H */

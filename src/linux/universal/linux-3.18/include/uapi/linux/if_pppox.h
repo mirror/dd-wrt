@@ -47,6 +47,7 @@ struct pppoe_addr {
  */
 struct pptp_addr {
 	__u16		call_id;
+	__u16		pad;
 	struct in_addr	sin_addr;
 };
 
