@@ -106,6 +106,18 @@ config NF_CONNTRACK_EVENTS
 
 	  If unsure, say `N'.
 
+config NF_CONNTRACK_RTCACHE
+	tristate "Cache route entries in conntrack objects"
+	depends on NETFILTER_ADVANCED
+	depends on NF_CONNTRACK
+	help
+	  If this option is enabled, the connection tracking code will
+	  cache routing information for each connection that is being
+	  forwarded, at a cost of 32 bytes per conntrack object.
+
+	  To compile it as a module, choose M here.  If unsure, say N.
+	  The module will be called nf_conntrack_rtcache.
+
 config NF_CONNTRACK_TIMEOUT
 	bool  'Connection tracking timeout'
 	depends on NETFILTER_ADVANCED
