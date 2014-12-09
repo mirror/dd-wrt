@@ -125,7 +125,9 @@ static void nf_conn_rtcache_dst_obsolete(struct nf_conn_rtcache *rtc,
 	rtc->cached_dst[dir].iif = -1;
 }
 
-static unsigned int nf_rtcache_in(const struct nf_hook_ops *ops,
+
+
+static unsigned int nf_rtcache_in(int pf,
 				  struct sk_buff *skb,
 				  const struct net_device *in,
 				  const struct net_device *out,
@@ -167,7 +169,7 @@ static unsigned int nf_rtcache_in(const struct nf_hook_ops *ops,
 	if (dst == NULL)
 		return NF_ACCEPT;
 
-	cookie = nf_rtcache_get_cookie(ops->pf, dst);
+	cookie = nf_rtcache_get_cookie(pf, dst);
 
 	dst = dst_check(dst, cookie);
 	pr_debug("obtained dst %p for skb %p, cookie %d\n", dst, skb, cookie);
@@ -178,8 +180,25 @@ static unsigned int nf_rtcache_in(const struct nf_hook_ops *ops,
 
 	return NF_ACCEPT;
 }
+static unsigned int nf_rtcache_in4(unsigned int hooknum,
+				  struct sk_buff *skb,
+				  const struct net_device *in,
+				  const struct net_device *out,
+				  int (*okfn)(struct sk_buff *))
+{
+return nf_rtcache_in(NFPROTO_IPV4,skb,in,out,okfn);
+}
 
-static unsigned int nf_rtcache_forward(const struct nf_hook_ops *ops,
+static unsigned int nf_rtcache_in6(unsigned int hooknum,
+				  struct sk_buff *skb,
+				  const struct net_device *in,
+				  const struct net_device *out,
+				  int (*okfn)(struct sk_buff *))
+{
+return nf_rtcache_in(NFPROTO_IPV6,skb,in,out,okfn);
+}
+
+static unsigned int nf_rtcache_forward(int pf,
 				       struct sk_buff *skb,
 				       const struct net_device *in,
 				       const struct net_device *out,
@@ -213,9 +232,28 @@ static unsigned int nf_rtcache_forward(const struct nf_hook_ops *ops,
 	if (likely(in->ifindex == iif))
 		return NF_ACCEPT;
 
-	nf_conn_rtcache_dst_set(ops->pf, rtc, skb_dst(skb), dir, in->ifindex);
+	nf_conn_rtcache_dst_set(pf, rtc, skb_dst(skb), dir, in->ifindex);
 	return NF_ACCEPT;
 }
+
+static unsigned int nf_rtcache_forward4(unsigned int hooknum,
+				  struct sk_buff *skb,
+				  const struct net_device *in,
+				  const struct net_device *out,
+				  int (*okfn)(struct sk_buff *))
+{
+return nf_rtcache_forward(NFPROTO_IPV4,skb,in,out,okfn);
+}
+
+static unsigned int nf_rtcache_forward6(unsigned int hooknum,
+				  struct sk_buff *skb,
+				  const struct net_device *in,
+				  const struct net_device *out,
+				  int (*okfn)(struct sk_buff *))
+{
+return nf_rtcache_forward(NFPROTO_IPV6,skb,in,out,okfn);
+}
+
 
 static int nf_rtcache_dst_remove(struct nf_conn *ct, void *data)
 {
@@ -237,11 +275,11 @@ static int nf_rtcache_dst_remove(struct nf_conn *ct, void *data)
 static int nf_rtcache_netdev_event(struct notifier_block *this,
 				   unsigned long event, void *ptr)
 {
-	struct net_device *dev = netdev_notifier_info_to_dev(ptr);
+	struct net_device *dev = ptr;
 	struct net *net = dev_net(dev);
 
 	if (event == NETDEV_DOWN)
-		nf_ct_iterate_cleanup(net, nf_rtcache_dst_remove, dev, 0, 0);
+		nf_ct_iterate_cleanup(net, nf_rtcache_dst_remove, dev);
 
 	return NOTIFY_DONE;
 }
@@ -252,14 +290,14 @@ static struct notifier_block nf_rtcache_notifier = {
 
 static struct nf_hook_ops rtcache_ops[] = {
 	{
-		.hook		= nf_rtcache_in,
+		.hook		= nf_rtcache_in4,
 		.owner		= THIS_MODULE,
 		.pf		= NFPROTO_IPV4,
 		.hooknum	= NF_INET_PRE_ROUTING,
 		.priority       = NF_IP_PRI_LAST,
 	},
 	{
-		.hook           = nf_rtcache_forward,
+		.hook           = nf_rtcache_forward4,
 		.owner          = THIS_MODULE,
 		.pf             = NFPROTO_IPV4,
 		.hooknum        = NF_INET_FORWARD,
@@ -267,14 +305,14 @@ static struct nf_hook_ops rtcache_ops[] = {
 	},
 #if IS_ENABLED(CONFIG_NF_CONNTRACK_IPV6)
 	{
-		.hook		= nf_rtcache_in,
+		.hook		= nf_rtcache_in6,
 		.owner		= THIS_MODULE,
 		.pf		= NFPROTO_IPV6,
 		.hooknum	= NF_INET_PRE_ROUTING,
 		.priority       = NF_IP_PRI_LAST,
 	},
 	{
-		.hook           = nf_rtcache_forward,
+		.hook           = nf_rtcache_forward6,
 		.owner          = THIS_MODULE,
 		.pf             = NFPROTO_IPV6,
 		.hooknum        = NF_INET_FORWARD,
@@ -364,7 +402,7 @@ static void __exit nf_conntrack_rtcache_fini(void)
 
 	/* zap all conntracks with rtcache extension */
 	for_each_net(net)
-		nf_ct_iterate_cleanup(net, nf_rtcache_ext_remove, NULL, 0, 0);
+		nf_ct_iterate_cleanup(net, nf_rtcache_ext_remove, NULL);
 
 	for_each_net(net) {
 		/* .. and make sure they're gone from dying list, too */
