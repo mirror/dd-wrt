@@ -1142,6 +1142,13 @@ ifeq ($(CONFIG_TOR),y)
 CONFIG_MATRIXSSL=n
 endif
 endif
+ifeq ($(CONFIG_POLARSSL),y)
+CONFIG_MATRIXSSL=n
+CFLAGS += -I$(TOP)/polarssl/include
+SSLLDFLAGS += -L$(TOP)/polarssl/library -lpolarssl -lpthread
+CFLAGS += -DHAVE_POLARSSL
+CFLAGS += -DHAVE_HTTPS
+endif
 
 ifneq ($(CONFIG_MATRIXSSL),y)
 ifeq ($(CONFIG_OPENSSL),y)
@@ -1151,6 +1158,7 @@ CFLAGS += -DHAVE_OPENSSL
 CFLAGS += -DHAVE_HTTPS
 endif
 endif
+
 
 ifeq ($(CONFIG_MATRIXSSL),y)
 #CONFIG_XYSSL=y
@@ -1162,12 +1170,6 @@ CFLAGS += -DHAVE_HTTPS
 OBJS += matrixssl_xface.o
 endif
 
-ifeq ($(CONFIG_XYSSL),y)
-CFLAGS += -I$(TOP)/httpd/xyssl/include
-SSLLDFLAGS += -L$(TOP)/httpd/xyssl/library -lxyssl -lpthread
-CFLAGS += -DHAVE_XYSSL
-CFLAGS += -DHAVE_HTTPS
-endif
 
 endif
 
@@ -1186,7 +1188,6 @@ generate:
 	./gen > webs.h
 
 clean:
-	cd xyssl && make clean
 	rm -f *.o *~ httpd
 	rm -f modules/*.o
 	rm -f modules/*.*~
@@ -1228,9 +1229,6 @@ endif
 httpd: cgi.o ej.o httpd.o broadcom.o \
        $(ADDOBJ) nvramsr.o callvalidate.o $(OBJS)
 #	gcc -o write_web write_web.c
-ifeq ($(CONFIG_XYSSL),y)
-	cd xyssl && make static
-endif
 #	./write_web www 
 	$(CC) -o $@ $^ $(CFLAGS) $(SSLCFLAGS) $(SSLLDFLAGS) $(LDFLAGS)
 #	ar arc -o $@ $^
