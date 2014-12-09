@@ -1,0 +1,29 @@
+/* BEGIN_HEADER */
+#include <polarssl/error.h>
+/* END_HEADER */
+
+/* BEGIN_DEPENDENCIES
+ * depends_on:POLARSSL_ERROR_C
+ * END_DEPENDENCIES
+ */
+
+/* BEGIN_CASE */
+void error_strerror( int code, char *result_str )
+{
+    char buf[500];
+
+    memset( buf, 0, sizeof( buf ) );
+
+    polarssl_strerror( code, buf, 500 );
+
+    TEST_ASSERT( strcmp( buf, result_str ) == 0 );
+
+#if defined(POLARSSL_ERROR_STRERROR_BC)
+    memset( buf, 0, sizeof( buf ) );
+
+    error_strerror( code, buf, 500 );
+
+    TEST_ASSERT( strcmp( buf, result_str ) == 0 );
+#endif
+}
+/* END_CASE */
