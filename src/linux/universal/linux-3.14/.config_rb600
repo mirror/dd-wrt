@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/powerpc 3.14.18-rc2 Kernel Configuration
+# Linux/powerpc 3.14.26 Kernel Configuration
 #
 # CONFIG_PPC64 is not set
 
@@ -556,6 +556,7 @@ CONFIG_NF_CONNTRACK_MARK=y
 # CONFIG_NF_CONNTRACK_ZONES is not set
 CONFIG_NF_CONNTRACK_PROCFS=y
 CONFIG_NF_CONNTRACK_EVENTS=y
+CONFIG_NF_CONNTRACK_RTCACHE=y
 # CONFIG_NF_CONNTRACK_TIMEOUT is not set
 # CONFIG_NF_CONNTRACK_TIMESTAMP is not set
 # CONFIG_NF_CT_PROTO_DCCP is not set
