@@ -96,7 +96,7 @@ endif
 LDFLAGS_vmlinux-y := -Bstatic
 LDFLAGS_vmlinux-$(CONFIG_RELOCATABLE) := -pie
 LDFLAGS_vmlinux	:= $(LDFLAGS_vmlinux-y)
-LDFLAGS_vmlinux += --gc-sections --sort-section=name
+LDFLAGS_vmlinux += --gc-sections
 
 ifndef CONFIG_FUNCTION_TRACER
 KBUILD_CFLAGS_KERNEL += -ffunction-sections -fdata-sections
