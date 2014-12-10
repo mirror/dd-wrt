@@ -962,6 +962,9 @@ endif
 ifeq ($(CONFIG_ARCHERC7),y)
 CFLAGS += -DHAVE_ARCHERC7
 endif
+ifeq ($(CONFIG_ARCHERC5),y)
+CFLAGS += -DHAVE_ARCHERC5
+endif
 ifeq ($(CONFIG_WR1043V2),y)
 CFLAGS += -DHAVE_WR1043V2
 endif
