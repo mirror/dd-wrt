@@ -1037,7 +1037,7 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 			fprintf(fp, "auth_algs=1\n");
 			char retry[32];
 			sprintf(retry,"%s_radius_retry",prefix);
-			fprintf(fp, "radius_retry_primary_interval=%s\n",nvram_defaukt_get(retry,"600"));
+			fprintf(fp, "radius_retry_primary_interval=%s\n",nvram_default_get(retry,"600"));
 
 			fprintf(fp, "auth_server_addr=%s\n", nvram_nget("%s_radius_ipaddr", prefix));
 			fprintf(fp, "auth_server_port=%s\n", nvram_nget("%s_radius_port", prefix));
