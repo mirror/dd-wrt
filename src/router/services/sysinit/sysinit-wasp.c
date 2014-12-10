@@ -186,7 +186,7 @@ void start_sysinit(void)
 		}
 		for (i = 0; i < 6; i++)
 			putc(mac[i], out);
-		fseek(fp, 20412, SEEK_SET);
+		fseek(fp, 20492, SEEK_SET);
 		for (i = 0; i < 2104; i++)
 			putc(getc(fp), out);
 		fclose(fp);
