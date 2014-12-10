@@ -56,6 +56,8 @@
 void start_sysinit(void)
 {
 	time_t tm = 0;
+	struct ifreq ifr;
+	int s;
 
 	if (!nvram_match("disable_watchdog", "1"))
 		eval("watchdog");
@@ -128,7 +130,7 @@ void start_sysinit(void)
 #ifdef HAVE_MMS344
 	FILE *fp = fopen("/dev/mtdblock/6", "rb");
 	if (fp) {
-		unsigned char buf2[256];	
+		unsigned char buf2[256];
 		fseek(fp, 0x2e010, SEEK_SET);
 		fread(buf2, 256, 1, fp);
 		fclose(fp);
@@ -143,9 +145,8 @@ void start_sysinit(void)
 		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
 		eval("ifconfig", "eth0", "hw", "ether", mac);
-		out:;
+	      out:;
 	}
-
 #endif
 
 #if defined(HAVE_WZR450HP2) || defined(HAVE_WDR3500)
@@ -157,9 +158,6 @@ void start_sysinit(void)
 	eval("vconfig", "add", "eth0", "1");
 	eval("vconfig", "add", "eth0", "2");
 #endif
-	struct ifreq ifr;
-	int s;
-
 	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
 		char eabuf[32];
 
@@ -169,6 +167,33 @@ void start_sysinit(void)
 		nvram_set("et0macaddr_safe", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
 		close(s);
 	}
+#ifdef HAVE_ARCHERC7
+	FILE *fp = fopen("/dev/mtdblock/5", "rb");
+	FILE *out = fopen("/tmp/archerc7-board.bin", "wb");
+	if (fp) {
+		fseek(fp, 20480, SEEK_SET);
+		int i;
+		for (i = 0; i < 6; i++)
+			putc(getc(fp), out);
+		char *mac = { 0, 1, 2, 3, 4, 5 };
+		if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
+			char eabuf[32];
+
+			strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
+			ioctl(s, SIOCGIFHWADDR, &ifr);
+			mac = (unsigned char *)ifr.ifr_hwaddr.sa_data close(s);
+		}
+		for (i = 0; i < 6; i++)
+			putc(mac[i], out);
+		fseek(fp, 20412, SEEK_SET);
+		for (i = 0; i < 2104; i++)
+			putc(getc(fp), out);
+		fclose(fp);
+		fclose(out);
+		eval("rm", "-f", "/tmp/ath10k-board.bin");
+		eval("ln", "-s", "/tmp/archerc7-board.bin", "/tmp/ath10k-board.bin");
+	}
+#endif
 
 	detect_wireless_devices();
 
