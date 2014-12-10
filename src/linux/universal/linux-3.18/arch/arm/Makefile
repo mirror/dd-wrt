@@ -18,7 +18,7 @@ ifeq ($(CONFIG_CPU_ENDIAN_BE8),y)
 LDFLAGS_vmlinux	+= --be8
 LDFLAGS_MODULE	+= --be8
 endif
-LDFLAGS_vmlinux += --gc-sections --sort-section=name
+LDFLAGS_vmlinux += --gc-sections
 
 OBJCOPYFLAGS	:=-O binary -R .comment -S
 GZFLAGS		:=-9
