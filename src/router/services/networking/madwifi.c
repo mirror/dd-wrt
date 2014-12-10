@@ -910,6 +910,8 @@ void start_ses_led_control(void)
 }
 
 #ifdef HAVE_MADWIFI
+
+extern char *hostapd_eap_get_types(void);
 void setupHostAP(char *prefix, char *driver, int iswan)
 {
 #ifdef HAVE_REGISTER
@@ -1038,7 +1040,9 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 			char retry[32];
 			sprintf(retry,"%s_radius_retry",prefix);
 			fprintf(fp, "radius_retry_primary_interval=%s\n",nvram_default_get(retry,"600"));
-
+			types = hostapd_eap_get_types();
+			fprintf(fp, "%s", types);
+			free(types);
 			fprintf(fp, "auth_server_addr=%s\n", nvram_nget("%s_radius_ipaddr", prefix));
 			fprintf(fp, "auth_server_port=%s\n", nvram_nget("%s_radius_port", prefix));
 			fprintf(fp, "auth_server_shared_secret=%s\n", nvram_nget("%s_radius_key", prefix));
