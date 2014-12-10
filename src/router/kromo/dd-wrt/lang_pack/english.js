@@ -2357,6 +2357,7 @@ var radius=new Object();
 radius.titl="Radius";
 radius.h2="Remote Authentication Dial-In User Service";
 radius.legend="Radius";
+radius.retry="Primary Server Retry Limit";
 radius.label="MAC Radius Client";
 radius.label2="MAC Format";
 radius.label3="Radius Auth Server Address";

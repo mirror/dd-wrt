@@ -2032,6 +2032,7 @@ wds.legend2="Erweiterte Optionen";
 radius.titl="Radius";
 radius.h2="Remote Authentication Dial-In User Service";
 radius.legend="Radius";
+radius.retry="Primäre Server Versuche";
 radius.label="Radius Client MAC";
 radius.label2="MAC-Format";
 radius.label3="Radius Auth Server IP";
