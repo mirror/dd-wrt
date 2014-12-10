@@ -921,6 +921,7 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 	char psk[32];
 	char akm[16];
 	char fstr[32];
+	char *types;
 
 	sprintf(akm, "%s_akm", prefix);
 	if (nvram_match(akm, "8021X"))
