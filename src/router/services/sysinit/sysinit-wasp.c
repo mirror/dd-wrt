@@ -175,7 +175,7 @@ void start_sysinit(void)
 		int i;
 		for (i = 0; i < 6; i++)
 			putc(getc(fp), out);
-		char *mac = "\x00\x01\x02\x03\x04\x05"
+		char *mac = "\x00\x01\x02\x03\x04\x05";
 		if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
 			char eabuf[32];
 
