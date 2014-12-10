@@ -789,6 +789,7 @@ _8021xprv
 	copytonv(wp, "%s_radius2_port", prefix);
 	copytonv(wp, "%s_radius2_key", prefix);
 #ifdef HAVE_MADWIFI
+	copytonv(wp, "%s_radius_retry", prefix);
 	copytonv(wp, "%s_acct", prefix);
 	sprintf(n, "%s_acct_ipaddr", prefix);
 	if (get_merge_ipaddr(wp, n, radius))

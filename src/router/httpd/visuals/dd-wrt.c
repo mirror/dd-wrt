@@ -5042,6 +5042,15 @@ void show_radius(webs_t wp, char *prefix, int showmacformat, int backup)
 		  prefix, prefix);
 
 	if (backup) {
+#ifdef HAVE_MADWIFI
+		sprintf(var, "%s_radius_retry", prefix);
+		websWrite(wp, "<div class=\"setting\">\n");
+		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(radius.retry)</script></div>\n");
+		websWrite(wp, "<input name=\"%s_radius_retry\" size=\"3\" maxlength=\"5\" onblur=\"valid_range(this,1,65535,radius.retry)\" value=\"%s\" />\n", prefix, nvram_default_get(var, "600"));
+		websWrite(wp, "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 600)\");\n//]]>\n</script></span>\n</div>\n");
+#endif	
+	
+	
 		rad = nvram_nget("%s_radius2_ipaddr", prefix);
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label23)</script></div>\n");
