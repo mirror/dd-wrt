@@ -722,7 +722,8 @@ void setupHS20(FILE * fp, char *prefix)
 			fprintf(fp, "disable_dgaf=1\n");
 		else
 			fprintf(fp, "disable_dgaf=0\n");
-		if (nvram_nmatch("1", "%s_osen,prefix"))
+
+		if (nvram_nmatch("1", "%s_osen",prefix))
 			fprintf(fp, "osen=1\n");
 		else
 			fprintf(fp, "osen=0\n");
