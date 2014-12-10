@@ -1208,12 +1208,12 @@ ifeq ($(CONFIG_UBNTM),y)
 	dd if=$(ARCH)-uclibc/root.uimage of=$(ARCH)-uclibc/aligned.uimage bs=4096 conv=sync
 	cat $(ARCH)-uclibc/root.fs  >> $(ARCH)-uclibc/aligned.uimage
 	./tools/trx_n  -m 40000000 -o $(ARCH)-uclibc/ar7420-firmware.bin $(ARCH)-uclibc/aligned.uimage
-	tools/ubnt/src/mkfwimage -v XM.ar7240.v6.0.0.133900.2000 -o $(ARCH)-uclibc/ubntm-dd-wrt.bin -i tools/ubnt/m-dd-wrt.txt
-	tools/ubnt/src/mkfwimage -v BZ.ar7240.v6.0.0.133900.2000 -o $(ARCH)-uclibc/ubntbz-dd-wrt.bin -i tools/ubnt/m-dd-wrt.txt
+	-tools/ubnt/src/mkfwimage -v XM.ar7240.v6.0.0.133900.2000 -o $(ARCH)-uclibc/ubntm-dd-wrt.bin -i tools/ubnt/m-dd-wrt.txt
+	-tools/ubnt/src/mkfwimage -v BZ.ar7240.v6.0.0.133900.2000 -o $(ARCH)-uclibc/ubntbz-dd-wrt.bin -i tools/ubnt/m-dd-wrt.txt
 endif
 
 ifeq ($(CONFIG_UBNTXW),y)
-	tools/ubnt/src/mkfwimage -v XW.ar934x.v6.0.0.133900.2000 -o $(ARCH)-uclibc/ubntxw-dd-wrt.bin -i tools/ubnt/m-dd-wrt.txt
+	-tools/ubnt/src/mkfwimage -v XW.ar934x.v6.0.0.133900.2000 -o $(ARCH)-uclibc/ubntxw-dd-wrt.bin -i tools/ubnt/m-dd-wrt.txt
 endif
 ifeq ($(CONFIG_DAP3410),y)
 	tools/dap3410/makedap $(ARCH)-uclibc/root.uimage $(ARCH)-uclibc/root.fs $(ARCH)-uclibc/dap3410.bin DAP3410
@@ -1692,6 +1692,8 @@ ifeq ($(CONFIG_WR1043V2),y)
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ARCHER-C7v1-firmware.bin mips-uclibc/tplink-ARCHER-C7v1-firmware.bin
 	-./tools/tplink/mktplinkfw -B ARCHER-C7v2 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-ARCHER-C7v2-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ARCHER-C7v2-firmware.bin mips-uclibc/tplink-ARCHER-C7v2-firmware.bin
+	-./tools/tplink/mktplinkfw -B ARCHER-C5v1 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-ARCHER-C5v1-firmware.bin
+	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ARCHER-C5v1-firmware.bin mips-uclibc/tplink-ARCHER-C5v1-firmware.bin
 	-./tools/tplink/mktplinkfw -B TL-WDR4900v2 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WDR4900v2-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/TL-WDR4900v2-firmware.bin mips-uclibc/tplink-TL-WDR4900v2-firmware.bin
 endif
