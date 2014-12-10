@@ -784,7 +784,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			fprintf(fp, "auth_algs=1\n");
 			char retry[32];
 			sprintf(retry,"%s_radius_retry",ifname);
-			fprintf(fp, "radius_retry_primary_interval=%s\n",nvram_defaukt_get(retry,"600"));
+			fprintf(fp, "radius_retry_primary_interval=%s\n",nvram_default_get(retry,"600"));
 			types = hostapd_eap_get_types();
 			fprintf(fp, "%s", types);
 			free(types);
