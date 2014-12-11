@@ -58,6 +58,11 @@ static int ehci_platform_reset(struct usb_hcd *hcd)
 	ehci->big_endian_desc = pdata->big_endian_desc;
 	ehci->big_endian_mmio = pdata->big_endian_mmio;
 	ehci->ignore_oc = pdata->ignore_oc;
+	ehci->qca_force_host_mode = pdata->qca_force_host_mode;
+	ehci->qca_force_16bit_ptw = pdata->qca_force_16bit_ptw;
+
+	if (pdata->reset_notifier)
+		ehci->reset_notifier = ehci_platform_reset_notifier;
 
 	ehci->caps = hcd->regs + pdata->caps_offset;
 	retval = ehci_setup(hcd);
