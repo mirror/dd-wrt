@@ -20,6 +20,7 @@
 
 #include <config.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <signal.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -1072,7 +1073,7 @@ int usbi_io_init(struct libusb_context *ctx)
 
 #ifdef USBI_TIMERFD_AVAILABLE
 	ctx->timerfd = timerfd_create(usbi_backend->get_timerfd_clockid(),
-		TFD_NONBLOCK);
+		O_NONBLOCK);
 	if (ctx->timerfd >= 0) {
 		usbi_dbg("using timerfd for timeouts");
 		r = usbi_add_pollfd(ctx, ctx->timerfd, POLLIN);
