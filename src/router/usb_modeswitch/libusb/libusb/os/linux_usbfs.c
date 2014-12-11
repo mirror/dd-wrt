@@ -1,4 +1,5 @@
 /*
+
  * Linux usbfs backend for libusb
  * Copyright (C) 2007-2009 Daniel Drake <dsd@gentoo.org>
  * Copyright (c) 2001 Johannes Erdfelt <johannes@erdfelt.com>
@@ -179,7 +180,6 @@ static int _is_usbdev_entry(struct dirent *entry, int *bus_p, int *dev_p)
 	if (sscanf(entry->d_name, "usbdev%d.%d", &busnum, &devnum) != 2)
 		return 0;
 
-	usbi_dbg("found: %s", entry->d_name);
 	if (bus_p != NULL)
 		*bus_p = busnum;
 	if (dev_p != NULL)
@@ -352,7 +352,7 @@ static int op_init(struct libusb_context *ctx)
 
 	if (supports_flag_zero_packet)
 		usbi_dbg("zero length packet flag supported");
-#if 0
+
 	r = stat(SYSFS_DEVICE_PATH, &statbuf);
 	if (r == 0 && S_ISDIR(statbuf.st_mode)) {
 		DIR *devices = opendir(SYSFS_DEVICE_PATH);
@@ -411,7 +411,7 @@ static int op_init(struct libusb_context *ctx)
 			sysfs_has_descriptors = 0;
 	}
  else
-#endif 
+
  {
 		usbi_dbg("sysfs usb info not available");
 		sysfs_has_descriptors = 0;
@@ -579,11 +579,10 @@ static int sysfs_get_active_config(struct libusb_device *dev, int *config)
 /* takes a usbfs/descriptors fd seeked to the start of a configuration, and
  * seeks to the next one. */
 static int seek_to_next_config(struct libusb_context *ctx, int fd,
-	int host_endian)
+	int host_endian, off_t *off)
 {
 	struct libusb_config_descriptor config;
 	unsigned char tmp[6];
-	off_t off;
 	ssize_t r;
 
 	/* read first 6 bytes of descriptor */
@@ -598,9 +597,9 @@ static int seek_to_next_config(struct libusb_context *ctx, int fd,
 
 	/* seek forward to end of config */
 	usbi_parse_descriptor(tmp, "bbwbb", &config, host_endian);
-	off = lseek(fd, config.wTotalLength - sizeof(tmp), SEEK_CUR);
-	if (off < 0) {
-		usbi_err(ctx, "seek failed ret=%d errno=%d", off, errno);
+	*off = lseek(fd, config.wTotalLength - sizeof(tmp), SEEK_CUR);
+	if (*off < 0) {
+		usbi_err(ctx, "seek failed ret=%d errno=%d", *off, errno);
 		return LIBUSB_ERROR_IO;
 	}
 
@@ -631,7 +630,6 @@ static int sysfs_get_active_config_descriptor(struct libusb_device *dev,
 	fd = _open_sysfs_attr(dev, "descriptors");
 	if (fd < 0)
 		return fd;
-
 	/* device might have been unconfigured since we read bConfigurationValue,
 	 * so first check that there is any config descriptor data at all... */
 	off = lseek(fd, 0, SEEK_END);
@@ -668,15 +666,16 @@ static int sysfs_get_active_config_descriptor(struct libusb_device *dev,
 		/* check bConfigurationValue */
 		if (tmp[5] == config)
 			break;
-
 		/* try the next descriptor */
-		off = lseek(fd, 0 - sizeof(tmp), SEEK_CUR);
-		if (off < 0)
+		off = lseek(fd, off, SEEK_SET);
+		if (off < 0) {
 			return LIBUSB_ERROR_IO;
+		}
 
-		r = seek_to_next_config(DEVICE_CTX(dev), fd, 0);
-		if (r < 0)
+		r = seek_to_next_config(DEVICE_CTX(dev), fd, 0, &off);
+		if (r < 0) {
 			return r;
+		}
 	}
 
 	to_copy = (len < sizeof(tmp)) ? len : sizeof(tmp);
@@ -729,7 +728,7 @@ static int get_config_descriptor(struct libusb_context *ctx, int fd,
 	/* might need to skip some configuration descriptors to reach the
 	 * requested configuration */
 	while (config_index > 0) {
-		r = seek_to_next_config(ctx, fd, 1);
+		r = seek_to_next_config(ctx, fd, 1, &off);
 		if (r < 0)
 			return r;
 		config_index--;
