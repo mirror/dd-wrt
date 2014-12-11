@@ -68,6 +68,11 @@ static int ehci_platform_reset(struct usb_hcd *hcd)
 	hcd->has_tt = pdata->has_tt;
 	ehci->has_synopsys_hc_bug = pdata->has_synopsys_hc_bug;
 	ehci->ignore_oc = pdata->ignore_oc;
+	ehci->qca_force_host_mode = pdata->qca_force_host_mode;
+	ehci->qca_force_16bit_ptw = pdata->qca_force_16bit_ptw;
+ 
+	if (pdata->reset_notifier)
+		ehci->reset_notifier = ehci_platform_reset_notifier;
 
 	if (pdata->pre_setup) {
 		retval = pdata->pre_setup(hcd);
