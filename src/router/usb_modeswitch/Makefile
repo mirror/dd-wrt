@@ -66,7 +66,7 @@ usb_modeswitch.string: usb_modeswitch.tcl
 	$(HOST_TCL) make_string.tcl usb_modeswitch.tcl > $@
 
 configure:
-	cd libusb && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections  -D_GNU_SOURCE -DNEED_PRINTF -fPIC" CXXFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -fPIC" CPPFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -fPIC"
+	cd libusb && ./configure --host=$(ARCH)-linux --disable-log CFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections  -D_GNU_SOURCE -DNEED_PRINTF -fPIC" CXXFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -fPIC" CPPFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -fPIC"
 	make -C libusb
 	cd libusb-compat && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections  -D_GNU_SOURCE -DNEED_PRINTF -fPIC" CXXFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -fPIC" CPPFLAGS="$(COPTS) -DNEED_PRINTF -fPIC" LIBUSB_1_0_LIBS="$(TOP)/usb_modeswitch/libusb/libusb/.libs/libusb-1.0.a" LIBUSB_1_0_CFLAGS="-I$(TOP)/usb_modeswitch/libusb/libusb"
 
