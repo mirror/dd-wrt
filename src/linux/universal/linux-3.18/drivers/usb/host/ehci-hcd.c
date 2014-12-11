@@ -263,37 +263,7 @@ static int ehci_reset (struct ehci_hcd *ehci)
 	dbg_cmd (ehci, "reset", command);
 	ehci_writel(ehci, command, &ehci->regs->command);
 
-	if (ehci->qca_force_host_mode) {
-		u32 usbmode;
-
-		udelay(1000);
-
-		usbmode = ehci_readl(ehci, &ehci->regs->usbmode);
-		usbmode |= USBMODE_CM_HC | (1 << 4);
-		ehci_writel(ehci, usbmode, &ehci->regs->usbmode);
-
-		ehci_dbg(ehci, "forced host mode, usbmode: %08x\n",
-			 ehci_readl(ehci, &ehci->regs->usbmode));
-	}
-
-	if (ehci->qca_force_16bit_ptw) {
-		u32 port_status;
-
-		udelay(1000);
-
-		/* enable 16-bit UTMI interface */
-		port_status = ehci_readl(ehci, &ehci->regs->port_status[0]);
-		port_status |= BIT(28);
-		ehci_writel(ehci, port_status, &ehci->regs->port_status[0]);
-
-		ehci_dbg(ehci, "16-bit UTMI interface enabled, status: %08x\n",
-			 ehci_readl(ehci, &ehci->regs->port_status[0]));
-	}
-
-	if (ehci->reset_notifier)
-		ehci->reset_notifier(ehci_to_hcd(ehci));
-
-#if defined(CONFIG_MACH_AR7240) || defined(CONFIG_MACH_HORNET) || defined(CONFIG_WASP_SUPPORT)
+#if (defined(CONFIG_MACH_AR7240) || defined(CONFIG_MACH_HORNET) || defined(CONFIG_WASP_SUPPORT)) && !defined(CONFIG_AP135)
 #define ath_usb_reg_wr		ar7240_reg_wr
 #define ath_usb_reg_rd		ar7240_reg_rd
 #define ATH_USB_USB_MODE	AR9130_USB_MODE
@@ -312,6 +282,37 @@ static int ehci_reset (struct ehci_hcd *ehci)
 	writel((readl(&ehci->regs->port_status[0]) | (1 << 28) ), &ehci->regs->port_status[0]);
 	printk("%s Port Status %x \n", __func__, readl(&ehci->regs->port_status[0]));
 #endif
+
+	if (ehci->qca_force_host_mode) {
+		u32 usbmode;
+
+		udelay(1000);
+
+		usbmode = ehci_readl(ehci, &ehci->regs->usbmode);
+		usbmode |= USBMODE_CM_HC | (1 << 4);
+		ehci_writel(ehci, usbmode, &ehci->regs->usbmode);
+
+		printk(KERN_EMERG "forced host mode, usbmode: %08x\n",
+			 ehci_readl(ehci, &ehci->regs->usbmode));
+	}
+
+	if (ehci->qca_force_16bit_ptw) {
+		u32 port_status;
+
+		udelay(1000);
+
+		/* enable 16-bit UTMI interface */
+		port_status = ehci_readl(ehci, &ehci->regs->port_status[0]);
+		port_status |= BIT(28);
+		ehci_writel(ehci, port_status, &ehci->regs->port_status[0]);
+
+		printk(KERN_EMERG "16-bit UTMI interface enabled, status: %08x\n",
+			 ehci_readl(ehci, &ehci->regs->port_status[0]));
+	}
+
+	if (ehci->reset_notifier)
+		ehci->reset_notifier(ehci_to_hcd(ehci));
+
 
 	ehci->rh_state = EHCI_RH_HALTED;
 	ehci->next_statechange = jiffies;

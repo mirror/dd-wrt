@@ -38,6 +38,8 @@
 #include <linux/serial.h>
 #include <linux/serial_8250.h>
 #include <linux/etherdevice.h>
+#include <linux/usb/ehci_pdriver.h>
+#include <linux/usb/ohci_pdriver.h>
 
 #include <asm/mach-ar7240/ar7240.h>
 #include <asm/mach-ar71xx/ar71xx.h>
@@ -93,36 +95,12 @@ static struct platform_device ar7240_usb_ohci_device = {
 static struct resource ar7240_usb_ehci_resources[] = {
 	[0] = {
 	       .start = AR7240_USB_EHCI_BASE,
-#ifdef CONFIG_AP135
-	       .end = AR7240_USB_EHCI_BASE + QCA955X_EHCI_SIZE - 1,
-#else
 	       .end = AR7240_USB_EHCI_BASE + AR7240_USB_WINDOW - 1,
-#endif	       
 		.flags = IORESOURCE_MEM,
 	       },
 	[1] = {
-#ifdef CONFIG_AP135
-	       .start = AR934X_IP3_IRQ(0),
-	       .end = AR934X_IP3_IRQ(0),
-#else
 	       .start = AR7240_CPU_IRQ_USB,
 	       .end = AR7240_CPU_IRQ_USB,
-#endif
-	       .flags = IORESOURCE_IRQ,
-	       },
-};
-
-
-
-static struct resource ar7240_usb_ehci2_resources[] = {
-	[0] = {
-	       .start = AR7240_USB_EHCI_BASE + 0x400000,
-	       .end = AR7240_USB_EHCI_BASE + 0x400000 + QCA955X_EHCI_SIZE - 1,
-	       .flags = IORESOURCE_MEM,
-	       },
-	[1] = {
-	       .start = AR934X_IP3_IRQ(1),
-	       .end = AR934X_IP3_IRQ(1),
 	       .flags = IORESOURCE_IRQ,
 	       },
 };
@@ -131,9 +109,6 @@ static struct resource ar7240_usb_ehci2_resources[] = {
  * The dmamask must be set for EHCI to work 
  */
 static u64 ehci_dmamask = ~(u32)0;
-
-
-static u64 ehci2_dmamask = ~(u32)0;
 
 static struct platform_device ar7240_usb_ehci_device = {
 	.name = "ar71xx-ehci",
@@ -146,18 +121,109 @@ static struct platform_device ar7240_usb_ehci_device = {
 	.resource = ar7240_usb_ehci_resources,
 };
 
+#ifdef CONFIG_AP135
 
-static struct platform_device ar7240_usb_ehci2_device = {
-	.name = "ar71xx-ehci",
-	.id = 1,
-	.dev = {
-		.dma_mask = &ehci2_dmamask,
-		.coherent_dma_mask = 0xffffffff,
-		},
-	.num_resources = ARRAY_SIZE(ar7240_usb_ehci2_resources),
-	.resource = ar7240_usb_ehci2_resources,
+static struct usb_ehci_pdata ath79_ehci_pdata_v2 = {
+	.caps_offset		= 0x100,
+	.has_tt			= 1,
+	.qca_force_host_mode	= 1,
+	.qca_force_16bit_ptw	= 1,
 };
 
+static void enable_tx_tx_idp_violation_fix(unsigned base)
+ {
+	void __iomem *phy_reg;
+	u32 t;
+ 
+	phy_reg = ioremap(base, 4);
+	if (!phy_reg)
+ 		return;
+ 
+	t = ioread32(phy_reg);
+	t &= ~0xff;
+	t |= 0x58;
+	iowrite32(t, phy_reg);
+
+	iounmap(phy_reg);
+}
+
+
+static void qca955x_usb_reset_notifier(struct platform_device *pdev)
+{
+	u32 base;
+
+	printk(KERN_EMERG "Reset Notifier for %d\n",pdev->id);
+	switch (pdev->id) {
+	case 0:
+		base = 0x18116c94;
+		break;
+
+	case 1:
+		base = 0x18116e54;
+		break;
+
+	default:
+		return;
+	}
+
+	enable_tx_tx_idp_violation_fix(base);
+	printk(KERN_EMERG "TX-TX IDP fix enabled\n");
+}
+
+static u64 ath79_usb_dmamask = DMA_BIT_MASK(32);
+
+static void __init ath79_usb_register(const char *name, int id,
+				      unsigned long base, unsigned long size,
+				      int irq, const void *data,
+				      size_t data_size)
+{
+	struct resource res[2];
+	struct platform_device *pdev;
+
+	memset(res, 0, sizeof(res));
+
+	res[0].flags = IORESOURCE_MEM;
+	res[0].start = base;
+	res[0].end = base + size - 1;
+
+	res[1].flags = IORESOURCE_IRQ;
+	res[1].start = irq;
+	res[1].end = irq;
+
+	pdev = platform_device_register_resndata(NULL, name, id,
+						 res, ARRAY_SIZE(res),
+						 data, data_size);
+
+	if (IS_ERR(pdev)) {
+		pr_err("ath79: unable to register USB at %08lx, err=%d\n",
+		       base, (int) PTR_ERR(pdev));
+		return;
+	}
+
+	pdev->dev.dma_mask = &ath79_usb_dmamask;
+	pdev->dev.coherent_dma_mask = DMA_BIT_MASK(32);
+}
+
+
+
+
+static void qca_usbregister(void) {
+
+	ath79_ehci_pdata_v2.reset_notifier = qca955x_usb_reset_notifier;
+
+	ath79_usb_register("ehci-platform", 0,
+			   AR7240_USB_EHCI_BASE, QCA955X_EHCI_SIZE,
+			   AR934X_IP3_IRQ(0),
+			   &ath79_ehci_pdata_v2, sizeof(ath79_ehci_pdata_v2));
+
+	ath79_usb_register("ehci-platform", 1,
+			   AR7240_USB_EHCI_BASE + 0x400000, QCA955X_EHCI_SIZE,
+			   AR934X_IP3_IRQ(1),
+			   &ath79_ehci_pdata_v2, sizeof(ath79_ehci_pdata_v2));
+
+
+}
+#endif
 static struct resource ar7240_uart_resources[] = {
 	{
 	 .start = AR7240_UART_BASE,
@@ -247,10 +313,6 @@ static struct platform_device ath_uart = {
 
 static struct platform_device *ar7241_platform_devices[] __initdata = {
 	&ar7240_usb_ehci_device
-};
-
-static struct platform_device *qca955x_platform_devices[] __initdata = {
-	&ar7240_usb_ehci2_device
 };
 
 static struct platform_device *ar7240_platform_devices[] __initdata = {
@@ -838,16 +900,18 @@ int __init ar7240_platform_init(void)
 	if (ret < 0)
 		return ret;
 
-	if (is_ar7241() || is_ar7242() || is_ar933x() || is_ar934x() || is_qca955x()) {
+	if (is_ar7241() || is_ar7242() || is_ar933x() || is_ar934x()) {
 		ret = platform_add_devices(ar7241_platform_devices, ARRAY_SIZE(ar7241_platform_devices));
 	}
 	if (is_ar7240()) {
 		ret = platform_add_devices(ar7240_platform_devices, ARRAY_SIZE(ar7240_platform_devices));
 	}
 
+#ifdef CONFIG_AP135
 	if (is_qca955x()) {
-		ret = platform_add_devices(qca955x_platform_devices, ARRAY_SIZE(qca955x_platform_devices));
+		qca_usbregister();
 	}
+#endif
 	platform_device_register_simple("ar71xx-wdt", -1, NULL, 0);
 
 #ifdef CONFIG_MACH_HORNET
