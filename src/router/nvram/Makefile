@@ -31,7 +31,7 @@ endif
 
 
 #CFLAGS	+= -g -DDEBUG
-CFLAGS	+= -s $(COPTS) -fPIC
+CFLAGS	+= -s $(COPTS) $(MIPS16_OPT) -fPIC
 LDFLAGS += -L.
 ifeq ($(ARCH),powerpc)
 CFLAGS  += -DHAVE_MAGICBOX -fpic
