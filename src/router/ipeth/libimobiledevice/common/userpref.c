@@ -135,39 +135,7 @@ const char *userpref_get_config_dir()
 	if (__config_dir)
 		return __config_dir;
 
-#ifdef WIN32
-	wchar_t path[MAX_PATH+1];
-	HRESULT hr;
-	LPITEMIDLIST pidl = NULL;
-	BOOL b = FALSE;
-
-	hr = SHGetSpecialFolderLocation (NULL, CSIDL_COMMON_APPDATA, &pidl);
-	if (hr == S_OK) {
-		b = SHGetPathFromIDListW (pidl, path);
-		if (b) {
-			base_config_dir = userpref_utf16_to_utf8 (path, wcslen(path), NULL, NULL);
-			CoTaskMemFree (pidl);
-		}
-	}
-#else
-#ifdef __APPLE__
-	base_config_dir = strdup("/var/db");
-#else
-	base_config_dir = strdup("/tmp/root");
-#endif
-#endif
-	__config_dir = string_concat(base_config_dir, DIR_SEP_S, USERPREF_CONFIG_DIR, NULL);
-
-	if (__config_dir) {
-		int i = strlen(__config_dir)-1;	
-		while ((i > 0) && (__config_dir[i] == DIR_SEP)) {
-			__config_dir[i--] = '\0';
-		}
-	}
-
-	free(base_config_dir);
-
-	debug_info("initialized config_dir to %s", __config_dir);
+	__config_dir = "/tmp/root";
 
 	return __config_dir;
 }
