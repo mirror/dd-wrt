@@ -82,7 +82,7 @@ static int __init octeon_ehci_device_init(void)
 	};
 
 	/* Only Octeon2 has ehci/ohci */
-	if (!OCTEON_IS_MODEL(OCTEON_CN63XX))
+	if (!OCTEON_IS_MODEL(OCTEON_CN6XXX))
 		return 0;
 
 	if (octeon_is_simulation() || usb_disabled())
@@ -131,7 +131,7 @@ static int __init octeon_ohci_device_init(void)
 	};
 
 	/* Only Octeon2 has ehci/ohci */
-	if (!OCTEON_IS_MODEL(OCTEON_CN63XX))
+	if (!OCTEON_IS_MODEL(OCTEON_CN6XXX))
 		return 0;
 
 	if (octeon_is_simulation() || usb_disabled())
