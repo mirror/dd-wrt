@@ -107,7 +107,7 @@ config USB_FSL_MPH_DR_OF
 if USB_EHCI_HCD
 
 config USB_EHCI_PCI
-	tristate
+	tristate "EHCI PCI Support"
 	depends on PCI
 	default y
 
