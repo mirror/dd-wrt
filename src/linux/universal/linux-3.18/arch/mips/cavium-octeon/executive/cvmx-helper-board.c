@@ -195,6 +195,8 @@ int cvmx_helper_board_get_mii_address(int ipd_port)
 			return 8;
 		else
 			return -1;
+	case CVMX_BOARD_TYPE_UBNT_E200:
+		return -1;
 	}
 
 	/* Some unknown board. Somebody forgot to update this function... */
