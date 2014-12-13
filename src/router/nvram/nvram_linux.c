@@ -71,7 +71,7 @@ void lock(void)
 		fclose(in);
 		lockwait++;
 		if (lockwait == 30) {
-			fprintf(stderr,"deadlock detected, try to fix it\n");
+			fprintf(stderr,"removing lockfile\n");
 			unlink("/tmp/.nvlock");	//something crashed, we fix it
 			break;
 		}
