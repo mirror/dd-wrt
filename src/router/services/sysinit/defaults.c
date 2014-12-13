@@ -763,7 +763,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl0_nctrlsb", "none", 0},	/* N-CTRL SB */
 	{"wl1_nctrlsb", "none", 0},	/* N-CTRL SB */
 	{"wl0_nband", "-1", 0},	/* N-BAND */
-	{"wl1_nband", "-1", 0},	/* N-BAND */
+	{"wl1_nband", "1", 0},	/* N-BAND */
 	{"wl0_nmcsidx", "-1", 0},	/* N-MCS Index - rate */
 	{"wl1_nmcsidx", "-1", 0},	/* N-MCS Index - rate */
 	{"wl0_nmode", "-1", 0},	/* N-mode */
@@ -847,6 +847,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl1_rx_amsdu_in_ampdu", "auto", 0},	/* Disable AMSDU Rx by default */
 	{"wl1_cal_period", "0", 0},	/* Disable periodic cal */
 	{"wl1_obss_coex", "0", 0},	/* Default OBSS Coexistence setting - OFF */
+	{"wl1_bss_opmode_cap_reqd", "0", 0},
 	/* Tx Beamforming */
 #endif
 
