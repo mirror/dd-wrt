@@ -852,6 +852,7 @@ privoxy.titl="Adblocking";
 privoxy.server="Privoxy";
 privoxy.legend="Filtering Proxy Server";
 privoxy.transp="Transparent Mode";
+privoxy.exclude="Exclude IP";
 privoxy.whitel="Whitelist";
 privoxy.custom="Custom Configuration";
 
