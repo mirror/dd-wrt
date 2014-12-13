@@ -9,8 +9,14 @@
 <div id="privoxyconfig">
   <div class="setting">
            <div class="label"><% tran("privoxy.transp"); %></div>
-           <input class="spaceradio" type="radio" name="privoxy_transp_enable" value="1" <% nvram_checked("privoxy_transp_enable", "1"); %> /><% tran("share.enable"); %>&nbsp;
-           <input class="spaceradio" type="radio" name="privoxy_transp_enable" value="0" <% nvram_checked("privoxy_transp_enable", "0"); %> /><% tran("share.disable"); %>
+           <input class="spaceradio" type="radio" name="privoxy_transp_enable" value="1" <% nvram_checked("privoxy_transp_enable", "1"); %> onclick="show_layer_ext(this, 'privoxyex', true)" /><% tran("share.enable"); %>&nbsp;
+           <input class="spaceradio" type="radio" name="privoxy_transp_enable" value="0" <% nvram_checked("privoxy_transp_enable", "0"); %> onclick="show_layer_ext(this, 'privoxyex', false)" /><% tran("share.disable"); %>
+  </div>
+  <div id="privoxyex">
+	  <div class="setting">
+           <div class="label"><% tran("privoxy.exclude"); %></div>
+           <input size="15" maxlength="15" class="text" name="privoxy_transp_exclude" value="<% nvram_get("privoxy_transp_exclude"); %>" />
+	  </div>
   </div>
   <div class="setting">
              <div class="label"><% tran("privoxy.custom"); %></div>
@@ -18,7 +24,7 @@
              <input class="spaceradio" type="radio" name="privoxy_advanced" value="0" <% nvram_checked("privoxy_advanced", "0"); %> onclick="show_layer_ext(this, 'privoxyadvanced', false); show_layer_ext(this, 'privoxywhite', true);"/><% tran("share.disable");%>
   </div>
   <div id="privoxywhite">
-  <div class="setting">
+	  <div class="setting">
               <div class="label"><% tran("privoxy.whitel"); %></div>
               <textarea cols="80" rows="12" id="privoxy_whitel" name="privoxy_whitel"></textarea>
               <script type="text/javascript">
