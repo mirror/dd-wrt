@@ -944,6 +944,7 @@ CONFIG_MTD_PHYSMAP_OF=y
 #
 # CONFIG_MTD_PMC551 is not set
 # CONFIG_MTD_DATAFLASH is not set
+CONFIG_MTD_M25P80=y
 # CONFIG_MTD_SST25L is not set
 # CONFIG_MTD_SLRAM is not set
 # CONFIG_MTD_PHRAM is not set
@@ -961,7 +962,8 @@ CONFIG_MTD_PHYSMAP_OF=y
 # LPDDR & LPDDR2 PCM memory drivers
 #
 # CONFIG_MTD_LPDDR is not set
-# CONFIG_MTD_SPI_NOR is not set
+CONFIG_MTD_SPI_NOR=y
+# CONFIG_MTD_SPI_NOR_USE_4K_SECTORS is not set
 # CONFIG_MTD_UBI is not set
 
 #
