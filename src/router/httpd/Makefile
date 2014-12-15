@@ -454,6 +454,9 @@ endif
 ifeq ($(CONFIG_KORENRON),y)
 CFLAGS += -DHAVE_KORENRON
 endif
+ifeq ($(CONFIG_TESTEM),y)
+CFLAGS += -DHAVE_TESTEM
+endif
 ifeq ($(CONFIG_HDWIFI),y)
 CFLAGS += -DHAVE_HDWIFI
 endif
