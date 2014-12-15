@@ -1258,6 +1258,8 @@ void ej_get_sysmodel(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "%s", "SANSFIL");
 #elif HAVE_KORENRON
 	websWrite(wp, "KORENRON %s", nvram_get("DD_BOARD"));
+#elif HAVE_TESTEM
+	websWrite(wp, "TESTEM %s", nvram_get("DD_BOARD"));
 #else
 	websWrite(wp, "%s", nvram_safe_get("DD_BOARD"));
 #endif
