@@ -414,7 +414,7 @@ static void set_tcp_params(void)
 		writeproc("/proc/sys/net/ipv4/tcp_vegas_beta", "3");
 	} else {
 		fclose(fp);
-		writeproc("/proc/sys/net/ipv4/tcp_congestion_control", nvram_default_get("tcp_congestion_control", "vegas"));
+		writeproc("/proc/sys/net/ipv4/tcp_congestion_control", nvram_default_get("tcp_congestion_control", "westwood"));
 	}
 
 }
