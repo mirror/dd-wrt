@@ -4759,7 +4759,9 @@ int led_control(int type, int act)
 		sec0_gpio = 0x001;
 		break;
 	case ROUTER_BOARD_AIRROUTER:
-		connected_gpio = 0x10b;
+		power_gpio = 0x10b;
+		diag_gpio = 0x00b;
+		connected_gpio = 0x100;
 		break;
 	case ROUTER_BOARD_DANUBE:
 #ifdef HAVE_WMBR_G300NH
