@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.10.62 Kernel Configuration
+# Linux/mips 3.10.63 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -1709,7 +1709,8 @@ CONFIG_INOTIFY_USER=y
 # CONFIG_QUOTA is not set
 # CONFIG_QUOTACTL is not set
 # CONFIG_AUTOFS4_FS is not set
-# CONFIG_FUSE_FS is not set
+CONFIG_FUSE_FS=m
+# CONFIG_CUSE is not set
 # CONFIG_OVERLAYFS_FS is not set
 
 #
