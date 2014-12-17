@@ -262,7 +262,7 @@ void configure_single_ath9k(int count)
 	if (strlen(vifs) > 0)
 		foreach(var, vifs, next) {
 		fprintf(stderr, "setup vifs %s %d\n", var, counter);
-		// create the first main hostapd interface when this is repaeter mode
+		// create the first main hostapd interface when this is repeater mode
 		if (isfirst)
 			sysprintf("iw %s interface add %s.%d type managed", wif, dev, counter);
 		setupHostAP_ath9k(dev, isfirst, counter, 0);
