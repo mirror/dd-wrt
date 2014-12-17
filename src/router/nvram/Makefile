@@ -66,6 +66,9 @@ endif
 ifeq ($(CONFIG_STORM),y)
 CFLAGS += -DHAVE_STORM
 endif
+ifeq ($(CONFIG_UBNTM),y)
+CFLAGS += -DHAVE_UBNTM
+endif
 ifeq ($(CONFIG_WHRAG108),y)
 CFLAGS += -DHAVE_WHRAG108
 endif
