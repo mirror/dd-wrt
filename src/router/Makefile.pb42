@@ -435,6 +435,9 @@ else
 endif
 ifneq ($(CONFIG_ATH10K),y)
 	sed -i 's/\CONFIG_THERMAL=y/# CONFIG_THERMAL is not set/g' $(LINUXDIR)/.config
+	sed -i 's/\CONFIG_THERMAL=m/# CONFIG_THERMAL is not set/g' $(LINUXDIR)/.config
+	sed -i 's/\CONFIG_HWMON=y/# CONFIG_HWMON is not set/g' $(LINUXDIR)/.config
+	sed -i 's/\CONFIG_HWMON=m/# CONFIG_HWMON is not set/g' $(LINUXDIR)/.config
 endif
 
 
