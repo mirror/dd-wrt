@@ -98,6 +98,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"router_style", "onnet", 0},
 #elif HAVE_KORENRON
 	{"router_style", "korenron", 0},
+#elif HAVE_TESTEM
+	{"router_style", "testem", 0},
 #elif HAVE_UNFY
 	{"router_style", "unfy", 0},
 #elif HAVE_IDEXX
