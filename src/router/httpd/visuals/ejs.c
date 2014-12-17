@@ -1487,7 +1487,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 
 	int vlan_supp = check_vlan_support();
 	if (getRouterBrand() == ROUTER_UBNT_UNIFIAC)
-	    vlan_supp = 1;
+		vlan_supp = 1;
 
 #ifdef HAVE_SPUTNIK_APD
 	int sputnik = nvram_match("apd_enable", "1");
@@ -2313,6 +2313,7 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 #elif HAVE_VENTANA
 	int TEMP_MUL = 10;
 	FILE *fp = fopen("/sys/bus/i2c/devices/0-0029/temp0_input", "rb");
+
 #else
 	int TEMP_MUL = 1000;
 #ifdef HAVE_X86
@@ -2336,20 +2337,27 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 #endif
 #endif
 
-	if (fp == NULL) {
-		websWrite(wp, "%s", live_translate("status_router.notavail"));	// no 
-		// i2c 
-		// lm75 
-		// found
-		return;
+	if (fp != NULL) {
+		int temp;
+		fscanf(fp, "%d", &temp);
+		fclose(fp);
+		int high = temp / TEMP_MUL;
+		int low = (temp - (high * TEMP_MUL)) / (TEMP_MUL / 10);
+		websWrite(wp, "%d.%d &#176;C", high, low);	// no i2c lm75 found
 	}
-	int temp;
-	fscanf(fp, "%d", &temp);
-	fclose(fp);
-	int high = temp / TEMP_MUL;
-	int low = (temp - (high * TEMP_MUL)) / (TEMP_MUL / 10);
+	FILE *fp2 = fopen("/sys/class/ieee80211/phy1/device/hwmon/hwmon0/temp1_input", "rb");
+	if (fp2 != NULL) {
+		int temp;
+		fscanf(fp2, "%d", &temp);
+		fclose(fp2);
+		if (fp)
+			websWrite(wp, " / ");
+		websWrite(wp, "ATH1 %d &#176;C", temp);
+	}
 
-	websWrite(wp, "%d.%d &#176;C", high, low);	// no i2c lm75 found
+	if (fp == NULL && fp2 == NULL)
+		websWrite(wp, "%s", live_translate("status_router.notavail"));	// no 
+
 #endif
 }
 
