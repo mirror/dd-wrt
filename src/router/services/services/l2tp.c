@@ -109,7 +109,7 @@ void start_l2tp(int status)
 
 	if (status != REDIAL) {
 		start_pppmodules();
-		insmod("ipv6 udp_tunnel l2tp_core l2tp_netlink l2tp_ppp");
+		insmod("ipv6 udp_tunnel ip6_udp_tunnel l2tp_core l2tp_netlink l2tp_ppp");
 		mkdir("/tmp/ppp", 0777);
 		mkdir("/var/run/xl2tpd", 0777);
 		mkdir("/tmp/xl2tpd", 0777);
