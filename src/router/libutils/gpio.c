@@ -114,13 +114,13 @@ void set_gpio(int gpio, int value)
 {
 	switch (gpio) {
 	case 0:		// system
-		sysprintf("echo %d > /sys/devices/leds.4/leds/tp-link\\:blue\\:system/brightness", value);
+		sysprintf("echo %d > /sys/devices/leds/leds/tp-link\\:blue\\:system/brightness", value);
 		break;
 	case 1:		// usb1
-		sysprintf("echo %d > /sys/devices/leds.4/leds/tp-link\\:green\\:usb1/brightness", value);
+		sysprintf("echo %d > /sys/devices/leds/leds/tp-link\\:green\\:usb1/brightness", value);
 		break;
 	case 2:		// usb2
-		sysprintf("echo %d > /sys/devices/leds.4/leds/tp-link\\:green\\:usb2/brightness", value);
+		sysprintf("echo %d > /sys/devices/leds/leds/tp-link\\:green\\:usb2/brightness", value);
 		break;
 
 	}
