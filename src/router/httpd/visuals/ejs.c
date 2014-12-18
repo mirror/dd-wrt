@@ -2345,16 +2345,27 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 		int low = (temp - (high * TEMP_MUL)) / (TEMP_MUL / 10);
 		websWrite(wp, "%d.%d &#176;C", high, low);	// no i2c lm75 found
 	}
-	FILE *fp2 = fopen("/sys/class/ieee80211/phy1/device/hwmon/hwmon0/temp1_input", "rb");
-	if (fp2 != NULL) {
-		int temp;
-		fscanf(fp2, "%d", &temp);
-		fclose(fp2);
-		if (fp)
-			websWrite(wp, " / ");
-		websWrite(wp, "ATH1 %d &#176;C", temp);
-	}
 
+	FILE *fp2 = NULL;
+#ifdef HAVE_ATH10K
+	int c = getdevicecount();
+	int i, found = 0;
+	for (i = 0; i < c; i++) {
+		char path[64];
+		sprintf(path, "/sys/class/ieee80211/phy%d/device/hwmon/hwmon0/temp1_input", i);
+		fp2 = fopen(path, "rb");
+		if (fp2 != NULL) {
+			int temp;
+			fscanf(fp2, "%d", &temp);
+			fclose(fp2);
+			if ((i == 0 && fp) || found) {
+				websWrite(wp, " / ");
+			}
+			found = 1;
+			websWrite(wp, "ath%d %d &#176;C", temp, i);
+		}
+	}
+#endif
 	if (fp == NULL && fp2 == NULL)
 		websWrite(wp, "%s", live_translate("status_router.notavail"));	// no 
 
