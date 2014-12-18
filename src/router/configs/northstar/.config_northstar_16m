@@ -1,4 +1,4 @@
-#
+7s#
 # Automatically generated make config: don't edit
 #
 
@@ -68,7 +68,7 @@ CONFIG_JFFS2=y
 #CONFIG_SQUID=y
 #CONFIG_RSTP=y
 CONFIG_BOESE=y
-CONFIG_SUPERCHANNEL=y
+#CONFIG_SUPERCHANNEL=y
 CONFIG_STUCK=y
 #CONFIG_BMON=y
 #CONFIG_GPSI=y
