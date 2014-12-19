@@ -248,8 +248,8 @@ endif
         # Make sure mksquashfs-2.0 is used
 	cd $(TARGETDIR)  &&  find . -iname "CVS" | xargs rm -rf
 	cd $(TARGETDIR)  &&  find . -iname ".svn" | xargs rm -rf
-	find $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel -name *.ko -exec mv {} $(TARGETDIR)/lib/modules/$(KERNELRELEASE) \;
-	find $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/net -name *.ko -exec mv {} $(TARGETDIR)/lib/modules/$(KERNELRELEASE) \;
+	-find $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel -name *.ko -exec mv {} $(TARGETDIR)/lib/modules/$(KERNELRELEASE) \;
+	-find $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/net -name *.ko -exec mv {} $(TARGETDIR)/lib/modules/$(KERNELRELEASE) \;
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/net
 	#e2fsck -y -f $(ARCH)-uclibc/root.fs
