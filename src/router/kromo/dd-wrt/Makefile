@@ -419,7 +419,6 @@ ifeq ($(CONFIG_SANSFIL),y)
 	cp sansfil/style.css $(INSTALLDIR)/www/style/sansfil
 	cp sansfil/About.htm $(INSTALLDIR)/www
 	cp sansfil/Status_Router.asp $(INSTALLDIR)/www
-	cp sansfil/Wiviz_Survey.asp $(INSTALLDIR)/www
 	cp sansfil/images/* $(INSTALLDIR)/www/images
 	cp sansfil/help/* $(INSTALLDIR)/www/help
 endif
