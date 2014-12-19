@@ -28,6 +28,9 @@ endif
 ifeq ($(CONFIG_TESTEM),y)
 DD_CFLAGS += -DHAVE_TESTEM
 endif
+ifeq ($(CONFIG_HOBBIT),y)
+DD_CFLAGS += -DHAVE_HOBBIT
+endif
 ifeq ($(CONFIG_ANTAIRA),y)
 DD_CFLAGS += -DHAVE_ANTAIRA
 endif

@@ -419,6 +419,7 @@ ifeq ($(CONFIG_SANSFIL),y)
 	cp sansfil/style.css $(INSTALLDIR)/www/style/sansfil
 	cp sansfil/About.htm $(INSTALLDIR)/www
 	cp sansfil/Status_Router.asp $(INSTALLDIR)/www
+	cp sansfil/Wiviz_Survey.asp $(INSTALLDIR)/www
 	cp sansfil/images/* $(INSTALLDIR)/www/images
 	cp sansfil/help/* $(INSTALLDIR)/www/help
 endif
@@ -607,6 +608,13 @@ ifeq ($(CONFIG_TESTEM),y)
 	cp testem/style.css $(INSTALLDIR)/www/style/testem
 	cp testem/help/* $(INSTALLDIR)/www/help/
 	cp testem/About.htm $(INSTALLDIR)/www
+endif
+ifeq ($(CONFIG_HOBBIT),y)
+	mkdir $(INSTALLDIR)/www/style/hobbit
+	cp hobbit/images/* $(INSTALLDIR)/www/images
+	cp hobbit/style.css $(INSTALLDIR)/www/style/hobbit
+	cp hobbit/help/* $(INSTALLDIR)/www/help
+	cp hobbit/About.htm $(INSTALLDIR)/www
 endif
 ifeq ($(CONFIG_WIRCOM),y)
 	mkdir $(INSTALLDIR)/www/style/wircom
