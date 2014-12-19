@@ -24,6 +24,9 @@ endif
 ifdef CONFIG_TESTEM
  MOTD_ADD:=.testem
 endif
+ifdef CONFIG_HOBBIT
+ MOTD_ADD:=.hobbit
+endif
 ifdef CONFIG_ONNET
 ifdef CONFIG_ONNET_BLANK
  MOTD_ADD:=.onnet_blank
