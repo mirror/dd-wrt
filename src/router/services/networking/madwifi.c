@@ -1836,6 +1836,8 @@ static void configure_single(int count)
 		sysprintf("iwconfig %s essid -- \"%s\"", var, nvram_default_get(ssid, "OTAi_vap"));
 #elif defined(HAVE_KORENRON)
 		sysprintf("iwconfig %s essid -- \"%s\"", var, nvram_default_get(ssid, "WBR2000_vap"));
+#elif defined(HAVE_HOBBIT)
+		sysprintf("iwconfig %s essid -- \"%s\"", var, nvram_default_get(ssid, "HQ-NDS-AIR"));
 #else
 #ifdef HAVE_REGISTER
 		if (!isregistered())
@@ -1934,6 +1936,8 @@ static void configure_single(int count)
 	sysprintf("iwconfig %s essid -- \"%s\"", dev, nvram_default_get(ssid, "corenet.ap"));
 #elif defined(HAVE_KORENRON)
 	sysprintf("iwconfig %s essid -- \"%s\"", dev, nvram_default_get(ssid, "WBR2000"));
+#elif defined(HAVE_HOBBIT)
+	sysprintf("iwconfig %s essid -- \"%s\"", dev, nvram_default_get(ssid, "HQ-NDS-AIR"));
 #else
 #ifdef HAVE_REGISTER
 	if (!isregistered())
@@ -1981,6 +1985,8 @@ static void configure_single(int count)
 		sysprintf("iwconfig %s essid -- \"%s\"", dev, nvram_default_get(ssid, "corenet.ap"));
 #elif defined(HAVE_KORENRON)
 		sysprintf("iwconfig %s essid -- \"%s\"", dev, nvram_default_get(ssid, "WBR2000"));
+#elif defined(HAVE_HOBBIT)
+		sysprintf("iwconfig %s essid -- \"%s\"", dev, nvram_default_get(ssid, "HQ-NDS-AIR"));
 #else
 		sysprintf("iwconfig %s essid -- \"%s\"", dev, nvram_default_get(ssid, "dd-wrt"));
 #endif
