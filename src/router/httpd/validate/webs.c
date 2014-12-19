@@ -1958,6 +1958,8 @@ void add_vifs_single(char *prefix, int device)
 	nvram_set(v2, "WBR2000_vap");
 #elif defined(HAVE_HDWIFI)
 	nvram_set(v2, "hdwifi_vap");
+#elif defined(HAVE_HOBBIT)
+	nvram_set(v2, "hobb-it_vap"
 #else
 	nvram_set(v2, "dd-wrt_vap");
 #endif

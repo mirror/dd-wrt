@@ -100,6 +100,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"router_style", "korenron", 0},
 #elif HAVE_TESTEM
 	{"router_style", "testem", 0},
+#elif HAVE_HOBBIT
+	{"router_style", "hobbit", 0},
 #elif HAVE_UNFY
 	{"router_style", "unfy", 0},
 #elif HAVE_IDEXX
@@ -258,6 +260,9 @@ struct nvram_tuple srouter_defaults[] = {
 #elif HAVE_KORENRON
 	{"lan_ipaddr", "10.0.0.1", 0},	/* LAN ip address */
 	{"lan_gateway", "10.0.0.254", 0},	/* Gateway */
+#elif HAVE_HOBBIT
+	{"lan_ipaddr", "192.168.50.254", 0},	/* LAN ip address */
+	{"lan_gateway", "192.168.50.254", 0},	/* Gateway */
 #elif HAVE_AXTEL
 	{"lan_ipaddr", "192.168.11.1", 0},	/* LAN IP address */
 	{"ath0_regdomain", "MEXICO", 0},	/* LAN IP address */
@@ -419,7 +424,7 @@ struct nvram_tuple srouter_defaults[] = {
 #elif HAVE_AP94
 	{"wan_proto", "dhcp", 0},	/* [static|dhcp|pppoe|disabled] */
 #elif HAVE_JA76PF
-#ifdef HAVE_MAKSAT
+#if defined(HAVE_MAKSAT) || defined(HAVE_ESPOD)
 	{"wan_proto", "disabled", 0},	/* [static|dhcp|pppoe|disabled] */
 #else
 	{"wan_proto", "dhcp", 0},	/* [static|dhcp|pppoe|disabled] */
@@ -911,6 +916,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl_ssid", "Lobo", 0},	/* Service set ID (network name) */
 #elif HAVE_KORENRON
 	{"wl_ssid", "WBR2000", 0},	/* Service set ID (network name) */
+#elif HAVE_HOBBIT
+	{"wl_ssid", "HQ-NDS200"},
 #else
 
 #if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K)
@@ -936,6 +943,10 @@ struct nvram_tuple srouter_defaults[] = {
 #elif defined(HAVE_ESPOD)
 	{"wl0_ssid", "ESPOD", 0},	/* Service set ID (network name) */
 	{"ath0_ssid", "ESPOD", 0},	/* Service set ID (network name) */
+	{"wl1_ssid", "ESPOD", 0},	/* Service set ID (network name) */
+	{"ath1_ssid", "ESPOD", 0},	/* Service set ID (network name) */
+	{"wl2_ssid", "ESPOD", 0},	/* Service set ID (network name) */
+	{"ath2_ssid", "ESPOD", 0},	/* Service set ID (network name) */
 #elif defined(HAVE_NEXTMEDIA)
 	{"wl0_ssid", "nextmedia", 0},	/* Service set ID (network name) */
 	{"ath0_ssid", "nextmedia", 0},	/* Service set ID (network name) */
@@ -2465,6 +2476,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"snmpd_sysname", "nextmedia", 0},
 #elif defined(HAVE_KORENRON)
 	{"snmpd_sysname", "KORENRON", 0},
+#elif defined(HAVE_HOBBIT)
+	{"snmpd_sysname", "Hobb-IT", 0},
 #else
 	{"snmpd_sysname", "dd-wrt", 0},
 #endif
