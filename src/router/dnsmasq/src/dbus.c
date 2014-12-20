@@ -426,7 +426,7 @@ static DBusMessage *dbus_set_bool(DBusMessage *message, int flag, char *name)
     }
   else
     {
-      my_syslog(LOG_INFO, "Disabling --$s option from D-Bus", name);
+      my_syslog(LOG_INFO, "Disabling --%s option from D-Bus", name);
       reset_option_bool(flag);
     }
 
