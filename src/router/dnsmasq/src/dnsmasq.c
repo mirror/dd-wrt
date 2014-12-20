@@ -315,9 +315,11 @@ int main (int argc, char **argv)
       blockdata_init();
 #endif
 
+#ifdef HAVE_INOTIFY
 #ifdef HAVE_LINUX_NETWORK
       if (!option_bool(OPT_NO_POLL))
 	inotify_dnsmasq_init();
+#endif
 #endif
     }
     
@@ -794,9 +796,11 @@ int main (int argc, char **argv)
   
   pid = getpid();
   
+#ifdef HAVE_INOTIFY
 #ifdef HAVE_LINUX_NETWORK
   /* Using inotify, have to select a resolv file at startup */
   poll_resolv(1, 0, now);
+#endif
 #endif
   
   while (1)
@@ -868,11 +872,13 @@ int main (int argc, char **argv)
 #if defined(HAVE_LINUX_NETWORK)
       FD_SET(daemon->netlinkfd, &rset);
       bump_maxfd(daemon->netlinkfd, &maxfd);
+#ifdef HAVE_INOTIFY
       if (daemon->port != 0 && !option_bool(OPT_NO_POLL))
 	{
 	  FD_SET(daemon->inotifyfd, &rset);
 	  bump_maxfd(daemon->inotifyfd, &maxfd);
 	}
+#endif
 #elif defined(HAVE_BSD_NETWORK)
       FD_SET(daemon->routefd, &rset);
       bump_maxfd(daemon->routefd, &maxfd);
@@ -940,7 +946,7 @@ int main (int argc, char **argv)
 	route_sock();
 #endif
 
-#ifdef HAVE_LINUX_NETWORK
+#if defined(HAVE_LINUX_NETWORK) && defined(HAVE_INOTIFY)
       if (daemon->port != 0 && !option_bool(OPT_NO_POLL) && FD_ISSET(daemon->inotifyfd, &rset) && inotify_check())
 	poll_resolv(1, 1, now); 	  
 #else
