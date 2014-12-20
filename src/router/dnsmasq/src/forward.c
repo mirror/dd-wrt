@@ -1048,7 +1048,7 @@ void receive_query(struct listener *listen, time_t now)
   /* packet buffer overwritten */
   daemon->srv_save = NULL;
   
-  dst_addr_4.s_addr = 0;
+  dst_addr_4.s_addr = dst_addr.addr.addr4.s_addr = 0;
   netmask.s_addr = 0;
   
   if (option_bool(OPT_NOWILD) && listen->iface)
@@ -1057,7 +1057,7 @@ void receive_query(struct listener *listen, time_t now)
      
       if (listen->family == AF_INET)
 	{
-	  dst_addr_4 = listen->iface->addr.in.sin_addr;
+	  dst_addr_4 = dst_addr.addr.addr4 = listen->iface->addr.in.sin_addr;
 	  netmask = listen->iface->netmask;
 	}
     }
@@ -1796,6 +1796,24 @@ unsigned char *tcp_request(int confd, time_t now,
 			  if ((last_server->tcpfd = socket(last_server->addr.sa.sa_family, SOCK_STREAM, 0)) == -1)
 			    continue;
 			  
+#ifdef HAVE_CONNTRACK
+			  /* Copy connection mark of incoming query to outgoing connection. */
+			  if (option_bool(OPT_CONNTRACK))
+			    {
+			      unsigned int mark;
+			      struct all_addr local;
+#ifdef HAVE_IPV6		      
+			      if (local_addr->sa.sa_family == AF_INET6)
+				local.addr.addr6 = local_addr->in6.sin6_addr;
+			      else
+#endif
+				local.addr.addr4 = local_addr->in.sin_addr;
+			      
+			      if (get_incoming_mark(&peer_addr, &local, 1, &mark))
+				setsockopt(last_server->tcpfd, SOL_SOCKET, SO_MARK, &mark, sizeof(unsigned int));
+			    }
+#endif	
+		      
 			  if ((!local_bind(last_server->tcpfd,  &last_server->source_addr, last_server->interface, 1) ||
 			       connect(last_server->tcpfd, &last_server->addr.sa, sa_len(&last_server->addr)) == -1))
 			    {
@@ -1820,24 +1838,6 @@ unsigned char *tcp_request(int confd, time_t now,
 			      size = new_size;
 			    }
 #endif
-			  
-#ifdef HAVE_CONNTRACK
-			  /* Copy connection mark of incoming query to outgoing connection. */
-			  if (option_bool(OPT_CONNTRACK))
-			    {
-			      unsigned int mark;
-			      struct all_addr local;
-#ifdef HAVE_IPV6		      
-			      if (local_addr->sa.sa_family == AF_INET6)
-				local.addr.addr6 = local_addr->in6.sin6_addr;
-			      else
-#endif
-				local.addr.addr4 = local_addr->in.sin_addr;
-			      
-			      if (get_incoming_mark(&peer_addr, &local, 1, &mark))
-				setsockopt(last_server->tcpfd, SOL_SOCKET, SO_MARK, &mark, sizeof(unsigned int));
-			    }
-#endif	
 			}
 		      
 		      *length = htons(size);
