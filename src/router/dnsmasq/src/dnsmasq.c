@@ -87,11 +87,6 @@ int main (int argc, char **argv)
  
   if (daemon->edns_pktsz < PACKETSZ)
     daemon->edns_pktsz = PACKETSZ;
-#ifdef HAVE_DNSSEC
-  /* Enforce min packet big enough for DNSSEC */
-  if (option_bool(OPT_DNSSEC_VALID) && daemon->edns_pktsz < EDNS_PKTSZ)
-    daemon->edns_pktsz = EDNS_PKTSZ;
-#endif
 
   daemon->packet_buff_sz = daemon->edns_pktsz > DNSMASQ_PACKETSZ ? 
     daemon->edns_pktsz : DNSMASQ_PACKETSZ;
@@ -315,8 +310,14 @@ int main (int argc, char **argv)
   if (daemon->port != 0)
     {
       cache_init();
+
 #ifdef HAVE_DNSSEC
       blockdata_init();
+#endif
+
+#ifdef HAVE_LINUX_NETWORK
+      if (!option_bool(OPT_NO_POLL))
+	inotify_dnsmasq_init();
 #endif
     }
     
@@ -793,6 +794,11 @@ int main (int argc, char **argv)
   
   pid = getpid();
   
+#ifdef HAVE_LINUX_NETWORK
+  /* Using inotify, have to select a resolv file at startup */
+  poll_resolv(1, 0, now);
+#endif
+  
   while (1)
     {
       int maxfd = -1;
@@ -862,11 +868,16 @@ int main (int argc, char **argv)
 #if defined(HAVE_LINUX_NETWORK)
       FD_SET(daemon->netlinkfd, &rset);
       bump_maxfd(daemon->netlinkfd, &maxfd);
+      if (daemon->port != 0 && !option_bool(OPT_NO_POLL))
+	{
+	  FD_SET(daemon->inotifyfd, &rset);
+	  bump_maxfd(daemon->inotifyfd, &maxfd);
+	}
 #elif defined(HAVE_BSD_NETWORK)
       FD_SET(daemon->routefd, &rset);
       bump_maxfd(daemon->routefd, &maxfd);
 #endif
-
+      
       FD_SET(piperead, &rset);
       bump_maxfd(piperead, &maxfd);
 
@@ -929,6 +940,10 @@ int main (int argc, char **argv)
 	route_sock();
 #endif
 
+#ifdef HAVE_LINUX_NETWORK
+      if (daemon->port != 0 && !option_bool(OPT_NO_POLL) && FD_ISSET(daemon->inotifyfd, &rset) && inotify_check())
+	poll_resolv(1, 1, now); 	  
+#else
       /* Check for changes to resolv files once per second max. */
       /* Don't go silent for long periods if the clock goes backwards. */
       if (daemon->last_resolv == 0 || 
@@ -941,7 +956,8 @@ int main (int argc, char **argv)
 	  poll_resolv(0, daemon->last_resolv != 0, now); 	  
 	  daemon->last_resolv = now;
 	}
-      
+#endif
+
       if (FD_ISSET(piperead, &rset))
 	async_event(piperead, now);
       
