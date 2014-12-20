@@ -15,6 +15,7 @@
 */
 
 #include "dnsmasq.h"
+#ifdef HAVE_INOTIFY
 #include <sys/inotify.h>
 
 #ifdef HAVE_LINUX_NETWORK
@@ -109,5 +110,5 @@ int inotify_check(void)
 
 #endif
 
-  
+#endif  
   
