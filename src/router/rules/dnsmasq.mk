@@ -4,6 +4,14 @@ endif
 
 DNSMASQ_COPTS += $(MIPS16_OPT) -DNO_AUTH
 
+ifneq ($(CONFIG_BCMMODERN),y)
+ifneq ($(ARCHITECTURE),broadcom)
+DNSMASQ_COPTS += -DHAVE_INOTIFY
+endif
+endif
+
+
+
 dnsmasq-clean:
 	$(MAKE) -j 4 -C dnsmasq CFLAGS="$(COPTS)" clean
 	$(MAKE) -j 4 -C dnsmasq/contrib/wrt CFLAGS="$(COPTS)" clean
