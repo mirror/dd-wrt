@@ -7,7 +7,9 @@ DNSMASQ_COPTS += $(MIPS16_OPT) -DNO_AUTH
 ifneq ($(CONFIG_BCMMODERN),y)
 ifneq ($(ARCHITECTURE),broadcom)
 ifneq ($(ARCHITECTURE),adm5120)
+ifneq ($(ARCHITECTURE),storm)
 DNSMASQ_COPTS += -DHAVE_INOTIFY
+endif
 endif
 endif
 endif
