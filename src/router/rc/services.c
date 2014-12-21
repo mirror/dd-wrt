@@ -152,8 +152,10 @@ int start_services_main(int argc, char **argv)
 		start_service_f("sshd");
 #endif
 
+#ifdef HAVE_IPV&
 #ifdef HAVE_RADVD
 	start_service_f("radvd");
+#endif
 #endif
 
 #ifdef HAVE_SNMP
@@ -309,8 +311,10 @@ int stop_services_main(int argc, char **argv)
 		stop_service_f("sshd");
 #endif
 
+#ifdef HAVE_IPV6
 #ifdef HAVE_RADVD
 	stop_service_f("radvd");
+#endif
 #endif
 
 #ifdef HAVE_WIFIDOG
@@ -702,9 +706,9 @@ static void handle_management(void)
 	start_service_f("cron");
 #ifdef HAVE_IPV6
 	start_service_f("ipv6");
-#endif
 #ifdef HAVE_RADVD
 	startstop_f("radvd");
+#endif
 #endif
 #ifdef HAVE_PPTPD
 	startstop_f("pptpd");
