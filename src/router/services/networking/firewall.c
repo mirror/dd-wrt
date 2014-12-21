@@ -1916,9 +1916,10 @@ static void filter_input(void)
 	/*
 	 * Wolf mod - accept protocol 41 for IPv6 tunneling 
 	 */
+#ifdef HAVE_IPV6
 	if (nvram_match("ipv6_enable", "1"))
 		save2file("-A INPUT -p 41 -j %s\n", log_accept);
-
+#endif
 	/*
 	 * Sveasoft mod - accept OSPF protocol broadcasts 
 	 */
@@ -2586,7 +2587,7 @@ void set_gprules(char *iface)
 #endif
 
 int isregistered_real(void);
-
+#ifdef HAVE_IPV6
 void start_firewall6(void)
 {
 
@@ -2642,7 +2643,7 @@ void start_firewall6(void)
 	eval("ip6tables", "-A", "FORWARD", "-j", "DROP");
 
 }
-
+#endif
 
 void start_loadfwmodules(void)
 {
@@ -2881,9 +2882,11 @@ void start_firewall(void)
 	} else
 		perror("/proc/sys/net/ipv4/ip_forward");
 	cprintf("start ipv6\n");
+#ifdef HAVE_IPV6
 	if (nvram_match("ipv6_enable", "1")) {
 		writeproc("/proc/sys/net/ipv6/conf/all/forwarding", "1");
 	}
+#endif
 #ifdef HAVE_GGEW
 	char *wordlist = nvram_safe_get("ral");
 	char var[256], *next;
@@ -2933,6 +2936,7 @@ void start_firewall(void)
 	cprintf("done\n");
 }
 
+#ifdef HAVE_IPV6
 void stop_firewall6(void)
 {
 	if (nvram_match("ipv6_enable", "0"))
@@ -2940,6 +2944,7 @@ void stop_firewall6(void)
 
 	eval("ip", "-6", "addr", "flush", "scope", "global");
 }
+#endif
 
 void stop_firewall(void)
 {

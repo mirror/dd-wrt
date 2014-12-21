@@ -2077,6 +2077,7 @@ struct nvram_tuple srouter_defaults[] = {
 #else
 	{"telnetd_enable", "1", 0},
 #endif
+#ifdef HAVE_IPV6
 	{"ipv6_enable", "0", 0},
 	{"ipv6_pf_len", "64", 0},
 	{"ipv6_mtu", "", 0},
@@ -2090,6 +2091,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"dhcp6s_seq_ips", "0", 0},
 	{"dhcp6s_custom", "0", 0},
 	{"dhcp6s_conf", "", 0},
+#endif
 #ifdef HAVE_CHILLI
 	{"chilli_net", "192.168.182.0/24", 0},
 	{"chilli_enable", "0", 0},
@@ -2545,7 +2547,6 @@ struct nvram_tuple srouter_defaults[] = {
 #else
 	{"status_auth", "1", 0},
 #endif
-	{"ipv6_enable", "0", 0},
 #ifdef HAVE_UNFY
 	{"enable_jffs2", "1", 0},
 	{"clean_jffs2", "1", 0},
