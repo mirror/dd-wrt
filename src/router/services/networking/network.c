@@ -4212,8 +4212,8 @@ void start_wan_service(void)
 	cprintf("start ddns\n");
 	start_ddns();
 }
-
-const char *ipv6_router_address(struct in6_addr *in6addr)
+#ifdef HAVE_IPV6
+static const char *ipv6_router_address(struct in6_addr *in6addr)
 {
 	char *p;
 	struct in6_addr addr;
@@ -4237,7 +4237,7 @@ const char *ipv6_router_address(struct in6_addr *in6addr)
 	return addr6;
 }
 
-void start_ipv6_tunnel(char *wan_ifname)
+static void start_ipv6_tunnel(char *wan_ifname)
 {
 	char *remote_endpoint = nvram_safe_get("ipv6_tun_end_ipv4");
 	char *tun_client_ipv6 = nvram_safe_get("ipv6_tun_client_addr");
@@ -4262,7 +4262,7 @@ void start_ipv6_tunnel(char *wan_ifname)
 
 }
 
-void stop_ipv6_tunnel(char *wan_ifname)
+static void stop_ipv6_tunnel(char *wan_ifname)
 {
 	if (nvram_match("ipv6_typ", "ipv6rd") || nvram_match("ipv6_typ", "ipv6to4")) {
 		eval("ip", "tunnel", "del", wan_ifname);
@@ -4277,7 +4277,7 @@ void stop_ipv6_tunnel(char *wan_ifname)
 	}
 }
 
-void start_wan6_done(char *wan_ifname)
+static void start_wan6_done(char *wan_ifname)
 {
 	if (nvram_match("ipv6_enable", "0"))
 		return;
@@ -4319,7 +4319,7 @@ void start_wan6_done(char *wan_ifname)
 	eval("startservice", "dhcp6s", "-f");
 
 }
-
+#endif
 void start_wan_done(char *wan_ifname)
 {
 	if (nvram_match("wan_testmode", "1")) {
