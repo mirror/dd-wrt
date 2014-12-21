@@ -14,7 +14,9 @@ radvd:
 	make -C radvd
 
 radvd-install:
+ifeq ($(CONFIG_IPV6),y)
 	install -d $(INSTALLDIR)/radvd/usr/sbin 
 	install radvd/radvd $(INSTALLDIR)/radvd/usr/sbin
 	install radvd/radvdump $(INSTALLDIR)/radvd/usr/sbin
+endif
 
