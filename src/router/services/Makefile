@@ -61,7 +61,7 @@ HCFLAGS  += -fpic -I$(TOP)/services/include -I$(LINUXDIR)/brcm/wl/bcmwifi/includ
 
 
 OBJS = services.o network.o firewall.o mssid.o wshaper.o ddns.o devinit.o sysinit.o sysinit-$(ARCHITECTURE).o interface.o udhcpc.o mkfiles.o iptable.o defaults.o \
-       bridgetools.o igmp.o udpxy.o wpa.o vlantagging.o httpd.o setuserpw.o gpio.o mask.o reset_defaults.o vpn.o cron.o syslog.o redial.o radvd.o	\
+       bridgetools.o igmp.o udpxy.o wpa.o vlantagging.o httpd.o setuserpw.o gpio.o mask.o reset_defaults.o vpn.o cron.o syslog.o redial.o	\
        pppoe_dual.o pppoe.o pptpclient.o l2tp.o hwmon.o ttraff.o radiotimer.o processmonitor.o wland.o radiofunctions.o apserv.o aoss.o processmanager.o utils.o minidlna.o tor.o gps.o
 
 
@@ -110,7 +110,7 @@ CFLAGS_EXTRA += -DHAVE_OVERCLOCKING
 endif
 ifeq ($(CONFIG_IPV6),y)
 CFLAGS_EXTRA += -DHAVE_IPV6
-OBJS += dhcp6.o
+OBJS += dhcp6.o radvd.o
 endif
 CFLAGS_EXTRA += -DARCH_$(ARCHITECTURE)
 ifeq ($(CONFIG_TRIMAX),y)
