@@ -10,16 +10,22 @@ if [ "$(nvram get usb_ses_umount )" = "1" ]; then
   #flush caches
   `sync`
 
-  #kill services
+  #kill known services that come with dd-wrt and usually access external storage
   killall proftpd
   killall smbd
   killall minidlna
   killall lighttpd
- # TODO kill other services that are not part of the firmware 
- # disable for now, since fuser returns all processes if not mounted, so we need to first check if these are mounted
- #`fuser -k -m /jffs`
- #`fuser -k -m /opt`
- #`fuser -k -m /mnt`
+  
+  #find other services that are not part of the firmware and kill them
+  pids=`ps | awk -F " " '{print $1}'`
+
+  for pid in $pids;
+  do
+        check=`cat /proc/$pid/maps 2> /dev/null | grep -E '/opt|/jffs'`
+        if [ "$check" != "" ]; then
+                `kill -9 $pid`;
+        fi
+  done
 
 
   `/sbin/blkid > /tmp/blkid.dump`
