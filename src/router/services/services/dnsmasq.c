@@ -287,7 +287,7 @@ void start_dnsmasq(void)
 			unsigned int im3 = get_single_ip(nvram_safe_get("lan_netmask"), 2);
 			unsigned int im4 = get_single_ip(nvram_safe_get("lan_netmask"), 4);
 			unsigned int sip = ((ip1 & im1) << 24) + ((ip2 & im2) << 16) + ((ip3 & im3) << 8) + dhcpstart;
-			unsigned int eip = sip + dhcpnum;
+			unsigned int eip = sip + dhcpnum - 1;
 			// Do new code - multi-subnet range
 			// Assumes that lan_netmask is set accordingly
 			// Assumes that dhcp_num is a multiple of 256
@@ -316,7 +316,7 @@ void start_dnsmasq(void)
 			unsigned int im3 = get_single_ip(nvram_nget("%s_netmask", ifname), 2);
 			unsigned int im4 = get_single_ip(nvram_nget("%s_netmask", ifname), 4);
 			unsigned int sip = ((ip1 & im1) << 24) + ((ip2 & im2) << 16) + ((ip3 & im3) << 8) + dhcpstart;
-			unsigned int eip = sip + dhcpnum;
+			unsigned int eip = sip + dhcpnum - 1;
 
 			fprintf(fp, "dhcp-range=%s,", ifname);
 
