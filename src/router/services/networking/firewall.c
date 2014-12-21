@@ -2632,7 +2632,7 @@ void start_firewall6(void)
 		if (nvram_match("wan_proto", "disabled")) {
 			eval("ip6tables", "-A", "FORWARD", "-o", nvram_safe_get("lan_ifname"), "-j", "ACCEPT");
 		} else {
-			eval("ip6tables", "-A", "FORWARD", "-o", nvram_safe_get("wan_ifname"), "-j", "ACCEPT");
+			eval("ip6tables", "-A", "FORWARD", "-o", get_wan_face(), "-j", "ACCEPT");
 		}
 	}
 
