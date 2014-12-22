@@ -192,7 +192,9 @@ void start_dnsmasq(void)
 	}
 	fprintf(fp, "\n");
 
-	fprintf(fp, "resolv-file=/tmp/resolv.dnsmasq\n" "all-servers\n" "strict-order\n");
+	fprintf(fp, "resolv-file=/tmp/resolv.dnsmasq\n" "all-servers\n");
+	if (nvram_match("dnsmasq_strict", "1"))
+		fprintf(fp, "strict-order\n");
 
 	/*
 	 * Domain 
