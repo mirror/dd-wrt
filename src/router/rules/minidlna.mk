@@ -1,9 +1,9 @@
-minidlna-configure:
+minidlna-configure: zlib
 	cd minidlna && make clean
 	cd minidlna && make distclean
 	cd minidlna && make
 
-minidlna:
+minidlna: zlib
 	cd minidlna && make
 
 minidlna-clean:
