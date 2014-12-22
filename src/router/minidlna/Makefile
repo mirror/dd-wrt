@@ -17,7 +17,7 @@
 #############################################################################################
 FFMPEG_VER=2.3
 
-SUBDIRS += zlib-1.2.7
+#SUBDIRS += zlib-1.2.7
 SUBDIRS += ffmpeg-$(FFMPEG_VER)
 SUBDIRS += libogg-1.3.0
 SUBDIRS += libexif-0.6.19
@@ -45,7 +45,7 @@ CROSS_COMPILE=$(ARCH)-linux-uclibc-
 #CROSS=mipsel-linux-uclibc
 # comments ended, by Michael Jiang.
 
-all: zlib ffmpeg libogg libexif sqlite3 libvorbis flac libid3tag libjpeg
+all: ffmpeg libogg libexif sqlite3 libvorbis flac libid3tag libjpeg
 	for i in $(SUBDIRS); do \
 		(cd $$i && make TOOL_CHAIN_PATH=$(TOOL_CHAIN_PATH) \
 				CROSS_COMPILE=$(CROSS_COMPILE) \
@@ -59,13 +59,6 @@ all: zlib ffmpeg libogg libexif sqlite3 libvorbis flac libid3tag libjpeg
 			     MINI_DLNA_PATH=$(MINI_DLNA_PATH))
 	cp ./minidlna/minidlna	./lib/minidlna
 	#make install
-
-zlib:
-	# compile zlib first, bcz. libid3tag needs it for configuration.
-	(cd zlib-1.2.7 && make TOOL_CHAIN_PATH=$(TOOL_CHAIN_PATH) \
-	CROSS_COMPILE=$(CROSS_COMPILE) \
-	HOST_COMPILE=$(HOST_COMPILE) \
-	MINI_DLNA_PATH=$(MINI_DLNA_PATH))
 
 ffmpeg:
 	if [ ! -f ./ffmpeg-$(FFMPEG_VER)/config.mak ];then \
@@ -190,8 +183,8 @@ flac:
 libid3tag:
 	if [ ! -f ./libid3tag-0.15.0b/Makefile ];then \
 	cd libid3tag-0.15.0b && (./configure --host=$(HOST)  CC="ccache $(CROSS_COMPILE)gcc" \
-				CPPFLAGS="$(COPTS) $(MIPS16_OPT) -I$(MINI_DLNA_PATH)/zlib-1.2.7/  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-				LDFLAGS=-L$(MINI_DLNA_PATH)/zlib-1.2.7/ \
+				CPPFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/zlib/  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+				LDFLAGS=-L$(TOP)/zlib/ \
 				); \
 	fi
 clean:
@@ -216,7 +209,6 @@ clean:
 	-rm ./lib/libid3tag.a
 	-rm ./lib/minidlna
 copy: 
-	cp ./zlib-1.2.7/libz.a				./lib/libz.a && \
 	cp ./libvorbis-1.3.3/lib/.libs/libvorbis.a	./lib/libvorbis.a && \
 	cp ./flac-1.2.1/src/libFLAC/.libs/libFLAC.a		./lib/libFLAC.a && \
 	cp ./libexif-0.6.19/libexif/.libs/libexif.a 		./lib/libexif.a  && \
@@ -237,7 +229,6 @@ distclean:
 	-cd ./libid3tag-0.15.0b/	&& make distclean
 	-rm -f ./libid3tag-0.15.0b/Makefile
 	-cd ./flac-1.2.1/	&& make distclean
-	-cd ./zlib-1.2.7/	&& make clean
 	-cd ./ffmpeg-$(FFMPEG_VER)/	&& make distclean
 	-cd ./jpeg-8/		&& make distclean
 	-cd ./minidlna/		&& make clean
