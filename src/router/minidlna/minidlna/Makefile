@@ -21,12 +21,13 @@ CFLAGS = -Wall $(COPTS)  -ffunction-sections -fdata-sections -D_GNU_SOURCE -D_FI
          -I$(MINI_DLNA_PATH)/sqlite-3.6.22 \
          -I$(MINI_DLNA_PATH)/libexif-0.6.19 \
          -I$(MINI_DLNA_PATH)/libid3tag-0.15.0b/include \
-		 -I$(MINI_DLNA_PATH)/libid3tag-0.15.0b/ \
+         -I$(MINI_DLNA_PATH)/libid3tag-0.15.0b/ \
          -I$(MINI_DLNA_PATH)/libogg-1.3.0/include/ \
          -I$(MINI_DLNA_PATH)/libvorbis-1.3.3/include/ \
          -I$(MINI_DLNA_PATH)/jpeg-8 \
          -I$(MINI_DLNA_PATH)/flac-1.2.1/include/ \
          -L$(MINI_DLNA_PATH)/lib \
+         -L$(TOP)/zlib/
 
 
 CC = ccache $(CROSS_COMPILE)gcc
