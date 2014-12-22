@@ -90,6 +90,11 @@
 				<input class="spaceradio" type="radio" name="dnsmasq_no_dns_rebind" value="0" <% nvram_checked("dnsmasq_no_dns_rebind", "0"); %> /><% tran("share.disable"); %>
 			</div>
 			<div class="setting">
+				<div class="label"><% tran("service.dnsmasq_strict"); %></div>
+				<input class="spaceradio" type="radio" name="dnsmasq_strict" value="1" <% nvram_checked("dnsmasq_strict", "1"); %> /><% tran("share.enable"); %>&nbsp;
+				<input class="spaceradio" type="radio" name="dnsmasq_strict" value="0" <% nvram_checked("dnsmasq_strict", "0"); %> /><% tran("share.disable"); %>
+			</div>
+			<div class="setting">
 				<div class="label"><% tran("service.dnsmasq_add_mac"); %></div>
 				<input class="spaceradio" type="radio" name="dnsmasq_add_mac" value="1" <% nvram_checked("dnsmasq_add_mac", "1"); %> /><% tran("share.enable"); %>&nbsp;
 				<input class="spaceradio" type="radio" name="dnsmasq_add_mac" value="0" <% nvram_checked("dnsmasq_add_mac", "0"); %> /><% tran("share.disable"); %>
