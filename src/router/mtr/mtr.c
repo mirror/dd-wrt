@@ -47,11 +47,7 @@
 #include "version.h"
 
 
-#ifdef ENABLE_IPV6
-#define DEFAULT_AF AF_UNSPEC
-#else
 #define DEFAULT_AF AF_INET
-#endif
 
 
 #ifdef NO_HERROR
