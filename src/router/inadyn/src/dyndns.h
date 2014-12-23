@@ -45,6 +45,7 @@ typedef enum
     TZO_DEFAULT,
     DYNSIP_DEFAULT,
     DYNDNS_3322_DYNAMIC,
+    DTDNS_DEFAULT,
     LAST_DNS_SYSTEM = -1
 } DYNDNS_SYSTEM_ID;
 
@@ -71,6 +72,12 @@ typedef enum
 #define DYNDNS_3322_MY_DNS_SERVER	"members.3322.org"
 #define DYNDNS_3322_MY_DNS_SERVER_URL "/dyndns/update?"
 
+
+#define DYNDNS_DTDNS_MY_IP_SERVER		"myip.dtdns.com"
+#define DYNDNS_DTDNS_MY_IP_SERVER_URL	"/"
+#define DYNDNS_DTDNS_MY_DNS_SERVER	"www.dtdns.com"
+#define DYNDNS_DTDNS_MY_DNS_SERVER_URL "/api/autodns.cfm?"
+
 /*REQ/RSP definitions*/
 
 #define DYNDNS_IP_SERVER_RESPONSE_BEGIN "Current IP Address: "
@@ -88,6 +95,20 @@ typedef enum
 /* Conversation with the IP server */
 #define DYNDNS_GET_MY_IP_HTTP_REQUEST  \
 	"GET http://%s%s HTTP/1.0\r\n\r\n"
+
+
+
+#define DYNDNS_DTDNS_GET_MY_IP_HTTP_REQUEST_FORMAT \
+	"GET %s" \
+		"id=%s&" \
+		"pw=%s&" \
+		"ip=%s " \
+	  "HTTP/1.0\r\n" \
+	  "Host: %s\r\n" \
+	  "User-Agent: "DYNDNS_AGENT_NAME " " DYNDNS_EMAIL_ADDR"\r\n\r\n"
+    
+
+
 
 /* dyndns.org specific update address format */
 /* 3322.org has the same parameters ...*/
