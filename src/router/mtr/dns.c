@@ -921,7 +921,7 @@ void restell(char *s)
   fputs("\r",stderr);
 }
 
-#if 1 //def __UCLIBC__
+#ifdef __UCLIBC__
 
 static const char       digits[] = "0123456789";
 #define __set_errno(e) (errno = (e))
