@@ -16,7 +16,8 @@
     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
-#include <config.h>
+#include "config.h"
+
 #include <strings.h>
 #include <unistd.h>
 
@@ -60,12 +61,11 @@
 
 #include "mtr.h"
 #include "mtr-curses.h"
-#include "display.h"
 #include "net.h"
 #include "dns.h"
-#ifndef NO_IPINFO
 #include "asn.h"
-#endif
+#include "display.h"
+
 #include "version.h"
 #endif
 
@@ -121,7 +121,7 @@ int mtr_curses_keyaction(void)
     return ActionMPLS;
   if (tolower(c) == 'n')
     return ActionDNS;
-#ifndef NO_IPINFO
+#ifdef IPINFO
   if (tolower(c) == 'y')
     return ActionII;
   if (tolower(c) == 'z')
@@ -304,7 +304,7 @@ int mtr_curses_keyaction(void)
     printw("  b <c>   set ping bit pattern to c(0..255) or random(c<0)\n" );
     printw("  Q <t>   set ping packet's TOS to t\n" );
     printw("  u       switch between ICMP ECHO and UDP datagrams\n" );
-#ifndef NO_IPINFO
+#ifdef IPINFO
     printw("  y       switching IP info\n");
     printw("  z       toggle ASN info on/off\n");
     pressanykey_row += 2;
@@ -344,7 +344,7 @@ void mtr_curses_hosts(int startstat)
       name = dns_lookup(addr);
       if (! net_up(at))
 	attron(A_BOLD);
-#ifndef NO_IPINFO
+#ifdef IPINFO
       if (is_printii())
         printw(fmt_ipinfo(addr));
 #endif
@@ -401,7 +401,7 @@ void mtr_curses_hosts(int startstat)
         name = dns_lookup(addrs);
         if (! net_up(at)) attron(A_BOLD);
         printw("\n    ");
-#ifndef NO_IPINFO
+#ifdef IPINFO
         if (is_printii())
           printw(fmt_ipinfo(addrs));
 #endif
@@ -490,13 +490,28 @@ void mtr_curses_init() {
 }
 
 
+static int block_col[NUM_FACTORS+1] =
+{	// 1:black 2:red 3:green 4:brown/yellow 5:blue 6:magenta 7:cyan 8:white
+        COLOR_PAIR(2)|A_BOLD,
+	A_NORMAL,
+	COLOR_PAIR(3),
+	COLOR_PAIR(3)|A_BOLD,
+	COLOR_PAIR(4)|A_BOLD,
+	COLOR_PAIR(6)|A_BOLD,
+	COLOR_PAIR(6),
+	COLOR_PAIR(2),
+	COLOR_PAIR(2)|A_BOLD
+};
+
 void mtr_print_scaled(int ms) 
 {
 	int i;
 
 	for (i = 0; i < NUM_FACTORS; i++) {
 		if (ms <= scale[i]) {
+			attrset(block_col[i+1]);
 			printw("%c", block_map[i]);
+			attrset(A_NORMAL);
 			return;
 		}
 	}
@@ -514,9 +529,9 @@ void mtr_fill_graph(int at, int cols)
 		if (saved[i] == -2) {
 			printw(" ");
 		} else if (saved[i] == -1) {
-			attron(A_BOLD);
-			printw("?");
-			attroff(A_BOLD);
+		        attrset(block_col[0]);
+			printw("%c", '?');
+			attrset(A_NORMAL);
 		} else {
 			if (display_mode == 1) {
 				if (saved[i] > scale[6]) {
@@ -552,7 +567,7 @@ void mtr_curses_graph(int startstat, int cols)
 		if (! net_up(at))
 			attron(A_BOLD);
 		if (addrcmp((void *) addr, (void *) &unspec_addr, af)) {
-#ifndef NO_IPINFO
+#ifdef IPINFO
 			if (is_printii())
 				printw(fmt_ipinfo(addr));
 #endif
@@ -642,7 +657,7 @@ void mtr_curses_redraw(void)
   } else {
     char msg[80];
     int padding = 30;
-#ifndef NO_IPINFO
+#ifdef IPINFO
     if (is_printii())
       padding += get_iiwidth();
 #endif
@@ -664,8 +679,16 @@ void mtr_curses_redraw(void)
     attroff(A_BOLD);
     
     for (i = 0; i < NUM_FACTORS-1; i++) {
-      printw("  %c:%d ms", block_map[i], scale[i]/1000);
+      printw("  ");
+      attrset(block_col[i+1]);
+      printw("%c", block_map[i]);
+      attrset(A_NORMAL);
+      printw(":%d ms", scale[i]/1000);
     }
+    printw("  ");
+    attrset(block_col[NUM_FACTORS]);
+    printw("%c", block_map[NUM_FACTORS-1]);
+    attrset(A_NORMAL);
   }
 
   refresh();
@@ -677,6 +700,10 @@ void mtr_curses_open(void)
   initscr();
   raw();
   noecho(); 
+  start_color();
+  int i;
+  for (i = 0; i < 8; i++)
+      init_pair(i+1, i, 0);
 
   mtr_curses_init();
   mtr_curses_redraw();

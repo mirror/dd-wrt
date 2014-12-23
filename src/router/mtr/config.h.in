@@ -106,9 +106,6 @@
 /* Define if you don't have the curses libraries available. */
 #undef NO_CURSES
 
-/* Define if you don't have the glib libraries available. */
-#undef NO_GLIB
-
 /* Define if you don't have the GTK+ libraries available. */
 #undef NO_GTK
 
