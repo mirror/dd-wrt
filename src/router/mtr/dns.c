@@ -513,10 +513,10 @@ void dns_open(void)
 
   if (!dns) return;
   MY_RES_INIT();
-  if (!myres.nscount) {
-    fprintf(stderr,"No nameservers defined.\n");
-    exit(-1);
-  }
+//  if (!myres.nscount) {
+//    fprintf(stderr,"No nameservers defined.\n");
+//    exit(-1);
+//  }
   myres.options|= RES_RECURSE | RES_DEFNAMES | RES_DNSRCH;
   resfd = socket(AF_INET, SOCK_DGRAM, 0);
   if (resfd == -1) {
@@ -530,9 +530,9 @@ void dns_open(void)
   if (resfd6 == -1) {
     // consider making removing this warning. For now leave it in to see 
     // new code activated. -- REW
-    fprintf(stderr,
-            "Unable to allocate IPv6 socket for nameserver communication: %s\n",
-	    strerror(errno));
+//    fprintf(stderr,
+//            "Unable to allocate IPv6 socket for nameserver communication: %s\n",
+//	    strerror(errno));
     //    exit(-1);
   }
 #endif
