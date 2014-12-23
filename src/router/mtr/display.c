@@ -16,7 +16,8 @@
     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
-#include <config.h>
+#include "config.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -29,9 +30,7 @@
 #include "select.h"
 #include "raw.h"
 #include "dns.h"
-#ifndef NO_IPINFO
-#include <asn.h>
-#endif
+#include "asn.h"
 
 extern int DisplayMode;
 
@@ -97,7 +96,7 @@ void display_open(void)
     break;
   case DisplayCurses:
     mtr_curses_open();  
-#ifndef NO_IPINFO
+#ifdef IPINFO
     if (ipinfo_no >= 0)
         asn_open();
 #endif
@@ -128,7 +127,7 @@ void display_close(time_t now)
     csv_close(now);
     break;
   case DisplayCurses:
-#ifndef NO_IPINFO
+#ifdef IPINFO
     if (ipinfo_no >= 0)
         asn_close();
 #endif

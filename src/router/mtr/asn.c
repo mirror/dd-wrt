@@ -16,12 +16,14 @@
     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
+#include "config.h"
+
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
 
-#ifndef __APPLE__
+#ifdef __APPLE__
 #define BIND_8_COMPAT
 #endif
 #include <arpa/nameser.h>
@@ -35,7 +37,6 @@
 #include <sys/socket.h>
 #include <search.h>
 
-#include "config.h"
 #include "mtr.h"
 #include "asn.h"
 

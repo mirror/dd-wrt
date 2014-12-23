@@ -16,7 +16,7 @@
     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
-#include <config.h>
+#include "config.h"
 
 #if defined(HAVE_SYS_XTI_H)
 #include <sys/xti.h>
@@ -210,6 +210,9 @@ extern int af;			/* address family of remote target */
 extern int mtrtype;		/* type of query packet used */
 extern int remoteport;          /* target port for TCP tracing */
 extern int timeout;             /* timeout for TCP connections */
+#ifdef SO_MARK
+extern int mark;		/* SO_MARK to set for ping packet*/
+#endif
 
 /* return the number of microseconds to wait before sending the next
    ping */
@@ -327,23 +330,24 @@ void net_send_tcp(int index)
     addrcpy((void *) &local4->sin_addr, (void *) &ssa4->sin_addr, af);
     addrcpy((void *) &remote4->sin_addr, (void *) remoteaddress, af);
     remote4->sin_port = htons(remoteport);
+    len = sizeof (struct sockaddr_in);
     break;
 #ifdef ENABLE_IPV6
   case AF_INET6:
     addrcpy((void *) &local6->sin6_addr, (void *) &ssa6->sin6_addr, af);
     addrcpy((void *) &remote6->sin6_addr, (void *) remoteaddress, af);
     remote6->sin6_port = htons(remoteport);
+    len = sizeof (struct sockaddr_in6);
     break;
 #endif
   }
 
-  if (bind(s, (struct sockaddr *) &local, sizeof (local))) {
+  if (bind(s, (struct sockaddr *) &local, len)) {
     display_clear();
     perror("bind()");
     exit(EXIT_FAILURE);
   }
 
-  len = sizeof (local);
   if (getsockname(s, (struct sockaddr *) &local, &len)) {
     display_clear();
     perror("getsockname()");
@@ -381,6 +385,13 @@ void net_send_tcp(int index)
 #endif
   }
 
+#ifdef SO_MARK
+    if (mark >= 0 && setsockopt( s, SOL_SOCKET, SO_MARK, &mark, sizeof mark ) ) {
+      perror( "setsockopt SO_MARK" );
+      exit( EXIT_FAILURE );
+    }
+#endif
+
   switch (local.ss_family) {
   case AF_INET:
     port = ntohs(local4->sin_port);
@@ -400,7 +411,7 @@ void net_send_tcp(int index)
   gettimeofday(&sequence[port].time, NULL);
   sequence[port].socket = s;
 
-  connect(s, (struct sockaddr *) &remote, sizeof (remote));
+  connect(s, (struct sockaddr *) &remote, len);
 }
 
 /*  Attempt to find the host at a particular number of hops away  */
@@ -480,6 +491,13 @@ void net_send_query(int index)
     break;
 #endif
   }
+
+#ifdef SO_MARK
+    if (mark >= 0 && setsockopt( sendsock, SOL_SOCKET, SO_MARK, &mark, sizeof mark ) ) {
+      perror( "setsockopt SO_MARK" );
+      exit( EXIT_FAILURE );
+    }
+#endif
 
   switch ( mtrtype ) {
   case IPPROTO_ICMP:
@@ -1393,7 +1411,7 @@ void net_save_return(int at, int seq, int ms)
 {
   int idx;
   idx = seq - host[at].saved_seq_offset;
-  if (idx < 0 || idx > SAVED_PINGS) {
+  if (idx < 0 || idx >= SAVED_PINGS) {
     return;
   }
   host[at].saved[idx] = ms;
