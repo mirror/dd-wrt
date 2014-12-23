@@ -48,6 +48,7 @@ DYNDNS_ORG_SPECIFIC_DATA dyndns_org_custom = {"custom"};
 DYNDNS_ORG_SPECIFIC_DATA dyndns_org_static = {"statdns"};
 
 static int get_req_for_dyndns_server(DYN_DNS_CLIENT *this, int nr, DYNDNS_SYSTEM *p_sys_info);
+static int get_req_for_dtdns_server(DYN_DNS_CLIENT *this, int nr, DYNDNS_SYSTEM *p_sys_info);
 static int get_req_for_freedns_server(DYN_DNS_CLIENT *p_self, int cnt,  DYNDNS_SYSTEM *p_sys_info);
 static int get_req_for_generic_http_dns_server(DYN_DNS_CLIENT *p_self, int cnt,  DYNDNS_SYSTEM *p_sys_info);
 static int get_req_for_noip_http_dns_server(DYN_DNS_CLIENT *p_self, int cnt,  DYNDNS_SYSTEM *p_sys_info);
@@ -141,6 +142,13 @@ DYNDNS_SYSTEM_INFO dns_system_table[] =
              DYNDNS_MY_IP_SERVER, DYNDNS_MY_IP_SERVER_URL,
 			"dynsip.org", "/nic/update?hostname=", ""}},
 
+    {DTDNS_DEFAULT, 
+        {"default@dtdns.com", NULL, 
+            (DNS_SYSTEM_SRV_RESPONSE_OK_FUNC) is_generic_server_rsp_ok, 
+            (DNS_SYSTEM_REQUEST_FUNC) get_req_for_dtdns_server,
+             DYNDNS_DTDNS_MY_IP_SERVER, DYNDNS_DTDNS_MY_IP_SERVER_URL,
+			"www.dtdns.com", "/api/autodns.cfm?", ""}},
+
     {CUSTOM_HTTP_BASIC_AUTH, 
         {"custom@http_svr_basic_auth", NULL,  
             (DNS_SYSTEM_SRV_RESPONSE_OK_FUNC)is_generic_server_rsp_ok, 
@@ -208,6 +216,19 @@ static int get_req_for_dyndns_server(DYN_DNS_CLIENT *p_self, int cnt,DYNDNS_SYST
 		p_self->info.credentials.p_enc_usr_passwd_buffer
 		);
 }
+
+static int get_req_for_dtdns_server(DYN_DNS_CLIENT *p_self, int cnt, DYNDNS_SYSTEM *p_sys_info)
+{
+	(void)p_sys_info;
+	return sprintf(p_self->p_req_buffer, DYNDNS_DTDNS_GET_MY_IP_HTTP_REQUEST_FORMAT,
+		p_self->info.dyndns_server_url,
+		p_self->info.credentials.my_username,
+		p_self->info.credentials.my_password,
+		p_self->info.my_ip_address.name,
+        p_self->info.dyndns_server_name.name);
+}
+
+
 
 static int get_req_for_freedns_server(DYN_DNS_CLIENT *p_self, int cnt, DYNDNS_SYSTEM *p_sys_info)
 {
@@ -464,6 +485,8 @@ static int is_generic_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p
 	if( (strstr(p_rsp, "KO") != NULL) )
 		return RC_OK;
 	if( (strstr(p_rsp, "good") != NULL) )
+		return RC_OK;
+	if( (strstr(p_rsp, "now points to") != NULL) ) // for dtdns
 		return RC_OK;
 	return RC_ERROR;
 }
