@@ -1899,7 +1899,6 @@ struct nvram_tuple srouter_defaults[] = {
 
 	{"ddns_username_10", "", 0},
 	{"ddns_passwd_10", "", 0},
-	{"ddns_hostname_10", "", 0},
 
 	/*
 	 * for last value 
