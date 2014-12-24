@@ -154,7 +154,7 @@ int init_ddns(void)
 
 		snprintf(_username, sizeof(_username), "%s", "ddns_username_10");
 		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd_10");
-		snprintf(_hostname, sizeof(_hostname), "%s", "ddns_hostname_10");
+		snprintf(_hostname, sizeof(_username), "%s", "ddns_username_10");
 		break;
 
 	default:
