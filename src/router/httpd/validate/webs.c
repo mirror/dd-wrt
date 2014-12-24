@@ -3522,7 +3522,7 @@ void ddns_save_value(webs_t wp)
 	char *enable, *username, *passwd, *hostname, *dyndnstype, *wildcard, *custom, *conf, *url, *force, *wan_ip;
 	struct variable ddns_variables[] = {
 		{
-	      argv:ARGV("0", "1", "2", "3", "4", "5", "6", "7", "8", "9")}, {
+	      argv:ARGV("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10")}, {
 	      argv:							   ARGV("30")},
 	}, *which;
 	char _username[] = "ddns_username_X";
