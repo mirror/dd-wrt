@@ -145,7 +145,7 @@ addEvent(window, "unload", function() {
 										<option value="7" <% nvsm("ddns_enable", "7", "selected"); %> >easyDNS.com</option>
 										<option value="8" <% nvsm("ddns_enable", "8", "selected"); %> >TZO.com</option>
 										<option value="9" <% nvsm("ddns_enable", "9", "selected"); %> >DynSIP.org</option>
-										<option value="9" <% nvsm("ddns_enable", "10", "selected"); %> >dtdns.com</option>
+										<option value="10" <% nvsm("ddns_enable", "10", "selected"); %> >dtdns.com</option>
 										<script type="text/javascript">
 										//<![CDATA[
 										document.write("<option value=\"5\" <% nvsm("ddns_enable", "5", "selected"); %> >" + ddns.custom + "</option>");
