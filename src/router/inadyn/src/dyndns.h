@@ -94,7 +94,7 @@ typedef enum
 
 /* Conversation with the IP server */
 #define DYNDNS_GET_MY_IP_HTTP_REQUEST  \
-	"GET http://%s%s HTTP/1.0\r\n\r\n"
+	"GET %s HTTP/1.1\r\nUser-Agent:DD-WRT\nAccept: */*\nHost: %s\n\n"
 
 
 
