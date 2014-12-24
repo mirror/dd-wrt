@@ -500,17 +500,13 @@ addEvent(window, "unload", function() {
 					<% nvsm("ddns_enable","8","<!--"); %>
 					<% nvsm("ddns_enable","9","<!--"); %>
 								<div class="setting">
-									<div class="label"><% tran("share.usrname"); %></div>
+									<div class="label"><% tran("share.hostname"); %></div>
 									<input name="ddns_username_10" size="30" maxlength="64" onblur="valid_name(this,share.usrname)" value="<% nvg("ddns_username_10"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.passwd"); %></div>
 									<input type="password" id="ddns_passwd_10" name="ddns_passwd_10" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvg("ddns_passwd_10"); %>" />&nbsp;&nbsp;&nbsp;
 									<input type="checkbox" name="ddns_passwd_unmask" value="0" onclick="setElementMask('ddns_passwd_10', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
-								</div>
-								<div class="setting">
-									<div class="label"><% tran("share.hostname"); %></div>
-									<input name="ddns_hostname_10" size="42" onblur="valid_name(this,share.hostname)" value="<% nvg("ddns_hostname_10"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("ddns.wanip"); %></div>
