@@ -49,6 +49,7 @@ function ddns_check(F,T) {
 	} else if(F.ddns_enable.value == 10) {
 		username = eval("F.ddns_username_"+F.ddns_enable.value);
 		passwd = eval("F.ddns_passwd_"+F.ddns_enable.value);
+		hostname = eval("F.ddns_username_"+F.ddns_enable.value);
 	}
 	if(username.value == "") {
 		alert(errmsg.err0);
@@ -60,7 +61,7 @@ function ddns_check(F,T) {
 		passwd.focus();
 		return false;
 	}
-	if(hostname && hostname.value == "") {
+	if(hostname.value == "") {
 		alert(errmsg.err7);
 		hostname.focus();
 		return false;
