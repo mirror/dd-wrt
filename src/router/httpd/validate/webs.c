@@ -3525,12 +3525,12 @@ void ddns_save_value(webs_t wp)
 	      argv:ARGV("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10")}, {
 	      argv:							   ARGV("30")},
 	}, *which;
-	char _username[] = "ddns_username_X";
-	char _passwd[] = "ddns_passwd_X";
-	char _hostname[] = "ddns_hostname_X";
-	char _dyndnstype[] = "ddns_dyndnstype_X";
-	char _wildcard[] = "ddns_wildcard_X";
-	char _custom[] = "ddns_custom_X";
+	char _username[] = "ddns_username_XX";
+	char _passwd[] = "ddns_passwd_XX";
+	char _hostname[] = "ddns_hostname_XX";
+	char _dyndnstype[] = "ddns_dyndnstype_XX";
+	char _wildcard[] = "ddns_wildcard_XX";
+	char _custom[] = "ddns_custom_XX";
 	char _conf[] = "ddns_conf";
 	char _url[] = "ddns_url";
 	char _force[] = "ddns_force";
