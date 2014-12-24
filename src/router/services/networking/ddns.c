@@ -47,13 +47,13 @@
  */
 
 char service[32];
-char _username[] = "ddns_username_X";
-char _passwd[] = "ddns_passwd_X";
-char _hostname[] = "ddns_hostname_X";
-char _dyndnstype[] = "ddns_dyndnstype_X";
-char _wildcard[] = "ddns_wildcard_X";
-char _url[] = "ddns_url_X";
-char _conf[] = "ddns_conf_X";
+char _username[] = "ddns_username_XX";
+char _passwd[] = "ddns_passwd_XX";
+char _hostname[] = "ddns_hostname_XX";
+char _dyndnstype[] = "ddns_dyndnstype_XX";
+char _wildcard[] = "ddns_wildcard_XX";
+char _url[] = "ddns_url_XX";
+char _conf[] = "ddns_conf_XX";
 
 int init_ddns(void)
 {
