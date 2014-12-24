@@ -3576,6 +3576,7 @@ void ddns_save_value(webs_t wp)
 	case 10:	// dtdns
 		snprintf(_username, sizeof(_username), "ddns_username_%s", enable);
 		snprintf(_passwd, sizeof(_passwd), "ddns_passwd_%s", enable);
+		snprintf(_hostname, sizeof(_username), "ddns_username_%s", enable);
 		break;
 	case 5:
 		// custom
