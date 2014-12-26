@@ -18,9 +18,16 @@ else
     openssl x509 -x509toreq -in clients/${CC_COMMONNAME}-req.pem -signkey clients/${CC_COMMONNAME}-key.pem -out clients/${CC_COMMONNAME}-tmp.pem ;
 fi
 
+periodOfValidity=$(awk -v days=$DEFDAYS ' BEGIN { print \
+  strftime("-startdate %y%m%d%H%M%SZ ", mktime(strftime("%Y %m %d %H %M %S %z")), "GMT")\
+  strftime("-enddate %y%m%d%H%M%SZ", mktime(strftime("%Y %m %d 23 59 59 %z"))+days*86400, "GMT") } ') \
+  || periodOfValidity="-days $DEFDAYS"
+
+echo "period of validity: $periodOfValidity"
+        
 openssl ca -batch \
 	-config ca.cnf \
-	-days $DEFDAYS \
+	$periodOfValidity \
 	-policy policy_anything \
 	-out clients/${CC_COMMONNAME}-cert.pem \
 	-passin pass:`grep output_password server.cnf | sed 's/.*=//;s/^ *//'` \
