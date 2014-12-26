@@ -489,7 +489,7 @@ int usb_process_path(char *path, int host, char *part, char *devpath)
 //      writeproc("/proc/sys/vm/overcommit_memory","2");
 //      writeproc("/proc/sys/vm/overcommit_ratio","145");
 	//prepare for optware
-	sysprintf("mkdir -p /jffs/lib/opkg");
+	//sysprintf("mkdir -p /jffs/lib/opkg");
 
 	return ret;
 }
