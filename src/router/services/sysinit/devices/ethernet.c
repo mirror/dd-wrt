@@ -176,6 +176,12 @@ static int detect_ethernet_devices(void)
 		try_module("ptp");
 		returncode = try_module("e1000");
 		returncode = try_module("e1000e");
+	} else if (detect("I217-LM"))	// Intel Gigabit 
+	{
+		try_module("pps_core");
+		try_module("ptp");
+		returncode = try_module("e1000");
+		returncode = try_module("e1000e");
 	}
 #ifndef HAVE_XSCALE
 	if (detect("Tolapai"))	// Realtek 8169 Adapter (various notebooks) 
