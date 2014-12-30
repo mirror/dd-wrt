@@ -34,6 +34,7 @@ static int detect(char *devicename)
 
 	if (tmp == NULL) {
 		system2("/sbin/lspci>/tmp/devices");
+		system2("/sbin/lspci -n>/tmp/devices");
 	} else
 		fclose(tmp);
 	char devcall[128];
@@ -182,6 +183,51 @@ static int detect_ethernet_devices(void)
 		try_module("ptp");
 		returncode = try_module("e1000");
 		returncode = try_module("e1000e");
+	} else if (detect("8086:151a"))	// Intel Gigabit 
+	{
+		try_module("pps_core");
+		try_module("ptp");
+		returncode = try_module("e1000");
+		returncode = try_module("e1000e");
+	} else if (detect("QCA8171"))	// QCA 
+	{
+		returncode = try_module("alx");
+	} else if (detect("QCA8172"))	// QCA
+	{
+		returncode = try_module("alx");
+	} else if (detect("QCA8161"))	// QCA
+	{
+		returncode = try_module("alx");
+	} else if (detect("QCA8162"))	// QCA
+	{
+		returncode = try_module("alx");
+	} else if (detect("Killer E220x"))	// QCA
+	{
+		returncode = try_module("alx");
+	} else if (detect("Attansic L1"))	// QCA
+	{
+		returncode = try_module("atl1");
+	} else if (detect("Attansic L2"))	// QCA
+	{
+		returncode = try_module("atl2");
+	} else if (detect("AR8132"))	// QCA
+	{
+		returncode = try_module("atl1c");
+	} else if (detect("AR8131"))	// QCA
+	{
+		returncode = try_module("atl1c");
+	} else if (detect("AR8152"))	// QCA
+	{
+		returncode = try_module("atl1c");
+	} else if (detect("AR8151"))	// QCA
+	{
+		returncode = try_module("atl1c");
+	} else if (detect("Attansic L2c"))	// QCA
+	{
+		returncode = try_module("atl1e");
+	} else if (detect("AR8121"))	// QCA
+	{
+		returncode = try_module("atl1e");
 	}
 #ifndef HAVE_XSCALE
 	if (detect("Tolapai"))	// Realtek 8169 Adapter (various notebooks) 
