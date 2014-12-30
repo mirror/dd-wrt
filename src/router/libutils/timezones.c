@@ -645,6 +645,8 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{"Asia/Tbilisi", "GET-4"}
 	,
+	{"Asia/Tehran", "IRDT"}
+	,
 	{"Asia/Tel_Aviv", "IST-2IDT,M3.4.4/26,M10.5.0"}
 	,
 	{"Asia/Thimbu", "BTT-6"}
