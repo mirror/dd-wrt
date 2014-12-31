@@ -2327,10 +2327,11 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 			char temp[32];
 			fscanf(fp, "%s", &temp[0]);
 			fclose(fp);
-			if (strlen(temp) > 4)
-				TEMP_MUL = 1000;
-			if (strlen(temp) > 5)
-				TEMP_MUL = 10000;
+			int l = strlen(temp);
+			if (l > 2)
+			    TEMP_MUL = 10 * (l - 2);
+			else
+			    TEMP_MUL = 1;
 		}
 		fp = fopen("/sys/class/hwmon/hwmon0/temp1_input", "rb");
 	}
@@ -2344,7 +2345,11 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 		fscanf(fp, "%d", &temp);
 		fclose(fp);
 		int high = temp / TEMP_MUL;
-		int low = (temp - (high * TEMP_MUL)) / (TEMP_MUL / 10);
+		int low;
+		if (TEMP_MUL > 10)
+			low = (temp - (high * TEMP_MUL)) / (TEMP_MUL / 10);
+		else 
+			low = 0;
 		websWrite(wp, "%d.%d &#176;C", high, low);	// no i2c lm75 found
 	}
 
