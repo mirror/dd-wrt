@@ -558,34 +558,34 @@ int main(int argc, char **argv)
 #ifndef HAVE_ERC
 #ifndef HAVE_CORENET
 #ifdef HAVE_TMK
-	fprintf(fp, "KMT-WAS %s (c) 2014 KMT GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
+	fprintf(fp, "KMT-WAS %s (c) 2015 KMT GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
 #elif HAVE_SANSFIL
-	fprintf(fp, "SANSFIL %s (c) 2014 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
+	fprintf(fp, "SANSFIL %s (c) 2015 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
 #elif HAVE_KORENRON
-	fprintf(fp, "KORENRON %s (c) 2014 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
+	fprintf(fp, "KORENRON %s (c) 2015 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
 #elif HAVE_TESTEM
-	fprintf(fp, "TESTEM %s (c) 2014 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
+	fprintf(fp, "TESTEM %s (c) 2015 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
 #elif HAVE_HOBBIT
-	fprintf(fp, "Hobb-IT %s (c) 2014 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
+	fprintf(fp, "Hobb-IT %s (c) 2015 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
 #elif HAVE_ONNET
 #ifdef HAVE_ONNET_BLANK
-	fprintf(fp, "Enterprise AP %s (c) 2014 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
+	fprintf(fp, "Enterprise AP %s (c) 2015 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
 #elif HAVE_UNFY
 	//fprintf(fp, "UNIFY %s (c) 2013 \nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
 	fprintf(fp, "Firmware %s (c) 2013 \nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
 #else
-	fprintf(fp, "OTAi %s (c) 2014 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
+	fprintf(fp, "OTAi %s (c) 2015 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
 #endif
 #elif HAVE_HDWIFI
-	fprintf(fp, "HDWIFI %s (c) 2014 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
+	fprintf(fp, "HDWIFI %s (c) 2015 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
 #else
 #ifdef DIST
 	if (strlen(DIST) > 0)
-		fprintf(fp, "DD-WRT v24-sp2 %s (c) 2014 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
+		fprintf(fp, "DD-WRT v24-sp2 %s (c) 2015 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
 	else
-		fprintf(fp, "DD-WRT v24-sp2 custom (c) 2014 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", SVN_REVISION);
+		fprintf(fp, "DD-WRT v24-sp2 custom (c) 2015 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", SVN_REVISION);
 #else
-	fprintf(fp, "DD-WRT v24-sp2 custom (c) 2014 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", SVN_REVISION);
+	fprintf(fp, "DD-WRT v24-sp2 custom (c) 2015 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", SVN_REVISION);
 #endif
 #endif
 #endif
