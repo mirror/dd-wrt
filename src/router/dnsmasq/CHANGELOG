@@ -19,6 +19,9 @@ version 2.73
 	    the answers given by --interface-name. Note that reverse queries
 	    (ie looking for names, given addresses) are not affected. 
 	    Thanks to Michael Gorbach for the suggestion.
+
+	    Fix crash in DNSSEC code with long RRs. Thanks to Marco Davids
+	    for the bug report.
 	
 
 version 2.72
