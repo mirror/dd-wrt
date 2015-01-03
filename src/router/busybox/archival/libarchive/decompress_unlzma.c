@@ -206,7 +206,7 @@ enum {
 
 
 IF_DESKTOP(long long) int FAST_FUNC
-unpack_lzma_stream(transformer_aux_data_t *aux UNUSED_PARAM, int src_fd, int dst_fd)
+unpack_lzma_stream(transformer_state_t *xstate)
 {
 	IF_DESKTOP(long long total_written = 0;)
 	lzma_header_t header;
@@ -214,8 +214,6 @@ unpack_lzma_stream(transformer_aux_data_t *aux UNUSED_PARAM, int src_fd, int dst
 	uint32_t pos_state_mask;
 	uint32_t literal_pos_mask;
 	uint16_t *p;
-	int num_bits;
-	int num_probs;
 	rc_t *rc;
 	int i;
 	uint8_t *buffer;
@@ -225,7 +223,7 @@ unpack_lzma_stream(transformer_aux_data_t *aux UNUSED_PARAM, int src_fd, int dst
 	int state = 0;
 	uint32_t rep0 = 1, rep1 = 1, rep2 = 1, rep3 = 1;
 
-	if (full_read(src_fd, &header, sizeof(header)) != sizeof(header)
+	if (full_read(xstate->src_fd, &header, sizeof(header)) != sizeof(header)
 	 || header.pos >= (9 * 5 * 5)
 	) {
 		bb_error_msg("bad lzma header");
@@ -239,6 +237,9 @@ unpack_lzma_stream(transformer_aux_data_t *aux UNUSED_PARAM, int src_fd, int dst
 	pos_state_mask = (1 << pb) - 1;
 	literal_pos_mask = (1 << lp) - 1;
 
+	/* Example values from linux-3.3.4.tar.lzma:
+	 * dict_size: 64M, dst_size: 2^64-1
+	 */
 	header.dict_size = SWAP_LE32(header.dict_size);
 	header.dst_size = SWAP_LE64(header.dst_size);
 
@@ -247,13 +248,17 @@ unpack_lzma_stream(transformer_aux_data_t *aux UNUSED_PARAM, int src_fd, int dst
 
 	buffer = xmalloc(MIN(header.dst_size, header.dict_size));
 
-	num_probs = LZMA_BASE_SIZE + (LZMA_LIT_SIZE << (lc + lp));
-	p = xmalloc(num_probs * sizeof(*p));
-	num_probs += LZMA_LITERAL - LZMA_BASE_SIZE;
-	for (i = 0; i < num_probs; i++)
-		p[i] = (1 << RC_MODEL_TOTAL_BITS) >> 1;
+	{
+		int num_probs;
 
-	rc = rc_init(src_fd); /*, RC_BUFFER_SIZE); */
+		num_probs = LZMA_BASE_SIZE + (LZMA_LIT_SIZE << (lc + lp));
+		p = xmalloc(num_probs * sizeof(*p));
+		num_probs += LZMA_LITERAL - LZMA_BASE_SIZE;
+		for (i = 0; i < num_probs; i++)
+			p[i] = (1 << RC_MODEL_TOTAL_BITS) >> 1;
+	}
+
+	rc = rc_init(xstate->src_fd); /*, RC_BUFFER_SIZE); */
 
 	while (global_pos + buffer_pos < header.dst_size) {
 		int pos_state = (buffer_pos + global_pos) & pos_state_mask;
@@ -301,7 +306,7 @@ unpack_lzma_stream(transformer_aux_data_t *aux UNUSED_PARAM, int src_fd, int dst
 			if (buffer_pos == header.dict_size) {
 				buffer_pos = 0;
 				global_pos += header.dict_size;
-				if (full_write(dst_fd, buffer, header.dict_size) != (ssize_t)header.dict_size)
+				if (transformer_write(xstate, buffer, header.dict_size) != (ssize_t)header.dict_size)
 					goto bad;
 				IF_DESKTOP(total_written += header.dict_size;)
 			}
@@ -310,6 +315,7 @@ unpack_lzma_stream(transformer_aux_data_t *aux UNUSED_PARAM, int src_fd, int dst
 			goto one_byte2;
 #endif
 		} else {
+			int num_bits;
 			int offset;
 			uint16_t *prob2;
 #define prob_len prob2
@@ -434,19 +440,22 @@ unpack_lzma_stream(transformer_aux_data_t *aux UNUSED_PARAM, int src_fd, int dst
 				if (buffer_pos == header.dict_size) {
 					buffer_pos = 0;
 					global_pos += header.dict_size;
-					if (full_write(dst_fd, buffer, header.dict_size) != (ssize_t)header.dict_size)
+					if (transformer_write(xstate, buffer, header.dict_size) != (ssize_t)header.dict_size)
 						goto bad;
 					IF_DESKTOP(total_written += header.dict_size;)
 				}
 				len--;
 			} while (len != 0 && buffer_pos < header.dst_size);
+			/* FIXME: ...........^^^^^
+			 * shouldn't it be "global_pos + buffer_pos < header.dst_size"?
+			 */
 		}
 	}
 
 	{
 		IF_NOT_DESKTOP(int total_written = 0; /* success */)
 		IF_DESKTOP(total_written += buffer_pos;)
-		if (full_write(dst_fd, buffer, buffer_pos) != (ssize_t)buffer_pos) {
+		if (transformer_write(xstate, buffer, buffer_pos) != (ssize_t)buffer_pos) {
  bad:
 			total_written = -1; /* failure */
 		}

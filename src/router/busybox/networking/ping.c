@@ -100,8 +100,9 @@
 //usage:     "\n			(after all -c CNT packets are sent)"
 //usage:     "\n	-w SEC		Seconds until ping exits (default:infinite)"
 //usage:     "\n			(can exit earlier with -c CNT)"
-//usage:     "\n	-q		Quiet, only displays output at start"
+//usage:     "\n	-q		Quiet, only display output at start"
 //usage:     "\n			and when finished"
+//usage:     "\n	-p		Pattern to use for payload"
 //usage:
 //usage:# define ping6_trivial_usage
 //usage:       "[OPTIONS] HOST"
@@ -110,8 +111,9 @@
 //usage:     "\n	-c CNT		Send only CNT pings"
 //usage:     "\n	-s SIZE		Send SIZE data bytes in packets (default:56)"
 //usage:     "\n	-I IFACE/IP	Use interface or IP address as source"
-//usage:     "\n	-q		Quiet, only displays output at start"
+//usage:     "\n	-q		Quiet, only display output at start"
 //usage:     "\n			and when finished"
+//usage:     "\n	-p		Pattern to use for payload"
 //usage:
 //usage:#endif
 //usage:
@@ -168,22 +170,9 @@ create_icmp_socket(void)
 #endif
 		sock = socket(AF_INET, SOCK_RAW, 1); /* 1 == ICMP */
 	if (sock < 0) {
-		if (errno != EPERM)
-			bb_perror_msg_and_die(bb_msg_can_not_create_raw_socket);
-#if defined(__linux__) || defined(__APPLE__)
-		/* We don't have root privileges.  Try SOCK_DGRAM instead.
-		 * Linux needs net.ipv4.ping_group_range for this to work.
-		 * MacOSX allows ICMP_ECHO, ICMP_TSTAMP or ICMP_MASKREQ
-		 */
-#if ENABLE_PING6
-		if (lsa->u.sa.sa_family == AF_INET6)
-			sock = socket(AF_INET6, SOCK_DGRAM, IPPROTO_ICMPV6);
-		else
-#endif
-			sock = socket(AF_INET, SOCK_DGRAM, 1); /* 1 == ICMP */
-		if (sock < 0)
-#endif
-		bb_error_msg_and_die(bb_msg_perm_denied_are_you_root);
+		if (errno == EPERM)
+			bb_error_msg_and_die(bb_msg_perm_denied_are_you_root);
+		bb_perror_msg_and_die(bb_msg_can_not_create_raw_socket);
 	}
 
 	xmove_fd(sock, pingsock);
@@ -343,7 +332,7 @@ static int common_ping_main(sa_family_t af, char **argv)
 
 /* Full(er) version */
 
-#define OPT_STRING ("qvc:s:t:w:W:I:n4" IF_PING6("6"))
+#define OPT_STRING ("qvc:s:t:w:W:I:np:4" IF_PING6("6"))
 enum {
 	OPT_QUIET = 1 << 0,
 	OPT_VERBOSE = 1 << 1,
@@ -354,8 +343,9 @@ enum {
 	OPT_W = 1 << 6,
 	OPT_I = 1 << 7,
 	/*OPT_n = 1 << 8, - ignored */
-	OPT_IPV4 = 1 << 9,
-	OPT_IPV6 = (1 << 10) * ENABLE_PING6,
+	OPT_p = 1 << 9,
+	OPT_IPV4 = 1 << 10,
+	OPT_IPV6 = (1 << 11) * ENABLE_PING6,
 };
 
 
@@ -368,6 +358,7 @@ struct globals {
 	unsigned opt_ttl;
 	unsigned long ntransmitted, nreceived, nrepeats;
 	uint16_t myid;
+	uint8_t pattern;
 	unsigned tmin, tmax; /* in us */
 	unsigned long long tsum; /* in us, sum of all times */
 	unsigned deadline;
@@ -498,7 +489,7 @@ static void sendping4(int junk UNUSED_PARAM)
 {
 	struct icmp *pkt = G.snd_packet;
 
-	//memset(pkt, 0, datalen + ICMP_MINLEN + 4); - G.snd_packet was xzalloced
+	memset(pkt, G.pattern, datalen + ICMP_MINLEN + 4);
 	pkt->icmp_type = ICMP_ECHO;
 	/*pkt->icmp_code = 0;*/
 	pkt->icmp_cksum = 0; /* cksum is calculated with this field set to 0 */
@@ -521,7 +512,7 @@ static void sendping6(int junk UNUSED_PARAM)
 {
 	struct icmp6_hdr *pkt = G.snd_packet;
 
-	//memset(pkt, 0, datalen + sizeof(struct icmp6_hdr) + 4);
+	memset(pkt, G.pattern, datalen + sizeof(struct icmp6_hdr) + 4);
 	pkt->icmp6_type = ICMP6_ECHO_REQUEST;
 	/*pkt->icmp6_code = 0;*/
 	/*pkt->icmp6_cksum = 0;*/
@@ -863,13 +854,13 @@ static void ping(len_and_sockaddr *lsa)
 static int common_ping_main(int opt, char **argv)
 {
 	len_and_sockaddr *lsa;
-	char *str_s;
+	char *str_s, *str_p;
 
 	INIT_G();
 
 	/* exactly one argument needed; -v and -q don't mix; -c NUM, -t NUM, -w NUM, -W NUM */
 	opt_complementary = "=1:q--v:v--q:c+:t+:w+:W+";
-	opt |= getopt32(argv, OPT_STRING, &pingcount, &str_s, &opt_ttl, &deadline, &timeout, &str_I);
+	opt |= getopt32(argv, OPT_STRING, &pingcount, &str_s, &opt_ttl, &deadline, &timeout, &str_I, &str_p);
 	if (opt & OPT_s)
 		datalen = xatou16(str_s); // -s
 	if (opt & OPT_I) { // -I
@@ -880,6 +871,9 @@ static int common_ping_main(int opt, char **argv)
 			str_I = NULL; /* don't try to bind to device later */
 		}
 	}
+	if (opt & OPT_p)
+		G.pattern = xstrtou_range(str_p, 16, 0, 255);
+
 	myid = (uint16_t) getpid();
 	hostname = argv[optind];
 #if ENABLE_PING6
