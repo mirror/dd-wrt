@@ -26,21 +26,11 @@
 #include "dhcpc.h"
 
 #include <netinet/if_ether.h>
+#include <linux/filter.h>
 #include <linux/if_packet.h>
 
-#ifndef __u16
-#define __u16 unsigned short
-#endif
-#ifndef __u8
-#define __u8 unsigned char
-#endif
-#ifndef __u32
-#define __u32 unsigned int
-#endif
-
-#include <linux/filter.h>
-
 /* "struct client_config_t client_config" is in bb_common_bufsiz1 */
+
 
 #if ENABLE_LONG_OPTS
 static const char udhcpc_longopts[] ALIGN1 =
@@ -64,7 +54,7 @@ static const char udhcpc_longopts[] ALIGN1 =
 	"foreground\0"     No_argument       "f"
 	"background\0"     No_argument       "b"
 	"broadcast\0"      No_argument       "B"
-	IF_FEATURE_UDHCPC_ARPING("arping\0"	No_argument       "a")
+	IF_FEATURE_UDHCPC_ARPING("arping\0"	Optional_argument "a")
 	IF_FEATURE_UDHCP_PORT("client-port\0"	Required_argument "P")
 	;
 #endif
@@ -146,6 +136,7 @@ static int mton(uint32_t mask)
 	return i;
 }
 
+#if ENABLE_FEATURE_UDHCPC_SANITIZEOPT
 /* Check if a given label represents a valid DNS label
  * Return pointer to the first character after the label upon success,
  * NULL otherwise.
@@ -202,6 +193,9 @@ static int good_hostname(const char *name)
 		name++;
 	}
 }
+#else
+# define good_hostname(name) 1
+#endif
 
 /* Create "opt_name=opt_value" string */
 static NOINLINE char *xmalloc_optname_optval(uint8_t *option, const struct dhcp_optflag *optflag, const char *opt_name)
@@ -258,8 +252,8 @@ static NOINLINE char *xmalloc_optname_optval(uint8_t *option, const struct dhcp_
 		case OPTION_STRING_HOST:
 			memcpy(dest, option, len);
 			dest[len] = '\0';
-//			if (type == OPTION_STRING_HOST && !good_hostname(dest))
-//				safe_strncpy(dest, "bad", len);
+			if (type == OPTION_STRING_HOST && !good_hostname(dest))
+				safe_strncpy(dest, "bad", len);
 			return ret;
 		case OPTION_STATIC_ROUTES: {
 			/* Option binary format:
@@ -847,17 +841,7 @@ static int send_release(uint32_t server, uint32_t ciaddr)
 	 */
 	return bcast_or_ucast(&packet, ciaddr, server);
 }
-#ifndef PACKET_AUXDATA
-struct tpacket_auxdata {
-	unsigned int		tp_status;
-	unsigned int		tp_len;
-	unsigned int		tp_snaplen;
-	unsigned short		tp_mac;
-	unsigned short		tp_net;
-	unsigned short		tp_vlan_tci;
-};
 
-#endif
 /* Returns -1 on errors that are fatal for the socket, -2 for those that aren't */
 /* NOINLINE: limit stack usage in caller */
 static NOINLINE int udhcp_recv_raw_packet(struct dhcp_packet *dhcp_pkt, int fd)
@@ -926,7 +910,6 @@ static NOINLINE int udhcp_recv_raw_packet(struct dhcp_packet *dhcp_pkt, int fd)
 		return -2;
 	}
 
-#ifdef PACKET_AUXDATA
 	for (cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
 		if (cmsg->cmsg_level == SOL_PACKET
 		 && cmsg->cmsg_type == PACKET_AUXDATA
@@ -940,7 +923,6 @@ static NOINLINE int udhcp_recv_raw_packet(struct dhcp_packet *dhcp_pkt, int fd)
 				goto skip_udp_sum_check;
 		}
 	}
-#endif
 
 	/* verify UDP checksum. IP header has to be modified for this */
 	memset(&packet.ip, 0, offsetof(struct iphdr, protocol));
@@ -998,58 +980,13 @@ static int udhcp_raw_socket(int ifindex)
 	int fd;
 	struct sockaddr_ll sock;
 
-	/*
-	 * Comment:
-	 *
-	 *	I've selected not to see LL header, so BPF doesn't see it, too.
-	 *	The filter may also pass non-IP and non-ARP packets, but we do
-	 *	a more complete check when receiving the message in userspace.
-	 *
-	 * and filter shamelessly stolen from:
-	 *
-	 *	http://www.flamewarmaster.de/software/dhcpclient/
-	 *
-	 * There are a few other interesting ideas on that page (look under
-	 * "Motivation").  Use of netlink events is most interesting.  Think
-	 * of various network servers listening for events and reconfiguring.
-	 * That would obsolete sending HUP signals and/or make use of restarts.
-	 *
-	 * Copyright: 2006, 2007 Stefan Rompf <sux@loplof.de>.
-	 * License: GPL v2.
-	 *
-	 * TODO: make conditional?
-	 */
-#ifndef BPF_STMT
-	static const struct sock_filter filter_instr[] = {
-		/* load 9th byte (protocol) */
-		BPF_STMT(BPF_LD|BPF_B|BPF_ABS, 9),
-		/* jump to L1 if it is IPPROTO_UDP, else to L4 */
-		BPF_JUMP(BPF_JMP|BPF_JEQ|BPF_K, IPPROTO_UDP, 0, 6),
-		/* L1: load halfword from offset 6 (flags and frag offset) */
-		BPF_STMT(BPF_LD|BPF_H|BPF_ABS, 6),
-		/* jump to L4 if any bits in frag offset field are set, else to L2 */
-		BPF_JUMP(BPF_JMP|BPF_JSET|BPF_K, 0x1fff, 4, 0),
-		/* L2: skip IP header (load index reg with header len) */
-		BPF_STMT(BPF_LDX|BPF_B|BPF_MSH, 0),
-		/* load udp destination port from halfword[header_len + 2] */
-		BPF_STMT(BPF_LD|BPF_H|BPF_IND, 2),
-		/* jump to L3 if udp dport is CLIENT_PORT, else to L4 */
-		BPF_JUMP(BPF_JMP|BPF_JEQ|BPF_K, 68, 0, 1),
-		/* L3: accept packet */
-		BPF_STMT(BPF_RET|BPF_K, 0xffffffff),
-		/* L4: discard packet */
-		BPF_STMT(BPF_RET|BPF_K, 0),
-	};
-	static const struct sock_fprog filter_prog = {
-		.len = sizeof(filter_instr) / sizeof(filter_instr[0]),
-		/* casting const away: */
-		.filter = (struct sock_filter *) filter_instr,
-	};
-#endif
-
 	log1("Opening raw socket on ifindex %d", ifindex); //log2?
 
 	fd = xsocket(PF_PACKET, SOCK_DGRAM, htons(ETH_P_IP));
+	/* ^^^^^
+	 * SOCK_DGRAM: remove link-layer headers on input (SOCK_RAW keeps them)
+	 * ETH_P_IP: want to receive only packets with IPv4 eth type
+	 */
 	log1("Got raw socket fd"); //log2?
 
 	sock.sll_family = AF_PACKET;
@@ -1057,24 +994,66 @@ static int udhcp_raw_socket(int ifindex)
 	sock.sll_ifindex = ifindex;
 	xbind(fd, (struct sockaddr *) &sock, sizeof(sock));
 
+#if 0 /* Several users reported breakage when BPF filter is used */
 	if (CLIENT_PORT == 68) {
 		/* Use only if standard port is in use */
+		/*
+		 *	I've selected not to see LL header, so BPF doesn't see it, too.
+		 *	The filter may also pass non-IP and non-ARP packets, but we do
+		 *	a more complete check when receiving the message in userspace.
+		 *
+		 * and filter shamelessly stolen from:
+		 *
+		 *	http://www.flamewarmaster.de/software/dhcpclient/
+		 *
+		 * There are a few other interesting ideas on that page (look under
+		 * "Motivation").  Use of netlink events is most interesting.  Think
+		 * of various network servers listening for events and reconfiguring.
+		 * That would obsolete sending HUP signals and/or make use of restarts.
+		 *
+		 * Copyright: 2006, 2007 Stefan Rompf <sux@loplof.de>.
+		 * License: GPL v2.
+		 */
+		static const struct sock_filter filter_instr[] = {
+			/* load 9th byte (protocol) */
+			BPF_STMT(BPF_LD|BPF_B|BPF_ABS, 9),
+			/* jump to L1 if it is IPPROTO_UDP, else to L4 */
+			BPF_JUMP(BPF_JMP|BPF_JEQ|BPF_K, IPPROTO_UDP, 0, 6),
+			/* L1: load halfword from offset 6 (flags and frag offset) */
+			BPF_STMT(BPF_LD|BPF_H|BPF_ABS, 6),
+			/* jump to L4 if any bits in frag offset field are set, else to L2 */
+			BPF_JUMP(BPF_JMP|BPF_JSET|BPF_K, 0x1fff, 4, 0),
+			/* L2: skip IP header (load index reg with header len) */
+			BPF_STMT(BPF_LDX|BPF_B|BPF_MSH, 0),
+			/* load udp destination port from halfword[header_len + 2] */
+			BPF_STMT(BPF_LD|BPF_H|BPF_IND, 2),
+			/* jump to L3 if udp dport is CLIENT_PORT, else to L4 */
+			BPF_JUMP(BPF_JMP|BPF_JEQ|BPF_K, 68, 0, 1),
+			/* L3: accept packet ("accept 0x7fffffff bytes") */
+			/* Accepting 0xffffffff works too but kernel 2.6.19 is buggy */
+			BPF_STMT(BPF_RET|BPF_K, 0x7fffffff),
+			/* L4: discard packet ("accept zero bytes") */
+			BPF_STMT(BPF_RET|BPF_K, 0),
+		};
+		static const struct sock_fprog filter_prog = {
+			.len = sizeof(filter_instr) / sizeof(filter_instr[0]),
+			/* casting const away: */
+			.filter = (struct sock_filter *) filter_instr,
+		};
 		/* Ignoring error (kernel may lack support for this) */
-#ifndef BPF_STMT
 		if (setsockopt(fd, SOL_SOCKET, SO_ATTACH_FILTER, &filter_prog,
 				sizeof(filter_prog)) >= 0)
-#endif
 			log1("Attached filter to raw socket fd"); // log?
 	}
+#endif
 
-#ifdef PACKET_AUXDATA
 	if (setsockopt(fd, SOL_PACKET, PACKET_AUXDATA,
 			&const_int_1, sizeof(int)) < 0
 	) {
 		if (errno != ENOPROTOOPT)
 			log1("Can't set PACKET_AUXDATA on raw socket");
 	}
-#endif
+
 	log1("Created raw socket");
 
 	return fd;
@@ -1171,7 +1150,7 @@ static void client_background(void)
 //usage:# define IF_UDHCP_VERBOSE(...)
 //usage:#endif
 //usage:#define udhcpc_trivial_usage
-//usage:       "[-fbq"IF_UDHCP_VERBOSE("v")IF_FEATURE_UDHCPC_ARPING("a")"RB] [-t N] [-T SEC] [-A SEC/-n]\n"
+//usage:       "[-fbq"IF_UDHCP_VERBOSE("v")"RB]"IF_FEATURE_UDHCPC_ARPING(" [-a[MSEC]]")" [-t N] [-T SEC] [-A SEC/-n]\n"
 //usage:       "	[-i IFACE]"IF_FEATURE_UDHCP_PORT(" [-P PORT]")" [-s PROG] [-p PIDFILE]\n"
 //usage:       "	[-oC] [-r IP] [-V VENDOR] [-F NAME] [-x OPT:VAL]... [-O OPT]..."
 //usage:#define udhcpc_full_usage "\n"
@@ -1195,7 +1174,7 @@ static void client_background(void)
 //usage:	)
 //usage:     "\n	-S,--syslog		Log to syslog too"
 //usage:	IF_FEATURE_UDHCPC_ARPING(
-//usage:     "\n	-a,--arping		Use arping to validate offered address"
+//usage:     "\n	-a[MSEC],--arping[=MSEC] Validate offered address with ARP ping"
 //usage:	)
 //usage:     "\n	-r,--request IP		Request this IP address"
 //usage:     "\n	-o,--no-default-options	Don't request any options (unless -O is given)"
@@ -1232,7 +1211,7 @@ static void client_background(void)
 //usage:	)
 //usage:     "\n	-S		Log to syslog too"
 //usage:	IF_FEATURE_UDHCPC_ARPING(
-//usage:     "\n	-a		Use arping to validate offered address"
+//usage:     "\n	-a[MSEC]	Validate offered address with ARP ping"
 //usage:	)
 //usage:     "\n	-r IP		Request this IP address"
 //usage:     "\n	-o		Don't request any options (unless -O is given)"
@@ -1257,8 +1236,9 @@ static void client_background(void)
 int udhcpc_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 {
-	uint8_t *temp, *message;
+	uint8_t *message;
 	const char *str_V, *str_h, *str_F, *str_r;
+	IF_FEATURE_UDHCPC_ARPING(const char *str_a = "2000";)
 	IF_FEATURE_UDHCP_PORT(char *str_P;)
 	void *clientid_mac_ptr;
 	llist_t *list_O = NULL;
@@ -1273,6 +1253,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 	int timeout; /* must be signed */
 	unsigned already_waited_sec;
 	unsigned opt;
+	IF_FEATURE_UDHCPC_ARPING(unsigned arpping_ms;)
 	int max_fd;
 	int retval;
 	fd_set rfds;
@@ -1290,7 +1271,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 	IF_LONG_OPTS(applet_long_options = udhcpc_longopts;)
 	opt = getopt32(argv, "CV:H:h:F:i:np:qRr:s:T:t:SA:O:ox:fB"
 		USE_FOR_MMU("b")
-		IF_FEATURE_UDHCPC_ARPING("a")
+		IF_FEATURE_UDHCPC_ARPING("a::")
 		IF_FEATURE_UDHCP_PORT("P:")
 		"v"
 		, &str_V, &str_h, &str_h, &str_F
@@ -1299,6 +1280,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 		, &discover_timeout, &discover_retries, &tryagain_timeout /* T,t,A */
 		, &list_O
 		, &list_x
+		IF_FEATURE_UDHCPC_ARPING(, &str_a)
 		IF_FEATURE_UDHCP_PORT(, &str_P)
 		IF_UDHCP_VERBOSE(, &dhcp_verbose)
 	);
@@ -1330,6 +1312,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 		SERVER_PORT = CLIENT_PORT - 1;
 	}
 #endif
+	IF_FEATURE_UDHCPC_ARPING(arpping_ms = xatou(str_a);)
 	while (list_O) {
 		char *optstr = llist_pop(&list_O);
 		unsigned n = bb_strtou(optstr, NULL, 0);
@@ -1665,6 +1648,8 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 		case INIT_SELECTING:
 			/* Must be a DHCPOFFER */
 			if (*message == DHCPOFFER) {
+				uint8_t *temp;
+
 /* What exactly is server's IP? There are several values.
  * Example DHCP offer captured with tchdump:
  *
@@ -1712,8 +1697,10 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 		case RENEW_REQUESTED:
 		case REBINDING:
 			if (*message == DHCPACK) {
+				unsigned start;
 				uint32_t lease_seconds;
 				struct in_addr temp_addr;
+				uint8_t *temp;
 
 				temp = udhcp_get_option(&packet, DHCP_LEASE_TIME);
 				if (!temp) {
@@ -1744,7 +1731,8 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 							NULL,
 							(uint32_t) 0,
 							client_config.client_mac,
-							client_config.interface)
+							client_config.interface,
+							arpping_ms)
 					) {
 						bb_info_msg("Offered address is in use "
 							"(got ARP reply), declining");
@@ -1769,7 +1757,10 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 				bb_info_msg("Lease of %s obtained, lease time %u",
 					inet_ntoa(temp_addr), (unsigned)lease_seconds);
 				requested_ip = packet.yiaddr;
+
+				start = monotonic_sec();
 				udhcp_run_script(&packet, state == REQUESTING ? "bound" : "renew");
+				already_waited_sec = (unsigned)monotonic_sec() - start;
 
 				state = BOUND;
 				change_listen_mode(LISTEN_NONE);
@@ -1787,10 +1778,30 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 #endif
 				/* make future renew packets use different xid */
 				/* xid = random_xid(); ...but why bother? */
-				already_waited_sec = 0;
+
 				continue; /* back to main loop */
 			}
 			if (*message == DHCPNAK) {
+				/* If network has more than one DHCP server,
+				 * "wrong" server can reply first, with a NAK.
+				 * Do not interpret it as a NAK from "our" server.
+				 */
+				if (server_addr != 0) {
+					uint32_t svid;
+					uint8_t *temp;
+
+					temp = udhcp_get_option(&packet, DHCP_SERVER_ID);
+					if (!temp) {
+ non_matching_svid:
+						log1("%s with wrong server ID, ignoring packet",
+							"Received DHCP NAK"
+						);
+						continue;
+					}
+					move_from_unaligned32(svid, temp);
+					if (svid != server_addr)
+						goto non_matching_svid;
+				}
 				/* return to init state */
 				bb_info_msg("Received DHCP NAK");
 				udhcp_run_script(&packet, "nak");

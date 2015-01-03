@@ -98,16 +98,18 @@
 //config:	  Enables "-N" command.
 
 //usage:#define less_trivial_usage
-//usage:       "[-E" IF_FEATURE_LESS_FLAGS("Mm") "Nh~I?] [FILE]..."
+//usage:       "[-E" IF_FEATURE_LESS_REGEXP("I")IF_FEATURE_LESS_FLAGS("Mm") "Nh~] [FILE]..."
 //usage:#define less_full_usage "\n\n"
 //usage:       "View FILE (or stdin) one screenful at a time\n"
 //usage:     "\n	-E	Quit once the end of a file is reached"
+//usage:	IF_FEATURE_LESS_REGEXP(
+//usage:     "\n	-I	Ignore case in all searches"
+//usage:	)
 //usage:	IF_FEATURE_LESS_FLAGS(
 //usage:     "\n	-M,-m	Display status line with line numbers"
 //usage:     "\n		and percentage through the file"
 //usage:	)
 //usage:     "\n	-N	Prefix line number to each line"
-//usage:     "\n	-I	Ignore case in all searches"
 //usage:     "\n	-~	Suppress ~s displayed past EOF"
 
 #include <sched.h>  /* sched_yield() */
@@ -402,6 +404,9 @@ static void fill_match_lines(unsigned pos);
  * last_line_pos - screen line position of next char to be read
  *      (takes into account tabs and backspaces)
  * eof_error - < 0 error, == 0 EOF, > 0 not EOF/error
+ *
+ * "git log -p | less -m" on the kernel git tree is a good test for EAGAINs,
+ * "/search on very long input" and "reaching max line count" corner cases.
  */
 static void read_lines(void)
 {
@@ -409,26 +414,27 @@ static void read_lines(void)
 	char *current_line, *p;
 	int w = width;
 	char last_terminated = terminated;
+	time_t last_time = 0;
+	int retry_EAGAIN = 2;
 #if ENABLE_FEATURE_LESS_REGEXP
 	unsigned old_max_fline = max_fline;
-	time_t last_time = 0;
-	unsigned seconds_p1 = 3; /* seconds_to_loop + 1 */
 #endif
+
+	/* (careful: max_fline can be -1) */
+	if (max_fline + 1 > MAXLINES)
+		return;
 
 	if (option_mask32 & FLAG_N)
 		w -= 8;
 
- IF_FEATURE_LESS_REGEXP(again0:)
-
 	p = current_line = ((char*)xmalloc(w + 4)) + 4;
-	max_fline += last_terminated;
 	if (!last_terminated) {
 		const char *cp = flines[max_fline];
-		strcpy(p, cp);
-		p += strlen(current_line);
-		free(MEMPTR(flines[max_fline]));
+		p = stpcpy(p, cp);
+		free(MEMPTR(cp));
 		/* last_line_pos is still valid from previous read_lines() */
 	} else {
+		max_fline++;
 		last_line_pos = 0;
 	}
 
@@ -439,13 +445,29 @@ static void read_lines(void)
 			char c;
 			/* if no unprocessed chars left, eat more */
 			if (readpos >= readeof) {
-				ndelay_on(0);
-				eof_error = safe_read(STDIN_FILENO, readbuf, sizeof(readbuf));
-				ndelay_off(0);
+				int flags = ndelay_on(0);
+
+				while (1) {
+					time_t t;
+
+					errno = 0;
+					eof_error = safe_read(STDIN_FILENO, readbuf, sizeof(readbuf));
+					if (errno != EAGAIN)
+						break;
+					t = time(NULL);
+					if (t != last_time) {
+						last_time = t;
+						if (--retry_EAGAIN < 0)
+							break;
+					}
+					sched_yield();
+				}
+				fcntl(0, F_SETFL, flags); /* ndelay_off(0) */
 				readpos = 0;
 				readeof = eof_error;
 				if (eof_error <= 0)
 					goto reached_eof;
+				retry_EAGAIN = 1;
 			}
 			c = readbuf[readpos];
 			/* backspace? [needed for manpages] */
@@ -480,6 +502,11 @@ static void read_lines(void)
 			*p++ = c;
 			*p = '\0';
 		} /* end of "read chars until we have a line" loop */
+#if 0
+//BUG: also triggers on this:
+// { printf "\nfoo\n"; sleep 1; printf "\nbar\n"; } | less
+// (resulting in lost empty line between "foo" and "bar" lines)
+// the "terminated" logic needs fixing (or explaining)
 		/* Corner case: linewrap with only "" wrapping to next line */
 		/* Looks ugly on screen, so we do not store this empty line */
 		if (!last_terminated && !current_line[0]) {
@@ -487,6 +514,7 @@ static void read_lines(void)
 			max_lineno++;
 			continue;
 		}
+#endif
  reached_eof:
 		last_terminated = terminated;
 		flines = xrealloc_vector(flines, 8, max_fline);
@@ -517,38 +545,22 @@ static void read_lines(void)
 #endif
 		}
 		if (eof_error <= 0) {
-			if (eof_error < 0) {
-				if (errno == EAGAIN) {
-					/* not yet eof or error, reset flag (or else
-					 * we will hog CPU - select() will return
-					 * immediately */
-					eof_error = 1;
-				} else {
-					print_statusline(bb_msg_read_error);
-				}
-			}
-#if !ENABLE_FEATURE_LESS_REGEXP
 			break;
-#else
-			if (wanted_match < num_matches) {
-				break;
-			} else { /* goto_match called us */
-				time_t t = time(NULL);
-				if (t != last_time) {
-					last_time = t;
-					if (--seconds_p1 == 0)
-						break;
-				}
-				sched_yield();
-				goto again0; /* go loop again (max 2 seconds) */
-			}
-#endif
 		}
 		max_fline++;
 		current_line = ((char*)xmalloc(w + 4)) + 4;
 		p = current_line;
 		last_line_pos = 0;
 	} /* end of "read lines until we reach cur_fline" loop */
+
+	if (eof_error < 0) {
+		if (errno == EAGAIN) {
+			eof_error = 1;
+		} else {
+			print_statusline(bb_msg_read_error);
+		}
+	}
+
 	fill_match_lines(old_max_fline);
 #if ENABLE_FEATURE_LESS_REGEXP
 	/* prevent us from being stuck in search for a match */
@@ -790,11 +802,18 @@ static void buffer_print(void)
 	unsigned i;
 
 	move_cursor(0, 0);
-	for (i = 0; i <= max_displayed_line; i++)
+	for (i = 0; i <= max_displayed_line; i++) {
 		if (pattern_valid)
 			print_found(buffer[i]);
 		else
 			print_ascii(buffer[i]);
+	}
+	if ((option_mask32 & FLAG_E)
+	 && eof_error <= 0
+	 && (max_fline - cur_fline) <= max_displayed_line
+	) {
+		less_exit(EXIT_SUCCESS);
+	}
 	status_print();
 }
 
@@ -1613,10 +1632,13 @@ int less_main(int argc, char **argv)
 
 	INIT_G();
 
-	/* TODO: -x: do not interpret backspace, -xx: tab also */
-	/* -xxx: newline also */
-	/* -w N: assume width N (-xxx -w 32: hex viewer of sorts) */
-	getopt32(argv, "EMmN~I" IF_FEATURE_LESS_DASHCMD("S"));
+	/* TODO: -x: do not interpret backspace, -xx: tab also
+	 * -xxx: newline also
+	 * -w N: assume width N (-xxx -w 32: hex viewer of sorts)
+	 * -s: condense many empty lines to one
+	 *     (used by some setups for manpage display)
+	 */
+	getopt32(argv, "EMmN~I" IF_FEATURE_LESS_DASHCMD("S") /*ignored:*/"s");
 	argc -= optind;
 	argv += optind;
 	num_files = argc;
