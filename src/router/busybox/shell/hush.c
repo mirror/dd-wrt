@@ -91,6 +91,7 @@
 #if ENABLE_HUSH_CASE
 # include <fnmatch.h>
 #endif
+#include <sys/utsname.h> /* for setting $HOSTNAME */
 
 #include "busybox.h"  /* for APPLET_IS_NOFORK/NOEXEC */
 #include "unicode.h"
@@ -944,6 +945,7 @@ static const struct built_in_command bltins1[] = {
 	BLTIN("source"   , builtin_source  , "Run commands in a file"),
 #endif
 	BLTIN("trap"     , builtin_trap    , "Trap signals"),
+	BLTIN("true"     , builtin_true    , NULL),
 	BLTIN("type"     , builtin_type    , "Show command type"),
 	BLTIN("ulimit"   , shell_builtin_ulimit  , "Control resource limits"),
 	BLTIN("umask"    , builtin_umask   , "Set file creation mask"),
@@ -1975,6 +1977,26 @@ static struct variable *set_vars_and_save_old(char **strings)
 
 
 /*
+ * Unicode helper
+ */
+static void reinit_unicode_for_hush(void)
+{
+	/* Unicode support should be activated even if LANG is set
+	 * _during_ shell execution, not only if it was set when
+	 * shell was started. Therefore, re-check LANG every time:
+	 */
+	if (ENABLE_FEATURE_CHECK_UNICODE_IN_ENV
+	 || ENABLE_UNICODE_USING_LOCALE
+        ) {
+		const char *s = get_local_var_value("LC_ALL");
+		if (!s) s = get_local_var_value("LC_CTYPE");
+		if (!s) s = get_local_var_value("LANG");
+		reinit_unicode(s);
+	}
+}
+
+
+/*
  * in_str support
  */
 static int FAST_FUNC static_get(struct in_str *i)
@@ -2040,15 +2062,7 @@ static void get_user_input(struct in_str *i)
 	/* Enable command line editing only while a command line
 	 * is actually being read */
 	do {
-		/* Unicode support should be activated even if LANG is set
-		 * _during_ shell execution, not only if it was set when
-		 * shell was started. Therefore, re-check LANG every time:
-		 */
-		const char *s = get_local_var_value("LC_ALL");
-		if (!s) s = get_local_var_value("LC_CTYPE");
-		if (!s) s = get_local_var_value("LANG");
-		reinit_unicode(s);
-
+		reinit_unicode_for_hush();
 		G.flag_SIGINT = 0;
 		/* buglet: SIGINT will not make new prompt to appear _at once_,
 		 * only after <Enter>. (^C will work) */
@@ -5026,8 +5040,9 @@ static NOINLINE const char *expand_one_var(char **to_be_freed_pp, char *arg, cha
 
 	/* Handle any expansions */
 	if (exp_op == 'L') {
+		reinit_unicode_for_hush();
 		debug_printf_expand("expand: length(%s)=", val);
-		val = utoa(val ? strlen(val) : 0);
+		val = utoa(val ? unicode_strlen(val) : 0);
 		debug_printf_expand("%s\n", val);
 	} else if (exp_op) {
 		if (exp_op == '%' || exp_op == '#') {
@@ -7785,6 +7800,14 @@ int hush_main(int argc, char **argv)
 
 	/* Export PWD */
 	set_pwd_var(/*exp:*/ 1);
+
+#if ENABLE_HUSH_BASH_COMPAT
+	/* Set (but not export) HOSTNAME unless already set */
+	if (!get_local_var_value("HOSTNAME")) {
+		struct utsname uts;
+		uname(&uts);
+		set_local_var_from_halves("HOSTNAME", uts.nodename);
+	}
 	/* bash also exports SHLVL and _,
 	 * and sets (but doesn't export) the following variables:
 	 * BASH=/bin/bash
@@ -7793,7 +7816,6 @@ int hush_main(int argc, char **argv)
 	 * HOSTTYPE=i386
 	 * MACHTYPE=i386-pc-linux-gnu
 	 * OSTYPE=linux-gnu
-	 * HOSTNAME=<xxxxxxxxxx>
 	 * PPID=<NNNNN> - we also do it elsewhere
 	 * EUID=<NNNNN>
 	 * UID=<NNNNN>
@@ -7821,6 +7843,7 @@ int hush_main(int argc, char **argv)
 	 * PS2='> '
 	 * PS4='+ '
 	 */
+#endif
 
 #if ENABLE_FEATURE_EDITING
 	G.line_input_state = new_line_input_t(FOR_SHELL);

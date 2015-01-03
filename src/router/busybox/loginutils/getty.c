@@ -334,18 +334,19 @@ static void finalize_tty_attrs(void)
 	 *         observed to improve backspacing through Unicode chars
 	 */
 
-	/* line buffered input (NL or EOL or EOF chars end a line);
-	 * recognize INT/QUIT/SUSP chars;
-	 * echo input chars;
-	 * echo BS-SP-BS on erase character;
-	 * echo kill char specially, not as ^c (ECHOKE controls how exactly);
-	 * erase all input via BS-SP-BS on kill char (else go to next line)
+	/* ICANON  line buffered input (NL or EOL or EOF chars end a line);
+	 * ISIG    recognize INT/QUIT/SUSP chars;
+	 * ECHO    echo input chars;
+	 * ECHOE   echo BS-SP-BS on erase character;
+	 * ECHOK   echo kill char specially, not as ^c (ECHOKE controls how exactly);
+	 * ECHOKE  erase all input via BS-SP-BS on kill char (else go to next line)
+	 * ECHOCTL Echo ctrl chars as ^c (else echo verbatim:
+	 *         e.g. up arrow emits "ESC-something" and thus moves cursor up!)
 	 */
-	G.tty_attrs.c_lflag |= ICANON | ISIG | ECHO | ECHOE | ECHOK | ECHOKE;
+	G.tty_attrs.c_lflag |= ICANON | ISIG | ECHO | ECHOE | ECHOK | ECHOKE | ECHOCTL;
 	/* Other bits in c_lflag:
 	 * XCASE   Map uppercase to \lowercase [tried, doesn't work]
 	 * ECHONL  Echo NL even if ECHO is not set
-	 * ECHOCTL Echo ctrl chars as ^c (else don't echo) - maybe set this?
 	 * ECHOPRT On erase, echo erased chars
 	 *         [qwe<BS><BS><BS> input looks like "qwe\ewq/" on screen]
 	 * NOFLSH  Don't flush input buffer after interrupt or quit chars
@@ -556,6 +557,16 @@ int getty_main(int argc UNUSED_PARAM, char **argv)
 			//	pid, getppid(),
 			//	getsid(0), getpgid(0));
 			bb_perror_msg_and_die("setsid");
+			/*
+			 * When we can end up here?
+			 * Example: setsid() fails when run alone in interactive shell:
+			 *  # getty 115200 /dev/tty2
+			 * because shell's child (getty) is put in a new process group.
+			 * But doesn't fail if shell is not interactive
+			 * (and therefore doesn't create process groups for pipes),
+			 * or if getty is not the first process in the process group:
+			 *  # true | getty 115200 /dev/tty2
+			 */
 		}
 		/* Looks like we are already a session leader.
 		 * In this case (setsid failed) we may still have ctty,

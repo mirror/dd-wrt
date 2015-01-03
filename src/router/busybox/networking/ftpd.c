@@ -622,14 +622,8 @@ popen_ls(const char *opt)
 	pid_t pid;
 
 	argv[0] = "ftpd";
-	argv[1] = opt; /* "-l" or "-1" */
-#if BB_MMU
+	argv[1] = opt; /* "-lA" or "-1A" */
 	argv[2] = "--";
-#else
-	/* NOMMU ftpd ls helper chdirs to argv[2],
-	 * preventing peer from seeing real root. */
-	argv[2] = xrealloc_getcwd_or_warn(NULL);
-#endif
 	argv[3] = G.ftp_arg;
 	argv[4] = NULL;
 
@@ -650,17 +644,10 @@ popen_ls(const char *opt)
 	/*fflush_all(); - so far we dont use stdio on output */
 	pid = BB_MMU ? xfork() : xvfork();
 	if (pid == 0) {
-		/* child */
 #if !BB_MMU
-		/* On NOMMU, we want to execute a child - copy of ourself.
-		 * In chroot we usually can't do it. Thus we chdir
-		 * out of the chroot back to original root,
-		 * and (see later below) execute bb_busybox_exec_path
-		 * relative to current directory */
-		if (fchdir(G.root_fd) != 0)
-			_exit(127);
-		/*close(G.root_fd); - close_on_exec_on() took care of this */
+		int cur_fd;
 #endif
+		/* child */
 		/* NB: close _first_, then move fd! */
 		close(outfd.rd);
 		xmove_fd(outfd.wr, STDOUT_FILENO);
@@ -674,19 +661,26 @@ popen_ls(const char *opt)
 		/* memset(&G, 0, sizeof(G)); - ls_main does it */
 		exit(ls_main(ARRAY_SIZE(argv) - 1, (char**) argv));
 #else
-		/* + 1: we must use relative path here if in chroot.
-		 * For example, execv("/proc/self/exe") will fail, since
-		 * it looks for "/proc/self/exe" _relative to chroot!_ */
-		execv(bb_busybox_exec_path + 1, (char**) argv);
+		cur_fd = xopen(".", O_RDONLY | O_DIRECTORY);
+		/* On NOMMU, we want to execute a child - copy of ourself
+		 * in order to unblock parent after vfork.
+		 * In chroot we usually can't re-exec. Thus we escape
+		 * out of the chroot back to original root.
+		 */
+		if (G.root_fd >= 0) {
+			if (fchdir(G.root_fd) != 0 || chroot(".") != 0)
+				_exit(127);
+			/*close(G.root_fd); - close_on_exec_on() took care of this */
+		}
+		/* Child expects directory to list on fd #3 */
+		xmove_fd(cur_fd, 3);
+		execv(bb_busybox_exec_path, (char**) argv);
 		_exit(127);
 #endif
 	}
 
 	/* parent */
 	close(outfd.wr);
-#if !BB_MMU
-	free((char*)argv[2]);
-#endif
 	return outfd.rd;
 }
 
@@ -705,10 +699,9 @@ handle_dir_common(int opts)
 	if (!(opts & USE_CTRL_CONN) && !port_or_pasv_was_seen())
 		return; /* port_or_pasv_was_seen emitted error response */
 
-	/* -n prevents user/groupname display,
-	 * which can be problematic in chroot */
-	ls_fd = popen_ls((opts & LONG_LISTING) ? "-l" : "-1");
+	ls_fd = popen_ls((opts & LONG_LISTING) ? "-lA" : "-1A");
 	ls_fp = xfdopen_for_read(ls_fd);
+/* FIXME: filenames with embedded newlines are mishandled */
 
 	if (opts & USE_CTRL_CONN) {
 		/* STAT <filename> */
@@ -729,16 +722,20 @@ handle_dir_common(int opts)
 		int remote_fd = get_remote_transfer_fd(" Directory listing");
 		if (remote_fd >= 0) {
 			while (1) {
-				line = xmalloc_fgetline(ls_fp);
+				unsigned len;
+
+				line = xmalloc_fgets(ls_fp);
 				if (!line)
 					break;
 				/* I've seen clients complaining when they
 				 * are fed with ls output with bare '\n'.
-				 * Pity... that would be much simpler.
+				 * Replace trailing "\n\0" with "\r\n".
 				 */
-/* TODO: need to s/LF/NUL/g here */
-				xwrite_str(remote_fd, line);
-				xwrite(remote_fd, "\r\n", 2);
+				len = strlen(line);
+				if (len != 0) /* paranoia check */
+					line[len - 1] = '\r';
+				line[len] = '\n';
+				xwrite(remote_fd, line, len + 1);
 				free(line);
 			}
 		}
@@ -1085,6 +1082,8 @@ enum {
 	const_PASV = mk_const4('P', 'A', 'S', 'V'),
 	const_PORT = mk_const4('P', 'O', 'R', 'T'),
 	const_PWD  = mk_const3('P', 'W', 'D'),
+	/* Same as PWD. Reportedly used by windows ftp client */
+	const_XPWD = mk_const4('X', 'P', 'W', 'D'),
 	const_QUIT = mk_const4('Q', 'U', 'I', 'T'),
 	const_REST = mk_const4('R', 'E', 'S', 'T'),
 	const_RETR = mk_const4('R', 'E', 'T', 'R'),
@@ -1103,10 +1102,11 @@ enum {
 #if !BB_MMU
 	OPT_l = (1 << 0),
 	OPT_1 = (1 << 1),
+	OPT_A = (1 << 2),
 #endif
-	OPT_v = (1 << ((!BB_MMU) * 2 + 0)),
-	OPT_S = (1 << ((!BB_MMU) * 2 + 1)),
-	OPT_w = (1 << ((!BB_MMU) * 2 + 2)) * ENABLE_FEATURE_FTP_WRITE,
+	OPT_v = (1 << ((!BB_MMU) * 3 + 0)),
+	OPT_S = (1 << ((!BB_MMU) * 3 + 1)),
+	OPT_w = (1 << ((!BB_MMU) * 3 + 2)) * ENABLE_FEATURE_FTP_WRITE,
 };
 
 int ftpd_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
@@ -1127,16 +1127,14 @@ int ftpd_main(int argc UNUSED_PARAM, char **argv)
 	G.timeout = 2 * 60;
 	opt_complementary = "t+:T+:vv:SS";
 #if BB_MMU
-	opts = getopt32(argv,   "vS" IF_FEATURE_FTP_WRITE("w") "t:T:", &G.timeout, &abs_timeout, &G.verbose, &verbose_S);
+	opts = getopt32(argv,    "vS" IF_FEATURE_FTP_WRITE("w") "t:T:", &G.timeout, &abs_timeout, &G.verbose, &verbose_S);
 #else
-	opts = getopt32(argv, "l1vS" IF_FEATURE_FTP_WRITE("w") "t:T:", &G.timeout, &abs_timeout, &G.verbose, &verbose_S);
+	opts = getopt32(argv, "l1AvS" IF_FEATURE_FTP_WRITE("w") "t:T:", &G.timeout, &abs_timeout, &G.verbose, &verbose_S);
 	if (opts & (OPT_l|OPT_1)) {
 		/* Our secret backdoor to ls */
-/* TODO: pass -n? It prevents user/group resolution, which may not work in chroot anyway */
-/* TODO: pass -A? It shows dot files */
 /* TODO: pass --group-directories-first? would be nice, but ls doesn't do that yet */
-		xchdir(argv[2]);
-		argv[2] = (char*)"--";
+		if (fchdir(3) != 0)
+			_exit(127);
 		/* memset(&G, 0, sizeof(G)); - ls_main does it */
 		return ls_main(argc, argv);
 	}
@@ -1174,15 +1172,6 @@ int ftpd_main(int argc UNUSED_PARAM, char **argv)
 	if (logmode)
 		applet_name = xasprintf("%s[%u]", applet_name, (int)getpid());
 
-#if !BB_MMU
-	G.root_fd = xopen("/", O_RDONLY | O_DIRECTORY);
-	close_on_exec_on(G.root_fd);
-#endif
-
-	if (argv[optind]) {
-		xchroot(argv[optind]);
-	}
-
 	//umask(077); - admin can set umask before starting us
 
 	/* Signals. We'll always take -EPIPE rather than a rude signal, thanks */
@@ -1198,23 +1187,22 @@ int ftpd_main(int argc UNUSED_PARAM, char **argv)
 	WRITE_OK(FTP_GREET);
 	signal(SIGALRM, timeout_handler);
 
-#ifdef IF_WE_WANT_TO_REQUIRE_LOGIN
+#if ENABLE_FEATURE_FTP_AUTHENTICATION
 	{
-		smallint user_was_specified = 0;
+		struct passwd *pw = NULL;
+
 		while (1) {
 			uint32_t cmdval = cmdio_get_cmd_and_arg();
 
 			if (cmdval == const_USER) {
-				if (G.ftp_arg == NULL || strcasecmp(G.ftp_arg, "anonymous") != 0)
-					cmdio_write_raw(STR(FTP_LOGINERR)" Server is anonymous only\r\n");
-				else {
-					user_was_specified = 1;
-					cmdio_write_raw(STR(FTP_GIVEPWORD)" Please specify the password\r\n");
-				}
+				pw = getpwnam(G.ftp_arg);
+				cmdio_write_raw(STR(FTP_GIVEPWORD)" Please specify password\r\n");
 			} else if (cmdval == const_PASS) {
-				if (user_was_specified)
-					break;
-				cmdio_write_raw(STR(FTP_NEEDUSER)" Login with USER\r\n");
+				if (check_password(pw, G.ftp_arg) > 0) {
+					break;	/* login success */
+				}
+				cmdio_write_raw(STR(FTP_LOGINERR)" Login failed\r\n");
+				pw = NULL;
 			} else if (cmdval == const_QUIT) {
 				WRITE_OK(FTP_GOODBYE);
 				return 0;
@@ -1222,9 +1210,23 @@ int ftpd_main(int argc UNUSED_PARAM, char **argv)
 				cmdio_write_raw(STR(FTP_LOGINERR)" Login with USER and PASS\r\n");
 			}
 		}
+		change_identity(pw);
 	}
 	WRITE_OK(FTP_LOGINOK);
 #endif
+
+	/* Do this after auth, else /etc/passwd is not accessible */
+#if !BB_MMU
+	G.root_fd = -1;
+#endif
+	argv += optind;
+	if (argv[0]) {
+#if !BB_MMU
+		G.root_fd = xopen("/", O_RDONLY | O_DIRECTORY);
+		close_on_exec_on(G.root_fd);
+#endif
+		xchroot(argv[0]);
+	}
 
 	/* RFC-959 Section 5.1
 	 * The following commands and options MUST be supported by every
@@ -1292,7 +1294,7 @@ int ftpd_main(int argc UNUSED_PARAM, char **argv)
 			WRITE_OK(FTP_ALLOOK);
 		else if (cmdval == const_SYST)
 			cmdio_write_raw(STR(FTP_SYSTOK)" UNIX Type: L8\r\n");
-		else if (cmdval == const_PWD)
+		else if (cmdval == const_PWD || cmdval == const_XPWD)
 			handle_pwd();
 		else if (cmdval == const_CWD)
 			handle_cwd();
