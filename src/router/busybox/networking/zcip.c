@@ -30,7 +30,11 @@
 //usage:     "\n	-f		Run in foreground"
 //usage:     "\n	-q		Quit after obtaining address"
 //usage:     "\n	-r 169.254.x.x	Request this address first"
+//usage:     "\n	-l x.x.0.0	Use this range instead of 169.254"
 //usage:     "\n	-v		Verbose"
+//usage:     "\n"
+//usage:     "\n$LOGGING=none		Suppress logging"
+//usage:     "\n$LOGGING=syslog 	Log to syslog"
 //usage:     "\n"
 //usage:     "\nWith no -q, runs continuously monitoring for ARP conflicts,"
 //usage:     "\nexits only on I/O errors (link down etc)"
@@ -87,6 +91,7 @@ enum {
 struct globals {
 	struct sockaddr saddr;
 	struct ether_addr eth_addr;
+	uint32_t localnet_ip;
 } FIX_ALIASING;
 #define G (*(struct globals*)&bb_common_bufsiz1)
 #define saddr    (G.saddr   )
@@ -98,14 +103,14 @@ struct globals {
  * Pick a random link local IP address on 169.254/16, except that
  * the first and last 256 addresses are reserved.
  */
-static uint32_t pick(void)
+static uint32_t pick_nip(void)
 {
 	unsigned tmp;
 
 	do {
 		tmp = rand() & IN_CLASSB_HOST;
 	} while (tmp > (IN_CLASSB_HOST - 0x0200));
-	return htonl((LINKLOCAL_ADDR + 0x0100) + tmp);
+	return htonl((G.localnet_ip + 0x0100) + tmp);
 }
 
 /**
@@ -197,6 +202,7 @@ int zcip_main(int argc UNUSED_PARAM, char **argv)
 {
 	int state;
 	char *r_opt;
+	const char *l_opt = "169.254.0.0";
 	unsigned opts;
 
 	// ugly trick, but I want these zeroed in one go
@@ -231,7 +237,7 @@ int zcip_main(int argc UNUSED_PARAM, char **argv)
 	// parse commandline: prog [options] ifname script
 	// exactly 2 args; -v accumulates and implies -f
 	opt_complementary = "=2:vv:vf";
-	opts = getopt32(argv, "fqr:v", &r_opt, &verbose);
+	opts = getopt32(argv, "fqr:l:v", &r_opt, &l_opt, &verbose);
 #if !BB_MMU
 	// on NOMMU reexec early (or else we will rerun things twice)
 	if (!FOREGROUND)
@@ -246,9 +252,20 @@ int zcip_main(int argc UNUSED_PARAM, char **argv)
 		openlog(applet_name, 0, LOG_DAEMON);
 		logmode |= LOGMODE_SYSLOG;
 	}
+	bb_logenv_override();
+
+	{ // -l n.n.n.n
+		struct in_addr net;
+		if (inet_aton(l_opt, &net) == 0
+		 || (net.s_addr & htonl(IN_CLASSB_NET)) != net.s_addr
+		) {
+			bb_error_msg_and_die("invalid network address");
+		}
+		G.localnet_ip = ntohl(net.s_addr);
+	}
 	if (opts & 4) { // -r n.n.n.n
 		if (inet_aton(r_opt, &ip) == 0
-		 || (ntohl(ip.s_addr) & IN_CLASSB_NET) != LINKLOCAL_ADDR
+		 || (ntohl(ip.s_addr) & IN_CLASSB_NET) != G.localnet_ip
 		) {
 			bb_error_msg_and_die("invalid link address");
 		}
@@ -295,7 +312,7 @@ int zcip_main(int argc UNUSED_PARAM, char **argv)
 		srand(t);
 	}
 	if (ip.s_addr == 0)
-		ip.s_addr = pick();
+		ip.s_addr = pick_nip();
 
 	// FIXME cases to handle:
 	//  - zcip already running!
@@ -366,11 +383,11 @@ int zcip_main(int argc UNUSED_PARAM, char **argv)
 					nprobes++;
 					VDBG("probe/%u %s@%s\n",
 							nprobes, argv_intf, inet_ntoa(ip));
+					timeout_ms = PROBE_MIN * 1000;
+					timeout_ms += random_delay_ms(PROBE_MAX - PROBE_MIN);
 					arp(/* ARPOP_REQUEST, */
 							/* &eth_addr, */ null_ip,
 							&null_addr, ip);
-					timeout_ms = PROBE_MIN * 1000;
-					timeout_ms += random_delay_ms(PROBE_MAX - PROBE_MIN);
 				}
 				else {
 					// Switch to announce state.
@@ -378,10 +395,10 @@ int zcip_main(int argc UNUSED_PARAM, char **argv)
 					nclaims = 0;
 					VDBG("announce/%u %s@%s\n",
 							nclaims, argv_intf, inet_ntoa(ip));
+					timeout_ms = ANNOUNCE_INTERVAL * 1000;
 					arp(/* ARPOP_REQUEST, */
 							/* &eth_addr, */ ip,
 							&eth_addr, ip);
-					timeout_ms = ANNOUNCE_INTERVAL * 1000;
 				}
 				break;
 			case RATE_LIMIT_PROBE:
@@ -391,10 +408,10 @@ int zcip_main(int argc UNUSED_PARAM, char **argv)
 				nclaims = 0;
 				VDBG("announce/%u %s@%s\n",
 						nclaims, argv_intf, inet_ntoa(ip));
+				timeout_ms = ANNOUNCE_INTERVAL * 1000;
 				arp(/* ARPOP_REQUEST, */
 						/* &eth_addr, */ ip,
 						&eth_addr, ip);
-				timeout_ms = ANNOUNCE_INTERVAL * 1000;
 				break;
 			case ANNOUNCE:
 				// timeouts in the ANNOUNCE state mean no conflicting ARP packets
@@ -403,10 +420,10 @@ int zcip_main(int argc UNUSED_PARAM, char **argv)
 					nclaims++;
 					VDBG("announce/%u %s@%s\n",
 							nclaims, argv_intf, inet_ntoa(ip));
+					timeout_ms = ANNOUNCE_INTERVAL * 1000;
 					arp(/* ARPOP_REQUEST, */
 							/* &eth_addr, */ ip,
 							&eth_addr, ip);
-					timeout_ms = ANNOUNCE_INTERVAL * 1000;
 				}
 				else {
 					// Switch to monitor state.
@@ -433,7 +450,7 @@ int zcip_main(int argc UNUSED_PARAM, char **argv)
 			default:
 				// Invalid, should never happen.  Restart the whole protocol.
 				state = PROBE;
-				ip.s_addr = pick();
+				ip.s_addr = pick_nip();
 				timeout_ms = 0;
 				nprobes = 0;
 				nclaims = 0;
@@ -495,22 +512,28 @@ int zcip_main(int argc UNUSED_PARAM, char **argv)
 			}
 #endif
 			if (p.arp.arp_op != htons(ARPOP_REQUEST)
-			 && p.arp.arp_op != htons(ARPOP_REPLY))
+			 && p.arp.arp_op != htons(ARPOP_REPLY)
+			) {
 				continue;
+			}
 
 			source_ip_conflict = 0;
 			target_ip_conflict = 0;
 
-			if (memcmp(p.arp.arp_spa, &ip.s_addr, sizeof(struct in_addr)) == 0
-			 && memcmp(&p.arp.arp_sha, &eth_addr, ETH_ALEN) != 0
-			) {
-				source_ip_conflict = 1;
-			}
-			if (p.arp.arp_op == htons(ARPOP_REQUEST)
-			 && memcmp(p.arp.arp_tpa, &ip.s_addr, sizeof(struct in_addr)) == 0
-			 && memcmp(&p.arp.arp_tha, &eth_addr, ETH_ALEN) != 0
-			) {
-				target_ip_conflict = 1;
+			if (memcmp(&p.arp.arp_sha, &eth_addr, ETH_ALEN) != 0) {
+				if (memcmp(p.arp.arp_spa, &ip.s_addr, sizeof(struct in_addr))) {
+					/* A probe or reply with source_ip == chosen ip */
+					source_ip_conflict = 1;
+				}
+				if (p.arp.arp_op == htons(ARPOP_REQUEST)
+				 && memcmp(p.arp.arp_spa, &null_ip, sizeof(struct in_addr)) == 0
+				 && memcmp(p.arp.arp_tpa, &ip.s_addr, sizeof(struct in_addr)) == 0
+				) {
+					/* A probe with source_ip == 0.0.0.0, target_ip == chosen ip:
+					 * another host trying to claim this ip!
+					 */
+					target_ip_conflict = 1;
+				}
 			}
 
 			VDBG("state = %d, source ip conflict = %d, target ip conflict = %d\n",
@@ -529,7 +552,7 @@ int zcip_main(int argc UNUSED_PARAM, char **argv)
 					}
 
 					// restart the whole protocol
-					ip.s_addr = pick();
+					ip.s_addr = pick_nip();
 					timeout_ms = 0;
 					nprobes = 0;
 					nclaims = 0;
@@ -555,7 +578,7 @@ int zcip_main(int argc UNUSED_PARAM, char **argv)
 					run(argv, "deconfig", &ip);
 
 					// restart the whole protocol
-					ip.s_addr = pick();
+					ip.s_addr = pick_nip();
 					timeout_ms = 0;
 					nprobes = 0;
 					nclaims = 0;
@@ -565,7 +588,7 @@ int zcip_main(int argc UNUSED_PARAM, char **argv)
 				// Invalid, should never happen.  Restart the whole protocol.
 				VDBG("invalid state -- starting over\n");
 				state = PROBE;
-				ip.s_addr = pick();
+				ip.s_addr = pick_nip();
 				timeout_ms = 0;
 				nprobes = 0;
 				nclaims = 0;

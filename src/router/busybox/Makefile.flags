@@ -163,7 +163,6 @@ CFLAGS += -DHAVE_NOMESSAGE
 endif
 CFLAGS += -DNEED_PRINTF
 CFLAGS += $(COPTS)
-
 CFLAGS += $(MIPS16_OPT) 
 # If a flat binary should be built, CFLAGS_busybox="-elf2flt"
 # env var should be set for make invocation.
