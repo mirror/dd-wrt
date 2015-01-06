@@ -634,38 +634,6 @@ static void nat_prerouting(void)
 				}
 			}
 		}
-#if defined(HAVE_RT2880) || defined(HAVE_RT61)
-		int cnt = 0;
-		int i;
-		for (i = 0; i < 2; i++) {
-			char wlif[32];
-
-			sprintf(wlif, "wl%d", i);
-			if (!ifexists(wlif))
-				break;
-			if (nvram_nmatch("1", "%s_isolation", wlif)) {
-				save2file("-A PREROUTING -i %s -d %s/%s -j RETURN\n", getRADev(wlif), lan_ip, nvram_safe_get("lan_netmask"));
-				sprintf(vif_ip, "%s_ipaddr", wlif);
-				save2file("-A PREROUTING -i %s -d %s -j RETURN\n", getRADev(wlif), nvram_safe_get(vif_ip));
-			}
-
-			char *next;
-			char var[80];
-			char *vifs = nvram_nget("wl%d_vifs", i);
-			if (vifs == NULL)
-				break;
-
-			foreach(var, vifs, next) {
-				if (nvram_nmatch("1", "%s_isolation", var)) {
-					save2file("-A PREROUTING -i %s -d %s/%s -j RETURN\n", getRADev(var), lan_ip, nvram_safe_get("lan_netmask"));
-					sprintf(vif_ip, "%s_ipaddr", var);
-					save2file("-A PREROUTING -i %s -d %s -j RETURN\n", getRADev(var), nvram_safe_get(vif_ip));
-				}
-
-			}
-		}
-
-#endif
 
 		/* no gui setting yet - redirect all except this IP */
 		if (strlen(nvram_safe_get("privoxy_transp_exclude"))) {
