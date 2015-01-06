@@ -990,8 +990,10 @@ void period_check(int sig)
 	sesgpio = 0x103;
 	val |= get_gpio(3) << 3;	//aoss pushbutton
 #elif defined(HAVE_WNDR3700)
+	wifigpio = 0x10b;
 	sesgpio = 0x103;
 	val |= get_gpio(3) << 3;	//aoss pushbutton
+	val |= get_gpio(11) << 11;	//aoss pushbutton
 #elif defined(HAVE_DIR825)
 	sesgpio = 0x108;
 	val |= get_gpio(8) << 8;	//aoss pushbutton
