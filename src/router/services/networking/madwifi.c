@@ -583,18 +583,23 @@ void do_hostapd(char *fstr, char *prefix)
 			kill(pid, SIGTERM);
 	}
 
-	char *argv[] = { "hostapd", "-B", "-P", fname, NULL, NULL, NULL };
+	char *argv[] = { "hostapd", "-B", "-P", fname, NULL, NULL, NULL, NULL, NULL };
 	int argc = 4;
 	debug = nvram_nget("%s_wpa_debug", prefix);
-	if (debug != NULL) {
+	char file[64];
+	if (debug != NULL && strlen(debug) > 0) {
 		if (!strcmp(debug, "1"))
-			argv[argc++] = "-ds";
+			argv[argc++] = "-d";
 		else if (!strcmp(debug, "2"))
-			argv[argc++] = "-dds";
+			argv[argc++] = "-dd";
 		else if (!strcmp(debug, "3"))
-			argv[argc++] = "-ddds";
+			argv[argc++] = "-ddd";
+		argv[argc++] = "-f";
+		sprintf(file,"/tmp/%s_debug",prefix);
+		argv[argc++] = file;
 	}
 	argv[argc++] = fstr;
+
 	_evalpid(argv, NULL, 0, NULL);
 }
 

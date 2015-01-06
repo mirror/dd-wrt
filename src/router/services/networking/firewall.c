@@ -634,6 +634,39 @@ static void nat_prerouting(void)
 				}
 			}
 		}
+#if defined(HAVE_RT2880) || defined(HAVE_RT61)
+		int cnt = 0;
+		int i;
+		for (i = 0; i < 2; i++) {
+			char wlif[32];
+
+			sprintf(wlif, "wl%d", i);
+			if (!ifexists(wlif))
+				break;
+			if (nvram_nmatch("1", "%s_isolation", wlif)) {
+				save2file("-A PREROUTING -i %s -d %s/%s -j RETURN\n", getRADev(wlif), lan_ip, nvram_safe_get("lan_netmask"));
+				sprintf(vif_ip, "%s_ipaddr", wlif);
+				save2file("-A PREROUTING -i %s -d %s -j RETURN\n", getRADev(wlif), nvram_safe_get(vif_ip));
+			}
+
+			char *next;
+			char var[80];
+			char *vifs = nvram_nget("wl%d_vifs", i);
+			if (vifs == NULL)
+				break;
+
+			foreach(var, vifs, next) {
+				if (nvram_nmatch("1", "%s_isolation", var)) {
+					save2file("-A PREROUTING -i %s -d %s/%s -j RETURN\n", getRADev(var), lan_ip, nvram_safe_get("lan_netmask"));
+					sprintf(vif_ip, "%s_ipaddr", var);
+					save2file("-A PREROUTING -i %s -d %s -j RETURN\n", getRADev(var), nvram_safe_get(vif_ip));
+				}
+
+			}
+		}
+
+#endif
+
 		/* no gui setting yet - redirect all except this IP */
 		if (strlen(nvram_safe_get("privoxy_transp_exclude"))) {
 			save2file("-A PREROUTING -p tcp -s %s --dport 80 -j ACCEPT \n", nvram_safe_get("privoxy_transp_exclude"));
@@ -2135,8 +2168,8 @@ static void filter_forward(void)
 
 		if (filter_web_hosts && strcmp(filter_web_hosts, "")
 		    || (filter_web_urls && strcmp(filter_web_urls, ""))
-		    || (filter_rule && !strncmp(filter_rule, "$STAT:1",7))
-		    || (filter_rule && !strncmp(filter_rule, "$STAT:2",7))) {
+		    || (filter_rule && !strncmp(filter_rule, "$STAT:1", 7))
+		    || (filter_rule && !strncmp(filter_rule, "$STAT:2", 7))) {
 			filter_host_url = 1;
 		}
 	}
@@ -2591,12 +2624,11 @@ int isregistered_real(void);
 void start_firewall6(void)
 {
 
-
 	if (nvram_match("ipv6_enable", "0"))
 		return;
-	
+
 	fprintf(stderr, "start firewall6\n");
-	
+
 	insmod("nf_defrag_ipv6 ip6_tables nf_conntrack_ipv6 ip6table_filter");
 
 	eval("ip6tables", "-F", "INPUT");
@@ -2647,17 +2679,12 @@ void start_firewall6(void)
 
 void start_loadfwmodules(void)
 {
-insmod("iptable_raw iptable_mangle nf_conntrack_h323 xt_NFLOG"
-" xt_length xt_REDIRECT xt_CT xt_limit xt_TCPMSS"
-" xt_connbytes xt_connlimit xt_physdev"
-" xt_CLASSIFY xt_recent"
-" xt_DSCP xt_conntrack xt_state"
-" xt_IMQ xt_string"
-" xt_LOG xt_iprange xt_tcpmss"
-" xt_NETMAP compat_xtables"
-" ipt_MASQUERADE iptable_filter nf_reject_ipv4"
-" ipt_REJECT nf_nat_h323"
-" ipt_TRIGGER nf_nat_masquerade_ipv4 ipt_ah");
+	insmod("iptable_raw iptable_mangle nf_conntrack_h323 xt_NFLOG"
+	       " xt_length xt_REDIRECT xt_CT xt_limit xt_TCPMSS"
+	       " xt_connbytes xt_connlimit xt_physdev"
+	       " xt_CLASSIFY xt_recent"
+	       " xt_DSCP xt_conntrack xt_state"
+	       " xt_IMQ xt_string" " xt_LOG xt_iprange xt_tcpmss" " xt_NETMAP compat_xtables" " ipt_MASQUERADE iptable_filter nf_reject_ipv4" " ipt_REJECT nf_nat_h323" " ipt_TRIGGER nf_nat_masquerade_ipv4 ipt_ah");
 
 }
 
