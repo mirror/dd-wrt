@@ -809,7 +809,7 @@ void period_check(int sig)
 
 #else
 	if (brand == ROUTER_BOARD_WCRGN) {
-		val = get_gpio(10) << 10;
+		val = (get_gpio(10) << 10) | (get_gpio(0) << 0);
 	} else if (brand == ROUTER_BOARD_WHRG300N) {
 		val = get_gpio(10) << 10;
 	} else if (brand == ROUTER_BOARD_HAMEA15) {
@@ -817,9 +817,9 @@ void period_check(int sig)
 	} else if (brand == ROUTER_BOARD_ECB9750) {
 		val = get_gpio(11) << 11;
 	} else if (brand == ROUTER_BOARD_NEPTUNE) {
-		val = get_gpio(10) << 10;
+		val = (get_gpio(10) << 10) | (get_gpio(0) << 0);
 	} else if (brand == ROUTER_BOARD_RT3352) {
-		val = get_gpio(10) << 10;
+		val = (get_gpio(10) << 10) | (get_gpio(0) << 0);
 	} else if (brand == ROUTER_BOARD_WR5422) {
 		val = get_gpio(10) << 10;
 	} else if (brand == ROUTER_BOARD_DIR600B) {
@@ -831,7 +831,7 @@ void period_check(int sig)
 	} else if (brand == ROUTER_BOARD_RT15N) {
 		val = get_gpio(12) << 12;
 	} else if (brand == ROUTER_BOARD_DIR615D) {
-		val = get_gpio(10) << 10;
+		val = (get_gpio(10) << 10)  | (get_gpio(0) << 0);
 	} else if (brand == ROUTER_BOARD_ESR6650) {
 		val = get_gpio(10) << 10;
 	} else if (brand == ROUTER_BOARD_EAP9550) {
@@ -849,9 +849,9 @@ void period_check(int sig)
 	} else if (brand == ROUTER_BOARD_TECHNAXX3G) {
 		val = get_gpio(10) << 10;
 	} else if (brand == ROUTER_WHR300HP2) {
-		val = get_gpio(52) << 1;
+		val = (get_gpio(52) << 1) | (get_gpio(53) << 2);
 	} else if (brand == ROUTER_BOARD_E1700) {
-		val = get_gpio(1) << 1;
+		val = (get_gpio(1) << 1) | (get_gpio(2) << 2);
 	} else if (brand == ROUTER_BOARD_W502U) {
 		val = get_gpio(10) << 10;
 	} else if (brand == ROUTER_BOARD_GW2380) {
@@ -894,24 +894,6 @@ void period_check(int sig)
 #ifdef HAVE_WZRG300NH
 	sesgpio = 0x117;
 	val |= get_gpio(23) << 23;	//aoss pushbutton
-#elif defined(HAVE_E1700)
-	sesgpio = 0x102;
-	val |= get_gpio(2) << 2;	//aoss pushbutton
-#elif defined(HAVE_WHR300HP2)
-	sesgpio = 0x102;
-	val |= get_gpio(53) << 2;	//aoss pushbutton
-#elif defined(HAVE_NEPTUNE)
-	sesgpio = 0x100;
-	val |= get_gpio(0);	//aoss pushbutton
-#elif defined(HAVE_HAMEA15)
-//      sesgpio = 0x100;
-//      val |= get_gpio(0);     //aoss pushbutton
-#elif defined(HAVE_WCRGN)
-	sesgpio = 0x100;
-	val |= get_gpio(0);	//aoss pushbutton
-#elif defined(HAVE_RT3352)
-	sesgpio = 0x100;
-	val |= get_gpio(0);	//aoss pushbutton
 #elif defined(HAVE_WZRG300NH2)
 	sesgpio = 0x10c;
 	val |= get_gpio(12) << 12;	//aoss pushbutton
@@ -1093,6 +1075,18 @@ void period_check(int sig)
 		sesgpio = 0x10a;	// gpio 10, inversed
 		break;
 #ifndef HAVE_BUFFALO
+	case ROUTER_BOARD_WCRGN:
+	case ROUTER_BOARD_RT3352:
+	case ROUTER_BOARD_NEPTUNE:
+	case ROUTER_BOARD_DIR615D:
+		sesgpio = 0x100;
+		break;
+	case ROUTER_BOARD_E1700:
+		sesgpio = 0x102;
+		break;
+	case ROUTER_WHR300HP2:
+		sesgpio = 0x102;
+		break;	
 	case ROUTER_ASUS_WL700GE:
 		sesgpio = 0x004;	// gpio 4, normal
 		break;
