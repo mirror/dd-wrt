@@ -60,6 +60,7 @@ void start_privoxy(void)
 				}
 			}
 		}
+
 	}
 
 	if (nvram_invmatch("privoxy_whitel", "")) {
