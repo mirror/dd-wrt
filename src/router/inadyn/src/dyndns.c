@@ -490,7 +490,7 @@ static int is_freedns_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p
 	if (strstr(p_rsp,"OK"))
 		return RC_OK;
 
-	if (strstr(p_rsp, p_self->info[infnr].my_ip_address.name) != NULL)
+	if (strstr(p_rsp, p_self->info.my_ip_address.name) != NULL)
 		return RC_OK;
 	else
 		return RC_DYNDNS_RSP_NOTOK;
