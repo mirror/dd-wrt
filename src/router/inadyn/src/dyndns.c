@@ -463,16 +463,6 @@ static int is_dyndns_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_
 		return RC_ERROR;
 }
 
-/* Freedns afraid.org.specific response validator.
-    ok blabla and n.n.n.n
-    fail blabla and n.n.n.n
-    are the good answers. We search our own IP address in response and that's enough.
-*/
-static int is_freedns_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string)
-{
-	(void) p_ok_string;
-    return (strstr(p_rsp, p_self->info.my_ip_address.name) != NULL);
-}
 
 /** generic http dns server ok parser 
 	parses a given string. If found is ok,
@@ -487,6 +477,23 @@ static int is_generic_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p
 	if( (strstr(p_rsp, "good") != NULL) )
 		return RC_OK;
 	return RC_ERROR;
+}
+
+
+/* Freedns afraid.org.specific response validator.
+    ok blabla and n.n.n.n
+    fail blabla and n.n.n.n
+    are the good answers. We search our own IP address in response and that's enough.
+*/
+static int is_freedns_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string)
+{
+	if (strstr(p_rsp,"OK"))
+		return RC_OK;
+
+	if (strstr(p_rsp, p_self->info[infnr].my_ip_address.name) != NULL)
+		return RC_OK;
+	else
+		return RC_DYNDNS_RSP_NOTOK;
 }
 
 
