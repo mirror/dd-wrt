@@ -852,6 +852,8 @@ void period_check(int sig)
 		val = (get_gpio(52) << 1) | (get_gpio(53) << 2);
 	} else if (brand == ROUTER_BOARD_E1700) {
 		val = (get_gpio(1) << 1) | (get_gpio(2) << 2);
+	} else if (brand == ROUTER_DIR810L) {
+		val = (get_gpio(1) << 1) | (get_gpio(2) << 2);
 	} else if (brand == ROUTER_BOARD_W502U) {
 		val = get_gpio(10) << 10;
 	} else if (brand == ROUTER_BOARD_GW2380) {
@@ -1084,6 +1086,7 @@ void period_check(int sig)
 		sesgpio = 0x100;
 		break;
 	case ROUTER_BOARD_E1700:
+	case ROUTER_DIR810L:
 		sesgpio = 0x102;
 		break;
 	case ROUTER_WHR300HP2:

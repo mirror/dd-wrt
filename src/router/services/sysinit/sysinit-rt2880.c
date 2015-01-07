@@ -119,7 +119,7 @@ void start_sysinit(void)
 	system("swconfig dev eth0 set apply");*/
 
 	//LAN/WAN ports as security mode
-	if (getRouterBrand() == ROUTER_BOARD_E1700) {
+	if (getRouterBrand() == ROUTER_BOARD_E1700 || getRouterBrand() == ROUTER_DIR810L) {
 //      sysprintf("switch reg w 3600 5ee3a");
 //      sysprintf("switch reg w 7000 717fc3");
 //      sysprintf("switch reg w 7804 1015e9f");

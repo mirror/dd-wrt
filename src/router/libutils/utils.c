@@ -1572,6 +1572,9 @@ int internal_getRouterBrand()
 #elif HAVE_E1700
 	setRouter("Linksys E1700 / N300");
 	return ROUTER_BOARD_E1700;
+#elif HAVE_DIR810L
+	setRouter("Dlink DIR-810L");
+	return ROUTER_DIR810L;
 #elif HAVE_WHR1166D
 	setRouter("Buffalo WHR-1166D");
 	return ROUTER_WHR300HP2;
@@ -5137,6 +5140,11 @@ int led_control(int type, int act)
 		connected_gpio = 0x10b;
 //              ses_gpio = 0x10e;
 		break;
+	case ROUTER_DIR810L:
+		power_gpio = 0x009;
+		diag_gpio = 0x00d;
+		diag_gpio_disabled = 0x009;
+		connected_gpio = 0x00c;
 	case ROUTER_WHR300HP2:
 		power_gpio = 0x109;
 		diag_gpio = 0x107;
