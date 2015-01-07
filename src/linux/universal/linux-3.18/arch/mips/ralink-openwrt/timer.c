@@ -327,7 +327,7 @@ static int rt_timer_probe(struct platform_device *pdev)
 
 	INIT_LIST_HEAD(&rt->gpios);
 
-	dev_info(&pdev->dev, "maximum frequncy is %luHz\n", rt->timer_freq);
+	dev_info(&pdev->dev, "maximum frequency is %luHz\n", rt->timer_freq);
 
 	return 0;
 }
