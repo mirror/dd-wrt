@@ -93,11 +93,15 @@ void start_sysinit(void)
 	insmod("raeth");
 #ifdef HAVE_WHR300HP2
 	insmod("rt2880_wdt");
-
+	int brand = getRouterBrand();
 	FILE *in = fopen("/dev/mtdblock/2", "rb");
 	unsigned char mac[32];
 	if (in != NULL) {
-		fseek(in, 4, SEEK_SET);
+		if (brand == ROUTER_DIR810L)
+		    fseek(in, 0x28, SEEK_SET);
+		else
+		    fseek(in, 4, SEEK_SET);
+
 		fread(mac, 6, 1, in);
 		fclose(in);
 		unsigned int copy[6];
