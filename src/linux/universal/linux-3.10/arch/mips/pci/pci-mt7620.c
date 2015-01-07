@@ -283,7 +283,7 @@ static int mt7620_pci_probe(struct platform_device *pdev)
 	iomem_resource.end = ~0;
 	ioport_resource.start = 0;
 	ioport_resource.end = ~0;
-
+	printk(KERN_INFO "pci: ralink soc = %X\n",ralink_soc);
 	/* bring up the pci core */
 	switch (ralink_soc) {
 	case MT762X_SOC_MT7620A:
@@ -297,7 +297,7 @@ static int mt7620_pci_probe(struct platform_device *pdev)
 		break;
 
 	default:
-		dev_err(&pdev->dev, "pcie is not supported on this hardware\n");
+		printk(KERN_INFO "pcie is not supported on this hardware\n");
 		return -1;
 	}
 	mdelay(50);
