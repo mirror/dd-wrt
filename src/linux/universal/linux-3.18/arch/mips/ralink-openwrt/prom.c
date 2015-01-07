@@ -15,9 +15,13 @@
 #include <asm/bootinfo.h>
 #include <asm/addrspace.h>
 
+#include <asm/mach-ralink-openwrt/ralink_regs.h>
+
 #include "common.h"
 
 struct ralink_soc_info soc_info;
+enum ralink_soc_type ralink_soc;
+EXPORT_SYMBOL_GPL(ralink_soc);
 
 const char *get_system_type(void)
 {

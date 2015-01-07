@@ -78,7 +78,6 @@ void __init plat_time_init(void)
 	clocksource_of_init();
 }
 
-
 int getCPUClock(void)
 {
     struct clk *clk;

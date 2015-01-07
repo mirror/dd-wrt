@@ -43,8 +43,6 @@
 #define CLKCFG_FFRAC_MASK	0x001f
 #define CLKCFG_FFRAC_USB_VAL	0x0003
 
-enum mt762x_soc_type mt762x_soc;
-
 /* does the board have sdram or ddram */
 static int dram_type;
 
@@ -375,7 +373,7 @@ void __init ralink_clk_init(void)
 #define RINT(x)		((x) / 1000000)
 #define RFRAC(x)	(((x) / 1000) % 1000)
 
-	if (mt762x_soc == MT762X_SOC_MT7628AN) {
+	if (ralink_soc == MT762X_SOC_MT7628AN) {
 		if (xtal_rate == MHZ(40))
 			cpu_rate = MHZ(580);
 		else
@@ -418,7 +416,7 @@ void __init ralink_clk_init(void)
 	ralink_clk_add("10000c00.uartlite", periph_rate);
 	ralink_clk_add("10180000.wmac", xtal_rate);
 
-	if (IS_ENABLED(CONFIG_USB) && mt762x_soc != MT762X_SOC_MT7628AN) {
+	if (IS_ENABLED(CONFIG_USB) && ralink_soc != MT762X_SOC_MT7628AN) {
 		/*
 		 * When the CPU goes into sleep mode, the BUS clock will be too low for
 		 * USB to function properly
@@ -506,19 +504,16 @@ void prom_soc_init(struct ralink_soc_info *soc_info)
 
 	if (n0 == MT7620_CHIP_NAME0 && n1 == MT7620_CHIP_NAME1) {
 		if (bga) {
-			mt762x_soc = MT762X_SOC_MT7620A;
+			ralink_soc = MT762X_SOC_MT7620A;
 			name = "MT7620A";
 			soc_info->compatible = "ralink,mt7620a-soc";
 		} else {
-			mt762x_soc = MT762X_SOC_MT7620N;
+			ralink_soc = MT762X_SOC_MT7620N;
 			name = "MT7620N";
 			soc_info->compatible = "ralink,mt7620n-soc";
-#ifdef CONFIG_PCI
-			panic("mt7620n is only supported for non pci kernels");
-#endif
 		}
 	} else if (n0 == MT7620_CHIP_NAME0 && n1 == MT7628_CHIP_NAME1) {
-		mt762x_soc = MT762X_SOC_MT7628AN;
+		ralink_soc = MT762X_SOC_MT7628AN;
 		name = "MT7628AN";
 		soc_info->compatible = "ralink,mt7628an-soc";
 	} else {
@@ -535,7 +530,7 @@ void prom_soc_init(struct ralink_soc_info *soc_info)
 	dram_type = (cfg0 >> SYSCFG0_DRAM_TYPE_SHIFT) & SYSCFG0_DRAM_TYPE_MASK;
 
 	soc_info->mem_base = MT7620_DRAM_BASE;
-	if (mt762x_soc == MT762X_SOC_MT7628AN)
+	if (ralink_soc == MT762X_SOC_MT7628AN)
 		mt7628_dram_init(soc_info);
 	else
 		mt7620_dram_init(soc_info);
@@ -548,7 +543,7 @@ void prom_soc_init(struct ralink_soc_info *soc_info)
 	pr_info("Digital PMU set to %s control\n",
 		(pmu1 & DIG_SW_SEL) ? ("sw") : ("hw"));
 
-	if (mt762x_soc == MT762X_SOC_MT7628AN)
+	if (ralink_soc == MT762X_SOC_MT7628AN)
 		rt2880_pinmux_data = mt7628an_pinmux_data;
 	else
 		rt2880_pinmux_data = mt7620a_pinmux_data;
