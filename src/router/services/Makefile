@@ -1102,6 +1102,9 @@ endif
 ifeq ($(CONFIG_WHR1166D),y)
 CFLAGS_EXTRA += -DHAVE_WHR1166D
 endif
+ifeq ($(CONFIG_DIR810L),y)
+CFLAGS_EXTRA += -DHAVE_DIR810L
+endif
 
 ifneq ($(ARCHITECTURE),broadcom)
 ifeq ($(CONFIG_RELAYD),y)
