@@ -39,6 +39,7 @@ static const u32 rt5350_reg_table[FE_REG_COUNT] = {
 	[FE_REG_RX_CALC_IDX0] = RT5350_RX_CALC_IDX0,
 	[FE_REG_FE_INT_ENABLE] = RT5350_FE_INT_ENABLE,
 	[FE_REG_FE_INT_STATUS] = RT5350_FE_INT_STATUS,
+	[FE_REG_FE_RST_GL] = 0,
 	[FE_REG_FE_DMA_VID_BASE] = 0,
 };
 
@@ -56,14 +57,14 @@ static int rt3050_fwd_config(struct fe_priv *priv)
 {
 	int ret;
 
-	if (soc_is_rt3052()) {
+	if (ralink_soc != RT305X_SOC_RT3052) {
 		ret = fe_set_clock_cycle(priv);
 		if (ret)
 			return ret;
 	}
 
 	fe_fwd_config(priv);
-	if (!soc_is_rt3352())
+	if (ralink_soc != RT305X_SOC_RT3352)
 		fe_w32(FE_PSE_FQFC_CFG_INIT, FE_PSE_FQ_CFG);
 	fe_csum_config(priv);
 

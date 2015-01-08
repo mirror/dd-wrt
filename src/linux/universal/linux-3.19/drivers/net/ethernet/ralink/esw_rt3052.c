@@ -38,6 +38,7 @@
 #include <linux/mii.h>
 
 #include <ralink_regs.h>
+
 #include <asm/mach-ralink-openwrt/rt305x.h>
 #include <asm/mach-ralink-openwrt/rt305x_esw_platform.h>
 
@@ -510,7 +511,7 @@ static void esw_hw_init(struct rt305x_esw *esw)
 	for (i = 0; i < 6; i++)
 		esw->ports[i].disable = (port_disable & (1 << i)) != 0;
 
-	if (soc_is_rt3352()) {
+	if (ralink_soc == RT305X_SOC_RT3352) {
 		/* reset EPHY */
 		u32 val = rt_sysc_r32(SYSC_REG_RESET_CTRL);
 		rt_sysc_w32(val | RT5350_RESET_EPHY, SYSC_REG_RESET_CTRL);
@@ -561,7 +562,7 @@ static void esw_hw_init(struct rt305x_esw *esw)
 		rt305x_mii_write(esw, 0, 29, 0x598b);
 		/* select local register */
 		rt305x_mii_write(esw, 0, 31, 0x8000);
-	} else if (soc_is_rt5350()) {
+	} else if (ralink_soc == RT305X_SOC_RT5350) {
 		/* reset EPHY */
 		u32 val = rt_sysc_r32(SYSC_REG_RESET_CTRL);
 		rt_sysc_w32(val | RT5350_RESET_EPHY, SYSC_REG_RESET_CTRL);
@@ -616,6 +617,53 @@ static void esw_hw_init(struct rt305x_esw *esw)
 		rt305x_mii_write(esw, 0, 29, 0x598b);
 		/* select local register */
 		rt305x_mii_write(esw, 0, 31, 0x8000);
+	} else if (ralink_soc == MT762X_SOC_MT7628AN) {
+		int i;
+//		u32 phy_val;
+		u32 val;
+
+		/* reset EPHY */
+		val = rt_sysc_r32(SYSC_REG_RESET_CTRL);
+		rt_sysc_w32(val | RT5350_RESET_EPHY, SYSC_REG_RESET_CTRL);
+		rt_sysc_w32(val, SYSC_REG_RESET_CTRL);
+
+		rt305x_mii_write(esw, 0, 31, 0x2000); /* change G2 page */
+		rt305x_mii_write(esw, 0, 26, 0x0020);
+
+		for (i = 0; i < 5; i++) {
+			rt305x_mii_write(esw, i, 31, 0x8000); //change L0 page
+			rt305x_mii_write(esw, i,  0, 0x3100);
+//			mii_mgr_read(i, 26, &phy_val);// EEE setting
+//			phy_val |= (1 << 5);
+//			rt305x_mii_write(esw, i, 26, phy_val);
+			rt305x_mii_write(esw, i, 30, 0xa000);
+			rt305x_mii_write(esw, i, 31, 0xa000); // change L2 page
+			rt305x_mii_write(esw, i, 16, 0x0606);
+			rt305x_mii_write(esw, i, 23, 0x0f0e);
+			rt305x_mii_write(esw, i, 24, 0x1610);
+			rt305x_mii_write(esw, i, 30, 0x1f15);
+			rt305x_mii_write(esw, i, 28, 0x6111);
+//			mii_mgr_read(i, 4, &phy_val);
+//			phy_val |= (1 << 10);
+//			rt305x_mii_write(esw, i, 4, phy_val);
+			rt305x_mii_write(esw, i, 31, 0x2000); // change G2 page
+			rt305x_mii_write(esw, i, 26, 0x0000);
+		}
+
+		//100Base AOI setting
+		rt305x_mii_write(esw, 0, 31, 0x5000);  //change G5 page
+		rt305x_mii_write(esw, 0, 19, 0x004a);
+		rt305x_mii_write(esw, 0, 20, 0x015a);
+		rt305x_mii_write(esw, 0, 21, 0x00ee);
+		rt305x_mii_write(esw, 0, 22, 0x0033);
+		rt305x_mii_write(esw, 0, 23, 0x020a);
+		rt305x_mii_write(esw, 0, 24, 0x0000);
+		rt305x_mii_write(esw, 0, 25, 0x024a);
+		rt305x_mii_write(esw, 0, 26, 0x035a);
+		rt305x_mii_write(esw, 0, 27, 0x02ee);
+		rt305x_mii_write(esw, 0, 28, 0x0233);
+		rt305x_mii_write(esw, 0, 29, 0x000a);
+		rt305x_mii_write(esw, 0, 30, 0x0000);
 	} else {
 		rt305x_mii_write(esw, 0, 31, 0x8000);
 		for (i = 0; i < 5; i++) {
@@ -1002,7 +1050,7 @@ esw_get_port_tr_badgood(struct switch_dev *dev,
 	int shift = attr->id == RT5350_ESW_ATTR_PORT_TR_GOOD ? 0 : 16;
 	u32 reg;
 
-	if (!soc_is_rt5350())
+	if ((ralink_soc != RT305X_SOC_RT5350) && (ralink_soc != MT762X_SOC_MT7628AN))
 		return -EINVAL;
 
 	if (idx < 0 || idx >= RT305X_ESW_NUM_LANWAN)
