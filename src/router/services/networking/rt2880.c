@@ -429,7 +429,7 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 
 	startradius[idx] = 0;
 	deconfigure_wifi();
-#if (defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_AR690W) || defined(HAVE_VF803) || defined(HAVE_HAMEA15)) && !defined(HAVE_ALL02310N)
+#if (defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_AR690W) || defined(HAVE_VF803) || defined(HAVE_HAMEA15) || defined(HAVE_DIR810L)) && !defined(HAVE_ALL02310N) 
 	char mac[32];
 	strcpy(mac, nvram_default_get("et0macaddr_safe", "00:11:22:33:44:55"));
 	MAC_ADD(mac);
@@ -475,6 +475,7 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 		eval("ifconfig", "wds18", "down");
 		eval("ifconfig", "wds19", "down");
 		eval("ifconfig", "apcli1", "down");
+		rmmod("MT7610_ap");
 		rmmod("RTPCI_ap");
 		rmmod("rlt_wifi");
 		rmmod("rt2860v2_ap");
@@ -1146,7 +1147,7 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 	fclose(fp);
 
 	if (isSTA(idx)) {
-#if (defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_AR690W) || defined(HAVE_VF803) || defined(HAVE_HAMEA15)) && !defined(HAVE_ALL02310N)
+#if (defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_AR690W) || defined(HAVE_VF803) || defined(HAVE_DIR810L) || defined(HAVE_HAMEA15)) && !defined(HAVE_ALL02310N)
 		if (nvram_match("mac_clone_enable", "1") && nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") && nvram_invmatch("def_whwaddr", "")) {
 			sysprintf("insmod rt2860v2_sta mac=%s", nvram_safe_get("def_whwaddr"));
 		} else {
@@ -1184,7 +1185,7 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 		setupSupplicant(dev);
 	} else {
 		if (idx == 0) {
-#if (defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_AR690W) || defined(HAVE_VF803) || defined(HAVE_HAMEA15)) && !defined(HAVE_ALL02310N)
+#if (defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_AR690W) || defined(HAVE_VF803) || defined(HAVE_DIR810L) || defined(HAVE_HAMEA15)) && !defined(HAVE_ALL02310N)
 			if (nvram_match("mac_clone_enable", "1") && nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") && nvram_invmatch("def_whwaddr", "")) {
 				sysprintf("insmod rt2860v2_ap mac=%s", nvram_safe_get("def_whwaddr"));
 				if (nvram_match("rtchip", "3062"))
@@ -1208,6 +1209,11 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 		} else {
 			insmod("RTPCI_ap");
 			insmod("rlt_wifi");
+#ifdef HAVE_DIR810L
+			sysprintf("insmod MT7610_ap mac=%s\n",mac);
+#else
+			insmod("MT7610_ap");
+#endif
 		}
 
 		char dev[32];
