@@ -811,7 +811,7 @@ void period_check(int sig)
 	if (brand == ROUTER_BOARD_WCRGN) {
 		val = (get_gpio(10) << 10) | (get_gpio(0) << 0);
 	} else if (brand == ROUTER_BOARD_WHRG300N) {
-		val = get_gpio(10) << 10;
+		val = (get_gpio(10) << 10) | (get_gpio(0) << 0);;
 	} else if (brand == ROUTER_BOARD_HAMEA15) {
 		val = get_gpio(0);
 	} else if (brand == ROUTER_BOARD_ECB9750) {
