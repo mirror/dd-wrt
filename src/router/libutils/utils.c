@@ -1573,7 +1573,7 @@ int internal_getRouterBrand()
 	setRouter("Linksys E1700 / N300");
 	return ROUTER_BOARD_E1700;
 #elif HAVE_DIR810L
-	setRouter("Dlink DIR-810L");
+	setRouter("Dlink DIR-810L B1");
 	return ROUTER_DIR810L;
 #elif HAVE_WHR1166D
 	setRouter("Buffalo WHR-1166D");
