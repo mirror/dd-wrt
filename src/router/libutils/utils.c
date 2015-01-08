@@ -1573,7 +1573,21 @@ int internal_getRouterBrand()
 	setRouter("Linksys E1700 / N300");
 	return ROUTER_BOARD_E1700;
 #elif HAVE_DIR810L
-	setRouter("Dlink DIR-810L B1");
+	void *getUEnv(char *name);
+
+	char *hw = getUEnv("HW_BOARD_REV");
+	if (hw) {
+	    if (!strcmp(hw,"B1"))
+		setRouter("Dlink DIR-810L B1");
+	    else if (!strcmp(hw,"A1"))
+		setRouter("Dlink DIR-810L B1");
+	    else if (!strcmp(hw,"C1"))
+		setRouter("Dlink DIR-810L C1");
+	    else
+		setRouter("Dlink DIR-810L XX");
+	
+	}else 
+	    setRouter("Dlink DIR-810L");
 	return ROUTER_DIR810L;
 #elif HAVE_WHR1166D
 	setRouter("Buffalo WHR-1166D");
@@ -3725,7 +3739,7 @@ static char *getUEnvExt(char *name)
 
 #endif
 
-#if defined(HAVE_BUFFALO) || defined(HAVE_BUFFALO_BL_DEFAULTS) || defined(HAVE_WMBR_G300NH) || defined(HAVE_WZRG450)
+#if defined(HAVE_BUFFALO) || defined(HAVE_BUFFALO_BL_DEFAULTS) || defined(HAVE_WMBR_G300NH) || defined(HAVE_WZRG450) || defined(HAVE_DIR810L)
 void *getUEnv(char *name)
 {
 
@@ -3739,6 +3753,8 @@ void *getUEnv(char *name)
 #define UOFFSET 0x40000
 #elif HAVE_WMBR_G300NH
 #define UOFFSET 0x0
+#elif HAVE_DIR810L
+#define UOFFSET 0x0
 #else
 #define UOFFSET 0x3E000
 #endif
@@ -3746,7 +3762,7 @@ void *getUEnv(char *name)
 	static char res[256];
 	memset(res, 0, sizeof(res));
 	//fprintf(stderr,"[u-boot env]%s\n",name);
-#ifdef HAVE_WMBR_G300NH
+#if defined(HAVE_WMBR_G300NH) || defined(HAVE_DIR810L)
 	FILE *fp = fopen("/dev/mtdblock/1", "rb");
 #else
 	FILE *fp = fopen("/dev/mtdblock/0", "rb");
