@@ -587,8 +587,12 @@ endif
 ifeq ($(CONFIG_MT7620),y)
 	dd if=mipsel-uclibc/root-mt7620.uimage of=mipsel-uclibc/aligned-mt7620.uimage bs=4096 conv=sync
 	cat mipsel-uclibc/root.fs  >> mipsel-uclibc/aligned-mt7620.uimage
-	cp mipsel-uclibc/aligned-mt7620.uimage mipsel-uclibc/aligned-mt7620.dir810l
-	./tools/dir810l/ncc_att_hwid -f mipsel-uclibc/aligned-mt7620.dir810l -m DIR-810L -H B1 -r WW -c 1.0 -F 2.5 -a
+	cp mipsel-uclibc/aligned-mt7620.uimage mipsel-uclibc/aligned-mt7620.dir810la1
+	cp mipsel-uclibc/aligned-mt7620.uimage mipsel-uclibc/aligned-mt7620.dir810lb1
+	cp mipsel-uclibc/aligned-mt7620.uimage mipsel-uclibc/aligned-mt7620.dir810lc1
+	./tools/dir810l/ncc_att_hwid -f mipsel-uclibc/aligned-mt7620.dir810lc1 -m DIR-810L -H C1 -r WW -c 1.0 -F 2.5 -a
+	./tools/dir810l/ncc_att_hwid -f mipsel-uclibc/aligned-mt7620.dir810lb1 -m DIR-810L -H B1 -r WW -c 1.0 -F 2.5 -a
+	./tools/dir810l/ncc_att_hwid -f mipsel-uclibc/aligned-mt7620.dir810la1 -m DIR-810L -H A1 -r WW -c 1.0 -F 2.5 -a
 	cp mipsel-uclibc/aligned-mt7620.uimage mipsel-uclibc/firmware_WHR-300HP2.ram
 	./tools/trx_n -m 30000000 -a 1 -o mipsel-uclibc/mt7620-webflash.bin mipsel-uclibc/firmware_WHR-300HP2.ram
 	cp tools/CRC_tool $(ARCH)-uclibc
