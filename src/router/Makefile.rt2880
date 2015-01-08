@@ -223,6 +223,9 @@ endif
 ifeq ($(CONFIG_MT7620),y)
 	cp $(LINUXDIR)/.config_mt7620 $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_DIR810L),y)
+	cp $(LINUXDIR)/.config_dir810l $(LINUXDIR)/.config
+endif
 	$(MAKE) -C $(LINUXDIR) oldconfig	
 
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
@@ -267,6 +270,23 @@ endif
 ifneq ($(CONFIG_BONDING),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/bonding
 endif
+ifeq ($(CONFIG_E1700),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wireless/rt5592
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wireless/rt7612
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wireless/rt7610
+endif
+ifneq ($(CONFIG_WHR1166D),y)
+ifneq ($(CONFIG_DIR810L),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wireless/rt7612
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wireless/rt7610
+else
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wireless/rt7612
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wireless/rt5592
+endif
+else
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wireless/rt5592
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wireless/rt7610
+endif
 ifneq ($(CONFIG_USBIP),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/staging/usbip
 endif
@@ -298,6 +318,7 @@ endif
 		awk '$$1 == "U" { print $$2 } ' | \
 		sort -u > $(LINUXDIR)/mod_symtab.txt
 	$(ARCH)-linux-nm -n $(LINUXDIR)/vmlinux.o | grep ' r __ksymtab' | sed -e 's,........ r __ksymtab_,,' > $(LINUXDIR)/kernel_symtab.txt
+	$(ARCH)-linux-nm -n $(LINUXDIR)/vmlinux.o | grep ' R __ksymtab' | sed -e 's,........ R __ksymtab_,,' >> $(LINUXDIR)/kernel_symtab.txt
 	grep -f $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_include.txt
 	grep -vf $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_exclude.txt
 	( \
@@ -324,7 +345,20 @@ endif
 	fi
 ifeq ($(CONFIG_MT7620),y)
 	cp $(LINUXDIR)/vmlinux $(LINUXDIR)/vmlinux-mt7620
+ifeq ($(CONFIG_DIR810L),y)
+	$(LINUXDIR)/scripts/dtc/dtc -O dtb -o $(LINUXDIR)/dts/MT7620a.dtb $(LINUXDIR)/dts/DIR-810L.dts
+else
+ifeq ($(CONFIG_E1700),y)
+	$(LINUXDIR)/scripts/dtc/dtc -O dtb -o $(LINUXDIR)/dts/MT7620a.dtb $(LINUXDIR)/dts/MT7620a_MT7530.dts
+else
+ifeq ($(CONFIG_WHR1166D),y)
+	$(LINUXDIR)/scripts/dtc/dtc -O dtb -o $(LINUXDIR)/dts/MT7620a.dtb $(LINUXDIR)/dts/MT7620a_1166.dts
+else
 	$(LINUXDIR)/scripts/dtc/dtc -O dtb -o $(LINUXDIR)/dts/MT7620a.dtb $(LINUXDIR)/dts/MT7620a.dts
+endif
+
+endif
+endif
 	patch-dtb $(LINUXDIR)/vmlinux-mt7620 $(LINUXDIR)/dts/MT7620a.dtb
 #	$(call CompressLzma,$(KDIR)/vmlinux-$(1)$(3),$(KDIR)/vmlinux-$(1)$(3).bin.lzma)
 endif
@@ -519,6 +553,23 @@ ifneq ($(CONFIG_USB_ADVANCED),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/jbd	
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/jbd2	
 endif
+ifeq ($(CONFIG_E1700),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wireless/rt5592
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wireless/rt7612
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wireless/rt7610
+endif
+ifneq ($(CONFIG_WHR1166D),y)
+ifneq ($(CONFIG_DIR810L),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wireless/rt7612
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wireless/rt7610
+else
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wireless/rt7612
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wireless/rt5592
+endif
+else
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wireless/rt5592
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wireless/rt7610
+endif
 ifeq ($(CONFIG_3G_ONLY),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs
 endif
@@ -536,6 +587,8 @@ endif
 ifeq ($(CONFIG_MT7620),y)
 	dd if=mipsel-uclibc/root-mt7620.uimage of=mipsel-uclibc/aligned-mt7620.uimage bs=4096 conv=sync
 	cat mipsel-uclibc/root.fs  >> mipsel-uclibc/aligned-mt7620.uimage
+	cp mipsel-uclibc/aligned-mt7620.uimage mipsel-uclibc/aligned-mt7620.dir810l
+	./tools/dir810l/ncc_att_hwid -f mipsel-uclibc/aligned-mt7620.dir810l -m DIR-810L -H B1 -r WW -c 1.0 -F 2.5 -a
 	cp mipsel-uclibc/aligned-mt7620.uimage mipsel-uclibc/firmware_WHR-300HP2.ram
 	./tools/trx_n -m 30000000 -a 1 -o mipsel-uclibc/mt7620-webflash.bin mipsel-uclibc/firmware_WHR-300HP2.ram
 	cp tools/CRC_tool $(ARCH)-uclibc
@@ -553,6 +606,14 @@ ifeq ($(CONFIG_MT7620),y)
 	-cd $(ARCH)-uclibc && ./CRC_tool aligned-mt7620.uimage-600-us WRTR-296N_US && cd ..
 	cp $(ARCH)-uclibc/aligned-mt7620.uimage $(ARCH)-uclibc/aligned-mt7620.uimage-600-eu
 	-cd $(ARCH)-uclibc && ./CRC_tool aligned-mt7620.uimage-600-eu WRTR-296N_EU && cd ..
+
+
+	cp $(ARCH)-uclibc/aligned-mt7620.uimage $(ARCH)-uclibc/aligned-mt7620.uimage-1166-jp
+	-cd $(ARCH)-uclibc && ./CRC_tool aligned-mt7620.uimage-1166-jp WRTR-300ACN && cd ..
+	cp $(ARCH)-uclibc/aligned-mt7620.uimage $(ARCH)-uclibc/aligned-mt7620.uimage-1166-us
+	-cd $(ARCH)-uclibc && ./CRC_tool aligned-mt7620.uimage-1166-us WRTR-300ACN_US && cd ..
+	cp $(ARCH)-uclibc/aligned-mt7620.uimage $(ARCH)-uclibc/aligned-mt7620.uimage-1166-eu
+	-cd $(ARCH)-uclibc && ./CRC_tool aligned-mt7620.uimage-1166-eu WRTR-300ACN_EU && cd ..
 endif
 
 
