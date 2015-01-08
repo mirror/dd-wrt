@@ -52,10 +52,10 @@
 #define MT7621_GPIO_MODE_SDHCI_SHIFT	18
 #define MT7621_GPIO_MODE_SDHCI_GPIO	1
 
-static struct rt2880_pmx_func uart1_grp[] =  { FUNC("uart1", 0, 1, 2) };
+static struct rt2880_pmx_func uart1_grp[] =  { FUNC("uart", 0, 1, 2) };
 static struct rt2880_pmx_func i2c_grp[] =  { FUNC("i2c", 0, 3, 2) };
-static struct rt2880_pmx_func uart3_grp[] = { FUNC("uart3", 0, 5, 4) };
-static struct rt2880_pmx_func uart2_grp[] = { FUNC("uart2", 0, 9, 4) };
+static struct rt2880_pmx_func uart3_grp[] = { FUNC("uart", 0, 5, 4) };
+static struct rt2880_pmx_func uart2_grp[] = { FUNC("uart", 0, 9, 4) };
 static struct rt2880_pmx_func jtag_grp[] = { FUNC("jtag", 0, 13, 5) };
 static struct rt2880_pmx_func wdt_grp[] = {
 	FUNC("wdt rst", 0, 18, 1),
@@ -66,7 +66,7 @@ static struct rt2880_pmx_func pcie_rst_grp[] = {
 	FUNC("pcie refclk", MT7621_GPIO_MODE_PCIE_REF, 19, 1)
 };
 static struct rt2880_pmx_func mdio_grp[] = { FUNC("mdio", 0, 20, 2) };
-static struct rt2880_pmx_func rgmii2_grp[] = { FUNC("rgmii2", 0, 22, 12) };
+static struct rt2880_pmx_func rgmii2_grp[] = { FUNC("rgmii", 0, 22, 12) };
 static struct rt2880_pmx_func spi_grp[] = {
 	FUNC("spi", 0, 34, 7),
 	FUNC("nand", 2, 34, 8),
@@ -75,7 +75,7 @@ static struct rt2880_pmx_func sdhci_grp[] = {
 	FUNC("sdhci", 0, 41, 8),
 	FUNC("nand", 2, 41, 8),
 };
-static struct rt2880_pmx_func rgmii1_grp[] = { FUNC("rgmii1", 0, 49, 12) };
+static struct rt2880_pmx_func rgmii1_grp[] = { FUNC("rgmii", 0, 49, 12) };
 
 static struct rt2880_pmx_group mt7621_pinmux_data[] = {
 	GRP("uart1", uart1_grp, 1, MT7621_GPIO_MODE_UART1),
@@ -175,6 +175,7 @@ void prom_soc_init(struct ralink_soc_info *soc_info)
 	soc_info->mem_size_min = MT7621_DDR2_SIZE_MIN;
 	soc_info->mem_size_max = MT7621_DDR2_SIZE_MAX;
 	soc_info->mem_base = MT7621_DRAM_BASE;
+	ralink_soc = MT762X_SOC_MT7621AT;
 
 	rt2880_pinmux_data = mt7621_pinmux_data;
 
