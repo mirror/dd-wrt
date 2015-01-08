@@ -1077,12 +1077,13 @@ void period_check(int sig)
 		break;
 	case ROUTER_D1800H:
 		sesgpio = 0x10a;	// gpio 10, inversed
-		break;
+		break;	
 #ifndef HAVE_BUFFALO
 	case ROUTER_BOARD_WCRGN:
 	case ROUTER_BOARD_RT3352:
 	case ROUTER_BOARD_NEPTUNE:
 	case ROUTER_BOARD_DIR615D:
+	case ROUTER_BOARD_WHRG300N:
 		sesgpio = 0x100;
 		break;
 	case ROUTER_BOARD_E1700:
