@@ -571,13 +571,14 @@ mt7530_probe(struct device *dev, void __iomem *base, struct mii_bus *bus, int vl
 		return ret;
 	}
 
+
 	map = mt7530_find_mapping(dev->of_node);
 	if (map)
 		mt7530_apply_mapping(mt7530, map);
 	mt7530_apply_config(swdev);
 
 	/* magic vodoo */
-	if (bus && mt7530_r32(mt7530, REG_HWTRAP) !=  0x1117edf) {
+	if (!IS_ENABLED(CONFIG_SOC_MT7621_OPENWRT) && bus && mt7530_r32(mt7530, REG_HWTRAP) !=  0x1117edf) {
 	        dev_info(dev, "fixing up MHWTRAP register - bootloader probably played with it\n");
 		mt7530_w32(mt7530, REG_HWTRAP, 0x1117edf);
 	}
