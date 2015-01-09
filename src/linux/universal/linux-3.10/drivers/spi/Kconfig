@@ -394,6 +394,12 @@ config SPI_RT2880
 	help
 	  This selects a driver for the Ralink RT288x/RT305x SPI Controller.
 
+config SPI_MT7621
+	tristate "MediaTek MT7621 SPI Controller"
+	depends on RALINK
+	help
+	  This selects a driver for the MediaTek MT7621 SPI Controller.
+
 config SPI_S3C24XX
 	tristate "Samsung S3C24XX series SPI"
 	depends on ARCH_S3C24XX
