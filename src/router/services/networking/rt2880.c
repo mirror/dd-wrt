@@ -429,7 +429,15 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 
 	startradius[idx] = 0;
 	deconfigure_wifi();
-#if (defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_AR690W) || defined(HAVE_VF803) || defined(HAVE_HAMEA15) || defined(HAVE_DIR810L)) && !defined(HAVE_ALL02310N) 
+#ifdef HAVE_DIR810L
+	char mac[32];
+	char mac5[32];
+	strcpy(mac, nvram_default_get("et0macaddr_safe", "00:11:22:33:44:55"));
+	strcpy(mac5, nvram_default_get("et0macaddr_safe", "00:11:22:33:44:55"));
+	MAC_ADD(mac5);
+	MAC_ADD(mac5);
+
+#elif (defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_AR690W) || defined(HAVE_VF803) || defined(HAVE_HAMEA15)) && !defined(HAVE_ALL02310N) 
 	char mac[32];
 	strcpy(mac, nvram_default_get("et0macaddr_safe", "00:11:22:33:44:55"));
 	MAC_ADD(mac);
@@ -1211,7 +1219,7 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 			insmod("RTPCI_ap");
 			insmod("rlt_wifi");
 #ifdef HAVE_DIR810L
-			sysprintf("insmod MT7610_ap mac=%s\n",mac);
+			sysprintf("insmod MT7610_ap mac=%s\n",mac5);
 #else
 			insmod("MT7610_ap");
 #endif
