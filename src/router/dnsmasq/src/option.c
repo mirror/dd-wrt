@@ -147,6 +147,7 @@ struct myoption {
 #define LOPT_LOCAL_SERVICE 335
 #define LOPT_DNSSEC_TIME   336
 #define LOPT_LOOP_DETECT   337
+#define LOPT_IGNORE_ADDR   338
 
 #ifdef HAVE_GETOPT_LONG
 static const struct option opts[] =  
@@ -181,6 +182,7 @@ static const struct myoption opts[] =
     { "local-service", 0, 0, LOPT_LOCAL_SERVICE },
     { "bogus-priv", 0, 0, 'b' },
     { "bogus-nxdomain", 1, 0, 'B' },
+    { "ignore-address", 1, 0, LOPT_IGNORE_ADDR },
     { "selfmx", 0, 0, 'e' },
     { "filterwin2k", 0, 0, 'f' },
     { "pid-file", 2, 0, 'x' },
@@ -457,6 +459,7 @@ static struct {
   { LOPT_QUIET_RA, OPT_QUIET_RA, NULL, gettext_noop("Do not log RA."), NULL },
   { LOPT_LOCAL_SERVICE, OPT_LOCAL_SERVICE, NULL, gettext_noop("Accept queries only from directly-connected networks"), NULL },
   { LOPT_LOOP_DETECT, OPT_LOOP_DETECT, NULL, gettext_noop("Detect and remove DNS forwarding loops"), NULL },
+  { LOPT_IGNORE_ADDR, ARG_DUP, "<ipaddr>", gettext_noop("Ignore DNS responses containing ipaddr."), NULL }, 
   { 0, 0, NULL, NULL, NULL }
 }; 
 
@@ -2119,14 +2122,23 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
       break;
       
     case 'B':  /* --bogus-nxdomain */
-      {
+    case LOPT_IGNORE_ADDR: /* --ignore-address */
+     {
 	struct in_addr addr;
 	unhide_metas(arg);
 	if (arg && (inet_pton(AF_INET, arg, &addr) > 0))
 	  {
 	    struct bogus_addr *baddr = opt_malloc(sizeof(struct bogus_addr));
-	    baddr->next = daemon->bogus_addr;
-	    daemon->bogus_addr = baddr;
+	    if (option == 'B')
+	      {
+		baddr->next = daemon->bogus_addr;
+		daemon->bogus_addr = baddr;
+	      }
+	    else
+	      {
+		baddr->next = daemon->ignore_addr;
+		daemon->ignore_addr = baddr;
+	      }
 	    baddr->addr = addr;
 	  }
 	else
