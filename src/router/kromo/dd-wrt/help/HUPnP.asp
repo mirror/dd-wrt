@@ -20,11 +20,10 @@
 				
 				<dt><% tran("upnp.clear"); %></dt>
 				<!--dd>If enabled, all UPnP port forwardings are deleted when the router starts up.</dd-->
-				</div>
 				</dd>
+				<% tran("hupnp.page4"); %>
 				
 				<dd>Click <i>Save Settings</i> to save your settings. Click <i>Cancel Changes</i> to cancel your unsaved changes.</dd-->
-				<% tran("hupnp.page5"); %>
 			</dl>
 		</div>
 		<div class="also">
