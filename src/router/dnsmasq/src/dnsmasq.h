@@ -569,8 +569,9 @@ struct hostsfile {
 #define STAT_SECURE_WILDCARD    7
 #define STAT_NO_SIG             8
 #define STAT_NO_DS              9
-#define STAT_NEED_DS_NEG       10
-#define STAT_CHASE_CNAME       11
+#define STAT_NO_NS             10
+#define STAT_NEED_DS_NEG       11
+#define STAT_CHASE_CNAME       12
 
 #define FREC_NOREBIND           1
 #define FREC_CHECKING_DISABLED  2
@@ -604,7 +605,9 @@ struct frec {
 #ifdef HAVE_DNSSEC 
   int class, work_counter;
   struct blockdata *stash; /* Saved reply, whilst we validate */
-  size_t stash_len;
+  struct blockdata *orig_domain; /* domain of original query, whilst
+				    we're seeing is if in unsigned domain */
+  size_t stash_len, name_start, name_len;
   struct frec *dependent; /* Query awaiting internally-generated DNSKEY or DS query */
   struct frec *blocking_query; /* Query which is blocking us. */
 #endif
@@ -930,7 +933,7 @@ extern struct daemon {
   char *runfile; 
   char *lease_change_command;
   struct iname *if_names, *if_addrs, *if_except, *dhcp_except, *auth_peers, *tftp_interfaces;
-  struct bogus_addr *bogus_addr;
+  struct bogus_addr *bogus_addr, *ignore_addr;
   struct server *servers;
   struct ipsets *ipsets;
   int log_fac; /* log facility */
@@ -1096,6 +1099,7 @@ size_t answer_request(struct dns_header *header, char *limit, size_t qlen,
 		      time_t now, int *ad_reqd, int *do_bit);
 int check_for_bogus_wildcard(struct dns_header *header, size_t qlen, char *name, 
 			     struct bogus_addr *addr, time_t now);
+int check_for_ignored_address(struct dns_header *header, size_t qlen, struct bogus_addr *baddr);
 unsigned char *find_pseudoheader(struct dns_header *header, size_t plen,
 				 size_t *len, unsigned char **p, int *is_sign);
 int check_for_local_domain(char *name, time_t now);
@@ -1128,7 +1132,7 @@ int in_zone(struct auth_zone *zone, char *name, char **cut);
 size_t dnssec_generate_query(struct dns_header *header, char *end, char *name, int class, int type, union mysockaddr *addr);
 int dnssec_validate_by_ds(time_t now, struct dns_header *header, size_t n, char *name, char *keyname, int class);
 int dnssec_validate_ds(time_t now, struct dns_header *header, size_t plen, char *name, char *keyname, int class);
-int dnssec_validate_reply(time_t now, struct dns_header *header, size_t plen, char *name, char *keyname, int *class, int *neganswer);
+int dnssec_validate_reply(time_t now, struct dns_header *header, size_t plen, char *name, char *keyname, int *class, int *neganswer, int *nons);
 int dnssec_chase_cname(time_t now, struct dns_header *header, size_t plen, char *name, char *keyname);
 int dnskey_keytag(int alg, int flags, unsigned char *rdata, int rdlen);
 size_t filter_rrsigs(struct dns_header *header, size_t plen);

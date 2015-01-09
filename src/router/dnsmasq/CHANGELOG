@@ -22,8 +22,25 @@ version 2.73
 
 	    Fix crash in DNSSEC code with long RRs. Thanks to Marco Davids
 	    for the bug report.
+	    
+	    Add --ignore-address option. Ignore replies to A-record 
+	    queries which include the specified address. No error is
+	    generated, dnsmasq simply continues to listen for another 
+	    reply. This is useful to defeat blocking strategies which
+	    rely on quickly supplying a forged answer to a DNS 
+	    request for certain domains, before the correct answer can
+            arrive. Thanks to Glen Huang for the patch.
 	
+	    Revisit the part of DNSSEC validation which determines if an 
+	    unsigned answer is legit, or is in some part of the DNS 
+	    tree which should be signed. Dnsmasq now works from the 
+	    DNS root downward looking for the limit of signed 
+	    delegations, rather than working bottom up. This is 
+	    both more correct, and less likely to trip over broken 
+	    nameservers in the unsigned parts of the DNS tree 
+	    which don't respond well to DNSSEC queries.
 
+	
 version 2.72
             Add ra-advrouter mode, for RFC-3775 mobile IPv6 support.
 
