@@ -15,9 +15,9 @@
 #include <linux/module.h>
 
 #include <asm/mipsregs.h>
-#include <asm/mach-ralink-openwrt/ralink_regs.h>
-#include <asm/mach-ralink-openwrt/rt305x.h>
-#include <asm/mach-ralink-openwrt/pinmux.h>
+#include <asm/mach-ralink/ralink_regs.h>
+#include <asm/mach-ralink/rt305x.h>
+#include <asm/mach-ralink/pinmux.h>
 
 #include "common.h"
 

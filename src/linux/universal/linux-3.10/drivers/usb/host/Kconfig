@@ -28,7 +28,13 @@ config USB_XHCI_HCD
 if USB_XHCI_HCD
 
 config USB_XHCI_PLATFORM
-	tristate
+	bool "xHCI platform"
+	depends on SOC_MT7621_OPENWRT
+
+config USB_MT7621_XHCI_PLATFORM
+	bool "MTK MT7621 xHCI"
+	depends on USB_XHCI_PLATFORM
+	depends on SOC_MT7621_OPENWRT
 
 config USB_XHCI_HCD_DEBUGGING
 	bool "Debugging for the xHCI host controller"

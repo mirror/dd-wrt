@@ -193,6 +193,7 @@ exit:
 void usb_hub_remove_port_device(struct usb_hub *hub,
 				       int port1)
 {
-	device_unregister(&hub->ports[port1 - 1]->dev);
+	if (hub->ports[port1 - 1])
+		device_unregister(&hub->ports[port1 - 1]->dev);
 }
 

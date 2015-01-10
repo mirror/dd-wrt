@@ -45,7 +45,7 @@
 #define RALINK_GPIO_HAS_4524            1
 #elif defined (CONFIG_RALINK_MT7620) || defined (CONFIG_SOC_MT7620_OPENWRT)
 #define RALINK_GPIO_HAS_7224            1
-#elif defined (CONFIG_RALINK_MT7621)
+#elif defined (CONFIG_RALINK_MT7621) || defined (CONFIG_SOC_MT7621_OPENWRT)
 #define RALINK_GPIO_HAS_9532            1
 #elif defined (CONFIG_RALINK_RT5350)
 #define RALINK_GPIO_HAS_2722            1
@@ -189,7 +189,7 @@
 #define RALINK_IRQ_ADDR			RALINK_INTCL_BASE
 #define RALINK_PRGIO_ADDR		RALINK_PIO_BASE // Programmable I/O
 
-#if defined (CONFIG_RALINK_MT7621)
+#if defined (CONFIG_RALINK_MT7621) || defined (CONFIG_SOC_MT7621_OPENWRT)
 #define RALINK_REG_INTENA		(RALINK_IRQ_ADDR   + 0x80)
 #define RALINK_REG_INTDIS		(RALINK_IRQ_ADDR   + 0x78)
 
@@ -456,7 +456,7 @@
 #define RALINK_GPIOMODE_WDT		0x400000
 
 
-#elif defined (CONFIG_RALINK_MT7621)
+#elif defined (CONFIG_RALINK_MT7621) || defined (CONFIG_SOC_MT7621_OPENWRT)
 
 #define RALINK_GPIOMODE_I2C		0x01
 #define RALINK_GPIOMODE_UARTF		0x1C
@@ -477,7 +477,7 @@
 
 // if you would like to enable GPIO mode for other pins, please modify this value
 // !! Warning: changing this value may make other features(MDIO, PCI, etc) lose efficacy
-#if defined (CONFIG_RALINK_MT7621) //FIXME
+#if defined (CONFIG_RALINK_MT7621) || defined (CONFIG_SOC_MT7621_OPENWRT) //FIXME
 #define RALINK_GPIOMODE_DFT		(RALINK_GPIOMODE_I2C | RALINK_GPIOMODE_PA_G) 
 #elif defined (CONFIG_RALINK_MT7620) || defined (CONFIG_SOC_MT7620_OPENWRT) //FIXME
 #define RALINK_GPIOMODE_DFT		(RALINK_GPIOMODE_I2C) | (RALINK_GPIOMODE_UARTF)
@@ -505,7 +505,7 @@
 #endif
 
 
-#if defined (CONFIG_RALINK_MT7621)
+#if defined (CONFIG_RALINK_MT7621) || defined (CONFIG_SOC_MT7621_OPENWRT)
 #define RALINK_GPIO_DATA_MASK		0xFFFFFFFF
 #define RALINK_GPIO_DATA_LEN		32
 #define RALINK_GPIO_DIR_IN		0

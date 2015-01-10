@@ -3,7 +3,7 @@
  * under the terms of the GNU General Public License version 2 as published
  * by the Free Software Foundation.
  *
- * Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
+ * Copyright (C) 2008-2014 Imre Kaloz <kaloz@openwrt.org>
  * Copyright (C) 2008-2009 Gabor Juhos <juhosg@openwrt.org>
  * Copyright (C) 2013 John Crispin <blogic@openwrt.org>
  */
@@ -27,9 +27,8 @@
 #include "common.h"
 
 __iomem void *rt_sysc_membase;
-__iomem void *rt_memc_membase;
 EXPORT_SYMBOL(rt_sysc_membase);
-EXPORT_SYMBOL(rt_memc_membase);
+__iomem void *rt_memc_membase;
 
 extern struct boot_param_header __dtb_start;
 
@@ -92,6 +91,17 @@ static int __init early_init_dt_find_memory(unsigned long node, const char *unam
 	return 0;
 }
 
+static int chosen_dtb;
+
+static int __init early_init_dt_find_chosen(unsigned long node, const char *uname,
+				     int depth, void *data)
+{
+	if (depth == 1 && !strcmp(uname, "chosen"))
+		chosen_dtb = 1;
+
+	return 0;
+}
+
 extern struct boot_param_header __image_dtb;
 
 void __init plat_mem_setup(void)
@@ -104,7 +114,9 @@ void __init plat_mem_setup(void)
 	 */
 	__dt_setup_arch(&__image_dtb);
 
-	strlcpy(arcs_cmdline, boot_command_line, COMMAND_LINE_SIZE);
+	of_scan_flat_dt(early_init_dt_find_chosen, NULL);
+	if (chosen_dtb)
+		strlcpy(arcs_cmdline, boot_command_line, COMMAND_LINE_SIZE);
 
 	of_scan_flat_dt(early_init_dt_find_memory, NULL);
 	if (memory_dtb)

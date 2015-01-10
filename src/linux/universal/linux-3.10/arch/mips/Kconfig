@@ -2226,21 +2226,6 @@ config IFX_VPE_CACHE_SPLIT
 	  By default, vpe_dcache_shared and vpe_icache_shared are set to 1
 	  (i.e., both icache and dcache are shared among VPEs)
 
-config PERFCTRS
-	bool "34K Performance counters"
-	depends on MIPS_MT && PROC_FS
-	default n
-	help
-	  34K Performance counter through /proc
-
-config MTSCHED
-	bool "Support mtsched priority configuration for TCs"
-	depends on MIPS_MT && PROC_FS
-	default y
-	help
-	  Support for mtsched priority configuration for TCs through
-	  /proc/mips/mtsched
-
 config MIPS_MT_SMTC_IM_BACKSTOP
 	bool "Use per-TC register bits as backstop for inhibited IM bits"
 	depends on MIPS_MT_SMTC

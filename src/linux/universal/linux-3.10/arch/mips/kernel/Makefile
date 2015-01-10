@@ -74,8 +74,6 @@ obj-$(CONFIG_MIPS32_O32)	+= binfmt_elfo32.o scall64-o32.o
 
 obj-$(CONFIG_KGDB)		+= kgdb.o
 obj-$(CONFIG_PROC_FS)		+= proc.o
-obj-$(CONFIG_MTSCHED)		+= mtsched_proc.o
-obj-$(CONFIG_PERFCTRS)		+= perf_proc.o
 obj-$(CONFIG_64BIT)		+= cpu-bugs64.o
 
 obj-$(CONFIG_I8253)		+= i8253.o
