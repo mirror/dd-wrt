@@ -17,8 +17,8 @@
 
 #include <asm/mipsregs.h>
 #include <asm/smp-ops.h>
-#include <asm/mach-ralink/ralink_regs.h>
-#include <asm/mach-ralink/mt7621.h>
+#include <asm/mach-ralink-openwrt/ralink_regs.h>
+#include <asm/mach-ralink-openwrt/mt7621.h>
 
 #include <pinmux.h>
 

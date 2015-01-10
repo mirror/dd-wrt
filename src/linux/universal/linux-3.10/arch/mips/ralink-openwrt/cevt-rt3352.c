@@ -16,7 +16,7 @@
 #include <linux/of_irq.h>
 #include <linux/of_address.h>
 
-#include <asm/mach-ralink/ralink_regs.h>
+#include <asm/mach-ralink-openwrt/ralink_regs.h>
 
 #define SYSTICK_FREQ		(50 * 1000)
 
