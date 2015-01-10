@@ -688,6 +688,8 @@
 
 #define ROUTER_DIR810L 0xe311
 
+#define ROUTER_DIR860 0xe40f
+
 #define NVROUTER "DD_BOARD"
 
 static inline int startswith(char *source, char *cmp)

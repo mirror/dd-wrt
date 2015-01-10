@@ -534,6 +534,22 @@ enum {
 #endif
 };
 
+#define	RALINK_GPIO6332_SET_DIR		0x51
+#define RALINK_GPIO6332_SET_DIR_IN	0x13
+#define RALINK_GPIO6332_SET_DIR_OUT	0x14
+#define	RALINK_GPIO6332_READ		0x52
+#define	RALINK_GPIO6332_WRITE		0x53
+#define	RALINK_GPIO6332_SET		0x22
+#define	RALINK_GPIO6332_CLEAR		0x32
+
+#define	RALINK_GPIO9564_SET_DIR		0x61
+#define RALINK_GPIO9564_SET_DIR_IN	0x15
+#define RALINK_GPIO9564_SET_DIR_OUT	0x16
+#define	RALINK_GPIO9564_READ		0x62
+#define	RALINK_GPIO9564_WRITE		0x63
+#define	RALINK_GPIO9564_SET		0x23
+#define	RALINK_GPIO9564_CLEAR		0x33
+
 #define	RALINK_GPIO_SET_DIR		0x01
 #define RALINK_GPIO_SET_DIR_IN		0x11
 #define RALINK_GPIO_SET_DIR_OUT		0x12
@@ -578,7 +594,15 @@ int gpio_set_dir_in(int gpio)
 	}
 	int req;
 	int val;
-#ifdef HAVE_MT7620
+#ifdef HAVE_MT7621
+	if (gpio <= 95 && gpio >= 64) {
+		req = RALINK_GPIO9564_SET_DIR_IN;
+		val = 1 << (gpio - 64);
+	} else if (gpio <= 63 && gpio >= 32) {
+		req = RALINK_GPIO6332_SET_DIR_IN;
+		val = 1 << (gpio - 32);
+	} else
+#elif defined(HAVE_MT7620)
 	if (gpio == 72) {
 		req = RALINK_GPIO72_SET_DIR_IN;
 		val = 1 << (gpio - 72);
@@ -614,7 +638,15 @@ int gpio_set_dir_out(int gpio)
 	}
 	int req;
 	int val;
-#ifdef HAVE_MT7620
+#ifdef HAVE_MT7621
+	if (gpio <= 95 && gpio >= 64) {
+		req = RALINK_GPIO9564_SET_DIR_OUT;
+		val = 1 << (gpio - 64);
+	} else if (gpio <= 63 && gpio >= 32) {
+		req = RALINK_GPIO6332_SET_DIR_OUT;
+		val = 1 << (gpio - 32);
+	} else
+#elif defined(HAVE_MT7620)
 	if (gpio == 72) {
 		req = RALINK_GPIO72_SET_DIR_OUT;
 		val = 1 << (gpio - 72);
@@ -653,7 +685,15 @@ int gpio_read_bit(int gpio, int *value)
 	}
 	int req;
 	int val;
-#ifdef HAVE_MT7620
+#ifdef HAVE_MT7621
+	if (gpio <= 95 && gpio >= 64) {
+		req = RALINK_GPIO9564_READ;
+		val = 1 << (gpio - 64);
+	} else if (gpio <= 63 && gpio >= 32) {
+		req = RALINK_GPIO6332_READ;
+		val = 1 << (gpio - 32);
+	} else
+#elif defined(HAVE_MT7620)
 	if (gpio == 72) {
 		req = RALINK_GPIO72_READ;
 		val = 1 << (gpio - 72);
@@ -696,7 +736,17 @@ int gpio_write_bit(int gpio, int setvalue)
 	int req;
 	int wreq;
 	int val;
-#ifdef HAVE_MT7620
+#ifdef HAVE_MT7621
+	if (gpio <= 95 && gpio >= 64) {
+		req = RALINK_GPIO9564_READ;
+		wreq = RALINK_GPIO9564_WRITE;
+		val = 1 << (gpio - 64);
+	} else if (gpio <= 63 && gpio >= 32) {
+		req = RALINK_GPIO6332_READ;
+		wreq = RALINK_GPIO6332_WRITE;
+		val = 1 << (gpio - 32);
+	} else
+#elif defined(HAVE_MT7620)
 	if (gpio == 72) {
 		req = RALINK_GPIO72_READ;
 		wreq = RALINK_GPIO72_WRITE;

@@ -1215,12 +1215,14 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 			}
 #endif
 		} else {
+#ifndef HAVE_DIR860
 			insmod("RTPCI_ap");
 			insmod("rlt_wifi");
 #ifdef HAVE_DIR810L
 			sysprintf("insmod MT7610_ap mac=%s\n",mac5);
 #else
 			insmod("MT7610_ap");
+#endif
 #endif
 		}
 
