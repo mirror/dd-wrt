@@ -8,9 +8,8 @@ config CLKEVT_RT3352
 	select CLKSRC_MMIO
 
 config IRQ_INTC
-	bool
 	default y
-	depends on !SOC_MT7621
+	depends on !SOC_MT7621_OPENWRT
 
 choice
 	prompt "Ralink SoC selection"
