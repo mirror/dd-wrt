@@ -196,6 +196,14 @@ config USB_RCAR_PHY
 	  To compile this driver as a module, choose M here: the
 	  module will be called rcar-phy.
 
+config RALINK_USBPHY
+	bool "Ralink USB PHY controller Driver"
+	depends on MIPS && RALINK
+	select USB_PHY
+	help
+	  Enable this to support ralink USB phy controller for ralink
+	  SoCs.
+
 config USB_ULPI
 	bool "Generic ULPI Transceiver Driver"
 	depends on ARM

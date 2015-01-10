@@ -60,5 +60,6 @@ obj-$(CONFIG_MTD_NAND_GPMI_NAND)	+= gpmi-nand/
 obj-$(CONFIG_MTD_NAND_XWAY)		+= xway_nand.o
 obj-$(CONFIG_MTD_NAND_BCM47XXNFLASH)	+= bcm47xxnflash/
 obj-$(CONFIG_MTD_NAND_ATH)		+= ath_nand.o
+obj-$(CONFIG_MTK_MTD_NAND)                      += mtk_nand.o bmt.o
 
 nand-objs := nand_base.o nand_bbt.o

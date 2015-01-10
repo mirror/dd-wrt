@@ -19,7 +19,7 @@
 #include <asm/gic.h>
 #include <asm/gcmpregs.h>
 
-#include <asm/mach-ralink-openwrt/mt7621.h>
+#include <asm/mach-ralink/mt7621.h>
 
 unsigned long _gcmp_base;
 static int gic_resched_int_base = 56;

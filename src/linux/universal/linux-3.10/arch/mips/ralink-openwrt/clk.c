@@ -77,19 +77,3 @@ void __init plat_time_init(void)
 	clk_put(clk);
 	clocksource_of_init();
 }
-
-int getCPUClock(void)
-{
-    struct clk *clk;
-    clk = clk_get_sys("cpu", NULL);
-    return clk_get_rate(clk) / 1000000;
-}
-
-u32 get_surfboard_sysclk(void) 
-{
-    struct clk *clk;
-    clk = clk_get_sys("sys", NULL);
-    return clk_get_rate(clk);
-}
-EXPORT_SYMBOL(get_surfboard_sysclk);
-

@@ -21,6 +21,9 @@
  */
 
 #include "xhci.h"
+#if defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
+#include "xhci-mtk.h"
+#endif
 
 #define XHCI_INIT_VALUE 0x0
 
