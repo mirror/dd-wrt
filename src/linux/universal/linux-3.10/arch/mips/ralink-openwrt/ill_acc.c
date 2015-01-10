@@ -10,7 +10,7 @@
 #include <linux/of_platform.h>
 #include <linux/of_irq.h>
 
-#include <asm/mach-ralink/ralink_regs.h>
+#include <asm/mach-ralink-openwrt/ralink_regs.h>
 
 #define REG_ILL_ACC_ADDR	0x10
 #define REG_ILL_ACC_TYPE	0x14
