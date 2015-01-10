@@ -1572,6 +1572,9 @@ int internal_getRouterBrand()
 #elif HAVE_E1700
 	setRouter("Linksys E1700 / N300");
 	return ROUTER_BOARD_E1700;
+#elif HAVE_DIR860
+	setRouter("Dlink DIR-860");
+	return ROUTER_DIR860;
 #elif HAVE_DIR810L
 	void *getUEnv(char *name);
 

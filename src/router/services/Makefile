@@ -1105,6 +1105,9 @@ endif
 ifeq ($(CONFIG_DIR810L),y)
 CFLAGS_EXTRA += -DHAVE_DIR810L
 endif
+ifeq ($(CONFIG_DIR860),y)
+CFLAGS_EXTRA += -DHAVE_DIR860
+endif
 
 ifneq ($(ARCHITECTURE),broadcom)
 ifeq ($(CONFIG_RELAYD),y)
