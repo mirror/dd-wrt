@@ -1222,7 +1222,10 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 			insmod("MT7610_ap");
 #endif
 		}
+}
 
+void init_network(int idx)
+{
 		char dev[32];
 		sprintf(dev, "wl%d", idx);
 		char bridged[32];
@@ -1445,6 +1448,9 @@ void configure_wifi(void)
 	configure_wifi_single(0);
 	if (get_wl_instances() == 2)
 		configure_wifi_single(1);
+	init_network(0);
+	if (get_wl_instances() == 2)
+	    init_network(1);
 }
 
 void start_configurewifi(void)
