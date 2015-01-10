@@ -124,6 +124,7 @@ void start_sysinit(void)
 
 	//LAN/WAN ports as security mode
 	if (brand == ROUTER_DIR860) {
+		system("swconfig dev eth0 set reset 1");
 		system("swconfig dev eth0 set enable_vlan 1");
 		system("swconfig dev eth0 vlan 1 set ports \"1 2 3 4 6t\"");
 		system("swconfig dev eth0 vlan 2 set ports \"0 6t\"");
