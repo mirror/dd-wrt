@@ -877,8 +877,7 @@ int add_mtd_partitions(struct mtd_info *master,
 		add_mtd_device(&slave->mtd);
 #ifdef CONFIG_MTD_ROOTFS_GEN
 		if (!strcmp(parts[i].name, "linux")) {
-
-		char *buf = vmalloc(4096);
+		unsigned int buf;
 		int offset = slave->offset;
 		int bootsize = slave->offset;
 		printk(KERN_INFO "scan from offset %X\n",bootsize);
@@ -886,8 +885,8 @@ int add_mtd_partitions(struct mtd_info *master,
 			    while((offset + master->erasesize) < master->size)
 			    {
 			    int retlen;
-			    mtd_read(master,offset,4, &retlen, buf);
-			    if (*((__u32 *) buf) == SQUASHFS_MAGIC)
+			    mtd_read(master,offset,4, &retlen, (u_char *)&buf);
+			    if (buf == SQUASHFS_MAGIC)
 				    {
 				    	printk(KERN_EMERG "\nfound squashfs at %X\n",offset);
 				    	struct mtd_partition part;
@@ -898,9 +897,8 @@ int add_mtd_partitions(struct mtd_info *master,
 				    	add_mtd_partitions(master,&part,1);
 					break;
 				    } 
-			    offset+=4096;
+			    offset+=64;
 			    }
-		vfree(buf);		
 		}
 #endif
 		if (!strcmp(parts[i].name, "rootfs")) {

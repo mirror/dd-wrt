@@ -16,7 +16,7 @@
 
 #include <asm/reboot.h>
 
-#include <asm/mach-ralink-openwrt/ralink_regs.h>
+#include <asm/mach-ralink/ralink_regs.h>
 
 /* Reset Control */
 #define SYSC_REG_RESET_CTRL	0x034

@@ -1,7 +1,7 @@
 #ifndef __LINUX_USB_PCI_QUIRKS_H
 #define __LINUX_USB_PCI_QUIRKS_H
 
-#ifdef CONFIG_PCI
+#if defined (CONFIG_PCI) && !defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
 void uhci_reset_hc(struct pci_dev *pdev, unsigned long base);
 int uhci_check_and_reset_hc(struct pci_dev *pdev, unsigned long base);
 bool usb_is_intel_switchable_xhci(struct pci_dev *pdev);

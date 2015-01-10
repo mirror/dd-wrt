@@ -87,6 +87,7 @@ struct irqaction c0_compare_irqaction = {
 void mips_set_clock_mode(enum clock_event_mode mode,
 				struct clock_event_device *evt)
 {
+#ifdef CONFIG_CEVT_SYSTICK_QUIRK
 	switch (mode) {
 	case CLOCK_EVT_MODE_ONESHOT:
 		if (cp0_timer_irq_installed)
@@ -109,6 +110,7 @@ void mips_set_clock_mode(enum clock_event_mode mode,
 		pr_err("Unhandeled mips clock_mode\n");
 		break;
 	}
+#endif
 }
 
 void mips_event_handler(struct clock_event_device *dev)
@@ -248,6 +250,15 @@ int __cpuinit r4k_clockevent_init(void)
 	if (!gic_present)
 #endif
 	clockevents_register_device(cd);
+
+#ifndef CONFIG_CEVT_SYSTICK_QUIRK
+	if (cp0_timer_irq_installed)
+		return 0;
+
+	cp0_timer_irq_installed = 1;
+
+	setup_irq(irq, &c0_compare_irqaction);
+#endif
 
 	return 0;
 }

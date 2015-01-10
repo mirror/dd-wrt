@@ -2611,7 +2611,7 @@ serial8250_pm(struct uart_port *port, unsigned int state,
 static unsigned int serial8250_port_size(struct uart_8250_port *pt)
 {
 	if (pt->port.iotype == UPIO_AU)
-		return 0x1000;
+		return 0x100;
 	if (is_omap1_8250(pt))
 		return 0x16 << pt->port.regshift;
 

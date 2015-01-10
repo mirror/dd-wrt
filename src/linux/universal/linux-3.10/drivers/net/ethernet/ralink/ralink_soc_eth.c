@@ -1007,7 +1007,7 @@ static int fe_hw_init(struct net_device *dev)
 {
 	struct fe_priv *priv = netdev_priv(dev);
 	int i, err;
-
+	printk(KERN_INFO "request irq %d\n",dev->irq);
 	err = devm_request_irq(priv->device, dev->irq, fe_handle_irq, 0,
 				dev_name(priv->device), dev);
 	if (err)
