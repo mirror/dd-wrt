@@ -428,7 +428,6 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 	char *next;
 
 	startradius[idx] = 0;
-	deconfigure_wifi();
 #ifdef HAVE_DIR810L
 	char mac[32];
 	char mac5[32];
@@ -1215,14 +1214,12 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 			}
 #endif
 		} else {
-#ifndef HAVE_DIR860
 			insmod("RTPCI_ap");
 			insmod("rlt_wifi");
 #ifdef HAVE_DIR810L
 			sysprintf("insmod MT7610_ap mac=%s\n",mac5);
 #else
 			insmod("MT7610_ap");
-#endif
 #endif
 		}
 
@@ -1444,6 +1441,7 @@ void start_hostapdwan(void)
 
 void configure_wifi(void)
 {
+	deconfigure_wifi();
 	configure_wifi_single(0);
 	if (get_wl_instances() == 2)
 		configure_wifi_single(1);
