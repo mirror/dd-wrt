@@ -106,8 +106,13 @@ asmlinkage void plat_irq_dispatch(void)
 
 	pending = read_c0_status() & read_c0_cause() & ST0_IM;
 
-	if (pending & STATUSF_IP7)
+	if (pending & STATUSF_IP7) {
+#ifdef CONFIG_EAP9550
+		ralink_gpio_control(11,0);
+		ralink_gpio_control(11,1);
+#endif
 		do_IRQ(RALINK_CPU_IRQ_COUNTER);
+	}
 
 	else if (pending & STATUSF_IP5)
 		do_IRQ(RALINK_CPU_IRQ_FE);

@@ -15,7 +15,7 @@
 #include <linux/leds.h>
 #include <linux/slab.h>
 
-#include <asm/mach-ralink/ralink_regs.h>
+#include <asm/mach-ralink-openwrt/ralink_regs.h>
 
 #define TIMER_REG_TMRSTAT		0x00
 #define TIMER_REG_TMR0LOAD		0x10
