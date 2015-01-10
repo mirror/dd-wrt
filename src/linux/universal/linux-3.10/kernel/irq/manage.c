@@ -1147,7 +1147,7 @@ __setup_irq(unsigned int irq, struct irq_desc *desc, struct irqaction *new)
 	if (shared && (desc->istate & IRQS_SPURIOUS_DISABLED)) {
 		desc->istate &= ~IRQS_SPURIOUS_DISABLED;
 		__enable_irq(desc, irq, false);
-	}
+    	}
 
 	raw_spin_unlock_irqrestore(&desc->lock, flags);
 

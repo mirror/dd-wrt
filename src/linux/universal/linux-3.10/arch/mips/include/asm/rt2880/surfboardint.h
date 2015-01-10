@@ -31,7 +31,7 @@
 #define SURFBOARDINT_UART1	 8	/* UART Lite */
 #define SURFBOARDINT_UART	 9	/* UART */
 #define SURFBOARDINT_TIMER0	 10	/* timer0 */
-#elif defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT2883) || defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621) || defined(CONFIG_SOC_MT7620_OPENWRT)
+#elif defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT2883) || defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621) || defined(CONFIG_SOC_MT7620_OPENWRT) || defined(CONFIG_SOC_MT7621_OPENWRT)
 #define RALINK_CPU_TIMER_IRQ 	 5	/* mips timer */
 #define SURFBOARDINT_GPIO	 6	/* GPIO */
 #define SURFBOARDINT_DMA	 7	/* DMA */
@@ -84,7 +84,7 @@
  * Surfboard registers are memory mapped on 32-bit aligned boundaries and
  * only word access are allowed.
  */
-#if defined (CONFIG_RALINK_MT7621)
+#if defined (CONFIG_RALINK_MT7621) || defined(CONFIG_SOC_MT7621_OPENWRT)
 #define RALINK_IRQ0STAT		(RALINK_INTCL_BASE + 0x9C) //IRQ_STAT
 #define RALINK_IRQ1STAT		(RALINK_INTCL_BASE + 0xA0) //FIQ_STAT
 #define RALINK_INTTYPE		(RALINK_INTCL_BASE + 0x6C) //FIQ_SEL

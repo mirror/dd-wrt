@@ -25,6 +25,13 @@ static void xhci_plat_quirks(struct device *dev, struct xhci_hcd *xhci)
 	 * dev struct in order to setup MSI
 	 */
 	xhci->quirks |= XHCI_PLAT;
+#if defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
+	/* MTK host controller gives a spurious successful event after a 
+	 * short transfer. Ignore it.
+	 */
+	xhci->quirks |= XHCI_SPURIOUS_SUCCESS;
+	xhci->quirks |= XHCI_LPM_SUPPORT;
+#endif
 }
 
 /* called during probe() after chip reset completes */
@@ -96,20 +103,31 @@ static int xhci_plat_probe(struct platform_device *pdev)
 
 	driver = &xhci_plat_xhci_driver;
 
+#if defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
+	irq = XHC_IRQ;
+#else
 	irq = platform_get_irq(pdev, 0);
+#endif
 	if (irq < 0)
 		return -ENODEV;
 
+#if !defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	if (!res)
 		return -ENODEV;
+#endif
 
 	hcd = usb_create_hcd(driver, &pdev->dev, dev_name(&pdev->dev));
 	if (!hcd)
 		return -ENOMEM;
 
+#if defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
+	hcd->rsrc_start = (uint32_t)XHC_IO_START;
+	hcd->rsrc_len = XHC_IO_LENGTH;
+#else
 	hcd->rsrc_start = res->start;
 	hcd->rsrc_len = resource_size(res);
+#endif
 
 	if (!request_mem_region(hcd->rsrc_start, hcd->rsrc_len,
 				driver->description)) {
