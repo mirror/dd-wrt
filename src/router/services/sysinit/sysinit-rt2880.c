@@ -98,9 +98,9 @@ void start_sysinit(void)
 	unsigned char mac[32];
 	if (in != NULL) {
 		if (brand == ROUTER_DIR810L)
-		    fseek(in, 0x28, SEEK_SET);
+			fseek(in, 0x28, SEEK_SET);
 		else
-		    fseek(in, 4, SEEK_SET);
+			fseek(in, 4, SEEK_SET);
 
 		fread(mac, 6, 1, in);
 		fclose(in);
@@ -123,7 +123,12 @@ void start_sysinit(void)
 	system("swconfig dev eth0 set apply");*/
 
 	//LAN/WAN ports as security mode
-	if (getRouterBrand() == ROUTER_BOARD_E1700 || getRouterBrand() == ROUTER_DIR810L) {
+	if (brand == ROUTER_DIR860) {
+		system("swconfig dev eth0 set enable_vlan 1");
+		system("swconfig dev eth0 vlan 1 set ports \"1 2 3 4 6t\"");
+		system("swconfig dev eth0 vlan 2 set ports \"0 6t\"");
+		system("swconfig dev eth0 set apply");
+	} else if (brand == ROUTER_BOARD_E1700 || brand == ROUTER_DIR810L) {
 //      sysprintf("switch reg w 3600 5ee3a");
 //      sysprintf("switch reg w 7000 717fc3");
 //      sysprintf("switch reg w 7804 1015e9f");
