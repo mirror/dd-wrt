@@ -282,6 +282,9 @@ endif
 ifeq ($(CONFIG_MT7620),y)
   CFLAGS += -DHAVE_MT7620
 endif
+ifeq ($(CONFIG_MT7621),y)
+  CFLAGS += -DHAVE_MT7621
+endif
 
 ifeq ($(CONFIG_XSCALE),y)
   CFLAGS += -DHAVE_XSCALE
@@ -518,6 +521,9 @@ CFLAGS += -DHAVE_WHR1166D
 endif
 ifeq ($(CONFIG_DIR810L),y)
 CFLAGS += -DHAVE_DIR810L
+endif
+ifeq ($(CONFIG_DIR860),y)
+CFLAGS += -DHAVE_DIR860
 endif
 ifeq ($(CONFIG_MT7612),y)
 CFLAGS += -DHAVE_MT7612
