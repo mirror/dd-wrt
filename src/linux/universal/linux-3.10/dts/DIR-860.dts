@@ -1,0 +1,71 @@
+/dts-v1/;
+
+/include/ "mt7621.dtsi"
+
+/ {
+	compatible = "ralink,mt7621-eval-board", "ralink,mt7621-soc";
+	model = "Dlink DIR860L B1";
+
+	memory@0 {
+		reg = <0x0 0x8000000>;
+	};
+	
+	chosen {
+		bootargs = "console=ttyS0,57600";
+	};
+
+	palmbus@1E000000 {
+
+		spi@b00 {
+			status = "okay";
+
+			m25p80@0 {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "mx25l12805d";
+				reg = <0 0>;
+				linux,modalias = "m25p80";
+				spi-max-frequency = <10000000>;
+
+				partition@0 {
+					label = "u-boot";
+					reg = <0x0 0x30000>;
+				};
+
+				partition@30000 {
+					label = "u-boot-env";
+					reg = <0x30000 0x4000>;
+				};
+
+				factory: partition@34000 {
+					label = "factory";
+					reg = <0x34000 0x6000>;
+				};
+
+				partition@50000 {
+					label = "linux";
+					reg = <0x50000 0xfa0000>;
+				};
+
+				partition@ff00000 {
+					label = "nvram";
+					reg = <0xff0000 0x10000>;
+				};
+			};
+		};
+	};
+
+	pinctrl {
+		state_default: pinctrl0 {
+			gpio {
+				ralink,group = "i2c", "uart2", "uart3", "rgmii2", "sdhci";
+				ralink,function = "gpio";
+			};
+		};
+	};
+
+	xhci@1E1C0000 {
+		status = "okay";
+	};
+
+};
