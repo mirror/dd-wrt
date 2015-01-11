@@ -2861,6 +2861,11 @@ static void showbridgesettings(webs_t wp, char *var, int mcast, int dual)
 	nvram_default_get(isolation, "0");
 	showRadio(wp, "wl_basic.isolation", isolation);
 
+	char redirect[32];
+	sprintf(redirect, "%s_dns_redirect", var);
+	nvram_default_get(redirect, "0");
+	showRadio(wp, "idx.force_dnsmasq", redirect);
+
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(share.ip)</script></div>\n");
 	char ip[32];
@@ -7021,6 +7026,17 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 			nvram_default_get(mcast, "1");
 			showRadio(wp, "wl_basic.masquerade", mcast);
 		}
+
+	char isolation[32];
+	sprintf(isolation, "%s_isolation", var);
+	nvram_default_get(isolation, "0");
+	showRadio(wp, "wl_basic.isolation", isolation);
+
+	char redirect[32];
+	sprintf(redirect, "%s_dns_redirect", var);
+	nvram_default_get(redirect, "0");
+	showRadio(wp, "idx.force_dnsmasq", redirect);
+
 
 		show_ipnetmask(wp, var);
 #if defined(HAVE_BKM) || defined(HAVE_TMK)
