@@ -557,10 +557,6 @@ enum {
 #define	RALINK_GPIO_WRITE		0x03
 #define	RALINK_GPIO_SET			0x21
 #define	RALINK_GPIO_CLEAR		0x31
-#define	RALINK_GPIO_READ_BIT		0x04
-#define	RALINK_GPIO_WRITE_BIT		0x05
-#define	RALINK_GPIO_READ_BYTE		0x06
-#define	RALINK_GPIO_WRITE_BYTE		0x07
 #define	RALINK_GPIO_READ_INT		0x02	//same as read
 #define	RALINK_GPIO_WRITE_INT		0x03	//same as write
 #define	RALINK_GPIO_SET_INT		0x21	//same as set
@@ -670,8 +666,6 @@ int gpio_set_dir_out(int gpio)
 	close(fd);
 	return 0;
 }
-
-#define RALINK_GPIO_DATA_LEN		24
 
 int gpio_read_bit(int gpio, int *value)
 {
