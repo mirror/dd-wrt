@@ -3245,6 +3245,10 @@ void start_wan(int status)
 	eval("ifconfig", ethname, "txqueuelen", getTXQ(ethname));
 
 	if (strcmp(wan_proto, "disabled") == 0) {
+		if (ioctl(s, SIOCGIFHWADDR, &ifr) == 0) {
+			char eabuf[32];
+			nvram_set("wan_hwaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		}
 		close(s);
 		start_wan_done(wan_ifname);
 		return;
