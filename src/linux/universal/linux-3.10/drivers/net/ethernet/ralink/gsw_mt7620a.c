@@ -796,7 +796,6 @@ int mt7620_gsw_probe(struct fe_priv *priv)
 			request_irq(gsw->irq, gsw_interrupt_mt7620, 0, "gsw", priv);
 			gsw_w32(gsw, ~PORT_IRQ_ST_CHG, GSW_REG_IMR);
 		} else {
-	printk(KERN_INFO "request irq %d\n",gsw->irq);
 			request_irq(gsw->irq, gsw_interrupt_mt7621, 0, "gsw", priv);
 			mt7530_mdio_w32(gsw, 0x7008, 0x1f);
 		}
