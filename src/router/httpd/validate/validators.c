@@ -762,6 +762,19 @@ void validate_portsetup(webs_t wp, char *value, struct variable *v)
 		if (masquerade)
 			nvram_set(val, masquerade);
 
+
+		sprintf(val, "%s_isolation", var);
+		char *isolation = websGetVar(wp, val, NULL);
+
+		if (isolation)
+			nvram_set(val, isolation);
+
+		sprintf(val, "%s_dns_redirect", var);
+		char *redirect = websGetVar(wp, val, NULL);
+
+		if (redirect)
+			nvram_set(val, redirect);
+
 		sprintf(val, "%s_mtu", var);
 		char *mtu = websGetVar(wp, val, NULL);
 		if (mtu)
