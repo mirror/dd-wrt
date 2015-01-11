@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/i386 3.10.64-rc1 Kernel Configuration
+# Linux/i386 3.10.64 Kernel Configuration
 #
 # CONFIG_64BIT is not set
 CONFIG_X86_32=y
@@ -2663,6 +2663,7 @@ CONFIG_MMC_CB710=m
 CONFIG_MMC_VIA_SDMMC=m
 CONFIG_MMC_VUB300=m
 CONFIG_MMC_USHC=m
+# CONFIG_MTK_MMC is not set
 # CONFIG_MEMSTICK is not set
 CONFIG_NEW_LEDS=y
 CONFIG_LEDS_CLASS=y
