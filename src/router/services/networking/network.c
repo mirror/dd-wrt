@@ -3102,33 +3102,34 @@ void start_wan(int status)
 	/*
 	 * Check PPPoE version, RP or linksys 
 	 */
+	char *ethname = wan_ifname;
 #ifdef HAVE_PPPOE
 	if (nvram_match("wan_proto", "pppoe"))
-		strncpy(ifr.ifr_name, pppoe_wan_ifname, IFNAMSIZ);
+		ethname = pppoe_wan_ifname;
 	else
 #endif
 #ifdef HAVE_PPPOEDUAL
 	if (nvram_match("wan_proto", "pppoe_dual"))
-		strncpy(ifr.ifr_name, pppoe_wan_ifname, IFNAMSIZ);
+		ethname = pppoe_wan_ifname;
 #endif
 #ifdef HAVE_L2TP
 	if (nvram_match("wan_proto", "l2tp"))
-		strncpy(ifr.ifr_name, pppoe_wan_ifname, IFNAMSIZ);
+		ethname = pppoe_wan_ifname;
 	else
 #endif
 #ifdef HAVE_PPTP
 	if (nvram_match("wan_proto", "pptp"))
-		strncpy(ifr.ifr_name, pppoe_wan_ifname, IFNAMSIZ);
-	else
+		ethname = pppoe_wan_ifname;
 #endif
-		strncpy(ifr.ifr_name, wan_ifname, IFNAMSIZ);
+
+	strncpy(ifr.ifr_name, ethname, IFNAMSIZ);
 
 	/*
 	 * Set WAN hardware address before bringing interface up 
 	 */
 	memset(ifr.ifr_hwaddr.sa_data, 0, ETHER_ADDR_LEN);
 
-	ifconfig(wan_ifname, 0, NULL, NULL);
+	ifconfig(ethname, 0, NULL, NULL);
 #if defined(HAVE_FONERA) || defined(HAVE_CA8) && !defined(HAVE_MR3202A)
 	if (getRouterBrand() != ROUTER_BOARD_FONERA2200 && getRouterBrand() != ROUTER_BOARD_CA8PRO) {
 		char staticlan[32];
@@ -3158,7 +3159,7 @@ void start_wan(int status)
 		ether_atoe(nvram_safe_get("def_hwaddr"), ifr.ifr_hwaddr.sa_data);
 	} else {
 
-		if (wlifname && (!strcmp(wan_ifname, wlifname) || nvram_match("wan_proto", "l2tp") || nvram_match("wan_proto", "pppoe") || nvram_match("wan_proto", "pppoe_dual") || nvram_match("wan_proto", "pptp")))	// sta mode
+		if (wlifname && (!strcmp(ethname, wlifname) || nvram_match("wan_proto", "l2tp") || nvram_match("wan_proto", "pppoe") || nvram_match("wan_proto", "pppoe_dual") || nvram_match("wan_proto", "pptp")))	// sta mode
 		{
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 			int instance = get_wl_instance(wlifname);
@@ -3182,22 +3183,22 @@ void start_wan(int status)
 			ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 
-			if (wlifname && !strcmp(wan_ifname, wlifname))
-				eval("wl", "-i", wan_ifname, "down");
-			else if (strcmp(wan_ifname, "br0"))
-				eval("ifconfig", wan_ifname, "down");
+			if (wlifname && !strcmp(ethname, wlifname))
+				eval("wl", "-i", ethname, "down");
+			else if (strcmp(ethname, "br0"))
+				eval("ifconfig", ethname, "down");
 
 			ioctl(s, SIOCSIFHWADDR, &ifr);
 #else
-			if (!wlifname && strcmp(wan_ifname, "br0")) {
-				eval("ifconfig", wan_ifname, "down");
+			if (!wlifname && strcmp(ethname, "br0")) {
+				eval("ifconfig", ethname, "down");
 				ioctl(s, SIOCSIFHWADDR, &ifr);
 			}
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
-			if (wlifname && !strcmp(wan_ifname, wlifname)) {
-				eval("wl", "-i", wan_ifname, "up");
-				config_macs(wan_ifname);
+			if (wlifname && !strcmp(ethname, wlifname)) {
+				eval("wl", "-i", ethname, "up");
+				config_macs(ethname);
 			}
 #endif
 			cprintf("Write WAN mac successfully\n");
@@ -3215,33 +3216,33 @@ void start_wan(int status)
 	// Set our Interface to the right MTU
 #ifdef HAVE_PPPOE
 	if (nvram_match("wan_proto", "pppoe")) {
-		ifr.ifr_mtu = atoi(getMTU(wan_ifname));	// default ethernet frame size
+		ifr.ifr_mtu = atoi(getMTU(ethname));	// default ethernet frame size
 	} else
 #endif
 #ifdef HAVE_PPPOEDUAL
 	if (nvram_match("wan_proto", "pppoe_dual")) {
-		ifr.ifr_mtu = atoi(getMTU(wan_ifname));	// default ethernet frame size
+		ifr.ifr_mtu = atoi(getMTU(ethname));	// default ethernet frame size
 	} else
 #endif
 #ifdef HAVE_PPTP
 	if (nvram_match("wan_proto", "pptp")) {
-		ifr.ifr_mtu = atoi(getMTU(wan_ifname));	// default ethernet frame size
+		ifr.ifr_mtu = atoi(getMTU(ethname));	// default ethernet frame size
 	} else
 #endif
 #ifdef HAVE_L2TP
 	if (nvram_match("wan_proto", "l2tp")) {
-		ifr.ifr_mtu = atoi(getMTU(wan_ifname));	// default ethernet frame size
+		ifr.ifr_mtu = atoi(getMTU(ethname));	// default ethernet frame size
 	} else
 #endif
 	{
 		int mtu = atoi(nvram_safe_get("wan_mtu"));
 		if (mtu == 1500)
-			mtu = atoi(getMTU(wan_ifname));
+			mtu = atoi(getMTU(ethname));
 		ifr.ifr_mtu = mtu;
 	}
 	// fprintf(stderr,"set mtu for %s to %d\n",ifr.ifr_name,ifr.ifr_mtu);
 	ioctl(s, SIOCSIFMTU, &ifr);
-	eval("ifconfig", wan_ifname, "txqueuelen", getTXQ(wan_ifname));
+	eval("ifconfig", ethname, "txqueuelen", getTXQ(ethname));
 
 	if (strcmp(wan_proto, "disabled") == 0) {
 		close(s);
@@ -3252,33 +3253,7 @@ void start_wan(int status)
 	/*
 	 * Bring up WAN interface 
 	 */
-#ifdef HAVE_PPPOE
-	/*
-	 * AhMan March 19 2005 
-	 */
-	/*
-	 * ice-man March 19 2005 
-	 */
-	/*
-	 * pppoe_wan interface must be up in order to use any pppoe client 
-	 */
-	if (strcmp(wan_proto, "pppoe") == 0)
-		ifconfig(pppoe_wan_ifname, IFUP, NULL, NULL);
-	else
-#endif
-#ifdef HAVE_PPPOEDUAL
-	if (strcmp(wan_proto, "pppoe_dual") == 0)
-		ifconfig(pppoe_wan_ifname, IFUP, NULL, NULL);
-	else
-#endif
-#ifdef HAVE_L2TP
-	if (strcmp(wan_proto, "l2tp") == 0)
-		ifconfig(pppoe_wan_ifname, IFUP, NULL, NULL);
-	else
-#endif
-	{
-		ifconfig(wan_ifname, IFUP, NULL, NULL);
-	}
+	ifconfig(ethname, IFUP, NULL, NULL);
 	if (nvram_match("wl0_mode", "infra")) {
 		eval("wl", "infra", "0");
 		eval("wl", "ssid", nvram_safe_get("wl0_ssid"));
@@ -4212,6 +4187,7 @@ void start_wan_service(void)
 	cprintf("start ddns\n");
 	start_ddns();
 }
+
 #ifdef HAVE_IPV6
 static const char *ipv6_router_address(struct in6_addr *in6addr)
 {
