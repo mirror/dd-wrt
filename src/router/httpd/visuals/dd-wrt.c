@@ -3625,7 +3625,9 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 				websWrite(wp, "document.write(\"<option value=\\\"ap\\\" %s >\" + wl_basic.ap + \"</option>\");\n", nvram_match(wl_mode, "ap") ? "selected=\\\"selected\\\"" : "");
 			}
 #ifndef HAVE_RT61
+#ifndef HAVE_DIR860
 			websWrite(wp, "document.write(\"<option value=\\\"sta\\\" %s >\" + wl_basic.client + \"</option>\");\n", nvram_match(wl_mode, "sta") ? "selected=\\\"selected\\\"" : "");
+#endif
 #endif
 #ifndef HAVE_RT2880
 #ifdef HAVE_RELAYD
@@ -4220,7 +4222,9 @@ if (!strcmp(prefix, "wl1"))
 				websWrite(wp, "document.write(\"<option value=\\\"ap\\\" %s >\" + wl_basic.ap + \"</option>\");\n", nvram_match(wl_mode, "ap") ? "selected=\\\"selected\\\"" : "");
 			}
 #ifndef HAVE_RT61
+#ifndef HAVE_DIR860
 			websWrite(wp, "document.write(\"<option value=\\\"sta\\\" %s >\" + wl_basic.client + \"</option>\");\n", nvram_match(wl_mode, "sta") ? "selected=\\\"selected\\\"" : "");
+#endif
 #endif
 #ifndef HAVE_RT2880
 #ifdef HAVE_RELAYD
