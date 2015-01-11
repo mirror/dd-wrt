@@ -146,11 +146,13 @@ EXPORT(__image_cmdline)
 	.fill	0x400
 #endif /* CONFIG_IMAGE_CMDLINE_HACK */
 
+#ifdef CONFIG_DTC
 	.ascii  "OWRTDTB:"
 	EXPORT(__image_dtb)
 	.fill   0x4000
 	.fill   0x4c58
 	j	kernel_entry
+#endif
 	__REF
 
 NESTED(kernel_entry, 16, sp)			# kernel entry point
