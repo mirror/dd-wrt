@@ -219,9 +219,11 @@ function setDNSMasq(F) {
 	if (document.setup._dhcp_dnsmasq) {
 		if(F._dhcp_dnsmasq.checked == true) {
 			setElementActive("_auth_dnsmasq", true);
+			setElementActive("_dns_redirect", true);
 		} else {
 			F._auth_dnsmasq.checked=false;		
 			setElementActive("_auth_dnsmasq", false);
+			setElementActive("_dns_redirect", false);
 		}
 	}
 }
