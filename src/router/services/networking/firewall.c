@@ -618,12 +618,14 @@ static void nat_prerouting(void)
 
 	if (nvram_match("dns_redirect", "1") && nvram_match("dnsmasq_enable", "1")) {
 		save2file("-A PREROUTING -i %s -p udp --dport 53 -j DNAT --to %s\n", nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ipaddr"));
+		save2file("-A PREROUTING -i %s -p tcp --dport 53 -j DNAT --to %s\n", nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ipaddr"));
 	}
 	foreach(var, vifs, next) {
 		if (strcmp(get_wan_face(), var)
 		    && strcmp(nvram_safe_get("lan_ifname"), var)) {
 			if (nvram_nmatch("1", "%s_dns_redirect", var)) {
 				save2file("-A PREROUTING -i %s -p udp --dport 53 -j DNAT --to %s\n", var, nvram_safe_get("lan_ipaddr"));
+				save2file("-A PREROUTING -i %s -p tcp --dport 53 -j DNAT --to %s\n", var, nvram_safe_get("lan_ipaddr"));
 			}
 		}
 	}
