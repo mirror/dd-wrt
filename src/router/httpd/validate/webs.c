@@ -3073,9 +3073,9 @@ static void save_prefix(webs_t wp, char *prefix)
 #endif
 	copytonv(wp, "%s_multicast", ifname);
 	copytonv(wp, "%s_bridged", ifname);
-	copytonv(wp, "%s_nat", prefix);
-	copytonv(wp, "%s_isolation", prefix);
-	copytonv(wp, "%s_dns_redirect", prefix);
+	copytonv(wp, "%s_nat", ifname);
+	copytonv(wp, "%s_isolation", ifname);
+	copytonv(wp, "%s_dns_redirect", ifname);
 
 	char addr[32];
 
