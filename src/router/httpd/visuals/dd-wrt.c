@@ -6969,6 +6969,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 	memset(bufferif, 0, 256);
 	getIfList(bufferif, "br");
 	foreach(var, eths, next) {
+		int isbridge = 0;
 		if (!strcmp("etherip0", var))
 			continue;
 		if (strchr(var, '.') == NULL) {
@@ -6978,7 +6979,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 				continue;
 			foreach(bword, bufferif, bnext) {
 				if (!strcmp(bword, var)) {
-					goto skip;
+					isbridge = 1;
 				}
 			}
 		}
@@ -6999,15 +7000,18 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "</div>\n");
 
 		// qlen end
-		websWrite(wp,
-			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idnet', true);\" name=\"%s_bridged\" %s /><script type=\"text/javascript\">Capture(wl_basic.unbridged)</script>&nbsp;\n",
-			  layer, var, nvram_default_match(ssid, "0", "1") ? "checked=\"checked\"" : "");
-		websWrite(wp,
-			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idnet', false);\" name=\"%s_bridged\" %s /><script type=\"text/javascript\">Capture(share.deflt)</script>\n",
-			  layer, var, nvram_default_match(ssid, "1", "1") ? "checked=\"checked\"" : "");
+		if (!isbridge) {
+			websWrite(wp,
+				  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idnet', true);\" name=\"%s_bridged\" %s /><script type=\"text/javascript\">Capture(wl_basic.unbridged)</script>&nbsp;\n",
+				  layer, var, nvram_default_match(ssid, "0", "1") ? "checked=\"checked\"" : "");
+			websWrite(wp,
+				  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idnet', false);\" name=\"%s_bridged\" %s /><script type=\"text/javascript\">Capture(share.deflt)</script>\n",
+				  layer, var, nvram_default_match(ssid, "1", "1") ? "checked=\"checked\"" : "");
+		}
 		websWrite(wp, "</div>\n");
-		websWrite(wp, "<div id=\"%s_idnet\">\n", layer);
-
+		if (!isbridge) {
+			websWrite(wp, "<div id=\"%s_idnet\">\n", layer);
+		}
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\">%s</div>\n", live_translate("idx.mtu"));
 		char mtu[32];
@@ -7094,7 +7098,10 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "</select>\n</div>\n");
 		}
 #endif
-		websWrite(wp, "<br />\n</div>\n");
+		websWrite(wp, "<br />\n");
+		if (!isbridge) {
+			websWrite(wp, "</div>\n");
+		}
 		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n ");
 		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_bridged\"), \"%s_idnet\", %s);\n", var, layer, nvram_match(ssid, "0") ? "true" : "false");
 		websWrite(wp, "//]]>\n</script>\n");
