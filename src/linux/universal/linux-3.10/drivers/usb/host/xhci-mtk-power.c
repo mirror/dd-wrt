@@ -16,6 +16,7 @@ void enableXhciAllPortPower(struct xhci_hcd *xhci){
 
 	g_num_u3_port = SSUSB_U3_PORT_NUM(readl(SSUSB_IP_CAP));
 	g_num_u2_port = SSUSB_U2_PORT_NUM(readl(SSUSB_IP_CAP));
+	printk(KERN_INFO "power up ports %d and %d\n",g_num_u3_port,g_num_u2_port);
 	
 	for(i=1; i<=g_num_u3_port; i++){
 		port_id=i;
