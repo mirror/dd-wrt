@@ -995,6 +995,7 @@ idx.dhcp_lease="Client-Lease-Zeit";
 idx.dhcp_dnsmasq="Nutze DNSMasq für DHCP";
 idx.dns_dnsmasq="Nutze DNSMasq für DNS";
 idx.auth_dnsmasq="DHCP-Authoritative";
+idx.force_dnsmasq="Erzwungene DNS Umleitung";
 idx.summt_opt1="keine";
 idx.summt_opt2="erster Son Apr - letzter Son Okt";
 idx.summt_opt3="letzter Son Mär - letzter Son Okt";
