@@ -124,14 +124,12 @@ gic_platform_init(int irqs, struct irq_chip *irq_controller)
 static void
 gic_irqdispatch(void)
 {
-	unsigned int irq = gic_get_int();
+	int irq = gic_get_int();
 
-	if (likely(irq < GIC_NUM_INTRS))
-		do_IRQ(MIPS_GIC_IRQ_BASE + irq);
-	else {
-		pr_err("Spurious GIC Interrupt!\n");
-		spurious_interrupt();
-	}
+	if (irq < 0)
+		return;  /* interrupt has already been cleared */
+	
+	do_IRQ(MIPS_GIC_IRQ_BASE + irq);
 
 }
 
