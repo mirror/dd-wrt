@@ -688,7 +688,7 @@
 
 #define ROUTER_DIR810L 0xe311
 
-#define ROUTER_DIR860 0xe40f
+#define ROUTER_DIR860LB1 0xe417
 
 #define NVROUTER "DD_BOARD"
 
