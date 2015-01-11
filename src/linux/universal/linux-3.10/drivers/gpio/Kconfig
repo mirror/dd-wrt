@@ -219,7 +219,7 @@ config GPIO_RCAR
 
 config GPIO_RALINK
 	bool "Ralink GPIO Support"
-	depends on RALINK_OPENWRT
+	depends on RALINK_OPENWRT && !SOC_MT7620_OPENWRT && !SOC_MT7621_OPENWRT 
 	help
 	  Say yes here to support the Ralink SoC GPIO device
 
@@ -717,6 +717,12 @@ config GPIO_MSIC
 	help
 	  Enable support for GPIO on intel MSIC controllers found in
 	  intel MID devices
+
+config GPIO_MT7621
+	bool "Mediatek GPIO Support"
+	depends on SOC_MT7620_OPENWRT || SOC_MT7621_OPENWRT
+	help
+	  Say yes here to support the Mediatek SoC GPIO device
 
 comment "USB GPIO expanders:"
 
