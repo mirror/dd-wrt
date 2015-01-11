@@ -5159,6 +5159,13 @@ int led_control(int type, int act)
 		connected_gpio = 0x10b;
 //              ses_gpio = 0x10e;
 		break;
+	case ROUTER_DIR860LB1:
+		power_gpio = 0x10f;
+		diag_gpio = 0x10d;
+		diag_gpio_disabled = 0x10f;
+		disconnected_gpio = 0x10e;
+		connected_gpio = 0x110;
+		break
 	case ROUTER_DIR810L:
 		power_gpio = 0x009;
 		diag_gpio = 0x00d;
