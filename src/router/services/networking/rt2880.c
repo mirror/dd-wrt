@@ -436,7 +436,7 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 	MAC_ADD(mac5);
 	MAC_ADD(mac5);
 
-#elif (defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_AR690W) || defined(HAVE_VF803) || defined(HAVE_HAMEA15)) && !defined(HAVE_ALL02310N) 
+#elif (defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_AR690W) || defined(HAVE_VF803) || defined(HAVE_HAMEA15)) && !defined(HAVE_ALL02310N)
 	char mac[32];
 	strcpy(mac, nvram_default_get("et0macaddr_safe", "00:11:22:33:44:55"));
 	MAC_ADD(mac);
@@ -979,7 +979,7 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 		if (nvram_match("wl1_nctrlsb", "ll") || nvram_match("wl1_nctrlsb", "lower") || nvram_match("wl1_nctrlsb", "lu"))
 			ext_chan = 0;
 	}
-	fprintf(fp, "HT_EXTCHA=%d\n",ext_chan);
+	fprintf(fp, "HT_EXTCHA=%d\n", ext_chan);
 
 	int mcs;
 	if (idx == 0) {
@@ -1217,126 +1217,133 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 			insmod("RTPCI_ap");
 			insmod("rlt_wifi");
 #ifdef HAVE_DIR810L
-			sysprintf("insmod MT7610_ap mac=%s\n",mac5);
+			sysprintf("insmod MT7610_ap mac=%s\n", mac5);
 #else
 			insmod("MT7610_ap");
 #endif
 		}
+	}
+
 }
 
 void init_network(int idx)
 {
-		char dev[32];
-		sprintf(dev, "wl%d", idx);
-		char bridged[32];
-		char *raif = get_wl_instance_name(idx);
-		char apcliif[32];
-		sprintf(apcliif, "apcli%d", idx);
+	char var[64];
+	char *next;
+	char *vifs;
+	char dev[32];
+	sprintf(dev, "wl%d", idx);
+	char bridged[32];
+	char *raif = get_wl_instance_name(idx);
+	char apcliif[32];
+	int s;
 
-		sprintf(bridged, "%s_bridged", getRADev(dev));
-		if (nvram_default_match(bridged, "1", "1")) {
-			if (getSTA() || getWET()) {
-				sysprintf("ifconfig %s 0.0.0.0 up", raif);
-				sysprintf("ifconfig %s 0.0.0.0 up", apcliif);
-				br_add_interface(getBridge(apcliif), raif);
-				if (getWET())
-					br_add_interface(getBridge(apcliif), apcliif);
-			} else {
-				sysprintf("ifconfig %s 0.0.0.0 up", raif);
-				br_add_interface(getBridge(raif), raif);
-			}
+	sprintf(apcliif, "apcli%d", idx);
+
+	sprintf(bridged, "%s_bridged", getRADev(dev));
+	if (nvram_default_match(bridged, "1", "1")) {
+		if (getSTA() || getWET()) {
+			sysprintf("ifconfig %s 0.0.0.0 up", raif);
+			sysprintf("ifconfig %s 0.0.0.0 up", apcliif);
+			br_add_interface(getBridge(apcliif), raif);
+			if (getWET())
+				br_add_interface(getBridge(apcliif), apcliif);
 		} else {
-			if (getSTA() || getWET()) {
-				sysprintf("ifconfig %s 0.0.0.0 up", raif);
-				sysprintf("ifconfig %s mtu %s", apcliif, getMTU(apcliif));
-				sysprintf("ifconfig %s txqueuelen %s", apcliif, getTXQ(apcliif));
-				sysprintf("ifconfig %s %s netmask %s up", raif, nvram_nget("%s_ipaddr", getRADev(dev)), nvram_nget("%s_netmask", getRADev(dev)));
-			} else {
-				sysprintf("ifconfig %s mtu %s", raif, getMTU(raif));
-				sysprintf("ifconfig %s txqueuelen %s", raif, getTXQ(raif));
-				sysprintf("ifconfig %s %s netmask %s up", raif, nvram_nget("%s_ipaddr", getRADev(dev)), nvram_nget("%s_netmask", getRADev(dev)));
-			}
+			sysprintf("ifconfig %s 0.0.0.0 up", raif);
+			br_add_interface(getBridge(raif), raif);
 		}
-		char vathmac[32];
-
-		sprintf(vathmac, "wl%d_hwaddr", idx);
-		char vmacaddr[32];
-
-		getMacAddr(raif, vmacaddr);
-		nvram_set(vathmac, vmacaddr);
-
-		vifs = nvram_nget("wl%d_vifs", idx);
-		if (vifs != NULL && strlen(vifs) > 0) {
-			int count = 1;
-
-			foreach(var, vifs, next) {
-
-				sprintf(bridged, "%s_bridged", getRADev(var));
-				if (nvram_default_match(bridged, "1", "1")) {
-					char ra[32];
-
-					sprintf(ra, "ra%d", count + (8 * idx));
-					sysprintf("ifconfig ra%d 0.0.0.0 up", count + (8 * idx));
-					br_add_interface(getBridge(getRADev(var)), ra);
-				} else {
-					char ip[32];
-					char mask[32];
-
-					sprintf(ip, "%s_ipaddr", getRADev(var));
-					sprintf(mask, "%s_netmask", getRADev(var));
-					char raa[32];
-					sprintf(raa, "ra%d", count + (8 * idx));
-					sysprintf("ifconfig %s mtu %s", raa, getMTU(raa));
-					sysprintf("ifconfig %s txqueuelen %s", raa, getTXQ(raa));
-					sysprintf("ifconfig ra%d %s netmask %s up", count, nvram_safe_get(ip), nvram_safe_get(mask));
-				}
-
-				sprintf(vathmac, "%s_hwaddr", var);
-				getMacAddr(getRADev(var), vmacaddr);
-				nvram_set(vathmac, vmacaddr);
-
-				count++;
-			}
+	} else {
+		if (getSTA() || getWET()) {
+			sysprintf("ifconfig %s 0.0.0.0 up", raif);
+			sysprintf("ifconfig %s mtu %s", apcliif, getMTU(apcliif));
+			sysprintf("ifconfig %s txqueuelen %s", apcliif, getTXQ(apcliif));
+			sysprintf("ifconfig %s %s netmask %s up", raif, nvram_nget("%s_ipaddr", getRADev(dev)), nvram_nget("%s_netmask", getRADev(dev)));
+		} else {
+			sysprintf("ifconfig %s mtu %s", raif, getMTU(raif));
+			sysprintf("ifconfig %s txqueuelen %s", raif, getTXQ(raif));
+			sysprintf("ifconfig %s %s netmask %s up", raif, nvram_nget("%s_ipaddr", getRADev(dev)), nvram_nget("%s_netmask", getRADev(dev)));
 		}
-
-		for (s = 1; s <= 10; s++) {
-			char wdsvarname[32] = { 0 };
-			char wdsdevname[32] = { 0 };
-			char wdsmacname[32] = { 0 };
-			char *wdsdev;
-			char dev[32];
-			char *hwaddr;
-			sprintf(dev, "wl%d", idx);
-			sprintf(wdsvarname, "%s_wds%d_enable", dev, (11 - s));
-			sprintf(wdsdevname, "%s_wds%d_if", dev, (11 - s));
-			sprintf(wdsmacname, "%s_wds%d_hwaddr", dev, (11 - s));
-			wdsdev = nvram_safe_get(wdsdevname);
-			if (strlen(wdsdev) == 0)
-				continue;
-			if (nvram_match(wdsvarname, "0"))
-				continue;
-			hwaddr = nvram_get(wdsmacname);
-			if (hwaddr != NULL) {
-				char *newdev = getWDSDev(wdsdev);
-
-				sysprintf("ifconfig %s 0.0.0.0 up", newdev);
-			}
-		}
-
-		/*
-
-		   set macfilter
-		 */
-
-		if (startradius[idx]) {
-			if (idx == 0)
-				eval("rt2860apd");
-			else
-				eval("rt2860apd", "-i", "ba");
-
-		}
-		setMacFilter(dev);
 	}
+	char vathmac[32];
+
+	sprintf(vathmac, "wl%d_hwaddr", idx);
+	char vmacaddr[32];
+
+	getMacAddr(raif, vmacaddr);
+	nvram_set(vathmac, vmacaddr);
+
+	vifs = nvram_nget("wl%d_vifs", idx);
+	if (vifs != NULL && strlen(vifs) > 0) {
+		int count = 1;
+
+		foreach(var, vifs, next) {
+
+			sprintf(bridged, "%s_bridged", getRADev(var));
+			if (nvram_default_match(bridged, "1", "1")) {
+				char ra[32];
+
+				sprintf(ra, "ra%d", count + (8 * idx));
+				sysprintf("ifconfig ra%d 0.0.0.0 up", count + (8 * idx));
+				br_add_interface(getBridge(getRADev(var)), ra);
+			} else {
+				char ip[32];
+				char mask[32];
+
+				sprintf(ip, "%s_ipaddr", getRADev(var));
+				sprintf(mask, "%s_netmask", getRADev(var));
+				char raa[32];
+				sprintf(raa, "ra%d", count + (8 * idx));
+				sysprintf("ifconfig %s mtu %s", raa, getMTU(raa));
+				sysprintf("ifconfig %s txqueuelen %s", raa, getTXQ(raa));
+				sysprintf("ifconfig ra%d %s netmask %s up", count, nvram_safe_get(ip), nvram_safe_get(mask));
+			}
+
+			sprintf(vathmac, "%s_hwaddr", var);
+			getMacAddr(getRADev(var), vmacaddr);
+			nvram_set(vathmac, vmacaddr);
+
+			count++;
+		}
+	}
+
+	for (s = 1; s <= 10; s++) {
+		char wdsvarname[32] = { 0 };
+		char wdsdevname[32] = { 0 };
+		char wdsmacname[32] = { 0 };
+		char *wdsdev;
+		char dev[32];
+		char *hwaddr;
+		sprintf(dev, "wl%d", idx);
+		sprintf(wdsvarname, "%s_wds%d_enable", dev, (11 - s));
+		sprintf(wdsdevname, "%s_wds%d_if", dev, (11 - s));
+		sprintf(wdsmacname, "%s_wds%d_hwaddr", dev, (11 - s));
+		wdsdev = nvram_safe_get(wdsdevname);
+		if (strlen(wdsdev) == 0)
+			continue;
+		if (nvram_match(wdsvarname, "0"))
+			continue;
+		hwaddr = nvram_get(wdsmacname);
+		if (hwaddr != NULL) {
+			char *newdev = getWDSDev(wdsdev);
+
+			sysprintf("ifconfig %s 0.0.0.0 up", newdev);
+		}
+	}
+
+	/*
+
+	   set macfilter
+	 */
+
+	if (startradius[idx]) {
+		if (idx == 0)
+			eval("rt2860apd");
+		else
+			eval("rt2860apd", "-i", "ba");
+
+	}
+	setMacFilter(dev);
+
 	vifs = nvram_nget("wl%d_vifs", idx);
 	if (vifs != NULL && strlen(vifs) > 0) {
 		foreach(var, vifs, next) {
@@ -1423,6 +1430,7 @@ void init_network(int idx)
 			br_add_interface(getBridge(dev), dev);
 		}
 	}
+
 	reset_hwaddr(nvram_safe_get("lan_ifname"));
 
 }
@@ -1450,7 +1458,7 @@ void configure_wifi(void)
 		configure_wifi_single(1);
 	init_network(0);
 	if (get_wl_instances() == 2)
-	    init_network(1);
+		init_network(1);
 }
 
 void start_configurewifi(void)
