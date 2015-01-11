@@ -2794,6 +2794,7 @@ struct nvram_tuple srouter_defaults[] = {
 #else
 	{"auth_dnsmasq", "1", 0},
 #endif
+	{"dns_redirect", "0", 0},
 #ifdef HAVE_GGEW
 	{"ral", "217.113.177.185 172.16.0.0/28", 0},
 	{"pptp_use_dhcp", "1", 0},	/* pptp will use dhcp to obtain ip address, netmask and gateway */
