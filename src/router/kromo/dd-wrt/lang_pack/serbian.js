@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//Serbian(Cyrillic) translation file - DD-WRT V24 SP2, 06/APRIL/2014, by Хранислав Миленковић (Mile-Lile) //
+//Serbian(Cyrillic) translation file - DD-WRT V24 SP2, 11/JAN/2015, by Хранислав Миленковић (Mile-Lile) //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
@@ -34,6 +34,7 @@ share.vdsl="Напредно VLAN означавање";
 share.vdslvlan7="Подршка за T-Home VLAN 7";
 share.vdslvlan8="Подршка за T-Home VLAN 8";
 share.wan_vlantag="VLAN ID ознака";
+share.wan_dualaccess="Режим двојног приступа";
 share.compression="PPP компресија (MPPC)";
 share.mlppp="Једна парица више линкова";
 share.vpi_vci="VPI/VCI";
@@ -168,6 +169,7 @@ share.styl="Стил";
 share.err="грешака";
 share.errs="грешака";
 share.meters="метара";
+share.ht80="VHT (80+80 MHz)"; <ѕа
 share.ht40="Широки HT40 (20+20 MHz)";
 share.ht20="Цели HT20 (20 MHz)";
 share.dynamicturbo="Динамични (20/40 MHz)";
@@ -386,6 +388,7 @@ errmsg.err102="Надоградња фирмвера...<br/>Молим, саче
 // **  COMMON MENU ENTRIES  **//
 bmenu.setup="Подешавања";
 bmenu.setupbasic="Основна подешавања";
+bmenu.setupipv6="IPV6";
 bmenu.setupddns="DDNS";
 bmenu.setupmacclone="Клонирање MAC адресе";
 bmenu.setuprouting="Напредно рутирање";
@@ -711,7 +714,56 @@ hnas.right2="За листу корисничких лозинки, унесит
 // ** DLNA **
 nas.dlna_legend="DLNA Сервер";
 nas.dlna_srv="MiniDLNA";
+nas.dlna_merge="Пребаци Media дир.";
+nas.dlna_thumb="Укључи корице";
 nas.dlna_dir="Директоријум фајлова";
+nas.dlna_cleandb="Очисти базу сада";
+
+// ** Common **
+nas.shareadd="Додај дељено";
+nas.sharedel="Уклони";
+nas.useradd="Додај корисника";
+nas.userdel="Уклони";
+nas.perm_rw="Читај/Пиши";
+nas.perm_ro="Read Only";
+nas.uname="Корисничко име";
+nas.pwd="Лозинка";
+
+
+hnas.right2="У циљу дељења ресурса додај путање и називе дељених ресурса. Дефиниши кориснике који имају приступ преко ФТП или самбе.";
+
+//help page
+hnas.page1="<dd>FTP Server омогућава дељење фајлова : <br/><ul><li>Преко итернета - WAN</li><li>у локалној мрежи</li></ul></dd>";
+hnas.page2="<dd>DLNA Server омогућава дељење медија : <br/><ul><li>Потребан је dlna способан клијент нпр. TV који ће пуштати фајлове који су ускладиштени на рутеру.</li></ul></dd>";
+hnas.page3="<dd>SAMBA Server омогућава приступ фајловима : <br/><ul><li>На рутеру из локалне мреже кроз експлорер.</li></ul></dd>";
+hnas.page4="<dd><br/><ul><li>Путања: Путања до маунтоване партиције. Погледајте тренутно маунтоване партиције под <a href=\"../USB.asp\">Disk Info</a> </li><li>Subdir: Име директоријума на датој партицији нпр. public или folder/sub_folder/sub_sub_folder </li><li>Име: Дељено име приказано током претраге мрежних дељења нпр. \\router\name </li><li>Public: Свако може приступити овом дељењу. Није потребан кориснички налог.</li></ul></dd><dt>Обрати пажњу</dt><dd><br/>За Windows кориснике: повезан USB драјв појавиће се у Windows под D: и садржи два директоријума <i>јавни, тајни</i>.</br>Желите да делите <i>D:\public</i>. Да бисте ово урадили повежите usb драјв и потражите или прецизирајте тачку маунтовања под <a href=\"../USB.asp\">USB Settings</a>.</br>D: једнако је тачки маунтовања под linux. Да бисте делили <i>D:\public</i>, означите тренутну тачку маунтовања и назначите поддиректоријум <i>public</i></br>назовите га нпр. Гости и подесите дозволе за приступ.</dd>";
+
+//** Privoxy.asp **//
+privoxy.titl="Adblocking";
+privoxy.server="Privoxy";
+privoxy.legend="Filtering Proxy Server";
+privoxy.transp="Transparent Mode";
+privoxy.exclude="Exclude IP";
+privoxy.whitel="Whitelist";
+privoxy.custom="Корисничка конфигурација";
+
+hprivoxy.right2="Омогућите privoxy и конфигуришите подешавања за клијенте. Proxy IP = <b>IP рутера</b> Proxy порт = <b>8118</b>";
+
+//help page
+hprivoxy.page1="<dd>Privoxy омогућава филтрирање реклама (адова). <br/><ul><br/></ul></dd>";
+hprivoxy.page2="<dd>Транспарентни мод : <br/><ul><li>Саобраћај ка порту 80 је пресретнут од стране privoxy-ја чак и ако клијент није подесио прокси</li><li>Ово вам омогућава филтрирање</li><li>Транспарентни мод не може пресрести https конекције јер су енкриптоване. Дакле, сав https саобраћај ће и даље пролазити privoxy</li></ul></dd>";
+hprivoxy.page3="<dd>Custom подешавања: <br/><ul><li>Дозвољава да прецизирате своја подешавања и путање до ваших филтера на спољним медијима нпр. usb стик</li></ul></dd>";
+
+//** Lighttpd.asp **//
+lighttpd.titl="Webserver";
+lighttpd.server="Lighttpd";
+lighttpd.legend="Lighttpd Webserver";
+lighttpd.port="HTTP порт";
+lighttpd.sslport="HTTPS порт";
+lighttpd.wan="WAN приступ";
+lighttpd.url="URL";
+
+hlighttpd.right2="Омогућите lighttpd и конфигуришите HTTP/HTTPS портове не којима ће lighttpd слушати захтеве. Подразумевани webserver root је под /jffs/www где можете сместити ваш вебсајт.";
 
 // ** Hotspot.asp **//
 hotspot.titl="Hotspot";
@@ -919,6 +971,7 @@ idx.dhcp_lease="Време закупа IP адресе";
 idx.dhcp_dnsmasq="Употреби DNSMasq за DHCP";
 idx.dns_dnsmasq="Употреби DNSMasq за DNS";
 idx.auth_dnsmasq="Ауторитативни-DHCP";
+idx.force_dnsmasq="Присилно DNS преусмерење";
 idx.summt_opt1="нема";
 idx.summt_opt2="прва Нед Апр - последња Нед Окт";
 idx.summt_opt3="последња Нед Мар - последња Нед Окт";
@@ -1023,8 +1076,23 @@ management.routing_legend="Рутирање";
 management.routing_srv="Рутирање";
 management.ipv6_legend="Подршка за IPv6";
 management.ipv6_srv="IPv6";
-management.ipv6_rad="Radvd омогућен";
-management.ipv6_radconf="Radvd конфиг.";
+management.ipv6_typ="Врста IPv6";
+management.ipv6_pf_len="Prefix Length";
+management.ipv6_rad_enable="Radvd";
+management.ipv6_rad="Radvd custom";
+management.ipv6_radconf="Radvd config";
+management.ipv6_dns="Статички DNS";
+management.ipv6_prefix="Додељени / Рутирани префикс";
+management.ipv6_addr="IPv6 адреса рутера";
+management.ipv6_dhcp6c_cust="Dhcp6c custom";
+management.ipv6_dhcp6c_conf="Dhcp6c config";
+management.ipv6_dhcp6s="Dhcp6s";
+management.ipv6_dhcp6s_seq_ips="Редне IP адресе";
+management.ipv6_dhcp6s_hosts="Custom hosts";
+management.ipv6_dhcp6s_cust="Dhcp6s custom";
+management.ipv6_dhcp6s_conf="Dhcp6s config";
+management.ipv6_tun_end_ipv4="Tunnel Endpoint IPv4 адреса";
+management.ipv6_tun_client_addr="Tunnel Client IPv6 адреса";
 management.jffs_legend="Подршка за JFFS2";
 management.jffs_srv="JFFS2";
 management.jffs_clean="Чисти JFFS2";
@@ -1243,6 +1311,8 @@ service.dnsmasq_legend="DNSMasq";
 service.dnsmasq_srv="DNSMasq";
 service.dnsmasq_loc="Локални DNS";
 service.dnsmasq_no_dns_rebind="Без DNS Rebind-овања";
+service.dnsmasq_strict="Упити DNS-у по строгом редоследу";
+service.dnsmasq_add_mac="Додај MAC наручиоца у DNS упит";
 service.dnsmasq_opt="Додатне DNSMasq опције";
 
 //pptp.webservices
@@ -1495,6 +1565,17 @@ service.samba3_user_shares="Приступ Дељеном";
 service.dlna_type_audio="Аудио";
 service.dlna_type_video="Видео";
 service.dlna_type_images="Слике";
+
+// Zabbix
+service.zabbix_legend="Zabbix";
+service.zabbix_cl="Client";
+service.zabbix_serverip="Zabbix Server IP";
+service.zabbix_usrpara="Кориснички параметри";
+
+//TRansmission
+service.transmission_legend="Bittorrent";
+service.transmission_srv="Transmission Daemon";
+service.transmission_dir="Transmission директоријум";
 
 // ** eop-tunnel.asp **//
 eoip.titl="EoIP Тунели";
@@ -2030,6 +2111,8 @@ wl_basic.label4="Бежични канал";
 wl_basic.label5="Објављивање бежичног SSID-а";
 wl_basic.label6="Осетљивост (ACK Timing)";
 wl_basic.label7="802.11n Режим преноса";
+wl_basic.igmpsnooping="Оптимизација мултикаст саобраћаја";
+wl_basic.turboqam="TurboQAM (QAM256) подршка";
 wl_basic.scanlist="Листа прегледа";
 wl_basic.duallink="Двострука веза";
 wl_basic.parent="Parent IP";
@@ -2110,6 +2193,16 @@ wl_basic.if_info="Инфо (опционално)";
 wl_basic.advanced_options="Напредна подешавања";
 wl_basic.rate_control="Алгоритам контроле брзине";
 wl_basic.ap83_vap_note="Додавање више од три виртуелна интерфејса ће довести до смањења перформанси са неким специфичним клијентским уређајима на овим додатним виртуелним интерфејсима.";
+wl_basic.isolation="Net Isolation";
+wl_basic.country_settings="Избор државе";
+wl_basic.ch_pos_auto="Ауто";
+wl_basic.ch_pos_upr="горњи";
+wl_basic.ch_pos_lwr="доњи";
+wl_basic.ghz="GHz";
+wl_basic.mhz="MHz";
+wl_basic.tbqam="TurboQAM";
+wl_basic.upper="горњи";
+wl_basic.lower="доњи";
 
 //help container
 hwl_basic.right2="Ако желите да искључите Бежичне-G клијенте, изаберите <em>B-Only</em> режим. Ако желите да онемогућите бежични приступ, изаберите <em>Онемогући</em>.<br/><b>Note :</b> прилком мењања бежичног режима неки напредни параметри су осетљиви да би се променили. (\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" or \"" + wl_adv.label5 + "\").";
