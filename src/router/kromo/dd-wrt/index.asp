@@ -254,6 +254,10 @@ function submitcheck(F) {
 		if(F._auth_dnsmasq) {
 			F.auth_dnsmasq.value = F._auth_dnsmasq.checked ? 1 : 0;
 		}
+
+		if(F._dns_redirect) {
+			F.dns_redirect.value = F._dns_redirect.checked ? 1 : 0;
+		}
 		
 		if(F._fullswitch) {
 			F.fullswitch.value = F._fullswitch.checked ? 1 : 0;
@@ -349,6 +353,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="dhcp_dnsmasq" value="0" />
 							<input type="hidden" name="dns_dnsmasq" value="0" />
 							<input type="hidden" name="auth_dnsmasq" value="0" />
+							<input type="hidden" name="dns_redirect" value="0" />
 							<input type="hidden" name="fullswitch" value="0" />
 							<input type="hidden" name="ppp_mlppp" value="0" />
 							<input type="hidden" name="lan_ipaddr" value="4" />
