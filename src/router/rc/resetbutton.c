@@ -854,6 +854,8 @@ void period_check(int sig)
 		val = (get_gpio(1) << 1) | (get_gpio(2) << 2);
 	} else if (brand == ROUTER_DIR810L) {
 		val = (get_gpio(1) << 1) | (get_gpio(2) << 2);
+	} else if (brand == ROUTER_DIR860LB1) {
+		val = (get_gpio(1) << 1) | (get_gpio(2) << 2);
 	} else if (brand == ROUTER_BOARD_W502U) {
 		val = get_gpio(10) << 10;
 	} else if (brand == ROUTER_BOARD_GW2380) {
