@@ -922,14 +922,14 @@ static void show_security_prefix(webs_t wp, int argc, char_t ** argv, char *pref
 #ifdef HAVE_QTN
 	if (!has_qtn(prefix))
 #endif
-	if (!primary || nvram_match(sta, "ap") || nvram_match(sta, "wdsap")) {
-		websWrite(wp,
+		if (!primary || nvram_match(sta, "ap") || nvram_match(sta, "wdsap")) {
+			websWrite(wp,
 #ifdef HAVE_IAS
-			  "<option value=\"wpa\" %s>%s</option>\n", selmatch(var, "wpa", "selected=\"selected\""), ias_enc_label("wpa"));
+				  "<option value=\"wpa\" %s>%s</option>\n", selmatch(var, "wpa", "selected=\"selected\""), ias_enc_label("wpa"));
 #else
-			  "<option value=\"wpa\" %s>WPA Enterprise</option>\n", selmatch(var, "wpa", "selected=\"selected\""));
+				  "<option value=\"wpa\" %s>WPA Enterprise</option>\n", selmatch(var, "wpa", "selected=\"selected\""));
 #endif
-	}
+		}
 #ifdef HAVE_IAS
 	websWrite(wp, "<option value=\"psk2\" %s>%s</option>\n", selmatch(var, "psk2", "selected=\"selected\""), ias_enc_label("psk2"));
 #else
@@ -939,14 +939,14 @@ static void show_security_prefix(webs_t wp, int argc, char_t ** argv, char *pref
 #ifdef HAVE_QTN
 	if (!has_qtn(prefix))
 #endif
-	if (!primary || nvram_match(sta, "ap") || nvram_match(sta, "wdsap")) {
-		websWrite(wp,
+		if (!primary || nvram_match(sta, "ap") || nvram_match(sta, "wdsap")) {
+			websWrite(wp,
 #ifdef HAVE_IAS
-			  "<option value=\"wpa2\" %s>%s</option>\n", selmatch(var, "wpa2", "selected=\"selected\""), ias_enc_label("wpa2"));
+				  "<option value=\"wpa2\" %s>%s</option>\n", selmatch(var, "wpa2", "selected=\"selected\""), ias_enc_label("wpa2"));
 #else
-			  "<option value=\"wpa2\" %s>WPA2 Enterprise</option>\n", selmatch(var, "wpa2", "selected=\"selected\""));
+				  "<option value=\"wpa2\" %s>WPA2 Enterprise</option>\n", selmatch(var, "wpa2", "selected=\"selected\""));
 #endif
-	}
+		}
 #ifdef HAVE_RT2880
 	if (!primary || nvram_match(sta, "ap"))
 #endif
@@ -960,31 +960,31 @@ static void show_security_prefix(webs_t wp, int argc, char_t ** argv, char *pref
 #ifdef HAVE_QTN
 	if (!has_qtn(prefix))
 #endif
-	if (!primary || nvram_match(sta, "ap") || nvram_match(sta, "wdsap")) {
-		websWrite(wp,
+		if (!primary || nvram_match(sta, "ap") || nvram_match(sta, "wdsap")) {
+			websWrite(wp,
 #ifdef HAVE_IAS
-			  "<option value=\"wpa wpa2\" %s>%s</option>\n", selmatch(var, "wpa wpa2", "selected=\"selected\""), ias_enc_label("wpa wpa2"));
+				  "<option value=\"wpa wpa2\" %s>%s</option>\n", selmatch(var, "wpa wpa2", "selected=\"selected\""), ias_enc_label("wpa wpa2"));
 #else
-			  "<option value=\"wpa wpa2\" %s>WPA2 Enterprise Mixed</option>\n", selmatch(var, "wpa wpa2", "selected=\"selected\""));
+				  "<option value=\"wpa wpa2\" %s>WPA2 Enterprise Mixed</option>\n", selmatch(var, "wpa wpa2", "selected=\"selected\""));
 #endif
 
 #ifdef HAVE_IAS
 #ifdef HAVE_ATH9K
-		if (!is_ath9k(prefix))
+			if (!is_ath9k(prefix))
 // disabled -> not implemented for newer wireless drivers
 #endif
-			websWrite(wp, "<option value=\"radius\" %s>%s</option>\n", selmatch(var, "radius", "selected=\"selected\""), ias_enc_label("radius"));
+				websWrite(wp, "<option value=\"radius\" %s>%s</option>\n", selmatch(var, "radius", "selected=\"selected\""), ias_enc_label("radius"));
 #else
-		websWrite(wp, "<option value=\"radius\" %s>RADIUS</option>\n", selmatch(var, "radius", "selected=\"selected\""));
+			websWrite(wp, "<option value=\"radius\" %s>RADIUS</option>\n", selmatch(var, "radius", "selected=\"selected\""));
 #endif
-	}
+		}
 #ifdef HAVE_QTN
 	if (!has_qtn(prefix))
 #endif
 #ifdef HAVE_IAS
-	websWrite(wp, "<option value=\"wep\" %s>%s</option>\n", selmatch(var, "wep", "selected=\"selected\""), ias_enc_label("wep"));
+		websWrite(wp, "<option value=\"wep\" %s>%s</option>\n", selmatch(var, "wep", "selected=\"selected\""), ias_enc_label("wep"));
 #else
-	websWrite(wp, "<option value=\"wep\" %s>WEP</option>\n", selmatch(var, "wep", "selected=\"selected\""));
+		websWrite(wp, "<option value=\"wep\" %s>WEP</option>\n", selmatch(var, "wep", "selected=\"selected\""));
 #endif
 #ifdef HAVE_WPA_SUPPLICANT
 #ifndef HAVE_MICRO
@@ -1931,6 +1931,10 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 
 		sprintf(bridge_name, "lan_hwaddr");
 		websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\"size=\"16\" value=\"%s\" /></td></tr>\n", bridge_name, nvram_safe_get(bridge_name));
+
+		websWrite(wp,
+			  "<td><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" disabled />\");\n//]]>\n</script></td></tr>\n");
+
 		// don't show that here, since that is under Basic Setup
 		// show_ipnetmask(wp, bridge);
 		count++;
@@ -1976,28 +1980,30 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 		// Bridges are bridges, Ports are ports, show it again HERE          
 		sprintf(bridge_name, "bridgemtu%d", count);
 		websWrite(wp, "<td><input class=\"num\" name=\"%s\"size=\"3\" value=\"%s\" /></td>\n", bridge_name, mtu != NULL ? mtu : "1500");
-		if (!strcmp(bridge, "br0")){
+		if (!strcmp(bridge, "br0")) {
 			sprintf(bridge_name, "lan_hwaddr");
 			websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\"size=\"16\" value=\"%s\" /></td>\n", bridge_name, nvram_safe_get(bridge_name));
 		} else {
 			sprintf(bridge_name, "%s_hwaddr", bridge);
 			mac = nvram_safe_get(bridge_name);
-			if(!strcmp(mac, "")){
+			if (!strcmp(mac, "")) {
 				websWrite(wp, "<td align=\"center\">...</td>\n");
-			}else{
+			} else {
 				websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\"size=\"16\" value=\"%s\" /></td>\n", bridge_name, nvram_safe_get(bridge_name));
 			}
 		}
-		
-		
+
 		if (strcmp(bridge, "br0")) {
-		websWrite(wp,
-			  "<td><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bridge_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script></td></tr>\n",
-			  count);
-		// don't show that here, since that is under Basic Setup
+			websWrite(wp,
+				  "<td><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bridge_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script></td></tr>\n",
+				  count);
+			// don't show that here, since that is under Basic Setup
 			websWrite(wp, "<tr><td colspan=\"7\" align=\"center\">");
 			show_ipnetmask(wp, bridge);
 			websWrite(wp, "</td></tr>");
+		} else {
+			websWrite(wp,
+				  "<td><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" disabled />\");\n//]]>\n</script></td></tr>\n");
 		}
 		count++;
 	}
@@ -3564,7 +3570,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	}
 #endif
 #endif
-#if !defined(HAVE_WZR450HP2) || !defined(HAVE_BUFFALO) 
+#if !defined(HAVE_WZR450HP2) || !defined(HAVE_BUFFALO)
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp,
 		  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpower)</script></div><input class=\"num\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%d\" /> dBm\n",
@@ -4633,7 +4639,7 @@ if (!strcmp(prefix, "wl1"))
 	}
 #endif
 #endif
-#if !defined(HAVE_WZR450HP2) || !defined(HAVE_BUFFALO) 
+#if !defined(HAVE_WZR450HP2) || !defined(HAVE_BUFFALO)
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp,
 		  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpower)</script></div><input class=\"num\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%d\" /> dBm\n",
@@ -4906,7 +4912,7 @@ void ej_show_wireless(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "document.write(\"<option value=\\\"h_strict\\\" %s >802.11h Strict</option>\");\n", !strcmp(wl_regmode, "h_strict") ? "selected=\\\"selected\\\"" : "");
 	websWrite(wp, "document.write(\"<option value=\\\"d\\\" %s >802.11d</option>\");\n", !strcmp(wl_regmode, "d") ? "selected=\\\"selected\\\"" : "");
 	websWrite(wp, "//]]>\n</script>\n</select>\n");
-	websWrite(wp, "</div>\n"); 
+	websWrite(wp, "</div>\n");
 	websWrite(wp, "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.tpcdb)</script></div>\n");
 
 	char *wl_tpcdb = nvram_default_get("wl_tpc_db", "off");
@@ -5046,9 +5052,8 @@ void show_radius(webs_t wp, char *prefix, int showmacformat, int backup)
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(radius.retry)</script></div>\n");
 		websWrite(wp, "<input name=\"%s_radius_retry\" size=\"3\" maxlength=\"5\" onblur=\"valid_range(this,1,65535,radius.retry)\" value=\"%s\" />\n", prefix, nvram_default_get(var, "600"));
 		websWrite(wp, "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 600)\");\n//]]>\n</script></span>\n</div>\n");
-#endif	
-	
-	
+#endif
+
 		rad = nvram_nget("%s_radius2_ipaddr", prefix);
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label23)</script></div>\n");
@@ -6317,8 +6322,7 @@ void ej_get_qosips(webs_t wp, int argc, char_t ** argv)
 		  "<th><script type=\"text/javascript\">Capture(qos.ipmask)</script></th>\n"
 		  "<th><script type=\"text/javascript\">Capture(qos.maxdownrate_b)</script></th>\n"
 		  "<th><script type=\"text/javascript\">Capture(qos.maxuprate_b)</script></th>\n"
-		  "<th><script type=\"text/javascript\">Capture(qos.maxlanrate_b)</script></th>\n" 
-		  "<th><script type=\"text/javascript\">Capture(share.priority)</script></th>\n" "</tr>\n");
+		  "<th><script type=\"text/javascript\">Capture(qos.maxlanrate_b)</script></th>\n" "<th><script type=\"text/javascript\">Capture(share.priority)</script></th>\n" "</tr>\n");
 
 	// write HTML data
 
@@ -6346,7 +6350,7 @@ void ej_get_qosips(webs_t wp, int argc, char_t ** argv)
 
 		websWrite(wp, "<tr>\n" "<td align=\"center\">\n" "<input type=\"checkbox\" name=\"svqos_ipdel%d\" />\n" "<input type=\"hidden\" name=\"svqos_ip%d\" value=\"%s\" />\n" "</td>\n", i, i, ip);
 		websWrite(wp, "	<td><em>%s</em></td>\n", ip);
-		
+
 		websWrite(wp, "	<td nowrap>\n"
 			  "<input name=\"svqos_ipdown%d\" class=\"num\" size=\"5\" maxlength=\"6\" value=\"%s\" style=\"text-align:right;\" %s /> kBits\n" "</td>\n", i, level2, strcmp(prio, "0") == 0 ? "" : "disabled");
 		websWrite(wp, "	<td nowrap>\n"
@@ -6842,15 +6846,15 @@ void ej_statfs(webs_t wp, int argc, char_t ** argv)
 void ej_getnumfilters(webs_t wp, int argc, char_t ** argv)
 {
 	char filter[32];
-	sprintf(filter,"numfilterservice%s",nvram_safe_get("filter_id"));
-	websWrite(wp,"%s",nvram_default_get(filter,"4"));
+	sprintf(filter, "numfilterservice%s", nvram_safe_get("filter_id"));
+	websWrite(wp, "%s", nvram_default_get(filter, "4"));
 }
 
 void ej_show_filters(webs_t wp, int argc, char_t ** argv)
 {
 	char filter[32];
-	sprintf(filter,"numfilterservice%s",nvram_safe_get("filter_id"));
-	int numfilters = atoi(nvram_default_get(filter,"4"));
+	sprintf(filter, "numfilterservice%s", nvram_safe_get("filter_id"));
+	int numfilters = atoi(nvram_default_get(filter, "4"));
 	int i;
 	for (i = 0; i < numfilters; i++) {
 		websWrite(wp, "<div class=\"setting\">\n"	//
@@ -6871,8 +6875,8 @@ void ej_show_filters(webs_t wp, int argc, char_t ** argv)
 void ej_gen_filters(webs_t wp, int argc, char_t ** argv)
 {
 	char filter[32];
-	sprintf(filter,"numfilterservice%s",nvram_safe_get("filter_id"));
-	int numfilters = atoi(nvram_default_get(filter,"4"));
+	sprintf(filter, "numfilterservice%s", nvram_safe_get("filter_id"));
+	int numfilters = atoi(nvram_default_get(filter, "4"));
 	int i;
 	for (i = 0; i < numfilters; i++) {
 		websWrite(wp, "var servport_name%d = \"", i);
