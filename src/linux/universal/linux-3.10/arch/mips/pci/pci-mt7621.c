@@ -149,13 +149,13 @@ extern void chk_phy_pll(void);
 #define RALINK_SYSTEM_CONTROL_BASE	0xbe000000
 #define GPIO_PERST
 #define ASSERT_SYSRST_PCIE(val)		do {	\
-						if (*(unsigned int *)(0xbe00000c) == 0x00030101)	\
+						if ((*(unsigned int *)(0xbe00000c)&0xFFFF) == 0x0101)	\
 							RALINK_RSTCTRL |= val;	\
 						else	\
 							RALINK_RSTCTRL &= ~val;	\
 					} while(0)
 #define DEASSERT_SYSRST_PCIE(val) 	do {	\
-						if (*(unsigned int *)(0xbe00000c) == 0x00030101)	\
+						if ((*(unsigned int *)(0xbe00000c)&0xFFFF) == 0x0101)	\
 							RALINK_RSTCTRL &= ~val;	\
 						else	\
 							RALINK_RSTCTRL |= val;	\

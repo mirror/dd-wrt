@@ -198,7 +198,7 @@ config USB_RCAR_PHY
 
 config RALINK_USBPHY
 	bool "Ralink USB PHY controller Driver"
-	depends on MIPS && RALINK
+	depends on MIPS && RALINK_OPENWRT
 	select USB_PHY
 	help
 	  Enable this to support ralink USB phy controller for ralink
