@@ -128,9 +128,13 @@ gic_irqdispatch(void)
 
 	if (irq < 0)
 		return;  /* interrupt has already been cleared */
-	
-	do_IRQ(MIPS_GIC_IRQ_BASE + irq);
 
+	if (likely(irq < GIC_NUM_INTRS))
+		do_IRQ(MIPS_GIC_IRQ_BASE + irq);
+	else {
+		pr_err("Spurious GIC Interrupt!\n");
+		spurious_interrupt();
+	}
 }
 
 static void
