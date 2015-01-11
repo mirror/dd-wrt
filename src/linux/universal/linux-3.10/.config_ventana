@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 3.10.64-rc1 Kernel Configuration
+# Linux/arm 3.10.64 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_MIGHT_HAVE_PCI=y
@@ -2520,6 +2520,7 @@ CONFIG_MMC_SDHCI_ESDHC_IMX=y
 # CONFIG_MMC_DW is not set
 # CONFIG_MMC_VUB300 is not set
 # CONFIG_MMC_USHC is not set
+# CONFIG_MTK_MMC is not set
 # CONFIG_MEMSTICK is not set
 # CONFIG_NEW_LEDS is not set
 # CONFIG_ACCESSIBILITY is not set
