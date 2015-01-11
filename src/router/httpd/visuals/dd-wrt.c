@@ -7027,16 +7027,15 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 			showRadio(wp, "wl_basic.masquerade", mcast);
 		}
 
-	char isolation[32];
-	sprintf(isolation, "%s_isolation", var);
-	nvram_default_get(isolation, "0");
-	showRadio(wp, "wl_basic.isolation", isolation);
+		char isolation[32];
+		sprintf(isolation, "%s_isolation", var);
+		nvram_default_get(isolation, "0");
+		showRadio(wp, "wl_basic.isolation", isolation);
 
-	char redirect[32];
-	sprintf(redirect, "%s_dns_redirect", var);
-	nvram_default_get(redirect, "0");
-	showRadio(wp, "idx.force_dnsmasq", redirect);
-
+		char redirect[32];
+		sprintf(redirect, "%s_dns_redirect", var);
+		nvram_default_get(redirect, "0");
+		showRadio(wp, "idx.force_dnsmasq", redirect);
 
 		show_ipnetmask(wp, var);
 #if defined(HAVE_BKM) || defined(HAVE_TMK)
