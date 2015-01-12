@@ -34,7 +34,7 @@ static void watchdog(void)
 	while (1) {
 		write(fd, "\0", 1);
 		fsync(fd);
-
+#ifndef HAVE_RT2880
 #ifdef HAVE_REGISTER
 		if (!nvram_match("flash_active", "1")) {
 			if (registered == -1)
@@ -109,7 +109,7 @@ static void watchdog(void)
 		/* 
 		 * end software wlan led control 
 		 */
-
+#endif
 		sleep(10);
 		if (nvram_match("warn_enabled", "1")) {
 			counter++;
