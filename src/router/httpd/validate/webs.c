@@ -65,6 +65,8 @@ void dhcpfwd(webs_t wp)
 	char *enable;
 
 	enable = websGetVar(wp, "dhcpfwd_enable", NULL);
+	if (enable && !strcmp(enable,"1"))
+		nvram_set("lan_proto","static");
 	nvram_set("dhcpfwd_enable", enable);
 
 }
