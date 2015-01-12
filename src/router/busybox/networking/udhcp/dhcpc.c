@@ -31,6 +31,8 @@
 
 #ifndef PACKET_AUXDATA
 #define PACKET_AUXDATA			8
+typedef unsigned int __u32;
+typedef unsigned int __u16;
 struct tpacket_auxdata {
 	__u32		tp_status;
 	__u32		tp_len;
