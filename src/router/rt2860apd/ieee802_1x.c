@@ -900,57 +900,44 @@ extern void add_usermac( char *mac, int idx, char *upstream,
 
 extern char *nvram_safe_get(const char *name);
 
-int addrule( char *mac, char *upstream, char *downstream )
+int addrule(char *mac, char *upstream, char *downstream)
 {
-    char *qos_mac = nvram_safe_get( "svqos_macs" );
-    int ret = 0;
+	char *qos_mac = nvram_safe_get( "svqos_macs" );
+	char *newqos;
+	int ret = 0;
+	int len = strlen(qos_mac);
 
-    if( strlen( qos_mac ) > 0 )
-    {
-	char *newqos = malloc( strlen( qos_mac ) * 2 );
+	newqos = malloc(len + 128);
+	memset(newqos, 0, len + 128);
 
-	memset( newqos, 0, strlen( qos_mac ) );
 	char level[32], level2[32], level3[32], data[32], type[32], prio[32];
 	strcpy(level3, "0");
-	do
-	{
-	    if( sscanf
-		( qos_mac, "%31s %31s %31s %31s %31s %31s |", data, level, level2,
-		  type, level3 , prio) < 6 )
-		break;
-	    if( !stricmp( data, mac ) && !strcmp( level, upstream )
-		&& !strcmp( level2, downstream ) )
-	    {
-		sprintf( newqos, "%s %s %s %s %s %s %s |", newqos, data, upstream,
-			 downstream, "hostapd", level3, prio );
-		ret |= 2;
-	    }
-	    else
-	    {
-		if( !stricmp( data, mac ) )
-		{
-		    ret |= 1;
-		}
-		sprintf( newqos, "%s %s %s %s %s %s %s |", newqos, data, level,
-			 level2, type, level3, prio);
-	    }
+	if (len > 0) {
+		do {
+			if(sscanf( qos_mac, "%31s %31s %31s %31s %31s %31s |", data, level, level2, type, level3, prio) < 6)
+				break;
+			if (!strcasecmp(data,mac)) {
+				sprintf(newqos,"%s %s %s %s %s %s %s |",newqos,data,upstream,downstream,"hostapd",level3,prio);
+				if (!strcmp(level,upstream) && !strcmp(level2,downstream))
+					ret = 1;
+				else
+					ret = 2;
+			} else
+				sprintf(newqos,"%s %s %s %s %s %s %s |",newqos,data,level,level2,type,level3,prio);
+		} while( ( qos_mac = strpbrk( ++qos_mac, "|" ) ) && qos_mac++ );
 	}
-	while( ( qos_mac = strpbrk( ++qos_mac, "|" ) ) && qos_mac++ );
-	nvram_set( "svqos_macs", newqos );
-	free( newqos );
-    }
-    else
-    {
-	char newqos[128];
 
-	sprintf( newqos, "%s %s %s %s %s %s |", mac, upstream, downstream,
-		 "hostapd", level3, prio);
-	nvram_set( "svqos_macs", newqos );
-    }
-    return ret;
+	if (!ret)
+		sprintf(newqos,"%s %s %s %s %s %s %s |",newqos,mac,upstream,downstream,"hostapd",level3,prio);
 
+	nvram_set("svqos_macs",newqos);
+	free(newqos);
 }
+
+
 #endif
+
+
 
 /* Process the RADIUS frames from Authentication Server */
 static RadiusRxResult
