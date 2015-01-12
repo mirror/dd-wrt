@@ -132,7 +132,7 @@ gic_irqdispatch(void)
 	if (likely(irq < GIC_NUM_INTRS))
 		do_IRQ(MIPS_GIC_IRQ_BASE + irq);
 	else {
-		pr_err("Spurious GIC Interrupt!\n");
+		pr_err("Spurious GIC Interrupt %d/%d!\n",irq,MIPS_GIC_IRQ_BASE + irq);
 		spurious_interrupt();
 	}
 }
