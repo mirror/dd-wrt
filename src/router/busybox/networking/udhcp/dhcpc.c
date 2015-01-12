@@ -29,6 +29,9 @@
 #include <linux/filter.h>
 #include <linux/if_packet.h>
 
+#ifndef PACKET_AUXDATA
+#define PACKET_AUXDATA			8
+#endif
 /* "struct client_config_t client_config" is in bb_common_bufsiz1 */
 
 
