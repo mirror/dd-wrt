@@ -466,6 +466,7 @@ endif
 ifeq ($(CONFIG_ONNET),y)
 	mkdir $(INSTALLDIR)/www/style/onnet
 	cp onnet/style.css $(INSTALLDIR)/www/style/onnet
+	cp onnet/SuperChannel.asp $(INSTALLDIR)/www
 	cp onnet/images/* $(INSTALLDIR)/www/images
 	cp onnet/help/* $(INSTALLDIR)/www/help
   ifeq ($(CONFIG_ONNET_BLANK),y)
