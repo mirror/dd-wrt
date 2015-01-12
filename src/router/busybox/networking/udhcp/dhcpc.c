@@ -31,6 +31,15 @@
 
 #ifndef PACKET_AUXDATA
 #define PACKET_AUXDATA			8
+struct tpacket_auxdata {
+	__u32		tp_status;
+	__u32		tp_len;
+	__u32		tp_snaplen;
+	__u16		tp_mac;
+	__u16		tp_net;
+	__u16		tp_vlan_tci;
+	__u16		tp_padding;
+};
 #endif
 /* "struct client_config_t client_config" is in bb_common_bufsiz1 */
 
