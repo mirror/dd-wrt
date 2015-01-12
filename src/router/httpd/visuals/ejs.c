@@ -2061,16 +2061,21 @@ void ej_show_wanipinfo(webs_t wp, int argc, char_t ** argv)	// Eko
 	}
 
 #ifdef HAVE_IPV6
-	if (nvram_match("ipv6_typ", "ipv6in4") || nvram_match("ipv6_typ", "ipv6pd"))
+	if (nvram_match("ipv6_typ", "ipv6in4") || nvram_match("ipv6_typ", "ipv6pd") || nvram_match("ipv6_typ", "ipv6native"))
 		websWrite(wp, "&nbsp;IPv4: %s", wan_ipaddr);
 	else
 #endif
 		websWrite(wp, "&nbsp;IP: %s", wan_ipaddr);
 #ifdef HAVE_IPV6
-	if (nvram_match("ipv6_typ", "ipv6in4") && getifaddr("ip6tun", AF_INET6, 0) != NULL)
-		websWrite(wp, "&nbsp;IPv6: %s", getifaddr("ip6tun", AF_INET6, 0));
-	else if (nvram_match("ipv6_typ", "ipv6pd") && getifaddr(nvram_safe_get("lan_ifname"), AF_INET6, 0) != NULL)
-		websWrite(wp, "&nbsp;IPv6: %s", getifaddr(nvram_safe_get("lan_ifname"), AF_INET6, 0));
+	char *ipv6addr = NULL;
+	if (nvram_match("ipv6_typ", "ipv6native"))
+		ipv6addr = getifaddr(get_wan_face(), AF_INET6, 0);
+	if (nvram_match("ipv6_typ", "ipv6in4"))
+		ipv6addr = getifaddr("ip6tun", AF_INET6, 0);
+	if (nvram_match("ipv6_typ", "ipv6pd"))
+		ipv6addr = getifaddr(nvram_safe_get("lan_ifname"), AF_INET6, 0);
+	if (ipv6addr)	
+		websWrite(wp, "&nbsp;IPv6: %s", ipv6addr);
 #endif
 
 	return;
