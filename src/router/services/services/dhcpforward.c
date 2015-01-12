@@ -53,6 +53,7 @@ void start_dhcpfwd(void)
 	FILE *fp;
 
 	if (nvram_match("dhcpfwd_enable", "1")) {
+		nvram_set("lan_proto", "static");
 		mkdir("/tmp/dhcp-fwd", 0700);
 		mkdir("/var/run/dhcp-fwd", 0700);
 		fp = fopen("/tmp/dhcp-fwd/dhcp-fwd.conf", "wb");
