@@ -624,8 +624,14 @@ static void nat_prerouting(void)
 		if (strcmp(get_wan_face(), var)
 		    && strcmp(nvram_safe_get("lan_ifname"), var)) {
 			if (nvram_nmatch("1", "%s_dns_redirect", var)) {
-				save2file("-A PREROUTING -i %s -p udp --dport 53 -j DNAT --to %s\n", var, nvram_safe_get("lan_ipaddr"));
-				save2file("-A PREROUTING -i %s -p tcp --dport 53 -j DNAT --to %s\n", var, nvram_safe_get("lan_ipaddr"));
+				char *target = nvram_nget("%s_dns_redirect_ip");
+				if (valid_ipaddr(target)) {
+					save2file("-A PREROUTING -i %s -p udp --dport 53 -j DNAT --to %s\n", var, target);
+					save2file("-A PREROUTING -i %s -p tcp --dport 53 -j DNAT --to %s\n", var, target);
+				} else {
+					save2file("-A PREROUTING -i %s -p udp --dport 53 -j DNAT --to %s\n", var, nvram_safe_get("lan_ipaddr"));
+					save2file("-A PREROUTING -i %s -p tcp --dport 53 -j DNAT --to %s\n", var, nvram_safe_get("lan_ipaddr"));
+				}
 			}
 		}
 	}

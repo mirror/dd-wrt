@@ -1130,6 +1130,7 @@ idx.dhcp_dnsmasq="Use DNSMasq for DHCP";
 idx.dns_dnsmasq="Use DNSMasq for DNS";
 idx.auth_dnsmasq="DHCP-Authoritative";
 idx.force_dnsmasq="Forced DNS Redirection";
+idx.dns_redirect="Optional DNS Target";
 idx.summt_opt1="none";
 idx.summt_opt2="first Sun Apr - last Sun Oct";
 idx.summt_opt3="last Sun Mar - last Sun Oct";
