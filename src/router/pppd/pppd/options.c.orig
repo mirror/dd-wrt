@@ -96,6 +96,7 @@ int	default_device = 1;	/* Using /dev/tty or equivalent */
 char	devnam[MAXPATHLEN];	/* Device name */
 bool	nodetach = 0;		/* Don't detach from controlling tty */
 bool	updetach = 0;		/* Detach once link is up */
+bool	master_detach;		/* Detach when we're (only) multilink master */
 int	maxconnect = 0;		/* Maximum connect time */
 char	user[MAXNAMELEN];	/* Username for PAP */
 char	passwd[MAXSECRETLEN];	/* Password for PAP */
@@ -125,6 +126,7 @@ bool	dump_options;		/* print out option values */
 bool	dryrun;			/* print out option values and exit */
 char	*domain;		/* domain name set by domain option */
 int	child_wait = 5;		/* # seconds to wait for children at exit */
+struct userenv *userenv_list;	/* user environment variables */
 
 #ifdef MAXOCTETS
 unsigned int  maxoctets = 0;    /* default - no limit */
@@ -146,6 +148,7 @@ struct	bpf_program pass_filter;/* Filter program for packets to pass */
 struct	bpf_program active_filter; /* Filter program for link-active pkts */
 #endif
 
+static option_t *curopt;	/* pointer to option being processed */
 char *current_option;		/* the name of the option being parsed */
 int  privileged_option;		/* set iff the current option came from root */
 char *option_source;		/* string saying where the option came from */
@@ -178,6 +181,11 @@ static int setactivefilter __P((char **));
 #ifdef MAXOCTETS
 static int setmodir __P((char **));
 #endif
+
+static int user_setenv __P((char **));
+static void user_setprint __P((option_t *, printer_func, void *));
+static int user_unsetenv __P((char **));
+static void user_unsetprint __P((option_t *, printer_func, void *));
 
 static option_t *find_option __P((const char *name));
 static int process_option __P((option_t *, char *, char **));
@@ -214,6 +222,9 @@ option_t general_options[] = {
     { "updetach", o_bool, &updetach,
       "Detach from controlling tty once link is up",
       OPT_PRIOSUB | OPT_A2CLR | 1, &nodetach },
+
+    { "master_detach", o_bool, &master_detach,
+      "Detach when we're multilink master but have no link", 1 },
 
     { "holdoff", o_int, &holdoff,
       "Set time in seconds before retrying connection",
@@ -292,6 +303,13 @@ option_t general_options[] = {
     { "child-timeout", o_int, &child_wait,
       "Number of seconds to wait for child processes at exit",
       OPT_PRIO },
+
+    { "set", o_special, (void *)user_setenv,
+      "Set user environment variable",
+      OPT_A2PRINTER | OPT_NOPRINT, (void *)user_setprint },
+    { "unset", o_special, (void *)user_unsetenv,
+      "Unset user environment variable",
+      OPT_A2PRINTER | OPT_NOPRINT, (void *)user_unsetprint },
 
 #ifdef HAVE_MULTILINK
     { "multilink", o_bool, &multilink,
@@ -780,6 +798,7 @@ process_option(opt, cmd, argv)
     case o_special_noarg:
     case o_special:
 	parser = (int (*) __P((char **))) opt->addr;
+	curopt = opt;
 	if (!(*parser)(argv))
 	    return 0;
 	if (opt->flags & OPT_A2LIST) {
@@ -893,7 +912,7 @@ check_options()
 static void
 print_option(opt, mainopt, printer, arg)
     option_t *opt, *mainopt;
-    void (*printer) __P((void *, char *, ...));
+    printer_func printer;
     void *arg;
 {
 	int i, v;
@@ -956,11 +975,8 @@ print_option(opt, mainopt, printer, arg)
 			printer(arg, " ");
 		}
 		if (opt->flags & OPT_A2PRINTER) {
-			void (*oprt) __P((option_t *,
-					  void ((*)__P((void *, char *, ...))),
-					  void *));
-			oprt = (void (*) __P((option_t *,
-					 void ((*)__P((void *, char *, ...))),
+			void (*oprt) __P((option_t *, printer_func, void *));
+			oprt = (void (*) __P((option_t *, printer_func,
 					 void *)))opt->addr2;
 			(*oprt)(opt, printer, arg);
 		} else if (opt->flags & OPT_A2STRVAL) {
@@ -998,7 +1014,7 @@ print_option(opt, mainopt, printer, arg)
 static void
 print_option_list(opt, printer, arg)
     option_t *opt;
-    void (*printer) __P((void *, char *, ...));
+    printer_func printer;
     void *arg;
 {
 	while (opt->name != NULL) {
@@ -1016,7 +1032,7 @@ print_option_list(opt, printer, arg)
  */
 void
 print_options(printer, arg)
-    void (*printer) __P((void *, char *, ...));
+    printer_func printer;
     void *arg;
 {
 	struct option_list *list;
@@ -1146,6 +1162,7 @@ getword(f, word, newlinep, filename)
     len = 0;
     escape = 0;
     comment = 0;
+    quoted = 0;
 
     /*
      * First skip white-space and comments.
@@ -1202,15 +1219,6 @@ getword(f, word, newlinep, filename)
 	if (!isspace(c))
 	    break;
     }
-
-    /*
-     * Save the delimiter for quoted strings.
-     */
-    if (!escape && (c == '"' || c == '\'')) {
-        quoted = c;
-	c = getc(f);
-    } else
-        quoted = 0;
 
     /*
      * Process characters until the end of the word.
@@ -1300,29 +1308,34 @@ getword(f, word, newlinep, filename)
 	    if (!got)
 		c = getc(f);
 	    continue;
-
 	}
 
 	/*
-	 * Not escaped: see if we've reached the end of the word.
-	 */
-	if (quoted) {
-	    if (c == quoted)
-		break;
-	} else {
-	    if (isspace(c) || c == '#') {
-		ungetc (c, f);
-		break;
-	    }
-	}
-
-	/*
-	 * Backslash starts an escape sequence.
+	 * Backslash starts a new escape sequence.
 	 */
 	if (c == '\\') {
 	    escape = 1;
 	    c = getc(f);
 	    continue;
+	}
+
+	/*
+	 * Not escaped: check for the start or end of a quoted
+	 * section and see if we've reached the end of the word.
+	 */
+	if (quoted) {
+	    if (c == quoted) {
+		quoted = 0;
+		c = getc(f);
+		continue;
+	    }
+	} else if (c == '"' || c == '\'') {
+	    quoted = c;
+	    c = getc(f);
+	    continue;
+	} else if (isspace(c) || c == '#') {
+	    ungetc (c, f);
+	    break;
 	}
 
 	/*
@@ -1351,6 +1364,9 @@ getword(f, word, newlinep, filename)
 	 */
 	if (len == 0)
 	    return 0;
+	if (quoted)
+	    option_error("warning: quoted word runs to end of file (%.20s...)",
+			 filename, word);
     }
 
     /*
@@ -1635,3 +1651,154 @@ loadplugin(argv)
     return 0;
 }
 #endif /* PLUGIN */
+
+/*
+ * Set an environment variable specified by the user.
+ */
+static int
+user_setenv(argv)
+    char **argv;
+{
+    char *arg = argv[0];
+    char *eqp;
+    struct userenv *uep, **insp;
+
+    if ((eqp = strchr(arg, '=')) == NULL) {
+	option_error("missing = in name=value: %s", arg);
+	return 0;
+    }
+    if (eqp == arg) {
+	option_error("missing variable name: %s", arg);
+	return 0;
+    }
+    for (uep = userenv_list; uep != NULL; uep = uep->ue_next) {
+	int nlen = strlen(uep->ue_name);
+	if (nlen == (eqp - arg) &&
+	    strncmp(arg, uep->ue_name, nlen) == 0)
+	    break;
+    }
+    /* Ignore attempts by unprivileged users to override privileged sources */
+    if (uep != NULL && !privileged_option && uep->ue_priv)
+	return 1;
+    /* The name never changes, so allocate it with the structure */
+    if (uep == NULL) {
+	uep = malloc(sizeof (*uep) + (eqp-arg));
+	strncpy(uep->ue_name, arg, eqp-arg);
+	uep->ue_name[eqp-arg] = '\0';
+	uep->ue_next = NULL;
+	insp = &userenv_list;
+	while (*insp != NULL)
+	    insp = &(*insp)->ue_next;
+	*insp = uep;
+    } else {
+	struct userenv *uep2;
+	for (uep2 = userenv_list; uep2 != NULL; uep2 = uep2->ue_next) {
+	    if (uep2 != uep && !uep2->ue_isset)
+		break;
+	}
+	if (uep2 == NULL && !uep->ue_isset)
+	    find_option("unset")->flags |= OPT_NOPRINT;
+	free(uep->ue_value);
+    }
+    uep->ue_isset = 1;
+    uep->ue_priv = privileged_option;
+    uep->ue_source = option_source;
+    uep->ue_value = strdup(eqp + 1);
+    curopt->flags &= ~OPT_NOPRINT;
+    return 1;
+}
+
+static void
+user_setprint(opt, printer, arg)
+    option_t *opt;
+    printer_func printer;
+    void *arg;
+{
+    struct userenv *uep, *uepnext;
+
+    uepnext = userenv_list;
+    while (uepnext != NULL && !uepnext->ue_isset)
+	uepnext = uepnext->ue_next;
+    while ((uep = uepnext) != NULL) {
+	uepnext = uep->ue_next;
+	while (uepnext != NULL && !uepnext->ue_isset)
+	    uepnext = uepnext->ue_next;
+	(*printer)(arg, "%s=%s", uep->ue_name, uep->ue_value);
+	if (uepnext != NULL)
+	    (*printer)(arg, "\t\t# (from %s)\n%s ", uep->ue_source, opt->name);
+	else
+	    opt->source = uep->ue_source;
+    }
+}
+
+static int
+user_unsetenv(argv)
+    char **argv;
+{
+    struct userenv *uep, **insp;
+    char *arg = argv[0];
+
+    if (strchr(arg, '=') != NULL) {
+	option_error("unexpected = in name: %s", arg);
+	return 0;
+    }
+    if (arg == '\0') {
+	option_error("missing variable name for unset");
+	return 0;
+    }
+    for (uep = userenv_list; uep != NULL; uep = uep->ue_next) {
+	if (strcmp(arg, uep->ue_name) == 0)
+	    break;
+    }
+    /* Ignore attempts by unprivileged users to override privileged sources */
+    if (uep != NULL && !privileged_option && uep->ue_priv)
+	return 1;
+    /* The name never changes, so allocate it with the structure */
+    if (uep == NULL) {
+	uep = malloc(sizeof (*uep) + strlen(arg));
+	strcpy(uep->ue_name, arg);
+	uep->ue_next = NULL;
+	insp = &userenv_list;
+	while (*insp != NULL)
+	    insp = &(*insp)->ue_next;
+	*insp = uep;
+    } else {
+	struct userenv *uep2;
+	for (uep2 = userenv_list; uep2 != NULL; uep2 = uep2->ue_next) {
+	    if (uep2 != uep && uep2->ue_isset)
+		break;
+	}
+	if (uep2 == NULL && uep->ue_isset)
+	    find_option("set")->flags |= OPT_NOPRINT;
+	free(uep->ue_value);
+    }
+    uep->ue_isset = 0;
+    uep->ue_priv = privileged_option;
+    uep->ue_source = option_source;
+    uep->ue_value = NULL;
+    curopt->flags &= ~OPT_NOPRINT;
+    return 1;
+}
+
+static void
+user_unsetprint(opt, printer, arg)
+    option_t *opt;
+    printer_func printer;
+    void *arg;
+{
+    struct userenv *uep, *uepnext;
+
+    uepnext = userenv_list;
+    while (uepnext != NULL && uepnext->ue_isset)
+	uepnext = uepnext->ue_next;
+    while ((uep = uepnext) != NULL) {
+	uepnext = uep->ue_next;
+	while (uepnext != NULL && uepnext->ue_isset)
+	    uepnext = uepnext->ue_next;
+	(*printer)(arg, "%s", uep->ue_name);
+	if (uepnext != NULL)
+	    (*printer)(arg, "\t\t# (from %s)\n%s ", uep->ue_source, opt->name);
+	else
+	    opt->source = uep->ue_source;
+    }
+}
