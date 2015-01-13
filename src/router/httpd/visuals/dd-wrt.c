@@ -2870,10 +2870,10 @@ static void showbridgesettings(webs_t wp, char *var, int mcast, int dual)
 
 	websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(idx.force_dnsmasq)</script></div>\n");
 	websWrite(wp,
-		  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idredirect', true);\" name=\"%s_bridged\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
+		  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idredirect', true);\" name=\"%s_dns_redirect\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
 		  vvar, var, nvram_default_match(redirect, "1", "0") ? "checked=\"checked\"" : "");
 	websWrite(wp,
-		  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idredirect', false);\" name=\"%s_bridged\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>\n",
+		  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idredirect', false);\" name=\"%s_dns_redirect\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>\n",
 		  vvar, var, nvram_default_match(redirect, "0", "0") ? "checked=\"checked\"" : "");
 	websWrite(wp, "</div>\n");
 
@@ -7075,10 +7075,10 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 
 		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(idx.force_dnsmasq)</script></div>\n");
 		websWrite(wp,
-			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idredirect', true);\" name=\"%s_bridged\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idredirect', true);\" name=\"%s_dns_redirect\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
 			  layer, var, nvram_default_match(redirect, "1", "0") ? "checked=\"checked\"" : "");
 		websWrite(wp,
-			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idredirect', false);\" name=\"%s_bridged\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>\n",
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idredirect', false);\" name=\"%s_dns_redirect\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>\n",
 			  layer, var, nvram_default_match(redirect, "0", "0") ? "checked=\"checked\"" : "");
 		websWrite(wp, "</div>\n");
 
