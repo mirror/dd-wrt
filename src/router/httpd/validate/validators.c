@@ -762,7 +762,6 @@ void validate_portsetup(webs_t wp, char *value, struct variable *v)
 		if (masquerade)
 			nvram_set(val, masquerade);
 
-
 		sprintf(val, "%s_isolation", var);
 		char *isolation = websGetVar(wp, val, NULL);
 
@@ -776,9 +775,9 @@ void validate_portsetup(webs_t wp, char *value, struct variable *v)
 			nvram_set(val, redirect);
 
 		sprintf(val, "%s_dns_redirect_ip", var);
-		char *redirect_ip = websGetVar(wp, val, NULL);
 
-		if (redirect_ip)
+		char redirect_ip[64];
+		if (get_merge_ipaddr(wp, val, redirect_ip))
 			nvram_set(val, redirect_ip);
 
 		sprintf(val, "%s_mtu", var);
@@ -3009,8 +3008,8 @@ void validate_blocked_service(webs_t wp, char *value, struct variable *v)
 
 	D("validate_blocked_service");
 	char filter[32];
-	sprintf(filter,"numfilterservice%s",nvram_safe_get("filter_id"));
-	int numfilters = atoi(nvram_default_get(filter,"4"));
+	sprintf(filter, "numfilterservice%s", nvram_safe_get("filter_id"));
+	int numfilters = atoi(nvram_default_get(filter, "4"));
 	for (i = 0; i < numfilters; i++) {
 		char blocked_service[] = "blocked_serviceXXX";
 		char *service;

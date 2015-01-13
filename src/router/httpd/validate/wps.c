@@ -47,9 +47,9 @@ void wps_ap_register(webs_t wp)
 	char *pin = websGetVar(wp, "wps_ap_pin", NULL);
 	if (pin) {
 		nvram_set("pincode", pin);
-		eval("hostapd_cli","-i","ath0","wps_ap_pin","set",pin,"300");
+		eval("hostapd_cli", "-i", "ath0", "wps_ap_pin", "set", pin, "300");
 #ifdef HAVE_WZRHPAG300NH
-		eval("hostapd_cli","-i","ath1","wps_ap_pin","set",pin,"300");
+		eval("hostapd_cli", "-i", "ath1", "wps_ap_pin", "set", pin, "300");
 #endif
 		nvram_set("wps_status", "2");
 	}
@@ -59,9 +59,9 @@ void wps_register(webs_t wp)
 {
 	char *pin = websGetVar(wp, "wps_pin", NULL);
 	if (pin) {
-		eval("hostapd_cli","-i","ath0","wps_pin","any",pin,"300");
+		eval("hostapd_cli", "-i", "ath0", "wps_pin", "any", pin, "300");
 #ifdef HAVE_WZRHPAG300NH
-		eval("hostapd_cli","-i","ath1","wps_pin","any",pin,"300");
+		eval("hostapd_cli", "-i", "ath1", "wps_pin", "any", pin, "300");
 #endif
 		nvram_set("wps_status", "3");
 	}
