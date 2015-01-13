@@ -279,10 +279,10 @@ static int forward_query(int udpfd, union mysockaddr *udpaddr,
 	  plen = forward->stash_len;
 	  
 	  if (forward->sentto->addr.sa.sa_family == AF_INET) 
-	    log_query(F_DNSSEC | F_IPV4, "retry", (struct all_addr *)&forward->sentto->addr.in.sin_addr, "dnssec");
+	    log_query(F_NOEXTRA | F_DNSSEC | F_IPV4, "retry", (struct all_addr *)&forward->sentto->addr.in.sin_addr, "dnssec");
 #ifdef HAVE_IPV6
 	  else
-	    log_query(F_DNSSEC | F_IPV6, "retry", (struct all_addr *)&forward->sentto->addr.in6.sin6_addr, "dnssec");
+	    log_query(F_NOEXTRA | F_DNSSEC | F_IPV6, "retry", (struct all_addr *)&forward->sentto->addr.in6.sin6_addr, "dnssec");
 #endif
   
 	  if (forward->sentto->sfd)
@@ -388,6 +388,9 @@ static int forward_query(int udpfd, union mysockaddr *udpaddr,
     {
       struct server *firstsentto = start;
       int forwarded = 0;
+      
+      /* If a query is retried, use the log_id for the retry when logging the answer. */
+      forward->log_id = daemon->log_id;
       
       if (option_bool(OPT_ADD_MAC))
 	plen = add_mac(header, plen, ((char *) header) + daemon->packet_buff_sz, &forward->source);
@@ -724,6 +727,11 @@ void reply_query(int fd, int family, time_t now)
   
   if (!(forward = lookup_frec(ntohs(header->id), hash)))
     return;
+  
+  /* log_query gets called indirectly all over the place, so 
+     pass these in global variables - sorry. */
+  daemon->log_display_id = forward->log_id;
+  daemon->log_source_addr = &forward->source;
   
   if (daemon->ignore_addr && RCODE(header) == NOERROR &&
       check_for_ignored_address(header, n, daemon->ignore_addr))
@@ -1258,6 +1266,11 @@ void receive_query(struct listener *listen, time_t now)
 	    dst_addr_4.s_addr = 0;
 	}
     }
+   
+  /* log_query gets called indirectly all over the place, so 
+     pass these in global variables - sorry. */
+  daemon->log_display_id = ++daemon->log_id;
+  daemon->log_source_addr = &source_addr;
   
   if (extract_request(header, (size_t)n, daemon->namebuff, &type))
     {
@@ -1675,7 +1688,8 @@ unsigned char *tcp_request(int confd, time_t now,
   struct in_addr dst_addr_4;
   union mysockaddr peer_addr;
   socklen_t peer_len = sizeof(union mysockaddr);
-  
+  int query_count = 0;
+
   if (getpeername(confd, (struct sockaddr *)&peer_addr, &peer_len) == -1)
     return packet;
   
@@ -1712,7 +1726,8 @@ unsigned char *tcp_request(int confd, time_t now,
 
   while (1)
     {
-      if (!packet ||
+      if (query_count == TCP_MAX_QUERIES ||
+	  !packet ||
 	  !read_write(confd, &c1, 1, 1) || !read_write(confd, &c2, 1, 1) ||
 	  !(size = c1 << 8 | c2) ||
 	  !read_write(confd, payload, size, 1))
@@ -1720,6 +1735,13 @@ unsigned char *tcp_request(int confd, time_t now,
   
       if (size < (int)sizeof(struct dns_header))
 	continue;
+      
+      query_count++;
+
+      /* log_query gets called indirectly all over the place, so 
+	 pass these in global variables - sorry. */
+      daemon->log_display_id = ++daemon->log_id;
+      daemon->log_source_addr = &peer_addr;
       
       check_subnet = 0;
 

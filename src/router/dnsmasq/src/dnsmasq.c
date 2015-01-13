@@ -93,6 +93,8 @@ int main (int argc, char **argv)
   daemon->packet = safe_malloc(daemon->packet_buff_sz);
   
   daemon->addrbuff = safe_malloc(ADDRSTRLEN);
+  if (option_bool(OPT_EXTRALOG))
+    daemon->addrbuff2 = safe_malloc(ADDRSTRLEN);
   
 #ifdef HAVE_DNSSEC
   if (option_bool(OPT_DNSSEC_VALID))
@@ -1593,6 +1595,9 @@ static void check_dns_listeners(fd_set *set, time_t now)
 		      }
 		}
 	      close(confd);
+
+	      /* The child can use up to TCP_MAX_QUERIES ids, so skip that many. */
+	      daemon->log_id += TCP_MAX_QUERIES;
 	    }
 #endif
 	  else

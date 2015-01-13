@@ -238,7 +238,8 @@ struct event_desc {
 #define OPT_DNSSEC_NO_SIGN 48 
 #define OPT_LOCAL_SERVICE  49
 #define OPT_LOOP_DETECT    50
-#define OPT_LAST           51
+#define OPT_EXTRALOG       51
+#define OPT_LAST           52
 
 /* extra flags for my_syslog, we use a couple of facilities since they are known 
    not to occupy the same bits as priorities, no matter how syslog.h is set up. */
@@ -442,6 +443,7 @@ struct crec {
 #define F_NO_RR     (1u<<25)
 #define F_IPSET     (1u<<26)
 #define F_NSIGMATCH (1u<<27)
+#define F_NOEXTRA   (1u<<28)
 
 /* Values of uid in crecs with F_CONFIG bit set. */
 #define SRC_INTERFACE 0
@@ -599,7 +601,7 @@ struct frec {
 #endif
   unsigned int iface;
   unsigned short orig_id, new_id;
-  int fd, forwardall, flags;
+  int log_id, fd, forwardall, flags;
   time_t time;
   unsigned char *hash[HASH_SIZE];
 #ifdef HAVE_DNSSEC 
@@ -941,7 +943,7 @@ extern struct daemon {
   int max_logs;  /* queue limit */
   int cachesize, ftabsize;
   int port, query_port, min_port;
-  unsigned long local_ttl, neg_ttl, max_ttl, max_cache_ttl, auth_ttl;
+  unsigned long local_ttl, neg_ttl, max_ttl, min_cache_ttl, max_cache_ttl, auth_ttl;
   struct hostsfile *addn_hosts;
   struct dhcp_context *dhcp, *dhcp6;
   struct ra_interface *ra_interfaces;
@@ -1002,6 +1004,8 @@ extern struct daemon {
   struct randfd randomsocks[RANDOM_SOCKS];
   int v6pktinfo; 
   struct addrlist *interface_addrs; /* list of all addresses/prefix lengths associated with all local interfaces */
+  int log_id, log_display_id; /* ids of transactions for logging */
+  union mysockaddr *log_source_addr;
 
   /* DHCP state */
   int dhcpfd, helperfd, pxefd; 
@@ -1036,6 +1040,7 @@ extern struct daemon {
 
   /* utility string buffer, hold max sized IP address as string */
   char *addrbuff;
+  char *addrbuff2; /* only allocated when OPT_EXTRALOG */
 
 } *daemon;
 

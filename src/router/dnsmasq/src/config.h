@@ -17,6 +17,7 @@
 #define FTABSIZ 150 /* max number of outstanding requests (default) */
 #define MAX_PROCS 20 /* max no children for TCP requests */
 #define CHILD_LIFETIME 150 /* secs 'till terminated (RFC1035 suggests > 120s) */
+#define TCP_MAX_QUERIES 100 /* Maximum number of queries per incoming TCP connection */
 #define EDNS_PKTSZ 4096 /* default max EDNS.0 UDP packet from RFC5625 */
 #define KEYBLOCK_LEN 40 /* choose to mininise fragmentation when storing DNSSEC keys */
 #define DNSSEC_WORK 50 /* Max number of queries to validate one question */
@@ -26,6 +27,7 @@
 #define RANDOM_SOCKS 64 /* max simultaneous random ports */
 #define LEASE_RETRY 60 /* on error, retry writing leasefile after LEASE_RETRY seconds */
 #define CACHESIZ 150 /* default cache size */
+#define TTL_FLOOR_LIMIT 3600 /* don't allow --min-cache-ttl to raise TTL above this under any circumstances */
 #define MAXLEASES 1000 /* maximum number of DHCP leases */
 #define PING_WAIT 3 /* wait for ping address-in-use test */
 #define PING_CACHE_TIME 30 /* Ping test assumed to be valid this long. */
