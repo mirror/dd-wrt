@@ -93,6 +93,17 @@ void start_tor(void)
 		sysprintf("iptables -t nat -A PREROUTING -i br0 -p tcp --syn -j DNAT --to %s:9040", nvram_safe_get("lan_ipaddr"));
 
 	}
+#ifdef HAVE_X86
+	eval("mkdir", "-p", "/usr/local/tor");
+	fprintf(fp, "DataDirectory /usr/local/tor");
+#else
+	if (nvram_match("enable_jffs2", "1")
+	    && nvram_match("jffs_mounted", "1")
+	    && nvram_match("sys_enable_jffs2", "1")) {
+		eval("mkdir", "-p", "/jffs/tor");
+		fprintf(fp, "DataDirectory /jffs/tor");
+	}
+#endif
 
 	fclose(fp);
 	ret = _evalpid(tor_argv, NULL, 0, &pid);
