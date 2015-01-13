@@ -1564,6 +1564,17 @@ service.dnsmasq_no_dns_rebind="No DNS Rebind";
 service.dnsmasq_strict="Query DNS in Strict Order";
 service.dnsmasq_add_mac="Add Requestor MAC to DNS Query";
 service.dnsmasq_opt="Additional DNSMasq Options";
+service.tor_legend="The Onion Router Project";
+service.tor_srv="TOR";
+service.tor_address="DNS Name or External IP";
+service.tor_nickname="Nickname / ID";
+service.tor_relay="Relay Mode";
+service.tor_dir="Directory Mirror";
+service.tor_bridge="Tor Bridge Mode";
+service.tor_transparent="Transparent Proxy";
+service.tor_bwrate="Bandwidth Rate";
+service.tor_bwburst="Bandwidth Burst";
+
 
 //pptp.webservices
 service.pptp_legend="PPTP";
