@@ -55,7 +55,6 @@ void start_tor(void)
 	mkdir("/tmp/tor", 0700);
 	FILE *fp = fopen("/tmp/torrc", "wb");
 	fprintf(fp, "Log notice syslog\n");
-	fprintf(fp, "DataDirectory /tmp/tor\n");
 	if (nvram_match("tor_relayonly", "1"))
 		fprintf(fp, "SocksPort 0\n");
 	else {
@@ -95,13 +94,15 @@ void start_tor(void)
 	}
 #ifdef HAVE_X86
 	eval("mkdir", "-p", "/usr/local/tor");
-	fprintf(fp, "DataDirectory /usr/local/tor");
+	fprintf(fp, "DataDirectory /usr/local/tor\n");
 #else
 	if (nvram_match("enable_jffs2", "1")
 	    && nvram_match("jffs_mounted", "1")
 	    && nvram_match("sys_enable_jffs2", "1")) {
 		eval("mkdir", "-p", "/jffs/tor");
-		fprintf(fp, "DataDirectory /jffs/tor");
+		fprintf(fp, "DataDirectory /jffs/tor\n");
+	}else{
+		fprintf(fp, "DataDirectory /tmp/tor\n");
 	}
 #endif
 
