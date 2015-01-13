@@ -2868,13 +2868,34 @@ static void showbridgesettings(webs_t wp, char *var, int mcast, int dual)
 	sprintf(redirect, "%s_dns_redirect", var);
 	nvram_default_get(redirect, "0");
 	showRadio(wp, "idx.force_dnsmasq", redirect);
+	
+	websWrite(wp, "<div id=\"%s_idredirect\">\n", vvar);
+	websWrite(wp, "<div class=\"setting\">\n");
+	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(idx.dns_redirect)</script></div>\n");
+	char dnsip[32];
+	sprintf(dnsip, "%s_dns_redirect_ip", var);
+	char *ipv = nvram_default_get(dnsip, "0.0.0.0");
+	websWrite(wp, "<input type=\"hidden\" name=\"%s_dns_redirect_ip\" value=\"4\" />\n", var);
+	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,223,share.ip)\" name=\"%s_ipaddr_0\" value=\"%d\" />.", var, get_single_ip(ipv, 0));
+	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.ip)\" name=\"%s_ipaddr_1\" value=\"%d\" />.", var, get_single_ip(ipv, 1));
+	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.ip)\" name=\"%s_ipaddr_2\" value=\"%d\" />.", var, get_single_ip(ipv, 2));
+	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.ip)\" name=\"%s_ipaddr_3\" value=\"%d\" />\n", var, get_single_ip(ipv, 3));
+	websWrite(wp, "</div>\n");
+
+	
+	websWrite(wp, "</div>\n");
+	websWrite(wp, "<script>\n//<![CDATA[\n ");
+	websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_dns_redirect\"), \"%s_idredirect\", %s);\n", var, vvar, nvram_match(redirect, "1") ? "true" : "false");
+	websWrite(wp, "//]]>\n</script>\n");
+	
+	
 
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(share.ip)</script></div>\n");
 	char ip[32];
 
 	sprintf(ip, "%s_ipaddr", var);
-	char *ipv = nvram_safe_get(ip);
+	ipv = nvram_safe_get(ip);
 
 	websWrite(wp, "<input type=\"hidden\" name=\"%s_ipaddr\" value=\"4\" />\n", var);
 	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,1,223,share.ip)\" name=\"%s_ipaddr_0\" value=\"%d\" />.", var, get_single_ip(ipv, 0));
@@ -7047,6 +7068,25 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		sprintf(redirect, "%s_dns_redirect", var);
 		nvram_default_get(redirect, "0");
 		showRadio(wp, "idx.force_dnsmasq", redirect);
+
+	websWrite(wp, "<div id=\"%s_idredirect\">\n", layer);
+	websWrite(wp, "<div class=\"setting\">\n");
+	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(idx.dns_redirect)</script></div>\n");
+	char dnsip[32];
+	sprintf(dnsip, "%s_dns_redirect_ip", var);
+	char *ipv = nvram_default_get(dnsip, "0.0.0.0");
+	websWrite(wp, "<input type=\"hidden\" name=\"%s_dns_redirect_ip\" value=\"4\" />\n", var);
+	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,223,share.ip)\" name=\"%s_ipaddr_0\" value=\"%d\" />.", var, get_single_ip(ipv, 0));
+	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.ip)\" name=\"%s_ipaddr_1\" value=\"%d\" />.", var, get_single_ip(ipv, 1));
+	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.ip)\" name=\"%s_ipaddr_2\" value=\"%d\" />.", var, get_single_ip(ipv, 2));
+	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.ip)\" name=\"%s_ipaddr_3\" value=\"%d\" />\n", var, get_single_ip(ipv, 3));
+	websWrite(wp, "</div>\n");
+
+	
+	websWrite(wp, "</div>\n");
+	websWrite(wp, "<script>\n//<![CDATA[\n ");
+	websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_dns_redirect\"), \"%s_idredirect\", %s);\n", var, layer, nvram_match(redirect, "1") ? "true" : "false");
+	websWrite(wp, "//]]>\n</script>\n");
 
 		show_ipnetmask(wp, var);
 #if defined(HAVE_BKM) || defined(HAVE_TMK)
