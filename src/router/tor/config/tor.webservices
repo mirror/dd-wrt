@@ -1,0 +1,47 @@
+<fieldset>
+		<legend><% tran("service.tor_legend"); %></legend>
+		<div class="setting">
+			<div class="label"><% tran("service.tor_srv"); %></div>
+			<input class="spaceradio" type="radio" name="tor_enable" value="1" <% nvram_checked("tor_enable", "1"); %> onclick="show_layer_ext(this, 'idtor', true)" /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" name="tor_enable" value="0" <% nvram_checked("tor_enable", "0"); %> onclick="show_layer_ext(this, 'idtor', false)" /><% tran("share.disable"); %>
+		</div>
+		<div id="idtor">
+			<div class="setting">
+				<div class="label"><% tran("service.tor_address"); %></div>
+				<input maxlength="79" size="20" name="tor_address" value="<% nvg("tor_address"); %>" />
+			</div>
+			<div class="setting">
+				<div class="label"><% tran("service.tor_nickname"); %></div>
+				<input maxlength="79" size="20" name="tor_id" value="<% nvg("tor_id"); %>" />
+			</div>
+			<div class="setting">
+				<div class="label"><% tran("service.tor_bwrate"); %></div>
+				<input maxlength="79" size="20" name="tor_bwrate" value="<% nvg("tor_bwrate"); %>" /> KB/s
+			</div>
+			<div class="setting">
+				<div class="label"><% tran("service.tor_bwburst"); %></div>
+				<input maxlength="79" size="20" name="tor_bwburst" value="<% nvg("tor_bwburst"); %>" /> KB/s
+			</div>
+			<div class="setting">
+				<div class="label"><% tran("service.tor_relay"); %></div>
+				<input class="spaceradio" type="radio" name="tor_relay" value="1" <% nvram_checked("tor_relay", "1"); %> /><% tran("share.enable"); %>&nbsp;
+				<input class="spaceradio" type="radio" name="tor_relay" value="0" <% nvram_checked("tor_relay", "0"); %> /><% tran("share.disable"); %>
+			</div>
+			<div class="setting">
+				<div class="label"><% tran("service.tor_dir"); %></div>
+				<input class="spaceradio" type="radio" name="tor_dir" value="1" <% nvram_checked("tor_dir", "1"); %> /><% tran("share.enable"); %>&nbsp;
+				<input class="spaceradio" type="radio" name="tor_dir" value="0" <% nvram_checked("tor_dir", "0"); %> /><% tran("share.disable"); %>
+			</div>
+			<div class="setting">
+				<div class="label"><% tran("service.tor_bridge"); %></div>
+				<input class="spaceradio" type="radio" name="tor_bridge" value="1" <% nvram_checked("tor_bridge", "1"); %> /><% tran("share.enable"); %>&nbsp;
+				<input class="spaceradio" type="radio" name="tor_bridge" value="0" <% nvram_checked("tor_bridge", "0"); %> /><% tran("share.disable"); %>
+			</div>
+			<div class="setting">
+				<div class="label"><% tran("service.tor_transparent"); %></div>
+				<input class="spaceradio" type="radio" name="tor_transparent" value="1" <% nvram_checked("tor_transparent", "1"); %> /><% tran("share.enable"); %>&nbsp;
+				<input class="spaceradio" type="radio" name="tor_transparent" value="0" <% nvram_checked("tor_transparent", "0"); %> /><% tran("share.disable"); %>
+			</div>
+		</div>
+</fieldset><br />
+

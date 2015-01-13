@@ -31,4 +31,6 @@ tor-clean:
 
 tor-install:
 	make -C tor DESTDIR=$(INSTALLDIR)/tor install
-	install -D tor/config/torrc $(INSTALLDIR)/tor/usr/etc/tor
+	mkdir -p $(INSTALLDIR)/tor/etc/configs
+	install -D tor/config/tor.webservices $(INSTALLDIR)/tor/etc/configs
+	install -D tor/config/tor.nvramconfig $(INSTALLDIR)/tor/etc/configs

@@ -3407,6 +3407,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"tor_relay", "0", 0},
 	{"tor_bridge", "0", 0},
 	{"tor_transparent", "0", 0},
+	{"tor_bwrate", "100", 0},
+	{"tor_bwburst", "200", 0},
 #endif
 #ifdef HAVE_UDPXY
 	{"udpxy_enable", "0", 0},
