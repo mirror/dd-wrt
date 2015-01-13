@@ -774,7 +774,7 @@ void validate_portsetup(webs_t wp, char *value, struct variable *v)
 		if (redirect)
 			nvram_set(val, redirect);
 
-		sprintf(val, "%s_dns_redirect_ip", var);
+		sprintf(val, "%s_dns_ipaddr", var);
 
 		char redirect_ip[64];
 		if (get_merge_ipaddr(wp, val, redirect_ip))
