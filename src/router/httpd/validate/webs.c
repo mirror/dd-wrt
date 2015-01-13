@@ -65,8 +65,8 @@ void dhcpfwd(webs_t wp)
 	char *enable;
 
 	enable = websGetVar(wp, "dhcpfwd_enable", NULL);
-	if (enable && !strcmp(enable,"1"))
-		nvram_set("lan_proto","static");
+	if (enable && !strcmp(enable, "1"))
+		nvram_set("lan_proto", "static");
 	nvram_set("dhcpfwd_enable", enable);
 
 }
@@ -124,7 +124,7 @@ void delete_pptp(webs_t wp)
 	char *iface;
 	iface = websGetVar(wp, "if_del", NULL);
 	if (iface)
-		kill(iface,SIGTERM);
+		kill(iface, SIGTERM);
 }
 #endif
 void save_wifi(webs_t wp)
@@ -1671,26 +1671,25 @@ void forward_add(webs_t wp)
 void filter_remove(webs_t wp)
 {
 	char filter[32];
-	sprintf(filter,"numfilterservice%s",nvram_safe_get("filter_id"));
-	int numfilters = atoi(nvram_default_get(filter,"4"));
-	if (numfilters>0)
-	    numfilters--;
+	sprintf(filter, "numfilterservice%s", nvram_safe_get("filter_id"));
+	int numfilters = atoi(nvram_default_get(filter, "4"));
+	if (numfilters > 0)
+		numfilters--;
 	char num[32];
-	sprintf(num,"%d",numfilters);
-	nvram_set(filter,num);
+	sprintf(num, "%d", numfilters);
+	nvram_set(filter, num);
 }
 
 void filter_add(webs_t wp)
 {
 	char filter[32];
-	sprintf(filter,"numfilterservice%s",nvram_safe_get("filter_id"));
-	int numfilters = atoi(nvram_default_get(filter,"4"));
-	    numfilters++;
+	sprintf(filter, "numfilterservice%s", nvram_safe_get("filter_id"));
+	int numfilters = atoi(nvram_default_get(filter, "4"));
+	numfilters++;
 	char num[32];
-	sprintf(num,"%d",numfilters);
-	nvram_set(filter,num);
+	sprintf(num, "%d", numfilters);
+	nvram_set(filter, num);
 }
-
 
 void lease_remove(webs_t wp)
 {
@@ -2537,13 +2536,13 @@ void save_networking(webs_t wp)
 			strcat(buffer, " ");
 
 		char brname[32];
-		
-		if (!strcmp(ifname,"br0"))
-			sprintf(brname,"lan_hwaddr");
-		else
-			sprintf(brname,"%s_hwaddr",ifname);
 
-		nvram_set(brname,websGetVar(wp,brname,NULL));
+		if (!strcmp(ifname, "br0"))
+			sprintf(brname, "lan_hwaddr");
+		else
+			sprintf(brname, "%s_hwaddr", ifname);
+
+		nvram_set(brname, websGetVar(wp, brname, NULL));
 	}
 	nvram_set("bridges", buffer);
 	// save bridge assignment
@@ -3078,10 +3077,13 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv(wp, "%s_nat", ifname);
 	copytonv(wp, "%s_isolation", ifname);
 	copytonv(wp, "%s_dns_redirect", ifname);
-	copytonv(wp, "%s_dns_redirect_ip", ifname);
+
+	sprintf(n, "%s_dns_redirect_ip", ifname);
+	char redirect_ip[64];
+	if (get_merge_ipaddr(wp, n, redirect_ip))
+		nvram_set(n, redirect_ip);
 
 	char addr[32];
-
 	sprintf(n, "%s_ipaddr", ifname);
 	if (get_merge_ipaddr(wp, n, addr))
 		nvram_set(n, addr);
@@ -3096,7 +3098,10 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv(wp, "%s_nat", prefix);
 	copytonv(wp, "%s_isolation", prefix);
 	copytonv(wp, "%s_dns_redirect", prefix);
-	copytonv(wp, "%s_dns_redirect_ip", prefix);
+	sprintf(n, "%s_dns_redirect_ip", prefix);
+	char redirect_ip[64];
+	if (get_merge_ipaddr(wp, n, redirect_ip))
+		nvram_set(n, redirect_ip);
 
 	char addr[32];
 
@@ -3167,7 +3172,7 @@ static void save_prefix(webs_t wp, char *prefix)
 				convert_wl_gmode(value, "wl0");
 #else
 				convert_wl_gmode(value, "wl");
-#endif				
+#endif
 			else
 				convert_wl_gmode(value, prefix);
 		}
@@ -3221,14 +3226,14 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv(wp, n);
 	copytonv(wp, "wl_reg_mode");
 	copytonv(wp, "wl_tpc_db");
-	
+
 #if defined(HAVE_NORTHSTAR) || defined(HAVE_80211AC) && !defined(HAVE_BUFFALO)
 	sprintf(n, "wl_regdomain");
 	char *reg = websGetVar(wp, n, NULL);
 	if (reg) {
 		if (strcmp(nvram_safe_get("wl_regdomain"), reg)) {
 			setRegulationDomain(reg);
-			eval("startstop","lan");
+			eval("startstop", "lan");
 		}
 	}
 	copytonv(wp, "wl_regdomain");
@@ -3294,8 +3299,8 @@ void wireless_save(webs_t wp)
 	// nvram_commit ();
 	applytake(value);
 #ifdef HAVE_GUESTPORT
-	eval("stopservice","firewall");
-	eval("startservice","firewall");
+	eval("stopservice", "firewall");
+	eval("startservice", "firewall");
 #endif
 }
 
@@ -3529,7 +3534,7 @@ void ddns_save_value(webs_t wp)
 	struct variable ddns_variables[] = {
 		{
 	      argv:ARGV("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10")}, {
-	      argv:							   ARGV("30")},
+	      argv:								 ARGV("30")},
 	}, *which;
 	char _username[] = "ddns_username_XX";
 	char _passwd[] = "ddns_passwd_XX";
@@ -3579,7 +3584,7 @@ void ddns_save_value(webs_t wp)
 		snprintf(_passwd, sizeof(_passwd), "ddns_passwd_%s", enable);
 		snprintf(_hostname, sizeof(_hostname), "ddns_hostname_%s", enable);
 		break;
-	case 10:	// dtdns
+	case 10:		// dtdns
 		snprintf(_username, sizeof(_username), "ddns_username_%s", enable);
 		snprintf(_passwd, sizeof(_passwd), "ddns_passwd_%s", enable);
 		snprintf(_hostname, sizeof(_username), "ddns_username_%s", enable);
