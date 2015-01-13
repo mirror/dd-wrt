@@ -1038,7 +1038,7 @@ int dnssec_validate_by_ds(time_t now, struct dns_header *header, size_t plen, ch
 		      else
 			{
 			  a.addr.keytag = keytag;
-			  log_query(F_KEYTAG | F_UPSTREAM, name, &a, "DNSKEY keytag %u");
+			  log_query(F_NOEXTRA | F_KEYTAG | F_UPSTREAM, name, &a, "DNSKEY keytag %u");
 			  
 			  recp1->addr.key.keylen = rdlen - 4;
 			  recp1->addr.key.keydata = key;
@@ -1092,7 +1092,7 @@ int dnssec_validate_by_ds(time_t now, struct dns_header *header, size_t plen, ch
       return STAT_SECURE;
     }
 
-  log_query(F_UPSTREAM, name, NULL, "BOGUS DNSKEY");
+  log_query(F_NOEXTRA | F_UPSTREAM, name, NULL, "BOGUS DNSKEY");
   return STAT_BOGUS;
 }
 
@@ -1136,7 +1136,7 @@ int dnssec_validate_ds(time_t now, struct dns_header *header, size_t plen, char 
   
   if (val == STAT_BOGUS)
     {
-      log_query(F_UPSTREAM, name, NULL, "BOGUS DS");
+      log_query(F_NOEXTRA | F_UPSTREAM, name, NULL, "BOGUS DS");
       return STAT_BOGUS;
     }
 
@@ -1201,7 +1201,7 @@ int dnssec_validate_ds(time_t now, struct dns_header *header, size_t plen, char 
 	  
 	  cache_end_insert();  
 	  
-	  log_query(F_UPSTREAM, name, NULL, nons ? "no delegation" : "no DS");
+	  log_query(F_NOEXTRA | F_UPSTREAM, name, NULL, nons ? "no delegation" : "no DS");
 	}
 
       return nons ? STAT_NO_NS : STAT_NO_DS; 
@@ -1885,7 +1885,7 @@ int dnssec_validate_reply(time_t now, struct dns_header *header, size_t plen, ch
 			      else
 				{
 				  a.addr.keytag = keytag;
-				  log_query(F_KEYTAG | F_UPSTREAM, name, &a, "DS keytag %u");
+				  log_query(F_NOEXTRA | F_KEYTAG | F_UPSTREAM, name, &a, "DS keytag %u");
 				  crecp->addr.ds.digest = digest;
 				  crecp->addr.ds.keydata = key;
 				  crecp->addr.ds.algo = algo;
@@ -2058,10 +2058,10 @@ size_t dnssec_generate_query(struct dns_header *header, char *end, char *name, i
   char *types = querystr("dnssec-query", type);
 
   if (addr->sa.sa_family == AF_INET) 
-    log_query(F_DNSSEC | F_IPV4, name, (struct all_addr *)&addr->in.sin_addr, types);
+    log_query(F_NOEXTRA | F_DNSSEC | F_IPV4, name, (struct all_addr *)&addr->in.sin_addr, types);
 #ifdef HAVE_IPV6
   else
-    log_query(F_DNSSEC | F_IPV6, name, (struct all_addr *)&addr->in6.sin6_addr, types);
+    log_query(F_NOEXTRA | F_DNSSEC | F_IPV6, name, (struct all_addr *)&addr->in6.sin6_addr, types);
 #endif
   
   header->qdcount = htons(1);
