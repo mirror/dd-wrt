@@ -572,11 +572,6 @@ int init_rt2880pci(void)
 #if defined (CONFIG_PCIE_PORT2)
 	val |= RALINK_PCIE2_RST;
 #endif
-	DEASSERT_SYSRST_PCIE(val);
-	printk("release PCIe RST: RALINK_RSTCTRL = %x\n", RALINK_RSTCTRL);
-
-	bypass_pipe_rst();
-	set_phy_for_ssc();
 	ASSERT_SYSRST_PCIE(RALINK_PCIE0_RST | RALINK_PCIE1_RST | RALINK_PCIE2_RST);
 	printk("pull PCIe RST: RALINK_RSTCTRL = %x\n", RALINK_RSTCTRL);
 #if defined GPIO_PERST /* add GPIO control instead of PERST_N */ /*chhung*/
@@ -600,27 +595,15 @@ int init_rt2880pci(void)
 #if defined (CONFIG_PCIE_PORT2)
 	val |= RALINK_PCIE2_RST;
 #endif
+
 	DEASSERT_SYSRST_PCIE(val);
 	printk("release PCIe RST: RALINK_RSTCTRL = %x\n", RALINK_RSTCTRL);
-#if defined (CONFIG_PCIE_PORT0)
-	read_config(0, 0, 0, 0x70c, &val);
-	val &= ~(0xff)<<8;
-	val |= 0x50<<8;
-	write_config(0, 0, 0, 0x70c, val);
-#endif
-#if defined (CONFIG_PCIE_PORT1)
-	read_config(0, 1, 0, 0x70c, &val);
-	val &= ~(0xff)<<8;
-	val |= 0x50<<8;
-	write_config(0, 1, 0, 0x70c, val);
-#endif
-#if defined (CONFIG_PCIE_PORT2)
-	read_config(0, 2, 0, 0x70c, &val);
-	val &= ~(0xff)<<8;
-	val |= 0x50<<8;
-	write_config(0, 2, 0, 0x70c, val);
-#endif
 
+	if ((*(unsigned int *)(0xbe00000c)&0xFFFF) == 0x0101) // MT7621 E2
+		bypass_pipe_rst();
+	set_phy_for_ssc();
+	printk("release PCIe RST: RALINK_RSTCTRL = %x\n", RALINK_RSTCTRL);
+	
 #if defined (CONFIG_PCIE_PORT0)
 	read_config(0, 0, 0, 0x70c, &val);
 	printk("Port 0 N_FTS = %x\n", (unsigned int)val);
@@ -693,6 +676,7 @@ int init_rt2880pci(void)
 	if (pcie_link_status == 0)
 		return 0;
 
+
 /*
 pcie(2/1/0) link status	pcie2_num	pcie1_num	pcie0_num
 3'b000			x		x		x
@@ -730,6 +714,7 @@ pcie(2/1/0) link status	pcie2_num	pcie1_num	pcie0_num
 		break;
 	}
 	printk(" -> %x\n", RALINK_PCI_PCICFG_ADDR);
+
 	//printk(" RALINK_PCI_ARBCTL = %x\n", RALINK_PCI_ARBCTL);
 
 /*
@@ -767,23 +752,33 @@ pcie(2/1/0) link status	pcie2_num	pcie1_num	pcie0_num
 		printk("PCIE2 enabled\n");
 	}
 #endif
-
-
 	switch(pcie_link_status) {
 	case 7:
 		read_config(0, 2, 0, 0x4, &val);
 		write_config(0, 2, 0, 0x4, val|0x4);
 		// write_config(0, 1, 0, 0x4, val|0x7);
+	read_config(0, 2, 0, 0x70c, &val);
+	val &= ~(0xff)<<8;
+	val |= 0x50<<8;
+	write_config(0, 2, 0, 0x70c, val);
 	case 3:
 	case 5:
 	case 6:
 		read_config(0, 1, 0, 0x4, &val);
 		write_config(0, 1, 0, 0x4, val|0x4);
 		// write_config(0, 1, 0, 0x4, val|0x7);
+	read_config(0, 1, 0, 0x70c, &val);
+	val &= ~(0xff)<<8;
+	val |= 0x50<<8;
+	write_config(0, 1, 0, 0x70c, val);
 	default:
 		read_config(0, 0, 0, 0x4, &val);
 		write_config(0, 0, 0, 0x4, val|0x4); //bus master enable
 		// write_config(0, 0, 0, 0x4, val|0x7); //bus master enable
+	read_config(0, 0, 0, 0x70c, &val);
+	val &= ~(0xff)<<8;
+	val |= 0x50<<8;
+	write_config(0, 0, 0, 0x70c, val);
 	}
 	register_pci_controller(&rt2880_controller);
 	return 0;
