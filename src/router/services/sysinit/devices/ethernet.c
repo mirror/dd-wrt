@@ -34,7 +34,7 @@ static int detect(char *devicename)
 
 	if (tmp == NULL) {
 		system2("/sbin/lspci>/tmp/devices");
-		system2("/sbin/lspci -n>/tmp/devices");
+		system2("/sbin/lspci -n>>/tmp/devices");
 	} else
 		fclose(tmp);
 	char devcall[128];
