@@ -26,22 +26,20 @@
 #include "dhcpc.h"
 
 #include <netinet/if_ether.h>
-#include <linux/types.h>
-#include <linux/filter.h>
 #include <linux/if_packet.h>
 
-#ifndef PACKET_AUXDATA
-#define PACKET_AUXDATA			8
-struct tpacket_auxdata {
-	unsigned int		tp_status;
-	unsigned int		tp_len;
-	unsigned int		tp_snaplen;
-	unsigned short		tp_mac;
-	unsigned short		tp_net;
-	unsigned short		tp_vlan_tci;
-	unsigned short		tp_padding;
-};
+#ifndef __u16
+#define __u16 unsigned short
 #endif
+#ifndef __u8
+#define __u8 unsigned char
+#endif
+#ifndef __u32
+#define __u32 unsigned int
+#endif
+
+#include <linux/filter.h>
+
 /* "struct client_config_t client_config" is in bb_common_bufsiz1 */
 
 
@@ -855,6 +853,18 @@ static int send_release(uint32_t server, uint32_t ciaddr)
 	return bcast_or_ucast(&packet, ciaddr, server);
 }
 
+#ifndef PACKET_AUXDATA
+struct tpacket_auxdata {
+	unsigned int		tp_status;
+	unsigned int		tp_len;
+	unsigned int		tp_snaplen;
+	unsigned short		tp_mac;
+	unsigned short		tp_net;
+	unsigned short		tp_vlan_tci;
+};
+
+#endif
+
 /* Returns -1 on errors that are fatal for the socket, -2 for those that aren't */
 /* NOINLINE: limit stack usage in caller */
 static NOINLINE int udhcp_recv_raw_packet(struct dhcp_packet *dhcp_pkt, int fd)
@@ -923,6 +933,7 @@ static NOINLINE int udhcp_recv_raw_packet(struct dhcp_packet *dhcp_pkt, int fd)
 		return -2;
 	}
 
+#ifdef PACKET_AUXDATA
 	for (cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
 		if (cmsg->cmsg_level == SOL_PACKET
 		 && cmsg->cmsg_type == PACKET_AUXDATA
@@ -936,6 +947,7 @@ static NOINLINE int udhcp_recv_raw_packet(struct dhcp_packet *dhcp_pkt, int fd)
 				goto skip_udp_sum_check;
 		}
 	}
+#endif
 
 	/* verify UDP checksum. IP header has to be modified for this */
 	memset(&packet.ip, 0, offsetof(struct iphdr, protocol));
@@ -1060,12 +1072,14 @@ static int udhcp_raw_socket(int ifindex)
 	}
 #endif
 
+#ifdef PACKET_AUXDATA
 	if (setsockopt(fd, SOL_PACKET, PACKET_AUXDATA,
 			&const_int_1, sizeof(int)) < 0
 	) {
 		if (errno != ENOPROTOOPT)
 			log1("Can't set PACKET_AUXDATA on raw socket");
 	}
+#endif
 
 	log1("Created raw socket");
 
