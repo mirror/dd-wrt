@@ -96,8 +96,6 @@ void start_tor(void)
 
 	fclose(fp);
 	ret = _evalpid(tor_argv, NULL, 0, &pid);
-	stop_firewall();
-	start_firewall();
 }
 
 #endif				/* HAVE_WOL */
