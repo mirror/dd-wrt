@@ -1380,6 +1380,7 @@ networking.prio="Prio";
 networking.bridge="Bridge";
 networking.snooping="IGMP Snooping";
 networking.assign="Assignment";
+networking.bridgeassign="Bridge Assignment";
 networking.bonding="Bonding";
 networking.bondtype="Bonding Type";
 networking.bondifaces="Bonding Interfaces";

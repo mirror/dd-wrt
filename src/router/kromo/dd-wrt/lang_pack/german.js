@@ -1184,6 +1184,22 @@ networking.stp="STP eingeschaltet";
 networking.iface="Schnittstelle";
 networking.h5="DHCPD";
 networking.legend5="Mehrere DHCP Server";
+networking.vlan="VLAN";
+networking.iface="Schnittstelle";
+networking.tg_number="Tag Nummer";
+networking.prio="Prio";
+networking.bridge="Bridge";
+networking.snooping="IGMP Snooping";
+networking.assign="Zuweisung";
+networking.bridgeassign="Bridge Zuweisung";
+networking.bonding="Bonding";
+networking.bondtype="Bonding Type";
+networking.bondifaces="Bonding Schnittstelle";
+networking.bond="Bond";
+networking.slave="Slave";
+networking.max="Max";
+networking.leasetime="Verfallszeit";
+
 
 //help container
 
