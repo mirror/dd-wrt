@@ -7022,6 +7022,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		rep(layer, '.', 'X');
 		sprintf(ssid, "%s_bridged", var);
 		// nvram_nset("0", "%s_bridged", var);
+		websWRite(wp, "<fieldset>\n");
 		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.network)</script> %s</div>\n", var);
 		// qlen here
 
@@ -7034,6 +7035,8 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 
 		// qlen end
 		if (!isbridge) {
+			websWrite(wp, "<div class=\"setting\">\n");
+			websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(networking.bridgeassign)</script></div>\n");
 			websWrite(wp,
 				  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idnet', true);\" name=\"%s_bridged\" %s /><script type=\"text/javascript\">Capture(wl_basic.unbridged)</script>&nbsp;\n",
 				  layer, var, nvram_default_match(ssid, "0", "1") ? "checked=\"checked\"" : "");
@@ -7160,9 +7163,10 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		}
 		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n ");
 		if (!isbridge)
-		    websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_bridged\"), \"%s_idnet\", %s);\n", var, layer, nvram_match(ssid, "0") ? "true" : "false");
+			websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_bridged\"), \"%s_idnet\", %s);\n", var, layer, nvram_match(ssid, "0") ? "true" : "false");
 		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_dns_redirect\"), \"%s_idredirect\", %s);\n", var, layer, nvram_match(redirect, "1") ? "true" : "false");
 		websWrite(wp, "//]]>\n</script>\n");
+		websWRite(wp, "</fieldset>\n");
 	      skip:;
 	}
 	websWrite(wp, "</fieldset><br />\n");
