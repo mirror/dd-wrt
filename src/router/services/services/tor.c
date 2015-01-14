@@ -93,8 +93,8 @@ void start_tor(void)
 
 	}
 #ifdef HAVE_X86
-	eval("mkdir", "-p", "/usr/local/tor");
-	fprintf(fp, "DataDirectory /usr/local/tor\n");
+	eval("mkdir", "-p", "/tmp/tor");
+	fprintf(fp, "DataDirectory /tmp/tor\n");
 #else
 	if (nvram_match("enable_jffs2", "1")
 	    && nvram_match("jffs_mounted", "1")
