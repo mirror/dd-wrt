@@ -7159,7 +7159,8 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "</div>\n");
 		}
 		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n ");
-		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_bridged\"), \"%s_idnet\", %s);\n", var, layer, nvram_match(ssid, "0") ? "true" : "false");
+		if (!isbridge)
+		    websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_bridged\"), \"%s_idnet\", %s);\n", var, layer, nvram_match(ssid, "0") ? "true" : "false");
 		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_dns_redirect\"), \"%s_idredirect\", %s);\n", var, layer, nvram_match(redirect, "1") ? "true" : "false");
 		websWrite(wp, "//]]>\n</script>\n");
 	      skip:;
