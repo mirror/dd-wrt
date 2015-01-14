@@ -3078,7 +3078,7 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv(wp, "%s_isolation", ifname);
 	copytonv(wp, "%s_dns_redirect", ifname);
 
-	sprintf(n, "%s_dns_redirect_ip", ifname);
+	sprintf(n, "%s_dns_ipaddr", ifname);
 	char redirect_ip[64];
 	if (get_merge_ipaddr(wp, n, redirect_ip))
 		nvram_set(n, redirect_ip);
@@ -3098,7 +3098,7 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv(wp, "%s_nat", prefix);
 	copytonv(wp, "%s_isolation", prefix);
 	copytonv(wp, "%s_dns_redirect", prefix);
-	sprintf(n, "%s_dns_redirect_ip", prefix);
+	sprintf(n, "%s_dns_ipaddr", prefix);
 	char redirect_ip[64];
 	if (get_merge_ipaddr(wp, n, redirect_ip))
 		nvram_set(n, redirect_ip);
