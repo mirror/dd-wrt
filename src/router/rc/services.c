@@ -598,6 +598,9 @@ static void handle_services(void)
 #ifdef HAVE_CPUTEMP
 	startstop_f("hwmon");
 #endif
+#ifdef HAVE_TOR
+	startstop_f("tor");
+#endif
 #ifdef HAVE_TELNET
 	startstop_f("telnetd");
 #endif
