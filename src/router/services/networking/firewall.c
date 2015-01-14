@@ -625,7 +625,7 @@ static void nat_prerouting(void)
 		    && strcmp(nvram_safe_get("lan_ifname"), var)) {
 			if (nvram_nmatch("1", "%s_dns_redirect", var)) {
 				char *target = nvram_nget("%s_dns_ipaddr",var);
-				if (target && strlen(target) && valid_ipaddr(target)) {
+				if (target && strlen(target) && sv_valid_ipaddr(target)) {
 					save2file("-A PREROUTING -i %s -p udp --dport 53 -j DNAT --to %s\n", var, target);
 					save2file("-A PREROUTING -i %s -p tcp --dport 53 -j DNAT --to %s\n", var, target);
 				} else {
