@@ -142,10 +142,11 @@ void ej_no_cache(webs_t wp, int argc, char_t ** argv)
 
 void prefix_ip_get(char *name, char *buf, int type)
 {
+	char *val = nvram_safe_get(name);
 	if (type == 1)
-		sprintf(buf, "%d.%d.%d.", get_single_ip(nvram_safe_get(name), 0), get_single_ip(nvram_safe_get(name), 1), get_single_ip(nvram_safe_get(name), 2));
+		sprintf(buf, "%d.%d.%d.", get_single_ip(val, 0), get_single_ip(val, 1), get_single_ip(val, 2));
 	if (type == 2)
-		sprintf(buf, "%d.%d.", get_single_ip(nvram_safe_get(name), 0), get_single_ip(nvram_safe_get(name), 1));
+		sprintf(buf, "%d.%d.", get_single_ip(val, 0), get_single_ip(val, 1));
 }
 
 /*
@@ -161,10 +162,12 @@ void ej_prefix_ip_get(webs_t wp, int argc, char_t ** argv)
 	name = argv[0];
 	type = atoi(argv[1]);
 
+	char *val = nvram_safe_get(name);
+
 	if (type == 1)
-		websWrite(wp, "%d.%d.%d.", get_single_ip(nvram_safe_get(name), 0), get_single_ip(nvram_safe_get(name), 1), get_single_ip(nvram_safe_get(name), 2));
+		sprintf(buf, "%d.%d.%d.", get_single_ip(val, 0), get_single_ip(val, 1), get_single_ip(val, 2));
 	if (type == 2)
-		websWrite(wp, "%d.%d.", get_single_ip(nvram_safe_get(name), 0), get_single_ip(nvram_safe_get(name), 1));
+		sprintf(buf, "%d.%d.", get_single_ip(val, 0), get_single_ip(val, 1));
 
 	return;
 }
@@ -2013,6 +2016,7 @@ void ej_show_timeoptions(webs_t wp, int argc, char_t ** argv)	// Eko
 	}
 
 }
+
 #ifdef HAVE_IPV6
 void ej_show_ipv6options(webs_t wp, int argc, char_t ** argv)
 {
@@ -2074,7 +2078,7 @@ void ej_show_wanipinfo(webs_t wp, int argc, char_t ** argv)	// Eko
 		ipv6addr = getifaddr("ip6tun", AF_INET6, 0);
 	if (nvram_match("ipv6_typ", "ipv6pd"))
 		ipv6addr = getifaddr(nvram_safe_get("lan_ifname"), AF_INET6, 0);
-	if (ipv6addr)	
+	if (ipv6addr)
 		websWrite(wp, "&nbsp;IPv6: %s", ipv6addr);
 #endif
 
@@ -2334,9 +2338,9 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 			fclose(fp);
 			int l = strlen(temp);
 			if (l > 2)
-			    TEMP_MUL = 10 * (l - 2);
+				TEMP_MUL = 10 * (l - 2);
 			else
-			    TEMP_MUL = 1;
+				TEMP_MUL = 1;
 		}
 		fp = fopen("/sys/class/hwmon/hwmon0/temp1_input", "rb");
 	}
@@ -2353,7 +2357,7 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 		int low;
 		if (TEMP_MUL > 10)
 			low = (temp - (high * TEMP_MUL)) / (TEMP_MUL / 10);
-		else 
+		else
 			low = 0;
 		websWrite(wp, "%d.%d &#176;C", high, low);	// no i2c lm75 found
 	}
