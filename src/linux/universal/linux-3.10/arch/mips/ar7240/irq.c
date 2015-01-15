@@ -100,7 +100,7 @@ static void ar71xx_misc_irq_dispatch(void)
 {
 	u32 pending;
 
-	pending = (AR71XX_RESET_REG_MISC_INT_STATUS)
+	pending = ar71xx_reset_rr(AR71XX_RESET_REG_MISC_INT_STATUS)
 	    & ar71xx_reset_rr(AR71XX_RESET_REG_MISC_INT_ENABLE);
 
 	if (pending & MISC_INT_UART)
