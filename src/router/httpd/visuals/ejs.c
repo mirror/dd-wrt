@@ -165,9 +165,9 @@ void ej_prefix_ip_get(webs_t wp, int argc, char_t ** argv)
 	char *val = nvram_safe_get(name);
 
 	if (type == 1)
-		sprintf(buf, "%d.%d.%d.", get_single_ip(val, 0), get_single_ip(val, 1), get_single_ip(val, 2));
+		websWrite(wp, "%d.%d.%d.", get_single_ip(val, 0), get_single_ip(val, 1), get_single_ip(val, 2));
 	if (type == 2)
-		sprintf(buf, "%d.%d.", get_single_ip(val, 0), get_single_ip(val, 1));
+		websWrite(wp, "%d.%d.", get_single_ip(val, 0), get_single_ip(val, 1));
 
 	return;
 }
