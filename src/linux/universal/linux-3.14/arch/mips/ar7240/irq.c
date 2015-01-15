@@ -474,22 +474,22 @@ asmlinkage void plat_irq_dispatch(void)
 
 static void ath79_ip2_disable(struct irq_data *data)
 {
-	disable_irq(ATH79_CPU_IRQ(2));
+	disable_irq(AR71XX_CPU_IRQ_IP2);
 }
 
 static void ath79_ip2_enable(struct irq_data *data)
 {
-	enable_irq(ATH79_CPU_IRQ(2));
+	enable_irq(AR71XX_CPU_IRQ_IP2);
 }
 
 static void ath79_ip3_disable(struct irq_data *data)
 {
-	disable_irq(ATH79_CPU_IRQ(3));
+	disable_irq(AR71XX_CPU_IRQ_IP3);
 }
 
 static void ath79_ip3_enable(struct irq_data *data)
 {
-	enable_irq(ATH79_CPU_IRQ(3));
+	enable_irq(AR71XX_CPU_IRQ_IP3);
 }
 
 void __init arch_init_irq(void)
