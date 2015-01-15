@@ -78,6 +78,8 @@ static cached_config_t	*cs_cache = NULL;
  *	Temporary local variables for parsing the configuration
  *	file.
  */
+#undef HAVE_SETUID
+
 #ifdef HAVE_SETUID
 /*
  *	Systems that have set/getresuid also have setuid.
