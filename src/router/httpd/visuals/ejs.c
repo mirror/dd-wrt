@@ -2374,7 +2374,7 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, " / ");
 			}
 			found = 1;
-			websWrite(wp, "ath%d %d &#176;C", i, temp);
+			websWrite(wp, "ath%d %d &#176;C", i, temp / 1000);
 		}
 	}
 #endif
