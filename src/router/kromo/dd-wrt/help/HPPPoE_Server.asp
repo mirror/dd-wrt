@@ -7,15 +7,8 @@
 		<div id="content">
 			<h2><% tran("service.pppoesrv_legend"); %></h2>
 			<dl>
-				<!--dd>PPPoE Server.....<br /><br />
-					<div class="note">
-						<h4>Note</h4>
-						<div>Please note....</div>
-					</div>
-				</dd-->
 				<% tran("hpppoesrv.page1"); %>
 				<dt><% tran("service.pppoesrv_legend"); %></dt>
-				<!--dd>Click <i>Save Settings</i> to save your settings or click <i>Cancel Changes</i> to cancel your unsaved changes.</dd-->
 				<% tran("hpppoesrv.page2"); %>
 			</dl>
 		</div>
