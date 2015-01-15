@@ -25,7 +25,7 @@ libpng-configure:
 
 	
 	
-libgd:
+libgd: libpng minidlna
 	CC="ccache $(ARCH)-linux-uclibc-gcc" \
 	CFLAGS="$(COPTS) $(MIPS16_OPT)   -I$(TOP)/minidlna/jpeg-8 -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/minidlna/jpeg-8 -ffunction-sections -fdata-sections -Wl,--gc-sections" \
