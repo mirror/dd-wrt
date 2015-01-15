@@ -100,7 +100,7 @@ static void ar71xx_misc_irq_dispatch(void)
 {
 	u32 pending;
 
-	pending = ar71xx_reset_rr(AR71XX_RESET_REG_MISC_INT_STATUS)
+	pending = (AR71XX_RESET_REG_MISC_INT_STATUS)
 	    & ar71xx_reset_rr(AR71XX_RESET_REG_MISC_INT_ENABLE);
 
 	if (pending & MISC_INT_UART)
@@ -330,9 +330,9 @@ static void ar934x_ip2_irq_init(void)
 static void qca956x_enable_timer_cb(void) {
 	u32 misc;
 
-	misc = ath79_reset_rr(AR71XX_RESET_REG_MISC_INT_ENABLE);
+	misc = ar71xx_reset_rr(AR71XX_RESET_REG_MISC_INT_ENABLE);
 	misc |= MISC_INT_MIPS_SI_TIMERINT_MASK;
-	ath79_reset_wr(AR71XX_RESET_REG_MISC_INT_ENABLE, misc);
+	ar71xx_reset_wr(AR71XX_RESET_REG_MISC_INT_ENABLE, misc);
 }
 
 
