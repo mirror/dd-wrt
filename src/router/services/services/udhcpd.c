@@ -203,7 +203,7 @@ void start_udhcpd(void)
 
 	if (nvram_invmatch("wan_wins", "")
 	    && nvram_invmatch("wan_wins", "0.0.0.0"))
-		fprintf(fp, "option wins %s\n", nvram_get("wan_wins"));
+		fprintf(fp, "option wins %s\n", nvram_safe_get("wan_wins"));
 
 	// Wolf add - keep lease within reasonable timeframe
 	if (atoi(nvram_safe_get("dhcp_lease")) < 10) {

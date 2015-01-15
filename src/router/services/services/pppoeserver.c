@@ -170,12 +170,9 @@ static void do_pppoeconfig(FILE * fp)
 {
 	int nowins = 0;
 
-	if (nvram_match("wan_wins", "0.0.0.0")) {
-		nvram_set("wan_wins", "");
+	if (nvram_default_match("wan_wins", "0.0.0.0", "0.0.0.0")) {
 		nowins = 1;
 	}
-	if (strlen(nvram_safe_get("wan_wins")) == 0)
-		nowins = 1;
 	// fprintf (fp, "crtscts\n");
 	if (nvram_default_match("pppoeserver_bsdcomp", "0", "0"))
 		fprintf(fp, "nobsdcomp\n");
