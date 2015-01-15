@@ -84,6 +84,10 @@ void start_sysinit(void)
 	/*
 	 * Set a sane date 
 	 */
+	if (!nvram_match("disable_watchdog", "1")) {
+		insmod("mt7621_wdt");
+		eval("watchdog");
+	}
 
 	stime(&tm);
 	nvram_set("wl0_ifname", "ra0");
@@ -380,9 +384,6 @@ void start_sysinit(void)
 	set_gpio(10, 1);
 #endif
 
-	if (!nvram_match("disable_watchdog", "1")) {
-		eval("watchdog");
-	}
 	return;
 }
 
