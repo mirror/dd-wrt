@@ -229,6 +229,9 @@ void shutdown_system(void)
 #ifdef HAVE_LAGUNA
 	start_service("deconfigurewifi");
 #endif
+	fprintf(stderr, "send dhcp lease release signal\n");
+	killall("udhcpc", SIGUSR2);
+	sleep(1);
 	fprintf(stderr, "Sending SIGTERM to all processes\n");
 	kill(-1, SIGTERM);
 	sync();
