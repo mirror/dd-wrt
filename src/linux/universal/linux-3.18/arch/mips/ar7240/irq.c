@@ -314,13 +314,25 @@ enable:
 	enable_irq(irq);
 }
 
+static struct irq_chip ip2_chip;
+static struct irq_chip ip3_chip;
+
 static void ar934x_ip2_irq_init(void)
 {
 	int i;
 	for (i = AR934X_IP2_IRQ_BASE; i < AR934X_IP2_IRQ_BASE + AR934X_IP2_IRQ_COUNT; i++)
-		irq_set_chip_and_handler(i, &dummy_irq_chip, handle_level_irq);
+		irq_set_chip_and_handler(i, &ip2_chip, handle_level_irq);
 
 	irq_set_chained_handler(AR71XX_CPU_IRQ_IP2, ar934x_ip2_irq_dispatch);
+}
+
+
+static void qca956x_enable_timer_cb(void) {
+	u32 misc;
+
+	misc = ath79_reset_rr(AR71XX_RESET_REG_MISC_INT_ENABLE);
+	misc |= MISC_INT_MIPS_SI_TIMERINT_MASK;
+	ath79_reset_wr(AR71XX_RESET_REG_MISC_INT_ENABLE, misc);
 }
 
 
@@ -330,17 +342,26 @@ static void qca955x_irq_init(void)
 
 	for (i = AR934X_IP2_IRQ_BASE;
 	     i < AR934X_IP2_IRQ_BASE + AR934X_IP2_IRQ_COUNT; i++)
-		irq_set_chip_and_handler(i, &dummy_irq_chip,
+		irq_set_chip_and_handler(i, &ip2_chip,
 					 handle_level_irq);
 
 	irq_set_chained_handler(AR71XX_CPU_IRQ_IP2, qca955x_ip2_irq_dispatch);
 
 	for (i = AR934X_IP3_IRQ_BASE;
 	     i < AR934X_IP3_IRQ_BASE + AR934X_IP3_IRQ_COUNT; i++)
-		irq_set_chip_and_handler(i, &dummy_irq_chip,
+		irq_set_chip_and_handler(i, &ip3_chip,
 					 handle_level_irq);
 	irq_set_chained_handler(AR71XX_CPU_IRQ_IP3, qca955x_ip3_irq_dispatch);
+
+	if (ar71xx_soc == AR71XX_SOC_QCA9556) {
+		/* QCA956x timer init workaround has to be applied right before setting
+		 * up the clock. Else, there will be no jiffies */
+		late_time_init = &qca956x_enable_timer_cb;
+	}
+	
+
 }
+
 
 
 
@@ -451,8 +472,35 @@ asmlinkage void plat_irq_dispatch(void)
 		spurious_interrupt();
 }
 
+static void ath79_ip2_disable(struct irq_data *data)
+{
+	disable_irq(ATH79_CPU_IRQ(2));
+}
+
+static void ath79_ip2_enable(struct irq_data *data)
+{
+	enable_irq(ATH79_CPU_IRQ(2));
+}
+
+static void ath79_ip3_disable(struct irq_data *data)
+{
+	disable_irq(ATH79_CPU_IRQ(3));
+}
+
+static void ath79_ip3_enable(struct irq_data *data)
+{
+	enable_irq(ATH79_CPU_IRQ(3));
+}
+
 void __init arch_init_irq(void)
 {
+	ip2_chip = dummy_irq_chip;
+	ip3_chip = dummy_irq_chip;
+	ip2_chip.irq_disable = ath79_ip2_disable;
+	ip2_chip.irq_enable = ath79_ip2_enable;
+	ip3_chip.irq_disable = ath79_ip3_disable;
+	ip3_chip.irq_enable = ath79_ip3_enable;
+
 	switch (ar71xx_soc) {
 	case AR71XX_SOC_AR7130:
 	case AR71XX_SOC_AR7141:
