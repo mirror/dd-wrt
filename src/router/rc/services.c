@@ -152,7 +152,7 @@ int start_services_main(int argc, char **argv)
 		start_service_f("sshd");
 #endif
 
-#ifdef HAVE_IPV&
+#ifdef HAVE_IPV6
 #ifdef HAVE_RADVD
 	start_service_f("radvd");
 #endif
