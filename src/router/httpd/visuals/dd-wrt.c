@@ -1181,7 +1181,7 @@ void ej_show_dhcpd_settings(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\">WINS</div>\n");
 		websWrite(wp, "<input type=\"hidden\" name=\"wan_wins\" value=\"4\" />\n");
-		char *wins = nvram_safe_get("wan_wins");
+		char *wins = nvram_default_get("wan_wins", "0.0.0.0");
 
 		for (i = 0; i < 4; i++) {
 			websWrite(wp,
