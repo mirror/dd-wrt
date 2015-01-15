@@ -78,12 +78,9 @@ void start_pptpd(void)
 	cprintf("check if wan_wins = zero\n");
 	int nowins = 0;
 
-	if (nvram_match("wan_wins", "0.0.0.0")) {
-		nvram_set("wan_wins", "");
+	if (nvram_default_match("wan_wins", "0.0.0.0", "0.0.0.0")) {
 		nowins = 1;
 	}
-	if (strlen(nvram_safe_get("wan_wins")) == 0)
-		nowins = 1;
 
 	cprintf("write config\n");
 	fprintf(fp, "lock\n" "name *\n" "nobsdcomp\n" "nodeflate\n" "auth\n" "refuse-pap\n" "refuse-eap\n" "refuse-chap\n" "refuse-mschap\n" "require-mschap-v2\n");
