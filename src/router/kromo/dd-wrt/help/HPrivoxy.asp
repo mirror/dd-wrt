@@ -9,27 +9,10 @@
 			<dl>
 				
 				<dt><% tran("privoxy.server"); %></dt>
-				<!--dd>Privoxy enables you to filter common ads. <br/>
-					<ul>
-					<br/>
-					</ul>
-				</dd-->
 				<% tran("hprivoxy.page1"); %>
 				<dt><% tran("privoxy.transp"); %></dt>
-				<!--dd>Transparent Mode : <br/>
-					<ul>
-						<li>Traffic to Port is 80 is intercepted by privoxy even if client did not configure any proxy settings</li>
-						<li>Thus you can enforce filtering</li>
-						<li>Transparent mode cannot intercept https connections. So all https traffic will still pass privoxy</li>
-					</ul>
-				</dd-->
 				<% tran("hprivoxy.page2"); %>
 				<dt><% tran("privoxy.custom"); %></dt>
-				<!--dd>Custom configuration: <br/>
-					<ul>
-						<li>Allows you to specify custom settings and paths to custom filters on external media e.g. usb disk</li>
-					</ul>
-				</dd--> 
 				<% tran("hprivoxy.page3"); %>
 				
 		</div>
