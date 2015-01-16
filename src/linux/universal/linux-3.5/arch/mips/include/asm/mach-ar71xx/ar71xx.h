@@ -723,6 +723,7 @@ void ar71xx_ddr_flush(u32 reg);
 #define WDOG_CTRL_ACTION_NMI		2	/* NMI */
 #define WDOG_CTRL_ACTION_FCR		3	/* full chip reset */
 
+#define MISC_INT_MIPS_SI_TIMERINT_MASK	BIT(28)
 #define MISC_INT_ENET_LINK		BIT(12)
 #define MISC_INT_DDR_PERF		BIT(11)
 #define MISC_INT_TIMER4		BIT(10)
