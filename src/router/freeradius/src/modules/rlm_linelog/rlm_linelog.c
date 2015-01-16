@@ -305,7 +305,7 @@ static int do_linelog(void *instance, REQUEST *request)
 		if (inst->group != NULL) {
 			gid = strtol(inst->group, &endptr, 10);
 			if (*endptr != '\0') {
-				grp = getgrnam(inst->group);
+				grp = rad_getgrnam(inst->group);
 				if (grp == NULL) {
 					RDEBUG2("Unable to find system group \"%s\"", inst->group);
 					goto skip_group;

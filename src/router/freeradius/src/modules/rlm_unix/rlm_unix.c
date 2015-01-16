@@ -93,11 +93,11 @@ static int groupcmp(void *instance, REQUEST *req, VALUE_PAIR *request,
 		return -1;
 	}
 
-	pwd = getpwnam(req->username->vp_strvalue);
+	pwd = rad_getpwnam(req->username->vp_strvalue);
 	if (pwd == NULL)
 		return -1;
 
-	grp = getgrnam(check->vp_strvalue);
+	grp = rad_getgrnam(check->vp_strvalue);
 	if (grp == NULL)
 		return -1;
 	
@@ -211,7 +211,7 @@ static int unix_getpw(UNUSED void *instance, REQUEST *request,
 		return RLM_MODULE_USERLOCK;
 	}
 #else /* OSFC2 */
-	if ((pwd = getpwnam(name)) == NULL) {
+	if ((pwd = rad_getpwnam(name)) == NULL) {
 		return RLM_MODULE_NOTFOUND;
 	}
 	encrypted_pass = pwd->pw_passwd;
