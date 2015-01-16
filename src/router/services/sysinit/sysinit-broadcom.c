@@ -303,6 +303,7 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 		nvram_set("partialboots", "0");
 	case ROUTER_LINKSYS_EA2700:
 		nvram_set("bootpartition", "0");
+		nvram_set("partialboots", "0");
 		insmod("emf igs wl");	// load module
 		break;
 	case ROUTER_WRT600N:
