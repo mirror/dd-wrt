@@ -1975,8 +1975,8 @@ static int command_socket_parse(CONF_SECTION *cs, rad_listen_t *this)
 #if defined(HAVE_GETPEEREID) || defined (SO_PEERCRED)
 	if (sock->uid_name) {
 		struct passwd *pw;
-		
-		pw = getpwnam(sock->uid_name);
+
+		pw = rad_getpwnam(sock->uid_name);
 		if (!pw) {
 			radlog(L_ERR, "Failed getting uid for %s: %s",
 			       sock->uid_name, strerror(errno));
@@ -1991,7 +1991,7 @@ static int command_socket_parse(CONF_SECTION *cs, rad_listen_t *this)
 	if (sock->gid_name) {
 		struct group *gr;
 
-		gr = getgrnam(sock->gid_name);
+		gr = rad_getgrnam(sock->gid_name);
 		if (!gr) {
 			radlog(L_ERR, "Failed getting gid for %s: %s",
 			       sock->gid_name, strerror(errno));

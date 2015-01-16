@@ -39,6 +39,9 @@ typedef struct auth_req REQUEST;
 #include	<pthread.h>
 #endif
 
+#include <pwd.h>
+#include <grp.h>
+
 #ifndef NDEBUG
 #define REQUEST_MAGIC (0xdeadbeef)
 #endif
@@ -506,6 +509,8 @@ int		rad_copy_variable(char *dst, const char *from);
 int		rad_expand_xlat(REQUEST *request, const char *cmd,
 				int max_argc, const char *argv[], int can_fail,
 				size_t argv_buflen, char *argv_buf);
+struct passwd	*rad_getpwnam(const char *name);
+struct group	*rad_getgrnam(const char *name);
 
 /* client.c */
 RADCLIENT_LIST	*clients_init(void);

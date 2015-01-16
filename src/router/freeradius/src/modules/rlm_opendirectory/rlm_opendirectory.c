@@ -352,7 +352,7 @@ static int od_authorize(UNUSED void *instance, REQUEST *request)
 	
 	/* resolve SACL */
 	uuid_clear(guid_sacl);
-	groupdata = getgrnam(kRadiusSACLName);
+	groupdata = rad_getgrnam(kRadiusSACLName);
 	if (groupdata != NULL) {
 		err = mbr_gid_to_uuid(groupdata->gr_gid, guid_sacl);
 		if (err != 0) {
@@ -377,7 +377,7 @@ static int od_authorize(UNUSED void *instance, REQUEST *request)
 		 */
 		if (uuid_parse(rad_client->community, guid_nasgroup) != 0) {
 			/* attempt to resolve the name */
-			groupdata = getgrnam(rad_client->community);
+			groupdata = rad_getgrnam(rad_client->community);
 			if (groupdata == NULL) {
 				radlog(L_AUTH, "rlm_opendirectory: The group \"%s\" does not exist on this system.", rad_client->community);
 				return RLM_MODULE_FAIL;
@@ -418,7 +418,7 @@ static int od_authorize(UNUSED void *instance, REQUEST *request)
 	name = (char *)request->username->vp_strvalue;
 	rad_assert(name != NULL);
 
-	userdata = getpwnam(name);
+	userdata = rad_getpwnam(name);
 	if (userdata != NULL) {
 		err = mbr_uid_to_uuid(userdata->pw_uid, uuid);
 		if (err != 0)
