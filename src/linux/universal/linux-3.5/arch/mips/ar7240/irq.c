@@ -253,7 +253,6 @@ static void ar934x_ip2_irq_dispatch(unsigned int irq, struct irq_desc *desc)
 }
 
 static struct irq_chip ip2_chip;
-static struct irq_chip ip3_chip;
 
 static void ar934x_ip2_irq_init(void)
 {
@@ -372,24 +371,11 @@ static void ath79_ip2_enable(struct irq_data *data)
 	enable_irq(AR71XX_CPU_IRQ_IP2);
 }
 
-static void ath79_ip3_disable(struct irq_data *data)
-{
-	disable_irq(AR71XX_CPU_IRQ_IP3);
-}
-
-static void ath79_ip3_enable(struct irq_data *data)
-{
-	enable_irq(AR71XX_CPU_IRQ_IP3);
-}
-
 void __init arch_init_irq(void)
 {
 	ip2_chip = dummy_irq_chip;
-	ip3_chip = dummy_irq_chip;
 	ip2_chip.irq_disable = ath79_ip2_disable;
 	ip2_chip.irq_enable = ath79_ip2_enable;
-	ip3_chip.irq_disable = ath79_ip3_disable;
-	ip3_chip.irq_enable = ath79_ip3_enable;
 
 	switch (ar71xx_soc) {
 	case AR71XX_SOC_AR7130:
