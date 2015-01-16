@@ -35,7 +35,7 @@ freeradius-configure: openssl
 	--enable-shared \
 	--disable-static \
 	--disable-developer \
-	--with-threads \
+	--without-threads \
 	--with-ltdl-include="$(TOP)/freeradius/libltdl/.libs" \
 	--with-ltdl-lib="$(TOP)/freeradius/libltdl" \
 	--with-openssl-includes="$(TOP)/openssl/include" \
