@@ -241,8 +241,31 @@ void shutdown_system(void)
 	kill(-1, SIGKILL);
 	sync();
 	sleep(1);
-	eval("/bin/umount", "-a", "-r");
-
+	char dev[32];
+	char mpoint[128];
+	char fstype[32];
+	char flags[64];
+	int a, b;
+	FILE *fp = fopen("/proc/mounts", "rb");
+	while (!feof(fp) && fscanf(fp, "%s %s %s %s %d %d", dev, mpoint, fstype, flags, &a, &b) == 6) {
+		if (!strcmp(fstype, "proc"))
+			continue;
+		if (!strcmp(fstype, "sysfs"))
+			continue;
+		if (!strcmp(fstype, "debugfs"))
+			continue;
+		if (!strcmp(fstype, "ramfs"))
+			continue;
+		if (!strcmp(fstype, "tmpfs"))
+			continue;
+		if (!strcmp(fstype, "devpts"))
+			continue;
+		if (!strcmp(fstype, "usbfs"))
+			continue;
+		fprintf(stderr, "unmounting %s\n", mpoint);
+		eval("umount", "-r", "-f", mpount);
+	}
+	fclose(fp);
 }
 
 static int fatal_signals[] = {
