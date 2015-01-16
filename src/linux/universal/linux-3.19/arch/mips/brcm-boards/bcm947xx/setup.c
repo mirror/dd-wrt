@@ -544,7 +544,7 @@ init_nflash_mtd_partitions(hndnand_t *nfl, struct mtd_info *mtd, size_t size)
 		printk("Boot partition size = %d(0x%x)\n", bootsz, bootsz);
 
 		/* Size pmon */
-		bcm947xx_nflash_parts[nparts].name = "boot";
+		bcm947xx_nflash_parts[nparts].name = "cfe";
 		bcm947xx_nflash_parts[nparts].size = bootsz;
 		bcm947xx_nflash_parts[nparts].offset = top;
 		bcm947xx_nflash_parts[nparts].mask_flags = MTD_WRITEABLE; /* forces on read only */
