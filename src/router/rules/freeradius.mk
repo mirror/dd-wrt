@@ -1,5 +1,5 @@
 freeradius-configure: openssl
-	cd freeradius && autconf && \
+	cd freeradius && autoconf && \
 	sys_lib_dlsearch_path_spec="$(ARCH)-uclibc" \
 	sys_lib_search_path_spec="$(ARCH)-uclibc" \
 	MYSQL_CONFIG="no" \
