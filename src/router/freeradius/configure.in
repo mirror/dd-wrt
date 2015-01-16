@@ -553,6 +553,10 @@ else
    )
 fi
 
+if test "x$WITH_THREADS" = "xyes"; then
+       AC_DEFINE(WITH_THREADS, [1], [define if you want thread support])
+fi
+
 dnl Check if we need -lsocket
 AC_CHECK_LIB(socket, getsockname)
 
