@@ -263,7 +263,7 @@ void shutdown_system(void)
 		if (!strcmp(fstype, "usbfs"))
 			continue;
 		fprintf(stderr, "unmounting %s\n", mpoint);
-		eval("umount", "-r", "-f", mpount);
+		eval("umount", "-r", "-f", mpoint);
 	}
 	fclose(fp);
 }
