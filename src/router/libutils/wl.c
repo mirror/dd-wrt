@@ -554,7 +554,7 @@ void radio_off(int idx)
 		eval("iwpriv", "ra0", "set", "WlanLed=0");
 		eval("iwpriv", "ba0", "set", "RadioOn=0");
 		eval("iwpriv", "ba0", "set", "WlanLed=0");
-	} if (idx == 0) {
+	} else if (idx == 0) {
 		eval("iwpriv", "ra0", "set", "RadioOn=0");
 		eval("iwpriv", "ra0", "set", "WlanLed=0");
 	} else {
@@ -570,7 +570,7 @@ void radio_on(int idx)
 		eval("iwpriv", "ra0", "set", "RadioOn=1");
 		eval("iwpriv", "ra0", "set", "WlanLed=1");
 		eval("iwpriv", "ba0", "set", "RadioOn=1");
-		eval("iwpriv", "ba0", "set", "WlanLed=1");	
+		eval("iwpriv", "ba0", "set", "WlanLed=1");
 	} else if (idx == 0) {
 		eval("iwpriv", "ra0", "set", "RadioOn=1");
 		eval("iwpriv", "ra0", "set", "WlanLed=1");
