@@ -1,3 +1,91 @@
+== iperf 3.0.11 2015-01-09 ==
+
+* User-visible changes
+
+  * Added -1 / --one-off flag, which causes the iperf3 server to
+    process one client connection and then exit.  Intended primarily
+    for bwctl integration (issue #230).
+
+  * Added various minor bug fixes (issues #231, #232, #233).
+
+  * Added 30-second timeout for UDP tests if unable to establish UDP
+    connectivity between sender and receiver (issue #222).
+
+== iperf 3.0.10 2014-12-16 ==
+
+* User-visible changes
+
+  * Fixed the build on MacOS X Yosemite (issue #213).
+
+  * UDP tests now honor the -w option for setting the socket buffer
+    sizes (issue #219).
+
+* Developer-visible changes
+
+  * Added an RPM spec file plus functionality to fill in the version
+    number.
+
+  * Fixed potential filename collision with a system header (issue
+    #203).
+
+== iperf 3.0.9 2014-10-14 ==
+
+* User-visible changes
+
+  * Fixed a series of problems that came from attempting a UDP test
+    with a pathologically large block size.  This put the server into
+    an odd state where it could not accept new client connections.
+    This in turn caused subsequent client connections to crash when
+    interrupted (issue #212).
+
+* Developer-visible changes
+
+  * None.
+
+== iperf 3.0.8 2014-09-30 ==
+
+* User-visible changes
+
+  * Updated license and copyright verbage to confirm to LBNL Tech
+    Transfer requirements.  No substantive changes; license remains
+    the 3-clause BSD license.
+
+* Developer-visible changes
+
+  * None.
+
+== iperf 3.0.7 2014-08-28 ==
+
+* User-visible changes
+
+  * A server bug where new connections from clients could disrupt
+    running tests has been fixed (issue #202).
+
+  * Rates now consistently use 1000-based prefixes (K, M, G), where
+    sizes of objects now consistently use 1024-based prefixes (issue #173).
+
+  * UDP tests with unlimited bandwidth are now supported (issue #170).
+
+  * An interaction between the -w and -B options, which kept them from
+    working when used together, has been fixed (issue #193).
+
+* Developer-visible changes
+
+== iperf 3.0.6 2014-07-28 ==
+
+* User-visible changes
+
+  * Several bugs that kept the -B option from working in various
+    circumstances have been fixed (issue #193).
+
+  * Various compatibility fixes for OpenBSD (issue #196) and
+    Solaris (issue #177).
+
+* Developer-visible changes
+
+  * The {get,set}_test_bind_address API calls have been added to
+    expose the -B functionality to API consumers (issue #197).
+
 == iperf 3.0.5 2014-06-16 ==
 
 * User-visible changes

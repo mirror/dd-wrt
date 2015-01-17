@@ -1,4 +1,4 @@
-.TH IPERF 1 "June 2014" ESnet "User Manuals"
+.TH IPERF 1 "January 2015" ESnet "User Manuals"
 .SH NAME
 iperf3 \- perform network throughput tests
 .SH SYNOPSIS
@@ -64,6 +64,9 @@ run in server mode
 .TP
 .BR -D ", " --daemon " "
 run the server in background as a daemon
+.TP
+.BR -1 ", " --one-off
+handle one client connection, then exit.
 
 .SH "CLIENT SPECIFIC OPTIONS"
 .TP
@@ -81,6 +84,8 @@ You can also add a '/' and a number to the bandwidth specifier.
 This is called "burst mode".
 It will send the given number of packets without pausing, even if that
 temporarily exceeds the specified bandwidth limit.
+Setting the target bandwidth to 0 will disable bandwidth limits
+(particularly useful for UDP tests).
 .TP
 .BR -t ", " --time " \fIn\fR"
 time in seconds to transmit for (default 10 secs)
@@ -101,7 +106,7 @@ number of parallel client streams to run
 run in reverse mode (server sends, client receives)
 .TP
 .BR -w ", " --window " \fIn\fR[KM]"
-TCP window size / socket buffer size (this gets sent to the server and used on that side too)
+window size / socket buffer size (this gets sent to the server and used on that side too)
 .TP
 .BR -B ", " --bind " \fIn\fR[KM]"
 bind to a specific interface or multicast address
