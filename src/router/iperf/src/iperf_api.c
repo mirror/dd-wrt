@@ -1,12 +1,29 @@
 /*
- * Copyright (c) 2009-2014, The Regents of the University of California,
- * through Lawrence Berkeley National Laboratory (subject to receipt of any
- * required approvals from the U.S. Dept. of Energy).  All rights reserved.
+ * iperf, Copyright (c) 2014, 2015, The Regents of the University of
+ * California, through Lawrence Berkeley National Laboratory (subject
+ * to receipt of any required approvals from the U.S. Dept. of
+ * Energy).  All rights reserved.
+ *
+ * If you have questions about your rights to use or distribute this
+ * software, please contact Berkeley Lab's Technology Transfer
+ * Department at TTD@lbl.gov.
+ *
+ * NOTICE.  This software is owned by the U.S. Department of Energy.
+ * As such, the U.S. Government has been granted for itself and others
+ * acting on its behalf a paid-up, nonexclusive, irrevocable,
+ * worldwide license in the Software to reproduce, prepare derivative
+ * works, and perform publicly and display publicly.  Beginning five
+ * (5) years after the date permission to assert copyright is obtained
+ * from the U.S. Department of Energy, and subject to any subsequent
+ * five (5) year renewals, the U.S. Government is granted for itself
+ * and others acting on its behalf a paid-up, nonexclusive,
+ * irrevocable, worldwide license in the Software to reproduce,
+ * prepare derivative works, distribute copies to the public, perform
+ * publicly and display publicly, and to permit others to do so.
  *
  * This code is distributed under a BSD style license, see the LICENSE file
  * for complete information.
  */
-
 #define _GNU_SOURCE
 #define __USE_GNU
 
@@ -46,7 +63,7 @@
 #include "units.h"
 #include "tcp_window_size.h"
 #include "iperf_util.h"
-#include "locale.h"
+#include "iperf_locale.h"
 
 
 /* Forwards. */
@@ -205,6 +222,18 @@ iperf_get_test_unit_format(struct iperf_test *ipt)
     return ipt->settings->unit_format;
 }
 
+char *
+iperf_get_test_bind_address(struct iperf_test *ipt)
+{
+    return ipt->bind_address;
+}
+
+int
+iperf_get_test_one_off(struct iperf_test *ipt)
+{
+    return ipt->one_off;
+}
+
 /************** Setter routines for some fields inside iperf_test *************/
 
 void
@@ -337,7 +366,7 @@ iperf_has_zerocopy( void )
 void
 iperf_set_test_zerocopy(struct iperf_test *ipt, int zerocopy)
 {
-    ipt->zerocopy = zerocopy;
+    ipt->zerocopy = (zerocopy && has_sendfile());
 }
 
 void
@@ -350,6 +379,18 @@ void
 iperf_set_test_unit_format(struct iperf_test *ipt, char unit_format)
 {
     ipt->settings->unit_format = unit_format;
+}
+
+void
+iperf_set_test_bind_address(struct iperf_test *ipt, char *bind_address)
+{
+    ipt->bind_address = strdup(bind_address);
+}
+
+void
+iperf_set_test_one_off(struct iperf_test *ipt, int one_off)
+{
+    ipt->one_off = one_off;
 }
 
 /********************** Get/set test protocol structure ***********************/
@@ -521,6 +562,7 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
         {"format", required_argument, NULL, 'f'},
         {"interval", required_argument, NULL, 'i'},
         {"daemon", no_argument, NULL, 'D'},
+        {"one-off", no_argument, NULL, '1'},
         {"verbose", no_argument, NULL, 'V'},
         {"json", no_argument, NULL, 'J'},
         {"version", no_argument, NULL, 'v'},
@@ -563,7 +605,7 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 
     blksize = 0;
     server_flag = client_flag = rate_flag = duration_flag = 0;
-    while ((flag = getopt_long(argc, argv, "p:f:i:DVJvsc:ub:t:n:k:l:P:Rw:B:M:N46S:L:ZO:F:A:T:C:dh", longopts, NULL)) != -1) {
+    while ((flag = getopt_long(argc, argv, "p:f:i:D1VJvsc:ub:t:n:k:l:P:Rw:B:M:N46S:L:ZO:F:A:T:C:dh", longopts, NULL)) != -1) {
         switch (flag) {
             case 'p':
                 test->server_port = atoi(optarg);
@@ -582,6 +624,10 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
                 break;
             case 'D':
 		test->daemon = 1;
+		server_flag = 1;
+	        break;
+            case '1':
+		test->one_off = 1;
 		server_flag = 1;
 	        break;
             case 'V':
@@ -625,7 +671,7 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 			return -1;
 		    }
 		}
-                test->settings->rate = unit_atof(optarg);
+                test->settings->rate = unit_atof_rate(optarg);
 		rate_flag = 1;
 		client_flag = 1;
                 break;
@@ -791,6 +837,11 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 	i_errno = IEBLOCKSIZE;
 	return -1;
     }
+    if (test->protocol->id == Pudp &&
+	blksize > MAX_UDP_BLOCKSIZE) {
+	i_errno = IEUDPBLOCKSIZE;
+	return -1;
+    }
     test->settings->blksize = blksize;
 
     if (!rate_flag)
@@ -858,7 +909,7 @@ iperf_check_throttle(struct iperf_stream *sp, struct timeval *nowP)
 int
 iperf_send(struct iperf_test *test, fd_set *write_setP)
 {
-    register int multisend, r;
+    register int multisend, r, streams_active;
     register struct iperf_stream *sp;
     struct timeval now;
 
@@ -873,6 +924,7 @@ iperf_send(struct iperf_test *test, fd_set *write_setP)
     for (; multisend > 0; --multisend) {
 	if (test->settings->rate != 0 && test->settings->burst == 0)
 	    gettimeofday(&now, NULL);
+	streams_active = 0;
 	SLIST_FOREACH(sp, &test->streams, streams) {
 	    if (sp->green_light &&
 	        (write_setP == NULL || FD_ISSET(sp->socket, write_setP))) {
@@ -882,6 +934,7 @@ iperf_send(struct iperf_test *test, fd_set *write_setP)
 		    i_errno = IESTREAMWRITE;
 		    return r;
 		}
+		streams_active = 1;
 		test->bytes_sent += r;
 		++test->blocks_sent;
 		if (test->settings->rate != 0 && test->settings->burst == 0)
@@ -892,6 +945,8 @@ iperf_send(struct iperf_test *test, fd_set *write_setP)
 		    break;
 	    }
 	}
+	if (!streams_active)
+	    break;
     }
     if (test->settings->burst != 0) {
 	gettimeofday(&now, NULL);
@@ -1719,23 +1774,6 @@ iperf_reset_test(struct iperf_test *test)
     test->duration = DURATION;
     test->server_affinity = -1;
     test->state = 0;
-
-    if(test->title) {
-        free(test->title);
-        test->title = NULL;
-    }
-    if(test->server_hostname) {
-        free(test->server_hostname);
-        test->server_hostname = NULL;
-    }
-    if(test->bind_address) {
-        free(test->bind_address);
-        test->bind_address = NULL;
-    }
-    if(test->congestion) {
-        free(test->congestion);
-        test->congestion = NULL;
-    }
     
     test->ctrl_sck = -1;
     test->prot_listener = -1;
@@ -1919,6 +1957,8 @@ iperf_print_intermediate(struct iperf_test *test)
     /* next build string with sum of all streams */
     if (test->num_streams > 1 || test->json_output) {
         sp = SLIST_FIRST(&test->streams); /* reset back to 1st stream */
+	/* Only do this of course if there was a first stream */
+	if (sp) {
         irp = TAILQ_LAST(&sp->result->interval_results, irlisthead);    /* use 1st stream for timing info */
 
         unit_snprintf(ubuf, UNIT_LEN, (double) bytes, 'A');
@@ -1956,6 +1996,7 @@ iperf_print_intermediate(struct iperf_test *test)
 		else
 		    iprintf(test, report_sum_bw_udp_format, start_time, end_time, ubuf, nbuf, avg_jitter * 1000.0, lost_packets, total_packets, lost_percent, test->omitting?report_omitted:"");
 	    }
+	}
 	}
     }
 }
@@ -2000,6 +2041,13 @@ iperf_print_results(struct iperf_test *test)
 
     start_time = 0.;
     sp = SLIST_FIRST(&test->streams);
+    /* 
+     * If there is at least one stream, then figure out the length of time
+     * we were running the tests and print out some statistics about
+     * the streams.  It's possible to not have any streams at all
+     * if the client got interrupted before it got to do anything.
+     */
+    if (sp) {
     end_time = timeval_diff(&sp->result->start_time, &sp->result->end_time);
     SLIST_FOREACH(sp, &test->streams, streams) {
 	if (test->json_output) {
@@ -2076,10 +2124,17 @@ iperf_print_results(struct iperf_test *test)
 		iprintf(test, report_bw_format, sp->socket, start_time, end_time, ubuf, nbuf, report_receiver);
 	}
     }
+    }
 
     if (test->num_streams > 1 || test->json_output) {
         unit_snprintf(ubuf, UNIT_LEN, (double) total_sent, 'A');
-	bandwidth = (double) total_sent / (double) end_time;
+	/* If no tests were run, arbitrariliy set bandwidth to 0. */
+	if (end_time > 0.0) {
+	    bandwidth = (double) total_sent / (double) end_time;
+	}
+	else {
+	    bandwidth = 0.0;
+	}
         unit_snprintf(nbuf, UNIT_LEN, bandwidth, test->settings->unit_format);
         if (test->protocol->id == Ptcp) {
 	    if (test->sender_has_retransmits) {
@@ -2096,7 +2151,13 @@ iperf_print_results(struct iperf_test *test)
 		    iprintf(test, report_sum_bw_format, start_time, end_time, ubuf, nbuf, report_sender);
 	    }
             unit_snprintf(ubuf, UNIT_LEN, (double) total_received, 'A');
-	    bandwidth = (double) total_received / (double) end_time;
+	    /* If no tests were run, set received bandwidth to 0 */
+	    if (end_time > 0.0) {
+		bandwidth = (double) total_received / (double) end_time;
+	    }
+	    else {
+		bandwidth = 0.0;
+	    }
             unit_snprintf(nbuf, UNIT_LEN, bandwidth, test->settings->unit_format);
 	    if (test->json_output)
 		cJSON_AddItemToObject(test->json_end, "sum_received", iperf_json_printf("start: %f  end: %f  seconds: %f  bytes: %d  bits_per_second: %f", (double) start_time, (double) end_time, (double) end_time, (int64_t) total_received, bandwidth * 8));
@@ -2105,7 +2166,13 @@ iperf_print_results(struct iperf_test *test)
         } else {
 	    /* Summary sum, UDP. */
             avg_jitter /= test->num_streams;
-	    lost_percent = 100.0 * lost_packets / total_packets;
+	    /* If no packets were sent, arbitrarily set loss percentage to 100. */
+	    if (total_packets > 0) {
+		lost_percent = 100.0 * lost_packets / total_packets;
+	    }
+	    else {
+		lost_percent = 100.0;
+	    }
 	    if (test->json_output)
 		cJSON_AddItemToObject(test->json_end, "sum", iperf_json_printf("start: %f  end: %f  seconds: %f  bytes: %d  bits_per_second: %f  jitter_ms: %f  lost_packets: %d  packets: %d  lost_percent: %f", (double) start_time, (double) end_time, (double) end_time, (int64_t) total_sent, bandwidth * 8, (double) avg_jitter * 1000.0, (int64_t) lost_packets, (int64_t) total_packets, (double) lost_percent));
 	    else
