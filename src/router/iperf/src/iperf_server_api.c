@@ -1,12 +1,29 @@
 /*
- * Copyright (c) 2009-2014, The Regents of the University of California,
- * through Lawrence Berkeley National Laboratory (subject to receipt of any
- * required approvals from the U.S. Dept. of Energy).  All rights reserved.
+ * iperf, Copyright (c) 2014, The Regents of the University of
+ * California, through Lawrence Berkeley National Laboratory (subject
+ * to receipt of any required approvals from the U.S. Dept. of
+ * Energy).  All rights reserved.
  *
- * This code is distributed under a BSD style license, see the LICENSE file
- * for complete information.
+ * If you have questions about your rights to use or distribute this
+ * software, please contact Berkeley Lab's Technology Transfer
+ * Department at TTD@lbl.gov.
+ *
+ * NOTICE.  This software is owned by the U.S. Department of Energy.
+ * As such, the U.S. Government has been granted for itself and others
+ * acting on its behalf a paid-up, nonexclusive, irrevocable,
+ * worldwide license in the Software to reproduce, prepare derivative
+ * works, and perform publicly and display publicly.  Beginning five
+ * (5) years after the date permission to assert copyright is obtained
+ * from the U.S. Department of Energy, and subject to any subsequent
+ * five (5) year renewals, the U.S. Government is granted for itself
+ * and others acting on its behalf a paid-up, nonexclusive,
+ * irrevocable, worldwide license in the Software to reproduce,
+ * prepare derivative works, distribute copies to the public, perform
+ * publicly and display publicly, and to permit others to do so.
+ *
+ * This code is distributed under a BSD style license, see the LICENSE
+ * file for complete information.
  */
-
 /* iperf_server_api.c: Functions to be used by an iperf server
 */
 
@@ -41,7 +58,7 @@
 #include "units.h"
 #include "tcp_window_size.h"
 #include "iperf_util.h"
-#include "locale.h"
+#include "iperf_locale.h"
 
 
 int
@@ -141,11 +158,10 @@ iperf_accept(struct iperf_test *test)
         if (test->on_connect)
             test->on_connect(test);
     } else {
-        /* XXX: Do we even need to receive cookie if we're just going to deny anyways? */
-        if (Nread(s, cookie, COOKIE_SIZE, Ptcp) < 0) {
-            i_errno = IERECVCOOKIE;
-            return -1;
-        }
+	/*
+	 * Don't try to read from the socket.  It could block an ongoing test. 
+	 * Just send ACCESS_DENIED.
+	 */
         if (Nwrite(s, (char*) &rbuf, sizeof(rbuf), Ptcp) < 0) {
             i_errno = IESENDMESSAGE;
             return -1;
@@ -516,8 +532,14 @@ iperf_run_server(struct iperf_test *test)
 			    FD_SET(s, &test->read_set);
 			if (s > test->max_fd) test->max_fd = s;
 
-			// If the protocol isn't UDP, set nonblocking sockets
-			if (test->protocol->id != Pudp) {
+			/* 
+			 * If the protocol isn't UDP, or even if it is but
+			 * we're the receiver, set nonblocking sockets.
+			 * We need this to allow a server receiver to
+			 * maintain interactivity with the control channel.
+			 */
+			if (test->protocol->id != Pudp ||
+			    !test->sender) {
 			    setnonblocking(s, 1);
 			}
 

@@ -1,10 +1,28 @@
 /*
- * Copyright (c) 2009-2014, The Regents of the University of California,
- * through Lawrence Berkeley National Laboratory (subject to receipt of any
- * required approvals from the U.S. Dept. of Energy).  All rights reserved.
+ * iperf, Copyright (c) 2014, The Regents of the University of
+ * California, through Lawrence Berkeley National Laboratory (subject
+ * to receipt of any required approvals from the U.S. Dept. of
+ * Energy).  All rights reserved.
  *
- * This code is distributed under a BSD style license, see the LICENSE file
- * for complete information.
+ * If you have questions about your rights to use or distribute this
+ * software, please contact Berkeley Lab's Technology Transfer
+ * Department at TTD@lbl.gov.
+ *
+ * NOTICE.  This software is owned by the U.S. Department of Energy.
+ * As such, the U.S. Government has been granted for itself and others
+ * acting on its behalf a paid-up, nonexclusive, irrevocable,
+ * worldwide license in the Software to reproduce, prepare derivative
+ * works, and perform publicly and display publicly.  Beginning five
+ * (5) years after the date permission to assert copyright is obtained
+ * from the U.S. Department of Energy, and subject to any subsequent
+ * five (5) year renewals, the U.S. Government is granted for itself
+ * and others acting on its behalf a paid-up, nonexclusive,
+ * irrevocable, worldwide license in the Software to reproduce,
+ * prepare derivative works, distribute copies to the public, perform
+ * publicly and display publicly, and to permit others to do so.
+ *
+ * This code is distributed under a BSD style license, see the LICENSE
+ * file for complete information.
  */
 
 #include <stdio.h>
@@ -124,13 +142,33 @@ iperf_tcp_listen(struct iperf_test *test)
 
     s = test->listener;
 
+    /*
+     * If certain parameters are specified (such as socket buffer
+     * size), then throw away the listening socket (the one for which
+     * we just accepted the control connection) and recreate it with
+     * those parameters.  That way, when new data connections are
+     * set, they'll have all the correct parameters in place.
+     *
+     * It's not clear whether this is a requirement or a convenience.
+     */
     if (test->no_delay || test->settings->mss || test->settings->socket_bufsize) {
         FD_CLR(s, &test->read_set);
         close(s);
 
         snprintf(portstr, 6, "%d", test->server_port);
         memset(&hints, 0, sizeof(hints));
-        hints.ai_family = (test->settings->domain == AF_UNSPEC ? AF_INET6 : test->settings->domain);
+
+	/*
+	 * If binding to the wildcard address with no explicit address
+	 * family specified, then force us to get an AF_INET6 socket.
+	 * More details in the comments in netanounce().
+	 */
+	if (test->settings->domain == AF_UNSPEC && !test->bind_address) {
+	    hints.ai_family = AF_INET6;
+	}
+	else {
+	    hints.ai_family = test->settings->domain;
+	}
         hints.ai_socktype = SOCK_STREAM;
         hints.ai_flags = AI_PASSIVE;
         if (getaddrinfo(test->bind_address, portstr, &hints, &res) != 0) {
@@ -203,10 +241,17 @@ iperf_tcp_listen(struct iperf_test *test)
             i_errno = IEREUSEADDR;
             return -1;
         }
-	if (test->settings->domain == AF_UNSPEC || test->settings->domain == AF_INET6) {
+
+	/*
+	 * If we got an IPv6 socket, figure out if it shoudl accept IPv4
+	 * connections as well.  See documentation in netannounce() for
+	 * more details.
+	 */
+#if defined(IPV6_V6ONLY) && !defined(__OpenBSD__)
+	if (res->ai_family == AF_INET6 && (test->settings->domain == AF_UNSPEC || test->settings->domain == AF_INET)) {
 	    if (test->settings->domain == AF_UNSPEC)
 		opt = 0;
-	    else if (test->settings->domain == AF_INET6)
+	    else 
 		opt = 1;
 	    if (setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY, 
 			   (char *) &opt, sizeof(opt)) < 0) {
@@ -218,6 +263,7 @@ iperf_tcp_listen(struct iperf_test *test)
 		return -1;
 	    }
 	}
+#endif /* IPV6_V6ONLY */
 
         if (bind(s, (struct sockaddr *) res->ai_addr, res->ai_addrlen) < 0) {
 	    saved_errno = errno;
