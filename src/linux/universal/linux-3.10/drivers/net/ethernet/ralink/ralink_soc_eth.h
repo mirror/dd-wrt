@@ -33,9 +33,11 @@ enum fe_reg {
 	FE_REG_TX_BASE_PTR0,
 	FE_REG_TX_MAX_CNT0,
 	FE_REG_TX_CTX_IDX0,
+	FE_REG_TX_DTX_IDX0,
 	FE_REG_RX_BASE_PTR0,
 	FE_REG_RX_MAX_CNT0,
 	FE_REG_RX_CALC_IDX0,
+	FE_REG_RX_DRX_IDX0,
 	FE_REG_FE_INT_ENABLE,
 	FE_REG_FE_INT_STATUS,
 	FE_REG_FE_DMA_VID_BASE,
@@ -44,10 +46,15 @@ enum fe_reg {
 	FE_REG_COUNT
 };
 
-#define FE_DRV_VERSION		"0.1.0"
+enum fe_work_flag {
+        FE_FLAG_RESET_PENDING,
+        FE_FLAG_MAX
+};
+
+#define FE_DRV_VERSION		"0.1.1"
 
 /* power of 2 to let NEXT_TX_DESP_IDX work */
-#ifdef CONFIG_SOC_MT7621
+#ifdef CONFIG_SOC_MT7621_OPENWRT
 #define NUM_DMA_DESC		(1 << 9)
 #else
 #define NUM_DMA_DESC		(1 << 7)
@@ -282,6 +289,7 @@ enum fe_reg {
 #define FE_PST_DTX_IDX1		BIT(1)
 #define FE_PST_DTX_IDX0		BIT(0)
 
+#define FE_RX_2B_OFFSET		BIT(31)
 #define FE_TX_WB_DDONE		BIT(6)
 #define FE_RX_DMA_BUSY		BIT(3)
 #define FE_TX_DMA_BUSY		BIT(1)
@@ -371,8 +379,7 @@ struct fe_soc_data
 	void (*reset_fe)(void);
 	void (*set_mac)(struct fe_priv *priv, unsigned char *mac);
 	int (*fwd_config)(struct fe_priv *priv);
-	void (*tx_dma)(struct fe_priv *priv, int idx, struct sk_buff *skb);
-	void (*rx_dma)(struct fe_priv *priv, int idx, int len);
+	void (*tx_dma)(struct fe_tx_dma *txd);
 	int (*switch_init)(struct fe_priv *priv);
 	int (*switch_config)(struct fe_priv *priv);
 	void (*port_init)(struct fe_priv *priv, struct device_node *port);
@@ -394,6 +401,9 @@ struct fe_soc_data
 #define FE_FLAG_PADDING_64B		BIT(0)
 #define FE_FLAG_PADDING_BUG		BIT(1)
 #define FE_FLAG_JUMBO_FRAME		BIT(2)
+#define FE_FLAG_RX_2B_OFFSET		BIT(3)
+#define FE_FLAG_RX_SG_DMA		BIT(4)
+#define FE_FLAG_RX_VLAN_CTAG		BIT(5)
 
 #define FE_STAT_REG_DECLARE		\
 	_FE(tx_bytes)			\
@@ -451,6 +461,8 @@ struct fe_priv
 
 	struct fe_hw_stats		*hw_stats;
 	unsigned long			vlan_map;
+	struct work_struct		pending_work;
+	DECLARE_BITMAP(pending_flags, FE_FLAG_MAX);
 };
 
 extern const struct of_device_id of_fe_match[];
@@ -464,6 +476,8 @@ void fe_stats_update(struct fe_priv *priv);
 void fe_fwd_config(struct fe_priv *priv);
 void fe_reg_w32(u32 val, enum fe_reg reg);
 u32 fe_reg_r32(enum fe_reg reg);
+
+void fe_reset(u32 reset_bits);
 
 static inline void *priv_netdev(struct fe_priv *priv)
 {
