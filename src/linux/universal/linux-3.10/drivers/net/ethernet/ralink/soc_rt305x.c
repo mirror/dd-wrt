@@ -18,14 +18,12 @@
 #include <linux/module.h>
 
 #include <asm/mach-ralink-openwrt/ralink_regs.h>
-#include <asm/mach-ralink-openwrt/rt305x.h>
 
 #include "ralink_soc_eth.h"
 #include "mdio_rt2880.h"
 
 #define RT305X_RESET_FE         BIT(21)
 #define RT305X_RESET_ESW        BIT(23)
-#define SYSC_REG_RESET_CTRL     0x034
 
 static const u32 rt5350_reg_table[FE_REG_COUNT] = {
 	[FE_REG_PDMA_GLO_CFG] = RT5350_PDMA_GLO_CFG,
@@ -34,9 +32,11 @@ static const u32 rt5350_reg_table[FE_REG_COUNT] = {
 	[FE_REG_TX_BASE_PTR0] = RT5350_TX_BASE_PTR0,
 	[FE_REG_TX_MAX_CNT0] = RT5350_TX_MAX_CNT0,
 	[FE_REG_TX_CTX_IDX0] = RT5350_TX_CTX_IDX0,
+	[FE_REG_TX_DTX_IDX0] = RT5350_TX_DTX_IDX0,
 	[FE_REG_RX_BASE_PTR0] = RT5350_RX_BASE_PTR0,
 	[FE_REG_RX_MAX_CNT0] = RT5350_RX_MAX_CNT0,
 	[FE_REG_RX_CALC_IDX0] = RT5350_RX_CALC_IDX0,
+	[FE_REG_RX_DRX_IDX0] = RT5350_RX_DRX_IDX0,
 	[FE_REG_FE_INT_ENABLE] = RT5350_FE_INT_ENABLE,
 	[FE_REG_FE_INT_STATUS] = RT5350_FE_INT_STATUS,
 	[FE_REG_FE_RST_GL] = 0,
@@ -73,8 +73,7 @@ static int rt3050_fwd_config(struct fe_priv *priv)
 
 static void rt305x_fe_reset(void)
 {
-	rt_sysc_w32(RT305X_RESET_FE, SYSC_REG_RESET_CTRL);
-	rt_sysc_w32(0, SYSC_REG_RESET_CTRL);
+	fe_reset(RT305X_RESET_FE);
 }
 
 static void rt5350_init_data(struct fe_soc_data *data,
@@ -115,15 +114,14 @@ static int rt5350_fwd_config(struct fe_priv *priv)
 	return 0;
 }
 
-static void rt5350_tx_dma(struct fe_priv *priv, int idx, struct sk_buff *skb)
+static void rt5350_tx_dma(struct fe_tx_dma *txd)
 {
-	priv->tx_dma[idx].txd4 = 0;
+	txd->txd4 = 0;
 }
 
 static void rt5350_fe_reset(void)
 {
-	rt_sysc_w32(RT305X_RESET_FE | RT305X_RESET_ESW, SYSC_REG_RESET_CTRL);
-	rt_sysc_w32(0, SYSC_REG_RESET_CTRL);
+	fe_reset(RT305X_RESET_FE | RT305X_RESET_ESW);
 }
 
 static struct fe_soc_data rt3050_data = {
