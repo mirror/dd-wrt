@@ -452,7 +452,13 @@ void hotspotsys_config(void)
 
 	if (strlen(nvram_safe_get("hotss_remotekey")) != 12) {
 		unsigned char hash[32];
-		char *et0 = nvram_safe_get("et0macaddr");
+		char *et0;
+		if (getRouterBrand() == ROUTER_ASUS_AC87U)
+			et0 = nvram_safe_get("et1macaddr");
+		else
+			et0 = nvram_safe_get("et0macaddr");
+		if (strlen(et0) == 0)
+			et0 = nvram_safe_get("et0macaddr_safe");
 
 		md5_begin(&MD);
 		md5_hash(et0, 17, &MD);
@@ -573,6 +579,5 @@ void hotspotsys_config(void)
 
 	return;
 }
-
 #endif				/* HAVE_HOTSPOT */
 #endif				/* HAVE_CHILLI */

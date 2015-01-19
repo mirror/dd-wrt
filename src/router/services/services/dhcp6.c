@@ -50,8 +50,15 @@ void start_dhcp6c(void)
 		return;
 
 	fprintf(stderr, "dhcp6c start\n");
+	char *mac;
+	if (getRouterBrand() == ROUTER_ASUS_AC87U)
+		mac = nvram_safe_get("et1macaddr");
+	else
+		mac = nvram_safe_get("et0macaddr");
+	if (strlen(mac) == 0)
+		mac = nvram_safe_get("et0macaddr_safe");
 
-	if (ether_atoe(nvram_safe_get("et0macaddr"), ea)) {
+	if (ether_atoe(mac, ea)) {
 		/* Generate IAID from the last 7 digits of WAN MAC */
 		iaid = ((unsigned long)(ea[3] & 0x0f) << 16) | ((unsigned long)(ea[4]) << 8) | ((unsigned long)(ea[5]));
 
@@ -86,9 +93,7 @@ void start_dhcp6c(void)
 				" send rapid-commit;\n"
 				" request domain-name-servers;\n"
 				" script \"/sbin/dhcp6c-state\";\n"
-				"};\n"
-				"id-assoc pd 0 {\n"
-				" prefix-interface %s {\n" "  sla-id 0;\n" "  sla-len %d;\n" " };\n" "};\n" "id-assoc na 0 { };\n", get_wan_face(), nvram_safe_get("lan_ifname"), prefix_len);
+				"};\n" "id-assoc pd 0 {\n" " prefix-interface %s {\n" "  sla-id 0;\n" "  sla-len %d;\n" " };\n" "};\n" "id-assoc na 0 { };\n", get_wan_face(), nvram_safe_get("lan_ifname"), prefix_len);
 			fclose(fpc);
 		}
 	}

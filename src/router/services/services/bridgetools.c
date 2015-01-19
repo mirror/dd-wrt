@@ -176,7 +176,7 @@ int br_add_bridge(const char *brname)
 	if (strcmp(brname, "br0") && strlen(nvram_safe_get(hwaddr)) > 0) {
 		eval("ifconfig", brname, "hw", "ether", nvram_safe_get(hwaddr));
 	} else {
-		eval("ifconfig", brname, "hw", "ether", nvram_safe_get("lan_hwaddr"));	
+		eval("ifconfig", brname, "hw", "ether", nvram_safe_get("lan_hwaddr"));
 	}
 
 	return ret;
