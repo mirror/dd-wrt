@@ -5913,19 +5913,6 @@ void ej_get_clone_wmac(webs_t wp, int argc, char_t ** argv)
 	ejArgs(argc, argv, "%d", &which);
 
 	if (nvram_match("def_whwaddr", "00:00:00:00:00:00")) {
-		// if (strlen (nvram_safe_get ("il0macaddr")) == 0)
-		// {
-		// if (nvram_match ("port_swap", "1"))
-		// c = strdup (nvram_safe_get ("et1macaddr"));
-		// else
-		// c = strdup (nvram_safe_get ("et0macaddr"));
-		// MAC_ADD (c);
-		// }
-		// else
-		// {
-		// c = strdup (nvram_safe_get ("il0macaddr"));
-		// }
-		// dofree = 1;
 
 		if (nvram_match("port_swap", "1")) {
 			if (strlen(nvram_safe_get("et1macaddr")) != 0)	// safe:
@@ -5939,7 +5926,10 @@ void ej_get_clone_wmac(webs_t wp, int argc, char_t ** argv)
 				MAC_ADD(c);	// et0macaddr +3
 			}
 		} else {
-			c = strdup(nvram_safe_get("et0macaddr"));
+			if (getRouterBrand() == ROUTER_ASUS_AC87U)
+				c = strdup(nvram_safe_get("et1macaddr"));
+			else
+				c = strdup(nvram_safe_get("et0macaddr"));
 		}
 
 		dofree = 1;
@@ -6282,8 +6272,8 @@ void ej_get_qossvcs(webs_t wp, int argc, char_t ** argv)
 			  "</select>\n"
 			  "</td>\n"
 			  "</tr>\n", i, strcmp(level, "100") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(level, "10") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(level,
-																					  "20") == 0 ? "selected=\\\"selected\\\"" : "",
-			  strcmp(level, "30") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(level, "40") == 0 ? "selected=\\\"selected\\\"" : "");
+																					  "20") ==
+			  0 ? "selected=\\\"selected\\\"" : "", strcmp(level, "30") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(level, "40") == 0 ? "selected=\\\"selected\\\"" : "");
 
 		qos_svcs = strpbrk(++qos_svcs, "|");
 		qos_svcs++;
@@ -6333,8 +6323,8 @@ void ej_get_qosips(webs_t wp, int argc, char_t ** argv)
 			  "</select>\n"
 			  "</td>\n"
 			  "</tr>\n", i, strcmp(level, "100") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(level, "10") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(level,
-																					  "20") == 0 ? "selected=\\\"selected\\\"" : "",
-			  strcmp(level, "30") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(level, "40") == 0 ? "selected=\\\"selected\\\"" : "");
+																					  "20") ==
+			  0 ? "selected=\\\"selected\\\"" : "", strcmp(level, "30") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(level, "40") == 0 ? "selected=\\\"selected\\\"" : "");
 
 		qos_ips = strpbrk(++qos_ips, "|");
 		qos_ips++;
@@ -6391,8 +6381,8 @@ void ej_get_qosips(webs_t wp, int argc, char_t ** argv)
 
 		websWrite(wp, "	<td nowrap>\n"
 			  "<input name=\"svqos_ipdown%d\" class=\"num\" size=\"5\" maxlength=\"6\" value=\"%s\" style=\"text-align:right;\" %s /> kBits\n" "</td>\n", i, level2, strcmp(prio, "0") == 0 ? "" : "disabled");
-		websWrite(wp, "	<td nowrap>\n"
-			  "<input class=\"num\" name=\"svqos_ipup%d\" size=\"5\" maxlength=\"6\" value=\"%s\" style=\"text-align:right;\" %s /> kBits\n" "</td>\n", i, level, strcmp(prio, "0") == 0 ? "" : "disabled");
+		websWrite(wp, "	<td nowrap>\n" "<input class=\"num\" name=\"svqos_ipup%d\" size=\"5\" maxlength=\"6\" value=\"%s\" style=\"text-align:right;\" %s /> kBits\n" "</td>\n", i, level,
+			  strcmp(prio, "0") == 0 ? "" : "disabled");
 
 		websWrite(wp, "	<td nowrap>\n"
 			  "<input name=\"svqos_iplanlvl%d\" class=\"num\" size=\"5\" maxlength=\"6\" value=\"%s\" style=\"text-align:right;\" %s /> kBits\n"
@@ -6410,8 +6400,10 @@ void ej_get_qosips(webs_t wp, int argc, char_t ** argv)
 			  "</select>\n"
 			  "</td>\n"
 			  "</tr>\n", i, i, strcmp(prio, "0") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(prio, "100") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(prio,
-																					  "10") == 0 ? "selected=\\\"selected\\\"" : "",
-			  strcmp(prio, "20") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(prio, "30") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(prio, "40") == 0 ? "selected=\\\"selected\\\"" : "");
+																					  "10") ==
+			  0 ? "selected=\\\"selected\\\"" : "", strcmp(prio, "20") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(prio, "30") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(prio,
+																							       "40") ==
+			  0 ? "selected=\\\"selected\\\"" : "");
 
 		qos_ips = strpbrk(++qos_ips, "|");
 		qos_ips++;
@@ -6452,17 +6444,15 @@ void ej_get_qosmacs(webs_t wp, int argc, char_t ** argv)
 
 		websWrite(wp, "<tr>\n"
 			  "<td>\n" "<input type=\"checkbox\" name=\"svqos_macdel%d\" />\n" "<input type=\"hidden\" name=\"svqos_mac%d\" value=\"%s\" />\n" "</td>\n" "<td><em>%s</em></td>\n" "<td>\n", i, i, mac, mac);
-		websWrite(wp, "<select name=\"svqos_macprio%d\"> \n"
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"100\\\" %s >\" + qos.prio_x + \"</option>\");\n"
-			  "document.write(\"<option value=\\\"10\\\" %s >\" + qos.prio_p + \"</option>\");\n"
-			  "document.write(\"<option value=\\\"20\\\" %s >\" + qos.prio_e + \"</option>\");\n"
+		websWrite(wp,
+			  "<select name=\"svqos_macprio%d\"> \n" "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"100\\\" %s >\" + qos.prio_x + \"</option>\");\n"
+			  "document.write(\"<option value=\\\"10\\\" %s >\" + qos.prio_p + \"</option>\");\n" "document.write(\"<option value=\\\"20\\\" %s >\" + qos.prio_e + \"</option>\");\n"
 			  "document.write(\"<option value=\\\"30\\\" %s >\" + share.standard + \"</option>\");\n"
-			  "document.write(\"<option value=\\\"40\\\" %s >\" + qos.prio_b + \"</option>\");\n//]]>\n</script>\n"
-			  "</select>\n"
-			  "</td>\n"
-			  "</tr>\n", i, strcmp(level, "100") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(level, "10") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(level,
-																					  "20") == 0 ? "selected=\\\"selected\\\"" : "",
-			  strcmp(level, "30") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(level, "40") == 0 ? "selected=\\\"selected\\\"" : "");
+			  "document.write(\"<option value=\\\"40\\\" %s >\" + qos.prio_b + \"</option>\");\n//]]>\n</script>\n" "</select>\n" "</td>\n" "</tr>\n", i, strcmp(level,
+																					     "100") ==
+			  0 ? "selected=\\\"selected\\\"" : "", strcmp(level, "10") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(level, "20") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(level,
+																								 "30") ==
+			  0 ? "selected=\\\"selected\\\"" : "", strcmp(level, "40") == 0 ? "selected=\\\"selected\\\"" : "");
 
 		qos_macs = strpbrk(++qos_macs, "|");
 		qos_macs++;
@@ -6537,8 +6527,10 @@ void ej_get_qosmacs(webs_t wp, int argc, char_t ** argv)
 			  "</select>\n"
 			  "</td>\n"
 			  "</tr>\n", i, i, strcmp(prio, "0") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(prio, "100") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(prio,
-																					  "10") == 0 ? "selected=\\\"selected\\\"" : "",
-			  strcmp(prio, "20") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(prio, "30") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(prio, "40") == 0 ? "selected=\\\"selected\\\"" : "");
+																					  "10") ==
+			  0 ? "selected=\\\"selected\\\"" : "", strcmp(prio, "20") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(prio, "30") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(prio,
+																							       "40") ==
+			  0 ? "selected=\\\"selected\\\"" : "");
 
 		qos_macs = strpbrk(++qos_macs, "|");
 		qos_macs++;
