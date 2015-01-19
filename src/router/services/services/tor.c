@@ -101,7 +101,7 @@ void start_tor(void)
 	    && nvram_match("sys_enable_jffs2", "1")) {
 		eval("mkdir", "-p", "/jffs/tor");
 		fprintf(fp, "DataDirectory /jffs/tor\n");
-	}else{
+	} else {
 		fprintf(fp, "DataDirectory /tmp/tor\n");
 	}
 #endif
