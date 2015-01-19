@@ -37,7 +37,7 @@ void start_jffs2(void)
 	int itworked = 0;
 
 	if (nvram_match("sys_enable_jffs2", "1")) {
-			insmod("crc32 lzma_compress lzma_decompress lzo_compress lzo_decompress jffs2");
+		insmod("crc32 lzma_compress lzma_decompress lzo_compress lzo_decompress jffs2");
 		if (nvram_match("sys_clean_jffs2", "1")) {
 			nvram_set("sys_clean_jffs2", "0");
 			nvram_commit();

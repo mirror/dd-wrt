@@ -202,15 +202,16 @@ void stop_3g(void)
 
 #endif
 
-
 void start_pppmodules(void)
 {
 	insmod("zlib_inflate zlib_deflate slhc ppp_generic bsd_comp ppp_deflate ppp_async ppp_synctty ppp_mppe pppox pppoe");
 }
+
 void stop_pppmodules(void)
 {
 	rmmod("pppoe pppox ppp_mppe ppp_synctty ppp_async ppp_deflate bsd_comp ppp_generic slhc");
 }
+
 void stop_dhcpc(void)
 {
 	FILE *fp = fopen("/var/run/udhcpc.pid", "rb");
