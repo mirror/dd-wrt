@@ -150,7 +150,7 @@ void start_pptp(int status)
 		NULL
 	};
 	char username[80], passwd[80];
-	
+
 	stop_dhcpc();
 #ifdef HAVE_PPPOE
 	stop_pppoe();

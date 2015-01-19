@@ -132,10 +132,19 @@ int mk_nocat_conf(void)
 
 	fprintf(fp, "InternalDevice\t%s\n", nvram_default_get("NC_ifname", nvram_safe_get("lan_ifname")));
 	fprintf(fp, "GatewayPort\t%s\n", nvram_safe_get("NC_GatewayPort"));
+
+	char *mac;
+	if (getRouterBrand() == ROUTER_ASUS_AC87U)
+		mac = nvram_safe_get("et1macaddr");
+	else
+		mac = nvram_safe_get("et0macaddr");
+	if (strlen(mac) == 0)
+		mac = nvram_safe_get("et0macaddr_safe");
+
 	if (nvram_match("port_swap", "1"))
 		fprintf(fp, "GatewayMAC\t%s\n", nvram_safe_get("et1macaddr"));
 	else
-		fprintf(fp, "GatewayMAC\t%s\n", nvram_safe_get("et0macaddr"));
+		fprintf(fp, "GatewayMAC\t%s\n", mac);
 	fprintf(fp, "GatewayPassword\t%s\n", nvram_safe_get("NC_Password"));
 	fprintf(fp, "GatewayMode\t%s\n", nvram_safe_get("NC_GatewayMode"));
 	fprintf(fp, "DocumentRoot\t%s\n", nvram_safe_get("NC_DocumentRoot"));
