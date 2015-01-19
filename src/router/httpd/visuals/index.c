@@ -76,8 +76,12 @@ void ej_get_clone_mac(webs_t wp, int argc, char_t ** argv)
 		if (nvram_match("def_hwaddr", "00:00:00:00:00:00")) {
 			if (nvram_match("port_swap", "1"))
 				c = strdup(nvram_safe_get("et1macaddr"));
-			else
-				c = strdup(nvram_safe_get("et0macaddr"));
+			else {
+				if (getRouterBrand() == ROUTER_ASUS_AC87U)
+					c = strdup(nvram_safe_get("et1macaddr"));
+				else
+					c = strdup(nvram_safe_get("et0macaddr"));
+			}
 			if (c) {
 				MAC_ADD(c);
 				dofree = 1;
