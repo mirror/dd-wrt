@@ -3756,10 +3756,17 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	sprintf(wl_ofdm_weak_det, "%s_ofdm_weak_det", prefix);
 
 #if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
-	if (!is_ath11n(prefix))
+	if (!is_ath11n(prefix)) {
+		showRadio(wp, "wl_basic.intmit", wl_intmit);
+	} else
 #endif
 	{
 		showAutoOption(wp, "wl_basic.intmit", wl_intmit);
+	}
+#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
+	if (!is_ath11n(prefix))
+#endif
+	{
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.noise_immunity)</script></div>\n<select name=\"%s\">\n", wl_noise_immunity);
 		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");

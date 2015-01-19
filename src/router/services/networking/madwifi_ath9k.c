@@ -154,7 +154,10 @@ void configure_single_ath9k(int count)
 		else
 			sysprintf("echo 20 > /sys/kernel/debug/ieee80211/%s/ath9k/chanbw", wif);
 	}
+	char wl_intmit[32];
 
+	sprintf(wl_intmit, "%s_intmit", dev);
+	sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath9k/ani", nvram_default_get(wl_intmit, "0"), wif);
 #ifdef HAVE_REGISTER
 	int cpeonly = iscpe();
 #else
@@ -783,8 +786,8 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			fprintf(fp, "eap_server=0\n");
 			fprintf(fp, "auth_algs=1\n");
 			char retry[32];
-			sprintf(retry,"%s_radius_retry",ifname);
-			fprintf(fp, "radius_retry_primary_interval=%s\n",nvram_default_get(retry,"600"));
+			sprintf(retry, "%s_radius_retry", ifname);
+			fprintf(fp, "radius_retry_primary_interval=%s\n", nvram_default_get(retry, "600"));
 			types = hostapd_eap_get_types();
 			fprintf(fp, "%s", types);
 			free(types);
