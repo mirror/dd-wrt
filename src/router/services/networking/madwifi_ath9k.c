@@ -648,7 +648,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 
 	char wmm[32];
 	sprintf(wmm, "%s_wmm", ifname);
-	fprintf(fp, "wmm_enabled=%s\n",nvram_default_get(wmm,"1"));
+	fprintf(fp, "wmm_enabled=%s\n", nvram_default_get(wmm, "1"));
 	if (nvram_match("mac_clone_enable", "1")
 	    && nvram_invmatch("def_whwaddr", "00:00:00:00:00:00")
 	    && nvram_invmatch("def_whwaddr", "")
