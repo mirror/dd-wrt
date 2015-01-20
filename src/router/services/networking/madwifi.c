@@ -595,7 +595,7 @@ void do_hostapd(char *fstr, char *prefix)
 		else if (!strcmp(debug, "3"))
 			argv[argc++] = "-ddd";
 		argv[argc++] = "-f";
-		sprintf(file,"/tmp/%s_debug",prefix);
+		sprintf(file, "/tmp/%s_debug", prefix);
 		argv[argc++] = file;
 	}
 	argv[argc++] = fstr;
@@ -728,7 +728,7 @@ void setupHS20(FILE * fp, char *prefix)
 		else
 			fprintf(fp, "disable_dgaf=0\n");
 
-		if (nvram_nmatch("1", "%s_osen",prefix))
+		if (nvram_nmatch("1", "%s_osen", prefix))
 			fprintf(fp, "osen=1\n");
 		else
 			fprintf(fp, "osen=0\n");
@@ -1045,8 +1045,8 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 			fprintf(fp, "eap_server=0\n");
 			fprintf(fp, "auth_algs=1\n");
 			char retry[32];
-			sprintf(retry,"%s_radius_retry",prefix);
-			fprintf(fp, "radius_retry_primary_interval=%s\n",nvram_default_get(retry,"600"));
+			sprintf(retry, "%s_radius_retry", prefix);
+			fprintf(fp, "radius_retry_primary_interval=%s\n", nvram_default_get(retry, "600"));
 			types = hostapd_eap_get_types();
 			fprintf(fp, "%s", types);
 			free(types);
@@ -1222,9 +1222,9 @@ static void set_rate(char *dev, char *priv)
 	// sysprintf("iwconfig %s rate 54M auto", priv);
 	// }
 	if (atol(mr) > 0)
-		sysprintf("iwpriv %s maxrate %s", priv, mr);
+		eval("iwpriv", priv, "maxrate %s", mr);
 	if (atoi(r) > 0)
-		sysprintf("iwpriv %s minrate %s", priv, r);
+		eval("iwpriv", priv, "minrate %s", r);
 }
 
 static void set_netmode(char *wif, char *dev, char *use)
@@ -1258,45 +1258,45 @@ static void set_netmode(char *wif, char *dev, char *use)
 	{
 #ifdef HAVE_WHRAG108
 		if (!strncmp(use, "ath0", 4)) {
-			sysprintf("iwpriv %s mode 1", use);
+			eval("iwpriv", use, "mode", "1");
 		} else
 #endif
 #ifdef HAVE_TW6600
 		if (!strncmp(use, "ath0", 4)) {
-			sysprintf("iwpriv %s mode 1", use);
+			eval("iwpriv", use, "mode", "1");
 		} else
 #endif
 		{
-			sysprintf("iwpriv %s xr 0", use);
+			eval("iwpriv", use, "xr", "0");
 			if (!strcmp(netmode, "mixed"))
-				sysprintf("iwpriv %s mode 0", use);
+				eval("iwpriv", use, "mode", "0");
 			if (!strcmp(netmode, "b-only"))
-				sysprintf("iwpriv %s mode 2", use);
+				eval("iwpriv", use, "mode", "2");
 			if (!strcmp(netmode, "g-only")) {
-				sysprintf("iwpriv %s mode 3", use);
-				sysprintf("iwpriv %s pureg 1", use);
+				eval("iwpriv", use, "mode", "3");
+				eval("iwpriv", use, "pureg", "1");
 			}
 			if (!strcmp(netmode, "ng-only")) {
-				sysprintf("iwpriv %s mode 7", use);
+				eval("iwpriv", use, "mode", "7");
 			}
 			if (!strcmp(netmode, "na-only")) {
-				sysprintf("iwpriv %s mode 6", use);
+				eval("iwpriv", use, "mode", "6");
 			}
 			if (!strcmp(netmode, "bg-mixed")) {
-				sysprintf("iwpriv %s mode 3", use);
+				eval("iwpriv", use, "mode", "3");
 			}
 
 			if (!strcmp(netmode, "a-only"))
-				sysprintf("iwpriv %s mode 1", use);
+				eval("iwpriv", use, "mode", "1");
 		}
 	}
 	if (nvram_default_match(bw, "40", "20")) {
 		{
 			if (!strcmp(netmode, "g-only")) {
-				sysprintf("iwpriv %s mode 6", use);
+				eval("iwpriv", use, "mode", "6");
 			}
 			if (!strcmp(netmode, "a-only")) {
-				sysprintf("iwpriv %s mode 5", use);
+				eval("iwpriv", use, "mode", "5");
 			}
 		}
 	} else {
@@ -1304,9 +1304,9 @@ static void set_netmode(char *wif, char *dev, char *use)
 
 		if (ext) {
 			if (strcmp(ext, "1") == 0) {
-				sysprintf("iwpriv %s xr 1", use);
+				eval("iwpriv", use, "xr", "1");
 			} else {
-				sysprintf("iwpriv %s xr 0", use);
+				eval("iwpriv", use, "xr", "0");
 			}
 		}
 	}
@@ -1316,9 +1316,9 @@ static void set_netmode(char *wif, char *dev, char *use)
 //      sysprintf("iwpriv %s compression 0",use);
 
 	if (nvram_default_match(ff, "1", "0"))
-		sysprintf("iwpriv %s ff 1", use);
+		eval("iwpriv", use, "ff", "1");
 	else
-		sysprintf("iwpriv %s ff 0", use);
+		eval("iwpriv", use, "ff", "0");
 
 }
 
@@ -1341,11 +1341,11 @@ static void setRTS(char *use)
 		sysprintf("iwconfig %s rts off", use);
 	}
 	if (nvram_nmatch("None", "%s_protmode", use))
-		sysprintf("iwpriv %s protmode 0", use);
+		eval("iwpriv", use, "protmode", "0");
 	if (nvram_nmatch("CTS", "%s_protmode", use))
-		sysprintf("iwpriv %s protmode 1", use);
+		eval("iwpriv", use, "protmode", "1");
 	if (nvram_nmatch("RTS/CTS", "%s_protmode", use))
-		sysprintf("iwpriv %s protmode 2", use);
+		eval("iwpriv", use, "protmode", "2");
 }
 
 /*static void set_compression( int count )
@@ -1366,29 +1366,29 @@ static void setMacFilter(char *iface)
 	char *next;
 	char var[32];
 
-	sysprintf("iwpriv %s maccmd 3", iface);
+	eval("iwpriv", iface, "maccmd", "3");
 
 	char nvvar[32];
 
 	sprintf(nvvar, "%s_macmode", iface);
 	if (nvram_match(nvvar, "deny")) {
-		sysprintf("iwpriv %s maccmd 2", iface);
+		eval("iwpriv", iface, "maccmd", "2");
 		char nvlist[32];
 
 		sprintf(nvlist, "%s_maclist", iface);
 
 		foreach(var, nvram_safe_get(nvlist), next) {
-			sysprintf("iwpriv %s addmac %s", iface, var);
+			eval("iwpriv", iface, "addmac", var);
 		}
 	} else if (nvram_match(nvvar, "allow")) {
-		sysprintf("iwpriv %s maccmd 1", iface);
+		eval("iwpriv", iface, "maccmd", "1");
 
 		char nvlist[32];
 
 		sprintf(nvlist, "%s_maclist", iface);
 
 		foreach(var, nvram_safe_get(nvlist), next) {
-			sysprintf("iwpriv %s addmac %s", iface, var);
+			eval("iwpriv", iface, "addmac", var);
 		}
 	}
 
@@ -1570,20 +1570,23 @@ static void configure_single(int count)
 		set_netmode(wif, dev, useif);
 	set_netmode(wif, dev, dev);
 
+	char bcn[32];
+	sprintf(bcn, "%s_bcn", dev);
+	eval("iwpriv", dev, "bintval", nvram_default_get(bcn, "100"));
 	char wmm[32];
 
 	sprintf(wmm, "%s_wmm", dev);
 	if (nvram_nmatch("1", "%s_pollingmode", dev))
-		sysprintf("iwpriv %s wmm 1", dev);
+		eval("iwpriv", dev, "wmm", "1");
 	else
-		sysprintf("iwpriv %s wmm %s", dev, nvram_default_get(wmm, "0"));
+		eval("iwpriv", dev, "wmm", nvram_default_get(wmm, "0"));
 	char doth[32];
 
 	sprintf(doth, "%s_doth", dev);
 #ifdef HAVE_BUFFALO
-	sysprintf("iwpriv %s doth %s", dev, nvram_default_get(doth, "1"));
+	eval("iwpriv", dev, "doth", nvram_default_get(doth, "1"));
 #else
-	sysprintf("iwpriv %s doth %s", dev, nvram_default_get(doth, "0"));
+	eval("iwpriv", dev, "doth", nvram_default_get(doth, "0"));
 #endif
 	int disablescan = 0;
 
@@ -1724,41 +1727,41 @@ static void configure_single(int count)
 	char *chanshift = nvram_default_get(chanshift_s, "0");
 
 	sprintf(maxassoc, "%s_maxassoc", dev);
-	sysprintf("iwpriv %s maxassoc %s", dev, nvram_default_get(maxassoc, "256"));
+	eval("iwpriv", dev, "maxassoc", nvram_default_get(maxassoc, "256"));
 
 	switch (atoi(chanshift)) {
 	case 15:
-		sysprintf("iwpriv %s channelshift -3", dev);
+		eval("iwpriv", dev, "channelshift", "-3");
 		break;
 	case 10:
-		sysprintf("iwpriv %s channelshift -2", dev);
+		eval("iwpriv", dev, "channelshift", "-2");
 		break;
 	case 5:
-		sysprintf("iwpriv %s channelshift -1", dev);
+		eval("iwpriv", dev, "channelshift", "-1");
 		break;
 	case 0:
-		sysprintf("iwpriv %s channelshift 0", dev);
+		eval("iwpriv", dev, "channelshift", "0");
 		break;
 	case -5:
-		sysprintf("iwpriv %s channelshift 1", dev);
+		eval("iwpriv", dev, "channelshift", "1");
 		break;
 	case -10:
-		sysprintf("iwpriv %s channelshift 2", dev);
+		eval("iwpriv", dev, "channelshift", "2");
 		break;
 	case -15:
-		sysprintf("iwpriv %s channelshift 3", dev);
+		eval("iwpriv", dev, "channelshift", "3");
 		break;
 	default:
-		sysprintf("iwpriv %s channelshift 0", dev);
+		eval("iwpriv", dev, "channelshift", "0");
 		break;
 	}
 	if (!strcmp(apm, "wdssta") || !strcmp(apm, "wdsap"))
-		sysprintf("iwpriv %s wds 1", dev);
+		eval("iwpriv", dev, "wds", "1");
 
 	if (!strcmp(apm, "wdsap"))
-		sysprintf("iwpriv %s wdssep 1", dev);
+		eval("iwpriv", dev, "wdssep", "1");
 	else
-		sysprintf("iwpriv %s wdssep 0", dev);
+		eval("iwpriv", dev, "wdssep", "0");
 
 	vifs = nvram_safe_get(wifivifs);
 	if (vifs != NULL)
@@ -1769,37 +1772,37 @@ static void configure_single(int count)
 		sprintf(ssid, "%s_ssid", var);
 		sprintf(mode, "%s_mode", var);
 		sprintf(maxassoc, "%s_maxassoc", var);
-		sysprintf("iwpriv %s maxassoc %s", var, nvram_default_get(maxassoc, "256"));
+		eval("iwpriv", var, "maxassoc", nvram_default_get(maxassoc, "256"));
 		switch (atoi(chanshift)) {
 		case 15:
-			sysprintf("iwpriv %s channelshift -3", var);
+			eval("iwpriv", var, "channelshift", "-3");
 			break;
 		case 10:
-			sysprintf("iwpriv %s channelshift -2", var);
+			eval("iwpriv", var, "channelshift", "-2");
 			break;
 		case 5:
-			sysprintf("iwpriv %s channelshift -1", var);
+			eval("iwpriv", var, "channelshift", "-1");
 			break;
 		case 0:
-			sysprintf("iwpriv %s channelshift 0", var);
+			eval("iwpriv", var, "channelshift", "0");
 			break;
 		case -5:
-			sysprintf("iwpriv %s channelshift 1", var);
+			eval("iwpriv", var, "channelshift", "1");
 			break;
 		case -10:
-			sysprintf("iwpriv %s channelshift 2", var);
+			eval("iwpriv", var, "channelshift", "2");
 			break;
 		case -15:
-			sysprintf("iwpriv %s channelshift 3", var);
+			eval("iwpriv", var, "channelshift", "3");
 			break;
 		default:
-			sysprintf("iwpriv %s channelshift 0", var);
+			eval("iwpriv", var, "channelshift", "0");
 			break;
 		}
 		char *mvap = nvram_default_get(mode, "ap");
 		set_scanlist(dev, wif);
 		setRTS(var);
-		sysprintf("iwpriv %s bgscan 0", var);
+		eval("iwpriv", var, "bgscan", "0");
 		if (strcmp(mvap, "sta") && strcmp(mvap, "wdssta")
 		    && strcmp(mvap, "wet")) {
 			cprintf("set channel\n");
@@ -1853,31 +1856,31 @@ static void configure_single(int count)
 #endif
 		cprintf("set broadcast flag vif %s\n", var);	// hide ssid
 		sprintf(broadcast, "%s_closed", var);
-		sysprintf("iwpriv %s hide_ssid %s", var, nvram_default_get(broadcast, "0"));
+		eval("iwpriv", var, "hide_ssid", nvram_default_get(broadcast, "0"));
 		sprintf(wmm, "%s_wmm", var);
 		if (nvram_nmatch("1", "%s_pollingmode", var))
-			sysprintf("iwpriv %s wmm 1", var);
+			eval("iwpriv", var, "wmm", "1");
 		else
-			sysprintf("iwpriv %s wmm %s", var, nvram_default_get(wmm, "0"));
+			eval("iwpriv", var, "wmm", nvram_default_get(wmm, "0"));
 		char isolate[32];
 
 		sprintf(isolate, "%s_ap_isolate", var);
 		if (nvram_default_match(isolate, "1", "0"))
-			sysprintf("iwpriv %s ap_bridge 0", var);
+			eval("iwpriv", var, "ap_bridge", "0");
 		if (!strcmp(mvap, "wdssta") || !strcmp(mvap, "wdsap"))
-			sysprintf("iwpriv %s wds 1", var);
+			eval("iwpriv", var, "wds", "1");
 		sprintf(mtikie, "%s_mtikie", var);
 		if (nvram_default_match(mtikie, "1", "0"))
-			sysprintf("iwpriv %s addmtikie 1", var);
+			eval("iwpriv", var, "addmtikie", "1");
 
 #ifdef HAVE_BONDING
 		if (!strcmp(mvap, "wdsap") && !isBond(var))
 #else
 		if (!strcmp(mvap, "wdsap"))
 #endif
-			sysprintf("iwpriv %s wdssep 1", var);
+			eval("iwpriv", var, "wdssep", "1");
 		else
-			sysprintf("iwpriv %s wdssep 0", var);
+			eval("iwpriv", var, "wdssep", "0");
 
 		// removed hostroaming 0 due to excessive tests and driver research
 		// sysprintf("iwpriv %s hostroaming 0", var);
@@ -1886,13 +1889,13 @@ static void configure_single(int count)
 
 	sprintf(mtikie, "%s_mtikie", dev);
 	if (nvram_default_match(mtikie, "1", "0"))
-		sysprintf("iwpriv %s addmtikie 1", dev);
+		eval("iwpriv", dev, "addmtikie", "1");
 
 	char isolate[32];
 
 	sprintf(isolate, "%s_ap_isolate", dev);
 	if (nvram_default_match(isolate, "1", "0"))
-		sysprintf("iwpriv %s ap_bridge 0", dev);
+		sysprintf("iwpriv", dev, "ap_bridge", "0");
 
 	sprintf(ssid, "ath%d_ssid", count);
 	sprintf(broadcast, "ath%d_closed", count);
@@ -1952,17 +1955,17 @@ static void configure_single(int count)
 		sysprintf("iwconfig %s essid -- \"%s\"", dev, nvram_default_get(ssid, "dd-wrt"));
 #endif
 	cprintf("set broadcast flag\n");	// hide ssid
-	sysprintf("iwpriv %s hide_ssid %s", dev, nvram_default_get(broadcast, "0"));
-	sysprintf("iwpriv %s bgscan 0", dev);
+	eval("iwpriv", dev, "hide_ssid", nvram_default_get(broadcast, "0"));
+	eval("iwpriv", dev, "bgscan", "0");
 	apm = nvram_default_get(wl, "ap");
 
 	char preamble[32];
 
 	sprintf(preamble, "%s_preamble", dev);
 	if (nvram_default_match(preamble, "1", "0")) {
-		sysprintf("iwpriv %s shpreamble 1", dev);
+		eval("iwpriv", dev, "shpreamble", "1");
 	} else
-		sysprintf("iwpriv %s shpreamble 0", dev);
+		eval("iwpriv", dev, "shpreamble", "0");
 
 	if (strcmp(apm, "sta") == 0 || strcmp(apm, "infra") == 0 || strcmp(apm, "wet") == 0 || strcmp(apm, "wdssta") == 0) {
 		cprintf("set ssid\n");
@@ -2041,11 +2044,11 @@ static void configure_single(int count)
 	sprintf(inact_tick, "%s_inact_tick", dev);
 	sprintf(inact, "%s_inact", dev);
 #ifdef HAVE_MAKSAT
-	sysprintf("iwpriv %s inact_tick %s", dev, nvram_default_get(inact_tick, "1"));
-	sysprintf("iwpriv %s inact %s", dev, nvram_default_get(inact, "15"));
+	eval("iwpriv", dev, "inact_tick", nvram_default_get(inact_tick, "1"));
+	eval("iwpriv", dev, "inact", nvram_default_get(inact, "15"));
 #else
-	sysprintf("iwpriv %s inact_tick %s", dev, nvram_default_get(inact_tick, "15"));
-	sysprintf("iwpriv %s inact %s", dev, nvram_default_get(inact, "300"));
+	eval("iwpriv", dev, "inact_tick", nvram_default_get(inact_tick, "15"));
+	eval("iwpriv", dev, "inact", nvram_default_get(inact, "300"));
 #endif
 
 #ifdef HAVE_RELAYD
@@ -2093,12 +2096,13 @@ static void configure_single(int count)
 
 			sprintf(inact_tick, "%s_inact_tick", var);
 			sprintf(inact, "%s_inact", var);
+
 #ifdef HAVE_MAKSAT
-			sysprintf("iwpriv %s inact_tick %s", var, nvram_default_get(inact_tick, "1"));
-			sysprintf("iwpriv %s inact %s", var, nvram_default_get(inact, "15"));
+			eval("iwpriv", var, "inact_tick", nvram_default_get(inact_tick, "1"));
+			eval("iwpriv", var, "inact", nvram_default_get(inact, "15"));
 #else
-			sysprintf("iwpriv %s inact_tick %s", var, nvram_default_get(inact_tick, "15"));
-			sysprintf("iwpriv %s inact %s", var, nvram_default_get(inact, "300"));
+			eval("iwpriv", var, "inact_tick", nvram_default_get(inact_tick, "15"));
+			eval("iwpriv", var, "inact", nvram_default_get(inact, "300"));
 #endif
 			if (strcmp(m2, "sta")) {
 				char bridged[32];
@@ -2156,7 +2160,7 @@ static void configure_single(int count)
 			continue;
 		hwaddr = nvram_get(wdsmacname);
 		if (hwaddr != NULL) {
-			sysprintf("iwpriv %s wds_add %s", primary, hwaddr);
+			eval("iwpriv", primary, "wds_add", hwaddr);
 			set_rate(dev, primary);
 		}
 	}
