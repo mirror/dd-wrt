@@ -3018,6 +3018,7 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv(wp, "%s_diversity", prefix);
 	copytonv(wp, "%s_preamble", prefix);
 	copytonv(wp, "%s_wmm", prefix);
+	copytonv(wp, "%s_bcn", prefix);
 	copytonv(wp, "%s_txantenna", prefix);
 	copytonv(wp, "%s_rxantenna", prefix);
 	copytonv(wp, "%s_intmit", prefix);
