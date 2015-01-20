@@ -26,6 +26,15 @@
 #include <broadcom.h>
 #include <cyutils.h>
 #include <shutils.h>
+#include <endian.h>		/* for __BYTE_ORDER */
+
+#if (__BYTE_ORDER == __LITTLE_ENDIAN)
+#  define HOST_TO_BE32(x)	bswap_32(x)
+#  define HOST_TO_BE16(x)	bswap_16(x)
+#else
+#  define HOST_TO_BE32(x)	(x)
+#  define HOST_TO_BE16(x)	(x)
+#endif
 
 #define MIN_BUF_SIZE    4096
 #define CODE_PATTERN_ERROR 9999
@@ -153,17 +162,17 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 
 	if (size < MIN_BUF_SIZE)
 		size = MIN_BUF_SIZE;
-	fprintf(stderr,"use buffer size %d\n",size);
+	fprintf(stderr, "use buffer size %d\n", size);
 	if ((buf = safe_malloc(size)) == NULL) {
 		ret = ENOMEM;
 		goto err;
 	}
-	eval("ledtool","500");
+	eval("ledtool", "500");
 	/*
 	 * Pipe the rest to the FIFO 
 	 */
 	cprintf("Upgrading\n");
-	int lastblock=0;
+	int lastblock = 0;
 	while (total && *total) {
 #ifdef HAVE_HTTPS
 		if (do_ssl) {
@@ -174,7 +183,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 #endif
 		{
 			if (waitfor(fileno(stream->fp), 5) <= 0) {
-			    lastblock=1;		
+				lastblock = 1;
 			}
 			count = safe_fread(buf, 1, size, stream->fp);
 			if (!count && (ferror(stream->fp) || feof(stream->fp))) {
@@ -201,6 +210,41 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 					goto err;
 				}
 				goto write_data;
+			}
+#endif
+#ifdef HAVE_DIR860
+#define SEAMA_MAGIC		0x5EA3A417
+
+			typedef struct seama_hdr seamahdr_t;
+			struct seama_hdr {
+				unsigned int magic;	/* should always be SEAMA_MAGIC. */
+				unsigned short reserved;	/* reserved for  */
+				unsigned short metasize;	/* size of the META data */
+				unsigned int size;	/* size of the image */
+			} __attribute__((packed));
+			seamahdr_t *seama = (seamahdr_t) buf;
+
+			if (seama->magic == HOST_TO_BE32(SEAMA_MAGIC)) {
+				unsigned int skip = HOST_TO_BE16(seama->metasize) + sizeof(seamahdr_t);
+				if (skip > count)
+					goto err;
+				memcpy(buf, buf + skip, count - skip);
+				count -= skip;
+				char *write_argv_buf[8];
+				write_argv_buf[0] = "mtd";
+				write_argv_buf[1] = "-f";
+				write_argv_buf[2] = "write";
+				write_argv_buf[3] = upload_fifo;
+				write_argv_buf[4] = "linux";
+				write_argv_buf[5] = NULL;
+				if (!mktemp(upload_fifo) || mkfifo(upload_fifo, S_IRWXU) < 0 || (ret = _evalpid(write_argv_buf, NULL, 0, &pid))
+				    || !(fifo = fopen(upload_fifo, "w"))) {
+					if (!ret)
+						ret = errno;
+					goto err;
+				}
+				goto write_data;
+
 			}
 #endif
 #ifdef HAVE_BUFFALO
@@ -409,11 +453,9 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 		uploadcount += count;
 		fprintf(stderr, "uploading [%d]\r", uploadcount);
 		if (lastblock)
-		    break;
+			break;
 		i++;
 	}
-
-
 
 	fprintf(stderr, "uploading [%d]\n", uploadcount);
 	fclose(fifo);
