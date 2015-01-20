@@ -157,7 +157,7 @@ void configure_single_ath9k(int count)
 	char wl_intmit[32];
 
 	sprintf(wl_intmit, "%s_intmit", dev);
-	sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath9k/ani", nvram_default_get(wl_intmit, "0"), wif);
+	sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath9k/ani", nvram_default_get(wl_intmit, "1"), wif);
 #ifdef HAVE_REGISTER
 	int cpeonly = iscpe();
 #else
