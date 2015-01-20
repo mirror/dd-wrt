@@ -973,7 +973,7 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 			ext_chan = 1;
 		if (channel <= 4)
 			ext_chan = 1;
-		if (channel >= 8)
+		if (channel >= 10)
 			ext_chan = 0;
 	} else {
 		if (nvram_match("wl1_nctrlsb", "ll") || nvram_match("wl1_nctrlsb", "lower") || nvram_match("wl1_nctrlsb", "lu"))
