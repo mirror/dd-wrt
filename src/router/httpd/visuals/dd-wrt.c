@@ -4843,6 +4843,7 @@ if (!strcmp(prefix, "wl1"))
 		sprintf(wmm, "%s_wmm", prefix);
 		showRadio(wp, "wl_adv.label18", wmm);
 	}
+#endif
 
 // radar detection
 #ifdef HAVE_MADWIFI
