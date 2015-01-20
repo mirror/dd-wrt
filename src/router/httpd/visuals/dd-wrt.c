@@ -1287,6 +1287,12 @@ void showRadio(webs_t wp, char *propname, char *nvname)
 	websWrite(wp, "</div>\n");
 }
 
+#define showRadioDefaultOn(wp, propname, nvname) \
+	do { \
+	nvram_default_get(nvname,"1"); \
+	showRadio(wp,propname,nvname); \
+	} while(0)
+
 #ifdef HAVE_MADWIFI
 void showAutoOption(webs_t wp, char *propname, char *nvname)
 {
@@ -3198,7 +3204,12 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		showrtssettings(wp, var);
 
 		sprintf(wmm, "%s_wmm", var);
-		showRadio(wp, "wl_adv.label18", wmm);
+#ifdef HAVE_ATH9K
+		if (is_ath9k(var))
+			showRadioDefaultOn(wp, "wl_adv.label18", wmm);
+		else
+#endif
+			showRadio(wp, "wl_adv.label18", wmm);
 #endif
 
 #endif				// end BUFFALO
@@ -4019,7 +4030,12 @@ websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"3\" maxlength=\"3\" onblu
 websWrite(wp, "</div>\n");
 #endif
 sprintf(wmm, "%s_wmm", prefix);
-showRadio(wp, "wl_adv.label18", wmm);
+#ifdef HAVE_ATH9K
+if (is_ath9k(prefix))
+	showRadioDefaultOn(wp, "wl_adv.label18", wmm);
+else
+#endif
+	showRadio(wp, "wl_adv.label18", wmm);
 #endif
 
 websWrite(wp, "<div class=\"setting\">\n");
@@ -4841,7 +4857,12 @@ if (!strcmp(prefix, "wl1"))
 // wmm
 	{
 		sprintf(wmm, "%s_wmm", prefix);
-		showRadio(wp, "wl_adv.label18", wmm);
+#ifdef HAVE_ATH9K
+		if (is_ath9k(prefix))
+			showRadioDefaultOn(wp, "wl_adv.label18", wmm);
+		else
+#endif
+			showRadio(wp, "wl_adv.label18", wmm);
 	}
 #endif
 
