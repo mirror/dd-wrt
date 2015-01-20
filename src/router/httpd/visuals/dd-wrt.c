@@ -3755,7 +3755,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 #endif
 	{
 #if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
-		if (!is_ath11n(prefix)) {
+		if (is_ath11n(prefix)) {
 			showRadio(wp, "wl_basic.intmit", wl_intmit);
 		} else
 #endif
@@ -4018,13 +4018,8 @@ websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_
 websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,99999999,wl_basic.preambletime)\" value=\"%s\" />\n", wl_preambletime, nvram_default_get(wl_preambletime, "20"));
 websWrite(wp, "</div>\n");
 #endif
-#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
-if (!is_ath11n(prefix))
-#endif
-{
-	sprintf(wmm, "%s_wmm", prefix);
-	showRadio(wp, "wl_adv.label18", wmm);
-}
+sprintf(wmm, "%s_wmm", prefix);
+showRadio(wp, "wl_adv.label18", wmm);
 #endif
 
 websWrite(wp, "<div class=\"setting\">\n");
@@ -4684,23 +4679,34 @@ if (!strcmp(prefix, "wl1"))
 #endif
 #endif
 
-	// channel options
-#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
-	if (!is_ath11n(prefix))
+#ifdef HAVE_ATH10K
+	if (!is_ath10k(prefix))
 #endif
 	{
-		showAutoOption(wp, "wl_basic.intmit", wl_intmit);
-		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.noise_immunity)</script></div>\n<select name=\"%s\">\n", wl_noise_immunity);
-		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-		websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >0</option>\");\n", nvram_default_match(wl_noise_immunity, "0", "4") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >1</option>\");\n", nvram_default_match(wl_noise_immunity, "1", "4") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >2</option>\");\n", nvram_default_match(wl_noise_immunity, "2", "4") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"3\\\" %s >3</option>\");\n", nvram_default_match(wl_noise_immunity, "3", "4") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"4\\\" %s >4</option>\");\n", nvram_default_match(wl_noise_immunity, "4", "4") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "//]]>\n</script>\n</select>\n</div>\n");
+#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
+		if (is_ath11n(prefix)) {
+			showRadio(wp, "wl_basic.intmit", wl_intmit);
+		} else
+#endif
+		{
+			showAutoOption(wp, "wl_basic.intmit", wl_intmit);
+		}
+#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
+		if (!is_ath11n(prefix))
+#endif
+		{
+			websWrite(wp, "<div class=\"setting\">\n");
+			websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.noise_immunity)</script></div>\n<select name=\"%s\">\n", wl_noise_immunity);
+			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >0</option>\");\n", nvram_default_match(wl_noise_immunity, "0", "4") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >1</option>\");\n", nvram_default_match(wl_noise_immunity, "1", "4") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >2</option>\");\n", nvram_default_match(wl_noise_immunity, "2", "4") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"3\\\" %s >3</option>\");\n", nvram_default_match(wl_noise_immunity, "3", "4") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"4\\\" %s >4</option>\");\n", nvram_default_match(wl_noise_immunity, "4", "4") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "//]]>\n</script>\n</select>\n</div>\n");
 
-		showRadio(wp, "wl_basic.ofdm_weak_det", wl_ofdm_weak_det);
+			showRadio(wp, "wl_basic.ofdm_weak_det", wl_ofdm_weak_det);
+		}
 	}
 
 	showOptionsLabel(wp, "wl_basic.protmode", wl_protmode, "None CTS RTS/CTS", nvram_default_get(wl_protmode, "None"));
@@ -4833,14 +4839,10 @@ if (!strcmp(prefix, "wl1"))
 	websWrite(wp, "</div>\n");
 #endif
 // wmm
-#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
-	if (!is_ath11n(prefix))
-#endif
 	{
 		sprintf(wmm, "%s_wmm", prefix);
 		showRadio(wp, "wl_adv.label18", wmm);
 	}
-#endif
 
 // radar detection
 #ifdef HAVE_MADWIFI
