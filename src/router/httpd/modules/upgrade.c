@@ -26,6 +26,7 @@
 #include <broadcom.h>
 #include <cyutils.h>
 #include <shutils.h>
+#include <byteswap.h>
 #include <endian.h>		/* for __BYTE_ORDER */
 
 #if (__BYTE_ORDER == __LITTLE_ENDIAN)
@@ -222,10 +223,11 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 				unsigned short metasize;	/* size of the META data */
 				unsigned int size;	/* size of the image */
 			} __attribute__((packed));
-			seamahdr_t *seama = (seamahdr_t) buf;
+			seamahdr_t *seama = (seamahdr_t *) buf;
 
 			if (seama->magic == HOST_TO_BE32(SEAMA_MAGIC)) {
 				unsigned int skip = HOST_TO_BE16(seama->metasize) + sizeof(seamahdr_t);
+				fprintf(stderr,"found seama header, sip seal header of %d bytes\n",skip);
 				if (skip > count)
 					goto err;
 				memcpy(buf, buf + skip, count - skip);
