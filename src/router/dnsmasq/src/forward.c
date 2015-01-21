@@ -737,7 +737,7 @@ void reply_query(int fd, int family, time_t now)
       check_for_ignored_address(header, n, daemon->ignore_addr))
     return;
 
-  if ((RCODE(header) == SERVFAIL || RCODE(header) == REFUSED) &&
+  if (RCODE(header) == REFUSED &&
       !option_bool(OPT_ORDER) &&
       forward->forwardall == 0)
     /* for broken servers, attempt to send to another one. */

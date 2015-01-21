@@ -550,13 +550,17 @@ struct resolvc {
 #endif
 };
 
-/* adn-hosts parms from command-line (also dhcp-hostsfile and dhcp-optsfile */
+/* adn-hosts parms from command-line (also dhcp-hostsfile and dhcp-optsfile and dhcp-hostsdir*/
 #define AH_DIR      1
 #define AH_INACTIVE 2
+#define AH_WD_DONE  4
 struct hostsfile {
   struct hostsfile *next;
   int flags;
   char *fname;
+#ifdef HAVE_LINUX_NETWORK
+  int wd; /* inotify watch descriptor */
+#endif
   unsigned int index; /* matches to cache entries for logging */
 };
 
@@ -961,7 +965,7 @@ extern struct daemon {
   int doing_ra, doing_dhcp6;
   struct dhcp_netid_list *dhcp_ignore, *dhcp_ignore_names, *dhcp_gen_names; 
   struct dhcp_netid_list *force_broadcast, *bootp_dynamic;
-  struct hostsfile *dhcp_hosts_file, *dhcp_opts_file;
+  struct hostsfile *dhcp_hosts_file, *dhcp_opts_file, *inotify_hosts;
   int dhcp_max, tftp_max;
   int dhcp_server_port, dhcp_client_port;
   int start_tftp_port, end_tftp_port; 
@@ -1212,7 +1216,7 @@ void reset_option_bool(unsigned int opt);
 struct hostsfile *expand_filelist(struct hostsfile *list);
 char *parse_server(char *arg, union mysockaddr *addr, 
 		   union mysockaddr *source_addr, char *interface, int *flags);
-
+int option_read_hostsfile(char *file);
 /* forward.c */
 void reply_query(int fd, int family, time_t now);
 void receive_query(struct listener *listen, time_t now);
@@ -1501,5 +1505,8 @@ int detect_loop(char *query, int type);
 /* inotify.c */
 #if defined(HAVE_LINUX_NETWORK) && defined(HAVE_INOTIFY)
 void inotify_dnsmasq_init();
-int inotify_check(void);
+int inotify_check(time_t now);
+#  ifdef HAVE_DHCP
+void set_dhcp_inotify(void);
+#  endif
 #endif
