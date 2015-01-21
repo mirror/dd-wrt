@@ -1400,7 +1400,9 @@ void clear_cache_and_reload(time_t now)
 	dhcp_read_ethers();
       reread_dhcp();
 #ifdef HAVE_LINUX_NETWORK
+#ifdef HAVE_INOTIFY
       set_dhcp_inotify();
+#endif
 #endif
       dhcp_update_configs(daemon->dhcp_conf);
       lease_update_from_configs(); 
