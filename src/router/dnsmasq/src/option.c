@@ -149,7 +149,7 @@ struct myoption {
 #define LOPT_LOOP_DETECT   337
 #define LOPT_IGNORE_ADDR   338
 #define LOPT_MINCTTL       339
-
+#define LOPT_DHCP_INOTIFY  340
 
 #ifdef HAVE_GETOPT_LONG
 static const struct option opts[] =  
@@ -248,6 +248,7 @@ static const struct myoption opts[] =
     { "interface-name", 1, 0, LOPT_INTNAME },
     { "dhcp-hostsfile", 1, 0, LOPT_DHCP_HOST },
     { "dhcp-optsfile", 1, 0, LOPT_DHCP_OPTS },
+    { "dhcp-hostsdir", 1, 0, LOPT_DHCP_INOTIFY },
     { "dhcp-no-override", 0, 0, LOPT_OVERRIDE },
     { "tftp-port-range", 1, 0, LOPT_TFTPPORTS },
     { "stop-dns-rebind", 0, 0, LOPT_REBIND },
@@ -336,6 +337,7 @@ static struct {
   { 'G', ARG_DUP, "<hostspec>", gettext_noop("Set address or hostname for a specified machine."), NULL },
   { LOPT_DHCP_HOST, ARG_DUP, "<path>", gettext_noop("Read DHCP host specs from file."), NULL },
   { LOPT_DHCP_OPTS, ARG_DUP, "<path>", gettext_noop("Read DHCP option specs from file."), NULL },
+  { LOPT_DHCP_INOTIFY, ARG_DUP, "<path>", gettext_noop("Read DHCP host specs from a directory."), NULL }, 
   { LOPT_TAG_IF, ARG_DUP, "tag-expression", gettext_noop("Evaluate conditional tag expression."), NULL },
   { 'h', OPT_NO_HOSTS, NULL, gettext_noop("Do NOT load %s file."), HOSTSFILE },
   { 'H', ARG_DUP, "<path>", gettext_noop("Specify a hosts file to be read in addition to %s."), HOSTSFILE },
@@ -1710,8 +1712,9 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
       break;
 #endif /* HAVE_DHCP */
 
-    case LOPT_DHCP_HOST: /* --dhcp-hostfile */
+    case LOPT_DHCP_HOST: /* --dhcp-hostsfile */
     case LOPT_DHCP_OPTS: /* --dhcp-optsfile */
+    case LOPT_DHCP_INOTIFY: /* dhcp-hostsdir */
     case 'H': /* --addn-hosts */
       {
 	struct hostsfile *new = opt_malloc(sizeof(struct hostsfile));
@@ -1734,6 +1737,12 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 	    new->next = daemon->dhcp_opts_file;
 	    daemon->dhcp_opts_file = new;
 	  } 	  
+	else if (option == LOPT_DHCP_INOTIFY)
+	  {
+	    new->next = daemon->inotify_hosts;
+	    daemon->inotify_hosts = new;
+	  }
+	
 	break;
       }
       
@@ -4042,6 +4051,13 @@ static void read_file(char *file, FILE *f, int hard_opt)
   fclose(f);
 }
 
+#ifdef HAVE_DHCP
+int option_read_hostsfile(char *file)
+{
+  return one_file(file, LOPT_BANK);
+}
+#endif
+
 static int one_file(char *file, int hard_opt)
 {
   FILE *f;
@@ -4139,7 +4155,7 @@ struct hostsfile *expand_filelist(struct hostsfile *list)
 	    
 	    /* don't read this as a file */
 	    ah->flags |= AH_INACTIVE;
-
+	    
 	    if (!(dir_stream = opendir(ah->fname)))
 	      my_syslog(LOG_ERR, _("cannot access directory %s: %s"), 
 			ah->fname, strerror(errno));

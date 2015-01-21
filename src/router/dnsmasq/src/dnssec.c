@@ -1818,11 +1818,14 @@ int dnssec_validate_reply(time_t now, struct dns_header *header, size_t plen, ch
 	      struct blockdata *key;
 	      struct crec *crecp;
 	      char *wildname;
+	      int have_wildcard = 0;
 
 	      rc = validate_rrset(now, header, plen, class1, type1, name, keyname, &wildname, NULL, 0, 0, 0);
 	      
 	      if (rc == STAT_SECURE_WILDCARD)
 		{
+		  have_wildcard = 1;
+
 		  /* An attacker replay a wildcard answer with a different
 		     answer and overlay a genuine RR. To prove this
 		     hasn't happened, the answer must prove that
@@ -1913,7 +1916,11 @@ int dnssec_validate_reply(time_t now, struct dns_header *header, size_t plen, ch
 			      p2 += 13; /* labels, orig_ttl, expiration, inception */
 			      GETSHORT(keytag, p2);
 			      
-			      if ((key = blockdata_alloc((char*)psave, rdlen2)))
+			      /* We don't cache sigs for wildcard answers, because to reproduce the
+				 answer from the cache will require one or more NSEC/NSEC3 records 
+				 which we don't cache. The lack of the RRSIG ensures that a query for
+				 this RRset asking for a secure answer will always be forwarded. */
+			      if (!have_wildcard && (key = blockdata_alloc((char*)psave, rdlen2)))
 				{
 				  if (!(crecp = cache_insert(name, &a, now, ttl,  F_FORWARD | F_DNSKEY | F_DS)))
 				    blockdata_free(key);

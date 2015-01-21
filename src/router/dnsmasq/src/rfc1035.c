@@ -1643,7 +1643,7 @@ size_t answer_request(struct dns_header *header, char *limit, size_t qlen,
 			      {
 				if (crecp->flags & F_NXDOMAIN)
 				  nxdomain = 1;
-				log_query(F_UPSTREAM, name, NULL, "secure no DS");	
+				log_query(F_UPSTREAM, name, NULL, "no DS");	
 			      }
 			    else if ((keydata = blockdata_retrieve(crecp->addr.ds.keydata, crecp->addr.ds.keylen, NULL)))
 			      {			     			      
