@@ -827,7 +827,7 @@ void period_check(int sig)
 	} else if (brand == ROUTER_BOARD_F5D8235) {
 		val = get_gpio(10) << 10;
 	} else if (brand == ROUTER_ASUS_RTN10PLUS) {
-		val = get_gpio(10) << 10;
+		val = get_gpio(10) << 10 | (get_gpio(0) << 0);
 	} else if (brand == ROUTER_BOARD_RT15N) {
 		val = get_gpio(12) << 12;
 	} else if (brand == ROUTER_BOARD_DIR615D) {
@@ -1087,6 +1087,7 @@ void period_check(int sig)
 	case ROUTER_BOARD_NEPTUNE:
 	case ROUTER_BOARD_DIR615D:
 	case ROUTER_BOARD_WHRG300N:
+	case ROUTER_ASUS_RTN10PLUS:		
 		sesgpio = 0x100;
 		break;
 	case ROUTER_DIR860LB1:
