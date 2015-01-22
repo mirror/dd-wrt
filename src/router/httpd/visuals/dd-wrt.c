@@ -1362,8 +1362,7 @@ void show_custominputlabel(webs_t wp, char *labelname, char *propertyname, char 
 #ifdef HAVE_USB
 void ej_show_usb_diskinfo(webs_t wp, int argc, char_t ** argv)
 {
-	char buff[512];
-	char line[256];
+	char line[512];
 	char used[32];
 	char avail[32];
 	char per[16];
@@ -1378,17 +1377,21 @@ void ej_show_usb_diskinfo(webs_t wp, int argc, char_t ** argv)
 
 	if ((fp = fopen("/tmp/df", "r"))) {
 
-		while (fgets(line, sizeof(line), fp)) {
+		while (!feof(fp) && fgets(line, sizeof(line), fp)) {
 			if (strlen(line) > 2) {
 
-				sscanf(line, "%s %s %s %s", used, avail, per, mp);
-
-				websWrite(wp, "<div class=\"setting\">");
-				websWrite(wp, "<div class=\"label\">%s %s</div>", live_translate("usb.usb_diskspace"), mp);
-				websWrite(wp, "<span id=\"usage\">");
-				websWrite(wp, "<div class=\"meter\"><div class=\"bar\" style=\"width:%s;\"></div>", per);
-				websWrite(wp, "<div class=\"text\">%s</div></div>", per);
-				websWrite(wp, "%s / %s </span></div><br><br>", used, avail);
+				memset(used, 0, sizeof(used));
+				memset(avail, 0, sizeof(avail));
+				memset(per, 0, sizeof(per));
+				memset(mp, 0, sizeof(mp));
+				if (sscanf(line, "%s %s %s %s", used, avail, per, mp) == 4) {
+					websWrite(wp, "<div class=\"setting\">");
+					websWrite(wp, "<div class=\"label\">%s %s</div>", live_translate("usb.usb_diskspace"), mp);
+					websWrite(wp, "<span id=\"usage\">");
+					websWrite(wp, "<div class=\"meter\"><div class=\"bar\" style=\"width:%s;\"></div>", per);
+					websWrite(wp, "<div class=\"text\">%s</div></div>", per);
+					websWrite(wp, "%s / %s </span></div><br><br>", used, avail);
+				}
 			}
 		}
 		websWrite(wp, "<hr><br>");
@@ -1396,17 +1399,17 @@ void ej_show_usb_diskinfo(webs_t wp, int argc, char_t ** argv)
 	}
 	websWrite(wp, "<div class=\"setting\">");
 	if ((fp = fopen("/tmp/disktype.dump", "r"))) {
-		while (fgets(buff, sizeof(buff), fp)) {
-			if (strcmp(buff, "\n"))
-				websWrite(wp, "%s<br />", buff);
+		while (!feof(fp) && fgets(line, sizeof(line), fp)) {
+			if (strcmp(line, "\n"))
+				websWrite(wp, "%s<br />", line);
 		}
 		fclose(fp);
 		mounted = 1;
 	}
 	if ((fp = fopen("/tmp/parttype.dump", "r"))) {
-		while (fgets(buff, sizeof(buff), fp)) {
-			if (strcmp(buff, "\n"))
-				websWrite(wp, "%s<br />", buff);
+		while (!feof(fp) && fgets(line, sizeof(line), fp)) {
+			if (strcmp(line, "\n"))
+				websWrite(wp, "%s<br />", line);
 		}
 		fclose(fp);
 		mounted = 1;
