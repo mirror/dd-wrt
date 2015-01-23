@@ -1326,9 +1326,7 @@ void init_network(int idx)
 				continue;
 			hwaddr = nvram_get(wdsmacname);
 			if (hwaddr != NULL) {
-				char *newdev = getWDSDev(wdsdev);
-
-				sysprintf("ifconfig %s 0.0.0.0 up", newdev);
+				sysprintf("ifconfig %s 0.0.0.0 up", wdsdev);
 			}
 		}
 
@@ -1407,7 +1405,6 @@ void init_network(int idx)
 		dev = nvram_safe_get(wdsdevname);
 		if (strlen(dev) == 0)
 			continue;
-		dev = getWDSDev(dev);
 		ifconfig(dev, 0, 0, 0);
 
 		// eval ("ifconfig", dev, "down");
