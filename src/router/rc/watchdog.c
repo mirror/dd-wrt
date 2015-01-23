@@ -34,82 +34,81 @@ static void watchdog(void)
 	while (1) {
 		write(fd, "\0", 1);
 		fsync(fd);
+		if (!nvram_match("flash_active", "1")) {
+
 #ifndef HAVE_RT2880
 #ifdef HAVE_REGISTER
-		if (!nvram_match("flash_active", "1")) {
 			if (registered == -1)
 				registered = isregistered_real();
 			if (!registered)
 				isregistered();	//to poll
-		}
 #endif
-		/* 
-		 * software wlan led control 
-		 */
-		if (radioledinitcount < 5) {
-			radioledinitcount++;
-			oldstate0 = -1;
-			oldstate1 = -1;
-		}
+			/* 
+			 * software wlan led control 
+			 */
+			if (radioledinitcount < 5) {
+				radioledinitcount++;
+				oldstate0 = -1;
+				oldstate1 = -1;
+			}
 #ifdef HAVE_MADWIFI
-		if (!nvram_match("flash_active", "1")) {
 			radiostate0 = get_radiostate("ath0");
 			if (cnt == 2)
 				radiostate1 = get_radiostate("ath1");
-		}
 #else
-		wl_ioctl(get_wl_instance_name(0), WLC_GET_RADIO, &radiostate0, sizeof(int));
+			wl_ioctl(get_wl_instance_name(0), WLC_GET_RADIO, &radiostate0, sizeof(int));
 #ifndef HAVE_QTN
-		if (cnt == 2)
-			wl_ioctl(get_wl_instance_name(1), WLC_GET_RADIO, &radiostate1, sizeof(int));
+			if (cnt == 2)
+				wl_ioctl(get_wl_instance_name(1), WLC_GET_RADIO, &radiostate1, sizeof(int));
 #endif
 #endif
 
-		if (radiostate0 != oldstate0) {
+			if (radiostate0 != oldstate0) {
 #ifdef HAVE_MADWIFI
-			if (radiostate0 == 1)
+				if (radiostate0 == 1)
 #else
-			if ((radiostate0 & WL_RADIO_SW_DISABLE) == 0)
+				if ((radiostate0 & WL_RADIO_SW_DISABLE) == 0)
 #endif
-				led_control(LED_WLAN0, LED_ON);
-			else {
-				led_control(LED_WLAN0, LED_OFF);
+					led_control(LED_WLAN0, LED_ON);
+				else {
+					led_control(LED_WLAN0, LED_OFF);
 #ifndef HAVE_MADWIFI
-				/* 
-				 * Disable wireless will cause diag led blink, so we want to
-				 * stop it. 
-				 */
-				if (brand == ROUTER_WRT54G)
-					diag_led(DIAG, STOP_LED);
-				/* 
-				 * Disable wireless will cause power led off, so we want to
-				 * turn it on. 
-				 */
-				if (brand == ROUTER_WRT54G_V8)
-					led_control(LED_POWER, LED_ON);
+					/* 
+					 * Disable wireless will cause diag led blink, so we want to
+					 * stop it. 
+					 */
+					if (brand == ROUTER_WRT54G)
+						diag_led(DIAG, STOP_LED);
+					/* 
+					 * Disable wireless will cause power led off, so we want to
+					 * turn it on. 
+					 */
+					if (brand == ROUTER_WRT54G_V8)
+						led_control(LED_POWER, LED_ON);
 #endif
+				}
+
+				oldstate0 = radiostate0;
 			}
 
-			oldstate0 = radiostate0;
-		}
-
-		if (radiostate1 != oldstate1) {
+			if (radiostate1 != oldstate1) {
 #ifdef HAVE_MADWIFI
-			if (radiostate1 == 1)
+				if (radiostate1 == 1)
 #else
-			if ((radiostate1 & WL_RADIO_SW_DISABLE) == 0)
+				if ((radiostate1 & WL_RADIO_SW_DISABLE) == 0)
 #endif
-				led_control(LED_WLAN1, LED_ON);
-			else {
-				led_control(LED_WLAN1, LED_OFF);
-			}
+					led_control(LED_WLAN1, LED_ON);
+				else {
+					led_control(LED_WLAN1, LED_OFF);
+				}
 
-			oldstate1 = radiostate1;
-		}
-		/* 
-		 * end software wlan led control 
-		 */
+				oldstate1 = radiostate1;
+			}
+			/* 
+			 * end software wlan led control 
+			 */
 #endif
+		}
 		sleep(5);
 		if (nvram_match("warn_enabled", "1")) {
 			counter++;
