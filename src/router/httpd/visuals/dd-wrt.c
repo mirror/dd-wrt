@@ -4040,6 +4040,13 @@ websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_
 websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,10,65535,wl_adv.label6)\" value=\"%s\" />\n", bcn, nvram_default_get(bcn, "100"));
 websWrite(wp, "</div>\n");
 
+char dtim[32];
+sprintf(bcn, "%s_dtim", prefix);
+websWrite(wp, "<div class=\"setting\">\n");
+websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label7)</script></div>\n");
+websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,1,255,wl_adv.label7)\" value=\"%s\" />\n", dtim, nvram_default_get(dtim, "2"));
+websWrite(wp, "</div>\n");
+
 sprintf(wmm, "%s_wmm", prefix);
 #ifdef HAVE_ATH9K
 if (is_ath9k(prefix))
@@ -4871,6 +4878,13 @@ if (!strcmp(prefix, "wl1"))
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label6)</script></div>\n");
 	websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,10,65535,wl_adv.label6)\" value=\"%s\" />\n", bcn, nvram_default_get(bcn, "100"));
+	websWrite(wp, "</div>\n");
+
+	char dtim[32];
+	sprintf(bcn, "%s_dtim", prefix);
+	websWrite(wp, "<div class=\"setting\">\n");
+	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label7)</script></div>\n");
+	websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,1,255,wl_adv.label7)\" value=\"%s\" />\n", dtim, nvram_default_get(dtim, "2"));
 	websWrite(wp, "</div>\n");
 
 // wmm
