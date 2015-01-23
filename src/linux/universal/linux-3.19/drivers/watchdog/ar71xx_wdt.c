@@ -98,9 +98,9 @@ static int ar71xx_wdt_set_timeout(int val)
 		return -EINVAL;
 
 	if (val > max_timeout)
-		timeout = max_timeout;
+		wdt_timeout = max_timeout;
 	else
-		timeout = val;
+		wdt_timeout = val;
 	ar71xx_wdt_keepalive();
 
 	printk(KERN_DEBUG DRV_NAME ": timeout=%d secs\n", wdt_timeout);
