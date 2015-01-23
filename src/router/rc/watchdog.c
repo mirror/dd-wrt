@@ -110,7 +110,7 @@ static void watchdog(void)
 		 * end software wlan led control 
 		 */
 #endif
-		sleep(10);
+		sleep(5);
 		if (nvram_match("warn_enabled", "1")) {
 			counter++;
 			if (!(counter % 60))
