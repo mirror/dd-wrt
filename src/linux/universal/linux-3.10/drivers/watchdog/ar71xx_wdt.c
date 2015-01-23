@@ -94,10 +94,13 @@ static inline void ar71xx_wdt_disable(void)
 
 static int ar71xx_wdt_set_timeout(int val)
 {
-	if (val < 1 || val > max_timeout)
+	if (val < 1)
 		return -EINVAL;
 
-	wdt_timeout = val;
+	if (val > max_timeout)
+		timeout = max_timeout;
+	else
+		timeout = val;
 	ar71xx_wdt_keepalive();
 
 	printk(KERN_DEBUG DRV_NAME ": timeout=%d secs\n", wdt_timeout);
@@ -260,6 +263,12 @@ u32 soc = AR71XX_SOC_AR7130;
 		soc = AR71XX_SOC_AR9342;
         }else if (is_ar9344()) {
 		soc = AR71XX_SOC_AR9344;
+	} else if (is_qca9533()) {
+		soc = AR71XX_SOC_QCA9533;
+	} else if (is_qca9556()) {
+		soc = AR71XX_SOC_QCA9556;
+	} else if (is_qca9558()) {
+		soc = AR71XX_SOC_QCA9558;
 	}
 #endif
 
@@ -283,6 +292,9 @@ u32 soc = AR71XX_SOC_AR7130;
 	case AR71XX_SOC_AR9341:
 	case AR71XX_SOC_AR9342:
 	case AR71XX_SOC_AR9344:
+	case AR71XX_SOC_QCA9533:
+	case AR71XX_SOC_QCA9556:
+	case AR71XX_SOC_QCA9558:
 		wdt_clk_freq = ar71xx_ref_freq;
 		break;
 #endif
