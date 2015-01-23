@@ -2491,9 +2491,9 @@ void validate_wds(webs_t wp, char *value, struct variable *v)
 			// quick and dirty
 #ifdef HAVE_RT2880
 			if (!strcmp(interface, "wl0"))
-				snprintf(wds_if, 31, "wds%d", (devcount++));
+				snprintf(wds_if, 31, "wds%d", (devcount++) - 1);
 			else if (!strcmp(interface, "wl1"))
-				snprintf(wds_if, 31, "wds%d", (devcount++) + 10);
+				snprintf(wds_if, 31, "wds%d", (devcount++) + 10 - 1);
 #else
 			if (!strcmp(interface, "wl0"))
 				snprintf(wds_if, 31, "wds0.%d", (devcount++));
