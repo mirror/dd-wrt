@@ -540,6 +540,11 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	sprintf(bcn, "%s_bcn", prefix);
 	fprintf(fp, "beacon_int=%s\n", nvram_default_get(bcn, "100"));
 	fprintf(fp, "\n");
+
+	char dtim[32];
+	sprintf(bcn, "%s_dtim", prefix);
+	fprintf(fp, "dtim_period=%s\n", nvram_default_get(dtim, "2"));
+	fprintf(fp, "\n");
 }
 
 static void setMacFilter(FILE * fp, char *iface)
