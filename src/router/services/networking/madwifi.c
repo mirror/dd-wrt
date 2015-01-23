@@ -1573,6 +1573,11 @@ static void configure_single(int count)
 	char bcn[32];
 	sprintf(bcn, "%s_bcn", dev);
 	eval("iwpriv", dev, "bintval", nvram_default_get(bcn, "100"));
+
+	char dtim[32];
+	sprintf(bcn, "%s_dtim", dev);
+	eval("iwpriv", dev, "dtim_period", nvram_default_get(dtim, "2"));
+
 	char wmm[32];
 
 	sprintf(wmm, "%s_wmm", dev);
