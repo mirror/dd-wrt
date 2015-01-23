@@ -1095,6 +1095,12 @@ int internal_getRouterBrand()
 #endif
 		return ROUTER_BUFFALO_WZR600DHP2;
 	}
+	if (nvram_match("boardtype", "0x0665") && nvram_match("boardrev", "0x1102") && boardnum == 1 ) {
+		setRouter("TPLink Archer C9");
+
+		return ROUTER_TPLINK_ARCHERC9;
+	}
+
 
 	if (nvram_match("boardtype", "0xD646") && nvram_match("boardrev", "0x1100") && nvram_match("0:devid", "0x43A1")) {
 		setRouter("Linksys EA6900");
