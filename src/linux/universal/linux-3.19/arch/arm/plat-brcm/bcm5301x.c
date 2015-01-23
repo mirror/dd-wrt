@@ -256,8 +256,6 @@ static int  __init bcm5301_pl310_init( void )
 {
 	void __iomem *l2cache_base;
 	u32 auxctl_val, auxctl_msk ;
-	extern void __init l310_init( void __iomem *, u32, u32, int );
-
 	/* Default AUXCTL modifiers */
 	auxctl_val = 0UL;
 	auxctl_msk = ~0UL ;
@@ -268,12 +266,13 @@ static int  __init bcm5301_pl310_init( void )
 	auxctl_val |= 1 << 29;	/* Instruction prefetch enable */
 	auxctl_val |= 1 << 28;	/* Data prefetch enable */
 	auxctl_val |= 1 << 30;	/* Early BRESP enable */
+	auxctl_val |= 1 << 22;	/* for dma coherency */
 	
 	l2cache_base = ioremap( L2CC_BASE_PA, SZ_4K );
 
 	/* Configure using default aux control value */
 	if( l2cache_base != NULL )
-		l310_init( l2cache_base, auxctl_val, auxctl_msk, 32 );
+		l2x0_init( l2cache_base, auxctl_val, auxctl_msk);
 
 	return 0;
 }
