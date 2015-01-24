@@ -2611,6 +2611,9 @@ void start_sysinit(void)
 		}
 		nvram_set("partialboots", "0");
 		break;
+	case ROUTER_ARCHER_C9:
+		set_gpio(0, 1);	// fixup ses button
+		break;
 	case ROUTER_BUFFALO_WZR1750:
 		nvram_set("0:ledbh12", "7");
 		nvram_set("1:ledbh10", "7");
