@@ -4037,7 +4037,7 @@ char bcn[32];
 sprintf(bcn, "%s_bcn", prefix);
 websWrite(wp, "<div class=\"setting\">\n");
 websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label6)</script></div>\n");
-websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,10,65535,wl_adv.label6)\" value=\"%s\" />\n", bcn, nvram_default_get(bcn, "100"));
+websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"5\" maxlength=\"5\" onblur=\"valid_range(this,10,65535,wl_adv.label6)\" value=\"%s\" />\n", bcn, nvram_default_get(bcn, "100"));
 websWrite(wp, "</div>\n");
 
 char dtim[32];
@@ -4877,7 +4877,7 @@ if (!strcmp(prefix, "wl1"))
 	sprintf(bcn, "%s_bcn", prefix);
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label6)</script></div>\n");
-	websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,10,65535,wl_adv.label6)\" value=\"%s\" />\n", bcn, nvram_default_get(bcn, "100"));
+	websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"5\" maxlength=\"5\" onblur=\"valid_range(this,10,65535,wl_adv.label6)\" value=\"%s\" />\n", bcn, nvram_default_get(bcn, "100"));
 	websWrite(wp, "</div>\n");
 
 	char dtim[32];
