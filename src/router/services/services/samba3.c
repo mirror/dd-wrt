@@ -207,9 +207,15 @@ void start_samba3(void)
 	eval("/usr/sbin/smbd", "-D", "--configfile=/tmp/smb.conf");
 #endif
 	eval("/usr/sbin/nmbd", "-D", "--configfile=/tmp/smb.conf");
-	if (pidof("nmbd") > 0) {
-	} else {
+	if (pidof("nmbd") <= 0) {
 		eval("/usr/sbin/nmbd", "-D", "--configfile=/tmp/smb.conf");
+	}
+	if (pidof("smbdd") <= 0) {
+#ifdef HAVE_SMP
+		eval("/usr/bin/taskset", "0x2", "/usr/sbin/smbd", "-D", "--configfile=/tmp/smb.conf");
+#else
+		eval("/usr/sbin/smbd", "-D", "--configfile=/tmp/smb.conf");
+#endif
 	}
 	syslog(LOG_INFO, "Samba3 : samba started\n");
 
