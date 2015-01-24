@@ -1088,6 +1088,7 @@ void period_check(int sig)
 	case ROUTER_BOARD_DIR615D:
 	case ROUTER_BOARD_WHRG300N:
 	case ROUTER_ASUS_RTN10PLUS:		
+	case ROUTER_TPLINK_ARCHERC9:		
 		sesgpio = 0x100;
 		break;
 	case ROUTER_DIR860LB1:

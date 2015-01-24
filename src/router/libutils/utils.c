@@ -1096,7 +1096,7 @@ int internal_getRouterBrand()
 		return ROUTER_BUFFALO_WZR600DHP2;
 	}
 	if (nvram_match("boardtype", "0x0665") && nvram_match("boardrev", "0x1102") && boardnum == 1 ) {
-		setRouter("TPLink Archer C9");
+		setRouter("TPLINK Archer C9");
 
 		return ROUTER_TPLINK_ARCHERC9;
 	}
@@ -5757,6 +5757,16 @@ int led_control(int type, int act)
 		power_gpio = 0x100;
 		connected_gpio = 0x106;
 		disconnected_gpio = 0x109;
+		break;
+	case ROUTER_TPLINK_ARCHERC9:
+		ses_gpio = 0x002; 
+		usb_gpio = 0x006;
+		usb_gpio1 = 0x007;
+		disconnected_gpio = 0x00f;
+		connected_gpio = 0x00e;
+		power_gpio = 0x112;
+		usb_power = 0x00c; // usb 3
+		usb_power1 = 0x00d; // usb 2
 		break;
 	case ROUTER_ASUS_AC67U:
 	case ROUTER_ASUS_AC56U:
