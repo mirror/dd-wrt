@@ -210,7 +210,7 @@ void start_samba3(void)
 	if (pidof("nmbd") <= 0) {
 		eval("/usr/sbin/nmbd", "-D", "--configfile=/tmp/smb.conf");
 	}
-	if (pidof("smbdd") <= 0) {
+	if (pidof("smbd") <= 0) {
 #ifdef HAVE_SMP
 		eval("/usr/bin/taskset", "0x2", "/usr/sbin/smbd", "-D", "--configfile=/tmp/smb.conf");
 #else
