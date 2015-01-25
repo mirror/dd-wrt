@@ -490,11 +490,14 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 		rmmod("rt3062ap");
 		rmmod("rt2860ap");
 	}
-	if (nvram_nmatch("disabled", "wl%d_net_mode", idx))
-		return;
 	char *cname = "/tmp/RT2860.dat";
 	if (idx == 1)
 		cname = "/tmp/RT2860_pci.dat";
+	if (nvram_nmatch("disabled", "wl%d_net_mode", idx))
+	{
+		eval("rm","-f", cname);
+		return;
+	}
 
 	FILE *fp = fopen(cname, "wb");	// config file for driver (don't ask me, its really the worst config thing i have seen)
 
