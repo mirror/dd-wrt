@@ -4041,7 +4041,7 @@ websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"5\" maxlength=\"5\" onblu
 websWrite(wp, "</div>\n");
 
 char dtim[32];
-sprintf(bcn, "%s_dtim", prefix);
+sprintf(dtim, "%s_dtim", prefix);
 websWrite(wp, "<div class=\"setting\">\n");
 websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label7)</script></div>\n");
 websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,1,255,wl_adv.label7)\" value=\"%s\" />\n", dtim, nvram_default_get(dtim, "2"));
@@ -4881,7 +4881,7 @@ if (!strcmp(prefix, "wl1"))
 	websWrite(wp, "</div>\n");
 
 	char dtim[32];
-	sprintf(bcn, "%s_dtim", prefix);
+	sprintf(dtim, "%s_dtim", prefix);
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label7)</script></div>\n");
 	websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,1,255,wl_adv.label7)\" value=\"%s\" />\n", dtim, nvram_default_get(dtim, "2"));
