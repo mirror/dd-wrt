@@ -542,7 +542,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	fprintf(fp, "\n");
 
 	char dtim[32];
-	sprintf(bcn, "%s_dtim", prefix);
+	sprintf(dtim, "%s_dtim", prefix);
 	fprintf(fp, "dtim_period=%s\n", nvram_default_get(dtim, "2"));
 	fprintf(fp, "\n");
 }
