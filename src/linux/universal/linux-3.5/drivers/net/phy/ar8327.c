@@ -25,13 +25,13 @@
 #include <linux/workqueue.h>
 #include <linux/of_device.h>
 #include <linux/leds.h>
+#include <linux/mdio.h>
 
 #include "ar8216.h"
 #include "ar8327.h"
 
 extern const struct ar8xxx_mib_desc ar8236_mibs[39];
-extern struct switch_attr ar8xxx_sw_attr_port[2];
-extern struct switch_attr ar8xxx_sw_attr_vlan[1];
+extern const struct switch_attr ar8xxx_sw_attr_vlan[1];
 
 static u32
 ar8327_get_pad_cfg(struct ar8327_pad_cfg *cfg)
@@ -651,7 +651,9 @@ ar8327_cleanup(struct ar8xxx_priv *priv)
 static void
 ar8327_init_globals(struct ar8xxx_priv *priv)
 {
+	struct ar8327_data *data = priv->chip_data;
 	u32 t;
+	int i;
 
 	/* enable CPU port and disable mirror port */
 	t = AR8327_FWD_CTRL0_CPU_PORT_EN |
@@ -672,14 +674,9 @@ ar8327_init_globals(struct ar8xxx_priv *priv)
 	ar8xxx_reg_set(priv, AR8327_REG_MODULE_EN,
 		       AR8327_MODULE_EN_MIB);
 
-	/* Disable EEE on all ports due to stability issues */
-	t = ar8xxx_read(priv, AR8327_REG_EEE_CTRL);
-	t |= AR8327_EEE_CTRL_DISABLE_PHY(0) |
-	     AR8327_EEE_CTRL_DISABLE_PHY(1) |
-	     AR8327_EEE_CTRL_DISABLE_PHY(2) |
-	     AR8327_EEE_CTRL_DISABLE_PHY(3) |
-	     AR8327_EEE_CTRL_DISABLE_PHY(4);
-	ar8xxx_write(priv, AR8327_REG_EEE_CTRL, t);
+	/* Disable EEE on all phy's due to stability issues */
+	for (i = 0; i < AR8XXX_NUM_PHYS; i++)
+		data->eee[i] = false;
 }
 
 static void
@@ -713,7 +710,44 @@ ar8327_init_port(struct ar8xxx_priv *priv, int port)
 static u32
 ar8327_read_port_status(struct ar8xxx_priv *priv, int port)
 {
-	return ar8xxx_read(priv, AR8327_REG_PORT_STATUS(port));
+	u32 t;
+
+	t = ar8xxx_read(priv, AR8327_REG_PORT_STATUS(port));
+	/* map the flow control autoneg result bits to the flow control bits
+	 * used in forced mode to allow ar8216_read_port_link detect
+	 * flow control properly if autoneg is used
+	 */
+	if (t & AR8216_PORT_STATUS_LINK_UP &&
+	    t & AR8216_PORT_STATUS_LINK_AUTO) {
+		t &= ~(AR8216_PORT_STATUS_TXFLOW | AR8216_PORT_STATUS_RXFLOW);
+		if (t & AR8327_PORT_STATUS_TXFLOW_AUTO)
+			t |= AR8216_PORT_STATUS_TXFLOW;
+		if (t & AR8327_PORT_STATUS_RXFLOW_AUTO)
+			t |= AR8216_PORT_STATUS_RXFLOW;
+	}
+
+	return t;
+}
+
+static u32
+ar8327_read_port_eee_status(struct ar8xxx_priv *priv, int port)
+{
+	int phy;
+	u16 t;
+
+	if (port >= priv->dev.ports)
+		return 0;
+
+	if (port == 0 || port == 6)
+		return 0;
+
+	phy = port - 1;
+
+	/* EEE Ability Auto-negotiation Result */
+	ar8xxx_phy_mmd_write(priv, phy, 0x7, 0x8000);
+	t = ar8xxx_phy_mmd_read(priv, phy, 0x4007);
+
+	return mmd_eee_adv_to_ethtool_adv_t(t);
 }
 
 static int
@@ -725,7 +759,8 @@ ar8327_atu_flush(struct ar8xxx_priv *priv)
 			      AR8327_ATU_FUNC_BUSY, 0);
 	if (!ret)
 		ar8xxx_write(priv, AR8327_REG_ATU_FUNC,
-			    AR8327_ATU_FUNC_OP_FLUSH);
+			     AR8327_ATU_FUNC_OP_FLUSH |
+			     AR8327_ATU_FUNC_BUSY);
 
 	return ret;
 }
@@ -865,13 +900,11 @@ ar8327_set_mirror_regs(struct ar8xxx_priv *priv)
 		   AR8327_FWD_CTRL0_MIRROR_PORT,
 		   (0xF << AR8327_FWD_CTRL0_MIRROR_PORT_S));
 	for (port = 0; port < AR8327_NUM_PORTS; port++) {
-		ar8xxx_rmw(priv, AR8327_REG_PORT_LOOKUP(port),
-			   AR8327_PORT_LOOKUP_ING_MIRROR_EN,
-			   0);
+		ar8xxx_reg_clear(priv, AR8327_REG_PORT_LOOKUP(port),
+			   AR8327_PORT_LOOKUP_ING_MIRROR_EN);
 
-		ar8xxx_rmw(priv, AR8327_REG_PORT_HOL_CTRL1(port),
-			   AR8327_PORT_HOL_CTRL1_EG_MIRROR_EN,
-			   0);
+		ar8xxx_reg_clear(priv, AR8327_REG_PORT_HOL_CTRL1(port),
+			   AR8327_PORT_HOL_CTRL1_EG_MIRROR_EN);
 	}
 
 	/* now enable mirroring if necessary */
@@ -886,17 +919,154 @@ ar8327_set_mirror_regs(struct ar8xxx_priv *priv)
 		   (priv->monitor_port << AR8327_FWD_CTRL0_MIRROR_PORT_S));
 
 	if (priv->mirror_rx)
-		ar8xxx_rmw(priv, AR8327_REG_PORT_LOOKUP(priv->source_port),
-			   AR8327_PORT_LOOKUP_ING_MIRROR_EN,
+		ar8xxx_reg_set(priv, AR8327_REG_PORT_LOOKUP(priv->source_port),
 			   AR8327_PORT_LOOKUP_ING_MIRROR_EN);
 
 	if (priv->mirror_tx)
-		ar8xxx_rmw(priv, AR8327_REG_PORT_HOL_CTRL1(priv->source_port),
-			   AR8327_PORT_HOL_CTRL1_EG_MIRROR_EN,
+		ar8xxx_reg_set(priv, AR8327_REG_PORT_HOL_CTRL1(priv->source_port),
 			   AR8327_PORT_HOL_CTRL1_EG_MIRROR_EN);
 }
 
-static struct switch_attr ar8327_sw_attr_globals[] = {
+static int
+ar8327_sw_set_eee(struct switch_dev *dev,
+		  const struct switch_attr *attr,
+		  struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	struct ar8327_data *data = priv->chip_data;
+	int port = val->port_vlan;
+	int phy;
+
+	if (port >= dev->ports)
+		return -EINVAL;
+	if (port == 0 || port == 6)
+		return -EOPNOTSUPP;
+
+	phy = port - 1;
+
+	data->eee[phy] = !!(val->value.i);
+
+	return 0;
+}
+
+static int
+ar8327_sw_get_eee(struct switch_dev *dev,
+		  const struct switch_attr *attr,
+		  struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	const struct ar8327_data *data = priv->chip_data;
+	int port = val->port_vlan;
+	int phy;
+
+	if (port >= dev->ports)
+		return -EINVAL;
+	if (port == 0 || port == 6)
+		return -EOPNOTSUPP;
+
+	phy = port - 1;
+
+	val->value.i = data->eee[phy];
+
+	return 0;
+}
+
+static void
+ar8327_wait_atu_ready(struct ar8xxx_priv *priv, u16 r2, u16 r1)
+{
+	int timeout = 20;
+
+	while (ar8xxx_mii_read32(priv, r2, r1) & AR8327_ATU_FUNC_BUSY && --timeout)
+                udelay(10);
+
+	if (!timeout)
+		pr_err("ar8327: timeout waiting for atu to become ready\n");
+}
+
+static void ar8327_get_arl_entry(struct ar8xxx_priv *priv,
+				 struct arl_entry *a, u32 *status, enum arl_op op)
+{
+	struct mii_bus *bus = priv->mii_bus;
+	u16 r2, page;
+	u16 r1_data0, r1_data1, r1_data2, r1_func;
+	u32 t, val0, val1, val2;
+	int i;
+
+	split_addr(AR8327_REG_ATU_DATA0, &r1_data0, &r2, &page);
+	r2 |= 0x10;
+
+	r1_data1 = (AR8327_REG_ATU_DATA1 >> 1) & 0x1e;
+	r1_data2 = (AR8327_REG_ATU_DATA2 >> 1) & 0x1e;
+	r1_func  = (AR8327_REG_ATU_FUNC >> 1) & 0x1e;
+
+	switch (op) {
+	case AR8XXX_ARL_INITIALIZE:
+		/* all ATU registers are on the same page
+		* therefore set page only once
+		*/
+		bus->write(bus, 0x18, 0, page);
+		wait_for_page_switch();
+
+		ar8327_wait_atu_ready(priv, r2, r1_func);
+
+		ar8xxx_mii_write32(priv, r2, r1_data0, 0);
+		ar8xxx_mii_write32(priv, r2, r1_data1, 0);
+		ar8xxx_mii_write32(priv, r2, r1_data2, 0);
+		break;
+	case AR8XXX_ARL_GET_NEXT:
+		ar8xxx_mii_write32(priv, r2, r1_func,
+				   AR8327_ATU_FUNC_OP_GET_NEXT |
+				   AR8327_ATU_FUNC_BUSY);
+		ar8327_wait_atu_ready(priv, r2, r1_func);
+
+		val0 = ar8xxx_mii_read32(priv, r2, r1_data0);
+		val1 = ar8xxx_mii_read32(priv, r2, r1_data1);
+		val2 = ar8xxx_mii_read32(priv, r2, r1_data2);
+
+		*status = val2 & AR8327_ATU_STATUS;
+		if (!*status)
+			break;
+
+		i = 0;
+		t = AR8327_ATU_PORT0;
+		while (!(val1 & t) && ++i < AR8327_NUM_PORTS)
+			t <<= 1;
+
+		a->port = i;
+		a->mac[0] = (val0 & AR8327_ATU_ADDR0) >> AR8327_ATU_ADDR0_S;
+		a->mac[1] = (val0 & AR8327_ATU_ADDR1) >> AR8327_ATU_ADDR1_S;
+		a->mac[2] = (val0 & AR8327_ATU_ADDR2) >> AR8327_ATU_ADDR2_S;
+		a->mac[3] = (val0 & AR8327_ATU_ADDR3) >> AR8327_ATU_ADDR3_S;
+		a->mac[4] = (val1 & AR8327_ATU_ADDR4) >> AR8327_ATU_ADDR4_S;
+		a->mac[5] = (val1 & AR8327_ATU_ADDR5) >> AR8327_ATU_ADDR5_S;
+		break;
+	}
+}
+
+static int
+ar8327_sw_hw_apply(struct switch_dev *dev)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	const struct ar8327_data *data = priv->chip_data;
+	int ret, i;
+
+	ret = ar8xxx_sw_hw_apply(dev);
+	if (ret)
+		return ret;
+
+	for (i=0; i < AR8XXX_NUM_PHYS; i++) {
+		if (data->eee[i])
+			ar8xxx_reg_clear(priv, AR8327_REG_EEE_CTRL,
+			       AR8327_EEE_CTRL_DISABLE_PHY(i));
+		else
+			ar8xxx_reg_set(priv, AR8327_REG_EEE_CTRL,
+			       AR8327_EEE_CTRL_DISABLE_PHY(i));
+	}
+
+	return 0;
+}
+
+static const struct switch_attr ar8327_sw_attr_globals[] = {
 	{
 		.type = SWITCH_TYPE_INT,
 		.name = "enable_vlan",
@@ -943,6 +1113,37 @@ static struct switch_attr ar8327_sw_attr_globals[] = {
 		.get = ar8xxx_sw_get_mirror_source_port,
 		.max = AR8327_NUM_PORTS - 1
  	},
+	{
+		.type = SWITCH_TYPE_STRING,
+		.name = "arl_table",
+		.description = "Get ARL table",
+		.set = NULL,
+		.get = ar8xxx_sw_get_arl_table,
+	},
+};
+
+static const struct switch_attr ar8327_sw_attr_port[] = {
+	{
+		.type = SWITCH_TYPE_NOVAL,
+		.name = "reset_mib",
+		.description = "Reset single port MIB counters",
+		.set = ar8xxx_sw_set_port_reset_mib,
+	},
+	{
+		.type = SWITCH_TYPE_STRING,
+		.name = "mib",
+		.description = "Get port's MIB counters",
+		.set = NULL,
+		.get = ar8xxx_sw_get_port_mib,
+	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "enable_eee",
+		.description = "Enable EEE PHY sleep mode",
+		.set = ar8327_sw_set_eee,
+		.get = ar8327_sw_get_eee,
+		.max = 1,
+	},
 };
 
 static const struct switch_dev_ops ar8327_sw_ops = {
@@ -951,8 +1152,8 @@ static const struct switch_dev_ops ar8327_sw_ops = {
 		.n_attr = ARRAY_SIZE(ar8327_sw_attr_globals),
 	},
 	.attr_port = {
-		.attr = ar8xxx_sw_attr_port,
-		.n_attr = ARRAY_SIZE(ar8xxx_sw_attr_port),
+		.attr = ar8327_sw_attr_port,
+		.n_attr = ARRAY_SIZE(ar8327_sw_attr_port),
 	},
 	.attr_vlan = {
 		.attr = ar8xxx_sw_attr_vlan,
@@ -962,7 +1163,7 @@ static const struct switch_dev_ops ar8327_sw_ops = {
 	.set_port_pvid = ar8xxx_sw_set_pvid,
 	.get_vlan_ports = ar8327_sw_get_ports,
 	.set_vlan_ports = ar8327_sw_set_ports,
-	.apply_config = ar8xxx_sw_hw_apply,
+	.apply_config = ar8327_sw_hw_apply,
 	.reset_switch = ar8xxx_sw_reset_switch,
 	.get_port_link = ar8xxx_sw_get_port_link,
 };
@@ -986,11 +1187,14 @@ const struct ar8xxx_chip ar8327_chip = {
 	.init_port = ar8327_init_port,
 	.setup_port = ar8327_setup_port,
 	.read_port_status = ar8327_read_port_status,
+	.read_port_eee_status = ar8327_read_port_eee_status,
 	.atu_flush = ar8327_atu_flush,
 	.vtu_flush = ar8327_vtu_flush,
 	.vtu_load_vlan = ar8327_vtu_load_vlan,
 	.phy_fixup = ar8327_phy_fixup,
 	.set_mirror_regs = ar8327_set_mirror_regs,
+	.get_arl_entry = ar8327_get_arl_entry,
+	.sw_hw_apply = ar8327_sw_hw_apply,
 
 	.num_mibs = ARRAY_SIZE(ar8236_mibs),
 	.mib_decs = ar8236_mibs,
@@ -1016,11 +1220,14 @@ const struct ar8xxx_chip ar8337_chip = {
 	.init_port = ar8327_init_port,
 	.setup_port = ar8327_setup_port,
 	.read_port_status = ar8327_read_port_status,
+	.read_port_eee_status = ar8327_read_port_eee_status,
 	.atu_flush = ar8327_atu_flush,
 	.vtu_flush = ar8327_vtu_flush,
 	.vtu_load_vlan = ar8327_vtu_load_vlan,
 	.phy_fixup = ar8327_phy_fixup,
 	.set_mirror_regs = ar8327_set_mirror_regs,
+	.get_arl_entry = ar8327_get_arl_entry,
+	.sw_hw_apply = ar8327_sw_hw_apply,
 
 	.num_mibs = ARRAY_SIZE(ar8236_mibs),
 	.mib_decs = ar8236_mibs,

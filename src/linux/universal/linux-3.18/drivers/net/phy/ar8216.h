@@ -337,6 +337,18 @@ enum {
 	AR8XXX_VER_AR8337 = 0x13,
 };
 
+#define AR8XXX_NUM_ARL_RECORDS	100
+
+enum arl_op {
+	AR8XXX_ARL_INITIALIZE,
+	AR8XXX_ARL_GET_NEXT
+};
+
+struct arl_entry {
+	u8 port;
+	u8 mac[6];
+};
+
 struct ar8xxx_priv;
 
 struct ar8xxx_mib_desc {
@@ -366,11 +378,15 @@ struct ar8xxx_chip {
 	void (*init_port)(struct ar8xxx_priv *priv, int port);
 	void (*setup_port)(struct ar8xxx_priv *priv, int port, u32 members);
 	u32 (*read_port_status)(struct ar8xxx_priv *priv, int port);
+	u32 (*read_port_eee_status)(struct ar8xxx_priv *priv, int port);
 	int (*atu_flush)(struct ar8xxx_priv *priv);
 	void (*vtu_flush)(struct ar8xxx_priv *priv);
 	void (*vtu_load_vlan)(struct ar8xxx_priv *priv, u32 vid, u32 port_mask);
 	void (*phy_fixup)(struct ar8xxx_priv *priv, int phy);
 	void (*set_mirror_regs)(struct ar8xxx_priv *priv);
+	void (*get_arl_entry)(struct ar8xxx_priv *priv, struct arl_entry *a,
+			      u32 *status, enum arl_op op);
+	int (*sw_hw_apply)(struct switch_dev *dev);
 
 	const struct ar8xxx_mib_desc *mib_decs;
 	unsigned num_mibs;
@@ -394,6 +410,9 @@ struct ar8xxx_priv {
 	bool initialized;
 	bool port4_phy;
 	char buf[2048];
+	struct arl_entry arl_table[AR8XXX_NUM_ARL_RECORDS];
+	char arl_buf[AR8XXX_NUM_ARL_RECORDS * 32 + 256];
+	bool link_up[AR8X16_MAX_PORTS];
 
 	bool init;
 
@@ -420,6 +439,10 @@ struct ar8xxx_priv {
 };
 
 u32
+ar8xxx_mii_read32(struct ar8xxx_priv *priv, int phy_id, int regnum);
+void
+ar8xxx_mii_write32(struct ar8xxx_priv *priv, int phy_id, int regnum, u32 val);
+u32
 ar8xxx_read(struct ar8xxx_priv *priv, int reg);
 void
 ar8xxx_write(struct ar8xxx_priv *priv, int reg, u32 val);
@@ -431,6 +454,8 @@ ar8xxx_phy_dbg_write(struct ar8xxx_priv *priv, int phy_addr,
 		     u16 dbg_addr, u16 dbg_data);
 void
 ar8xxx_phy_mmd_write(struct ar8xxx_priv *priv, int phy_addr, u16 addr, u16 data);
+u16
+ar8xxx_phy_mmd_read(struct ar8xxx_priv *priv, int phy_addr, u16 addr);
 void
 ar8xxx_phy_init(struct ar8xxx_priv *priv);
 int
@@ -487,6 +512,18 @@ int
 ar8xxx_sw_get_port_link(struct switch_dev *dev, int port,
 			struct switch_port_link *link);
 int
+ar8xxx_sw_set_port_reset_mib(struct switch_dev *dev,
+                             const struct switch_attr *attr,
+                             struct switch_val *val);
+int
+ar8xxx_sw_get_port_mib(struct switch_dev *dev,
+                       const struct switch_attr *attr,
+                       struct switch_val *val);
+int
+ar8xxx_sw_get_arl_table(struct switch_dev *dev,
+			const struct switch_attr *attr,
+			struct switch_val *val);
+int
 ar8216_wait_bit(struct ar8xxx_priv *priv, int reg, u32 mask, u32 val);
 
 static inline struct ar8xxx_priv *
@@ -534,6 +571,31 @@ static inline void
 ar8xxx_reg_set(struct ar8xxx_priv *priv, int reg, u32 val)
 {
 	ar8xxx_rmw(priv, reg, 0, val);
+}
+
+static inline void
+ar8xxx_reg_clear(struct ar8xxx_priv *priv, int reg, u32 val)
+{
+	ar8xxx_rmw(priv, reg, val, 0);
+}
+
+static inline void
+split_addr(u32 regaddr, u16 *r1, u16 *r2, u16 *page)
+{
+	regaddr >>= 1;
+	*r1 = regaddr & 0x1e;
+
+	regaddr >>= 5;
+	*r2 = regaddr & 0x7;
+
+	regaddr >>= 3;
+	*page = regaddr & 0x1ff;
+}
+
+static inline void
+wait_for_page_switch(void)
+{
+	udelay(5);
 }
 
 #endif
