@@ -284,8 +284,6 @@ int main(int argc, char **argv)
 		       fprintf(stderr, "Failed to connect to the switch. Use the \"list\" command to see which switches are available.\n");
                        return 1;
                }
-	
-		return 1;
 	}
 
 	swlib_scan(dev);
