@@ -676,7 +676,7 @@ list_switch(struct nl_msg *msg, void *arg)
 	if (!tb[SWITCH_ATTR_DEV_NAME] || !tb[SWITCH_ATTR_NAME])
 		goto done;
 
-	printf("Found: %s - %s\n", nla_get_string(tb[SWITCH_ATTR_DEV_NAME]),
+	fprintf(stderr, "Found: %s - %s\n", nla_get_string(tb[SWITCH_ATTR_DEV_NAME]),
 		nla_get_string(tb[SWITCH_ATTR_ALIAS]));
 
 done:
@@ -699,24 +699,24 @@ swlib_print_portmap(struct switch_dev *dev, char *segment)
 
 	if (segment) {
 		if (!strcmp(segment, "cpu")) {
-			printf("%d ", dev->cpu_port);
+			fprintf(stderr,"%d ", dev->cpu_port);
 		} else if (!strcmp(segment, "disabled")) {
 			for (i = 0; i < dev->ports; i++)
 				if (!dev->maps[i].segment)
-					printf("%d ", i);
+					fprintf(stderr,"%d ", i);
 		} else for (i = 0; i < dev->ports; i++) {
 			if (dev->maps[i].segment && !strcmp(dev->maps[i].segment, segment))
-				printf("%d ", i);
+				fprintf(stderr,"%d ", i);
 		}
 	} else {
-		printf("%s - %s\n", dev->dev_name, dev->name);
+		fprintf(stderr,"%s - %s\n", dev->dev_name, dev->name);
 		for (i = 0; i < dev->ports; i++)
 			if (i == dev->cpu_port)
-				printf("port%d:\tcpu\n", i);
+				fprintf(stderr,"port%d:\tcpu\n", i);
 			else if (dev->maps[i].segment)
-				printf("port%d:\t%s.%d\n", i, dev->maps[i].segment, dev->maps[i].virt);
+				fprintf(stderr,"port%d:\t%s.%d\n", i, dev->maps[i].segment, dev->maps[i].virt);
 			else
-				printf("port%d:\tdisabled\n", i);
+				fprintf(stderr,"port%d:\tdisabled\n", i);
 	}
 }
 
