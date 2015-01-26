@@ -408,7 +408,7 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 	int channel = wifi_getchannel(getRADev(prefix));
 
 	if (channel > 0 && channel < 1000) {
-		int freq = get_wififreq(getRADev(prefix));
+		int freq = wifi_getfreq(getRADev(prefix));
 		if (has_mimo(prefix)
 		    && (nvram_nmatch("n-only", "%s_net_mode", prefix)
 			|| nvram_nmatch("mixed", "%s_net_mode", prefix)
