@@ -69,7 +69,7 @@ print_attrs(const struct switch_attr *attr)
 				type = "unknown";
 				break;
 		}
-		printf("\tAttribute %d (%s): %s (%s)\n", ++i, type, attr->name, attr->description);
+		fprintf(stderr,"\tAttribute %d (%s): %s (%s)\n", ++i, type, attr->name, attr->description);
 		attr = attr->next;
 	}
 }
@@ -77,12 +77,12 @@ print_attrs(const struct switch_attr *attr)
 static void
 list_attributes(struct switch_dev *dev)
 {
-	printf("%s: %s(%s), ports: %d (cpu @ %d), vlans: %d\n", dev->dev_name, dev->alias, dev->name, dev->ports, dev->cpu_port, dev->vlans);
-	printf("     --switch\n");
+	fprintf(stderr,"%s: %s(%s), ports: %d (cpu @ %d), vlans: %d\n", dev->dev_name, dev->alias, dev->name, dev->ports, dev->cpu_port, dev->vlans);
+	fprintf(stderr,"     --switch\n");
 	print_attrs(dev->ops);
-	printf("     --vlan\n");
+	fprintf(stderr,"     --vlan\n");
 	print_attrs(dev->vlan_ops);
-	printf("     --port\n");
+	fprintf(stderr,"     --port\n");
 	print_attrs(dev->port_ops);
 }
 
@@ -93,21 +93,21 @@ print_attr_val(const struct switch_attr *attr, const struct switch_val *val)
 
 	switch (attr->type) {
 	case SWITCH_TYPE_INT:
-		printf("%d", val->value.i);
+		fprintf(stderr,"%d", val->value.i);
 		break;
 	case SWITCH_TYPE_STRING:
-		printf("%s", val->value.s);
+		fprintf(stderr,"%s", val->value.s);
 		break;
 	case SWITCH_TYPE_PORTS:
 		for(i = 0; i < val->len; i++) {
-			printf("%d%s ",
+			fprintf(stderr,"%d%s ",
 				val->value.ports[i].id,
 				(val->value.ports[i].flags &
 				 SWLIB_PORT_FLAG_TAGGED) ? "t" : "");
 		}
 		break;
 	default:
-		printf("?unknown-type?");
+		fprintf(stderr,"?unknown-type?");
 	}
 }
 
@@ -116,9 +116,9 @@ show_attrs(struct switch_dev *dev, struct switch_attr *attr, struct switch_val *
 {
 	while (attr) {
 		if (attr->type != SWITCH_TYPE_NOVAL) {
-			printf("\t%s: ", attr->name);
+			fprintf(stderr,"\t%s: ", attr->name);
 			if (swlib_get_attr(dev, attr, val) < 0)
-				printf("???");
+				fprintf(stderr,"???");
 			else
 				print_attr_val(attr, val);
 			putchar('\n');
@@ -132,7 +132,7 @@ show_global(struct switch_dev *dev)
 {
 	struct switch_val val;
 
-	printf("Global attributes:\n");
+	fprintf(stderr,"Global attributes:\n");
 	show_attrs(dev, dev->ops, &val);
 }
 
@@ -141,7 +141,7 @@ show_port(struct switch_dev *dev, int port)
 {
 	struct switch_val val;
 
-	printf("Port %d:\n", port);
+	fprintf(stderr,"Port %d:\n", port);
 	val.port_vlan = port;
 	show_attrs(dev, dev->port_ops, &val);
 }
@@ -163,15 +163,15 @@ show_vlan(struct switch_dev *dev, int vlan, bool all)
 			return;
 	}
 
-	printf("VLAN %d:\n", vlan);
+	fprintf(stderr,"VLAN %d:\n", vlan);
 	show_attrs(dev, dev->vlan_ops, &val);
 }
 
 static void
 print_usage(void)
 {
-	printf("swconfig list\n");
-	printf("swconfig dev <dev> [port <port>|vlan <vlan>] (help|set <key> <value>|get <key>|load <config>|show)\n");
+	fprintf(stderr,"swconfig list\n");
+	fprintf(stderr,"swconfig dev <dev> [port <port>|vlan <vlan>] (help|set <key> <value>|get <key>|load <config>|show)\n");
 	exit(1);
 }
 
