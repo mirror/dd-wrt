@@ -443,12 +443,35 @@ void ej_get_currate(webs_t wp, int argc, char_t ** argv)
 
 void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 {
-	int channel = wifi_getchannel(nvram_safe_get("wifi_display"));
+	char *prefix = nvram_safe_get("wifi_display");
+	int channel = wifi_getchannel(prefix);
 
 	if (channel > 0 && channel < 1000) {
-		websWrite(wp, "%d (%d MHz)", channel, get_wififreq(nvram_safe_get("wifi_display"), wifi_getfreq(nvram_safe_get("wifi_display"))));
+		int freq = get_wififreq(prefix);
+		if (has_mimo(prefix)
+		    && (nvram_nmatch("n-only", "%s_net_mode", prefix)
+			|| nvram_nmatch("mixed", "%s_net_mode", prefix)
+			|| nvram_nmatch("na-only", "%s_net_mode", prefix)
+			|| nvram_nmatch("n2-only", "%s_net_mode", prefix)
+			|| nvram_nmatch("n5-only", "%s_net_mode", prefix)
+			|| nvram_nmatch("ac-only", "%s_net_mode", prefix)
+			|| nvram_nmatch("acn-mixed", "%s_net_mode", prefix)
+			|| nvram_nmatch("ng-only", "%s_net_mode", prefix))
+		    && (nvram_nmatch("ap", "%s_mode", prefix)
+			|| nvram_nmatch("wdsap", "%s_mode", prefix)
+			|| nvram_nmatch("infra", "%s_mode", prefix))) {
+			if (nvram_nmatch("40", "%s_channelbw", prefix)) {
+				websWrite(wp, "%d + ", channel);
+				websWrite(wp, "%d", nvram_nmatch("upper", "%s_nctrlsb", prefix) ? channel - 4 : channel + 4);
+			} else {
+				websWrite(wp, "%d", channel);
+			}
+		} else {
+			websWrite(wp, "%d", channel);
+		}
+		websWrite(wp, " (%d)", freq);
+
 	} else
-		// websWrite (wp, "unknown");
 		websWrite(wp, "%s", live_translate("share.unknown"));
 	return;
 }
