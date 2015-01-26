@@ -16,7 +16,6 @@
 #ifndef _LINUX_SWITCH_H
 #define _LINUX_SWITCH_H
 
-#include <net/genetlink.h>
 #include <linux/types.h>
 #include <linux/netdevice.h>
 #include <linux/netlink.h>
@@ -25,6 +24,8 @@
 #include <netlink/netlink.h>
 #include <netlink/genl/genl.h>
 #include <netlink/genl/ctrl.h>
+#else
+#include <net/genetlink.h>
 #endif
 
 /* main attributes */
@@ -98,7 +99,7 @@ enum {
 };
 
 #define SWITCH_ATTR_DEFAULTS_OFFSET	0x1000
-
+#ifdef __KERNEL__
 struct switch_dev;
 struct switch_op;
 struct switch_val;
@@ -245,5 +246,5 @@ struct switch_attr {
 	int ofs;
 	int max;
 };
-
+#endif
 #endif /* _LINUX_SWITCH_H */
