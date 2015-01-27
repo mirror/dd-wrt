@@ -3,7 +3,7 @@
  * Broadcom Home Networking Division 10/100 Mbit/s Ethernet
  * Device Driver.
  *
- * Copyright (C) 2012, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -16,7 +16,7 @@
  * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- * $Id: etc.c 393340 2013-03-27 06:10:49Z $
+ * $Id: etc.c 474170 2014-04-30 08:52:19Z $
  */
 
 #include <et_cfg.h>
@@ -34,6 +34,13 @@
 #include <etc.h>
 #include <et_export.h>
 #include <bcmutils.h>
+#include <hndsoc.h>
+#include <hndfwd.h>
+#ifdef ETFA
+#include <etc_fa.h>
+#endif
+
+#define ETC_TXERR_COUNTDOWN 3
 
 #ifdef ETROBO
 #ifndef	_siutils_h_
@@ -52,6 +59,9 @@ uint32 et_msg_level =
 /* local prototypes */
 static void etc_loopback(etc_info_t *etc, int on);
 static void etc_dumpetc(etc_info_t *etc, struct bcmstrbuf *b);
+static void et_dump_arl_tbl(etc_info_t *etc, uint porv, uint num, struct bcmstrbuf *b);
+static void et_dump_port_status(etc_info_t *etc, uint portnum, struct bcmstrbuf *b);
+int et_get_portinfo(etc_info_t *etc, int port_id, et_sw_port_info_t *portstatus);
 
 /* 802.1d priority to traffic class mapping. queues correspond one-to-one
  * with traffic classes.
@@ -99,9 +109,13 @@ etc_chipmatch(uint vendor, uint device)
 }
 
 void*
-etc_attach(void *et, uint vendor, uint device, uint unit, void *osh, void *regsva)
+etc_attach(void *et, uint vendor, uint device, uint coreunit, void *osh, void *regsva)
 {
 	etc_info_t *etc;
+	uint unit = coreunit;
+
+	/* get unit from coreunit */
+	etc_unitmap(vendor, device, coreunit, &unit);
 
 	ET_TRACE(("et%d: etc_attach: vendor 0x%x device 0x%x\n", unit, vendor, device));
 
@@ -119,16 +133,23 @@ etc_attach(void *et, uint vendor, uint device, uint unit, void *osh, void *regsv
 
 	etc->et = et;
 	etc->unit = unit;
+	etc->coreunit = coreunit;
 	etc->osh = osh;
 	etc->vendorid = (uint16) vendor;
 	etc->deviceid = (uint16) device;
 	etc->forcespeed = ET_AUTO;
 	etc->linkstate = FALSE;
 
+#ifdef ET_INGRESS_QOS
+	etc->dma_rx_thresh = DMA_RX_THRESH_DEFAULT;
+	etc->dma_rx_policy = DMA_RX_POLICY_NONE;
+#endif /* ET_INGRESS_QOS */
+
 #ifdef PKTC
 	/* initialize default pktc values */
 	etc->pktcbnd = MAX(PKTCBND, RXBND);
 #endif
+	etc_quota(etc);
 
 	/* set chip opsvec */
 	etc->chops = etc_chipmatch(vendor, device);
@@ -187,7 +208,12 @@ etc_init(etc_info_t *etc, uint options)
 	ET_TRACE(("et%d: etc_init\n", etc->unit));
 
 	ASSERT(etc->pioactive == NULL);
+#if defined(BCM_GMAC3)
+	if (DEV_NTKIF(etc))
+		ASSERT(!ETHER_ISNULLADDR(&etc->cur_etheraddr));
+#else  /* ! BCM_GMAC3 */
 	ASSERT(!ETHER_ISNULLADDR(&etc->cur_etheraddr));
+#endif /* ! BCM_GMAC3 */
 	ASSERT(!ETHER_ISMULTI(&etc->cur_etheraddr));
 
 	/* init the chip */
@@ -228,7 +254,7 @@ etc_down(etc_info_t *etc, int reset)
 
 /* common iovar handler. return 0=ok, -1=error */
 int
-etc_iovar(etc_info_t *etc, uint cmd, uint set, void *arg)
+etc_iovar(etc_info_t *etc, uint cmd, uint set, void *arg, int len)
 {
 	int error;
 	uint *vecarg;
@@ -283,11 +309,13 @@ etc_iovar(etc_info_t *etc, uint cmd, uint set, void *arg)
 			}
 			break;
 #endif /* BCMDBG */
+
 		case IOV_PKTC:
 			if (set)
 				etc->pktc = *vecarg;
 			else
 				*vecarg = (uint)etc->pktc;
+			etc_quota(etc);
 			break;
 
 		case IOV_PKTCBND:
@@ -295,12 +323,75 @@ etc_iovar(etc_info_t *etc, uint cmd, uint set, void *arg)
 				etc->pktcbnd = MAX(*vecarg, 32);
 			else
 				*vecarg = etc->pktcbnd;
+			etc_quota(etc);
+			break;
+#ifdef ET_INGRESS_QOS
+		case IOV_DMA_RX_THRESH:
+			if (set)
+				/* Don't let the thresh to claim all descriptors */
+				etc->dma_rx_thresh = MIN(*vecarg, NRXD-12);
+			else
+				*vecarg = etc->dma_rx_thresh;
+			break;
+
+		case IOV_DMA_RX_POLICY:
+			if (set) {
+				if (*vecarg > DMA_RX_POLICY_LAST) {
+					error = -1;
+					break;
+				}
+#ifdef ETROBO
+				ASSERT(robo);
+
+				if (*vecarg) {
+					/* Disable flow control for IMP port */
+					error = bcm_robo_flow_control(robo, FALSE);
+				}
+				else {
+					/* Enable flow control for IMP port */
+					error = bcm_robo_flow_control(robo, TRUE);
+				}
+
+				if (error != 0)
+					break;
+#else
+				/* TBD: flow control on non-ROBO switches */
+				error = -1;
+				break;
+#endif /* ETROBO */
+				etc->dma_rx_policy = *vecarg;
+			}
+			else
+				*vecarg = etc->dma_rx_policy;
+			break;
+#endif /* ET_INGRESS_QOS */
+
+		case IOV_RXQUOTA:
+			if (set)
+				etc->quota = *vecarg;
+			else
+				*vecarg = etc->quota;
+			etc_quota(etc);
+			break;
+
+		case IOV_RXLAZYTO: /* rxlazy timeout */
+			if (set)
+				etc->rxlazy_timeout = *vecarg;
+			else
+				*vecarg = etc->rxlazy_timeout;
+			break;
+
+		case IOV_RXLAZYFC: /* rxlazy framecnt */
+			if (set)
+				etc->rxlazy_framecnt = *vecarg;
+			else
+				*vecarg = etc->rxlazy_framecnt;
 			break;
 
 		case IOV_COUNTERS:
 			{
 				struct bcmstrbuf b;
-				bcm_binit(&b, (char*)arg, IOCBUFSZ);
+				bcm_binit(&b, (char*)arg, len);
 				etc_dumpetc(etc, &b);
 			}
 			break;
@@ -309,7 +400,7 @@ etc_iovar(etc_info_t *etc, uint cmd, uint set, void *arg)
 		case IOV_DUMP_CTF:
 			{
 				struct bcmstrbuf b;
-				bcm_binit(&b, (char*)arg, IOCBUFSZ);
+				bcm_binit(&b, (char*)arg, len);
 				et_dump_ctf(etc->et, &b);
 			}
 			break;
@@ -319,11 +410,98 @@ etc_iovar(etc_info_t *etc, uint cmd, uint set, void *arg)
 		case IOV_DUMP_CTRACE:
 			{
 				struct bcmstrbuf b;
-				bcm_binit(&b, (char*)arg, IOCBUFSZ);
+				bcm_binit(&b, (char*)arg, len);
 				et_dump_ctrace(etc->et, &b);
 			}
 			break;
 #endif /* BCMDBG_CTRACE */
+
+#ifdef BCMDBG
+		case IOV_MACRD:
+			{
+				uint val;
+				val = (*etc->chops->macrd)(etc->ch, vecarg[0]);
+				ET_TRACE(("etc_ioctl: ETCMACRD reg_off 0x%x => 0x%x\n",
+				          vecarg[0], val));
+				vecarg[0] = val;
+			}
+			break;
+
+		case IOV_MACWR:
+			{
+				ET_TRACE(("etc_ioctl: ETCMACWR reg_off 0x%x <= 0x%x\n",
+				          vecarg[0], vecarg[1]));
+				(*etc->chops->macwr)(etc->ch, vecarg[0], vecarg[1]);
+			}
+			break;
+#endif /* BCMDBG */
+
+		case IOV_DUMP:
+		if (et_msg_level & 0x10000)
+			bcmdumplog((char *)arg, len);
+#ifdef BCMDBG
+		else
+		{
+			struct bcmstrbuf b;
+			bcm_binit(&b, (char*)arg, len);
+			et_dump(etc->et, &b);
+		}
+#endif /* BCMDBG */
+		break;
+
+#ifdef ETFA
+		case IOV_FA_DUMP:
+			{
+				struct bcmstrbuf b;
+				bcm_binit(&b, (char*)arg, len);
+				fa_dump(etc->fa, &b, FALSE);
+			}
+			break;
+#endif /* ETFA */
+
+#ifdef BCM_GMAC3
+		case IOV_DUMP_FWDER:
+			{
+				struct bcmstrbuf b;
+				bcm_binit(&b, (char*)arg, len);
+				et_dump_fwder(etc->et, &b);
+			}
+			break;
+#endif /* BCM_GMAC3 */
+
+		case IOV_PORTSTATS:
+			{
+				struct bcmstrbuf b;
+				bcm_binit(&b, (char*)arg, IOCBUFSZ);
+				et_dump_port_status(etc, *vecarg, &b);
+			}
+			break;
+
+		case IOV_SW_MCTBL:
+			{
+				struct bcmstrbuf b;
+				uint num, pov;
+				bcm_binit(&b, (char*)arg, IOCBUFSZ);
+				pov = (*vecarg & 0x1ffff) >> 16;
+				num = *vecarg & 0xffff;
+				et_dump_arl_tbl(etc, pov, num, &b);
+			}
+			break;
+
+		case IOV_CAP:
+			{
+				struct bcmstrbuf b;
+				bcm_binit(&b, (char*)arg, len);
+#ifdef ETFA
+				/* Do we need to consider the HW cap and nvram ctf_fa_mode? */
+				bcm_bprintf(&b, "fa ");
+#endif
+#ifdef BCM_GMAC3
+				if (!getvar(NULL, "gmac3_off"))
+					bcm_bprintf(&b, "gmac3 ");
+#endif
+			}
+			break;
 
 		default:
 			error = -1;
@@ -385,6 +563,10 @@ etc_ioctl(etc_info_t *etc, int cmd, void *arg)
 		break;
 
 	case ETCSPEED:
+		if (etc->phyaddr == EPHY_NOREG) {
+			/* Don't configure the MII interface speed through ioctl */
+			goto err;
+		}
 		if (val == ET_1000FULL) {
 			etc->speed = 1000;
 			etc->duplex = 1;
@@ -471,15 +653,23 @@ etc_ioctl(etc_info_t *etc, int cmd, void *arg)
 	case ETCROBORD:
 		if (etc->robo && vec) {
 			uint page, reg;
-			uint16 val;
+			uint64 val;
+			int len = 2;
 			robo_info_t *robo = (robo_info_t *)etc->robo;
 
 			page = vec[0] >> 16;
 			reg = vec[0] & 0xffff;
-			val = -1;
-			robo->ops->read_reg(etc->robo, page, reg, &val, 2);
-			vec[1] = val;
-			ET_TRACE(("etc_ioctl: ETCROBORD of page 0x%x, reg 0x%x => 0x%x\n",
+			if ((vec[1] >= 1) && (vec[1] <= 8))
+				len = vec[1];
+			/* For SPI mode, the length can only be 1, 2, and 4 bytes */
+			if ((len > 4) && (!strcmp(robo->ops->desc, "SPI (GPIO)"))) {
+				vec[1] = -1;
+				break;
+			}
+			val = 0;
+			robo->ops->read_reg(etc->robo, page, reg, &val, len);
+			*((unsigned long long *)&vec[2]) = val;
+			ET_TRACE(("etc_ioctl: ETCROBORD of page 0x%x, reg 0x%x  => 0x%016llX\n",
 			          page, reg, val));
 		}
 		break;
@@ -487,63 +677,25 @@ etc_ioctl(etc_info_t *etc, int cmd, void *arg)
 	case ETCROBOWR:
 		if (etc->robo && vec) {
 			uint page, reg;
-			uint16 val;
+			uint64 val;
 			robo_info_t *robo = (robo_info_t *)etc->robo;
-
+			int len = 2;
 			page = vec[0] >> 16;
 			reg = vec[0] & 0xffff;
-			val = vec[1];
-			robo->ops->write_reg(etc->robo, page, vec[0], &val, 2);
-			ET_TRACE(("etc_ioctl: ETCROBOWR to page 0x%x, reg 0x%x <= 0x%x\n",
-			          page, reg, val));
-		}
-		break;
-	case ETCROBORD4:
-		if (etc->robo && vec) {
-			uint page, reg;
-			uint32 val;
-			robo_info_t *robo = (robo_info_t *)etc->robo;
-
-			page = vec[0] >> 16;
-			reg = vec[0] & 0xffff;
-			val = -1;
-			robo->ops->read_reg(etc->robo, page, reg, &val, 4);
-			vec[1] = val;
-			ET_TRACE(("etc_ioctl: ETCROBORD4 of page 0x%x, reg 0x%x => 0x%x\n",
-			          page, reg, val));
-		}
-		break;
-
-	case ETCROBOWR4:
-		if (etc->robo && vec) {
-			uint page, reg;
-			uint32 val;
-			robo_info_t *robo = (robo_info_t *)etc->robo;
-
-			page = vec[0] >> 16;
-			reg = vec[0] & 0xffff;
-			val = vec[1];
-			robo->ops->write_reg(etc->robo, page, vec[0], &val, 4);
-			ET_TRACE(("etc_ioctl: ETCROBOWR4 to page 0x%x, reg 0x%x <= 0x%x\n",
-			          page, reg, val));
-		}
-		break;
-	case ETCROBOWR1:
-		if (etc->robo && vec) {
-			uint page, reg;
-			uint8 val;
-			robo_info_t *robo = (robo_info_t *)etc->robo;
-
-			page = vec[0] >> 16;
-			reg = vec[0] & 0xffff;
-			val = vec[1];
-			robo->ops->write_reg(etc->robo, page, vec[0], &val, 1);
-			ET_TRACE(("etc_ioctl: ETCROBOWR4 to page 0x%x, reg 0x%x <= 0x%x\n",
+			if ((vec[1] >= 1) && (vec[1] <= 8))
+				len = vec[1];
+			/* For SPI mode, the length can only be 1, 2, and 4 bytes */
+			if ((len > 4) && (!strcmp(robo->ops->desc, "SPI (GPIO)"))) {
+				vec[1] = -1;
+				break;
+			}
+			val = *((unsigned long long *)&vec[2]);
+			robo->ops->write_reg(etc->robo, page, vec[0], &val, len);
+			ET_TRACE(("etc_ioctl: ETCROBOWR to page 0x%x, reg 0x%x <= 0x%016llX\n",
 			          page, reg, val));
 		}
 		break;
 #endif /* ETROBO */
-
 
 	default:
 	err:
@@ -720,6 +872,29 @@ etc_qos(etc_info_t *etc, uint on)
 	et_init(etc->et, ET_INIT_INTRON);
 }
 
+void
+etc_quota(etc_info_t *etc)
+{
+	int quota = ETCQUOTA_MAX;
+
+#ifdef PKTC
+	quota = (etc->pktc) ? etc->pktcbnd : RXBND;
+#endif
+
+	/* Cap to ETCQUOTA_MAX */
+	etc->quota = (quota > ETCQUOTA_MAX) ? ETCQUOTA_MAX : quota;
+}
+
+void
+etc_rxlazy(etc_info_t *etc, uint microsecs, uint framecnt)
+{
+	ASSERT(framecnt >= 1U);
+	ASSERT(etc->bp_ticks_usec != 0U);
+
+	etc->rxlazy_timeout = microsecs * etc->bp_ticks_usec;
+	etc->rxlazy_framecnt = framecnt;
+}
+
 /* WAR: BCM53115 switch is not retaining the tag while forwarding
  * the vlan/priority tagged frames even when tag status preserve
  * is enabled. This problem can be only worked around by doing
@@ -867,7 +1042,8 @@ etc_dumpetc(etc_info_t *etc, struct bcmstrbuf *b)
 	bcm_bprintf(b, "chained %d unchained %d maxchainsz %d currchainsz %d\n",
 	               etc->chained, etc->unchained, etc->maxchainsz, etc->currchainsz);
 
-#if defined(BCMDBG) && defined(PKTC)
+#if defined(BCMDBG)
+#if defined(PKTC)
 	bcm_bprintf(b, "chain sz histo:");
 	for (i = 0; i < PKTCBND && etc->chained; i++) {
 		bcm_bprintf(b, "  %d(%d%%)", etc->chainsz[i],
@@ -875,7 +1051,17 @@ etc_dumpetc(etc_info_t *etc, struct bcmstrbuf *b)
 		if (((i % 8) == 7) && (i != PKTCBND - 1))
 			bcm_bprintf(b, "\n              :");
 	}
-#endif
+#endif /* PKTC */
+
+	bcm_bprintf(b, "\nrx processed :%d", etc->rxprocessed);
+
+	for (i = 0; i < ETCQUOTA_MAX; i++) {
+		if (etc->quota_stats[i]) {
+			bcm_bprintf(b, "  %d %d\n", i, etc->quota_stats[i]);
+		}
+	}
+	bzero(etc->quota_stats, ETCQUOTA_MAX * sizeof(int));
+#endif /* BCMDBG */
 
 	bcm_bprintf(b, "\n");
 }
@@ -889,6 +1075,140 @@ etc_totlen(etc_info_t *etc, void *p)
 	for (; p; p = PKTNEXT(etc->osh, p))
 		total += PKTLEN(etc->osh, p);
 	return (total);
+}
+
+static void
+et_dump_arl_entry(uint porv, uint num,  uint64 reg_val64, uint32 reg_val32, struct bcmstrbuf *b)
+{
+	uint32  prtn;
+	uint64  vidn;
+
+	vidn = (reg_val64 & VID_MASK) >> 48;
+	prtn = (reg_val32 & 0x1ff);
+
+	if ((prtn <= 5) && ((num == 0xff) || (!porv && (vidn == num)) || (porv && (prtn == num)))) {
+		bcm_bprintf(b, "%012llx       ", (reg_val64 & MACADDR_MASK));
+		bcm_bprintf(b, "0x%0llx", vidn);
+		bcm_bprintf(b, "%12d   ", prtn);
+		bcm_bprintf(b, "0x%08x\n", reg_val32);
+	}
+}
+
+static void
+et_dump_arl_tbl(etc_info_t *etc, uint porv, uint num, struct bcmstrbuf *b)
+{
+	uint8	val8 = 0x80;
+	uint32  val32;
+	uint64  val64;
+	robo_info_t *robo = (robo_info_t *)etc->robo;
+
+	/* write 1 to bit 7 Page 5, address 0x50 */
+	robo->ops->write_reg(etc->robo, 5, 0x50, &val8, sizeof(val8));
+
+	OSL_DELAY(150);
+
+	bcm_bprintf(b, "MAC ADDRESS        VID        Port        Flags\n");
+	bcm_bprintf(b, "-----------        ---        ----        -----\n");
+
+	robo->ops->read_reg(etc->robo, 5, 0x50, &val8, sizeof(uint8));
+	val8 &= 0x81;	/* read bit 0 & 7  -- if "1", ARL search is started */
+					/* and valid entry is found */
+
+	while (val8) {
+		/* MAC-VID  1 */
+		robo->ops->read_reg(etc->robo, 5, 0x60, &val64, sizeof(uint64));
+		/* reading 0x68 should clears bit 0 of 0x50 & search to cont.. */
+		robo->ops->read_reg(etc->robo, 5, 0x68, &val32, sizeof(uint32));
+
+		if (val64 && (val8 & 0x01))
+			et_dump_arl_entry(porv, num, val64, val32, b);
+
+		/* MAC-VID  2 */
+		robo->ops->read_reg(etc->robo, 5, 0x70, &val64, sizeof(uint64));
+		robo->ops->read_reg(etc->robo, 5, 0x78, &val32, sizeof(uint32));
+		if (val64 && (val8 & 0x01))
+			et_dump_arl_entry(porv, num, val64, val32, b);
+
+		robo->ops->read_reg(etc->robo, 5, 0x50, &val8, sizeof(uint8));
+		if ((val8 & 0x80) == 0) {
+			break;
+		}
+
+		if ((val8 & 0x01) == 0) {
+			robo->ops->read_reg(etc->robo, 5, 0x50, &val8, sizeof(uint8));
+		}
+
+		val8 = (val8 & 0x81);
+	}
+}
+
+static void
+et_dump_port_status(etc_info_t *etc, uint portn, struct bcmstrbuf *b)
+{
+	uint16 i, val;
+	uint pstart, pend;
+	et_sw_port_info_t portinfo;
+	char *phy_speed[4] = {"Unknown", "100", "1000", "10"};
+
+	memset(&portinfo, 0, sizeof(et_sw_port_info_t));
+
+	if (et_get_portinfo(etc, portn, &portinfo) != 0)
+		return;
+
+	if(portn == 0xff)   {   /* all ports */
+		pstart = 0;
+		pend = 4;
+	} else if (portn < 5) {
+		pstart = pend = portn;
+	} else {
+		/* invalid port range */
+		return;
+	}
+
+	/* pretty print */
+	bcm_bprintf(b, "Port    Link    Speed(Mbps)    Duplex\n");
+	bcm_bprintf(b, "----    ----    -----------    ------\n");
+
+	for (i = pstart; i <= pend; i++) {
+		bcm_bprintf(b, "\n%4d    ", i);
+		if (portinfo.link_state & (1 << i)) {
+			bcm_bprintf(b, "  Up");
+
+			val = ((portinfo.speed >> (i * 2))) & 0x0003;
+			bcm_bprintf(b, "%15s      ", phy_speed[val]);
+
+			bcm_bprintf(b, portinfo.duplex & (1 << i) ? "Full" : "Half");
+
+		} else {
+			bcm_bprintf(b, "Down");
+		}
+	}
+}
+
+int
+et_get_portinfo(etc_info_t *etc, int port_id, et_sw_port_info_t *portstatus)
+{
+	uint page = 1, reg;
+	uint16 lnk, spd, dplx;
+	robo_info_t *robo = (robo_info_t *)etc->robo;
+
+	if ((etc == NULL) || (portstatus == NULL))
+		return -1;	/* fail */
+
+	reg = 0;
+	robo->ops->read_reg(etc->robo, page, reg, &lnk, 2);
+
+	reg = 4;
+	robo->ops->read_reg(etc->robo, page, reg, &spd, 2);
+
+	reg = 8;
+	robo->ops->read_reg(etc->robo, page, reg, &dplx, 2);
+
+	portstatus->speed = spd;
+	portstatus->link_state = lnk;
+	portstatus->duplex = dplx;
+
+	return 0;
 }
 
 #ifdef BCMDBG
@@ -919,3 +1239,25 @@ etc_prhex(char *msg, uchar *buf, uint nbytes, int unit)
 	prhex(NULL, buf, nbytes);
 }
 #endif /* BCMDBG */
+
+void
+etc_unitmap(uint vendor, uint device, uint coreunit, uint *unit)
+{
+#if !defined(_CFE_) || defined(CFG_ETC47XX)
+	{
+		extern struct chops bcm47xx_et_chops;
+
+		if (bcm47xx_et_chops.id(vendor, device))
+			*unit = coreunit;
+	}
+#endif
+
+#ifdef CFG_GMAC
+	{
+		extern struct chops bcmgmac_et_chops;
+
+		if (bcmgmac_et_chops.id(vendor, device))
+			bcmgmac_et_chops.unitmap(coreunit, unit);
+	}
+#endif /* CFG_GMAC */
+}

@@ -1,6 +1,6 @@
 # Broadcom 802.11abg Networking Device Driver Configuration file
 #
-# Copyright (C) 2014, Broadcom Corporation. All Rights Reserved.
+# Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
 # 
 # Permission to use, copy, modify, and/or distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -46,7 +46,7 @@ RPC_RETURN_WAIT_TIMEOUT_MSEC=64000
 # Embed 43526b and 43236b image
 EMBED_IMAGE_43236b=1
 EMBED_IMAGE_43526b=1
-EMBED_IMAGE_4360b=1
+EMBED_IMAGE_43556b1=1
 BCM_DNGL_EMBEDIMAGE=1
 DNGL_WD_KEEP_ALIVE=1
 RXCHAIN_PWRSAVE=1
@@ -72,4 +72,3 @@ WLEXTLOG=0
 WLDPT=0
 BCMAUTH_PSK=0
 WL_MONITOR=0
-WOWL=0

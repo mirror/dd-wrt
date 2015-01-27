@@ -1,7 +1,7 @@
 /*
  * Broadcom QSPI serial flash interface
  *
- * Copyright (C) 2014, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -770,10 +770,10 @@ spiflash_init(si_t *sih)
 			spiflash.numblocks = 64;
 			break;
 		case 0x16:
-		case 0x17:
 			/* ST M25P64 64 Mbit Serial Flash */
 			spiflash.numblocks = 128;
 			break;
+		case 0x17:
 		case 0x18:
 			/* ST M25FL128 128 Mbit Serial Flash */
 			spiflash.numblocks = 256;
@@ -889,7 +889,8 @@ spiflash_init(si_t *sih)
 		/* Get chip revision */
 		srab_base = (uint32 *)REG_MAP(CHIPCB_SRAB_BASE, SI_CORE_SIZE);
 		W_REG(osh, (uint32 *)((uint32)srab_base + CHIPCB_SRAB_CMDSTAT_OFFSET), 0x02400001);
-		chip_rev = R_REG(osh, (uint32 *)((uint32)srab_base + CHIPCB_SRAB_RDL_OFFSET)) & 0x3;
+		chip_rev = R_REG(osh,
+			(uint32 *)((uint32)srab_base + CHIPCB_SRAB_RDL_OFFSET)) & 0xff;
 		REG_UNMAP(srab_base);
 		if (CHIPID(sih->chip) == BCM4707_CHIP_ID && chip_rev < 2) {
 			force_3byte_mode = 1;

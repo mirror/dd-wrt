@@ -2,7 +2,7 @@
  * PHY module Power-per-rate API. Provides interface functions and definitions for opaque
  * ppr structure for use containing regulatory and board limits and tx power targets.
  *
- * Copyright (C) 2014, Broadcom Corporation
+ * Copyright (C) 2015, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -85,10 +85,10 @@ int ppr_init_ser_mem_by_bw(uint8* pbuf, wl_tx_bw_t bw, uint32 len);
 int ppr_init_ser_mem(uint8* pbuf, ppr_t * ppr, uint32 len);
 
 /* Constructor routine for opaque PPR struct */
-ppr_t* ppr_create(osl_t *osh, wl_tx_bw_t bw);
+ppr_t* ppr_create(osl_t* osh, wl_tx_bw_t bw);
 
 /* Destructor routine for opaque PPR struct */
-void ppr_delete(osl_t *osh, ppr_t* pprptr);
+void ppr_delete(osl_t* osh, ppr_t* pprptr);
 
 /* Type routine for inferring opaque structure size */
 wl_tx_bw_t ppr_get_ch_bw(const ppr_t* pprptr);
@@ -111,6 +111,12 @@ int ppr_get_ht_mcs(ppr_t* pprptr, wl_tx_bw_t bw, wl_tx_nss_t Nss, wl_tx_mode_t m
 /* Get the VHT MCS values for the group specified by Nss, with the given bw and tx chains */
 int ppr_get_vht_mcs(ppr_t* pprptr, wl_tx_bw_t bw, wl_tx_nss_t Nss, wl_tx_mode_t mode,
  wl_tx_chains_t tx_chains, ppr_vht_mcs_rateset_t* mcs);
+
+/* Get the minimum power for a VHT MCS rate specified by Nss, with the given bw and tx chains.
+ * Disabled rates are ignored
+ */
+int ppr_get_vht_mcs_min(ppr_t* pprptr, wl_tx_bw_t bw, wl_tx_nss_t Nss, wl_tx_mode_t mode,
+ wl_tx_chains_t tx_chains, int8* mcs_min);
 
 
 /* Routines to set target powers per rate for a whole rate set */
@@ -155,6 +161,9 @@ int ppr_set_same_vht_mcs(ppr_t* pprptr, wl_tx_bw_t bw, wl_tx_nss_t Nss, wl_tx_mo
 
 /* Ensure no rate limit is greater than the specified maximum */
 uint ppr_apply_max(ppr_t* pprptr, int8 max);
+
+/* Make disabled rates explicit. If one rate in a group is disabled, disable the whole group */
+int ppr_force_disabled(ppr_t* pprptr, int8 threshold);
 
 /*
  * Reduce total transmitted power to level of constraint.
@@ -252,7 +261,7 @@ int ppr_deserialize(ppr_t* pprptr, const uint8* buf, uint buflen);
  * Creates an opaque structure referenced by *pptrptr, NULL on error.
  * Returns error code, BCME_OK if successful.
  */
-int ppr_deserialize_create(osl_t *osh, const uint8* buf, uint buflen, ppr_t** pprptr);
+int ppr_deserialize_create(osl_t* osh, const uint8* buf, uint buflen, ppr_t** pprptr);
 
 /* Subtract a common value from each power and re-store */
 void ppr_minus_cmn_val(ppr_t* pprptr, int8 val);
@@ -263,6 +272,9 @@ void ppr_plus_cmn_val(ppr_t* pprptr, int8 val);
 /* Multiply a percentage */
 void ppr_multiply_percentage(ppr_t* pprptr, uint8 val);
 
+
+/* Forward declaration */
+typedef struct tx_pwr_cache_entry tx_pwr_cache_entry_t;
 
 #ifdef WLTXPWR_CACHE
 
@@ -300,47 +312,70 @@ enum txpwr_cache_info_type {
 #define TXPWR_STF_TARGET_PWR_MIN_INVALID 0x40
 #define TXPWR_STF_TARGET_PWR_NOT_CACHED 0x20
 
-extern ppr_t* wlc_phy_get_cached_pwr(chanspec_t chanspec, uint pwr_type);
+extern ppr_t* wlc_phy_get_cached_pwr(tx_pwr_cache_entry_t* cacheptr, chanspec_t chanspec,
+	uint pwr_type);
 
-extern int wlc_phy_set_cached_pwr(osl_t *osh, chanspec_t chanspec, uint pwr_type, ppr_t* pwrptr);
+extern int wlc_phy_set_cached_pwr(osl_t* osh, tx_pwr_cache_entry_t* cacheptr, chanspec_t chanspec,
+	uint pwr_type, ppr_t* pwrptr);
 
-extern uint8 wlc_phy_get_cached_pwr_max(chanspec_t chanspec, uint core);
+extern uint8 wlc_phy_get_cached_pwr_max(tx_pwr_cache_entry_t* cacheptr, chanspec_t chanspec,
+	uint core);
 
-extern int wlc_phy_set_cached_pwr_max(chanspec_t chanspec, uint core, uint8 max_pwr);
+extern int wlc_phy_set_cached_pwr_max(tx_pwr_cache_entry_t* cacheptr, chanspec_t chanspec,
+	uint core, uint8 max_pwr);
 
-extern uint8 wlc_phy_get_cached_pwr_min(chanspec_t chanspec, uint core);
+extern uint8 wlc_phy_get_cached_pwr_min(tx_pwr_cache_entry_t* cacheptr, chanspec_t chanspec,
+	uint core);
 
-extern int wlc_phy_set_cached_pwr_min(chanspec_t chanspec, uint core, uint8 min_pwr);
+extern int wlc_phy_set_cached_pwr_min(tx_pwr_cache_entry_t* cacheptr, chanspec_t chanspec,
+	uint core, uint8 min_pwr);
 
-extern int wlc_phy_get_cached_stf_target_pwr_min(chanspec_t chanspec);
+extern int wlc_phy_get_cached_stf_target_pwr_min(tx_pwr_cache_entry_t* cacheptr,
+	chanspec_t chanspec);
 
-extern int wlc_phy_set_cached_stf_target_pwr_min(chanspec_t chanspec, int min_pwr);
+extern int wlc_phy_set_cached_stf_target_pwr_min(tx_pwr_cache_entry_t* cacheptr,
+	chanspec_t chanspec, int min_pwr);
 
-extern int8 wlc_phy_get_cached_txchain_offsets(chanspec_t chanspec, uint core);
+extern int8 wlc_phy_get_cached_txchain_offsets(tx_pwr_cache_entry_t* cacheptr, chanspec_t chanspec,
+	uint core);
 
-extern int wlc_phy_set_cached_txchain_offsets(chanspec_t chanspec, uint core, int8 offset);
+extern int wlc_phy_set_cached_txchain_offsets(tx_pwr_cache_entry_t* cacheptr, chanspec_t chanspec,
+	uint core, int8 offset);
 
-extern bool wlc_phy_txpwr_cache_is_cached(chanspec_t chanspec);
+extern bool wlc_phy_txpwr_cache_is_cached(tx_pwr_cache_entry_t* cacheptr, chanspec_t chanspec);
 
-extern bool wlc_phy_is_pwr_cached(uint pwr_type, ppr_t* pwrptr);
+extern bool wlc_phy_is_pwr_cached(tx_pwr_cache_entry_t* cacheptr, uint pwr_type, ppr_t* pwrptr);
 
-extern void wlc_phy_uncache_pwr(uint pwr_type, ppr_t* pwrptr);
+extern void wlc_phy_uncache_pwr(tx_pwr_cache_entry_t* cacheptr, uint pwr_type, ppr_t* pwrptr);
 
-extern void wlc_phy_uncache_pwr(uint pwr_type, ppr_t* pwrptr);
+extern chanspec_t wlc_phy_txpwr_cache_find_other_cached_chanspec(tx_pwr_cache_entry_t* cacheptr,
+	chanspec_t chanspec);
 
-extern chanspec_t wlc_phy_txpwr_cache_find_other_cached_chanspec(chanspec_t chanspec);
+extern tx_pwr_cache_entry_t* wlc_phy_txpwr_cache_create(osl_t* osh);
 
-extern void wlc_phy_txpwr_cache_clear(osl_t *osh, chanspec_t chanspec);
+extern void wlc_phy_txpwr_cache_clear(osl_t* osh, tx_pwr_cache_entry_t* cacheptr,
+	chanspec_t chanspec);
 
-extern void wlc_phy_txpwr_cache_invalidate(void);
+extern void wlc_phy_txpwr_cache_invalidate(tx_pwr_cache_entry_t* cacheptr);
 
-extern void wlc_phy_txpwr_cache_close(osl_t *osh);
+extern void wlc_phy_txpwr_cache_close(osl_t* osh, tx_pwr_cache_entry_t* cacheptr);
 
-extern int wlc_phy_txpwr_setup_entry(chanspec_t chanspec);
+extern int wlc_phy_txpwr_setup_entry(tx_pwr_cache_entry_t* cacheptr, chanspec_t chanspec);
 
-extern bool wlc_phy_get_stf_ppr_cached(chanspec_t chanspec);
+#ifndef WLTXPWR_CACHE_PHY_ONLY
+extern bool wlc_phy_get_stf_ppr_cached(tx_pwr_cache_entry_t* cacheptr, chanspec_t chanspec);
 
-extern void wlc_phy_set_stf_ppr_cached(chanspec_t chanspec, bool bcached);
+extern void wlc_phy_set_stf_ppr_cached(tx_pwr_cache_entry_t* cacheptr, chanspec_t chanspec,
+	bool bcached);
+
+extern int wlc_phy_get_cached_stf_pwr_min_dbm(tx_pwr_cache_entry_t* cacheptr);
+
+extern void wlc_phy_set_cached_stf_pwr_min_dbm(tx_pwr_cache_entry_t* cacheptr, int min_pwr);
+
+extern void wlc_phy_set_cached_stf_max_offset(tx_pwr_cache_entry_t* cacheptr, chanspec_t chanspec,
+	uint8 max_offset);
+
+extern uint8 wlc_phy_get_cached_stf_max_offset(tx_pwr_cache_entry_t* cacheptr, chanspec_t chanspec);
+#endif /* WLTXPWR_CACHE_PHY_ONLY */
 #endif /* WLTXPWR_CACHE */
-
 #endif	/* _wlc_ppr_h_ */
