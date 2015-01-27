@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -15,7 +15,7 @@
  *
  * Fundamental constants relating to IP Protocol
  *
- * $Id: bcmip.h 427480 2013-10-03 19:09:47Z $
+ * $Id: bcmip.h 449391 2014-01-16 23:23:52Z $
  */
 
 #ifndef _bcmip_h_

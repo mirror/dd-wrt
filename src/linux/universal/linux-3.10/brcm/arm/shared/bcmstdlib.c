@@ -1,7 +1,7 @@
 /*
  * stdlib support routines for self-contained images.
  *
- * Copyright (C) 2014, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: bcmstdlib.c 419467 2013-08-21 09:19:48Z $
+ * $Id: bcmstdlib.c 446340 2014-01-03 17:01:34Z $
  */
 
 /*
@@ -29,7 +29,7 @@
 	defined(EFI)
 /* debatable */
 #include <osl.h>
-#elif 1
+#else
 #include <stdio.h>
 #endif 
 
@@ -91,6 +91,8 @@ snprintf(char *buf, size_t bufsize, const char *fmt, ...)
 
 #else /* BCMSTDLIB_WIN32_APP */
 
+#if !defined(BCMROMOFFLOAD_EXCLUDE_STDLIB_FUNCS)
+
 static const char hex_upper[17] = "0123456789ABCDEF";
 static const char hex_lower[17] = "0123456789abcdef";
 
@@ -138,8 +140,6 @@ BCMROMFN(vsnprintf)(char *buf, size_t size, const char *fmt, va_list ap)
 	const char *iptr, *tmpptr;
 	unsigned int x;
 	int i;
-	int leadingzero;
-	int leadingnegsign;
 	int islong;
 	int width;
 	int width2 = 0;
@@ -169,16 +169,9 @@ BCMROMFN(vsnprintf)(char *buf, size_t size, const char *fmt, va_list ap)
 			hashash = 1;
 			iptr++;
 		}
-		if (*iptr == '-') {
-			leadingnegsign = 1;
+		if (*iptr == '-' || *iptr == '0') {
 			iptr++;
-		} else
-			leadingnegsign = 0;
-
-		if (*iptr == '0')
-			leadingzero = 1;
-		else
-			leadingzero = 0;
+		}
 
 		width = 0;
 		while (*iptr && bcm_isdigit(*iptr)) {
@@ -248,6 +241,10 @@ BCMROMFN(vsnprintf)(char *buf, size_t size, const char *fmt, va_list ap)
 			break;
 		case 'X':
 		case 'x':
+			if (hashash) {
+				*optr++ = '0';
+				*optr++ = *iptr;
+			}
 			x = va_arg(ap, unsigned int);
 			optr += __atox(optr, end, x, 16, width,
 			               (*iptr == 'X') ? hex_upper : hex_lower);
@@ -296,6 +293,7 @@ BCMROMFN(snprintf)(char *buf, size_t bufsize, const char *fmt, ...)
 
 	return r;
 }
+#endif	/* !BCMROMOFFLOAD_EXCLUDE_STDLIB_FUNCS */
 
 #endif /* BCMSTDLIB_WIN32_APP */
 
@@ -671,18 +669,10 @@ memcpy(void *dest, const void *src, size_t n)
 		if (n >= 32) {
 			const uint32 *sfinal = (const uint32 *)((const uint8 *)sw + (n & ~31));
 
-			/* Note: order of '%' registers is chosen to avoid assembler warnings,
-			 * and may need to be reordered if function or compiler is changed.
-			 */
-			asm volatile("1:\n\t"
-#if (__GNUC_MINOR__ >= 5)	/* arm-none-eabi-gcc 4.5.1 (2010.09) */
-				     "ldmia.w %0!, {%3, %4, %5, %6, %8, %9, %10, %7}\n\t"
-				     "stmia.w %1!, {%3, %4, %5, %6, %8, %9, %10, %7}\n\t"
-#else				/* arm-none-eabi-gcc 4.2.1 (2007q3-53) */
-				     "ldmia.w %0!, {%8, %9, %10, %7, %6, %5, %3, %4}\n\t"
-				     "stmia.w %1!, {%8, %9, %10, %7, %6, %5, %3, %4}\n\t"
-#endif
-				     "cmp %2, %0\n\t"
+			asm volatile("\n1:\t"
+				     "ldmia.w\t%0!, {%3, %4, %5, %6, %7, %8, %9, %10}\n\t"
+				     "stmia.w\t%1!, {%3, %4, %5, %6, %7, %8, %9, %10}\n\t"
+				     "cmp\t%2, %0\n\t"
 				     "bhi.n\t1b\n\t"
 				     : "=r" (sw), "=r" (dw), "=r" (sfinal), "=r" (t1), "=r" (t2),
 				     "=r" (t3), "=r" (t4), "=r" (t5), "=r" (t6), "=r" (t7),
@@ -697,68 +687,53 @@ memcpy(void *dest, const void *src, size_t n)
 		case 0:
 			break;
 		case 1:
-			asm volatile("ldr %2, [%0]\n\t"
-			             "str %2, [%1]\n\t"
-			             "adds %0, #4\n\t"
-			             "adds %1, #4\n\t"
+			asm volatile("ldr\t%2, [%0]\n\t"
+			             "str\t%2, [%1]\n\t"
+			             "adds\t%0, #4\n\t"
+			             "adds\t%1, #4\n\t"
 			             : "=r" (sw), "=r" (dw), "=r" (t1)
 			             : "0" (sw), "1" (dw));
 			break;
 		case 2:
-			asm volatile("ldmia.w %0!, {%2, %3}\n\t"
-			             "stmia.w %1!, {%2, %3}\n\t"
+			asm volatile("ldmia.w\t%0!, {%2, %3}\n\t"
+			             "stmia.w\t%1!, {%2, %3}\n\t"
 			             : "=r" (sw), "=r" (dw), "=r" (t1), "=r" (t2)
 			             : "0" (sw), "1" (dw));
 			break;
 		case 3:
-			asm volatile("ldmia.w %0!, {%2, %3, %4}\n\t"
-			             "stmia.w %1!, {%2, %3, %4}\n\t"
+			asm volatile("ldmia.w\t%0!, {%2, %3, %4}\n\t"
+			             "stmia.w\t%1!, {%2, %3, %4}\n\t"
 			             : "=r" (sw), "=r" (dw), "=r" (t1), "=r" (t2),
 			             "=r" (t3)
 			             : "0" (sw), "1" (dw));
 			break;
 		case 4:
-			asm volatile("ldmia.w %0!, {%2, %3, %4, %5}\n\t"
-			             "stmia.w %1!, {%2, %3, %4, %5}\n\t"
+			asm volatile("ldmia.w\t%0!, {%2, %3, %4, %5}\n\t"
+			             "stmia.w\t%1!, {%2, %3, %4, %5}\n\t"
 			             : "=r" (sw), "=r" (dw), "=r" (t1), "=r" (t2),
 			             "=r" (t3), "=r" (t4)
 			             : "0" (sw), "1" (dw));
 			break;
 		case 5:
 			asm volatile(
-#if (__GNUC_MINOR__ >= 5)
-				     "ldmia.w %0!, {%2, %3, %4, %5, %6}\n\t"
-			             "stmia.w %1!, {%2, %3, %4, %5, %6}\n\t"
-#else
-				     "ldmia.w %0!, {%3, %4, %5, %6, %2}\n\t"
-			             "stmia.w %1!, {%3, %4, %5, %6, %2}\n\t"
-#endif
+				     "ldmia.w\t%0!, {%2, %3, %4, %5, %6}\n\t"
+			             "stmia.w\t%1!, {%2, %3, %4, %5, %6}\n\t"
 			             : "=r" (sw), "=r" (dw), "=r" (t1), "=r" (t2),
 			             "=r" (t3), "=r" (t4), "=r" (t5)
 			             : "0" (sw), "1" (dw));
 			break;
 		case 6:
 			asm volatile(
-#if (__GNUC_MINOR__ >= 5)
-				     "ldmia.w %0!, {%2, %3, %4, %5, %6, %7}\n\t"
-			             "stmia.w %1!, {%2, %3, %4, %5, %6, %7}\n\t"
-#else
-				     "ldmia.w %0!, {%4, %5, %6, %7, %3, %2}\n\t"
-			             "stmia.w %1!, {%4, %5, %6, %7, %3, %2}\n\t"
-#endif
+				     "ldmia.w\t%0!, {%2, %3, %4, %5, %6, %7}\n\t"
+			             "stmia.w\t%1!, {%2, %3, %4, %5, %6, %7}\n\t"
 			             : "=r" (sw), "=r" (dw), "=r" (t1), "=r" (t2),
 			             "=r" (t3), "=r" (t4), "=r" (t5), "=r" (t6)
 			             : "0" (sw), "1" (dw));
 			break;
 		case 7:
 			asm volatile(
-#if (__GNUC_MINOR__ >= 5)
-				     "ldmia.w %0!, {%2, %3, %4, %5, %6, %8, %7}\n\t"
-			             "stmia.w %1!, {%2, %3, %4, %5, %6, %8, %7}\n\t"
-#else
-				     "ldmia.w %0!, {%5, %6, %7, %8, %4, %3, %2}\n\t"
-			             "stmia.w %1!, {%5, %6, %7, %8, %4, %3, %2}\n\t"
-#endif
+				     "ldmia.w\t%0!, {%2, %3, %4, %5, %6, %8, %7}\n\t"
+			             "stmia.w\t%1!, {%2, %3, %4, %5, %6, %8, %7}\n\t"
 			             : "=r" (sw), "=r" (dw), "=r" (t1), "=r" (t2),
 			             "=r" (t3), "=r" (t4), "=r" (t5), "=r" (t6),
 			             "=r" (t7)
@@ -819,23 +794,31 @@ memcpy(void *dest, const void *src, size_t n)
 
 	return dest;
 }
-#endif /* __ARM_ARCH_7M__ */
+#endif /* defined(__ARM_ARCH_7M__) || defined(__ARM_ARCH_7R__) */
 
 #endif /* EFI */
 
 /* Include printf if it has already not been defined as NULL */
 #ifndef printf
-
+bool last_nl = FALSE;
 int
 printf(const char *fmt, ...)
 {
 	va_list ap;
 	int count = 0, i;
 	char buffer[PRINTF_BUFLEN + 1];
+#ifdef DONGLEBUILD
+	if (last_nl) {
+		/* add the dongle ref time */
+		uint32 dongle_time_ms;
+		dongle_time_ms = hndrte_reftime_ms();
 
+		count = sprintf(buffer, "%06u.%03u ", dongle_time_ms / 1000, dongle_time_ms % 1000);
+	}
+#endif /* DONGLEBUILD */
 
 	va_start(ap, fmt);
-	count += vsnprintf(buffer, sizeof(buffer), fmt, ap);
+	count += vsnprintf(buffer + count, sizeof(buffer) - count, fmt, ap);
 	va_end(ap);
 
 	for (i = 0; i < count; i++) {
@@ -847,6 +830,10 @@ printf(const char *fmt, ...)
 #endif
 	}
 
+	if (buffer[i - 1] == '\n')
+		last_nl = TRUE;
+	else
+		last_nl = FALSE;
 
 #ifdef MSGTRACE
 	msgtrace_put(buffer, count);
@@ -862,6 +849,8 @@ int
 fputs(const char *s, FILE *stream /* UNUSED */)
 {
 	char c;
+
+	UNUSED_PARAMETER(stream);
 	while ((c = *s++))
 		putchar(c);
 	return 0;
@@ -878,6 +867,7 @@ puts(const char *s)
 int
 fputc(int c, FILE *stream /* UNUSED */)
 {
+	UNUSED_PARAMETER(stream);
 	putc(c);
 	return (int)(unsigned char)c;
 }

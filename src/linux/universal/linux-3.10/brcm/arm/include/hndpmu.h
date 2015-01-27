@@ -1,7 +1,7 @@
 /*
  * HND SiliconBackplane PMU support.
  *
- * Copyright (C) 2014, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: hndpmu.h 419467 2013-08-21 09:19:48Z $
+ * $Id: hndpmu.h 450539 2014-01-22 09:40:44Z $
  */
 
 #ifndef _hndpmu_h_
@@ -36,6 +36,8 @@
 #define BBPLL_NDIV_FRAC_BITS		24
 #define P1_DIV_SCALE_BITS			12
 
+#define PMUREQTIMER (1 << 0)
+
 extern void si_pmu_init(si_t *sih, osl_t *osh);
 extern void si_pmu_chip_init(si_t *sih, osl_t *osh);
 extern void si_pmu_pll_init(si_t *sih, osl_t *osh, uint32 xtalfreq);
@@ -43,14 +45,14 @@ extern bool si_pmu_is_autoresetphyclk_disabled(si_t *sih, osl_t *osh);
 extern void si_pmu_res_init(si_t *sih, osl_t *osh);
 extern void si_pmu_swreg_init(si_t *sih, osl_t *osh);
 extern uint32 si_pmu_force_ilp(si_t *sih, osl_t *osh, bool force);
-extern uint32 si_pmu_enb_ht_req(si_t *sih, osl_t *osh, bool enb);
 extern void si_pmu_res_minmax_update(si_t *sih, osl_t *osh);
 
-extern uint32 si_pmu_si_clock(si_t *sih, osl_t *osh);
-extern uint32 si_pmu_cpu_clock(si_t *sih, osl_t *osh);
-extern uint32 si_pmu_mem_clock(si_t *sih, osl_t *osh);
-extern uint32 si_pmu_alp_clock(si_t *sih, osl_t *osh);
-extern uint32 si_pmu_ilp_clock(si_t *sih, osl_t *osh);
+extern uint32 si_pmu_si_clock(si_t *sih, osl_t *osh);   /* returns [Hz] units */
+extern uint32 si_pmu_cpu_clock(si_t *sih, osl_t *osh);  /* returns [hz] units */
+extern uint32 si_pmu_mem_clock(si_t *sih, osl_t *osh);  /* returns [Hz] units */
+extern uint32 si_pmu_alp_clock(si_t *sih, osl_t *osh);  /* returns [Hz] units */
+extern void si_pmu_ilp_clock_set(uint32 cycles);
+extern uint32 si_pmu_ilp_clock(si_t *sih, osl_t *osh);  /* returns [Hz] units */
 
 extern void si_pmu_set_switcher_voltage(si_t *sih, osl_t *osh, uint8 bb_voltage, uint8 rf_voltage);
 extern void si_pmu_set_ldo_voltage(si_t *sih, osl_t *osh, uint8 ldo, uint8 voltage);
@@ -68,7 +70,6 @@ uint32 *max_res_mask, uint32 *clk_ctl_st);
 /* below function are only for BBPLL parallel purpose */
 extern void si_pmu_gband_spurwar(si_t *sih, osl_t *osh);
 extern uint32 si_pmu_cal_fvco(si_t *sih, osl_t *osh);
-extern uint32 si_mac_clk(si_t *sih, osl_t *osh);
 
 extern bool si_pmu_is_otp_powered(si_t *sih, osl_t *osh);
 extern uint32 si_pmu_measure_alpclk(si_t *sih, osl_t *osh);
@@ -85,12 +86,16 @@ extern uint32 si_pmu_waitforclk_on_backplane(si_t *sih, osl_t *osh, uint32 clk, 
 extern void si_pmu_set_4330_plldivs(si_t *sih, uint8 dacrate);
 extern void si_pmu_pllreset(si_t *sih);
 extern uint32 si_pmu_get_bb_vcofreq(si_t *sih, osl_t *osh, int xtalfreq);
-
 typedef void (*si_pmu_callback_t)(void* arg);
+
+extern uint32 si_mac_clk(si_t *sih, osl_t *osh);
+extern void si_pmu_switch_on_PARLDO(si_t *sih, osl_t *osh);
+extern int si_pmu_fvco_pllreg(si_t *sih, uint32 *fvco, uint32 *pllreg);
 
 extern void si_pmu_otp_power(si_t *sih, osl_t *osh, bool on, uint32* min_res_mask);
 extern void si_sdiod_drive_strength_init(si_t *sih, osl_t *osh, uint32 drivestrength);
 
 extern void si_pmu_minresmask_htavail_set(si_t *sih, osl_t *osh, bool set_clear);
+extern void si_pmu_slow_clk_reinit(si_t *sih, osl_t *osh);
 
 #endif /* _hndpmu_h_ */

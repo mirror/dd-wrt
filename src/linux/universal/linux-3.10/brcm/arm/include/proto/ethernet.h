@@ -1,7 +1,7 @@
 /*
  * From FreeBSD 2.2.7: Fundamental constants relating to ethernet.
  *
- * Copyright (C) 2013, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: ethernet.h 401759 2013-05-13 16:08:08Z $
+ * $Id: ethernet.h 470880 2014-04-16 22:00:58Z $
  */
 
 #ifndef _NET_ETHERNET_H_	/* use native BSD ethernet.h when available */
@@ -173,6 +173,15 @@ do { \
 	((uint16 *)(d))[2] = ((uint16 *)(s))[2]; \
 	((uint16 *)(d))[1] = ((uint16 *)(s))[1]; \
 	((uint16 *)(d))[0] = ((uint16 *)(s))[0]; \
+} while (0)
+
+/* Copy 14Byte ethernet header: 32bit aligned source and destination. */
+#define ehcopy32(s, d) \
+do { \
+	((uint32 *)(d))[0] = ((const uint32 *)(s))[0]; \
+	((uint32 *)(d))[1] = ((const uint32 *)(s))[1]; \
+	((uint32 *)(d))[2] = ((const uint32 *)(s))[2]; \
+	((uint16 *)(d))[6] = ((const uint16 *)(s))[6]; \
 } while (0)
 
 
