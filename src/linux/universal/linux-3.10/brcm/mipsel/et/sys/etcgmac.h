@@ -1,7 +1,7 @@
 /*
  * Broadcom Gigabit Ethernet MAC defines.
  *
- * Copyright (C) 2012, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -14,14 +14,19 @@
  * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- * $Id: etcgmac.h 267700 2011-06-19 15:41:07Z $
+ * $Id: etcgmac.h 458392 2014-02-26 21:19:35Z $
  */
 #ifndef _etcgmac_h_
 #define _etcgmac_h_
 
 /* chip interrupt bit error summary */
 #define	I_ERRORS		(I_PDEE | I_PDE | I_DE | I_RDU | I_RFO | I_XFU)
-#define	DEF_INTMASK		(I_XI0 | I_XI1 | I_XI2 | I_XI3 | I_RI | I_ERRORS)
+
+#if defined(BCM_GMAC3)
+#define	DEF_INTMASK		(I_XI0 | I_XI1 | I_XI2 | I_XI3 | I_RI | I_ERRORS | I_TO)
+#else  /* ! BCM_GMAC3 */
+#define DEF_INTMASK     (I_XI0 | I_XI1 | I_XI2 | I_XI3 | I_RI | I_ERRORS)
+#endif /* ! BCM_GMAC3 */
 
 #define GMAC_RESET_DELAY 	2
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -13,7 +13,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: hndctf.h 418247 2013-08-14 11:16:42Z $
+ * $Id: hndctf.h 494914 2014-08-04 23:18:20Z $
  */
 
 #ifndef _HNDCTF_H_
@@ -42,9 +42,13 @@
 #define CTF_ACTION_BYTECNT	(1 << 7)
 #define CTF_ACTION_PPPOE_ADD	(1 << 8)
 #define CTF_ACTION_PPPOE_DEL	(1 << 9)
+#define CTF_ACTION_BR_AS_TXIF	(1 << 10)
 
 #define CTF_SUSPEND_TCP		(1 << 0)
 #define CTF_SUSPEND_UDP		(1 << 1)
+
+#define CTF_SUSPEND_TCP_MASK		0x55555555
+#define CTF_SUSPEND_UDP_MASK		0xAAAAAAAA
 
 #define	ctf_attach(osh, n, m, c, a) \
 	(ctf_attach_fn ? ctf_attach_fn(osh, n, m, c, a) : NULL)
@@ -54,9 +58,9 @@
 #define ctf_enable(ci, d, e, b)	(CTF_ENAB(ci) ? (ci)->fn.enable(ci, d, e, b) : BCME_OK)
 #define ctf_brc_add(ci, b)	(CTF_ENAB(ci) ? (ci)->fn.brc_add(ci, b) : BCME_OK)
 #define ctf_brc_delete(ci, e)	(CTF_ENAB(ci) ? (ci)->fn.brc_delete(ci, e) : BCME_OK)
-#define ctf_brc_update(ci, b)	(CTF_ENAB(ci) ? (ci)->fn.brc_update(ci, b) : BCME_OK)
-#define ctf_brc_lkup(ci, e)	(CTF_ENAB(ci) ? (ci)->fn.brc_lkup(ci, e) : NULL)
-#define ctf_brc_release(ci, b)	do { if (CTF_ENAB(ci)) (ci)->fn.brc_release(ci, b); } while (0)
+#define ctf_brc_lkup(ci, e, l)	(CTF_ENAB(ci) ? (ci)->fn.brc_lkup(ci, e, l) : NULL)
+#define ctf_brc_acquire(ci)	do { if (CTF_ENAB(ci)) (ci)->fn.brc_acquire(ci); } while (0)
+#define ctf_brc_release(ci)	do { if (CTF_ENAB(ci)) (ci)->fn.brc_release(ci); } while (0)
 #define ctf_ipc_add(ci, i, v6)	(CTF_ENAB(ci) ? (ci)->fn.ipc_add(ci, i, v6) : BCME_OK)
 #define ctf_ipc_delete(ci, i, v6)	\
 	(CTF_ENAB(ci) ? (ci)->fn.ipc_delete(ci, i, v6) : BCME_OK)
@@ -92,8 +96,20 @@
 #define ctf_live(ci, i, v6)		(CTF_ENAB(ci) ? (ci)->fn.live(ci, i, v6) : FALSE)
 #endif /* BCMFA */
 
+/* For broadstream iqos */
+#define ctf_fwdcb_register(ci, cb)           \
+		(CTF_ENAB(ci) ? (ci)->fn.ctf_fwdcb_register(ci, cb) : BCME_OK)
+
 #define CTFCNTINCR(s) ((s)++)
 #define CTFCNTADD(s, c) ((s) += (c))
+
+/* Copy an ethernet address in reverse order */
+#define	ether_rcopy(s, d) \
+do { \
+	((uint16 *)(d))[2] = ((uint16 *)(s))[2]; \
+	((uint16 *)(d))[1] = ((uint16 *)(s))[1]; \
+	((uint16 *)(d))[0] = ((uint16 *)(s))[0]; \
+} while (0)
 
 #define PPPOE_ETYPE_OFFSET	12
 #define PPPOE_VER_OFFSET	14
@@ -106,6 +122,7 @@
 #define PPPOE_PROT_PPP		0x0021
 #define PPPOE_PROT_PPP_IP6	0x0057
 
+#define CTF_DROP_PACKET	-2	/* Don't osl_startxmit if fwdcb return this */
 
 typedef struct ctf_pub	ctf_t;
 typedef struct ctf_brc	ctf_brc_t;
@@ -120,11 +137,11 @@ typedef void (*ctf_detach_t)(ctf_t *ci);
 typedef int32 (*ctf_forward_t)(ctf_t *ci, void *p, void *rxifp);
 typedef bool (*ctf_isenabled_t)(ctf_t *ci, void *dev);
 typedef bool (*ctf_isbridge_t)(ctf_t *ci, void *dev);
+typedef void (*ctf_brc_acquire_t)(ctf_t *ci);
+typedef void (*ctf_brc_release_t)(ctf_t *ci);
 typedef int32 (*ctf_brc_add_t)(ctf_t *ci, ctf_brc_t *brc);
 typedef int32 (*ctf_brc_delete_t)(ctf_t *ci, uint8 *ea);
-typedef int32 (*ctf_brc_update_t)(ctf_t *ci, ctf_brc_t *brc);
-typedef ctf_brc_t * (*ctf_brc_lkup_t)(ctf_t *ci, uint8 *da);
-typedef void (*ctf_brc_release_t)(ctf_t *ci, ctf_brc_t *brc);
+typedef ctf_brc_t * (*ctf_brc_lkup_t)(ctf_t *ci, uint8 *da, bool lock_taken);
 typedef int32 (*ctf_ipc_add_t)(ctf_t *ci, ctf_ipc_t *ipc, bool v6);
 typedef int32 (*ctf_ipc_delete_t)(ctf_t *ci, ctf_ipc_t *ipc, bool v6);
 typedef int32 (*ctf_ipc_count_get_t)(ctf_t *ci);
@@ -151,6 +168,10 @@ typedef int32 (*ctf_fa_register_t)(ctf_t *ci, ctf_fa_cb_t facb, void *fa);
 typedef void (*ctf_live_t)(ctf_t *ci, ctf_ipc_t *ipc, bool v6);
 #endif /* BCMFA */
 
+/* For broadstream iqos */
+typedef int (*ctf_fwdcb_t)(void *skb, ctf_ipc_t *ipc);
+typedef int32 (*ctf_fwdcb_register_t)(ctf_t *ci, ctf_fwdcb_t fwdcb);
+
 struct ctf_brc_hot {
 	struct ether_addr	ea;	/* Dest address */
 	ctf_brc_t		*brcp;	/* BRC entry corresp to dest mac */
@@ -163,8 +184,8 @@ typedef struct ctf_fn {
 	ctf_isbridge_t		isbridge;
 	ctf_brc_add_t		brc_add;
 	ctf_brc_delete_t	brc_delete;
-	ctf_brc_update_t	brc_update;
 	ctf_brc_lkup_t		brc_lkup;
+	ctf_brc_acquire_t	brc_acquire;
 	ctf_brc_release_t	brc_release;
 	ctf_ipc_add_t		ipc_add;
 	ctf_ipc_delete_t	ipc_delete;
@@ -188,6 +209,8 @@ typedef struct ctf_fn {
 	ctf_fa_register_t	fa_register;
 	ctf_live_t		live;
 #endif /* BCMFA */
+	/* For broadstream iqos */
+	ctf_fwdcb_register_t	ctf_fwdcb_register;
 } ctf_fn_t;
 
 struct ctf_pub {
@@ -208,6 +231,8 @@ struct ctf_brc {
 	uint32			live;		/* Counter used to expire the entry */
 	uint32			hits;		/* Num frames matching brc entry */
 	uint64			*bytecnt_ptr;	/* Pointer to the byte counter */
+	uint32			hitting;	/* Indicate how fresh the entry is been used */
+	uint32			ip;
 };
 
 #ifdef CTF_IPV6
@@ -241,6 +266,7 @@ struct ctf_ipc {
 	struct	ether_addr	dhost;		/* Destination MAC address */
 	struct	ether_addr	shost;		/* Source MAC address */
 	void			*txif;		/* Target interface to send */
+	void			*txbif;		/* Target Bridge interface to send */
 	uint32			action;		/* NAT and/or VLAN actions */
 	ctf_brc_t		*brcp;		/* BRC entry corresp to source mac */
 	uint32			live;		/* Counter used to expire the entry */
@@ -257,6 +283,8 @@ struct ctf_ipc {
 	void			*pkt;		/* Received packet */
 	uint8			flags;		/* Flags for multiple purpose */
 #endif /* BCMFA */
+	/* For broadstream iqos, counter is increased by ipc_tcp_susp or ipc_udp_susp */
+	int			susp_cnt;
 };
 
 extern ctf_t *ctf_kattach(osl_t *osh, uint8 *name);
@@ -267,7 +295,7 @@ extern ctf_t *_ctf_attach(osl_t *osh, uint8 *name, uint32 *msg_level,
 extern ctf_t *kcih;
 
 /* Hot bridge cache lkup */
-#define MAXBRCHOT		4
+#define MAXBRCHOT		256
 #define MAXBRCHOTIF		4
 #define CTF_BRC_HOT_HASH(da) 	((((uint8 *)da)[4] ^ ((uint8 *)da)[5]) & (MAXBRCHOT - 1))
 #define CTF_HOTBRC_CMP(hbrc, da, rxifp) \
@@ -296,5 +324,7 @@ do { \
 	} \
 } while (0)
 
+
+#define	CTF_IS_PKTTOBR(p)	PKTISTOBR(p)
 
 #endif /* _HNDCTF_H_ */

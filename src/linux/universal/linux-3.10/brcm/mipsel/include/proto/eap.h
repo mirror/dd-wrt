@@ -6,7 +6,7 @@
  *
  * Copyright (C) 2002 Broadcom Corporation
  *
- * $Id: eap.h 241182 2011-02-17 21:50:03Z $
+ * $Id: eap.h 405837 2013-06-05 00:13:20Z $
  */
 
 #ifndef _eap_h_
@@ -44,6 +44,8 @@ typedef BWL_PRE_PACKED_STRUCT struct {
 #define BCM_EAP_SES		10
 #define BCM_EAP_EXP_LEN		12  /* EAP_LEN 5 + 3 bytes for SMI ID + 4 bytes for ven type */
 #define BCM_SMI_ID		0x113d
+#define WFA_VENDOR_SMI	0x009F68
+
 
 /* This marks the end of a packed structure section. */
 #include <packed_section_end.h>

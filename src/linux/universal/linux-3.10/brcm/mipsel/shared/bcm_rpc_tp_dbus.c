@@ -1,8 +1,11 @@
 /*
  * RPC Transport layer(for host dbus driver)
+ * For documentation, see [WlBmacRpcModule] Twiki
+ * This file is BMAC specific, so it does not take part in DHD builds.
+ *
  * Broadcom 802.11abg Networking Device Driver
  *
- * Copyright (C) 2014, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -16,10 +19,10 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: bcm_rpc_tp_dbus.c 422800 2013-09-10 01:12:42Z $
+ * $Id: bcm_rpc_tp_dbus.c 431375 2013-10-23 12:51:40Z $
  */
 
-#if (!defined(WLC_HIGH) && !defined(WLC_LOW))
+#if (!defined(WLC_HIGH) && !defined(WLC_LOW)) && !defined(BCM_FD_AGGR)
 #error "SPLIT"
 #endif
 
@@ -164,6 +167,12 @@ bcm_rpc_tp_agg_set(rpc_tp_info_t *rpcb, uint32 reason, bool set)
 	}
 }
 
+uint32
+bcm_rpc_tp_agg_get(rpc_tp_info_t *rpcb)
+{
+	return (uint32) rpcb->tp_tx_aggregation;
+}
+
 void
 bcm_rpc_tp_agg_limit_set(rpc_tp_info_t *rpc_th, uint8 sf, uint16 bytes)
 {
@@ -301,6 +310,7 @@ bcm_rpc_tp_tx_agg_flush(rpc_tp_info_t * rpcb)
 	bcm_rpc_tp_tx_agg_initstate(rpcb);
 }
 
+#ifndef BCM_FD_AGGR
 
 static void BCMFASTPATH
 rpc_dbus_send_complete(void *handle, void *pktinfo, int status)
@@ -407,6 +417,7 @@ error:
 	return;
 }
 
+#endif /* BCM_FD_AGGR */
 int BCMFASTPATH
 bcm_rpc_tp_recv_rtn(rpc_tp_info_t *rpcb)
 {
@@ -456,7 +467,161 @@ bcm_rpc_tp_recv_rtn(rpc_tp_info_t *rpcb)
 	}
 	return status;
 }
+#ifdef BCM_FD_AGGR
+void
+bcm_rpc_dbus_recv_aggrpkt(void *handle, void *pkt, int len)
+{
+	rpc_tp_info_t *rpcb = handle;
+	void *pktdup;
+	uint32 rpc_len;
+	uint frag = rpcb->tp_host_deagg_cnt_sf;
+	uint agglen = len;
+	uint padhead_len = 0;
+	uint padend_len = 0;
 
+	if ((rpcb == NULL) || (pkt == NULL))
+		return;
+
+	/* TP pkt should have more than encapsulation header */
+	if (len <= BCM_RPC_TP_ENCAP_LEN) {
+		RPC_TP_ERR(("%s: wrong len %d\n", __FUNCTION__, len));
+		goto error;
+	}
+
+	while (len > BCM_RPC_TP_ENCAP_LEN) {
+		rpc_len = ltoh32_ua(bcm_rpc_buf_data(rpcb, pkt));
+		bcm_rpc_buf_pull(rpcb, pkt, BCM_RPC_TP_ENCAP_LEN);
+		padhead_len = (rpc_len >> BCM_RPC_TP_PADHEAD_SHIFT) & 0x3;
+		padend_len = (rpc_len >> BCM_RPC_TP_PADEND_SHIFT) & 0x3;
+		rpc_len &= BCM_RPC_TP_LEN_MASK;
+
+
+		if (padhead_len) {
+			bcm_rpc_buf_pull(rpcb, pkt, padhead_len);
+		}
+
+		if (rpc_len > (uint32)(len - BCM_RPC_TP_ENCAP_LEN - padhead_len - padend_len)) {
+			rpcb->tp_host_deagg_cnt_badsflen++;
+			return;
+		}
+
+		/* RPC_BUFFER_RX: allocate */
+		if ((pktdup = bcm_rpc_buf_pktdup(rpcb, pkt)) == NULL) {
+			RPC_TP_ERR(("%s: bcm_rpc_tp_pktget failed (len %d)\n", __FUNCTION__, len));
+			goto error;
+		}
+
+		/* set the clone packet size to size of individual packet */
+		bcm_rpc_buf_len_set(rpcb, pktdup, rpc_len);
+
+		/* !! send up cloned packet */
+		bcm_rpc_tp_rx(rpcb, pktdup);
+
+		len -= (BCM_RPC_TP_ENCAP_LEN + rpc_len + padhead_len + padend_len);
+		bcm_rpc_buf_pull(rpcb, pkt, rpc_len + padend_len);
+
+		if (len > BCM_RPC_TP_ENCAP_LEN) {	/* more frag */
+			rpcb->tp_host_deagg_cnt_sf++;
+			RPC_TP_DEAGG(("%s: deagg %d(remaining %d) bytes\n", __FUNCTION__,
+				rpc_len, len));
+		} else {
+			if (len != 0) {
+				printf("%s: deagg, remaining len %d is not 0\n", __FUNCTION__, len);
+			}
+			rpcb->tp_host_deagg_cnt_pass++;
+		}
+	}
+
+	if (frag < rpcb->tp_host_deagg_cnt_sf) {	/* aggregated frames */
+		rpcb->tp_host_deagg_cnt_sf++;	/* last one was not counted */
+		rpcb->tp_host_deagg_cnt_chain++;
+
+		rpcb->tp_host_deagg_cnt_bytes += agglen;
+	}
+error:
+	return;
+}
+
+void
+bcm_rpc_dbus_recv_aggrbuf(void *handle, uint8 *buf, int len)
+{
+	rpc_tp_info_t *rpcb = handle;
+	void *pkt;
+	uint32 rpc_len;
+	uint frag = rpcb->tp_host_deagg_cnt_sf;
+	uint agglen = len;
+	uint padhead_len = 0;
+	uint padend_len = 0;
+
+	if ((rpcb == NULL) || (buf == NULL))
+		return;
+
+	/* TP pkt should have more than encapsulation header */
+	if (len <= BCM_RPC_TP_ENCAP_LEN) {
+		RPC_TP_ERR(("%s: wrong len %d\n", __FUNCTION__, len));
+		goto error;
+	}
+
+	while (len > BCM_RPC_TP_ENCAP_LEN) {
+		rpc_len = ltoh32_ua(buf);
+
+		padhead_len = (rpc_len >> BCM_RPC_TP_PADHEAD_SHIFT) & 0x3;
+		padend_len = (rpc_len >> BCM_RPC_TP_PADEND_SHIFT) & 0x3;
+		rpc_len &= BCM_RPC_TP_LEN_MASK;
+
+		if (rpc_len != 0) {
+
+			if (rpc_len > (uint32)(len - BCM_RPC_TP_ENCAP_LEN - padhead_len -
+				padend_len)) {
+				rpcb->tp_host_deagg_cnt_badsflen++;
+				return;
+			}
+
+			/* RPC_BUFFER_RX: allocate */
+			if ((pkt = PKTGET(rpcb->osh, rpc_len + padhead_len, FALSE)) == NULL) {
+				RPC_TP_ERR(("%s: bcm_rpc_tp_pktget failed (len %d)\n", __FUNCTION__,
+					len));
+				goto error;
+			}
+
+			/* RPC_BUFFER_RX: BYTE_COPY from dbus buffer */
+			bcopy(buf + BCM_RPC_TP_ENCAP_LEN, bcm_rpc_buf_data(rpcb, pkt),
+				rpc_len + padhead_len);
+			PKTPULL(rpcb->osh, pkt, padhead_len);
+
+			/* !! send up */
+			bcm_rpc_tp_rx(rpcb, pkt);
+		} else {
+			RPC_TP_DEAGG(("%s: zero len pad (remaining %d) bytes\n", __FUNCTION__,
+				len));
+		}
+
+		len -= (BCM_RPC_TP_ENCAP_LEN + rpc_len + padhead_len + padend_len);
+		buf += (BCM_RPC_TP_ENCAP_LEN + rpc_len + padhead_len + padend_len);
+
+		if (len >= BCM_RPC_TP_ENCAP_LEN) {	/* more frag */
+			rpcb->tp_host_deagg_cnt_sf++;
+			RPC_TP_DEAGG(("%s: deagg %d(remaining %d) bytes\n", __FUNCTION__,
+				rpc_len, len));
+		} else {
+			if (len != 0) {
+				printf("%s: deagg, remaining len %d is not 0\n", __FUNCTION__, len);
+			}
+			rpcb->tp_host_deagg_cnt_pass++;
+		}
+	}
+
+	if (frag < rpcb->tp_host_deagg_cnt_sf) {	/* aggregated frames */
+		rpcb->tp_host_deagg_cnt_sf++;	/* last one was not counted */
+		rpcb->tp_host_deagg_cnt_chain++;
+
+		rpcb->tp_host_deagg_cnt_bytes += agglen;
+	}
+error:
+	return;
+}
+#endif /* BCM_FD_AGGR */
+#ifndef BCM_FD_AGGR
 static void
 rpc_dbus_flowctrl_tx(void *handle, bool on)
 {
@@ -542,6 +707,7 @@ static dbus_callbacks_t rpc_dbus_cbs = {
 	rpc_dbus_pktfree
 };
 
+#endif /* BCM_FD_AGGR */
 #if !defined(NDIS)
 rpc_tp_info_t *
 bcm_rpc_tp_attach(osl_t * osh, void *bus)
@@ -558,6 +724,7 @@ bcm_rpc_tp_attach(osl_t * osh, shared_info_t *shared, void *bus)
 	void *shared = NULL;
 #endif /* linux */
 
+	UNUSED_PARAMETER(shared);
 	rpcb = (rpc_tp_info_t*)MALLOC(osh, sizeof(rpc_tp_info_t));
 	if (rpcb == NULL) {
 		printf("%s: rpc_tp_info_t malloc failed\n", __FUNCTION__);
@@ -574,9 +741,13 @@ bcm_rpc_tp_attach(osl_t * osh, shared_info_t *shared, void *bus)
 #endif
 	rpcb->osh = osh;
 
+#ifdef BCM_FD_AGGR
+	dbus = bus;
+#else
 	/* FIX: Need to determine rx size and pass it here */
 	dbus = (struct dbus_pub *)dbus_attach(osh, DBUS_RX_BUFFER_SIZE_RPC, BCM_RPC_TP_DBUS_NRXQ,
 		BCM_RPC_TP_DBUS_NTXQ, rpcb /* info */, &rpc_dbus_cbs, &dbus_extdl, shared);
+#endif /* BCM_FD_AGGR */
 
 	if (dbus == NULL) {
 		printf("%s: dbus_attach failed\n", __FUNCTION__);
@@ -602,11 +773,13 @@ bcm_rpc_tp_attach(osl_t * osh, shared_info_t *shared, void *bus)
 	rpcb->sh = shared;
 #endif /* NDIS */
 
+#ifndef BCM_FD_AGGR
 	/* Bring DBUS up right away so RPC can start receiving */
 	if (dbus_up(dbus)) {
 		RPC_TP_ERR(("%s: dbus_up failed\n", __FUNCTION__));
 		goto error;
 	}
+#endif
 
 	return rpcb;
 
@@ -622,6 +795,7 @@ bcm_rpc_tp_detach(rpc_tp_info_t * rpcb)
 {
 	ASSERT(rpcb);
 
+#ifndef BCM_FD_AGGR
 	if (rpcb->bus) {
 #if defined(NDIS)
 		NdisFreeSpinLock(&rpcb->lock);
@@ -631,6 +805,7 @@ bcm_rpc_tp_detach(rpc_tp_info_t * rpcb)
 		rpcb->bus = NULL;
 	}
 
+#endif /* BCM_FD_AGGR */
 	MFREE(rpcb->osh, rpcb, sizeof(rpc_tp_info_t));
 }
 
@@ -639,6 +814,9 @@ bcm_rpc_tp_watchdog(rpc_tp_info_t *rpcb)
 {
 	static int old = 0;
 
+#ifdef BCM_FD_AGGR
+	RPC_TP_LOCK(rpcb);
+#endif
 	/* close agg periodically to avoid stale aggregation(include rpc_agg change) */
 	bcm_rpc_tp_tx_agg_release(rpcb);
 
@@ -646,6 +824,9 @@ bcm_rpc_tp_watchdog(rpc_tp_info_t *rpcb)
 
 	old = rpcb->tp_tx_agg_cnt_sf;
 	BCM_REFERENCE(old);
+#ifdef BCM_FD_AGGR
+	RPC_TP_UNLOCK(rpcb);
+#endif
 }
 
 static void
@@ -702,10 +883,21 @@ bcm_rpc_tp_tx_encap(rpc_tp_info_t * rpcb, rpc_buf_t *b)
 {
 	uint32 *tp_lenp;
 	uint32 rpc_len;
+#ifdef BCM_FD_AGGR
+	uint32 padend_len = 0;
+
+	rpc_len = bcm_rpc_buf_len_get(rpcb, b);
+	tp_lenp = (uint32*)bcm_rpc_buf_push(rpcb, b, BCM_RPC_TP_ENCAP_LEN);
+	if ((rpc_len) & 0x3)
+		padend_len = sizeof(uint32) - ((rpc_len) & 0x3);
+	*tp_lenp = htol32(rpc_len | ((padend_len & 0xff) << BCM_RPC_TP_PADEND_SHIFT));
+	bcm_rpc_buf_len_set(rpcb, b, rpc_len + BCM_RPC_TP_ENCAP_LEN + padend_len);
+#else
 
 	rpc_len = pkttotlen(rpcb->osh, b);
 	tp_lenp = (uint32*)bcm_rpc_buf_push(rpcb, b, BCM_RPC_TP_ENCAP_LEN);
 	*tp_lenp = htol32(rpc_len);
+#endif
 }
 
 int
@@ -713,6 +905,9 @@ bcm_rpc_tp_buf_send(rpc_tp_info_t * rpcb, rpc_buf_t *b)
 {
 	int err;
 
+#ifdef BCM_FD_AGGR
+	RPC_TP_LOCK(rpcb);
+#endif
 	/* Add the TP encapsulation */
 	bcm_rpc_tp_tx_encap(rpcb, b);
 
@@ -724,6 +919,9 @@ bcm_rpc_tp_buf_send(rpc_tp_info_t * rpcb, rpc_buf_t *b)
 		err = bcm_rpc_tp_buf_send_internal(rpcb, b);
 	}
 
+#ifdef BCM_FD_AGGR
+	RPC_TP_UNLOCK(rpcb);
+#endif
 	return err;
 }
 
@@ -731,6 +929,7 @@ static int BCMFASTPATH
 bcm_rpc_tp_buf_send_internal(rpc_tp_info_t * rpcb, rpc_buf_t *b)
 {
 	int err;
+#ifndef BCM_FD_AGGR
 	bool tx_flow_control;
 	int timeout = RPC_BUS_SEND_WAIT_TIMEOUT_MSEC;
 	bool timedout = FALSE;
@@ -827,6 +1026,9 @@ bcm_rpc_tp_buf_send_internal(rpc_tp_info_t * rpcb, rpc_buf_t *b)
 		rpcb->tx_cnt++;
 	}
 	RPC_TP_UNLOCK(rpcb);
+#else
+	err = dbus_send_pkt(rpcb->bus, b, b);
+#endif /* BCM_FD_AGGR */
 
 	return err;
 }
@@ -1043,6 +1245,12 @@ bcm_rpc_buf_next_set(rpc_tp_info_t * rpcb, rpc_buf_t* b, rpc_buf_t *nextb)
 	PKTSETLINK(b, nextb);
 }
 
+rpc_buf_t *
+bcm_rpc_buf_pktdup(rpc_tp_info_t * rpcb, rpc_buf_t* b)
+{
+	return PKTDUP(rpcb->osh, b);
+}
+
 #if defined(WLC_HIGH) && defined(BCMDBG)
 int
 bcm_rpc_tp_dump(rpc_tp_info_t *rpcb, struct bcmstrbuf *b)
@@ -1141,6 +1349,14 @@ int
 bcm_rpc_tp_get_device_speed(rpc_tp_info_t *rpc_th)
 {
 	return dbus_get_device_speed(rpc_th->bus);
+}
+
+int
+bcm_rpc_tp_set_device_speed(rpc_tp_info_t *rpc_th, uint8 speed)
+{
+	if (rpc_th == NULL)
+		return DBUS_ERR;
+	return dbus_set_device_speed(rpc_th->bus, speed);
 }
 
 void
