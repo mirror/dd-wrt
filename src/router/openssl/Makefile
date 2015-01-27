@@ -4,18 +4,18 @@
 ## Makefile for OpenSSL
 ##
 
-VERSION=1.0.1k
+VERSION=1.0.2
 MAJOR=1
-MINOR=0.1
+MINOR=0.2
 SHLIB_VERSION_NUMBER=1.0.0
 SHLIB_VERSION_HISTORY=
 SHLIB_MAJOR=1
 SHLIB_MINOR=0.0
-SHLIB_EXT=.so.$(SHLIB_MAJOR).$(SHLIB_MINOR)
-PLATFORM=linux-ppc
-OPTIONS=--prefix=/usr --openssldir=/etc/ssl -Os -pipe -funit-at-a-time -mcpu=e300c3 -mtune=e300c3 -fno-caller-saves -mhard-float -ffunction-sections -fdata-sections -Wl,--gc-sections -DHAVE_CRYPTODEV -DUSE_CRYPTODEV_DIGESTS -DOPENSSL_SMALL_FOOTPRINT -L/home/seg/DEV/mpc83xx/src/router/zlib -I/home/seg/DEV/mpc83xx/src/router/zlib -DNDEBUG -ldl -DOPENSSL_SMALL_FOOTPRINT enable-threads enable-zlib-dynamic no-aes192 no-ans1 no-camellia no-ec no-ec2m no-ec_nistp_64_gcc_128 no-ecdh no-ecdsa no-err no-gmp no-gost no-hw no-idea no-jpake no-krb5 no-md2 no-mdc2 no-rc5 no-rfc3779 no-ripemd no-rmd160 no-sctp no-sha0 no-shared no-smime no-store no-unit-test static-engine
-CONFIGURE_ARGS=linux-ppc --prefix=/usr --openssldir=/etc/ssl -Os -pipe -funit-at-a-time -mcpu=e300c3 -mtune=e300c3 -fno-caller-saves -mhard-float -ffunction-sections -fdata-sections -Wl,--gc-sections -DHAVE_CRYPTODEV -DUSE_CRYPTODEV_DIGESTS -DOPENSSL_SMALL_FOOTPRINT -L/home/seg/DEV/mpc83xx/src/router/zlib -I/home/seg/DEV/mpc83xx/src/router/zlib -DNDEBUG -ldl -DOPENSSL_SMALL_FOOTPRINT no-idea no-md2 no-mdc2 no-rc5 no-sha0 no-smime no-rmd160 no-aes192 no-camellia no-ripemd no-ans1 no-krb5 no-err no-hw threads zlib-dynamic no-ec no-ec2m
-SHLIB_TARGET=linux-shared
+SHLIB_EXT=
+PLATFORM=linux-mips
+OPTIONS=--prefix=/usr --openssldir=/etc/ssl -Os -pipe -mips32r2 -mtune=mips32r2 -msoft-float -fno-caller-saves -mno-branch-likely -DASMAES512 -ffunction-sections -fdata-sections -Wl,--gc-sections -L/home/seg/DEV/pb42/src/router/zlib -I/home/seg/DEV/pb42/src/router/zlib -DNDEBUG -ldl -DOPENSSL_SMALL_FOOTPRINT enable-threads enable-zlib-dynamic no-aes192 no-ans1 no-camellia no-ec no-ec2m no-ec_nistp_64_gcc_128 no-ecdh no-ecdsa no-err no-gmp no-gost no-hw no-idea no-jpake no-krb5 no-libunbound no-md2 no-mdc2 no-rc5 no-rfc3779 no-ripemd no-rmd160 no-sctp no-sha0 no-shared no-smime no-ssl-trace no-ssl2 no-store no-unit-test static-engine
+CONFIGURE_ARGS=linux-mips --prefix=/usr --openssldir=/etc/ssl -Os -pipe -mips32r2 -mtune=mips32r2 -msoft-float -fno-caller-saves -mno-branch-likely -DASMAES512 -ffunction-sections -fdata-sections -Wl,--gc-sections -L/home/seg/DEV/pb42/src/router/zlib -I/home/seg/DEV/pb42/src/router/zlib -DNDEBUG -ldl -DOPENSSL_SMALL_FOOTPRINT no-idea no-md2 no-mdc2 no-rc5 no-sha0 no-smime no-rmd160 no-aes192 no-camellia no-ripemd no-ans1 no-krb5 no-err no-hw threads no-ssl2 zlib-dynamic no-ec no-ec2m
+SHLIB_TARGET=-fPIC
 
 # HERE indicates where this Makefile lives.  This can be used to indicate
 # where sub-Makefiles are expected to be.  Currently has very limited usage,
@@ -59,15 +59,15 @@ OPENSSLDIR=/etc/ssl
 # equal 4.
 # PKCS1_CHECK - pkcs1 tests.
 
-CC= ccache powerpc-linux-uclibc-gcc
-CFLAG= -DZLIB_SHARED -DZLIB -DOPENSSL_THREADS -D_REENTRANT -DDSO_DLFCN -DHAVE_DLFCN_H -Os -pipe -funit-at-a-time -mcpu=e300c3 -mtune=e300c3 -fno-caller-saves -mhard-float -ffunction-sections -fdata-sections -DHAVE_CRYPTODEV -DUSE_CRYPTODEV_DIGESTS -DOPENSSL_SMALL_FOOTPRINT -I/home/seg/DEV/mpc83xx/src/router/zlib -DNDEBUG -DOPENSSL_SMALL_FOOTPRINT -DOPENSSL_NO_ERR -DB_ENDIAN -DTERMIO $(OPENWRT_OPTIMIZATION_FLAGS) -fomit-frame-pointer -Wall -DOPENSSL_BN_ASM_MONT -DSHA1_ASM -DSHA256_ASM -DSHA512_ASM -DAES_ASM
-DEPFLAG= -DOPENSSL_NO_AES192 -DOPENSSL_NO_ANS1 -DOPENSSL_NO_CAMELLIA -DOPENSSL_NO_EC -DOPENSSL_NO_EC2M -DOPENSSL_NO_EC_NISTP_64_GCC_128 -DOPENSSL_NO_ECDH -DOPENSSL_NO_ECDSA -DOPENSSL_NO_GMP -DOPENSSL_NO_GOST -DOPENSSL_NO_IDEA -DOPENSSL_NO_JPAKE -DOPENSSL_NO_MD2 -DOPENSSL_NO_MDC2 -DOPENSSL_NO_RC5 -DOPENSSL_NO_RFC3779 -DOPENSSL_NO_RIPEMD -DOPENSSL_NO_RMD160 -DOPENSSL_NO_SCTP -DOPENSSL_NO_SHA0 -DOPENSSL_NO_SMIME -DOPENSSL_NO_STORE -DOPENSSL_NO_UNIT_TEST
+CC= ccache mips-linux-uclibc-gcc
+CFLAG= -DZLIB_SHARED -DZLIB -DOPENSSL_THREADS -D_REENTRANT -DDSO_LINUX-SHARED -Os -pipe -mips32r2 -mtune=mips32r2 -msoft-float -fno-caller-saves -mno-branch-likely -DASMAES512 -ffunction-sections -fdata-sections -I/home/seg/DEV/pb42/src/router/zlib -DNDEBUG -DOPENSSL_SMALL_FOOTPRINT -DOPENSSL_NO_ERR -DTERMIO $(OPENWRT_OPTIMIZATION_FLAGS) -fomit-frame-pointer -Wall -DOPENSSL_BN_ASM_MONT -DSHA1_ASM -DSHA256_ASM -DAES_ASM
+DEPFLAG= -DOPENSSL_NO_AES192 -DOPENSSL_NO_ANS1 -DOPENSSL_NO_CAMELLIA -DOPENSSL_NO_EC -DOPENSSL_NO_EC2M -DOPENSSL_NO_EC_NISTP_64_GCC_128 -DOPENSSL_NO_ECDH -DOPENSSL_NO_ECDSA -DOPENSSL_NO_GMP -DOPENSSL_NO_GOST -DOPENSSL_NO_IDEA -DOPENSSL_NO_JPAKE -DOPENSSL_NO_LIBUNBOUND -DOPENSSL_NO_MD2 -DOPENSSL_NO_MDC2 -DOPENSSL_NO_RC5 -DOPENSSL_NO_RFC3779 -DOPENSSL_NO_RIPEMD -DOPENSSL_NO_RMD160 -DOPENSSL_NO_SCTP -DOPENSSL_NO_SHA0 -DOPENSSL_NO_SMIME -DOPENSSL_NO_SSL_TRACE -DOPENSSL_NO_SSL2 -DOPENSSL_NO_STORE -DOPENSSL_NO_UNIT_TEST
 PEX_LIBS= 
-EX_LIBS= -Wl,--gc-sections -L/home/seg/DEV/mpc83xx/src/router/zlib -ldl -ldl
+EX_LIBS= -Wl,--gc-sections -L/home/seg/DEV/pb42/src/router/zlib -ldl -ldl
 EXE_EXT= 
 ARFLAGS= 
-AR= powerpc-linux-uclibc-ar $(ARFLAGS) r
-RANLIB= powerpc-linux-uclibc-ranlib
+AR= mips-linux-uclibc-ar $(ARFLAGS) r
+RANLIB= mips-linux-uclibc-ranlib
 NM= nm
 PERL= /usr/bin/perl
 TAR= tar
@@ -88,22 +88,23 @@ ASFLAG=$(CFLAG)
 PROCESSOR= 
 
 # CPUID module collects small commonly used assembler snippets
-CPUID_OBJ= ppccpuid.o ppccap.o
-BN_ASM= bn-ppc.o ppc-mont.o ppc64-mont.o
+CPUID_OBJ= mem_clr.o
+BN_ASM= bn-mips.o mips-mont.o
+EC_ASM= 
 DES_ENC= des_enc.o fcrypt_b.o
-AES_ENC= aes_core.o aes_cbc.o aes-ppc.o
+AES_ENC= aes_cbc.o aes-mips.o
 BF_ENC= bf_enc.o
 CAST_ENC= c_enc.o
 RC4_ENC= rc4_enc.o rc4_skey.o
 RC5_ENC= rc5_enc.o
 MD5_ASM_OBJ= 
-SHA1_ASM_OBJ= sha1-ppc.o sha256-ppc.o sha512-ppc.o
+SHA1_ASM_OBJ= sha1-mips.o sha256-mips.o
 RMD160_ASM_OBJ= 
 WP_ASM_OBJ= wp_block.o
 CMLL_ENC= camellia.o cmll_misc.o cmll_cbc.o
 MODES_ASM_OBJ= 
 ENGINES_ASM_OBJ= 
-PERLASM_SCHEME= linux32
+PERLASM_SCHEME= dlfcn
 
 # KRB5 stuff
 KRB5_INCLUDES=
@@ -175,8 +176,8 @@ LIBS=   libcrypto.a libssl.a
 SHARED_CRYPTO=libcrypto$(SHLIB_EXT)
 SHARED_SSL=libssl$(SHLIB_EXT)
 SHARED_LIBS=
-SHARED_LIBS_LINK_EXTS=.so.$(SHLIB_MAJOR) .so
-SHARED_LDFLAGS=
+SHARED_LIBS_LINK_EXTS=
+SHARED_LDFLAGS=.so.$(SHLIB_MAJOR).$(SHLIB_MINOR)
 
 GENERAL=        Makefile
 BASENAME=       openssl

@@ -159,6 +159,13 @@ const EVP_CIPHER *EVP_aes_256_cfb(void)
 {
     return EVP_aes_256_cfb128();
 }
+#undef EVP_aes_512_cfb
+const EVP_CIPHER *EVP_aes_512_cfb(void);
+const EVP_CIPHER *EVP_aes_512_cfb(void) 
+{ 
+    return EVP_aes_512_cfb128(); 
+}
+
 # endif
 
 #endif
