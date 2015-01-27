@@ -1,7 +1,7 @@
 /*
  * Indices for 802.11 a/b/g/n/ac 1-3 chain symmetric transmit rates
  *
- * Copyright (C) 2014, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -43,7 +43,16 @@ typedef enum wl_tx_bw {
 	WL_TX_BW_20IN40,
 	WL_TX_BW_20IN80,
 	WL_TX_BW_40IN80,
-	WL_TX_BW_ALL
+	WL_TX_BW_160,
+	WL_TX_BW_20IN160,
+	WL_TX_BW_40IN160,
+	WL_TX_BW_80IN160,
+	WL_TX_BW_ALL,
+	WL_TX_BW_8080,
+	WL_TX_BW_8080CHAN2,
+	WL_TX_BW_20IN8080,
+	WL_TX_BW_40IN8080,
+	WL_TX_BW_80IN8080
 } wl_tx_bw_t;
 
 

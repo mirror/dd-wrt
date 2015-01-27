@@ -1,7 +1,7 @@
 /*
  * BCM53XXX ARM/Cortext A9 boot code for standalone apps.
  *
- * Copyright (C) 2014, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -4386,9 +4386,16 @@ l2cc_init:
 	ldr	r2,[r1,r2]
 	ldr	r1,=CID_ID_MASK
 	and	r2,r2,r1
+	ldr	r1,=0xcf12	/* NS Ax/Bx */
+	cmp	r2,r1
+	beq	l2cc_256k
+	ldr	r1,=0xcf26	/* NS 47094 */
+	cmp	r2,r1
+	beq	l2cc_256k
 	ldr	r1,=0xcf19
 	cmp	r2,r1
 	bge	l2cc_512k
+l2cc_256k:
 	ldr	r1,=0x0a130000
 	ldr	r4,=0x111
 	b	l2cc_inv
@@ -5531,9 +5538,59 @@ FUNC(RunProgram)
 	mov r0,#0		/* A0 = handle */
 	ldr r3,=CFE_EPTSEAL  /* A3 = entrypoint signature */
 	pop {r4}		/* entry point */
-	mov pc,r4		/* go for it. */
 
+	/* Check if the MERGE_FRAG function should execute or not,
+	 * according to the information within structure cfe_frag_info_t.
+	 * _frag_info_sz is the size of structure cfe_frag_info_t.
+	 * Structure cfe_frag_info_t is stored right before MERGE_FRAG function, and
+	 * MERGE_FRAG function is stored right before entry point.
+	 * Note: {r0-r4} must be preserved
+	 */
+	ldr r7, =_frag_merge_func_len
+	ldr r6, [r7]
+	ldr r8, =_frag_info_sz
+	ldr r7, [r8]
+	add r6, r6, r7
+	sub r5, r4, r6
+	ldr r6, [r5]
+	cmp r6, #0
+	beq do_run
+	mov pc, r6	/* Go to _merge_func */
+do_run:
+	mov pc, r4		/* go for it. */
 END(RunProgram)
+
+
+	.globl _frag_merge_func
+_frag_merge_func:
+	.word _merge_func
+
+	.globl _frag_merge_func_len
+_frag_merge_func_len:
+	.word _merge_func_end - _merge_func
+
+       .globl _frag_info_sz
+_frag_info_sz:
+	.word   0
+
+/* This merge_func will relocate at address which is stored at MERGE_FRAG.
+ * It will reference the value which is stored at MERGE_FRAG.
+ * There are the merge_func pointer, des_addr, src_addr and length.
+ * r4 is the entry point, r0-r3 are the parameters for the image.
+ * r5 is the address of MERGE_FRAG
+ */
+FUNC(_merge_func)
+	ldmia	r5, {r9-r12}
+1:
+	ldmia	r11!, {r7-r8}			@ copy 8 bytes from the memory at r11 address
+	stmia	r10!, {r7-r8}			@ store 8 bytes to the memory at r10 address
+						@ r12 is the length, each loop copy 8 bytes
+	subs	r12, r12, #8			@ adjust the length
+	bgt	1b
+
+	mov	pc, r4				@ jump to the entry point
+_merge_func_end:
+END(_merge_func)
 
 /*  *********************************************************************
     *  BOARD_SETLEDS(x)

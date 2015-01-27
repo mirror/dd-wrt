@@ -1,7 +1,7 @@
 /*
  * DDR23 Denali contoller & DDRPHY init routines.
  *
- * Copyright (C) 2014, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -1017,7 +1017,7 @@ Program_Digital_Core_Power_Voltage(si_t *sih)
 		return retval;
 	}
 
-	if (CHIPID(sih->chip) == BCM4707_CHIP_ID) {
+	if (CHIPID(sih->chip) == BCM4707_CHIP_ID || CHIPID(sih->chip) == BCM47094_CHIP_ID) {
 		if (sih->chippkg != BCM4709_PKG_ID) {
 			/* access internal regulator phy by setting the MDC/MDIO
 			 * bus frequency to 125/8
@@ -1200,7 +1200,7 @@ c_ddr_init(unsigned long ra)
 	}
 #ifdef NFLASH_SUPPORT
 embedded_nv:
-#endif /* NFLASH_SUPPORT */
+#endif
 	if (nvh == NULL) {
 		nvh = (struct nvram_header *)(flbase + 1024);
 		if (R_REG(osh, &nvh->magic) != NVRAM_MAGIC) {
