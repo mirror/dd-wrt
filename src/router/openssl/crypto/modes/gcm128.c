@@ -865,7 +865,8 @@ void CRYPTO_gcm128_init(GCM128_CONTEXT *ctx, void *key, block128_f block)
         ctx->ghash = gcm_ghash_4bit;
     }
 # elif  defined(GHASH_ASM_PPC)
-    if (OPENSSL_ppccap_P & PPC_CRYPTO207) {
+    gcm_init_4bit(ctx->Htable, ctx->H.u);
+/*    if (OPENSSL_ppccap_P & PPC_CRYPTO207) {
         gcm_init_p8(ctx->Htable, ctx->H.u);
         ctx->gmult = gcm_gmult_p8;
         ctx->ghash = gcm_ghash_p8;
@@ -873,7 +874,7 @@ void CRYPTO_gcm128_init(GCM128_CONTEXT *ctx, void *key, block128_f block)
         gcm_init_4bit(ctx->Htable, ctx->H.u);
         ctx->gmult = gcm_gmult_4bit;
         ctx->ghash = gcm_ghash_4bit;
-    }
+    }*/
 # else
     gcm_init_4bit(ctx->Htable, ctx->H.u);
 # endif
