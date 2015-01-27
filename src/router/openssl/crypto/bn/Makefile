@@ -10,7 +10,7 @@ INCLUDES= -I.. -I$(TOP) -I../../include
 CFLAG=-g
 MAKEFILE=	Makefile
 AR=		ar r
-
+PERL = perl
 BN_ASM=		bn_asm.o
 
 CFLAGS= $(INCLUDES) $(CFLAG)
@@ -91,14 +91,14 @@ bn-mips3.o:	asm/mips3.s
 	else	$(CC) -c $(CFLAGS) -o $@ asm/mips3.s; fi
 
 bn-mips.s:	asm/mips.pl
-	$(PERL) asm/mips.pl $(PERLASM_SCHEME) $@
+	$(PERL) asm/mips.pl $(PERLASM_SCHEME) > $@
 mips-mont.s:	asm/mips-mont.pl
-	$(PERL)	asm/mips-mont.pl $(PERLASM_SCHEME) $@
+	$(PERL)	asm/mips-mont.pl $(PERLASM_SCHEME) > $@
 
 bn-s390x.o:	asm/s390x.S
 	$(CC) $(CFLAGS) -c -o $@ asm/s390x.S
 s390x-gf2m.s:	asm/s390x-gf2m.pl
-	$(PERL) asm/s390x-gf2m.pl $(PERLASM_SCHEME) $@
+	$(PERL) asm/s390x-gf2m.pl $(PERLASM_SCHEME) > $@
 
 x86_64-gcc.o:	asm/x86_64-gcc.c
 	$(CC) $(CFLAGS) -c -o $@ asm/x86_64-gcc.c
