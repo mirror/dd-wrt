@@ -449,7 +449,8 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 	if (channel > 0 && channel < 1000) {
 		int freq = get_wififreq(prefix, wifi_getfreq(prefix));	// translation for special frequency devices
 		websWrite(wp, "%d", channel);
-		if (has_mimo(prefix)
+#ifdef HAVE_ATH9K
+		if (is_ath9k(prefix)
 		    && (nvram_nmatch("n-only", "%s_net_mode", prefix)
 			|| nvram_nmatch("mixed", "%s_net_mode", prefix)
 			|| nvram_nmatch("na-only", "%s_net_mode", prefix)
@@ -465,6 +466,7 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, " + %d", nvram_nmatch("upper", "%s_nctrlsb", prefix) ? channel - 4 : channel + 4);
 			}
 		}
+#endif
 		websWrite(wp, " (%d)", freq);
 
 	} else
