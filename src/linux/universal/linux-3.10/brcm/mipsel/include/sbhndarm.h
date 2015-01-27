@@ -1,7 +1,7 @@
 /*
  * Broadcom SiliconBackplane ARM definitions
  *
- * Copyright (C) 2014, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: sbhndarm.h 419467 2013-08-21 09:19:48Z $
+ * $Id: sbhndarm.h 451593 2014-01-27 10:37:14Z $
  */
 
 #ifndef	_sbhndarm_h_
@@ -29,9 +29,21 @@
 
 /* bits in corecontrol */
 #define	ACC_FORCED_RST		0x1
-#define	ACC_SERRINT			0x2
+#define	ACC_SERRINT		0x2
 #define	ACC_WFICLKSTOP		0x4
 #define ACC_NOTSLEEPINGCLKREQ_SHIFT	24
+#define ACC_FORCECLOCKRATIO	(1<<7)
+#define ACC_CLOCKRATIO_SHIFT	(8)
+#define ACC_CLOCKRATIO_MASK	(0xF00)
+#define ACC_CLOCKMODE_SHIFT	(12)
+#define ACC_CLOCKMODE_MASK	(0x7000)
+
+#define ACC_CLOCKRATIO_1_TO_1	(0)
+#define ACC_CLOCKRATIO_2_TO_1	(0x4)
+
+#define ACC_CLOCKMODE_SAME	(0)	/* BP and CPU clock are the same */
+#define ACC_CLOCKMODE_ASYNC	(1)	/* BP and CPU clock are asynchronous */
+#define ACC_CLOCKMODE_SYNCH	(2)	/* BP and CPU clock are synch, ratio 1:1 or 1:2 */
 
 /* arm resetlog */
 #define SBRESETLOG		0x1
@@ -161,18 +173,20 @@
 #define ARMCR4_DATA_VALID	(1 << 0)
 
 /* intmask/intstatus bits */
-#define ARMCR4_INTMASK_TIMER	0x1
-
-/* arm core-specific conrol flags */
-#define	SICF_CPUHALT		0x0020
-#define	SICF_UPDATEFW		0x0040
-
-/* arm core-specific status flags */
-#define	SISF_SDRENABLE		0x0001
-#define	SISF_TCMPROT		0x0002
+#define ARMCR4_INTMASK_TIMER		(0x1)
+#define ARMCR4_INTMASK_CLOCKSTABLE	(0x20000000)
 
 #define CHIP_SDRENABLE(sih)	(sih->boardflags2 & BFL2_SDR_EN)
 #define CHIP_TCMPROTENAB(sih)	(si_arm_sflags(sih) & SISF_TCMPROT)
+
+#ifdef REROUTE_OOBINT
+#define PMU_OOB_BIT	0x12
+#define CC_OOB		0x0
+#define M2MDMA_OOB	0x1
+#define PMU_OOB		0x2
+#define D11_OOB		0x3
+#define SDIOD_OOB	0x4
+#endif /* REROUTE_OOBINT */
 
 #elif defined(__ARM_ARCH_7A__)
 /* backplane related stuff */

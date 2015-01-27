@@ -1,6 +1,6 @@
 # Broadcom 802.11abg Networking Device Driver Configuration file
 #
-# Copyright (C) 2014, Broadcom Corporation. All Rights Reserved.
+# Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
 # 
 # Permission to use, copy, modify, and/or distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -14,7 +14,7 @@
 # OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 # CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #
-# $Id: wlconfig_lx_router_media 454474 2014-02-10 22:56:34Z $
+# $Id: wlconfig_lx_router_media,v 1.1 2010-12-06 20:57:20 $
 #
 # Linux Kernel wl driver config file
 
@@ -47,6 +47,9 @@ BCM_DCS=1
 WIFI_ACT_FRAME=1
 WL11U=1
 WLPROBRESP_SW=1
+ifeq ($(WLPROBRESP_SW),1)
+WLPROBRESP_MAC_FILTER=1
+endif
 PSTA=1
 TRAFFIC_MGMT=1
 TRAFFIC_MGMT_RSSI_POLICY=1
@@ -54,4 +57,3 @@ WET_TUNNEL=1
 WLNAR=1
 PSPRETEND=1
 WLTAF=1
-WLMAC_RX_NO_SLEEP=1

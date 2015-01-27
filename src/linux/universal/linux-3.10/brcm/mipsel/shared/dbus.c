@@ -1,7 +1,10 @@
-/*
- * Dongle BUS interface for USB, SDIO, SPI, etc.
+/** @file dbus_sdio.c
  *
- * Copyright (C) 2014, Broadcom Corporation. All Rights Reserved.
+ * Hides details of USB / SDIO / SPI interfaces and OS details. It is intended to shield details and
+ * provide the caller with one common bus interface for all dongle devices. In practice, it is only
+ * used for USB interfaces. DBUS is not a protocol, but an abstraction layer.
+ *
+ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -15,13 +18,14 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: dbus.c 422800 2013-09-10 01:12:42Z $
+ * $Id: dbus.c 453919 2014-02-06 23:10:30Z $
  */
 
 
 #include "osl.h"
 #include "dbus.h"
 #include <bcmutils.h>
+
 #if defined(BCM_DNGL_EMBEDIMAGE)
 #include <bcmsrom_fmt.h>
 #include <trxhdr.h>
@@ -76,25 +80,35 @@
 #endif
 #endif /* #if defined(BCM_DNGL_EMBEDIMAGE) */
 
-/* This private structure dbus_info_t is also declared in dbus_usb_linux.c.
+
+/** General info for all BUS types */
+typedef struct dbus_irbq {
+	dbus_irb_t *head;
+	dbus_irb_t *tail;
+	int cnt;
+} dbus_irbq_t;
+
+/**
+ * This private structure dbus_info_t is also declared in dbus_usb_linux.c.
  * All the fields must be consistent in both declarations.
  */
 typedef struct dbus_info {
 	dbus_pub_t   pub; /* MUST BE FIRST */
 
 	void        *cbarg;
-	dbus_callbacks_t *cbs;
+	dbus_callbacks_t *cbs; /* callbacks to higher level, e.g. dhd_linux.c */
 	void        *bus_info;
-	dbus_intf_t *drvintf;
+	dbus_intf_t *drvintf;  /* callbacks to lower level, e.g. dbus_usb.c or dbus_usb_linux.c */
 	uint8       *fw;
 	int         fwlen;
 	uint32      errmask;
-	int         rx_low_watermark;
+	int         rx_low_watermark;  /* avoid rx overflow by filling rx with free IRBs */
 	int         tx_low_watermark;
 	bool        txoff;
-	bool        txoverride;
+	bool        txoverride;   /* flow control related */
 	bool        rxoff;
 	bool        tx_timer_ticking;
+
 
 	dbus_irbq_t *rx_q;
 	dbus_irbq_t *tx_q;
@@ -157,6 +171,7 @@ static void dbus_if_pktfree(void *handle, void *p, bool send);
 static struct dbus_irb *dbus_if_getirb(void *cbarg, bool send);
 static void dbus_if_rxerr_indicate(void *handle, bool on);
 
+/** functions in this file that are called by lower DBUS levels, e.g. dbus_usb.c */
 static dbus_intf_callbacks_t dbus_intf_cbs = {
 	dbus_if_send_irb_timeout,
 	dbus_if_send_irb_complete,
@@ -164,9 +179,9 @@ static dbus_intf_callbacks_t dbus_intf_cbs = {
 	dbus_if_errhandler,
 	dbus_if_ctl_complete,
 	dbus_if_state_change,
-	NULL,   /* isr */
-	NULL,   /* dpc */
-	NULL,   /* watchdog */
+	NULL,			/* isr */
+	NULL,			/* dpc */
+	NULL,			/* watchdog */
 	dbus_if_pktget,
 	dbus_if_pktfree,
 	dbus_if_getirb,
@@ -185,21 +200,21 @@ static void            *probe_arg = NULL;
 static void            *disc_arg = NULL;
 
 #if defined(BCM_REQUEST_FW)
-int8 *nonfwnvram   = NULL; /* stand-alone multi-nvram given with driver load */
-int nonfwnvramlen  = 0;
+int8 *nonfwnvram = NULL; /* stand-alone multi-nvram given with driver load */
+int nonfwnvramlen = 0;
 #endif /* #if defined(BCM_REQUEST_FW) */
 static void* q_enq(dbus_irbq_t *q, dbus_irb_t *b);
 static void* q_enq_exec(struct exec_parms *args);
 static dbus_irb_t*q_deq(dbus_irbq_t *q);
 static void* q_deq_exec(struct exec_parms *args);
-static int dbus_tx_timer_init(dbus_info_t *dbus_info);
-static int dbus_tx_timer_start(dbus_info_t *dbus_info, uint timeout);
-static int dbus_tx_timer_stop(dbus_info_t *dbus_info);
-static int dbus_irbq_init(dbus_info_t *dbus_info, dbus_irbq_t *q, int nq, int size_irb);
-static int dbus_irbq_deinit(dbus_info_t *dbus_info, dbus_irbq_t *q, int size_irb);
-static int dbus_rxirbs_fill(dbus_info_t *dbus_info);
-static int dbus_send_irb(dbus_pub_t *pub, uint8 *buf, int len, void *pkt, void *info);
-static void dbus_disconnect(void *handle);
+static int   dbus_tx_timer_init(dbus_info_t *dbus_info);
+static int   dbus_tx_timer_start(dbus_info_t *dbus_info, uint timeout);
+static int   dbus_tx_timer_stop(dbus_info_t *dbus_info);
+static int   dbus_irbq_init(dbus_info_t *dbus_info, dbus_irbq_t *q, int nq, int size_irb);
+static int   dbus_irbq_deinit(dbus_info_t *dbus_info, dbus_irbq_t *q, int size_irb);
+static int   dbus_rxirbs_fill(dbus_info_t *dbus_info);
+static int   dbus_send_irb(dbus_pub_t *pub, uint8 *buf, int len, void *pkt, void *info);
+static void  dbus_disconnect(void *handle);
 static void *dbus_probe(void *arg, const char *desc, uint32 bustype, uint32 hdrlen);
 
 #if (defined(BCM_DNGL_EMBEDIMAGE) || defined(BCM_REQUEST_FW))
@@ -217,7 +232,7 @@ static int dbus_zlib_decomp(dbus_info_t *dbus_info);
 extern void *dbus_zlib_calloc(int num, int size);
 extern void dbus_zlib_free(void *ptr);
 #endif
-#endif /* (defined(BCM_DNGL_EMBEDIMAGE) || defined(BCM_REQUEST_FW)) */
+#endif /* defined(BCM_DNGL_EMBEDIMAGE) || defined(BCM_REQUEST_FW) */
 
 /* function */
 void
@@ -239,6 +254,10 @@ dbus_flowctrl_tx(void *dbi, bool on)
 		dbus_info->cbs->txflowcontrol(dbus_info->cbarg, on);
 }
 
+/**
+ * if lower level DBUS signaled a rx error, more free rx IRBs should be allocated or flow control
+ * should kick in to make more free rx IRBs available.
+ */
 static void
 dbus_if_rxerr_indicate(void *handle, bool on)
 {
@@ -252,17 +271,14 @@ dbus_if_rxerr_indicate(void *handle, bool on)
 	if (dbus_info->txoverride == on)
 		return;
 
-	dbus_info->txoverride = on;
+	dbus_info->txoverride = on;	/* flow control */
 
 	if (!on)
 		dbus_rxirbs_fill(dbus_info);
 
 }
 
-/*
- * q_enq()/q_deq() are executed with protection
- * via exec_rxlock()/exec_txlock()
- */
+/** q_enq()/q_deq() are executed with protection via exec_rxlock()/exec_txlock() */
 static void*
 q_enq(dbus_irbq_t *q, dbus_irb_t *b)
 {
@@ -310,6 +326,10 @@ q_deq_exec(struct exec_parms *args)
 	return q_deq(args->qdeq.q);
 }
 
+/**
+ * called during attach phase. Status @ Dec 2012: this function does nothing since for all of the
+ * lower DBUS levels dbus_info->drvintf->tx_timer_init is NULL.
+ */
 static int
 dbus_tx_timer_init(dbus_info_t *dbus_info)
 {
@@ -357,6 +377,7 @@ dbus_tx_timer_stop(dbus_info_t *dbus_info)
 	return DBUS_ERR;
 }
 
+/** called during attach phase. */
 static int
 dbus_irbq_init(dbus_info_t *dbus_info, dbus_irbq_t *q, int nq, int size_irb)
 {
@@ -382,6 +403,7 @@ dbus_irbq_init(dbus_info_t *dbus_info, dbus_irbq_t *q, int nq, int size_irb)
 	return DBUS_OK;
 }
 
+/** called during detach phase or when attach failed */
 static int
 dbus_irbq_deinit(dbus_info_t *dbus_info, dbus_irbq_t *q, int size_irb)
 {
@@ -402,6 +424,7 @@ dbus_irbq_deinit(dbus_info_t *dbus_info, dbus_irbq_t *q, int size_irb)
 	return DBUS_OK;
 }
 
+/** multiple code paths require the rx queue to be filled with more free IRBs */
 static int
 dbus_rxirbs_fill(dbus_info_t *dbus_info)
 {
@@ -453,12 +476,18 @@ dbus_rxirbs_fill(dbus_info_t *dbus_info)
 			args.qenq.b = (dbus_irb_t *) rxirb;
 			EXEC_RXLOCK(dbus_info, q_enq_exec, &args);
 			break;
+		} else if (err != DBUS_OK) {
+			int i = 0;
+			while (i++ < 100) {
+				DBUSERR(("%s :: memory leak for rxirb note?\n", __FUNCTION__));
+			}
 		}
 	}
 #endif /* EHCI_FASTPATH_RX */
 	return err;
 }
 
+/** called when the DBUS interface state changed. */
 void
 dbus_flowctrl_rx(dbus_pub_t *pub, bool on)
 {
@@ -492,7 +521,10 @@ dbus_flowctrl_rx(dbus_pub_t *pub, bool on)
 
 }
 
-/* Handles both sending of a buffer or a pkt */
+/**
+ * Several code paths in this file want to send a buffer to the dongle. This function handles both
+ * sending of a buffer or a pkt
+ */
 static int
 dbus_send_irb(dbus_pub_t *pub, uint8 *buf, int len, void *pkt, void *info)
 {
@@ -509,7 +541,8 @@ dbus_send_irb(dbus_pub_t *pub, uint8 *buf, int len, void *pkt, void *info)
 
 	DBUSTRACE(("%s\n", __FUNCTION__));
 
-	if (dbus_info->pub.busstate == DBUS_STATE_UP) {
+	if (dbus_info->pub.busstate == DBUS_STATE_UP ||
+		dbus_info->pub.busstate == DBUS_STATE_SLEEP) {
 #ifdef EHCI_FASTPATH_TX
 		struct ehci_qtd *qtd;
 		int token = EHCI_QTD_SET_CERR(3);
@@ -571,6 +604,7 @@ dbus_send_irb(dbus_pub_t *pub, uint8 *buf, int len, void *pkt, void *info)
 		txirb->retry_count = 0;
 
 		if (dbus_info->drvintf && dbus_info->drvintf->send_irb) {
+			/* call lower DBUS level send_irb function */
 			err = dbus_info->drvintf->send_irb(dbus_info->bus_info, txirb);
 			if (err == DBUS_ERR_TXDROP) {
 				/* tx fail and no completion routine to clean up, reclaim irb NOW */
@@ -600,6 +634,10 @@ dbus_send_irb(dbus_pub_t *pub, uint8 *buf, int len, void *pkt, void *info)
 }
 
 #if (defined(BCM_DNGL_EMBEDIMAGE) || defined(BCM_REQUEST_FW))
+
+/**
+ * Before downloading a firmware image into the dongle, the validity of the image must be checked.
+ */
 static int
 check_file(osl_t *osh, unsigned char *headers)
 {
@@ -615,8 +653,8 @@ check_file(osl_t *osh, unsigned char *headers)
 
 	headers += SIZEOF_TRX(trx);
 
-	/* TRX V1: get firmwre len */
-	/* TRX V2: get firmwre len and DSG/CFG lengths */
+	/* TRX V1: get firmware len */
+	/* TRX V2: get firmware len and DSG/CFG lengths */
 	if (ltoh32(trx->flag_version) & TRX_UNCOMP_IMAGE) {
 		actual_len = ltoh32(trx->offsets[TRX_OFFSETS_DLFWLEN_IDX]) +
 		                     SIZEOF_TRX(trx);
@@ -634,6 +672,12 @@ check_file(osl_t *osh, unsigned char *headers)
 
 }
 
+/**
+ * It is easy for the user to pass one jumbo nvram file to the driver than a set of smaller files.
+ * The 'jumbo nvram' file format is essentially a set of nvram files. Before commencing firmware
+ * download, the dongle needs to be probed so that the correct nvram contents within the jumbo nvram
+ * file is selected.
+ */
 static int
 dbus_jumbo_nvram(dbus_info_t *dbus_info)
 {
@@ -666,6 +710,7 @@ dbus_jumbo_nvram(dbus_info_t *dbus_info)
 	return DBUS_OK;
 }
 
+/** before commencing fw download, the correct NVRAM image to download has to be picked */
 static int
 dbus_get_nvram(dbus_info_t *dbus_info)
 {
@@ -769,6 +814,10 @@ dbus_get_nvram(dbus_info_t *dbus_info)
 	return DBUS_OK;
 }
 
+/**
+ * during driver initialization ('attach') or after PnP 'resume', firmware needs to be loaded into
+ * the dongle
+ */
 static int
 dbus_do_download(dbus_info_t *dbus_info)
 {
@@ -836,13 +885,14 @@ dbus_do_download(dbus_info_t *dbus_info)
 			goto fail;
 		}
 	}
-#endif /* BCM_REQUEST_FW */
+#endif /* defined(BCM_REQUEST_FW) */
 
 	err = dbus_get_nvram(dbus_info);
 	if (err) {
 		DBUSERR(("dbus_do_download: fail to get nvram %d\n", err));
 		return err;
 	}
+
 
 	if (dbus_info->drvintf->dlstart && dbus_info->drvintf->dlrun) {
 		err = dbus_info->drvintf->dlstart(dbus_info->bus_info,
@@ -887,6 +937,7 @@ fail:
 }
 #endif /* defined(BCM_DNGL_EMBEDIMAGE) || defined(BCM_REQUEST_FW) */
 
+/** required for DBUS deregistration */
 static void
 dbus_disconnect(void *handle)
 {
@@ -896,9 +947,9 @@ dbus_disconnect(void *handle)
 		disconnect_cb(disc_arg);
 }
 
-/*
- * This function is called when the sent irb timesout without a tx response status.
- * DBUS adds reliability by resending timedout irbs DBUS_TX_RETRY_LIMIT times.
+/**
+ * This function is called when the sent irb times out without a tx response status.
+ * DBUS adds reliability by resending timed out IRBs DBUS_TX_RETRY_LIMIT times.
  */
 static void
 dbus_if_send_irb_timeout(void *handle, dbus_irb_tx_t *txirb)
@@ -915,6 +966,10 @@ dbus_if_send_irb_timeout(void *handle, dbus_irb_tx_t *txirb)
 
 }
 
+/**
+ * When lower DBUS level signals that a send IRB completed, either successful or not, the higher
+ * level (e.g. dhd_linux.c) has to be notified, and transmit flow control has to be evaluated.
+ */
 static void BCMFASTPATH
 dbus_if_send_irb_complete(void *handle, dbus_irb_tx_t *txirb, int status)
 {
@@ -981,6 +1036,11 @@ dbus_if_send_irb_complete(void *handle, dbus_irb_tx_t *txirb, int status)
 	}
 }
 
+/**
+ * When lower DBUS level signals that a receive IRB completed, either successful or not, the higher
+ * level (e.g. dhd_linux.c) has to be notified, and fresh free receive IRBs may have to be given
+ * to lower levels.
+ */
 static void BCMFASTPATH
 dbus_if_recv_irb_complete(void *handle, dbus_irb_rx_t *rxirb, int status)
 {
@@ -994,7 +1054,8 @@ dbus_if_recv_irb_complete(void *handle, dbus_irb_rx_t *rxirb, int status)
 
 	DBUSTRACE(("%s\n", __FUNCTION__));
 
-	if (dbus_info->pub.busstate != DBUS_STATE_DOWN) {
+	if (dbus_info->pub.busstate != DBUS_STATE_DOWN &&
+		dbus_info->pub.busstate != DBUS_STATE_SLEEP) {
 		if (status == DBUS_OK) {
 			if ((rxirb->buf != NULL) && (rxirb->actual_len > 0)) {
 				if (dbus_info->cbs && dbus_info->cbs->recv_buf)
@@ -1015,7 +1076,6 @@ dbus_if_recv_irb_complete(void *handle, dbus_irb_rx_t *rxirb, int status)
 				!dbus_info->rxoff) {
 				DBUSTRACE(("Low watermark so submit more %d <= %d \n",
 					dbus_info->rx_low_watermark, rxirb_pending));
-
 				dbus_rxirbs_fill(dbus_info);
 			} else if (dbus_info->rxoff)
 				DBUSTRACE(("rx flow controlled. not filling more. cut_rxq=%d\n",
@@ -1049,13 +1109,19 @@ dbus_if_recv_irb_complete(void *handle, dbus_irb_rx_t *rxirb, int status)
 		}
 #endif /* BCM_RPC_NOCOPY || BCM_RPC_TXNOCOPY || BCM_RPC_TOC */
 	}
-
-	bzero(rxirb, sizeof(dbus_irb_rx_t));
-	args.qenq.q = dbus_info->rx_q;
-	args.qenq.b = (dbus_irb_t *) rxirb;
-	EXEC_RXLOCK(dbus_info, q_enq_exec, &args);
+	if (dbus_info->rx_q != NULL) {
+		bzero(rxirb, sizeof(dbus_irb_rx_t));
+		args.qenq.q = dbus_info->rx_q;
+		args.qenq.b = (dbus_irb_t *) rxirb;
+		EXEC_RXLOCK(dbus_info, q_enq_exec, &args);
+	} else
+		MFREE(dbus_info->pub.osh, rxirb, sizeof(dbus_irb_tx_t));
 }
 
+/**
+ *  Accumulate errors signaled by lower DBUS levels and signal them to higher (e.g. dhd_linux.c)
+ *  level.
+ */
 static void
 dbus_if_errhandler(void *handle, int err)
 {
@@ -1090,6 +1156,10 @@ dbus_if_errhandler(void *handle, int err)
 		dbus_info->cbs->errhandler(dbus_info->cbarg, err);
 }
 
+/**
+ * When lower DBUS level signals control IRB completed, higher level (e.g. dhd_linux.c) has to be
+ * notified.
+ */
 static void
 dbus_if_ctl_complete(void *handle, int type, int status)
 {
@@ -1104,6 +1174,11 @@ dbus_if_ctl_complete(void *handle, int type, int status)
 	}
 }
 
+/**
+ * Rx related functionality (flow control, posting of free IRBs to rx queue) is dependent upon the
+ * bus state. When lower DBUS level signals a change in the interface state, take appropriate action
+ * and forward the signaling to the higher (e.g. dhd_linux.c) level.
+ */
 static void
 dbus_if_state_change(void *handle, int state)
 {
@@ -1138,6 +1213,7 @@ dbus_if_state_change(void *handle, int state)
 		dbus_info->cbs->state_change(dbus_info->cbarg, state);
 }
 
+/** Forward request for packet from lower DBUS layer to higher layer (e.g. dhd_linux.c) */
 static void *
 dbus_if_pktget(void *handle, uint len, bool send)
 {
@@ -1155,6 +1231,7 @@ dbus_if_pktget(void *handle, uint len, bool send)
 	return p;
 }
 
+/** Forward request to free packet from lower DBUS layer to higher layer (e.g. dhd_linux.c) */
 static void
 dbus_if_pktfree(void *handle, void *p, bool send)
 {
@@ -1169,6 +1246,7 @@ dbus_if_pktfree(void *handle, void *p, bool send)
 		ASSERT(0);
 }
 
+/** Lower DBUS level requests either a send or receive IRB */
 static struct dbus_irb*
 dbus_if_getirb(void *cbarg, bool send)
 {
@@ -1190,6 +1268,10 @@ dbus_if_getirb(void *cbarg, bool send)
 	return irb;
 }
 
+/**
+ * Called as part of DBUS bus registration. Calls back into higher level (e.g. dhd_linux.c) probe
+ * function.
+ */
 static void *
 dbus_probe(void *arg, const char *desc, uint32 bustype, uint32 hdrlen)
 {
@@ -1201,6 +1283,10 @@ dbus_probe(void *arg, const char *desc, uint32 bustype, uint32 hdrlen)
 	return (void *)DBUS_ERR;
 }
 
+/**
+ * As part of initialization, higher level (e.g. dhd_linux.c) requests DBUS to prepare for
+ * action.
+ */
 int
 dbus_register(int vid, int pid, probe_cb_t prcb,
 	disconnect_cb_t discb, void *prarg, void *param1, void *param2)
@@ -1213,7 +1299,7 @@ dbus_register(int vid, int pid, probe_cb_t prcb,
 	disconnect_cb = discb;
 	probe_arg = prarg;
 
-	err = dbus_bus_register(vid, pid, dbus_probe,
+	err = dbus_bus_register(vid, pid, dbus_probe, /* call lower DBUS level register function */
 		dbus_disconnect, NULL, &g_busintf, param1, param2);
 
 	return err;
@@ -1226,8 +1312,8 @@ dbus_deregister()
 
 	DBUSTRACE(("%s\n", __FUNCTION__));
 
-	ret = dbus_bus_deregister();
 	probe_cb = NULL;
+	ret = dbus_bus_deregister();
 	disconnect_cb = NULL;
 	probe_arg = NULL;
 
@@ -1235,6 +1321,7 @@ dbus_deregister()
 
 }
 
+/** As part of initialization, data structures have to be allocated and initialized */
 dbus_pub_t *
 dbus_attach(osl_t *osh, int rxsize, int nrxq, int ntxq, void *cbarg,
 	dbus_callbacks_t *cbs, dbus_extdl_t *extdl, struct shared_info *sh)
@@ -1242,11 +1329,13 @@ dbus_attach(osl_t *osh, int rxsize, int nrxq, int ntxq, void *cbarg,
 	dbus_info_t *dbus_info;
 	int err;
 
-	if ((g_busintf == NULL) || (g_busintf->attach == NULL) || (cbs == NULL) ||
-		(nrxq <= 0) || (ntxq <= 0))
+	if ((g_busintf == NULL) || (g_busintf->attach == NULL) || (cbs == NULL))
 		return NULL;
 
 	DBUSTRACE(("%s\n", __FUNCTION__));
+
+	if ((nrxq <= 0) || (ntxq <= 0))
+		return NULL;
 
 	dbus_info = MALLOC(osh, sizeof(dbus_info_t));
 	if (dbus_info == NULL)
@@ -1254,7 +1343,7 @@ dbus_attach(osl_t *osh, int rxsize, int nrxq, int ntxq, void *cbarg,
 
 	bzero(dbus_info, sizeof(dbus_info_t));
 
-	/* BUS-specific driver interface */
+	/* BUS-specific driver interface (at a lower DBUS level) */
 	dbus_info->drvintf = g_busintf;
 	dbus_info->cbarg = cbarg;
 	dbus_info->cbs = cbs;
@@ -1399,6 +1488,10 @@ dbus_detach(dbus_pub_t *pub)
 	MFREE(osh, dbus_info, sizeof(dbus_info_t));
 }
 
+/**
+ * higher layer requests us to 'up' the interface to the dongle. Prerequisite is that firmware (not
+ * bootloader) must be active in the dongle.
+ */
 int
 dbus_up(dbus_pub_t *pub)
 {
@@ -1426,6 +1519,7 @@ dbus_up(dbus_pub_t *pub)
 	return err;
 }
 
+/** higher layer requests us to 'down' the interface to the dongle. */
 int
 dbus_down(dbus_pub_t *pub)
 {
@@ -1480,6 +1574,12 @@ dbus_stop(dbus_pub_t *pub)
 	return DBUS_ERR;
 }
 
+int dbus_send_txdata(dbus_pub_t *dbus, void *pktbuf)
+{
+	return dbus_send_buf(dbus, PKTDATA(dbus->osh, pktbuf), PKTLEN(dbus->osh, pktbuf),
+			pktbuf /* pktinfo */);
+}
+
 int
 dbus_send_buf(dbus_pub_t *pub, uint8 *buf, int len, void *info)
 {
@@ -1524,6 +1624,7 @@ dbus_recv_ctl(dbus_pub_t *pub, uint8 *buf, int len)
 	return DBUS_ERR;
 }
 
+/** Only called via RPC (Dec 2012) */
 int
 dbus_recv_bulk(dbus_pub_t *pub, uint32 ep_idx)
 {
@@ -1560,6 +1661,27 @@ dbus_recv_bulk(dbus_pub_t *pub, uint32 ep_idx)
 	return DBUS_ERR;
 }
 
+/** only called by dhd_cdc.c (Dec 2012) */
+int
+dbus_poll_intr(dbus_pub_t *pub)
+{
+	dbus_info_t *dbus_info = (dbus_info_t *) pub;
+
+	int status = DBUS_ERR;
+
+	if (dbus_info == NULL)
+		return DBUS_ERR;
+
+	if (dbus_info->pub.busstate == DBUS_STATE_UP) {
+		if (dbus_info->drvintf && dbus_info->drvintf->recv_irb_from_ep) {
+			status = dbus_info->drvintf->recv_irb_from_ep(dbus_info->bus_info,
+				NULL, 0xff);
+		}
+	}
+	return status;
+}
+
+/** called by nobody (Dec 2012) */
 void *
 dbus_pktget(dbus_pub_t *pub, int len)
 {
@@ -1571,6 +1693,7 @@ dbus_pktget(dbus_pub_t *pub, int len)
 	return PKTGET(dbus_info->pub.osh, len, TRUE);
 }
 
+/** called by nobody (Dec 2012) */
 void
 dbus_pktfree(dbus_pub_t *pub, void* pkt)
 {
@@ -1582,6 +1705,7 @@ dbus_pktfree(dbus_pub_t *pub, void* pkt)
 	PKTFREE(dbus_info->pub.osh, pkt, TRUE);
 }
 
+/** called by nobody (Dec 2012) */
 int
 dbus_get_stats(dbus_pub_t *pub, dbus_stats_t *stats)
 {
@@ -1622,6 +1746,22 @@ dbus_get_device_speed(dbus_pub_t *pub)
 		return INVALID_SPEED;
 
 	return (dbus_info->pub.device_speed);
+}
+
+int
+dbus_set_device_speed(dbus_pub_t *pub, uint8 speed)
+{
+	dbus_info_t *dbus_info = (dbus_info_t *) pub;
+	int err = DBUS_ERR;
+
+	if (dbus_info == NULL)
+		return INVALID_SPEED;
+	if (dbus_info->drvintf && dbus_info->drvintf->set_device_speed) {
+		err = dbus_info->drvintf->set_device_speed(dbus_info->bus_info,
+		speed);
+	}
+
+	return err;
 }
 
 int
@@ -2388,6 +2528,7 @@ EXPORT_SYMBOL(dbus_set_config);
 EXPORT_SYMBOL(dbus_flowctrl_rx);
 EXPORT_SYMBOL(dbus_up);
 EXPORT_SYMBOL(dbus_get_device_speed);
+EXPORT_SYMBOL(dbus_set_device_speed);
 EXPORT_SYMBOL(dbus_send_pkt);
 EXPORT_SYMBOL(dbus_recv_ctl);
 EXPORT_SYMBOL(dbus_attach);

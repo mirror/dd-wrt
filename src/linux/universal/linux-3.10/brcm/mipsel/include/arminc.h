@@ -1,7 +1,7 @@
 /*
  * HND Run Time Environment for standalone ARM programs.
  *
- * Copyright (C) 2014, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: arminc.h 419467 2013-08-21 09:19:48Z $
+ * $Id: arminc.h 425360 2013-09-24 00:06:24Z $
  */
 
 #ifndef	_ARMINC_H
@@ -77,6 +77,20 @@ var:	.word	val
 #define _ULCAST_ (unsigned long)
 
 #endif	/* _LANGUAGE_ASSEMBLY */
+
+/*
+ * Macro to count leading zeroes
+ *
+ */
+#if defined(__GNUC__)
+#define CLZ(x) __builtin_clzl(x)
+#elif defined(__arm__)
+#define CLZ(x) __clz(x)
+#else
+#ifndef WLOFFLD
+#error "No buitlin CLZ known on this compiler platform"
+#endif /* WLOFFLD */
+#endif /* __GNUC__ */
 
 
 #if defined(__ARM_ARCH_7M__)	/* Cortex-M3 */
