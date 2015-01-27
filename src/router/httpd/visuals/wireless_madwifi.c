@@ -447,7 +447,8 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 	int channel = wifi_getchannel(prefix);
 
 	if (channel > 0 && channel < 1000) {
-		int freq = get_wififreq(prefix,wifi_getfreq(prefix)); // translation for special frequency devices
+		int freq = get_wififreq(prefix, wifi_getfreq(prefix));	// translation for special frequency devices
+		websWrite(wp, "%d", channel);
 		if (has_mimo(prefix)
 		    && (nvram_nmatch("n-only", "%s_net_mode", prefix)
 			|| nvram_nmatch("mixed", "%s_net_mode", prefix)
@@ -461,13 +462,8 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 			|| nvram_nmatch("wdsap", "%s_mode", prefix)
 			|| nvram_nmatch("infra", "%s_mode", prefix))) {
 			if (nvram_nmatch("40", "%s_channelbw", prefix)) {
-				websWrite(wp, "%d + ", channel);
-				websWrite(wp, "%d", nvram_nmatch("upper", "%s_nctrlsb", prefix) ? channel - 4 : channel + 4);
-			} else {
-				websWrite(wp, "%d", channel);
+				websWrite(wp, " + %d", nvram_nmatch("upper", "%s_nctrlsb", prefix) ? channel - 4 : channel + 4);
 			}
-		} else {
-			websWrite(wp, "%d", channel);
 		}
 		websWrite(wp, " (%d)", freq);
 
