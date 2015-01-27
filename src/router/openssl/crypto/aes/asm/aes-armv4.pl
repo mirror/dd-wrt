@@ -715,8 +715,8 @@ _armv4_AES_set_encrypt_key:
 .Ldone:	mov	r0,#0
 	ldmia   sp!,{r4-r12,lr}
 .Labrt:
-#if defined(__thumb2__) && __ARM_ARCH__>=7
-	.short	0x4770			@ bx lr in Thumb2 encoding
+#if __ARM_ARCH__>=5
+	ret				@ bx lr
 #else
 	tst	lr,#1
 	moveq	pc,lr			@ be binary compatible with V4, yet
@@ -950,7 +950,7 @@ AES_Td:
 .align	5
 asm_AES_decrypt:
 #if __ARM_ARCH__<7
-	sub	r3,pc,#8		@ AES_decrypt
+	sub	r3,pc,#8		@ asm_AES_decrypt
 #else
 	adr	r3,asm_AES_decrypt
 #endif
@@ -1203,6 +1203,7 @@ _armv4_AES_decrypt:
 ___
 
 $code =~ s/\bbx\s+lr\b/.word\t0xe12fff1e/gm;	# make it possible to compile with -march=armv4
+$code =~ s/\bret\b/bx\tlr/gm;
 
 open SELF,$0;
 while(<SELF>) {
