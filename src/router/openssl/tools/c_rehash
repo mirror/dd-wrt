@@ -68,14 +68,17 @@ sub hash_dir {
 	chdir $_[0];
 	opendir(DIR, ".");
 	my @flist = readdir(DIR);
-	# Delete any existing symbolic links
-	foreach (grep {/^[\da-f]+\.r{0,1}\d+$/} @flist) {
-		if(-l $_) {
-			unlink $_;
+	closedir DIR;
+	if ( $removelinks ) {
+		# Delete any existing symbolic links
+		foreach (grep {/^[\da-f]+\.r{0,1}\d+$/} @flist) {
+			if(-l $_) {
+				unlink $_;
+				print "unlink $_" if $verbose;
+			}
 		}
 	}
-	closedir DIR;
-	FILE: foreach $fname (grep {/\.pem$/} @flist) {
+	FILE: foreach $fname (grep {/\.(pem)|(crt)|(cer)|(crl)$/} @flist) {
 		# Check to see if certificates and/or CRLs present.
 		my ($cert, $crl) = check_file($fname);
 		if(!$cert && !$crl) {
@@ -117,7 +120,7 @@ sub check_file {
 sub link_hash_cert {
 		my $fname = $_[0];
 		$fname =~ s/'/'\\''/g;
-		my ($hash, $fprint) = `"$openssl" x509 -hash -fingerprint -noout -in "$fname"`;
+		my ($hash, $fprint) = `"$openssl" x509 $x509hash -fingerprint -noout -in "$fname"`;
 		chomp $hash;
 		chomp $fprint;
 		$fprint =~ s/^.*=//;
@@ -133,16 +136,16 @@ sub link_hash_cert {
 			$suffix++;
 		}
 		$hash .= ".$suffix";
-		print "$fname => $hash\n";
-		$symlink_exists=eval {symlink("",""); 1};
 		if ($symlink_exists) {
 			symlink $fname, $hash;
+			print "link $fname -> $hash\n" if $verbose;
 		} else {
 			open IN,"<$fname" or die "can't open $fname for read";
 			open OUT,">$hash" or die "can't open $hash for write";
 			print OUT <IN>;	# does the job for small text files
 			close OUT;
 			close IN;
+			print "copy $fname -> $hash\n" if $verbose;
 		}
 		$hashlist{$hash} = $fprint;
 }
@@ -152,7 +155,7 @@ sub link_hash_cert {
 sub link_hash_crl {
 		my $fname = $_[0];
 		$fname =~ s/'/'\\''/g;
-		my ($hash, $fprint) = `"$openssl" crl -hash -fingerprint -noout -in '$fname'`;
+		my ($hash, $fprint) = `"$openssl" crl $crlhash -fingerprint -noout -in '$fname'`;
 		chomp $hash;
 		chomp $fprint;
 		$fprint =~ s/^.*=//;
@@ -168,12 +171,12 @@ sub link_hash_crl {
 			$suffix++;
 		}
 		$hash .= ".r$suffix";
-		print "$fname => $hash\n";
-		$symlink_exists=eval {symlink("",""); 1};
 		if ($symlink_exists) {
 			symlink $fname, $hash;
+			print "link $fname -> $hash\n" if $verbose;
 		} else {
 			system ("cp", $fname, $hash);
+			print "cp $fname -> $hash\n" if $verbose;
 		}
 		$hashlist{$hash} = $fprint;
 }
