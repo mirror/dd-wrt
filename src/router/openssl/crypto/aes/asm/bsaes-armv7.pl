@@ -702,13 +702,17 @@ $code.=<<___;
 # define BSAES_ASM_EXTENDED_KEY
 # define XTS_CHAIN_TWEAK
 # define __ARM_ARCH__ __LINUX_ARM_ARCH__
+# define __ARM_MAX_ARCH__ __LINUX_ARM_ARCH__
 #endif
 
 #ifdef __thumb__
 # define adrl adr
 #endif
 
-#if __ARM_ARCH__>=7
+#if __ARM_MAX_ARCH__>=7
+.arch	armv7-a
+.fpu	neon
+
 .text
 .syntax	unified 	@ ARMv7-capable assembler is expected to handle this
 #ifdef __thumb2__
@@ -716,8 +720,6 @@ $code.=<<___;
 #else
 .code   32
 #endif
-
-.fpu	neon
 
 .type	_bsaes_decrypt8,%function
 .align	4
@@ -1084,7 +1086,7 @@ my ($keysched)=("sp");
 
 $code.=<<___;
 .extern AES_cbc_encrypt
-.extern asm_AES_decrypt
+.extern AES_decrypt
 
 .global	bsaes_cbc_encrypt
 .type	bsaes_cbc_encrypt,%function
@@ -1330,7 +1332,7 @@ bsaes_cbc_encrypt:
 	mov	r2, $key
 	vmov	@XMM[4],@XMM[15]		@ just in case ensure that IV
 	vmov	@XMM[5],@XMM[0]			@ and input are preserved
-	bl	asm_AES_decrypt
+	bl	AES_decrypt
 	vld1.8	{@XMM[0]}, [$fp,:64]		@ load result
 	veor	@XMM[0], @XMM[0], @XMM[4]	@ ^= IV
 	vmov	@XMM[15], @XMM[5]		@ @XMM[5] holds input
@@ -1360,7 +1362,7 @@ my $const = "r6";	# shared with _bsaes_encrypt8_alt
 my $keysched = "sp";
 
 $code.=<<___;
-.extern	asm_AES_encrypt
+.extern	AES_encrypt
 .global	bsaes_ctr32_encrypt_blocks
 .type	bsaes_ctr32_encrypt_blocks,%function
 .align	5
@@ -1556,7 +1558,7 @@ bsaes_ctr32_encrypt_blocks:
 	mov	r1, sp			@ output on the stack
 	mov	r2, r7			@ key
 
-	bl	asm_AES_encrypt
+	bl	AES_encrypt
 
 	vld1.8	{@XMM[0]}, [r4]!	@ load input
 	vld1.8	{@XMM[1]}, [sp,:64]	@ load encrypted counter
@@ -1617,7 +1619,7 @@ bsaes_xts_encrypt:
 	ldr	r0, [ip, #4]			@ iv[]
 	mov	r1, sp
 	ldr	r2, [ip, #0]			@ key2
-	bl	asm_AES_encrypt
+	bl	AES_encrypt
 	mov	r0,sp				@ pointer to initial tweak
 #endif
 
@@ -1945,7 +1947,7 @@ $code.=<<___;
 	mov		r2, $key
 	mov		r4, $fp				@ preserve fp
 
-	bl		asm_AES_encrypt
+	bl		AES_encrypt
 
 	vld1.8		{@XMM[0]}, [sp,:128]
 	veor		@XMM[0], @XMM[0], @XMM[8]
@@ -1977,7 +1979,7 @@ $code.=<<___;
 	mov		r2, $key
 	mov		r4, $fp			@ preserve fp
 
-	bl		asm_AES_encrypt
+	bl		AES_encrypt
 
 	vld1.8		{@XMM[0]}, [sp,:128]
 	veor		@XMM[0], @XMM[0], @XMM[8]
@@ -2031,7 +2033,7 @@ bsaes_xts_decrypt:
 	ldr	r0, [ip, #4]			@ iv[]
 	mov	r1, sp
 	ldr	r2, [ip, #0]			@ key2
-	bl	asm_AES_encrypt
+	bl	AES_encrypt
 	mov	r0, sp				@ pointer to initial tweak
 #endif
 
@@ -2363,7 +2365,7 @@ $code.=<<___;
 	mov		r4, $fp				@ preserve fp
 	mov		r5, $magic			@ preserve magic
 
-	bl		asm_AES_decrypt
+	bl		AES_decrypt
 
 	vld1.8		{@XMM[0]}, [sp,:128]
 	veor		@XMM[0], @XMM[0], @XMM[8]
@@ -2395,7 +2397,7 @@ $code.=<<___;
 	mov		r2, $key
 	mov		r4, $fp			@ preserve fp
 
-	bl		asm_AES_decrypt
+	bl		AES_decrypt
 
 	vld1.8		{@XMM[0]}, [sp,:128]
 	veor		@XMM[0], @XMM[0], @XMM[9]
@@ -2418,7 +2420,7 @@ $code.=<<___;
 	vst1.8		{@XMM[0]}, [sp,:128]
 	mov		r2, $key
 
-	bl		asm_AES_decrypt
+	bl		AES_decrypt
 
 	vld1.8		{@XMM[0]}, [sp,:128]
 	veor		@XMM[0], @XMM[0], @XMM[8]

@@ -45,11 +45,7 @@ if ($flavour =~ /64/) {
 	$PUSH	="stw";
 } else { die "nonsense $flavour"; }
 
-$LITTLE_ENDIAN=0;
-if ($flavour =~ /le$/) {
-	die "little-endian is 64-bit only: $flavour" if ($SIZE_T == 4);
-	$LITTLE_ENDIAN=1;
-}
+$LITTLE_ENDIAN = ($flavour=~/le$/) ? $SIZE_T : 0;
 
 $0 =~ m/(.*[\/\\])[^\/\\]+$/; $dir=$1;
 ( $xlate="${dir}ppc-xlate.pl" and -f $xlate ) or
@@ -334,9 +330,9 @@ $code.=<<___;
 .byte	0xe1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0c, 0x7d
 
 
-.globl	.asm_AES_encrypt
+.globl	.AES_encrypt
 .align	7
-.asm_AES_encrypt:
+.AES_encrypt:
 	$STU	$sp,-$FRAME($sp)
 	mflr	r0
 
@@ -524,7 +520,7 @@ Lenc_done:
 
 .align	5
 Lppc_AES_encrypt:
-	lwz	$acc00,464($key)
+	lwz	$acc00,240($key)
 	addi	$Tbl1,$Tbl0,3
 	lwz	$t0,0($key)
 	addi	$Tbl2,$Tbl0,2
@@ -668,7 +664,7 @@ Lenc_loop:
 
 .align	4
 Lppc_AES_encrypt_compact:
-	lwz	$acc00,464($key)
+	lwz	$acc00,240($key)
 	addi	$Tbl1,$Tbl0,2048
 	lwz	$t0,0($key)
 	lis	$mask80,0x8080
@@ -810,11 +806,11 @@ Lenc_compact_done:
 	blr
 	.long	0
 	.byte	0,12,0x14,0,0,0,0,0
-.size	.asm_AES_encrypt,.-.asm_AES_encrypt
+.size	.AES_encrypt,.-.AES_encrypt
 
-.globl	.asm_AES_decrypt
+.globl	.AES_decrypt
 .align	7
-.asm_AES_decrypt:
+.AES_decrypt:
 	$STU	$sp,-$FRAME($sp)
 	mflr	r0
 
@@ -1002,7 +998,7 @@ Ldec_done:
 
 .align	5
 Lppc_AES_decrypt:
-	lwz	$acc00,464($key)
+	lwz	$acc00,240($key)
 	addi	$Tbl1,$Tbl0,3
 	lwz	$t0,0($key)
 	addi	$Tbl2,$Tbl0,2
@@ -1146,7 +1142,7 @@ Ldec_loop:
 
 .align	4
 Lppc_AES_decrypt_compact:
-	lwz	$acc00,464($key)
+	lwz	$acc00,240($key)
 	addi	$Tbl1,$Tbl0,2048
 	lwz	$t0,0($key)
 	lis	$mask80,0x8080
@@ -1445,7 +1441,7 @@ Ldec_compact_done:
 	blr
 	.long	0
 	.byte	0,12,0x14,0,0,0,0,0
-.size	.asm_AES_decrypt,.-.asm_AES_decrypt
+.size	.AES_decrypt,.-.AES_decrypt
 
 .asciz	"AES for PPC, CRYPTOGAMS by <appro\@openssl.org>"
 .align	7
