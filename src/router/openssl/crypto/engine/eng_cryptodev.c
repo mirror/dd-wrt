@@ -735,7 +735,7 @@ cryptodev_engine_ciphers(ENGINE *e, const EVP_CIPHER **cipher,
         break;
 	case NID_aes_512_cbc:
 		*cipher = &cryptodev_aes_512_cbc;
-+		break;
+		break;
 # ifdef CRYPTO_AES_CTR
     case NID_aes_128_ctr:
         *cipher = &cryptodev_aes_ctr;
