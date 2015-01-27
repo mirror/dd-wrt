@@ -2,7 +2,7 @@
  * Required functions exported by the port-specific (os-dependent) driver
  * to common (os-independent) driver code.
  *
- * Copyright (C) 2012, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -15,7 +15,7 @@
  * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- * $Id: et_export.h 381881 2013-01-30 06:04:30Z $
+ * $Id: et_export.h 468275 2014-04-07 05:21:13Z $
  */
 
 #ifndef _et_export_h_
@@ -30,6 +30,7 @@ extern int et_up(void *et);
 extern int et_down(void *et, int reset);
 extern void et_dump(void *et, struct bcmstrbuf *b);
 extern void et_intrson(void *et);
+extern void et_discard(void *et, void *pkt);
 
 /* for BCM5222 dual-phy shared mdio contortion */
 extern void *et_phyfind(void *et, uint coreunit);
@@ -41,4 +42,17 @@ extern void et_dump_ctf(void *et, struct bcmstrbuf *b);
 #ifdef BCMDBG_CTRACE
 extern void et_dump_ctrace(void *et, struct bcmstrbuf *b);
 #endif
+#ifdef BCM_GMAC3
+extern void et_dump_fwder(void *et, struct bcmstrbuf *b);
+#endif
+#ifdef ETFA
+extern void et_fa_lock_init(void *et);
+extern void et_fa_lock(void *et);
+extern void et_fa_unlock(void *et);
+extern void *et_fa_get_fa_dev(void *et);
+extern bool et_fa_dev_on(void *dev);
+extern void et_fa_set_dev_on(void *et);
+extern void *et_fa_fs_create(void);
+extern void et_fa_fs_clean(void);
+#endif /* ETFA */
 #endif	/* _et_export_h_ */

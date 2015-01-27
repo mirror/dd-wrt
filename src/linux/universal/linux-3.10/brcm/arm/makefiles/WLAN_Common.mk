@@ -198,16 +198,16 @@ include $(WLAN_TreeBaseA)/src/tools/release/WLAN.usf
 define _common-component-names-to-rel-paths
 $(strip \
   $(patsubst $(WLAN_TreeBaseA)/%,%,$(wildcard $(addprefix $(WLAN_TreeBaseA)/,\
-  $(sort $(foreach name,$(if $1,$1,$(WLAN_AllComponentPaths)),$(filter %/$(name),$(WLAN_AllComponentPaths))))))))
+  $(sort $(foreach name,$(if $1,$1,$(WLAN_COMPONENT_PATHS)),$(filter %/$(name),$(WLAN_COMPONENT_PATHS))))))))
 endef
 
 # If WLAN_ComponentsInUse is unset it defaults to the full set (for now, anyway - TODO).
 # It's also possible to request the full set with a literal '*'.
 ifeq (,$(WLAN_ComponentsInUse))
-  WLAN_ComponentsInUse		:= $(sort $(notdir $(WLAN_AllComponentPaths)))
+  WLAN_ComponentsInUse		:= $(sort $(notdir $(WLAN_COMPONENT_PATHS)))
   # $(call wlan_die,no SW component request)
 else ifeq (*,$(WLAN_ComponentsInUse))
-  WLAN_ComponentsInUse		:= $(sort $(notdir $(WLAN_AllComponentPaths)))
+  WLAN_ComponentsInUse		:= $(sort $(notdir $(WLAN_COMPONENT_PATHS)))
   $(call wlan_info,all SW components requested ("$(WLAN_ComponentsInUse)"))
 else
   WLAN_ComponentsInUse		:= $(sort $(WLAN_ComponentsInUse))
@@ -234,6 +234,51 @@ $(foreach _path,$(WLAN_ComponentPathsInUse), \
   $(eval WLAN_ComponentSrcPathsInUse += $(addprefix $(_path)/,$($(notdir $(_path))_SrcDirs))) \
   $(eval WLAN_ComponentBaseDir_$$(notdir $(_path)) := $$(WLAN_TreeBaseA)/$(_path)) \
 )
+
+# Phy specific subdirs
+ifeq ($(findstring phymods,$(WLAN_ComponentsInUse)),phymods)
+PHY_TOP_DIR = src/wl/phymods
+PHY_CMN_DIR_LIST = dbg
+PHY_1OFF_DIR_LIST =
+PHY_TYPE_LIST = cmn
+PHY_MOD_LIST = core radar
+PHY_MOD_SRC_DIRS = $(foreach PHY_CMN_DIR,$(PHY_CMN_DIR_LIST),$(PHY_TOP_DIR)/cmn/$(PHY_CMN_DIR)/src)
+PHY_MOD_SRC_DIRS += $(foreach PHY_1OFF_DIR,$(PHY_1OFF_DIR_LIST),$(PHY_TOP_DIR)/$(PHY_1OFF_DIR)/src)
+PHY_MOD_SRC_DIRS += $(foreach PHY_TYPE,$(PHY_TYPE_LIST),\
+	$(foreach PHY_MOD,$(PHY_MOD_LIST),$(PHY_TOP_DIR)/$(PHY_TYPE)/$(PHY_MOD)/src))
+PHY_MOD_INC_DIRS = $(foreach PHY_CMN_DIR,$(PHY_CMN_DIR_LIST),$(PHY_TOP_DIR)/cmn/$(PHY_CMN_DIR)/include)
+PHY_MOD_INC_DIRS += $(foreach PHY_1OFF_DIR,$(PHY_1OFF_DIR_LIST),$(PHY_TOP_DIR)/$(PHY_1OFF_DIR)/include)
+PHY_MOD_INC_DIRS += $(foreach PHY_TYPE,$(PHY_TYPE_LIST),\
+	$(foreach PHY_MOD,$(PHY_MOD_LIST),$(PHY_TOP_DIR)/$(PHY_TYPE)/$(PHY_MOD)/include))
+PHY_MOD_INC_DIRS += $(foreach PHY_DIR,$(PHY_MOD_SRC_DIRS),$(PHY_DIR))
+else
+PHY_MOD_SRC_DIRS =
+PHY_MOD_INC_DIRS =
+endif
+
+# Global include/source path
+WLAN_StdSrcDirs = src/shared src/wl/sys src/wl/phy src/bcmcrypto
+WLAN_StdSrcDirs += $(PHY_MOD_SRC_DIRS)
+WLAN_StdIncDirs = src/include src/common/include src/common/include/devctrl_if
+WLAN_StdIncDirs += $(PHY_MOD_INC_DIRS)
+
+WLAN_SrcIncDirs = src/shared src/wl/sys src/wl/ndis/include src/wl/phy src/bcmcrypto
+WLAN_SrcIncDirs += src/wl/keymgmt/src src/wl/iocv/src src/wl/ndis/src src/wl/shim/src
+WLAN_SrcIncDirs += $(PHY_MOD_SRC_DIRS)
+
+export WLAN_StdSrcDirsR	 = $(addprefix $(WLAN_TreeBaseR)/,$(WLAN_StdSrcDirs))
+export WLAN_StdIncDirsR	 = $(addprefix $(WLAN_TreeBaseR)/,$(WLAN_StdIncDirs))
+export WLAN_SrcIncDirsR  = $(addprefix $(WLAN_TreeBaseR)/,$(WLAN_SrcIncDirs))
+export WLAN_StdIncPathR	 = $(addprefix -I,$(WLAN_StdIncDirsR))
+export WLAN_IncDirsR	 = $(WLAN_StdIncDirsR) $(WLAN_SrcIncDirsR)
+export WLAN_IncPathR	 = $(addprefix -I,$(WLAN_IncDirsR))
+
+export WLAN_StdSrcDirsA	 = $(addprefix $(WLAN_TreeBaseA)/,$(WLAN_StdSrcDirs))
+export WLAN_StdIncDirsA	 = $(addprefix $(WLAN_TreeBaseA)/,$(WLAN_StdIncDirs))
+export WLAN_SrcIncDirsA	 = $(addprefix $(WLAN_TreeBaseA)/,$(WLAN_SrcIncDirs))
+export WLAN_StdIncPathA	 = $(addprefix -I,$(WLAN_StdIncDirsA))
+export WLAN_IncDirsA	 = $(WLAN_StdIncDirsA) $(WLAN_SrcIncDirsA)
+export WLAN_IncPathA	 = $(addprefix -I,$(WLAN_IncDirsA))
 
 # Public convenience macros based on WLAN_ComponentPathsInUse list.
 export WLAN_ComponentSrcDirsR	 = $(addprefix $(WLAN_TreeBaseR)/,$(WLAN_ComponentSrcPathsInUse))
@@ -275,14 +320,15 @@ endif
 # Variables of general utility.
 WLAN_Perl := perl
 WLAN_Python := python
+WLAN_WINPFX ?= Z:
 
 # These macros are used to stash an extra copy of generated source files,
 # such that when a source release is made those files can be reconstituted
 # from the stash during builds. Required if the generating tools or inputs
 # are not shipped.
 define wlan_copy_to_gen
-  $(if $(WLAN_COPY_GEN),&& mkdir -pv $(subst $(abspath $2),$(abspath $2/$(WLAN_GenBaseDir)),$(dir $1)) && \
-    cp -pv $1 $(subst $(abspath $2),$(abspath $2/$(WLAN_GenBaseDir)),$1.GEN))
+  $(if $(WLAN_COPY_GEN),&& mkdir -p $(subst $(abspath $2),$(abspath $2/$(WLAN_GEN_BASEDIR)),$(dir $(abspath $1))) && \
+    cp -pv $1 $(subst $(abspath $2),$(abspath $2/$(WLAN_GEN_BASEDIR)),$(abspath $1).GEN))
 endef
 
 ################################################################
@@ -323,12 +369,13 @@ vpath wlc_clm_data$4.c $1 $$(abspath $1)
 ifneq (,$(wildcard $(addsuffix /wl/clm/private/wlc_clm_data.xml,$2 $2/../../src $2/../../../src)))
   vpath wlc_clm_data.xml $(wildcard $(addsuffix /wl/clm/private,$5 $2 $2/../../src $2/../../../src))
   vpath %.clm $(addsuffix /wl/clm/types,$2 $2/../../src $2/../../../src)
-  $$(sort $1/wlc_clm_data$4.c ./wlc_clm_data$4.c): wlc_clm_data.xml $$(if $$(CLM_TYPE),$$(CLM_TYPE).clm) ; \
+  $$(sort $1/wlc_clm_data$4.c ./wlc_clm_data$4.c): \
+      wlc_clm_data.xml $2/wl/clm/include/wlc_clm_data.h $$(wildcard $2/wl/clm/bin/ClmCompiler.py) $$(if $$(CLM_TYPE),$$(CLM_TYPE).clm) ; \
     $$(strip $$(abspath $$(<D)/../../../tools/build/ClmCompiler) \
       $$(if $$(CLM_TYPE),--config_file $$(lastword $$^) $3,$$(if $3,$3,$$(CLMCOMPDEFFLAGS))) \
       $(CLMCOMPEXTFLAGS) $$< $$@ $$(call wlan_copy_to_gen,$$@,$2))
 else
-  vpath %.GEN $(subst $(abspath $2),$(abspath $2/$(WLAN_GenBaseDir)),$1) $(sort $(patsubst %/,%,$(dir $(wildcard $(subst $(abspath $2),$(abspath $2/$(WLAN_GenBaseDir)),$(dir $1))*/*.GEN))))
+  vpath %.GEN $(subst $(abspath $2),$(abspath $2/$(WLAN_GEN_BASEDIR)),$1) $(sort $(patsubst %/,%,$(dir $(wildcard $(subst $(abspath $2),$(abspath $2/$(WLAN_GEN_BASEDIR)),$(dir $1))*/*.GEN))))
   $1/%: %.GEN ; cp -pv $$< $$@
 endif
   clm_compiled: $1/wlc_clm_data$4.c

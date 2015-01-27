@@ -1,7 +1,7 @@
 /*
  * SROM format definition.
  *
- * Copyright (C) 2014, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: bcmsrom_fmt.h 419467 2013-08-21 09:19:48Z $
+ * $Id: bcmsrom_fmt.h 502763 2014-09-16 02:48:59Z $
  */
 
 #ifndef	_bcmsrom_fmt_h_
@@ -369,6 +369,8 @@
 
 #define SROM9_PO_MCS32		202
 #define SROM9_PO_LOFDM40DUP	203
+#define SROM9_EU_EDCRSTH	204
+#define SROM10_EU_EDCRSTH	204
 #define SROM8_RXGAINERR_2G	205
 #define SROM8_RXGAINERR_5GL	206
 #define SROM8_RXGAINERR_5GM	207
@@ -376,6 +378,7 @@
 #define SROM8_RXGAINERR_5GU	209
 #define SROM8_SUBBAND_PPR	210
 #define SROM8_PCIEINGRESS_WAR	211
+#define SROM8_EU_EDCRSTH	212
 #define SROM9_SAR		212
 
 #define SROM8_NOISELVL_2G	213
@@ -383,6 +386,7 @@
 #define SROM8_NOISELVL_5GM	215
 #define SROM8_NOISELVL_5GH	216
 #define SROM8_NOISELVL_5GU	217
+#define SROM8_NOISECALOFFSET	218
 
 #define SROM9_REV_CRC		219
 
@@ -477,7 +481,7 @@
 #define SROM11_PDOFF_2G_40M_VALID_MASK  0x8000
 #define SROM11_PDOFF_2G_40M_VALID_SHIFT 15
 
-#define SROM11_PDOFF_2G_40M             100
+#define SROM11_PDOFF_2G_40M     	100
 #define SROM11_PDOFF_40M_A0		101
 #define SROM11_PDOFF_40M_A1		102
 #define SROM11_PDOFF_40M_A2		103
@@ -568,6 +572,7 @@
 #define SROM11_MCSBW805GHPO 		196
 #define SROM11_MCSBW805GHPO_1		197
 #define SROM11_RPCAL_5GU		198
+#define SROM11_PDOFF_2G_CCK	        199
 #define SROM11_MCSLR5GLPO		200
 #define SROM11_MCSLR5GMPO		201
 #define SROM11_MCSLR5GHPO		202
@@ -607,6 +612,8 @@
 #define SROM11_RXGAINERR_5GM		229
 #define SROM11_RXGAINERR_5GH		230
 #define SROM11_RXGAINERR_5GU		231
+
+#define SROM11_EU_EDCRSTH	        232
 
 #define SROM11_SIGN 			64
 #define SROM11_CRCREV 			233

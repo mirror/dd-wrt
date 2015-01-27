@@ -1,7 +1,7 @@
 /*
  * Broadcom SiliconBackplane chipcommon serial flash interface
  *
- * Copyright (C) 2012, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -441,7 +441,7 @@ retry:		ccsflash_cmd(osh, cc, SFLASH_ST_WREN);
 				else
 					return -12;
 			}
-		} else if (sih->ccrev >= 20) {
+		} else if (sih->ccrev >= 20 || (CHIPID(sih->chip) == BCM4706_CHIP_ID)) {
 			W_REG(osh, &cc->flashaddress, off);
 			data = GET_BYTE(buf);
 			buf++;
