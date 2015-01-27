@@ -426,17 +426,17 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, " + %d", nvram_nmatch("upper", "%s_nctrlsb", prefix) ? channel - 4 : channel + 4);
 			} else if (nvram_nmatch("80", "%s_nbw", prefix)) {
 				if (nvram_nmatch("ll", "%s_nctrlsb", prefix) || nvram_nmatch("lower", "%s_nctrlsb", prefix))
-					websWrite(wp, " + %d", channel + 6);
-				if (nvram_nmatch("lu", "%s_nctrlsb", prefix))
-					websWrite(wp, " + %d", channel + 2);
-				if (nvram_nmatch("ul", "%s_nctrlsb", prefix))
-					websWrite(wp, " + %d", channel - 2);
-				if (nvram_nmatch("uu", "%s_nctrlsb", prefix) || nvram_nmatch("upper", "%s_nctrlsb", prefix))
 					websWrite(wp, " + %d", channel - 6);
+				if (nvram_nmatch("lu", "%s_nctrlsb", prefix))
+					websWrite(wp, " + %d", channel - 2);
+				if (nvram_nmatch("ul", "%s_nctrlsb", prefix))
+					websWrite(wp, " + %d", channel + 2);
+				if (nvram_nmatch("uu", "%s_nctrlsb", prefix) || nvram_nmatch("upper", "%s_nctrlsb", prefix))
+					websWrite(wp, " + %d", channel + 6);
 
 			}
 		}
-		websWrite(wp, " (%d)", channel, freq);
+		websWrite(wp, " (%d)", freq);
 
 	} else
 		websWrite(wp, "%s", live_translate("share.unknown"));
