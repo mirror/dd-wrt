@@ -409,6 +409,7 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 
 	if (channel > 0 && channel < 1000) {
 		int freq = wifi_getfreq(getRADev(prefix));
+		websWrite(wp, "%d", channel);
 		if (has_mimo(prefix)
 		    && (nvram_nmatch("n-only", "%s_net_mode", prefix)
 			|| nvram_nmatch("mixed", "%s_net_mode", prefix)
@@ -422,25 +423,20 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 			|| nvram_nmatch("wdsap", "%s_mode", prefix)
 			|| nvram_nmatch("infra", "%s_mode", prefix))) {
 			if (nvram_nmatch("40", "%s_nbw", prefix)) {
-				websWrite(wp, "%d + ", channel);
-				websWrite(wp, "%d", nvram_nmatch("upper", "%s_nctrlsb", prefix) ? channel - 4 : channel + 4);
+				websWrite(wp, " + %d", nvram_nmatch("upper", "%s_nctrlsb", prefix) ? channel - 4 : channel + 4);
 			} else if (nvram_nmatch("80", "%s_nbw", prefix)) {
-				if (nvram_nmatch("ll", "%s_nctrlsb", prefix))
-					websWrite(wp, "%d + ", channel + 6);
+				if (nvram_nmatch("ll", "%s_nctrlsb", prefix) || nvram_nmatch("lower", "%s_nctrlsb", prefix))
+					websWrite(wp, " + %d", channel + 6);
 				if (nvram_nmatch("lu", "%s_nctrlsb", prefix))
-					websWrite(wp, "%d + ", channel + 2);
+					websWrite(wp, " + %d", channel + 2);
 				if (nvram_nmatch("ul", "%s_nctrlsb", prefix))
-					websWrite(wp, "%d + ", channel - 2);
-				if (nvram_nmatch("uu", "%s_nctrlsb", prefix))
-					websWrite(wp, "%d + ", channel - 6);
+					websWrite(wp, " + %d", channel - 2);
+				if (nvram_nmatch("uu", "%s_nctrlsb", prefix) || nvram_nmatch("upper", "%s_nctrlsb", prefix))
+					websWrite(wp, " + %d", channel - 6);
 
-			} else {
-				websWrite(wp, "%d", channel);
 			}
-		} else {
-			websWrite(wp, "%d", channel);
 		}
-		websWrite(wp, " (%d)", freq);
+		websWrite(wp, " (%d)", channel, freq);
 
 	} else
 		websWrite(wp, "%s", live_translate("share.unknown"));
