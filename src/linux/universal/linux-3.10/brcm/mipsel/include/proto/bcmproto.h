@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -72,24 +72,26 @@ typedef struct {
 static const uint8 llc_snap_hdr[SNAP_HDR_LEN] = {0xaa, 0xaa, 0x03, 0x00, 0x00, 0x00};
 
 /* Generic header parser function */
-static inline int
+static INLINE int
 hnd_frame_proto(uint8 *p, int plen, frame_proto_t *fp)
 {
 	struct dot3_mac_llc_snap_header *sh = (struct dot3_mac_llc_snap_header *)p;
 	struct dot3_mac_llc_snapvlan_header *svh = (struct dot3_mac_llc_snapvlan_header *)p;
 	struct ether_header *eh = (struct ether_header *)p;
 	struct ethervlan_header *evh = (struct ethervlan_header *)p;
-	uint16 type = ntoh16(eh->ether_type);
+	uint16 type;
 	uint16 len;
 
 	if (p == NULL || plen <= 0)
 		return BCME_ERROR;
 
+	type  = ntoh16(eh->ether_type);
+
 	bzero(fp, sizeof(frame_proto_t));
 
 	/* L2 header/pointer check */
 	fp->l2 = p;
-	fp->l2_len = plen;
+	fp->l2_len = (uint16)plen;
 	if (type < ETHER_TYPE_MIN) {
 		if (bcmp(&sh->dsap, llc_snap_hdr, SNAP_HDR_LEN) == 0) {
 			type = ntoh16(sh->type);
@@ -127,7 +129,7 @@ hnd_frame_proto(uint8 *p, int plen, frame_proto_t *fp)
 	}
 	/* L3 header/pointer check */
 	fp->l3 = p;
-	fp->l3_len = plen;
+	fp->l3_len = (uint16)plen;
 	switch (type) {
 	case ETHER_TYPE_ARP: {
 		if ((plen -= ARP_DATA_LEN) < 0)
@@ -200,7 +202,7 @@ hnd_frame_proto(uint8 *p, int plen, frame_proto_t *fp)
 
 	/* L4 header/pointer check */
 	fp->l4 = p;
-	fp->l4_len = plen;
+	fp->l4_len = (uint16)plen;
 	switch (type) {
 	case IP_PROT_ICMP:
 		fp->l4_t = FRAME_L4_ICMP_H;
