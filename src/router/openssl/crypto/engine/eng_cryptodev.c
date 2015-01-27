@@ -160,6 +160,7 @@ static struct {
     {
         CRYPTO_AES_CBC, NID_aes_256_cbc, 16, 32,
     },
+    { CRYPTO_AES_CBC,		NID_aes_512_cbc,	16,	64, },
 # ifdef CRYPTO_AES_CTR
     {
         CRYPTO_AES_CTR, NID_aes_128_ctr, 14, 16,
@@ -641,6 +642,20 @@ const EVP_CIPHER cryptodev_aes_256_cbc = {
     NULL
 };
 
+const EVP_CIPHER cryptodev_aes_512_cbc = {
+	NID_aes_512_cbc,
+	16, 64, 16,
+	EVP_CIPH_CBC_MODE,
+	cryptodev_init_key,
+	cryptodev_cipher,
+	cryptodev_cleanup,
+	sizeof(struct dev_crypto_state),
+	EVP_CIPHER_set_asn1_iv,
+	EVP_CIPHER_get_asn1_iv,
+	NULL
+};
+
+
 # ifdef CRYPTO_AES_CTR
 const EVP_CIPHER cryptodev_aes_ctr = {
     NID_aes_128_ctr,
@@ -718,6 +733,9 @@ cryptodev_engine_ciphers(ENGINE *e, const EVP_CIPHER **cipher,
     case NID_aes_256_cbc:
         *cipher = &cryptodev_aes_256_cbc;
         break;
+	case NID_aes_512_cbc:
+		*cipher = &cryptodev_aes_512_cbc;
++		break;
 # ifdef CRYPTO_AES_CTR
     case NID_aes_128_ctr:
         *cipher = &cryptodev_aes_ctr;
