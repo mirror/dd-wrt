@@ -241,7 +241,7 @@ static void print_result(int alg, int run_no, int count, double time_used);
 static int do_multi(int multi);
 # endif
 
-# define ALGOR_NUM       30
+# define ALGOR_NUM       32
 # define SIZE_NUM        5
 # define RSA_NUM         4
 # define DSA_NUM         3

@@ -1113,6 +1113,7 @@ static int aes_ctr_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
 BLOCK_CIPHER_generic_pack(NID_aes, 128, EVP_CIPH_FLAG_FIPS)
     BLOCK_CIPHER_generic_pack(NID_aes, 192, EVP_CIPH_FLAG_FIPS)
     BLOCK_CIPHER_generic_pack(NID_aes, 256, EVP_CIPH_FLAG_FIPS)
+BLOCK_CIPHER_generic_pack(NID_aes,512,EVP_CIPH_FLAG_FIPS)
 
 static int aes_gcm_cleanup(EVP_CIPHER_CTX *c)
 {
@@ -1605,6 +1606,8 @@ BLOCK_CIPHER_custom(NID_aes, 128, 1, 12, gcm, GCM,
     BLOCK_CIPHER_custom(NID_aes, 256, 1, 12, gcm, GCM,
                     EVP_CIPH_FLAG_FIPS | EVP_CIPH_FLAG_AEAD_CIPHER |
                     CUSTOM_FLAGS)
+BLOCK_CIPHER_custom(NID_aes,512,1,12,gcm,GCM,
+		EVP_CIPH_FLAG_FIPS|EVP_CIPH_FLAG_AEAD_CIPHER|CUSTOM_FLAGS)
 
 static int aes_xts_ctrl(EVP_CIPHER_CTX *c, int type, int arg, void *ptr)
 {
@@ -1743,6 +1746,7 @@ BLOCK_CIPHER_custom(NID_aes, 128, 1, 16, xts, XTS,
                     EVP_CIPH_FLAG_FIPS | XTS_FLAGS)
     BLOCK_CIPHER_custom(NID_aes, 256, 1, 16, xts, XTS,
                     EVP_CIPH_FLAG_FIPS | XTS_FLAGS)
+BLOCK_CIPHER_custom(NID_aes,512,1,16,xts,XTS,EVP_CIPH_FLAG_FIPS|XTS_FLAGS)
 
 static int aes_ccm_ctrl(EVP_CIPHER_CTX *c, int type, int arg, void *ptr)
 {
@@ -1915,6 +1919,7 @@ BLOCK_CIPHER_custom(NID_aes, 128, 1, 12, ccm, CCM,
                     EVP_CIPH_FLAG_FIPS | CUSTOM_FLAGS)
     BLOCK_CIPHER_custom(NID_aes, 256, 1, 12, ccm, CCM,
                     EVP_CIPH_FLAG_FIPS | CUSTOM_FLAGS)
+BLOCK_CIPHER_custom(NID_aes,512,1,12,ccm,CCM,EVP_CIPH_FLAG_FIPS|CUSTOM_FLAGS)
 #endif
 typedef struct {
     union {
@@ -2018,4 +2023,18 @@ static const EVP_CIPHER aes_256_wrap = {
 const EVP_CIPHER *EVP_aes_256_wrap(void)
 {
     return &aes_256_wrap;
+}
+
+static const EVP_CIPHER aes_512_wrap = {
+    NID_id_aes512_wrap,
+    8, 64, 8, WRAP_FLAGS,
+    aes_wrap_init_key, aes_wrap_cipher,
+    NULL,
+    sizeof(EVP_AES_WRAP_CTX),
+    NULL, NULL, NULL, NULL
+};
+
+const EVP_CIPHER *EVP_aes_512_wrap(void)
+{
+    return &aes_512_wrap;
 }
