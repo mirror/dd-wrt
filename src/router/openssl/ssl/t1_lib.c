@@ -114,7 +114,9 @@
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
 #ifdef OPENSSL_NO_EC2M
+#ifndef OPENSSL_NO_EC
 # include <openssl/ec.h>
+#endif
 #endif
 #include <openssl/ocsp.h>
 #include <openssl/rand.h>
