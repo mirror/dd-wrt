@@ -541,6 +541,9 @@ ifeq ($(CONFIG_DIST),"mini")
 	rm -rf $(TARGETDIR)/usr/share/pci.ids
 	rm -rf $(TARGETDIR)/usr/sbin/mkfs.jffs2
 endif
+ifneq ($(CONFIG_DHDAP),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/dhd
+endif
 ifeq ($(CONFIG_WAVESAT),y)
 	make -f Makefile.northstar wavesat-install
 endif
@@ -580,7 +583,8 @@ endif
 	echo -ne '\xde\xad\xc0\xde' >> $(ARCH)-uclibc/dd-wrt.jffs2
 #	./tools/trx -m 32000000 -o $(ARCH)-uclibc/northstar-firmware-jffs2.bin $(ARCH)-uclibc/vmlinuz.lzma $(ARCH)-uclibc/dd-wrt.jffs2
 	./tools/trx -m 40000000 -o $(ARCH)-uclibc/northstar-firmware-squashfs.bin $(ARCH)-uclibc/vmlinuz.lzma -a 131072 $(ARCH)-uclibc/root.fs
-
+	./tools/trx -m 40000000 -o tools/tplink/kernel.hdr0 $(ARCH)-uclibc/vmlinuz.lzma
+	cd tools/tplink && ./mktplinkfw3 -B CPE510 -k kernel.hdr0 -r ../../arm-uclibc/root.fs -o ../../$(ARCH)-uclibc/archerc9.bin
 	./tools/seama/packimgs -b 64 -o $(ARCH)-uclibc/raw-dir868.img -i $(ARCH)-uclibc/vmlinuz.lzma -i $(ARCH)-uclibc/root.fs
 	./tools/seama/seama -i $(ARCH)-uclibc/raw-dir868.img -m dev=/dev/mtdblock/7 -m type=firmware 
 	./tools/seama/seama -s $(ARCH)-uclibc/web-dir868.img -i $(ARCH)-uclibc/raw-dir868.img.seama -m signature=wrgac02_dlob.hans_dir868
