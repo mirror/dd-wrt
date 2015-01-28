@@ -24,6 +24,7 @@
 #include <wlutils.h>
 #include <bcmwifi_channels.h>
 #include <proto/802.1d.h>
+#include <sys/utsname.h>
 
 #if 0// ndef cprintf
 #define cprintf(fmt, args...) do { \
@@ -167,6 +168,13 @@
 		fprintf(stderr, "%s:%d:(%s): setting bsscfg #%d iovar \"%s\" " \
 				"to val 0x%x failed, err = %d\n",	\
 		        __FUNCTION__, __LINE__, ifname, bssidx, iovar, (unsigned int)val, ret);
+#ifdef __CONFIG_DHDAP__
+#define DHD_BSSIOVAR_SETINT(ifname, iovar, bssidx, val)						\
+	if ((ret = dhd_bssiovar_setint(ifname, iovar, bssidx, val)))				\
+		fprintf(stderr, "%s:%d:(%s): setting bsscfg #%d iovar \"%s\" " \
+				"to val 0x%x failed, err = %d\n",	\
+		        __FUNCTION__, __LINE__, ifname, bssidx, iovar, (unsigned int)val, ret);
+#endif
 #else
 #define WLCONF_DBG(fmt, arg...)
 #define WL_IOCTL(name, cmd, buf, len)			(ret = wl_ioctl(name, cmd, buf, len))
@@ -186,12 +194,17 @@
 		(ret = wl_bssiovar_get(ifname, iovar, bssidx, param, paramlen))
 #define WL_BSSIOVAR_SETINT(ifname, iovar, bssidx, val)	(ret = wl_bssiovar_setint(ifname, iovar, \
 			bssidx, val))
+#ifdef __CONFIG_DHDAP__
+#define DHD_BSSIOVAR_SETINT(ifname, iovar, bssidx, val)	(ret = dhd_bssiovar_setint(ifname, iovar, \
+			bssidx, val))
+#endif
 #endif
 			
-#ifdef BCMWPA2
 #define CHECK_PSK(mode) ((mode) & (WPA_AUTH_PSK | WPA2_AUTH_PSK))
-#else
-#define CHECK_PSK(mode) ((mode) & WPA_AUTH_PSK)
+
+#ifdef __CONFIG_DHDAP__
+#define DHD_MAX_ASSOC_VAL		32
+#define DHD_BSS_MAXASSOC_VAL		32
 #endif
 
 /* prototypes */
@@ -1016,6 +1029,17 @@ wlconf_aburn_ampdu_amsdu_set(char *name, char prefix[PREFIX_LEN], int nmode, int
 	int len = strlen("amsdu");
 	int ret;
 	int phytype;
+	wlc_rev_info_t rev;
+#ifdef __CONFIG_DHDAP__
+	int is_dhd = 0;
+#endif
+	struct utsname unamebuf;
+
+	uname(&unamebuf);
+#ifdef __CONFIG_DHDAP__
+	is_dhd = !dhd_probe(name);
+#endif
+	WL_IOCTL(name, WLC_GET_REVINFO, &rev, sizeof(rev));
 	WL_IOCTL(name, WLC_GET_PHYTYPE, &phytype, sizeof(phytype));
 
 	/* First, clear WMM and afterburner settings to avoid conflicts */
@@ -1079,19 +1103,44 @@ wlconf_aburn_ampdu_amsdu_set(char *name, char prefix[PREFIX_LEN], int nmode, int
 				WL_IOVAR_SETINT(name, "ampdu", OFF);
 			}
 			wlconf_set_ampdu_retry_limit(name, prefix);
+
+			/* For MIPS routers set the num mpdu per ampdu limit to 32. We observed
+			 * that having this value at 32 helps with bi-di thru'put as well.
+			 */
+			if ((phytype == PHY_TYPE_AC) &&
+			    (strncmp(unamebuf.machine, "mips", 4) == 0)) {
+				WL_IOVAR_SETINT(name, "ampdu_mpdu", 32);
+			}
 		}
 
 		if (amsdu_valid_option) {
 			if (amsdu_option_val != OFF) { /* AMPDU (above) has priority over AMSDU */
 				if (phytype == PHY_TYPE_AC) {
 					WL_IOVAR_SETINT(name, "amsdu", amsdu_option_val);
+#ifdef __CONFIG_DHDAP__
+					/* 43602 dhdap, ampdu_mpdu=32 gives good tput with amsdu */
+					if (is_dhd)
+						WL_IOVAR_SETINT(name, "ampdu_mpdu", 32);
+#endif
 				} else if (ampdu_option_val == OFF) {
 					WL_IOVAR_SETINT(name, "ampdu", OFF);
 					WL_IOVAR_SETINT(name, "amsdu", amsdu_option_val);
 				}
-			} else
+			} else {
 				WL_IOVAR_SETINT(name, "amsdu", OFF);
+#ifdef __CONFIG_DHDAP__
+				/* Use default ampdu_mpdu=-1 when amsdu is disabled */
+				if (is_dhd)
+					WL_IOVAR_SETINT(name, "ampdu_mpdu", -1);
+#endif
+			}
 
+		} else {		
+#ifdef __CONFIG_DHDAP__
+			/* Use default ampdu_mpdu=-1 when amsdu is disabled */
+			if (is_dhd)
+				WL_IOVAR_SETINT(name, "ampdu_mpdu", -1);
+#endif
 		}
 
 		WL_IOVAR_SETINT(name, "rx_amsdu_in_ampdu", OFF);
@@ -1261,6 +1310,9 @@ wlconf(char *name)
 	bool ure_enab = FALSE;
 	bool radar_enab = FALSE;
 	bool obss_coex = FALSE;
+#ifdef __CONFIG_DHDAP__
+	int is_dhd;
+#endif
 
 	/* wlconf doesn't work for virtual i/f, so if we are given a
 	 * virtual i/f return 0 if that interface is in it's parent's "vifs"
@@ -1329,6 +1381,11 @@ cprintf("wl probe\n");
 	/* Check interface (fail silently for non-wl interfaces) */
 	if ((ret = wl_probe(name)))
 		return ret;
+
+#ifdef __CONFIG_DHDAP__
+	/* Check if interface uses dhd adapter */
+	is_dhd = !dhd_probe(name);
+#endif /* __CONFIG_DHDAP__ */
 
 cprintf("get wl addr\n");
 	/* Get MAC address */
@@ -1536,6 +1593,14 @@ cprintf("set maxassoc flag %s\n",name);
 	if (ap | apsta) {
 		max_assoc = val = atoi(nvram_safe_get(strcat_r(prefix, "maxassoc", tmp)));
 		if (val > 0) {
+#ifdef __CONFIG_DHDAP__
+			/* fix for max_assoc value greater than 32 for DHD */
+			if ((val > DHD_MAX_ASSOC_VAL) && is_dhd) {
+			    val = DHD_MAX_ASSOC_VAL;
+			    snprintf(var, sizeof(var), "%d", val);
+			    nvram_set(tmp, var);
+			}
+#endif
 			WL_IOVAR_SETINT(name, "maxassoc", val);
 		} else { /* Get value from driver if not in nvram */
 			WL_IOVAR_GETINT(name, "maxassoc", &max_assoc);
@@ -1574,6 +1639,15 @@ cprintf("set bsscfg %s\n",name);
 		if (ap || (apsta && bsscfg->idx != 0)) {
 			val = atoi(nvram_safe_get(strcat_r(bsscfg->prefix, "bss_maxassoc", tmp)));
 			if (val > 0) {
+#ifdef __CONFIG_DHDAP__
+				/* fix for val greater than 32 for DHD */
+				if (is_dhd && (val > DHD_BSS_MAXASSOC_VAL)) {
+					val = DHD_BSS_MAXASSOC_VAL;
+					/* rewrite the nvram contents */
+					snprintf(var, sizeof(var), "%d", val);
+					nvram_set(tmp, var);
+				}
+#endif
 				WL_BSSIOVAR_SETINT(name, "bss_maxassoc", bsscfg->idx, val);
 			} else if (max_assoc > 0) { /* Set maxassoc same as global if not set */
 				snprintf(var, sizeof(var), "%d", max_assoc);
@@ -1587,16 +1661,40 @@ cprintf("set bsscfg %s\n",name);
 
 		/* Set the ap isolate mode */
 		val = atoi(nvram_default_get(strcat_r(subprefix, "ap_isolate", tmp),"0"));
+#ifdef __CONFIG_DHDAP__
+		if (is_dhd) {
+		DHD_BSSIOVAR_SETINT(name, "ap_isolate", bsscfg->idx, val);
+		} else
+#endif /* __CONFIG_DHDAP__ */
 		WL_BSSIOVAR_SETINT(name, "ap_isolate", bsscfg->idx, val);
 
 		/* Set the WMF enable mode */
-		if (wmf) {
+		if (wmf ||
+#ifdef __CONFIG_DHDAP__
+			is_dhd ||
+#endif
+		    0) {
+#ifdef __CONFIG_DHDAP__
+			if (is_dhd) {
+				val = atoi(nvram_safe_get(strcat_r(bsscfg->prefix,
+						"wmf_bss_enable", tmp)));
+				DHD_BSSIOVAR_SETINT(name, "wmf_bss_enable", bsscfg->idx, val);
+
+				val = atoi(nvram_safe_get(strcat_r(bsscfg->prefix,
+						"wmf_psta_disable", tmp)));
+				DHD_BSSIOVAR_SETINT(name, "wmf_psta_disable", bsscfg->idx, val);
+
+			} else {
+#endif /* __CONFIG_DHDAP__ */
 			val = atoi(nvram_safe_get(strcat_r(bsscfg->prefix, "wmf_bss_enable", tmp)));
 			WL_BSSIOVAR_SETINT(name, "wmf_bss_enable", bsscfg->idx, val);
 
 			val = atoi(nvram_safe_get(strcat_r(bsscfg->prefix,
 				"wmf_psta_disable", tmp)));
 			WL_BSSIOVAR_SETINT(name, "wmf_psta_disable", bsscfg->idx, val);
+#ifdef __CONFIG_DHDAP__
+			}
+#endif /* __CONFIG_DHDAP__ */
 		}
 
 		if (wet) {
@@ -2695,6 +2793,20 @@ cprintf("set security settings %s\n",name);
 	}
 
 	if (nvram_match(strcat_r(bsscfg->prefix, "wmf_bss_enable", tmp), "1")) {
+
+#ifdef __CONFIG_DHDAP__
+if (nvram_match(strcat_r(bsscfg->prefix, "wmf_bss_enable", tmp), "1")) {
+	if (is_dhd) {
+			val = atoi(nvram_safe_get(strcat_r(prefix, "wmf_ucigmp_query", tmp)));
+			(void)dhd_iovar_setint(name, "wmf_ucast_igmp_query", val);
+			val = atoi(nvram_safe_get(strcat_r(prefix, "wmf_mdata_sendup", tmp)));
+			(void)dhd_iovar_setint(name, "wmf_mcast_data_sendup", val);
+			val = atoi(nvram_safe_get(strcat_r(prefix, "wmf_ucast_upnp", tmp)));
+			(void)dhd_iovar_setint(name, "wmf_ucast_upnp", val);
+		
+	} else {
+#endif /* __CONFIG_DHDAP__ */
+
 		val = atoi(nvram_safe_get(strcat_r(prefix, "wmf_ucigmp_query", tmp)));
 		wl_iovar_setint(name, "wmf_ucast_igmp_query", val);
 		val = atoi(nvram_safe_get(strcat_r(prefix, "wmf_mdata_sendup", tmp)));
@@ -2703,7 +2815,11 @@ cprintf("set security settings %s\n",name);
 		wl_iovar_setint(name, "wmf_ucast_upnp", val);
 		val = atoi(nvram_safe_get(strcat_r(prefix, "wmf_igmpq_filter", tmp)));
 		wl_iovar_setint(name, "wmf_igmpq_filter", val);
+		
+#ifdef __CONFIG_DHDAP__
 	}
+#endif
+    }
 
 	ret = 0;
 exit:
