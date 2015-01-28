@@ -22,7 +22,6 @@
 #include <bcmnvram.h>
 #include <syslog.h>
 #include <fcntl.h>
-#include <sys/ioctl.h>
 //#include <math.h>
 #ifdef HAVE_ATH9K
 #include <glob.h>
@@ -2709,6 +2708,7 @@ int wl_bssiovar_setint(char *ifname, char *iovar, int bssidx, int val)
  */
 
 #ifdef HAVE_DHDAP
+#include <sys/ioctl.h>
 #include <net/if.h>
 #include <dhdioctl.h>
 /*
