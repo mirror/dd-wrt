@@ -25,6 +25,8 @@
 #include <asm/spinlock.h>
 #endif
 
+#define ACP_WAR_ENAB() 0
+
 static struct clk * _soc_refclk = NULL;
 
 static struct plat_serial8250_port uart_ports[] = {
@@ -268,6 +270,9 @@ static int  __init bcm5301_pl310_init( void )
 	auxctl_val |= 1 << 30;	/* Early BRESP enable */
 	auxctl_val |= 1 << 22;	/* for dma coherency */
 	
+	if (ACP_WAR_ENAB())
+		auxctl_val |= 1 << 11; /* Store buffer device limitation enable */
+
 	l2cache_base = ioremap( L2CC_BASE_PA, SZ_4K );
 
 	/* Configure using default aux control value */

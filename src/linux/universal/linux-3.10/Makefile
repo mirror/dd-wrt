@@ -601,11 +601,11 @@ endif
 
 ifdef CONFIG_BCM47XX
 ifeq ($(CONFIG_MIPS),y)
-KBUILD_CFLAGS += -I$(srctree)/brcm/mipsel/include -DBCMDRIVER -Dlinux
-KBUILD_AFLAGS += -I$(srctree)/brcm/mipsel/include -DBCMDRIVER -Dlinux
+KBUILD_CFLAGS += -DBCMDRIVER -Dlinux
+KBUILD_AFLAGS += -DBCMDRIVER -Dlinux
 else
-KBUILD_CFLAGS += -I$(srctree)/brcm/$(ARCH)/include -DBCMDRIVER -Dlinux
-KBUILD_AFLAGS += -I$(srctree)/brcm/$(ARCH)/include -DBCMDRIVER -Dlinux
+KBUILD_CFLAGS += -DBCMDRIVER -Dlinux
+KBUILD_AFLAGS += -DBCMDRIVER -Dlinux
 endif
 endif
 
