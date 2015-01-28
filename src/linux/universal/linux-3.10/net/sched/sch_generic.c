@@ -29,13 +29,8 @@
 #include <net/pkt_sched.h>
 #include <net/dst.h>
 
-#ifdef CONFIG_BCM47XX
-#include <typedefs.h>
-#include <bcmdefs.h>
-#else
 #define BCMFASTPATH
 #define BCMFASTPATH_HOST
-#endif
 
 /* Main transmission queue. */
 

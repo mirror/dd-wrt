@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.10.65 Kernel Configuration
+# Linux/mips 3.10.66 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -1067,6 +1067,7 @@ CONFIG_ET_ALL_PASSIVE_ON=y
 # CONFIG_BCM_CTF is not set
 # CONFIG_WL_EMULATOR is not set
 # CONFIG_BCM57XX is not set
+# CONFIG_DHDAP is not set
 CONFIG_WL=m
 # CONFIG_WAPI is not set
 # CONFIG_WL_USE_AP is not set

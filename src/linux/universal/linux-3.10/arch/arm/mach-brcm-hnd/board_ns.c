@@ -65,6 +65,16 @@ ctf_attach_t ctf_attach_fn = NULL;
 EXPORT_SYMBOL(ctf_attach_fn);
 #endif				/* HNDCTF */
 
+
+/* To store real PHYS_OFFSET value */
+unsigned int ddr_phys_offset_va = -1;
+EXPORT_SYMBOL(ddr_phys_offset_va);
+
+/* For NS-Ax ACP only */
+unsigned int ns_acp_win_size = SZ_256M;
+EXPORT_SYMBOL(ns_acp_win_size);
+
+
 /* This is the main reference clock 25MHz from external crystal */
 static struct clk clk_ref = {
 	.name = "Refclk",
@@ -170,7 +180,21 @@ static void __init brcm_setup(void)
 {
 	/* Get global SB handle */
 	sih = si_kattach(SI_OSH);
-
+#if 0
+	if (ACP_WAR_ENAB() && BCM4707_CHIP(CHIPID(sih->chip))) {
+		if (sih->chippkg == BCM4708_PKG_ID)
+			ns_acp_win_size = SZ_128M;
+		else if (sih->chippkg == BCM4707_PKG_ID)
+			ns_acp_win_size = SZ_32M;
+		else
+			ns_acp_win_size = SZ_256M;
+	} else if (BCM4707_CHIP(CHIPID(sih->chip)) &&
+		(CHIPREV(sih->chiprev) == 4 || CHIPREV(sih->chiprev) == 6)) {
+		/* Chiprev 4 for NS-B0 and chiprev 6 for NS-B1 */
+		ns_acp_win_size = SZ_1G;
+	}
+	printk(KERN_INFO "acp_win_size = %X\n",SZ_1G);
+#endif
 //      if (strncmp(boot_command_line, "root=/dev/mtdblock", strlen("root=/dev/mtdblock")) == 0)
 //              sprintf(saved_root_name, "/dev/mtdblock%d", rootfs_mtdblock());
 	/* Set watchdog interval in ms */
@@ -216,6 +240,16 @@ void __init board_fixup(struct tag *t, char **cmdline, struct meminfo *mi)
 
 	early_printk("board_fixup: mem=%uMiB\n", mem_size >> 20);
 
+	/* for NS-B0-ACP */
+#if 0
+	if (ACP_WAR_ENAB()) {
+		mi->bank[0].start = PHYS_OFFSET;
+		mi->bank[0].size = mem_size;
+		mi->nr_banks++;
+		return;
+	}
+#endif
+
 	lo_size = min(mem_size, DRAM_MEMORY_REGION_SIZE);
 
 	mi->bank[0].start = PHYS_OFFSET;
@@ -240,6 +274,10 @@ void __init bcm47xx_adjust_zones(unsigned long *size, unsigned long *hole)
 
 	if (size[0] <= dma_size)
 		return;
+#if 0
+	if (ACP_WAR_ENAB())
+		return;
+#endif
 
 	size[ZONE_NORMAL] = size[0] - dma_size;
 	size[ZONE_DMA] = dma_size;

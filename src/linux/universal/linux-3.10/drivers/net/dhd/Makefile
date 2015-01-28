@@ -17,19 +17,28 @@
 #
 # $Id: Makefile,v 1.13 2010-12-13 20:23:49 $
 #
+ifeq ($(CONFIG_MIPS),y)
+EXTRA_CFLAGS+=-I$(srctree)/brcm/mipsel/include -I$(srctree)/brcm/mipsel/shared/bcmwifi/include -DBCMDRIVER -Dlinux  -DCONFIG_NOPRINTK=1
+EXTRA_AFLAGS+=-I$(srctree)/brcm/mipsel/include -I$(srctree)/brcm/mipsel/shared/bcmwifi/include -DBCMDRIVER -Dlinux
+SRCBASE := $(srctree)/drivers/net/wl/../../../brcm/mipsel/dhd/src
+SRCBASE_DHD := $(srctree)/drivers/net/dhd/../../../brcm/mipsel/dhd/src
+SRCBASE_OFFSET := ../../../brcm/mipsel/dhd/src
+else
+EXTRA_CFLAGS+=-I$(srctree)/brcm/arm/dongle/include -I$(srctree)/brcm/arm/dhd/src/dhd/sys -DBCMDRIVER -Dlinux  -DCONFIG_NOPRINTK=1
+EXTRA_AFLAGS+=-I$(srctree)/brcm/arm/dongle/include -I$(srctree)/brcm/arm/dhd/src/dhd/sys -DBCMDRIVER -Dlinux
+SRCBASE := $(srctree)/drivers/net/wl/../../../brcm/arm/dhd/src
+SRCBASE_DHD := $(srctree)/drivers/net/dhd/../../../brcm/arm/dhd/src
+SRCBASE_OFFSET := ../../../brcm/arm/dhd/src
+endif
+
+
 TARGET := dhd
 obj-$(CONFIG_DHDAP) := $(TARGET).o
 
-ifndef SRCBASE_DHD
-    SRCBASE_DHD := dhd/src
-else
-    SRCBASE_DHD := $(subst $(dir $(patsubst %/,%,$(dir $(SRCBASE_DHD)))),,$(SRCBASE_DHD))
-endif
+#SRCBASE_OFFSET := ../../../../../../../../$(SRCBASE_DHD)
+DHDMAKEFILE    := $(SRCBASE_DHD)/dhd/config/dhd_router.mk
 
-SRCBASE_OFFSET := ../../../../../../../../$(SRCBASE_DHD)
-DHDMAKEFILE    := $(SRCBASE)/../../$(SRCBASE_DHD)/dhd/config/dhd_router.mk
-
-REBUILD_DHD_MODULE=$(shell if [ -d "$(SRCBASE)/../../$(SRCBASE_DHD)/dhd/sys" ]; then echo 1; else echo 0; fi)
+REBUILD_DHD_MODULE=$(shell if [ -d "$(SRCBASE_DHD)/dhd/sys" ]; then echo 1; else echo 0; fi)
 
 # If source directory (dhd/src/dhd/sys) exists then build dhd, otherwise use pre-builts
 ifeq ($(REBUILD_DHD_MODULE),1)

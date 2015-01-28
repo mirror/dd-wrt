@@ -280,13 +280,8 @@
 #include <asm/uaccess.h>
 #include <asm/ioctls.h>
 
-#ifdef CONFIG_BCM47XX
-#include <typedefs.h>
-#include <bcmdefs.h>
-#else
 #define BCMFASTPATH
 #define BCMFASTPATH_HOST
-#endif
 
 
 int sysctl_tcp_fin_timeout __read_mostly = TCP_FIN_TIMEOUT;
