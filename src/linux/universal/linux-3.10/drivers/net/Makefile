@@ -71,6 +71,7 @@ obj-$(CONFIG_USB_ZD1201)        += usb/
 obj-$(CONFIG_USB_IPHETH)        += usb/
 ifeq ($(CONFIG_BCM47XX),y)
 obj-$(CONFIG_HND) 		+= hnd/
+obj-$(CONFIG_DHDAP) 		+= dhd/
 obj-$(CONFIG_BCM_CTF) += ctf/
 obj-$(CONFIG_WL) += wl/
 obj-$(CONFIG_PROXYARP) += proxyarp/
