@@ -1696,14 +1696,13 @@ cprintf("set bsscfg %s\n",name);
 			}
 #endif /* __CONFIG_DHDAP__ */
 		}
-
+		
 		if (wet) {
 			val = atoi(nvram_safe_get(strcat_r(bsscfg->prefix,
 							 "mcast_regen_bss_enable", tmp)));
 			WL_BSSIOVAR_SETINT(name, "mcast_regen_bss_enable", bsscfg->idx, val);
 		}
 
-	}
 cprintf("set rxchain pwrsave %s\n",name);
 //fprintf(stderr, "set rxchain pwrsave %s\n",name);
 
@@ -1747,7 +1746,7 @@ cprintf("set radio pwrsave %s\n",name);
 			val);
 	}
 
-
+}
 cprintf("get phy type %s\n",name);
 //fprintf(stderr, "get phy type %s\n",name);
 	/* Get current phy type */
@@ -2792,10 +2791,8 @@ cprintf("set security settings %s\n",name);
 		}
 	}
 
-	if (nvram_match(strcat_r(bsscfg->prefix, "wmf_bss_enable", tmp), "1")) {
-
-#ifdef __CONFIG_DHDAP__
 if (nvram_match(strcat_r(bsscfg->prefix, "wmf_bss_enable", tmp), "1")) {
+#ifdef __CONFIG_DHDAP__
 	if (is_dhd) {
 			val = atoi(nvram_safe_get(strcat_r(prefix, "wmf_ucigmp_query", tmp)));
 			(void)dhd_iovar_setint(name, "wmf_ucast_igmp_query", val);
