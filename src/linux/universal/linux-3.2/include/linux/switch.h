@@ -13,9 +13,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  */
-
-#ifndef __LINUX_SWITCH_H
-#define __LINUX_SWITCH_H
+#ifndef _LINUX_SWITCH_H
+#define _LINUX_SWITCH_H
 
 #include <linux/types.h>
 #include <linux/netdevice.h>
@@ -41,6 +40,7 @@ enum {
 	SWITCH_ATTR_NAME,
 	SWITCH_ATTR_VLANS,
 	SWITCH_ATTR_PORTS,
+	SWITCH_ATTR_PORTMAP,
 	SWITCH_ATTR_CPU_PORT,
 	/* attributes */
 	SWITCH_ATTR_OP_ID,
@@ -55,6 +55,14 @@ enum {
 	/* port lists */
 	SWITCH_ATTR_PORT,
 	SWITCH_ATTR_MAX
+};
+
+enum {
+	/* port map */
+	SWITCH_PORTMAP_PORTS,
+	SWITCH_PORTMAP_SEGMENT,
+	SWITCH_PORTMAP_VIRT,
+	SWITCH_PORTMAP_MAX
 };
 
 /* commands */
@@ -91,9 +99,7 @@ enum {
 };
 
 #define SWITCH_ATTR_DEFAULTS_OFFSET	0x1000
-
 #ifdef __KERNEL__
-
 struct switch_dev;
 struct switch_op;
 struct switch_val;
@@ -129,6 +135,8 @@ struct switch_port_link {
 	bool tx_flow;
 	bool rx_flow;
 	enum switch_port_speed speed;
+	/* in ethtool adv_t format */
+	u32 eee;
 };
 
 struct switch_port_stats {
@@ -190,6 +198,7 @@ struct switch_dev {
 	int id;
 	struct list_head dev_list;
 	unsigned long def_global, def_port, def_vlan;
+
 	struct mutex lock;
 	struct switch_port *portbuf;
 
@@ -203,6 +212,11 @@ struct switch_dev {
 struct switch_port {
 	u32 id;
 	u32 flags;
+};
+
+struct switch_portmap {
+	u32 virt;
+	const char *s;
 };
 
 struct switch_val {
@@ -230,7 +244,5 @@ struct switch_attr {
 	int ofs;
 	int max;
 };
-
 #endif
-
-#endif
+#endif /* _LINUX_SWITCH_H */
