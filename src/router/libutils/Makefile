@@ -1,5 +1,6 @@
 -include $(LINUXDIR)/.config
 CONFIG_WR941=
+CONFIG_DHDAP=
 CONFIG_WA901=
 CONFIG_MMS344=
 CONFIG_DIR615I=
@@ -324,6 +325,9 @@ ifeq ($(CONFIG_OCTEON),y)
 endif
 ifeq ($(CONFIG_EROUTER),y)
   CFLAGS += -DHAVE_EROUTER
+endif
+ifeq ($(CONFIG_DHDAP),y)
+  CFLAGS += -DHAVE_DHDAP
 endif
 ifeq ($(CONFIG_E200),y)
   CFLAGS += -DHAVE_E200
