@@ -66,7 +66,7 @@ endif
 ifneq ($(CONFIG_BCM5354),y)
 CFLAGS += -DHAVE_VINT
 endif
-ifneq ($(CONFIG_DHDAP),y)
+ifeq ($(CONFIG_DHDAP),y)
 CFLAGS += -D__CONFIG_DHDAP__
 endif
 
