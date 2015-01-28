@@ -22,6 +22,8 @@
 #include <bcmnvram.h>
 #include <syslog.h>
 #include <fcntl.h>
+#include <sys/ioctl.h>
+#include <net/if.h>
 //#include <math.h>
 #ifdef HAVE_ATH9K
 #include <glob.h>
@@ -2530,7 +2532,6 @@ int wl_iovar_setbuf(char *ifname, char *iovar, void *param, int paramlen, void *
 
 	return wl_ioctl(ifname, WLC_SET_VAR, bufptr, iolen);
 }
-
 int wl_iovar_set(char *ifname, char *iovar, void *param, int paramlen)
 {
 	char smbuf[WLC_IOCTL_SMLEN];
@@ -2707,5 +2708,159 @@ int wl_bssiovar_setint(char *ifname, char *iovar, int bssidx, int val)
  * sizeof (err_buf)) != 0) fprintf(stderr, "Error getting the Errorstring
  * from driver\n"); else fprintf(stderr, err_buf); } 
  */
+
+#ifdef HAVE_DHDAP
+#include <dhdioctl.h>
+/*
+ * Probe the specified interface.
+ * @param	name	interface name
+ * @return	0       if using dhd driver
+ *          <0      otherwise
+ */
+int
+dhd_probe(char *name)
+{
+	int ret, val;
+	val = 0;
+	/* Check interface */
+	ret = dhd_ioctl(name, DHD_GET_MAGIC, &val, sizeof(val));
+	if (val == WLC_IOCTL_MAGIC) {
+		ret = 1; /* is_dhd = !dhd_probe(), so ret 1 for WL */
+	} else if (val == DHD_IOCTL_MAGIC) {
+		ret = 0;
+	} else {
+		if (ret < 0) {
+			perror("dhd_ioctl");
+		}
+		ret = 1; /* default: WL mode */
+	}
+	return ret;
+}
+
+int
+dhd_iovar_setbuf(char *ifname, char *iovar, void *param, int paramlen, void *bufptr, int buflen)
+{
+	uint namelen;
+	uint iolen;
+
+	namelen = strlen(iovar) + 1;	 /* length of iovar name plus null */
+	iolen = namelen + paramlen;
+
+	/* check for overflow */
+	if (iolen > buflen)
+		return (BCME_BUFTOOSHORT);
+
+	memcpy(bufptr, iovar, namelen);	/* copy iovar name including null */
+	memcpy((int8*)bufptr + namelen, param, paramlen);
+
+	return dhd_ioctl(ifname, WLC_SET_VAR, bufptr, iolen);
+}
+
+int
+dhd_iovar_set(char *ifname, char *iovar, void *param, int paramlen)
+{
+	char smbuf[WLC_IOCTL_SMLEN];
+
+	return dhd_iovar_setbuf(ifname, iovar, param, paramlen, smbuf, sizeof(smbuf));
+}
+
+/*
+ * set named driver variable to int value
+ * calling example: dhd_iovar_setint(ifname, "arate", rate)
+*/
+int
+dhd_iovar_setint(char *ifname, char *iovar, int val)
+{
+	return dhd_iovar_set(ifname, iovar, &val, sizeof(val));
+}
+
+int
+dhd_ioctl(char *name, int cmd, void *buf, int len)
+{
+	struct ifreq ifr;
+	dhd_ioctl_t ioc;
+	int ret = 0;
+	int s;
+	char buffer[WLC_IOCTL_SMLEN];
+
+	/* open socket to kernel */
+	if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+		perror("socket");
+		return -1;
+	}
+
+	/* do it */
+	if (cmd == WLC_SET_VAR) {
+		cmd = DHD_SET_VAR;
+	} else if (cmd == WLC_GET_VAR) {
+		cmd = DHD_GET_VAR;
+	}
+
+	ioc.cmd = cmd;
+	ioc.buf = buf;
+	ioc.len = len;
+	ioc.set = FALSE;
+	ioc.driver = DHD_IOCTL_MAGIC;
+	ioc.used = 0;
+	ioc.needed = 0;
+
+	strncpy(ifr.ifr_name, name, sizeof(ifr.ifr_name) - 1);
+	ifr.ifr_name[sizeof(ifr.ifr_name) - 1] = '\0';
+
+	ifr.ifr_data = (caddr_t) &ioc;
+	if ((ret = ioctl(s, SIOCDEVPRIVATE, &ifr)) < 0)
+		if (cmd != WLC_GET_MAGIC && cmd != WLC_GET_BSSID) {
+			if ((cmd == WLC_GET_VAR) || (cmd == WLC_SET_VAR)) {
+				snprintf(buffer, sizeof(buffer), "%s: WLC_%s_VAR(%s)", name,
+				         cmd == WLC_GET_VAR ? "GET" : "SET", (char *)buf);
+			} else {
+				snprintf(buffer, sizeof(buffer), "%s: cmd=%d", name, cmd);
+			}
+			perror(buffer);
+		}
+	/* cleanup */
+	close(s);
+	return ret;
+}
+
+/*
+ * set named & bss indexed driver variable to buffer value
+ */
+int
+dhd_bssiovar_setbuf(char *ifname, char *iovar, int bssidx, void *param, int paramlen, void *bufptr,
+                   int buflen)
+{
+	int err;
+	int iolen;
+
+	err = wl_bssiovar_mkbuf(iovar, bssidx, param, paramlen, bufptr, buflen, &iolen);
+	if (err)
+		return err;
+
+	return dhd_ioctl(ifname, WLC_SET_VAR, bufptr, iolen);
+}
+
+/*
+ * set named & bss indexed driver variable to buffer value
+ */
+int
+dhd_bssiovar_set(char *ifname, char *iovar, int bssidx, void *param, int paramlen)
+{
+	char smbuf[WLC_IOCTL_SMLEN];
+
+	return dhd_bssiovar_setbuf(ifname, iovar, bssidx, param, paramlen, smbuf, sizeof(smbuf));
+}
+
+/*
+ * set named & bss indexed driver variable to int value
+ */
+int
+dhd_bssiovar_setint(char *ifname, char *iovar, int bssidx, int val)
+{
+	return dhd_bssiovar_set(ifname, iovar, bssidx, &val, sizeof(int));
+}
+
+#endif /* __CONFIG_DHDAP__ */
+
 
 #endif
