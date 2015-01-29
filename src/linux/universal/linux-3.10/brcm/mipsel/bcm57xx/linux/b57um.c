@@ -10,7 +10,7 @@
 /*                                                                            */
 /******************************************************************************/
 
-/* $Id: b57um.c 346935 2012-07-25 00:24:55Z $ */
+/* $Id: b57um.c 329791 2012-04-26 22:36:58Z $ */
 
 char bcm5700_driver[] = "bcm5700";
 char bcm5700_version[] = "8.3.14";
@@ -994,7 +994,7 @@ int attached_to_ICH4_or_older( struct pci_dev *pdev)
 	walk_pci_bus (tmp_pdev) {
 		if ((tmp_pdev->hdr_type == 1) &&
 		   (tmp_pdev->subordinate != NULL) &&
-		   (tmp_pdev->subordinate->secondary == pdev->bus->number)) {
+		   (tmp_pdev->subordinate->busn_res.start == pdev->bus->number)) {
 
 			ich_table = pci_ICHtable;
 
@@ -1043,7 +1043,7 @@ __devinit bcm5700_init_board(struct pci_dev *pdev, struct net_device **dev_out, 
 #if (LINUX_VERSION_CODE >= 0x20600)
 	SET_NETDEV_DEV(dev, &pdev->dev);
 #endif
-	pUmDevice = (PUM_DEVICE_BLOCK) dev->priv;
+	pUmDevice = (PUM_DEVICE_BLOCK) netdev_priv(dev);
 
 	/* enable device (incl. PCI PM wakeup), and bus-mastering */
 	rc = pci_enable_device(pdev);
@@ -1238,6 +1238,7 @@ bcm5700_print_ver(void)
 	printk("ver. %s %s\n", bcm5700_version, bcm5700_date);
 	return 0;
 }
+static struct net_device_ops mac_net_ops;
 
 static int __devinit
 bcm5700_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
@@ -1274,30 +1275,34 @@ bcm5700_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
 	}
 	atomic_inc(&bcm5700_load_count);
 #endif
-	dev->open = bcm5700_open;
-	dev->hard_start_xmit = bcm5700_start_xmit;
-	dev->stop = bcm5700_close;
-	dev->get_stats = bcm5700_get_stats;
-	dev->set_multicast_list = bcm5700_set_rx_mode;
-	dev->do_ioctl = bcm5700_ioctl;
-	dev->set_mac_address = &bcm5700_set_mac_addr;
+
+        mac_net_ops.ndo_open      = bcm5700_open;
+        mac_net_ops.ndo_stop      = bcm5700_close;
+        mac_net_ops.ndo_start_xmit= bcm5700_start_xmit;
+        mac_net_ops.ndo_get_stats = bcm5700_get_stats;
+        mac_net_ops.ndo_set_rx_mode = bcm5700_set_rx_mode;
+        mac_net_ops.ndo_tx_timeout= bcm5700_reset;
+        mac_net_ops.ndo_do_ioctl        =  bcm5700_ioctl;
 #if T3_JUMBO_RCV_RCB_ENTRY_COUNT
-	dev->change_mtu = &bcm5700_change_mtu;
+	mac_net_ops.ndo_change_mtu		= &bcm5700_change_mtu;
 #endif
+	mac_net_ops.ndo_set_mac_address	= &bcm5700_set_mac_addr;
+        dev->netdev_ops = (const struct net_device_ops *)&mac_net_ops;             
+
+
 #if (LINUX_VERSION_CODE >= 0x20400)
-	dev->tx_timeout = bcm5700_reset;
 	dev->watchdog_timeo = TX_TIMEOUT;
 #endif
 #ifdef BCM_VLAN
-	dev->vlan_rx_register = &bcm5700_vlan_rx_register;
-	dev->vlan_rx_kill_vid = &bcm5700_vlan_rx_kill_vid;
+//	dev->vlan_rx_register = &bcm5700_vlan_rx_register;
+//	dev->vlan_rx_kill_vid = &bcm5700_vlan_rx_kill_vid;
 #endif
 #ifdef BCM_NAPI_RXPOLL
 	dev->poll = bcm5700_poll;
 	dev->weight = 64;
 #endif
 
-	pUmDevice = (PUM_DEVICE_BLOCK) dev->priv;
+	pUmDevice = (PUM_DEVICE_BLOCK) netdev_priv(dev);
 	pDevice = (PLM_DEVICE_BLOCK) pUmDevice;
 
 	dev->base_addr = pci_resource_start(pdev, 0);
@@ -1506,7 +1511,7 @@ static void __devexit
 bcm5700_remove_one (struct pci_dev *pdev)
 {
 	struct net_device *dev = pci_get_drvdata (pdev);
-	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK)dev->priv;
+	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK)netdev_priv(dev);
 
 #ifdef BCM_PROC_FS
 	bcm5700_proc_remove_dev(dev);
@@ -1548,7 +1553,7 @@ static PLM_DEVICE_BLOCK pDev2;
 static void 
 bcm5700emu_open(struct net_device *dev)
 {
-	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK)dev->priv;
+	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK)netdev_priv(dev);
 	PLM_DEVICE_BLOCK pDevice = (PLM_DEVICE_BLOCK) pUmDevice;       
 	static int instance = 0;
 	static char *wlemu_if = NULL;
@@ -1662,7 +1667,7 @@ STATIC int
 bcm5700emu_start_xmit(struct sk_buff *skb, struct net_device *dev)
 {
 
-  PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK)dev->priv;
+  PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK)netdev_priv(dev);
   PLM_DEVICE_BLOCK pDevice = (PLM_DEVICE_BLOCK) pUmDevice;
   return wlcemu_start_xmit(skb,pDevice->wlc);
 }	
@@ -1672,7 +1677,7 @@ bcm5700emu_start_xmit(struct sk_buff *skb, struct net_device *dev)
 int
 bcm5700_open(struct net_device *dev)
 {
-	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK)dev->priv;
+	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK)netdev_priv(dev);
 	PLM_DEVICE_BLOCK pDevice = (PLM_DEVICE_BLOCK) pUmDevice;
 	int rc;
 
@@ -1863,7 +1868,7 @@ STATIC void
 bcm5700_stats_timer(unsigned long data)
 {
 	struct net_device *dev = (struct net_device *)data;
-	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK)dev->priv;
+	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK)netdev_priv(dev);
 	PLM_DEVICE_BLOCK pDevice = (PLM_DEVICE_BLOCK) pUmDevice;
 	unsigned long flags = 0;
 
@@ -1888,7 +1893,7 @@ STATIC void
 bcm5700_timer(unsigned long data)
 {
 	struct net_device *dev = (struct net_device *)data;
-	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK)dev->priv;
+	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK)netdev_priv(dev);
 	PLM_DEVICE_BLOCK pDevice = (PLM_DEVICE_BLOCK) pUmDevice;
 	unsigned long flags = 0;
 	LM_UINT32 value32;
@@ -2162,7 +2167,7 @@ bcm5700_adapt_coalesce(PUM_DEVICE_BLOCK pUmDevice)
 STATIC void
 bcm5700_reset(struct net_device *dev)
 {
-	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK)dev->priv;
+	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK)netdev_priv(dev);
 	PLM_DEVICE_BLOCK pDevice = (PLM_DEVICE_BLOCK) pUmDevice;
 	unsigned long flags;
 
@@ -2240,10 +2245,11 @@ bcm5700_poll_wait(UM_DEVICE_BLOCK *pUmDevice)
 
 
 #ifdef BCM_VLAN
+#if 0
 STATIC void
 bcm5700_vlan_rx_register(struct net_device *dev, struct vlan_group *vlgrp)
 {
-	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK) dev->priv;
+	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK) netdev_priv(dev);
 
 	bcm5700_intr_off(pUmDevice);
 	bcm5700_poll_wait(pUmDevice);
@@ -2255,7 +2261,7 @@ bcm5700_vlan_rx_register(struct net_device *dev, struct vlan_group *vlgrp)
 STATIC void
 bcm5700_vlan_rx_kill_vid(struct net_device *dev, uint16_t vid)
 {
-	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK) dev->priv;
+	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK) netdev_priv(dev);
 
 	bcm5700_intr_off(pUmDevice);
 	bcm5700_poll_wait(pUmDevice);
@@ -2269,11 +2275,12 @@ bcm5700_vlan_rx_kill_vid(struct net_device *dev, uint16_t vid)
 	bcm5700_intr_on(pUmDevice);
 }
 #endif
+#endif
 
 STATIC int
 _bcm5700_start_xmit(struct sk_buff *skb, struct net_device *dev)
 {
-	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK)dev->priv;
+	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK)netdev_priv(dev);
 	PLM_DEVICE_BLOCK pDevice = (PLM_DEVICE_BLOCK) pUmDevice;
 	PLM_PACKET pPacket;
 	PUM_PACKET pUmPacket;
@@ -2505,7 +2512,7 @@ bcm5700_poll(struct net_device *dev, int *budget)
 {
 	int orig_budget = *budget;
 	int work_done;
-	UM_DEVICE_BLOCK *pUmDevice = (UM_DEVICE_BLOCK *) dev->priv;
+	UM_DEVICE_BLOCK *pUmDevice = (UM_DEVICE_BLOCK *) netdev_priv(dev);
 	LM_DEVICE_BLOCK *pDevice = &pUmDevice->lm_dev;
 	unsigned long flags = 0;
 	LM_UINT32 tag;
@@ -2588,7 +2595,7 @@ bcm5700_interrupt(int irq, void *dev_instance, struct pt_regs *regs)
 #endif
 {
 	struct net_device *dev = (struct net_device *)dev_instance;
-	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK)dev->priv;
+	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK)netdev_priv(dev);
 	PLM_DEVICE_BLOCK pDevice = (PLM_DEVICE_BLOCK) pUmDevice;
 	LM_UINT32 oldtag, newtag;
 	int i, max_intr_loop;
@@ -2766,7 +2773,7 @@ STATIC int
 bcm5700_close(struct net_device *dev)
 {
 
-	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK)dev->priv;
+	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK)netdev_priv(dev);
 	PLM_DEVICE_BLOCK pDevice = (PLM_DEVICE_BLOCK) pUmDevice;
 
 #if (LINUX_VERSION_CODE < 0x02032b)
@@ -2830,7 +2837,7 @@ STATIC int
 bcm5700_freemem(struct net_device *dev)
 {
 	int i;
-	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK)dev->priv;
+	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK)netdev_priv(dev);
 	LM_DEVICE_BLOCK	 *pDevice = &pUmDevice->lm_dev;
 
 	for (i = 0; i < pUmDevice->mem_list_num; i++) {
@@ -2957,7 +2964,7 @@ bcm5700_rx_err_count(UM_DEVICE_BLOCK *pUmDevice)
 STATIC struct net_device_stats *
 bcm5700_get_stats(struct net_device *dev)
 {
-	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK)dev->priv;
+	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK)netdev_priv(dev);
 	PLM_DEVICE_BLOCK pDevice = (PLM_DEVICE_BLOCK) pUmDevice;
 	PT3_STATS_BLOCK pStats = (PT3_STATS_BLOCK) pDevice->pStatsBlkVirt;
 	struct net_device_stats *p_netstats = &pUmDevice->stats;
@@ -3208,7 +3215,7 @@ bcm5700_get_reg_blk(UM_DEVICE_BLOCK *pUmDevice, u32 **buf, u32 start, u32 end,
 static int netdev_ethtool_ioctl(struct net_device *dev, void *useraddr)
 {
 	struct ethtool_cmd ethcmd;
-	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK)dev->priv;
+	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK)netdev_priv(dev);
 	PLM_DEVICE_BLOCK pDevice = (PLM_DEVICE_BLOCK) pUmDevice;
 
 	if (mm_copy_from_user(&ethcmd, useraddr, sizeof(ethcmd)))
@@ -4119,7 +4126,7 @@ static int netdev_ethtool_ioctl(struct net_device *dev, void *useraddr)
 STATIC void
 b57_dump(struct net_device *dev, struct bcmstrbuf *b)
 {
-	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK)dev->priv;
+	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK)netdev_priv(dev);
 	PLM_DEVICE_BLOCK pDevice = (PLM_DEVICE_BLOCK) pUmDevice;
 	struct net_device_stats *st;
 	char macaddr[32];
@@ -4166,7 +4173,7 @@ b57_dump(struct net_device *dev, struct bcmstrbuf *b)
 /* Provide ioctl() calls to examine the MII xcvr state. */
 STATIC int bcm5700_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
 {
-	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK)dev->priv;
+	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK)netdev_priv(dev);
 	PLM_DEVICE_BLOCK pDevice = (PLM_DEVICE_BLOCK) pUmDevice;
 	u16 *data = (u16 *)&rq->ifr_data;
 	u32 value;
@@ -4334,6 +4341,48 @@ STATIC int bcm5700_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
 
 		if (robo->ops->write_reg(robo, (args[0] >> 16) & 0xffff, args[0] & 0xffff,
 		                         &args[1], 2))
+			return -EIO;
+
+		return 0;
+	}
+
+	case SIOCGETCROBORD4:		/* Read the specified ROBO register. */
+	{
+		int args[2];
+		robo_info_t *robo = (robo_info_t *)pUmDevice->robo;
+
+		if (((pDevice->Flags & ROBO_SWITCH_FLAG) == 0) || (robo == NULL))
+			return -ENXIO;
+
+		if (mm_copy_from_user(&args, rq->ifr_data, sizeof(args)))
+			return -EFAULT;
+
+		if (robo->ops->read_reg(robo, (args[0] >> 16) & 0xffff, args[0] & 0xffff, &value, 4))
+			return -EIO;
+
+		args[1] = value;
+		if (mm_copy_to_user(rq->ifr_data, &args, sizeof(args)))
+			return -EFAULT;
+
+		return 0;
+	}
+
+	case SIOCSETCROBOWR4:		/* Write the specified ROBO register. */
+	{
+		int args[2];
+		robo_info_t *robo = (robo_info_t *)pUmDevice->robo;
+
+		if (!capable(CAP_NET_ADMIN))
+			return -EPERM;
+
+		if (((pDevice->Flags & ROBO_SWITCH_FLAG) == 0) || (robo == NULL))
+			return -ENXIO;
+
+		if (mm_copy_from_user(&args, rq->ifr_data, sizeof(args)))
+			return -EFAULT;
+
+		if (robo->ops->write_reg(robo, (args[0] >> 16) & 0xffff, args[0] & 0xffff,
+		                         &args[1], 4))
 			return -EIO;
 
 		return 0;
@@ -4840,16 +4889,33 @@ STATIC int bcm5700_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
 
 STATIC void bcm5700_do_rx_mode(struct net_device *dev)
 {
-	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK)dev->priv;
+	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK)netdev_priv(dev);
 	PLM_DEVICE_BLOCK pDevice = (PLM_DEVICE_BLOCK) pUmDevice;
 	int i;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 36)
 	struct dev_mc_list *mclist;
+#else
+	struct netdev_hw_addr *ha;
+#endif
 
 	LM_MulticastClear(pDevice);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 36)
+
 	for (i = 0, mclist = dev->mc_list; mclist && i < dev->mc_count;
 			 i++, mclist = mclist->next) {
 		LM_MulticastAdd(pDevice, (PLM_UINT8) &mclist->dmi_addr);
 	}
+#else	/* >= 2.6.36 */
+		i = 0;
+		netdev_for_each_mc_addr(ha, dev) {
+			i ++;
+			LM_MulticastAdd(pDevice, (PLM_UINT8) &ha->addr);
+		} /* for each ha */
+#endif /* LINUX_VERSION_CODE */
+
+
+
+
 	if (dev->flags & IFF_ALLMULTI) {
 		if (!(pDevice->ReceiveMask & LM_ACCEPT_ALL_MULTICAST)) {
 			LM_SetReceiveMask(pDevice,
@@ -4875,19 +4941,32 @@ STATIC void bcm5700_do_rx_mode(struct net_device *dev)
 
 STATIC void bcm5700_set_rx_mode(struct net_device *dev)
 {
-	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK)dev->priv;
+	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK)netdev_priv(dev);
 	PLM_DEVICE_BLOCK pDevice = (PLM_DEVICE_BLOCK) pUmDevice;
 	int i;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 36)
 	struct dev_mc_list *mclist;
+#else
+	struct netdev_hw_addr *ha;
+#endif
 	unsigned long flags;
 
 	BCM5700_PHY_LOCK(pUmDevice, flags);
 
 	LM_MulticastClear(pDevice);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 36)
+
 	for (i = 0, mclist = dev->mc_list; mclist && i < dev->mc_count;
 			 i++, mclist = mclist->next) {
 		LM_MulticastAdd(pDevice, (PLM_UINT8) &mclist->dmi_addr);
 	}
+#else	/* >= 2.6.36 */
+		i = 0;
+		netdev_for_each_mc_addr(ha, dev) {
+			i ++;
+			LM_MulticastAdd(pDevice, (PLM_UINT8) &ha->addr);
+		} /* for each ha */
+#endif /* LINUX_VERSION_CODE */
 	if (dev->flags & IFF_ALLMULTI) {
 		if (!(pDevice->ReceiveMask & LM_ACCEPT_ALL_MULTICAST)) {
 			LM_SetReceiveMask(pDevice,
@@ -4918,7 +4997,7 @@ STATIC void bcm5700_set_rx_mode(struct net_device *dev)
 STATIC int bcm5700_set_mac_addr(struct net_device *dev, void *p)
 {
 	struct sockaddr *addr=p;
-	PLM_DEVICE_BLOCK pDevice = (PLM_DEVICE_BLOCK) dev->priv;
+	PLM_DEVICE_BLOCK pDevice = (PLM_DEVICE_BLOCK) netdev_priv(dev);
 	UM_DEVICE_BLOCK *pUmDevice = (UM_DEVICE_BLOCK *) pDevice;
 
 	if(is_valid_ether_addr(addr->sa_data)){
@@ -4935,7 +5014,7 @@ STATIC int bcm5700_set_mac_addr(struct net_device *dev, void *p)
 STATIC int bcm5700_change_mtu(struct net_device *dev, int new_mtu)
 {
 	int pkt_size = new_mtu + ETHERNET_PACKET_HEADER_SIZE;
-	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK)dev->priv;
+	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK)netdev_priv(dev);
 	PLM_DEVICE_BLOCK pDevice = &pUmDevice->lm_dev;
 	unsigned long flags;
 	int reinit = 0;
@@ -5074,7 +5153,7 @@ void cleanup_module(void)
 #endif
 	/* No need to check MOD_IN_USE, as sys_delete_module() checks. */
 	while (root_tigon3_dev) {
-		pUmDevice = (PUM_DEVICE_BLOCK)root_tigon3_dev->priv;
+		pUmDevice = (PUM_DEVICE_BLOCK)root_tigon3_netdev_priv(dev);
 #ifdef BCM_PROC_FS
 		bcm5700_proc_remove_dev(root_tigon3_dev);
 #endif
@@ -5104,7 +5183,7 @@ static void bcm5700_suspend (struct pci_dev *pdev)
 #endif
 {
 	struct net_device *dev = (struct net_device *) pci_get_drvdata(pdev);
-	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK) dev->priv;
+	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK) netdev_priv(dev);
 	PLM_DEVICE_BLOCK pDevice = &pUmDevice->lm_dev;
 
 	if (!netif_running(dev))
@@ -5133,7 +5212,7 @@ static void bcm5700_resume(struct pci_dev *pdev)
 #endif
 {
 	struct net_device *dev = (struct net_device *) pci_get_drvdata(pdev);
-	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK) dev->priv;
+	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK) netdev_priv(dev);
 	PLM_DEVICE_BLOCK pDevice = &pUmDevice->lm_dev;
 
 	if (!netif_running(dev))
@@ -5917,21 +5996,6 @@ MM_IndicateRxPackets(PLM_DEVICE_BLOCK pDevice)
 		} else
 #endif
 		{
-#ifdef BCM_VLAN
-			if (pUmDevice->vlgrp &&
-				(pPacket->Flags & RCV_BD_FLAG_VLAN_TAG)) {
-				/* Override vlan priority with dscp priority */
-				if (dscp_prio)
-					UPD_VLANTAG_PRIO(pPacket->VlanTag, dscp_prio);
-#ifdef BCM_NAPI_RXPOLL
-				vlan_hwaccel_receive_skb(skb, pUmDevice->vlgrp,
-					pPacket->VlanTag);
-#else
-				vlan_hwaccel_rx(skb, pUmDevice->vlgrp,
-					pPacket->VlanTag);
-#endif
-			} else
-#endif
 			{
 #ifdef BCM_WL_EMULATOR
 				if(pDevice->wl_emulate_rx) {
@@ -6292,12 +6356,12 @@ bcm5700_find_peer(struct net_device *dev)
 	LM_DEVICE_BLOCK *pDevice;
 
 	tmp_dev = 0;
-	pUmDevice = (UM_DEVICE_BLOCK *) dev->priv;
+	pUmDevice = (UM_DEVICE_BLOCK *) netdev_priv(dev);
 	pDevice = &pUmDevice->lm_dev;
 	if (T3_ASIC_REV(pDevice->ChipRevId) == T3_ASIC_REV_5704) {
 		tmp_dev = root_tigon3_dev;
 		while (tmp_dev) {
-			pUmTmp = (PUM_DEVICE_BLOCK) tmp_dev->priv;
+			pUmTmp = (PUM_DEVICE_BLOCK) netdev_priv(tmp_dev);
 			if ((tmp_dev != dev) &&
 				(pUmDevice->pdev->bus->number ==
 				pUmTmp->pdev->bus->number) &&
@@ -6322,7 +6386,7 @@ MM_FindPeerDev(LM_DEVICE_BLOCK *pDevice)
 	peer_dev = bcm5700_find_peer(dev);
 	if (!peer_dev)
 		return 0;
-	return ((LM_DEVICE_BLOCK *) peer_dev->priv);
+	return ((LM_DEVICE_BLOCK *) netdev_priv(peer_dev));
 }
 
 int MM_FindCapability(LM_DEVICE_BLOCK *pDevice, int capability)
@@ -6335,7 +6399,7 @@ int MM_FindCapability(LM_DEVICE_BLOCK *pDevice, int capability)
 STATIC void
 poll_bcm5700(struct net_device *dev)
 {
-	UM_DEVICE_BLOCK *pUmDevice = dev->priv;
+	UM_DEVICE_BLOCK *pUmDevice = netdev_priv(dev);
 
 #if defined(RED_HAT_LINUX_KERNEL) && (LINUX_VERSION_CODE < 0x020605)
 	if (netdump_mode) {
