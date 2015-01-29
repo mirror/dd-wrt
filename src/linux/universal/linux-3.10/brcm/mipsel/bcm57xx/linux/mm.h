@@ -19,7 +19,6 @@
 #include <ctf/hndctf.h>
 #endif /* HNDCTF */
 
-#include <linux/config.h>
 
 #if defined(CONFIG_SMP) && !defined(__SMP__)
 #define __SMP__
@@ -61,7 +60,7 @@
 
 #include <linuxver.h>
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
-#include <linux/utsrelease.h>
+#include <linux/vermagic.h>
 #endif
 #include <linux/kernel.h>
 #include <linux/sched.h>
@@ -92,9 +91,9 @@
 #include <linux/ethtool.h>
 #endif
 #ifdef CONFIG_PROC_FS
-#include <linux/smp_lock.h>
+//#include <linux/smp_lock.h>
 #include <linux/proc_fs.h>
-#define BCM_PROC_FS 1
+//#define BCM_PROC_FS 1
 #endif
 #ifdef NETIF_F_HW_VLAN_TX
 #include <linux/if_vlan.h>
@@ -252,13 +251,13 @@ typedef dma_addr_t dmaaddr_high_t;
 #define pci_map_page bcm_pci_map_page
 #endif
 
-static inline dmaaddr_high_t
+static inline dma_addr_t
 bcm_pci_map_page(struct pci_dev *dev, struct page *page,
-		    int offset, size_t size, int dir)
+		    unsigned long offset, size_t size, int dir)
 {
 	dmaaddr_high_t phys;
 
-	phys = (page-mem_map) *	(dmaaddr_high_t) PAGE_SIZE + offset;
+	phys = (page-mem_map) *	(dma_addr_t) PAGE_SIZE + offset;
 
 	return phys;
 }
@@ -524,14 +523,14 @@ static inline void MM_MapTxDma(PLM_DEVICE_BLOCK pDevice,
 	}
 #if MAX_SKB_FRAGS
 	else {
-		skb_frag_t *sk_frag;
+		struct skb_frag_struct *sk_frag;
 		dmaaddr_high_t hi_map;
 
 		sk_frag = &skb_shinfo(skb)->frags[frag - 1];
 			
 		hi_map = pci_map_page(
 				((struct _UM_DEVICE_BLOCK *)pDevice)->pdev,
-				sk_frag->page,
+				skb_frag_page(sk_frag),
 				sk_frag->page_offset,
 				sk_frag->size, PCI_DMA_TODEVICE);
 
