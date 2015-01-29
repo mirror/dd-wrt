@@ -426,7 +426,7 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 			if (nvram_nmatch("40", "%s_nbw", prefix)) {
 				int ext_chan = 0;
 
-				if (nvram_nmatch("lower", "%d_nctrlsb", prefix) || nvram_nmatch("ll", "%d_nctrlsb", prefix) || nvram_nmatch("lu", "%d_nctrlsb", prefix))
+				if (nvram_nmatch("lower", "%s_nctrlsb", prefix) || nvram_nmatch("ll", "%s_nctrlsb", prefix) || nvram_nmatch("lu", "%s_nctrlsb", prefix))
 					ext_chan = 1;
 				else
 					ext_chan = 0;
