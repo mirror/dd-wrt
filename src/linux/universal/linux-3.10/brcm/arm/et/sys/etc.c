@@ -677,24 +677,61 @@ etc_ioctl(etc_info_t *etc, int cmd, void *arg)
 	case ETCROBOWR:
 		if (etc->robo && vec) {
 			uint page, reg;
-			uint64 val;
 			robo_info_t *robo = (robo_info_t *)etc->robo;
-			int len = 2;
+			uint16 val;
+
 			page = vec[0] >> 16;
 			reg = vec[0] & 0xffff;
-			if ((vec[1] >= 1) && (vec[1] <= 8))
-				len = vec[1];
-			/* For SPI mode, the length can only be 1, 2, and 4 bytes */
-			if ((len > 4) && (!strcmp(robo->ops->desc, "SPI (GPIO)"))) {
-				vec[1] = -1;
-				break;
-			}
-			val = *((unsigned long long *)&vec[2]);
-			robo->ops->write_reg(etc->robo, page, vec[0], &val, len);
-			ET_TRACE(("etc_ioctl: ETCROBOWR to page 0x%x, reg 0x%x <= 0x%016llX\n",
+			val = -1;
+			robo->ops->read_reg(etc->robo, page, reg, &val, 2);
+			vec[1] = val;
+			ET_TRACE(("etc_ioctl: ETCROBORD of page 0x%x, reg 0x%x => 0x%x\n",
+ 			          page, reg, val));
+		}
+		break;
+	case ETCROBORD4:
+		if (etc->robo && vec) {
+			uint page, reg;
+			uint32 val;
+			robo_info_t *robo = (robo_info_t *)etc->robo;
+
+			page = vec[0] >> 16;
+			reg = vec[0] & 0xffff;
+			val = -1;
+			robo->ops->read_reg(etc->robo, page, reg, &val, 4);
+			vec[1] = val;
+			ET_TRACE(("etc_ioctl: ETCROBORD4 of page 0x%x, reg 0x%x => 0x%x\n",
 			          page, reg, val));
 		}
 		break;
+
+	case ETCROBOWR4:
+		if (etc->robo && vec) {
+			uint page, reg;
+			uint32 val;
+			robo_info_t *robo = (robo_info_t *)etc->robo;
+
+			page = vec[0] >> 16;
+			reg = vec[0] & 0xffff;
+			val = vec[1];
+			robo->ops->write_reg(etc->robo, page, vec[0], &val, 4);
+			ET_TRACE(("etc_ioctl: ETCROBOWR4 to page 0x%x, reg 0x%x <= 0x%x\n",
+			          page, reg, val));
+		}
+		break;
+	case ETCROBOWR1:
+		if (etc->robo && vec) {
+			uint page, reg;
+			uint8 val;
+			robo_info_t *robo = (robo_info_t *)etc->robo;
+
+			page = vec[0] >> 16;
+			reg = vec[0] & 0xffff;
+			val = vec[1];
+			robo->ops->write_reg(etc->robo, page, vec[0], &val, 1);
+			ET_TRACE(("etc_ioctl: ETCROBOWR4 to page 0x%x, reg 0x%x <= 0x%x\n",
+ 			          page, reg, val));
+ 		}
 #endif /* ETROBO */
 
 	default:
