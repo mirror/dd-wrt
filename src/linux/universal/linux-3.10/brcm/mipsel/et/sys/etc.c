@@ -653,23 +653,15 @@ etc_ioctl(etc_info_t *etc, int cmd, void *arg)
 	case ETCROBORD:
 		if (etc->robo && vec) {
 			uint page, reg;
-			uint64 val;
-			int len = 2;
+			uint16 val;
 			robo_info_t *robo = (robo_info_t *)etc->robo;
 
-			page = vec[0] >> 16;
-			reg = vec[0] & 0xffff;
-			if ((vec[1] >= 1) && (vec[1] <= 8))
-				len = vec[1];
-			/* For SPI mode, the length can only be 1, 2, and 4 bytes */
-			if ((len > 4) && (!strcmp(robo->ops->desc, "SPI (GPIO)"))) {
-				vec[1] = -1;
-				break;
-			}
-			val = 0;
-			robo->ops->read_reg(etc->robo, page, reg, &val, len);
-			*((unsigned long long *)&vec[2]) = val;
-			ET_TRACE(("etc_ioctl: ETCROBORD of page 0x%x, reg 0x%x  => 0x%016llX\n",
+ 			page = vec[0] >> 16;
+ 			reg = vec[0] & 0xffff;
+			val = -1;
+			robo->ops->read_reg(etc->robo, page, reg, &val, 2);
+			vec[1] = val;
+			ET_TRACE(("etc_ioctl: ETCROBORD of page 0x%x, reg 0x%x => 0x%x\n",
 			          page, reg, val));
 		}
 		break;
@@ -677,16 +669,15 @@ etc_ioctl(etc_info_t *etc, int cmd, void *arg)
 	case ETCROBOWR:
 		if (etc->robo && vec) {
 			uint page, reg;
+			uint16 val; 
 			robo_info_t *robo = (robo_info_t *)etc->robo;
-			uint16 val;
 
-			page = vec[0] >> 16;
-			reg = vec[0] & 0xffff;
-			val = -1;
-			robo->ops->read_reg(etc->robo, page, reg, &val, 2);
-			vec[1] = val;
-			ET_TRACE(("etc_ioctl: ETCROBORD of page 0x%x, reg 0x%x => 0x%x\n",
- 			          page, reg, val));
+ 			page = vec[0] >> 16;
+ 			reg = vec[0] & 0xffff;
+			val = vec[1];
+			robo->ops->write_reg(etc->robo, page, vec[0], &val, 2);
+			ET_TRACE(("etc_ioctl: ETCROBOWR to page 0x%x, reg 0x%x <= 0x%x\n",
+			          page, reg, val));
 		}
 		break;
 	case ETCROBORD4:
@@ -730,8 +721,9 @@ etc_ioctl(etc_info_t *etc, int cmd, void *arg)
 			val = vec[1];
 			robo->ops->write_reg(etc->robo, page, vec[0], &val, 1);
 			ET_TRACE(("etc_ioctl: ETCROBOWR4 to page 0x%x, reg 0x%x <= 0x%x\n",
- 			          page, reg, val));
- 		}
+			          page, reg, val));
+		}
+		break;
 #endif /* ETROBO */
 
 	default:
