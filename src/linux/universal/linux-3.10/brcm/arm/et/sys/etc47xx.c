@@ -4,7 +4,7 @@
  * This file implements the chip-specific routines
  * for Broadcom HNBU Sonics SiliconBackplane enet cores.
  *
- * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2012, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -17,7 +17,7 @@
  * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- * $Id: etc47xx.c 458474 2014-02-27 00:47:47Z $
+ * $Id: etc47xx.c 286404 2011-09-27 19:29:08Z $
  */
 
 #include <et_cfg.h>
@@ -80,8 +80,6 @@ static void chipreset(ch_t *ch);
 static void chipinit(ch_t *ch, uint options);
 static bool chiptx(ch_t *ch, void *p);
 static void *chiprx(ch_t *ch);
-static int  chiprxquota(ch_t *ch, int quota, void **rxpkts);
-static void chiprxlazy(ch_t *ch);
 static void chiprxfill(ch_t *ch);
 static int chipgetintrevents(ch_t *ch, bool in_isr);
 static bool chiperrors(ch_t *ch);
@@ -93,7 +91,6 @@ static void chipstatsupd(ch_t *ch);
 static void chipdumpmib(ch_t *ch, struct bcmstrbuf *b, bool clear);
 static void chipenablepme(ch_t *ch);
 static void chipdisablepme(ch_t *ch);
-static void chipconfigtimer(ch_t *ch, uint microsecs);
 static void chipphyreset(ch_t *ch, uint phyaddr);
 static void chipphyinit(ch_t *ch, uint phyaddr);
 static uint16 chipphyrd(ch_t *ch, uint phyaddr, uint reg);
@@ -106,8 +103,6 @@ static void chipphyor(struct bcm4xxx *ch, uint phyaddr, uint reg, uint16 v);
 static void chipphyand(struct bcm4xxx *ch, uint phyaddr, uint reg, uint16 v);
 static void chipphyforce(struct bcm4xxx *ch, uint phyaddr);
 static void chipphyadvertise(struct bcm4xxx *ch, uint phyaddr);
-static uint chipmacrd(struct bcm4xxx *ch, uint reg);
-static void chipmacwr(struct bcm4xxx *ch, uint reg, uint val);
 #ifdef BCMDBG
 static void chipdumpregs(struct bcm4xxx *ch, bcmenetregs_t *regs, struct bcmstrbuf *b);
 #endif /* BCMDBG */
@@ -124,12 +119,9 @@ struct chops bcm47xx_et_chops = {
 	chipinit,
 	chiptx,
 	chiprx,
-	chiprxquota,
-	chiprxlazy,
 	chiprxfill,
 	chipgetintrevents,
 	chiperrors,
-	NULL,
 	chipintrson,
 	chipintrsoff,
 	chiptxreclaim,
@@ -138,12 +130,9 @@ struct chops bcm47xx_et_chops = {
 	chipdumpmib,
 	chipenablepme,
 	chipdisablepme,
-	chipconfigtimer,
 	chipphyreset,
 	chipphyrd,
 	chipphywr,
-	chipmacrd,
-	chipmacwr,
 	chipdump,
 	chiplongname,
 	chipduplexupd
@@ -225,9 +214,6 @@ chipattach(etc_info_t *etc, void *osh, void *regsva)
 
 	boardflags = etc->boardflags;
 	boardtype = ch->sih->boardtype;
-
-	/* Backplane clock ticks per microsecs: used by gptimer, intrecvlazy */
-	etc->bp_ticks_usec = si_clock(ch->sih) / 1000000;
 
 	/* get our local ether addr */
 	sprintf(name, "et%dmacaddr", etc->coreunit);
@@ -419,20 +405,6 @@ chiplongname(struct bcm4xxx *ch, char *buf, uint bufsize)
 
 	strncpy(buf, s, bufsize);
 	buf[bufsize - 1] = '\0';
-}
-
-static uint
-chipmacrd(struct bcm4xxx *ch, uint offset)
-{
-	ASSERT(offset < 4096); /* GMAC Register space is 4K size */
-	return R_REG(ch->osh, (uint *)((uint)(ch->regs) + offset));
-}
-
-static void
-chipmacwr(struct bcm4xxx *ch, uint offset, uint val)
-{
-	ASSERT(offset < 4096); /* GMAC Register space is 4K size */
-	W_REG(ch->osh, (uint *)((uint)(ch->regs) + offset), val);
 }
 
 static void
@@ -779,44 +751,6 @@ chiprx(struct bcm4xxx *ch)
 		ch->intstatus &= ~I_RI;
 
 	return (p);
-}
-
-static int BCMFASTPATH
-chiprxquota(ch_t *ch, int quota, void **rxpkts)
-{
-	int rxcnt;
-	void * pkt;
-	uint8 * addr;
-
-	ET_TRACE(("et%d: chiprxquota\n", ch->etc->unit));
-	ET_LOG("et%d: chiprxquota", ch->etc->unit, 0);
-
-	rxcnt = 0;
-
-	while ((quota > 0) && ((pkt = dma_rx(ch->di)) != NULL)) {
-		addr = PKTDATA(ch->osh, pkt);
-#if !defined(_CFE_)
-		bcm_prefetch_32B(addr + 32, 1);
-#endif /* _CFE_ */
-		rxpkts[rxcnt] = pkt;
-		rxcnt++;
-		quota--;
-	}
-
-	if (rxcnt < quota) { /* ring is "possibly" empty, enable et interrupts */
-		ch->intstatus &= ~I_RI;
-	}
-
-	return rxcnt; /* rxpkts[] has rxcnt number of pkts to be processed */
-}
-
-
-static void BCMFASTPATH
-chiprxlazy(ch_t *ch)
-{
-	uint reg_val = ((ch->etc->rxlazy_timeout & IRL_TO_MASK) |
-	                (ch->etc->rxlazy_framecnt << IRL_FC_SHIFT));
-	W_REG(ch->osh, &ch->regs->intrecvlazy, reg_val);
 }
 
 /* reclaim completed dma receive descriptors and packets */
@@ -1232,15 +1166,6 @@ chipphyand(struct bcm4xxx *ch, uint phyaddr, uint reg, uint16 v)
 	tmp = chipphyrd(ch, phyaddr, reg);
 	tmp &= v;
 	chipphywr(ch, phyaddr, reg, tmp);
-}
-
-static void
-chipconfigtimer(struct bcm4xxx *ch, uint microsecs)
-{
-	ASSERT(ch->etc->bp_ticks_usec != 0);
-
-	/* Enable general purpose timer in periodic mode */
-	W_REG(ch->osh, &ch->regs->gptimer, microsecs * ch->etc->bp_ticks_usec);
 }
 
 static void
