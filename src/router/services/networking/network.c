@@ -2841,6 +2841,7 @@ void start_wan(int status)
 
 	eval("ifconfig", nvram_safe_get("wan_ifname"), "allmulti", "promisc");
 
+	start_firewall(); // start firewall once, to fix problem with rules which should exist even before wan is up
 	// wan test mode
 	if (nvram_match("wan_testmode", "1")) {
 		status = 0;	// avoid redialing
