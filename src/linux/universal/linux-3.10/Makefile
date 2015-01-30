@@ -609,10 +609,6 @@ KBUILD_AFLAGS += -DBCMDRIVER -Dlinux
 endif
 endif
 
-ifeq ($(CONFIG_DHDAP),m)
-KBUILD_CFLAGS += -DDHDAP
-endif
-
 include $(srctree)/arch/$(SRCARCH)/Makefile
 
 ifdef CONFIG_READABLE_ASM
