@@ -1,10 +1,8 @@
 #!/bin/sh
 
-
 if [ "$(nvram get usb_ses_umount )" = "1" ]; then
   
-  
-  LOGENTRY="`date +%b` `date +%d` `date +%R`:`date +%S` `whoami` kumount.info: umounting all usb drives"
+  LOGENTRY="`date +%b` `date +%d` `date +%R`:`date +%S` kumount.info: umounting all usb drives"
   echo $LOGENTRY >> /var/log/messages
 
   #flush caches
@@ -16,17 +14,17 @@ if [ "$(nvram get usb_ses_umount )" = "1" ]; then
   killall minidlna
   killall lighttpd
   
-  #find other services that are not part of the firmware and kill them
-  pids=`ps | awk -F " " '{print $1}'`
-
-  for pid in $pids;
-  do
-        check=`cat /proc/$pid/maps 2> /dev/null | grep -E '/opt|/jffs'`
-        if [ "$check" != "" ]; then
-                `kill -9 $pid`;
-        fi
-  done
-
+  #kill other services that are using the external storage
+  killprocs() {
+    mnts=`awk -v p="$1" '$1 == p {if(m) printf "|"; printf $2; m=1}' \
+	  /proc/mounts`
+    [ -z "$mnts" ] && return
+    pids=`ps | tail -n +3 | awk -F " " '{print $1}'`
+    for pid in $pids; do
+        ( cd /proc/$pid && { ls -l cwd exe root fd; cat maps; } ) 2> /dev/null \
+		| awk '{print $NF}' | grep -qs -E "^($mnts)" && kill -9 $pid
+    done
+  }
 
   `/sbin/blkid > /tmp/blkid.dump`
 
@@ -39,12 +37,15 @@ if [ "$(nvram get usb_ses_umount )" = "1" ]; then
       if [ "$ptype" != "" ]; then
 	  `/sbin/swapoff $part`
       else
-	  `/bin/umount $part`
+	  killprocs $part
+	  sleep 1
+	  mnts=`awk -v p=$part '$1 == p {print $2}' /proc/mounts`
+	  [ -n "$mnts" ] && `/bin/umount -r $mnts`
       fi
 
     fi
   done < /tmp/blkid.dump
 
 
-echo "<b>Drives have been umounted</b>" >/tmp/disktype.dump
+  echo "<b>Drives have been umounted</b>" >/tmp/disktype.dump
 fi
