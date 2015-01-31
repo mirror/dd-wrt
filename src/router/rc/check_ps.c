@@ -127,6 +127,8 @@ void softcontrol_wlan_led(void)	// done in watchdog.c for non-micro builds.
 	int oldstate0 = -1;
 	int radiostate1 = -1;
 	int oldstate1 = -1;
+	int radiostate2 = -1;
+	int oldstate2 = -1;
 
 #ifdef HAVE_MADWIFI
 	int cnt = getdevicecount();
@@ -144,6 +146,8 @@ void softcontrol_wlan_led(void)	// done in watchdog.c for non-micro builds.
 	wl_ioctl(get_wl_instance_name(0), WLC_GET_RADIO, &radiostate0, sizeof(int));
 	if (cnt == 2)
 		wl_ioctl(get_wl_instance_name(1), WLC_GET_RADIO, &radiostate1, sizeof(int));
+	if (cnt == 3)
+		wl_ioctl(get_wl_instance_name(2), WLC_GET_RADIO, &radiostate2, sizeof(int));
 #endif
 
 	if (radiostate0 != oldstate0) {
@@ -187,6 +191,20 @@ void softcontrol_wlan_led(void)	// done in watchdog.c for non-micro builds.
 		}
 
 		oldstate1 = radiostate1;
+	}
+	
+	if (radiostate2 != oldstate2) {
+#ifdef HAVE_MADWIFI
+		if (radiostate2 == 1)
+#else
+		if ((radiostate2 & WL_RADIO_SW_DISABLE) == 0)
+#endif
+			led_control(LED_WLAN2, LED_ON);
+		else {
+			led_control(LED_WLAN2, LED_OFF);
+		}
+
+		oldstate2 = radiostate2;
 	}
 	/* 
 	 * end software wlan led control 
