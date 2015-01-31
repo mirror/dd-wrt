@@ -1083,14 +1083,18 @@ void setRegulationDomain(char *reg)
 	default:
 		nvram_set("0:regrev", rrev0);
 		nvram_set("1:regrev", rrev1);
+		nvram_set("2:regrev", rrev1);
 		nvram_set("0:ccode", ccode0);
 		nvram_set("1:ccode", ccode1);
+		nvram_set("2:ccode", ccode1);
 	}
 	nvram_set("wl_country_rev", rrev0);
 	nvram_set("wl0_country_rev", rrev0);
 	nvram_set("wl1_country_rev", rrev1);
+	nvram_set("wl2_country_rev", rrev1);
 	nvram_set("wl_country_code", ccode0);
 	nvram_set("wl0_country_code", ccode0);
+	nvram_set("wl1_country_code", ccode1);
 	nvram_set("wl1_country_code", ccode1);
 
 }
