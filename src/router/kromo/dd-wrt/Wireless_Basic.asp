@@ -12,6 +12,11 @@ var wl1_nctrlsb = '<% nvg("wl1_nctrlsb"); %>';
 var wl1_nbw = '<% nvg("wl1_nbw"); %>';
 var wl1_phytype = '<% nvg("wl1_phytype"); %>';
 var wl1_40m_disable = '<% nvg("wl1_40m_disable"); %>';
+var wl2_channel = '<% nvg("wl2_channel"); %>';
+var wl2_nctrlsb = '<% nvg("wl2_nctrlsb"); %>';
+var wl2_nbw = '<% nvg("wl2_nbw"); %>';
+var wl2_phytype = '<% nvg("wl2_phytype"); %>';
+var wl2_40m_disable = '<% nvg("wl2_40m_disable"); %>';
 
 function create_wchannel0_auto(F) {
 	F.wl0_wchannel.length = 1;
@@ -25,6 +30,13 @@ function create_wchannel1_auto(F) {
 	
 	F.wl1_wchannel[0] = new Option(share.auto);
 	F.wl1_wchannel[0].value = "0";
+}
+
+function create_wchannel2_auto(F) {
+	F.wl2_wchannel.length = 1;
+	
+	F.wl2_wchannel[0] = new Option(share.auto);
+	F.wl2_wchannel[0].value = "0";
 }
 
 function create_wchannel0(F) {
@@ -73,6 +85,29 @@ function create_wchannel1(F) {
 		F.wl1_wchannel[wch-3].selected = true;	
 }
 
+function create_wchannel2(F) {
+	var max_channel = '14';
+	var wch;
+
+	if(wl2_nctrlsb == "lower") {
+		wch = parseInt(F.wl2_channel.value)+2;
+	}
+	else {
+		wch = parseInt(F.wl2_channel.value)-2;
+	}
+
+	F.wl2_wchannel.length = parseInt(max_channel)-4;
+
+	for(ch=3 ; ch<=(parseInt(max_channel)-2) ; ch++){
+		F.wl2_wchannel[ch-3] = new Option(ch);
+		F.wl2_wchannel[ch-3].value = ch;
+	}
+	if(wch < 3 || wch > max_channel-2 || wch == "0")
+		F.wl2_wchannel[0].selected = true;
+	else
+		F.wl2_wchannel[wch-3].selected = true;	
+}
+
 function InitBW0(num,F) {
 	if(wl0_channel == "0") {
 		if(F.wl0_wchannel) choose_enable(F.wl0_wchannel);
@@ -95,6 +130,18 @@ function InitBW1(num,F) {
 	}
 	else
 		SelBW1(num,F);
+}
+
+function InitBW2(num,F) {
+	if(wl2_channel == "0") {
+		if(F.wl2_wchannel) choose_enable(F.wl2_wchannel);
+		choose_enable(F.wl2_schannel);
+
+		if(F.wl2_wchannel) create_wchannel2_auto(F)
+	
+	}
+	else
+		SelBW2(num,F);
 }
 
 function SelBW0(num,F) {
@@ -151,7 +198,32 @@ function SelBW1(num,F) {
 	}
 }
 
-
+function SelBW2(num,F) {
+	if (num == 0) {	// Auto
+		if(F.wl2_wchannel)
+			choose_enable(F.wl2_wchannel);
+			
+		choose_enable(F.wl2_channel);
+		if(F.wl2_wchannel)
+			create_wchannel2_auto(F);
+	}
+	else if (num == 10 || num == 20) {
+		if(F.wl2_wchannel)
+			choose_disable(F.wl2_wchannel);
+		
+		choose_enable(F.wl2_schannel);
+		if(F.wl2_wchannel)
+			create_wchannel2(F);
+	}
+	else {
+		if(F.wl2_wchannel)
+			choose_enable(F.wl2_wchannel);
+		
+		choose_enable(F.wl2_schannel);
+		if(F.wl2_wchannel)
+			create_wchannel2(F);
+	}
+}
 
 
 function vifs_add_submit(F,I) {
@@ -185,6 +257,12 @@ function submitcheck(F) {
 		if(F.wl1_ssid.value == ""){
 			alert(errmsg.err50);
 			F.wl1_ssid.focus();
+			return false;
+		}
+	if(F.wl2_ssid)
+		if(F.wl2_ssid.value == ""){
+			alert(errmsg.err50);
+			F.wl2_ssid.focus();
 			return false;
 		}
 	if(F.wl0_nbw)
@@ -235,6 +313,30 @@ function submitcheck(F) {
 		F.wl1_nbw.value = 40;
 	}
 	}
+	if(F.wl2_nbw)
+	{
+	if(F.wl2_nbw.value == 0) { // Auto
+		F.wl2_channel.value = 0;
+	}
+	else if(F.wl2_nbw.value == 5) { // 5MHz
+		F.wl2_nctrlsb.value = "none";
+		F.wl2_nbw.value = 5;
+	}
+	else if(F.wl2_nbw.value == 10) { // 10MHz
+		F.wl2_nctrlsb.value = "none";
+		F.wl2_nbw.value = 10;
+	}
+	else if(F.wl2_nbw.value == 20) { // 20MHz
+		F.wl2_nctrlsb.value = "none";
+		F.wl2_nbw.value = 20;
+	}
+	else if(F.wl2_nbw.value == 80) { // 80MHz
+		F.wl2_nbw.value = 80;
+	}
+	else { // 40MHz
+		F.wl2_nbw.value = 40;
+	}
+	}
 	F.submit_type.value = "save";
 	F.save_button.value = sbutton.saving;
 	return true;
@@ -268,6 +370,12 @@ addEvent(window, "load", function() {
 	{
 	    if (wl1_phytype == 'n' || wl1_phytype == 'h' || wl1_phytype == 'v' || wl1_phytype == 's')
 		InitBW1('<% nvg("wl1_nbw"); %>' ,document.wireless);
+	}
+	var wl2_mode = "<% nvg("wl2_mode"); %>";
+	   if (wl2_mode=="ap" || wl2_mode=="infra")
+	{
+	    if (wl2_phytype == 'n' || wl2_phytype == 'h' || wl2_phytype == 'v' || wl2_phytype == 's')
+		InitBW2('<% nvg("wl2_nbw"); %>' ,document.wireless);
 	}
 		
 	update = new StatusbarUpdate();
@@ -338,6 +446,7 @@ function initChannelProperties() {
 }
 		//]]>
 		</script>
+		<% tab_style(); %>
 	</head>
 
 	<body class="gui">
@@ -360,6 +469,7 @@ function initChannelProperties() {
 
 				  	<input type="hidden" name="wl0_nctrlsb" />
 				  	<input type="hidden" name="wl1_nctrlsb" /> 
+				  	<input type="hidden" name="wl2_nctrlsb" /> 
 				  	<input type="hidden" name="iface" />
 				  	
 				  	<% show_wireless(); %>
