@@ -2384,6 +2384,8 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 
 		if (!strcmp(prefix, "wl1"))
 			instance = 1;
+		if (!strcmp(prefix, "wl2"))
+			instance = 2;
 		{
 
 			unsigned int chanlist[128];
@@ -4233,6 +4235,8 @@ if (!strcmp(prefix, "wl0"))
 	showbridgesettings(wp, get_wl_instance_name(0), 1, 1);
 if (!strcmp(prefix, "wl1"))
 	showbridgesettings(wp, get_wl_instance_name(1), 1, 1);
+if (!strcmp(prefix, "wl2"))
+	showbridgesettings(wp, get_wl_instance_name(2), 1, 1);
 #endif
 #else
 // BUFFALO Basic
@@ -4960,6 +4964,8 @@ if (!strcmp(prefix, "wl1"))
 		showbridgesettings(wp, get_wl_instance_name(0), 1, 1);
 	if (!strcmp(prefix, "wl1"))
 		showbridgesettings(wp, get_wl_instance_name(1), 1, 1);
+	if (!strcmp(prefix, "wl2"))
+		showbridgesettings(wp, get_wl_instance_name(2), 1, 1);
 #endif
 
 	websWrite(wp, "</div>\n");
@@ -5021,6 +5027,7 @@ void ej_show_wireless(webs_t wp, int argc, char_t ** argv)
 	}
 #else
 	int c = get_wl_instances();
+	//fprintf(stderr, "Devicecount: %d", c);
 	int i;
 
 	for (i = 0; i < c; i++) {
