@@ -2729,9 +2729,6 @@ dhd_probe(char *name)
 	} else if (val == DHD_IOCTL_MAGIC) {
 		ret = 0;
 	} else {
-		if (ret < 0) {
-			perror("dhd_ioctl");
-		}
 		ret = 1; /* default: WL mode */
 	}
 	return ret;
