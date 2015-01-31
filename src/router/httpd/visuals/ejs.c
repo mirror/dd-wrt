@@ -2237,7 +2237,7 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	static double tempavg_50 = 0.000;
 	static double tempavg_502 = 0.000;
 	static double tempavg_max = 0.000;
-	int no2 = 0, no5 = 0;
+	int no2 = 0, no5 = 0, no52 = 0;
 	strcpy(buf, "phy_tempsense");
 	strcpy(buf2, "phy_tempsense");
 	strcpy(buf3, "phy_tempsense");
@@ -2250,7 +2250,7 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 		no5 = 1;
 	}
 	if (nvram_match("wl2_net_mode", "disabled") || (ret = wl_ioctl("eth3", WLC_GET_VAR, buf3, sizeof(buf3)))) {
-		no5 = 1;
+		no52 = 1;
 	}
 	ret_int = (unsigned int *)buf;
 	ret_int2 = (unsigned int *)buf2;
@@ -2319,7 +2319,6 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "WL1 %4.2f &#176;C", tempavg_50);
 #else
 		websWrite(wp, "WL1 %4.2f &#176;C", tempavg_50 * 0.5 + 20.0);
-		websWrite(wp, "WL2 %4.2f &#176;C", tempavg_502 * 0.5 + 20.0);
 	}
 #endif
 	else if (no5)
@@ -2330,6 +2329,8 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 #else
 		websWrite(wp, "WL0 %4.2f &#176;C / WL1 %4.2f &#176;C", tempavg_24 * 0.5 + 20.0, tempavg_50 * 0.5 + 20.0);
 #endif
+	if(!no52)
+		websWrite(wp, " / WL2 %4.2f &#176;C", tempavg_502 * 0.5 + 20.0);
 
 #else
 #ifdef HAVE_GATEWORX
