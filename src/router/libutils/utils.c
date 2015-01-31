@@ -4730,7 +4730,7 @@ int isap8x(void)
 int led_control(int type, int act)
 /*
  * type: LED_POWER, LED_DIAG, LED_DMZ, LED_CONNECTED, LED_BRIDGE, LED_VPN,
- * LED_SES, LED_SES2, LED_WLAN0, LED_WLAN1, LED_SEC0, LED_SEC1, USB_POWER
+ * LED_SES, LED_SES2, LED_WLAN0, LED_WLAN1, LED_WLAN2, LED_SEC0, LED_SEC1, USB_POWER
  * act: LED_ON, LED_OFF, LED_FLASH 
  * 1st hex number: 1 = inverted, 0 = normal
  */
@@ -4756,7 +4756,8 @@ int led_control(int type, int act)
 	int ses2_gpio = 0x0ff;
 	int wlan_gpio = 0x0ff;	// wlan button led R7000
 	int wlan0_gpio = 0x0ff;	// use this only if wlan led is not controlled by hardware!
-	int wlan1_gpio = 0x0ff;	// use this only if wlan led is not controlled by hardware!
+	int wlan1_gpio = 0x0ff;	
+	int wlan2_gpio = 0x0ff;	
 	int usb_gpio = 0x0ff;
 	int usb_gpio1 = 0x0ff;
 	int sec0_gpio = 0x0ff;	// security leds, wrt600n
@@ -5838,10 +5839,23 @@ int led_control(int type, int act)
 	case ROUTER_NETGEAR_R7000:
 		power_gpio = 0x102;	// power led 
 		diag_gpio = 0x103;	// power led orange     
+		//connected_gpio = 0x109;	// wan led green
+		usb_power = 0x000;	// usb enable
+		wlan0_gpio = 0x10c;	// radio 0 
+		wlan1_gpio = 0x10d;	// radio 1 
+		//ses_gpio = 0x10e;	// wps led
+		//wlan_gpio = 0x10f;	// wifi button led
+		usb_gpio = 0x111;	//usb1 
+		usb_gpio1 = 0x112;	//usb2 
+		break;
+	case ROUTER_NETGEAR_R8000:
+		power_gpio = 0x102;	// power led 
+		diag_gpio = 0x103;	// power led orange     
 		connected_gpio = 0x109;	// wan led green
 		usb_power = 0x000;	// usb enable
 		wlan0_gpio = 0x10d;	// radio 0 
-		wlan1_gpio = 0x10c;	// radio 1 
+		wlan1_gpio = 0x10c;	// radio 5G-1 
+		wlan2_gpio = 0x10f;	// radio 5G-2
 		ses_gpio = 0x10e;	// wps led
 		wlan_gpio = 0x10f;	// wifi button led
 		usb_gpio = 0x111;	//usb1 
@@ -5981,6 +5995,9 @@ int led_control(int type, int act)
 		break;
 	case LED_WLAN1:
 		use_gpio = wlan1_gpio;
+		break;
+	case LED_WLAN2:
+		use_gpio = wlan2_gpio;
 		break;
 	case LED_USB:
 		use_gpio = usb_gpio;
