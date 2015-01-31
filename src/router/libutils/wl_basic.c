@@ -135,7 +135,7 @@ int bcm_gettxpower(char *wlname)
 	else if (!strcmp(wlname, "wl1"))
 		c = 1;
 	else if (!strcmp(wlname, "wl2"))
-		c = 1;
+		c = 2;
 	else
 		return pwr;
 #ifdef HAVE_QTN
