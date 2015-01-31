@@ -413,6 +413,7 @@ bmenu.wirelessMac="MAC Filter";
 bmenu.wirelessAdvanced="Advanced Settings";
 bmenu.wirelessAdvancedwl0="WL0-Advanced";
 bmenu.wirelessAdvancedwl1="WL1-Advanced";
+bmenu.wirelessAdvancedwl2="WL2-Advanced";
 bmenu.wirelessWds="WDS";
 bmenu.wirelessWds0="Ath0-WDS";
 bmenu.wirelessWds1="Ath1-WDS";
@@ -420,6 +421,7 @@ bmenu.wirelessWds2="Ath2-WDS";
 bmenu.wirelessWds3="Ath3-WDS";
 bmenu.wirelessWdswl0="WL0-WDS";
 bmenu.wirelessWdswl1="WL1-WDS";
+bmenu.wirelessWdswl2="WL2-WDS";
 
 bmenu.security="Security";
 bmenu.firwall="Firewall";
