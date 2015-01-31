@@ -81,6 +81,12 @@ int wl_ioctl(char *name, int cmd, void *buf, int len)
 	ioc.cmd = cmd;
 	ioc.buf = buf;
 	ioc.len = len;
+
+	/* initializing the remaining fields */
+	ioc.set = FALSE;
+	ioc.used = 0;
+	ioc.needed = 0;
+
 	strncpy(ifr.ifr_name, name, IFNAMSIZ);
 	ifr.ifr_data = (caddr_t) & ioc;
 	if ((ret = ioctl(s, SIOCDEVPRIVATE, &ifr)) < 0)
