@@ -1182,6 +1182,17 @@ void start_restore_defaults(void)
 		{"wan_default", "vlan2", 0},
 		{0, 0, 0}
 	};
+	struct nvram_tuple generic_2[] = {
+		{"lan_ifname", "br0", 0},
+		{"lan_ifnames",
+		 "vlan1 eth1 eth2 eth3 wl0.1 wl1.1 wl2.1",
+		 0},
+		{"wan_ifname", "vlan2", 0},
+		{"wan_ifname2", "vlan2", 0},
+		{"wan_ifnames", "vlan2", 0},
+		{"wan_default", "vlan2", 0},
+		{0, 0, 0}
+	};
 #elif HAVE_MAGICBOX
 	struct nvram_tuple generic[] = {
 		{"lan_ifname", "br0", 0},
@@ -2130,6 +2141,9 @@ void start_restore_defaults(void)
 		break;
 	case ROUTER_ASUS_RTN53:
 		linux_overrides = rt53nvlan;
+		break;
+	case ROUTER_NETGEAR_R8000:
+		linux_overrides = generic_2;
 		break;
 #endif
 	case ROUTER_ASUS_AC66U:
