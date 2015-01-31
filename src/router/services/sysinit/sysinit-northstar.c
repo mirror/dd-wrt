@@ -167,6 +167,7 @@ void start_sysinit(void)
 				MAC_ADD(mac);
 				nvram_set("pci/1/1/macaddr", mac);
 				MAC_ADD(mac);
+				MAC_ADD(mac);
 				nvram_set("pci/2/1/macaddr", mac);
 			}
 			struct nvram_tuple ac1450_pci_1_1_params[] = {
@@ -388,6 +389,7 @@ void start_sysinit(void)
 				MAC_ADD(mac);
 				MAC_ADD(mac);
 				nvram_set("pci/1/1/macaddr", mac);
+				MAC_ADD(mac);
 				MAC_ADD(mac);
 				nvram_set("pci/2/1/macaddr", mac);
 			}
@@ -618,6 +620,7 @@ void start_sysinit(void)
 				MAC_ADD(mac);
 				nvram_set("pci/1/1/macaddr", mac);
 				MAC_ADD(mac);
+				MAC_ADD(mac);
 				nvram_set("pci/2/1/macaddr", mac);
 			}
 			struct nvram_tuple r6300v2_pci_1_1_params[] = {
@@ -840,6 +843,7 @@ void start_sysinit(void)
 				MAC_ADD(mac);
 				MAC_ADD(mac);
 				nvram_set("pci/1/1/macaddr", mac);
+				MAC_ADD(mac);
 				MAC_ADD(mac);
 				nvram_set("pci/2/1/macaddr", mac);
 			}
@@ -1127,6 +1131,7 @@ void start_sysinit(void)
 				MAC_ADD(mac);
 				nvram_set("0:macaddr", mac);
 				MAC_ADD(mac);
+				MAC_ADD(mac);
 				nvram_set("1:macaddr", mac);
 			}
 			nvram_set("0:ag1", "2");                                                                                                                                                                                                            
@@ -1321,7 +1326,6 @@ void start_sysinit(void)
 		nvram_unset("et1macaddr");
 		break;
 	case ROUTER_NETGEAR_R8000:
-		nvram_set("vlan2hwname", "et2");
 		if (nvram_get("0:venid") == NULL) {
 			if (!sv_valid_hwaddr(nvram_safe_get("0:macaddr"))
 			    || startswith(nvram_safe_get("0:macaddr"), "00:90:4C")
@@ -1329,12 +1333,14 @@ void start_sysinit(void)
 			    || startswith(nvram_safe_get("1:macaddr"), "00:90:4C")) {
 				char mac[20];
 				strcpy(mac, nvram_safe_get("et2macaddr"));
-				MAC_ADD(mac);
-				MAC_ADD(mac);
 				nvram_set("0:macaddr", mac);
+				nvram_set("et0macaddr",mac);
 				MAC_ADD(mac);
+				nvram_set("et1macaddr", mac);
+				MAC_SUB(mac);
+				MAC_SUB(mac);
 				nvram_set("1:macaddr", mac);
-				MAC_ADD(mac);
+				MAC_SUB(mac);
 				nvram_set("2:macaddr", mac);
 			}
 
@@ -1615,8 +1621,13 @@ void start_sysinit(void)
 			nvram_set("devpath1", "pcie/2/3");
 			nvram_set("devpath2", "pcie/2/4");
 		}
+
 		nvram_unset("et0macaddr");
 		nvram_unset("et1macaddr");
+		//nvram_set("fwd_cpumap", "d:x:2:169:1 d:l:5:169:1 d:u:5:163:0");
+		//nvram_set("fwd_wlandevs", "eth1 eth2 eth3");
+		nvram_set("lan_ifnames", "vlan1 eth1 eth2 eth3 wl0.1 wl1.1 wl2.1");
+		set_gpio(6, 1); //reset button
 		break;
 	case ROUTER_ASUS_AC87U:
 		set_gpio(11, 1);	// fixup reset button
@@ -2719,14 +2730,20 @@ void start_sysinit(void)
 		nvram_set("et0macaddr_safe", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
 		close(s);
 	}
+	
 	insmod("emf");
 	insmod("igs");
+#ifdef HAVE_DHDAP
+	insmod("dhd");
+#endif
 	insmod("wl");
+
+
 	/*
 	 * Set a sane date 
 	 */
 	stime(&tm);
-	nvram_set("wl0_ifname", "ath0");
+//	nvram_set("wl0_ifname", "ath0");
 
 	led_control(LED_POWER, LED_ON);
 	led_control(LED_DIAG, LED_OFF);
@@ -2735,6 +2752,7 @@ void start_sysinit(void)
 	led_control(LED_BRIDGE, LED_OFF);
 	led_control(LED_WLAN0, LED_OFF);
 	led_control(LED_WLAN1, LED_OFF);
+	led_control(LED_WLAN2, LED_OFF);
 	led_control(LED_CONNECTED, LED_OFF);
 
 	if (!nvram_match("disable_watchdog", "1")) {
