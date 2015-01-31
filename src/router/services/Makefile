@@ -180,6 +180,9 @@ endif
 ifeq ($(CONFIG_GLAUCO),y)
 CFLAGS_EXTRA += -DHAVE_GLAUCO
 endif
+ifeq ($(CONFIG_DHDAP),y)
+CFLAGS_EXTRA += -DHAVE_DHDAP
+endif
 
 ifeq ($(CONFIG_NSTX),y)
 CFLAGS_EXTRA += -DHAVE_NSTX
