@@ -103,6 +103,7 @@ struct onload onloads[] = {
 	// { "Filters", filter_onload },
 	{"WL_ActiveTable-wl0", wl_active_onload},
 	{"WL_ActiveTable-wl1", wl_active_onload},
+	{"WL_ActiveTable-wl2", wl_active_onload},
 	{"MACClone", macclone_onload},
 	{"FilterSummary", filtersummary_onload},
 	{"Ping", ping_onload},
@@ -633,8 +634,10 @@ void ej_ifndef(webs_t wp, int argc, char_t ** argv)
 		name = name + 11;
 		if (!strncmp(name, "_wl0", 4))
 			ifname = nvram_safe_get("wl0_ifname");
-		else		// "_wl1"
+		else if (!strncmp(name, "_wl1", 4))
 			ifname = nvram_safe_get("wl1_ifname");
+		else		// "_wl1"
+			ifname = nvram_safe_get("wl2_ifname");
 		char *next;
 
 		if (wl_iovar_get(ifname, "cap", (void *)caps, WLC_IOCTL_SMLEN)
@@ -1057,6 +1060,15 @@ void ej_show_styles(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<option value=\"%s\" %s>%s</option>\n", entry->d_name, nvram_match("router_style", entry->d_name) ? "selected=\"selected\"" : "", entry->d_name);
 	}
 	closedir(directory);
+	return;
+}
+
+void ej_tab_style(webs_t wp, int argc, char_t ** argv)
+{
+	// for triple radio increase hight ob tab area
+	if(get_wl_instances() == 3)
+		websWrite(wp, "<style type=\"text/css\">#header { height: 11.5em; }</style>");
+
 	return;
 }
 
@@ -2216,15 +2228,19 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	static int tempcount = 0;
 	char buf[WLC_IOCTL_SMLEN];
 	char buf2[WLC_IOCTL_SMLEN];
+	char buf3[WLC_IOCTL_SMLEN];
 	int ret;
 	unsigned int *ret_int = NULL;
 	unsigned int *ret_int2 = NULL;
+	unsigned int *ret_int3 = NULL;
 	static double tempavg_24 = 0.000;
 	static double tempavg_50 = 0.000;
+	static double tempavg_502 = 0.000;
 	static double tempavg_max = 0.000;
 	int no2 = 0, no5 = 0;
 	strcpy(buf, "phy_tempsense");
 	strcpy(buf2, "phy_tempsense");
+	strcpy(buf3, "phy_tempsense");
 
 	if (nvram_match("wl0_net_mode", "disabled") || (ret = wl_ioctl("eth1", WLC_GET_VAR, buf, sizeof(buf)))) {
 		no2 = 1;
@@ -2233,27 +2249,36 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	if (nvram_match("wl1_net_mode", "disabled") || (ret = wl_ioctl("eth2", WLC_GET_VAR, buf2, sizeof(buf2)))) {
 		no5 = 1;
 	}
+	if (nvram_match("wl2_net_mode", "disabled") || (ret = wl_ioctl("eth3", WLC_GET_VAR, buf3, sizeof(buf3)))) {
+		no5 = 1;
+	}
 	ret_int = (unsigned int *)buf;
 	ret_int2 = (unsigned int *)buf2;
-
-	if (tempcount == -2) {
+	ret_int3 = (unsigned int *)buf3;
+	if (tempcount == -3) {
 		tempcount++;
 		tempavg_24 = *ret_int;
 		tempavg_50 = *ret_int2;
+		tempavg_502 = *ret_int3;
 		if (tempavg_24 < 0.0)
 			tempavg_24 = 0.0;
 		if (tempavg_50 < 0.0)
 			tempavg_50 = 0.0;
+		if (tempavg_502 < 0.0)
+			tempavg_502 = 0.0;
 	} else {
 		if (tempavg_24 < 10.0 && *ret_int > 0.0)
 			tempavg_24 = *ret_int;
 		if (tempavg_50 < 10.0 && *ret_int2 > 0.0)
 			tempavg_50 = *ret_int2;
-
+		if (tempavg_502 < 10.0 && *ret_int3 > 0.0)
+			tempavg_502 = *ret_int3;
 		if (tempavg_24 > 200.0 && *ret_int > 0.0)
 			tempavg_24 = *ret_int;
 		if (tempavg_50 > 200.0 && *ret_int2 > 0.0)
 			tempavg_50 = *ret_int2;
+		if (tempavg_502 > 200.0 && *ret_int3 > 0.0)
+			tempavg_502 = *ret_int3;
 
 		tempavg_24 = (tempavg_24 * 4 + *ret_int) / 5;
 		tempavg_50 = (tempavg_50 * 4 + *ret_int2) / 5;
@@ -2289,11 +2314,13 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 #endif
 	if (no2 && no5 && cputemp)
 		websWrite(wp, "%s", live_translate("status_router.notavail"));	// no 
-	else if (no2)
+	else if (no2){
 #ifdef HAVE_QTN
 		websWrite(wp, "WL1 %4.2f &#176;C", tempavg_50);
 #else
 		websWrite(wp, "WL1 %4.2f &#176;C", tempavg_50 * 0.5 + 20.0);
+		websWrite(wp, "WL2 %4.2f &#176;C", tempavg_502 * 0.5 + 20.0);
+	}
 #endif
 	else if (no5)
 		websWrite(wp, "WL0 %4.2f &#176;C", tempavg_24 * 0.5 + 20.0);
