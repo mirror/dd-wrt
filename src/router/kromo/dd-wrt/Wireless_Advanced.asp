@@ -235,6 +235,7 @@ addEvent(window, "unload", function() {
 		
 		//]]>
 		</script>
+		<% tab_style(); %>
 	</head>
 
 	<body class="gui">
