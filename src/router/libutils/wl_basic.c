@@ -91,7 +91,7 @@ int get_wl_instance(char *name)
 	if (!ifexists(name))
 		return -1;
 	if (wl_probe(name))
-		return -1;
+	    return -1;
 	ret = wl_ioctl(name, WLC_GET_INSTANCE, &unit, sizeof(unit));
 //      fprintf(stderr,"wl_instance = %d\n",unit);
 	if (ret == 0)
@@ -161,32 +161,21 @@ int wl_probe(char *name)
 	if (isListed("probe_blacklist", name))
 		return -1;
 
-#if 0				//defined(linux)
-	char buf[DEV_TYPE_LEN];
-
-	if ((ret = wl_get_dev_type(name, buf, DEV_TYPE_LEN)) < 0) {
-//              fprintf(stderr,"dev type=%s fail\n",name);
-		addList("probe_blacklist", name);
-		return ret;
-	}
-	/*
-	 * Check interface 
-	 */
-//      fprintf(stderr,"dev type=%s\n",buf);
-	if (strncmp(buf, "wl", 2)) {
-		addList("probe_blacklist", name);
-		return -1;
-	}
-#else
 	/*
 	 * Check interface 
 	 */
 	if ((ret = wl_ioctl(name, WLC_GET_MAGIC, &val, sizeof(val)))) {
 		//    fprintf(stderr,"magic fail\n");
+#ifdef HAVE_DHDAP
+		if (dhd_probe(name)) {
+#endif
 		addList("probe_blacklist", name);
 		return ret;
-	}
+#ifdef HAVE_DHDAP
+		}
 #endif
+	}
+
 	if ((ret = wl_ioctl(name, WLC_GET_VERSION, &val, sizeof(val)))) {
 		//    fprintf(stderr,"version fail\n");
 		addList("probe_blacklist", name);
