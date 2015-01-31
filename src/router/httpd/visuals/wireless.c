@@ -427,6 +427,8 @@ void ej_wireless_active_table(webs_t wp, int argc, char_t ** argv)
 			iface = get_wl_instance_name(0);
 		else if (!strcmp(ifname, "wl1"))
 			iface = get_wl_instance_name(1);
+		else if (!strcmp(ifname, "wl2"))
+			iface = get_wl_instance_name(2);
 		else
 			iface = nvram_safe_get("wl0_ifname");
 		sysprintf("wl -i %s %s > %s", iface, ASSOCLIST_CMD, ASSOCLIST_TMP);
