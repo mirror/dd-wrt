@@ -55,16 +55,7 @@ char *get_wl_instance_name(int instance)
 #ifdef HAVE_QTN
 	if (instance == 1)
 		return "qtn";
-#elif HAVE_DHDAP
-	if (instance == 0)
-		return "eth1";
-	if (instance == 1)
-		return "eth2";
-	if (instance == 2)
-		return "eth3";
-#else
 #endif
-
 	if (get_wl_instance("eth1") == instance)
 		return "eth1";
 	if (get_wl_instance("eth2") == instance)
