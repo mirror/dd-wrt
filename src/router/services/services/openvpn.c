@@ -102,8 +102,6 @@ void start_openvpnserver(void)
 	else if (nvram_invmatch("openvpn_pkcs12", "")) {
 		fprintf(fp, "dh /tmp/openvpn/dh.pem\n");
 		fprintf(fp, "pkcs12 /tmp/openvpn/cert.p12\n");
-		if (nvram_invmatch("openvpn_auth", "none"))	//not needed if we have no auth anyway
-			fprintf(fp, "tls-server\n");
 	} else {
 		if (nvram_invmatch("openvpn_dh", ""))
 			fprintf(fp, "dh /tmp/openvpn/dh.pem\n");
@@ -113,8 +111,6 @@ void start_openvpnserver(void)
 			fprintf(fp, "cert /tmp/openvpn/cert.pem\n");
 		if (nvram_invmatch("openvpn_key", ""))
 			fprintf(fp, "key /tmp/openvpn/key.pem\n");
-		if (nvram_invmatch("openvpn_auth", "none"))	//not needed if we have no auth anyway
-			fprintf(fp, "tls-server\n");
 	}
 	//be sure Chris old style config is still working
 	if (nvram_match("openvpn_switch", "1")) {
@@ -139,6 +135,8 @@ void start_openvpnserver(void)
 		if (nvram_invmatch("openvpn_lzo", "off"))
 			fprintf(fp, "comp-lzo %s\n",	//yes/no/adaptive/disable 
 				nvram_safe_get("openvpn_lzo"));
+		if (nvram_invmatch("openvpn_auth", "none"))	//not needed if we have no auth anyway
+			fprintf(fp, "tls-server\n");
 		if (nvram_match("openvpn_dupcn", "1"))
 			fprintf(fp, "duplicate-cn\n");
 		if (nvram_match("openvpn_dupcn", "0")	//keep peer ip persistant for x sec. works only when dupcn=off & no proxy mode
@@ -147,7 +145,7 @@ void start_openvpnserver(void)
 		if (nvram_match("openvpn_cl2cl", "1"))
 			fprintf(fp, "client-to-client\n");
 		if (nvram_match("openvpn_redirgate", "1"))
-			fprintf(fp, "push\n" "redirect-gateway def1\n");
+			fprintf(fp, "push \"redirect-gateway def1\"\n");
 		if (nvram_invmatch("openvpn_tlscip", "0"))
 			fprintf(fp, "tls-cipher %s\n", nvram_safe_get("openvpn_tlscip"));
 		if (nvram_match("openvpn_proto", "udp"))
@@ -379,8 +377,6 @@ void start_openvpn(void)
 		fprintf(fp, "secret /tmp/openvpncl/static.key\n");
 	else if (nvram_invmatch("openvpncl_pkcs12", "")) {;
 		fprintf(fp, "pkcs12 /tmp/openvpncl/cert.p12\n");
-		if (nvram_invmatch("openvpncl_auth", "none") && nvram_invmatch("openvpncl_tlscip", "0")) //not needed if we have no auth anyway
-			fprintf(fp, "tls-client\n");
 	} else {
 		if (nvram_invmatch("openvpncl_ca", ""))
 			fprintf(fp, "ca /tmp/openvpncl/ca.crt\n");
@@ -388,8 +384,6 @@ void start_openvpn(void)
 			fprintf(fp, "cert /tmp/openvpncl/client.crt\n");
 		if (nvram_invmatch("openvpncl_key", ""))
 			fprintf(fp, "key /tmp/openvpncl/client.key\n");
-		if (nvram_invmatch("openvpncl_auth", "none") && nvram_invmatch("openvpncl_tlscip", "0")) //not needed if we have no auth anyway
-			fprintf(fp, "tls-client\n");		
 	}
 	fprintf(fp,
 #ifdef HAVE_ERC
@@ -397,7 +391,7 @@ void start_openvpn(void)
 #else
 		"management 127.0.0.1 16\n"
 #endif
-		"management-log-cache 100\n" "verb 3\n" "mute 3\n" "syslog\n" "writepid /var/run/openvpncl.pid\n" "resolv-retry infinite\n" "nobind\n" "persist-key\n" "persist-tun\n" "pull\n" "script-security 2\n");
+		"management-log-cache 100\n" "verb 3\n" "mute 3\n" "syslog\n" "writepid /var/run/openvpncl.pid\n" "client\n" "resolv-retry infinite\n" "nobind\n" "persist-key\n" "persist-tun\n" "script-security 2\n");
 	fprintf(fp, "dev %s\n", ovpniface);
 	fprintf(fp, "proto %s\n", nvram_safe_get("openvpncl_proto"));
 	fprintf(fp, "cipher %s\n", nvram_safe_get("openvpncl_cipher"));
@@ -421,6 +415,8 @@ void start_openvpn(void)
 		else
 			fprintf(fp, "route-noexec\n");
 	}
+	if (nvram_invmatch("openvpncl_auth", "none") && nvram_invmatch("openvpncl_tlscip", "0"))	//not needed if we have no auth anyway
+		fprintf(fp, "tls-client\n");
 	if (nvram_invmatch("openvpncl_mtu", ""))
 		fprintf(fp, "tun-mtu %s\n", nvram_safe_get("openvpncl_mtu"));
 	if (nvram_invmatch("openvpncl_fragment", "")
