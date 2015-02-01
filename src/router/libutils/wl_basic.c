@@ -72,8 +72,6 @@ int get_wl_instances(void)
 {
 #ifdef HAVE_QTN
 	return 2;
-#elif HAVE_DHDAP
-	return 3;
 #else
 	if (get_wl_instance("eth1") == 1)
 		return 2;
