@@ -85,14 +85,6 @@ int get_wl_instances(void)
 
 int get_wl_instance(char *name)
 {
-#if HAVE_DHDAP
-	if (!strcmp(name, "eth1"))
-		return 0;
-	if (!strcmp(name, "eth2"))
-		return 1;
-	if (!strcmp(name, "eth3"))
-		return 2;
-#else
 	int unit;
 	int ret;
 
@@ -105,7 +97,6 @@ int get_wl_instance(char *name)
 	if (ret == 0)
 		return unit;
 	return ret;
-#endif
 }
 
 int bcm_gettxpower(char *wlname)
