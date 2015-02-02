@@ -159,10 +159,19 @@ char *get_wdev(void)
 int wl_probe(char *name)
 {
 	int ret, val;
-
+	char buf[DEV_TYPE_LEN];
 	if (isListed("probe_blacklist", name))
 		return -1;
 
+
+	if ((ret = wl_get_dev_type(name, buf, DEV_TYPE_LEN)) < 0)
+		return ret;
+	/* Check interface */
+	if (strncmp(buf, "wl", 2)) {
+		addList("probe_blacklist", name);
+		return -1;
+	}
+#if 0
 	/*
 	 * Check interface 
 	 */
@@ -177,15 +186,16 @@ int wl_probe(char *name)
 		}
 #endif
 	}
+#endif
 
 	if ((ret = wl_ioctl(name, WLC_GET_VERSION, &val, sizeof(val)))) {
-		//fprintf(stderr,"WLC_GET_VERSION fail: %s\n", name);
+		fprintf(stderr,"WLC_GET_VERSION fail: %s\n", name);
 		addList("probe_blacklist", name);
 		return ret;
 	}
 
 	if (val > WLC_IOCTL_VERSION) {
-		//fprintf(stderr,"WLC_IOCTL_VERSION fail name: %s val: %d ictlv: %d \n", name, val, WLC_IOCTL_VERSION);
+		fprintf(stderr,"WLC_IOCTL_VERSION fail name: %s val: %d ictlv: %d \n", name, val, WLC_IOCTL_VERSION);
 		addList("probe_blacklist", name);
 		return -1;
 	}
