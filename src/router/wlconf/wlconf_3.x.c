@@ -26,7 +26,7 @@
 #include <proto/802.1d.h>
 #include <sys/utsname.h>
 
-#if 0// ndef cprintf
+#if 1// ndef cprintf
 #define cprintf(fmt, args...) do { \
 		fprintf(stderr,"%s (%d):%s ",__FILE__,__LINE__,__func__); \
 		fprintf(stderr, fmt, ## args); \
@@ -1342,6 +1342,23 @@ cprintf("get ifname unit\n");
 	/* clean up tmp */
 	memset(tmp, 0, sizeof(tmp));
 
+
+cprintf("wl probe\n");
+	/* Check interface (fail silently for non-wl interfaces) */
+	if ((ret = wl_probe(name)))
+		return ret;
+
+#ifdef __CONFIG_DHDAP__
+	/* Check if interface uses dhd adapter */
+	is_dhd = !dhd_probe(name);
+#endif /* __CONFIG_DHDAP__ */
+
+	/* Bring up the interface temporarily before issuing iovars. */
+	/* This will ensure all the cores are fully initialized */
+	WL_IOCTL(name, WLC_UP, NULL, 0);
+
+
+
 	/* because of ifdefs in wl driver,  when we don't have AP capabilities we
 	 * can't use the same iovars to configure the wl.
 	 * so we use "wl_ap_build" to help us know how to configure the driver
@@ -1377,16 +1394,6 @@ cprintf("get caps\n");
 		else if (!strcmp(cap, "radio_pwrsave"))
 			radio_pwrsave = 1;
 	}
-cprintf("wl probe\n");
-	/* Check interface (fail silently for non-wl interfaces) */
-	if ((ret = wl_probe(name)))
-		return ret;
-
-#ifdef __CONFIG_DHDAP__
-	/* Check if interface uses dhd adapter */
-	is_dhd = !dhd_probe(name);
-#endif /* __CONFIG_DHDAP__ */
-
 cprintf("get wl addr\n");
 	/* Get MAC address */
 	(void) wl_hwaddr(name, (uchar *)buf);
