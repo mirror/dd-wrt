@@ -590,7 +590,7 @@ static struct attribute *gpio_attrs[] = {
 };
 
 static const struct attribute_group gpio_attr_group = {
-       .attrs = gpio_attrs,
+	.attrs = gpio_attrs,
 };
 
 /*
@@ -973,9 +973,6 @@ static void gpiod_unexport(struct gpio_desc *desc)
 
 		dev = class_find_device(&gpio_class, NULL, desc, match_export);
 		if (dev) {
-			device_remove_file(dev, &dev_attr_edge);
-			device_remove_file(dev, &dev_attr_direction);
-			sysfs_remove_group(&dev->kobj, &gpio_attr_group);
 			gpio_setup_irq(desc, dev, 0);
 			clear_bit(FLAG_EXPORT, &desc->flags);
 		} else
@@ -985,6 +982,9 @@ static void gpiod_unexport(struct gpio_desc *desc)
 	mutex_unlock(&sysfs_lock);
 
 	if (dev) {
+		device_remove_file(dev, &dev_attr_edge);
+		device_remove_file(dev, &dev_attr_direction);
+		sysfs_remove_group(&dev->kobj, &gpio_attr_group);
 		device_unregister(dev);
 		put_device(dev);
 	}
