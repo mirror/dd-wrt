@@ -1020,7 +1020,7 @@ void setRegulationDomain(char *reg)
 	strncpy(ccode, getIsoName(reg), 3);
 
 	if (!strcmp(ccode, "EU") || !strcmp(ccode, "DE")) {
-		strcpy(ccode0, "EU");
+		strcpy(ccode0, "DE");
 		strcpy(rrev0, "0");
 		strcpy(ccode1, "EU");
 		strcpy(rrev1, "38");
@@ -1096,5 +1096,4 @@ void setRegulationDomain(char *reg)
 	nvram_set("wl0_country_code", ccode0);
 	nvram_set("wl1_country_code", ccode1);
 	nvram_set("wl1_country_code", ccode1);
-
 }
