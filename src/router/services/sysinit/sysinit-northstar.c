@@ -168,6 +168,8 @@ void start_sysinit(void)
 				nvram_set("pci/1/1/macaddr", mac);
 				MAC_ADD(mac);
 				MAC_ADD(mac);
+				MAC_ADD(mac);
+				MAC_ADD(mac);
 				nvram_set("pci/2/1/macaddr", mac);
 			}
 			struct nvram_tuple ac1450_pci_1_1_params[] = {
@@ -389,6 +391,8 @@ void start_sysinit(void)
 				MAC_ADD(mac);
 				MAC_ADD(mac);
 				nvram_set("pci/1/1/macaddr", mac);
+				MAC_ADD(mac);
+				MAC_ADD(mac);
 				MAC_ADD(mac);
 				MAC_ADD(mac);
 				nvram_set("pci/2/1/macaddr", mac);
@@ -621,6 +625,8 @@ void start_sysinit(void)
 				nvram_set("pci/1/1/macaddr", mac);
 				MAC_ADD(mac);
 				MAC_ADD(mac);
+				MAC_ADD(mac);
+				MAC_ADD(mac);
 				nvram_set("pci/2/1/macaddr", mac);
 			}
 			struct nvram_tuple r6300v2_pci_1_1_params[] = {
@@ -843,6 +849,8 @@ void start_sysinit(void)
 				MAC_ADD(mac);
 				MAC_ADD(mac);
 				nvram_set("pci/1/1/macaddr", mac);
+				MAC_ADD(mac);
+				MAC_ADD(mac);
 				MAC_ADD(mac);
 				MAC_ADD(mac);
 				nvram_set("pci/2/1/macaddr", mac);
@@ -1130,6 +1138,8 @@ void start_sysinit(void)
 				MAC_ADD(mac);
 				MAC_ADD(mac);
 				nvram_set("0:macaddr", mac);
+				MAC_ADD(mac);
+				MAC_ADD(mac);
 				MAC_ADD(mac);
 				MAC_ADD(mac);
 				nvram_set("1:macaddr", mac);
