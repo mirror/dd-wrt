@@ -174,7 +174,6 @@ pid_t ddrun_shell(int timeout, int nowait)
 		 * Pass on TZ 
 		 */
 		snprintf(tz, sizeof(tz), "TZ=%s", getenv("TZ"));
-
 		/* 
 		 * Now run it.  The new program will take over this PID, so
 		 * nothing further in init.c should be run. 
@@ -813,6 +812,7 @@ int main(int argc, char **argv)
 			} else
 #endif
 			{
+				start_service_force("radio_off");
 				start_service_force("radio_on");
 			}
 #endif
