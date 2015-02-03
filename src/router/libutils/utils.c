@@ -5839,11 +5839,11 @@ int led_control(int type, int act)
 	case ROUTER_NETGEAR_R7000:
 		power_gpio = 0x102;	// power led 
 		diag_gpio = 0x103;	// power led orange     
-		//connected_gpio = 0x109;	// wan led green
+		connected_gpio = 0x109;	// wan led green
 		usb_power = 0x000;	// usb enable
 		wlan0_gpio = 0x10c;	// radio 0 
 		wlan1_gpio = 0x10d;	// radio 1 
-		//ses_gpio = 0x10e;	// wps led
+		ses_gpio = 0x10e;	// wps led
 		//wlan_gpio = 0x10f;	// wifi button led
 		usb_gpio = 0x111;	//usb1 
 		usb_gpio1 = 0x112;	//usb2 
