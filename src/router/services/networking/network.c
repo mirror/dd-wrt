@@ -487,7 +487,7 @@ static int wlconf_up(char *name)
 	} else {
 		nvram_nset("1", "wl%d_infra", instance);
 	}
-	eval("ifconfig", name, "up");
+	
 
 #ifdef HAVE_80211AC
 	if (has_beamforming(prefix)) {
@@ -640,7 +640,7 @@ static int wlconf_up(char *name)
 	char *vifs = nvram_nget("%s_vifs", ifinst);
 	if (vifs != NULL)
 		foreach(var, vifs, next) {
-		eval("ifconfig", var, "up");
+			eval("ifconfig", var, "up");
 		}
 #endif
 	eval("ifconfig", name, "up");
