@@ -483,6 +483,7 @@ static void handle_hotspot(void)
 	stop_service_f("nas");
 	eval("wlconf", nvram_safe_get("wl0_ifname"), "down");
 	eval("wlconf", nvram_safe_get("wl1_ifname"), "down");
+	eval("wlconf", nvram_safe_get("wl2_ifname"), "down");
 #endif
 #ifdef HAVE_MADWIFI
 	stop_service_f("stabridge");
@@ -1002,6 +1003,7 @@ static void handle_wireless(void)
 	stop_service_f("nas");
 	eval("wlconf", nvram_safe_get("wl0_ifname"), "down");
 	eval("wlconf", nvram_safe_get("wl1_ifname"), "down");
+	eval("wlconf", nvram_safe_get("wl2_ifname"), "down");
 #endif
 #ifdef HAVE_MADWIFI
 	stop_service_f("stabridge");
