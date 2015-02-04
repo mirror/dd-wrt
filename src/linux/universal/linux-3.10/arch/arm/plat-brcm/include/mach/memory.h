@@ -12,13 +12,8 @@
  * are defined from the board-level configuration file
  */
 
-#ifdef __ASSEMBLY__
-#ifndef PHYS_OFFSET
-#define PHYS_OFFSET             UL(CONFIG_DRAM_BASE)
-#endif
-#else
 #define PLAT_PHYS_OFFSET             UL(CONFIG_DRAM_BASE)
-#endif
+
 
 
 /*
