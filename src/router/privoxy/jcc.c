@@ -1,4 +1,4 @@
-const char jcc_rcs[] = "$Id: jcc.c,v 1.431 2014/10/18 11:31:12 fabiankeil Exp $";
+const char jcc_rcs[] = "$Id: jcc.c,v 1.435 2015/01/24 16:42:57 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/jcc.c,v $
@@ -1333,7 +1333,7 @@ enum chunk_status
  *
  * Function    :  chunked_body_is_complete
  *
- * Description :  Figures out wheter or not a chunked body is complete.
+ * Description :  Figures out whether or not a chunked body is complete.
  *
  *                Currently it always starts at the beginning of the
  *                buffer which is somewhat wasteful and prevents Privoxy
@@ -1388,12 +1388,15 @@ static enum chunk_status chunked_body_is_complete(struct iob *iob, size_t *lengt
       {
          return CHUNK_STATUS_PARSE_ERROR;
       }
-      /*
-       * Skip "\r\n", the chunk data and another "\r\n".
-       * Moving p to either the beginning of the next chunk-size
-       * or one byte beyond the end of the chunked data.
-       */
-      p += 2 + chunksize + 2;
+      /* Move beyond the chunkdata. */
+      p += 2 + chunksize;
+
+      /* There should be another "\r\n" to skip */
+      if (memcmp(p, "\r\n", 2))
+      {
+         return CHUNK_STATUS_PARSE_ERROR;
+      }
+      p += 2;
    } while (chunksize > 0U);
 
    *length = (size_t)(p - iob->cur);
@@ -1952,6 +1955,21 @@ static void chat(struct client_state *csp)
          {
             send_crunch_response(csp, rsp);
          }
+
+         /*
+          * Temporary workaround to prevent already-read client
+          * bodies from being parsed as new requests. For now we
+          * err on the safe side and throw all the following
+          * requests under the bus, even if no client body has been
+          * buffered. A compliant client will repeat the dropped
+          * requests on an untainted connection.
+          *
+          * The proper fix is to discard the no longer needed
+          * client body in the buffer (if there is one) and to
+          * continue parsing the bytes that follow.
+          */
+         drain_and_close_socket(csp->cfd);
+         csp->cfd = JB_INVALID_SOCKET;
 
          return;
       }
@@ -3497,7 +3515,7 @@ int main(int argc, char **argv)
    cgi_init_error_messages();
 
    /*
-    * If runnig on unix and without the --nodaemon
+    * If running on unix and without the --no-daemon
     * option, become a daemon. I.e. fork, detach
     * from tty and get process group leadership
     */

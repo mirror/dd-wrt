@@ -1,5 +1,5 @@
 #############################################################################
-# $Id: regression-tests.action,v 1.56 2014/11/14 12:59:11 fabiankeil Exp $
+# $Id: regression-tests.action,v 1.59 2014/11/20 15:29:57 fabiankeil Exp $
 #############################################################################
 #
 # This is a configuration file for Privoxy-Regression-Test
@@ -32,9 +32,10 @@ for-privoxy-version=3.0.22
 # Some dependencies Privoxy-Regression-Test should know about:
 #
 # Level  9 needs = config line user-manual\s+(\.?\.?/|[A-Za-z]:)
+# Level 12 needs = feature status FEATURE_CGI_EDIT_ACTIONS Yes
 # Level 12 needs = config line enable-edit-actions\s+1
 # Level 13 needs = feature status FEATURE_CONNECTION_KEEP_ALIVE Yes
-# Level 13 needs = config line keep-alive-timeout\s+[1-9]+
+# Level 13 needs = config line keep-alive-timeout\s+(2[1-9]+|[3-9]\d+|1\d{2,})
 # Level 14 needs = feature status FEATURE_CONNECTION_KEEP_ALIVE No
 # Level 15 needs = config line connection-sharing\s+0
 # Level 16 needs = feature status FEATURE_CONNECTION_KEEP_ALIVE Yes
@@ -720,27 +721,49 @@ TAG:^Proxy-Authorization header forwarding$
 # Expect Status Code = 404
 # Level = 21
 # Fetch Test = http://p.p/edit-actions
+# Level = 12
 # Fetch Test = http://p.p/eaa
+# Level = 12
 # Fetch Test = http://p.p/eau
+# Level = 12
 # Fetch Test = http://p.p/ear
+# Level = 12
 # Fetch Test = http://p.p/eal
+# Level = 12
 # Fetch Test = http://p.p/eafu
+# Level = 12
 # Fetch Test = http://p.p/eas
+# Level = 12
 # Fetch Test = http://p.p/easa
+# Level = 12
 # Fetch Test = http://p.p/easr
+# Level = 12
 # Fetch Test = http://p.p/eass
+# Level = 12
 # Fetch Test = http://p.p/edit-actions-for-url
+# Level = 12
 # Fetch Test = http://p.p/edit-actions-list
+# Level = 12
 # Fetch Test = http://p.p/edit-actions-submit
+# Level = 12
 # Fetch Test = http://p.p/edit-actions-url
+# Level = 12
 # Fetch Test = http://p.p/edit-actions-url-form
+# Level = 12
 # Fetch Test = http://p.p/edit-actions-add-url
+# Level = 12
 # Fetch Test = http://p.p/edit-actions-add-url-form
+# Level = 12
 # Fetch Test = http://p.p/edit-actions-remove-url
+# Level = 12
 # Fetch Test = http://p.p/edit-actions-remove-url-form
+# Level = 12
 # Fetch Test = http://p.p/edit-actions-section-add
+# Level = 12
 # Fetch Test = http://p.p/edit-actions-section-remove
+# Level = 12
 # Fetch Test = http://p.p/edit-actions-section-swap
+# Level = 12
 # Fetch Test = http://p.p/error-favicon.ico
 # Fetch Test = http://p.p/favicon.ico
 # Fetch Test = http://p.p/robots.txt
@@ -755,26 +778,47 @@ TAG:^Proxy-Authorization header forwarding$
 # Fetch Test = http://p.p/does-not-exist
 # Expect Status Code = 404
 # Trusted CGI Request = http://p.p/eaa
+# Level = 12
 # Trusted CGI Request = http://p.p/eau
+# Level = 12
 # Trusted CGI Request = http://p.p/ear
+# Level = 12
 # Trusted CGI Request = http://p.p/eal
+# Level = 12
 # Trusted CGI Request = http://p.p/eafu
+# Level = 12
 # Trusted CGI Request = http://p.p/eas
+# Level = 12
 # Trusted CGI Request = http://p.p/easa
+# Level = 12
 # Trusted CGI Request = http://p.p/easr
+# Level = 12
 # Trusted CGI Request = http://p.p/eass
+# Level = 12
 # Trusted CGI Request = http://p.p/edit-actions-for-url
+# Level = 12
 # Trusted CGI Request = http://p.p/edit-actions-list
+# Level = 12
 # Trusted CGI Request = http://p.p/edit-actions-submit
+# Level = 12
 # Trusted CGI Request = http://p.p/edit-actions-url
+# Level = 12
 # Trusted CGI Request = http://p.p/edit-actions-url-form
+# Level = 12
 # Trusted CGI Request = http://p.p/edit-actions-add-url
+# Level = 12
 # Trusted CGI Request = http://p.p/edit-actions-add-url-form
+# Level = 12
 # Trusted CGI Request = http://p.p/edit-actions-remove-url
+# Level = 12
 # Trusted CGI Request = http://p.p/edit-actions-remove-url-form
+# Level = 12
 # Trusted CGI Request = http://p.p/edit-actions-section-add
+# Level = 12
 # Trusted CGI Request = http://p.p/edit-actions-section-remove
+# Level = 12
 # Trusted CGI Request = http://p.p/edit-actions-section-swap
+# Level = 12
 # Trusted CGI Request = http://p.p/send-stylesheet
 
 # The following tests depend on Privoxy being configured to deliver the user manual

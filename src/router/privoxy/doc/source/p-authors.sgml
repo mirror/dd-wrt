@@ -3,7 +3,7 @@
 
  Purpose     :  Entity included in other project documents.
 
- $Id: p-authors.sgml,v 2.61 2014/11/03 14:40:53 fabiankeil Exp $
+ $Id: p-authors.sgml,v 2.64 2015/01/24 16:43:11 fabiankeil Exp $
 
  Copyright (C) 2001-2013 Privoxy Developers http://www.privoxy.org/
  See LICENSE.
@@ -53,7 +53,7 @@ Current Privoxy Team:
  Karsten Hopp
  Alexander Lazic
  Daniel Leite
- Gábor Lipták
+ Gï¿½bor Liptï¿½k
  Adam Lock
  Guy Laroche
  Justin McMurtry
@@ -63,7 +63,7 @@ Current Privoxy Team:
  Haroon Rafique
  Georg Sauthoff
  Thomas Steudten
- Jörg Strohmayer
+ Jï¿½rg Strohmayer
  Rodney Stromlund
  Sviatoslav Sviridov
  Sarantis Paskalis
@@ -93,7 +93,8 @@ Current Privoxy Team:
  Sam Chen
  Ramkumar Chinchani
  Billy Crook
- Frédéric Crozat
+ Frï¿½dï¿½ric Crozat
+ Matthew Daley
  Michael T. Davis
  Markus Dittrich
  Mattes Dolak
@@ -108,11 +109,12 @@ Current Privoxy Team:
  John McGowan
  Lizik Grelier
  Daniel Griscom
- Felix Gröbert
+ Felix Grï¿½bert
  Bernard Guillot
  Jeff H.
  Tim H.
  Aaron Hamid
+ Basil Hussain
  Darel Henman
  Magnus Holmgren
  Eric M. Hopper
@@ -144,10 +146,11 @@ Current Privoxy Team:
  Amuro Namie
  Mark Nelson
  Adam Piggott
- Petr Písar
+ Petr Pï¿½sar
  Dan Price
+ Kai Raven
  Roberto Ragusa
- Félix Rauch
+ Fï¿½lix Rauch
  Chris John Riley
  Maynard Riley
  Andreas Rutkauskas
@@ -167,7 +170,7 @@ Current Privoxy Team:
  David Wagner
  Glenn Washburn
  Song Weijia
- Jörg Weinmann
+ Jï¿½rg Weinmann
  Darren Wiebe
  Anduin Withers
  Oliver Yeoh
