@@ -3,7 +3,7 @@
 
  Purpose     :  Entity included in other project documents.
 
- $Id: changelog.sgml,v 2.9 2014/11/14 13:50:51 fabiankeil Exp $
+ $Id: changelog.sgml,v 2.11 2015/01/24 16:43:58 fabiankeil Exp $
 
  Copyright (C) 2013 Privoxy Developers http://www.privoxy.org/
  See LICENSE.
@@ -21,15 +21,15 @@
 -->
 
 <para>
- <application>Privoxy 3.0.22</application> stable is mainly a bug-fix
- release, it also has a couple of new features, though.
- Note that the first two entries in the ChangeLog below refer to security
- issues:
+  <application>Privoxy 3.0.23</application> stable is a bug-fix release,
+  some of the fixed bugs are security issues (CVE requests pending):
 </para>
 
 <!--
  The SGML ChangeLog can be generated with: utils/changelog2doc.pl ChangeLog
 -->
+<para>
+
 <para>
  <itemizedlist>
   <listitem>
@@ -38,51 +38,38 @@
     <itemizedlist>
     <listitem>
      <para>
-      Fixed a memory leak when rejecting client connections due to
-      the socket limit being reached (CID 66382). This affected
-      Privoxy 3.0.21 when compiled with IPv6 support (on most
-      platforms this is the default).
+      Fixed a DoS issue in case of client requests with incorrect
+      chunk-encoded body. When compiled with assertions enabled
+      (the default) they could previously cause Privoxy to abort().
+      Reported by Matthew Daley.
      </para>
     </listitem>
     <listitem>
      <para>
-      Fixed an immediate-use-after-free bug (CID 66394) and two
-      additional unconfirmed use-after-free complaints made by
-      Coverity scan (CID 66391, CID 66376).
+      Fixed multiple segmentation faults and memory leaks in the
+      pcrs code. This fix also increases the chances that an invalid
+      pcrs command is rejected as such. Previously some invalid commands
+      would be loaded without error. Note that Privoxy's pcrs sources
+      (action and filter files) are considered trustworthy input and
+      should not be writable by untrusted third-parties.
      </para>
     </listitem>
     <listitem>
      <para>
-      Actually show the FORCE_PREFIX value on the show-status page.
+      Fixed an 'invalid read' bug which could at least theoretically
+      cause Privoxy to crash. So far, no crashes have been observed.
      </para>
     </listitem>
     <listitem>
      <para>
-      Properly deal with Keep-Alive headers with timeout= parameters
-      If the timeout still can't be parsed, use the configured
-      timeout instead of preventing the client from keeping the
-      connection alive. Fixes #3615312/#870 reported by Bernard Guillot.
+      Compiles with --disable-force again. Reported by Kay Raven.
      </para>
     </listitem>
     <listitem>
      <para>
-      Not using any filter files no longer results in warning messages
-      unless an action file is referencing header taggers or filters.
-      Reported by Stefan Kurtz in #3614835.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Fixed a bug that prevented Privoxy from reusing some reusable
-      connections. Two bit masks with different purpose unintentionally
-      shared the same bit.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      A couple of additional bugs were discovered by Coverity Scan.
-      The fixes that are not expected to affect users are not explicitly
-      mentioned here, for details please have a look at the CVS logs.
+      Client requests with body that can't be delivered no longer
+      cause pipelined requests behind them to be rejected as invalid.
+      Reported by Basil Hussain.
      </para>
      </listitem>
     </itemizedlist>
@@ -94,86 +81,14 @@
     <itemizedlist>
     <listitem>
      <para>
-      Introduced negative tag patterns NO-REQUEST-TAG and NO-RESPONSE-TAG.
-      They apply if no matching tag is found after parsing client or
-      server headers.
+      If a pcrs command is rejected as invalid, Privoxy now logs
+      the cause of the problem as text. Previously the pcrs error
+      code was logged.
      </para>
     </listitem>
     <listitem>
      <para>
-      Add support for external filters which allow to process the
-      response body with a script or program written in any language
-      the platform supports. External filters are enabled with
-      +external-filter{} after they have been defined in one of the
-      filter files with a header line starting with "EXTERNAL-FILTER:".
-      External filter support is experimental, not compiled by default
-      and known not to work on all platforms.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Add support for the 'PATCH' method as defined in RFC5789.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Reject requests with unsupported Expect header values.
-      Fixes a couple of Co-Advisor tests.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Normalize the HTTP-version in forwarded requests and responses.
-      This is an explicit RFC 2616 MUST and RFC 7230 mandates that
-      intermediaries send their own HTTP-version in forwarded
-      messages.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Server 'Keep-Alive' headers are no longer forwarded. From a user's
-      point of view it doesn't really matter, but RFC 2616 (obsolete)
-      mandates that the header is removed and this fixes a Co-Advisor
-      complaint.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Change declared template file encoding to UTF-8. The templates
-      already used a subset of UTF-8 anyway and changing the declaration
-      allows to properly display UTF-8 characters used in the action files.
-      This change may require existing action files with ISO-8859-1
-      characters that aren't valid UTF-8 to be converted to UTF-8.
-      Requested by Sam Chen in #582.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Do not pass rejected keep-alive timeouts to the server. It might
-      not have caused any problems (we know of), but doing the right
-      thing shouldn't hurt either.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Let log_error() use its own buffer size #define to make changing
-      the log buffer size slightly less inconvenient.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Turned single-threaded into a "proper" toggle directive with arguments.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      CGI templates no longer enforce new windows for some links.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Remove an undocumented workaround ('HOST' header removal) for
-      an Apple iTunes bug that according to #729900 got fixed in 2003.
+      The tests are less likely to cause false positives.
      </para>
      </listitem>
     </itemizedlist>
@@ -185,139 +100,13 @@
     <itemizedlist>
     <listitem>
      <para>
-      The pattern 'promotions.' is no longer being blocked.
-      Reported by rakista in #3608540.
+      '.sify.com/' is no longer blocked. Apparently it is not actually
+      a pure tracking site (anymore?). Reported by Andrew on ijbswa-users@.
      </para>
     </listitem>
     <listitem>
      <para>
-      Disable fast-redirects for .microsofttranslator.com/.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Disable filter{banners-by-size} for .dgb-tagungszentren.de/.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Add adn.speedtest.net as a site-specific unblocker.
-      Support request #3612908.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Disable filter{banners-by-size} for creativecommons.org/.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Block requests to data.gosquared.com/. Reported by cbug in #3613653.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Unblock .conrad./newsletter/. Reported by David Bo in #3614238.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Unblock .bundestag.de/.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Unblock .rote-hilfe.de/.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Disable fast-redirects for .facebook.com/plugins/like.php.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Unblock Stackexchange popup URLs that aren't used to serve ads.
-      Reported by David Wagner in #3615179.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Disable fast-redirects for creativecommons.org/.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Unblock .stopwatchingus.info/.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Block requests for .adcash.com/script/.
-      Reported by Tyrexionibus in #3615289.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Disable HTML filters if the response was tagged as JavaScript.
-      Filtering JavaScript code with filters intended to deal with HTML
-      is usually a waste of time and, more importantly, may break stuff.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Use a custom redirect{} for .washingtonpost.com/wp-apps/imrs\.php\?src=
-      Previously enabling the 'Advanced' settings (or manually enabling
-      +fast-redirects{}) prevented some images from being loaded properly.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Unblock "adina*." Fixes #919 reported by Morton A. Goldberg.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Block '/.*DigiAd'.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Unblock 'adele*.'. Reported by Adele Lime in #1663.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Disable banners-by-size for kggp.de/.
-     </para>
-     </listitem>
-    </itemizedlist>
-   </para>
-  </listitem>
-  <listitem>
-   <para>
-    Filter file improvements & bug fixes:
-    <itemizedlist>
-    <listitem>
-     <para>
-      Decrease the chances that js-annoyances creates invalid JavaScript.
-      Submitted by John McGowan on ijbswa-users@.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Let the msn filter hide 'related' ads again.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Remove a stray '1' in the 'html-annoyances' filter.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Prevent img-reorder from messing up img tags with empty src
-      attributes. Fixes #880 reported by Duncan.
+      Unblock banners on .amnesty.de/ which aren't ads.
      </para>
      </listitem>
     </itemizedlist>
@@ -329,144 +118,32 @@
     <itemizedlist>
     <listitem>
      <para>
-      Updated the 'Would you like to donate?' section.
+      The 'Would you like to donate?' section now also contains
+      a "Paypal" address.
      </para>
     </listitem>
     <listitem>
      <para>
-      Note that invalid forward-override{} parameter syntax isn't
-      detected until the parameter is used.
+      The list of supported operating systems has been updated.
      </para>
     </listitem>
     <listitem>
      <para>
-      Add another +redirect{} example: a shortcut for illumos bugs.
+      The existence of the SF support and feature trackers has been
+      deemphasized because they have been broken for months.
+      Most of the time the mailing lists still work.
      </para>
     </listitem>
     <listitem>
      <para>
-      Make it more obvious that many operating systems support log
-      rotation out of the box.
+      The claim that default.action updates are sometimes released
+      on their own has been removed. It hasn't happened in years.
      </para>
     </listitem>
     <listitem>
      <para>
-      Fixed dead links. Reported by Mark Nelson in #3614557.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Rephrased the 'Why is the configuration so complicated?' answer
-      to be slightly less condescending. Anonymously suggested in #3615122.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Be more explicit about accept-intercepted-requests's lack of MITM support.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Make 'demoronizer' FAQ entries more generic.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Add an example hostname to the --pre-chroot-nslookup description.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Add an example for a host pattern that matches an IP address.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Rename the 'domain pattern' to 'host pattern' as it may
-      contain IP addresses as well.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Recommend forward-socks5t when using Tor. It seems to work fine and
-      modifying the Tor configuration to profit from it hasn't been necessary
-      for a while now.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Add another redirect{} example to stress that redirect loops can
-      and should be avoided.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      The usual spelling and grammar fixes. Parts of them were
-      reported by Reuben Thomas in #3615276.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Mention the PCRS option letters T and D in the filter section.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Clarify that handle-as-empty-doc-returns-ok is still useful
-      and will not be removed without replacement.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Note that security issues shouldn't be reported using the bug tracker.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Clarify what Privoxy does if both +block{} and +redirect{} apply.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Removed the obsolete bookmarklets section.
-     </para>
-     </listitem>
-    </itemizedlist>
-   </para>
-  </listitem>
-  <listitem>
-   <para>
-    Build system improvements:
-    <itemizedlist>
-    <listitem>
-     <para>
-      Let --with-group properly deal with secondary groups.
-      Patch submitted by Anatoly Arzhnikov in #3615187.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Fix web-actions target.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Add a web-faq target that only updates the FAQ on the webserver.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Remove already-commented-out non-portable DOSFILTER alternatives.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Remove the obsolete targets dok-put and dok-get.
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      Add a sf-shell target.
+      Explicitly mention that Tor's port may deviate from the default
+      when using a bundle. Requested by Andrew on ijbswa-users@.
      </para>
      </listitem>
     </itemizedlist>

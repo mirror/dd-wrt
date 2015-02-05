@@ -3,7 +3,7 @@
 
  Purpose     :  Used with other docs and files only.
 
- $Id: p-config.sgml,v 2.111 2014/11/14 11:31:24 fabiankeil Exp $
+ $Id: p-config.sgml,v 2.113 2015/01/24 16:42:13 fabiankeil Exp $
 
  Copyright (C) 2001-2014 Privoxy Developers http://www.privoxy.org/
  See LICENSE.
@@ -97,7 +97,7 @@
  Sample Configuration File for Privoxy &p-version;
 </title>
 <para>
- $Id: p-config.sgml,v 2.111 2014/11/14 11:31:24 fabiankeil Exp $
+ $Id: p-config.sgml,v 2.113 2015/01/24 16:42:13 fabiankeil Exp $
 </para>
 <para>
 Copyright (C) 2001-2014 Privoxy Developers http://www.privoxy.org/
@@ -1065,7 +1065,6 @@ actionsfile
     so that you will notice when things go wrong. The other levels are
     probably only of interest if you are hunting down a specific problem.
     They can produce a hell of an output (especially 16).
-    <!-- LOL -->
    </para>
    <para>
     If you are used to the more verbose settings, simply enable the debug lines
@@ -2225,8 +2224,13 @@ forward-socks4, forward-socks4a, forward-socks5 and forward-socks5t</title>
   forward-socks5t   /               127.0.0.1:9050 .
 </screen>
    </para>
-
-    <para>
+   <para>
+    Note that if you got Tor through one of the bundles, you may
+    have to change the port from 9050 to 9150 (or even another one).
+    For details, please check the documentation on the
+    <ulink url="https://torproject.org/">Tor website</ulink>.
+   </para>
+   <para>
     The public <application>Tor</application> network can't be used to
     reach your local network, if you need to access local servers you
     therefore might want to make some exceptions:

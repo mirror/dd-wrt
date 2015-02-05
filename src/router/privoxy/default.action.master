@@ -11,7 +11,7 @@
 #
 #  File        :  $Source: /cvsroot/ijbswa/current/default.action.master,v $
 #
-#  $Id: default.action.master,v 1.313 2014/11/11 12:19:38 fabiankeil Exp $
+#  $Id: default.action.master,v 1.316 2014/12/19 12:31:10 fabiankeil Exp $
 #
 #  Requires    :  This version requires Privoxy v3.0.11 or later due to
 #                 syntax changes.
@@ -391,6 +391,17 @@
 #    +limit-connect{-3, 7, 20-100, 500-}   # Ports less than 3, 7, 20 to 100 and above 500 are OK.
 #    +limit-connect{-}                     # All ports are OK
 #    +limit-connect{,}                     # No HTTPS/SSL traffic is allowed
+#
+# +limit-cookie-lifetime{lifetime in minutes}
+#
+#    This action reduces the lifetime of HTTP cookies coming from the
+#    server to the specified number of minutes, starting from the time
+#    the cookie passes Privoxy.
+#
+#    Cookies with a lifetime below the limit are not modified.
+#    The lifetime of session cookies is set to the specified limit.
+#    The effect of this action depends on the server.
+#     If the parameter is "0", this action behaves like session-cookies-only.
 #
 # +overwrite-last-modified{block}
 # +overwrite-last-modified{reset-to-request-time}
@@ -1406,8 +1417,6 @@ www.xml.eshop.msn.com/tracksponsorimpression.asp
 content.ipro.com
 #MASTER# BLOCK-REFERRER: http://www.weatherbug.com/default.asp 10/05/06
 .247realmedia.com
-#MASTER# BLOCK-REFERRER: http://www.samachar.com/ 10/05/06
-.sify.com
 #MASTER# BLOCK-REFERRER: http://www.nbc4.com/news/2672416/detail.html 10/06/06
 .searchignite.com
 #MASTER# BLOCK-REFERRER: http://www.sdtimes.com/ 10/07/06
@@ -1906,6 +1915,8 @@ adn.speedtest.net
 # URL = http://cologne.stopwatchingus.info/images/banner/Demo-Koeln-12-04-14-Banner2.png
 # URL = http://cologne.stopwatchingus.info/images/banner/Demo-12-April.jpg
 .stopwatchingus.info/
+# URL = http://www.amnesty.de/files/Banner_gelb_Manning_300x250.gif
+.amnesty.de/
 
 
 #############################################################################

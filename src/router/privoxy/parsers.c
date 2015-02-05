@@ -1,4 +1,4 @@
-const char parsers_rcs[] = "$Id: parsers.c,v 1.297 2014/11/12 11:59:47 fabiankeil Exp $";
+const char parsers_rcs[] = "$Id: parsers.c,v 1.298 2015/01/24 16:41:51 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/parsers.c,v $
@@ -96,6 +96,7 @@ static char *get_header_line(struct iob *iob);
 static jb_err scan_headers(struct client_state *csp);
 static jb_err header_tagger(struct client_state *csp, char *header);
 static jb_err parse_header_time(const char *header_time, time_t *result);
+static jb_err parse_time_header(const char *header, time_t *result);
 
 static jb_err crumble                   (struct client_state *csp, char **header);
 static jb_err filter_header             (struct client_state *csp, char **header);
@@ -2668,13 +2669,12 @@ static jb_err server_last_modified(struct client_state *csp, char **header)
    }
    else if (0 == strcmpic(newval, "randomize"))
    {
-      const char *header_time = *header + sizeof("Last-Modified:");
-
       log_error(LOG_LEVEL_HEADER, "Randomizing: %s", *header);
 
-      if (JB_ERR_OK != parse_header_time(header_time, &last_modified))
+      if (JB_ERR_OK != parse_time_header(*header, &last_modified))
       {
-         log_error(LOG_LEVEL_HEADER, "Couldn't parse: %s in %s (crunching!)", header_time, *header);
+         log_error(LOG_LEVEL_HEADER,
+            "Couldn't parse time in %s (crunching!)", *header);
          freez(*header);
       }
       else
@@ -3371,11 +3371,10 @@ static jb_err client_if_modified_since(struct client_state *csp, char **header)
       }
       else /* add random value */
       {
-         const char *header_time = *header + sizeof("If-Modified-Since:");
-
-         if (JB_ERR_OK != parse_header_time(header_time, &tm))
+         if (JB_ERR_OK != parse_time_header(*header, &tm))
          {
-            log_error(LOG_LEVEL_HEADER, "Couldn't parse: %s in %s (crunching!)", header_time, *header);
+            log_error(LOG_LEVEL_HEADER,
+               "Couldn't parse time in %s (crunching!)", *header);
             freez(*header);
          }
          else
@@ -4332,6 +4331,44 @@ static jb_err parse_header_time(const char *header_time, time_t *result)
    }
 
    return JB_ERR_PARSE;
+
+}
+
+/*********************************************************************
+ *
+ * Function    :  parse_time_header
+ *
+ * Description :  Parses the time in an HTTP time header to get
+ *                the numerical respresentation.
+ *
+ * Parameters  :
+ *          1  :  header = HTTP header with a time value
+ *          2  :  result = storage for header_time in seconds
+ *
+ * Returns     :  JB_ERR_OK if the time format was recognized, or
+ *                JB_ERR_PARSE otherwise.
+ *
+ *********************************************************************/
+static jb_err parse_time_header(const char *header, time_t *result)
+{
+   const char *header_time;
+
+   header_time = strchr(header, ':');
+
+   /*
+    * Currently this can't happen as all callers are called
+    * through sed() which requires a header name followed by
+    * a colon.
+    */
+   assert(header_time != NULL);
+
+   header_time++;
+   if (*header_time == ' ')
+   {
+      header_time++;
+   }
+
+   return parse_header_time(header_time, result);
 
 }
 
