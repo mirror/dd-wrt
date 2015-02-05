@@ -6,7 +6,7 @@
   <title>What's New in this Release</title>
   <meta name="GENERATOR" content=
   "Modular DocBook HTML Stylesheet Version 1.79">
-  <link rel="HOME" title="Privoxy 3.0.22 User Manual" href="index.html">
+  <link rel="HOME" title="Privoxy 3.0.23 User Manual" href="index.html">
   <link rel="PREVIOUS" title="Installation" href="installation.html">
   <link rel="NEXT" title="Quickstart to Using Privoxy" href=
   "quickstart.html">
@@ -21,7 +21,7 @@
     <table summary="Header navigation table" width="100%" border="0"
     cellpadding="0" cellspacing="0">
       <tr>
-        <th colspan="3" align="center">Privoxy 3.0.22 User Manual</th>
+        <th colspan="3" align="center">Privoxy 3.0.23 User Manual</th>
       </tr>
 
       <tr>
@@ -41,10 +41,9 @@
     <h1 class="SECT1"><a name="WHATSNEW" id="WHATSNEW">3. What's New in this
     Release</a></h1>
 
-    <p><span class="APPLICATION">Privoxy 3.0.22</span> stable is mainly a
-    bug-fix release, it also has a couple of new features, though. Note that
-    the first two entries in the ChangeLog below refer to security
-    issues:</p>
+    <p><span class="APPLICATION">Privoxy 3.0.23</span> stable is a bug-fix
+    release, some of the fixed bugs are security issues (CVE requests
+    pending):</p>
 
     <ul>
       <li>
@@ -52,47 +51,36 @@
 
         <ul>
           <li>
-            <p>Fixed a memory leak when rejecting client connections due to
-            the socket limit being reached (CID 66382). This affected Privoxy
-            3.0.21 when compiled with IPv6 support (on most platforms this is
-            the default).</p>
+            <p>Fixed a DoS issue in case of client requests with incorrect
+            chunk-encoded body. When compiled with assertions enabled (the
+            default) they could previously cause Privoxy to abort(). Reported
+            by Matthew Daley.</p>
           </li>
 
           <li>
-            <p>Fixed an immediate-use-after-free bug (CID 66394) and two
-            additional unconfirmed use-after-free complaints made by Coverity
-            scan (CID 66391, CID 66376).</p>
+            <p>Fixed multiple segmentation faults and memory leaks in the
+            pcrs code. This fix also increases the chances that an invalid
+            pcrs command is rejected as such. Previously some invalid
+            commands would be loaded without error. Note that Privoxy's pcrs
+            sources (action and filter files) are considered trustworthy
+            input and should not be writable by untrusted third-parties.</p>
           </li>
 
           <li>
-            <p>Actually show the FORCE_PREFIX value on the show-status
-            page.</p>
+            <p>Fixed an 'invalid read' bug which could at least theoretically
+            cause Privoxy to crash. So far, no crashes have been
+            observed.</p>
           </li>
 
           <li>
-            <p>Properly deal with Keep-Alive headers with timeout= parameters
-            If the timeout still can't be parsed, use the configured timeout
-            instead of preventing the client from keeping the connection
-            alive. Fixes #3615312/#870 reported by Bernard Guillot.</p>
+            <p>Compiles with --disable-force again. Reported by Kay
+            Raven.</p>
           </li>
 
           <li>
-            <p>Not using any filter files no longer results in warning
-            messages unless an action file is referencing header taggers or
-            filters. Reported by Stefan Kurtz in #3614835.</p>
-          </li>
-
-          <li>
-            <p>Fixed a bug that prevented Privoxy from reusing some reusable
-            connections. Two bit masks with different purpose unintentionally
-            shared the same bit.</p>
-          </li>
-
-          <li>
-            <p>A couple of additional bugs were discovered by Coverity Scan.
-            The fixes that are not expected to affect users are not
-            explicitly mentioned here, for details please have a look at the
-            CVS logs.</p>
+            <p>Client requests with body that can't be delivered no longer
+            cause pipelined requests behind them to be rejected as invalid.
+            Reported by Basil Hussain.</p>
           </li>
         </ul>
       </li>
@@ -102,78 +90,13 @@
 
         <ul>
           <li>
-            <p>Introduced negative tag patterns NO-REQUEST-TAG and
-            NO-RESPONSE-TAG. They apply if no matching tag is found after
-            parsing client or server headers.</p>
+            <p>If a pcrs command is rejected as invalid, Privoxy now logs the
+            cause of the problem as text. Previously the pcrs error code was
+            logged.</p>
           </li>
 
           <li>
-            <p>Add support for external filters which allow to process the
-            response body with a script or program written in any language
-            the platform supports. External filters are enabled with
-            +external-filter{} after they have been defined in one of the
-            filter files with a header line starting with "EXTERNAL-FILTER:".
-            External filter support is experimental, not compiled by default
-            and known not to work on all platforms.</p>
-          </li>
-
-          <li>
-            <p>Add support for the 'PATCH' method as defined in RFC5789.</p>
-          </li>
-
-          <li>
-            <p>Reject requests with unsupported Expect header values. Fixes a
-            couple of Co-Advisor tests.</p>
-          </li>
-
-          <li>
-            <p>Normalize the HTTP-version in forwarded requests and
-            responses. This is an explicit RFC 2616 MUST and RFC 7230
-            mandates that intermediaries send their own HTTP-version in
-            forwarded messages.</p>
-          </li>
-
-          <li>
-            <p>Server 'Keep-Alive' headers are no longer forwarded. From a
-            user's point of view it doesn't really matter, but RFC 2616
-            (obsolete) mandates that the header is removed and this fixes a
-            Co-Advisor complaint.</p>
-          </li>
-
-          <li>
-            <p>Change declared template file encoding to UTF-8. The templates
-            already used a subset of UTF-8 anyway and changing the
-            declaration allows to properly display UTF-8 characters used in
-            the action files. This change may require existing action files
-            with ISO-8859-1 characters that aren't valid UTF-8 to be
-            converted to UTF-8. Requested by Sam Chen in #582.</p>
-          </li>
-
-          <li>
-            <p>Do not pass rejected keep-alive timeouts to the server. It
-            might not have caused any problems (we know of), but doing the
-            right thing shouldn't hurt either.</p>
-          </li>
-
-          <li>
-            <p>Let log_error() use its own buffer size #define to make
-            changing the log buffer size slightly less inconvenient.</p>
-          </li>
-
-          <li>
-            <p>Turned single-threaded into a "proper" toggle directive with
-            arguments.</p>
-          </li>
-
-          <li>
-            <p>CGI templates no longer enforce new windows for some
-            links.</p>
-          </li>
-
-          <li>
-            <p>Remove an undocumented workaround ('HOST' header removal) for
-            an Apple iTunes bug that according to #729900 got fixed in
-            2003.</p>
+            <p>The tests are less likely to cause false positives.</p>
           </li>
         </ul>
       </li>
@@ -183,121 +106,13 @@
 
         <ul>
           <li>
-            <p>The pattern 'promotions.' is no longer being blocked. Reported
-            by rakista in #3608540.</p>
+            <p>'.sify.com/' is no longer blocked. Apparently it is not
+            actually a pure tracking site (anymore?). Reported by Andrew on
+            ijbswa-users@.</p>
           </li>
 
           <li>
-            <p>Disable fast-redirects for .microsofttranslator.com/.</p>
-          </li>
-
-          <li>
-            <p>Disable filter{banners-by-size} for
-            .dgb-tagungszentren.de/.</p>
-          </li>
-
-          <li>
-            <p>Add adn.speedtest.net as a site-specific unblocker. Support
-            request #3612908.</p>
-          </li>
-
-          <li>
-            <p>Disable filter{banners-by-size} for creativecommons.org/.</p>
-          </li>
-
-          <li>
-            <p>Block requests to data.gosquared.com/. Reported by cbug in
-            #3613653.</p>
-          </li>
-
-          <li>
-            <p>Unblock .conrad./newsletter/. Reported by David Bo in
-            #3614238.</p>
-          </li>
-
-          <li>
-            <p>Unblock .bundestag.de/.</p>
-          </li>
-
-          <li>
-            <p>Unblock .rote-hilfe.de/.</p>
-          </li>
-
-          <li>
-            <p>Disable fast-redirects for .facebook.com/plugins/like.php.</p>
-          </li>
-
-          <li>
-            <p>Unblock Stackexchange popup URLs that aren't used to serve
-            ads. Reported by David Wagner in #3615179.</p>
-          </li>
-
-          <li>
-            <p>Disable fast-redirects for creativecommons.org/.</p>
-          </li>
-
-          <li>
-            <p>Unblock .stopwatchingus.info/.</p>
-          </li>
-
-          <li>
-            <p>Block requests for .adcash.com/script/. Reported by
-            Tyrexionibus in #3615289.</p>
-          </li>
-
-          <li>
-            <p>Disable HTML filters if the response was tagged as JavaScript.
-            Filtering JavaScript code with filters intended to deal with HTML
-            is usually a waste of time and, more importantly, may break
-            stuff.</p>
-          </li>
-
-          <li>
-            <p>Use a custom redirect{} for
-            .washingtonpost.com/wp-apps/imrs\.php\?src= Previously enabling
-            the 'Advanced' settings (or manually enabling +fast-redirects{})
-            prevented some images from being loaded properly.</p>
-          </li>
-
-          <li>
-            <p>Unblock "adina*." Fixes #919 reported by Morton A.
-            Goldberg.</p>
-          </li>
-
-          <li>
-            <p>Block '/.*DigiAd'.</p>
-          </li>
-
-          <li>
-            <p>Unblock 'adele*.'. Reported by Adele Lime in #1663.</p>
-          </li>
-
-          <li>
-            <p>Disable banners-by-size for kggp.de/.</p>
-          </li>
-        </ul>
-      </li>
-
-      <li>
-        <p>Filter file improvements &amp; bug fixes:</p>
-
-        <ul>
-          <li>
-            <p>Decrease the chances that js-annoyances creates invalid
-            JavaScript. Submitted by John McGowan on ijbswa-users@.</p>
-          </li>
-
-          <li>
-            <p>Let the msn filter hide 'related' ads again.</p>
-          </li>
-
-          <li>
-            <p>Remove a stray '1' in the 'html-annoyances' filter.</p>
-          </li>
-
-          <li>
-            <p>Prevent img-reorder from messing up img tags with empty src
-            attributes. Fixes #880 reported by Duncan.</p>
+            <p>Unblock banners on .amnesty.de/ which aren't ads.</p>
           </li>
         </ul>
       </li>
@@ -307,129 +122,29 @@
 
         <ul>
           <li>
-            <p>Updated the 'Would you like to donate?' section.</p>
+            <p>The 'Would you like to donate?' section now also contains a
+            "Paypal" address.</p>
           </li>
 
           <li>
-            <p>Note that invalid forward-override{} parameter syntax isn't
-            detected until the parameter is used.</p>
+            <p>The list of supported operating systems has been updated.</p>
           </li>
 
           <li>
-            <p>Add another +redirect{} example: a shortcut for illumos
-            bugs.</p>
+            <p>The existence of the SF support and feature trackers has been
+            deemphasized because they have been broken for months. Most of
+            the time the mailing lists still work.</p>
           </li>
 
           <li>
-            <p>Make it more obvious that many operating systems support log
-            rotation out of the box.</p>
+            <p>The claim that default.action updates are sometimes released
+            on their own has been removed. It hasn't happened in years.</p>
           </li>
 
           <li>
-            <p>Fixed dead links. Reported by Mark Nelson in #3614557.</p>
-          </li>
-
-          <li>
-            <p>Rephrased the 'Why is the configuration so complicated?'
-            answer to be slightly less condescending. Anonymously suggested
-            in #3615122.</p>
-          </li>
-
-          <li>
-            <p>Be more explicit about accept-intercepted-requests's lack of
-            MITM support.</p>
-          </li>
-
-          <li>
-            <p>Make 'demoronizer' FAQ entries more generic.</p>
-          </li>
-
-          <li>
-            <p>Add an example hostname to the --pre-chroot-nslookup
-            description.</p>
-          </li>
-
-          <li>
-            <p>Add an example for a host pattern that matches an IP
-            address.</p>
-          </li>
-
-          <li>
-            <p>Rename the 'domain pattern' to 'host pattern' as it may
-            contain IP addresses as well.</p>
-          </li>
-
-          <li>
-            <p>Recommend forward-socks5t when using Tor. It seems to work
-            fine and modifying the Tor configuration to profit from it hasn't
-            been necessary for a while now.</p>
-          </li>
-
-          <li>
-            <p>Add another redirect{} example to stress that redirect loops
-            can and should be avoided.</p>
-          </li>
-
-          <li>
-            <p>The usual spelling and grammar fixes. Parts of them were
-            reported by Reuben Thomas in #3615276.</p>
-          </li>
-
-          <li>
-            <p>Mention the PCRS option letters T and D in the filter
-            section.</p>
-          </li>
-
-          <li>
-            <p>Clarify that handle-as-empty-doc-returns-ok is still useful
-            and will not be removed without replacement.</p>
-          </li>
-
-          <li>
-            <p>Note that security issues shouldn't be reported using the bug
-            tracker.</p>
-          </li>
-
-          <li>
-            <p>Clarify what Privoxy does if both +block{} and +redirect{}
-            apply.</p>
-          </li>
-
-          <li>
-            <p>Removed the obsolete bookmarklets section.</p>
-          </li>
-        </ul>
-      </li>
-
-      <li>
-        <p>Build system improvements:</p>
-
-        <ul>
-          <li>
-            <p>Let --with-group properly deal with secondary groups. Patch
-            submitted by Anatoly Arzhnikov in #3615187.</p>
-          </li>
-
-          <li>
-            <p>Fix web-actions target.</p>
-          </li>
-
-          <li>
-            <p>Add a web-faq target that only updates the FAQ on the
-            webserver.</p>
-          </li>
-
-          <li>
-            <p>Remove already-commented-out non-portable DOSFILTER
-            alternatives.</p>
-          </li>
-
-          <li>
-            <p>Remove the obsolete targets dok-put and dok-get.</p>
-          </li>
-
-          <li>
-            <p>Add a sf-shell target.</p>
+            <p>Explicitly mention that Tor's port may deviate from the
+            default when using a bundle. Requested by Andrew on
+            ijbswa-users@.</p>
           </li>
         </ul>
       </li>

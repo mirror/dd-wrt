@@ -1,16 +1,59 @@
 --------------------------------------------------------------------
 ChangeLog for Privoxy
 --------------------------------------------------------------------
+*** Version 3.0.23 stable ***
+
+- Bug fixes:
+  - Fixed a DoS issue in case of client requests with incorrect
+    chunk-encoded body. When compiled with assertions enabled
+    (the default) they could previously cause Privoxy to abort().
+    Reported by Matthew Daley.
+  - Fixed multiple segmentation faults and memory leaks in the
+    pcrs code. This fix also increases the chances that an invalid
+    pcrs command is rejected as such. Previously some invalid commands
+    would be loaded without error. Note that Privoxy's pcrs sources
+    (action and filter files) are considered trustworthy input and
+    should not be writable by untrusted third-parties.
+  - Fixed an 'invalid read' bug which could at least theoretically
+    cause Privoxy to crash. So far, no crashes have been observed.
+  - Compiles with --disable-force again. Reported by Kay Raven.
+  - Client requests with body that can't be delivered no longer
+    cause pipelined requests behind them to be rejected as invalid.
+    Reported by Basil Hussain.
+
+- General improvements:
+  - If a pcrs command is rejected as invalid, Privoxy now logs
+    the cause of the problem as text. Previously the pcrs error
+    code was logged.
+  - The tests are less likely to cause false positives.
+
+- Action file improvements:
+  - '.sify.com/' is no longer blocked. Apparently it is not actually
+    a pure tracking site (anymore?). Reported by Andrew on ijbswa-users@.
+  - Unblock banners on .amnesty.de/ which aren't ads.
+
+- Documentation improvements:
+  - The 'Would you like to donate?' section now also contains
+    a "Paypal" address.
+  - The list of supported operating systems has been updated.
+  - The existence of the SF support and feature trackers has been
+    deemphasized because they have been broken for months.
+    Most of the time the mailing lists still work.
+  - The claim that default.action updates are sometimes released
+    on their own has been removed. It hasn't happened in years.
+  - Explicitly mention that Tor's port may deviate from the default
+    when using a bundle. Requested by Andrew on ijbswa-users@.
+
 *** Version 3.0.22 stable ***
 
 - Bug fixes:
   - Fixed a memory leak when rejecting client connections due to
     the socket limit being reached (CID 66382). This affected
     Privoxy 3.0.21 when compiled with IPv6 support (on most
-    platforms this is the default).
+    platforms this is the default). CVE-2015-1030.
   - Fixed an immediate-use-after-free bug (CID 66394) and two
     additional unconfirmed use-after-free complaints made by
-    Coverity scan (CID 66391, CID 66376).
+    Coverity scan (CID 66391, CID 66376). CVE-2015-1031.
   - Actually show the FORCE_PREFIX value on the show-status page.
   - Properly deal with Keep-Alive headers with timeout= parameters
     If the timeout still can't be parsed, use the configured
@@ -1492,7 +1535,7 @@ ChangeLog for Privoxy
   with external PCRE versions newer than Privoxy's internal
   one. (Reported by Chung-chieh Shan)
 - Fixed crashes with null bytes in PCRS replacement strings
-  (Patch provided by Felix Gröbert).
+  (Patch provided by Felix Grï¿½bert).
 - Fixed crashes with header time randomization on mingw32.
 - The CGI style sheet is no longer delivered if the referring
   page isn't a Privoxy CGI page. This prevents a JavaScript-based
@@ -1815,7 +1858,7 @@ image).
 - one case where there were both local and global "referrer" variables
 (yuck!) clarified by renaming the local one to "refer".
 - Fixed some places where close() was used instead of close_socket().
-Thanks to Jörg Strohmayer (joergs at users.sourceforge.net) for these.
+Thanks to Jï¿½rg Strohmayer (joergs at users.sourceforge.net) for these.
 - Temporary hack to get FORCE_LOAD to work with IE.  I just lowercased the
 FORCE_LOAD_PREFIX.  Needs fixing properly.
 - Most URLs hardcoded into Junkbuster were changed to go through a script
@@ -1847,7 +1890,7 @@ also has a higher name collision risk.
 - Filled in the function header templates for my functions in
 parsers.c (again). They obviously got lost in our current
 patch war ;-)
-- Cut the credit for the §-referrer-option from the config file,
+- Cut the credit for the ï¿½-referrer-option from the config file,
 that Stefan had placed there.
 - Improved the re_filterfile
 

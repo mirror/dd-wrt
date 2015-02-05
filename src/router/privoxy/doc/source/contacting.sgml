@@ -3,7 +3,7 @@
 
  Purpose     :  Entity included in other project documents.
 
- $Id: contacting.sgml,v 2.38 2014/07/14 12:56:30 fabiankeil Exp $
+ $Id: contacting.sgml,v 2.41 2014/12/19 12:30:38 fabiankeil Exp $
 
  Copyright (C) 2001-2011 Privoxy Developers http://www.privoxy.org/
  See LICENSE.
@@ -196,14 +196,7 @@ debug  8192 # Non-fatal errors</literallayout>
 </sect2>
 <sect2 id="contact-support"><title>Get Support</title>
 <para>
- For casual users, our
- <ulink url="http://sourceforge.net/tracker/?group_id=11118&#38;atid=211118">support forum at SourceForge</ulink>
- is probably best suited:
- <ulink url="http://sourceforge.net/tracker/?group_id=11118&#38;atid=211118">http://sourceforge.net/tracker/?group_id=11118&#38;atid=211118</ulink>
-</para>
-
-<para>
- All users are of course welcome to discuss their issues on the <ulink
+ All users are welcome to discuss their issues on the <ulink
  url="http://lists.sourceforge.net/lists/listinfo/ijbswa-users">users
  mailing list</ulink>, where the developers also hang around.
 </para>
@@ -274,25 +267,13 @@ debug  8192 # Non-fatal errors</literallayout>
  the Actions File Tracker.
 </para>
 
-<para>
- New, improved <filename>default.action</filename> files may occasionally be made
- available based on your feedback. These will be announced on the <ulink
- url="http://lists.sourceforge.net/lists/listinfo/ijbswa-announce">ijbswa-announce</ulink>
- list and available from our the <ulink
- url="http://sourceforge.net/project/showfiles.php?group_id=11118">files section</ulink> of
- our <ulink url="http://sf.net/projects/ijbswa/">project page</ulink>.
-</para>
 </sect3>
 
 
 <sect3 id="contact-bugs"><title>Reporting Bugs</title>
-<para>
- Please report bugs that aren't security issues through our bug tracker:
- <ulink url="http://sourceforge.net/tracker/?group_id=11118&amp;atid=111118">http://sourceforge.net/tracker/?group_id=11118&amp;atid=111118</ulink>.
-</para>
 
 <para>
-  Before doing so, please make sure that the bug has <emphasis>not already been submitted</emphasis>
+  Before reporting bugs, please make sure that the bug has <emphasis>not already been submitted</emphasis>
   and observe the additional hints at the top of the <ulink
   url="http://sourceforge.net/tracker/?func=add&amp;group_id=11118&amp;atid=111118">submit
   form</ulink>. If already submitted, please feel free to add any info to the
@@ -315,14 +296,6 @@ debug  8192 # Non-fatal errors</literallayout>
 </para>
 </sect2>
 
-<sect2 id="contact-feature"><title>Request New Features</title>
-<para>
- You are welcome to submit ideas on new features or other proposals
- for improvement through our feature request tracker at
- <ulink url="http://sourceforge.net/tracker/?atid=361118&#38;group_id=11118">http://sourceforge.net/tracker/?atid=361118&#38;group_id=11118</ulink>.
-</para>
-</sect2>
-
 <sect2 id="mailing-lists"><title>Mailing Lists</title>
 <para>
 If you prefer to communicate through email, instead of using a web interface,
@@ -334,4 +307,16 @@ You can find an overview of all <application>Privoxy</application>-related maili
 including list archives, at:
 <ulink url="http://sourceforge.net/mail/?group_id=11118">http://sourceforge.net/mail/?group_id=11118</ulink>.
 </para>
+</sect2>
+
+<sect2 id="sf-trackers"><title>SourceForge support trackers</title>
+<para>
+ The
+ <ulink url="http://sourceforge.net/tracker/?group_id=11118&#38;atid=211118">SourceForge support trackers</ulink>
+ may be used as well, but have various technical problems that are unlikely to
+ be fixed anytime soon. If you don't get a timely response, please try the
+ mailing list as well. While it's hosted at SourceForge as well, it usually
+ works as expected.
+</para>
+
 </sect2>
