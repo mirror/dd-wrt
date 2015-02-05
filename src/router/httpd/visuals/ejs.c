@@ -2365,9 +2365,12 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 			fscanf(fp, "%s", &temp[0]);
 			fclose(fp);
 			int l = strlen(temp);
-			if (l > 2)
-				TEMP_MUL = 10 * (l - 2);
-			else
+			int i;
+			if (l > 2) {
+				TEMP_MUL=1;
+				for (i=0;i<(l-2);i++)
+				    TEMP*=10;
+			} else
 				TEMP_MUL = 1;
 		}
 		fp = fopen("/sys/class/hwmon/hwmon0/temp1_input", "rb");
