@@ -1,4 +1,4 @@
-$Id: TODO,v 1.128 2014/11/12 12:00:10 fabiankeil Exp $
+$Id: TODO,v 1.130 2014/12/19 12:36:06 fabiankeil Exp $
 
 Some Privoxy-related tasks, sorted by the time they
 have been added, not by priority.
@@ -116,9 +116,9 @@ http://www.privoxy.org/faq/general.html#DONATE
     macros with strstr() before compiling pcrs commands.
     Investigated, needs some restructuring but is probably worth it.
 
-51) Make user-manual directive more generic to allow serving
-    the FAQ and other stuff, too. Consider changing the port
-    for "same origin policy" issues.
+51) Make user-manual directive more generic to allow serving the FAQ
+    and files from user-specified directories. Consider changing the
+    port for "same origin policy" issues.
 
 53) Find a more reliable hoster. Involves finding out what our
     requirements are and which SF alternatives fulfil them.
@@ -207,9 +207,6 @@ http://www.privoxy.org/faq/general.html#DONATE
 
 82) Detect if the system time goes back in time let the user
     know if it caused any connections to get closed.
-
-84) Flesh out the user-manual delivery to serve pages from
-    other directories, too.
 
 85) Once #84 is done, write a script that populates a directory with
     various common third-party icons (stumbleupon.png, facebook.png ...)
@@ -359,7 +356,7 @@ http://www.privoxy.org/faq/general.html#DONATE
 126) Run the Co-Advisor HTTP compliance tests, evaluate the results,
      fix the compliance issues that aren't by design and document
      the rest.
-     Note that Privoxy developers qualified for free account upgrades:
+     Note that Privoxy developers qualify for free account upgrades:
      http://coad.measurement-factory.com/details.html#pricing
 
 127) Add "real" CGI support (serve program output instead of forwarding

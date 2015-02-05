@@ -1,7 +1,7 @@
 #ifndef PROJECT_H_INCLUDED
 #define PROJECT_H_INCLUDED
 /** Version string. */
-#define PROJECT_H_VERSION "$Id: project.h,v 1.208 2014/11/12 12:00:41 fabiankeil Exp $"
+#define PROJECT_H_VERSION "$Id: project.h,v 1.209 2014/11/16 18:43:48 fabiankeil Exp $"
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/project.h,v $
@@ -1365,10 +1365,9 @@ struct configuration_spec
 /** Calculates the number of elements in an array, using sizeof. */
 #define SZ(X)  (sizeof(X) / sizeof(*X))
 
-#ifdef FEATURE_FORCE_LOAD
-/** The force load URL prefix. */
+/** The force load URL prefix. Not behind an ifdef because
+  * it's always used for the show-status page. */
 #define FORCE_PREFIX "/PRIVOXY-FORCE"
-#endif /* def FEATURE_FORCE_LOAD */
 
 #ifdef FEATURE_NO_GIFS
 /** The MIME type for images ("image/png" or "image/gif"). */

@@ -1,4 +1,4 @@
-const char pcrs_rcs[] = "$Id: pcrs.c,v 1.46 2014/11/14 10:40:10 fabiankeil Exp $";
+const char pcrs_rcs[] = "$Id: pcrs.c,v 1.47 2015/01/24 16:40:59 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/pcrs.c,v $
@@ -319,6 +319,13 @@ static pcrs_substitute *pcrs_compile_replacement(const char *replacement, int tr
          if (replacement[i] == '$' && !quoted && i < (int)(length - 1))
          {
             char *symbol, symbols[] = "'`+&";
+            if (l >= PCRS_MAX_SUBMATCHES)
+            {
+               freez(text);
+               freez(r);
+               *errptr = PCRS_WARN_BADREF;
+               return NULL;
+            }
             r->block_length[l] = (size_t)(k - r->block_offset[l]);
 
             /* Numerical backreferences */
@@ -330,7 +337,10 @@ static pcrs_substitute *pcrs_compile_replacement(const char *replacement, int tr
                }
                if (r->backref[l] > capturecount)
                {
+                  freez(text);
+                  freez(r);
                   *errptr = PCRS_WARN_BADREF;
+                  return NULL;
                }
             }
 
@@ -360,14 +370,17 @@ static pcrs_substitute *pcrs_compile_replacement(const char *replacement, int tr
             }
 
             /* Valid and in range? -> record */
-            if (r->backref[l] < PCRS_MAX_SUBMATCHES + 2)
+            if (0 <= r->backref[l] && r->backref[l] < PCRS_MAX_SUBMATCHES + 2)
             {
                r->backref_count[r->backref[l]] += 1;
                r->block_offset[++l] = k;
             }
             else
             {
+               freez(text);
+               freez(r);
                *errptr = PCRS_WARN_BADREF;
+               return NULL;
             }
             continue;
          }

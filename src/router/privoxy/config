@@ -1,6 +1,6 @@
-#        Sample Configuration File for Privoxy 3.0.22
+#        Sample Configuration File for Privoxy 3.0.23
 #
-#  $Id: config,v 1.106 2014/11/14 11:31:53 fabiankeil Exp $
+#  $Id: config,v 1.107 2015/01/24 16:44:20 fabiankeil Exp $
 #
 #  Copyright (C) 2001-2014 Privoxy Developers http://www.privoxy.org/
 #
@@ -1334,6 +1334,11 @@ enable-proxy-authentication-forwarding 0
 #      would use something like:
 #
 #        forward-socks5t   /               127.0.0.1:9050 .
+#
+#      Note that if you got Tor through one of the bundles, you may
+#      have to change the port from 9050 to 9150 (or even another
+#      one). For details, please check the documentation on the Tor
+#      website.
 #
 #      The public Tor network can't be used to reach your local
 #      network, if you need to access local servers you therefore

@@ -1,4 +1,4 @@
-const char loaders_rcs[] = "$Id: loaders.c,v 1.99 2014/06/02 06:22:21 fabiankeil Exp $";
+const char loaders_rcs[] = "$Id: loaders.c,v 1.100 2015/01/24 16:40:21 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/loaders.c,v $
@@ -1314,7 +1314,8 @@ int load_one_re_filterfile(struct client_state *csp, int fileid)
          if ((dummy = pcrs_compile_command(buf, &error)) == NULL)
          {
             log_error(LOG_LEVEL_ERROR,
-               "Adding re_filter job \'%s\' to filter %s failed with error %d.", buf, bl->name, error);
+               "Adding re_filter job \'%s\' to filter %s failed: %s",
+               buf, bl->name, pcrs_strerror(error));
             freez(buf);
             continue;
          }
