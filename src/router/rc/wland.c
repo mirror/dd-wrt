@@ -630,6 +630,7 @@ static void do_wlan_check(void)
 #ifdef HAVE_AQOS
 	do_aqos_check();
 #endif
+#ifndef HAVE_DHDAP
 #ifndef HAVE_MADWIFI
 	if (getSTA() || getWET())
 		do_client_check();
@@ -638,6 +639,7 @@ static void do_wlan_check(void)
 #else
 
 	do_madwifi_check();
+#endif
 #endif
 
 }
