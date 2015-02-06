@@ -1337,23 +1337,27 @@ void start_sysinit(void)
 		break;
 	case ROUTER_NETGEAR_R8000:
 		if (nvram_get("0:venid") == NULL) {
-			if (!sv_valid_hwaddr(nvram_safe_get("0:macaddr"))
-			    || startswith(nvram_safe_get("0:macaddr"), "00:90:4C")
-			    || !sv_valid_hwaddr(nvram_safe_get("1:macaddr"))
-			    || startswith(nvram_safe_get("1:macaddr"), "00:90:4C")) {
-				char mac[20];
-				strcpy(mac, nvram_safe_get("et2macaddr"));
-				nvram_set("0:macaddr", mac);
-				nvram_set("et0macaddr", mac);
-				MAC_ADD(mac);
-				nvram_set("et1macaddr", mac);
-				MAC_SUB(mac);
-				MAC_SUB(mac);
-				nvram_set("1:macaddr", mac);
-				MAC_SUB(mac);
-				nvram_set("2:macaddr", mac);
-			}
-
+			char mac[20];
+			strcpy(mac, nvram_safe_get("et2macaddr"));
+			MAC_ADD(mac);
+			MAC_ADD(mac);
+			MAC_ADD(mac);
+			MAC_ADD(mac);
+			nvram_set("0:macaddr", mac);
+			MAC_ADD(mac);
+			MAC_ADD(mac);
+			MAC_ADD(mac);
+			MAC_ADD(mac);
+			nvram_set("1:macaddr", mac);
+			MAC_ADD(mac);
+			MAC_ADD(mac);
+			MAC_ADD(mac);
+			MAC_ADD(mac);
+			nvram_set("2:macaddr", mac);
+			strcpy(mac, nvram_safe_get("et2macaddr"));
+			MAC_SUB(mac);
+			MAC_SUB(mac);
+			nvram_set("lan_hwaddr", mac);
 			nvram_set("0:rxgains5gmelnagaina0", "1");
 			nvram_set("0:rxgains5gmelnagaina1", "1");
 			nvram_set("0:rxgains5gmelnagaina2", "1");
@@ -1631,12 +1635,9 @@ void start_sysinit(void)
 			nvram_set("devpath1", "pcie/2/3");
 			nvram_set("devpath2", "pcie/2/4");
 		}
-
 		nvram_unset("et0macaddr");
 		nvram_unset("et1macaddr");
 		//nvram_set("fwd_cpumap", "d:x:2:169:1 d:l:5:169:1 d:u:5:163:0");
-		//nvram_set("fwd_wlandevs", "eth1 eth2 eth3");
-		nvram_set("lan_ifnames", "vlan1 eth1 eth2 eth3 wl0.1 wl1.1 wl2.1");
 		set_gpio(6, 1);	//reset button
 		break;
 	case ROUTER_ASUS_AC87U:
