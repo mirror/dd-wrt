@@ -1628,10 +1628,10 @@ void start_lan(void)
 #endif
 #ifdef HAVE_NORTHSTAR
 	if (getSTA() || getWET() || CANBRIDGE()) {
-		nvram_setz(lan_ifnames, "vlan1 vlan2 eth1 eth2");
+		nvram_setz(lan_ifnames, "vlan1 vlan2 eth1 eth2 eth3");
 		PORTSETUPWAN("");
 	} else {
-		nvram_setz(lan_ifnames, "vlan1 vlan2 eth1 eth2");
+		nvram_setz(lan_ifnames, "vlan1 vlan2 eth1 eth2 eth3");
 		PORTSETUPWAN("vlan2");
 	}
 	strncpy(ifr.ifr_name, "vlan1", IFNAMSIZ);
