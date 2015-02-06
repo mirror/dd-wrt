@@ -1958,6 +1958,17 @@ void start_restore_defaults(void)
 		{"wan_default", "eth2", 0},
 		{0, 0, 0}
 	};
+
+	struct nvram_tuple dir890vlan[] = {
+		{"lan_ifname", "br0", 0},
+		{"lan_ifnames", "vlan1 eth1 eth2 eth3", 0},
+		{"wan_ifname", "vlan2", 0},
+		{"wan_ifname2", "vlan2", 0},
+		{"wan_ifnames", "vlan2", 0},
+		{"wan_default", "vlan2", 0},
+		{0, 0, 0}
+	};
+
 #endif
 
 	struct nvram_tuple *linux_overrides;
@@ -2143,8 +2154,10 @@ void start_restore_defaults(void)
 		linux_overrides = rt53nvlan;
 		break;
 	case ROUTER_NETGEAR_R8000:
-	case ROUTER_DLINK_DIR890:
 		linux_overrides = generic_2;
+		break;
+	case ROUTER_DLINK_DIR890:
+		linux_overrides = dir890vlan;
 		break;
 #endif
 	case ROUTER_ASUS_AC66U:
