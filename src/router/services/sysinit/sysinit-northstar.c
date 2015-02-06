@@ -148,11 +148,11 @@ void start_sysinit(void)
 		nvram_set("wait_time", "3");
 		nvram_commit();
 	}
-	
+
 	if (nvram_get("et_txq_thresh") == NULL) {
 		nvram_set("et_txq_thresh", "1024");
 	}
-	
+
 	switch (getRouterBrand()) {
 	case ROUTER_NETGEAR_AC1450:
 
@@ -203,26 +203,26 @@ void start_sysinit(void)
 				{"ledbh0", "11", 0},
 				{"ledbh1", "11", 0},
 				{"ledbh2", "11", 0},
-				{"ledbh3", "11", 0},                                                                                                                                                                                               
-				{"mcs32po", "0x8", 0},                                                                                                                                                                                             
-				{"legofdm40duppo", "0x0", 0},                                                                                                                                                                                      
-				{"antswctl2g", "0", 0},                                                                                                                                                                                            
-				{"txchain", "7", 0},                                                                                                                                                                                               
-				{"elna2g", "2", 0},                                                                                                                                                                                                
-				{"antswitch", "0", 0},                                                                                                                                                                                             
-				{"aa2g", "7", 0},                                                                                                                                                                                                  
-				{"cckbw20ul2gpo", "0", 0},                                                                                                                                                                                         
-				{"leddc", "0xFFFF", 0},                                                                                                                                                                                            
-				{"pa2gw2a0", "0xF9FA", 0},                                                                                                                                                                                         
-				{"pa2gw2a1", "0xFA15", 0},                                                                                                                                                                                         
-				{"pa2gw2a2", "0xF9DD", 0},                                                                                                                                                                                         
-				{"xtalfreq", "20000", 0},                                                                                                                                                                                          
-				{"ccode", "Q1", 0},                                                                                                                                                                                                
-				{"pdetrange2g", "3", 0},                                                                                                                                                                                           
-				{"regrev", "15", 0},                                                                                                                                                                                               
-				{"devid", "0x4332", 0},                                                                                                                                                                                            
-				{"tempthresh", "120", 0},                                                                                                                                                                                          
-				{"mcsbw402gpo", "0xECA86222", 0},                                                                                                                                                                                                                                                                                                                                                                                
+				{"ledbh3", "11", 0},
+				{"mcs32po", "0x8", 0},
+				{"legofdm40duppo", "0x0", 0},
+				{"antswctl2g", "0", 0},
+				{"txchain", "7", 0},
+				{"elna2g", "2", 0},
+				{"antswitch", "0", 0},
+				{"aa2g", "7", 0},
+				{"cckbw20ul2gpo", "0", 0},
+				{"leddc", "0xFFFF", 0},
+				{"pa2gw2a0", "0xF9FA", 0},
+				{"pa2gw2a1", "0xFA15", 0},
+				{"pa2gw2a2", "0xF9DD", 0},
+				{"xtalfreq", "20000", 0},
+				{"ccode", "Q1", 0},
+				{"pdetrange2g", "3", 0},
+				{"regrev", "15", 0},
+				{"devid", "0x4332", 0},
+				{"tempthresh", "120", 0},
+				{"mcsbw402gpo", "0xECA86222", 0},
 				{"mcsbw202gpo", "0xCA862222", 0},
 				{0, 0, 0}
 			};
@@ -236,11 +236,11 @@ void start_sysinit(void)
 			}
 
 			struct nvram_tuple ac1450_pci_2_1_params[] = {
-				{"rxgains5ghtrisoa0", "5", 0},                                                                                                                                                                                     
-				{"rxgains5ghtrisoa1", "4", 0},                                                                                                                                                                                     
-				{"rxgains5ghtrisoa2", "4", 0},                                                                                                                                                                                     
-				{"mcslr5gmpo", "0", 0},                                                                                                                                                                                            
-				{"txchain", "7", 0},                                                                                                                                                                                               
+				{"rxgains5ghtrisoa0", "5", 0},
+				{"rxgains5ghtrisoa1", "4", 0},
+				{"rxgains5ghtrisoa2", "4", 0},
+				{"mcslr5gmpo", "0", 0},
+				{"txchain", "7", 0},
 				{"phycal_tempdelta", "255", 0},
 				{"pdgain5g", "4", 0},
 				{"subband5gver", "0x4", 0},
@@ -924,7 +924,7 @@ void start_sysinit(void)
 				{"pdoffset40ma2", "0", 0},
 				{"regrev", "53", 0},
 				{"devid", "0x43a1", 0},
-				{"mcsbw402gpo", "0xA976A600", 0},                                                                                                                                                                                 
+				{"mcsbw402gpo", "0xA976A600", 0},
 				{"mcsbw202gpo", "0xA976A600", 0},
 				{0, 0, 0}
 			};
@@ -980,7 +980,7 @@ void start_sysinit(void)
 				{"pdoffset2g40ma0", "15", 0},
 				{"sar5g", "15", 0},
 				{"pdoffset2g40ma1", "15", 0},
-				{"pdoffset2g40ma2", "15", 0},                                                                   
+				{"pdoffset2g40ma2", "15", 0},
 				{"pa5ga0", "0xFF4C,0x1808,0xFD1B,0xFF4C,0x18CF,0xFD0C,0xFF4A,0x1920,0xFD08,0xFF4C,0x1949,0xFCF6", 0},
 				{"pa5ga1", "0xFF4A,0x18AC,0xFD0B,0xFF44,0x1904,0xFCFF,0xFF56,0x1A09,0xFCFC,0xFF4F,0x19AB,0xFCEF", 0},
 				{"rxgains5gmelnagaina0", "3", 0},
@@ -1016,7 +1016,7 @@ void start_sysinit(void)
 				{"temps_period", "15", 0},
 				{"mcsbw805gmpo", "0xBA768600", 0},
 				{"dot11agduplrpo", "0", 0},
-				{"mcsbw205ghpo", "0xBA768600", 0}, 
+				{"mcsbw205ghpo", "0xBA768600", 0},
 				{"measpower", "0x7f", 0},
 				{"rxgains5ghelnagaina0", "3", 0},
 				{"ofdmlrbw202gpo", "0", 0},
@@ -1144,178 +1144,178 @@ void start_sysinit(void)
 				MAC_ADD(mac);
 				nvram_set("1:macaddr", mac);
 			}
-			nvram_set("0:ag1", "2");                                                                                                                                                                                                            
-			nvram_set("0:cck2gpo", "0");                                                                                                                                                                                                        
-			nvram_set("0:ag2", "255");                                                                                                                                                                                                          
-			nvram_set("0:ledbh0", "11");                                                                                                                                                                                                        
-			nvram_set("0:ledbh1", "11");                                                                                                                                                                                                        
-			nvram_set("0:ledbh2", "11");                                                                                                                                                                                                        
-			nvram_set("0:ledbh3", "11");                                                                                                                                                                                                        
-			nvram_set("0:venid", "0x14e4");                                                                                                                                                                                                     
-			nvram_set("0:aa2g", "3");                                                                                                                                                                                                           
-			nvram_set("0:ledbh12", "11");                                                                                                                                                                                                       
-			nvram_set("0:pdetrange2g", "3");                                                                                                                                                                                                    
-			nvram_set("0:pa2gw1a0", "0x1a7b");                                                                                                                                                                                                  
-			nvram_set("0:pa2gw1a1", "0x1a4a");                                                                                                                                                                                                  
-			nvram_set("0:elna2g", "2");                                                                                                                                                                                                         
-			nvram_set("0:rxchain", "3");                                                                                                                                                                                                        
-			nvram_set("0:tempthresh", "120");                                                                                                                                                                                                   
-			nvram_set("0:regrev", "61");                                                                                                                                                                                                        
-			nvram_set("0:pa2gw0a0", "0xfed9");                                                                                                                                                                                                  
-			nvram_set("0:pa2gw0a1", "0xfed4");                                                                                                                                                                                                  
-			nvram_set("0:leddc", "0xFFFF");                                                                                                                                                                                                     
-			nvram_set("0:triso2g", "3");                                                                                                                                                                                                        
-			nvram_set("0:sromrev", "8");                                                                                                                                                                                                        
-			nvram_set("0:ofdm5gpo", "0");                                                                                                                                                                                                       
-			nvram_set("0:ccode", "Q2");                                                                                                                                                                                                         
-			nvram_set("0:boardtype", "0x62b");                                                                                                                                                                                                  
-			nvram_set("0:boardvendor", "0x14e4");                                                                                                                                                                                               
-			nvram_set("0:tssipos2g", "1");                                                                                                                                                                                                      
-			nvram_set("0:devid", "0x43a9");                                                                                                                                                                                                     
-			nvram_set("0:extpagain2g", "3");                                                                                                                                                                                                    
-			nvram_set("0:maxp2ga0", "0x6A");                                                                                                                                                                                                    
-			nvram_set("0:maxp2ga1", "0x6A");                                                                                                                                                                                                    
-			nvram_set("0:boardflags", "0x80001200");                                                                                                                                                                                            
-			nvram_set("0:opo", "68");                                                                                                                                                                                                           
-			nvram_set("0:tempoffset", "0");                                                                                                                                                                                                     
-			nvram_set("0:ofdm5glpo", "0");                                                                                                                                                                                                      
-			nvram_set("0:antswitch", "0");                                                                                                                                                                                                      
-			nvram_set("0:txchain", "3");                                                                                                                                                                                                        
-			nvram_set("0:ofdm2gpo", "0xA8641000");                                                                                                                                                                                              
-			nvram_set("0:ofdm5ghpo", "0");                                                                                                                                                                                                      
-			nvram_set("0:mcs2gpo0", "0x1000");                                                                                                                                                                                                  
-			nvram_set("0:mcs2gpo1", "0xA864");                                                                                                                                                                                                  
-			nvram_set("0:boardflags2", "0x1800");                                                                                                                                                                                               
-			nvram_set("0:mcs2gpo2", "0x1000");                                                                                                                                                                                                  
-			nvram_set("0:mcs2gpo3", "0xA864");                                                                                                                                                                                                  
-			nvram_set("0:mcs2gpo4", "0x1000");                                                                                                                                                                                                  
-			nvram_set("0:mcs2gpo5", "0xA864");                                                                                                                                                                                                  
-			nvram_set("0:mcs2gpo6", "0x1000");                                                                                                                                                                                                  
-			nvram_set("0:mcs2gpo7", "0xA864");                                                                                                                                                                                                  
-			nvram_set("0:pa2gw2a0", "0xfa91");                                                                                                                                                                                                  
-			nvram_set("0:pa2gw2a1", "0xfa9a");                                                                                                                                                                                                  
+			nvram_set("0:ag1", "2");
+			nvram_set("0:cck2gpo", "0");
+			nvram_set("0:ag2", "255");
+			nvram_set("0:ledbh0", "11");
+			nvram_set("0:ledbh1", "11");
+			nvram_set("0:ledbh2", "11");
+			nvram_set("0:ledbh3", "11");
+			nvram_set("0:venid", "0x14e4");
+			nvram_set("0:aa2g", "3");
+			nvram_set("0:ledbh12", "11");
+			nvram_set("0:pdetrange2g", "3");
+			nvram_set("0:pa2gw1a0", "0x1a7b");
+			nvram_set("0:pa2gw1a1", "0x1a4a");
+			nvram_set("0:elna2g", "2");
+			nvram_set("0:rxchain", "3");
+			nvram_set("0:tempthresh", "120");
+			nvram_set("0:regrev", "61");
+			nvram_set("0:pa2gw0a0", "0xfed9");
+			nvram_set("0:pa2gw0a1", "0xfed4");
+			nvram_set("0:leddc", "0xFFFF");
+			nvram_set("0:triso2g", "3");
+			nvram_set("0:sromrev", "8");
+			nvram_set("0:ofdm5gpo", "0");
+			nvram_set("0:ccode", "Q2");
+			nvram_set("0:boardtype", "0x62b");
+			nvram_set("0:boardvendor", "0x14e4");
+			nvram_set("0:tssipos2g", "1");
+			nvram_set("0:devid", "0x43a9");
+			nvram_set("0:extpagain2g", "3");
+			nvram_set("0:maxp2ga0", "0x6A");
+			nvram_set("0:maxp2ga1", "0x6A");
+			nvram_set("0:boardflags", "0x80001200");
+			nvram_set("0:opo", "68");
+			nvram_set("0:tempoffset", "0");
+			nvram_set("0:ofdm5glpo", "0");
+			nvram_set("0:antswitch", "0");
+			nvram_set("0:txchain", "3");
+			nvram_set("0:ofdm2gpo", "0xA8641000");
+			nvram_set("0:ofdm5ghpo", "0");
+			nvram_set("0:mcs2gpo0", "0x1000");
+			nvram_set("0:mcs2gpo1", "0xA864");
+			nvram_set("0:boardflags2", "0x1800");
+			nvram_set("0:mcs2gpo2", "0x1000");
+			nvram_set("0:mcs2gpo3", "0xA864");
+			nvram_set("0:mcs2gpo4", "0x1000");
+			nvram_set("0:mcs2gpo5", "0xA864");
+			nvram_set("0:mcs2gpo6", "0x1000");
+			nvram_set("0:mcs2gpo7", "0xA864");
+			nvram_set("0:pa2gw2a0", "0xfa91");
+			nvram_set("0:pa2gw2a1", "0xfa9a");
 			nvram_set("0:antswctl2g", "0");
-			nvram_set("0:ag0", "2");                                                                                                                                                               
-			nvram_set("1:tssiposslope5g", "1");                                                                                                                                                                                                 
-			nvram_set("1:sb20in80and160lr5ghpo", "0");                                                                                                                                                                                          
-			nvram_set("1:rxgains2gtrisoa0", "7");                                                                                                                                                                                               
-			nvram_set("1:ofdm5glpo", "0");                                                                                                                                                                                                      
-			nvram_set("1:boardflags", "0x30001000");                                                                                                                                                                                            
-			nvram_set("1:antswitch", "0");                                                                                                                                                                                                      
-			nvram_set("1:sar2g", "0xFF");                                                                                                                                                                                                       
-			nvram_set("1:tempsense_slope", "0xff");                                                                                                                                                                                             
-			nvram_set("1:mcsbw805glpo", "0x22000000");                                                                                                                                                                                          
-			nvram_set("1:tempoffset", "255");                                                                                                                                                                                                   
-			nvram_set("1:rxgains5ghelnagaina0", "2");                                                                                                                                                                                           
-			nvram_set("1:rxgains5ghelnagaina1", "2");                                                                                                                                                                                           
-			nvram_set("1:sb40and80lr5gmpo", "0");                                                                                                                                                                                               
-			nvram_set("1:ofdm5ghpo", "0x75000000");                                                                                                                                                                                             
-			nvram_set("1:mcsbw805ghpo", "0xDD975300");                                                                                                                                                                                          
-			nvram_set("1:rawtempsense", "0x1ff");                                                                                                                                                                                               
-			nvram_set("1:sb20in80and160hr5glpo", "0");                                                                                                                                                                                          
-			nvram_set("1:femctrl", "1");                                                                                                                                                                                                        
-			nvram_set("1:dot11agofdmhrbw202gpo", "0");                                                                                                                                                                                          
-			nvram_set("1:sb20in80and160hr5ghpo", "0");                                                                                                                                                                                          
-			nvram_set("1:sb20in40lrpo", "0");                                                                                                                                                                                                   
-			nvram_set("1:rxgains5gmtrelnabypa0", "1");                                                                                                                                                                                          
-			nvram_set("1:rxgains5gmtrelnabypa1", "1");                                                                                                                                                                                          
-			nvram_set("1:papdcap2g", "0");                                                                                                                                                                                                      
-			nvram_set("1:pa2ga0", "0xFF35,0x18F7,0xFCF5");                                                                                                                                                                                      
-			nvram_set("1:mcsbw405glpo", "0x22000000");                                                                                                                                                                                          
-			nvram_set("1:mcsbw402gpo", "0");                                                                                                                                                                                                                                                                                                                                                                                    
-			nvram_set("1:sb40and80hr5gmpo", "0");                                                                                                                                                                                               
-			nvram_set("1:mcslr5glpo", "0");                                                                                                                                                                                                     
-			nvram_set("1:mcsbw1605glpo", "0");                                                                                                                                                                                                  
-			nvram_set("1:dot11agduplrpo", "0");                                                                                                                                                                                                 
-			nvram_set("1:ccode", "Q2");                                                                                                                                                                                                                                                                                                                                                                                                 
-			nvram_set("1:rxgains5ghtrelnabypa0", "1");                                                                                                                                                                                          
-			nvram_set("1:rxgains5ghtrelnabypa1", "1");                                                                                                                                                                                          
-			nvram_set("1:mcsbw405ghpo", "0xDD975000");                                                                                                                                                                                          
-			nvram_set("1:mcsbw202gpo", "0");                                                                                                                                                                                                    
-			nvram_set("1:ofdmlrbw202gpo", "0");                                                                                                                                                                                                 
-			nvram_set("1:mcslr5ghpo", "0");                                                                                                                                                                                                     
-			nvram_set("1:mcsbw1605ghpo", "0");                                                                                                                                                                                                  
-			nvram_set("1:devid", "0x43b1");                                                                                                                                                                                                     
-			nvram_set("1:sb40and80lr5glpo", "0");                                                                                                                                                                                               
-			nvram_set("1:measpower1", "0x7f");                                                                                                                                                                                                  
-			nvram_set("1:measpower2", "0x7f");                                                                                                                                                                                                  
-			nvram_set("1:sb40and80lr5ghpo", "0");                                                                                                                                                                                               
-			nvram_set("1:rxgains2gtrelnabypa0", "1");                                                                                                                                                                                           
-			nvram_set("1:maxp5ga0", "78,78,78,100");                                                                                                                                                                                            
-			nvram_set("1:maxp5ga1", "78,78,78,100");                                                                                                                                                                                            
-			nvram_set("1:sar5g", "0xFF");                                                                                                                                                                                                       
-			nvram_set("1:gainctrlsph", "0");                                                                                                                                                                                                    
-			nvram_set("1:pdgain2g", "14");                                                                                                                                                                                                      
-			nvram_set("1:aga0", "0");                                                                                                                                                                                                           
-			nvram_set("1:subband5gver", "0x4");                                                                                                                                                                                                 
-			nvram_set("1:aga1", "0");                                                                                                                                                                                                           
-			nvram_set("1:sb40and80hr5glpo", "0");                                                                                                                                                                                               
-			nvram_set("1:sb20in40hrpo", "0");                                                                                                                                                                                                   
-			nvram_set("1:noiselvl5ga0", "31,31,31,31");                                                                                                                                                                                         
-			nvram_set("1:mcsbw205gmpo", "0x22000000");                                                                                                                                                                                          
-			nvram_set("1:cckbw202gpo", "0");                                                                                                                                                                                                    
-			nvram_set("1:noiselvl5ga1", "31,31,31,31");                                                                                                                                                                                         
-			nvram_set("1:agbg0", "0");                                                                                                                                                                                                          
-			nvram_set("1:agbg1", "0");                                                                                                                                                                                                          
-			nvram_set("1:sb40and80hr5ghpo", "0");                                                                                                                                                                                               
-			nvram_set("1:epagain2g", "0");                                                                                                                                                                                                      
-			nvram_set("1:rxgains2gelnagaina0", "4");                                                                                                                                                                                            
-			nvram_set("1:rxchain", "3");                                                                                                                                                                                                        
-			nvram_set("1:boardnum", "20771");                                                                                                                                                                                                   
-			nvram_set("1:tworangetssi2g", "0");                                                                                                                                                                                                 
-			nvram_set("1:papdcap5g", "0");                                                                                                                                                                                                      
-			nvram_set("1:dot11agduphrpo", "0");                                                                                                                                                                                                 
-			nvram_set("1:aa2g", "1");                                                                                                                                                                                                           
-			nvram_set("1:tempcorrx", "0x3f");                                                                                                                                                                                                   
-			nvram_set("1:rxgains5gtrelnabypa0", "1");                                                                                                                                                                                           
-			nvram_set("1:regrev", "61");                                                                                                                                                                                                        
-			nvram_set("1:rxgains5gtrelnabypa1", "1");                                                                                                                                                                                           
-			nvram_set("1:boardrev", "0x1402");                                                                                                                                                                                                  
-			nvram_set("1:boardvendor", "0x14e4");                                                                                                                                                                                               
-			nvram_set("1:pdoffset80ma0", "0x0");                                                                                                                                                                                                
-			nvram_set("1:pdoffset80ma1", "0x0");                                                                                                                                                                                                
-			nvram_set("1:maxp2ga0", "0x50");                                                                                                                                                                                                    
-			nvram_set("1:pdoffset80ma2", "0x0");                                                                                                                                                                                                
-			nvram_set("1:cckbw20ul2gpo", "0");                                                                                                                                                                                                  
-			nvram_set("1:temps_hysteresis", "15");                                                                                                                                                                                              
-			nvram_set("1:tssiposslope2g", "1");                                                                                                                                                                                                 
-			nvram_set("1:rxgains5gmtrisoa0", "5");                                                                                                                                                                                              
-			nvram_set("1:rxgains5gmtrisoa1", "4");                                                                                                                                                                                              
-			nvram_set("1:tempthresh", "255");                                                                                                                                                                                                   
-			nvram_set("1:rxgains5gelnagaina0", "1");                                                                                                                                                                                            
-			nvram_set("1:rxgains5gelnagaina1", "1");                                                                                                                                                                                            
-			nvram_set("1:sromrev", "11");                                                                                                                                                                                                       
-			nvram_set("1:sb20in80and160lr5gmpo", "0");                                                                                                                                                                                          
-			nvram_set("1:phycal_tempdelta", "0");                                                                                                                                                                                               
-			nvram_set("1:rxgainerr5ga0", "0x3F,0x3F,0x3F,0x3F");                                                                                                                                                                                
-			nvram_set("1:rxgainerr5ga1", "0x1F,0x1F,0x1F,0x1F");                                                                                                                                                                                
-			nvram_set("1:pdoffset40ma0", "0x1111");                                                                                                                                                                                             
-			nvram_set("1:rpcal2g", "0");                                                                                                                                                                                                        
-			nvram_set("1:pdoffset40ma1", "0x1111");                                                                                                                                                                                             
-			nvram_set("1:mcsbw205glpo", "0x22000000");                                                                                                                                                                                          
-			nvram_set("1:pdoffset40ma2", "0x1111");                                                                                                                                                                                             
-			nvram_set("1:measpower", "0x7f");                                                                                                                                                                                                   
-			nvram_set("1:temps_period", "15");                                                                                                                                                                                                  
-			nvram_set("1:venid", "0x14e4");                                                                                                                                                                                                     
-			nvram_set("1:mcsbw805gmpo", "0x22000000");                                                                                                                                                                                          
-			nvram_set("1:pdgain5g", "4");                                                                                                                                                                                                       
-			nvram_set("1:boardflags2", "0x300002");                                                                                                                                                                                             
-			nvram_set("1:mcsbw205ghpo", "0xDD975000");                                                                                                                                                                                          
-			nvram_set("1:boardflags3", "0x0");                                                                                                                                                                                                  
-			nvram_set("1:rxgains5gtrisoa0", "7");                                                                                                                                                                                               
-			nvram_set("1:rxgains5ghtrisoa0", "5");                                                                                                                                                                                              
-			nvram_set("1:rxgains5gtrisoa1", "6");                                                                                                                                                                                               
-			nvram_set("1:rxgains5ghtrisoa1", "4");                                                                                                                                                                                              
-			nvram_set("1:sb20in80and160hr5gmpo", "0");                                                                                                                                                                                          
-			nvram_set("1:epagain5g", "0");                                                                                                                                                                                                      
-			nvram_set("1:tempsense_option", "0x3");                                                                                                                                                                                             
-			nvram_set("1:boardtype", "0x621");                                                                                                                                                                                                  
-			nvram_set("1:tworangetssi5g", "0");                                                                                                                                                                                                 
-			nvram_set("1:rxgains5gmelnagaina0", "2");                                                                                                                                                                                           
-			nvram_set("1:rxgains5gmelnagaina1", "2");                                                                                                                                                                                           
-			nvram_set("1:aa5g", "3");                                                                                                                                                                                                           
-			nvram_set("1:xtalfreq", "40000");                                                                                                                                                                                                   
-			nvram_set("1:mcsbw405gmpo", "0x22000000");                                                                                                                                                                                          
+			nvram_set("0:ag0", "2");
+			nvram_set("1:tssiposslope5g", "1");
+			nvram_set("1:sb20in80and160lr5ghpo", "0");
+			nvram_set("1:rxgains2gtrisoa0", "7");
+			nvram_set("1:ofdm5glpo", "0");
+			nvram_set("1:boardflags", "0x30001000");
+			nvram_set("1:antswitch", "0");
+			nvram_set("1:sar2g", "0xFF");
+			nvram_set("1:tempsense_slope", "0xff");
+			nvram_set("1:mcsbw805glpo", "0x22000000");
+			nvram_set("1:tempoffset", "255");
+			nvram_set("1:rxgains5ghelnagaina0", "2");
+			nvram_set("1:rxgains5ghelnagaina1", "2");
+			nvram_set("1:sb40and80lr5gmpo", "0");
+			nvram_set("1:ofdm5ghpo", "0x75000000");
+			nvram_set("1:mcsbw805ghpo", "0xDD975300");
+			nvram_set("1:rawtempsense", "0x1ff");
+			nvram_set("1:sb20in80and160hr5glpo", "0");
+			nvram_set("1:femctrl", "1");
+			nvram_set("1:dot11agofdmhrbw202gpo", "0");
+			nvram_set("1:sb20in80and160hr5ghpo", "0");
+			nvram_set("1:sb20in40lrpo", "0");
+			nvram_set("1:rxgains5gmtrelnabypa0", "1");
+			nvram_set("1:rxgains5gmtrelnabypa1", "1");
+			nvram_set("1:papdcap2g", "0");
+			nvram_set("1:pa2ga0", "0xFF35,0x18F7,0xFCF5");
+			nvram_set("1:mcsbw405glpo", "0x22000000");
+			nvram_set("1:mcsbw402gpo", "0");
+			nvram_set("1:sb40and80hr5gmpo", "0");
+			nvram_set("1:mcslr5glpo", "0");
+			nvram_set("1:mcsbw1605glpo", "0");
+			nvram_set("1:dot11agduplrpo", "0");
+			nvram_set("1:ccode", "Q2");
+			nvram_set("1:rxgains5ghtrelnabypa0", "1");
+			nvram_set("1:rxgains5ghtrelnabypa1", "1");
+			nvram_set("1:mcsbw405ghpo", "0xDD975000");
+			nvram_set("1:mcsbw202gpo", "0");
+			nvram_set("1:ofdmlrbw202gpo", "0");
+			nvram_set("1:mcslr5ghpo", "0");
+			nvram_set("1:mcsbw1605ghpo", "0");
+			nvram_set("1:devid", "0x43b1");
+			nvram_set("1:sb40and80lr5glpo", "0");
+			nvram_set("1:measpower1", "0x7f");
+			nvram_set("1:measpower2", "0x7f");
+			nvram_set("1:sb40and80lr5ghpo", "0");
+			nvram_set("1:rxgains2gtrelnabypa0", "1");
+			nvram_set("1:maxp5ga0", "78,78,78,100");
+			nvram_set("1:maxp5ga1", "78,78,78,100");
+			nvram_set("1:sar5g", "0xFF");
+			nvram_set("1:gainctrlsph", "0");
+			nvram_set("1:pdgain2g", "14");
+			nvram_set("1:aga0", "0");
+			nvram_set("1:subband5gver", "0x4");
+			nvram_set("1:aga1", "0");
+			nvram_set("1:sb40and80hr5glpo", "0");
+			nvram_set("1:sb20in40hrpo", "0");
+			nvram_set("1:noiselvl5ga0", "31,31,31,31");
+			nvram_set("1:mcsbw205gmpo", "0x22000000");
+			nvram_set("1:cckbw202gpo", "0");
+			nvram_set("1:noiselvl5ga1", "31,31,31,31");
+			nvram_set("1:agbg0", "0");
+			nvram_set("1:agbg1", "0");
+			nvram_set("1:sb40and80hr5ghpo", "0");
+			nvram_set("1:epagain2g", "0");
+			nvram_set("1:rxgains2gelnagaina0", "4");
+			nvram_set("1:rxchain", "3");
+			nvram_set("1:boardnum", "20771");
+			nvram_set("1:tworangetssi2g", "0");
+			nvram_set("1:papdcap5g", "0");
+			nvram_set("1:dot11agduphrpo", "0");
+			nvram_set("1:aa2g", "1");
+			nvram_set("1:tempcorrx", "0x3f");
+			nvram_set("1:rxgains5gtrelnabypa0", "1");
+			nvram_set("1:regrev", "61");
+			nvram_set("1:rxgains5gtrelnabypa1", "1");
+			nvram_set("1:boardrev", "0x1402");
+			nvram_set("1:boardvendor", "0x14e4");
+			nvram_set("1:pdoffset80ma0", "0x0");
+			nvram_set("1:pdoffset80ma1", "0x0");
+			nvram_set("1:maxp2ga0", "0x50");
+			nvram_set("1:pdoffset80ma2", "0x0");
+			nvram_set("1:cckbw20ul2gpo", "0");
+			nvram_set("1:temps_hysteresis", "15");
+			nvram_set("1:tssiposslope2g", "1");
+			nvram_set("1:rxgains5gmtrisoa0", "5");
+			nvram_set("1:rxgains5gmtrisoa1", "4");
+			nvram_set("1:tempthresh", "255");
+			nvram_set("1:rxgains5gelnagaina0", "1");
+			nvram_set("1:rxgains5gelnagaina1", "1");
+			nvram_set("1:sromrev", "11");
+			nvram_set("1:sb20in80and160lr5gmpo", "0");
+			nvram_set("1:phycal_tempdelta", "0");
+			nvram_set("1:rxgainerr5ga0", "0x3F,0x3F,0x3F,0x3F");
+			nvram_set("1:rxgainerr5ga1", "0x1F,0x1F,0x1F,0x1F");
+			nvram_set("1:pdoffset40ma0", "0x1111");
+			nvram_set("1:rpcal2g", "0");
+			nvram_set("1:pdoffset40ma1", "0x1111");
+			nvram_set("1:mcsbw205glpo", "0x22000000");
+			nvram_set("1:pdoffset40ma2", "0x1111");
+			nvram_set("1:measpower", "0x7f");
+			nvram_set("1:temps_period", "15");
+			nvram_set("1:venid", "0x14e4");
+			nvram_set("1:mcsbw805gmpo", "0x22000000");
+			nvram_set("1:pdgain5g", "4");
+			nvram_set("1:boardflags2", "0x300002");
+			nvram_set("1:mcsbw205ghpo", "0xDD975000");
+			nvram_set("1:boardflags3", "0x0");
+			nvram_set("1:rxgains5gtrisoa0", "7");
+			nvram_set("1:rxgains5ghtrisoa0", "5");
+			nvram_set("1:rxgains5gtrisoa1", "6");
+			nvram_set("1:rxgains5ghtrisoa1", "4");
+			nvram_set("1:sb20in80and160hr5gmpo", "0");
+			nvram_set("1:epagain5g", "0");
+			nvram_set("1:tempsense_option", "0x3");
+			nvram_set("1:boardtype", "0x621");
+			nvram_set("1:tworangetssi5g", "0");
+			nvram_set("1:rxgains5gmelnagaina0", "2");
+			nvram_set("1:rxgains5gmelnagaina1", "2");
+			nvram_set("1:aa5g", "3");
+			nvram_set("1:xtalfreq", "40000");
+			nvram_set("1:mcsbw405gmpo", "0x22000000");
 			nvram_set("1:pa5ga0", "0xff3c,0x19d6,0xfce4,0xff3b,0x19d0,0xfce5,0xff39,0x19b8,0xfce5,0xff3a,0x19b0,0xfce5");
 			nvram_set("1:txchain", "3");
 			nvram_set("1:pa5ga1", "0xff33,0x1918,0xfcf3,0xff37,0x1988,0xfcea,0xff32,0x1953,0xfceb,0xff36,0x1944,0xfcee");
@@ -1327,12 +1327,12 @@ void start_sysinit(void)
 			nvram_set("devpath1", "pci/2/1");
 			nvram_set("wl_pcie_mrrs", "128");
 		}
-		set_gpio(0, 1); //USB
-		set_gpio(4, 1); //wifi
-		set_gpio(6, 1); //reset button
-		set_gpio(9,1);  //red connected
-		set_gpio(10,1); //green 2.4
-		set_gpio(12,1); //green 5
+		set_gpio(0, 1);	//USB
+		set_gpio(4, 1);	//wifi
+		set_gpio(6, 1);	//reset button
+		set_gpio(9, 1);	//red connected
+		set_gpio(10, 1);	//green 2.4
+		set_gpio(12, 1);	//green 5
 		nvram_unset("et1macaddr");
 		break;
 	case ROUTER_NETGEAR_R8000:
@@ -1344,7 +1344,7 @@ void start_sysinit(void)
 				char mac[20];
 				strcpy(mac, nvram_safe_get("et2macaddr"));
 				nvram_set("0:macaddr", mac);
-				nvram_set("et0macaddr",mac);
+				nvram_set("et0macaddr", mac);
 				MAC_ADD(mac);
 				nvram_set("et1macaddr", mac);
 				MAC_SUB(mac);
@@ -1637,7 +1637,7 @@ void start_sysinit(void)
 		//nvram_set("fwd_cpumap", "d:x:2:169:1 d:l:5:169:1 d:u:5:163:0");
 		//nvram_set("fwd_wlandevs", "eth1 eth2 eth3");
 		nvram_set("lan_ifnames", "vlan1 eth1 eth2 eth3 wl0.1 wl1.1 wl2.1");
-		set_gpio(6, 1); //reset button
+		set_gpio(6, 1);	//reset button
 		break;
 	case ROUTER_ASUS_AC87U:
 		set_gpio(11, 1);	// fixup reset button
@@ -2740,7 +2740,7 @@ void start_sysinit(void)
 		nvram_set("et0macaddr_safe", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
 		close(s);
 	}
-	
+
 	insmod("emf");
 	insmod("igs");
 #ifdef HAVE_DHDAP
@@ -2748,12 +2748,11 @@ void start_sysinit(void)
 #endif
 	insmod("wl");
 
-
 	/*
 	 * Set a sane date 
 	 */
 	stime(&tm);
-//	nvram_set("wl0_ifname", "ath0");
+//      nvram_set("wl0_ifname", "ath0");
 
 	led_control(LED_POWER, LED_ON);
 	led_control(LED_DIAG, LED_OFF);

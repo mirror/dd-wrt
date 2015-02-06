@@ -1193,6 +1193,16 @@ void start_restore_defaults(void)
 		{"wan_default", "vlan2", 0},
 		{0, 0, 0}
 	};
+
+	struct nvram_tuple dir890vlan[] = {
+		{"lan_ifname", "br0", 0},
+		{"lan_ifnames", "vlan1 eth1 eth2 eth3", 0},
+		{"wan_ifname", "vlan2", 0},
+		{"wan_ifname2", "vlan2", 0},
+		{"wan_ifnames", "vlan2", 0},
+		{"wan_default", "vlan2", 0},
+		{0, 0, 0}
+	};
 #elif HAVE_MAGICBOX
 	struct nvram_tuple generic[] = {
 		{"lan_ifname", "br0", 0},
@@ -1959,15 +1969,6 @@ void start_restore_defaults(void)
 		{0, 0, 0}
 	};
 
-	struct nvram_tuple dir890vlan[] = {
-		{"lan_ifname", "br0", 0},
-		{"lan_ifnames", "vlan1 eth1 eth2 eth3", 0},
-		{"wan_ifname", "vlan2", 0},
-		{"wan_ifname2", "vlan2", 0},
-		{"wan_ifnames", "vlan2", 0},
-		{"wan_default", "vlan2", 0},
-		{0, 0, 0}
-	};
 
 #endif
 
@@ -2005,9 +2006,19 @@ void start_restore_defaults(void)
     || defined(HAVE_GATEWORX) || defined(HAVE_FONERA) || defined(HAVE_SOLO51) || defined(HAVE_RT2880) || defined(HAVE_LS2) || defined(HAVE_LS5) \
     || defined(HAVE_WHRAG108) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_OPENRISC) \
     || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_CA8)  || defined(HAVE_OCTEON)
-	linux_overrides = generic;
 	int brand = getRouterBrand();
-
+	switch(brand)
+	{
+	case ROUTER_NETGEAR_R8000:
+	linux_overrides = generic_2;
+	break;
+	case ROUTER_DLINK_DIR890:
+	linux_overrides = dir890vlan;
+	break;
+	default:
+	linux_overrides = generic;
+	break;
+	}
 	if (nvram_invmatch("sv_restore_defaults", "0"))	// ||
 		// nvram_invmatch("os_name", 
 		// "linux"))
@@ -2152,12 +2163,6 @@ void start_restore_defaults(void)
 		break;
 	case ROUTER_ASUS_RTN53:
 		linux_overrides = rt53nvlan;
-		break;
-	case ROUTER_NETGEAR_R8000:
-		linux_overrides = generic_2;
-		break;
-	case ROUTER_DLINK_DIR890:
-		linux_overrides = dir890vlan;
 		break;
 #endif
 	case ROUTER_ASUS_AC66U:
