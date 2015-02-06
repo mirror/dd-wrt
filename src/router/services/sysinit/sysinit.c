@@ -204,7 +204,7 @@ static void buffalo_defaults(int force)
 				if (mode_ex && !strcmp(mode_ex, "mixed-psk")) {
 					char *mode = getUEnv("DEF-p_wireless_eth1_11a-authmode");
 					if (!mode)
-					    mode = getUEnv("DEF-p_wireless_eth1_11bg-authmode");
+						mode = getUEnv("DEF-p_wireless_eth1_11bg-authmode");
 					if (!mode) {
 						nvram_set("wl_akm", "disabled");
 						nvram_set("wl0_akm", "disabled");
@@ -266,7 +266,7 @@ static void buffalo_defaults(int force)
 				if (mode_ex && !strcmp(mode_ex, "mixed-psk")) {
 					char *mode = getUEnv("DEF-p_wireless_eth2_11bg-authmode");
 					if (!mode)
-					    mode = getUEnv("DEF-p_wireless_eth2_11a-authmode");
+						mode = getUEnv("DEF-p_wireless_eth2_11a-authmode");
 					if (!mode) {
 						nvram_set("wl1_akm", "disabled");
 						nvram_set("wl1_security_mode", "disabled");
@@ -385,7 +385,7 @@ static void buffalo_defaults(int force)
 #ifdef HAVE_BCMMODERN
 
 		unsigned long boardnum = strtoul(nvram_safe_get("boardnum"), NULL, 0);
-		
+
 		nvram_set("wl0_country_code", "Q1");
 		nvram_set("wl0_country_rev", "27");
 		nvram_set("wl1_country_code", "Q1");
@@ -1185,7 +1185,7 @@ void start_restore_defaults(void)
 	struct nvram_tuple generic_2[] = {
 		{"lan_ifname", "br0", 0},
 		{"lan_ifnames",
-		 "vlan1 eth1 eth2 eth3 wl0.1 wl1.1 wl2.1",
+		 "vlan1 vlan2 eth1 eth2 eth3 wl0.1 wl1.1 wl2.1",
 		 0},
 		{"wan_ifname", "vlan2", 0},
 		{"wan_ifname2", "vlan2", 0},
@@ -1196,7 +1196,7 @@ void start_restore_defaults(void)
 
 	struct nvram_tuple dir890vlan[] = {
 		{"lan_ifname", "br0", 0},
-		{"lan_ifnames", "vlan1 eth1 eth2 eth3", 0},
+		{"lan_ifnames", "vlan1 vlan2 eth1 eth2 eth3", 0},
 		{"wan_ifname", "vlan2", 0},
 		{"wan_ifname2", "vlan2", 0},
 		{"wan_ifnames", "vlan2", 0},
@@ -1969,7 +1969,6 @@ void start_restore_defaults(void)
 		{0, 0, 0}
 	};
 
-
 #endif
 
 	struct nvram_tuple *linux_overrides;
@@ -2007,17 +2006,16 @@ void start_restore_defaults(void)
     || defined(HAVE_WHRAG108) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_OPENRISC) \
     || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_CA8)  || defined(HAVE_OCTEON)
 	int brand = getRouterBrand();
-	switch(brand)
-	{
+	switch (brand) {
 	case ROUTER_NETGEAR_R8000:
-	linux_overrides = generic_2;
-	break;
+		linux_overrides = generic_2;
+		break;
 	case ROUTER_DLINK_DIR890:
-	linux_overrides = dir890vlan;
-	break;
+		linux_overrides = dir890vlan;
+		break;
 	default:
-	linux_overrides = generic;
-	break;
+		linux_overrides = generic;
+		break;
 	}
 	if (nvram_invmatch("sv_restore_defaults", "0"))	// ||
 		// nvram_invmatch("os_name", 
@@ -2805,7 +2803,8 @@ void start_drivers(void)
 		led_control(LED_USB, LED_ON);
 		led_control(LED_USB1, LED_ON);
 
-		insmod("nls_base usb-common usbcore ehci-hcd ehci-platform ehci-pci usb-uhci uhci-hcd usb-ohci ohci-hcd xhci-hcd dwc_otg usb-libusual fsl-mph-dr-of phy-mxs-usb ci_hdrc ci13xxx_imx usbmisc_imx ci_hdrc_imx");
+		insmod
+		    ("nls_base usb-common usbcore ehci-hcd ehci-platform ehci-pci usb-uhci uhci-hcd usb-ohci ohci-hcd xhci-hcd dwc_otg usb-libusual fsl-mph-dr-of phy-mxs-usb ci_hdrc ci13xxx_imx usbmisc_imx ci_hdrc_imx");
 
 		if (nvram_match("usb_storage", "1")) {
 			insmod("scsi_mod scsi_wait_scan sd_mod cdrom sr_mod usb-storage");
