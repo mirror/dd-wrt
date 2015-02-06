@@ -1182,27 +1182,6 @@ void start_restore_defaults(void)
 		{"wan_default", "vlan2", 0},
 		{0, 0, 0}
 	};
-	struct nvram_tuple generic_2[] = {
-		{"lan_ifname", "br0", 0},
-		{"lan_ifnames",
-		 "vlan1 vlan2 eth1 eth2 eth3 wl0.1 wl1.1 wl2.1",
-		 0},
-		{"wan_ifname", "vlan2", 0},
-		{"wan_ifname2", "vlan2", 0},
-		{"wan_ifnames", "vlan2", 0},
-		{"wan_default", "vlan2", 0},
-		{0, 0, 0}
-	};
-
-	struct nvram_tuple dir890vlan[] = {
-		{"lan_ifname", "br0", 0},
-		{"lan_ifnames", "vlan1 vlan2 eth1 eth2 eth3", 0},
-		{"wan_ifname", "vlan2", 0},
-		{"wan_ifname2", "vlan2", 0},
-		{"wan_ifnames", "vlan2", 0},
-		{"wan_default", "vlan2", 0},
-		{0, 0, 0}
-	};
 #elif HAVE_MAGICBOX
 	struct nvram_tuple generic[] = {
 		{"lan_ifname", "br0", 0},
@@ -2005,18 +1984,8 @@ void start_restore_defaults(void)
     || defined(HAVE_GATEWORX) || defined(HAVE_FONERA) || defined(HAVE_SOLO51) || defined(HAVE_RT2880) || defined(HAVE_LS2) || defined(HAVE_LS5) \
     || defined(HAVE_WHRAG108) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_OPENRISC) \
     || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_CA8)  || defined(HAVE_OCTEON)
-	int brand = getRouterBrand();
-	switch (brand) {
-	case ROUTER_NETGEAR_R8000:
-		linux_overrides = generic_2;
-		break;
-	case ROUTER_DLINK_DIR890:
-		linux_overrides = dir890vlan;
-		break;
-	default:
-		linux_overrides = generic;
-		break;
-	}
+	linux_overrides = generic;
+
 	if (nvram_invmatch("sv_restore_defaults", "0"))	// ||
 		// nvram_invmatch("os_name", 
 		// "linux"))
