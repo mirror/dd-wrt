@@ -1141,6 +1141,9 @@ void period_check(int sig)
 	case ROUTER_TRENDNET_TEW812:
 		sesgpio = 0x107;	// gpio 7, inversed
 		break;
+	case ROUTER_DLINK_DIR890:
+		sesgpio = 0x107;	// gpio 7, inversed
+		break;
 	case ROUTER_DLINK_DIR868:
 	case ROUTER_ASUS_AC67U:
 		wifigpio = 0x10f;

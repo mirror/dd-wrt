@@ -73,6 +73,8 @@ int get_wl_instances(void)
 #ifdef HAVE_QTN
 	return 2;
 #else
+	if (get_wl_instance("eth3") == 2)
+		return 3;
 	if (get_wl_instance("eth1") == 1)
 		return 2;
 	if (get_wl_instance("eth2") == 1)

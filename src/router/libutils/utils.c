@@ -1178,6 +1178,13 @@ int internal_getRouterBrand()
 		setRouter("Dlink-DIR868L");
 		return ROUTER_DLINK_DIR868;
 	}
+
+	if (boardnum == 24 && nvram_match("boardtype", "0x072F")
+	    && nvram_match("boardrev", "0x1101")
+	    && nvram_match("gpio7", "wps_button")) {
+		setRouter("Dlink-DIR890L");
+		return ROUTER_DLINK_DIR890;
+	}
 	if (boardnum == 00 && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1100")
 	    && nvram_match("gpio15", "wps_button")) {
@@ -5739,6 +5746,17 @@ int led_control(int type, int act)
 		disconnected_gpio = 0x101;
 		power_gpio = 0x102;
 		diag_gpio = 0x100;
+		break;
+
+	case ROUTER_DLINK_DIR890:
+		usb_power = 0x015;
+		usb_power1 = 0x012;
+		usb_gpio = 0x108;
+		usb_gpio1 = 0x10f;		
+		connected_gpio = 0x101;
+		disconnected_gpio = 0x103;
+		power_gpio = 0x102;
+		diag_gpio = 0x002;
 		break;
 	case ROUTER_TRENDNET_TEW812:
 		// gpio !1 = 2.4 ghz led
