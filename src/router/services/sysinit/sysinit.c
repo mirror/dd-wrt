@@ -2143,6 +2143,7 @@ void start_restore_defaults(void)
 		linux_overrides = rt53nvlan;
 		break;
 	case ROUTER_NETGEAR_R8000:
+	case ROUTER_DLINK_DIR890:
 		linux_overrides = generic_2;
 		break;
 #endif
@@ -2402,6 +2403,7 @@ void start_restore_defaults(void)
 	case ROUTER_BUFFALO_WZR1750:
 	case ROUTER_BUFFALO_WXR1900DHP:
 	case ROUTER_DLINK_DIR868:
+	case ROUTER_DLINK_DIR890:
 	case ROUTER_ASUS_AC56U:
 	case ROUTER_TRENDNET_TEW812:
 	case ROUTER_TRENDNET_TEW811:
