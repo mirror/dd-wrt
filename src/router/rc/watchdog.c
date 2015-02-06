@@ -45,6 +45,7 @@ static void watchdog(void)
 			if (!registered)
 				isregistered();	//to poll
 #endif
+#ifndef HAVE_DHDAP
 			/* 
 			 * software wlan led control 
 			 */
@@ -127,6 +128,7 @@ static void watchdog(void)
 			 */
 #endif
 		}
+#endif
 		sleep(5);
 		if (nvram_match("warn_enabled", "1")) {
 			counter++;

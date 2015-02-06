@@ -692,7 +692,10 @@
 
 #define ROUTER_TPLINK_ARCHERC9 0xe513
 
+#define ROUTER_DLINK_DIR890 0xe6111
+
 #define NVROUTER "DD_BOARD"
+
 
 static inline int startswith(char *source, char *cmp)
 {
