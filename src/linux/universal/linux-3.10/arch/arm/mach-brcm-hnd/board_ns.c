@@ -749,6 +749,13 @@ static uint lookup_nflash_rootfs_offset(hndnand_t * nfl, struct mtd_info *mtd, i
 		blocksize = 65536;
 	}
 
+	if (nvram_match("boardnum", "24") && nvram_match("boardtype", "0x072F")
+	    && nvram_match("boardrev", "0x1101")
+	    && nvram_match("gpio7", "wps_button")) {
+		printk(KERN_INFO "DIR-690L Hack for detecting filesystems\n");
+		blocksize = 65536;
+	}
+
 	printk("lookup_nflash_rootfs_offset: offset = 0x%x, 0x%x\n", offset, blocksize);
 	for (off = offset; off < offset + size; off += blocksize) {
 		mask = rbsize - 1;
