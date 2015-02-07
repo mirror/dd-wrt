@@ -1063,14 +1063,6 @@ void ej_show_styles(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-void ej_tab_style(webs_t wp, int argc, char_t ** argv)
-{
-	// for triple radio increase hight ob tab area
-	if(get_wl_instances() == 3)
-		websWrite(wp, "<style type=\"text/css\">#header { height: 11.5em; }</style>");
-
-	return;
-}
 
 #ifdef HAVE_LANGUAGE
 // extern websRomPageIndexType websRomPageIndex[];
@@ -1979,6 +1971,8 @@ void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 	websWrite(wp, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/pwc/default.css\" />\n");
 	websWrite(wp, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/pwc/ddwrt.css\" />\n");
 #endif
+	if(get_wl_instances() == 3)
+		websWrite(wp, "\t\t<style type=\"text/css\">#header { height: 11.5em; }</style>\n");
 #ifdef HAVE_WIKINGS
 	websWrite(wp, "\t\t<title>:::: Excel Networks ::::");
 #elif HAVE_ESPOD
@@ -1993,6 +1987,7 @@ void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 		websWrite(wp, " - %s", live_translate(argv[0]));
 	}
 	websWrite(wp, "</title>\n");
+	
 
 }
 
