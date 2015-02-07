@@ -1080,6 +1080,14 @@ void setRegulationDomain(char *reg)
 		nvram_set("pci/1/1/ccode", ccode0);
 		nvram_set("pci/2/1/ccode", ccode1);
 		break;
+	case ROUTER_NETGEAR_R8000:
+		nvram_set("0:regrev", rrev1);
+		nvram_set("1:regrev", rrev0);
+		nvram_set("2:regrev", rrev1);
+		nvram_set("0:ccode", ccode1);
+		nvram_set("1:ccode", ccode0);
+		nvram_set("2:ccode", ccode1);
+		break;
 	default:
 		nvram_set("0:regrev", rrev0);
 		nvram_set("1:regrev", rrev1);
