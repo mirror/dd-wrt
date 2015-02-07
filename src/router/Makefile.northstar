@@ -601,6 +601,9 @@ endif
 	cd $(ARCH)-uclibc && ../tools/bufenc/makefw.sh buffalo
 
 	cp $(ARCH)-uclibc/northstar-firmware-squashfs.bin $(ARCH)-uclibc/netgear.trx
+ifeq ($(CONFIG_DHDAP),y)
+	./netgear/packet -k $(ARCH)-uclibc/netgear.trx -f netgear/emptyfile -b netgear/comp-r8000.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-r8000.h && cp dd-wrt.bin.chk $(ARCH)-uclibc/K3_R8000.chk
+else
 	./netgear/packet -k $(ARCH)-uclibc/netgear.trx -f netgear/emptyfile -b netgear/comp-ex6200.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-ex6200.h && cp dd-wrt.bin.chk $(ARCH)-uclibc/K3_EX6200.chk
 	./netgear/packet -k $(ARCH)-uclibc/netgear.trx -f netgear/emptyfile -b netgear/comp-ac1450.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-ac1450.h && cp dd-wrt.bin.chk $(ARCH)-uclibc/K3_AC1450.chk
 	./netgear/packet -k $(ARCH)-uclibc/netgear.trx -f netgear/emptyfile -b netgear/comp-r6250.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-r6250.h && cp dd-wrt.bin.chk $(ARCH)-uclibc/K3_R6250.chk
@@ -608,9 +611,6 @@ endif
 	./netgear/packet -k $(ARCH)-uclibc/netgear.trx -f netgear/emptyfile -b netgear/comp-r6300v2-CH.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-r6300v2-CH.h && cp dd-wrt.bin.chk $(ARCH)-uclibc/K3_R6300V2CH.chk
 	./netgear/packet -k $(ARCH)-uclibc/netgear.trx -f netgear/emptyfile -b netgear/comp-r6700.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-r6700.h && cp dd-wrt.bin.chk $(ARCH)-uclibc/K3_R6700.chk
 	./netgear/packet -k $(ARCH)-uclibc/netgear.trx -f netgear/emptyfile -b netgear/comp-r7000.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-r7000.h && cp dd-wrt.bin.chk $(ARCH)-uclibc/K3_R7000.chk
-
-ifeq ($(CONFIG_DHDAP),y)
-	./netgear/packet -k $(ARCH)-uclibc/netgear.trx -f netgear/emptyfile -b netgear/comp-r8000.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-r8000.h && cp dd-wrt.bin.chk $(ARCH)-uclibc/K3_R8000.chk
 endif	
 	-$(MAKE) -f Makefile.northstar validate MAXIMUM_SIZE=7470000 EX_PATH=$(ARCH)-uclibc/K3_EX6200.chk
 
