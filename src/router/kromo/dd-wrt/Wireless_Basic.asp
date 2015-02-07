@@ -446,7 +446,6 @@ function initChannelProperties() {
 }
 		//]]>
 		</script>
-		<% tab_style(); %>
 	</head>
 
 	<body class="gui">
