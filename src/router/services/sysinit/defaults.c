@@ -737,6 +737,7 @@ struct nvram_tuple srouter_defaults[] = {
 #else
 	{"wl0_web_filter", "0", 0},	/* Allow/Deny Wireless Access Web */
 	{"wl1_web_filter", "0", 0},
+	{"wl2_web_filter", "0", 0},
 #endif
 	/*
 	 * PPPoE parameters 
@@ -763,22 +764,31 @@ struct nvram_tuple srouter_defaults[] = {
 	 */
 	{"wl0_nbw_cap", "1", 0},
 	{"wl1_nbw_cap", "1", 0},
+	{"wl2_nbw_cap", "1", 0},
 	{"wl0_nbw", "20", 0},	/* N-BW */
 	{"wl1_nbw", "20", 0},	/* N-BW */
+	{"wl2_nbw", "20", 0},	/* N-BW */
 	{"wl0_bw_cap", "255", 0},	/* N-BW */
 	{"wl1_bw_cap", "255", 0},	/* N-BW */
+	{"wl2_bw_cap", "255", 0},	/* N-BW */
 	{"wl0_nctrlsb", "none", 0},	/* N-CTRL SB */
 	{"wl1_nctrlsb", "none", 0},	/* N-CTRL SB */
+	{"wl2_nctrlsb", "none", 0},	/* N-CTRL SB */
 	{"wl0_nband", "-1", 0},	/* N-BAND */
 	{"wl1_nband", "1", 0},	/* N-BAND */
+	{"wl2_nband", "1", 0},	/* N-BAND */
 	{"wl0_nmcsidx", "-1", 0},	/* N-MCS Index - rate */
 	{"wl1_nmcsidx", "-1", 0},	/* N-MCS Index - rate */
+	{"wl2_nmcsidx", "-1", 0},	/* N-MCS Index - rate */
 	{"wl0_nmode", "-1", 0},	/* N-mode */
 	{"wl1_nmode", "-1", 0},	/* N-mode */
+	{"wl2_nmode", "-1", 0},	/* N-mode */
 	{"wl0_nreqd", "0", 0},	/* Require 802.11n support */
 	{"wl1_nreqd", "0", 0},	/* Require 802.11n support */
+	{"wl2_nreqd", "0", 0},	/* Require 802.11n support */
 	{"wl0_vlan_prio_mode", "off", 0},	/* VLAN Priority support */
 	{"wl1_vlan_prio_mode", "off", 0},	/* VLAN Priority support */
+	{"wl2_vlan_prio_mode", "off", 0},	/* VLAN Priority support */
 	{"wl0_leddc", "0x640000", 0},	/* 100% duty cycle for LED on router */
 	{"wl_rxstreams", "0", 0},	/* 802.11n Rx Streams, 0 is invalid, WLCONF will
 					 * change it to a radio appropriate default
@@ -789,37 +799,62 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_80211AC
 	{"wl0_wmf_bss_enable", "0", 0},	/* 0= off 1= on */
 	{"wl1_wmf_bss_enable", "0", 0},
+	{"wl2_wmf_bss_enable", "0", 0},
+
 	{"wl0_wmf_ucigmp_query", "0", 0},	/* Disable Converting IGMP Query to ucast (default) */
 	{"wl0_wmf_mdata_sendup", "0", 0},	/* Disable Sending Multicast Data to host  (default) */
 	{"wl0_wmf_ucast_upnp", "1", 0},	/* Disable Converting upnp to ucast (default) */
 	{"wl0_wmf_igmpq_filter", "0", 0},	/* Disable igmp query filter */
+
 	{"wl1_wmf_ucigmp_query", "0", 0},	/* Disable Converting IGMP Query to ucast (default) */
 	{"wl1_wmf_mdata_sendup", "0", 0},	/* Disable Sending Multicast Data to host  (default) */
 	{"wl1_wmf_ucast_upnp", "1", 0},	/* Disable Converting upnp to ucast (default) */
 	{"wl1_wmf_igmpq_filter", "0", 0},	/* Disable igmp query filter */
+
+	{"wl2_wmf_ucigmp_query", "0", 0},	/* Disable Converting IGMP Query to ucast (default) */
+	{"wl2_wmf_mdata_sendup", "0", 0},	/* Disable Sending Multicast Data to host  (default) */
+	{"wl2_wmf_ucast_upnp", "1", 0},	/* Disable Converting upnp to ucast (default) */
+	{"wl2_wmf_igmpq_filter", "0", 0},	/* Disable igmp query filter */
 	/* Airtime fairness */
 	{"wl0_atf", "0", 0},	/* 0= off 1= on */
 	{"wl1_atf", "0", 0},
+	{"wl2_atf", "0", 0},
+
 	{"wl0_txbf", "0", 0},
 	{"wl1_txbf", "0", 0},
+	{"wl2_txbf", "0", 0},
+
 	{"wl0_itxbf", "0", 0},
 	{"wl1_itxbf", "0", 0},
+	{"wl2_itxbf", "0", 0},
 
 	{"wl0_txbf_bfr_cap", "1", 0},
 	{"wl0_txbf_bfe_cap", "1", 0},
+
 	{"wl1_txbf_bfr_cap", "1", 0},
 	{"wl1_txbf_bfe_cap", "1", 0},
+
+	{"wl2_txbf_bfr_cap", "1", 0},
+	{"wl2_txbf_bfe_cap", "1", 0},
+
 	{"wl0_turbo_qam", "1", 0},	/* RIFS mode advertisement */
 	{"wl1_turbo_qam", "1", 0},	/* RIFS mode advertisement */
+	{"wl2_turbo_qam", "1", 0},	/* RIFS mode advertisement */
+
 	{"wl0_rxchain_pwrsave_enable", "0", 0},
 	{"wl1_rxchain_pwrsave_enable", "0", 0},
+	{"wl2_rxchain_pwrsave_enable", "0", 0},
+
 	{"wl0_txchain_pwrsave_enable", "0", 0},
 	{"wl1_txchain_pwrsave_enable", "0", 0},
+	{"wl2_txchain_pwrsave_enable", "0", 0},
+	
 #endif
 #ifdef HAVE_BCMMODERN
 	{"wl_rifs_advert", "auto", 0},	/* RIFS mode advertisement */
 	{"wl0_rifs_advert", "auto", 0},	/* RIFS mode advertisement */
 	{"wl1_rifs_advert", "auto", 0},	/* RIFS mode advertisement */
+	{"wl2_rifs_advert", "auto", 0},	/* RIFS mode advertisement */
 	{"wl_stbc_tx", "auto", 0},	/* Default STBC TX setting */
 	{"wl_stbc_rx", "1", 0},	/* Default STBC RX setting */
 	{"wl_ampdu", "auto", 0},	/* Default AMPDU setting */
@@ -855,6 +890,18 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl1_cal_period", "0", 0},	/* Disable periodic cal */
 	{"wl1_obss_coex", "0", 0},	/* Default OBSS Coexistence setting - OFF */
 	{"wl1_bss_opmode_cap_reqd", "0", 0},
+	{"wl2_stbc_tx", "auto", 0},	/* Default STBC TX setting */
+	{"wl2_stbc_rx", "1", 0},	/* Default STBC RX setting */
+	{"wl2_ampdu", "auto", 0},	/* Default AMPDU setting */
+	/* Default AMPDU retry limit per-tid setting */
+	{"wl2_ampdu_rtylimit_tid", "5 5 5 5 5 5 5 5", 0},
+	/* Default AMPDU regular rate retry limit per-tid setting */
+	{"wl2_ampdu_rr_rtylimit_tid", "2 2 2 2 2 2 2 2", 0},
+	{"wl2_amsdu", "auto", 0},	/* Default AMSDU setting */
+	{"wl2_rx_amsdu_in_ampdu", "auto", 0},	/* Disable AMSDU Rx by default */
+	{"wl2_cal_period", "0", 0},	/* Disable periodic cal */
+	{"wl2_obss_coex", "0", 0},	/* Default OBSS Coexistence setting - OFF */
+	{"wl2_bss_opmode_cap_reqd", "0", 0},
 	/* Tx Beamforming */
 #endif
 
@@ -879,6 +926,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl_radioids", "", 0},	/* List of radio IDs */
 	{"wl_shortslot", "auto", 0},
 	{"wl1_shortslot", "auto", 0},
+	{"wl2_shortslot", "auto", 0},
 #ifdef HAVE_WTS
 	{"wl_ssid", "www.wts.com.ve", 0},	/* Service set ID (network name) */
 #elif HAVE_DDLAN
@@ -1053,6 +1101,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
 	{"wl0_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
 	{"wl1_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
+	{"wl2_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
 #endif
 	{"wl0.1_ssid", "", 0},	/* Service set ID (network name) */
 	{"wl0.2_ssid", "", 0},	/* Service set ID (network name) */
@@ -1114,6 +1163,7 @@ struct nvram_tuple srouter_defaults[] = {
 #else
 	{"wl_ap_isolate", "0", 0},	/* AP isolate mode */
 	{"wl1_ap_isolate", "0", 0},
+	{"wl2_ap_isolate", "0", 0},
 #endif
 #ifdef HAVE_POWERNOC_WORT54G
 	{"wl_mode", "sta", 0},	/* AP mode (ap|sta|wet|infra) */
@@ -1130,6 +1180,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl_mode", "ap", 0},	/* AP mode (ap|sta|wet|infra) */
 	{"wl0_mode", "ap", 0},	/* AP mode (ap|sta|wet|infra) */
 	{"wl1_mode", "ap", 0},	/* AP mode (ap|sta|wet|infra) */
+	{"wl2_mode", "ap", 0},	/* AP mode (ap|sta|wet|infra) */
 #else
 #ifdef HAVE_DDLAN
 	{"wl_mode", "sta", 0},	/* AP mode (ap|sta|wet|infra) */
@@ -1293,6 +1344,7 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
 	{"wl_dtim", "1", 0},	/* DTIM period (3.11.5) *//* It is best value for WiFi test */
 	{"wl1_dtim", "1", 0},
+	
 	{"wl_bcn", "100", 0},	/* Beacon interval */
 	{"wl1_bcn", "100", 0},
 	{"wl_plcphdr", "long", 0},	/* 802.11b PLCP preamble type */
@@ -1353,6 +1405,7 @@ struct nvram_tuple srouter_defaults[] = {
 #else
 	{"wl_frameburst", "off", 0},	/* BRCM Frambursting mode (off|on) */
 	{"wl1_frameburst", "off", 0},
+	{"wl2_frameburst", "off", 0},
 #endif
 
 	{"wl_infra", "1", 0},	/* Network Type (BSS/IBSS) */
@@ -1985,6 +2038,7 @@ struct nvram_tuple srouter_defaults[] = {
 #else
 	{"wl0_txpwr", "71", 0},
 	{"wl1_txpwr", "71", 0},
+	{"wl2_txpwr", "71", 0},
 #endif
 #endif
 
@@ -2738,6 +2792,11 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl1_wme_sta_vi", "7 15 2 6016 3008 off", 0},	/* WME STA AC_VI                                                         * paramters */
 	{"wl1_wme_sta_vo", "3 7 2 3264 1504 off", 0},	/* WME STA AC_VO
 							 * paramters */
+	{"wl2_wme_sta_bk", "15 1023 7 0 0 off", 0},	/* WME STA AC_BK paramters */
+	{"wl2_wme_sta_be", "15 1023 3 0 0 off", 0},	/* WME STA AC_BE paramters */
+	{"wl2_wme_sta_vi", "7 15 2 6016 3008 off", 0},	/* WME STA AC_VI                                                         * paramters */
+	{"wl2_wme_sta_vo", "3 7 2 3264 1504 off", 0},	/* WME STA AC_VO
+							 * paramters */
 
 	/*
 	 * EDCA parameters for AP 
@@ -2749,9 +2808,18 @@ struct nvram_tuple srouter_defaults[] = {
 							 * paramters */
 	{"wl1_wme_no_ack", "off", 0},	/* WME No-Acknowledgmen mode */
 	{"wl1_wme_apsd", "on", 0},	/* WME APSD mode */
+	
+	{"wl2_wme_ap_bk", "15 1023 7 0 0 off", 0},	/* WME AP AC_BK paramters */
+	{"wl2_wme_ap_be", "15 63 3 0 0 off", 0},	/* WME AP AC_BE paramters */
+	{"wl2_wme_ap_vi", "7 15 1 6016 3008 off", 0},	/* WME AP AC_VI                                                  * paramters */
+	{"wl2_wme_ap_vo", "3 7 1 3264 1504 off", 0},	/* WME AP AC_VO
+							 * paramters */
+	{"wl2_wme_no_ack", "off", 0},	/* WME No-Acknowledgmen mode */
+	{"wl2_wme_apsd", "on", 0},	/* WME APSD mode */
 
 	{"wl_maxassoc", "128", 0},	/* Max associations driver could support */
 	{"wl1_maxassoc", "128", 0},	/* Max associations driver could support */
+	{"wl2_maxassoc", "128", 0},	/* Max associations driver could support */
 
 	/* Per AC Tx parameters */
 
@@ -2764,6 +2832,11 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl1_wme_txp_bk", "7 3 4 2 0", 0},	/* WME AC_BK Tx parameters */
 	{"wl1_wme_txp_vi", "7 3 4 2 0", 0},	/* WME AC_VI Tx parameters */
 	{"wl1_wme_txp_vo", "7 3 4 2 0", 0},	/* WME AC_VO Tx parameters */
+	
+	{"wl2_wme_txp_be", "7 3 4 2 0", 0},	/* WME AC_BE Tx parameters */
+	{"wl2_wme_txp_bk", "7 3 4 2 0", 0},	/* WME AC_BK Tx parameters */
+	{"wl2_wme_txp_vi", "7 3 4 2 0", 0},	/* WME AC_VI Tx parameters */
+	{"wl2_wme_txp_vo", "7 3 4 2 0", 0},	/* WME AC_VO Tx parameters */
 
 #ifdef HAVE_ZEROIP
 	{"shat_enable", "0", 0},
@@ -3007,12 +3080,12 @@ struct nvram_tuple srouter_defaults[] = {
 	{"radiooff_boot_off", "0", 0},
 #endif
 #endif
-	{"radio0_on_time", "111111111111111111111111", 0},	/* Radio timer,
-								 * always on */
+	{"radio0_on_time", "111111111111111111111111", 0},	/* Radio timer,always on */
 	{"radio0_timer_enable", "0", 0},
-	{"radio1_on_time", "111111111111111111111111", 0},	/* Radio timer,
-								 * always on */
+	{"radio1_on_time", "111111111111111111111111", 0},	/* Radio timer,always on */
 	{"radio1_timer_enable", "0", 0},
+	{"radio2_on_time", "111111111111111111111111", 0},	/* Radio timer,always on */
+	{"radio2_timer_enable", "0", 0},
 #ifdef HAVE_CPUTEMP
 	{"hwmon_temp_max", "60", 0},
 	{"hwmon_temp_hyst", "50", 0},
