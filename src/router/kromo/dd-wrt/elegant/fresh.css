@@ -35,7 +35,6 @@ border-style: solid solid none;
 border-width: 0.09em;
 display: block;
 margin-left: 0.362em;
-padding: 0.453em 0.906em;
 text-decoration: none;
 }
 #menuSubList li.current {
@@ -43,6 +42,7 @@ background:#6384cf;
 }
 fieldset {
 border-radius: 4px;
+border-width: 1px;
 }
 fieldset legend {
 left: 0px;
