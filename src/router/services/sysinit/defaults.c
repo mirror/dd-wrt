@@ -1381,6 +1381,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl0_net_mode", "mixed", 0},	/* Wireless mode
 					 * (mixed|g-only|b-only|disable) */
 	{"wl1_net_mode", "mixed", 0},
+	{"wl2_net_mode", "mixed", 0},
 #endif
 
 #ifdef HAVE_SAGAR
