@@ -29,6 +29,7 @@ int main(int argc, char **argv)
 
 	unsigned int radiotime0;	// 4 byte int number (24 bits from gui + 1 bit for midnight)
 	unsigned int radiotime1;	// 4 byte int number (24 bits from gui + 1 bit for midnight)
+	unsigned int radiotime2;	// 4 byte int number (24 bits from gui + 1 bit for midnight)
 
 	int firsttime, needchange;
 
@@ -51,6 +52,9 @@ int main(int argc, char **argv)
 			radiotime1 = (unsigned int)strtol(nvram_get("radio1_on_time"), NULL, 2);
 			radiotime1 += ((radiotime1 & 1) << 24);
 			radiotime1 = (radiotime1 >> (24 - currtime->tm_hour - 1)) & 3;
+			radiotime2 = (unsigned int)strtol(nvram_get("radio2_on_time"), NULL, 2);
+			radiotime2 += ((radiotime2 & 1) << 24);
+			radiotime2 = (radiotime2 >> (24 - currtime->tm_hour - 1)) & 3;
 
 			if (currtime->tm_min != 0)
 				needchange = 1;	// prevet to be executed more than once when min == 0
@@ -73,12 +77,22 @@ int main(int argc, char **argv)
 					radiotime1 = 2;	// 10
 					break;
 				}
+				switch (radiotime2) {
+				case 3:	// 11
+					radiotime2 = 1;	// 01
+					break;
+				case 0:	// 00
+					radiotime2 = 2;	// 10
+					break;
+				}
 			}
 
 			if (nvram_match("radio0_timer_enable", "0"))
 				radiotime0 = 0;
 			if (nvram_match("radio1_timer_enable", "0"))
 				radiotime1 = 0;
+			if (nvram_match("radio2_timer_enable", "0"))
+				radiotime2 = 0;
 
 			if (((needchange) && currtime->tm_min == 0) || (firsttime))	// change when min = 0  or firstime
 			{
@@ -111,6 +125,22 @@ int main(int argc, char **argv)
 				case 2:	// 10 - turn radio off
 					syslog(LOG_DEBUG, "Turning radio 1 off\n");
 					start_service_force("radio_off_1");
+					break;
+				}
+				
+				switch (radiotime2) {
+				case 0:
+
+					break;	// do nothing, radio1 timer disabled
+
+				case 1:	// 01 - turn radio on
+					syslog(LOG_DEBUG, "Turning radio 2 on\n");
+					start_service_force("radio_on_2");
+					break;
+
+				case 2:	// 10 - turn radio off
+					syslog(LOG_DEBUG, "Turning radio 2 off\n");
+					start_service_force("radio_off_2");
 					break;
 				}
 				needchange = 0;
