@@ -609,6 +609,9 @@ endif
 	./netgear/packet -k $(ARCH)-uclibc/netgear.trx -f netgear/emptyfile -b netgear/comp-r6700.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-r6700.h && cp dd-wrt.bin.chk $(ARCH)-uclibc/K3_R6700.chk
 	./netgear/packet -k $(ARCH)-uclibc/netgear.trx -f netgear/emptyfile -b netgear/comp-r7000.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-r7000.h && cp dd-wrt.bin.chk $(ARCH)-uclibc/K3_R7000.chk
 
+ifeq ($(CONFIG_DHDAP),y)
+	./netgear/packet -k $(ARCH)-uclibc/netgear.trx -f netgear/emptyfile -b netgear/comp-r8000.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-r8000.h && cp dd-wrt.bin.chk $(ARCH)-uclibc/K3_R8000.chk
+endif	
 	-$(MAKE) -f Makefile.northstar validate MAXIMUM_SIZE=7470000 EX_PATH=$(ARCH)-uclibc/K3_EX6200.chk
 
 
