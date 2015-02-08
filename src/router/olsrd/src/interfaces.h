@@ -116,7 +116,7 @@ struct olsr_netbuf {
  *A struct containing all necessary information about each
  *interface participating in the OLSRD routing
  */
-struct interface {
+struct interface_olsr {
   /* IP version 4 */
   struct sockaddr_in int_addr;         /* address */
   struct sockaddr_in int_netmask;      /* netmask */
@@ -178,7 +178,7 @@ struct interface {
 
   /* backpointer to olsr_if configuration */
   struct olsr_if *olsr_if;
-  struct interface *int_next;
+  struct interface_olsr *int_next;
 };
 
 #define OLSR_DEFAULT_MTU             1500
@@ -192,28 +192,28 @@ enum olsr_ifchg_flag {
 };
 
 /* The interface linked-list */
-extern struct interface *ifnet;
+extern struct interface_olsr *ifnet;
 
 int olsr_init_interfacedb(void);
 void olsr_delete_interfaces(void);
 
-void olsr_trigger_ifchange(int if_index, struct interface *, enum olsr_ifchg_flag);
+void olsr_trigger_ifchange(int if_index, struct interface_olsr *, enum olsr_ifchg_flag);
 
-struct interface *if_ifwithsock(int);
+struct interface_olsr *if_ifwithsock(int);
 
-struct interface *if_ifwithaddr(const union olsr_ip_addr *);
+struct interface_olsr *if_ifwithaddr(const union olsr_ip_addr *);
 
-struct interface *if_ifwithname(const char *);
+struct interface_olsr *if_ifwithname(const char *);
 struct olsr_if *olsrif_ifwithname(const char *if_name);
 
 const char *if_ifwithindex_name(const int if_index);
 
-struct interface *if_ifwithindex(const int if_index);
+struct interface_olsr *if_ifwithindex(const int if_index);
 
 struct olsr_if *olsr_create_olsrif(const char *name, int hemu);
 
-int olsr_add_ifchange_handler(void (*f) (int if_index, struct interface *, enum olsr_ifchg_flag));
-int olsr_remove_ifchange_handler(void (*f) (int if_index, struct interface *, enum olsr_ifchg_flag));
+int olsr_add_ifchange_handler(void (*f) (int if_index, struct interface_olsr *, enum olsr_ifchg_flag));
+int olsr_remove_ifchange_handler(void (*f) (int if_index, struct interface_olsr *, enum olsr_ifchg_flag));
 
 void olsr_remove_interface(struct olsr_if *);
 

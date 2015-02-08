@@ -48,7 +48,7 @@
 #define PROMISCUOUS 0xffffffff
 
 /* Function returns false if the message should not be forwarded */
-typedef bool parse_function(union olsr_message *, struct interface *, union olsr_ip_addr *);
+typedef bool parse_function(union olsr_message *, struct interface_olsr *, union olsr_ip_addr *);
 
 struct parse_function_entry {
   uint32_t type;                       /* If set to PROMISCUOUS all messages will be received */
@@ -56,14 +56,14 @@ struct parse_function_entry {
   struct parse_function_entry *next;
 };
 
-typedef char *preprocessor_function(char *packet, struct interface *, union olsr_ip_addr *, int *length);
+typedef char *preprocessor_function(char *packet, struct interface_olsr *, union olsr_ip_addr *, int *length);
 
 struct preprocessor_function_entry {
   preprocessor_function *function;
   struct preprocessor_function_entry *next;
 };
 
-typedef void packetparser_function(struct olsr *olsr, struct interface *in_if, union olsr_ip_addr *from_addr);
+typedef void packetparser_function(struct olsr *olsr, struct interface_olsr *in_if, union olsr_ip_addr *from_addr);
 
 struct packetparser_function_entry {
   packetparser_function *function;
@@ -90,6 +90,6 @@ void olsr_packetparser_add_function(packetparser_function * function);
 
 int olsr_packetparser_remove_function(packetparser_function * function);
 
-void parse_packet(struct olsr *, int, struct interface *, union olsr_ip_addr *);
+void parse_packet(struct olsr *, int, struct interface_olsr *, union olsr_ip_addr *);
 
 #endif /* _OLSR_MSG_PARSER */

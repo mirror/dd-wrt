@@ -39,9 +39,9 @@
 # Please also write a new version to:
 # gui/win32/Main/Frontend.rc (line 71, around "CAPTION [...]")
 # gui/win32/Inst/installer.nsi (line 57, around "MessageBox MB_YESNO [...]")
-VERS =		0.6.7.1
+VERS =		0.6.8
 
-TOPDIR = .
+TOPDIR = $(shell pwd)
 INSTALLOVERWRITE ?=
 include Makefile.inc
 
@@ -71,7 +71,16 @@ endif
 .PHONY: default_target switch
 default_target: $(EXENAME)
 
-$(EXENAME):	$(OBJS) src/builddata.o
+ANDROIDREGEX=
+ifeq ($(OS),android)
+# On Android Google forgot to include regex engine code for Froyo version (but also there was
+# no support in older versions for it) so we have here this missing code.
+# http://groups.google.com/group/android-ndk/browse_thread/thread/5ea6f0650f0e3fc
+CFLAGS += -D__POSIX_VISIBLE
+ANDROIDREGEX=$(REGEX_LIB)
+endif
+
+$(EXENAME):	$(OBJS) $(ANDROIDREGEX) src/builddata.o
 ifeq ($(VERBOSE),0)
 		@echo "[LD] $@"
 endif
@@ -121,6 +130,7 @@ uberclean:	clean clean_libs clean_gui
 	find . \( -name '*.[od]' -o -name '*~' \) -not -path "*/.hg*" -type f -print0 | xargs -0 rm -f
 	$(MAKECMDPREFIX)$(MAKECMD) -C $(SWITCHDIR) clean
 	$(MAKECMDPREFIX)$(MAKECMD) -C $(CFGDIR) clean
+	$(MAKECMDPREFIX)rm -f builddata.txt
 
 install: install_olsrd
 
@@ -349,9 +359,6 @@ mdns_uninstall:
 # no targets for mini: it's an example plugin
 #
 
-# nameserver uses regex, which was only recently added to Android.  On
-# Android, $(REGEX_OBJS) will have all of the files needed, on all
-# other platforms, it'll be empty and therefore ignored.
 nameservice:
 		$(MAKECMDPREFIX)$(MAKECMD) -C lib/nameservice clean
 		$(MAKECMDPREFIX)$(MAKECMD) -C lib/nameservice
@@ -400,6 +407,15 @@ pud_install:
 
 pud_uninstall:
 		$(MAKECMDPREFIX)$(MAKECMD) -C lib/pud DESTDIR=$(DESTDIR) uninstall
+
+pud_java: pud
+		$(MAKECMDPREFIX)$(MAKECMD) -C lib/pud DESTDIR=$(DESTDIR) java
+
+pud_java_install:
+		$(MAKECMDPREFIX)$(MAKECMD) -C lib/pud DESTDIR=$(DESTDIR) java-install
+
+pud_java_uninstall:
+		$(MAKECMDPREFIX)$(MAKECMD) -C lib/pud DESTDIR=$(DESTDIR) java-uninstall
 
 quagga:
 		$(MAKECMDPREFIX)$(MAKECMD) -C lib/quagga

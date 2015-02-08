@@ -39,7 +39,7 @@ static bool readULL(const char * valueName, const char * value, unsigned long lo
 	errno = 0;
 	valueNew = strtoull(value, &endPtr, 10);
 
-	if (!((endPtr != value) && (*value != '\0') && (*endPtr == '\0'))) {
+	if (!((endPtr != value) && (*value != '\0') && (*endPtr == '\0')) || (errno == ERANGE)) {
 		/* invalid conversion */
 		sgwDynSpeedError(true, "Configured %s (%s) could not be converted to a number", valueName, value);
 		return false;

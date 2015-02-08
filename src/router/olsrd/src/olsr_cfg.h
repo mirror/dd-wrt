@@ -105,6 +105,8 @@
 #define DEF_SMART_GW_ALWAYS_REMOVE_SERVER_TUNNEL  false
 #define DEF_GW_USE_COUNT     1
 #define DEF_GW_TAKEDOWN_PERCENTAGE 25
+#define DEF_GW_EGRESS_FILE    "/var/run/olsrd-sgw-egress.conf"
+#define DEF_GW_EGRESS_FILE_PERIOD 5000
 #define DEF_GW_OFFSET_TABLES 90
 #define DEF_GW_OFFSET_RULES  0
 #define DEF_GW_PERIOD        10*1000
@@ -150,6 +152,8 @@
 
 #define MIN_SMARTGW_USE_COUNT_MIN  1
 #define MAX_SMARTGW_USE_COUNT_MAX  64
+
+#define MIN_SMARTGW_EGRESS_FILE_PERIOD 1000
 
 #define MAX_SMARTGW_EGRESS_INTERFACE_COUNT_MAX 32
 
@@ -234,7 +238,7 @@ struct olsr_if {
   bool configured;
   bool host_emul;
   union olsr_ip_addr hemu_ip;
-  struct interface *interf;
+  struct interface_olsr *interf;
   struct if_config_options *cnf, *cnfi;
   struct olsr_if *next;
 };
@@ -260,11 +264,6 @@ struct plugin_entry {
   char *name;
   struct plugin_param *params;
   struct plugin_entry *next;
-};
-
-struct sgw_egress_if {
-  char *name;
-  struct sgw_egress_if *next;
 };
 
 /*
@@ -319,6 +318,9 @@ struct olsrd_config {
   char *smart_gw_policyrouting_script;
   struct sgw_egress_if * smart_gw_egress_interfaces;
   uint8_t smart_gw_egress_interfaces_count;
+  char *smart_gw_egress_file;
+  uint32_t smart_gw_egress_file_period;
+  char *smart_gw_status_file;
   uint32_t smart_gw_offset_tables;
   uint32_t smart_gw_offset_rules;
   uint32_t smart_gw_period;

@@ -912,7 +912,7 @@ build_config_body(struct autobuf *abuf)
   abuf_puts(abuf, "<h2>Interfaces</h2>\n");
   abuf_puts(abuf, "<table width=\"100%%\" border=\"0\">\n");
   for (ifs = olsr_cnf->interfaces; ifs != NULL; ifs = ifs->next) {
-    const struct interface *const rifs = ifs->interf;
+    const struct interface_olsr *const rifs = ifs->interf;
     abuf_appendf(abuf, "<tr><th colspan=\"3\">%s</th>\n", ifs->name);
     if (!rifs) {
       abuf_puts(abuf, "<tr><td colspan=\"3\">Status: DOWN</td></tr>\n");

@@ -657,7 +657,7 @@ void FindNeighbors(
         }
         else
         {
-          struct interface* bestIntf = if_ifwithaddr(&bestLinkToNeighbor->local_iface_addr);
+          struct interface_olsr * bestIntf = if_ifwithaddr(&bestLinkToNeighbor->local_iface_addr);
 
           OLSR_PRINTF(
             9,
@@ -854,7 +854,7 @@ void FindNeighbors(
         else
         {
 #ifndef NODEBUG
-          struct interface* bestIntf = if_ifwithaddr(&bestLinkToNeighbor->local_iface_addr);
+          struct interface_olsr * bestIntf = if_ifwithaddr(&bestLinkToNeighbor->local_iface_addr);
           struct lqtextbuffer lqbuffer;
 #endif /* NODEBUG */
           OLSR_PRINTF(
@@ -1368,7 +1368,7 @@ static int CreateLocalEtherTunTap(void)
  * ------------------------------------------------------------------------- */
 static int CreateInterface(
   const char* ifName,
-  struct interface* olsrIntf)
+  struct interface_olsr * olsrIntf)
 {
   int capturingSkfd = -1;
   int encapsulatingSkfd = -1;
@@ -1562,7 +1562,7 @@ static int CreateInterface(
  * Return     : fail (-1) or success (0)
  * Data Used  : none
  * ------------------------------------------------------------------------- */
-int CreateBmfNetworkInterfaces(struct interface* skipThisIntf)
+int CreateBmfNetworkInterfaces(struct interface_olsr * skipThisIntf)
 {
   int skfd;
   struct ifconf ifc;
@@ -1612,7 +1612,7 @@ int CreateBmfNetworkInterfaces(struct interface* skipThisIntf)
   ifr = ifc.ifc_req;
   for (n = ifc.ifc_len / sizeof(struct ifreq); --n >= 0; ifr++)
   {
-    struct interface* olsrIntf;
+    struct interface_olsr * olsrIntf;
     union olsr_ip_addr ipAddr;
 
     /* Skip the BMF network interface itself */

@@ -56,6 +56,7 @@
  */
 
 #include "stdint.h"
+#include "stdbool.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -77,13 +78,14 @@ extern "C" {
    * If the ETX divider is zero, then no weighing is performed and only the path
    * costs are considered (classic behaviour), but scaled to a 64 bit number.
    *
+   * @param up true when the relevant interface is up
    * @param weights the weights for the calculation
    * @param path_cost the (ETX) path cost to the gateway
    * @param exitUk the gateway exit link uplink bandwidth (in kbps)
    * @param exitDk the gateway exit link downlink bandwidth (in kbps)
-   * @return the weighed path cost, INT64_MAX when exitUk and/or exitDk are zero
+   * @return the weighed path cost, INT64_MAX when up is false or when exitUk and/or exitDk are zero
    */
-  int64_t gw_costs_weigh(const struct costs_weights weights, uint32_t path_cost, uint32_t exitUk, uint32_t exitDk);
+  int64_t gw_costs_weigh(bool up, const struct costs_weights weights, uint32_t path_cost, uint32_t exitUk, uint32_t exitDk);
 
 #ifdef __cplusplus
 }

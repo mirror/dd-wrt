@@ -30,7 +30,7 @@ typedef struct _TRxTxNetworkInterface {
 /** A list of TOLSRNetworkInterface objects, used for OLSR interfaces */
 typedef struct _TOLSRNetworkInterface {
 		/** A pointer to the OLSR interface */
-		struct interface * olsrIntf;
+		struct interface_olsr * olsrIntf;
 
 		/** The next TOLSRNetworkInterface in the list */
 		struct _TOLSRNetworkInterface * next;
@@ -44,6 +44,6 @@ unsigned char * getMainIpMacAddress(void);
 TRxTxNetworkInterface * getRxNetworkInterfaces(void);
 TRxTxNetworkInterface * getTxNetworkInterfaces(void);
 int getDownlinkSocketFd(void);
-TOLSRNetworkInterface * getOlsrNetworkInterface(struct interface * olsrIntf);
+TOLSRNetworkInterface * getOlsrNetworkInterface(struct interface_olsr * olsrIntf);
 
 #endif /* _PUD_NETWORKINTERFACES_H */

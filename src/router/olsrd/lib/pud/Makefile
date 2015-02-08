@@ -59,6 +59,14 @@ CFLAGS += -DGIT_SHA=\"$(GIT_SHA)\" -DPLUGIN_VER=\"$(PLUGIN_VER)\"
 
 all: default_target
 
+ifeq ($(OS),android)
+# On Android Google forgot to include regex engine code for Froyo version (but also there was
+# no support in older versions for it) so we have here this missing code.
+# http://groups.google.com/group/android-ndk/browse_thread/thread/5ea6f0650f0e3fc
+OBJS +=     $(REGEX_LIB)
+CFLAGS += -D__POSIX_VISIBLE
+endif
+
 default_target: nmealib library $(PLUGIN_FULLNAME)
 
 # repeat from toplevel Makefile.inc, and adjust: we need the library includes

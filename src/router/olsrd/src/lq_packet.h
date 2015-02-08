@@ -281,7 +281,7 @@ void olsr_output_lq_hello(void *para);
 
 void olsr_output_lq_tc(void *para);
 
-void olsr_input_lq_hello(union olsr_message *ser, struct interface *inif, union olsr_ip_addr *from);
+void olsr_input_lq_hello(union olsr_message *ser, struct interface_olsr *inif, union olsr_ip_addr *from);
 
 extern bool lq_tc_pending;
 

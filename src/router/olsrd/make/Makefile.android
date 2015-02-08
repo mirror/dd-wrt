@@ -6,7 +6,7 @@
 #    (e.g. into to /opt, otherwise call 'make NDK_BASE=')
 #
 # 2) Compile olsrd with the make command:
-#    make OS=android DEBUG=0 NDK_BASE=/opt/android-ndk-r8
+#    make OS=android DEBUG=0 NDK_BASE=/opt/android-ndk-r10
 #
 # 3) Install olsrd on your local PC, e.g.
 #    sudo make OS=android DEBUG=0 install_all
@@ -103,9 +103,9 @@ NDK_ABI=arm
 NDK_ABIDIR=linux-androideabi
 NDK_SYSROOT=$(NDK_BASE)/platforms/android-$(NDK_PLATFORM_LEVEL)/arch-$(NDK_ABI)
 NDK_UNAME=$(shell uname -s | tr '[A-Z]' '[a-z]')
-# if you are using NDK older than r8, you must use 4.4.3:
+# if you are using NDK older than r10, you must use 4.4.3:
 #NDK_COMPILER_VERSION=4.4.3
-NDK_COMPILER_VERSION=4.6
+NDK_COMPILER_VERSION=4.8
 NDK_TOOLCHAIN=$(NDK_BASE)/toolchains/$(NDK_ABI)-$(NDK_ABIDIR)-$(NDK_COMPILER_VERSION)/prebuilt/$(NDK_UNAME)-$(NDK_ARCH)
 CROSS_COMPILE = $(NDK_TOOLCHAIN)/bin/$(NDK_ABI)-$(NDK_ABIDIR)-
 

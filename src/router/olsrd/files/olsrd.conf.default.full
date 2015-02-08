@@ -184,6 +184,27 @@
 
 # SmartGatewayEgressInterfaces ""
 
+# Declares the file that contains the bandwidth parameters of the egress
+# interfaces declared by SmartGatewayEgressInterfaces. Every line in the file
+# declares bandwidth parameters of an egress interface, with the format:
+#   # this is a comment
+#   interface=upstream,downstream,pathcost,network/prefix,gateway
+# (default is /var/run/olsrd-sgw-egress.conf)
+
+# SmartGatewayEgressFile "/var/run/olsrd-sgw-egress.conf"
+
+# Determines the period (in milliseconds) on which the SmartGatewayEgressFile
+# is checked for changes and processed if changed.
+# (default is 5000)
+
+# SmartGatewayEgressFilePeriod "5000"
+
+# Declares the file that is written by olsrd to contain the status of the smart
+# gateways and is only relevant when SmartGatewayUseCount is larger than 1.
+# The default setting is <not set>
+
+# SmartGatewayStatusFile <not set>
+
 # Determines the routing tables offset for multi-gateway policy routing tables
 # See the policy routing script for an explanation.
 # (default is 90)

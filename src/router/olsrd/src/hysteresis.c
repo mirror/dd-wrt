@@ -144,7 +144,7 @@ olsr_update_hysteresis_hello(struct link_entry *entry, olsr_reltime htime)
 }
 
 void
-update_hysteresis_incoming(union olsr_ip_addr *remote, struct interface *local, uint16_t seqno)
+update_hysteresis_incoming(union olsr_ip_addr *remote, struct interface_olsr *local, uint16_t seqno)
 {
   struct link_entry *lnk = lookup_link_entry(remote, NULL, local);
 

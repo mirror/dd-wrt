@@ -32,7 +32,7 @@ void closePud(void);
 void pudError(bool useErrno, const char *format, ...) __attribute__ ((format(printf, 2, 3)));
 
 bool packetReceivedFromOlsr(union olsr_message *olsrMessage,
-		struct interface *in_if __attribute__ ((unused)),
+		struct interface_olsr *in_if __attribute__ ((unused)),
 		union olsr_ip_addr *ipaddr __attribute__ ((unused)));
 
 #endif /* _PUD_PUD_H */

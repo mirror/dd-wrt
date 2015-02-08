@@ -160,7 +160,7 @@ static void txToAllOlsrInterfaces(TimedTxInterface interfaces) {
 	 */
 	if (((interfaces & TX_INTERFACE_OLSR) != 0) && getOlsrTtl() && (pu_size > 0)) {
 		int r;
-		struct interface *ifn;
+		struct interface_olsr *ifn;
 		for (ifn = ifnet; ifn; ifn = ifn->int_next) {
 			/* force the pending buffer out if there's not enough space for our message */
 			if ((int)pu_size > net_outbuffer_bytes_left(ifn)) {

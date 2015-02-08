@@ -74,23 +74,23 @@ static uint32_t send_empty_tc;          /* TC empty message sending */
 
 /* IPv4 */
 
-static bool serialize_hello4(struct hello_message *, struct interface *);
+static bool serialize_hello4(struct hello_message *, struct interface_olsr *);
 
-static bool serialize_tc4(struct tc_message *, struct interface *);
+static bool serialize_tc4(struct tc_message *, struct interface_olsr *);
 
-static bool serialize_mid4(struct interface *);
+static bool serialize_mid4(struct interface_olsr *);
 
-static bool serialize_hna4(struct interface *);
+static bool serialize_hna4(struct interface_olsr *);
 
 /* IPv6 */
 
-static bool serialize_hello6(struct hello_message *, struct interface *);
+static bool serialize_hello6(struct hello_message *, struct interface_olsr *);
 
-static bool serialize_tc6(struct tc_message *, struct interface *);
+static bool serialize_tc6(struct tc_message *, struct interface_olsr *);
 
-static bool serialize_mid6(struct interface *);
+static bool serialize_mid6(struct interface_olsr *);
 
-static bool serialize_hna6(struct interface *);
+static bool serialize_hna6(struct interface_olsr *);
 
 /**
  * Set the timer that controls the generation of
@@ -128,7 +128,7 @@ get_empty_tc_timer(void)
  */
 
 bool
-queue_hello(struct hello_message * message, struct interface * ifp)
+queue_hello(struct hello_message * message, struct interface_olsr * ifp)
 {
 #ifdef DEBUG
   OLSR_PRINTF(BMSG_DBGLVL, "Building HELLO on %s\n-------------------\n", ifp->int_name);
@@ -158,7 +158,7 @@ queue_hello(struct hello_message * message, struct interface * ifp)
  */
 
 bool
-queue_tc(struct tc_message * message, struct interface * ifp)
+queue_tc(struct tc_message * message, struct interface_olsr * ifp)
 {
 #ifdef DEBUG
   OLSR_PRINTF(BMSG_DBGLVL, "Building TC on %s\n-------------------\n", ifp->int_name);
@@ -183,7 +183,7 @@ queue_tc(struct tc_message * message, struct interface * ifp)
  */
 
 bool
-queue_mid(struct interface * ifp)
+queue_mid(struct interface_olsr * ifp)
 {
 #ifdef DEBUG
   OLSR_PRINTF(BMSG_DBGLVL, "Building MID on %s\n-------------------\n", ifp->int_name);
@@ -207,7 +207,7 @@ queue_mid(struct interface * ifp)
  *@return nada
  */
 bool
-queue_hna(struct interface * ifp)
+queue_hna(struct interface_olsr * ifp)
 {
 #ifdef DEBUG
   OLSR_PRINTF(BMSG_DBGLVL, "Building HNA on %s\n-------------------\n", ifp->int_name);
@@ -248,7 +248,7 @@ check_buffspace(int msgsize, int buffsize, const char *type)
  */
 
 static bool
-serialize_hello4(struct hello_message *message, struct interface *ifp)
+serialize_hello4(struct hello_message *message, struct interface_olsr *ifp)
 {
   uint16_t remainsize, curr_size;
   struct hello_neighbor *nb;
@@ -414,7 +414,7 @@ serialize_hello4(struct hello_message *message, struct interface *ifp)
  */
 
 static bool
-serialize_hello6(struct hello_message *message, struct interface *ifp)
+serialize_hello6(struct hello_message *message, struct interface_olsr *ifp)
 {
   uint16_t remainsize, curr_size;
   struct hello_neighbor *nb;
@@ -569,7 +569,7 @@ serialize_hello6(struct hello_message *message, struct interface *ifp)
  */
 
 static bool
-serialize_tc4(struct tc_message *message, struct interface *ifp)
+serialize_tc4(struct tc_message *message, struct interface_olsr *ifp)
 {
 #ifdef DEBUG
   struct ipaddr_str buf;
@@ -684,7 +684,7 @@ serialize_tc4(struct tc_message *message, struct interface *ifp)
  */
 
 static bool
-serialize_tc6(struct tc_message *message, struct interface *ifp)
+serialize_tc6(struct tc_message *message, struct interface_olsr *ifp)
 {
 #ifdef DEBUG
   struct ipaddr_str buf;
@@ -791,13 +791,13 @@ serialize_tc6(struct tc_message *message, struct interface *ifp)
  */
 
 static bool
-serialize_mid4(struct interface *ifp)
+serialize_mid4(struct interface_olsr *ifp)
 {
   uint16_t remainsize, curr_size, needsize;
   /* preserve existing data in output buffer */
   union olsr_message *m;
   struct midaddr *addrs;
-  struct interface *ifs;
+  struct interface_olsr *ifs;
 
   if ((olsr_cnf->ip_version != AF_INET) || (!ifp) || (ifnet == NULL) || ((ifnet->int_next == NULL) && (ipequal(&olsr_cnf->main_addr, &ifnet->ip_addr))))
     return false;
@@ -885,13 +885,13 @@ serialize_mid4(struct interface *ifp)
  */
 
 static bool
-serialize_mid6(struct interface *ifp)
+serialize_mid6(struct interface_olsr *ifp)
 {
   uint16_t remainsize, curr_size, needsize;
   /* preserve existing data in output buffer */
   union olsr_message *m;
   struct midaddr6 *addrs6;
-  struct interface *ifs;
+  struct interface_olsr *ifs;
 
   //printf("\t\tGenerating mid on %s\n", ifn->int_name);
 
@@ -978,7 +978,7 @@ serialize_mid6(struct interface *ifp)
  *@return nada
  */
 static bool
-serialize_hna4(struct interface *ifp)
+serialize_hna4(struct interface_olsr *ifp)
 {
   uint16_t remainsize, curr_size, needsize;
   /* preserve existing data in output buffer */
@@ -1080,7 +1080,7 @@ serialize_hna4(struct interface *ifp)
  *@return nada
  */
 static bool
-serialize_hna6(struct interface *ifp)
+serialize_hna6(struct interface_olsr *ifp)
 {
   uint16_t remainsize, curr_size, needsize;
   /* preserve existing data in output buffer */

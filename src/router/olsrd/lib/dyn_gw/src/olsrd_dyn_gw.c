@@ -129,6 +129,8 @@ static bool check_gw(union olsr_ip_addr *, uint8_t, struct ping_list *);
 
 static int ping_is_possible(struct ping_list *);
 
+static char ping_cmd[PING_CMD_MAX_LEN] = { DEFAULT_PING_CMD };
+
 /* Event function to register with the scheduler */
 static void olsr_event_doing_hna(void *);
 
@@ -206,12 +208,26 @@ set_plugin_hna(const char *value, void *data __attribute__ ((unused)), set_plugi
   return 0;
 }
 
+static int
+set_plugin_cmd(const char *value, void *data __attribute__ ((unused)), set_plugin_parameter_addon addon __attribute__ ((unused)))
+{
+  size_t len = strlen(value);
+
+  if (len < PING_CMD_MAX_LEN) {
+    strncpy(ping_cmd, value, sizeof(ping_cmd));
+    return 0;
+  }
+
+  return 1;
+}
+
 static const struct olsrd_plugin_parameters plugin_parameters[] = {
   {.name = "interval",      .set_plugin_parameter = &set_plugin_int,  .data = &ping_check_interval  },
   {.name = "pinginterval",  .set_plugin_parameter = &set_plugin_int,  .data = &ping_check_interval  },
   {.name = "checkinterval", .set_plugin_parameter = &set_plugin_int,  .data = &hna_check_interval   },
   {.name = "ping",          .set_plugin_parameter = &set_plugin_ping, .data = NULL                  },
   {.name = "hna",           .set_plugin_parameter = &set_plugin_hna,  .data = NULL                  },
+  {.name = "pingcmd",       .set_plugin_parameter = &set_plugin_cmd,  .data = &ping_cmd             },
 };
 
 void
@@ -537,9 +553,9 @@ ping_is_possible(struct ping_list *the_ping_list)
 {
   struct ping_list *list;
   for (list = the_ping_list; list; list = list->next) {
-    char ping_command[50];
-    snprintf(ping_command, sizeof(ping_command), "ping -c 1 -q %s", list->ping_address);
-    olsr_printf(1, "\nDo ping on %s ...\n", list->ping_address);
+    char ping_command[sizeof(ping_cmd) + INET6_ADDRSTRLEN];
+    snprintf(ping_command, sizeof(ping_command), ping_cmd, list->ping_address);
+    olsr_printf(1, "\nDo ping on (%s) %s ...\n", ping_cmd, list->ping_address);
     if (system(ping_command) == 0) {
       olsr_printf(1, "...OK\n\n");
       return 1;

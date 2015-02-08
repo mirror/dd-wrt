@@ -22,9 +22,11 @@
 #include "gateway_default_handler.h"
 #include "gateway_list.h"
 #include "gateway.h"
+#include "egressTypes.h"
+#include "egressFile.h"
 
 #include <assert.h>
-#include <net/if.h>
+#include <linux/rtnetlink.h>
 
 /*
  * Defines for the multi-gateway script
@@ -36,14 +38,11 @@
 #define SCRIPT_MODE_EGRESSIF  "egressif"
 #define SCRIPT_MODE_SGWTUN    "sgwtun"
 
-/** structure that holds an interface name, mark and a pointer to the gateway that uses it */
-struct interfaceName {
-  char name[IFNAMSIZ]; /**< interface name */
-  uint8_t tableNr; /**< routing table number */
-  uint8_t ruleNr; /**< IP rule number */
-  uint8_t bypassRuleNr; /**< bypass IP rule number */
-  struct gateway_entry *gw; /**< gateway that uses this interface name */
-};
+/* ipv4 prefix 0.0.0.0/0 */
+static struct olsr_ip_prefix ipv4_slash_0_route;
+
+/* ipv4 prefixes 0.0.0.0/1 and 128.0.0.0/1 */
+static struct olsr_ip_prefix ipv4_slash_1_routes[2];
 
 /** the gateway tree */
 struct avl_tree gateway_tree;
@@ -72,9 +71,6 @@ static struct gw_container_entry *current_ipv4_gw;
 /** the current IPv6 gateway */
 static struct gw_container_entry *current_ipv6_gw;
 
-/** interface names for smart gateway egress interfaces */
-struct interfaceName * sgwEgressInterfaceNames;
-
 /** interface names for smart gateway tunnel interfaces, IPv4 */
 struct interfaceName * sgwTunnel4InterfaceNames;
 
@@ -83,6 +79,28 @@ struct interfaceName * sgwTunnel6InterfaceNames;
 
 /** the timer for proactive takedown */
 static struct timer_entry *gw_takedown_timer;
+
+struct BestOverallLink {
+  bool valid;
+  bool isOlsr;
+  union {
+    struct sgw_egress_if * egress;
+    struct gateway_entry * olsr;
+  } link;
+  int olsrTunnelIfIndex;
+};
+
+static struct sgw_egress_if * bestEgressLinkPrevious = NULL;
+static struct sgw_egress_if * bestEgressLink = NULL;
+
+struct sgw_route_info bestEgressLinkPreviousRoute;
+struct sgw_route_info bestEgressLinkRoute;
+
+struct sgw_route_info bestOverallLinkPreviousRoutes[2];
+struct sgw_route_info bestOverallLinkRoutes[2];
+
+static struct BestOverallLink bestOverallLinkPrevious;
+static struct BestOverallLink bestOverallLink;
 
 /*
  * Forward Declarations
@@ -114,13 +132,6 @@ static inline uint8_t * hna_mask_to_hna_pointer(union olsr_ip_addr *mask, int pr
 }
 
 /**
- * @return true if multi-gateway mode is enabled
- */
-static inline bool multi_gateway_mode(void) {
-  return (olsr_cnf->smart_gw_use_count > 1);
-}
-
-/**
  * Convert an encoded 1 byte transport value (5 bits mantissa, 3 bits exponent)
  * to an uplink/downlink speed value
  *
@@ -139,7 +150,7 @@ static uint32_t deserialize_gw_speed(uint8_t value) {
 
   if (value == UINT8_MAX) {
     /* maximum value: also return maximum value */
-    return UINT32_MAX;
+    return MAX_SMARTGW_SPEED;
   }
 
   speed = (value >> 3) + 1;
@@ -165,7 +176,7 @@ static uint8_t serialize_gw_speed(uint32_t speed) {
     return 0;
   }
 
-  if (speed > 320000000) {
+  if (speed >= MAX_SMARTGW_SPEED) {
     return UINT8_MAX;
   }
 
@@ -395,16 +406,17 @@ static bool multiGwRulesSgwServerTunnel(bool add) {
  */
 static bool multiGwRulesEgressInterfaces(bool add) {
   bool ok = true;
-  unsigned int i = 0;
 
-  for (i = 0; i < olsr_cnf->smart_gw_egress_interfaces_count; i++) {
-    struct interfaceName * ifn = &sgwEgressInterfaceNames[i];
-    if (!multiGwRunScript(SCRIPT_MODE_EGRESSIF, add, ifn->name, ifn->tableNr, ifn->ruleNr, ifn->bypassRuleNr)) {
+  struct sgw_egress_if * egress_if = olsr_cnf->smart_gw_egress_interfaces;
+  while (egress_if) {
+    if (!multiGwRunScript(SCRIPT_MODE_EGRESSIF, add, egress_if->name, egress_if->tableNr, egress_if->ruleNr, egress_if->bypassRuleNr)) {
       ok = false;
       if (add) {
         return ok;
       }
     }
+
+    egress_if = egress_if->next;
   }
 
   return ok;
@@ -435,6 +447,83 @@ static bool multiGwRulesSgwTunnels(bool add) {
   return ok;
 }
 
+/**
+ * Process interface up/down events for non-olsr interfaces, which are egress
+ * interfaces
+ *
+ * @param if_index the index of the interface
+ * @param flag the up/down event
+ */
+static void doEgressInterface(int if_index, enum olsr_ifchg_flag flag) {
+  switch (flag) {
+    case IFCHG_IF_ADD: {
+      char ifname[IF_NAMESIZE];
+      struct sgw_egress_if * egress_if;
+
+      /*
+       * we need to get the name of the interface first because the interface
+       * might be hot-plugged _after_ olsrd has started
+       */
+      if (!if_indextoname(if_index, ifname)) {
+        /* not a known OS interface */
+        return;
+      }
+
+      egress_if = findEgressInterface(ifname);
+      if (!egress_if) {
+        /* not a known egress interface */
+        return;
+      }
+
+      egress_if->if_index = if_index;
+
+      if (egress_if->upCurrent) {
+        /* interface is already up: no change */
+        return;
+      }
+
+      egress_if->upPrevious = egress_if->upCurrent;
+      egress_if->upCurrent = true;
+      egress_if->upChanged = true;
+
+      egress_if->bwCostsChanged = egressBwCalculateCosts(&egress_if->bwCurrent, egress_if->upCurrent);
+    }
+      break;
+
+    case IFCHG_IF_REMOVE: {
+      /*
+       * we need to find the egress interface by if_index because we might
+       * be too late; the kernel could already have removed the interface
+       * in which case we'd get a NULL ifname here if we'd try to call
+       * if_indextoname
+       */
+      struct sgw_egress_if * egress_if = findEgressInterfaceByIndex(if_index);
+      if (!egress_if) {
+        /* not a known egress interface */
+        return;
+      }
+
+      if (!egress_if->upCurrent) {
+        /* interface is already down: no change */
+        return;
+      }
+
+      egress_if->upPrevious = egress_if->upCurrent;
+      egress_if->upCurrent = false;
+      egress_if->upChanged = true;
+
+      egress_if->bwCostsChanged = egressBwCalculateCosts(&egress_if->bwCurrent, egress_if->upCurrent);
+    }
+      break;
+
+    case IFCHG_IF_UPDATE:
+    default:
+      return;
+  }
+
+  doRoutesMultiGw(true, false, GW_MULTI_CHANGE_PHASE_RUNTIME);
+}
+
 /*
  * Callback Functions
  */
@@ -444,11 +533,15 @@ static bool multiGwRulesSgwTunnels(bool add) {
  * when the interface comes up again.
  *
  * @param if_index the interface index
- * @param ifh the interface
+ * @param ifh the interface (NULL when not an olsr interface)
  * @param flag interface change flags
  */
-static void smartgw_tunnel_monitor(int if_index __attribute__ ((unused)),
-    struct interface *ifh __attribute__ ((unused)), enum olsr_ifchg_flag flag __attribute__ ((unused))) {
+static void smartgw_tunnel_monitor(int if_index, struct interface_olsr *ifh, enum olsr_ifchg_flag flag) {
+  if (!ifh && multi_gateway_mode()) {
+    /* non-olsr interface in multi-sgw mode */
+    doEgressInterface(if_index, flag);
+  }
+
   return;
 }
 
@@ -564,6 +657,21 @@ static void gw_takedown_timer_callback(void *unused __attribute__ ((unused))) {
 int olsr_init_gateways(void) {
   int retries = 5;
 
+  memset(&bestEgressLinkPreviousRoute, 0, sizeof(bestEgressLinkPreviousRoute));
+  memset(&bestEgressLinkRoute, 0, sizeof(bestEgressLinkRoute));
+  memset(bestOverallLinkPreviousRoutes, 0, sizeof(bestOverallLinkPreviousRoutes));
+  memset(bestOverallLinkRoutes, 0, sizeof(bestOverallLinkRoutes));
+
+  /* ipv4 prefix 0.0.0.0/0 */
+  memset(&ipv4_slash_0_route, 0, sizeof(ipv4_slash_0_route));
+
+  /* ipv4 prefixes 0.0.0.0/1 and 128.0.0.0/1 */
+  memset(&ipv4_slash_1_routes, 0, sizeof(ipv4_slash_1_routes));
+  ipv4_slash_1_routes[0].prefix.v4.s_addr = htonl(0x00000000);
+  ipv4_slash_1_routes[0].prefix_len = 1;
+  ipv4_slash_1_routes[1].prefix.v4.s_addr = htonl(0x80000000);
+  ipv4_slash_1_routes[1].prefix_len = 1;
+
   gateway_entry_mem_cookie = olsr_alloc_cookie("gateway_entry_mem_cookie", OLSR_COOKIE_TYPE_MEMORY);
   olsr_cookie_set_memory_size(gateway_entry_mem_cookie, sizeof(struct gateway_entry));
 
@@ -575,26 +683,38 @@ int olsr_init_gateways(void) {
   olsr_gw_list_init(&gw_list_ipv4, olsr_cnf->smart_gw_use_count);
   olsr_gw_list_init(&gw_list_ipv6, olsr_cnf->smart_gw_use_count);
 
-  if (!multi_gateway_mode()) {
-    sgwEgressInterfaceNames = NULL;
-    sgwTunnel4InterfaceNames = NULL;
-    sgwTunnel6InterfaceNames = NULL;
-  } else {
+  sgwTunnel4InterfaceNames = NULL;
+  sgwTunnel6InterfaceNames = NULL;
+  memset(&bestOverallLinkPrevious, 0, sizeof(bestOverallLinkPrevious));
+  memset(&bestOverallLink, 0, sizeof(bestOverallLink));
+
+  if (multi_gateway_mode()) {
     uint8_t i;
     struct sgw_egress_if * egressif;
     unsigned int nrOlsrIfs = getNrOfOlsrInterfaces(olsr_cnf);
 
+    /* Initialise the egress interfaces */
     /* setup the egress interface name/mark pairs */
-    sgwEgressInterfaceNames = olsr_malloc(sizeof(struct interfaceName) * olsr_cnf->smart_gw_egress_interfaces_count, "sgwEgressInterfaceNames");
     i = 0;
     egressif = olsr_cnf->smart_gw_egress_interfaces;
     while (egressif) {
-      struct interfaceName * ifn = &sgwEgressInterfaceNames[i];
-      ifn->gw = NULL;
-      ifn->tableNr = olsr_cnf->smart_gw_offset_tables + 1 + i;
-      ifn->ruleNr = olsr_cnf->smart_gw_offset_rules + olsr_cnf->smart_gw_egress_interfaces_count + nrOlsrIfs + 1 + i;
-      ifn->bypassRuleNr = olsr_cnf->smart_gw_offset_rules + i;
-      snprintf(&ifn->name[0], sizeof(ifn->name), "%s", egressif->name);
+      egressif->if_index = if_nametoindex(egressif->name);
+
+      egressif->tableNr = olsr_cnf->smart_gw_offset_tables + 1 + i;
+      egressif->ruleNr = olsr_cnf->smart_gw_offset_rules + olsr_cnf->smart_gw_egress_interfaces_count + nrOlsrIfs + 1 + i;
+      egressif->bypassRuleNr = olsr_cnf->smart_gw_offset_rules + i;
+
+      egressif->upPrevious = egressif->upCurrent = olsr_if_isup(egressif->name);
+      egressif->upChanged = (egressif->upPrevious != egressif->upCurrent);
+
+      egressBwClear(&egressif->bwPrevious, egressif->upPrevious);
+      egressBwClear(&egressif->bwCurrent, egressif->upCurrent);
+      egressif->bwCostsChanged = egressBwCostsChanged(egressif);
+      egressif->bwNetworkChanged = egressBwNetworkChanged(egressif);
+      egressif->bwGatewayChanged = egressBwGatewayChanged(egressif);
+      egressif->bwChanged = egressBwChanged(egressif);
+
+      egressif->inEgressFile = false;
 
       egressif = egressif->next;
       i++;
@@ -654,8 +774,6 @@ int olsr_init_gateways(void) {
     return 1;
   }
 
-  olsr_add_ifchange_handler(smartgw_tunnel_monitor);
-
   return 0;
 }
 
@@ -666,6 +784,7 @@ int olsr_startup_gateways(void) {
   bool ok = true;
 
   if (!multi_gateway_mode()) {
+    olsr_add_ifchange_handler(smartgw_tunnel_monitor);
     return 0;
   }
 
@@ -678,6 +797,29 @@ int olsr_startup_gateways(void) {
     olsr_printf(0, "Could not setup multi-gateway iptables and ip rules\n");
     olsr_shutdown_gateways();
     return 1;
+  }
+
+  startEgressFile();
+  doRoutesMultiGw(true, false, GW_MULTI_CHANGE_PHASE_STARTUP);
+
+  olsr_add_ifchange_handler(smartgw_tunnel_monitor);
+
+  /* Check egress interfaces up status to compensate for a race: the interfaces
+   * can change status between initialising their data structures and
+   * registering the tunnel monitor */
+  {
+    struct sgw_egress_if * egress_if = olsr_cnf->smart_gw_egress_interfaces;
+    while (egress_if) {
+      bool upCurrent = olsr_if_isup(egress_if->name);
+
+      if (upCurrent != egress_if->upCurrent) {
+        int idx = upCurrent ? (int) if_nametoindex(egress_if->name) : egress_if->if_index;
+        enum olsr_ifchg_flag flag = upCurrent ? IFCHG_IF_ADD : IFCHG_IF_REMOVE;
+        smartgw_tunnel_monitor(idx, NULL, flag);
+      }
+
+      egress_if = egress_if->next;
+    }
   }
 
   if (olsr_cnf->smart_gw_takedown_percentage > 0) {
@@ -693,6 +835,7 @@ int olsr_startup_gateways(void) {
  */
 void olsr_shutdown_gateways(void) {
   if (!multi_gateway_mode()) {
+    olsr_remove_ifchange_handler(smartgw_tunnel_monitor);
     return;
   }
 
@@ -701,6 +844,30 @@ void olsr_shutdown_gateways(void) {
     olsr_stop_timer(gw_takedown_timer);
     gw_takedown_timer = NULL;
   }
+
+  olsr_remove_ifchange_handler(smartgw_tunnel_monitor);
+
+  stopEgressFile();
+  {
+    struct sgw_egress_if * egress_if = olsr_cnf->smart_gw_egress_interfaces;
+    while (egress_if) {
+      egress_if->upPrevious = egress_if->upCurrent;
+      egress_if->upCurrent = false;
+      egress_if->upChanged = (egress_if->upPrevious != egress_if->upCurrent);
+
+      egress_if->bwPrevious = egress_if->bwCurrent;
+      egressBwClear(&egress_if->bwCurrent, egress_if->upCurrent);
+      egress_if->bwCostsChanged = egressBwCostsChanged(egress_if);
+      egress_if->bwNetworkChanged = egressBwNetworkChanged(egress_if);
+      egress_if->bwGatewayChanged = egressBwGatewayChanged(egress_if);
+      egress_if->bwChanged = egressBwChanged(egress_if);
+
+      egress_if->inEgressFile = false;
+
+      egress_if = egress_if->next;
+    }
+  }
+  doRoutesMultiGw(true, false, GW_MULTI_CHANGE_PHASE_SHUTDOWN);
 
   (void)multiGwRulesSgwTunnels(false);
   (void)multiGwRulesEgressInterfaces(false);
@@ -715,8 +882,6 @@ void olsr_shutdown_gateways(void) {
 void olsr_cleanup_gateways(void) {
   struct gateway_entry * tree_gw;
   struct gw_container_entry * gw;
-
-  olsr_remove_ifchange_handler(smartgw_tunnel_monitor);
 
   /* remove all gateways in the gateway tree that are not the active gateway */
   OLSR_FOR_ALL_GATEWAY_ENTRIES(tree_gw) {
@@ -752,10 +917,6 @@ void olsr_cleanup_gateways(void) {
   gw_handler->cleanup();
   gw_handler = NULL;
 
-  if (sgwEgressInterfaceNames) {
-    free(sgwEgressInterfaceNames);
-    sgwEgressInterfaceNames = NULL;
-  }
   if (sgwTunnel4InterfaceNames) {
     free(sgwTunnel4InterfaceNames);
     sgwTunnel4InterfaceNames = NULL;
@@ -927,6 +1088,7 @@ void olsr_update_gateway_entry(union olsr_ip_addr *originator, union olsr_ip_add
 
   gw->ipv4 = (ptr[GW_HNA_FLAGS] & GW_HNA_FLAG_IPV4) != 0;
   gw->ipv4nat = (ptr[GW_HNA_FLAGS] & GW_HNA_FLAG_IPV4_NAT) != 0;
+  gw->ipv6 = false;
 
   if (olsr_cnf->ip_version == AF_INET6) {
     gw->ipv6 = (ptr[GW_HNA_FLAGS] & GW_HNA_FLAG_IPV6) != 0;
@@ -960,12 +1122,22 @@ void olsr_update_gateway_entry(union olsr_ip_addr *originator, union olsr_ip_add
     if (new_gw_in_list) {
       new_gw_in_list = olsr_gw_list_update(&gw_list_ipv4, new_gw_in_list);
       assert(new_gw_in_list);
+
+      if (multi_gateway_mode() && new_gw_in_list->tunnel) {
+        /* the active gateway has changed its costs: re-evaluate egress routes */
+        doRoutesMultiGw(false, true, GW_MULTI_CHANGE_PHASE_RUNTIME);
+      }
     }
 
     new_gw_in_list = olsr_gw_list_find(&gw_list_ipv6, gw);
     if (new_gw_in_list) {
       new_gw_in_list = olsr_gw_list_update(&gw_list_ipv6, new_gw_in_list);
       assert(new_gw_in_list);
+
+      if (multi_gateway_mode() && new_gw_in_list->tunnel) {
+        /* the active gateway has changed its costs: re-evaluate egress routes */
+        doRoutesMultiGw(false, true, GW_MULTI_CHANGE_PHASE_RUNTIME);
+      }
     }
   }
 
@@ -1165,6 +1337,10 @@ bool olsr_set_inet_gateway(struct gateway_entry * chosen_gw, bool ipv4, bool ipv
       assert(new_gw_in_list->tunnel);
       olsr_os_inetgw_tunnel_route(new_gw_in_list->tunnel->if_index, true, true, olsr_cnf->rt_table_tunnel);
       current_ipv4_gw = new_gw_in_list;
+
+      if (multi_gateway_mode()) {
+        doRoutesMultiGw(false, true, GW_MULTI_CHANGE_PHASE_RUNTIME);
+      }
     } else {
       /* new gw is not yet in the gw list */
       char name[IFNAMSIZ];
@@ -1191,6 +1367,10 @@ bool olsr_set_inet_gateway(struct gateway_entry * chosen_gw, bool ipv4, bool ipv
         new_gw_in_list->gw = new_gw;
         new_gw_in_list->tunnel = new_v4gw_tunnel;
         current_ipv4_gw = olsr_gw_list_add(&gw_list_ipv4, new_gw_in_list);
+
+        if (multi_gateway_mode()) {
+          doRoutesMultiGw(false, true, GW_MULTI_CHANGE_PHASE_RUNTIME);
+        }
       } else {
         /* adding the tunnel failed, we try again in the next cycle */
         set_unused_iptunnel_name(new_gw);
@@ -1211,6 +1391,10 @@ bool olsr_set_inet_gateway(struct gateway_entry * chosen_gw, bool ipv4, bool ipv
       assert(new_gw_in_list->tunnel);
       olsr_os_inetgw_tunnel_route(new_gw_in_list->tunnel->if_index, true, true, olsr_cnf->rt_table_tunnel);
       current_ipv6_gw = new_gw_in_list;
+
+      if (multi_gateway_mode()) {
+        doRoutesMultiGw(false, true, GW_MULTI_CHANGE_PHASE_RUNTIME);
+      }
     } else {
       /* new gw is not yet in the gw list */
       char name[IFNAMSIZ];
@@ -1237,6 +1421,10 @@ bool olsr_set_inet_gateway(struct gateway_entry * chosen_gw, bool ipv4, bool ipv
         new_gw_in_list->gw = new_gw;
         new_gw_in_list->tunnel = new_v6gw_tunnel;
         current_ipv6_gw = olsr_gw_list_add(&gw_list_ipv6, new_gw_in_list);
+
+        if (multi_gateway_mode()) {
+          doRoutesMultiGw(false, true, GW_MULTI_CHANGE_PHASE_RUNTIME);
+        }
       } else {
         /* adding the tunnel failed, we try again in the next cycle */
         set_unused_iptunnel_name(new_gw);
@@ -1260,6 +1448,715 @@ struct gateway_entry *olsr_get_inet_gateway(bool ipv6) {
 	}
 
 	return current_ipv4_gw ? current_ipv4_gw->gw : NULL;
+}
+
+/*
+ * Process Egress Changes
+ */
+
+#define MSGW_ROUTE_ADD_ALLOWED(phase)   ((phase == GW_MULTI_CHANGE_PHASE_STARTUP ) || (phase == GW_MULTI_CHANGE_PHASE_RUNTIME ))
+#define MSGW_ROUTE_ADD_FORCED(phase)    ( phase == GW_MULTI_CHANGE_PHASE_STARTUP )
+#define MSGW_ROUTE_DEL_ALLOWED(phase)   ((phase == GW_MULTI_CHANGE_PHASE_RUNTIME ) || (phase == GW_MULTI_CHANGE_PHASE_SHUTDOWN))
+#define MSGW_ROUTE_DEL_FORCED(phase)    ( phase == GW_MULTI_CHANGE_PHASE_SHUTDOWN)
+#define MSGW_ROUTE_FORCED(phase)        ((phase == GW_MULTI_CHANGE_PHASE_STARTUP ) || (phase == GW_MULTI_CHANGE_PHASE_SHUTDOWN))
+
+/**
+ * Determine best egress link.
+ * The list of egress interface is ordered on priority (the declaration order),
+ * so the function will - for multiple egress links with the same costs - set the
+ * best egress interface to the first declared one of those.
+ * When there is no best egress interface (that is up) then the function will
+ * set the best egress interface to NULL.
+ *
+ * @param phase the phase of the change (startup/runtime/shutdown)
+ * @return true when the best egress link changed or when any of its relevant
+ * parameters has changed
+ */
+static bool determineBestEgressLink(enum sgw_multi_change_phase phase) {
+  bool changed = false;
+  struct sgw_egress_if * bestEgress = olsr_cnf->smart_gw_egress_interfaces;
+
+  if (phase == GW_MULTI_CHANGE_PHASE_SHUTDOWN) {
+    bestEgress = NULL;
+  } else {
+    struct sgw_egress_if * egress_if = bestEgress;
+    if (egress_if) {
+      egress_if = egress_if->next;
+    }
+    while (egress_if) {
+      if (egress_if->upCurrent && (egress_if->bwCurrent.costs < bestEgress->bwCurrent.costs)) {
+        bestEgress = egress_if;
+      }
+
+      egress_if = egress_if->next;
+    }
+
+    if (bestEgress && (!bestEgress->upCurrent || (bestEgress->bwCurrent.costs == INT64_MAX))) {
+      bestEgress = NULL;
+    }
+  }
+
+  bestEgressLinkPrevious = bestEgressLink;
+  bestEgressLink = bestEgress;
+
+  changed = (bestEgressLinkPrevious != bestEgressLink) || //
+      (bestEgressLink && (bestEgressLink->upChanged || bestEgressLink->bwChanged));
+
+  if (changed || MSGW_ROUTE_FORCED(phase)) {
+    if (!bestEgressLink || !bestEgressLink->upCurrent) {
+      olsr_cnf->smart_gw_uplink = 0;
+      olsr_cnf->smart_gw_downlink = 0;
+    } else {
+      olsr_cnf->smart_gw_uplink = bestEgressLink->bwCurrent.egressUk;
+      olsr_cnf->smart_gw_downlink = bestEgressLink->bwCurrent.egressDk;
+    }
+    refresh_smartgw_netmask();
+  }
+
+  return changed;
+}
+
+/**
+ * Determine best overall link (choose egress interface over olsrd).
+ *
+ * When there is no best overall link, the best overall link will be set to a
+ * NULL egress interface.
+ *
+ * @param phase the phase of the change (startup/runtime/shutdown)
+ * @return true when the best egress link changed or when any of its relevant
+ * parameters has changed
+ */
+static bool determineBestOverallLink(enum sgw_multi_change_phase phase) {
+  struct gw_container_entry * gwContainer = (olsr_cnf->ip_version == AF_INET) ? current_ipv4_gw : current_ipv6_gw;
+  struct gateway_entry * olsrGw = !gwContainer ? NULL : gwContainer->gw;
+
+  int64_t egressCosts = !bestEgressLink ? INT64_MAX : bestEgressLink->bwCurrent.costs;
+  int64_t olsrCosts = !olsrGw ? INT64_MAX : olsrGw->path_cost;
+  int64_t bestOverallCosts = MIN(egressCosts, olsrCosts);
+
+  bestOverallLinkPrevious = bestOverallLink;
+  if ((bestOverallCosts == INT64_MAX) || (phase == GW_MULTI_CHANGE_PHASE_SHUTDOWN)) {
+    bestOverallLink.valid = false;
+    bestOverallLink.isOlsr = false;
+    bestOverallLink.link.egress = NULL;
+    bestOverallLink.olsrTunnelIfIndex = 0;
+  } else if (egressCosts <= olsrCosts) {
+    bestOverallLink.valid = bestEgressLink;
+    bestOverallLink.isOlsr = false;
+    bestOverallLink.link.egress = bestEgressLink;
+    bestOverallLink.olsrTunnelIfIndex = 0;
+  } else {
+    struct olsr_iptunnel_entry * tunnel = !gwContainer ? NULL : gwContainer->tunnel;
+
+    bestOverallLink.valid = olsrGw;
+    bestOverallLink.isOlsr = true;
+    bestOverallLink.link.olsr = olsrGw;
+    bestOverallLink.olsrTunnelIfIndex = !tunnel ? 0 : tunnel->if_index;
+  }
+
+  return memcmp(&bestOverallLink, &bestOverallLinkPrevious, sizeof(bestOverallLink));
+}
+
+/**
+ * Program a route (add or remove) through netlink
+ *
+ * @param add true to add the route, false to remove it
+ * @param route the route
+ * @param linkName the human readable id of the route, used in error reports in
+ * the syslog
+ */
+static void programRoute(bool add, struct sgw_route_info * route, const char * linkName) {
+  if (!route || !route->active) {
+    return;
+  }
+
+  if (olsr_new_netlink_route( //
+      route->route.family, //
+      route->route.rttable, //
+      route->route.flags, //
+      route->route.scope, //
+      route->route.if_index, //
+      route->route.metric, //
+      route->route.protocol, //
+      !route->route.srcSet ? NULL : &route->route.srcStore, //
+      !route->route.gwSet ? NULL : &route->route.gwStore, //
+      !route->route.dstSet ? NULL : &route->route.dstStore, //
+      add, //
+      route->route.del_similar, //
+      route->route.blackhole //
+      )) {
+    olsr_syslog(OLSR_LOG_ERR, "Could not %s a route for the %s %s", !add ? "remove" : "add", !add ? "previous" : "current", linkName);
+    route->active = false;
+  } else {
+    route->active = add;
+  }
+}
+
+/**
+ * Determine the best overall egress/olsr interface routes.
+ *
+ * These are a set of 2 /1 routes to override any default gateway
+ * routes that are setup through other means such as a DHCP client.
+ *
+ * @param routes a pointer to the array of 2 /1 routes where to store the
+ * newly determined routes
+ */
+static void determineBestOverallLinkRoutes(struct sgw_route_info * routes) {
+  int ifIndex = 0;
+  union olsr_ip_addr * gw = NULL;
+  int i;
+  if (!bestOverallLink.valid) {
+    /* there is no current best overall link */
+  } else if (!bestOverallLink.isOlsr) {
+    /* current best overall link is an egress interface */
+    struct sgw_egress_if * egress = bestOverallLink.link.egress;
+    if (egress) {
+      ifIndex = egress->if_index;
+      if (egress->bwCurrent.gatewaySet) {
+        gw = &egress->bwCurrent.gateway;
+      }
+    }
+  } else {
+    /* current best overall link is an olsr tunnel interface */
+    struct gw_container_entry * gwContainer = current_ipv4_gw;
+    struct olsr_iptunnel_entry * tunnel = !gwContainer ? NULL : gwContainer->tunnel;
+
+    if (tunnel) {
+      ifIndex = tunnel->if_index;
+    }
+  }
+
+  if (!ifIndex) {
+    for (i = 0; i < 2; i++) {
+      routes[i].active = false;
+    }
+    return;
+  }
+
+  for (i = 0; i < 2; i++) {
+    memset(&routes[i], 0, sizeof(routes[i]));
+    routes[i].active = true;
+    routes[i].route.family = AF_INET;
+    routes[i].route.rttable = olsr_cnf->rt_table;
+    routes[i].route.flags = 0;
+    routes[i].route.scope = !gw ? RT_SCOPE_LINK : RT_SCOPE_UNIVERSE;
+    routes[i].route.if_index = ifIndex;
+    routes[i].route.metric = 0;
+    routes[i].route.protocol = RTPROT_STATIC;
+    routes[i].route.srcSet = false;
+    routes[i].route.gwSet = false;
+    if (gw) {
+      routes[i].route.gwSet = true;
+      routes[i].route.gwStore = *gw;
+    }
+    routes[i].route.dstSet = true;
+    routes[i].route.dstStore = ipv4_slash_1_routes[i];
+    routes[i].route.del_similar = false;
+    routes[i].route.blackhole = false;
+  }
+}
+
+/**
+ * Setup default gateway override routes: a set of 2 /1 routes for the best
+ * overall link
+ *
+ * @param phase the phase of the change (startup/runtime/shutdown)
+ */
+static void setupDefaultGatewayOverrideRoutes(enum sgw_multi_change_phase phase) {
+  bool force = MSGW_ROUTE_FORCED(phase);
+  int i;
+
+  if (!bestOverallLinkPrevious.valid && !bestOverallLink.valid && !force) {
+    return;
+  }
+
+  memcpy(&bestOverallLinkPreviousRoutes, &bestOverallLinkRoutes, sizeof(bestOverallLinkPreviousRoutes));
+
+  determineBestOverallLinkRoutes(bestOverallLinkRoutes);
+
+  for (i = 0; i < 2; i++) {
+    bool routeChanged = //
+        (bestOverallLinkPreviousRoutes[i].active != bestOverallLinkRoutes[i].active) || //
+        memcmp(&bestOverallLinkPreviousRoutes[i].route, &bestOverallLinkRoutes[i].route, sizeof(bestOverallLinkRoutes[i].route));
+
+    if ((routeChanged || MSGW_ROUTE_DEL_FORCED(phase)) && MSGW_ROUTE_DEL_ALLOWED(phase)) {
+      programRoute(false, &bestOverallLinkPreviousRoutes[i], "overall best gateway");
+    }
+
+    if ((routeChanged || MSGW_ROUTE_ADD_FORCED(phase)) && MSGW_ROUTE_ADD_ALLOWED(phase)) {
+      programRoute(true, &bestOverallLinkRoutes[i], "overall best gateway");
+    }
+  }
+}
+
+/**
+ * Determine the best egress interface route.
+ *
+ * @param route a pointer to the an route where to store the
+ * newly determined route
+ * @param networkRoute true when the route is a network route (not an internet
+ * route)
+ * @param if_index the index of the interface that the route is for
+ * @param gw the gateway for the route
+ * @param dst the destination for the route
+ * @param table the routing table for the route
+ */
+static void determineEgressLinkRoute( //
+    struct sgw_route_info * route, //
+    bool networkRoute, //
+    int if_index, //
+    union olsr_ip_addr * gw, //
+    struct olsr_ip_prefix * dst, //
+    int table) {
+  // default route
+  // ----: ip route replace|delete blackhole default                          table 90: !egress_if               (1)
+  // ppp0: ip route replace|delete           default                 dev ppp0 table 90:  egress_if && dst && !gw (2)
+  // eth1: ip route replace|delete           default via 192.168.0.1 dev eth1 table 90:  egress_if && dst &&  gw (3)
+
+  // network route
+  // eth1: ip route replace|delete to 192.168.0.0/24                 dev eth1 table 90:  egress_if && dst && !gw (2*)
+
+  memset(route, 0, sizeof(*route));
+  if (if_index <= 0) { /* 1 */
+    route->active = true;
+    route->route.family = AF_INET;
+    route->route.rttable = table;
+    route->route.flags = RTNH_F_ONLINK;
+    route->route.scope = RT_SCOPE_UNIVERSE;
+    route->route.if_index = 0;
+    route->route.metric = 0;
+    route->route.protocol = RTPROT_STATIC;
+    route->route.srcSet = false;
+    route->route.gwSet = false;
+    route->route.dstSet = false;
+    if (dst) {
+      route->route.dstSet = true;
+      route->route.dstStore = *dst;
+    }
+    route->route.del_similar = false;
+    route->route.blackhole = true;
+  } else if (dst && !gw) { /* 2 */
+    route->active = true;
+    route->route.family = AF_INET;
+    route->route.rttable = table;
+    route->route.flags = !networkRoute ? RTNH_F_ONLINK /* 2 */ : 0 /* 2* */;
+    route->route.scope = RT_SCOPE_LINK;
+    route->route.if_index = if_index;
+    route->route.metric = 0;
+    route->route.protocol = RTPROT_STATIC;
+    route->route.srcSet = false;
+    route->route.gwSet = false;
+    route->route.dstSet = true;
+    route->route.dstStore = *dst;
+    route->route.del_similar = false;
+    route->route.blackhole = false;
+  } else if (dst && gw) { /* 3 */
+    route->active = true;
+    route->route.family = AF_INET;
+    route->route.rttable = table;
+    route->route.flags = 0;
+    route->route.scope = RT_SCOPE_UNIVERSE;
+    route->route.if_index = if_index;
+    route->route.metric = 0;
+    route->route.protocol = RTPROT_STATIC;
+    route->route.srcSet = false;
+    route->route.gwSet = true;
+    route->route.gwStore = *gw;
+    route->route.dstSet = true;
+    route->route.dstStore = *dst;
+    route->route.del_similar = false;
+    route->route.blackhole = false;
+  } else {
+    /* no destination set */
+    route->active = false;
+    olsr_syslog(OLSR_LOG_ERR, "No route destination specified in %s", __FUNCTION__);
+    return;
+  }
+}
+
+/**
+ * Setup default route for the best egress interface
+ *
+ * When there is no best egress link, then a blackhole route is setup to prevent
+ * looping smart gateway tunnel traffic.
+ *
+ * @param phase the phase of the change (startup/runtime/shutdown)
+ */
+static void configureBestEgressLinkRoute(enum sgw_multi_change_phase phase) {
+  bool force = MSGW_ROUTE_FORCED(phase);
+
+  /*
+   * bestEgressLinkPrevious  bestEgressLink  Action
+   *                   NULL            NULL  -
+   *                   NULL               x  add new route
+   *                      x            NULL  remove old route
+   *                      x               x  remove old route && add new routes
+   */
+
+  if (!bestEgressLinkPrevious && !bestEgressLink && !force) {
+    return;
+  }
+
+  memcpy(&bestEgressLinkPreviousRoute, &bestEgressLinkRoute, sizeof(bestEgressLinkPreviousRoute));
+
+  determineEgressLinkRoute( //
+      &bestEgressLinkRoute, // route
+      false, // networkRoute
+      !bestEgressLink ? 0 : bestEgressLink->if_index, // if_index
+      (!bestEgressLink || !bestEgressLink->bwCurrent.gatewaySet) ? NULL : &bestEgressLink->bwCurrent.gateway, // gw
+      &ipv4_slash_0_route, // dst
+      olsr_cnf->smart_gw_offset_tables // table
+      );
+
+  {
+    bool routeChanged = //
+        (bestEgressLinkPreviousRoute.active != bestEgressLinkRoute.active) || //
+        memcmp(&bestEgressLinkPreviousRoute.route, &bestEgressLinkRoute.route, sizeof(bestEgressLinkRoute.route));
+
+    if ((routeChanged || MSGW_ROUTE_DEL_FORCED(phase)) && MSGW_ROUTE_DEL_ALLOWED(phase)) {
+      programRoute(false, &bestEgressLinkPreviousRoute, "best egress link");
+    }
+
+    if ((routeChanged || MSGW_ROUTE_ADD_FORCED(phase)) && MSGW_ROUTE_ADD_ALLOWED(phase)) {
+      programRoute(true, &bestEgressLinkRoute, "best egress link");
+    }
+  }
+}
+
+/**
+ * Setup network (when relevant) and default routes for the every egress
+ * interface
+ *
+ * @param phase the phase of the change (startup/runtime/shutdown)
+ */
+static void configureEgressLinkRoutes(enum sgw_multi_change_phase phase) {
+  bool force = MSGW_ROUTE_FORCED(phase);
+
+  /* egress interfaces */
+  struct sgw_egress_if * egress_if = olsr_cnf->smart_gw_egress_interfaces;
+  while (egress_if) {
+    if (!egress_if->bwNetworkChanged && !egress_if->bwGatewayChanged && !egress_if->upChanged && !force) {
+      /* no relevant change */
+      goto next;
+    }
+
+    /* network route */
+    if (egress_if->bwNetworkChanged || force) {
+      bool routeChanged;
+
+      struct sgw_route_info networkRoutePrevious = egress_if->networkRouteCurrent;
+
+      if (!egress_if->bwCurrent.networkSet || !egress_if->upCurrent || (egress_if->bwCurrent.costs == INT64_MAX)) {
+        memset(&egress_if->networkRouteCurrent, 0, sizeof(egress_if->networkRouteCurrent));
+        egress_if->networkRouteCurrent.active = false;
+      } else {
+        determineEgressLinkRoute( //
+            &egress_if->networkRouteCurrent, // route
+            true,// networkRoute
+            egress_if->if_index, // if_index
+            NULL, // gw
+            &egress_if->bwCurrent.network, // dst
+            egress_if->tableNr // table
+            );
+      }
+
+      routeChanged = //
+          (networkRoutePrevious.active != egress_if->networkRouteCurrent.active) || //
+          memcmp(&networkRoutePrevious.route, &egress_if->networkRouteCurrent.route, sizeof(egress_if->networkRouteCurrent.route));
+
+      if ((routeChanged || MSGW_ROUTE_DEL_FORCED(phase)) && MSGW_ROUTE_DEL_ALLOWED(phase)) {
+        programRoute(false, &networkRoutePrevious, egress_if->name);
+      }
+
+      if ((routeChanged || MSGW_ROUTE_ADD_FORCED(phase)) && MSGW_ROUTE_ADD_ALLOWED(phase)) {
+        programRoute(true, &egress_if->networkRouteCurrent, egress_if->name);
+      }
+    }
+
+    /* default route */
+    if (egress_if->bwGatewayChanged || force) {
+      bool routeChanged;
+
+      struct sgw_route_info egressRoutePrevious = egress_if->egressRouteCurrent;
+
+      if (!egress_if->upCurrent || (egress_if->bwCurrent.costs == INT64_MAX)) {
+        memset(&egress_if->egressRouteCurrent, 0, sizeof(egress_if->egressRouteCurrent));
+        egress_if->egressRouteCurrent.active = false;
+      } else {
+        determineEgressLinkRoute( //
+            &egress_if->egressRouteCurrent, // route
+            false,// networkRoute
+            egress_if->if_index, // if_index
+            !egress_if->bwCurrent.gatewaySet ? NULL : &egress_if->bwCurrent.gateway, // gw
+            &ipv4_slash_0_route, // dst
+            egress_if->tableNr // table
+            );
+      }
+
+      routeChanged = //
+          (egressRoutePrevious.active != egress_if->egressRouteCurrent.active) || //
+          memcmp(&egressRoutePrevious, &egress_if->egressRouteCurrent, sizeof(egress_if->egressRouteCurrent));
+
+       if ((routeChanged || MSGW_ROUTE_DEL_FORCED(phase)) && MSGW_ROUTE_DEL_ALLOWED(phase)) {
+         programRoute(false, &egressRoutePrevious, egress_if->name);
+       }
+
+       if ((routeChanged || MSGW_ROUTE_ADD_FORCED(phase)) && MSGW_ROUTE_ADD_ALLOWED(phase)) {
+         programRoute(true, &egress_if->egressRouteCurrent, egress_if->name);
+       }
+    }
+
+    next: egress_if = egress_if->next;
+  }
+}
+
+/*
+ * Multi-Smart-Gateway Status Overview
+ */
+
+#define IPNONE    ((olsr_cnf->ip_version == AF_INET) ? "0.0.0.0"     : "::")
+#define MASKNONE  ((olsr_cnf->ip_version == AF_INET) ? "0.0.0.0/0"   : "::/0")
+#define IPLOCAL   ((olsr_cnf->ip_version == AF_INET) ? "127.0.0.1"   : "::1")
+#define MASKLOCAL ((olsr_cnf->ip_version == AF_INET) ? "127.0.0.0/8" : "::1/128")
+
+/**
+ * Print a timestamp to a file
+ *
+ * @param f the file
+ */
+static void printDate(FILE * f) {
+  time_t timer;
+  struct tm* tm_info;
+  char buffer[64];
+
+  time(&timer);
+  tm_info = localtime(&timer);
+
+  strftime(buffer, sizeof(buffer), "%B %d, %Y at %H:%M:%S", tm_info);
+  fprintf(f, "%s", buffer);
+}
+
+/**
+ * Write multi-smart-gateway status file
+ *
+ * <pre>
+ * # multi-smart-gateway status overview, generated on October 10, 2014 at 08:27:15
+ *
+ * #Originator Prefix      Uplink Downlink PathCost   Type   Interface Gateway     Cost
+ *  127.0.0.1  127.0.0.0/8 0      0        4294967295 egress ppp0      0.0.0.0     9223372036854775807
+ *  127.0.0.1  127.0.0.0/8 0      0        4294967295 egress eth1      192.168.0.1 9223372036854775807
+ * *0.0.0.0    0.0.0.0/0   290    1500     1024       olsr   tnl_4094  0.0.0.0     2182002287
+ * </pre>
+ *
+ * @param phase the phase of the change (startup/runtime/shutdown)
+ */
+static void writeProgramStatusFile(enum sgw_multi_change_phase phase) {
+  /*                                # Origi Prefx Upln Dwnl PathC Type Intfc Gtway Cost */
+  static const char * fmt_header = "%s%-15s %-18s %-9s %-9s %-10s %-6s %-16s %-15s %s\n";
+  static const char * fmt_values = "%s%-15s %-18s %-9u %-9u %-10u %-6s %-16s %-15s %lld\n";
+
+  char * fileName = olsr_cnf->smart_gw_status_file;
+  FILE * fp = NULL;
+
+  if (!fileName || (fileName[0] == '\0')) {
+    return;
+  }
+
+  if (phase == GW_MULTI_CHANGE_PHASE_SHUTDOWN) {
+    remove(fileName);
+    return;
+  }
+
+  fp = fopen(fileName, "w");
+  if (!fp) {
+    olsr_syslog(OLSR_LOG_ERR, "Could not write to %s", fileName);
+    return;
+  }
+
+  fprintf(fp, "# OLSRd Multi-Smart-Gateway Status Overview\n");
+  fprintf(fp, "# Generated on ");
+  printDate(fp);
+  fprintf(fp, "\n\n");
+
+  /* header */
+  fprintf(fp, fmt_header, "#", "Originator", "Prefix", "Uplink", "Downlink", "PathCost", "Type", "Interface", "Gateway", "Cost");
+
+  /* egress interfaces */
+  {
+    struct sgw_egress_if * egress_if = olsr_cnf->smart_gw_egress_interfaces;
+    while (egress_if) {
+      struct ipaddr_str gwStr;
+      const char * gw = !egress_if->bwCurrent.gatewaySet ? IPNONE : olsr_ip_to_string(&gwStr, &egress_if->bwCurrent.gateway);
+      bool selected = bestOverallLink.valid && !bestOverallLink.isOlsr && (bestOverallLink.link.egress == egress_if);
+
+      fprintf(fp, fmt_values, //
+          selected ? "*" : " ", //selected
+          IPLOCAL, // Originator
+          MASKLOCAL, // Prefix
+          egress_if->bwCurrent.egressUk, // Uplink
+          egress_if->bwCurrent.egressDk, // Downlink
+          egress_if->bwCurrent.path_cost, // PathCost
+          "egress", // Type
+          egress_if->name, // Interface
+          gw, // Gateway
+          egress_if->bwCurrent.costs // Cost
+          );
+
+      egress_if = egress_if->next;
+    }
+  }
+
+  /* olsr */
+  {
+    struct gateway_entry * current_gw = olsr_get_inet_gateway((olsr_cnf->ip_version == AF_INET) ? false : true);
+    struct interfaceName * sgwTunnelInterfaceNames = (olsr_cnf->ip_version == AF_INET) ? sgwTunnel4InterfaceNames : sgwTunnel6InterfaceNames;
+
+    int i = 0;
+    for (i = 0; i < olsr_cnf->smart_gw_use_count; i++) {
+      struct interfaceName * node = &sgwTunnelInterfaceNames[i];
+      struct gateway_entry * gw = node->gw;
+      struct tc_entry* tc = !gw ? NULL : olsr_lookup_tc_entry(&gw->originator);
+
+      struct ipaddr_str originatorStr;
+      const char * originator = !gw ? IPNONE : olsr_ip_to_string(&originatorStr, &gw->originator);
+      struct ipaddr_str prefixIpStr;
+      const char * prefixIPStr = !gw ? IPNONE : olsr_ip_to_string(&prefixIpStr, &gw->external_prefix.prefix);
+      uint8_t prefix_len = !gw ? 0 : gw->external_prefix.prefix_len;
+      struct ipaddr_str tunnelGwStr;
+      const char * tunnelGw = !gw ? IPNONE : olsr_ip_to_string(&tunnelGwStr, &gw->originator);
+      bool selected = bestOverallLink.valid && bestOverallLink.isOlsr && current_gw && (current_gw == gw);
+
+      char prefix[strlen(prefixIPStr) + 1 + 3 + 1];
+      snprintf(prefix, sizeof(prefix), "%s/%d", prefixIPStr, prefix_len);
+
+      fprintf(fp, fmt_values, //
+          selected ? "*" : " ", // selected
+          originator, // Originator
+          !gw ? MASKNONE : prefix, // Prefix IP
+          !gw ? 0 : gw->uplink, // Uplink
+          !gw ? 0 : gw->downlink, // Downlink
+          (!gw || !tc) ? ROUTE_COST_BROKEN : tc->path_cost, // PathCost
+          "olsr", // Type
+          node->name, // Interface
+          tunnelGw, // Gateway
+          !gw ? INT64_MAX : gw->path_cost // Cost
+      );
+    }
+  }
+
+  fclose(fp);
+}
+
+/**
+ * Report a new gateway with its most relevant parameters in the syslog
+ */
+static void reportNewGateway(void) {
+  if (!bestOverallLink.valid) {
+    /* best overall link is invalid (none) */
+    olsr_syslog(OLSR_LOG_INFO, "New gateway selected: none");
+    return;
+  }
+
+  if (!bestOverallLink.isOlsr) {
+    /* best overall link is an egress interface */
+    struct ipaddr_str gwStr;
+    const char * gw = !bestOverallLink.link.egress->bwCurrent.gatewaySet ? //
+        NULL : //
+        olsr_ip_to_string(&gwStr, &bestOverallLink.link.egress->bwCurrent.gateway);
+
+    olsr_syslog(OLSR_LOG_INFO, "New gateway selected: %s %s%s%swith uplink/downlink/pathcost = %u/%u/%u", //
+        bestOverallLink.link.egress->name, //
+        !gw ? "" : "via ", //
+        !gw ? "" : gwStr.buf, //
+        !gw ? "" : " ", //
+        bestOverallLink.link.egress->bwCurrent.egressUk, //
+        bestOverallLink.link.egress->bwCurrent.egressDk, //
+        bestOverallLink.link.egress->bwCurrent.path_cost);
+    return;
+  }
+
+  /* best overall link is an olsr (tunnel) interface */
+  {
+    struct tc_entry* tc = olsr_lookup_tc_entry(&bestOverallLink.link.olsr->originator);
+
+    char ifNameBuf[IFNAMSIZ];
+    const char * ifName = if_indextoname(bestOverallLink.olsrTunnelIfIndex, ifNameBuf);
+
+    struct ipaddr_str gwStr;
+    const char * gw = olsr_ip_to_string(&gwStr, &bestOverallLink.link.olsr->originator);
+
+    olsr_syslog(OLSR_LOG_INFO, "New gateway selected: %s %s%s%swith uplink/downlink/pathcost = %u/%u/%u", //
+        !ifName ? "none" : ifName, //
+        !gw ? "" : "via ", //
+        !gw ? "" : gwStr.buf, //
+        !gw ? "" : " ", //
+        bestOverallLink.link.olsr->uplink, //
+        bestOverallLink.link.olsr->downlink, //
+        !tc ? ROUTE_COST_BROKEN : tc->path_cost);
+  }
+}
+
+/**
+ * Process changes that are relevant to egress interface: changes to the
+ * egress interfaces themselves and to the smart gateway that is chosen by olsrd
+ *
+ * @param egressChanged true when an egress interface changed
+ * @param olsrChanged true when the smart gateway changed
+ * @param phase the phase of the change (startup/runtime/shutdown)
+ */
+void doRoutesMultiGw(bool egressChanged, bool olsrChanged, enum sgw_multi_change_phase phase) {
+  bool bestEgressChanged = false;
+  bool bestOverallChanged = false;
+  bool force = MSGW_ROUTE_FORCED(phase);
+
+  assert( //
+      (phase == GW_MULTI_CHANGE_PHASE_STARTUP) || //
+      (phase == GW_MULTI_CHANGE_PHASE_RUNTIME) || //
+      (phase == GW_MULTI_CHANGE_PHASE_SHUTDOWN));
+
+  if (!egressChanged && !olsrChanged && !force) {
+    goto out;
+  }
+
+  assert(multi_gateway_mode());
+
+  if (egressChanged || force) {
+    bestEgressChanged = determineBestEgressLink(phase);
+    configureEgressLinkRoutes(phase);
+  }
+
+  if (olsrChanged || bestEgressChanged || force) {
+    bestOverallChanged = determineBestOverallLink(phase);
+  }
+
+  if (bestOverallChanged || force) {
+    setupDefaultGatewayOverrideRoutes(phase);
+  }
+
+  if (bestEgressChanged || force) {
+    configureBestEgressLinkRoute(phase);
+  }
+
+  if (bestOverallChanged || force) {
+    reportNewGateway();
+  }
+
+  writeProgramStatusFile(phase);
+
+  out: if (egressChanged) {
+    /* clear the 'changed' flags of egress interfaces */
+    struct sgw_egress_if * egress_if = olsr_cnf->smart_gw_egress_interfaces;
+    while (egress_if) {
+      egress_if->upChanged = false;
+
+      egress_if->bwCostsChanged = false;
+      egress_if->bwNetworkChanged = false;
+      egress_if->bwGatewayChanged = false;
+      egress_if->bwChanged = false;
+
+      egress_if = egress_if->next;
+    }
+  }
 }
 
 #endif /* __linux__ */

@@ -596,7 +596,7 @@ olsr_namesvc_gen(void *foo __attribute__ ((unused)))
   /* send buffer: huge */
   char buffer[10240];
   union olsr_message *message = (union olsr_message *)buffer;
-  struct interface *ifn;
+  struct interface_olsr *ifn;
   int namesize;
 
   if (!nameservice_configured) {
@@ -652,7 +652,7 @@ olsr_namesvc_gen(void *foo __attribute__ ((unused)))
  * Parse name olsr message of NAME type
  */
 bool
-olsr_parser(union olsr_message *m, struct interface *in_if __attribute__ ((unused)), union olsr_ip_addr *ipaddr)
+olsr_parser(union olsr_message *m, struct interface_olsr *in_if __attribute__ ((unused)), union olsr_ip_addr *ipaddr)
 {
   struct namemsg *namemessage;
   union olsr_ip_addr originator;
@@ -1426,7 +1426,7 @@ bool
 allowed_ip(const union olsr_ip_addr *addr)
 {
   struct ip_prefix_list *hna;
-  struct interface *iface;
+  struct interface_olsr *iface;
   union olsr_ip_addr tmp_ip, tmp_msk;
   struct ipaddr_str strbuf;
 

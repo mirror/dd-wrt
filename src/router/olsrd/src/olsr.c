@@ -311,12 +311,12 @@ olsr_init_tables(void)
  *@returns positive if forwarded
  */
 int
-olsr_forward_message(union olsr_message *m, struct interface *in_if, union olsr_ip_addr *from_addr)
+olsr_forward_message(union olsr_message *m, struct interface_olsr *in_if, union olsr_ip_addr *from_addr)
 {
   union olsr_ip_addr *src;
   struct neighbor_entry *neighbor;
   int msgsize;
-  struct interface *ifn;
+  struct interface_olsr *ifn;
   bool is_ttl_1 = false;
 
   /*
@@ -410,7 +410,7 @@ olsr_forward_message(union olsr_message *m, struct interface *in_if, union olsr_
 }
 
 void
-set_buffer_timer(struct interface *ifn)
+set_buffer_timer(struct interface_olsr *ifn)
 {
   /* Set timer */
   ifn->fwdtimer = GET_TIMESTAMP(random() * olsr_cnf->max_jitter * MSEC_PER_SEC / RAND_MAX);

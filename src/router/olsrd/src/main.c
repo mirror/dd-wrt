@@ -317,7 +317,7 @@ int main(int argc, char *argv[]) {
   int i;
 
 #ifdef __linux__
-  struct interface *ifn;
+  struct interface_olsr *ifn;
 #endif /* __linux__ */
 
 #ifdef _WIN32
@@ -764,7 +764,7 @@ void olsr_reconfigure(int signo __attribute__ ((unused))) {
 #endif /* _WIN32 */
 
 static void olsr_shutdown_messages(void) {
-  struct interface *ifn;
+  struct interface_olsr *ifn;
 
   /* send TC reset */
   for (ifn = ifnet; ifn; ifn = ifn->int_next) {
@@ -799,7 +799,7 @@ static void olsr_shutdown(int signo __attribute__ ((unused)))
 #ifndef _WIN32
   int errNr = errno;
 #endif
-  struct interface *ifn;
+  struct interface_olsr *ifn;
   int exit_value;
 
   OLSR_PRINTF(1, "Received signal %d - shutting down\n", (int)signo);

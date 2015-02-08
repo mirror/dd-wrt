@@ -54,7 +54,12 @@ int olsr_ioctl_del_route(const struct rt_entry *rt);
 int olsr_ioctl_del_route6(const struct rt_entry *rt);
 
 #ifdef __linux__
-int rtnetlink_register_socket(int);
+  int olsr_new_netlink_route(unsigned char family, uint32_t rttable,
+    unsigned int flags, unsigned char scope, int if_index, int metric,
+    int protocol, const union olsr_ip_addr *src, const union olsr_ip_addr *gw,
+    const struct olsr_ip_prefix *dst, bool set, bool del_similar, bool blackhole);
+
+  int rtnetlink_register_socket(int);
 #endif /* __linux__ */
 
 void olsr_os_niit_4to6_route(const struct olsr_ip_prefix *dst_v4, bool set);
