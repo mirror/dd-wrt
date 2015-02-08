@@ -232,7 +232,7 @@ static int ack_handler(struct nl_msg __attribute__ ((unused)) *nla, void *arg) {
  *					the pointer will point to a new linked list, if there was any
  *					information retreived.
  */
-static void nl80211_link_info_for_interface(struct interface *iface, struct lq_nl80211_data **nl80211) {
+static void nl80211_link_info_for_interface(struct interface_olsr *iface, struct lq_nl80211_data **nl80211) {
 	int finish = 0;
 	struct nl_msg *request_message = NULL;
 	struct nl_cb *request_cb = NULL;
@@ -441,7 +441,7 @@ static uint8_t signal_to_quality(int8_t signal) {
 }
 
 void nl80211_link_info_get(void) {
-	struct interface *next_interface = NULL;
+	struct interface_olsr *next_interface = NULL;
 	struct lq_nl80211_data *nl80211_list = NULL;
 	struct link_entry *link = NULL;
 	struct lq_nl80211_data *lq_data = NULL;

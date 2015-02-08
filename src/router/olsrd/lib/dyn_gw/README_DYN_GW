@@ -87,6 +87,9 @@ LoadPlugin "olsrd_dyn_gw.so.0.5"
     PlParam "HNA"    "192.168.200.0 255.255.255.0"
     PlParam "HNA"    "192.168.201.0 255.255.255.0"
     PlParam "HNA"    "192.168.202.0 255.255.255.0"
+
+    #   Set custom ping command - %s will be replaced with IP to ping
+    PlParam "PingCmd" "ping -c 1 -q -I vpn %s"
 }
 
 --------------------------------------------------------------------------------

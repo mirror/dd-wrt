@@ -191,7 +191,7 @@ PacketReceivedFromOLSR(unsigned char *encapsulationUdpData, int len)
 
 
 bool
-olsr_parser(union olsr_message *m, struct interface *in_if __attribute__ ((unused)), union olsr_ip_addr *ipaddr)
+olsr_parser(union olsr_message *m, struct interface_olsr *in_if __attribute__ ((unused)), union olsr_ip_addr *ipaddr)
 {
   union olsr_ip_addr originator;
   int size;
@@ -235,7 +235,7 @@ olsr_mdns_gen(unsigned char *packet, int len)
   char buffer[10240];
   int aligned_size;
   union olsr_message *message = (union olsr_message *)buffer;
-  struct interface *ifn;
+  struct interface_olsr *ifn;
   
   aligned_size=len;
 
@@ -598,7 +598,7 @@ DoMDNS(int skfd, void *data __attribute__ ((unused)), unsigned int flags __attri
 }                               /* DoMDNS */
 
 int
-InitMDNS(struct interface *skipThisIntf)
+InitMDNS(struct interface_olsr *skipThisIntf)
 {
   //Tells OLSR to launch olsr_parser when the packets for this plugin arrive
   olsr_parser_add_function(&olsr_parser, PARSER_TYPE);

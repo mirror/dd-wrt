@@ -278,26 +278,59 @@ All other parameters will be ignored if SmartGateway is set to "no"
    set). This setting can contain multiple interfaces, for example
      SmartGatewayEgressInterfaces "eth0" "eth1" "ppp0"
    The default setting is <not set>.
-5- SmartGatewayTablesOffset and SmartGatewayRulesOffset determine the ranges of
+5- SmartGatewayEgressFile declares the file that contains the bandwidth
+   parameters of the egress interfaces declared by SmartGatewayEgressInterfaces.
+   Every line in the file declares bandwidth parameters of an egress interface,
+   with the format:
+     # this is a comment
+     interface=upstream,downstream,pathcost,network/prefix,gateway
+   Only the upstream and downstream fields are mandatory, the other fields are
+   optional. An empty field signifies that its default should be used.
+   The field defaults are:
+     upstream           = 0 (Kbps)
+     downstream         = 0 (Kbps)
+     pathcost           = 0 (dimensionless, 1024 is equivalent to 1 hop)
+     network/prefix     = no default / not set
+                          - network is an IP address
+                          - prefix is a number in the range [0, 24] for IPv4
+                            and in the range [0, 128] for IPv6
+     gateway            = no default / not set (IP address)
+   Note that when an interface needs a gateway to properly transport traffic
+   then the gateway IP address field MUST be set; doing otherwise will
+   result in non-functional routes being programmed. When an interface doesn't
+   need a gateway (for example a ppp interface) then the gateway IP address
+   field must be left empty.
+   Also note that when an interface has an attached network (like an Ethernet
+   interface, but not like a ppp interface) then the network/prefix field must
+   be set in order for a network route to be programmed.
+   The default setting is "/var/run/olsrd-sgw-egress.conf".
+6- SmartGatewayEgressFilePeriod determines the period (in milliseconds) on which
+   the SmartGatewayEgressFile is checked for changes and processed if changed.
+   The default setting is 5000.
+7- SmartGatewayStatusFile declares the file that is written by olsrd to contain
+   the status of the smart gateways and is only relevant when
+   SmartGatewayUseCount is larger than 1.
+   The default setting is <not set>
+8- SmartGatewayTablesOffset and SmartGatewayRulesOffset determine the ranges of
    policy routing rule markings that are used in a multi-gateway setup (see the
    policy routing script for an explanation).
    The default settings are 90 and 0 respectively. The value of 0 for
    SmartGatewayRulesOffset will automatically align the table and rule numbers
    for the server tunnel, egress interfaces and gateway tunnel interfaces.
-6- SmartGatewayAllowNAT controls whether you want to allow the selection
+9- SmartGatewayAllowNAT controls whether you want to allow the selection
    of an outgoing ipv4 gateway with NAT (Network Address Translation).
    The default setting is "yes".
-7- SmartGatewayPeriod determines the period (in milliseconds) on which
+10-SmartGatewayPeriod determines the period (in milliseconds) on which
    a new smart gateway selection is performed.
    The default setting is 10000 milliseconds.
-8- SmartGatewayStableCount determines the number of times the same new gateway
+11-SmartGatewayStableCount determines the number of times the same new gateway
    must be chosen before that new smart gateway is actually selected.
    The default setting is 6.
-9- SmartGatewayThreshold (percentage) controls whether you want to allow
+12-SmartGatewayThreshold (percentage) controls whether you want to allow
    re-selection of a new outgoing gateway if its routing cost is lower or equal
    to the configured percentage of the routing cost of the current gateway.
    The default setting is 0, which disables it.
-10-SmartGatewayWeightExitLinkUp, SmartGatewayWeightExitLinkDown,
+13-SmartGatewayWeightExitLinkUp, SmartGatewayWeightExitLinkDown,
    SmartGatewayWeightEtx and SmartGatewayDividerEtx control the weighing
    of gateway bandwidth and ETX costs.
 

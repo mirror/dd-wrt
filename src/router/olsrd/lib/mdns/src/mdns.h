@@ -67,7 +67,7 @@
 //#define BMF_ENCAP_PORT 50698
 
 /* Forward declaration of OLSR interface type */
-struct interface;
+struct interface_olsr;
 
 struct FilteredHost{
   union olsr_ip_addr host;
@@ -82,11 +82,11 @@ void DoMDNS(int sd, void *x, unsigned int y);
 void DoElection(int skfd, void *x, unsigned int y);
 void BmfPError(const char *format, ...) __attribute__ ((format(printf, 1, 2)));
 union olsr_ip_addr *MainAddressOf(union olsr_ip_addr *ip);
-//int InterfaceChange(struct interface* interf, int action);
+//int InterfaceChange(struct interface_olsr * interf, int action);
 //int SetFanOutLimit(const char* value, void* data, set_plugin_parameter_addon addon);
-//int InitBmf(struct interface* skipThisIntf);
+//int InitBmf(struct interface_olsr * skipThisIntf);
 //void CloseBmf(void);
-int InitMDNS(struct interface *skipThisIntf);
+int InitMDNS(struct interface_olsr *skipThisIntf);
 void CloseMDNS(void);
 int AddFilteredHost(const char *FilteredHost, void *data __attribute__ ((unused)),
 			 set_plugin_parameter_addon addon __attribute__ ((unused)));
@@ -94,7 +94,7 @@ int isInFilteredList(union olsr_ip_addr *src);
 void olsr_mdns_gen(unsigned char *packet, int len);
 
 /* Parser function to register with the scheduler */
-bool olsr_parser(union olsr_message *, struct interface *, union olsr_ip_addr *);
+bool olsr_parser(union olsr_message *, struct interface_olsr *, union olsr_ip_addr *);
 
 
 #endif /* _MDNS_MDNS_H */

@@ -7,7 +7,7 @@ CFLAGS += -fPIC
 
 all: $(REGEX_LIB)
 
-.c.o:
+%.o: %.c
 ifeq ($(VERBOSE),0)
 	@echo "[CC] $<"
 endif

@@ -131,7 +131,7 @@ static void sendToAllTxInterfaces(unsigned char *buffer,
  - false otherwise
  */
 bool packetReceivedFromOlsr(union olsr_message *olsrMessage,
-		struct interface *in_if __attribute__ ((unused)), union olsr_ip_addr *ipaddr __attribute__ ((unused))) {
+		struct interface_olsr *in_if __attribute__ ((unused)), union olsr_ip_addr *ipaddr __attribute__ ((unused))) {
 	const union olsr_ip_addr * originator = getOlsrMessageOriginator(
 			olsr_cnf->ip_version, olsrMessage);
 	unsigned int transmitStringLength;
@@ -233,7 +233,7 @@ static void packetReceivedFromDownlink(int skfd, void *data __attribute__ ((unus
 			if (olsr_cnf->smart_gw_active)
 			{
 				int r;
-				struct interface *ifn;
+				struct interface_olsr *ifn;
 				for (ifn = ifnet; ifn; ifn = ifn->int_next) {
 					/* force the pending buffer out if there's not enough space for our message */
 					if ((int)olsrMessageLength > net_outbuffer_bytes_left(ifn)) {

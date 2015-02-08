@@ -74,7 +74,7 @@ struct NonOlsrInterface {
 
   /* OLSRs idea of this network interface. NULL if this interface is not
    * OLSR-enabled. */
-  struct interface *olsrIntf;
+  struct interface_olsr *olsrIntf;
 
   /* IP address of this network interface */
   union olsr_ip_addr intAddr;
@@ -139,8 +139,8 @@ void FindNeighbors(struct TBestNeighbors *neighbors,
                    union olsr_ip_addr *source,
                    union olsr_ip_addr *forwardedBy, union olsr_ip_addr *forwardedTo, int *nPossibleNeighbors);
 
-int CreateNonOlsrNetworkInterfaces(struct interface *skipThisIntf);
-void AddInterface(struct interface *newIntf);
+int CreateNonOlsrNetworkInterfaces(struct interface_olsr *skipThisIntf);
+void AddInterface(struct interface_olsr *newIntf);
 void CloseNonOlsrNetworkInterfaces(void);
 int AddNonOlsrIf(const char *ifName, void *data, set_plugin_parameter_addon addon);
 int IsNonOlsrIf(const char *ifName);

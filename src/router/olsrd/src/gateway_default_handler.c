@@ -267,7 +267,7 @@ static int64_t gw_default_getcosts(struct gateway_entry *gw) {
   }
 
   /* determine the path cost */
-  return gw_costs_weigh(gw_costs_weights, tc->path_cost, gw->uplink, gw->downlink);
+  return gw_costs_weigh(true, gw_costs_weights, tc->path_cost, gw->uplink, gw->downlink);
 }
 
 /**

@@ -54,6 +54,8 @@
 
 #define DEFAULT_HNA_CHECK_INTERVAL	1000
 #define DEFAULT_PING_CHECK_INTERVAL	5
+#define DEFAULT_PING_CMD            "ping -c 1 -q %s"
+#define PING_CMD_MAX_LEN            64
 
 int olsrd_plugin_init(void);
 

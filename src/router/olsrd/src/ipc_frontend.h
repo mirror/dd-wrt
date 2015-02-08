@@ -98,7 +98,7 @@ bool ipc_check_allowed_ip(const union olsr_ip_addr *);
 
 void ipc_accept(int fd, void *, unsigned int);
 
-bool frontend_msgparser(union olsr_message *, struct interface *, union olsr_ip_addr *);
+bool frontend_msgparser(union olsr_message *, struct interface_olsr *, union olsr_ip_addr *);
 
 int ipc_route_send_rtentry(const union olsr_ip_addr *, const union olsr_ip_addr *, int, int, const char *);
 

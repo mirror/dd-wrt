@@ -76,7 +76,7 @@ static bool readUL(const char * valueName, const char * value, unsigned long * v
 	errno = 0;
 	valueNew = strtoul(value, &endPtr, 10);
 
-	if (!((endPtr != value) && (*value != '\0') && (*endPtr == '\0'))) {
+	if (!((endPtr != value) && (*value != '\0') && (*endPtr == '\0')) || (errno == ERANGE)) {
 		/* invalid conversion */
 		sgwDynSpeedError(false, "Value of parameter %s (%s) could not be converted to a number", valueName, value);
 		return false;

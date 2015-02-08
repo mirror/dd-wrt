@@ -100,7 +100,7 @@ void olsr_print_hna_set(void);
 #define olsr_print_hna_set() do { } while(0)
 #endif
 
-bool olsr_input_hna(union olsr_message *, struct interface *, union olsr_ip_addr *);
+bool olsr_input_hna(union olsr_message *, struct interface_olsr *, union olsr_ip_addr *);
 
 #endif /* _OLSR_HNA */
 
