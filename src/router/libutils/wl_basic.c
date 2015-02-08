@@ -85,27 +85,6 @@ int get_wl_instances(void)
 	return 1;
 }
 
-int get_maxbssid(char *name)
-{
-	char cap[WLC_IOCTL_SMLEN];
-	char caps[WLC_IOCTL_MEDLEN];
-	char *next;
-	if (wl_iovar_get(name, "cap", (void *)caps, sizeof(caps)))
-		return 4;	//minimum is default
-	foreach(cap, caps, next) {
-		if (!strcmp(cap, "mbss16")) {
-			return 16;
-		}
-		if (!strcmp(cap, "mbss8")) {
-			return 8;
-		}
-		if (!strcmp(cap, "mbss4")) {
-			return 4;
-		}
-	}
-	return 4;
-}
-
 int get_wl_instance(char *name)
 {
 	int unit;
