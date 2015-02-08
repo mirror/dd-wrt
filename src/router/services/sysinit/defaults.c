@@ -2059,6 +2059,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl0_antdiv", "3", 0},
 	{"wl1_txant", "3", 0},
 	{"wl1_antdiv", "3", 0},
+	{"wl2_txant", "3", 0},
+	{"wl2_antdiv", "3", 0},
 #endif
 
 	{"apwatchdog_enable", "0", 0},
