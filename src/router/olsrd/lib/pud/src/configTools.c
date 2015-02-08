@@ -63,7 +63,7 @@ bool readBool(const char * parameterName, const char * str, bool * dst) {
 	errno = 0;
 	value = strtoul(str, &endPtr, 10);
 
-	if (!((endPtr != str) && (*str != '\0') && (*endPtr == '\0'))) {
+	if (!((endPtr != str) && (*str != '\0') && (*endPtr == '\0')) || (errno == ERANGE)) {
 		/* invalid conversion */
 		pudError(false, "Value of parameter %s (%s) could not be converted to a number", parameterName, str);
 		retVal = false;
@@ -109,7 +109,7 @@ bool readUC(const char * parameterName, const char * str, unsigned char * dst) {
 	errno = 0;
 	value = strtoul(str, &endPtr, 10);
 
-	if (!((endPtr != str) && (*str != '\0') && (*endPtr == '\0'))) {
+	if (!((endPtr != str) && (*str != '\0') && (*endPtr == '\0')) || (errno == ERANGE)) {
 		/* invalid conversion */
 		pudError(false, "Value of parameter %s (%s) could not be converted to a number", parameterName, str);
 		return false;
@@ -150,7 +150,7 @@ bool readUS(const char * parameterName, const char * str, unsigned short * dst) 
 	errno = 0;
 	value = strtoul(str, &endPtr, 10);
 
-	if (!((endPtr != str) && (*str != '\0') && (*endPtr == '\0'))) {
+	if (!((endPtr != str) && (*str != '\0') && (*endPtr == '\0')) || (errno == ERANGE)) {
 		/* invalid conversion */
 		pudError(false, "Value of parameter %s (%s) could not be converted to a number", parameterName, str);
 		return false;
@@ -194,7 +194,7 @@ bool readULL(const char * parameterName, const char * str, unsigned long long * 
 	errno = 0;
 	value = strtoull(str, &endPtr, base);
 
-	if (!((endPtr != str) && (*str != '\0') && (*endPtr == '\0'))) {
+	if (!((endPtr != str) && (*str != '\0') && (*endPtr == '\0')) || (errno == ERANGE)) {
 		/* invalid conversion */
 		pudError(false, "Value of parameter %s (%s) could not be converted to a number (base %d)", parameterName, str, base);
 		return false;
@@ -230,7 +230,7 @@ bool readULL(const char * parameterName, const char * str, unsigned long long * 
 	errno = 0;
 	value = strtod(str, &endPtr);
 
-	if (!((endPtr != str) && (*str != '\0') && (*endPtr == '\0'))) {
+	if (!((endPtr != str) && (*str != '\0') && (*endPtr == '\0')) || (errno == ERANGE)) {
 		/* invalid conversion */
 		pudError(false, "Value of parameter %s (%s) could not be converted to a number", parameterName, str);
 		return false;

@@ -154,7 +154,7 @@ check_interface_updates(void *foo __attribute__ ((unused)))
 int
 chk_if_changed(struct olsr_if *iface)
 {
-  struct interface *ifp;
+  struct interface_olsr *ifp;
   struct ifreq ifr;
   struct sockaddr_in6 tmp_saddr6;
   int if_changes;
@@ -371,7 +371,7 @@ remove_interface:
 int
 add_hemu_if(struct olsr_if *iface)
 {
-  struct interface *ifp;
+  struct interface_olsr *ifp;
   union olsr_ip_addr null_addr;
   uint32_t addr[4];
   struct ipaddr_str buf;
@@ -380,9 +380,9 @@ add_hemu_if(struct olsr_if *iface)
   if (!iface->host_emul)
     return -1;
 
-  ifp = olsr_malloc(sizeof(struct interface), "Interface update 2");
+  ifp = olsr_malloc(sizeof(struct interface_olsr), "Interface update 2");
 
-  memset(ifp, 0, sizeof(struct interface));
+  memset(ifp, 0, sizeof(struct interface_olsr));
 
   /* initialize backpointer */
   ifp->olsr_if = iface;
@@ -529,7 +529,7 @@ if_basename(const char *name)
 int
 chk_if_up(struct olsr_if *iface, int debuglvl __attribute__ ((unused)))
 {
-  struct interface ifs, *ifp;
+  struct interface_olsr ifs, *ifp;
   struct ifreq ifr;
   union olsr_ip_addr null_addr;
   size_t name_size;
@@ -542,7 +542,7 @@ chk_if_up(struct olsr_if *iface, int debuglvl __attribute__ ((unused)))
     return -1;
 
   memset(&ifr, 0, sizeof(struct ifreq));
-  memset(&ifs, 0, sizeof(struct interface));
+  memset(&ifs, 0, sizeof(struct interface_olsr));
   strscpy(ifr.ifr_name, iface->name, sizeof(ifr.ifr_name));
 
   OLSR_PRINTF(debuglvl, "Checking %s:\n", ifr.ifr_name);
@@ -673,9 +673,6 @@ chk_if_up(struct olsr_if *iface, int debuglvl __attribute__ ((unused)))
 
   ifs.ttl_index = -32;          /* For the first 32 TC's, fish-eye is disabled */
 
-  /* Set up buffer */
-  net_add_buffer(&ifs);
-
   OLSR_PRINTF(1, "\tMTU - IPhdr: %d\n", ifs.int_mtu);
 
   olsr_syslog(OLSR_LOG_INFO, "Adding interface %s\n", iface->name);
@@ -754,13 +751,13 @@ chk_if_up(struct olsr_if *iface, int debuglvl __attribute__ ((unused)))
     join_mcast(&ifs, ifs.send_socket);
   }
 
-  ifp = olsr_malloc(sizeof(struct interface), "Interface update 2");
+  ifp = olsr_malloc(sizeof(struct interface_olsr), "Interface update 2");
 
   iface->configured = 1;
   iface->interf = ifp;
 
   /* XXX bad code */
-  memcpy(ifp, &ifs, sizeof(struct interface));
+  memcpy(ifp, &ifs, sizeof(struct interface_olsr));
 
   /* initialize backpointer */
   ifp->olsr_if = iface;
@@ -849,6 +846,9 @@ chk_if_up(struct olsr_if *iface, int debuglvl __attribute__ ((unused)))
   ifp->valtimes.hna = reltime_to_me(iface->cnf->hna_params.validity_time * MSEC_PER_SEC);
 
   ifp->mode = iface->cnf->mode;
+
+  /* Set up buffer */
+  net_add_buffer(ifp);
 
   /*
    *Call possible ifchange functions registered by plugins

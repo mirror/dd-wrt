@@ -1,3 +1,102 @@
+0.6.8 -------------------------------------------------------------------
+
+Ferry Huberts (81):
+      linux: increase the netlink buffer size
+      linux: fix using tables >= 256
+      linux: fix type of af_family
+      linux: do not try to set routes with negative metric
+      linux: add 'flags' parameter to olsr_new_netlink_route function
+      linux: add 'scope' parameter to olsr_new_netlink_route function
+      linux: make it possible to add/remove blackhole routes
+      linux: export the olsr_new_netlink_route function
+      Update version after branch of v0.6.7
+      android: use the machine specific NDK instead of always the 32bit variant
+      Merge branch 'linux-routes.v1'
+      android: fix build on 32 bit platform (see 0295e11)
+      linux: olsr_if_isup: fix return code in error path
+      conf parser: fix a warning
+      Merge branch 'release-0.6.7'
+      linux: fix a typo
+      sgw: move add/remove of ifchange handler to better place
+      sgw: export multi_gateway_mode method
+      sgw: make sure gw->ipv6 is always set for a new gateway
+      sgw: cost calculation can now directly account for interface up/down
+         status
+      config parser: minor improvement for SmartGatewayEgressInterfaces
+      pud: fix strto* result checking for out-of-range situations
+      sgwdynspeed: fix strto* result checking for out-of-range situations
+      Merge branch 'release-0.6.7'
+      Merge branch 'release-0.6.7'
+      release: fix up the CHANGELOG
+      Merge branch 'release-0.6.7'
+      sgw: fix deserialize_gw_speed
+      txtinfo: fix formatting in ipc_print_sgw
+      sgw: move 'struct sgw_egress_if' type into a separate include file
+      sgw: store table & rule numbers in the sgw_egress_if structure
+      sgw: add egress file reader settings
+      sgw: add egress file reader
+      sgw: track the interface index of an egress interface
+      sgw: track the up status of an egress interface
+      sgw: use the smartgw_tunnel_monitor to track up/down of egress interfaces
+      sgw: introduce function to process multi-sgw changes
+      sgw: determine best exit link in doRoutesMultiGw
+      sgw: determine best overall link in doRoutesMultiGw
+      sgw: add SmartGatewayStatusFile setting
+      sgw: add the smart gateway status file writer
+      sgw: add reportNewGateway function
+      sgw: program best overall link routes
+      sgw: program best egress link route
+      sgw: program egress link routes
+      sgwdynspeed: only allow the plugin in single-sgw mode
+      sgw: fix default path costs for egress interfaces
+      sgw: initialise the egress interfaces earlier
+      sgw: lazily determine the sgw costs weights
+      sgw: show all sgw tunnels in the output file instead of only the active
+         one
+      sgw: reset cached egress file timestamp on file access errors
+      sgw: do not prematurely exit doRoutesMultiGw
+      Merge branch 'msgw'
+      sgw: do not make the egress types available only on linux
+      sgw: initialise the egress best routes differently
+      sgw: remove an unused variable
+      sgw: unshadow a variable
+      sgw: change the cached timestamp
+      build: make TOPDIR an absolute path
+      sgw: android has no getline(), implement it
+      android: bump the NDK compiler version
+      android: fixup regex makefile
+      sgw: fix android build
+      pud: duplicate android regex trick from nameservice
+      sgw: always clear egress settings when this egress file is not readable
+      Revert "sgw: always clear egress settings when this egress file is not
+         readable"
+      sgw: always clear egress settings when this egress file is not readable
+      sgw: refresh the advertised speed when the best overall link changes
+      sgw: when there is no best overall link advertise 0 bandwidth
+      sgw: only advertise egress speeds
+      sgw: refactor egress file change detection
+      sgw: uplink and downlink fields can be 9 chars wide in the output file
+      sgw: tune the status file for IPv4, making it a bit more compact
+      sgw: use MAX_SMARTGW_SPEED instead of hard-coding it
+      sgw: fix cost calculation for advertised speeds greater or equal than MAX
+      sgw: the costs are signed numbers
+      sgw: react to path cost changes on all active gateways
+      txtinfo: fix output of /sgw command
+      build: uberclean must also remove builddata.txt
+      build: add some pud targets
+      Rename 'struct interface' to 'struct interface_olsr'
+
+Henning Rogge (6):
+      Update version after release of v0.6.7.1
+      Only use IPV6_TCLASS and IPV6_V6ONLY when defined
+      Merge branch 'master' of git://olsr.org/olsrd
+      Prevent memory leak when setting up new interface
+      Fix bug of former commit
+      Release v0.6.8
+
+Nico Geyso (1):
+      dyn gw plugin - add PingCmd parameter
+
 0.6.7.1 -------------------------------------------------------------------
 
 Ferry Huberts (6):
@@ -17,6 +116,15 @@ Nico Geyso (2):
       txtinfo: set_plugin_boolean stores into an int
 
 0.6.7 -------------------------------------------------------------------
+
+Note: In this release the configuration files have been moved from /etc into
+      /etc/olsrd.
+
+Note: In this release the pud plugin was upgraded to version 2.0.0.
+      This is because of a breaking change in its wire format. If you have
+      deployed the pud plugin on your mesh then you should update all nodes
+      to the new pud plugin at the same time since there is no interoperability
+      between the old version and the new version.
 
 Alessio Caiazza (4):
       Hotfix for very long http headers also for jsoninfo
@@ -278,15 +386,6 @@ Teco Boot (2):
 
 Yury Popov (1):
       Fix for win32 compiling with i686-w64-mingw32-gcc on ubuntu
-
-Note: In this release the pud plugin was upgraded to version 2.0.0.
-      This is because of a breaking change in its wire format. If you have
-      deployed the pud plugin on your mesh then you should update all nodes
-      to the new pud plugin at the same time since there is no interoperability
-      between the old version and the new version.
-
-Note: In this release the configuration files have been moved from /etc into
-      /etc/olsrd.
 
 0.6.6.2 -------------------------------------------------------------------
 

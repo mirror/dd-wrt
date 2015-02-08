@@ -475,7 +475,7 @@ ListInterfaces(void)
 int
 add_hemu_if(struct olsr_if *iface)
 {
-  struct interface *ifp;
+  struct interface_olsr *ifp;
   union olsr_ip_addr null_addr;
   uint32_t addr[4];
   struct ipaddr_str buf;
@@ -484,9 +484,9 @@ add_hemu_if(struct olsr_if *iface)
   if (!iface->host_emul)
     return -1;
 
-  ifp = olsr_malloc(sizeof(struct interface), "Interface update 2");
+  ifp = olsr_malloc(sizeof(struct interface_olsr), "Interface update 2");
 
-  memset(ifp, 0, sizeof(struct interface));
+  memset(ifp, 0, sizeof(struct interface_olsr));
 
   /* initialize backpointer */
   ifp->olsr_if = iface;
@@ -605,7 +605,7 @@ int
 chk_if_changed(struct olsr_if *iface)
 {
   struct ipaddr_str buf;
-  struct interface *Int;
+  struct interface_olsr *Int;
   struct InterfaceInfo Info;
   int Res;
   int IsWlan;
@@ -750,7 +750,7 @@ chk_if_up(struct olsr_if *iface, int debuglvl __attribute__ ((unused)))
 {
   struct ipaddr_str buf;
   struct InterfaceInfo Info;
-  struct interface *New;
+  struct interface_olsr *New;
   union olsr_ip_addr NullAddr;
   int IsWlan;
   struct sockaddr_in *AddrIn;
@@ -764,7 +764,7 @@ chk_if_up(struct olsr_if *iface, int debuglvl __attribute__ ((unused)))
   if (GetIntInfo(&Info, iface->name) < 0)
     return 0;
 
-  New = olsr_malloc(sizeof(struct interface), "Interface 1");
+  New = olsr_malloc(sizeof(struct interface_olsr), "Interface 1");
   /* initialize backpointer */
   New->olsr_if = iface;
 

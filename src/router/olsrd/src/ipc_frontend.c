@@ -192,7 +192,7 @@ ipc_check_allowed_ip(const union olsr_ip_addr *addr)
  *@return true for not preventing forwarding
  */
 bool
-frontend_msgparser(union olsr_message * msg, struct interface * in_if __attribute__ ((unused)), union olsr_ip_addr * from_addr
+frontend_msgparser(union olsr_message * msg, struct interface_olsr * in_if __attribute__ ((unused)), union olsr_ip_addr * from_addr
                    __attribute__ ((unused)))
 {
   int size;

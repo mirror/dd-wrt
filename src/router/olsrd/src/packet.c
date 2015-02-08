@@ -85,7 +85,7 @@ olsr_free_hello_packet(struct hello_message *message)
  *@return 0
  */
 int
-olsr_build_hello_packet(struct hello_message *message, struct interface *outif)
+olsr_build_hello_packet(struct hello_message *message, struct interface_olsr *outif)
 {
   struct hello_neighbor *message_neighbor, *tmp_neigh;
   struct link_entry *links;

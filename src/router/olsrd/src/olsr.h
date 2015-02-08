@@ -65,9 +65,9 @@ uint16_t get_msg_seqno(void);
 
 bool olsr_is_bad_duplicate_msg_seqno(uint16_t seqno);
 
-int olsr_forward_message(union olsr_message *, struct interface *, union olsr_ip_addr *);
+int olsr_forward_message(union olsr_message *, struct interface_olsr *, union olsr_ip_addr *);
 
-void set_buffer_timer(struct interface *);
+void set_buffer_timer(struct interface_olsr *);
 
 void olsr_init_tables(void);
 
