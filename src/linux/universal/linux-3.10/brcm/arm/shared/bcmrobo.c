@@ -2160,18 +2160,19 @@ bcm_robo_enable_switch(robo_info_t *robo)
 		robo->ops->write_reg(robo, PAGE_CTRL, 0x16, &val16, sizeof(val16));    
 	}
 
-
 	if (boardnum != NULL && boardtype != NULL && boardrev != NULL)
-	if (!strcmp(boardnum, "32") && !strcmp(boardtype, "0x0665") && !strcmp(boardrev, "0x1301") ) {
+	if (!strcmp(boardnum, "32") && !strcmp(boardtype, "0x0665")) {
 		/* WAN port LED fix*/
 		val16 = 0x3000 ;
 		robo->ops->write_reg(robo, PAGE_CTRL, 0x10, &val16, sizeof(val16));
 		val8 = 0x78 ;
 		robo->ops->write_reg(robo, PAGE_CTRL, 0x12, &val8, sizeof(val8)); 
+		if(!strcmp(boardrev, "0x1301"))
 		val8 = 0x01 ;
+		if(!strcmp(boardrev, "0x1101"))
+		val8 = 0x10 ;
 		robo->ops->write_reg(robo, PAGE_CTRL, 0x14, &val8, sizeof(val8)); 
 	}
-
 
 	if (SRAB_ENAB() && ROBO_IS_BCM5301X(robo->devid)) {
 		int pdescsz = sizeof(pdesc97) / sizeof(pdesc_t);
