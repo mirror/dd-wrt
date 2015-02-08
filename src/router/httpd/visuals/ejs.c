@@ -72,6 +72,8 @@ websRomPageIndexType *PwebsRomPageIndex = NULL;
 char *(*GOZILA_GET) (webs_t wp, char *name) = NULL;
 void (*validate_cgi) (webs_t fp) = NULL;
 
+extern char *request_url;
+
 #ifdef HAVE_HTTPS
 int do_ssl;
 #endif
@@ -1971,7 +1973,7 @@ void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 	websWrite(wp, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/pwc/default.css\" />\n");
 	websWrite(wp, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/pwc/ddwrt.css\" />\n");
 #endif
-	if(get_wl_instances() == 3)
+	if(get_wl_instances() == 3 && ( startswith(request_url, "Wireless") || startswith(request_url, "WL_WPA")))
 		websWrite(wp, "\t\t<style type=\"text/css\">#header { height: 11.5em; }</style>\n");
 #ifdef HAVE_WIKINGS
 	websWrite(wp, "\t\t<title>:::: Excel Networks ::::");
@@ -3095,7 +3097,7 @@ void ej_show_upgrade_options(webs_t wp, int argc, char_t ** argv)
 	show_onlineupdates(wp, argc, argv);
 #endif
 #endif
-} extern char *request_url;
+}
 
 void ej_getsetuppage(webs_t wp, int argc, char_t ** argv)
 {
