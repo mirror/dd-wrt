@@ -3273,7 +3273,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 #elif HAVE_RT2880
 	if (count < 7)
 #else
-	int max = WL_MAXBSSCFG;
+	int max = get_maxbssid(prefix);
 	if (has_qtn(prefix))
 		max = 3;
 	if (count < max)
@@ -3373,7 +3373,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 #elif HAVE_RT2880
 	if (count < 7 && gpfound == 0)
 #else
-	int max = WL_MAXBSSCFG;
+	int max = get_maxbssid(prefix);
 	if (has_qtn(prefix))
 		max = 3;
 	if (count < max && gpfound == 0)
