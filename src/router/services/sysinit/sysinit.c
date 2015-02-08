@@ -2462,7 +2462,7 @@ void start_restore_defaults(void)
 		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")
 		    || !nvram_get("vlan2ports")
 		    || nvram_match("vlan2ports", "")) {
-			nvram_set("vlan1ports", "3 2 1 5 7 8*");
+			nvram_set("vlan1ports", "3 2 1 0 5 7 8*");
 			nvram_set("vlan2ports", "4 8u");
 		}
 		break;
