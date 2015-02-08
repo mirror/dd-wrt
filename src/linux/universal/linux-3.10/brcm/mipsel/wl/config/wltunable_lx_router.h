@@ -28,7 +28,7 @@
 					 * 23 (43224b0), 24 (4313), 25 (5357a0), 26 (4331a0),
 					 * 28 (5357b0), 29 (4331B0), 30(43228).
 					 */
-#ifdef DHDAP
+#if defined(CONFIG_DHDAP_MODULE) || defined(CONFIG_DHDAP)
 #define D11CONF2	0x500		/* Excluding Core Rev 49 for DHDAP builds */
 #else
 #define D11CONF2	0x30500		/* D11 Core Rev > 31, Rev 40(4360a0),
