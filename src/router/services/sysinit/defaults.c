@@ -1394,11 +1394,10 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl0_gmode", XSTR(GMODE_AUTO), 0},	/* 54g mode */
 #endif
 
-	{"wl_gmode_protection", "auto", 0},	/* 802.11g RTS/CTS protection
-						 * (off|auto) */
+	{"wl_gmode_protection", "auto", 0},	/* 802.11g RTS/CTS protection (off|auto) */
 	{"wl1_gmode_protection", "auto", 0},
-	{"wl_nmode_protection", "auto", 0},	/* 802.11g RTS/CTS protection
-						 * (off|auto) */
+	{"wl2_gmode_protection", "auto", 0},
+	{"wl_nmode_protection", "auto", 0},	/* 802.11g RTS/CTS protection (off|auto) */
 #ifdef HAVE_SKYTEL
 	{"wl_frameburst", "on", 0},	/* BRCM Frambursting mode (off|on) */
 #elif HAVE_GGEW
