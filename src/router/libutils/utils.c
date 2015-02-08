@@ -5873,7 +5873,7 @@ int led_control(int type, int act)
 		usb_power = 0x000;	// usb enable
 		wlan0_gpio = 0x10d;	// radio 0 
 		wlan1_gpio = 0x10c;	// radio 5G-1 
-		wlan2_gpio = 0x10f;	// radio 5G-2
+		wlan2_gpio = 0x110;	// radio 5G-2
 		ses_gpio = 0x10e;	// wps led
 		wlan_gpio = 0x10f;	// wifi button led
 		usb_gpio = 0x111;	//usb1 
@@ -6828,6 +6828,12 @@ void getPortMapping(int *vlanmap)
 			vlanmap[4] = 3;
 		}
 		if (nvram_match("vlan1ports", "4 3 2 1 5*") && nvram_match("boardnum", "32")) {	//R7000
+			vlanmap[1] = 1;
+			vlanmap[2] = 2;
+			vlanmap[3] = 3;
+			vlanmap[4] = 4;
+		}
+		if (nvram_match("vlan1ports", "3 2 1 0 5 7 8*") && nvram_match("boardnum", "32")) {
 			vlanmap[1] = 1;
 			vlanmap[2] = 2;
 			vlanmap[3] = 3;
