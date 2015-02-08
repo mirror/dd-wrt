@@ -56,7 +56,7 @@
 #define BMF_ENCAP_PORT 50698
 
 /* Forward declaration of OLSR interface type */
-struct interface;
+struct interface_olsr;
 
 extern int FanOutLimit;
 extern int BroadcastRetransmitCount;
@@ -68,9 +68,9 @@ void BMF_handle_tuntapFd(int, void*, unsigned int);
 
 void BmfPError(const char* format, ...) __attribute__((format(printf, 1, 2)));
 union olsr_ip_addr* MainAddressOf(union olsr_ip_addr* ip);
-void InterfaceChange(int, struct interface* interf, enum olsr_ifchg_flag action);
+void InterfaceChange(int, struct interface_olsr * interf, enum olsr_ifchg_flag action);
 int SetFanOutLimit(const char* value, void* data, set_plugin_parameter_addon addon);
-int InitBmf(struct interface* skipThisIntf);
+int InitBmf(struct interface_olsr * skipThisIntf);
 void CloseBmf(void);
 
 #endif /* _BMF_BMF_H */

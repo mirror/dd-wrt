@@ -1149,7 +1149,7 @@ BMF_handle_tuntapFd(int skfd __attribute__ ((unused)),
  * Output     : none
  * Data Used  : none
  * ------------------------------------------------------------------------- */
-void InterfaceChange(int if_index __attribute__((unused)), struct interface* interf,
+void InterfaceChange(int if_index __attribute__((unused)), struct interface_olsr * interf,
     enum olsr_ifchg_flag action)
 {
   if (interf == NULL) {
@@ -1228,7 +1228,7 @@ int SetFanOutLimit(
  * Return     : fail (0) or success (1)
  * Data Used  : BmfThreadRunning, BmfThread
  * ------------------------------------------------------------------------- */
-int InitBmf(struct interface* skipThisIntf)
+int InitBmf(struct interface_olsr * skipThisIntf)
 {
   CreateBmfNetworkInterfaces(skipThisIntf);
 

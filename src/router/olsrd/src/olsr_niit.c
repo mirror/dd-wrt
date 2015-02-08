@@ -13,7 +13,7 @@
 #include <net/if.h>
 
 #ifdef __linux__
-static void handle_niit_ifchange (int if_index, struct interface *iface, enum olsr_ifchg_flag);
+static void handle_niit_ifchange (int if_index, struct interface_olsr *iface, enum olsr_ifchg_flag);
 
 static bool niit4to6_active, niit6to4_active;
 
@@ -100,7 +100,7 @@ static void refresh_niit4to6_routes(bool set) {
   } OLSR_FOR_ALL_RT_ENTRIES_END(rt)
 }
 
-static void handle_niit_ifchange (int if_index, struct interface *iface __attribute__ ((unused)),
+static void handle_niit_ifchange (int if_index, struct interface_olsr *iface __attribute__ ((unused)),
     enum olsr_ifchg_flag flag) {
   bool active;
 

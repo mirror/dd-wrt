@@ -32,7 +32,7 @@ unsigned char * getMainIpMacAddress(void) {
 		struct ifreq ifr;
 		unsigned char * macInIfr;
 
-		struct interface *mainInterface = if_ifwithaddr(&olsr_cnf->main_addr);
+		struct interface_olsr *mainInterface = if_ifwithaddr(&olsr_cnf->main_addr);
 		if (!mainInterface) {
 			pudError(true, "Could not get the main interface");
 			return NULL;

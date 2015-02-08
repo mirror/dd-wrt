@@ -184,7 +184,7 @@ lq_ffeth_nl80211_handle_lqchange(void) {
 }
 
 static void
-lq_parser_ffeth_nl80211(struct olsr *olsr, struct interface *in_if, union olsr_ip_addr *from_addr)
+lq_parser_ffeth_nl80211(struct olsr *olsr, struct interface_olsr *in_if, union olsr_ip_addr *from_addr)
 {
   const union olsr_ip_addr *main_addr;
   struct link_entry *lnk;

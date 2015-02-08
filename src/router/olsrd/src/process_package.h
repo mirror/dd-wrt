@@ -46,11 +46,11 @@
 #include "packet.h"
 #include "neighbor_table.h"
 
-bool olsr_input_hello(union olsr_message *, struct interface *, union olsr_ip_addr *);
+bool olsr_input_hello(union olsr_message *, struct interface_olsr *, union olsr_ip_addr *);
 
 void olsr_init_package_process(void);
 
-void olsr_hello_tap(struct hello_message *, struct interface *, const union olsr_ip_addr *);
+void olsr_hello_tap(struct hello_message *, struct interface_olsr *, const union olsr_ip_addr *);
 
 #endif /* _OLSR_PROCESS_PACKAGE */
 

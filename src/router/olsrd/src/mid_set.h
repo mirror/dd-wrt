@@ -84,7 +84,7 @@ struct mid_entry *mid_lookup_entry_bymain(const union olsr_ip_addr *);
 void olsr_print_mid_set(void);
 int olsr_update_mid_table(const union olsr_ip_addr *, olsr_reltime);
 void olsr_delete_mid_entry(struct mid_entry *);
-bool olsr_input_mid(union olsr_message *, struct interface *, union olsr_ip_addr *);
+bool olsr_input_mid(union olsr_message *, struct interface_olsr *, union olsr_ip_addr *);
 
 #endif /* _OLSR_MID */
 

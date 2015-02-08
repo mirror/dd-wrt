@@ -67,7 +67,7 @@ void
 generate_hello(void *p)
 {
   struct hello_message hellopacket;
-  struct interface *ifn = (struct interface *)p;
+  struct interface_olsr *ifn = (struct interface_olsr *)p;
 
   olsr_build_hello_packet(&hellopacket, ifn);
 
@@ -82,7 +82,7 @@ void
 generate_tc(void *p)
 {
   struct tc_message tcpacket;
-  struct interface *ifn = (struct interface *)p;
+  struct interface_olsr *ifn = (struct interface_olsr *)p;
 
   olsr_build_tc_packet(&tcpacket);
 
@@ -96,7 +96,7 @@ generate_tc(void *p)
 void
 generate_mid(void *p)
 {
-  struct interface *ifn = (struct interface *)p;
+  struct interface_olsr *ifn = (struct interface_olsr *)p;
 
   if (queue_mid(ifn) && TIMED_OUT(ifn->fwdtimer)) {
     set_buffer_timer(ifn);
@@ -107,7 +107,7 @@ generate_mid(void *p)
 void
 generate_hna(void *p)
 {
-  struct interface *ifn = (struct interface *)p;
+  struct interface_olsr *ifn = (struct interface_olsr *)p;
 
   if (queue_hna(ifn) && TIMED_OUT(ifn->fwdtimer)) {
     set_buffer_timer(ifn);

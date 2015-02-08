@@ -8,6 +8,8 @@
 #include "olsr.h"
 #include "olsr_cookie.h"
 #include "scheduler.h"
+#include "log.h"
+#include "gateway.h"
 
 /* System includes */
 
@@ -77,6 +79,11 @@ static struct timer_entry * smartgw_speed_file_timer = NULL;
  - true otherwise
  */bool initSgwDynSpeed(void) {
 	char * speedFile;
+
+	if (multi_gateway_mode()) {
+	  olsr_syslog(OLSR_LOG_ERR, "sgwDynSpeed plugin can't be enabled in multi-smart-gateway mode");
+	  return false;
+	}
 
 	if (!startSpeedFile()) {
 		return false;

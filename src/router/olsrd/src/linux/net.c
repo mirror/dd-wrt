@@ -269,7 +269,7 @@ net_os_set_global_ifoptions(void) {
  *@return 1 on sucess 0 on failiure
  */
 int
-net_os_set_ifoptions(const char *if_name, struct interface *iface)
+net_os_set_ifoptions(const char *if_name, struct interface_olsr *iface)
 {
   char procfile[FILENAME_MAX];
   if (olsr_cnf->ip_version == AF_INET6)
@@ -304,7 +304,7 @@ net_os_set_ifoptions(const char *if_name, struct interface *iface)
 int
 net_os_restore_ifoptions(void)
 {
-  struct interface *ifs;
+  struct interface_olsr *ifs;
   char procfile[FILENAME_MAX];
 
   OLSR_PRINTF(1, "Restoring network state\n");
@@ -401,7 +401,7 @@ gethemusocket(struct sockaddr_in *pin)
  *@return the FD of the socket or -1 on error.
  */
 int
-getsocket(int bufspace, struct interface *ifp)
+getsocket(int bufspace, struct interface_olsr *ifp)
 {
   struct sockaddr_in sin;
   int on;
@@ -486,7 +486,7 @@ getsocket(int bufspace, struct interface *ifp)
  *@return the FD of the socket or -1 on error.
  */
 int
-getsocket6(int bufspace, struct interface *ifp)
+getsocket6(int bufspace, struct interface_olsr *ifp)
 {
   struct sockaddr_in6 sin;
   int on;
@@ -580,7 +580,7 @@ getsocket6(int bufspace, struct interface *ifp)
 }
 
 int
-join_mcast(struct interface *ifs, int sock)
+join_mcast(struct interface_olsr *ifs, int sock)
 {
   /* See linux/in6.h */
   struct ipaddr_str buf;
@@ -713,7 +713,7 @@ bool olsr_if_isup(const char * dev)
   if (ioctl(olsr_cnf->ioctl_s, SIOCGIFFLAGS, &ifr) < 0) {
     OLSR_PRINTF(1, "ioctl SIOCGIFFLAGS (get flags) error on device %s: %s (%d)\n",
         dev, strerror(errno), errno);
-    return 1;
+    return false;
   }
   return (ifr.ifr_flags & IFF_UP) != 0;
 }

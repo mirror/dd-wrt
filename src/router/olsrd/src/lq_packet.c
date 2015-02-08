@@ -67,7 +67,7 @@ static uint32_t msg_buffer_aligned[(MAXMESSAGESIZE - OLSR_HEADERSIZE) / sizeof(u
 static unsigned char *const msg_buffer = (unsigned char *)msg_buffer_aligned;
 
 static void
-create_lq_hello(struct lq_hello_message *lq_hello, struct interface *outif)
+create_lq_hello(struct lq_hello_message *lq_hello, struct interface_olsr *outif)
 {
   struct link_entry *walker;
 
@@ -150,7 +150,7 @@ destroy_lq_hello(struct lq_hello_message *lq_hello)
 }
 
 static void
-create_lq_tc(struct lq_tc_message *lq_tc, struct interface *outif)
+create_lq_tc(struct lq_tc_message *lq_tc, struct interface_olsr *outif)
 {
   struct link_entry *lnk;
   struct neighbor_entry *walker;
@@ -322,7 +322,7 @@ serialize_common(struct olsr_common *comm)
 }
 
 static void
-serialize_lq_hello(struct lq_hello_message *lq_hello, struct interface *outif)
+serialize_lq_hello(struct lq_hello_message *lq_hello, struct interface_olsr *outif)
 {
   static const int LINK_ORDER[] = { SYM_LINK, UNSPEC_LINK, ASYM_LINK, LOST_LINK };
   int rem, size, req, expected_size = 0;
@@ -513,7 +513,7 @@ calculate_border_flag(void *lower_border, void *higher_border)
 }
 
 static void
-serialize_lq_tc(struct lq_tc_message *lq_tc, struct interface *outif)
+serialize_lq_tc(struct lq_tc_message *lq_tc, struct interface_olsr *outif)
 {
   int off, rem, size, expected_size = 0;
   struct lq_tc_header *head;
@@ -622,7 +622,7 @@ void
 olsr_output_lq_hello(void *para)
 {
   struct lq_hello_message lq_hello;
-  struct interface *outif = para;
+  struct interface_olsr *outif = para;
 
   if (outif == NULL) {
     return;
@@ -651,7 +651,7 @@ olsr_output_lq_tc(void *para)
 {
   static int prev_empty = 1;
   struct lq_tc_message lq_tc;
-  struct interface *outif = para;
+  struct interface_olsr *outif = para;
 
   if (outif == NULL) {
     return;

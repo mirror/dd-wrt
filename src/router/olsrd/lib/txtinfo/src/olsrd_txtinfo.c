@@ -198,14 +198,14 @@ plugin_ipc_init(void)
       return 0;
     }
 #endif /* (defined __FreeBSD__ || defined __FreeBSD_kernel__) && defined SO_NOSIGPIPE */
-#if defined linux
+#if defined linux && defined IPV6_V6ONLY
     if (txtinfo_ipv6_only && olsr_cnf->ip_version == AF_INET6) {
       if (setsockopt(ipc_socket, IPPROTO_IPV6, IPV6_V6ONLY, (char *)&yes, sizeof(yes)) < 0) {
         perror("IPV6_V6ONLY failed");
         return 0;
       }
     }
-#endif /* defined linux */
+#endif /* defined linux && defined IPV6_V6ONLY */
     /* Bind the socket */
 
     /* complete the socket structure */
@@ -522,6 +522,14 @@ ipc_print_hna(struct autobuf *abuf)
 
 
 #ifdef __linux__
+
+/** interface names for smart gateway tunnel interfaces, IPv4 */
+extern struct interfaceName * sgwTunnel4InterfaceNames;
+
+/** interface names for smart gateway tunnel interfaces, IPv6 */
+extern struct interfaceName * sgwTunnel6InterfaceNames;
+
+
 /**
  * Construct the sgw table for a given ip version
  *
@@ -530,61 +538,66 @@ ipc_print_hna(struct autobuf *abuf)
  * @param fmtv the format for printing
  */
 static void sgw_ipvx(struct autobuf *abuf, bool ipv6, const char * fmth, const char * fmtv) {
-  struct gateway_entry * current_gw;
-  struct gw_list * list;
-  struct gw_container_entry * gw;
+  struct gateway_entry * current_gw = olsr_get_inet_gateway(ipv6);
+  struct interfaceName * sgwTunnelInterfaceNames = !ipv6 ? sgwTunnel4InterfaceNames : sgwTunnel6InterfaceNames;
+  int i = 0;
 
-  list = ipv6 ? &gw_list_ipv6 : &gw_list_ipv4;
-  if (list->count) {
-    char current[2] = { 0, 0 };
-    char originator[INET6_ADDRSTRLEN];
-    char prefix[(INET6_ADDRSTRLEN * 2) + 1];
-    uint32_t uplink = 0;
-    uint32_t downlink = 0;
-    olsr_linkcost pc = 0;
-    char sipv4[2] = { 0, 0 };
-    char sipv4nat[2] = { 0, 0 };
-    char sipv6[2] = { 0, 0 };
-    char if_name[IF_NAMESIZE];
-    char destination[INET6_ADDRSTRLEN];
-    long long int cost = 0;
+  abuf_appendf(abuf, "# Table: Smart Gateway IPv%s\n", ipv6 ? "6" : "4");
+  abuf_appendf(abuf, fmth, "#", "Originator", "Prefix", "Uplink", "Downlink", "PathCost", "IPv4", "IPv4-NAT", "IPv6", "Tunnel-Name", "Destination", "Cost");
 
-    memset(originator, 0, sizeof(originator));
-    memset(prefix, 0, sizeof(prefix));
-    memset(if_name, 0, sizeof(if_name));
-    memset(destination, 0, sizeof(destination));
+  for (i = 0; i < olsr_cnf->smart_gw_use_count; i++) {
+    bool selected;
+    struct ipaddr_str originatorStr;
+    const char * originator;
+    struct ipaddr_str prefixIpStr;
+    const char * prefixIPStr;
+    union olsr_ip_addr netmask = { { 0 } };
+    struct ipaddr_str prefixMaskStr;
+    const char * prefixMASKStr;
+    struct interfaceName * node = &sgwTunnelInterfaceNames[i];
+    struct ipaddr_str tunnelGwStr;
+    const char * tunnelGw;
 
-    abuf_appendf(abuf, "# Table: Smart Gateway IPv%s\n", ipv6 ? "6" : "4");
-    abuf_appendf(abuf, fmth, "#", "Originator", "Prefix", "Uplink", "Downlink", "PathCost", "IPv4", "IPv4-NAT", "IPv6", "Tunnel-Name", "Destination", "Cost");
+    struct gateway_entry * gw = node->gw;
+    struct tc_entry* tc;
 
-    current_gw = olsr_get_inet_gateway(false);
-    OLSR_FOR_ALL_GWS(&list->head, gw) {
-      if (gw) {
-        current[0] = (current_gw && (gw->gw == current_gw)) ? '*' : ' ';
+    if (!gw) {
+      continue;
+    }
 
-        if (gw->gw) {
-          struct tc_entry* tc = olsr_lookup_tc_entry(&gw->gw->originator);
+    tc = olsr_lookup_tc_entry(&gw->originator);
+    if (!tc) {
+      continue;
+    }
 
-          inet_ntop(ipv6 ? AF_INET6 : AF_INET, &gw->gw->originator, originator, sizeof(originator));
-          strncpy(prefix, olsr_ip_prefix_to_string(&gw->gw->external_prefix), sizeof(prefix));
-          prefix[sizeof(prefix) - 1] = '\0';
-          uplink = gw->gw->uplink;
-          downlink = gw->gw->downlink;
-          pc = tc ?tc->path_cost : ROUTE_COST_BROKEN;
-          sipv4[0] = gw->gw->ipv4 ? 'Y' : 'N';
-          sipv4nat[0] = gw->gw->ipv4nat ? 'Y' : 'N';
-          sipv6[0] = gw->gw->ipv6 ? 'Y' : 'N';
-        }
-        if (gw->tunnel) {
-          strncpy(if_name, gw->tunnel->if_name, sizeof(if_name));
-          inet_ntop(ipv6 ? AF_INET6 : AF_INET, &gw->tunnel->target, destination, sizeof(destination));
-        }
-        if (gw->gw) {
-          cost = (long long int)gw->gw->path_cost;
-        }
-        abuf_appendf(abuf, fmtv, current, originator, prefix, uplink, downlink, pc, sipv4, sipv4nat, sipv6, if_name, destination, cost);
-      }
-    } OLSR_FOR_ALL_GWS_END(gw);
+    selected = current_gw && (current_gw == gw);
+    originator = olsr_ip_to_string(&originatorStr, &gw->originator);
+    prefixIPStr = olsr_ip_to_string(&prefixIpStr, &gw->external_prefix.prefix);
+
+    prefix_to_netmask((uint8_t *) &netmask, !ipv6 ? sizeof(netmask.v4) : sizeof(netmask.v6), gw->external_prefix.prefix_len);
+    prefixMASKStr = olsr_ip_to_string(&prefixMaskStr, &netmask);
+
+    tunnelGw = olsr_ip_to_string(&tunnelGwStr, &gw->originator);
+
+    {
+      char prefix[strlen(prefixIPStr) + 1 + strlen(prefixMASKStr) + 1];
+      snprintf(prefix, sizeof(prefix), "%s/%s", prefixIPStr, prefixMASKStr);
+
+      abuf_appendf(abuf, fmtv, //
+          selected ? "*" : " ", // selected
+          originator, // Originator
+          prefix, // Prefix IP / Prefix Mask
+          gw->uplink, // Uplink
+          gw->downlink, // Downlink
+          tc->path_cost, // PathCost
+          gw->ipv4 ? "Y" : "N", // IPv4
+          gw->ipv4nat ? "Y" : "N", // IPv4-NAT
+          gw->ipv6 ? "Y" : "N", // IPv6
+          node->name, // Tunnel-Name
+          tunnelGw, // Destination
+          gw->path_cost // Cost
+          );
+    }
   }
 }
 #endif /* __linux__ */
@@ -596,15 +609,19 @@ ipc_print_sgw(struct autobuf *abuf)
   abuf_puts(abuf, "Gateway mode is only supported in linux\n");
 #else
 
-  static const char * fmth4 = "%s%-16s %-33s %-8s %-8s %-8s %-4s %-8s %-4s %-16s %-16s %s\n";
-  static const char * fmtv4 = "%s%-16s %-33s %-8u %-8u %-8u %-4s %-8s %-4s %-16s %-16s %lld\n";
-  static const char * fmth6 = "%s%-46s %-93s %-8s %-8s %-8s %-4s %-8s %-4s %-16s %-46s %s\n";
-  static const char * fmtv6 = "%s%-46s %-93s %-8u %-8u %-8u %-4s %-8s %-4s %-16s %-46s %lld\n";
+  static const char * fmth4 = "%s%-15s %-31s %-9s %-9s %-10s %-4s %-8s %-4s %-15s %-15s %s\n";
+  static const char * fmtv4 = "%s%-15s %-31s %-9u %-9u %-10u %-4s %-8s %-4s %-15s %-15s %lld\n";
+#if 0
+  static const char * fmth6 = "%s%-45s %-91s %-9s %-9s %-10s %-4s %-8s %-4s %-15s %-45s %s\n";
+  static const char * fmtv6 = "%s%-45s %-91s %-9u %-9u %-10u %-4s %-8s %-4s %-15s %-45s %lld\n";
+#endif
 
   sgw_ipvx(abuf, false, fmth4, fmtv4);
   abuf_puts(abuf, "\n");
+#if 0
   sgw_ipvx(abuf, true, fmth6, fmtv6);
   abuf_puts(abuf, "\n");
+#endif
 #endif /* __linux__ */
 }
 
@@ -733,7 +750,7 @@ ipc_print_interface(struct autobuf *abuf)
   const struct olsr_if *ifs;
   abuf_puts(abuf, "Table: Interfaces\nName\tState\tMTU\tWLAN\tSrc-Adress\tMask\tDst-Adress\n");
   for (ifs = olsr_cnf->interfaces; ifs != NULL; ifs = ifs->next) {
-    const struct interface *const rifs = ifs->interf;
+    const struct interface_olsr *const rifs = ifs->interf;
     abuf_appendf(abuf, "%s\t", ifs->name);
     if (!rifs) {
       abuf_puts(abuf, "DOWN\n");

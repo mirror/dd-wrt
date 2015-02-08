@@ -561,7 +561,7 @@ olsr_print_mid_set(void)
  */
 
 bool
-olsr_input_mid(union olsr_message *m, struct interface *in_if __attribute__ ((unused)), union olsr_ip_addr *from_addr)
+olsr_input_mid(union olsr_message *m, struct interface_olsr *in_if __attribute__ ((unused)), union olsr_ip_addr *from_addr)
 {
   struct ipaddr_str buf;
   struct mid_alias *tmp_adr;
@@ -595,7 +595,7 @@ olsr_input_mid(union olsr_message *m, struct interface *in_if __attribute__ ((un
 
   for (;tmp_adr; tmp_adr = tmp_adr->next) {
 #ifndef NO_DUPLICATE_DETECTION_HANDLER
-    struct interface *ifs;
+    struct interface_olsr *ifs;
     bool stop = false;
     for (ifs = ifnet; ifs != NULL; ifs = ifs->int_next) {
       if (ipequal(&ifs->ip_addr, &tmp_adr->alias_addr)) {

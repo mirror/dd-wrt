@@ -768,7 +768,7 @@ olsr_calculate_tc_border(uint8_t lower_border, union olsr_ip_addr *lower_border_
  * hence the spot we are looking at.
  */
 bool
-olsr_input_tc(union olsr_message * msg, struct interface * input_if __attribute__ ((unused)), union olsr_ip_addr * from_addr)
+olsr_input_tc(union olsr_message * msg, struct interface_olsr * input_if __attribute__ ((unused)), union olsr_ip_addr * from_addr)
 {
   struct ipaddr_str buf;
   uint16_t size, msg_seq, ansn;

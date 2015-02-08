@@ -50,13 +50,13 @@ void set_empty_tc_timer(uint32_t);
 
 uint32_t get_empty_tc_timer(void);
 
-bool queue_hello(struct hello_message *, struct interface *);
+bool queue_hello(struct hello_message *, struct interface_olsr *);
 
-bool queue_tc(struct tc_message *, struct interface *);
+bool queue_tc(struct tc_message *, struct interface_olsr *);
 
-bool queue_mid(struct interface *);
+bool queue_mid(struct interface_olsr *);
 
-bool queue_hna(struct interface *);
+bool queue_hna(struct interface_olsr *);
 
 #endif /* _BUILD_MSG_H */
 

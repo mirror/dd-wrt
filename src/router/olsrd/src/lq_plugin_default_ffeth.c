@@ -168,7 +168,7 @@ default_lq_ffeth_handle_lqchange(void) {
 }
 
 static void
-default_lq_parser_ffeth(struct olsr *olsr, struct interface *in_if, union olsr_ip_addr *from_addr)
+default_lq_parser_ffeth(struct olsr *olsr, struct interface_olsr *in_if, union olsr_ip_addr *from_addr)
 {
   const union olsr_ip_addr *main_addr;
   struct link_entry *lnk;
