@@ -1103,5 +1103,5 @@ void setRegulationDomain(char *reg)
 	nvram_set("wl_country_code", ccode0);
 	nvram_set("wl0_country_code", ccode0);
 	nvram_set("wl1_country_code", ccode1);
-	nvram_set("wl1_country_code", ccode1);
+	nvram_set("wl2_country_code", ccode1);
 }
