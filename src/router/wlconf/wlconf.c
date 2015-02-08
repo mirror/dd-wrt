@@ -1075,7 +1075,7 @@ cprintf("set mssid flags %s\n",name);
 			WL_BSSIOVAR_SET(name, "ssid", bsscfg->idx, &ssid, sizeof(ssid));
 		}
 	}
-#define MBSS_UC_IDX_MASK		(4 - 1)
+#define MBSS_UC_IDX_MASK		(max_no_vifs - 1)
 
 cprintf("set local addr %s\n",name);
 	if (!ure_enab) {
@@ -1085,7 +1085,7 @@ cprintf("set local addr %s\n",name);
 		char newmac[32];
 		memcpy(newmac,vif_addr,sizeof(vif_addr));
 		/* construct and set other wlX.Y_hwaddr */
-		for (i = 1; i < 4; i++) {
+		for (i = 1; i < bclist->count; i++) {
 			snprintf(tmp, sizeof(tmp), "wl%d.%d_hwaddr", unit, i);
 			addr = nvram_safe_get(tmp);
 				if (mbsscap)
@@ -1095,7 +1095,7 @@ cprintf("set local addr %s\n",name);
 				                          eaddr));
 		}
 		/* The addresses are available in NVRAM, so set them */
-		for (i = 1; i < 4; i++) {
+		for (i = 1; i < bclist->count; i++) {
 				snprintf(tmp, sizeof(tmp), "wl%d.%d_hwaddr",
 				         unit, i);
 				ether_atoe(nvram_safe_get(tmp), eaddr);
