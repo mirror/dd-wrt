@@ -1796,6 +1796,7 @@ void start_sysinit(void)
 
 		break;
 	case ROUTER_DLINK_DIR890:
+		{
 			char buf[64];
 			FILE *fp = popen("cat /dev/mtdblock0|grep lanmac", "r");
 			fread(buf, 1, 24, fp);
@@ -1821,6 +1822,7 @@ void start_sysinit(void)
 			buf[27] = 0;
 			fprintf(stderr, "set 5g mac 2 %s\n", &buf[9]);
 			nvram_set("2:macaddr", &buf[10]);
+		}
 		break;
 	case ROUTER_DLINK_DIR880:
 		if (nvram_get("0:venid") == NULL) {
