@@ -1984,8 +1984,7 @@ void start_sysinit(void)
 				{"mcslr5gmpo", "0", 0},
 				{"pa5ga2", "0xff3d,0x1aee,0xfcc1,0xff33,0x1a56,0xfcc4,0xff3f,0x1b04,0xfcc1,0xff47,0x1b48,0xfcc2", 0},
 				{0, 0, 0}
-
-			}
+			};
 			struct nvram_tuple *t;
 			t = dir880_0params;
 			while (t->name) {
@@ -2213,7 +2212,6 @@ void start_sysinit(void)
 				{"rxgains5gtrelnabypa2", "1", 0},
 				{"maxp5ga2", "92,92,92,92", 0},
 				{"pa5ga2", "0xff2e,0x197b,0xfcd8,0xff2d,0x196e,0xfcdc,0xff30,0x1a7d,0xfcc2,0xff2e,0x1ac6,0xfcb4", 0},
-
 				{0, 0, 0}
 			};
 
