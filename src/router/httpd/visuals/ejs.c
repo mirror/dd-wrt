@@ -1065,7 +1065,6 @@ void ej_show_styles(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-
 #ifdef HAVE_LANGUAGE
 // extern websRomPageIndexType websRomPageIndex[];
 void ej_show_languages(webs_t wp, int argc, char_t ** argv)
@@ -1973,7 +1972,7 @@ void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 	websWrite(wp, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/pwc/default.css\" />\n");
 	websWrite(wp, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/pwc/ddwrt.css\" />\n");
 #endif
-	if(get_wl_instances() == 3 && ( startswith(request_url, "Wireless") || startswith(request_url, "WL_WPA")))
+	if (get_wl_instances() == 3 && (startswith(request_url, "Wireless") || startswith(request_url, "WL_WPA")))
 		websWrite(wp, "\t\t<style type=\"text/css\">#header { height: 11.5em; }</style>\n");
 #ifdef HAVE_WIKINGS
 	websWrite(wp, "\t\t<title>:::: Excel Networks ::::");
@@ -1989,7 +1988,6 @@ void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 		websWrite(wp, " - %s", live_translate(argv[0]));
 	}
 	websWrite(wp, "</title>\n");
-	
 
 }
 
@@ -2311,7 +2309,7 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 #endif
 	if (no2 && no5 && cputemp)
 		websWrite(wp, "%s", live_translate("status_router.notavail"));	// no 
-	else if (no2){
+	else if (no2) {
 #ifdef HAVE_QTN
 		websWrite(wp, "WL1 %4.2f &#176;C", tempavg_50);
 #else
@@ -2325,7 +2323,7 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 #else
 		websWrite(wp, "WL0 %4.2f &#176;C / WL1 %4.2f &#176;C", tempavg_24 * 0.5 + 20.0, tempavg_50 * 0.5 + 20.0);
 #endif
-	if(!no52)
+	if (!no52)
 		websWrite(wp, " / WL2 %4.2f &#176;C", tempavg_502 * 0.5 + 20.0);
 
 #else
@@ -2363,9 +2361,9 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 			int l = strlen(temp);
 			int i;
 			if (l > 2) {
-				TEMP_MUL=1;
-				for (i=0;i<(l-2);i++)
-				    TEMP_MUL *= 10;
+				TEMP_MUL = 1;
+				for (i = 0; i < (l - 2); i++)
+					TEMP_MUL *= 10;
 			} else
 				TEMP_MUL = 1;
 		}
