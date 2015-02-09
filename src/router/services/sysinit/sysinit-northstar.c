@@ -1888,6 +1888,7 @@ void start_sysinit(void)
 				{"measpower1", "0x7f", 0},
 				{"measpower2", "0x7f", 0},
 				{"tssiposslope2g", "1", 0},
+				{"ledbh13","7"},
 				{0, 0, 0}
 			};
 			struct nvram_tuple dir880_1params[] = {
@@ -1983,8 +1984,11 @@ void start_sysinit(void)
 				{"mcsbw1605gmpo", "0", 0},
 				{"mcslr5gmpo", "0", 0},
 				{"pa5ga2", "0xff3d,0x1aee,0xfcc1,0xff33,0x1a56,0xfcc4,0xff3f,0x1b04,0xfcc1,0xff47,0x1b48,0xfcc2", 0},
+				{"ledbh14","7"},
 				{0, 0, 0}
 			};
+
+
 			struct nvram_tuple *t;
 			t = dir880_0params;
 			while (t->name) {
