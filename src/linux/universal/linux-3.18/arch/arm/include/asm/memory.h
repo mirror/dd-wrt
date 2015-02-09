@@ -152,7 +152,9 @@
  * have CONFIG_ARM_PATCH_PHYS_VIRT. Assembly code must always use
  * PLAT_PHYS_OFFSET and not PHYS_OFFSET.
  */
+#ifndef PLAT_PHYS_OFFSET
 #define PLAT_PHYS_OFFSET	UL(CONFIG_PHYS_OFFSET)
+#endif
 
 #ifndef __ASSEMBLY__
 

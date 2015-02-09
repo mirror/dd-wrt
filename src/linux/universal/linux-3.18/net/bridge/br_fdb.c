@@ -25,13 +25,9 @@
 #include <asm/unaligned.h>
 #include <linux/if_vlan.h>
 #include "br_private.h"
-#ifdef CONFIG_BCM47XX
-#include <typedefs.h>
-#include <bcmdefs.h>
-#else
+
 #define BCMFASTPATH
 #define BCMFASTPATH_HOST
-#endif
 
 static struct kmem_cache *br_fdb_cache __read_mostly;
 static struct net_bridge_fdb_entry *fdb_find(struct hlist_head *head,
