@@ -2366,7 +2366,7 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 			if (l > 2) {
 				TEMP_MUL=1;
 				for (i=0;i<(l-2);i++)
-				    TEMP*=10;
+				    TEMP_MUL *= 10;
 			} else
 				TEMP_MUL = 1;
 		}
