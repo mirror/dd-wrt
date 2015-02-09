@@ -296,6 +296,7 @@ configs-update:
 	svn update $(LINUXDIR)/../linux-3.13
 	svn update $(LINUXDIR)/../linux-3.14
 	svn update $(LINUXDIR)/../linux-3.18
+	svn update $(LINUXDIR)/../linux-3.19
 	svn update $(TOP)/private
 	$(TOP)/private/symlinks.sh $(TOP) $(LINUXDIR)
 
