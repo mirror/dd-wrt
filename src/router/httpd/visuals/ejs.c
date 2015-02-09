@@ -2316,9 +2316,8 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "WL1 %4.2f &#176;C", tempavg_50);
 #else
 		websWrite(wp, "WL1 %4.2f &#176;C", tempavg_50 * 0.5 + 20.0);
-	}
 #endif
-	else if (no5)
+	} else if (no5)
 		websWrite(wp, "WL0 %4.2f &#176;C", tempavg_24 * 0.5 + 20.0);
 	else
 #ifdef HAVE_QTN
