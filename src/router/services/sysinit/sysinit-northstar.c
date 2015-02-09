@@ -1795,6 +1795,214 @@ void start_sysinit(void)
 			set_regulation(1, "US", "0");
 
 		break;
+	case ROUTER_DLINK_DIR880:
+		if (nvram_get("0:venid") == NULL) {
+			char buf[64];
+			FILE *fp = popen("cat /dev/mtdblock0|grep lanmac", "r");
+			fread(buf, 1, 24, fp);
+			pclose(fp);
+			buf[24] = 0;
+			fprintf(stderr, "set main mac %s\n", &buf[7]);
+			nvram_set("et0macaddr", &buf[7]);
+			fp = popen("cat /dev/mtdblock0|grep wlan5mac", "r");
+			fread(buf, 1, 26, fp);
+			pclose(fp);
+			buf[26] = 0;
+			fprintf(stderr, "set 5g mac %s\n", &buf[9]);
+			nvram_set("1:macaddr", &buf[9]);
+			fp = popen("cat /dev/mtdblock0|grep wlan24mac", "r");
+			fread(buf, 1, 27, fp);
+			pclose(fp);
+			buf[27] = 0;
+			fprintf(stderr, "set 2.4g mac %s\n", &buf[10]);
+			nvram_set("0:macaddr", &buf[10]);
+			struct nvram_tuple dir880_0params[] = {
+				{"rxgains2gtrisoa0", "7", 0},
+				{"rxgains2gtrisoa1", "7", 0},
+				{"rxgains2gtrisoa2", "7", 0},
+				{"pa2ga0", "0xFF29,0x1b86,0xFCa9", 0},
+				{"pa2ga1", "0xFF2e,0x1c4d,0xFC99", 0},
+				{"pa2ga2", "0xFF27,0x1ac0,0xFcc0", 0},
+				{"aa2g", "7", 0},
+				{"venvid", "0x14e4", 0},
+				{"mcsbw402gpo", "0x0", 0},
+				{"epagain2g", "0", 0},
+				{"pdoffset2g40ma0", "15", 0},
+				{"pdoffset2g40ma1", "15", 0},
+				{"pdoffset2g40ma2", "15", 0},
+				{"mcsbw202gpo", "0x0", 0},
+				{"rxchain", "7", 0},
+				{"pdoffset80ma0", "0", 0},
+				{"rawtempsense", "0x1ff", 0},
+				{"pdoffset80ma1", "0", 0},
+				{"tempthresh", "255", 0},
+				{"pdoffset80ma2", "0", 0},
+				{"cckbw20ul2gpo", "0", 0},
+				{"sb40and80lr5ghpo", "0", 0},
+				{"sar2g", "18", 0},
+				{"gainctrlsph", "0", 0},
+				{"regrev", "0", 0},
+				{"measpower", "0x7f", 0},
+				{"pdoffset2g40mvalid", "1", 0},
+				{"pdoffset40ma0", "0", 0},
+				{"pdoffset40ma1", "0", 0},
+				{"pdgain2g", "14", 0},
+				{"pdoffset40ma2", "0", 0},
+				{"rxgains2gelnagaina0", "4", 0},
+				{"rxgains2gelnagaina1", "4", 0},
+				{"rxgains2gelnagaina2", "4", 0},
+				{"sromrev", "11", 0},
+				{"cckbw202gpo", "0", 0},
+				{"rxgains2gtrelnabypa0", "1", 0},
+				{"rxgains2gtrelnabypa1", "1", 0},
+				{"ccode", "US", 0},
+				{"rpcal2g", "0", 0},
+				{"rxgains2gtrelnabypa2", "1", 0},
+				{"dot11agduplrpo", "0", 0},
+				{"boardvendor", "0x14e4", 0},
+				{"tssifloor2g", "0x3ff", 0},
+				{"ofdmlrbw202gpo", "0", 0},
+				{"devid", "0x43a1", 0},
+				{"dot11agofdmhrbw202gpo", "0x0", 0},
+				{"maxp2ga0", "94", 0},
+				{"maxp2ga1", "94", 0},
+				{"maxp2ga2", "94", 0},
+				{"rxgainerr2ga0", "63", 0},
+				{"rxgainerr2ga1", "31", 0},
+				{"rxgainerr2ga2", "31", 0},
+				{"boardflags", "0x1000", 0},
+				{"tempoffset", "255", 0},
+				{"antswitch", "0", 0},
+				{"txchain", "7", 0},
+				{"phycal_tempdelta", "255", 0},
+				{"boardflags2", "0x100002", 0},
+				{"boardflags3", "0x3", 0},
+				{"agbg0", "71", 0},
+				{"agbg1", "71", 0},
+				{"agbg2", "71", 0},
+				{"papdcap2g", "0", 0},
+				{"tworangetssi2g", "0", 0},
+				{"dot11agduphrpo", "0", 0},
+				{"femctrl", "3", 0},
+				{"xtalfreq", "65535", 0},
+				{"measpower1", "0x7f", 0},
+				{"measpower2", "0x7f", 0},
+				{"tssiposslope2g", "1", 0},
+				{0, 0, 0}
+			};
+			struct nvram_tuple dir880_1params[] = {
+				{"tssiposslope5g", "1", 0},
+				{"boardflags", "0x30000000", 0},
+				{"antswitch", "0", 0},
+				{"mcsbw805glpo", "0", 0},
+				{"rxgains5ghelnagaina0", "2", 0},
+				{"rxgains5ghelnagaina1", "2", 0},
+				{"rxgains5ghelnagaina2", "3", 0},
+				{"mcsbw805ghpo", "0x0", 0},
+				{"femctrl", "3", 0},
+				{"rxgains5gmtrelnabypa0", "1", 0},
+				{"rxgains5gmtrelnabypa1", "1", 0},
+				{"rxgains5gmtrelnabypa2", "1", 0},
+				{"mcsbw405glpo", "0", 0},
+				{"mcsbw1605glpo", "0", 0},
+				{"mcslr5glpo", "0", 0},
+				{"dot11agduplrpo", "0", 0},
+				{"ccode", "US", 0},
+				{"macaddr", "00:90:4C:0E:50:18", 0},
+				{"rxgains5ghtrelnabypa0", "1", 0},
+				{"rxgains5ghtrelnabypa1", "1", 0},
+				{"mcsbw405ghpo", "0x0", 0},
+				{"rxgains5ghtrelnabypa2", "1", 0},
+				{"mcsbw1605ghpo", "0", 0},
+				{"mcslr5ghpo", "0", 0},
+				{"devid", "0x43a2", 0},
+				{"measpower1", "0x7f", 0},
+				{"measpower2", "0x7f", 0},
+				{"sb40and80lr5ghpo", "0", 0},
+				{"maxp5ga0", "94,94,94,94", 0},
+				{"maxp5ga1", "94,94,94,94", 0},
+				{"maxp5ga2", "94,94,94,94", 0},
+				{"sar5g", "15", 0},
+				{"gainctrlsph", "0", 0},
+				{"aga0", "71", 0},
+				{"aga1", "133", 0},
+				{"subband5gver", "0x4", 0},
+				{"aga2", "133", 0},
+				{"mcsbw205gmpo", "0x0", 0},
+				{"rxchain", "7", 0},
+				{"papdcap5g", "0", 0},
+				{"dot11agduphrpo", "0", 0},
+				{"regrev", "0", 0},
+				{"rxgains5gtrelnabypa0", "1", 0},
+				{"rxgains5gtrelnabypa1", "1", 0},
+				{"rxgains5gtrelnabypa2", "1", 0},
+				{"boardvendor", "0x14e4", 0},
+				{"pdoffset80ma0", "0", 0},
+				{"pdoffset80ma1", "0", 0},
+				{"pdoffset80ma2", "0", 0},
+				{"rxgains5gmtrisoa0", "5", 0},
+				{"rxgains5gmtrisoa1", "4", 0},
+				{"rxgains5gmtrisoa2", "4", 0},
+				{"rxgains5gelnagaina0", "1", 0},
+				{"rxgains5gelnagaina1", "1", 0},
+				{"pcieingress_war", "15", 0},
+				{"rxgains5gelnagaina2", "1", 0},
+				{"sromrev", "11", 0},
+				{"phycal_tempdelta", "255", 0},
+				{"rxgainerr5ga0", "63,63,63,63", 0},
+				{"rxgainerr5ga1", "31,31,31,31", 0},
+				{"rxgainerr5ga2", "31,31,31,31", 0},
+				{"pdoffset40ma0", "4369", 0},
+				{"pdoffset40ma1", "4369", 0},
+				{"mcsbw205glpo", "0", 0},
+				{"pdoffset40ma2", "4369", 0},
+				{"measpower", "0x7f", 0},
+				{"venid", "0x14e4", 0},
+				{"mcsbw805gmpo", "0x0", 0},
+				{"pdgain5g", "4", 0},
+				{"boardflags2", "0x300002", 0},
+				{"boardflags3", "0x0", 0},
+				{"mcsbw205ghpo", "0x0", 0},
+				{"rxgains5ghtrisoa0", "5", 0},
+				{"rxgains5gtrisoa0", "7", 0},
+				{"rxgains5ghtrisoa1", "4", 0},
+				{"rxgains5gtrisoa1", "6", 0},
+				{"rxgains5ghtrisoa2", "4", 0},
+				{"rxgains5gtrisoa2", "5", 0},
+				{"epagain5g", "0", 0},
+				{"tworangetssi5g", "0", 0},
+				{"rxgains5gmelnagaina0", "2", 0},
+				{"rxgains5gmelnagaina1", "2", 0},
+				{"rxgains5gmelnagaina2", "3", 0},
+				{"aa5g", "7", 0},
+				{"xtalfreq", "65535", 0},
+				{"mcsbw405gmpo", "0x0", 0},
+				{"pa5ga0", "0xff45,0x1b8f,0xfcb4,0xff3d,0x1af7,0xfcbe,0xff46,0x1b8a,0xfcb4,0xff43,0x1b06,0xfcc1", 0},
+				{"txchain", "7", 0},
+				{"pa5ga1", "0xff3c,0x1acd,0xfcc1,0xff45,0x1b14,0xfcc5,0xff42,0x1b04,0xfcc5,0xff3f,0x1aab,0xfccc", 0},
+				{"mcsbw1605gmpo", "0", 0},
+				{"mcslr5gmpo", "0", 0},
+				{"pa5ga2", "0xff3d,0x1aee,0xfcc1,0xff33,0x1a56,0xfcc4,0xff3f,0x1b04,0xfcc1,0xff47,0x1b48,0xfcc2", 0},
+				{0, 0, 0}
+
+			}
+			struct nvram_tuple *t;
+			t = dir880_0params;
+			while (t->name) {
+				nvram_nset(t->value, "0:%s", t->name);
+				t++;
+			}
+			t = dir880_1params;
+			while (t->name) {
+				nvram_nset(t->value, "1:%s", t->name);
+				t++;
+			}
+
+			nvram_set("0:venid", "0x14E4");
+
+		}
+
+		break;
 	case ROUTER_DLINK_DIR868:
 	case ROUTER_DLINK_DIR865:
 
