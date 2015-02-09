@@ -119,13 +119,8 @@
 #include <linux/mroute.h>
 #endif
 
-#ifdef CONFIG_BCM47XX
-#include <typedefs.h>
-#include <bcmdefs.h>
-#else
 #define BCMFASTPATH
 #define BCMFASTPATH_HOST
-#endif
 
 
 /* The inetsw table contains everything that inet_create needs to
