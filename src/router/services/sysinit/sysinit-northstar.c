@@ -2000,6 +2000,7 @@ void start_sysinit(void)
 			nvram_set("0:venid", "0x14E4");
 
 		}
+		set_gpio(7, 1);	// fixup ses button
 
 		break;
 	case ROUTER_DLINK_DIR868:
