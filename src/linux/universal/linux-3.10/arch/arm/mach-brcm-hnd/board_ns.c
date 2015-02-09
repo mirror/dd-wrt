@@ -508,9 +508,15 @@ struct mtd_partition *init_mtd_partitions(hndsflash_t * sfl_info, struct mtd_inf
 
 	if (nvram_match("boardnum", "24") && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1110")
-	    && nvram_match("gpio7", "wps_button")) {
+	    && nvram_match("gpio7", "wps_button") && !nvram_match("gpio6", "wps_led")) {
 		maxsize = 0x200000;
 		size = maxsize;
+	}
+
+	if (nvram_match("boardnum", "24") && nvram_match("boardtype", "0x0646")
+	    && nvram_match("boardrev", "0x1110")
+	    && nvram_match("gpio7", "wps_button") && nvram_match("gpio6", "wps_led")) {
+		bootsz = 0x200000;
 	}
 
 	if (nvram_match("boardnum", "24") && nvram_match("boardtype", "0x072F")
