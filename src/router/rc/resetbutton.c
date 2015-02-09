@@ -1142,6 +1142,7 @@ void period_check(int sig)
 		sesgpio = 0x107;	// gpio 7, inversed
 		break;
 	case ROUTER_DLINK_DIR890:
+	case ROUTER_DLINK_DIR880:
 		sesgpio = 0x107;	// gpio 7, inversed
 		break;
 	case ROUTER_DLINK_DIR868:
