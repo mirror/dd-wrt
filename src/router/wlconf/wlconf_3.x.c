@@ -1799,7 +1799,7 @@ cprintf("get phy type %s\n",name);
 cprintf("set reg mode %s\n",name);
 //fprintf(stderr, "set reg mode %s\n",name);
 	/* Setup regulatory mode */
-	strcmp(tmp,"wl_reg_mode");
+	strcpy(tmp,"wl_reg_mode");
 //	strcat_r(prefix, "reg_mode", tmp);
 	if (nvram_default_match(tmp, "off","off"))  {
 		val = 0;
