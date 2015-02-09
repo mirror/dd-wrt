@@ -2065,10 +2065,8 @@ int internal_getRouterBrand()
 		{"Ubiquiti Rocket M5 XW", 0xe6b5, "3", "3", ROUTER_BOARD_R5M, 0, 10},	//
 		{"Ubiquiti Rocket M5", 0xe8b5, "3", "3", ROUTER_BOARD_R5M, 0, 10},	//
 		{"Ubiquiti Rocket M5", 0xe1c5, "3", "3", ROUTER_BOARD_R5M, 0, 10},	//
-		{"Ubiquiti Airbeam 5", 0xe1e5, "3", "3", ROUTER_BOARD_R5M, 0, 10},	//
 		{"Ubiquiti Rocket M5 Titanium XW", 0xe1d5, "3", "3", ROUTER_BOARD_TI, 0, 10},	// Titanium
-		{"Ubiquiti Bullet M2 Titanium", 0xe2d2, "3", "3", ROUTER_BOARD_TI, 0, 10},	// Titanium
-		{"Ubiquiti Bullet M5 Titanium", 0xe2d5, "3", "3", ROUTER_BOARD_TI, 0, 10},	// Titanium
+		{"Ubiquiti Rocket M6", 0xe1b6, "3", "3", ROUTER_BOARD_R5M, 0, 10},	//
 		{"Ubiquiti Rocket M3", 0xe1c3, "3", "3", ROUTER_BOARD_R5M, M35, 10},	//
 		{"Ubiquiti Rocket M3", 0xe1e3, "3", "3", ROUTER_BOARD_R5M, M35, 10},	//
 		{"Ubiquiti Rocket M5 X3 XW", 0xe3b5, "3", "3", ROUTER_BOARD_R5M, 0, 10},	//
@@ -2076,15 +2074,20 @@ int internal_getRouterBrand()
 		{"Ubiquiti Rocket M365", 0xe1d3, "3", "3", ROUTER_BOARD_R5M, M365, 10},	//
 		{"Ubiquiti Rocket M900", 0xe1b9, "3", "3", ROUTER_BOARD_R2M, M900, 10},	//
 		{"Ubiquiti Rocket M900", 0xe1d9, "3", "3", ROUTER_BOARD_R2M, M900, 10},	//
+		{"Ubiquiti Airbeam 5", 0xe1e5, "3", "3", ROUTER_BOARD_R5M, 0, 10},	//
 		{"Ubiquiti Bullet M2", 0xe202, "1", "1", ROUTER_BOARD_BS5M, 0, 10},	//
 		{"Ubiquiti Bullet M5", 0xe205, "1", "1", ROUTER_BOARD_BS5M, 0, 10},	//
+		{"Ubiquiti Bullet M2 Titanium", 0xe2d2, "3", "3", ROUTER_BOARD_TI, 0, 10},	// Titanium
+		{"Ubiquiti Bullet M5 Titanium", 0xe2d5, "3", "3", ROUTER_BOARD_TI, 0, 10},	// Titanium
 		{"Ubiquiti Airgrid M2", 0xe212, "1", "1", ROUTER_BOARD_BS2M, 0, 10},	//
 		{"Ubiquiti Airgrid M2", 0xe242, "1", "1", ROUTER_BOARD_BS2M, 0, 10},	//
+		{"Ubiquiti Airgrid M2", 0xe252, "1", "1", ROUTER_BOARD_BS2M, 0, 10},	//
 		{"Ubiquiti Airgrid M5", 0xe215, "1", "1", ROUTER_BOARD_BS5M, 0, 10},	//
 		{"Ubiquiti Airgrid M5", 0xe245, "1", "1", ROUTER_BOARD_BS5M, 0, 10},	//
+		{"Ubiquiti Airgrid M5", 0xe255, "1", "1", ROUTER_BOARD_BS5M, 0, 10},	//
 		{"Ubiquiti Airgrid M5 XW", 0xe835, "1", "1", ROUTER_BOARD_BS5M, 0, 10},	//
 		{"Ubiquiti AirRouter", 0xe4a2, "1", "1", ROUTER_BOARD_AIRROUTER, 0, 10},	//
-		{"Ubiquiti AirRouter HP", 0xe4b2, "1", "1", ROUTER_BOARD_AIRROUTER, 0, 10},	//
+		{"Ubiquiti AirRouter", 0xe4b2, "1", "1", ROUTER_BOARD_AIRROUTER, 0, 10},	//
 		{"Ubiquiti Pico M2", 0xe302, "1", "1", ROUTER_BOARD_BS2M, 0, 10},	//
 		{"Ubiquiti Pico M5", 0xe305, "1", "1", ROUTER_BOARD_BS5M, 0, 10},	//
 		{"Ubiquiti Airwire", 0xe405, "3", "3", ROUTER_BOARD_BS5M, 0, 10},	//
@@ -2102,6 +2105,7 @@ int internal_getRouterBrand()
 		{"Ubiquiti Simple AP", 0xe4a2, "3", "3", ROUTER_BOARD_R2M, 0, 10},	//
 		{"Ubiquiti PowerBridge M3", 0xe2a3, "3", "3", ROUTER_BOARD_R5M, M35, 10},	//
 		{"Ubiquiti PowerBridge M5", 0xe1a5, "3", "3", ROUTER_BOARD_R5M, 0, 10},	//
+		{"Ubiquiti PowerBridge M10", 0xe110, "3", "3", ROUTER_BOARD_R5M, 0, 10},	//
 		{"Ubiquiti PowerBridge M5 X3", 0xe3a5, "3", "3", ROUTER_BOARD_R5M, 0, 10},	//
 		{"Ubiquiti PowerBridge M365", 0xe1a3, "3", "3", ROUTER_BOARD_R5M, M365, 10},	//
 		{"Ubiquiti Rocket M10", 0xe110, "3", "3", ROUTER_BOARD_R5M, M10, 10},	// 
@@ -2110,7 +2114,11 @@ int internal_getRouterBrand()
 		{"Ubiquiti NanoBridge M900", 0xe239, "3", "3", ROUTER_BOARD_BS5M, M900, 10},	//
 		{"Ubiquiti NanoBridge M5", 0xe235, "3", "3", ROUTER_BOARD_BS5M, 0, 10},	//
 		{"Ubiquiti NanoBridge M5", 0xe2b5, "3", "3", ROUTER_BOARD_BS5M, 0, 10},	//
+		{"Ubiquiti NanoBridge M5", 0xe2e5, "3", "3", ROUTER_BOARD_BS5M, 0, 10},	//
 		{"Ubiquiti NanoBridge M2", 0xe232, "3", "3", ROUTER_BOARD_BS2M, 0, 10},	//
+		{"Ubiquiti NanoBridge M2", 0xe2b2, "3", "3", ROUTER_BOARD_BS2M, 0, 10},	//
+		{"Ubiquiti PicoStation M2", 0xe302, "1", "1", ROUTER_BOARD_BS2M, 0, 10},	//
+		{"Ubiquiti PicoStation M5", 0xe305, "1", "1", ROUTER_BOARD_BS2M, 0, 10},	//
 		{"Ubiquiti 3G Station", 0xe6a2, "3", "3", ROUTER_BOARD_BS2M, 0, 10},	//
 		{"Ubiquiti 3G Station Professional", 0xe6b2, "3", "3", ROUTER_BOARD_BS2M, 0, 10},	//
 		{"Ubiquiti 3G Station Outdoor", 0xe6c2, "3", "3", ROUTER_BOARD_BS2M, 0, 10},	//
@@ -5763,8 +5771,8 @@ int led_control(int type, int act)
 		diag_gpio_disabled = 0x102;
 		usb_gpio = 0x108; 
 		usb_gpio1 = 0x10f; 
-		wlan0_gpio = 0x10d;
-		wlan1_gpio = 0x10e;
+//		wlan0_gpio = 0x10d;
+//		wlan1_gpio = 0x10e;
 		usb_power = 0x009;
 		usb_power1 = 0x00a;
 		break;
