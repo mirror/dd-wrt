@@ -694,6 +694,8 @@
 
 #define ROUTER_DLINK_DIR890 0xe6111
 
+#define ROUTER_DLINK_DIR880 0xe70f
+
 #define NVROUTER "DD_BOARD"
 
 
