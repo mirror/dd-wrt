@@ -1,7 +1,7 @@
 /*
  * Broadcom 802.11abg Networking Device Driver Configuration file
  *
- * Copyright (C) 2014, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: wltunable_lx_router_media.h 316716 2012-02-23 04:39:13Z $
+ * $Id: wltunable_lx_router.h 309193 2012-01-19 00:03:57Z $
  *
  * wl driver tunables
  */
@@ -26,37 +26,21 @@
 					 * 23 (43224b0), 24 (4313), 25 (5357a0), 26 (4331a0),
 					 * 28 (5357b0), 29 (4331B0), 30(43228).
 					 */
-#define D11CONF2	0x500		/* D11 Core Rev > 31, Rev 40(4360a0), 42(4360B0) */
+#if defined(CONFIG_DHDAP_MODULE) || defined(CONFIG_DHDAP)
+#define D11CONF2	0x500		/* Excluding Core Rev 49 for DHDAP builds */
+#else
+#define D11CONF2	0x20500		/* D11 Core Rev > 31, Rev 40(4360a0),
+					 * 42(4360B0), 49(43602a0)
+					 */
+#endif
 
 #define NRXBUFPOST	56	/* # rx buffers posted */
 #define RXBND		24	/* max # rx frames to process */
-#define PKTCBND		36	/* max # rx frames to chain */
-#define CTFPOOLSZ       192	/* max buffers in ctfpool */
+#define CTFPOOLSZ       64	/* max buffers in ctfpool */
 
 #define WME_PER_AC_TX_PARAMS 1
 #define WME_PER_AC_TUNING 1
 
-#define NTXD_AC3X3		512	/* TX descriptor ring */
-#define NRXD_AC3X3		512	/* RX descriptor ring */
-#define NTXD_LARGE_AC3X3	2048	/* TX descriptor ring */
-#define NRXD_LARGE_AC3X3	2048	/* RX descriptor ring */
-#define NRXBUFPOST_AC3X3	320	/* # rx buffers posted */
-#define RXBND_AC3X3		36	/* max # rx frames to process */
-#define CTFPOOLSZ_AC3X3		512	/* max buffers in ctfpool */
-#define PKTCBND_AC3X3		48	/* max # rx frames to chain */
-
-#define TXMR			2	/* number of outstanding reads */
-#define TXPREFTHRESH		8	/* prefetch threshold */
-#define TXPREFCTL		16	/* max descr allowed in prefetch request */
-#define TXBURSTLEN		256	/* burst length for dma reads */
-
-#define RXPREFTHRESH		1	/* prefetch threshold */
-#define RXPREFCTL		8	/* max descr allowed in prefetch request */
-#define RXBURSTLEN		256	/* burst length for dma writes */
-
-#define MRRS			512	/* Max read request size */
-
-#define AMPDU_PKTQ_LEN          1536
-#define AMPDU_PKTQ_FAVORED_LEN  4096
+#define AMPDU_PKTQ_FAVORED_LEN 4096
 
 #define WLRXEXTHDROOM -1        /* to reserve extra headroom in DMA Rx buffer */

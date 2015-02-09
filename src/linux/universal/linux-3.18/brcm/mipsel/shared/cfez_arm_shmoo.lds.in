@@ -45,7 +45,7 @@ SECTIONS
 	}
 
 	.mmu_table : {
-		. = ALIGN(0x10000);
+		. = ALIGN(0x4000);
 		*(section_mmu_table)
 	}
 

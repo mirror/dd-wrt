@@ -2,7 +2,7 @@
  * Common [OS-independent] header file for
  * Broadcom BCM47XX 10/100Mbps Ethernet Device Driver
  *
- * Copyright (C) 2012, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -16,7 +16,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: etc.h 341899 2012-06-29 04:06:38Z $
+ * $Id: etc.h 468275 2014-04-07 05:21:13Z $
  */
 
 #ifndef _etc_h_
@@ -33,6 +33,7 @@
 #define NUMTXQ		4
 
 #define TXREC_THR       8
+#define ETCQUOTA_MAX	64 /* Max et quota in dpc mode: bounds IOV_PKTCBND */
 
 #if defined(__ECOS)
 #define IOCBUFSZ	4096
@@ -41,9 +42,16 @@
 #else
 #define IOCBUFSZ	4096
 #endif
-
 struct etc_info;	/* forward declaration */
 struct bcmstrbuf;	/* forward declaration */
+
+#ifdef ET_INGRESS_QOS
+#define DMA_RX_THRESH_DEFAULT	250
+#define DMA_RX_POLICY_NONE	0
+#define DMA_RX_POLICY_UDP	1
+#define DMA_RX_POLICY_TOS	2
+#define DMA_RX_POLICY_LAST	2
+#endif /* ET_INGRESS_QOS */
 
 /* each chip type supports a set of chip-type-specific ops */
 struct chops {
@@ -54,9 +62,12 @@ struct chops {
 	void (*init)(ch_t *ch, uint options);		/* chip init */
 	bool (*tx)(ch_t *ch, void *p);			/* transmit frame */
 	void *(*rx)(ch_t *ch);				/* receive frame */
+	int  (*rxquota)(ch_t *ch, int quota, void **rxpkts); /* receive quota pkt */
+	void (*rxlazy)(ch_t *ch);
 	void (*rxfill)(ch_t *ch);			/* post dma rx buffers */
 	int (*getintrevents)(ch_t *ch, bool in_isr);	/* return intr events */
 	bool (*errors)(ch_t *ch);			/* handle chip errors */
+	bool (*dmaerrors)(ch_t *ch);			/* check chip dma errors */
 	void (*intrson)(ch_t *ch);			/* enable chip interrupts */
 	void (*intrsoff)(ch_t *ch);			/* disable chip interrupts */
 	void (*txreclaim)(ch_t *ch, bool all);		/* reclaim transmit resources */
@@ -65,12 +76,17 @@ struct chops {
 	void (*dumpmib)(ch_t *ch, struct bcmstrbuf *, bool clear);	/* get sw mib counters */
 	void (*enablepme)(ch_t *ch);			/* enable PME */
 	void (*disablepme)(ch_t *ch);			/* disable PME */
+	void (*configtimer)(ch_t *ch, uint microsecs); /* enable|disable gptimer */
 	void (*phyreset)(ch_t *ch, uint phyaddr);	/* reset phy */
 	uint16 (*phyrd)(ch_t *ch, uint phyaddr, uint reg);	/* read phy register */
 	void (*phywr)(ch_t *ch, uint phyaddr, uint reg, uint16 val);	/* write phy register */
+	uint (*macrd)(ch_t *ch, uint reg);	/* read gmac register */
+	void (*macwr)(ch_t *ch, uint reg, uint val);	/* write gmac register */
 	void (*dump)(ch_t *ch, struct bcmstrbuf *b);		/* debugging output */
 	void (*longname)(ch_t *ch, char *buf, uint bufsize);	/* return descriptive name */
 	void (*duplexupd)(ch_t *ch);			/* keep mac duplex consistent */
+	void (*unitmap)(uint coreunit, uint *unit);	/* core unit to enet unit mapping */
+	uint (*activerxbuf)(ch_t *ch); /* calculate the number of available free rx descriptors */
 };
 
 /*
@@ -80,8 +96,16 @@ typedef struct etc_info {
 	void		*et;		/* pointer to os-specific private state */
 	uint		unit;		/* device instance number */
 	void 		*osh; 		/* pointer to os handler */
+	bool		gmac_fwd;	/* wl rx/tx forwarding over gmac: -DBCM_GMAC3 */
 	bool		pktc;		/* packet chaining enabled or not */
-	int		pktcbnd;	/* max # of packets to chain */
+
+	uint		bp_ticks_usec; /* backplane clock ticks per microsec */
+	uint		rxlazy_timeout; /* rxlazy timeout configuration */
+	uint		rxlazy_framecnt; /* rxlazy framecount configuration */
+
+	int         pktcbnd;	/* max # of packets to chain */
+	int         quota;		/* max # of packets to recv */
+
 	void		*mib;		/* pointer to s/w maintained mib counters */
 	bool		up;		/* interface up and running */
 	bool		promisc;	/* promiscuous destination address */
@@ -103,6 +127,7 @@ typedef struct etc_info {
 	uint16		deviceid;	/* pci function device id */
 	uint		chip;		/* chip number */
 	uint		chiprev;	/* chip revision */
+	uint		chippkg;	/* chip package option */
 	uint		coreid;		/* core id */
 	uint		corerev;	/* core revision */
 
@@ -132,6 +157,11 @@ typedef struct etc_info {
 	uint32		boardflags;	/* board flags */
 	uint32		txrec_thresh;	/* # of tx frames after which reclaim is done */
 
+#ifdef ET_INGRESS_QOS
+	uint16		dma_rx_thresh;	/* DMA red zone RX descriptor threshold */
+	uint16		dma_rx_policy;	/* DMA RX discard policy in red zone */
+#endif /* ET_INGRESS_QOS */
+
 	/* sw-maintained stat counters */
 	uint32		txframes[NUMTXQ];	/* transmitted frames on each tx fifo */
 	uint32		txframe;	/* transmitted frames */
@@ -156,10 +186,28 @@ typedef struct etc_info {
 	uint32		unchained;	/* number of frames not chained */
 	uint32		maxchainsz;	/* max chain size so far */
 	uint32		currchainsz;	/* current chain size */
-#if defined(BCMDBG) && defined(PKTC)
+#if defined(BCMDBG)
+#if defined(PKTC)
 	uint32		chainsz[PKTCBND];	/* chain size histo */
+#endif /* PKTC */
+	uint32		quota_stats[ETCQUOTA_MAX];
+#endif /* BCMDBG */
+	uint32		rxprocessed;
+	uint32		reset_countdown;
+#ifdef ETFA
+	void		*fa;		/* optional fa private data */
 #endif
 } etc_info_t;
+
+typedef struct et_sw_port_info {
+	uint16 port_id;
+	uint16 link_state;	/* 0:down  1:up */
+	uint16 speed;		/* 0:unknown  1:10M  2:100M  3:1000M  4:200M */
+	uint16 duplex;		/* 0:unknown  1:half  2:full */
+} et_sw_port_info_t;
+
+#define MACADDR_MASK	0x0000FFFFFFFFFFFFLL
+#define VID_MASK		0x0FFF000000000000LL
 
 /* interrupt event bitvec */
 #define	INTR_TX		0x1
@@ -196,7 +244,7 @@ typedef struct etc_info {
  * Must be >= size of largest rxhdr
  * Must be 2-mod-4 aligned so IP is 0-mod-4
  */
-#define	HWRXOFF		14
+#define	HWRXOFF		30
 
 #define TC_BK		0	/* background traffic class */
 #define TC_BE		1	/* best effort traffic class */
@@ -211,6 +259,7 @@ typedef struct etc_info {
 #define TX_Q1		TC_BE	/* DMA txq 1 */
 #define TX_Q2		TC_CL	/* DMA txq 2 */
 #define TX_Q3		TC_VO	/* DMA txq 3 */
+
 
 static inline uint32
 etc_up2tc(uint32 up)
@@ -228,27 +277,48 @@ etc_priq(uint32 txq_state)
 	return (priq_selector[txq_state]);
 }
 
-/* rx header flags bits */
-#define RXH_FLAGS(etc, rxh) (((etc)->coreid == GMAC_CORE_ID) ? \
-	((((bcmgmacrxh_t *)(rxh))->flags) & htol16(GRXF_CRC | GRXF_OVF | GRXF_OVERSIZE)) : \
-	((((bcmenetrxh_t *)(rxh))->flags) & htol16(RXF_NO | RXF_RXER | RXF_CRC | RXF_OV)))
+/* RXH_FLAGS: GMAC and ENET47XX versions. */
+#define IS_GMAC(etc)            ((etc)->coreid == GMAC_CORE_ID)
 
-#define RXH_OVERSIZE(etc, rxh) (((etc)->coreid == GMAC_CORE_ID) ? \
-	(ltoh16(((bcmgmacrxh_t *)(rxh))->flags) & GRXF_OVERSIZE) : FALSE)
+/* Test whether any rx errors occurred. */
+#define GMAC_RXH_FLAGS(rxh) \
+	((((bcmgmacrxh_t *)(rxh))->flags) & htol16(GRXF_CRC | GRXF_OVF | GRXF_OVERSIZE))
 
-#define RXH_CRC(etc, rxh) (((etc)->coreid == GMAC_CORE_ID) ? \
-	(ltoh16(((bcmgmacrxh_t *)(rxh))->flags) & GRXF_CRC) : \
-	(ltoh16(((bcmenetrxh_t *)(rxh))->flags) & RXF_CRC))
+#define ENET47XX_RXH_FLAGS(rxh) \
+	((((bcmenetrxh_t *)(rxh))->flags) & htol16(RXF_NO | RXF_RXER | RXF_CRC | RXF_OV))
 
-#define RXH_OVF(etc, rxh) (((etc)->coreid == GMAC_CORE_ID) ? \
-	(ltoh16(((bcmgmacrxh_t *)(rxh))->flags) & GRXF_OVF) : \
-	(ltoh16(((bcmenetrxh_t *)(rxh))->flags) & RXF_OV))
+#define RXH_FLAGS(etc, rxh) \
+	(IS_GMAC(etc) ? GMAC_RXH_FLAGS(rxh) : ENET47XX_RXH_FLAGS(rxh))
 
-#define RXH_RXER(etc, rxh) (((etc)->coreid == GMAC_CORE_ID) ? \
-	FALSE : (ltoh16(((bcmenetrxh_t *)(rxh))->flags) & RXF_RXER))
+/* Host order rx header error flag accessors. */
+#define GMAC_RXH_FLAG_NONE      (FALSE)
+#define ENET47XX_RXH_FLAG_NONE  (FALSE)
 
-#define RXH_NO(etc, rxh) (((etc)->coreid == GMAC_CORE_ID) ? \
-	FALSE : (ltoh16(((bcmenetrxh_t *)(rxh))->flags) & RXF_NO))
+#define GMAC_RXERROR(rxh, mask) \
+	((ltoh16(((bcmgmacrxh_t *)(rxh))->flags)) & (mask))
+#define ENET47XX_RXERROR(rxh, mask) \
+	((ltoh16(((bcmenetrxh_t *)(rxh))->flags)) & (mask))
+
+/* rx: over size packet error */
+#define RXH_OVERSIZE(etc, rxh) \
+	(IS_GMAC(etc) ? GMAC_RXERROR(rxh, GRXF_OVERSIZE) : ENET47XX_RXH_FLAG_NONE)
+
+/* rx: crc error. */
+#define RXH_CRC(etc, rxh) \
+	(IS_GMAC(etc) ? GMAC_RXERROR(rxh, GRXF_CRC) : ENET47XX_RXERROR(rxh, RXF_CRC))
+
+/* rx: fifo overflow error. */
+#define RXH_OVF(etc, rxh) \
+	(IS_GMAC(etc) ? GMAC_RXERROR(rxh, GRXF_OVF) : ENET47XX_RXERROR(rxh, RXF_OV))
+
+/* rx: symbol error */
+#define RXH_RXER(etc, rxh) \
+	(IS_GMAC(etc) ? GMAC_RXH_FLAG_NONE : ENET47XX_RXERROR(rxh, RXF_RXER))
+
+/* rx: crc error (odd nibbles) */
+#define RXH_NO(etc, rxh) \
+	(IS_GMAC(etc) ? GMAC_RXH_FLAG_NONE : ENET47XX_RXERROR(rxh, RXF_NO))
+
 
 #ifdef	CFG_GMAC
 #define ET_GMAC(etc)	((etc)->coreid == GMAC_CORE_ID)
@@ -256,23 +326,41 @@ etc_priq(uint32 txq_state)
 #define ET_GMAC(etc)	(0)
 #endif	/* CFG_GMAC */
 
+#if defined(BCM_GMAC3)
+/** Types of ethernet device driver.
+ * In the 3 GMAC Model, the ethernet driver operates as either a
+ * - FWD: HW Switch Forwarder to WLAN MAC Interface such as wl0, wl1
+ * - NTK: Ethernet Network Interface binding to network stack (via CTF)
+ */
+#define DEV_FWDER_NAME          "fwd"
+#define DEV_NTKIF(etc)          ((etc)->gmac_fwd == FALSE)
+#define DEV_FWDER(etc)          ((etc)->gmac_fwd == TRUE)
+#else  /* ! BCM_GMAC3 */
+#define DEV_FWDER_NAME          "eth"
+#define DEV_NTKIF(etc)          (TRUE)
+#define DEV_FWDER(etc)          (FALSE)
+#endif /* ! BCM_GMAC3 */
+
 /* exported prototypes */
 extern struct chops *etc_chipmatch(uint vendor, uint device);
-extern void *etc_attach(void *et, uint vendor, uint device, uint unit, void *dev, void *regsva);
+extern void *etc_attach(void *et, uint vendor, uint device, uint coreunit, void *dev, void *regsva);
 extern void etc_detach(etc_info_t *etc);
 extern void etc_reset(etc_info_t *etc);
 extern void etc_init(etc_info_t *etc, uint options);
 extern void etc_up(etc_info_t *etc);
 extern uint etc_down(etc_info_t *etc, int reset);
 extern int etc_ioctl(etc_info_t *etc, int cmd, void *arg);
-extern int etc_iovar(etc_info_t *etc, uint cmd, uint set, void *arg);
+extern int etc_iovar(etc_info_t *etc, uint cmd, uint set, void *arg, int len);
 extern void etc_promisc(etc_info_t *etc, uint on);
 extern void etc_qos(etc_info_t *etc, uint on);
+extern void etc_quota(etc_info_t *etc);
+extern void etc_rxlazy(etc_info_t *etc, uint microsecs, uint framecnt);
 extern void etc_dump(etc_info_t *etc, struct bcmstrbuf *b);
 extern void etc_watchdog(etc_info_t *etc);
 extern uint etc_totlen(etc_info_t *etc, void *p);
 #ifdef ETROBO
 extern void *etc_bcm53115_war(etc_info_t *etc, void *p);
 #endif /* ETROBO */
+extern void etc_unitmap(uint vendor, uint device, uint coreunit, uint *unit);
 
 #endif	/* _etc_h_ */
