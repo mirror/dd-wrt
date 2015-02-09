@@ -2,7 +2,7 @@
  * Initialization and support routines for self-booting
  * compressed image.
  *
- * Copyright (C) 2014, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -16,7 +16,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: load.c 419467 2013-08-21 09:19:48Z $
+ * $Id: load.c 410377 2013-07-01 01:34:53Z $
  */
 
 #include <typedefs.h>
@@ -309,14 +309,14 @@ load(si_t *sih)
 static void
 set_sflash_div(si_t *sih)
 {
-	uint idx;
+	uint idx = si_coreidx(sih);
+	osl_t *osh = si_osh(sih);
 	chipcregs_t *cc;
 	struct nvram_header *nvh = NULL;
 	uintptr flbase;
 	uint32 fltype, off, clkdiv, bpclock, sflmaxclk, sfldiv;
 
 	/* Check for sflash */
-	idx = si_coreidx(sih);
 	cc = si_setcoreidx(sih, SI_CC_IDX);
 	ASSERT(cc);
 
@@ -334,7 +334,7 @@ set_sflash_div(si_t *sih)
 		nvh = (struct nvram_header *)(flbase + off - MAX_NVRAM_SPACE);
 		if (R_REG(osh, &nvh->magic) == NVRAM_MAGIC)
 			break;
-		off += DEF_NVRAM_SPACE;
+		off +=  DEF_NVRAM_SPACE;
 		nvh = NULL;
 	};
 

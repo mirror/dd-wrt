@@ -1,7 +1,7 @@
 /*
  * Broadcom 802.11abg Networking Device Driver Configuration file
  *
- * Copyright (C) 2014, Broadcom Corporation
+ * Copyright (C) 2015, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -9,7 +9,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: wltunable_lx_router_1chipG.h 401759 2013-05-13 16:08:08Z $
+ * $Id: wltunable_lx_router_1chipG.h 413605 2013-07-19 19:06:36Z $
  *
  * wl driver tunables single-chip (4712/535x) G-only driver
  */

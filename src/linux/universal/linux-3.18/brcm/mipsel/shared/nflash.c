@@ -1,7 +1,7 @@
 /*
  * Broadcom chipcommon NAND flash interface
  *
- * Copyright (C) 2014, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: nflash.c 419467 2013-08-21 09:19:48Z $
+ * $Id: nflash.c 411518 2013-07-09 09:02:59Z $
  */
 
 #include <typedefs.h>
@@ -46,84 +46,6 @@ static hndnand_t nflash;
 /* Private variables used for BCM4706 only */
 static uint32 nflash_col_mask;
 static uint32 nflash_row_shift;
-
-
-#undef DEBUG_GEN_1BIT_ERR
-/* 256 bytes for 3 bytes ecc. */
-#define SOFT_HAMMING_SECTOR_SIZE (256)
-#define SOFT_HAMMING_ECC_BYTES (3)
-
-#define MAX_SOFTECC_OOB_SZ (64)
-static uint8 tmp_page_oob[MAX_SOFTECC_OOB_SZ];
-
-#define SAME_ECC(recc, cecc) \
-				((recc[0] == cecc[0]) && \
-				(recc[1] == cecc[1]) && \
-				(recc[2] == cecc[2]))
-
-#if defined(_CFE_) || defined(CFE_FLASH_ERASE_FLASH_ENABLED)
-extern void hamming_compute_256(const uint8 *data, uint8 *code);
-extern int8 hamming_correct_256(uint8 *data, const uint8 *original_code,
-    const uint8 *computed_code);
-
-#define nand_calculate_ecc(mtd, data, ecc)\
-	hamming_compute_256(data, ecc)
-#define nand_correct_data(mtd, data, read_ecc, calc_ecc)\
-	hamming_correct_256(data, read_ecc, calc_ecc)
-
-int enable_ecc_correct = 1;
-#else
-extern int nand_calculate_ecc(struct mtd_info *mtd, const u_char *dat, u_char *ecc_code);
-extern int nand_correct_data(struct mtd_info *mtd, u_char *dat, u_char *read_ecc, u_char *calc_ecc);
-int enable_ecc_correct = 0;
-#endif
-
-/* Redefine nand_ecclayout to same as mtd-abi.h */
-#ifdef CONFIG_BCM47XX
-#define MTD_MAX_OOBFREE_ENTRIES	16
-#else
-#define MTD_MAX_OOBFREE_ENTRIES	8
-#endif
-struct nand_oobfree {
-	uint32 offset;
-	uint32 length;
-};
-
-struct nand_ecclayout {
-	uint32 eccbytes;
-#ifdef CONFIG_BCM47XX
-	uint32 eccpos[128];
-#else
-	uint32 eccpos[64];
-#endif /* CONFIG_BCM47XX */
-	uint32 oobavail;
-	struct nand_oobfree oobfree[MTD_MAX_OOBFREE_ENTRIES];
-};
-
-/* Define default oob placement schemes for large and small page devices */
-static struct nand_ecclayout brcmnand_swecc_nand_oob_8 = {
-	.eccbytes = 3,
-	.eccpos = {0, 1, 2},
-};
-
-static struct nand_ecclayout brcmnand_swecc_nand_oob_16 = {
-	.eccbytes = 6,
-	.eccpos = {0, 1, 2, 3, 6, 7},
-};
-
-static struct nand_ecclayout brcmnand_swecc_oob_64 = {
-	.eccbytes = 24,
-	.eccpos = {
-		   40, 41, 42, 43, 44, 45, 46, 47,
-		   48, 49, 50, 51, 52, 53, 54, 55,
-		   56, 57, 58, 59, 60, 61, 62, 63},
-};
-
-/* For softare ecc reference current layout. */
-static struct nand_ecclayout *curr_ecclayout = NULL;
-#ifdef DEBUG_GEN_1BIT_ERR
-int enable_inject_err_on_write = 1;
-#endif
 
 /* Prototype */
 static int nflash_poll(si_t *sih, chipcregs_t *cc);
@@ -390,21 +312,6 @@ nflash_init(si_t *sih)
 				| NFCF_DS_8 | NFCF_WE;
 
 		W_REG(osh, &cc->nflashconf, val);
-
-		switch (nflash.oobsize) {
-		case 64:
-			curr_ecclayout = &brcmnand_swecc_oob_64;
-			break;
-		case 16:
-			curr_ecclayout = &brcmnand_swecc_nand_oob_16;
-			break;
-		case 8:
-			curr_ecclayout = &brcmnand_swecc_nand_oob_8;
-			break;
-		default:
-			printf("unsupported oob size %d.\n", nflash.oobsize);
-			return NULL;
-		}
 	} else {
 		nflash_enable(&nflash, 1);
 		nflash_cmd(osh, cc, NCMD_ID_RD);
@@ -512,7 +419,6 @@ nflash_read(hndnand_t *nfl, uint64 offset, uint len, uchar *buf)
 	uint res;
 
 	ASSERT(sih);
-
 	mask = NFL_SECTOR_SIZE - 1;
 	if ((offset & mask) != 0 || (len & mask) != 0)
 		return 0;
@@ -527,27 +433,12 @@ nflash_read(hndnand_t *nfl, uint64 offset, uint len, uchar *buf)
 	if (CHIPID(sih->chip) == BCM4706_CHIP_ID) {
 		uint32 page_addr, page_offset;
 		uint32 ctrlcode;
-		int prev_page_start_offset = -1;
-		uint page_start_offset;
-		int sector_idx = 0, eccpos;
-		uint8 *pdata;
-		uint8 read_ecc[SOFT_HAMMING_ECC_BYTES];
-		uint8 calc_ecc[SOFT_HAMMING_ECC_BYTES];
 
-		/* 4706 only support SW 1-bit hamming ECC */
-		pdata = (uint8*)buf;
 		while (res > 0) {
 			page_offset = offset & (nflash.pagesize - 1);
 			page_addr = (offset & ~(nflash.pagesize - 1)) * 2;
 			page_addr += page_offset;
 
-			page_start_offset = (offset & ~(uint32)((uint32)nflash.pagesize-1));
-			if (page_start_offset != prev_page_start_offset) {
-				/* read oob only on new page to read. */
-				nflash_readoob(sih, cc, page_start_offset,
-					nflash.oobsize, tmp_page_oob);
-				prev_page_start_offset = page_start_offset;
-			}
 			W_REG(osh, &cc->nflashcoladdr, page_addr & nflash_col_mask);
 			W_REG(osh, &cc->nflashrowaddr, page_addr >> nflash_row_shift);
 
@@ -569,27 +460,6 @@ nflash_read(hndnand_t *nfl, uint64 offset, uint len, uchar *buf)
 					return (len - res);
 
 				*to = R_REG(osh, &cc->nflashdata);
-			}
-
-			for (i = 0, sector_idx = (page_offset / SOFT_HAMMING_SECTOR_SIZE);
-				 i < (NFL_SECTOR_SIZE / SOFT_HAMMING_SECTOR_SIZE);
-				 i++, sector_idx++) {
-
-				/* find correct ecc position on page oob. */
-				eccpos = sector_idx * SOFT_HAMMING_ECC_BYTES;
-
-				read_ecc[0] = tmp_page_oob[curr_ecclayout->eccpos[eccpos + 0]];
-				read_ecc[1] = tmp_page_oob[curr_ecclayout->eccpos[eccpos + 1]];
-				read_ecc[2] = tmp_page_oob[curr_ecclayout->eccpos[eccpos + 2]];
-
-				nand_calculate_ecc(NULL, pdata, calc_ecc);
-
-				if (enable_ecc_correct && !SAME_ECC(read_ecc, calc_ecc) &&
-					nand_correct_data(NULL, pdata, read_ecc, calc_ecc) < 0) {
-						printf("nflash_read: cannot correct data !!\n");
-					}
-
-				pdata += SOFT_HAMMING_SECTOR_SIZE;
 			}
 
 			res -= NFL_SECTOR_SIZE;
@@ -687,43 +557,8 @@ nflash_write(hndnand_t *nfl, uint64 offset, uint len, const uchar *buf)
 	if (CHIPID(sih->chip) == BCM4706_CHIP_ID) {
 		uint32 page_addr;
 		uint32 ctrlcode;
-		uint8 *pdata;
-		int sector_idx, eccpos;
-		uint8 calc_ecc[SOFT_HAMMING_ECC_BYTES];
-
-		/* 4706 only support SW 1-bit hamming ECC */
-		pdata = (uint8 *)buf;
 
 		while (res > 0) {
-			nflash_readoob(sih, cc, offset, nflash.oobsize, tmp_page_oob);
-
-			for (i = 0, sector_idx = 0;
-				  i < (nflash.pagesize / SOFT_HAMMING_SECTOR_SIZE);
-				  i++, sector_idx++) {
-				eccpos = sector_idx * SOFT_HAMMING_ECC_BYTES;
-				nand_calculate_ecc(NULL, pdata, calc_ecc);
-
-				tmp_page_oob[curr_ecclayout->eccpos[eccpos + 0]] = calc_ecc[0];
-				tmp_page_oob[curr_ecclayout->eccpos[eccpos + 1]] = calc_ecc[1];
-				tmp_page_oob[curr_ecclayout->eccpos[eccpos + 2]] = calc_ecc[2];
-				pdata += SOFT_HAMMING_SECTOR_SIZE;
-			}
-
-			/* written a sector */
-			if (nflash_writeoob(sih, cc, offset,
-				nflash.oobsize, tmp_page_oob) < 0) {
-				printf("\nflash_write write oob fail, offset 0x%08x\n",
-					(uint32)offset);
-				return -1;
-			}
-
-#ifdef DEBUG_GEN_1BIT_ERR
-			for (i = 0; i < enable_inject_err_on_write; i++) {
-				int min_range = (res < nflash.pagesize)? res: nflash.pagesize;
-				min_range /= sizeof(uint32);
-				from[(from[i]%min_range)] ^= 0x04;
-			}
-#endif
 			page_addr = (offset & ~(nflash.pagesize - 1)) * 2;
 
 			W_REG(osh, &cc->nflashcoladdr, page_addr & nflash_col_mask);

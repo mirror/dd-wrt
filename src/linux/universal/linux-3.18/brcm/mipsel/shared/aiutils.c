@@ -2,7 +2,7 @@
  * Misc utility routines for accessing chip-specific features
  * of the SiliconBackplane-based Broadcom chips.
  *
- * Copyright (C) 2014, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -16,7 +16,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: aiutils.c 419467 2013-08-21 09:19:48Z $
+ * $Id: aiutils.c 446901 2014-01-07 15:29:58Z $
  */
 #include <bcm_cfg.h>
 #include <typedefs.h>
@@ -308,11 +308,11 @@ BCMATTACHFN(ai_scan)(si_t *sih, void *regs, uint devid)
 			if (cid == OOB_ROUTER_CORE_ID) {
 				asd = get_asd(sih, &eromptr, 0, 0, AD_ST_SLAVE,
 					&addrl, &addrh, &sizel, &sizeh);
-				if (asd != 0) {
+				if (asd != 0)
 					sii->oob_router = addrl;
-				}
 			}
-			if (cid != GMAC_COMMON_4706_CORE_ID && cid != NS_CCB_CORE_ID)
+			if (cid != GMAC_COMMON_4706_CORE_ID && cid != NS_CCB_CORE_ID &&
+				cid != PMU_CORE_ID)
 				continue;
 		}
 
@@ -412,6 +412,12 @@ BCMATTACHFN(ai_scan)(si_t *sih, void *regs, uint devid)
 			uint fwp = (nsp == 1) ? 0 : 1;
 			asd = get_asd(sih, &eromptr, fwp + i, 0, AD_ST_SWRAP, &addrl, &addrh,
 			              &sizel, &sizeh);
+
+			/* cache APB bridge wrapper address for set/clear timeout */
+			if ((mfg == MFGID_ARM) && (cid == APB_BRIDGE_ID)) {
+				ASSERT(sii->num_br < SI_MAXBR);
+				sii->br_wrapba[sii->num_br++] = addrl;
+			}
 			if (asd == 0) {
 				SI_ERROR(("Missing descriptor for SW %d\n", i));
 				goto error;
@@ -748,6 +754,7 @@ ai_corerev(si_t *sih)
 	uint32 cib;
 
 	sii = SI_INFO(sih);
+
 	cib = sii->cib[sii->curidx];
 	return remap_corerev(sih, (cib & CIB_REV_MASK) >> CIB_REV_SHIFT);
 }
@@ -858,6 +865,70 @@ ai_corereg(si_t *sih, uint coreidx, uint regoff, uint mask, uint val)
 	return (w);
 }
 
+/*
+ * If there is no need for fiddling with interrupts or core switches (typically silicon
+ * back plane registers, pci registers and chipcommon registers), this function
+ * returns the register offset on this core to a mapped address. This address can
+ * be used for W_REG/R_REG directly.
+ *
+ * For accessing registers that would need a core switch, this function will return
+ * NULL.
+ */
+uint32 *
+ai_corereg_addr(si_t *sih, uint coreidx, uint regoff)
+{
+	uint32 *r = NULL;
+	bool fast = FALSE;
+	si_info_t *sii;
+
+	sii = SI_INFO(sih);
+
+	ASSERT(GOODIDX(coreidx));
+	ASSERT(regoff < SI_CORE_SIZE);
+
+	if (coreidx >= SI_MAXCORES)
+		return 0;
+
+	if (BUSTYPE(sih->bustype) == SI_BUS) {
+		/* If internal bus, we can always get at everything */
+		fast = TRUE;
+		/* map if does not exist */
+		if (!sii->regs[coreidx]) {
+			sii->regs[coreidx] = REG_MAP(sii->coresba[coreidx],
+			                            SI_CORE_SIZE);
+			ASSERT(GOODREGS(sii->regs[coreidx]));
+		}
+		r = (uint32 *)((uchar *)sii->regs[coreidx] + regoff);
+	} else if (BUSTYPE(sih->bustype) == PCI_BUS) {
+		/* If pci/pcie, we can get at pci/pcie regs and on newer cores to chipc */
+
+		if ((sii->coreid[coreidx] == CC_CORE_ID) && SI_FAST(sii)) {
+			/* Chipc registers are mapped at 12KB */
+
+			fast = TRUE;
+			r = (uint32 *)((char *)sii->curmap + PCI_16KB0_CCREGS_OFFSET + regoff);
+		} else if (sii->pub.buscoreidx == coreidx) {
+			/* pci registers are at either in the last 2KB of an 8KB window
+			 * or, in pcie and pci rev 13 at 8KB
+			 */
+			fast = TRUE;
+			if (SI_FAST(sii))
+				r = (uint32 *)((char *)sii->curmap +
+				               PCI_16KB0_PCIREGS_OFFSET + regoff);
+			else
+				r = (uint32 *)((char *)sii->curmap +
+				               ((regoff >= SBCONFIGOFF) ?
+				                PCI_BAR0_PCISBR_OFFSET : PCI_BAR0_PCIREGS_OFFSET) +
+				               regoff);
+		}
+	}
+
+	if (!fast)
+		return 0;
+
+	return (r);
+}
+
 void
 ai_core_disable(si_t *sih, uint32 bits)
 {
@@ -928,6 +999,13 @@ ai_core_reset(si_t *sih, uint32 bits, uint32 resetbits)
 		SI_ERROR(("%s: WARN1: resetstatus=0x%0x\n", __FUNCTION__, dummy));
 #endif
 
+	/* put core into reset state */
+	W_REG(sii->osh, &ai->resetctrl, AIRC_RESET);
+	OSL_DELAY(10);
+
+	/* ensure there are no pending backplane operations */
+	SPINWAIT((R_REG(sii->osh, &ai->resetstatus) != 0), 300);
+
 	W_REG(sii->osh, &ai->ioctrl, (bits | resetbits | SICF_FGC | SICF_CLOCK_EN));
 	dummy = R_REG(sii->osh, &ai->ioctrl);
 	BCM_REFERENCE(dummy);
@@ -939,10 +1017,6 @@ ai_core_reset(si_t *sih, uint32 bits, uint32 resetbits)
 	if (dummy != 0)
 		SI_ERROR(("%s: WARN2: resetstatus=0x%0x\n", __FUNCTION__, dummy));
 #endif
-
-	/* put core into reset state */
-	W_REG(sii->osh, &ai->resetctrl, AIRC_RESET);
-	OSL_DELAY(10);
 
 	while (R_REG(sii->osh, &ai->resetctrl) != 0 && --loop_counter != 0) {
 		/* ensure there are no pending backplane operations */
@@ -1323,3 +1397,52 @@ ai_viewall(si_t *sih, bool verbose)
 	}
 }
 #endif	/* BCMDBG */
+
+void
+BCMATTACHFN(ai_enable_backplane_timeouts)(si_t *sih)
+{
+#ifdef AXI_TIMEOUTS
+	si_info_t *sii = SI_INFO(sih);
+	aidmp_t *ai;
+	int i;
+
+	for (i = 0; i < sii->num_br; ++i) {
+		ai = (aidmp_t *) sii->br_wrapba[i];
+		W_REG(sii->osh, &ai->errlogctrl, (1 << AIELC_TO_ENAB_SHIFT) |
+		      ((AXI_TO_VAL << AIELC_TO_EXP_SHIFT) & AIELC_TO_EXP_MASK));
+	}
+#endif /* AXI_TIMEOUTS */
+}
+
+void
+ai_clear_backplane_to(si_t *sih)
+{
+#ifdef AXI_TIMEOUTS
+	si_info_t *sii = SI_INFO(sih);
+	aidmp_t *ai;
+	int i;
+
+	for (i = 0; i < sii->num_br; ++i) {
+		ai = (aidmp_t *) sii->br_wrapba[i];
+		/* check for backplane timeout & clear backplane hang */
+		if (R_REG(sii->osh, &ai->errlogstatus) & AIELS_TIMEOUT_MASK) {
+			/* set ErrDone to clear the condition */
+			W_REG(sii->osh, &ai->errlogdone, AIELD_ERRDONE_MASK);
+
+			/* SPINWAIT on errlogstatus timeout status bits */
+			while (R_REG(sii->osh, &ai->errlogstatus) & AIELS_TIMEOUT_MASK)
+				;
+
+			/* reset APB Bridge */
+			OR_REG(sii->osh, &ai->resetctrl, AIRC_RESET);
+			/* sync write */
+			(void)R_REG(sii->osh, &ai->resetctrl);
+			/* clear Reset bit */
+			AND_REG(sii->osh, &ai->resetctrl, ~(AIRC_RESET));
+			/* sync write */
+			(void)R_REG(sii->osh, &ai->resetctrl);
+			printf("--- AXI timeout; APB Bridge %d\n", i);
+		}
+	}
+#endif /* AXI_TIMEOUTS */
+}

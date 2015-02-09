@@ -6,6 +6,7 @@ SECTIONS {
 		_ftext = . ;
 		text_start = .;
 		*(.text.startup)
+		*(.text.debugptr)
 		*(.init)
 		*(.text)
 		*(.text.*)
@@ -96,5 +97,4 @@ SECTIONS {
 		 KEEP(*(.logstrs))
 		 logstrs_size = .;
 	}
-
 }
