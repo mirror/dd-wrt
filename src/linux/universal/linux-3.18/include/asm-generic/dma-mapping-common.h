@@ -7,10 +7,7 @@
 #include <linux/dma-debug.h>
 #include <linux/dma-attrs.h>
 
-#ifdef CONFIG_BCM47XX
-#include <typedefs.h>
-#include <bcmdefs.h>
-#else
+#ifndef BCMFASTPATH
 #define BCMFASTPATH
 #define BCMFASTPATH_HOST
 #endif

@@ -285,7 +285,7 @@ brcmnand_hw_ecc_layout(struct brcmnand_mtd *brcmnand)
 	layout->oobavail = ((oob_per_sec - ecc_per_sec)	<< brcmnand->sec_per_page_shift) - 1;
 
 	brcmnand->mtd.oobavail = layout->oobavail;
-	brcmnand->chip.ecclayout = layout;
+//	brcmnand->chip.ecclayout = layout;
 	brcmnand->chip.ecc.layout = layout;
 
 	/* Output layout for debugging */

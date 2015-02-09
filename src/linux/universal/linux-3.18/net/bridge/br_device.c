@@ -22,13 +22,8 @@
 #include <asm/uaccess.h>
 #include "br_private.h"
 
-#ifdef CONFIG_BCM47XX
-#include <typedefs.h>
-#include <bcmdefs.h>
-#else
 #define BCMFASTPATH
 #define BCMFASTPATH_HOST
-#endif
 
 #define COMMON_FEATURES (NETIF_F_SG | NETIF_F_FRAGLIST | NETIF_F_HIGHDMA | \
 			 NETIF_F_GSO_MASK | NETIF_F_HW_CSUM)

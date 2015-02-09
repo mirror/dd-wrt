@@ -25,6 +25,7 @@
 #include <linux/cramfs_fs.h>
 #include <linux/squashfs_fs.h>
 #endif
+#include <linux/memblock.h>
 
 #include <typedefs.h>
 #include <osl.h>
@@ -64,6 +65,16 @@ EXPORT_SYMBOL(kcih);
 ctf_attach_t ctf_attach_fn = NULL;
 EXPORT_SYMBOL(ctf_attach_fn);
 #endif				/* HNDCTF */
+
+
+/* To store real PHYS_OFFSET value */
+unsigned int ddr_phys_offset_va = -1;
+EXPORT_SYMBOL(ddr_phys_offset_va);
+
+/* For NS-Ax ACP only */
+unsigned int ns_acp_win_size = SZ_256M;
+EXPORT_SYMBOL(ns_acp_win_size);
+
 
 /* This is the main reference clock 25MHz from external crystal */
 static struct clk clk_ref = {
@@ -170,7 +181,21 @@ static void __init brcm_setup(void)
 {
 	/* Get global SB handle */
 	sih = si_kattach(SI_OSH);
-
+#if 0
+	if (ACP_WAR_ENAB() && BCM4707_CHIP(CHIPID(sih->chip))) {
+		if (sih->chippkg == BCM4708_PKG_ID)
+			ns_acp_win_size = SZ_128M;
+		else if (sih->chippkg == BCM4707_PKG_ID)
+			ns_acp_win_size = SZ_32M;
+		else
+			ns_acp_win_size = SZ_256M;
+	} else if (BCM4707_CHIP(CHIPID(sih->chip)) &&
+		(CHIPREV(sih->chiprev) == 4 || CHIPREV(sih->chiprev) == 6)) {
+		/* Chiprev 4 for NS-B0 and chiprev 6 for NS-B1 */
+		ns_acp_win_size = SZ_1G;
+	}
+	printk(KERN_INFO "acp_win_size = %X\n",SZ_1G);
+#endif
 //      if (strncmp(boot_command_line, "root=/dev/mtdblock", strlen("root=/dev/mtdblock")) == 0)
 //              sprintf(saved_root_name, "/dev/mtdblock%d", rootfs_mtdblock());
 	/* Set watchdog interval in ms */
@@ -201,7 +226,7 @@ void __init board_init(void)
 	return;
 }
 
-void __init board_fixup(struct tag *t, char **cmdline, struct meminfo *mi)
+void __init board_fixup(struct tag *t, char **cmdline)
 {
 	early_printk("board_fixup\n");
 
@@ -216,18 +241,25 @@ void __init board_fixup(struct tag *t, char **cmdline, struct meminfo *mi)
 
 	early_printk("board_fixup: mem=%uMiB\n", mem_size >> 20);
 
+	/* for NS-B0-ACP */
+#if 0
+	if (ACP_WAR_ENAB()) {
+		mi->bank[0].start = PHYS_OFFSET;
+		mi->bank[0].size = mem_size;
+		mi->nr_banks++;
+		return;
+	}
+#endif
+
 	lo_size = min(mem_size, DRAM_MEMORY_REGION_SIZE);
 
-	mi->bank[0].start = PHYS_OFFSET;
-	mi->bank[0].size = lo_size;
-	mi->nr_banks++;
+	memblock_add(PHYS_OFFSET, lo_size);
+
 
 	if (lo_size == mem_size)
 		return;
 
-	mi->bank[1].start = DRAM_LARGE_REGION_BASE + lo_size;
-	mi->bank[1].size = mem_size - lo_size;
-	mi->nr_banks++;
+	memblock_add(DRAM_LARGE_REGION_BASE + lo_size, mem_size - lo_size);
 }
 
 #ifdef CONFIG_ZONE_DMA
@@ -240,6 +272,10 @@ void __init bcm47xx_adjust_zones(unsigned long *size, unsigned long *hole)
 
 	if (size[0] <= dma_size)
 		return;
+#if 0
+	if (ACP_WAR_ENAB())
+		return;
+#endif
 
 	size[ZONE_NORMAL] = size[0] - dma_size;
 	size[ZONE_DMA] = dma_size;
@@ -265,7 +301,8 @@ MACHINE_START(BRCM_NS, "Northstar Prototype")
 //      IO_BASE_PA,
 //   .io_pg_offst =                             /* for early debug */
 //      (IO_BASE_VA >>18) & 0xfffc,
-    .smp = smp_ops(brcm_smp_ops),.fixup = board_fixup,	/* Opt. early setup_arch() */
+    .smp = smp_ops(brcm_smp_ops),
+    .fixup = board_fixup,	/* Opt. early setup_arch() */
     .map_io = board_map_io,	/* Opt. from setup_arch() */
     .init_irq = board_init_irq,	/* main.c after setup_arch() */
     .init_time = board_init_timer,	/* main.c after IRQs */
@@ -470,9 +507,21 @@ struct mtd_partition *init_mtd_partitions(hndsflash_t * sfl_info, struct mtd_inf
 
 	if (nvram_match("boardnum", "24") && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1110")
-	    && nvram_match("gpio7", "wps_button")) {
+	    && nvram_match("gpio7", "wps_button") && !nvram_match("gpio6", "wps_led")) {
 		maxsize = 0x200000;
 		size = maxsize;
+	}
+
+	if (nvram_match("boardnum", "24") && nvram_match("boardtype", "0x0646")
+	    && nvram_match("boardrev", "0x1110")
+	    && nvram_match("gpio7", "wps_button") && nvram_match("gpio6", "wps_led")) {
+		bootsz = 0x200000;
+	}
+
+	if (nvram_match("boardnum", "24") && nvram_match("boardtype", "0x072F")
+	    && nvram_match("boardrev", "0x1101")
+	    && nvram_match("gpio7", "wps_button")) {
+		bootsz = 0x200000;
 	}
 
 	if (nvram_match("boardnum","679") && nvram_match("boardtype", "0x0646") 
@@ -597,7 +646,8 @@ struct mtd_partition *init_mtd_partitions(hndsflash_t * sfl_info, struct mtd_inf
 
 	} else {
 		root_dev_setup("1f04");
-		bootsz = boot_partition_size(sfl_info->base);
+		if (!bootsz)
+			bootsz = boot_partition_size(sfl_info->base);
 		printk("Boot partition size = %d(0x%x)\n", bootsz, bootsz);
 		/* Size pmon */
 		if (maxsize)
@@ -708,6 +758,13 @@ static uint lookup_nflash_rootfs_offset(hndnand_t * nfl, struct mtd_info *mtd, i
 	    && nvram_match("boardrev", "0x1110")
 	    && nvram_match("gpio7", "wps_button")) {
 		printk(KERN_INFO "DIR-686L Hack for detecting filesystems\n");
+		blocksize = 65536;
+	}
+
+	if (nvram_match("boardnum", "24") && nvram_match("boardtype", "0x072F")
+	    && nvram_match("boardrev", "0x1101")
+	    && nvram_match("gpio7", "wps_button")) {
+		printk(KERN_INFO "DIR-690L Hack for detecting filesystems\n");
 		blocksize = 65536;
 	}
 

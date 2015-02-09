@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.18.1 Kernel Configuration
+# Linux/mips 3.18.7-rc1 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -1135,6 +1135,7 @@ CONFIG_ET_ALL_PASSIVE_RUNTIME=y
 # CONFIG_BCM_CTF is not set
 # CONFIG_WL_EMULATOR is not set
 CONFIG_BCM57XX=m
+# CONFIG_DHDAP is not set
 CONFIG_WL=y
 # CONFIG_WAPI is not set
 # CONFIG_WL_USE_AP is not set

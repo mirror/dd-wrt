@@ -145,7 +145,7 @@ int xhci_fake_doorbell(struct xhci_hcd *xhci, int slot_id)
 	mdelay(1);
 
 	/* read the status register to check if HSE is set or not? */
-        temp1 = xhci_readl(xhci, &xhci->op_regs->status);
+        temp1 = readl(&xhci->op_regs->status);
 	xhci_dbg(xhci, "op reg status = %x\n",temp1);
 
 	/* clear HSE if set */
@@ -154,9 +154,9 @@ int xhci_fake_doorbell(struct xhci_hcd *xhci, int slot_id)
 		temp1 &= ~(0x1fff);
 		temp1 |= STS_FATAL;
 		xhci_dbg(xhci, "temp1=%x\n",temp1);
-		xhci_writel(xhci, temp1, &xhci->op_regs->status);
+		writel(temp1, &xhci->op_regs->status);
 		mdelay(1);
-	        temp1 = xhci_readl(xhci, &xhci->op_regs->status);
+	        temp1 = readl(&xhci->op_regs->status);
         	xhci_dbg(xhci, "After clear op reg status=%x\n", temp1);
 	}
 	
@@ -164,12 +164,12 @@ int xhci_fake_doorbell(struct xhci_hcd *xhci, int slot_id)
 	xhci_free_virt_device(xhci, slot_id);
 
 	/* Run the controller if needed */
-	temp1 = xhci_readl(xhci, &xhci->op_regs->command);
+	temp1 = readl(&xhci->op_regs->command);
 	if (temp1 & CMD_RUN)
 		return 0;
 	temp1 |= (CMD_RUN);
 
-	xhci_writel(xhci, temp1, &xhci->op_regs->command);
+	writel(temp1, &xhci->op_regs->command);
 	/*
 	 * Wait for the HCHalted Status bit to be 0 to indicate the host is running.
 	 */
