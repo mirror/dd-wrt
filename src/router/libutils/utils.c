@@ -1174,9 +1174,16 @@ int internal_getRouterBrand()
 
 	if (boardnum == 24 && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1110")
-	    && nvram_match("gpio7", "wps_button")) {
+	    && nvram_match("gpio7", "wps_button") && !nvram_match("gpio6", "wps_led")) {
 		setRouter("Dlink-DIR868L");
 		return ROUTER_DLINK_DIR868;
+	}
+
+	if (boardnum == 24 && nvram_match("boardtype", "0x0646")
+	    && nvram_match("boardrev", "0x1110")
+	    && nvram_match("gpio7", "wps_button") && nvram_match("gpio6", "wps_led")) {
+		setRouter("Dlink-DIR880L");
+		return ROUTER_DLINK_DIR880;
 	}
 
 	if (boardnum == 24 && nvram_match("boardtype", "0x072F")
