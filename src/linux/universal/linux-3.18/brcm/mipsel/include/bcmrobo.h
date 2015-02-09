@@ -1,7 +1,7 @@
 /*
  * RoboSwitch setup functions
  *
- * Copyright (C) 2014, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: bcmrobo.h 427480 2013-10-03 19:09:47Z $
+ * $Id: bcmrobo.h 523408 2014-12-30 05:46:51Z $
  */
 
 #ifndef _bcm_robo_h_
@@ -40,8 +40,9 @@
 #define DEVID53012	0x53012	/* 53012 */
 #define DEVID53018	0x53018	/* 53018 */
 #define DEVID53019	0x53019	/* 53019 */
+#define DEVID53030	0x53030	/* 53030 */
 #define ROBO_IS_BCM5301X(id) ((id) == DEVID53010 || (id) == DEVID53011 || (id) == DEVID53012 || \
-(id) == DEVID53018 || (id) == DEVID53019)
+(id) == DEVID53018 || (id) == DEVID53019 || (id) == DEVID53030)
 
 /* Power save duty cycle times */
 #define MAX_NO_PHYS		5
@@ -148,6 +149,9 @@ struct robo_info_s {
 	/* PLC */
 	bool	plc_hw;			/* PLC chip */
 #endif /* PLC */
+#ifdef BCMFA
+	int		aux_pid;
+#endif /* BCMFA */
 };
 
 /* Power Save mode related functions */

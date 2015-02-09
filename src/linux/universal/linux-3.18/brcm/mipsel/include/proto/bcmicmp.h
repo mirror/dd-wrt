@@ -1,7 +1,7 @@
 /*
  * Fundamental constants relating to ICMP Protocol
  *
- * Copyright (C) 2013, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: bcmicmp.h 384537 2013-02-12 04:27:03Z $
+ * $Id: bcmicmp.h 384540 2013-02-12 04:28:58Z $
  */
 
 #ifndef _bcmicmp_h_

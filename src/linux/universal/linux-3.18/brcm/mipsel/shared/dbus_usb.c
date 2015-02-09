@@ -1,7 +1,7 @@
 /*
  * Dongle BUS interface for USB, OS independent
  *
- * Copyright (C) 2014, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: dbus_usb.c 419467 2013-08-21 09:19:48Z $
+ * $Id: dbus_usb.c 452339 2014-01-30 00:41:10Z $
  */
 
 #include <osl.h>
@@ -30,24 +30,15 @@
 #ifdef EMBED_IMAGE_43236b
 #include "rtecdc_43236b.h"
 #endif /* EMBED_IMAGE_43236b */
-#ifdef EMBED_IMAGE_43238b
-#include "rtecdc_43238b.h"
-#endif /* EMBED_IMAGE_43238b */
 #ifdef EMBED_IMAGE_43526a
 #include "rtecdc_43526a.h"
 #endif /* EMBED_IMAGE_43526a */
 #ifdef EMBED_IMAGE_43526b
 #include "rtecdc_43526b.h"
 #endif /* EMBED_IMAGE_43526b */
-#ifdef EMBED_IMAGE_4360b
-#include "rtecdc_4360b.h"
-#endif /* EMBED_IMAGE_4360b */
 #ifdef EMBED_IMAGE_43242a0
 #include "rtecdc_43242a0.h"
 #endif /* EMBED_IMAGE_43242a0 */
-#ifdef EMBED_IMAGE_43242a1
-#include "rtecdc_43242a1.h"
-#endif /* EMBED_IMAGE_43242a1 */
 #ifdef EMBED_IMAGE_43143a0
 #include "rtecdc_43143a0.h"
 #endif /* EMBED_IMAGE_43143a0 */
@@ -63,6 +54,18 @@
 #ifdef EMBED_IMAGE_4350b1
 #include "rtecdc_4350b1.h"
 #endif /* EMBED_IMAGE_4350b1 */
+#ifdef EMBED_IMAGE_4350c0
+#include "rtecdc_4350c0.h"
+#endif /* EMBED_IMAGE_4350c0 */
+#ifdef EMBED_IMAGE_4350c1
+#include "rtecdc_4350c1.h"
+#endif /* EMBED_IMAGE_4350c1 */
+#ifdef EMBED_IMAGE_43556b1
+#include "rtecdc_43556b1.h"
+#endif /* EMBED_IMAGE_43556b1 */
+#ifdef EMBED_IMAGE_43569a0
+#include "rtecdc_43569a0.h"
+#endif /* EMBED_IMAGE_43569a0 */
 #ifdef EMBED_IMAGE_GENERIC
 #include "rtecdc.h"
 #endif
@@ -82,7 +85,7 @@ typedef struct {
 	dbus_pub_t  *pub;
 
 	void        *cbarg;
-	dbus_intf_callbacks_t *cbs;
+	dbus_intf_callbacks_t *cbs;  /** callbacks into higher DBUS level (dbus.c) */
 	dbus_intf_t *drvintf;
 	void        *usbosl_info;
 	uint32      rdlram_base_addr;
@@ -127,6 +130,10 @@ extern int dbus_write_membytes(usb_info_t *usbinfo, bool set, uint32 address,
 	uint8 *data, uint size);
 extern bool dbus_usbos_dl_send_bulk(void *info, void *buffer, int len);
 
+/**
+ * These functions are called by the lower DBUS level (dbus_usb_os.c) to notify this DBUS level
+ * (dbus_usb.c) of an event.
+ */
 static dbus_intf_callbacks_t dbus_usb_intf_cbs = {
 	dbus_usb_send_irb_timeout,
 	dbus_usb_send_irb_complete,
@@ -134,11 +141,11 @@ static dbus_intf_callbacks_t dbus_usb_intf_cbs = {
 	dbus_usb_errhandler,
 	dbus_usb_ctl_complete,
 	dbus_usb_state_change,
-	NULL,  /* isr */
-	NULL,  /* dpc */
-	NULL,  /* watchdog */
-	NULL,  /* dbus_if_pktget */
-	NULL,  /* dbus_if_pktfree */
+	NULL,			/* isr */
+	NULL,			/* dpc */
+	NULL,			/* watchdog */
+	NULL,			/* dbus_if_pktget */
+	NULL, 			/* dbus_if_pktfree */
 	dbus_usb_getirb,
 	dbus_usb_rxerr_indicate
 };
@@ -162,12 +169,12 @@ const bcm_iovar_t dhdusb_iovars[] = {
  * attach() is not called at probe and detach()
  * can be called inside disconnect()
  */
-static probe_cb_t      probe_cb = NULL;
-static disconnect_cb_t disconnect_cb = NULL;
-static void            *probe_arg = NULL;
-static void            *disc_arg = NULL;
-static dbus_intf_t     *g_dbusintf = NULL;
-static dbus_intf_t     dbus_usb_intf;
+static probe_cb_t	probe_cb = NULL;
+static disconnect_cb_t	disconnect_cb = NULL;
+static void		*probe_arg = NULL;
+static void		*disc_arg = NULL;
+static dbus_intf_t	*g_dbusintf = NULL;
+static dbus_intf_t	dbus_usb_intf; /** functions called by higher layer DBUS into lower layer */
 
 /*
  * dbus_intf_t common to all USB
@@ -186,6 +193,7 @@ static void * dbus_usb_probe(void *arg, const char *desc, uint32 bustype, uint32
 static void *
 dbus_usb_probe(void *arg, const char *desc, uint32 bustype, uint32 hdrlen)
 {
+	DBUSTRACE(("%s(): \n", __FUNCTION__));
 	if (probe_cb) {
 
 		if (g_dbusintf != NULL) {
@@ -223,6 +231,7 @@ dbus_bus_register(int vid, int pid, probe_cb_t prcb,
 {
 	int err;
 
+	DBUSTRACE(("%s(): \n", __FUNCTION__));
 	probe_cb = prcb;
 	disconnect_cb = discb;
 	probe_arg = prarg;
@@ -239,6 +248,7 @@ dbus_bus_register(int vid, int pid, probe_cb_t prcb,
 int
 dbus_bus_deregister()
 {
+	DBUSTRACE(("%s(): \n", __FUNCTION__));
 	return dbus_bus_osl_deregister();
 }
 
@@ -247,6 +257,8 @@ void *
 dbus_usb_attach(dbus_pub_t *pub, void *cbarg, dbus_intf_callbacks_t *cbs)
 {
 	usb_info_t *usb_info;
+
+	DBUSTRACE(("%s(): \n", __FUNCTION__));
 
 	if ((g_dbusintf == NULL) || (g_dbusintf->attach == NULL))
 		return NULL;
@@ -303,6 +315,7 @@ dbus_usb_detach(dbus_pub_t *pub, void *info)
 void
 dbus_usb_disconnect(void *handle)
 {
+	DBUSTRACE(("%s(): \n", __FUNCTION__));
 	if (disconnect_cb)
 		disconnect_cb(disc_arg);
 }
@@ -725,7 +738,7 @@ dbus_usb_dl_writeimage(usb_info_t *usbinfo, uint8 *fw, int fwlen)
 {
 	osl_t *osh = usbinfo->pub->osh;
 	void *osinfo = usbinfo->usbosl_info;
-	unsigned int sendlen, sent, dllen, pktlen;
+	unsigned int sendlen, sent, dllen;
 	char *bulkchunk = NULL, *dlpos;
 	rdl_state_t state;
 	int err = DBUS_OK;
@@ -741,17 +754,6 @@ dbus_usb_dl_writeimage(usb_info_t *usbinfo, uint8 *fw, int fwlen)
 	sent = 0;
 	dlpos = fw;
 	dllen = fwlen;
-	pktlen = RDL_CHUNK;
-
-#ifdef BCM_USB30
-	/* for SuperSpeed with non-disconnect target, need to make sure */
-	/* bulk out write times can divided by 32 to keep SeqN is 0           */
-	pktlen = (fwlen + RDL_CHUNK - 1)/RDL_CHUNK;
-	if (pktlen%32) {
-		pktlen = (pktlen/32 + 1)*32;
-	}
-	pktlen = (dllen + pktlen - 1)/pktlen;
-#endif /* BCM_USB30 */
 
 	/* Get chip id and rev */
 	id.chip = usbinfo->pub->attrib.devid;
@@ -766,18 +768,17 @@ dbus_usb_dl_writeimage(usb_info_t *usbinfo, uint8 *fw, int fwlen)
 		/* Wait until the usb device reports it received all the bytes we sent */
 
 		if (sent < dllen) {
-			if ((dllen-sent) < pktlen)
+			if ((dllen-sent) < RDL_CHUNK)
 				sendlen = dllen-sent;
 			else
-				sendlen = pktlen;
+				sendlen = RDL_CHUNK;
 
-#ifndef BCM_USB30
 			/* simply avoid having to send a ZLP by ensuring we never have an even
 			 * multiple of 64
 			 */
 			if (!(sendlen % 64))
 				sendlen -= 4;
-#endif /* BCM_USB30 */
+
 			/* send data */
 			memcpy(bulkchunk, dlpos, sendlen);
 			if (!dbus_usbos_dl_send_bulk(osinfo, bulkchunk, sendlen)) {
@@ -878,7 +879,6 @@ dbus_usb_update_chipinfo(usb_info_t *usbinfo, uint32 chip)
 		case 43234:
 		case 43235:
 		case 43236:
-		case 43238:
 			usbinfo->rdlram_size = RDL_RAM_SIZE_43236;
 			usbinfo->rdlram_base_addr = RDL_RAM_BASE_43236;
 			break;
@@ -900,6 +900,7 @@ dbus_usb_update_chipinfo(usb_info_t *usbinfo, uint32 chip)
 			break;
 
 		case 43242:
+		case 43243:
 			usbinfo->rdlram_size = RDL_RAM_SIZE_43242;
 			usbinfo->rdlram_base_addr = RDL_RAM_BASE_43242;
 			break;
@@ -910,6 +911,9 @@ dbus_usb_update_chipinfo(usb_info_t *usbinfo, uint32 chip)
 			break;
 
 		case 0x4350:
+		case 43556:
+		case 43558:
+		case 43569:
 			usbinfo->rdlram_size = RDL_RAM_SIZE_4350;
 			usbinfo->rdlram_base_addr = RDL_RAM_BASE_4350;
 			break;
@@ -1045,22 +1049,11 @@ dbus_bus_fw_get(void *bus, uint8 **fw, int *fwlen, int *decomp)
 #ifdef EMBED_IMAGE_43236b
 			*fw = (uint8 *)dlarray_43236b;
 			*fwlen = sizeof(dlarray_43236b);
-#endif
-#ifdef EMBED_IMAGE_43238b
-			*fw = (uint8 *)dlarray_43238b;
-			*fwlen = sizeof(dlarray_43238b);
-#endif
 
-		}
-	}	break;
-	case BCM4360_CHIP_ID:
-#ifdef EMBED_IMAGE_4360b
-		if (crev > 2) {
-			*fw = (uint8 *)dlarray_4360b;
-			*fwlen = sizeof(dlarray_4360b);
-		}
 #endif
-		break;
+		}
+		} break;
+	case BCM4360_CHIP_ID:
 	case BCM4352_CHIP_ID:
 	case BCM43526_CHIP_ID:
 #ifdef EMBED_IMAGE_43526a
@@ -1081,9 +1074,6 @@ dbus_bus_fw_get(void *bus, uint8 **fw, int *fwlen, int *decomp)
 #ifdef EMBED_IMAGE_43242a0
 		*fw = (uint8 *)dlarray_43242a0;
 		*fwlen = sizeof(dlarray_43242a0);
-#elif defined(EMBED_IMAGE_43242a1)
-		*fw = (uint8 *)dlarray_43242a1;
-		*fwlen = sizeof(dlarray_43242a1);
 #endif
 		break;
 
@@ -1091,13 +1081,20 @@ dbus_bus_fw_get(void *bus, uint8 **fw, int *fwlen, int *decomp)
 #ifdef EMBED_IMAGE_43143a0
 		*fw = (uint8 *)dlarray_43143a0;
 		*fwlen = sizeof(dlarray_43143a0);
-#elif defined(EMBED_IMAGE_43143b0)
+#endif
+#ifdef EMBED_IMAGE_43143b0
 		*fw = (uint8 *)dlarray_43143b0;
 		*fwlen = sizeof(dlarray_43143b0);
 #endif
 		break;
 
 	case BCM4350_CHIP_ID:
+	case BCM4354_CHIP_ID:
+	case BCM43556_CHIP_ID:
+	case BCM43558_CHIP_ID:
+	case BCM43566_CHIP_ID:
+	case BCM43568_CHIP_ID:
+	case BCM43570_CHIP_ID:
 #ifdef EMBED_IMAGE_4350a0
 		if (crev == 0) {
 			*fw = (uint8 *)dlarray_4350a0;
@@ -1116,6 +1113,32 @@ dbus_bus_fw_get(void *bus, uint8 **fw, int *fwlen, int *decomp)
 			*fwlen = sizeof(dlarray_4350b1);
 		}
 #endif
+#ifdef EMBED_IMAGE_43556b1
+		if (crev == 2) {
+			*fw = (uint8 *)dlarray_43556b1;
+			*fwlen = sizeof(dlarray_43556b1);
+		}
+#endif
+#ifdef EMBED_IMAGE_4350c0
+		if (crev == 3) {
+			*fw = (uint8 *)dlarray_4350c0;
+			*fwlen = sizeof(dlarray_4350c0);
+		}
+#endif /* EMBED_IMAGE_4350c0 */
+#ifdef EMBED_IMAGE_4350c1
+		if (crev == 4) {
+			*fw = (uint8 *)dlarray_4350c1;
+			*fwlen = sizeof(dlarray_4350c1);
+		}
+#endif /* EMBED_IMAGE_4350c1 */
+		break;
+	case BCM43569_CHIP_ID:
+#ifdef EMBED_IMAGE_43569a0
+		if (crev == 0) {
+			*fw = (uint8 *)dlarray_43569a0;
+			*fwlen = sizeof(dlarray_43569a0);
+		}
+#endif /* EMBED_IMAGE_43569a0 */
 		break;
 
 	default:

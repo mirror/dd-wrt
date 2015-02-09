@@ -1,21 +1,15 @@
 /*
  * Broadcom USB remote download definitions
  *
- * Copyright (C) 2014, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2015, Broadcom Corporation
+ * All Rights Reserved.
  * 
- * Permission to use, copy, modify, and/or distribute this software for any
- * purpose with or without fee is hereby granted, provided that the above
- * copyright notice and this permission notice appear in all copies.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
- * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
- * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
- * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
- * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
- * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
- * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
+ * the contents of this file may not be disclosed to third parties, copied
+ * or duplicated in any form, in whole or in part, without the prior
+ * written permission of Broadcom Corporation.
  *
- * $Id: usbrdl.h 419467 2013-08-21 09:19:48Z $
+ * $Id: usbrdl.h 446706 2014-01-06 22:56:14Z $
  */
 
 #ifndef _USB_RDL_H
@@ -39,6 +33,7 @@
 #define DL_DEFER_RESP_OK	9	/* Potentially defer the response to setup
 					 * if resp unavailable
 					 */
+#define DL_CHGSPD		0x0A
 
 #define	DL_HWCMD_MASK		0xfc	/* Mask for hardware read commands: */
 #define	DL_RDHW			0x10	/* Read a hardware address (Ctl-in) */
@@ -89,6 +84,7 @@
 #define	DL_CFRD			0x33	/* Reserved for dmamem use */
 #define	DL_CFWR			0x34	/* Reserved for dmamem use */
 #define DL_GET_NVRAM            0x35    /* Query nvram parameter */
+#define DL_ENABLE_U1U2		0x36    /* Enable U1 and U2 */
 
 #define	DL_DBGTRIG		0xFF	/* Trigger bRequest type to aid debug */
 
