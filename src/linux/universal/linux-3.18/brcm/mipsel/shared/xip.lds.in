@@ -6,6 +6,7 @@ SECTIONS {
 		_ftext = .;
 		text_start = .;
 		*(.text.startup)
+		*(.text.debugptr)
 		*(.init)
 		*(.textini2.*)
 		*(.textini3.*)
@@ -34,6 +35,7 @@ SECTIONS {
 		_fdata = .;
 		data_start = .;
 		*(.data)
+		*(.rodataini1.*)
 		*(.rodataini2.*)
 		*(.dataini2.*)
 		*(.rodataini3.*)
@@ -63,5 +65,4 @@ SECTIONS {
 		 KEEP(*(.logstrs))
 		 logstrs_size = .;
 	}
-
 }
