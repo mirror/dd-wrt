@@ -77,12 +77,8 @@
 #include <linux/highmem.h>
 
 
-#ifdef CONFIG_BCM47XX
-#include <typedefs.h>
-#include <bcmdefs.h>
-#else
+#define BCMFASTPATH
 #define BCMFASTPATH_HOST
-#endif
 
 struct kmem_cache *skbuff_head_cache __read_mostly;
 static struct kmem_cache *skbuff_fclone_cache __read_mostly;

@@ -81,7 +81,7 @@ ENTRY(__mach_head_fixup)
 	orr	r0, #0x00ff0000
 	mov	r8, pc
 	and	r8, r8, r0
-	ldr	r9, =PHYS_OFFSET
+	ldr	r9, =PLAT_PHYS_OFFSET
 	and	r9, r9, r0
 	cmp	r8, r9
 	beq	5f

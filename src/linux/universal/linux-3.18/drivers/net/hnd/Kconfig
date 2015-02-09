@@ -34,6 +34,9 @@ config WL_EMULATOR
 config BCM57XX
 	tristate "BCM57xx support is ON"
 	depends on WL_EMULATOR
+config DHDAP
+	tristate "BCM DHD support"
+	depends on HND && !WL_EMULATOR
 config WL
 	tristate "Wireless feature variant is set to AP"
 	depends on WL_EMULATOR

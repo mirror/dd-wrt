@@ -63,6 +63,7 @@ obj-$(CONFIG_XEN_NETDEV_FRONTEND) += xen-netfront.o
 obj-$(CONFIG_XEN_NETDEV_BACKEND) += xen-netback/
 obj-$(CONFIG_USB_NET_DRIVERS) += usb/
 ifeq ($(CONFIG_BCM47XX),y)
+obj-$(CONFIG_DHDAP) 		+= dhd/
 obj-$(CONFIG_HND) 		+= hnd/
 obj-$(CONFIG_WL) += wl/
 obj-$(CONFIG_PROXYARP) += proxyarp/

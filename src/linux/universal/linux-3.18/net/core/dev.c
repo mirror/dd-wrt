@@ -140,13 +140,8 @@
 #include "net-sysfs.h"
 
 
-#ifdef CONFIG_BCM47XX
-#include <typedefs.h>
-#include <bcmdefs.h>
-#else
 #define BCMFASTPATH
 #define BCMFASTPATH_HOST
-#endif
 
 /* Instead of increasing this, you should create a hash table. */
 #define MAX_GRO_SKBS 8
