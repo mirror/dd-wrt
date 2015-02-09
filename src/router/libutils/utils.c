@@ -5755,6 +5755,20 @@ int led_control(int type, int act)
 		diag_gpio = 0x100;
 		break;
 
+	case ROUTER_DLINK_DIR880:
+		connected_gpio = 0x103;
+		disconnected_gpio = 0x101;
+		power_gpio = 0x102;
+		diag_gpio = 0x100;
+		diag_gpio_disabled = 0x102;
+		usb_gpio = 0x108; 
+		usb_gpio1 = 0x10f; 
+		wlan0_gpio = 0x10d;
+		wlan1_gpio = 0x10e;
+		usb_power = 0x009;
+		usb_power1 = 0x00a;
+		break;
+
 	case ROUTER_DLINK_DIR890:
 		usb_power = 0x015;
 		usb_power1 = 0x012;
