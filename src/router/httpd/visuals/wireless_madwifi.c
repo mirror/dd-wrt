@@ -463,7 +463,7 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 			|| nvram_nmatch("wdsap", "%s_mode", prefix)
 			|| nvram_nmatch("infra", "%s_mode", prefix))) {
 			if (nvram_nmatch("40", "%s_channelbw", prefix)) {
-				websWrite(wp, " + %d", nvram_nmatch("upper", "%s_nctrlsb", prefix) ? channel - 4 : channel + 4);
+				websWrite(wp, " + %d", nvram_nmatch("upper", "%s_nctrlsb", prefix) ? channel + 4 : channel - 4);
 			}
 		}
 #endif
