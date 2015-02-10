@@ -2,7 +2,7 @@
 
    This file is part of the LZO real-time data compression library.
 
-   Copyright (C) 1996-2014 Markus Franz Xaver Johannes Oberhumer
+   Copyright (C) 1996-2015 Markus Franz Xaver Johannes Oberhumer
    All Rights Reserved.
 
    The LZO library is free software; you can redistribute it and/or
@@ -30,7 +30,7 @@
 #include "src/lzo_conf.h"
 #include "src/lzo_ptr.h"
 #endif
-#include "lzo/lzoconf.h"
+#include <lzo/lzoconf.h>
 
 /* utility layer */
 #define WANT_LZO_MALLOC 1
@@ -56,12 +56,12 @@ static unsigned long align_test(lzo_bytep block, lzo_uint len, lzo_uint step)
     unsigned long i = 0;
 
     assert(step > 0);
-    assert(step <= 65536L);
+    assert(step <= 65536ul);
     assert((step & (step - 1)) == 0);
 
     for (offset = step; offset < len; offset += step)
     {
-        k1 = LZO_PTR_ALIGN_UP(b1+1,step);
+        k1 = LZO_PTR_ALIGN_UP(b1 + 1, step);
         k2 = b2 + offset;
         if (k1 != k2)
         {
@@ -109,7 +109,7 @@ static unsigned long align_test(lzo_bytep block, lzo_uint len, lzo_uint step)
 
         for (k = b1 + 1; k <= k1; k++)
         {
-            x = LZO_PTR_ALIGN_UP(k,step);
+            x = LZO_PTR_ALIGN_UP(k, step);
             if (x != k1)
             {
                 printf("error 3: base: %p %p %p  i %lu step %ld offset %ld: "
@@ -165,7 +165,7 @@ int main(int argc, char *argv[])
     printf("Align init: %p ( 0x%lx )\n", buf, (unsigned long) (size_t) buf);
 #endif
 
-    for (step = 1; step <= 65536L; step *= 2)
+    for (step = 1; step <= 65536ul; step *= 2)
     {
         lzo_bytep block = buf;
         unsigned long n;
