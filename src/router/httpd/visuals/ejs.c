@@ -1557,7 +1557,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 
 #endif
 
-	static char menu_t[8][13][32] = {
+	static char menu_t[8][12][32] = {
 		{"index.asp", "IPV6.asp", "DDNS.asp", "WanMAC.asp", "Routing.asp", "Vlan.asp", "Networking.asp", "eop-tunnel.asp", "", "", "", ""},	// 
 		{"Wireless_Basic.asp", "SuperChannel.asp", "WiMAX.asp", "Wireless_radauth.asp", "WL_WPATable.asp", "AOSS.asp", "Wireless_MAC.asp", "Wireless_Advanced.asp", "Wireless_WDS.asp", "", "", ""},	//
 		{"Services.asp", "FreeRadius.asp", "PPPoE_Server.asp", "PPTP.asp", "USB.asp", "NAS.asp", "Hotspot.asp", "Nintendo.asp", "Milkfish.asp", "Privoxy.asp", "Lighttpd.asp", ""},	//
@@ -1570,7 +1570,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	/*
 	 * real name is bmenu.menuname[i][j] 
 	 */
-	static char menuname_t[8][14][32] = {
+	static char menuname_t[8][13][32] = {
 		{"setup", "setupbasic", "setupipv6", "setupddns", "setupmacclone", "setuprouting", "setupvlan", "networking", "setupeop", "", "", "", ""},	//
 		{"wireless", "wirelessBasic", "wirelessSuperchannel", "wimax", "wirelessRadius", "wirelessSecurity",	//
 #ifdef HAVE_WPS
@@ -1586,10 +1586,10 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 		{"admin", "adminManagement", "adminAlive", "adminDiag", "adminWol", "adminFactory", "adminUpgrade", "adminBackup", "", "", "", "", ""},	//
 		{"statu", "statuRouter", "statuInet", "statuLAN", "statuWLAN", "statuSputnik", "statuVPN", "statuBand", "statuSyslog", "statuSysInfo", "statuActivate", "statuMyPage", "statuGpio", "statuCWMP"}	//
 	};
-	static char menu[8][13][32];
-	static char menuname[8][14][32];
-	memcpy(menu, menu_t, 8 * 13 * 32);
-	memcpy(menuname, menuname_t, 8 * 14 * 32);
+	static char menu[8][12][32];
+	static char menuname[8][13][32];
+	memcpy(menu, menu_t, 8 * 12 * 32);
+	memcpy(menuname, menuname_t, 8 * 13 * 32);
 #if HAVE_ERC
 	if (!wp->userid) {
 		memcpy(menu, menu_s, 8 * 12 * 32);
