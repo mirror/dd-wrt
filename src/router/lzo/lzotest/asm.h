@@ -2,7 +2,7 @@
 
    This file is part of the LZO real-time data compression library.
 
-   Copyright (C) 1996-2014 Markus Franz Xaver Johannes Oberhumer
+   Copyright (C) 1996-2015 Markus Franz Xaver Johannes Oberhumer
    All Rights Reserved.
 
    The LZO library is free software; you can redistribute it and/or
@@ -31,7 +31,7 @@
 **************************************************************************/
 
 #if defined(LZO_USE_ASM)
-#  include "lzo/lzo_asm.h"
+#  include <lzo/lzo_asm.h>
 #else
 #  define lzo1c_decompress_asm              0
 #  define lzo1c_decompress_asm_safe         0
