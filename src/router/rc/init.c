@@ -772,7 +772,7 @@ int main(int argc, char **argv)
 #ifdef HAVE_VLANTAGGING
 			start_service("bridging");
 #endif
-			start_service("lan");
+			start_service_force("lan");
 #ifdef HAVE_BONDING
 			start_service("bonding");
 #endif
@@ -790,9 +790,6 @@ int main(int argc, char **argv)
 #ifdef HAVE_VLANTAGGING
 			start_service("vlantagging");
 			start_service("bridgesif");
-#endif
-#ifdef HAVE_EMF
-			start_service("emf");
 #endif
 			start_service_force("wan_boot");
 			start_service_f("ttraff");
@@ -817,7 +814,9 @@ int main(int argc, char **argv)
 			}
 #endif
 			start_service_f("radio_timer");
-
+#ifdef HAVE_EMF
+			start_service("emf");
+#endif
 			cprintf("run rc file\n");
 #ifdef HAVE_REGISTER
 			if (isregistered_real())
