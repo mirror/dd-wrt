@@ -541,6 +541,9 @@ void __init ath79_init_mac(unsigned char *dst, const unsigned char *src, int off
 #if defined(CONFIG_DIR825C1) || defined(CONFIG_DIR615I)
 #define DIR825C1_MAC_LOCATION_0			0x1ffe0004
 #define DIR825C1_MAC_LOCATION_1			0x1ffe0018
+#define DHP1565A1_MAC_LOCATION_0			0x1ffeffa0
+#define DHP1565A1_MAC_LOCATION_1			0x1ffeffb4
+
 #define DIR615I_MAC_LOCATION_0			0x1fffffb4
 static u8 mac0[6];
 static u8 mac1[6];
@@ -618,6 +621,10 @@ int __init ar7240_platform_init(void)
     #ifdef CONFIG_DIR825C1
 	dir825b1_read_ascii_mac(mac0, DIR825C1_MAC_LOCATION_0);
 	dir825b1_read_ascii_mac(mac1, DIR825C1_MAC_LOCATION_1);
+	if (!memcmp(mac0,"\x0\x0\x0\x0\x0\x0",6)) {
+		dir825b1_read_ascii_mac(mac0, DHP1565A1_MAC_LOCATION_0);
+		dir825b1_read_ascii_mac(mac1, DHP1565A1_MAC_LOCATION_1);
+	}
     #endif
 
     #else
