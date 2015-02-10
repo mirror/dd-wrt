@@ -1527,7 +1527,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	int wimaxwifi = 0;
 #endif
 #ifdef HAVE_ERC
-	static char menu_s[8][13][32] = {
+	static char menu_s[8][12][32] = {
 		{"index.asp", "DDNS.asp", "", "", "", "", "", "", "", "", "", ""},	//
 		{"Wireless_Basic.asp", "WL_WPATable.asp", "", "", "", "", "", "", "", "", "", ""},	//
 		{"ForwardSpec.asp", "", "", "", "", "", "", "", "", "", "", ""},	//
@@ -1541,7 +1541,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	/*
 	 * real name is bmenu.menuname[i][j] 
 	 */
-	static char menuname_s[8][14][32] = {
+	static char menuname_s[8][13][32] = {
 		{"setup", "setupbasic", "setupddns", "", "", "", "", "", "", "", "", "", ""},	//
 		{"wireless", "wirelessBasic", "wirelessSecurity", "", "", "", "", "", "", "", "", "", ""},	//
 		{"applications", "applicationspforwarding", "", "", "", "", "", "", "", "", "", "", ""},	//
@@ -1592,8 +1592,8 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	memcpy(menuname, menuname_t, 8 * 14 * 32);
 #if HAVE_ERC
 	if (!wp->userid) {
-		memcpy(menu, menu_s, 8 * 13 * 32);
-		memcpy(menuname, menuname_s, 8 * 14 * 32);
+		memcpy(menu, menu_s, 8 * 12 * 32);
+		memcpy(menuname, menuname_s, 8 * 13 * 32);
 	}
 #endif
 #ifdef HAVE_IPR
