@@ -2,6 +2,10 @@
 User visible changes for LZO -- a real-time data compression library
 ============================================================================
 
+Changes in 2.09 (04 Feb 2015)
+  * Work around gcc bug #64516 that could affect architectures like
+    armv4, armv5 and sparc.
+
 Changes in 2.08 (29 Jun 2014)
   * Updated the Autoconf scripts to fix some reported build problems.
   * Added CMake build support.
