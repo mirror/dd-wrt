@@ -479,6 +479,9 @@ static void handle_hotspot(void)
 #endif
 
 	stop_service_f("radio_timer");
+#ifdef HAVE_EMF
+	stop_service_f("emf");	//
+#endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	stop_service_f("nas");
 	eval("wlconf", nvram_safe_get("wl0_ifname"), "down");
@@ -490,9 +493,7 @@ static void handle_hotspot(void)
 #endif
 	stop_service_f("ttraff");
 	stop_service_force_f("wan");
-#ifdef HAVE_EMF
-	stop_service_f("emf");	//
-#endif
+
 #ifdef HAVE_VLANTAGGING
 	stop_service_f("bridgesif");
 	stop_service_f("vlantagging");
@@ -999,6 +1000,9 @@ static void handle_wireless(void)
 #endif
 
 	stop_service_f("radio_timer");
+#ifdef HAVE_EMF
+	stop_service_f("emf");	//
+#endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	stop_service_f("nas");
 	eval("wlconf", nvram_safe_get("wl0_ifname"), "down");
@@ -1021,9 +1025,7 @@ static void handle_wireless(void)
 			stop_service_force_f("wan");
 		}
 	}
-#ifdef HAVE_EMF
-	stop_service_f("emf");	//
-#endif
+
 #ifdef HAVE_VLANTAGGING
 	stop_service_f("bridgesif");
 	stop_service_f("vlantagging");
@@ -1101,6 +1103,9 @@ static void handle_wireless_2(void)
 #endif
 
 	stop_service_f("radio_timer");
+#ifdef HAVE_EMF
+	stop_service_f("emf");	//
+#endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	stop_service_f("nas");
 	eval("wlconf", nvram_safe_get("wl0_ifname"), "down");
@@ -1123,9 +1128,6 @@ static void handle_wireless_2(void)
 			stop_service_force_f("wan");
 		}
 	}
-#ifdef HAVE_EMF
-	stop_service_f("emf");	//
-#endif
 #ifdef HAVE_VLANTAGGING
 	stop_service_f("bridgesif");
 	stop_service_f("vlantagging");
