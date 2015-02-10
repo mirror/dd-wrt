@@ -1937,6 +1937,11 @@ int internal_getRouterBrand()
 	nvram_default_get("ath0_rxantenna", "7");
 	nvram_default_get("ath0_txantenna", "7");
 	return ROUTER_BOARD_WHRHPGN;
+#elif HAVE_DHP1565
+	setRouter("Dlink DHP1565-A1");
+	nvram_default_get("ath0_rxantenna", "3");
+	nvram_default_get("ath0_txantenna", "3");
+	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_DIR825C1
 	setRouter("Dlink DIR825-C1");
 	nvram_default_get("ath0_rxantenna", "3");
@@ -5333,6 +5338,16 @@ int led_control(int type, int act)
 		power_gpio = 0x113;
 		ses_gpio = 0x103;
 		sec0_gpio = 0x103;
+		break;
+#elif HAVE_DHP1565
+	case ROUTER_BOARD_WHRHPGN:
+		diag_gpio = 0x10e;
+		diag_gpio_disabled = 0x116;
+		connected_gpio = 0x112;
+		disconnected_gpio = 0x113;
+		power_gpio = 0x116;
+		usb_gpio = 0x10b;
+                ses_gpio = 0x10f;
 		break;
 #elif HAVE_DIR825C1
 	case ROUTER_BOARD_WHRHPGN:
