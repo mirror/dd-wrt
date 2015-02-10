@@ -2379,6 +2379,8 @@ void radio_off(int idx)
 			led_control(LED_WLAN0, LED_OFF);
 		if (idx == 1)
 			led_control(LED_WLAN1, LED_OFF);
+		if (idx == 2)
+			led_control(LED_WLAN2, LED_OFF);
 
 	} else {
 
@@ -2390,6 +2392,7 @@ void radio_off(int idx)
 		}
 		led_control(LED_WLAN0, LED_OFF);
 		led_control(LED_WLAN1, LED_OFF);
+		led_control(LED_WLAN2, LED_OFF);
 	}
 	//fix ticket 2991
 	eval("startservice", "nas", "-f");
@@ -2408,6 +2411,8 @@ void radio_on(int idx)
 			led_control(LED_WLAN0, LED_ON);
 		if (idx == 1)
 			led_control(LED_WLAN1, LED_ON);
+		if (idx == 2)
+			led_control(LED_WLAN2, LED_ON);
 
 	} else {
 		int cc = get_wl_instances();
@@ -2419,6 +2424,7 @@ void radio_on(int idx)
 		}
 		led_control(LED_WLAN0, LED_ON);
 		led_control(LED_WLAN1, LED_ON);
+		led_control(LED_WLAN2, LED_ON);
 	}
 	eval("startservice", "nas", "-f");
 	eval("startservice", "guest_nas", "-f");
