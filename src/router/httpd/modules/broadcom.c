@@ -1886,13 +1886,27 @@ static char *scanfile(char *buf, char *tran)
 		int val;
 		int prev = 0;
 		for (i = 0; i < filelen; i++) {
+		      again:;
 			if (count < sizeof(temp)) {
+				prev = val;
 				val = getc(fp);
-				if (val==' ' && !count)
-				    continue;
+				if (val == EOF)
+					return NULL;
+				if (val == ' ' && !count)
+					continue;
 			} else {
-				count = 0;	// we may scan forward, but doesnt make much sense
-				getc(fp);
+				int a, v;
+				for (a = 0; a < filelen - i; a++) {
+					v = getc(fp);
+					if (v == EOF)
+						return NULL;
+					if (v == ';') {
+						i += a;
+						count = 0;
+						goto again;
+					}
+				}
+				return NULL;
 			}
 			if (val == '\r')
 				continue;
@@ -1900,7 +1914,6 @@ static char *scanfile(char *buf, char *tran)
 				continue;
 			if (val == '\n')
 				continue;
-			prev = temp[count - 1];
 			if (val == '"' && prev != '\\' && ign == 0)
 				ign = 1;
 			else if (val == '"' && prev != '\\' && ign == 1)
