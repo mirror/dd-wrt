@@ -5,7 +5,7 @@
 function process_aborted(F) {
 	bar1.togglePause();
 	alert(fail.mess2);
-	window.location.replace("Upgrade.asp")
+	window.location.replace("Upgrade.asp");
 	return false;
 }
 
