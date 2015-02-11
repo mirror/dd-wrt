@@ -21,7 +21,6 @@ function setMemoryValues(val) {
 	setMeterBar("mem_cached", memCached / memUsed * 100, memCached + " kB / " + memUsed + " kB");
 	setMeterBar("mem_active", memActive / memUsed * 100, memActive + " kB / " + memUsed + " kB");
 	setMeterBar("mem_inactive", memInactive / memUsed * 100, memInactive + " kB / " + memUsed + " kB");
-<% nvim("show_hidden","1","/"); %><% nvram_invmatch("show_hidden","1","/"); %>	setMeterBar("mem_hidden", 100 , "32768 kB / 32768 kB");
 }
 
 function setUptimeValues(val) {
@@ -182,12 +181,6 @@ addEvent(window, "unload", function() {
 									<div class="label"><% tran("status_router.mem_inactive"); %></div>
 									<span id="mem_inactive"></span>&nbsp;
 								</div>
-<% nvim("show_hidden","1","<!--"); %>
-								<div class="setting">
-									<div class="label"><% tran("status_router.mem_hidden"); %></div>
-									<span id="mem_hidden"></span>&nbsp;
-								</div>
-<% nvim("show_hidden","1","-->"); %>
 							</fieldset><br />
 							
 							<fieldset>
