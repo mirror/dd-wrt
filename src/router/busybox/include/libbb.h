@@ -234,7 +234,11 @@ typedef unsigned long long uoff_t;
 # if UINT_MAX == 0xffffffff
 /* While sizeof(off_t) == sizeof(int), off_t is typedef'ed to long anyway.
  * gcc will throw warnings on printf("%d", off_t). Crap... */
+#ifdef __UCLIBC__
 typedef unsigned long uoff_t;
+#else
+typedef unsigned long long uoff_t;
+#endif
 #  define XATOOFF(a) xatoi_positive(a)
 #  define BB_STRTOOFF bb_strtou
 #  define STRTOOFF strtol
