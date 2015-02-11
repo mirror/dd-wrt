@@ -151,8 +151,10 @@ var update;
 addEvent(window, "load", function() {
 	setPacketInfo("<% wl_packet_get(); %>");
 	setMemoryValues("<% dumpmeminfo(); %>");
-<% ifndef("HASWIFI", "/"); %><% ifndef("HASWIFI", "/"); %>	setWirelessTable(<% active_wireless(1); %>);
-<% ifndef("HASWIFI", "/"); %><% ifndef("HASWIFI", "/"); %>	setWDSTable(<% active_wds(1); %>);
+<% ifndef("HASWIFI", "/"); %><% ifndef("HASWIFI", "*"); %>	
+	setWirelessTable(<% active_wireless(1); %>);
+	setWDSTable(<% active_wds(1); %>);
+<% ifndef("HASWIFI", "*"); %><% ifndef("HASWIFI", "/"); %>
 	setDHCPTable(<% dumpleases(1); %>);
 	setElementVisible("dhcp", "<% nvg("lan_proto"); %>" == "dhcp");
 
