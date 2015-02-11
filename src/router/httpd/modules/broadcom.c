@@ -1886,9 +1886,11 @@ static char *scanfile(char *buf, char *tran)
 		int val;
 		int prev = 0;
 		for (i = 0; i < filelen; i++) {
-			if (count < sizeof(temp))
+			if (count < sizeof(temp)) {
 				val = getc(fp);
-			else {
+				if (val==' ' && !count)
+				    continue;
+			} else {
 				count = 0;	// we may scan forward, but doesnt make much sense
 				getc(fp);
 			}
