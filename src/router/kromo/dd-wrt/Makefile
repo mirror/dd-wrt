@@ -987,11 +987,28 @@ optimizefiles:
 	-repugly $(INSTALLDIR)/www
 ifeq ($(CONFIG_IAS),y)
 	-repugly $(INSTALLDIR)/www/intatstart/js
+	../../../../tools/removewhitespace.sh $(INSTALLDIR)/www/intatstart/js
 endif
 ifeq ($(CONFIG_PWC),y)
 	-repugly $(INSTALLDIR)/www/js
+	../../../../tools/removewhitespace.sh $(INSTALLDIR)/www/js
 endif
-#	repugly $(INSTALLDIR)/www/lang_pack
+	../../../../tools/removewhitespace.sh $(INSTALLDIR)/www
+	../../../../tools/removewhitespace.sh $(INSTALLDIR)/www/help
+	../../../../tools/removewhitespace.sh $(INSTALLDIR)/www/lang_pack
+	../../../../tools/removewhitespace.sh $(INSTALLDIR)/www/style
+	../../../../tools/removewhitespace.sh $(INSTALLDIR)/www/style/blue
+	../../../../tools/removewhitespace.sh $(INSTALLDIR)/www/style/brainslayer
+	../../../../tools/removewhitespace.sh $(INSTALLDIR)/www/style/cyan
+	../../../../tools/removewhitespace.sh $(INSTALLDIR)/www/style/elegant
+	../../../../tools/removewhitespace.sh $(INSTALLDIR)/www/style/green
+	../../../../tools/removewhitespace.sh $(INSTALLDIR)/www/style/kromo
+	../../../../tools/removewhitespace.sh $(INSTALLDIR)/www/style/orange
+	../../../../tools/removewhitespace.sh $(INSTALLDIR)/www/style/pwc
+	../../../../tools/removewhitespace.sh $(INSTALLDIR)/www/style/red
+	../../../../tools/removewhitespace.sh $(INSTALLDIR)/www/style/wikar
+	../../../../tools/removewhitespace.sh $(INSTALLDIR)/www/style/xirian
+	../../../../tools/removewhitespace.sh $(INSTALLDIR)/www/style/yellow
 
 removeobsolete:
 	cd $(INSTALLDIR)/www  &&  find . -iname "CVS" | xargs rm -rf
