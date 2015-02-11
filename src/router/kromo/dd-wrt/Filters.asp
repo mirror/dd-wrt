@@ -7,10 +7,11 @@ var summary_win = null;
 var ipmac_win = null;
 
 function dayall(F) {
-	if(F.day_all.checked == false)
+	if(F.day_all.checked == false) {
 		I = 1;
-	else
+	} else {
 		I = 0;
+	}
 	
 	day_enable_disable(F,I);
 }
@@ -104,9 +105,13 @@ function service(id, name, port_start, port_end, protocol) {
 }
 
 var sorton = function(x,y){
-	if(x.name <  y.name) return -1;
-	else if (x.name == y.name) return 0;
-	else return 1;
+	if(x.name <  y.name) {
+	    return -1;
+	} else if (x.name == y.name) {
+	    return 0;
+	} else {
+	    return 1;
+	}
 }
 
 var services=new Array();
@@ -143,10 +148,11 @@ function setBlockedServicesValue() {
 	var index;
 
 	if (p2p_value)
-	if (p2p_value == "1")
+	if (p2p_value == "1") {
 	    document.filters._filter_p2p.checked = true;
-	else
+	} else {
 	    document.filters._filter_p2p.checked = false;
+	}
 
 	/* for service port 0 */
 	for (i=0;i<document.filters.numfilters.value;i++) {
