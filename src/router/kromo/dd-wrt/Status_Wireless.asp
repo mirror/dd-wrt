@@ -267,7 +267,8 @@ addEvent(window, "unload", function() {
 								<script type="text/javascript">
 								//<![CDATA[
 								document.write("<input class=\"button\" type=\"button\" name=\"site_survey\" value=\"" + sbutton.survey + "\" onclick=\"OpenSiteSurvey()\" />");
-								<% ifndef("WIVIZ","/"); %><% ifndef("WIVIZ","/"); %>document.write("<input class=\"button\" type=\"button\" name=\"wiviz_survey\" value=\"Wiviz survey\" onclick=\"OpenWiwizSurvey()\" />");
+								<% ifndef("WIVIZ","/"); %><% ifndef("WIVIZ","*"); %>document.write("<input class=\"button\" type=\"button\" name=\"wiviz_survey\" value=\"Wiviz survey\" onclick=\"OpenWiwizSurvey()\" />");
+								<% ifndef("WIVIZ","*"); %><% ifndef("WIVIZ","/"); %>
 								//]]>
 								</script>
 							</div><br />

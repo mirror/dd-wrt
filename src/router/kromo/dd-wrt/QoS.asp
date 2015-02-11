@@ -117,14 +117,15 @@ function qos_grey(num,F) {
     F.qos_aqd.disabled = sw_disabled;
 	F.add_svc_button.disabled = sw_disabled;
 	F.edit_svc_button.disabled = sw_disabled;
-	<% nvm("portprio_support","0","/"); %><% nvm("portprio_support","0","/"); %>port_grey(sw_disabled, F);
+	<% nvm("portprio_support","0","/"); %><% nvm("portprio_support","0","*"); %>port_grey(sw_disabled, F);
+    <% nvm("portprio_support","0","*"); %><% nvm("portprio_support","0","/"); %>
     pkts_grey(sw_disabled, F);
 	macs_grey(sw_disabled, F, false);
 	ips_grey(sw_disabled, F, false);
 	svcs_grey(sw_disabled, F);		
 	F.svqos_defaults.disabled = sw_disabled;
 	if (sw_disabled == true) defaultlvl_grey(false, F);
-	<% nvm("svqos_defaults","0","/"); %><% nvm("svqos_defaults","0","/"); %>else if (F.svqos_defaults.checked) defaultlvl_grey(true, F);
+	<% nvm("svqos_defaults","0","/"); %><% nvm("svqos_defaults","0","*"); %>else if (F.svqos_defaults.checked) defaultlvl_grey(true, F);<% nvm("svqos_defaults","0","*"); %><% nvm("svqos_defaults","0","/"); %>
 } 
 
 function service(id, name, port_start, port_end) {
