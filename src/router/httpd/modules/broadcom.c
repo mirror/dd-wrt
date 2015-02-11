@@ -1870,74 +1870,77 @@ static char *getLanguageName()
 	return l;
 }
 
+static char *scanfile(char *buf, char *tran)
+{
+	static char temp[256], temp1[256];
+	char *temp2;
+	FILE *fp = getWebsFile(buf);
+	if (fp) {
+		strcpy(temp1, tran);
+		strcat(temp1, "=\"");
+		int len = strlen(temp1);
+		int filelen = getWebsFileLen(buf);
+		int i;
+		int count = 0;
+		int ign = 0;
+		int val;
+		int prev = 0;
+		for (i = 0; i < filelen; i++) {
+			if (count < sizeof(temp))
+				val = getc(fp);
+			else {
+				count = 0;	// we may scan forward, but doesnt make much sense
+				getc(fp);
+			}
+			if (val == '\r')
+				continue;
+			if (val == '\t')
+				continue;
+			if (val == '\n')
+				continue;
+			prev = temp[count - 1];
+			if (val == '"' && prev != '\\' && ign == 0)
+				ign = 1;
+			else if (val == '"' && prev != '\\' && ign == 1)
+				ign = 0;
+			temp[count++] = val;
+			if (!ign && val == ';') {
+				temp[count] = 0;
+				count = 0;
+				if ((memcmp(temp, temp1, len)) == 0) {
+					temp2 = strtok(temp, "\"");
+					temp2 = strtok(NULL, "\"");
+
+					fclose(fp);
+					return temp2;
+				}
+			}
+		}
+
+		fclose(fp);
+	}
+	return NULL;
+}
+
 char *live_translate(char *tran)
 {
 
-	FILE *fp;
-	static char temp[256], temp1[256];
-	char *temp2;
 	if (tran == NULL || !strlen(tran))
 		return "";
 	char *lang = getLanguageName();
 	char buf[64];
-	int start, filelen, pos;
-
-	memset(temp, 0, sizeof(temp));
-	memset(temp1, 0, sizeof(temp));
-
 	sprintf(buf, "%s", lang);
 	free(lang);
 
-	strcpy(temp1, tran);
-	strcat(temp1, "=\"");
-
-	int len = strlen(temp1);
-
-	fp = getWebsFile(buf);
-	if (fp) {
-		start = ftell(fp);
-		filelen = getWebsFileLen(buf);
-
-		while (fgets(temp, 256, fp) != NULL) {
-			pos = ftell(fp);
-
-			if ((pos - start) > filelen)
-				break;
-			if ((memcmp(temp, temp1, len)) == 0) {
-				temp2 = strtok(temp, "\"");
-				temp2 = strtok(NULL, "\"");
-
-				fclose(fp);
-				return temp2;
-			}
-		}
-		fclose(fp);
-	}
+	char *result = scanfile(buf, tran);
+	if (result)
+		return result;
 
 	strcpy(buf, "lang_pack/english.js");	// if string not found, try english 
-	fp = getWebsFile(buf);
-
-	if (fp == NULL)
-		return "Error";
-	start = ftell(fp);
-	filelen = getWebsFileLen(buf);
-
-	while (fgets(temp, 256, fp) != NULL) {
-		pos = ftell(fp);
-
-		if ((pos - start) > filelen)
-			break;
-		if ((memcmp(temp, temp1, len)) == 0) {
-			temp2 = strtok(temp, "\"");
-			temp2 = strtok(NULL, "\"");
-
-			fclose(fp);
-			return temp2;
-		}
-	}
-	fclose(fp);
-
-	return "Error";		// not found
+	result = scanfile(buf, tran);
+	if (result)
+		return result;
+	return "Error";
 
 }
 
@@ -1970,9 +1973,9 @@ static void do_syslog(struct mime_handler *handler, char *url, webs_t stream, ch
 						websWrite(stream, "<tr bgcolor=\"#FFFF00\"><td>%s</td></tr>", line);
 					} else if (strstr(line, "authpriv.notice")) {
 						websWrite(stream, "<tr bgcolor=\"#7CFC00\"><td>%s</td></tr>", line);
-					} else if (strstr(line, "mounting unchecked fs") 
-						|| strstr(line, "httpd login failure")
-						|| strstr(line, "auth-failure") ) {
+					} else if (strstr(line, "mounting unchecked fs")
+						   || strstr(line, "httpd login failure")
+						   || strstr(line, "auth-failure")) {
 						websWrite(stream, "<tr bgcolor=\"#FF0000\"><td>%s</td></tr>", line);
 					} else {
 						websWrite(stream, "<tr><td>%s</td></tr>", line);
@@ -2261,7 +2264,7 @@ struct mime_handler mime_handlers[] = {
 	{"style/blue/style.css", "text/css", NULL, NULL, do_stylecss, NULL, 1},
 	{"style/cyan/style.css", "text/css", NULL, NULL, do_stylecss, NULL, 1},
 	{"style/elegant/style.css", "text/css", NULL, NULL, do_stylecss, NULL, 1},
-	{"style/elegant/fresh.css", "text/css", NULL, NULL, do_ej, NULL, 1}, 
+	{"style/elegant/fresh.css", "text/css", NULL, NULL, do_ej, NULL, 1},
 	{"style/green/style.css", "text/css", NULL, NULL, do_stylecss, NULL, 1},
 	{"style/orange/style.css", "text/css", NULL, NULL, do_stylecss, NULL, 1},
 	{"style/red/style.css", "text/css", NULL, NULL, do_stylecss, NULL, 1},
