@@ -1914,7 +1914,8 @@ static char *scanfile(char *buf, char *tran)
 			case '\t':
 			case '\n':
 				continue;
-				case '"' if (prev != '\\') {
+			case '"':
+				if (prev != '\\') {
 					if (!ign)
 						ign = 1;
 					else
