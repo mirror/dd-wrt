@@ -240,30 +240,30 @@ function ValidateKey(key, bit, index) {
 	return true;
 }
 function enable_idttls(ifname) {
-	show_layer_ext(this, 'idttls' + ifname, true)
-	show_layer_ext(this, 'idtls'  + ifname, false)
-	show_layer_ext(this, 'idpeap' + ifname, false)
-	show_layer_ext(this, 'idleap' + ifname, false)
+	show_layer_ext(this, 'idttls' + ifname, true);
+	show_layer_ext(this, 'idtls'  + ifname, false);
+	show_layer_ext(this, 'idpeap' + ifname, false);
+	show_layer_ext(this, 'idleap' + ifname, false);
 }
 
 function enable_idpeap(ifname) {
-	show_layer_ext(this, 'idttls' + ifname, false)
-	show_layer_ext(this, 'idtls' + ifname, false)
-	show_layer_ext(this, 'idpeap' + ifname, true)
-	show_layer_ext(this, 'idleap' + ifname, false)
+	show_layer_ext(this, 'idttls' + ifname, false);
+	show_layer_ext(this, 'idtls' + ifname, false);
+	show_layer_ext(this, 'idpeap' + ifname, true);
+	show_layer_ext(this, 'idleap' + ifname, false);
 }
 function enable_idleap(ifname) {
-	show_layer_ext(this, 'idttls' + ifname, false)
-	show_layer_ext(this, 'idtls' + ifname, false)
-	show_layer_ext(this, 'idpeap' + ifname, false)
-	show_layer_ext(this, 'idleap' + ifname, true)
+	show_layer_ext(this, 'idttls' + ifname, false);
+	show_layer_ext(this, 'idtls' + ifname, false);
+	show_layer_ext(this, 'idpeap' + ifname, false);
+	show_layer_ext(this, 'idleap' + ifname, true);
 }
 
 function enable_idtls(ifname) {
-	show_layer_ext(this, 'idttls' + ifname, false)
-	show_layer_ext(this, 'idtls' + ifname, true)
-	show_layer_ext(this, 'idpeap' + ifname, false)
-	show_layer_ext(this, 'idleap' + ifname, false)
+	show_layer_ext(this, 'idttls' + ifname, false);
+	show_layer_ext(this, 'idtls' + ifname, true);
+	show_layer_ext(this, 'idpeap' + ifname, false);
+	show_layer_ext(this, 'idleap' + ifname, false);
 }
 
 var update;
@@ -273,10 +273,11 @@ addEvent(window, "load", function() {
 	<% init_80211x_layers(); %>
 	
 	var F = document.forms[0];
-	if(F.security_mode && F.wl_wep_bit)
+	if(F.security_mode && F.wl_wep_bit) {
 		if(F.security_mode.value == "wep" || F.security_mode.value == "radius") {
 			keyMode(F.wl_wep_bit.value, F);
 		}
+	}
 		
 	update = new StatusbarUpdate();
 	update.start();
