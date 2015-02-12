@@ -1420,14 +1420,6 @@ cprintf("get instance\n");
 	wlconf_validate_all(prefix, restore_defaults);
 	nvram_set(strcat_r(prefix, "ifname", tmp), name);
 	nvram_set(strcat_r(prefix, "hwaddr", tmp), ether_etoa((uchar *)buf, eaddr));
-	fprintf(stderr, "ifname %s mac %s\n", name, ether_etoa((uchar *)buf, eaddr));
-	if(!strcmp( ether_etoa((uchar *)buf, eaddr), "00:00:00:00:00:02")){
-		fprintf(stderr, "R8000 mac fix\n");
-		wl_iovar_get(name, "perm_etheraddr", &vif_addr, sizeof(vif_addr));
-		wl_iovar_set(name, "cur_etheraddr", &vif_addr, ETHER_ADDR_LEN);
-		nvram_set(strcat_r(prefix, "hwaddr", tmp), ether_etoa((uchar *)vif_addr, eaddr));
-		eval("ifconfig", name, "hw", "ether", ether_etoa((uchar *)vif_addr, eaddr));
-	}
 	snprintf(buf, sizeof(buf), "%d", unit);
 	nvram_set(strcat_r(prefix, "unit", tmp), buf);
 
