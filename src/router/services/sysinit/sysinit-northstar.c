@@ -1325,6 +1325,7 @@ void start_sysinit(void)
 			char mac[20];
 			strcpy(mac, nvram_safe_get("et2macaddr"));
 			MAC_ADD(mac);
+			MAC_ADD(mac);
 			nvram_set("0:macaddr", mac);
 			MAC_ADD(mac);
 			nvram_set("1:macaddr", mac);
