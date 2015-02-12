@@ -11,14 +11,21 @@ function to_submit(F, I) {
 		F.ping.value = sbutton.cmd;
 		applytype=1;
 	}
-	else { if (I == "startup")
-		F.startup.value = sbutton.saving;
-	} else{ if (I == "shutdown")
-		F.shutdown.value = sbutton.saving;
-	} else { if (I == "firewall")
-		F.firewall.value = sbutton.saving;
-	} else{  if (I == "custom")
-		F.custom.value = sbutton.saving;
+	else { 
+		if (I == "startup") {
+		    F.startup.value = sbutton.saving;
+		} else { if (I == "shutdown") {
+			    F.shutdown.value = sbutton.saving;
+			    } else { 
+				    if (I == "firewall") {
+					F.firewall.value = sbutton.saving;
+				    } else {  
+					    if (I == "custom") {
+						    F.custom.value = sbutton.saving;
+					    }
+				    }
+			    }
+		}
 	}
 		
 	if (applytype) {
