@@ -107,8 +107,10 @@ function service(id, name, port_start, port_end, protocol) {
 var sorton = function(x,y){
 	if(x.name <  y.name) {
 	    return -1;
-	} else if (x.name == y.name) {
-	    return 0;
+	} else { 
+		if (x.name == y.name) {
+		    return 0;
+		}
 	} else {
 	    return 1;
 	}
@@ -147,11 +149,12 @@ function write_service_options(name) {
 function setBlockedServicesValue() {
 	var index;
 
-	if (p2p_value)
+	if (p2p_value) {
 	if (p2p_value == "1") {
 	    document.filters._filter_p2p.checked = true;
 	} else {
 	    document.filters._filter_p2p.checked = false;
+	}
 	}
 
 	/* for service port 0 */

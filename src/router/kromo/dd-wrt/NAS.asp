@@ -421,7 +421,7 @@ function checkSambaUsers() {
 			index = users[i].id.substr( sublabel.length, users[i].id.length - sublabel.length );
 			for(j = 0; j < users[i].childElements().length; j++) {
 				element = users[i].childElements()[j].childElements()[0];
-				error = false
+				error = false;
 				
 				if(element && element.name ) {
 					if( element.name.substr(0, element.name.length - index.length - 1 ) == 'smbuser_username' ) {

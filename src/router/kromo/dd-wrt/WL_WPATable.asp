@@ -42,7 +42,7 @@ function check_form(F) {
 						wpa_psk_error = 0;
 						if(result == false) return result;
 					}
-				} else if(element.options[element.selectedIndex].value.substr(0,3) == "wep") {
+				} else { if(element.options[element.selectedIndex].value.substr(0,3) == "wep") {
 					var iface = element.name.substr(0, element.name.length - 14).replace("X",".");
 					for (var j=1; j <= 4; j++) {
 						if(F.elements[iface + '_key'][j-1].checked) {
@@ -62,6 +62,7 @@ function check_form(F) {
 							if(result == false) return result;
 						}
 					}
+				   }
 				}
 			}
 		}	
@@ -106,7 +107,7 @@ function valid_wpa_psk(F, blur) {
 				setTimeout("wpa_psk_error=0", 1000);
 				return false;
 			}
-		} else 
+		} else {
 		if(F.value.length >=8 && F.value.length <= 63 ){
 			if(!isascii(F,F.value)) {
 				F.value = value;
@@ -131,13 +132,14 @@ function valid_wpa_psk(F, blur) {
 				return false;
 			}
 		}
+		}
 	} else {
 		if(F.security_mode.value == "psk" || F.security_mode.value == "psk2" || F.security_mode.value == "psk psk2"){
 			if(F.wl_wpa_psk.value.length == 64){
 				if(!isxdigit(F.wl_wpa_psk, F.wl_wpa_psk.value)) {
 					return false;
 				}
-			} else 
+			} else {
 			if(F.wl_wpa_psk.value.length >=8 && F.wl_wpa_psk.value.length <= 63 ){
 				if(!isascii(F.wl_wpa_psk,F.wl_wpa_psk.value)) {
 					return false;
@@ -145,6 +147,7 @@ function valid_wpa_psk(F, blur) {
 			} else{
 				alert(errmsg.err39);
 				return false;
+			}
 			}
 		}
 	}
