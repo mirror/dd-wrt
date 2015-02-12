@@ -110,9 +110,9 @@ var sorton = function(x,y){
 	} else { 
 		if (x.name == y.name) {
 		    return 0;
-		}
-	} else {
-	    return 1;
+		} else {
+	          return 1;
+	        }
 	}
 }
 
