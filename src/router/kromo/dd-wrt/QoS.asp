@@ -145,7 +145,7 @@ var sorton = function(x,y){
 	          return 1;
 	        }
 	}
-}
+};
 
 services=new Array();
 services_length=0;

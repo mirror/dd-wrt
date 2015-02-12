@@ -104,7 +104,7 @@ function service(id, name, port_start, port_end, protocol) {
 	this.modified = false;
 }
 
-var sorton = function(x,y){
+var sorton = function(x,y) {
 	if(x.name <  y.name) {
 	    return -1;
 	} else { 
@@ -114,7 +114,7 @@ var sorton = function(x,y){
 	          return 1;
 	        }
 	}
-}
+};
 
 var services=new Array();
 var services_length=0;
