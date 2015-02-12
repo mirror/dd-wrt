@@ -35,10 +35,11 @@ function SelMTU(num,F) {
 }
 
 function mtu_enable_disable(F,I) {
-	if ( I == "0" )
+	if ( I == "0" ) {
 		choose_disable(F.wan_mtu);
-	else
+	} else {
 		choose_enable(F.wan_mtu);
+	}
 }
 
 function valid_value(F) {
