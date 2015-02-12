@@ -65,7 +65,7 @@ addEvent(window, "unload", function() {
 					<div id="help">
 						<div><h2><% tran("share.help"); %></h2></div>
 						<dl>
-							<dt class="term"><% tran("prioxy.server"); %></dt>
+							<dt class="term"><% tran("privoxy.server"); %></dt>
 							<dd class="definition"><% tran("hprivoxy.right2"); %></dd>
 						</dl>
 						<br />

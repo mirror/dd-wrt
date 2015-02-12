@@ -52,28 +52,28 @@ function setUPnPTable(forwards) {
 		row.insertCell(-1).innerHTML = data[i].desc;
 
 		//enabled
-		var cell = row.insertCell(-1)
+		var cell = row.insertCell(-1);
 		cell.innerHTML = (data[i].enabled ? share.yes : share.no);
 		cell.align="right";
 
 
 		//wan port
-		var cell = row.insertCell(-1)
+		var cell = row.insertCell(-1);
 		cell.innerHTML = data[i].wanPorts;
 		cell.align="right";
 		
 		//lan port
-		var cell = row.insertCell(-1)
+		var cell = row.insertCell(-1);
 		cell.innerHTML = data[i].lanPorts;
 		cell.align="right";
 		
 		//IP
-		var cell = row.insertCell(-1)
+		var cell = row.insertCell(-1);
 		cell.innerHTML = data[i].lanIP;
 		cell.align="right";
 
 		//proto
-		var cell = row.insertCell(-1)
+		var cell = row.insertCell(-1);
 		cell.innerHTML = data[i].proto;
 		cell.align="center";
 
