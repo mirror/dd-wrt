@@ -28,10 +28,11 @@ static void *call(void *handle, char *func, webs_t stream);
 char *uqstrchr(char *buf, char find)
 {
 	int q = 0;
-	while (*buf) {
-		if (*buf == '"')
+	char val;
+	while ((val = *buf)) {
+		if (val == '"')
 			q ^= 1;
-		else if ((*buf == find) && (!q))
+		else if ((val == find) && (!q))
 			return buf;
 		++buf;
 	}
@@ -45,11 +46,12 @@ static char *unqstrstr(char *haystack, char *needle)
 	int q;
 	int needlelen = strlen(needle);
 	int haylen = strlen(haystack);
-	for (cur = haystack, q = 0; cur < &haystack[haylen] && !(!q && !strncmp(needle, cur, needlelen)); cur++) {
+	char *target = &haystack[haylen];
+	for (cur = haystack, q = 0; cur < target && !(!q && !strncmp(needle, cur, needlelen)); cur++) {
 		if (*cur == '"')
 			q ? q-- : q++;
 	}
-	return (cur < &haystack[haylen]) ? cur : NULL;
+	return (cur < target) ? cur : NULL;
 }
 
 static char *get_arg(char *args, char **next)
