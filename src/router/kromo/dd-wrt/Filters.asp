@@ -169,7 +169,7 @@ function setBlockedServicesValue() {
 }
 
 function onchange_blockedServices(index, start, end) {
-	index--
+	index--;
 	if(index == -1) {
 		start.value = '';
 		end.value = '';
