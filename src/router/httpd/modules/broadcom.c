@@ -1892,7 +1892,7 @@ static char *scanfile(char *buf, char *tran)
 				val = getc(fp);
 				if (val == EOF)
 					return NULL;
-				if (val == ' ' && !count)
+				if (!count && val == ' ')
 					continue;
 			} else {
 				int a, v;
@@ -1908,28 +1908,33 @@ static char *scanfile(char *buf, char *tran)
 				}
 				return NULL;
 			}
-			if (val == '\r')
-				continue;
-			if (val == '\t')
-				continue;
-			if (val == '\n')
-				continue;
-			if (val == '"' && prev != '\\' && ign == 0)
-				ign = 1;
-			else if (val == '"' && prev != '\\' && ign == 1)
-				ign = 0;
 			temp[count++] = val;
-			if (!ign && val == ';') {
-				temp[count] = 0;
-				count = 0;
-				if ((memcmp(temp, temp1, len)) == 0) {
-					temp2 = strtok(temp, "\"");
-					temp2 = strtok(NULL, "\"");
+			switch (val) {
+			case '\r':
+			case '\t':
+			case '\n':
+				continue;
+				case '"' if (prev != '\\') {
+					if (!ign)
+						ign = 1;
+					else
+						ign = 0;
 
-					fclose(fp);
-					return temp2;
+				}
+				break;
+			case ';':
+				if (!ign) {
+					temp[count] = 0;
+					count = 0;
+					if ((memcmp(temp, temp1, len)) == 0) {
+						temp2 = strtok(temp, "\"");
+						temp2 = strtok(NULL, "\"");
+						fclose(fp);
+						return temp2;
+					}
 				}
 			}
+
 		}
 
 		fclose(fp);
