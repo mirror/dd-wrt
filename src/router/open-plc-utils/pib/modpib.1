@@ -1,0 +1,188 @@
+.TH modpib 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+modpib - Qualcomm Atheros PIB File Editor 
+
+.SH SYNOPSIS
+.BR modpib
+.BI [ options ] 
+.IR filename
+
+.SH DESCRIPTION
+Change device identity parameters in a PIB file and update the checksum.
+Device identity parameters are the \fBMAC\fR, \fBDAK\fR, \fBNMK\fR and the \fBManufacturer\fB, \fBNetwork\fR and \fBUser\fR HFID.
+Collectively, they establish the device network identity.
+
+.PP
+This program is the safe way to edit identity parameters since only valid PIB files can be edited and only selected values changed.
+In addition, critical cross-parameter updates are automatically applied.
+
+.PP
+This program is part of the Qualcomm Atheros Powerline Toolkit.
+See the \fBAMP\fR man page for an overview and installation instructions.
+
+.SH OPTIONS
+
+.TP
+-\fBC \fImode\fR
+Set Central Coordinator Selection mode.
+Permitted values for \fBmode\fR are \fB0\fR=Auto, \fB1\fR=Never, \fB2\fR=Always, \fB3\fR=UserAssigned and \fB4\fR=Covert.
+
+.TP
+-\fBD \fIxx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx\fR
+The new Device Access Key (DAK).
+This key will replace the original DAK.
+Keys are 16 hex octet strings.
+Octets may be seperated by optional colons.
+The symbol \fBnone\fR, \fBkey1\fR or \fBkey2\fR may be specified in place of a hexadecimal string, for convenience.
+Use program \fBhpavkey\fR to compute the DAK for a specific password, if required.
+
+.TP
+-\fBL \fIlevel\fR
+Set security level.
+The security level is written into the PreferredNID.
+Level \fB0\fR enables pusbutton pairing.
+Level \fB1\fR disables it.
+The default secutity level is \fB0\fR.
+
+.TP
+-\fBM \fIxx:xx:xx:xx:xx:xx\fR
+The new Media Access Control (MAC) address.
+This address will replace the original address, if specified.
+Addresses are 6 hex octet strings.
+Octets may be seperated by optional colons.
+Qualcomm Atheros powerline devices derive their MAC address from their PIB and each device on a network must have a unique address.
+To facilitate the assignement of unique addresses, substituting the word "\fBauto\fR", "\fBnext\fR" or "\fBplus\fR" will cause the original MAC address to be incremented before a new checksum is calculated.
+Successive uses of this option will continue to increment the stored address.
+You can inspect the stored MAC address with "chkpib -v pibfile".
+
+.TP
+-\fBN \fIxx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx\fR
+The new Network Membership Key (NMK).
+This key will replace the original NMK, create a new \fBPreferredNID\fR and clear the \fBAVLNMembership\fR bit.
+Keys are 16 hex octets.
+Optionally, octets may be seperated colons.
+The symbol \fBkey1\fR or \fBkey2\fR can be specified in place of a hexadecimal string, for convenience.
+Use program \fBhpavkey\fR to compute the NMK from a specific password, if required.
+
+.TP
+-\fBP \fIfilename\fR
+The specified file is loaded from disk and written into the prescaler section of the PIB.
+This file must be in the format used by the Qualcomm Atheros Windows Device Manager, which is a two column file, each column consisting of 8 ASCII alpha-numeric characters.
+The first column corresponds to the array index value (00000000 through 00001155, decimal), and the second column is the value stored at that position in the prescaler array (00000000 through 000000ff, hexadecimal).
+The two columns may be separated by any whitespace characters when using this tool.
+However, for full compatibility with the Windows Device Manager it is advised to use a single space between the columns.
+The '#' character may also be used at the start of a line to denote a comment.
+
+.TP
+-\fBS \fIstring\fR
+The new manufacturing string.
+The maximum length is 63 characters.
+
+.TP
+-\fBT \fIstring\fR
+The new network name string.
+The maximum length is 63 character.
+
+.TP
+-\fBU \fIstring\fR
+The new username string.
+The maximum length is 63 characters.
+
+.TP
+.RB - q
+Enable quiet mode.
+This option has no effect at present.
+
+.TP
+.RB - v
+Print PIB identity parameters on stdout after changes have been applied.
+This option helps verify that changes have been applied correctly.
+It can also be used, without changes, to merely inspect existing parameters.
+
+.TP
+.RB - ? ,-- help
+Print program help summary on stdout.
+This option takes precedence over other options on the command line.
+
+.TP
+.RB - ! ,-- version
+Print program version information on stdout.
+This option takes precedence over other options on the command line.
+Use this option when sending screen dumps to Qualcomm Atheros Technical Support so that they know exactly which version of the Linux Toolkit you are using.
+
+.SH ARGUMENTS
+
+.TP
+.IR filename
+The name of the PIB file to be modified.
+No assumptions are made based on filename and no filename conventions are enforced.
+
+.SH KEYS
+Encryption keys are long, tedious to type and prone to error.
+For convenience, symbolic names may be used to specify the key for options -\fBD\fR and -\fBN\fR.
+Symbolic name "\fBnone\fR" translates to zeros.
+Symbolic name "\fBkey1\fR" translates to the HomePlug AV compliant key for pass phrase "HomePlugAV".
+Symbolic name "key2" translates to the HomePlug AV compliant key for pass phrase "HomePlugAV0123".
+The actual key that is generated for \fBkey1\fR or \fBkey2\fR will differ depending on context.
+
+.SH EXAMPLES
+The following example replaces the MAC address in pib file \fBabc.pib\fR and computes a new checksum.
+The input file is over-written.
+A command like this one can be used to establish the start MAC address when downloading a series of PIBs.
+
+.PP
+   # modpib -M 00:b0:52:DA:DA:FF abc.pib
+
+.PP
+The following example increments the MAC address in pib file \fBabc.pib\fR and computes a new checksum.
+The word \fBauto\fR, \fBnext\fR or \fBplus\fR, in place of a MAC address, will increment the old address each time the command is executed.
+This command can be used to ensure that unique and consecutive MAC addresses are used each time a PIB is downloaded.
+
+.PP
+   # modpib -M auto abc.pib 
+
+.PP
+The following command updates pib file \fBabc.pib\fR with the DAK and NMK read from the device connected to \fBeth0\fR.
+In similar fashion, program \fBrkey\fR can be used to compute random key values from a keyfile.
+
+.PP
+   # modpib -D $(int6kid -Di eth0) -N $(rkey secret.key -M) abc.pib
+
+.PP
+The following example displays the current value of keys and strings stored in pib file \fBabc.pib\fR because option \fB-v\fR is present.
+This can be used to verify PIB identity settings before or after an edit.
+
+.PP
+   # modpib -v abc.pib 
+           PIB 4-4 15560 bytes
+           MAC 00:B0:52:00:00:01
+           DAK 68:9F:07:4B:8B:02:75:A2:71:0B:0B:57:79:AD:16:30 (HomePlugAV)
+           NMK 50:D3:E4:93:3F:85:5B:70:40:78:4D:F8:15:AA:8D:B7 (HomePlugAV)
+           NID B0:F2:E6:95:66:6B:03
+           NET Qualcomm Atheros Enabled Network
+           MFG Qualcomm Atheros HomePlug AV Device
+           USR Qualcomm Atheros Enabled Product
+           CCo Auto
+           MDU N/A
+
+.SH DISCLAIMER
+PIB file structure and content is proprietary to Qualcomm Atheros, Ocala FL USA.
+Consequently, public information is not available.
+Qualcomm Atheros reserves the right to modify PIB file structure or content in future firmware releases without any obligation to notify or compensate users of this program.
+
+.SH SEE ALSO
+.BR chkpib (7),
+.BR chkpib2 (7),
+.BR getpib (7 ),
+.BR modpib ( 1 ),
+.BR pib2xml ( 1 ),
+.BR pibcomp ( 1 ),
+.BR pibdump ( 1 ),
+.BR setpib ( 1 ),
+.BR xml2pib ( 1 )
+
+.SH CREDITS
+ Nathaniel Houghton <nhoughto@qca.qualcomm.com>
+ Charles Maier <cmaier@qca.qualcomm.com>
+

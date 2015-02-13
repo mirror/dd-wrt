@@ -1,0 +1,125 @@
+.TH coqos_man 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+coqos_man - Set and monitor bandwidth
+
+.SH SYNOPSIS
+.BR coqos_man
+.RI [ options ]
+.Br limit      
+.RI [ device ]
+[...]
+
+.SH DESCRIPTION
+.B This page is under construction.
+
+.PP
+Monitors the bandwidth being used and sets a bandwidth limit.
+If the bandwidth limit is exceeded it will suspend the lower priority streams in priority order until the bandwidth being used is less than the limit.
+
+.PP
+This program is part of the Qualcomm Atheros Powerline Toolkit.
+See the \fBplc\fR man page for an overview and installation instructions.
+
+.SH OPTIONS
+
+.TP
+.RB - e
+Redirects stderr messages to stdout.
+By convention progress messages and error messages are printed on stderr while primary program output is printed on stdout.
+This option prints all output on stdout in cases where this is desired.
+
+.TP
+-\fBi \fIinterface\fR
+Select the host Ethernet interface.
+All requests are sent via this host interface and only reponses received via this host interface are recognized.
+The default interface is \fBeth1\fR because most people use \fBeth0\fR as their principle network connection; however, if environment string "PLC" is defined then it takes precedence over the default interface.
+This option then takes precedence over either default.
+
+.TP
+.RB - q
+Suppresses status messages on stderr.
+
+.TP
+.RB - r
+Display relative memory offsets on output.
+This option is the default.
+
+.TP
+.RB - v
+Prints additional information on stdout.
+In particular, this option dumps outgoing Ethernet packets on stdout.
+
+.TP
+.RB - ? ,-- help   
+Displays program help information on stderr.
+This option takes precedence over all other options on the command line except version information.
+
+.TP
+.RB - ! ,-- version
+Displays program version information on stderr.
+This option takes precedence over all other options on the command line except help information.
+Use this option when sending screen dumps to Atheros technical staff.
+
+.SH ARGUMENTS
+
+.TP
+.IR limit 
+The bandwidth limit, in kbps, expressed as a decimal integer.
+This argument is required.
+The range is 10 through 90000.
+
+.TP
+.IR device
+The MAC address of some powerline device.
+More than one address may be specified on the command line.
+If more than one address is specified then operations are performed on each device in turn.
+The default address is "\fBlocal\fR".
+See \fBDEVICES\fR for more information.
+
+.SH DEVICES
+Ethernet MAC addresses are expressed as six hexadecimal octets optionally separated by colon.
+For example, the Qualcomm Atheros Local Management Address (LMA) of "00b052000001" may also be entered as "00:b0:52:00:00:01" or "00b052:000001".
+Addresses are case insensitive and quotes are optional.
+In addition, some special addresses may be entered by name rather than number where names are case sensitive.
+
+.TP
+.BR all
+A synonym for the "broadcast" address, described next.
+
+.TP
+.BR broadcast
+A synonym for the Ethernet broadcast address, \fBFF:FF:FF:FF:FF:FF\fR.
+All devices, whether local, remote or foreign will respond to this address.
+
+.TP
+.BR local
+A synonym for the Qualcomm Atheros vendor specific Local Management Address (LMA), \fB00:B0:52:00:00:01\fR.
+All local Atheros devices recognize this address but remote and foreign devices do not.
+A remote device is any device at the far end of a powerline connection.
+A foreign device is any device not manufactured by Atheros.
+..SH REFERENCES
+See the Qualcomm Atheros HomePlug AV Firmware Technical Reference Manual for more information.
+
+.SH DISCLAIMER
+Atheros HomePlug AV Vendor Specific Management Message structure and content is proprietary to Qualcomm Atheros, Ocala FL USA.
+Consequently, public information may not be available.
+Qualcomm Atheros reserves the right to modify message structure and content in future firmware releases without any obligation to notify or compensate users of this program.
+
+.SH EXAMPLES
+The following example suspends streams if the bandwidth used exceeds 20mbps.
+
+.PP
+   # coqos_man 20000 00:B0:52:BA:BE:01 
+
+.SH SEE ALSO
+.BR coqos_add ( 1 ),
+.BR coqos_info ( 1 ),
+.BR coqos_mod ( 1 ),
+.BR coqos_rel ( 1 )
+
+.SH CREDITS
+ Bill Wike <bill.wike@qca.qualcomm.com>
+ Nathaniel Houghton <nhoughto@qca.qualcomm.com>
+ Charles Maier <cmaier@qca.qualcomm.com>
+

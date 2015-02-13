@@ -1,0 +1,512 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			ptsctl.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='psread.c.html' title=' psread.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='PushButton.c.html' title=' PushButton.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *
+ *   ptsctl.c - PTS Module Controller;
+ *
+ *   Contributor(s):
+ *	Nathaniel Houghton &lt;nhoughto@qca.qualcomm.com&gt;
+ *	Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *	Mathieu Olivari &lt;mathieu@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *   system header files;
+ *--------------------------------------------------------------------*/
+
+#include &lt;unistd.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;ctype.h&gt;
+
+#if defined (__linux__)
+#	include &lt;termios.h&gt;
+#elif defined (__APPLE__)
+#	include &lt;termios.h&gt;
+#elif defined (__OpenBSD__)
+#	include &lt;termios.h&gt;
+#elif defined (WIN32)
+#	include &lt;windows.h&gt;
+#else
+#error &quot;Unknown Environment&quot;
+#endif
+
+/*====================================================================*
+ *   custom header files;
+ *--------------------------------------------------------------------*/
+
+#include &quot;../tools/getoptv.h&quot;
+#include &quot;../tools/putoptv.h&quot;
+#include &quot;../tools/version.h&quot;
+#include &quot;../tools/number.h&quot;
+#include &quot;../tools/symbol.h&quot;
+#include &quot;../tools/timer.h&quot;
+#include &quot;../tools/files.h&quot;
+#include &quot;../tools/flags.h&quot;
+#include &quot;../tools/timer.h&quot;
+#include &quot;../tools/error.h&quot;
+
+/*====================================================================*
+ *   custom source files;
+ *--------------------------------------------------------------------*/
+
+#ifndef MAKEFILE
+#include &quot;../tools/getoptv.c&quot;
+#include &quot;../tools/putoptv.c&quot;
+#include &quot;../tools/version.c&quot;
+#include &quot;../tools/uintspec.c&quot;
+#include &quot;../tools/synonym.c&quot;
+#include &quot;../tools/todigit.c&quot;
+#include &quot;../tools/error.c&quot;
+#endif
+
+/*====================================================================*
+ *   program constants;
+ *--------------------------------------------------------------------*/
+
+#define PTSCTL_DEBUG 0
+#define PTSCTL_UNITS &quot;CBA&quot;
+#define PTSCTL_LEDS 5
+#define PTSCTL_BITS 7
+#define PTSCTL_WAIT 50
+#define PTSCTL_ECHO 0
+#define PTSCTL_MODE 1
+
+#define PTSCTL_LINE_ATTN 127
+#define PTSCTL_GRND_ATTN 127
+
+#define PTSCTL_BUFFER_SIZE 10
+#define PTSCTL_STRING_SIZE 15
+
+#ifdef WIN32
+#	define PTSCTL_PORT &quot;com1:&quot;
+#else
+#	define PTSCTL_PORT &quot;/dev/ttyS0&quot;
+#endif
+
+#define PTSCTL_SILENCE (1 &lt;&lt; 0)
+#define PTSCTL_VERBOSE (1 &lt;&lt; 1)
+#define PTSCTL_CHANGE  (1 &lt;&lt; 2)
+#define PTSCTL_DISPLAY (1 &lt;&lt; 3)
+#define PTSCTL_ITERATE (1 &lt;&lt; 4)
+
+/*====================================================================*
+ *   program variables;
+ *--------------------------------------------------------------------*/
+
+static const struct _term_ modes [] =
+
+{
+	{
+		&quot;off&quot;,
+		&quot;0&quot;
+	},
+	{
+		&quot;on&quot;,
+		&quot;1&quot;
+	}
+};
+
+static char buffer [PTSCTL_BUFFER_SIZE];
+static char string [PTSCTL_STRING_SIZE];
+static signed length = 0;
+static signed offset = 0;
+
+/*====================================================================*
+ *
+ *   void cycle (char * string, unsigned offset, unsigned length);
+ *
+ *   rotate a number of consecutive characters starting at a given
+ *   offset within a string; this is used to shift the character,
+ *   that represents the power on/off bit, out of the way during
+ *   data conversions from binary to ASCII and ASCII to binary;
+ *
+ *--------------------------------------------------------------------*/
+
+static void cycle (char * string, unsigned offset, unsigned length)
+
+{
+	signed c = string [offset];
+	memcpy (&amp;string [offset], &amp;string [offset + 1], length);
+	string [offset + length] = c;
+	return;
+}
+
+/*====================================================================*
+ *
+ *   void function1 (struct _file_ * port, char const * units, unsigned wait, unsigned echo);
+ *
+ *   send echo command to Weeder Solid State Relay modules in an order
+ *   specified by units;
+ *
+ *--------------------------------------------------------------------*/
+
+static void function1 (struct _file_ * port, char const * units, unsigned wait, unsigned echo)
+
+{
+	extern char buffer [PTSCTL_BUFFER_SIZE];
+	extern signed length;
+	while (*units)
+	{
+		length = 0;
+		buffer [length++] = *units++;
+		buffer [length++] = 'X';
+		buffer [length++] = '0' + (echo &amp; 1);
+		buffer [length++] = '\r';
+		if (write (port-&gt;file, buffer, length) != length)
+		{
+			error (1, errno, FILE_CANTSAVE, port-&gt;name);
+		}
+		SLEEP (wait);
+	}
+	return;
+}
+
+/*====================================================================*
+ *
+ *   void function2 (struct _file_ * port, char const * units, unsigned wait, unsigned data);
+ *
+ *   send write command to Weeder Solid State Relay modules in an
+ *   order specified by units;
+ *
+ *--------------------------------------------------------------------*/
+
+static void function2 (struct _file_ * port, char const * units, unsigned wait, unsigned data)
+
+{
+	extern char buffer [PTSCTL_BUFFER_SIZE];
+	extern char string [PTSCTL_STRING_SIZE];
+	extern signed length;
+	extern signed offset;
+	memset (string, 0, sizeof (string));
+	memset (buffer, 0, sizeof (buffer));
+	for (offset = 0; offset &lt; (signed)(sizeof (string)); offset++)
+	{
+		string [offset] = '0' + (data &amp; 1);
+		data &gt;&gt;= 1;
+	}
+	cycle (string, 0, 5);
+	for (offset = 0; *units; offset += PTSCTL_LEDS)
+	{
+		length = 0;
+		buffer [length++] = *units++;
+		buffer [length++] = 'W';
+		memcpy (&amp;buffer [length], &amp;string [offset], PTSCTL_LEDS);
+		length += PTSCTL_LEDS;
+		buffer [length++] = '\r';
+		if (write (port-&gt;file, buffer, length) != length)
+		{
+			error (1, errno, FILE_CANTSAVE, port-&gt;name);
+		}
+		SLEEP (wait);
+	}
+	return;
+}
+
+/*====================================================================*
+ *
+ *   void function3 (struct _file_ * port, char const * units, unsigned wait);
+ *
+ *   read weeder solid state modules and display settings on the
+ *   console as attenuation;
+ *
+ *--------------------------------------------------------------------*/
+
+static void function3 (struct _file_ * port, char const * units, unsigned wait)
+
+{
+	extern char buffer [PTSCTL_BUFFER_SIZE];
+	extern char string [PTSCTL_STRING_SIZE];
+	extern signed length;
+	extern signed offset;
+	signed value1 = 0;
+	signed value2 = 0;
+	memset (string, 0, sizeof (string));
+	for (offset = 0; *units; offset += PTSCTL_LEDS)
+	{
+		length = 0;
+		buffer [length++] = *units++;
+		buffer [length++] = 'R';
+		buffer [length++] = '\r';
+		if (write (port-&gt;file, buffer, length) != length)
+		{
+			error (1, errno, FILE_CANTSAVE, port-&gt;name);
+		}
+		SLEEP (wait);
+		memset (buffer, 0, sizeof (buffer));
+		if (read (port-&gt;file, buffer, PTSCTL_LEDS + 2) == -1)
+		{
+			error (1, errno, FILE_CANTREAD, port-&gt;name);
+		}
+		memcpy (&amp;string [offset], &amp;buffer [1], PTSCTL_LEDS);
+		SLEEP (wait);
+	}
+	cycle (string, PTSCTL_LEDS, 2);
+	while (--offset &gt; PTSCTL_BITS)
+	{
+		value1 &lt;&lt;= 1;
+		value1 |= string [offset] - '0';
+	}
+	while (offset-- &gt; 0)
+	{
+		value2 &lt;&lt;= 1;
+		value2 |= string [offset] - '0';
+	}
+	if ((value1 &gt;= 0) &amp;&amp; (value2 &gt;= 0))
+	{
+		printf (&quot;%d %d\n&quot;, value1, value2);
+	}
+	return;
+}
+
+/*====================================================================*
+ *
+ *   void function4 (struct _file_ * port, char const * units, unsigned wait);
+ *
+ *   sequence through all attenuator settings at one second intervals;
+ *   this function can be used to debug program additions and changes;
+ *
+ *--------------------------------------------------------------------*/
+
+static void function4 (struct _file_ * port, char const * units, unsigned wait)
+
+{
+	signed value;
+	for (value = 0; value &lt; 128; value++)
+	{
+		function2 (port, units, wait, (value &lt;&lt; 8) | (value &lt;&lt; 1) | 1);
+		function3 (port, units, wait);
+		SLEEP (wait);
+	}
+	return;
+}
+
+/*====================================================================*
+ *
+ *   int main (int argc, char const * argv []);
+ *
+ *--------------------------------------------------------------------*/
+
+int main (int argc, char const * argv [])
+
+{
+	static char const * optv [] =
+	{
+		&quot;f:g:n:p:iqrvw:z&quot;,
+		&quot;&quot;,
+		&quot;PTS Module Controller&quot;,
+		&quot;f f\tport is (f) [&quot; PTSCTL_PORT &quot;]&quot;,
+		&quot;g n\tline ground attenuation is (n) [&quot; LITERAL (PTSCTL_GRND_ATTN) &quot;]&quot;,
+		&quot;n n\tline neutral attenuation is (n) [&quot; LITERAL (PTSCTL_LINE_ATTN) &quot;]&quot;,
+		&quot;p n\tpower is (n) [&quot; LITERAL (PTSCTL_MODE) &quot;]&quot;,
+		&quot;q\tquiet mode&quot;,
+		&quot;r\tread and display attenuator settings&quot;,
+		&quot;v\tverbose mode&quot;,
+		&quot;w n\twait (n) millseconds [&quot; LITERAL (PTSCTL_WAIT) &quot;]&quot;,
+		(char const *) (0)
+	};
+	struct _file_ port =
+	{
+		-1,
+		PTSCTL_PORT
+	};
+
+#if defined (WIN32)
+
+	HANDLE hSerial;
+	DCB dcbSerial =
+	{
+		0
+	};
+
+#else
+
+	struct termios termios;
+
+#endif
+
+	char const * units = PTSCTL_UNITS;
+	unsigned wait = PTSCTL_WAIT;
+	unsigned mode = PTSCTL_MODE;
+	unsigned echo = PTSCTL_ECHO;
+	unsigned line = PTSCTL_LINE_ATTN;
+	unsigned grnd = PTSCTL_GRND_ATTN;
+	unsigned data = 0;
+	flag_t flags = (flag_t)(0);
+	signed c;
+	optind = 1;
+	if (getenv (&quot;PTSCTL&quot;))
+	{
+		port.name = strdup (getenv (&quot;PTSCTL&quot;));
+	}
+	while ((c = getoptv (argc, argv, optv)) != -1)
+	{
+		switch (c)
+		{
+		case 'f':
+			port.name = optarg;
+			break;
+		case 'g':
+			_setbits (flags, PTSCTL_CHANGE);
+			grnd = (unsigned)(uintspec (optarg, 0, 0x7F));
+			break;
+		case 'n':
+			_setbits (flags, PTSCTL_CHANGE);
+			line = (unsigned)(uintspec (optarg, 0, 0x7F));
+			break;
+		case 'p':
+			_setbits (flags, PTSCTL_CHANGE);
+			mode = (unsigned)(uintspec (synonym (optarg, modes, SIZEOF (modes)), 0, 1));
+			break;
+		case 'w':
+			wait = (unsigned)(uintspec (optarg, 5, 100));
+			break;
+		case 'q':
+			_setbits (flags, PTSCTL_SILENCE);
+			break;
+		case 'r':
+			_setbits (flags, PTSCTL_DISPLAY);
+			break;
+		case 'v':
+			_setbits (flags, PTSCTL_VERBOSE);
+			break;
+		case 'z':
+			_setbits (flags, PTSCTL_ITERATE);
+			break;
+		default:
+			break;
+		}
+	}
+	argc -= optind;
+	argv += optind;
+	if (argc)
+	{
+		error (1, ENOTSUP, ERROR_TOOMANY);
+	}
+
+#if defined (WIN32)
+
+	hSerial = CreateFile (port.name, GENERIC_READ | GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+	if (hSerial == INVALID_HANDLE_VALUE)
+	{
+		error (1, errno, FILE_CANTOPEN, port.name);
+	}
+	dcbSerial.DCBlength = sizeof (dcbSerial);
+	if (!GetCommState (hSerial, &amp;dcbSerial))
+	{
+		error (1, 0, FILE_CANTREAD &quot; state&quot;, port.name);
+	}
+	dcbSerial.BaudRate = CBR_9600;
+	dcbSerial.ByteSize = 8;
+	dcbSerial.StopBits = ONESTOPBIT;
+	dcbSerial.Parity = NOPARITY;
+	if (!SetCommState (hSerial, &amp;dcbSerial))
+	{
+		error (1, 0, FILE_CANTSAVE &quot; state&quot;, port.name);
+	}
+	CloseHandle (hSerial);
+	if ((port.file = open (port.name, O_BINARY | O_RDWR)) == -1)
+	{
+		error (1, errno, FILE_CANTOPEN, port.name);
+	}
+
+#else
+
+	if ((port.file = open (port.name, O_RDWR|O_NOCTTY|O_NDELAY)) == -1)
+	{
+		error (1, 0, FILE_CANTOPEN, port.name);
+	}
+	tcgetattr (port.file, &amp;termios);
+	termios.c_cflag = CS8;
+	cfsetospeed (&amp;termios, B9600);
+	tcsetattr (port.file, TCSANOW, &amp;termios);
+
+#endif
+
+	function1 (&amp;port, units, wait, echo);
+	if (_anyset (flags, PTSCTL_CHANGE))
+	{
+		data = line &lt;&lt; 8 | grnd &lt;&lt; 1 | mode;
+		function2 (&amp;port, units, wait, data);
+	}
+	if (_anyset (flags, PTSCTL_DISPLAY))
+	{
+		function3 (&amp;port, units, wait);
+	}
+	if (_anyset (flags, PTSCTL_ITERATE))
+	{
+		function4 (&amp;port, units, wait);
+	}
+	close (port.file);
+	return (0);
+}
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='psread.c.html' title=' psread.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='PushButton.c.html' title=' PushButton.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

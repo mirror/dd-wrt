@@ -1,0 +1,294 @@
+.TH xml2pib 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+xml2pib - Qualcomm Atheros XML driven PIB editor
+
+.SH SYNOPSIS
+.BR xml2pib 
+.RI [ options ] 
+.BR pib-file 
+.RB [ pib-file ] 
+[...]
+
+.SH DESCRIPTION
+The Atheros PIB XML Editor modifies an Atheros PIB file based on XML instructions defined in one or more instruction files.
+Instruction files must be valid XML and conform to schema file \fBpiboffset.xsd\fR or errors will occur.
+Always validate XML files against this schema with a validating parser before submitting them to this program.
+Firefox or Internet Explorer are suitable for validation purposes purpose.
+
+.PP
+This program is part of the Qualcomm Atheros Powerline Toolkit.
+See the \fBAMP\fR man page for an overview and installation instructions.
+
+.SH OPTIONS
+
+.TP
+-\fBf \fIfilename\fR
+The XML instruction file.
+XML instruction files must conform to the Qualcomm Atheros scheme designed for this purpose.
+If more that one \fB.xml\fR file is specified then edits are applied in order of filename such that later edit instructions can over-write eariler instructions.
+Instruction files usually have a \fB.xml\fR extension but this program makes no assumption based on filename and does not enforce any filename conventions.
+
+.TP
+.RB - o
+Print the appropriate XML schema on stdout.
+This schema should be used to validate XML instructions using a validating parser such as Firefox or Microsoft Internet Explorer.
+
+.TP
+.RB - q
+Suppresses printing of progress messages.
+This option has no effect at this time.
+
+.TP
+.RB - v
+Print additional information.
+This option has no effect at this time.
+
+.TP
+.RB - ? ,-- help
+Print program help summary on stdout.
+This option takes precedence over other options on the command line.
+
+.TP
+.RB - ! ,-- version
+Print program version information on stdout.
+This option takes precedence over other options on the command line.
+Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of the Linux Toolkit you are using.
+
+.SH ARGUMENTS
+
+.TP
+.BR pib-file
+An Atheros parameter filename.
+Only one parameter file can be edited at a time and so care must be taken to avoid the use of wildcard filenames.
+Parameter files usually have a \fB.pib\fR extension but this program makes no assumption based on filename and does not enforce any filename conventions.
+
+.SH SCHEMA
+The official Atheros XML PIB Edit schema follows.
+It defines general instruction file structure and the elements used to edit PIB files.
+This file should be a controlled document and instruction files should always be validated against it before using them to edit a PIB file.
+An explanation of this file appears below.
+
+.PP
+   <?xml version='1.0' encoding='iso-8859-1'?>
+   <xs:schema xmlns:xs='http://www.w3.org/2001/XMLSchema' elementFormDefault='qualified'>
+        <xs:element name='pib'>
+                <xs:complexType>
+                        <xs:sequence>
+                                <xs:element maxOccurs='unbounded' ref='object'/>
+                                </xs:sequence>
+                        </xs:complexType>
+                </xs:element>
+        <xs:element name='object'>
+                <xs:complexType>
+                        <xs:attribute name='name' use='required' type='xs:NCName'/>
+                        <xs:sequence>
+                                <xs:sequence>
+                                        <xs:element ref='offset'/>
+                                        <xs:element ref='length'/>
+                                        </xs:sequence>
+                                <xs:choice>
+                                        <xs:element ref='array'/>
+                                        <xs:element ref='dataString'/>
+                                        <xs:element ref='dataHuge'/>
+                                        <xs:element ref='dataLong'/>
+                                        <xs:element ref='dataWord'/>
+                                        <xs:element ref='dataByte'/>
+                                        </xs:choice>
+                                </xs:sequence>
+                        </xs:complexType>
+                </xs:element>
+        <xs:element name='length' type='xs:positiveInteger'/>
+        <xs:element name='offset' type='xs:hexBinary'/>
+        <xs:element name='array'>
+                <xs:complexType>
+                        <xs:choice maxOccurs='unbounded'>
+                                <xs:element ref='dataByte'/>
+                                <xs:element ref='dataHex'/>
+                                </xs:choice>
+                        </xs:complexType>
+                </xs:element>
+        <xs:element name='dataString' type='xs:string'/>
+        <xs:element name='dataHuge' type='xs:unsignedLong'/>
+        <xs:element name='dataLong' type='xs:unsignedInt'/>
+        <xs:element name='dataWord' type='xs:unsignedShort'/>
+        <xs:element name='dataByte' type='xs:unsignedByte'/>
+        <xs:element name='dataHex' type='xs:hexBinary'/>
+        </xs:schema>
+
+.SH ELEMENTS
+
+.TP
+.RB < pib >
+The Parameter Information Block subject to edit.
+There is exactly one \fBpib\fR defined in an instruction file.
+
+.TP
+.RB < object >
+A data region withn a \fBpib\fR.
+There must be at least one \fBobject\fR defined inside a \fBpib\fR.
+Each \fBobject\fR has an \fBoffset\fR, a \fBlength\fR and \fBdata\fR where data is expressed as one \fBdataString\fR, a \fBdataByte\fR, a \fBdataHex\fR or an \fBarray\fR as described below.
+The name attribute optional but may be used for clarity or for reporting purposes.
+
+.TP
+.RB < offset >
+The relative position of the \fRobject\fB in bytes expressed in hexadecimal.
+The \fBoffset\fR plus the \fBlength\fR of an \fBobject\fR cannot exceed PIB length or an error will occur.
+The \fBoffset\fR and \fBlength\fR element can appear in either order but both must appear before the data element.
+The \fBoffset\fR element is required.
+
+.TP
+.RB < length >
+The extent of the \fBobject\fR expressed in decimal bytes.
+The \fBoffset\fR plus \fBlength\fR of an \fBobject\fR cannot exceed PIB length.
+The the \fBoffset\fR and \fBlength\fR elements can occur in either order but both must precede the data element.
+The \fBlength\fB element is required for elements \fBarray\fR and \fBdataString\fR but may be omitted for elements \fBdataHuge\fR, \fBdataLong\fR, \fBdataWord\fR and \fBdataByte\fR.
+
+.TP
+.RB < array >
+A sequence of \fBdataByte\fR and/or \fBdataHex\fR elements.
+The implied length is determined by array members but must equal the object \fBlength\fR attribute or an error will occur.
+A \fBdataString\fR is illegal inside an \fBarray\fR.
+
+.TP
+.RB < dataString >
+Any sequence of printable characters.
+The implied length is 1 byte longer than the number of characters.
+The string will be truncated or padded with NUL bytes to match the object \fBlength\fR attribute.
+An object \fBlength\fR attribute of \fB0\fR stores one NUL byte.
+A \fBdataString\fR element is illegal within an \fBarray\fR block.
+
+.TP
+.RB < dataHuge >
+A unsigned decimal integer string that represents any 64 bit binary value.
+The implied length is 8 bytes.
+The object \fBlength\fR attribute is ignored and may be omitted.
+
+.TP
+.RB < dataLong >
+A unsigned decimal integer string that represents any 32 bit binary value.
+The implied length is 4 bytes.
+The object \fBlength\fR attribute is ignored and may be omitted.
+
+.TP
+.RB < dataWord >
+A unsigned decimal integer string that represents any 16 bit binary value.
+The implied length is 2 bytes.
+The object \fBlength\fR attribute is ignored and may be omitted.
+
+.TP
+.RB < dataByte >
+An unsigned  decimal digit string that represents any 8 bit binary value.
+The implied length is 1 byte.
+The object \fIlength\fR attribute is ignored and may be omitted.
+
+.TP
+.RB < dataHex >
+A hexadecimal digit string that represents one byte for each digit pair (octet) present.
+There must be an even number of digits or an error will occur.
+The resulting length must equal the object \fIlength\fR unless the value appears inside an \fBarray\fR.
+Inside an \fBarray\fR, the resulting length must not exceed the remaining \fBarray\fR length.
+
+.SH PROCESS 
+The program reads one PIB file and replaces selected values with new ones, computes the new checksum and re-writes the file.
+New values are defined by offset, length, format and value.
+The object name is actually irrelevant.
+Critical values are the offset, length and data type/value.
+Obviously, care must be taken when specifying offsets and lengths to avoid editing objects incorrectly.
+
+.SH INSTRUCTIONS
+An example instruction file follows.
+It references the Qualcomm Atheros XML PIB Edit schema file, \fBpiboffset.xsd\fR, that is shown above so that a validating parser can find the schema and perform document checks.
+The remainder of the file describes a series of object names, offsets, lengths and values that describe the edits to be performed.
+
+.PP
+   <pib xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+        xsi:noNamespaceSchemaLocation="piboffset.xsd">
+        <object name="HFID_Manufacturer">
+                <offset>0024</offset>
+                <length>64</length>
+                <dataString>Atheros HomePlug AV Device</dataString>
+        </object>
+        <object name="HFID_User">
+                <length>64</length>
+                <offset>0074</offset>
+                <dataString>Atheros</dataString>
+        </object>
+        <object name="MDURole">
+                <offset>0101</offset>
+                <dataByte>0</dataByte>
+        </object>
+        <object name="PriorityTTl">
+                <offset>0210</offset>
+                <length>16</length>
+                <array>
+                        <dataHex>80841E008084</dataHex>
+                        <dataHex>1e</dataHex>
+                        <dataByte>0</dataByte>
+                        <dataHex></dataHex>
+                        <dataHex></dataHex>
+                        <dataHex></dataHex>
+                        <dataHex></dataHex>
+                        <dataHex>C0</dataHex>
+                        <dataByte>198</dataByte>
+                        <dataHex>2d</dataHex>
+                        <dataHex>00</dataHex>
+                </array>
+        </object>
+        <object name="VLANPrioTOSPrecMatrix">
+                <length>4</length>
+                <offset>0224</offset>
+                <array>
+                        <dataByte>65</dataByte>
+                        <dataByte>250</dataByte>
+                        <dataHex></dataHex>
+                        <dataHex>Fa</dataHex>
+                </array>
+        </object>
+        <object name="EnableLEDThroughputIndicate">
+                <length>1</length>
+                <offset>1E94</offset>
+                <dataByte>0</dataByte>
+        </object>
+        <object name="HFID_AVLN">
+                <length>64</length>
+                <offset>00B4</offset>
+                <dataString>Atheros-Net</dataString>
+        </object>
+   </pib>
+
+.SH EXAMPLES
+The following example reads PIB file \fBabc.pib\fR and edits it according to instructions found in XML file \fBlocal.xml\fR.
+The PIB file is always specified first, followed by one or more XML instruction files.
+
+.PP
+        # xml2pib abc.pib local.xml
+
+.PP
+The following example reads PIB file \fBabc.pib\fR and edits it according to three XML instruction files, in the order specified.
+Order can be critical since later edits could over-write earlier edits.
+
+.PP
+        # xml2pib abc.pib standard.xml custom.xml errata.xml
+
+.PP
+The following example does nothing because no instruction files are specified.
+
+.PP
+        # xml2pib abc.pib
+
+.PP
+
+.SH SEE ALSO
+.BR chkpib (7),
+.BR chkpib2 (7),
+.BR getpib (7 ),
+.BR modpib ( 1 ),
+.BR pib2xml ( 1 ),
+.BR pibcomp ( 1 ),
+.BR pibdump ( 1 ),
+.BR setpib ( 1 )
+
+.SH CREDITS
+ Charles Maier <cmaier@qca.qualcomm.com>
+

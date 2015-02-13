@@ -1,0 +1,556 @@
+.TH amprule 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+amprule - Stream Classification Utility
+
+.SH SYNOPSIS
+.BR amprule
+.RI [ options ] 
+.IR action    
+.IR operand 
+.IR condition
+.RI [ condition ]
+.RI [ condition ]
+.IR control
+.IR volatility
+.RI [ device ]
+.RI [ device ]
+[...]
+
+.PP
+where \fIcondition\fR is a \fIfield\fR \fIoperator\fR \fIvalue\fR sequence.
+
+.SH DESCRIPTION
+Format and send stream classification rules to one or more devices.
+Rules specify an action to be taken when a frame satisfies selection criteria.
+Selection criteria consists of one, two or three conditions where any or all conditions must be satisfied.
+Each condition consists of a field type, a relational operator and a value.
+Rules may be added to a device, or removed from a device, so that they have permanent or temporary effect.
+
+.PP
+Classification rules are cumulative.
+If a new rule set is identical to an old rule set then an error will occur unless it contains a different Transmission Action.
+In that case the old rule will be replaced.
+Identical classification rule sets are permitted if one of the sets is associated with a VLAN tag action.
+Classification is based on the original frame before is is altered by VLAN Tag insertion or removal.
+
+.PP
+Classification is multi-dimensional and the terminology used here may seem strange at first.
+Refer to the Qualcomm Atheros Firmware Techncial Reference Manual description of the VS_CLASSIFICATION management message for a full explanation.
+
+.PP
+This program is part of the Qualcomm Atheros Powerline Toolkit.
+See the \fBplc\fR man page for an overview and installation instructions.
+
+.SH OPTIONS
+
+.TP
+.RB - e
+Redirects stderr messages to stdout.
+By convention status and error messages are printed on stderr while primary program output is printed on stdout.
+This option prints all output on stdout in cases where this is desired.
+
+.TP
+-\fBi\fR \fIinterface\fR
+Select the host Ethernet interface.
+All requests are sent via this host interface and only reponses received via this host interface are recognized.
+The default interface is \fBeth1\fR because most people use \fBeth0\fR as their principle network connection; however, if environment string "PLC" is defined then it takes precedence over the default interface.
+This option then takes precedence over either default.
+
+.TP
+.RB - q
+Suppresses status messages on stderr.
+.RP
+.RB - r
+Read rules from a device and display them on stdout.
+
+.TP
+.RB - s
+Print a list of program keywords on stdout.
+This option over-rides all others, except \fB-?\fR and \fB-!\fR, and the program will terminate without further action.
+
+.TP
+-\fBt \fImilliseconds\fR
+Read timeout in milliseconds.
+Values range from 0 through UINT_MAX.
+This is the maximum time allowed for a response.
+The default is shown in brackets on the program menu.
+-\fBT \fItag\fR
+The VLAN tag to be inserted into frames before they are transmitted.
+The tag is a 32-bit hexadecimal integer with optional "\fB0x\fR" prefix.
+This option is required for action \fBTagTX\fR and must be omitted for all other actions.
+
+.TP
+.RB - v
+Print additional information on stdout.
+In particular, this option dumps incoming and outgoing packets which can be saved as text files for reference.
+
+.TP
+-\fBV \fIversion\fR
+The CSPEC version number expressed as a small decimal integer.
+This option is required (and should be \fB2\fR) for action \fBTagTX\fR and must be omitted for all other actions.
+
+.TP
+.RB - ? ,-- help
+Print program help summary on stdout.
+This option takes precedence over other options on the command line.
+
+.TP
+.RB - ! ,-- version
+Print program version information on stdout.
+This option takes precedence over other options on the command line.
+Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of the Linux Toolkit you are using.
+
+.SH ARGUMENTS
+
+.TP
+.IR action   
+The action to be taken for frames that meet any (or all) selection criteria.
+Valid actions are listed and described under \fBACTIONS\fR.
+
+.TP
+.IR operand 
+The operand specifies the logical relationship between conditions before the \fIaction\fR to be taken.
+Valid operands are listed and described under \fBOPERANDS\fR.
+
+.TP
+.IR condition
+A conditional expression consisting of a \fIfield\fR, \fIoperator\fR and \fIvalue\fR.
+See \fBCONDITIONS\fR for more information.
+
+.TP
+.IR control
+The control specifies the action to be taken by the device upon receipt of the rule.
+The basic actions are to add it to, or remove it from, the list of existing rules.
+Valid controls are listed and described under \fBCONTROLS\fR.
+
+.TP
+.IR volatility
+The volatility specifies the effective lifetime of the rule.
+Temoprary rules are stored in SDRAM and are lost then the device is reset.
+Permanent rules are stored in NVRAM and are restored after the device is reset.
+Valid volatilities are listed and described under \fBVOLATILITY\fR.
+
+.TP
+.IR device
+The MAC address of some powerline device.
+More than one address may be specified on the command line.
+If more than one address is specified then operations are performed on each device in turn.
+The default address is "\fBlocal\fR".
+See \fBDEVICES\fR for more information.
+
+.SH ACTIONS
+Actions indcate the disposition of frames that match selection criteria.
+They are expressed as discrete alphanumeric strings entered in upper, lower or mixed character case.
+They are position sensitive.
+Failure to enter a known action will results in an error message that lists permitted actions.
+
+.TP
+.BR CAP0 , CAP1 , CAP2 , CAP3
+Assign a specific Channel Access Priority to frames.
+
+.TP
+.BR Drop , DropTX
+Do not forward frames over powerline.
+
+.TP
+.BR DropRX
+Do not forward frames to host.
+
+.TP
+.BR Boost
+Boost frame priority to CAP3 for MMEs only.
+At least one condition must be "\fBMME\fR".
+
+.TP
+.BR StripTX
+Remove the VLAN Tag from frames before transmission over powerline.
+This option checks for a VLAN Tag even when there are no VLAN related conditions.
+
+.TP
+.BR StripRX
+Remove the VLAN Tag from frames before forwarding to host.
+This option checks for a VLAN Tag even when there are no VLAN related conditions.
+
+.TP
+.BR TagTX
+Insert a given VLAN Tag into frames before transmission over powerline.
+This action requires option \fB-T\fR to specify the tag and option \fB-V\fR to specify the CSPEC version.
+
+.SH OPERANDS
+The \fIoperand\fR indicates the logical relationship that must exist between conditions in the rule set before the action is applied to a frame.
+Operands are expressed as discrete alphanumeric strings entered in upper, lower or mixed character case.
+Failure to enter a known operand will result in an error message that lists permitted operands.
+They are positon sensitive.
+One operand is allowed and it must appear after the \fIaction\fR and before any \fIcondition\fR.
+
+.TP
+.BR Any
+Apply the action to frames that satisfy \fBany\fR of the conditions.
+This is equivalent to the logical \fBor\fR operation.
+
+.TP
+.BR All
+Apply the action to frames that satisfy \fBall\fR of the conditions.
+This is equivalent to the logical \fBand\fR operation.
+
+.TP
+.BR Always
+Apply the action to all frames.
+All conditions are ignored.
+
+.SH CONDITIONS
+A condition consists of a \fIfield\fR, an \fIoperator\fR and a \fIvalue\fR.
+One condition is required but three are permitted.
+Condition order is not important but all conditions must appear after the \fIoperand\fR and before the \fIcontrol\fR.
+
+.TP
+.IR field
+The field is the part of the Ethernet frame to be examined.
+Some fields are not valid for some actions but this program does not enforce such rules since validation is performed by runtime firmware on each device.
+Recognized fields are listed and described under \fBFIELDS\fR.
+
+.TP
+.IR operator
+The operator specifies the relationsip that must exist between the \fIfield\fR and \fIvalue\fR in order for the \fIcondition\fR to evaluate \fBTrue\fR.
+Currently, only equality operators are supported.
+Valid operators are listed and described under \fBOPERATORS\fR.
+
+.TP
+.IR value
+The value must be appropriate to the field type.
+Some fields are MAC or IP addresses, some are integers, some are bitmaps and others are states.
+Integers and bitmaps may be expressed in binary, decimal or hexadecimal format.
+Binary values staRt with \fB0b\fR.
+Hexadecimal values start with \fB0x\fR.
+States are expressed using keywords.
+Users are responsible for knowing how many bits are significant for each type of value.
+Valid values are described along with fields under \fBFIELDS\fR.
+
+.SH FIELDS
+Fields indicate the portion of the frame that is inspected during selection and the size and format of the value permited in the condition statement.
+They are expressed as discrete alphanumeric strings entered in upper, lower or mixed character case.
+Failure to enter a known field will result in an error message that lists permitted fields.
+
+.TP
+.BR ET
+A 16-bit Ethertype expressed in hexadecimal with optional "\fB0x\fR" prefix.
+The format is described in IEEE Standard 802-2001 [4].
+
+.TP 
+.BR EthDA 
+A 48-bit Ethernet destination address expressed in hexadecimal.
+Octets may be separated with optional colons for clarity.
+The format is described in IEEE Standard 802-2001 [4].
+
+.TP 
+.BR EthSA  
+A 48-bit Ethernet source address expressed in hexadecimal.
+Octets may be separated with optional colons for clarity.
+The format is described in IEEE Standard 802-2001 [4].
+
+.TP
+.BR IPSP
+A 16-bit IP source port expressed as a decimal integer.
+This condition applies to either TCP or UDP packets, depending on the protocol used, and is valid only for actions "\fBCAP0\fR", "\fBCAP1\fR", "\fBCAP2\fR", "\fBCAP3\fR" and "\fBDrop\fR".
+
+.TP
+.BR IPDP 
+A 16-bit IP destination port expressed as a decimal integer.
+This condition applies to either TCP or UDP packets, depending on the protocol used, and is valid only for actions "\fBCAP0\fR", "\fBCAP1\fR", "\fBCAP2\fR", "\fBCAP3\fR" and "\fBDrop\fR".
+
+.TP
+.BR IPV4TOS 
+An 8-bit Type-of-Service code where the format is defined in the RFC 791 (Internet Protocol) [14].
+
+.TP
+.BR IPV4PROT 
+An 8-bit Ethernet protocol code.
+The format is defined in the RFC 791 (Internet Protocol) [14].
+
+.TP
+.BR IPV4SA
+A 32-bit Internet Protocol source address expressed in dotted-decimal notation.
+The official format is defined in RFC 791 (Internet Protocol) [14].
+Our implementation permits empty octets and leading zeros within fields.
+For example, "..." is equivalent to "0.0.0.0 and "127..000.001" is equivalent to "127.0.0.1". 
+.TP
+.BR IPV4DA 
+A 32-bit Internet Protocol destination address expressed in dotted-decimal notation. The official format is defined in RFC 791 (internet Protocol) [14]. Our implementation permits empty octets and leading zeros within fields. For example, "..." is equivalent to "0.0.0.0 and "127..000.001" is equivalent to "127.0.0.1".
+
+.TP
+.BR IPV6TC
+An 8-bit Internet Protocol V6 traffic class expressed as defined in RFC 2460 (Internet Protocol Version 6) [17].
+
+.TP
+.BR IPV6FL
+A 24-bit IPV6 flow label where the lower 20 bits are the IPv6 Flow Label defined in RFC 2460 (Internat Protocol Version 6) [17].
+The upper 4 bits should be zero.
+The value can be entered either as a decimal, binary or hex integer.
+
+.TP
+.BR IPV6SA
+A 128-bit IPV6 source address expressed as colon-separated hexadecmial quartets (octet pairs).
+The official format is defined in RFC 2460 (Internet Protocol Version 6) [17].
+Our implementation permits multiple empty fields, abreviated fields and leading zeros within fields.
+When multiple empty fields appear, the right-most occurance expands to multiple zeros.
+For example, "AAAA::BBBB::CCCC" is equivalent to "AAAA:0000:BBBB:0000:0000:0000:0000:CCCC".
+
+.TP
+.BR IPV6DA
+A 128-bit IPV6 destination address expressed as colon-separated hexadecimal quartets (octet pairs).
+The official format is defined in RFC 2460 (Internet Protocol Version 6) [17].
+Our implementation permits multiple empty fields, abbreviated fields and leading zeros within fields.
+When multiple empty fields appear, the right-most occurance expands to zeros.
+For example, ":1::2" is equivalent to "0000:0001:0000:0000:0000:0000:0000:0002".
+
+.TP
+.BR MME
+A 24-bit Atheros HomePlugAV Management Message type expressed as a hex byte stream.
+For clarity, the recommeded format it "xx:xxxx".
+The first byte is the MMV.
+The next two bytes are the MMTYPE.
+Both are defined in the HomePlug AV Specification.
+The MMTYPE will match all MME variants, such as Request, Confirm, Indicate and Response because the lower two bits are ignored.
+This field is only valid for action "\fBBoost\fR".
+
+.TP
+.BR TCPAck
+The string "\fBTrue\fR" or "\fBFalse\fR" to indicate that the frame is (or is not) a TCP Acknowledgement.
+Double negatives are allowed so "Is True" is equvalent to "Not False" and "Is False" is equivalent to "Not True".
+
+.TP
+.BR TCPSP
+A 16-bit TCP source port as a decimal integer.
+The format is defined in RFC 793 (Transmission Control Protocol [15]).
+
+.TP
+.BR TCPDP 
+A 16-bit TCP destination port expressed as a decimal integer.
+The format is defined in RFC 793 (Transmission Control Protocol [15]).
+
+.TP
+.BR UDPSP 
+A 16-bit UDP source port expressed as a decimal integer.
+The format is defined in RFC 768 (User Datagram Protocol [13]).
+
+.TP
+.BR UDPDP
+A 16-bit UDP destination port expressed as a decimal integer.
+The format is defined in RFC 768 (User Datagram Protocol [13]).
+
+.TP
+.BR VLANID 
+A 16-bit VLAN identifier where the lower 12 bits are the VLAN Identifier (VID) defined in IEEE Std 802.1Q-1998 (Virtual Bridged Local Area Networks) [11].
+The upper 4 bits should be zero.
+
+.TP 
+.BR VLANUP 
+An 8-bit Ethernet VLAN tag where the lower 3 bits are the User Priority sub-field of a VLAN Tag defined in IEEE Std 802.1Q-1998 (Virtual Bridged Local Area Networks) [11].
+The upper 5 bits should be zero.
+
+.TP
+.BR VLANTag
+The string "\fBPresent\fR" or "\fBMissing\fR" to indicate the presence (or absence) of one or more VLAN Tags within a frame.
+This classifier is essentially equivalent to "\fBET Is 0x8100\fR".
+Double negatives are allowed so "Is Present" is equivalent to "Not Missing" and "Is Missing" is equivalent to "Not Present".
+
+.SH OPERATORS
+An operator indicates an equality between a \fIfield\fR and a \fIvalue\fR.
+An operator is an alphanumeric string entered in upper, lower or mixed character case.
+Failure to enter a known operator will result in an error message that lists permitted operators.
+Operators are position sensitive and must appear between each \fIfield\fR and \fIvalue\fR.
+
+.TP
+.BR Is
+Indicates that the frame field must equal the associated value for the condition to evaluate true.
+
+.TP
+.BR Not
+Indicates that the frame field must not equal the associated value for the condition to evaluate true.
+
+.SH STATES
+A state is a special case of \fIvalue\fR.
+
+.TP
+.BR True , On , Yes , Present
+Indicates a positive state or presence of some entity.
+All are equivalent and can be used interchangeably.
+Double negatives are permitted so "Is True" is equvalent to "Not False".
+
+.TP
+.BR False , Off , No , Missing
+Indicates a negative state or absence of some entity.
+All are equivalent and can be used interchangeably.
+Double negatives are permitted so "Is False" is equvalent to "Not True".
+
+.SH CONTROLS
+The control determines how the devices will handle the rule after it is validated.
+It is expressed as a discrete alphanumeric string entered in upper, lower or mixed character case.
+Failure to enter a known control will result in an error message that lists permitted controls.
+The control is position sensitive and must occur after \fIcondition\fR and before \fIvolatility\fR.
+
+.TP
+.BR Add
+Adds the rule to the current list of rules unless a violation occurs.
+In some cases, a rule may replace an existing rule instead of being added.
+
+.TP
+.BR Rem , Remove
+Remove the rule from the current list of rules unless a violation occurs.
+
+.SH VOLATILITY
+The volatility determines which device rule set will be affected by the action.
+It is expressed as a discrete alphanumeric string entered in upper, lower or mixed character case.
+Failure to enter a known volatility will result in an error message that lists permitted volatilities.
+The volatility is position sensitive and must occur after \fIcontrol\fR.
+
+.TP
+.BR Temp
+The temporary rule set will be modified.
+The temporary rule set resides in the working PIB stored in SDRAM.
+
+.TP
+.BR Perm
+The permanent rule set will be modified.
+The permanent rule set resides in the user PIB stored in NVRAM.
+
+.SH DEVICES
+Powerline devices use Ethernet Media Access Control (MAC) addresses.
+A MAC address is a 48-bit value entered as 12 hexadecimal digits in upper, lower or mixed character case.
+Octets may be separated with colons for clarity.
+For example, "00b052000001", "00:b0:52:00:00:01" and "00b052:000001" are valid and equivalent.
+
+.PP
+The following MAC addresses are special and may be entered by name instead of number.
+
+.TP
+.BR all
+Same as "broadcast".
+
+.TP
+.BR broadcast
+A synonym for the Ethernet broadcast address, \fBFF:FF:FF:FF:FF:FF\fR.
+All devices, whether local, remote or foreign recognize messages sent to this address.
+A remote device is any device at the far end of a powerline connection.
+A foreign device is any device not manufactured by Atheros.
+
+.TP
+.BR local
+A synonym for the Qualcomm Atheros vendor specific Local Management Address (LMA), \fB00:B0:52:00:00:01\fR.
+All local Atheros devices recognize this address but remote and foreign devices do not.
+A remote device is any device at the far end of a powerline connection.
+A foreign device is any device not manufactured by Atheros.
+
+.SH REFERENCES
+See the Qualcomm Atheros HomePlug AV Firmware Technical Reference Manual for more information.
+
+.SH DISCLAIMER
+Atheros HomePlug AV Vendor Specific Management Message structure and content is proprietary to Qualcomm Atheros, Ocala FL USA.
+Consequently, public information is not available.
+Qualcomm Atheros reserves the right to modify message structure or content in future firmware releases without any obligation to notify or compensate users of this program.
+
+.SH EXAMPLES
+This command adds a temporary classification rule to the classification table on device B00:B0:52:BA:BE:01.
+The rule instructs the device to drop frames that match either (any) of two conditions.
+The first condition states that the IPv4 source address is 192.168.99.2.
+The second conditon states that the IPv4 destination address is 192.168.99.100.
+
+.PP
+   # amprule drop any IPv4SA is 192.168.99.2 IPv4DA is 192.168.99.100 add temp 00:B0:52:BA:BE:01
+
+.PP
+Observe that the \fIaction\fR, \fIoperand\fR and \fIconditions\fR come first then the \fIcontrol\fR and \fIvolatility\fR then the affected \fIdevices\fR.
+Up to three conditions may be specified.
+Keyword order is important.
+Character case is not important.
+
+.PP
+The following example prints a list of programmed keywords on stdout for reference.
+The example shown here has been abbreviate due to formatting limitations.
+
+.PP
+   # amprule -t
+    
+     Controls are 'Add'|'Rem'|'Remove'
+     Volatilities are 'Temp'|'Perm'
+     Actions are 'CAP0'|'CAP1'|'CAP2'|'CAP3'|'Boost'|...|'StripTX'|'StripRX'|'TagRX'
+     Operands are 'All'|'Any'|'Always'
+     Fields are 'EthDA'|'EthSA'|'VLANUP'|'VLANID'|'IPv4TOS'|...|'TCPAck'|'VLANTag'
+     Operators are 'Is'|'Not'
+
+.PP
+More example follow:
+
+.PP    
+.B  Ethernet Address Rules
+
+.PP
+Ethernet address rules have the following general format:
+
+.PP 
+   | CAP0 | ANY | EthSA | IS  | xx:xx:xx:xx:xx:xx | ADD    | TEMP | xx:xx:xx:xx:xx:xx
+   | CAP1 | ALL | EthDA | NOT |                   | REMOVE | PERM |
+   | CAP2 |
+   | CAP3 |
+   | DROP |
+
+.PP 
+For example, instruct device 00:B0:52:BA:BE:FF to temporarily add a rule to forward frames from 00:2B:FE:CA:FE:BA at CAP3.
+Observe Ethernet hardware addresses are used both in the condition and for the affected powerline devices.
+
+.PP 
+   # amprule cap3 any ethsa is 00:2b:fe:ca:fe:ba add temp 00:b0;52:ba:be:ff
+
+.PP
+.B IP Address Rules
+
+.PP
+IP address rules have the following general format:
+
+.PP 
+   | CAP0 | ANY | IPv4SA | IS  | ddd.ddd.ddd.ddd | ADD    | TEMP | xx:xx:xx:xx:xx:xx
+   | CAP1 | ALL | IPv4DA | NOT |                 | REMOVE | PERM |
+   | CAP2 |
+   | CAP3 |
+   | DROP |
+ 
+
+.PP
+For example, instruct device 00:B0:52:BA:BE:FF to permanently remove the rule that drops packets from 192.168.99.1.
+Notice that the IP address is specified in dotted decimal format but the device address is specified in hexadecimal octet format.
+Dotted decimal format permits empty and variable length octets but octet delimiters are mandatory.
+Hexadecimal octet format requires fixed length octets but octet delimiters are optional.
+
+.PP 
+   # amprule drop any ipv4sa is 192.168.99.1 remove perm 00:b0:52:ba:be:ff
+
+.PP
+.B IP Protocol Rules
+
+.PP
+IP protocol rules have the following general format:
+
+.PP 
+   | CAP0 | ANY | IPv4PROT | IS  | xxxx | ADD    | TEMP | xx:xx:xx:xx:xx:xx
+   | CAP1 | ALL |          | NOT |      | REMOVE | PERM |
+   | CAP2 |
+   | CAP3 |
+   | DROP |
+
+.PP 
+For example, to instruct device 00:B0:52:BA:BE:FF to permanently add a rule to forward non-IP packets at CAP2.
+In this example, delmiters have been omitted from the device Ethernet address.
+
+.PP 
+   # amprule CAP2 all ipv4prot not 0x0800 add perm 00b052babeff
+
+.SH SEE ALSO
+.BR plc ( 1 ),
+.BR amprate ( 1 ),
+.BR ampstat ( 1 ),
+.BR amptone ( 7)
+
+.SH CREDITS
+ Charles Maier <cmaier@qca.qualcomm.com>
+

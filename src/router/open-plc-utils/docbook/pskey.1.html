@@ -1,0 +1,135 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			pskey.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='psin.1.html' title=' psin.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='psnotch.1.html' title=' psnotch.1 '>NEXT</a>]
+			</div>
+<pre>
+pskey(1)                                     Qualcomm Atheros Open Powerline Toolkit                                    pskey(1)
+
+NAME
+       pskey - Print prescaler key
+
+SYNOPSIS
+       pskey [options] file [file] [...]  [&gt;stdout]
+
+DESCRIPTION
+       Read the prescaler section of a .pib file and print the SHA256 digest (key) on stdout.  The digest acts as a finger-print
+       of the prescalers stored within and may be used to compare prescalers and detect changes.  Only the prescaler section  is
+       read.  The rest of the PIB is ignored.
+
+       This  program  is  part of the Qualcomm Atheros Powerline Toolkit.  See the AMP man page for an overview and installation
+       instructions.
+
+OPTIONS
+       -q     Enable quiet mode.  This suppresses the filename after prescaler keys on output.
+
+       -v     Verbose mode.  This option has no effect at present.  None.
+
+ARGUMENTS
+       file   The name of an Atheros Parameter Information Block (PIB) file.  This file is not  modified.   By  convention,  PIB
+              files  have  a  .pib  extenstion  but  this program does not enforce that convention but invalid PIB files will be
+              rejected on input.
+
+DISCLAIMER
+       PIB file structure and content is proprietary to Qualcomm Atheros, Ocala FL USA.  Consequently, public information is not
+       available.  Qualcomm Atheros reserves the right to modify PIB file structure or content in future firmware releases with‐
+       out any obligation to notify or compensate users of this program.
+
+EXAMPLES
+       This example prints the SHA256 digest for the prescaler section in file v3.3.4.pib.  The digest uniquely identifies  that
+       particular prescaler set.  PIB files with the same prescaler digest contain the same prescaler set.
+
+          # pskey v3.3.4.pib
+          AF26B02BB5044BE70986A5C2F5705671213D63A7827928C240D131E940EF4FC4 v3.3.4.pib
+
+       The next example is the same as before but does not print the input filename after the key.
+
+          # pskey v3.3.4.pib -q
+          AF26B02BB5044BE70986A5C2F5705671213D63A7827928C240D131E940EF4FC4
+
+       The  next  example does the same for all .pib files in the current folder.  Observe that several files have the same fin‐
+       gerprint and so contain identical prescaler sets.  Prescalers are designed to satisfy EMI requirements for various appli‐
+       cations and world regions.  It is critical that the correct prescalers are used.
+
+          # pskey *.pib
+          AF26B02BB5044BE70986A5C2F5705671213D63A7827928C240D131E940EF4FC4 2008-06-25.pib
+          AF26B02BB5044BE70986A5C2F5705671213D63A7827928C240D131E940EF4FC4 v2.0.4.pib
+          AF26B02BB5044BE70986A5C2F5705671213D63A7827928C240D131E940EF4FC4 v3.0.1.pib
+          9D6F711B81BEAE3DE9182ECC264C47DDD187264A2B89A162C54F3C1FDD5CE240 v3.0.4.pib
+          AF26B02BB5044BE70986A5C2F5705671213D63A7827928C240D131E940EF4FC4 v3.0.5.pib
+          9D6F711B81BEAE3DE9182ECC264C47DDD187264A2B89A162C54F3C1FDD5CE240 v3.1.0.pib
+          9D6F711B81BEAE3DE9182ECC264C47DDD187264A2B89A162C54F3C1FDD5CE240 v3.1.3.pib
+          9D6F711B81BEAE3DE9182ECC264C47DDD187264A2B89A162C54F3C1FDD5CE240 v3.1.4.pib
+          AF26B02BB5044BE70986A5C2F5705671213D63A7827928C240D131E940EF4FC4 v3.1.6.pib
+          9D6F711B81BEAE3DE9182ECC264C47DDD187264A2B89A162C54F3C1FDD5CE240 v3.1.7.pib
+          AF26B02BB5044BE70986A5C2F5705671213D63A7827928C240D131E940EF4FC4 v3.1.8.pib
+          AF26B02BB5044BE70986A5C2F5705671213D63A7827928C240D131E940EF4FC4 v3.1.9.pib
+          9D6F711B81BEAE3DE9182ECC264C47DDD187264A2B89A162C54F3C1FDD5CE240 v3.2.0.pib
+          AF26B02BB5044BE70986A5C2F5705671213D63A7827928C240D131E940EF4FC4 v3.3.0.pib
+          AF26B02BB5044BE70986A5C2F5705671213D63A7827928C240D131E940EF4FC4 v3.3.1.pib
+          AF26B02BB5044BE70986A5C2F5705671213D63A7827928C240D131E940EF4FC4 v3.3.2.pib
+          980444623A8B8E76121E5014B054D9D1306C06C4D7FD7E2E158D13C9B24CFDE1 v3.3.4-1.pib
+          AF26B02BB5044BE70986A5C2F5705671213D63A7827928C240D131E940EF4FC4 v3.3.4-2.pib
+          649C3B280E20A78994D11048C6E2ABEB6BA5DBCBBE3BA2BDD3BA3C3CFF8EF7E4 v3.3.4-RC9.pib
+          AF26B02BB5044BE70986A5C2F5705671213D63A7827928C240D131E940EF4FC4 v3.3.4.pib
+
+       The  next  example  does  the same as the previous one but sorts on the digest in order to group files by their prescaler
+       sets.  This highlights the fact that we have four different prescaler sets in the group and two files are apparently dif‐
+       ferent from the others.  The sort program is a Linux utility and may not be available on some systems.
+
+          # pskey *.pib | sort
+          649C3B280E20A78994D11048C6E2ABEB6BA5DBCBBE3BA2BDD3BA3C3CFF8EF7E4 v3.3.4-RC9.pib
+          980444623A8B8E76121E5014B054D9D1306C06C4D7FD7E2E158D13C9B24CFDE1 v3.3.4-1.pib
+          9D6F711B81BEAE3DE9182ECC264C47DDD187264A2B89A162C54F3C1FDD5CE240 v3.0.4.pib
+          9D6F711B81BEAE3DE9182ECC264C47DDD187264A2B89A162C54F3C1FDD5CE240 v3.1.0.pib
+          9D6F711B81BEAE3DE9182ECC264C47DDD187264A2B89A162C54F3C1FDD5CE240 v3.1.3.pib
+          9D6F711B81BEAE3DE9182ECC264C47DDD187264A2B89A162C54F3C1FDD5CE240 v3.1.4.pib
+          9D6F711B81BEAE3DE9182ECC264C47DDD187264A2B89A162C54F3C1FDD5CE240 v3.1.7.pib
+          9D6F711B81BEAE3DE9182ECC264C47DDD187264A2B89A162C54F3C1FDD5CE240 v3.2.0.pib
+          AF26B02BB5044BE70986A5C2F5705671213D63A7827928C240D131E940EF4FC4 2008-06-25.pib
+          AF26B02BB5044BE70986A5C2F5705671213D63A7827928C240D131E940EF4FC4 v2.0.4.pib
+          AF26B02BB5044BE70986A5C2F5705671213D63A7827928C240D131E940EF4FC4 v3.0.1.pib
+          AF26B02BB5044BE70986A5C2F5705671213D63A7827928C240D131E940EF4FC4 v3.0.5.pib
+          AF26B02BB5044BE70986A5C2F5705671213D63A7827928C240D131E940EF4FC4 v3.1.6.pib
+          AF26B02BB5044BE70986A5C2F5705671213D63A7827928C240D131E940EF4FC4 v3.1.8.pib
+          AF26B02BB5044BE70986A5C2F5705671213D63A7827928C240D131E940EF4FC4 v3.1.9.pib
+          AF26B02BB5044BE70986A5C2F5705671213D63A7827928C240D131E940EF4FC4 v3.3.0.pib
+          AF26B02BB5044BE70986A5C2F5705671213D63A7827928C240D131E940EF4FC4 v3.3.1.pib
+          AF26B02BB5044BE70986A5C2F5705671213D63A7827928C240D131E940EF4FC4 v3.3.2.pib
+          AF26B02BB5044BE70986A5C2F5705671213D63A7827928C240D131E940EF4FC4 v3.3.4-2.pib
+          AF26B02BB5044BE70986A5C2F5705671213D63A7827928C240D131E940EF4FC4 v3.3.4.pib
+
+DISCLAIMER
+       PIB file structure and content is proprietary to Qualcomm Atheros, Ocala FL USA.  Consequently, public information is not
+       available.  Qualcomm Atheros reserves the right to modify PIB file structure or content in future firmware releases with‐
+       out any obligation to notify or compensate users of this program.
+
+SEE ALSO
+       psgraph(7), psin(1), psout(1)
+
+CREDITS
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                                 pskey(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='psin.1.html' title=' psin.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='psnotch.1.html' title=' psnotch.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

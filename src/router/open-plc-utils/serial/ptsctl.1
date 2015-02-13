@@ -1,0 +1,114 @@
+.TH ptsctl 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+ptsctl - PTS Module Controller
+
+.SH SYNOPSIS
+.BR ptsctl
+.RI [ options ]
+
+.SH DESCRIPTION
+Set attenuation level on the Qualcomm Atheros Production Test System using a local RS-232 communication port.
+The port settings must be configured before running this program.
+Settings are 9600 baud, no parity, 8 data and 1 stop bit.
+See datasheet \fIhttp://www.weedtech.com/wtssr-m.pdf\fR for more information.
+
+.SH OPTIONS
+
+.TP
+-\fBf\fI file\fR
+The name of the serial port.
+On Linux, the name is usually "/dev/ttyS[0-4]".
+On OS/X, the name is usually "/dev/cua[0-4]".
+On Windows, the name is "com[0-9]:".
+The default is "/dev/ttyS0" on Linux and "com1:" on Windows.
+If environment string "\fBPTSCTL\fR" is defined then it takes precedence over the default serial port.
+This option then takes precedence over either default.
+
+.TP
+-\fBg\fI attenuation\fR
+The desired line/ground attenation in Decibels.
+The value may be expressed in decimal, binary, or hexadecimal.
+Binary varues start with "\fB0b\fR" and hexadecimal values start with "\fB0x\fR".
+The default for this option is \fB127\fR dB.
+
+.TP
+-\fBn\fI attenuation\fR
+The desired line/neutral attenation in Decibels.
+The value may be expressed in decimal, binary, or hexadecimal.
+Binary varues start with "0b" and hexadecimal values start with "0x".
+The default for this option is \fB127\fR dB.
+
+.TP
+-\fBp\fI power\fR
+Turn on or off the Device Under Test power.
+The value of \fBpower\fR can be \fB1\fR=on or \fB0\fR=off.
+Alternately, keywords "\fBon\fR" and "\fBoff\fR" can be used.
+
+.TP
+.RB - r
+Read and display undecorated attenuator settings on stdout.
+Setting appear as two decimal integers representing the attenuation in decibels.
+The line/neutral setting appears first then the line/ground setting.
+This option is independent of options \fB-n\fR and \fB-g\fR.
+If this option is present and the other are missing then settings are display but not changed.
+If this setting appears with either or both of the other two then the settings are changed then read and displayed.
+
+.TP
+-\fBw\fI wait\fR
+Wait time in milliseconds.
+Serial I/O operation are slow and a delay is needed after each write operation.
+Unfortunately, different operating systems require different wait times.
+This options lets you adjust the time.
+The default is 10 milliseconds which should be adequate on most systems.
+
+.SH EXAMPLES
+The following example turns the Device Under Test power on and configures the line/neutral attenuator for \fB72\fRdB attenuation.
+Line ground attenation is automatically set to \fB127\fR dB since it is not specified on the command line.
+Option \fB-p\fR is not necessary if the Device Under Test power is already on.
+
+.PP
+   # ptsctl -p 1 -n 72
+
+.PP
+The next example configures the controller for \fB42\fR dB attenuation on line/neutral and \fB100\fR dB on line/ground.
+There is no needed to turn the Device Under Test on again because it remains on until turned off.
+
+.PP
+   # ptsctl -n 42 -g 100
+
+.PP
+The next example configures the controller for \fB56\fR dB attenuation on line/ground and \fB127\fR dB on line/neutral, and turns the Device Under Test off.
+
+.PP
+   # ptsctl -p off -g 56
+
+.PP
+The next example reads the atteuator setting and displays them on decimal format on stdout.
+The line/neutral setting appears first then the line/ground setting.
+In this example, line/neutral has \fB55\fR dB attenuation and line/ground has \fB120\fR dB attenuation.
+
+.PP
+   # ptsctl -r
+   55 120
+
+.PP
+You can also set the attenuation and read it back using one command.
+The next example sets line/neutral attenuation to \fB10\fR db and line/ground attenuation to \fB50\fR db then reads the attenuator settings and displays them in the standard order, line/neutral then line/ground.
+
+.PP
+   # ptsctl -g 50 -r -n 10 
+   10 50
+
+.SH REFERENCES
+Information shown above applies to WTSSR-M Solid State Relay Module by Weeder Technologies, 90-A Beal Pkwy NW, Fort Walton Beach FL 32548 USA; Tel +44 850 863 5723.
+
+.SH SEE ALSO
+.BR plc ( 1 ),
+.BR WTSSR-M ( 1 ),
+.BR weeder ( 1 )
+
+.SH CREDITS
+ Charles Maier <cmaier@qca.qualcomm.com>
+ Nathaniel Houghton <nhoughto@qca.qualcomm.com>
+

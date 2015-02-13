@@ -1,0 +1,141 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			nvmpeek2.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='nvmpeek1.c.html' title=' nvmpeek1.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='nvmpeek.c.html' title=' nvmpeek.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *
+ *   void nvmpeek2 (void const * memory);
+ *
+ *   print a memory resident firmware image header on stdout;
+ *
+ *
+ *   Contributor(s):
+ *	Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef NVMPEEK2_SOURCE
+#define NVMPEEK2_SOURCE
+
+#include &lt;stdio.h&gt;
+
+#include &quot;../tools/memory.h&quot;
+#include &quot;../tools/format.h&quot;
+#include &quot;../nvm/nvm.h&quot;
+
+void nvmpeek2 (void const * memory)
+
+{
+	extern char const * nvm_imagetypes [];
+	extern char const * nvm_platforms [];
+	struct nvm_header2 * nvm_header = (struct nvm_header2 *)(memory);
+	char const * string = &quot;Unknown&quot;;
+	char platform [100];
+	printf (&quot;\tHeader Version = 0x%04x-0x%04x\n&quot;, LE16TOH (nvm_header-&gt;MajorVersion), nvm_header-&gt;MinorVersion);
+	printf (&quot;\tHeader Checksum = 0x%08X\n&quot;, LE32TOH (nvm_header-&gt;HeaderChecksum));
+	printf (&quot;\tHeader Next = 0x%08X\n&quot;, LE32TOH (nvm_header-&gt;NextHeader));
+	printf (&quot;\tHeader Prev = 0x%08X\n&quot;, LE32TOH (nvm_header-&gt;PrevHeader));
+	printf (&quot;\tFlash Address = 0x%08X\n&quot;, LE32TOH (nvm_header-&gt;ImageNvmAddress));
+	printf (&quot;\tImage Address = 0x%08X\n&quot;, LE32TOH (nvm_header-&gt;ImageAddress));
+	printf (&quot;\tEntry Address = 0x%08X\n&quot;, LE32TOH (nvm_header-&gt;EntryPoint));
+	printf (&quot;\tEntry Version = 0x%04X\n&quot;, LE16TOH (nvm_header-&gt;AppletEntryVersion));
+	printf (&quot;\tImage Checksum = 0x%08X\n&quot;, LE32TOH (nvm_header-&gt;ImageChecksum));
+	printf (&quot;\tImage ModuleID = 0x%04X\n&quot;, LE32TOH (nvm_header-&gt;ModuleID));
+	printf (&quot;\tImage ModuleSubID = 0x%04X\n&quot;, LE32TOH (nvm_header-&gt;ModuleSubID));
+	printf (&quot;\tImage Size = 0x%08X (%d)\n&quot;, LE32TOH (nvm_header-&gt;ImageLength), LE32TOH (nvm_header-&gt;ImageLength));
+	if (LE32TOH (nvm_header-&gt;ImageType) &lt; NVM_IMAGETYPES)
+	{
+		string = nvm_imagetypes [LE32TOH (nvm_header-&gt;ImageType)];
+	}
+	printf (&quot;\tImage Type = %s\n&quot;, string);
+	strfbits (platform, sizeof (platform), nvm_platforms, &quot;|&quot;, LE16TOH (nvm_header-&gt;ExecuteMask));
+	printf (&quot;\tImage Exec = %s\n&quot;, platform);
+
+#if 0
+
+	printf (&quot;\tReserved = 0x%04X\n&quot;, LE16TOH (nvm_header-&gt;Reserved0));
+	printf (&quot;\tReserved = 0x%08X\n&quot;, LE32TOH (nvm_header-&gt;Reserved1));
+	printf (&quot;\tReserved = 0x%08X\n&quot;, LE32TOH (nvm_header-&gt;Reserved2));
+	printf (&quot;\tReserved = 0x%08X\n&quot;, LE32TOH (nvm_header-&gt;Reserved3));
+	printf (&quot;\tReserved = 0x%08X\n&quot;, LE32TOH (nvm_header-&gt;Reserved4));
+	printf (&quot;\tReserved = 0x%08X\n&quot;, LE32TOH (nvm_header-&gt;Reserved5));
+	printf (&quot;\tReserved = 0x%08X\n&quot;, LE32TOH (nvm_header-&gt;Reserved6));
+	printf (&quot;\tReserved = 0x%08X\n&quot;, LE32TOH (nvm_header-&gt;Reserved7));
+	printf (&quot;\tReserved = 0x%08X\n&quot;, LE32TOH (nvm_header-&gt;Reserved8));
+	printf (&quot;\tReserved = 0x%08X\n&quot;, LE32TOH (nvm_header-&gt;Reserved9));
+	printf (&quot;\tReserved = 0x%08X\n&quot;, LE32TOH (nvm_header-&gt;Reserved10));
+	printf (&quot;\tReserved = 0x%08X\n&quot;, LE32TOH (nvm_header-&gt;Reserved11));
+
+#endif
+
+	return;
+}
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='nvmpeek1.c.html' title=' nvmpeek1.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='nvmpeek.c.html' title=' nvmpeek.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

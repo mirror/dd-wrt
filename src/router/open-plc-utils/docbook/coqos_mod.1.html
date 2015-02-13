@@ -1,0 +1,138 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			coqos_mod.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='coqos_man.1.html' title=' coqos_man.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='coqos_rel.1.html' title=' coqos_rel.1 '>NEXT</a>]
+			</div>
+<pre>
+coqos_mod(1)                                 Qualcomm Atheros Open Powerline Toolkit                                coqos_mod(1)
+
+NAME
+       coqos_mod - Suspend or resume a managed data stream
+
+SYNOPSIS
+       coqos_mod [options] action cid [device] [...]
+
+DESCRIPTION
+       This page is under construction.
+
+       Suspend  or  resume a stream through the bandwidth manager using an Atheros vendor specific VS_MOD_CONN message.  This is
+       the proper way to stop a stream flowing if the data rate exceeds the available bandwidth.  Use program coqos_man  to  set
+       stream bandwidth.
+
+       This  program  is  part of the Qualcomm Atheros Powerline Toolkit.  See the plc man page for an overview and installation
+       instructions.
+
+OPTIONS
+       -e     Redirects stderr messages to stdout.  By convention status and error messages are printed on stderr while  primary
+              program output is printed on stdout.  This option prints all output on stdout in cases where this is desired.
+
+       -i interface
+              Select  the host Ethernet interface.  All requests are sent via this host interface and only reponses received via
+              this host interface are recognized.  The default interface is eth1 because most people use eth0 as their principle
+              network  connection;  however,  if  environment  string &quot;PLC&quot; is defined then it takes precedence over the default
+              interface.  This option then takes precedence over either default.
+
+       -q     Suppresses status messages on stderr.
+
+       -r     Display relative memory offsets on output.  This option is the default.
+
+       -v     Prints additional information on stdout.  In particular, this option dumps outgoing Ethernet packets on stdout.
+
+       -?,--help
+              Displays program help information on stderr.  This option takes precedence over all other options on  the  command
+              line except version information.
+
+       -!,--version
+              Displays  program  version information on stderr.  This option takes precedence over all other options on the com‐
+              mand line except help information.  Use this option when sending screen dumps to Atheros technical staff.
+
+ARGUMENTS
+       action A symbol indicating the action to be performed on the stream identified by argument cid.  Valid actions are  &quot;sus�‐
+              pend&quot; and &quot;resume&quot;.  See ACTIONS for an explanation of each action.
+
+       cid    A  connection  identifier.   (Charlie,  expand  on this.)  Connection ID.  2 byte number to identify the stream to
+              delete.  Byte 0 is the OrigTEI and byte one is the LLID-F.
+
+       device The MAC address of some powerline device.  More than one address may be specified on the command  line.   If  more
+              than  one  address  is  specified  then  operations  are performed on each device in turn.  The default address is
+              &quot;local&quot;.  See DEVICES for more information.
+
+ACTIONS
+       suspend
+              Suspend the identified stream.  See argument cid for more information.
+
+       resume Resume the identified stream.  See argument cid for more information.
+
+DEVICES
+       Ethernet MAC addresses are expressed as six hexadecimal octets optionally separated by colon.  For example, the  Qualcomm
+       Atheros  Local  Management Address (LMA) of &quot;00b052000001&quot; may also be entered as &quot;00:b0:52:00:00:01&quot; or &quot;00b052:000001&quot;.
+       Addresses are case insensitive and quotes are optional.  In addition, some special  addresses  may  be  entered  by  name
+       rather than number where names are case sensitive.
+
+       all    A synonym for the &quot;broadcast&quot; address, described next.
+
+       broadcast
+              A  synonym  for  the Ethernet broadcast address, FF:FF:FF:FF:FF:FF.  All devices, whether local, remote or foreign
+              will respond to this address.
+
+       local  A synonym for the Qualcomm Atheros vendor specific Local Management Address (LMA), 00:B0:52:00:00:01.   All  local
+              Atheros  devices  recognize  this address but remote and foreign devices do not.  A remote device is any device at
+              the far end of a powerline connection.  A foreign device is any device not manufactured by Atheros.  Ethernet  MAC
+              addresses  are  six  hexadecimal octets optionally separated by colon.  For example, the addresses &quot;00b052000001&quot;,
+              &quot;00:b0:52:00:00:01&quot; and &quot;00b052:000001&quot; are all valid and equivalent.  Certain Ethernet device addresses are  spe‐
+              cial and may be entered by name rather than number.
+
+       all    A synonym for &quot;broadcast&quot;, described next.
+
+       broadcast
+              A  synonym  for the standard Ethernet broadcast address, FF:FF:FF:FF:FF:FF.  All devices, whether local, remote or
+              foreign will respond to this address.
+
+       local  A synonym for the Qualcomm Atheros vendor specific Local Management Address (LMA), 00:B0:52:00:00:01.   All  local
+              Atheros  devices  recognize  this address but remote and foreign devices do not.  A remote device is any device at
+              the far end of a powerline connection.  A foreign device is any device not manufactured by Atheros.
+
+REFERENCES
+       See the Qualcomm Atheros HomePlug AV Firmware Technical Reference Manual for more information.
+
+DISCLAIMER
+       Atheros HomePlug AV Vendor Specific Management Message structure and content is proprietary to Qualcomm Atheros, Ocala FL
+       USA.   Consequently,  public  information  may  not  be available.  Qualcomm Atheros reserves the right to modify message
+       structure and content in future firmware releases without any obligation to notify or compensate users of this program.
+
+EXAMPLES
+       The following example suspends a stream 805.  All data in this cid will be discarded and not sent over the channel.
+
+          # coqos_mod SPND 805 00:B0:52:BA:BE:01
+
+SEE ALSO
+       coqos_add(1), coqos_info(1), coqos_man(1), coqos_rel(1)
+
+CREDITS
+        Bill Wike &lt;bill.wike@qca.qualcomm.com&gt;
+        Nathaniel Houghton &lt;nhoughto@qca.qualcomm.com&gt;
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                             coqos_mod(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='coqos_man.1.html' title=' coqos_man.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='coqos_rel.1.html' title=' coqos_rel.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

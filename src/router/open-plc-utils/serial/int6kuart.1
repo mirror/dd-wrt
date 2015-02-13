@@ -1,0 +1,336 @@
+.TH int6kuart 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+int6kuart - Qualcomm Atheros Serial Line Device Manager
+
+.SH SYNOPSIS
+.BR int6kuart
+.RI [ options ] 
+[...]
+
+.SH DESCRIPTION
+Perform powerline device management operations over serial line interface.
+
+.PP
+Serial line commands are 7-bit ASCII character strings sent to the local powerline device over the host serial port.
+They can be sent using any terminal emulator but this program will, in many cases, reduce typing and simplify scripting.
+It is especially useful for downloading device parameters and uploading device parameters or firmware because those operations involve large volumes of data.
+Also, this program permits decimal integer arguments in many cases where the serial line commands require hexadecimal integer values.
+See the \fBCOMMANDS\fR section (below) for a list of supported serial line commands.
+
+.PP
+This program is part of the Qualcomm Atheros Powerline Toolkit.
+See the \fBAMP\fR man page for an overview and installation instructions.
+
+.SH COMMENTS
+This program does not configure or reconfigure host serial port settings by default because most operating systems have their own serial port configuration utility.
+Be sure to configure host serial port settings before using this program because other programs may change them before or after use.
+Atheros factory default settings for UART-enabled powerline devices are \fB115200\fR baud, \fB8\fR data bits, \fB1\fR stop bit, \fBno\fR parity and \fBno\fR flow control.
+See option \fB-b\fR for a quick way to match host serial port settings the Qualcomm Atheros default settings.
+
+.PP
+On Windows, use the DOS \fBmode\fR command.
+The general form of this command is \fBmode\fR,\fIbaud\fR,\fIparity\fR,\fIdatabits\fR,\fIstopbits\fR.
+The following example will set a Windows host to the default serial settings used by Atheros powerline devices.
+
+.PP
+   # mode com3:115200,n,8,1
+
+.PP
+On Linux, use the \fBstty\fR utility to inspect and set serial port parameters.
+The following Linux command will configure serial device \fB/dev/ttyS0\fR speed to \fB115200\fR baud with \fB8\fR data bits, \fB1\fR stop bit, \fBno\fR parity bit and \fBno\fR flow control.
+Consult the \fBstty\fR man page for an explanation of these and other options.
+
+.PP
+   # stty -F /dev/ttyS0 115200 cs8 cstopb -parenb -ixon
+
+.PP
+On Linux, you can also use the \fBminicom\fR terminal emulator to communicate using the underlying serial line commands described in the \fBCOMMANDS\fR section.
+The minicom program reads default settings from configuration file \fB/etc/minicom/minirc.dfl\fR if present on startup.
+A basic configuration file looks like this:
+
+.PP
+   pu port             /dev/ttyUSB0
+   pu baudrate         115200
+   pu bits             8
+   pu parity           N
+   pu stopbits         1
+   pu rtscts           No
+
+.SH OPTIONS
+
+.TP
+.RB - b
+Set host serial port to the default settings mentioned above.
+The original host serial port settings are not restored when the program terminates.
+You must restore them manually or by other means.
+Changing host serial port settings will break serial communications with the local powerline device if the device is not using the same settings.
+
+.TP
+-\fBc \fIcommand\fR
+Send a custom serial line command to the local powerline device over the host serial interface.
+Argument \fIcommand\fR is sent as specified but will be terminated with a carriage return.
+The command must be enclosed in quotes if it contains spaces or special characters.
+This option can be used to send serial line commands that are not supported by this program.
+
+.TP
+-\fBC \fImodule\fR
+Commit downloaded parameters and/or firmware to NVM using the \fBATWNV\fR serial line command.
+Argument \fImodule\fR is one hexadecimal octet.
+The low-order nibble contains the module number.
+The high-order nibble contains optional control bits.
+Acceptable \fImodule\fR values are \fB0x01\fR=Firmware, \fB0x02\fR=Parameters, \fB0x10\fR=Force Flash and \fB0x20\fR=Do Not Reboot.
+The default value is 0x00 which has no effect.
+The \fB0x\fR prefix is optional.
+
+.TP
+.RB - d
+Read and display the destination device address using the \fBATDST\fR serial line command.
+This option is similar to option \fB-D\fR but substitutes \fB?\fR for the device address.
+
+.TP
+-\fBD \fIaddress\fR
+Set the destination device address for \fBTransparent Mode\fR using the \fBATDST\fR serial line command.
+This address will supercede the default destination device address, stored in the PIB, until the device is reset.
+Multicast address values are not permitted by the device.
+Argument \fIaddress\fR is six hexadecimal octets optionally separated by colons.
+
+.TP
+-\fBF \fIfilename\fR
+Read the named frame description file and send it over powerline as an Atheros vendor-specific management message using the \fBATM\fR serial line command.
+Unlike program \fBefsu\fR, only the first file frame is sent.
+Any subsequent frames defined in the file are ignored.
+
+.TP
+.RB - H
+Exit \fBCommand Mode\fR and enter \fBHigh Speed Command Mode\fR using the \fBATHSC\fR serial line command.
+
+.TP
+.RB - i
+Get and display network information using the \fBATNI\fR serial line command.
+The information includes the TEI, MAC address, receive rate and transmit rate for each remote device on the network.
+
+.TP
+.RB - I
+Get and display the PIB version and device MAC address using the \fBATRPM\fR serial line command.
+
+.TP
+.RB - m  
+Read and display the \fBNetwork Membership Key\fR of the local powerline device using the \fBATSK\fR serial line command.
+This option is similar to option \fB-M\fR but substitutes \fB?\fR for the membership key.
+
+.TP
+-\fBM \fIkey\fR
+Set the \fBNetwork Membership Key\fR of the local powerline device using the \fBATSK\fR serial line command.
+The \fIkey\fR consists of 16 hexadecimal octets optionally separated by colons.
+
+.TP
+-\fBN \fIfilename\fR
+Open the named firmware file on the local host and write it to the local device using multiple \fBATWPF\fR serial line commands.
+There is no default filename or extension.
+The file is assumed to contain a valid firmware image.
+
+.TP
+.RB - O
+Exit \fBCommand Mode\fR and enter \fBTransparent Mode\fR using the \fBATO\fR serial line command.
+Subsequent serial data will be transmitted over the powerline to the destination device address as raw data.
+Use option \fB-d\fR to set the destination device address.
+
+.TP
+-\fBp \fIfilename\fR
+Read the parameter block from the local powerline device and write it to the named file on the local host using multiple \fBATRP\fR serial line commands.
+Required \fIlength\fR and \fIoffset\fR values are automatically computed for each serial line command sent.
+There is no default filename or extention.
+
+.TP
+-\fBP \fIfilename\fR
+Open the parameter file on the local host and write it to the local powerline device using multiple \fBATWPF\fR serial line commands.
+Required \fIlength\fR and \fIoffset\fR values are automatically computed for each serial line command sent.
+There is no default filename or extention.
+The named file is assumed to contain a valid parameter block.
+
+.TP
+.RB - q
+Suppress progress and error information on stderr.
+
+.TP
+.RB - r
+Read and display the local powerline device hardware identifier and firmware version string using the \fBATRV\fR serial line command.
+
+.TP
+.RB - R
+Reset the local device using the \fBATZ\fR serial line command
+
+.TP
+-\fBs \fItty\fR
+Communicate with the local powerline device over the named serial interface on the local host.
+The program default is "/dev/ttyUSB0" for Linux and "com1:" for Windows.
+The program default is replaced if environment variable \fBPLCUART\fR is defined.
+This option over-rides those default settings.
+
+.TP
+.RB - S 
+Place the local power line device in \fBPower Save Mode\fR using the \fBATPS\fR serial line command.
+
+.TP
+.RB - t
+Test device using the \fBAT\fR serial line command.
+The device will respond with "OK" when in \fBCommand Mode\fR.
+
+.TP
+.RB - T
+Restore factory defaults on the local power line device using the \fBATFD\fR serial line command.
+Among other things, this will restore the destination device address stored in the factory PIB.
+Any destination device address previously set using option \fN-d\fR will be lost.
+
+.TP
+.RB - u
+Force default host port settings to match the default setting for UART-enabled Atheros powerline devices.
+The setting are \fB115200\fR baud, \fB8\fR data bits, \fBno\fR parity bits and \fB1\fR stop bit.
+These settings will remain active when the program terminates and will not change unless changed by some other means, perhaps by another application.
+This option is an easy means of establishg an initial serial connection with a powerline device, unless it's settings have been changed.
+.TP
+.RB - v
+Display actual serial line commands and responses on stdout.  
+.TP
+.RB - w
+Place the local powerline device in \fBCommand Mode\fR using the \fB+++\fR serial line command. The device will remain in command mode until it is reset or forced into \fBTransparaent Mode\fR or \fBHigh Speed Command Mode\fR.
+.TP
+-\fBW \fItimeout\fR
+Set the \fBTransparent Mode\fR aggregation \fItimeout\fR using the \fBATTO\fR serial line command. The \fItimeout\fR is expressed in decimal milliseconds. Valid values are \fB1\fR through \fB2000\fR. 
+.TP
+.RB - z
+Get the \fBTransparent Mode\fR buffer size using the \fBATBSZ\fR serial line command. This option is similar to option \fB-B\fR but substitutes \fB?\fR for the buffer size. 
+.TP
+-\fBZ \fIsize\fR
+Set the \fBTransparent Mode\fR buffer size using the \fBATBSZ\fR serial line command. The \fIsize\fR in bytes is specified in decimal here and converted to hexadecimal for transmission. Valid values range from \fB46\fR to \fB1500\fR. The default is \fB500\fR bytes.
+.TP
+.RB - ? ,-- help
+Print program help summary on stdout. This option takes precedence over other options on the command line. 
+.TP
+.RB - ! ,-- version
+Print program version information on stdout. This option takes precedence over other options on the command line. Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of the Linux Toolkit you are using.
+.SH ARGUMENTS
+None.
+.SH COMMANDS
+This section lists serial line commands recognized by local powerline devices when in \fBCommand Mode\fR. Commands can be issued interactively using a terminal emulator, like \fBminicom\fR on Linux or \fBHyperTerminal\fR on Windows or stored as text and copied to the serial port using system utilities, like \fBcat\fR on Linux or \fBtype\fR on Windows. This program merely converts the command line options and arguments described above into one or more of the serial line commands shown below.
+.TP
+.BR +++
+Exit \fBTransparent Mode\fR and enter \fBCommand Mode\fR. See option \fB-w\fR above.
+.TP
+.BR AT
+Test for \fBCommand Mode\fR by doing nothing, successfully. See option \fB-t\fR above.    
+.TP
+.BI ATBR mode , baudrate , databits , parity , stopbits , flowctrl
+Set serial line parameters on the local powerline device. Beware that this will break the existing serial connection when the new parameters differ from those of the local host. 
+.TP
+.BI ATBSZ ?
+Get \fBTransparent Mode\fR buffer size. See option \fB-z\fR above.
+.TP
+.BI ATBSZ size
+Set \fBTransparent Mode\fR buffer size. See option \fB-Z\fR above.
+.TP
+.BI ATDST ?
+Get \fBTransparent Mode\fR destination device address. See option \fB-d\fR above.
+.TP
+.BI ATDST address             
+Set \fBTransparent Mode\fR destination device address. See option \fB-D\fR above.
+.TP
+.BR ATFD
+Reset local device to factory defaults. See option \fB-T\fR above.
+.TP
+.BR ATHSC
+Exit \FBCommand Mode\fR and enter \fBHigh Speed Command Mode\fR. Once the \fBOK\fR response is received, the local host should send commands to the device at successively higher speeds until a valid response is received.
+.TP
+.BI ATM message
+Send an Atheros vendor-specific management message over powerline. The message is expressed as a series of hexadecimal digits.
+.TP
+.BI ATNI ?
+Read nework information and store the information internally. Return the number of associated stations and information about the first associated station. The information includes the peer station device address, TX rate and RX rate.
+.TP
+.BI ATNI station
+Extract and display previously stored network information for a specific peer \fIstation\fR. The information returned is that previosly stored using a \fBATNI\fR serial line command query.
+.TP
+.BR ATO
+Exit \fBCommand Mode\fR and enter \fBTransparent Mode\fR. Successful switch requires a valid destination MAC address, buffer size and aggregation timeout value. Use serial line commands \fBATDST\fR and \fBATBSZ\fR to get and/or set the first two values. Use serial line command \fBATTO\fR to set the timeout value.
+.TP
+.BI ATPS time
+Place the device in \FBPower Save Mode\fR for a specified \fItime\fR in seconds. Valid values are \fB1\fR to \fB384\fR seconds. The default time is \fBA\fR seconds.
+.TP
+.BI ATRP length , offset
+Read and display a parameter block segment where \fIlength\fR is the number of bytes read and \fIoffset\fR is the relative position, in bytes, from the start of the parameter block. Valid \fBlength\fR values are \fB0\fR through \fB400\fR hexadecimal. See option \fB-p\fR above to read and save an entire parameter block.
+.TP
+.BR ATRPM
+Get PIB version and device MAC address.
+.TP
+.BR ATRV
+Get hardware and firmware revision. See option \fB-r\fR above.
+.TP
+.BI ATSK ? 
+Get device Network Membership Key. See option \fB-m\fR above.
+.TP
+.BI ATSK key 
+Set device Network Membership Key. See option \fB-M\fR above.
+.TP
+.BI ATTO ?
+Get the \fBTransparent Mode\fR aggregation \fItimeout\fR in milliseconds. 
+.TP
+.BI ATTO timeout
+Set the \fBTransparent Mode\fR aggregation \fItimeout\fR in milliseconds. See option \fB-W\fR above.
+.TP
+.BI ATWNV module
+Update NVM with PIB and/or Firmware module. See option \fB-C\fR above.
+.TP
+.BI ATWPF module , length , offset , checksum , data
+Write a parameter block or firmware segment to the local powerline device where \fImodule\fR is the module identifier, \fIlength\fR is the number of bytes to write, \fIoffset\fR is the relative position from the start of the module, \fIchecksum\fR is the 1's complement of the data and \fIdata\fR is the data to be written.
+Valid module identifiers are \fB1\fR=\fBFW\fR and \fB2\fR=\fBPIB\fR.
+Valid \fIlength\fR values are \fB0\fR up to \fB400\fR hexadecimal.
+See options \fB-N\fR and \fB-P\fR above to write an entire parameter block or firmware images.
+
+.TP
+.BR ATZ
+Reset device.
+See option \fB-R\fR above.
+
+.SH REFERENCES
+See the Qualcomm Atheros HomePlug AV Firmware Technical Reference Manual for more information.
+
+.SH DISCLAIMER
+Atheros serial line commands are proprietary to Qualcomm Atheros, Ocala FL USA.
+Consequently, public information is not available.
+Qualcomm Atheros reserves the right to modify command line syntax or command functionality in future firmware releases without any obligation to notify or compensate product or program users.
+
+.SH EXAMPLES
+The following example places the device in \fBCommand Mode\fR (wakeup).
+Serial line commands are ignored unless the device is in this mode so this is often the first command issued.
+
+.PP
+   # int6kuart -w
+
+.PP
+The next example sets the destination device address on the local powerline device to \fB00B052BABE12\fR.
+The destination device can be any remote powerline device on the same logical network as the local device.
+
+.PP
+   # int6kuart -D 00:B0:52:BA:BE:12
+
+.PP
+The next example places the device in \fBTransparent Mode\fR where serial line output is sent over powerline to the destination powerline device and forwarded the remote host connected to it.
+
+.PP
+   # int6kuart -O
+
+.PP
+The next example sends the serial line command "ATSK?" to the local powerline device.
+
+.PP
+   # int6kuart -c "ATSK?"
+
+.SH SEE ALSO
+.BR amp ( 1 ),
+.BR int6kbaud ( 1 ),
+.BR ttysig ( 1 )
+
+.SH CREDITS
+ Charles Maier <cmaier@qca.qualcomm.com>
+

@@ -1,0 +1,100 @@
+.TH pibdump 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+pibdump - Qualcomm Atheros Parameter Information Block Dump Utility
+
+.SH SYNOPSIS
+.BR pibdump 
+.RI [ options ]
+.IR file 
+.RI [> stdout ]
+
+.SH DESCRIPTION
+Read a Qualcomm Atheros powerline parameter information block (PIB) file and print an object driven dump on stdout.
+This program replaces program \fBodd\fR because it distinguishes between legacy and current PIB file formats.
+
+.PP
+An object driven dump requires an object definition file that lists the size and name of data objects (ie; integers, arrays or structures) within the parameter file.
+Individual data members are presented as smaller, individual data dumps within a larger, overall data dump.
+
+.SH OPTIONS
+
+.TP
+-\fBf\fI file\fR
+The object definition file that lists the size, name and description of individual individual objects in order of occurance.
+If this option is omitted then object definitions are read from stdin.
+The object definition file is not modified by this program.
+
+.TP
+.RB - ? ,-- help
+Print program help summary on stdout.
+This option takes precedence over other options on the command line.
+
+.TP
+.RB - ! ,-- version
+Print program version information on stdout.
+This option takes precedence over other options on the command line.
+Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of the Linux Toolkit you are using.
+
+.SH ARGUMENTS
+
+.TP
+.IR file
+The name of a binary file.
+The file must have either Thunderbolt/Lightning or Panther/Lynx format or output will be incorrect.
+The file is not modified by this program.
+Only one such file is permitted on the command line.
+
+.SH EXAMPLES
+The following is an example object definition file for an Ethernet frame.
+Frame fields, like \fBODA\fR, \fBOSA\fR and \fBETHTYPE\fR,  are defined by \fIlength\fR in order of their appears in the frame.
+Array subscripts following object names are optional but, if present, become part of the object name.
+Fields having no \fIlength\fR are headers and will be ignored.
+Comments and blank lines are also ignored.
+
+.PP
+   # ========================================
+   #
+   # ----------------------------------------
+   
+   0 header
+   
+   6 ODA[6] Own Destination Address
+   6 OSA[6] Own Source Address
+   2 ETHTYPE Ethertype or frame length
+   
+   # ========================================
+   #
+   # ----------------------------------------
+   
+   0 body
+   
+   1500 Payload[1500]
+   
+   # ========================================
+   #
+   # ----------------------------------------
+   
+   0 trailer
+   
+   4 CRC Cyclical Redundancy Check
+
+.PP
+The following command uses object definition file \fBether.txt\fR to identify and display member fields within binary file \fBabc.bin\fR in hexadecimal dump format.
+
+.PP
+   # pibdump -f ether.txt abc.bin
+
+.SH SEE ALSO
+.BR chkpib (7),
+.BR chkpib2 (7),
+.BR getpib (7 ),
+.BR modpib ( 1 ),
+.BR pib2xml ( 1 ),
+.BR pibcomp ( 1 ),
+.BR setpib ( 1 ),
+.BR xml2pib ( 1 )
+
+.SH CREDITS
+ Charles Maier <cmaier@qca.qualcomm.com>
+

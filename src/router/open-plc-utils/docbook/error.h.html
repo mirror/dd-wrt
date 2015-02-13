@@ -1,0 +1,133 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			error.h
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='endian.h.html' title=' endian.h '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='ether.h.html' title=' ether.h '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   error.h - error function definitions and declarations;
+ *
+ *   this file is an alterantive to GNU header file of the same
+ *   name; in addition to standard GNU error function declarations,
+ *   some additional functions are declared;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef ERROR_HEADER
+#define ERROR_HEADER
+
+/*====================================================================*
+ *   system header files;
+ *--------------------------------------------------------------------*/
+
+#include &lt;errno.h&gt;
+
+/*====================================================================*
+ *   custom header files;
+ *--------------------------------------------------------------------*/
+
+#include &quot;../tools/types.h&quot;
+
+/*====================================================================*
+ *
+ *--------------------------------------------------------------------*/
+
+#if defined (WIN32)
+#define __func__ __FUNCTION__
+#endif
+
+/*====================================================================*
+ *   define error codes for systems that do not support POSIX codes;
+ *--------------------------------------------------------------------*/
+
+#ifndef ECANCELED
+#define ECANCELED 0
+#endif
+#ifndef ENOTSUP
+#define ENOTSUP EPERM
+#endif
+#ifndef EBADMSG
+#define EBADMSG 0
+#endif
+#ifndef EPROTONOSUPPORT
+#define EPROTONOSUPPORT 124
+#endif
+#ifndef ENODATA
+#define ENODATA 0
+#endif
+#ifndef EOVERFLOW
+#define EOVERFLOW 0
+#endif
+
+/*====================================================================*
+ *   define common error message strings;
+ *--------------------------------------------------------------------*/
+
+#define ERROR_NOTROOT &quot;This program needs root privileges&quot;
+#define ERROR_TOOMANY &quot;Too many command line arguments&quot;
+
+#define CANT_START_TIMER &quot;function %s can't start timer&quot;, __func__
+#define CANT_RESET_TIMER &quot;function %s can't reset timer&quot;, __func__
+
+/*====================================================================*
+ *
+ *--------------------------------------------------------------------*/
+
+#define TRACE error (0, 0, &quot;%s (%d)&quot;, __FILE__, __LINE__);
+
+/*====================================================================*
+ *   declare GNU error() and error_at_line() functions;
+ *--------------------------------------------------------------------*/
+
+#ifdef __GNUC__
+
+__attribute__ ((format (printf, 3, 4)))
+
+#endif
+
+signed error (signed status, errno_t number, char const * format, ...);
+
+#ifdef __GNUC__
+
+__attribute__ ((format (printf, 3, 4)))
+
+#endif
+
+signed debug (signed status, char const * string, char const * format, ...);
+
+signed extra (signed status, errno_t number, int argc, char const * argv []);
+
+/*====================================================================*
+ *   end definitions and declarations;
+ *--------------------------------------------------------------------*/
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='endian.h.html' title=' endian.h '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='ether.h.html' title=' ether.h '>NEXT</a>]
+			</div>
+		</body>
+	</html>

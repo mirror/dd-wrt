@@ -1,0 +1,184 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			evse_cm_slac_param.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='evse_cm_slac_match.c.html' title=' evse_cm_slac_match.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='evse_cm_start_atten_char.c.html' title=' evse_cm_start_atten_char.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *  
+ *   signed evse_cm_slac_param (struct session * session, struct channel * channel, struct message * message);
+ *
+ *   slac.h
+ *  
+ *   EVSE-HLE listens indefinitely for a cm_slac_param request and 
+ *   responds with a cm_slac_param confirm; this function should not
+ *   exit untile a cm_slac_param request so that SLAC sessions will
+ *   properly synchronize;
+ *
+ *   unlike some other EVSE-HLE functions, this one does not check
+ *   the run identifier because this is the first point at which a
+ *   new run identifier is received; it should, however, store the
+ *   run identifier to verify future messages from the PEV;
+ *
+ *   EVSE-HLE should copy the message OSA to the session variable PEV
+ *   MAC address; the PEV MAC address can then be used to respond in
+ *   unicast to the right PEVHLE;
+ *
+ *   EVSE-HLE should copy the run identifier to the session variable 
+ *   for use later in the session; this will be used to distinguish
+ *   one PEV-EVSE session from another;   
+ *
+ *   EVSE-HLE should copy the application type and security type to
+ *   the session variable unless it wants to operate in a mode that
+ *   is different from the PEV;
+ *
+ *   at this point, the EVSE-HLE dictates the number of msounds and
+ *   the msound timeout;
+ *
+ *   EVSE-HLE should set the msound target to the broadcast address;
+ *
+ *   EVSE-HLE should set the number of sounds to 8 and the timeout
+ *   to 10 intervals of 100ms.
+ *
+ *   EVSE-HLE may send zeros for the forwarding station since it is
+ *   not used here;
+ *  
+ *--------------------------------------------------------------------*/
+
+#ifndef EVSE_CM_SLAC_PARAM_SOURCE
+#define EVSE_CM_SLAC_PARAM_SOURCE
+
+#include &lt;stdio.h&gt;
+#include &lt;string.h&gt;
+
+#include &quot;../ether/channel.h&quot;
+#include &quot;../tools/types.h&quot;
+#include &quot;../tools/flags.h&quot;
+#include &quot;../tools/error.h&quot;
+#include &quot;../tools/memory.h&quot;
+#include &quot;../slac/slac.h&quot;
+
+signed evse_cm_slac_param (struct session * session, struct channel * channel, struct message * message) 
+
+{ 
+	extern byte const broadcast [ETHER_ADDR_LEN]; 
+	struct cm_slac_param_request * request = (struct cm_slac_param_request *) (message); 
+	struct cm_slac_param_confirm * confirm = (struct cm_slac_param_confirm *) (message); 
+	while (readmessage (channel, message, HOMEPLUG_MMV, (CM_SLAC_PARAM | MMTYPE_REQ)) &gt; 0) 
+	{ 
+		debug (0, __func__, &quot;&lt;-- CM_SLAC_PARAM.REQ&quot;); 
+		session-&gt;APPLICATION_TYPE = request-&gt;APPLICATION_TYPE; 
+		session-&gt;SECURITY_TYPE = request-&gt;SECURITY_TYPE; 
+		memcpy (session-&gt;PEV_MAC, request-&gt;ethernet.OSA, sizeof (session-&gt;PEV_MAC)); 
+		memcpy (session-&gt;RunID, request-&gt;RunID, sizeof (session-&gt;RunID)); 
+
+#if SLAC_DEBUG
+
+		if (_anyset (session-&gt;flags, SLAC_VERBOSE)) 
+		{ 
+			char string [256]; 
+			debug (0, __func__, &quot;CM_SLAC_PARAM.REQ.APPLICATION_TYPE %d&quot;, request-&gt;APPLICATION_TYPE); 
+			debug (0, __func__, &quot;CM_SLAC_PARAM.REQ.SECURITY_TYPE %d&quot;, request-&gt;SECURITY_TYPE); 
+			debug (0, __func__, &quot;CM_SLAC_PARAM.REQ.RunID %s&quot;, HEXSTRING (string, request-&gt;RunID)); 
+			debug (0, __func__, &quot;CM_SLAC_PARAM.REQ.CipherSuiteSetSize %d&quot;, request-&gt;CipherSuiteSetSize); 
+			debug (0, __func__, &quot;CM_SLAC_PARAM.REQ.CipherSuite [0] %d&quot;, request-&gt;CipherSuite [0]); 
+			debug (0, __func__, &quot;CM_SLAC_PARAM.REQ.CipherSuite [1] %d&quot;, request-&gt;CipherSuite [1]); 
+		} 
+
+#endif
+
+		if (_anyset (session-&gt;flags, SLAC_COMPARE)) 
+		{ 
+			if (LE16TOH (request-&gt;CipherSuite [0]) != (uint16_t) (session-&gt;counter)) 
+			{ 
+				debug (session-&gt;exit, __func__, &quot;session-&gt;counter mismatch! PEV=(%d) EVSE=(%d)&quot;, LE16TOH (request-&gt;CipherSuite [0]), session-&gt;counter); 
+			} 
+		} 
+		debug (0, __func__, &quot;--&gt; CM_SLAC_PARAM.CNF&quot;); 
+		memset (message, 0, sizeof (* message)); 
+		EthernetHeader (&amp; confirm-&gt;ethernet, session-&gt;PEV_MAC, channel-&gt;host, channel-&gt;type); 
+		HomePlugHeader1 (&amp; confirm-&gt;homeplug, HOMEPLUG_MMV, (CM_SLAC_PARAM | MMTYPE_CNF)); 
+		memcpy (confirm-&gt;MSOUND_TARGET, broadcast, sizeof (confirm-&gt;MSOUND_TARGET)); 
+		confirm-&gt;NUM_SOUNDS = session-&gt;NUM_SOUNDS; 
+		confirm-&gt;TIME_OUT = session-&gt;TIME_OUT; 
+		confirm-&gt;RESP_TYPE = session-&gt;RESP_TYPE; 
+		memcpy (confirm-&gt;FORWARDING_STA, session-&gt;FORWARDING_STA, sizeof (confirm-&gt;FORWARDING_STA)); 
+		confirm-&gt;APPLICATION_TYPE = session-&gt;APPLICATION_TYPE; 
+		confirm-&gt;SECURITY_TYPE = session-&gt;SECURITY_TYPE; 
+		memcpy (confirm-&gt;RunID, session-&gt;RunID, sizeof (confirm-&gt;RunID)); 
+		confirm-&gt;CipherSuite = HTOLE16 ((uint16_t) (session-&gt;counter)); 
+		if (sendmessage (channel, message, (ETHER_MIN_LEN - ETHER_CRC_LEN)) &lt;= 0) 
+		{ 
+			return (debug (1, __func__, CHANNEL_CANTSEND)); 
+		} 
+		return (0); 
+	} 
+	return (debug (0, __func__, &quot;&lt;-- CM_SLAC_PARAM.REQ ?&quot;)); 
+} 
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='evse_cm_slac_match.c.html' title=' evse_cm_slac_match.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='evse_cm_start_atten_char.c.html' title=' evse_cm_start_atten_char.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

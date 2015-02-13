@@ -1,0 +1,71 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			plcdevs.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='plcboot.1.html' title=' plcboot.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='plcfwd.1.html' title=' plcfwd.1 '>NEXT</a>]
+			</div>
+<pre>
+plcdevs(1)                                   Qualcomm Atheros Open Powerline Toolkit                                  plcdevs(1)
+
+NAME
+       plcdevs - Qualcomm Atheros Powerline Device Enumerator
+
+SYNOPSIS
+       plcdevs [options]
+
+DESCRIPTION
+       Search  host  Ethernet  interfaces  for local Atheros powerline devices.  This program is useful on host computers having
+       multiple interface cards and powerline device are connected to only one or two of them.
+
+       This program is part of the Qualcomm Atheros Powerline Toolkit.  See the plc man page for an  overview  and  installation
+       instructions.
+
+OPTIONS
+       -?,--help
+              Print program help summary on stdout.  This option takes precedence over other options on the command line.
+
+       -!,--version
+              Print program version information on stdout.  This option takes precedence over other options on the command line.
+              Use this option when sending screen dumps to Intellon Technical Support so that they know exactly which version of
+              the Linux Toolkit you are using.
+
+ARGUMENTS
+       None.
+
+EXAMPLES
+       The  following  example searches host Ethernet interfaces for powerline devices.  We can see that there are three network
+       interfaces present but interface eth3 is the only one having a local powerline device connected.
+
+          # plcdevs
+          eth2 00:0f:EA:4b:98:CA 010.234.095.003
+          eth3 00:0F:EA:4B:98:CB 010.234.094.099 AR7400 INT7400-MAC-Test mac-release 2011/02/09 14:59:43 OCAFAE01494
+          eth4 00:50:04:A5:D8:98 192.168.099.001
+
+SEE ALSO
+       plc(1), ifs(1), plcnets(1)
+
+CREDITS
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                               plcdevs(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='plcboot.1.html' title=' plcboot.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='plcfwd.1.html' title=' plcfwd.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

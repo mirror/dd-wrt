@@ -1,0 +1,87 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			flags.h
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='files.h.html' title=' files.h '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='format.h.html' title=' format.h '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   flags.h - bitmap flagword definitions and declarations;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef FLAGS_HEADER
+#define FLAGS_HEADER
+
+/*====================================================================*
+ *   system header files;
+ *--------------------------------------------------------------------*/
+
+#include &lt;stdint.h&gt;
+
+/*====================================================================*
+ *   define macros for common, but error prone, bitmap operations;
+ *--------------------------------------------------------------------*/
+
+#define _bits(object) (sizeof (object) &lt;&lt; 3)
+#define _getbits(map,pos,cnt) (((map)&gt;&gt;((pos)-(cnt)+1))&amp;~(~(0)&lt;&lt;(cnt)))
+
+#define _bitmask(bits) ~(~(0) &lt;&lt; bits)
+
+#define _setbits(flag,mask) flag |=  (mask)
+#define _clrbits(flag,mask) flag &amp;= ~(mask)
+#define _toggle(flag,mask)  flag = ~(flag) &amp; ~(mask)
+
+#define _anyset(flag,mask) ((flag) &amp; (mask)) != (0)
+#define _anyclr(flag,mask) ((flag) &amp; (mask)) != (mask)
+#define _allset(flag,mask) ((flag) &amp; (mask)) == (mask)
+#define _allclr(flag,mask) ((flag) &amp; (mask)) == (0)
+
+// #define _notset(flag,mask) ((flag) &amp; (mask)) == (0)
+
+#define _anybits(flag,mask) ((flag) &amp; (mask)) != (0)
+#define _allbits(flag,mask) ((flag) &amp; (mask)) == (mask)
+
+#define _clean(flag,mask) ((flag) &amp; ~(mask)) == (0)
+#define _dirty(flag,mask) ((flag) &amp; ~(mask)) != (0)
+
+/*====================================================================*
+ *
+ *--------------------------------------------------------------------*/
+
+void set32bitmap (uint32_t * map, unsigned bit);
+void clr32bitmap (uint32_t * map, unsigned bit);
+
+/*====================================================================*
+ *   end definitions and declarations;
+ *--------------------------------------------------------------------*/
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='files.h.html' title=' files.h '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='format.h.html' title=' format.h '>NEXT</a>]
+			</div>
+		</body>
+	</html>

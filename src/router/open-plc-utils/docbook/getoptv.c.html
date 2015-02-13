@@ -1,0 +1,283 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			getoptv.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='getifname.c.html' title=' getifname.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='getpib.c.html' title=' getpib.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   int getoptv (int argc, char const * argv[], char const * optv[]);
+ *
+ *   getoptv.h
+ *
+ *   this is a posix compliant getopt() function that supports no
+ *   extensions; see the posix website for specification details;
+ *
+ *   &lt;http://www.opengroup.org/onlinepubs/007904975/functions/getopt.html&gt;
+ *
+ *   we implemented this function to ensure that linux and windows
+ *   consoles act the same; microsoft c++ would not compile the
+ *   debian version of getopt and so, after trying to fix things,
+ *   we decided to start fresh; the debian version is too complex;
+ *
+ *   this function conforms to posix standard; it does not support
+ *   gnu style extensions like &quot;--option&quot; for arguments or &quot;ab::c&quot;
+ *   for operands; if you don't know what that means then you won't
+ *   care, either; you should avoid such extentions, anyway;
+ *
+ *   the posix standard says that command options and operands must
+ *   precede other arguments; this version of getopt allows options
+ *   and operands to appear anywhere and makes non-compliant argv[]
+ *   compliant in the process;
+ *
+ *   we define characters instead of coding them so that microsoft
+ *   folks can use '/' instead of '-' and still preserve the posix
+ *   behaviour;
+ *
+ *   we declare optarg as &quot;char const *&quot; so that the target cannot
+ *   be changed by the application; this is not POSIX compliant so
+ *   it will conflict with other getopt variants; getopt.h is often
+ *   included with unistd.h which is a common file;
+ *
+ *   systems.
+ *
+ *   this version calls virtually no functions and should compile
+ *   on any posix system;
+ *
+ *   you may include getoptv.h or declare these variables:
+ *
+ *    extern char const *optarg;
+ *    extern int optopt;
+ *    extern int optind;
+ *    extern int opterr;
+ *
+ *   you may cut and paste this c language code segment to get you
+ *   started; you must insert your own code and case breaks;
+ *
+ *    signed c;
+ *    optind = 1;
+ *    opterr = 1;
+ *
+ *    while ((c = getoptv(argc, argv, * optv)) != -1)
+ *    {
+ *       switch(c)
+ *       {
+ *          case 'a': // optopt is 'a'; optarg is NULL;
+ *          case 'b': // optopt is 'b'; optarg is operand;
+ *          case ':': // optopt is option; optarg is NULL; missing operand;
+ *          case '?': // optopt is option; optarg is NULL; illegal option;
+ *           default: // optopt is option: optarg is NULL; illegal option;
+ *       }
+ *    }
+ *
+ *    after options and operands are processed, optind points to
+ *    the next argv [] string; loop until optind equals argc or
+ *    argv[optind] is NULL; we check both but either will do;
+ *
+ *    while ((optind &lt; argc) &amp;&amp; (argv [optind]))
+ *    {
+ *       // do stuff to argv[optind++].
+ *    }
+ *
+ *   alternately, and even better, the following works just fine:
+ *
+ *    argc -= optind;
+ *    argv += optind;
+ *    while ((argc) &amp;&amp; (* argv))
+ *    {
+ *       // do stuff to * argv.
+ *
+ *    }
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef GETOPTV_SOURCE
+#define GETOPTV_SOURCE
+
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+
+#include &quot;../tools/getoptv.h&quot;
+#include &quot;../tools/putoptv.h&quot;
+#include &quot;../tools/version.h&quot;
+#include &quot;../tools/error.h&quot;
+
+char const * program_name = &quot;program&quot;;
+char * optarg = (char *) (0);
+signed optopt = (char) (0);
+signed optind = 1;
+signed opterr = 1;
+signed optmin = 0;
+signed getoptv (int argc, char const * argv [], char const * optv [])
+
+{
+	static char const * string;
+	static char const * option;
+	static signed count;
+	signed index;
+	if ((optind == 0) || (optind == 1))
+	{
+		for (program_name = string = * argv; * string; string++)
+		{
+			if ((* string == '/') || (* string == '\\'))
+			{
+				program_name = string + 1;
+			}
+		}
+		string = (char *) (0);
+		if (argc == optmin)
+		{
+			putoptv (optv);
+			exit (0);
+		}
+		count = optind = 1;
+	}
+	while ((count &lt; argc) || (string))
+	{
+		if (string)
+		{
+			if (*string)
+			{
+				optarg = (char *) (0);
+				optopt = *string++;
+				for (option = * optv; * option; option++)
+				{
+					if (optopt == GETOPTV_C_OPERAND)
+					{
+						continue;
+					}
+					if (*option == GETOPTV_C_OPERAND)
+					{
+						continue;
+					}
+					if (*option == optopt)
+					{
+						option++;
+						if (*option != GETOPTV_C_OPERAND)
+						{
+							return (optopt);
+						}
+						if (*string)
+						{
+							optarg = (char *) (string);
+							string = (char *) (0);
+							return (optopt);
+						}
+						if (count &lt; argc)
+						{
+							optarg = (char *)(argv [count]);
+							for (index = count++; index &gt; optind; index--)
+							{
+								argv [index] = argv [index - 1];
+							}
+							argv [optind++] = optarg;
+							return (optopt);
+						}
+						if (opterr)
+						{
+							error (1, 0, &quot;option '%c' needs an operand.&quot;, optopt);
+						}
+						if (** optv == GETOPTV_C_OPERAND)
+						{
+							return (GETOPTV_C_OPERAND);
+						}
+						return (GETOPTV_C_ILLEGAL);
+					}
+				}
+				if (opterr)
+				{
+					error (1, 0, &quot;option '%c' has no meaning.&quot;, optopt);
+				}
+				return (GETOPTV_C_ILLEGAL);
+			}
+			else
+			{
+				string = (char *) (0);
+			}
+		}
+		if (count &lt; argc)
+		{
+			string = argv [count];
+			if (*string == GETOPTV_C_OPTION)
+			{
+				for (index = count; index &gt; optind; index--)
+				{
+					argv [index] = argv [index - 1];
+				}
+				argv [optind++] = string++;
+				if (*string == GETOPTV_C_VERSION)
+				{
+					version ();
+					exit (0);
+				}
+				if (*string == GETOPTV_C_SUMMARY)
+				{
+					putoptv (optv);
+					exit (0);
+				}
+				if (*string == GETOPTV_C_OPTION)
+				{
+					string++;
+					if (!strcmp (string, &quot;&quot;))
+					{
+						optarg = (char *) (0);
+						optopt = (char) (0);
+						return (-1);
+					}
+					if (!strcmp (string, &quot;version&quot;))
+					{
+						version ();
+						exit (0);
+					}
+					if (!strcmp (string, &quot;help&quot;))
+					{
+						putoptv (optv);
+						exit (0);
+					}
+					optarg = (char *)(string);
+					optopt = GETOPTV_C_OPTION;
+					return (-1);
+				}
+			}
+			else
+			{
+				string = (char *) (0);
+			}
+			count++;
+		}
+	}
+	optarg = (char *) (0);
+	optopt = (char) (0);
+	return (-1);
+}
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='getifname.c.html' title=' getifname.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='getpib.c.html' title=' getpib.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

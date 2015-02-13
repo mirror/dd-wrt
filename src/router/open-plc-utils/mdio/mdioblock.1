@@ -1,0 +1,155 @@
+.TH mdioblock 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+mdioblock - Qualcomm Atheros Clause 22 MDIO Instruction Block Assembler
+
+.SH SYNOPSIS
+.BR mdioblock
+.RI [ options ]
+.IR file
+.RI [ file ]
+.RI [ ... ]
+.RI [> stdout ]
+
+.PP
+.BR mdioblock
+.RI [ options ]
+.RI [< stdin ] 
+.RI [> stdout ]
+
+.SH DESCRIPTION
+Assemble an Atheros MDIO instruction block from hexadecimal register instructions.
+MDIO instruction blocks are written to Atheros powerline devices as modules using the \fBVS_MOD_OP\fR message type.
+Alternately, program \fBint6kmod\fR can be used.
+
+.PP 
+Atheros MDIO modules consists of a 16-bit header followed by one or more MDIO communication frames with register masks and padded to the nearest multiple of 32-bits for download purposes.
+MDIO instructions are specified here using \fB802.3 Clause 22\fR (or \fIphy\fR, \fIreg\fR, \fIdata\fR and \fImask\fR) format.
+See program \fBmdioblock2\fR for a similar program that accepts instructions in \fB802.3ae Clause 45\fR (or \fIaddress\fR, \fIdata\fR and \fImask\fR) format.
+
+.PP
+This program is part of the Qualcomm Atheros Powerline Toolkit.
+See the \fBAMP\fR man page for an overview and installation instructions.
+
+.SH OPTIONS
+
+.TP
+.RB - q
+Quiet mode.
+Suppresses error messages caused by instruction syntax errors.
+
+.TP
+.RB - v
+Verbose mode.
+Prints instructions on stderr as they are processed.
+
+.TP
+.RB - ? ,-- help   
+Displays program help information on stderr.
+This option takes precedence over all other options on the command line except version information.
+
+.TP
+.RB - ! ,-- version
+Displays program version information on stderr.
+This option takes precedence over all other options on the command line except help information.
+Use this option when sending screen dumps to Atheros technical staff.
+
+.SH ARGUMENTS
+
+.TP
+.IR file
+A text files contining one or more generic MDIO register intructions consisting of a \fBphy\fR, \fBreg\fR, \fBdata\fR and \fBmask\fR fields.
+Fields are seperated by whitespace and instructions are terminated with semicolon.
+Multiple instructions may appear on a single line or a single instruction can span multiple lines.
+Script-style comments are permitted between instructions but not between fields.
+
+.SH REFERENCES
+See the Qualcomm Atheros \fIAR7x00 Firmware Technical Reference Manual\fR section on the \fIModule Operation\fR message type for more information on MDIO Block format.
+
+.SH DISCLAIMER
+Atheros HomePlug AV Vendor Specific Management Message structure and content is proprietary to Qualcomm Atheros, Ocala FL USA.
+Consequently, public information may not be available.
+Qualcomm Atheros reserves the right to modify message structure and content in future firmware releases without any obligation to notify or compensate users of this program.
+
+.SH EXAMPLES
+The following command reads register instructions from file \fBmdio.txt\fR and writes them as an MDIO program block to file \fBmdio.bin\fR.
+In this example, the program acts as a filter.
+
+.PP
+   # mdioblock < mdio.txt > mdio.bin
+
+.PP
+The following command reads register instructions from files \fBphysetup.dat\fR, \fBflowctl.dat\fR and \fBmisc.ins\fR and write them all as one MDIO block to file \fBmdio.bin\fR.
+The previous contents of file \fBmdio.bin\fR is overwritten.
+
+.PP
+   # mdioblock physetup.dat flowctl.dat misc.ins > mdio.bin
+
+.PP
+An example register instruction file might look like this.
+The first two lines consist of one instruction each.
+An instruction has \fIphy\fR, \fIreg\fR, \fIdata\fR and \fImask\fR fields.
+Instruction fields are separated by whitespace.
+Instructions are separated by a semicolon.
+Multiple instruction may appear on one line and one instruction can span multiple lines.
+Script-style comments are permitted between instructions but not between instruction fields.
+
+.PP
+   18 00 0000 FFFF;
+   10 16 003F FFFF;
+   
+   # multiple instructions on one line;
+   
+   10 17 7E3F FFFF; 18 00 0000 FFFF;
+   
+   # one instruction on multiple lines;
+   
+   10 
+   
+   02 
+   
+   0700 
+   
+   FFFF;
+   
+   10 03 0000 FFFF;
+   18 00 0000 FFFF;
+   14 00 007D FFFF;
+   14 01 0000 FFFF; 
+
+.PP
+A 16-bit hexdump of the MDIO block will look like this on little-endian hosts.
+The block consists of a 16-bit header followed by a variable number of 16-bit triplets.
+The header indicates the number of triplets that follow.
+Each triplet specifies a 16-bit operation, a 16-bit data value and a 16-bit data mask.
+The application of these fields is beyond the scope of this man page.
+Consult the IEEE standards for more information.
+
+.PP
+   # hexdump mdio.bin
+   0000000 0241 8185 0000 ffff ad05 003f ffff af05
+   0000010 7e3f ffff 8185 0000 ffff 8505 0700 ffff
+   0000020 8705 0000 ffff 8185 0000 ffff 8145 007d
+   0000030 ffff 8345 0000 ffff                    
+
+.PP
+An 8-bit dump of the MDIO block will look like this on all hosts since the MDIO block is always distributed in little-endian format.
+.pp
+   # hexdmp mdio.bin
+   00000000  41 02 85 81 00 00 FF FF 05 AD 3F 00 FF FF 05 AF  A.........?.....
+   00000010  3F 7E FF FF 85 81 00 00 FF FF 05 85 00 07 FF FF  ?~..............
+   00000020  05 87 00 00 FF FF 85 81 00 00 FF FF 45 81 7D 00  ............E.}.
+   00000030  FF FF 45 83 00 00 FF FF                          ..E.....
+
+.SH SEE ALSO
+.BR amp ( 1 ),
+.BR int6kmod ( 1 ),
+.BR int6kmdio ( 1 ),
+.BR int6kmdio2 ( 1 ),
+.BR mdioblock2 ( 1 ),
+.BR mdiodump ( 1 ),
+.BR mdiogen ( 1 )
+
+.SH CREDITS
+Charles Maier <cmaier@qca.qualcomm.com>
+

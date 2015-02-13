@@ -1,0 +1,108 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			CMEncrypt.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='chkpib2.1.html' title=' chkpib2.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='config2cfg.1.html' title=' config2cfg.1 '>NEXT</a>]
+			</div>
+<pre>
+CMEncrypt(1)                                 Qualcomm Atheros Open Powerline Toolkit                                CMEncrypt(1)
+
+NAME
+       CMEncrypt - Send Encrypted Payload
+
+SYNOPSIS
+       CMEncrypt [options] [device] [device] [...]
+
+DESCRIPTION
+       Transmit  a  file  over  powerline  using  CM_ENCRYPTED_PAYLOAD messages.  This program tests and demonstrates proper (or
+       improper) message routing but does not support encrypted transmission.  All payloads are sent unencrypted at this time.
+
+OPTIONS
+       -A status
+              The AVLN Status.  This indicates the current association status and capabilities of the sending station.   Permit‐
+              ted  values  are  0  through  255  but only value 0 through 5 and 8 are recognized by the firmware.  Values may be
+              entered in decimal, hexadecimal or binary format.  Hexadecimal value are prefixed with &quot;0x&quot; or &quot;0X&quot;.  Binary  val‐
+              ues are prefixed with &quot;0b&quot; or &quot;0B&quot;.  The default is 0.
+
+       -f file
+              The  name  of the payload file.  File content may be text or binary and forms the payload of one or more messages.
+              Payloads are transmitted unencrypted when PID is 4 and PEKS is 15 which is default.
+
+       -K PEKS
+              The Payload Encryption Key Select.  This value indicates the key used to encrypt the  payload.   Permitted  values
+              are 0 through 15.  Values may be entered in decimal, hexadecimal or binary format.  Hexadecimal value are prefixed
+              with &quot;0x&quot; or &quot;0X&quot;.  Binary values are prefixed with &quot;0b&quot; or &quot;0B&quot;..  The default is 15 for &quot;No Encryption&quot;.
+
+       -P PID The Protocol Identifier.  This value detemines how the payload is interpreted  by  powerline  devices.   Permitted
+              values are 0 through 4.  The default is 4 for &quot;HLE Protocol&quot;.
+
+       -v     Print incoming and outgoing Ethernet frames in hex dump format on stdout.
+
+       -?,--help
+              Print program help summary on stdout.  This option takes precedence over other options on the command line.
+
+       -?,--version
+              Print program version information on stdout.  This option takes precedence over other options on the command line.
+              Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version  of
+              the Linux Toolkit you are using.
+
+ARGUMENTS
+       device The  Media  Access  Control  (MAC)  address of a remote host, not a powerline device.  Addresses are 6 hexadecimal
+              octets optionally separated  by  colon.   For  example,  the  addresses  &quot;00b052000001&quot;,  &quot;00:b0:52:00:00:01&quot;  and
+              &quot;00b052:000001&quot;  are  all  valid  and  equivalent.   For  convenience,  the  symbolic  address &quot;local&quot; resolves to
+              &quot;00:b0:52:00:00:01&quot; and the symbolic addresses &quot;all&quot; and &quot;broadcast&quot; both resolve to &quot;ff:ff:ff:ff:ff:ff&quot;.
+
+INTERNALS
+       This program lets the user specify some CM_ENCRYPTED_PAYLOAD fields but not others.  The following are  fields  that  the
+       user cannot specify.  The program automatically computes these values.
+
+       PRN    The Protocol Run Number.  This is a random number used to distinguish between runs having the same protocol.  This
+              program uses the system time variable.
+
+       UUID   The Universally Unique Identifier.  This program uses the left-most 16 bytes of the SHA256 digest for the payload.
+
+REFERENCES
+       Consult the HomePlug AV Specification or Atheros Firmware Technical Reference Manual for more information.
+
+EXAMPLES
+       The  following  example transmits file myfile.txt to host 00:85:73:00:94:01 in unecrypted format because that is the pro‐
+       gram default.  The remote address is required and refers to the ultimate recipient, not the local device.
+
+          # CMEncrypt -f myfile.txt 00:85:73:00:94:01 The next example  does  the  same  but  specifies  the  program  defaults.
+       Observe that operands can be expressed in decimal, binary or hexadecimal format.
+
+          # CMEncrypt -f myfile.txt -A 0 -P 0b0100 -K 0x0F 00:85:73:00:94:01
+
+DISCLAIMER
+       Atheros HomePlug AV Vendor Specific Management Message structure and content is proprietary to Qualcomm Atheros, Ocala FL
+       USA.  Consequently, public information is not available.  Qualcomm Atheros reserves the right to modify message structure
+       or content in future firmware releases without any obligation to notify or compensate users of this program.
+
+SEE ALSO
+       None.
+
+CREDITS
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                             CMEncrypt(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='chkpib2.1.html' title=' chkpib2.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='config2cfg.1.html' title=' config2cfg.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

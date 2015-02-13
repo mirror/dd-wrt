@@ -1,0 +1,39 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<xs:schema xmlns:xs='http://www.w3.org/2001/XMLSchema' elementFormDefault='qualified'>
+	<xs:element name='pib'>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element maxOccurs='unbounded' ref='object'/>
+				</xs:sequence>
+			</xs:complexType>
+		</xs:element>
+	<xs:element name='object'>
+		<xs:complexType>
+			<xs:attribute name='name' use='required' type='xs:NCName'/>
+			<xs:sequence>
+				<xs:sequence>
+					<xs:element ref='offset'/>
+					<xs:element ref='length'/>
+					</xs:sequence>
+				<xs:choice>
+					<xs:element ref='array'/>
+					<xs:element ref='dataString'/>
+					<xs:element ref='dataByte'/>
+					</xs:choice>
+				</xs:sequence>
+			</xs:complexType>
+		</xs:element>
+	<xs:element name='length' type='xs:positiveInteger'/>
+	<xs:element name='offset' type='xs:hexBinary'/>
+	<xs:element name='array'>
+		<xs:complexType>
+			<xs:choice maxOccurs='unbounded'>
+				<xs:element ref='dataByte'/>
+				<xs:element ref='dataHex'/>
+				</xs:choice>
+			</xs:complexType>
+		</xs:element>
+	<xs:element name='dataString' type='xs:string'/>
+	<xs:element name='dataHex' type='xs:hexBinary'/>
+	<xs:element name='dataByte' type='xs:unsignedByte'/>
+	</xs:schema>

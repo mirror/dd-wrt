@@ -1,0 +1,216 @@
+.TH plcfwd 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+plcfwd - Qualcomm Atheros Forward Configuration
+
+.SH SYNOPSIS
+.BR plcfwd
+.RI [ options ]
+.RI [ device ]
+.RI [ device ]
+[...]
+
+.SH DESCRIPTION
+Set VLAN and MAC address lookup for tx path traffic.
+Setup requests are processed by master PLC device attached to the local device.
+Upon receiving the request MME, the PLC device will send a confirm MME back with the results to the originating host.
+
+.PP
+This program is part of the Qualcomm Atheros Powerline Toolkit.
+See the \fBplc\fR man page for an overview and installation instructions.
+
+.SH OPTIONS
+
+.TP
+.RB - A
+Add VLANIDs of multiple slaves to memory.
+
+.TP
+.RB - C
+Commit configruation to flash memory.
+
+.TP
+-\fBD\fI VLANID\fR
+Set the default VLAN ID expressed as a 32-bit decimal value.
+
+.TP
+.RB - e
+Redirects stderr messages to stdout.
+By convention status and error messages are printed on stderr while primary program output is printed on stdout.
+This option prints all output on stdout in cases where this is desired.
+
+.TP
+-\fBf\fI filename\fR
+Read additional device addresses and VLAN IDs from the named file.
+This option may appear multiple times and may appear in addition option \fb-z\fR.
+Each occurance of this option adds one or more entries to the VLANID table used by options \fB-A\fR or \fB-R\fR.
+The format used on each line of this file is identical to that used by option \fB-z\fR.
+
+.TP
+-\fBi \fIinterface\fR
+Select the host Ethernet interface.
+All requests are sent via this host interface and only reponses received via this host interface are recognized.
+The default interface is \fBeth1\fR because most people use \fBeth0\fR as their principle network connection; however, if environment string "PLC" is defined then it takes precedence over the default interface.
+This option then takes precedence over either default.
+
+.TP
+-\fBl\fI length\fR
+The read data length in bytes.
+This option is ignored during other operations.
+The length is expressed in decimal.
+The default is \fB0\fR bytes.
+
+.TP
+-\fBM\fI state\fR
+Enable or disable VLANID forwarding on the master.
+Valid states are \fB0\fR to disable and \fB1\fR but values up to \fB255\fR are permitted.
+Keywords "\fBon\fR" and "\fBenable\fR" are the same as \fB1\fR.
+Keywords "\fBoff\fR" and "\fBdisable\fR" are the same as \fB0\fR.
+
+.TP
+-\fBo\fI offset\fR
+The read data offset in bytes.
+This option is ignored during other operations.
+The offset is expressed in hexadecimal.
+The default is \fB0\fR bytes;
+
+.TP
+.RB - q
+Suppresses status messages on stderr.
+
+.TP
+.RB - R
+Remove VLANIDs of multiple slaves from memory.
+
+.TP
+-\fBS\fI state\fR
+Enable or disable VLANID forwarding on all slaves.
+Valid states are \fB0\fR to disable and \fB1\fR but values up to \fB255\fR are permitted.
+Keywords "\fBon\fR" and "\fBenable\fR" are the same as \fB1\fR.
+Keywords "\fBoff\fR" and "\fBdisable\fR" are the same as \fB0\fR.
+
+.TP
+-\fBt\fI timeout\fR
+
+.TP
+.RB - v
+Prints additional information on stdout.
+In particular, this option dumps outgoing Ethernet packets on stdout.
+
+.TP
+-\fBz\fI address\fR,\fIid\fR[,\fIid\fR[,...]]
+A device address and associated VLAN IDs separated by commas.
+This option may appear multiple times and may appear in addition option \fb-f\fR.
+Each occurance of this option adds one entry to the VLANID table used by options \fB-A\fR or \fB-R\fR.
+The string format used here is identical to that used on each line of input files named by option \fB-f\fR.
+
+.TP
+.RB - ? ,-- help   
+Displays program help information on stderr.
+This option takes precedence over all other options on the command line except version information.
+
+.TP
+.RB - ! ,-- version
+Displays program version information on stderr.
+This option takes precedence over all other options on the command line except help information.
+Use this option when sending screen dumps to Atheros technical staff.
+
+.SH ARGUMENTS
+
+.TP
+.IR device
+The MAC address of some powerline device.
+More than one address may be specified.
+If more than one address is specified then operations are performed on each device in turn.
+The default address is \fBlocal\fR.
+See \fBDEVICES\fR for information about symbolic device addresses.
+
+.SH DEVICES
+Powerline devices use Ethernet Media Access Control (MAC) addresses.
+A MAC address is a 48-bit value entered as 12 hexadecimal digits in upper, lower or mixed character case.
+Octets may be separated with colons for clarity.
+For example, "00b052000001", "00:b0:52:00:00:01" and "00b052:000001" are valid and equivalent.
+
+.PP
+The following MAC addresses are special and may be entered by name instead of number.
+
+.TP
+.BR all
+Same as "broadcast".
+
+.TP
+.BR broadcast
+A synonym for the Ethernet broadcast address, \fBFF:FF:FF:FF:FF:FF\fR.
+All devices, whether local, remote or foreign recognize messages sent to this address.
+A remote device is any device at the far end of a powerline connection.
+A foreign device is any device not manufactured by Atheros.
+
+.TP
+.BR local
+A synonym for the Qualcomm Atheros vendor specific Local Management Address (LMA), \fB00:B0:52:00:00:01\fR.
+All local Atheros devices recognize this address but remote and foreign devices do not.
+A remote device is any device at the far end of a powerline connection.
+A foreign device is any device not manufactured by Atheros.
+
+.SH REFERENCES
+See the Qualcomm Atheros HomePlug AV Firmware Technical Reference Manual for technical information.
+
+.SH DISCLAIMER
+Atheros HomePlug AV Vendor Specific Management Message structure and content is proprietary to Qualcomm Atheros, Ocala FL USA.
+Consequently, public information may not be available.
+Qualcomm Atheros reserves the right to modify message structure and content in future firmware releases without any obligation to notify or compensate users of this program.
+
+.SH EXAMPLES
+The following example reads \fB100\fR bytes starting at offset \fB0x24\fR.
+The operation is \fBread\fR because no other operation is specifed using \fB-A\fR, \fB-C\fR, \fB-R\fB, \fB-M\fR or \fB-S\fR.
+The offset is always in hexadecimal and length is always in decimal.
+
+.PP
+   # plcfwd -o 24 -l 100
+
+.PP
+The following example adds three VLAN IDs to the VLANID table on  device \fB00:B0:52:CA:FE:08\fR.
+Option \fB-z\fR creates the VLANID table and option \fB-A\fR adds table content to the device.
+This program supports up to 10 VLAN IDs per entry but PLC firmware supports 8 maximum.
+
+.PP
+   # plcfwd -A -z 00:B0:52:CA:FE:08,2300,2313,2415
+
+.PP
+The following example does the same thing but adds three table entries.
+The first entry is enclosed in quotes because spaces appear in the entry.
+The third entry has more than 10 VLAN IDs.
+The program will discard the last ID without indication but PLC firmware should report an error because there are more than 8 IDs reported in the request message.
+
+.PP
+   # plcfwd -A -z "00:B0:52:CA:FE:08, 2300, 2313 , 2415" -z 00B052BABE01,0100 -z 00B052888888,100,200,300,400,500,600,700,800,900,1000,1100
+
+.PP
+To avoid typing the above command line many times, you can save the entries in file \fBplcfwd.txt\fR, like so ...
+
+.PP
+   00:B0:52:CA:FE:08, 2300, 2313 , 2415
+   00B052BABE01,0100 
+   00B052888888,100,200,300,400,500,600,700,800,900,1000,1100
+
+.PP
+The next example adds these entries to the VLANID table by naming the file that contains the entries using option \fB-f\fR.
+
+.PP
+   # plcfwd -A -f plcfwd.txt
+
+.PP
+The next example removes the same entries to the VLANID table.
+
+.PP
+   # plcfwd -R -f plcfwd.txt
+
+.PP
+Of course, you can combine options \fB-z\fR and \fB-f\fR to cumulative effect.
+
+.SH SEE ALSO
+.BR PLC ( 1 ),
+
+.SH CREDITS
+ Charles Maier <cmaier@qca.qualcomm.com>
+

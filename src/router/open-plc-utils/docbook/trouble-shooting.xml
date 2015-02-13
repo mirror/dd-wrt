@@ -1,0 +1,66 @@
+	<section id='procedure-troubleshoot-problems'>
+		<title>
+			Trouble-shooting Problems 
+			</title>
+		<para>
+			The following steps may help determine why two devices cannot communicate via ethernet over the powerline.  They assume that you have successfully installed the Powerline Toolkit but are having trouble forming a powerline network.
+			</para>
+		<orderedlist>
+			<listitem id="trouble-shoot-1">
+				<para>
+					On <application>Linux</application>, run program <application>ifconfig</application> to determine available interface names as described <link linkend='procedure-select-interface-linux'>earlier</link>. The default interface name is <constant>eth1</constant> on Linux. You must use interface names, not numbers, on the Linux command line.
+					</para>
+				<para>
+					On <application>Windows</application>, run program <ulink url='pcapdevs.7.html'>pcapdevs</ulink> to determine available interface numbers as described <link linkend='procedure-select-interface-windows'>earlier</link>. The default interface number is <constant>2</constant> on Windows. You must use interface numbers,  not names,  on Windows command lines, even under Cygwin.
+					</para>
+				<para>
+					In either case, <application>Linux</application> or <application>Windows</application>, if a powerline device is connected to any interface other than the default interface then you must specify the name or number on the command line each time you run <ulink url='int6k.7.html'>int6k</ulink>. In the following examples, we will use device numbers <constant>3</constant> and <constant>4</constant> to indicate two different interfaces on the same host.
+					</para>
+				</listitem>
+			<listitem id="trouble-shoot-2">
+				<para>
+					Make sure both devices respond to <userinput>int6k -ri3</userinput> and <userinput>int6k -ri4</userinput> as described <link linkend='script-example-device-identification'>earlier</link>. They should each display the software revision information. If you get no response then check your connections and network configuration. If you see <quote>Bootloader</quote> then the connection is good but the firmware is not running. If the firmware versions are different then make them the same.
+					</para>
+				<para>
+					You must have running firmware to continue and the firmware revisions should be the same.
+					</para>
+				</listitem>
+			<listitem id="trouble-shoot-3">
+				<para>
+					Make sure both devices respond to <userinput>int6k -Ii3</userinput> then <userinput>int6k -Ii4</userinput> as described <link linkend='script-example-device-configuration'>earlier</link>. They should display about 10 lines of information showing their <acronym>MAC</acronym>, <acronym>DAK</acronym> and <acronym>NMK</acronym>.
+					</para>
+				<para>
+					If the <acronym>MAC</acronym> is <constant>00:B0:52:00:00:01</constant> then either the default Atheros <acronym>PIB</acronym> was stored in <acronym>NVRAM</acronym> or you downloaded and flashed the generic Atheros <acronym>PIB</acronym> without changing the <acronym>MAC</acronym> address beforehand. 
+					</para> 
+				<para>
+					If the <acronym>MAC</acronym> is <constant>00:B0:52:00:00:03</constant> then either no <acronym>PIB</acronym> was stored in <acronym>NVRAM</acronym> or you downloaded and attempted to flashed an invalid <acronym>PIB</acronym>. The firmware will disable powerline communications in this case.
+					</para>
+				</listitem>
+			<listitem id="trouble-shoot-4">
+				<para>
+					If the devices have different <acronym>NMK</acronym>s they will not form a network. 
+					</para>
+				<para>
+					One way to form a network is to manually set the <acronym>NMK</acronym> on each device to a known value with <userinput>int6k -Mi3</userinput> then <userinput>int6k -Mi4</userinput>. Each device will reset afterwards and may reset again when the other device is changed. Repeat <link linkend='trouble-shoot-3'>Step 3</link> and confirm that both devices have the same <acronym>NMK</acronym> and that <quote>(HomePlugAV)</quote> appears next to the <acronym>NMK</acronym>.
+					</para> 
+				<para>
+					Another way to form a network is to physically press the push-button on each device for 2 to 3 seconds or simulate a push-button press on each device with <userinput>int6k -B1 -i3</userinput> then <userinput>int6k -B1 -i4</userinput>. The devices should reset several times and then form a network.
+					</para>
+				</listitem>
+			<listitem id="trouble-shoot-5">
+				<para>
+					Make sure each device knows the other one is present on the network with <userinput>int6k -mi3</userinput> then <userinput>int6k -Mi4</userinput>. Each device should show that a network exists and identify the other device as a station on that network. It may take up to 120 seconds for one device to find another and up to 5 minutes to recognise that the other device has left the network.
+					</para>
+				</listitem>
+			<listitem id="trouble-shoot-6">
+				<para>
+					<link linkend='trouble-shoot-5'>Step 5</link> should also show the <acronym>TX</acronym> and <acronym>RX</acronym> <acronym>PHY</acronym> rates for each device. <application>Ping</application> each host Interface from the other several times to generate traffic. The <acronym>PHY</acronym> Rates should then be non-zero. We use <ulink url='efsu.7.html'>efsu</ulink> to generate <link linkend='scripting-traffic'>traffic</link> inside our own scripts. You may elect to use another method.
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					Power down both devices then power them up. Wait about 20 seconds and confirm that you can <application>ping</application> in either direction.
+					</para>
+				</listitem>
+			</orderedlist>
+		</section>

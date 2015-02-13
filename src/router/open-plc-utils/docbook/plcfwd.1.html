@@ -1,0 +1,176 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			plcfwd.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='plcdevs.1.html' title=' plcdevs.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='plcget.1.html' title=' plcget.1 '>NEXT</a>]
+			</div>
+<pre>
+plcfwd(1)                                    Qualcomm Atheros Open Powerline Toolkit                                   plcfwd(1)
+
+NAME
+       plcfwd - Qualcomm Atheros Forward Configuration
+
+SYNOPSIS
+       plcfwd [options] [device] [device] [...]
+
+DESCRIPTION
+       Set  VLAN  and MAC address lookup for tx path traffic.  Setup requests are processed by master PLC device attached to the
+       local device.  Upon receiving the request MME, the PLC device will send a confirm MME back with the results to the origi‐
+       nating host.
+
+       This  program  is  part of the Qualcomm Atheros Powerline Toolkit.  See the plc man page for an overview and installation
+       instructions.
+
+OPTIONS
+       -A     Add VLANIDs of multiple slaves to memory.
+
+       -C     Commit configruation to flash memory.
+
+       -D VLANID
+              Set the default VLAN ID expressed as a 32-bit decimal value.
+
+       -e     Redirects stderr messages to stdout.  By convention status and error messages are printed on stderr while  primary
+              program output is printed on stdout.  This option prints all output on stdout in cases where this is desired.
+
+       -f filename
+              Read  additional device addresses and VLAN IDs from the named file.  This option may appear multiple times and may
+              appear in addition option -z.  Each occurance of this option adds one or more entries to the VLANID table used  by
+              options -A or -R.  The format used on each line of this file is identical to that used by option -z.
+
+       -i interface
+              Select  the host Ethernet interface.  All requests are sent via this host interface and only reponses received via
+              this host interface are recognized.  The default interface is eth1 because most people use eth0 as their principle
+              network  connection;  however,  if  environment  string &quot;PLC&quot; is defined then it takes precedence over the default
+              interface.  This option then takes precedence over either default.
+
+       -l length
+              The read data length in bytes.  This option is ignored during other operations.  The length is expressed in  deci‐
+              mal.  The default is 0 bytes.
+
+       -M state
+              Enable  or  disable VLANID forwarding on the master.  Valid states are 0 to disable and 1 but values up to 255 are
+              permitted.  Keywords &quot;on&quot; and &quot;enable&quot; are the same as 1.  Keywords &quot;off&quot; and &quot;disable&quot; are the same as 0.
+
+       -o offset
+              The read data offset in bytes.  This option is ignored during other operations.  The offset is expressed  in  hex‐
+              adecimal.  The default is 0 bytes;
+
+       -q     Suppresses status messages on stderr.
+
+       -R     Remove VLANIDs of multiple slaves from memory.
+
+       -S state
+              Enable  or  disable VLANID forwarding on all slaves.  Valid states are 0 to disable and 1 but values up to 255 are
+              permitted.  Keywords &quot;on&quot; and &quot;enable&quot; are the same as 1.  Keywords &quot;off&quot; and &quot;disable&quot; are the same as 0.
+
+       -t timeout
+
+       -v     Prints additional information on stdout.  In particular, this option dumps outgoing Ethernet packets on stdout.
+
+       -z address,id[,id[,...]]
+              A device address and associated VLAN IDs separated by commas.  This option  may  appear  multiple  times  and  may
+              appear in addition option -f.  Each occurance of this option adds one entry to the VLANID table used by options -A
+              or -R.  The string format used here is identical to that used on each line of input files named by option -f.
+
+       -?,--help
+              Displays program help information on stderr.  This option takes precedence over all other options on  the  command
+              line except version information.
+
+       -!,--version
+              Displays  program  version information on stderr.  This option takes precedence over all other options on the com‐
+              mand line except help information.  Use this option when sending screen dumps to Atheros technical staff.
+
+ARGUMENTS
+       device The MAC address of some powerline device.  More than one address may be specified.  If more than  one  address  is
+              specified  then  operations  are performed on each device in turn.  The default address is local.  See DEVICES for
+              information about symbolic device addresses.
+
+DEVICES
+       Powerline devices use Ethernet Media Access Control (MAC) addresses.  A MAC address is a 48-bit value entered as 12  hex‐
+       adecimal  digits in upper, lower or mixed character case.  Octets may be separated with colons for clarity.  For example,
+       &quot;00b052000001&quot;, &quot;00:b0:52:00:00:01&quot; and &quot;00b052:000001&quot; are valid and equivalent.
+
+       The following MAC addresses are special and may be entered by name instead of number.
+
+       all    Same as &quot;broadcast&quot;.
+
+       broadcast
+              A synonym for the Ethernet broadcast address, FF:FF:FF:FF:FF:FF.  All devices, whether local,  remote  or  foreign
+              recognize  messages sent to this address.  A remote device is any device at the far end of a powerline connection.
+              A foreign device is any device not manufactured by Atheros.
+
+       local  A synonym for the Qualcomm Atheros vendor specific Local Management Address (LMA), 00:B0:52:00:00:01.   All  local
+              Atheros  devices  recognize  this address but remote and foreign devices do not.  A remote device is any device at
+              the far end of a powerline connection.  A foreign device is any device not manufactured by Atheros.
+
+REFERENCES
+       See the Qualcomm Atheros HomePlug AV Firmware Technical Reference Manual for technical information.
+
+DISCLAIMER
+       Atheros HomePlug AV Vendor Specific Management Message structure and content is proprietary to Qualcomm Atheros, Ocala FL
+       USA.   Consequently,  public  information  may  not  be available.  Qualcomm Atheros reserves the right to modify message
+       structure and content in future firmware releases without any obligation to notify or compensate users of this program.
+
+EXAMPLES
+       The following example reads 100 bytes starting at offset 0x24.  The operation is  read  because  no  other  operation  is
+       specifed using -A, -C, -R, -M or -S.  The offset is always in hexadecimal and length is always in decimal.
+
+          # plcfwd -o 24 -l 100
+
+       The following example adds three VLAN IDs to the VLANID table on  device 00:B0:52:CA:FE:08.  Option -z creates the VLANID
+       table and option -A adds table content to the device.  This program supports up to 10 VLAN IDs per entry but PLC firmware
+       supports 8 maximum.
+
+          # plcfwd -A -z 00:B0:52:CA:FE:08,2300,2313,2415
+
+       The  following  example  does the same thing but adds three table entries.  The first entry is enclosed in quotes because
+       spaces appear in the entry.  The third entry has more than 10 VLAN IDs.  The program will discard  the  last  ID  without
+       indication but PLC firmware should report an error because there are more than 8 IDs reported in the request message.
+
+          #     plcfwd     -A     -z     &quot;00:B0:52:CA:FE:08,     2300,     2313     ,     2415&quot;    -z    00B052BABE01,0100    -z
+       00B052888888,100,200,300,400,500,600,700,800,900,1000,1100
+
+       To avoid typing the above command line many times, you can save the entries in file plcfwd.txt, like so ...
+
+          00:B0:52:CA:FE:08, 2300, 2313 , 2415
+          00B052BABE01,0100
+          00B052888888,100,200,300,400,500,600,700,800,900,1000,1100
+
+       The next example adds these entries to the VLANID table by naming the file that contains the entries using option -f.
+
+          # plcfwd -A -f plcfwd.txt
+
+       The next example removes the same entries to the VLANID table.
+
+          # plcfwd -R -f plcfwd.txt
+
+       Of course, you can combine options -z and -f to cumulative effect.
+
+SEE ALSO
+       PLC(1),
+
+CREDITS
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                                plcfwd(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='plcdevs.1.html' title=' plcdevs.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='plcget.1.html' title=' plcget.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

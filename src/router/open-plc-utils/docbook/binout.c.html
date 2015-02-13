@@ -1,0 +1,85 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			binout.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='baudrate.c.html' title=' baudrate.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='BootDevice1.c.html' title=' BootDevice1.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   void binout (void const * memory, size_t extent, char c, char e, FILE * fp)
+ *
+ *   memory.h
+ *
+ *   print memory as a series of binary bytes separated by character
+ *   c; normally, character c will be BIN_EXTENDER as defined
+ *   in number.h;
+ *
+ *   for example, binout (memory, 6, '-', stdout) would print
+ *
+ *      00000000-11010000-01010010-00000000-00000000-00000001
+ *
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef BINOUT_SOURCE
+#define BINOUT_SOURCE
+
+#include &lt;stdio.h&gt;
+#include &lt;ctype.h&gt;
+
+#include &quot;../tools/memory.h&quot;
+#include &quot;../tools/number.h&quot;
+
+void binout (void const * memory, size_t extent, char c, char e, FILE * fp)
+
+{
+	byte * offset = (byte *)(memory);
+	while (extent--)
+	{
+		unsigned bits = 8;
+		while (bits--)
+		{
+			putc (DIGITS_BIN [(* offset &gt;&gt; bits) &amp; 1], fp);
+		}
+		if ((extent) &amp;&amp; (c))
+		{
+			putc (c, fp);
+		}
+		offset++;
+	}
+	if (e)
+	{
+		putc (e, fp);
+	}
+	return;
+}
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='baudrate.c.html' title=' baudrate.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='BootDevice1.c.html' title=' BootDevice1.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

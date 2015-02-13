@@ -1,0 +1,141 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			plctest.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='plcstat.1.html' title=' plcstat.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='plctone.1.html' title=' plctone.1 '>NEXT</a>]
+			</div>
+<pre>
+plctest(1)                                   Qualcomm Atheros Open Powerline Toolkit                                  plctest(1)
+
+NAME
+       plctest - Qualcomm Atheros PLC Test Applet Loader
+
+SYNOPSIS
+       plctest [options] [file] [file] [...]
+
+DESCRIPTION
+       Download  and  execute  one  or  more  test applets to the local Qualcomm Atheros powerline device.  An applet is a small
+       firmware image that can be started by the bootloader and will return to the bootloader when done.  This program  replaces
+       int6ktest  and  amptest because is supports both old and new image file formats and the old and new powerline device boot
+       methods.
+
+       Qualcomm Atheros firmware files may contain one or more applets.  Each applet is preceded by a header that specifies  the
+       image  size,  load  address  and start address and other information.  Program plctest sequentially dowloads and executes
+       every applet in each image file named on the command line.  It waits for each applet to complete before  downloading  and
+       executing  the next one.  The program terminates once all applets in all files have been executed or some applet fails to
+       complete within 60 seconds.
+
+       Most applets return to the Bootloader on successful completion so that another applet can  be  downloaded  and  executed.
+       This allows applet sequences to be executed with one command.  A sequence may consist of one file having multiple applets
+       or multiple files each having one applet or any combination of single and  multiple  applet  files.   The  sequence  will
+       break,  after a timeout, if any applet in the chain fails to return to the Bootloader in time.  Failure to return in time
+       may be either a good thing or a bad thing depending on applet design.
+
+       This program is part of the Qualcomm Atheros Powerline Toolkit.  See the APT man page for an  overview  and  installation
+       instructions.
+
+COMMENTS
+       The  Powerline  Toolkit  contains a set of legacy applets in folder applets.  These were originally designed for use with
+       program int6ktest and most will not display console messages properly using this program; however, a new series  of  com‐
+       patible applets are under development and should be available through Qualcomm Atheros Field Application Engineering.
+
+       Assuming  a  good  set  of applets are available, this program is ideal for testing reference designs for performance and
+       production units for defects.  Applets may become available for testing onboard connections, memory integrity  and  noise
+       immunity.  Consult with Atheros Field Application Engineering for applet availability.
+
+OPTIONS
+       -e     Redirects  stderr messages to stdout.  By convention status and error messages are printed on stderr while primary
+              program output is printed on stdout.  This option prints all output on stdout in cases where this is desired.
+
+       -i interface
+              Select the host Ethernet interface.  All requests are sent via this host interface and only reponses received  via
+              this host interface are recognized.  The default interface is eth1 because most people use eth0 as their principle
+              network connection; however, if environment string &quot;PLC&quot; is defined then it  takes  precedence  over  the  default
+              interface.  This option then takes precedence over either default.
+
+       -l     Execute all applets in all files on the command line until the program is terminated using ^C.
+
+       -p frequency
+              The  polling  frequency  expressed in polls-per-second.  For example, 1 means one poll per second and 10 means ten
+              polls per second.  Overall wait time is count/frequency where count may be modified using option -c.  Overall wait
+              time  is  always  approximate since operating system overhead and latency are not taken into account.  The default
+              frequency is 5.
+
+       -q     Suppresses normal progress and status messages.
+
+       -t timeout
+              Read timeout in milliseconds.  Values range from 0 through UINT_MAX.  This is  the  maximum  time  allowed  for  a
+              response.  The default is shown in brackets on the program menu.
+
+       -v     Print additional information on stdout.  Specifically, this option prints incoming and outgoing frames in hexadec‐
+              imal format on stdout.  Output can be directed to a text file for analysis.
+
+       -w seconds
+              Application timeout in seconds.  This application will wait this long for an applet to terminate and return to the
+              bootloader before reporting an error and proceeding to the next applet.
+
+       -x     Exit  program on first error instead of proceeding to the next applet.  Error exits return a non-zero value to the
+              shell.
+
+       -X     Exit program on first applet load instead of waiting for the applet to complete.  This exit returns a  zero  value
+              to the shell.
+
+       -?, --help
+              Print program help summary on stdout.  This option takes precedence over other options on the command line.
+
+       -!, --version
+              Print program version information on stdout.  This option takes precedence over other options on the command line.
+              Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version  of
+              the Linux Toolkit you are using.
+
+ARGUMENTS
+       file   The  name of an Atheros image file.  The image file may contain one or more images.  Each image will be downloaded
+              and executed in turn until all images are executed or an image fails to return to the Bootloader within  1  minute
+              for some reason.
+
+EXAMPLES
+       The  following example sequentially downloads then executes each image in file abc.nvm in turn.  Each image must complete
+       and return to the bootloader before the next one downloads.  Observe that no device address  is  needed  because  Atheros
+       powerline devices use address 00:b0:52:00:00:01 when in bootloader mode.
+
+          # plctest abc.nvm
+
+       The  following  example  will  sequentially  download and execute the images in each file abc.nvm, def.nvm and ghi.nvm in
+       turn.
+
+          # plctest abc.nvm def.nvm ghi.nvm
+
+DISCLAIMER
+       Atheros image file structure and content is proprietary to Qualcomm Atheros, Ocala FL USA.  Consequently, public informa‐
+       tion  is  not  available.   Qualcomm  Atheros  reserves  the right to change file structure or content in future firmware
+       releases without any obligation to notify or compensate users of this program.  This  program  is  reserved  for  use  by
+       Atheros Field Engineers.  Use of this program may void some contractual obligations made by Atheros.
+
+SEE ALSO
+       APT(1), chknvm(1), chknvm2(1), amptest(1), int6ktest(1), nvmsplit(1), nvmmerge(1), setnvm(1)
+
+CREDITS
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                               plctest(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='plcstat.1.html' title=' plcstat.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='plctone.1.html' title=' plctone.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

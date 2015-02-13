@@ -1,0 +1,196 @@
+.TH plcrate 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+plcrate - Qualcomm Atheros AR7x00 PHY Rate Monitor
+
+.SH SYNOPSIS
+.BR plcrate
+.RI [ options ] 
+.RI [ device ] 
+.RI [ device ] 
+[...]
+
+.SH DESCRIPTION
+The Atheros PHY Rate Utility polls one or more devices and prints the average transmit and receive PHY rates between a device and each neighboring network device.
+Output is column-oriented and suitable for loading into a spreadsheet or being read by a simple program.
+
+.PP
+This program is part of the Qualcomm Atheros Powerline Toolkit.
+See the \fBplc\fR man page for an overview and installation instructions.
+
+.SH CHIPSETS
+QCA6410, 
+QCA7000, 
+QCA7420
+
+.SH OPTIONS
+
+.TP
+.RB - c
+Display coded PHY rates.
+Coded PHY rates are displayed by default so this option is redundant but it has been kept for backword compatibility.
+This option and option \fB-u\fR are mutually exclusive.
+
+.TP
+-\fBd \fIseconds\fR
+Traffic duration in seconds per connection.
+Directional traffic is systematically sent between each pair of powerline network devices for this period of time.
+Consequently, the total time needed to generate traffic between all network devices will be approximately \fBn!\fR times this value, so don''t get carried away.
+The minimum value is \fB1\fR second and the maximum value is \fB60\fR seconds.
+
+.TP
+.RB - e
+Redirects stderr messages to stdout.
+By convention status and error messages are printed on stderr while primary program output is printed on stdout.
+This option prints all output on stdout in cases where this is desired.
+
+.TP
+-\fBi \fIinterface\fR
+Select the host Ethernet interface.
+All requests are sent via this host interface and only reponses received via this host interface are recognized.
+The default interface is \fBeth1\fR because most people use \fBeth0\fR as their principle network connection; however, if environment string "PLC" is defined then it takes precedence over the default interface.
+This option then takes precedence over either default.
+
+.TP
+.RB - n
+Reads the average transmit and receive PHY rate for wach device using VS_NW_INFO and prints it on stdout.
+Each output line displays the ethernet interface, source address, destination address and either the transmit or receive PHY rate.
+
+.TP
+-\fBo \fImilliseconds\fR
+Read timeout in milliseconds.
+Values range from 0 through UINT_MAX.
+This is the maximum time allowed for a response.
+The default is shown in brackets on the program menu.
+
+.TP
+.RB - q
+Enter quiet mode.
+Progress messages are suppressed.
+
+.TP
+.RB - r
+Reads device hardware and software revision information using VS_SW_VER and prints it on stdout.
+
+.TP
+.RB - R
+Resets the device using VS_RS_DEV.
+
+.TP
+.RB - t
+Generate powerline traffic between the local device and each remote device on each powerline network connected to the host.
+It does not generate any traffic between remote powerline device pairs.
+This option is especially useful when remote powerline devices are not connected to Ethernet devices capable of sending traffic back to the host.
+
+.TP
+.RB - T
+Generate powerline traffic between all devices on each powerline network connected to the host.
+This option is similar to option \fB-t\fR but it takes much longer because traffic is systematically generated between each pair of powerline devices.
+Consequently, the time to complete will increase factorially as the number of network devices increases.
+Such complete traffic path coverage is not always needed.
+
+.TP
+.RB - u
+Display un-coded PHY rates.
+Coded PHY rates are displayed by default.
+This option and option \fB-c\fR are mutually exclusive.
+
+.TP
+.RB -v
+Enter verbose mode.
+All Etherenet frames sent or received by the program are displayed on stdout.
+
+.TP
+.RB - x
+Exit program on first error with a non-zero exit code.
+This option allows shell scripts to detect failed or incomplete operations and take the appropriate action.
+
+.TP
+.RB - ? ,-- help
+Print program help summary on stdout.
+This option takes precedence over other options on the command line.
+
+.TP
+.RB - ! ,-- version
+Print program version information on stdout.
+This option takes precedence over other options on the command line.
+Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of the Linux Toolkit you are using.
+
+.SH ARGUMENTS 
+
+.TP
+.B device
+The MAC address of some powerline device.
+More than one address may be specified.
+If more than one address is specified then operations are performed on each device in turn.
+The default address is \fBlocal\fR.
+See \fBDEVICES\fR for information about symbolic device addresses.
+
+.SH DEVICES
+Powerline devices use Ethernet Media Access Control (MAC) addresses.
+A MAC address is a 48-bit value entered as 12 hexadecimal digits in upper, lower or mixed character case.
+Octets may be separated with colons for clarity.
+For example, "00b052000001", "00:b0:52:00:00:01" and "00b052:000001" are valid and equivalent.
+
+.PP
+The following MAC addresses are special and may be entered by name instead of number.
+
+.TP
+.BR all
+Same as "broadcast".
+
+.TP
+.BR broadcast
+A synonym for the Ethernet broadcast address, \fBFF:FF:FF:FF:FF:FF\fR.
+All devices, whether local, remote or foreign recognize messages sent to this address.
+A remote device is any device at the far end of a powerline connection.
+A foreign device is any device not manufactured by Atheros.
+
+.TP
+.BR local
+A synonym for the Qualcomm Atheros vendor specific Local Management Address (LMA), \fB00:B0:52:00:00:01\fR.
+All local Atheros devices recognize this address but remote and foreign devices do not.
+A remote device is any device at the far end of a powerline connection.
+A foreign device is any device not manufactured by Atheros.
+
+.SH REFERENCES
+See the Qualcomm Atheros HomePlug AV Firmware Technical Reference Manual for more information.
+
+.SH EXAMPLES
+The following example displays the average transmit and receive PHY rates from each of two devices.
+One is a local device connected to interface \fBeth2\fR and the other is a remote device at the far end of the powerline.
+In this case, they are the only two devices on the powerline network.
+Observe the recipricol rates shown.
+
+.PP
+   # plcrate -ni eth2 00:B0:52:00:00:AA 00:B0:52:00:00:BB
+   eth2 00:B0:52:00:00:AA 00:B0:52:00:00:BB TX 163 mbps
+   eth2 00:B0:52:00:00:AA 00:B0:52:00:00:BB RX 176 mbps
+   eth2 00:B0:52:00:00:BB 00:B0:52:00:00:AA TX 176 mbps
+   eth2 00:B0:52:00:00:BB 00:B0:52:00:00:AA RX 163 mbps
+
+.PP
+The following example generates powerline traffic between the local device and each remote device because option \fB-t\fR is present.
+It then displays the PHY rate read from the local device.
+
+.PP
+   # plcrate -tni eth2 
+   eth2 00:B0:52:00:00:AA 00:B0:52:00:00:BB TX 163 mbps
+   eth2 00:B0:52:00:00:AA 00:B0:52:00:00:BB RX 176 mbps
+
+.SH DISCLAIMER
+Atheros HomePlug AV Vendor Specific Management Message Entry structure and content is proprietary to Qualcomm Atheros, Ocala FL USA.
+Consequently, public information may not be available.
+Qualcomm Atheros reserves the right to modify message structure and content in future firmware releases without any obligation to notify or compensate users of this program.
+
+.SH SEE ALSO
+.BR PLC ( 1 ), 
+.BR amprate ( 1 ), 
+.BR int6krate ( 1 ) 
+
+.SH CREDITS
+ Nathaniel Houghton <nhoughto@qca.qualcomm.com>
+ Charles Maier <cmaier@qca.qualcomm.com>
+'
+'
+

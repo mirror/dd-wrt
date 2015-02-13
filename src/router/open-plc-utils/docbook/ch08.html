@@ -1,0 +1,91 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Chapter 8.  Serial Drivers</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="prev" href="ch07s12.html" title="SLAC Functions and Variables"><link rel="next" href="ch08s02.html" title="Principles of Operation"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Chapter 8. 
+		Serial Drivers
+		</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch07s12.html">Prev</a> </td><th width="60%" align="center"> </th><td width="20%" align="right"> <a accesskey="n" href="ch08s02.html">Next</a></td></tr></table><hr></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="driver-spi"></a>Chapter 8. 
+		Serial Drivers
+		</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="section"><a href="ch08.html#driver-spi-intro">
+			Introduction
+			</a></span></dt><dt><span class="section"><a href="ch08s02.html">
+			Principles of Operation
+			</a></span></dt><dt><span class="section"><a href="ch08s03.html">
+				SPI Serial Driver
+				</a></span></dt><dd><dl><dt><span class="section"><a href="ch08s03.html#qcaspi_spi_thread">
+				qcaspi_spi_thread
+				</a></span></dt><dt><span class="section"><a href="ch08s03.html#qcaspi_qca7k_sync">
+				qcaspi_qca7k_sync
+				</a></span></dt></dl></dd><dt><span class="section"><a href="ch08s04.html">
+				Register Functions
+				</a></span></dt><dd><dl><dt><span class="section"><a href="ch08s04.html#qcaspi_read_register">
+				qcaspi_read_register
+				</a></span></dt><dt><span class="section"><a href="ch08s04.html#qcaspi_write_register">
+				qcaspi_write_register
+				</a></span></dt><dt><span class="section"><a href="ch08s04.html#qcaspi_tx_cmd">
+				qcaspi_tx_cmd
+				</a></span></dt></dl></dd><dt><span class="section"><a href="ch08s05.html">
+				Interrupt Functions
+				</a></span></dt><dd><dl><dt><span class="section"><a href="ch08s05.html#disable_spi_interrupts">
+				disable_spi_interrupts
+				</a></span></dt><dt><span class="section"><a href="ch08s05.html#enable_spi_interrupts">
+				enable_spi_interrupts
+				</a></span></dt><dt><span class="section"><a href="ch08s05.html#qcaspi_intr_handler">
+				qcaspi_intr_handler
+				</a></span></dt></dl></dd><dt><span class="section"><a href="ch08s06.html">
+				Transmit Functions
+				</a></span></dt><dd><dl><dt><span class="section"><a href="ch08s06.html#qcaspi_transmit">
+				qcaspi_transmit
+				</a></span></dt><dt><span class="section"><a href="ch08s06.html#qcaspi_tx_frame">
+				qcaspi_tx_frame
+				</a></span></dt><dt><span class="section"><a href="ch08s06.html#qcaspi_flush_txq">
+				qcaspi_flush_txq
+				</a></span></dt></dl></dd><dt><span class="section"><a href="ch08s07.html">
+				Receive Functions
+				</a></span></dt><dd><dl><dt><span class="section"><a href="ch08s07.html#qcaspi_receive">
+				qcaspi_receive
+				</a></span></dt></dl></dd><dt><span class="section"><a href="ch08s08.html">
+				DMA Functions
+				</a></span></dt><dd><dl><dt><span class="section"><a href="ch08s08.html#qcaspi_dma_read_burst">
+				qcaspi_dma_read_burst
+				</a></span></dt><dt><span class="section"><a href="ch08s08.html#qcaspi_dma_read_legacy">
+				qcaspi_dma_read_legacy
+				</a></span></dt><dt><span class="section"><a href="ch08s08.html#qcaspi_dma_write_burst">
+				qcaspi_dma_write_burst
+				</a></span></dt><dt><span class="section"><a href="ch08s08.html#qcaspi_dma_write_legacy">
+				qcaspi_dma_write_legacy
+				</a></span></dt></dl></dd><dt><span class="section"><a href="ch08s09.html">
+				Support Functions
+				</a></span></dt><dd><dl><dt><span class="section"><a href="ch08s09.html#QcaFrmCreateHeader">
+				QcaFrmCreateHeader
+				</a></span></dt><dt><span class="section"><a href="ch08s09.html#QcaFrmCreateFooter">
+				QcaFrmCreateFooter
+				</a></span></dt><dt><span class="section"><a href="ch08s09.html#QcaFrmFsmInit">
+				QcaFrmFsmInit
+				</a></span></dt><dt><span class="section"><a href="ch08s09.html#QcaFrmFsmDecode">
+				QcaFrmFsmDecode
+				</a></span></dt></dl></dd><dt><span class="section"><a href="ch08s10.html">
+				Kernel Functions
+				</a></span></dt><dd><dl><dt><span class="section"><a href="ch08s10.html#qcaspi_netdev_xmit">
+				qcaspi_netdev_xmit
+				</a></span></dt><dt><span class="section"><a href="ch08s10.html#qcaspi_netdev_tx_timeout">
+				qcaspi_netdev_tx_timeout
+				</a></span></dt><dt><span class="section"><a href="ch08s10.html#qcaspi_netdev_uninit">
+				qcaspi_netdev_uninit
+				</a></span></dt><dt><span class="section"><a href="ch08s10.html#qcaspi_netdev_get_stats">
+				qcaspi_netdev_get_stats
+				</a></span></dt><dt><span class="section"><a href="ch08s10.html#qcaspi_netdev_change_mtu">
+				qcaspi_netdev_change_mtu
+				</a></span></dt><dt><span class="section"><a href="ch08s10.html#qcaspi_netdev_set_mac_address">
+				qcaspi_netdev_set_mac_address
+				</a></span></dt><dt><span class="section"><a href="ch08s10.html#qcaspi_netdev_close">
+				qcaspi_netdev_close
+				</a></span></dt><dt><span class="section"><a href="ch08s10.html#qcaspi_mod_exit">
+				qcaspi_mod_exit
+				</a></span></dt></dl></dd></dl></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="driver-spi-intro"></a>
+			Introduction
+			</h2></div></div></div><p>
+			Most Qualcomm Atheros PLC chipsets are Ethernet-to-Powerline bridges but the QCA7000 is a Serial-to-Powerline bridge, ... with a big difference. The QCA7000 expects the host serial stream to be segmented into Ethernet frames where each frame is encapsulated by a distinct serial header and trailer. This means the host can format and transmit, or receive and decode, standard Ethernet 802.3 frames over an ordinary SPI or UART interface thereby enabling full Ethernet or Internet protocol communications over powerline at low cost and low speed. The enabling component here is an Ethernet-to-Serial driver that supports the SPI or UART interface connected to the QCA7000. This section covers such a driver.
+			</p><p>
+			The example driver described here was written for the Freescale iMX28 board support package running a custom Freescale Linux distribution. As such, we believe that this driver is suitable for the iMX28 processor out of the box but it could be adapted to other processors.
+			</p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch07s12.html">Prev</a> </td><td width="20%" align="center"> </td><td width="40%" align="right"> <a accesskey="n" href="ch08s02.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">
+		SLAC Functions and Variables
+		 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 
+			Principles of Operation
+			</td></tr></table></div></body></html>0

@@ -1,0 +1,150 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			pev_cm_slac_match.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='pev_cm_set_key.c.html' title=' pev_cm_set_key.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='pev_cm_slac_param.c.html' title=' pev_cm_slac_param.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *
+ *   signed pev_cm_slac_match (struct session * session, struct channel * channel, struct message * message);
+ *
+ *   slac.h
+ *
+ *   send CM_SLAC_MATCH.REQ and receive CM_SLAC_MATCH.CNF; store NMK
+ *   and NID in the session variable so that PEV-HLE can configure 
+ *   PEV-PLC to form a network with EVSE-PLC;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef PEV_CM_SLAC_MATCH_SOURCE
+#define PEV_CM_SLAC_MATCH_SOURCE
+
+#include &lt;string.h&gt;
+#include &lt;errno.h&gt;
+
+#include &quot;../ether/channel.h&quot;
+#include &quot;../tools/memory.h&quot;
+#include &quot;../tools/error.h&quot;
+#include &quot;../tools/flags.h&quot;
+#include &quot;../slac/slac.h&quot;
+
+signed pev_cm_slac_match (struct session * session, struct channel * channel, struct message * message) 
+
+{ 
+	struct cm_slac_match_request * request = (struct cm_slac_match_request *) (message); 
+	struct cm_slac_match_confirm * confirm = (struct cm_slac_match_confirm *) (message); 
+	debug (0, __func__, &quot;--&gt; CM_SLAC_MATCH.REQ&quot;); 
+	memset (message, 0, sizeof (* message)); 
+	EthernetHeader (&amp; request-&gt;ethernet, session-&gt;EVSE_MAC, channel-&gt;host, channel-&gt;type); 
+	HomePlugHeader1 (&amp; request-&gt;homeplug, HOMEPLUG_MMV, (CM_SLAC_MATCH | MMTYPE_REQ)); 
+	request-&gt;APPLICATION_TYPE = session-&gt;APPLICATION_TYPE; 
+	request-&gt;SECURITY_TYPE = session-&gt;SECURITY_TYPE; 
+	request-&gt;MVFLength = HTOLE16 (sizeof (request-&gt;MatchVarField)); 
+	memcpy (request-&gt;MatchVarField.PEV_ID, session-&gt;PEV_ID, sizeof (request-&gt;MatchVarField.PEV_ID)); 
+	memcpy (request-&gt;MatchVarField.PEV_MAC, session-&gt;PEV_MAC, sizeof (request-&gt;MatchVarField.PEV_MAC)); 
+	memcpy (request-&gt;MatchVarField.RunID, session-&gt;RunID, sizeof (request-&gt;MatchVarField.RunID)); 
+	if (sendmessage (channel, message, sizeof (* request)) &lt;= 0) 
+	{ 
+		return (debug (1, __func__, CHANNEL_CANTSEND)); 
+	} 
+	if (readmessage (channel, message, HOMEPLUG_MMV, (CM_SLAC_MATCH | MMTYPE_CNF)) &gt; 0) 
+	{ 
+		if (! memcmp (session-&gt;RunID, confirm-&gt;MatchVarField.RunID, sizeof (session-&gt;RunID))) 
+		{ 
+			debug (0, __func__, &quot;&lt;-- CM_SLAC_MATCH.CNF&quot;); 
+
+#if SLAC_DEBUG
+
+			if (_anyset (session-&gt;flags, SLAC_VERBOSE)) 
+			{ 
+				char string [256]; 
+				debug (0, __func__, &quot;CM_SLAC_MATCH.CNF.APPLICATION_TYPE %d&quot;, confirm-&gt;APPLICATION_TYPE); 
+				debug (0, __func__, &quot;CM_SLAC_MATCH.CNF.SECURITY_TYPE %d&quot;, confirm-&gt;SECURITY_TYPE); 
+				debug (0, __func__, &quot;CM_SLAC_MATCH.CNF.MVFLength %d&quot;, LE16TOH (confirm-&gt;MVFLength)); 
+				debug (0, __func__, &quot;CM_SLAC_MATCH.CNF.MatchVarField.PEV_ID %s&quot;, HEXSTRING (string, confirm-&gt;MatchVarField.PEV_ID)); 
+				debug (0, __func__, &quot;CM_SLAC_MATCH.CNF.MatchVarField.PEV_MAC %s&quot;, HEXSTRING (string, confirm-&gt;MatchVarField.PEV_MAC)); 
+				debug (0, __func__, &quot;CM_SLAC_MATCH.CNF.MatchVarField.EVSE_ID %s&quot;, HEXSTRING (string, confirm-&gt;MatchVarField.EVSE_ID)); 
+				debug (0, __func__, &quot;CM_SLAC_MATCH.CNF.MatchVarField.EVSE_MAC %s&quot;, HEXSTRING (string, confirm-&gt;MatchVarField.EVSE_MAC)); 
+				debug (0, __func__, &quot;CM_SLAC_MATCH.CNF.MatchVarField.RunID %s&quot;, HEXSTRING (string, confirm-&gt;MatchVarField.RunID)); 
+				debug (0, __func__, &quot;CM_SLAC_MATCH.CNF.MatchVarField.NID %s&quot;, HEXSTRING (string, confirm-&gt;MatchVarField.NID)); 
+				debug (0, __func__, &quot;CM_SLAC_MATCH.CNF.MatchVarField.NMK %s&quot;, HEXSTRING (string, confirm-&gt;MatchVarField.NMK)); 
+			} 
+
+#endif
+
+			memcpy (session-&gt;EVSE_ID, confirm-&gt;MatchVarField.EVSE_ID, sizeof (session-&gt;EVSE_ID)); 
+			memcpy (session-&gt;EVSE_MAC, confirm-&gt;MatchVarField.EVSE_MAC, sizeof (session-&gt;EVSE_MAC)); 
+			memcpy (session-&gt;NMK, confirm-&gt;MatchVarField.NMK, sizeof (session-&gt;NMK)); 
+			memcpy (session-&gt;NID, confirm-&gt;MatchVarField.NID, sizeof (session-&gt;NID)); 
+			return (0); 
+		} 
+	} 
+	return (debug (session-&gt;exit, __func__, &quot;&lt;-- CM_SLAC_MATCH.CNF ?&quot;)); 
+} 
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='pev_cm_set_key.c.html' title=' pev_cm_set_key.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='pev_cm_slac_param.c.html' title=' pev_cm_slac_param.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

@@ -1,0 +1,78 @@
+.TH ttysig 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+ttysig - Serial Line Signal Controller
+
+.SH SYNOPSIS
+.BR ttysig
+.RI [ options ] 
+
+.SH DESCRIPTION
+Interactively control serial line output signals (Request To Send, Data Terminal Ready), and read the current value of all control signals (Request To Send, Clear To Send, Data Set Ready, Data Terminal Ready, Data Carrier Detect, Ring Indicator).
+
+.PP
+This program is part of the Qualcomm Atheros Powerline Toolkit.
+See the \fBAMP\fR man page for an overview and installation instructions.
+
+.SH OPTIONS
+
+.TP
+-\fBs \fIdevice\fR
+Specify the serial device used.
+The default is serial console device "/dev/ttyS0".
+
+.TP
+-\fBD \fIvalue\fR
+Set the serial control line DTR high if value is non-zero, low otherwise.
+
+.TP
+-\fBI\fR
+Interactive mode.
+
+.TP
+-\fBR \fIvalue\fR
+Set the serial control line RTS high if value is non-zero, low otherwise.
+
+.TP
+-\fBr\fR
+Print serial control line status on stdout.
+This is performed after -\fBR\fR and -\fBD\fR.
+
+.TP
+.RB - ? ,-- help
+Print program help summary on stdout.
+This option takes precedence over other options on the command line.
+
+.TP
+.RB - ? ,-- version
+Print program version information on stdout.
+This option takes precedence over other options on the command line.
+Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of the Linux Toolkit you are using.
+
+.SH EXAMPLES
+The following example sets DTR high and RTS low at program start.
+The user then interactively prints the current control signal values, and then sets DTR low.
+Since no serial devices are specified, program defaults are used.
+
+.PP
+  $ ./ttysig -I -D 1 -R 0
+  command (D #, R #, r, q): r
+  RTS: -V
+  CTS: -V
+  DSR: -V
+  DTR: +V
+  DCD: -V
+  RI : -V
+  command (D #, R #, r, q): D 0
+  command (D #, R #, r, q):
+
+.PP
+
+.SH SEE ALSO
+.BR amp ( 1 ),
+.BR int6kdetect ( 1 ),
+.BR int6kuart ( 1 )
+
+.SH CREDITS
+ Nathaniel Houghton <nhoughto@qca.qualcomm.com>
+

@@ -1,0 +1,72 @@
+.TH ttyrecv 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+ttyrecv - Serial Line Rate Tester (Receive)
+
+.SH SYNOPSIS
+.BR ttyrecv
+.RI [ options ] 
+.RI [> stdout ]
+
+.SH DESCRIPTION
+Receive data from a serial device.
+The primary purpose of this program is to receive data over a serial port for a specified time duration.
+
+.PP
+The ttyrecv program exits after the receive time (see \fB-t\fR) has elapsed.
+
+.PP
+This program is part of the Qualcomm Atheros Powerline Toolkit.
+See the \fBAMP\fR man page for an overview and installation instructions.
+
+.SH COMMENTS
+This program does not yet support Windows platforms.
+
+.SH OPTIONS
+
+.TP
+.RB - c
+Consume all data received (do not print to standard output).
+
+.TP
+-\fBl \fIfile\fR
+The serial port file to read data from.
+The default is \fB/dev/ttyS0\fR.
+
+.TP
+.RB - r
+Print the receive rate to standard output after the receive time has elapsed.
+
+.TP
+-\fBs \fIspeed\fR
+The serial baud rate.
+Supported baud rates are \fB0\fR, \fB50\fR, \fB75\fR, \fB110\fR, \fB134\fR, \fB150\fR, \fB200\fR, \fB300\fR, \fB600\fR, \fB1200\fR, \fB1800\fR, \fB2400\fR, \fB4800\fR, \fB9600\fR, \fB19200\fR, \fB38400\fR, \fB57600\fR, \fB115200\fR, \fB230400\fR, \fB460800\fR, \fB500000\fR and \fB921600\fR.
+
+.TP
+-\fBt \fItime\fR
+Receive for \fBtime\fR seconds.
+The default is 10 seconds.
+
+.TP
+.RB - ? ,-- help
+Print program help summary on stdout.
+This option takes precedence over other options on the command line.
+
+.TP
+.RB - ? ,-- version
+Print program version information on stdout.
+This option takes precedence over other options on the command line.
+Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of the Linux Toolkit you are using.
+
+.SH EXAMPLES
+None.
+
+.SH SEE ALSO
+.BR amp ( 1 ),
+.BR int6kuart ( 1 ),
+.BR ttysend ( 1 ),
+
+.SH CREDITS
+ Charles Maier <cmaier@qca.qualcomm.com>
+ Nathaniel Houghton <nhoughto@qca.qualcomm.com>
+

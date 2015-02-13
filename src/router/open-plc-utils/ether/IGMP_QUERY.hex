@@ -1,0 +1,35 @@
+#!/usr/local/bin/efsu -ieth0
+# file: efsu/IGMP_QUERY.hex
+
+# ====================================================================
+#
+# This is an example IGMP query packet; use it to emulate a router by
+# sending an IGMP query over the network to stimulate IGMP membership 
+# reports from IGMP enabled devices;
+#
+# this can be used on networks that do not have a router available to
+# perform this function;
+#
+# The following command sends 100 IGMP query packets at 120 second 
+# intervals;
+#
+#   efsu -i <interface> IGMP.hex -l 100 -w 120
+#
+# this particular pacet has the following parameters; do not disturb
+# it or you will invalidate the checksum;
+#
+# MAC SA 00 0b 52 00 24 66
+# Multicast DA  01 00 5E 00 00 02 
+# IP SA  192.168.99.200
+# IP DA  224.0.0.2     
+# IP Checksum 776D
+# IGMP Checksum EE9B
+# RESPONSE TIMER 10 seconds (100 * 1/10 seconds)
+#
+# --------------------------------------------------------------------
+
+01 00 5E 00 00 02 00 0B 52 00 24 66 08 00 45 00
+00 1C 00 00 00 00 40 02 76 6D C0 A8 63 C8 E0 00
+00 02 11 64 EE 9B 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00
+

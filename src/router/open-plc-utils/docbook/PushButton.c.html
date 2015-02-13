@@ -1,0 +1,179 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			PushButton.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='ptsctl.c.html' title=' ptsctl.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='putoptv.c.html' title=' putoptv.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *
+ *   signed PushButton (struct plc * plc);
+ *
+ *   plc.h
+ *
+ *   THis plugin for program plc emulates pushbutton functionality
+ *   using a MS_PB_ENC message;
+ *
+ *
+ *   Contributor(s):
+ *      Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef PUSHBUTTON_SOURCE
+#define PUSHBUTTON_SOURCE
+
+#include &lt;stdint.h&gt;
+#include &lt;memory.h&gt;
+
+#include &quot;../tools/error.h&quot;
+#include &quot;../tools/memory.h&quot;
+#include &quot;../plc/plc.h&quot;
+
+signed PushButton (struct plc * plc)
+
+{
+	struct channel * channel = (struct channel *)(plc-&gt;channel);
+	struct message * message = (struct message *)(plc-&gt;message);
+
+#ifndef __GNUC__
+#pragma pack (push,1)
+#endif
+
+	struct __packed ms_pb_enc_request
+	{
+		struct ethernet_hdr ethernet;
+		struct homeplug_hdr homeplug;
+		uint8_t PBACTION;
+	}
+	* request = (struct ms_pb_enc_request *) (message);
+	struct __packed ms_pb_enc_confirm
+	{
+		struct ethernet_hdr ethernet;
+		struct homeplug_hdr homeplug;
+		uint8_t MSTATUS;
+		uint8_t AVLNSTAT;
+	}
+	* confirm = (struct ms_pb_enc_confirm *) (message);
+
+#ifndef __GNUC__
+#pragma pack (pop)
+#endif
+
+	if (plc-&gt;pushbutton == 1)
+	{
+		Request (plc, &quot;Join Network&quot;);
+	}
+	if (plc-&gt;pushbutton == 2)
+	{
+		Request (plc, &quot;Leave Network&quot;);
+	}
+	if (plc-&gt;pushbutton == 3)
+	{
+		Request (plc, &quot;Fetch Network Status&quot;);
+	}
+	memset (message, 0, sizeof (* message));
+	EthernetHeader (&amp;request-&gt;ethernet, channel-&gt;peer, channel-&gt;host, channel-&gt;type);
+	request-&gt;homeplug.MMV = 0;
+	request-&gt;homeplug.MMTYPE = HTOLE16 (MS_PB_ENC | MMTYPE_REQ);
+	request-&gt;PBACTION = plc-&gt;pushbutton;
+	plc-&gt;packetsize = (ETHER_MIN_LEN - ETHER_CRC_LEN);
+	if (SendMME (plc) &lt;= 0)
+	{
+		error ((plc-&gt;flags &amp; PLC_BAILOUT), errno, CHANNEL_CANTSEND);
+		return (-1);
+	}
+	if (ReadMFG (plc, 0, (MS_PB_ENC | MMTYPE_CNF)) &lt;= 0)
+	{
+		error ((plc-&gt;flags &amp; PLC_BAILOUT), errno, CHANNEL_CANTREAD);
+		return (-1);
+	}
+	if (confirm-&gt;MSTATUS)
+	{
+		Failure (plc, PLC_WONTDOIT);
+		return (-1);
+	}
+	if (plc-&gt;pushbutton == 1)
+	{
+		Confirm (plc, &quot;Joining ...&quot;);
+		return (0);
+	}
+	if (plc-&gt;pushbutton == 2)
+	{
+		Confirm (plc, &quot;Leaving ...&quot;);
+		return (0);
+	}
+	if (plc-&gt;pushbutton == 3)
+	{
+		Confirm (plc, &quot;Membership Status %d&quot;, confirm-&gt;AVLNSTAT);
+		return (0);
+	}
+	Failure (plc, &quot;Unexpected pushbutton action code&quot;);
+	return (-1);
+}
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='ptsctl.c.html' title=' ptsctl.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='putoptv.c.html' title=' putoptv.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

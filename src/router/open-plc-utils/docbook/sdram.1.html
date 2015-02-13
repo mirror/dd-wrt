@@ -1,0 +1,76 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			sdram.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='sada.1.html' title=' sada.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='setpib.1.html' title=' setpib.1 '>NEXT</a>]
+			</div>
+<pre>
+sdram(1)                                     Qualcomm Atheros Open Powerline Toolkit                                    sdram(1)
+
+NAME
+       sdram - Atheros SDRAM Configuration File Generator
+
+SYNOPSIS
+       sdram
+
+DESCRIPTION
+       The  Atheros  SDRAM  Configuration  File  Generator  creates two INT6300 SDRAM configuration files in the current working
+       folder.  Either of them may be used as the argument for the int6kf -C option when initializing INT6300 devices.  Read the
+       int6kf man page for more information.
+
+       This  program  is  part of the Qualcomm Atheros Powerline Toolkit.  See the AMP man page for an overview and installation
+       instructions.
+
+BACKGROUND
+       Configuration files for the Linux Toolkit have .cfg extensions and consist of 32 binary bytes plus  a  32  bit  checksum.
+       They are difficult to modify but easy to verify.  The format requires no conversion on input or output and, consequently,
+       it is preferred to that used by the Windows Device Manager.
+
+       Configuration files for the Windows Device Manager have .config extensions and consist of 64  hexadecimal  ASCII  charac‐
+       ters.  They are easily modified using a text editor but cannot be easily validated.  They require ASCII to binary conver‐
+       sion on input and binary to ASCII conversion on output.  Read the config2cfg man page for more information.
+
+OPTIONS
+       There are no options.
+
+EXAMPLES
+       The following example writes two files, sdram16mb.cfg and sdram64.cfg, in the current working folder.  They will  replace
+       any existing files having the same names.
+
+           # sdram
+           writing sdram16mb.cfg
+           writing sdram64mb.cfg
+
+DISCLAIMER
+       The  SDRAM file structure and content is proprietary to Qualcomm Atheros, Ocala FL USA.  Consequently, public information
+       is not available.  Qualcomm Atheros reserves the right to change  the  file  structure  or  content  in  future  firmware
+       releases without any obligation to notify or compensate users of this program.
+
+SEE ALSO
+       config2cfg(1), int6kf(1)
+
+CREDITS
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                                 sdram(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='sada.1.html' title=' sada.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='setpib.1.html' title=' setpib.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

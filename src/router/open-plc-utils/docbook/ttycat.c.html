@@ -1,0 +1,212 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			ttycat.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='Transmit.c.html' title=' Transmit.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='ttyrecv.c.html' title=' ttyrecv.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *
+ *   ttycat.c - serial port test program;
+ *
+ *   write one or more files to a serial device;
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *   system header files;
+ *--------------------------------------------------------------------*/
+
+#include &lt;stdlib.h&gt;
+#include &lt;limits.h&gt;
+#include &lt;memory.h&gt;
+#include &lt;signal.h&gt;
+#include &lt;termios.h&gt;
+#include &lt;unistd.h&gt;
+
+/*====================================================================*
+ *   custom header files;
+ *--------------------------------------------------------------------*/
+
+#include &quot;../tools/getoptv.h&quot;
+#include &quot;../tools/putoptv.h&quot;
+#include &quot;../tools/number.h&quot;
+#include &quot;../tools/error.h&quot;
+#include &quot;../tools/files.h&quot;
+#include &quot;../serial/serial.h&quot;
+
+/*====================================================================*
+ *   custom source files;
+ *--------------------------------------------------------------------*/
+
+#ifndef MAKEFILE
+#include &quot;../tools/getoptv.c&quot;
+#include &quot;../tools/putoptv.c&quot;
+#include &quot;../tools/version.c&quot;
+#include &quot;../tools/efreopen.c&quot;
+#include &quot;../tools/uintspec.c&quot;
+#include &quot;../tools/todigit.c&quot;
+#include &quot;../tools/error.c&quot;
+#endif
+
+/*====================================================================*
+ *   program warnings;
+ *--------------------------------------------------------------------*/
+
+#if defined (WIN32)
+#error &quot;This program does not support Windows platforms&quot;
+#endif
+
+/*====================================================================*
+ *
+ *   signed copy (signed ifd, signed ofd, void * memory, signed extent)
+ *
+ *   copy ifd to ofd using a buffer of specified size;
+ *
+ *--------------------------------------------------------------------*/
+
+static signed copy (signed ifd, signed ofd, void * memory, signed extent)
+
+{
+	while ((extent = read (ifd, memory, extent)) &gt; 0)
+	{
+		if (write (ofd, memory, extent) &lt; extent)
+		{
+			return (-1);
+		}
+	}
+	return (0);
+}
+
+/*====================================================================*
+ *
+ *   int main (int argc, char const * argv []);
+ *
+ *--------------------------------------------------------------------*/
+
+int main (int argc, char const * argv [])
+
+{
+	static char const * optv [] =
+	{
+		&quot;s:&quot;,
+		PUTOPTV_S_FUNNEL,
+		&quot;copy one or more files to a  serial device&quot;,
+		&quot;s n\tline speed is (n) [115200]&quot;,
+		(char const *)(0)
+	};
+	struct termios restore;
+	struct termios current;
+	speed_t speed = B115200;
+	byte buffer [512];
+	signed c;
+	while ((c = getoptv (argc, argv, optv)) != -1)
+	{
+		switch (c)
+		{
+		case 's':
+			if (baudrate (uintspec (optarg, 0, UINT_MAX), &amp;speed))
+			{
+				error (1, 0, &quot;could not set baud rate&quot;);
+			}
+			break;
+		default:
+			break;
+		}
+	}
+	argc -= optind;
+	argv += optind;
+	if (!isatty (STDOUT_FILENO))
+	{
+		error (1, ENOTSUP, &quot;stdout must be a serial line device&quot;);
+	}
+	tcflush (STDOUT_FILENO, TCIFLUSH);
+	tcgetattr (STDOUT_FILENO, &amp;restore);
+	memset (&amp;current, 0, sizeof (current));
+	current.c_cflag = speed | CS8 | CLOCAL | CREAD;
+	current.c_iflag = IGNPAR;
+	current.c_oflag = 0;
+	current.c_lflag = 0;
+	current.c_cc [VTIME] = 0;
+	current.c_cc [VMIN] = 5;
+	tcsetattr (STDOUT_FILENO, TCSANOW, &amp;current);
+	if (!argc)
+	{
+		copy (STDIN_FILENO, STDOUT_FILENO, buffer, sizeof (buffer));
+	}
+	while ((argc) &amp;&amp; (* argv))
+	{
+		if (efreopen (* argv, &quot;rb&quot;, stdin))
+		{
+			copy (STDIN_FILENO, STDOUT_FILENO, buffer, sizeof (buffer));
+		}
+		argc--;
+		argv++;
+	}
+	tcsetattr (STDOUT_FILENO, TCSANOW, &amp;restore);
+	exit (0);
+}
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='Transmit.c.html' title=' Transmit.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='ttyrecv.c.html' title=' ttyrecv.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

@@ -1,0 +1,45 @@
+<chapter id='security'>
+	<title>
+		Security
+		</title>
+	<section id='security-intro'>
+		<title>
+			Introduction 
+			</title>
+		<para>
+			HomePlug AV devices support two types of secure access: Network Access and Device Access. Network access requires a Network Membership Key (NMK) that grants a device the right to join and participate in a given HomePlug AV powerline network. Device access requires a Device Access Key (DAK) that grants a local host the right to perform privileged operations on a given device. Both types of keys, the NMK and the DAK, are apparently random 128-bit (or 16-byte) integers. At the network level, any application that can produce the correct NMK or DAK can gain access to the network or the device that demands that key. 
+			</para>
+		</section>
+	<section id="encryption-keys">
+		<title>
+			Encryption Keys
+			</title>
+		<para>
+			There are many ways to generate keys but some methods are preferred to others. The HomePlug Powerline Alliance has published two algorithms for generating fixed-length, binary keys from human-friendly, variable-length character strings. One method generates an NMK and the other generates a DAK. We call these character strings "pass phrases" or "passwords".
+			</para>
+		<para>
+			Both HomePlug AV algorithms use the widely published SHA256 algorithm that converts variable length input to a statistically unique 256-bit (or 32 byte) digest or signature. It is statistically improbable that two inputs will produce the same output and is would be computationally expensive to determine the input given the output. Although these algorithms are approved by the HomePlug Powerline Alliance, there is no requirement to used them. Many other excellent algorithms exist.
+			</para>
+		</section>
+	<section id="user-passwords">
+		<title>
+			User Passwords
+			</title>
+		<para>
+			Atheros end-user software implements the recommended HomePlug AV algorithms for converting variable-length character strings (passwords) to fixed-length binary values (keys). This ensures that a given password will always produce the same key. It also ensures that no two passwords will produce the same key and that the key cannot be used to determine the password. A given password will also produce a different NMK and DAK.
+			</para>
+		<para>
+			HomePlug AV passwords are 12 to 64 characters long and may contain any ASCII character in the range 0x20 (space) through 0x7E (~). This character set essentially includes all printable characters that can be entered using an English Language keyboard.
+			</para>
+		<para>
+			People frequently confuse the DAK with the device password and the NMK with the network password. The password is a character string and the key is a binary value. The password are for people and the key is for computers.
+			</para>
+		</section>
+	<section id="security-strategy">
+		<title>
+			Password Strategy
+			</title>
+		<para>
+			</para>
+		</section>
+	</chapter>

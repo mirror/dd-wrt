@@ -1,0 +1,88 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			ttysig.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='ttysend.1.html' title=' ttysend.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='weeder.1.html' title=' weeder.1 '>NEXT</a>]
+			</div>
+<pre>
+ttysig(1)                                    Qualcomm Atheros Open Powerline Toolkit                                   ttysig(1)
+
+NAME
+       ttysig - Serial Line Signal Controller
+
+SYNOPSIS
+       ttysig [options]
+
+DESCRIPTION
+       Interactively  control  serial  line output signals (Request To Send, Data Terminal Ready), and read the current value of
+       all control signals (Request To Send, Clear To Send, Data Set Ready, Data Terminal Ready, Data Carrier Detect, Ring Indi‐
+       cator).
+
+       This  program  is  part of the Qualcomm Atheros Powerline Toolkit.  See the AMP man page for an overview and installation
+       instructions.
+
+OPTIONS
+       -s device
+              Specify the serial device used.  The default is serial console device &quot;/dev/ttyS0&quot;.
+
+       -D value
+              Set the serial control line DTR high if value is non-zero, low otherwise.
+
+       -I     Interactive mode.
+
+       -R value
+              Set the serial control line RTS high if value is non-zero, low otherwise.
+
+       -r     Print serial control line status on stdout.  This is performed after -R and -D.
+
+       -?,--help
+              Print program help summary on stdout.  This option takes precedence over other options on the command line.
+
+       -?,--version
+              Print program version information on stdout.  This option takes precedence over other options on the command line.
+              Use  this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of
+              the Linux Toolkit you are using.
+
+EXAMPLES
+       The following example sets DTR high and RTS low at program start.  The user then interactively prints the current control
+       signal values, and then sets DTR low.  Since no serial devices are specified, program defaults are used.
+
+         $ ./ttysig -I -D 1 -R 0
+         command (D #, R #, r, q): r
+         RTS: -V
+         CTS: -V
+         DSR: -V
+         DTR: +V
+         DCD: -V
+         RI : -V
+         command (D #, R #, r, q): D 0
+         command (D #, R #, r, q):
+
+SEE ALSO
+       amp(1), int6kdetect(1), int6kuart(1)
+
+CREDITS
+        Nathaniel Houghton &lt;nhoughto@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                                ttysig(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='ttysend.1.html' title=' ttysend.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='weeder.1.html' title=' weeder.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

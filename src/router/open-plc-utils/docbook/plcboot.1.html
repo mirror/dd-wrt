@@ -1,0 +1,179 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			plcboot.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='plc.1.html' title=' plc.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='plcdevs.1.html' title=' plcdevs.1 '>NEXT</a>]
+			</div>
+<pre>
+plcboot(1)                                   Qualcomm Atheros Open Powerline Toolkit                                  plcboot(1)
+
+NAME
+       plcboot - Qualcomm Atheros Panther/Lynx Powerline Device Bootstrapper
+
+SYNOPSIS
+       plcboot [options] -N file -P file [device] [device] [...]
+
+DESCRIPTION
+       Download and start runtime firmware on a local powerline device when it is in bootloader mode.  A powerline device enters
+       bootloader mode if it has not flash memory or cannot load firmware from flash memory for some reason.  You can  use  this
+       progrm  to start the device and then, optionally, permanently write a softloader, parameters and firmware into flash mem‐
+       ory.
+
+       Qualcomm Atheros introduced new boot methods with the Lightning chipset and new file formats and flash methods  with  the
+       Panther  chipset.   This program supports the newer formats and methods.  It does not support the older formats and meth‐
+       ods.  See programs int6kboot or ampboot to initialize earlier chipsets.
+
+       This program is part of the Qualcomm Atheros Powerline Toolkit.  See the plc man page for an  overview  and  installation
+       instructions.
+
+OPTIONS
+       -e     Redirects stderr messages to stdout.  Normally, status and error messages are printed on stderr while primary pro‐
+              gram output is printed on stdout.  This option prints all output on stdout in cases where this is desired.
+
+       -F[F]  Flash or Force Flash NVRAM using either VS_MOD_NVM or VS_MODULE_OPERATION.  Adding a second F here or  another  -F
+              anywhere  on  the  command line will force-flash a blank or corrupted NVRAM.  Firmware loaded from NVRAM may treat
+              force-flash as an error, depending of the firmware version.
+
+       -i interface
+              Select the host Ethernet interface.  All requests are sent via this host interface and only reponses received  via
+              this host interface are recognized.  The default interface is eth1 because most people use eth0 as their principle
+              network connection; however, if environment string &quot;PLC&quot; is defined then it  takes  precedence  over  the  default
+              interface.  This option then takes precedence over either default.
+
+       -N filename
+              The  file  containing the firmware chain used to boot and flash the device.  This option and argument are required
+              when booting or flashing a device but may appear anywhere on the  command  line.   Invalid  image  files  will  be
+              rejected.  No assumptions are made about this file based on filename and no filename conventions are enforced.
+
+       -P filename
+              The  file  containing the firmware chain used to boot and flash the device.  This option and argument are required
+              when booting or flashing a device but may appear anywhere on the  command  line.   Invalid  image  files  will  be
+              rejected.  No assumptions are made about this file based on filename and no filename conventions are enforced.
+
+       -q     Suppresses status messages on stderr.
+
+       -S filename
+              The  file containing the softloader chain used to flash the device.  On prior versions of plcboot, the presence of
+              this option indicated that flash memory should be programmed but that is no longer the case.  You must now specify
+              bot this option and option -F in order to program flash memory.  This option and argument are required when flash‐
+              ing a device but may appear anywhere on the command line.  Invalid image files will be rejected.   No  assumptions
+              are made about this file based on filename and no filename conventions are enforced.
+
+       -t milliseconds
+              Read  timeout  in  milliseconds.   Values  range  from 0 through UINT_MAX.  This is the maximum time allowed for a
+              response.  The default is shown in brackets on the program menu.
+
+       -v     Prints additional information on stdout.  In particular, this option dumps outgoing Ethernet packets on stdout.
+
+       -?,--help
+              Print program help summary on stdout.  This option takes precedence over other options on the command line.
+
+       -!,--version
+              Print program version information on stdout.  This option takes precedence over other options on the command line.
+              Use  this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of
+              the Linux Toolkit you are using.
+
+ARGUMENTS
+       device The Ethernet hardware address of some powerline device.  More than one address may be  specified  on  the  command
+              line.   If  more  than one address is specified then operations are performed on each device in turn.  The default
+              address is local.  as explained in the DEVICES section.
+
+DEVICES
+       Powerline device addresses are 12 hexadecimal digits in upper, lower or mixed case.  Individual octets may  be  separated
+       by   colons,   for  clarity,  but  colons  are  not  required.   For  example,  &quot;00b052000001&quot;,  &quot;00:b0:52:00:00:01&quot;  and
+       &quot;00b052:000001&quot; are valid and equivalent.
+
+       A local device is any Atheros Powerline Device connected directly to a host Ethernet interface.  A remote device  is  any
+       Atheros Powerline Device at the far end of a powerline connection.  A foreign device is any powerline device not manufac‐
+       tured by Atheros.
+
+       Common device addresses have symbolic names that can be used in place of the actual address value.   The  following  sym‐
+       bolic addresses are recognized by this program and most other toolkit programs.
+
+       all    Equivalent to &quot;broadcast&quot;, described next.
+
+       broadcast
+              A  synonym  for  the Ethernet broadcast address, FF:FF:FF:FF:FF:FF.  All devices, whether local, remote or foreign
+              will respond to this address.
+
+       local  A synonym for the Qualcomm Atheros Local Management Address (LMA), 00:B0:52:00:00:01.  All local  Atheros  devices
+              will respond to this address but remote and foreign devices will not.
+
+REFERENCES
+       See  the  Qualcomm  Atheros  HomePlug AV Firmware Technical Reference Manual for technical information.  See the Qualcomm
+       Atheros Powerline Toolkit Online Documetation for practical information and examples.
+
+EXAMPLES
+       This example boots a powerline device by downloading runtime parameters and firmware then  starting  firmware  execution.
+       The  actual boot method used will depend on the file formats and powerline device type detected by the program.  The out‐
+       put shown here is typical for panther and lynx chipsets.  Option -P and -N are required but their order is not important.
+       Tne  MAC address may be omitted beccause it will default to 00:B0:52:00:00:01 which is also the default bootloader device
+       address.  On completion, runtime firmware is executing in SDRAM but flash memory has not been programmed.  If This opera‐
+       tion is common for flash-less devices.  If we reset the device at this point then it will return to bootloader mode.
+
+          # plcboot -P AR7420.pib -N AR7400.nvm
+          eth1 00:B0:52:00:00:01 BootLoader is running
+          eth1 00:B0:52:00:00:01 Write AR7420.nvm (1) (0x00000040:6212)
+          eth1 00:B0:52:00:00:01 Start AR7420.nvm (1) (0x000000C0)
+          eth1 00:B0:52:00:00:01 Write AR7420.pib (1) (0x00200000:10904)
+          eth1 00:B0:52:00:00:01 Write AR7420.nvm (5) (0x002B610C:281252)
+          eth1 00:B0:52:00:00:01 Start AR7420.nvm (5) (0x002B64FC)
+          eth1 00:B0:52:BA:BE:88 MAC-QCA7420ES-0.9.0.278-0-20110914-INTERNAL is running
+
+       The  next  example  boots  a  device,  as  before, then flashes the same parameters and firmware into non-volatile memory
+       attached to the device.  Observe that a softloader is required and will be written to flash memory before runtime parame‐
+       ters  and firmware.  The softloader need only be written once when first programming a blank flash memory.  Option -FF is
+       optional but permitted for backward compatibility with programs ampboot and int6kboot.
+
+          # plcboot -P AR7420.pib -N AR7400.nvm -S AR7420-softloader.nvm -FF
+          eth1 00:B0:52:00:00:01 Write AR7420.nvm (1) (00000040:6212)
+          eth1 00:B0:52:00:00:01 Start AR7420.nvm (1) (000000C0)
+          eth1 00:B0:52:00:00:01 Write AR7420.pib (1) (00200000:11692)
+          eth1 00:B0:52:00:00:01 Write AR7420.nvm (5) (002B6A4C:282444)
+          eth1 00:B0:52:00:00:01 Start AR7420.nvm (5) (002B6E3C)
+          eth1 00:B0:52:00:00:06 MAC-QCA7420ES-1.0.0.280-00-20110923-ALPHA is running
+          eth1 00:B0:52:00:00:06 Start Session
+          eth1 00:B0:52:00:00:06 Flash AR7420-softloader.nvm
+          eth1 00:B0:52:00:00:06 Close Session
+          eth1 00:B0:52:00:00:06 Start Session
+          eth1 00:B0:52:00:00:06 Flash AR7420.pib
+          eth1 00:B0:52:00:00:06 Flash AR7420.nvm
+          eth1 00:B0:52:00:00:06 Close Session
+
+DISCLAIMER
+       Qualcomm Atheros firmware file structure and content is proprietary to Qualcomm Atheros,  Ocala  FL  USA.   Consequently,
+       public information is not available.  Qualcomm Atheros reserves the right to change firmware file structure or content or
+       change the name or behavior of any program that inspects or changes firmware files, in future software  releases  without
+       any  obligation  to notify or compensate users of such programs.  Qualcomm Atheros HomePlug AV Vendor Specific Management
+       Message structure and content is proprietary to Qualcomm Atheros, Ocala FL USA.  Consequently, public information may not
+       be  available.   Aualcomm  Atheros reserves the right to modify message structure and content in future firmware releases
+       without any obligation to notify or compensate users of this program.
+
+SEE ALSO
+       ampboot(1), amptool(1), chknvm(1), chkpib(1), int6kboot(1), modpib(1), plctool(1)
+
+CREDITS
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                               plcboot(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='plc.1.html' title=' plc.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='plcdevs.1.html' title=' plcdevs.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

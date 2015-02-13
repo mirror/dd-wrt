@@ -1,0 +1,159 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			chkpib.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='chknvm2.1.html' title=' chknvm2.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='chkpib2.1.html' title=' chkpib2.1 '>NEXT</a>]
+			</div>
+<pre>
+chkpib(1)                                    Qualcomm Atheros Open Powerline Toolkit                                   chkpib(1)
+
+NAME
+       chkpib - Qualcomm Atheros PLC Parameter File Inspector
+
+SYNOPSIS
+       chkpib [options] file [file] [...]
+
+DESCRIPTION
+       The  Qualcomm  Atheros  Parameter  File  Validator  checks Qualcomm Atheros powerline parameter files for obvious errors,
+       including obsolete format, wrong file size, bad checksums and read errors.  It makes no attempt  to  check  any  internal
+       information other than file length and checksum.
+
+       This  program handles both the older Thunderbolt and Lightning and the newer Panther and Lynx parameter file formats.  It
+       validates files directly from disk and so it is slower than program chkpib2 but needs less memory at runtime.
+
+       This program is part of the Qualcomm Atheros Powerline Toolkit.  See the AMP man page for an  overview  and  installation
+       instructions.
+
+OPTIONS
+       -m     Display  manifest content, if present.  The manifest is a special module, included in some image chains, that con‐
+              tains useful information about the chain.  This option suppresses the summary ’looks good’ message.
+
+       -q     Suppresses printing of progress messages.
+
+       -v     Print additional information such as the PIB header for each file.  This information can be used  to  confirm  pib
+              version and distinguish one PIB file from another.
+
+       -?,--help
+              Print program help summary on stdout.  This option takes precedence over other options on the command line.
+
+       -!,--version
+              Print program version information on stdout.  This option takes precedence over other options on the command line.
+              Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version  of
+              the Linux Toolkit you are using.
+
+ARGUMENTS
+       file   The  name of a runtime parameter file.  By convention, runtime parameter files have a .pib extention but this pro‐
+              gram does not enforce that convention.
+
+DISCLAIMER
+       Qualcomm Atheros parameter file structure and content is proprietary to Qualcomm Atheros, Ocala  FL  USA.   Consequently,
+       public  information  is not available.  Qualcomm Atheros reserves the right to change parameter file structure or content
+       or change the name or behavior of any program that inspects or changes parameter files, in future software releases with‐
+       out any obligation to notify or compensate users of such programs.
+
+EXAMPLES
+       The  next  example  reads file abc.pib and validates it.  The message shown indicates that the PIB version is recent, the
+       file is the correct size, the checksum is valid computes and there are no read errors.
+
+          # chkpib abc.pib
+          abc.pib looks good
+
+       The next example reads three files and reports on each one.  You can suppress good news with  the  -q  option.   Remember
+       that &quot;looking good&quot; does not mean &quot;is good&quot;.
+
+          # chkpib INT6400.pib AR7400.pib AR7420.pib
+          INT6400.pib looks good
+          AR7400.pib looks good
+          AR7420.pib looks good
+
+       The  next  example  reads  three files and displays selected information about each one because option -v is present.  Ov
+       course, program output could be piped to a file and used for documentation purposes.
+
+          # chkpib -v INT6400.pib AR7400.pib AR7420.pib
+          ------- INT6400.pib -------
+                  PIB 4-2 10888 bytes
+                  MAC 00:B0:52:BA:BE:00
+                  DAK 68:9F:07:4B:8B:02:75:A2:71:0B:0B:57:79:AD:16:30 (HomePlugAV)
+                  NMK 50:D3:E4:93:3F:85:5B:70:40:78:4D:F8:15:AA:8D:B7 (HomePlugAV)
+                  NID B0:F2:E6:95:66:6B:03
+                  NET Intellon Enabled Network
+                  MFG Intellon HomePlug AV Device
+                  USR Intellon Enabled Product
+                  CCo Auto
+                  MDU N/A
+          ------- AR7400.pib -------
+                  PIB 7-1 16352 bytes
+                  MAC 00:B0:52:00:00:08
+                  DAK F0:84:B4:E8:F6:06:9F:F1:30:0C:9B:DB:81:23:67:FF (HomePlugAV0123)
+                  NMK 50:D3:E4:93:3F:85:5B:70:40:78:4D:F8:15:AA:8D:B7 (HomePlugAV)
+                  NID B0:F2:E6:95:66:6B:03
+                  NET Atheros Enabled Network
+                  MFG Atheros HomePlug AV Device
+                  USR Intergalactic Software Pirates
+                  CCo Never
+                  MDU Slave
+          ------- AR7420.pib -------
+                  PIB 0-2 10904 bytes
+                  MAC 00:B0:52:00:00:01
+                  DAK 68:9F:07:4B:8B:02:75:A2:71:0B:0B:57:79:AD:16:30 (HomePlugAV)
+                  NMK 50:D3:E4:93:3F:85:5B:70:40:78:4D:F8:15:AA:8D:B7 (HomePlugAV)
+                  NID B0:F2:E6:95:66:6B:03
+                  NET Atheros Enabled Network
+                  MFG Atheros HomePlug AV Device
+                  USR Atheros Enabled Product
+                  CCo Auto
+                  MDU N/A
+
+       This example prints the manifest found inside newer parameter files.  This can be used  to  distinguish  parameter  files
+       from  firmware  files, determine exact firmware or parameter file revisions and so forth.  Observe that we specified sev‐
+       eral files on the command line but only one file, AR7420.pib, contained a manifest.
+
+          # chkpib -m INT6400.pib AR7400.pib AR7420.pib
+          ------- AR7420.pib (0) -------
+                  Signature: 1234ABCD
+                  Hardware Compatibility: AR74200
+                  Chain Major Version: 0
+                  Chain Minor Version: 1
+                  Chain Type: Parameter Block
+                  Build Major Version: 0
+                  Build Minor Version: 0
+                  Build Type: Special
+                  Manifest Version: 1
+                  Build Number: 0
+                  Build Date: 20110811
+                  Build Time: 203853
+                  Device Type: 29728
+                  Build Hostname: TOR-SW-SIM04
+                  Build Username: buildbot
+                  Build Description: Custom
+                  Build Version String: AR-7420-FW-0_0-0_2-20110811:203853-buildbot:TOR-SW-SIM04-1-0_1
+
+SEE ALSO
+       chkpib2(7), getpib(7), modpib(1), pib2xml(1), pibcomp(1), pibdump(1), setpib(1), xml2pib(1)
+
+CREDITS
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+        Nathaniel Houghton &lt;nhoughto@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                                chkpib(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='chknvm2.1.html' title=' chknvm2.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='chkpib2.1.html' title=' chkpib2.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

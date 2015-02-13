@@ -1,0 +1,90 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			nvmsplit.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='nvmmerge.1.html' title=' nvmmerge.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='pcapdevs.1.html' title=' pcapdevs.1 '>NEXT</a>]
+			</div>
+<pre>
+nvmsplit(1)                                  Qualcomm Atheros Open Powerline Toolkit                                 nvmsplit(1)
+
+NAME
+       nvmsplit - Qualcomm Atheros PLC Firmware Image File Slicer
+
+SYNOPSIS
+       nvmsplit [options] file [file] [...]
+
+DESCRIPTION
+       Extract  all  images  from  an  Atheros binary image file, leaving the original files intact.  Extracted images appear in
+       files having the input file basename with sequence numbers indicating the relative position of the image within the orig‐
+       inal  file.   For  example,  image file abc.nvm might result in files abc-00.nvm, abc-01.nvm, abc-02.nvm and so on.  Each
+       output file is a valid, single-image file and so they can be combined using program nvmmerge.
+
+       Atheros image files consist of a chain of image headers, each followed by an image block.  Image blocks can contain data,
+       applets  or  programs.  Atheros software reads the header chain and decides which images to download and execute based on
+       information in the image headers.  Tampering with image headers or images may void some contractual obligations  made  by
+       Atheros.
+
+       This  program  is  part of the Qualcomm Atheros Powerline Toolkit.  See the AMP man page for an overview and installation
+       instructions.
+
+OPTIONS
+       -q     Suppress routine messages.  This option has no effect at this time.
+
+       -v     Print component file names on stderr as they are created.
+
+       -?,--help
+              Print program help summary on stdout.  This option takes precedence over other options on the command line.
+
+       -!,--version
+              Print program version information on stdout.  This option takes precedence over other options on the command line.
+              Use  this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of
+              the Linux Toolkit you are using.
+
+ARGUMENTS
+       file   The name of an Atheros image file.  By convention, Atheros Image files have a .nvm file extension but this program
+              does not enforce this convention.  Invalid image files will be rejected causing the output to be incomplete.
+
+EXAMPLES
+       The  following  example  reads  Atheros  image file abc.nvm and creates one or more output files.  Each file contains one
+       image with associated header.
+
+          # nvmsplit abc.nvm -v
+          nvmsplit: abc.nvm --&gt; abc-00.nvm
+          nvmsplit: abc.nvm --&gt; abc-01.nvm
+          nvmsplit: abc.nvm --&gt; abc-02.nvm
+          nvmsplit: abc.nvm --&gt; abc-03.nvm
+
+DISCLAIMER
+       Atheros image file structure and content is proprietary to Qualcomm Atheros, Ocala FL USA.  Consequently, public informa‐
+       tion  is  not  available.   Qualcomm  Atheros  reserves  the right to change file structure or content in future firmware
+       releases without any obligation to notify or compensate users of this program.  This  program  is  reserved  for  use  by
+       Atheros Field Engineers.  Use of this program may void some contractual obligations made by Atheros.
+
+SEE ALSO
+       chknvm(1), int6k(1), int6kf(1), int6ktest(1), nvmmerge(1), setnvm(1)
+
+CREDITS
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                              nvmsplit(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='nvmmerge.1.html' title=' nvmmerge.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='pcapdevs.1.html' title=' pcapdevs.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

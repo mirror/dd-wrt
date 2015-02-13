@@ -1,0 +1,167 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			efsu.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='efru.1.html' title=' efru.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='evse.1.html' title=' evse.1 '>NEXT</a>]
+			</div>
+<pre>
+efsu(1)                                      Qualcomm Atheros Open Powerline Toolkit                                     efsu(1)
+
+NAME
+       efsu - Ethernet Frame Send Utility
+
+SYNOPSIS
+       efsu [options] file [file] [...]
+
+       efsu [options] [&lt;stdin]
+
+DESCRIPTION
+       Sends custom Ethernet frames over a specific host Ethernet interface.
+
+       A  frame is specified as a text stream of hexadecimal octets read from one or more frame description files or from stdin.
+       Each octet is converted to a binary byte, buffered and transmitted over the network on the specified host interface.  The
+       program  assumes  that  frames are valid and will transmit whatever you specify, right or wrong.  The program only checks
+       minimum and maximum frame length.
+
+       Frame descriptions are stored as plain text files.  Multiple frames may be specified in one file by separating them  with
+       a semicolon.  All descriptions in a file are read and sent immediately but multiple files may be specified on the command
+       line and options allow pauses between files, command line repetition and pauses between command line iterations.
+
+       A frame descriptions is a continuous stream of hexadecimal digits.  Intervening text, punctuation, white space  and  com‐
+       ments  are  discarded.  Hex characters inside script-style, C-style or C++-style comments are ignored.  Script-style com‐
+       ments include all characters between a hash (’#’) and the next newline or EOF.  C-style  and  C++-style  comments  follow
+       normal  language  rules.   Comments may be used to document frame descriptions or hide frame segments.  In the end, there
+       must be an even number of hex digits that represent 60 to 1518 octets;
+
+OPTIONS
+       -d address
+              Replace the destination Ethernet address of each transmitted frame with  the  option  argument.   The  destination
+              address  consists of 12 hex digits in upper, lower or mixed case.  Octets may be seperated with colons for clarity
+              but colons are not required.
+
+       -e ethertype
+              Echo received frames having ethertype.  This effectively filters received frames but does not  filter  transmitted
+              frames.   The  ethertype  is expressed in hexadecimal without the &quot;0x&quot; prefix.  The keyword &quot;hp10&quot; can be used for
+              887B and keyword &quot;hpav&quot; can be used for 88E1.
+
+       -h     Replace the source address of each transmitted frame with the Ethernet address of the host interface used to  send
+              the  frame.   This allows frames to be sent correctly from any host interface.  Use option -i to specify an inter‐
+              face.
+
+       -i interface
+              The host interface used to send frames.  The default is &quot;eth1&quot; because most people use &quot;eth0&quot; as  their  principle
+              network  connection; however, if the string &quot;PLC&quot; is defined in the environment then it will over-ride the program
+              default.  Any interface specified on the command line will over-ride the default.
+
+       -l count
+              Repeat command line count times by re-sending all files each time.  The default is 1.
+
+       -p seconds
+              Pause between each file on the command line.  The default is 0 seconds.
+
+       -t timer
+              Read timeout in milliseconds.  Values range from 0 through UINT_MAX.  This is  the  maximum  time  allowed  for  a
+              response.  The default is 50 milliseconds.
+
+       -v     Dumps  transmitted  frames on stdout as they are sent.  If an Ethertype was specified using option -e the received
+              frames having that Ethertype will also be dumped.
+
+       -w seconds
+              Wait between command line iterations.  The default is 0 seconds.
+
+ARGUMENTS
+       file   The name of a file containing one or more frame specifications.  When  more  than  one  file  is  specified,  efsu
+              behaves  like the cat utility by reading and sending each file in turn.  The program makes no assumptions based on
+              filename or extension and enforces no filename conventions; however, giving  frame  description  files  the  *.hex
+              extension  is  a  good  convention.   Some  toolkit distributions include example .hex files in the source folder.
+              These files are not needed for proper execution and may be deleted.
+
+NOTES
+       One way to create a frame description file is to cut-and-paste output from a packet sniffer program and discard the  line
+       numbers and ASCII text columns.  You can then break out selected frame segments onto new lines and insert comments.
+
+EXAMPLES
+       For example, a simple file might look like:
+
+          #!/usr/local/bin/efsu -ieth0
+          # file: abc.hex
+          # =====================================
+          # this is an example frame description;
+          # -------------------------------------
+          00 B0 52 00 00 01
+          // 00 B0 52 BE DE 73
+          00 E0 45 DA DA 07
+          88 E1
+          /* content */
+          00 00 00 00 00 00 00 00
+          00 00 00 00 00 00 00 00
+          00000000 0000 00 /* control byte */ 00
+          00 00 00 00 00 00 00 00
+          00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+          00 00 00 00 00 00 00 00
+
+       The bang path permits direct execution of the file if 1) efsu is installed in the bang path directory, 2) the description
+       file has execute permissions and 3) the user has execute privileges for that file.  The script-style,  C++-style  and  C-
+       style  comments are ignored along with any white space.  Only the hexadecimal octets are read and sent.  Since the number
+       of octets exceeds 60 and the number of digits is even, efsu will report no errors and send the packet.  There is no guar‐
+       antee that this packet is valid.
+
+       Assuming  the  above  file is named abc.hex, we can transmit the file over the network as an Ethernet frame with the next
+       command.  A hexadecimal dump of the transmitted frame appears on the console because option -v is present.
+
+          # efsu abc.hex -v
+          00000000 00 B0 52 00 00 01 00 E0 45 DA DA 07 88 E1 00 00 ..R.....E.......
+          00000010 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ................
+          00000020 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ................
+          00000030 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ................
+          00000040 00 00 00 00 00 00                               ......
+
+       Since every host interface has a different hardware address, one can replace the source  address  of  transmitted  frames
+       with  the actual host interface address using option -h.  Observe that the original source address has been replaced with
+       that of the local host interface used to transmit the frame.
+
+          # efsu abc.hex -vh
+          00000000 00 B0 52 00 00 01 00 0F EA 10 D5 1C 88 E1 00 00 ..R.............
+          00000010 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ................
+          00000020 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ................
+          00000030 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ................
+          00000040 00 00 00 00 00 00                               ......
+
+       You can also direct the frame to another device using option -d.  Observe that the original destination address has  been
+       replaced with the one specified on the command line.
+
+          # efsu abc.hex -vhd 00b052beef01
+          00000000 00 B0 52 BE EF 01 00 0F EA 10 D5 1C 88 E1 00 00 ..R.............
+          00000010 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ................
+          00000020 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ................
+          00000030 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ................
+          00000040 00 00 00 00 00 00                               ......
+
+SEE ALSO
+       amp(1), hpav(1)
+
+CREDITS
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                                  efsu(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='efru.1.html' title=' efru.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='evse.1.html' title=' evse.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

@@ -1,0 +1,89 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			mdiodump.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='mdioblock2.1.html' title=' mdioblock2.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='mdustats.1.html' title=' mdustats.1 '>NEXT</a>]
+			</div>
+<pre>
+mdiodump(1)                                  Qualcomm Atheros Open Powerline Toolkit                                 mdiodump(1)
+
+NAME
+       mdiodump - Qualcomm Atheros MDIO Custom Module Analyser
+
+SYNOPSIS
+       mdiodump [options] file [file] [...]
+
+DESCRIPTION
+       Read  one  or  more binary MDIO program files and output MDIO instructions on stdout.  These instructions are suitable as
+       input to program mdioblock which outputs MDIO programs.  See the mdioblock manpage for more information.
+
+       This program is part of the Qualcomm Atheros Powerline Toolkit.  See the PLC man page for an  overview  and  installation
+       instructions.
+
+OPTIONS
+       -s     Print summary information on stdout instead of MDIO instructions.
+
+       -t phy_type
+              Specify the PHY chipset that this MDIO module will be used with.  The only supported option arguments are &quot;ar8236&quot;
+              and &quot;generic&quot;.  Argument &quot;ar8236&quot; indicates that the MDIO register instructions are Atheros AR8236 specific.   The
+              AR8236  supports  special  MDIO registers and instructions in addition to generic MDIO registers and instructions.
+              The default is &quot;generic&quot; which displays instructions as standard MDIO instructions.  This option and option -b are
+              mutually exclusive.
+
+       -v     Prints additional information on stdout.  In particular, this option causes mdiodump to display every MDIO command
+              present instead of just the simulation summary.
+
+       -?,--help
+              Displays program help information on stderr.  This option takes precedence over all other options on  the  command
+              line except version information.
+
+       -!,--version
+              Displays  program  version information on stderr.  This option takes precedence over all other options on the com‐
+              mand line except help information.  Use this option when sending screen dumps to Atheros technical staff.
+
+ARGUMENTS
+       file   The MDIO custom module file to operate on.
+
+REFERENCES
+       See the Qualcomm Atheros HomePlug AV Firmware Technical Reference Manual for  information  about  generic  MDIO  register
+       instruction.   See  the  Qualcomm  Atheros AR8236 Six-Port Fast Ethernet Switch Data Sheet for detailed information about
+       AR8236 specific MDIO registers and instructions.
+
+DISCLAIMER
+       Atheros HomePlug AV Vendor Specific Management Message structure and content is proprietary to Qualcomm Atheros, Ocala FL
+       USA.   Consequently,  public  information  may  not  be available.  Qualcomm Atheros reserves the right to modify message
+       structure and content in future firmware releases without any obligation to notify or compensate users of this program.
+
+EXAMPLES
+       None.
+
+SEE ALSO
+       amp(1), int6kmod(1), int6kmdio(1), int6kmdio2(1), mdioblock(1), mdioblock2(1), mdiogen(1), plcmdio16(1), plcmdio32(1)
+
+CREDITS
+        Nathaniel Houghton &lt;nhoughto@qca.qualcomm.com&gt;
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+        Marc Bertola &lt;marc.bertola@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                              mdiodump(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='mdioblock2.1.html' title=' mdioblock2.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='mdustats.1.html' title=' mdustats.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

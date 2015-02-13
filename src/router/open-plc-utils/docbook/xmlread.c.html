@@ -1,0 +1,90 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			xmlread.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='xmlopen.c.html' title=' xmlopen.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='xmlscan.c.html' title=' xmlscan.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   NODE * xmlread (NODE * node, char const * filename);
+ *
+ *   node.h
+ *
+ *   open an XML file and return the parse tree root;
+ *
+ *   the entire file is read into a buffer associated with the text
+ *   member in the root node; the buffer is then split into strings
+ *   referenced by child nodes, forming a hierarchial string vector;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef XMLREAD_SOURCE
+#define XMLREAD_SOURCE
+
+#include &lt;unistd.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;memory.h&gt;
+#include &lt;fcntl.h&gt;
+#include &lt;errno.h&gt;
+
+#include &quot;../tools/error.h&quot;
+#include &quot;../tools/files.h&quot;
+#include &quot;../nodes/node.h&quot;
+
+signed xmlread (NODE * node, char const * filename)
+
+{
+	struct stat stat;
+	signed fd;
+	memset (node, 0, sizeof (NODE));
+	if (lstat (filename, &amp;stat))
+	{
+		error (1, errno, FILE_CANTSTAT, filename);
+	}
+	if (!(node-&gt;text = malloc (stat.st_size + 1)))
+	{
+		error (1, errno, FILE_CANTLOAD, filename);
+	}
+	if ((fd = open (filename, O_BINARY|O_RDONLY)) == -1)
+	{
+		error (1, errno, FILE_CANTOPEN, filename);
+	}
+	if (read (fd, node-&gt;text, stat.st_size) != stat.st_size)
+	{
+		error (1, errno, FILE_CANTREAD, filename);
+	}
+	node-&gt;text [stat.st_size] = (char)(0);
+	close (fd);
+	return (0);
+}
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='xmlopen.c.html' title=' xmlopen.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='xmlscan.c.html' title=' xmlscan.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

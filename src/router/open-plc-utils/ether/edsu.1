@@ -1,0 +1,86 @@
+.TH edsu 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+edsu - Qualcomm Atheros Ethernet II Data Send Utility
+
+.SH SYNOPSIS
+.BR edsu
+.RI [ options ]
+.IR file
+.RI [ file ]
+[...]
+
+.SH DESCRIPTION
+Send one or more files as a series of Ethernet II (IEEE 802.2) frames.
+Input files are sequentially read and sent over network as a continuous stream of standard Ethernet frames.
+All frames (except perhaps the last frame for each file) will contain 1500 bytes of file data.
+The receiving host may elect to concatenate frame data as frames arrive.
+
+.PP
+This program can be used to test remote Atheros UART-enabled powerline devices.
+The remote UART-enabled powerline device will remove frame headers and forward frame data to the local host as a serial data stream.
+No protocol is imposed on the serial data stream.
+For example, there is no indication of frame or file start or end within the stream.
+The retmote powerline device must be in \fBTransparent Mode\fR and configured to accept frames from the sending host.
+The remote host must also be ready to handle serial data as it arrives.
+
+.SH OPTIONS
+
+.TP
+-\fBd \fIxx:xx:xx:xx:xx:xx\fR
+The Ethernet address of the destination device.
+If the destination device is a Linux, Mac OSX or Windows host then program \fBedru\fR can be used to receive and write frame data to \fBstdout\fR as a serial stream.
+If the destination device is an Atheros UART-enabled powerline device then received frame data will be converted to a serial data stream and forwared to the host connected to that device.
+In that case, the UART-enabled powerline device must be programmed with the address of the sending host.
+
+.TP
+-\fBe \fIethertype\fR
+The protocol (or ethertype) of interest expressed as a 16-bit hexadecimal integer.
+Prefix "\fB0x\fR" is optional.
+This filters out frames having any other ethertype.
+The default is \fBETH_P_802_2\fR as defined in \fBif_ether.h\fR.
+
+.TP
+-\fBi \fIinterface\fR
+The host interface used to send frames.
+The program default is "\fBeth1\fR" on Linux, "\fBen0\fR" on MacOSX or OpenBSD and "\fB2\fR" on Windows; however, if environment string "\fBPLC\fR" is defined, it supersedes the program default.
+Any  interface specified on the command line supersedes all others.
+
+.TP
+-\fBp \fIseconds\fR
+Pause time in seconds between sending each frame.
+Pauses may be necessary when the destination device is a UART-enabled powerline device because each frame must be converted and transmitted serially from the remote device to the remote host.
+Permitted pause times are \fB0\fR through \fB255\fR seconds.
+The default is \fB0\fR.
+
+.TP
+.RB - q
+Quiet mode.
+This option has no effect at this time.
+
+.TP
+.RB - v
+Verbose mode.
+This option displays outgoing frames on stdout in hexadecimal dump format as they are sent.
+
+.SH ARGUMENTS
+
+.TP
+.IR file
+The name of a text or binary file accessible from the local host.
+
+.SH EXAMPLES
+The following example sends files \fBabc.txt\fR then \fBdef.bin\fR to the remote Atheros UART-enabled powerline device \fB00:B0:52:BA:BE:55\fR over network interface \fBeth1\fR.
+There is a constant 1 second delay between each frame sent so that remote UART-enabled powerline devices have time to convert and forward each frame to their local host.
+
+.PP
+   # edsu -ieth1 -d 00:b0:52:BA:BE:55 abc.txt def.bin
+
+.SH SEE ALSO
+.BR amp ( 1 ),
+.BR edru ( 1 )
+.BR efsu ( 1 ),
+
+.SH CREDITS
+ Charles Maier <cmaier@qca.qualcomm.com>
+

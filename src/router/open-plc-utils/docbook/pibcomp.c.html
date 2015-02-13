@@ -1,0 +1,423 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			pibcomp.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='pib2xml.c.html' title=' pib2xml.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='pibdump.c.html' title=' pibdump.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *
+ *   pibcomp.c - Qualcomm Atheros Parameter Information Block Compare Utility
+ *
+ *
+ *   Contributor(s):
+ *      Nathaniel Houghton &lt;nhoughto@qca.qualcomm.com&gt;
+ *	Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *   system header files;
+ *--------------------------------------------------------------------*/
+
+#include &lt;unistd.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;ctype.h&gt;
+#include &lt;errno.h&gt;
+#include &lt;sys/stat.h&gt;
+
+/*====================================================================*
+ *   custom header files;
+ *--------------------------------------------------------------------*/
+
+#include &quot;../tools/getoptv.h&quot;
+#include &quot;../tools/number.h&quot;
+#include &quot;../tools/memory.h&quot;
+#include &quot;../tools/error.h&quot;
+#include &quot;../tools/flags.h&quot;
+#include &quot;../tools/chars.h&quot;
+#include &quot;../tools/sizes.h&quot;
+#include &quot;../tools/files.h&quot;
+#include &quot;../nvm/nvm.h&quot;
+#include &quot;../pib/pib.h&quot;
+
+/*====================================================================*
+ *   custom source files;
+ *--------------------------------------------------------------------*/
+
+#ifndef MAKEFILE
+#include &quot;../tools/getoptv.c&quot;
+#include &quot;../tools/putoptv.c&quot;
+#include &quot;../tools/version.c&quot;
+#include &quot;../tools/hexview.c&quot;
+#include &quot;../tools/hexoffset.c&quot;
+#include &quot;../tools/error.c&quot;
+#include &quot;../tools/checksum32.c&quot;
+#include &quot;../tools/fdchecksum32.c&quot;
+#endif
+
+#ifndef MAKEFILE
+#include &quot;../nvm/nvmseek2.c&quot;
+#endif
+
+/*====================================================================*
+ *
+ *   void function (char const * filename [], flag_t flags);
+ *
+ *   read object definitions from stdin and use them to compare two
+ *   files; dump only those objects that differ on stdout;
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+static void function (char const * filename [], flag_t flags)
+
+{
+	unsigned file;
+	unsigned object = 0;
+	unsigned lineno = 1;
+	signed fd [2];
+	signed length = 0;
+	off_t origin [2];
+	off_t offset [2];
+	off_t extent [2];
+	char memory [_ADDRSIZE+1];
+	char symbol [_NAMESIZE];
+	char string [_LINESIZE];
+	char * sp;
+	signed c;
+	for (file = 0; file &lt; SIZEOF (fd); file++)
+	{
+		uint32_t version;
+		if ((fd [file] = open (filename [file], O_BINARY|O_RDONLY)) == -1)
+		{
+			error (1, errno, &quot;%s&quot;, filename [file]);
+		}
+		if (read (fd [file], &amp;version, sizeof (version)) != sizeof (version))
+		{
+			error (1, errno, FILE_CANTREAD, filename [file]);
+		}
+		if ((extent [file] = lseek (fd [file], 0, SEEK_END)) == (off_t)(-1))
+		{
+			error (1, 0, FILE_CANTSIZE, filename [file]);
+		}
+		if ((origin [file] = lseek (fd [file], 0, SEEK_SET)))
+		{
+			error (1, errno, FILE_CANTHOME, filename [file]);
+		}
+		if (LE32TOH (version) == 0x60000000)
+		{
+			error (1, ENOTSUP, &quot;%s is not a PIB file&quot;, filename [file]);
+		}
+		if (LE32TOH (version) == 0x00010001)
+		{
+			struct nvm_header2 nvm_header;
+			if (nvmseek2 (fd [file], filename [file], &amp;nvm_header, NVM_IMAGE_PIB))
+			{
+				error (1, ENOTSUP, &quot;%s is not a PIB file&quot;, filename [file]);
+			}
+			origin [file] = lseek (fd [file], 0, SEEK_CUR);
+		}
+	}
+	if (origin [0] != origin [1])
+	{
+		error (0, EINVAL, &quot;PIBs have different offsets&quot;);
+	}
+	memset (offset, 0, sizeof (offset));
+	while ((c = getc (stdin)) != EOF)
+	{
+		if ((c == '#') || (c == ';'))
+		{
+			do
+			{
+				c = getc (stdin);
+			}
+			while (nobreak (c));
+			lineno++;
+			continue;
+		}
+		if (isspace (c))
+		{
+			if (c == '\n')
+			{
+				lineno++;
+			}
+			continue;
+		}
+		if (c == '+')
+		{
+			do
+			{
+				c = getc (stdin);
+			}
+			while (isblank (c));
+		}
+		length = 0;
+		while (isdigit (c))
+		{
+			length *= 10;
+			length += c - '0';
+			c = getc (stdin);
+		}
+		while (isblank (c))
+		{
+			c = getc (stdin);
+		}
+		sp = symbol;
+		if (isalpha (c) || (c == '_'))
+		{
+			do
+			{
+				*sp++ = (char)(c);
+				c = getc (stdin);
+			}
+			while (isident (c));
+		}
+		while (isblank (c))
+		{
+			c = getc (stdin);
+		}
+		if (c == '[')
+		{
+			*sp++ = (char)(c);
+			c = getc (stdin);
+			while (isblank (c))
+			{
+				c = getc (stdin);
+			}
+			while (isdigit (c))
+			{
+				*sp++ = (char)(c);
+				c = getc (stdin);
+			}
+			while (isblank (c))
+			{
+				c = getc (stdin);
+			}
+			*sp = (char)(0);
+			if (c != ']')
+			{
+				error (1, EINVAL, &quot;Have '%s' but need ']' on line %d&quot;, symbol, lineno);
+			}
+			*sp++ = (char)(c);
+			c = getc (stdin);
+		}
+		*sp = (char)(0);
+		while (isblank (c))
+		{
+			c = getc (stdin);
+		}
+		sp = string;
+		while (nobreak (c))
+		{
+			*sp++ = (char)(c);
+			c = getc (stdin);
+		}
+		*sp = (char)(0);
+		if (length &gt; 0)
+		{
+
+#if defined (WIN32)
+
+			char * buffer [2];
+			buffer [0] = (char *)(emalloc (length));
+			buffer [1] = (char *)(emalloc (length));
+
+#else
+
+			byte buffer [2][length];
+
+#endif
+
+			if ((read (fd [0], buffer [0], length) == length) &amp;&amp; (read (fd [1], buffer [1], length) == length))
+			{
+				if (memcmp (buffer [0], buffer [1], length))
+				{
+					if (!object++)
+					{
+						for (c = 0; c &lt; _ADDRSIZE + 65; c++)
+						{
+							putc ('-', stdout);
+						}
+						putc ('\n', stdout);
+					}
+					printf (&quot;%s %d %s\n&quot;, hexoffset (memory, sizeof (memory), offset [0]), length, symbol);
+					for (c = 0; c &lt; _ADDRSIZE; c++)
+					{
+						putc ('-', stdout);
+					}
+					printf (&quot; %s\n&quot;, filename [0]);
+					hexview (buffer [0], offset [0], length, stdout);
+					for (c = 0; c &lt; _ADDRSIZE; c++)
+					{
+						putc ('-', stdout);
+					}
+					printf (&quot; %s\n&quot;, filename [1]);
+					hexview (buffer [1], offset [1], length, stdout);
+					for (c = 0; c &lt; _ADDRSIZE + 65; c++)
+					{
+						putc ('-', stdout);
+					}
+					putc ('\n', stdout);
+				}
+			}
+
+#if defined (WIN32)
+
+			free (buffer [0]);
+			free (buffer [1]);
+
+#endif
+
+		}
+		offset [0] += length;
+		offset [1] += length;
+		lineno++;
+	}
+	if (_allclr (flags, PIB_SILENCE))
+	{
+		offset [0] += origin [0];
+		offset [1] += origin [1];
+		for (file = 0; file &lt; SIZEOF (extent); file++)
+		{
+			if (offset [file] &lt; extent [file])
+			{
+				error (0, 0, &quot;%s exceeds definition by &quot; OFF_T_SPEC &quot; bytes&quot;, filename [file], extent [file] - offset [file]);
+			}
+			if (offset [file] &gt; extent [file])
+			{
+				error (0, 0, &quot;definition exceeds %s by &quot; OFF_T_SPEC &quot; bytes&quot;, filename [file], offset [file] - extent [file]);
+			}
+		}
+		if (extent [0] &gt; extent [1])
+		{
+			error (0, 0, &quot;%s exceeds %s by &quot; OFF_T_SPEC &quot; bytes&quot;, filename [0], filename [1], extent [0] - extent [1]);
+		}
+		if (extent [1] &gt; extent [0])
+		{
+			error (0, 0, &quot;%s exceeds %s by &quot; OFF_T_SPEC &quot; bytes&quot;, filename [1], filename [0], extent [1] - extent [0]);
+		}
+	}
+	close (fd [0]);
+	close (fd [1]);
+	return;
+}
+
+/*====================================================================*
+ *
+ *   int main (int argc, char const * argv []);
+ *
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+int main (int argc, char const * argv [])
+
+{
+	static char const * optv [] =
+	{
+		&quot;f:qv&quot;,
+		&quot;file1 file2&quot;,
+		&quot;Qualcomm Atheros Parameter Information Block Compare Utility&quot;,
+		&quot;f f\tobject definition file&quot;,
+		&quot;q\tquiet mode&quot;,
+		&quot;v\tverbose mode&quot;,
+		(char const *)(0)
+	};
+	flag_t flags = (flag_t)(0);
+	signed c;
+	optind = 1;
+	while ((c = getoptv (argc, argv, optv)) != -1)
+	{
+		switch (c)
+		{
+		case 'f':
+			if (!freopen (optarg, &quot;rb&quot;, stdin))
+			{
+				error (1, errno, &quot;%s&quot;, optarg);
+			}
+			break;
+		case 'q':
+			_setbits (flags, PIB_SILENCE);
+			break;
+		case 'v':
+			_setbits (flags, PIB_VERBOSE);
+			break;
+		default:
+			break;
+		}
+	}
+	argc -= optind;
+	argv += optind;
+	if (argc != 2)
+	{
+		error (1, 0, &quot;Need two files to compare.&quot;);
+	}
+	function (argv, flags);
+	return (0);
+}
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='pib2xml.c.html' title=' pib2xml.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='pibdump.c.html' title=' pibdump.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

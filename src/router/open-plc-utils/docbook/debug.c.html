@@ -1,0 +1,91 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			debug.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='dataspec.c.html' title=' dataspec.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='decdecode.c.html' title=' decdecode.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   signed debug (signed status, char const * string, char const * format, ...);
+ *
+ *   error.h
+ *
+ *   variation of the GNU error() function that accepts a message in
+ *   place of an error code and always returns -1;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef DEBUG_SOURCE
+#define DEBUG_SOURCE
+
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdarg.h&gt;
+#include &lt;string.h&gt;
+
+#include &quot;../tools/types.h&quot;
+#include &quot;../tools/error.h&quot;
+
+#ifdef __GNUC__
+
+__attribute__ ((format (printf, 3, 4)))
+
+#endif
+
+signed debug (signed status, char const * string, char const * format, ...)
+
+{
+	extern char const * program_name;
+	if ((program_name) &amp;&amp; (* program_name))
+	{
+		fprintf (stderr, &quot;%s: &quot;, program_name);
+	}
+	if ((string) &amp;&amp; (* string))
+	{
+		fprintf (stderr, &quot;%s: &quot;, string);
+	}
+	if ((format) &amp;&amp; (*format))
+	{
+		va_list arglist;
+		va_start (arglist, format);
+		vfprintf (stderr, format, arglist);
+		va_end (arglist);
+	}
+	fprintf (stderr, &quot;\n&quot;);
+	fflush (stderr);
+	if (status)
+	{
+		exit (status);
+	}
+	return (-1);
+}
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='dataspec.c.html' title=' dataspec.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='decdecode.c.html' title=' decdecode.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

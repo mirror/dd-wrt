@@ -1,0 +1,98 @@
+	<section id='firmware-6000-boot'>
+		<title>
+			Boot from Host (INT6000)
+			</title>
+		<para>
+			The Boot from Host operation downloads a firmware image and <acronym>PIB</acronym> image from the local host and starts firmware execution. The process is initiated by the <trademark>INT6000</trademark> <application>Bootloader</application> following a device reset. The <application>Bootloader</application> passes control to the <trademark>INT6000</trademark> <application>Softloader</application> to negotiate with the local host. The process therefore requires <application>Softloader</application> aware software running on the local host in order to complete.
+			</para>
+		<para>
+			The device does not have a unique hardware address until the firmware starts and assigns one. Until that time, the <application>Softloader</application> accepts messages addressed to 00:B0:52:00:00:01. In addition, the <application>Softloader</application> does not know the hardware address of the local host and so it addresses <constant>VS_HST_ACTION</constant> messages to FF:FF:FF:FF:FF:FF; however, these messages are not forwarded over powerline.
+			</para>
+		<figure>
+			<title>
+				Boot from Host (INT6000)
+				</title>
+<programlisting><![CDATA[
+
+          INT6000                             LOCAL-HOST
+        [01] |                                    |
+        [02] |-------- VS_HST_ACTION.IND -------->| [03]
+        [05] |<------- VS_HST_ACTION.RSP ---------| [04]
+             |                                    |
+        [07] |<------- VS_WR_MOD.REQ -------------| [07]
+        [07] |-------- VS_WR_MOD.CNF ------------>| [07]
+        [07] |<-----------------------------------| [07]
+        [07] |----------------------------------->| [07]
+             |                                    |
+        [08] |<------- VS_WR_MOD.REQ -------------| [08]
+        [08] |-------- VS_WR_MOD.CNF ------------>| [08]
+        [08] |<-----------------------------------| [08]
+        [08] |----------------------------------->| [08]
+             |                                    |
+        [10] |<------- VS_ST_MAC.REQ -------------| [09]
+        [11] |-------- VS_ST_MAC.CNF ------------>| [12]
+
+ ]]></programlisting>
+			</figure>
+		<orderedlist>
+			<listitem>
+				<para>
+					The <trademark>INT6000</trademark> <application>Bootloader</application> automatically starts after device reset. It reads the <application>Softloader</application> from <acronym>NVRAM</acronym>,  writes it into <acronym>SDRAM</acronym> and starts execution. The <application>Softloader</application> then manages the Boot from Host process.
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The <application>Softloader</application> broadcasts a <constant>VS_HST_ACTION.IND</constant> message every <constant>500</constant> milliseconds to request the download of runtime firmware and <acronym>PIB</acronym>. The <varname>HOST_ACTION_REQ</varname> field of the message is 0x00 in this case. The message source address if <constant>00:B0:52:00:00:01</constant> as explained above. 
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The local host receives the <constant>VS_HST_ACTION.IND</constant> message and inspects the HOST_ACTION_REQ field to determine action requested. It may then elect to service the request or ignore it. On a single-host system, the host must service the request or the device will not start. On a multi-host system,  one of the hosts must elect to service the request or the device will not start.
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The local host sends a <constant>VS_HST_ACTION.RSP</constant> message to the device to indicate the ability and willingness to service the request. The MSTATUS field is set to 0x00 for affirmative and 0x01 for negative. 
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The <application>Softloader</application> receives the <constant>VS_HST_ACTION.RSP</constant> from the host and inspects the MSTATUS field. On affirmative status, the <application>Softloader</application> stops sending <varname>VS_HST_ACTION</varname> messages and waits indefinitely for the firmware image and <acronym>PIB</acronym>. 
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The local host determines which firmware image and <acronym>PIB</acronym> to download. In some cases there may be no choice. In other cases, there may be a choice between default and custom software or between current and upgraded software. This is a principle design issue to consider. 
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The local host downloads a firmware image to the device by sending <constant>VS_WR_MOD.REQ</constant> messages to the device and waiting for a <constant>VS_WR_MEM.CNF</constant> messages from the device after each request. Each message contains an image segment, the memory offset, the segment length and the checksum used to monitor and manage download progress. If a single transaction fails, the local host should detect it and repeat it. 
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The local host downloads a <acronym>PIB</acronym> to the device by sending <constant>VS_WR_MOD.REQ</constant> messages to the device and waiting for a <constant>VS_WR_MEM.CNF</constant> message from the device after each request. Each message contains an image segement, the  memory offset, the segment length and the checksum used to monitor and manage download progress. If a single transaction fails, the local host should detect it and repeat it. 
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The local host starts execution of the downloaded firmware by sending a <constant>VS_ST_MAC.REQ</constant> message to the device. The message contains the start address for the firmware. 
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The <application>Softloader</application> receives the <constant>VS_ST_MAC.REQ</constant> from the local host, validates the content.
+					</para>
+				</listitem>
+			<listitem>
+					<para>The <application>Softloader</application> sends a <constant>VS_ST_MAC.CNF</constant> message to the local host to indicate an ability or willingness to start execution. Assuming an ability and willingness, the <application>Softloader</application> immediately starts firmware execution which relinquishes device control to the firmware. 
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The local host receives the <constant>VS_ST_MAC.CNF</constant> message from the device, inspects the MSTATUS field and acts accordingly. Assuming an affirmative status, this process terminates. 
+					</para>
+				</listitem>
+			</orderedlist>
+		</section>

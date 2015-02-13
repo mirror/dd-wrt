@@ -1,0 +1,16 @@
+#!/usr/local/bin/efsu -ieth0
+# file: efsu/TCP_ACK.hex
+
+# ====================================================================
+#
+#   TCP operation
+#   efsu -i usb2 -hd 00:B0:52:DA:DA:80 TCP.hex -l 10
+#   efsu -i usb2 -hd 00:B0:52:DA:DA:80 TCP_ACK.hex -l 1
+#
+# --------------------------------------------------------------------
+
+00 1e 68 b8 79 95 00 1d 7e 01 1d 18 08 00 45 00
+00 28 48 d1 40 00 80 06 2a 0d c0 a8 03 64 c0 a8
+03 3d 13 89 04 8f 50 3c 07 9b ff 17 ee 74 50 10
+ff ff ca 66 00 00 ff ff ff ff ff ff ff ff ff ff
+

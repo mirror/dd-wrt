@@ -1,0 +1,110 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			psout.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='psnotch.1.html' title=' psnotch.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='ptsctl.1.html' title=' ptsctl.1 '>NEXT</a>]
+			</div>
+<pre>
+psout(1)                                     Qualcomm Atheros Open Powerline Toolkit                                    psout(1)
+
+NAME
+       psout - Export PIB Prescalers
+
+SYNOPSIS
+       psout [options] file [&gt;stdout]
+
+DESCRIPTION
+       Export the prescaler section of a PIB file as an amplitude map suitable for input to program psin or the Qualcomm Atheros
+       Windows Device Manager.  Prescalers are stored in the PIB in binary format but the amplitude map is  in  text  format  so
+       that  values  may be changed using an ordinary text editor.  Program psin can be used to import an amplitude map into the
+       original or another PIB file.
+
+       This program is part of the Qualcomm Atheros Powerline Toolkit.  See the AMP man page for an  overview  and  installation
+       instructions.
+
+OPTIONS
+       None.
+
+ARGUMENTS
+       file   The  name  of  an  Atheros Parameter Information Block (PIB) file.  This file is not modified.  By convention, PIB
+              files have a .pib extension but this program does not enforce that convention and does  not  make  any  assumption
+              based  on  filename or extension but the program will reject invalid PIB files.  Only one filename is permitted on
+              the command line.
+
+FILES
+       An amplitude map consists of 1155 frequency-amplitude pairs.  Each pair consists of a decimal  index  and  a  hexadecimal
+       scaler.   The  index  represents a frequecy from 1.8 mhz through 30 mhz.  The scaler represents the amplitude attenuation
+       applied at that frequency.  The frequency and attenuation are computed as follows.
+
+            frequency = 40.96 * (index + 74)
+
+            index = (frequency / 40.96) - 74
+
+            decibels = 20 * log10 (scaler / 256)
+
+            scaler = 256 * pow (decibels / 20)
+
+EXAMPLES
+       The following example prints the prescaler section of file abc.pib on stdout as an amplitude map.  The  output  has  been
+       abbreviated here to save space.  A single comment line identifies the prescaler source file.  Output may be directed to a
+       text file, edited using a text editor and read into the same or another PIB file with program psin.
+
+          # psout abc.pib
+          # file: abc.pib
+          00000000 00000000
+          00000001 00000000
+          00000002 00000000
+          00000003 00000000
+          ...
+          00000027 000000D0
+          00000028 000000D0
+          00000029 000000D1
+          00000030 000000D1
+          ...
+          00000214 00000000
+          00000215 00000000
+          00000216 00000000
+          ...
+          00001155 00000000
+
+       The next example copies prescalers from file abc.pib to def.pib using a command line pipe.
+
+          # psout abc.pib | psin def.pib
+
+DISCLAIMER
+       PIB file structure and content is proprietary to Qualcomm Atheros, Ocala FL USA.  Consequently, public information is not
+       available.  Qualcomm Atheros reserves the right to modify PIB file structure or content in future firmware releases with‐
+       out any obligation to notify or compensate users of this program.
+
+       Tampering with prescaler settings may violate national or international electo-magnetic emission standards  and  lead  to
+       fines  or  penalties.   Qualcomm  Atheros  shall  not  be  held responsible for any consequences of modifications made to
+       prescaler sets provided to their customers.
+
+SEE ALSO
+       psgraph(1), pskey(1), psin(1)
+
+CREDITS
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                                 psout(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='psnotch.1.html' title=' psnotch.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='ptsctl.1.html' title=' ptsctl.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

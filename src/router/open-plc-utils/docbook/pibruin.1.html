@@ -1,0 +1,123 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			pibruin.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='pibdump.1.html' title=' pibdump.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='pibrump.1.html' title=' pibrump.1 '>NEXT</a>]
+			</div>
+<pre>
+pibruin(1)                                   Qualcomm Atheros Open Powerline Toolkit                                  pibruin(1)
+
+NAME
+       pibruin - Classification Rule Insert Utility
+
+SYNOPSIS
+       pibruin [options] [&lt;rules] file
+
+DESCRIPTION
+       Read  a  set of classification rules from stdin and insert them directly into a PIB file.  This program is an alternative
+       to program int6krule and a companion to program pibrump.  Although it is possible to ruin a PIB using this  command,  the
+       name is short for &quot;rule insert&quot;.
+
+       Atheros  recommends that users validate all classification rule sets used with this program before inserting them into an
+       operational PIB.  Individual rules may be syntactically valid but they can still be technically invalid or conflict  with
+       other.  This program does not perform any technical or cross-rule validation what-so-ever.
+
+       Cross-rule  validation  is  normally  done by runtime firmware when a rule arrives in a VS_CLASSIFIER management message.
+       This validation prevents the insertion of meaningless or conflicting rules into the PIB.  It may be possible to commit  a
+       PIB containing mis-configured classification rule sets thus causing the device to lockup or misbehave on reboot.
+
+       One  recommended  method of rule set validation is to program a device with individual rules using program int6krule then
+       read the PIB and extract the rule set with program pibrump.  The rule set should be valid at that point.
+
+       This program is part of the Qualcomm Atheros Powerline Toolkit.  See the AMP man page for an  overview  and  installation
+       instructions.
+
+OPTIONS
+       -o offset
+              Specify  an alternative PIB offset when inserting the classifier block.  Customers should not use this option.  It
+              is provided to account for firmware changes that might occur in the future.  Improper use of this option can  ren‐
+              der a PIB file unrecoverable.
+
+       -q     Suppresses progress messages.
+
+       -v     Print additional information on stdout.
+
+       -?,--help
+              Print program help summary on stdout.  This option takes precedence over other options on the command line.
+
+       -!,--version
+              Print program version information on stdout.  This option takes precedence over other options on the command line.
+              Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version  of
+              the Linux Toolkit you are using.
+
+ARGUMENTS
+       file   The  name of a valid Atheros runtime parameter file.  The file is modified by this program only if the classifica‐
+              tion rule file is syntactically correct.  See the DISCLAIMER section below.  No backup file is created.   By  con‐
+              vention,  runtime  parameter  files  have a .pib extention but this program does not enforce that convention.  The
+              file must exist and be a valid PIB file or errors will occur.
+
+       rules  The name of a valid classifier rule file.  The file is not modified by this program.  Classifier  rule  files  are
+              standard ASCII text and may be created manually using a normal text editor or may be generated automatically using
+              another program such as pubrump.  By convention, classifier rule files have a ..qos  extension  but  this  program
+              does not enforce that convention.  If this file is omitted then rules are read from from the console, one rule per
+              line.
+
+DISCLAIMER
+       PIB file structure and content is proprietary to Qualcomm Atheros, Ocala FL USA.  Consequently, public information is not
+       available.  Qualcomm Atheros reserves the right to change the file structure or content in future firmware releases with‐
+       out any obligation to notify or compensate users of this program.
+
+       This program is provided for convenience only.  It is possible to insert meaningless or confilicting rule sets into a PIB
+       with  this  program  because  approved  cross-rule validation is not performed.  Incorrect application of perfectly valid
+       rules may render a device ineffective or unusable on a powerline network.  Program users  are  responsible  for  ensuring
+       that their rule sets are verified by other means before using this program to insert them into an operational PIB file.
+
+EXAMPLES
+       The  following  is  an example set of classification rules stored in file rules.txt.  The file contains 5 rules, one rule
+       per line.  The rules are identical to command line arguments expected by program int6krule and one could type  them,  one
+       at  a  time,  into  int6krule  and  wait  for  the device to reset each time.  Alternately, we could insert all the rules
+       directly into a PIB file at once then download and commit the PIB, resulting in only one reset.
+
+          # cat rules.txt
+          Cap1 any VLANID is 20 add perm
+          DropRX any VLANID is 25 add perm
+          StripRx any VLANID is 5 VLANID is 10 VLANID is 15 add perm
+          StripRx any VLANID is 20 add perm
+          Cap1 any VLANID is 5 VLANID is 10 VLANID is 15 add perm
+
+       The following example reads file rules.txt from stdin and writes it into file def.pib.  This may be usefule if one wanted
+       to distribute a known set of rules to other users or wanted to test various combinations of rules.  Sincd rule files are
+
+          # pibruin &lt; rules.txt
+
+       The  next  example  reads  classification rules directly from file abc.pib using program pibrump and writes them directly
+       into file def.pbi using program pibruin.  This is one means of transfering classification rules from one PIB to  another.
+
+SEE ALSO
+       int6krule(7), pibrump(7)
+
+CREDITS
+        Nathaniel Houghton &lt;nhoughto@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                               pibruin(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='pibdump.1.html' title=' pibdump.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='pibrump.1.html' title=' pibrump.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

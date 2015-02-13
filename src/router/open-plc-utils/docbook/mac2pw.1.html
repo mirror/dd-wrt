@@ -1,0 +1,180 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			mac2pw.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='int6kwait.1.html' title=' int6kwait.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='mac2pwd.1.html' title=' mac2pwd.1 '>NEXT</a>]
+			</div>
+<pre>
+mac2pw(1)                                    Qualcomm Atheros Open Powerline Toolkit                                   mac2pw(1)
+
+NAME
+       mac2pw - Qualcomm Atheros Ethernet Device Password Generator
+
+SYNOPSIS
+       mac2pw [options] address [address] [...]
+
+DESCRIPTION
+       Print  a  range  of  consecutive  Ethernet addresses and passwords on stdout.  The starting address and address range are
+       specified.  Computed passwords consist of upper case letters (A-Z) with separators.   The  algorithm  used  here  is  not
+       required  for HomePlug AV compliance and so vendors are free to use other methods to generate their own device passwords.
+
+       This program may be used to generate passwords for large numbers of consecutive device addresses over a fixed range.   It
+       complements  program  mac2pwd  which  generates  passwords  for non-consecutive device addresses that may occur in unpre‐
+       dictable order.
+
+       This program is part of the Qualcomm Atheros Powerline Toolkit.  See the AMP man page for an  overview  and  installation
+       instructions.
+
+CAVEATS
+       Atheros  provides  this program as a simple means of generating unique and apparently random device passwords for a large
+       volume of Ethernet devices.  It uses a Linear Congruential Random Number Generator  to  produce  a  single-wheel  Bazerie
+       Cylinder  and to select characters from that cylinder.  The algorithm used is adequate for this purpose and nothing more.
+       Vendors are encouraged to develop their own means of generating passwords for the reasons mentioned below.
+
+       Device addresses can be determined using a variety of network management programs.  Anyone having access to this program,
+       or  the  algorithm  used,  could  compute the device password and gain access to device features reserved for priviledged
+       users.
+
+OPTIONS
+       -b bunch
+              The password bunching factor.  Passwords have a fixed number of upper case letters broken  into  groups  separated
+              with dashes.  The number of letters in each group are the bunch value.  When bunch is 0, password length is count.
+              When bunch is 1, password length is twice count because every other character will be a dash.  The  minimum  is  0
+              and the maximum is 255.  The default is 4.
+
+       -l count
+              The  number  of  letters  in  the password string.  Overall password length is the sum of count plus the number of
+              delimiters implied by bunch.  The minimum is 12 and the maximum is 64.  The default is 16.
+
+       -n number
+              The number of consecutive addresses and passwords to compute and print.  The minimum  is  0  and  the  maximum  is
+              1677215  or  0xFFFFFF.   The default is 1.  In addition, number cannot exceed the remaining available addresses in
+              the vendor range.  For example, given start address 00:B0:52:FF:FF:00, there are only 255 remaining  addresses  in
+              the 00:B0:52 vendor range so it would be an error to request more than that number.
+
+       -q     Quiet  mode.   Exclude  the  device  address on output.  This option can be used in scripts to return the password
+              associated with a given device address.
+
+       -v     Verbose mode.  Prefix each line with a ’0’ column.  The Atheros Production Test System (PTS) uses the first column
+              of a password database file to indicate which addresses and passwords have already been used.
+
+       -?,--help
+              Print program help information on stdout.  This option takes precedence over other options on the command line.
+
+       -!,--version
+              Print program version information on stdout.  This option takes precedence over other options on the command line.
+              Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version  of
+              the Linux Toolkit you are using.
+
+ARGUMENTS
+       address
+              The  first  Ethernet  address  expressed as 12 consecutive hexadecimal digits.  Puncutation is not permitted.  The
+              final address of the range is computed by adding number to this address.  This argument is required.  There is  no
+              default  address.   If  more than one device address is specified then an address/password series will be computed
+              for each.
+
+EXAMPLES
+       The following example prints the given device address and associated password string on stdout.
+
+          # mac2pw 00B052000001
+          00B052000001 MLPB-YLQM-YSSL-BMBB
+
+       This example does the same thing but ommits the device address.
+
+          # mac2pw 00B052000001 -q
+          MLPB-YLQM-YSSL-BMBB
+
+       The following example prints 10 consecutive device addresses and passwords on stdout.  The  starting  device  address  is
+       given and option -n specifies the number of addresses to print.  Output can be directed to a file.
+
+          # mac2pw 00B052000001 -n 10
+          00B052000001 MLPB-YLQM-YSSL-BMBB
+          00B052000002 KSQJ-ZZFT-TNJL-VZIH
+          00B052000003 HDFV-SEHB-LFWM-VLBF
+          00B052000004 LBPL-NZSM-VPUC-XPLM
+          00B052000005 JXDN-UYFQ-NISF-MIGH
+          00B052000006 YPOS-UVDA-VMML-JBBP
+          00B052000007 PJAO-DWSS-OQYL-XDTU
+          00B052000008 SKVQ-CNRF-PUDM-WKZC
+          00B052000009 YQTM-LHTJ-FYQC-YVNW
+          00B05200000A KADM-CHII-KYVF-FQRZ
+
+       The following example prints 10 consecutive device addresses and passwords, as before, but starts from a different device
+       address.  The address range here overlaps the range shown above but identical device addresses have identical  passwords.
+
+          # mac2pw 00B052000006 -n 10
+          00B052000006 YPOS-UVDA-VMML-JBBP
+          00B052000007 PJAO-DWSS-OQYL-XDTU
+          00B052000008 SKVQ-CNRF-PUDM-WKZC
+          00B052000009 YQTM-LHTJ-FYQC-YVNW
+          00B05200000A KADM-CHII-KYVF-FQRZ
+          00B05200000B YCZS-MVPX-VNFL-CLVZ
+          00B05200000C PIBZ-DKMB-YMJL-QTMQ
+          00B05200000D DPTA-HOEK-QERM-HJIY
+          00B05200000E TMQQ-YFCW-OIVC-OGWO
+          00B05200000F QUHL-PSQM-HHPF-PHLT
+
+       The  following  example  prints 10 consecutive device addresses and passwords, as before, but changes the password length
+       and letter grouping.  Option -l specifies 12 letters and option -b specifies a bunching factor of three.  Use a  bunching
+       factor of 0 to remove dashes.
+
+          # mac2pw 00B052000006 -n 10 -l 12 -b 3
+          00B052000006 YPO-SUV-DAV-MML
+          00B052000007 PJA-ODW-SSO-QYL
+          00B052000008 SKV-QCN-RFP-UDM
+          00B052000009 YQT-MLH-TJF-YQC
+          00B05200000A KAD-MCH-IIK-YVF
+          00B05200000B YCZ-SMV-PXV-NFL
+          00B05200000C PIB-ZDK-MBY-MJL
+          00B05200000D DPT-AHO-EKQ-ERM
+          00B05200000E TMQ-QYF-CWO-IVC
+          00B05200000F QUH-LPS-QMH-HPF
+
+       The  following  example prints 10 consecutive device addresses and passwords but inserts a 0 at the start of each line to
+       indicate that the address and password have not been used.  The Atheros Production Test System (PTS) will set the 0 to  1
+       after it programs a device.  This format is simlar to PTS DBBuilder Utility output.
+
+          # mac2pw 00B052000006 -n 10 -u
+          0 00B052000006 MLNX-JIAN-NERM-NIRR
+          0 00B052000007 MBOR-ASNO-HLQJ-ZSFL
+          0 00B052000008 NACT-DPWJ-MEVU-NMRX
+          0 00B052000009 NYVC-DOVN-BLTH-OYZM
+          0 00B05200000A NKMN-ZRVP-RERA-BSSA
+          0 00B05200000B NMRT-KRNA-NLMJ-ADQT
+          0 00B05200000C EVAL-BAWY-UEBN-RINO
+          0 00B05200000D EUSE-QXOK-XLVN-TKMM
+          0 00B05200000E EINV-GNUP-DEQM-CVSB
+          0 00B05200000F EJAL-JSJF-GLNS-LLOD
+
+DISCLAIMER
+       Qualcomm  Atheros  reserves  the  right  to  modify program names, functionality, input format or output format in future
+       toolkit releases without any obligation to notify or compensate toolkit users.
+
+SEE ALSO
+       hpavkey(1), hpavkeys(1), keys(1), mac2pwd(1), rkey(1)
+
+CREDITS
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                                mac2pw(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='int6kwait.1.html' title=' int6kwait.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='mac2pwd.1.html' title=' mac2pwd.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

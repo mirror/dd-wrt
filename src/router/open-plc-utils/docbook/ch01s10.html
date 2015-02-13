@@ -1,0 +1,2083 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Packages</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="ch01.html" title="Chapter 1.  Overview"><link rel="prev" href="ch01s09.html" title="Toolkit Folders"><link rel="next" href="ch01s11.html" title="Toolkit Support"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">
+			Packages 
+			</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch01s09.html">Prev</a> </td><th width="60%" align="center">Chapter 1. 
+		Overview 
+		</th><td width="20%" align="right"> <a accesskey="n" href="ch01s11.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="overview-packages"></a>
+			Packages 
+			</h2></div></div></div><p>
+			The following table lists programs and the release packages that contains them. Packages contain programs of interest to various customer and engineering groups based on the activities that they normally perform. Some groups may need multiple packages. Some packages are restricted.
+			</p><div class="table"><a name="idp8046784"></a><p class="title"><b>Table 1.1. 
+		Program/Package Matrix
+		</b></p><div class="table-contents"><p>
+		The toolkit is divided into 5 groups loosely based on chipset family, intended audience, network security, intellectual property, code maturity and other criteria. Some individual programs may be hard to classify and so their placement may be subject to some debate.
+		</p><div class="variablelist"><dl><dt><span class="term">
+				amp-utils
+				</span></dt><dd>
+				Tools developed for <span class="productname">INT6000</span>™, <span class="productname">INT6300</span>™, <span class="productname">INT6400</span>™ and <span class="productname">AR7400</span>™ chipsets. 
+Some are obsolete but most are still useful. 
+This package is a candidate for public distribution under a permissive open source license.
+				</dd><dt><span class="term">
+				plc-utils
+				</span></dt><dd>
+				Tools developed for <span class="productname">QCA6410</span>™, <span class="productname">QCA7000</span>™ and <span class="productname">AR7420</span>™ chipsets. 
+These tools handle the newer files formats, hardware boot conventsions and flash memory layouts for chipsets having fixed internal SRAM. 
+This package is a candidate for public distribution under a permissive open source license.
+				</dd><dt><span class="term">
+				nda-utils
+				</span></dt><dd>
+				Tools designed to manipulate parameter blocks or access reserved or restricted features on powerline devices. 
+Most are useful during powerline product development and production but are not needed for proper product operation or maintenance. 
+This package is reserved for Qualcomm Atheros customers who sign a non-disclosure agreement covering Qualcomm Atheros intellectual property.
+Parts of this package are candidates for some sort of restrictive license.
+				</dd><dt><span class="term">
+				key-utils	
+				</span></dt><dd>
+				Tools that generate HomePlug AV compliant keys from device MAC address or user passwords.
+This package is reserved for Qualcomm Atheros customers who sign a non-disclosure agreement related to Qualcomm Atheros powerline intellectual property.
+Parts of this package are candidates for some sort of restrictive license.
+				</dd><dt><span class="term">
+				qca-utils
+				</span></dt><dd>
+				Tools that perform restricted or experiemental operations on active powerline devices or parameter information blocks. 
+Some of these tools here are one-of-a-kind or could present security risks to active powerline networks.
+This package not not released to customers. It is reserved for Qualcomm Atheros PLC Engineering use.
+Most of this package is a candidate for restrictive license.
+				</dd></dl></div><table summary="
+		Program/Package Matrix
+		" border="1"><colgroup><col><col><col><col><col><col><col></colgroup><thead><tr><th>
+					Program
+					</th><th>
+					amp-utils
+					</th><th>
+					plc-utils
+					</th><th>
+					nda-utils
+					</th><th>
+					key-utils
+					</th><th>
+					qca-utils
+					</th><th>
+					source-only
+					</th><th>
+					deprecated
+					</th></tr></thead><tbody><tr><td>
+					CMEncrypt
+					</td><td>
+					amp-utils
+					</td><td>
+					plc-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					adccap
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					ampagc
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					ampboot
+					</td><td>
+					amp-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					amphost
+					</td><td>
+					amp-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					ampinit
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					nda-utils
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					ampID
+					</td><td>
+					amp-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					amplist
+					</td><td>
+					amp-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					amprate
+					</td><td>
+					amp-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					ampsnr
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					ampstat
+					</td><td>
+					amp-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					amptest
+					</td><td>
+					amp-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					amptone
+					</td><td>
+					amp-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					amptool
+					</td><td>
+					amp-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					ampwait
+					</td><td>
+					amp-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					arpc
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					arpc1
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					chknvm
+					</td><td>
+					amp-utils
+					</td><td>
+					plc-utils
+					</td><td>
+					nda-utils
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					chknvm2
+					</td><td>
+					amp-utils
+					</td><td>
+					plc-utils
+					</td><td>
+					nda-utils
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					chkpib
+					</td><td>
+					amp-utils
+					</td><td>
+					plc-utils
+					</td><td>
+					nda-utils
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					chkpib2
+					</td><td>
+					amp-utils
+					</td><td>
+					plc-utils
+					</td><td>
+					nda-utils
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					config2cfg
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					source-only
+					</td><td>
+					 
+					</td></tr><tr><td>
+					coqos_add
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					coqos_info
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					coqos_man
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					coqos_mod
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					coqos_rel
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					dlinkug
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					edru
+					</td><td>
+					amp-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					edsu
+					</td><td>
+					amp-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					efbu
+					</td><td>
+					amp-utils
+					</td><td>
+					plc-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					efeu
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					efru
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					efsu
+					</td><td>
+					amp-utils
+					</td><td>
+					plc-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					fetchpib
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					source-only
+					</td><td>
+					 
+					</td></tr><tr><td>
+					getpib
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					nda-utils
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					grab
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					hpav
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					nda-utils
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					hpavkey
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					nda-utils
+					</td><td>
+					key-utils
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					hpavkeys
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					nda-utils
+					</td><td>
+					key-utils
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					int64host
+					</td><td>
+					amp-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					int6k
+					</td><td>
+					amp-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					int6kbaud
+					</td><td>
+					amp-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					int6kboot
+					</td><td>
+					amp-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					int6kdetect
+					</td><td>
+					amp-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					int6kecho
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					nda-utils
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					int6keth
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					nda-utils
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					int6khost
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					deprecated
+					</td></tr><tr><td>
+					int6kid
+					</td><td>
+					amp-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					int6klist
+					</td><td>
+					amp-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					int6klog
+					</td><td>
+					amp-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					int6kmdio
+					</td><td>
+					amp-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					deprecated
+					</td></tr><tr><td>
+					int6kmdio2
+					</td><td>
+					amp-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					deprecated
+					</td></tr><tr><td>
+					int6kmod
+					</td><td>
+					amp-utils
+					</td><td>
+					 
+					</td><td>
+					nda-utils
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					int6kp
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					nda-utils
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					int6kpair
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					int6kprobe
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					nda-utils
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					int6krate
+					</td><td>
+					amp-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					int6krule
+					</td><td>
+					amp-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					int6kstat
+					</td><td>
+					amp-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					int6ktest
+					</td><td>
+					amp-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					int6ktone
+					</td><td>
+					amp-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					int6kuart
+					</td><td>
+					amp-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					int6kug
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					int6kwait
+					</td><td>
+					amp-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					mac2pw
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					nda-utils
+					</td><td>
+					key-utils
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					mac2pwd
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					nda-utils
+					</td><td>
+					key-utils
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					mdioblock
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					nda-utils
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					mdioblock2
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					nda-utils
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					mdiodump
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					nda-utils
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					mdustats
+					</td><td>
+					amp-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					mme
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					nda-utils
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					modpib
+					</td><td>
+					amp-utils
+					</td><td>
+					plc-utils
+					</td><td>
+					nda-utils
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					mrgpib
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					netifs
+					</td><td>
+					amp-utils
+					</td><td>
+					plc-utils
+					</td><td>
+					nda-utils
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					nvmmerge
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					nda-utils
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					nvmsplit
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					nda-utils
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					odc
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					deprecated
+					</td></tr><tr><td>
+					odd
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					deprecated
+					</td></tr><tr><td>
+					odx
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					deprecated
+					</td></tr><tr><td>
+					pcapdevs
+					</td><td>
+					amp-utils
+					</td><td>
+					plc-utils
+					</td><td>
+					nda-utils
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					pib2xml
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					nda-utils
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					pibcomp
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					nda-utils
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					pibdump
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					nda-utils
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					pibruin
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					nda-utils
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					pibrump
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					nda-utils
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					plcboot
+					</td><td>
+					 
+					</td><td>
+					plc-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					plcecho
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					nda-utils
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					plcfwd
+					</td><td>
+					amp-utils
+					</td><td>
+					plc-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					plcget
+					</td><td>
+					amp-utils
+					</td><td>
+					plc-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					plchost
+					</td><td>
+					 
+					</td><td>
+					plc-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					plcId
+					</td><td>
+					 
+					</td><td>
+					plc-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					plcinit
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					nda-utils
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					plclist
+					</td><td>
+					 
+					</td><td>
+					plc-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					plcm
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					plcmmcinfo
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					nda-utils
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					plcmdio16
+					</td><td>
+					 
+					</td><td>
+					plc-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					plcmdio32
+					</td><td>
+					 
+					</td><td>
+					plc-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					plcmod
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					nda-utils
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					plcnets
+					</td><td>
+					amp-utils
+					</td><td>
+					plc-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					plcrate
+					</td><td>
+					 
+					</td><td>
+					plc-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					plcrule
+					</td><td>
+					 
+					</td><td>
+					plc-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					plcset
+					</td><td>
+					amp-utils
+					</td><td>
+					plc-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					plcstat
+					</td><td>
+					 
+					</td><td>
+					plc-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					plcsnif
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					plctest
+					</td><td>
+					 
+					</td><td>
+					plc-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					plctone
+					</td><td>
+					 
+					</td><td>
+					plc-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					plctool
+					</td><td>
+					 
+					</td><td>
+					plc-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					plcwait
+					</td><td>
+					 
+					</td><td>
+					plc-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					po1
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					po2
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					psgen
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					nda-utils
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					psin
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					nda-utils
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					pskey
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					nda-utils
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					psnotch
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					nda-utils
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					psout
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					nda-utils
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					ptsctl
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					nda-utils
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					pxe
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					deprecated
+					</td></tr><tr><td>
+					rkey
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					nda-utils
+					</td><td>
+					key-utils
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					sada
+					</td><td>
+					amp-utils
+					</td><td>
+					plc-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					sdram
+					</td><td>
+					amp-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					deprecated
+					</td></tr><tr><td>
+					setpib
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					nda-utils
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					slac
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					deprecated
+					</td></tr><tr><td>
+					throwpib
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					source-only
+					</td><td>
+					 
+					</td></tr><tr><td>
+					weeder
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					nda-utils
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr><tr><td>
+					xml2pib
+					</td><td>
+					 
+					</td><td>
+					 
+					</td><td>
+					nda-utils
+					</td><td>
+					 
+					</td><td>
+					qca-utils
+					</td><td>
+					 
+					</td><td>
+					 
+					</td></tr></tbody></table></div></div><br class="table-break"></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch01s09.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="ch01.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch01s11.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">
+			Toolkit Folders 
+			 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 
+			Toolkit Support 
+			</td></tr></table></div></body></html>0

@@ -1,0 +1,408 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			int6kmod.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='int6kmdio.c.html' title=' int6kmdio.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='int6krate.c.html' title=' int6krate.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*&quot;
+ *
+ *    int6kmod.c -
+ *
+ *
+ *   Contributor(s):
+ *      Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*&quot;
+ *   system header files;
+ *--------------------------------------------------------------------*/
+
+#include &lt;unistd.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;limits.h&gt;
+
+/*====================================================================*
+ *   custom header files;
+ *--------------------------------------------------------------------*/
+
+#include &quot;../tools/getoptv.h&quot;
+#include &quot;../tools/putoptv.h&quot;
+#include &quot;../tools/memory.h&quot;
+#include &quot;../tools/number.h&quot;
+#include &quot;../tools/symbol.h&quot;
+#include &quot;../tools/types.h&quot;
+#include &quot;../tools/flags.h&quot;
+#include &quot;../tools/files.h&quot;
+#include &quot;../tools/error.h&quot;
+#include &quot;../ether/channel.h&quot;
+#include &quot;../plc/plc.h&quot;
+
+/*====================================================================*
+ *   custom source files;
+ *--------------------------------------------------------------------*/
+
+#ifndef MAKEFILE
+#include &quot;../plc/Devices.c&quot;
+#include &quot;../plc/Confirm.c&quot;
+#include &quot;../plc/Display.c&quot;
+#include &quot;../plc/Request.c&quot;
+#include &quot;../plc/Failure.c&quot;
+#include &quot;../plc/ReadMME.c&quot;
+#include &quot;../plc/SendMME.c&quot;
+#include &quot;../plc/ModuleCommit.c&quot;
+#include &quot;../plc/ModuleRead.c&quot;
+#include &quot;../plc/ModuleDump.c&quot;
+#include &quot;../plc/ModuleSpec.c&quot;
+#include &quot;../plc/ModuleSession.c&quot;
+#include &quot;../plc/ModuleWrite.c&quot;
+#endif
+
+#ifndef MAKEFILE
+#include &quot;../tools/basespec.c&quot;
+#include &quot;../tools/getoptv.c&quot;
+#include &quot;../tools/putoptv.c&quot;
+#include &quot;../tools/version.c&quot;
+#include &quot;../tools/uintspec.c&quot;
+#include &quot;../tools/hexdump.c&quot;
+#include &quot;../tools/hexview.c&quot;
+#include &quot;../tools/hexencode.c&quot;
+#include &quot;../tools/hexdecode.c&quot;
+#include &quot;../tools/hexstring.c&quot;
+#include &quot;../tools/todigit.c&quot;
+#include &quot;../tools/checkfilename.c&quot;
+#include &quot;../tools/checksum32.c&quot;
+#include &quot;../tools/fdchecksum32.c&quot;
+#include &quot;../tools/strfbits.c&quot;
+#include &quot;../tools/synonym.c&quot;
+#include &quot;../tools/typename.c&quot;
+#include &quot;../tools/error.c&quot;
+#endif
+
+#ifndef MAKEFILE
+#include &quot;../ether/openchannel.c&quot;
+#include &quot;../ether/closechannel.c&quot;
+#include &quot;../ether/readpacket.c&quot;
+#include &quot;../ether/sendpacket.c&quot;
+#include &quot;../ether/channel.c&quot;
+#endif
+
+#ifndef MAKEFILE
+#include &quot;../mme/MMECode.c&quot;
+#include &quot;../mme/EthernetHeader.c&quot;
+#include &quot;../mme/QualcommHeader.c&quot;
+#include &quot;../mme/UnwantedMessage.c&quot;
+#endif
+
+/*====================================================================*
+ *
+ *   void Manager (struct plc * plc, uint16_t ModuleID, uint16_t ModuleSubID);
+ *
+ *   read a custom modul from flash memory or write a suceom module
+ *   to flash memory using the VS_MODULE_OPERATION message; read and
+ *   save the old module before writing and commiting the new module;
+ *
+ *   ModuleDump () and ModuleRead () are called with argument source
+ *   set to VS_MODULE_FLASH because this function operates on modules
+ *   in flash memory only;
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+static void Manager (struct plc * plc, uint16_t ModuleID, uint16_t ModuleSubID)
+
+{
+	if (_anyset (plc-&gt;flags, PLC_DUMP_MODULE))
+	{
+		ModuleDump (plc, PLC_MOD_OP_READ_FLASH, ModuleID, ModuleSubID);
+		return;
+	}
+	if (_anyset (plc-&gt;flags, PLC_READ_MODULE))
+	{
+		ModuleRead (plc, &amp;plc-&gt;nvm, PLC_MOD_OP_READ_FLASH, ModuleID, ModuleSubID);
+	}
+	if (_anyset (plc-&gt;flags, PLC_WRITE_MODULE))
+	{
+		struct vs_module_spec vs_module_spec;
+		vs_module_spec.MODULE_ID = ModuleID;
+		vs_module_spec.MODULE_SUB_ID = ModuleSubID;
+		ModuleSpec (&amp;plc-&gt;NVM, &amp;vs_module_spec);
+		ModuleSession (plc, 1, &amp;vs_module_spec);
+		ModuleWrite (plc, &amp;plc-&gt;NVM, 0, &amp;vs_module_spec);
+		ModuleCommit (plc, (PLC_COMMIT_FORCE));
+		return;
+	}
+	return;
+}
+
+/*====================================================================*
+ *
+ *   int main (int argc, char const * argv[]);
+ *
+ *   parse command line, populate plc structure and perform selected
+ *   operations; show help summary if asked; see getoptv and putoptv
+ *   to understand command line parsing and help summary display; see
+ *   plc.h for the definition of struct plc;
+ *
+ *   the command line accepts multiple MAC addresses and the program
+ *   performs the specified operations on each address, in turn; the
+ *   address order is significant but the option order is not; the
+ *   default address is a local broadcast that causes all devices on
+ *   the local H1 interface to respond but not those at the remote
+ *   end of the powerline;
+ *
+ *   the default address is 00:B0:52:00:00:01; omitting the address
+ *   will automatically address the local device; some options will
+ *   cancel themselves if this makes no sense;
+ *
+ *   the default interface is eth1 because most people use eth0 as
+ *   their principle network connection; you can specify another
+ *   interface with -i or define environment string PLC to make
+ *   that the default interface and save typing;
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+int main (int argc, char const * argv [])
+
+{
+	extern struct channel channel;
+	static char const * optv [] =
+	{
+		&quot;dei:m:M:qs:S:t:vx&quot;,
+		&quot;device [device] [...]&quot;,
+		&quot;Qualcomm Atheros Powerline Device Module Manager&quot;,
+		&quot;d\tdump module in hexadecimal format&quot;,
+		&quot;e\tredirect stderr to stdout&quot;,
+
+#if defined (WINPCAP) || defined (LIBPCAP)
+
+		&quot;i n\thost interface is (n) [&quot; LITERAL (CHANNEL_ETHNUMBER) &quot;]&quot;,
+
+#else
+
+		&quot;i s\thost interface is (s) [&quot; LITERAL (CHANNEL_ETHDEVICE) &quot;]&quot;,
+
+#endif
+
+		&quot;m f\tread module from NVRAM to file (f)&quot;,
+		&quot;M f\twrite module file (f) to flash memory&quot;,
+		&quot;s n\tmodule sub-ID [&quot; LITERAL (PLC_SUBMODULEID) &quot;]&quot;,
+		&quot;S n\tsession ID [&quot; LITERAL (PLCSESSION) &quot;]&quot;,
+		&quot;t n\tmodule ID [&quot; LITERAL (PLC_MODULEID) &quot;]&quot;,
+		&quot;q\tquiet mode&quot;,
+		&quot;v\tverbose mode&quot;,
+		(char const *) (0)
+	};
+
+#include &quot;../plc/plc.c&quot;
+
+	struct vs_module_spec vs_module_spec;
+	uint16_t ModuleID = 0;
+	uint16_t ModuleSubID = 0;
+	signed c;
+	memset (&amp;vs_module_spec, 0, sizeof (vs_module_spec));
+	if (getenv (PLCDEVICE))
+	{
+
+#if defined (WINPCAP) || defined (LIBPCAP)
+
+		channel.ifindex = atoi (getenv (PLCDEVICE));
+
+#else
+
+		channel.ifname = strdup (getenv (PLCDEVICE));
+
+#endif
+
+	}
+	optind = 1;
+	while ((c = getoptv (argc, argv, optv)) != -1)
+	{
+		switch (c)
+		{
+		case 'e':
+			dup2 (STDOUT_FILENO, STDERR_FILENO);
+			break;
+		case 'C':
+			_setbits (plc.flags, PLC_COMMIT_MODULE);
+			break;
+		case 'd':
+			if (_anyset (plc.flags, PLC_READ_MODULE))
+			{
+				error (1, EINVAL, &quot;Options -d and -m are mutually exclusive&quot;);
+			}
+			_setbits (plc.flags, PLC_DUMP_MODULE);
+			break;
+		case 'i':
+
+#if defined (WINPCAP) || defined (LIBPCAP)
+
+			channel.ifindex = atoi (optarg);
+
+#else
+
+			channel.ifname = optarg;
+
+#endif
+
+			break;
+		case 'M':
+			_setbits (plc.flags, PLC_WRITE_MODULE);
+			if (!checkfilename (optarg))
+			{
+				error (1, EINVAL, &quot;%s&quot;, optarg);
+			}
+			if ((plc.NVM.file = open (plc.NVM.name = optarg, O_BINARY|O_RDONLY)) == -1)
+			{
+				error (1, errno, &quot;%s&quot;, plc.NVM.name);
+			}
+			if (ModuleSpec (&amp;plc.NVM, &amp;vs_module_spec) == -1)
+			{
+				error (1, errno, &quot;%s&quot;, optarg);
+			}
+			break;
+		case 'm':
+			if (_anyset (plc.flags, PLC_DUMP_MODULE))
+			{
+				error (1, EINVAL, &quot;Options -d and -m are mutually exclusive&quot;);
+			}
+			_setbits (plc.flags, PLC_READ_MODULE);
+			if (!checkfilename (optarg))
+			{
+				error (1, EINVAL, &quot;%s&quot;, optarg);
+			}
+			if ((plc.nvm.file = open (plc.nvm.name = optarg, O_BINARY|O_CREAT|O_RDWR|O_TRUNC, FILE_FILEMODE)) == -1)
+			{
+				error (1, errno, &quot;%s&quot;, plc.nvm.name);
+			}
+
+#ifndef WIN32
+
+			chown (optarg, getuid (), getgid ());
+
+#endif
+
+			break;
+		case 't':
+			ModuleID = (uint16_t)(basespec (optarg, 16, sizeof (ModuleID)));
+			break;
+		case 's':
+			ModuleSubID = (uint16_t)(basespec (optarg, 16, sizeof (ModuleSubID)));
+			break;
+		case 'S':
+			plc.cookie = (uint32_t)(basespec (optarg, 16, sizeof (plc.cookie)));
+			break;
+		case 'q':
+			_setbits (channel.flags, CHANNEL_SILENCE);
+			_setbits (plc.flags, PLC_SILENCE);
+			break;
+		case 'v':
+			_setbits (channel.flags, CHANNEL_VERBOSE);
+			_setbits (plc.flags, PLC_VERBOSE);
+			break;
+		case 'x':
+			_setbits (plc.flags, PLC_BAILOUT);
+			break;
+		default:
+			break;
+		}
+	}
+	argc -= optind;
+	argv += optind;
+	if (argc != 1)
+	{
+		if (plc.nvm.file != -1)
+		{
+			error (1, ECANCELED, PLC_NODEVICE);
+		}
+	}
+	openchannel (&amp;channel);
+	if (!(plc.message = malloc (sizeof (* plc.message))))
+	{
+		error (1, errno, PLC_NOMEMORY);
+	}
+	if (!argc)
+	{
+		Manager (&amp;plc, ModuleID, ModuleSubID);
+	}
+	while ((argc) &amp;&amp; (* argv))
+	{
+		if (!hexencode (channel.peer, sizeof (channel.peer), synonym (* argv, devices, SIZEOF (devices))))
+		{
+			error (1, errno, PLC_BAD_MAC, * argv);
+		}
+		Manager (&amp;plc, ModuleID, ModuleSubID);
+		argc--;
+		argv++;
+	}
+	free (plc.message);
+	closechannel (&amp;channel);
+	exit (0);
+}
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='int6kmdio.c.html' title=' int6kmdio.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='int6krate.c.html' title=' int6krate.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

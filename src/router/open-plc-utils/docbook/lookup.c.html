@@ -1,0 +1,70 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			lookup.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='LocalDevices.c.html' title=' LocalDevices.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='mac2pw.c.html' title=' mac2pw.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   signed lookup (char const * name, struct _code_ const list [], size_t size);
+ *
+ *   symbol.h
+ *
+ *   search a name list and return the associated name; return the
+ *   corresponding code on success or -1 on failure; the search is
+ *   case insensitive;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef LOOKUP_SOURCE
+#define LOOKUP_SOURCE
+
+#include &lt;unistd.h&gt;
+#include &lt;string.h&gt;
+
+#include &quot;../tools/symbol.h&quot;
+
+signed lookup (char const * name, struct _code_ const list [], size_t size)
+
+{
+	struct _code_ const * item = list;
+	if ((name) &amp;&amp; (*name)) while ((unsigned)(item - list) &lt; size)
+	{
+		if (!strcasecmp (item-&gt;name, name))
+		{
+			return (item-&gt;code);
+		}
+		item++;
+	}
+	return (-1);
+}
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='LocalDevices.c.html' title=' LocalDevices.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='mac2pw.c.html' title=' mac2pw.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

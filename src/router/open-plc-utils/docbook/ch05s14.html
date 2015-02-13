@@ -1,0 +1,41 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Trouble-shooting Problems</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="ch05.html" title="Chapter 5.  Procedures"><link rel="prev" href="ch05s13.html" title="Pairing UART Devices post PTS"><link rel="next" href="ch05s15.html" title="SLAC Configuration"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">
+			Trouble-shooting Problems 
+			</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch05s13.html">Prev</a> </td><th width="60%" align="center">Chapter 5. 
+		Procedures 
+		</th><td width="20%" align="right"> <a accesskey="n" href="ch05s15.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="procedure-troubleshoot-problems"></a>
+			Trouble-shooting Problems 
+			</h2></div></div></div><p>
+			The following steps may help determine why two devices cannot communicate via ethernet over the powerline.  They assume that you have successfully installed the Powerline Toolkit but are having trouble forming a powerline network.
+			</p><div class="orderedlist"><ol type="1"><li><p><a name="trouble-shoot-1"></a>
+					On <span class="application">Linux</span>, run program <span class="application">ifconfig</span> to determine available interface names as described <a class="link" href="ch05s02.html" title="Select an Interface on Linux">earlier</a>. The default interface name is <code class="constant">eth1</code> on Linux. You must use interface names, not numbers, on the Linux command line.
+					</p><p>
+					On <span class="application">Windows</span>, run program <a class="ulink" href="pcapdevs.7.html" target="_top">pcapdevs</a> to determine available interface numbers as described <a class="link" href="ch05s03.html" title="Select an Interface on Windows">earlier</a>. The default interface number is <code class="constant">2</code> on Windows. You must use interface numbers,  not names,  on Windows command lines, even under Cygwin.
+					</p><p>
+					In either case, <span class="application">Linux</span> or <span class="application">Windows</span>, if a powerline device is connected to any interface other than the default interface then you must specify the name or number on the command line each time you run <a class="ulink" href="int6k.7.html" target="_top">int6k</a>. In the following examples, we will use device numbers <code class="constant">3</code> and <code class="constant">4</code> to indicate two different interfaces on the same host.
+					</p></li><li><p><a name="trouble-shoot-2"></a>
+					Make sure both devices respond to <strong class="userinput"><code>int6k -ri3</code></strong> and <strong class="userinput"><code>int6k -ri4</code></strong> as described <a class="link" href="ch05s04.html#script-example-device-identification" title="Example 5.6.  Device Identification">earlier</a>. They should each display the software revision information. If you get no response then check your connections and network configuration. If you see “<span class="quote">Bootloader</span>” then the connection is good but the firmware is not running. If the firmware versions are different then make them the same.
+					</p><p>
+					You must have running firmware to continue and the firmware revisions should be the same.
+					</p></li><li><p><a name="trouble-shoot-3"></a>
+					Make sure both devices respond to <strong class="userinput"><code>int6k -Ii3</code></strong> then <strong class="userinput"><code>int6k -Ii4</code></strong> as described <a class="link" href="ch05s04.html#script-example-device-configuration" title="Example 5.7.  Inspecting Device Configuration">earlier</a>. They should display about 10 lines of information showing their <acronym class="acronym">MAC</acronym>, <acronym class="acronym">DAK</acronym> and <acronym class="acronym">NMK</acronym>.
+					</p><p>
+					If the <acronym class="acronym">MAC</acronym> is <code class="constant">00:B0:52:00:00:01</code> then either the default Atheros <acronym class="acronym">PIB</acronym> was stored in <acronym class="acronym">NVRAM</acronym> or you downloaded and flashed the generic Atheros <acronym class="acronym">PIB</acronym> without changing the <acronym class="acronym">MAC</acronym> address beforehand. 
+					</p><p>
+					If the <acronym class="acronym">MAC</acronym> is <code class="constant">00:B0:52:00:00:03</code> then either no <acronym class="acronym">PIB</acronym> was stored in <acronym class="acronym">NVRAM</acronym> or you downloaded and attempted to flashed an invalid <acronym class="acronym">PIB</acronym>. The firmware will disable powerline communications in this case.
+					</p></li><li><p><a name="trouble-shoot-4"></a>
+					If the devices have different <acronym class="acronym">NMK</acronym>s they will not form a network. 
+					</p><p>
+					One way to form a network is to manually set the <acronym class="acronym">NMK</acronym> on each device to a known value with <strong class="userinput"><code>int6k -Mi3</code></strong> then <strong class="userinput"><code>int6k -Mi4</code></strong>. Each device will reset afterwards and may reset again when the other device is changed. Repeat <a class="link" href="ch05s14.html#trouble-shoot-3">Step 3</a> and confirm that both devices have the same <acronym class="acronym">NMK</acronym> and that “<span class="quote">(HomePlugAV)</span>” appears next to the <acronym class="acronym">NMK</acronym>.
+					</p><p>
+					Another way to form a network is to physically press the push-button on each device for 2 to 3 seconds or simulate a push-button press on each device with <strong class="userinput"><code>int6k -B1 -i3</code></strong> then <strong class="userinput"><code>int6k -B1 -i4</code></strong>. The devices should reset several times and then form a network.
+					</p></li><li><p><a name="trouble-shoot-5"></a>
+					Make sure each device knows the other one is present on the network with <strong class="userinput"><code>int6k -mi3</code></strong> then <strong class="userinput"><code>int6k -Mi4</code></strong>. Each device should show that a network exists and identify the other device as a station on that network. It may take up to 120 seconds for one device to find another and up to 5 minutes to recognise that the other device has left the network.
+					</p></li><li><p><a name="trouble-shoot-6"></a>
+					<a class="link" href="ch05s14.html#trouble-shoot-5">Step 5</a> should also show the <acronym class="acronym">TX</acronym> and <acronym class="acronym">RX</acronym> <acronym class="acronym">PHY</acronym> rates for each device. <span class="application">Ping</span> each host Interface from the other several times to generate traffic. The <acronym class="acronym">PHY</acronym> Rates should then be non-zero. We use <a class="ulink" href="efsu.7.html" target="_top">efsu</a> to generate <a class="link" href="ch06s10.html" title="Generating Powerline Traffic">traffic</a> inside our own scripts. You may elect to use another method.
+					</p></li><li><p>
+					Power down both devices then power them up. Wait about 20 seconds and confirm that you can <span class="application">ping</span> in either direction.
+					</p></li></ol></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch05s13.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="ch05.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch05s15.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">
+			Pairing UART Devices post PTS
+			 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 
+			SLAC Configuration
+			</td></tr></table></div></body></html>0

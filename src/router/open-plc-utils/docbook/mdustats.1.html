@@ -1,0 +1,137 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			mdustats.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='mdiodump.1.html' title=' mdiodump.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='mme.1.html' title=' mme.1 '>NEXT</a>]
+			</div>
+<pre>
+mdustats(1)                                  Qualcomm Atheros Open Powerline Toolkit                                 mdustats(1)
+
+NAME
+       mdustats
+
+SYNOPSIS
+       mdustats [options] [device] [device] [...]
+
+DESCRIPTION
+       Collect and display MDU traffic statisitcs using the Qualcomm Atheros vendor specific VS_MDU_TRAFFIC_STATS message.
+
+       This  program  is  part of the Qualcomm Atheros Powerline Toolkit.  See the plc man page for an overview and installation
+       instructions.
+
+OPTIONS
+       -c command
+              An integer indicating the type of statistics to be collected and reported.  Permitted values  are  0  through  255
+              decimal  but only 4 through 15 are valid at this time.  This option is mandatory because the default value of 0 is
+              invalid.
+               4 - retrieve traffic statistics on the slave side
+               5 - retrieve traffic statistics (master TX/RX) collected on the master side
+               6 - retrieve traffic statistics (slave TX/RX) collected on the master side
+               7 - retrieve traffic statistics (master/slave TX/RX) collected on the master side
+               8 - clear traffic statistics on the slave side
+               9 - clear traffic statistics (master TX/RX) colleted on the master side
+               10 - clear traffic statistics (slave TX/RX) collected on the master side
+               11 - clear traffic statistics (master/slave TX/RX) collected on the master side
+               12 - retrieve then clear traffic statistics collected on the slave side
+               13 - retrieve then clear traffic statistics (master TX/RX) collected on the master side
+               14 - retrieve then clear traffic statistics (slave TX/RX) collected on the master side
+               15 - retrieve then clear traffic statistics (master/slave TX/RX) collected on the master side
+
+       -s session
+              The session identifier used to associate request/confirm message pairs.  Valid identifiers are 0 through 255.  The
+              default is 0.
+
+       -t milliseconds
+              Read  timeout  in  milliseconds.   Values  range  from 0 through UINT_MAX.  This is the maximum time allowed for a
+              response.  The default is shown in brackets on the program menu.
+
+       -u unit
+              The slave unit number.  This is the same as the slave Terminal Equipment Identifier or TEI.   Valid  unit  numbers
+              are  0  through  255.   Unit  0 is the default.  This option is ignored when option -c specified any of the &quot;slave
+              side&quot; commands 4, 8 or 12.
+
+       -v     Print additional information on stdout.
+
+       -x     Cause the program to exit on the first error instead  of  continuing  with  remaining  iterations,  operations  or
+              devices.   Normally,  the program reports errors and moves on to the next operation, iteration or device depending
+              on the command line.
+
+       -?,--help
+              Print program help summary on stdout.  This option takes precedence over other options on the command line.
+
+       -?,--version
+              Print program version information on stdout.  This option takes precedence over other options on the command line.
+              Use  this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of
+              the Linux Toolkit you are using.
+
+ARGUMENTS
+       device The Ethernet hardware address of some powerline device.  More than one address may be  specified  on  the  command
+              line.   If  more  than one address is specified then operations are performed on each device in turn.  The default
+              address is local.  as explained in the DEVICES section.
+
+DEVICES
+       Powerline devices use Ethernet hardware, or Media Access Control (MAC), addresses.  Device addresses are expressed as  12
+       hexadecimal digits (0123456789ABCDEFabcdef) in upper, lower or mixed case.  Individual octets may be separated by colons,
+       for  clarity,  but  not  all  octets  need  to  be  seperated.   For  example,  &quot;00b052000001&quot;,  &quot;00:b0:52:00:00:01&quot;  and
+       &quot;00b052:000001&quot; are valid and equivalent.
+
+       These symbolic addresses are recognized by this program and may be used instead of the actual address value.
+
+       all    Equivalent to &quot;broadcast&quot;, described next.
+
+       broadcast
+              A  synonym  for the standard Ethernet broadcast address, FF:FF:FF:FF:FF:FF.  All devices, whether local, remote or
+              foreign will respond to this address.
+
+       local  A synonym for the Qualcomm Atheros vendor specific Local Management Address (LMA), 00:B0:52:00:00:01.   All  local
+              Atheros  devices  will  recognize  this  address  but remote and foreign devices will not.  A remote device is any
+              device at the far end of a powerline connection.  A foreign device is any device not manufactured by Atheros.
+
+REFERENCES
+       See the Qualcomm Atheros Powerline Firmware Technical Reference Manual for more information about MDU powerline  configu‐
+       ration and the VS_MDU_TRAFFIC_STATS message type.
+
+DISCLAIMER
+       Atheros HomePlug AV Vendor Specific Management Message structure and content is proprietary to Qualcomm Atheros, Ocala FL
+       USA.  Consequently, public information may not be available.  Qualcomm Atheros  reserves  the  right  to  modify  message
+       structure or content in future firmware releases without any obligation to notify or compensate users of this program.
+
+EXAMPLES
+       The  following  example collects and displays MDU traffic statistics on the slave side of the local device because option
+       -c is 4.  The local device is implicit because no device is specified on the command line.
+
+          # mdustats -c 4
+
+       The next example collects and displays MDU traffic statistics for slave 2 on the master side of device  00:b0:52:9F:E0:14
+       because option -c is 5 and option -s is 2.  The master device is explicit in this example.
+
+          # mdustats -c 5 -u 2 00b0529FE014
+
+SEE ALSO
+       plc(1), int6kstat(1), sada(1)
+
+CREDITS
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                              mdustats(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='mdiodump.1.html' title=' mdiodump.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='mme.1.html' title=' mme.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

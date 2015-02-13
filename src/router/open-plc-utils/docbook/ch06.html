@@ -1,0 +1,42 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Chapter 6.  Scripting</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="prev" href="ch05s16.html" title="SLAC Demonstration"><link rel="next" href="ch06s02.html" title="Linux Script Basics"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Chapter 6. 
+		Scripting
+		</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch05s16.html">Prev</a> </td><th width="60%" align="center"> </th><td width="20%" align="right"> <a accesskey="n" href="ch06s02.html">Next</a></td></tr></table><hr></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="chapter-scripting"></a>Chapter 6. 
+		Scripting
+		</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="section"><a href="ch06.html#scripting-intro">
+			Introduction
+			</a></span></dt><dt><span class="section"><a href="ch06s02.html">
+			Linux Script Basics 
+			</a></span></dt><dt><span class="section"><a href="ch06s03.html">
+			Host Independence
+			</a></span></dt><dt><span class="section"><a href="ch06s04.html">
+			Checking Device Connection
+			</a></span></dt><dt><span class="section"><a href="ch06s05.html">
+			Random Device Identity
+			</a></span></dt><dt><span class="section"><a href="ch06s06.html">
+			Actual Device Identity
+			</a></span></dt><dt><span class="section"><a href="ch06s07.html">
+			Editing a PIB
+			</a></span></dt><dt><span class="section"><a href="ch06s08.html">
+			Initialize a Device
+			</a></span></dt><dt><span class="section"><a href="ch06s09.html">
+			Update a Device
+			</a></span></dt><dt><span class="section"><a href="ch06s10.html">
+			Generating Powerline Traffic
+			</a></span></dt><dt><span class="section"><a href="ch06s11.html">
+			Reading PHY Rates
+			</a></span></dt><dt><span class="section"><a href="ch06s12.html">
+			User Interaction
+			</a></span></dt></dl></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="scripting-intro"></a>
+			Introduction
+			</h2></div></div></div><p>
+			The Open Powerline Toolkit comes with a variety of example scripts in the <code class="filename">scripts</code> folder. They have proven useful to Atheros engineers but may not satisfy your specific needs. This chapter explains how some of these scripts work so that you can modify them to do what you need to do. Most scripts covered in this chapter are intended for a <a class="link" href="ch02s05.html" title="Powerline Workstations">Powerline Workstation</a>.
+			</p><p>
+			Atheros provides GNU <span class="application">bash</span> scripts as examples and does not guarantee that they are suitable in any or all situations. Furthermore,  Atheros may not always update them to reflect changes to toolkit programs. Toolkit command line syntax may change from one release to the next and so Atheros cannot guarantee that older scripts will work with newer programs. The scrips are small,  simple and well organized. Do not run them until you have read them and understand what they do and how they work.
+			</p><p>
+			Sample scripts are available in the <code class="filename">scripts</code> folder. Some extremely useful ones are <a class="ulink" href="flash.sh.html" target="_top">flash.sh</a>, <a class="ulink" href="upgrade.sh.html" target="_top">upgrade.sh</a> and <a class="ulink" href="traffic.sh.html" target="_top">traffic.sh</a>. They all reference files <a class="ulink" href="hardware.sh.html" target="_top">hardware.sh</a> and <a class="ulink" href="firmware.sh.html" target="_top">firmware.sh</a>. 					</p><p>
+			Although Toolkit programs run under Windows their power is realized through scripts. Scripting requires environmental support for sophisticated symbol substitution and expansion. Most Linux shells are suitable but Microsoft DOS is not. On Windows, consider using installing Cygwin and using their bash shell. Scripting languages <span class="application">Tcl</span> and <span class="application">Python</span> are suitable alternatives. Another alternative is to write small Windows programs that format and execute the DOS shell commands you want.
+			</p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch05s16.html">Prev</a> </td><td width="20%" align="center"> </td><td width="40%" align="right"> <a accesskey="n" href="ch06s02.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">
+			SLAC Demonstration
+			 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 
+			Linux Script Basics 
+			</td></tr></table></div></body></html>0

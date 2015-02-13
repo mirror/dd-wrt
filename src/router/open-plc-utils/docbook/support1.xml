@@ -1,0 +1,264 @@
+<section id="support-command">
+		<title>
+			Command Line Functions
+			</title>
+		<para>
+			Command line functions are used by all toolkit programs. They are generic functions but we include them in a special section because they collectively co-operate to convert command line options and arguments into appropriate binary representations and provide concise but meaningful feedback when that is not possible.
+			</para>
+	<section id="support-assist">
+		<title>
+			assist
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+				<funcdef>void <function>assist</function></funcdef>
+  				<paramdef>char const * <parameter>name</parameter></paramdef>
+   				<paramdef>char const * <parameter>type</parameter></paramdef>
+  				<paramdef>const struct _code_ <parameter>list</parameter> []</paramdef>
+    				<paramdef>size_t <parameter>size</parameter></paramdef>
+				<paramdef>FILE * <parameter>fp</parameter></paramdef>
+  				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Show why a symbolic <varname>name</varname> was rejected by function <link linkend='support-lookup'>lookup</link> or similar functions. Argument <varname>type</varname> contains a title for the class of names stored in <varname>list</varname>. This function prints an error message on file stream <constant>fp</constant> showing the program name,  the <varname>type</varname> string,  the symbolic <varname>name</varname> and all names stored in the <varname>list</varname>. The <constant>_code_</constant> structure is declared in <ulink url='types.h.html'>types.h</ulink>. The function is declared in <ulink url='symbol.h.html'>symbol.h</ulink> and defined in <ulink url='assist.c.html'>assist.c</ulink>. Function <link linkend='support-expect'>expect</link> is used to print list names.
+			</para>
+		</section>
+	<section id="support-basespec">
+		<title>
+			basespec
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>uint64_t <function>basespec</function></funcdef>
+    				<paramdef>char const * <parameter>string</parameter></paramdef>
+   				<paramdef>unsigned <parameter>base</parameter></paramdef>
+   				<paramdef>unsigned <parameter>size</parameter></paramdef>
+   				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Return the unsigned integer equivalent of a numeric <varname>string</varname>. Print an error message on <varname>stderr</varname> and exit the program with status <constant>1</constant> if a syntax error occurs or the result exceeds the capacity of the requested integer <varname>size</varname> in bytes. If <varname>base</varname> is <constant>0</constant>,  numeric values may be expressed in decimal, hexadecimal or binary notation where hexadecimal values start with <constant>"0x"</constant> and binary values start with <constant>"0b"</constant>. When <varname>base</varname> is non-zero, the notation in <varname>string</varname> must conform to the corresponding number base rules. Applications should cast the return value to the appropriate data type prevent loss-of-data compiler warnings. This function is typically used to convert and length-check integers entered as command line arguments. The function is declared in <ulink url='number.h.html'>number.h</ulink> and defined in <ulink url='basespec.c.html'>basespec.c</ulink>.
+			</para>
+		<para>
+			Like function <link linkend='support-uintspec'>uintspec</link>,  this function both converts and range checks numeric string values,  but the minimum and maximum value are implicit in the <varname>size</varname> of the integer. The minimum value is always <constant>0</constant> and the maximum value can be computed by  <constant>((1 &lt;&lt; size &lt;&lt; 3) - 1)</constant>.
+			</para>
+		</section>
+	<section id="support-bytespec">
+		<title>
+			bytespec
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>void <function>bytespec</function></funcdef>
+    				<paramdef>char const * <parameter>string</parameter></paramdef>
+   				<paramdef>void  * <parameter>memory</parameter></paramdef>
+   				<paramdef>size_t <parameter>extent</parameter></paramdef>
+   				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Encode a <varname>memory</varname> region with the binary equivalent of a fixed-length hexadecimal string. Print an error message on stderr and exit the program with status <constant>1</constant> if a syntax error occurs or the number of octets does not equal  <varname>extent</varname>. Hexadecimal octets may be separated by colons for readability but colons are not required. Empty octets are illegal. The function is declared in <ulink url='memory.h.html'>memory.h</ulink> and defined in <ulink url='bytespec.c.html'>bytespec.c</ulink>.
+			</para>
+		<para>
+			This function is typically used to enter fixed-length data, like hardware addresses and encryption keys, on the command line. 
+			</para>
+		</section>
+	<section id="support-checkfilename">
+		<title>
+			checkfilename
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>bool <function>checkfilename</function></funcdef>
+    				<paramdef>char const * <parameter>filename</parameter></paramdef>
+				</funcprototype>
+			</funcsynopsis>
+			<para>
+				Return logical <constant>true</constant> if the <varname>filename</varname> argument contains only letters, digits, slashes, periods, underscores and hyphens. This function can be used to detect cases where a user accidentally entered an Ethernet address in place of a filename on the command line. Ethernet address strings are, as it happens, also valid filenames. The function is declared in <ulink url='files.h.html'>files.h</ulink> and defined in <ulink url='checkfilename.c.html'>checkfilename.c</ulink>.
+				</para>
+		</section>
+	<section id="support-dataspec">
+		<title>
+			dataspec
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>void <function>dataspec</function></funcdef>
+    				<paramdef>char const * <parameter>string</parameter></paramdef>
+   				<paramdef>void  * <parameter>memory</parameter></paramdef>
+   				<paramdef>size_t <parameter>extent</parameter></paramdef>
+   				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Encode a <varname>memory</varname> region with the binary equivalent of a variable-length hexadecimal string. Print an error message on stderr and exit the program with the status <constant>1</constant> if a syntax error occurs or the number of octets exceeds <varname>extent</varname>. The number of octets may, however, be less than <constant>extent</constant>. Unlike function <link linkend='support-bytespec'>bytespec</link>, hexadecimal octets may not be separated by colons. This function is typically used to enter variable-length data from the command line. The function is declared in <ulink url='memory.h.html'>memory.h</ulink> and defined in <ulink url='dataspec.c.html'>dataspec.c</ulink>.
+			</para>
+		</section>
+	<section id="support-error">
+		<title>
+			error
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>void <function>error</function></funcdef>
+    				<paramdef>int<parameter>exitcode</parameter></paramdef>
+    				<paramdef>errno_t <parameter>number</parameter></paramdef>
+   				<paramdef>char const * <parameter>format</parameter></paramdef>
+   				<paramdef><parameter>...</parameter></paramdef>
+				</funcprototype>
+			</funcsynopsis>
+		<para>
+			This function works like printf except that printed messages appear on <constant>stderr</constant> and are prefixed with the program name and error information. If argument <varname>errno</varname> is non-zero then messages are prefixed with the system error description. If argument <varname>exitcode</varname> is non-zero then function <varname>error</varname> exits the program with value <varname>exitcode</varname> after printing the message and does not return to the caller. The function is declared in <ulink url='error.h.html'>error.h</ulink> and defined in <ulink url='error.c.html'>error.c</ulink>.
+			</para>
+		<para>
+			This function is used to print informative error messages on the console and prevent program execution from proceeding when input is invalid or some error condition exists.
+			</para>
+		</section>
+	<section id="support-expect">
+		<title>
+			expect
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+				<funcdef>void <function>expect</function></funcdef>
+  				<paramdef>const struct _code_ <parameter>list</parameter> []</paramdef>
+    				<paramdef>size_t <parameter>size</parameter></paramdef>
+     				<paramdef>FILE * <parameter>fp</parameter></paramdef>
+ 				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Display all names in argument <varname>list</varname> on file stream <varname>fp</varname>. This function is called by runction <link linkend='support-assist'>assist</link> to print the list of symbolic names but other function may have use for it. The <constant>_code_</constant> structure is declared in <ulink url='types.h.html'>types.h</ulink>. The function is declared in <ulink url='symbol.h.html'>symbol.h</ulink> and defined in <ulink url='expect.c.html'>expect.c</ulink>.
+			</para>
+		</section>
+	<section id="support-getoptv">
+		<title>
+			getoptv
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>int <function>getoptv</function></funcdef>
+    				<paramdef>int <parameter>argc</parameter></paramdef>
+    				<paramdef>char const * <parameter>argv</parameter> []</paramdef>
+   				<paramdef>char const * <parameter>optv</parameter> []</paramdef>
+ 				</funcprototype>
+			</funcsynopsis>
+		<para>
+			A custom version of the <acronym>POSIX</acronym> function <function>getopt</function>. It supports standard global variables <varname>optind</varname>, <varname>opterr</varname>, <varname>optopt</varname> and <varname>optarg</varname> and the non-standard variable <varname>optmin</varname>. It extracts the program name from <varname>argv[0]</varname> and sets global string pointer <varname>program_name</varname> for use by functions <function>alert</function>, <function>error</function> and others. Options <userinput>-?</userinput> and <userinput>--help</userinput> both display program information on <constant>stdout</constant>. Options <userinput>-!</userinput> and <userinput>--version</userinput> both display program version information on <constant>stdout</constant>. String vector <varname>optv</varname> includes both the standard argument <varname>optstring</varname> and usage text found in many programs. The function is declared in <ulink url='getoptv.h.html'>getoptv.h</ulink> and defined in <ulink url='getoptv.c.html'>getoptv.c</ulink>.
+			</para>
+		</section>
+	<section id="support-ipv4spec">
+		<title>
+			ipv4spec
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>size_t <function>ipv4spec</function></funcdef>
+    				<paramdef>char const * <parameter>string</parameter></paramdef>
+   				<paramdef>void  * <parameter>memory</parameter></paramdef>
+   				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Encode a 4-byte <varname>memory</varname> region with an IPv4 dotted-decimal <varname>string</varname> and return the number of bytes encoded. Terminate the program with an error message and exitcode of <constant>1</constant> on conversion error. The value returned by this function is always <constant>4</constant> and memory is always encoded in network byte order. This function is typically used to convert IPv4 strings entered as command line arguments. The function is declared in <ulink url='memory.h.html'>memory.h</ulink> and defined in <ulink url='ipv4spec.c.html'>ipv4spec.c</ulink>.
+			</para>
+		<para>
+			Dotted-decimal format consists of decimal values in the range 0 through 255. Each value represents one octet or 8-bit value. IPv4 addresses require 4 such values separated by one decimal point. This function permits empty octets and leading zeros within octets. For example,  <quote>...</quote> is equivalent to <quote>0.0.0.0</quote> and <quote>127.0.000.001</quote> is equivalent to <quote>127.0.0.1</quote>. The second example will encode memory as follows <constant>{ 0x7F, 0x00, 0x00, 0x01 }</constant> which is in network byte order, or big endian.
+			</para>
+		</section>
+	<section id="support-ipv6spec">
+		<title>
+			ipv6spec
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>size_t <function>ipv6spec</function></funcdef>
+    				<paramdef>char const * <parameter>string</parameter></paramdef>
+   				<paramdef>void  * <parameter>memory</parameter></paramdef>
+   				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Encode a 16-byte <varname>memory</varname> region with an IPv6 colon-separated hexadecimal quartet <varname>string</varname> and return the number of bytes encoded. Terminate the program with an error message and exitcode of <constant>1</constant> on conversion error. The value returned by this function is always <constant>16</constant> and memory is always encoded in network byte order. This function is typically used to convert IPv6 strings entered as command line arguments. The function is declared in <ulink url='memory.h.html'>memory.h</ulink> and defined in <ulink url='ipv6spec.c.html'>ipv6spec.c</ulink>.
+			</para>
+		<para>
+			Colon-separated hexadecimal quartet notation consists of hexadecimal values in the range 0 through FFFF. Each value represents a quartet or a 32-bit value. IPv6 addresses require 8 quartets separated by one colon. By convention, an empty quartet expands with enough zeros to right-justify the remainder of the address. This function permits multiple empty quartets and leading zeros within quartets. When multiple empty quartets appear, only the right-most occurance expands to zeros. For example,  <quote>AA12::BB34::CC56::DD78</quote> is equivalent to <quote>AA12:0000:BB34:0000:CC56:0000:0000:DD78</quote> because only the right-most empty field expands. This will encode memory as follows <constant>{ 0xAA, 0x12, 0x00, 0x00, 0xBB, 0x34, 0x00, 0x00, 0xCC, 0x56, 0x00, 0x00, 0x00, 0x00, 0xDD, 0x78 }</constant> which is in network byte order, or big-endian.
+			</para>
+		</section>
+	<section id="support-lookup">
+		<title>
+			lookup
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+				<funcdef>signed <function>lookup</function></funcdef>
+  				<paramdef>char const * <parameter>name</parameter></paramdef>
+   				<paramdef>const struct _code_ <parameter>list</parameter> []</paramdef>
+    				<paramdef>size_t <parameter>size</parameter></paramdef>
+  				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Lookup a symbolic <varname>name</varname> in a <varname>list</varname> and return an associated integer or <constant>-1</constant> if the <varname>name</varname> does not appear in the <varname>list</varname>. A typical use is the translation of symbolic command line arguments to integer codes. For example, some Toolkit programs assign symbolic names to field codes so that users can enter names instead of numbers. This approach becomes more useful as the number of permitted codes increases. The <constant>_code_</constant> structure is declared in <ulink url='types.h.html'>types.h</ulink>. The function is declared in <ulink url='symbol.h.html'>symbol.h</ulink> and defined in <ulink url='lookup.c.html'>lookup.c</ulink>.
+			</para>
+		<para>
+			This function offers two benefits: 1) multiple symbols can translate to one code and 2) names can be changed or new names added without affecting program logic. This function is similar to but different from function <link linkend='support-synonym'>synonym</link> which returns a character string instead of an integer. 
+			</para>
+		</section>
+	<section id="support-putoptv">
+		<title>
+			putoptv
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>void <function>putoptv</function></funcdef>
+    				<paramdef>char const * <parameter>optv</parameter> []</paramdef>
+ 				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Print program information on <constant>stdout</constant>. Program information is stored in string vector <varname>optv</varname>. String indexes are defined in file <filename>putoptv.h</filename>. String <varname>optv[0]</varname> is the <acronym>POSIX</acronym> standard argument <varname>optstring</varname>. This function is called by function <function>getoptv</function> whenever option <userinput>-?</userinput> or <userinput>--help</userinput> is detected on the command line. There is virtually no need to call this function directly. The function is declared in <ulink url='putoptv.h.html'>putoptv.h</ulink> and defined in <ulink url='putoptv.c.html'>putoptv.c</ulink>.
+			</para>
+		</section>
+	<section id="support-synonym">
+		<title>
+			synonym
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>char const * <function>synonym</function></funcdef>
+    				<paramdef>char const * <parameter>string</parameter></paramdef>
+    				<paramdef>const struct _term_ <parameter>list</parameter> []</paramdef>
+    				<paramdef>size_t <parameter>size</parameter></paramdef>
+  				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Lookup a symbolic <varname>name</varname> in a <varname>list</varname> and return an associated string or the original <varname>string</varname> if the <varname>name</varname> does not appear in the <varname>list</varname>. A typical use is the translation of symbolic command line arguments to their equivalent numeric strings before encoding them. For example, many Toolkit programs convert the command line argument <quote>local</quote> to <quote>00:B0:52:00:00:01</quote> before encoding the device MAC address. The <constant>_term_</constant> structure is declared in <ulink url='types.h.html'>types.h</ulink>. The function is declared in <ulink url='symbol.h.html'>symbol.h</ulink> and defined in <ulink url='synonym.c.html'>synonym.c</ulink>.
+			</para>
+		<para>
+			This function is similar to but different from function <link linkend='support-lookup'>lookup</link> which returns an integer instead of a character string.
+			</para>
+		</section>
+	<section id="support-uintspec">
+		<title>
+			uintspec
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>uint64_t <function>uintspec</function></funcdef>
+    				<paramdef>char const * <parameter>string</parameter></paramdef>
+   				<paramdef>uint64_t <parameter>minimum</parameter></paramdef>
+   				<paramdef>uint64_t <parameter>maximum</parameter></paramdef>
+   				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Return the unsigned integer equivalent of a numeric <varname>string</varname>. Print an error message on <varname>stderr</varname> and exit the program with the value <constant>1</constant> when a syntax error occurs or the result exceeds the specified <varname>minimum</varname> or <varname>maximum</varname> value. Numeric values may be expressed in decimal, hexadecimal or binary notation where hexadecimal values start with <constant>"0x"</constant> and binary values start with <constant>"0b"</constant>. Applications should cast the return value to the appropriate data type to avoid loss-of-data warnings on some compilers. This function is typically used to convert and range-check integer values entered as command-line arguments. The function is declared in <ulink url='number.h.html'>number.h</ulink> and defined in <ulink url='uintspec.c.html'>uintspec.c</ulink>.
+			</para>
+		</section>
+	<section id="support-version">
+		<title>
+			version
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>void <function>version</function></funcdef>
+   				<void/>
+   				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Print package and program version information on <constant>stdout</constant>. This function is called by function <function>getoptv</function> whenever option <userinput>-!</userinput> or <userinput>--version</userinput> is detected on the command line. There is no need to call this function directly. The function is declared in <ulink url='version.h.html'>version.h</ulink> and defined in <ulink url='version.c.html'>version.c</ulink>. Constants <constant>PACKAGE</constant> and <constant>VERSION</constant> define the information that is displayed. They are defined in file <ulink url="version.h.html">version.h</ulink> and must be maintained by developers. 
+			</para>
+		</section>
+	</section>

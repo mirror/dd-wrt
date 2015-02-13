@@ -1,0 +1,82 @@
+<section id="support-network">
+	<title>
+		Network Functions
+		</title>
+	<section id="support-networkbridges">
+		<title>
+			NetworkBridges
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>size_t <function>NetworkBridges</function></funcdef>
+    				<paramdef>struct channel * <parameter>channel</parameter></paramdef>
+    				<paramdef>void  * <parameter>memory</parameter></paramdef>
+    				<paramdef>size_t <parameter>extent</parameter></paramdef>
+				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Search a channel for local powerline devices (bridges) and store their Ethernet hardware in consecutive <varname>memory</varname> locations. The memory <varname>extent</varname> is specified in bytes. The number of devices found is returned as the function value,  provided enough space is available to store all addressed. Unlike function <link linkend='support-networkdevices'>NetworkDevices</link>, the channel <varname>peer</varname> address is ignored. 
+			</para>
+		<para>
+			We call local devices <quote>bridges</quote> because each serves as an Ethernet-to-Powerline bridge for the local host.
+			</para>
+		<example>
+			<title>
+				Enumerating Local Devices
+				</title>
+<programlisting>
+#include &lt;net/if.h&gt;
+#include &quot;../ether/channel.h&quot;
+extern struct channel <varname>channel</varname>; 
+uint8_t <varname>address</varname> [<constant>255</constant>][<constant>ETHER_ADDR_LEN</constant>]; 
+size_t <varname>bridges</varname> = <function>NetworkBridges</function> (&amp;<varname>channel</varname>, <varname>address</varname>, sizeof (<varname>address</varname>));
+size_t <varname>bridge</varname> = 0; 
+while (<varname>bridge</varname> &lt; <varname>bridges</varname>)
+{
+   <function>binout</function> (<varname>address</varname> [<varname>bridge</varname>], <constant>ETHER_ADDR_LEN</constant>, <constant>':'</constant>, stdout);
+   <function>putc</function> (<constant>'\n'</constant>, <varname>stdout</varname>);  
+} 
+</programlisting>
+			<para>
+				The code segment shown above illustrates how to use function <varname>NetworkBridges</varname> to identify all local devices. We do not need to set the <link linkend='support-channel'>channel</link> <varname>peer</varname> because <varname>NetworkBridges</varname> always uses the Atheros <varname>localcast</varname> address. Array <varname>address</varname> is declared with two dimensions to simplify access to individual addresses on return.  
+				</para>
+			</example>
+		</section>
+	<section id="support-networkdevices">
+		<title>
+			NetworkDevices
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>size_t <function>NetworkDevices</function></funcdef>
+    				<paramdef>struct channel * <parameter>channel</parameter></paramdef>
+    				<paramdef>void * <parameter>memory</parameter></paramdef>
+    				<paramdef>size_t <parameter>extent</parameter></paramdef>
+				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Query a powerline device, specified by <link linkend='support-channel'>channel</link>, for neighboring network devices and store their Ethernet addresses in consecutive <varname>memory</varname> locations. The memory <varname>extent</varname> is specified in bytes. The number of devices found is returned as the function value, provided sufficient space is available to store all addresses. Unlike function <link linkend='support-networkbridges'>NetworkBridges</link>, the <structname>channel</structname> <varname>peer</varname> address is identifies the device to be queried. 
+			</para>
+		<example>
+			<title>
+				Enumerating Network Devices
+				</title>
+<programlisting>
+#include &lt;net/if.h&gt;
+#include &quot;../ether/channel.h&quot;
+extern struct channel <varname>channel</varname>; 
+uint8_t <varname>address</varname> [<constant>255</constant>][<constant>ETHER_ADDR_LEN</constant>]; 
+size_t <varname>devices</varname> = <function>NetworkDevices</function> (&amp;<varname>channel</varname>, <varname>address</varname>, sizeof (<varname>address</varname>));
+size_t <varname>device</varname> = <constant>0</constant>; 
+while (<varname>device</varname> &lt; <varname>devices</varname>)
+{
+   <function>binout</function> (<varname>address</varname> [<varname>device</varname>], <constant>ETHER_ADDR_LEN</constant>, <constant>':'</constant>, <varname>stdout</varname>);
+   <function>putc</function> (<constant>'\n'</constant>;, <varname>stdout</varname>);  
+} 
+</programlisting>
+			<para>
+				The code segment shown above illustrates how to use function <varname>NetworkDevices</varname> to identify all devices on a specific network. You must set the <link linkend='support-channel'>channel</link> <varname>peer</varname> address before calling <varname>NetworkDevices</varname>. Array <varname>address</varname> is declared with two dimensions to simplify access to individual addresses on return. If the <link linkend='support-channel'>channel</link> <varname>peer</varname> address is not the Ethernet <varname>broadcast</varname> or Atheros <varname>localcast</varname> address then the first address returned will be the <link linkend='support-channel'>channel</link> <varname>peer</varname> address.
+				</para>
+			</example>
+		</section>
+	</section>

@@ -1,0 +1,101 @@
+# ===================================================================== 
+#
+#   NOTICE OF LICENSE CHANGE
+#
+#   As of 15-Oct-2013, Qualcomm Atheros, Inc. decided to migrate the
+#   license of this Powerline Toolkit to more clearly communicate our
+#   expectations regarding the licensing and usage of the Powerline 
+#   Toolkit. We do not expect this will have a practical impact on any 
+#   current or future users of the Powerline Toolkit. Older versions 
+#   of the Powerline Toolkit continue to be available under the 
+#   previous license. 
+#
+#   The new license, known as the Clear BSD License, appears below.
+#
+# --------------------------------------------------------------------- 
+
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+This package is an open version of the Qualcomm Atheros Powerline 
+Toolkit. It may be distributed as a zip, gzip or bzip2 tarball that
+contains source code and build scripts for Linux, OpenBSD, MAC OSX 
+and Microsoft Windows. It also contains documentation in docbook XML, 
+HTML and plain text format. 
+
+We recommend that you open file docbook/index.html with a web browser 
+the read Chapter 1 before attempting to install or use the toolkit 
+but the impatient may do the following and survive ...
+
+TO INSTALL
+----------
+
+1. Enter package folder using "cd open-plc-utils".
+2. Compile and install all tools in /usr/local/bin using "sudo make install". 
+3. Compile and install man pages in  /usr/share/man/man1 using "sudo make manuals".
+4  Change to the documentation folder using "cd docbook".
+5. Add page index.html to browser favorites.
+6. Add page toolkit.html to browser favorites.
+
+TO UNINSTALL
+------------
+
+1. Enter package folder using "cd open-plc-utils".
+2. Remove installed programs using "sudo make uninstall".
+3. Remove all package files using "rm -r *".
+
+Ocala Design Center
+Qualcomm Atheros, Inc.
+203 East Silver Springs Blvd #200
+Ocala FL 34470 USA
++1-352-547-4413
+cmaier@qca.qualcomm.com
+
+CONTRIBUTORS
+------------
+Abdel Younes <younes@leacom.fr>
+Charles Maier <razzlefratz@gmail.com>
+Florian Fainelli <f.fainelli@gmail.com>
+Mathieu Olivari <mathieu.olivari@gmail.com>
+Mathieu Poullet <m.poullet@avm.de>
+Stefan Wahren <stefan.wahren@i2se.com>
+Werner Henze <w.henze@avm.de>
+

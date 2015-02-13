@@ -1,0 +1,98 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			efru.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='efeu.1.html' title=' efeu.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='efsu.1.html' title=' efsu.1 '>NEXT</a>]
+			</div>
+<pre>
+efru(1)                                      Qualcomm Atheros Open Powerline Toolkit                                     efru(1)
+
+NAME
+       efru - HomePlug AV Packet Listener
+
+SYNOPSIS
+       efru [options]
+
+DESCRIPTION
+       Display incoming 802.3 Ethernet frames addressed to this host or broadcast.  Do not display outgoing frames.
+
+       The  program  is an example of a simple packet listener.  Engineers and software developers can extend this code to build
+       custom sniffers or servers.  The framework is present here but you must add any additional features.
+
+       This program is part of the Qualcomm Atheros Powerline Toolkit.  See the plc man page for an  overview  and  installation
+       instructions.
+
+OPTIONS
+       -e ethertype
+              The protocol (or ethertype) of interest expressed as a 16-bit hexadecimal integer.  Prefix &quot;0x&quot; is optional.  This
+              filters out frames having any other ethertype.  The default is ETH_P_802_2 as defined in if_ether.h.
+
+       -i interface
+              Names the host ethernet interface to watch.  The named interface, such as eth0, eth1 and so on, must be  connected
+              to  a  HomePlug AV ethernet-to-powerline bridge adapter to receive any HomePlug AV traffic.  The default interface
+              is eth1.
+
+       -q     Quiet mode.  Suppress the printing of the normal message descriptions on stdout.
+
+       -t milliseconds
+              Read timeout in milliseconds.  Values range from 0 through UINT_MAX.  This is  the  maximum  time  allowed  for  a
+              response.  The default is 50 milliseconds.
+
+       -v     Verbose  mode.   Displays  incoming  frames  in  hexadecimal dump format on stdout.  This option is independent of
+              option -a which prints VS_ARPC message text on stderr.
+
+       -?, --help
+              Print program help summary on stdout.  This option takes precedence over other options on the command  line.   -!,
+              --version  Print  program  version  information on stdout.  This option takes precedence over other options on the
+              command line.  Use this option when sending screen dumps to Atheros Technical Support so that  they  know  exactly
+              which  version  of  the  Linux  Toolkit you are using.  See the HomePlug AV Specification for a description of all
+              HomePlug AV message types.  See the Qualcomm Atheros INT6000  Firmware  Reference  Manual  for  a  description  of
+              Atheros Vendor Specific message types.
+
+EXAMPLES
+       The  following  command monitors the default interface eth1 for HomePlug AV traffic and dumps detected frames on the con‐
+       sole as they occur.  Terminate the foreground process by typing ^C or ^Z at the console.  This program is usually run  in
+       a separate console window when performing other toolkit operations.
+
+          # efru
+
+       The  following  command  monitors  host  interface  eth4  for  incoming  HomePlug AV frames and dumps writes them to file
+       efru.log.  Frames are printed in hexadecimal dump format because option -v is present.  Terminate the foreground  process
+       by typing ^C or ^Z at the console.
+
+          # efru -v -i eth4 &gt; efru.log
+
+DISCLAIMER
+       Atheros HomePlug AV Vendor Specific Management Message structure and content is proprietary to Qualcomm Atheros, Ocala FL
+       USA.  Consequently, public information is not available.  Qualcomm Atheros reserves the right to modify  management  mes‐
+       sage  structure and content in future firmware releases without any obligation to notify or compensate users of this pro‐
+       gram.
+
+SEE ALSO
+       plc(1), efsu(1), hpav(1), hpavd(1), mme(1)
+
+CREDITS
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                                  efru(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='efeu.1.html' title=' efeu.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='efsu.1.html' title=' efsu.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

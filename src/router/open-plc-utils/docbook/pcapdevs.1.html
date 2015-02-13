@@ -1,0 +1,116 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			pcapdevs.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='nvmsplit.1.html' title=' nvmsplit.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='pev.1.html' title=' pev.1 '>NEXT</a>]
+			</div>
+<pre>
+pcapdevs(1)                                  Qualcomm Atheros Open Powerline Toolkit                                 pcapdevs(1)
+
+NAME
+       pcapdevs - Qualcomm Atheros PCAP Device Enumerator
+
+SYNOPSIS
+       pcapdevs [options]
+
+DESCRIPTION
+       The pcapdevs program enumerates available libpcap or winpcap devices on stdout.
+
+       This  program  is  part of the Qualcomm Atheros Powerline Toolkit.  See the AMP man page for compilation and installation
+       instructions.
+
+COMMENTS
+       This program is only compiled in the Windows version of the toolkit because it is not needed on other platforms.  It  can
+       be  compiled,  possibly  with  some  modifications,  on  Linux or OpenBSD systems where libpcap development libraries are
+       installed.
+
+BACKGROUND
+       The Atheros Powerline Toolkit uses the libpcap or winpcap package to enable raw socket operations on systems that have no
+       native  raw  packet  support.  Unfortunately, libpcap and winpcap reference available network interfaces by number rather
+       than by name.  Consequently, users need some way to determine what network interfaces are  available  and  determine  the
+       number associated with each one.  This utility does that.
+
+OPTIONS
+       -h     Print  bash  compatible variable definitions on stdout.  The definitions enumerate available devices and their MAC
+              addresses.  This is merely a convenience to minimze typing errors and, consequently, some editing may be required.
+              The output is a generous start when creating file hardware.sh.
+
+       -q     Suppresses printing of progress messages.
+
+       -v     Print additional information.
+
+EXAMPLES
+       The following command enumerates available libpcap devices for a Linux host.  Users should note the interface numbers and
+       use them when specifying a network interfaces on libpcap  enabled  programs  in  this  toolkit.   The  Ethernet  hardware
+       addresses shown may be useful when writing scripts.
+
+          # pcapdevs
+          1 00:60:97:05:97:0C eth0
+          2 00:0F:EA:10:D5:1C eth1
+          3 00:0F:EA:10:D5:1C any (Pseudo-device that captures on all interfaces)
+          4 00:00:00:00:00:00 lo
+
+       The  next  example  enumaerates available winpcap devices on a Windows hosts.  Observe that device names and descriptions
+       are much longer than on Linux.
+
+          # pcapdevs
+          1 00:00:00:00:00:00 \Device\NPF_GenericDialupAdapter     (Adapter for generic dialup and VPN capture)
+          2 00:0E:2E:03:5F:B8 \Device\NPF_{4CFAABD5-C929-4942-914B-BDFE72B13611} (Realtek RTL8139 Family)
+          3 00:C0:49:D5:CB:14 \Device\NPF_{73E0D2EF-6069-4831-B379-507025F2BDCD} (Realtek RTL8139 Family)
+          4 00:0C:76:87:3E:3D \Device\NPF_{86B96905-3AA7-46F1-969A-6C23E3BBBA8B} (Broadcom NetXtreme Gigabit)
+
+       Assuming that we have compiled and installed the Linux Toolkit with libpcap or winpcap  support,  we  can  use  int6k  to
+       request  revision  information  on  all  devices connected to interface 2 with the following command.  Interface 2 is the
+       default interface when the toolkit is comipled with either libpcap or winpcap and so option -i could have been omitted in
+       this case.
+
+          # int6k -i 2 -r
+
+       Most  example Atheros scripts include file hardware.sh that defines symbolic Ethernet interfaces, NIC1 and NIC2 and their
+       respective hardware addresses, MAC1 and MAC2.  These symbols are referenced by scripts when needed, providing a degree of
+       host  independence.   The following example illustrates some typical output for a Windows environment.  The output can be
+       used with the Cygwin bash shell, for example.
+
+          # pcapdevs -h &gt; hardware.sh
+          # cat hardware.sh
+          NIC1=1 # Adapter for generic dialup and VPN capture
+          NIC2=2 # Realtek RTL8139 Family Fast Ethernet Adapter (Microsoft’s Packet Scheduler)
+          NIC3=3 # Realtek RTL8139 Family Fast Ethernet Adapter (Microsoft’s Packet Scheduler)
+          NIC4=4 # Broadcom NetXtreme Gigabit Ethernet Driver
+          MAC1=00:00:00:00:00:00 # Adapter for generic dialup and VPN capture
+          MAC2=00:0E:2E:03:5F:B8 # Realtek RTL8139 Family Fast Ethernet Adapter (Microsoft’s Packet Scheduler)
+          MAC3=00:C0:49:D5:CB:14 # Realtek RTL8139 Family Fast Ethernet Adapter (Microsoft’s Packet Scheduler)
+          MAC4=00:0C:76:87:3E:3D # Broadcom NetXtreme Gigabit Ethernet Driver
+
+       The previous example creats a basic hardware.sh file but some editing is still required.  You should add a bang  path  at
+       the top, delete definitions of NIC1 and MAC and renumber the remaining symbols.  You may also want to add other host-spe‐
+       cific definitions.
+
+SEE ALSO
+       amp(1), ifs(1), plcnets(1)
+
+CREDITS
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                              pcapdevs(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='nvmsplit.1.html' title=' nvmsplit.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='pev.1.html' title=' pev.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

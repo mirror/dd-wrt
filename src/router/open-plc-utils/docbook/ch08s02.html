@@ -1,0 +1,195 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Principles of Operation</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="ch08.html" title="Chapter 8.  Serial Drivers"><link rel="prev" href="ch08.html" title="Chapter 8.  Serial Drivers"><link rel="next" href="ch08s03.html" title="SPI Serial Driver"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">
+			Principles of Operation
+			</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch08.html">Prev</a> </td><th width="60%" align="center">Chapter 8. 
+		Serial Drivers
+		</th><td width="20%" align="right"> <a accesskey="n" href="ch08s03.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="driver-spi-principles"></a>
+			Principles of Operation
+			</h2></div></div></div><p>
+			The basic unit of data transfer over MII and powerline is the IEEE 802.3 Ethernet frame. On output, the host must encapsulate each Ethernet frame as shown below before serial transmission to the QCA7000. The QCA7000 strips off the serial header and footer and forwards the frame over powerline.  
+			</p><div class="table"><a name="idp14007136"></a><p class="title"><b>Table 8.1. 
+				SPI Transmit Frame
+				</b></p><div class="table-contents"><p>
+			Allocate a 1528-byte buffer to accommodate the largest outgoing serial packet and pad with <code class="constant">NUL</code> bytes. Write <code class="varname">SOF</code>, compute and write <code class="varname">FL</code>, copy the outgoing frame then write <code class="varname">EOF</code>. Serially transmit <code class="varname">FL</code> + <code class="constant">12</code> buffer bytes to the QCA7000.
+			</p><table summary="
+				SPI Transmit Frame
+				" border="1"><colgroup><col><col><col><col></colgroup><thead><tr><th>
+						Offset
+						</th><th>
+						Length
+						</th><th>
+						Symbol
+						</th><th>
+						Description
+						</th></tr></thead><tbody><tr><td>
+						0x0000
+						</td><td>
+						4
+						</td><td>
+						SOF
+						</td><td>
+						Start Of Frame. Must be <code class="constant">0xAAAAAAAA</code>.
+						</td></tr><tr><td>
+						0x0004
+						</td><td>
+						2
+						</td><td>
+						FL
+						</td><td>
+						The Ethernet frame length in little endian format. The frame starts at offset <code class="constant">0x0008</code> here and includes all fields up to but excluding <code class="varname">EOF</code>. The minimum is <code class="constant">60</code>. The maximum is <code class="constant">1518</code> if <code class="varname">VLAN</code> is omitted and <code class="constant">1522</code> if not.
+						</td></tr><tr><td>
+						0x0006
+						</td><td>
+						2
+						</td><td>
+						RSVD
+						</td><td>
+						Must be <code class="constant">0x0000</code>. Reserved to ensure 4-byte frame alignment.
+						</td></tr><tr><td>
+						0x0008
+						</td><td>
+						6
+						</td><td>
+						DA
+						</td><td>
+						Destination address.
+						</td></tr><tr><td>
+						0x000E
+						</td><td>
+						6
+						</td><td>
+						SA
+						</td><td>
+						Source address. This must not be the MAC address of the powerline device. This must be the MAC address of the local host serial interface as assigned by the SP or UART driver. The PLC device and the associated host interface must have different MAC address. 
+						</td></tr><tr><td>
+						0x0014
+						</td><td>
+						4
+						</td><td>
+						VLAN
+						</td><td>
+						Virtual LAN tag. This field may be omitted.  
+						</td></tr><tr><td>
+						0x0018
+						</td><td>
+						2
+						</td><td>
+						ET
+						</td><td>
+						Ethertype. This field starts at offset <code class="constant">0x0014</code> if <code class="varname">VLAN</code> is omitted.
+						</td></tr><tr><td>
+						0x001A
+						</td><td>
+						42 to 1500
+						</td><td>
+						BODY
+						</td><td>
+						Frame body. This field starts at offset <code class="constant">0x0016</code> and ranges from <code class="constant">46</code> to <code class="constant">1500</code> bytes if <code class="varname">VLAN</code> is omitted.
+						</td></tr><tr><td>
+						0x004A to 0x05F8
+						</td><td>
+						4
+						</td><td>
+						EOF
+						</td><td>
+						End Of Frame. Must be <code class="constant">0x5555</code>. This field starts at offset <code class="constant">0x0008</code> plus <code class="varname">FL</code>.
+						</td></tr></tbody></table></div></div><br class="table-break"><div class="table"><a name="idp14025064"></a><p class="title"><b>Table 8.2. 
+				SPI Receive Frame
+				</b></p><div class="table-contents"><p>
+			The SPI read frame occurs in response to a read interrupt generated by the QCA7000. The host must acknowledge a read interrupt and service it by reading and acting on QCA7000 SPI register values. For incoming frames, the host reads the 32-bit overall packet length reported by the QCA7000 then read that many bytes, stripping off the serial header and footer and forwarding the Ethernet frame to the host.
+			</p><p>
+			Allocate a 1532-byte buffer to accomodate the largest incoming serial packet. Read <code class="varname">LEN</code> to determine the size of the incoming serial packet. Read <code class="varname">LEN</code> bytes into the buffer. Beware that <code class="varname">LEN</code> is a multiple of 4-bytes so there may be a few trailing <code class="constant">NUL</code> bytes in buffer. 
+			</p><table summary="
+				SPI Receive Frame
+				" border="1"><colgroup><col><col><col><col></colgroup><thead><tr><th>
+						Offset
+						</th><th>
+						Length
+						</th><th>
+						Symbol
+						</th><th>
+						Description
+						</th></tr></thead><tbody><tr><td>
+						0x0000
+						</td><td>
+						4
+						</td><td>
+						LEN
+						</td><td>
+						Hardware generated packet length. This field is only generated for SPI packets, not the UART packets.
+						</td></tr><tr><td>
+						0x0004
+						</td><td>
+						4
+						</td><td>
+						SOF
+						</td><td>
+						Start Of Frame. Must be <code class="constant">0xAAAAAAAA</code>.
+						</td></tr><tr><td>
+						0x0008
+						</td><td>
+						2
+						</td><td>
+						FL
+						</td><td>
+						Ethernet frame length in little endian format. The frame starts at offset <code class="constant">0x000C</code> here and includes all fields up to but excluding <code class="varname">EOF</code>. The minimum length is <code class="constant">60</code>. The maximum is <code class="constant">1518</code> if <code class="varname">VLAN</code> is omitted and <code class="constant">1522</code> if not.   
+						</td></tr><tr><td>
+						0x000A
+						</td><td>
+						2
+						</td><td>
+						RSVD
+						</td><td>
+						Must be <code class="constant">0x0000</code>. Reserved to ensure 4-byte frame alignment.
+						</td></tr><tr><td>
+						0x000C
+						</td><td>
+						6
+						</td><td>
+						DA
+						</td><td>
+						Destination address.
+						</td></tr><tr><td>
+						0x0012
+						</td><td>
+						6
+						</td><td>
+						SA
+						</td><td>
+						Source address. This must not be the MAC address of the powerline device. This must be the MAC address of the local host serial interface as assigned by the SP or UART driver. The PLC device and the associated host interface must have different MAC address. 
+						</td></tr><tr><td>
+						0x0018
+						</td><td>
+						4
+						</td><td>
+						VLAN
+						</td><td>
+						Virtual LAN tag. This field may be omitted.  
+						</td></tr><tr><td>
+						0x001C
+						</td><td>
+						2
+						</td><td>
+						ET
+						</td><td>
+						Ethertype. This field starts offset <code class="constant">0x0018</code> if <code class="varname">VLAN</code> is omitted.
+						</td></tr><tr><td>
+						0x001E
+						</td><td>
+						42 to 1500
+						</td><td>
+						BODY
+						</td><td>
+						Frame body. This field starts at offset <code class="constant">0x001A</code> and ranges from <code class="constant">46</code> to <code class="constant">1500</code> bytes if <code class="varname">VLAN</code> is omitted.
+						</td></tr><tr><td>
+						0x004A to 0x05F8
+						</td><td>
+						4
+						</td><td>
+						EOF
+						</td><td>
+						End Of Frame. Must be <code class="constant">0x5555</code>. This field starts at offset <code class="constant">0x000C</code> plus <code class="varname">FL</code>.
+						</td></tr></tbody></table></div></div><br class="table-break"></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch08.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="ch08.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch08s03.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Chapter 8. 
+		Serial Drivers
+		 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 
+				SPI Serial Driver
+				</td></tr></table></div></body></html>0

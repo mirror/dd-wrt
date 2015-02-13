@@ -1,0 +1,119 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			number.h
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='node.h.html' title=' node.h '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='nvm.h.html' title=' nvm.h '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   number.h - numeric conversion definitions and declarations;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef NUMBER_HEADER
+#define NUMBER_HEADER
+
+/*====================================================================*
+ *   system header files;
+ *--------------------------------------------------------------------*/
+
+#include &lt;stdio.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;stddef.h&gt;
+
+/*====================================================================*
+ *   numeric converson sizes and limits;
+ *--------------------------------------------------------------------*/
+
+#define RADIX_BIN 2
+#define RADIX_OCT 8
+#define RADIX_DEC 10
+#define RADIX_HEX 16
+
+#define RADIX_MIN 2
+#define RADIX_MAX 36
+
+#define BIN_DIGITS 8
+#define DEC_DIGITS 3
+#define OCT_DIGITS 3
+#define HEX_DIGITS 2
+
+#define IPv4_SIZE 4
+#define IPv6_SIZE 16
+
+/*====================================================================*
+ *   numeric conversion strings;
+ *--------------------------------------------------------------------*/
+
+#define DIGITS_BIN &quot;01&quot;
+#define DIGITS_OCT &quot;01234567&quot;
+#define DIGITS_DEC &quot;0123456789&quot;
+#define DIGITS_HEX &quot;0123456789ABCDEF&quot;
+#define DIGITS_ALL &quot;0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ&quot;
+
+/*====================================================================*
+ *   numeric string extenders;
+ *--------------------------------------------------------------------*/
+
+#define BIN_EXTENDER '-'
+#define DEC_EXTENDER '.'
+#define HEX_EXTENDER ':'
+
+/*====================================================================*
+ *
+ *--------------------------------------------------------------------*/
+
+#define isodd(n)  (((n)&amp;(1)) != 0)
+#define iseven(n) (((n)&amp;(1)) == 0)
+
+/*====================================================================*
+ *
+ *--------------------------------------------------------------------*/
+
+uint64_t QCASRand (uint32_t seed);
+uint32_t QCARand ();
+
+/*====================================================================*
+ *
+ *--------------------------------------------------------------------*/
+
+uint64_t basespec (char const * string, unsigned base, unsigned size);
+uint64_t uintspec (char const * string, uint64_t minimum, uint64_t maximum);
+uint64_t tonumber (char const * string, uint64_t minimum, uint64_t maximum, uint64_t nominal);
+signed sintspec (char const *string, signed number);
+unsigned totruth (char const *string, signed fail);
+unsigned todigit (unsigned c);
+
+/*====================================================================*
+ *   end definitions;
+ *--------------------------------------------------------------------*/
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='node.h.html' title=' node.h '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='nvm.h.html' title=' nvm.h '>NEXT</a>]
+			</div>
+		</body>
+	</html>

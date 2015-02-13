@@ -1,0 +1,206 @@
+.TH ampboot 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+ampboot - Qualcomm Atheros AR7x00 Powerline Device Bootstrapper
+
+.SH SYNOPSIS
+.BR ampboot
+.RI [ options ] 
+.RB - N 
+.IR file 
+.RB - P 
+.IR file
+.RI [ device ]
+.RI [ device ]
+[...]
+
+.SH DESCRIPTION
+Download and start runtime firmware on a local powerline device when it is in bootloader mode.
+A device remains in bootloader mode when it cannot load firmware from flash memory for some reason.
+This can happen if the device has no flash memory or the flash memory is either blank or corrupted.
+You can use this progrm to start a device or start the device and then, once runtime firmware starts, program flash memory.
+
+.PP
+The bootloader only recognizes a subset of Atheros message types.
+This program uses that subset to write runtime firmware and parameters into SDRAM then start firmware execution.
+Optionally, it can proceed to download the same firmware and parameters again and commit them to flash memory.
+
+.PP
+Starting a device is a three phase operation.
+The first phase writes an SDRAM configuration program into TCM and executes it.
+The second phase writes runtime firmware and parameters as images into SDRAM.
+The third phase starts firmware execution.
+Once the runtime firmware starts, the device is operational.
+
+.PP
+Flashing a device is a two phase operation.
+The first phase downloads runtime firmare and parameters under firmware control into scratch buffers.
+The second phase instructs the firmware to write the scratch buffers to flash memory and reboot the device.
+After flashing the device is self-sustaining.
+
+.PP
+This program is part of the Qualcomm Atheros Powerline Toolkit.
+See the \fBplc\fR man page for an overview and installation instructions.
+
+.SH OPTIONS
+
+.TP
+.RB - e
+Redirects stderr messages to stdout.
+By convention status and error messages are printed on stderr while primary program output is printed on stdout.
+This option prints all output on stdout in cases where this is desired.
+
+.TP
+.RB - F [ F ]
+Write previously downloaded MAC and PIB to NVRAM using VS_MOD_NVM.
+Adding a second \fBF\fR here or another -\fBF\fR anywhere on the command line will \fBforce-flash\fR a blank or corrupted NVRAM.
+Firmware loaded from NVRAM will treat force-flash as an error.
+This option can be used to create factory settings but cannot be used to change them once created.
+Subsequent use creates and updates operational settings that can be erased using a factory reset.
+
+.TP
+-\fB\i \fIinterface\fR
+Select the host Ethernet interface.
+All requests are sent via this host interface and only reponses received via this host interface are recognized.
+The default interface is \fBeth1\fR because most people use \fBeth0\fR as their principle network connection; however, if environment string "PLC" is defined then it takes precedence over the default interface.
+This option then takes precedence over either default.
+
+.TP 
+-\fBN \fIfilename\fR
+Read the named NVM file and write it to the device.
+This option and argument are required.
+Any file having an invalid NVM file format will be rejected.
+No assumptions are made based on filename and no filename conventions are enforced.
+
+.TP
+-\fBP \fIfilename\fR
+Read the named PIB file and write it to the device.
+This option and argument are required.
+Any file having an invalid PIB file format will be rejected.
+No assumptions are made based on filename and no filename conventions are enforced.
+
+.TP
+.RB - q
+Suppresses status messages on stderr.
+
+.TP
+-\fBt \fImilliseconds\fR
+Read timeout in milliseconds.
+Values range from 0 through UINT_MAX.
+This is the maximum time allowed for a response.
+The default is shown in brackets on the program menu.
+
+.TP
+.RB - v
+Prints additional information on stdout.
+In particular, this option dumps outgoing Ethernet packets on stdout.
+
+.TP
+.RB - ? ,-- help
+Print program help summary on stdout.
+This option takes precedence over other options on the command line.
+
+.TP
+.RB - ! ,-- version
+Print program version information on stdout.
+This option takes precedence over other options on the command line.
+Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of the Linux Toolkit you are using.
+
+.SH ARGUMENTS
+
+.TP
+.IR device
+The Ethernet hardware address of some powerline device.
+More than one address may be specified on the command line.
+If more than one address is specified then operations are performed on each device in turn.
+The default address is \fBlocal\fR.
+as explained in the \fBDEVICES\fR section.
+
+.SH DEVICES
+Powerline device addresses are 12 hexadecimal digits in upper, lower or mixed case.
+Individual octets may be separated by colons, for clarity, but colons are not required.
+For example, "00b052000001", "00:b0:52:00:00:01" and "00b052:000001" are valid and equivalent.
+
+.PP
+A \fBlocal\fR device is any Atheros Powerline Device connected directly to a host Ethernet interface.
+A \fBremote\fR device is any Atheros Powerline Device at the far end of a powerline connection.
+A \fBforeign\fR device is any powerline device not manufactured by Atheros.
+
+.PP
+Common device addresses have symbolic names that can be used in place of the actual address value.
+The following symbolic addresses are recognized by this program and most other toolkit programs.
+
+.TP
+.BR all
+Equivalent to "broadcast", described next.
+
+.TP
+.BR broadcast
+A synonym for the Ethernet broadcast address, \fBFF:FF:FF:FF:FF:FF\fR.
+All devices, whether local, remote or foreign will respond to this address.
+
+.TP
+.BR local
+A synonym for the Qualcomm Atheros Local Management Address (LMA), \fB00:B0:52:00:00:01\fR.
+All local Atheros devices will respond to this address but remote and foreign devices will not.
+
+.SH REFERENCES
+See the Qualcomm Atheros HomePlug AV Firmware Technical Reference Manual for technical information.
+See the Qualcomm Atheros Powerline Toolkit Online Documetation for practical information and examples.
+
+.SH EXAMPLES
+The -\fBN\fR and -\fBP\fR options are always required.
+Their order is not important.
+Tne MAC address is not needed because devices default to address 00:B0:52:00:00:01 (the program default address) in bootloader mode.
+Once this operation completes, firmware is running in SDRAM but the NVRAM, if present, has not been programmed.
+This operation is common for flash-less devices.
+If we reset the device at this point then the device will return to bootloader mode.
+
+.PP
+   ampboot -N test.nvm -P test.pib
+   # eth0 00:B0:52:00:00:01 Write SDRAM Configuration
+   # eth0 00:B0:52:00:00:01 Written.
+   # eth0 00:B0:52:00:00:01 Write to device memory
+   # eth0 00:B0:52:00:00:01 Written.
+   # eth0 00:B0:52:00:00:01 Write to device memory
+   # eth0 00:B0:52:00:00:01 Written.
+   # eth0 00:B0:52:00:00:01 Start Firmware
+   # eth0 00:B0:52:00:00:01 Started.
+
+.PP
+The next example does the same thing but performs the extra steps needed to program NVRAM.
+It first downloads the firmware image from file \fBtest.nvm\fR and the parameter block image from file \fBtest.pib\fR using VS_WR_MEM then starts firmware execution using VS_ST_MAC.
+Once runtime firmware has started, it downloads the same firmware image and parameter block image (again) using VS_WR_MOD and commits them to NVRAM using VS_MOD_NVM.
+
+.PP
+   ampboot -N test.nvm -P test.pib -F
+   # eth0 00:B0:52:00:00:01 Write SDRAM Configuration
+   # eth0 00:B0:52:00:00:01 Written.
+   # eth0 00:B0:52:00:00:01 Write to device memory
+   # eth0 00:B0:52:00:00:01 Written.
+   # eth0 00:B0:52:00:00:01 Write to device memory
+   # eth0 00:B0:52:00:00:01 Written.
+   # eth0 00:B0:52:00:00:01 Start Firmware
+   # eth0 00:B0:52:00:00:01 Started.
+   # eth0 00:B0:52:00:00:01 Write MAC as module
+   # eth0 00:B0:52:00:00:01 Written.
+   # eth0 00:B0:52:00:00:01 Write PIB as module
+   # eth0 00:B0:52:00:00:01 Written.
+   # eth0 00:B0:52:00:00:01 Flash Device
+   # eth0 00:B0:52:00:00:01 Flashed.
+
+.SH DISCLAIMER
+Atheros HomePlug AV Vendor Specific Management Message structure and content is proprietary to Qualcomm Atheros, Ocala FL USA.
+Consequently, public information may not be available.
+Qualcomm Atheros reserves the right to modify message structure and content in future firmware releases without any obligation to notify or compensate users of this program.
+
+.SH SEE ALSO
+.BR plc ( 1 ), 
+.BR amptool ( 1 ), 
+.BR chknvm ( 1 ), 
+.BR chkpib ( 1 ), 
+.BR modpib ( 1 ) 
+
+.SH CREDITS
+ Charles Maier <cmaier@qca.qualcomm.com>
+

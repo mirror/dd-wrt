@@ -1,0 +1,921 @@
+<chapter id='hardware'>
+	<title>
+		Hardware 
+		</title>
+	<section id="hardware-intro">
+		<title>
+			Introduction
+			</title>
+		<para>
+			</para>
+		</section>
+	<section id='hardware-form-factors'>
+		<title>
+			Device Form Factors 
+			</title>
+		<para>
+			Atheros Communications, Ocala FL USA designs and manufactures chipsets that permit network communications over powerline. They do no not manufacture powerline communication products for market. Instead, they provide chipsets, reference designs and expertise needed to build powerline communications products. Atheros does manufacture some sample products, in various form factors, for evaluation purposes only. 
+			</para>
+		<variablelist>
+			<varlistentry>
+				<term>
+					Wall Adapters 
+					</term>
+				<listitem>
+					<para>
+						A small unit that plugs into any power outlet and has one RJ45 Ethernet jack. The RJ45 jack can be used to connect the unit to another Ethernet device, such as a hub, switch or computer network interface card using CAT5 Ethernet cable. Two or more such units can be used to connect Ethernet devices over the powerline. For example, a computer on one room can be connected to a network printer in another room. See Atheros Product Brief 27003417 - RD6300-ETH <trademark class='registered'>HomePlug</trademark> AV Wall Adapter Reference Design for more information. 
+						</para>
+					</listitem>
+				</varlistentry>
+			<varlistentry>
+				<term>
+					Desktop Adapters 
+					</term>
+				<listitem>
+					<para>
+						A compact unit having a 6ft power cord, one threaded coax cable F connector and one RJ45 Ethernet jack. Two such units can be used to connect Ethernet devices over either powerline (as above) or coax cable. Use of coax cable improves performance over longer distances and permits network segments to be isolated from each other. See Atheros Product Brief 27002824 - RD6000-ETH <trademark class='registered'>HomePlug</trademark> AV Ethernet Hybrid Adapter Reference Design for more information. 
+						</para>
+					</listitem>
+				</varlistentry>
+			<varlistentry>
+				<term>
+					PCI Cards 
+					</term>
+				<listitem>
+					<para>
+						A standard PCI compliant computer card having one DIN powerline connector and one threaded coax cable F connector. The card can be inserted into a PCI bus slot on a computer, or other device. Atheros provides device drivers that make the card behave like an ordinary Ethernet card. Like the desktop unit (above), computers and embedded systems can be connected either over powerline or coax cable. See Atheros Product Brief 27003239 - EK6000-PCI <trademark class='registered'>HomePlug</trademark> AV Card Evaluation Kit for more information. 
+						</para>
+					<para>
+						PCI cards are no longer available from Atheros but reference designs may be obtained from selected Atheros customers that specialize in PCI designs.
+						</para>
+					</listitem>
+				</varlistentry>
+			<varlistentry>
+				<term>
+					Mini-PLC 
+					</term>
+				<listitem>
+					<para>
+						A Mini-PCI form factor card that integrates most components needed to embed <trademark class='registered'>HomePlug</trademark> AV into your product design. Although the card will insert into a Mini-PCI slot, it is not electrically compatible with the Mini-PCI standard. Atheros uses this card in both the RD6000-ETH Desktop Adaptor and the EK6000-PCI Card described above. See Atheros Product Brief <citetitle>27002835 - RD6000-PLC <trademark class='registered'>HomePlug</trademark> AV Mini-PLC Module Reference Design</citetitle> for more information. 
+						</para>
+					<para>
+						Unlike Wall and Desktop Adapters, the Mini-PLC Cards require a device driver written for the particular operating system used. Atheros provides a device drivers for the Windows XP Operating System and for the Linux 2.4 and Linux 2.6 kernel. These drivers make the PCI card look like an ordinary Ethernet interface card. 
+						</para>
+					<para>
+						Mini-PLC cards are no longer available from Atheros but cards may be obtained from selected Atheros customers that specialize in PCI designs.
+						</para>
+					</listitem>
+				</varlistentry>
+			<varlistentry>
+				<term>
+					Embedded Systems 
+					</term>
+				<listitem>
+					<para>
+						Atheros offers an expanding family of reference designs for powerline-enabled switches and routers. Most include onboard CPU and enablement software based on Linux, OpenWRT and other suitable operating systems. Atheros will assist customers in adapting the basic hardware and software to suite particular markets. 
+						</para>
+					</listitem>
+				</varlistentry>
+			<varlistentry>
+				<term>
+					Chipsets 
+					</term>
+				<listitem>
+					<para>
+						Atheros offers an expanding family of Powerline enabled chipsets. Several SoC chipsets are also planned to support a variety of communications applications.
+						</para>
+					</listitem>
+				</varlistentry>
+			</variablelist>
+		</section>
+	<section id='hardware-device-communications'>
+		<title>
+			Device Communications 
+			</title>
+		<para>
+			Atheros powerline communication chipsets serve as a transparent bridges between an Ethernet network and an active powerline or passive coax cable, effectively extending the Ethernet network. <trademark class='registered'>HomePlug</trademark> AV devices on the powerline, or at either end of a coax cable, will automatically detect each other and establish communications. Normal Ethernet frames that are detected by one <trademark class='registered'>HomePlug</trademark> AV device are passed over powerline or coax to other <trademark class='registered'>HomePlug</trademark> AV devices which then pass the frames on to any Etherenet devices that may be connected to them. 
+			</para>
+		<para>
+			There are three levels of communication. 
+			</para>
+		<variablelist>
+			<varlistentry>
+				<term>
+					Powerline Communications 
+					</term>
+				<listitem>
+					<para>
+						<trademark class='registered'>HomePlug</trademark> AV devices use a proprietary protocol defined by the HomePlug Powerline Alliance. In most cases, <trademark class='registered'>HomePlug</trademark> AV communications do not leave the powerline or coax media used to connect devices. Connected devices use this protocol to detect each other, establish connection, encapsulate Ethernet frames and route them between devices. This level of communications is proprietary and hidden. See the HomePlug Powerline Alliance <citetitle><trademark class='registered'>HomePlug</trademark> AV Specification </citetitle> for more information. 
+						</para>
+					</listitem>
+				</varlistentry>
+			<varlistentry>
+				<term>
+					Atheros Device Communications 
+					</term>
+				<listitem>
+					<para>
+						Atheros devices use a subset of the <trademark class='registered'>HomePlug</trademark> AV protocol, mentioned above, to communicate with a local host processor. The subset is known as 
+						<varname>
+							vendor-specific messages 
+							</varname>
+						. Atheros vendor-specific messages are intercepted and processed by Atheros devices. In some cases, they are forwared over powerline or coax to other Atheros devices. Atheros vendor-specific messages are used to interrogate, synchronize, configure and control Atheros devices without affecting <trademark class='registered'>HomePlug</trademark> AV devices from other manufacturers. See the Atheros <citetitle><trademark class='registered'>HomePlug</trademark> AV Firmware Technical Reference Manual</citetitle> for more information. 
+						</para>
+					</listitem>
+				</varlistentry>
+			<varlistentry>
+				<term>
+					Network Traffic 
+					</term>
+				<listitem>
+					<para>
+						This is the normal network traffic that passes transparently from local Ethernet, over powerline or coax, to remote Ethernet through <trademark class='registered'>HomePlug</trademark> AV devices. 
+						</para>
+					</listitem>
+				</varlistentry>
+			</variablelist>
+		</section>
+	<section id='device-configurations'>
+		<title>
+			Device Configurations 
+			</title>
+		<para>
+			There are several test configurations that can be used to experiment with Atheros powerline communication devices. Configurations vary based on the powerline communications devices you have available to work with. All configurations described here require at least one computer with an Ethernet card and the Open Powerline Toolkit installed. Most configurations require two Atheros powerline devices. 
+			</para>
+		<para>
+			Open Powerline Toolkit programs let the user specify which Ethernet interface card to use when sending and receiving Ethernet frames. This means that a computer with two interface cards installed can emulate two computers provided there are not internal routing conflicts. To avoid routing conflicts, Atheros recommends that you start with two computers until your are ready for more sophisticated experimentation. 
+			</para>
+		<para>
+			Open Powerline Toolkit programs default to <constant>eth0</constant>	. This allows the computer to be connected to the normal network on <constant>eth0</constant> and connected to the powerline network on <constant>eth1</constant>. To over-ride the default powerline interfaces, set environment variable <constant>PLC</constant> to the desired interface name. All configurations assume that the Ethernet card is installed, the Ethernet driver for that card is loaded and the correct interface is enabled. 
+			</para>
+		<para>
+			Atheros powerline communication devices radiate across powerline or coax at radio frequencies. If two devices are connected, in any way, without intermmediate filters or isolation, they will attempt to commicate. Additionally, they will attempt to circumvent certain types of powerline noise or competing frequencies which can cause reduce data rates. Atheros recomends that devices under test (<acronym>DUT</acronym>) take their power from a shared but isolated power source like an isolation power strip or an uninterruptable power supply. 
+			</para>
+		<para>
+			( ... explain about powerline isolation ... ) The power strip should have no filtering, surge protectors or electronic cirtuits inside.
+			</para>
+		<programlisting>
+        ---&gt; [ATTENUATOR] ---&gt; [POWER_STRIP] ---&gt; [POWERLINE_DEVICE] ---&gt;
+			</programlisting>
+		<para>
+			Typical configurations are: 
+			</para>
+		<section id='configuration-1'>
+			<title>
+				Local Host to Local Device 
+				</title>
+			<para>
+				This is the simplest configuration. It establishes an Ethernet connection between the host and one powerline device. It can be used to test or program a single powerline device. 
+				</para>
+			<para>
+				It requires 
+				</para>
+			<itemizedlist>
+				<listitem>
+					<para>
+						One host computer with an Ethernet interface card 
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+						One CAT-5 Ethernet cable with an RJ-45 connector at either end. 
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+						One Atheros powerline device with RJ-45 connector. 
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+						An isolated power source 
+						</para>
+					</listitem>
+				</itemizedlist>
+			<programlisting>
+	[LOCAL_HOST] ---/ ethernet /-----&gt; [POWERLINE_DEVICE] ---/ powerline /-----&gt; 
+				</programlisting>
+		<para>
+				Connect the local host to the powerline device with an ordinary CAT-5 Ethernet cable. Apply power to the powerline device. The local host <emphasis>cannot ping the powerline device</emphasis> because it functions at the data link layer. The local host can interrogate and control the powerline device using 
+				<ulink url='int6k.7.html'>
+					int6k 
+					</ulink>
+				or 
+				<ulink url='int6k2.7.html'>
+					int6k2 
+					</ulink>
+				programs. 
+				</para>
+			<itemizedlist>
+				<listitem>
+					<para>
+						Type &quot;int6k -r&quot; and note the hardware and firmware revision. 
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+						Type &quot;int6k -I&quot; and note the device MAC, DAK and NMK. 
+<!-- It must have a unique MAC address and must share the same NMK as the other devices on it's logical network. -->
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+						Type &quot;int6k -m&quot; and confirm that the device detects no other devices indicating proper powerline isolation. 
+						</para>
+					</listitem>
+				</itemizedlist>
+			</section>
+		<section id='configuration-2'>
+			<title>
+				Local Host to Remote Device 
+				</title>
+			<para>
+				This configuration is the simplest <emphasis>powerline</emphasis> network configuration. It expands the previous configuration by creating a simple powerline network having two powerline devices. One device, the &quot;local device&quot;, is connected to the host via Ethernet. A second device, the &quot;remote device&quot;, is connected to the first via powerline. 
+				</para>
+			<para>
+				It requires 
+				</para>
+			<itemizedlist>
+				<listitem>
+					<para>
+						One host computer with an Ethernet interface card 
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+						One CAT-5 Ethernet cable with an RJ-45 connector at either end. 
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+						Two Atheros powerline devices, one with RJ-45 connector. 
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+						An isolated power source. 
+						</para>
+					</listitem>
+				</itemizedlist>
+			<programlisting>
+        [LOCAL_HOST] ---/ ethernet /-----&gt; [POWERLINE_DEVICE] ---/ powerline /-----&gt;
+                                           [POWERLINE_DEVICE] ---/ powerline /-----&gt; 
+				</programlisting>
+			<para>
+				Configure the previous network then plug a second powerline device into the same power source as the first powerline device. The local host still cannot ping any Ethernet network devices because there are no remote Ethernet devices to ping but it can interrogate and control both powerline devices. 
+				</para>
+			</section>
+		<section id='configuration-3'>
+			<title>
+				Local Host to Remote Host 
+				</title>
+			<para>
+				This configuration is the simplest <emphasis>Ethernet</emphasis> network configuration. It expands the previous network by connecting the second powerline device to an existing Ethernet network through an Ethernet switch. 
+				</para>
+			<para>
+				It requires 
+				</para>
+			<itemizedlist>
+				<listitem>
+					<para>
+						Two host computers, each with an Ethernet interface card 
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+						Two CAT-5 Ethernet cables with RJ-45 connectors at either end. 
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+						Two Atheros powerline devices, each with RJ-45 connector. 
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+						An isolated power source. 
+						</para>
+					</listitem>
+				</itemizedlist>
+			<programlisting>
+        [LOCAL_HOST]  ---/ ethernet /-----&gt; [POWERLINE_DEVICE] ---/ powerline /-----&gt;
+        [REMOTE_HOST] ---/ ethernet /-----&gt; [POWERLINE_DEVICE] ---/ powerline /-----&gt; 
+				</programlisting>
+			<para>
+				Configure the previous network then plug the second powerline device into an Ethernet switch connected to an exiting Ethernet network. The local host can now ping other Ethernet network devices on the. 
+				</para>
+			</section>
+		</section>
+	<section id='hardware-workstation'>
+		<title>
+			Powerline Workstations
+			</title>
+		<para>
+			The Open Powerline Toolkit is a collection of independent programs. Individually, they perform basic but useful operations on powerline communication devices and associated support files such as <acronym>PIB</acronym> and <acronym>NVM</acronym> files. Collectively, they can perform many types of engineering experiments, functional tests and production tasks. Their simplicity and high degree of flexibility lets customers adapt an off-the-shelf linux host to meet a wide range of production requirements. We call this configuration a <quote>powerline workstation</quote>.
+			</para>
+		<para>
+			This section explains how to configure a powerline workstation and setup the Open Powerline Toolkit on that workstation. It covers some necessary aspects of Linux and the Toolkit but it is not a Linux tutorial or a Open Powerline Toolkit tutorial. Linux essentials are covered on the Internet and Open Powerline Toolkit essentials are covered in other sections of this documentation and on-line man pages. Although some typical configurations are illustrated, many variations are possible and are left to the customer to develop based on our examples. There is no single correct way to do anything.
+				</para>
+		<section id="hardware-host-hardware">
+			<title>
+				Host Hardware
+				</title>
+			<para>
+				A powerline workstation host has no special hardware requirements. Any host capable of running Linux and supporting multiple Ethernet cards will do. For example, a 450mhz <acronym>CPU</acronym> having 128mb of memory, one 3gb disk and three 10/100 Ethernet cards is adequate.
+				</para>
+			<para>
+				Production tasks such as device initialization or firmware upgrade require one Ethernet card. Experimentation and functional testing typically require two Ethernet cards. Atheros recommends three Ethernet cards so that the host can communicate with other hosts over a local area network while talking to powerline devices. Atheros also recommends that all Ethernet cards installed support at least 100mbps and be of the same type to simplify network configuration.
+				</para>
+			</section>
+		<section id="hardware-host-software">
+			<title>
+				Host Software
+				</title>
+			<para>
+				Atheros recommends installiing a Debian-based or Ubuntu-based Linux distribution due to the simplicity of network configuration. <trademark>Redhat</trademark>-based or <trademark>SuSE</trademark>-based distributions are also acceptable. A complete GNU toolchain is required to compile and install the Open Powerline Toolkit. Atheros uses GNU <application>make</application> 3.8.0, GNU <application>gcc</application> 3.3.5 and GNU <application>ld</application> 2.15. If these components are not installed then you must install them. Linux system installation and configuration is beyond the scope of this documentation but there is a wealth of information available on the Internet.
+				</para>
+			<para>
+				Of course, the Open Powerline Toolkit needs to be installed and successful installation proves that all required Linux components are installed correctly. See <link linkend="install-linux">Installation on Linux</link> for more information on how to install the Open Powerline Toolkit.
+				</para>
+			</section>
+		<section id="hardware-network">
+			<title>
+				Network Configuration
+				</title>
+			<para>
+				Linux will assign interface names like <varname>eth0</varname>, <varname>eth1</varname> and <varname>eth2</varname> to each installed network card. Atheros recommends that <varname>eth0</varname> be connected to your local network so that you can communicate with other hosts on that network. The other two interface cards can then be connected to Atheros devices that are plugged into an isolated power-strip. Of course, one CAT-5 Ethenet cable will be needed for each Ethernet card installed. 
+				</para>
+			<para>
+				Interfaces <varname>eth1</varname> and <varname>eth2</varname> should be assigned IP addresses on a separate sub-net so that you can <application>ping</application> one card from the other over the powerline without sending traffic over the local network. Remember that powerline devices have MAC addresses but not IP addresses. Also,  Linux <application>ping</application> uses the routing table to route messages and so you may need to use the <userinput>-I</userinput> option when pinging over the powerline. Otherwise, ping packets may go out over the local network by default.
+				</para>
+<screen>
+# ifconfig
+eth0      Link encap:Ethernet  HWaddr 00:50:04:A5:D9:5A  
+          inet addr:192.168.99.12  Bcast:192.168.99.255  Mask:255.255.255.0
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+
+eth1      Link encap:Ethernet  HWaddr 00:01:03:2B:03:67  
+          inet addr:192.168.101.10  Bcast:192.168.101.255  Mask:255.255.255.0
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+
+eth2      Link encap:Ethernet  HWaddr 00:01:03:2B:03:73  
+          inet addr:192.168.101.11  Bcast:192.168.101.255  Mask:255.255.255.0
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+
+lo        Link encap:Local Loopback  
+          inet addr:127.0.0.1  Mask:255.0.0.0
+          UP LOOPBACK RUNNING  MTU:16436  Metric:1
+</screen>
+			<para>
+				The abbreviated <application>ifconfig</application> console display,  shown above,  illustrates a typical Ethernet configuration using three cards,  as recommended by Atheros. Interface <varname>eth0</varname> is on the <constant>192.168.99.0</constant> subnet which serves as the local network, in this case. Interfaces <varname>eth1</varname> and <varname>eth2</varname> are both on the <constant>192.168.101.0</constant> subnet which serves as the powerline network, in this case.
+				</para>
+			<para>
+				Although not required, installing both <application>wireshark</application> and <application>tshark</application> is a great idea because they can be used to monitor and log network traffic on any or all of the Ethernet interfaces during various operations.
+				</para>
+			</section>
+		<section id="hardware-powerstrip">
+			<title>
+				Isolated Power-strip
+				</title>
+			<para>
+				Atheros devices have a way of finding each other over powerline and sometimes across nearby powerlines. Power-strip isolation prevents cross-talk with other powerline devices that may be plugged into nearby. Proper isolation is not critical when getting started but can be critical in technical evaluation and production environments.
+				</para>
+			<para>
+				There are many ways to isolate powerline devices. One way is to plug the powerline workstation and the power-strip into an Uninterruptable Power Supply (<acronym>UPS</acronym>). Atheros also provides several reference designs for both expensive and inexpensive hardware that can be used to isolate devices and workstations. 
+				</para>
+			<para>
+				Atheros powerline devices tend to work best when there is some signal attenuation over powerline or coax connections. Engineering evaluation configurations should insert some type of variable attenuation between powerline devices to measure the performance of their own powerline device designs. Consult with your Atheros Field Application Engineer on this matter.
+				</para>
+			</section>
+		</section>
+	<section id="hardware-send-to-self">
+		<title>
+			Send-to-self Patch
+			</title>
+		<para>
+			One advantage of <productname>Linux</productname> powerline workstations is the ability to control the low-level networking environment. ISO Layer 2 traffic can be easily directed from one Ethernet interface to another on the same host but Layer 3 traffic is a different matter because routing software merely routes this type of traffic internally.
+			</para>
+		<para>
+			A <productname>Linux</productname> kernel <ulink url='http://www.ssi.bg/~ja/#loop'>patch</ulink> is available that will allow ISO Layer 3 traffic to be routed from one Ethernet interface to another on the same host. With this patch, multiple instances of a traffic generator,  like <application>ttcp</application> or <application>iperf</application>, can be effectively deployed on the same host without modification.
+			</para>
+		<para>
+			This patch is useful for testing on a closed network but it could pose a security risk to the local host when connected to a public network. Kernels having this patch installed should have a special designation such as <quote>linux-2.6.28-send-to-self</quote> so that users are aware that the patch is installed. 
+			</para>
+		<example>
+			<title>
+				<quote>send-to-self</quote> Patch Description
+				</title>
+			<para>
+				The following is the full, original patch description.
+				</para>
+<programlisting><![CDATA[
+	Send-To-Self interface flag
+	Julian Anastasov <ja@ssi.bg>, July 2003
+
+	Patches for different kernels:
+
+	send-to-self-2.4.21-1.diff
+	send-to-self-2.5.73-1.diff
+
+	The  presented patch implements routing of traffic between local
+IP addresses externally via ethernet interfaces. This patch is basically
+the Ben Greear's send-to-self work but reimplemented entirely on routing
+level.   The idea is  to return output route  via external interfaces if
+path between two local IP addresses is requested and they are configured
+on different interfaces with /proc/sys/net/ipv4/conf/DEVNAME/loop set to
+1.    As  result,  arp_filter  (if  enabled  -  the  recommended  value)
+automatically  accepts  the ARP  requests  on the  right  interface. The
+rp_filter  check is modified to accept traffic from such interfaces with
+local  IP as sender, so using loop=1 for interfaces attached to insecure
+mediums is not recommended.
+
+Pros:
+- it can be used from all existing applications without change
+- it is not limited to 2 interfaces
+- you can use it with many IP addresses
+- does not depend on the rp_filter and arp_filter states, they
+can be set to 1
+- the packets are not altered in any way, useful for QoS testings
+- the routing result is cached, the routing checks are not per packet
+
+Cons:
+- not possible to use it for interfaces attached to insecure
+mediums (the rp_filter protection allows saddr to be local IP).
+By design. Use at your own risk.
+
+	The usage is simple:
+
+# Connect two or more interfaces to same hub or via crossover cable
+
+# Enable loopback mode for eth0 and eth1. This even can be
+# default mode without breaking any other talks. By this way
+# we allow external routing only between local IPs configured
+# on the specified interfaces.
+
+echo 1 > /proc/sys/net/ipv4/conf/eth0/loop
+echo 1 > /proc/sys/net/ipv4/conf/eth1/loop
+
+# Add some IP addresses for testing, eg. client and server IP
+
+ip address add 192.168.1.1 dev eth0
+ip address add 192.168.2.1 dev eth1
+
+# Testing with applications that are aware of this binding.
+# The main thing the apps need to know is what src and dst IP
+# addresses to use. The client app needs to bind to the src IP
+# and by this way to request output route to the dst IP. There
+# is no specific configuration for the server app listening on
+# 192.168.2.1
+
+ping -I 192.168.1.1 192.168.2.1
+
+# Note that specifying the output device (SO_BINDTODEVICE is
+# not recommended)
+
+
+# Testing with applications that are not aware of this feature:
+# for 192.168.1.1 client (the same for the server is not needed).
+# Note that by default, in local routes the kernel uses the local
+# IPs as preferred source. This is the safe default mode (if loop=1)
+# for applications that do not care what src IP will be used
+# for their talks with local IPs. We try to change that and to
+# use IPs from different interfaces.
+
+ip route replace local 192.168.2.1 dev eth1 scope host src 192.168.1.1 proto kernel
+
+# but for any case, here it is and for the "server":
+
+ip route replace local 192.168.1.1 dev eth0 scope host src 192.168.2.1 proto kernel
+
+# Testing it:
+
+ping 192.168.2.1
+ping -I 192.168.1.1 192.168.2.1
+telnet 192.168.2.1
+
+# Note that by replacing the local route's preferred source IP address
+# we help the IP address autoselection to select proper IP to the
+# target, in our case, route via eth
+]]></programlisting>
+				</example>
+			<example>
+				<title>
+					<quote>send-to-self</quote> Patch Application
+					</title>
+				<para>
+					The following example illustrates how to use <application>iperf</application> to perform <acronym>TCP</acronym> and <acronym>UDP</acronym> traffic measurements once this patch is installed. We illustrate the use of <application>iperf</application> but do not necessarily endorse it for traffic measurement. We also illustrate the use of two interfaces but the <quote>send-to-self</quote> patch will support additional interfaces. We also illustrate the use of environment variables so that procedures can execute on different hosts without modification but these environment variables are not required. 
+					</para>
+				<para>
+					First, we define environment variables, <varname>IF1</varname> and <varname>IF2</varname>, for each Ethernet interface and, <varname>IP1</varname> and <varname>IP2</varname>, for their IP addresses. Each interface must be on a separate IP subnet. We export definitions here so that they are accessible to this process and any subprocesses, such as shell scripts. Do whatever is appropriate for your environment.
+					</para>
+<screen><![CDATA[
+export IF1=eth1
+export IF2=eth2
+export IP1=192.168.1.1
+export IP2=192.168.2.2
+]]></screen>
+			<para>
+				Next, we assign the IP addresses to the interfaces using program <application>ifconfig</application>. There are other ways to do this. Observe that we reference our environment variables on the command line.
+				</para>
+<screen><![CDATA[
+ifconfig ${IF1} ${IP1}
+ifconfig ${IF2} ${IP2}
+]]></screen>
+			<para>
+				Next, we suppress internal routing between local interfaces. The <varname>loop</varname> propery only exists on kernels that have the <quote>send-to-self</quote> patch installed and have the <filename>/proc</filename> filesystem mounted. Some systems may not mount this file system.
+				</para>
+<screen><![CDATA[
+echo 1 > /proc/sys/net/ipv4/conf/${IF1}/loop
+echo 1 > /proc/sys/net/ipv4/conf/${IF2}/loop
+]]></screen>
+			<para>
+				Alternately, you could edit file <filename>/etc/sysctl.conf</filename>, as follows, to set the <varname>loop</varname> property for each interface during system startup. Again, the <varname>loop</varname> propery only exists on kernels that have the <quote>send-to-self</quote> patch installed and so errors will occur if you boot another kernel that does not have it installed.
+				</para>
+<programlisting><![CDATA[
+net.ipv4.conf.eth1.loop = 1
+net.ipv4.conf.eth2.loop = 1
+]]></programlisting>
+			<para>
+				Open a console window and start <application>iperf</application> as a server. Option <userinput>-s</userinput> identifies this instance of <application>iperf</application> as the server. Option <userinput>-B</userinput> binds this instance to one host  interface by IP address, in this case <varname>IP1</varname> defined earlier.			
+				</para>
+<screen><![CDATA[
+iperf -B ${IP1} -s
+------------------------------------------------------------
+Server listening on TCP port 5001
+Binding to local address 192.168.1.1
+TCP window size: 85.3 KByte (default)
+------------------------------------------------------------
+]]></screen>
+			<para>
+				Open a second console window and start <application>iperf</application> as a client. Option <userinput>-c</userinput> identifies this instance of <application>iperf</application> as a client. Option <userinput>-B</userinput> binds this instance to the one interface by IP address, in this case <varname>IP2</varname> defined earlier. The server address must also be specified, in this case <varname>IP1</varname> bound to the server in the last step.
+				</para>
+<screen><![CDATA[
+iperf -B ${IP2} -c ${IP1}
+------------------------------------------------------------
+Client connecting to 192.168.1.1, TCP port 5001
+Binding to local address 192.168.2.1
+TCP window size: 16.0 KByte (default)
+------------------------------------------------------------
+[  3] local 192.168.2.1 port 5001 connected with 192.168.1.1 port 5001
+[ ID] Interval       Transfer     Bandwidth
+[  3]  0.0-10.0 sec  31.1 MBytes  26.0 Mbits/sec
+]]></screen>
+			</example>
+		<example>
+			<title>
+				<quote>send-to-self</quote> Patch Installation
+				</title>
+			<para>
+				The <quote>send-to-self</quote> patch exists for several recent <productname>Linux</productname> kernel versions but not all versions. Assuming you have obtained the correct kernel archive and the correct patch version, the following script illustrates the steps needed to apply the patch on <productname>Ubuntu 9.04</productname> and recompile the kernel. Observe that, in this case, the patch version does not match the kernel version because a patch has not been published for that kernel version. 
+				</para>
+			<para>
+				The following script can be used on a Ubuntu Linux distribution to download kernel source, the send-to-self patch, apply the patch then compile and install the resulting kernal image. When the <application>menuconfig</application> screen appears:
+				</para>
+			<orderedlist>
+				<listitem>
+					<para>
+					Select <userinput>General Setup</userinput> on the <quote>Linux Kernel Configuration</quote> screen.
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+					Select <userinput>Local version - append to kernel release</userinput> on the <quote>General Setup</quote> screen.
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+					Enter the version suffix <quote>-send-to-self</quote>.
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+					Select <userinput>ok</userinput> to return to the <quote>General Setup</quote> screen.  
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+					Select <userinput>Automatically append version information to the version string</userinput> on the <quote>General Setup</quote> screen.
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+					Select <userinput>exit</userinput> to return to the <quote>Linux Kernel Configuration</quote> screen. 
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+					Select <userinput>exit</userinput> to close the <application>menuconfig</application> program.
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+					Select <userinput>yes</userinput> if prompted to save your new kernel configuration. This message does not appear each time.
+						</para>
+					</listitem>
+				</orderedlist>
+<programlisting><![CDATA[
+#!/bin/bash
+# file: patches/send-to-self-2.6.28.sh
+
+# ====================================================================
+# environment variables;
+# --------------------------------------------------------------------
+
+VERSION=2.6.28
+CURRENT=9
+VARIANT=send-to-self
+PACKAGE=linux-source-${VERSION}
+ARCHIVE=${PACKAGE}.tar.bz2
+PATCH=send-to-self-2.6.26-1.diff 
+
+# ====================================================================
+# extend version string;
+# --------------------------------------------------------------------
+
+if [ ! -z ${CURRENT} ]; then
+	VERSION+=.${CURRENT}
+fi
+if [ ! -z ${VARIANT} ]; then
+	VERSION+=-${VARIANT}
+fi
+
+# ====================================================================
+# install required software;
+# --------------------------------------------------------------------
+
+if [ ! -f ${ARCHIVE} ]; then
+	wget http://www.ssi.bg/~ja/${PATCH}
+ 	apt-get install ${PACKAGE} 
+#	apt-get install ${PACKAGE} --reinstall
+	apt-get install binutils patch gcc g++
+	apt-get install ncurses-dev
+	mv /usr/src/${ARCHIVE} . 
+fi
+
+# ====================================================================
+# confirm archive file exists;
+# --------------------------------------------------------------------
+
+if [ ! -f ${ARCHIVE} ]; then
+	echo "File ${ARCHIVE} is missing or misplaced"
+	exit 1
+fi
+
+# ====================================================================
+# confirm patch file exists;
+# --------------------------------------------------------------------
+
+if [ ! -f ${PATCH} ]; then
+	echo "File ${PATCH} is missing or misplaced"
+	exit 1
+fi
+
+# ====================================================================
+# remove old kernel source if present;
+# --------------------------------------------------------------------
+
+if [ -d ${PACKAGE} ]; then
+	echo "Removing old source ..."
+	rm -fr ${PACKAGE}
+fi
+
+# ====================================================================
+# extract kernel source;
+# --------------------------------------------------------------------
+
+tar -vjxf ${ARCHIVE}
+if [ ! -d ${PACKAGE} ]; then
+	echo "Folder ${PACKAGE} does not exist"
+	exit 1
+fi
+cd ${PACKAGE}
+
+# ====================================================================
+# patch kernel source;
+# --------------------------------------------------------------------
+
+patch -p1 < ../${PATCH}
+
+# ====================================================================
+# compile kernel source; 
+# --------------------------------------------------------------------
+
+make mrproper
+make menuconfig
+make 
+
+# ====================================================================
+# install kernel source; 
+# --------------------------------------------------------------------
+
+make modules_install
+make install
+
+# ====================================================================
+# install kernel source; 
+# --------------------------------------------------------------------
+
+mkinitramfs -o /boot/initrd.img-${VERSION} ${VERSION}
+ln -fs config-${VERSION} /boot/config
+ln -fs initrd.img-${VERSION} /boot/initrd.img
+ln -fs System.map-${VERSION} /boot/System.map
+ln -fs vmlinuz-${VERSION} /boot/vmlinuz
+
+]]></programlisting>
+				</example>
+<note>
+				<title>
+					In case you don't know ...
+					</title>
+				<para>
+					apt-get &#045;&#045;reinstall
+					</para>
+				<para>
+					The <application>apt-get</application> program is only available on Debian-based distributions. If you do not use a Debian-based system then you must find another way to obtain the necessary packages. Option <userinput>&#045;&#045;reinstall</userinput> instructs <application>apt-get</application> to download the kernel even though it has been installed before. It is not needed on the first script execution but may be needed on subsequent script executions if you have deleted the kernel archive file.  
+					</para>
+				<para>
+					mkinitramfs
+					</para>
+				<para>
+					This script uses <application>mkinitramfs</application> instead of the <application>mkinitrd</application>. This may differ on other distributions. The kernel source package used here has <productname>Ubuntu</productname> modifications that result in a minor version being appended to the kernel version. This may not happen with other distributions or with kernels obtained directly from kernel.org.
+					</para>
+				<para>
+					cut-and-paste
+					</para>
+				<para>
+					This script, or some like it, are included in the <filename>./patches</filename> folder of the toolkit. You can also copy and paste this script but remember to edit the environment variables at the top, remove all carriage returns and set correct file permissions with <userinput>chmod 0755</userinput> before executing it on your <productname>Linux</productname> host. Run the script as <varname>root</varname> user.					</para>
+				<para>
+					grub/menu.lst
+					</para>
+				<para>
+					If your system uses <application>grub</application> then edit file <filename>/boot/grub/menu.lst</filename> and add a new reference to the new <filename>initrd.img</filename>,  <filename>System.map</filename> and <filename>vmlinuz</filename> files installed in folder <filename>/boot</filename> by this script. We recommend adding these references as the last ones in the file so that the new kernel does not start by default. Once you are confident that everything works, you can then move the references to the first entry. We also recommend setting the <varname>timeout</varname> value to <constant>10</constant> for now.
+					</para>
+</note>
+		<example>
+			<title>
+				<quote>send-to-self</quote> Patch Listing
+				</title>
+			<para>
+				The following <quote>send-to-self</quote> patch is specifically for <productname>Linux</productname> kernel 2.6.30 and is provided for information only. For practical purposes, the patch has not changed much from version to version but the line numbers have changed. Some recent <quote>send-to-self</quote> patches are included in the toolkit <filename>./patches</filename> folder.
+				</para>
+<programlisting><![CDATA[
+diff -urp v2.6.30/linux/Documentation/networking/ip-sysctl.txt linux/Documentation/networking/ip-sysctl.txt
+--- v2.6.30/linux/Documentation/networking/ip-sysctl.txt	2009-06-13 10:53:29.000000000 +0300
++++ linux/Documentation/networking/ip-sysctl.txt	2009-06-13 15:54:15.000000000 +0300
+@@ -637,6 +637,13 @@ accept_redirects - BOOLEAN
+ forwarding - BOOLEAN
+ 	Enable IP forwarding on this interface.
+ 
++loop - BOOLEAN
++	By default (loop=0) the traffic between local IP addresses
++	is routed via interface "lo". Setting this flag for two
++	interfaces allows traffic between their IP addresses to
++	be looped externally. This is useful for setups where the
++	interfaces are attached to same broadcast medium.
++
+ mc_forwarding - BOOLEAN
+ 	Do multicast routing. The kernel needs to be compiled with CONFIG_MROUTE
+ 	and a multicast routing daemon is required.
+diff -urp v2.6.30/linux/include/linux/inetdevice.h linux/include/linux/inetdevice.h
+--- v2.6.30/linux/include/linux/inetdevice.h	2009-06-13 10:53:56.000000000 +0300
++++ linux/include/linux/inetdevice.h	2009-06-13 15:54:15.000000000 +0300
+@@ -106,6 +106,7 @@ static inline void ipv4_devconf_setall(s
+ 	  IN_DEV_ORCONF((in_dev), ACCEPT_REDIRECTS)))
+ 
+ #define IN_DEV_ARPFILTER(in_dev)	IN_DEV_ORCONF((in_dev), ARPFILTER)
++#define IN_DEV_LOOP(in_dev)		IN_DEV_CONF_GET(in_dev, LOOP)
+ #define IN_DEV_ARP_ANNOUNCE(in_dev)	IN_DEV_MAXCONF((in_dev), ARP_ANNOUNCE)
+ #define IN_DEV_ARP_IGNORE(in_dev)	IN_DEV_MAXCONF((in_dev), ARP_IGNORE)
+ #define IN_DEV_ARP_NOTIFY(in_dev)	IN_DEV_MAXCONF((in_dev), ARP_NOTIFY)
+diff -urp v2.6.30/linux/include/linux/sysctl.h linux/include/linux/sysctl.h
+--- v2.6.30/linux/include/linux/sysctl.h	2009-06-13 10:53:56.000000000 +0300
++++ linux/include/linux/sysctl.h	2009-06-13 15:54:40.000000000 +0300
+@@ -491,6 +491,7 @@ enum
+ 	NET_IPV4_CONF_PROMOTE_SECONDARIES=20,
+ 	NET_IPV4_CONF_ARP_ACCEPT=21,
+ 	NET_IPV4_CONF_ARP_NOTIFY=22,
++	NET_IPV4_CONF_LOOP=23,
+ 	__NET_IPV4_CONF_MAX
+ };
+ 
+diff -urp v2.6.30/linux/kernel/sysctl_check.c linux/kernel/sysctl_check.c
+--- v2.6.30/linux/kernel/sysctl_check.c	2009-06-13 10:53:57.000000000 +0300
++++ linux/kernel/sysctl_check.c	2009-06-13 15:55:00.000000000 +0300
+@@ -220,6 +220,7 @@ static const struct trans_ctl_table tran
+ 	{ NET_IPV4_CONF_PROMOTE_SECONDARIES,	"promote_secondaries" },
+ 	{ NET_IPV4_CONF_ARP_ACCEPT,		"arp_accept" },
+ 	{ NET_IPV4_CONF_ARP_NOTIFY,		"arp_notify" },
++	{ NET_IPV4_CONF_LOOP,			"loop" },
+ 	{}
+ };
+ 
+diff -urp v2.6.30/linux/net/ipv4/devinet.c linux/net/ipv4/devinet.c
+--- v2.6.30/linux/net/ipv4/devinet.c	2009-06-13 10:53:58.000000000 +0300
++++ linux/net/ipv4/devinet.c	2009-06-13 15:55:22.000000000 +0300
+@@ -1449,6 +1449,7 @@ static struct devinet_sysctl_table {
+ 		DEVINET_SYSCTL_RW_ENTRY(ARP_IGNORE, "arp_ignore"),
+ 		DEVINET_SYSCTL_RW_ENTRY(ARP_ACCEPT, "arp_accept"),
+ 		DEVINET_SYSCTL_RW_ENTRY(ARP_NOTIFY, "arp_notify"),
++		DEVINET_SYSCTL_RW_ENTRY(LOOP, "loop"),
+ 
+ 		DEVINET_SYSCTL_FLUSHING_ENTRY(NOXFRM, "disable_xfrm"),
+ 		DEVINET_SYSCTL_FLUSHING_ENTRY(NOPOLICY, "disable_policy"),
+diff -urp v2.6.30/linux/net/ipv4/fib_frontend.c linux/net/ipv4/fib_frontend.c
+--- v2.6.30/linux/net/ipv4/fib_frontend.c	2009-06-13 10:53:58.000000000 +0300
++++ linux/net/ipv4/fib_frontend.c	2009-06-13 15:54:15.000000000 +0300
+@@ -239,16 +239,17 @@ int fib_validate_source(__be32 src, __be
+ 					.tos = tos } },
+ 			    .iif = oif };
+ 	struct fib_result res;
+-	int no_addr, rpf;
++	int no_addr, rpf, loop;
+ 	int ret;
+ 	struct net *net;
+ 
+-	no_addr = rpf = 0;
++	no_addr = rpf = loop = 0;
+ 	rcu_read_lock();
+ 	in_dev = __in_dev_get_rcu(dev);
+ 	if (in_dev) {
+ 		no_addr = in_dev->ifa_list == NULL;
+ 		rpf = IN_DEV_RPFILTER(in_dev);
++		loop = IN_DEV_LOOP(in_dev);
+ 	}
+ 	rcu_read_unlock();
+ 
+@@ -258,6 +259,11 @@ int fib_validate_source(__be32 src, __be
+ 	net = dev_net(dev);
+ 	if (fib_lookup(net, &fl, &res))
+ 		goto last_resort;
++	if (loop && res.type == RTN_LOCAL) {
++		*spec_dst = FIB_RES_PREFSRC(res);
++		fib_res_put(&res);
++		return 0;
++	}
+ 	if (res.type != RTN_UNICAST)
+ 		goto e_inval_res;
+ 	*spec_dst = FIB_RES_PREFSRC(res);
+diff -urp v2.6.30/linux/net/ipv4/route.c linux/net/ipv4/route.c
+--- v2.6.30/linux/net/ipv4/route.c	2009-06-13 10:53:58.000000000 +0300
++++ linux/net/ipv4/route.c	2009-06-13 15:54:15.000000000 +0300
+@@ -2521,6 +2521,11 @@ static int ip_route_output_slow(struct n
+ 			dev_put(dev_out);
+ 			goto out;	/* Wrong error code */
+ 		}
++		err = -ENETDOWN;
++		if (!(dev_out->flags&IFF_UP)) {
++			dev_put(dev_out);
++			goto out;
++		}
+ 
+ 		if (ipv4_is_local_multicast(oldflp->fl4_dst) ||
+ 		    oldflp->fl4_dst == htonl(0xFFFFFFFF)) {
+@@ -2588,10 +2593,41 @@ static int ip_route_output_slow(struct n
+ 	free_res = 1;
+ 
+ 	if (res.type == RTN_LOCAL) {
+-		if (!fl.fl4_src)
+-			fl.fl4_src = fl.fl4_dst;
++		struct in_device *in_dev;
++		__be32 src;
++
+ 		if (dev_out)
+ 			dev_put(dev_out);
++		dev_out = FIB_RES_DEV(res);
++		in_dev = in_dev_get(dev_out);
++		src = fl.fl4_src? : FIB_RES_PREFSRC(res);
++		if (in_dev && IN_DEV_LOOP(in_dev) && src) {
++			struct net_device *dev_src;
++
++			in_dev_put(in_dev);
++			in_dev = NULL;
++			dev_src = ip_dev_find(net, src);
++			if (dev_src && dev_src != dev_out &&
++			    (in_dev = in_dev_get(dev_src)) &&
++			    IN_DEV_LOOP(in_dev)) {
++				in_dev_put(in_dev);
++				dev_out = dev_src;
++				fl.fl4_src = src;
++				fl.oif = dev_out->ifindex;
++				res.type = RTN_UNICAST;
++				if (res.fi) {
++					fib_info_put(res.fi);
++					res.fi = NULL;
++				}
++				goto make_route;
++			}
++			if (dev_src)
++				dev_put(dev_src);
++		}
++		if (in_dev)
++			in_dev_put(in_dev);
++		if (!fl.fl4_src)
++			fl.fl4_src = fl.fl4_dst;
+ 		dev_out = net->loopback_dev;
+ 		dev_hold(dev_out);
+ 		fl.oif = dev_out->ifindex;
+]]></programlisting>
+			</example>
+		</section>
+	</chapter>
+

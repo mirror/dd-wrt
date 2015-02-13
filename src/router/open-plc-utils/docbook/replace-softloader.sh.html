@@ -1,0 +1,59 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			replace-softloader.sh
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='pushbutton.sh.html' title=' pushbutton.sh '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='start.sh.html' title=' start.sh '>NEXT</a>]
+			</div>
+<pre>
+#!/bin/sh
+
+# this script replaces the intellon softloader with runtime firmware;
+# it assumes the softloader is running when the script is started;
+
+# ====================================================================
+# file symbols;
+# --------------------------------------------------------------------
+
+ETH=eth4
+PIB=../firmware/v3.3.6.pib
+NVM=../firmware/v3.3.6-0-8-B-RC1.nvm
+MAC=00B05200CA08
+DAK=689F074B8B0275A2710B0B5779AD1630
+NMK=50D3E4933F855B7040784DF815AA8DB7
+
+# ====================================================================
+#  
+# --------------------------------------------------------------------
+
+modpib -M ${MAC} -D ${DAK} -N ${NMK} ${PIB}
+int6k -i ${ETH} -P ${PIB} -N ${NVM} -F
+int6k -i ${ETH} -P ${PIB} -N ${NVM} -FF
+
+# ====================================================================
+#  
+# --------------------------------------------------------------------
+
+ exit 0
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='pushbutton.sh.html' title=' pushbutton.sh '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='start.sh.html' title=' start.sh '>NEXT</a>]
+			</div>
+		</body>
+	</html>

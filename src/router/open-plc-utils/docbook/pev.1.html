@@ -1,0 +1,147 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			pev.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='pcapdevs.1.html' title=' pcapdevs.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='pib2xml.1.html' title=' pib2xml.1 '>NEXT</a>]
+			</div>
+<pre>
+pev(1)                                       Qualcomm Atheros Open Powerline Toolkit                                      pev(1)
+
+NAME
+       pev - Qualcomm Atheros Plug-in Electric Vehicle Emulator
+
+SYNOPSIS
+       pev [options]
+
+DESCRIPTION
+       Emulate  the  PEV  part  of  the  HomePlug AV Signal Level Attentuation Characterization (SLAC) protocol where a PEV is a
+       &quot;Plug-in Electric Vehicle&quot; and an EVSE is an &quot;Electric Vehicle Supply Equipment&quot; or charging station.  This program  will
+       remain  active  until  it  detects  and  connects  to an available EVSE-HLE on the powerline network.  Once connected, it
+       charges a virtual vehicle for about 10 seconds then disconnects and terminates.  See the HomePlug Green PHY Specification
+       Release Version 1.1 for more information on this protocol.
+
+       Signal  Level  Attenuation  Characterization  (SLAC) enables a station to measure the signal level of its transmission at
+       other stations in the network.  It is designed for automotive applications  where  there  are  multiple  plug-in  vehicle
+       (PEVs)  and  electric vehicle supply equipment (EVSE) on the network.  The PEV signal level is measured at multiple EVSEs
+       to determine which EVSE the PEV is actually plugged into.  The process leading to this determination is called &quot;Green PHY
+       PEV-EVSE Association&quot; (GreenPPEA).
+
+       This  program  is  part of the Qualcomm Atheros Powerline Toolkit.  See the plc man page for an overview and installation
+       instructions.
+
+OPTIONS
+       -c     Print the PEV-HLE configuration profile on stdout.  The configuration profile specifies program defaults in a for‐
+              mat that you, as a user, can edit and save.  Use options -p and -s to read named profiles and sections.
+
+       -d     Print  the  contents of the PEV-HLE session variable on stdout.  The session variable is an program data structure
+              that stores information passed between the PEV-HLE and EVSE-HLE during SLAC association.  This option is  used  to
+              inspect  and  veriify  information  relevant to the process.  If the program was compiled with variable SLAC_DEBUG
+              defined then this option also prints MME message fields before messages are  sent  or  after  they  are  received.
+              Interested parties can follow along in the source code.
+
+       -i     Select  the host Ethernet interface.  All requests are sent via this host interface and only reponses received via
+              this host interface are recognized.  The default interface is eth1 because most people use eth0 as their principle
+              network  connection;  however,  if  environment  string &quot;PLC&quot; is defined then it takes precedence over the default
+              interface.  This option then takes precedence over either default.
+
+       -p profile
+              The PEV-HLE configuration profile name.  The program will supply default values for missing profile elements.  See
+              the example profile shown below.  The default profile name is &quot;pev.ini&quot;.
+
+       -q     Enter quiet mode.  Progress messages are suppressed.
+
+       -s section
+              The  configuration profile section name.  The program will supply default values for missing configuration profile
+              elements.  See the example profile shown below.  The default section name is &quot;default&quot;.
+
+       -v     Enter verbose mode.  All Etherenet frames sent or received by the program are displayed on stdout.
+
+       -w milliseconds
+              Wakeup frequency in milliseconds.  Values range from 0 through UINT_MAX.  The default is 5000 milliseconds  (or  5
+              seconds).
+
+       -?, --help
+              Print program help summary on stdout.  This option takes precedence over other options on the command line.
+
+       -!, --version
+              Print program version information on stdout.  This option takes precedence over other options on the command line.
+              Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version  of
+              the Linux Toolkit you are using.
+
+PROFILES
+       The  default  configuration  profile for this program is &quot;pev.ini&quot;.  The default profile section is &quot;default&quot;.  Users may
+       create addition profiles and reference them with option -p or add additional sections to an existing profiles and  refer�‐
+       ence them with option -s.
+
+       Attenuation Theshold
+              The average attenuation above which the PEV will not connect to an EVSE.  The default value is 10db.
+
+       MSound Pause
+              The  time in milliseconds between each MSound sent by the PEV-HLE to the EVSE-HLE.  Sending MSounds too frequently
+              overloads the EVSE-PLC.  Sending them too infrequently wastes time.  This value is derived and does not appear  in
+              the HPGP specification.  The default pause is 10 milliseconds.
+
+       Vehicle Identifier
+              Vehicle  identification.   The  17-byte  Vehicle Identification Number to be placed in CM_MNBC_SOUND.IND.SenderID.
+              This value is not used but is can be changed here so that the field is easy to spot within network message traces.
+
+       Network Membership Key
+              The  16-byte Network Memberhip Key (NMK) for the PEV-PLC device.  This program uses CM_SET_KEY to sets the PEV-PLC
+              NMK to this value after disconnecting.  The default value is the key for Network Password &quot;HomePlugAV&quot;.
+
+       Network Identifier
+              The 7-byte Network Identifier (NID) for the PEV-PLC device.  This program uses CM_SET_KEY to sets the PEV-PLC  NID
+              to this value after disconnecting.  The default value is the same as that for Network Password &quot;HomePlugAV&quot;.
+
+REFERENCES
+       See  the Qualcomm Atheros AR7420, QCA6410 IEEE 1901, HomePlug AV and QCA7000 HomePlug Green PHY PLC Chipset Programmer’’s
+       Guide or the HomePlug Green PHY Specification Release Version 1.1 for more information on this protocol.
+
+EXAMPLES
+       The following example starts a PEV session on interface eth0 and wait up to 2000 milliseconds (or 2 seconds) for the EVSE
+       to respond during any given exchange.
+
+          # pev -ieth0 -w2000
+
+       The default PEV-HLE configuration profile, &quot;pev.ini&quot;, looks something like this but it can be changed using a normal text
+       editor.  Use option -P to produce a template profile, if one is needed.
+
+          # file: pev.ini
+          # ====================================================================
+          # PEV-HLE initialization;
+          # --------------------------------------------------------------------
+          [default]
+          attenuation threshold = 10
+          msound pause = 10
+          vehicle identifier = AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+          network membership key = 50D3E4933F855B7040784DF815AA8DB7
+          network identifier = B0F2E695666B03
+
+SEE ALSO
+       plc(1), evse(1)
+
+CREDITS
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                                   pev(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='pcapdevs.1.html' title=' pcapdevs.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='pib2xml.1.html' title=' pib2xml.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

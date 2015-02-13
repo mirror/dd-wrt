@@ -1,0 +1,350 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			plcrule.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='PLCReadParameterBlock.c.html' title=' PLCReadParameterBlock.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='PLCSelect.c.html' title=' PLCSelect.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *
+ *   plcrule.c - Qualcomm Atheros Message MakeRules Utility;
+ *
+ *   Contributor(s):
+ *      Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*&quot;
+ *   system header files;
+ *--------------------------------------------------------------------*/
+
+#include &lt;unistd.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;limits.h&gt;
+
+/*====================================================================*
+ *   custom header files;
+ *--------------------------------------------------------------------*/
+
+#include &quot;../tools/getoptv.h&quot;
+#include &quot;../tools/putoptv.h&quot;
+#include &quot;../tools/memory.h&quot;
+#include &quot;../tools/number.h&quot;
+#include &quot;../tools/symbol.h&quot;
+#include &quot;../tools/types.h&quot;
+#include &quot;../tools/flags.h&quot;
+#include &quot;../tools/files.h&quot;
+#include &quot;../tools/error.h&quot;
+#include &quot;../plc/plc.h&quot;
+#include &quot;../plc/rules.h&quot;
+
+/*====================================================================*
+ *   custom source files;
+ *--------------------------------------------------------------------*/
+
+#ifndef MAKEFILE
+#include &quot;../tools/getoptv.c&quot;
+#include &quot;../tools/putoptv.c&quot;
+#include &quot;../tools/version.c&quot;
+#include &quot;../tools/basespec.c&quot;
+#include &quot;../tools/hexdump.c&quot;
+#include &quot;../tools/hexencode.c&quot;
+#include &quot;../tools/bytespec.c&quot;
+#include &quot;../tools/ipv4spec.c&quot;
+#include &quot;../tools/ipv6spec.c&quot;
+#include &quot;../tools/uintspec.c&quot;
+#include &quot;../tools/hexdecode.c&quot;
+#include &quot;../tools/hexstring.c&quot;
+#include &quot;../tools/todigit.c&quot;
+#include &quot;../tools/error.c&quot;
+#include &quot;../tools/synonym.c&quot;
+#include &quot;../tools/assist.c&quot;
+#include &quot;../tools/lookup.c&quot;
+#include &quot;../tools/codelist.c&quot;
+#include &quot;../tools/memout.c&quot;
+#include &quot;../tools/reword.c&quot;
+#endif
+
+#ifndef MAKEFILE
+#include &quot;../plc/Confirm.c&quot;
+#include &quot;../plc/Display.c&quot;
+#include &quot;../plc/Failure.c&quot;
+#include &quot;../plc/ReadMME.c&quot;
+#include &quot;../plc/Request.c&quot;
+#include &quot;../plc/SendMME.c&quot;
+#include &quot;../plc/Devices.c&quot;
+#include &quot;../plc/rules.c&quot;
+#include &quot;../plc/ParseRule.c&quot;
+#include &quot;../plc/PrintRule.c&quot;
+#include &quot;../plc/MakeRule.c&quot;
+#include &quot;../plc/ReadRules.c&quot;
+#endif
+
+#ifndef MAKEFILE
+#include &quot;../ether/channel.c&quot;
+#include &quot;../ether/openchannel.c&quot;
+#include &quot;../ether/closechannel.c&quot;
+#include &quot;../ether/readpacket.c&quot;
+#include &quot;../ether/sendpacket.c&quot;
+#endif
+
+#ifndef MAKEFILE
+#include &quot;../mme/MMECode.c&quot;
+#include &quot;../mme/EthernetHeader.c&quot;
+#include &quot;../mme/QualcommHeader.c&quot;
+#include &quot;../mme/UnwantedMessage.c&quot;
+#endif
+
+/*====================================================================*
+ *   program constants;
+ *--------------------------------------------------------------------*/
+
+#define PLCRULE_CSPEC_VERSION 0
+#define PLCRULE_VLAN_TAG 0x00000000
+#define COMMA &quot;,&quot;
+#define QUOTE &quot;''&quot;
+
+/*====================================================================*
+ *
+ *   int main (int argc, char const * argv[]);
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+int main (int argc, char const * argv [])
+
+{
+	extern struct channel channel;
+	static char const * optv [] =
+	{
+		&quot;ei:qrst:T:vV:&quot;,
+		&quot;action operand condition [...] control volatility [device] [...]\n\n          where a condition is: field operator value&quot;,
+		&quot;Qualcomm Atheros Stream MakeRules Utility&quot;,
+		&quot;e\tredirect stderr to stdout&quot;,
+
+#if defined (WINPCAP) || defined (LIBPCAP)
+
+		&quot;i n\thost interface is (n) [&quot; LITERAL (CHANNEL_ETHNUMBER) &quot;]&quot;,
+
+#else
+
+		&quot;i s\thost interface is (s) [&quot; LITERAL (CHANNEL_ETHDEVICE) &quot;]&quot;,
+
+#endif
+
+		&quot;q\tquiet mode&quot;,
+		&quot;r\tread rules from device&quot;,
+		&quot;s\tdisplay symbol tables&quot;,
+		&quot;t n\tread timeout is (n) milliseconds [&quot; LITERAL (CHANNEL_TIMEOUT) &quot;]&quot;,
+		&quot;T x\tinserted vlan tag is x [&quot; LITERAL (PLCRULE_VLAN_TAG) &quot;]&quot;,
+		&quot;v\tverbose mode&quot;,
+		&quot;V n\tcspec version is n [&quot; LITERAL (PLCRULE_CSPEC_VERSION) &quot;]&quot;,
+		(char const *) (0)
+	};
+
+#include &quot;../plc/plc.c&quot;
+
+	struct cspec cspec;
+	struct MMERule rule;
+	signed c;
+	memset (&amp; rule, 0, sizeof (rule));
+	memset (&amp; cspec, 0, sizeof (cspec));
+	cspec.VLAN_TAG = PLCRULE_VLAN_TAG;
+	cspec.CSPEC_VERSION = PLCRULE_CSPEC_VERSION;
+	if (getenv (PLCDEVICE))
+	{
+
+#if defined (WINPCAP) || defined (LIBPCAP)
+
+		channel.ifindex = atoi (getenv (PLCDEVICE));
+
+#else
+
+		channel.ifname = strdup (getenv (PLCDEVICE));
+
+#endif
+
+	}
+	optind = 1;
+	while ((c = getoptv (argc, argv, optv)) != -1)
+	{
+		switch (c)
+		{
+		case 'e':
+			dup2 (STDOUT_FILENO, STDERR_FILENO);
+			break;
+		case 'i':
+
+#if defined (WINPCAP) || defined (LIBPCAP)
+
+			channel.ifindex = atoi (optarg);
+
+#else
+
+			channel.ifname = optarg;
+
+#endif
+
+			break;
+		case 'q':
+			_setbits (channel.flags, CHANNEL_SILENCE);
+			_setbits (plc.flags, PLC_SILENCE);
+			break;
+		case 'r':
+			_setbits (plc.flags, PLC_ANALYSE);
+			break;
+		case 's':
+			printf (&quot;\n&quot;);
+			printf (&quot; Controls are &quot;);
+			codelist (controls, SIZEOF (controls), COMMA, QUOTE, stdout);
+			printf (&quot;.\n&quot;);
+			printf (&quot; Volatilities are &quot;);
+			codelist (volatilities, SIZEOF (volatilities), COMMA, QUOTE, stdout);
+			printf (&quot;.\n&quot;);
+			printf (&quot; Actions are &quot;);
+			codelist (actions, SIZEOF (actions), COMMA, QUOTE, stdout);
+			printf (&quot;.\n&quot;);
+			printf (&quot; Operands are &quot;);
+			codelist (operands, SIZEOF (operands), COMMA, QUOTE, stdout);
+			printf (&quot;.\n&quot;);
+			printf (&quot; Fields are &quot;);
+			codelist (fields, SIZEOF (fields), COMMA, QUOTE, stdout);
+			printf (&quot;.\n&quot;);
+			printf (&quot; Operators are &quot;);
+			codelist (operators, SIZEOF (operators), COMMA, QUOTE, stdout);
+			printf (&quot;.\n&quot;);
+			printf (&quot; States are &quot;);
+			codelist (states, SIZEOF (states), COMMA, QUOTE, stdout);
+			printf (&quot;.\n&quot;);
+			printf (&quot;\n&quot;);
+			return (0);
+		case 't':
+			channel.timeout = (signed)(uintspec (optarg, 0, UINT_MAX));
+			break;
+		case 'T':
+			cspec.VLAN_TAG = (uint32_t)(basespec (optarg, 16, sizeof (cspec.VLAN_TAG)));
+			cspec.VLAN_TAG = htonl (cspec.VLAN_TAG);
+			break;
+		case 'v':
+			_setbits (channel.flags, CHANNEL_VERBOSE);
+			_setbits (plc.flags, PLC_VERBOSE);
+			break;
+		case 'V':
+			cspec.CSPEC_VERSION = (uint16_t)(basespec (optarg, 10, sizeof (cspec.CSPEC_VERSION)));
+			cspec.CSPEC_VERSION = HTOLE16 (cspec.CSPEC_VERSION);
+			break;
+		default:
+			break;
+		}
+	}
+	argc -= optind;
+	argv += optind;
+	if (_allclr (plc.flags, PLC_ANALYSE))
+	{
+		if (ParseRule (&amp; argc, &amp; argv, &amp; rule, &amp; cspec) == -1)
+		{
+			error (1, 0, &quot;invalid rule&quot;);
+		}
+	}
+	openchannel (&amp; channel);
+	if (!(plc.message = malloc (sizeof (* plc.message))))
+	{
+		error (1, errno, PLC_NOMEMORY);
+	}
+	if (!argc)
+	{
+		if (_anyset (plc.flags, PLC_ANALYSE))
+		{
+			ReadRules (&amp; plc);
+		}
+		else
+		{
+			MakeRule (&amp; plc, &amp; rule);
+		}
+	}
+	while ((argc) &amp;&amp; (* argv))
+	{
+		if (!hexencode (channel.peer, sizeof (channel.peer), synonym (* argv, devices, SIZEOF (devices))))
+		{
+			error (1, errno, PLC_BAD_MAC, * argv);
+		}
+		if (_anyset (plc.flags, PLC_ANALYSE))
+		{
+			ReadRules (&amp; plc);
+		}
+		else
+		{
+			MakeRule (&amp; plc, &amp; rule);
+		}
+		argc--;
+		argv++;
+	}
+	free (plc.message);
+	closechannel (&amp; channel);
+	exit (0);
+}
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='PLCReadParameterBlock.c.html' title=' PLCReadParameterBlock.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='PLCSelect.c.html' title=' PLCSelect.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

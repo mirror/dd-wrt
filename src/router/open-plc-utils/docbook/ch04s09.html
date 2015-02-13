@@ -1,0 +1,107 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>But wait! There's more ...</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="ch04.html" title="Chapter 4.  Firmware"><link rel="prev" href="ch04s08.html" title="Liar! Liar! Pants on Fire!"><link rel="next" href="ch04s10.html" title="Upgrade Device (INT6000/INT6300/INT6400)"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">
+			But wait! There's more ...
+			</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch04s08.html">Prev</a> </td><th width="60%" align="center">Chapter 4. 
+		Firmware 
+		</th><td width="20%" align="right"> <a accesskey="n" href="ch04s10.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="firmware-caveats-3"></a>
+			But wait! There's more ...
+			</h2></div></div></div><p>
+			Starting with the <span class="productname">AR7420</span>™, the <code class="varname">DeviceID</code> field in <code class="constant">VS_SW_VER</code> is now the <code class="varname">DEVICE_CLASS</code> field and identifies the “<span class="quote">Device Family</span>”, not the device type. Instead, the <code class="varname">IDENT</code> field in <code class="constant">VS_SW_VER</code> identifies the device type and the <code class="varname">IDENT</code> field is located at a variable offset within the message frame. Previously, the <code class="varname">IDENT</code> was located a fixed offset within the frame.
+			</p><div class="table"><a name="idp10028808"></a><p class="title"><b>Table 4.3. 
+				Device Identification
+				</b></p><div class="table-contents"><table summary="
+				Device Identification
+				" border="1"><colgroup><col><col><col><col><col></colgroup><thead><tr><th>
+							Chipset
+							</th><th>
+							Softloader
+							</th><th>
+							Bootloader
+							</th><th>
+							Firmware
+							</th><th>
+							Identity
+							</th></tr></thead><tbody><tr><td>
+							INT6000
+							</td><td>
+							0x01
+							</td><td>
+							 
+							</td><td>
+							0x01
+							</td><td>
+							0x00000042
+							</td></tr><tr><td>
+							INT6300
+							</td><td>
+							 
+							</td><td>
+							0x01
+							</td><td>
+							0x02
+							</td><td>
+							0x00006300
+							</td></tr><tr><td>
+							INT6400
+							</td><td>
+							 
+							</td><td>
+							0x03
+							</td><td>
+							0x03
+							</td><td>
+							0x00006400
+							</td></tr><tr><td>
+							AR7400
+							</td><td>
+							 
+							</td><td>
+							0x03
+							</td><td>
+							0x04
+							</td><td>
+							0x00007400
+							</td></tr><tr><td>
+							AR6405
+							</td><td>
+							 
+							</td><td>
+							0x03
+							</td><td>
+							0x05
+							</td><td>
+							0x00006400
+							</td></tr><tr><td>
+							AR7420
+							</td><td>
+							 
+							</td><td>
+							0x05
+							</td><td>
+							0x20
+							</td><td>
+							0x001CFCFC
+							</td></tr><tr><td>
+							QCA6410
+							</td><td>
+							 
+							</td><td>
+							0x05
+							</td><td>
+							0x21
+							</td><td>
+							0x001B58EC
+							</td></tr><tr><td>
+							QCA7000
+							</td><td>
+							 
+							</td><td>
+							0x05
+							</td><td>
+							0x22
+							</td><td>
+							0x001B589C
+							</td></tr></tbody></table></div></div><br class="table-break"></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch04s08.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="ch04.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch04s10.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">
+			Liar! Liar! Pants on Fire!
+			 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 
+            Upgrade Device (INT6000/INT6300/INT6400)
+            </td></tr></table></div></body></html>0

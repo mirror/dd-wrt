@@ -1,0 +1,189 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			int6kboot.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='int6kbaud.1.html' title=' int6kbaud.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='int6kdetect.1.html' title=' int6kdetect.1 '>NEXT</a>]
+			</div>
+<pre>
+int6kboot(1)                                 Qualcomm Atheros Open Powerline Toolkit                                int6kboot(1)
+
+NAME
+       int6kboot - Qualcomm Atheros Powerline Device Boot Utility I
+
+SYNOPSIS
+       int6kboot [options] -N file -P file [device] [device] [...]
+
+DESCRIPTION
+       Download  and  start runtime firmware on any local Atheros powerline device that is in bootloader mode.  A device remains
+       in bootloader mode when it cannot load firmware from flash memory for some reason.  This can happen because there  is  no
+       flash  memory  or  because the flash memory is blank or corrupted.  This program can start a device or start then flash a
+       device.
+
+       The bootloader only recognizes a subset of Atheros message types.   This  program  uses  that  subset  to  write  runtime
+       firmware  and  parameters into SDRAM then start firmware execution at a known address.  Optionally, this program can then
+       proceed to download the same firmware and parameters, again, and instruct the runtime firmware to  write  them  to  flash
+       memory.
+
+       Starting  a device is a three phase operation that can only be performed when the bootloader is running.  The first phase
+       writes an SDRAM configuration program into TCM and executes it.  The second phase writes runtime firmware and  parameters
+       as  images  into SDRAM.  The third phase starts firmware execution.  Once the runtime firmware starts, the device will be
+       operational.
+
+       Flashing a device is a two phase operation that can only be performed when the firmware  is  running.   The  first  phase
+       downloads  runtime  firmare  and  parameters into scratch buffers under firmware control.  The second phase instructs the
+       firmware to write the scratch buffers to flash memory and restart the device.  After flashing, the device will  be  self-
+       sustaining.
+
+       Since  the  device address is 00:B0:52:00:00:01 on boot, the host must send all messages to that address.  This can cause
+       problems if multiple devices are connected to the host and in Bootloader mode.  The devices will have the  same  firmware
+       and MAC address because their PIBs will be identical.  One should avoid this situation.
+
+       Is  probably alright to have other device connected to the host that are running firmware because they will still see but
+       not recognize the messages used in this operation.  If only one device is connected to the host, then is  save  to  flash
+       the  device using address 00:B0:52:00:00:01.  Otherwise, the host should address messages to the actual device address so
+       that other devices do not attempt to write to their own flash memory at the same time.
+
+       This program is part of the Qualcomm Atheros Powerline Toolkit.  See the plc man page for an  overview  and  installation
+       instructions.
+
+OPTIONS
+       -e     Redirects  stderr messages to stdout.  By convention status and error messages are printed on stderr while primary
+              program output is printed on stdout.  This option prints all output on stdout in cases where this is desired.
+
+       -F[F]  Write previously downloaded MAC and PIB to NVRAM using VS_MOD_NVM.  Adding a second F here or another -F  anywhere
+              on  the  command  line  will force-flash a blank or corrupted NVRAM.  Firmware loaded from NVRAM will treat force-
+              flash as an error.  This option can be used to create factory settings but cannot be used to change them once cre‐
+              ated.  Subsequent use creates and updates operational settings that can be erased using a factory reset.
+
+       -i interface
+              Select  the host Ethernet interface.  All requests are sent via this host interface and only reponses received via
+              this host interface are recognized.  The default interface is eth1 because most people use eth0 as their principle
+              network  connection;  however,  if  environment  string &quot;PLC&quot; is defined then it takes precedence over the default
+              interface.  This option then takes precedence over either default.
+
+       -N filename
+              Read the named NVM file and write it to the device.  This option and argument are required.  Any  file  having  an
+              invalid  NVM  file format will be rejected.  No assumptions are made based on filename and no filename conventions
+              are enforced.
+
+       -P filename
+              Read the named PIB file and write it to the device.  This option and argument are required.  Any  file  having  an
+              invalid  PIB  file format will be rejected.  No assumptions are made based on filename and no filename conventions
+              are enforced.
+
+       -q     Suppresses status messages on stderr.
+
+       -t milliseconds
+              Read timeout in milliseconds.  Values range from 0 through UINT_MAX.  This is  the  maximum  time  allowed  for  a
+              response.  The default is shown in brackets on the program menu.
+
+       -v     Prints additional information on stdout.  In particular, this option dumps outgoing Ethernet packets on stdout.
+
+       -?,--help
+              Print program help summary on stdout.  This option takes precedence over other options on the command line.
+
+       -!,--version
+              Print program version information on stdout.  This option takes precedence over other options on the command line.
+              Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version  of
+              the Linux Toolkit you are using.
+
+ARGUMENTS
+       device The  Ethernet  hardware  address  of some powerline device.  More than one address may be specified on the command
+              line.  If more than one address is specified then operations are performed on each device in  turn.   The  default
+              address is local.  as explained in the DEVICES section.
+
+DEVICES
+       Powerline  device  addresses are 12 hexadecimal digits in upper, lower or mixed case.  Individual octets may be separated
+       by  colons,  for  clarity,  but  colons  are  not  required.   For  example,  &quot;00b052000001&quot;,   &quot;00:b0:52:00:00:01&quot;   and
+       &quot;00b052:000001&quot; are valid and equivalent.
+
+       A  local  device is any Atheros Powerline Device connected directly to a host Ethernet interface.  A remote device is any
+       Atheros Powerline Device at the far end of a powerline connection.  A foreign device is any powerline device not manufac‐
+       tured by Atheros.
+
+       Common  device  addresses  have symbolic names that can be used in place of the actual address value.  The following sym‐
+       bolic addresses are recognized by this program and most other toolkit programs.
+
+       all    Equivalent to &quot;broadcast&quot;, described next.
+
+       broadcast
+              A synonym for the Ethernet broadcast address, FF:FF:FF:FF:FF:FF.  All devices, whether local,  remote  or  foreign
+              will respond to this address.
+
+       local  A  synonym  for the Qualcomm Atheros Local Management Address (LMA), 00:B0:52:00:00:01.  All local Atheros devices
+              will respond to this address but remote and foreign devices will not.
+
+REFERENCES
+       See the Qualcomm Atheros HomePlug AV Firmware Technical Reference Manual for technical  information.   See  the  Qualcomm
+       Atheros Powerline Toolkit Online Documetation for practical information and examples.
+
+EXAMPLES
+       The  -N and -P options are always required.  Their order is not important.  Tne MAC address is not needed because devices
+       default to address 00:B0:52:00:00:01 (the program default address) in bootloader mode.  Once  this  operation  completes,
+       firmware is running in SDRAM but the NVRAM, if present, has not been programmed.  This operation is common for flash-less
+       devices.  If we reset the device at this point then the device will return to bootloader mode.
+
+          int6kboot -N test.nvm -P test.pib
+          # eth0 00:B0:52:00:00:01 Write SDRAM Configuration
+          # eth0 00:B0:52:00:00:01 Written.
+          # eth0 00:B0:52:00:00:01 Write to device memory
+          # eth0 00:B0:52:00:00:01 Written.
+          # eth0 00:B0:52:00:00:01 Write to device memory
+          # eth0 00:B0:52:00:00:01 Written.
+          # eth0 00:B0:52:00:00:01 Start Firmware
+          # eth0 00:B0:52:00:00:01 Started.
+
+       The next example does the same thing but performs the extra steps needed  to  program  NVRAM.   It  first  downloads  the
+       firmware  image  from file test.nvm and the parameter block image from file test.pib using VS_WR_MEM then starts firmware
+       execution using VS_ST_MAC.  Once runtime firmware has started, it downloads the same firmware image and  parameter  block
+       image (again) using VS_WR_MOD and commits them to NVRAM using VS_MOD_NVM.
+
+          int6kboot -N test.nvm -P test.pib -F
+          # eth0 00:B0:52:00:00:01 Write SDRAM Configuration
+          # eth0 00:B0:52:00:00:01 Written.
+          # eth0 00:B0:52:00:00:01 Write to device memory
+          # eth0 00:B0:52:00:00:01 Written.
+          # eth0 00:B0:52:00:00:01 Write to device memory
+          # eth0 00:B0:52:00:00:01 Written.
+          # eth0 00:B0:52:00:00:01 Start Firmware
+          # eth0 00:B0:52:00:00:01 Started.
+          # eth0 00:B0:52:00:00:01 Write MAC as module
+          # eth0 00:B0:52:00:00:01 Written.
+          # eth0 00:B0:52:00:00:01 Write PIB as module
+          # eth0 00:B0:52:00:00:01 Written.
+          # eth0 00:B0:52:00:00:01 Flash Device
+          # eth0 00:B0:52:00:00:01 Flashed.
+
+DISCLAIMER
+       Atheros HomePlug AV Vendor Specific Management Message structure and content is proprietary to Qualcomm Atheros, Ocala FL
+       USA.  Consequently, public information may not be available.  Qualcomm Atheros  reserves  the  right  to  modify  message
+       structure and content in future firmware releases without any obligation to notify or compensate users of this program.
+
+SEE ALSO
+       plc(1), ampboot(1), chknvm(1), chkpib(1), int6k(1), modpib(1)
+
+CREDITS
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                             int6kboot(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='int6kbaud.1.html' title=' int6kbaud.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='int6kdetect.1.html' title=' int6kdetect.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

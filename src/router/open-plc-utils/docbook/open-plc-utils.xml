@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.1.2//EN" "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd" [
+	<!ENTITY overview SYSTEM "overview.xml">
+	<!ENTITY install SYSTEM "install.xml">
+	<!ENTITY install-linux SYSTEM "install-linux.xml">
+	<!ENTITY install-macosx SYSTEM "install-macosx.xml">
+	<!ENTITY install-windows-xp SYSTEM "install-windows-xp.xml">
+	<!ENTITY install-windows-7 SYSTEM "install-windows-7.xml">
+	<!ENTITY programs SYSTEM "programs.xml">
+	<!ENTITY packages SYSTEM "packages.xml">
+	<!ENTITY folders SYSTEM "folders.xml">
+	<!ENTITY hardware SYSTEM "hardware.xml">
+	<!ENTITY software SYSTEM "software.xml">
+	<!ENTITY firmware SYSTEM "firmware.xml">
+	<!ENTITY firmware-6000-upload SYSTEM "firmware-6000-upload.xml">
+	<!ENTITY firmware-6000-flash SYSTEM "firmware-6000-flash.xml">
+	<!ENTITY firmware-6000-boot SYSTEM "firmware-6000-boot.xml">
+	<!ENTITY firmware-6300-boot SYSTEM "firmware-6300-boot.xml">
+	<!ENTITY firmware-6400-boot SYSTEM "firmware-6400-boot.xml">
+	<!ENTITY firmware-7400-boot SYSTEM "firmware-7400-boot.xml">
+	<!ENTITY firmware-7420-boot SYSTEM "firmware-7420-boot.xml">
+	<!ENTITY firmware-7420-flash SYSTEM "firmware-7420-flash.xml">
+	<!ENTITY procedures SYSTEM "procedures.xml">
+	<!ENTITY scripting SYSTEM "scripting.xml">
+	<!ENTITY support SYSTEM "support.xml">
+	<!ENTITY command SYSTEM "support1.xml">
+	<!ENTITY ethernet SYSTEM "support2.xml">
+	<!ENTITY network SYSTEM "support3.xml">
+	<!ENTITY generic SYSTEM "support4.xml">
+	<!ENTITY message SYSTEM "support5.xml">
+	<!ENTITY keys SYSTEM "support6.xml">
+	<!ENTITY xml SYSTEM "support7.xml">
+	<!ENTITY download SYSTEM "support8.xml">
+	<!ENTITY procrastinate SYSTEM "support9.xml">
+	<!ENTITY traffic SYSTEM "support10.xml">
+	<!ENTITY slac SYSTEM "support11.xml">
+	<!ENTITY library SYSTEM "library.xml">
+	<!ENTITY security SYSTEM "security.xml">
+	<!ENTITY embedding SYSTEM "embedding.xml">
+	<!ENTITY management SYSTEM "management.xml">
+	<!ENTITY driver1 SYSTEM "qcaspi.xml">
+	<!ENTITY procedure-slac-demo SYSTEM "slac-demo.xml">
+	<!ENTITY procedure-slac-config SYSTEM "slac-config.xml">
+	<!ENTITY procedure-trouble-shooting SYSTEM "trouble-shooting.xml">
+]>
+<book lang='en'>
+	<bookinfo>
+		<title>
+			Qualcomm Atheros Open Powerline Toolkit 
+			</title>
+		<authorgroup>
+			<corpauthor>
+				Qualcomm Atheros, Ocala FL USA
+				</corpauthor>
+			<editor>
+				<firstname>
+					Charles 
+					</firstname>
+				<surname>
+					Maier 
+					</surname>
+				</editor>
+			<collab>
+				<collabname>
+					Andrew Barnes &lt;abarnes@qca.qualcomm.com&gt;
+					</collabname>
+				</collab>
+			<collab>
+				<collabname>
+					Marc Bertola &lt;mbertola@qti.qualcomm.com&gt;
+					</collabname>
+				</collab>
+			<collab>
+				<collabname>
+					Florian Fainelli &lt;f.fainelli@gmail.com&gt;
+					</collabname>
+				</collab>
+			<collab>
+				<collabname>
+					Nate Houghton &lt;nhoughto@qca.qualcomm.com&gt;
+					</collabname>
+				</collab>
+			<collab>
+				<collabname>
+					Mathieu Poullet &lt;m.poullet@avm.de&gt;
+					</collabname>
+				</collab>
+			<collab>
+				<collabname>
+					Stefan Wahren &lt;stefan.wahren@i2se.com&gt;
+					</collabname>
+				</collab>
+			<collab>
+				<collabname>
+					Bill Wike &lt;bwike@qca.qualcomm.com&gt;
+					</collabname>
+				</collab>
+			<collab>
+				<collabname>
+					Alejandro Vasquez &lt;avasquez@qca.qualcomm.com&gt;
+					</collabname>
+				</collab>
+			</authorgroup>
+		<date>
+			NOV 2013
+			</date>
+		<releaseinfo>
+			open-plc-utils-0.0.4
+			</releaseinfo>
+		<abstract>
+			<para>
+				This document is the manual for the Qualcomm Atheros Open Powerline Toolkit. New users should read the first chapter before starting using the toolkit because it will answer many questions about toolkit installation, structure, content and application. New users may want to add this page and <ulink url='toolkit.html'>toolkit.html</ulink> to their browser favorites for later reference. 
+				</para>
+			<para>
+				<trademark class='registered'>HomePlug</trademark> AV is a registered trademark of the HomePlug Powerline Alliance. <trademark>Linux</trademark> is a trademark of Linus Tovalds. <trademark class='registered'>Windows</trademark> is a registered trademark of Microsoft Corporation. <productname>INT6000</productname>, <productname>INT6300</productname>, <productname>INT6400</productname>, <productname>AR6410</productname>, <productname>QCA7000</productname>, <productname>AR7400</productname> and <productname>AR7420</productname> are powerline products from Qualcomm Atheros. 
+				</para>
+			</abstract>
+		<keywordset>
+			<keyword>Intellon</keyword>
+			<keyword>Atheros</keyword>
+			<keyword>Qualcomm</keyword>
+			<keyword>HomePlug</keyword>
+			<keyword>powerline</keyword>
+			<keyword>communications</keyword>
+			<keyword>INT6000</keyword>
+			<keyword>INT6300</keyword>
+			<keyword>INT6400</keyword>
+			<keyword>AR7400</keyword>
+			<keyword>AR7420</keyword>
+			</keywordset>
+		</bookinfo>
+	&overview; 
+	&hardware; 
+	&software; 
+	&firmware; 
+	&procedures; 
+	&scripting;
+	&support;
+	&driver1;
+	</book>

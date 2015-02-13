@@ -1,0 +1,54 @@
+.TH sdram 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+sdram \- Atheros SDRAM Configuration File Generator
+
+.SH SYNOPSIS
+\fBsdram\fR 
+
+.SH DESCRIPTION
+The Atheros SDRAM Configuration File Generator creates two INT6300 SDRAM configuration files in the current working folder.
+Either of them may be used as the argument for the \fBint6kf\fR \fB-C\fR option when initializing INT6300 devices.
+Read the \fBint6kf\fR man page for more information.
+
+.PP
+This program is part of the Qualcomm Atheros Powerline Toolkit.
+See the \fBAMP\fR man page for an overview and installation instructions.
+
+.SH BACKGROUND
+Configuration files for the Linux Toolkit have \fB.cfg\fR extensions and consist of 32 binary bytes plus a 32 bit checksum.
+They are difficult to modify but easy to verify.
+The format requires no conversion on input or output and, consequently, it is preferred to that used by the Windows Device Manager.
+
+.PP
+Configuration files for the Windows Device Manager have \fB.config\fR extensions and consist of 64 hexadecimal ASCII characters.
+They are easily modified using a text editor but cannot be easily validated.
+They require ASCII to binary conversion on input and binary to ASCII conversion on output.
+Read the \fBconfig2cfg\fR man page for more information.
+
+.SH OPTIONS
+
+.TP
+There are no options.
+
+.SH EXAMPLES
+The following example writes two files, \fBsdram16mb.cfg\fR and \fBsdram64.cfg\fR, in the current working folder.
+They will replace any existing files having the same names.
+
+.PP
+    # sdram
+    writing sdram16mb.cfg
+    writing sdram64mb.cfg
+
+.SH DISCLAIMER
+The SDRAM file structure and content is proprietary to Qualcomm Atheros, Ocala FL USA.
+Consequently, public information is not available.
+Qualcomm Atheros reserves the right to change the file structure or content in future firmware releases without any obligation to notify or compensate users of this program.
+
+.SH SEE ALSO
+.BR config2cfg ( 1 ),
+.BR int6kf ( 1 )
+
+.SH CREDITS
+ Charles Maier <cmaier@qca.qualcomm.com>
+
