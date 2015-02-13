@@ -53,13 +53,13 @@
 # toolchain;
 # --------------------------------------------------------------------
 
-AR=$(CROSS)ar
-CAS=$(CROSS)gcc -c
-CC=$(CROSS)gcc
-CXX=$(CROSS)g++
-LD=$(CROSS)ld
-RANLIB=$(CROSS)ranlib
-STRIP=$(CROSS)strip
+#AR=$(CROSS)ar
+#CAS=$(CROSS)gcc -c
+#CC=$(CROSS)gcc
+#CXX=$(CROSS)g++
+#LD=$(CROSS)ld
+#RANLIB=$(CROSS)ranlib
+#STRIP=$(CROSS)strip
 
 # ====================================================================
 # installation folders;
@@ -106,7 +106,7 @@ VPATH=../applets:../debian:../docbook:../docbook2:../ether:../key:../mdio:../mme
 # default compiler and linker flags;
 # --------------------------------------------------------------------
 
-CFLAGS=-Wall -Wextra -Wno-unused-parameter -DMAKEFILE -D__GETOPT_H__ -D_GETOPT_DEFINED_ $(EXTRA_CFLAGS)
-CXXFLAGS=-Wall -Wextra -Wno-unused-parameter -DMAKEFILE $(EXTRA_CXXFLAGS)
-LDFLAGS=$(EXTRA_LDFLAGS)
+CFLAGS=-Wall -Wextra -Wno-unused-parameter -DMAKEFILE -D__GETOPT_H__ -D_GETOPT_DEFINED_ $(EXTRA_CFLAGS) $(COPTS) -DNEED_PRINTF  -ffunction-sections -fdata-sections -Wl,--gc-sections
+CXXFLAGS=-Wall -Wextra -Wno-unused-parameter -DMAKEFILE $(EXTRA_CXXFLAGS)  -ffunction-sections -fdata-sections -Wl,--gc-sections
+LDFLAGS=$(EXTRA_LDFLAGS) -ffunction-sections -fdata-sections -Wl,--gc-sections
 
