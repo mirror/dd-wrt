@@ -73,4 +73,3 @@ void stop_radio_off_2(void)
 void stop_radio_on_2(void)
 {
 }
-

@@ -74,7 +74,7 @@ int ifconfig(char *name, int flags, char *addr, char *netmask)
 	cprintf("ifconfig(): name=[%s] flags=[%s] addr=[%s] netmask=[%s]\n", name, flags == IFUP ? "IFUP" : "0", addr, netmask);
 
 	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
-		goto err2; // override socket close
+		goto err2;	// override socket close
 	cprintf("ifconfig(): socket opened\n");
 
 	strncpy(ifr.ifr_name, name, IFNAMSIZ);
@@ -116,7 +116,7 @@ int ifconfig(char *name, int flags, char *addr, char *netmask)
 err:
 	cprintf("ifconfig() done with error\n");
 	close(s);
-err2:   
+err2:
 #ifndef HAVE_SILENCE
 	perror(name);
 #endif
