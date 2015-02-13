@@ -1095,12 +1095,11 @@ int internal_getRouterBrand()
 #endif
 		return ROUTER_BUFFALO_WZR600DHP2;
 	}
-	if (nvram_match("boardtype", "0x0665") && nvram_match("boardrev", "0x1102") && boardnum == 1 ) {
+	if (nvram_match("boardtype", "0x0665") && nvram_match("boardrev", "0x1102") && boardnum == 1) {
 		setRouter("TPLINK Archer C9");
 
 		return ROUTER_TPLINK_ARCHERC9;
 	}
-
 
 	if (nvram_match("boardtype", "0xD646") && nvram_match("boardrev", "0x1100") && nvram_match("0:devid", "0x43A1")) {
 		setRouter("Linksys EA6900");
@@ -1600,17 +1599,17 @@ int internal_getRouterBrand()
 
 	char *hw = getUEnv("HW_BOARD_REV");
 	if (hw) {
-	    if (!strcmp(hw,"B1"))
-		setRouter("Dlink DIR-810L B1");
-	    else if (!strcmp(hw,"A1"))
-		setRouter("Dlink DIR-810L B1");
-	    else if (!strcmp(hw,"C1"))
-		setRouter("Dlink DIR-810L C1");
-	    else
-		setRouter("Dlink DIR-810L XX");
-	
-	}else 
-	    setRouter("Dlink DIR-810L");
+		if (!strcmp(hw, "B1"))
+			setRouter("Dlink DIR-810L B1");
+		else if (!strcmp(hw, "A1"))
+			setRouter("Dlink DIR-810L B1");
+		else if (!strcmp(hw, "C1"))
+			setRouter("Dlink DIR-810L C1");
+		else
+			setRouter("Dlink DIR-810L XX");
+
+	} else
+		setRouter("Dlink DIR-810L");
 	return ROUTER_DIR810L;
 #elif HAVE_WHR1166D
 	setRouter("Buffalo WHR-1166D");
@@ -4783,8 +4782,8 @@ int led_control(int type, int act)
 	int ses2_gpio = 0x0ff;
 	int wlan_gpio = 0x0ff;	// wlan button led R7000
 	int wlan0_gpio = 0x0ff;	// use this only if wlan led is not controlled by hardware!
-	int wlan1_gpio = 0x0ff;	
-	int wlan2_gpio = 0x0ff;	
+	int wlan1_gpio = 0x0ff;
+	int wlan2_gpio = 0x0ff;
 	int usb_gpio = 0x0ff;
 	int usb_gpio1 = 0x0ff;
 	int sec0_gpio = 0x0ff;	// security leds, wrt600n
@@ -5347,7 +5346,7 @@ int led_control(int type, int act)
 		disconnected_gpio = 0x113;
 		power_gpio = 0x116;
 		usb_gpio = 0x10b;
-                ses_gpio = 0x10f;
+		ses_gpio = 0x10f;
 		break;
 #elif HAVE_DIR825C1
 	case ROUTER_BOARD_WHRHPGN:
@@ -5784,10 +5783,10 @@ int led_control(int type, int act)
 		power_gpio = 0x102;
 		diag_gpio = 0x100;
 		diag_gpio_disabled = 0x102;
-		usb_gpio = 0x108; 
-		usb_gpio1 = 0x10f; 
-//		wlan0_gpio = 0x10d;
-//		wlan1_gpio = 0x10e;
+		usb_gpio = 0x108;
+		usb_gpio1 = 0x10f;
+//              wlan0_gpio = 0x10d;
+//              wlan1_gpio = 0x10e;
 		usb_power = 0x009;
 		usb_power1 = 0x00a;
 		break;
@@ -5796,7 +5795,7 @@ int led_control(int type, int act)
 		usb_power = 0x015;
 		usb_power1 = 0x012;
 		usb_gpio = 0x108;
-		usb_gpio1 = 0x10f;		
+		usb_gpio1 = 0x10f;
 		connected_gpio = 0x101;
 		disconnected_gpio = 0x103;
 		power_gpio = 0x102;
@@ -5822,15 +5821,15 @@ int led_control(int type, int act)
 		disconnected_gpio = 0x109;
 		break;
 	case ROUTER_TPLINK_ARCHERC9:
-		ses_gpio = 0x002; 
+		ses_gpio = 0x002;
 		usb_gpio = 0x006;
 		usb_gpio1 = 0x007;
 		disconnected_gpio = 0x00f;
 		connected_gpio = 0x00e;
 		power_gpio = 0x112;
 		diag_gpio = 0x012;
-		usb_power = 0x00c; // usb 3
-		usb_power1 = 0x00d; // usb 2
+		usb_power = 0x00c;	// usb 3
+		usb_power1 = 0x00d;	// usb 2
 		break;
 	case ROUTER_ASUS_AC67U:
 	case ROUTER_ASUS_AC56U:
@@ -5906,7 +5905,7 @@ int led_control(int type, int act)
 		wlan0_gpio = 0x10d;	// radio 0 
 		wlan1_gpio = 0x10c;	// radio 1 
 		ses_gpio = 0x10e;	// wps led
-		//wlan_gpio = 0x10f;	// wifi button led
+		//wlan_gpio = 0x10f;    // wifi button led
 		usb_gpio = 0x111;	//usb1 
 		usb_gpio1 = 0x112;	//usb2 
 		break;
@@ -6153,7 +6152,7 @@ int insmod(char *module)
 	int ret;
 	wordlist = module;
 	foreach(word, wordlist, next) {
-	    ret |= eval("insmod", word);
+		ret |= eval("insmod", word);
 	}
 	return ret;
 }
@@ -6164,7 +6163,7 @@ void rmmod(char *module)
 	char *next, *wordlist;
 	wordlist = module;
 	foreach(word, wordlist, next) {
-	    eval("rmmod", word);
+		eval("rmmod", word);
 	}
 }
 
