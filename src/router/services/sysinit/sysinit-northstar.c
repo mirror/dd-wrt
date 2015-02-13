@@ -365,6 +365,9 @@ void start_sysinit(void)
 				nvram_nset(extra_params->value, "pci/2/1/%s", extra_params->name);
 				extra_params++;
 			}
+			nvram_unset("et1macaddr");
+			nvram_set("pci/1/1/vendid", "0x14E4");
+			nvram_commit();
 		}
 		set_gpio(6, 1);	//reset button
 		set_gpio(2, 0);	//power led
@@ -373,8 +376,6 @@ void start_sysinit(void)
 		set_gpio(0, 1);
 		set_gpio(4, 1);	//ses
 		set_gpio(5, 1);	//wifi
-		nvram_set("pci/1/1/vendid", "0x14E4");
-		nvram_unset("et1macaddr");
 		break;
 	case ROUTER_NETGEAR_R6250:
 
@@ -594,6 +595,9 @@ void start_sysinit(void)
 				nvram_nset(extra_params->value, "pci/2/1/%s", extra_params->name);
 				extra_params++;
 			}
+			nvram_set("pci/1/1/vendid", "0x14E4");
+			nvram_unset("et1macaddr");
+			nvram_commit();
 		}
 		set_gpio(6, 1);	//reset button
 		set_gpio(2, 0);	//power led
@@ -602,8 +606,6 @@ void start_sysinit(void)
 		set_gpio(0, 1);
 		set_gpio(4, 1);	//ses
 		set_gpio(5, 1);	//wifi
-		nvram_set("pci/1/1/vendid", "0x14E4");
-		nvram_unset("et1macaddr");
 		break;
 	case ROUTER_NETGEAR_R6300V2:
 
@@ -817,6 +819,9 @@ void start_sysinit(void)
 				nvram_nset(extra_params->value, "pci/2/1/%s", extra_params->name);
 				extra_params++;
 			}
+			nvram_set("pci/1/1/vendid", "0x14E4");
+			nvram_unset("et1macaddr");
+			nvram_commit();
 		}
 		set_gpio(6, 1);	//reset button
 		set_gpio(2, 0);	//power led
@@ -825,8 +830,6 @@ void start_sysinit(void)
 		set_gpio(0, 1);
 		set_gpio(4, 1);	//ses
 		set_gpio(5, 1);	//wifi
-		nvram_set("pci/1/1/vendid", "0x14E4");
-		nvram_unset("et1macaddr");
 		break;
 	case ROUTER_NETGEAR_R7000:
 
@@ -1102,17 +1105,18 @@ void start_sysinit(void)
 				nvram_nset(extra_params->value, "pci/2/1/%s", extra_params->name);
 				extra_params++;
 			}
+			nvram_set("wl_pcie_mrrs", "128");
+			nvram_set("wl0_pcie_mrrs", "128");
+			nvram_set("wl1_pcie_mrrs", "128");
+			nvram_set("pci/1/1/vendid", "0x14E4");
+			nvram_unset("et1macaddr");
+			nvram_commit();
 		}
 		set_gpio(15, 1);	//wlan button led on
 		set_gpio(4, 1);
 		set_gpio(9, 1);
 		set_gpio(5, 1);
 		set_gpio(6, 1);	//reset button
-		nvram_set("wl_pcie_mrrs", "128");
-		nvram_set("wl0_pcie_mrrs", "128");
-		nvram_set("wl1_pcie_mrrs", "128");
-		nvram_set("pci/1/1/vendid", "0x14E4");
-		nvram_unset("et1macaddr");
 		break;
 	case ROUTER_NETGEAR_EX6200:
 		nvram_set("vlan2hwname", "et0");
@@ -1311,6 +1315,8 @@ void start_sysinit(void)
 			nvram_set("devpath0", "pci/1/1");
 			nvram_set("devpath1", "pci/2/1");
 			nvram_set("wl_pcie_mrrs", "128");
+			nvram_unset("et1macaddr");
+			nvram_commit();
 		}
 		set_gpio(0, 1);	//USB
 		set_gpio(4, 1);	//wifi
@@ -1318,7 +1324,6 @@ void start_sysinit(void)
 		set_gpio(9, 1);	//red connected
 		set_gpio(10, 1);	//green 2.4
 		set_gpio(12, 1);	//green 5
-		nvram_unset("et1macaddr");
 		break;
 	case ROUTER_NETGEAR_R8000:
 		if (nvram_get("0:venid") == NULL) {
@@ -1607,9 +1612,10 @@ void start_sysinit(void)
 			nvram_set("devpath0", "pcie/1/1");
 			nvram_set("devpath1", "pcie/2/3");
 			nvram_set("devpath2", "pcie/2/4");
+			nvram_unset("et0macaddr");
+			nvram_unset("et1macaddr");
+			nvram_commit();
 		}
-		nvram_unset("et0macaddr");
-		nvram_unset("et1macaddr");
 		//nvram_set("fwd_cpumap", "d:x:2:169:1 d:l:5:169:1 d:u:5:163:0");
 		set_gpio(6, 1);	//reset button
 		break;
@@ -1826,6 +1832,7 @@ void start_sysinit(void)
 			buf[26] = 0;
 			fprintf(stderr, "set 5g mac 2 %s\n", &buf[9]);
 			nvram_set("2:macaddr", &buf[9]);
+			nvram_commit();
 		}
 		break;
 	case ROUTER_DLINK_DIR880:
@@ -2040,6 +2047,7 @@ void start_sysinit(void)
 			}
 
 			nvram_set("0:venid", "0x14E4");
+			nvram_commit();
 
 		}
 		set_gpio(7, 1);	// fixup ses button
@@ -2273,6 +2281,7 @@ void start_sysinit(void)
 			}
 
 			nvram_set("pci/1/1/vendid", "0x14E4");
+			nvram_commit();
 
 		}
 		set_gpio(7, 1);	// fixup wifi button
@@ -2464,6 +2473,7 @@ void start_sysinit(void)
 			nvram_set("acs_2g_ch_no_restrict", "1");
 			nvram_set("devpath0", "pci/1/1/");
 			nvram_set("devpath1", "pci/2/1/");
+			nvram_commit();
 		}
 		nvram_set("partialboots", "0");
 	case ROUTER_LINKSYS_EA6500V2:
@@ -2652,6 +2662,7 @@ void start_sysinit(void)
 			nvram_set("acs_2g_ch_no_restrict", "1");
 			nvram_set("devpath0", "pci/1/1/");
 			nvram_set("devpath1", "pci/2/1/");
+			nvram_commit();
 		}
 		nvram_set("partialboots", "0");
 		break;
@@ -2851,6 +2862,7 @@ void start_sysinit(void)
 			nvram_set("acs_2g_ch_no_restrict", "1");
 			nvram_set("devpath0", "pci/1/1/");
 			nvram_set("devpath1", "pci/2/1/");
+			nvram_commit();
 		}
 		nvram_set("partialboots", "0");
 		break;
