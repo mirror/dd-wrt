@@ -26,7 +26,7 @@
 #include <proto/802.1d.h>
 #include <sys/utsname.h>
 
-#if 0// ndef cprintf
+#if 0 //cprintf
 #define cprintf(fmt, args...) do { \
 		fprintf(stderr,"%s (%d):%s ",__FILE__,__LINE__,__func__); \
 		fprintf(stderr, fmt, ## args); \
@@ -923,7 +923,7 @@ wlconf_get_bsscfgs(char* ifname, char* prefix)
 }
 
 static void
-wlconf_security_options(char *name, char *prefix, int bsscfg_idx, bool wet)
+wlconf_security_options(char *name, char *prefix, int bsscfg_idx, bool wet, bool is_dhd)
 {
 	int i;
 	int val;
@@ -936,6 +936,7 @@ wlconf_security_options(char *name, char *prefix, int bsscfg_idx, bool wet)
 	* defaults since the new chip may not support the requested
 	* encryptions after the card has been changed.
 	*/
+cprintf("set security settings %s, idx %d\n",name, bsscfg_idx);
 	if (wlconf_set_wsec(name, prefix, bsscfg_idx)) {
 		/* change nvram only, code below will pass them on */
 		wlconf_restore_var(prefix, "auth_mode");
@@ -945,13 +946,15 @@ wlconf_security_options(char *name, char *prefix, int bsscfg_idx, bool wet)
 		wlconf_restore_var(prefix, "wep");
 		wlconf_set_wsec(name, prefix, bsscfg_idx);
 	}
-
+cprintf("akm\n");
 	val = wlconf_akm_options(prefix);
 	/* In wet mode enable in driver wpa supplicant */
-	if (wet && (CHECK_PSK(val))) {
+
+	if (!is_dhd && wet && (CHECK_PSK(val))) {
 		wsec_pmk_t psk;
 		char *key;
 
+cprintf("psk\n");
 		if (((key = nvram_get(strcat_r(prefix, "wpa_psk", tmp))) != NULL) &&
 		    (strlen(key) < WSEC_MAX_PSK_LEN)) {
 			psk.key_len = (ushort) strlen(key);
@@ -959,20 +962,25 @@ wlconf_security_options(char *name, char *prefix, int bsscfg_idx, bool wet)
 			strcpy((char *)psk.key, key);
 			WL_IOCTL(name, WLC_SET_WSEC_PMK, &psk, sizeof(psk));
 		}
+cprintf("sup_wpa\n");
 		wl_iovar_setint(name, "sup_wpa", 1);
 	}
+cprintf("wpa_auth\n");
 	WL_BSSIOVAR_SETINT(name, "wpa_auth", bsscfg_idx, val);
 
+cprintf("auth_mode\n");
 	/* EAP Restrict if we have an AKM or radius authentication */
 	val = ((val != 0) || (nvram_default_match(strcat_r(prefix, "auth_mode", tmp), "radius","disabled")));
 	WL_BSSIOVAR_SETINT(name, "eap_restrict", bsscfg_idx, val);
 
+cprintf("wep keys\n");
 	/* Set WEP keys */
 	if (nvram_default_match(strcat_r(prefix, "wep", tmp), "enabled","disabled")) {
 		for (i = 1; i <= DOT11_MAX_DEFAULT_KEYS; i++)
 			wlconf_set_wep_key(name, prefix, bsscfg_idx, i);
 	}
 
+cprintf("auth\n");
 	/* Set 802.11 authentication mode - open/shared */
 	val = atoi(nvram_default_get(strcat_r(prefix, "auth", tmp),"0"));
 	WL_BSSIOVAR_SETINT(name, "auth", bsscfg_idx, val);
@@ -2753,8 +2761,9 @@ cprintf("set auto channel 01 tmp: %s %s\n", name, prefix);
 cprintf("set security settings %s\n",name);
 	for (i = 0; i < bclist->count; i++) {
 		bsscfg = &bclist->bsscfgs[i];
-		wlconf_security_options(name, bsscfg->prefix, bsscfg->idx, wet);
+		wlconf_security_options(name, bsscfg->prefix, bsscfg->idx, wet,is_dhd);
 	}
+cprintf("set enable bss %s\n",name);
 
 	/*
 	 * Finally enable BSS Configs or Join BSS
@@ -2796,6 +2805,8 @@ cprintf("set security settings %s\n",name);
 			}
 		}
 	}
+
+cprintf("set enable wmf %s\n",name);
 
 if (nvram_match(strcat_r(bsscfg->prefix, "wmf_bss_enable", tmp), "1")) {
 #ifdef __CONFIG_DHDAP__
