@@ -1,0 +1,53 @@
+<section id="support-download">
+	<title>
+		Download Functions
+		</title>
+	<para>
+		Download function write applets, parameters and runtime firmware to device SDRAM or NVRAM.		
+		</para>
+	<section id="WriteExecuteApplet">
+		<title>
+			WriteExecuteApplet
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>signed <function>WriteExecuteApplet</function></funcdef>
+   				<paramdef>struct plc * <parameter>plc</parameter></paramdef>
+				<paramdef>void const * <parameter>header</parameter></paramdef>
+   				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Write an NVM image directly into <acronym>SDRAM</acronym> using <constant>VS_WRITE_AND_EXECUTE</constant> messages. This function calls either <link linkend='WriteExecuteApplet1'>WriteExecuteApplet1</link> or <link linkend='WriteExecuteApplet2'>WriteExecuteApplet2</link> based on the NVM header version. The function is declared in <ulink url='plc.h.html'>plc.h</ulink> and defined in <ulink url='WriteExecuteApplet.c.html'>WriteExecuteApplet.c</ulink>. The <varname>plc</varname> structure is defined in <ulink url='plc.h.html'>plc.h</ulink>.
+			</para>
+		</section>
+	<section id="WriteExecuteApplet1">
+		<title>
+			WriteExecuteApplet1
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>signed <function>WriteExecuteApplet1</function></funcdef>
+   				<paramdef>struct plc * <parameter>plc</parameter></paramdef>
+				<paramdef>struct nvm_header1 * <parameter>header</parameter></paramdef>
+   				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Write an NVM image directly into <acronym>SDRAM</acronym> using <constant>VS_WRITE_AND_EXECUTE</constant> messages. This function is similar to <link linkend='WriteExecuteApplet2'>WriteExecuteApplet2</link> but expects a structure <varname>nvm_header1</varname> pointer instead of a structure <varname>nvm_header2</varname> pointer. The function is declared in <ulink url='plc.h.html'>plc.h</ulink> and defined in <ulink url='WriteExecuteApplet.c.html'>WriteExecuteApplet.c</ulink>. Structure <varname>plc</varname> is defined in file <ulink url='plc.h.html'>plc.h</ulink>. Structure <varname>nvm_header1</varname> is defined in file <ulink url='nvm.h.html'>nvm.h</ulink>.
+			</para>
+		</section>
+	<section id="WriteExecuteApplet2">
+		<title>
+			WriteExecuteApplet2
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>signed <function>WriteExecuteApplet2</function></funcdef>
+   				<paramdef>struct plc * <parameter>plc</parameter></paramdef>
+				<paramdef>struct nvm_header2 * <parameter>header</parameter></paramdef>
+   				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Write an NVM image directly into <acronym>SDRAM</acronym> using <constant>VS_WRITE_AND_EXECUTE</constant> messages. This function is similar to <link linkend='WriteExecuteApplet1'>WriteExecuteApplet1</link> but expects a structure <varname>nvm_header2</varname> pointer instead of a structure <varname>nvm_header1</varname> pointer. The function is declared in <ulink url='plc.h.html'>plc.h</ulink> and defined in <ulink url='WriteExecuteApplet.c.html'>WriteExecuteApplet.c</ulink>. Structure <varname>plc</varname> is defined in file <ulink url='plc.h.html'>plc.h</ulink>. Structure <varname>nvm_header1</varname> is defined in file <ulink url='nvm.h.html'>nvm.h</ulink>.
+			</para>
+		</section>
+	</section>

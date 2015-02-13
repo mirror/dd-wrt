@@ -1,0 +1,341 @@
+.TH plctool 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+plctool - Qualcomm Atheros Panther/Lynx Powerline Device Manager
+
+.SH SYNOPSIS
+.BR plctool
+.RI [ options ] 
+.RI [ device ] 
+.RI [ device ] 
+[...]
+
+.SH DESCRIPTION
+This version of the Qualcomm Atheros Powerline Device Manager performs basic operations on powerline devices using vendor-specific management messages.
+It can be used to interrogate and control devices or upgrade firmware if on-board NVRAM is present.
+See \fBamptool\fR for a similar utility that supports AR7400 devices.
+It supports chipsets QCA6410, QCA7000 and QCA7420.
+
+.PP
+This program is the proper tool for upgrading panther/lynx devices.
+It is important to reset panther/lynx devices after update since reset after update is not automatic anymore.
+Also, everything takes longer because part memory is erased before being written.
+Some operations may take 20 to 40 seconds so be patient.
+
+.PP
+This program is part of the Qualcomm Atheros Powerline Toolkit.
+See the \fBplc\fR man page for an overview and installation instructions.
+
+.SH COMMENTS
+This program version is identical to legacy program \fBint6k\fR except for option -\fBm\fR which uses version \fB1\fR of the Qualcomm Atheros \fBVS_NW_INFO\fR vendor-specific message.
+Older firmware versions may not recognize this message version.
+
+.SH OPTIONS
+
+.TP
+.RB - a
+Read device attributes using VS_OP_ATTRIBUTES.
+Attributes are short strings and integers that describe device hardware and firmware.
+They are concatenated to form the output that is similar to option -\fBr\fR but derived differently.
+
+.TP
+-\fBB \fIaction\fR
+press the simple connect pushbutton using VS_PB_ENC.
+The \fBaction\fR can be specified by number 1, 2, 3 or 4 or by symbol "\fBjoin\fR", "\fBleave\fR", "\fBstatus\fR" or "\fBreset\fR", respectively.
+Use 1 on both devices that are expected to join.
+Use 2 only on the device that is expected to leave the network.
+
+.TP
+-\fBd\fR \fIfilename\fR
+Read Watchdog Report from the device and write it to the named file in binary format using VS_WD_RPT.
+The report file can be sent to Qualcomm Atheros for technical analysis.
+No assumptions are made based on filename and no filename convetions are enforced; however, you should use a \fB.log\fR file extension to indicate binary format.
+
+.TP
+-\fBD\fR \fIxx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx\fR
+Define the 16 octet Device Access Key (DAK) in hex format.
+The DAK is used by option -\fBJ\fR.
+It may also be set to "\fBkey1\fR" or "\fBkey2\fR" as explained in the \fBKEYS\fR section.
+
+.TP
+.RB - e
+Redirects stderr messages to stdout.
+Normally, status and error messages are printed on stderr while primary program output is printed on stdout.
+This option prints all output on stdout in cases where this is desired.
+
+.TP
+.RB - f
+Read flash memory parameters using VS_GET_NVM.
+An error will be reported if no flash memory is present.
+
+.TP
+.RB - F [ F ]
+Write previously downloaded MAC and PIB to NVRAM using VS_MOD_NVM.
+Adding a second \fBF\fR here or another -\fBF\fR anywhere on the command line WILL NOT \fBforce-flash\fR a blank or corrupted NVRAM as with programs \fBint6k\fR and \fBamptool\fR.
+Firmware loaded from NVRAM will treat force-flash as an error.
+This option can be used to create factory settings but cannot be used to change them once created.
+Subsequent use creates and updates operational settings that can be erased using a factory reset.
+This option is executed after all others on the command line, except for the -\fBR\fR option.
+
+.TP
+.RB - g
+Read multicast group information discovered while IGMP snooping using VS_MULTICAST_INFO.
+
+.TP
+-\fBi\fR \fIinterface\fR
+Select the host Ethernet interface.
+All requests are sent via this host interface and only reponses received via this host interface are recognized.
+The default interface is \fBeth1\fR because most people use \fBeth0\fR as their principle network connection; however, if environment string "PLC" is defined then it takes precedence over the default interface.
+This option then takes precedence over either default.
+
+.TP
+.RB - I
+Read the device PIB header using VS_MODULE_OPERATION and print the PIB major and minor revision number, Device Access Key (DAK), Network Membership Key (NMK), MAC address and other identity information on stdout.
+The values displayed can be changed using program \fBmodpib\fR.
+
+.TP
+-\fBJ \fIxx:xx:xx:xx:xx:xx\fR
+Set the Network Membership Key (NMK) on a remote device using VS_SET_KEY.
+This option is similar to option -\fBK\fR but requires the remote device MAC and DAK in addition to the NMK and local device MAC address.
+The NMK value is defined using option -\fBK\fR unless you want to use the default value.
+The remote DAK is defined using option -\fBD\fR unless you want to use the default value.
+Programming remote device keys is complicated.
+It is often easier to connect the device directly to the host and use the -\fBK\fR option.
+
+.TP
+-\fBK\fR \fIxx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx\fR
+Define the Network Membership Key (NMK) value used by options -\fBM\fR or -\fBJ\fR.
+The symbolic names "\fBkey1\fR" and "\fBkey2\fR" are recognized as described in the \fBKEY\fR section.
+
+.TP
+-\fBl\fR \fIcount\fR
+Define the number of times that the command will be repeated for each device specified.
+Normally, you will repeat operations on one device only.
+
+.TP
+.RB -L
+Read and display powerline link status.
+
+.TP
+.RB - m
+Read network membership information using VS_NW_INFO.
+This can be used to determine network configuration.
+
+.TP
+.RB - M
+Set the Network Membership Key (NMK) on the local device using VS_SET_KEY.
+The NMK value is specified using the -\fBK\fR option unless you want to use the default value.
+
+.TP 
+-\fBn\fR \fIfilename\fR
+Read firmware from the device SDRAM and write it to the named \fB.nvm\fR file using multiple VS_RD_MOD messages.
+No assumptions are made based on filename and no filename conventions are enforced.
+This option is performed before option -\fBN\fR when both are specified.
+
+.TP 
+-\fBN\fR \fIfilename\fR
+Read the named \fB.nvm\fR file and write it to the device using multiple VS_WR_MOD messages.
+No assumptions are made based on filename and no filename conventions are enforced; however, files having invalid .nvm format will be rejected.
+This option is executed after -\fBn\fR when both are specified.
+
+.TP
+-\fBp\fR \fIfilename\fR
+Read parameters from the device NVRAM and write them to the named \fB.pib\fR file using multiple VS_RD_MOD messages.
+No assumptions are made based on filename and no filename convetions are enforced.
+This option is executed before option \f-BP\fR when both are specified.
+
+.TP
+-\fBP\fR \fIfilename\fR
+Read the named \fB.pib\fR file and write it to the device using multiple VS_WR_MOD messages.
+No assumptions are made based on filename and no filename conventions are enforced; however, files having invalid .pib format will be rejected.
+This option is executed after -\fBp\fR when both are specified.
+
+.TP
+.RB - q
+Suppresses status messages on stderr.
+
+.TP
+.RB - Q
+Quick flash.
+The program will not wait for a device to reset or the firmware to restart after writing flash memory.
+This option is desirable with newer firmware that writes flash memory in the background.
+It has no effect unless used with option -\fBF\fR or -\fBC\fR.
+
+.TP
+.RB - r
+Read device firmware and hardware revision using VS_SW_VER.
+Output is similar to option -\fBa\fR but is derived differently.
+
+.TP 
+.RB - R
+Reset the device using VS_RS_DEV.
+This option is executed after all others on the same command line.
+
+.TP
+-\fBt \fImilliseconds\fR
+Read timeout in milliseconds.
+Values range from 0 through UINT_MAX.
+This is the maximum time allowed for a response.
+The default is shown in brackets on the program menu.
+
+.TP
+.RB - T
+Restore factory defaults.
+This permanently erases all PIB changes made since the device was last programmed with factory default settings.
+The device will automatically reset and reboot.
+
+.TP
+.RB - v
+Print additional information on stdout.
+In particular, this option dumps incoming and outgoing packets which can be saved as text files for reference.
+
+.TP
+-\fBw \fIseconds\fR
+Defines the number of \fIseconds\fR to wait before repeating command line options.
+This option has no effect unless option -\fBl\fR is also specified with a non-zero value.
+
+.TP
+.RB - x
+Cause the program to exit on the first error instead of continuing with remaining iterations, operations or devices.
+Normally, the program reports errors and moves on to the next operation, iteration or device depending on the command line.
+
+.TP
+.RB - ? ,-- help
+Print program help summary on stdout.
+This option takes precedence over other options on the command line.
+
+.TP
+.RB - ? ,-- version
+Print program version information on stdout.
+This option takes precedence over other options on the command line.
+Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of the Linux Toolkit you are using.
+
+.SH ARGUMENTS
+
+.TP
+.IR device
+The Ethernet hardware address of some powerline device.
+More than one address may be specified on the command line.
+If more than one address is specified then operations are performed on each device in turn.
+The default address is \fBlocal\fR.
+as explained in the \fBDEVICES\fR section.
+
+.SH KEYS
+Passwords are variable length character strings that end-users can remember.
+Keys are fixed length binary values created by encrypting passwords.
+There are two encryption algorithms for HomePlugAV.
+One for DAKs and the other for NMKs.
+This means that a given password will produce different keys depending on use.
+This program only deals with keys because that is what powerline devices recognize.
+The passwords that generated the keys are irrelevant here.
+
+.PP
+Encryption keys are tedious to type and prone to error.
+For convenience, symbolic names have been assigned to common encryption keys and are recognized by options -\fBD\fR and -\fBK\fR.
+
+.TP
+.BR key1
+Key for encrypted password "\fBHomePlugAV\fR".
+This is "689F074B8B0275A2710B0B5779AD1630" for option -\fBD\fR and "50D3E4933F855B7040784DF815AA8DB7" for option -\fBK\fR.
+
+.TP
+.BR key2
+Key for encrypted password "\fBHomePlugAV0123\fR".
+This is "F084B4E8F6069FF1300C9BDB812367FF" for option -\fBD\fR and "B59319D7E8157BA001B018669CCEE30D" for option -\fBK\fR.
+
+.TP
+.BR none
+Always "00000000000000000000000000000000".
+
+.SH DEVICES
+Powerline devices use Ethernet hardware, or Media Access Control (MAC), addresses.
+Device addresses are 12 hexadecimal digits (\fB0123456789ABCDEFabcdef\fR) in upper, lower or mixed case.
+Individual octets may be separated by colons, for clarity, but not all octets need to be seperated.
+For example, "00b052000001", "00:b0:52:00:00:01" and "00b052:000001" are valid and equivalent.
+
+.PP
+These symbolic addresses are recognized by this program and may be used instead of the actual address value.
+
+.TP
+.BR all
+Equivalent to "broadcast", described next.
+
+.TP
+.BR broadcast
+A synonym for the standard Ethernet broadcast address, \fBFF:FF:FF:FF:FF:FF\fR.
+All devices, whether local, remote or foreign will respond to this address.
+
+.TP
+.BR local
+A synonym for the Qualcomm Atheros vendor specific Local Management Address (LMA), \fB00:B0:52:00:00:01\fR.
+All local Atheros devices will recognize this address but remote and foreign devices will not.
+A remote device is any device at the far end of a powerline connection.
+A foreign device is any device not manufactured by Atheros.
+
+.SH REFERENCES
+See the Qualcomm Atheros HomePlug AV Firmware Technical Reference Manual for more information.
+
+.SH DISCLAIMER
+Atheros HomePlug AV Vendor Specific Management Message structure and content is proprietary to Qualcomm Atheros, Ocala FL USA.
+Consequently, public information may not be available.
+Qualcomm Atheros reserves the right to modify message structure or content in future firmware releases without any obligation to notify or compensate users of this program.
+
+.SH EXAMPLES
+
+.PP
+The following command writew file \fBQCA7000.pib\fR and \fBQCA7000.nvm\fR to a remote powerline device then resets it.
+The reset is required because reset after flash is no longer automatic.
+
+.PP
+   # plctool -P QCA7000.pib -N QCA7000.nvm -R 00B05201053E
+
+.PP
+The previous command does not replace existing PIB values.
+Instead, it appends the new PIB values to the end of the old PIB.
+To replace existing PIB values, you must write the same PIB again, as follows.
+ 
+
+.PP
+   # plctool -P QCA7000.pib -R 00B05201053E
+
+.PP
+The following commands do the same thing but avoid one unecessary reset.
+
+.PP
+   # plctool -P QCA7000.pib -N QCA7000.nvm 00B05201053E
+   # plctool -P QCA7000.pib -R 00B05201053E
+
+.PP
+The reset can also be postponed as follows.
+
+.PP
+   # plctool -P QCA7000.pib -N QCA7000.nvm 00B05201053E
+   # plctool -P QCA7000.pib 00B05201053E
+   # plctool -R 00B05201053E
+
+.PP
+The next two commands are equivalent.
+They set the NMK on the local device to key1 as descripted in the \fBKEYS\fR section.
+The first command resets the NMK on the local device with -\fBM\fR then specifies the NMK as \fBkey1\fR.
+The second command omits the key specification since \fBkey1\fR is the program default NMK.
+One could, of course, type the encryption key.
+
+.PP
+   # plctool -MK key1
+   # plctool -M
+
+.SH SEE ALSO
+.BR plc ( 1 ),
+.BR ampboot ( 1 ),
+.BR ampboot ( 1 ),
+.BR amphost ( 1 ),
+.BR int6kid ( 1 ),
+.BR amprate ( 1 ),
+.BR amprule ( 1 ),
+.BR ampstat ( 1 ),
+.BR ampwait ( 1 )
+
+.SH CREDITS
+ Charles Maier <cmaier@qca.qualcomm.com>
+ Nathaniel Houghton <nhoughto@qca.qualcomm.com>
+

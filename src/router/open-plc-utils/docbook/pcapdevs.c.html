@@ -1,0 +1,274 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			pcapdevs.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='ParseRule.c.html' title=' ParseRule.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='pcap_freenameindex.c.html' title=' pcap_freenameindex.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *
+ *   pcapdevs.c - pcap device enumerator;
+ *
+ *
+ *   Contributor(s):
+ *      Nathaniel Houghton &lt;nhoughto@qca.qualcomm.com&gt;
+ *	Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *   system header files;
+ *--------------------------------------------------------------------*/
+
+#include &lt;unistd.h&gt;
+#include &lt;errno.h&gt;
+#include &lt;string.h&gt;
+#include &lt;pcap.h&gt;
+
+#if defined (__linux__)
+#elif defined (__APPLE__)
+#elif defined (__OpenBSD__)
+#	include &lt;sys/types.h&gt;
+#	include &lt;sys/socket.h&gt;
+#	include &lt;net/if.h&gt;
+#	include &lt;netinet/in.h&gt;
+#	include &lt;netinet/if_ether.h&gt;
+#elif defined (WINPCAP) || defined (LIBPCAP)
+#else
+#error &quot;Unknown environment&quot;
+#endif
+
+/*====================================================================*
+ *   custom header files;
+ *--------------------------------------------------------------------*/
+
+#include &quot;../tools/getoptv.h&quot;
+#include &quot;../tools/putoptv.h&quot;
+#include &quot;../tools/version.h&quot;
+#include &quot;../tools/memory.h&quot;
+#include &quot;../tools/flags.h&quot;
+#include &quot;../tools/types.h&quot;
+#include &quot;../tools/error.h&quot;
+#include &quot;../ether/ether.h&quot;
+
+/*====================================================================*
+ *   custom source files;
+ *--------------------------------------------------------------------*/
+
+#ifndef MAKEFILE
+#include &quot;../tools/getoptv.c&quot;
+#include &quot;../tools/putoptv.c&quot;
+#include &quot;../tools/version.c&quot;
+#include &quot;../tools/error.c&quot;
+#include &quot;../tools/hexdecode.c&quot;
+#endif
+
+/*====================================================================*
+ *   program constants;
+ *--------------------------------------------------------------------*/
+
+#define PCAP_VERBOSE (1 &lt;&lt; 0)
+#define PCAP_SILENCE (1 &lt;&lt; 1)
+#define PCAP_DEVICES (1 &lt;&lt; 2)
+#define PCAP_NICS (1 &lt;&lt; 3)
+#define PCAP_MACS (1 &lt;&lt; 4)
+
+/*====================================================================*
+ *
+ *   void pcap_enum (flag_t flags);
+ *
+ *   pcap_enum available pcap devices on stdout;
+ *
+ *
+ *   Contributor(s):
+ *      Nathaniel Houghton &lt;nhoughto@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+void pcap_enum (flag_t flags)
+
+{
+	char report [PCAP_ERRBUF_SIZE];
+	char string [ETHER_ADDR_LEN * 3];
+	byte number [ETHER_ADDR_LEN];
+	pcap_if_t * device;
+	pcap_if_t * devices = (pcap_if_t *)(0);
+	unsigned index;
+	if (pcap_findalldevs (&amp;devices, report) == -1)
+	{
+		error (1, 0, &quot;Can't enumerate interfaces&quot;);
+	}
+	if (!devices)
+	{
+		error (1, 0, &quot;No interfaces available&quot;);
+	}
+	if (_anyset (flags, PCAP_DEVICES))
+	{
+		for (device = devices, index = 1; device; device = device-&gt;next, index++)
+		{
+			gethwaddr (number, device-&gt;name);
+			hexdecode (number, sizeof (number), string, sizeof (string));
+			printf (&quot;%2d %s %s&quot;, index, string, device-&gt;name);
+			if (device-&gt;description)
+			{
+				printf (&quot;\t(%s)&quot;, device-&gt;description);
+			}
+			printf (&quot;\n&quot;);
+		}
+	}
+	if (_anyset (flags, PCAP_NICS))
+	{
+		for (device = devices, index = 1; device; device = device-&gt;next, index++)
+		{
+
+#if defined (WIN32)
+
+			printf (&quot;ETH%d=%d&quot;, index, index);
+
+#else
+
+			printf (&quot;ETH%d=%s&quot;, index, device-&gt;name);
+
+#endif
+
+			if (device-&gt;description)
+			{
+				printf (&quot;\t# %s&quot;, device-&gt;description);
+			}
+			printf (&quot;\n&quot;);
+		}
+		printf (&quot;\n&quot;);
+	}
+	if (_anyset (flags, PCAP_MACS))
+	{
+		for (device = devices, index = 1; device; device = device-&gt;next, index++)
+		{
+			gethwaddr (number, device-&gt;name);
+			hexdecode (number, sizeof (number), string, sizeof (string));
+			printf (&quot;NIC%d=%s&quot;, index, string);
+			if (device-&gt;description)
+			{
+				printf (&quot;\t# %s&quot;, device-&gt;description);
+			}
+			printf (&quot;\n&quot;);
+		}
+		printf (&quot;\n&quot;);
+	}
+	pcap_freealldevs (devices);
+	return;
+}
+
+/*====================================================================*
+ *
+ *   int main (int argc, char const * argv [])
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+int main (int argc, char const * argv [])
+
+{
+	static char const * optv [] =
+	{
+		&quot;hqv&quot;,
+		&quot;&quot;,
+		&quot;enumerate available pcap devices on stdout&quot;,
+		&quot;h\tprint host definitions for scripting&quot;,
+		&quot;q\tquiet&quot;,
+		&quot;v\tverbose messages&quot;,
+		(char const *) (0)
+	};
+	flag_t flags = PCAP_DEVICES;
+	signed c;
+	optind = 1;
+	while ((c = getoptv (argc, argv, optv)) != -1)
+	{
+		switch ((char) (c))
+		{
+		case 'h':
+			_clrbits (flags, (PCAP_DEVICES));
+			_setbits (flags, (PCAP_NICS | PCAP_MACS));
+			break;
+		case 'q':
+			_setbits (flags, PCAP_SILENCE);
+			break;
+		case 'v':
+			_setbits (flags, PCAP_VERBOSE);
+			break;
+		default:
+			break;
+		}
+	}
+	argc -= optind;
+	argv += optind;
+	if (argc)
+	{
+		error (1, ECANCELED, ERROR_TOOMANY);
+	}
+	pcap_enum (flags);
+	return (0);
+}
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='ParseRule.c.html' title=' ParseRule.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='pcap_freenameindex.c.html' title=' pcap_freenameindex.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

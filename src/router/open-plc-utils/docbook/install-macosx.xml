@@ -1,0 +1,41 @@
+	<section id="install-macosx">
+		<title>
+			Toolkit Installation on Mac OS X
+			</title>
+		<para>
+			Toolkit installation on <productname>Mac OS X</productname> is essentially identical to installation on Linux but special steps are needed before starting.
+			</para>
+		<para>
+			First, you must install the toolkit as the <varname>root</varname> user or you will be denied permission. The <varname>root</varname> user account is disabled by default and so you must enable it in order to login. Follow instructions at <ulink url='http://support.apple.com/kb/HT1528'>Enabling the &quot;root&quot; user in Mac OS X</ulink> to enable the account and login. After installation, toolkit programs should be run from a normal user account.
+			</para>
+		<para>
+			Second, <productname>Mac OS X</productname> does not include C Language development tools by default. You must download and install them in order to build the toolkit. You can download and install them from the Apple website or (if you are ambitious) download, compile and install them from various open source websites. Consider using <ulink url="https://developer.apple.com/technologies/tools/"><application>Xcode</application></ulink> on <application>Mac OS X Leopard</application> or <application>Lion</application>. 
+			</para>
+		<para>
+			Login as the root user and download or copy the toolkit archive file to your preferred folder then follow the <link linkend='install-linux'>instructions</link> for installing the toolkit on Linux.
+				</para>
+		<example>
+			<title>
+				Setting the <constant>PATH</constant> variable on <productname>OS X</productname>
+				</title>
+		<para>
+			While still logged in as the <varname>root</varname> user, edit <filename>/etc/profile</filename> and add folder<filename>/usr/local/bin</filename> to the <varname>PATH</varname> definition found there. This will ensure that all users can access toolkit programs. The change may not take effect until the next time you login or open a new command shell.
+				</para>
+
+<screen>
+PATH="/bin:/sbin:/usr/local/bin"
+</screen>
+			</example>
+		<example>
+			<title>
+				Installing the Toolkit on <productname>Mac OS X</productname>
+				</title>
+		<para>
+			While still logged in as the <varname>root</varname> user, remember to delete the toolkit source folder or, at least change ownership of all files in the toolkit folder, so that you can access and/or remove them later.
+			</para>
+<screen>
+cd ..
+rm -r plc-utils-x.x.x
+</screen>
+			</example>
+		</section>

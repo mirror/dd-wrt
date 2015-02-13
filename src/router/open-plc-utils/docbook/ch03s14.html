@@ -1,0 +1,43 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Packet Basics</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="ch03.html" title="Chapter 3.  Software"><link rel="prev" href="ch03s13.html" title="Endian-ness"><link rel="next" href="ch03s15.html" title="Frame Encoding"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">
+			Packet Basics 
+</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch03s13.html">Prev</a> </td><th width="60%" align="center">Chapter 3. 
+		Software 
+		</th><td width="20%" align="right"> <a accesskey="n" href="ch03s15.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="packet-basics"></a>
+			Packet Basics 
+</h2></div></div></div><p>
+			Local and remote <span class="trademark">HomePlug</span>® AV powerline devices are managed by sending Ethernet frames that contain <span class="trademark">HomePlug AV</span>® formatted management messages. These frames have an 802.3 Ethernet header and a payload that contains the Management Message (MM).
+			</p><p>
+			The Ethernet header must be transmitted in newtwork byte order which is big-endian. The Ethernet payload must be sent in <span class="productname">ARM</span>™ host byte order which is little endian. You should use standard network functions <code class="varname">htons()</code> and <code class="varname">htonl()</code> to write Ethernet headers and <code class="varname">ntohs()</code> and <code class="varname">ntohl()</code> to read them. You should use function <code class="varname">HTOLE16()</code> and <code class="varname">HTOLE32()</code> to write integer payload values and <code class="varname">LE26TOH()</code> and <code class="varname">LE32TOH()</code> to read them.    
+			</p><pre class="programlisting">
++---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+ ... +---+---+
+| Ethernet Header                                       | Ethernet Payload    | 
++---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+ ... +---+---+
+</pre><p>
+			Ethernet headers consist of a destination address (<code class="constant">ODA</code>), a source address (<code class="constant">OSA</code>) and an ethertype (<code class="constant">MTYPE</code>). The ethertype is always 0x88E1 for Homeplug frames of any type. Programmers may use either function <a class="ulink" href="EthernetHeader.c.html" target="_top">EthernetHeader.c</a> or <a class="ulink" href="EncodeEthernetHeader.c.html" target="_top">EncodeEthernetHeader</a> to encode a buffer with the ODA and OSA and the HomePlug ethertype. An example appears later on. Structure <code class="constant">header_eth</code> is defined in <a class="ulink" href="ihp.h.html" target="_top">ihp.h</a> for this purpose.
+			</p><pre class="programlisting">
++---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+ ... +---+---+
+|          ODA          |          OSA          | MTYPE | Ethernet Payload    |
++---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+ ... +---+---+
+</pre><p>
+			Management messages consist of a message header (MMHEADER) and a message entry (MMENTRY). The message header identifies the nature of the message entry that follows it. The acronyms MME and MMENTRY both mean Management Message Entry but they are often used to mean the entire management message or Ethernet frame. This imprecise usage can be confusing at times. Structure <code class="constant">header_mme</code> is defined in <a class="ulink" href="ihp.h.html" target="_top">ihp.h</a> for this purpose.
+			</p><pre class="programlisting">
++---+ ... +---+---+---+---+---+---+---+---+---+---+---+ ... +---+---+---+---+---+
+|             | MMHEADER              | MMENTRY                                 |
++---+ ... +---+---+---+---+---+---+---+---+---+---+---+ ... +---+---+---+---+---+
+</pre><p>
+			The message header contains message protocol version (MMV), message type (MMTYPE) and vendor identifier (OUI). The management message entry (MMENTRY) that follows the header contains information unique to a the request (REQ), confirmation (CNF), response (RSP) or indication (IND). Programmers may use the Atheros EncodeAtherosHeader function to encode a buffer with a specific MMTYPE and the Atheros MMV and OUI. AN example appears later on.
+			</p><pre class="programlisting">
++---+ ... +---+---+---+---+---+---+---+---+---+---+---+ ... +---+---+---+---+---+
+|             |MMV| MMTYPE|    OUI    |        MMENTRY                          |
++---+ ... +---+---+---+---+---+---+---+---+---+---+---+ ... +---+---+---+---+---+
+</pre><p>
+			The MMV value, within MMHEADER, indicates the Homeplug AV Management Message protocol version which determines how the message should be interpreted. The protocol version is defined in the HomePlug AV Specification and may change from time to time. One notable change is the recent insertion of an FMI (Fragment Management Information ) field between MMTYPE and OUI , as shown below.
+			</p><p>
+			In most cases, protocol changes are hidden from the application by the Atheros API functions; however, software developers should set the <code class="constant">HOMEPLUG_MMV</code> constant, defined in <a class="ulink" href="ihp.h.html" target="_top">ihp.h</a>, to the version appropriate for their firmware or application. The value of this constant enables or disables conditional compilation statements throughout the HomePlug API code base.
+			</p><p>
+			To send an MME, you must encode an Ethernet frame buffer with information and transmit it. To read an MME, you must read an Ethernet frame buffer and decode it. The information necessary to encode or decode Atheros vendor-specific Ethernet frames is covered in the <span class="trademark">INT6000</span>™ Firmware Technical Reference Manual; however, the Atheros HomePlug API includes many buffer encode and decode functions that support basic operational requirements.
+			</p></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch03s13.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="ch03.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch03s15.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">
+			Endian-ness 
+			 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 
+			Frame Encoding 
+			</td></tr></table></div></body></html>0

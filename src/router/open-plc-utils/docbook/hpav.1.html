@@ -1,0 +1,94 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			hpav.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='getpib.1.html' title=' getpib.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='hpavkey.1.html' title=' hpavkey.1 '>NEXT</a>]
+			</div>
+<pre>
+hpav(1)                                      Qualcomm Atheros Open Powerline Toolkit                                     hpav(1)
+
+NAME
+       hpav - HomePlug AV Packet Listener
+
+SYNOPSIS
+       hpav [options]
+
+DESCRIPTION
+       Display HomePlug AV Ethernet messages sent by a local powerline device to the host or the broadcast address.  Do not dis‐
+       play HomePlug AV frames sent from the host to powerline devices or forwarded over powerline through the  local  powerline
+       devices.
+
+       The  program  is  an  example of a simple packet listener and daemon.  Engineers and software developers can extend it to
+       build custom sniffers or servers.  The framework is present but additional features must be added.
+
+       This program is part of the Qualcomm Atheros Powerline Toolkit.  See the plc man page for an  overview  and  installation
+       instructions.
+
+OPTIONS
+       -i interface
+              Names  the host ethernet interface to watch.  The named interface, such as eth0, eth1 and so on, must be connected
+              to a HomePlug AV ethernet-to-powerline bridge adapter to receive any HomePlug AV traffic.  The  default  interface
+              is eth1.
+
+       -q     Quiet mode.  Suppress the printing of the normal message descriptions on stdout.
+
+       -v     Verbose  mode.   Displays  incoming  frames  in  hexadecimal dump format on stdout.  This option is independent of
+              option -a which prints VS_ARPC message text on stderr.
+
+       -?, --help
+              Print program help summary on stdout.  This option takes precedence over other options on the command line.
+
+       -!, --version
+              Print program version information on stdout.  This option takes precedence over other options on the command line.
+              Use  this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of
+              the Linux Toolkit you are using.  See the HomePlug AV Specification for a description of all HomePlug  AV  message
+              types.   See  the  Qualcomm Atheros INT6000 Firmware Reference Manual for a description of Atheros Vendor Specific
+              message types.
+
+EXAMPLES
+       The following command monitors the default host interface eth1 for HomePlug AV traffic and dumps detected frames  on  the
+       console  as they arrive.  To terminate the process, type ^C or ^Z at the console.  This program is usually run in a sepa‐
+       rate console window while performing powerline operations.
+
+          # hpav
+
+       The following command monitors host interface eth4 for incoming  HomePlug  AV  frames  and  dumps  writes  them  to  file
+       hpav.log.   Frames are printed in hexadecimal dump format because option -v is present.  Terminate the foreground process
+       by typing ^C or ^Z at the console.
+
+          # hpav -v -i eth4 &gt; hpav.log
+
+DISCLAIMER
+       Atheros HomePlug AV Vendor Specific Management Message structure and content is proprietary to Qualcomm Atheros, Ocala FL
+       USA.   Consequently,  public information is not available.  Qualcomm Atheros reserves the right to modify management mes‐
+       sage structure and content in future firmware releases without any obligation to notify or compensate users of this  pro‐
+       gram.
+
+SEE ALSO
+       plc(1), efru(1), efsu(1), mme(1)
+
+CREDITS
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                                  hpav(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='getpib.1.html' title=' getpib.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='hpavkey.1.html' title=' hpavkey.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

@@ -1,0 +1,189 @@
+.TH ampID 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+ampID - Echo Device Key
+
+.SH SYNOPSIS
+.BR ampID 
+.RI [ options ] 
+.RI [ device ] 
+.RI [ device ] 
+[ ... ]
+
+.SH DESCRIPTION
+This program prints a single powerline device key or HFID on stdout.
+It can be used to dynamically define environment variables or insert command line arguments in scripts at runtime.
+It is intended to echo a specific key read from a single device but it can be used to echo a specific key type read from several devices by specifying either the Qualcomm Atheros Local Management Address or a broadcast address.
+
+.PP
+This program is, in some sense, the inverse of \fBmodpib\fR but it reads the key and HFID directly from the powerline device instead of reading from a PIB file.
+
+.PP
+This program is part of the Qualcomm Atheros Powerline Toolkit.
+See the \fBplc\fR man page for an overview and installation instructions.
+
+.SH OPTIONS
+
+.TP
+.RB - A
+Prints the Ethernet address (MAC) for each specified device.
+This option and options -\fBD\fR, -\fBM\fR, -\fBN\fR, -\fBS\fR and -\fBU\fR are mutually exclusive.
+
+.TP
+.RB - D
+Prints the Device Access Key (DAK) for each specified device.
+This option and options -\fBA\fR, -\fBM\fR, -\fBN\fR, -\fBS\fR and -\fBU\fR are mutually exclusive.
+
+.TP
+.RB - e
+Redirects stderr messages to stdout.
+By convention status and error messages are printed on stderr while primary program output is printed on stdout.
+This option prints all output on stdout in cases where this is desired.
+
+.TP
+-\fBi\fR \fIinterface\fR
+Select the host Ethernet interface.
+All requests are sent via this host interface and only reponses received via this host interface are recognized.
+The default interface is \fBeth1\fR because most people use \fBeth0\fR as their principle network connection; however, if environment string "PLC" is defined then it takes precedence over the default interface.
+This option then takes precedence over either default.
+
+.TP
+.RB - n
+Append a newline to the end of each key.
+Newlines are omitted by default so that program output can be used as the raw input to another program.
+If you want the newline then you must request it with this option.
+
+.TP
+.RB - M
+Prints the Network Membership Key (NMK) for each specified device.
+This option and options -\fBA\fR, -\fBD\fR, -\fBN\fR, -\fBS\fR and -\fBU\fR are mutually exclusive.
+
+.TP
+.RB - N
+Prints the network HFID string for each specified device.
+This option and options -\fBA\fR, -\fBD\fR, -\fBM\fR, -\fBS\fR and -\fBU\fR are mutually exclusive.
+
+.TP
+.RB - q
+Suppresses status messages on stderr.
+
+.TP
+.RB - S
+Prints the manufacturer HFID string for each specified device.
+This option and options -\fBA\fR, -\fBD\fR, -\fBM\fR, -\fBN\fR and -\fBU\fR are mutually exclusive.
+
+.TP
+.RB - v
+Print additional information on stdout.
+In particular, this option dumps incoming and outgoing packets which can be saved as text files for reference.
+
+.TP
+-\fBx\fR
+Cause the program to exit on the first error instead of continuing with remaining iterations, operations or devices.
+Normally, the program reports errors and moves on to the next operation, iteration or device depending on the command line.
+
+.TP
+.RB - ? ,-- help
+Print program help summary on stdout.
+This option takes precedence over other options on the command line.
+
+.TP
+.RB - ? ,-- version
+Print program version information on stdout.
+This option takes precedence over other options on the command line.
+Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of the Linux Toolkit you are using.
+
+.SH ARGUMENTS
+
+.TP
+.IR device
+The MAC address of some powerline device.
+More than one address may be specified.
+If more than one address is specified then operations are performed on each device in turn.
+The default address is \fBlocal\fR.
+See \fBDEVICES\fR for information about symbolic device addresses.
+
+.SH DEVICES
+Powerline devices use Ethernet Media Access Control (MAC) addresses.
+A MAC address is a 48-bit value entered as 12 hexadecimal digits in upper, lower or mixed character case.
+Octets may be separated with colons for clarity.
+For example, "00b052000001", "00:b0:52:00:00:01" and "00b052:000001" are valid and equivalent.
+
+.PP
+The following MAC addresses are special and may be entered by name instead of number.
+
+.TP
+.BR all
+Same as "broadcast".
+
+.TP
+.BR broadcast
+A synonym for the Ethernet broadcast address, \fBFF:FF:FF:FF:FF:FF\fR.
+All devices, whether local, remote or foreign recognize messages sent to this address.
+A remote device is any device at the far end of a powerline connection.
+A foreign device is any device not manufactured by Atheros.
+
+.TP
+.BR local
+A synonym for the Qualcomm Atheros vendor specific Local Management Address (LMA), \fB00:B0:52:00:00:01\fR.
+All local Atheros devices recognize this address but remote and foreign devices do not.
+A remote device is any device at the far end of a powerline connection.
+A foreign device is any device not manufactured by Atheros.
+
+.SH REFERENCES
+See the Qualcomm Atheros HomePlug AV Firmware Technical Reference Manual for more information.
+
+.SH DISCLAIMER
+Atheros HomePlug AV Vendor Specific Management Message Entry structure and content is proprietary to Qualcomm Atheros, Ocala FL USA.
+Consequently, public information may not be available.
+Qualcomm Atheros reserves the right to modify message structure and content in future firmware releases without any obligation to notify or compensate users of this program.
+
+.SH EXAMPLES
+The following example prints the \fBDAK\fR of the local device on stdout.
+The local device is interrogated because no MAC address was specified.
+The default interface, \fBeth1\fR on Linux and \fB2\fR on Windows, is used unless environment variable \fBPLC\fR is defined.
+The DAK is always printed by default.
+Depending on your system, you may want to use option -\fBn\fR when using this program interactively.
+
+.PP
+   # ampID
+   00:11:22:33:44:55:66:77:88:99:AA:DD:CC:DD:EE:FF
+
+.PP
+The following example prints the \fBNMK\fR of device \fB00:B0:52:DA:DA:57\fR connected to interface \fBeth2\fR on a Linux system.
+Several devices could be specified but that is not a common request.
+
+.PP
+   # DAK -Mi eth2 00:B0:52:DA:DA:57
+   F4:23:71:4A:51:39:C2:2D:E5:EA:87:43:99:A1:37:81
+
+.PP
+The following example dynamically inserts the DAK and NMK of the previous device on the command line of another program.
+In this example, we want to insert the DAK and NMK into PIB file \fBabc.pib\fR using program \fBmodpib\fR.
+See the \fBmodpib\fR man page for an explanation of command line syntax.
+See the GNU bash manuals for an explanation of why this works.
+
+.PP
+   # modpib abc.pib -D $(ampID -Di eth2 00:B0:52:DA:DA:57) -N $(ampID -Mi eth2 00:B0:52:DA:DA:57)
+
+.PP
+The following example is an alternate way of accomplishing the same thing using shell script variables.
+This method may be easier to read and maintain.
+Notice that we 'squished' all the options together for brevity.
+
+.PP
+   # PLC=00:B0:52:DA:DA:57
+   # DAK=$(ampID -Dieth2 ${PLC})
+   # NMK=$(ampID -Mieth2 ${PLC})
+   # modpib abc.pib -D ${DAK} -N ${NMK}
+
+.SH SEE ALSO
+.BR plc ( 1 ), 
+.BR amptool ( 1 ), 
+.BR ampboot ( 1 ),
+.BR ampinit ( 1 ),
+.BR modpib ( 1 )
+
+.SH CREDITS
+ Charles Maier <cmaier@qca.qualcomm.com>
+

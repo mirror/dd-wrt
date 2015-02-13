@@ -1,0 +1,157 @@
+.TH int6klog 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+int6klog - Qualcomm Atheros Log Retrieval Utility
+
+.SH SYNOPSIS
+.BR int6klog
+.RI [ options ] 
+.RI [ device ] 
+.RI [ device ] 
+[...]
+.RI [> stdout ]
+
+.SH DESCRIPTION
+Read and print the device watchdog and checkpoint report on stdout for subsequent analysis by Atheros Technical Support.
+Report output is in XML format and contains base-64 encoded binary data returned by the device.
+Aside from the XML tags, output is not in human readable format.
+
+.PP
+This program is part of the Qualcomm Atheros Powerline Toolkit.
+See the \fBAMP\fR man page for an overview and installation instructions.
+
+.SH OPTIONS
+
+.TP
+.RB - C
+Return customer log.
+This option has no effect unless used with option \fB-r\fR and is for EoC only.
+
+.TP
+.RB - c
+Clear report.
+This option is independent of options \fB-r\fB and \fB-C\fR.
+
+.TP
+.RB - e
+Redirects stderr messages to stdout.
+By convention status and error messages are printed on stderr while primary program output is printed on stdout.
+This option prints all output on stdout in cases where this is desired.
+
+.TP
+.RB - f
+Specifies the output format.
+Possible values are "xml" and "raw".
+"xml" will output the watchdog and checkpoint log in the customer XML xlog format.
+"raw" will output the watchdog log in the Engineering Device Manager .log format.
+
+.TP
+-\fBi\fR \fIinterface\fR
+Select the host Ethernet interface.
+All requests are sent via this host interface and only reponses received via this host interface are recognized.
+The default interface is \fBeth1\fR because most people use \fBeth0\fR as their principle network connection; however, if environment string "PLC" is defined then it takes precedence over the default interface.
+This option then takes precedence over either default.
+
+.TP
+.RB - q
+Suppresses status messages on stderr.
+
+.TP
+.RB - r
+Read watchdog log.
+This is not the default option and must be specified when needed.
+
+.TP
+.RB - v
+Print additional information on stdout.
+In particular, this option dumps incoming and outgoing packets which can be saved as text files for reference.
+
+.TP
+.RB - ? ,-- help
+Print program help summary on stdout.
+This option takes precedence over other options on the command line.
+
+.TP
+.RB - ? ,-- version
+Print program version information on stdout.
+This option takes precedence over other options on the command line.
+Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of the Linux Toolkit you are using.
+
+.SH ARGUMENTS
+
+.TP
+.IR device
+The MAC address of some powerline device.
+More than one address may be specified.
+If more than one address is specified then operations are performed on each device in turn.
+The default address is \fBlocal\fR.
+See \fBDEVICES\fR for information about symbolic device addresses.
+
+.SH LOGFILES
+Log files are save in binary format by default but they can also be saved in XML format by adding option \fB-x\fR to the command line.
+By convention, binary log files have a \fB.log\fR extension and XML log files have a \fB.xlog\fR extension.
+The extension is not critical but it helps us determine the format before we open the file.
+
+.SH DEVICES
+Powerline devices use Ethernet Media Access Control (MAC) addresses.
+MAC addresses are 12 hexadecimal digits (\fB0123456789ABCDEFabcdef\fR) in upper, lower or mixed case.
+Individual octets may be separated by colons, for clarity, but not all octets need to be seperated.
+For example, "00b052000001", "00:b0:52:00:00:01" and "00b052:000001" are valid and equivalent.
+
+.PP
+The following MAC addresses are special and may be expressed by name instead of number.
+
+.TP
+.BR all
+Equivalent to "broadcast", described next.
+
+.TP
+.BR broadcast
+A synonym for the standard Ethernet broadcast address, \fBFF:FF:FF:FF:FF:FF\fR.
+All devices, whether local, remote or foreign will respond to this address.
+
+.TP
+.BR local
+A synonym for the Qualcomm Atheros vendor specific Local Management Address (LMA), \fB00:B0:52:00:00:01\fR.
+All local Atheros devices will recognize this address but remote and foreign devices will not.
+A remote device is any device at the far end of a powerline connection.
+A foreign device is any device not manufactured by Atheros.
+
+.SH REFERENCES
+See the Qualcomm Atheros HomePlug AV Firmware Technical Reference Manual for more information.
+
+.SH DISCLAIMER
+Atheros HomePlug AV Vendor Specific Management Message structure and content is proprietary to Atheros Communications, Ocala FL USA.
+Consequently, public information is not available.
+Atheros Communications reserves the right to modify message structure or content in future firmware releases without any obligation to notify or compensate users of this program.
+
+.SH EXAMPLES
+The following example reads the Watchdog and Checkpoint Report from device \fB00:B0:52:BA:BE:02\fR and prints them on stdout in XML format.
+The output contains data segments formatted in base-64 notation which preserved data integrity when read or transmitted in text format.
+
+.PP
+   # int6klog 00:B0:52:BA:BE:02
+
+.PP
+The next example does the same thing but pipes output to file \fBtemp.log\fR.
+Atheros recommends using a \fB.log\fR extension for compatibility with the WIndows Device Manager.
+
+.PP
+   # int6klog 00:B0:52:BA:BE:02 > temp.log
+
+.PP
+
+.SH SEE ALSO
+.BR amp ( 1 ),
+.BR int6k ( 1 ),
+.BR int6kf ( 1 ),
+.BR int6khost ( 1 ),
+.BR int6kid ( 1 ),
+.BR int6krate ( 1 ),
+.BR int6krule ( 1 ),
+.BR int6kstat ( 1 ),
+.BR int6kwait ( 1 )
+
+.SH CREDITS
+ Charles Maier <cmaier@qca.qualcomm.com>
+

@@ -1,0 +1,137 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			int6keth.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='int6kdetect.1.html' title=' int6kdetect.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='int6kf.1.html' title=' int6kf.1 '>NEXT</a>]
+			</div>
+<pre>
+int6keth(1)                                  Qualcomm Atheros Open Powerline Toolkit                                 int6keth(1)
+
+NAME
+       int6keth - Qualcomm Atheros Ethernet PHY Settings
+
+SYNOPSIS
+       int6keth [options] [device] [device] [...]
+
+DESCRIPTION
+       Read or write INT6x00 Ethernet PHY Settings using VS_ENET_SETTINGS.
+
+       This  program  is  part of the Qualcomm Atheros Powerline Toolkit.  See the plc man page for an overview and installation
+       instructions.
+
+OPTIONS
+       -a mode
+              Advertise auto-negotiate capabilities.  This option takes effect when option -w is present.  It  is  ignored  when
+              option  -r  is  present.   Valid  values are &quot;1000Full&quot;, &quot;100Full&quot;, &quot;100Half&quot;, &quot;10Full&quot; and &quot;10Half&quot;.  The default
+              value is no advertisement of capabilities.
+
+       -d mode
+              Device duplex transmission mode.  This option takes effect when option -w is present.  It is ignored  when  option
+              -r is present.  Valid values are &quot;Half&quot; and &quot;Full&quot;.  The default value is &quot;Half&quot;.
+
+       -e     Redirects  stderr messages to stdout.  By convention status and error messages are printed on stderr while primary
+              program output is printed on stdout.  This option prints all output on stdout in cases where this is desired.
+
+       -f control
+              Flow control enable.  This option takes effect when option -w is  present.   It  is  ignored  when  option  -r  is
+              present.  Valid values are &quot;On&quot;, &quot;Off&quot;, &quot;Tx&quot; and &quot;Rx&quot;.  The default value is &quot;Off&quot;.
+
+       -n mode
+              Auto-negotiate  mode.   This  option  takes  effect  when  option  -w is present.  It is ignored when option -r is
+              present.  Valid values are &quot;On&quot; and &quot;Off&quot;.  The default value is &quot;On&quot;.
+
+       -p number
+              The ethernet port number.  Available port numbers differ with chipset and firmware version so consult  the  appro‐
+              priate technical documentation.  Permitted values are 0 through 7.  The default port is 0.
+
+       -s speed
+              Network  transmission  speed  in  mbps.   This  option takes effect when option -w is present.  It is ignored when
+              option -r is present.  Valid values are &quot;10&quot;, &quot;100&quot; and &quot;1000&quot;.  The default value is &quot;10&quot;.
+
+       -i interface
+              Select the host Ethernet interface.  All requests are sent via this host interface and only reponses received  via
+              this host interface are recognized.  The default interface is eth1 because most people use eth0 as their principle
+              network connection; however, if environment string &quot;PLC&quot; is defined then it  takes  precedence  over  the  default
+              interface.  This option then takes precedence over either default.
+
+       -q     Suppresses status messages on stderr.
+
+       -r     Read settings from the Ethernet interface on the designated port.  If present, or implied by default, then options
+              -a, -d, -f, -n and -s have no effect.  This option and option -w are mutually exclusive.
+
+       -v     Print additional information on stdout.  In particular, this option dumps incoming and outgoing packets which  can
+              be saved as text files for reference.
+
+       -w     Write  settings to the Ethernet interface on the specified port.  Be sure to specify all settings to avoid writing
+              default values.  This option and option -r are mutually exclusive.
+
+       -?,--help
+              Print program help summary on stdout.  This option takes precedence over other options on the command line.
+
+       -?,--version
+              Print program version information on stdout.  This option takes precedence over other options on the command line.
+              Use  this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of
+              the Linux Toolkit you are using.
+
+ARGUMENTS
+       device The MAC address of some powerline device.  More than one address may be specified on the command  line.   If  more
+              than one address is specified then operations are performed on each device in turn.  The default address is local.
+              See DEVICES for information.
+
+DEVICES
+       Powerline devices use Ethernet Media Access Control (MAC) addresses.  A MAC address is a 48-bit value entered as 12  hex‐
+       adecimal  digits in upper, lower or mixed character case.  Octets may be separated with colons for clarity.  For example,
+       &quot;00b052000001&quot;, &quot;00:b0:52:00:00:01&quot; and &quot;00b052:000001&quot; are valid and equivalent.
+
+       The following MAC addresses are special and may be entered by name instead of number.
+
+       all    Same as &quot;broadcast&quot;.
+
+       broadcast
+              A synonym for the Ethernet broadcast address, FF:FF:FF:FF:FF:FF.  All devices, whether local,  remote  or  foreign
+              recognize  messages sent to this address.  A remote device is any device at the far end of a powerline connection.
+              A foreign device is any device not manufactured by Atheros.
+
+       local  A synonym for the Qualcomm Atheros vendor specific Local Management Address (LMA), 00:B0:52:00:00:01.   All  local
+              Atheros  devices  recognize  this address but remote and foreign devices do not.  A remote device is any device at
+              the far end of a powerline connection.  A foreign device is any device not manufactured by Atheros.
+
+REFERENCES
+       See the Qualcomm Atheros HomePlug AV Firmware Technical Reference Manual for more information.
+
+DISCLAIMER
+       Atheros HomePlug AV Vendor Specific Management Message structure and content is proprietary to Qualcomm Atheros, Ocala FL
+       USA.  Consequently, public information is not available.  Qualcomm Atheros reserves the right to modify message structure
+       or content in future firmware releases without any obligation to notify or compensate users of this program.
+
+EXAMPLES
+       None.
+
+SEE ALSO
+       plc(1) int6kid(1), int6krule(1), int6kstat(1)
+
+CREDITS
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                              int6keth(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='int6kdetect.1.html' title=' int6kdetect.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='int6kf.1.html' title=' int6kf.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

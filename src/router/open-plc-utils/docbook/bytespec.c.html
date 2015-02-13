@@ -1,0 +1,106 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			bytespec.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='__bswap.c.html' title=' __bswap.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='ChangeIdent.c.html' title=' ChangeIdent.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   size_t bytespec (char const *string,  void * memory, size_t extent);
+ *
+ *   memory.h
+ *
+ *   encode a memory region with a fixed-length hexadecimal string;
+ *   return the number of bytes encoded or terminate the program on
+ *   error;
+ *
+ *   the number of octets in string must equal the memory extent or
+ *   an error will occur; octets may be seperated by colons; empty
+ *   octets are illegal;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef BYTESPEC_SOURCE
+#define BYTESPEC_SOURCE
+
+#include &lt;ctype.h&gt;
+#include &lt;errno.h&gt;
+
+#include &quot;../tools/memory.h&quot;
+#include &quot;../tools/number.h&quot;
+#include &quot;../tools/error.h&quot;
+
+size_t bytespec (char const * string, void * memory, size_t extent)
+
+{
+	char const * number = string;
+	byte * origin = (byte *)(memory);
+	byte * offset = (byte *)(memory);
+	if (!number)
+	{
+		error (1, EINVAL, &quot;bytespec&quot;);
+	}
+	while (isspace (*number))
+	{
+		number++;
+	}
+	while ((*number) &amp;&amp; (extent))
+	{
+		unsigned digit;
+		if ((offset &gt; origin) &amp;&amp; (*number == HEX_EXTENDER))
+		{
+			number++;
+		}
+		if ((digit = todigit (*number++)) &gt;= RADIX_HEX)
+		{
+			error (1, EINVAL, &quot;You said '%s' but I want a hex digit&quot;, string);
+		}
+		*offset = digit &lt;&lt; 4;
+		if ((digit = todigit (*number++)) &gt;= RADIX_HEX)
+		{
+			error (1, EINVAL, &quot;You said '%s' but I want a hex digit&quot;, string);
+		}
+		*offset |= digit;
+		offset++;
+		extent--;
+	}
+	while (isspace (*number))
+	{
+		number++;
+	}
+	if ((*number) || (extent))
+	{
+		error (1, EINVAL, &quot;%s is not %d bytes&quot;, string, (unsigned)(offset - origin + extent));
+	}
+	return (offset - origin);
+}
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='__bswap.c.html' title=' __bswap.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='ChangeIdent.c.html' title=' ChangeIdent.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

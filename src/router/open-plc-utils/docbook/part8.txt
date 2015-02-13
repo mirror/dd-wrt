@@ -1,0 +1,10 @@
+		<div class='footerlinks'>
+			[<a href='index.html' text='Table of Contents'>PREV</a>]
+			[<a href='index.html' text='Table of Contents'>HOME</a>]
+			[<a href='index.html' text='Table of Contents'>NEXT</a>]
+			</div>
+		<div class='footer'>
+			<b style='font: bold italic 9pt verdana; color: navy;'>Qualcomm Atheros<br/>System Application Engineering Team<br/>There is Right Here, Right Now!<br/><a href='mailto:cmaier@qca.qualcomm.com?subject=Qualcomm%20Atheros%20Powerline%20Toolkit'>Contact Us</a>
+			</div>
+		</body>
+	</html>

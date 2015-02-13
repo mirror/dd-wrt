@@ -1,0 +1,226 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			evse_cm_set_key.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='evse_cm_mnbc_sound.c.html' title=' evse_cm_mnbc_sound.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='evse_cm_slac_match.c.html' title=' evse_cm_slac_match.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *
+ *   signed evse_cm_set_key (struct session * session, struct channel * channel, struct message * message);
+ *
+ *   slac.h
+ *
+ *   PEV-HLE sets the NMK and NID on PEV-PLC using CM_SET_KEY.REQ; 
+ *   the NMK and NID must match those provided by EVSE-HLE using 
+ *   CM_SLAC_MATCH.CNF;
+ *
+ *   Contributor(s):
+ *      Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef EVSE_CM_SET_KEY_SOURCE
+#define EVSE_CM_SET_KEY_SOURCE
+
+#include &lt;string.h&gt;
+
+#include &quot;../ether/channel.h&quot;
+#include &quot;../tools/memory.h&quot;
+#include &quot;../tools/error.h&quot;
+#include &quot;../tools/flags.h&quot;
+#include &quot;../mme/qualcomm.h&quot;
+#include &quot;../mme/homeplug.h&quot;
+#include &quot;../slac/slac.h&quot;
+
+signed evse_cm_set_key (struct session * session, struct channel * channel, struct message * message) 
+
+{ 
+
+#ifndef __GNUC__
+#pragma pack(push,1)
+#endif
+
+	struct __packed cm_set_key_request 
+	{ 
+		struct ethernet_hdr ethernet; 
+		struct homeplug_fmi homeplug; 
+		uint8_t KEYTYPE; 
+		uint32_t MYNOUNCE; 
+		uint32_t YOURNOUNCE; 
+		uint8_t PID; 
+		uint16_t PRN; 
+		uint8_t PMN; 
+		uint8_t CCOCAP; 
+		uint8_t NID [SLAC_NID_LEN]; 
+		uint8_t NEWEKS; 
+		uint8_t NEWKEY [SLAC_NMK_LEN]; 
+		uint8_t RSVD [3]; 
+	} 
+	* request = (struct cm_set_key_request *) (message); 
+	struct __packed cm_set_key_confirm 
+	{ 
+		struct ethernet_hdr ethernet; 
+		struct homeplug_fmi homeplug; 
+		uint8_t RESULT; 
+		uint32_t MYNOUNCE; 
+		uint32_t YOURNOUNCE; 
+		uint8_t PID; 
+		uint16_t PRN; 
+		uint8_t PMN; 
+		uint8_t CCOCAP; 
+		uint8_t RSVD [27]; 
+	} 
+	* confirm = (struct cm_set_key_confirm *) (message); 
+
+#ifndef __GNUC__
+#pragma pack (pop)
+#endif
+
+	memset (message, 0, sizeof (* message)); 
+	debug (0, __func__, &quot;--&gt; CM_SET_KEY.REQ&quot;); 
+	EthernetHeader (&amp; request-&gt;ethernet, channel-&gt;peer, channel-&gt;host, channel-&gt;type); 
+	HomePlugHeader1 (&amp; request-&gt;homeplug, HOMEPLUG_MMV, (CM_SET_KEY | MMTYPE_REQ)); 
+	request-&gt;KEYTYPE = SLAC_CM_SETKEY_KEYTYPE; 
+	memset (&amp; request-&gt;MYNOUNCE, 0xAA, sizeof (request-&gt;MYNOUNCE)); 
+	memset (&amp; request-&gt;YOURNOUNCE, 0x00, sizeof (request-&gt;YOURNOUNCE)); 
+	request-&gt;PID = SLAC_CM_SETKEY_PID; 
+	request-&gt;PRN = HTOLE16 (SLAC_CM_SETKEY_PRN); 
+	request-&gt;PMN = SLAC_CM_SETKEY_PMN; 
+	request-&gt;CCOCAP = SLAC_CM_SETKEY_CCO; 
+	memcpy (request-&gt;NID, session-&gt;NID, sizeof (request-&gt;NID)); 
+	request-&gt;NEWEKS = SLAC_CM_SETKEY_EKS; 
+	memcpy (request-&gt;NEWKEY, session-&gt;NMK, sizeof (request-&gt;NEWKEY)); 
+
+#if SLAC_DEBUG
+
+	if (_anyset (session-&gt;flags, SLAC_VERBOSE)) 
+	{ 
+		char string [1024]; 
+		debug (0, __func__, &quot;CM_SET_KEY.KEYTYPE %d&quot;, request-&gt;KEYTYPE); 
+		debug (0, __func__, &quot;CM_SET_KEY.MYNOUNCE %s&quot;, hexstring (string, sizeof (string), &amp; request-&gt;MYNOUNCE, sizeof (request-&gt;MYNOUNCE))); 
+		debug (0, __func__, &quot;CM_SET_KEY.YOURNOUNCE %s&quot;, hexstring (string, sizeof (string), &amp; request-&gt;YOURNOUNCE, sizeof (request-&gt;MYNOUNCE))); 
+		debug (0, __func__, &quot;CM_SET_KEY.PID %d&quot;, request-&gt;PID); 
+		debug (0, __func__, &quot;CM_SET_KEY.PRN %d&quot;, LE32TOH (request-&gt;PRN)); 
+		debug (0, __func__, &quot;CM_SET_KEY.PMN %d&quot;, request-&gt;PMN); 
+		debug (0, __func__, &quot;CM_SET_KEY.CCoCAP %d&quot;, request-&gt;CCOCAP); 
+		debug (0, __func__, &quot;CM_SET_KEY.NID %s&quot;, HEXSTRING (string, request-&gt;NID)); 
+		debug (0, __func__, &quot;CM_SET_KEY.NEWEKS %d&quot;, request-&gt;NEWEKS); 
+		debug (0, __func__, &quot;CM_SET_KEY.NEWKEY %s&quot;, HEXSTRING (string, request-&gt;NEWKEY)); 
+	} 
+
+#endif
+
+	if (sendpacket (channel, request, sizeof (* request)) &lt;= 0) 
+	{ 
+		return (debug (1, __func__, CHANNEL_CANTSEND)); 
+	} 
+	while (readpacket (channel, confirm, sizeof (* confirm)) &gt; 0) 
+	{ 
+		if (ntohs (confirm-&gt;ethernet.MTYPE) != ETH_P_HPAV) 
+		{ 
+			debug (session-&gt;exit, __func__, &quot;Ignore MTYPE 0x%04X&quot;, htons (confirm-&gt;ethernet.MTYPE)); 
+			continue; 
+		} 
+		if (confirm-&gt;homeplug.MMV != HOMEPLUG_MMV) 
+		{ 
+			debug (session-&gt;exit, __func__, &quot;Ignore MMV 0x%02X&quot;, confirm-&gt;homeplug.MMV); 
+			continue; 
+		} 
+		if (LE32TOH (confirm-&gt;homeplug.MMTYPE) != (CM_SET_KEY | MMTYPE_CNF)) 
+		{ 
+			debug (session-&gt;exit, __func__, &quot;Ignore MMTYPE 0x%04X&quot;, LE32TOH (confirm-&gt;homeplug.MMTYPE)); 
+			continue; 
+		} 
+		debug (0, __func__, &quot;&lt;-- CM_SET_KEY.CNF&quot;); 
+		if (! confirm-&gt;RESULT) 
+		{ 
+			return (debug (session-&gt;exit, __func__, &quot;Device refused request&quot;)); 
+		} 
+
+#if SLAC_DEBUG
+
+		if (_anyset (session-&gt;flags, SLAC_VERBOSE)) 
+		{ 
+			char string [1024]; 
+			debug (0, __func__, &quot;CM_SET_KEY.RESULT %d&quot;, confirm-&gt;RESULT); 
+			debug (0, __func__, &quot;CM_SET_KEY.MYNOUNCE %s&quot;, hexstring (string, sizeof (string), &amp; confirm-&gt;MYNOUNCE, sizeof (confirm-&gt;MYNOUNCE))); 
+			debug (0, __func__, &quot;CM_SET_KEY.YOURNOUNCE %s&quot;, hexstring (string, sizeof (string), &amp; confirm-&gt;YOURNOUNCE, sizeof (confirm-&gt;MYNOUNCE))); 
+			debug (0, __func__, &quot;CM_SET_KEY.PID %d&quot;, confirm-&gt;PID); 
+			debug (0, __func__, &quot;CM_SET_KEY.PRN %d&quot;, LE32TOH (confirm-&gt;PRN)); 
+			debug (0, __func__, &quot;CM_SET_KEY.PMN %d&quot;, confirm-&gt;PMN); 
+			debug (0, __func__, &quot;CM_SET_KEY.CCoCAP %d&quot;, confirm-&gt;CCOCAP); 
+		} 
+
+#endif
+
+		return (0); 
+	} 
+	return (debug (session-&gt;exit, __func__, &quot;&lt;-- CM_SET_KEY.REQ ?&quot;)); 
+} 
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='evse_cm_mnbc_sound.c.html' title=' evse_cm_mnbc_sound.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='evse_cm_slac_match.c.html' title=' evse_cm_slac_match.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

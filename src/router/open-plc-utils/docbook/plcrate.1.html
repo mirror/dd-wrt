@@ -1,0 +1,164 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			plcrate.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='plcotst.1.html' title=' plcotst.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='plcrule.1.html' title=' plcrule.1 '>NEXT</a>]
+			</div>
+<pre>
+plcrate(1)                                   Qualcomm Atheros Open Powerline Toolkit                                  plcrate(1)
+
+NAME
+       plcrate - Qualcomm Atheros AR7x00 PHY Rate Monitor
+
+SYNOPSIS
+       plcrate [options] [device] [device] [...]
+
+DESCRIPTION
+       The  Atheros  PHY  Rate Utility polls one or more devices and prints the average transmit and receive PHY rates between a
+       device and each neighboring network device.  Output is column-oriented and suitable for loading  into  a  spreadsheet  or
+       being read by a simple program.
+
+       This  program  is  part of the Qualcomm Atheros Powerline Toolkit.  See the plc man page for an overview and installation
+       instructions.
+
+CHIPSETS
+       QCA6410, QCA7000, QCA7420
+
+OPTIONS
+       -c     Display coded PHY rates.  Coded PHY rates are displayed by default so this option is redundant  but  it  has  been
+              kept for backword compatibility.  This option and option -u are mutually exclusive.
+
+       -d seconds
+              Traffic  duration in seconds per connection.  Directional traffic is systematically sent between each pair of pow‐
+              erline network devices for this period of time.  Consequently, the total time needed to generate  traffic  between
+              all network devices will be approximately n! times this value, so don’’t get carried away.  The minimum value is 1
+              second and the maximum value is 60 seconds.
+
+       -e     Redirects stderr messages to stdout.  By convention status and error messages are printed on stderr while  primary
+              program output is printed on stdout.  This option prints all output on stdout in cases where this is desired.
+
+       -i interface
+              Select  the host Ethernet interface.  All requests are sent via this host interface and only reponses received via
+              this host interface are recognized.  The default interface is eth1 because most people use eth0 as their principle
+              network  connection;  however,  if  environment  string &quot;PLC&quot; is defined then it takes precedence over the default
+              interface.  This option then takes precedence over either default.
+
+       -n     Reads the average transmit and receive PHY rate for wach device using VS_NW_INFO and prints it  on  stdout.   Each
+              output  line  displays  the  ethernet  interface,  source  address, destination address and either the transmit or
+              receive PHY rate.
+
+       -o milliseconds
+              Read timeout in milliseconds.  Values range from 0 through UINT_MAX.  This is  the  maximum  time  allowed  for  a
+              response.  The default is shown in brackets on the program menu.
+
+       -q     Enter quiet mode.  Progress messages are suppressed.
+
+       -r     Reads device hardware and software revision information using VS_SW_VER and prints it on stdout.
+
+       -R     Resets the device using VS_RS_DEV.
+
+       -t     Generate  powerline traffic between the local device and each remote device on each powerline network connected to
+              the host.  It does not generate any traffic between remote powerline device pairs.  This option is especially use‐
+              ful  when  remote  powerline  devices are not connected to Ethernet devices capable of sending traffic back to the
+              host.
+
+       -T     Generate powerline traffic between all devices on each powerline network connected to the host.   This  option  is
+              similar  to  option  -t  but it takes much longer because traffic is systematically generated between each pair of
+              powerline devices.  Consequently, the time to complete will increase factorially as the number of network  devices
+              increases.  Such complete traffic path coverage is not always needed.
+
+       -u     Display  un-coded  PHY  rates.   Coded PHY rates are displayed by default.  This option and option -c are mutually
+              exclusive.
+
+       -v     Enter verbose mode.  All Etherenet frames sent or received by the program are displayed on stdout.
+
+       -x     Exit program on first error with a non-zero exit code.  This option allows  shell  scripts  to  detect  failed  or
+              incomplete operations and take the appropriate action.
+
+       -?,--help
+              Print program help summary on stdout.  This option takes precedence over other options on the command line.
+
+       -!,--version
+              Print program version information on stdout.  This option takes precedence over other options on the command line.
+              Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version  of
+              the Linux Toolkit you are using.
+
+ARGUMENTS
+       device The  MAC  address  of some powerline device.  More than one address may be specified.  If more than one address is
+              specified then operations are performed on each device in turn.  The default address is local.   See  DEVICES  for
+              information about symbolic device addresses.
+
+DEVICES
+       Powerline  devices use Ethernet Media Access Control (MAC) addresses.  A MAC address is a 48-bit value entered as 12 hex‐
+       adecimal digits in upper, lower or mixed character case.  Octets may be separated with colons for clarity.  For  example,
+       &quot;00b052000001&quot;, &quot;00:b0:52:00:00:01&quot; and &quot;00b052:000001&quot; are valid and equivalent.
+
+       The following MAC addresses are special and may be entered by name instead of number.
+
+       all    Same as &quot;broadcast&quot;.
+
+       broadcast
+              A  synonym  for  the Ethernet broadcast address, FF:FF:FF:FF:FF:FF.  All devices, whether local, remote or foreign
+              recognize messages sent to this address.  A remote device is any device at the far end of a powerline  connection.
+              A foreign device is any device not manufactured by Atheros.
+
+       local  A  synonym  for the Qualcomm Atheros vendor specific Local Management Address (LMA), 00:B0:52:00:00:01.  All local
+              Atheros devices recognize this address but remote and foreign devices do not.  A remote device is  any  device  at
+              the far end of a powerline connection.  A foreign device is any device not manufactured by Atheros.
+
+REFERENCES
+       See the Qualcomm Atheros HomePlug AV Firmware Technical Reference Manual for more information.
+
+EXAMPLES
+       The  following  example  displays  the  average  transmit and receive PHY rates from each of two devices.  One is a local
+       device connected to interface eth2 and the other is a remote device at the far end of the powerline.  In this case,  they
+       are the only two devices on the powerline network.  Observe the recipricol rates shown.
+
+          # plcrate -ni eth2 00:B0:52:00:00:AA 00:B0:52:00:00:BB
+          eth2 00:B0:52:00:00:AA 00:B0:52:00:00:BB TX 163 mbps
+          eth2 00:B0:52:00:00:AA 00:B0:52:00:00:BB RX 176 mbps
+          eth2 00:B0:52:00:00:BB 00:B0:52:00:00:AA TX 176 mbps
+          eth2 00:B0:52:00:00:BB 00:B0:52:00:00:AA RX 163 mbps
+
+       The  following  example  generates powerline traffic between the local device and each remote device because option -t is
+       present.  It then displays the PHY rate read from the local device.
+
+          # plcrate -tni eth2
+          eth2 00:B0:52:00:00:AA 00:B0:52:00:00:BB TX 163 mbps
+          eth2 00:B0:52:00:00:AA 00:B0:52:00:00:BB RX 176 mbps
+
+DISCLAIMER
+       Atheros HomePlug AV Vendor Specific Management Message Entry structure and content is proprietary  to  Qualcomm  Atheros,
+       Ocala FL USA.  Consequently, public information may not be available.  Qualcomm Atheros reserves the right to modify mes‐
+       sage structure and content in future firmware releases without any obligation to notify or compensate users of this  pro‐
+       gram.
+
+SEE ALSO
+       PLC(1), amprate(1), int6krate(1)
+
+CREDITS
+        Nathaniel Houghton &lt;nhoughto@qca.qualcomm.com&gt;
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                               plcrate(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='plcotst.1.html' title=' plcotst.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='plcrule.1.html' title=' plcrule.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

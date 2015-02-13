@@ -1,0 +1,261 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			xml2pib.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='weeder.1.html' title=' weeder.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='toolkit.html' title=' Index '>NEXT</a>]
+			</div>
+<pre>
+xml2pib(1)                                   Qualcomm Atheros Open Powerline Toolkit                                  xml2pib(1)
+
+NAME
+       xml2pib - Qualcomm Atheros XML driven PIB editor
+
+SYNOPSIS
+       xml2pib [options] pib-file [pib-file] [...]
+
+DESCRIPTION
+       The  Atheros  PIB  XML  Editor  modifies an Atheros PIB file based on XML instructions defined in one or more instruction
+       files.  Instruction files must be valid XML and conform to schema file piboffset.xsd or errors will occur.  Always  vali‐
+       date  XML files against this schema with a validating parser before submitting them to this program.  Firefox or Internet
+       Explorer are suitable for validation purposes purpose.
+
+       This program is part of the Qualcomm Atheros Powerline Toolkit.  See the AMP man page for an  overview  and  installation
+       instructions.
+
+OPTIONS
+       -f filename
+              The  XML  instruction  file.   XML instruction files must conform to the Qualcomm Atheros scheme designed for this
+              purpose.  If more that one .xml file is specified then edits are applied in order of filename such that later edit
+              instructions  can  over-write eariler instructions.  Instruction files usually have a .xml extension but this pro‐
+              gram makes no assumption based on filename and does not enforce any filename conventions.
+
+       -o     Print the appropriate XML schema on stdout.  This schema should be used to validate XML instructions using a vali‐
+              dating parser such as Firefox or Microsoft Internet Explorer.
+
+       -q     Suppresses printing of progress messages.  This option has no effect at this time.
+
+       -v     Print additional information.  This option has no effect at this time.
+
+       -?,--help
+              Print program help summary on stdout.  This option takes precedence over other options on the command line.
+
+       -!,--version
+              Print program version information on stdout.  This option takes precedence over other options on the command line.
+              Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version  of
+              the Linux Toolkit you are using.
+
+ARGUMENTS
+       pib-file
+              An Atheros parameter filename.  Only one parameter file can be edited at a time and so care must be taken to avoid
+              the use of wildcard filenames.  Parameter files usually have a .pib extension but this program makes no assumption
+              based on filename and does not enforce any filename conventions.
+
+SCHEMA
+       The official Atheros XML PIB Edit schema follows.  It defines general instruction file structure and the elements used to
+       edit PIB files.  This file should be a controlled document and instruction files should always be  validated  against  it
+       before using them to edit a PIB file.  An explanation of this file appears below.
+
+          &lt;?xml version=’1.0’ encoding=’iso-8859-1’?&gt;
+          &lt;xs:schema xmlns:xs=’http://www.w3.org/2001/XMLSchema’ elementFormDefault=’qualified’&gt;
+               &lt;xs:element name=’pib’&gt;
+                       &lt;xs:complexType&gt;
+                               &lt;xs:sequence&gt;
+                                       &lt;xs:element maxOccurs=’unbounded’ ref=’object’/&gt;
+                                       &lt;/xs:sequence&gt;
+                               &lt;/xs:complexType&gt;
+                       &lt;/xs:element&gt;
+               &lt;xs:element name=’object’&gt;
+                       &lt;xs:complexType&gt;
+                               &lt;xs:attribute name=’name’ use=’required’ type=’xs:NCName’/&gt;
+                               &lt;xs:sequence&gt;
+                                       &lt;xs:sequence&gt;
+                                               &lt;xs:element ref=’offset’/&gt;
+                                               &lt;xs:element ref=’length’/&gt;
+                                               &lt;/xs:sequence&gt;
+                                       &lt;xs:choice&gt;
+                                               &lt;xs:element ref=’array’/&gt;
+                                               &lt;xs:element ref=’dataString’/&gt;
+                                               &lt;xs:element ref=’dataHuge’/&gt;
+                                               &lt;xs:element ref=’dataLong’/&gt;
+                                               &lt;xs:element ref=’dataWord’/&gt;
+                                               &lt;xs:element ref=’dataByte’/&gt;
+                                               &lt;/xs:choice&gt;
+                                       &lt;/xs:sequence&gt;
+                               &lt;/xs:complexType&gt;
+                       &lt;/xs:element&gt;
+               &lt;xs:element name=’length’ type=’xs:positiveInteger’/&gt;
+               &lt;xs:element name=’offset’ type=’xs:hexBinary’/&gt;
+               &lt;xs:element name=’array’&gt;
+                       &lt;xs:complexType&gt;
+                               &lt;xs:choice maxOccurs=’unbounded’&gt;
+                                       &lt;xs:element ref=’dataByte’/&gt;
+                                       &lt;xs:element ref=’dataHex’/&gt;
+                                       &lt;/xs:choice&gt;
+                               &lt;/xs:complexType&gt;
+                       &lt;/xs:element&gt;
+               &lt;xs:element name=’dataString’ type=’xs:string’/&gt;
+               &lt;xs:element name=’dataHuge’ type=’xs:unsignedLong’/&gt;
+               &lt;xs:element name=’dataLong’ type=’xs:unsignedInt’/&gt;
+               &lt;xs:element name=’dataWord’ type=’xs:unsignedShort’/&gt;
+               &lt;xs:element name=’dataByte’ type=’xs:unsignedByte’/&gt;
+               &lt;xs:element name=’dataHex’ type=’xs:hexBinary’/&gt;
+               &lt;/xs:schema&gt;
+
+ELEMENTS
+       &lt;pib&gt;  The Parameter Information Block subject to edit.  There is exactly one pib defined in an instruction file.
+
+       &lt;object&gt;
+              A  data region withn a pib.  There must be at least one object defined inside a pib.  Each object has an offset, a
+              length and data where data is expressed as one dataString, a dataByte, a dataHex or an array as  described  below.
+              The name attribute optional but may be used for clarity or for reporting purposes.
+
+       &lt;offset&gt;
+              The  relative  position  of the object in bytes expressed in hexadecimal.  The offset plus the length of an object
+              cannot exceed PIB length or an error will occur.  The offset and length element can appear  in  either  order  but
+              both must appear before the data element.  The offset element is required.
+
+       &lt;length&gt;
+              The  extent  of  the  object  expressed  in  decimal bytes.  The offset plus length of an object cannot exceed PIB
+              length.  The the offset and length elements can occur in either order but both must precede the data element.  The
+              length  element  is required for elements array and dataString but may be omitted for elements dataHuge, dataLong,
+              dataWord and dataByte.
+
+       &lt;array&gt;
+              A sequence of dataByte and/or dataHex elements.  The implied length is determined by array members but must  equal
+              the object length attribute or an error will occur.  A dataString is illegal inside an array.
+
+       &lt;dataString&gt;
+              Any  sequence  of  printable  characters.  The implied length is 1 byte longer than the number of characters.  The
+              string will be truncated or padded with NUL bytes  to  match  the  object  length  attribute.   An  object  length
+              attribute of 0 stores one NUL byte.  A dataString element is illegal within an array block.
+
+       &lt;dataHuge&gt;
+              A  unsigned  decimal  integer string that represents any 64 bit binary value.  The implied length is 8 bytes.  The
+              object length attribute is ignored and may be omitted.
+
+       &lt;dataLong&gt;
+              A unsigned decimal integer string that represents any 32 bit binary value.  The implied length is  4  bytes.   The
+              object length attribute is ignored and may be omitted.
+
+       &lt;dataWord&gt;
+              A  unsigned  decimal  integer string that represents any 16 bit binary value.  The implied length is 2 bytes.  The
+              object length attribute is ignored and may be omitted.
+
+       &lt;dataByte&gt;
+              An unsigned  decimal digit string that represents any 8 bit binary value.  The implied  length  is  1  byte.   The
+              object length attribute is ignored and may be omitted.
+
+       &lt;dataHex&gt;
+              A  hexadecimal  digit  string that represents one byte for each digit pair (octet) present.  There must be an even
+              number of digits or an error will occur.  The resulting length must equal  the  object  length  unless  the  value
+              appears inside an array.  Inside an array, the resulting length must not exceed the remaining array length.
+
+PROCESS
+       The  program  reads  one PIB file and replaces selected values with new ones, computes the new checksum and re-writes the
+       file.  New values are defined by offset, length, format and value.  The object name  is  actually  irrelevant.   Critical
+       values  are the offset, length and data type/value.  Obviously, care must be taken when specifying offsets and lengths to
+       avoid editing objects incorrectly.
+
+INSTRUCTIONS
+       An example instruction file follows.  It references the Qualcomm Atheros XML PIB Edit schema file, piboffset.xsd, that is
+       shown  above  so  that  a  validating  parser can find the schema and perform document checks.  The remainder of the file
+       describes a series of object names, offsets, lengths and values that describe the edits to be performed.
+
+          &lt;pib xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;
+               xsi:noNamespaceSchemaLocation=&quot;piboffset.xsd&quot;&gt;
+               &lt;object name=&quot;HFID_Manufacturer&quot;&gt;
+                       &lt;offset&gt;0024&lt;/offset&gt;
+                       &lt;length&gt;64&lt;/length&gt;
+                       &lt;dataString&gt;Atheros HomePlug AV Device&lt;/dataString&gt;
+               &lt;/object&gt;
+               &lt;object name=&quot;HFID_User&quot;&gt;
+                       &lt;length&gt;64&lt;/length&gt;
+                       &lt;offset&gt;0074&lt;/offset&gt;
+                       &lt;dataString&gt;Atheros&lt;/dataString&gt;
+               &lt;/object&gt;
+               &lt;object name=&quot;MDURole&quot;&gt;
+                       &lt;offset&gt;0101&lt;/offset&gt;
+                       &lt;dataByte&gt;0&lt;/dataByte&gt;
+               &lt;/object&gt;
+               &lt;object name=&quot;PriorityTTl&quot;&gt;
+                       &lt;offset&gt;0210&lt;/offset&gt;
+                       &lt;length&gt;16&lt;/length&gt;
+                       &lt;array&gt;
+                               &lt;dataHex&gt;80841E008084&lt;/dataHex&gt;
+                               &lt;dataHex&gt;1e&lt;/dataHex&gt;
+                               &lt;dataByte&gt;0&lt;/dataByte&gt;
+                               &lt;dataHex&gt;&lt;/dataHex&gt;
+                               &lt;dataHex&gt;&lt;/dataHex&gt;
+                               &lt;dataHex&gt;&lt;/dataHex&gt;
+                               &lt;dataHex&gt;&lt;/dataHex&gt;
+                               &lt;dataHex&gt;C0&lt;/dataHex&gt;
+                               &lt;dataByte&gt;198&lt;/dataByte&gt;
+                               &lt;dataHex&gt;2d&lt;/dataHex&gt;
+                               &lt;dataHex&gt;00&lt;/dataHex&gt;
+                       &lt;/array&gt;
+               &lt;/object&gt;
+               &lt;object name=&quot;VLANPrioTOSPrecMatrix&quot;&gt;
+                       &lt;length&gt;4&lt;/length&gt;
+                       &lt;offset&gt;0224&lt;/offset&gt;
+                       &lt;array&gt;
+                               &lt;dataByte&gt;65&lt;/dataByte&gt;
+                               &lt;dataByte&gt;250&lt;/dataByte&gt;
+                               &lt;dataHex&gt;&lt;/dataHex&gt;
+                               &lt;dataHex&gt;Fa&lt;/dataHex&gt;
+                       &lt;/array&gt;
+               &lt;/object&gt;
+               &lt;object name=&quot;EnableLEDThroughputIndicate&quot;&gt;
+                       &lt;length&gt;1&lt;/length&gt;
+                       &lt;offset&gt;1E94&lt;/offset&gt;
+                       &lt;dataByte&gt;0&lt;/dataByte&gt;
+               &lt;/object&gt;
+               &lt;object name=&quot;HFID_AVLN&quot;&gt;
+                       &lt;length&gt;64&lt;/length&gt;
+                       &lt;offset&gt;00B4&lt;/offset&gt;
+                       &lt;dataString&gt;Atheros-Net&lt;/dataString&gt;
+               &lt;/object&gt;
+          &lt;/pib&gt;
+
+EXAMPLES
+       The following example reads PIB file abc.pib and edits it according to instructions found in XML file local.xml.  The PIB
+       file is always specified first, followed by one or more XML instruction files.
+
+               # xml2pib abc.pib local.xml
+
+       The  following  example reads PIB file abc.pib and edits it according to three XML instruction files, in the order speci‐
+       fied.  Order can be critical since later edits could over-write earlier edits.
+
+               # xml2pib abc.pib standard.xml custom.xml errata.xml
+
+       The following example does nothing because no instruction files are specified.
+
+               # xml2pib abc.pib
+
+SEE ALSO
+       chkpib(7), chkpib2(7), getpib(7), modpib(1), pib2xml(1), pibcomp(1), pibdump(1), setpib(1)
+
+CREDITS
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                               xml2pib(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='weeder.1.html' title=' weeder.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='toolkit.html' title=' Index '>NEXT</a>]
+			</div>
+		</body>
+	</html>

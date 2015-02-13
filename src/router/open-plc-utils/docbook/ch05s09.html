@@ -1,0 +1,27 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Upgrading PIB Only</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="ch05.html" title="Chapter 5.  Procedures"><link rel="prev" href="ch05s08.html" title="Upgrading Firmware and PIB"><link rel="next" href="ch05s10.html" title="Starting a Device"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">
+			Upgrading PIB Only
+			</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch05s08.html">Prev</a> </td><th width="60%" align="center">Chapter 5. 
+		Procedures 
+		</th><td width="20%" align="right"> <a accesskey="n" href="ch05s10.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="procedure-upgrade-pib"></a>
+			Upgrading PIB Only
+			</h2></div></div></div><p>
+			When flashing a <acronym class="acronym">PIB</acronym> to the local device, the <acronym class="acronym">PIB</acronym> <acronym class="acronym">DAK</acronym> must match that of the local device or you will get a “<span class="quote">DAK Not Zero</span>” error message. This message is incorrect and should probably read “<span class="quote">DAK Mismatch</span>”. The following two toolkit commands should prevent this error from occuring on Linux. The first command reads the actual <acronym class="acronym">MAC</acronym> (<strong class="userinput"><code>-A</code></strong>) and <acronym class="acronym">DAK</acronym> (<strong class="userinput"><code>-D</code></strong>) from the device using program <a class="ulink" href="int6kid.7.html" target="_top">int6kid</a> and inserts them on the command lise as <a class="ulink" href="modpib.7.html" target="_top">modpib</a> arguments using options <strong class="userinput"><code>-M</code></strong> and <strong class="userinput"><code>-D</code></strong>. We need not include the station <acronym class="acronym">MAC</acronym> address on the <a class="ulink" href="int6k.7.html" target="_top">int6k</a> command line because the device is local, but we could include it.
+			</p><div class="example"><a name="idp11047728"></a><p class="title"><b>Example 5.16. 
+				Upgrade local device PIB
+				</b></p><div class="example-contents"><pre class="screen">
+ # modpib abc.pib -ieth1 -M $(int6kid -ieth1 -A) -D $(int6kid -ieth1 -D)
+ # int6k -P abc.pib -C pib 
+ </pre></div></div><br class="example-break"><p>
+			When flashing a <acronym class="acronym">PIB</acronym> to a remote device, the <acronym class="acronym">PIB</acronym> <acronym class="acronym">DAK</acronym> must be all zeros or you will get a “<span class="quote">DAK Not Zero</span>” error message. This message occurs because the <span class="productname">HomePlug</span>™ AV Specification does not permit a <acronym class="acronym">DAK</acronym> to be transmitted over powerline in any form. The following two toolkit commands should prevent this error on Linux. We must include the device <acronym class="acronym">MAC</acronym> on the command line when invoking each program because the device is remote. Notice that symbol <code class="constant">none</code> can be used as shorthand <code class="constant">00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00</code> when specifying the <acronym class="acronym">DAK</acronym>.
+			</p><div class="example"><a name="idp11051560"></a><p class="title"><b>Example 5.17. 
+				Upgrade remote PIB
+				</b></p><div class="example-contents"><pre class="screen">
+ # modpib abc.pib -ieth1 -M $(int6kid -ieth1 -A 00B052BEEF03) -D none 
+ # int6k -P abc.pib -C2 00B052BEEF03
+ </pre></div></div><br class="example-break"><p>
+			The <acronym class="acronym">MAC</acronym> address stored in the <acronym class="acronym">PIB</acronym> can have any value but it is good practice to preserve the original value. This avoids the common mistake of flashing multiple network stations with the same <acronym class="acronym">MAC</acronym> address because the PIB was not updated. 
+			</p></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch05s08.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="ch05.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch05s10.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">
+			Upgrading Firmware and PIB
+			 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 
+			Starting a Device
+			</td></tr></table></div></body></html>0

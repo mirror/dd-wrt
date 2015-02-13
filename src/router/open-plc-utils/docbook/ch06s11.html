@@ -1,0 +1,21 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Reading PHY Rates</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="ch06.html" title="Chapter 6.  Scripting"><link rel="prev" href="ch06s10.html" title="Generating Powerline Traffic"><link rel="next" href="ch06s12.html" title="User Interaction"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">
+			Reading PHY Rates
+			</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch06s10.html">Prev</a> </td><th width="60%" align="center">Chapter 6. 
+		Scripting
+		</th><td width="20%" align="right"> <a accesskey="n" href="ch06s12.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="scripting-phy-rates"></a>
+			Reading PHY Rates
+			</h2></div></div></div><p>
+			Atheros powerline devices automatically compute their average PHY rate which can be read and displayed. Average PHY rate is an indication of performance and can be affected by attenuation and ambient powerline noise. Program <a class="ulink" href="int6krate.7.html" target="_top">int6krate</a> is designed to report the average PHY rate.
+			</p><pre class="programlisting">
+int6krate -xni ${NIC2}
+if [ ${?} != 0 ]; then
+        echo "Network did not converge"
+        exit 1
+fi
+</pre><p>
+			The example above uses <a class="ulink" href="int6krate.7.html" target="_top">int6krate</a> to read and display the average TX and RX PHY rates for the device connected to Ethernet interface <code class="varname">NIC2</code>. Option <strong class="userinput"><code>-n</code></strong> requests PHY rates. Option <strong class="userinput"><code>-x</code></strong> exits with a status that can be tested in the subsequent “<span class="quote">if</span>” statement. Output appears in fix-width columns to facilitate post-processing. Other ways to obtain PHY rates are “<span class="quote"><strong class="userinput"><code>int6k -m</code></strong></span>” and “<span class="quote"><strong class="userinput"><code>int6kstat -t</code></strong></span>”.
+			</p></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch06s10.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="ch06.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch06s12.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">
+			Generating Powerline Traffic
+			 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 
+			User Interaction
+			</td></tr></table></div></body></html>0

@@ -1,0 +1,227 @@
+	<section id='slac-config'>
+		<title>
+			SLAC Configuration
+			</title>
+		<para>
+			Avitar can be used to configure a PLC device as either a normal PLC station or a <acronym>SLAC</acronym> <acronym>PEV-PLC</acronym> or <acronym>SLAC</acronym> <acronym>EVSE-PLC</acronym> station. In doing so, <application>Avitar</application> changes several <acronym>PIB</acronym> values at the same time. This section illustrates how to configurat a <acronym>PIB</acronym> the same way using the toolkit.
+			</para>
+		<para>
+			The HomePlug Green PHY Specification refers to the <constant>APCM_SET_CCO.REQ</constant> and <constant>APCM_CONF_SLAC</constant> primatives in the SLAC protocol description. These are virtual operations to be implemented by the user. In both cases, one must read the <acronym>PIB</acronym> from the <acronym>PLC</acronym> device, edit the <acronym>PIB</acronym>, recompute <acronym>PIB</acronym> checksums and write the <acronym>PIB</acronym> back to the <acronym>PLC</acronym> device. This can be done manually, using <application>Avitar</application>, or in a script, using the Powerline Toolkit as shown below, or programatically, using custom software.
+			</para>
+		<table>
+			<title>
+				PEV-PLC PIB Settings
+				</title>
+			<tgroup cols="3">
+				<colspec colname="pev-plc-offset"/>
+				<colspec colname="pev-plc-length"/>
+				<colspec colname="pev-plc-symbol"/>
+				<colspec colname="pev-plc-string"/>
+				<thead>
+					<row>
+						<entry>
+							OFFSET
+							</entry>
+						<entry>
+							LENGTH
+							</entry>
+						<entry>
+							SYMBOL
+							</entry>
+						<entry>
+							DESCRIPTION
+							</entry>
+						</row>
+					</thead>
+				<tbody>
+					<row>
+						<entry>
+							0000F4
+							</entry>
+						<entry>
+							1
+							</entry>
+						<entry>
+							CCoSelection
+							</entry>
+						<entry>
+							1: This sets CCo Selection to Never;
+							</entry>
+						</row>
+					<row>
+						<entry>
+							001653
+							</entry>
+						<entry>
+							1
+							</entry>
+						<entry>
+							SLAC_EnableMode
+							</entry>
+						<entry>
+							1: This sets SLAC Selection to PEV;
+							</entry>
+						</row>
+					<row>
+						<entry>
+							001C98
+							</entry>
+						<entry>
+							4
+							</entry>
+						<entry>
+							LowLinkSpeed_kbps
+							</entry>
+						<entry>
+							10240
+							</entry>
+						</row>
+					<row>
+						<entry>
+							001C9C
+							</entry>
+						<entry>
+							4
+							</entry>
+						<entry>
+							HighLinkSpeed_kbps
+							</entry>
+						<entry>
+							102400
+							</entry>
+						</row>
+					</tbody>
+				</tgroup>
+			</table>
+		<para>
+			</para>
+		<para>
+			The following shell script converts a factory <acronym>PIB</acronym> to a <acronym>SLAC</acronym> <acronym>PEV</acronym> by setting the CCO Mode to Never and the <acronym>SLAC</acronym> Mode to <acronym>PEV</acronym>. The User HFID is set to <quote>PEV</quote> for role identification, optionally. This <acronym>PIB</acronym> must be written into PEV-PLC flash memory for proper operation.
+			</para>
+<screen>
+#!/bin/sh
+# file: pev.sh
+# ========================================================================
+# convert a factory PIB to a SLAC PEV PIB by changing these PIB settings;
+# ------------------------------------------------------------------------
+setpib ${1} 74 hfid "PEV"
+setpib ${1} F4 byte 1
+setpib ${1} 1653 byte 1
+setpib ${1} 1C98 long 10240 long 102400
+</screen>
+		<table>
+			<title>
+				PEV-EVSE PIB Settings
+				</title>
+			<tgroup cols="4">
+				<colspec colname="pev-plc-offset"/>
+				<colspec colname="pev-plc-length"/>
+				<colspec colname="pev-plc-symbol"/>
+				<colspec colname="pev-plc-string"/>
+				<thead>
+					<row>
+						<entry>
+							OFFSET
+							</entry>
+						<entry>
+							LENGTH
+							</entry>
+						<entry>
+							SYMBOL
+							</entry>
+						<entry>
+							DESCRIPTION
+							</entry>
+						</row>
+					</thead>
+				<tbody>
+					<row>
+						<entry>
+							0000F4
+							</entry>
+						<entry>
+							1
+							</entry>
+						<entry>
+							CcoSelection
+							</entry>
+						<entry>
+							2: This sets CCo Mode to Always;
+							</entry>
+						</row>
+					<row>
+						<entry>
+							001653
+							</entry>
+						<entry>
+							1
+							</entry>
+						<entry>
+							SLAC_EnableMode
+							</entry>
+						<entry>
+							2: This sets SLAC Mode to EVSE;
+							</entry>
+						</row>
+					<row>
+						<entry>
+							001C98
+							</entry>
+						<entry>
+							4
+							</entry>
+						<entry>
+							LowLinkSpeed_kbps
+							</entry>
+						<entry>
+							10240
+							</entry>
+						</row>
+					<row>
+						<entry>
+							001C9C
+							</entry>
+						<entry>
+							4
+							</entry>
+						<entry>
+							HighLinkSpeed_kbps
+							</entry>
+						<entry>
+							102400
+							</entry>
+						</row>
+					</tbody>
+				</tgroup>
+			</table>
+		<para>
+			The following shell script converts a factory <acronym>PIB</acronym> to a <acronym>SLAC</acronym> <acronym>EVSE</acronym> by setting the CCO Mode to Always and the <acronym>SLAC</acronym> Mode to <acronym>EVSE</acronym>. The User HFID is set to <quote>EVSE</quote> for role identification, optionally. This <acronym>PIB</acronym> must be written into EVSE-PLC flash memory for proper operation.
+			</para>
+<screen>
+#!/bin/sh
+# file: evse.sh
+# ========================================================================
+# convert a factory PIB to a SLAC EVSE PIB by changing these PIB settings;
+# ------------------------------------------------------------------------
+setpib ${1} 74 hfid "EVSE"
+setpib ${1} F4 byte 2
+setpib ${1} 1653 byte 2
+setpib ${1} 1C98 long 10240 long 102400
+</screen>
+
+		<section id='slac-apcm-set-cco'>
+			<title>
+				APCM_SET_CCO Primative
+				</title>
+			<para>
+				This primative configures a PLC state by reading PIB from PLC, changing CCoSelection, computing new PIB checksum then writing the PIB back to PLC. It can be performed manually using Avitar, in a script using the Powerline Toolkit or programatically using custom software.
+				</para>
+			</section>
+		<section id='slac-apcm-config-slac'>
+			<title>
+				APCM_CONFIG_SLAC Primative
+				</title>
+			<para>
+				</para>
+			</section>
+		</section>

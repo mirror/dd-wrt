@@ -1,0 +1,55 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Firmware Components</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="ch04.html" title="Chapter 4.  Firmware"><link rel="prev" href="ch04.html" title="Chapter 4.  Firmware"><link rel="next" href="ch04s03.html" title="Architecture Overview"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Firmware Components</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch04.html">Prev</a> </td><th width="60%" align="center">Chapter 4. 
+		Firmware 
+		</th><td width="20%" align="right"> <a accesskey="n" href="ch04s03.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="firmware-components"></a>Firmware Components</h2></div></div></div><p>
+			Device initialization involves the following components. They are described here and then referenced throughout the toolkit documentation. You may want to read and re-read this page. 
+			</p><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="firmware-bootloader"></a>
+				Bootloader 
+				</h3></div></div></div><p>
+				The <span class="application">Bootloader</span> is permanent software burned into the chipset. The <span class="productname">INT6000</span>™ and <span class="productname">INT6300</span>™ both have a <span class="application">Bootloader</span> program but they behave differently because the <span class="productname">INT6000</span>™ needs flash memory and the <span class="productname">INT6300</span>™ does not. Neither the <span class="productname">INT6000</span>™ <span class="application">Bootloader</span> nor the <span class="productname">INT6300</span>™ <span class="application">Bootloader</span> can write to flash memory.
+				</p><p>
+				On startup,  the <span class="productname">INT6000</span>™ <span class="application">Bootloader</span> attempts to load runtime firmware from flash memory into <acronym class="acronym">SDRAM</acronym>. If flash memory is not available,  or the runtime firmware stored there cannot be loaded,  then the <span class="productname">INT6000</span>™ <span class="application">Bootloader</span> cannot continue so the device cannot function.
+				</p><p>
+				On startup,  the <span class="productname">INT6300</span>™ <span class="application">Bootloader</span> attempts to load runtime firmware from flash memory into <acronym class="acronym">SDRAM</acronym>. If flash memory is not available,  or the runtime firmware stored there cannot be loaded,  then <span class="application">Bootloader</span> will request runtime firmware from the local host processor.
+				</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="firmware-softloader"></a>
+				Softloader 
+				</h3></div></div></div><p>
+				An optional program stored in flash memory in place of runtime firmware. This program is used on the <span class="productname">INT6000</span>™ to support the Boot From Host operation, if needed. It is not used on the <span class="productname">INT6300</span>™ because the <span class="productname">INT6300</span>™ <span class="application">Bootloader</span> now performs similar functions. The Softloader cannot write to flash memory.
+				</p><p>
+				On startup,  the <span class="productname">INT6000</span>™ <span class="application">Bootloader</span> loads the <span class="application">Softloader</span> from flash memory into <acronym class="acronym">SDRAM</acronym>,  as it would do with runtime firmware. The <span class="application">Softloader</span> then requests the actual runtime firmware from local host. 
+				</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="firmware-memory-configuration"></a>
+				Memory Configuration Parameters
+				</h3></div></div></div><p>
+				A small block of information that describes the type, size and characteristics of the <acronym class="acronym">SDRAM</acronym> available for the benefit of the <acronym class="acronym">Bootloader</acronym>. On the INT6000, <acronym class="acronym">SDRAM</acronym> configuration must be stored in flash memory. On the INT6300, it may be stored in flash memory or on the local host. The <span class="productname">INT6300</span>™ <span class="application">Bootloader</span> attempts to read configuration information from flash memory when it is present; otherwise, it requests that information from the local host using a VS_HST_ACTION message and so the host must store this information until it is requested.  
+				</p><p>
+				There are two <acronym class="acronym">SDRAM</acronym> configuration file formats. The first format is used by the <span class="application">Windows Device Manager</span> and the <a class="ulink" href="int6k2.7.html" target="_top">
+					<span class="application">int6k2</span>
+				</a> program and typically has a <code class="filename">.config</code> file extension. The second format is used by the <a class="ulink" href="int6k.7.html" target="_top">
+					<span class="application">int6k</span>
+				</a> program and <a class="ulink" href="int6kf.7.html" target="_top">
+					<span class="application">int6kf</span>
+				</a> program and typically has a <code class="filename">.cfg</code> file extension. The latter format is more robust and should eventually replace the format.
+				</p><p>
+				The Windows Device Manager form consists of 64 hexadecimal ASCII characters. Files are at least 64 bytes but only the first 64 bytes are used. Files can be modified using a text editor. ASCII hex to binary conversion and checksum computation is needed on input. The <a class="ulink" href="config2cfg.7.html" target="_top">
+					<span class="application">config2cfg</span>
+				</a> program can be used to convert this format to Open Powerline Toolkit format. 
+				</p><p>
+				The Open Powerline Toolkit format consists of 32 binary bytes plus a 4 byte checksum. The file size is exactly 36 bytes. No conversion or checksum computation is needed on input. The <a class="ulink" href="chkcfg.7.html" target="_top">
+					<span class="application">chkcfg</span>
+				</a> program can be used the validate this file format because it contains a checksum. 
+				</p><p>
+				The <span class="productname">INT6400</span>™ chipset does not need a memory configuration parameter file because it has a different memory controller than earlier chipsets. <acronym class="acronym">SDRAM</acronym> is now configured dynamically by an applets stored in the <code class="filename">.nvm</code> file.
+				</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="firmware-runtime"></a>
+				Runtime Firmware (MAC Software)
+				</h3></div></div></div><p>
+				The executable image that determines <span class="productname">INT6000</span>™ or <span class="productname">INT6300</span>™ capability and functionality. Runtime firmware refers to any executable image except the <a class="link" href="ch04s02.html#firmware-bootloader" title="Bootloader">Bootloader</a> which is considered to be boot firmware. Firmware files have a .nvm extension and can contain multiple firmware images. One of these images could be the parameter information block but Atheros currently distributes that as a separate file. The <a class="ulink" href="chknvm.7.html" target="_top">chknvm</a> program can be used to detect obsolete or corrupt .nvm files. Runtime firmware can write to flash memory and must be running in order to re-program the chipset. 
+				</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="firmware-configuration"></a>
+				Parameter Information Block (PIB)
+				</h3></div></div></div><p>
+				The configuration image that determines device network identity, functional capability and operational mode. The PIB structure often changes from one major firmware release to the next and often is not portable across major releases. Parameter information files have a <code class="filename">.pib</code> extension by convention and contain one parameter set. The <a class="ulink" href="chkpib.7.html" target="_top">chkpib</a> program can be used to detect obsolete or corrupt PIB files.
+				</p><p>
+				Recent firmware releases support two <acronym class="acronym">PIB</acronym> images in flash memory: the Factory <acronym class="acronym">PIB</acronym> and the User <acronym class="acronym">PIB</acronym>. The Factory <acronym class="acronym">PIB</acronym> is the first <acronym class="acronym">PIB</acronym> image written to flash memory. Once written, the Factory <acronym class="acronym">PIB</acronym> cannot be changed without special software. The User <acronym class="acronym">PIB</acronym> is created and over-written whenever the device needs to save new <acronym class="acronym">PIB</acronym> parameters. Factory default values are restored by erasing the User <acronym class="acronym">PIB</acronym> and rebooting the device. When a device reboots, it attempts to load the User <acronym class="acronym">PIB</acronym> from flash memory. Failing that, it attempts to load the Factory <acronym class="acronym">PIB</acronym> from flash memory. Failing that, it loads a Default <acronym class="acronym">PIB</acronym> having minimum functionality. The loaded <acronym class="acronym">PIB</acronym> becomes the Working <acronym class="acronym">PIB</acronym> and determines runtime device identity and behavior. 
+				</p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch04.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="ch04.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch04s03.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Chapter 4. 
+		Firmware 
+		 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 
+			Architecture Overview 
+			</td></tr></table></div></body></html>0

@@ -1,0 +1,111 @@
+.TH pibrump 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+pibrump - Classification Rule Dump Utility                      
+
+.SH SYNOPSIS
+.BR pibrump
+.RI [ options ]
+.IR file
+.RI [ file ]
+[...]
+
+.SH DESCRIPTION
+Read classifier rules stored in a PIB file and print them on stdout in a format similar to the command line for program \fBint6krule\fR.
+The output can be read by program \fBpibruin\fR for insertion into another PIB file.
+The program name is short for "\fBru\fRle du\fBmp\fR".
+
+.PP
+This program is part of the Qualcomm Atheros Powerline Toolkit.
+See the \fBAMP\fR man page for an overview and installation instructions.
+
+.SH OPTIONS
+
+.TP
+.RB - q
+Suppresses comments used to group classification rules.
+
+.TP
+.RB - v
+Print additional information on stdout.
+Presently, this option has no effect.
+
+.TP
+.RB - ? ,-- help
+Print program help summary on stdout.
+This option takes precedence over other options on the command line.
+
+.TP
+.RB - ! ,-- version
+Print program version information on stdout.
+This option takes precedence over other options on the command line.
+Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of the Linux Toolkit you are using.
+
+.SH ARGUMENTS
+
+.TP
+.IR file
+The name of a valid Atheros runtime parameter file.
+The file is not modified by this program.
+The file must exist and be a valid runtime parameter file or errors will occur.
+By convention, runtime parameter files have a \fB.pib\fR extention but this program does not enforce that convention.
+
+.SH DISCLAIMER
+PIB file structure and content is proprietary to Qualcomm Atheros, Ocala FL USA.
+Consequently, public information is not available.
+Qualcomm Atheros reserves the right to change the file structure or content in future firmware releases without any obligation to notify or compensate users of this program.
+
+.SH EXAMPLES
+The following example prints the classifier rules stored in file \fBabc.pib\fR on stdout.
+Individual rules are printed in a format that is essentially the same as that used to enter rules using program \fBint6krule\fR.
+Rules are grouped by their category using comments.
+
+.PP
+   > pibrump abc.pib
+   # auto connection rules:
+   StripRX Any VLANID Is 5 VLANID Is 10 VLANID Is 15 add perm
+   StripRX Any VLANID Is 20 add perm
+   CAP1 Any VLANID Is 5 VLANID Is 10 VLANID Is 15 add perm
+   # priority mapping rules:
+   CAP1 Any VLANID Is 20 add perm
+   DropRX Any VLANID Is 25 add perm
+
+.PP
+The next example prints the classifier rules stored in file \fBdef.pib\fR but output is a huge disappointment because there are no rules, much like a Rambo movie.
+
+.PP
+   > pibrump def.pib
+   # auto connection rules:
+   # priority mapping rules:
+
+.PP
+The next example shows a case where the the user has selected two rules from the first example and used them as input to program \fBint6krule\fR.
+There is no PIB file involved here because an MME is sent directly to the device with each command and the device will reset each time.
+There are times when you may not want to set rules this way.
+
+.PP
+   > int6krule StripRX Any VLANID Is 5 VLANID Is 10 VLANID Is 15 add perm
+   # int6krule CAP1 Any VLANID Is 20 add perm
+
+.PP
+The next example reads classification rules from file \fBabc.pib\fR and write them to file \fBrules.txt\fR instead of the console.
+The rules are then read from file \fBrules.txt\fR and written into file \fBdef.pib\fR using program \fBpibruin\fR.
+This procedure can be used to distribute a given rule set to other toolkit users.
+
+.PP
+   > pibrump abc.def > rules.txt
+   # pibruin < rules.txt def.pib
+
+.PP
+The next example reads classification rules directly from file \fBabc.pib\fR and writes them directly into file \fBdef.pib\fR using program \fBpibruin\fR.
+
+.PP
+   > pibrump abc.pib | pibruin def.pib
+
+.SH SEE ALSO
+.BR int6krule (7),
+.BR pibruin (7 )
+
+.SH CREDITS
+ Nathaniel Houghton <nhoughto@qca.qualcomm.com>
+

@@ -1,0 +1,125 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			int6kmdio2.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='int6kmdio.1.html' title=' int6kmdio.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='int6kmod.1.html' title=' int6kmod.1 '>NEXT</a>]
+			</div>
+<pre>
+int6kmdio2(1)                                Qualcomm Atheros Open Powerline Toolkit                               int6kmdio2(1)
+
+NAME
+       int6kmdio2 - Qualcomm Atheros 32-bit MDIO Register Editor
+
+SYNOPSIS
+       int6kmdio2 [options] [device] [device] [...]
+
+DESCRIPTION
+       Read  or  write  the  global MDIO registers on an Atheros powerline device using multiple VS_MDIO_COMMAND vendor-specific
+       management messages.  Commands are entered using 32-bit register and data  values  then  converted  to  three  equivalent
+       16-bit  commands.   The  default operation is to read a register.  Registers are written only if data is specified on the
+       command line.
+
+       This program writes MDIO instructions using 802.3ae Clause 45 (address, data and mask) format.  See program int6kmdio for
+       a similar program to write instructions using 802.3 Clause 22 (phy, reg, data and mask) format.
+
+       This program is deprecated and may be removed in future toolkit releases.  Use program plcmdio32 instead.
+
+OPTIONS
+       -a address
+              The  19-bit  global  register  address.   Some  devices  may not support all possible addresses.  Addresses may be
+              expressed in decimal, hexadecimal or binary notation.  Hexadecimal values must be  prefixed  with  &quot;0x&quot;  or  &quot;0X&quot;.
+              Binary values must be prefixed with &quot;0b&quot; or &quot;0B&quot;.
+
+       -d data
+              A  32-bit  data  value  to be inserted into the specified register.  The specified data value is written when this
+              option is present; otherwise the specified register is read and the content is  displayed.   Data  values  may  be
+              expressed  in decimal, hexadecimal or binary notation.  Hexadecimal values are prefixed with &quot;0x&quot; or &quot;0X&quot;.  Binary
+              values are prefixed with &quot;0b&quot; or &quot;0B&quot;.
+
+       -e     Redirects stderr messages to stdout.  By convention status and error messages are printed on stderr while  primary
+              program output is printed on stdout.  This option prints all output on stdout in cases where this is desired.
+
+       -h     Write high order-byte before low-order byte.  This option is only useful on some architectures.
+
+       -i interface
+              Select  the host Ethernet interface.  All requests are sent via this host interface and only reponses received via
+              this host interface are recognized.  The default interface is eth1 because most people use eth0 as their principle
+              network  connection;  however,  if  environment  string &quot;PLC&quot; is defined then it takes precedence over the default
+              interface.  This option then takes precedence over either default.
+
+       -q     Suppresses status messages on stderr.
+
+       -v     Prints additional information on stdout.  In particular, this option dumps outgoing Ethernet packets on stdout.
+
+       -?,--help
+              Displays program help information on stderr.  This option takes precedence over all other options on  the  command
+              line except version information.
+
+       -!,--version
+              Displays  program  version information on stderr.  This option takes precedence over all other options on the com‐
+              mand line except help information.  Use this option when sending screen dumps to Atheros technical staff.
+
+ARGUMENTS
+       device The MAC address of some powerline device.  More than one address may be specified.  If more than  one  address  is
+              specified  then  operations  are performed on each device in turn.  The default address is local.  See DEVICES for
+              information about symbolic device addresses.
+
+DEVICES
+       Powerline devices use Ethernet Media Access Control (MAC) addresses.  A MAC address is a 48-bit value entered as 12  hex‐
+       adecimal  digits in upper, lower or mixed character case.  Octets may be separated with colons for clarity.  For example,
+       &quot;00b052000001&quot;, &quot;00:b0:52:00:00:01&quot; and &quot;00b052:000001&quot; are valid and equivalent.
+
+       The following MAC addresses are special and may be entered by name instead of number.
+
+       all    Same as &quot;broadcast&quot;.
+
+       broadcast
+              A synonym for the Ethernet broadcast address, FF:FF:FF:FF:FF:FF.  All devices, whether local,  remote  or  foreign
+              recognize  messages sent to this address.  A remote device is any device at the far end of a powerline connection.
+              A foreign device is any device not manufactured by Atheros.
+
+       local  A synonym for the Qualcomm Atheros vendor specific Local Management Address (LMA), 00:B0:52:00:00:01.   All  local
+              Atheros  devices  recognize  this address but remote and foreign devices do not.  A remote device is any device at
+              the far end of a powerline connection.  A foreign device is any device not manufactured by Atheros.
+
+REFERENCES
+       See the Qualcomm Atheros HomePlug AV Firmware Technical Reference Manual for technical information.
+
+DISCLAIMER
+       Atheros HomePlug AV Vendor Specific Management Message structure and content is proprietary to Qualcomm Atheros, Ocala FL
+       USA.   Consequently,  public  information  may  not  be available.  Qualcomm Atheros reserves the right to modify message
+       structure and content in future firmware releases without any obligation to notify or compensate users of this program.
+
+EXAMPLES
+       None.
+
+SEE ALSO
+       plc(1), int6kmod(1), int6kmdio(1), int6kmdio2(1), mdioblock(1),  mdioblock2(1),  mdiodump(1),  mdiogen(1),  plcmdio16(1),
+       plcmdio32(1)
+
+CREDITS
+        Nathaniel Houghton &lt;nhoughto@qca.qualcomm.com&gt;
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                            int6kmdio2(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='int6kmdio.1.html' title=' int6kmdio.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='int6kmod.1.html' title=' int6kmod.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

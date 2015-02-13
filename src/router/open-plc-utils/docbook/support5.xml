@@ -1,0 +1,76 @@
+<section id="support-message">
+	<title>
+		Message Debug Functions
+		</title>
+	<para>
+		Message debug functions are not needed for proper toolkit operation but they can be useful during development, debugging and testing phases of product development. They are specific to HomePlug AV messages only.
+		</para>
+	<section id="support-mmecode">
+		<title>
+			MMECode
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+				<funcdef>char const * <function>MMECode</function></funcdef>
+				<paramdef>uint16_t <parameter>MMTYPE</parameter></paramdef>
+				<paramdef>uint8_t <parameter>MSTATUS</parameter></paramdef>
+				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Return text that explains the status code for a given Atheros vendor-specific management message. Argument <varname>MMTYPE</varname> is an unsigned integer in the range <constant>0xA000</constant> through <constant>0xAFFF</constant> and must exactly match the <varname>MMTYPE</varname> of the message returning the status code. For example, the <varname>CNF</varname> variant of a message is currently the only variant that has an <varname>MSTATUS</varname> field and so other variants return a default string. The function is declared in <ulink url="mme.h.html">mme.h</ulink> and defined in <ulink url="MMECode.c.html">MMECode.c</ulink>. 
+			</para>
+		<para>
+			Inclusion of this function can increase application size by 3kb because the text associated with all Atheros vendor-specific management messages and errors are included whether needed or not. Conditional compilation statements are provided internally to suppress the full table with a terse substitute.
+			</para>
+		<para>
+			Although the <application>Bootloader</application> and firmware share some common Vendor Specific Management Messages, the two programs may return different codes for a given message and error condition. Where there are conflicts, Bootloader codes take precedence over firmware codes because it is unlikely that users will .issue the same messages to a device running firmware.
+			</para>
+		</section>
+	<section id="support-mmemode">
+		<title>
+			MMEMode
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+				<funcdef>char const * <function>MMEMode</function></funcdef>
+				<paramdef>uint16_t <parameter>MMTYPE</parameter></paramdef>
+				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Return the mode of a given management message type as a string. The mode is determined by the two least significant bits of argument  <varname>MMTYPE</varname>. The mode string will be one of <quote>REQ</quote>, <quote>CNF</quote>,  <quote>IND</quote> or <quote>RSP</quote>. The function is declared in <ulink url="ihp.h.html">ihp.h</ulink> and defined in <ulink url="MMEMode.c.html">MMEMode.c</ulink>. 
+			</para>
+		<para>
+			Most management messages have a request and a confirmation variant while a few have an indication and a response variant. Requests originate from the host and are acknolwedged by a confirmation from the device. Indications originate from a device and are acknowledged by a response from the host.
+			</para>
+		</section>
+	<section id="support-mmename">
+		<title>
+			MMEName
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+				<funcdef>char const * <function>MMEName</function></funcdef>
+				<paramdef>uint16_t <parameter>MMTYPE</parameter></paramdef>
+				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Return the name associated with a given management message type. The name is the mnemonic used to distinguish one message type from another in the <citetitle>HomePlug AV Specification</citetitle> or Atheros <citetitle>Firwmare Technical Reference Manual</citetitle>. Argument <varname>MMTYPE</varname> is an unsigned integer in the range <constant>0x0000</constant> through <constant>0xAFFF</constant>. The request, confirmation, indication and response variants of a management message will all return the same message name. The function is declared in <ulink url="mme.h.html">mme.h</ulink> and defined in <ulink url="MMEName.c.html">MMEName.c</ulink>. 
+			</para>
+		</section>
+	<section id="support-mmepeek">
+		<title>
+			MMEPeek
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+				<funcdef>void <function>MMEPeek</function></funcdef>
+				<paramdef>void const * <parameter>memory</parameter></paramdef>
+				<paramdef>size_t <parameter>extent</parameter></paramdef>
+				<paramdef>FILE *<parameter>fp</parameter></paramdef>
+				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Prints an Atheros vendor-specific management message to stream <constant>fp</constant> in human readable format. Argument <varname>buffer</varname> is the message address and argument <varname>extent</varname> is the message extent in bytes. Output consists of a formatted header showing decoded header. The function is declared in <ulink url="mme.h.html">mme.h</ulink> and defined in <ulink url="MMEPeek.c.html">MMEPeek.c</ulink>. 
+			</para>
+		</section>
+	</section>

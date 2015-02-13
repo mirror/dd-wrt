@@ -1,0 +1,133 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			slac_session.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='slac_connect.c.html' title=' slac_connect.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='slac_structs.c.html' title=' slac_structs.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *
+ *   void slac_session (struct session * session);
+ *
+ *   slac.h
+ *
+ *   print the SLAC session variable if the SLAC_SESSION bit is set 
+ *   in the sesssion variable flagword;
+ *
+ *   macro HEXSTRING is defined in memory.h and is used to reduce the
+ *   number of arguments one must type to invoke function hexstring;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef SLAC_SESSION_SOURCE
+#define SLAC_SESSION_SOURCE
+
+#include &lt;stdio.h&gt;
+
+#include &quot;../tools/memory.h&quot;
+#include &quot;../tools/error.h&quot;
+#include &quot;../tools/flags.h&quot;
+#include &quot;../slac/slac.h&quot;
+
+void slac_session (struct session * session) 
+
+{ 
+	if (_anyset (session-&gt;flags, SLAC_SESSION)) 
+	{ 
+		char string [256]; 
+		debug (0, __func__, &quot;session.RunID %s&quot;, HEXSTRING (string, session-&gt;RunID)); 
+		debug (0, __func__, &quot;session.APPLICATION_TYPE %d&quot;, session-&gt;APPLICATION_TYPE); 
+		debug (0, __func__, &quot;session.SECURITY_TYPE %d&quot;, session-&gt;SECURITY_TYPE); 
+		debug (0, __func__, &quot;session.RESP_TYPE %d&quot;, session-&gt;RESP_TYPE); 
+		debug (0, __func__, &quot;session.NUM_SOUNDS %d&quot;, session-&gt;NUM_SOUNDS); 
+		debug (0, __func__, &quot;session.TIME_OUT %d&quot;, session-&gt;TIME_OUT); 
+		debug (0, __func__, &quot;session.NumGroups %d&quot;, session-&gt;NumGroups); 
+		debug (0, __func__, &quot;session.AAG %s&quot;, hexstring (string, sizeof (string), session-&gt;AAG, sizeof (session-&gt;AAG))); 
+		debug (0, __func__, &quot;session.MSOUND_TARGET %s&quot;, HEXSTRING (string, session-&gt;MSOUND_TARGET)); 
+		debug (0, __func__, &quot;session.FORWARDING_STA %s&quot;, HEXSTRING (string, session-&gt;FORWARDING_STA)); 
+		debug (0, __func__, &quot;session.PEV_ID %s&quot;, HEXSTRING (string, session-&gt;PEV_ID)); 
+		debug (0, __func__, &quot;session.PEV_MAC %s&quot;, HEXSTRING (string, session-&gt;PEV_MAC)); 
+		debug (0, __func__, &quot;session.EVSE_ID %s&quot;, HEXSTRING (string, session-&gt;EVSE_ID)); 
+		debug (0, __func__, &quot;session.EVSE_MAC %s&quot;, HEXSTRING (string, session-&gt;EVSE_MAC)); 
+		debug (0, __func__, &quot;session.RND %s&quot;, HEXSTRING (string, session-&gt;RND)); 
+		debug (0, __func__, &quot;session.NMK %s&quot;, HEXSTRING (string, session-&gt;NMK)); 
+		debug (0, __func__, &quot;session.NID %s&quot;, HEXSTRING (string, session-&gt;NID)); 
+		debug (0, __func__, &quot;session.original_nmk %s&quot;, HEXSTRING (string, session-&gt;original_nmk)); 
+		debug (0, __func__, &quot;session.original_nid %s&quot;, HEXSTRING (string, session-&gt;original_nid)); 
+		debug (0, __func__, &quot;session.state %d&quot;, session-&gt;state); 
+		debug (0, __func__, &quot;session.sounds %d&quot;, session-&gt;sounds); 
+		debug (0, __func__, &quot;session.limit %d&quot;, session-&gt;limit); 
+		debug (0, __func__, &quot;session.pause %d&quot;, session-&gt;pause); 
+		debug (0, __func__, &quot;session.chargetime %d&quot;, session-&gt;chargetime); 
+		debug (0, __func__, &quot;session.settletime %d&quot;, session-&gt;settletime); 
+		debug (0, __func__, &quot;session.counter %d&quot;, session-&gt;counter); 
+		debug (0, __func__, &quot;session.flags 0x%04X&quot;, session-&gt;flags); 
+	} 
+	return; 
+} 
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='slac_connect.c.html' title=' slac_connect.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='slac_structs.c.html' title=' slac_structs.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

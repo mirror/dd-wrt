@@ -1,0 +1,164 @@
+.TH int6khost 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+int6khost - INT6300 Host Emulator
+
+.SH SYNOPSIS
+.BR int6khost
+.RB [ options ] 
+.BR -C 
+.IR file 
+.BR -N 
+.IR file 
+.BR -P 
+.IR file 
+.BR -n 
+.IR file 
+.BR -p 
+.IR file
+
+.SH DESCRIPTION
+The INT6300 Host Emulator waits for VS_HST_ACTION.IND messages from a local device and services them as described in the INT6300 Technical Reference Manual.
+It can be used to demonstrate or verify proper device/host interaction for flash-less devices.
+This program is not production grade and will stop dead - like a bug! - when things go wrong.
+Use the Qualcomm Atheros Embedded API for real-time, production-grade applications.
+
+.P
+Host emulation applies to flash-less device designs where a local host processor provides the persistent storage.
+The local host can provide a wide range of intelligent storage functions for a device but this program offers one.
+Options -\fBC\fR, -\fBN\fR and -\fBP\fR name existing files that store factory default memory configuration, runtime firmware and parameters, respectively.
+Options -\fBn\fR and -\fBp\fR name scratch files that will store user firmware and parameters, respectively.This is similiar to the standard Atheros NVRAM scheme but still different.
+
+.P
+To use the program, connect a flash-less device to the host via ethernet then start this program with the correct filenames.
+The program will automatically respond to device requests to download memory configuration, firmware and/or parameters and upload firmware or and/or parameters under device control.
+See the Qualcomm Atheros Firmware Technical Reference Manual for more information.
+
+.P
+This program is part of the Qualcomm Atheros Powerline Toolkit.
+See the \fBplc\fR man page for an overview and installation instructions.
+
+.SH OPTIONS
+
+.TP
+-\fBC \fIfilename\fR
+Use this file to download memory configuration when requested by the local device.
+The file must exist and have a valid configuration file format or it will be rejected.
+No assumptions are made based on filename and no filename conventions are enforced.
+The program will not over-write this file.
+This option and argument are required.
+
+.TP
+.RB - e
+Redirects stderr messages to stdout.
+By convention status and error messages are printed on stderr while primary program output is printed on stdout.
+This option prints all output on stdout in cases where this is desired.
+
+.TP
+-\fBF\fR[\fBF\fR]
+Flash NVRAM once downloaded firmware has started.
+The same firmware and PIB are downloaded, again, using VS_WR_MOD and written to NVRAM using VS_MOD_NVM.
+Adding a second \fBF\fR here or another -\fBF\fR anywhere on the command line will perform a forced flash.
+When no NVRAM is present, normal and force flash cause the device to upload to the host.
+When blank or corrupted NVRAM is present, forced flash writes to NVRAM.
+This operation will fail when no NVRAM is present.
+
+.TP
+\fB\-i \fIinterface\fR
+Select the host Ethernet interface.
+All requests are sent via this host interface and only reponses received via this host interface are recognized.
+The default interface is \fBeth1\fR because most people use \fBeth0\fR as their principle network connection; however, if environment string "PLC" is defined then it takes precedence over the default interface.
+This option then takes precedence over either default.
+
+.TP 
+-\fBN \fIfilename\fR
+Use this file to download firmware when requested by the local device.
+The file must exist and have a valid NVM file format or it will be rejected.
+No assumptions are made based on filename and no filename conventions are enforced.
+The program will not over-write this file.
+This option and argument are required.
+
+.TP
+-\fBn \fIfilename\fR
+Use this file to store firmware uploaded from the local device.
+The file need not exist but an error will occur if it cannot be created or written.
+If firmware is uploaded to this file, it is used for subsequent firmware downloads unless the device requests a factory reset.
+In that case, the file specified by option -\fBN\fR is used.
+This option and argument are optional.
+If omitted then the default filename \fBhost.pib\fR will be used.
+
+.TP
+-\fBP \fIfilename\fR
+Use this file to download parameters when requested by the local device.
+The file must exist and have a valid PIB file format or it will be rejected.
+No assumptions are made based on filename and no filename conventions are enforced.
+The program will not over-write this file.
+This option and argument are required.
+
+.TP
+-\fBp \fIfilename\fR
+Use this file to store parameters uploaded from the local device.
+The file need not exist but an error will occur if it cannot be created or written.
+Once parameters are uploaded to this file, it is used for subsequent parameter downloads unless the device requests a factory reset.
+In that case, the file specified by option -\fBP\fR is used.
+This option and argument are optional.
+If omitted then the default filename \fBhost.nvm\fR will be used.
+
+.TP
+-\fBq\fP
+Suppress status messages on stderr.
+
+.TP
+-\fBt \fImilliseconds\fR
+Read timeout in milliseconds.
+Values range from 0 through UINT_MAX.
+This is the maximum time allowed for a response.
+The default is shown in brackets on the program menu.
+
+.TP
+-\fBv\fP
+Print additional information on stdout.
+In particular, this option will print incoming and outgoing Ethernet frames on stdout.
+
+.TP
+-\fB?\fR, --\fBhelp\fR
+Print program help summary on stdout.
+This option takes precedence over other options on the command line.
+
+.TP
+-\fB!\fR, --\fBversion\fR
+Print program version information on stdout.
+This option takes precedence over other options on the command line.
+Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of the Linux Toolkit you are using.
+
+.SH ARGUMENTS
+None.
+
+.SH REFERENCES
+See the Qualcomm Atheros HomePlug AV Firmware Technical Reference Manual for more information.
+
+.SH EXAMPLES
+The following command starts the host emulator.
+The -\fBC\fR, -\fBN\fR and -\fBP\fR options are always required.
+Their order is not important.
+
+.PP
+   int6khost -C test.cfg -N test.nvm -P test.pib
+   > eth0 00:B0:52:00:00:01 Waiting for Host Action Requests
+   > 
+
+.SH DISCLAIMER
+Atheros HomePlug AV Vendor Specific Management Message Entry structure and content is proprietary to Qualcomm Atheros, Ocala FL USA.
+Consequently, public information may not be available.
+Qualcomm Atheros reserves the right to modify message structure and content in future firmware releases without any obligation to notify or compensate users of this program.
+
+.SH SEE ALSO
+.BR plc ( 1 ), 
+.BR int64host ( 1 ), 
+.BR int6k ( 1 ), 
+.BR int6kboot ( 1 )
+.BR plchost ( 1 )
+
+.SH CREDITS
+ Charles Maier <cmaier@qca.qualcomm.com>
+

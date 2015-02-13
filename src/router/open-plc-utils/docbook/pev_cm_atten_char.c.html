@@ -1,0 +1,149 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			pev_cm_atten_char.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='pev.c.html' title=' pev.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='pev_cm_mnbc_sound.c.html' title=' pev_cm_mnbc_sound.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *
+ *   signed pev_cm_atten_char (struct session * session, struct channel * channel, struct message * message);
+ *
+ *   slac.h
+ *
+ *   PEV-HLE waits for CM_ATTEN_CHAR.IND from EVSE-HLE and responds
+ *   to indicate the data was received in good order; this response
+ *   does not mean that PEV-HLE will mate with EVSE-HLE;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef PEV_CM_ATTEN_CHAR_SOURCE
+#define PEV_CM_ATTEN_CHAR_SOURCE
+
+#include &lt;string.h&gt;
+
+#include &quot;../ether/channel.h&quot;
+#include &quot;../tools/memory.h&quot;
+#include &quot;../tools/error.h&quot;
+#include &quot;../tools/flags.h&quot;
+#include &quot;../slac/slac.h&quot;
+
+signed pev_cm_atten_char (struct session * session, struct channel * channel, struct message * message) 
+
+{ 
+	struct cm_atten_char_indicate * indicate = (struct cm_atten_char_indicate *) (message); 
+	struct cm_atten_char_response * response = (struct cm_atten_char_response *) (message); 
+	while (readmessage (channel, message, HOMEPLUG_MMV, (CM_ATTEN_CHAR | MMTYPE_IND)) &gt; 0) 
+	{ 
+		if (! memcmp (session-&gt;RunID, indicate-&gt;ACVarField.RunID, sizeof (session-&gt;RunID))) 
+		{ 
+			debug (0, __func__, &quot;&lt;-- CM_ATTEN_CHAR.IND&quot;); 
+			memcpy (session-&gt;EVSE_MAC, indicate-&gt;ethernet.OSA, sizeof (session-&gt;EVSE_MAC)); 
+			session-&gt;NUM_SOUNDS = indicate-&gt;ACVarField.NUM_SOUNDS; 
+			session-&gt;NumGroups = indicate-&gt;ACVarField.ATTEN_PROFILE.NumGroups; 
+			memcpy (session-&gt;AAG, indicate-&gt;ACVarField.ATTEN_PROFILE.AAG, indicate-&gt;ACVarField.ATTEN_PROFILE.NumGroups); 
+
+#if SLAC_DEBUG
+
+			if (_anyset (session-&gt;flags, SLAC_VERBOSE)) 
+			{ 
+				char string [256]; 
+				debug (0, __func__, &quot;CM_ATTEN_CHAR.IND.ACVarField.APPLICATION_TYPE %d&quot;, indicate-&gt;APPLICATION_TYPE); 
+				debug (0, __func__, &quot;CM_ATTEN_CHAR.IND.ACVarField.SECURITY_TYPE %d&quot;, indicate-&gt;SECURITY_TYPE); 
+				debug (0, __func__, &quot;CM_ATTEN_CHAR.IND.ACVarField.SOURCE_ADDRESS %s&quot;, HEXSTRING (string, indicate-&gt;ACVarField.SOURCE_ADDRESS)); 
+				debug (0, __func__, &quot;CM_ATTEN_CHAR.IND.ACVarField.RunID %s&quot;, HEXSTRING (string, indicate-&gt;ACVarField.RunID)); 
+				debug (0, __func__, &quot;CM_ATTEN_CHAR.IND.ACVarField.SOURCE_ID %s&quot;, HEXSTRING (string, indicate-&gt;ACVarField.SOURCE_ID)); 
+				debug (0, __func__, &quot;CM_ATTEN_CHAR.IND.ACVarField.RESP_ID %s&quot;, HEXSTRING (string, indicate-&gt;ACVarField.RESP_ID)); 
+				debug (0, __func__, &quot;CM_ATTEN_CHAR.IND.ACVarField.NUM_SOUNDS %d&quot;, indicate-&gt;ACVarField.NUM_SOUNDS); 
+				debug (0, __func__, &quot;CM_ATTEN_CHAR.IND.ACVarField.ATTEN_PROFILE.NumGroups %d&quot;, indicate-&gt;ACVarField.ATTEN_PROFILE.NumGroups); 
+				debug (0, __func__, &quot;CM_ATTEN_CHAR.IND.ACVarField.ATTEN_PROFILE.AAG %s&quot;, hexstring (string, sizeof (string), indicate-&gt;ACVarField.ATTEN_PROFILE.AAG, indicate-&gt;ACVarField.ATTEN_PROFILE.NumGroups)); 
+			} 
+
+#endif
+
+			debug (0, __func__, &quot;--&gt; CM_ATTEN_CHAR.RSP&quot;); 
+			memset (message, 0, sizeof (* message)); 
+			EthernetHeader (&amp; response-&gt;ethernet, session-&gt;EVSE_MAC, channel-&gt;host, channel-&gt;type); 
+			HomePlugHeader1 (&amp; response-&gt;homeplug, HOMEPLUG_MMV, (CM_ATTEN_CHAR | MMTYPE_RSP)); 
+			response-&gt;APPLICATION_TYPE = session-&gt;APPLICATION_TYPE; 
+			response-&gt;SECURITY_TYPE = session-&gt;SECURITY_TYPE; 
+			memcpy (response-&gt;ACVarField.SOURCE_ADDRESS, session-&gt;PEV_MAC, sizeof (response-&gt;ACVarField.SOURCE_ADDRESS)); 
+			memcpy (response-&gt;ACVarField.RunID, session-&gt;RunID, sizeof (response-&gt;ACVarField.RunID)); 
+			memset (response-&gt;ACVarField.SOURCE_ID, 0, sizeof (response-&gt;ACVarField.SOURCE_ID)); 
+			memset (response-&gt;ACVarField.RESP_ID, 0, sizeof (response-&gt;ACVarField.RESP_ID)); 
+			response-&gt;ACVarField.Result = 0; 
+			if (sendmessage (channel, message, sizeof (* response)) &lt;= 0) 
+			{ 
+				return (debug (1, __func__, CHANNEL_CANTSEND)); 
+			} 
+			return (0); 
+		} 
+	} 
+	return (debug (session-&gt;exit, __func__, &quot;&lt;-- CM_ATTEN_CHAR.IND ?&quot;)); 
+} 
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='pev.c.html' title=' pev.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='pev_cm_mnbc_sound.c.html' title=' pev_cm_mnbc_sound.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

@@ -1,0 +1,118 @@
+.TH CMEncrypt 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+CMEncrypt - Send Encrypted Payload
+
+.SH SYNOPSIS
+.BR CMEncrypt
+.RI [ options ] 
+.RI [ device ] 
+.RI [ device ] 
+.RI [ ... ]
+
+.SH DESCRIPTION
+Transmit a file over powerline using CM_ENCRYPTED_PAYLOAD messages.
+This program tests and demonstrates proper (or improper) message routing but does not support encrypted transmission.
+All payloads are sent unencrypted at this time.
+
+.SH OPTIONS
+
+.TP
+-\fBA\fI status\fR
+The AVLN Status.
+This indicates the current association status and capabilities of the sending station.
+Permitted values are \fB0\fR through \fB255\fR but only value 0 through 5 and 8 are recognized by the firmware.
+Values may be entered in decimal, hexadecimal or binary format.
+Hexadecimal value are prefixed with "\fB0x\fR" or "\fB0X\fR".
+Binary values are prefixed with "\fB0b\fR" or "\fB0B\fR".
+The default is \fB0\fR.
+
+.TP
+-\fBf\fI file\fR
+The name of the payload file.
+File content may be text or binary and forms the payload of one or more messages.
+Payloads are transmitted unencrypted when PID is 4 and PEKS is 15 which is default.
+
+.TP
+-\fBK \fIPEKS\fR
+The Payload Encryption Key Select.
+This value indicates the key used to encrypt the payload.
+Permitted values are \fB0\fR through \fB15\fR.
+Values may be entered in decimal, hexadecimal or binary format.
+Hexadecimal value are prefixed with "\fB0x\fR" or "\fB0X\fR".
+Binary values are prefixed with "\fB0b\fR" or "\fB0B\fR"..
+The default is \fB15\fR for "No Encryption".
+
+.TP
+-\fBP \fIPID\fR
+The Protocol Identifier.
+This value detemines how the payload is interpreted by powerline devices.
+Permitted values are \fB0\fR through \fB4\fR.
+The default is \fB4\fR for "HLE Protocol".
+
+.TP
+-\fBv\fR
+Print incoming and outgoing Ethernet frames in hex dump format on stdout.
+
+.TP
+.RB - ? ,-- help
+Print program help summary on stdout.
+This option takes precedence over other options on the command line.
+
+.TP
+.RB - ? ,-- version
+Print program version information on stdout.
+This option takes precedence over other options on the command line.
+Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of the Linux Toolkit you are using.
+
+.SH ARGUMENTS
+
+.TP
+\fIdevice\fR
+The Media Access Control (MAC) address of a remote host, not a powerline device.
+Addresses are 6 hexadecimal octets optionally separated by colon.
+For example, the addresses "00b052000001", "00:b0:52:00:00:01" and "00b052:000001" are all valid and equivalent.
+For convenience, the symbolic address "\fBlocal\fR" resolves to "00:b0:52:00:00:01" and the symbolic addresses "\fBall\fR" and "\fBbroadcast\fR" both resolve to "ff:ff:ff:ff:ff:ff".
+
+.SH INTERNALS
+This program lets the user specify some CM_ENCRYPTED_PAYLOAD fields but not others.
+The following are fields that the user cannot specify.
+The program automatically computes these values.
+
+.TP
+.BR PRN
+The Protocol Run Number.
+This is a random number used to distinguish between runs having the same protocol.
+This program uses the system time variable.
+
+.TP
+.BR UUID
+The Universally Unique Identifier.
+This program uses the left-most 16 bytes of the SHA256 digest for the payload.
+
+.SH REFERENCES
+Consult the \fIHomePlug AV Specification\fR or \fIAtheros Firmware Technical Reference Manual\fR for more information.
+
+.SH EXAMPLES
+The following example transmits file \fBmyfile.txt\fR to host \fB00:85:73:00:94:01\fR in unecrypted format because that is the program default.
+The remote address is required and refers to the ultimate recipient, not the local device.
+
+.PP
+   # CMEncrypt -f myfile.txt 00:85:73:00:94:01
+The next example does the same but specifies the program defaults.
+Observe that operands can be expressed in decimal, binary or hexadecimal format.
+
+.PP
+   # CMEncrypt -f myfile.txt -A 0 -P 0b0100 -K 0x0F 00:85:73:00:94:01
+
+.SH DISCLAIMER
+Atheros HomePlug AV Vendor Specific Management Message structure and content is proprietary to Qualcomm Atheros, Ocala FL USA.
+Consequently, public information is not available.
+Qualcomm Atheros reserves the right to modify message structure or content in future firmware releases without any obligation to notify or compensate users of this program.
+
+.SH SEE ALSO
+None.
+
+.SH CREDITS
+ Charles Maier <cmaier@qca.qualcomm.com>
+

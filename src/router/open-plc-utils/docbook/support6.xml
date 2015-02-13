@@ -1,0 +1,242 @@
+	<section id="support-key">
+		<title>
+			Key Generation Functions
+			</title>
+		<para>
+			Atheros applications use the SHA256 algorithm to compute unique HomePlug AV keys, including the Device Access Key (<acronym>DAK</acronym>), Network Membership Key (<acronym>NMK</acronym>) and Network Identifier (<acronym>NID</acronym>). The SHA256 algorithm is seeded, salted and rehashed differently for each type of HomePlug AV key. A different function is used to compute each type of HomePlug AV key but all of them call the SHA256 functions. The SHA256 algorithm returns a <constant>256</constant> bit (<constant>32</constant> byte) digest but only the upper <constant>128</constant> bits (<constant>16</constant> bytes) are used for HomePlug AV keys. 
+			</para>
+		<example>
+			<title>
+				SHA256 Digest Computation
+				</title>
+		<para>
+			The following code example illustrates how to generate, rehash and print an SHA256 digest, or key, from a user-defined seed string and salt string. This logic is typical of that used to generate HomePlug AV compliant keys. See the HomePlug AV Specification for the specific rules used to generate each type of key.
+			</para>
+<programlisting><![CDATA[
+#include <stdio.h>
+
+#include "../crypt/SHA256.h"
+
+#include "../crypt/SHA256Reset.c"
+#include "../crypt/SHA256Block.c"
+#include "../crypt/SHA256Write.c"
+#include "../crypt/SHA256Fetch.c"
+
+struct sha256 sha256; 
+char * seed = "ForMeToKnowAndYouToFindOut"; 
+char * salt = "X$z@p"; 
+byte digest [SHA256_DIGEST_SIZE];
+int i; 
+
+SHA256Reset (&sha256); 
+SHA256Write (&sha256, (byte *)(seed), strlen (seed)); 
+SHA256Write (&sha256, (byte *)(salt), strlen (salt)); 
+SHA256Fetch (&sha256, digest); 
+
+for (i = 0; i < 999; i++)
+{
+	SHA256Reset (&sha256); 
+	SHA256Write (&sha256, digest, sizeof (digest)); 
+	SHA256Fetch (&sha256, digest); 
+}
+for (i = 0;  i < 16; i++)
+{
+	printf ("%02x", digest [i]); 
+}
+printf ("\n"); 
+]]></programlisting>
+			<para>
+				Above, we declare struct <varname>sha256</varname> and initialize it using function <link linkend='support-SHA256Reset'>SHA256Reset</link>. We then write a user-defined seed string (or password) followed by an optional salt string to the digest using function <link linkend='support-SHA256Write'>SHA256Write</link>. The resulting digest (or key) is obtained by calling function <link linkend='support-SHA256Fetch'>SHA256Fetch</link>. Constant <constant>SHA256_DIGEST_SIZE</constant> is defined in <ulink url='SHA256.h.html'>SHA256.h</ulink>. Although the digest is probably secure enough at this point, we rehash it <constant>999</constant> times for good measure. We then print the first <constant>16</constant> bytes of the result because HomePlug AV keys are always <constant>16</constant> bytes long.
+				</para>
+			</example>
+		<section id="support-MACPasswords">
+			<title>
+				MACPasswords
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+  					<funcdef>void <function>MACPasswords</function></funcdef>
+   					<paramdef>uint32_t<parameter>vendor</parameter></paramdef>
+   					<paramdef>uint32_t<parameter>device</parameter></paramdef>
+   					<paramdef>uint32_t<parameter>number</parameter></paramdef>
+					<paramdef>unsigned <parameter>count</parameter></paramdef>
+ 					<paramdef>unsigned <parameter>bunch</parameter></paramdef>
+ 					<paramdef>unsigned <parameter>space</parameter></paramdef>
+ 					<paramdef>flag_t <parameter>flags</parameter></paramdef>
+					</funcprototype>
+				</funcsynopsis>
+			<para>
+				Print a range of device addresses and user passwords on stdout. The calling application must split the starting device address into a three-byte <acronym>OUI</acronym> and three-byte device number and pass them as the unsigned 32-bit integers <varname>vendor</varname> and <varname>device</varname>, respectively. Argument <varname>device</varname> is the first device number in the range and <varname>number</varname> is the final device number. Argument <varname>count</varname> is the number of uppercase letters comprising a password. Passwords contain this many letters but the letters are grouped for easy reading. Letter groups are separated by hyphens. Argument <varname>bunch</varname> defines how many letters form each group. Argument <varname>space</varname> is the character used to separate groups of letters. Argument <varname>flags</varname> enables or disables function features such as insertion of a <quote>used</quote> flag for use by the Atheros Production Test System or the omission of the device address on output. The output of this function is similar to that produced by the <application>DB Builder</application> utility distributed with the <acronym>PTS</acronym>. This function is declared in <ulink url="keys.h.html">keys.h</ulink> and defined in <ulink url="MACPasswords.c.html">MACPasswords.c</ulink>. 				</para>
+			</section>
+		<section id="support-HPAVKeyDAK">
+			<title>
+				HPAVKeyDAK
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+  					<funcdef>void <function>HPAVKeyDAK</function></funcdef>
+   					<paramdef> byte <parameter>DAK</parameter> []</paramdef>
+					<paramdef>char const <parameter>string</parameter></paramdef>
+  					</funcprototype>
+				</funcsynopsis>
+			<para>
+				Encode buffer <varname>DAK</varname> with the Device Access Key (<acronym>DAK</acronym>) derived from the <constant>NUL</constant> terminated <varname>string</varname>. The <varname>string</varname> is salted, hashed and re-hashed using the <acronym>SHA256</acronym> algorithm. The <varname>DAK</varname> is always <constant>HPAVKEY_DAK_LEN</constant> bytes, defined in <ulink url="HPAVKey.h.html">HPAVKey.h</ulink>,  so no length argument is needed. See the HomePlug AV Specification for more information. This function is declared in <ulink url="HPAVKey.h.html">HPAVKey.h</ulink> and defined in <ulink url="HPAVKeyDAK.c.html">HPAVKeyDAK.c</ulink>.				
+				</para>
+			</section>
+		<section id="support-HPAVKeyNMK">
+			<title>
+				HPAVKeyNMK
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+  					<funcdef>void <function>HPAVKeyNMK</function></funcdef>
+   					<paramdef> byte <parameter>digest</parameter> []</paramdef>
+					<paramdef>char const <parameter>string</parameter></paramdef>
+  					</funcprototype>
+				</funcsynopsis>
+			<para>
+				Encode buffer <varname>NMK</varname> with the Network Membership Key (<acronym>NMK</acronym>) derived from the <constant>NUL</constant> terminated <varname>string</varname>. The string is salted, hashed and re-hashed using the <acronym>SHA256</acronym> algorithm. The <varname>DAK</varname> is always <constant>HPAVKEY_NMK_LEN</constant> bytes,  as defined in <ulink url="HPAVKey.h.html">HPAVKey.h</ulink>,  so no length argument is needed. See the HomePlug AV Specification for more information. This function is declared in <ulink url="HPAVKey.h.html">HPAVKey.h</ulink> and defined in <ulink url="HPAVKeyNMK.c.html">HPAVKeyNMK.c</ulink>.				
+				</para>
+			</section>
+		<section id="support-HPAVKeyNID">
+			<title>
+				HPAVKeyNID
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+  					<funcdef>void <function>HPAVKeyNID</function></funcdef>
+   					<paramdef> byte <parameter>NID</parameter> []</paramdef>
+   					<paramdef>byte const <parameter>NMK</parameter> []</paramdef>
+					<paramdef>signed <parameter>level</parameter></paramdef>
+  					</funcprototype>
+				</funcsynopsis>
+			<para>
+				Encode buffer <varname>NID</varname> with the Network Identification Key (<acronym>NID</acronym>) derived from the 16-byte Network Membership Key (<acronym>NMK</acronym>). The <varname>NMK</varname> is hashed and re-hashed using the <acronym>SHA256</acronym> algorithm then encoded with the security <varname>level</varname>. The <varname>NID</varname> is always <constant>HPAVKEY_NID_LEN</constant> bytes,  as defined in <ulink url="HPAVKey.h.html">HPAVKey.h</ulink>,  so no length argument is needed. See the HomePlug AV Specification for more information. This function is declared in <ulink url="HPAVKey.h.html">HPAVKey.h</ulink> and defined in <ulink url="HPAVKeyNID.c.html">HPAVKeyNID.c</ulink>.				
+				</para>
+			</section>
+		<section id="support-HPAVKeyOut">
+			<title>
+				HPAVKeyOut
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+  					<funcdef>void <function>HPAVKeyOut</function></funcdef>
+   					<paramdef>byte const <parameter>digest</parameter> []</paramdef>
+					<paramdef>size_t <parameter>length</parameter></paramdef>
+   					<paramdef>char const * <parameter>phrase</parameter></paramdef>
+					<paramdef>flag_t <parameter>flags</parameter></paramdef>
+  					</funcprototype>
+				</funcsynopsis>
+			<para>
+				Decode and print up to <varname>length</varname> bytes from buffer <varname>digest</varname> on stdout. Print <constant>NUL</constant> terminated <varname>phrase</varname> on the same line following the digest when bit <varname>HPAVKEY_VERBOSE</varname>, defined in <ulink url='HPAVKey.h.html'>HPAVKey.h</ulink>, is set in <varname>flags</varname>. This procedure prints keys and phrases in a standard column-oriented format that other applications can easily read and use. This function is declared in <ulink url="HPAVKey.h.html">HPAVKey.h</ulink> and defined in <ulink url="HPAVKeyOut.c.html">HPAVKeyOut.c</ulink>.				
+				</para>
+			</section>
+		<section id="support-SHA256Block">
+			<title>
+				SHA256Block
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+  					<funcdef>void <function>SHA256Block</function></funcdef>
+   					<paramdef>struct sha256 * <parameter>sha256</parameter></paramdef>
+					<paramdef>void const * <parameter>memory</parameter></paramdef>
+  					</funcprototype>
+				</funcsynopsis>
+			<para>
+				Merge 64 bytes of memory into the current <acronym>SHA256</acronym> digest. This function performs the core computations required by the <acronym>SHA256</acronym> algoithm. It is called by function <link linkend='support-SHA256Fetch'><varname>SHA256Fetch</varname></link> and so there is no reason to call this function directly. The <varname>sha256</varname> structure is defined in <ulink url="SHA256.h.html">SHA256.h</ulink>. The function is declared in <ulink url="SHA256.h.html">SHA256.h</ulink> and defined in <ulink url="SHA256Block.c.html">SHA256Block.c</ulink>. 
+				</para>
+			</section>
+		<section id="support-SHA256Fetch">
+			<title>
+				SHA256Fetch
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+  					<funcdef>void <function>SHA256Fetch</function></funcdef>
+   					<paramdef>struct sha256 * <parameter>sha256</parameter></paramdef>
+					<paramdef> byte <parameter>digest</parameter> []</paramdef>
+  					</funcprototype>
+				</funcsynopsis>
+			<para>
+				 Conclude <acronym>SHA256</acronym> computation and transfer the result to the named 32-byte <varname>digest</varname> then flush the <varname>sha256</varname> structure. The <varname>digest</varname> is always 32 bytes long regardless of the amount of information that has been written using function <link linkend='support-SHA256Write'>SHA256Write</link>. The <varname>sha256</varname> structure is defined in <ulink url="SHA256.h.html">SHA256.h</ulink>. This function is declared in <ulink url="SHA256.h.html">SHA256.h</ulink> and defined in <ulink url="SHA256Fetch.c.html">SHA256Fetch.c</ulink>.
+				</para>
+			<para>
+				Once this function is called, the <varname>sha256</varname> structure is purged for security reasons. You must call <link linkend='support-SHA256Reset'>SHA256Reset</link> again before starting another hash or subsequent calls to this function or <link linkend='support-SHA256Write'>SHA256Write</link> will have unpredictable results. .
+				</para>
+			</section>
+		<section id="support-SHA256Ident">
+			<title>
+				SHA256Ident
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+  					<funcdef>void <function>SHA256Ident</function></funcdef>
+   					<paramdef>int <parameter>fd</parameter></paramdef>
+   					<paramdef> byte <parameter>digest</parameter> []</paramdef>
+ 					</funcprototype>
+				</funcsynopsis>
+			<para>
+				Compute the SHA256 digest from the content of a file. The digest serves as the file <quote>fingerprint</quote> and can be used to identify identical content despite filename changes. File descriptor <varname>fd</varname> is the subject file which must be positioned to the start befor calling this function. Buffer <varname>digest</varname> will be written with the computed 256-digest and must be <constant>SHA256_DIGEST_SIZE</constant> bytes long, as defined in <ulink url="SHA256.h.html">SHA256.h</ulink>. This function is declared in <ulink url="SHA256.h.html">SHA256.h</ulink> and defined in <ulink url="SHA256Ident.c.html">SHA256Ident.c</ulink>.  
+				</para>
+			</section>
+		<section id="support-SHA256Match">
+			<title>
+				SHA256Match
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+  					<funcdef>void <function>SHA256Match</function></funcdef>
+   					<paramdef>int <parameter>fd</parameter></paramdef>
+   					<paramdef>byte const <parameter>digest</parameter> []</paramdef>
+ 					</funcprototype>
+				</funcsynopsis>
+			<para>
+				Search a registry file for a known SHA256 digest. Return <constant>true</constant> on success or <constant>false</constant> on failure. File descriptor <varname>fd</varname> is the registry file which must be positioned to the start before calling this function. Buffer <varname>digest</varname> contains the known 256-bit digest and must be <constant>SHA256_DIGEST_SIZE</constant> bytes long, as defined in <ulink url='SHA256.h.html'>SHA256.h</ulink>. A registry file consists of 64-digit hexadecimal strings that represent SHA256 digest values. Optional text may be appear between the digest and newline to document digest significance. This function ignores such text. This function is declared in <ulink url="SHA256.h.html">SHA256.h</ulink> and defined in <ulink url="SHA256Match.c.html">SHA256Match.c</ulink>.  
+				</para>
+			</section>
+		<section id="support-SHA256Print">
+			<title>
+				SHA256Print
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+  					<funcdef>void <function>SHA256Print</function></funcdef>
+   					<paramdef>byte const <parameter>digest</parameter> []</paramdef>
+   					<paramdef>char const * <parameter>string</parameter></paramdef>
+ 					</funcprototype>
+				</funcsynopsis>
+			<para>
+				Print an SHA256 <varname>digest</varname> and optional <varname>string</varname> on <constant>stdout</constant>. Buffer <varname>digest</varname> must be <constant>SHA256_DIGEST_SIZE</constant> bytes long, as defined in <ulink url='SHA256.h.html'>SHA256.h</ulink>, which results in 64 hexadecimal digits on output. Variable length string is <constant>NUL</constant> terminated but may be <constant>NULL</constant>. If <varname>string</varname> is not <constant>NULL</constant> and is not empty then a space is inserted between the digest and the string on output. This function may be used to print SHA256 digests and optional strings in standard format,  such as a registry file. This function is declared in <ulink url="SHA256.h.html">SHA256.h</ulink> and defined in <ulink url="SHA256Print.c.html">SHA256Print.c</ulink>.  
+				</para>
+			</section>
+		<section id="support-SHA256Reset">
+			<title>
+				SHA256Reset
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+  					<funcdef>void <function>SHA256Reset</function></funcdef>
+   					<paramdef>struct sha256 * <parameter>sha256</parameter></paramdef>
+ 					</funcprototype>
+				</funcsynopsis>
+			<para>
+				Initialize a <varname>sha256</varname> structure before computing a new <acronym>SHA256</acronym> digest. This function should be called once before calling <link linkend='support-SHA256Write'>SHA256Write</link> for the first time for a given digest. The <varname>sha256</varname> structure is defined in <ulink url="SHA256.h.html">SHA256.h</ulink>. This function is declared in <ulink url="SHA256.h.html">SHA256.h</ulink> and defined in <ulink url="SHA256Reset.c.html">SHA256Reset.c</ulink>.  
+				</para>
+			</section>
+		<section id="support-SHA256Write">
+			<title>
+				SHA256Write
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+  					<funcdef>void <function>SHA256Write</function></funcdef>
+   					<paramdef>struct sha256 * <parameter>sha256</parameter></paramdef>
+					<paramdef>void const * <parameter>memory</parameter></paramdef>
+					<paramdef>size_t <parameter>extent</parameter></paramdef>
+  					</funcprototype>
+				</funcsynopsis>
+			<para>
+				Writes a region of memory to the current <acronym>SHA256</acronym> digest contained in an <varname>sha256</varname> structure. An application may call this function any number of times to concatinate multiple memory regions before fetching the digest with function <function>SHA256Fetch</function>. The <varname>sha256</varname> structure is defined in <ulink url="SHA256.h.html">SHA256.h</ulink>.  This function is declared in <ulink url="SHA256.h.html">SHA256.h</ulink> and defined in <ulink url="SHA256Write.c.html">SHA256Write.c</ulink>.				
+				</para>
+			</section>
+		</section>

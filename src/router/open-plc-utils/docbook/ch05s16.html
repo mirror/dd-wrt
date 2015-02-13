@@ -1,0 +1,45 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>SLAC Demonstration</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="ch05.html" title="Chapter 5.  Procedures"><link rel="prev" href="ch05s15.html" title="SLAC Configuration"><link rel="next" href="ch06.html" title="Chapter 6.  Scripting"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">
+			SLAC Demonstration
+			</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch05s15.html">Prev</a> </td><th width="60%" align="center">Chapter 5. 
+		Procedures 
+		</th><td width="20%" align="right"> <a accesskey="n" href="ch06.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="procedure-slac-demonstration"></a>
+			SLAC Demonstration
+			</h2></div></div></div><p>
+			This page explains how to install and use two Qualcomm Atheros Powerline Toolkit programs, <a class="ulink" href="pev.7.html" target="_top">pev</a> and <a class="ulink" href="evse.7.html" target="_top">evse</a>, to demonstrate the HomePlug AV Signal Level Attenuation Characterization (<acronym class="acronym">SLAC</acronym>) protocol. 
+			</p><p>
+			On Microsoft Windows, the two programs are distributed in a seperate Microsoft installation file <code class="filename">slac-utils-x.x.x.msi</code>. To install them on Microsoft Windows, double-click on the installation file. The programs will be installed in folder <code class="filename">c:\Program Files (x86)\Qualcomm Atheros\Powerline Toolkit</code> unless the user overrides the default settings durin installation. New users should add this folder to the <code class="constant">PATH</code> environment variable and define environment variable <code class="constant">PLC</code> to reference the Ethernet interface connected to their PLC device. 
+			</p><p>
+			On Linux, the two programs are distibuted inside the full toolkit tarball <code class="filename">plc-utils-x.x.x</code>. To install them on Linux, unpack the tarball and change directory to the package folder. Type "<span class="command"><strong>sudo make install</strong></span>" to compile and install the toolkit. Type type "<span class="command"><strong>sudo make manuals</strong></span>" to install man pages. New users should define environment variable <code class="constant">PLC</code> to reference the inteface connected to their PLC device.
+			</p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title"> 
+		Exception!
+		</h3><p>
+		In some cases QCA will distribute two Windows <code class="filename">.exe</code> files and two monolithic <code class="filename">.c</code> files. On Windows, copy the executable files to folder <code class="filename">c:\Program Files (x86)\Qualcomm Atheros\Powerline Toolkit</code> and update the system <code class="constant">PATH</code> and <code class="constant">PLC</code> environment variables. On Linux, compile the two source files using "<span class="command"><strong>gcc -o pev pev.c</strong></span>" and "<span class="command"><strong>gcc -o evse evse.c</strong></span>" and copy the two binary files to <code class="filename">/usr/local/bin</code> then update the system <code class="constant">PLC</code> environment variable. You will need root priviledge to copy the binary files to the system folder and you must change the binary file permissions to <code class="constant">4555</code> in order to execute them as a non-root user.
+		</p></div><p>
+			Each program reads an optional configuration file on start-up. Program <a class="ulink" href="pev.7.html" target="_top">pev</a> reads <code class="filename">pev.ini</code> and program <a class="ulink" href="evse.7.html" target="_top">evse</a> reads <code class="filename">evse.ini</code>. Qualcomm Atheros does not provide these files but option <code class="constant">-c</code>, on each program, can be used to print a template configuration file on stdout. Once a user settles on a convenient working folder, they should run command "<span class="command"><strong>pev -c &gt; pev.ini</strong></span>" to create the configuration file for program <span class="application">pev</span> and "<span class="command"><strong>evse -c &gt; evse.ini</strong></span>" to create the configuration file for program <span class="application">evse</span>.
+			</p><p>
+			A <acronym class="acronym">SLAC</acronym> demonstration can be setup using two Qualcomm Atheros PL16 boards, two personal computers, a power strip and a powerline impairment of some kind. One PL16 board must be configured as a <acronym class="acronym">PEV</acronym> and the other must be configured as an <acronym class="acronym">EVSE</acronym>. Plug both PL16 boards into the powerstrip and connect each board to a different computer via Ethernet. Run program <a class="ulink" href="pev.7.html" target="_top">pev</a> on the computer connected to the <acronym class="acronym">PEV</acronym> configured board. Run program <a class="ulink" href="evse.7.html" target="_top">evse</a> on the computer connected to the <acronym class="acronym">EVSE</acronym> configured board. Program <a class="ulink" href="evse.7.html" target="_top">evse</a> runs continuously waiting to service <a class="ulink" href="pev.7.html" target="_top">pev</a> programs running on other computers. Program <a class="ulink" href="pev.7.html" target="_top">pev</a> runs until charging occurs then exits.
+			</p><p>
+			On the <acronym class="acronym">EVSE</acronym> host, start program <a class="ulink" href="evse.7.html" target="_top">evse</a> as shown below. It will run until cancelled.  
+			</p><pre class="screen">
+# evse   
+evse: UnoccupiedState: Listening ...
+</pre><p>
+			Messages will appear on the console as events occur. The first field is the program name, in this case “<span class="quote">evse</span>”. The second field is the function name, in this case “<span class="quote">UnoccupiedState</span>”. In this case, program <span class="application">evse</span> does nothing until some <acronym class="acronym">PEV</acronym> trys to associate. 
+			</p><p>
+			On the <acronym class="acronym">EVSE</acronym> host, run program <a class="ulink" href="evse.7.html" target="_top">evse</a> as shown below. It will run until it detects and connects to an available <acronym class="acronym">EVSE-HLE</acronym>. Use option <span class="command"><strong>-w</strong></span> to vary probe timeouts. 
+			</p><pre class="screen">
+# pev   
+pev: DisconnectedState: Probing ...
+pev: pev_cm_slac_param: --&gt; CM_SLAC_PARAM.REQ
+pev: pev_cm_slac_param: &lt;-- CM_SLAC_PARAM.CNF
+</pre><p>
+			Messages will appear on the console as events occur. The first field is the program name, in this case “<span class="quote">pev</span>”. The second field is the function name, in this case <code class="function">DisconnectedState</code> and <code class="function">pev_cm_slac_param</code>. The right arrow indicates that function <code class="function">pev_cm_slac_param</code> is sending a <code class="constant">CM_SLAC_PARAM.REQ</code> message. If things work properly, you will see a another message indicating that function <code class="function">pev_cm_slac_param</code> is receiving a <code class="constant">CM_SLAC_PARAM.CNF</code> message. 
+			</p><div class="mediaobject"><img src="IMG_20130227_145749.jpg" alt="IMG_20130227_145749.jpg"><div class="caption"><p>
+					Unimpaired SLAC configuration. Result should be below threshold and <acronym class="acronym">PEV</acronym> should connect.
+					</p></div></div><div class="mediaobject"><img src="IMG_20130227_151458.jpg" alt="IMG_20130227_151458.jpg"><div class="caption"><p>
+					Impaired SLAC configuration. Result should be above threshold and <acronym class="acronym">PEV</acronym> should not connect.
+					</p></div></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch05s15.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="ch05.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch06.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">
+			SLAC Configuration
+			 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> Chapter 6. 
+		Scripting
+		</td></tr></table></div></body></html>0

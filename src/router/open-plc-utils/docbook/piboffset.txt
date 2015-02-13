@@ -1,0 +1,272 @@
+   0 Untitled
+  12 mReserved array[12] of uint8
+   6 mMACAddress CCMACAddress
+  16 mDAK CCEncryptionKey
+   2 mRSVD16 uint16
+  64 mHFID_Manufacturer CCHFID
+  16 mNMK CCEncryptionKey
+  64 mHFID_User CCHFID
+  64 mHFID_AVLN CCHFID
+   1 mCCoSelection uint8
+   1 mCoexistModeSelect uint8
+   1 mPLFreqSelection uint8
+   1 mRSVD8 uint8
+   6 mNIDByField_Byte array[6] of uint8
+   1 mHybridMode_mask 00C0
+   1 mAVLNMembership uint8
+   1 mMDUConfiguration uint8
+   1 mMDURole uint8
+   1 mSnifferEnabled uint8
+   6 mSnifferReturnMACAddress CCMACAddress
+   1 mMemoryProfile uint8
+   1 mAuthorizedUpdateLevel uint8
+   1 mAuthorizedSimpleConnectEnabled uint8
+  16 mNVM_AuthorizationKey CCEncryptionKey
+   4 mPIBReadCookie uint32
+   4 mChipSignatureId uint32
+  16 mProductIdString array[16] of char
+   1 mBoardType uint8
+   1 mBoardRevisionNumber uint8
+   2 mReserved8 array[2] of uint8
+  84 mReserved32 array[2] of uint32
+  64 mCustomer_Rsvd array[64] of uint8
+ 180 mQCA_Rsvd array[128] of uint8
+   1 mNumPorts uint8
+ 160 mPortInfoArray array[32] of CCGenMultiPortInfo
+   1 mOverrideDefaults uint8
+   4 mMaxFramesPerSec uint32
+  96 mPortConfigurations array[8] of CPortConfiguration
+   1 mPhyAddressSelection uint8
+   1 mPhyAddressSelection_Data uint8
+  32 mProtocolId uint8
+   1 mProtocolId uint8
+   4 mBaudRate uint32
+   1 mDataLength uint8
+   1 mStopBits uint8
+   1 mParity uint8
+   1 mFlowControl uint8
+  23 mDivisorAdjustValue int8
+   1 mOverrideDefaults uint8
+   1 mIsEthernetEnabled uint8
+   1 mIsSpiSlaveEnabled uint8
+  53 mIsUartEnabled uint8
+   1 mOverrideDefaults uint8
+   1 mConfigFlags uint8
+   2 mReserved uint16
+   4 mMacAndIPv4NumberOfRulesForEachCategory array[4] of uint8
+ 200 mMacAndIPv4RulesIntervalPairs array[10] of CCMACAndIPv4AddressIntervalPair
+   4 mMacAndIPv6NumberOfRulesForEachCategory array[4] of uint8
+ 556 mMacAndIPv6RulesIntervalPairs array[10] of CCMACAndIPv6AddressIntervalPair
+   1 mUnicastPriority uint8
+   1 mMcastPriority uint8
+   1 mIGMPMLDPriority uint8
+   1 mAVStreamPriority uint8
+  16 mPriorityTTL_us array[4] of uint32
+   4 mMMETTL_us uint32
+   1 mEnableVLANOver uint8
+   1 mEnableTOSOver uint8
+   1 mEnableTrafficClass_DSCPOver uint8
+   1 mMinimumCapToPreserveForQos uint8
+   1 mPrio3_mask 0000
+   1 mPrio7_mask 0000
+   1 mPrec3_mask 0000
+   1 mPrec7_mask 0000
+  64 mTrafficClass_DSCPMatrices array[16] of CCTrafficClassMatrix
+   4 mNumClassifierPriorityMaps uint32
+   4 mNumAutoConnections uint32
+ 224 mClassifierPriorityMaps array[8] of CCClassifierPriorityMap_PIB
+1600 mAutoConnections array[16] of CCAutoConnection_PIB
+   1 mNumberOfConfigEntries uint8
+  16 mEntries array[8] of CAggregationConfigEntry
+ 103 Reserved_CustomAggregationParameters array[12] of uint32
+   4 mToneMaskType uint32
+   4 mEnabled uint32
+   4 mStartTone uint32
+   4 mEndTone uint32
+  12 mReserved array[3] of uint32
+   2 mPsdIndex uint16
+   2 mEnableDynamicPsd uint16
+   4 mPhySyncReference uint32
+   4 mTxPrescalerType uint32
+1348 mData array[337] of uint32
+   1 mMitigateEnabled uint8
+   4 mCorrelThreshold uint32
+   4 mScaledTxGain int32
+   1 mEnableIsolationChannelScanning_Selection uint8
+   8 mMasterIsolationChannelSelection_ChannelID uint64
+   1 mNumIsolationChannels uint8
+ 384 mIsolationChannelConfiguration array[16] of CCIsolationChannelConfig
+   1 mEnabled uint8
+   1 mDefaultHwCouplingState_LineNeutral uint8
+   1 mEnableToneMaskPhyLimitForSmartCoupler uint8
+   1 mReserved0 uint8
+   4 mCouplingControlGpioBitMask uint32
+   2 mAlternateCouplingMinImprovement_Percent uint16
+   2 mAlternateCouplingMinPhyRate_Mbps uint16
+   8 mReserved0 array[2] of uint32
+   4 mTimeoutForUnusedPrimaryChannel_ms uint32
+   4 mTimeoutForUnusedAlternateChannel_ms uint32
+   2 mMaxPhyRateScale_Percent uint16
+   2 mMinimumDropInUsedPhyRate_Mbps uint16
+   4 mMinTimeBetweenInitialSounding_ms uint32
+   4 mOverrideCouplingSelectTimeout_ms uint32
+   8 mReserved0 array[2] of uint32
+  32 mReserved1 array[8] of uint32
+   1 mEnableROBO_OnlyModeSelection uint8
+   1 mROBOModeSelection4UnicastData uint8
+   1 mROBOModeSelection4BroadcastData uint8
+   1 mROBOModeSelection4MMEs uint8
+   1 mSLAC_EnableMode uint8
+   4 mScaledTxGainAdjustment_LowAttenuationTone uint32
+  40 mScaledTxGainAdjustment_HighAttenuationTone uint32
+   4 mFeatureMapA uint32
+   4 mFeatureMapB uint32
+   4 mRsvdC uint32
+   4 mRsvdD uint32
+   1 mAllowNEKRotation uint8
+   1 mOverrideNEKRotationTimer uint8
+   2 mNEKRotationTime_Min uint16
+   4 mOverrideLocalNEK uint32
+  16 mLocalNEKToUse CCEncryptionKey
+   1 mReserved0 uint8
+   1 mOverrideMinButtonPressHoldTime uint8
+   2 mMinButtonPressHoldTime uint16
+   1 mPBControlStatus uint8
+   1 mSTAMembershipMaskEnabled uint8
+   1 mExitDefaultEnabled uint8
+   1 mRejectDefaultEnabled uint8
+   1 mChainingEnabled uint8
+   1 mRSVD1 uint8
+   1 mRSVD2 uint8
+  16 mVendorSpecificNMK CCEncryptionKey
+   4 mUplinkLimit_bps uint32
+   4 mDownlinkLimit_bps uint32
+   1 mMDUStaticSNID uint8
+   1 mOverrideBridgeTableAgingTime uint8
+   2 mLocalBridgeTableAgingTime_min uint16
+   2 mRemoteBridgeTableAgingTime_min uint16
+  47 mLocalMACAddressLimit uint8
+   4 mConfigFlags uint32
+   4 mTxToneMapExpiry_ms uint32
+   4 mRxToneMapExpiry_ms uint32
+   4 mTimeoutToResound_ms uint32
+   4 mMissingSackThresholdForUnplugDetection uint32
+   4 mUnplugTimeout_ms uint32
+   8 mContentionWindowTable array[4] of uint16
+   4 mBackoffDeferalCountTable array[4] of uint8
+   1 mGoodSoundCountThreshold uint8
+   1 mSoundCountThreshold_GoodSoundCountPass uint8
+   1 mSoundCountThreshold_GoodSoundCountFail uint8
+   1 mReserved1 uint8
+   1 mChannelAccessEnhancementControl uint8
+   3 mReserved0 array[3] of uint8
+   1 mChannelAccessEnhancementControl uint8
+   3 mReserved0 array[3] of uint8
+   1 mChannelAccessEnhancementControl uint8
+   3 mReserved0 array[3] of uint8
+   1 mChannelAccessEnhancementControl uint8
+   3 mReserved0 array[3] of uint8
+   1 mChannelAccessEnhancementControl uint8
+   3 mReserved0 array[3] of uint8
+   1 mChannelAccessEnhancementControl uint8
+   3 mReserved0 array[3] of uint8
+  64 mReserved array[2] of uint32
+   1 mOverrideDefaultLedEventBehavior uint8
+   1 mReportToHostConfig uint8
+   1 mNumBehaviors uint8
+   1 mNumEvents uint8
+ 896 mBehaviorBlockArray array[32] of tBehaviorBlock
+ 384 mEventBlockArray array[48] of tEventBlock
+   6 mPinToGpioNoMapping array[6] of uint8
+   2 mInputGpioMask uint16
+   2 mOutputGpioMask uint16
+   2 mControlGpioMask uint16
+   1 mData uint8
+   1 mData uint8
+   1 mRsvd_mask 00FC
+   1 mData uint8
+   1 mPLLinkStatus_CCoDuration_sec uint8
+   1 mPLLinkStatus_StaDuration_sec uint8
+   1 mDefault_CCoPLLinkStatusOn uint8
+   1 mRsvd_mask 00F8
+   4 mLowLinkSpeed_kbps uint32
+   4 mHighLinkSpeed_kbps uint32
+   1 mReserved1 uint8
+   2 mSCID_MinHoldTime_ms uint16
+   2 mSCID_MaxHoldTime_ms uint16
+   2 mSCID_AddFailTimeout_ms uint16
+   2 mSCID_GpioMask uint16
+   4 mSCID_SCAdderTimeout_ms uint32
+   4 mSCID_SCJoinerTimeout_ms uint32
+   2 mSCID_SCTimeout_ms uint16
+   2 mSCID_JoinFailTimeout_ms uint16
+   2 mNMKRand_MinHoldTime_ms uint16
+   2 mNMKRand_MaxHoldTime_ms uint16
+   2 mNMKRand_GpioMask uint16
+   2 mReserved1 uint16
+   2 mRstFactDflt_MinHoldTime_ms uint16
+   2 mRstFactDflt_MaxHoldTime_ms uint16
+   2 mRstFactDflt_GpioMask uint16
+   2 mReserved1 uint16
+   2 mGPIOReportMME_MinHoldTime_ms uint16
+   2 mGPIOReportMME_MaxHoldTime_ms uint16
+   2 mGPIOReportMME_GpioMask uint16
+   2 mGPIOReportMME_Dest uint16
+   6 mGPIOReportMME_DestAddr CCMACAddress
+   2 mReserved1 uint16
+   2 mGPIO_SCR_MME_MinHoldTime_ms uint16
+   2 mGPIO_SCR_MME_MaxHoldTime_ms uint16
+   2 mGPIO_SCR_MME_GpioMask uint16
+   2 mGPIO_SCR_MME_Dest uint16
+   6 mGPIO_SCR_MME_DestAddr CCMACAddress
+   1 mGPIO_SCR_MME_UserEvt uint8
+ 156 mGPIO_SCR_MME_StateCtrl uint8
+   2 mStandbyConfig uint16
+   4 mPowerSavePeriod tPowerSavePeriod
+   4 mStandbyModeEnabledForStationRole uint32
+   1 mLedOnDutyCycle uint8
+   1 mbPowerLedEnabled bool
+   4 mSignalingGpioAssignment array[4] of uint8
+   4 mProgrammingGpioAssignment array[5] of uint8
+   1 mNumberProgrammingGpios uint8
+  13 mMaxSize array[6] of uint32
+   1 mEnabled uint8
+   1 mPolarity uint8
+   1 mGpioNumber uint8
+   5 mReserved array[5] of uint8
+   8 mRSVD array[2] of uint32
+ 120 mWakeEvents array[3] of CCAPMConcurrentEvents
+   2 mNumberConcurrentWakeEvents uint16
+ 120 mSleepEvents array[3] of CCAPMConcurrentEvents
+   2 mNumberConcurrentSleepEvents uint16
+   4 mDurationB4Standby_ms uint32
+   4 mAwakeWindow tAwakeWindow
+   4 mUnusedOptionBits_mask FFFC
+   1 mEthPhyType uint8
+   1 mOptimizationType uint8
+   2 mRSVD1 array[2] of uint8
+  74 mRSVD2 array[2] of uint32
+   1 mStaticNetworkEnabled uint8
+   1 mLD_TEI uint8
+   6 mCCo_MACAdd CCMACAddress
+   1 mSNID uint8
+   1 mNumPeerNodes uint8
+  14 mPeerNodes array[2] of CCPeerNodeX
+   1 mContinuousRx uint8
+   1 mMaxPbsPerSymbol uint8
+   1 mMaxModulation uint8
+   1 mRsvd8 uint8
+   4 mRsvd32 uint32
+  96 mMmeDebugConfiguration uint32
+   1 mFeatureEnabled uint8
+   1 mLimitMme uint8
+   1 mLimitCap0 uint8
+   1 mReserved1 uint8
+  12 mReserved2 array[3] of uint32
+   1 mFeatureEnabled uint8
+   1 mPrimaryScalePercent uint8
+   1 mAlternateScalePercent uint8
+   1 mMaximumMissingReports uint8
+   4 mReportTimeInterval_ms uint32
+   4 mMinimumSymbolRate_s uint32
+  20 RSVD

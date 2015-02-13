@@ -1,0 +1,74 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			xmlattribute.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='xml2pib.c.html' title=' xml2pib.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='xmldata.c.html' title=' xmldata.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   struct node * xmlattribute (struct node const * node, char const * name);
+ *
+ *   node.h
+ *
+ *   search an element node for the named attribute node; return the
+ *   attribute node address;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef XMLATTRIBUTE_SOURCE
+#define XMLATTRIBUTE_SOURCE
+
+#include &lt;string.h&gt;
+
+#include &quot;../nodes/node.h&quot;
+
+struct node const * xmlattribute (struct node const * node, char const * name)
+
+{
+	if (node)
+	{
+		node = node-&gt;below;
+	}
+	while (node)
+	{
+		if (node-&gt;type == NODE_ATTR)
+		{
+			if (!strcmp (node-&gt;text, name))
+			{
+				break;
+			}
+		}
+		node=node-&gt;after;
+	}
+	return (node);
+}
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='xml2pib.c.html' title=' xml2pib.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='xmldata.c.html' title=' xmldata.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

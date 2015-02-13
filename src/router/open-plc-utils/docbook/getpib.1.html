@@ -1,0 +1,188 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			getpib.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='evse.1.html' title=' evse.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='hpav.1.html' title=' hpav.1 '>NEXT</a>]
+			</div>
+<pre>
+getpib(1)                                    Qualcomm Atheros Open Powerline Toolkit                                   getpib(1)
+
+NAME
+       getpib - Qualcomm Atheros PIB Data Extractor
+
+SYNOPSIS
+       getpib file offset format [length]
+
+DESCRIPTION
+       This  program is a companion to program setpib and is designed to support shell scripts.  It extracts PIB file parameters
+       so that a scripting language can evaluate, manipulate or store them with minimal effort.  Good scripting skills and  some
+       imagination may be required to make effective use of this program.
+
+       Users having a detailed knowledge of PIB content and structure can make extremely effective use of this program; however,
+       Atheros is under no obligation to provide customers with the offset, length or format of PIB file parameters.
+
+       This program is part of the Qualcomm Atheros Powerline Toolkit.  See the AMP man page for an  overview  and  installation
+       instructions.
+
+OPTIONS
+       - c character
+              The appended character.  Append this character each line of output instead of newline.  Use this to create a comma
+              separated list of value, for example, by specifying a comma.
+
+       -n     Append a newline to the output.
+
+       -q     Enable quiet mode which has no effect.
+
+       -v     Verbose mode.  Does nothing.
+
+       -?,--help
+              Print program help summary on stdout.  This option takes precedence over other options on the command line.
+
+       -!,--version
+              Print program version information on stdout.  This option takes precedence over other options on the command line.
+              Usethis  option  when sending screen dumps to Atheros Technical Support so that they know exactly which version of
+              the Linux Toolkit you are using.
+
+ARGUMENTS
+       file   The PIB filename.  This argument is required and must appear first on the command line.  No assumptions  are  made
+              based on filename and no filename conventions are enforced; however, an invalid PIB file will be rejected.
+
+       offset The  data  offset  in  bytes expressed in hexadecimal.  This argument is required and must follow the filename.  A
+              leading &quot;0x&quot; prefix is optional.  The data offset plus the data length cannot exceed the file extent.
+
+       format The output format.  This argument is required and must follow the offset.  Some formats imply fixed  data  length.
+              Others formats are for variable length data.  The fixed data formats are byte, word, long, hfid, mac and key.  The
+              variable data formats are data and text.  The formats are described in the next section.
+
+       length The data length in bytes expressed in decimal.  This argument is only required for the the data formats  data  and
+              text.  The data offset plus the data length cannot exceed the file extent.  The data length cannot exceed 1024.
+
+FORMATS
+       byte   Extract  1  byte  and  display it as an unsigned decimal integer value.  The offset advances  byte before starting
+              another extraction.
+
+       word   Extract 2 consecutive bytes and display them as an unsigned decimal integer value after  endian  conversion.   The
+              offset advances  bytes before starting another extraction.
+
+       long   Extract  4  consecutive  bytes and display them as an unsigned decimal integer value after endian conversion.  The
+              offset advances 4 bytes before starting another extraction.
+
+       huge   Extract 8 consecutive bytes and display them as an unsigned decimal integer value after  endian  conversion.   The
+              offset advances 8 bytes before starting another extraction.
+
+       xbyte  Extract  1  byte and display it as a hexadecimal integer value.  The offset advances  byte before starting another
+              extraction.
+
+       xword  Extract 2 consecutive bytes and display them as a hexadecimal integer value after endian conversion.   The  offset
+              advances  bytes before starting another extraction.
+
+       xlong  Extract  4  consecutive bytes and display them as a hexadecimal integer value after endian conversion.  The offset
+              advances 4 bytes before starting another extraction.
+
+       xhuge  Extract 8 consecutive bytes and display them as a hexadecimal integer value after endian conversion.   The  offset
+              advances 8 bytes before starting another extraction.
+
+       data length
+              Extract  the  specified  number  of bytes and display them as a hexadecimal string with no punctuation to separate
+              octets.  The offset advances length bytes before starting another extraction.  The minimum length is 1.  The maxi‐
+              mum length is 1024.
+
+       mac    Extract  6  bytes  and  display  them as a colon-separated hexadecimal string.  The offset advances 6 bytes before
+              starting another extraction.  This is similar to &quot;data 6&quot; but colons separate each octet.
+
+       key    Extract 16 bytes and display them as a colon-separated hexadecimal string.  The offset advances  16  bytes  before
+              starting another extraction.  This is similar to &quot;data 16&quot; but colons separate each octet.
+
+       hfid   Extract  64 consecutive bytes and display them as an ASCII string that terminates at the first non-printable char‐
+              acter.  The offset advances 64 bytes before starting another extraction.  This is equivalent to &quot;text 64&quot;.
+
+       skip length
+              Advance the specified number of bytes without displaying anything.  The offset advances  by  length  bytes  before
+              starting another extraction.  The minimum length is 1.  The maximum length is 1024.
+
+       text length
+              Extract  the specified number of bytes and display them as an ASCII string that terminates at the first non-print‐
+              able character.  The offset advances the specified number of bytes before starting another extraction.
+
+TR-069
+       accesspassword
+              Extract 65 consecutive bytes and display them as an ASCII string that terminates at the first non-printable  char‐
+              acter.   The offset advances 65 bytes before starting another extraction.  This format is equivalent to &quot;text 65&quot;.
+
+       accessusername
+              Extract 33 consecutive bytes and display them as an ASCII string that terminates at the first non-printable  char‐
+              acter.   The offset advances 33 bytes before starting another extraction.  This format is equivalent to &quot;text 33&quot;.
+
+       adminpassword
+              Extract 33 consecutive bytes and display them as an ASCII string that terminates at the first non-printable  char‐
+              acter.   The offset advances 33 bytes before starting another extraction.  This format is equivalent to &quot;text 33&quot;.
+
+       adminusername
+              Extract 33 consecutive bytes and display them as an ASCII string that terminates at the first non-printable  char‐
+              acter.   The offset advances 33 bytes before starting another extraction.  This format is equivalent to &quot;text 33&quot;.
+
+       password
+              Extract 257 consecutive bytes and display them as an ASCII string that terminates at the first non-printable char‐
+              acter.   The  offset  advances  257  bytes before starting another extraction.  This format is equivalent to &quot;text
+              257&quot;.
+
+       url    Extract 257 consecutive bytes and display them as an ASCII string that terminates at the first non-printable char‐
+              acter.   The  offset  advances  257  bytes before starting another extraction.  This format is equivalent to &quot;text
+              257&quot;.
+
+       username
+              Extract 257 consecutive bytes and display them as an ASCII string that terminates at the first non-printable char‐
+              acter.   The  offset  advances  257  bytes before starting another extraction.  This format is equivalent to &quot;text
+              257&quot;.
+
+EXAMPLES
+       The following example extracts one byte from offset 01F7 of PIB file abc.pib and displays it as an unsigned decimal inte‐
+       ger  string.   No  length specification is needed because the byte format has an implied length of 1 byte.  The displayed
+       value is 232 because the byte format is decimal.  We could have specified &quot;data 1&quot; to display the  byte  in  hexadecimal.
+       The return prompt appears on the display line because option -n was omitted.
+
+          # getpib abc.pib 01F7 byte
+          232#
+
+       The  next  example  extracts two bytes at offset 01F7 and displays them as a hexadecimal string.  A length of 2 is needed
+       because the data format is variable length.  We could have specified &quot;word&quot; to display these bytes as an unsigned decimal
+       integer  string.   The hexadecimal string consists two octets E8 and 8A.  The first byte is the same one extracted in the
+       last example.  The return prompt appears on a new line because option -n was present.
+
+          # getpib abc.pib 01F7 data 2 -n
+          E88A
+          #
+
+DISCLAIMER
+       PIB file structure and content is proprietary to Qualcomm Atheros, Ocala FL USA.  Consequently, public information is not
+       available.  Qualcomm Atheros reserves the right to modify PIB file structure or content in future firmware releases with‐
+       out any obligation to notify or compensate users of this program.
+
+SEE ALSO
+       chkpib(7), chkpib2(7), modpib(1), pib2xml(1), pibcomp(1), pibdump(1), setpib(1), xml2pib(1)
+
+CREDITS
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                                getpib(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='evse.1.html' title=' evse.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='hpav.1.html' title=' hpav.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

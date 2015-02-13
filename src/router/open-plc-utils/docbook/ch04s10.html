@@ -1,0 +1,46 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Upgrade Device (INT6000/INT6300/INT6400)</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="ch04.html" title="Chapter 4.  Firmware"><link rel="prev" href="ch04s09.html" title="But wait! There's more ..."><link rel="next" href="ch04s11.html" title="Update Local Host (INT6000/INT6300/INT6400)"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">
+            Upgrade Device (INT6000/INT6300/INT6400)
+            </th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch04s09.html">Prev</a> </td><th width="60%" align="center">Chapter 4. 
+		Firmware 
+		</th><td width="20%" align="right"> <a accesskey="n" href="ch04s11.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="firmware-6000-flash"></a>
+            Upgrade Device (INT6000/INT6300/INT6400)
+            </h2></div></div></div><p>
+            The Upgrade Device operation downloads firmware and/or <acronym class="acronym">PIB</acronym> from a remote host to an Atheros device for permanent storage and immediate execution. The device determines where and how it will store the information based on the availability of onboard flash memory. If the device has dedicated flash memory then it will store the firmware and <acronym class="acronym">PIB</acronym> there and reset itself; otherwise, it will hand the firmware and <acronym class="acronym">PIB</acronym> to the local host for storage and the local host will reset the device. The reset ensures that new firmware and <acronym class="acronym">PIB</acronym> take immediate effect once they are saved. This operation requires custom software on the remote host and Atheros firmware on the device. 
+            </p><div class="figure"><a name="idp10045088"></a><p class="title"><b>Figure 4.2. 
+                Upgrade Device (INT6000/INT6300/INT6400)
+                </b></p><div class="figure-contents"><pre class="programlisting">
+
+        REMOTE-HOST                        INT6300/INT6400
+        [01] |-------- VS_WR_MOD.REQ ------------&gt;| [01]
+        [01] |&lt;------- VS_WR_MOD.CNF -------------| [01]
+        [01] |-----------------------------------&gt;| [01]
+        [01] |&lt;-----------------------------------| [01]
+             |                                    |
+        [02] |-------- VS_WR_MOD.REQ ------------&gt;| [02]
+        [02] |&lt;------- VS_WR_MOD.CNF -------------| [02]
+        [02] |-----------------------------------&gt;| [02]
+        [02] |&lt;-----------------------------------| [02]
+             |                                    |
+        [03] |-------- VS_MOD_NVM.REQ -----------&gt;| [04]
+        [05] |&lt;------- VS_MOD_NVM.CNF ------------| [04]
+             |                                    | [06]
+
+</pre></div></div><br class="figure-break"><div class="orderedlist"><ol type="1"><li><p>
+                    Optionally, the remote host writes firmware to the device by sending a series of <code class="constant">VS_WR_MOD.REQ</code> messages and waiting for a <code class="constant">VS_WR_MOD.CNF</code> message after each one. The message <code class="varname">MODULEID</code> field is set to <code class="constant">0x01</code> for this operation. 
+                    </p></li><li><p>
+                    Optionally, the remote host writes the <acronym class="acronym">PIB</acronym> to the device by sending <code class="constant">VS_WR_MOD.REQ</code> messages and waiting for a <code class="constant">VS_WR_MOD.CNF</code> message after each one. The <code class="varname">MODULEID</code> is set to <code class="varname">0x02</code> for this operation. 
+                    </p></li><li><p>
+                    The remote host commits the firmware and/or <acronym class="acronym">PIB</acronym> to persistent storage by sending a <code class="constant">VS_MOD_NVM.REQ</code> message and waiting for a <code class="constant">VS_MOD_NVM.CNF</code> message. 
+                    </p></li><li><p>
+                    The device received the <code class="constant">VS_MOD_NVM.REQ</code> and sends a <code class="constant">VS_MOD_NVM.CNF</code> message to the remote host. 
+                    </p></li><li><p>
+                    The remote host receives the <code class="constant">VS_MOD_NVM.CNF</code> and proceeds with other activity. The remote host does not know or care that the device may not have dedicated flash memory available.
+                    </p></li><li><p>
+                    The device determines where and how to store the information. If dedicated flash memory is available, the device writes the downloaded firmware and <acronym class="acronym">PIB</acronym> to flash memory and performs a software reset that results in a normal <span class="emphasis"><em>Boot from Flash</em></span> operation. If no dedicated flash memory is available, the device initiates an <a class="link" href="ch04s11.html" title="Update Local Host (INT6000/INT6300/INT6400)">Update Local Host</a> operation.
+                    </p></li></ol></div><p>
+            The device does not notify the remote host when the upgrade operation completes. It is therefore incumbent on the remote host to determine ultimate success or failure by polling the device, possiby using a <code class="constant">VS_SW_VER.REQ</code> message, until a response is received. The complete upgrade operation can take from <code class="constant">20</code> seconds to <code class="constant">45</code> seconds depending on device configuration.
+            </p></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch04s09.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="ch04.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch04s11.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">
+			But wait! There's more ...
+			 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 
+			Update Local Host (INT6000/INT6300/INT6400)
+			</td></tr></table></div></body></html>0

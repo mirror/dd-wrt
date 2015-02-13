@@ -1,0 +1,81 @@
+.TH ttycat 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+ttycat - Serial Line Output Utility
+
+.SH SYNOPSIS
+.BR ttycat
+.RI [ options ] 
+.RI [ file ]
+.RI [ file ]
+.RI [> stdout ]
+
+.PP
+.BR ttycat
+.RI [ options ] 
+.RI [< stdin ]
+.RI [> stdout ]
+
+.PP
+
+.SH DESCRIPTION
+Copy one or more files to a serial device.
+This program is similar to traditional \fBcat\fR utility but expects stdout to be a serial tty device.
+It will configure stdout before writing and will restore the original configuration afterwards.
+It can be used to send data to the local Atheros UART-enabled powerline device.
+If the remote powerline device is not UART-enabled, use program \fBedru\fR to capture and display arriving at the remote host and program \fBedsu\fR to send files in the opposite direction.
+
+.PP
+This program is part of the Qualcomm Atheros Powerline Toolkit.
+See the \fBAMP\fR man page for an overview and installation instructions.
+
+.SH COMMENTS
+This program only supports the \fBLinux\fR and \fBMacOSX\fR  platforms, at present.
+
+.SH OPTIONS
+
+.TP
+-\fBs \fIspeed\fR
+The serial baud rate.
+Supported baud rates are \fB0\fR, \fB50\fR, \fB75\fR, \fB110\fR, \fB134\fR, \fB150\fR, \fB200\fR, \fB300\fR, \fB600\fR, \fB1200\fR, \fB1800\fR, \fB2400\fR, \fB4800\fR, \fB9600\fR, \fB19200\fR, \fB38400\fR, \fB57600\fR, \fB115200\fR, \fB230400\fR, \fB460800\fR, \fB500000\fR and \fB921600\fR.
+
+.TP
+.RB - ? ,-- help
+Print program help summary on stdout.
+This option takes precedence over other options on the command line.
+
+.TP
+.RB - ? ,-- version
+Print program version information on stdout.
+This option takes precedence over other options on the command line.
+Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of the Linux Toolkit you are using.
+
+.SH ARGUMENTS
+
+.TP
+.IR file
+The name of an input file.
+No assumptions are made about the file based on the filename or extension.
+Input files are not modified.
+
+.TP
+.IR stdout
+The name of a serial output device.
+A error will occur if the device is not a true tty device according as determined by the \fBisatty\fR function.
+Depending on the amount of input data and the baud rate, serial output may take several seconds or several minutes.
+
+.SH EXAMPLES
+The following command copies files \fBabc.txt\fR and \fBdef.bin\fR to stdout which must be an active serial device or an error will occur.
+
+.PP
+   # ttycat abc.txt def.bin > /dev/ttyUSB1
+
+.SH SEE ALSO
+.BR amp ( 1 ),
+.BR edru ( 1 ),
+.BR edsu ( 1 ),
+.BR int6kuart ( 1 ),
+
+.SH CREDITS
+ Charles Maier <cmaier@qca.qualcomm.com>
+

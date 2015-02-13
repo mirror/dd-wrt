@@ -1,0 +1,91 @@
+.TH nvmmerge 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+nvmmerge - Qualcomm Atheros PLC Firmware Image File Splicer
+
+.SH SYNOPSIS
+.BR nvmmerge 
+.RI [ options ]
+.IR file
+.RI [ file ]
+[...]
+.RI [> stdout ]
+
+.SH DESCRIPTION
+Combine multiple binary image files into a single Qualcomm Atheros binary image file, leaving the original files intact.
+
+.PP
+Qualcomm Atheros image files consist of a chain of image headers, each followed by an image block.
+Image blocks can contain data, applets or programs.
+Atheros software reads the header chain and decides which images to download and execute based on information in image headers.
+Tampering with image headers or images may void some contractual obligations made by Atheros.
+
+.PP
+This program is part of the Qualcomm Atheros Powerline Toolkit.
+See the \fBAMP\fR man page for an overview and installation instructions.
+
+.SH OPTIONS
+
+.TP
+.RB - q
+Suppresses printing of routine messages.
+This option has no efect.
+
+.TP
+.RB - v
+Print input file names on stderr as they are merged.
+
+.TP
+.RB - ? ,-- help
+Print program help summary on stdout.
+This option takes precedence over other options on the command line.
+
+.TP
+.RB - ! ,-- version
+Print program version information on stdout.
+This option takes precedence over other options on the command line.
+use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of the Linux Toolkit you are using.
+
+.SH ARGUMENTS
+
+.TP
+.IR file
+The name of  a Qualcomm Atheros image file.
+By convention, these image files have a \fB.nvm\fR file extension but this program does not enforce that convention.
+Invalid image files will be rejected causing the output to be incomplete.
+
+.SH EXAMPLES
+The following example combines three files, \fBabc-00.nvm\fR, \fBabc-01.nvm\fR and \fBabc-06.nvm\fR into one file \fBabc.nvm\fR.
+Option \fB-v\fR displays the input file names as they are merged.
+Program output is in binary format and so output should be directed to a file or pipe and not the console.
+
+.PP
+   # nvmmerge -v abc-00.nvm abc-01.nvm abc-06.nvm > abc.nvm
+   nvmmerge: abc-00.nvm
+   nvmmerge: abc-01.nvm
+   nvmmerge: abc-06.nvm
+
+.SH DISCLAIMER
+Atheros image file structure and content is proprietary to Qualcomm Atheros, Ocala FL USA.
+Consequently, public information is not available.
+Qualcomm Atheros reserves the right to change file structure or content in future firmware releases without any obligation to notify or compensate users of this program.
+This program is reserved for use by Qualcomm Atheros Field Engineers.
+Use of this program may void certain contractual obligations made by Qualcomm Atheros.
+
+.SH SEE ALSO
+.BR ampboot ( 1 ),
+.BR amptest ( 1 ),
+.BR amptool ( 1 ),
+.BR chknvm ( 1 ),
+.BR chknvm2 ( 1 ),
+.BR int6k ( 1 ),
+.BR int6kf ( 1 ),
+.BR int6ktest ( 1 ),
+.BR nvmsplit ( 1 ),
+.BR plcboot ( 1 ),
+.BR plctest ( 1 ),
+.BR plctool ( 1 )
+
+.SH CREDITS 
+ Charles Maier <cmaier@qca.qualcomm.com>
+

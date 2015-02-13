@@ -1,0 +1,605 @@
+<section id="slac">
+	<title>
+		SLAC Functions and Variables
+		</title>
+	<para>
+		The functions described in this chapter implement <acronym>SLAC</acronym> protocol building blocks. Essentially, there is one function for each dataflow shown on the SLAC interface diagram. The implementations are not sophisticated. Customers must adapt them their own run-time environments.
+		</para>
+	<para>
+		To assist in adapting functions fo various environments, SLAC functions all accept three arguments. The first is a session variable that references information that supports a single PEV-EVSE SLAC interaction. The second is a <link linkend='support-ethernet'>channel</link> variable that references information that supports ISO Layer 2 network communications. The third is a message variable that references an IEEE 802.3 frame buffer used to format, transmit, receive and interpret SLAC messages. Applications may create lists, stacks, queues or heaps of session variables to support multiple PEV-EVSE conversations. That has not been done here but may be done in the future.
+		</para>
+	<para>
+		PEV-HLE determines the application type and security type and stores them in the session variable before attempting a new SLAC session. PEV-HLE also generates and stores the run identifier in the session variable before attempting a new SLAC session. The run identifier is included in messages so that the EVSE-HLE can distinguish frames from different PEV-HLEs when transmitted in broadcast.
+		</para>
+	<section id="session-variable">
+		<title>
+			The Session Variable
+			</title>
+		<para>
+			The session variable is a structure defined in <ulink utl="slac.h.html">slac.h</ulink>. It stores the information needed to manage a single <acronym>SLAC</acronym> protocol session between PEV-HLE and EVSE-HLE. It is necessary because there are cases where multiple PEV-HLE attempt to communicate with one EVSE-HLE or vice verse and each communication involves multiple steps and some steps will fail or be abandoned. 
+			</para>
+	<variablelist>
+		<varlistentry id="session-RunID">
+			<term>
+				session.RunID
+				</term>
+			<listitem>
+				<para>
+A session identifier used to support multiple PEV-EVSE sessions. 
+The PEV-HLE defines a new value with each associateion attempt and broadcasts it to EVSE-HLE in <constant>CM_SLAC_PARAM.REQ</constant> <constant>RunID</constant>.
+EVSE-HLE receive it and store it in their session variable. 
+Once association starts, subsequent messages, in both directions, include this identifier so that PEV-HLE and EVSE-HLE can detect and collate messages from the same conversation. 
+					</para>
+				</listitem>
+			</varlistentry>
+		<varlistentry id="session-ApplicationType">
+			<term>
+				session.APPLICATION_TYPE
+				</term>
+			<listitem>
+				<para>
+Indicates the context in which the SLAC process is being carried out. 
+Currently, the only context is PEV-EVSE association. 
+The PEV-HLE sends this value to the EVSE-HLE in EVSE-HLE in <constant>CM_SLAC_PARAM.REQ</constant> message <constant>APPLICATION_TYPE</constant> field. 
+EVSE-HLE receive it and store it in their session variable.
+					</para>
+				</listitem>
+			</varlistentry>
+		<varlistentry id="session-SecurityType">
+			<term>
+				session.SECURITY_TYPE
+				</term>
+			<listitem>
+				<para>
+Indicates that the sender prefers Secure <acronym>SLAC</acronym> for PEV-EVSE matching. 
+Currently, the only value used in <acronym>SLAC</acronym> demonstration software is <constant>0</constant> for <quote>No Security</quote>. 
+The PEV-HLE defines this value as <constant>0</constant> on startup and broadcasts it to EVSE-HLE in in <constant>CM_SLAC_PARAM.REQ</constant> message <constant>SECURITY_TYPE</constant> field. 
+EVSE-HLE receive it and store it in their session variable for later use when sending <acronym>SLAC</acronym> messages. 
+					</para>
+				</listitem>
+			</varlistentry>
+		<varlistentry id="session-ResponseType">
+			<term>
+				session.RESP_TYPE
+				</term>
+			<listitem>
+				<para>
+The EVSE-HLE defines this value and sends it to the PEV-HLE in <constant>CM_SLAC_PARAM.CNF</constant> message <constant>RESP_TYPE</constant> field. 
+THe default is <constant>0</constant> but this can be changed using <quote>response type =</quote> in profile <filename>evse.ini</filename>.
+					</para>
+				</listitem>
+			</varlistentry>
+		<varlistentry id="session-NUM-SOUNDS">
+			<term>
+				session.NUM_SOUNDS
+				</term>
+			<listitem>
+				<para>
+The number of <constant>CM_MNBC_SOUND.IND</constant> messages that the PEV-HLE should send during sounding. 
+The EVSE-HLE defines this value and sends it to PEV-HLE in <constant>CM_SLAC_PARAM.CNF</constant> message <constant>NUM_SOUNDS</constant> field.
+The default is <constant>10</constant> but this can be changed using <quote>time to soundi =</quote> in profile <filename>evse.ini</filename>. 
+					</para>
+				</listitem>
+			</varlistentry>
+		<varlistentry id="session-TIME-OUT">
+			<term>
+				session.TIME_OUT
+				</term>
+			<listitem>
+				<para>
+The total time allowed for all session sounding to complete. 
+Any msounds arriving after the timeout will be lost. 
+The time is expressed in 100 msec increments. 
+The EVSE-HLE defines this value and sends it to PEV_HLE in <constant>CM_SLAC_PARAM.CNF</constant>.
+The default is <constant>8</constant> but this can be changed using <quote>number of sounds =</quote> in profile <filename>evse.ini</filename>. 
+					</para>
+				</listitem>
+			</varlistentry>
+		<varlistentry id="session-AAG">
+			<term>
+				session.AAG []
+				</term>
+			<listitem>
+				<para>
+The cumulative average attenuation across <constant>58</constant> groups of <constant>16</constant> carriers. 
+The EVSE-HLE computes these averages from multiple <constant>CM_ATTEN_PROFILE.IND</constant> and forwards them to PEV-HLE in <constant>CM_ATTEN_CHAR.IND</constant>. 
+PEV_HLE populates array from <constant>CM_ATTEN_CHAR.IND</constant> message <varname>ACVarField.ATTEN_PROFILE.AAG</varname> field and evaluates it by averaging all values in the array to determine the overall average attenuation. 
+If that values is less than or equal to <structname>session</structname>.<structfield>limit</structfield> then a match may be attempted. 
+					</para>
+				</listitem>
+			</varlistentry>
+		<varlistentry id="session-NumGroups">
+			<term>
+				session.NumGroups
+				</term>
+			<listitem>
+				<para>
+The number of elements in array <structname>session</structname>.<structfield>AAG</structfield>. 
+This EVSE-HLE defines this number and sends it to PEV-HLE in <constant>CM_ATTEN_CHAR.IND</constant> <constant>ACVarField.NumGroups</constant>.
+For practical purposes, this value of this variable is constant at <constant>58</constant>.
+					</para>
+				</listitem>
+			</varlistentry>
+		<varlistentry id="session-MSOUND-TARGET">
+			<term>
+				session.MSOUND_TARGET
+				</term>
+			<listitem>
+				<para>
+MAC address of EVSE-HLE that will receive <constant>CM_MNBC_SOUND.IND</constant> messages. 
+The EVSE-HLE defines this address and broadcasts it to PEV-HLE in <constant>CM_SLAC_PARAM.CNF</constant> message <constant>M-SOUND_TRAGET</constant> field.
+THe PEV-HLE stores this address in its session variable.
+The default is <constant>FF:FF:FF:FF:FF:FF</constant> and remains constant. 
+This value is not used at this time.
+					</para>
+				</listitem>
+			</varlistentry>
+		<varlistentry id="session-FORWARDING_STA">
+			<term>
+				session.FORWARDING_STA
+				</term>
+			<listitem>
+				<para>
+MAC address of PEV-HLE to receive <constant>CM_SLAC_PROFILE.IND</constant> messages. 
+The EVSE-HLE defines this address and sends it to PEV-HLE in <constant>CM_SLAC_PARAM.CNF</constant> message <constant>FORWARDING_STA</constant> field. 
+THe PEV-HLE stores this address in its session variable.
+The default is <constant>FF:FF:FF:FF:FF:FF</constant> and remains constant. 
+This value is ignored when RESP_TYPE=0. 
+					</para>
+				</listitem>
+			</varlistentry>
+		<varlistentry id="session-PEV_ID">
+			<term>
+				session.PEV_ID
+				</term>
+			<listitem>
+				<para>
+The vehicle identification number.
+The PEV-HLE sends this value to the EVSE-HLE in <constant>CM_SLAC_MATCH.REQ</constant> <constant>MatchVarField.PEV_ID</constant> field.
+The default is <constant>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</constant> but is can be changed using <quote>vehicle identifier =</quote> in profile <filename>pev.ini</filename>.
+The MatchVarField portion of the message forms the transaction record and may be encrypted.
+					</para>
+				</listitem>
+			</varlistentry>
+		<varlistentry id="session-PEV_MAC">
+			<term>
+				session.PEV_MAC
+				</term>
+			<listitem>
+				<para>
+PEV-HLE MAC address.
+The PEV-HLE sends this address to the EVSE-HLE in <constant>CM_SLAC_MATCH.REQ</constant> <constant>MatchVarField.PEV_MAC</constant> field.
+The MatchVarField portion of the message forms the transaction record and may be encrypted.
+					</para>
+				</listitem>
+			</varlistentry>
+		<varlistentry id="session-EVSE_ID">
+			<term>
+				session.EVSE_ID
+				</term>
+			<listitem>
+				<para>
+The station identification number. 
+The EVSE-HLE sends this value to PEV-HLE in <constant>CM_SLAC_MATCH.CNF</constant> message <constant>MatchVarField.EVSE_ID</constant> field. 
+The default is <constant>BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB</constant> but is can be changed using <quote>station identifier =</quote> in profile <filename>evse.ini</filename>.
+The MatchVarField portion of the message forms the transaction record and may be encrypted.
+					</para>
+				</listitem>
+			</varlistentry>
+		<varlistentry id="session-EVSE_MAC">
+			<term>
+				session.EVSE_MAC
+				</term>
+			<listitem>
+				<para>
+EVSE-HLE MAC address.
+The EVSE-HLE sends this value to PEV-HLE in <constant>CM_SLAC_MATCH.CNF</constant> message <constant>MatchVarField.EVSE_MAC</constant> field. 
+The MatchVarField portion of the message forms the transaction record and may be encrypted.
+					</para>
+				</listitem>
+			</varlistentry>
+		<varlistentry id="session-NMK">
+			<term>
+				session.NMK
+				</term>
+			<listitem>
+				<para>
+The EVSE-PLC Network Membership Key.
+The EVSE-HLE defines this value when the station powers on.
+The EVSE-HLE sends the NMK to the PEV-HLE in <constant>CM_SLAC_MATCH.CNF</constant> message <constant>MatchField.NMK</constant> field. 
+The PEV-HLE uses this value to form a network with the EVSE-PLC during charging.
+The MatchVarField portion of the message forms the transaction record and may be encrypted.
+					</para>
+				<para>
+The default for PEV-HLE is <constant>50D3E4933F855B7040784DF815AA8DB7</constant>, which is the key derived from network password <quote>HomePlugAV</quote>, but that can be changed using <quote>nwtwork membership key =</quote> in profile <filename>pev.ini</filename>. 
+					</para>
+				<para>
+The default for EVSE-HLE is <constant>B59319D7E8157BA001B018669CCEE30D</constant>, which is the key derived from network password <quote>HomePlugAV0123</quote>, but that can be changed using <quote>nwtwork membership key =</quote> in profile <filename>evse.ini</filename>. 
+					</para>
+					
+				</listitem>
+			</varlistentry>
+		<varlistentry id="session-NID">
+			<term>
+				session.NID
+				</term>
+			<listitem>
+				<para>
+The EVSE-PLC Network Identifier.
+The EVSE-HLE defines this value when the station powers.
+The EVSE-HLE sends the NID to the PEV-HLE in <constant>CM_SLAC_MATCH.CNF</constant> message <constant>MatchField.NID</constant> field. 
+The PEV-HLE uses this value to form a network with the EVSE-PLC during charging.
+The MatchVarField portion of the message forms the transaction record and may be encrypted.
+					</para>
+				<para>
+The default for PEV-HLE is <constant>B0F2E695666B03</constant>, which is the key derived from network password <quote>HomePlugAV</quote>, but that can be changed using <quote>nwtwork membership key =</quote> in profile <filename>pev.ini</filename>. 
+					</para>
+				<para>
+The default for EVSE-HLE is <constant>026BCBA5354E08</constant>, which is the key derived from network password <quote>HomePlugAV0123</quote>, but that can be changed using <quote>nwtwork membership key =</quote> in profile <filename>evse.ini</filename>. 
+					</para>
+				</listitem>
+			</varlistentry>
+		<varlistentry id="session-RND">
+			<term>
+				session.RND
+				</term>
+			<listitem>
+				<para>
+A random value. 
+PEV-HLE computes this value and sends it to EVSE-HLE in <constant>CM_MNBC_SOUND.IND</constant>. 
+This value is not used at this time.
+					</para>
+				</listitem>
+			</varlistentry>
+		<varlistentry id="session-nmk">
+			<term>
+				session.original_nmk
+				</term>
+			<listitem>
+				<para>
+The original PEV-PLC Network Membership Key.
+This is the original NMK of the PEV-HLE.
+The PEV-HLE preserves this value before, and restores it after, the charging cycle.
+The Qualcomm Atheros PEV-HLE and EVSE-HLE demonstration software reads these values from profile <filename>pev.ini</filename> and <filename>evse.ini</filename>, respectively, by <quote>network membership key = </quote>.  
+					</para>
+				</listitem>
+			</varlistentry>
+		<varlistentry id="session-nid">
+			<term>
+				session.original_nid
+				</term>
+			<listitem>
+				<para>
+The PLC Network Identifier (<acronym>NID</acronym>). 
+PEV-PLC and EVSE-PLC will each have a different <acronym>NID</acronym> at the start of the SLAC process.
+This value must be preserved before, and restored after, charging. 
+Once charging is complete, PEV-HLE and EVSE-HLE restore this value to their respective PLC using <constant>CM_SET_KEY</constant>. 
+In a real world implementation, PEV-HLE and EVSE-HLE would read this value from their repective PLC and save it in <structname>session</structname>.<structfield>nmk</structfield> and <structname>session</structname>.<structfield>NMK</structfield>. 
+The Qualcomm Atheros PEV-HLE and EVSE-HLE demonstration software reads these values from profile <filename>pev.ini</filename> and <filename>evse.ini</filename>, respectively, by <quote>network identifier = </quote>.  
+					</para>
+				</listitem>
+			</varlistentry>
+		<varlistentry id="session-state">
+			<term>
+				session.state
+				</term>
+			<listitem>
+				<para>
+The current <acronym>SLAC</acronym> protocol session state. Qualcomm Atheros PEV-HLE and EVSE-HLE demonstration programs use this value to direct internal state transitions. 
+Values range from <constant>0</constant> through <constant>3</constant>. 
+					</para>
+				</listitem>
+			</varlistentry>
+		<varlistentry id="session-sounds">
+			<term>
+				session.sounds
+				</term>
+			<listitem>
+				<para>
+The number of MSounds captured received by EVSE-HLE. 
+This value may be less that <structfield>NUM_SOUNDS</structfield> the requested by the EVSE_HLE due to network interruptions or EVSE-HLE overloading. 
+This is the denominator used when computing the average attenuation in array <structname>session</structname>.<structfield>AAG</structfield>. 
+The values is set by PEV_HLE from <constant>CM_ATTEN_CHAR.IND</constant> message <varname>NUM_SOUNDS</varname> field.
+					</para>
+				</listitem>
+			</varlistentry>
+		<varlistentry id="session-limit">
+			<term>
+				session.limit
+				</term>
+			<listitem>
+				<para>
+The attenuation threshold. 
+If the average attenuation value in <structname>session</structname>.<structfield>AAG</structfield> exceeds this value the PEV-HLE will make no attempt to connect the PEV-PLC to the EVSE-PLC. 
+The default value is <constant>10</constant> but this can be re-defined in profile <filename>pev.ini</filename> by <quote>attenuation threshold = </quote>.
+					</para>
+				</listitem>
+			</varlistentry>
+		<varlistentry id="session-pause">
+			<term>
+				session.pause
+				</term>
+			<listitem>
+				<para>
+The time in milliseconds between MSounds. 
+Sounding too frequently does not allow enough time for the EVSE-PLC to sample and compute values. 
+Sounding too infrequently wastes time. 
+The maximum sample rate may be limited by the quality of the powerline media and traffic passwing through the EVSE-PLC. 
+The default is <constant>10</constant> but can be re-defined in profile <filename>pev.ini</filename> by <quote>msound pause = </quote>.   
+					</para>
+				</listitem>
+			</varlistentry>
+		<varlistentry id="session-chargetime">
+			<term>
+				session.chargetime
+				</term>
+			<listitem>
+				<para>
+The time in milliseconds allowed for the charging cycle to complete.
+The default is <constant>10</constant> but this can be changed using <quote>charge time =</quote> in profile <filename>pev.ini</filename> and <filename>evse.ini</filename>.
+The charge time should be the same for PEV-HLE and EVSE-HLE when running long tests.   
+					</para>
+				</listitem>
+			</varlistentry>
+		<varlistentry id="session-settletime">
+			<term>
+				session.settletime
+				</term>
+			<listitem>
+				<para>
+The time in milliseconds allowed for the charging cycle to complete.
+The default is <constant>10</constant> but this can be changed using <quote>settle time =</quote> in profile <filename>pev.ini</filename> and <filename>evse.ini</filename>.
+The settle time should be the same for PEV-HLE and EVSE-HLE when running long tests.   
+					</para>
+				</listitem>
+			</varlistentry>
+		<varlistentry id="session-counter">
+			<term>
+				session.counter
+				</term>
+			<listitem>
+				<para>
+The number of chaging session that have take place.
+This variable is not part of the SLAC protocol.
+The PEV-HLE and EVSE-HLE increment this counter each time they enter the <quote>Charging</quote> state and exchange this value in the unused <constant>CM_SLAC_PARAM.REW</constant> and <constant>CM_SLAC_PARAM.CNF</constant> message <constant>CipherSuite</constant> field.
+Runtime options can be used to instruct either the PEV-HLE or EVSE-HLE to terminate if their counts are out-of-sync.
+					</para>
+				</listitem>
+			</varlistentry>
+		<varlistentry id="session-flags">
+			<term>
+				session.flags
+				</term>
+			<listitem>
+				<para>
+A bit-mapped flagword used to control program flow based on user-specified command line options.
+					</para>
+				</listitem>
+			</varlistentry>
+		</variablelist>
+		</section>
+
+
+
+
+
+
+	<section id="pev_cm_slac_param">
+		<title>
+			pev_cm_slac_param
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>signed <function>pev_cm_slac_param</function></funcdef>
+   				<paramdef>struct session * <parameter>session</parameter></paramdef>
+   				<paramdef>struct channel * <parameter>channel</parameter></paramdef>
+   				<paramdef>struct message * <parameter>message</parameter></paramdef>
+    				</funcprototype>
+			</funcsynopsis>
+		<para>
+PEV-HLE broadcasts <constant>CM_SLAC_PARAM.REQ</constant> messages and waits for a <constant>CM_SLAC_PARAM.CNF</constant> from EVSE-HLEs. 
+This is the first message sent and it initiates SLAC session one some EVSE-HLE responds. 
+Function pev_cm_slac_param copies session.<structfield>APPLICATION_TYPE</structfield>, session.<structfield>SECURITY_TYPE</structfield> and session.<structfield>RunID</structfield> into <constant>CM_SLAC_PARAM.REQ</constant> and broadcasts it to listening EVSE-HLE.
+			</para>
+		<para>
+It is possible that multiple EVSE-HLEs will respond but one response is sufficient to proceed. 
+If a <constant>CM_SLAC_PARAM.CNF</constant> is not received within a reasonable time, PEV-HLE sends another another <constant>CM_SLAC_PARAM.REQ</constant> message. 
+PEV-HLE should compare the run identifier in the <constant>CM_SLAC_PARAM.CNF</constant> to that stored in the session variable to ensure that it is not processing <constant>CM_SLAC_PARAM.CNF</constant> messages from some other session. 
+PEV-HLE compares <varname>RunID</varname>, <varname>APPLICATION_TYPE</varname> and <varname>SECURITY_TYPE</varname> from <constant>CM_SLAC_PARAM.CNF</constant> to that stored in the session variable to ensure they have not changed. 
+PEV-HLE stores <varname>MSOUND_TARGET</varname>, <varname>NUM_SOUNDS</varname> and <varname>TIME_OUT</varname> in the session variable for later use.
+			</para>
+		</section>
+	<section id="evse_cm_slac_param">
+		<title>
+			evse_cm_slac_param
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>signed <function>evse_cm_slac_param</function></funcdef>
+   				<paramdef>struct session * <parameter>session</parameter></paramdef>
+   				<paramdef>struct channel * <parameter>channel</parameter></paramdef>
+   				<paramdef>struct message * <parameter>message</parameter></paramdef>
+    				</funcprototype>
+			</funcsynopsis>
+		<para>
+EVSE-HLE receives a <constant>CM_SLAC_PARAM.REQ</constant> and responds with a <constant>CM_SLAC_PARAM.CNF</constant> message.
+This function waits indefinitly for <constant>CM_SLAC_PARAM.REQ</constant> then copies <varname>RunID</varname>, <varname>APPLICATION_TYPE</varname> and <varname>SECURITY_TYPE</varname> from <constant>CM_SLAC_PARAM.REQ</constant> to the session variable for later use. 
+It then copies session.<structfield>MSOUND_TARGET</structfield>, session.<structfield>NUM_SOUNDS</structfield>, session.<structfield>TIME_OUT</structfield>, session.<structfield>RESP_TYPE</structfield>, session.<structfield>FORWARDING_STA</structfield>, session.<structfield>APPLICATION_TYPE</structfield>, session.<structfield>SECURITY_TYPE</structfield> and session.<structfield>RunID</structfield>  to <constant>CM_SLAC_PARAM.CNF</constant> and sends it unicast to the requesting PEV-HLE.
+			</para>
+		</section>
+
+	<section id="pev_cm_start_atten_char">
+		<title>
+			pev_cm_start_atten_char
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>signed <function>evse_cm_start_atten_char</function></funcdef>
+   				<paramdef>struct session * <parameter>session</parameter></paramdef>
+   				<paramdef>struct channel * <parameter>channel</parameter></paramdef>
+   				<paramdef>struct message * <parameter>message</parameter></paramdef>
+    				</funcprototype>
+			</funcsynopsis>
+		<para>
+PEV-HLE informs listening EVSE-HLE that sounding is about to start by broadcasting <constant>CM_START_ATTEN_CHAR.IND</constant>.
+Function pev_cm_start_char copies session.<structfield>NUM_SOUNDS</structfield>, session.<structfield>TIME_OUT</structfield>, session.<structfield>RESP_TYPE</structfield>, session.<structfield>FORWARDING_STA</structfield> and session.<structfield>RunID</structfield> to <constant>CM_START_ATTEN_CHAR.IND</constant>.
+			</para>
+		<para>
+			The standard recommends that this message be sent three times. Our demonstration software does not do this.
+			</para>
+		</section>
+	<section id="evse_cm_start_atten_char">
+		<title>
+			evse_cm_start_atten_char
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>signed <function>evse_cm_start_atten_char</function></funcdef>
+   				<paramdef>struct session * <parameter>session</parameter></paramdef>
+   				<paramdef>struct channel * <parameter>channel</parameter></paramdef>
+   				<paramdef>struct message * <parameter>message</parameter></paramdef>
+    				</funcprototype>
+			</funcsynopsis>
+		<para>
+EVSE-HLE receives <constant>CM_START_ATTEN_CHAR</constant> from PEV-HLE and prepares to receive sounds by initializing msound counters and starting a timer.
+This function compares <varname>RunID</varname> from <constant>CM_START_ATTEN_CHAR</constant> to session.<structfield>RunID</structfield> to ensure that this message belongs to a known session.
+This function compares <varname>APPLICATION_TYPE</varname>, <varname>SECURITY_TYPE</varname>, <varname>NUM_SOUNDS</varname>, <varname>TIME_OUT</varname>, <varname>RESP_TYPE</varname> and <varname>FORWARDING_STA</varname> to the session variable to ensure that values have not changed. 
+			</para>
+		</section>
+	<section id="pev_cm_mnbc_sound">
+		<title>
+			pev_cm_mnbc_sound
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>signed <function>pev_cm_mnbc_sound</function></funcdef>
+   				<paramdef>struct session * <parameter>session</parameter></paramdef>
+   				<paramdef>struct channel * <parameter>channel</parameter></paramdef>
+   				<paramdef>struct message * <parameter>message</parameter></paramdef>
+    				</funcprototype>
+			</funcsynopsis>
+		<para>
+PEV-HLE sends periodic <constant>CM_MNBC_SOUND.IND</constant> to EVSE-HLE.
+			</para>
+		</section>
+	<section id="evse_cm_mnbc_sound">
+		<title>
+			evse_cm_mnbc_sound
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>signed <function>evse_cm_mnbc_sound</function></funcdef>
+   				<paramdef>struct session * <parameter>session</parameter></paramdef>
+   				<paramdef>struct channel * <parameter>channel</parameter></paramdef>
+   				<paramdef>struct message * <parameter>message</parameter></paramdef>
+    				</funcprototype>
+			</funcsynopsis>
+		<para>
+EVSE-HLE receives interleaved <constant>CM_MNBC_SOUND.IND</constant> from PEV-HLE and <constant>CM_ATTEN_PROFILE.IND</constant> messages from EVSE-PLC.
+This function maintains a running average of attenuation values across each carrier group in array session.<structfield>AAG</structfield>.
+			</para>
+		</section>
+	<section id="evse_cm_atten_char">
+		<title>
+			evse_cm_atten_char
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>signed <function>evse_cm_atten_char</function></funcdef>
+   				<paramdef>struct session * <parameter>session</parameter></paramdef>
+   				<paramdef>struct channel * <parameter>channel</parameter></paramdef>
+   				<paramdef>struct message * <parameter>message</parameter></paramdef>
+    				</funcprototype>
+			</funcsynopsis>
+		<para>
+EVSE-HLE sends <constant>CM_ATTEN_CHAR.IND</constant> to PEV-HLE.
+This function copies session.<structfield>AAG</structfield> to <constant>CM_ATTEN_CHAR.IND</constant>.
+			</para>
+		</section>
+	<section id="pev_cm_atten_char">
+		<title>
+			pev_cm_atten_char
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>signed <function>pev_cm_atten_char</function></funcdef>
+   				<paramdef>struct session * <parameter>session</parameter></paramdef>
+   				<paramdef>struct channel * <parameter>channel</parameter></paramdef>
+   				<paramdef>struct message * <parameter>message</parameter></paramdef>
+    				</funcprototype>
+			</funcsynopsis>
+		<para>
+PEV-HLE receives <constant>CM_ATTEN_CHAR.IND</constant> from EVSE-HLE and acknwoledges with <constant>CM_ATTEN_CHAR.RSP</constant>.
+			</para>
+		</section>
+	<section id="pev_cm_slac_match">
+		<title>
+			pev_cm_slac_match
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>signed <function>pev_cm_slac_match</function></funcdef>
+   				<paramdef>struct session * <parameter>session</parameter></paramdef>
+   				<paramdef>struct channel * <parameter>channel</parameter></paramdef>
+   				<paramdef>struct message * <parameter>message</parameter></paramdef>
+    				</funcprototype>
+			</funcsynopsis>
+		<para>
+PEV-HLE sends <constant>CM_SLAC_MATCH.REQ</constant> to selected EVSE-HLE and waits for <constant>CM_SLAC_MATCH.CNF</constant>.
+This function evaluates sounds across all carrier groups and compares result to some threshold and selects one EVSE-HLE.
+This function copies session.<structfield>APPLICAION_TYPE</structfield>, session.<structfield>SECURITY_TYPE</structfield>, session.<structfield>PEV_ID</structfield>, session.<structfield>PEV_MAC</structfield> and session.<structfield>RunID</structfield> to <constant>CM_SLAC_PARAM.REQ</constant> and sends it unicast to the selected EVSE-HLE.
+			</para>
+		</section>
+	<section id="evse_cm_slac_match">
+		<title>
+			evse_cm_slac_match
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>signed <function>evse_cm_slac_match</function></funcdef>
+   				<paramdef>struct session * <parameter>session</parameter></paramdef>
+   				<paramdef>struct channel * <parameter>channel</parameter></paramdef>
+   				<paramdef>struct message * <parameter>message</parameter></paramdef>
+    				</funcprototype>
+			</funcsynopsis>
+		<para>
+EVSE-HLE listens for <constant>CM_SLAC_MATCH.REQ</constant> from PEV-HLE and abandons the session if no indication is received within a reasonable time.
+If an indication is received then this function compares <varname>RunID</varname> from <constant>CM_SLAC_MATCH.REQ</constant> to the session.<structfield>RunID</structfield> to ensure the message is part of the current session. 
+This function compares <varname>APPLICATION_TYPE</varname> and <varname>SECURITY_TYPE</varname> to the session.<structfield>APPLICATION_TYPE</structfield> and session.<structfield>SECURITY_TYPE</structfield> to ensure that they have not changed.
+This function copies <varname>PEV_ID</varname> and <varname>PEV_MAC</varname> from <constant>CM_SLAC_MATCH.REQ</constant> to the session variable for later use.
+This function updates session.<structfield>NMK</structfield> and session.<structfield>NID</structfield> with random values.
+This function copies session.<structfield>EVSE_ID</structfield>, session.<structfield>EVSE_MAC</structfield>, session.<structfield>NMK</structfield> and session.<structfield>NID</structfield> to <constant>CM_SLAC_MATCH.RSP</constant> and sends it unicast to the selecing PEV-HLE.
+			</para>
+		</section>
+
+	<section id="evse_cm_set_key">
+		<title>
+			evse_cm_set_key
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>signed <function>evse_cm_mnbc_sound</function></funcdef>
+   				<paramdef>struct session * <parameter>session</parameter></paramdef>
+   				<paramdef>struct channel * <parameter>channel</parameter></paramdef>
+   				<paramdef>struct message * <parameter>message</parameter></paramdef>
+    				</funcprototype>
+			</funcsynopsis>
+		<para>
+			</para>
+		</section>
+	<section id="pev_cm_set_key">
+		<title>
+			pev_cm_set_key
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>signed <function>pev_cm_mnbc_sound</function></funcdef>
+   				<paramdef>struct session * <parameter>session</parameter></paramdef>
+   				<paramdef>struct channel * <parameter>channel</parameter></paramdef>
+   				<paramdef>struct message * <parameter>message</parameter></paramdef>
+    				</funcprototype>
+			</funcsynopsis>
+		<para>
+			</para>
+		</section>
+	</section>

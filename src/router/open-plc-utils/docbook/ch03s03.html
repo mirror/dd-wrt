@@ -1,0 +1,45 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Platform Options</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="ch03.html" title="Chapter 3.  Software"><link rel="prev" href="ch03s02.html" title="Security Considerations"><link rel="next" href="ch03s04.html" title="GNU Makefiles on Linux"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">
+			Platform Options 
+			</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch03s02.html">Prev</a> </td><th width="60%" align="center">Chapter 3. 
+		Software 
+		</th><td width="20%" align="right"> <a accesskey="n" href="ch03s04.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="software-platform-options"></a>
+			Platform Options 
+			</h2></div></div></div><p>
+			Qualcomm Atheros makes no claim that the <span class="application">Open Powerline Toolkit</span> will compile  and link in all environments without generating warnings or errors. Different compilers, and compiler versions, treat certain conditions differently and different distributions include different header files or define standard constants and macros differently. Developers should expect to make some source code and makefile modifications to match their environment. 
+			</p><p>
+			The principle consideration is support for raw Ethernet frames. Other considerations include POSIX compliance,  system header file locations,  compiler version and library support. This section discusses some of these considerations.
+			</p><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="platform-linux"></a>
+					<span class="application">GNU/Linux</span> 
+					</h3></div></div></div><p>
+					The toolkit will compile and execute on <span class="application">GNU/Linux</span> systems without modification by using standard Linux header files and native Linux libraries. Raw socket support is native to the Linux Kernel. This is the preferred environment due to cost, networking speed and ease of access to Layer 2 networking.
+					</p><p>
+					Qualcomm Atheros has cross-compiled and executed versions of the toolkit on <span class="productname">MontaVista</span>™ and <span class="productname">AMiLDA</span>™ Linux both for <span class="productname">MIPSEL</span>™ processors. Most toolkit makefiles have symbolic hooks for cross-compilers but Qualcomm Atheros does not support cross-compilation efforts on any platform. 
+					</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="platform-linux-libpcap"></a>
+					GNU/Linux with Libpcap 
+					</h3></div></div></div><p>
+					The toolkit can compile and will execute on <span class="application">GNU/Linux</span> systems having the <span class="application">libpcap</span> development package and runtime libraries installed; however, this feature is disabled by default because it is not needed on Linux and offers no benefits over native Linux sockets.
+					</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="platform-linux-bpf"></a>
+					GNU/Linux with BPF
+					</h3></div></div></div><p>
+					The toolkit should compile and execute on <span class="application">GNU/Linux</span> systems having <span class="application">BPF</span> compiled into the kernel but modifications would be needed to toolkit source code. This configuration has not been tested but the source code is present to support it. Consult Qualcomm Atheros if this option is of interest to you.
+					</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="platform-osx-bpf"></a>
+					<span class="productname">Mac OS X</span>™ with BPF				
+					</h3></div></div></div><p>
+					The toolkit will compile and execute on <span class="application">Mac OS X</span> without modification by using native <acronym class="acronym">BPF</acronym> support compiled into the <span class="application">Darwin</span> kernel. Compilation is clean on <span class="application">Leopard</span> and should be fairly clean on <span class="application">Tiger</span>.
+					</p><p>
+					You may observe compiler warnings concerning the <code class="constant">size_t</code> data type and <code class="constant">print</code> statements. These warning occur because <span class="application">Mac OS X</span> defined the <code class="constant">size_t</code> data type as a 64-bit integer while most other systems define it as a 32-bit integer. Ignore the warnings. We will eventually eliminate them all.
+					</p><p>
+					You may observe a compiler warning concerning the definition of intrinsic function <code class="constant">snprinf</code>. We are not sure what causes this warning but it will be corrected eventually.
+					</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="platform-windows-winpcap"></a>
+					<span class="productname">Windows XP</span>™ with Winpcap 
+					</h3></div></div></div><p>
+					The toolkit will compile and execute on Microsoft <span class="productname">Windows XP</span>™ having <span class="application">WinPcap 4.0.1</span> runtime libraries installed. To assist windows developers, the toolkit includes a Microsoft <span class="productname">Visual Studio .NET 2003</span>™ solution file plus required <span class="application">WinPcap 4.0.1</span> header files and libraries. The resulting programs should execute on any Microsoft <span class="productname">Windows</span>™ computer having <span class="application">WinPcap 4.0.1</span> runtime libraries installed. Qualcomm Atheros does not support the toolkit under any Microsoft <span class="productname">Windows</span>™ operating system at this time. 
+					</p><p>
+					Recent versions of the toolkit include self-extracting file <code class="filename">.\VisualStudioNET\WinPcap4_0_1.exe</code> that installs <span class="application">WinPcap 4.0.1</span> libraries on your system in cases where you have another version installed. If this creates a conflict the you must resolve it to satisfy your system requirements.
+					</p><p>
+					This is not the preferred Toolkit environment due to cost, networking overhead, difficulty accessing Layer network support and lack of a powerful native scripting language. Qualcomm Atheros has not implemented all Toolkit programs on Windows for technical reasons. 
+					</p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch03s02.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="ch03.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch03s04.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">
+			Security Considerations
+			 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 
+				GNU Makefiles on Linux
+				</td></tr></table></div></body></html>0

@@ -1,0 +1,77 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			getoptv.h
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='format.h.html' title=' format.h '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='homeplug.h.html' title=' homeplug.h '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   getoptv.h - getopt related definitions and declarations;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef GETOPTV_HEADER
+#define GETOPTV_HEADER
+
+/*====================================================================*
+ *   constant definitions;
+ *--------------------------------------------------------------------*/
+
+#define GETOPTV_VERSION 1
+#define GETOPTV_SUMMARY 1
+
+#define GETOPTV_C_OPTION  ('-')
+#define GETOPTV_C_OPERAND (':')
+#define GETOPTV_C_ILLEGAL ('?')
+#define GETOPTV_C_VERSION ('!')
+#define GETOPTV_C_SUMMARY ('?')
+
+/*====================================================================*
+ *   variable declarations;
+ *--------------------------------------------------------------------*/
+
+extern char * optarg;
+extern signed optopt;
+extern signed optind;
+extern signed opterr;
+extern signed optmin;
+
+/*====================================================================*
+ *   function declarations;
+ *--------------------------------------------------------------------*/
+
+signed getoptv (int argc, char const * argv [], char const * optv []);
+
+/*====================================================================*
+ *   end definitions;
+ *--------------------------------------------------------------------*/
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='format.h.html' title=' format.h '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='homeplug.h.html' title=' homeplug.h '>NEXT</a>]
+			</div>
+		</body>
+	</html>

@@ -1,0 +1,57 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Chapter 4.  Firmware</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="prev" href="ch03s15.html" title="Frame Encoding"><link rel="next" href="ch04s02.html" title="Firmware Components"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Chapter 4. 
+		Firmware 
+		</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch03s15.html">Prev</a> </td><th width="60%" align="center"> </th><td width="20%" align="right"> <a accesskey="n" href="ch04s02.html">Next</a></td></tr></table><hr></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="firmware"></a>Chapter 4. 
+		Firmware 
+		</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="section"><a href="ch04.html#firmware-intro">
+			Introduction 
+			</a></span></dt><dt><span class="section"><a href="ch04s02.html">Firmware Components</a></span></dt><dd><dl><dt><span class="section"><a href="ch04s02.html#firmware-bootloader">
+				Bootloader 
+				</a></span></dt><dt><span class="section"><a href="ch04s02.html#firmware-softloader">
+				Softloader 
+				</a></span></dt><dt><span class="section"><a href="ch04s02.html#firmware-memory-configuration">
+				Memory Configuration Parameters
+				</a></span></dt><dt><span class="section"><a href="ch04s02.html#firmware-runtime">
+				Runtime Firmware (MAC Software)
+				</a></span></dt><dt><span class="section"><a href="ch04s02.html#firmware-configuration">
+				Parameter Information Block (PIB)
+				</a></span></dt></dl></dd><dt><span class="section"><a href="ch04s03.html">
+			Architecture Overview 
+			</a></span></dt><dt><span class="section"><a href="ch04s04.html">
+			Firmware Boot Process
+			</a></span></dt><dt><span class="section"><a href="ch04s05.html">
+			Boot from Host Configuration 
+			</a></span></dt><dt><span class="section"><a href="ch04s06.html">
+			Things to Remember
+			</a></span></dt><dt><span class="section"><a href="ch04s07.html">
+			Every Little Bit Hurts
+			</a></span></dt><dt><span class="section"><a href="ch04s08.html">
+			Liar! Liar! Pants on Fire!
+			</a></span></dt><dt><span class="section"><a href="ch04s09.html">
+			But wait! There's more ...
+			</a></span></dt><dt><span class="section"><a href="ch04s10.html">
+            Upgrade Device (INT6000/INT6300/INT6400)
+            </a></span></dt><dt><span class="section"><a href="ch04s11.html">
+			Update Local Host (INT6000/INT6300/INT6400)
+			</a></span></dt><dt><span class="section"><a href="ch04s12.html">
+			Boot from Host (INT6000)
+			</a></span></dt><dt><span class="section"><a href="ch04s13.html">
+			Boot from Host (INT6300)
+			</a></span></dt><dt><span class="section"><a href="ch04s14.html">
+			Boot from Host (INT6400)
+			</a></span></dt><dt><span class="section"><a href="ch04s15.html">
+			Boot from Host (AR7400)
+			</a></span></dt><dt><span class="section"><a href="ch04s16.html">
+			 Boot from Host (AR7420)
+			</a></span></dt><dt><span class="section"><a href="ch04s17.html">
+			Flash Memory (AR6410/AR7420)
+			</a></span></dt></dl></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="firmware-intro"></a>
+			Introduction 
+			</h2></div></div></div><p>
+			An Atheros chipset consists of an integral <acronym class="acronym">CPU</acronym>, <acronym class="acronym">ROM</acronym> and proprietary circuitry. The <acronym class="acronym">CPU</acronym> requires a minimum amount of external <acronym class="acronym">SDRAM</acronym> to execute runtime software and store runtime configuration parameters. The <span class="productname">INT6000</span>™ chipset also requires a minimum amount of external flash memory in order to start. The <span class="productname">INT6300</span>™ can use external flash memory in the same way as the <span class="productname">INT6000</span>™ or it can use a local host processor as surrogate flash memory.			
+			</p><p>
+			On startup, the SDRAM memory controller must be configured before runtime firmware and parameters are loaded. On the <span class="productname">INT6000</span>™, runtime firmware and configuration parameters must be loaded from external flash memory. On the <span class="productname">INT6300</span>™, it may be loaded from external flash memory or from a external host processor. Runtime firmware determines device capability. Runtime configuration parameters determine device network identity and personality.
+			</p><p>
+			The following sections identify and describe firmware related components and discuss some of the routine actions required to manage them. Consult the Atheros <em class="citetitle">HomePlug AV Hardware Technical Reference Manual</em> and <em class="citetitle">HomePlug AV Firmware Technical Reference Manual</em> for more information.
+			</p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch03s15.html">Prev</a> </td><td width="20%" align="center"> </td><td width="40%" align="right"> <a accesskey="n" href="ch04s02.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">
+			Frame Encoding 
+			 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> Firmware Components</td></tr></table></div></body></html>0

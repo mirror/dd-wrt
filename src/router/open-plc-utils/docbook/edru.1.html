@@ -1,0 +1,92 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			edru.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='coqos_rel.1.html' title=' coqos_rel.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='edsu.1.html' title=' edsu.1 '>NEXT</a>]
+			</div>
+<pre>
+edru(1)                                      Qualcomm Atheros Open Powerline Toolkit                                     edru(1)
+
+NAME
+       edru - Qualcomm Atheros Ethernet II Data Read Utility
+
+SYNOPSIS
+       edru [options] [&gt;stdout]
+
+DESCRIPTION
+       Listen  for incoming Ethernet II frames and write frame data, less header information, to stdout as a binary data stream.
+       Since frame data can contain anything, users should direct output to a file or pipe it through some  type  of  filter  to
+       prevent  corruption of the terminal session.  If all incoming data is known to be ASCII then directing stdout to the con‐
+       sole should not cause any problems.
+
+       This program can be used to test remote Atheros UART-enabled powerline devices.  Remote device package serial  data  from
+       their  local  host as Ethernet II frames and forwared them over the powerline to a specific destination.  The destination
+       must be the Ethernet address of the receiving host.  This program reads such  frames,  discards  the  frame  headers  and
+       writes the frame dat on stdout.  Data should appear exactly as sent by the remote hos.
+
+OPTIONS
+       -e ethertype
+              The protocol (or ethertype) of interest expressed as a 16-bit hexadecimal integer.  Prefix &quot;0x&quot; is optional.  This
+              filters out frames having any other ethertype.  The default is ETH_P_802_2 as defined in if_ether.h.
+
+       -i interface
+              The host interface used to read frames.  The default is &quot;eth1&quot; because most people use &quot;eth0&quot; as  their  principle
+              network  connection; however, if the string &quot;PLC&quot; is defined in the environment then it will over-ride the program
+              default.  Any interface specified on the command line will over-ride the default.
+
+       -q     Quiet mode.  This option has no effect at this time.
+
+       -t milliseconds
+              Read timeout in milliseconds.  Values range from 0 through UINT_MAX.  This is  the  maximum  time  allowed  for  a
+              response.  The default is 50 milliseconds.
+
+       -v     Verbose mode.  This option has no effect at this time.
+
+ARGUMENTS
+       None.
+
+EXAMPLES
+       The  following  example  monitors host interface eth1 for incoming 802.2 Ethernet frames and writes frame data to stdout.
+       In this case, stdout is the console.  Frame data is written, as it arrives, and forms a single output stream.   Directing
+       output to  the console may corrupt your terminal session, forcing you to close the console window and open another one.
+
+          # edru -ieth1
+
+       The  next  example  does  the  same  thing but directs output to file test.log.  The output file may be inspected using a
+       binary hex editor.  The programs continues to read and write until interrupted using ctrl-c or ctrl-z.
+
+          # edru -ieth1 &gt; test.log
+
+       The next example does the same thing but pipes output into program hexdmp which  displays  data  in  hexadecimal  format.
+       This prevents terminal session corruptions caused by binary data.  Programhexdmp may not be provided with the toolkit.
+
+          # edru -ieth1 | hexdmp
+
+SEE ALSO
+       amp(1), efsu(1), hpav(1)
+
+CREDITS
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                                  edru(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='coqos_rel.1.html' title=' coqos_rel.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='edsu.1.html' title=' edsu.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

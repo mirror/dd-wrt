@@ -1,0 +1,479 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			int6kmdio2.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='int6klog.c.html' title=' int6klog.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='int6kmdio.c.html' title=' int6kmdio.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *
+ *   int6kmdio2 - Qualcomm Atheros 32-bit MDIO Register Editor
+ *
+ *
+ *   Contributor(s):
+ *      Nathaniel Houghton &lt;nhoughto@qca.qualcomm.com&gt;
+ *      Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*&quot;
+ *   system header files;
+ *--------------------------------------------------------------------*/
+
+#include &lt;unistd.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;ctype.h&gt;
+
+/*====================================================================*
+ *   custom header files;
+ *--------------------------------------------------------------------*/
+
+#include &quot;../tools/getoptv.h&quot;
+#include &quot;../tools/putoptv.h&quot;
+#include &quot;../tools/memory.h&quot;
+#include &quot;../tools/number.h&quot;
+#include &quot;../tools/symbol.h&quot;
+#include &quot;../tools/types.h&quot;
+#include &quot;../tools/flags.h&quot;
+#include &quot;../tools/files.h&quot;
+#include &quot;../tools/error.h&quot;
+#include &quot;../plc/plc.h&quot;
+#include &quot;../ram/nvram.h&quot;
+#include &quot;../ram/sdram.h&quot;
+#include &quot;../nvm/nvm.h&quot;
+#include &quot;../pib/pib.h&quot;
+#include &quot;../mme/mme.h&quot;
+#include &quot;../mdio/mdio.h&quot;
+
+/*====================================================================*
+ *   custom source files;
+ *--------------------------------------------------------------------*/
+
+#ifndef MAKEFILE
+#include &quot;../plc/Devices.c&quot;
+#include &quot;../plc/Display.c&quot;
+#include &quot;../mme/UnwantedMessage.c&quot;
+#endif
+
+#ifndef MAKEFILE
+#include &quot;../tools/getoptv.c&quot;
+#include &quot;../tools/putoptv.c&quot;
+#include &quot;../tools/version.c&quot;
+#include &quot;../tools/uintspec.c&quot;
+#include &quot;../tools/hexencode.c&quot;
+#include &quot;../tools/hexdecode.c&quot;
+#include &quot;../tools/todigit.c&quot;
+#include &quot;../tools/hexdump.c&quot;
+#include &quot;../tools/hexview.c&quot;
+#include &quot;../tools/regview32.c&quot;
+#include &quot;../tools/synonym.c&quot;
+#include &quot;../tools/error.c&quot;
+#endif
+
+#ifndef MAKEFILE
+#include &quot;../ether/channel.c&quot;
+#include &quot;../ether/openchannel.c&quot;
+#include &quot;../ether/closechannel.c&quot;
+#include &quot;../ether/readpacket.c&quot;
+#include &quot;../ether/sendpacket.c&quot;
+#endif
+
+#ifndef MAKEFILE
+#include &quot;../mme/EthernetHeader.c&quot;
+#include &quot;../mme/QualcommHeader.c&quot;
+#include &quot;../mme/MMECode.c&quot;
+#endif
+
+/*====================================================================*
+ *   program constants;
+ *--------------------------------------------------------------------*/
+
+#define MDIO_FLAG_REVERSE (1 &lt;&lt; 0)
+
+#define MDIO_MODE_READ 0
+#define MDIO_MODE_WRITE 1
+
+#define CODE_SHIFT 3
+#define CODE_MASK (0x03 &lt;&lt; CODE_SHIFT)
+#define CODE_HIGH_ADDR 0x03
+#define CODE_LOW_ADDR 0x02
+
+#define HIGH_ADDR_SHIFT 9
+#define LOW_ADDR_SHIFT 1
+
+#define HIGH_ADDR_MASK (0x000003FF &lt;&lt; HIGH_ADDR_SHIFT)
+#define LOW_ADDR_MASK 0x000001FC
+
+/*====================================================================*
+ *
+ *   signed mdio (struct channel * channel, uint8_t mode, uint8_t phy, uint16_t * data);
+ *
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+static signed mdio (struct channel * channel, uint8_t mode, uint8_t phy, uint8_t reg, uint16_t * data)
+
+{
+	struct message message;
+	signed packetsize;
+
+#ifndef __GNUC__
+#pragma pack (push,1)
+#endif
+
+	struct __packed vs_mdio_command_request
+	{
+		struct ethernet_hdr ethernet;
+		struct qualcomm_hdr qualcomm;
+		uint8_t OPERATION;
+		uint8_t PHY;
+		uint8_t REG;
+		uint16_t DATA;
+	}
+	* request = (struct vs_mdio_command_request *)(&amp;message);
+	struct __packed vs_mdio_command_confirm
+	{
+		struct ethernet_hdr ethernet;
+		struct qualcomm_hdr qualcomm;
+		uint8_t MSTATUS;
+		uint16_t DATA;
+		uint8_t PHY;
+		uint8_t REG;
+	}
+	* confirm = (struct vs_mdio_command_confirm *)(&amp;message);
+
+#ifndef __GNUC__
+#pragma pack (pop)
+#endif
+
+	memset (&amp;message, 0, sizeof (message));
+	EthernetHeader (&amp;request-&gt;ethernet, channel-&gt;peer, channel-&gt;host, channel-&gt;type);
+	QualcommHeader (&amp;request-&gt;qualcomm, 0, (VS_MDIO_COMMAND | MMTYPE_REQ));
+	request-&gt;OPERATION = mode;
+	request-&gt;PHY = phy;
+	request-&gt;REG = reg;
+	request-&gt;DATA = HTOLE16 (*data);
+
+#if 1
+
+	printf (&quot; phy 0x%02X&quot;, phy);
+	printf (&quot; reg 0x%02X&quot;, reg);
+	printf (&quot; data 0x%04X&quot;, * data);
+	printf (&quot;\n&quot;);
+
+#endif
+
+	if (sendpacket (channel, &amp;message, (ETHER_MIN_LEN - ETHER_CRC_LEN)) == -1)
+	{
+		error (1, errno, CHANNEL_CANTSEND);
+	}
+	while ((packetsize = readpacket (channel, &amp;message, sizeof (message))) &gt; 0)
+	{
+		if (UnwantedMessage (&amp;message, packetsize, 0, (VS_MDIO_COMMAND | MMTYPE_CNF)))
+		{
+			continue;
+		}
+		if (confirm-&gt;MSTATUS)
+		{
+			error (0, 0, &quot;%s (%0X): %s&quot;, MMECode (confirm-&gt;qualcomm.MMTYPE, confirm-&gt;MSTATUS), confirm-&gt;MSTATUS, PLC_WONTDOIT);
+			continue;
+		}
+		*data = confirm-&gt;DATA;
+		return (0);
+	}
+	return (-1);
+}
+
+/*====================================================================*
+ *
+ *   void function (struct channel * channel, uint8_t mode, uint32_t address, uint32_t content, flag_t flags);
+ *
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+static void function (struct channel * channel, uint8_t mode, uint32_t address, uint32_t content, flag_t flags)
+
+{
+	uint8_t phy;
+	uint8_t reg;
+	uint16_t mdio_data;
+	uint16_t high_addr = (address &amp; HIGH_ADDR_MASK) &gt;&gt; HIGH_ADDR_SHIFT;
+	uint16_t low_addr = (address &amp; LOW_ADDR_MASK) &gt;&gt; LOW_ADDR_SHIFT;
+
+/*
+ *   supply chip with high address bytes
+ */
+
+	phy = CODE_HIGH_ADDR &lt;&lt; CODE_SHIFT;
+	reg = 0;
+	mdio_data = high_addr;
+	if (mdio (channel, MDIO_MODE_WRITE, phy, reg, &amp;mdio_data))
+	{
+		error (1, 0, &quot;could not set high address bits&quot;);
+	}
+	if (_allclr (flags, MDIO_FLAG_REVERSE))
+	{
+
+/*
+ *   supply chip with first low address bytes and first data chunk
+ */
+
+		phy = CODE_LOW_ADDR &lt;&lt; CODE_SHIFT;
+		phy |= (low_addr &amp; 0xE0) &gt;&gt; 5;
+		reg = (low_addr &amp; 0x1F);
+		mdio_data = (content &amp; 0x0000FFFF);
+		if (mdio (channel, mode, phy, reg, &amp;mdio_data))
+		{
+			error (1, 0, &quot;could not read low 16bits&quot;);
+		}
+		if (mode == MDIO_MODE_READ)
+		{
+			content = mdio_data;
+		}
+
+/*
+ *   supply chip with second low address bytes and second data chunk
+ */
+
+		phy = CODE_LOW_ADDR &lt;&lt; CODE_SHIFT;
+		phy |= (low_addr &amp; 0xE0) &gt;&gt; 5;
+		reg = (low_addr &amp; 0x1F) | 0x01;
+		mdio_data = (content &amp; 0xFFFF0000) &gt;&gt; 16;
+		if (mdio (channel, mode, phy, reg, &amp;mdio_data))
+		{
+			error (1, 0, &quot;could not read high 16bits&quot;);
+		}
+		if (mode == MDIO_MODE_READ)
+		{
+			content |= (mdio_data &lt;&lt; 16);
+			printf (&quot;0x%08x: 0x%08x\n&quot;, address, content);
+		}
+	}
+	else
+	{
+
+/*
+ *   supply chip with second low address bytes and second data chunk
+ */
+
+		phy = CODE_LOW_ADDR &lt;&lt; CODE_SHIFT;
+		phy |= (low_addr &amp; 0xE0) &gt;&gt; 5;
+		reg = (low_addr &amp; 0x1F) | 0x01;
+		mdio_data = (content &amp; 0xFFFF0000) &gt;&gt; 16;
+		if (mdio (channel, mode, phy, reg, &amp;mdio_data))
+		{
+			error (1, 0, &quot;could not read high 16bits&quot;);
+		}
+		if (mode == MDIO_MODE_READ)
+		{
+			content = (mdio_data &lt;&lt; 16);
+		}
+
+/*
+ *   supply chip with first low address bytes and first data chunk
+ */
+
+		phy = CODE_LOW_ADDR &lt;&lt; CODE_SHIFT;
+		phy |= (low_addr &amp; 0xE0) &gt;&gt; 5;
+		reg = (low_addr &amp; 0x1F);
+		mdio_data = (content &amp; 0x0000FFFF);
+		if (mdio (channel, mode, phy, reg, &amp;mdio_data))
+		{
+			error (1, 0, &quot;could not read low 16bits&quot;);
+		}
+		if (mode == MDIO_MODE_READ)
+		{
+			content |= mdio_data;
+			printf (&quot;0x%08x: 0x%08x\n&quot;, address, content);
+		}
+	}
+	return;
+}
+
+/*====================================================================*
+ *
+ *   int main (int argc, char const * argv []);
+ *
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+int main (int argc, char const * argv [])
+
+{
+	extern struct channel channel;
+	static char const * optv [] =
+	{
+		&quot;a:d:hei:qv&quot;,
+		&quot;[device] [...]&quot;,
+		&quot;Qualcomm Atheros 32-bit MDIO Register Editor&quot;,
+		&quot;a n\taddress is (n) [0x00000000]&quot;,
+		&quot;d n\tcontent is (n) [0x00000000]&quot;,
+		&quot;e\tredirect stderr to stdout&quot;,
+		&quot;h\tsend high-order data before low-order data&quot;,
+
+#if defined (WINPCAP) || defined (LIBPCAP)
+
+		&quot;i n\thost interface is (n) [&quot; LITERAL (CHANNEL_ETHNUMBER) &quot;]&quot;,
+
+#else
+
+		&quot;i s\thost interface is (s) [&quot; LITERAL (CHANNEL_ETHDEVICE) &quot;]&quot;,
+
+#endif
+
+		&quot;q\tquiet mode&quot;,
+		&quot;v\tverbose mode&quot;,
+		(char const *) (0)
+	};
+	flag_t flags = (flag_t)(0);
+	uint8_t mode = MDIO_MODE_READ;
+	uint32_t address = 0;
+	uint32_t content = 0;
+	signed c;
+	if (getenv (PLCDEVICE))
+	{
+
+#if defined (WINPCAP) || defined (LIBPCAP)
+
+		channel.ifindex = atoi (getenv (PLCDEVICE));
+
+#else
+
+		channel.ifname = strdup (getenv (PLCDEVICE));
+
+#endif
+
+	}
+	optind = 1;
+	while ((c = getoptv (argc, argv, optv)) != -1)
+	{
+		switch (c)
+		{
+		case 'a':
+			address = (uint32_t)(uintspec (optarg, 0, 0x0007FFFF));
+			if (address &amp; 0x03)
+			{
+				error (1, 0, &quot;address must be on an even 4 byte boundary&quot;);
+			}
+			break;
+		case 'd':
+			mode = MDIO_MODE_WRITE;
+			content = (uint32_t)(uintspec (optarg, 0, 0xFFFFFFFF));
+			break;
+		case 'e':
+			dup2 (STDOUT_FILENO, STDERR_FILENO);
+			break;
+		case 'i':
+
+#if defined (WINPCAP) || defined (LIBPCAP)
+
+			channel.ifindex = atoi (optarg);
+
+#else
+
+			channel.ifname = optarg;
+
+#endif
+
+			break;
+		case 'q':
+			_setbits (channel.flags, CHANNEL_SILENCE);
+			break;
+		case 'r':
+			_setbits (flags, MDIO_FLAG_REVERSE);
+			break;
+		case 'v':
+			_setbits (channel.flags, CHANNEL_VERBOSE);
+			break;
+		default:
+			break;
+		}
+	}
+	argc -= optind;
+	argv += optind;
+	openchannel (&amp;channel);
+	if (!argc)
+	{
+		function (&amp;channel, mode, address, content, flags);
+	}
+	while ((argc) &amp;&amp; (* argv))
+	{
+		if (!hexencode (channel.peer, sizeof (channel.peer), synonym (* argv, devices, SIZEOF (devices))))
+		{
+			error (1, errno, PLC_BAD_MAC, * argv);
+		}
+		function (&amp;channel, mode, address, content, flags);
+		argv++;
+		argc--;
+	}
+	closechannel (&amp;channel);
+	return (0);
+}
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='int6klog.c.html' title=' int6klog.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='int6kmdio.c.html' title=' int6kmdio.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

@@ -1,0 +1,169 @@
+	<section id='firmware-7420-boot'>
+		<title>
+			 Boot from Host (AR7420)
+			</title>
+			<para>
+				The <constant>VS_WRITE_AND_EXECUTE</constant> message is now the only way to write runtime parameters and firmware into volatile memory. The legacy <constant>VS_RD_MEM</constant>, <constant>VS_WR_MEM</constant> and <constant>VS_ST_MAC</constant> are deprecated and will no longer be supported by the bootloader. This means that some customers must re-write their applications to boot newer powerline devices.
+				</para>
+		<figure>
+			<title>
+				Boot from Host (AR6410/AR7420)
+				</title>
+<programlisting><![CDATA[
+
+          AR7420                             LOCAL-HOST
+        [01] |                                    |
+        [02] |-------- VS_HOST_ACTION.IND ------->| [03]
+        [05] |<------- VS_HOST_ACTION.RSP --------| [04]
+             |                                    | [06]
+             |<---- VS_WRITE_AND_EXECUTE.REQ -----| [07]
+        [08] |----- VS_WRITE_AND_EXECUTE.CNF ---->|      
+             |<-----------------------------------| [09]
+        [10] |----------------------------------->| [11]
+        [12] |                                    | 
+        [13] |-------- VS_HOST_ACTION.IND ------->| [14]
+        [16] |<------- VS_HOST_ACTION.RSP --------| [15]
+             |                                    | [16]
+             |<-VS_WRITE_AND_EXECUTE_APPLET.REQ --| [17]
+        [18] |--VS_WRITE_AND_EXECUTE_APPLET.CNF ->|     
+             |<-----------------------------------| [19]
+        [20] |----------------------------------->| 
+             |<-VS_WRITE_AND_EXECUTE_APPLET.REQ --| [21]
+        [22] |--VS_WRITE_AND_EXECUTE_APPLET.CNF ->|     
+             |<-----------------------------------| [23]
+        [24] |----------------------------------->| 
+        [25] |                                    |
+
+ ]]></programlisting>
+			</figure>
+		<orderedlist>
+			<listitem>
+				<para>
+					The bootloader enters boot-from-host mode based on the hardware strapping or failure to load runtime firmware from flash memory. The device hardware address is <constant>00:B0:52:00:00:01</constant> in this state.
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The bootloader broadcasts a <constant>VS_HOST_ACTION.IND</constant> message with <varname>HOST_ACTION_REQ</varname> set to <constant>4</constant> to indicate that it is waiting to be configured. The bootloader will continue to broadcast the <constant>VS_HOST_ACTION.IND</constant> message every <constant>750</constant>ms until it receives a <constant>VS_HOST_ACTION.RSP</constant> message from the local host. The BootROM does not know the local host hardware address at this stage so indications are broadcast, not addressed.
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The local host receives a <constant>VS_HOST_ACTION.IND</constant> message and inspects <varname>HOST_ACTION_REQ</varname> field to determine the required action. The local host must be programmed to listen and act appropriately. The first indcation requests device configuration.
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The local host sends a <constant>VS_HOST_ACTION.RSP</constant> message with <varname>MSTATUS</varname> set to <constant>0</constant> to indicate a willingness and ability to service the request. 
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The bootloader receives the <constant>VS_HOST_ACTION.RSP</constant> message, stops broadcasting <constant>VS_HOST_ACTION.IND</constant> messages and waits indefinitely for the local host to act. 
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The local host retrieves the firmware chain and extracts the configuration applet image from the chain. The firmware chain may be stored on disk or in memory depending on how the local host is programmed.
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The local host sends a <constant>VS_WRITE_AND_EXECUTE.REQ</constant> message with <varname>FLAGS</varname> set to <constant>2</constant>, <varname>ALLOWED_MEM_TYPES</varname> to <constant>1</constant>, <varname>CURR_PART_OFFSET</varname> to the applet image header <varname>IMAGEADDRESS</varname> and <varname>CURR_PART_LENGTH</varname> to the applet image header <varname>IMAGELENGTH</varname> to download the applet in absolute address mode. Alternately, setting <varname>FLAGS</varname> to <constant>0</constant> and <varname>CURR_PART_OFFSET</varname> to <constant>0</constant> will download the applet in relative address mode. 
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The bootloader acknowledges each <constant>VS_WRITE_AND_EXECUTE.REQ</constant> message with a <constant>VS_WRITE_AND_EXECUTE.CNF</constant> message having <varname>MSTATUS</varname> set to <constant>0</constant>.
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The local host continues to download the configuration applet in <constant>1400</constant> byte blocks until the last block is reached. The local host sets <varname>START_ADDR</varname> to the applet image header <varname>ENTRYPOINT</varname>, <varname>CHECKSUM</varname> to the applet image header <varname>IMAGECHECKSUM</varname> and the execute bit in <varname>FLAGS</varname> to <constant>1</constant>.
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The bootloader receives the last <constant>VS_WRITE_AND_EXECUTE.REQ</constant> message, confirms the configuration applet checksum then acknowledges with a <constant>VS_WRITE_AND_EXECUTE.CNF</constant> message having <varname>MSTATUS</varname> set to <constant>0</constant>.
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The local host exists the boot from host sequence and returns to listening mode.
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The bootloader executes the configuration applet. The device hardware address is <constant>00:B0:52:00:00:01</constant> in this state.
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The bootloader broadcasts a <constant>VS_HOST_ACTION.IND</constant> message with <varname>HOST_ACTION_REQ</varname> set to <constant>0</constant> to indicate that it is waiting for runtime parameters and firmware. 
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The local host receives a <constant>VS_HOST_ACTION.IND</constant> message and inspects the <varname>HOST_ACTION_REQ</varname> field to determine the required action. The local host must be programmed to listen and act appropriately.
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The bootloader receives the <constant>VS_HOST_ACTION.RSP</constant> message, stops broadcasting <constant>VS_HOST_ACTION.IND</constant> messages and waits indefinitely for the local host to act. 
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The local host locates the parameter chain and firmware chain. The chains may be stored on disk or in memory depending on how the local host is programmed.
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The local host sends a <constant>VS_WRITE_AND_EXECUTE.REQ</constant> message with <varname>FLAGS</varname> set to <constant>2</constant>, <varname>ALLOWED_MEM_TYPES</varname> set to <constant>1</constant>, <varname>CURR_PART_OFFSET</varname> to the parameter image header <varname>IMAGEADDRESS</varname> and <varname>CURR_PART_LENGTH</varname> to the entire parameter image chain length to download parameters in absolute address mode. Alternately, setting <varname>FLAGS</varname> to <constant>0</constant> and <varname>CURR_PART_OFFSET</varname> to <constant>0</constant> will download parameters in relative address mode. 
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The bootloader acknowledges each <constant>VS_WRITE_AND_EXECUTE.REQ</constant> message with a <constant>VS_WRITE_AND_EXECUTE.CNF</constant> message having <varname>MSTATUS</varname> set to <constant>0</constant>.
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The local host continues to download the parameter chain in <constant>1400</constant> byte blocks until the last block is reached. The local host then sets the <varname>START_ADDR</varname> field to the parameter image header <varname>ENTRYPOINT</varname>, <varname>CHECKSUM</varname> to the parameter image header <varname>IMAGECHECKSUM</varname> and the execute bit in <varname>FLAGS</varname> to <constant>1</constant>.
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The bootloader receives the last <constant>VS_WRITE_AND_EXECUTE.REQ</constant> message, confirms the parameter chain checksum and acknowledges with a <constant>VS_WRITE_AND_EXECUTE.CNF</constant> message having <varname>MSTATUS</varname> set to <constant>0</constant>.
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The local host sends a <constant>VS_WRITE_AND_EXECUTE.REQ</constant> message with <varname>FLAGS</varname> set to <constant>2</constant>, <varname>ALLOWED_MEM_TYPES</varname> to <constant>1</constant>, <varname>CURR_PART_OFFSET</varname> to the firmware image header <varname>IMAGEADDRESS</varname> and <varname>CURR_PART_LENGTH</varname> to the firmware image header <varname>IMAGELENGTH</varname> to download firmware in absolute address mode. Alternately, setting <varname>FLAGS</varname> to <constant>0</constant> and <varname>CURR_PART_OFFSET</varname> to <constant>0</constant> will download firmware in relative address mode. 
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The bootloader acknowledges each <constant>VS_WRITE_AND_EXECUTE.REQ</constant> message with a <constant>VS_WRITE_AND_EXECUTE.CNF</constant> message having the <varname>MSTATUS</varname> field set to <constant>0</constant>.
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The local host continues to download the parameter chain in <constant>1400</constant> byte blocks until the last block is reached. The local host then sets <varname>START_ADDR</varname> to the parameter image header <varname>ENTRYPOINT</varname>, <varname>CHECKSUM</varname> to the parameter image header <varname>IMAGECHECKSUM</varname> and the execute bit in <varname>FLAGS</varname> to <constant>1</constant>.
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The bootloader receives the last <constant>VS_WRITE_AND_EXECUTE.REQ</constant> message, confirms the firmware chain checksum and acknowledges with a <constant>VS_WRITE_AND_EXECUTE.CNF</constant> message having the <varname>MSTATUS</varname> field set to <constant>0</constant>.
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The bootloader executes the runtime firmware and the device begins operation. The device hardware address will become that programmed into the parameter inforamtion block.
+					</para>
+				</listitem>
+			</orderedlist>
+		<para>
+			At this point, runtime firmware is executing in volatile memory with runtime parameters. If the power is reset at this point then all would be lost. If the device has dedicated flash memory attached then we may want to write runtime parameters and firmware to flash memory so that the device can boot from flash in case of a power failure or reset. 
+			</para>
+		</section>

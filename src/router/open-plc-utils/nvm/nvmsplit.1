@@ -1,0 +1,87 @@
+.TH nvmsplit 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+nvmsplit - Qualcomm Atheros PLC Firmware Image File Slicer
+
+.SH SYNOPSIS
+.BR nvmsplit
+.RI [ options ]
+.IR file
+.RI [ file ]
+[...]
+
+.SH DESCRIPTION
+Extract all images from an Atheros binary image file, leaving the original files intact.
+Extracted images appear in files having the input file basename with sequence numbers indicating the relative position of the image within the original file.
+For example, image file \fBabc.nvm\fR might result in files \fBabc-00.nvm\fR, \fBabc-01.nvm\fR, \fBabc-02.nvm\fR and so on.
+Each output file is a valid, single-image file and so they can be combined using program \fBnvmmerge\fR.
+
+.PP
+Atheros image files consist of a chain of image headers, each followed by an image block.
+Image blocks can contain data, applets or programs.
+Atheros software reads the header chain and decides which images to download and execute based on information in the image headers.
+Tampering with image headers or images may void some contractual obligations made by Atheros.
+
+.PP
+This program is part of the Qualcomm Atheros Powerline Toolkit.
+See the \fBAMP\fR man page for an overview and installation instructions.
+
+.SH OPTIONS
+
+.TP
+.RB - q
+Suppress routine messages.
+This option has no effect at this time.
+
+.TP
+.RB - v
+Print component file names on stderr as they are created.
+
+.TP
+.RB - ? ,-- help
+Print program help summary on stdout.
+This option takes precedence over other options on the command line.
+
+.TP
+.RB - ! ,-- version
+Print program version information on stdout.
+This option takes precedence over other options on the command line.
+Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of the Linux Toolkit you are using.
+
+.SH ARGUMENTS
+
+.TP
+.IR file
+The name of an Atheros image file.
+By convention, Atheros Image files have a \fB.nvm\fR file extension but this program does not enforce this convention.
+Invalid image files will be rejected causing the output to be incomplete.
+
+.SH EXAMPLES
+The following example reads Atheros image file \fBabc.nvm\fR and creates one or more output files.
+Each file contains one image with associated header.
+
+.PP
+   # nvmsplit abc.nvm -v
+   nvmsplit: abc.nvm --> abc-00.nvm
+   nvmsplit: abc.nvm --> abc-01.nvm
+   nvmsplit: abc.nvm --> abc-02.nvm
+   nvmsplit: abc.nvm --> abc-03.nvm
+
+.SH DISCLAIMER
+Atheros image file structure and content is proprietary to Qualcomm Atheros, Ocala FL USA.
+Consequently, public information is not available.
+Qualcomm Atheros reserves the right to change file structure or content in future firmware releases without any obligation to notify or compensate users of this program.
+This program is reserved for use by Atheros Field Engineers.
+Use of this program may void some contractual obligations made by Atheros.
+
+.SH SEE ALSO
+.BR chknvm ( 1 ),
+.BR int6k ( 1 ),
+.BR int6kf ( 1 ),
+.BR int6ktest ( 1 ),
+.BR nvmmerge ( 1 ),
+.BR setnvm ( 1 )
+
+.SH CREDITS 
+ Charles Maier <cmaier@qca.qualcomm.com>
+

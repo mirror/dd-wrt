@@ -1,0 +1,316 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			ttyrecv.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='ttycat.c.html' title=' ttycat.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='ttysend.c.html' title=' ttysend.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *
+ *   ttyrecv.c
+ *
+ *   Contributor(s):
+ *	Nathaniel Houghton &lt;nhoughto@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *   system header files;
+ *--------------------------------------------------------------------*/
+
+#include &lt;sys/time.h&gt;
+#include &lt;sys/types.h&gt;
+
+#include &lt;fcntl.h&gt;
+#include &lt;limits.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;termios.h&gt;
+
+/*====================================================================*
+ *   custom header files;
+ *--------------------------------------------------------------------*/
+
+#include &quot;../tools/error.h&quot;
+#include &quot;../tools/putoptv.h&quot;
+#include &quot;../tools/getoptv.h&quot;
+#include &quot;../tools/number.h&quot;
+#include &quot;../tools/types.h&quot;
+#include &quot;../tools/flags.h&quot;
+#include &quot;../serial/serial.h&quot;
+
+/*====================================================================*
+ *   custom source files;
+ *--------------------------------------------------------------------*/
+
+#ifndef MAKEFILE
+#include &quot;../tools/getoptv.c&quot;
+#include &quot;../tools/putoptv.c&quot;
+#include &quot;../tools/version.c&quot;
+#include &quot;../tools/error.c&quot;
+#include &quot;../tools/uintspec.c&quot;
+#include &quot;../tools/todigit.c&quot;
+#endif
+
+#ifndef MAKEFILE
+#include &quot;../serial/baudrate.c&quot;
+#endif
+
+/*====================================================================*
+ *   program constants;
+ *--------------------------------------------------------------------*/
+
+#define SERIAL_PORT &quot;/dev/ttyS0&quot;
+
+#define TTYRECV_VERBOSE (1 &lt;&lt; 0)
+
+/*====================================================================*
+ *
+ *   double ttyrecv (int ifd, int ofd, size_t time, size_t chunk_size, flag_t flags) ;
+ *
+ *--------------------------------------------------------------------*/
+
+static double ttyrecv (int ifd, int ofd, size_t time, size_t chunk_size, flag_t flags)
+
+{
+	char *buf;
+	char *p;
+	ssize_t r;
+	ssize_t w;
+	size_t bytes_read;
+	struct timeval tv_start,
+	tv_now,
+	tv_result;
+	struct timeval tv_timeout;
+	double bytes_sec;
+	fd_set rfd;
+	buf = malloc (chunk_size);
+	if (buf == NULL)
+	{
+		error (1, errno, &quot;could not allocate memory&quot;);
+	}
+	tcflush (ifd, TCIFLUSH);
+	FD_ZERO (&amp;rfd);
+	FD_SET (ifd, &amp;rfd);
+	tv_timeout.tv_sec = 5;
+	tv_timeout.tv_usec = 0;
+	if (select (ifd + 1, &amp;rfd, NULL, NULL, &amp;tv_timeout) != 1)
+	{
+		error (1, errno, &quot;timed out waiting for data&quot;);
+	}
+	if (gettimeofday (&amp;tv_start, NULL) == -1)
+	{
+		error (1, errno, &quot;could not get time&quot;);
+	}
+	if (_anyset (flags, TTYRECV_VERBOSE))
+	{
+		fprintf (stderr, &quot;Started receive timer.\n&quot;);
+	}
+	bytes_read = 0;
+	do
+	{
+		FD_ZERO (&amp;rfd);
+		FD_SET (ifd, &amp;rfd);
+		tv_timeout.tv_sec = 1;
+		tv_timeout.tv_usec = 0;
+		if (select (ifd + 1, &amp;rfd, NULL, NULL, &amp;tv_timeout) == 1)
+		{
+			r = read (ifd, buf, chunk_size);
+			if (r == -1)
+			{
+				error (1, 0, &quot;could not read&quot;);
+			}
+			bytes_read += r;
+			if (ofd != -1)
+			{
+				p = buf;
+				while (r)
+				{
+					w = write (ofd, p, r);
+					if (w == -1)
+					{
+						error (1, errno, &quot;could not write&quot;);
+					}
+					p += w;
+					r -= w;
+				}
+			}
+		}
+		if (gettimeofday (&amp;tv_now, NULL) == -1)
+		{
+			error (1, errno, &quot;could not get time&quot;);
+		}
+		timersub (&amp;tv_now, &amp;tv_start, &amp;tv_result);
+	}
+	while (tv_result.tv_sec &lt; (signed)(time));
+	bytes_sec = bytes_read / (tv_result.tv_sec + tv_result.tv_usec / 1000000.0);
+	free (buf);
+	return (bytes_sec * 8 / 1000.0);
+}
+
+/*====================================================================*
+ *
+ *   int main (int argc, char const * argv []);
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+int main (int argc, char const * argv [])
+
+{
+	static char const * optv [] =
+	{
+		&quot;cl:rs:t:qv&quot;,
+		&quot;&quot;,
+		&quot;Serial Line Rate Tester&quot;,
+		&quot;c\tconsume received data (do not output to stdout)&quot;,
+		&quot;l f\tserial port is (f) [&quot; SERIAL_PORT &quot;]&quot;,
+		&quot;r\tprint the receive data rate to stdout&quot;,
+		&quot;s n\tport speed [ 115200 ]&quot;,
+		&quot;t n\treceive for (n) seconds [ 10 ]&quot;,
+		&quot;q\tquiet mode&quot;,
+		&quot;v\tverbose mode&quot;,
+		(char const *) (0)
+	};
+	struct termios termios;
+	char * line = SERIAL_PORT;
+	double rate = 0;
+	speed_t speed = B115200;
+	size_t time = 10;
+	size_t chunk_size = 256;
+	flag_t flags = 0;
+	signed consume = 0;
+	signed rflag = 0;
+	signed fd;
+	signed c;
+	optind = 1;
+	while ((c = getoptv (argc, argv, optv)) != -1)
+	{
+		switch ((char) (c))
+		{
+		case 'c':
+			consume = 1;
+			break;
+		case 'r':
+			rflag = 1;
+			break;
+		case 'l':
+			line = optarg;
+			break;
+		case 's':
+			if (baudrate (uintspec (optarg, 0, UINT_MAX), &amp;speed))
+			{
+				error (1, 0, &quot;could not set baud rate&quot;);
+			}
+			break;
+		case 't':
+			time = uintspec (optarg, 0, SIZE_MAX);
+			break;
+		case 'v':
+			_setbits (flags, TTYRECV_VERBOSE);
+			break;
+		default:
+			break;
+		}
+	}
+	argc -= optind;
+	argv += optind;
+	fd = open (line, O_RDWR | O_NONBLOCK);
+	if (fd == -1)
+	{
+		error (1, errno, &quot;could not open %s&quot;, line);
+	}
+	if (tcgetattr (fd, &amp;termios) == -1)
+	{
+		error (1, errno, &quot;could not get tty attributes&quot;);
+	}
+	cfmakeraw (&amp;termios);
+	if (cfsetspeed (&amp;termios, speed) == -1)
+	{
+		error (1, errno, &quot;could not set tty speed&quot;);
+	}
+	if (tcsetattr (fd, TCSANOW, &amp;termios) == -1)
+	{
+		error (1, errno, &quot;could not set tty attributes&quot;);
+	}
+	if (!consume)
+	{
+		rate = ttyrecv (fd, STDOUT_FILENO, time, chunk_size, flags);
+	}
+	else
+	{
+		rate = ttyrecv (fd, -1, time, chunk_size, flags);
+	}
+	if (rflag)
+	{
+		fprintf (stderr, &quot;%.02f Kbps\n&quot;, rate);
+	}
+	close (fd);
+	return (0);
+}
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='ttycat.c.html' title=' ttycat.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='ttysend.c.html' title=' ttysend.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

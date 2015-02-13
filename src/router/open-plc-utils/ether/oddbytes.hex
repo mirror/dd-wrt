@@ -1,0 +1,15 @@
+#!/usr/local/bin/efsu -ieth0
+# file: efsu/oddbytes.hex
+
+# ====================================================================
+#
+# An example frame description file containing an odd number of hex 
+# digits and so efsu will treat this as an error;
+#
+# --------------------------------------------------------------------
+
+0123456789ABCDEF 
+0123456789ABCDEF 
+0123456789ABCDEF
+0123456789ABCDEF 0
+

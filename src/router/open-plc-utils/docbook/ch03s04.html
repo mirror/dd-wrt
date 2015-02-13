@@ -1,0 +1,51 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>GNU Makefiles on Linux</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="ch03.html" title="Chapter 3.  Software"><link rel="prev" href="ch03s03.html" title="Platform Options"><link rel="next" href="ch03s05.html" title="Stand-alone Compiling on GNU/Linux"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">
+				GNU Makefiles on Linux
+				</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch03s03.html">Prev</a> </td><th width="60%" align="center">Chapter 3. 
+		Software 
+		</th><td width="20%" align="right"> <a accesskey="n" href="ch03s05.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="software-makefiles"></a>
+				GNU Makefiles on Linux
+				</h2></div></div></div><p>
+				The toolkit includes recursive GNU makefiles for Linux. The <code class="filename">Makefile</code> in the root folder calls Makefiles in subordinate folders. Makefiles in subordinate folders can be run independently to produce individual toolkit components. Developers can control which components are compiled and installed by editing the <code class="constant">FOLDERS</code> symbol in the main Makefile.
+				</p><p>
+				Component Makefiles have a standard format that includes the following targets: 
+				</p><div class="variablelist"><dl><dt><span class="term">
+						compile
+						</span></dt><dd><p>
+						Compiles source code files prior to installation. Intermmediate files and target files are created in the same folder as the Makefile. This is the default target. That means that typing <span class="command"><strong>make</strong></span> or <span class="command"><strong>make compile</strong></span> have the same result.
+							</p></dd><dt><span class="term">
+						library
+						</span></dt><dd><p>
+						Creates any special folders that are needed for installation. This target is built by the <span class="command"><strong>install</strong></span> target but it can be built independently.
+							</p></dd><dt><span class="term">
+						scripts
+						</span></dt><dd><p>
+						Installs scripts required for proper toolkit operation. This target must be built explicitly to prevent accidental loss of changes made to existing scripts. This target may be built at any time, before or after the <span class="command"><strong>install</strong></span> target.
+							</p></dd><dt><span class="term">
+						manuals
+						</span></dt><dd><p>
+						Creates manuals, documents or html pages. Documentation files are not automatically installed by any target. Installation is left to the user.
+							</p></dd><dt><span class="term">
+						install
+						</span></dt><dd><p>
+						Installs executable files in folder <code class="filename">/usr/local/bin</code>. This target automatically builds the <span class="command"><strong>compile</strong></span> target before installation. This means that <span class="command"><strong>make install</strong></span> will compile and install in one step.
+							</p></dd><dt><span class="term">
+						uninstall
+						</span></dt><dd><p>
+						Removes installed components. This target does nothing for Makefiles that have <span class="command"><strong>install</strong></span> targets defined.
+							</p></dd><dt><span class="term">
+						clean
+						</span></dt><dd><p>
+						Removes intermmediate and temporary files. Temporary files are defined by variable <code class="varname">TRASH</code> at the start of each Makefile.
+							</p></dd><dt><span class="term">
+						fresh
+						</span></dt><dd><p>
+						Removes intermmediate and temporary then re-compiles local targets. It is normally equivalent to <span class="command"><strong>make clean </strong></span> followed by <span class="command"><strong>make compile</strong></span>.
+							</p></dd></dl></div><p>
+ 				Developers wanting to compile the toolkit under <span class="productname">Windows</span>™ should use <span class="productname">Visual Studio .NET</span>™ solution files instead of makefiles.
+				</p><p>
+				Developers wanting to compile the toolkit under <span class="application">OpenBSD</span> must make changes to accommodate variations in <span class="application">make</span> program syntax. 
+				</p></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch03s03.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="ch03.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch03s05.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">
+			Platform Options 
+			 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 
+				Stand-alone Compiling on GNU/Linux
+				</td></tr></table></div></body></html>0

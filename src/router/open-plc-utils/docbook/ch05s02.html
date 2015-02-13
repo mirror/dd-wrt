@@ -1,0 +1,61 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Select an Interface on Linux</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="ch05.html" title="Chapter 5.  Procedures"><link rel="prev" href="ch05.html" title="Chapter 5.  Procedures"><link rel="next" href="ch05s03.html" title="Select an Interface on Windows"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">
+			Select an Interface on Linux
+			</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch05.html">Prev</a> </td><th width="60%" align="center">Chapter 5. 
+		Procedures 
+		</th><td width="20%" align="right"> <a accesskey="n" href="ch05s03.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="procedure-select-interface-linux"></a>
+			Select an Interface on Linux
+			</h2></div></div></div><p>
+			<span class="application">Linux</span> network interfaces are referenced by name. Use Linux utility <span class="application">ifconfig</span> to determine the names of interfaces on your host. By default, Toolkit programs communicate with powerline devices on interface <code class="varname">eth1</code> but another interface can be specified on the command line with the <strong class="userinput"><code>-i</code></strong> option:
+			</p><div class="example"><a name="idp10962496"></a><p class="title"><b>Example 5.1. 
+				Selecting another Interface on Linux
+				</b></p><div class="example-contents"><pre class="screen">
+# int6k -i eth3 ...
+</pre></div></div><br class="example-break"><p>
+			In the previous example, <span class="command"><strong>int6k</strong></span> will send and receive frames on interface <code class="varname">eth3</code> instead of the default interface. Having to specify the interface can become become tedious when entering commands manually. An alternative method involves setting environment variable <code class="constant">PLC</code> to your preferred Ethernet interfaces, as follows: 
+			</p><div class="example"><a name="idp10964544"></a><p class="title"><b>Example 5.2. 
+				Changing the Default Interface on Linux
+				</b></p><div class="example-contents"><pre class="screen">
+# export PLC="eth2"
+</pre></div></div><br class="example-break"><p>
+			In the previous example, environment variable <code class="constant">PLC</code> is defined and exported, making it available to all programs running under the current console session. This command can be included in <code class="filename">~/.profile</code> or <code class="filename">/etc/profile</code> or in <code class="filename">/etc/environment</code> on <span class="productname">Debian </span>™ and <span class="productname">Ubuntu</span>™ systems.
+			</p><div class="example"><a name="idp10967760"></a><p class="title"><b>Example 5.3. 
+				Finding Interfaces on Linux
+				</b></p><div class="example-contents"><pre class="screen">
+# ifconfig
+eth0      Link encap:Ethernet  HWaddr 00:60:97:05:97:0C  
+          inet addr:192.168.170.179  Bcast:192.168.170.255  Mask:255.255.255.0
+          inet6 addr: fe80::260:97ff:fe05:970c/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:52130758 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:59629414 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000 
+          RX bytes:43781526 (41.7 MiB)  TX bytes:4226651392 (3.9 GiB)
+          Interrupt:209 Base address:0xe000 
+
+eth1      Link encap:Ethernet  HWaddr 00:0F:EA:10:D5:1C  
+          inet addr:192.168.99.1  Bcast:192.168.99.255  Mask:255.255.255.0
+          inet6 addr: fe80::20f:eaff:fe10:d51c/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:68711621 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:70059644 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000 
+          RX bytes:3449044517 (3.2 GiB)  TX bytes:1328494982 (1.2 GiB)
+          Interrupt:217 
+
+lo        Link encap:Local Loopback  
+          inet addr:127.0.0.1  Mask:255.0.0.0
+          inet6 addr: ::1/128 Scope:Host
+          UP LOOPBACK RUNNING  MTU:16436  Metric:1
+          RX packets:177789 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:177789 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0 
+          RX bytes:599522176 (571.7 MiB)  TX bytes:599522176 (571.7 MiB)
+</pre></div></div><br class="example-break"><p>
+			The previous example demonstrates the use of Linux <span class="application">ifconfig</span> utility to identify available network interfaces by name and <acronym class="acronym">MAC</acronym> address.
+			</p><p>
+			If your computer has multiple Ethernet interface cards installed, you can connect each card to a different Atheros powerline device and communicate with each device, independently, from one console session (window) by specifying the appropriate interface card with each command. It is also possible to open multiple console sessions (windows), each having a unique enviroment, and assign a different value for <code class="constant">PLC</code> in each enviroment.
+			</p></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch05.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="ch05.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch05s03.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Chapter 5. 
+		Procedures 
+		 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 
+			Select an Interface on Windows
+			</td></tr></table></div></body></html>0

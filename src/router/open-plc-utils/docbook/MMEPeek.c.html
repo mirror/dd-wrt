@@ -1,0 +1,165 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			MMEPeek.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='MMEName.c.html' title=' MMEName.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='modpib.c.html' title=' modpib.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *
+ *   void MMEPeek (void const * memory, size_t length, FILE *fp);
+ *
+ *   mme.h
+ *
+ *   print a HomePlug AV frame header on stdout in human readable
+ *   format;
+ *
+ *
+ *   Contributor(s):
+ *	Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef MMPEEK_SOURCE
+#define MMPEEK_SOURCE
+
+#include &lt;stdio.h&gt;
+#include &lt;stdint.h&gt;
+
+#include &quot;../tools/memory.h&quot;
+#include &quot;../mme/mme.h&quot;
+
+#ifndef ETHER_ADDR_LEN
+#define ETHER_ADDR_LEN 6 /* normally defined in ethernet.h or if_ether.h */
+#endif
+
+void MMEPeek (void const * memory, size_t extent, FILE *fp)
+
+{
+	char address [ETHER_ADDR_LEN * 3];
+	struct message * message = (struct message *)(memory);
+	fprintf (fp, &quot;ODA=%s &quot;, hexstring (address, sizeof (address), message-&gt;ethernet.ODA, sizeof (message-&gt;ethernet.ODA)));
+	fprintf (fp, &quot;OSA=%s &quot;, hexstring (address, sizeof (address), message-&gt;ethernet.OSA, sizeof (message-&gt;ethernet.OSA)));
+	fprintf (fp, &quot;MTYPE=%04X &quot;, ntohs (message-&gt;ethernet.MTYPE));
+	if (ntohs (message-&gt;ethernet.MTYPE) == ETH_P_HPAV)
+	{
+		struct homeplug_hdr * homeplug = (struct homeplug_hdr *)(&amp;message-&gt;content);
+		uint16_t mmtype = LE16TOH (homeplug-&gt;MMTYPE);
+		if (mmtype &lt; MMTYPE_VS)
+		{
+			if (homeplug-&gt;MMV == 0x00)
+			{
+				struct homeplug_hdr * homeplug = (struct homeplug_hdr *)(&amp;message-&gt;content);
+				mmtype = LE16TOH (homeplug-&gt;MMTYPE);
+				fprintf (fp, &quot;MMV=%02X &quot;, homeplug-&gt;MMV);
+				fprintf (fp, &quot;MMTYPE=%04X &quot;, mmtype);
+				fprintf (fp, &quot;%s.%s\n&quot;, MMEName (mmtype), MMEMode (mmtype));
+				return;
+			}
+			if (homeplug-&gt;MMV == 0x01)
+			{
+				struct homeplug_fmi * homeplug = (struct homeplug_fmi *)(&amp;message-&gt;content);
+				mmtype = LE16TOH (homeplug-&gt;MMTYPE);
+				fprintf (fp, &quot;MMV=%02X &quot;, homeplug-&gt;MMV);
+				fprintf (fp, &quot;MMTYPE=%04X &quot;, mmtype);
+				fprintf (fp, &quot;FMID=%02X &quot;, homeplug-&gt;FMID);
+				fprintf (fp, &quot;FMSN=%02X &quot;, homeplug-&gt;FMSN);
+				fprintf (fp, &quot;%s.%s\n&quot;, MMEName (mmtype), MMEMode (mmtype));
+				return;
+			}
+		}
+		if (mmtype &lt; MMTYPE_XX)
+		{
+			if (homeplug-&gt;MMV == 0x00)
+			{
+				struct qualcomm_hdr * qualcomm = (struct qualcomm_hdr *)(&amp;message-&gt;content);
+				mmtype = LE16TOH (qualcomm-&gt;MMTYPE);
+				fprintf (fp, &quot;MMV=%02X &quot;, qualcomm-&gt;MMV);
+				fprintf (fp, &quot;MMTYPE=%04X &quot;, mmtype);
+				fprintf (fp, &quot;OUI=%s &quot;, hexstring (address, sizeof (address), qualcomm-&gt;OUI, sizeof (qualcomm-&gt;OUI)));
+				fprintf (fp, &quot;%s.%s\n&quot;, MMEName (mmtype), MMEMode (mmtype));
+				return;
+			}
+			if (homeplug-&gt;MMV == 0x01)
+			{
+				struct qualcomm_fmi * qualcomm = (struct qualcomm_fmi *)(&amp;message-&gt;content);
+				mmtype = LE16TOH (qualcomm-&gt;MMTYPE);
+				fprintf (fp, &quot;MMV=%02X &quot;, qualcomm-&gt;MMV);
+				fprintf (fp, &quot;MMTYPE=%04X &quot;, mmtype);
+				fprintf (fp, &quot;FMID=%02X &quot;, qualcomm-&gt;FMID);
+				fprintf (fp, &quot;FMSN=%02X &quot;, qualcomm-&gt;FMSN);
+				fprintf (fp, &quot;OUI=%s &quot;, hexstring (address, sizeof (address), qualcomm-&gt;OUI, sizeof (qualcomm-&gt;OUI)));
+				fprintf (fp, &quot;%s.%s\n&quot;, MMEName (mmtype), MMEMode (mmtype));
+				return;
+			}
+		}
+	}
+	fprintf (fp, &quot;UNKNOWN_MESSAGE_TYPE\n&quot;);
+	return;
+}
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='MMEName.c.html' title=' MMEName.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='modpib.c.html' title=' modpib.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

@@ -1,0 +1,480 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			pibruin1.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='pibpeek2.c.html' title=' pibpeek2.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='pibruin.c.html' title=' pibruin.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *
+ *   pibruin1.c - Atheros Classification Rule Insert Utility;
+ *
+ *   This inserts classification rules into pib files from a rule
+ *   description file;
+ *
+ *
+ *   Contributor(s):
+ *      Nathaniel Houghton &lt;nhoughto@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*&quot;
+ *   system header files;
+ *--------------------------------------------------------------------*/
+
+#include &lt;ctype.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;string.h&gt;
+#include &lt;netinet/in.h&gt;
+#include &lt;arpa/inet.h&gt;
+
+/*====================================================================*
+ *   custom header files;
+ *--------------------------------------------------------------------*/
+
+#include &quot;../tools/getoptv.h&quot;
+#include &quot;../tools/memory.h&quot;
+#include &quot;../tools/number.h&quot;
+#include &quot;../tools/symbol.h&quot;
+#include &quot;../tools/types.h&quot;
+#include &quot;../tools/flags.h&quot;
+#include &quot;../tools/files.h&quot;
+#include &quot;../tools/error.h&quot;
+#include &quot;../plc/rules.h&quot;
+#include &quot;../pib/pib.h&quot;
+
+/*====================================================================*
+ *   custom source files;
+ *--------------------------------------------------------------------*/
+
+#ifndef MAKEFILE
+#include &quot;../tools/getoptv.c&quot;
+#include &quot;../tools/putoptv.c&quot;
+#include &quot;../tools/version.c&quot;
+#include &quot;../tools/lookup.c&quot;
+#include &quot;../tools/reword.c&quot;
+#include &quot;../tools/hexstring.c&quot;
+#include &quot;../tools/hexdecode.c&quot;
+#include &quot;../tools/fdchecksum32.c&quot;
+#include &quot;../tools/memout.c&quot;
+#include &quot;../tools/assist.c&quot;
+#include &quot;../tools/bytespec.c&quot;
+#include &quot;../tools/basespec.c&quot;
+#include &quot;../tools/ipv4spec.c&quot;
+#include &quot;../tools/ipv6spec.c&quot;
+#include &quot;../tools/endian.c&quot;
+#include &quot;../tools/emalloc.c&quot;
+#include &quot;../tools/todigit.c&quot;
+#include &quot;../tools/codelist.c&quot;
+#include &quot;../tools/error.c&quot;
+#endif
+
+#ifndef MAKEFILE
+#include &quot;../pib/pibfile1.c&quot;
+#include &quot;../pib/piblock.c&quot;
+#endif
+
+#ifndef MAKEFILE
+#include &quot;../plc/rules.c&quot;
+#include &quot;../plc/ParseRule.c&quot;
+#endif
+
+/*====================================================================*
+ *   program variables;
+ *--------------------------------------------------------------------*/
+
+#ifndef __GNUC__
+#pragma pack (push,1)
+#endif
+
+typedef struct __packed classifier_pib
+
+{
+	uint32_t CR_PID;
+	uint32_t CR_OPERAND;
+	uint8_t CR_VALUE [16];
+}
+
+classifier_pib;
+struct __packed auto_connection
+
+{
+	uint8_t MACTION;
+	uint8_t MOPERAND;
+	uint16_t NUM_CLASSIFIERS;
+	struct classifier_pib CLASSIFIER [3];
+	struct cspec cspec;
+	uint8_t RSVD [14];
+}
+
+auto_connection;
+struct __packed classifier_priority_map
+
+{
+	uint32_t Priority;
+	struct classifier_pib CLASSIFIER;
+}
+
+classifier_priority_map;
+
+#ifndef __GNUC__
+#pragma pack (pop)
+#endif
+
+/*====================================================================*
+ *   program constants;
+ *--------------------------------------------------------------------*/
+
+#define PIB_MAX_AUTOCONN 16
+#define PIB_MAX_PRIORITY_MAPS 8
+
+#define PIB_AUTOCONN_COUNT_OFFSET 0x22C
+#define PIB_PRIORITY_COUNT_OFFSET 0x228
+
+#define PIB_AUTOCONN_OFFSET 0x310
+#define PIB_PRIORITY_MAPS_OFFSET 0x230
+
+/*====================================================================*
+ *
+ *   signed handle_rule (char * str, int argc, struct auto_connection * autoconn, struct classifier_priority_map * priority_map, int * autoconn_count, int * priority_count);
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+static signed handle_rule (char * str, int argc, struct auto_connection * autoconn, struct classifier_priority_map * priority_map, int * autoconn_count, int * priority_count)
+
+{
+	char const ** argv;
+	char **mem;
+	unsigned i;
+	signed c;
+	size_t len;
+	struct rule rule;
+	struct cspec cspec;
+	static char const * optv [] =
+	{
+		&quot;T:V:&quot;,
+		&quot;&quot;,
+		&quot;Atheros Classification Rule Insert Utility&quot;,
+		&quot;T\ttag&quot;,
+		&quot;V\tversion&quot;,
+		(char const *) (0)
+	};
+	extern char const * program_name;
+	mem = emalloc ((argc + 2) * sizeof (char *));
+	argv = (char const **)(mem);
+	* argv = program_name;
+	++argv;
+	* argv = str;
+	++argv;
+	len = strlen (str);
+	for (i = 1; i &lt; len; ++i)
+	{
+		if (str [i] == ' ')
+		{
+			str [i] = '\0';
+			* argv = &amp;str [i + 1];
+			++argv;
+		}
+	}
+	* argv = NULL;
+	optind = 1;
+	argv = (char const **)(mem);
+	memset (&amp;rule, 0, sizeof (rule));
+	memset (&amp;cspec, 0, sizeof (cspec));
+	while ((c = getoptv (argc, (char const **)(argv), optv)) != -1)
+	{
+		switch ((char) (c))
+		{
+		case 'T':
+			cspec.VLAN_TAG = (uint32_t)(basespec (optarg, 16, sizeof (cspec.VLAN_TAG)));
+			cspec.VLAN_TAG = htonl (cspec.VLAN_TAG);
+			break;
+		case 'V':
+			cspec.CSPEC_VERSION = (uint16_t)(basespec (optarg, 10, sizeof (cspec.CSPEC_VERSION)));
+			break;
+		default:
+			break;
+		}
+	}
+	argc -= optind;
+	argv += optind;
+	ParseRule (&amp;argc, (char const ***) &amp;argv, &amp;rule, &amp;cspec);
+
+/* Now migrate the rule into the correct PIB structure. */
+
+	if (rule.NUM_CLASSIFIERS &gt; 1 || rule.MACTION == ACTION_STRIPTX || rule.MACTION == ACTION_STRIPRX || rule.MACTION == ACTION_TAGTX || *priority_count &gt;= PIB_MAX_PRIORITY_MAPS)
+	{
+		if (*autoconn_count &gt;= PIB_MAX_AUTOCONN)
+		{
+			error (1, 0, &quot;too many rules&quot;);
+		}
+		autoconn = &amp;autoconn [*autoconn_count];
+		autoconn-&gt;CLASSIFIER [0].CR_PID = 0xFF;
+		autoconn-&gt;CLASSIFIER [1].CR_PID = 0xFF;
+		autoconn-&gt;CLASSIFIER [2].CR_PID = 0xFF;
+		autoconn-&gt;MACTION = rule.MACTION;
+		autoconn-&gt;MOPERAND = rule.MOPERAND;
+		autoconn-&gt;NUM_CLASSIFIERS = rule.NUM_CLASSIFIERS;
+		for (i = 0; i &lt; rule.NUM_CLASSIFIERS; ++i)
+		{
+			autoconn-&gt;CLASSIFIER [i].CR_PID = rule.CLASSIFIER [i].CR_PID;
+			autoconn-&gt;CLASSIFIER [i].CR_OPERAND = rule.CLASSIFIER [i].CR_OPERAND;
+			memcpy (&amp;autoconn-&gt;CLASSIFIER [i].CR_VALUE, &amp;rule.CLASSIFIER [i].CR_VALUE, sizeof (autoconn-&gt;CLASSIFIER [i].CR_VALUE));
+		}
+		memcpy (&amp;autoconn-&gt;cspec, &amp;rule.cspec, sizeof (autoconn-&gt;cspec));
+		++(*autoconn_count);
+	}
+	else
+	{
+		if (*priority_count &gt;= PIB_MAX_PRIORITY_MAPS)
+		{
+			error (1, 0, &quot;too many rules&quot;);
+		}
+		priority_map = &amp;priority_map [*priority_count];
+		priority_map-&gt;Priority = rule.MACTION;
+		priority_map-&gt;CLASSIFIER.CR_PID = rule.CLASSIFIER [0].CR_PID;
+		priority_map-&gt;CLASSIFIER.CR_OPERAND = rule.CLASSIFIER [0].CR_OPERAND;
+		memcpy (&amp;priority_map-&gt;CLASSIFIER.CR_VALUE, &amp;rule.CLASSIFIER [0].CR_VALUE, sizeof (priority_map-&gt;CLASSIFIER.CR_VALUE));
+		++(*priority_count);
+	}
+	free (mem);
+	return (0);
+}
+
+static void read_rules (struct auto_connection auto_connection [], unsigned * autoconn_count, struct classifier_priority_map classifier_priority_map [], unsigned * priority_count)
+
+{
+	int len = 0;
+	int wc = 0;
+	while ((c = getc (stdin)) != EOF)
+	{
+		if (isspace (c))
+		{
+			continue;
+		}
+		if (c == '#')
+		{
+			do
+			{
+				c = getc (stdin);
+			}
+			while (nobreak (c));
+			continue;
+		}
+		len = 0;
+		wc = 0;
+		do
+		{
+			if (isspace (c))
+			{
+				while (c != '\n' &amp;&amp; (c = getc (stdin)) != EOF &amp;&amp; isspace (c))
+				{
+					continue;
+				}
+				if (len &gt; 0)
+				{
+					++wc;
+				}
+				if (c != '\n' &amp;&amp; c != '#')
+				{
+					line [len++] = ' ';
+					if (len == sizeof (line) - 1)
+					{
+						error (1, 0, &quot;rule too long&quot;);
+					}
+				}
+			}
+			if (c == '\n' || c == '#')
+			{
+				line [len] = '\0';
+				handle_rule (line, wc, auto_connection, classifier_priority_map, autoconn_count, priority_count);
+				len = 0;
+				wc = 0;
+				if (c == '#')
+				{
+					ungetc (c, stdin);
+				}
+				break;
+			}
+			line [len++] = c;
+			if (len == sizeof (line) - 1)
+			{
+				error (1, 0, &quot;rule too long&quot;);
+			}
+		}
+		while ((c = getc (stdin)) != EOF);
+	}
+	if (len &gt; 0)
+	{
+		line [len] = '\0';
+		handle_rule (line, wc, auto_connection, classifier_priority_map, autoconn_count, priority_count);
+	}
+}
+
+/*====================================================================*
+ *
+ *   int main (int argc, char const * argv[]);
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+int main (int argc, char const * argv [])
+
+{
+	static char const * optv [] =
+	{
+		&quot;eqv&quot;,
+		&quot;pibfile &lt; rules&quot;,
+		&quot;Atheros Classification Rule Insert Utility&quot;,
+		&quot;e\tredirect stderr messages to stdout&quot;,
+		&quot;q\tquiet mode&quot;,
+		&quot;v\tverbose mode&quot;,
+		(char const *) (0)
+	};
+	struct auto_connection auto_connection [PIB_MAX_AUTOCONN];
+	struct classifier_priority_map classifier_priority_map [PIB_MAX_PRIORITY_MAPS];
+	unsigned autoconn_count = 0;
+	unsigned priority_count = 0;
+	flag_t flags = (flag_t)(0);
+	struct _file_ pib;
+	char line [1024];
+	signed c;
+	optind = 1;
+	while ((c = getoptv (argc, argv, optv)) != -1)
+	{
+		switch ((char) (c))
+		{
+		case 'e':
+			dup2 (STDOUT_FILENO, STDERR_FILENO);
+			break;
+		case 'q':
+			_setbits (flags, PIB_SILENCE);
+			break;
+		case 'v':
+			_setbits (flags, PIB_VERBOSE);
+			break;
+		default:
+			break;
+		}
+	}
+	argc -= optind;
+	argv += optind;
+	if (!argc)
+	{
+		error (1, 0, &quot;must specify PIB file&quot;);
+	}
+	memset (&amp;auto_connection, 0, sizeof (auto_connection));
+	memset (&amp;classifier_priority_map, 0, sizeof (classifier_priority_map));
+	read_rules (auto_connection, &amp;autoconn_count, classifier_priority_map, &amp;priority_count);
+	pib.name = * argv;
+	if ((pib.file = open (pib.name, O_BINARY|O_RDWR, FILE_FILEMODE)) == -1)
+	{
+		error (1, errno, &quot;%s&quot;, pib.name);
+	}
+	if (pibfile1 (&amp;pib))
+	{
+		error (1, errno, &quot;Bad PIB file: %s&quot;, pib.name);
+	}
+	if (lseek (pib.file, PIB_AUTOCONN_OFFSET, SEEK_SET) != PIB_AUTOCONN_OFFSET)
+	{
+		error (1, errno, &quot;could not seek to AutoConnections&quot;);
+	}
+	if (write (pib.file, &amp;auto_connection, sizeof (auto_connection)) != sizeof (auto_connection))
+	{
+		error (1, errno, &quot;could not write AutoConnections&quot;);
+	}
+	if (lseek (pib.file, PIB_AUTOCONN_COUNT_OFFSET, SEEK_SET) != PIB_AUTOCONN_COUNT_OFFSET)
+	{
+		error (1, errno, &quot;could not seek to AutoConnection count&quot;);
+	}
+	if (write (pib.file, &amp;autoconn_count, sizeof (autoconn_count)) != sizeof (autoconn_count))
+	{
+		error (1, errno, &quot;could not write AutoConnection count&quot;);
+	}
+	if (lseek (pib.file, PIB_PRIORITY_MAPS_OFFSET, SEEK_SET) != PIB_PRIORITY_MAPS_OFFSET)
+	{
+		error (1, errno, &quot;could not seek to Priority Map&quot;);
+	}
+	if (write (pib.file, &amp;classifier_priority_map, sizeof (classifier_priority_map)) != sizeof (classifier_priority_map))
+	{
+		error (1, errno, &quot;could not write Priority Map&quot;);
+	}
+	if (lseek (pib.file, PIB_PRIORITY_COUNT_OFFSET, SEEK_SET) != PIB_PRIORITY_COUNT_OFFSET)
+	{
+		error (1, errno, &quot;could not seek to PriorityMaps count&quot;);
+	}
+	if (write (pib.file, &amp;priority_count, sizeof (priority_count)) != sizeof (priority_count))
+	{
+		error (1, errno, &quot;could not write PriorityMaps count&quot;);
+	}
+	piblock (&amp;pib);
+	close (pib.file);
+	exit (0);
+}
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='pibpeek2.c.html' title=' pibpeek2.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='pibruin.c.html' title=' pibruin.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

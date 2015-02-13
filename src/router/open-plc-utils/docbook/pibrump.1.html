@@ -1,0 +1,114 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			pibrump.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='pibruin.1.html' title=' pibruin.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='plc.1.html' title=' plc.1 '>NEXT</a>]
+			</div>
+<pre>
+pibrump(1)                                   Qualcomm Atheros Open Powerline Toolkit                                  pibrump(1)
+
+NAME
+       pibrump - Classification Rule Dump Utility
+
+SYNOPSIS
+       pibrump [options] file [file] [...]
+
+DESCRIPTION
+       Read  classifier  rules stored in a PIB file and print them on stdout in a format similar to the command line for program
+       int6krule.  The output can be read by program pibruin for insertion into another PIB file.  The program name is short for
+       &quot;rule dump&quot;.
+
+       This  program  is  part of the Qualcomm Atheros Powerline Toolkit.  See the AMP man page for an overview and installation
+       instructions.
+
+OPTIONS
+       -q     Suppresses comments used to group classification rules.
+
+       -v     Print additional information on stdout.  Presently, this option has no effect.
+
+       -?,--help
+              Print program help summary on stdout.  This option takes precedence over other options on the command line.
+
+       -!,--version
+              Print program version information on stdout.  This option takes precedence over other options on the command line.
+              Use  this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of
+              the Linux Toolkit you are using.
+
+ARGUMENTS
+       file   The name of a valid Atheros runtime parameter file.  The file is not modified by  this  program.   The  file  must
+              exist  and  be a valid runtime parameter file or errors will occur.  By convention, runtime parameter files have a
+              .pib extention but this program does not enforce that convention.
+
+DISCLAIMER
+       PIB file structure and content is proprietary to Qualcomm Atheros, Ocala FL USA.  Consequently, public information is not
+       available.  Qualcomm Atheros reserves the right to change the file structure or content in future firmware releases with‐
+       out any obligation to notify or compensate users of this program.
+
+EXAMPLES
+       The following example prints the classifier rules stored in file abc.pib on stdout.  Individual rules are  printed  in  a
+       format that is essentially the same as that used to enter rules using program int6krule.  Rules are grouped by their cat‐
+       egory using comments.
+
+          &gt; pibrump abc.pib
+          # auto connection rules:
+          StripRX Any VLANID Is 5 VLANID Is 10 VLANID Is 15 add perm
+          StripRX Any VLANID Is 20 add perm
+          CAP1 Any VLANID Is 5 VLANID Is 10 VLANID Is 15 add perm
+          # priority mapping rules:
+          CAP1 Any VLANID Is 20 add perm
+          DropRX Any VLANID Is 25 add perm
+
+       The next example prints the classifier rules stored in file def.pib but output is a huge disappointment because there are
+       no rules, much like a Rambo movie.
+
+          &gt; pibrump def.pib
+          # auto connection rules:
+          # priority mapping rules:
+
+       The  next example shows a case where the the user has selected two rules from the first example and used them as input to
+       program int6krule.  There is no PIB file involved here because an MME is sent directly to the device  with  each  command
+       and the device will reset each time.  There are times when you may not want to set rules this way.
+
+          &gt; int6krule StripRX Any VLANID Is 5 VLANID Is 10 VLANID Is 15 add perm
+          # int6krule CAP1 Any VLANID Is 20 add perm
+
+       The  next  example  reads classification rules from file abc.pib and write them to file rules.txt instead of the console.
+       The rules are then read from file rules.txt and written into file def.pib using program pibruin.  This procedure  can  be
+       used to distribute a given rule set to other toolkit users.
+
+          &gt; pibrump abc.def &gt; rules.txt
+          # pibruin &lt; rules.txt def.pib
+
+       The  next  example reads classification rules directly from file abc.pib and writes them directly into file def.pib using
+       program pibruin.
+
+          &gt; pibrump abc.pib | pibruin def.pib
+
+SEE ALSO
+       int6krule(7), pibruin(7)
+
+CREDITS
+        Nathaniel Houghton &lt;nhoughto@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                               pibrump(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='pibruin.1.html' title=' pibruin.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='plc.1.html' title=' plc.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

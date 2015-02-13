@@ -1,0 +1,67 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Toolkit Installation on Windows 7™</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="ch01.html" title="Chapter 1.  Overview"><link rel="prev" href="ch01s06.html" title="Toolkit Installation on Windows XP™"><link rel="next" href="ch01s08.html" title="Toolkit Programs"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">
+			Toolkit Installation on <span class="productname">Windows 7</span>™
+			</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch01s06.html">Prev</a> </td><th width="60%" align="center">Chapter 1. 
+		Overview 
+		</th><td width="20%" align="right"> <a accesskey="n" href="ch01s08.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="install-windows-7"></a>
+			Toolkit Installation on <span class="productname">Windows 7</span>™
+			</h2></div></div></div><p>
+			The <span class="productname">Windows</span>™ version of the toolkit comes pre-compiled and ready to install and run using the native <span class="application">Windows Installer</span>. You may copy and distribute installation file <code class="filename">plc-utils-x.x.x.msi</code>. Users merely click on the file to install the package and may discard it afterwards. This method of installation permits remote installation over network.
+			</p><p>
+			The version of the Windows Installer used here needs Microsoft <span class="productname">.NET Framework 1.1</span>™ to work correctly. Newer versions of the <span class="productname">.NET Framework</span>™ will not work. The <span class="productname">.NET Framework</span>™ must be installed before the toolkit is installed or the <span class="productname">Windows Installer</span>™ will report dependency errors and refuse to complete installation. Multiple versions of the <span class="productname">.NET Framework</span>™ can coexist under <span class="productname">Windows 7</span>™. The <span class="productname">.NET Framework</span>™ needed is included in the toolkit <code class="filename">support</code> folder.
+			</p><p>
+			Failure to <a class="link" href="ch01s07.html#removal-windows-7" title="Removing the Toolkit">remove previous toolkit versions</a> on some systems may result in the message "Another version of this product is already installed" when trying to install a new version. You may want to remove prior version before starting toolkit installation.
+			</p><p>
+			Windows versions of toolkit programs that communicate with powerline devices all need <span class="productname">WinPcap</span>™ from <a class="ulink" href="http://www.winpcap.org/install/default.htm" target="_top">winpcap.org</a> to read and write Ethernet frames. <span class="productname">WinPcap</span>™ may be installed before or after toolkit installation but tools that access powerline devices will not run without it. You may want to install <span class="productname">WinPcap</span>™ before starting toolkit installation. If you have <span class="productname">Wireshark</span>™ installed then you probably already have <span class="productname">WinPcap</span>™ installed. A recent copy of <span class="productname">WinPcap</span>™ is included in the toolkit <code class="filename">support</code> folder. 
+			</p><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="idp7390560"></a>
+				Obtaining the Toolkit
+				</h3></div></div></div><p>
+				QCA customers can download the toolkit from the QCA Customer FTP Site.
+				</p><p>
+				QCA employees may be able to download the toolkit from the QCA Application Engineering World FTP site <a class="ulink" href="ftp://appslinux01.qca.qualcomm.com/toolkit/plc-utils/" target="_top">ftp://appslinux01.qca.qualcomm.com/toolkit/plc-utils/</a>. There are several installers available for Windows. Each installs a subset of the toolkit. Download the desired installer files to your local machine then execute them by right-clicking on them and selecting option "Run as Administrator".
+				</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="idp7392264"></a>
+				Installing the Toolkit
+				</h3></div></div></div><p>
+					 Older toolkit programs were installed in folder <code class="filename">C:\Program Files\Atheros\Toolkit</code> by default but now they are installed in <code class="filename">C:\Program Files (x86)\Qualcomm Atheros\Open Powerline Toolkit</code> instead. If you select a different folder during installation then remember it for the next step.
+					</p><div class="figure"><a name="idp7393776"></a><p class="title"><b>Figure 1.4. 
+					Windows Installer Dialogue
+					</b></p><div class="figure-contents"><div class="mediaobject" align="center"><img src="Win7-installer-dialogue.png" align="middle" alt="Windows Installer Dialogue"></div></div></div><br class="figure-break"><p>
+				Accept install defaults.
+				</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="idp7395376"></a>
+				Setting the PATH variable
+				</h3></div></div></div><p>
+				<span class="application">Toolkit</span> programs have command line interfaces and must be run from an open console window. To simplify program access and minimize the typing required, add the toolkit installation path mentioned above to the <code class="envar">PATH</code> environment variable by following steps listed below. If you have <code class="constant">Administrator</code> privileges then we recommend that you edit the system <code class="envar">PATH</code> variable; otherwise, you may need to create and/or edit a user <code class="envar">PATH</code> variable.
+				</p><div class="figure"><a name="idp7397424"></a><p class="title"><b>Figure 1.5. 
+					Control Panel System Dialogue
+					</b></p><div class="figure-contents"><div class="mediaobject" align="center"><img src="Win7-system-settings.png" align="middle" alt="Control Panel System Dialogue"></div></div></div><br class="figure-break"><div class="orderedlist"><ol type="1"><li><p>
+						On the <span class="command"><strong>Start</strong></span> menu, select the <span class="command"><strong>Control Panel</strong></span> option.
+						</p></li><li><p>
+						On the <span class="command"><strong>Adjust system settings</strong></span> page, select the <span class="command"><strong>System</strong></span> icon.
+						</p></li><li><p>
+						On the <span class="command"><strong>View basic information about your computer</strong></span> page, select the <span class="command"><strong>Advanced system settings</strong></span> option.
+						</p></li><li><p>
+						On the <span class="command"><strong>System Properties</strong></span> dialog, press the <span class="command"><strong>Environment Variables</strong></span> button.
+						</p></li><li><p>
+						On the <span class="command"><strong>Environment Variables</strong></span> dialog box, scroll down the <span class="command"><strong>System variables</strong></span> list and select the <span class="command"><strong>Path</strong></span> variable then press the <span class="command"><strong>Edit</strong></span> button.
+						</p></li><li><p>
+						On the <span class="command"><strong>Edit System Variable</strong></span> dialogue box, append the installation path to the <span class="command"><strong>Variable value</strong></span> field.
+						</p></li><li><p>
+						Press the <span class="command"><strong>OK</strong></span> button.
+						</p></li></ol></div><p>
+				Environment variable changes made here do not take effect until a console window is opened. This means that you may need to close and then reopen console windows that depend on the changes. It is a good idea to immediately open a console window and execute a toolkit command in order to confirm that the <code class="constant">PATH</code> variable is properly defined.
+				</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="removal-windows-7"></a>
+				Removing the Toolkit
+				</h3></div></div></div><p>
+				To remove an existing version of the Qualcomm Atheros <span class="application">Open Powerline Toolkit</span> from your system, follow the steps listed below. If the toolkit is not installed on your system then omit these steps. If you are unsure, you can follow them to determine if you have the toolkit installed or you can attempt to install, anyway, and return here if installation is prevented.
+				</p><div class="figure"><a name="idp7408952"></a><p class="title"><b>Figure 1.6. 
+					Control Panel Add/Remove Dialogue
+					</b></p><div class="figure-contents"><div class="mediaobject" align="center"><img src="Win7-remove-program.png" align="middle" alt="Control Panel Add/Remove Dialogue"></div></div></div><br class="figure-break"><div class="orderedlist"><ol type="1"><li><p>
+						On the <span class="command"><strong>Start</strong></span> menu, select the <code class="option">Control Panel</code> option.
+						</p></li><li><p>
+						On the <span class="command"><strong>Adjust system settings</strong></span> page, select the <span class="command"><strong>Programs and Features</strong></span> icon.
+						</p></li><li><p>
+						On the <span class="command"><strong>Uninstall or change a program</strong></span> page, scroll down and select the appropriate QCA <code class="option">Open Powerline Toolkit</code> entry then press the <code class="option">Remove</code> pushbutton. There may be several different QCA Open Powerline Toolkit entries so be sure to select the correct one.
+						</p></li></ol></div></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch01s06.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="ch01.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch01s08.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">
+			Toolkit Installation on <span class="productname">Windows XP</span>™
+			 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 
+			Toolkit Programs 
+			</td></tr></table></div></body></html>0

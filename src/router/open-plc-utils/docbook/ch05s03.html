@@ -1,0 +1,29 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Select an Interface on Windows</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="ch05.html" title="Chapter 5.  Procedures"><link rel="prev" href="ch05s02.html" title="Select an Interface on Linux"><link rel="next" href="ch05s04.html" title="Identify a Device"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">
+			Select an Interface on Windows
+			</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch05s02.html">Prev</a> </td><th width="60%" align="center">Chapter 5. 
+		Procedures 
+		</th><td width="20%" align="right"> <a accesskey="n" href="ch05s04.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="procedure-select-interface-windows"></a>
+			Select an Interface on Windows
+			</h2></div></div></div><p>
+			<span class="application">Winpcap</span> references host network interfaces by number, not name. This means that you must determine the proper interface number for the network adapter that you plan to use. Use Toolkit <a class="ulink" href="pcapdevs.7.html" target="_top">pcapdevs</a>  utility will enumerate available host network adapters by number,  <acronym class="acronym">MAC</acronym> address and description. By default, Toolkit programs communicate with powerline devices on pcap interface <code class="varname">2</code> but another interface can be specified on the command line with the <strong class="userinput"><code>-i</code></strong> option:
+			</p><div class="example"><a name="idp10974568"></a><p class="title"><b>Example 5.4. 
+				Selecting another Interface on Windows
+				</b></p><div class="example-contents"><pre class="screen">
+# int6k -i 3 ...
+</pre></div></div><br class="example-break"><p>
+			In the previous example, <span class="command"><strong>int6k</strong></span> will send and receive frames using host interface <code class="varname">3</code> instead of the default interface. Having to specify the interface can become tedious when entering commands manually. Presently there is no way to specify a default interface on WIndows platforms.
+			</p><div class="example"><a name="idp10976360"></a><p class="title"><b>Example 5.5. 
+				Finding Interfaces on Windows
+				</b></p><div class="example-contents"><pre class="screen">
+# pcapdevs
+ 1 00:00:00:00:00:00 \Device\NPF_GenericDialupAdapter	(Adapter for generic dialup
+ 2 00:0E:2E:03:5F:B8 \Device\NPF_{4CFAABD5-C929-4942-914B-BDFE72B13611} (Realtek R
+ 3 00:C0:49:D5:CB:14 \Device\NPF_{73E0D2EF-6069-4831-B379-507025F2BDCD} (Realtek R
+ 4 00:0C:76:87:3E:3D \Device\NPF_{86B96905-3AA7-46F1-969A-6C23E3BBBA8B} (Broadcom
+</pre></div></div><br class="example-break"><p>
+			The previous example illustrates the use of Toolkit <a class="ulink" href="pcapdevs.7.html" target="_top">pcapdevs</a> utility to identify available network interfaces by interface number, <acronym class="acronym">MAC</acronym> address and description. The descriptions have been truncated in this example because they are too long. Devices having <acronym class="acronym">MAC</acronym> address <code class="constant">00:00:00:00:00:00</code> are unavailable.
+			</p></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch05s02.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="ch05.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch05s04.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">
+			Select an Interface on Linux
+			 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 
+			Identify a Device 
+			</td></tr></table></div></body></html>0

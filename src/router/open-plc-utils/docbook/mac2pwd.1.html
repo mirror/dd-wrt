@@ -1,0 +1,168 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			mac2pwd.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='mac2pw.1.html' title=' mac2pw.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='mdioblock.1.html' title=' mdioblock.1 '>NEXT</a>]
+			</div>
+<pre>
+mac2pwd(1)                                   Qualcomm Atheros Open Powerline Toolkit                                  mac2pwd(1)
+
+NAME
+       mac2pwd - Qualcomm Atheros Ethernet Device Password Generator
+
+SYNOPSIS
+       mac2pwd [options] file [file] [ ... ]
+
+DESCRIPTION
+       Read Ethernet addresses from one or more files and print computed passwords with the associated address.  Input addresses
+       can appear in any order and need not be consecutive.  Computed passwords consist of upper case letters (A-Z)  with  group
+       separators.   The  algorithm  used  here is not mandatory for HomePlug AV compliance and so vendors are free to use other
+       methods to generate their own device passwords.
+
+       This program may be used to generate passwords for large numbers of non-consecutive MAC addresses that may occur in  ran‐
+       dom order.  It complements program mac2pw which generates passwords for consecutive MAC addresses over a given range.
+
+       This  program  is  part of the Qualcomm Atheros Powerline Toolkit.  See the AMP man page for an overview and installation
+       instructions.
+
+CAVEATS
+       Atheros provides this program as a simple means of generating unique and apparently random device passwords for  a  large
+       volume  of  Ethernet  devices.   It  uses  a Linear Cogruential Random Number Generator to produce a single-wheel Bazerie
+       Cylinder and to select characters from that cylinder.  The algorithm used is adequate for purpose and nothing more.  Ven‐
+       dors are encouraged to develop their own means of generating passwords for the reasons mentioned below.
+
+       MAC addresses can be determined using a variety of network management programs.  Anyone having access to this program, or
+       the algorithm used, could compute the device password and gain access to device features reserved for priviledged  users.
+
+OPTIONS
+       -b bunch
+              The  password  bunching  factor.  Passwords have a fixed number of upper case letters broken into groups separated
+              with dashes.  The number of letters in each group are the bunch value.  When bunch is 0, password length is count.
+              When  bunch  is 1, password length is twice count because every other character will be a dash.  The default bunch
+              is 4.
+
+       -l count
+              The number of letters in the password string.  The default count is 16.  Overall password length  is  the  sum  of
+              count plus the number of delimiters implied by bunch.
+
+       -q     Quiet mode.  Exclude the MAC address on output.  This option can be used in scripts to return the password associ‐
+              ated with a given MAC address.
+
+       -v     Verbose mode.  Prefix each line with a ’0’ column.  The Atheros Production Test System (PTS) uses the first column
+              of a password database file to indicate which addresses and passwords have already been used.
+
+       -?,--help
+              Print program help information on stdout.  This option takes precedence over other options on the command line.
+
+       -!,--version
+              Print program version information on stdout.  This option takes precedence over other options on the command line.
+              Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version  of
+              the Linux Toolkit you are using.
+
+ARGUMENTS
+       file   The  name  of a file that contains Ethernet address strings.  Individual address strings consist of 12 consecutive
+              hexadecimal digits.  Addresses are seperated by whites space.  This allows multiple addresses on a line.  There is
+              no line length limit.  Punctuation is not permitted; however, a hash (’#’) or semicolon (’;’) in any column starts
+              comment text that continues to the end of that line.  An error in any input file terminates the  program  with  an
+              error message.
+
+EXAMPLES
+       An example input file, mac.txt, is shown below.  Comment lines document the file.  Blank lines are permitted and multiple
+       addresses appear on one line.  This file contains 5 MAC addresses.  Punctuation is not permitted within a MAC address.
+
+          # =================================
+          # unused MAC addresses;
+          # ---------------------------------
+          00b052000004
+          00b052BABE33
+          00b052BABE34 00b052CAFE05
+          00b052CAFE01
+
+       Another example input file, mac2.txt, appears below.  A hash (’#’) and a semi-colon  (’;’)  are  used  to  hide  selected
+       addresses.   Hidden  addresses  are ignored because they are comments.  This file contains 7 addresses but only 5 will be
+       recognized.
+
+          002b88ffff00
+          002b887fff00
+          # 002b88660066
+          002b88660067
+          002b88660063 ; 002b8800FFFF
+          002b88660066
+
+       The following example reads the two files shown above and prints 10 addresses, 5 from each file,  with  associated  pass‐
+       words.  Output appears on the console but it could be directed to a file.
+
+          # mac2pwd mac.txt more.mac
+          00B052000004 LBPL-NZSM-VPUC-XPLM
+          00B052BABE33 KKDF-KLMC-JENV-NGFG
+          00B052BABE34 FVPK-WQID-VVHY-ZHYQ
+          00B052CAFE05 PCHK-EXLA-QEDY-DPJU
+          00B052CAFE01 KDGB-ZVBQ-YLTF-ZCET
+          002B88FFFF00 OIFX-KUHT-RUIN-MURF
+          002B887FFF00 SPUU-KOJU-RXOA-ZORW
+          002B88660067 BTQY-NMZL-WUNM-HSHW
+          002B88660063 EJRX-AATI-YSMU-JWSG
+          002B88660066 FOFC-LVAB-MTHH-TVNO
+
+       The  following  example is the same but prints output suitable for input to the Qualcomm Atheros PTS because option -v is
+       specified.  The output format is similar to that produced by the Qualcomm Atheros DB Builder Utility for Windows.
+
+          # mac2pwd -v mac.txt more.mac
+          0 00B052000004 LBPL-NZSM-VPUC-XPLM
+          0 00B052BABE33 KKDF-KLMC-JENV-NGFG
+          0 00B052BABE34 FVPK-WQID-VVHY-ZHYQ
+          0 00B052CAFE05 PCHK-EXLA-QEDY-DPJU
+          0 00B052CAFE01 KDGB-ZVBQ-YLTF-ZCET
+          0 002B88FFFF00 OIFX-KUHT-RUIN-MURF
+          0 002B887FFF00 SPUU-KOJU-RXOA-ZORW
+          0 002B88660067 BTQY-NMZL-WUNM-HSHW
+          0 002B88660063 EJRX-AATI-YSMU-JWSG
+          0 002B88660066 FOFC-LVAB-MTHH-TVNO
+
+       The following example omits the MAC address from the output for clandestine cases where one does not want  both  the  MAC
+       address and the password to appear together.  It can also be used to generate random passwords for other purposes.
+
+          # mac2pwd -q mac.txt more.mac
+          LBPL-NZSM-VPUC-XPLM
+          KKDF-KLMC-JENV-NGFG
+          FVPK-WQID-VVHY-ZHYQ
+          PCHK-EXLA-QEDY-DPJU
+          KDGB-ZVBQ-YLTF-ZCET
+          OIFX-KUHT-RUIN-MURF
+          SPUU-KOJU-RXOA-ZORW
+          BTQY-NMZL-WUNM-HSHW
+          EJRX-AATI-YSMU-JWSG
+          FOFC-LVAB-MTHH-TVNO
+
+DISCLAIMER
+       Qualcomm  Atheros  reserves  the  right  to  modify program names, functionality, input format or output format in future
+       toolkit releases without any obligation to notify or compensate toolkit users.
+
+SEE ALSO
+       hpavkey(1), hpavkeys(1), keys(1), mac2pw(1), rkey(1)
+
+CREDITS
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                               mac2pwd(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='mac2pw.1.html' title=' mac2pw.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='mdioblock.1.html' title=' mdioblock.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

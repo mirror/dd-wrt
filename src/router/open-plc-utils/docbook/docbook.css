@@ -1,0 +1,65 @@
+acronym.acronym { color: blue; }
+body { background: white; margin: 10px 20px 10px 20px; font: normal 10pt verdana; } 
+b.fsfunc { color: maroon; }
+code.computeroutput { }
+code.constant { color: red; }
+code.envar { }
+code.filename { font: italic; color: blue; }
+code.funcdef { font: normal 10pt courier; }
+code.function { }
+code.option { }
+code.prompt { }
+code.varname { color: blue; }
+div.abstract { }
+div.author { }
+div.authorgroup { }
+div.book { }
+div.caption { }
+div.chapter { }
+div.example { }
+div.figure { }
+div.funcsynopsis { font: normal 10pt courier; padding: 10px; background: beige; }
+div.itemizedlist { }
+div.list-of-examples { }
+div.list-of-figures { }
+div.mediaobject { }
+div.navfooter { width: 100%; }
+div.navheader { width: 100%; }
+div.orderedlist { }
+div.section { }
+div.titlepage { }
+div.toc { }
+div.variablelist { }
+em.citetitle { }
+h1.title { }
+h2.title { }
+h3.author { }
+h3.corpauthor { }
+h3.editor { }
+h3.title { }
+h4.editedby { }
+h4.title { }
+p.releaseinfo { }
+p.title { }
+pre { border: none; padding: 10px; font: monospace; } 
+pre.funcsynopsisinfo { background: aqua; color: black; } 
+pre.programlisting   { background: #CCFFFF; color: black; } 
+pre.screen           { background: black;  color: lime; } 
+span.acronym { }
+span.application { font: bold; }
+span.chapter { }
+span.citation { }
+span.emphasis { }
+span.firstname { }
+span.productname { }
+span.quote { }
+span.section { }
+span.surname { }
+span.term { }
+span.trademark { }
+strong.command { }
+strong.userinput { }
+var.fsfunc { font: bold 10pt courier; color: maroon; }
+var.pdparam { font: bold 10pt courier; color: navy; }
+td.include { background: #FFFF00; }
+td.exclude { background: #FFFFFF; }

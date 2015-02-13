@@ -1,0 +1,74 @@
+.TH ttysend 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+ttysend - Serial Line Rate Tester (Send)
+
+.SH SYNOPSIS
+.BR ttysend
+.RI [ options ] 
+.RI [< stdin ]
+
+.SH DESCRIPTION
+Send data to a serial device.
+The primary purpose of this program is to send data over a serial port that can then be received with the \fBttyrecv\fR utility.
+
+.PP
+The ttysend program exits when either one of the following conditions are met:
+    1.
+The file specified on the command line (see \fB-f\fR) is sent in its entirety.
+    2.
+The send time specified on the command line (see \fB-t\fR) has elapsed.
+
+.PP
+This program is part of the Qualcomm Atheros Powerline Toolkit.
+See the \fBAMP\fR man page for an overview and installation instructions.
+
+.SH COMMENTS
+This program does not yet support Windows platforms.
+
+.SH OPTIONS
+
+.TP
+-\fBf \fIfile\fR
+The file to send.
+If this option is not specified, the values 0x00 to 0xFF are sent in a loop.
+Instead of a filename, a '-' may be specified.
+This is similar to the \fBtar\fR utility, and instructs ttysend to read from standard input.
+
+.TP
+-\fBl \fIfile\fR
+The serial port file to send data to.
+The default is \fB/dev/ttyS0\fR.
+
+.TP
+-\fBs \fIspeed\fR
+The serial baud rate.
+Supported baud rates are \fB0\fR, \fB50\fR, \fB75\fR, \fB110\fR, \fB134\fR, \fB150\fR, \fB200\fR, \fB300\fR, \fB600\fR, \fB1200\fR, \fB1800\fR, \fB2400\fR, \fB4800\fR, \fB9600\fR, \fB19200\fR, \fB38400\fR, \fB57600\fR, \fB115200\fR, \fB230400\fR, \fB460800\fR, \fB500000\fR and \fB921600\fR.
+
+.TP
+-\fBt \fItime\fR
+Transmit for a maximum of \fBtime\fR seconds.
+The default is 15 seconds.
+
+.TP
+.RB - ? ,-- help
+Print program help summary on stdout.
+This option takes precedence over other options on the command line.
+
+.TP
+.RB - ? ,-- version
+Print program version information on stdout.
+This option takes precedence over other options on the command line.
+Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of the Linux Toolkit you are using.
+
+.SH EXAMPLES
+None.
+
+.SH SEE ALSO
+.BR amp ( 1 ),
+.BR int6kuart ( 1 ),
+.BR ttyrecv ( 1 )
+
+.SH CREDITS
+ Nathaniel Houghton <nhoughto@qca.qualcomm.com>
+

@@ -1,0 +1,161 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			modpib.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='mme.1.html' title=' mme.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='nics.1.html' title=' nics.1 '>NEXT</a>]
+			</div>
+<pre>
+modpib(1)                                    Qualcomm Atheros Open Powerline Toolkit                                   modpib(1)
+
+NAME
+       modpib - Qualcomm Atheros PIB File Editor
+
+SYNOPSIS
+       modpib [options] filename
+
+DESCRIPTION
+       Change  device  identity  parameters in a PIB file and update the checksum.  Device identity parameters are the MAC, DAK,
+       NMK and the Manufacturer, Network and User HFID.  Collectively, they establish the device network identity.
+
+       This program is the safe way to edit identity parameters since only valid PIB files can be edited and only selected  val‐
+       ues changed.  In addition, critical cross-parameter updates are automatically applied.
+
+       This  program  is  part of the Qualcomm Atheros Powerline Toolkit.  See the AMP man page for an overview and installation
+       instructions.
+
+OPTIONS
+       -C mode
+              Set Central Coordinator Selection mode.  Permitted values for mode are 0=Auto, 1=Never,  2=Always,  3=UserAssigned
+              and 4=Covert.
+
+       -D xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx
+              The  new Device Access Key (DAK).  This key will replace the original DAK.  Keys are 16 hex octet strings.  Octets
+              may be seperated by optional colons.  The symbol none, key1 or key2 may be specified in  place  of  a  hexadecimal
+              string, for convenience.  Use program hpavkey to compute the DAK for a specific password, if required.
+
+       -L level
+              Set  security  level.   The  security  level is written into the PreferredNID.  Level 0 enables pusbutton pairing.
+              Level 1 disables it.  The default secutity level is 0.
+
+       -M xx:xx:xx:xx:xx:xx
+              The new Media Access Control (MAC) address.  This  address  will  replace  the  original  address,  if  specified.
+              Addresses  are  6  hex  octet  strings.   Octets  may be seperated by optional colons.  Qualcomm Atheros powerline
+              devices derive their MAC address from their PIB and each device on a network  must  have  a  unique  address.   To
+              facilitate  the  assignement  of  unique  addresses, substituting the word &quot;auto&quot;, &quot;next&quot; or &quot;plus&quot; will cause the
+              original MAC address to be incremented before a new checksum is calculated.  Successive uses of this  option  will
+              continue to increment the stored address.  You can inspect the stored MAC address with &quot;chkpib -v pibfile&quot;.
+
+       -N xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx
+              The new Network Membership Key (NMK).  This key will replace the original NMK, create a new PreferredNID and clear
+              the AVLNMembership bit.  Keys are 16 hex octets.  Optionally, octets may be seperated colons.  The symbol key1  or
+              key2  can  be specified in place of a hexadecimal string, for convenience.  Use program hpavkey to compute the NMK
+              from a specific password, if required.
+
+       -P filename
+              The specified file is loaded from disk and written into the prescaler section of the PIB.  This file  must  be  in
+              the format used by the Qualcomm Atheros Windows Device Manager, which is a two column file, each column consisting
+              of 8 ASCII alpha-numeric characters.  The first column corresponds to the  array  index  value  (00000000  through
+              00001155,  decimal),  and  the second column is the value stored at that position in the prescaler array (00000000
+              through 000000ff, hexadecimal).  The two columns may be separated by any whitespace  characters  when  using  this
+              tool.  However, for full compatibility with the Windows Device Manager it is advised to use a single space between
+              the columns.  The ’#’ character may also be used at the start of a line to denote a comment.
+
+       -S string
+              The new manufacturing string.  The maximum length is 63 characters.
+
+       -T string
+              The new network name string.  The maximum length is 63 character.
+
+       -U string
+              The new username string.  The maximum length is 63 characters.
+
+       -q     Enable quiet mode.  This option has no effect at present.
+
+       -v     Print PIB identity parameters on stdout after changes have been applied.  This option helps  verify  that  changes
+              have been applied correctly.  It can also be used, without changes, to merely inspect existing parameters.
+
+       -?,--help
+              Print program help summary on stdout.  This option takes precedence over other options on the command line.
+
+       -!,--version
+              Print program version information on stdout.  This option takes precedence over other options on the command line.
+              Use this option when sending screen dumps to Qualcomm Atheros Technical Support so that they  know  exactly  which
+              version of the Linux Toolkit you are using.
+
+ARGUMENTS
+       filename
+              The  name  of  the PIB file to be modified.  No assumptions are made based on filename and no filename conventions
+              are enforced.
+
+KEYS
+       Encryption keys are long, tedious to type and prone to error.  For convenience, symbolic names may be used to specify the
+       key for options -D and -N.  Symbolic name &quot;none&quot; translates to zeros.  Symbolic name &quot;key1&quot; translates to the HomePlug AV
+       compliant key for pass phrase &quot;HomePlugAV&quot;.  Symbolic name &quot;key2&quot; translates to the HomePlug AV compliant  key  for  pass
+       phrase &quot;HomePlugAV0123&quot;.  The actual key that is generated for key1 or key2 will differ depending on context.
+
+EXAMPLES
+       The  following example replaces the MAC address in pib file abc.pib and computes a new checksum.  The input file is over-
+       written.  A command like this one can be used to establish the start MAC address when downloading a series of PIBs.
+
+          # modpib -M 00:b0:52:DA:DA:FF abc.pib
+
+       The following example increments the MAC address in pib file abc.pib and computes a new checksum.  The word auto, next or
+       plus,  in  place of a MAC address, will increment the old address each time the command is executed.  This command can be
+       used to ensure that unique and consecutive MAC addresses are used each time a PIB is downloaded.
+
+          # modpib -M auto abc.pib
+
+       The following command updates pib file abc.pib with the DAK and NMK read from the device connected to eth0.   In  similar
+       fashion, program rkey can be used to compute random key values from a keyfile.
+
+          # modpib -D $(int6kid -Di eth0) -N $(rkey secret.key -M) abc.pib
+
+       The  following  example  displays  the  current value of keys and strings stored in pib file abc.pib because option -v is
+       present.  This can be used to verify PIB identity settings before or after an edit.
+
+          # modpib -v abc.pib
+                  PIB 4-4 15560 bytes
+                  MAC 00:B0:52:00:00:01
+                  DAK 68:9F:07:4B:8B:02:75:A2:71:0B:0B:57:79:AD:16:30 (HomePlugAV)
+                  NMK 50:D3:E4:93:3F:85:5B:70:40:78:4D:F8:15:AA:8D:B7 (HomePlugAV)
+                  NID B0:F2:E6:95:66:6B:03
+                  NET Qualcomm Atheros Enabled Network
+                  MFG Qualcomm Atheros HomePlug AV Device
+                  USR Qualcomm Atheros Enabled Product
+                  CCo Auto
+                  MDU N/A
+
+DISCLAIMER
+       PIB file structure and content is proprietary to Qualcomm Atheros, Ocala FL USA.  Consequently, public information is not
+       available.  Qualcomm Atheros reserves the right to modify PIB file structure or content in future firmware releases with‐
+       out any obligation to notify or compensate users of this program.
+
+SEE ALSO
+       chkpib(7), chkpib2(7), getpib(7), modpib(1), pib2xml(1), pibcomp(1), pibdump(1), setpib(1), xml2pib(1)
+
+CREDITS
+        Nathaniel Houghton &lt;nhoughto@qca.qualcomm.com&gt;
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                                modpib(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='mme.1.html' title=' mme.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='nics.1.html' title=' nics.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

@@ -1,0 +1,682 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			MMEName.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='MMEMode.c.html' title=' MMEMode.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='MMEPeek.c.html' title=' MMEPeek.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *
+ *   char const * MMEName (uint16_t MMTYPE);
+ *
+ *   mme.h
+ *
+ *   Return HomePlug or Atheros Management Message name for a given
+ *   MMTYPE; this function is not needed but it could be useful when
+ *   developing and debugging applications;
+ *
+ *   If you add or remove items in this list then update constant
+ *   MMTYPES to reflect the number of list members;
+ *
+ *
+ *   Contributor(s):
+ *	Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef MMENAME_SOURCE
+#define MMENAME_SOURCE
+
+#include &quot;../mme/mme.h&quot;
+
+static const struct mme_name
+
+{
+	uint16_t type;
+	char const * name;
+}
+
+mme_names [] =
+
+{
+
+	{
+		CC_CCO_APPOINT,
+		&quot;CC_CCO_APPOINT&quot;
+	},
+	{
+		CC_BACKUP_APPOINT,
+		&quot;CC_BACKUP_APPOINT&quot;
+	},
+	{
+		CC_LINK_INFO,
+		&quot;CC_LINK_INFO&quot;
+	},
+	{
+		CC_HANDOVER,
+		&quot;CC_HANDOVER&quot;
+	},
+	{
+		CC_HANDOVER_INFO,
+		&quot;CC_HANDOVER_INFO&quot;
+	},
+	{
+		CC_DISCOVER_LIST,
+		&quot;CC_DISCOVER_LIST&quot;
+	},
+	{
+		CC_LINK_NEW,
+		&quot;CC_LINK_NEW&quot;
+	},
+	{
+		CC_LINK_MOD,
+		&quot;CC_LINK_MOD&quot;
+	},
+	{
+		CC_LINK_SQZ,
+		&quot;CC_LINK_SQZ&quot;
+	},
+	{
+		CC_LINK_REL,
+		&quot;CC_LINK_REL&quot;
+	},
+	{
+		CC_DETECT_REPORT,
+		&quot;CC_DETECT_REPORT&quot;
+	},
+	{
+		CC_WHO_RU,
+		&quot;CC_WHO_RU&quot;
+	},
+	{
+		CC_ASSOC,
+		&quot;CC_ASSOC&quot;
+	},
+	{
+		CC_LEAVE,
+		&quot;CC_LEAVE&quot;
+	},
+	{
+		CC_SET_TEI_MAP,
+		&quot;CC_SET_TEI_MAP&quot;
+	},
+	{
+		CC_RELAY,
+		&quot;CC_RELAY&quot;
+	},
+	{
+		CC_BEACON_RELIABILITY,
+		&quot;CC_BEACON_RELIABILITY&quot;
+	},
+	{
+		CC_ALLOC_MOVE,
+		&quot;CC_ALLOC_MOVE&quot;
+	},
+	{
+		CC_ACCESS_NEW,
+		&quot;CC_ACCESS_NEW&quot;
+	},
+	{
+		CC_ACCESS_REL,
+		&quot;CC_ACCESS_REL&quot;
+	},
+	{
+		CC_DCPPC,
+		&quot;CC_DCPPC&quot;
+	},
+	{
+		CC_HP1_DET,
+		&quot;CC_HP1_DET&quot;
+	},
+	{
+		CC_BLE_UPDATE,
+		&quot;CC_BLE_UPDATE&quot;
+	},
+	{
+		CP_PROXY_APPOINT,
+		&quot;CP_PROXY_APPOINT&quot;
+	},
+	{
+		PH_PROXY_APPOINT,
+		&quot;PH_PROXY_APPOINT&quot;
+	},
+	{
+		CP_PROXY_WAKE,
+		&quot;CP_PROXY_WAKE&quot;
+	},
+	{
+		NN_INL,
+		&quot;NN_INL&quot;
+	},
+	{
+		NN_NEW_NET,
+		&quot;NN_NEW_NET&quot;
+	},
+	{
+		NN_ADD_ALLOC,
+		&quot;NN_ADD_ALLOC&quot;
+	},
+	{
+		NN_REL_ALLOC,
+		&quot;NN_REL_ALLOC&quot;
+	},
+	{
+		NN_REL_NET,
+		&quot;NN_REL_NET&quot;
+	},
+	{
+		CM_ASSOCIATED_STA,
+		&quot;CM_ASSOCIATED_STA&quot;
+	},
+	{
+		CM_ENCRYPTED_PAYLOAD,
+		&quot;CM_ENCRYPTED_PAYLOAD&quot;
+	},
+	{
+		CM_SET_KEY,
+		&quot;CM_SET_KEY&quot;
+	},
+	{
+		CM_GET_KEY,
+		&quot;CM_GET_KEY&quot;
+	},
+	{
+		CM_SC_JOIN,
+		&quot;CM_SC_JOIN&quot;
+	},
+	{
+		CM_CHAN_EST,
+		&quot;CM_CHAN_EST&quot;
+	},
+	{
+		CM_TM_UPDATE,
+		&quot;CM_TM_UPDATE&quot;
+	},
+	{
+		CM_AMP_MAP,
+		&quot;CM_AMP_MAP&quot;
+	},
+	{
+		CM_BRG_INFO,
+		&quot;CM_BRG_INFO&quot;
+	},
+	{
+		CM_CONN_NEW,
+		&quot;CM_CONN_NEW&quot;
+	},
+	{
+		CM_CONN_REL,
+		&quot;CM_CONN_REL&quot;
+	},
+	{
+		CM_CONN_MOD,
+		&quot;CM_CONN_MOD&quot;
+	},
+	{
+		CM_CONN_INFO,
+		&quot;CM_CONN_INFO&quot;
+	},
+	{
+		CM_STA_CAP,
+		&quot;CM_STA_CAP&quot;
+	},
+	{
+		CM_NW_INFO,
+		&quot;CM_NW_INFO&quot;
+	},
+	{
+		CM_GET_BEACON,
+		&quot;CM_GET_BEACON&quot;
+	},
+	{
+		CM_HFID,
+		&quot;CM_HFID&quot;
+	},
+	{
+		CM_MME_ERROR,
+		&quot;CM_MME_ERROR&quot;
+	},
+	{
+		CM_NW_STATS,
+		&quot;CM_NW_STATS&quot;
+	},
+	{
+		CM_SLAC_PARAM,
+		&quot;CM_SLAC_PARAM&quot;
+	},
+	{
+		CM_START_ATTEN_CHAR,
+		&quot;CM_START_ATTEN_CHAR&quot;
+	},
+	{
+		CM_ATTEN_CHAR,
+		&quot;CM_ATTEN_CHAR&quot;
+	},
+	{
+		CM_PKCS_CERT,
+		&quot;CM_PKCS_CERT&quot;
+	},
+	{
+		CM_MNBC_SOUND,
+		&quot;CM_MNBC_SOUND&quot;
+	},
+	{
+		CM_VALIDATE,
+		&quot;CM_VALIDATE&quot;
+	},
+	{
+		CM_SLAC_MATCH,
+		&quot;CM_SLAC_MATCH&quot;
+	},
+	{
+		CM_SLAC_USER_DATA,
+		&quot;CM_SLAC_USER_DATA&quot;
+	},
+	{
+		CM_ATTEN_PROFILE,
+		&quot;CM_ATTEN_PROFILE&quot;
+	},
+	{
+		MS_PB_ENC,
+		&quot;MS_PB_ENC&quot;
+	},
+	{
+		VS_SW_VER,
+		&quot;VS_SW_VER&quot;
+	},
+	{
+		VS_WR_MEM,
+		&quot;VS_WR_MEM&quot;
+	},
+	{
+		VS_RD_MEM,
+		&quot;VS_RD_MEM&quot;
+	},
+	{
+		VS_ST_MAC,
+		&quot;VS_ST_MAC&quot;
+	},
+	{
+		VS_GET_NVM,
+		&quot;VS_GET_NVM&quot;
+	},
+	{
+		0xA028,
+		&quot;RESERVED&quot;
+	},
+	{
+		0xA02C,
+		&quot;RESERVED&quot;
+	},
+	{
+		VS_RS_DEV,
+		&quot;VS_RS_DEV&quot;
+	},
+	{
+		VS_WR_MOD,
+		&quot;VS_WR_MOD&quot;
+	},
+	{
+		VS_RD_MOD,
+		&quot;VS_RD_MOD&quot;
+	},
+	{
+		VS_MOD_NVM,
+		&quot;VS_MOD_NVM&quot;
+	},
+	{
+		VS_WD_RPT,
+		&quot;VS_WD_RPT&quot;
+	},
+	{
+		VS_LNK_STATS,
+		&quot;VS_LNK_STATS&quot;
+	},
+	{
+		VS_SNIFFER,
+		&quot;VS_SNIFFER&quot;
+	},
+	{
+		VS_NW_INFO,
+		&quot;VS_NW_INFO&quot;
+	},
+	{
+		0xA03C,
+		&quot;RESERVED&quot;
+	},
+	{
+		VS_CP_RPT,
+		&quot;VS_CP_RPT&quot;
+	},
+	{
+		VS_ARPC,
+		&quot;VS_ARPC&quot;
+	},
+	{
+		VS_SET_KEY,
+		&quot;VS_SET_KEY&quot;
+	},
+	{
+		VS_MFG_STRING,
+		&quot;VS_MFG_STRING&quot;
+	},
+	{
+		VS_RD_CBLOCK,
+		&quot;VS_RD_CBLOCK&quot;
+	},
+	{
+		VS_SET_SDRAM,
+		&quot;VS_SET_SDRAM&quot;
+	},
+	{
+		VS_HOST_ACTION,
+		&quot;VS_HOST_ACTION&quot;
+	},
+	{
+		VS_OP_ATTRIBUTES,
+		&quot;VS_OP_ATTRIBUTES&quot;
+	},
+	{
+		VS_ENET_SETTINGS,
+		&quot;VS_ENET_SETTINGS&quot;
+	},
+	{
+		VS_TONE_MAP_CHAR,
+		&quot;VS_TONE_MAP_CHAR&quot;
+	},
+	{
+		VS_NW_INFO_STATS,
+		&quot;VS_NW_INFO_STATS&quot;
+	},
+	{
+		VS_SLAVE_MEM,
+		&quot;VS_SLAVE_MEM&quot;
+	},
+	{
+		VS_FAC_DEFAULTS,
+		&quot;VS_FAC_DEFAULTS&quot;
+	},
+	{
+		VS_CLASSIFICATION,
+		&quot;VS_CLASSIFICATION&quot;
+	},
+	{
+		VS_RX_TONE_MAP_CHAR,
+		&quot;VS_RX_TONE_MAP_CHAR&quot;
+	},
+	{
+		VS_SET_LED_BEHAVIOR,
+		&quot;VS_SET_LED_BEHAVIOR&quot;
+	},
+	{
+		VS_WRITE_AND_EXECUTE_APPLET,
+		&quot;VS_WRITE_AND_EXECUTE_APPLET&quot;
+	},
+	{
+		VS_MDIO_COMMAND,
+		&quot;VS_MDIO_COMMAND&quot;
+	},
+	{
+		VS_SLAVE_REG,
+		&quot;VS_SLAVE_REG&quot;
+	},
+	{
+		VS_BANDWIDTH_LIMITING,
+		&quot;VS_BANDWIDTH_LIMITING&quot;
+	},
+	{
+		VS_SNID_OPERATION,
+		&quot;VS_SNID_OPERATION&quot;
+	},
+	{
+		VS_NN_MITIGATE,
+		&quot;VS_NN_MITIGATE&quot;
+	},
+	{
+		VS_MODULE_OPERATION,
+		&quot;VS_MODULE_OPERATION&quot;
+	},
+	{
+		VS_DIAG_NETWORK_PROBE,
+		&quot;VS_DIAG_NETWORK_PROBE&quot;
+	},
+	{
+		VS_PL_LINK_STATUS,
+		&quot;VS_PL_LINK_STATUS&quot;
+	},
+	{
+		VS_GPIO_STATE_CHANGE,
+		&quot;VS_GPIO_STATE_CHANGE&quot;
+	},
+	{
+		VS_CONN_ADD,
+		&quot;VS_CONN_ADD&quot;
+	},
+	{
+		VS_CONN_MOD,
+		&quot;VS_CONN_MOD&quot;
+	},
+	{
+		VS_CONN_REL,
+		&quot;VS_CONN_REL&quot;
+	},
+	{
+		VS_CONN_INFO,
+		&quot;VS_CONN_INFO&quot;
+	},
+	{
+		VS_MULTIPORT_LNK_STA,
+		&quot;VS_MULTIPORT_LNK_STA&quot;
+	},
+	{
+		VS_EM_ID_TABLE,
+		&quot;VS_EM_ID_TABLE&quot;
+	},
+	{
+		VS_STANDBY,
+		&quot;VS_STANDBY&quot;
+	},
+	{
+		VS_SLEEPSCHEDULE,
+		&quot;VS_SLEEPSCHEDULE&quot;
+	},
+	{
+		VS_SLEEPSCHEDULE_NOTIFICATION,
+		&quot;VS_SLEEPSCHEDULE_NOTIFICATION&quot;
+	},
+	{
+		0xA0EC,
+		&quot;RESERVED&quot;
+	},
+	{
+		VS_MICROCONTROLLER_DIAG,
+		&quot;VS_MICROCONTROLLER_DIAG&quot;
+	},
+	{
+		VS_GET_PROPERTY,
+		&quot;VS_GET_PROPERTY&quot;
+	},
+	{
+		0xA0FC,
+		&quot;RESERVED&quot;
+	},
+	{
+		VS_SET_PROPERTY,
+		&quot;VS_SET_PROPERTY&quot;
+	},
+	{
+		VS_PHYSWITCH_MDIO,
+		&quot;VS_PHYSWITCH_MDIO&quot;
+	},
+	{
+		VS_SELFTEST_ONETIME_CONFIG,
+		&quot;VS_SELFTEST_ONETIME_CONFIG&quot;
+	},
+	{
+		VS_SELFTEST_RESULTS,
+		&quot;VS_SELFTEST_RESULTS&quot;
+	},
+	{
+		VS_MDU_TRAFFIC_STATS,
+		&quot;VS_MDU_TRAFFIC_STATS&quot;
+	},
+	{
+		VS_FORWARD_CONFIG,
+		&quot;VS_FORWARD_CONFIG&quot;
+	},
+	{
+		0xA11C,
+		&quot;RESERVED&quot;
+	},
+	{
+		VS_HYBRID_INFO,
+		&quot;VS_HYBRID_INFO&quot;
+	}
+
+};
+
+char const * MMEName (uint16_t MMTYPE)
+
+{
+	size_t lower = 0;
+	size_t upper = SIZEOF (mme_names);
+	MMTYPE &amp;= MMTYPE_MASK;
+	while (lower &lt; upper)
+	{
+		size_t index = (lower + upper) &gt;&gt; 1;
+		signed order = MMTYPE - mme_names [index].type;
+		if (order &lt; 0)
+		{
+			upper = index - 0;
+			continue;
+		}
+		if (order &gt; 0)
+		{
+			lower = index + 1;
+			continue;
+		}
+		return (mme_names [index].name);
+	}
+	return (&quot;UNKNOWN_MESSAGE_TYPE&quot;);
+}
+
+/*====================================================================*
+ *   print a multi-column list of MME codes and names on stdout;
+ *--------------------------------------------------------------------*/
+
+#if 0
+#include &lt;stdio.h&gt;
+
+#define COLS 4
+#define WIDTH 20
+
+int main (int argc, char const * argv [])
+
+{
+	unsigned cols = COLS;
+	unsigned rows = ((SIZEOF (mme_names) + (COLS - 1)) / cols);
+	unsigned row = 0;
+	unsigned mme = 0;
+	for (row = 0; row &lt; rows; row++)
+	{
+		for (mme = row; mme &lt; SIZEOF (mme_names); mme += rows)
+		{
+			printf (&quot;%04X %-*.*s &quot;, mme_names [mme].type, WIDTH, WIDTH, mme_names [mme].name);
+		}
+		printf (&quot;\n&quot;);
+	}
+	return (0);
+}
+
+#endif
+
+/*====================================================================*
+ *   print a multi-column list of MME codes and names on stdout;
+ *--------------------------------------------------------------------*/
+
+#if 0
+#include &lt;stdio.h&gt;
+
+int main (int argc, char const * argv [])
+
+{
+	unsigned mme = 0;
+	for (mme = 0; mme &lt; SIZEOF (mme_names); mme++)
+	{
+		printf (&quot;{ %s, \&quot;%s\&quot; },&quot;,  mme_names [mme].name, mme_names [mme].name);
+//		printf (&quot;0x%04X;%s;yes;yes;yes\n&quot;, mme_names [mme].type, mme_names [mme].name);
+	}
+	return (0);
+}
+
+#endif
+
+/*====================================================================*
+ *
+ *--------------------------------------------------------------------*/
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='MMEMode.c.html' title=' MMEMode.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='MMEPeek.c.html' title=' MMEPeek.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

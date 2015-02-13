@@ -1,0 +1,153 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			ether.h
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='error.h.html' title=' error.h '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='ethernet.h.html' title=' ethernet.h '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   ether.h - Ethernet definitions and declarations;
+ *
+ *   include or exclude various ethernet related definitions based
+ *   platform and environment;
+ *
+ *.  Qualcomm Atheros HomePlug AV Powerline Toolkit
+ *:  Copyright (c) 2009-2013 by Qualcomm Atheros Inc. ALL RIGHTS RESERVED;
+ *;  For demonstration and evaluation only; Not for production use.
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef ETHER_HEADER
+#define ETHER_HEADER
+
+/*====================================================================*
+ *   system header files;
+ *--------------------------------------------------------------------*/
+
+#include &lt;stdint.h&gt;
+#if defined (__linux__)
+#       include &lt;net/if.h&gt;
+#       include &lt;net/ethernet.h&gt;
+#       include &lt;arpa/inet.h&gt;
+#elif defined (__APPLE__)
+#       include &lt;sys/types.h&gt;
+#       include &lt;sys/socket.h&gt;
+#       include &lt;net/if.h&gt;
+#       include &lt;net/ethernet.h&gt;
+#       include &lt;arpa/inet.h&gt;
+#       include &lt;net/bpf.h&gt;
+#elif defined (__OpenBSD__)
+#       include &lt;sys/ioctl.h&gt;
+#       include &lt;sys/types.h&gt;
+#       include &lt;sys/socket.h&gt;
+#       include &lt;net/if.h&gt;
+#       include &lt;netinet/in.h&gt;
+#       include &lt;netinet/if_ether.h&gt;
+#       include &lt;net/bpf.h&gt;
+#       include &lt;fcntl.h&gt;
+#elif defined (WIN32)
+#       if defined (WINPCAP)
+#               include &lt;pcap.h&gt;
+#               include &lt;Packet32.h&gt;
+#       endif
+#       include &lt;net/ethernet.h&gt;
+#       include &lt;net/if.h&gt;
+#elif defined (__CYGWIN__)
+#	error &quot;Cygwin in unsupported!&quot;
+#else
+#	error &quot;Unknown environment!&quot;
+#endif
+
+/*====================================================================*
+ *   custom header files;
+ *--------------------------------------------------------------------*/
+
+#include &quot;../tools/types.h&quot;
+
+/*====================================================================*
+ *   variables;
+ *--------------------------------------------------------------------*/
+
+typedef struct nic
+
+{
+	unsigned ifindex;
+	byte ethernet [ETHER_ADDR_LEN];
+	byte internet [4];
+	char ifname [IF_NAMESIZE];
+	char ifdesc [255];
+}
+
+NIC;
+
+/*====================================================================*
+ *   ethertypes;
+ *--------------------------------------------------------------------*/
+
+#define ETH_P_HP10 0x887B
+#define ETH_P_HCP  0x88B7
+#define ETH_P_LLDP 0x88CC
+#define ETH_P_HPAV 0x88E1
+#define ETH_P_1905 0x893A
+
+/*====================================================================*
+ *   basic 802.2 Ethernet frame structure;
+ *--------------------------------------------------------------------*/
+
+#ifndef __GNUC__
+#pragma pack (push, 1)
+#endif
+
+typedef struct ethernet_frame
+
+{
+	byte frame_dhost [ETHER_ADDR_LEN];
+	byte frame_shost [ETHER_ADDR_LEN];
+	uint16_t frame_type;
+	byte frame_data [ETHERMTU];
+}
+
+FRAME;
+
+#ifndef __GNUC__
+#pragma pack (pop)
+#endif
+
+/*====================================================================*
+ *   functions;
+ *--------------------------------------------------------------------*/
+
+char * getifname (signed number);
+signed gethwaddr (void * memory, char const * device);
+signed anynic (char buffer [], unsigned length);
+unsigned hostnics (struct nic list [], unsigned size);
+
+/*====================================================================*
+ *
+ *--------------------------------------------------------------------*/
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='error.h.html' title=' error.h '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='ethernet.h.html' title=' ethernet.h '>NEXT</a>]
+			</div>
+		</body>
+	</html>

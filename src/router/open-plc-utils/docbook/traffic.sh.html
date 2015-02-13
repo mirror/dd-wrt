@@ -1,0 +1,113 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			traffic.sh
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='tr069prog.sh.html' title=' tr069prog.sh '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='upgradep.sh.html' title=' upgradep.sh '>NEXT</a>]
+			</div>
+<pre>
+#!/bin/sh
+# file: scripts/traffic.sh
+
+# this script attempts to send traffic between NIC1 and NIC2 in both
+# directions to establish a PHY Rate; the frame file can contain any 
+# valid Ethernet frame;
+
+# ====================================================================
+# host symbols;
+# --------------------------------------------------------------------
+
+. /etc/environment
+. ${SCRIPTS}/hardware.sh
+
+# ====================================================================
+# file symbols;
+# --------------------------------------------------------------------
+
+COUNT=10000
+FRAME=frame.hex
+
+# ====================================================================
+# create dummy ethernet frame;
+# --------------------------------------------------------------------
+
+cat &gt; ${FRAME} &lt;&lt; EOF
+FF FF FF FF FF FF FF FF FF FF FF FF 08 00 FF FF
+FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
+FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
+FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
+FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
+FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
+FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
+FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
+FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
+FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
+FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
+FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
+FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
+FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
+FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
+FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
+FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
+FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
+FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
+FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
+FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
+FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
+FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
+FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
+FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
+FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
+FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
+FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
+FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
+FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
+FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
+FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
+EOF
+
+# ====================================================================
+# check environment; 
+# --------------------------------------------------------------------
+
+if [ ! -f ${FRAME} ]; then
+	echo &quot;File ${FRAME} is missing or misplaced&quot;
+	exit 1
+fi
+
+# ====================================================================
+# send traffic in both directions;
+# --------------------------------------------------------------------
+
+efsu -i ${ETH1} -hd ${NIC2} ${FRAME} -l ${COUNT}          
+efsu -i ${ETH2} -hd ${NIC1} ${FRAME} -l ${COUNT}
+efsu -i ${ETH1} -hd ${NIC2} ${FRAME} -l ${COUNT}
+efsu -i ${ETH2} -hd ${NIC1} ${FRAME} -l ${COUNT} 
+
+# ====================================================================
+# echo device TX/RX PHY Rates;        
+# --------------------------------------------------------------------
+
+int6krate -ni ${ETH2}
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='tr069prog.sh.html' title=' tr069prog.sh '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='upgradep.sh.html' title=' upgradep.sh '>NEXT</a>]
+			</div>
+		</body>
+	</html>

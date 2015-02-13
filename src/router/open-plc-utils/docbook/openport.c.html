@@ -1,0 +1,233 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			openport.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='openchannel.c.html' title=' openchannel.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='output.c.html' title=' output.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *
+ *   void openport (struct _file_ * port, flag_t flags);
+ *
+ *   open the serial port named by port-&gt;name and set file descriptor
+ *   port-&gt;file; datatype struct _file_ is define in tools/types.h;
+ *
+ *   this function no longer initializes port settings because there
+ *   are too many differences in constants, variables and functions
+ *   between Linux, OpenBSD, MacOSX and Windows to cleanly implement
+ *   a single approach to serial port configuration; this means that
+ *   users should manually configure a port and then leave it alone;
+ *
+ *   use stty on Linux systems and the Control Panel on Windows;
+ *
+ *   port configuration code for Linux and Windows can be enabled if
+ *   needed by defining SERIAL_CONFIG at compile time; this will not
+ *   restore original port setting when the port is closed;
+ *
+ *
+ *   Contributor(s):
+ *	Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *	Mathieu Olivari &lt;mathieu@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef OPENPORT_SOURCE
+#define OPENPORT_SOURCE
+
+#include &lt;unistd.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;errno.h&gt;
+
+#if defined (WIN32)
+#	include &lt;windows.h&gt;
+#elif defined (__linux__)
+#	include &lt;termios.h&gt;
+#elif defined (__APPLE__)
+#	include &lt;termios.h&gt;
+#	include &lt;net/ethernet.h&gt;
+#elif defined (__OpenBSD__)
+#	include &lt;termios.h&gt;
+#else
+#error &quot;Unknown Environment&quot;
+#endif
+
+#include &quot;../tools/types.h&quot;
+#include &quot;../tools/files.h&quot;
+#include &quot;../tools/flags.h&quot;
+#include &quot;../tools/error.h&quot;
+#include &quot;../serial/serial.h&quot;
+
+void openport (struct _file_ * port, flag_t flags)
+
+{
+
+#if defined (WIN32)
+
+	HANDLE hSerial;
+	COMMTIMEOUTS timeouts;
+	hSerial = CreateFile (port-&gt;name, GENERIC_READ | GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+	if (hSerial == INVALID_HANDLE_VALUE)
+	{
+		error (1, errno, &quot;%s&quot;, port-&gt;name);
+	}
+	if (_anyset (flags, UART_DEFAULT))
+	{
+		DCB dcbSerial =
+		{
+			0
+		};
+		dcbSerial.DCBlength = sizeof (dcbSerial);
+		if (!GetCommState (hSerial, &amp;dcbSerial))
+		{
+			error (1, errno, &quot;Can't read state: %s&quot;, port-&gt;name);
+		}
+		if (_anyset (flags, UART_VERBOSE))
+		{
+			printf (&quot;getting %s &quot;, port-&gt;name);
+			printf (&quot;Baud %6d &quot;, dcbSerial.BaudRate);
+			printf (&quot;Data %d &quot;, dcbSerial.ByteSize);
+			printf (&quot;Stop %d &quot;, dcbSerial.StopBits);
+			printf (&quot;Parity %d\n&quot;, dcbSerial.Parity);
+		}
+		dcbSerial.BaudRate = CBR_115200;
+		dcbSerial.ByteSize = DATABITS_8;
+		dcbSerial.StopBits = ONESTOPBIT;
+		dcbSerial.Parity = NOPARITY;
+		if (_anyset (flags, UART_VERBOSE))
+		{
+			printf (&quot;setting %s &quot;, port-&gt;name);
+			printf (&quot;Baud %6d &quot;, dcbSerial.BaudRate);
+			printf (&quot;Data %d &quot;, dcbSerial.ByteSize);
+			printf (&quot;Stop %d &quot;, dcbSerial.StopBits);
+			printf (&quot;Parity %d\n&quot;, dcbSerial.Parity);
+		}
+		if (!SetCommState (hSerial, &amp;dcbSerial))
+		{
+			error (1, errno, &quot;Can't save state: %s&quot;, port-&gt;name);
+		}
+	}
+	timeouts.ReadIntervalTimeout = 10;
+	timeouts.ReadTotalTimeoutConstant = 50;
+	timeouts.ReadTotalTimeoutMultiplier = 10;
+	timeouts.WriteTotalTimeoutConstant = 50;
+	timeouts.WriteTotalTimeoutMultiplier = 10;
+	if (!SetCommTimeouts (hSerial, &amp;timeouts))
+	{
+		error (1, errno, &quot;Can't set timeouts: %s&quot;, port-&gt;name);
+	}
+	CloseHandle (hSerial);
+	if ((port-&gt;file = open (port-&gt;name, O_BINARY|O_RDWR)) == -1)
+	{
+		error (1, errno, &quot;%s&quot;, port-&gt;name);
+	}
+
+#else
+
+	if ((port-&gt;file = open (port-&gt;name, O_BINARY|O_RDWR)) == -1)
+	{
+		error (1, errno, &quot;%s&quot;, port-&gt;name);
+	}
+	if (_anyset (flags, UART_DEFAULT))
+	{
+		struct termios termios;
+
+#if 1
+
+/*
+ *	POSIX generic code;
+ */
+
+		tcgetattr (port-&gt;file, &amp;termios);
+		cfmakeraw (&amp;termios);
+		termios.c_cflag |= CS8;
+		termios.c_cflag &amp;= ~(CSTOPB);
+		cfsetospeed (&amp;termios, B115200);
+
+#else
+
+/*
+ *	Linux specific code;
+ */
+
+		termios.c_cflag = B115200 | CS8 | CLOCAL | CREAD;
+		termios.c_iflag = IGNPAR;
+		termios.c_oflag = 0;
+		termios.c_lflag = 0;
+		termios.c_cc [VTIME] = 0;
+		termios.c_cc [VMIN] = 5;
+
+#endif
+
+		tcsetattr (port-&gt;file, TCSANOW, &amp;termios);
+	}
+
+#endif
+
+	return;
+}
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='openchannel.c.html' title=' openchannel.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='output.c.html' title=' output.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

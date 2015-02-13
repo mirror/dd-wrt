@@ -1,0 +1,21 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Checking Device Connection</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="ch06.html" title="Chapter 6.  Scripting"><link rel="prev" href="ch06s03.html" title="Host Independence"><link rel="next" href="ch06s05.html" title="Random Device Identity"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">
+			Checking Device Connection
+			</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch06s03.html">Prev</a> </td><th width="60%" align="center">Chapter 6. 
+		Scripting
+		</th><td width="20%" align="right"> <a accesskey="n" href="ch06s05.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="scripting-A"></a>
+			Checking Device Connection
+			</h2></div></div></div><p>
+			You may want to confirm that a device is actually connected to an Etherenet interface before attempting to run a script. Program <a class="ulink" href="int6kwait.7.html" target="_top">int6kwait</a> can be used for this purpose. We often print a brief message to alert the operator that there is no connection or the device has no power applied.
+			</p><pre class="programlisting">
+int6kwait -xqsi ${NIC1}
+if [ ${?} != 0 ]; then
+        echo "Device is not connected"
+        exit 1
+fi
+</pre><p>
+			In the above example,  we invoke <a class="ulink" href="int6kwait.7.html" target="_top">int6kwait</a> to poll the device connected to a specific Ethernet interface (<strong class="userinput"><code>-i</code></strong>) until the firmware starts (<strong class="userinput"><code>-s</code></strong>). The program will return a non-zero return value (<strong class="userinput"><code>-x</code></strong>) if the device does not start within a given period of time. By default, the timeout period is 60 seconds. On return,  we check the return code then print an error message and exit the script on timeout. Symbol <acronym class="acronym">NIC1</acronym> must be defined earlier in the script,  possibly in <a class="link" href="ch06s03.html#scripting-hardware-definitions" title="Example 6.1.  hardware.sh">hardware.sh</a>.
+			</p></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch06s03.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="ch06.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch06s05.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">
+			Host Independence
+			 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 
+			Random Device Identity
+			</td></tr></table></div></body></html>0

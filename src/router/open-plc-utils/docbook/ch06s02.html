@@ -1,0 +1,41 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Linux Script Basics</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="ch06.html" title="Chapter 6.  Scripting"><link rel="prev" href="ch06.html" title="Chapter 6.  Scripting"><link rel="next" href="ch06s03.html" title="Host Independence"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">
+			Linux Script Basics 
+			</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch06.html">Prev</a> </td><th width="60%" align="center">Chapter 6. 
+		Scripting
+		</th><td width="20%" align="right"> <a accesskey="n" href="ch06s03.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="scripting-basics"></a>
+			Linux Script Basics 
+			</h2></div></div></div><p>
+			We summarize some scripting rules here for those who may not be familiar with Linux scripting. If you do not understand the rules or the syntax or have questions then you should consult Linux documentation available on the internet.
+			</p><p>
+			On Linux, all commands typed in a console window are read and interpreted by a command interpreter called a <span class="application">shell</span> program. The are several shell programs available for Linux but we use <span class="application">bash</span> exclusively. If you elect to use a different shell program,  like <span class="application">csh</span>,  then you will probably need to modify our scripts.
+			</p><p>
+			If you do not set execute permissions you must submit it to the shell for execution. If you set execute permissions on a script file then you can execute it directly by typing the filename. You can set execute permission on Linux with the <span class="application">chmod</span> utility as shown in the example below.
+			</p><pre class="programlisting">
+# bash script.sh
+...
+# chmod 0755 script.sh
+# script.sh
+...
+</pre><p>
+			The example above show how to run a script file using <span class="application">bash</span> when it does not have execute permissions set. It then shows how to set the execute permissions and run it directly without using <span class="application">bash</span>.
+			</p><p>
+			It is good practice to insert a bang-path on the first line of a script to ensure is is executed by the correct shell program, regardless of the shell used to open the script. It is possible to open a script with one shell and have it execute under another shell.
+			</p><pre class="programlisting">
+#!/bin/bash
+</pre><p>
+			The next example shows an example bang-path. The first two characters inform the shell that this file contains scripting commands. The remainder of the bang-path line includes a program path with any options and arguments needed by the program. The shell will invoke that program and pass the rest of the script file to the program as standard input.					
+			</p><p>
+			Symbols are defined with the symbol name then an equals sign then the definition text. By convention, symbol names use uppercase letters. The definition consists of all characters from the equals sign to the line end. If a definition contains white space, enclose it in quotes so that it is treated as one string when expanded. Symbol scope ends with the defining file unless it is exported. 
+			</p><pre class="programlisting">
+NIC=eth0
+MAC=00:B0:52:00:12:34
+MFG="Intergalactic Software Pirates, Inc."
+...
+echo NIC is ${NIC} MAC is ${MAC} MFG is ${MFG}
+</pre><p>
+			To reference a symbol, precede the variable name with a dollar sign. Atheros scripts go one step further by enclosing the symbol name is braces. This improves readability and simplifies global search-and-replace operations.
+			</p></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch06.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="ch06.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch06s03.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Chapter 6. 
+		Scripting
+		 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 
+			Host Independence
+			</td></tr></table></div></body></html>0

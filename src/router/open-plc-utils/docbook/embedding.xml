@@ -1,0 +1,15 @@
+<chapter id='embedded'>
+	<title>
+		Embedded Applications
+		</title>
+	<section id='embedded-intro'>
+		<title>
+			Introduction 
+			</title>
+		<para>
+			The Open Powerline Toolkit has been developed with embedded applications in mind but it is not an embedded turn-key system. It has been successfully cross-compiled for several big and little endian platforms. Qualcomm Atheros does not claim to support cross-compilation for any particular environment or guarantee proper program execution on all platforms. Customers should have (or obtain) embedded system expertise or allow time to develop the expertise before attempting any embedded project.
+			</para>
+		<para>
+			Many embedded systems use flash memory for persistent storage. When power is applied, an image is read from flash memory into volatile memory and executed there. The image contains an operating system kernel and filesystem image. The kernel mounts the filesystem image and starts applications found there. The filesystem stores application programs, support libraries and configuration files and should have enough free space for temporary files that might be needed. A typical embedded system uses <productname>Linux</productname> as the operating system kernel, <productname>Busybox</productname> as the principle application and <productname>uClib</productname> as the support library. All executable components must be compiled for the target host processor instruction set. 					</para>
+		</section>
+	</chapter>

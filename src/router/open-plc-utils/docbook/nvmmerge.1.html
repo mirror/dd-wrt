@@ -1,0 +1,89 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			nvmmerge.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='nics.1.html' title=' nics.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='nvmsplit.1.html' title=' nvmsplit.1 '>NEXT</a>]
+			</div>
+<pre>
+nvmmerge(1)                                  Qualcomm Atheros Open Powerline Toolkit                                 nvmmerge(1)
+
+NAME
+       nvmmerge - Qualcomm Atheros PLC Firmware Image File Splicer
+
+SYNOPSIS
+       nvmmerge [options] file [file] [...]  [&gt;stdout]
+
+DESCRIPTION
+       Combine  multiple binary image files into a single Qualcomm Atheros binary image file, leaving the original files intact.
+
+       Qualcomm Atheros image files consist of a chain of image headers, each followed by an image block.  Image blocks can con‐
+       tain data, applets or programs.  Atheros software reads the header chain and decides which images to download and execute
+       based on information in image headers.  Tampering with image headers or images may void some contractual obligations made
+       by Atheros.
+
+       This  program  is  part of the Qualcomm Atheros Powerline Toolkit.  See the AMP man page for an overview and installation
+       instructions.
+
+OPTIONS
+       -q     Suppresses printing of routine messages.  This option has no efect.
+
+       -v     Print input file names on stderr as they are merged.
+
+       -?,--help
+              Print program help summary on stdout.  This option takes precedence over other options on the command line.
+
+       -!,--version
+              Print program version information on stdout.  This option takes precedence over other options on the command line.
+              use  this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of
+              the Linux Toolkit you are using.
+
+ARGUMENTS
+       file   The name of  a Qualcomm Atheros image file.  By convention, these image files have a .nvm file extension but  this
+              program  does  not  enforce that convention.  Invalid image files will be rejected causing the output to be incom‐
+              plete.
+
+EXAMPLES
+       The following example combines three files, abc-00.nvm, abc-01.nvm and abc-06.nvm into one file abc.nvm.  Option -v  dis‐
+       plays  the input file names as they are merged.  Program output is in binary format and so output should be directed to a
+       file or pipe and not the console.
+
+          # nvmmerge -v abc-00.nvm abc-01.nvm abc-06.nvm &gt; abc.nvm
+          nvmmerge: abc-00.nvm
+          nvmmerge: abc-01.nvm
+          nvmmerge: abc-06.nvm
+
+DISCLAIMER
+       Atheros image file structure and content is proprietary to Qualcomm Atheros, Ocala FL USA.  Consequently, public informa‐
+       tion  is  not  available.   Qualcomm  Atheros  reserves  the right to change file structure or content in future firmware
+       releases without any obligation to notify or compensate users of this program.  This program is reserved for use by Qual‐
+       comm Atheros Field Engineers.  Use of this program may void certain contractual obligations made by Qualcomm Atheros.
+
+SEE ALSO
+       ampboot(1),  amptest(1),  amptool(1),  chknvm(1), chknvm2(1), int6k(1), int6kf(1), int6ktest(1), nvmsplit(1), plcboot(1),
+       plctest(1), plctool(1)
+
+CREDITS
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                              nvmmerge(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='nics.1.html' title=' nics.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='nvmsplit.1.html' title=' nvmsplit.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

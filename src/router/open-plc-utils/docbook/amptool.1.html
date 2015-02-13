@@ -1,0 +1,261 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			amptool.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='amptone.1.html' title=' amptone.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='ampwait.1.html' title=' ampwait.1 '>NEXT</a>]
+			</div>
+<pre>
+amptool(1)                                   Qualcomm Atheros Open Powerline Toolkit                                  amptool(1)
+
+NAME
+       amptool - Qualcomm Atheros AR7x00 Powerline Device Manager
+
+SYNOPSIS
+       amptool [options] [device] [device] [...]
+
+DESCRIPTION
+       This  version  of the Qualcomm Atheros Device Manager for Linux performs basic operations on Atheros AR7400 devices using
+       the raw Ethernet protocol described in the Qualcomm Atheros HomePlug AV Firmware Technical Reference Manual.  It  can  be
+       used to interrogate and control devices or upgrade firmware if on-board NVRAM is present.
+
+       This  program is part of the Qualcomm Atheros Powerline Toolkit.  It supports chipset AR7400 and QCA7450.  See plctool to
+       support QCA6410, QCA7000 and QCA7420 devices.  See the plc man page for an overview and installation instructions.
+
+COMMENTS
+       This program version is identical to legacy program int6k except for option -m which  uses  version  1  of  the  Qualcomm
+       Atheros VS_NW_INFO vendor-specific message.  Older firmware versions may not recognize this message version.
+
+OPTIONS
+       -a     Read  device  attributes  using  VS_OP_ATTRIBUTES.  Attributes are short strings and integers that describe device
+              hardware and firmware.  They are concatenated to form the output that is similar to option -r but derived  differ‐
+              ently.
+
+       -B action
+              Press  the  simple  connect  pushbutton using VS_PB_ENC.  The action can be specified by number 1, 2, 3 or 4 or by
+              symbol &quot;join&quot;, &quot;leave&quot;, &quot;status&quot; or &quot;reset&quot;, respectively.  Use 1 on both devices that are expected to join.   Use
+              2 only on the device that is expected to leave the network.
+
+       -C module
+              Commit  (flash)  downloaded modules to NVRAM using VS_MOD_NVM.  The module can be spedified by number 1, 2 or 3 or
+              by symbol &quot;nvm&quot;, &quot;pib&quot; or &quot;all&quot;, repectively.  Module 3 is equivalent to option -F which writes the  NVM  and  PIB
+              together.  You cannot force flash NVRAM using this option.  Use option -FF to force flash.
+
+       -d filename
+              Read  Watchdog Report from the device and write it to the named file in binary format using VS_WD_RPT.  The report
+              file can be sent to Qualcomm Atheros for technical analysis.  No assumptions are made based  on  filename  and  no
+              filename convetions are enforced; however, you should use a .log file extension to indicate binary format.
+
+       -D xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx
+              Define  the  16 octet Device Access Key (DAK) in hex format.  The DAK is used by option -J.  It may also be set to
+              &quot;key1&quot; or &quot;key2&quot; as explained in the KEYS section.
+
+       -e     Redirects stderr messages to stdout.  By convention status and error messages are printed on stderr while  primary
+              program output is printed on stdout.  This option prints all output on stdout in cases where this is desired.
+
+       -f     Read flash memory parameters using VS_GET_NVM.  An error will be reported if no flash memory is present.
+
+       -F[F]  Write  previously downloaded MAC and PIB to NVRAM using VS_MOD_NVM.  Adding a second F here or another -F anywhere
+              on the command line will force-flash a blank or corrupted NVRAM.  Firmware loaded from  NVRAM  will  treat  force-
+              flash  as  an  error.   This  option can be used to create factory settings but cannot be used to change them once
+              created.  Subsequent use creates and updates operational settings that can be erased using a factory reset.   This
+              option is executed after all others on the command line, except for the -R option.
+
+       -g     Read multicast group information discovered while IGMP snooping using VS_MULTICAST_INFO.
+
+       -i interface
+              Select  the host Ethernet interface.  All requests are sent via this host interface and only reponses received via
+              this host interface are recognized.  The default interface is eth1 because most people use eth0 as their principle
+              network  connection;  however,  if  environment  string &quot;PLC&quot; is defined then it takes precedence over the default
+              interface.  This option then takes precedence over either default.
+
+       -I     Read the device PIB header using VS_RD_MOD and print the firmware major revision number, PIB minor  revision  num‐
+              ber, Device Access Key (DAK), Network Membership Key (NMK), MAC address and other information on stdout.  The val‐
+              ues displayed can be changed using program modpib.
+
+       -J xx:xx:xx:xx:xx:xx
+              Set the Network Membership Key (NMK) on a remote device using VS_SET_KEY.  This option is similar to option -K but
+              requires  the  remote  device  MAC  and DAK in addition to the NMK and local device MAC address.  The NMK value is
+              defined using option -K unless you want to use the default value.  The remote  DAK  is  defined  using  option  -D
+              unless  you  want to use the default value.  Programming remote device keys is complicated.  It is often easier to
+              connect the device directly to the host and use the -K option.
+
+       -K xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx
+              Define the Network Membership Key (NMK) value used by options -M or -J.  The symbolic names &quot;key1&quot; and &quot;key2&quot;  are
+              recognized as described in the KEY section.
+
+       -l count
+              Define the number of times that the command will be repeated for each device specified.  Normally, you will repeat
+              operations on one device only.
+
+       -m     Read network membership information using VS_NW_INFO.  This can be used to determine network configuration.
+
+       -M     Set the Network Membership Key (NMK) on the local device using VS_SET_KEY.  The NMK value is specified  using  the
+              -K option unless you want to use the default value.
+
+       -n filename
+              Read  firmware  from  the  device SDRAM and write it to the named .nvm file using multiple VS_RD_MOD messages.  No
+              assumptions are made based on filename and no filename conventions are enforced.  This option is performed  before
+              option -N when both are specified.
+
+       -N filename
+              Read  the  named  .nvm file and write it to the device using multiple VS_WR_MOD messages.  No assumptions are made
+              based on filename and no filename conventions are enforced; however, files having  invalid  .nvm  format  will  be
+              rejected.  This option is executed after -n when both are specified.
+
+       -p filename
+              Read parameters from the device SDRAM and write them to the named .pib file using multiple VS_RD_MOD messages.  No
+              assumptions are made based on filename and no filename convetions are enforced.  This option  is  executed  before
+              option BP when both are specified.
+
+       -P filename
+              Read  the  named  .pib file and write it to the device using multiple VS_WR_MOD messages.  No assumptions are made
+              based on filename and no filename conventions are enforced; however, files having  invalid  .pib  format  will  be
+              rejected.  This option is executed after -p when both are specified.
+
+       -q     Suppresses status messages on stderr.
+
+       -Q     Quick  flash.  The program will not wait for a device to reset or the firmware to restart after writing flash mem‐
+              ory.  This option is desirable with newer firmware that writes flash memory in the background.  It has  no  effect
+              unless used with option -F or -C.
+
+       -r     Read device firmware and hardware revision using VS_SW_VER.  Output is similar to option -a but is derived differ‐
+              ently.
+
+       -R     Reset the device using VS_RS_DEV.  This option is executed after all others on the same command line.
+
+       -s     Read device SDRAM configuration using VS_RD_CBLOCK.
+
+       -t milliseconds
+              Read timeout in milliseconds.  Values range from 0 through UINT_MAX.  This is  the  maximum  time  allowed  for  a
+              response.  The default is shown in brackets on the program menu.
+
+       -T     Restore  factory defaults.  This permanently erases all PIB changes made since the device was last programmed with
+              factory default settings.  The device will automatically reset and reboot.
+
+       -v     Print additional information on stdout.  In particular, this option dumps incoming and outgoing packets which  can
+              be saved as text files for reference.
+
+       -w seconds
+              Defines  the  number  of  seconds to wait before repeating command line options.  This option has no effect unless
+              option -l is also specified with a non-zero value.
+
+       -x     Cause the program to exit on the first error instead  of  continuing  with  remaining  iterations,  operations  or
+              devices.   Normally,  the program reports errors and moves on to the next operation, iteration or device depending
+              on the command line.
+
+       -?,--help
+              Print program help summary on stdout.  This option takes precedence over other options on the command line.
+
+       -?,--version
+              Print program version information on stdout.  This option takes precedence over other options on the command line.
+              Use  this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of
+              the Linux Toolkit you are using.
+
+ARGUMENTS
+       device The Ethernet hardware address of some powerline device.  More than one address may be  specified  on  the  command
+              line.   If  more  than one address is specified then operations are performed on each device in turn.  The default
+              address is local.  as explained in the DEVICES section.
+
+KEYS
+       Passwords are variable length character strings that end-users can remember.  Keys are fixed length binary values created
+       by encrypting passwords.  There are two encryption algorithms for HomePlugAV.  One for DAKs and the other for NMKs.  This
+       means that a given password will produce different keys depending on use.  This program only deals with keys because that
+       is what powerline devices recognize.  The passwords that generated the keys are irrelevant here.
+
+       Encryption  keys  are  tedious  to type and prone to error.  For convenience, symbolic names have been assigned to common
+       encryption keys and are recognized by options -D and -K.
+
+       key1   Key  for  encrypted  password  &quot;HomePlugAV&quot;.   This  is  &quot;689F074B8B0275A2710B0B5779AD1630&quot;  for  option  -D   and
+              &quot;50D3E4933F855B7040784DF815AA8DB7&quot; for option -K.
+
+       key2   Key  for  encrypted  password  &quot;HomePlugAV0123&quot;.   This  is  &quot;F084B4E8F6069FF1300C9BDB812367FF&quot;  for option -D and
+              &quot;B59319D7E8157BA001B018669CCEE30D&quot; for option -K.
+
+       none   Always &quot;00000000000000000000000000000000&quot;.
+
+DEVICES
+       Powerline devices use Ethernet hardware, or Media Access Control (MAC), addresses.  Device addresses are  12  hexadecimal
+       digits  (0123456789ABCDEFabcdef)  in upper, lower or mixed case.  Individual octets may be separated by colons, for clar‐
+       ity, but not all octets need to be seperated.  For example, &quot;00b052000001&quot;, &quot;00:b0:52:00:00:01&quot; and  &quot;00b052:000001&quot;  are
+       valid and equivalent.
+
+       These symbolic addresses are recognized by this program and may be used instead of the actual address value.
+
+       all    Equivalent to &quot;broadcast&quot;, described next.
+
+       broadcast
+              A  synonym  for the standard Ethernet broadcast address, FF:FF:FF:FF:FF:FF.  All devices, whether local, remote or
+              foreign will respond to this address.
+
+       local  A synonym for the Qualcomm Atheros vendor specific Local Management Address (LMA), 00:B0:52:00:00:01.   All  local
+              Atheros  devices  will  recognize  this  address  but remote and foreign devices will not.  A remote device is any
+              device at the far end of a powerline connection.  A foreign device is any device not manufactured by Atheros.
+
+REFERENCES
+       See the Qualcomm Atheros HomePlug AV Firmware Technical Reference Manual for more information.
+
+DISCLAIMER
+       Atheros HomePlug AV Vendor Specific Management Message structure and content is proprietary to Qualcomm Atheros, Ocala FL
+       USA.   Consequently,  public  information  may  not  be available.  Qualcomm Atheros reserves the right to modify message
+       structure or content in future firmware releases without any obligation to notify or compensate users of this program.
+
+EXAMPLES
+          # amptool -n old.nvm -p old.pib -N new.nvm -P new.pib -F 01:23:45:67:89:AB
+
+       Performs 5 operations on one device.  Uploads the firmware and PIB from the device and writes them to files  old.nvm  and
+       old.pib,  respectively.   Reads files new.nvm and new.pib and downloads them as new firmware and PIB, respectively.  Com‐
+       mits the downloaded firmware and PIB to NVRAM.  Operations are executed in the order just  described  regardless  of  the
+       order specified on the command line.  If you want reading and writing to occur in a different order then you must use two
+       or more commands to accomplish tasks in the order you want.
+
+          # amptool -N new.nvm 01:23:45:67:89:28
+          # amptool -P new.pib 01:23:45:67:89:28
+          # amptool -C 3 01:23:45:67:89:28
+
+       It is not neccessary to specify all operations on one command line.  The three command lines  above  do  essentially  the
+       same  thing  as  the command line shown in the previou example.  Notice that this example uses -C 3, instead of -F, as an
+       alternate way to write MAC and PIB to NVRAM.  Specifying -C 1, instead, would write the .nvm file only.   Specifying,  -C
+       2, instead, would write the .pib file only.  The value 3 is the logical OR of 1 and 2.
+
+          # amptool -N new.nvm -P new.pib -FF local
+
+       Downloads  file  new.nvm  and  file  new.pib  and  force  flashes the local device.  Force flashing only works on running
+       firmware that has been downloaded and stated by the Qualcomm Atheros  Boot  Loader.   See  amptoolf  to  download,  start
+       firmware and perform a force flash in one operation.
+
+          # amptool -MK key1
+          # amptool -M
+
+       These  two commands are equivalent.  They set the NMK on the local device to key1 as descripted in the KEYS section.  The
+       first command resets the NMK on the local device with -M then specifies the NMK as key1.  The second  command  omits  the
+       key specification since key1 is the program default NMK.  One could, of course, type the encryption key.
+
+SEE ALSO
+       plc(1), ampboot(1), ampboot(1), amphost(1), int6kid(1), amprate(1), amprule(1), ampstat(1), ampwait(1)
+
+CREDITS
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+        Nathaniel Houghton &lt;nhoughto@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                               amptool(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='amptone.1.html' title=' amptone.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='ampwait.1.html' title=' ampwait.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

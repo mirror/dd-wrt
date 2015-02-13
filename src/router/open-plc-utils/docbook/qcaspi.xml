@@ -1,0 +1,814 @@
+<chapter id='driver-spi'>
+	<title>
+		Serial Drivers
+		</title>
+	<section id="driver-spi-intro">
+		<title>
+			Introduction
+			</title>
+		<para>
+			Most Qualcomm Atheros PLC chipsets are Ethernet-to-Powerline bridges but the QCA7000 is a Serial-to-Powerline bridge, ... with a big difference. The QCA7000 expects the host serial stream to be segmented into Ethernet frames where each frame is encapsulated by a distinct serial header and trailer. This means the host can format and transmit, or receive and decode, standard Ethernet 802.3 frames over an ordinary SPI or UART interface thereby enabling full Ethernet or Internet protocol communications over powerline at low cost and low speed. The enabling component here is an Ethernet-to-Serial driver that supports the SPI or UART interface connected to the QCA7000. This section covers such a driver.
+			</para>
+		<para>
+			The example driver described here was written for the Freescale iMX28 board support package running a custom Freescale Linux distribution. As such, we believe that this driver is suitable for the iMX28 processor out of the box but it could be adapted to other processors.
+			</para>
+		</section>
+
+	<section id="driver-spi-principles">
+		<title>
+			Principles of Operation
+			</title>
+		<para>
+			The basic unit of data transfer over MII and powerline is the IEEE 802.3 Ethernet frame. On output, the host must encapsulate each Ethernet frame as shown below before serial transmission to the QCA7000. The QCA7000 strips off the serial header and footer and forwards the frame over powerline.  
+			</para>
+		<table>
+			<title>
+				SPI Transmit Frame
+				</title>
+		<para>
+			Allocate a 1528-byte buffer to accommodate the largest outgoing serial packet and pad with <constant>NUL</constant> bytes. Write <varname>SOF</varname>, compute and write <varname>FL</varname>, copy the outgoing frame then write <varname>EOF</varname>. Serially transmit <varname>FL</varname> + <constant>12</constant> buffer bytes to the QCA7000.
+			</para>
+		<tgroup cols="4">
+			<thead>
+				<row>
+					<entry>
+						Offset
+						</entry>
+					<entry>
+						Length
+						</entry>
+					<entry>
+						Symbol
+						</entry>
+					<entry>
+						Description
+						</entry>
+					</row>
+				</thead>
+			<tbody>
+				<row>
+					<entry>
+						0x0000
+						</entry>
+					<entry>
+						4
+						</entry>
+					<entry>
+						SOF
+						</entry>
+					<entry>
+						Start Of Frame. Must be <constant>0xAAAAAAAA</constant>.
+						</entry>
+					</row>
+				<row>
+					<entry>
+						0x0004
+						</entry>
+					<entry>
+						2
+						</entry>
+					<entry>
+						FL
+						</entry>
+					<entry>
+						The Ethernet frame length in little endian format. The frame starts at offset <constant>0x0008</constant> here and includes all fields up to but excluding <varname>EOF</varname>. The minimum is <constant>60</constant>. The maximum is <constant>1518</constant> if <varname>VLAN</varname> is omitted and <constant>1522</constant> if not.
+						</entry>
+					</row>
+				<row>
+					<entry>
+						0x0006
+						</entry>
+					<entry>
+						2
+						</entry>
+					<entry>
+						RSVD
+						</entry>
+					<entry>
+						Must be <constant>0x0000</constant>. Reserved to ensure 4-byte frame alignment.
+						</entry>
+					</row>  
+				<row>
+					<entry>
+						0x0008
+						</entry>
+					<entry>
+						6
+						</entry>
+					<entry>
+						DA
+						</entry>
+					<entry>
+						Destination address.
+						</entry>
+					</row>  
+				<row>
+					<entry>
+						0x000E
+						</entry>
+					<entry>
+						6
+						</entry>
+					<entry>
+						SA
+						</entry>
+					<entry>
+						Source address. This must not be the MAC address of the powerline device. This must be the MAC address of the local host serial interface as assigned by the SP or UART driver. The PLC device and the associated host interface must have different MAC address. 
+						</entry>
+					</row>  
+				<row>
+					<entry>
+						0x0014
+						</entry>
+					<entry>
+						4
+						</entry>
+					<entry>
+						VLAN
+						</entry>
+					<entry>
+						Virtual LAN tag. This field may be omitted.  
+						</entry>
+					</row>  
+				<row>
+					<entry>
+						0x0018
+						</entry>
+					<entry>
+						2
+						</entry>
+					<entry>
+						ET
+						</entry>
+					<entry>
+						Ethertype. This field starts at offset <constant>0x0014</constant> if <varname>VLAN</varname> is omitted.
+						</entry>
+					</row>  
+				<row>
+					<entry>
+						0x001A
+						</entry>
+					<entry>
+						42 to 1500
+						</entry>
+					<entry>
+						BODY
+						</entry>
+					<entry>
+						Frame body. This field starts at offset <constant>0x0016</constant> and ranges from <constant>46</constant> to <constant>1500</constant> bytes if <varname>VLAN</varname> is omitted.
+						</entry>
+					</row>  
+				<row>
+					<entry>
+						0x004A to 0x05F8
+						</entry>
+					<entry>
+						4
+						</entry>
+					<entry>
+						EOF
+						</entry>
+					<entry>
+						End Of Frame. Must be <constant>0x5555</constant>. This field starts at offset <constant>0x0008</constant> plus <varname>FL</varname>.
+						</entry>
+					</row>
+				</tbody>
+			</tgroup>
+		</table>
+		<table>
+			<title>
+				SPI Receive Frame
+				</title>
+		<para>
+			The SPI read frame occurs in response to a read interrupt generated by the QCA7000. The host must acknowledge a read interrupt and service it by reading and acting on QCA7000 SPI register values. For incoming frames, the host reads the 32-bit overall packet length reported by the QCA7000 then read that many bytes, stripping off the serial header and footer and forwarding the Ethernet frame to the host.
+			</para>
+		<para>
+			Allocate a 1532-byte buffer to accomodate the largest incoming serial packet. Read <varname>LEN</varname> to determine the size of the incoming serial packet. Read <varname>LEN</varname> bytes into the buffer. Beware that <varname>LEN</varname> is a multiple of 4-bytes so there may be a few trailing <constant>NUL</constant> bytes in buffer. 
+			</para>
+		<tgroup cols="4">
+			<thead>
+				<row>
+					<entry>
+						Offset
+						</entry>
+					<entry>
+						Length
+						</entry>
+					<entry>
+						Symbol
+						</entry>
+					<entry>
+						Description
+						</entry>
+					</row>
+				</thead>
+			<tbody>
+				<row>
+					<entry>
+						0x0000
+						</entry>
+					<entry>
+						4
+						</entry>
+					<entry>
+						LEN
+						</entry>
+					<entry>
+						Hardware generated packet length. This field is only generated for SPI packets, not the UART packets.
+						</entry>
+					</row>
+				<row>
+					<entry>
+						0x0004
+						</entry>
+					<entry>
+						4
+						</entry>
+					<entry>
+						SOF
+						</entry>
+					<entry>
+						Start Of Frame. Must be <constant>0xAAAAAAAA</constant>.
+						</entry>
+					</row>
+				<row>
+					<entry>
+						0x0008
+						</entry>
+					<entry>
+						2
+						</entry>
+					<entry>
+						FL
+						</entry>
+					<entry>
+						Ethernet frame length in little endian format. The frame starts at offset <constant>0x000C</constant> here and includes all fields up to but excluding <varname>EOF</varname>. The minimum length is <constant>60</constant>. The maximum is <constant>1518</constant> if <varname>VLAN</varname> is omitted and <constant>1522</constant> if not.   
+						</entry>
+					</row>
+				<row>
+					<entry>
+						0x000A
+						</entry>
+					<entry>
+						2
+						</entry>
+					<entry>
+						RSVD
+						</entry>
+					<entry>
+						Must be <constant>0x0000</constant>. Reserved to ensure 4-byte frame alignment.
+						</entry>
+					</row>  
+				<row>
+					<entry>
+						0x000C
+						</entry>
+					<entry>
+						6
+						</entry>
+					<entry>
+						DA
+						</entry>
+					<entry>
+						Destination address.
+						</entry>
+					</row>  
+				<row>
+					<entry>
+						0x0012
+						</entry>
+					<entry>
+						6
+						</entry>
+					<entry>
+						SA
+						</entry>
+					<entry>
+						Source address. This must not be the MAC address of the powerline device. This must be the MAC address of the local host serial interface as assigned by the SP or UART driver. The PLC device and the associated host interface must have different MAC address. 
+						</entry>
+					</row>  
+				<row>
+					<entry>
+						0x0018
+						</entry>
+					<entry>
+						4
+						</entry>
+					<entry>
+						VLAN
+						</entry>
+					<entry>
+						Virtual LAN tag. This field may be omitted.  
+						</entry>
+					</row>  
+				<row>
+					<entry>
+						0x001C
+						</entry>
+					<entry>
+						2
+						</entry>
+					<entry>
+						ET
+						</entry>
+					<entry>
+						Ethertype. This field starts offset <constant>0x0018</constant> if <varname>VLAN</varname> is omitted.
+						</entry>
+					</row>  
+				<row>
+					<entry>
+						0x001E
+						</entry>
+					<entry>
+						42 to 1500
+						</entry>
+					<entry>
+						BODY
+						</entry>
+					<entry>
+						Frame body. This field starts at offset <constant>0x001A</constant> and ranges from <constant>46</constant> to <constant>1500</constant> bytes if <varname>VLAN</varname> is omitted.
+						</entry>
+					</row>  
+				<row>
+					<entry>
+						0x004A to 0x05F8
+						</entry>
+					<entry>
+						4
+						</entry>
+					<entry>
+						EOF
+						</entry>
+					<entry>
+						End Of Frame. Must be <constant>0x5555</constant>. This field starts at offset <constant>0x000C</constant> plus <varname>FL</varname>.
+						</entry>
+					</row>
+				</tbody>
+			</tgroup>
+			</table>
+		</section>
+	<section id="qcaspi1">
+			<title>
+				SPI Serial Driver
+				</title>
+		<section id="qcaspi_spi_thread">
+			<title>
+				qcaspi_spi_thread
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+					<funcdef>static int <function>qcaspi_spi_thread</function></funcdef>
+	  				<paramdef>char void * <parameter>data</parameter></paramdef>
+	  				</funcprototype>
+				</funcsynopsis>
+			<para>
+				Manages synchronization with the exteranl QCA7000. 
+				Handles interrupts fomr the external QCA7000. 
+				Transmits frames for the transmit queue to the QCA7000.
+				</para>
+			</section>
+		<section id="qcaspi_qca7k_sync">
+			<title>
+				qcaspi_qca7k_sync
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+					<funcdef>void <function>qca_qca7k_sync</function></funcdef>
+	  				<paramdef>char struct qcaspi * <parameter>qca</parameter></paramdef>
+	   				<paramdef>int <parameter>event</parameter></paramdef>
+	  				</funcprototype>
+				</funcsynopsis>
+			<para>
+				Keeps track of the current synchonization state.
+				</para>
+			</section>
+		</section>
+
+	<section id="qcaspi2">
+			<title>
+				Register Functions
+				</title>
+		<section id="qcaspi_read_register">
+			<title>
+				qcaspi_read_register
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+					<funcdef>uint16_t <function>qcaspi_read_register</function></funcdef>
+	  				<paramdef>struct qcaspi * <parameter>qca</parameter></paramdef>
+	  				<paramdef>uint16_t <parameter>reg</parameter></paramdef>
+	  				</funcprototype>
+				</funcsynopsis>
+			<para>
+				Reads a QCA7000 register and returns register content.
+				</para>
+			</section>
+		<section id="qcaspi_write_register">
+			<title>
+				qcaspi_write_register
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+					<funcdef>void <function>qcaspi_write_register</function></funcdef>
+	  				<paramdef>struct qcaspi * <parameter>qca</parameter></paramdef>
+	  				<paramdef>uint16_t <parameter>reg</parameter></paramdef>
+	  				<paramdef>uint16_t <parameter>value</parameter></paramdef>
+	  				</funcprototype>
+				</funcsynopsis>
+			<para>
+				Write a value into a QCA7000 register.
+				</para>
+			</section>
+		<section id="qcaspi_tx_cmd">
+			<title>
+				qcaspi_tx_cmd
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+					<funcdef>int <function>qcaspi_tx_cmd</function></funcdef>
+	  				<paramdef>struct qcaspi * <parameter>qca</parameter></paramdef>
+	  				<paramdef>uint16_t <parameter>cmd</parameter></paramdef>
+	  				</funcprototype>
+				</funcsynopsis>
+			<para>
+				Transmit a 16-bit command to the QCA7000. This is currently used when performing a legacy DMA read or write.
+				</para>
+			</section>
+		</section>
+	
+	<section id="qcaspi3">
+			<title>
+				Interrupt Functions
+				</title>
+		<section id="disable_spi_interrupts">
+			<title>
+				disable_spi_interrupts
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+					<funcdef>uint32_t <function>disable_spi_interrupts</function></funcdef>
+	  				<paramdef>struct qcaspi * <parameter>qca</parameter></paramdef>
+	  				</funcprototype>
+				</funcsynopsis>
+			<para>
+				Disables interrupts by writing <constant>0</constant> to the QCA7000 <varname>INTR_ENABLE</varname> register.
+				</para>
+			</section>
+		<section id="enable_spi_interrupts">
+			<title>
+				enable_spi_interrupts
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+					<funcdef>uint32_t <function>enable_spi_interrupts</function></funcdef>
+	  				<paramdef>struct qcaspi * <parameter>qca</parameter></paramdef>
+	  				<paramdef>uint32_t <parameter>intr_enable</parameter></paramdef>
+	  				</funcprototype>
+				</funcsynopsis>
+			<para>
+				Enables interrupts specified by writing to the QCA7000 <varname>INTR_ENABLE</varname> register and returns the previous register value.
+				</para>
+			</section>
+		<section id="qcaspi_intr_handler">
+			<title>
+				qcaspi_intr_handler
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+					<funcdef>static irqreturn_t <function>qcaspi_intr_handler</function></funcdef>
+	  				<paramdef>int <parameter>irq</parameter></paramdef>
+	  				<paramdef>void * <parameter>data</parameter></paramdef>
+	  				</funcprototype>
+				</funcsynopsis>
+			<para>
+				Called to service interrupts on rising edge of the QCA7000 interrupt line.
+				</para>
+			</section>
+		</section>
+	
+	<section id="qcaspi4">
+			<title>
+				Transmit Functions
+				</title>
+		<section id="qcaspi_transmit">
+			<title>
+				qcaspi_transmit
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+					<funcdef>int <function>qcaspi_transmit</function></funcdef>
+	  				<paramdef>struct qcaspi * <parameter>qca</parameter></paramdef>
+	  				</funcprototype>
+				</funcsynopsis>
+			<para>
+				Transmit as many frames as possible from the transmit queue.
+				</para>
+			</section>
+		<section id="qcaspi_tx_frame">
+			<title>
+				qcaspi_tx_frame
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+					<funcdef>int <function>qcaspi_tx_frame</function></funcdef>
+	  				<paramdef>struct qcaspi * <parameter>qca</parameter></paramdef>
+	  				<paramdef>struct sk_buff * <parameter>skb</parameter></paramdef>
+	  				</funcprototype>
+				</funcsynopsis>
+			<para>
+				Transmit a single socket buffer over the SPI interface. 
+				</para>
+			</section>
+		<section id="qcaspi_flush_txq">
+			<title>
+				qcaspi_flush_txq
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+					<funcdef>void <function>qcaspi_flush_txq</function></funcdef>
+	  				<paramdef>struct qcaspi * <parameter>qca</parameter></paramdef>
+	  				</funcprototype>
+				</funcsynopsis>
+			<para>
+				Flush the transmit queue. Typically called when a synchronization issue is detected between the SPI master (host) and SPI slave (QCA7000).
+				</para>
+			</section>
+		</section>
+	
+	<section id="qcaspi5">
+			<title>
+				Receive Functions
+				</title>
+		<section id="qcaspi_receive">
+			<title>
+				qcaspi_receive
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+					<funcdef>int <function>qcaspi_receive</function></funcdef>
+	  				<paramdef>struct qcaspi * <parameter>qca</parameter></paramdef>
+	  				</funcprototype>
+				</funcsynopsis>
+			<para>
+				Reads the QCA7000 read buffer bytes register and reads all available data from the QCA7000. Calls function to parse out the individual Ethernet frames and passes them to the Linux kernel protocol stack.
+				</para>
+			</section>
+		</section>
+	
+	<section id="qcaspi6">
+			<title>
+				DMA Functions
+				</title>
+		<section id="qcaspi_dma_read_burst">
+			<title>
+				qcaspi_dma_read_burst
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+					<funcdef>uint32_t <function>qcaspi_dma_read_burst</function></funcdef>
+	  				<paramdef>struct qcaspi * <parameter>qca</parameter></paramdef>
+	  				<paramdef>uint8_t * <parameter>buffer</parameter></paramdef>
+	  				<paramdef>uint32_t <parameter>length</parameter></paramdef>
+	  				</funcprototype>
+				</funcsynopsis>
+			<para>
+				Performs QCA7000 DMA burst read.
+				</para>
+			</section>
+		<section id="qcaspi_dma_read_legacy">
+			<title>
+				qcaspi_dma_read_legacy
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+					<funcdef>uint32_t <function>qcaspi_dma_read_legacy</function></funcdef>
+	  				<paramdef>struct qcaspi * <parameter>qca</parameter></paramdef>
+	  				<paramdef>uint8_t * <parameter>buffer</parameter></paramdef>
+	  				<paramdef>uint32_t <parameter>length</parameter></paramdef>
+	  				</funcprototype>
+				</funcsynopsis>
+			<para>
+				Performs QCA7000 DMA legacy read.
+				</para>
+			</section>
+		<section id="qcaspi_dma_write_burst">
+			<title>
+				qcaspi_dma_write_burst
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+					<funcdef>uint32_t <function>qcaspi_dma_write_burst</function></funcdef>
+	  				<paramdef>struct qcaspi * <parameter>qca</parameter></paramdef>
+	  				<paramdef>uint8_t * <parameter>buffer</parameter></paramdef>
+	  				<paramdef>uint32_t <parameter>length</parameter></paramdef>
+	  				</funcprototype>
+				</funcsynopsis>
+			<para>
+				Called by <function>qcaspi_tx_frame</function> to peform a DMA burst write instead of a legacy write.
+				</para>
+			</section>
+		<section id="qcaspi_dma_write_legacy">
+			<title>
+				qcaspi_dma_write_legacy
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+					<funcdef>uint32_t <function>qcaspi_dma_write_legacy</function></funcdef>
+	  				<paramdef>struct qcaspi * <parameter>qca</parameter></paramdef>
+	  				<paramdef>uint8_t * <parameter>buffer</parameter></paramdef>
+	  				<paramdef>uint32_t <parameter>length</parameter></paramdef>
+	  				</funcprototype>
+				</funcsynopsis>
+			<para>
+				Called by <function>qcaspi_tx_frame</function> to peform a DMA legacy write instead of a burst write.
+				</para>
+			</section>
+		</section>
+	
+	<section id="qcaspi7">
+			<title>
+				Support Functions
+				</title>
+		<section id="QcaFrmCreateHeader">
+			<title>
+				QcaFrmCreateHeader
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+					<funcdef>uint32_t <function>QcaFrmCreateHeader</function></funcdef>
+	  				<paramdef>uint8_t * <parameter>buffer</parameter></paramdef>
+	  				<paramdef>uint16_t <parameter>length</parameter></paramdef>
+	  				</funcprototype>
+				</funcsynopsis>
+			<para>
+				Encode buffer with the required SPI header and overall frame length.
+				</para>
+			</section>
+		<section id="QcaFrmCreateFooter">
+			<title>
+				QcaFrmCreateFooter
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+					<funcdef>uint32_t <function>QcaFrmCreateFooter</function></funcdef>
+	  				<paramdef>uint8_t * <parameter>buffer</parameter></paramdef>
+	  				</funcprototype>
+				</funcsynopsis>
+			<para>
+				Encode buffer with the required SPI footer. 
+				</para>
+			</section>
+		<section id="QcaFrmFsmInit">
+			<title>
+				QcaFrmFsmInit
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+					<funcdef>void <function>QcaFrmFsmInit</function></funcdef>
+	  				<paramdef>QcaFrmHdl * <parameter>frmHdl</parameter></paramdef>
+	  				</funcprototype>
+				</funcsynopsis>
+			<para>
+				Initialize the state machine used to decode the incoming QCA7000 byte stream.
+				</para>
+			</section>
+		<section id="QcaFrmFsmDecode">
+			<title>
+				QcaFrmFsmDecode
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+					<funcdef>uint32_t <function>QcaFrmFsmDecode</function></funcdef>
+	  				<paramdef>QcaFrmHdl * <parameter>frmHdl</parameter></paramdef>
+	  				<paramdef>uint8_t * <parameter>buffer</parameter></paramdef>
+	  				<paramdef>uint16_t <parameter>length</parameter></paramdef>
+	  				<paramdef>uint8_t <parameter>bytevalue</parameter></paramdef>
+	  				</funcprototype>
+				</funcsynopsis>
+			<para>
+				Feeds incoming bytes into the state machine and breaks the stream into individual frames. Frames are passed to the Linux kernel.
+				</para>
+			</section>
+		</section>
+	
+	<section id="qcaspi">
+			<title>
+				Kernel Functions
+				</title>
+		<section id="qcaspi_netdev_xmit">
+			<title>
+				qcaspi_netdev_xmit
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+					<funcdef>int <function>qcaspi_netdev_xmit</function></funcdef>
+	  				<paramdef>struct sk_buff * <parameter>skb</parameter></paramdef>
+	  				<paramdef>struct net_device * <parameter>device</parameter></paramdef>
+	  				</funcprototype>
+				</funcsynopsis>
+			<para>
+				Called by the Linux kernel append outgoing frames to the transmit queue.
+				</para>
+			</section>
+		<section id="qcaspi_netdev_tx_timeout">
+			<title>
+				qcaspi_netdev_tx_timeout
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+					<funcdef>void <function>qcaspi_netdev_tx_timeout</function></funcdef>
+	  				<paramdef>struct net_device * <parameter>device</parameter></paramdef>
+	  				</funcprototype>
+				</funcsynopsis>
+			<para>
+				Called by the Linux kernel after the transmit queue has been stopped for an extended period of time.
+				</para>
+			</section>
+		<section id="qcaspi_netdev_uninit">
+			<title>
+				qcaspi_netdev_uninit
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+					<funcdef>static void <function>qcaspi_netdev_uninit</function></funcdef>
+	  				<paramdef>struct net_device * <parameter>device</parameter></paramdef>
+	  				</funcprototype>
+				</funcsynopsis>
+			<para>
+				Called when function <function>unregister_netdev</function> is called. For the QCA7000 driver, function <function>qcaspi_mod_exit</function> calls function <function>unregister_netdev</function>.
+				</para>
+			</section>
+		<section id="qcaspi_netdev_get_stats">
+			<title>
+				qcaspi_netdev_get_stats
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+					<funcdef>struct net_device_stats * <function>qcaspi_netdev_get_stats</function></funcdef>
+	  				<paramdef>struct net_device * <parameter>device</parameter></paramdef>
+	  				</funcprototype>
+				</funcsynopsis>
+			<para>
+				Returns transmit, receive and error statistics associated with the net device. These are the statistics displayed by <application>ifconfig</application>.
+				</para>
+			</section>
+		<section id="qcaspi_netdev_change_mtu">
+			<title>
+				qcaspi_netdev_change_mtu
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+					<funcdef>int <function>qcaspi_netdev_change_mtu</function></funcdef>
+	  				<paramdef>struct net_device * <parameter>device</parameter></paramdef>
+	  				<paramdef>int <parameter>new_mtu</parameter></paramdef>
+	  				</funcprototype>
+				</funcsynopsis>
+			<para>
+				Changes the serial interface MTU size.
+				</para>
+			</section>
+		<section id="qcaspi_netdev_set_mac_address">
+			<title>
+				qcaspi_netdev_set_mac_address
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+					<funcdef>static int <function>qcaspi_netdev_set_mac_address</function></funcdef>
+	  				<paramdef>struct net_device * <parameter>device</parameter></paramdef>
+	  				<paramdef>void * <parameter>memory</parameter></paramdef>
+	  				</funcprototype>
+				</funcsynopsis>
+			<para>
+				Sets the serial interface MAC address. Called by <application>ifconfig</application> whenever user types <command>ifconfig qca0 hw ether xx:xx:xx:xx:xx:xx</command>.
+				</para>
+			</section>
+		<section id="qcaspi_netdev_close">
+			<title>
+				qcaspi_netdev_close
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+					<funcdef>int <function>qcaspi_netdev_close</function></funcdef>
+	  				<paramdef>struct net_device * <parameter>device</parameter></paramdef>
+	  				</funcprototype>
+				</funcsynopsis>
+			<para>
+				Called by <application>ifconfig</application> to disable the network interface.
+				</para>
+			</section>
+		<section id="qcaspi_mod_exit">
+			<title>
+				qcaspi_mod_exit
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+					<funcdef>static void <function>qcaspi_mod_exit</function></funcdef>
+	  				<paramdef><parameter>void</parameter></paramdef>
+	  				</funcprototype>
+				</funcsynopsis>
+			<para>
+				Called by the kernel to shutdown the driver module.
+				</para>
+			</section>
+		</section>
+	</chapter>

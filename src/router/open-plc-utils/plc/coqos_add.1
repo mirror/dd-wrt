@@ -1,0 +1,380 @@
+.TH coqos_add 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+coqos_add - Add a managed data stream
+
+.SH SYNOPSIS
+.BR coqos_add
+.IR action
+.IR priority 
+.IR rate
+.IR ttl
+.IR operand
+.IR condition 
+.RI [ condition ]
+[...]
+.RI [ device ]
+[...]
+
+.SH DESCRIPTION
+.B This page is under construction.
+
+.PP
+Add a managed stream to one or more powerline devices using the VS_CONN_ADD message.
+Consult the Qualcomm Atheros Firmware Technical Reference Manual for a description of this vendor specific message type.
+
+.PP
+This program is part of the Qualcomm Atheros Powerline Toolkit.
+See the \fBplc\fR man page for an overview and installation instructions.
+
+.SH BACKGROUND
+
+.PP
+Bandwidth management prioritizes streams so that data from lowest priority stream is dropped first whenever one of the following conditions is detected.
+This ensures that the remaining streams continue operate at their full pontential.
+
+.TP
+.B Degraded line condition 
+The channel degrades to the point where the available PHY rate from the transmitter to the receiver is too low due to the variability of the power line.s characteristics.
+
+.TP
+.B Over subscription 
+Too much data is being sent per second, resulting in packet loss due to excessive collisions due to excessive channel oversubscription.
+
+.TP
+.B Lack of channel Capacity
+On starting new source there is not enough channel capacity to support it.
+
+.SH OPTIONS
+
+.TP
+.RB - e
+Redirects stderr messages to stdout.
+By convention progress messages and error messages are printed on stderr while primary program output is printed on stdout.
+This option prints all output on stdout in cases where this is desired.
+
+.TP
+-\fBi \fIinterface\fR
+Select the host Ethernet interface.
+All requests are sent via this host interface and only reponses received via this host interface are recognized.
+The default interface is \fBeth1\fR because most people use \fBeth0\fR as their principle network connection; however, if environment string "PLC" is defined then it takes precedence over the default interface.
+This option then takes precedence over either default.
+
+.TP
+.RB - q
+Suppresses status messages on stderr.
+
+.TP
+.RB - r
+Display relative memory offsets on output.
+This option is the default.
+
+.TP
+.RB - v
+Prints additional information on stdout.
+In particular, this option dumps outgoing Ethernet packets on stdout.
+
+.TP
+.RB - ? ,-- help
+Displays program help information on stderr.
+This option takes precedence over all other options on the command line except version information.
+
+.TP
+.RB - ! ,-- version
+Displays program version information on stderr.
+This option takes precedence over all other options on the command line except help information.
+Use this option when sending screen dumps to Atheros technical staff.
+
+.SH ARGUMENTS
+
+.TP
+.IR action
+The action taken for frames that satisfy the selection criteria.
+Valid actions are "\fBCAP0\fR", "\fBCAP1\fR", "\fBCAP2\fR", "\fBCAP3\fR" to specify the channel access priority queue.
+CAP0 and CAP1 are for best effort data.
+CAP2 is for video and non urgent MMEs.
+CAP3 is for voice, urgent MMEs and control messages such as IGMP and MLD.
+
+.TP
+.IR priority
+The relative priority of this stream.
+Valid values are \fB0\fR through \fB15\fR where 0 is the lowest priority and 15 is the highest.
+
+.TP
+.IR destination
+The destination MAC address.
+
+.TP
+.IR rate
+The average expected data rate for this stream.
+Valid values are \fB1\fR to \fB9000\fR where units are in 10kbps so the minimum rate is 10kbps and the maximum rate is 90mbps.
+
+.TP
+.IR ttl
+The time to live for this stream.
+Valid values are 10000 to 2000000 where units are in microseconds so the minimum is time is 10 milliseconds and the maximum time is 2 seconds.
+
+.TP
+.IR operand
+The operand specifies the logical relationship between conditions before the \fIaction\fR to be taken.
+Valid operands are listed and described under \fBOPERANDS\fR.
+
+.TP
+.IR condition
+A conditional expression consisting of a \fIfield\fR, \fIoperator\fR and \fIvalue\fR.
+See \fBCONDITIONS\fR for more information.
+
+.TP
+.IR device
+The MAC address of some powerline device.
+More than one address may be specified on the command line.
+If more than one address is specified then operations are performed on each device in turn.
+The default address is "\fBlocal\fR".
+See \fBDEVICES\fR for more information.
+
+.SH CONDITIONS
+A condition consists of a \fIfield\fR, an \fIoperator\fR and a \fIvalue\fR.
+One condition is required but three are permitted.
+Condition order is not important but all conditions must appear after the \fIoperand\fR and before the \fIcontrol\fR.
+
+.TP
+.IR field
+The field is the part of the Ethernet frame to be examined.
+Some fields are not valid for some actions but this program does not enforce such rules since validation is performed by runtime firmware on each device.
+Recognized fields are listed and described under \fBFIELDS\fR.
+
+.TP
+.IR operator
+The operator specifies the relationsip that must exist between the \fIfield\fR and \fIvalue\fR in order for the \fIcondition\fR to evaluate \fBTrue\fR.
+Currently, only equality operators are supported.
+Valid operators are listed and described under \fBOPERATORS\fR.
+
+.TP
+.IR value
+The value must be appropriate to the field type.
+Some fields are MAC or IP addresses, some are integers, some are bitmaps and others are states.
+Integers and bitmaps may be expressed in binary, decimal or hexadecimal format.
+Binary values staRt with \fB0b\fR.
+Hexadecimal values start with \fB0x\fR.
+States are expressed using keywords.
+Users are responsible for knowing how many bits are significant for each type of value.
+Valid values are described along with fields under \fBFIELDS\fR.
+
+.SH OPERANDS
+The \fIoperand\fR indicates the logical relationship that must exist between conditions in the rule set before the action is applied to a frame.
+Operands are expressed as discrete alphanumeric strings entered in upper, lower or mixed character case.
+Failure to enter a known operand will result in an error message that lists all possible operands.
+They are positon sensitive.
+One operand is allowed and it must appear after the \fIaction\fR and before any \fIcondition\fR.
+
+.TP
+.BR Any
+Apply the action to frames that satisfy \fBany\fR of the conditions.
+This is equivalent to the logical \fBor\fR operation.
+
+.TP
+.BR All
+Apply the action to frames that satisfy \fBall\fR of the conditions.
+This is equivalent to the logical \fBand\fR operation.
+
+.TP
+.BR Always
+Apply the action to all frames, regardless of any and all conditions that may be specified.
+
+.SH FIELDS
+Fields indicate the portion of the frame that is inspected during selection and the size and format of the value permited in the condition statement.
+They are expressed as discrete alphanumeric strings entered in upper, lower or mixed character case.
+Failure to enter a known field will result in an error message that lists all possible fields.
+
+.TP
+.BR ET
+A 16-bit Ethertype expressed in decimal, hexadecimal or binary.
+The format is described in IEEE Standard 802-2001 [4].
+
+.TP 
+.BR EthDA 
+A 48-bit Ethernet destination address expressed in hexadecimal.
+The format is described in IEEE Standard 802-2001 [4].
+
+.TP 
+.BR EthSA  
+A 48-bit Ethernet source address expressed in hexadecimal.
+The format is described in IEEE Standard 802-2001 [4].
+
+.TP 
+.BR VLANUP 
+An 8-bit Ethernet VLAN tag where the lower 3 bits are the User Priority sub-field of a VLAN Tag defined in IEEE Std 802.1Q-1998 (Virtual Bridged Local Area Networks) [11].
+The upper 5 bits should be zero.
+
+.TP
+.BR VLANID 
+A 16-bit VLAN identifier where the lower 12 bits are the VLAN Identifier (VID) defined in IEEE Std 802.1Q-1998 (Virtual Bridged Local Area Networks) [11].
+The upper 4 bits should be zero.
+
+.TP
+.BR IPV4TOS 
+An 8-bit Type-of-Service code where the format is defined in the RFC 791 (Internet Protocol) [14].
+
+.TP
+.BR IPV4PROT 
+An 8-bit Ethernet Protocol identifier.
+The format is defined in the RFC 791 (Internet Protocol) [14].
+
+.TP
+.BR IPV4SA
+A 32-bit Internet Protocol source address expressed in dotted-decimal notation.
+The official format is defined in RFC 791 (Internet Protocol) [14].
+Our implementation permits empty octets and leading zeros within fields.
+For example, "..." is equivalent to "0.0.0.0 and "127..000.001" is equivalent to "127.0.0.1". 
+.TP
+.BR IPV4DA 
+A 32-bit Internet Protocol destination address expressed in dotted-decimal notation. The official format is defined in RFC 791 (internet Protocol) [14]. Our implementation permits empty octets and leading zeros within fields. For example, "..." is equivalent to "0.0.0.0 and "127..000.001" is equivalent to "127.0.0.1".
+
+.TP
+.BR IPV6TC
+An 8-bit Internet Protocol V6 traffic class expressed as defined in RFC 2460 (Internet Protocol Version 6) [17].
+
+.TP
+.BR IPV6FL
+A 24-bit IPV6 flow label where the lower 20 bits are the IPv6 Flow Label defined in RFC 2460 (Internat Protocol Version 6) [17].
+The upper 4 bits should be zero.
+The value can be entered either as a decimal, binary or hex integer.
+
+.TP
+.BR IPV6SA
+A 128-bit IPV6 source address expressed as colon-separated hexadecmial quartets (octet pairs).
+The official format is defined in RFC 2460 (Internet Protocol Version 6) [17].
+Our implementation permits multiple empty fields, abreviated fields and leading zeros within fields.
+When multiple empty fields appear, only the right-most occurance expands to zeros.
+For example, "FFFF::DDDD::BBBB::AAAA" is equivalent to "FFFF:0000:DDDD:0000:BBBB:0000:0000:AAAA".
+
+.TP
+.BR IPV6DA
+A 128-bit IPV6 destination address expressed as colon-separated hexadecimal quartets (octet pairs).
+The official format is defined in RFC 2460 (Internet Protocol Version 6) [17].
+Our implementation permits multiple empty fields, abbreviated fields and leading zeros within fields.
+When multiple empty fields appear, only the right-most occurance expands to zeros.
+For example, "AAAA::BBBB::CCCC::DDDD" is equivalent to "AAAA:0000:BBBB:0000:CCCC:0000:0000:DDDD".
+
+.TP
+.BR TCPSP
+A 16-bit TCP source port as a decimal integer.
+The format is defined in RFC 793 (Transmission Control Protocol [15]).
+
+.TP
+.BR TCPDP 
+A 16-bit TCP destination port expressed as a decimal integer.
+The format is defined in RFC 793 (Transmission Control Protocol [15]).
+
+.TP
+.BR UDPSP 
+A 16-bit UDP source port expressed as a decimal integer.
+The format is defined in RFC 768 (User Datagram Protocol [13]).
+
+.TP
+.BR UDPDP
+A 16-bit UDP destination port expressed as a decimal integer.
+The format is defined in RFC 768 (User Datagram Protocol [13]).
+
+.TP
+.BR IPSP
+A 16-bit IP source port expressed as a decimal integer.
+This condition applies to either TCP or UDP packets, depending on the protocol used, and is valid only for actions "\fBCAP0\fR", "\fBCAP1\fR", "\fBCAP2\fR", "\fBCAP3\fR" and "\fBDrop\fR".
+
+.TP
+.BR IPDP 
+A 16-bit IP destination port expressed as a decimal integer.
+This condition applies to either TCP or UDP packets, depending on the protocol used, and is valid only for actions "\fBCAP0\fR", "\fBCAP1\fR", "\fBCAP2\fR", "\fBCAP3\fR" and "\fBDrop\fR".
+
+.TP
+.BR MME
+A 24-bit Atheros HomePlugAV Management Message type expressed in hexadecimal.
+The first byte is the MMV and the next two bytes are the MMTYPE for a HomePlug AV frame as defined in the HomePlug AV Specification.
+The MMTYPE will match any MME sub-type (Request; Confirm; Indicate; Response).
+This field is only valid for action "\fBBoost\fR".
+
+.SH OPERATORS
+An operator indicates an equality between a \fIfield\fR and a \fIvalue\fR.
+An operator is an alphanumeric string entered in upper, lower or mixed character case.
+Failure to enter a known operator will result in an error message that lists all possible operators.
+Operators are position sensitive and must appear between each \fIfield\fR and \fIvalue\fR.
+
+.TP
+.BR Is
+Indicates that the frame field must equal the associated value for the condition to evaluate true.
+
+.TP
+.BR Not
+Indicates that the frame field must not equal the associated value for the condition to true true.
+
+.SH STATES
+A state is a special case of \fIvalue\fR.
+
+.TP
+.BR True , On , Yes , Present
+Indicates a positive state or presence of some entity.
+All are equivalent and can be used interchangeably.
+Double negatives are permitted so "Is True" is equvalent to "Not False".
+
+.TP
+.BR False , Off , No , Missing
+Indicates a negative state or absence of some entity.
+ALl are equivalent and can be used interchangeably.
+Double negatives are permitted so "Is False" is equvalent to "Not True".
+
+.SH DEVICES
+Powerline devices use Ethernet Media Access Control (MAC) addresses.
+A MAC address is a 48-bit value entered as 12 hexadecimal digits in upper, lower or mixed character case.
+Octets may be separated with colons for clarity.
+For example, "00b052000001", "00:b0:52:00:00:01" and "00b052:000001" are valid and equivalent.
+
+.PP
+The following MAC addresses are common or special and may be entered by name instead of number.
+
+.TP
+.BR all
+Same as "broadcast".
+
+.TP
+.BR broadcast
+A synonym for the Ethernet broadcast address, \fBFF:FF:FF:FF:FF:FF\fR.
+All devices, whether local, remote or foreign recognize messages sent to this address.
+A remote device is any device at the far end of a powerline connection.
+A foreign device is any device not manufactured by Atheros.
+
+.TP
+.BR local
+A synonym for the Qualcomm Atheros vendor specific Local Management Address (LMA), \fB00:B0:52:00:00:01\fR.
+All local Atheros devices recognize this address but remote and foreign devices do not.
+A remote device is any device at the far end of a powerline connection.
+A foreign device is any device not manufactured by Atheros.
+..SH REFERENCES
+See the Qualcomm Atheros HomePlug AV Firmware Technical Reference Manual for more information.
+
+.SH DISCLAIMER
+Atheros HomePlug AV Vendor Specific Management Message structure and content is proprietary to Qualcomm Atheros, Ocala FL USA.
+Consequently, public information may not be available.
+Qualcomm Atheros reserves the right to modify message structure and content in future firmware releases without any obligation to notify or compensate users of this program.
+
+.SH EXAMPLES
+The following example adds a temporary stream to device \fB00:b0:52:BA:BE:01\fR which will then manage the bandwidth for that stream until removed with program \fBcoqos_rel\fR.
+
+.PP
+	# coqos_add CAP2 15 5000 200000 any ethda is 192.168.105 00:B0:52:BA:BE:01         
+
+.PP
+This adds a stream to the bandwidth manager that sets all traffic to destination address of 192.168.0.105 as priority 15 (the highest priority).
+This would then need to also be sent to each device on the network.
+Refer to int6krule for more details on how to specify conditions.
+
+.SH SEE ALSO
+.BR coqos_info ( 1 ),
+.BR coqos_man ( 1 ),
+.BR coqos_mod ( 1 ),
+.BR coqos_rel ( 1 )
+
+.SH CREDITS
+ Bill Wike <bill.wike@qca.qualcomm.com>
+ Nathaniel Houghton <nhoughto@qca.qualcomm.com>
+ Charles Maier <cmaier@qca.qualcomm.com>
+
