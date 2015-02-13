@@ -1,0 +1,84 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			ttysend.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='ttyrecv.1.html' title=' ttyrecv.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='ttysig.1.html' title=' ttysig.1 '>NEXT</a>]
+			</div>
+<pre>
+ttysend(1)                                   Qualcomm Atheros Open Powerline Toolkit                                  ttysend(1)
+
+NAME
+       ttysend - Serial Line Rate Tester (Send)
+
+SYNOPSIS
+       ttysend [options] [&lt;stdin]
+
+DESCRIPTION
+       Send  data  to  a serial device.  The primary purpose of this program is to send data over a serial port that can then be
+       received with the ttyrecv utility.
+
+       The ttysend program exits when either one of the following conditions are met:
+           1.  The file specified on the command line (see -f) is sent in its entirety.
+           2.  The send time specified on the command line (see -t) has elapsed.
+
+       This program is part of the Qualcomm Atheros Powerline Toolkit.  See the AMP man page for an  overview  and  installation
+       instructions.
+
+COMMENTS
+       This program does not yet support Windows platforms.
+
+OPTIONS
+       -f file
+              The  file  to  send.   If  this option is not specified, the values 0x00 to 0xFF are sent in a loop.  Instead of a
+              filename, a ’-’ may be specified.  This is similar to the tar utility, and instructs ttysend to read from standard
+              input.
+
+       -l file
+              The serial port file to send data to.  The default is /dev/ttyS0.
+
+       -s speed
+              The  serial  baud rate.  Supported baud rates are 0, 50, 75, 110, 134, 150, 200, 300, 600, 1200, 1800, 2400, 4800,
+              9600, 19200, 38400, 57600, 115200, 230400, 460800, 500000 and 921600.
+
+       -t time
+              Transmit for a maximum of time seconds.  The default is 15 seconds.
+
+       -?,--help
+              Print program help summary on stdout.  This option takes precedence over other options on the command line.
+
+       -?,--version
+              Print program version information on stdout.  This option takes precedence over other options on the command line.
+              Use  this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of
+              the Linux Toolkit you are using.
+
+EXAMPLES
+       None.
+
+SEE ALSO
+       amp(1), int6kuart(1), ttyrecv(1)
+
+CREDITS
+        Nathaniel Houghton &lt;nhoughto@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                               ttysend(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='ttyrecv.1.html' title=' ttyrecv.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='ttysig.1.html' title=' ttysig.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

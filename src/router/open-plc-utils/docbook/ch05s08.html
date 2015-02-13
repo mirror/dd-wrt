@@ -1,0 +1,30 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Upgrading Firmware and PIB</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="ch05.html" title="Chapter 5.  Procedures"><link rel="prev" href="ch05s07.html" title="Configuring a Device"><link rel="next" href="ch05s09.html" title="Upgrading PIB Only"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">
+			Upgrading Firmware and PIB
+			</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch05s07.html">Prev</a> </td><th width="60%" align="center">Chapter 5. 
+		Procedures 
+		</th><td width="20%" align="right"> <a accesskey="n" href="ch05s09.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="procedure-upgrade-device"></a>
+			Upgrading Firmware and PIB
+			</h2></div></div></div><p>
+			Eventually,  you may want to upgrade (or downgrade) the runtime firmware stored in <acronym class="acronym">NVRAM</acronym>. To do this, you must locate a copy of the new <code class="filename">.nvm</code> file on the Atheros <acronym class="acronym">FTP</acronym> site and download it to your host. You must then download the file to the device and ask the runtime firmware on the device to write the file to <acronym class="acronym">NVRAM</acronym>. Writing firmware to <acronym class="acronym">NVRAM</acronym> is also called “<span class="quote">flashing the device</span>”. Program <a class="ulink" href="int6k.7.html" target="_top">int6k</a> can be used for this purpose when runtime firmware is executing on the device.
+			</p><p>
+			Program <span class="application">int6k</span> instructs runtime firmware to write to <acronym class="acronym">NVRAM</acronym> but the firmware will behave differently depending on how it was loaded and started. The first time <acronym class="acronym">NVRAM</acronym> is written by runtime firmware, the Factory <acronym class="acronym">PIB</acronym> is created in <acronym class="acronym">NVRAM</acronym>. The second time, the User <acronym class="acronym">PIB</acronym> is created. Thereafter, the User <acronym class="acronym">PIB</acronym> will be re-written each time. This preserves original factory settings and permits their restoration regardless of intervening parameter changes. This means that you should make an effort to get things right the first time.
+			</p><div class="example"><a name="idp11036384"></a><p class="title"><b>Example 5.15. 
+				Upgrade Firmware and PIB
+				</b></p><div class="example-contents"><pre class="screen">
+# int6k  -i eth2 -P ../firmware/new.pib -N ../firmware/new.nvm -F
+eth2 00:B0:52:00:00:01 Write Firmware to Device
+eth2 00:B0:52:00:00:BE Wrote ../firmware/new.nvm
+eth2 00:B0:52:00:00:01 Write Parameters to Device
+eth2 00:B0:52:00:00:BE Wrote ../firmware/new.pib
+eth2 00:B0:52:00:00:01 Flash NVRAM
+eth2 00:B0:52:00:00:BE Flashing ...
+eth2 00:B0:52:00:00:BE Started INT6000-MAC-3-3-3325-00-2443-20080414-FINAL-B
+</pre></div></div><br class="example-break"><p>
+			This example downloads a <acronym class="acronym">PIB</acronym> file (<strong class="userinput"><code>-P</code></strong>) and an <acronym class="acronym">NVM</acronym> file (<strong class="userinput"><code>-N</code></strong>) to the device then instructs the runtime firmware to write (or flash) (<strong class="userinput"><code>-F</code></strong>) both of them to <acronym class="acronym">NVRAM</acronym>. Option <strong class="userinput"><code>-F</code></strong> always writes both to <acronym class="acronym">NVRAM</acronym> but option <strong class="userinput"><code>-C</code></strong> can be used to write only one or the other or both.
+			</p><p>
+			Observe that options <strong class="userinput"><code>-P</code></strong>, <strong class="userinput"><code>-N</code></strong> and <strong class="userinput"><code>-F</code></strong> are all in uppercase. As a rule, uppercase options modify the device and lowercase options do not. One notable exception to this rule is <strong class="userinput"><code>-I</code></strong> which merely displays device identity.
+			</p></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch05s07.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="ch05.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch05s09.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">
+			Configuring a Device
+			 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 
+			Upgrading PIB Only
+			</td></tr></table></div></body></html>0

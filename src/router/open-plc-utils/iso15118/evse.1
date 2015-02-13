@@ -1,0 +1,170 @@
+.TH evse 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+evse - Qualcomm Atheros Electric Vehicle Supply Equipment Emulator
+
+.SH SYNOPSIS
+.BR evse
+.RI [ options ] 
+
+.SH DESCRIPTION
+Emulate the EVSE part of the HomePlug AV Signal Level Attentuation Characterization (SLAC) protocol where a \fBPEV\fR is a "\fBPlug-in Electric Vehicle\fR" and an \fBEVSE\fR is an "\fBElectric Vehicle Supply Equipment\fR" or charging station.
+This program remains active until terminated by the user.
+It waits for some PEV-HLE on the powerline network to attempt to connect in order to charge a virtual vehicle then services the PEV-HLE until the PEV-HLE elects to connect, elects not to connect or abandons the attempt.
+See the \fIHomePlug Green PHY Specification Release Version 1.1\fR for more information on this protocol.
+
+.PP
+Signal Level Attenuation Characterization (SLAC) enables a station to measure the signal level of its transmission at other stations in the network.
+It is designed for automotive applications where there are multiple plug-in vehicle (PEVs) and electric vehicle supply equipment (EVSE) on the network.
+The PEV signal level is measured at multiple EVSEs to determine which EVSE the PEV is actually plugged into.
+The process leading to this determination is called "\fBGreen PHY PEV-EVSE Association\fB" (GreenPPEA).
+
+.PP
+This program is part of the Qualcomm Atheros Powerline Toolkit.
+See the \fBplc\fR man page for an overview and installation instructions.
+
+.SH OPTIONS
+
+.TP
+.RB - c
+Print the EVSE-HLE configuration profile on stdout.
+The configuration profile specifies program defaults in a format that you, as a user, can edit and save.
+Use options \fB-p\fR and \fB-s\fR to read named profiles and sections.
+
+.TP
+.RB - d
+Print the contents of the EVSE-HLE session variable on stdout.
+The session variable is an program data structure that stores information passed between the PEV-HLE and EVSE-HLE during SLAC association.
+This option is used to inspect and veriify information relevant to the process.
+
+.PP
+If the program was compiled with variable SLAC_DEBUG defined then this option also prints MME message fields before messages are sent or after they are received.
+Interested parties can follow along in the source code.
+
+.TP
+.RB - i
+Select the host Ethernet interface.
+All requests are sent via this host interface and only reponses received via this host interface are recognized.
+The default interface is \fBeth1\fR because most people use \fBeth0\fR as their principle network connection; however, if environment string "PLC" is defined then it takes precedence over the default interface.
+This option then takes precedence over either default.
+
+.TP
+-\fBp \fIprofile\fR
+The EVSE-HLE configuration profile name.
+The program will supply default values for missing profile elements.
+See the example profile shown below.
+The default profile is "\fBevse.ini\fR".
+
+.TP
+.RB - q
+Enter quiet mode.
+Progress messages are suppressed.
+
+.TP
+-\fBs \fIsection\fR
+The configuration profile section name.
+The program will supply default values for missing configuration profile elements.
+See the example profile shown below.
+The default section name is "\fBdefault\fR".
+
+.TP
+.RB - v 
+Enter verbose mode.
+All Etherenet frames sent or received by the program are displayed on stdout.
+
+.TP
+-\fB?\fR, --\fBhelp\fR
+Print program help summary on stdout.
+This option takes precedence over other options on the command line.
+
+.TP
+-\fB!\fR, --\fBversion\fR
+Print program version information on stdout.
+This option takes precedence over other options on the command line.
+Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of the Linux Toolkit you are using.
+
+.SH PROFILE
+The default configuration profile for this program is "\fBevse.ini\fR".
+The default profile section is "\fBdefault\fR".
+Users may create addition profiles and reference them with option \fB-p\fr or add additional sections to an existing profiles and reference them with option \fB-s\fR.
+
+.TP 
+.B Time to Sound
+The time in 100 millisecond increments for all msounds to arrive at the msound target.
+The msound target may proceed with attenuation characterization computations should all msounds fail to arrive within this period.
+This value is read but not used by program \fBpev\fR or program \fBevse\fR.
+This value is the same as CM_SLAC_PARAM.CNF.TIME_OUT.
+The default value is \fB10\fR which represents 1000 milliseconds.
+
+.TP 
+.B Number of Sounds 
+
+.TP
+The total number of msounds that will be sent to the msound target.
+All msounds must arrive within the allotted time or they will be lost.
+This value is the same as CM_SLAC_PARAM.CNF.NUM_SOUNDS.
+The default is \fB8\fR.
+
+.TP
+.B Response  Type
+Controls whether the msound recipient sends signal attenuation characteristic profile data to the EVSE-HLE or another station.
+The only response specified at this time is the EVSE-HLE.
+The default value is \fB0\fR.
+Any other value is ignored.
+
+.TP
+.B Station Identifier
+Vehicle identification.
+The 17-byte Vehicle Identification Number to be placed in CM_MNBC_SOUND.IND.SenderID.
+This value is not used but is can be changed here so that the field is easy to spot within network message traces.
+
+.TP
+.B Network Membership Key
+The 16-byte Network Memberhip Key (NMK) for the PEV-PLC device.
+This program uses CM_SET_KEY to sets the EVSE-PLC NMK to this value after disconnecting.
+The default value is the key for Network Password "\fBHomePlugAV0123\fR".
+
+.TP
+.B Network Identifier
+The 7-byte Network Identifier (NID) for the PEV-PLC device.
+This program uses CM_SET_KEY to sets the EVSE-PLC NID to this value after disconnecting.
+The default value is the same as that for Network Password "\fBHomePlugAV0123\fR".
+
+.SH REFERENCES
+See the \fIQualcomm Atheros AR7420, QCA6410 IEEE 1901, HomePlug AV and QCA7000 HomePlug Green PHY PLC Chipset Programmer's Guide\fR or the \fIHomePlug Green PHY Specification Release Version 1.1\fR for more information on this protocol.
+
+.SH REFERENCES
+See the \fIQualcomm Atheros AR7420, QCA6410 IEEE 1901, HomePlug AV and QCA7000 HomePlug Green PHY PLC Chipset Programmer'sw Guide\fR or the \fIHomePlug Green PHY Specification Release Version 1.1\fR for more information on this protocol.
+
+.SH EXAMPLES
+The following example starts a EVSE session on interface \fBeth0\fR and wait up to 2000 milliseconds (or 2 seconds) for the PEV to respond during any given exchange.
+
+.PP
+   # evse -ieth0 -w2000
+
+.PP
+The default EVSE-HLE configuration profile, "\fBevse.ini\fR", looks something like this but it can be changed using a normal text editor.
+Use option \fB-P\fR to produce a template profile, if one is needed.
+
+.PP
+   # file: evse.ini
+   # ====================================================================
+   # EVSE-HLE initiaization;
+   # --------------------------------------------------------------------
+   [default]
+   time to sound = 10
+   number of sounds = 8
+   response type = 0
+   station identifier = BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+   network membership key = B59319D7E8157BA001B018669CCEE30D
+   network identifier = 026BCBA5354E08
+
+.SH SEE ALSO
+.BR plc ( 1 ),
+.BR pev ( 1 )
+
+.SH CREDITS
+ Charles Maier <cmaier@qca.qualcomm.com>
+'
+'
+

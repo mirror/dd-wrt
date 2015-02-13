@@ -1,0 +1,338 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			rules.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='ruledump.c.html' title=' ruledump.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='RxRates1.c.html' title=' RxRates1.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *
+ *   rules.c - Classification Rules Lookup Tables;
+ *
+ *   rules.h
+ *
+ *   QoS related symbol tables used by function ParseRule;
+ *
+ *   Contributor(s):
+ *	Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *	Nathaniel Houghton &lt;nhoughto@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef RULES_SOURCE
+#define RULES_SOURCE
+
+#include &quot;../plc/rules.h&quot;
+
+struct _code_ const controls [] =
+
+{
+	{
+		CONTROL_ADD,
+		&quot;Add&quot;
+	},
+	{
+		CONTROL_REM,
+		&quot;Rem&quot;
+	},
+	{
+		CONTROL_REMOVE,
+		&quot;Remove&quot;
+	}
+};
+
+struct _code_ const volatilities [] =
+
+{
+	{
+		VOLATILITY_TEMP,
+		&quot;Temp&quot;
+	},
+	{
+		VOLATILITY_PERM,
+		&quot;Perm&quot;
+	}
+};
+
+struct _code_ const actions [] =
+
+{
+	{
+		ACTION_CAP0,
+		&quot;CAP0&quot;
+	},
+	{
+		ACTION_CAP1,
+		&quot;CAP1&quot;
+	},
+	{
+		ACTION_CAP2,
+		&quot;CAP2&quot;
+	},
+	{
+		ACTION_CAP3,
+		&quot;CAP3&quot;
+	},
+	{
+		ACTION_BOOST,
+		&quot;Boost&quot;
+	},
+	{
+		ACTION_DROP,
+		&quot;Drop&quot;
+	},
+	{
+		ACTION_DROPTX,
+		&quot;DropTX&quot;
+	},
+	{
+		ACTION_DROPRX,
+		&quot;DropRX&quot;
+	},
+	{
+		ACTION_AUTOCONNECT,
+		&quot;AutoConnect&quot;
+	},
+	{
+		ACTION_STRIPTX,
+		&quot;StripTX&quot;
+	},
+	{
+		ACTION_STRIPRX,
+		&quot;StripRX&quot;
+	},
+	{
+		ACTION_TAGTX,
+		&quot;TagTX&quot;
+	},
+	{
+		ACTION_TAGRX,
+		&quot;TagRX&quot;
+	}
+};
+
+struct _code_ const operands [] =
+
+{
+	{
+		OPERAND_ALL,
+		&quot;All&quot;
+	},
+	{
+		OPERAND_ANY,
+		&quot;Any&quot;
+	},
+	{
+		OPERAND_ALWAYS,
+		&quot;Always&quot;
+	}
+};
+
+struct _code_ const fields [] =
+
+{
+	{
+		FIELD_ETH_DA,
+		&quot;EthDA&quot;
+	},
+	{
+		FIELD_ETH_SA,
+		&quot;EthSA&quot;
+	},
+	{
+		FIELD_VLAN_UP,
+		&quot;VLANUP&quot;
+	},
+	{
+		FIELD_VLAN_ID,
+		&quot;VLANID&quot;
+	},
+	{
+		FIELD_IPV4_TOS,
+		&quot;IPv4TOS&quot;
+	},
+	{
+		FIELD_IPV4_PROT,
+		&quot;IPv4PROT&quot;
+	},
+	{
+		FIELD_IPV4_SA,
+		&quot;IPv4SA&quot;
+	},
+	{
+		FIELD_IPV4_DA,
+		&quot;IPv4DA&quot;
+	},
+	{
+		FIELD_IPV6_TC,
+		&quot;IPv6TC&quot;
+	},
+	{
+		FIELD_IPV6_FL,
+		&quot;IPv6FL&quot;
+	},
+	{
+		FIELD_IPV6_SA,
+		&quot;IPv6SA&quot;
+	},
+	{
+		FIELD_IPV6_DA,
+		&quot;IPv6DA&quot;
+	},
+	{
+		FIELD_TCP_SP,
+		&quot;TCPSP&quot;
+	},
+	{
+		FIELD_TCP_DP,
+		&quot;TCPDP&quot;
+	},
+	{
+		FIELD_UDP_SP,
+		&quot;UDPSP&quot;
+	},
+	{
+		FIELD_UDP_DP,
+		&quot;UDPDP&quot;
+	},
+	{
+		FIELD_IP_SP,
+		&quot;IPSP&quot;
+	},
+	{
+		FIELD_IP_DP,
+		&quot;IPDP&quot;
+	},
+	{
+		FIELD_HPAV_MME,
+		&quot;MME&quot;
+	},
+	{
+		FIELD_ETH_TYPE,
+		&quot;ET&quot;
+	},
+	{
+		FIELD_TCP_ACK,
+		&quot;TCPAck&quot;
+	},
+	{
+		FIELD_VLAN_TAG,
+		&quot;VLANTag&quot;
+	}
+};
+
+struct _code_ const operators [] =
+
+{
+	{
+		OPERATOR_IS,
+		&quot;Is&quot;
+	},
+	{
+		OPERATOR_NOT,
+		&quot;Not&quot;
+	}
+};
+
+struct _code_ const states [] =
+
+{
+	{
+		OPERATOR_IS,
+		&quot;True&quot;
+	},
+	{
+		OPERATOR_NOT,
+		&quot;False&quot;
+	},
+	{
+		OPERATOR_IS,
+		&quot;On&quot;
+	},
+	{
+		OPERATOR_NOT,
+		&quot;Off&quot;
+	},
+	{
+		OPERATOR_IS,
+		&quot;Yes&quot;
+	},
+	{
+		OPERATOR_NOT,
+		&quot;No&quot;
+	},
+	{
+		OPERATOR_IS,
+		&quot;Present&quot;
+	},
+	{
+		OPERATOR_NOT,
+		&quot;Missing&quot;
+	}
+};
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='ruledump.c.html' title=' ruledump.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='RxRates1.c.html' title=' RxRates1.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

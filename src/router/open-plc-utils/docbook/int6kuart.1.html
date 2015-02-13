@@ -1,0 +1,309 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			int6kuart.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='int6ktone.1.html' title=' int6ktone.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='int6kwait.1.html' title=' int6kwait.1 '>NEXT</a>]
+			</div>
+<pre>
+int6kuart(1)                                 Qualcomm Atheros Open Powerline Toolkit                                int6kuart(1)
+
+NAME
+       int6kuart - Qualcomm Atheros Serial Line Device Manager
+
+SYNOPSIS
+       int6kuart [options] [...]
+
+DESCRIPTION
+       Perform powerline device management operations over serial line interface.
+
+       Serial  line  commands  are  7-bit  ASCII character strings sent to the local powerline device over the host serial port.
+       They can be sent using any terminal emulator but this program will, in many cases, reduce typing and simplify  scripting.
+       It is especially useful for downloading device parameters and uploading device parameters or firmware because those oper‐
+       ations involve large volumes of data.  Also, this program permits decimal integer  arguments  in  many  cases  where  the
+       serial line commands require hexadecimal integer values.  See the COMMANDS section (below) for a list of supported serial
+       line commands.
+
+       This program is part of the Qualcomm Atheros Powerline Toolkit.  See the AMP man page for an  overview  and  installation
+       instructions.
+
+COMMENTS
+       This  program  does not configure or reconfigure host serial port settings by default because most operating systems have
+       their own serial port configuration utility.  Be sure to configure host serial port settings before  using  this  program
+       because  other programs may change them before or after use.  Atheros factory default settings for UART-enabled powerline
+       devices are 115200 baud, 8 data bits, 1 stop bit, no parity and no flow control.  See option -b for a quick way to  match
+       host serial port settings the Qualcomm Atheros default settings.
+
+       On  Windows, use the DOS mode command.  The general form of this command is mode,baud,parity,databits,stopbits.  The fol‐
+       lowing example will set a Windows host to the default serial settings used by Atheros powerline devices.
+
+          # mode com3:115200,n,8,1
+
+       On Linux, use the stty utility to inspect and set serial port parameters.  The following  Linux  command  will  configure
+       serial  device  /dev/ttyS0 speed to 115200 baud with 8 data bits, 1 stop bit, no parity bit and no flow control.  Consult
+       the stty man page for an explanation of these and other options.
+
+          # stty -F /dev/ttyS0 115200 cs8 cstopb -parenb -ixon
+
+       On Linux, you can also use the minicom terminal emulator  to  communicate  using  the  underlying  serial  line  commands
+       described  in  the  COMMANDS  section.   The  minicom  program  reads default settings from configuration file /etc/mini�‐
+       com/minirc.dfl if present on startup.  A basic configuration file looks like this:
+
+          pu port             /dev/ttyUSB0
+          pu baudrate         115200
+          pu bits             8
+          pu parity           N
+          pu stopbits         1
+          pu rtscts           No
+
+OPTIONS
+       -b     Set host serial port to the default settings mentioned above.  The original host  serial  port  settings  are  not
+              restored  when  the  program  terminates.  You must restore them manually or by other means.  Changing host serial
+              port settings will break serial communications with the local powerline device if the device is not using the same
+              settings.
+
+       -c command
+              Send  a custom serial line command to the local powerline device over the host serial interface.  Argument command
+              is sent as specified but will be terminated with a carriage return.  The command must be enclosed in quotes if  it
+              contains  spaces  or  special  characters.  This option can be used to send serial line commands that are not sup‐
+              ported by this program.
+
+       -C module
+              Commit downloaded parameters and/or firmware to NVM using the ATWNV serial line command.  Argument module  is  one
+              hexadecimal octet.  The low-order nibble contains the module number.  The high-order nibble contains optional con‐
+              trol bits.  Acceptable module values are 0x01=Firmware, 0x02=Parameters, 0x10=Force Flash and 0x20=Do Not  Reboot.
+              The default value is 0x00 which has no effect.  The 0x prefix is optional.
+
+       -d     Read  and  display  the destination device address using the ATDST serial line command.  This option is similar to
+              option -D but substitutes ? for the device address.
+
+       -D address
+              Set the destination device address for Transparent Mode using the ATDST serial line command.   This  address  will
+              supercede the default destination device address, stored in the PIB, until the device is reset.  Multicast address
+              values are not permitted by the device.  Argument address  is  six  hexadecimal  octets  optionally  separated  by
+              colons.
+
+       -F filename
+              Read  the named frame description file and send it over powerline as an Atheros vendor-specific management message
+              using the ATM serial line command.  Unlike program efsu, only the first file frame is sent.  Any subsequent frames
+              defined in the file are ignored.
+
+       -H     Exit Command Mode and enter High Speed Command Mode using the ATHSC serial line command.
+
+       -i     Get  and  display  network  information using the ATNI serial line command.  The information includes the TEI, MAC
+              address, receive rate and transmit rate for each remote device on the network.
+
+       -I     Get and display the PIB version and device MAC address using the ATRPM serial line command.
+
+       -m     Read and display the Network Membership Key of the local powerline device using  the  ATSK  serial  line  command.
+              This option is similar to option -M but substitutes ? for the membership key.
+
+       -M key Set the Network Membership Key of the local powerline device using the ATSK serial line command.  The key consists
+              of 16 hexadecimal octets optionally separated by colons.
+
+       -N filename
+              Open the named firmware file on the local host and write it to the local device using multiple ATWPF  serial  line
+              commands.  There is no default filename or extension.  The file is assumed to contain a valid firmware image.
+
+       -O     Exit  Command  Mode  and enter Transparent Mode using the ATO serial line command.  Subsequent serial data will be
+              transmitted over the powerline to the destination device address as raw data.  Use option -d to set  the  destina‐
+              tion device address.
+
+       -p filename
+              Read  the  parameter  block from the local powerline device and write it to the named file on the local host using
+              multiple ATRP serial line commands.  Required length and offset values are automatically computed for each  serial
+              line command sent.  There is no default filename or extention.
+
+       -P filename
+              Open  the  parameter file on the local host and write it to the local powerline device using multiple ATWPF serial
+              line commands.  Required length and offset values are automatically computed for each serial  line  command  sent.
+              There is no default filename or extention.  The named file is assumed to contain a valid parameter block.
+
+       -q     Suppress progress and error information on stderr.
+
+       -r     Read  and display the local powerline device hardware identifier and firmware version string using the ATRV serial
+              line command.
+
+       -R     Reset the local device using the ATZ serial line command
+
+       -s tty Communicate with the local powerline device over the named serial  interface  on  the  local  host.   The  program
+              default is &quot;/dev/ttyUSB0&quot; for Linux and &quot;com1:&quot; for Windows.  The program default is replaced if environment vari‐
+              able PLCUART is defined.  This option over-rides those default settings.
+
+       -S     Place the local power line device in Power Save Mode using the ATPS serial line command.
+
+       -t     Test device using the AT serial line command.  The device will respond with &quot;OK&quot; when in Command Mode.
+
+       -T     Restore factory defaults on the local power line device using the ATFD serial line command.  Among  other  things,
+              this will restore the destination device address stored in the factory PIB.  Any destination device address previ‐
+              ously set using option -d will be lost.
+
+       -u     Force default host port settings to match the default setting for UART-enabled  Atheros  powerline  devices.   The
+              setting  are  115200 baud, 8 data bits, no parity bits and 1 stop bit.  These settings will remain active when the
+              program terminates and will not change unless changed by some other means, perhaps by another  application.   This
+              option  is  an easy means of establishg an initial serial connection with a powerline device, unless it’s settings
+              have been changed.
+
+       -v     Display actual serial line commands and responses on stdout.
+
+       -w     Place the local powerline device in Command Mode using the +++ serial line command. The device will remain in com‐
+              mand mode until it is reset or forced into Transparaent Mode or High Speed Command Mode.
+
+       -W timeout
+              Set the Transparent Mode aggregation timeout using the ATTO serial line command. The timeout is expressed in deci‐
+              mal milliseconds. Valid values are 1 through 2000.
+
+       -z     Get the Transparent Mode buffer size using the ATBSZ serial line command. This option is similar to option -B  but
+              substitutes ? for the buffer size.
+
+       -Z size
+              Set  the Transparent Mode buffer size using the ATBSZ serial line command. The size in bytes is specified in deci‐
+              mal here and converted to hexadecimal for transmission. Valid values range from 46 to 1500.  The  default  is  500
+              bytes.
+
+       -?,--help
+              Print program help summary on stdout. This option takes precedence over other options on the command line.
+
+       -!,--version
+              Print  program version information on stdout. This option takes precedence over other options on the command line.
+              Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version  of
+              the Linux Toolkit you are using.
+
+ARGUMENTS
+       None.
+
+COMMANDS
+       This  section  lists  serial  line  commands  recognized by local powerline devices when in Command Mode. Commands can be
+       issued interactively using a terminal emulator, like minicom on Linux or HyperTerminal on Windows or stored as  text  and
+       copied  to the serial port using system utilities, like cat on Linux or type on Windows. This program merely converts the
+       command line options and arguments described above into one or more of the serial line commands shown below.
+
+       +++    Exit Transparent Mode and enter Command Mode. See option -w above.
+
+       AT     Test for Command Mode by doing nothing, successfully. See option -t above.
+
+       ATBRmode,baudrate,databits,parity,stopbits,flowctrl
+              Set serial line parameters on the local powerline device. Beware that this will break the existing serial  connec‐
+              tion when the new parameters differ from those of the local host.
+
+       ATBSZ? Get Transparent Mode buffer size. See option -z above.
+
+       ATBSZsize
+              Set Transparent Mode buffer size. See option -Z above.
+
+       ATDST? Get Transparent Mode destination device address. See option -d above.
+
+       ATDSTaddress
+              Set Transparent Mode destination device address. See option -D above.
+
+       ATFD   Reset local device to factory defaults. See option -T above.
+
+       ATHSC  Exit  Command Mode and enter High Speed Command Mode. Once the OK response is received, the local host should send
+              commands to the device at successively higher speeds until a valid response is received.
+
+       ATMmessage
+              Send an Atheros vendor-specific management message over powerline. The message is expressed as a  series  of  hex‐
+              adecimal digits.
+
+       ATNI?  Read  nework information and store the information internally. Return the number of associated stations and infor‐
+              mation about the first associated station. The information includes the peer station device address, TX  rate  and
+              RX rate.
+
+       ATNIstation
+              Extract and display previously stored network information for a specific peer station. The information returned is
+              that previosly stored using a ATNI serial line command query.
+
+       ATO    Exit Command Mode and enter Transparent Mode. Successful switch requires a valid destination MAC  address,  buffer
+              size  and aggregation timeout value. Use serial line commands ATDST and ATBSZ to get and/or set the first two val‐
+              ues. Use serial line command ATTO to set the timeout value.
+
+       ATPStime
+              Place the device in Power Save Mode for a specified time in seconds. Valid  values  are  1  to  384  seconds.  The
+              default time is A seconds.
+
+       ATRPlength,offset
+              Read  and  display  a  parameter block segment where length is the number of bytes read and offset is the relative
+              position, in bytes, from the start of the parameter block. Valid length values are 0 through 400 hexadecimal.  See
+              option -p above to read and save an entire parameter block.
+
+       ATRPM  Get PIB version and device MAC address.
+
+       ATRV   Get hardware and firmware revision. See option -r above.
+
+       ATSK?  Get device Network Membership Key. See option -m above.
+
+       ATSKkey
+              Set device Network Membership Key. See option -M above.
+
+       ATTO?  Get the Transparent Mode aggregation timeout in milliseconds.
+
+       ATTOtimeout
+              Set the Transparent Mode aggregation timeout in milliseconds. See option -W above.
+
+       ATWNVmodule
+              Update NVM with PIB and/or Firmware module. See option -C above.
+
+       ATWPFmodule,length,offset,checksum,data
+              Write  a  parameter block or firmware segment to the local powerline device where module is the module identifier,
+              length is the number of bytes to write, offset is the relative position from the start of the module, checksum  is
+              the  1’s  complement of the data and data is the data to be written.  Valid module identifiers are 1=FW and 2=PIB.
+              Valid length values are 0 up to 400 hexadecimal.  See options -N and -P above to write an entire  parameter  block
+              or firmware images.
+
+       ATZ    Reset device.  See option -R above.
+
+REFERENCES
+       See the Qualcomm Atheros HomePlug AV Firmware Technical Reference Manual for more information.
+
+DISCLAIMER
+       Atheros  serial line commands are proprietary to Qualcomm Atheros, Ocala FL USA.  Consequently, public information is not
+       available.  Qualcomm Atheros reserves the right to modify command line syntax or command functionality in future firmware
+       releases without any obligation to notify or compensate product or program users.
+
+EXAMPLES
+       The  following example places the device in Command Mode (wakeup).  Serial line commands are ignored unless the device is
+       in this mode so this is often the first command issued.
+
+          # int6kuart -w
+
+       The next example sets the destination device address on the local powerline  device  to  00B052BABE12.   The  destination
+       device can be any remote powerline device on the same logical network as the local device.
+
+          # int6kuart -D 00:B0:52:BA:BE:12
+
+       The next example places the device in Transparent Mode where serial line output is sent over powerline to the destination
+       powerline device and forwarded the remote host connected to it.
+
+          # int6kuart -O
+
+       The next example sends the serial line command &quot;ATSK?&quot; to the local powerline device.
+
+          # int6kuart -c &quot;ATSK?&quot;
+
+SEE ALSO
+       amp(1), int6kbaud(1), ttysig(1)
+
+CREDITS
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                             int6kuart(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='int6ktone.1.html' title=' int6ktone.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='int6kwait.1.html' title=' int6kwait.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

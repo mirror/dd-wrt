@@ -1,0 +1,232 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			Attributes1.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='assist.c.html' title=' assist.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='Attributes2.c.html' title=' Attributes2.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *
+ *   signed Attributes1 (struct plc * plc);
+ *
+ *   plc.h
+ *
+ *   This plugin for program plc requests device attributes using
+ *   a VS_OP_ATTRIBUTES message; attributes are pre-parsed versions
+ *   of information returned by VS_SW_VER and other messages;
+ *
+ *   The VS_OP_ATTRIBUTES message structure changed between FW 3.3.4
+ *   and 3.3.5 and fields are ocassionally appended to the end; you
+ *   should not use this message for operational systems because the
+ *   format may change again; it was originally intended for PTS use
+ *   only;
+ *
+ *
+ *   Contributor(s):
+ *      Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef ATTRIBUTES1_SOURCE
+#define ATTRIBUTES1_SOURCE
+
+#include &lt;stdint.h&gt;
+#include &lt;memory.h&gt;
+
+#include &quot;../plc/plc.h&quot;
+#include &quot;../tools/memory.h&quot;
+#include &quot;../tools/format.h&quot;
+#include &quot;../tools/error.h&quot;
+#include &quot;../tools/flags.h&quot;
+
+#ifdef WIN32
+#define snprintf _snprintf
+#endif
+
+signed Attributes1 (struct plc * plc)
+
+{
+	struct channel * channel = (struct channel *)(plc-&gt;channel);
+	struct message * message = (struct message *)(plc-&gt;message);
+
+#ifndef __GNUC__
+#pragma pack (push,1)
+#endif
+
+	struct __packed vs_op_attributes_request
+	{
+		struct ethernet_hdr ethernet;
+		struct qualcomm_hdr qualcomm;
+		uint32_t COOKIE;
+		uint8_t RTYPE;
+	}
+	* request = (struct vs_op_attributes_request *) (message);
+	struct __packed vs_op_attributes_confirm
+	{
+		struct ethernet_hdr ethernet;
+		struct qualcomm_hdr qualcomm;
+		uint16_t MSTATUS;
+		uint32_t COOKIE;
+		uint8_t RTYPE;
+		uint16_t MLENGTH;
+		uint8_t MBUFFER [1024];
+	}
+	* confirm = (struct vs_op_attributes_confirm *) (message);
+	struct __packed attributes
+	{
+		uint8_t HARDWARE [16];
+		uint8_t SOFTWARE [16];
+		uint32_t FWVERSION [5];
+		uint8_t RELEASEDATE [8];
+		uint8_t RELEASETYPE [12];
+		uint8_t SDRAMTYPE;
+		uint8_t RESERVED;
+		uint8_t LINEFREQ;
+		uint32_t SDRAMSIZE;
+		uint8_t AUTHMODE;
+	}
+	* attributes = (struct attributes *)(confirm-&gt;MBUFFER);
+
+#ifndef __GNUC__
+#pragma pack (pop)
+#endif
+
+	Request (plc, &quot;Fetch Device Attributes&quot;);
+	memset (message, 0, sizeof (* message));
+	EthernetHeader (&amp;request-&gt;ethernet, channel-&gt;peer, channel-&gt;host, channel-&gt;type);
+	QualcommHeader (&amp;request-&gt;qualcomm, 0, (VS_OP_ATTRIBUTES | MMTYPE_REQ));
+	plc-&gt;packetsize = (ETHER_MIN_LEN - ETHER_CRC_LEN);
+	request-&gt;COOKIE = HTOLE32 (plc-&gt;cookie);
+	request-&gt;RTYPE = 0;
+	if (SendMME (plc) &lt;= 0)
+	{
+		error ((plc-&gt;flags &amp; PLC_BAILOUT), errno, CHANNEL_CANTSEND);
+		return (-1);
+	}
+	while (ReadMME (plc, 0, (VS_OP_ATTRIBUTES | MMTYPE_CNF)) &gt; 0)
+	{
+		static char const * frequency [] =
+		{
+			&quot;Unknown frequency&quot;,
+			&quot;50Hz&quot;,
+			&quot;60Hz&quot;,
+		};
+		static char const * zero_cross [] =
+		{
+			&quot;Not yet detected&quot;,
+			&quot;Detected&quot;,
+			&quot;Missing&quot;,
+		};
+		char string [512];
+		size_t length = 0;
+		if (confirm-&gt;MSTATUS)
+		{
+			Failure (plc, PLC_WONTDOIT);
+			continue;
+		}
+
+#if 0
+#if defined (__GNUC__)
+#warning &quot;Debug code active in module Attributes1&quot;
+#endif
+
+		fprintf (stderr, &quot;HARDWARE=[%-16.16s]\n&quot;, attributes-&gt;HARDWARE);
+		fprintf (stderr, &quot;SOFTWARE=[%-16.16s]\n&quot;, attributes-&gt;SOFTWARE);
+		fprintf (stderr, &quot;FIRMWARE MAJOR VERSION=(%d)\n&quot;, LE32TOH (attributes-&gt;FWVERSION [0]));
+		fprintf (stderr, &quot;FIRMWARE MINOR VERSION=(%d)\n&quot;, LE32TOH (attributes-&gt;FWVERSION [1]));
+		fprintf (stderr, &quot;FIRMWARE [2]=(%d)\n&quot;, LE32TOH (attributes-&gt;FWVERSION [2]));
+		fprintf (stderr, &quot;FIRMWARE [3]=(%d)\n&quot;, LE32TOH (attributes-&gt;FWVERSION [3]));
+		fprintf (stderr, &quot;FIRMWARE [4]=(%d)\n&quot;, LE32TOH (attributes-&gt;FWVERSION [4]));
+		fprintf (stderr, &quot;RELEASE DATE=[%-8.8s]\n&quot;, attributes-&gt;RELEASEDATE);
+		fprintf (stderr, &quot;RELEASE TYPE=[%-12.12s]\n&quot;, attributes-&gt;RELEASETYPE);
+		fprintf (stderr, &quot;SDRAM SIZE=[0x%08X]\n&quot;, LE32TOH (attributes-&gt;SDRAMSIZE));
+		fprintf (stderr, &quot;SDRAM TYPE=[0x%02X]\n&quot;, attributes-&gt;SDRAMTYPE);
+		fprintf (stderr, &quot;RESERVED=[0x%02X]\n&quot;, attributes-&gt;RESERVED);
+		fprintf (stderr, &quot;LINE FREQUENCY=[0x%02X]\n&quot;, attributes-&gt;LINEFREQ);
+		fprintf (stderr, &quot;AUTHORIZATION MODE=[0x%02X]\n&quot;, attributes-&gt;AUTHMODE);
+
+#endif
+
+		length += snprintf (string + length, sizeof (string) - length, &quot;%s&quot;, attributes-&gt;HARDWARE);
+		length += snprintf (string + length, sizeof (string) - length, &quot;-%s&quot;, attributes-&gt;SOFTWARE);
+		length += snprintf (string + length, sizeof (string) - length, &quot;-%d&quot;, LE32TOH (attributes-&gt;FWVERSION [0]));
+		length += snprintf (string + length, sizeof (string) - length, &quot;-%d&quot;, LE32TOH (attributes-&gt;FWVERSION [1]));
+		length += snprintf (string + length, sizeof (string) - length, &quot;-%04d&quot;, LE32TOH (attributes-&gt;FWVERSION [2]));
+		length += snprintf (string + length, sizeof (string) - length, &quot;-%02d&quot;, LE32TOH (attributes-&gt;FWVERSION [3]));
+		length += snprintf (string + length, sizeof (string) - length, &quot;-%04d&quot;, LE32TOH (attributes-&gt;FWVERSION [4]));
+		length += snprintf (string + length, sizeof (string) - length, &quot;-%-8.8s&quot;, attributes-&gt;RELEASEDATE);
+		length += snprintf (string + length, sizeof (string) - length, &quot;-%s&quot;, attributes-&gt;RELEASETYPE);
+		length += snprintf (string + length, sizeof (string) - length, &quot;-%c&quot;, attributes-&gt;SDRAMTYPE);
+		length += snprintf (string + length, sizeof (string) - length, &quot; (%dmb) &quot;, LE32TOH (attributes-&gt;SDRAMSIZE));
+		length += snprintf (string + length, sizeof (string) - length, &quot; (0x%02X) \&quot;%s\&quot; \&quot;%s\&quot; &quot;, attributes-&gt;LINEFREQ, frequency [attributes-&gt;LINEFREQ &amp; 0x03], zero_cross [(attributes-&gt;LINEFREQ &amp; 0x0C) &gt;&gt; 2]);
+		length += snprintf (string + length, sizeof (string) - length, &quot; 0x%02X&quot;, attributes-&gt;AUTHMODE);
+		Display (plc, &quot;%s&quot;, string);
+	}
+	return (0);
+}
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='assist.c.html' title=' assist.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='Attributes2.c.html' title=' Attributes2.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

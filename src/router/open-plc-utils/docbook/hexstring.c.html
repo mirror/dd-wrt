@@ -1,0 +1,64 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			hexstring.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='hexpeek.c.html' title=' hexpeek.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='hexview.c.html' title=' hexview.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   char * hexstring ( char buffer [], size_t length, void const * memory, size_t extent);
+ *
+ *   memory.h
+ *
+ *   decode a memory region into a hexadecimal character buffer and
+ *   return the buffer address;
+ *
+ *   allow three string characters for each memory byte; this means
+ *   that the buffer must hold at least three characters or nothing
+ *   will be decoded;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef HEXSTRING_SOURCE
+#define HEXSTRING_SOURCE
+
+#include &lt;stdint.h&gt;
+
+#include &quot;../tools/memory.h&quot;
+
+char * hexstring (char buffer [], size_t length, void const * memory, size_t extent)
+
+{
+	hexdecode (memory, extent, buffer, length);
+	return ((char *)(buffer));
+}
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='hexpeek.c.html' title=' hexpeek.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='hexview.c.html' title=' hexview.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

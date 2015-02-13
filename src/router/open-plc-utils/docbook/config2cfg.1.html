@@ -1,0 +1,126 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			config2cfg.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='CMEncrypt.1.html' title=' CMEncrypt.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='coqos_add.1.html' title=' coqos_add.1 '>NEXT</a>]
+			</div>
+<pre>
+config2cfg(1)                                Qualcomm Atheros Open Powerline Toolkit                               config2cfg(1)
+
+NAME
+       config2cfg - Atheros Configuration File Converter
+
+SYNOPSIS
+       config2cfg [options] file [file] [...]
+
+DESCRIPTION
+       The  config2cfg program converts an SDRAM configuration file used by the Windows Device Manager to the configuration file
+       format used by the Qualcomm Atheros Powerline Toolkit.
+
+       This program is part of the Qualcomm Atheros Powerline Toolkit.  See the AMP man page for an  overview  and  installation
+       instructions.
+
+OPTIONS
+       There are no options.
+
+EXPLANATION
+       The  Windows  Device Manager format consists of 64 ASCII hexadecomal characters.  Files usually have a .config extension.
+       File size is at least 64 characters.  Excess characters are ignored in input.  This means  that  files  can  be  modified
+       using  any text editor and there is no way to detect modification.  From a programmin standpoint, ASCII-to-binary conver‐
+       tion and checksum computation is required on input and binary-to-ASCII conversion iw required on output.
+
+       The Atheros Powerline Toolkit format consists of 32 binary bytes plus a 4 byte (32 bit) checksum.  Files usually  have  a
+       .cfg extension.  File size is always 36 characters.  The files can be edited using any hex editor but a new checksum must
+       be computed and inserted after any change.  No conversion or computation is required on input or output.  Input is  ready
+       for direct insertion into a VS_SET_SDRAM message.
+
+       Programs  int6k  and  int6kf  expect this latter format and so you can use this program determine if a given file has the
+       proper format.
+
+OPTIONS
+       file   The filename of a Windows Device Manager SDRAM configuration file.  The file is re-written such that the  filename
+              is  preserved  but  the contents are not.  Windows Device Manager SDRAM configuration files usually have a .config
+              extension but the program makes no assumption based on filename and does not enforce any filename conventions.
+
+       -q     Suppresses printing of progress messages.  There are no progress messages in this version.
+
+       -v     Print additional information.  There is no additional information printed in this version.
+
+       -?, --help
+              Print program help summary on stdout.  This option takes precedence over other options on the command line.
+
+       -!, --version
+              Print program version information on stdout.  This option takes precedence over other options on the command line.
+              Use  this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of
+              the Linux Toolkit you are using.
+
+EXAMPLES
+       The following example reads file abc.cfg and validates it.  The message shown indicates that the  configuration  file  is
+       the correct size and has a checksums and there are no read errors.
+
+           &gt; chkcfg abc.cfg
+           chkcfg: abc.cfg looks good
+
+       The  following  example  reads three files in succession and reports on each one.  You can suppress good news with the -q
+       option.
+
+           # chkcfg abc.cfg def.cfg ghi.cfg
+           chkcfg: abc.cfg looks good
+           chkcfg: def.cfg is corrupt
+           chkcfg: ghi.cfg looks good
+
+       The following example displays the SDRAM configuration values in all files having names that match the  wildcard  pattern
+       sdram*.cfg.   We can confirm that the values inside are correct for their filenames.  Program output could have been sent
+       to a file and saved for later reference.
+
+           # chknvm -qv sdram*.cfg
+           ------- sdram32.cfg -------
+                   SIZE=0x02000000 (32mb)
+                   CONF=0x00143188
+                   TIM0=0x01E1D491
+                   TIM1=0x000883D6
+                   CNTRL=0x00003089
+                   REF=0x00000366
+                   CLOCK=0x00000001
+           ------- sdram16.cfg -------
+                   SIZE=0x01000000 (16mb)
+                   CONF=0x00142F68
+                   TIM0=0x0115124E
+                   TIM1=0x000883D6
+                   CNTRL=0x00003089
+                   REF=0x00000493
+                   CLOCK=0x00000001
+
+DISCLAIMER
+       The SDRAM file structure and content is proprietary to Qualcomm Atheros, Ocala FL USA.  Consequently, public  information
+       is  not  available.   Qualcomm  Atheros  reserves  the  right  to change the file structure or content in future firmware
+       releases without any obligation to notify or compensate users of this program.
+
+SEE ALSO
+       int6k(1), int6kf(1), modpib(1), chknvm(1), chkpib(1)
+
+CREDITS
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                            config2cfg(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='CMEncrypt.1.html' title=' CMEncrypt.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='coqos_add.1.html' title=' coqos_add.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

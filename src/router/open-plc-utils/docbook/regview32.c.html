@@ -1,0 +1,89 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			regview32.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='ReadRules.c.html' title=' ReadRules.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='RemoteDeviceList1.c.html' title=' RemoteDeviceList1.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   void regview32 (void const * memory, size_t offset, size_t length, FILE *fp);
+ *
+ *   memory.h
+ *
+ *   print memory as a binary dump showing absolute memory offsets
+ *   and 32-bit binary register maps; sample output looks like:
+ *
+ *      REGISTER CONTENTS 31----24 23----16 15----08 07----00
+ *
+ *      00183000 00000F7F 00000000-00000000-00001111-01111111
+ *      00183004 00000A00 00000000-00000000-00001010-00000000
+ *      00183008 00000FF8 00000000-00000000-00001111-11111000
+ *      0018300C 00000000 00000000-00000000-00000000-00000000
+ *      00183010 00000075 00000000-00000000-00000000-01110101
+ *
+ *   the header line shown above is not part of the output;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef REGVIEW_SOURCE
+#define REGVIEW_SOURCE
+
+#include &lt;stdio.h&gt;
+
+#include &quot;../tools/memory.h&quot;
+#include &quot;../tools/endian.h&quot;
+
+void regview32 (void const * memory, size_t offset, size_t extent, FILE *fp)
+
+{
+	uint32_t * origin = (uint32_t *)(memory);
+	while (extent &gt;= sizeof (* origin))
+	{
+		signed bit = sizeof (* origin) &lt;&lt; 3;
+		printf (&quot;%08X &quot;, (uint32_t)(offset));
+		printf (&quot;%08X &quot;, LE32TOH (* origin));
+		while (bit--)
+		{
+			putc (((LE32TOH (* origin) &gt;&gt; bit) &amp; 1)? '1': '0', fp);
+			if ((bit) &amp;&amp; !(bit%8))
+			{
+				putc ('-', fp);
+			}
+		}
+		putc ('\n', fp);
+		offset += sizeof (* origin);
+		extent -= sizeof (* origin);
+		origin++;
+	}
+	return;
+}
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='ReadRules.c.html' title=' ReadRules.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='RemoteDeviceList1.c.html' title=' RemoteDeviceList1.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

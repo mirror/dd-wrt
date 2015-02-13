@@ -1,0 +1,120 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			checksum32.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='checkfilename.c.html' title=' checkfilename.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='chipset.c.html' title=' chipset.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   uint32_t checksum32 (void const * memory, size_t extent, uint32_t checksum);
+ *
+ *   memory.h
+ *
+ *   compute the 32 bit checksum of a memory segment; the calculated
+ *   checksum is the one's complement of the XOR of all 32-bit words;
+ *   this means that extent should be an even multiple of 4-bytes or
+ *   trailing bytes will be excluded from the calculation;
+ *
+ *   set checksum argument to 0 when the memory region does not
+ *   include the previous checksum value;
+ *
+ *   set checksum argument to the previous checksum value when the
+ *   memory region includes the previous checksum value; this will
+ *   effectively cancel-out the previous checksum value;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef CHECKSUM32_SOURCE
+#define CHECKSUM32_SOURCE
+
+#include &lt;stdint.h&gt;
+#include &lt;memory.h&gt;
+
+#include &quot;../tools/memory.h&quot;
+
+uint32_t checksum32 (register void const * memory, register size_t extent, register uint32_t checksum)
+
+{
+
+#ifdef __GNUC__
+
+	while (extent &gt;= sizeof (checksum))
+	{
+		checksum ^= *(typeof (checksum) *)(memory);
+		memory += sizeof (checksum);
+		extent -= sizeof (checksum);
+	}
+
+#else
+
+	uint32_t * offset = (uint32_t *)(memory);
+	while (extent &gt;= sizeof (* offset))
+	{
+		checksum ^= *offset++;
+		extent -= sizeof (* offset);
+	}
+
+#endif
+
+	return (~checksum);
+}
+
+/*====================================================================*
+ *   demo/test program;
+ *--------------------------------------------------------------------*/
+
+#if 0
+#include &lt;stdio.h&gt;
+
+int main (int argc, char const * argv [])
+
+{
+	uint32_t data [100];
+	read (0, data, sizeof (data));
+	data [10] = 0;
+	data [10] = checksum32 (data, sizeof (data), data [10]);
+	printf (&quot;data [10] = 0x%08x\n&quot;, data [10]);
+	data [10] = checksum32 (data, sizeof (data), data [10]);
+	printf (&quot;data [10] = 0x%08x\n&quot;, data [10]);
+	data [10] = checksum32 (data, sizeof (data), 0);
+	printf (&quot;data [10] = 0x%08x\n&quot;, data [10]);
+	data [10] = checksum32 (data, sizeof (data), 0);
+	printf (&quot;data [10] = 0x%08x\n&quot;, data [10]);
+	return (0);
+}
+
+#endif
+
+/*====================================================================*
+ *
+ *--------------------------------------------------------------------*/
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='checkfilename.c.html' title=' checkfilename.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='chipset.c.html' title=' chipset.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

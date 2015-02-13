@@ -1,0 +1,142 @@
+	<section id="install-windows-7">
+		<title>
+			Toolkit Installation on <productname>Windows 7</productname>
+			</title>
+		<para>
+			The <productname>Windows</productname> version of the toolkit comes pre-compiled and ready to install and run using the native <application>Windows Installer</application>. You may copy and distribute installation file <filename>plc-utils-x.x.x.msi</filename>. Users merely click on the file to install the package and may discard it afterwards. This method of installation permits remote installation over network.
+			</para>
+		<para>
+			The version of the Windows Installer used here needs Microsoft <productname>.NET Framework 1.1</productname> to work correctly. Newer versions of the <productname>.NET Framework</productname> will not work. The <productname>.NET Framework</productname> must be installed before the toolkit is installed or the <productname>Windows Installer</productname> will report dependency errors and refuse to complete installation. Multiple versions of the <productname>.NET Framework</productname> can coexist under <productname>Windows 7</productname>. The <productname>.NET Framework</productname> needed is included in the toolkit <filename>support</filename> folder.
+			</para>
+		<para>
+			Failure to <link linkend='removal-windows-7'>remove previous toolkit versions</link> on some systems may result in the message &quot;Another version of this product is already installed&quot; when trying to install a new version. You may want to remove prior version before starting toolkit installation.
+			</para>
+		<para>
+			Windows versions of toolkit programs that communicate with powerline devices all need <productname>WinPcap</productname> from <ulink url="http://www.winpcap.org/install/default.htm">winpcap.org</ulink> to read and write Ethernet frames. <productname>WinPcap</productname> may be installed before or after toolkit installation but tools that access powerline devices will not run without it. You may want to install <productname>WinPcap</productname> before starting toolkit installation. If you have <productname>Wireshark</productname> installed then you probably already have <productname>WinPcap</productname> installed. A recent copy of <productname>WinPcap</productname> is included in the toolkit <filename>support</filename> folder. 
+			</para>
+		<section>
+			<title>
+				Obtaining the Toolkit
+				</title>
+			<para>
+				QCA customers can download the toolkit from the QCA Customer FTP Site.
+				</para>
+			<para>
+				QCA employees may be able to download the toolkit from the QCA Application Engineering World FTP site <ulink url='ftp://appslinux01.qca.qualcomm.com/toolkit/plc-utils/'>ftp://appslinux01.qca.qualcomm.com/toolkit/plc-utils/</ulink>. There are several installers available for Windows. Each installs a subset of the toolkit. Download the desired installer files to your local machine then execute them by right-clicking on them and selecting option "Run as Administrator".
+				</para>
+			</section>
+		<section>
+			<title>
+				Installing the Toolkit
+				</title>
+				<para>
+					 Older toolkit programs were installed in folder <filename>C:\Program Files\Atheros\Toolkit</filename> by default but now they are installed in <filename>C:\Program Files (x86)\Qualcomm Atheros\Open Powerline Toolkit</filename> instead. If you select a different folder during installation then remember it for the next step.
+					</para>
+			<figure>
+				<title>
+					Windows Installer Dialogue
+					</title>
+				<mediaobject>
+					<imageobject>
+						<imagedata fileref='Win7-installer-dialogue.png' align="center" />
+						</imageobject>
+					</mediaobject>
+				</figure>
+			<para>
+				Accept install defaults.
+				</para>
+			</section>
+		<section>
+			<title>
+				Setting the PATH variable
+				</title>
+			<para>
+				<application>Toolkit</application> programs have command line interfaces and must be run from an open console window. To simplify program access and minimize the typing required, add the toolkit installation path mentioned above to the <envar>PATH</envar> environment variable by following steps listed below. If you have <constant>Administrator</constant> privileges then we recommend that you edit the system <envar>PATH</envar> variable; otherwise, you may need to create and/or edit a user <envar>PATH</envar> variable.
+				</para>
+			<figure>
+				<title>
+					Control Panel System Dialogue
+					</title>
+				<mediaobject>
+					<imageobject>
+						<imagedata fileref='Win7-system-settings.png' format='PNG' align="center" />
+						</imageobject>
+					</mediaobject>
+				</figure>
+			<orderedlist>
+				<listitem>
+					<para>
+						On the <command>Start</command> menu, select the <command>Control Panel</command> option.
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+						On the <command>Adjust system settings</command> page, select the <command>System</command> icon.
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+						On the <command>View basic information about your computer</command> page, select the <command>Advanced system settings</command> option.
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+						On the <command>System Properties</command> dialog, press the <command>Environment Variables</command> button.
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+						On the <command>Environment Variables</command> dialog box, scroll down the <command>System variables</command> list and select the <command>Path</command> variable then press the <command>Edit</command> button.
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+						On the <command>Edit System Variable</command> dialogue box, append the installation path to the <command>Variable value</command> field.
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+						Press the <command>OK</command> button.
+						</para>
+					</listitem>
+				</orderedlist> 
+			<para>
+				Environment variable changes made here do not take effect until a console window is opened. This means that you may need to close and then reopen console windows that depend on the changes. It is a good idea to immediately open a console window and execute a toolkit command in order to confirm that the <constant>PATH</constant> variable is properly defined.
+				</para>
+			</section>
+		<section id="removal-windows-7">
+			<title>
+				Removing the Toolkit
+				</title>
+			<para>
+				To remove an existing version of the Qualcomm Atheros <application>Open Powerline Toolkit</application> from your system, follow the steps listed below. If the toolkit is not installed on your system then omit these steps. If you are unsure, you can follow them to determine if you have the toolkit installed or you can attempt to install, anyway, and return here if installation is prevented.
+				</para>
+			<figure>
+				<title>
+					Control Panel Add/Remove Dialogue
+					</title>
+				<mediaobject>
+					<imageobject>
+						<imagedata fileref="Win7-remove-program.png" align="center"/>
+						</imageobject>
+					</mediaobject>
+				</figure>
+			<orderedlist>
+				<listitem>
+					<para>
+						On the <command>Start</command> menu, select the <option>Control Panel</option> option.
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+						On the <command>Adjust system settings</command> page, select the <command>Programs and Features</command> icon.
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+						On the <command>Uninstall or change a program</command> page, scroll down and select the appropriate QCA <option>Open Powerline Toolkit</option> entry then press the <option>Remove</option> pushbutton. There may be several different QCA Open Powerline Toolkit entries so be sure to select the correct one.
+						</para>
+					</listitem>
+				</orderedlist>
+			</section>
+		</section>

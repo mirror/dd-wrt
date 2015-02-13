@@ -1,0 +1,313 @@
+.TH plcset 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+plcset - Qualcomm Atheros PLC Set Property
+
+.SH SYNOPSIS
+.BR plcset
+.RI [ options ]
+.RI [ type 
+.IR  data ]
+.RI [ type 
+.IR  data ]
+.RI [ device ]
+.RI [ device ]
+[...]
+
+.SH DESCRIPTION
+Set a specific property value on an Qualcomm Atheros powerline device using the \fBVS_SET_PROPERTY\fR message.
+Properties are specified using their numeric property identifier.
+Property names are not supported.
+Property values are entered using \fBtype\fR and \fBdata\fR pairs.
+Users familiar with program \fBsetpib\fR should already understand this method of entering data values.
+
+.PP
+Only selected properties can be set using this message type.
+See the Qualcomm Atheros \fIFirmware Technical Reference Manual\fR for supported property identifiers, versions, values and data formats.
+
+.PP
+This program is part of the Qualcomm Atheros Powerline Toolkit.
+
+.SH OPTIONS
+
+.TP
+.RB - e
+Redirects stderr messages to stdout.
+By convention status and error messages are printed on stderr while primary program output is printed on stdout.
+This option prints all output on stdout in cases where this is desired.
+
+.TP
+-\fBn\fI number\fR
+The property identifier or peoperty version.
+Property identifiers and versions are entered as 32-bit decimal integers.
+Property names are not supported.
+The default is \fB0\fR.
+This option may appear more than once on the command line.
+The first occurance specifies the property identifier.
+The second occurances specifies the property version.
+See the \fIFirmware Technical Reference Manual\fR for an list of valid property identifiers and versions.
+
+.TP
+-\fBi \fIinterface\fR
+Select the host Ethernet interface.
+All requests are sent via this interface and only reponses received via this interface are recognized.
+The default interface is \fBeth1\fR because most people use \fBeth0\fR as their principle network connection; however, if environment string "PLC" is defined then it takes precedence over the default interface.
+This option then takes precedence over either default.
+
+.TP
+-\fBo\fI option\fR
+The update option (or method) expressed as an 8-bit hexadecimal integer.
+The prefix "0x" is optional.
+Option values are constructed from the logical OR of \fB0x01\fR=\fBApplyNow\fR, \fB0x02\fR=\fBPersist\fR and \fB0x04\fR=\fBReset\fR.
+The only legal option values are \fB0x01\fR, \fB0x02\fR, \fB0x03\fR and \fB0x06\fR.
+
+.TP
+.RB - q
+Suppresses status messages on stderr.
+
+.TP
+.RB - v
+Prints additional information on stdout.
+In particular, this option dumps outgoing Ethernet packets on stdout.
+
+.TP
+.RB - ? ,-- help   
+Displays program help information on stderr.
+This option takes precedence over all other options on the command line except version information.
+
+.TP
+.RB - ! ,-- version
+Displays program version information on stderr.
+This option takes precedence over all other options on the command line except help information.
+Use this option when sending screen dumps to Atheros technical staff.
+
+.SH ARGUMENTS
+
+.TP
+.IR device
+The MAC address of some powerline device.
+More than one address may be specified.
+If more than one address is specified then operations are performed on each device in turn.
+The default address is \fBlocal\fR.
+See \fBDEVICES\fR for information about symbolic device addresses.
+
+.SH FORMATS
+Each property is assigned one or more values.
+Each value may have a different type and size.
+The expected type, size and order of property values is described in the \fIFirmware Technical Reference Manual\fR under the \fBVS_SET_PROPERTY\fR message description.
+Expected data types and values must be entered on the command line in the order specified in the manual and must appear on the command line before any device addresses appear.
+
+.TP
+\fBbyte \fIinteger\fR
+An unsigned integer stored as 8 bits or 1 byte.
+The value is expressed in decimal by default.
+A binary value may be expressed with a \fB0b\fR prefix.
+A hexadecimal value may be expressed using a \fB0x\fR prefix.
+The offset increments by 1 prior to the next insertion.
+
+.TP
+\fBword \fIinteger\fR
+An unsigned integer stored as 16 bits or 2 bytes.
+The value is expressed in decimal by default.
+A binary value may be expressed with a \fB0b\fR prefix.
+A hexadecimal value may be expressed using a \fB0x\fR prefix.
+The result will be sent in little endian byte order.
+The offset increments by 2 prior to the next insertion.
+
+.TP
+\fBlong \fIinteger\fR
+An unsigned integer stored as 32 bits or 4 bytes.
+The value is expressed in decimal by default.
+A binary value may be expressed with a \fB0b\fR prefix.
+A hexadecimal value may be expressed using a \fB0x\fR prefix.
+The result will be sent in little endian byte order.
+The offset increments by 4 prior to the next insertions.
+
+.TP
+\fBhuge \fIinteger\fR
+An unsigned integer stored as 64 bits or 8 bytes.
+The value is expressed in decimal by default.
+A binary value may be expressed with a \fB0b\fR prefix.
+A hexadecimal value may be expressed using a \fB0x\fR prefix.
+The offset increments by 8 prior to the next insertion.
+The result will be sent in little endian byte order.
+This type is only available on hosts that support 64 bit data values.
+
+.TP
+\fBdata \fIhex\fR
+A sequence of hexadecimal octets.
+Octets may be separated by a colon for clarity.
+The number of octets determines the number of bytes written.
+The result is sent in the byte order specified on the command line.
+The offset increments by the number of bytes written.
+This is similar to "\fBkey\fR" and "\fBmac\fR" below but accepts variable length input.
+
+.TP
+\fBkey \fIhex\fR
+A sequence of hexadecimal octets.
+Octets may be separated by a colon for clarity.
+The number of octets must convert to 16 bytes or an error will occur.
+The result is sent in the byte order specified on the command line.
+The offset increments by 16 prior to the next insertion.
+This is similar "\fBdata\fR" above but accepts ony fixed length input.
+This option may be used to set the DAK, NMK or NVAK values.
+
+.TP
+\fBmac \fIhex\fR
+A sequence of hexadecimal octets.
+Octets may be separated by a colon for clarity.
+The number of octets must convert to 6 bytes or an error will occur.
+The result is sent in the byte order specified on the command line.
+The offset increments by 6 prior to the next insertion.
+This is similar "\fBdata\fR" above but accepts only fixed length input.
+This option may be used to set the DAK, NMK or NVAK values.
+
+.TP
+\fBhfid \fIstring\fR
+An ASCII character string.
+The string is always stored as 64 bytes.
+Short strings are padded on the right with NUL characters.
+Long strings are truncated on the right and the last byte is forced to NUL.
+The offset increments by 64 prior to the next insertion.
+This option may be used to enter user, network and  manufacturer identification strings.
+
+.TP
+\fBzero \fIcount\fR
+An unsigned integer representing the number of consecutive bytes to fill with \fB0x00\fR.
+The offset increments by the number of bytes written.
+This option may be used to erase regions of the PIB.
+
+.TP
+\fBfill \fIcount\fR
+An unsigned integer representing the number of consecutive bytes to fill with \fB0xFF\fR.
+The offset increments by the number of bytes written.
+This option may be used to erase regions of the PIB.
+
+.TP
+\fBskip \fIcount\fR
+An unsigned integer indicating the number of bytes to skip over before staring another change.
+Intervening data data locations are unchanged.
+
+.SH TR69 DATA TYPES
+These data types are not currently recognized by the runtime firmware and so errors will certainly result if they are used.
+
+.TP
+\fBaccesspassword \fIstring\fR
+An ASCII character string.
+The string is always stored as 257 bytes.
+Short strings are padded on the right with NUL characters.
+Long strings are truncated on the right and the last byte is forced to NUL.
+The offset increments by 257 prior to the next insertion.
+
+.TP
+\fBaccessusername \fIstring\fR
+An ASCII character string.
+The string is always stored as 33 bytes.
+Short strings are padded on the right with NUL characters.
+Long strings are truncated on the right and the last byte is forced to NUL.
+The offset increments by 33 prior to the next insertion.
+
+.TP
+\fBadminpassword \fIstring\fR
+An ASCII character string.
+The string is always stored as 33 bytes.
+Short strings are padded on the right with NUL characters.
+Long strings are truncated on the right and the last byte is forced to NUL.
+The offset increments by 33 prior to the next insertion.
+
+.TP
+\fBadminusername \fIstring\fR
+An ASCII character string.
+The string is always stored as 33 bytes.
+Short strings are padded on the right with NUL characters.
+Long strings are truncated on the right and the last byte is forced to NUL.
+The offset increments by 33 prior to the next insertion.
+
+.TP
+\fBpassword \fIstring\fR
+An ASCII character string.
+The string is always stored as 257 bytes.
+Short strings are padded on the right with NUL characters.
+Long strings are truncated on the right and the last byte is forced to NUL.
+The offset increments by 257 prior to the next insertion.
+
+.TP
+\fBurl \fIstring\fR
+An ASCII character string.
+The string is always stored as 257 bytes.
+Short strings are padded on the right with NUL characters.
+Long strings are truncated on the right and the last byte is forced to NUL.
+The offset increments by 257 prior to the next insertion.
+
+.TP
+\fBusername \fIstring\fR
+An ASCII character string.
+The string is always stored as 257 bytes.
+Short strings are padded on the right with NUL characters.
+Long strings are truncated on the right and the last byte is forced to NUL.
+The offset increments by 257 prior to the next insertion.
+
+.SH DEVICES
+Powerline devices use Ethernet Media Access Control (MAC) addresses.
+A MAC address is a 48-bit value entered as 12 hexadecimal digits in upper, lower or mixed character case.
+Octets may be separated with colons for clarity.
+For example, "00b052000001", "00:b0:52:00:00:01" and "00b052:000001" are valid and equivalent.
+
+.PP
+The following MAC addresses are special and may be entered by name instead of number.
+
+.TP
+.BR all
+Same as "broadcast".
+
+.TP
+.BR broadcast
+A synonym for the Ethernet broadcast address, \fBFF:FF:FF:FF:FF:FF\fR.
+All devices, whether local, remote or foreign recognize messages sent to this address.
+A remote device is any device at the far end of a powerline connection.
+A foreign device is any device not manufactured by Atheros.
+
+.TP
+.BR local
+A synonym for the Qualcomm Atheros vendor specific Local Management Address (LMA), \fB00:B0:52:00:00:01\fR.
+All local Atheros devices recognize this address but remote and foreign devices do not.
+A remote device is any device at the far end of a powerline connection.
+A foreign device is any device not manufactured by Atheros.
+
+.SH REFERENCES
+See the Qualcomm Atheros HomePlug AV Firmware Technical Reference Manual for the latest information on available properties.
+
+.SH DISCLAIMER
+Atheros HomePlug AV Vendor Specific Management Message structure and content is proprietary to Qualcomm Atheros, Ocala FL USA.
+Consequently, public information may not be available.
+Qualcomm Atheros reserves the right to modify message structure and content in future firmware releases without any obligation to notify or compensate users of this program.
+
+.SH EXAMPLES
+The following example sets the "time-to-live" property for each channel access priority type: \fBCAP0\fR, \fBCAP1\fR, \fBCAP2\fR, \fBCAP3\fR and \fBMME\fR.
+The property identifier is \fB101\fR.
+It needs five 32-bit decimal integer values in microseconds.
+Data type \fBlong\fR specifies a 32-bit decimal value that will be converted to little endian format on output.
+
+.PP
+   # plcset -n 101 long 100 long 200 long 250 long 300 long 100
+
+.PP
+The next example set the User HFID.
+The first occurance of option \fB-n\fR specifies the property by number as \fB105\fR.
+The second occurance specifies the property version as \fB1\fR.
+This is merely an example of how to specify the propery version.
+At the time of writing, property \fB105\fR is still version \fB0\fR.
+
+.PP
+   # plcset -n 105 -n 1 hfid "Intergalactic Software Pirates"   
+
+.SH SEE ALSO
+.BR plc ( 1 ),
+.BR getpib ( 1 ),
+.BR modpib ( 1 ),
+.BR plcset ( 1 ),
+.BR setpib ( 1 )
+
+.SH CREDITS
+ Charles Maier <cmaier@qca.qualcomm.com>
+

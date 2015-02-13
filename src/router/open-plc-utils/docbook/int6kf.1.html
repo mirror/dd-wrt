@@ -1,0 +1,163 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			int6kf.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='int6keth.1.html' title=' int6keth.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='int6khost.1.html' title=' int6khost.1 '>NEXT</a>]
+			</div>
+<pre>
+int6kf(1)                                    Qualcomm Atheros Open Powerline Toolkit                                   int6kf(1)
+
+NAME
+       int6kf - INT6300 Flash Utility for Linux
+
+SYNOPSIS
+       int6kf [options] -C file -N file -P file
+
+DESCRIPTION
+       This program is deprecated.  Use int6kboot when downloading firmware 3.3.4 or later on INT6300 devices or later.
+
+       Download  and  start  runtime firmware on a local Atheros powerline device that is in bootloader mode.  A device stays in
+       bootloader mode when it cannot load firmware from NVRAM.  That can happen because there is no NVRAM or because the  NVRAM
+       is  blank  or corrupted.  The bootloader only understands a subset of Atheros message types and cannot flash NVRAM.  This
+       program uses that subset to download runtime firmware and start execution.  Optionally, it will proceed  to  flash  NVRAM
+       after the firmware has started.
+
+       Booting  a device is a two part operation.  The first part downloads SDRAM configuration parameters then download runtime
+       firmware and parameters into SDRAM and starts the firmware.  The second part downloads  runtime  firmare  and  parameters
+       (again)  into scratch buffers and instructs the firmware to write them into to NVRAM.  This program can perform the first
+       part alone or the first then the second part but not the second part alone.  The second part can be performed alone using
+       program int6k.
+
+       This  program  is  part of the Atheros Powerline Toolkit.  See the AMP man page for compilation and installation instruc‐
+       tions.
+
+OPTIONS
+       -a     Wait until device sends a VS_HOST_ACTION.IND before downloading SDRAM configuration, firmware and PIB.
+
+       -C filename
+              Read the named SDRAM configuration file and write it to the device.  This option and argument are  required.   Any
+              file  having  an invalid SDRAM configuration file format will be rejected.  No assumptions are made based on file‐
+              name and no filename conventions are enforced.
+
+       -e     Redirects stderr messages to stdout.  By convention status and error messages are printed on stderr while  primary
+              program output is printed on stdout.  This option prints all output on stdout in cases where this is desired.
+
+       -F[F]  Write  previously downloaded MAC and PIB to NVRAM using VS_MOD_NVM.  Adding a second F here or another -F anywhere
+              on the command line will force-flash a blank or corrupted NVRAM.  Firmware loaded from  NVRAM  will  treat  force-
+              flash as an error.  This option can be used to create factory settings but cannot be used to change them once cre‐
+              ated.  Subsequent use creates and updates operational settings that can be erased using  a  factory  reset.   This
+              option is executed after all others on the command line, except for the -R option.
+
+       -i interface
+              Select  the host Ethernet interface.  All requests are sent via this interface and only reponses received via this
+              interface are recognized.  The default interface is eth1 because most people use eth0 as their  principle  network
+              connection;  however,  if environment string &quot;PLC&quot; is defined then it takes precedence over the default interface.
+              This option then takes precedence over either default.
+
+       -N filename
+              Read the named NVM file and write it to the device.  This option and argument are required.  Any  file  having  an
+              invalid  NVM  file format will be rejected.  No assumptions are made based on filename and no filename conventions
+              are enforced.
+
+       -P filename
+              Read the named PIB file and write it to the device.  This option and argument are required.  Any  file  having  an
+              invalid  PIB  file format will be rejected.  No assumptions are made based on filename and no filename conventions
+              are enforced.
+
+       -q     Suppresses status messages on stderr.
+
+       -t timer
+              Read timeout or capture period in milliseconds.  Values range from 0 through UINT_MAX.  This value  has  different
+              effects on Linux and Windows.  On Linux, where native raw sockets are used, this is the maximum time allowed for a
+              response and so larger values should not affect performance.  On Windows, where WinPcap is used, this is the  time
+              allotted  for  packet  capture  and  so  larger values will certainly affect performance.  The default is shown in
+              brackets on the program menu.
+
+       -v     Prints additional information on stdout.  In particular, this option dumps outgoing Ethernet packets on stdout.
+
+       -?,--help
+              Print program help summary on stdout.  This option takes precedence over other options on the command line.
+
+       -!,--version
+              Print program version information on stdout.  This option takes precedence over other options on the command line.
+              Use  this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of
+              the Linux Toolkit you are using.
+
+ARGUMENTS
+       None.
+
+REFERENCES
+       See the Atheros HomePlug AV Firmware Technical Reference Manual for more information.
+
+EXAMPLES
+       The -C, -N and -P options are always required.  Their order is not important.  Notice  that  no  MAC  address  is  needed
+       because devices use address 00:B0:52:00:00:01, the program default address, when in bootloader mode.
+
+          int6kf -C test.cfg -N test.nvm -P test.pib
+          &gt; eth0 00:B0:52:00:00:01 Write SDRAM Configuration
+          &gt; eth0 00:B0:52:00:00:01 Written.
+          &gt; eth0 00:B0:52:00:00:01 Write to device memory
+          &gt; eth0 00:B0:52:00:00:01 Written.
+          &gt; eth0 00:B0:52:00:00:01 Write to device memory
+          &gt; eth0 00:B0:52:00:00:01 Written.
+          &gt; eth0 00:B0:52:00:00:01 Start Firmware
+          &gt; eth0 00:B0:52:00:00:01 Started.
+
+       Downloads  SDRAM  configuration  file test.cfg with VS_SET_SDRAM then firmware from file test.nvm with VS_WR_MEM then PIB
+       from file test.pib then starts firmware execution with VS_ST_MAC.  This operation is common on flash-less systems.
+
+          int6kf -C test.cfg -N test.nvm -P test.pib -F
+          &gt; eth0 00:B0:52:00:00:01 Write SDRAM Configuration
+          &gt; eth0 00:B0:52:00:00:01 Written.
+          &gt; eth0 00:B0:52:00:00:01 Write to device memory
+          &gt; eth0 00:B0:52:00:00:01 Written.
+          &gt; eth0 00:B0:52:00:00:01 Write to device memory
+          &gt; eth0 00:B0:52:00:00:01 Written.
+          &gt; eth0 00:B0:52:00:00:01 Start Firmware
+          &gt; eth0 00:B0:52:00:00:01 Started.
+          &gt; eth0 00:B0:52:00:00:01 Write MAC as module
+          &gt; eth0 00:B0:52:00:00:01 Written.
+          &gt; eth0 00:B0:52:00:00:01 Write PIB as module
+          &gt; eth0 00:B0:52:00:00:01 Written.
+          &gt; eth0 00:B0:52:00:00:01 Flash Device
+          &gt; eth0 00:B0:52:00:00:01 Flashed.
+
+       Perform the same actions as before with some extra steps.  After starting firmware execution, the same firmware  and  PIB
+       are  downloaded again, using VS_WR_MOD instead of VS_WR_MEM, and written to NVRAM using VS_MOD_NVM with force.  The force
+       option is only recognized by firmware that has been started by the bootloader and will  fail  when  no  flash  memory  is
+       present.
+
+DISCLAIMER
+       Atheros  HomePlug  AV Vendor Specific Management Message Entry structure and content is proprietary to Atheros Communica‐
+       tions, Ocala FL USA.  Consequently, public information may not be available.  Atheros Communications reserves  the  right
+       to  modify message structure and content in future firmware releases without any obligation to notify or compensate users
+       of this program.
+
+SEE ALSO
+       AMP(1), int6k(1), int6kid(1), int6krate(1), int6kwait(1)
+
+CREDITS
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                                int6kf(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='int6keth.1.html' title=' int6keth.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='int6khost.1.html' title=' int6khost.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

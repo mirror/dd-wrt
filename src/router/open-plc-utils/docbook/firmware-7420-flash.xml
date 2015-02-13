@@ -1,0 +1,212 @@
+<section id='firmware-AR7420-flash'>
+	<title>
+			Flash Memory (AR6410/AR7420)
+			</title>
+	<para>
+			The <constant>VS_MODULE_OPERATION</constant> message is now the only way of write flash memory. The legacy message types <constant>VS_RD_MOD</constant>, <constant>VS_WR_MOD</constant>, <constant>VS_MOD_NVM</constant> and <constant>VS_PTS_NVM</constant> are deprecated and will no longer be supported by runtime firmware. This means that some customers must re-write their applications to flash newer powerline devices.
+			</para>
+	<tip>
+		<para>
+			The <constant>VS_MODULE_OPERATION</constant> message type has many formats and the structure differs with each format. Readers should consult the <citetitle>QCA Firmware Technical Reference Manual</citetitle> for a complete description.
+				</para>
+	</tip>
+		<para>
+				A blank flash memory must first be programmed with a softloader module. The module consists of a manifest, the executable softloader program image and a flash memory map. The map is used to manage flash memory during initializations and upgrades. The softloader module must be written into flash memory as a separate module before parameter and firmware modules are written. After that, parameter and firmware modules may be written and re-written without re-writing the softloader module. Of course, the softloader module must be re-written if flash memory is erased. 
+				</para>
+	<figure>
+		<title>
+				Flashing the Softloader (AR7420)
+				</title>
+		<programlisting><![CDATA[
+
+   AR7420                                        LOCAL-HOST
+ [02] |<- VS_MODULE_OPERATION.REQ (Start Session) ---| [01]
+ [03] |-- VS_MODULE_OPERATION.CNF (Start Session) -->| [04]
+      |                                              |
+ [06] |<-- VS_MODULE_OPERATION.REQ (Write Module) ---| [05]
+ [07] |--- VS_MODULE_OPERATION.CNF (Write Module) -->| [08]
+      |<---------------------------------------------|     
+      |--------------------------------------------->|     
+      |                                              |
+ [10] |<- VS_MODULE_OPERATION.REQ (Close Session) ---| [09]
+ [11] |-- VS_MODULE_OPERATION.CNF (Close Session) -->| [12]
+
+ ]]></programlisting>
+	</figure>
+	<orderedlist>
+		<listitem>
+			<para>
+					The local host sends a <constant>VS_MODULE_OPERATION.REQ</constant> module write session request to register a session identifier and the module identifier, module length and module checksum of the softloader module. The softloader module identifier is <constant>0x7003</constant>. The softloader module is the entire softloader chain including manifest, softloader image and flash memory layout.
+					</para>
+		</listitem>
+		<listitem>
+			<para>
+					The device receives the request, validates the module identifier and preserves the module length and checksum until the module write session is closed. The local host has <constant>30</constant> minutes to complete registered module write operations and close the module write session.
+					</para>
+		</listitem>
+		<listitem>
+			<para>
+					The device responds with <constant>VS_MODULE_OPERATION.CNF</constant> with <varname>MSTATUS</varname> set to <constant>0</constant>, if things went well.
+					</para>
+		</listitem>
+		<listitem>
+			<para>
+					The local host receives the confirmation and prepares to download the softloader module.
+					</para>
+		</listitem>
+		<listitem>
+			<para>
+					The local host sends a <constant>VS_MODULE_OPERATION.REQ</constant> module write request containing the offset, length and content of the first portion of the module being downloaded.
+					</para>
+		</listitem>
+		<listitem>
+			<para>
+				 	The device receives the request and write to a scrath region of flash memory awaiting session close.	
+					</para>
+		</listitem>
+		<listitem>
+			<para>
+					The device responds with <constant>VS_MODULE_OPERATION.CNF</constant> with <varname>MSTATUS</varname> set to <constant>0</constant> if things went well.
+					</para>
+		</listitem>
+		<listitem>
+			<para>
+					The local host receives the confirmation and continues downloading the softloader in fragments using <constant>VS_MODULE_OPERATION</constant> write requests, advancing the offset and adjusting the length with each write.
+					</para>
+		</listitem>
+		<listitem>
+			<para>
+					The local host send a <constant>VS_MODULE_OPERATION.REQ</constant> close module write session request having <varname>COMMIT_CODE</varname> bits <constant>0</constant> and <constant>1</constant> set. to indicate <quote>Force Commit</quote> and <quote>Commit without reset</quote>, respectively.
+					</para>
+		</listitem>
+		<listitem>
+			<para>
+					The device recevies the request, verifies the module length and checksum then transfers the module from scratch memory to it's final location in flash memory.
+					</para>
+		</listitem>
+		<listitem>
+			<para>
+					The device responds with <constant>VS_MODULE_OPERATION.CNF</constant> close module write session with <varname>MSTATUS</varname> set to <constant>0</constant> if things went well. If things did not go well then the local host must request a new write module session and start over.
+					</para>
+		</listitem>
+	</orderedlist>
+		<para>
+				Once the softloader module is written, the parameter and firmware modules may be written in much the same way except that they must be written as a pair. The parameter module must be downloaded first. The firmware module cannot be committed to without a compatible parameter module. 
+				</para>
+		<para>
+		When parameters and firmware are written together the User <acronym>PIB</acronym>, Factory <acronym>PIB</acronym> and firmware are modified modified. The new User <acronym>PIB</acronym> is created by copying the old User <acronym>PIB</acronym> over the new one. Consequently the only change comes from extra fields found at the end of the new User <acronym>PIB</acronym>. The new Factory <acronym>PIB</acronym> becomes the new User <acronym>PIB</acronym> with certain fields from the old User <acronym>PIB</acronym> preserved, such as the <acronym>MAC</acronym>, <acronym>DAK</acronym> and so on.
+			</para>
+	<figure>
+		<title>
+				Flash Parameters and Firmware (AR7420)
+				</title>
+		<programlisting><![CDATA[
+
+       AR7420                                      LOCAL-HOST
+    [02] |<- VS_MODULE_OPERATION.REQ (start session) ---| [01]
+    [03] |-- VS_MODULE_OPERATION.CNF (start session) -->| [04]
+         |                                              |
+    [06] |<-- VS_MODULE_OPERATION.REQ (write module) ---| [05]
+    [07] |--- VS_MODULE_OPERATION.CNF (write module) -->| [08]
+         |<---------------------------------------------|
+         |--------------------------------------------->|
+         |                                              |
+    [10] |<-- VS_MODULE_OPERATION.REQ (write module) ---| [09]
+    [11] |--- VS_MODULE_OPERATION.CNF (write module) -->| [12]
+         |<---------------------------------------------|
+         |--------------------------------------------->|
+         |                                              |
+    [14] |<- VS_MODULE_OPERATION.REQ (commit modules) --| [13]
+    [15] |-- VS_MODULE_OPERATION.CNF (commit modules) ->| [16]
+
+ ]]></programlisting>
+	</figure>
+	<orderedlist>
+		<listitem>
+			<para>
+				The local host sends a <constant>VS_MODULE_OPERATION.REQ</constant> module write session request to register the session identifier, module identifiers, module lengths and module checksums. In this case, the two modules are the runtime parameters and runtime firmware. The module identifiers are <constant>0x7002</constant> and <constant>0x7003</constant>, respectively. The application running on the local must must locate these modules and determine their size and checksum.
+				</para>
+		</listitem>
+		<listitem>
+			<para>
+					The device receives the request, validates the module identifier and preserves the module lengths and checksums until the module write session is closed. The local host has <constant>30</constant> minutes to complete registered module write operations and close the module write session.
+					</para>
+		</listitem>
+		<listitem>
+			<para>
+					The device responds with <constant>VS_MODULE_OPERATION.CNF</constant> with <varname>MSTATUS</varname> set to <constant>0</constant>, if things went well.
+					</para>
+		</listitem>
+		<listitem>
+			<para>
+					The local host receives the confirmation and prepares to download the parameter module.
+					</para>
+		</listitem>
+		<listitem>
+			<para>
+					The local host sends a <constant>VS_MODULE_OPERATION.REQ</constant> module write request containing the offset, length and content of the first portion of the module being downloaded.
+					</para>
+		</listitem>
+		<listitem>
+			<para>
+				 	The device receives the request and write to a scratch region of flash memory awaiting write session close.	
+					</para>
+		</listitem>
+		<listitem>
+			<para>
+					The device responds with <constant>VS_MODULE_OPERATION.CNF</constant> with <varname>MSTATUS</varname> set to <constant>0</constant> if things went well.
+					</para>
+		</listitem>
+		<listitem>
+			<para>
+					The local host receives the confirmation and continues downloading the parameter module in fragments using <constant>VS_MODULE_OPERATION</constant> write requests, advancing the offset and adjusting the length with each write.
+					</para>
+		</listitem>
+		
+		
+		<listitem>
+			<para>
+					The local host receives the confirmation and prepares to download the firmware module.
+					</para>
+		</listitem>
+		<listitem>
+			<para>
+					The local host sends a <constant>VS_MODULE_OPERATION.REQ</constant> module write request containing the offset, length and content of the first portion of the module being downloaded.
+					</para>
+		</listitem>
+		<listitem>
+			<para>
+				 	The device receives the request and write to a scratch region of flash memory awaiting write session close.	
+					</para>
+		</listitem>
+		<listitem>
+			<para>
+					The device responds with <constant>VS_MODULE_OPERATION.CNF</constant> with <varname>MSTATUS</varname> set to <constant>0</constant> if things went well.
+					</para>
+		</listitem>
+		<listitem>
+			<para>
+					The local host receives the confirmation and continues downloading the firmware module in fragments using <constant>VS_MODULE_OPERATION</constant> write requests, advancing the offset and adjusting the length with each write.
+					</para>
+		</listitem>
+
+		<listitem>
+			<para>
+					The local host send a <constant>VS_MODULE_OPERATION.REQ</constant> close module write session request having <varname>COMMIT_CODE</varname> bits <constant>0</constant> and <constant>1</constant> set. to indicate <quote>force commit</quote> and <quote>commit without reset</quote>, respectively.
+					</para>
+		</listitem>
+		<listitem>
+			<para>
+					The device receives the request, verifies the module length and checksum then transfers the module from scratch memory to it's final location in flash memory.
+					</para>
+		</listitem>
+		<listitem>
+			<para>
+					The device responds with <constant>VS_MODULE_OPERATION.CNF</constant> close module write session with <varname>MSTATUS</varname> set to <constant>0</constant> if things went well. If things did not go well then the local host must request a new write module session and start over.
+					</para>
+		</listitem>
+	</orderedlist>
+	<para>
+		At this point, the device is ready to boot from flash memory if the power fails or the device resets.
+		</para>
+</section>

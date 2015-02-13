@@ -1,0 +1,35 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Initialize a Device</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="ch06.html" title="Chapter 6.  Scripting"><link rel="prev" href="ch06s07.html" title="Editing a PIB"><link rel="next" href="ch06s09.html" title="Update a Device"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">
+			Initialize a Device
+			</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch06s07.html">Prev</a> </td><th width="60%" align="center">Chapter 6. 
+		Scripting
+		</th><td width="20%" align="right"> <a accesskey="n" href="ch06s09.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="scripting-initialise-device"></a>
+			Initialize a Device
+			</h2></div></div></div><p>
+			Initializing a device involves downloading memory configuration parameters, runtime firmware and runtime parameters into <acronym class="acronym">SDRAM</acronym> and then starting the runtime firmware to make the device fully functional. Program <a class="ulink" href="int6kf.7.html" target="_top">int6kf</a> can be used for this purpose when the INT6000 <span class="application">Softloader</span> or INT6300 <span class="application">Bootloader</span> is running. Additionally, program <a class="ulink" href="int6kf.7.html" target="_top">int6kf</a> can be used to flash blank or corrupted <acronym class="acronym">NVRAM</acronym> once runtime firmware has started.
+			</p><p>
+			Device initialization is only necessary when a device that has no <acronym class="acronym">NVRAM</acronym> or has corrupted <acronym class="acronym">NVRAM</acronym> or has a <span class="application">Softloader</span> stored in <acronym class="acronym">NVRAM</acronym>. It is only possible when either the INT6000 <span class="application">Softloader</span> or INT6300 <span class="application">Bootloader</span> is running. See <a class="link" href="ch04s04.html" title="Firmware Boot Process">The Boot Process</a> for detailed information.
+			</p><pre class="programlisting">
+int6kf -i ${NIC1} -C ${CFG} -P ${PIB} -N ${NVM}
+if [ ${?} != 0 ]; then
+        exit 1
+fi
+</pre><p>
+			The example above uses program <a class="ulink" href="int6kf.7.html" target="_top">int6kf</a> to download an <acronym class="acronym">SDRAM</acronym> configuration file (<strong class="userinput"><code>-C</code></strong>), <acronym class="acronym">PIB</acronym> file (<strong class="userinput"><code>-P</code></strong>) and <acronym class="acronym">NVM</acronym> file (<strong class="userinput"><code>-N</code></strong>) then start firmware execution. Symbols <code class="varname">NIC1</code>, <acronym class="acronym">CFG</acronym>, <acronym class="acronym">PIB</acronym> and <acronym class="acronym">NVM</acronym> must be defined earlier in the script, perhaps in files <a class="link" href="ch06s03.html#scripting-hardware-definitions" title="Example 6.1.  hardware.sh">hardware.sh</a> and <a class="link" href="ch06s03.html#scripting-firmware-definitions" title="Example 6.2.  firmware.sh">firmware.sh</a>.
+			</p><p>
+			Program <a class="ulink" href="int6kf.7.html" target="_top">int6kf</a> returns a non-zero value on error. We can check the return code and exit the script on error to avoid subsequent errors. We could, of course, suppress normal output (<strong class="userinput"><code>-q</code></strong>) and print our own error message using the Linux <strong class="userinput"><code>echo</code></strong> utility.
+			</p><p>
+			In some cases, we may want to flash a blank or corrupted <acronym class="acronym">NVRAM</acronym> after the runtime firmware has started. We could use program <a class="ulink" href="int6k.7.html" target="_top">int6k</a> for this purpose but program <a class="ulink" href="int6kf.7.html" target="_top">int6kf</a> can be used, as well. Essentially, it initializes the device (as above) then downloads the <acronym class="acronym">PIB</acronym> and <acronym class="acronym">NVM</acronym> files again and flashes them into <acronym class="acronym">NVRAM</acronym>.
+			</p><pre class="programlisting">
+int6kf -i ${NIC1} -C ${CFG} -P ${PIB} -N ${NVM} -FF
+if [ ${?} != 0 ]; then
+        exit 1
+fi
+</pre><p>
+			The example above initializes a device with an <acronym class="acronym">SDRAM</acronym> configuration file (<strong class="userinput"><code>-C</code></strong>),  <acronym class="acronym">PIB</acronym> file (<strong class="userinput"><code>-P</code></strong>) and <acronym class="acronym">NVM</acronym> file (<strong class="userinput"><code>-N</code></strong>) as before. Once the runtime firmware has started, the <acronym class="acronym">PIB</acronym> and <acronym class="acronym">NVM</acronym> files are downloaded again and flashed (<strong class="userinput"><code>-FF</code></strong>) into <acronym class="acronym">NVRAM</acronym>.
+			</p><p>
+			The force-flash option (<strong class="userinput"><code>-FF</code></strong>) is needed in this case because runtime firmware that has been written directly to <acronym class="acronym">SDRAM</acronym> and started by the local host assumes there is no <acronym class="acronym">NVRAM</acronym> present to flash or there might be <span class="application">Softloader</span> firmware stored in <acronym class="acronym">NVRAM</acronym> that must be protected from accidental flashing. Runtime firmware that has been read from <acronym class="acronym">NVRAM</acronym> need not make that assumption. 
+			</p></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch06s07.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="ch06.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch06s09.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">
+			Editing a PIB
+			 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 
+			Update a Device
+			</td></tr></table></div></body></html>0

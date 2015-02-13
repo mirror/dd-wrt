@@ -1,0 +1,42 @@
+# file: nvm/nvmoffsets.txt
+
+# ====================================================================
+# thunderbolt/lightning;
+# --------------------------------------------------------------------
+
+0 Thunderbolt/Lightning NVM Headers
+4 HEADERVERSION Always 0x60000000
+4 IMAGEROMADDR
+4 IMAGEADDR
+4 IMAGELENGTH
+4 IMAGECHECKSUM
+4 ENTRYPOINT
+1 HEADERMINORVERSION
+1 IMAGETYPE
+2 IGNOREMASK
+4 RESERVED [2]
+4 NEXTHEADER
+4 HEADERCHECKSUM
+
+# ====================================================================
+# panther/lynx;         
+# --------------------------------------------------------------------
+
+0 Panther/Lynx NVM Headers
+2 MajorVersion Starts with 1.
+2 MinorVersion Starts with 1.
+4 AppletExecuteMask
+4 ImageNvmAddress 
+4 ImageMemoryAddress
+4 ImageLength
+4 ImageChecksum
+4 EntryPoint
+4 NextNvmHeader
+4 PreviousNvmHeader
+4 EntryType
+2 ModuleID
+2 ModuleSubID
+2 AppletEntryVersion
+46 Reserved
+4 HeaderChecksum
+

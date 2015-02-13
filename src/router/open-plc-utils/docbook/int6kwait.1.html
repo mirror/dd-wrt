@@ -1,0 +1,183 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			int6kwait.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='int6kuart.1.html' title=' int6kuart.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='mac2pw.1.html' title=' mac2pw.1 '>NEXT</a>]
+			</div>
+<pre>
+int6kwait(1)                                 Qualcomm Atheros Open Powerline Toolkit                                int6kwait(1)
+
+NAME
+       int6kwait - Qualcomm Atheros INT6x00 Powerline Device Procrastinator
+
+SYNOPSIS
+       int6kwait [options] [device] [device] [...]
+
+DESCRIPTION
+       Poll  a  Qualcomm  Atheros powerline device, waiting for one or more events to occur before continuing or returning.  The
+       events include reset or power off, restart or power on and network association.  It is used to  pause  shell  scripts  at
+       critical points where a device must be in a known state before continuing.
+
+       This  program  is  part of the Qualcomm Atheros Powerline Toolkit.  See the plc man page for an overview and installation
+       instructions.
+
+OPTIONS
+       -a     Poll the device every few seconds using VS_NW_INFO messages until the device indicates that a networks exists  and
+              has  at  least  one  station.   This option can give false readings if other devices have dropped off-line and the
+              device bridging table still holds information about them.  The program always checks for this event last if  other
+              event options are specified.
+
+       -c count
+              The  number  of times the program will poll the device before declaring an event failure.  The program will wait a
+              fixed period of time between each poll attempt.  Overall wait time is count/frequency where count can be  modified
+              using  option  -c.   Overall  wait  time is always approximate since operating system overhead and latency are not
+              taken into account.  The default count is 300.
+
+       -e     Redirects stderr messages to stdout.  By convention status and error messages are printed on stderr while  primary
+              program output is printed on stdout.  This option prints all output on stdout in cases where this is desired.
+
+       -f firmware
+              The identification string for firmware that should be running after the device starts.  This option can be used to
+              detect a failed firmware load.  If the actual identification string does not match this one once the device starts
+              then  an  error is reported.  If option -x is present then the program terminates with a non-zero exit code.  This
+              option   has   no   effect   unless   option   -s   is   present.    An   identification   string    looks    like
+              &quot;INT6000-MAC-3-1-3143-1690-20071107-FINAL-B&quot; and can be obtained using int6k -r.
+
+       -i     Select  the host Ethernet interface.  All requests are sent via this host interface and only reponses received via
+              this host interface are recognized.  The default interface is eth1 because most people use eth0 as their principle
+              network  connection;  however,  if  environment  string &quot;PLC&quot; is defined then it takes precedence over the default
+              interface.  This option then takes precedence over either default.
+
+       -p frequency
+              The polling frequency expressed in polls-per-second.  For example, 1 means one poll per second and  10  means  ten
+              polls per second.  Overall wait time is count/frequency where count may be modified using option -c.  Overall wait
+              time is always approximate since operating system overhead and latency are not taken into  account.   The  default
+              frequency is 5.
+
+       -q     Enter quiet mode.  Progress messages are suppressed.
+
+       -r     Poll  the  device  every  few  seconds  using VS_SW_VER messages until the bootloader or runtime firmware fails to
+              respond or the poll count exhausts.  The absence of a response indicates that the device either lost connection to
+              the  host,  lost  power or has reset.  The program always checks for this event first when other events are speci‐
+              fied.
+
+       -R     Reset the device then check return status.  Exit program on error if option -x is present; otherwise,  repeat  the
+              reset request until the device either accepts the request or the wait time is exceeded.
+
+       -s     Poll  the  device  every few seconds using VS_SW_VER messages until the bootloader or runtime firmware responds or
+              the poll count exhausts.  The presence of a response indicates that the device has either connected to  the  host,
+              received power or finished reboot.
+
+       -t     Display the actual time in seconds taken for successful completion, or waited for unsuccessful completion, of ecah
+              event.
+
+       -v     Enter verbose mode.  All Etherenet frames sent or received by the program are displayed on stdout.
+
+       -w seconds
+              Additional time to wait once all events have occured.  This wait does not occur if  any  of  the  events  timeout.
+              When  no  other  events  are specified this option is effectively equivalent to sleep.  This option can be used to
+              allow the device or the network to settle.  For example, a nominal 5 second wait is  recommended  after  a  device
+              successfully associates before attempting to transfer data.
+
+       -x     Exit  program  on  first  error  with  a non-zero exit code.  This option allows shell scripts to detect failed or
+              incomplete operations and take the appropriate action.
+
+       -?, --help
+              Print program help summary on stdout.  This option takes precedence over other options on the command line.
+
+       -!, --version
+              Print program version information on stdout.  This option takes precedence over other options on the command line.
+              Use  this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of
+              the Linux Toolkit you are using.
+
+ARGUMENTS
+       device The Media Access Control (MAC) address of some device.  Addresses are 6 hexadecimal octets optionally separated by
+              colon.   For  example,  the  addresses  &quot;00b052000001&quot;,  &quot;00:b0:52:00:00:01&quot; and &quot;00b052:000001&quot; are all valid and
+              equivalent.  For convenience, the symbolic address  &quot;local&quot;  resolves  to  &quot;00:b0:52:00:00:01&quot;  and  the  symbolic
+              addresses &quot;all&quot; and &quot;broadcast&quot; both resolve to &quot;ff:ff:ff:ff:ff:ff&quot;.
+
+REFERENCES
+       See the Qualcomm Atheros HomePlug AV Firmware Technical Reference Manual for more information.
+
+DISCLAIMER
+       Atheros  HomePlug  AV  Vendor Specific Management Message Entry structure and content is proprietary to Qualcomm Atheros,
+       Ocala FL USA.  Consequently, public information may not be available.  Qualcomm Atheros reserves the right to modify mes‐
+       sage  structure and content in future firmware releases without any obligation to notify or compensate users of this pro‐
+       gram.
+
+EXAMPLES
+       The following command polls the local device until firmware stops running then polls the  device  until  firmware  starts
+       running again.  This command can be inserted into a shell script at a point where the device must reset and reboot before
+       proceeding.  Observer that the program waits up to 60 seconds for each event, in turn.  The 60 seconds is the product  of
+       60 poll attempts spaced 1 second apart.
+
+          # int6kwait -rs
+          eth0 00:B0:52:BA:BA:01 Allow 60 seconds for Reset
+          eth0 00:B0:52:BA:BA:01 Allow 60 seconds for Start
+
+       The  following  example specifies 5 poll attempts spaced 10 seconds apart.  Less frequent polling reduces network traffic
+       but makes the program less responsive to events.  Observe that the allotted time applies to each event in turn.
+
+          # int6kwait -rs -p 10 -c 5
+          eth0 00:B0:52:BA:BA:01 Allow 50 seconds for Reset
+          eth0 00:B0:52:BA:BA:01 Allow 50 seconds for Start
+
+       The next example reports the actual amount of time taken for each event to occur.  Observe that the  last  event,  device
+       association, did not occur within the allotted time.
+
+          # int6kwait -rsat
+          eth0 00:B0:52:BA:BA:01 Allow 60 seconds for Reset
+          etho 00:B0:52:BA:BA:01 Waited 22 seconds to Reset
+          eth0 00:B0:52:BA:BA:01 Allow 60 seconds for Start
+          etho 00:B0:52:BA:BA:01 Waited 4 seconds to Start
+          eth0 00:B0:52:BA:BA:01 Allow 60 seconds for Assoc
+          etho 00:B0:52:BA:BA:01 Waited 60 seconds for Assoc
+          etho 00:B0:52:BA:BA:01 Device did not Assoc
+
+       The  following  example  illustrates use of the revision string to detect mismatched firmware.  In this example, we reset
+       the device first, using program int6k, then wait for it to reset then start up again.  There are also operation that  can
+       cause the device to reset.
+
+          # int6k -R
+          # int6kwait -xrsf INT6000-MAC-3-1-3143-1690-20071107-FINAL-B
+          eth0 00:B0:52:BA:BA:01 Device started wrong firmware
+
+       Immediately  after  a  reset we wait for the firmware to stop responding, with option -r, and then start responding, with
+       option -s, and then perform a string comparison against the actual firmware revision string,  with  option  -f.   If  the
+       strings  do  not  match then an error is reported.  In this case, the program will exit with a non-zero return code since
+       option -x is present.
+
+DISCLAIMER
+       Atheros HomePlug AV Vendor Specific Management Message Entry structure and content is proprietary  to  Qualcomm  Atheros,
+       Ocala FL USA.  Consequently, public information may not be available.  Qualcomm Atheros reserves the right to modify mes‐
+       sage structure and content in future firmware releases without any obligation to notify or compensate users of this  pro‐
+       gram.
+
+SEE ALSO
+       plc(1), int6k(1), int6kf(1), int6khost(1), int6kid(1), int6krate(1), int6krule(1), int6kstat(1)
+
+CREDITS
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                             int6kwait(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='int6kuart.1.html' title=' int6kuart.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='mac2pw.1.html' title=' mac2pw.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

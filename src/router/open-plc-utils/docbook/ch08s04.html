@@ -1,0 +1,23 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Register Functions</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="ch08.html" title="Chapter 8.  Serial Drivers"><link rel="prev" href="ch08s03.html" title="SPI Serial Driver"><link rel="next" href="ch08s05.html" title="Interrupt Functions"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">
+				Register Functions
+				</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch08s03.html">Prev</a> </td><th width="60%" align="center">Chapter 8. 
+		Serial Drivers
+		</th><td width="20%" align="right"> <a accesskey="n" href="ch08s05.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="qcaspi2"></a>
+				Register Functions
+				</h2></div></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="qcaspi_read_register"></a>
+				qcaspi_read_register
+				</h3></div></div></div><div class="funcsynopsis"><table border="0" summary="Function synopsis" cellspacing="0" cellpadding="0"><tr><td><code class="funcdef">uint16_t <b class="fsfunc">qcaspi_read_register</b> (</code></td><td><code>struct qcaspi * </code> </td><td><var class="pdparam">qca</var>, </td></tr><tr><td> </td><td><code>uint16_t </code> </td><td><var class="pdparam">reg</var><code class="funcdef">)</code>;</td></tr></table></div><p>
+				Reads a QCA7000 register and returns register content.
+				</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="qcaspi_write_register"></a>
+				qcaspi_write_register
+				</h3></div></div></div><div class="funcsynopsis"><table border="0" summary="Function synopsis" cellspacing="0" cellpadding="0"><tr><td><code class="funcdef">void <b class="fsfunc">qcaspi_write_register</b> (</code></td><td><code>struct qcaspi * </code> </td><td><var class="pdparam">qca</var>, </td></tr><tr><td> </td><td><code>uint16_t </code> </td><td><var class="pdparam">reg</var>, </td></tr><tr><td> </td><td><code>uint16_t </code> </td><td><var class="pdparam">value</var><code class="funcdef">)</code>;</td></tr></table></div><p>
+				Write a value into a QCA7000 register.
+				</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="qcaspi_tx_cmd"></a>
+				qcaspi_tx_cmd
+				</h3></div></div></div><div class="funcsynopsis"><table border="0" summary="Function synopsis" cellspacing="0" cellpadding="0"><tr><td><code class="funcdef">int <b class="fsfunc">qcaspi_tx_cmd</b> (</code></td><td><code>struct qcaspi * </code> </td><td><var class="pdparam">qca</var>, </td></tr><tr><td> </td><td><code>uint16_t </code> </td><td><var class="pdparam">cmd</var><code class="funcdef">)</code>;</td></tr></table></div><p>
+				Transmit a 16-bit command to the QCA7000. This is currently used when performing a legacy DMA read or write.
+				</p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch08s03.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="ch08.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch08s05.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">
+				SPI Serial Driver
+				 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 
+				Interrupt Functions
+				</td></tr></table></div></body></html>0

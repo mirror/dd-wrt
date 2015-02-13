@@ -1,0 +1,120 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			strfbits.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='strdecr.c.html' title=' strdecr.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='strincr.c.html' title=' strincr.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   size_t strfbits (char  buffer [], size_t length, char const * operands [], char const * operator, unsigned flagword);
+ *
+ *   format.h
+ *
+ *   format buffer with an enumerated list of the bits in a flagword;
+ *   each flagword bit position corresponds to a string in operands[]
+ *   and operator is the string separating formatted operands;
+ *
+ *   enumeration continues until all bits are enumerated or operands
+ *   are exhausted or the buffer fills;
+ *
+ *   for example, the following formats buffer with the literal string
+ *   &quot;one, three, five, six&quot; since those bits are set;
+ *
+ *   char buffer[100];
+ *   char const operator = &quot;, &quot;;
+ *   char const *operands[] =
+ *   {
+ *      &quot;zero&quot;,
+ *      &quot;one&quot;,
+ *      &quot;two&quot;,
+ *      &quot;three&quot;,
+ *      &quot;four&quot;,
+ *      &quot;five&quot;,
+ *      &quot;six&quot;,
+ *      &quot;seven&quot;,
+ *      &quot;eight&quot;,
+ *      &quot;nine&quot;,
+ *      &quot;ten&quot;,
+ *      (char *)(0)
+ *   };
+ *   flag_t flags = 0x006C;
+ *
+ *   strfbits (buffer, sizeof(buffer), operands, operator, flags);
+ *
+ *   we decrement length before starting to reserve room for the NUL
+ *   terminator; not room ... no write; we then add length to buffer
+ *   before to compute the terminator address then subtract it after
+ *   to compute the buffer start; this minimizes indexing and offset
+ *   calculations within the loop;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef STRFBITS_SOURCE
+#define STRFBITS_SOURCE
+
+#include &lt;unistd.h&gt;
+
+#include &quot;../tools/memory.h&quot;
+#include &quot;../tools/flags.h&quot;
+
+size_t strfbits (char buffer [], size_t length, char const * operands [], char const * operator, unsigned flagword)
+
+{
+	char * string = (char *)(buffer);
+	char const *separator = &quot;&quot;;
+	if (length--)
+	{
+		buffer += length;
+		while ((*operands) &amp;&amp; (flagword))
+		{
+			if (flagword &amp; 1)
+			{
+				char const *symbol;
+				for (symbol = separator; (*symbol) &amp;&amp; (string &lt; buffer); symbol++)
+				{
+					*string++ = *symbol;
+				}
+				for (symbol = *operands; (*symbol) &amp;&amp; (string &lt; buffer); symbol++)
+				{
+					*string++ = *symbol;
+				}
+				separator = operator;
+			}
+			flagword &gt;&gt;= 1;
+			operands++;
+		}
+		*string = (char) (0);
+		buffer -= length;
+	}
+	return (string - (char *)(buffer));
+}
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='strdecr.c.html' title=' strdecr.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='strincr.c.html' title=' strincr.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

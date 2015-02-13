@@ -1,0 +1,386 @@
+<chapter id='chapter-scripting'>
+	<title>
+		Scripting
+		</title>
+	<section id="scripting-intro">
+		<title>
+			Introduction
+			</title>
+		<para>
+			The Open Powerline Toolkit comes with a variety of example scripts in the <filename>scripts</filename> folder. They have proven useful to Atheros engineers but may not satisfy your specific needs. This chapter explains how some of these scripts work so that you can modify them to do what you need to do. Most scripts covered in this chapter are intended for a <link linkend='hardware-workstation'>Powerline Workstation</link>.
+			</para>
+		<para>
+			Atheros provides GNU <application>bash</application> scripts as examples and does not guarantee that they are suitable in any or all situations. Furthermore,  Atheros may not always update them to reflect changes to toolkit programs. Toolkit command line syntax may change from one release to the next and so Atheros cannot guarantee that older scripts will work with newer programs. The scrips are small,  simple and well organized. Do not run them until you have read them and understand what they do and how they work.
+			</para>
+		<para>
+			Sample scripts are available in the <filename>scripts</filename> folder. Some extremely useful ones are <ulink url='flash.sh.html'>flash.sh</ulink>, <ulink url='upgrade.sh.html'>upgrade.sh</ulink> and <ulink url="traffic.sh.html">traffic.sh</ulink>. They all reference files <ulink url="hardware.sh.html">hardware.sh</ulink> and <ulink url="firmware.sh.html">firmware.sh</ulink>. 					</para>
+		<para>
+			Although Toolkit programs run under Windows their power is realized through scripts. Scripting requires environmental support for sophisticated symbol substitution and expansion. Most Linux shells are suitable but Microsoft DOS is not. On Windows, consider using installing Cygwin and using their bash shell. Scripting languages <application>Tcl</application> and <application>Python</application> are suitable alternatives. Another alternative is to write small Windows programs that format and execute the DOS shell commands you want.
+			</para>
+		</section>
+	<section id="scripting-basics" >
+		<title>
+			Linux Script Basics 
+			</title>
+		<para>
+			We summarize some scripting rules here for those who may not be familiar with Linux scripting. If you do not understand the rules or the syntax or have questions then you should consult Linux documentation available on the internet.
+			</para>
+		<para>
+			On Linux, all commands typed in a console window are read and interpreted by a command interpreter called a <application>shell</application> program. The are several shell programs available for Linux but we use <application>bash</application> exclusively. If you elect to use a different shell program,  like <application>csh</application>,  then you will probably need to modify our scripts.
+			</para>
+		<para>
+			If you do not set execute permissions you must submit it to the shell for execution. If you set execute permissions on a script file then you can execute it directly by typing the filename. You can set execute permission on Linux with the <application>chmod</application> utility as shown in the example below.
+			</para>
+<programlisting><![CDATA[
+# bash script.sh
+...
+# chmod 0755 script.sh
+# script.sh
+...
+]]></programlisting>
+		<para>
+			The example above show how to run a script file using <application>bash</application> when it does not have execute permissions set. It then shows how to set the execute permissions and run it directly without using <application>bash</application>.
+			</para>
+		<para>
+			It is good practice to insert a bang-path on the first line of a script to ensure is is executed by the correct shell program, regardless of the shell used to open the script. It is possible to open a script with one shell and have it execute under another shell.
+			</para>
+<programlisting><![CDATA[
+#!/bin/bash
+]]></programlisting>
+		<para>
+			The next example shows an example bang-path. The first two characters inform the shell that this file contains scripting commands. The remainder of the bang-path line includes a program path with any options and arguments needed by the program. The shell will invoke that program and pass the rest of the script file to the program as standard input.					
+			</para>
+		<para>
+			Symbols are defined with the symbol name then an equals sign then the definition text. By convention, symbol names use uppercase letters. The definition consists of all characters from the equals sign to the line end. If a definition contains white space, enclose it in quotes so that it is treated as one string when expanded. Symbol scope ends with the defining file unless it is exported. 
+			</para>
+<programlisting><![CDATA[
+NIC=eth0
+MAC=00:B0:52:00:12:34
+MFG="Intergalactic Software Pirates, Inc."
+...
+echo NIC is ${NIC} MAC is ${MAC} MFG is ${MFG}
+]]></programlisting>
+		<para>
+			To reference a symbol, precede the variable name with a dollar sign. Atheros scripts go one step further by enclosing the symbol name is braces. This improves readability and simplifies global search-and-replace operations.
+			</para>
+		</section>
+
+	<section id="scripting-independence" >
+		<title>
+			Host Independence
+			</title>
+		<para>
+			Different hosts may use interfaces for different purposes. For example, one host might use <varname>eth0</varname> for local network communications and <varname>eth1</varname> for powerline communications. Another host might do the opposite. A portability problem is created when scripts use the literal interface names on the command line,  as illustrated below:
+			</para>
+
+<programlisting><![CDATA[
+#!/bin/bash
+int6k -i eth1 -r
+int6k -i eth2 -r
+]]></programlisting>
+
+		<para>
+			The commands shown above will work on a host where <varname>eth1</varname> and <varname>eth2</varname> are used for powerline communications but will not work on another host where <varname>eth1</varname> or <varname>eth2</varname> are configured differently. Editing scripts can become a chore when they contain many interface references. One solution is the consistent use of symbols. For example, the following example provides some degree of portability.
+			</para>
+
+<programlisting><![CDATA[
+#!/bin/bash
+
+NIC1=eth1
+NIC2=eth2
+
+int6k -i ${NIC1} -r
+int6k -i ${NIC2} -r
+]]></programlisting>
+
+		<para>
+			The commands shown above are an improvment because symbols <varname>NIC1</varname> and <varname>NIC2</varname> can be edited once;  however, if you frequently move many scripts from one host to another then each script must be changed. That can also become a chore. A better solution is to define the symbols <varname>NIC1</varname> and <varname>NIC2</varname> once in a single file and then include the definitions in scripts that need them. For example,  if we created file <filename>hardware.sh</filename> like so ...
+			</para>
+
+<programlisting><![CDATA[
+#!/bin/bash 
+# file: scripts/hardware.sh
+
+NIC1=eth1
+NIC2=eth2
+]]></programlisting>
+
+		<para>
+			... then we could include it in one or more other scripts,  like so ...
+			</para>
+
+<programlisting><![CDATA[
+. ../scripts/hardware.sh
+
+int6k -i ${NIC1} -r
+int6k -i ${NIC2} -r
+]]></programlisting>
+
+		<para>
+			On Linux, the <userinput>.</userinput> command causes the named file to be included in-line as though it were part of the including file. This elminates the need to <userinput>export</userinput> symbol definitions. A full discussion of Linux environment variable scope can be found on the internet. The point is that each host should have it's own definitions files stored in a common folder so that other scripts can include them and reference them in a consistent manner.
+			</para>
+		<para>
+			Atheros example scripts include two definitions files: <filename>hardware.sh</filename> and <filename>firmware.sh</filename>. File <filename>hardware.sh</filename> defines hardware related symbols as shown below and file <filename>firmware.sh</filename> defines firmware and configuration filenames. They reside in a <filename>scripts</filename> folder and relative path is used to access them. This has proven to work well in most situations.
+			</para>
+		<example id="scripting-hardware-definitions">
+			<title>
+				hardware.sh
+				</title>
+
+			<para>
+				You should create a <filename>hardware.sh</filename> file in a common folder on each host where you want to execute toolkit scripts. In this way, a script created on one host can be executed on another host without modification.  
+				</para>
+
+<programlisting><![CDATA[
+#!/bin/bash
+# file: scripts/hardware.sh
+
+NIC1=eth1
+NIC2=eth2
+MAC1=00:50:04:A5:D9:5A
+MAC2=00:01:03:2B:03:67
+
+DUT=eth1
+]]></programlisting>
+			<para>
+				File <filename>hardware.sh</filename> assigns specific values to symbols that are used in many of the scripts found in the <filename>scripts</filename> folder. Some Atheros scripts uses all these symbols and some do not. By convention,  <varname>NIC1</varname> and <varname>NIC2</varname> name the Ethernet interfaces connected to a Golden Node and Device Under Test. <varname>MAC1</varname> and <varname>MAC2</varname> are the hardware addresses of <varname>NIC1</varname> and <varname>NIC2</varname>,  respectively. These symbols can be referenced in scripts with references like <varname>${NIC1}</varname> or <varname>${MAC1}</varname>. Of course, you could define other symbols here, as well. See the script under <link linkend="procedure-upgrade-device">Device Upgrade</link> as one example of how file <filename>hardware.sh</filename> can be included in another script.
+				</para>
+			<para>
+				Some scripts, such as <ulink url='flash.sh.html'>flash.sh</ulink> and <ulink url='upgrade.sh.html'>upgrade.sh</ulink>, only operate on one device and do not need to define both <varname>NIC1</varname> and <varname>NIC2</varname>. By convention, these scripts reference interface <varname>DUT</varname> only.
+				</para>
+			</example>
+		<example id="scripting-firmware-definitions">
+			<title>
+				firmware.sh
+				</title>
+			<para>
+				You should create a <filename>firmware.sh</filename> file in a common folder on each host where you want to execute toolkit scripts. In this way, a script created on one host can be executed on another host without modification. 
+				</para>
+<programlisting><![CDATA[
+#!/bin/bash
+# file: scripts/firmware.sh
+
+CFG=sdram16mb.cfg
+CFG=sdram64mb.cfg
+
+PIB=v3.3.0.pib
+NVM=v3.3.0-0-5-A-FINAL.nvm
+NVM=v3.3.0-0-5-B-FINAL.nvm
+]]></programlisting>
+
+			<para>
+				File <filename>firmware.sh</filename> assigns specific filenames to symbols that are used in some of the scripts found in the <filename>scripts</filename> folder. Some Atheros scripts use all of these symbols and some do not. By convention,  <varname>CFG</varname> defines the SDRAM configuration file used to initialize an <productname>INT6000</productname> or <productname>INT6300</productname> device, <varname>PIB</varname> defines the Parameter Information Block file to be used and <varname>NVM</varname> defines the firmware image file to be used.
+				</para>
+			<para>
+				This file is especially useful when working with a specific version of firmware. If there are multiple definitions for a symbol, the last definition is the one that takes effect. At Atheros, this file often contains dozens of definitions and we merely move or copy the ones we want to the end of the file. Our custom scripts then operate on the same configuration, parameter and firmware files until we reorder the definitions in <filename>firmware.sh</filename>. 
+				</para>
+			</example>
+		</section>
+	<section id="scripting-A">
+		<title>
+			Checking Device Connection
+			</title>
+		<para>
+			You may want to confirm that a device is actually connected to an Etherenet interface before attempting to run a script. Program <ulink url='int6kwait.7.html'>int6kwait</ulink> can be used for this purpose. We often print a brief message to alert the operator that there is no connection or the device has no power applied.
+			</para>
+<programlisting><![CDATA[
+int6kwait -xqsi ${NIC1}
+if [ ${?} != 0 ]; then
+        echo "Device is not connected"
+        exit 1
+fi
+]]></programlisting>
+		<para>
+			In the above example,  we invoke <ulink url='int6kwait.7.html'>int6kwait</ulink> to poll the device connected to a specific Ethernet interface (<userinput>-i</userinput>) until the firmware starts (<userinput>-s</userinput>). The program will return a non-zero return value (<userinput>-x</userinput>) if the device does not start within a given period of time. By default, the timeout period is 60 seconds. On return,  we check the return code then print an error message and exit the script on timeout. Symbol <acronym>NIC1</acronym> must be defined earlier in the script,  possibly in <link linkend='scripting-hardware-definitions'>hardware.sh</link>.
+			</para>
+		</section>
+	<section id="scripting-random-identity">
+		<title>
+			Random Device Identity
+			</title>
+		<para>
+			Some Atheros scripts need random <acronym>MAC</acronym>, <acronym>DAK</acronym> or <acronym>NMK</acronym> strings as arguments to Toolkit programs. Program <ulink url='rkey.7.html'>rkey</ulink> can be used for this purpose. We demonstrate one way to define symbols here and demonstrate how to use symbols later on.
+			</para>
+<programlisting><![CDATA[
+DAK=$(rkey secret.key -D)
+NMK=$(rkey secret.key -M)
+]]></programlisting>
+		<para>
+			The first statement,  above,  uses program <ulink url='rkey.7.html'>rkey</ulink> to read file <filename>secret.key</filename> and compute a random <acronym>DAK</acronym> (<userinput>-D</userinput>). The ouput string is assigned to symbol <acronym>DAK</acronym>. The second statement uses program <ulink url='rkey.7.html'>rkey</ulink> to read the file <filename>secret.key</filename> and compute a random <acronym>NMK</acronym> (<userinput>-M</userinput>). The output is assigned to symbol <acronym>NMK</acronym>.
+			</para> 
+		</section>
+	<section id="scripting-actual-identity">
+		<title>
+			Actual Device Identity
+			</title>
+		<para>
+			Some scripts need actual <acronym>MAC</acronym>, <acronym>DAK</acronym> or <acronym>NMK</acronym> strings as arguments to Toolkit programs. Program <ulink url='int6kid.7.html'>int6kid</ulink> can be used for this purpose. We demonstrate one way to define symbols here and demonstrate how to use them later on.
+
+			</para>
+<programlisting><![CDATA[
+DAK=$(int6kid -Di ${NIC1})
+NMK=$(int6kid -Mi ${NIC1})
+]]></programlisting>
+		<para>
+			The first statement,  above,  uses program <ulink url='int6kid.7.html'>int6kid</ulink> to echo the <acronym>DAK</acronym> (<userinput>-D</userinput>) from the device connected to Ethernet interface <varname>NIC1</varname> and assign the output to symbol <acronym>DAK</acronym>. The second statement uses program <ulink url='int6kid.7.html'>int6kid</ulink> to echo the <acronym>NMK</acronym> (<userinput>-M</userinput>) of the device connected to Ethernet interface <varname>NIC1</varname> and assign the output to symbol <acronym>NMK</acronym>.
+			</para> 
+		</section>
+	<section id="scripting-edit-PIB">
+		<title>
+			Editing a PIB
+			</title>
+		<para>
+			Many scripts place a device in a known state by editing a <acronym>PIB</acronym> file and writing it to the device before starting an operation. Program <ulink url='modpib.7.html'>modpib</ulink> can be used for this purpose. It is safe because only certain values can be changed and, where necessary, certain cross-parameter computations are performed automatically.
+			</para>
+<programlisting><![CDATA[
+modpib -C 0 -M next -D ${DAK} -N ${NMK} ${PIB}
+if [ ${?} != 0 ]; then
+        exit 1
+fi
+]]></programlisting>
+		<para>
+			The example above uses <ulink url='modpib.7.html'>modpib</ulink> to set the CCo state (<userinput>-C</userinput>), the MAC address (<userinput>-M</userinput>), the <acronym>DAK</acronym> (<userinput>-D</userinput>) and the <acronym>NMK</acronym> (<userinput>-N</userinput>) in the defined <varname>PIB</varname> file. Argument <constant>0</constant> means <quote>CCo Auto</quote> and  argument <userinput>next</userinput> increments the <acronym>MAC</acronym> address. The <acronym>DAK</acronym> and <acronym>NMK</acronym> were defined earlier in the script. Symbol <acronym>PIB</acronym> must be defined earlier in the script,  possibly in <link linkend='scripting-firmware-definitions'>firmware.sh</link>.
+			</para>
+		<para>
+			Program <ulink url='modpib.7.html'>modpib</ulink> will print an error message and return a non-zero value on error. We test the return value and exit the script on error to avoid subsequent errors. One could, of course, suppress normal output (<userinput>-q</userinput>) and print your own error message using the Linux <userinput>echo</userinput> utility.
+			</para> 
+		</section>
+	<section id="scripting-initialise-device">
+		<title>
+			Initialize a Device
+			</title>
+		<para>
+			Initializing a device involves downloading memory configuration parameters, runtime firmware and runtime parameters into <acronym>SDRAM</acronym> and then starting the runtime firmware to make the device fully functional. Program <ulink url='int6kf.7.html'>int6kf</ulink> can be used for this purpose when the INT6000 <application>Softloader</application> or INT6300 <application>Bootloader</application> is running. Additionally, program <ulink url='int6kf.7.html'>int6kf</ulink> can be used to flash blank or corrupted <acronym>NVRAM</acronym> once runtime firmware has started.
+			</para>
+		<para>
+			Device initialization is only necessary when a device that has no <acronym>NVRAM</acronym> or has corrupted <acronym>NVRAM</acronym> or has a <application>Softloader</application> stored in <acronym>NVRAM</acronym>. It is only possible when either the INT6000 <application>Softloader</application> or INT6300 <application>Bootloader</application> is running. See <link linkend='firmware-bootload'>The Boot Process</link> for detailed information.
+			</para>
+<programlisting><![CDATA[
+int6kf -i ${NIC1} -C ${CFG} -P ${PIB} -N ${NVM}
+if [ ${?} != 0 ]; then
+        exit 1
+fi
+]]></programlisting>
+		<para>
+			The example above uses program <ulink url='int6kf.7.html'>int6kf</ulink> to download an <acronym>SDRAM</acronym> configuration file (<userinput>-C</userinput>), <acronym>PIB</acronym> file (<userinput>-P</userinput>) and <acronym>NVM</acronym> file (<userinput>-N</userinput>) then start firmware execution. Symbols <varname>NIC1</varname>, <acronym>CFG</acronym>, <acronym>PIB</acronym> and <acronym>NVM</acronym> must be defined earlier in the script, perhaps in files <link linkend='scripting-hardware-definitions'>hardware.sh</link> and <link linkend='scripting-firmware-definitions'>firmware.sh</link>.
+			</para>
+		<para>
+			Program <ulink url='int6kf.7.html'>int6kf</ulink> returns a non-zero value on error. We can check the return code and exit the script on error to avoid subsequent errors. We could, of course, suppress normal output (<userinput>-q</userinput>) and print our own error message using the Linux <userinput>echo</userinput> utility.
+			</para>
+		<para>
+			In some cases, we may want to flash a blank or corrupted <acronym>NVRAM</acronym> after the runtime firmware has started. We could use program <ulink url='int6k.7.html'>int6k</ulink> for this purpose but program <ulink url='int6kf.7.html'>int6kf</ulink> can be used, as well. Essentially, it initializes the device (as above) then downloads the <acronym>PIB</acronym> and <acronym>NVM</acronym> files again and flashes them into <acronym>NVRAM</acronym>.
+			</para>
+<programlisting><![CDATA[
+int6kf -i ${NIC1} -C ${CFG} -P ${PIB} -N ${NVM} -FF
+if [ ${?} != 0 ]; then
+        exit 1
+fi
+]]></programlisting>
+		<para>
+			The example above initializes a device with an <acronym>SDRAM</acronym> configuration file (<userinput>-C</userinput>),  <acronym>PIB</acronym> file (<userinput>-P</userinput>) and <acronym>NVM</acronym> file (<userinput>-N</userinput>) as before. Once the runtime firmware has started, the <acronym>PIB</acronym> and <acronym>NVM</acronym> files are downloaded again and flashed (<userinput>-FF</userinput>) into <acronym>NVRAM</acronym>.
+			</para>
+		<para>
+			The force-flash option (<userinput>-FF</userinput>) is needed in this case because runtime firmware that has been written directly to <acronym>SDRAM</acronym> and started by the local host assumes there is no <acronym>NVRAM</acronym> present to flash or there might be <application>Softloader</application> firmware stored in <acronym>NVRAM</acronym> that must be protected from accidental flashing. Runtime firmware that has been read from <acronym>NVRAM</acronym> need not make that assumption. 
+			</para>
+		</section>
+	<section id="scripting-update-device">
+		<title>
+			Update a Device
+			</title>
+		<para>
+			In some cases we want to replace the runtime firmware or runtime parameters stored in NVRAM. Program <ulink url='int6k.7.html'>int6k</ulink> can be used for this purpose when runtime firmware is running.
+			</para>
+		<para>
+			A device update may be necessary when new runtime firmware or new runtime parameters or both must be programmed into <acronym>NVRAM</acronym>. It is only possible when <acronym>NVRAM</acronym> is present and the runtime firmware is running.
+			</para>
+<programlisting><![CDATA[
+int6k -i ${NIC1} -P ${PIB} -N ${NVM} -F
+if [ ${?} != 0 ]; then
+        exit 1
+fi
+]]></programlisting>
+		<para>
+			The example above uses <ulink url='int6k.7.html'>int6k</ulink> to download a <acronym>PIB</acronym> file (<userinput>-P</userinput>) and <acronym>NVM</acronym> file (<userinput>-N</userinput>) then flash <acronym>NVRAM</acronym> (<userinput>-F</userinput>). Symbol <varname>NIC1</varname> must be defined earlier in the script, perhaps in file <link linkend='scripting-hardware-definitions'>hardware.sh</link>. Symbols PIB and NVM must also be defined earlier in the script, perhaps in file <link linkend='scripting-firmware-definitions'>firmware.sh</link>.
+			</para>
+		<para>
+			Program <ulink url='int6k.7.html'>int6k</ulink> returns a non-zero value on error. We can check the return code and exit the script on error to avoid subsequent errors. We could, of course, suppress normal output (<userinput>-q</userinput>) and print our own error message using the Linux <userinput>echo</userinput> utility.
+
+			</para>
+		<para>
+			In some cases, you may want to preserve the current firmware on a device and update only the <acronym>PIB</acronym>. Program <ulink url='int6k.7.html'>int6k</ulink> can be used for this purpose, as well.
+			</para>
+<programlisting><![CDATA[
+int6k -i ${NIC1} -P ${PIB} -C 2
+if [ ${?} != 0 ]; then
+        exit 1
+fi
+]]></programlisting>
+		<para>
+			The example above downloads a <acronym>PIB</acronym> file (<userinput>-P</userinput>) and commits (<userinput>-C</userinput>) the <acronym>PIB</acronym> only to <acronym>NVRAM</acronym>. There are a variety of device flash scenarios and each requires some varation on one of the examples shown here.
+			</para>
+		</section>
+	<section id="scripting-traffic">
+		<title>
+			Generating Powerline Traffic
+			</title>
+		<para>
+			Once two devices associate, you must send data across the powerline in both direction so that each device can compute a TX and RX PHY rate. One method is to use the efsu program that comes with the Toolkit. The program is designed to send free-form Ethernet frames for test and debug purposes but we can also use it to send lots of junk frames in either direction.
+			</para>
+<programlisting><![CDATA[
+FRAME=frame.hex
+COUNT=1000
+efsu -i ${NIC1} -hd ${MAC2} ${FRAME} -l ${COUNT}
+efsu -i ${NIC2} -hd ${MAC1} ${FRAME} -l ${COUNT}
+efsu -i ${NIC1} -hd ${MAC2} ${FRAME} -l ${COUNT}
+efsu -i ${NIC2} -hd ${MAC1} ${FRAME} -l ${COUNT}
+]]></programlisting>
+		<para>
+			The example above uses <ulink url='efsu.7.html'>efsu</ulink> to send the generic Ethernet frame stored in file <filename>frame.hex</filename> between the two Ethernet interfaces <varname>NIC1</varname> and <varname>NIC2</varname> (<userinput>-i</userinput>). In this example, <varname>NIC1</varname> and <varname>NIC2</varname> are both installed in the host. We have <ulink url='efsu.7.html'>efsu</ulink> insert the host source address in the <acronym>OSA</acronym> field (<userinput>-h</userinput>) and destination address in the <acronym>ODA</acronym> field (<userinput>-d</userinput>) of each frame as it is sent. The entire operation sends the same frame <constant>1000</constant> times (<userinput>-l</userinput>) in each direction, twice.
+			</para>
+		<para>
+			Other methods of generating bi-directional traffic can be used but this method is simple, needs nothing other than the toolkit programs and permits easy synchronization. Program <ulink url='efsu.7.html'>efsu</ulink> is designed to send custom Etherenet frames, not measure or control data rates,  but the toolkit includes open source program <ulink url='ttcp.7.html'>ttcp</ulink> which is designed to measure and control data rates.
+			</para>
+		</section>
+	<section id="scripting-phy-rates">
+		<title>
+			Reading PHY Rates
+			</title>
+		<para>
+			Atheros powerline devices automatically compute their average PHY rate which can be read and displayed. Average PHY rate is an indication of performance and can be affected by attenuation and ambient powerline noise. Program <ulink url='int6krate.7.html'>int6krate</ulink> is designed to report the average PHY rate.
+			</para>
+<programlisting><![CDATA[
+int6krate -xni ${NIC2}
+if [ ${?} != 0 ]; then
+        echo "Network did not converge"
+        exit 1
+fi
+]]></programlisting>
+		<para>
+			The example above uses <ulink url='int6krate.7.html'>int6krate</ulink> to read and display the average TX and RX PHY rates for the device connected to Ethernet interface <varname>NIC2</varname>. Option <userinput>-n</userinput> requests PHY rates. Option <userinput>-x</userinput> exits with a status that can be tested in the subsequent <quote>if</quote> statement. Output appears in fix-width columns to facilitate post-processing. Other ways to obtain PHY rates are <quote><userinput>int6k -m</userinput></quote> and <quote><userinput>int6kstat -t</userinput></quote>.
+			</para> 
+		</section>
+	<section id="scripting-interaction">
+		<title>
+			User Interaction
+			</title>
+		<para>
+			Scripts should be designed, whenever possible, to perform correctly without user intervention but there are cases where user intervention is appropriate. The following example illustrates one <application>bash</application> shell method that only requires user input when default values are wrong. 
+			</para>
+<programlisting><![CDATA[
+MAC=00:B0:52:00:BA:BE
+echo -n "MAC Address [${MAC}]: "; read
+if [ ! -z ${REPLY} ]; then
+        MAC="${REPLY}"
+fi
+]]></programlisting>
+		<para>
+			First, we define symbol <acronym>MAC</acronym> with a default value. The Linux <application>echo</application> utility prints a prompt on the console that includes the symbol value. The trailing newline is suppressed (<option>-n</option>) so that text can be typed immediately after the prompt. The <application>echo</application> command is terminated with semicolon (<userinput>;</userinput>) so that another command can be included on the same line. The shell <application>read</application> statement waits for the user to type something and press the <userinput>enter</userinput> key. The shell will assign the input to shell variable <varname>REPLY</varname>. The value of <varname>REPLY</varname> is evaluated and used to redefine the symbol only if the input was a non-zero length string.
+			</para>
+<screen>
+MAC Address [00:B0:52:00:BA:BE]: 
+</screen>
+		<para>
+			The user will see something like this. If the value is correct the user can press the <userinput>enter</userinput> key to generate a zero length string. Otherwise, the user can type the correct value before pressing the <userinput>enter</userinput> key.
+			</para>		
+		</section>
+	</chapter>

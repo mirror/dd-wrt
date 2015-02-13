@@ -1,0 +1,426 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			ampstat.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='amprule.c.html' title=' amprule.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='amptest.c.html' title=' amptest.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*&quot;
+ *
+ *   ampstat.c -
+ *
+ *
+ *   Contributor(s):
+ *      Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*&quot;
+ *   system header files;
+ *--------------------------------------------------------------------*/
+
+#include &lt;unistd.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;limits.h&gt;
+
+/*====================================================================*
+ *   custom header files;
+ *--------------------------------------------------------------------*/
+
+#include &quot;../tools/getoptv.h&quot;
+#include &quot;../tools/putoptv.h&quot;
+#include &quot;../tools/memory.h&quot;
+#include &quot;../tools/number.h&quot;
+#include &quot;../tools/symbol.h&quot;
+#include &quot;../tools/types.h&quot;
+#include &quot;../tools/flags.h&quot;
+#include &quot;../tools/files.h&quot;
+#include &quot;../tools/error.h&quot;
+#include &quot;../plc/plc.h&quot;
+
+/*====================================================================*
+ *   custom source files;
+ *--------------------------------------------------------------------*/
+
+#ifndef MAKEFILE
+#include &quot;../plc/chipset.c&quot;
+#include &quot;../plc/Confirm.c&quot;
+#include &quot;../plc/Display.c&quot;
+#include &quot;../plc/Failure.c&quot;
+#include &quot;../plc/Request.c&quot;
+#include &quot;../plc/ReadMME.c&quot;
+#include &quot;../plc/SendMME.c&quot;
+#include &quot;../plc/Devices.c&quot;
+#include &quot;../plc/LinkStatistics.c&quot;
+#include &quot;../plc/LocalDevices.c&quot;
+#include &quot;../plc/NetworkInformation.c&quot;
+#include &quot;../plc/NetworkInformation1.c&quot;
+#include &quot;../plc/NetworkInformation2.c&quot;
+#include &quot;../plc/PLCSelect.c&quot;
+#include &quot;../plc/Topology.c&quot;
+#include &quot;../plc/Topology1.c&quot;
+#include &quot;../plc/Topology2.c&quot;
+#include &quot;../plc/Platform.c&quot;
+#include &quot;../plc/WaitForStart.c&quot;
+#endif
+
+#ifndef MAKEFILE
+#include &quot;../tools/error.c&quot;
+#include &quot;../tools/getoptv.c&quot;
+#include &quot;../tools/putoptv.c&quot;
+#include &quot;../tools/version.c&quot;
+#include &quot;../tools/uintspec.c&quot;
+#include &quot;../tools/hexdump.c&quot;
+#include &quot;../tools/hexencode.c&quot;
+#include &quot;../tools/hexdecode.c&quot;
+#include &quot;../tools/hexstring.c&quot;
+#include &quot;../tools/todigit.c&quot;
+#include &quot;../tools/synonym.c&quot;
+#include &quot;../tools/typename.c&quot;
+#endif
+
+#ifndef MAKEFILE
+#include &quot;../ether/openchannel.c&quot;
+#include &quot;../ether/closechannel.c&quot;
+#include &quot;../ether/readpacket.c&quot;
+#include &quot;../ether/sendpacket.c&quot;
+#include &quot;../ether/channel.c&quot;
+#endif
+
+#ifndef MAKEFILE
+#include &quot;../mme/EthernetHeader.c&quot;
+#include &quot;../mme/QualcommHeader.c&quot;
+#include &quot;../mme/QualcommHeader1.c&quot;
+#include &quot;../mme/UnwantedMessage.c&quot;
+#include &quot;../mme/MMECode.c&quot;
+#endif
+
+/*====================================================================*
+ *   program constants;
+ *--------------------------------------------------------------------*/
+
+#define AMPSTAT_LOOP 1
+#define AMPSTAT_WAIT 0
+
+/*====================================================================*
+ *   program constants;
+ *--------------------------------------------------------------------*/
+
+static const struct _term_ linkids [] =
+
+{
+	{
+		&quot;CSMA-ALL&quot;,
+		&quot;0xFC&quot;
+	},
+	{
+		&quot;CSMA-CAP0&quot;,
+		&quot;0x00&quot;
+	},
+	{
+		&quot;CSMA-CAP1&quot;,
+		&quot;0x01&quot;
+	},
+	{
+		&quot;CSMA-CAP2&quot;,
+		&quot;0x02&quot;
+	},
+	{
+		&quot;CSMA-CAP3&quot;,
+		&quot;0x03&quot;
+	},
+	{
+		&quot;CSMA-PEER&quot;,
+		&quot;0xF8&quot;
+	},
+};
+
+static const struct _term_ directions [] =
+
+{
+	{
+		&quot;both&quot;,
+		&quot;2&quot;
+	},
+	{
+		&quot;rx&quot;,
+		&quot;1&quot;
+	},
+	{
+		&quot;tx&quot;,
+		&quot;0&quot;
+	}
+};
+
+/*====================================================================*
+ *
+ *   void manager (struct plc * plc);
+ *
+ *   perform operations in logical order despite any order specfied
+ *   on the command line; for example read PIB before writing PIB;
+ *
+ *   operation order is controlled by the order of &quot;if&quot; statements
+ *   shown here; the entire operation sequence can be repeated with
+ *   an optional pause between each iteration;
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+void manager (struct plc * plc, signed count, signed pause)
+
+{
+	while (count--)
+	{
+		if (_anyset (plc-&gt;flags, PLC_ANALYSE))
+		{
+			Topology2 (plc);
+		}
+		if (_anyset (plc-&gt;flags, PLC_NETWORK))
+		{
+			NetworkInformation2 (plc);
+		}
+		if (_anyset (plc-&gt;flags, PLC_LINK_STATS))
+		{
+			LinkStatistics (plc);
+		}
+		sleep (pause);
+	}
+	return;
+}
+
+/*====================================================================*
+ *
+ *   int main (int argc, char const * argv[]);
+ *
+ *   parse command line, populate plc structure and perform selected
+ *   operations; show help summary if asked; see getoptv and putoptv
+ *   to understand command line parsing and help summary display; see
+ *   plc.h for the definition of struct plc;
+ *
+ *   the command line accepts multiple MAC addresses and the program
+ *   performs the specified operations on each address, in turn; the
+ *   address order is significant but the option order is not; the
+ *   default address is a local broadcast that causes all devices on
+ *   the local H1 interface to respond but not those at the remote
+ *   end of the powerline;
+ *
+ *   the default address is 00:B0:52:00:00:01; omitting the address
+ *   will automatically address the local device; some options will
+ *   cancel themselves if this makes no sense;
+ *
+ *   the default interface is eth1 because most people use eth0 as
+ *   their principle network connection; you can specify another
+ *   interface with -i or define environment string PLC to make
+ *   that the default interface and save typing;
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+int main (int argc, char const * argv [])
+
+{
+	extern struct channel channel;
+	static char const * optv [] =
+	{
+		&quot;Cd:ei:l:mp:qs:tvw:&quot;,
+		&quot;device [device] [...] [&gt; stdout]&quot;,
+		&quot;Qualcomm Atheros AR7x00 Link Statistics&quot;,
+
+#if defined (WINPCAP) || defined (LIBPCAP)
+
+		&quot;i n\thost interface is (n) [&quot; LITERAL (CHANNEL_ETHNUMBER) &quot;]&quot;,
+
+#else
+
+		&quot;i s\thost interface is (s) [&quot; LITERAL (CHANNEL_ETHDEVICE) &quot;]&quot;,
+
+#endif
+
+		&quot;C\tclear statistics without reading using VS_LNK_STATS&quot;,
+		&quot;d n\tdirection (0=tx, 1=rx, 2=both) for VS_LNK_STATS&quot;,
+		&quot;e\tredirect stderr to stdout&quot;,
+		&quot;l n\tloop n times [&quot; LITERAL (AMPSTAT_LOOP) &quot;]&quot;,
+		&quot;s n\tLink ID for VS_LNK_STATS (see Programmer's Guide)&quot;,
+		&quot;m\tprint network membership information using VS_NW_INFO&quot;,
+		&quot;p x\tpeer node address for options -s&quot;,
+		&quot;q\tquiet mode&quot;,
+		&quot;t\tprint network topology using VS_NW_INFO with VS_SW_VER&quot;,
+		&quot;v\tverbose mode&quot;,
+		&quot;w n\twait n seconds [&quot; LITERAL (AMPSTAT_WAIT) &quot;]&quot;,
+		(char const *) (0)
+	};
+
+#include &quot;../plc/plc.c&quot;
+
+	signed loop = AMPSTAT_LOOP;
+	signed wait = AMPSTAT_WAIT;
+	signed c;
+	if (getenv (PLCDEVICE))
+	{
+
+#if defined (WINPCAP) || defined (LIBPCAP)
+
+		channel.ifindex = atoi (getenv (PLCDEVICE));
+
+#else
+
+		channel.ifname = strdup (getenv (PLCDEVICE));
+
+#endif
+
+	}
+	optind = 1;
+	plc.pushbutton = 0;
+	while ((c = getoptv (argc, argv, optv)) != -1)
+	{
+		switch (c)
+		{
+		case 'C':
+			_setbits (plc.flags, PLC_LINK_STATS);
+			plc.pushbutton = 1;
+			break;
+		case 'd':
+			_setbits (plc.flags, PLC_LINK_STATS);
+			plc.module = (uint8_t)(uintspec (synonym (optarg, directions, SIZEOF (directions)), 0, UCHAR_MAX));
+			break;
+		case 'e':
+			dup2 (STDOUT_FILENO, STDERR_FILENO);
+			break;
+		case 'i':
+
+#if defined (WINPCAP) || defined (LIBPCAP)
+
+			channel.ifindex = atoi (optarg);
+
+#else
+
+			channel.ifname = optarg;
+
+#endif
+
+			break;
+		case 'm':
+			_setbits (plc.flags, PLC_NETWORK);
+			break;
+		case 'p':
+			_setbits (plc.flags, PLC_LINK_STATS);
+			if (!hexencode (plc.RDA, sizeof (plc.RDA), (char const *)(optarg)))
+			{
+				error (1, errno, PLC_BAD_MAC, optarg);
+			}
+			break;
+		case 'l':
+			loop = (unsigned)(uintspec (optarg, 0, UINT_MAX));
+			break;
+		case 'q':
+			_setbits (channel.flags, CHANNEL_SILENCE);
+			_setbits (plc.flags, PLC_SILENCE);
+			break;
+		case 's':
+			_setbits (plc.flags, PLC_LINK_STATS);
+			plc.action = (uint8_t)(uintspec (synonym (optarg, linkids, SIZEOF (linkids)), 0, UCHAR_MAX));
+			break;
+		case 't':
+			_setbits (plc.flags, PLC_ANALYSE);
+			break;
+		case 'v':
+			_setbits (channel.flags, CHANNEL_VERBOSE);
+			_setbits (plc.flags, PLC_VERBOSE);
+			break;
+		case 'w':
+			wait = (unsigned)(uintspec (optarg, 0, 3600));
+			break;
+		default:
+			break;
+		}
+	}
+	argc -= optind;
+	argv += optind;
+	openchannel (&amp;channel);
+	if (!(plc.message = malloc (sizeof (* plc.message))))
+	{
+		error (1, errno, PLC_NOMEMORY);
+	}
+	if (!argc)
+	{
+		manager (&amp;plc, loop, wait);
+	}
+	while ((argc) &amp;&amp; (* argv))
+	{
+		if (!hexencode (channel.peer, sizeof (channel.peer), synonym (* argv, devices, SIZEOF (devices))))
+		{
+			error (1, errno, PLC_BAD_MAC, * argv);
+		}
+		manager (&amp;plc, loop, wait);
+		argc--;
+		argv++;
+	}
+	free (plc.message);
+	closechannel (&amp;channel);
+	return (0);
+}
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='amprule.c.html' title=' amprule.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='amptest.c.html' title=' amptest.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

@@ -1,0 +1,843 @@
+<chapter id='software'>
+	<title>
+		Software 
+		</title>
+	<section id='software-intro'>
+		<title>
+			Introduction 
+			</title>
+		<para>
+			The <application>Open Powerline Toolkit</application> is designed to support hardware engineers and embedded software developers working on GNU/Linux and Linux-like systems. Debian GNU/Linux is the platform of choice because it is open source and has extensive cross-platform support. The toolkit has been compiled and executed on several platforms but Qualcomm Atheros does not necessarily support the toolkit on those platforms. Qualcomm Atheros has made every effort to enable cross-platform compatibility by conforming to POSIX standards and following good programming practice but there are limitations on any such effort. 
+			</para>
+		</section>
+	<section id='software-security'>
+		<title>
+			Security Considerations
+			</title>
+		<para>
+			Toolkit programs are installed in <filename>/usr/local/bin</filename> with owner <constant>root</constant> and group <constant>root</constant> (<command>chown root:root</command>) and with read and execute permissions for owner, group and others (<command>chmod 0555</command>). This lets anyone execute these programs even though they are owned by user <constant>root</constant>.
+			</para>
+		<para>
+			Additionally,  programs that send raw Ethernet frames are installed with seteuid owner (<command>chmod 4555</command>) so that they will execute with <constant>root</constant> user privileges, regardless of the user executing them. This lets any user send raw Ethernet frames but it also presents a security risk on the host computer. For example, program <application>int6k</application> is intended to read and write <filename>.nvm</filename> and <filename>.pib</filename> files but a malicious user could use it to overwrite other files normally protected by standard file permissions. 
+			</para>
+		<para>
+			You can change the default file permissions by changing the <command>-m 4555</command> option on the <command>install</command> command in various <filename>Makefiles</filename>. Be aware that doing so will restrict program access to the the <constant>root</constant> user. 
+			</para>
+		</section>
+	<section id='software-platform-options'>
+		<title>
+			Platform Options 
+			</title>
+		<para>
+			Qualcomm Atheros makes no claim that the <application>Open Powerline Toolkit</application> will compile  and link in all environments without generating warnings or errors. Different compilers, and compiler versions, treat certain conditions differently and different distributions include different header files or define standard constants and macros differently. Developers should expect to make some source code and makefile modifications to match their environment. 
+			</para>
+		<para>
+			The principle consideration is support for raw Ethernet frames. Other considerations include POSIX compliance,  system header file locations,  compiler version and library support. This section discusses some of these considerations.
+			</para>
+			<section id="platform-linux" >
+				<title>
+					<application>GNU/Linux</application> 
+					</title>
+				<para>
+					The toolkit will compile and execute on <application>GNU/Linux</application> systems without modification by using standard Linux header files and native Linux libraries. Raw socket support is native to the Linux Kernel. This is the preferred environment due to cost, networking speed and ease of access to Layer 2 networking.
+					</para>
+				<para>
+					Qualcomm Atheros has cross-compiled and executed versions of the toolkit on <productname>MontaVista</productname> and <productname>AMiLDA</productname> Linux both for <productname>MIPSEL</productname> processors. Most toolkit makefiles have symbolic hooks for cross-compilers but Qualcomm Atheros does not support cross-compilation efforts on any platform. 
+					</para>
+				</section>
+			<section id="platform-linux-libpcap" >
+				<title>
+					GNU/Linux with Libpcap 
+					</title>
+				<para>
+					The toolkit can compile and will execute on <application>GNU/Linux</application> systems having the <application>libpcap</application> development package and runtime libraries installed; however, this feature is disabled by default because it is not needed on Linux and offers no benefits over native Linux sockets.
+					</para>
+				</section>
+			<section id="platform-linux-bpf">
+				<title>
+					GNU/Linux with BPF
+					</title>
+				<para>
+					The toolkit should compile and execute on <application>GNU/Linux</application> systems having <application>BPF</application> compiled into the kernel but modifications would be needed to toolkit source code. This configuration has not been tested but the source code is present to support it. Consult Qualcomm Atheros if this option is of interest to you.
+					</para>
+ 				</section>
+ 			<section id="platform-osx-bpf">
+				<title>
+					<productname>Mac OS X</productname> with BPF				
+					</title>
+				<para>
+					The toolkit will compile and execute on <application>Mac OS X</application> without modification by using native <acronym>BPF</acronym> support compiled into the <application>Darwin</application> kernel. Compilation is clean on <application>Leopard</application> and should be fairly clean on <application>Tiger</application>.
+					</para>
+				<para>
+					You may observe compiler warnings concerning the <constant>size_t</constant> data type and <constant>print</constant> statements. These warning occur because <application>Mac OS X</application> defined the <constant>size_t</constant> data type as a 64-bit integer while most other systems define it as a 32-bit integer. Ignore the warnings. We will eventually eliminate them all.
+					</para>
+				<para>
+					You may observe a compiler warning concerning the definition of intrinsic function <constant>snprinf</constant>. We are not sure what causes this warning but it will be corrected eventually.
+					</para>
+				</section>
+			<section id="platform-windows-winpcap" >
+				<title>
+					<productname>Windows XP</productname> with Winpcap 
+					</title>
+				<para>
+					The toolkit will compile and execute on Microsoft <productname>Windows XP</productname> having <application>WinPcap 4.0.1</application> runtime libraries installed. To assist windows developers, the toolkit includes a Microsoft <productname>Visual Studio .NET 2003</productname> solution file plus required <application>WinPcap 4.0.1</application> header files and libraries. The resulting programs should execute on any Microsoft <productname>Windows</productname> computer having <application>WinPcap 4.0.1</application> runtime libraries installed. Qualcomm Atheros does not support the toolkit under any Microsoft <productname>Windows</productname> operating system at this time. 
+					</para>
+				<para>
+					Recent versions of the toolkit include self-extracting file <filename>.\VisualStudioNET\WinPcap4_0_1.exe</filename> that installs <application>WinPcap 4.0.1</application> libraries on your system in cases where you have another version installed. If this creates a conflict the you must resolve it to satisfy your system requirements.
+					</para>
+				<para>
+					This is not the preferred Toolkit environment due to cost, networking overhead, difficulty accessing Layer network support and lack of a powerful native scripting language. Qualcomm Atheros has not implemented all Toolkit programs on Windows for technical reasons. 
+					</para>
+				</section>
+			</section>
+		<section id='software-makefiles'>
+			<title>
+				GNU Makefiles on Linux
+				</title>
+			<para>
+				The toolkit includes recursive GNU makefiles for Linux. The <filename>Makefile</filename> in the root folder calls Makefiles in subordinate folders. Makefiles in subordinate folders can be run independently to produce individual toolkit components. Developers can control which components are compiled and installed by editing the <constant>FOLDERS</constant> symbol in the main Makefile.
+				</para>
+			<para>
+				Component Makefiles have a standard format that includes the following targets: 
+				</para>
+			<variablelist>
+				<varlistentry>
+					<term>
+						compile
+						</term>
+					<listitem>
+						<para>
+						Compiles source code files prior to installation. Intermmediate files and target files are created in the same folder as the Makefile. This is the default target. That means that typing <command>make</command> or <command>make compile</command> have the same result.
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry>
+					<term>
+						library
+						</term>
+					<listitem>
+						<para>
+						Creates any special folders that are needed for installation. This target is built by the <command>install</command> target but it can be built independently.
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry>
+					<term>
+						scripts
+						</term>
+					<listitem>
+						<para>
+						Installs scripts required for proper toolkit operation. This target must be built explicitly to prevent accidental loss of changes made to existing scripts. This target may be built at any time, before or after the <command>install</command> target.
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry>
+					<term>
+						manuals
+						</term>
+					<listitem>
+						<para>
+						Creates manuals, documents or html pages. Documentation files are not automatically installed by any target. Installation is left to the user.
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry>
+					<term>
+						install
+						</term>
+					<listitem>
+						<para>
+						Installs executable files in folder <filename>/usr/local/bin</filename>. This target automatically builds the <command>compile</command> target before installation. This means that <command>make install</command> will compile and install in one step.
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry>
+					<term>
+						uninstall
+						</term>
+					<listitem>
+						<para>
+						Removes installed components. This target does nothing for Makefiles that have <command>install</command> targets defined.
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry>
+					<term>
+						clean
+						</term>
+					<listitem>
+						<para>
+						Removes intermmediate and temporary files. Temporary files are defined by variable <varname>TRASH</varname> at the start of each Makefile.
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry>
+					<term>
+						fresh
+						</term>
+					<listitem>
+						<para>
+						Removes intermmediate and temporary then re-compiles local targets. It is normally equivalent to <command>make clean </command> followed by <command>make compile</command>.
+							</para>
+						</listitem>
+					</varlistentry>
+				</variablelist>
+			<para>
+ 				Developers wanting to compile the toolkit under <productname>Windows</productname> should use <productname>Visual Studio .NET</productname> solution files instead of makefiles.
+				</para>
+			<para>
+				Developers wanting to compile the toolkit under <application>OpenBSD</application> must make changes to accommodate variations in <application>make</application> program syntax. 
+				</para>
+			</section>
+		<section id="software-stand-alone">
+			<title>
+				Stand-alone Compiling on GNU/Linux
+				</title>
+			<para>
+				You do not need makefiles to build toolkit programs because source files explicitly include all required components using <command>include</command> statement blocks like that shown below. You will see similar blocks near the top of most programs. 
+				</para>
+			<example>
+				<title>
+					The <constant>MAKEFILE</constant> constant
+					</title>
+<programlisting>
+#ifndef MAKEFILE 
+#include "../tools/getoptv.c" 
+#include "../tools/putoptv.c" 
+#include "../tools/version.c" 
+... 
+#endif 
+</programlisting>
+				</example>
+			<para>
+				This mechanism has several advantages. First, the preprocessor <userinput>include</userinput> statements form a complete inventory of required files. Secondly, the relative pathnames help developers locate needed source files. Third,  the complete program can be compiled with one <command>gcc</command> command, like the one shown below. This allows program compilation in environments where the <application>GNU make</application> program or the Atheros <filename>Makefiles</filename> are not available.
+				</para>
+			<example>
+				<title>
+					Stand-alone Compiling on GNU/Linux
+					</title>
+<screen><![CDATA[
+# gcc -o program program.c 
+]]></screen>
+			</example>
+			<para>
+				Most toolkit makefiles define the preprocessor constant <constant>MAKEFILE</constant> as a compiler option using <userinput>CFLAGS= ... -DMAKEFILE ...</userinput>. When this constant is defined, the compiler will not include components inside an include block like that shown above and so the <filename>Makefile</filename> is responsible for compiling and linking all components. If the constant is not defined, because no <filename>Makefile</filename> was used, the compiler will merely include everything needed.
+				</para>
+			</section>
+		<section id="software-cross-compile">
+			<title>
+				Cross-Compiling on GNU/Linux
+				</title>
+			<para>
+				Makefiles are setup for cross-compilation using custom toolchains. File <filename>make.def</filename>, in the main toolkit folder, defines cross-comilation symbols referenced in lower-level makefiles. Lower-level makefiles include <filename>make.def</filename> before building their targets. The following is an example <filename>make.def</filename> file used when cross-compiling for the ADM5120 MIPSEL-based gateway.
+				</para>
+			<example>
+				<title>
+					Cross-compiling with make.def
+					</title>
+<programlisting>
+# file: make.def
+
+# ====================================================================
+# Edimax Hardware;
+# --------------------------------------------------------------------
+
+PLATFORM=-D_ADM5120_
+MODEL=-D_6104KP_
+ENDIAN=-D_LITTLE_ENDIAN_
+GATEWAY=y
+
+# ====================================================================
+# AMiLDA Software; uncomment these lines when cross-compiling;
+# --------------------------------------------------------------------
+
+# CROSS=/export/tools/mipsel-linux-uclibc/bin/mipsel-uclibc-
+# CROSS_LINUX=/export/tools/bin/mipsel-linux-
+
+# ====================================================================
+# toolchain;
+# --------------------------------------------------------------------
+
+CC=$(CROSS)gcc
+STRIP=$(CROSS)strip
+LD=$(CROSS)ld
+AR=$(CROSS)ar
+RANLIB=$(CROSS)ranlib
+CAS=$(CROSS)gcc -c
+CPP=$(CROSS)gcc -E
+
+# ====================================================================
+# folders;
+# --------------------------------------------------------------------
+
+BIN=/usr/local/bin
+MAN=/usr/share/man/man7
+WWW=/home/www
+DOC=/home/www/software/plc-utils/
+
+# ====================================================================
+# permissions;
+# --------------------------------------------------------------------
+
+OWNER=0
+GROUP=0
+
+</programlisting>
+				</example>
+			<para>
+				Developers are encouraged to make changes in this file rather than adding additional variables to the lower-level makefiles. For example, you can edit variable <varname>BIN</varname> to install toolkit programs in some location other than <filename>/usr/local/bin</filename> or variable <varname>WWW</varname> to install <acronym>HTML</acronym> documentation on your local website.
+				</para>
+			</section>
+		<section id="software-visualstudio">
+			<title>
+				Compilation with Visual Studio .NET 2003
+				</title>
+			<para>
+				To build the <application>Open Powerline Toolkit</application> on Windows XP, you must have access to a Windows computer with  <application>Visual Studio .NET 2003</application> and <application>WinPcap</application> runtime libraries installed. <application>WinPcap</application> is an open source version of the packet capture library, <application>libpcap</application>, widely used on <application>Linux</application> and <application>OpenBSD</application> systems. It is readily available on the Internet. Installation of these components is beyond the scope of this document. 
+				</para>
+			<para>
+				The Windows and Linux versions of the <application>Open Powerline Toolkit</application> use the same code base but the Windows version requires a Microsoft solution file that includes special compiler settings and specific POSIX header files. The solution file and header files are included in the same archive as Linux version.
+				</para>
+			<example>
+				<title>
+					Microsoft Visual Studio .NET 2003
+					</title>
+			<mediaobject>
+				<imageobject>
+					<imagedata fileref='VisualStudioNET.png' format='PNG' align="center" />
+					</imageobject>
+				</mediaobject>
+				</example>
+			<para>
+				Use an application like <application>WinZip</application> to extract archived files into a build folder of your choice. Use <application>Windows Explorer</application> to locate solution file <filename>.\VisualStudioNET\plc-utils.sln</filename> under the toolkit root folder. Double-click the file to open it with <application>Visual Studio .NET</application>. In <application>Visual Studio .NET</application>, open the <option>Solution Explorer</option> window and observe a display similar to that shown above. 
+				</para>
+			<para>
+				Figure 1 illustrates a <application>Visual Studio .NET</application> window with the <option>Solution Explorer</option> pane exposed. In the <constant>Solution Explorer</constant> window, <command>right-click</command> the <constant>plc-utils</constant> solution and select the <option>Rebuild</option> menu option. Compiliation should begin. Watch for comilation errors.
+				</para>
+			<para>	
+				On successful compilation of all projects in this solution, you should find executable programs in the <filename>Release</filename> folder under each project folder. If not then look in the <filename>Debug</filename> folder,  instead. You can now open a console window, change to each <filename>Release</filename> or <filename>Debug</filename> folder in turn and run the programs located there. Instead, we recommend that you create a <application>Windows Installer</application> package by <command>right-clicking</command> on the <constant>Install</constant> project in the <constant>Solution Explorer</constant> window and selecting the <option>Build</option> menu option. Compilation should resume.
+				</para>
+			<para>
+				On successful completion of the install project build, you should find the <application>Windows Installer</application> file <filename>plc-utils.msi</filename> in the <filename>VisualStudioNET</filename> folder above the <application>install</application> project folder. Double-clicking on this file will start the <application>Windows Installer</application> program.
+				</para>
+			<para>
+				To distribute the toolkit package to other Windows computers,  copy the <application>Windows Installer</application> file to a public network share or some type of portable media.
+				</para>
+
+			</section>
+		<section id='software-solution-files'>
+			<title>
+					Microsoft Solution Files
+					</title>
+			<para>
+				The Atheros <application>Open Powerline Toolkit</application> includes a <productname>Visual Studio .NET</productname> solution file, <filename>./VisualStudioNET/plc-utils.sln</filename>,  that will build the toolkit on <application>Windows XP SP2</application> from the Linux code base. The following information may be helpful to developers wanting to modify or extend the solution or port it to another version of Microsoft <application>Visual Studio</application>:
+				</para>
+			<itemizedlist>
+				<listitem>
+					<para>
+						All projects are WIN32 Console Projects.
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+						All projects have pre-compiled headers suppressed.
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+						All projects should globally define preprocessor constant <constant>MAKEFILE</constant> to prevent proliferation of "already defined" link errors. See <link linkend="software-stand-alone">Stand-alone Compiling on GNU/Linux</link> for an explanation of this constant.
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+						All projects search folder <filename>..\include</filename> for <ulink url="stdint.h.html">stdint.h</ulink> and <ulink url="unistd.h.html">unistd.h</ulink> because Microsoft does not provide them. These header files are customized or abbreviated versions of their POSIX counterparts and should be used when originals are available.
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+						Projects that perform raw Ethernet I/O should globally define preprocessor constant <constant>WINPCAP</constant> to enable appropriate code segments. Preprocessor error statements should (but may not) alert you if <constant>WINPCAP</constant> is not defined on <productname>Windows</productname> platforms.						</para>
+					</listitem>
+				<listitem>
+					<para>
+						Projects that perform raw Ethernet I/O search folder <filename>..\include</filename> for <application>WinPcap</application> header files. These files are taken from the <application>WinPcap</application> development package and may require periodic updates.  Header files <ulink url="pcap.h.html">pcap.h</ulink>, <ulink url='pcap-stdinc.h.html'>pca-stdinc.h</ulink>, <ulink url='pcap-bpf.h.html'>pcap-bpf.h</ulink>,  <ulink url='ipv6_misc.h.html'>ipv6_misc.h</ulink> and <ulink url='bittypes.h.html'>bittypes.h</ulink> belong in folder <filename>VisualStudioNET\include</filename>. Other header files belong in folder <filename>VisualStudioNET\include\pcap</filename>.
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+						Projects that perform raw Ethernet I/O should include folder <filename>..\library</filename> for core <application>WinPcap</application> libraries.
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+						Projects that perform raw Ethernet I/O should link to libraries <filename>ws2_32.lib</filename>,  <filename>packet.lib</filename> and <filename>wpcap.lib</filename>. The first library is the Microsoft <application>Winsock2</application> library. The others are core <application>WinPcap</application> libraries.
+						</para>
+					</listitem>
+				</itemizedlist>
+			</section>
+		<section id='software-header-files'>
+			<title>
+				Header Files 
+				</title>
+			<para>
+				Atheros <application>Open Powerline Toolkit</application> programs reference POSIX functions and constants where possible. Specifically, they make wide use of the data types <constant>uint8_t</constant>, <constant>uint16_t</constant> and <constant>uint32_t</constant> which are defined in file <filename>stdint.h</filename>. Microsoft <productname>Visual C</productname> and <productname>.NET</productname> environments do not include this file. Consequently, Atheros provides an <ulink url='stdint.h.html'>alternative</ulink> in folder <filename>../Windows/include</filename>. This file is open source and was designed to be compatible with the Microsoft development environments; however, you may occassionally experience warnings about the "benign redefinition" for some of these data types.
+				</para>
+			<para>
+				Where possible, this toolkit includes <productname>OpenBSD</productname> network constants because the OpenBSD project pioneered many of the common network protocols and applications used today. Some systems do not include all <productname>OpenBSD</productname> network header files or do not define all <productname>OpenBSD</productname> network constants. Specifically, Microsoft systems do not provide file <filename>netinet/if_ether.h</filename> and so an <ulink url='if_ether.h.html'>alternative</ulink> is included in folder <filename>../Windows/include/netinet</filename> and <productname>Windows</productname> applications should include it.
+				</para>
+			<para>
+				When the <command>gcc -std=iso9899:1999</command> option is enabled, some <productname>OpenBSD</productname> header files found on <application>GNU/Linux</application> systems will exclude required constant definitions because they do not conform to that standard. Atheros is investigating the best way to address this problem.
+				</para>
+			<para>
+				On some systems,  such as <productname>OpenBSD</productname>, <productname>FreeBSD</productname> and <productname>Mac OS X</productname>, header files must be included in specific order to avoid compilation errors. We have done our best to deal with this problem. Visit the <ulink url="http://www.gnu.org/software/hello/manual/autoconf/Header-Portability.html">GNU Autocnf Project</ulink> for more information about this.
+				</para>
+			</section>
+		<section id="software-compiler-constants">
+			<title>
+				Compiler Constants
+				</title>
+			<section id="software-constants-platform">
+				<title>
+					Platform Constants
+					</title>
+				<para>
+					Platform constants conditionaly compile source code blocks based on the hardware architecture and host operating system. Hardware architecture constants are normally defined in system header files. Operating system constants are often compiler intrinsic or defined in system header files. 
+					</para>
+				<variablelist>
+					<varlistentry>
+						<term>
+							<constant>__APPLE__</constant>
+							</term>
+						<listitem>
+							<para>
+							A intrinsic compiler constant indicating <productname>Mac OS X</productname> operating system support.
+								</para>
+							</listitem>
+						</varlistentry>
+					<varlistentry>
+						<term>
+							<constant>__BYTE_ORDER</constant>
+							</term>
+						<listitem>
+							<para>
+							A standard constant indicating big or little endian host architecture. Some systems may not define this constant and so an alternative should be used.
+								</para>
+							</listitem>					
+						</varlistentry>
+					<varlistentry>
+						<term>
+							<constant>LIBPCAP</constant>
+							</term>
+						<listitem>
+							<para>
+							An Atheros constant, that must be manually defined in your makefile or solution file, to indicate that the target host will have <application>LibPcap</application> support. It is not used by the toolkit,  at this time,  and so the associated code has not been tested.				
+								</para>
+							</listitem>
+						</varlistentry>
+					<varlistentry>
+						<term>
+							<constant>__linux__</constant>
+							</term>
+						<listitem>
+							<para>
+							A standard constant indicating <productname>GNU/Linux</productname> kernel support. It is automatically defined on <productname>GNU/Linux</productname> systems.
+								</para>
+							</listitem>					
+						</varlistentry>
+					<varlistentry>
+						<term>
+							<constant>__OpenBSD__</constant>
+							</term>
+						<listitem>
+							<para>
+							A standard constant indicating <productname>OpenBSD</productname> kernel support. It is automatically define on <productname>OpenBSD</productname> systems. It is not used by the toolkit,  at this time, and so the associated code has not been extensively tested.
+								</para>
+							</listitem>
+						</varlistentry>
+					<varlistentry>
+						<term>
+							<constant>WIN32</constant>
+							</term>
+						<listitem>
+							<para>
+							A standard constant indicating Microsoft <productname>Windows</productname> support. It is automatically defined in Microsoft <productname>Windows</productname> environments.  					
+								</para>
+							</listitem>
+						</varlistentry>
+					<varlistentry>
+						<term>
+							<constant>WINPCAP</constant>
+							</term>
+						<listitem>
+							<para>
+							An Atheros constant, that must be manually defined in your makefile or solution file, to indicate that the target host will have <application>WinPcap</application> support. The toolkit only defines this constant in Windows Microsoft project files for programs that perform raw Ethernet I/O.  					
+								</para>
+							</listitem>
+						</varlistentry>
+					</variablelist>
+				</section>
+		<section id="software-constants-ethernet">
+				<title>
+					Ethernet Constants
+					</title>
+				<para>
+					The toolkit attempts to use existing definitions for Ethernet related constants where possible. This has been problematic due to inconsistencies in the way different systems structure their header files. Most of the following definitions already exist on <productname>Linux</productname>,  <productname>OpenBSD</productname> and <productname>OS X</productname> but there are still some differences between <productname>Linux</productname> distributions and many constants are undefined on <productname>Windows</productname>. 
+					</para>
+				<para>
+					The <productname>Windows</productname> version of the toolkit includes an abbreviated <filename>net/ethernet.h</filename> that provides constant definitions mentioned in this section.
+					</para>
+				<variablelist>
+					<varlistentry>
+						<term>
+							ETHER_ADDR_LEN
+							</term>
+						<listitem>
+							<para>
+							The length of an Ethernet hardware address in bytes. The value is <constant>6</constant> bytes. On <productname>Linux</productname> and <productname>OS X</productname>, this is defined in <filename>net/ethernet.h</filename>.
+								</para>
+							</listitem>
+						</varlistentry>
+					<varlistentry>
+						<term>
+							ETHER_CRC_LEN
+							</term>
+						<listitem>
+							<para>
+							The length of an Ethernet frame <acronym>FCS</acronym> trailer. The value is <constant>4</constant> bytes. On <productname>Linux</productname> and <productname>OS X</productname>, this is defined in <filename>net/ethernet.h</filename>. Atheros also includes a conditional definition in <filename>int6k/int6k.h</filename> because some <productname>Linux</productname> system do not define it anywhere.
+								</para>
+							</listitem>
+						</varlistentry>
+					<varlistentry>
+						<term>
+							ETHER_HDR_LEN
+							</term>
+						<listitem>
+							<para>
+							The length of an Ethernet frame header including the source address,  destination address and type/length field. The value is <constant>14</constant> bytes or <constant>ETHER_ADDR_LEN</constant> + <constant>ETHER_ADDR_LEN</constant> + <constant>ETHER_TYPE_LEN</constant>. On <productname>Linux</productname> and <productname>OS X</productname>, this is defined in <filename>net/ethernet.h</filename>.
+								</para>
+							</listitem>
+						</varlistentry>
+					<varlistentry>
+						<term>
+							ETHER_MAX_LEN
+							</term>
+						<listitem>
+							<para>
+							The maximum length of an Ethernet frame in bytes. The value is <constant>1518</constant> bytes of <constant>ETHER_HDR_LEN</constant> + <constant>ETHERMTU</constant> + <constant>ETHER_CRC_LEN</constant>. On <productname>Linux</productname> and <productname>OS X</productname>,  this is defined in <filename>net/ethernet.h</filename>.
+								</para>
+							</listitem>
+						</varlistentry>
+					<varlistentry>
+						<term>
+							ETHER_MIN_LEN
+							</term>
+						<listitem>
+							<para>
+							The minimum length of an Ethernet frame in bytes. The value is <constant>64</constant> bytes. On <productname>Linux</productname> and <productname>OS X</productname> this is defined in <filename>net/ethernet.h</filename>
+								</para>
+							</listitem>
+						</varlistentry>
+					<varlistentry>
+						<term>
+							ETHER_TYPE_LEN
+							</term>
+						<listitem>
+							<para>
+							The length of Ethernet type/length,  or ethertype,  field in bytes. The value is <constant>2</constant>. On <productname>Linux</productname> and <productname>OS X</productname>, it is defined in <filename>net/ethernet.h</filename>.
+								</para>
+							</listitem>
+						</varlistentry>
+					<varlistentry>
+						<term>
+							ETHERMTU
+							</term>
+						<listitem>
+							<para>
+							The maximum transfer unit (ie; data handling capacity) for an Ethernet frame in bytes. The value is <constant>1500</constant> bytes. On <productname>Linux</productname> and <productname>OS X</productname>,  this is defined in <filename>net/ethernet.h</filename>
+								</para>
+							</listitem>
+						</varlistentry>
+					</variablelist>
+				</section>
+			</section>
+		<section id="software-packet-capture">
+			<title>
+				<application>LibPcap</application>,  <application>WinPcap</application> and <application>BPF</application>
+				</title>
+			<para>
+				<application>LibPcap</application> is an open source Ethernet packet capture library that is widely used. It provides core functionality for the <application>Wireshark</application> packet sniffer, formerly known as <application>Ethereal</application>.
+<application>LibPcap</application> libraries are available for Linux and OpenBSD. On Linux and OpenBSD you must link applications to  <filename>libpcap.a</filename> and <filename>libwpcap.a</filename>. The toolkit does not use either of these libraries on Linux because they are not needed there. 
+				</para>
+			<para>
+				<application>WinPcap</application> is an open source version of <application>LibPcap</application> written for Microsoft <productname>Windows</productname>. The <application>WinPcap</application> libraries let Windows applications send and receive raw packets. On <productname>Windows</productname> you must link applications to <filename>Packet.lib</filename> and <filename>wpcap.lib</filename>.
+				</para>
+			<para>
+				In principle, the <application>LibPcap</application> and <application>WinPcap</application> library implementations should function identically but they do not;  however,  they are similar enough to provide a useful degree of platform independence. Defining preprocessor constants <constant>LIBPCAP</constant> or <constant>WINPCAP</constant> when compiling the toolkit will enable the corresponding source code. This can be done by adding "-DLIBPCAP" or "-DWINPCAP" to variable <varname>LFLAGS</varname> in file <filename>Makefile</filename> in folders int6k, int6k2, efsu and hpav. Constant <constant>WINPCAP</constant> need only be defined this way when compiling the toolkit using <productname>cygwin</productname> or <productname>mingw</productname> environments. Do not define both constants <constant>LIBPCAP</constant> and <constant>WINPCAP</constant> at the same time or compiler errors will occur. 
+				</para>
+			<para>
+				Berkeley Packet Filters (<acronym>BPF</acronym>) is an open source Ethernet packet capture mechanism available on many <productname>UNIX</productname>-like systems. Native <acronym>BPF</acronym> is supported on some systems but must be explicitly compiled into the kernel on other systems. <productname>Linux</productname> systems normally do not support <acronym>BPF</acronym> by default but <productname>Mac OS X</productname> does and so we automatically use it whenever compiler constant <constant>__APPLE__</constant> is defined. In principle, one could compile a custom <productname>Linux</productname> kernel with <acronym>BPF</acronym> enabled.  
+				</para>
+			</section>
+		<section id='software-struct-packing'>
+			<title>
+				Structure Packing 
+				</title>
+			<para>Programs in this toolkit make extensive use of packed data structures to simplify source code and guarantee reliability; however, this creates portability issues because different compilers implement structure packing in different ways. Three common structure packing mechanisms are:</para>
+		<variablelist>
+			<varlistentry>
+				<term>
+					_packed 
+					</term>
+				<listitem>
+					<para>
+					The __packed keyword is not part of any C or C++ standard but it is recognized by some compilers, such as the ARM C/C++ and OpenBSD C compiler. This keyword only affects the data structure that it prefaces and it is an ideal way to selectively pack structures. It can be easily defined and undefined using a preprocessor macro. Atheros has elected to insert this keyword wherever it might be appropriate. The ARM C compilers accept this keyword.
+						</para>
+					<example>
+						<title>
+							Packing Structures with keyword <quote>__packed</quote> 
+							</title>
+<programlisting>
+typedef struct __packed header_eth 
+{ 
+	uint8_t source [ETHER_ADDR_LEN]; 
+	uint8_t target [ETHER_ADDR_LEN]; 
+	uint16_t protocol; 
+} 
+header_eth; 
+</programlisting>
+					</example>
+				</listitem>
+			</varlistentry>
+			<varlistentry>
+				<term>
+					__attribute__ ((packed)) 
+					</term>
+				<listitem>
+					<para>
+					Attributes are not part of any C or C++ standard but they are recognized by the gcc and Sun Microsystems C compiler. Attributes only affect structures and functions that reference them in their declaration. This is convenient because we can use a preprocessor macro to define the keyword <varname>__packed</varname>, mentioned above, to be <constant>__attribute__ ((packed))</constant>. Atheros includes this definition in <filename>tools/types.h</filename> and OpenBSD does this in their system header files.
+						</para>
+					<example>
+						<title>
+							Packing Structures with Attribute <quote>packed</quote>
+							</title>
+<programlisting>
+typedef struct __attribute__ ((packed)) header_eth 
+{ 
+	uint8_t source [ETHER_ADDR_LEN]; 
+	uint8_t target [ETHER_ADDR_LEN]; 
+	uint16_t protocol; 
+} 
+header_eth; 
+</programlisting>
+					</example>
+				</listitem>
+			</varlistentry>
+			<varlistentry>
+				<term>
+					#pragrma pack 
+					</term>
+				<listitem>
+					<para>
+					Pragmas are part of most C and C++ language standards but some compilers do not recognize or implement the <varname>pack</varname> pragma. In addition, different compilers implement it in different ways. The <varname>pack</varname> pragma affects all data structures up the next <varname>pack</varname> pragma or end of compile unit. Most pragma implementations accept the push and pop option for pragma nesting. Some pragma pack implementations accept no arguments, most permit either one or two arguments while others allow three arguments. OpenBSD does not recognize this pragma and generates warnings in all cases. Aside from all that, the pack pragma is the most widely supported method for declaring packed structures.
+						</para>
+					<example>
+						<title>
+							Packing Structures with the Pragma <quote>pack</quote>
+							</title>
+<programlisting>
+#pragma pack (push, 1) 
+struct header_eth 
+{ 
+	uint8_t source [ETHER_ADDR_LEN]; 
+	uint8_t target [ETHER_ADDR_LEN]; 
+	uint16_t protocol; 
+} 
+header_eth; 
+#pragma pack (pop)
+</programlisting>
+					</example>
+				</listitem>
+			</varlistentry>
+			<varlistentry>
+				<term>
+					The Atheros Way 
+					</term>
+				<listitem>
+					<para>
+					Toolkit programs declares packed structures using all three methods, as shown below.
+						</para>
+					<example>
+						<title>
+							Packing Structures the Atheros Way 
+							</title>
+<programlisting><![CDATA[
+#ifndef __packed 
+#ifdef __GNUC__ 
+#define __packed __attribute__ ((packed)) 
+#else 
+#define __packed 
+#endif 
+#endif 
+
+#ifndef __GNUC__
+#pragma pack (push, 1)
+#endif
+ 
+struct __packed header_eth 
+{ 
+	uint8_t source [ETHER_ADDR_LEN]; 
+	uint8_t target [ETHER_ADDR_LEN]; 
+	uint16_t protocol; 
+} 
+header_eth; 
+
+#ifndef __GNUC__
+#pragma pack (pop)
+#endif 
+]]></programlisting>
+						</example>
+					</listitem>
+				</varlistentry>
+			</variablelist>
+		</section>
+	<section id='endianess'>
+		<title>
+			Endian-ness 
+			</title>
+		<para>
+			Atheros vendor-specific messages contain information in mixed endian format. The Ethernet header portion is sent <emphasis>big endian </emphasis> but the Atheros header and payload are sent in <emphasis>little endian </emphasis>. The traditional endian converstion functions <function>htons()</function>, <function>htonl()</function>, <function>ntohs()</function> and <function>ntohl()</function> can be used to perform platform independent conversions on the Ethernet header but not the Atheros header payload.
+			</para>
+		<para>
+			The Open Powerline Toolkit includes similar macros <function>HTOLE16</function>, <function>HTOLE32</function>, <function>LE16TOH</function> and <function>LE32TOH</function> in <ulink url="endian.h.html">endian.h</ulink> which serve the same function but conform to recommendations for standarized byte order function on Linux, OpenBSD and FreeBSD. Observe that the names are independent of any network implications.
+			</para>
+<programlisting><![CDATA[
+#if BYTE_ORDER == BIG_ENDIAN
+#	define LE16TOH(x) __bswap_16(x)
+#	define LE32TOH(x) __bswap_32(x)
+#	define LE64TOH(x) __bswap_64(x)
+#	define HTOLE16(x) __bswap_16(x)
+#	define HTOLE32(x) __bswap_32(x)
+#	define HTOLE64(x) __bswap_64(x)
+#elif BYTE_ORDER == LITTLE_ENDIAN
+#	define LE16TOH(x) (x)
+#	define LE32TOH(x) (x)
+#	define LE64TOH(x) (x)
+#	define HTOLE16(x) (x)
+#	define HTOLE32(x) (x)
+#	define HTOLE64(x) (x)
+#else
+#error "Undefined host byte order."
+#endif
+]]></programlisting>
+		<para> 
+			In addition, the Open Powerline Toolkit includes function <link linkend='support-endian'>endian</link> that reverses byte order over a variable-length memory region.
+			</para>
+		</section>
+	<section id='packet-basics'>
+		<title>
+			Packet Basics 
+</title>
+		<para>
+			Local and remote <trademark class='registered'>HomePlug</trademark> AV powerline devices are managed by sending Ethernet frames that contain <trademark class='registered'>HomePlug AV</trademark> formatted management messages. These frames have an 802.3 Ethernet header and a payload that contains the Management Message (MM).
+			</para>
+		<para>
+			The Ethernet header must be transmitted in newtwork byte order which is big-endian. The Ethernet payload must be sent in <productname>ARM</productname> host byte order which is little endian. You should use standard network functions <varname>htons()</varname> and <varname>htonl()</varname> to write Ethernet headers and <varname>ntohs()</varname> and <varname>ntohl()</varname> to read them. You should use function <varname>HTOLE16()</varname> and <varname>HTOLE32()</varname> to write integer payload values and <varname>LE26TOH()</varname> and <varname>LE32TOH()</varname> to read them.    
+			</para>
+
+<programlisting><![CDATA[
++---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+ ... +---+---+
+| Ethernet Header                                       | Ethernet Payload    | 
++---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+ ... +---+---+
+]]></programlisting>
+
+		<para>
+			Ethernet headers consist of a destination address (<constant>ODA</constant>), a source address (<constant>OSA</constant>) and an ethertype (<constant>MTYPE</constant>). The ethertype is always 0x88E1 for Homeplug frames of any type. Programmers may use either function <ulink url="EthernetHeader.c.html">EthernetHeader.c</ulink> or <ulink url="EncodeEthernetHeader.c.html">EncodeEthernetHeader</ulink> to encode a buffer with the ODA and OSA and the HomePlug ethertype. An example appears later on. Structure <constant>header_eth</constant> is defined in <ulink url='ihp.h.html'>ihp.h</ulink> for this purpose.
+			</para>
+
+<programlisting><![CDATA[
++---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+ ... +---+---+
+|          ODA          |          OSA          | MTYPE | Ethernet Payload    |
++---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+ ... +---+---+
+]]></programlisting>
+
+		<para>
+			Management messages consist of a message header (MMHEADER) and a message entry (MMENTRY). The message header identifies the nature of the message entry that follows it. The acronyms MME and MMENTRY both mean Management Message Entry but they are often used to mean the entire management message or Ethernet frame. This imprecise usage can be confusing at times. Structure <constant>header_mme</constant> is defined in <ulink url='ihp.h.html'>ihp.h</ulink> for this purpose.
+			</para>
+
+<programlisting><![CDATA[
++---+ ... +---+---+---+---+---+---+---+---+---+---+---+ ... +---+---+---+---+---+
+|             | MMHEADER              | MMENTRY                                 |
++---+ ... +---+---+---+---+---+---+---+---+---+---+---+ ... +---+---+---+---+---+
+]]></programlisting>
+
+		<para>
+			The message header contains message protocol version (MMV), message type (MMTYPE) and vendor identifier (OUI). The management message entry (MMENTRY) that follows the header contains information unique to a the request (REQ), confirmation (CNF), response (RSP) or indication (IND). Programmers may use the Atheros EncodeAtherosHeader function to encode a buffer with a specific MMTYPE and the Atheros MMV and OUI. AN example appears later on.
+			</para>
+
+<programlisting><![CDATA[
++---+ ... +---+---+---+---+---+---+---+---+---+---+---+ ... +---+---+---+---+---+
+|             |MMV| MMTYPE|    OUI    |        MMENTRY                          |
++---+ ... +---+---+---+---+---+---+---+---+---+---+---+ ... +---+---+---+---+---+
+]]></programlisting>
+
+		<para>
+			The MMV value, within MMHEADER, indicates the Homeplug AV Management Message protocol version which determines how the message should be interpreted. The protocol version is defined in the HomePlug AV Specification and may change from time to time. One notable change is the recent insertion of an FMI (Fragment Management Information ) field between MMTYPE and OUI , as shown below.
+			</para>
+		<para>
+			In most cases, protocol changes are hidden from the application by the Atheros API functions; however, software developers should set the <constant>HOMEPLUG_MMV</constant> constant, defined in <ulink url='ihp.h.html'>ihp.h</ulink>, to the version appropriate for their firmware or application. The value of this constant enables or disables conditional compilation statements throughout the HomePlug API code base.
+			</para>
+		<para>
+			To send an MME, you must encode an Ethernet frame buffer with information and transmit it. To read an MME, you must read an Ethernet frame buffer and decode it. The information necessary to encode or decode Atheros vendor-specific Ethernet frames is covered in the <trademark>INT6000</trademark> Firmware Technical Reference Manual; however, the Atheros HomePlug API includes many buffer encode and decode functions that support basic operational requirements.
+			</para>
+		</section>
+	<section id='frame-encoding'>
+		<title>
+			Frame Encoding 
+			</title>
+		<para>
+			The following technique illustrates one way to encode a frame buffer with an Ethernet header followed by an Atheros message header. We first declare the frame buffer then a length variable to keep track of how many bytes have actually been encoded. At any time, the value 'buffer + length' is the address of the next buffer position to encode and the expression 'sizeof (buffer) - length' is the number of un-encoded bytes remaining in the buffer. Each call to an encoding function will increment the length for the next operation. This technique minimizes the number of intermmediate application variables and makes maximum use of compiler generated constants.
+			</para>
+		<example>
+			<title>
+				Frame Encoding by Offset
+				</title>
+
+<programlisting><![CDATA[
+uint8_t buffer [ETHER_MAX_LEN];
+size_t length = 0; 
+
+uint8_t OSA [ETHER_ADDR_LEN] = { 0x00, 0xB0, 0x52, 0x00, 0xD4, 0x32 };
+uint8_t ODA [ETHER_ADDR_LEN] = { 0x00, 0xB0, 0x52, 0x00, 0x66, 0xF7 };
+uint16_t MMTYPE = 0xA050;
+
+length += EncodeEthernetHeader (buffer + length, sizeof (buffer) - length, uint8_t OSA, uint8_t ODA);
+length += EncodeAtherosHeader (buffer + length, sizeof (buffer) - length, unit16_t MMTYPE);
+
+if (length < sizeof (MME))
+{
+	error (...);
+}
+]]></programlisting>
+
+		</example>
+		<para>
+			For those who prefer to use pointers, the following technique accomplishes the same thing because. At any given time, the value bp - buffer is the encoded length. 
+			</para>
+	<example>
+		<title>
+			Frame Encoding by Address
+			</title>
+<programlisting><![CDATA[
+uint8_t buffer [ETHER_MAX_LEN];
+uint8_t bp = buffer;
+
+bp += EncodeEthernetHeader (bp, buffer + sizeof (buffer) - bp, uint8_t OSA, uint8_t ODA);
+bp += EncodeAtherosHeader (bp, buffer + sizeof (buffer) - bp, unit16_t MMTYPE);
+
+if (bp < (buffer + sizeof (MME)))
+{
+	error (...);
+}
+]]></programlisting>
+		</example>
+	</section>
+	</chapter>

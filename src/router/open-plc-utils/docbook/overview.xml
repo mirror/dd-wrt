@@ -1,0 +1,80 @@
+<chapter id='overview'>
+	<title>
+		Overview 
+		</title>
+	<section id='overview-intro'>
+		<title>
+			Introduction 
+			</title>
+		<para>
+			 The <application>Open Powerline Toolkit</application> (vanilla version) may be downloaded from <ulink utl="https://github.com/qca/open-plc-utils.git">https://github.com/qca/open-plc-utils.git</ulink> by any interested party. An advanced version (chocolate version) may be downloaded from the Qualcomm Atheros Customer FTP site by parties having permission to do so. The chocolate version includes special programs that perform advanced engineering, production and maintenance tasks. Within this document, we refer to both versions, collectively, as <quote>the toolkit</quote>.
+			</para>
+		<para>
+			The toolkit contains C Language source code and <productname>GNU</productname> makefiles to compile many useful programs. It also includes Linux shell scripts that use these programs, in various ways, to interrogate, control and manage Qualcomm Atheros <productname>INT6000</productname>, <productname>INT6300</productname>, <productname>INT6400</productname>, <productname>AR7400</productname> and later powerline devices. Qualcomm Atheros also provides a similar, but less extensive, toolkit for <productname>INT5500</productname> powerline devices.
+			</para>
+		<para>
+			The toolkit is intended for hardware engineers, verification engineers, field engineers and embedded software developers, consequently, programs are simple and compact. It is not intended for computer novices or retail users. Many customers embed a subset of toolkit programs in products for troubleshooting purposes.
+			</para>
+		<para>
+			The toolkit includes extensive HTML documentation and online man pages for users who cannot access installed man pages. HTML documentation starts with file <ulink url="index.html">docbook/index.html</ulink>. Online man pages start with file <ulink url="toolkit.html">docbook/toolkit.html</ulink>. Qualcomm Atheros recommends that you add these two pages to your browser favorites for later reference.
+			</para>
+		<para>
+			All toolkit programs are written in C and have command line intefaces. The source code essentially conforms to <ulink url='http://www.open-std.org/jtc1/sc22/wg14/www/standards.html#9899'>ISO/IEC9899:1999</ulink>. The source tree cleanly compiles using gcc or pcc on Ubuntu, OpenBSD and MacOSX. It also compiles under Microsoft C with the inclusion of special header files. The command line interface conforms to <ulink url='http://www.opengroup.org/onlinepubs/009695399/basedefs/xbd_chap12.html#tag_12_02'> <citetitle>Section 12.2 Utility Syntax Guidelines</citetitle></ulink> of The Open Group Base Specification Issue 6 (<ulink url='http://www.opengroup.org/onlinepubs/009695399/mindex.html'>
+<citetitle>IEEE Std 1003.1, 2004 Edition</citetitle></ulink>). 
+			</para>
+		<para>
+			The toolkit includes Microsoft Visual Studio .NET project files and solutions files to compile toolkit programs, plus the executable version (<filename>.exe</filename>) of each program and a set of Microsoft installation file (<filename>.msi</filename>) so that the toolkit package comes ready to install and run on any Windows host; however, Qualcomm Atheros does not provide support for Microsoft windows version of this toolkit. Toolkit documentation does provide Windows developers with special guidance on setting up their own Visual Studio projects and solutions, should they want to do that. 
+			</para>
+		</section>
+	<section id='overview-background'>
+		<title>
+			Background 
+			</title>
+		<para>
+			<trademark class='registered'>HomePlug</trademark> AV is an industry standard protocol for powerline communications developed by the <ulink url='http://www.homeplug.org/home'>HomePlug Powerline Alliance</ulink>. Qualcomm Atheros manufactures a family of chipsets that conform to that standard and have MII, UART and SPI host interfaces. The <productname>INT6x00</productname> and <productname>AR7x00</productname> series are flagship members of that chipset family. The principle difference between the chipsets is their boot method, cost and speed. The <trademark>INT6000</trademark> requires onboard NVRAM but the <productname>INT6300</productname>, <productname>INT6400</productname> and <productname>AR7400</productname> do not. 
+			</para>
+		<para>
+			The <trademark class='registered'>HomePlug</trademark> AV protocol is based on IEEE-802.3, has ethertype <constant>0x88E1</constant> and uses special message formats. A subset of those message formats is reserved for each chipset vendor to define their own message formats. Qualcomm Atheros uses this vendor-specific subset to communicate between host processors and Qualcomm Atheros devices. This toolkit uses Qualcomm Atheros vendor-specific message formats to communicates with Qualcomm Atheros devices. It also understands Qualcomm Atheros firmware and configuration file formats. 
+			</para>
+		<para>
+			This toolkit sends and receives Qualcomm Atheros vendor-specific messages but not generic <trademark class='registered'>HomePlug</trademark> AV messages. Qualcomm Atheros vendor-specific management message formats are described in the Qualcomm Atheros <citetitle><trademark class='registered'>HomePlug</trademark> AV Firmware Technical Reference Manual</citetitle>. If you do not have a copy of this document then you may request one from Qualcomm Atheros.
+			</para>
+		</section>
+	<section id='overview-distribution'>
+		<title>
+			Toolkit Distribution
+			</title>
+		<para>
+			The Qualcomm Atheros <application>Open Powerline Toolkit</application> is distributed using compressed tape archive files named <filename>open-plc-utils-x.x.x.tar.gz</filename> and <filename>open-plc-utils-x.x.x.tar.bz2</filename> and standard compressed archive file named <filename>open-plc-utils-x.x.x.zip</filename>, where <emphasis>x.x.x</emphasis> is the version number. Archive files ending in <filename>.gz</filename> can be decompressed with the Linux <application>gzip</application> utility. Archive files ending in <filename>.bz2</filename> can be decompressed with the Linux <application>bzip2</application> utility. Archive files ending in <filename>.zip</filename> can be decompressed using the Linux <application>unzip</application> utility or the Windows <application>WinZip</application> utility. The contents of decompressed archives can be extracted using the Linux <application>tar</application> utility. Recent versions of the Linux <application>tar</application> utility allow decompression and extraction in one operation. The <application>WinZip</application> or <application>7-zip</application> program may be used to decompress archives and extract contents on Microsoft Windows platforms.
+			</para>
+		<para>
+			Some Windows network administrators enable security software that removes <filename>.exe</filename> and other executable files from <filename>.zip</filename> archives in transit or in-situ. In that case, Windows user may want to download the <filename>*.tar.gz</filename> archive and use a program like <application>7zip</application> to unpack the archive file. 
+			</para>
+		<para>
+			The toolkit includes source code, build scripts, documentation and pre-compiled programs for Microsoft Windows. Some third party libraries may also be included to support Microsoft platforms. Although the Microsoft Windows versions of toolkit programs are pre-compiled and ready-to-run, they are not supported because this package is designed for use on Linux platforms.
+			</para>
+		<para>
+			The Windows installer included in this version of the toolkit needs Microsoft .NET 1.1. Windows versions of toolkit programs that communicate with powerline devices need WinPcap 4.1.2 or later. A copy of Microsoft .NET 1.1 and WinPcap 4.1.2 is included in the <filename>support</filename> folder. 
+			</para>
+		</section>
+		&install;
+		&programs;
+		&folders;
+	<section id='overview-packages'>
+		<title>
+			Packages 
+			</title>
+		<para>
+			The following table lists programs and the release packages that contains them. Packages contain programs of interest to various customer and engineering groups based on the activities that they normally perform. Some groups may need multiple packages. Some packages are restricted.
+			</para>
+		&packages;
+		</section>
+	<section id='overview-toolkit-support'>
+		<title>
+			Toolkit Support 
+			</title>
+		<para>
+			Contact the Qualcomm Atheros System Application Engineering Team if you have questions concerning the content, operation, application or direction of this toolkit on GNU/Linux systems. If you are having trouble communicating with Qualcomm Atheros powerline devices using the toolkit, try following the <link linkend="procedure-troubleshoot-problems">troubleshooting</link> procedure found later in this document.
+			</para>
+		</section>
+	</chapter>

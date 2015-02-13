@@ -1,0 +1,141 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			plchostd.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='plchost.1.html' title=' plchost.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='plcID.1.html' title=' plcID.1 '>NEXT</a>]
+			</div>
+<pre>
+plchostd(1)                                  Qualcomm Atheros Open Powerline Toolkit                                 plchostd(1)
+
+NAME
+       plchostd - Qualcomm Atheros PLC Host Daemon
+
+SYNOPSIS
+       plchostd [options] -N nvmfile -P pibfile
+
+DESCRIPTION
+       Wait  for  VS_HST_ACTION.IND  messages from a local device and service them as described in the Qualcomm Atheros Firmware
+       Technical Reference Manual for powerline devices.  Unlike programs int6khost and int64host, this program  uses  operating
+       system features available on POSIX, Unix, BSD and Linux systems but not available on Microsoft or VxWorks systems.
+
+       To  use  the program, connect a flash-less device to the host via ethernet then start this program with the correct file‐
+       names.  The program will automatically respond to device requests  to  download  memory  configuration,  firmware  and/or
+       parameters  and  upload  firmware or and/or parameters under device control.  See the Qualcomm Atheros Firmware Technical
+       Reference Manual for more information.
+
+       This program is part of the Qualcomm Atheros Powerline Toolkit.  See the plc man page for an  overview  and  installation
+       instructions.
+
+OPTIONS
+       -i interface
+              Select  the host Ethernet interface.  All requests are sent via this interface and only reponses received via this
+              interface are recognized.  The default interface is eth1 because most people use eth0 as their  principle  network
+              connection;  however,  if environment string &quot;PLC&quot; is defined then it takes precedence over the default interface.
+              This option then takes precedence over either default.
+
+       -N nvmfile
+              The file containing the firmware chain used to boot and flash the device.  The file must exist and  have  a  valid
+              NVM file format or it will be rejected.  No assumptions are made based on filename and no filename conventions are
+              enforced.  The program will not over-write this file.  This option and argument are required.
+
+       -n filename
+              Use this file to store firmware uploaded from the local device.  The file need not exist but an error  will  occur
+              if  it  cannot  be  created  or written.  If firmware is uploaded to this file, it is used for subsequent firmware
+              downloads unless the device requests a factory reset.  In that case, the file specified  by  option  -N  is  used.
+              This option and argument are optional.  If omitted then the default filename host.pib will be used.
+
+       -P pibfile
+              The  file  containing the parameter chain used to boot and flash the device.  The file must exist and have a valid
+              PIB file format or it will be rejected.  No assumptions are made based on filename and no filename conventions are
+              enforced.  The program will not over-write this file.  This option and argument are required.
+
+       -p filename
+              Use this file to store parameters uploaded from the local device.  The file need not exist but an error will occur
+              if it cannot be created or written.  Once parameters are uploaded to this file, it is used for subsequent  parame‐
+              ter  downloads unless the device requests a factory reset.  In that case, the file specified by option -P is used.
+              This option and argument are optional.  If omitted then the default filename host.nvm will be used.
+
+       -q     Suppress status messages on stderr.
+
+       -s pathname
+              The server socket pathname.  Automatically open this Unix socket and post event information to it for the  benefit
+              of other host processes.
+
+       -S filename
+              The file containing the softloader chain used to flash the device.  The presence of this file causes the device to
+              be flashed once it has booted.  The file must exist and have a valid PIB file format or it will be  rejected.   No
+              assumptions  are made based on filename and no filename conventions are enforced.  The program will not over-write
+              this file.  This option and argument are required.
+
+       -t timeout
+              Read timeout in milliseconds.  Values range from 0 through UINT_MAX.  This is  the  maximum  time  allowed  for  a
+              response.  The default is shown in brackets on the program menu.
+
+       -v     Print  additional  information  on  stdout.   In particular, this option will print incoming and outgoing Ethernet
+              frames on stdout.
+
+       -w wakeup
+              Wakeup time in seconds.  If no VS_HST_ACTION.IND message is received within this time period then the process will
+              wakeup  and perform periodic functions such as posting network topography to the server socket specified by option
+              -s.
+
+       -?, --help
+              Print program help summary on stdout.  This option takes precedence over other options on the command line.
+
+       -!, --version
+              Print program version information on stdout.  This option takes precedence over other options on the command line.
+              Use  this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of
+              the Linux Toolkit you are using.
+
+ARGUMENTS
+       None.
+
+REFERENCES
+       See the Qualcomm Atheros HomePlug AV Firmware Technical Reference Manual for more information.
+
+EXAMPLES
+       The following example starts the host server.  The -N and -P options are always required.  Option order is not important.
+       Control  does  not return to the console until the program is terminated by the user using CTRL-C or another command line
+       interrupt.
+
+          # plchostd -N test.nvm -P test.pib -n temp.nvm -p temp.pib
+
+       The next example does the same but spawns the program as an independent process and returns control to the  console.   In
+       this case, that process must be terminated or killed using an appropriate command such ad kill.
+
+          # plchostd -N test.nvm -P test.pib -n temp.nvm -p temp.pib -d
+
+DISCLAIMER
+       Atheros  HomePlug  AV  Vendor Specific Management Message Entry structure and content is proprietary to Qualcomm Atheros,
+       Ocala FL USA.  Consequently, public information may not be available.  Qualcomm Atheros reserves the right to modify mes‐
+       sage  structure and content in future firmware releases without any obligation to notify or compensate users of this pro‐
+       gram.
+
+SEE ALSO
+       plc(1), int64host(1), int6k(1), int6kboot(1), int6khost(1)
+
+CREDITS
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                              plchostd(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='plchost.1.html' title=' plchost.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='plcID.1.html' title=' plcID.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

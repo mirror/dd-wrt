@@ -1,0 +1,181 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Things to Remember</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="ch04.html" title="Chapter 4.  Firmware"><link rel="prev" href="ch04s05.html" title="Boot from Host Configuration"><link rel="next" href="ch04s07.html" title="Every Little Bit Hurts"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">
+			Things to Remember
+			</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch04s05.html">Prev</a> </td><th width="60%" align="center">Chapter 4. 
+		Firmware 
+		</th><td width="20%" align="right"> <a accesskey="n" href="ch04s07.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="bootload-rules"></a>
+			Things to Remember
+			</h2></div></div></div><p>
+			The Boot from Host configuration offers design flexibility but also increases the possibilities. Remember that the processes described here are based on simple rules that ultimately dictate why each process step is needed. Readers may find it helpful to review these rules.
+			</p><div class="orderedlist"><ol type="1"><li><p>
+					<span class="emphasis"><em>
+						The softloader and bootloader programs have limited vocabulary.
+						</em></span>
+				</p><p>
+					The <span class="productname">INT6000</span>™ softloader recognizes only the <code class="constant">VS_SW_VER</code>, <code class="constant">VS_ST_MAC</code>, <code class="constant">VS_RS_DEV</code>, <code class="constant">VS_WR_MOD</code> requests. It does not recognize <code class="constant">VS_WR_MEM</code>. 
+					</p><p>
+					The <span class="productname">INT6300</span>™ bootloader recognizes only the <code class="constant">VS_SW_VER</code>, <code class="constant">VS_WR_MEM</code>, <code class="constant">VS_ST_MAC</code>, <code class="constant">VS_RS_DEV</code> and <code class="constant">VS_SET_SDRAM</code> requests. It does not recognize <code class="constant">VS_WR_MOD</code>.
+					</p><p>
+					The <span class="productname">INT6400</span>™ bootloader recognizes only the <code class="constant">VS_SW_VER</code>, <code class="constant">VS_WR_MEM</code>, <code class="constant">VS_ST_MAC</code>, <code class="constant">VS_RS_DEV</code> requests. It recognizes <code class="constant">VS_SET_SDRAM</code> and responds to it but ignores it. It does not recognize <code class="constant">VS_WR_MOD</code>.
+					</p><p>
+					The <span class="productname">AR7400</span>™ bootloader recognizes only <code class="constant">VS_SW_VER</code>, <code class="constant">VS_WR_MEM</code>, <code class="constant">VS_ST_MAC</code>, <code class="constant">VS_RS_DEV</code> requests. It recognizes <code class="constant">VS_SET_SDRAM</code> and responds to it but ignores it. It does not recognize <code class="constant">VS_WR_MOD</code>.
+					</p><p>
+					The <span class="productname">AR7420</span>™ bootloader recognizes only <code class="constant">VS_SW_VER</code>, <code class="constant">VS_RS_DEV</code>, <code class="constant">VS_WRITE_AND_EXECUTE</code> and <code class="constant">VS_RAND_MAC_ADDRESS</code> requests. Early versions recognize <code class="constant">VS_WRITE_MEM</code> and <code class="constant">VS_ST_MAC</code> requests but they must not be used. 
+					</p><div class="table"><a name="idp9946104"></a><p class="title"><b>Table 4.1. 
+				Softloader/Bootloader MMEs
+				</b></p><div class="table-contents"><table summary="
+				Softloader/Bootloader MMEs
+				" border="1"><colgroup><col><col><col><col></colgroup><thead><tr><th>
+						MME
+						</th><th>
+						NAME
+						</th><th>
+						INT6000 Softloader
+						</th><th>
+						INT6300 Bootloader
+						</th><th>
+						INT6400 Bootloader
+						</th><th>
+						AR7400 Bootloader
+						</th><th>
+						AR7420 Bootloader
+						</th></tr></thead><tbody><tr><td>
+						0xA000
+						</td><td>
+						VS_SW_VER
+						</td><td>
+						Yes
+						</td><td>
+						Yes
+						</td><td>
+						Yes
+						</td><td>
+						Yes
+						</td><td>
+						Yes
+						</td></tr><tr><td>
+						0xA008
+						</td><td>
+						VS_WR_MEM
+						</td><td>
+						No
+						</td><td>
+						Yes 
+						</td><td>
+						Yes
+						</td><td>
+						Yes
+						</td><td>
+						Deprecated
+						</td></tr><tr><td>
+						0xA00C
+						</td><td>
+						VS_ST_MAC
+						</td><td>
+						Yes
+						</td><td>
+						Yes 
+						</td><td>
+						Yes
+						</td><td>
+						Yes
+						</td><td>
+						Deprecated
+						</td></tr><tr><td>
+						0xA01C
+						</td><td>
+						VS_RS_DEV
+						</td><td>
+						Yes
+						</td><td>
+						Yes
+						</td><td>
+						Yes
+						</td><td>
+						Yes
+						</td><td>
+						Yes
+						</td></tr><tr><td>
+						0xA020
+						</td><td>
+						VS_WR_MOD
+						</td><td>
+						Yes
+						</td><td>
+						No
+						</td><td>
+						No
+						</td><td>
+						No
+						</td><td>
+						No
+						</td></tr><tr><td>
+						0xA05C
+						</td><td>
+						VS_SDRAM
+						</td><td>
+						No
+						</td><td>
+						Yes
+						</td><td>
+						Ignored
+						</td><td>
+						Ignored
+						</td><td>
+						No
+						</td></tr><tr><td>
+						0xA060
+						</td><td>
+						VS_HOST_ACTION
+						</td><td>
+						No
+						</td><td>
+						Yes
+						</td><td>
+						Yes
+						</td><td>
+						Yes
+						</td><td>
+						Yes
+						</td></tr><tr><td>
+						0xA098
+						</td><td>
+						VS_WRITE_AND_EXECUTE
+						</td><td>
+						No
+						</td><td>
+						No
+						</td><td>
+						No
+						</td><td>
+						Yes
+						</td><td>
+						Yes
+						</td></tr><tr><td>
+						0xA0D4
+						</td><td>
+						VS_RAND_MAC_ADDRESS
+						</td><td>
+						No
+						</td><td>
+						No
+						</td><td>
+						No
+						</td><td>
+						Yes
+						</td><td>
+						Yes
+						</td></tr></tbody></table></div></div><br class="table-break"></li><li><p>
+					<span class="emphasis"><em>The Softloader, Bootloader and runtime firmware may treat the same MME differently</em></span> because each is a different program. A notorious obvious example is the <code class="constant">VS_SW_VER</code> message type. This means that one may need to be aware of the device state when anticipating device behaviour or interpreting device response.
+					</p></li><li><p>
+					<span class="emphasis"><em>The local host is surrogate flash memory</em></span>. When dedicated flash memory is not available to a device, the device will request firmware and parameter storage services from the local host using <code class="constant">VS_HST_ACTION</code> messages. The local host must be programmed to detect and respond to these messages or the firmware will appear to hang. See program <a class="link" href="ch01s08.html#program-int6khost">int6khost</a>, <a class="link" href="ch01s08.html#program-int64host">int64host</a>, <a class="link" href="ch01s08.html#program-amphost">amphost</a> or <a class="link" href="ch01s08.html#program-plchost">plchost</a> to demonstrate and experiment with this interaction.
+					</p></li><li><p>
+					<span class="emphasis"><em>Only runtime firmware can write flash memory</em></span>. Runtime firmware must be executing in order to write flash memory or upload to the local host. The Softloader and Bootloader cannot perform either operation.
+					</p></li><li><p>
+					<span class="emphasis"><em>All <acronym class="acronym">PIB</acronym> changes must be written in flash memory</em></span>. There are several things that can cause <acronym class="acronym">PIB</acronym> changes. When a <acronym class="acronym">PIB</acronym> change is needed,  the Working <acronym class="acronym">PIB</acronym> is copied to a scratch area and modified there. The Scratch <acronym class="acronym">PIB</acronym> must then be written to flash memory or sent to the local host for storage. The device then resets causing the stored <acronym class="acronym">PIB</acronym> to replace the Working <acronym class="acronym">PIB</acronym>. If a freshly downloaded <acronym class="acronym">PIB</acronym> changes for any reason then the cycle will repeat, automatically. 
+					</p></li><li><p>
+					<span class="emphasis"><em>Runtime firmware updates the PIB after joining and before leaving an AVLN</em></span>. This will cause a device reset in each case. If the device is using the local host for persistent storage, runtime firmware will send the associated <code class="constant">VS_HST_ACTION</code> messages to the host and the host will send the associated <code class="constant">VS_RD_MOD</code> and <code class="constant">VS_RS_DEV</code> messages as per <a class="link" href="ch04s11.html" title="Update Local Host (INT6000/INT6300/INT6400)">Update Local Host</a>.
+					</p></li></ol></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch04s05.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="ch04.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch04s07.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">
+			Boot from Host Configuration 
+			 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 
+			Every Little Bit Hurts
+			</td></tr></table></div></body></html>0

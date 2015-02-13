@@ -1,0 +1,71 @@
+.TH pibcomp 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+pibcomp - Qualcomm Atheros Parameter Block Compare Utility 
+
+.SH SYNOPSIS
+.BR pibcomp 
+.RI [ options ]
+.IR file
+.IR file
+.RI [> stdout ]
+
+.SH DESCRIPTION
+Read and compare two Qualcomm Atheros powerline parameter block files and print only those objects that are different.
+It will detect and handle both old and new powerline parameter file formats.
+This program is similar to program \fBodc\fR but is designed specifically for Qualcomm Atheros powerline parameter files.
+Program \fBodc\fR is no longer supported and will be removed from future toolkit releases.
+
+.PP
+Object driven comparison requires an object definition file that lists the size and name of data data objects (ie; integers, arrays or structures) within the parameter file.
+Individual data members are presented as smaller, individual data dumps within a larger, overall data dump.
+See program pibdump for more information of object definition file format.
+
+.SH OPTIONS
+
+.TP
+-\fBf\fI file\fR
+The object definition file that lists the size, name and description of individual individual objects in order of occurance.
+If this option is omitted then object definitions are read from stdin.
+The object definition file is not modified by this program.
+See the \fBpibdump\fR man page for an example of an object definition file.
+
+.TP
+.RB - ? ,-- help
+Print program help summary on stdout.
+This option takes precedence over other options on the command line.
+
+.TP
+.RB - ! ,-- version
+Print program version information on stdout.
+This option takes precedence over other options on the command line.
+Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of the Linux Toolkit you are using.
+
+.SH ARGUMENTS
+
+.TP
+.IR file
+The name of a binary file.
+Two binary files are needed for comparison and both should conform to the object definition file for the comarison to be meaningful.
+
+.SH EXAMPLES
+The following example compares file \fBabc.bin\fR and \fBdef.bin\fR and prints objects that are different in hexdump format.
+Objects are defined in \fBobjects.txt\fR and read using \fB-f\fR.
+
+.PP
+   # pibcomp -f objects.txt abc.bin def.bin
+
+.SH SEE ALSO
+.BR chkpib (7),
+.BR chkpib2 (7),
+.BR getpib (7 ),
+.BR modpib ( 1 ),
+.BR pib2xml ( 1 ),
+.BR pibdump ( 1 ),
+.BR setpib ( 1 ),
+.BR xml2pib ( 1 )
+
+.SH CREDITS
+ Nathaniel Houghton <nhoughto@qca.qualcomm.com>
+ Charles Maier <cmaier@qca.qualcomm.com>
+

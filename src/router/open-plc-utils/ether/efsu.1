@@ -1,0 +1,181 @@
+.TH efsu 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+efsu - Ethernet Frame Send Utility
+
+.SH SYNOPSIS
+.BR efsu
+.RI [ options ]
+.IR file
+.RI [ file ]
+[...]
+
+.PP
+.BR efsu
+.RI [ options ]
+.RI [< stdin ]
+
+.SH DESCRIPTION
+
+.PP
+Sends custom Ethernet frames over a specific host Ethernet interface.
+
+.PP
+A frame is specified as a text stream of hexadecimal octets read from one or more frame description files or from stdin.
+Each octet is converted to a binary byte, buffered and transmitted over the network on the specified host interface.
+The program assumes that frames are valid and will transmit whatever you specify, right or wrong.
+The program only checks minimum and maximum frame length.
+
+.PP
+Frame descriptions are stored as plain text files.
+Multiple frames may be specified in one file by separating them with a semicolon.
+All descriptions in a file are read and sent immediately but multiple files may be specified on the command line and options allow pauses between files, command line repetition and pauses between command line iterations.
+
+.PP
+A frame descriptions is a continuous stream of hexadecimal digits.
+Intervening text, punctuation, white space and comments are discarded.
+Hex characters inside script-style, C-style or C++-style comments are ignored.
+Script-style comments include all characters between a hash ('\fB#\fR') and the next newline or EOF.
+C-style and C++-style comments follow normal language rules.
+Comments may be used to document frame descriptions or hide frame segments.
+In the end, there must be an even number of hex digits that represent 60 to 1518 octets;
+
+.SH OPTIONS
+
+.TP
+-\fBd \fIaddress\fR
+Replace the destination Ethernet address of each transmitted frame with the option argument.
+The destination address consists of 12 hex digits in upper, lower or mixed case.
+Octets may be seperated with colons for clarity but colons are not required.
+
+.TP
+-\fBe \fIethertype\fR
+Echo received frames having \fIethertype\fR.
+This effectively filters received frames but does not filter transmitted frames.
+The ethertype is expressed in hexadecimal without the "\fB0x\fR" prefix.
+The keyword "\fBhp10\fR" can be used for \fB887B\fR and keyword "\fBhpav\fR" can be used for \fB88E1\fR.
+
+.TP
+.RB - h
+Replace the source address of each transmitted frame with the Ethernet address of the host interface used to send the frame.
+This allows frames to be sent correctly from any host interface.
+Use option \fB-i\fR to specify an interface.
+
+.TP
+-\fBi \fIinterface\fR
+The host interface used to send frames.
+The default is "\fBeth1\fR" because most people use "eth0" as their principle network connection; however, if the string "\fBPLC\fR" is defined in the environment then it will over-ride the program default.
+Any interface specified on the command line will over-ride the default.
+
+.TP
+-\fBl \fIcount\fR
+Repeat command line \fIcount\fR times by re-sending all files each time.
+The default is \fB1\fR.
+
+.TP
+-\fBp \fIseconds\fR
+Pause between each file on the command line.
+The default is \fB0\fR seconds.
+
+.TP
+-\fBt \fItimer\fR
+Read timeout in milliseconds.
+Values range from 0 through UINT_MAX.
+This is the maximum time allowed for a response.
+The default is 50 milliseconds.
+
+.TP
+.RB - v
+Dumps transmitted frames on stdout as they are sent.
+If an Ethertype was specified using option \fB-e\fR the received frames having that Ethertype will also be dumped.
+
+.TP
+-\fBw \fIseconds\fR
+Wait between command line iterations.
+The default is \fB0\fR seconds.
+
+.SH ARGUMENTS
+
+.TP
+.IR file
+The name of a file containing one or more frame specifications.
+When more than one file is specified, \fBefsu\fR behaves like the \fBcat\fR utility by reading and sending each file in turn.
+The program makes no assumptions based on filename or extension and enforces no filename conventions; however, giving frame description files the *.hex extension is a good convention.
+Some toolkit distributions include example \fB.hex\fR files in the source folder.
+These files are not needed for proper execution and may be deleted.
+
+.SH NOTES
+One way to create a frame description file is to cut-and-paste output from a packet sniffer program and discard the line numbers and ASCII text columns.
+You can then break out selected frame segments onto new lines and insert comments.
+
+.SH EXAMPLES
+For example, a simple file might look like:
+
+.PP
+   #!/usr/local/bin/efsu -ieth0
+   # file: abc.hex
+   # =====================================
+   # this is an example frame description;
+   # -------------------------------------
+   00 B0 52 00 00 01 
+   // 00 B0 52 BE DE 73 
+   00 E0 45 DA DA 07
+   88 E1 
+   /* content */
+   00 00 00 00 00 00 00 00
+   00 00 00 00 00 00 00 00
+   00000000 0000 00 /* control byte */ 00
+   00 00 00 00 00 00 00 00
+   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+   00 00 00 00 00 00 00 00
+
+.PP
+The bang path permits direct execution of the file if 1) \fBefsu\fR is installed in the bang path directory, 2) the description file has execute permissions and 3) the user has execute privileges for that file.
+The script-style, C++-style and C-style comments are ignored along with any white space.
+Only the hexadecimal octets are read and sent.
+Since the number of octets exceeds 60 and the number of digits is even, \fBefsu\fR will report no errors and send the packet.
+There is no guarantee that this packet is valid.
+
+.PP
+Assuming the above file is named \fBabc.hex\fR, we can transmit the file over the network as an Ethernet frame with the next command.
+A hexadecimal dump of the transmitted frame appears on the console because option \fB-v\fR is present.
+
+.PP
+   # efsu abc.hex -v
+   00000000 00 B0 52 00 00 01 00 E0 45 DA DA 07 88 E1 00 00 ..R.....E.......
+   00000010 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ................
+   00000020 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ................
+   00000030 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ................
+   00000040 00 00 00 00 00 00                               ......
+
+.PP
+Since every host interface has a different hardware address, one can replace the source address of transmitted frames with the actual host interface address using option \fB-h\fR.
+Observe that the original source address has been replaced with that of the local host interface used to transmit the frame.
+
+.PP
+   # efsu abc.hex -vh
+   00000000 00 B0 52 00 00 01 \fB00 0F EA 10 D5 1C\fR 88 E1 00 00 ..R.............
+   00000010 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ................
+   00000020 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ................
+   00000030 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ................
+   00000040 00 00 00 00 00 00                               ......
+
+.PP
+You can also direct the frame to another device using option \fB-d\fR.
+Observe that the original destination address has been replaced with the one specified on the command line.
+
+.PP
+   # efsu abc.hex -vhd 00b052beef01
+   00000000 \fB00 B0 52 BE EF 01\fR 00 0F EA 10 D5 1C 88 E1 00 00 ..R.............
+   00000010 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ................
+   00000020 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ................
+   00000030 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ................
+   00000040 00 00 00 00 00 00                               ......
+
+.SH SEE ALSO
+.BR amp ( 1 ),
+.BR hpav ( 1 )
+
+.SH CREDITS
+ Charles Maier <cmaier@qca.qualcomm.com>
+

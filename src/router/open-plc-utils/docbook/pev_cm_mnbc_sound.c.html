@@ -1,0 +1,126 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			pev_cm_mnbc_sound.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='pev_cm_atten_char.c.html' title=' pev_cm_atten_char.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='pev_cm_set_key.c.html' title=' pev_cm_set_key.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *
+ *   signed pev_cm_mnbc_sound (struct session * session, struct channel * channel, struct message * message);
+ *
+ *   slac.h
+ *
+ *   As HLE-PEV send cm_mnbc_sound indications unicast to the
+ *   MSOUND_TARGET address recorded in the session variable;
+ *
+ *   a brief delay of a few milliseconds is needed between msounds 
+ *   so that EVSE-PLC has time to forward CM_MNBC_SOUND.IND and
+ *   CM_ATTEN_PROFILE.IND to EVSE-HLE; session.timer controls this
+ *   delay;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef PEV_CM_MNBC_SOUND_SOURCE
+#define PEV_CM_MNBC_SOUND_SOURCE
+
+#include &lt;string.h&gt;
+#include &lt;errno.h&gt;
+
+#include &quot;../ether/channel.h&quot;
+#include &quot;../tools/memory.h&quot;
+#include &quot;../tools/error.h&quot;
+#include &quot;../tools/timer.h&quot;
+#include &quot;../slac/slac.h&quot;
+
+signed pev_cm_mnbc_sound (struct session * session, struct channel * channel, struct message * message) 
+
+{ 
+	struct cm_mnbc_sound_indicate * indicate = (struct cm_mnbc_sound_indicate *) (message); 
+	signed sound = session-&gt;NUM_SOUNDS; 
+	while (sound--) 
+	{ 
+		debug (0, __func__, &quot;--&gt; CM_MNBC_SOUND.IND&quot;); 
+		memset (message, 0, sizeof (* message)); 
+		EthernetHeader (&amp; indicate-&gt;ethernet, session-&gt;MSOUND_TARGET, channel-&gt;host, channel-&gt;type); 
+		HomePlugHeader1 (&amp; indicate-&gt;homeplug, HOMEPLUG_MMV, (CM_MNBC_SOUND | MMTYPE_IND)); 
+		indicate-&gt;APPLICATION_TYPE = session-&gt;APPLICATION_TYPE; 
+		indicate-&gt;SECURITY_TYPE = session-&gt;SECURITY_TYPE; 
+		memcpy (indicate-&gt;MSVarField.SenderID, session-&gt;PEV_ID, sizeof (indicate-&gt;MSVarField.SenderID)); 
+		indicate-&gt;MSVarField.CNT = sound; 
+		memcpy (indicate-&gt;MSVarField.RunID, session-&gt;RunID, sizeof (indicate-&gt;MSVarField.RunID)); 
+		memset (indicate-&gt;MSVarField.RND, 0, sizeof (indicate-&gt;MSVarField.RND)); 
+		if (sendmessage (channel, message, sizeof (* indicate)) &lt;= 0) 
+		{ 
+			return (debug (1, __func__, CHANNEL_CANTSEND)); 
+		} 
+		SLEEP (session-&gt;pause); 
+	} 
+	return (0); 
+} 
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='pev_cm_atten_char.c.html' title=' pev_cm_atten_char.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='pev_cm_set_key.c.html' title=' pev_cm_set_key.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

@@ -1,0 +1,103 @@
+.TH pcapdevs 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+pcapdevs - Qualcomm Atheros PCAP Device Enumerator
+
+.SH SYNOPSIS
+\fBpcapdevs\fR [\fBoptions\fR] 
+
+.SH DESCRIPTION
+The \fBpcapdevs\fR program enumerates available libpcap or winpcap devices on stdout.
+
+.PP
+This program is part of the Qualcomm Atheros Powerline Toolkit.
+See the \fBAMP\fR man page for compilation and installation instructions.
+
+.SH COMMENTS
+This program is only compiled in the Windows version of the toolkit because it is not needed on other platforms.
+It can be compiled, possibly with some modifications, on Linux or OpenBSD systems where \fBlibpcap\fR development libraries are installed.
+
+.SH BACKGROUND
+The Atheros Powerline Toolkit uses the libpcap or winpcap package to enable raw socket operations on systems that have no native raw packet support.
+Unfortunately, libpcap and winpcap reference available network interfaces by number rather than by name.
+Consequently, users need some way to determine what network interfaces are available and determine the number associated with each one.
+This utility does that.
+
+.SH OPTIONS
+
+.TP
+\fB-h\fR
+Print \fBbash\fR compatible variable definitions on stdout.
+The definitions enumerate available devices and their MAC addresses.
+This is merely a convenience to minimze typing errors and, consequently, some editing may be required.
+The output is a generous start when creating file \fBhardware.sh\fR.
+
+.TP
+\fB\-q\fR
+Suppresses printing of progress messages.
+
+.TP
+\fB\-v\fR
+Print additional information.
+
+.SH EXAMPLES
+The following command enumerates available libpcap devices for a Linux host.
+Users should note the interface numbers and use them when specifying a network interfaces on libpcap enabled programs in this toolkit.
+The Ethernet hardware addresses shown may be useful when writing scripts.
+
+.PP
+   # pcapdevs
+   1 00:60:97:05:97:0C eth0
+   2 00:0F:EA:10:D5:1C eth1
+   3 00:0F:EA:10:D5:1C any (Pseudo-device that captures on all interfaces)
+   4 00:00:00:00:00:00 lo
+
+.PP
+The next example enumaerates available winpcap devices on a Windows hosts.
+Observe that device names and descriptions are much longer than on Linux.
+
+.PP
+   # pcapdevs
+   1 00:00:00:00:00:00 \\Device\\NPF_GenericDialupAdapter	(Adapter for generic dialup and VPN capture)
+   2 00:0E:2E:03:5F:B8 \\Device\\NPF_{4CFAABD5-C929-4942-914B-BDFE72B13611} (Realtek RTL8139 Family)
+   3 00:C0:49:D5:CB:14 \\Device\\NPF_{73E0D2EF-6069-4831-B379-507025F2BDCD} (Realtek RTL8139 Family)
+   4 00:0C:76:87:3E:3D \\Device\\NPF_{86B96905-3AA7-46F1-969A-6C23E3BBBA8B} (Broadcom NetXtreme Gigabit)
+
+.PP
+Assuming that we have compiled and installed the Linux Toolkit with libpcap or winpcap support, we can use \fBint6k\fR to request revision information on all devices connected to interface \fB2\fR with the following command.
+Interface \fB2\fR is the default interface when the toolkit is comipled with either libpcap or winpcap and so option \fB-i\fR could have been omitted in this case.
+
+.PP
+   # int6k -i 2 -r
+
+.PP
+Most example Atheros scripts include file \fBhardware.sh\fR that defines symbolic Ethernet interfaces, \fBNIC1\fR and \fBNIC2\fR and their respective hardware addresses, \fBMAC1\fR and \fBMAC2\fR.
+These symbols are referenced by scripts when needed, providing a degree of host independence.
+The following example illustrates some typical output for a Windows environment.
+The output can be used with the Cygwin bash shell, for example.
+
+.PP 
+   # pcapdevs -h > hardware.sh
+   # cat hardware.sh
+   NIC1=1 # Adapter for generic dialup and VPN capture
+   NIC2=2 # Realtek RTL8139 Family Fast Ethernet Adapter (Microsoft's Packet Scheduler) 
+   NIC3=3 # Realtek RTL8139 Family Fast Ethernet Adapter (Microsoft's Packet Scheduler) 
+   NIC4=4 # Broadcom NetXtreme Gigabit Ethernet Driver
+   MAC1=00:00:00:00:00:00 # Adapter for generic dialup and VPN capture
+   MAC2=00:0E:2E:03:5F:B8 # Realtek RTL8139 Family Fast Ethernet Adapter (Microsoft's Packet Scheduler) 
+   MAC3=00:C0:49:D5:CB:14 # Realtek RTL8139 Family Fast Ethernet Adapter (Microsoft's Packet Scheduler) 
+   MAC4=00:0C:76:87:3E:3D # Broadcom NetXtreme Gigabit Ethernet Driver
+
+.PP
+The previous example creats a basic \fBhardware.sh\fR file but some editing is still required.
+You should add a \fBbang path\fR at the top, delete definitions of \fBNIC1\fR and \fBMAC\fR and renumber the remaining symbols.
+You may also want to add other host-specific definitions.
+
+.SH SEE ALSO
+.BR amp ( 1 ),
+.BR ifs ( 1 ),
+.BR plcnets ( 1 )
+
+.SH CREDITS
+ Charles Maier <cmaier@qca.qualcomm.com>
+

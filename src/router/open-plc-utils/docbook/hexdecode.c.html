@@ -1,0 +1,80 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			hexdecode.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='gpioinfo.c.html' title=' gpioinfo.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='hexdump.c.html' title=' hexdump.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   size_t hexdecode (void const * memory, size_t extent,  char buffer [], size_t length);
+ *
+ *   memory.h
+ *
+ *   decode a memory region as a string of hex octets separated with
+ *   character HEX_EXTENDER;
+ *
+ *   allow three string characters for each memory byte; this means
+ *   that the buffer must hold at least three characters or nothing
+ *   will be decoded; the maximum number of bytes is the lesser of
+ *   chars/3 and bytes;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef HEXDECODE_SOURCE
+#define HEXDECODE_SOURCE
+
+#include &quot;../tools/memory.h&quot;
+#include &quot;../tools/number.h&quot;
+
+size_t hexdecode (void const * memory, register size_t extent, char buffer [], register size_t length)
+
+{
+	register char * string = (char *)(buffer);
+	register byte * offset = (byte *)(memory);
+	if (length)
+	{
+		length /= HEX_DIGITS + 1;
+		while ((length--) &amp;&amp; (extent--))
+		{
+			*string++ = DIGITS_HEX [(*offset &gt;&gt; 4) &amp; 0x0F];
+			*string++ = DIGITS_HEX [(*offset &gt;&gt; 0) &amp; 0x0F];
+			if ((length) &amp;&amp; (extent))
+			{
+				*string++ = HEX_EXTENDER;
+			}
+			offset++;
+		}
+		*string = (char) (0);
+	}
+	return (string - buffer);
+}
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='gpioinfo.c.html' title=' gpioinfo.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='hexdump.c.html' title=' hexdump.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

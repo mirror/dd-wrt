@@ -1,0 +1,154 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			plchost.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='plcget.1.html' title=' plcget.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='plchostd.1.html' title=' plchostd.1 '>NEXT</a>]
+			</div>
+<pre>
+plchost(1)                                   Qualcomm Atheros Open Powerline Toolkit                                  plchost(1)
+
+NAME
+       plchost - Qualcomm Atheros Powerline Device Host Emulator
+
+SYNOPSIS
+       plchost [options] -N file -P file
+
+DESCRIPTION
+       Wait  for VS_HST_ACTION.IND messages from a local device and service them as described in the QCA Firmware Technical Ref‐
+       erence Manual.  This program can be used to demonstrate or verify proper powerline device/host interaction for flash-less
+       devices.   This implementation is not production grade and will stop dead - like a bug! - when things go wrong.  Consider
+       using the Qualcomm Atheros Embedded API for real-time, production-grade applications.
+
+       Host emulation applies to flash-less device designs where a local host processor provides the  persistent  storage.   The
+       local  host  can provide a wide range of intelligent storage functions for a device but this program offers one.  Options
+       -N and -P name existing files that store the factory default runtime firmware and parameters, respectively.   Options  -n
+       and  -p  name scratch files that will store user firmware and parameters, respectively.  This is similiar to the standard
+       Atheros NVRAM scheme but is not the same.
+
+       To use the program, connect a flash-less device to the host via ethernet then start this program with the  correct  file‐
+       names.   The  program  will  automatically  respond  to device requests to download memory configuration, firmware and/or
+       parameters and upload firmware or and/or parameters under device control.  See the Qualcomm  Atheros  Firmware  Technical
+       Reference Manual for more information.
+
+       This  program  is  part of the Qualcomm Atheros Powerline Toolkit.  See the plc man page for an overview and installation
+       instructions.
+
+OPTIONS
+       -F[F]  Flash NVRAM once downloaded firmware has started.   The  same  firmware  and  PIB  are  downloaded,  again,  using
+              VS_WR_MOD  and  written  to  NVRAM using VS_MOD_NVM.  Adding a second F here or another -F anywhere on the command
+              line will perform a forced flash.  When no NVRAM is present, normal and force flash cause the device to upload  to
+              the  host.  When blank or corrupted NVRAM is present, forced flash writes to NVRAM.  This operation will fail when
+              no NVRAM is present.
+
+       -i interface
+              Select the host Ethernet interface.  All requests are sent via this host interface and only reponses received  via
+              this host interface are recognized.  The default interface is eth1 because most people use eth0 as their principle
+              network connection; however, if environment string &quot;PLC&quot; is defined then it  takes  precedence  over  the  default
+              interface.  This option then takes precedence over either default.
+
+       -N filename
+              Use  this  fIle to download firmware when requested by the local device.  The file must exist and have a valid NVM
+              file format or it will be rejected.  No assumptions are made based on filename and  no  filename  conventions  are
+              enforced.  The program will not over-write this file.  This option and argument are required.
+
+       -n filename
+              Use  this  file to store firmware uploaded from the local device.  The file need not exist but an error will occur
+              if it cannot be created or written.  If firmware is uploaded to this file, it  is  used  for  subsequent  firmware
+              downloads  unless  the  device  requests  a factory reset.  In that case, the file specified by option -N is used.
+              This option and argument are optional.  If omitted then the default filename user.pib will be used.
+
+       -P filename
+              Use this file to download parameters when requested by the local device.  The file must exist and have a valid PIB
+              file  format  or  it  will be rejected.  No assumptions are made based on filename and no filename conventions are
+              enforced.  The program will not over-write this file.  This option and argument are required.
+
+       -p filename
+              Use this file to store parameters uploaded from the local device.  The file need not exist but an error will occur
+              if  it cannot be created or written.  Once parameters are uploaded to this file, it is used for subsequent parame‐
+              ter downloads unless the device requests a factory reset.  In that case, the file specified by option -P is  used.
+              This option and argument are optional.  If omitted then the default filename user.nvm will be used.
+
+       -q     Suppress status messages on stderr.
+
+       -Sfilename
+              Use this file to download the softloader when requested by the local device.  The file must exist and have a valid
+              NVM file format or it will be rejected.  No assumptions are made based on filename and no filename conventions are
+              enforced.  The program will not over-write this file.  This option and argument are required.
+
+       -t milliseconds
+              Read  timeout  in  milliseconds.   Values  range  from 0 through UINT_MAX.  This is the maximum time allowed for a
+              response.  The default is shown in brackets on the program menu.
+
+       -v     Print additional information on stdout.  In particular, this option will  print  incoming  and  outgoing  Ethernet
+              frames on stdout.
+
+       -?, --help
+              Print program help summary on stdout.  This option takes precedence over other options on the command line.
+
+       -!, --version
+              Print program version information on stdout.  This option takes precedence over other options on the command line.
+              Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version  of
+              the Linux Toolkit you are using.
+
+ARGUMENTS
+       None.
+
+REFERENCES
+       See the Qualcomm Atheros HomePlug AV Firmware Technical Reference Manual for more information.
+
+EXAMPLES
+       The  following  command  starts the host emulator.  The -N and -P options are always required.  Their order is not impor‐
+       tant.
+
+          # plchost -N test.nvm -P test.pib -n temp.nvm -p temp.pib
+          eth1 00:B0:52:00:00:01 Waiting for Host Action Requests
+
+          eth1 00:B0:52:00:00:01 Host Action Request is (4) configure memory.
+          eth1 00:B0:52:00:00:01 Write Memory (00000040:15752)
+          eth1 00:B0:52:00:00:01 Wrote mac-release-X.nvm
+          eth1 00:B0:52:00:00:01 Started BootLoader
+
+          eth1 00:B0:52:00:00:01 Host Action Request is (0) initialize device.
+          eth1 00:B0:52:00:00:01 Write Memory (00000040:15752)
+          eth1 00:B0:52:00:00:01 Wrote mac-release-X.nvm
+          eth1 00:B0:52:00:00:01 Started BootLoader
+          eth1 00:B0:52:00:00:01 Write Memory (00204000:1013952)
+          eth1 00:B0:52:00:00:01 Wrote mac-release-X.nvm
+          eth1 00:B0:52:00:00:01 Write Memory (01F00000:11400)
+          eth1 00:B0:52:00:00:01 Wrote AR7400-WallAdapter-HomePlugAV_NorthAmerica.pib
+          eth1 00:B0:52:00:00:03 Started INT7400-MAC-0-0-1008-00-63-20100227-AUTO-D
+
+DISCLAIMER
+       Atheros HomePlug AV Vendor Specific Management Message Entry structure and content is proprietary  to  Qualcomm  Atheros,
+       Ocala FL USA.  Consequently, public information may not be available.  Qualcomm Atheros reserves the right to modify mes‐
+       sage structure and content in future firmware releases without any obligation to notify or compensate users of this  pro‐
+       gram.
+
+SEE ALSO
+       plc(1), ampboot(1), amptool(1),
+
+CREDITS
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                               plchost(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='plcget.1.html' title=' plcget.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='plchostd.1.html' title=' plchostd.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

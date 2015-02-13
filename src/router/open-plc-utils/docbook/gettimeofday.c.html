@@ -1,0 +1,78 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			gettimeofday.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='GetProperty.c.html' title=' GetProperty.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='gpioinfo.c.html' title=' gpioinfo.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   gettimeofday.c - get time of day for Windows;
+ *
+ *   A gettimeofday implementation for Microsoft Windows;
+ *
+ *   Public domain code, author &quot;ponnada&quot;;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef GETTIMEOFDAY_SOURCE
+#define GETTIMEOFDAY_SOURCE
+
+#include &lt;time.h&gt;
+#include &lt;windows.h&gt;
+#include &lt;sys/time.h&gt;
+
+int gettimeofday (struct timeval *tv, struct timezone *tz)
+
+{
+	FILETIME ft;
+	unsigned __int64 tmpres = 0;
+	static int tzflag = 0;
+	if (NULL != tv)
+	{
+		GetSystemTimeAsFileTime (&amp;ft);
+		tmpres |= ft.dwHighDateTime;
+		tmpres &lt;&lt;= 32;
+		tmpres |= ft.dwLowDateTime;
+		tmpres /= 10;
+		tmpres -= DELTA_EPOCH_IN_MICROSECS;
+		tv-&gt;tv_sec = (long)(tmpres / 1000000UL);
+		tv-&gt;tv_usec = (long)(tmpres % 1000000UL);
+	}
+	if (NULL != tz)
+	{
+		if (!tzflag)
+		{
+			_tzset ();
+			tzflag++;
+		}
+		tz-&gt;tz_minuteswest = _timezone / 60;
+		tz-&gt;tz_dsttime = _daylight;
+	}
+	return 0;
+}
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='GetProperty.c.html' title=' GetProperty.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='gpioinfo.c.html' title=' gpioinfo.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

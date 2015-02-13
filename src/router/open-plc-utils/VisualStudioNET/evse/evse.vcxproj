@@ -1,0 +1,107 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{34B76C94-5998-47F6-981A-745818407BF4}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)\Programs\2010\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)\Objects\2010\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</GenerateManifest>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;MAKEFILE;WINPCAP;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <CompileAs>CompileAsC</CompileAs>
+      <DisableSpecificWarnings>4996</DisableSpecificWarnings>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>ws2_32.lib;Packet.lib;wpcap.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>$(OutDir)evse.exe</OutputFile>
+      <AdditionalLibraryDirectories>..\library;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\ether\channel.c" />
+    <ClCompile Include="..\..\ether\closechannel.c" />
+    <ClCompile Include="..\..\slac\evse_cm_set_key.c" />
+    <ClCompile Include="..\..\tools\config.c" />
+    <ClCompile Include="..\..\tools\debug.c" />
+    <ClCompile Include="..\..\plc\Devices.c" />
+    <ClCompile Include="..\..\tools\error.c" />
+    <ClCompile Include="..\..\mme\EthernetHeader.c" />
+    <ClCompile Include="..\..\slac\evse.c" />
+    <ClCompile Include="..\..\slac\evse_cm_atten_char.c" />
+    <ClCompile Include="..\..\slac\evse_cm_mnbc_sound.c" />
+    <ClCompile Include="..\..\slac\evse_cm_slac_match.c" />
+    <ClCompile Include="..\..\slac\evse_cm_slac_param.c" />
+    <ClCompile Include="..\..\slac\evse_cm_start_atten_char.c" />
+    <ClCompile Include="..\..\ether\gethwaddr.c" />
+    <ClCompile Include="..\..\ether\getifname.c" />
+    <ClCompile Include="..\..\tools\getoptv.c" />
+    <ClCompile Include="..\..\tools\gettimeofday.c" />
+    <ClCompile Include="..\..\tools\hexdecode.c" />
+    <ClCompile Include="..\..\tools\hexdump.c" />
+    <ClCompile Include="..\..\tools\hexencode.c" />
+    <ClCompile Include="..\..\tools\hexstring.c" />
+    <ClCompile Include="..\..\mme\HomePlugHeader1.c" />
+    <ClCompile Include="..\..\ether\openchannel.c" />
+    <ClCompile Include="..\..\tools\putoptv.c" />
+    <ClCompile Include="..\..\mme\QualcommHeader1.c" />
+    <ClCompile Include="..\..\mme\readmessage.c" />
+    <ClCompile Include="..\..\ether\readpacket.c" />
+    <ClCompile Include="..\..\mme\sendmessage.c" />
+    <ClCompile Include="..\..\ether\sendpacket.c" />
+    <ClCompile Include="..\..\slac\slac_session.c" />
+    <ClCompile Include="..\..\tools\todigit.c" />
+    <ClCompile Include="..\..\tools\uintspec.c" />
+    <ClCompile Include="..\..\mme\UnwantedMessage.c" />
+    <ClCompile Include="..\..\tools\version.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\tools\getoptv.h" />
+    <ClInclude Include="..\..\ether\channel.h" />
+    <ClInclude Include="..\..\tools\config.h" />
+    <ClInclude Include="..\..\tools\debug.h" />
+    <ClInclude Include="..\..\tools\error.h" />
+    <ClInclude Include="..\..\tools\putoptv.h" />
+    <ClInclude Include="..\..\tools\version.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ReadMe.txt" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

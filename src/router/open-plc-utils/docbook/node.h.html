@@ -1,0 +1,152 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			node.h
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='namedb.h.html' title=' namedb.h '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='number.h.html' title=' number.h '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   node.h - document node definitions and declarations;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef NODE_HEADER
+#define NODE_HEADER
+
+/*====================================================================*
+ *   system headers;
+ *--------------------------------------------------------------------*/
+
+#include &lt;unistd.h&gt;
+#include &lt;stdint.h&gt;
+
+/*====================================================================*
+ *   custom headers;
+ *--------------------------------------------------------------------*/
+
+#include &quot;../tools/types.h&quot;
+
+/*====================================================================*
+ *
+ *--------------------------------------------------------------------*/
+
+#define ISO_CHARSET &quot;iso-8859-1&quot;
+#define ISO_CONTENT &quot;text/html&quot;
+
+/*====================================================================*
+ *
+ *--------------------------------------------------------------------*/
+
+#define W3C_STD &quot;-//W3C//DTD XHTML 1.0 Strict//EN&quot;
+#define W3C_DTD &quot;http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd&quot;
+
+/*====================================================================*
+ *
+ *--------------------------------------------------------------------*/
+
+#define XML_VERSION &quot;1.0&quot;
+#define XML_NAMESPACE &quot;http://www.w3.org/2001/XMLSchema-instance&quot;
+#define XML_CHARSET ISO_CHARSET
+#define XML_LANGUAGE &quot;en-us&quot;
+#define XML_SCHEMA &quot;http://www.w3.org/2001/XMLSchema&quot;
+
+/*====================================================================*
+ *
+ *--------------------------------------------------------------------*/
+
+#define NODE_ELEM '&lt;'
+#define NODE_SGML '!'
+#define NODE_INST '?'
+#define NODE_ATTR ' '
+#define NODE_VALU '='
+#define NODE_ETAG '/'
+#define NODE_DATA '&gt;'
+
+/*====================================================================*
+ *
+ *--------------------------------------------------------------------*/
+
+#define DATA_SCHEMA &quot;piboffset.xsd&quot;
+#define DATA_NAME &quot;name&quot;
+#define DATA_TEXT &quot;text&quot;
+#define DATA_OBJECT &quot;pib&quot;
+#define DATA_MEMBER &quot;object&quot;
+#define DATA_OFFSET &quot;offset&quot;
+#define DATA_LENGTH &quot;length&quot;
+#define DATA_STRUCT &quot;array&quot;
+#define DATA_STRING &quot;dataString&quot;
+#define DATA_MEMORY &quot;dataHex&quot;
+#define DATA_HUGE &quot;dataHuge&quot;
+#define DATA_LONG &quot;dataLong&quot;
+#define DATA_WORD &quot;dataWord&quot;
+#define DATA_BYTE &quot;dataByte&quot;
+
+/*====================================================================*
+ *   variables;
+ *--------------------------------------------------------------------*/
+
+typedef struct node
+
+{
+	struct node * above;
+	struct node * prior;
+	struct node * after;
+	struct node * below;
+	unsigned line;
+	unsigned type;
+	char * text;
+}
+
+NODE;
+
+/*====================================================================*
+ *   functions;
+ *--------------------------------------------------------------------*/
+
+char const * xmlselect (NODE const *, char const * element, char const * attribute);
+signed xmlread (NODE *, char const * filename);
+signed xmlscan (NODE *);
+signed xmledit (NODE const *, void * memory, size_t extent);
+NODE * xmlopen (char const * filename);
+NODE * xmlnode (NODE *);
+NODE const * xmlelement (NODE const *, char const * name);
+NODE const * xmlattribute (NODE const *, char const * name);
+NODE const * xmlvalue (NODE const *);
+NODE const * xmldata (NODE const *);
+void xmlschema ();
+void xmltree (NODE const *);
+void xmlfree (NODE *);
+
+/*====================================================================*
+ *
+ *--------------------------------------------------------------------*/
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='namedb.h.html' title=' namedb.h '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='number.h.html' title=' number.h '>NEXT</a>]
+			</div>
+		</body>
+	</html>

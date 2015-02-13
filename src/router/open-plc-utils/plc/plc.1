@@ -1,0 +1,505 @@
+.TH plc 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+Qualcomm Atheros Powerline Toolkit 
+
+.SH SYNOPSIS
+Qualcomm Atheros provides the \fBPowerline Toolkit\fR to customers free of charge.
+The toolkit contains source code and makefiles to build many useful programs.
+It also includes example shell scripts that use these programs, in various ways, to interrogate, control and manage QCA powerline devices.
+The programs are intended for hardware engineers and software developers, consequently.
+They are not intended for end users or computer novices.
+Most are compact and simple by design and can be included and executed on embedded platforms having few resources.
+
+.SH INSTALLATION
+The Powerline Toolkit is distributed as a tarball named \fBplc-utils-x.x.x.tar.gz\fR or \fBplc-utils-x.x.x.tar.bz2\fR.
+Users may unpack the tarball and change to the directory that it creates to inspect the source code and documentation.
+To compile the source code, type "\fBmake\fR".
+To install the programs, type "\fBmake install\fR".
+To install man pages, type "\fBmake manuals\fR".
+To uninstall programs and man pages, type "\fBmake uninstall\fR".
+To read about the Toolkit, browse file \fBdocbook/index.html\fR and \fBdocbook/toolkit.html\fR.
+This package does not automatically install scripts or html pages.
+They must be manually copied to the preferred locations.
+
+.PP
+We recommend that you login as root before installing this package; otherwise, you will be prompted for the root password as each component is installed.
+On some systems, "\fBsudo make install\fR" will work.
+Programs are installed in \fB/usr/local/bin\fR.
+Man pages are installed in \fB/usr/share/man/man[1-9]\fR.
+If these folders are not correct for your system, or if you want to install in other folders, then edit folder names defined in the \fBMakefile\fR in each package folder.
+The package has been compiled in a variety of Linux distributions (debian, ubuntu, redhat, monta vista, amilda) and on MacOSX (10.5, 10.6).
+It has also been cross-compiled for MIPS and Freescale iMX35 but QCA does not support general cross compilation efforts.
+
+.PP
+Although this package has been compiled on several platforms, there is no guarantee that it will compile without errors or warnings on non-GNU/Linux platforms.
+We continuously update the package but do not attempt to compile or test it on systems other than GNU/Linux and Microsoft VisualStudio .NET.
+Some programs have been excluded from the Windows installation for technical reasons.
+
+.SH BACKGROUND
+\fBHomePlug 1.0\fR and \fBHomePlug AV\fR are industry standard protocols for powerline communications.
+Qualcomm Atheros manufactures a family of chipsets that conform to these standards and have various USB, PCI, Ethernet, MII, SPI and UART host interfaces.
+
+.PP
+The \fBHomePlug 1.0\fR protocol is based on IEEE-802.3, has ethertype 0x887B and uses special message formats.
+
+.PP
+The \fBHomePlug AV\fR protocol is based on IEEE-802.3, has ethertype 0x88E1 and special message formats.
+A subset of those message formats are left unspecified so that chipset vendors can define message formats for their own products.
+QCA vendor specific management message formats are described in the QCA HomePlugAV Firmware Technical Reference Manual.
+This toolkit uses these messages to communicate with QCA powerline devices.
+Customers may use the toolkit to send these messages, explore device behavior and develope their own applications.
+
+.PP
+Each program in the toolkit deals with a narrow aspect of QCA powerline device management but they can be called from shell scripts to perform complex tasks.
+With them, one can identify chipset hardware and firmware version, reset devices, flash devices, identify other QCA network devices, validate *.pib and *.nvm files, sniff HomePlug AV Ethernet frames, send generic Ethernet frames and so on.
+
+.PP
+The source code is designed to demonstrate and educate and may be modified without obligation to Qualcomm Atheros.
+The QCA Application Engineering Team would appreciate feedback concerning changes that improve the useability, reliability or efficiency.
+Keep in mind that these tools are supposed to be small and simple.
+
+.SH TOOLS
+There are many independent programs in this package.
+Significant ones are listed below.
+See \fBhtml/overview.html\fR for more information about the Atheros Powerline Toolkit.
+
+.TP
+.BR ampboot
+A command line utility to start, and optionally flash, newer Atheros Powerline Devices.
+It is an alternative to program \fBint6kboot\fR that may have additional options specific to the \fBAR7400\fR.
+
+.TP
+.BR amphost
+A example embedded host emulator that responds to VS_HST_ACTION messages sent from a flash-less device to a local host processor.
+It can be used to investigate and verify device-to-host interaction.
+The Atheros embedded API can perform similar functionality in a production environment.
+
+.TP
+.BR ampsnif
+A command line utility to enable or disable sniffer mode on an Atheros Powerline Device.
+
+.TP
+.BR amptest
+A command line utility to download and execute a sequence of test applets to the local powerline device.
+It is not for general use because there are no interlocks to prevent loading images designed for other platforms or loading images in illogical order.
+It is an laternative to, and replacement for, program \fBint6ktest\fR.
+
+.TP
+.BR amptool
+A basic device manager used to inspect and control Atheros powerline devices connected to the local host.
+It is similar to \fBint6k\fR but is specific to the \fBAR7400\fR chipsets.
+
+.TP
+.BR ampwait
+A command line utility used to pause shell scripts at critical points where a device must be in a known state before proceeding.
+Typical cases involve waiting for device power off or reset, power on or restart and network device association.
+
+.TP
+.BR ar8236mdioblock
+Produce an MDIO block from Atheros AR8236 special register instructions.
+The output is suitable for downloading to INT6x00 and AR7x00 powerline devices.
+
+.TP
+.BR ar8236regedit
+Insert values into Atheros AR8236 special registers.
+
+.TP
+.BR chknvm
+A command line utility that validates NVM files based on internal header information, filesize, checksums and other general characteristics.
+Optionally, it can be used to display all image headers within an NVM file or the firmware revision contained in the file.
+
+.TP
+.BR chkpib
+A command line utility that validates PIB files based on internal header information, filesize, checksum, and other general characteristics.
+It can also be used to produce a text catalog of PIB files contained in a directory.
+
+.TP
+.BR coqos_add
+CoQoS stream utility.
+No description.
+
+.TP
+.BR coqos_info
+CoQoS stream utility.
+No description.
+
+.TP
+.BR coqos_man 
+CoQoS stream utility.
+No description.
+
+.TP
+.BR coqos_mod 
+CoQoS stream utility.
+No description.
+
+.TP
+.BR coqos_rel 
+CoQoS stream utility.
+No description.
+
+.TP
+.BR efsu
+A utility to send freeform Ethernet frames.
+Frames are defined as text files containing hexadecimal byte codes having optional comments and whitespace.
+Comments and white space are stripped from the input file and the hexadecimal byte codes are transmitted as Ethernet frames.
+
+.TP
+.BR ethcat
+Send on or more files to a remote UART-enabled powerline device using IEEE 802.2 Ethernet frames.
+Transmitted frames are assembled into a serial data stream and forwarded to the local host by the remote device.
+
+.TP
+.BR fp
+A command line utility that prints the SHA256 digest for one or more files based on their content.
+Output can be used to compare files or identify files based soley on their content despite any filename changes.
+
+.TP
+.BR getpib
+A command line utility for extracting data from a valid PIB file based on data offset, length and format.
+It is a companion to program \fBsetpib\fR.
+Both programs are intended for use in shell scripts.
+Users must have some knowledge about the data they are extracting.
+
+.TP
+.BR hpav
+An basic packet sniffer that displays incoming HomePlug AV protocol frames addressed to the host as they arrive.
+The program may be run in the background as a daemon.
+
+.TP
+.BR hpavkey
+A HomePlug AV key generator.
+HomePlug AV devices use has keys for various purposes.
+This program converts one or more pass phrases, entered on the command line, to either DAKs, NMKs or NIDs.
+It is similar to \fBhpavkeys\fR  but converts a limited number of pass phrases at one time.
+
+.TP
+.BR hpavkeys
+A HomePlug AV key generator.
+This program is similar to \fBhpavkey\fR but converts large number of pass phrases, read from stdin, and converts them to either DAKs, NMKs or NIDs.
+
+.TP
+.BR int6k
+A basic device manager used to inspect and control Atheros INT6x00 devices connected to the local host.
+It is similar to \fBamptool\fR and \fBplctool\fR but is implemented for \fBINT6000\fR, \fBINT6300\fR and \fBINT6400\fR devices only.
+Some options work on newer chipsets but otherd do not.
+
+.TP
+.BR int6kbaud
+A command line utility to configurate UART settings on a UART-enabled Atheros powerline device using the \fBATBR\fR serial line command.
+
+.TP
+.BR int6kboot
+A command line utility used to bootstrap powerline devices having no flash memory, blank flash memory or corrupted memory.
+It interacts with the Atheros BootLoader to configure SDRAM then download runtime firmware and PIB and start firmware execution.
+It can also be used to \fBforce flash\fR blank or corrupted flash memory.
+
+.TP
+.BR int6keth
+A command line utility to read and write device Ethernet PHY settings.
+
+.TP
+.BR int6kf
+A basic flash utility used to initialize INT6300 devices having no flash memory, blank flash memory or corrupted memory.
+It interacts with the Atheros Boot Loader to download SDRAM configuration, runtime firmware and PIB.
+It can also be used to \fBforce flash\fR blank or corrupted flash memory.
+
+.TP
+.BR int6khost
+A example embedded host emulator that responds to VS_HST_ACTION messages sent from a flash-less device to a local host processor.
+It can be used to investigate and verify device-to-host interaction.
+The Atheros embedded API can perform similar functionality in a production environment.
+
+.TP
+.BR int6khost64
+An updated version of \fBint6khost\fR that omits the needed for an external SDRAM configuration file.
+It takes advantage of the \fBmemctl\fR applet included in the newer *.nvm files.
+
+.TP
+.BR int6kid
+A command line utility to print the DAK or NMK read from one or more devices.
+It can be used in shell scripts to dynamically obtain device key values and insert them on the command line of other programs.
+
+.TP
+.BR int6km
+A basic memory read utility used to inspect INT6x000 accessible SDRAM memory locations and mapped registers.
+Not all locations or registers are accessible.
+
+.TP
+.BR int6kmdio
+Insert values into MDIO PHY address registers using an VS_MDIO_COMMAND message.
+
+.TP
+.BR int6kmod
+A command line utility that downloads raw modules using  a sequence of VS_MODULE_OPERATION messages.
+
+.TP
+.BR int6kprobe
+A command line utility that detects and reports neighbor networks using the VS_DIAG_PROBE message.
+
+.TP
+.BR int6krate
+A command line utility that reports computed PHY rates for a single device or all devices on a logical network.
+Ouput is designed for import into a spread sheet.
+
+.TP
+.BR int6krule
+A command line utility used to format and send classification rules to a device.
+Classification rules are specified using symbolic names for actions, options, conditons and frame fields.
+
+.TP
+.BR int6kstat
+A command line utility that prints device link statistics on stdout in a relatively undecorated format.
+Output is designed for easy interpretation by other programs.
+
+.TP
+.BR int6ktest
+A command line utility to download and execute a series of test applets to the local powerline device.
+It is not for general use because there are no interlocks to prevent loading images designed for other platforms or loading images in illogical order.
+
+.TP
+.BR int6kuart
+A command line utility to send serial line commands to a UART-enabled Atheros Powerline device.
+This program elminates the need for terminal emulation software and can be used to download PIB and firmware files to a device over the serial line interface.
+
+.TP
+.BR int6kwait
+A command line utility used to pause shell scripts at critical points where a device must be in a known state before proceeding.
+Typical cases involve waiting for device power off or reset, power on or restart and network device association.
+
+.TP
+.BR mac2pw
+A device password generator that prints a range of MAC addresses and user passwords on stdout.
+It is an alternative to the Atheros Production Test System (PTS) DBBuilder Utility.
+
+.TP
+.BR mac2pwd
+A device password generator that reads MAC addresses from one or more input files and prints addresses and passwords on stdout.
+It is an alternative to the Atheros Production Test System (PTS) DBBuilder utility.
+
+.TP
+.BR mdioblock
+Produce an MDIO block from generic MDIO register instructions.
+The output is suitable for downloading to INT6x00 and AR7x00 powerline devices.
+
+.TP
+.BR mdiodump
+Display a binary MDIO program file in human readable form.
+
+.TP
+.BR mdiogen
+Generate a binary MDIO program file from a series of instruction macros.
+This program is for folks who know what they are doing.
+It has no man page or instructions for use.
+
+.TP
+.BR mdustats
+Collect and display various MDU traffic statistics using the VS_MDU_TRAFFIC_STATS message.
+
+.TP
+.BR modpib
+A basic command line PIB editor used to change the MAC, DAK and/or NMK of an existing PIB file.
+It can also be used to change the manufacturer string, network name and username strings.
+
+.TP
+.BR mrgpib
+A command line utility to copy PIB settings from one PIB file to another where the PIB files have different PIB versions.
+
+.TP
+.BR nvmmerge
+A command line utility to merge multiple applets or NVM files into a single NVM file.
+
+.TP
+.BR nvmsplit
+A command line utility to split an NVM file into multiple NVM files each containing one image.
+The original NVM file is preserved.
+
+.TP
+.BR odc
+An offset-driven hex compare utility for analysing the difference between two files having a fixed structure.
+An offset definition file is required for proper use.
+This program has been superceded by program \fBpibcomp\fR.
+
+.TP
+.BR odd
+An offset-driven hex dump utility for analyzing any binary file that has a fixed structured, such as an INT6000 PIB file or an INT5500 CFG file.
+An offset definition file is required for proper use.
+This program has been superceded by program \fBpibdump\fR.
+
+.TP
+.BR odx
+An offset-driven XML generator used to convert an offset definition file, used by programs odc and odd, to an XML edit definition file used by program pxe.
+
+.TP
+.BR pibdump
+Read a Qualcomm Atheros powerline parameter file and print an object driven dump on stdout.
+This program requires an object definition file.
+
+.TP
+.BR pibcomp
+Read and compare two Qualcomm Atheros powerline parameter files and print an objec driver dump for only those object that are different.
+This program requires and object definition file.
+
+.TP
+.BR pibruin
+A classifier rule input utility used to insert multiple classifier rules into a pib file.
+Use program \fBpibrump\fR to read rules from another PIB file or create a rule file manually with any text editor.
+This program is an alternative to program \fBint6krule\fR.
+
+.TP
+.BR pibrump
+A classifier rule dump utility used to read rules from a PIB file and print them in a format similar to the input for program \fBint6krule\fR.
+The output can be read directly by program \fBpibruin\fR.
+
+.TP
+.BR plcboot
+A command line utility to start, and optionally flash, Qualcomm Atheros Powerline Devices.
+It is a newer version of program \fBampboot\fR having options specific to the QCA6410, QCA7000 and AR7420 chipsets.
+
+.TP
+.BR plchost
+A example embedded host emulator that responds to VS_HST_ACTION messages sent from a flash-less device to a local host processor.
+It can be used to investigate and verify device-to-host interaction.
+The Atheros embedded API can perform similar functionality in a production environment.
+
+.TP
+.BR plcmod
+A command line utility that downloads raw modules using a sequence of VS_MODULE_OPERATION messages.
+This version can handle multiple module writes and modules exceeding 1400 bytes.
+
+.TP
+.BR plcnets
+A powerline network enumerator that searches all host network interfaces for powerline devices and their neighbors.
+
+.TP
+.BR plctool
+
+.TP
+.BR plctest
+A command line utility to download and execute a sequence of test applets to the local powerline device.
+It is not for general use because there are no interlocks to prevent loading images designed for other platforms or loading images in illogical order.
+It is a newer version of program \fBamptest\fR.
+
+.TP
+.BR pskey
+Print the SHA256 digest for the amplitude make stored in a PIB file.
+The digest can be used as a fingerprint or signature for the prescaler set.
+
+.TP
+.BR psin
+Read a prescaler file from stdin and replace the amplitude map stored in a PIB file.
+
+.TP
+.BR psout
+Read a PIB file and print a prescaler file suitable for input using \fBpsin\fR or the WIndows Device Manager.
+
+.TP
+.BR rkey
+A command line utility to generate distinct HomePlug AV compliant keys from a user defined keyfile that seeds the hash algorithm.
+It can be used to dynamically generate distinct keys inside shell scripts or create long lists of unique keys for use by other programs.
+
+.TP
+.BR setnvm
+A command line utility to modify slected header parameters for all image within a given NVM file.
+This program can be used to translate legacy NVM files to contemporary NVM file and vice verse.
+
+.TP
+.BR setpib
+A command line utility to insert arbitrary values into a PIB file based on data offset, length and format then compute a new PIB checksum.
+This program is a general purpose program intended for use in shell scripts but it requires detailed knowledge of PIB structure.
+
+.TP
+.BR ttycat
+A command line utility to write one or more files to a serial device.
+This program is a convenient tool for testing Atheros UART-enabled powerline devices.
+
+.TP
+.BR weeder
+A command line utility to set the programmable attenuators build into the Atheros Production Test System (PTS).
+
+.PP
+There may be other programs added, from time to time, that are not listed here.
+
+.SH SEE ALSO
+.BR amphost ( 1 ),
+.BR ampinit ( 1 ),
+.BR plcmod ( 1 ),
+.BR amptest ( 1 ),
+.BR amptool ( 1 ),
+.BR ar8236regedit ( 1 ),
+.BR chkpib ( 1 ),
+.BR chknvm ( 1 ),
+.BR coqos_add ( 1 ),
+.BR coqos_info ( 1 ),
+.BR coqos_man ( 1 ),
+.BR coqos_mod ( 1 ),
+.BR coqos_rel ( 1 ),
+.BR efsu ( 1 ),
+.BR efbu ( 1 ),
+.BR getpib ( 1 ),
+.BR hpav ( 1 ),
+.BR hpavkey ( 1 ),
+.BR hpavkeys ( 1 ),
+.BR int6k ( 1 ),
+.BR int6kbaud ( 1 ),
+.BR int6kboot ( 1 ),
+.BR int6keth ( 1 ),
+.BR int6kf ( 1 ),
+.BR int6khost ( 1 ),
+.BR int6khost64 ( 1 ),
+.BR int6kid ( 1 ),
+.BR int6km ( 1 ),
+.BR int6kmdio ( 1 ),
+.BR int6kmod ( 1 ),
+.BR int6kprobe ( 1 ),
+.BR int6krate ( 1 ),
+.BR int6krule ( 1 ),
+.BR int6kstat ( 1 ),
+.BR int6ktest ( 1 ),
+.BR int6kuart ( 1 ),
+.BR int6kwait ( 1 ),
+.BR mac2pw ( 1 ),
+.BR mac2pwd ( 1 ),
+.BR mdiodump ( 1 ),
+.BR modpib ( 1 ),
+.BR mrgpib ( 1 ),
+.BR nvmmerge ( 1 ),
+.BR nvmsplit ( 1 ),
+.BR odc ( 1 ),
+.BR odd ( 1 ),
+.BR odx ( 1 ),
+.BR pibdump ( 1 ),
+.BR pibcomp ( 1 ),
+.BR pibruin ( 1 ),
+.BR pibrump ( 1 ),
+.BR plcboot ( 1 ),
+.BR plchost ( 1 ),
+.BR plcmod ( 1 ),
+.BR plcinit ( 1 ),
+.BR plctest ( 1 ),
+.BR plctool ( 1 ),
+.BR plcrate ( 1 ),
+.BR plcrate ( 1 ),
+.BR plcwait ( 1 ),
+.BR psin ( 1 ),
+.BR pskey ( 1 ),
+.BR psout ( 1 ),
+.BR rkey ( 1 ),
+.BR setnvm ( 1 ),
+.BR setpib ( 1 ),
+.BR ttycat ( 1 ),
+.BR ttyrecv ( 1 ),
+.BR ttysend ( 1 ),
+.BR weeder ( 1 )
+
+.SH CREDITS
+ Alex Vasquez <alex.vasques@qca.qualcomm.com>
+ Andy Barnes <andy.barnes@qca.qualcomm.com>
+ Bill Wike <bill.wike@qca.qualcomm.com>
+ Charles Maier <cmaier@qca.qualcomm.com>
+ John Byron <john.byron@qca.qualcomm.com>
+ Mathieu Olivari <mathieu@qca.qualcomm.com>
+ Nathaniel Houghton <nhoughto@qca.qualcomm.com>
+ Marc Bertola <marc.bertola@qca.qualcomm.com>
+

@@ -1,0 +1,517 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			int6kdetect.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='int6k.c.html' title=' int6k.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='int6keth.c.html' title=' int6keth.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *
+ *   int6kdetect.c
+ *
+ *
+ *   Contributor(s):
+ *	Nathaniel Houghton &lt;nhoughto@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *   system header files;
+ *--------------------------------------------------------------------*/
+
+#include &lt;fcntl.h&gt;
+#include &lt;limits.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;unistd.h&gt;
+
+#ifdef WIN32
+#include &lt;windows.h&gt;
+#else
+#include &lt;termios.h&gt;
+#endif
+
+/*====================================================================*
+ *   custom header files;
+ *--------------------------------------------------------------------*/
+
+#include &quot;../tools/error.h&quot;
+#include &quot;../tools/files.h&quot;
+#include &quot;../tools/flags.h&quot;
+#include &quot;../tools/putoptv.h&quot;
+#include &quot;../tools/getoptv.h&quot;
+#include &quot;../serial/serial.h&quot;
+
+/*====================================================================*
+ *   custom source files;
+ *--------------------------------------------------------------------*/
+
+#ifndef MAKEFILE
+#include &quot;../tools/getoptv.c&quot;
+#include &quot;../tools/putoptv.c&quot;
+#include &quot;../tools/version.c&quot;
+#include &quot;../tools/error.c&quot;
+#endif
+
+#ifndef MAKEFILE
+#include &quot;../serial/baudrate.c&quot;
+#endif
+
+/*====================================================================*
+ *   program constants;
+ *--------------------------------------------------------------------*/
+
+#define SERIAL_PORT &quot;/dev/ttyS0&quot;
+
+#define INT6KDETECT_QUIET    (1 &lt;&lt; 0)
+#define INT6KDETECT_CMD_MODE (1 &lt;&lt; 1)
+
+struct serial
+
+{
+
+#ifdef WIN32
+
+	HANDLE h;
+
+#else
+
+	int fd;
+
+#endif
+
+};
+
+#define UART_NOPARITY   0
+#define UART_EVENPARITY 1
+#define UART_ODDPARITY  2
+
+struct serial_mode
+
+{
+	int baud_rate;
+	int parity;
+	int data_bits;
+	int stop_bits;
+};
+
+ssize_t read_serial (struct serial *s, void *buf, size_t nbytes)
+
+{
+
+#ifdef WIN32
+
+	DWORD read;
+	BOOL r;
+	r = ReadFile (s-&gt;h, buf, (DWORD) nbytes, &amp;read, NULL);
+	if (r) return read;
+	else return -1;
+
+#else
+
+	return (read (s-&gt;fd, buf, nbytes));
+
+#endif
+
+}
+
+ssize_t write_serial (struct serial *s, void *buf, size_t nbytes)
+
+{
+
+#ifdef WIN32
+
+	DWORD written;
+	BOOL r;
+	r = WriteFile (s-&gt;h, buf, (DWORD) nbytes, &amp;written, NULL);
+	if (r) return written;
+	else return -1;
+
+#else
+
+	return (write (s-&gt;fd, buf, nbytes));
+
+#endif
+
+}
+
+int open_serial (char const *file, struct serial *s)
+
+{
+
+#ifdef WIN32
+
+	s-&gt;h = CreateFile (file, GENERIC_READ | GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+	if (s-&gt;h == INVALID_HANDLE_VALUE)
+	{
+		return (-1);
+	}
+
+#else
+
+	if ((s-&gt;fd = open (file, O_RDWR)) == -1)
+	{
+		return (-1);
+	}
+
+#endif
+
+	return (0);
+}
+
+int close_serial (struct serial *s)
+
+{
+
+#ifdef WIN32
+
+	if (CloseHandle (s-&gt;h)) return 0;
+	else return -1;
+
+#else
+
+	return (close (s-&gt;fd));
+
+#endif
+
+}
+
+int set_serial (struct serial *s, struct serial_mode *serial_mode)
+
+{
+
+#ifdef WIN32
+
+	COMMTIMEOUTS timeouts;
+	DCB dcbSerial;
+	memset (&amp;dcbSerial, 0, sizeof (dcbSerial));
+	dcbSerial.DCBlength = sizeof (dcbSerial);
+	if (!GetCommState (s-&gt;h, &amp;dcbSerial))
+	{
+		return (-1);
+	}
+	dcbSerial.BaudRate = serial_mode-&gt;baud_rate;
+	dcbSerial.ByteSize = serial_mode-&gt;data_bits;
+	switch (serial_mode-&gt;stop_bits)
+	{
+	case 1:
+		dcbSerial.StopBits = ONESTOPBIT;
+		break;
+	case 2:
+		dcbSerial.StopBits = TWOSTOPBITS;
+		break;
+	default:
+		error (1, 0, &quot;invalid stop bit setting&quot;);
+	}
+	switch (serial_mode-&gt;parity)
+	{
+	case UART_ODDPARITY:
+		dcbSerial.Parity = ODDPARITY;
+		dcbSerial.fParity = TRUE;
+		break;
+	case UART_EVENPARITY:
+		dcbSerial.Parity = EVENPARITY;
+		dcbSerial.fParity = TRUE;
+		break;
+	case UART_NOPARITY:
+		dcbSerial.Parity = NOPARITY;
+		dcbSerial.fParity = FALSE;
+		break;
+	default:
+		error (1, 0, &quot;invalid parity serial_mode&quot;);
+	}
+	if (!SetCommState (s-&gt;h, &amp;dcbSerial))
+	{
+		error (0, 0, &quot;could not set serial port settings&quot;);
+		return (-1);
+	}
+	timeouts.ReadIntervalTimeout = 0;
+	timeouts.ReadTotalTimeoutConstant = 10;
+	timeouts.ReadTotalTimeoutMultiplier = 0;
+	timeouts.WriteTotalTimeoutConstant = 10;
+	timeouts.WriteTotalTimeoutMultiplier = 10;
+	if (!SetCommTimeouts (s-&gt;h, &amp;timeouts))
+	{
+		return (-1);
+	}
+
+#else
+
+	struct termios termios;
+	speed_t speed;
+	tcgetattr (s-&gt;fd, &amp;termios);
+	cfmakeraw (&amp;termios);
+	termios.c_cflag &amp;= ~CSIZE;
+	switch (serial_mode-&gt;data_bits)
+	{
+	case 8:
+		termios.c_cflag |= CS8;
+		break;
+	case 7:
+		termios.c_cflag |= CS7;
+		break;
+	case 6:
+		termios.c_cflag |= CS6;
+		break;
+	case 5:
+		termios.c_cflag |= CS5;
+		break;
+	default:
+		error (1, 0, &quot;invalid serial byte size&quot;);
+	}
+	switch (serial_mode-&gt;stop_bits)
+	{
+	case 2:
+		termios.c_cflag |= CSTOPB;
+		break;
+	case 1:
+		termios.c_cflag &amp;= ~CSTOPB;
+		break;
+	default:
+		error (1, 0, &quot;invalid number of stop bits&quot;);
+	}
+	switch (serial_mode-&gt;parity)
+	{
+	case UART_ODDPARITY:
+		termios.c_cflag |= PARENB;
+		termios.c_cflag |= PARODD;
+		break;
+	case UART_EVENPARITY:
+		termios.c_cflag |= PARENB;
+		termios.c_cflag &amp;= ~PARODD;
+		break;
+	case UART_NOPARITY:
+		termios.c_cflag &amp;= ~PARENB;
+		break;
+	default:
+		error (1, 0, &quot;invalid parity serial_mode&quot;);
+	}
+	if (baudrate (serial_mode-&gt;baud_rate, &amp;speed) == -1)
+	{
+		error (0, 0, &quot;warning: unsupported baud rate: %d&quot;, serial_mode-&gt;baud_rate);
+		return (-1);
+	}
+	if (cfsetspeed (&amp;termios, speed) == -1) error (1, 0, &quot;could not set serial baud rate&quot;);
+	termios.c_cc [VTIME] = 1;
+	termios.c_cc [VMIN] = 0;
+	if (tcsetattr (s-&gt;fd, TCSANOW, &amp;termios) == -1) error (1, 0, &quot;could not set serial attributes&quot;);
+
+#endif
+
+	return (0);
+}
+
+int at_cmd (struct serial *s)
+
+{
+	char buf [32];
+	ssize_t r;
+	if (write_serial (s, &quot;AT\r&quot;, 3) == -1) error (1, 0, &quot;could not write&quot;);
+	memset (buf, 0, sizeof (buf));
+	r = read_serial (s, buf, sizeof (buf) - 1);
+	if (r &lt; 0) return -1;
+	else if (r == 0) return -1;
+	if (!strcmp (buf, &quot;OK\r&quot;)) return 0;
+	return (-1);
+}
+
+void wakeup (struct serial *s)
+
+{
+	sleep (1);
+	if (write_serial (s, &quot;+++&quot;, 3) == -1) error (1, 0, &quot;could not write&quot;);
+	sleep (1);
+}
+
+void dump_serial_mode (struct serial_mode *serial_mode)
+
+{
+	printf (&quot;baud_rate = %d\n&quot;, serial_mode-&gt;baud_rate);
+	printf (&quot;stop_bits = %d\n&quot;, serial_mode-&gt;stop_bits);
+	printf (&quot;data_bits = %d\n&quot;, serial_mode-&gt;data_bits);
+	printf (&quot;parity    = %d\n&quot;, serial_mode-&gt;parity);
+}
+
+int try_serial_mode (struct serial *s, struct serial_mode *serial_mode, flag_t flags)
+
+{
+	if (set_serial (s, serial_mode) == -1)
+	{
+		error (0, 0, &quot;could not set serial_mode&quot;);
+		return (-1);
+	}
+	if (!_anyset (flags, INT6KDETECT_CMD_MODE)) wakeup (s);
+	at_cmd (s);
+	return (at_cmd (s));
+}
+
+int detect (struct serial *s, struct serial_mode *serial_mode, flag_t flags)
+
+{
+	static int rate [] =
+	{
+		115200,
+		9600,
+		460800,
+		230400,
+		57600,
+		38400,
+		19200,
+		4800,
+		2400,
+		600,
+		300,
+		50
+	};
+	static int parity [] =
+	{
+		UART_NOPARITY,
+		UART_EVENPARITY,
+		UART_ODDPARITY
+	};
+	size_t i;
+	size_t j;
+	unsigned current;
+	unsigned total;
+	total = 2 * 2 * 3 * (sizeof (rate) / sizeof (int));
+	current = 0;
+	for (serial_mode-&gt;stop_bits = 1; serial_mode-&gt;stop_bits &lt;= 2; ++serial_mode-&gt;stop_bits)
+	{
+		for (serial_mode-&gt;data_bits = 8; serial_mode-&gt;data_bits &gt;= 7; --serial_mode-&gt;data_bits)
+		{
+			for (i = 0; i &lt; sizeof (parity) / sizeof (int); ++i)
+			{
+				serial_mode-&gt;parity = parity [i];
+				for (j = 0; j &lt; sizeof (rate) / sizeof (int); ++j)
+				{
+					serial_mode-&gt;baud_rate = rate [j];
+					++current;
+					if (!_anyset (flags, INT6KDETECT_QUIET))
+					{
+						printf (&quot;\rTesting mode: %03d/%03d (%.01f%%)...&quot;, current, total, current * 100.0 / total);
+						fflush (stdout);
+					}
+					if (!try_serial_mode (s, serial_mode, flags))
+					{
+						if (!_anyset (flags, INT6KDETECT_QUIET)) printf (&quot;\n&quot;);
+						return (0);
+					}
+				}
+			}
+		}
+	}
+	if (!_anyset (flags, INT6KDETECT_QUIET)) printf (&quot;\n&quot;);
+	return (-1);
+}
+
+int main (int argc, char const * argv [])
+
+{
+	static char const * optv [] =
+	{
+		&quot;cl:qv&quot;,
+		&quot;&quot;,
+		&quot;Atheros UART Device Detector&quot;,
+		&quot;c\tassume device is in command mode&quot;,
+		&quot;l f\tserial port is (f) [&quot; SERIAL_PORT &quot;]&quot;,
+		&quot;q\tquiet mode&quot;,
+		&quot;v\tverbose mode&quot;,
+		(char const *) (0)
+	};
+	signed c;
+	char const *line = SERIAL_PORT;
+	struct serial serial;
+	struct serial_mode serial_mode;
+	flag_t flags = 0;
+	optind = 1;
+	while ((c = getoptv (argc, argv, optv)) != -1)
+	{
+		switch ((char) (c))
+		{
+		case 'c':
+			_setbits (flags, INT6KDETECT_CMD_MODE);
+			break;
+		case 'l':
+			line = optarg;
+			break;
+		case 'q':
+			_setbits (flags, INT6KDETECT_QUIET);
+			break;
+		default:
+			break;
+		}
+	}
+	argc -= optind;
+	argv += optind;
+	if (open_serial (line, &amp;serial) == -1) error (1, errno, &quot;could not open %s&quot;, line);
+	if (detect (&amp;serial, &amp;serial_mode, flags) == -1) error (1, 0, &quot;could not detect device&quot;);
+	printf (&quot;Detected the following serial mode:\n&quot;);
+	dump_serial_mode (&amp;serial_mode);
+	close_serial (&amp;serial);
+	return (0);
+}
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='int6k.c.html' title=' int6k.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='int6keth.c.html' title=' int6keth.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

@@ -1,0 +1,17 @@
+#!/usr/local/bin/efsu -hvieth0
+# file: efsu/frame.hex 
+
+# ====================================================================
+# generic ethernet frame used to generate traffic between two devices
+# from a script; see script traffic.sh to see an example of how to do
+# this;
+# --------------------------------------------------------------------
+
+FF FF FF FF FF FF FF FF FF FF FF FF 08 00 FF FF
+FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
+FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
+FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
+FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
+FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
+FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
+

@@ -1,0 +1,276 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			mac2pwd.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='mac2pw.c.html' title=' mac2pw.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='MACPasswords.c.html' title=' MACPasswords.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+#define _GETOPT_H
+
+/*====================================================================*
+ *   system header files;
+ *--------------------------------------------------------------------*/
+
+#include &lt;stdio.h&gt;
+#include &lt;ctype.h&gt;
+#include &lt;errno.h&gt;
+#include &lt;limits.h&gt;
+
+/*====================================================================*
+ *   custom header files;
+ *--------------------------------------------------------------------*/
+
+#include &quot;../tools/getoptv.h&quot;
+#include &quot;../tools/putoptv.h&quot;
+#include &quot;../tools/memory.h&quot;
+#include &quot;../tools/number.h&quot;
+#include &quot;../tools/types.h&quot;
+#include &quot;../tools/flags.h&quot;
+#include &quot;../tools/error.h&quot;
+#include &quot;../key/keys.h&quot;
+
+/*====================================================================*
+ *   custom source files;
+ *--------------------------------------------------------------------*/
+
+#ifndef MAKEFILE
+#include &quot;../tools/getoptv.c&quot;
+#include &quot;../tools/putoptv.c&quot;
+#include &quot;../tools/version.c&quot;
+#include &quot;../tools/todigit.c&quot;
+#include &quot;../tools/uintspec.c&quot;
+#include &quot;../tools/error.c&quot;
+#endif
+
+#ifndef MAKEFILE
+#include &quot;../key/MACPasswords.c&quot;
+#endif
+
+/*====================================================================*
+ *   program constants;
+ *--------------------------------------------------------------------*/
+
+#ifndef ETHER_ADDR_LEN
+#define ETHER_ADDR_LEN 6
+#endif
+
+/*====================================================================*
+ *
+ *   void function (const char * file, unsigned count, unsigned bunch, flag_t flags)
+ *
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+static void function (const char * file, unsigned count, unsigned group, unsigned space, flag_t flags)
+
+{
+	unsigned line = 1;
+	unsigned radix = 0x10;
+	unsigned width;
+	unsigned digit;
+	signed c = getc (stdin);
+	while (c != EOF)
+	{
+		uint32_t vendor = 0;
+		uint32_t device = 0;
+		while (isspace (c))
+		{
+			if (c == '\n')
+			{
+				line++;
+			}
+			c = getc (stdin);
+		}
+		if ((c == '#') || (c == ';'))
+		{
+			do
+			{
+				c = getc (stdin);
+			}
+			while ((c != '\n') &amp;&amp; (c != EOF));
+			continue;
+		}
+		for (width = 0; width &lt; ETHER_ADDR_LEN; width++)
+		{
+			if ((digit = todigit (c)) &lt; radix)
+			{
+				vendor *= radix;
+				vendor += digit;
+				c = getc (stdin);
+				continue;
+			}
+			error (1, EINVAL, &quot;%s: line %d: Illegal vendor&quot;, file, line);
+		}
+		if (!vendor)
+		{
+			error (1, EPERM, &quot;%s: line %d: Vendor can't be zero&quot;, file, line);
+		}
+		for (width = 0; width &lt; ETHER_ADDR_LEN; width++)
+		{
+			if ((digit = todigit (c)) &lt; radix)
+			{
+				device *= radix;
+				device += digit;
+				c = getc (stdin);
+				continue;
+			}
+			error (1, EINVAL, &quot;%s: line %d: Illegal device&quot;, file, line);
+		}
+		if (!device)
+		{
+			error (1, EPERM, &quot;%s: line %d: Device can't be zero&quot;, file, line);
+		}
+		while (isspace (c))
+		{
+			if (c == '\n')
+			{
+				line++;
+			}
+			c = getc (stdin);
+		}
+		MACPasswords (vendor, device, 1, count, group, space, flags);
+	}
+	return;
+}
+
+/*====================================================================*
+ *
+ *   int main (int argc, const char * argv []);
+ *
+ *   read one or more text files containing device address strings
+ *   and print a stream of address/password pairs; device addresses
+ *   must be separated by white space;
+ *
+ *
+ *   Contributor(s):
+ *	Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+#define DEFAULT_COUNT 16
+#define DEFAULT_GROUP 4
+
+int main (int argc, const char * argv [])
+
+{
+	static const char * optv [] =
+	{
+		&quot;b:l:qs:uv&quot;,
+		PUTOPTV_S_FUNNEL,
+		&quot;Atheros device password generator&quot;,
+		&quot;b n\tbunching factor [&quot; LITERAL (DEFAULT_GROUP) &quot;]&quot;,
+		&quot;l n\tpassword letters [&quot; LITERAL (DEFAULT_COUNT) &quot;]&quot;,
+		&quot;q\tomit device address on output&quot;,
+		&quot;v\tprepend PTS flag on output&quot;,
+		(const char *)(0)
+	};
+	unsigned count = DEFAULT_COUNT;
+	unsigned group = DEFAULT_GROUP;
+	unsigned space = '-';
+	flag_t flags = (flag_t)(0);
+	signed c;
+	optind = 1;
+	while ((c = getoptv (argc, argv, optv)) != -1)
+	{
+		switch ((char)(c))
+		{
+		case 'b':
+			group = (unsigned)(uintspec (optarg, 0, UCHAR_MAX));
+			break;
+		case 'l':
+			count = (unsigned)(uintspec (optarg, 12, 64));
+			break;
+		case 'q':
+			_setbits (flags, PASSWORD_SILENCE);
+			break;
+		case 'u':
+		case 'v':
+			_setbits (flags, PASSWORD_VERBOSE);
+			break;
+		default:
+			break;
+		}
+	}
+	argc -= optind;
+	argv += optind;
+	if (!argc)
+	{
+		function (&quot;stdin&quot;, count, group, space, flags);
+	}
+	while ((argv) &amp;&amp; (* argv))
+	{
+		if (!freopen (* argv, &quot;rb&quot;, stdin))
+		{
+			error (1, EINVAL, &quot;Can't open %s&quot;, * argv);
+		}
+		function (* argv, count, group, space, flags);
+		argc--;
+		argv++;
+	}
+	return (0);
+}
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='mac2pw.c.html' title=' mac2pw.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='MACPasswords.c.html' title=' MACPasswords.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

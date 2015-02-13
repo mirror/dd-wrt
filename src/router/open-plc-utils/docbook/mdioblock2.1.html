@@ -1,0 +1,113 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			mdioblock2.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='mdioblock.1.html' title=' mdioblock.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='mdiodump.1.html' title=' mdiodump.1 '>NEXT</a>]
+			</div>
+<pre>
+mdioblock2(1)                                Qualcomm Atheros Open Powerline Toolkit                               mdioblock2(1)
+
+NAME
+       mdioblock2 - Qualcomm Atheros Clause 45 MDIO Instruction Block Assembler
+
+SYNOPSIS
+       mdioblock2 [options] file [file] [...]  [&gt;stdout]
+
+       mdioblock2 [options] [&lt;stdin] [&gt;stdout]
+
+DESCRIPTION
+       Assemble  an  Atheros MDIO instruction block from hexadecimal register instructions.  MDIO instruction blocks are written
+       to Atheros powerline devices as modules using the VS_MOD_OP message type.  Alternately, program int6kmod can be used.
+
+       Atheros MDIO modules consists of a 16-bit header followed by one or more MDIO communication frames  with  register  masks
+       and  padded  to  the nearest multiple of 32-bits for download purposes.  MDIO instructions are entered here using 802.3ae
+       Clause 45 (or addr, data and mask) format.  See program mdioblock for a similar  program  that  accepts  instructions  in
+       802.3 Clause 22 (or phy, reg, data and mask) format.
+
+       This  program  is  part of the Qualcomm Atheros Powerline Toolkit.  See the AMP man page for an overview and installation
+       instructions.
+
+OPTIONS
+       -q     Quiet mode.  Suppresses error messages caused by instruction syntax errors.
+
+       -v     Verbose mode.  Prints instructions on stderr as they are processed.
+
+       -?,--help
+              Displays program help information on stderr.  This option takes precedence over all other options on  the  command
+              line except version information.
+
+       -!,--version
+              Displays  program  version information on stderr.  This option takes precedence over all other options on the com‐
+              mand line except help information.  Use this option when sending screen dumps to Atheros technical staff.
+
+ARGUMENTS
+       file   A text files contining one or more generic MDIO register intructions  consisting  of  a  address,  data  and  mask
+              fields.   Fields  are separated by whitespace.  Instructions are terminated with semicolon.  Multiple instructions
+              may appear on one line and one instruction may span multiple lines.  Script-style comments are  permitted  between
+              instructions but not between instruction fields.
+
+REFERENCES
+       See the Qualcomm Atheros AR7x00 Firmware Technical Reference Manual section on the Module Operation message type for more
+       information on MDIO Block format.
+
+DISCLAIMER
+       Atheros HomePlug AV Vendor Specific Management Message structure and content is proprietary to Qualcomm Atheros, Ocala FL
+       USA.   Consequently,  public  information  may  not  be available.  Qualcomm Atheros reserves the right to modify message
+       structure and content in future firmware releases without any obligation to notify or compensate users of this program.
+
+EXAMPLES
+       The following command reads register instructions from text file mdio.txt and writes binary file mdio.bin.  In this exam‐
+       ple,  the  program  acts as a filter, reading from stdin and writing to stdout.  Progress and error messages, if any, are
+       written to stderr.
+
+          # mdioblock2 &lt; mdio.txt &gt; mdio.bin
+
+       The following command reads register instructions from files physetup.dat then flowctl.dat then misc.ins and  writes  one
+       binary MDIO block to file mdio.bin.  The previous contents of file mdio.bin are overwritten.
+
+          # mdioblock2 physetup.dat flowctl.dat misc.ins &gt; mdio.bin
+
+       An  example  register  instruction file might look like this.  Instructions have addr, data and mask fields.  Instruction
+       fields are separated by whitespace and instructions are terminate by a semicolon.  Multiple instructions  can  appear  on
+       one  line  or  one instruction can span multiple lines.  Script-style comments are permitted between instructions but not
+       between instruction fields.
+
+          2c 7e3f003f ffffffff;
+          8 500 ffffffff;
+          100 7d ffffffff; 30 19f005f2 ffffffff;
+          200
+               7d
+                   ffffffff;
+          300 7d ffffffff;
+          # Hello World
+          400 7d ffffffff;
+          500 7d ffffffff;
+
+SEE ALSO
+       amp(1), int6kmod(1), int6kmdio(1), int6kmdio2(1), mdioblock(1), mdiodump(1), mdiogen(1)
+
+CREDITS
+       Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                            mdioblock2(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='mdioblock.1.html' title=' mdioblock.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='mdiodump.1.html' title=' mdiodump.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

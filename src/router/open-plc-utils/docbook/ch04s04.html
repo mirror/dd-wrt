@@ -1,0 +1,29 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Firmware Boot Process</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="ch04.html" title="Chapter 4.  Firmware"><link rel="prev" href="ch04s03.html" title="Architecture Overview"><link rel="next" href="ch04s05.html" title="Boot from Host Configuration"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">
+			Firmware Boot Process
+			</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch04s03.html">Prev</a> </td><th width="60%" align="center">Chapter 4. 
+		Firmware 
+		</th><td width="20%" align="right"> <a accesskey="n" href="ch04s05.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="firmware-bootload"></a>
+			Firmware Boot Process
+			</h2></div></div></div><p>
+			The <span class="productname">INT6300</span>™  can boot HomePlug AV firmware from either dedicated flash memory or a local host processor. This means that dedicated flash memory in not necessary when an onboard processor having persistent storage is available. The absence of dedicated flash memory and availability of an onboard host processor is called a <span class="emphasis"><em>Boot from Host</em></span> configuration. 
+			</p><p>
+			The Boot from Host configuration is of interest to customers who are committed to using a host processor in their <span class="productname">INT6300</span>™ based product and want to use it to eliminate the additional cost of dedicated flash memory to store HomePlug AV firmware for <span class="productname">INT6300</span>™ devices. 
+			</p><p>
+			The Boot from Host configuration supports three operations: <a class="link" href="ch04s10.html" title="Upgrade Device (INT6000/INT6300/INT6400)">Upgrade Device</a>, <a class="link" href="ch04s11.html" title="Update Local Host (INT6000/INT6300/INT6400)">Update Local Host</a> and <a class="link" href="ch04s12.html" title="Boot from Host (INT6000)">Boot from Host</a>. Product designers must write host software to support all three operations as described later in this document. Atheros provides an Embedded Application Program Interface to assist product designers with this effort. Obtain a copy of the <em class="citetitle">HomePlug AV Application Programming Interface User's Guide</em> from Atheros Communications,  Ocala FL USA for more information.
+			</p><p>
+			Readers should not confuse a Boot from Host configuration with the <a class="link" href="ch04s12.html" title="Boot from Host (INT6000)">Boot from Host</a> operation. The former is a hardware configuration having an <span class="productname">INT6300</span>™  with no dedicated flash memory available. The latter is the process of downloading configuration information, firmware and <acronym class="acronym">PIB</acronym> from the local host to the device and starting firmware execution on startup. 
+			</p><p>
+			This discussion assumes that the reader is familiar with the following: 
+			</p><div class="orderedlist"><ol type="1" compact><li><p>
+					The distinction between a local and remote host
+					</p></li><li><p>
+					The relationship between the powerline device H1, M1 and PHY interfaces.
+					</p></li><li><p>
+					The structure of the following Atheros Management Message types: <code class="constant">VS_HST_ACTION</code>,  <code class="constant">VS_SET_SDRAM</code>, <code class="constant">VS_WR_MEM</code>, <code class="constant">VS_WR_MOD</code>, <code class="constant">VS_RS_DEV</code>, <code class="constant">VS_ST_MAC</code> and <code class="constant">VS_WRITE_AND_EXECUTE</code>. Be aware that message types <code class="constant">VS_SET_SDRAM</code>, <code class="constant">VS_WR_MEM</code>, <code class="constant">VS_WR_MOD</code> and <code class="constant">VS_ST_MAC</code> are deprecated and will no longer be supported by the newest firmware. 
+					</p></li><li><p>
+					Hardware architecture covered in the <em class="citetitle">QCA Powerline Hardware Technical Reference Manual</em> and the management message formats covered in the <em class="citetitle">QCA Powerline Firmware Technical Reference Manual</em>.
+					</p></li></ol></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch04s03.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="ch04.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch04s05.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">
+			Architecture Overview 
+			 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 
+			Boot from Host Configuration 
+			</td></tr></table></div></body></html>0

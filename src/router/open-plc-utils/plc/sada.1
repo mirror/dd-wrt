@@ -1,0 +1,56 @@
+.TH sada 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+sada - slave authorization/deauthorization
+
+.SH SYNOPSIS
+.BR sada 
+.RI [ options ] 
+[...]
+
+.SH DESCRIPTION
+
+.SH OPTIONS
+
+.TP
+.RB - e
+Redirects stderr messages to stdout.
+By convention status and error messages are printed on stderr while primary program output is printed on stdout.
+This option prints all output on stdout in cases where this is desired.
+.RB - q
+Suppresses status messages on stderr.
+
+.TP
+.RB - v
+Print additional information on stdout.
+In particular, this option dumps incoming and outgoing packets which can be saved as text files for reference.
+
+.TP
+.RB - ? ,-- help
+Print program help summary on stdout.
+This option takes precedence over other options on the command line.
+
+.TP
+.RB - ! ,-- version
+Print program version information on stdout.
+This option takes precedence over other options on the command line.
+Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of the Linux Toolkit you are using.
+
+.SH ARGUMENTS
+
+.SH EXAMPLES
+None.
+
+.SH REFERENCES
+See the Qualcomm Atheros \fIPowerline Firmware Technical Reference Manual\fR for more information about MDU powerline configuration.
+
+.SH DISCLAIMER
+None.
+
+.SH SEE ALSO
+.BR plc ( 1 ),
+.BR mdustats ( 1 )
+
+.SH CREDITS
+ Charles Maier <cmaier@qca.qualcomm.com>
+

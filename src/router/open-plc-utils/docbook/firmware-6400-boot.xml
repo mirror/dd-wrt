@@ -1,0 +1,174 @@
+	<section id='firmware-6400-boot'>
+		<title>
+			Boot from Host (INT6400)
+			</title>
+		<para>
+			The <productname>INT6400</productname> boot-from-host operation downloads and executes a memory configuration applet then downloads runtime parameters and firmware from a local host and starts firmware execution. This method is initiated by the <productname>INT6400</productname> bootloader after reset on a device having no flash memory, blank flash memory or corrupted flash memory. The method requires bootloader aware software running on the local host in order to complete.
+			</para>
+		<para>
+			The <productname>INT6400</productname> boot-from-host method is similar to the <productname>INT6300</productname> boot-from-host method but it downloads and executes an SDRAM configuration applet instead of downloading SDRAM parameters. The applet is downloaded and executed using the same mechanism as runtime firmware. The applet executes and returns to the bootloader when done. The bootloader then continues to drive the boot process using <varname>VS_HOST_ACTION</varname> messages.
+			</para>
+		<para>
+			The <productname>INT6400</productname> boot-from-host method will work for <productname>AR7400</productname> and <productname>QCA7420</productname> chipsets but will not work on successive chipsets. Customers should adopt or implement the <productname>AR7400</productname> boot-from-host method, instead of this one, to avoid building obsolete products.
+			</para>
+		<para>
+			The <productname>INT6400</productname> does not have a unique hardware address until the firmware starts and assigns one from the parameter information block. Until that time, the bootloader will only acknowledge messages addressed to <constant>00:B0:52:00:00:01</constant>. In addition, the bootloader does not know the hardware address of the local host and so it addresses <constant>VS_HOST_ACTION</constant> messages to <constant>FF:FF:FF:FF:FF:FF</constant>; however, these messages are not transmitted over the powerline.
+			</para>
+		<figure>
+			<title>
+				Boot from Host (INT6400)
+				</title>
+<programlisting><![CDATA[
+
+          INT6400                            LOCAL-HOST
+        [01] |                                    |
+        [02] |-------- VS_HOST_ACTION.IND ------->| [03]
+        [05] |<------- VS_HOST_ACTION.RSP --------| [04]
+             |                                    |
+        [06] |<------- VS_WR_MEM.REQ -------------| [06]
+        [06] |-------- VS_WR_MEM.CNF ------------>| [06]
+        [06] |<-----------------------------------| [06]
+        [06] |----------------------------------->| [06]
+             |                                    |
+        [08] |<------- VS_ST_MAC.REQ -------------| [07]
+        [09] |-------- VS_ST_MAC.CNF ------------>| [10]
+        [11] |                                    |
+        [12] |-------- VS_HOST_ACTION.IND ------->| [13]
+        [15] |<------- VS_HOST_ACTION.RSP --------| [14]
+             |                                    |
+             |                                    | [16]
+             |                                    |
+        [17] |<------- VS_WR_MEM.REQ -------------| [17]
+        [17] |-------- VS_WR_MEM.CNF ------------>| [17]
+        [17] |<-----------------------------------| [17]
+        [17] |----------------------------------->| [17]
+             |                                    |
+        [18] |<------- VS_WR_MEM.REQ -------------| [18]
+        [18] |-------- VS_WR_MEM.CNF ------------>| [18]
+        [18] |<-----------------------------------| [18]
+        [18] |----------------------------------->| [18]
+             |                                    |
+        [20] |<------- VS_ST_MAC.REQ -------------| [19]
+        [21] |-------- VS_ST_MAC.CNF ------------>| [22]
+
+ ]]></programlisting>
+			</figure>
+		<orderedlist>
+			<listitem>
+				<para>
+					The bootloader automatically starts after device reset and attempts to read the runtime firmware image from flash memory, write it into <acronym>SDRAM</acronym> and start execution. If it succeeds then normal operation begins and no futher action is required. If it fails, for any reason, then the bootloader initiates the boot-from-host sequence.
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The bootloader broadcasts <constant>VS_HOST_ACTION.IND</constant> with <varname>HOST_ACTION_REQ</varname> set to <constant>0x04</constant> to request configuration. The destination address is <constant>FF:FF:FF:FF:FF:FF</constant> and source address is <constant>00:B0:52:00:00:01</constant> as explained above. This message is sent every <constant>500</constant> milliseconds which differs from that of other chips.
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The local host receives the <constant>VS_HOST_ACTION.IND</constant> message and inspects the <varname>HOST_ACTION_REQ</varname> field to determine the appropriate action. On a single-host system, the lone host must service the request or the device will not start. On a multi-host system, one host must elect to service the request of the device will not start.
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The local host sends <constant>VS_HOST_ACTION.RSP</constant> to silence the bootloader or indicate the ability and willingness to service the request. The destination address must be <constant>00:B0:52:00:00:01</constant> and the source address is that of the host interface. The <varname>MSTATUS</varname> field is set to <constant>0x00</constant> for affirmative and <constant>0x01</constant> for negative. 
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The bootloader receives the <constant>VS_HOST_ACTION.RSP</constant> from the host and inspects the <varname>MSTATUS</varname> field. On affirmative response, the bootloader stops broadcasting <constant>VS_HOST_ACTION.IND</constant> messages and waits indefinitely for the local host to download a configuation applet and start execution. 
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The host downloads the memory control applet to the device by sending <constant>VS_WR_MEM.REQ</constant> messages to the device and waiting for a <constant>VS_WR_MEM.CNF</constant> message from the device after each one. Each message contains an image segment and the segment memory offset, length and checksum. These values are used to monitor and manage download progress. If a transaction fails, the host can detect it and should repeat it.
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The host starts execution of the memory control applet by sending a <constant>VS_ST_MAC.REQ</constant> message to the device. The message contains the applet load address, length, checksum and start address. These values are often obtained from an NVM file image header.
+
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The bootloader receives the <constant>VS_ST_MAC.REQ</constant> from the host and validates the contents.					
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The bootloader sends a <constant>VS_ST_MAC.CNF</constant> message to the host indicating the ability and willingness to start applet execution. The <varname>MSTATUS</varname> field is set to <constant>0x00</constant> for affirmative and <constant>0x01</constant> for negative.
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The host receives the <constant>VS_ST_MAC.CNF</constant> message from the device and evaluates the <varname>MSTATUS</varname> field. On affirmative,  the host waits for further requests from the device. On negative,  the host may attempt another start or another download followed by a start or attempt to alert a human.
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+ 					The bootloader starts applet execution. The applet configures memory, runs to completion and returns to the Bootloader.		
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The bootloader broadcasts a <constant>VS_HOST_ACTION.IND</constant> message every 500 milliseconds to request runtime firmware and parameter download. The message destination address is <constant>FF:FF:FF:FF:FF:FF</constant> and source address is <constant>00:B0:52:00:00:01</constant> as explained above. The <varname>HOST_ACTION_REQ</varname> field is set to <constant>0x00</constant>. 
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The host receives the <constant>VS_HOST_ACTION.IND</constant> message and inspects the <varname>HOST_ACTION_REQ</varname> field to determine the requested action. On a single-host system,  the lone host must service the request or the device will not start. On a multi-host system, one host must elect to service the request of the device will not start.
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The host sends a <constant>VS_HOST_ACTION.RSP</constant> message to the device to indicate the ability and willingness to service the request. The <varname>MSTATUS</varname> field is set to <constant>0x00</constant> for affirmative and <constant>0x01</constant> for negative. 
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The bootloader receives the <constant>VS_HOST_ACTION.RSP</constant> from the host and inspects the <varname>MSTATUS</varname> field. On affirmative response, the bootloader stops broadcasting <constant>VS_HOST_ACTION.IND</constant> messages and waits indefinitely for the host to download the runtime firmware and parameters and start execution. 
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The host determines which firmware and parameter image to download. In some cases there may be no choice. In other cases, there may be a choice between default and custom images or between current and upgraded images. This is a principle design issue to consider. 
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The host downloads the firmware image to the device by sending <constant>VS_WR_MEM.REQ</constant> messages to the device and waiting for a <constant>VS_WR_MEM.CNF</constant> message from the device after each one. Each message contains an image segment and the segment memory offset, length and checksum. These values are used to monitor and manage download progress. If a transaction fails, the local host can detect it and should repeat it.
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The host downloads the parameter block to the device by sending <constant>VS_WR_MEM.REQ</constant> messages to the device and waiting for a <constant>VS_WR_MEM.CNF</constant> message from the device after each one. Each message contains an image segment and the segment memory offset, length and checksum. These values are used to monitor and manage download progress. If a transaction fails, the local host can detect it and should repeat it. 
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The host starts runtime firmware execution by sending a <constant>VS_ST_MAC.REQ</constant> message to the device. The message contains the firmware load address, length, checksum and start address. These values are often obtained from an NVM file image header.
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The bootloader receives the <constant>VS_ST_MAC.REQ</constant> from the host and validates the content.
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The bootloader sends a <constant>VS_ST_MAC.CNF</constant> message to indicate the ability or willingness to start firmware execution.   
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					The host receives the <constant>VS_ST_MAC.CNF</constant> message from the device, inspects the <varname>MSTATUS</varname> field and acts accordingly. 
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+ 					The bootloader starts runtime firmware execution. The firmware reads and validates the parameter block then assumes full control of the device. It can take several seconds for firmware start to be evident. Once the firmware starts,  any future <constant>VS_HOST_ACTION</constant> messages will contain the unique hardware address for the device.
+					</para>
+				</listitem>
+			</orderedlist>
+		</section>

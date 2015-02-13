@@ -1,0 +1,80 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			host.sh
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='host64.sh.html' title=' host64.sh '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='psnotch.sh.html' title=' psnotch.sh '>NEXT</a>]
+			</div>
+<pre>
+#!/bin/sh
+# file: scripts/host.sh
+
+# edit a PIB file then kick off the INT6300 Host Emulator; if you do
+# not want to edit the PIB file before starting then comment out the
+# line that does that;
+
+# ====================================================================
+# host symbols;
+# --------------------------------------------------------------------
+
+. ${SCRIPTS}/hardware.sh
+. ${SCRIPTS}/firmware.sh
+
+# ====================================================================
+# file symbols;
+# --------------------------------------------------------------------
+
+MAC=auto
+DAK=$(rkey secret.key -D)
+NMK=$(rkey secret.key -M)
+
+# ====================================================================
+# confirm MAC;
+# --------------------------------------------------------------------
+
+echo -n &quot;MAC Address [${MAC}]: &quot;; read
+if [ ! -z ${REPLY} ]; then
+	MAC=&quot;${REPLY}&quot;                  
+fi
+
+# ====================================================================
+# modify PIB;
+# --------------------------------------------------------------------
+
+modpib ${PIB} -C0 -M ${MAC} -N ${NMK} -D ${DAK}
+if [ ${?} != 0 ]; then
+	exit 1
+fi
+
+# ====================================================================
+# service host action request messages;
+# --------------------------------------------------------------------
+
+# int6khost -i ${ETH} -C ${CFG} -P ${PIB} -N ${NVM} -p abc.pib -n abc.nvm -FF
+# int6khost -i ${ETH} -C ${CFG} -P ${PIB} -N ${NVM} -p abc.pib -n abc.nvm -F
+int6khost -i ${ETH} -C ${CFG} -P ${PIB} -N ${NVM} -p abc.pib -n abc.nvm
+if [ ${?} != 0 ]; then
+	exit 1
+fi
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='host64.sh.html' title=' host64.sh '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='psnotch.sh.html' title=' psnotch.sh '>NEXT</a>]
+			</div>
+		</body>
+	</html>

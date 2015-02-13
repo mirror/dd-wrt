@@ -1,0 +1,78 @@
+.TH psin 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+psin - Import PIB Prescalers
+
+.SH SYNOPSIS
+.BR psin 
+.RI [ options ]
+.RI [< stdin ]
+.IR file 
+
+.SH SYNOPSIS
+Read an amplitude map from stdin and insert it into a nexisting PIB file, replacing the previous amplitude map.
+This program permits custom amplitude maps to be loaded into a PIB file.
+It can also pipe a map directly from one PIB file to another.
+Atheros can provide standard amplitude maps (\fBprescalers\fR) that conform to most national or international EMI regulations.
+Generally speaking, these maps should not be modified but there are execeptions.
+
+.PP
+This program is part of the Qualcomm Atheros Powerline Toolkit.
+See the \fBAMP\fR man page for an overview and installation instructions.
+
+.SH CAVEATS
+The Atheros Windows Device Manager determines the type of prescalers stored in the PIB by inspecting the \fBToneMaskType\fR code which is also stored in the PIB but is not part of the prescaler set.
+If this program is used to store a new prescaler set in a PIB and the ToneMaskType code is not updated to reflect the change then the Windows Device Manager will continue to display the previous prescaler type.
+This will confuse Windows Device Manager users.
+Use program \fBsetpib\fR to set the \fBToneMaskType\fR code and program \fBpskey\fR to verify the true prescaler type.
+
+.SH OPTIONS
+None.
+
+.SH ARGUMENTS
+
+.TP
+.IR file
+The name of an Atheros Parameter Information Block (\fBPIB\fR) file.
+The original prescalers are replaced and the checksum is re-computed.
+By convention, PIB files have a \fB.pib\fR extension but this program does not enforce that convention and does not make any assumption based on filename or extension but the program will reject invalid PIB files.
+Only one file may be specified on the command line.
+
+.SH FILES
+An amplitude map consists of 1155 frequency-amplitude pairs.
+Each pair consists of a decimal \fBindex\fR and a hexadecimal \fBscaler\fR value.
+The index represents a frequecy from 1.8 mhz through 30 mhz.
+The \fBscaler\fR represents the amplitude attenuation applied at that frequency.
+The frequency and attenuation are computed as follows.
+
+.PP
+   \fBfrequency = (index + 74) / 40.96\fR 
+   \fBdecibels = 20 * log10 (scaler / 256)\fR
+
+.SH EXAMPLE
+The following example loads prescaler file \fBabc.psc\fR into PIB file \fBabc.pib\fR.
+The \fBToneMaskType\fR code is not updated by this operation and should be updated separately to avoid confusing Windows Device Manager users.
+Program \fBsetpib\fR is one means of updating this code.
+
+.PP
+   # psin < abc.psc abc.pib
+
+.SH DISCLAIMER
+PIB file structure and content is proprietary to Qualcomm Atheros, Ocala FL USA.
+Consequently, public information is not available.
+Qualcomm Atheros reserves the right to modify PIB file structure or content in future firmware releases without any obligation to notify or compensate users of this program.
+
+.PP
+Tampering with prescaler settings may violate national or international electo-magnetic emission standards and lead to fines or penalties.
+Qualcomm Atheros shall not be held responsible for any consequences of modifications made to prescaler sets provided to their customers.
+
+.SH SEE ALSO
+.BR psgraph (7),
+.BR pskey ( 1 ),
+.BR psout ( 1 ),
+.BR setpib ( 1 )
+
+.SH CREDITS
+ Charles Maier <cmaier@qca.qualcomm.com>
+ Nathaniel Houghton <nhoughto@qca.qualcomm.com>
+

@@ -1,0 +1,104 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			weeder.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='ttysig.1.html' title=' ttysig.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='xml2pib.1.html' title=' xml2pib.1 '>NEXT</a>]
+			</div>
+<pre>
+weeder(1)                                    Qualcomm Atheros Open Powerline Toolkit                                   weeder(1)
+
+NAME
+       weeder - Weeder Solid State Relay Module Controller
+
+SYNOPSIS
+       weeder [options] [attenuation]
+
+DESCRIPTION
+       Set  or get the attenuation level on the Qualcomm Atheros Production Test System using a local RS-232 communication port.
+       Attenuator settings are changed if an attenuation value is specified.  Attenuator settings are read and displayed  if  no
+       attenuation  value  is specified.  The serial port settings must be configured before running this program.  Settings are
+       9600 baud, no parity, 8 data and 1 stop bit.  See datasheet http://www.weedtech.com/wtssr-m.pdf for more information.
+
+OPTIONS
+       -e echo
+              Enable or disable echo mode.  The value of echo can be 1=on or 0=off.  Alternately, keywords &quot;on&quot; and &quot;off&quot; can be
+              used.  Atheros recommends that you always disable echo when using this program to speed relay switching.
+
+       -m mode
+              Turn  on  or off the Device Under Test power.  The value of mode can be 1=on or 0=off.  Alternately, keywords &quot;on&quot;
+              and &quot;off&quot; can be used.
+
+       -o units
+              Change relay control module order.  Individual relay control modules are assigned a digital address  that  can  be
+              referenced  using  the  UTF-8  letters  &quot;[A-P]&quot; then &quot;[a-p]&quot;.  The Atheros PTS is configured so that module &quot;B&quot; is
+              activated before module &quot;A&quot;.  This options lets you specify some other module order.  The default value is &quot;BA&quot; to
+              indicate &quot;B&quot; before &quot;A&quot;.
+
+       -p port
+              The  name  of  the  serial  port.   On  Linux, the name is usually &quot;/dev/ttyS[0-4]&quot;.  On OS/X, the name is usually
+              &quot;/dev/cua[0-4]&quot;.  On Windows, the name is &quot;com[0-9]:&quot;.  The default is &quot;/dev/ttyS0&quot; on Linux and &quot;com1:&quot;  on  Win‐
+              dows.   If  environment  string  &quot;WEEDER&quot;  is defined then it takes precedence over the default serial port.  This
+              option then takes precedence over either default.  Belkin USB-to-serial cables are named &quot;/dev/ttyUSB0&quot; on  Linux.
+
+       -w wait
+              Wait  time  in  milliseconds.   Serial  I/O  operation  are slow and a delay is needed after each write operation.
+              Unfortunately, different operating systems require different wait times.  This options lets you adjust  the  time.
+              The default is 10 milliseconds which should be adequate on most systems.
+
+ARGUMENTS
+       attenuation
+              The  attenuation  in  decibels.   The  attenuation may be expressed in decimal, binary or hexadecimal when setting
+              attenuator but is displayed in decimal when reading the attenuator.  Binary values start with &quot;0b&quot; and hexadecimal
+              values start with &quot;0x&quot;.
+
+EXAMPLES
+       The following example turns the Device Under Test power on and configures the attenuator for 72db attenuation.  Option -m
+       is not necessary if the Device Under Test power is already on.
+
+          # weeder -m 1 72
+
+       The next example configures the controller for 42db attenuation.  There is no needed to turn the  Device  Under  Test  on
+       again because it remains on until turned off.
+
+          # weeder 42
+
+       The next example configures the controller for 56db attenuation and turns the Device Under Test off.
+
+          # weeder -m off 56
+
+       The next example displays the current attenuation on the console because no attenuation value was specified.
+
+          # weeder
+
+REFERENCES
+       Information  shown above applies to WTSSR-M Solid State Relay Module by Weeder Technologies, 90-A Beal Pkwy NW, Fort Wal‐
+       ton Beach FL 32548 USA; Tel +44 850 863 5723.
+
+SEE ALSO
+       amp(1), ptsctl(1), WTSSR-M(1)
+
+CREDITS
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                                weeder(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='ttysig.1.html' title=' ttysig.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='xml2pib.1.html' title=' xml2pib.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

@@ -1,0 +1,66 @@
+<section id='firmware-6000-flash'>
+	<title>
+            Upgrade Device (INT6000/INT6300/INT6400)
+            </title>
+	<para>
+            The Upgrade Device operation downloads firmware and/or <acronym>PIB</acronym> from a remote host to an Atheros device for permanent storage and immediate execution. The device determines where and how it will store the information based on the availability of onboard flash memory. If the device has dedicated flash memory then it will store the firmware and <acronym>PIB</acronym> there and reset itself; otherwise, it will hand the firmware and <acronym>PIB</acronym> to the local host for storage and the local host will reset the device. The reset ensures that new firmware and <acronym>PIB</acronym> take immediate effect once they are saved. This operation requires custom software on the remote host and Atheros firmware on the device. 
+            </para>
+	<figure>
+		<title>
+                Upgrade Device (INT6000/INT6300/INT6400)
+                </title>
+		<programlisting><![CDATA[
+
+        REMOTE-HOST                        INT6300/INT6400
+        [01] |-------- VS_WR_MOD.REQ ------------>| [01]
+        [01] |<------- VS_WR_MOD.CNF -------------| [01]
+        [01] |----------------------------------->| [01]
+        [01] |<-----------------------------------| [01]
+             |                                    |
+        [02] |-------- VS_WR_MOD.REQ ------------>| [02]
+        [02] |<------- VS_WR_MOD.CNF -------------| [02]
+        [02] |----------------------------------->| [02]
+        [02] |<-----------------------------------| [02]
+             |                                    |
+        [03] |-------- VS_MOD_NVM.REQ ----------->| [04]
+        [05] |<------- VS_MOD_NVM.CNF ------------| [04]
+             |                                    | [06]
+
+]]></programlisting>
+	</figure>
+	<orderedlist>
+		<listitem>
+			<para>
+                    Optionally, the remote host writes firmware to the device by sending a series of <constant>VS_WR_MOD.REQ</constant> messages and waiting for a <constant>VS_WR_MOD.CNF</constant> message after each one. The message <varname>MODULEID</varname> field is set to <constant>0x01</constant> for this operation. 
+                    </para>
+		</listitem>
+		<listitem>
+			<para>
+                    Optionally, the remote host writes the <acronym>PIB</acronym> to the device by sending <constant>VS_WR_MOD.REQ</constant> messages and waiting for a <constant>VS_WR_MOD.CNF</constant> message after each one. The <varname>MODULEID</varname> is set to <varname>0x02</varname> for this operation. 
+                    </para>
+		</listitem>
+		<listitem>
+			<para>
+                    The remote host commits the firmware and/or <acronym>PIB</acronym> to persistent storage by sending a <constant>VS_MOD_NVM.REQ</constant> message and waiting for a <constant>VS_MOD_NVM.CNF</constant> message. 
+                    </para>
+		</listitem>
+		<listitem>
+			<para>
+                    The device received the <constant>VS_MOD_NVM.REQ</constant> and sends a <constant>VS_MOD_NVM.CNF</constant> message to the remote host. 
+                    </para>
+		</listitem>
+		<listitem>
+			<para>
+                    The remote host receives the <constant>VS_MOD_NVM.CNF</constant> and proceeds with other activity. The remote host does not know or care that the device may not have dedicated flash memory available.
+                    </para>
+		</listitem>
+		<listitem>
+			<para>
+                    The device determines where and how to store the information. If dedicated flash memory is available, the device writes the downloaded firmware and <acronym>PIB</acronym> to flash memory and performs a software reset that results in a normal <emphasis>Boot from Flash</emphasis> operation. If no dedicated flash memory is available, the device initiates an <link linkend='firmware-6000-upload'>Update Local Host</link> operation.
+                    </para>
+		</listitem>
+	</orderedlist>
+	<para>
+            The device does not notify the remote host when the upgrade operation completes. It is therefore incumbent on the remote host to determine ultimate success or failure by polling the device, possiby using a <constant>VS_SW_VER.REQ</constant> message, until a response is received. The complete upgrade operation can take from <constant>20</constant> seconds to <constant>45</constant> seconds depending on device configuration.
+            </para>
+</section>

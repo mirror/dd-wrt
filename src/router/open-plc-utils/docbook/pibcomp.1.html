@@ -1,0 +1,78 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			pibcomp.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='pib2xml.1.html' title=' pib2xml.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='pibdump.1.html' title=' pibdump.1 '>NEXT</a>]
+			</div>
+<pre>
+pibcomp(1)                                   Qualcomm Atheros Open Powerline Toolkit                                  pibcomp(1)
+
+NAME
+       pibcomp - Qualcomm Atheros Parameter Block Compare Utility
+
+SYNOPSIS
+       pibcomp [options] file file [&gt;stdout]
+
+DESCRIPTION
+       Read  and  compare  two Qualcomm Atheros powerline parameter block files and print only those objects that are different.
+       It will detect and handle both old and new powerline parameter file formats.  This program is similar to program odc  but
+       is  designed specifically for Qualcomm Atheros powerline parameter files.  Program odc is no longer supported and will be
+       removed from future toolkit releases.
+
+       Object driven comparison requires an object definition file that lists the size and name of data data objects (ie;  inte‐
+       gers, arrays or structures) within the parameter file.  Individual data members are presented as smaller, individual data
+       dumps within a larger, overall data dump.  See program pibdump for more information of object definition file format.
+
+OPTIONS
+       -f file
+              The object definition file that lists the size, name and description of individual individual objects in order  of
+              occurance.   If this option is omitted then object definitions are read from stdin.  The object definition file is
+              not modified by this program.  See the pibdump man page for an example of an object definition file.
+
+       -?,--help
+              Print program help summary on stdout.  This option takes precedence over other options on the command line.
+
+       -!,--version
+              Print program version information on stdout.  This option takes precedence over other options on the command line.
+              Use  this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of
+              the Linux Toolkit you are using.
+
+ARGUMENTS
+       file   The name of a binary file.  Two binary files are needed for comparison and both should conform to the object defi‐
+              nition file for the comarison to be meaningful.
+
+EXAMPLES
+       The following example compares file abc.bin and def.bin and prints objects that are different in hexdump format.  Objects
+       are defined in objects.txt and read using -f.
+
+          # pibcomp -f objects.txt abc.bin def.bin
+
+SEE ALSO
+       chkpib(7), chkpib2(7), getpib(7), modpib(1), pib2xml(1), pibdump(1), setpib(1), xml2pib(1)
+
+CREDITS
+        Nathaniel Houghton &lt;nhoughto@qca.qualcomm.com&gt;
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                               pibcomp(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='pib2xml.1.html' title=' pib2xml.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='pibdump.1.html' title=' pibdump.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

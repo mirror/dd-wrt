@@ -1,0 +1,30 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Stand-alone Compiling on GNU/Linux</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="ch03.html" title="Chapter 3.  Software"><link rel="prev" href="ch03s04.html" title="GNU Makefiles on Linux"><link rel="next" href="ch03s06.html" title="Cross-Compiling on GNU/Linux"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">
+				Stand-alone Compiling on GNU/Linux
+				</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch03s04.html">Prev</a> </td><th width="60%" align="center">Chapter 3. 
+		Software 
+		</th><td width="20%" align="right"> <a accesskey="n" href="ch03s06.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="software-stand-alone"></a>
+				Stand-alone Compiling on GNU/Linux
+				</h2></div></div></div><p>
+				You do not need makefiles to build toolkit programs because source files explicitly include all required components using <span class="command"><strong>include</strong></span> statement blocks like that shown below. You will see similar blocks near the top of most programs. 
+				</p><div class="example"><a name="idp9537664"></a><p class="title"><b>Example 3.1. 
+					The <code class="constant">MAKEFILE</code> constant
+					</b></p><div class="example-contents"><pre class="programlisting">
+#ifndef MAKEFILE 
+#include "../tools/getoptv.c" 
+#include "../tools/putoptv.c" 
+#include "../tools/version.c" 
+... 
+#endif 
+</pre></div></div><br class="example-break"><p>
+				This mechanism has several advantages. First, the preprocessor <strong class="userinput"><code>include</code></strong> statements form a complete inventory of required files. Secondly, the relative pathnames help developers locate needed source files. Third,  the complete program can be compiled with one <span class="command"><strong>gcc</strong></span> command, like the one shown below. This allows program compilation in environments where the <span class="application">GNU make</span> program or the Atheros <code class="filename">Makefiles</code> are not available.
+				</p><div class="example"><a name="idp9540736"></a><p class="title"><b>Example 3.2. 
+					Stand-alone Compiling on GNU/Linux
+					</b></p><div class="example-contents"><pre class="screen">
+# gcc -o program program.c 
+</pre></div></div><br class="example-break"><p>
+				Most toolkit makefiles define the preprocessor constant <code class="constant">MAKEFILE</code> as a compiler option using <strong class="userinput"><code>CFLAGS= ... -DMAKEFILE ...</code></strong>. When this constant is defined, the compiler will not include components inside an include block like that shown above and so the <code class="filename">Makefile</code> is responsible for compiling and linking all components. If the constant is not defined, because no <code class="filename">Makefile</code> was used, the compiler will merely include everything needed.
+				</p></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch03s04.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="ch03.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch03s06.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">
+				GNU Makefiles on Linux
+				 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 
+				Cross-Compiling on GNU/Linux
+				</td></tr></table></div></body></html>0

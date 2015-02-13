@@ -1,0 +1,123 @@
+.TH config2cfg 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+config2cfg \- Atheros Configuration File Converter
+
+.SH SYNOPSIS
+\fBconfig2cfg\fR [\fBoptions\fR] \fBfile\fR [\fBfile\fR] [\fB...\fR]
+
+.SH DESCRIPTION
+The \fBconfig2cfg\fR program converts an SDRAM configuration file used by the Windows Device Manager to the configuration file format used by the Qualcomm Atheros Powerline Toolkit.
+
+.P
+This program is part of the Qualcomm Atheros Powerline Toolkit.
+See the \fBAMP\fR man page for an overview and installation instructions.
+
+.SH OPTIONS
+There are no options.
+
+.SH EXPLANATION
+The Windows Device Manager format consists of 64 ASCII hexadecomal characters.
+Files usually have a \fB.config\fR extension.
+File size is at least 64 characters.
+Excess characters are ignored in input.
+This means that files can be modified using any text editor and there is no way to detect modification.
+From a programmin standpoint, ASCII-to-binary convertion and checksum computation is required on input and binary-to-ASCII conversion iw required on output.
+
+.PP
+The Atheros Powerline Toolkit format consists of 32 binary bytes plus a 4 byte (32 bit) checksum.
+Files usually have a \fB.cfg\fR extension.
+File size is always 36 characters.
+The files can be edited using any hex editor but a new checksum must be computed and inserted after any change.
+No conversion or computation is required on input or output.
+Input is ready for direct insertion into a VS_SET_SDRAM message.
+
+.PP
+Programs \fBint6k\fR and \fBint6kf\fR expect this latter format and so you can use this program determine if a given file has the proper format.
+
+.SH OPTIONS
+
+.TP
+\fIfile\fR
+The filename of a Windows Device Manager SDRAM configuration file.
+The file is re-written such that the filename is preserved but the contents are not.
+Windows Device Manager SDRAM configuration files usually have a \fB.config\fR extension but the program makes no assumption based on filename and does not enforce any filename conventions.
+
+.TP
+\fB\-q\fR
+Suppresses printing of progress messages.
+There are no progress messages in this version.
+
+.TP
+\fB\-v\fR
+Print additional information.
+There is no additional information printed in this version.
+
+.TP
+-\fB?\fR, --\fBhelp\fR
+Print program help summary on stdout.
+This option takes precedence over other options on the command line.
+
+.TP
+-\fB!\fR, --\fBversion\fR
+Print program version information on stdout.
+This option takes precedence over other options on the command line.
+Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of the Linux Toolkit you are using.
+
+.SH EXAMPLES
+The following example reads file abc.cfg and validates it.
+The message shown indicates that the configuration file is the correct size and has a checksums and there are no read errors.
+
+.P
+    > chkcfg abc.cfg
+    chkcfg: abc.cfg looks good
+
+.P
+The following example reads three files in succession and reports on each one.
+You can suppress good news with the \fB-q\fR option.
+
+.P
+    # chkcfg abc.cfg def.cfg ghi.cfg
+    chkcfg: abc.cfg looks good
+    chkcfg: def.cfg is corrupt
+    chkcfg: ghi.cfg looks good
+
+.P
+The following example displays the SDRAM configuration values in all files having names that match the wildcard pattern \fBsdram*.cfg\fR.
+We can confirm that the values inside are correct for their filenames.
+Program output could have been sent to a file and saved for later reference.
+
+.P
+    # chknvm -qv sdram*.cfg
+    ------- sdram32.cfg -------
+            SIZE=0x02000000 (32mb)
+            CONF=0x00143188
+            TIM0=0x01E1D491
+            TIM1=0x000883D6
+            CNTRL=0x00003089
+            REF=0x00000366
+            CLOCK=0x00000001
+    ------- sdram16.cfg -------
+            SIZE=0x01000000 (16mb)
+            CONF=0x00142F68
+            TIM0=0x0115124E
+            TIM1=0x000883D6
+            CNTRL=0x00003089
+            REF=0x00000493
+            CLOCK=0x00000001
+
+.SH DISCLAIMER
+The SDRAM file structure and content is proprietary to Qualcomm Atheros, Ocala FL USA.
+Consequently, public information is not available.
+Qualcomm Atheros reserves the right to change the file structure or content in future firmware releases without any obligation to notify or compensate users of this program.
+
+.SH SEE ALSO
+.BR int6k ( 1 ),
+.BR int6kf ( 1 ),
+.BR modpib ( 1 ),
+.BR chknvm ( 1 ),
+.BR chkpib ( 1 )
+
+.SH CREDITS
+ Charles Maier <cmaier@qca.qualcomm.com>
+

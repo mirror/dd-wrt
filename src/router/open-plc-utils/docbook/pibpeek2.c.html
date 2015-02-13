@@ -1,0 +1,156 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			pibpeek2.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='pibpeek1.c.html' title=' pibpeek1.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='pibruin1.c.html' title=' pibruin1.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *
+ *   signed pibpeek2 (void const * memory);
+ *
+ *   pib.h
+ *
+ *   print Panther/Lynx PIB identity information on stdout;
+ *
+ *
+ *   Contributor(s):
+ *		Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef PIBPEEK2_SOURCE
+#define PIBPEEK2_SOURCE
+
+#include &lt;stdio.h&gt;
+#include &lt;memory.h&gt;
+
+#include &quot;../tools/memory.h&quot;
+#include &quot;../tools/number.h&quot;
+#include &quot;../key/HPAVKey.h&quot;
+#include &quot;../key/keys.h&quot;
+#include &quot;../pib/pib.h&quot;
+
+static char const * CCoMode2 [] =
+
+{
+	&quot;Auto&quot;,
+	&quot;Never&quot;,
+	&quot;Always&quot;,
+	&quot;User&quot;,
+	&quot;Covert&quot;,
+	&quot;Unknown&quot;
+};
+
+static char const * MDURole2 [] =
+
+{
+	&quot;Slave&quot;,
+	&quot;Master&quot;
+};
+
+signed pibpeek2 (void const * memory)
+
+{
+	extern const struct key keys [KEYS];
+	extern char const * CCoMode2 [];
+	extern char const * MDURole2 [];
+	struct PIB3_0 * PIB = (struct PIB3_0 *)(memory);
+	char buffer [HPAVKEY_SHA_LEN * 3];
+	size_t key;
+	printf (&quot;\tPIB %d-%d %d bytes\n&quot;, PIB-&gt;VersionHeader.FWVersion, PIB-&gt;VersionHeader.PIBVersion, LE16TOH (PIB-&gt;VersionHeader.PIBLength));
+	printf (&quot;\tMAC %s\n&quot;, hexstring (buffer, sizeof (buffer), PIB-&gt;LocalDeviceConfig.MAC, sizeof (PIB-&gt;LocalDeviceConfig.MAC)));
+	printf (&quot;\tDAK %s&quot;, hexstring (buffer, sizeof (buffer), PIB-&gt;LocalDeviceConfig.DAK, sizeof (PIB-&gt;LocalDeviceConfig.DAK)));
+	for (key = 0; key &lt; KEYS; key++)
+	{
+		if (!memcmp (keys [key].DAK, PIB-&gt;LocalDeviceConfig.DAK, HPAVKEY_DAK_LEN))
+		{
+			printf (&quot; (%s)&quot;, keys [key].phrase);
+			break;
+		}
+	}
+	printf (&quot;\n&quot;);
+	printf (&quot;\tNMK %s&quot;, hexstring (buffer, sizeof (buffer), PIB-&gt;LocalDeviceConfig.NMK, sizeof (PIB-&gt;LocalDeviceConfig.NMK)));
+	for (key = 0; key &lt; KEYS; key++)
+	{
+		if (!memcmp (keys [key].NMK, PIB-&gt;LocalDeviceConfig.NMK, HPAVKEY_NMK_LEN))
+		{
+			printf (&quot; (%s)&quot;, keys [key].phrase);
+			break;
+		}
+	}
+	printf (&quot;\n&quot;);
+	printf (&quot;\tNID %s\n&quot;, hexstring (buffer, sizeof (buffer), PIB-&gt;LocalDeviceConfig.PreferredNID, sizeof (PIB-&gt;LocalDeviceConfig.PreferredNID)));
+	printf (&quot;\tNET %s\n&quot;, PIB-&gt;LocalDeviceConfig.NET);
+	printf (&quot;\tMFG %s\n&quot;, PIB-&gt;LocalDeviceConfig.MFG);
+	printf (&quot;\tUSR %s\n&quot;, PIB-&gt;LocalDeviceConfig.USR);
+	printf (&quot;\tCCo %s\n&quot;, CCoMode2 [PIB-&gt;LocalDeviceConfig.CCoSelection &gt; SIZEOF (CCoMode2)-1?SIZEOF (CCoMode2)-1:PIB-&gt;LocalDeviceConfig.CCoSelection]);
+	printf (&quot;\tMDU %s\n&quot;, PIB-&gt;LocalDeviceConfig.MDUConfiguration? MDURole2 [PIB-&gt;LocalDeviceConfig.MDURole &amp; 1]: &quot;N/A&quot;);
+	return (0);
+}
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='pibpeek1.c.html' title=' pibpeek1.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='pibruin1.c.html' title=' pibruin1.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

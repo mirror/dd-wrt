@@ -1,0 +1,1556 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			MMECode.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='mme.c.html' title=' mme.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='MMEMode.c.html' title=' MMEMode.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *
+ *   char const * MMECode (uint16_t MMTYPE, uint8_t MSTATUS)
+ *
+ *   mme.h
+ *
+ *   return text for a given message type and status code; search is
+ *   performed using two nested binary searches;
+ *
+D
+ *   a given vendor specific status code may mean something different
+ *   for each message type; this table maps message types and codes to
+ *   strings; it is bulky but takes less space than many small tables;
+ *   define MMEPASSFAIL as 0 to suppress the table without disturbing
+ *   other code;
+ *
+ *   the bootloader and firmware share some message types but return
+ *   different status codes for the same message type and error; two
+ *   MMEs in particular, VS_WR_MEM and VS_ST_MAC are normally used
+ *   only with the Bootloader and so we define SOFTLOADER as 1
+ *   causing Bootloader/Softloader codes to replace the firmware
+ *   codes;
+ *
+ *
+ *   Contributor(s):
+ *	Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef MMECODE_SOURCE
+#define MMECODE_SOURCE
+
+#include &lt;stdio.h&gt;
+#include &lt;stdint.h&gt;
+
+#include &quot;../mme/mme.h&quot;
+#include &quot;../tools/symbol.h&quot;
+#include &quot;../tools/endian.h&quot;
+
+#ifndef MMEPASSFAIL
+
+static struct mme_code
+
+{
+	uint16_t type;
+	uint8_t code;
+	char const * text;
+}
+
+mme_codes [] =
+
+{
+	{
+		0x8005,
+		0x01,
+		&quot;Read Stopped&quot;
+	},
+	{
+		0x8005,
+		0x03,
+		&quot;Stopped with Valid Read&quot;
+	},
+	{
+		0x8005,
+		0x05,
+		&quot;Reached End&quot;
+	},
+	{
+		0x8005,
+		0x07,
+		&quot;Stopped, Valid Read, Reached End - All Done! Go Away!&quot;
+	},
+	{
+		0x8005,
+		0x80,
+		&quot;Invalid Index&quot;
+	},
+	{
+		0x8005,
+		0x81,
+		&quot;Invalid Word Count&quot;
+	},
+	{
+		0x8005,
+		0x82,
+		&quot;No Stop Before Read&quot;
+	},
+	{
+		0x8005,
+		0x83,
+		&quot;Invalid MME&quot;
+	},
+
+#ifdef SOFTLOADER
+
+	{
+		0xA005,
+		0x14,
+		&quot;Bad Checksum&quot;
+	},
+	{
+		0xA005,
+		0x1C,
+		&quot;Bad Length&quot;
+	},
+	{
+		0xA005,
+		0x38,
+		&quot;Bad Address&quot;
+	},
+	{
+		0xA005,
+		0x3C,
+		&quot;Bad Data Alignment&quot;
+	},
+
+#else
+
+	{
+		0xA005,
+		0x10,
+		&quot;Bad Address&quot;
+	},
+	{
+		0xA005,
+		0x14,
+		&quot;Bad Length&quot;
+	},
+
+#endif
+
+	{
+		0xA009,
+		0x10,
+		&quot;Bad Offset&quot;
+	},
+	{
+		0xA009,
+		0x14,
+		&quot;Bad Length&quot;
+	},
+	{
+		0xA00D,
+		0x10,
+		&quot;Bad Module ID&quot;
+	},
+
+#ifdef SOFTLOADER
+
+	{
+		0xA00D,
+		0x14,
+		&quot;Bad Image Checksum&quot;
+	},
+	{
+		0xA00D,
+		0x1C,
+		&quot;Bad Image Length&quot;
+	},
+	{
+		0xA00D,
+		0x38,
+		&quot;Bad Image Load Address&quot;
+	},
+	{
+		0xA00D,
+		0x3C,
+		&quot;Bad Data Alignment&quot;
+	},
+	{
+		0xA00D,
+		0x40,
+		&quot;Bad Start Address&quot;
+	},
+
+#else
+
+	{
+		0xA00D,
+		0x38,
+		&quot;Bad Command&quot;
+	},
+	{
+		0xA00D,
+		0x40,
+		&quot;Failed to Lock NVM&quot;
+	},
+
+#endif
+
+	{
+		0xA011,
+		0x10,
+		&quot;No Flash Memory&quot;
+	},
+	{
+		0xA01D,
+		0x01,
+		&quot;Device Failed to Reset&quot;
+	},
+	{
+		0xA01D,
+		0x02,
+		&quot;Device is Busy&quot;
+	},
+	{
+		0xA021,
+		0x10,
+		&quot;Bad Module&quot;
+	},
+	{
+		0xA021,
+		0x12,
+		&quot;Bad Length&quot;
+	},
+	{
+		0xA021,
+		0x14,
+		&quot;Bad Checksum&quot;
+	},
+	{
+		0xA021,
+		0x20,
+		&quot;Bad Offset&quot;
+	},
+	{
+		0xA021,
+		0x40,
+		&quot;Operation Blocked&quot;
+	},
+	{
+		0xA021,
+		0x50,
+		&quot;Fail to lock NVM&quot;
+	},
+	{
+		0xA025,
+		0x10,
+		&quot;Bad Module&quot;
+	},
+	{
+		0xA025,
+		0x12,
+		&quot;Bad Length&quot;
+	},
+	{
+		0xA025,
+		0x14,
+		&quot;Bad Checksum&quot;
+	},
+	{
+		0xA025,
+		0x20,
+		&quot;Unexpected Offset&quot;
+	},
+	{
+		0xA025,
+		0x50,
+		&quot;Fail to lock NVM&quot;
+	},
+	{
+		0xA025,
+		0x58,
+		&quot;DAK Mismatch&quot;
+	},
+	{
+		0xA029,
+		0x10,
+		&quot;Bad Module&quot;
+	},
+	{
+		0xA029,
+		0x14,
+		&quot;No Flash Memory&quot;
+	},
+	{
+		0xA029,
+		0x18,
+		&quot;Not enough NVRAM&quot;
+	},
+	{
+		0xA029,
+		0x1C,
+		&quot;Bad Header Checksum&quot;
+	},
+	{
+		0xA029,
+		0x20,
+		&quot;Bad Image Checksum&quot;
+	},
+	{
+		0xA029,
+		0x24,
+		&quot;Bad PIB&quot;
+	},
+	{
+		0xA029,
+		0x28,
+		&quot;Softloader Too Large&quot;
+	},
+	{
+		0xA029,
+		0x2C,
+		&quot;Firmware Too Large&quot;
+	},
+	{
+		0xA029,
+		0x42,
+		&quot;Firmware without PIB&quot;
+	},
+	{
+		0xA029,
+		0x44,
+		&quot;Bad PIB Checksum&quot;
+	},
+	{
+		0xA029,
+		0x46,
+		&quot;DAK Not Zero&quot;
+	},
+	{
+		0xA029,
+		0x48,
+		&quot;MAC Mismatch&quot;
+	},
+	{
+		0xA029,
+		0x50,
+		&quot;MFG HFID Mismatch&quot;
+	},
+	{
+		0xA029,
+		0x52,
+		&quot;Bad Bind Factory Defaults&quot;
+	},
+	{
+		0xA029,
+		0x54,
+		&quot;Bad Bind Template PIB&quot;
+	},
+	{
+		0xA029,
+		0x56,
+		&quot;Bad Bind Working PIB&quot;
+	},
+	{
+		0xA029,
+		0x58,
+		&quot;Error Computing PIB Checksum&quot;
+	},
+	{
+		0xA029,
+		0x5A,
+		&quot;Bad Bind Scratch PIB&quot;
+	},
+	{
+		0xA029,
+		0x5C,
+		&quot;No Firmware Version&quot;
+	},
+	{
+		0xA029,
+		0x5E,
+		&quot;Version Mismatch&quot;
+	},
+	{
+		0xA029,
+		0x60,
+		&quot;Bad 01PIB Checksum&quot;
+	},
+	{
+		0xA029,
+		0x62,
+		&quot;Bad 02PIB Checksum&quot;
+	},
+	{
+		0xA029,
+		0x64,
+		&quot;Bad WPIB Checksum&quot;
+	},
+	{
+		0xA029,
+		0x66,
+		&quot;Illegal Firmware Revision&quot;
+	},
+	{
+		0xA031,
+		0x01,
+		&quot;Bad Control&quot;
+	},
+	{
+		0xA031,
+		0x02,
+		&quot;Bad Direction&quot;
+	},
+	{
+		0xA031,
+		0x10,
+		&quot;Bad Link ID&quot;
+	},
+	{
+		0xA031,
+		0x20,
+		&quot;Bad MAC Address&quot;
+	},
+	{
+		0xA035,
+		0x10,
+		&quot;Bad Control&quot;
+	},
+	{
+		0xA049,
+		0x20,
+		&quot;Invalid Duration&quot;
+	},
+	{
+		0xA049,
+		0x12,
+		&quot;Invalid Length&quot;
+	},
+	{
+		0xA049,
+		0x24,
+		&quot;Already Set&quot;
+	},
+	{
+		0xA051,
+		0x10,
+		&quot;Bad PEKS&quot;
+	},
+	{
+		0xA051,
+		0x11,
+		&quot;Bad PIB&quot;
+	},
+	{
+		0xA051,
+		0x12,
+		&quot;Bad PEKS Encrypted Payload&quot;
+	},
+	{
+		0xA051,
+		0x13,
+		&quot;Remote Failure&quot;
+	},
+	{
+		0xA051,
+		0x14,
+		&quot;Bad Remote Response&quot;
+	},
+	{
+		0xA051,
+		0x15,
+		&quot;Remote Decryption Failed&quot;
+	},
+	{
+		0xA059,
+		0x10,
+		&quot;No Flash Memory&quot;
+	},
+	{
+		0xA05D,
+		0x30,
+		&quot;Bad Checksum&quot;
+	},
+	{
+		0xA05D,
+		0x34,
+		&quot;BIST Failed&quot;
+	},
+	{
+		0xA065,
+		0x10,
+		&quot;No Flash Memory&quot;
+	},
+	{
+		0xA069,
+		0x01,
+		&quot;Failed&quot;
+	},
+	{
+		0xA069,
+		0x02,
+		&quot;Not Supported&quot;
+	},
+	{
+		0xA06D,
+		0x01,
+		&quot;Bad Control&quot;
+	},
+	{
+		0xA06D,
+		0x02,
+		&quot;Success Write&quot;
+	},
+	{
+		0xA06D,
+		0x03,
+		&quot;Bad Write Parameter&quot;
+	},
+	{
+		0xA071,
+		0x01,
+		&quot;Bad MAC Address&quot;
+	},
+	{
+		0xA071,
+		0x02,
+		&quot;Bad TMSLOT&quot;
+	},
+	{
+		0xA081,
+		0x10,
+		&quot;Bad Module ID&quot;
+	},
+	{
+		0xA081,
+		0x14,
+		&quot;No Flash Memory&quot;
+	},
+	{
+		0xA081,
+		0x18,
+		&quot;Not Enough Flash Memory&quot;
+	},
+	{
+		0xA081,
+		0x1C,
+		&quot;Bad Image Header Checksum&quot;
+	},
+	{
+		0xA081,
+		0x20,
+		&quot;Bad Image Checksum&quot;
+	},
+	{
+		0xA081,
+		0x24,
+		&quot;Invalid PIB&quot;
+	},
+	{
+		0xA081,
+		0x28,
+		&quot;Softloader Too Large&quot;
+	},
+	{
+		0xA081,
+		0x2C,
+		&quot;Firmware File Too Large&quot;
+	},
+	{
+		0xA081,
+		0x42,
+		&quot;Firmware without PIB&quot;
+	},
+	{
+		0xA081,
+		0x44,
+		&quot;Bad PIB Checksum&quot;
+	},
+	{
+		0xA081,
+		0x46,
+		&quot;DAK Not Zero&quot;
+	},
+	{
+		0xA081,
+		0x48,
+		&quot;DAC Mismatch&quot;
+	},
+	{
+		0xA081,
+		0x50,
+		&quot;MFG HFID Mismatch&quot;
+	},
+	{
+		0xA081,
+		0x52,
+		&quot;Bad Bind Factory Defaults&quot;
+	},
+	{
+		0xA081,
+		0x54,
+		&quot;Bad Bind Template PIB&quot;
+	},
+	{
+		0xA081,
+		0x56,
+		&quot;Bad Bind Working PIB&quot;
+	},
+	{
+		0xA081,
+		0x58,
+		&quot;DAK Mismatch&quot;
+	},
+	{
+		0xA081,
+		0x5A,
+		&quot;Failed to Lock NVM&quot;
+	},
+	{
+		0xA089,
+		0x01,
+		&quot;Bad Control&quot;
+	},
+	{
+		0xA089,
+		0x02,
+		&quot;Bad Volatility&quot;
+	},
+	{
+		0xA089,
+		0x03,
+		&quot;Bad Classifier&quot;
+	},
+	{
+		0xA089,
+		0x04,
+		&quot;Classifier table full&quot;
+	},
+	{
+		0xA089,
+		0x05,
+		&quot;Classifier exists with different action&quot;
+	},
+	{
+		0xA089,
+		0x06,
+		&quot;Classifier not found&quot;
+	},
+	{
+		0xA08D,
+		0x10,
+		&quot;Refused&quot;
+	},
+	{
+		0xA08D,
+		0x11,
+		&quot;Refused&quot;
+	},
+	{
+		0xA08F,
+		0x10,
+		&quot;Error&quot;
+	},
+	{
+		0xA091,
+		0x01,
+		&quot;Unknown Peer Address&quot;
+	},
+	{
+		0xA091,
+		0x02,
+		&quot;Unknown Slot Number&quot;
+	},
+	{
+		0xA099,
+		0x01,
+		&quot;Destination Address Misaligned&quot;
+	},
+	{
+		0xA099,
+		0x02,
+		&quot;Entry Point Misaligned&quot;
+	},
+	{
+		0xA099,
+		0x04,
+		&quot;Entry Point Out-of-Bounds&quot;
+	},
+	{
+		0xA099,
+		0x08,
+		&quot;Bad Checksum&quot;
+	},
+	{
+		0xA099,
+		0x10,
+		&quot;Out of Memory&quot;
+	},
+	{
+		0xA099,
+		0x20,
+		&quot;Offset or Length Mismatch&quot;
+	},
+	{
+		0xA099,
+		0x40,
+		&quot;Memory not Operational&quot;
+	},
+	{
+		0xA099,
+		0x80,
+		&quot;Bad Length&quot;
+	},
+	{
+		0xA0B1,
+		0x10,
+		&quot;Invalid Number of Module Operations&quot;
+	},
+	{
+		0xA0B1,
+		0x11,
+		&quot;Invalid Module Operation ID&quot;
+	},
+	{
+		0xA0B1,
+		0x12,
+		&quot;Invalid Session ID&quot;
+	},
+	{
+		0xA0B1,
+		0x13,
+		&quot;Invalid Num Module Operation Specific Data&quot;
+	},
+	{
+		0xA0B1,
+		0x14,
+		&quot;Module ID not found&quot;
+	},
+	{
+		0xA0B1,
+		0x15,
+		&quot;Invalid Module Length&quot;
+	},
+	{
+		0xA0B1,
+		0x16,
+		&quot;Invalid Module Index&quot;
+	},
+	{
+		0xA0B1,
+		0x17,
+		&quot;Invalid Data Length&quot;
+	},
+	{
+		0xA0B1,
+		0x18,
+		&quot;Unexpected Offset&quot;
+	},
+	{
+		0xA0B1,
+		0x19,
+		&quot;Invalid Commit Action Code&quot;
+	},
+	{
+		0xA0B1,
+		0x1A,
+		&quot;Operation Block by previous Commit&quot;
+	},
+	{
+		0xA0B1,
+		0x1B,
+		&quot;Duplicate ModuleID/SubID&quot;
+	},
+	{
+		0xA0B1,
+		0x1C,
+		&quot;Invalid ModuleID/SubID&quot;
+	},
+	{
+		0xA0B1,
+		0x20,
+		&quot;No Flash Memory&quot;
+	},
+	{
+		0xA0B1,
+		0x21,
+		&quot;Not Enough Flash Memory&quot;
+	},
+	{
+		0xA0B1,
+		0x22,
+		&quot;Unsupported Flash memory Type&quot;
+	},
+	{
+		0xA0B1,
+		0x23,
+		&quot;Can't Lock Flash Memory&quot;
+	},
+	{
+		0xA0B1,
+		0x24,
+		&quot;Can't Write Flash Memory&quot;
+	},
+	{
+		0xA0B1,
+		0x30,
+		&quot;Bad Module Checksum&quot;
+	},
+	{
+		0xA0B1,
+		0x31,
+		&quot;Individual Module Error&quot;
+	},
+	{
+		0xA0B1,
+		0x32,
+		&quot;Module not available in NVM or Memory&quot;
+	},
+	{
+		0xA0B1,
+		0x40,
+		&quot;Invalid Header Checksum&quot;
+	},
+	{
+		0xA0B1,
+		0x41,
+		&quot;Invalid Firmware Image Checksum&quot;
+	},
+	{
+		0xA0B1,
+		0x42,
+		&quot;Softloader Image is Too Large&quot;
+	},
+	{
+		0xA0B1,
+		0x43,
+		&quot;Firmware Image is Too Large&quot;
+	},
+	{
+		0xA0B1,
+		0x44,
+		&quot;Invalid PIB Checksum&quot;
+	},
+	{
+		0xA0B1,
+		0x45,
+		&quot;No Firmware Version&quot;
+	},
+	{
+		0xA0B1,
+		0x46,
+		&quot;FW Commit but no PIB&quot;
+	},
+	{
+		0xA0B1,
+		0x47,
+		&quot;Major Version Mismatch&quot;
+	},
+	{
+		0xA0B1,
+		0x48,
+		&quot;Minor Version Mismatch&quot;
+	},
+	{
+		0xA0B1,
+		0x50,
+		&quot;Invalid PIB&quot;
+	},
+	{
+		0xA0B1,
+		0x51,
+		&quot;DAK Not Zero&quot;
+	},
+	{
+		0xA0B1,
+		0x52,
+		&quot;MAC Mismatch&quot;
+	},
+	{
+		0xA0B1,
+		0x53,
+		&quot;DAK Mismatch&quot;
+	},
+	{
+		0xA0B1,
+		0x54,
+		&quot;Manufacturer HFID Mismatch&quot;
+	},
+	{
+		0xA0B1,
+		0x55,
+		&quot;Bad Bind to Factory Default PIB&quot;
+	},
+	{
+		0xA0B1,
+		0x56,
+		&quot;Bad Bind to Template PIB&quot;
+	},
+	{
+		0xA0B1,
+		0x57,
+		&quot;Bad Bind to Working PIB&quot;
+	},
+	{
+		0xA0B1,
+		0x58,
+		&quot;Bad Bind Scratch PIB&quot;
+	},
+	{
+		0xA0B1,
+		0x59,
+		&quot;Error Generating Checksum Scratch PIB&quot;
+	},
+	{
+		0xA0B1,
+		0x5A,
+		&quot;Checksum Error O1 PIB&quot;
+	},
+	{
+		0xA0B1,
+		0x5B,
+		&quot;Checksum Error O2 PIB&quot;
+	},
+	{
+		0xA0B1,
+		0x5C,
+		&quot;Checksum Error Working PIB&quot;
+	},
+	{
+		0xA0B1,
+		0x61,
+		&quot;Unexpected Module Operation&quot;
+	},
+	{
+		0xA0B1,
+		0x62,
+		&quot;Not Enough Resources&quot;
+	},
+	{
+		0xA0B1,
+		0x63,
+		&quot;Received Module Data Out of Order&quot;
+	},
+	{
+		0xA0B1,
+		0x64,
+		&quot;No PIB Version&quot;
+	},
+	{
+		0xA0B1,
+		0x70,
+		&quot;Module Length Mismatch with Module Info&quot;
+	},
+	{
+		0xA0B1,
+		0x71,
+		&quot;No NVM Softloader Present in Flash Memory&quot;
+	},
+	{
+		0xA0C1,
+		0x03,
+		&quot;Invalid Classifier&quot;
+	},
+	{
+		0xA0C1,
+		0x04,
+		&quot;Already too many Classifiers&quot;
+	},
+	{
+		0xA0C1,
+		0x05,
+		&quot;Classifier exists with different Classification Action&quot;
+	},
+	{
+		0xA0C1,
+		0x07,
+		&quot;Link Already in Progress&quot;
+	},
+	{
+		0xA0C1,
+		0x08,
+		&quot;Invalid Configuration&quot;
+	},
+	{
+		0xA0C1,
+		0x10,
+		&quot;Invalid CSPEC Version&quot;
+	},
+	{
+		0xA0C1,
+		0x11,
+		&quot;Invalid CSPEC&quot;
+	},
+	{
+		0xA0C1,
+		0x20,
+		&quot;Out of Local Resources&quot;
+	},
+	{
+		0xA0C1,
+		0x30,
+		&quot;Invalid Peer&quot;
+	},
+	{
+		0xA0C1,
+		0x31,
+		&quot;Peer Confirm Timed out&quot;
+	},
+	{
+		0xA0C1,
+		0x40,
+		&quot;Peer rejection&quot;
+	},
+	{
+		0xA0C5,
+		0x01,
+		&quot;Invalid Modification Control&quot;
+	},
+	{
+		0xA0C5,
+		0x06,
+		&quot;CID Not Found&quot;
+	},
+	{
+		0xA0C5,
+		0x07,
+		&quot;Link Update in Progress, try again later&quot;
+	},
+	{
+		0xA0C9,
+		0x06,
+		&quot;CID Not Found&quot;
+	},
+	{
+		0xA0C9,
+		0x07,
+		&quot;Link Update in Progress. Try again later&quot;
+	},
+	{
+		0xA0C9,
+		0x31,
+		&quot;Peer Confirm Timed out&quot;
+	},
+	{
+		0xA0CD,
+		0x01,
+		&quot;Invalid Request Type&quot;
+	},
+	{
+		0xA0CD,
+		0x04,
+		&quot;Too Many Requests&quot;,
+	},
+	{
+		0xA0CD,
+		0x06,
+		&quot;CID Not Found&quot;
+	},
+	{
+		0xA0CD,
+		0x10,
+		&quot;Invalid CSPEC Version&quot;
+	},
+	{
+		0xA0CD,
+		0x31,
+		&quot;Peer Confirm Timed out&quot;
+	},
+	{
+		0xA0D1,
+		0x01,
+		&quot;Unsupported&quot;
+	},
+	{
+		0xA0D1,
+		0x02,
+		&quot;Process Failed&quot;
+	},
+	{
+		0xA0D1,
+		0x02,
+		&quot;Process Failed&quot;
+	},
+	{
+		0xA0D9,
+		0x01,
+		&quot;Bad VersionID or InfoID&quot;
+	},
+	{
+		0xA0DD,
+		0x01,
+		&quot;No Enumeration Table&quot;
+	},
+	{
+		0xA0F5,
+		0x01,
+		&quot;Bad Request Type&quot;
+	},
+	{
+		0xA0F5,
+		0x02,
+		&quot;FMI Not Zero&quot;
+	},
+	{
+		0xA0F5,
+		0x03,
+		&quot;Invalid Command&quot;
+	},
+	{
+		0xA0F5,
+		0x04,
+		&quot;Bad Index&quot;
+	},
+	{
+		0xA0F5,
+		0x05,
+		&quot;Bad Value Count&quot;
+	},
+	{
+		0xA0F5,
+		0x06,
+		&quot;Capture Already Started&quot;
+	},
+	{
+		0xA0F5,
+		0x07,
+		&quot;Data Invalid&quot;
+	},
+	{
+		0xA0F5,
+		0x08,
+		&quot;Bad Gain Value&quot;
+	},
+	{
+		0xA0F5,
+		0x10,
+		&quot;Bad MAC Address&quot;
+	},
+	{
+		0xA0F5,
+		0x11,
+		&quot;Bad Tone Map Index&quot;
+	},
+	{
+		0xA0F5,
+		0x12,
+		&quot;Capture Failed&quot;
+	},
+	{
+		0xA0F5,
+		0x13,
+		&quot;No Data Available&quot;
+	},
+	{
+		0xA0F9,
+		0x01,
+		&quot;Get Property Failure&quot;
+	},
+	{
+		0xA0F9,
+		0x02,
+		&quot;Unsupported Property&quot;
+	},
+	{
+		0xA0F9,
+		0x03,
+		&quot;Unsupported Property Version&quot;
+	},
+	{
+		0xA101,
+		0x01,
+		&quot;Set Property Failure&quot;
+	},
+	{
+		0xA101,
+		0x02,
+		&quot;Unsupported Property&quot;
+	},
+	{
+		0xA101,
+		0x03,
+		&quot;Unsupported Property Version&quot;
+	},
+	{
+		0xA101,
+		0x04,
+		&quot;Property Not Persistent&quot;
+	},
+	{
+		0xA101,
+		0x05,
+		&quot;Flash Memory Failure&quot;
+	},
+	{
+		0xA101,
+		0x06,
+		&quot;Bad Option for Supported Property&quot;
+	},
+	{
+		0xA101,
+		0x07,
+		&quot;Invalid Property Data&quot;
+	},
+	{
+		0xA101,
+		0x08,
+		&quot;Bad Property Data Length&quot;
+	},
+	{
+		0xA105,
+		0x01,
+		&quot;Buffer Not Available&quot;
+	},
+	{
+		0xA109,
+		0x01,
+		&quot;No Flash Memory&quot;
+	},
+	{
+		0xA109,
+		0x02,
+		&quot;Invalid Flash Sector&quot;
+	},
+	{
+		0xA109,
+		0x03,
+		&quot;Current DAK Mismatch&quot;
+	},
+	{
+		0xA109,
+		0x04,
+		&quot;Flash is Busy&quot;
+	},
+	{
+		0xA109,
+		0x05,
+		&quot;No Access to Flash&quot;
+	},
+	{
+		0xA109,
+		0x06,
+		&quot;Unsupported Chip&quot;
+	},
+	{
+		0xA109,
+		0x07,
+		&quot;Unspecified Error&quot;
+	},
+	{
+		0xA10D,
+		0x01,
+		&quot;Option Not Supported&quot;
+	},
+	{
+		0xA10D,
+		0x02,
+		&quot;No Flash Memory&quot;
+	},
+	{
+		0xA10D,
+		0x03,
+		&quot;Pending Self Test&quot;
+	},
+	{
+		0xA10D,
+		0x04,
+		&quot;Flash Activity Conflict&quot;
+	},
+	{
+		0xA10D,
+		0x05,
+		&quot;Bad Parameter&quot;
+	},
+	{
+		0xA111,
+		0x01,
+		&quot;Option Not Supported&quot;
+	},
+	{
+		0xA111,
+		0x02,
+		&quot;Self Test Finished&quot;
+	},
+	{
+		0xA111,
+		0x03,
+		&quot;Self Test Pending&quot;
+	},
+	{
+		0xA111,
+		0x04,
+		&quot;Self Test In Progress&quot;
+	},
+	{
+		0xA111,
+		0x05,
+		&quot;Self Test No Result&quot;
+	},
+	{
+		0xA111,
+		0x06,
+		&quot;Self Test Aborted&quot;
+	},
+	{
+		0xA111,
+		0x07,
+		&quot;No Flash Memory&quot;
+	},
+	{
+		0xA115,
+		0x01,
+		&quot;Interface Not Supported&quot;
+	},
+	{
+		0xA115,
+		0x02,
+		&quot;Slave Not Found&quot;
+	},
+	{
+		0xA115,
+		0x03,
+		&quot;Wrong Parameter&quot;
+	},
+	{
+		0xA119,
+		0x01,
+		&quot;Bad Version&quot;
+	},
+	{
+		0xA119,
+		0x02,
+		&quot;Bad Argument&quot;
+	},
+	{
+		0xA119,
+		0x03,
+		&quot;Too Many Slaves&quot;
+	},
+	{
+		0xA119,
+		0x04,
+		&quot;Too Many VLAN IDs&quot;
+	},
+	{
+		0xA119,
+		0x05,
+		&quot;No Such Slave&quot;
+	},
+	{
+		0xA119,
+		0x06,
+		&quot;Flash Operation Blocked&quot;
+	},
+	{
+		0xA119,
+		0x07,
+		&quot;Unsupported Operation&quot;
+	},
+	{
+		0xA119,
+		0x08,
+		&quot;Flash Activity Conflict&quot;
+	},
+	{
+		0xA119,
+		0x09,
+		&quot;Table Busy&quot;
+	},
+	{
+		0xA119,
+		0x0A,
+		&quot;One Slave Has Duplicate VLAN ID&quot;
+	},
+	{
+		0xA119,
+		0x0B,
+		&quot;Multiple Slaves Have Same VLAN ID&quot;
+	},
+	{
+		0xA119,
+		0x0C,
+		&quot;Multiple Configurations for One Slave&quot;
+	},
+	{
+		0xA119,
+		0x0D,
+		&quot;Can't set VLAN ID for Local Station&quot;
+	},
+	{
+		0xA119,
+		0x0E,
+		&quot;Bad Data Offset&quot;
+	},
+	{
+		0xA119,
+		0x0F,
+		&quot;Bad Data Length&quot;
+	},
+	{
+		0xA119,
+		0x10,
+		&quot;VLAN ID Has Been Configured&quot;
+	},
+	{
+		0xA119,
+		0x11,
+		&quot;Bad MME Source&quot;
+	},
+	{
+		0xA119,
+		0x12,
+		&quot;VLAN ID out of range&quot;
+	},
+	{
+		0xA119,
+		0x13,
+		&quot;Cannot remove nonexistent VLAN ID&quot;
+	},
+	{
+		0xA149,
+		0x1,
+		&quot;Invalid Key Length&quot;
+	},
+	{
+		0xA149,
+		0x2,
+		&quot;Invalid Key&quot;
+	},
+	{
+		0xA149,
+		0x3,
+		&quot;Invalid Access Type&quot;
+	},
+	{
+		0xA149,
+		0x4,
+		&quot;Invalid Level Control&quot;
+	}
+};
+
+#endif
+
+char const * MMECode (uint16_t MMTYPE, uint8_t MSTATUS)
+
+{
+
+#ifndef MMEPASSFAIL
+
+	size_t lower = 0;
+	size_t upper = SIZEOF (mme_codes);
+	MMTYPE = LE16TOH (MMTYPE);
+	while (lower &lt; upper)
+	{
+		size_t index = (lower + upper) &gt;&gt; 1;
+		signed order = MMTYPE - mme_codes [index].type;
+		if (order &lt; 0)
+		{
+			upper = index - 0;
+			continue;
+		}
+		if (order &gt; 0)
+		{
+			lower = index + 1;
+			continue;
+		}
+		for (lower = index; lower &gt; 0; lower--)
+		{
+			if (mme_codes [lower - 1].type != mme_codes [index].type)
+			{
+				break;
+			}
+		}
+		for (upper = index; upper &lt; SIZEOF (mme_codes); upper++)
+		{
+			if (mme_codes [upper + 0].type != mme_codes [index].type)
+			{
+				break;
+			}
+		}
+		while (lower &lt; upper)
+		{
+			index = (lower + upper) &gt;&gt; 1;
+			order = MSTATUS - mme_codes [index].code;
+			if (order &lt; 0)
+			{
+				upper = index - 0;
+				continue;
+			}
+			if (order &gt; 0)
+			{
+				lower = index + 1;
+				continue;
+			}
+			return (mme_codes [index].text);
+		}
+	}
+
+#endif
+
+	return ((MSTATUS)? (&quot;Failure&quot;):(&quot;Success&quot;));
+}
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='mme.c.html' title=' mme.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='MMEMode.c.html' title=' MMEMode.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

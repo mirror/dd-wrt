@@ -1,0 +1,144 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			evse_cm_start_atten_char.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='evse_cm_slac_param.c.html' title=' evse_cm_slac_param.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='ExecuteApplets1.c.html' title=' ExecuteApplets1.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *
+ *   signed evse_cm_start_atten_char (struct session * session, struct channel * channel, struct message * message);
+ *
+ *   slac.h
+ *
+ *   EVSE_HLE stores NUM_SOUNDS, TIME_OUT and FORWARDING_STA for use
+ *   later in the SLAC session;
+ *
+ *   accept only CM_ATTEN_CHAR.IND with RunID that match the earlier
+ *   CM_SLAC_PARAM.REQ;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef EVSE_CM_START_ATTEN_CHAR_SOURCE
+#define EVSE_CM_START_ATTEN_CHAR_SOURCE
+
+#include &lt;string.h&gt;
+
+#include &quot;../ether/channel.h&quot;
+#include &quot;../tools/memory.h&quot;
+#include &quot;../tools/error.h&quot;
+#include &quot;../tools/flags.h&quot;
+#include &quot;../slac/slac.h&quot;
+
+signed evse_cm_start_atten_char (struct session * session, struct channel * channel, struct message * message) 
+
+{ 
+	struct cm_start_atten_char_indicate * indicate = (struct cm_start_atten_char_indicate *) (message); 
+	if (readmessage (channel, message, HOMEPLUG_MMV, (CM_START_ATTEN_CHAR | MMTYPE_IND)) &gt; 0) 
+	{ 
+		if (! memcmp (session-&gt;RunID, indicate-&gt;ACVarField.RunID, sizeof (session-&gt;RunID))) 
+		{ 
+			debug (0, __func__, &quot;&lt;-- CM_START_ATTEN_CHAR.IND&quot;); 
+
+#if SLAC_DEBUG
+
+			if (_anyset (session-&gt;flags, SLAC_VERBOSE)) 
+			{ 
+				char string [256]; 
+				debug (0, __func__, &quot;CM_START_ATTEN_CHAR.IND.APPLICATION_TYPE %d&quot;, indicate-&gt;APPLICATION_TYPE); 
+				debug (0, __func__, &quot;CM_START_ATTEN_CHAR.IND.SECURITY_TYPE %d&quot;, indicate-&gt;SECURITY_TYPE); 
+				debug (0, __func__, &quot;CM_START_ATTEN_CHAR.IND.ACVarField.NUM_SOUNDS %d&quot;, indicate-&gt;ACVarField.NUM_SOUNDS); 
+				debug (0, __func__, &quot;CM_START_ATTEN_CHAR.IND.ACVarField.TIME_OUT %d&quot;, indicate-&gt;ACVarField.TIME_OUT); 
+				debug (0, __func__, &quot;CM_START_ATTEN_CHAR.IND.ACVarField.RESP_TYPE %d&quot;, indicate-&gt;ACVarField.RESP_TYPE); 
+				debug (0, __func__, &quot;CM_START_ATTEN_CHAR.IND.ACVarField.FORWARDING_STA %s&quot;, HEXSTRING (string, indicate-&gt;ACVarField.FORWARDING_STA)); 
+				debug (0, __func__, &quot;CM_START_ATTEN_CHAR.IND.ACVarField.RunID %s&quot;, HEXSTRING (string, indicate-&gt;ACVarField.RunID)); 
+			} 
+
+#endif
+
+			if (indicate-&gt;APPLICATION_TYPE != session-&gt;APPLICATION_TYPE) 
+			{ 
+				debug (session-&gt;exit, __func__, &quot;%s: APPLICATION_TYPE&quot;, __func__); 
+			} 
+			if (indicate-&gt;SECURITY_TYPE != session-&gt;SECURITY_TYPE) 
+			{ 
+				debug (session-&gt;exit, __func__, &quot;%s: SECURITY_TYPE&quot;, __func__); 
+			} 
+			session-&gt;NUM_SOUNDS = indicate-&gt;ACVarField.NUM_SOUNDS; 
+			session-&gt;TIME_OUT = indicate-&gt;ACVarField.TIME_OUT; 
+			if (indicate-&gt;ACVarField.RESP_TYPE != session-&gt;RESP_TYPE) 
+			{ 
+				debug (session-&gt;exit, __func__, &quot;%s: RESP_TYPE&quot;, __func__); 
+			} 
+			memcpy (session-&gt;FORWARDING_STA, indicate-&gt;ACVarField.FORWARDING_STA, sizeof (session-&gt;FORWARDING_STA)); 
+			return (0); 
+		} 
+	} 
+	return (debug (session-&gt;exit, __func__, &quot;CM_START_ATTEN_CHAR.IND ?&quot;)); 
+} 
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='evse_cm_slac_param.c.html' title=' evse_cm_slac_param.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='ExecuteApplets1.c.html' title=' ExecuteApplets1.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

@@ -1,0 +1,133 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			coqos_info.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='coqos_add.1.html' title=' coqos_add.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='coqos_man.1.html' title=' coqos_man.1 '>NEXT</a>]
+			</div>
+<pre>
+coqos_info(1)                                Qualcomm Atheros Open Powerline Toolkit                               coqos_info(1)
+
+NAME
+       coqos_info - CoQoS Stream Utility
+
+SYNOPSIS
+       coqos_info [options] type [cid] [limit] [device]
+
+DESCRIPTION
+       This page is under construction.
+
+       None.
+
+       This  program  is  part of the Qualcomm Atheros Powerline Toolkit.  See the plc man page for an overview and installation
+       instructions.
+
+OPTIONS
+       -e     Redirects stderr messages to stdout.  By convention progress messages and error messages  are  printed  on  stderr
+              while primary program output is printed on stdout.  This option prints all output on stdout in cases where this is
+              desired.
+
+       -i interface
+              Select the host Ethernet interface.  All requests are sent via this host interface and only reponses received  via
+              this host interface are recognized.  The default interface is eth1 because most people use eth0 as their principle
+              network connection; however, if environment string &quot;PLC&quot; is defined then it  takes  precedence  over  the  default
+              interface.  This option then takes precedence over either default.
+
+       -q     Suppresses status messages on stderr.
+
+       -r     Display relative memory offsets on output.  This option is the default.
+
+       -v     Prints additional information on stdout.  In particular, this option dumps outgoing Ethernet packets on stdout.
+
+       -?,--help
+              Displays  program  help information on stderr.  This option takes precedence over all other options on the command
+              line except version information.
+
+       -!,--version
+              Displays program version information on stderr.  This option takes precedence over all other options on  the  com‐
+              mand line except help information.  Use this option when sending screen dumps to Atheros technical staff.
+
+ARGUMENTS
+       type   The  request  type.   Valid  types  are &quot;STA&quot;, &quot;CID&quot;, &quot;RSVD&quot;, &quot;VIC&quot;, &quot;BW&quot;, and &quot;BW&quot;.  Individual request types are
+              described below.
+
+       device The MAC address of some powerline device.  More than one address may be specified on the command  line.   If  more
+              than  one  address  is  specified  then  operations  are performed on each device in turn.  The default address is
+              &quot;local&quot;.  See DEVICES for more information.
+
+TYPES
+       STA    Station.  Request information on all active connections for this station.
+
+       CID number
+              Connection identifier.  If present, it must be followed by a valid connection identifier.  Connection  identifiers
+              are  assigned  when the connection is added using program coqos_add.  The connection identifier is two bytes where
+              byte 0 is the LLID-F and byte 1 is the OrigTEI.
+
+       RSVD   Reserved.  Sets REQ_TYPE = 2 in the mme.
+
+       VIC    Vicinity.  Provide all active connections in the vicinity.
+
+        BW number
+              Bandwidth.  set station to provide info when the limit is exceeded.  BW must be followed by a number.  This number
+              is in units of 10kbps.  BWC cancels all previous requests.
+
+DEVICES
+       Ethernet  MAC addresses are expressed as six hexadecimal octets optionally separated by colon.  For example, the Qualcomm
+       Atheros Local Management Address (LMA) of &quot;00b052000001&quot; may also be entered as &quot;00:b0:52:00:00:01&quot;  or  &quot;00b052:000001&quot;.
+       Addresses  are  case  insensitive  and  quotes  are optional.  In addition, some special addresses may be entered by name
+       rather than number where names are case sensitive.
+
+       all    A synonym for the &quot;broadcast&quot; address, described next.
+
+       broadcast
+              A synonym for the Ethernet broadcast address, FF:FF:FF:FF:FF:FF.  All devices, whether local,  remote  or  foreign
+              will respond to this address.
+
+       local  A  synonym  for the Qualcomm Atheros vendor specific Local Management Address (LMA), 00:B0:52:00:00:01.  All local
+              Atheros devices recognize this address but remote and foreign devices do not.  A remote device is  any  device  at
+              the far end of a powerline connection.  A foreign device is any device not manufactured by Atheros.  See the Qual‐
+              comm Atheros HomePlug AV Firmware Technical Reference Manual for more information.
+
+DISCLAIMER
+       Atheros HomePlug AV Vendor Specific Management Message structure and content is proprietary to Qualcomm Atheros, Ocala FL
+       USA.   Consequently,  public  information  may  not  be available.  Qualcomm Atheros reserves the right to modify message
+       structure and content in future firmware releases without any obligation to notify or compensate users of this program.
+
+EXAMPLES
+       This command requests connection from the station
+
+            # coqos_info STA 00:B0:52:BA:BE:01
+
+       This command set the station to provide notification if the bandwidth used exceeds 20mbps
+
+            # coqos_info BW 2000 00:B0:52:BA:BE:01
+
+SEE ALSO
+       coqos_add(1), coqos_rel(1), coqos_man(1), coqos_mod(1)
+
+CREDITS
+        Bill Wike &lt;bill.wike@qca.qualcomm.com&gt;
+        Nathaniel Houghton &lt;nhoughto@qca.qualcomm.com&gt;
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                            coqos_info(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='coqos_add.1.html' title=' coqos_add.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='coqos_man.1.html' title=' coqos_man.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

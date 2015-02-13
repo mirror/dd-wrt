@@ -1,0 +1,90 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			edsu.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='edru.1.html' title=' edru.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='efbu.1.html' title=' efbu.1 '>NEXT</a>]
+			</div>
+<pre>
+edsu(1)                                      Qualcomm Atheros Open Powerline Toolkit                                     edsu(1)
+
+NAME
+       edsu - Qualcomm Atheros Ethernet II Data Send Utility
+
+SYNOPSIS
+       edsu [options] file [file] [...]
+
+DESCRIPTION
+       Send  one  or more files as a series of Ethernet II (IEEE 802.2) frames.  Input files are sequentially read and sent over
+       network as a continuous stream of standard Ethernet frames.  All frames (except perhaps the last  frame  for  each  file)
+       will contain 1500 bytes of file data.  The receiving host may elect to concatenate frame data as frames arrive.
+
+       This program can be used to test remote Atheros UART-enabled powerline devices.  The remote UART-enabled powerline device
+       will remove frame headers and forward frame data to the local host as a serial data stream.  No protocol  is  imposed  on
+       the  serial  data stream.  For example, there is no indication of frame or file start or end within the stream.  The ret‐
+       mote powerline device must be in Transparent Mode and configured to accept frames from the sending host.  The remote host
+       must also be ready to handle serial data as it arrives.
+
+OPTIONS
+       -d xx:xx:xx:xx:xx:xx
+              The  Ethernet  address  of  the destination device.  If the destination device is a Linux, Mac OSX or Windows host
+              then program edru can be used to receive and write frame data to stdout as a serial stream.   If  the  destination
+              device  is  an  Atheros  UART-enabled powerline device then received frame data will be converted to a serial data
+              stream and forwared to the host connected to that device.  In that case, the UART-enabled powerline device must be
+              programmed with the address of the sending host.
+
+       -e ethertype
+              The protocol (or ethertype) of interest expressed as a 16-bit hexadecimal integer.  Prefix &quot;0x&quot; is optional.  This
+              filters out frames having any other ethertype.  The default is ETH_P_802_2 as defined in if_ether.h.
+
+       -i interface
+              The host interface used to send frames.  The program default is &quot;eth1&quot; on Linux, &quot;en0&quot; on MacOSX  or  OpenBSD  and
+              &quot;2&quot;  on  Windows; however, if environment string &quot;PLC&quot; is defined, it supersedes the program default.  Any  inter‐
+              face specified on the command line supersedes all others.
+
+       -p seconds
+              Pause time in seconds between sending each frame.  Pauses may be necessary when the destination device is a  UART-
+              enabled  powerline  device because each frame must be converted and transmitted serially from the remote device to
+              the remote host.  Permitted pause times are 0 through 255 seconds.  The default is 0.
+
+       -q     Quiet mode.  This option has no effect at this time.
+
+       -v     Verbose mode.  This option displays outgoing frames on stdout in hexadecimal dump format as they are sent.
+
+ARGUMENTS
+       file   The name of a text or binary file accessible from the local host.
+
+EXAMPLES
+       The  following  example  sends  files  abc.txt  then  def.bin  to  the  remote  Atheros  UART-enabled  powerline   device
+       00:B0:52:BA:BE:55 over network interface eth1.  There is a constant 1 second delay between each frame sent so that remote
+       UART-enabled powerline devices have time to convert and forward each frame to their local host.
+
+          # edsu -ieth1 -d 00:b0:52:BA:BE:55 abc.txt def.bin
+
+SEE ALSO
+       amp(1), edru(1) efsu(1),
+
+CREDITS
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                                  edsu(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='edru.1.html' title=' edru.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='efbu.1.html' title=' efbu.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

@@ -1,0 +1,271 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			manifest.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='MakeRule.c.html' title=' MakeRule.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='manifetch.c.html' title=' manifetch.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *
+ *   signed manifest (void const * memory, size_t extent);
+ *
+ *   print manifest contents on stdout in human readable format;
+ *
+ *
+ *   Contributor(s):
+ *	Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef MANIFEST_SOURCE
+#define MANIFEST_SOURCE
+
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;errno.h&gt;
+
+#include &quot;../tools/format.h&quot;
+#include &quot;../tools/memory.h&quot;
+#include &quot;../tools/endian.h&quot;
+#include &quot;../tools/error.h&quot;
+#include &quot;../tools/files.h&quot;
+#include &quot;../tools/tlv.h&quot;
+#include &quot;../nvm/nvm.h&quot;
+
+/*
+ *   strings must appear in order of hardware types;
+ */
+
+static char const * compatibility [] =
+
+{
+	&quot;QCA7420&quot;,
+	(char const *) (0)
+};
+
+/*
+ *   strings must appear in order of field type; the last string is the error string;
+ */
+
+static char const * nvm_fields [] =
+
+{
+	&quot;Signature&quot;,
+	&quot;Hardware Compatibility&quot;,
+	&quot;Chain Major Version&quot;,
+	&quot;Chain Minor Version&quot;,
+	&quot;Chain Type&quot;,
+	&quot;Build Major Version&quot;,
+	&quot;Build Minor Version&quot;,
+	&quot;Build Type&quot;,
+	&quot;Manifest Version&quot;,
+	&quot;Build Number&quot;,
+	&quot;Build Date&quot;,
+	&quot;Build Time&quot;,
+	&quot;Device Type&quot;,
+	&quot;Build Hostname&quot;,
+	&quot;Build Username&quot;,
+	&quot;Build Description&quot;,
+	&quot;Build Version String&quot;,
+	&quot;Build Sustaining Release&quot;,
+	&quot;Build Major Subversion&quot;,
+	&quot;Generic Identifier 0&quot;,
+	&quot;Generic Identifier 1&quot;,
+	&quot;Softloader Major Version&quot;,
+	&quot;Softloader Minor Version&quot;,
+	&quot;Manifest Free Space&quot;,
+	&quot;Unknown Type&quot;
+};
+
+/*
+ *   strings must appear in order of chain type;
+ */
+
+static char const * nvm_chains [] =
+
+{
+	&quot;Softloader&quot;,
+	&quot;Firmware&quot;,
+	&quot;Parameter Block&quot;,
+	&quot;CustomModule&quot;
+};
+
+/*====================================================================*
+ *
+ *   char * myitoa (unsigned number, char buffer [], size_t length);
+ *
+ *   non-standard version of itoa () where buffer is packed right-
+ *   to-left to avoid reversing digits; ensure buffer is longer
+ *   than needed;
+ *
+ *
+ *   Contributor(s):
+ *	Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+static char * myitoa (unsigned number, char buffer [], size_t length)
+
+{
+	buffer [-- length] = (char) (0);
+	do
+	{
+		buffer [-- length] = '0' +  (number % 10);
+		number /= 10;
+	}
+	while (number);
+	return (buffer);
+}
+
+/*====================================================================*
+ *
+ *   signed manifest (void const * memory, size_t extent);
+ *
+ *   nvm.h
+ *
+ *   walk through a manifest and print known values, when present;
+ *   known values are those defined in nvm.h and named here;
+ *
+ *   the TLVNode data structure used here is not the same a that in
+ *   the firmware headers; our structure assumes values are 32-bit
+ *   integers and treats strings are exceptions to that rule;
+ *
+ *
+ *   Contributor(s):
+ *	Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+signed manifest (void const * memory, size_t extent)
+
+{
+	uint8_t * offset = (uint8_t *) (memory);
+	uint32_t length = (uint32_t) (extent);
+	char string [1024];
+	while (length &gt; 0)
+	{
+		struct TLVNode * node = (struct TLVNode *) (offset);
+		uint32_t type = LE32TOH (node-&gt;type);
+		uint32_t size = LE32TOH (node-&gt;size);
+		uint32_t data = LE32TOH (node-&gt;data);
+
+		switch (type)
+		{
+		case NVM_FIELD_SIGNATURE:
+		case NVM_FIELD_BUILD_DATE:
+			printf (&quot;\t%s: %08X\n&quot;, nvm_fields [type], data);
+			break;
+		case NVM_FIELD_BUILD_TIME:
+			printf (&quot;\t%s: %06X\n&quot;, nvm_fields [type], data);
+			break;
+		case NVM_FIELD_DEVICE_TYPE:
+			printf (&quot;\t%s: %04X\n&quot;, nvm_fields [type], data);
+			break;
+		case NVM_FIELD_CHAIN_TYPE:
+			printf (&quot;\t%s: %s\n&quot;, nvm_fields [type], data &lt; SIZEOF (nvm_chains)? nvm_chains [data]: myitoa (data, string, sizeof (string)));
+			break;
+		case NVM_FIELD_BUILD_HOSTNAME:
+		case NVM_FIELD_BUILD_USERNAME:
+		case NVM_FIELD_BUILD_DESCRIPTION:
+		case NVM_FIELD_BUILD_VERSION_STRING:
+		case NVM_FIELD_BUILD_TYPE:
+			printf (&quot;\t%s: %s\n&quot;, nvm_fields [type], (char const *) (&amp; node-&gt;data));
+			break;
+		case NVM_FIELD_HARDWARE_COMPAT:
+			strfbits (string, sizeof (string), compatibility, &quot;|&quot;, data);
+			printf (&quot;\t%s: %s\n&quot;, nvm_fields [type], string);
+			break;
+		case NVM_FIELD_MANIFEST_VERSION:
+		case NVM_FIELD_CHAIN_MAJOR_VERSION:
+		case NVM_FIELD_CHAIN_MINOR_VERSION:
+		case NVM_FIELD_BUILD_NUMBER:
+		case NVM_FIELD_BUILD_MAJOR_VERSION:
+		case NVM_FIELD_BUILD_MINOR_VERSION:
+		case NVM_FIELD_BUILD_MAJOR_SUBVERSION:
+		case NVM_FIELD_BUILD_SUSTAINING_RELEASE:
+		case NVM_FIELD_GENERIC_ID0:
+		case NVM_FIELD_GENERIC_ID1:
+		case NVM_FIELD_SL_MAJOR_VERSION:
+		case NVM_FIELD_SL_MINOR_VERSION:
+			printf (&quot;\t%s: %d\n&quot;, nvm_fields [type], data);
+			break;
+		case NVM_FIELD_FREE_SPACE:
+			printf (&quot;\t%s: %d/&quot; SIZE_T_SPEC &quot; bytes\n&quot;, nvm_fields [type], size, extent);
+			break;
+		default:
+			error (0, 0, &quot;%s: %d&quot;, nvm_fields [sizeof (nvm_fields) / sizeof (const char *) - 1], type);
+			break;
+		}
+
+		length -= sizeof (* node) - sizeof (node-&gt;size) +  LE32TOH (node-&gt;size);
+		offset += sizeof (* node) - sizeof (node-&gt;size) +  LE32TOH (node-&gt;size);
+	}
+	return (0);
+}
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='MakeRule.c.html' title=' MakeRule.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='manifetch.c.html' title=' manifetch.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

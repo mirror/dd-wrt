@@ -1,0 +1,185 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			amplist.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='ampID.1.html' title=' ampID.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='amprate.1.html' title=' amprate.1 '>NEXT</a>]
+			</div>
+<pre>
+amplist(1)                                   Qualcomm Atheros Open Powerline Toolkit                                  amplist(1)
+
+NAME
+       amplist - List Atheros Device Addresses
+
+SYNOPSIS
+       amplist [options] [device] [device] [...]
+
+DESCRIPTION
+       print  the  local  device  address or all network device addresses for a specific device.  This program is ideal for that
+       special script jokey in your life.  It only prints device addresses.  Nothing else.
+
+       Devices are detected using one of two methods.  The two methods can be used in combination to determine network topology.
+
+       The  first  method  sends  one VS_SW_VER message to the Qualcomm Atheros Local Management Address and prints the Ethernet
+       source address found in each received confirmation message.  The method is used when no device addresses  appear  on  the
+       command  line.   The  result is a list of all local devices, being this connected directly to the local host.  Each local
+       device device may bridge to an independent powerline network having remote devices as members.
+
+       The second method sends one VS_NW_INFO message to each specified device and prints the Ethernet source address  found  in
+       each  received  message plus the Ethernet addresses of each network station identified in that message body.  This method
+       is used whenever one, or more, device addresses appear on the command line.  It is possible  to  query  remote  powerline
+       devices directly and so duplicate devices addresses are printed when devices share powerline neighbors.
+
+       This  program  is  part of the Qualcomm Atheros Powerline Toolkit.  See the plc man page for an overview and installation
+       instructions.
+
+COMMENTS
+       This program is identical to legacy program int6klist but uses version 1 of the Qualcomm Atheros  VS_NW_INFO  vendor-spe‐
+       cific message.  Older firmware versions may not recognize this message version.
+
+OPTIONS
+       -b     Print  bridge  device  addresses.  Each specified device reports it’s own address. This option has no effect if no
+              devices are specified.
+
+       -i     Select the host Ethernet interface. All requests are sent via this host interface and only reponses  received  via
+              this  host interface are recognized. The default interface is eth1 because most people use eth0 as their principle
+              network connection; however, if environment string &quot;PLC&quot; is defined then it  takes  precedence  over  the  default
+              interface. This option then takes precedence over either default.
+
+       -n     Append a newline to output.
+
+       -q     Enter quiet mode. This option has no effect at this time.
+
+       -r     Print  remote device addresses. Each specified device reports neighbor device addresses. This option has no effect
+              when no devices are specified.
+
+       -s     Insert a newline, instead of a space, between each device address.
+
+       -v     Enter verbose mode. All Etherenet frames sent or received by the program are displayed on stdout.
+
+       -?, --help
+              Print program help summary on stdout. This option takes precedence over other options on the command line.
+
+       -!, --version
+              Print program version information on stdout. This option takes precedence over other options on the command  line.
+              Use  this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of
+              the Linux Toolkit you are using.
+
+ARGUMENTS
+       device The MAC address of some powerline device. More than one address may be specified. If omitted the the program  out‐
+              put  consists  of local device addresses only. Otherwise, output conisists of the specified device followed by all
+              devices associated with it. The default address is local.  See  DEVICES  for  information  about  symbolic  device
+              addresses.
+
+DEVICES
+       Powerline  devices  use Ethernet Media Access Control (MAC) addresses. A MAC address is a 48-bit value entered as 12 hex‐
+       adecimal digits in upper, lower or mixed character case. Octets may be separated with colons for  clarity.  For  example,
+       &quot;00b052000001&quot;, &quot;00:b0:52:00:00:01&quot; and &quot;00b052:000001&quot; are valid and equivalent.
+
+       The following MAC addresses are special and may be entered by name instead of number.
+
+       all    Same as &quot;broadcast&quot;.
+
+       broadcast
+              A  synonym  for  the  Ethernet broadcast address, FF:FF:FF:FF:FF:FF. All devices, whether local, remote or foreign
+              recognize messages sent to this address.  A remote device is any device at the far end of a powerline  connection.
+              A foreign device is any device not manufactured by Atheros.
+
+       local  A  synonym  for  the Qualcomm Atheros vendor specific Local Management Address (LMA), 00:B0:52:00:00:01. All local
+              Atheros devices recognize this address but remote and foreign devices do not. A remote device is any device at the
+              far end of a powerline connection. A foreign device is any device not manufactured by Atheros.
+
+REFERENCES
+       See the Qualcomm Atheros HomePlug AV Firmware Technical Reference Manual for more information.
+
+DISCLAIMER
+       Atheros  HomePlug  AV  Vendor Specific Management Message Entry structure and content is proprietary to Qualcomm Atheros,
+       Ocala FL USA. Consequently, public information may not be available. Qualcomm Atheros reserves the right to  modify  mes‐
+       sage  structure and content in future firmware releases without any obligation to notify or compensate users of this pro‐
+       gram.
+
+EXAMPLES
+       The following command lists all local devices. Since no devices are specified on the command line, one VS_SW_VER  message
+       is  addressed  to 00:B0:52:00:00:01 and the responses are collected. As we can see, there is only one local device avail‐
+       able at this time. Observe that the prompt appears immediately after the address because newlines are omitted by default.
+
+          # amplist
+          00:B0:52:BE:EF:04 #
+
+       The  next  example  does  the  same  thing  but there are now three local devices available. Observe that all devices are
+       printed without intervening newlines so that the output of this program can be used as input to other toolkit programs.
+
+          # amplist
+          00:B0:52:BE:EF:04 00:B0:52:BA:BE:02 00:B0:52:BA:BE:01 # int6k
+
+       The next example queries the first local device from  the  previous  example,  00:B0:52:BE:EF:04,  for  a  list  neighbor
+       devices.  This  time a VS_NW_INFO message is sent because we named a device on the command line. The named device happens
+       to be a local device but it need not be. We can see that the device has no neighbors.
+
+          # amplist 00:B0:52:BE:EF:04
+          00:B0:52:BE:EF:04 # int6k
+
+       The next example we query the next local device, 00:B0:52:BA:BE:02, and find that it has two neighbor  devices  that  did
+       not show up earlier because they are remote devices. Observe that the three devices comprise a complete logical powerline
+       network. Device 00:B0:52:BA:BE:02 is connected to the local host but 00:0F:33:F2:01:21  and  00:0f:00:F2:01:13  are  con‐
+       nected to other hosts, somewhere.
+
+          # amplist 00:B0:52:BA:BE:02
+          00:B0:52:BA:BE:02 00:0F:33:F2:01:21 00:0F:00:F2:01:13
+
+       The  next  example  shows  that we can query multiple devices at a time for neighbors. We have copied the output from the
+       second example and pasted it onto the command line. We now have a list of all devices, local and remote.
+
+          # amplist 00:B0:52:BE:EF:04 00:B0:52:BA:BE:02 00:B0:52:BA:BE:01
+          00:B0:52:BE:EF:04 00:B0:52:BA:BE:01 00:B0:52:BA:BE:02 00:0F:33:F2:01:21 00:0F:00:F2:01:13
+
+       This next example does the same thing but uses option -n to append a newline after each query. This output is  eaiser  to
+       understand because each device queried starts on a new line and is followed by any neighbors.
+
+          # amplist 00:B0:52:BE:EF:04 00:B0:52:BA:BE:02 00:B0:52:BA:BE:01 -n
+          00:B0:52:BE:EF:04
+          00:B0:52:BA:BE:02 00:0F:33:F2:01:21 00:0F:00:F2:01:13
+          00:B0:52:BA:BE:01
+
+       This  example  invokes  amplist which returns a list of local devices. That list is inserted into another amplist command
+       line. This demontrates how program output can be used in scripts.
+
+          # amplist $(amplist) -n
+          00:B0:52:BE:EF:04
+          00:B0:52:BA:BE:02 00:0F:33:F2:01:21 00:0F:00:F2:01:13
+          00:B0:52:BA:BE:01
+
+       This next example accomplishes the same thing since all local device respond with a list of powerline neighbors.
+
+          # amplist local
+          00:B0:52:BE:EF:04
+          00:B0:52:BA:BE:02 00:0F:33:F2:01:21 00:0F:00:F2:01:13
+          00:B0:52:BA:BE:01
+
+SEE ALSO
+       plc(1), amprate(1), ampstat(1), amptone(1), amptool(1)
+
+CREDITS
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                               amplist(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='ampID.1.html' title=' ampID.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='amprate.1.html' title=' amprate.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

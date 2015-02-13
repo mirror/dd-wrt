@@ -1,0 +1,89 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			SHA256Fetch.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='SHA256.c.html' title=' SHA256.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='SHA256Ident.c.html' title=' SHA256Ident.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   void SHA256Fetch (struct sha256 * sha256,  uint8_t digest []);
+ *
+ *   SHA256.h
+ *
+ *   read the SHA256 digest; this function works like function read()
+ *   but the function returns no value and the digest buffer is fixed
+ *   length;
+ *
+ *   to start a digest, use function SHA256Reset(); to write data to
+ *   the digest use function SHA256Write();
+ *
+ *   Read standard FIPS180-2 sec 5.3.2 for an explanation;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef SHA256FETCH_SOURCE
+#define SHA256FETCH_SOURCE
+
+#include &quot;../key/SHA256.h&quot;
+
+static void encode (uint8_t memory [], uint32_t number)
+
+{
+	*memory++ = (uint8_t)(number &gt;&gt; 24);
+	*memory++ = (uint8_t)(number &gt;&gt; 16);
+	*memory++ = (uint8_t)(number &gt;&gt; 8);
+	*memory++ = (uint8_t)(number &gt;&gt; 0);
+	return;
+}
+
+void SHA256Fetch (struct sha256 * sha256, uint8_t digest [])
+
+{
+	unsigned word;
+	uint8_t bits [8];
+	uint32_t upper = (sha256-&gt;count [0] &gt;&gt; 29) | (sha256-&gt;count [1] &lt;&lt; 3);
+	uint32_t lower = (sha256-&gt;count [0] &lt;&lt; 3);
+	uint32_t final = (sha256-&gt;count [0] &amp; 0x3F);
+	uint32_t extra = (final &lt; 56)? (56 - final): (120 - final);
+	encode (&amp;bits [0], upper);
+	encode (&amp;bits [4], lower);
+	SHA256Write (sha256, sha256-&gt;extra, extra);
+	SHA256Write (sha256, bits, sizeof (bits));
+	for (word = 0; word &lt; sizeof (sha256-&gt;state) / sizeof (uint32_t); word++)
+	{
+		encode (digest, sha256-&gt;state [word]);
+		digest += sizeof (uint32_t);
+	}
+	memset (sha256, 0, sizeof (struct sha256));
+	return;
+}
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='SHA256.c.html' title=' SHA256.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='SHA256Ident.c.html' title=' SHA256Ident.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

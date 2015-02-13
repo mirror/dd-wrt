@@ -1,0 +1,52 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Update Local Host (INT6000/INT6300/INT6400)</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="ch04.html" title="Chapter 4.  Firmware"><link rel="prev" href="ch04s10.html" title="Upgrade Device (INT6000/INT6300/INT6400)"><link rel="next" href="ch04s12.html" title="Boot from Host (INT6000)"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">
+			Update Local Host (INT6000/INT6300/INT6400)
+			</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch04s10.html">Prev</a> </td><th width="60%" align="center">Chapter 4. 
+		Firmware 
+		</th><td width="20%" align="right"> <a accesskey="n" href="ch04s12.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="firmware-6000-upload"></a>
+			Update Local Host (INT6000/INT6300/INT6400)
+			</h2></div></div></div><p>
+			The Update Local Host operation transfers a firmware image and/or <acronym class="acronym">PIB</acronym> image from the device to the local host for permanent storage. After the firmware and <acronym class="acronym">PIB</acronym> are stored, the local host will reset the device and the device will retrieve parameters and firmware using the <a class="link" href="ch04s12.html" title="Boot from Host (INT6000)">Boot from Host</a> operation described in the next section.
+			</p><p>
+			The firmware may initiate this operation after a remote host has downloaded new firmware or <acronym class="acronym">PIB</acronym> and issued a <code class="constant">VS_MOD_NVM.REQ</code> to the device,  the device has been asked to restore factory default settings or the firmware has dynamically altered the runtime <acronym class="acronym">PIB</acronym> in some way. Consequently, the device will be reset by the host in each case.
+			</p><p>
+			The device initiates this operation to complete an Upgrade Device operation when the device has no dedicated flash memory onboard. This operation requires running Atheros firmware on the device and custom software on the local host.
+			</p><div class="figure"><a name="idp10053552"></a><p class="title"><b>Figure 4.3. 
+				Update Local Host (INT6000/INT6300/INT6400)
+				</b></p><div class="figure-contents"><pre class="programlisting">
+
+      INT6300/INT6400                           LOCAL-HOST
+        [01] |-------- VS_HOST_ACTION.IND -------&gt;| [01]
+        [03] |&lt;------- VS_HOST_ACTION.RSP --------| [02]
+             |                                    |
+        [04] |&lt;------- VS_RD_MOD.REQ -------------| [04]
+        [04] |-------- VS_RD_MOD.CNF ------------&gt;| [04]
+        [04] |&lt;-----------------------------------| [04]
+        [04] |-----------------------------------&gt;| [04]
+             |                                    |
+        [05] |&lt;------- VS_RD_MOD.REQ -------------| [05]
+        [05] |-------- VS_RD_MOD.CNF ------------&gt;| [05]
+        [05] |&lt;-----------------------------------| [05]
+        [05] |-----------------------------------&gt;| [05]
+             |                                    |
+        [06] |&lt;------- VS_RS_DEV.REQ -------------| [06]
+        [07] |-------- VS_RS_DEV.CNF ------------&gt;| [07]
+
+</pre></div></div><br class="figure-break"><div class="orderedlist"><ol type="1"><li><p>
+					The runtime firmware initiates this operation by broadcasting <code class="constant">VS_HOST_ACTION.IND</code> messages every 500 milliseconds. The <code class="constant">HOST_ACTION_REQ</code> field of the message can be either <code class="constant">0x01</code>, <code class="constant">0x02</code> or <code class="constant">0x03</code> to indicate that a firmware image, a parameter block image or both are ready for upload by the local host. 
+					</p></li><li><p>
+					The local host sends a <code class="constant">VS_HOST_ACTION.RSP</code> message to the device to indicate the ability and willingness to upload the information. The <code class="varname">MSTATUS</code> field is set to <code class="constant">0x00</code> for affirmative and <code class="constant">0x01</code> for negative. 
+					</p></li><li><p>
+					Assuming an affirmative response, the device stops broadcasting and will wait indefinitely for local host action. 
+					</p></li><li><p>
+					Optionally, the local host reads the firmware image from the device by sending a series of VS_RD_MOD.REQ messages to the device and waiting for a <code class="constant">VS_RD_MOD.CNF</code> message after each one. The message <code class="varname">MODULEID</code> field is set to <code class="constant">0x01</code> for this operation. 
+					</p></li><li><p>
+					Optionally, the local host reads the <acronym class="acronym">PIB</acronym> from the device by sending a series of <code class="constant">VS_RD_MOD.REQ</code> messages to the device and waiting for a <code class="constant">VS_RD_MOD.CNF</code> message after each one. The message <code class="varname">MODULEID</code> field is set to <code class="constant">0x02</code> for this operation. 
+					</p></li><li><p>
+					The local host sends a <code class="constant">VS_RS_DEV.REQ</code> message to the device to initiate a firmware reboot. 
+					</p></li><li><p>
+					The device sends a <code class="constant">VS_RS_DEV.CNF</code> to the host and performs a software reset. This forces a <a class="link" href="ch04s12.html" title="Boot from Host (INT6000)">Boot from Host</a>.
+					</p></li></ol></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch04s10.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="ch04.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch04s12.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">
+            Upgrade Device (INT6000/INT6300/INT6400)
+             </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 
+			Boot from Host (INT6000)
+			</td></tr></table></div></body></html>0

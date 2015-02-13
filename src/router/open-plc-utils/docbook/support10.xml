@@ -1,0 +1,129 @@
+<section id="support-traffic">
+	<title>
+		Traffic Functions
+		</title>
+	<para>
+		Traffic functions generate powerline traffic in various ways. Some send traffic direct from the host to each device while others use the <constant>VS_FR_LBK</constant> message to echo Ethernet frames back to the sender.
+		</para>
+	<section id="support-CrossTraffic1">
+		<title>
+			CrossTraffic1
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>signed <function>CrossTraffic1</function></funcdef>
+   				<paramdef>struct plc * <parameter>plc</parameter></paramdef>
+    				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Instruct a powerline device  to send a generic Ethernet frame to another powerline device for a fixed period of time in order to set the <constant>TX</constant> rate on the source device and the <constant>RX</constant> rate on the destination device. The source and destination address are specified in <varname>plc->MAC</varname> and <varname>plc->RDA</varname>, respectively, and the duration is specified in <varname>plc->timeperiod</varname>. This function is similar to function <link linkend='support-CrossTraffic2'>CrossTraffic2</link> but the source and destination addresses are reversed. Structure <varname>plc</varname> is declared in file <ulink url='plc.h.html'>plc.h</ulink> and defined in file <ulink url='plc.c.html'>plc.c</ulink>. The function is declared in <ulink url='plc.h.html'>plc.h</ulink> and defined in file <ulink url='CrossTraffic1.c.html'>CrossTraffic1.c</ulink>. 
+			</para>
+		</section>
+	<section id="support-CrossTraffic2">
+		<title>
+			CrossTraffic2
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>signed <function>CrossTraffic2</function></funcdef>
+   				<paramdef>struct plc * <parameter>plc</parameter></paramdef>
+    				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Instruct a powerline device  to send a generic Ethernet frame to another powerline device for a fixed period of time in order to set the <constant>TX</constant> rate on the source device and the <constant>RX</constant> rate on the destination device. The source and destination address are specified in <varname>plc->RDA</varname> and <varname>plc->MAC</varname>, respectively, and the duration is specified in <varname>plc->timeperiod</varname>. This function is similar to function <link linkend='support-CrossTraffic1'>CrossTraffic1</link> but the source and destination addresses are reversed. Structure <varname>plc</varname> is declared in file <ulink url='plc.h.html'>plc.h</ulink> and defined in file <ulink url='plc.c.html'>plc.c</ulink>. The function is declared in <ulink url='plc.h.html'>plc.h</ulink> and defined in file <ulink url='CrossTraffic2.c.html'>CrossTraffic2.c</ulink>. 
+			</para>
+		</section>
+	<section id="support-LocalTraffic1">
+		<title>
+			LocalTraffic1
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>signed <function>LocalTraffic1</function></funcdef>
+   				<paramdef>struct plc * <parameter>plc</parameter></paramdef>
+    				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Send a fixed number of generic frames from the local host a remote powerline device in order to set the <constant>TX</constant> rate on the local powerline device and the <constant>RX</constant> rate on the remote powerline device. The local and remote device address are specified in <varname>plc->MAC</varname> and <varname>plc->RDA</varname>, respectively, and the count is specified in <varname>plc->count</varname>. This function is similar to function <link linkend='support-LocalTraffic2'>LocalTraffic2</link> which instructs a remote device to echo frames back to the local device. Structure <varname>plc</varname> is declared in file <ulink url='plc.h.html'>plc.h</ulink> and defined in file <ulink url='plc.c.html'>plc.c</ulink>. The function is declared in <ulink url='plc.h.html'>plc.h</ulink> and defined in file <ulink url='LocalTraffic1.c.html'>LocalTraffic1.c</ulink>. 
+			</para>
+		</section>
+	<section id="support-LocalTraffic2">
+		<title>
+			LocalTraffic2
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>signed <function>LocalTraffic2</function></funcdef>
+   				<paramdef>struct plc * <parameter>plc</parameter></paramdef>
+    				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Instruct a remote powerline device to echo generic Ethernet frames back to the local host for a fixed period of time in order to set the <constant>TX</constant> rate on the remote powerline device and the <constant>RX</constant> rate on the local powerline device. The local and remote device address are specified in <varname>plc->MAC</varname> and <varname>plc->RDA</varname>, respectively, and the count is specified in <varname>plc->count</varname>. This function is useful when there is no easy way to send traffic from the remote host. This function complements function <link linkend='support-LocalTraffic1'>LocalTraffic1</link> which send frames from the local device to a remote device. Structure <varname>plc</varname> is declared in file <ulink url='plc.h.html'>plc.h</ulink> and defined in file <ulink url='plc.c.html'>plc.c</ulink>. The function is declared in <ulink url='plc.h.html'>plc.h</ulink> and defined in file <ulink url='LocalTraffic2.c.html'>LocalTraffic2.c</ulink>. 
+			</para>
+		</section>
+	<section id="support-NetworkTraffic1">
+		<title>
+			NetworkTraffic1
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>signed <function>NetworkTraffic1</function></funcdef>
+   				<paramdef>struct plc * <parameter>plc</parameter></paramdef>
+    				</funcprototype>
+			</funcsynopsis>
+		<para>
+			This function is an alternative to function <link linkend='support-NetworkTraffic2'>NetworkTraffic2</link> which uses Qualcomm Version <constant>1</constant> management messages to determine network topology. Structure <varname>plc</varname> is declared in file <ulink url='plc.h.html'>plc.h</ulink> and defined in file <ulink url='plc.c.html'>plc.c</ulink>. The function is declared in <ulink url='plc.h.html'>plc.h</ulink> and defined in file <ulink url='NetworkTraffic1.c.html'>NetworkTraffic1.c</ulink>. 
+			</para>
+		<para>
+			This function use <constant>VS_SW_INFO</constant> and <constant>VS_NW_INFO</constant> messages to discover powerline network topology then calls functions <link linkend='support-LocalTraffic1'>LocalTraffic1</link> and <link linkend='support-LocalTraffic2'>LocalTraffic2</link> to generate traffic between the local powerline device and each remote powerline device. Unlike function <link linkend='support-NetworkTraffic1'>NetworkTraffic1</link>, it does not generate traffic between various remote devices.
+			</para>
+		</section>
+	<section id="support-NetworkTraffic2">
+		<title>
+			NetworkTraffic2
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>signed <function>NetworkTraffic2</function></funcdef>
+   				<paramdef>struct plc * <parameter>plc</parameter></paramdef>
+    				</funcprototype>
+			</funcsynopsis>
+		<para>
+			This function is an alternative to function <link linkend='support-NetworkTraffic1'>NetworkTraffic1</link> which uses Qualcomm Version <constant>0</constant> management messages to determine network topology. Structure <varname>plc</varname> is declared in file <ulink url='plc.h.html'>plc.h</ulink> and defined in file <ulink url='plc.c.html'>plc.c</ulink>. The function is declared in <ulink url='plc.h.html'>plc.h</ulink> and defined in file <ulink url='NetworkTraffic2.c.html'>NetworkTraffic2.c</ulink>. 
+			</para>
+		</section>
+	<section id="support-Traffic1">
+		<title>
+			Traffic1
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>signed <function>Traffic1</function></funcdef>
+   				<paramdef>struct plc * <parameter>plc</parameter></paramdef>
+    				</funcprototype>
+			</funcsynopsis>
+		<para>
+			This function is an alternative to function <link linkend='support-Traffic2'>Traffic2</link> which uses Qualcomm Version <constant>1</constant> management messages to determine network topology. Structure <varname>plc</varname> is declared in file <ulink url='plc.h.html'>plc.h</ulink> and defined in file <ulink url='plc.c.html'>plc.c</ulink>. The function is declared in <ulink url='plc.h.html'>plc.h</ulink> and defined in file <ulink url='Traffic1.c.html'>Traffic1.c</ulink>. 
+			</para>
+		<para>
+			This function use <constant>VS_SW_INFO</constant> and <constant>VS_NW_INFO</constant> messages to discover powerline network topology then calls functions <link linkend='support-LocalTraffic1'>LocalTraffic1</link> and <link linkend='support-LocalTraffic2'>LocalTraffic2</link> to generate traffic between the local powerline device and each remote powerline device. Unlike function <link linkend='support-NetworkTraffic1'>NetworkTraffic1</link>, it does not generate traffic between remote devices.
+			</para>
+		</section>
+	<section id="support-Traffic2">
+		<title>
+			Traffic2
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>signed <function>Traffic2</function></funcdef>
+   				<paramdef>struct plc * <parameter>plc</parameter></paramdef>
+    				</funcprototype>
+			</funcsynopsis>
+		<para>
+			This function is an alternative to function <link linkend='support-Traffic1'>Traffic1</link> which uses Qualcomm Version <constant>0</constant> management messages to determine network topology. Structure <varname>plc</varname> is declared in file <ulink url='plc.h.html'>plc.h</ulink> and defined in file <ulink url='plc.c.html'>plc.c</ulink>. The function is declared in <ulink url='plc.h.html'>plc.h</ulink> and defined in file <ulink url='Traffic2.c.html'>Traffic2.c</ulink>. 
+			</para>
+		<para>
+			This function use <constant>VS_SW_INFO</constant> and <constant>VS_NW_INFO</constant> messages to discover powerline network topology then calls functions <link linkend='support-LocalTraffic1'>LocalTraffic1</link> and <link linkend='support-LocalTraffic2'>LocalTraffic2</link> to generate traffic between the local powerline device and each remote powerline device. Unlike function <link linkend='support-NetworkTraffic2'>NetworkTraffic2</link>, it does not generate traffic between remote devices.
+			</para>
+		</section>
+	</section>

@@ -1,0 +1,69 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			SHA256Ident.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='SHA256Fetch.c.html' title=' SHA256Fetch.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='SHA256Match.c.html' title=' SHA256Match.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   void SHA256Ident (signed fd,  uint8_t digest []);
+ *
+ *   SHA256.h
+ *
+ *   compute the SHA256 digest of file content; the digest becomes
+ *   the fingerprint that can be used to identify the file despite
+ *   filename changes;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef SHA256IDENT_SOURCE
+#define SHA256IDENT_SOURCE
+
+#include &lt;unistd.h&gt;
+
+#include &quot;../key/SHA256.h&quot;
+
+void SHA256Ident (signed fd, uint8_t digest [])
+
+{
+	struct sha256 sha256;
+	uint8_t buffer [1024];
+	signed length;
+	SHA256Reset (&amp;sha256);
+	while ((length = read (fd, buffer, sizeof (buffer))) &gt; 0)
+	{
+		SHA256Write (&amp;sha256, buffer, length);
+	}
+	SHA256Fetch (&amp;sha256, digest);
+	return;
+}
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='SHA256Fetch.c.html' title=' SHA256Fetch.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='SHA256Match.c.html' title=' SHA256Match.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

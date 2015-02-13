@@ -1,0 +1,90 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{7A360081-23A2-4ABF-8BC8-13B27D6A826E}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)\Programs\2010\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)\Objects\2010\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
+    <EmbedManifest Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</EmbedManifest>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;MAKEFILE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <CompileAs>CompileAsC</CompileAs>
+      <DisableSpecificWarnings>4996</DisableSpecificWarnings>
+      <StringPooling>true</StringPooling>
+      <MinimalRebuild>true</MinimalRebuild>
+    </ClCompile>
+    <Link>
+      <OutputFile>$(OutDir)chkpib.exe</OutputFile>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <TargetMachine>MachineX86</TargetMachine>
+      <AdditionalLibraryDirectories>..\library;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\nvm\fdmanifest.c" />
+    <ClCompile Include="..\..\tools\checksum32.c" />
+    <ClCompile Include="..\..\pib\chkpib.c" />
+    <ClCompile Include="..\..\tools\error.c" />
+    <ClCompile Include="..\..\tools\fdchecksum32.c" />
+    <ClCompile Include="..\..\tools\getoptv.c" />
+    <ClCompile Include="..\..\tools\hexdecode.c" />
+    <ClCompile Include="..\..\tools\hexstring.c" />
+    <ClCompile Include="..\..\key\HPAVKeyNID.c" />
+    <ClCompile Include="..\..\key\keys.c" />
+    <ClCompile Include="..\..\nvm\manifest.c" />
+    <ClCompile Include="..\..\pib\pibpeek1.c" />
+    <ClCompile Include="..\..\pib\pibpeek2.c" />
+    <ClCompile Include="..\..\tools\putoptv.c" />
+    <ClCompile Include="..\..\key\SHA256Block.c" />
+    <ClCompile Include="..\..\key\SHA256Fetch.c" />
+    <ClCompile Include="..\..\key\SHA256Reset.c" />
+    <ClCompile Include="..\..\key\SHA256Write.c" />
+    <ClCompile Include="..\..\tools\strfbits.c" />
+    <ClCompile Include="..\..\tools\version.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\tools\error.h" />
+    <ClInclude Include="..\..\tools\getoptv.h" />
+    <ClInclude Include="..\..\key\HPAVKey.h" />
+    <ClInclude Include="..\..\key\keys.h" />
+    <ClInclude Include="..\..\nvm\nvm.h" />
+    <ClInclude Include="..\..\pib\pib.h" />
+    <ClInclude Include="..\..\tools\putoptv.h" />
+    <ClInclude Include="..\..\tools\version.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

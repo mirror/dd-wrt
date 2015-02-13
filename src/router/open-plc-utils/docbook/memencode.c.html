@@ -1,0 +1,223 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			memencode.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='memdecr.c.html' title=' memdecr.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='memincr.c.html' title=' memincr.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *
+ *   unsigned memencode (void * memory, size_t extent, char const * format, char const * string);
+ *
+ *   memory.h
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef MEMENCODE_SOURCE
+#define MEMENCODE_SOURCE
+
+#include &lt;string.h&gt;
+
+#include &quot;../tools/memory.h&quot;
+#include &quot;../tools/number.h&quot;
+#include &quot;../tools/error.h&quot;
+#include &quot;../pib/pib.h&quot;
+
+static size_t memstring (void * memory, size_t extent, char const * format, char const * string, size_t length)
+
+{
+	if (extent &lt; length)
+	{
+		error (1, ECANCELED, &quot;Overflow at %s %s&quot;, format, string);
+	}
+	memset (memory, 0, length);
+	strncpy (memory, string, length-1);
+	return (length);
+}
+
+size_t memencode (void * memory, size_t extent, char const * format, char const * string)
+
+{
+	if (!strcmp (format, &quot;byte&quot;))
+	{
+		uint8_t * number = (uint8_t *)(memory);
+		if (extent &lt; sizeof (* number))
+		{
+			error (1, ECANCELED, &quot;Overflow at %s %s&quot;, format, string);
+		}
+		* number = (uint8_t)(basespec (string, 0, sizeof (* number)));
+		return (sizeof (* number));
+	}
+	if (!strcmp (format, &quot;word&quot;))
+	{
+		uint16_t * number = (uint16_t *)(memory);
+		if (extent &lt; sizeof (* number))
+		{
+			error (1, ECANCELED, &quot;Overflow at %s %s&quot;, format, string);
+		}
+		* number = (uint16_t)(basespec (string, 0, sizeof (* number)));
+		* number = HTOLE16 (* number);
+		return (sizeof (* number));
+	}
+	if (!strcmp (format, &quot;long&quot;))
+	{
+		uint32_t * number = (uint32_t *)(memory);
+		if (extent &lt; sizeof (* number))
+		{
+			error (1, ECANCELED, &quot;Overflow at %s %s&quot;, format, string);
+		}
+		* number = (uint32_t)(basespec (string, 0, sizeof (* number)));
+		* number = HTOLE32 (* number);
+		return (sizeof (* number));
+	}
+	if (!strcmp (format, &quot;huge&quot;))
+	{
+		uint64_t * number = (uint64_t *)(memory);
+		if (extent &lt; sizeof (* number))
+		{
+			error (1, ECANCELED, &quot;Overflow at %s %s&quot;, format, string);
+		}
+		* number = (uint64_t)(basespec (string, 0, sizeof (* number)));
+		* number = HTOLE64 (* number);
+		return (sizeof (* number));
+	}
+	if (!strcmp (format, &quot;text&quot;))
+	{
+		extent = (unsigned)(strlen (string));
+		memcpy (memory, string, extent);
+		return (extent);
+	}
+	if (!strcmp (format, &quot;data&quot;))
+	{
+		extent = (unsigned)(dataspec (string, memory, extent));
+		return (extent);
+	}
+	if (!strcmp (format, &quot;fill&quot;))
+	{
+		extent = (unsigned)(uintspec (string, 0, extent));
+		memset (memory, ~0, extent);
+		return (extent);
+	}
+	if (!strcmp (format, &quot;zero&quot;))
+	{
+		extent = (unsigned)(uintspec (string, 0, extent));
+		memset (memory, 0, extent);
+		return (extent);
+	}
+	if (!strcmp (format, &quot;skip&quot;))
+	{
+		extent = (unsigned)(uintspec (string, 0, extent));
+		return (extent);
+	}
+
+#if 1
+
+/*
+ *   tr-069 specific fields that don't really belong in the PIB;
+ */
+
+	if (!strcmp (format, &quot;adminusername&quot;) || !strcmp (format, &quot;adminpassword&quot;) || !strcmp (format, &quot;accessusername&quot;))
+	{
+		return (memstring (memory, extent, format, string, PIB_NAME_LEN + 1));
+	}
+	if (!strcmp (format, &quot;accesspassword&quot;))
+	{
+		return (memstring (memory, extent, format, string, PIB_HFID_LEN + 1));
+	}
+	if (!strcmp (format, &quot;username&quot;) || !strcmp (format, &quot;password&quot;) || !strcmp (format, &quot;url&quot;))
+	{
+		return (memstring (memory, extent, format, string, PIB_TEXT_LEN + 1));
+	}
+
+#endif
+
+#if 1
+
+/*
+ *   HPAV specific fields that belong in the PIB;
+ */
+
+	if (!strcmp (format, &quot;hfid&quot;))
+	{
+		return (memstring (memory, extent, format, string, PIB_HFID_LEN));
+	}
+	if (!strcmp (format, &quot;mac&quot;))
+	{
+		return (bytespec (string, memory, ETHER_ADDR_LEN));
+	}
+	if (!strcmp (format, &quot;key&quot;))
+	{
+		return (bytespec (string, memory, PIB_KEY_LEN));
+	}
+
+#endif
+
+	error (1, ENOTSUP, &quot;%s&quot;, format);
+	return (0);
+}
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='memdecr.c.html' title=' memdecr.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='memincr.c.html' title=' memincr.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

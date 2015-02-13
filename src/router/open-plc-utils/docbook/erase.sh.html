@@ -1,0 +1,82 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			erase.sh
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='CM_ENCRYPTED.sh.html' title=' CM_ENCRYPTED.sh '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='firmware.sh.html' title=' firmware.sh '>NEXT</a>]
+			</div>
+<pre>
+#!/bin/sh
+# file: scripts/erase.sh
+
+# this script erases flash memory only on selected firmware versions;
+ 
+# ====================================================================
+# symbols;
+# --------------------------------------------------------------------
+
+. /etc/environment
+. ${SCRIPTS}/hardware.sh
+. ${SCRIPTS}/firmware.sh
+
+# ====================================================================
+# query connection;
+# --------------------------------------------------------------------
+
+echo -n &quot;Interface [${ETH}]: &quot;; read  
+if [ ! -z ${REPLY} ]; then
+	ETH=${REPLY}
+fi
+
+# ====================================================================
+# check connection;
+# --------------------------------------------------------------------
+
+int6kwait -xqsi ${ETH}
+if [ ${?} != 0 ]; then
+	echo &quot;Device is not connected&quot;
+	exit 1
+fi
+
+# ====================================================================
+# read device DAK;
+# --------------------------------------------------------------------
+
+DAK=$(int6kid -i ${ETH} -D)
+
+# ====================================================================
+# erase NVRAM on local device; only works on some firmware versions;  
+# --------------------------------------------------------------------
+
+int6kp -i ${ETH} -D ${DAK} -E
+if [ ${?} != 0 ]; then
+	exit 1
+fi
+
+# ====================================================================
+# return success;
+# --------------------------------------------------------------------
+
+exit 0
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='CM_ENCRYPTED.sh.html' title=' CM_ENCRYPTED.sh '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='firmware.sh.html' title=' firmware.sh '>NEXT</a>]
+			</div>
+		</body>
+	</html>

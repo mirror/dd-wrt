@@ -1,0 +1,136 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			dataspec.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='coqos_rel.c.html' title=' coqos_rel.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='debug.c.html' title=' debug.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   size_t dataspec (char const * string,  void * memory, size_t extent);
+ *
+ *   memory.h
+ *
+ *   encode a memory region with a variable-length hexadecimal string;
+ *   return the number of bytes encoded or terminate the program on
+ *   error;
+ *
+ *   the number of octets in string must equal the memory extent or
+ *   an error will occur; octets may be seperated by semi-colons;
+ *   empty octets are illegal;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef DATASPEC_SOURCE
+#define DATASPEC_SOURCE
+
+#include &lt;ctype.h&gt;
+#include &lt;errno.h&gt;
+
+#include &quot;../tools/memory.h&quot;
+#include &quot;../tools/number.h&quot;
+#include &quot;../tools/error.h&quot;
+
+size_t dataspec (char const * string, void * memory, size_t extent)
+
+{
+	char const * number = string;
+	byte * origin = (byte *)(memory);
+	byte * offset = (byte *)(memory);
+	if (!number)
+	{
+		error (1, EFAULT, &quot;dataspec&quot;);
+	}
+
+#ifdef WIN32
+
+	while (isspace (*number))
+	{
+		number++;
+	}
+
+#endif
+
+	while ((*number) &amp;&amp; (extent))
+	{
+		unsigned digit = 0;
+
+#ifdef WIN32
+
+		if (isspace (*number))
+		{
+			break;
+		}
+
+#endif
+
+		if ((offset &gt; origin) &amp;&amp; (*number == HEX_EXTENDER))
+		{
+			number++;
+		}
+		if ((digit = todigit (*number++)) &gt;= RADIX_HEX)
+		{
+			error (1, EINVAL, &quot;You said '%s' but I want a hex digit&quot;, string);
+		}
+		*offset = digit &lt;&lt; 4;
+		if (!*number)
+		{
+			error (1, EINVAL, &quot;You said '%s' but I want another hex digit&quot;, string);
+		}
+		if ((digit = todigit (*number++)) &gt;= 0x10)
+		{
+			error (1, EINVAL, &quot;You said '%s' but I want valid hex data&quot;, string);
+		}
+		*offset |= digit;
+		offset++;
+		extent--;
+	}
+
+#ifdef WIN32
+
+	while (isspace (*number))
+	{
+		number++;
+	}
+
+#endif
+
+	if (*number &amp;&amp; !extent)
+	{
+		error (1, EINVAL, &quot;'%s' exceeds %d bytes&quot;, string, (unsigned)(offset - origin - extent));
+	}
+	if (*number)
+	{
+		error (1, EINVAL, &quot;String '%s' contains trash&quot;, string);
+	}
+	return (offset - origin);
+}
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='coqos_rel.c.html' title=' coqos_rel.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='debug.c.html' title=' debug.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

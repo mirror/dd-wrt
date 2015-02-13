@@ -1,0 +1,3 @@
+		<h2 id='manual-pages'>
+			Manual Pages
+			</h2>

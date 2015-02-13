@@ -1,0 +1,93 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			xmlopen.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='xmlnode.c.html' title=' xmlnode.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='xmlread.c.html' title=' xmlread.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   NODE * xmlopen (char const * filename);
+ *
+ *   node.h
+ *
+ *   open an XML file and return the parse tree root;
+ *
+ *   the entire file is read into a buffer associated with the text
+ *   member in the root node; the buffer is then split into strings
+ *   referenced by child nodes, forming a hierarchial string vector;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef XMLOPEN_SOURCE
+#define XMLOPEN_SOURCE
+
+#include &lt;unistd.h&gt;
+#include &lt;memory.h&gt;
+#include &lt;fcntl.h&gt;
+#include &lt;errno.h&gt;
+
+#include &quot;../nodes/node.h&quot;
+#include &quot;../tools/memory.h&quot;
+#include &quot;../tools/files.h&quot;
+#include &quot;../tools/error.h&quot;
+
+NODE * xmlopen (char const * filename)
+
+{
+	ssize_t length;
+	NODE * node = NEW (NODE);
+	signed fd = open (filename, O_BINARY|O_RDONLY);
+	if (fd == -1)
+	{
+		error (1, errno, FILE_CANTOPEN, filename);
+	}
+	length = lseek (fd, 0, SEEK_END);
+	if (length == -1)
+	{
+		error (1, errno, FILE_CANTSEEK, filename);
+	}
+	if (lseek (fd, 0, SEEK_SET) == -1)
+	{
+		error (1, errno, FILE_CANTHOME, filename);
+	}
+	memset (node, 0, sizeof (NODE));
+	node-&gt;text = STR (length);
+	if (read (fd, node-&gt;text, length) &lt; length)
+	{
+		error (1, errno, FILE_CANTREAD, filename);
+	}
+	node-&gt;text [length] = (char)(0);
+	close (fd);
+	xmlscan (node);
+	return (node);
+}
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='xmlnode.c.html' title=' xmlnode.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='xmlread.c.html' title=' xmlread.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

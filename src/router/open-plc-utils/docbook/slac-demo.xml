@@ -1,0 +1,77 @@
+	<section id='procedure-slac-demonstration'>
+		<title>
+			SLAC Demonstration
+			</title>
+		<para>
+			This page explains how to install and use two Qualcomm Atheros Powerline Toolkit programs, <ulink url="pev.7.html">pev</ulink> and <ulink url="evse.7.html">evse</ulink>, to demonstrate the HomePlug AV Signal Level Attenuation Characterization (<acronym>SLAC</acronym>) protocol. 
+			</para>
+		<para>
+			On Microsoft Windows, the two programs are distributed in a seperate Microsoft installation file <filename>slac-utils-x.x.x.msi</filename>. To install them on Microsoft Windows, double-click on the installation file. The programs will be installed in folder <filename>c:\Program Files (x86)\Qualcomm Atheros\Powerline Toolkit</filename> unless the user overrides the default settings durin installation. New users should add this folder to the <constant>PATH</constant> environment variable and define environment variable <constant>PLC</constant> to reference the Ethernet interface connected to their PLC device. 
+			</para>
+		<para>
+			On Linux, the two programs are distibuted inside the full toolkit tarball <filename>plc-utils-x.x.x</filename>. To install them on Linux, unpack the tarball and change directory to the package folder. Type "<command>sudo make install</command>" to compile and install the toolkit. Type type "<command>sudo make manuals</command>" to install man pages. New users should define environment variable <constant>PLC</constant> to reference the inteface connected to their PLC device.
+			</para>
+<note>
+	<title> 
+		Exception!
+		</title>
+	<para>
+		In some cases QCA will distribute two Windows <filename>.exe</filename> files and two monolithic <filename>.c</filename> files. On Windows, copy the executable files to folder <filename>c:\Program Files (x86)\Qualcomm Atheros\Powerline Toolkit</filename> and update the system <constant>PATH</constant> and <constant>PLC</constant> environment variables. On Linux, compile the two source files using "<command>gcc -o pev pev.c</command>" and "<command>gcc -o evse evse.c</command>" and copy the two binary files to <filename>/usr/local/bin</filename> then update the system <constant>PLC</constant> environment variable. You will need root priviledge to copy the binary files to the system folder and you must change the binary file permissions to <constant>4555</constant> in order to execute them as a non-root user.
+		</para>
+	</note>
+		<para>
+			Each program reads an optional configuration file on start-up. Program <ulink url="pev.7.html">pev</ulink> reads <filename>pev.ini</filename> and program <ulink url="evse.7.html">evse</ulink> reads <filename>evse.ini</filename>. Qualcomm Atheros does not provide these files but option <constant>-c</constant>, on each program, can be used to print a template configuration file on stdout. Once a user settles on a convenient working folder, they should run command "<command>pev -c &gt; pev.ini</command>" to create the configuration file for program <application>pev</application> and "<command>evse -c &gt; evse.ini</command>" to create the configuration file for program <application>evse</application>.
+			</para>
+		<para>
+			A <acronym>SLAC</acronym> demonstration can be setup using two Qualcomm Atheros PL16 boards, two personal computers, a power strip and a powerline impairment of some kind. One PL16 board must be configured as a <acronym>PEV</acronym> and the other must be configured as an <acronym>EVSE</acronym>. Plug both PL16 boards into the powerstrip and connect each board to a different computer via Ethernet. Run program <ulink url='pev.7.html'>pev</ulink> on the computer connected to the <acronym>PEV</acronym> configured board. Run program <ulink url='evse.7.html'>evse</ulink> on the computer connected to the <acronym>EVSE</acronym> configured board. Program <ulink url='evse.7.html'>evse</ulink> runs continuously waiting to service <ulink url='pev.7.html'>pev</ulink> programs running on other computers. Program <ulink url='pev.7.html'>pev</ulink> runs until charging occurs then exits.
+			</para>
+		<para>
+			On the <acronym>EVSE</acronym> host, start program <ulink url='evse.7.html'>evse</ulink> as shown below. It will run until cancelled.  
+			</para>
+<screen>
+# evse   
+evse: UnoccupiedState: Listening ...
+</screen>
+		<para>
+			Messages will appear on the console as events occur. The first field is the program name, in this case <quote>evse</quote>. The second field is the function name, in this case <quote>UnoccupiedState</quote>. In this case, program <application>evse</application> does nothing until some <acronym>PEV</acronym> trys to associate. 
+			</para>
+		<para>
+			On the <acronym>EVSE</acronym> host, run program <ulink url='evse.7.html'>evse</ulink> as shown below. It will run until it detects and connects to an available <acronym>EVSE-HLE</acronym>. Use option <command>-w</command> to vary probe timeouts. 
+			</para>
+<screen>
+# pev   
+pev: DisconnectedState: Probing ...
+pev: pev_cm_slac_param: --&gt; CM_SLAC_PARAM.REQ
+pev: pev_cm_slac_param: &lt;-- CM_SLAC_PARAM.CNF
+</screen>
+		<para>
+			Messages will appear on the console as events occur. The first field is the program name, in this case <quote>pev</quote>. The second field is the function name, in this case <function>DisconnectedState</function> and <function>pev_cm_slac_param</function>. The right arrow indicates that function <function>pev_cm_slac_param</function> is sending a <constant>CM_SLAC_PARAM.REQ</constant> message. If things work properly, you will see a another message indicating that function <function>pev_cm_slac_param</function> is receiving a <constant>CM_SLAC_PARAM.CNF</constant> message. 
+			</para>
+		<mediaobject>
+			<imageobject>
+				<imagedata fileref='IMG_20130227_145749.jpg' format='JPG'/>
+				</imageobject>
+			<textobject>
+				<phrase>IMG_20130227_145749.jpg</phrase>
+				</textobject>
+			<caption>
+				<para>
+					Unimpaired SLAC configuration. Result should be below threshold and <acronym>PEV</acronym> should connect.
+					</para>
+				</caption>
+			</mediaobject>
+		<mediaobject>
+			<imageobject>
+				<imagedata fileref='IMG_20130227_151458.jpg' format='JPG'/>
+				</imageobject>
+			<textobject>
+				<phrase>IMG_20130227_151458.jpg</phrase>
+				</textobject>
+			<caption>
+				<para>
+					Impaired SLAC configuration. Result should be above threshold and <acronym>PEV</acronym> should not connect.
+					</para>
+				</caption>
+			</mediaobject>
+		</section>
+

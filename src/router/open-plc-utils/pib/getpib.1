@@ -1,0 +1,253 @@
+.TH getpib 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+getpib - Qualcomm Atheros PIB Data Extractor 
+
+.SH SYNOPSIS
+.BR getpib 
+.IR file 
+.IR offset 
+.IR format 
+.RI [ length ]
+
+.SH DESCRIPTION
+This program is a companion to program \fBsetpib\fR and is designed to support shell scripts.
+It extracts PIB file parameters so that a scripting language can evaluate, manipulate or store them with minimal effort.
+Good scripting skills and some imagination may be required to make effective use of this program.
+
+.PP
+Users having a detailed knowledge of PIB content and structure can make extremely effective use of this program; however, Atheros is under no obligation to provide customers with the offset, length or format of PIB file parameters.
+
+.PP
+This program is part of the Qualcomm Atheros Powerline Toolkit.
+See the \fBAMP\fR man page for an overview and installation instructions.
+
+.SH OPTIONS
+
+.TP
+- \fBc \fIcharacter\fR
+The appended character.
+Append this character each line of output instead of newline.
+Use this to create a comma separated list of value, for example, by specifying a comma.
+
+.TP
+.RB - n
+Append a newline to the output.
+
+.TP
+.RB - q
+Enable quiet mode which has no effect.
+
+.TP
+.RB - v
+Verbose mode.
+Does nothing.
+
+.TP
+.RB - ? ,-- help
+Print program help summary on stdout.
+This option takes precedence over other options on the command line.
+
+.TP
+.RB - ! ,-- version
+Print program version information on stdout.
+This option takes precedence over other options on the command line.
+Usethis option when sending screen dumps to Atheros Technical Support so that they know exactly which version of the Linux Toolkit you are using.
+
+.SH ARGUMENTS
+
+.TP
+.IR file
+The PIB filename.
+This argument is required and must appear first on the command line.
+No assumptions are made based on filename and no filename conventions are enforced; however, an invalid PIB file will be rejected.
+
+.TP
+.IR offset
+The data offset in bytes expressed in hexadecimal.
+This argument is required and must follow the filename.
+A leading "\fB0x\fR" prefix is optional.
+The data \fIoffset\fR plus the data \fIlength\fR cannot exceed the file extent.
+
+.TP
+.IB format
+The output format.
+This argument is required and must follow the offset.
+Some formats imply fixed data length.
+Others formats are for variable length data.
+The fixed data formats are \fBbyte\fR, \fBword\fR, \fBlong\fR, \fBhfid\fR, \fBmac\fR and \fBkey\fR.
+The variable data formats are \fBdata\fR and \fBtext\fR.
+The formats are described in the next section.
+
+.TP
+.IB length
+The data length in bytes expressed in decimal.
+This argument is only required for the the data formats \fBdata\fR and \fBtext\fR.
+The data \fIoffset\fR plus the data \fIlength\fR cannot exceed the file extent.
+The data \fIlength\fR cannot exceed \fB1024\fR.
+
+.SH FORMATS
+
+.TP
+.BR byte
+Extract 1 byte and display it as an unsigned decimal integer value.
+The offset advances \f1\fR byte before starting another extraction.
+
+.TP
+.BR word
+Extract 2 consecutive bytes and display them as an unsigned decimal integer value after endian conversion.
+The offset advances \f2\fR bytes before starting another extraction.
+
+.TP
+.BR long
+Extract 4 consecutive bytes and display them as an unsigned decimal integer value after endian conversion.
+The offset advances \fB4\fR bytes before starting another extraction.
+
+.TP
+.BR huge
+Extract 8 consecutive bytes and display them as an unsigned decimal integer value after endian conversion.
+The offset advances \fB8\fR bytes before starting another extraction.
+
+.TP
+.BR xbyte
+Extract 1 byte and display it as a hexadecimal integer value.
+The offset advances \f1\fR byte before starting another extraction.
+
+.TP
+.BR xword
+Extract 2 consecutive bytes and display them as a hexadecimal integer value after endian conversion.
+The offset advances \f2\fR bytes before starting another extraction.
+
+.TP
+.BR xlong
+Extract 4 consecutive bytes and display them as a hexadecimal integer value after endian conversion.
+The offset advances \fB4\fR bytes before starting another extraction.
+
+.TP
+.BR xhuge
+Extract 8 consecutive bytes and display them as a hexadecimal integer value after endian conversion.
+The offset advances \fB8\fR bytes before starting another extraction.
+
+.TP
+\fBdata \fIlength\fR
+Extract the specified number of bytes and display them as a hexadecimal string with no punctuation to separate octets.
+The offset advances \fIlength\fR bytes before starting another extraction.
+The minimum length is \fB1\fR.
+The maximum length is \fB1024\fR.
+
+.TP
+.BR mac
+Extract 6 bytes and display them as a colon-separated hexadecimal string.
+The offset advances 6 bytes before starting another extraction.
+This is similar to "\fBdata 6\fR" but colons separate each octet.
+
+.TP
+.BR key
+Extract 16 bytes and display them as a colon-separated hexadecimal string.
+The offset advances 16 bytes before starting another extraction.
+This is similar to "\fBdata 16\fR" but colons separate each octet.
+
+.TP
+.BR hfid
+Extract 64 consecutive bytes and display them as an ASCII string that terminates at the first non-printable character.
+The offset advances \fB64\fR bytes before starting another extraction.
+This is equivalent to "\fBtext 64\fR".
+
+.TP
+\fBskip \fIlength\fR
+Advance the specified number of bytes without displaying anything.
+The offset advances by \fIlength\fR bytes before starting another extraction.
+The minimum length is \fB1\fR.
+The maximum length is \fB1024\fR.
+
+.TP
+\fBtext \fIlength\fR
+Extract the specified number of bytes and display them as an ASCII string that terminates at the first non-printable character.
+The offset advances the specified number of bytes before starting another extraction.
+
+.SH TR-069
+
+.TP
+.BR accesspassword
+Extract 65 consecutive bytes and display them as an ASCII string that terminates at the first non-printable character.
+The offset advances \fB65\fR bytes before starting another extraction.
+This format is equivalent to "\fBtext 65\fR".
+
+.TP
+.BR accessusername
+Extract 33 consecutive bytes and display them as an ASCII string that terminates at the first non-printable character.
+The offset advances \fB33\fR bytes before starting another extraction.
+This format is equivalent to "\fBtext 33\fR".
+
+.TP
+.BR adminpassword
+Extract 33 consecutive bytes and display them as an ASCII string that terminates at the first non-printable character.
+The offset advances \fB33\fR bytes before starting another extraction.
+This format is equivalent to "\fBtext 33\fR".
+
+.TP
+.BR adminusername
+Extract 33 consecutive bytes and display them as an ASCII string that terminates at the first non-printable character.
+The offset advances \fB33\fR bytes before starting another extraction.
+This format is equivalent to "\fBtext 33\fR".
+
+.TP
+.BR password
+Extract 257 consecutive bytes and display them as an ASCII string that terminates at the first non-printable character.
+The offset advances \fB257\fR bytes before starting another extraction.
+This format is equivalent to "\fBtext 257\fR".
+
+.TP
+.BR url
+Extract 257 consecutive bytes and display them as an ASCII string that terminates at the first non-printable character.
+The offset advances \fB257\fR bytes before starting another extraction.
+This format is equivalent to "\fBtext 257\fR".
+
+.TP
+.BR username
+Extract 257 consecutive bytes and display them as an ASCII string that terminates at the first non-printable character.
+The offset advances \fB257\fR bytes before starting another extraction.
+This format is equivalent to "\fBtext 257\fR".
+
+.SH EXAMPLES
+The following example extracts one byte from offset \fB01F7\fR of PIB file \fBabc.pib\fR and displays it as an unsigned decimal integer string.
+No length specification is needed because the \fBbyte\fR format has an implied length of \fB1\fR byte.
+The displayed value is \fB232\fR because the \fBbyte\fR format is decimal.
+We could have specified "\fBdata 1\fR" to display the byte in hexadecimal.
+The return prompt appears on the display line because option \fB-n\fR was omitted.
+
+.PP
+   # getpib abc.pib 01F7 byte 
+   232#
+
+.PP
+The next example extracts two bytes at offset \fB01F7\fR and displays them as a hexadecimal string.
+A length of \fB2\fR is needed because the \fBdata\fR format is variable length.
+We could have specified "\fBword\fR" to display these bytes as an unsigned decimal integer string.
+The hexadecimal string consists two octets \fBE8\fR and \fB8A\fR.
+The first byte is the same one extracted in the last example.
+The return prompt appears on a new line because option \fB-n\fR was present.
+
+.PP
+   # getpib abc.pib 01F7 data 2 -n
+   E88A
+   #
+
+.SH DISCLAIMER
+PIB file structure and content is proprietary to Qualcomm Atheros, Ocala FL USA.
+Consequently, public information is not available.
+Qualcomm Atheros reserves the right to modify PIB file structure or content in future firmware releases without any obligation to notify or compensate users of this program.
+
+.SH SEE ALSO
+.BR chkpib (7),
+.BR chkpib2 (7),
+.BR modpib ( 1 ),
+.BR pib2xml ( 1 ),
+.BR pibcomp ( 1 ),
+.BR pibdump ( 1 ),
+.BR setpib ( 1 ),
+.BR xml2pib ( 1 )
+
+.SH CREDITS
+ Charles Maier <cmaier@qca.qualcomm.com>
+

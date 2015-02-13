@@ -1,0 +1,218 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			config2cfg.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='codename.c.html' title=' codename.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='config.c.html' title=' config.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *
+ *   config2cfg.c - convert a .config file to a .cfg file;
+ *
+ *   Contributor(s):
+ *	Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+#define _GETOPT_H
+
+/*====================================================================*
+ *   system header files;
+ *--------------------------------------------------------------------*/
+
+#include &lt;stdio.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;fcntl.h&gt;
+#include &lt;errno.h&gt;
+
+/*====================================================================*
+ *   custom header files;
+ *--------------------------------------------------------------------*/
+
+#include &quot;../tools/getoptv.h&quot;
+#include &quot;../tools/putoptv.h&quot;
+#include &quot;../tools/version.h&quot;
+#include &quot;../tools/number.h&quot;
+#include &quot;../tools/flags.h&quot;
+#include &quot;../tools/memory.h&quot;
+#include &quot;../tools/files.h&quot;
+#include &quot;../tools/error.h&quot;
+#include &quot;../ram/sdram.h&quot;
+
+/*====================================================================*
+ *   custom source files;
+ *--------------------------------------------------------------------*/
+
+#ifndef MAKEFILE
+#include &quot;../tools/getoptv.c&quot;
+#include &quot;../tools/putoptv.c&quot;
+#include &quot;../tools/version.c&quot;
+#include &quot;../tools/error.c&quot;
+#include &quot;../tools/checksum32.c&quot;
+#include &quot;../tools/todigit.c&quot;
+#include &quot;../tools/hexencode.c&quot;
+#endif
+
+/*====================================================================*
+ *
+ *--------------------------------------------------------------------*/
+
+int main (int argc, char const * argv [])
+
+{
+	static char const * optv [] =
+	{
+		&quot;qv&quot;,
+		&quot;file [file] [...]&quot;,
+		&quot;convert ASCII SDRAM configuration files (DM) to binary (toolkit) format&quot;,
+		&quot;q\tquiet mode&quot;,
+		&quot;v\tverbose mode&quot;,
+		(char const *) (0)
+	};
+	struct config_ram config_ram;
+	char string [(sizeof (config_ram) &lt;&lt; 1) + 1];
+	uint32_t checksum;
+	flag_t flags = (flag_t)(0);
+	signed state = 1;
+	signed fd;
+	signed c;
+	optind = 1;
+	while ((c = getoptv (argc, argv, optv)) != -1)
+	{
+		switch ((char) (c))
+		{
+		case 'q':
+			_setbits (flags, SDRAM_SILENCE);
+			break;
+		case 'v':
+			_setbits (flags, SDRAM_VERBOSE);
+			break;
+		default:
+			break;
+		}
+	}
+	argc -= optind;
+	argv += optind;
+	while ((argc-- &gt; 0) &amp;&amp; (* argv != (char const *)(0)))
+	{
+
+#if 0
+
+		char const * pathname;
+		char const * filename;
+		char const * extender;
+		for (pathname = filename = * argv; *pathname; pathname++)
+		{
+			if ((*pathname == '/') || (*pathname == '\\'))
+			{
+				filename = pathname + 1;
+			}
+		}
+		for (pathname = extender = filename; *pathname; pathname++)
+		{
+			if (*pathname == '.')
+			{
+				extender = pathname;
+			}
+		}
+		if (extender == filename)
+		{
+			extender = pathname;
+		}
+
+#endif
+
+		if ((fd = open (* argv, O_BINARY|O_RDONLY)) == -1)
+		{
+			error (0, errno, &quot;can't open %s for input&quot;, * argv);
+			state = 1;
+		}
+		else if (read (fd, &amp;string, sizeof (string)) &lt; (ssize_t) (sizeof (string) - 1))
+		{
+			error (0, errno, &quot;can't read %s&quot;, * argv);
+			state = 1;
+		}
+		else
+		{
+			close (fd);
+			if (hexencode ((uint8_t *) (&amp;config_ram), sizeof (config_ram), string) == sizeof (config_ram))
+			{
+				error (1, errno, &quot;%s is suspect&quot;, * argv);
+			}
+			checksum = checksum32 (&amp;config_ram, sizeof (config_ram), 0);
+			if ((fd = open (* argv, O_BINARY|O_CREAT|O_RDWR|O_TRUNC, FILE_FILEMODE)) == -1)
+			{
+				error (1, errno, &quot;can't open %s for output&quot;, * argv);
+			}
+			write (fd, &amp;config_ram, sizeof (config_ram));
+			write (fd, &amp;checksum, sizeof (checksum));
+		}
+		close (fd);
+		argv++;
+	}
+	return (state);
+}
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='codename.c.html' title=' codename.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='config.c.html' title=' config.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

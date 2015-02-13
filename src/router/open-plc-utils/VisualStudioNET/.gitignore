@@ -1,0 +1,10 @@
+*.msi
+*.tmp
+*.Exe
+*.Ini
+UpgradeLog.XML
+*.suo
+*.ncb
+Programs/
+Objects/
+ipch/

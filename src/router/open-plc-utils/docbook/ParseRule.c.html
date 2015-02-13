@@ -1,0 +1,230 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			ParseRule.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='output.c.html' title=' output.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='pcapdevs.c.html' title=' pcapdevs.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *
+ *   signed ParseRule (int * argcp, char const ** argvp [], struct rule * rule, struct cspec * cspec);
+ *
+ *   rules.h
+ *
+ *   This module takes an argument vector and an argument count
+ *   and fills in a classification rule structure that is suitable for
+ *   sending in a VS_CLASSIFICATION MME;
+ *
+ *   This module is currently used by plcrule and pibruin;
+ *
+ *
+ *   Contributor(s):
+ *	Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *	Nathaniel Houghton &lt;nhoughto@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+#include &lt;memory.h&gt;
+#include &lt;errno.h&gt;
+
+#include &quot;../tools/memory.h&quot;
+#include &quot;../tools/number.h&quot;
+#include &quot;../tools/error.h&quot;
+#include &quot;../ether/ether.h&quot;
+#include &quot;../plc/rules.h&quot;
+
+signed ParseRule (int * argcp, char const ** argvp [], struct MMERule * rule, struct cspec * cspec)
+
+{
+	int argc = * argcp;
+	char const ** argv = * argvp;
+	union
+	{
+		uint32_t wide;
+		uint16_t word;
+		uint8_t byte [4];
+	}
+	temp;
+	signed code;
+	struct MMEClassifier * classifier = (struct MMEClassifier *)(&amp;rule-&gt;CLASSIFIER);
+	if ((code = lookup (* argv++, actions, SIZEOF (actions))) == -1)
+	{
+		assist (*--argv, CLASSIFIER_ACTION_NAME, actions, SIZEOF (actions));
+	}
+	rule-&gt;MACTION = (uint8_t)(code);
+	argc--;
+	if ((code = lookup (* argv++, operands, SIZEOF (operands))) == -1)
+	{
+		assist (*--argv, CLASSIFIER_OPERAND_NAME, operands, SIZEOF (operands));
+	}
+	rule-&gt;MOPERAND = (uint8_t)(code);
+	argc--;
+	while ((* argv) &amp;&amp; (lookup (* argv, controls, SIZEOF (controls)) == -1))
+	{
+		if ((code = lookup (* argv++, fields, SIZEOF (fields))) == -1)
+		{
+			assist (*--argv, CLASSIFIER_FIELD_NAME, fields, SIZEOF (fields));
+		}
+		classifier-&gt;CR_PID = (uint8_t)(code);
+		argc--;
+		if ((code = lookup (* argv++, operators, SIZEOF (operators))) == -1)
+		{
+			assist (*--argv, CLASSIFIER_OPERATOR_NAME, operators, SIZEOF (operators));
+		}
+		classifier-&gt;CR_OPERAND = (uint8_t)(code);
+		argc--;
+		if (!argc || !* argv)
+		{
+			error (1, ENOTSUP, &quot;I have %s '%s' but no value&quot;, CLASSIFIER_OPERATOR_NAME, *--argv);
+		}
+		switch (classifier-&gt;CR_PID)
+		{
+		case FIELD_ETH_SA:
+		case FIELD_ETH_DA:
+			bytespec (* argv++, classifier-&gt;CR_VALUE, ETHER_ADDR_LEN);
+			break;
+		case FIELD_IPV4_SA:
+		case FIELD_IPV4_DA:
+			ipv4spec (* argv++, classifier-&gt;CR_VALUE);
+			break;
+		case FIELD_IPV6_SA:
+		case FIELD_IPV6_DA:
+			ipv6spec (* argv++, classifier-&gt;CR_VALUE);
+			break;
+		case FIELD_VLAN_UP:
+		case FIELD_IPV6_TC:
+		case FIELD_IPV4_TOS:
+		case FIELD_IPV4_PROT:
+			classifier-&gt;CR_VALUE [0] = (uint8_t)(basespec (* argv++, 0, sizeof (classifier-&gt;CR_VALUE [0])));
+			break;
+		case FIELD_VLAN_ID:
+		case FIELD_TCP_SP:
+		case FIELD_TCP_DP:
+		case FIELD_UDP_SP:
+		case FIELD_UDP_DP:
+		case FIELD_IP_SP:
+		case FIELD_IP_DP:
+			temp.word = (uint16_t)(basespec (* argv++, 0, sizeof (temp.word)));
+			temp.word = htons (temp.word);
+			memcpy (classifier-&gt;CR_VALUE, &amp;temp, sizeof (temp.word));
+			break;
+		case FIELD_ETH_TYPE:
+			temp.word = (uint16_t)(basespec (* argv++, 0, sizeof (temp.word)));
+			temp.word = htons (temp.word);
+			memcpy (classifier-&gt;CR_VALUE, &amp;temp, sizeof (temp.word));
+			break;
+		case FIELD_IPV6_FL:
+			temp.wide = (uint32_t)(basespec (* argv++, 0, sizeof (temp.wide))) &amp; 0x000FFFFF;
+			temp.wide = htonl (temp.wide);
+			memcpy (classifier-&gt;CR_VALUE, &amp;temp.byte [1], 3);
+			break;
+		case FIELD_HPAV_MME:
+			bytespec (* argv++, classifier-&gt;CR_VALUE, sizeof (uint16_t) + sizeof (uint8_t));
+			temp.byte [0] = classifier-&gt;CR_VALUE [1];
+			classifier-&gt;CR_VALUE [1] = classifier-&gt;CR_VALUE [2];
+			classifier-&gt;CR_VALUE [2] = temp.byte [0];
+			break;
+		case FIELD_TCP_ACK:
+			if ((code = lookup (* argv++, states, SIZEOF (states))) == -1)
+			{
+				assist (*--argv, CLASSIFIER_STATE_NAME, states, SIZEOF (states));
+			}
+			memset (classifier-&gt;CR_VALUE, 0, sizeof (classifier-&gt;CR_VALUE));
+			break;
+		case FIELD_VLAN_TAG:
+			if ((code = lookup (* argv++, states, SIZEOF (states))) == -1)
+			{
+				assist (*--argv, CLASSIFIER_STATE_NAME, states, SIZEOF (states));
+			}
+			memset (classifier-&gt;CR_VALUE, 0, sizeof (classifier-&gt;CR_VALUE));
+			classifier-&gt;CR_OPERAND ^= code;
+			break;
+		default:
+			error (1, ENOTSUP, &quot;%s&quot;, argv [-2]);
+			break;
+		}
+		rule-&gt;NUM_CLASSIFIERS++;
+		classifier++;
+		argc--;
+	}
+	memcpy (classifier, cspec, sizeof (* cspec));
+	if ((code = lookup (* argv++, controls, SIZEOF (controls))) == -1)
+	{
+		assist (*--argv, CLASSIFIER_CONTROL_NAME, controls, SIZEOF (controls));
+	}
+	rule-&gt;MCONTROL = (uint8_t)(code);
+	argc--;
+	if ((code = lookup (* argv++, volatilities, SIZEOF (volatilities))) == -1)
+	{
+		assist (*--argv, CLASSIFIER_VOLATILITY_NAME, volatilities, SIZEOF (volatilities));
+	}
+	rule-&gt;MVOLATILITY = (uint8_t)(code);
+	argc--;
+	* argcp = argc;
+	* argvp = argv;
+	return (0);
+}
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='output.c.html' title=' output.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='pcapdevs.c.html' title=' pcapdevs.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

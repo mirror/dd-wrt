@@ -1,0 +1,148 @@
+.TH plchostd2 1 "January 2014" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+plchostd2 - Qualcomm Atheros Panther/Lynx PLC Host Daemon
+
+.SH SYNOPSIS
+.BR plchostd2
+.RB [ options ] 
+.BR -N 
+.IR nvmfile 
+.BR -P 
+.IR pibfile
+
+.SH DESCRIPTION
+Wait for VS_HST_ACTION.IND messages from a local device and service them as described in the Qualcomm Atheros Firmware Technical Reference Manual for powerline devices.
+Unlike programs \fBint6khost\fR and \fBint64host\fR, this program uses operating system features available on POSIX, Unix, BSD and Linux systems but not available on Microsoft or VxWorks systems.
+This program supports chipsets QCA6410, QCA7000 and QCA7420.
+
+.PP
+To use the program, connect a flash-less device to the host via ethernet then start this program with the correct filenames.
+The program will automatically respond to device requests to download memory configuration, firmware and/or parameters and upload firmware or and/or parameters under device control.
+See the Qualcomm Atheros Firmware Technical Reference Manual for more information.
+
+.PP
+This program is part of the Qualcomm Atheros Powerline Toolkit.
+See the \fBplc\fR man page for an overview and installation instructions.
+
+.SH OPTIONS
+
+.TP
+\fB\-i \fIinterface\fR
+Select the host Ethernet interface.
+All requests are sent via this interface and only reponses received via this interface are recognized.
+The default interface is \fBeth1\fR because most people use \fBeth0\fR as their principle network connection; however, if environment string "PLC" is defined then it takes precedence over the default interface.
+This option then takes precedence over either default.
+
+.TP 
+-\fBN \fInvmfile\fR
+The file containing the firmware chain used to boot and flash the device.
+The file must exist and have a valid NVM file format or it will be rejected.
+No assumptions are made based on filename and no filename conventions are enforced.
+The program will not over-write this file.
+This option and argument are required.
+
+.TP
+-\fBn \fIfilename\fR
+Use this file to store firmware uploaded from the local device.
+The file need not exist but an error will occur if it cannot be created or written.
+If firmware is uploaded to this file, it is used for subsequent firmware downloads unless the device requests a factory reset.
+In that case, the file specified by option -\fBN\fR is used.
+This option and argument are optional.
+If omitted then the default filename \fBhost.pib\fR will be used.
+
+.TP
+-\fBP \fIpibfile\fR
+The file containing the parameter chain used to boot and flash the device.
+The file must exist and have a valid PIB file format or it will be rejected.
+No assumptions are made based on filename and no filename conventions are enforced.
+The program will not over-write this file.
+This option and argument are required.
+
+.TP
+-\fBp \fIfilename\fR
+Use this file to store parameters uploaded from the local device.
+The file need not exist but an error will occur if it cannot be created or written.
+Once parameters are uploaded to this file, it is used for subsequent parameter downloads unless the device requests a factory reset.
+In that case, the file specified by option -\fBP\fR is used.
+This option and argument are optional.
+If omitted then the default filename \fBhost.nvm\fR will be used.
+
+.TP
+-\fBq\fP
+Suppress status messages on stderr.
+
+.TP
+-\fBS \fIfilename\fR
+The file containing the softloader chain used to flash the device.
+The presence of this file causes the device to be flashed once it has booted.
+The file must exist and have a valid PIB file format or it will be rejected.
+No assumptions are made based on filename and no filename conventions are enforced.
+The program will not over-write this file.
+This option and argument are required.
+
+.TP
+-\fBt \fItimeout\fR
+Read timeout in milliseconds.
+Values range from 0 through UINT_MAX.
+This is the maximum time allowed for a response.
+The default is shown in brackets on the program menu.
+
+.TP
+-\fBv\fP
+Print additional information on stdout.
+In particular, this option will print incoming and outgoing Ethernet frames on stdout.
+
+.TP
+-\fBw \fIwakeup\fR
+Wakeup time in seconds.
+If no VS_HST_ACTION.IND message is received within this time period then the process will wakeup and perform periodic functions such as posting network topography to the server socket specified by option \fB-s\fR.
+
+.TP
+-\fB?\fR, --\fBhelp\fR
+Print program help summary on stdout.
+This option takes precedence over other options on the command line.
+
+.TP
+-\fB!\fR, --\fBversion\fR
+Print program version information on stdout.
+This option takes precedence over other options on the command line.
+Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of the Linux Toolkit you are using.
+
+.SH ARGUMENTS
+None.
+
+.SH REFERENCES
+See the Qualcomm Atheros HomePlug AV Firmware Technical Reference Manual for more information.
+
+.SH EXAMPLES
+The following example starts the host server.
+The -\fBN\fR and -\fBP\fR options are always required.
+Option order is not important.
+Control does not return to the console until the program is terminated by the user using CTRL-C or another command line interrupt.
+
+.PP
+   # plchostd2 -N test.nvm -P test.pib -n temp.nvm -p temp.pib
+
+.PP
+The next example does the same but spawns the program as an independent process and returns control to the console.
+In this case, that process must be terminated or killed using an appropriate command such ad \fBkill\fR.
+
+.PP
+   # plchostd2 -N test.nvm -P test.pib -n temp.nvm -p temp.pib -d
+
+.SH DISCLAIMER
+Atheros HomePlug AV Vendor Specific Management Message Entry structure and content is proprietary to Qualcomm Atheros, Ocala FL USA.
+Consequently, public information may not be available.
+Qualcomm Atheros reserves the right to modify message structure and content in future firmware releases without any obligation to notify or compensate users of this program.
+
+.SH SEE ALSO
+.BR plc ( 1 ), 
+.BR int64host ( 1 ),
+.BR int6k ( 1 ), 
+.BR int6kboot ( 1 ), 
+.BR int6khost ( 1 )
+
+.SH CREDITS
+ Charles Maier <cmaier@qca.qualcomm.com>
+

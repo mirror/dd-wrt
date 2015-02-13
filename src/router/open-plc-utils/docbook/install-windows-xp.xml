@@ -1,0 +1,139 @@
+	<section id="install-windows-xp">
+		<title>
+			Toolkit Installation on <productname>Windows XP</productname>
+			</title>
+		<para>
+			The <productname>Windows</productname> version of the toolkit comes pre-compiled and ready to install and run using the <application>Windows Installer</application>. You may copy and distribute installation file <filename>plc-utils-x.x.x.msi</filename>. Users may then click on the installation file to install the package then discard it afterwards. The installation file permits remote installation over the network.
+			</para>
+		<para>
+			The version of the Windows Installer used here needs Microsoft <productname>.NET Framework 1.1</productname> to work correctly. Newer versions of the <productname>.NET Framework</productname> will not work. The <productname>.NET Framework</productname> must be installed before the toolkit is installed or the <productname>Windows Installer</productname> will report dependency errors and refuse to complete installation. Multiple versions of the <productname>.NET Framework</productname> can coexist under <productname>Windows 7</productname>. The <productname>.NET Framework</productname> needed is included in the toolkit <filename>support</filename> folder. 
+			</para>
+		<para>
+			Windows versions of toolkit programs that communicate with powerline devices all need <productname>WinPcap</productname> from <ulink url="http://www.winpcap.org/install/default.htm">winpcap.org</ulink> to read and write Ethernet frames. <productname>WinPcap</productname> may be installed before or after toolkit installation but tools that access powerline devices will not run without it. You may want to install <productname>WinPcap</productname> before starting toolkit installation. If you have <productname>Wireshark</productname> installed then you probably already have <productname>WinPcap</productname> installed. A recent copy of <productname>WinPcap</productname> is included in the toolkit <filename>support</filename> folder.
+			</para>
+		<para>
+			Failure to <link linkend='removal-windows-xp'>remove previous toolkit versions</link> on some systems may result in the message &quot;Another version of this product is already installed&quot; when trying to install a new version. You may want to remove prior version before starting toolkit installation.
+			</para>
+		<section>
+			<title>
+				Obtaining the Toolkit
+				</title>
+			<para>
+				QCA customers can download the toolkit from the QCA Customer FTP Site.
+				</para>
+			<para>
+				QCA employees may be able to download the toolkit from the QCA Application Engineering World FTP site <ulink url='ftp://appslinux01.qca.qualcomm.com/toolkit/plc-utils/'>ftp://appslinux01.qca.qualcomm.com/toolkit/plc-utils/</ulink>. There are several installers available for Windows. Each installs a subset of the toolkit. Download the desired installer files to your local machine then execute them by right-clicking on them and selecting option "Run as Administrator".
+				</para>
+			</section>
+		<section>
+			<title>
+				Installing the Toolkit
+				</title>
+			<para>
+				Use a compression program like <application>WinZip</application> to decompress the archive file and extract all files. Use Microsoft <application>Windows Explorer</application> to locate file <filename>.\VisualStudioNET\plc-utils-x.x.x.msi</filename> under the main toolkit folder. Click on the file to start the <application>Windows Installer</application> then follow the installation instructions.
+				</para>
+			<figure>
+				<title>
+					Windows Installer Dialogue
+					</title>
+				<mediaobject>
+					<imageobject>
+						<imagedata fileref='WinXP-WindowsInstaller.png' align="center" />
+						</imageobject>
+					</mediaobject>
+				</figure>
+			<para>
+				 Older toolkit programs were installed in folder <filename>C:\Program Files\Atheros\Toolkit</filename> but they are now installed in folder <filename>C:\Program Files\Qualcomm Atheros\Open Powerline Toolkit</filename> instead. If you select a different folder, remember it for the next step. 
+				</para>
+			</section>
+		<section>
+			<title>
+				Setting the PATH variable
+				</title>
+			<para>
+				<application>Toolkit</application> programs have command line interfaces and must be run from an open console window. To simplify program access and minimize the typing required, add the toolkit installation path mentioned above to the <envar>PATH</envar> environment variable by following steps listed below. If you have <constant>Administrator</constant> privileges then we recommend that you edit the system <envar>PATH</envar> variable; otherwise, you may need to create and/or edit a user <envar>PATH</envar> variable.
+				</para>
+			<figure>
+				<title>
+					Control Panel System Dialogue
+					</title>
+				<mediaobject>
+					<imageobject>
+						<imagedata fileref='WinXP-PathVariable.png' format='PNG' align="center" />
+						</imageobject>
+					</mediaobject>
+				</figure>
+			<orderedlist>
+				<listitem>
+					<para>
+						On the <command>Start</command> menu, select the <command>Control Panel</command> option.
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+						In the <command>Control Panel</command> window, select the <command>System</command> icon.
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+						On the <command>System Properties</command> dialog box, select the <command>Advanced</command> tab.
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+						On the <command>Advanced</command> tab, press the <command>Environment Variables</command> button.
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+						On the <command>Environment Variables</command> dialog box, scroll down the <command>System variables</command> list and select the <command>Path</command> variable then press the <command>Edit</command> button.
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+						On the <command>Edit System Variable</command> dialogue box, append the installation path to the <command>Variable value</command> field.
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+						Press the <command>OK</command> button.
+						</para>
+					</listitem>
+				</orderedlist> 
+			</section>
+		<section id="removal-windows-xp">
+			<title>
+				Removing the Toolkit
+				</title>
+			<para>
+				To remove an existing version of the Qualcomm Atheros <application>Open Powerline Toolkit</application> from your system, follow the steps listed below. If the toolkit is not installed on your system then omit these steps. If you are unsure, you can follow them to determine if you have the toolkit installed or you can attempt to install, anyway, and return here if installation is prevented.
+				</para>
+			<figure>
+				<title>
+					Control Panel Add/Remove Dialogue
+					</title>
+				<mediaobject>
+					<imageobject>
+						<imagedata fileref="WinXP-AddRemoveProgram.png" align="center"/>
+						</imageobject>
+					</mediaobject>
+				</figure>
+			<orderedlist>
+				<listitem>
+					<para>
+						On the <command>Start</command> menu, select the <option>Control Panel</option> option.
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+						In the <command>Control Panel</command> window, select the <option>Add or Remove Programs</option> icon.
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+						On the <command>Add or Remove Programs</command> dialog box, scroll down and select the Qualcomm Atheros <option>Open Powerline Toolkit</option> entry then press the <option>Remove</option> pushbutton.
+						</para>
+					</listitem>
+				</orderedlist>
+			</section>
+		</section>

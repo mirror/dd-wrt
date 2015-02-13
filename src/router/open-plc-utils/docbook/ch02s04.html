@@ -1,0 +1,96 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Device Configurations</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="ch02.html" title="Chapter 2.  Hardware"><link rel="prev" href="ch02s03.html" title="Device Communications"><link rel="next" href="ch02s05.html" title="Powerline Workstations"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">
+			Device Configurations 
+			</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch02s03.html">Prev</a> </td><th width="60%" align="center">Chapter 2. 
+		Hardware 
+		</th><td width="20%" align="right"> <a accesskey="n" href="ch02s05.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="device-configurations"></a>
+			Device Configurations 
+			</h2></div></div></div><p>
+			There are several test configurations that can be used to experiment with Atheros powerline communication devices. Configurations vary based on the powerline communications devices you have available to work with. All configurations described here require at least one computer with an Ethernet card and the Open Powerline Toolkit installed. Most configurations require two Atheros powerline devices. 
+			</p><p>
+			Open Powerline Toolkit programs let the user specify which Ethernet interface card to use when sending and receiving Ethernet frames. This means that a computer with two interface cards installed can emulate two computers provided there are not internal routing conflicts. To avoid routing conflicts, Atheros recommends that you start with two computers until your are ready for more sophisticated experimentation. 
+			</p><p>
+			Open Powerline Toolkit programs default to <code class="constant">eth0</code>	. This allows the computer to be connected to the normal network on <code class="constant">eth0</code> and connected to the powerline network on <code class="constant">eth1</code>. To over-ride the default powerline interfaces, set environment variable <code class="constant">PLC</code> to the desired interface name. All configurations assume that the Ethernet card is installed, the Ethernet driver for that card is loaded and the correct interface is enabled. 
+			</p><p>
+			Atheros powerline communication devices radiate across powerline or coax at radio frequencies. If two devices are connected, in any way, without intermmediate filters or isolation, they will attempt to commicate. Additionally, they will attempt to circumvent certain types of powerline noise or competing frequencies which can cause reduce data rates. Atheros recomends that devices under test (<acronym class="acronym">DUT</acronym>) take their power from a shared but isolated power source like an isolation power strip or an uninterruptable power supply. 
+			</p><p>
+			( ... explain about powerline isolation ... ) The power strip should have no filtering, surge protectors or electronic cirtuits inside.
+			</p><pre class="programlisting">
+        ---&gt; [ATTENUATOR] ---&gt; [POWER_STRIP] ---&gt; [POWERLINE_DEVICE] ---&gt;
+			</pre><p>
+			Typical configurations are: 
+			</p><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="configuration-1"></a>
+				Local Host to Local Device 
+				</h3></div></div></div><p>
+				This is the simplest configuration. It establishes an Ethernet connection between the host and one powerline device. It can be used to test or program a single powerline device. 
+				</p><p>
+				It requires 
+				</p><div class="itemizedlist"><ul type="disc"><li><p>
+						One host computer with an Ethernet interface card 
+						</p></li><li><p>
+						One CAT-5 Ethernet cable with an RJ-45 connector at either end. 
+						</p></li><li><p>
+						One Atheros powerline device with RJ-45 connector. 
+						</p></li><li><p>
+						An isolated power source 
+						</p></li></ul></div><pre class="programlisting">
+	[LOCAL_HOST] ---/ ethernet /-----&gt; [POWERLINE_DEVICE] ---/ powerline /-----&gt; 
+				</pre><p>
+				Connect the local host to the powerline device with an ordinary CAT-5 Ethernet cable. Apply power to the powerline device. The local host <span class="emphasis"><em>cannot ping the powerline device</em></span> because it functions at the data link layer. The local host can interrogate and control the powerline device using 
+				<a class="ulink" href="int6k.7.html" target="_top">
+					int6k 
+					</a>
+				or 
+				<a class="ulink" href="int6k2.7.html" target="_top">
+					int6k2 
+					</a>
+				programs. 
+				</p><div class="itemizedlist"><ul type="disc"><li><p>
+						Type "int6k -r" and note the hardware and firmware revision. 
+						</p></li><li><p>
+						Type "int6k -I" and note the device MAC, DAK and NMK. 
+
+						</p></li><li><p>
+						Type "int6k -m" and confirm that the device detects no other devices indicating proper powerline isolation. 
+						</p></li></ul></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="configuration-2"></a>
+				Local Host to Remote Device 
+				</h3></div></div></div><p>
+				This configuration is the simplest <span class="emphasis"><em>powerline</em></span> network configuration. It expands the previous configuration by creating a simple powerline network having two powerline devices. One device, the "local device", is connected to the host via Ethernet. A second device, the "remote device", is connected to the first via powerline. 
+				</p><p>
+				It requires 
+				</p><div class="itemizedlist"><ul type="disc"><li><p>
+						One host computer with an Ethernet interface card 
+						</p></li><li><p>
+						One CAT-5 Ethernet cable with an RJ-45 connector at either end. 
+						</p></li><li><p>
+						Two Atheros powerline devices, one with RJ-45 connector. 
+						</p></li><li><p>
+						An isolated power source. 
+						</p></li></ul></div><pre class="programlisting">
+        [LOCAL_HOST] ---/ ethernet /-----&gt; [POWERLINE_DEVICE] ---/ powerline /-----&gt;
+                                           [POWERLINE_DEVICE] ---/ powerline /-----&gt; 
+				</pre><p>
+				Configure the previous network then plug a second powerline device into the same power source as the first powerline device. The local host still cannot ping any Ethernet network devices because there are no remote Ethernet devices to ping but it can interrogate and control both powerline devices. 
+				</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="configuration-3"></a>
+				Local Host to Remote Host 
+				</h3></div></div></div><p>
+				This configuration is the simplest <span class="emphasis"><em>Ethernet</em></span> network configuration. It expands the previous network by connecting the second powerline device to an existing Ethernet network through an Ethernet switch. 
+				</p><p>
+				It requires 
+				</p><div class="itemizedlist"><ul type="disc"><li><p>
+						Two host computers, each with an Ethernet interface card 
+						</p></li><li><p>
+						Two CAT-5 Ethernet cables with RJ-45 connectors at either end. 
+						</p></li><li><p>
+						Two Atheros powerline devices, each with RJ-45 connector. 
+						</p></li><li><p>
+						An isolated power source. 
+						</p></li></ul></div><pre class="programlisting">
+        [LOCAL_HOST]  ---/ ethernet /-----&gt; [POWERLINE_DEVICE] ---/ powerline /-----&gt;
+        [REMOTE_HOST] ---/ ethernet /-----&gt; [POWERLINE_DEVICE] ---/ powerline /-----&gt; 
+				</pre><p>
+				Configure the previous network then plug the second powerline device into an Ethernet switch connected to an exiting Ethernet network. The local host can now ping other Ethernet network devices on the. 
+				</p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch02s03.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="ch02.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch02s05.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">
+			Device Communications 
+			 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 
+			Powerline Workstations
+			</td></tr></table></div></body></html>0

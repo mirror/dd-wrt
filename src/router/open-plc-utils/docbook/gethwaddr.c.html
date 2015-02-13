@@ -1,0 +1,253 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			gethwaddr.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='getargv.c.html' title=' getargv.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='getifname.c.html' title=' getifname.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *
+ *   int gethwaddr (void volatile * memory, char const * device);
+ *
+ *   ether.h
+ *
+ *   encode memory with the hardware address of a named host Ethernet
+ *   interface;
+ *
+ *   there are two ways to obtain the hardware address on Linux; we
+ *   use the first because some systems do not support getifaddrs()
+ *   and some implementations are inconsistent;
+ *
+ *
+ *   Contributor(s):
+ *      Nathaniel Houghton &lt;nhoughto@qca.qualcomm.com&gt;
+ *      Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef GETHWADDR_SOURCE
+#define GETHWADDR_SOURCE
+
+#include &lt;stdint.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;memory.h&gt;
+
+#include &quot;../tools/error.h&quot;
+#include &quot;../ether/ether.h&quot;
+
+#ifndef OID_802_3_CURRENT_ADDRESS
+#define OID_802_3_CURRENT_ADDRESS 0x01010102
+#endif
+
+int gethwaddr (void * memory, char const * device)
+
+{
+
+#if defined (__linux__)
+
+#	include &lt;ifaddrs.h&gt;
+#	include &lt;netpacket/packet.h&gt;
+#	include &lt;sys/ioctl.h&gt;
+
+	struct ifreq ifreq;
+	int fd;
+	if ((fd = socket (AF_INET, SOCK_DGRAM, 0)) == -1)
+	{
+		error (1, errno, &quot;%s: %s&quot;, __func__, device);
+	}
+	memcpy (ifreq.ifr_name, device, sizeof (ifreq.ifr_name));
+	if (ioctl (fd, SIOCGIFHWADDR, &amp;ifreq) == -1)
+	{
+		close (fd);
+		return (-1);
+	}
+	memcpy (memory, ifreq.ifr_ifru.ifru_hwaddr.sa_data, ETHER_ADDR_LEN);
+	close (fd);
+
+#elif defined (__linux__)
+
+#include &lt;ifaddrs.h&gt;
+#include &lt;net/if_types.h&gt;
+
+	struct ifaddrs *ifaddrs;
+	struct ifaddrs *ifaddr;
+	if (getifaddrs (&amp;ifaddrs) == -1)
+	{
+		error (1, errno, &quot;No interfaces available&quot;);
+	}
+	for (ifaddr = ifaddrs; ifaddr; ifaddr = ifaddr-&gt;ifa_next)
+	{
+		if (strcmp (device, ifaddr-&gt;ifa_name))
+		{
+			continue;
+		}
+		if (!ifaddr-&gt;ifa_addr)
+		{
+			continue;
+		}
+		if (ifaddr-&gt;ifa_addr-&gt;sa_family == AF_PACKET)
+		{
+			struct sockaddr_ll * sockaddr = (struct sockaddr_ll *) (ifaddr-&gt;ifa_addr);
+			memcpy (memory, sockaddr-&gt;sll_addr, ETHER_ADDR_LEN);
+			break;
+		}
+	}
+	freeifaddrs (ifaddrs);
+
+#elif defined (__APPLE__)
+
+#include &lt;ifaddrs.h&gt;
+#include &lt;net/if_dl.h&gt;
+
+	struct ifaddrs *ifaddrs;
+	struct ifaddrs *ifaddr;
+	if (getifaddrs (&amp;ifaddrs) == -1)
+	{
+		error (1, errno, &quot;No interfaces available&quot;);
+	}
+	for (ifaddr = ifaddrs; ifaddr; ifaddr = ifaddr-&gt;ifa_next)
+	{
+		if (strcmp (device, ifaddr-&gt;ifa_name))
+		{
+			continue;
+		}
+		if (!ifaddr-&gt;ifa_addr)
+		{
+			continue;
+		}
+		if (ifaddr-&gt;ifa_addr-&gt;sa_family == AF_LINK)
+		{
+			struct sockaddr_dl * sockaddr = (struct sockaddr_dl *) (ifaddr-&gt;ifa_addr);
+			memcpy (memory, LLADDR (sockaddr), ETHER_ADDR_LEN);
+			break;
+		}
+	}
+	freeifaddrs (ifaddrs);
+
+#elif defined (__OpenBSD__)
+
+#include &lt;ifaddrs.h&gt;
+#include &lt;net/if_dl.h&gt;
+
+	struct ifaddrs *ifaddrs;
+	struct ifaddrs *ifaddr;
+	if (getifaddrs (&amp;ifaddrs) == -1)
+	{
+		error (1, errno, &quot;No interfaces available&quot;);
+	}
+	for (ifaddr = ifaddrs; ifaddr; ifaddr = ifaddr-&gt;ifa_next)
+	{
+		if (strcmp (device, ifaddr-&gt;ifa_name))
+		{
+			continue;
+		}
+		if (!ifaddr-&gt;ifa_addr)
+		{
+			continue;
+		}
+		if (ifaddr-&gt;ifa_addr-&gt;sa_family == AF_LINK)
+		{
+			struct sockaddr_dl * sockaddr = (struct sockaddr_dl *) (ifaddr-&gt;ifa_addr);
+			memcpy (memory, LLADDR (sockaddr), ETHER_ADDR_LEN);
+			break;
+		}
+	}
+	freeifaddrs (ifaddrs);
+
+#elif defined (WINPCAP) || defined (LIBPCAP)
+
+	LPADAPTER adapter = PacketOpenAdapter ((PCHAR)(device));
+	PPACKET_OID_DATA data = (PPACKET_OID_DATA)(malloc (ETHER_ADDR_LEN + sizeof (PACKET_OID_DATA)));
+	if (!data)
+	{
+		error (1, errno, &quot;Can't allocate packet: %s&quot;, device);
+	}
+	data-&gt;Oid = OID_802_3_CURRENT_ADDRESS;
+	data-&gt;Length = ETHER_ADDR_LEN;
+	if ((adapter == 0) || (adapter-&gt;hFile == INVALID_HANDLE_VALUE))
+	{
+		error (1, errno, &quot;Can't access interface: %s&quot;, device);
+	}
+	if (!PacketRequest (adapter, FALSE, data))
+	{
+		memset (memory, 0, ETHER_ADDR_LEN);
+		PacketCloseAdapter (adapter);
+		free (data);
+		return (-1);
+	}
+	memcpy (memory, data-&gt;Data, data-&gt;Length);
+	PacketCloseAdapter (adapter);
+	free (data);
+
+#else
+#error &quot;Unknown environment&quot;
+#endif
+
+	return (0);
+}
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='getargv.c.html' title=' getargv.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='getifname.c.html' title=' getifname.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

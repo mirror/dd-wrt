@@ -1,0 +1,18 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Random Device Identity</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="ch06.html" title="Chapter 6.  Scripting"><link rel="prev" href="ch06s04.html" title="Checking Device Connection"><link rel="next" href="ch06s06.html" title="Actual Device Identity"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">
+			Random Device Identity
+			</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch06s04.html">Prev</a> </td><th width="60%" align="center">Chapter 6. 
+		Scripting
+		</th><td width="20%" align="right"> <a accesskey="n" href="ch06s06.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="scripting-random-identity"></a>
+			Random Device Identity
+			</h2></div></div></div><p>
+			Some Atheros scripts need random <acronym class="acronym">MAC</acronym>, <acronym class="acronym">DAK</acronym> or <acronym class="acronym">NMK</acronym> strings as arguments to Toolkit programs. Program <a class="ulink" href="rkey.7.html" target="_top">rkey</a> can be used for this purpose. We demonstrate one way to define symbols here and demonstrate how to use symbols later on.
+			</p><pre class="programlisting">
+DAK=$(rkey secret.key -D)
+NMK=$(rkey secret.key -M)
+</pre><p>
+			The first statement,  above,  uses program <a class="ulink" href="rkey.7.html" target="_top">rkey</a> to read file <code class="filename">secret.key</code> and compute a random <acronym class="acronym">DAK</acronym> (<strong class="userinput"><code>-D</code></strong>). The ouput string is assigned to symbol <acronym class="acronym">DAK</acronym>. The second statement uses program <a class="ulink" href="rkey.7.html" target="_top">rkey</a> to read the file <code class="filename">secret.key</code> and compute a random <acronym class="acronym">NMK</acronym> (<strong class="userinput"><code>-M</code></strong>). The output is assigned to symbol <acronym class="acronym">NMK</acronym>.
+			</p></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch06s04.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="ch06.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch06s06.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">
+			Checking Device Connection
+			 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 
+			Actual Device Identity
+			</td></tr></table></div></body></html>0

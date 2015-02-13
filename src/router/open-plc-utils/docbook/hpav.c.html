@@ -1,0 +1,261 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			hpav.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='hostnics.c.html' title=' hostnics.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='hpavd.c.html' title=' hpavd.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *
+ *   hpav.c - Atheros HomePlug AV Packet Monitor;
+ *
+ *   print message header and/or full message content on stdout for
+ *   each HomePlugAV or Atheros Vendor Specific message received by
+ *   the host;
+ *
+ *
+ *   Contributor(s):
+ *      Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *   system header files;
+ *--------------------------------------------------------------------*/
+
+#include &lt;fcntl.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;limits.h&gt;
+#include &lt;ctype.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;errno.h&gt;
+
+#if defined (__linux__)
+#include &lt;net/if.h&gt;
+#include &lt;net/if_arp.h&gt;
+#include &lt;netpacket/packet.h&gt;
+#include &lt;signal.h&gt;
+#endif
+
+/*====================================================================*
+ *   custom header files;
+ *--------------------------------------------------------------------*/
+
+#include &quot;../tools/getoptv.h&quot;
+#include &quot;../tools/putoptv.h&quot;
+#include &quot;../tools/memory.h&quot;
+#include &quot;../tools/number.h&quot;
+#include &quot;../tools/types.h&quot;
+#include &quot;../tools/flags.h&quot;
+#include &quot;../tools/error.h&quot;
+#include &quot;../ether/channel.h&quot;
+#include &quot;../plc/plc.h&quot;
+#include &quot;../mme/mme.h&quot;
+
+/*====================================================================*
+ *   custom source files;
+ *--------------------------------------------------------------------*/
+
+#ifndef MAKEFILE
+#include &quot;../tools/getoptv.c&quot;
+#include &quot;../tools/putoptv.c&quot;
+#include &quot;../tools/version.c&quot;
+#include &quot;../tools/hexdump.c&quot;
+#include &quot;../tools/hexdecode.c&quot;
+#include &quot;../tools/hexstring.c&quot;
+#include &quot;../tools/uintspec.c&quot;
+#include &quot;../tools/todigit.c&quot;
+#include &quot;../tools/error.c&quot;
+#endif
+
+#ifndef MAKEFILE
+#include &quot;../ether/channel.c&quot;
+#include &quot;../ether/openchannel.c&quot;
+#include &quot;../ether/closechannel.c&quot;
+#include &quot;../ether/sendpacket.c&quot;
+#include &quot;../ether/readpacket.c&quot;
+#endif
+
+#ifndef MAKEFILE
+#include &quot;../mme/MMEPeek.c&quot;
+#include &quot;../mme/MMEName.c&quot;
+#include &quot;../mme/MMEMode.c&quot;
+#endif
+
+/*====================================================================*
+ *   program constants;
+ *--------------------------------------------------------------------*/
+
+#define HPAV_VERBOSE (1 &lt;&lt; 0)
+#define HPAV_SILENCE (1 &lt;&lt; 1)
+
+#define PLCDEVICE &quot;PLC&quot;
+
+/*====================================================================*
+ *
+ *   int main (int argc, char * argv[]);
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+int main (int argc, char const * argv [])
+
+{
+	extern struct channel channel;
+	struct message message;
+	static char const * optv [] =
+	{
+		&quot;i:qt:v&quot;,
+		PUTOPTV_S_DIVINE,
+		&quot;Qualcomm Atheros HomePlug AV Packet Monitor&quot;,
+
+#if defined (WINPCAP)
+
+		&quot;i s\thost interface is (s) [&quot; CHANNEL_ETHDEVICE &quot;]&quot;,
+
+#else
+
+		&quot;i n\thost interface is (n) [&quot; LITERAL (CHANNEL_ETHNUMBER) &quot;]&quot;,
+
+#endif
+
+		&quot;q\tsuppress normal output&quot;,
+		&quot;t n\tread timeout is (n) milliseconds [&quot; LITERAL (CHANNEL_TIMEOUT) &quot;]&quot;,
+		&quot;v\tverbose messages on stdout&quot;,
+		(char const *) (0)
+	};
+	flag_t flags = (flag_t)(0);
+	signed length;
+	signed c;
+	if (getenv (PLCDEVICE))
+	{
+
+#if defined (WINPCAP)
+
+		channel.ifindex = atoi (getenv (PLCDEVICE));
+
+#else
+
+		channel.ifname = strdup (getenv (PLCDEVICE));
+
+#endif
+
+	}
+	optind = 1;
+	while ((c = getoptv (argc, argv, optv)) != -1)
+	{
+		switch (c)
+		{
+		case 'i':
+
+#if defined (WIN32)
+
+			channel.ifindex = atoi (optarg);
+
+#else
+
+			channel.ifname = optarg;
+
+#endif
+
+			break;
+		case 'q':
+			_setbits (flags, HPAV_SILENCE);
+			break;
+		case 't':
+			channel.timeout = (unsigned)(uintspec (optarg, 0, UINT_MAX));
+			break;
+		case 'v':
+			_setbits (flags, HPAV_VERBOSE);
+			break;
+		default:
+			break;
+		}
+	}
+	argc -= optind;
+	argv += optind;
+	openchannel (&amp;channel);
+	while ((length = readpacket (&amp;channel, &amp;message, sizeof (message))) &gt;= 0)
+	{
+		if (length &gt; 0)
+		{
+			if (_allclr (flags, HPAV_SILENCE))
+			{
+				MMEPeek (&amp;message, length, stdout);
+			}
+			if (_anyset (flags, HPAV_VERBOSE))
+			{
+				hexdump (&amp;message, 0, length, stdout);
+			}
+		}
+	}
+	closechannel (&amp;channel);
+	return (0);
+}
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='hostnics.c.html' title=' hostnics.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='hpavd.c.html' title=' hpavd.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

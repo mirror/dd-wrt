@@ -1,0 +1,265 @@
+.TH mac2pw 1 "Feb 2015" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+mac2pw - Qualcomm Atheros Ethernet Device Password Generator
+
+.SH SYNOPSIS
+.BR mac2pw
+.RI [ options ] 
+.IR address 
+.RI [ address ]
+[...] 
+
+.SH DESCRIPTION
+Print a range of consecutive Ethernet addresses and passwords on stdout suche that each device has a unique password.
+Program output is suitable as input to the Qualcomm Atheros HomePlug AV Production Test System or may be used in custom production systems.
+A starting address and an address range are specified.
+Computed passwords consist of upper case letters and digits with optional group separators.
+Output consists of address/password pairs in text format.
+
+.PP
+This program is designed to generate passwords for a large number of consecutive device addresses.
+It complements program \fBmac2pwd\fR which generates passwords for non-consecutive device addresses occuring in unspecified order.
+
+.PP
+This program is part of the Qualcomm Atheros Powerline Toolkit.
+See the \fBAMP\fR man page for an overview and installation instructions.
+
+.SH CAVEATS
+Atheros provides this program as a simple means of generating unique and apparently random device passwords for a large volume of Ethernet devices.
+Two different password algorithms are implemented but neither one is required for HomePlug AV compliance.
+Vendors are free to use other methods to generate their own device passwords and are encouraged to do so.
+
+.TP 
+Random Method
+Generate random passwords based on system entropy.
+A different set of passwords is generated for a given address range with each program execution.
+There is no correlation at between addresses and passwords.
+This method is the most secure but requires care when programming and labelling devices at the factory.
+It may be necessary to maintain a database if regular device maintenance and firmware upgrade are needed.
+
+.TP 
+Device Method
+Generate apparently random passwords based on device address.
+The same set of passwords will be generated for a given address range with each program execution.
+This method may be appropriate on system where regular maintenance and firmware upsates are required.
+This method is less secure because device addresses can be determined using a variety of network management programs.
+Anyone having access to this program, or the algorithm, could compute the device password and gain access to device features reserved for priviledged users.
+This program does provide features to mitigate the risks of using this method.
+
+.SH OPTIONS
+
+.TP
+-\fBb\fR \fIbunch\fR
+The password bunching factor.
+Passwords consists of \fIcount\fR uppercase letters and digits optionally displayed in groups separated by hyphens.
+The bunching factor specifies the number of letters and digits in each group.
+When \fIbunch\fR is \fB0\fR or greater than \fIcount\fR, bunching is suppressed.
+Separating hyphens increase overall password length.
+The minimum is \fB0\fR and the maximum is \fB255\fR.
+The default is \fB0\fR which suppresses bunching.
+
+.TP
+.RB - e
+Compute passwords based on host system entropy.
+Passwords consist of uppercase letters [A-Z] optionally grouped using option \fB-b\fR.
+This method produces a non-repeatable set of unique passwords over a given address range.
+This method is the default and is more secure than method \fB-m\fR.
+
+.TP
+-\fBl \fIcount\fR
+The number of letters in the password string.
+Overall password length is the sum of \fIcount\fR plus the number of delimiters implied by \fIbunch\fR.
+The minimum is \fB12\fR and the maximum is \fB64\fR.
+The default is \fB16\fR.
+
+.TP
+.RB - m
+Compute passwords based on target device address.
+Passwords consist of uppercase letters [A-Z].
+This method produces a repeatable set of unique passwords over a given address range.
+This method is less secure than the default method \fB-e\fR.
+
+.TP
+-\fBn \fInumber\fR
+The number of consecutive addresses and passwords to compute and print.
+The minimum is \fB0\fR and the maximum is \fB1677215\fR or 0xFFFFFF.
+The default is \fB1\fR.
+In addition, \fInumber\fR cannot exceed the remaining available addresses in the \fIvendor\fR range.
+For example, given start address 00:B0:52:FF:FF:00, there are only 255 remaining addresses in the 00:B0:52 vendor range so it would be an error to request more than that number.
+
+.TP
+.RB - q
+Quiet mode.
+Exclude the device address on output.
+This option can be used in scripts to return the password associated with a given device address.
+
+.TP
+.RB - v
+Verbose mode.
+Prefix each line with a '0' column.
+The Atheros Production Test System (PTS) uses the first column of a password database file to indicate which addresses and passwords have already been used.
+
+.TP
+.RB - ? ,-- help
+Print program help information on stdout.
+This option takes precedence over other options on the command line.
+
+.TP
+.RB - ! ,-- version
+Print program version information on stdout.
+This option takes precedence over other options on the command line.
+Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of the Linux Toolkit you are using.
+
+.SH ARGUMENTS
+
+.TP
+\fBaddress\fR
+The first Ethernet address expressed as 12 consecutive hexadecimal digits.
+Puncutation is not permitted.
+The final address of the range is computed by adding \fBnumber\fR to this address.
+This argument is required.
+There is no default \fBaddress\fR.
+If more than one device address is specified then an address/password series will be computed for each.
+
+.SH EXAMPLES
+The following example prints the given device address and a random password string on stdout.
+The default password length is 25 characters long but the length can be changes using option \fB-l\fR.
+
+.PP
+   # mac2pw 00B052000001
+   00B052000001 5KAXCQFQNN4PPNC76XN2YUWMS 
+
+.PP
+Repeating the command will generate a new password string.
+This is the default behaviour and is the same as specifying option \fB-e\fR for "\fBentropy\fR".
+
+.PP
+   # mac2pw 00B052000001
+   00B052000001 CA35TM5JLG4S6XBKSM3HSU6J4 
+
+.PP
+This example ommits the device address.
+Repeating the command produces a new password string.
+
+.PP
+   # mac2pw 00B052000001 -q
+   2LJ6P5JPEHE6V63GZWC337Q8E 
+   # mac2pw 00B052000001 -q
+   5Z8J7EGGL2HJDKMZ978W8V94W
+
+.PP
+The next example shows how to generate passwords for three different devices with one command.
+The program generates a password for each device address specified on the command line.
+
+.PP
+   # mac2pw 00B052000001 00B05200BABE 00B05200DEAD
+   00B052000001 NJHWXEFRPVVW87C9J4BQEHYYE
+   00B05200BABE 5PT9Z64Z4TVRPEJCK8LR2XFMR
+   00B05200DEAD 7R2LJYGJB42329AS4NM29H8V4
+
+.PP
+The next example prints \fB10\fR consecutive device addresses and random passwords on stdout.
+The starting device address is given and option \fB-n\fR specifies the number of addresses to print.
+Output can be piped to a file or another process.
+
+.PP
+   # mac2pw 00B052000001 -n 10
+   00B052000001 LEKWS42VX92YR3LLL6KBD5RCG
+   00B052000002 BHYKXG3VEVXNZ7CF2UERCU4G6
+   00B052000003 UBP87NFZMMW5WY8KK5GJFAWS3
+   00B052000004 CU7Y7JKFNASS6E4GQ3XL3HWGZ
+   00B052000005 9RN3WTXAQUXV8THZUB898ZGB3
+   00B052000006 HCXNPW2CM9JVHBJN2TZVRVDU6
+   00B052000007 DFD5QY5HATC5NFC5SF3AWL2PD
+   00B052000008 837GAN4HSG9U6TTRCPRXMG84T
+   00B052000009 HBLZHG32FSZKQ8TANGK5U8DS9
+   00B05200000A KEY9D3DW66HX68AWZRCD4VPD9
+
+.PP
+The following example prints \fB10\fR consecutive device addresses and passwords but inserts a \fB0\fR at the start of each line to indicate that the address and password have not been used.
+The Qualcomm Atheros Production Test System (PTS) will set the \fB0\fR to \fB1\fR after it programs a device.
+This format is simlar to PTS DBBuilder Utility output.
+
+.PP
+   # mac2pw 00B052000006 -n 10 -v
+   0 00B052000006 VZNKWJUHAV2687NV6EJYUVQ4D
+   0 00B052000007 RENKKWRNFLU4ZNZ3P6K4SZ4PG
+   0 00B052000008 NEL6LL2V2YZAL2Q27E2DJ25BG
+   0 00B052000009 MYX2T5HM68T5JCK7YYJNDWH2P
+   0 00B05200000A 6UY4MPYP43GXSD39VLTNZCJEZ
+   0 00B05200000B MD47KPFZLSNL9XRLJTN3MKJ5N
+   0 00B05200000C BKVTVYE47LE4DKMUNQPPXR7HL
+   0 00B05200000D RBJ8DA5DB48TZUTAQXZ9CPFTM
+   0 00B05200000E HSK6N9ZGZPGV4T5YXST4DH3W8
+   0 00B05200000F BLW8QQ4JMEVSQJYHRPBDGG5RS
+
+.PP
+The next example prints \fB10\fR consecutive device addresses and passwords, as before, but changes password length and character bunching.
+Option \fB-l\fR specifies \fB12\fR characters and option \fB-b\fR specifies a bunching factor of three.
+
+.PP
+   # mac2pw 00B052000001 -n 10 -l 12 -b 3
+   00B052000001 S2J-V4B-NB6-37M
+   00B052000002 QEX-292-CYF-AVV
+   00B052000003 5VH-2KR-FYP-EVH
+   00B052000004 NYU-TPB-ZK3-6H6
+   00B052000005 MGX-GB7-P2P-42B
+   00B052000006 DDM-UD8-8NS-BZA
+   00B052000007 MLZ-86G-F4G-MS8
+   00B052000008 DTY-U8D-DT8-3G2
+   00B052000009 6BY-WVU-GB9-UEB
+   00B05200000A TX3-NUS-TKM-LVL
+
+.PP
+The next example prints \fB10\fR consecutive device addresses and passwords, as before, but starts from a different device address.
+We specified option \fB-m\fR so that passwords are generated based on the MAC address.
+This ensures that the same password is generated each time for a given device address.
+We also specified password length or \fB16\fR characters using option \fB-l\fR and bunching factor of \fB4\fR with option \fB-b\fR.
+
+.PP
+   # mac2pw 00B052000001 -m -l 16 -b 4 -n 10
+   00B052000001 HBXY-FVHN-COML-MVLY
+   00B052000002 KYCC-KFFD-BHCN-CSUL
+   00B052000003 LQXF-TULV-IOQB-SKJI
+   00B052000004 SOBX-FRNC-EIHL-KBPW
+   00B052000005 XPAC-KESG-MDYY-OFPQ
+   00B052000006 SFTQ-DWEF-GHYC-VOWW
+   00B052000007 NNZQ-FCTW-VQLG-ESBV
+   00B052000008 SEPC-KYYS-JZEO-HHVT
+   00B052000009 OYPS-DSDV-QILZ-JYOV
+   00B05200000A HQYV-FIWJ-CJDZ-XPNZ
+
+.PP
+The following example prints \fB10\fR consecutive device addresses and passwords, as before, but starts from a different device address.
+The address range here overlaps the range shown above but identical device addresses have identical passwords.
+Address based passwords may be of interest on large private networks requireing frequent firmware upgrades or device configuration.
+
+.PP
+   # mac2pw 00B052000006 -m -l 16 -b 4 -n 10
+   00B052000006 SFTQ-DWEF-GHYC-VOWW
+   00B052000007 NNZQ-FCTW-VQLG-ESBV
+   00B052000008 SEPC-KYYS-JZEO-HHVT
+   00B052000009 OYPS-DSDV-QILZ-JYOV
+   00B05200000A HQYV-FIWJ-CJDZ-XPNZ
+   00B05200000B MQIG-KUKM-YQSJ-KPRM
+   00B05200000C VTLW-DAVK-JCMU-JQLU
+   00B05200000D PIQB-OITS-RFCY-PUVE
+   00B05200000E IWAV-KYJM-JBEM-GPMR
+   00B05200000F LQJY-DSEX-WDHE-FVMB
+
+.SH DISCLAIMER
+Qualcomm Atheros reserves the right to modify program names, functionality, input format or output format in future toolkit releases without any obligation to notify or compensate toolkit users.
+
+.SH SEE ALSO
+.BR hpavkey ( 1 ),
+.BR hpavkeys ( 1 ),
+.BR keys ( 1 ),
+.BR mac2pwd ( 1 ),
+.BR rkey ( 1 )
+
+.SH CREDITS
+ Charles Maier <cmaier@qca.qualcomm.com>
+ Pouyan Sepehrdad <pouyans@qti.qualcomm.com>
+ Ning Shang <nshang@qti.qualcomm.com>
+

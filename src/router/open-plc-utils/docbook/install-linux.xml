@@ -1,0 +1,69 @@
+	<section id="install-linux">
+		<title>
+			Toolkit Installation on Linux
+			</title>
+		<para>
+			The Linux version of the toolkit must be compiled from source code. The only requirement is the standard <application>GNU/Linux</application> toolchain consisting of <application>make</application>, <application>gcc</application> and <application>ld</application>. These are included with most <application>Linux</application> distributions but may require installation. On <productname>Debian</productname> based distributions, such as <productname>Ubuntu</productname>, they may be installed using <application>apt-get</application>. On <productname>RedHat</productname> distributions, such as <productname>Fedora</productname>, they may be installed using <application>rpm</application>. On <productname>SuSE</productname> based distributions, they may be installed using <application>YaST2</application>.
+			</para>
+		<section>
+			<title>
+				Toolkit Installation on GNU/<productname>Linux</productname>
+				</title>
+			<example>
+				<title>
+					Toolkit Installation on GNU/<productname>Linux</productname>
+					</title>
+<screen>
+# cp plc-utils-1.2.1.tar.gz /home/mydir
+# cd /home/mydir
+# tar -vzxf plc-utils-1.2.1.tar.gz
+# cd plc-utils-1.2.1
+# make
+# make install
+# make manuals
+</screen>
+				</example>
+			<para> 
+				Decompress the archive and extract the contents with the <application>tar</application> utility. This will create a folder having the same basename as the archive such that one version will not over-write another. Consult the <application>tar</application> man page on your system for detailed instructions. Change directory to the appropriate folder.
+				</para>
+			<para>
+				The main package folder contains a recursive <filename>Makefile</filename> that will compile and install all toolkit programs. If you do not want to compile and install all programs then change directory to the appropriate folder and run <application>make</application> from there. To compile binary files, type <userinput>make</userinput>. To install binary files, type <userinput>make install</userinput>. To install man pages, type <userinput>make manuals</userinput>. The package does not automatically install examples, scripts, applets or man pages. 
+				</para>
+			<para>
+				We recommend that you <command>login</command> as <constant>root</constant> user before installing the toolkit; otherwise, you will be prompted for the <constant>root</constant> password as each program or component is installed. 
+				</para>
+			<para>
+				Programs are installed in folder <filename>/usr/local/bin</filename> and man pages are installed in folders <filename>/usr/share/man/man1</filename>. If these folders are not correct for your system, or if you want to install in other folders, then edit the folder names defined in the <link linkend="software-cross-compile">make.def</link> file found in main toolkit folder or over-ride these definitions in subordinate makefiles.
+				</para>
+			</section>
+		<section>
+			<title>
+				Toolkit Documentation on GNU/Linux
+				</title>
+			<para>
+				Toolkit web pages are not automatically installed. To access toolkit documentation, point your browser to <ulink url="index.html">docbook/index.html</ulink> and add the page to the browser bookmark or favorites list. If you are interested in how the toolkit has been implemented then do the same for page <ulink url="toolkit.html">docbook/toolkit.html</ulink>. 				</para>
+			<para>
+				The method described above is only recommended if you do not plan to move or remove toolkit folders. Otherwise, you can merely copy the entire contents of the toolkit <filename>docbook</filename> folder to another folder of your choice and point your browser to the new file locations.
+				</para>
+<screen>
+cp -rv docbook/* /home/mydir/toolkit
+</screen>
+			</section>
+		<section>
+			<title>
+				Toolkit Removal on GNU/<productname>Linux</productname>
+				</title>		
+			<para>
+				To uninstall installed programs and man pages on Linux, change to the main toolkit folder and type <userinput>make uninstall</userinput>.
+				</para>
+			<example>
+				<title>
+					Toolkit Removal on GNU/<productname>Linux</productname>
+					</title>
+<screen>
+# cd /home/mydir/plc-utils-1.2.1
+make uninstall
+</screen>
+				</example>
+			</section>
+		</section>

@@ -1,0 +1,66 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			strincr.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='strfbits.c.html' title=' strfbits.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='synonym.c.html' title=' synonym.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   signed strincr (void * memory, size_t extent, byte min, byte max);
+ *
+ *   memory.h
+ *
+ *   increment a multi-byte memory region; start at min and reset at
+ *   max; return -1 if all bytes are max;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef STRINCR_SOURCE
+#define STRINCR_SOURCE
+
+#include &quot;../tools/memory.h&quot;
+
+signed strincr (void * memory, register size_t extent, register byte min, register byte max)
+
+{
+	register byte * offset = (byte *)(memory);
+	while (extent--)
+	{
+		if (++ offset [extent] &lt;= max)
+		{
+			return (0);
+		}
+		offset [extent] = min;
+	}
+	return (-1);
+}
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='strfbits.c.html' title=' strfbits.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='synonym.c.html' title=' synonym.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

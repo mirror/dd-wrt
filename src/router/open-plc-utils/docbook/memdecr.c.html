@@ -1,0 +1,70 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			memdecr.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='MDUTrafficStats.c.html' title=' MDUTrafficStats.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='memencode.c.html' title=' memencode.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   signed memdecr (void * memory, size_t extent);
+ *
+ *   memory.h
+ *
+ *   decrement a multi-byte memory region; start at 0xff and reset
+ *   at 0x00; return -1 if all bytes are 0x00;
+ *
+ *   for example:
+ *
+ *      0x00 0x00 0x00 --&gt; 0x00 0x00 0x01
+ *      0xFF 0x00 0xFF --&gt; 0xFF 0x01 0x00
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef MEMDECR_SOURCE
+#define MEMDECR_SOURCE
+
+#include &quot;../tools/memory.h&quot;
+
+signed memdecr (void * memory, register size_t extent)
+
+{
+	register byte * offset = (byte *)(memory);
+	while (extent--)
+	{
+		if (-- offset [extent] != 0xFF)
+		{
+			return (0);
+		}
+	}
+	return (-1);
+}
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='MDUTrafficStats.c.html' title=' MDUTrafficStats.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='memencode.c.html' title=' memencode.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

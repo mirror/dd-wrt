@@ -1,0 +1,62 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Powerline Workstations</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="ch02.html" title="Chapter 2.  Hardware"><link rel="prev" href="ch02s04.html" title="Device Configurations"><link rel="next" href="ch02s06.html" title="Send-to-self Patch"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">
+			Powerline Workstations
+			</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch02s04.html">Prev</a> </td><th width="60%" align="center">Chapter 2. 
+		Hardware 
+		</th><td width="20%" align="right"> <a accesskey="n" href="ch02s06.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="hardware-workstation"></a>
+			Powerline Workstations
+			</h2></div></div></div><p>
+			The Open Powerline Toolkit is a collection of independent programs. Individually, they perform basic but useful operations on powerline communication devices and associated support files such as <acronym class="acronym">PIB</acronym> and <acronym class="acronym">NVM</acronym> files. Collectively, they can perform many types of engineering experiments, functional tests and production tasks. Their simplicity and high degree of flexibility lets customers adapt an off-the-shelf linux host to meet a wide range of production requirements. We call this configuration a “<span class="quote">powerline workstation</span>”.
+			</p><p>
+			This section explains how to configure a powerline workstation and setup the Open Powerline Toolkit on that workstation. It covers some necessary aspects of Linux and the Toolkit but it is not a Linux tutorial or a Open Powerline Toolkit tutorial. Linux essentials are covered on the Internet and Open Powerline Toolkit essentials are covered in other sections of this documentation and on-line man pages. Although some typical configurations are illustrated, many variations are possible and are left to the customer to develop based on our examples. There is no single correct way to do anything.
+				</p><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="hardware-host-hardware"></a>
+				Host Hardware
+				</h3></div></div></div><p>
+				A powerline workstation host has no special hardware requirements. Any host capable of running Linux and supporting multiple Ethernet cards will do. For example, a 450mhz <acronym class="acronym">CPU</acronym> having 128mb of memory, one 3gb disk and three 10/100 Ethernet cards is adequate.
+				</p><p>
+				Production tasks such as device initialization or firmware upgrade require one Ethernet card. Experimentation and functional testing typically require two Ethernet cards. Atheros recommends three Ethernet cards so that the host can communicate with other hosts over a local area network while talking to powerline devices. Atheros also recommends that all Ethernet cards installed support at least 100mbps and be of the same type to simplify network configuration.
+				</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="hardware-host-software"></a>
+				Host Software
+				</h3></div></div></div><p>
+				Atheros recommends installiing a Debian-based or Ubuntu-based Linux distribution due to the simplicity of network configuration. <span class="trademark">Redhat</span>™-based or <span class="trademark">SuSE</span>™-based distributions are also acceptable. A complete GNU toolchain is required to compile and install the Open Powerline Toolkit. Atheros uses GNU <span class="application">make</span> 3.8.0, GNU <span class="application">gcc</span> 3.3.5 and GNU <span class="application">ld</span> 2.15. If these components are not installed then you must install them. Linux system installation and configuration is beyond the scope of this documentation but there is a wealth of information available on the Internet.
+				</p><p>
+				Of course, the Open Powerline Toolkit needs to be installed and successful installation proves that all required Linux components are installed correctly. See <a class="link" href="ch01s04.html" title="Toolkit Installation on Linux">Installation on Linux</a> for more information on how to install the Open Powerline Toolkit.
+				</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="hardware-network"></a>
+				Network Configuration
+				</h3></div></div></div><p>
+				Linux will assign interface names like <code class="varname">eth0</code>, <code class="varname">eth1</code> and <code class="varname">eth2</code> to each installed network card. Atheros recommends that <code class="varname">eth0</code> be connected to your local network so that you can communicate with other hosts on that network. The other two interface cards can then be connected to Atheros devices that are plugged into an isolated power-strip. Of course, one CAT-5 Ethenet cable will be needed for each Ethernet card installed. 
+				</p><p>
+				Interfaces <code class="varname">eth1</code> and <code class="varname">eth2</code> should be assigned IP addresses on a separate sub-net so that you can <span class="application">ping</span> one card from the other over the powerline without sending traffic over the local network. Remember that powerline devices have MAC addresses but not IP addresses. Also,  Linux <span class="application">ping</span> uses the routing table to route messages and so you may need to use the <strong class="userinput"><code>-I</code></strong> option when pinging over the powerline. Otherwise, ping packets may go out over the local network by default.
+				</p><pre class="screen">
+# ifconfig
+eth0      Link encap:Ethernet  HWaddr 00:50:04:A5:D9:5A  
+          inet addr:192.168.99.12  Bcast:192.168.99.255  Mask:255.255.255.0
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+
+eth1      Link encap:Ethernet  HWaddr 00:01:03:2B:03:67  
+          inet addr:192.168.101.10  Bcast:192.168.101.255  Mask:255.255.255.0
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+
+eth2      Link encap:Ethernet  HWaddr 00:01:03:2B:03:73  
+          inet addr:192.168.101.11  Bcast:192.168.101.255  Mask:255.255.255.0
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+
+lo        Link encap:Local Loopback  
+          inet addr:127.0.0.1  Mask:255.0.0.0
+          UP LOOPBACK RUNNING  MTU:16436  Metric:1
+</pre><p>
+				The abbreviated <span class="application">ifconfig</span> console display,  shown above,  illustrates a typical Ethernet configuration using three cards,  as recommended by Atheros. Interface <code class="varname">eth0</code> is on the <code class="constant">192.168.99.0</code> subnet which serves as the local network, in this case. Interfaces <code class="varname">eth1</code> and <code class="varname">eth2</code> are both on the <code class="constant">192.168.101.0</code> subnet which serves as the powerline network, in this case.
+				</p><p>
+				Although not required, installing both <span class="application">wireshark</span> and <span class="application">tshark</span> is a great idea because they can be used to monitor and log network traffic on any or all of the Ethernet interfaces during various operations.
+				</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="hardware-powerstrip"></a>
+				Isolated Power-strip
+				</h3></div></div></div><p>
+				Atheros devices have a way of finding each other over powerline and sometimes across nearby powerlines. Power-strip isolation prevents cross-talk with other powerline devices that may be plugged into nearby. Proper isolation is not critical when getting started but can be critical in technical evaluation and production environments.
+				</p><p>
+				There are many ways to isolate powerline devices. One way is to plug the powerline workstation and the power-strip into an Uninterruptable Power Supply (<acronym class="acronym">UPS</acronym>). Atheros also provides several reference designs for both expensive and inexpensive hardware that can be used to isolate devices and workstations. 
+				</p><p>
+				Atheros powerline devices tend to work best when there is some signal attenuation over powerline or coax connections. Engineering evaluation configurations should insert some type of variable attenuation between powerline devices to measure the performance of their own powerline device designs. Consult with your Atheros Field Application Engineer on this matter.
+				</p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch02s04.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="ch02.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch02s06.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">
+			Device Configurations 
+			 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 
+			Send-to-self Patch
+			</td></tr></table></div></body></html>0

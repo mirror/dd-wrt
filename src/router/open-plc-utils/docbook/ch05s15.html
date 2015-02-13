@@ -1,0 +1,135 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>SLAC Configuration</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="ch05.html" title="Chapter 5.  Procedures"><link rel="prev" href="ch05s14.html" title="Trouble-shooting Problems"><link rel="next" href="ch05s16.html" title="SLAC Demonstration"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">
+			SLAC Configuration
+			</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch05s14.html">Prev</a> </td><th width="60%" align="center">Chapter 5. 
+		Procedures 
+		</th><td width="20%" align="right"> <a accesskey="n" href="ch05s16.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="slac-config"></a>
+			SLAC Configuration
+			</h2></div></div></div><p>
+			Avitar can be used to configure a PLC device as either a normal PLC station or a <acronym class="acronym">SLAC</acronym> <acronym class="acronym">PEV-PLC</acronym> or <acronym class="acronym">SLAC</acronym> <acronym class="acronym">EVSE-PLC</acronym> station. In doing so, <span class="application">Avitar</span> changes several <acronym class="acronym">PIB</acronym> values at the same time. This section illustrates how to configurat a <acronym class="acronym">PIB</acronym> the same way using the toolkit.
+			</p><p>
+			The HomePlug Green PHY Specification refers to the <code class="constant">APCM_SET_CCO.REQ</code> and <code class="constant">APCM_CONF_SLAC</code> primatives in the SLAC protocol description. These are virtual operations to be implemented by the user. In both cases, one must read the <acronym class="acronym">PIB</acronym> from the <acronym class="acronym">PLC</acronym> device, edit the <acronym class="acronym">PIB</acronym>, recompute <acronym class="acronym">PIB</acronym> checksums and write the <acronym class="acronym">PIB</acronym> back to the <acronym class="acronym">PLC</acronym> device. This can be done manually, using <span class="application">Avitar</span>, or in a script, using the Powerline Toolkit as shown below, or programatically, using custom software.
+			</p><div class="table"><a name="idp11136624"></a><p class="title"><b>Table 5.1. 
+				PEV-PLC PIB Settings
+				</b></p><div class="table-contents"><table summary="
+				PEV-PLC PIB Settings
+				" border="1"><colgroup><col><col><col></colgroup><thead><tr><th>
+							OFFSET
+							</th><th>
+							LENGTH
+							</th><th>
+							SYMBOL
+							</th><th>
+							DESCRIPTION
+							</th></tr></thead><tbody><tr><td>
+							0000F4
+							</td><td>
+							1
+							</td><td>
+							CCoSelection
+							</td><td>
+							1: This sets CCo Selection to Never;
+							</td></tr><tr><td>
+							001653
+							</td><td>
+							1
+							</td><td>
+							SLAC_EnableMode
+							</td><td>
+							1: This sets SLAC Selection to PEV;
+							</td></tr><tr><td>
+							001C98
+							</td><td>
+							4
+							</td><td>
+							LowLinkSpeed_kbps
+							</td><td>
+							10240
+							</td></tr><tr><td>
+							001C9C
+							</td><td>
+							4
+							</td><td>
+							HighLinkSpeed_kbps
+							</td><td>
+							102400
+							</td></tr></tbody></table></div></div><br class="table-break"><p>
+			</p><p>
+			The following shell script converts a factory <acronym class="acronym">PIB</acronym> to a <acronym class="acronym">SLAC</acronym> <acronym class="acronym">PEV</acronym> by setting the CCO Mode to Never and the <acronym class="acronym">SLAC</acronym> Mode to <acronym class="acronym">PEV</acronym>. The User HFID is set to “<span class="quote">PEV</span>” for role identification, optionally. This <acronym class="acronym">PIB</acronym> must be written into PEV-PLC flash memory for proper operation.
+			</p><pre class="screen">
+#!/bin/sh
+# file: pev.sh
+# ========================================================================
+# convert a factory PIB to a SLAC PEV PIB by changing these PIB settings;
+# ------------------------------------------------------------------------
+setpib ${1} 74 hfid "PEV"
+setpib ${1} F4 byte 1
+setpib ${1} 1653 byte 1
+setpib ${1} 1C98 long 10240 long 102400
+</pre><div class="table"><a name="idp11214160"></a><p class="title"><b>Table 5.2. 
+				PEV-EVSE PIB Settings
+				</b></p><div class="table-contents"><table summary="
+				PEV-EVSE PIB Settings
+				" border="1"><colgroup><col><col><col><col></colgroup><thead><tr><th>
+							OFFSET
+							</th><th>
+							LENGTH
+							</th><th>
+							SYMBOL
+							</th><th>
+							DESCRIPTION
+							</th></tr></thead><tbody><tr><td>
+							0000F4
+							</td><td>
+							1
+							</td><td>
+							CcoSelection
+							</td><td>
+							2: This sets CCo Mode to Always;
+							</td></tr><tr><td>
+							001653
+							</td><td>
+							1
+							</td><td>
+							SLAC_EnableMode
+							</td><td>
+							2: This sets SLAC Mode to EVSE;
+							</td></tr><tr><td>
+							001C98
+							</td><td>
+							4
+							</td><td>
+							LowLinkSpeed_kbps
+							</td><td>
+							10240
+							</td></tr><tr><td>
+							001C9C
+							</td><td>
+							4
+							</td><td>
+							HighLinkSpeed_kbps
+							</td><td>
+							102400
+							</td></tr></tbody></table></div></div><br class="table-break"><p>
+			The following shell script converts a factory <acronym class="acronym">PIB</acronym> to a <acronym class="acronym">SLAC</acronym> <acronym class="acronym">EVSE</acronym> by setting the CCO Mode to Always and the <acronym class="acronym">SLAC</acronym> Mode to <acronym class="acronym">EVSE</acronym>. The User HFID is set to “<span class="quote">EVSE</span>” for role identification, optionally. This <acronym class="acronym">PIB</acronym> must be written into EVSE-PLC flash memory for proper operation.
+			</p><pre class="screen">
+#!/bin/sh
+# file: evse.sh
+# ========================================================================
+# convert a factory PIB to a SLAC EVSE PIB by changing these PIB settings;
+# ------------------------------------------------------------------------
+setpib ${1} 74 hfid "EVSE"
+setpib ${1} F4 byte 2
+setpib ${1} 1653 byte 2
+setpib ${1} 1C98 long 10240 long 102400
+</pre><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="slac-apcm-set-cco"></a>
+				APCM_SET_CCO Primative
+				</h3></div></div></div><p>
+				This primative configures a PLC state by reading PIB from PLC, changing CCoSelection, computing new PIB checksum then writing the PIB back to PLC. It can be performed manually using Avitar, in a script using the Powerline Toolkit or programatically using custom software.
+				</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="slac-apcm-config-slac"></a>
+				APCM_CONFIG_SLAC Primative
+				</h3></div></div></div><p>
+				</p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch05s14.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="ch05.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch05s16.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">
+			Trouble-shooting Problems 
+			 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 
+			SLAC Demonstration
+			</td></tr></table></div></body></html>0

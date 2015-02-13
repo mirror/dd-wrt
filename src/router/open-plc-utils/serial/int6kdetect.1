@@ -1,0 +1,72 @@
+.TH int6kdetect 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+int6kdetect - Qualcomm Atheros UART Device Detector
+
+.SH SYNOPSIS
+.BR int6kdetect
+.RI [ options ] 
+[...]
+
+.SH DESCRIPTION
+None.
+
+.SH COMMENTS
+None.
+
+.SH OPTIONS
+
+.TP
+.RB - c
+Assume device is in command mode.
+This reduces the amount of time needed to detect serial device settings.
+
+.TP
+-\fBl \fItty\fR
+Communicate with the local powerline device over the named serial interface on the local host.
+The program default is "/dev/ttyUSB0" for Linux and "com1:" for Windows.
+The program default is replaced if environment variable \fBPLCUART\fR is defined.
+This option over-rides those default settings.
+
+.TP
+.RB - q
+Suppress progress and error information on stderr.
+
+.TP
+.RB - v
+Display actual serial line commands and responses on stdout.
+
+.TP
+.RB - ? ,-- help
+Print program help summary on stdout.
+This option takes precedence over other options on the command line.
+
+.TP
+.RB - ! ,-- version
+Print program version information on stdout.
+This option takes precedence over other options on the command line.
+Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of the Linux Toolkit you are using.
+
+.SH ARGUMENTS
+None.
+
+.SH REFERENCES
+See the Qualcomm Atheros HomePlug AV Firmware Technical Reference Manual for more information.
+
+.SH DISCLAIMER
+Qualcomm Atheros serial line commands are proprietary to Qualcomm Atheros, Ocala FL USA.
+Consequently, public information is not available.
+Qualcomm Atheros reserves the right to modify command line syntax or command functionality in future firmware releases without any obligation to notify or compensate product or program users.
+
+.SH EXAMPLES
+None.
+
+.SH SEE ALSO
+.BR amp ( 1 ),
+.BR int6kbaud ( 1 ),
+.BR int6kuart ( 1 ),
+.BR ttysig ( 1 )
+
+.SH CREDITS
+ Nathaniel Houghton <nhoughto@qca.qualcomm.com>
+

@@ -1,0 +1,328 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			ttysig.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='ttysend.c.html' title=' ttysend.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='typelist.c.html' title=' typelist.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *
+ *   ttysig.c - Serial Line Signal Controller;
+ *
+ *   This program is for Linux only;
+ *
+ *   Contributor(s):
+ *	Nathaniel Houghton &lt;nhoughto@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *   kernel header files;
+ *--------------------------------------------------------------------*/
+
+#include &lt;sys/ioctl.h&gt;
+
+/*====================================================================*
+ *   system header files;
+ *--------------------------------------------------------------------*/
+
+#include &lt;ctype.h&gt;
+#include &lt;errno.h&gt;
+#include &lt;fcntl.h&gt;
+#include &lt;termios.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;unistd.h&gt;
+
+/*====================================================================*
+ *   custom header files;
+ *--------------------------------------------------------------------*/
+
+#include &quot;../tools/getoptv.h&quot;
+#include &quot;../tools/putoptv.h&quot;
+#include &quot;../tools/version.h&quot;
+#include &quot;../tools/types.h&quot;
+#include &quot;../tools/flags.h&quot;
+#include &quot;../tools/number.h&quot;
+#include &quot;../tools/error.h&quot;
+
+/*====================================================================*
+ *   custom source files;
+ *--------------------------------------------------------------------*/
+
+#ifndef MAKEFILE
+#include &quot;../tools/getoptv.c&quot;
+#include &quot;../tools/putoptv.c&quot;
+#include &quot;../tools/version.c&quot;
+#include &quot;../tools/uintspec.c&quot;
+#include &quot;../tools/todigit.c&quot;
+#include &quot;../tools/error.c&quot;
+#endif
+
+/*====================================================================*
+ *   constants;
+ *--------------------------------------------------------------------*/
+
+#define SERIAL_PORT &quot;/dev/ttyS0&quot;
+#define TTYSIG_SET_DTR       (1 &lt;&lt; 0)
+#define TTYSIG_SET_RTS       (1 &lt;&lt; 1)
+#define TTYSIG_READ_STATUS   (1 &lt;&lt; 2)
+#define TTYSIG_INTERACTIVE   (1 &lt;&lt; 3)
+#define TTYSIG_NOPROMPT      (1 &lt;&lt; 4)
+
+void set_status (int fd, int flag, int value)
+
+{
+	int status;
+	if (ioctl (fd, TIOCMGET, &amp;status) == -1) error (1, errno, &quot;TIOCMGET failed&quot;);
+	if (value) status |= flag;
+	else status &amp;= ~flag;
+	if (ioctl (fd, TIOCMSET, &amp;status) == -1) error (1, errno, &quot;TIOCMSET failed&quot;);
+}
+
+void print_status (int fd)
+
+{
+	int status;
+	if (ioctl (fd, TIOCMGET, &amp;status) == -1) error (1, errno, &quot;TIOCMGET failed&quot;);
+	printf (&quot;--&gt; DTR: %s\n&quot;, (status &amp; TIOCM_DTR)? &quot;+V&quot;: &quot;-V&quot;);
+	printf (&quot;--&gt; RTS: %s\n&quot;, (status &amp; TIOCM_RTS)? &quot;+V&quot;: &quot;-V&quot;);
+	printf (&quot;&lt;-- CTS: %s\n&quot;, (status &amp; TIOCM_CTS)? &quot;+V&quot;: &quot;-V&quot;);
+	printf (&quot;&lt;-- DSR: %s\n&quot;, (status &amp; TIOCM_DSR)? &quot;+V&quot;: &quot;-V&quot;);
+	printf (&quot;&lt;-- DCD: %s\n&quot;, (status &amp; TIOCM_CD)? &quot;+V&quot;: &quot;-V&quot;);
+	printf (&quot;&lt;-- RI : %s\n&quot;, (status &amp; TIOCM_RI)? &quot;+V&quot;: &quot;-V&quot;);
+}
+
+void comment (void)
+
+{
+	int c;
+	while ((c = getchar ()) != EOF)
+	{
+		if (c == '\n')
+		{
+			ungetc (c, stdin);
+			break;
+		}
+	}
+}
+
+int number (char *buf, int *val)
+
+{
+	char *p;
+	while (isspace (*buf)) ++buf;
+	if (!isdigit (*buf))
+	{
+		error (0, 0, &quot;\&quot;%s\&quot; is not a number&quot;, buf);
+		return (-1);
+	}
+	*val = atoi (buf);
+	p = buf;
+	while (isdigit (*buf)) ++buf;
+	if (*buf != '\0')
+	{
+		error (0, 0, &quot;\&quot;%s\&quot; is not a number&quot;, p);
+		return (-1);
+	}
+	return (0);
+}
+
+void interactive (int fd, flag_t flags)
+
+{
+	char buf [32];
+	int i,
+	c;
+	int value;
+	char *p;
+	for (; ; )
+	{
+		if (!_anyset (flags, TTYSIG_NOPROMPT))
+		{
+			printf (&quot;command (D #, R #, e, r, s, q): &quot;);
+			fflush (stdout);
+		}
+		i = 0;
+		while ((c = getchar ()) != EOF)
+		{
+			if (c == '#')
+			{
+				comment ();
+				continue;
+			}
+			if (c == '\n') break;
+			if (i == sizeof (buf) - 1) error (1, 0, &quot;input too large&quot;);
+			buf [i++] = c;
+		}
+		if (c == EOF) return;
+		if (i == 0) continue;
+		buf [i] = '\0';
+		switch (buf [0])
+		{
+		case 'D':
+			if (number (buf + 1, &amp;value)) break;
+			set_status (fd, TIOCM_DTR, value);
+			break;
+		case 'e':
+			p = buf + 1;
+			if (*p == ' ') ++p;
+			printf (&quot;%s\n&quot;, p);
+			fflush (stdout);
+			break;
+		case 'R':
+			if (number (buf + 1, &amp;value)) break;
+			set_status (fd, TIOCM_RTS, value);
+			break;
+		case 'r':
+			print_status (fd);
+			break;
+		case 's':
+			if (number (buf + 1, &amp;value)) break;
+			sleep (value);
+			break;
+		case 'q':
+		case 'Q':
+			return;
+			break;
+		case '\0':
+			break;
+		default:
+			error (0, 0, &quot;invalid command&quot;);
+		}
+	}
+}
+
+int main (int argc, char const ** argv)
+
+{
+	int fd;
+	static char const * optv [] =
+	{
+		&quot;s:D:IR:rqv&quot;,
+		&quot;[ttysig script filename]&quot;,
+		&quot;Serial Line Signal Controller&quot;,
+		&quot;D n\tset DTR (0 = -V, 1 = +V) at startup&quot;,
+		&quot;I\tInteractive mode&quot;,
+		&quot;R n\tset RTS (0 = -V, 1 = +V) at startup&quot;,
+		&quot;r\tread current RTS/DTR values at startup&quot;,
+		&quot;s f\tserial port is (f) [&quot; SERIAL_PORT &quot;]&quot;,
+		&quot;q\tquiet mode&quot;,
+		&quot;v\tverbose mode&quot;,
+		(char const *) (0)
+	};
+	signed c;
+	optind = 1;
+	flag_t flags = 0;
+	uint8_t dtr_value;
+	uint8_t rts_value;
+	char *device = SERIAL_PORT;
+	int input = -1;
+	while ((c = getoptv (argc, argv, optv)) != -1)
+	{
+		switch ((char) (c))
+		{
+		case 'D':
+			dtr_value = uintspec (optarg, 0, 1);
+			_setbits (flags, TTYSIG_SET_DTR);
+			break;
+		case 'I':
+			_setbits (flags, TTYSIG_INTERACTIVE);
+			break;
+		case 'R':
+			rts_value = uintspec (optarg, 0, 1);
+			_setbits (flags, TTYSIG_SET_RTS);
+			break;
+		case 'r':
+			_setbits (flags, TTYSIG_READ_STATUS);
+			break;
+		case 's':
+			device = optarg;
+			break;
+		default:
+			break;
+		}
+	}
+	argc -= optind;
+	argv += optind;
+	if (argc == 1)
+	{
+		input = open (* argv, O_RDONLY);
+		if (input == -1) error (1, errno, &quot;%s&quot;, * argv);
+		if (dup2 (input, STDIN_FILENO) == -1) error (1, errno, &quot;%s&quot;, * argv);
+		_setbits (flags, TTYSIG_INTERACTIVE | TTYSIG_NOPROMPT);
+	}
+	else if (argc &gt; 0) error (1, 0, &quot;Invalid arguments&quot;);
+	fd = open (device, O_RDONLY);
+	if (fd == -1) error (1, errno, &quot;could not open %s&quot;, device);
+	if (_anyset (flags, TTYSIG_SET_DTR)) set_status (fd, TIOCM_DTR, dtr_value);
+	if (_anyset (flags, TTYSIG_SET_RTS)) set_status (fd, TIOCM_RTS, rts_value);
+	if (_anyset (flags, TTYSIG_READ_STATUS)) print_status (fd);
+	if (_anyset (flags, TTYSIG_INTERACTIVE)) interactive (fd, flags);
+	close (fd);
+	return (0);
+}
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='ttysend.c.html' title=' ttysend.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='typelist.c.html' title=' typelist.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

@@ -1,0 +1,132 @@
+<chapter id='management'>
+	<title>
+		Remote Management
+		</title>
+	<section id='management-intro'>
+		<title>
+			Introduction 
+			</title>
+		<para>
+			The Atheros <application>Open Powerline Toolkit</application> includes several example applications that perform basic powerline device management from a remote host. Each example implements a different network protocol,  such as HTTP,  SNMP or TR-069. These applications merely demonstrate the underlying concepts but none perform full network device management. That is left to our customers because their needs vary. 
+			</para>
+		<para>
+			All examples are proxy implementations where a local host communicates with one powerline device over Ethernet. That device then communicates with other devices over powerline or coax. All management functionality is programmed into the local host but other hosts are able to request information or services from it over Ethernet. The local host could be either part of the local powerline device or an external workstation.
+			</para>
+		</section>
+	<section id="remote-http">
+		<title>
+			HTTP Protocol
+			</title>
+		<section id="remote-http-overview">
+			<title>
+				Overview
+				</title>
+			<para>
+				HTTP provides a simple means for one device to interact with one or more remote hosts. The device merely needs requires a basic web server with Common Gateway Interface (<acronym>CGI</acronym>) support. With CGI support, one can write programs that read structured data from their standard input and write HTML to their standard output. Generally, the HTML output is a form that the user can complete and submit for subsequent processing by some application on device.
+				</para>
+			<para>
+				The basic chain of events looks something like this:
+				</para>
+			<orderedlist>
+				<listitem>
+					<para>
+						A user connects the client (some remote computer) to the server (some powerline device) using a web browser.
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+						The server executes the application (some CGI program) designated as the default Uniform Resource Locator (URL) and passes any associated data to the application. Initially there is no data to pass.
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+						The application sees there is no data on stdin and prints an HTML form on stdout. The form contains one or more submit buttons and assigns some URL as the ultimate recipient of form data.
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+						The server forwards the form to the requesting client.
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+						The client displays the form. 
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+						The user completes the form and presses one of the submit buttons. This creates some data for the application to process.
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+						The client forwards the form to the URL designated by the application. Often, this URL is an application on the originating server but it could be an application on another server.
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+						The server executes the application designated by the URL and passes the associated data to the application.
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+						The application reads the form data from stdin, processes it and writes new HTML to stdout. This could be the same form with new data or new fields or new submit buttons or a different form.
+						</para>
+					</listitem>
+				</orderedlist>
+			<para>
+				The chain of events described above is the same even for scripting languages such as <acronym>PHP</acronym>, <acronym>ASP</acronym> and <acronym>JSP</acronym>. The only difference is the nature of the application. In our case, the application is a compiled C Language program because we do not want the overhead of a full scripting language. We also elected of have one application process all forms to minimize the number of files that must be distributed and maintained.
+				</para>
+			<para>
+				One design consideration is the method used to store information from one data exchange to the next. We cannot store the information in memory because the application does not run continuously. Consequently, we defined a data structure to hold all the required information then write the structure directly to a file in binary format on exit and read it back on start up. This data structure is known as a <quote>session variable</quote> and the process of reading and writing it in binary is known as <quote>serialization</quote>. 
+				</para>
+			<orderedlist>
+				<listitem>
+					<para>
+						Read session state from a file.
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+						Read form data from stdin and parse it. Update the session state based on the form data. For example, record which submit button was pressed by the user. Store the content of form fields changed by the user.
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+						Inspect the session state and perform any tasks indicated. Update the session state based on task results. 
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+						Write new HTML to stdout. Indicate the new session state for the user to see. This could include new data in form fields, new form fields, a new form or new submit buttons. 
+						</para>
+					</listitem>
+				<listitem>
+					<para>
+						Save the session state to a file.
+							</para>
+					</listitem>
+				<listitem>
+					<para>
+						Terminate the application.
+						</para>
+					</listitem>
+				</orderedlist>
+			</section>
+		<section id="remote-http-example">
+			<title>
+				Installation
+				</title>
+			</section>
+		</section>
+	<section id="temote-SNMP">
+		<title>
+			SNMP Protocol
+			</title>
+		</section>
+	<section id="remote-tr069">
+		<title>
+			TR-069 Protocol
+			</title>
+		</section>
+	</chapter>
