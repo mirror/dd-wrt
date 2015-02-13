@@ -487,7 +487,6 @@ static int wlconf_up(char *name)
 	} else {
 		nvram_nset("1", "wl%d_infra", instance);
 	}
-	
 
 #ifdef HAVE_80211AC
 	if (has_beamforming(prefix)) {
@@ -640,7 +639,7 @@ static int wlconf_up(char *name)
 	char *vifs = nvram_nget("%s_vifs", ifinst);
 	if (vifs != NULL)
 		foreach(var, vifs, next) {
-			eval("ifconfig", var, "up");
+		eval("ifconfig", var, "up");
 		}
 #endif
 	eval("ifconfig", name, "up");
@@ -2841,7 +2840,7 @@ void start_wan(int status)
 
 	eval("ifconfig", nvram_safe_get("wan_ifname"), "allmulti", "promisc");
 
-	start_firewall(); // start firewall once, to fix problem with rules which should exist even before wan is up
+	start_firewall();	// start firewall once, to fix problem with rules which should exist even before wan is up
 	// wan test mode
 	if (nvram_match("wan_testmode", "1")) {
 		status = 0;	// avoid redialing

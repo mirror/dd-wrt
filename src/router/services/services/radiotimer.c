@@ -57,7 +57,7 @@
 void start_radio_timer(void)
 {
 	if (nvram_match("radio0_timer_enable", "0")
-	    && nvram_match("radio1_timer_enable", "0") 
+	    && nvram_match("radio1_timer_enable", "0")
 	    && nvram_match("radio2_timer_enable", "0"))
 		return;
 #ifdef HAVE_MADWIFI

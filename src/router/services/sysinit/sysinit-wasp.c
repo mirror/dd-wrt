@@ -181,7 +181,7 @@ void start_sysinit(void)
 
 			strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 			ioctl(s, SIOCGIFHWADDR, &ifr);
-			mac = (unsigned char *)ifr.ifr_hwaddr.sa_data; 
+			mac = (unsigned char *)ifr.ifr_hwaddr.sa_data;
 			close(s);
 		}
 		for (i = 0; i < 6; i++)

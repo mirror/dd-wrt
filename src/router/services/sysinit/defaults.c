@@ -850,7 +850,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl0_txchain_pwrsave_enable", "0", 0},
 	{"wl1_txchain_pwrsave_enable", "0", 0},
 	{"wl2_txchain_pwrsave_enable", "0", 0},
-	
+
 #endif
 #ifdef HAVE_BCMMODERN
 	{"wl_rifs_advert", "auto", 0},	/* RIFS mode advertisement */
@@ -1346,7 +1346,7 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
 	{"wl_dtim", "1", 0},	/* DTIM period (3.11.5) *//* It is best value for WiFi test */
 	{"wl1_dtim", "1", 0},
-	
+
 	{"wl_bcn", "100", 0},	/* Beacon interval */
 	{"wl1_bcn", "100", 0},
 	{"wl_plcphdr", "long", 0},	/* 802.11b PLCP preamble type */
@@ -2820,7 +2820,7 @@ struct nvram_tuple srouter_defaults[] = {
 							 * paramters */
 	{"wl1_wme_no_ack", "off", 0},	/* WME No-Acknowledgmen mode */
 	{"wl1_wme_apsd", "on", 0},	/* WME APSD mode */
-	
+
 	{"wl2_wme_ap_bk", "15 1023 7 0 0 off", 0},	/* WME AP AC_BK paramters */
 	{"wl2_wme_ap_be", "15 63 3 0 0 off", 0},	/* WME AP AC_BE paramters */
 	{"wl2_wme_ap_vi", "7 15 1 6016 3008 off", 0},	/* WME AP AC_VI                                                  * paramters */
@@ -2844,7 +2844,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl1_wme_txp_bk", "7 3 4 2 0", 0},	/* WME AC_BK Tx parameters */
 	{"wl1_wme_txp_vi", "7 3 4 2 0", 0},	/* WME AC_VI Tx parameters */
 	{"wl1_wme_txp_vo", "7 3 4 2 0", 0},	/* WME AC_VO Tx parameters */
-	
+
 	{"wl2_wme_txp_be", "7 3 4 2 0", 0},	/* WME AC_BE Tx parameters */
 	{"wl2_wme_txp_bk", "7 3 4 2 0", 0},	/* WME AC_BK Tx parameters */
 	{"wl2_wme_txp_vi", "7 3 4 2 0", 0},	/* WME AC_VI Tx parameters */
@@ -2989,7 +2989,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"openvpn_clcon", "", 0},
 	{"openvpn_cldiscon", "", 0},
 	{"openvpn_ccddef", "", 0},
-	{"openvpn_dhcpbl", "0", 0},	
+	{"openvpn_dhcpbl", "0", 0},
 	{"openvpn_scramble", "off", 0},
 	{"openvpn_scrmblpw", "o54a72ReutDK", 0},
 #endif
