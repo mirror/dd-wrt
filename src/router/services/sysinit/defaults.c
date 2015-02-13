@@ -129,6 +129,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"time_zone", "Asia/Tokyo", 0},
 #elif HAVE_AXTEL
 	{"time_zone", "America/Mexico City", 0},
+#elif HAVE_HOBBIT
+	{"time_zone", "Europe/Bruessel", 0},
 #else
 	{"time_zone", "Europe/Berlin", 0},
 #endif
@@ -1653,6 +1655,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"router_name", "IPR", 0},
 #elif HAVE_KORENRON
 	{"router_name", "KORENRON", 0},
+#elif HAVE_HOBBIT
+	{"router_name", "HQ-NDS200", 0},
 #else
 	{"router_name", MODEL_NAME, 0},	/* Router name string */
 #endif
@@ -2691,6 +2695,12 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl_regdomain", "UNITED_STATES", 0},
 	{"wl0_country_code", "US", 0},
 	{"wl1_country_code", "US", 0},
+	{"wl0_country_rev", "0", 0},
+	{"wl1_country_rev", "0", 0},
+#elif HAVE_HOBBIT
+	{"wl_regdomain", "GERMANY", 0},
+	{"wl0_country_code", "DE", 0},
+	{"wl1_country_code", "DE", 0},
 	{"wl0_country_rev", "0", 0},
 	{"wl1_country_rev", "0", 0},
 #endif
