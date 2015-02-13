@@ -2538,6 +2538,7 @@ int wl_iovar_setbuf(char *ifname, char *iovar, void *param, int paramlen, void *
 
 	return wl_ioctl(ifname, WLC_SET_VAR, bufptr, iolen);
 }
+
 int wl_iovar_set(char *ifname, char *iovar, void *param, int paramlen)
 {
 	char smbuf[WLC_IOCTL_SMLEN];
@@ -2715,7 +2716,6 @@ int wl_bssiovar_setint(char *ifname, char *iovar, int bssidx, int val)
  * from driver\n"); else fprintf(stderr, err_buf); } 
  */
 
-
 int get_maxbssid(char *name)
 {
 	char cap[WLC_IOCTL_SMLEN];
@@ -2736,8 +2736,5 @@ int get_maxbssid(char *name)
 	}
 	return 4;
 }
-
-
-
 
 #endif
