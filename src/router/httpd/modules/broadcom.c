@@ -1897,10 +1897,17 @@ static char *scanfile(char *buf, char *tran)
 			} else {
 				int a, v;
 				for (a = 0; a < filelen - i; a++) {
+					prev = v;
 					v = getc(fp);
 					if (v == EOF)
 						return NULL;
-					if (v == ';') {
+					if (v == '"' && prev != '\\') {
+						if (!ign)
+							ign = 1;
+						else
+							ign = 0;
+
+					} else if (!ign && v == ';') {
 						i += a;
 						count = 0;
 						goto again;
