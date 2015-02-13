@@ -523,7 +523,7 @@ static void handle_hotspot(void)
 	start_service("bridging");
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-//	start_service("wlconf");
+//      start_service("wlconf");
 #endif
 	start_service("lan");
 #ifdef HAVE_BONDING
@@ -1025,7 +1025,6 @@ static void handle_wireless(void)
 			stop_service_force_f("wan");
 		}
 	}
-
 #ifdef HAVE_VLANTAGGING
 	stop_service_f("bridgesif");
 	stop_service_f("vlantagging");
@@ -1042,7 +1041,7 @@ static void handle_wireless(void)
 	start_service("bridging");
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-//	start_service("wlconf");
+//      start_service("wlconf");
 #endif
 	start_service("lan");
 #ifdef HAVE_BONDING
@@ -1090,7 +1089,6 @@ static void handle_wireless(void)
 #else
 	startstop_fdelay("httpd", 4);	// httpd will not accept connection anymore on wan/lan ip changes changes
 #endif
-
 
 }
 
@@ -1141,7 +1139,7 @@ static void handle_wireless_2(void)
 #endif
 	stop_running_main(0, NULL);
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-//	start_service("wlconf");
+//      start_service("wlconf");
 #endif
 #ifdef HAVE_VLANTAGGING
 	start_service("bridging");

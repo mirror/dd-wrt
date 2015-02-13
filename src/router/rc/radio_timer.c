@@ -127,7 +127,7 @@ int main(int argc, char **argv)
 					start_service_force("radio_off_1");
 					break;
 				}
-				
+
 				switch (radiotime2) {
 				case 0:
 

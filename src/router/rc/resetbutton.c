@@ -132,7 +132,7 @@ int getbuttonstate()
 #elif defined(HAVE_VENTANA)
 int getbuttonstate()
 {
-//	int ret = get_gpio(240);
+//      int ret = get_gpio(240);
 	int ret = get_gpio(496);
 	if (ret == 1)
 		return 0;
@@ -831,7 +831,7 @@ void period_check(int sig)
 	} else if (brand == ROUTER_BOARD_RT15N) {
 		val = get_gpio(12) << 12;
 	} else if (brand == ROUTER_BOARD_DIR615D) {
-		val = (get_gpio(10) << 10)  | (get_gpio(0) << 0);
+		val = (get_gpio(10) << 10) | (get_gpio(0) << 0);
 	} else if (brand == ROUTER_BOARD_ESR6650) {
 		val = get_gpio(10) << 10;
 	} else if (brand == ROUTER_BOARD_EAP9550) {
@@ -941,8 +941,8 @@ void period_check(int sig)
 	sesgpio = 0x00b;
 	val |= get_gpio(11) << 11;	//aoss pushbutton
 #elif defined(HAVE_WNR2200)
-        sesgpio = 0x101; //not yet supported
-        val |= get_gpio(37) << 1;      //aoss pushbutton
+	sesgpio = 0x101;	//not yet supported
+	val |= get_gpio(37) << 1;	//aoss pushbutton
 #elif defined(HAVE_WNR2000)
 	sesgpio = 0x00b;
 	val |= get_gpio(11) << 11;	//aoss pushbutton
@@ -1079,7 +1079,7 @@ void period_check(int sig)
 		break;
 	case ROUTER_D1800H:
 		sesgpio = 0x10a;	// gpio 10, inversed
-		break;	
+		break;
 #ifndef HAVE_BUFFALO
 	case ROUTER_BOARD_WCRGN:
 	case ROUTER_BOARD_DIR600B:
@@ -1087,20 +1087,20 @@ void period_check(int sig)
 	case ROUTER_BOARD_NEPTUNE:
 	case ROUTER_BOARD_DIR615D:
 	case ROUTER_BOARD_WHRG300N:
-	case ROUTER_ASUS_RTN10PLUS:		
-	case ROUTER_TPLINK_ARCHERC9:		
+	case ROUTER_ASUS_RTN10PLUS:
+	case ROUTER_TPLINK_ARCHERC9:
 		sesgpio = 0x100;
 		break;
 	case ROUTER_DIR860LB1:
 		sesgpio = 0x112;
-		break;		
+		break;
 	case ROUTER_BOARD_E1700:
 	case ROUTER_DIR810L:
 		sesgpio = 0x102;
 		break;
 	case ROUTER_WHR300HP2:
 		sesgpio = 0x102;
-		break;	
+		break;
 	case ROUTER_ASUS_WL700GE:
 		sesgpio = 0x004;	// gpio 4, normal
 		break;
