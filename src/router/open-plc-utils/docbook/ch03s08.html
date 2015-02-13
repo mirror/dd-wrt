@@ -1,0 +1,28 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Microsoft Solution Files</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="ch03.html" title="Chapter 3.  Software"><link rel="prev" href="ch03s07.html" title="Compilation with Visual Studio .NET 2003"><link rel="next" href="ch03s09.html" title="Header Files"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">
+					Microsoft Solution Files
+					</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch03s07.html">Prev</a> </td><th width="60%" align="center">Chapter 3. 
+		Software 
+		</th><td width="20%" align="right"> <a accesskey="n" href="ch03s09.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="software-solution-files"></a>
+					Microsoft Solution Files
+					</h2></div></div></div><p>
+				The Atheros <span class="application">Open Powerline Toolkit</span> includes a <span class="productname">Visual Studio .NET</span>™ solution file, <code class="filename">./VisualStudioNET/plc-utils.sln</code>,  that will build the toolkit on <span class="application">Windows XP SP2</span> from the Linux code base. The following information may be helpful to developers wanting to modify or extend the solution or port it to another version of Microsoft <span class="application">Visual Studio</span>:
+				</p><div class="itemizedlist"><ul type="disc"><li><p>
+						All projects are WIN32 Console Projects.
+						</p></li><li><p>
+						All projects have pre-compiled headers suppressed.
+						</p></li><li><p>
+						All projects should globally define preprocessor constant <code class="constant">MAKEFILE</code> to prevent proliferation of "already defined" link errors. See <a class="link" href="ch03s05.html" title="Stand-alone Compiling on GNU/Linux">Stand-alone Compiling on GNU/Linux</a> for an explanation of this constant.
+						</p></li><li><p>
+						All projects search folder <code class="filename">..\include</code> for <a class="ulink" href="stdint.h.html" target="_top">stdint.h</a> and <a class="ulink" href="unistd.h.html" target="_top">unistd.h</a> because Microsoft does not provide them. These header files are customized or abbreviated versions of their POSIX counterparts and should be used when originals are available.
+						</p></li><li><p>
+						Projects that perform raw Ethernet I/O should globally define preprocessor constant <code class="constant">WINPCAP</code> to enable appropriate code segments. Preprocessor error statements should (but may not) alert you if <code class="constant">WINPCAP</code> is not defined on <span class="productname">Windows</span>™ platforms.						</p></li><li><p>
+						Projects that perform raw Ethernet I/O search folder <code class="filename">..\include</code> for <span class="application">WinPcap</span> header files. These files are taken from the <span class="application">WinPcap</span> development package and may require periodic updates.  Header files <a class="ulink" href="pcap.h.html" target="_top">pcap.h</a>, <a class="ulink" href="pcap-stdinc.h.html" target="_top">pca-stdinc.h</a>, <a class="ulink" href="pcap-bpf.h.html" target="_top">pcap-bpf.h</a>,  <a class="ulink" href="ipv6_misc.h.html" target="_top">ipv6_misc.h</a> and <a class="ulink" href="bittypes.h.html" target="_top">bittypes.h</a> belong in folder <code class="filename">VisualStudioNET\include</code>. Other header files belong in folder <code class="filename">VisualStudioNET\include\pcap</code>.
+						</p></li><li><p>
+						Projects that perform raw Ethernet I/O should include folder <code class="filename">..\library</code> for core <span class="application">WinPcap</span> libraries.
+						</p></li><li><p>
+						Projects that perform raw Ethernet I/O should link to libraries <code class="filename">ws2_32.lib</code>,  <code class="filename">packet.lib</code> and <code class="filename">wpcap.lib</code>. The first library is the Microsoft <span class="application">Winsock2</span> library. The others are core <span class="application">WinPcap</span> libraries.
+						</p></li></ul></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch03s07.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="ch03.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch03s09.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">
+				Compilation with Visual Studio .NET 2003
+				 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 
+				Header Files 
+				</td></tr></table></div></body></html>0

@@ -1,0 +1,100 @@
+#!/usr/local/bin/efsu -ieth1
+# file: efsu/IGMP.hex
+
+# ====================================================================
+#
+#   IGMP operation
+#   efsu -i usb2 -h IGMP.hex -l 100
+#   efsu -i usb3 -h IGMP_JOIN.hex -l 1
+#   efsu -i usb2 -h IGMP.hex -l 10000000
+#   efsu -i usb3 -h IGMP_LEAVE.hex -l 1
+#
+# --------------------------------------------------------------------
+
+01 00 5e 01 64 01 00 1e 68 b8 79 95 08 00 45 00
+05 4c bd bc 00 00 01 11 ee fc c0 a8 03 3d e0 01
+64 01 04 7b 04 d2 05 38 08 0f 80 21 ea 62 14 c4
+d4 4f 00 00 53 28 47 00 45 1e 00 19 ce 4f bc 4a
+82 53 ae 47 bd 78 33 42 e5 dc 07 2e f5 e2 76 25
+ea c5 07 3c c1 d7 78 bd 99 f6 4a 23 d1 12 85 1a
+a0 f2 23 b4 47 bc 6a 89 1a 48 fc 25 a2 d8 2d ef
+15 a5 95 ad b0 a7 4e a0 01 9c d7 89 59 ab 69 1a
+3b 0d 91 f9 1e 8a 40 c5 89 fb 48 89 36 ae 72 6c
+17 23 9c 2d 14 28 d2 96 f7 20 cd c9 cd 0e 17 12
+f3 8a bc 33 66 72 9d a3 29 3a 93 83 e9 c4 28 24
+78 7c e4 5b c2 f4 02 56 90 00 c2 72 7a 2b 8c 5e
+4a 00 82 27 84 57 0f ef c6 37 1f a7 d1 3f de 1f
+a0 66 df 23 94 ba ed c5 7d ae 34 55 e2 d6 62 74
+f4 a0 af 53 5e 12 b0 6e 8e e6 27 4a bc 76 81 39
+31 1a 47 00 45 1f f1 da 27 28 12 45 9d 60 2b 8e
+9a f1 bb 03 73 2b c0 03 4a 3c 04 57 e6 9a f0 95
+a2 67 71 02 6c 21 a2 75 e3 64 0d 72 bc ea bc 52
+81 4a 34 83 00 0c 6a b8 e9 1a 44 a2 34 75 e3 66
+04 e9 ef 39 1a 68 9d 78 dd 03 f6 ef 3c a9 54 e3
+96 07 5c 9d 3d e2 34 2d c9 77 23 d7 18 bb 63 c3
+a8 e9 c2 ef 11 a1 5a b4 87 6b c4 a8 90 34 96 4f
+90 f5 c4 2e d7 23 c3 c4 cb bc 7f 34 56 54 f7 4e
+22 67 ee b9 1c 9f 1c 2a b6 27 de 2a 40 51 a4 72
+3d e2 2b 27 6f 3c cb a7 1a 32 66 78 74 40 b5 05
+de 21 40 cd 9a 8e c1 55 7e 9c 48 83 d3 c4 1b f5
+c4 84 e8 fa bc f1 3a b8 db 8e 1d 78 f9 82 47 00
+45 10 1b cc 11 57 d5 5c 6a 44 21 e0 01 81 d2 b0
+ab 11 10 2f 14 25 24 1b ac 3b e9 78 5b fb b5 5e
+24 ba c2 7c 17 7e f1 03 26 57 94 f7 3d e3 74 2d
+30 30 54 75 a4 7b 5c 46 5e 44 af 3c f7 8c 90 20
+33 a8 89 13 af 08 59 ba 40 79 32 b0 74 77 0f ba
+1c 5b d6 07 5f 5a a8 a3 50 d4 ac 6f 35 e2 16 08
+5d ec 4e a9 d4 3d 54 52 2e 51 b9 2b 89 f9 e2 69
+64 68 37 94 30 53 5e 38 60 a0 6e 9d 9c 4c f6 c4
+e8 81 45 1c a9 8b 77 62 89 f1 13 c4 f5 5e 2b 44
+42 83 0e 47 88 ba 22 de 1b a0 7c 50 82 0c 32 20
+44 5b c4 6c d8 9e cc 01 1d e2 e4 68 4b d6 01 0c
+41 bb bc 44 85 2b 54 e4 fb c3 47 00 45 11 7a 0d
+91 7d e2 d6 2e 99 ae 4f f5 c8 f3 5e 58 25 b4 c0
+11 db 71 38 9b af 91 af 34 4f d2 c1 f8 b9 3a 7e
+c1 f6 f7 88 d0 24 29 46 b2 3d e5 1b b4 e4 18 83
+37 27 cb 00 86 85 18 96 e4 39 3e e6 ae 31 3c 88
+15 45 1e e5 9b 34 89 49 5e b3 c7 a5 37 88 98 23
+67 44 88 68 78 de 07 27 a7 10 33 e4 0a 7c 21 28
+88 91 1b 6a e2 b7 61 02 23 34 75 70 c5 db fb 9c
+9f ef 11 b1 4c 2b a2 7e 88 37 78 9d 1b 12 c9 1d
+5c 44 40 a7 19 a0 93 d5 e3 56 0a 8c db b6 9c 9d
+57 89 50 38 24 90 46 f1 39 af 19 a2 60 d2 68 81
+78 67 62 f2 88 92 0f 12 8b c1 1b 34 c7 95 c9 fa
+75 09 bc 76 81 a3 47 00 45 12 49 eb de 32 62 84
+49 21 ea f1 d3 04 2b 4b 0b a1 46 23 c9 fb 00 f7
+fb e4 5f 78 bd 22 94 61 1e 23 fb bc 71 6a 6b af
+19 51 b5 8c 0f 5d e2 56 4f 56 4c 45 91 a9 c6 e8
+0c 43 35 6d 6d 61 77 57 8a e9 db 90 6a f4 d7 8d
+27 0f 28 8d 11 35 14 7a bd a7 91 6c f1 17 8c d9
+96 2e 33 de 30 48 dd 79 06 50 55 68 c1 3e f1 42
+15 29 22 24 47 a7 1f b0 fc f4 ef e4 20 9c 88 00
+00 01 34 6b ca 18 77 08 1e 6e b2 50 9d 8b b2 7b
+d5 0a 29 d1 4c 49 ee 2d ce 86 1a cb dd a3 85 34
+b9 71 d7 84 4c 0b 7d 82 f5 85 1b 5f 8c 92 44 bc
+b1 1a d4 6e 23 4b 60 48 ff d0 35 6f b7 e7 b2 e2
+f1 2d 47 00 45 13 28 c1 d7 5c 10 d5 93 de dc 42
+67 71 7c 07 d1 3d 53 de 1b 31 73 73 07 1d 51 16
+b8 f5 11 75 8a 4c 18 e1 e9 4a af 2c 7c 82 b0 94
+3e bb c5 08 d1 a2 11 b9 c3 a1 a9 6c 29 e4 92 d8
+09 e2 e2 d2 9c 08 e0 07 f4 47 a2 8c 6c c5 3b 21
+d7 c4 bc 8c 7f 34 0c b3 43 57 d6 af bc 42 3c ec
+cd b4 a1 37 8f d1 ad 2a 03 3f 6e b1 a9 1a f1 c1
+c5 c3 39 39 ff 93 92 1d 9a 23 de 2c bf f2 5b 00
+89 20 6a 72 2e 97 32 48 f4 51 44 8c 50 9b c9 1c
+2a 65 70 0f 69 59 4b dd 17 85 01 eb c6 b6 6f d0
+78 b7 8c 98 3f 0c 92 80 fc d4 6c 74 3c 04 4d be
+d4 a7 14 8d a2 d5 1f 19 df 65 c1 b0 c6 e5 47 00
+45 14 6f 52 b4 51 8c 58 b1 69 91 34 fb 71 45 57
+1f 10 cc 2d eb 9d 65 ab 81 ec 89 2a 71 cf 2f 05
+c4 76 bc 78 91 1a 78 2f 35 77 13 31 4b 14 74 10
+1e 37 5e 25 93 37 6f c0 56 d7 93 d8 79 f6 b0 bb
+fa f1 43 17 ed cf 8a 0c 2d 61 c0 76 c8 b7 f8 5d
+e3 86 44 a3 79 04 7f 16 80 a9 24 e7 92 9e 4e bc
+52 c0 e1 3b 1c 3d 52 42 92 4b be b9 61 5a 9c 6f
+69 fe 42 06 8b 08 78 f0 ba 1c 53 14 2a 42 05 84
+23 51 1b 5a 45 56 23 4a bc 6a 85 32 85 b2 ae f1
+1e 6a e3 26 fb 05 c4 1b 92 84 89 53 5e 27 40 4a
+44 2b c0 76 2f 27 87 8a 92 92 d4 2d 77 45 18 54
+c1 f3 75 85 d9 d6 eb 1d 9a 49
+

@@ -1,0 +1,86 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			assist.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='ARPCWrite.c.html' title=' ARPCWrite.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='Attributes1.c.html' title=' Attributes1.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   void assist (char const * name, char const * type, struct _code_ const list [], size_t size);
+ *
+ *   symbol.h
+ *
+ *   print program name followed by an error message containing the
+ *   type of name expected, the incorrect name and a list of correct
+ *   name;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef ASSIST_SOURCE
+#define ASSIST_SOURCE
+
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+
+#include &quot;../tools/symbol.h&quot;
+#include &quot;../tools/error.h&quot;
+
+void assist (char const * name, char const * type, struct _code_ const list [], size_t size)
+
+{
+	extern char const * program_name;
+	fprintf (stderr, &quot;%s: &quot;, program_name);
+	fprintf (stderr, &quot;%s: &quot;, strerror (ENOTSUP));
+	if (name)
+	{
+
+#if 0
+
+		fprintf (stderr, &quot;Have %s '%s' but expected %s &quot;, type, name, type);
+
+#else
+
+		fprintf (stderr, &quot;Have '%s' but want &quot;, name);
+
+#endif
+
+	}
+	else
+	{
+		fprintf (stderr, &quot;Want %s &quot;, type);
+	}
+	codelist (list, size, &quot;,&quot;, &quot;''&quot;, stderr);
+	fprintf (stderr, &quot;.\n&quot;);
+	exit (1);
+}
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='ARPCWrite.c.html' title=' ARPCWrite.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='Attributes1.c.html' title=' Attributes1.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

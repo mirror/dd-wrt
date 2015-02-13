@@ -1,0 +1,107 @@
+#!/usr/local/bin/efsu -ieth0
+# file: efsu/SMB.hex
+
+# ====================================================================
+#
+#   SMB operation
+#   efsu -i usb2 -hd 00:B0:52:DA:DA:80 SMB.hex -l 10
+#   efsu -i usb2 -hd 00:B0:52:DA:DA:80 SMB_ACK.hex -l 1
+#
+# --------------------------------------------------------------------
+
+00 1e 68 b8 79 95 00 1d 7e 01 1d 18 08 00 45 00
+05 dc ef d3 40 00 80 06 7d 56 c0 a8 03 64 c0 a8
+03 3d 01 bd 04 0f 4b 5e dd 44 bd 1c bf 1d 50 10
+ff c0 7e 71 00 00 5d 71 2c 78 74 a0 e0 61 ff f8
+f1 32 c5 85 51 45 b0 61 e7 b5 c9 fe 22 7e b9 7e
+f1 22 3c de 62 72 68 51 0a b4 5f cc df 27 07 78
+3d e0 ba e5 00 ee 2a 0b 8c 95 5c 62 4b 32 1e aa
+28 97 88 a0 c3 c7 c2 e6 28 84 1c 6f 80 85 d3 88
+18 01 99 18 b8 d0 39 40 35 a7 32 ad 3d 72 80 f3
+43 ed f8 1a 87 d7 10 9f 99 7d ef 18 20 00 00 01
+ba 44 07 7f 0d 2d 07 02 d3 7b f8 00 00 01 e0 07
+ec 80 00 00 c4 80 71 02 15 4e 21 60 63 8f 32 0a
+bc d9 40 62 a6 ba 71 85 e2 e1 f1 b4 e3 0d 13 eb
+88 5c ee bb ca e7 4c 75 39 42 78 0d 67 0e ae 75
+d7 10 60 58 ab 8d 87 52 90 31 0e 1b 31 73 c7 c6
+01 a8 54 c7 51 44 20 b2 9b 7a 1c 33 14 65 61 33
+53 88 59 46 d0 d0 1f dc 00 3c a0 1a d3 8c 51 15
+13 52 d7 5c 42 44 de 3a cc ae 31 03 48 96 bb 66
+c4 19 e0 17 d3 96 10 20 89 7c 1a 7f fe ec e1 f0
+fd 4e 20 60 08 47 83 e1 70 8a d5 cc c1 01 72 d4
+de 73 1e 1e 03 48 5c 2f 51 44 21 d9 ac 07 40 dd
+e3 1f c5 44 f8 78 f8 8f 5c 43 59 98 8b 5c 62 0b
+c3 e3 61 34 38 64 10 41 d0 9b 9d 55 c4 2d d2 74
+4e 8f a7 30 47 f1 16 1d 09 ae 54 27 df 3a 7b ae
+5a 49 71 94 e2 14 41 1a 0e 82 a3 69 c6 2c 83 98
+01 fc f3 9c 06 ee b8 84 0c 26 e0 19 c6 d8 0b eb
+8c c0 69 5a 9e f1 87 8b 78 4c a5 57 10 8e 67 7a
+00 f2 01 ad e2 0b 13 97 35 0a 22 90 41 70 1b a3
+61 f4 28 64 96 0f 47 80 d2 32 f0 0c ab 97 86 f6
+01 e4 d5 c5 5a 2b 46 55 38 88 67 1a 9c ab bd 0a
+24 c2 a2 b0 a0 fa 27 85 19 5c d5 e0 a8 8d 4e 60
+b3 d4 01 fc b0 1a d1 1f 7a 14 46 06 c9 f4 71 1e
+27 b8 e8 07 f0 a1 1e b9 98 f7 f3 3b 01 06 e3 e1
+ae 02 af 7c 58 0d 25 42 a8 51 38 22 c6 9e 78 8a
+38 59 f0 1f 14 03 e8 55 2a 5e 14 35 82 aa c4 58
+d1 77 45 10 95 96 9a 55 c2 8d 39 88 33 d7 12 58
+4f 11 f4 73 70 a3 71 06 e9 c6 cf a0 ec c0 46 06
+bf ff 80 8f 32 3c 0d 4a ae 21 07 27 c6 49 27 40
+72 9c 40 ca 0e c6 c7 43 e0 f9 c5 de 37 4d 8a 01
+97 ff e0 e0 19 c0 2e 94 03 e8 2d a8 a2 d8 2c da
+b2 23 81 da 28 84 6d a6 f2 19 fe 11 aa 90 74 38
+64 89 15 32 6a 52 5c e3 de 99 5c 66 48 4d 89 a1
+44 a2 87 8e b8 b2 92 31 20 78 b0 c4 e4 e5 57 14
+49 8e 17 52 08 dc 83 21 78 73 f2 0e 94 02 36 1a
+80 b8 ca e0 89 e8 22 73 0e 87 b6 37 b3 1d 29 f3
+8e eb 73 40 67 7f 88 65 9d 00 0d 30 41 2d 00 23
+55 0a 21 09 93 8d c7 9b d9 63 d7 23 32 00 46 45
+f3 87 ad 7a 78 02 1e 7a 46 08 9a f1 79 d3 a2 10
+ca 1f ff fc e0 fb 23 cf 25 1d 62 38 e9 4a ae 1a
+52 0c 38 03 69 62 3c 01 06 f8 c1 30 00 d7 67 fc
+9f 2d b8 e7 11 5c d0 cc 03 52 75 9c 21 09 ed 60
+11 0c 65 4c 7c 2f d7 12 a3 ed f9 99 88 aa 9c 06
+70 f3 d4 64 70 e2 48 74 40 ae 07 a2 d0 3c e0 1f
+43 84 d3 9e 63 8a b1 d1 39 be 7e 46 a3 7e 3d c5
+cc 48 7d b4 32 36 66 58 55 6a 70 86 d5 91 30 35
+59 1e de 3e 60 30 82 55 c8 f1 16 10 65 0a 19 bd
+10 69 45 e7 65 3f ca 76 c5 c1 c0 b8 bf 3d 72 1b
+77 70 07 d0 00 00 01 39 32 71 03 c0 86 3c 01 e8
+f8 5c 75 71 45 23 0e 58 31 80 0c 0c 5f ff 07 cd
+c5 4b e2 2b 86 d2 82 0d cc c0 1f 1f 24 90 d3 00
+cc dd 78 85 15 5c 85 93 80 e5 e0 20 07 40 e4 4e
+1e 6e 11 62 3a 87 5b 87 ac 81 42 88 4d 88 cc 69
+f0 e9 6b 02 12 85 9f 1d 5c 6a 62 e6 0f 32 0a 13
+7b fc 71 90 ff 0b a2 8b 66 83 ea 9e 02 c9 ff 0e
+d7 84 8f ed f1 d1 02 ef 15 b7 da a8 70 c3 02 ce
+cf 3e 3e cf ae 10 70 6f 0b 87 d3 88 18 35 ec 5d
+29 03 17 31 ce 69 eb 94 a4 75 38 8d 34 bd 72 94
+f4 6f a1 56 0c f4 63 0a db 37 13 4a 50 84 e6 41
+e2 0d 71 02 08 f0 7d 71 78 e8 7c 1e f5 42 88 0f
+cf bc 9d b5 0a 25 a6 0b 05 47 91 e2 05 14 5a 76
+10 8b 10 22 33 44 5b cf 73 c4 08 8c d4 28 92 ab
+17 71 24 89 dc d3 08 82 a2 25 0a 21 b7 75 60 f1
+04 6a cb 60 66 ff f8 04 4e 38 78 e8 f1 40 4c 00
+7d 45 12 f5 92 2a 78 06 f7 00 7f 78 c5 82 e5 82
+e0 1b 44 e7 95 11 6f 37 de 32 bb 03 a0 2e ba 1c
+3b 18 10 05 90 a3 98 51 cf 39 c7 c0 3e 93 42 8a
+20 b6 a7 98 e4 f1 13 6c 61 a2 e5 f1 0f 78 c1 80
+e4 7f fd ee d1 1c e2 34 97 5e 30 6b eb c4 12 a5
+43 13 13 be 57 a1 43 a2 f1 6c d7 3a da 5d 38 c9
+43 8c bd 5c 62 02 0f 50 f8 54 6c 2a 9c 62 8c 97
+dc e9 4a 36 b8 84 60 05 f0 78 55 de 20 61 94 1f
+29 c7 c6 05 57 11 60 12 d3 4d 3f 86 2a b9 88 e3
+ae 7c e0 6a 1d 4e 20 60 49 62 a2 74 c7 44 7b c6
+08 32 81 91 36 d8 7c d5 c4 58 a0 e2 34 2c 8b ec
+d9 c3 c2 8f 9a f1 13 0c 20 19 9d e3 56 02 eb 01
+95 d7 18 41 8a 1f 3c d8 27 f6 a8 d8 4d e3 14 11
+6c 8c 59 d0 9a 72 c0 28 0c e0 19 c2 80 e4 c2 ef
+36 11 33 0e 20 41 f7 88 b4 03 bc 6d 76 ba e3 15
+d4 64 58 31 94 d4 ad 44 39 8b 69 5b cf 18 d7 30
+5e 71 30 98 06 74 e3 34 02 d6 b8 7c 3a ab 88 20
+5d e6 eb 80 83 53 9c 00 5f 75 cb 0c 36 23 ca f1
+b0 8a a7 3b 17 5c c0 ca 6c 1f 27 73 92 b2 3e 3d
+a5 6e 6c 03 28 db cf 50 a9 60 3e 3e 31 c0 3e b2
+3c f4 e6 10 98 ea 98 7d 38 82 10 d3 9a 16 c0 46
+33 ce 6a ab 94 0d b4 7f cb e3
+

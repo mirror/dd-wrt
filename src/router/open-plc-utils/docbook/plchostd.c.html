@@ -1,0 +1,746 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			plchostd.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='plchost.c.html' title=' plchost.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='plcID.c.html' title=' plcID.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*&quot;
+ *
+ *   plchostd.c -
+ *
+ *
+ *   Contributor(s):
+ *      Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *      Nathaniel Houghton &lt;nhoughto@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*&quot;
+ *   system header files;
+ *--------------------------------------------------------------------*/
+
+#include &lt;unistd.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;limits.h&gt;
+#include &lt;string.h&gt;
+#include &lt;ctype.h&gt;
+#include &lt;memory.h&gt;
+#include &lt;signal.h&gt;
+#include &lt;errno.h&gt;
+#include &lt;sys/socket.h&gt;
+#include &lt;sys/un.h&gt;
+
+/*====================================================================*
+ *   custom header files;
+ *--------------------------------------------------------------------*/
+
+#include &quot;../ether/channel.h&quot;
+#include &quot;../tools/getoptv.h&quot;
+#include &quot;../tools/putoptv.h&quot;
+#include &quot;../tools/memory.h&quot;
+#include &quot;../tools/number.h&quot;
+#include &quot;../tools/types.h&quot;
+#include &quot;../tools/flags.h&quot;
+#include &quot;../tools/files.h&quot;
+#include &quot;../tools/error.h&quot;
+#include &quot;../ram/nvram.h&quot;
+#include &quot;../ram/sdram.h&quot;
+#include &quot;../nvm/nvm.h&quot;
+#include &quot;../pib/pib.h&quot;
+#include &quot;../plc/plc.h&quot;
+
+/*====================================================================*
+ *   custom source files;
+ *--------------------------------------------------------------------*/
+
+#ifndef MAKEFILE
+#include &quot;../plc/BootDevice1.c&quot;
+#include &quot;../plc/BootDevice2.c&quot;
+#include &quot;../plc/BootFirmware1.c&quot;
+#include &quot;../plc/BootFirmware2.c&quot;
+#include &quot;../plc/BootParameters1.c&quot;
+#include &quot;../plc/BootParameters2.c&quot;
+#include &quot;../plc/chipset.c&quot;
+#include &quot;../plc/Confirm.c&quot;
+#include &quot;../plc/Devices.c&quot;
+#include &quot;../plc/ExecuteApplets.c&quot;
+#include &quot;../plc/ExecuteApplets1.c&quot;
+#include &quot;../plc/ExecuteApplets2.c&quot;
+#include &quot;../plc/Failure.c&quot;
+#include &quot;../plc/FlashDevice.c&quot;
+#include &quot;../plc/FlashDevice1.c&quot;
+#include &quot;../plc/FlashDevice2.c&quot;
+#include &quot;../plc/FlashSoftloader.c&quot;
+#include &quot;../plc/FlashFirmware.c&quot;
+#include &quot;../plc/FlashParameters.c&quot;
+#include &quot;../plc/FlashNVM.c&quot;
+#include &quot;../plc/HostActionResponse.c&quot;
+#include &quot;../plc/InitDevice.c&quot;
+#include &quot;../plc/InitDevice1.c&quot;
+#include &quot;../plc/InitDevice2.c&quot;
+#include &quot;../plc/ModuleSpec.c&quot;
+#include &quot;../plc/ModuleSession.c&quot;
+#include &quot;../plc/ModuleWrite.c&quot;
+#include &quot;../plc/ModuleCommit.c&quot;
+#include &quot;../plc/NVMSelect.c&quot;
+#include &quot;../plc/Request.c&quot;
+#include &quot;../plc/ResetDevice.c&quot;
+#include &quot;../plc/ReadMME.c&quot;
+#include &quot;../plc/SendMME.c&quot;
+#include &quot;../plc/ReadFirmware1.c&quot;
+#include &quot;../plc/ReadParameters.c&quot;
+#include &quot;../plc/ReadParameters1.c&quot;
+#include &quot;../plc/ReadParameters2.c&quot;
+#include &quot;../plc/LocalDevices.c&quot;
+#include &quot;../plc/WaitForReset.c&quot;
+#include &quot;../plc/WaitForStart.c&quot;
+#include &quot;../plc/WriteMEM.c&quot;
+#include &quot;../plc/WriteNVM.c&quot;
+#include &quot;../plc/WritePIB.c&quot;
+#include &quot;../plc/WriteExecuteApplet2.c&quot;
+#include &quot;../plc/WriteExecuteFirmware.c&quot;
+#include &quot;../plc/WriteExecuteFirmware1.c&quot;
+#include &quot;../plc/WriteExecuteFirmware2.c&quot;
+#include &quot;../plc/WriteExecuteParameters.c&quot;
+#include &quot;../plc/WriteExecuteParameters1.c&quot;
+#include &quot;../plc/WriteExecuteParameters2.c&quot;
+#include &quot;../plc/WriteExecutePIB.c&quot;
+#include &quot;../plc/Platform.c&quot;
+#include &quot;../plc/PLCTopology.c&quot;
+#include &quot;../plc/PLCTopologyPrint.c&quot;
+#include &quot;../plc/WriteFirmware1.c&quot;
+#include &quot;../plc/WriteFirmware2.c&quot;
+#include &quot;../plc/StartFirmware1.c&quot;
+#include &quot;../plc/StartFirmware2.c&quot;
+#include &quot;../plc/PLCSelect.c&quot;
+#include &quot;../plc/ModuleRead.c&quot;
+#endif
+
+#ifndef MAKEFILE
+#include &quot;../tools/getoptv.c&quot;
+#include &quot;../tools/putoptv.c&quot;
+#include &quot;../tools/version.c&quot;
+#include &quot;../tools/uintspec.c&quot;
+#include &quot;../tools/checkfilename.c&quot;
+#include &quot;../tools/hexdecode.c&quot;
+#include &quot;../tools/hexstring.c&quot;
+#include &quot;../tools/todigit.c&quot;
+#include &quot;../tools/hexdump.c&quot;
+#include &quot;../tools/checksum32.c&quot;
+#include &quot;../tools/fdchecksum32.c&quot;
+#include &quot;../tools/error.c&quot;
+#include &quot;../tools/strfbits.c&quot;
+#include &quot;../tools/typename.c&quot;
+#endif
+
+#ifndef MAKEFILE
+#include &quot;../ether/openchannel.c&quot;
+#include &quot;../ether/closechannel.c&quot;
+#include &quot;../ether/readpacket.c&quot;
+#include &quot;../ether/sendpacket.c&quot;
+#include &quot;../ether/channel.c&quot;
+#endif
+
+#ifndef MAKEFILE
+#include &quot;../mme/EthernetHeader.c&quot;
+#include &quot;../mme/QualcommHeader.c&quot;
+#include &quot;../mme/UnwantedMessage.c&quot;
+#include &quot;../mme/MMECode.c&quot;
+#ifdef AR7x00
+#include &quot;../mme/QualcommHeader1.c&quot;
+#endif
+#endif
+
+#ifndef MAKEFILE
+#include &quot;../key/keys.c&quot;
+#endif
+
+#ifndef MAKEFILE
+#include &quot;../nvm/nvmfile.c&quot;
+#include &quot;../nvm/nvmfile1.c&quot;
+#include &quot;../nvm/nvmfile2.c&quot;
+#endif
+
+#ifndef MAKEFILE
+#include &quot;../pib/pibfile.c&quot;
+#include &quot;../pib/pibfile1.c&quot;
+#include &quot;../pib/pibfile2.c&quot;
+#include &quot;../pib/pibpeek1.c&quot;
+#endif
+
+/*====================================================================*
+ *   program constants;
+ *--------------------------------------------------------------------*/
+
+#define MESSAGE &quot;Starting PLC Host Server\n&quot;
+#define SOCKETNAME &quot;/tmp/socket&quot;
+
+/*====================================================================*
+ *   program variables;
+ *--------------------------------------------------------------------*/
+
+static bool done = false;
+
+/*====================================================================*
+ *
+ *   void terminate (signo_t signal);
+ *
+ *
+ *
+ *   Contributor(s):
+ *      Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+static void terminate (signo_t signal)
+
+{
+	done = true;
+	return;
+}
+
+/*====================================================================*
+ *
+ *   signed opensocket (char const * socketname);
+ *
+ *
+ *
+ *   Contributor(s):
+ *      Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+static signed opensocket (char const * socketname)
+
+{
+	signed fd;
+	struct sockaddr_un sockaddr_un =
+	{
+
+#if defined (__OpenBSD__) || defined (__APPLE__)
+
+		0,
+
+#endif
+
+		AF_UNIX,
+		&quot;/tmp/socket&quot;
+	};
+	strncpy (sockaddr_un.sun_path, socketname, sizeof (sockaddr_un.sun_path));
+
+#if defined (__OpenBSD__) || defined (__APPLE__)
+
+	sockaddr_un.sun_len = SUN_LEN (&amp;sockaddr_un);
+
+#endif
+
+	if (unlink (sockaddr_un.sun_path))
+	{
+		if (errno != ENOENT)
+		{
+			error (1, errno, &quot;%s&quot;, sockaddr_un.sun_path);
+		}
+	}
+	if ((fd = socket (AF_UNIX, SOCK_DGRAM, 0)) == -1)
+	{
+		error (1, errno, &quot;%s&quot;, sockaddr_un.sun_path);
+	}
+	if (bind (fd, (struct sockaddr *)(&amp;sockaddr_un), sizeof (sockaddr_un)) == -1)
+	{
+		error (1, errno, &quot;%s&quot;, sockaddr_un.sun_path);
+	}
+	if (chmod (sockaddr_un.sun_path, 0666) == -1)
+	{
+		error (1, errno, &quot;%s&quot;, sockaddr_un.sun_path);
+	}
+	return (fd);
+}
+
+/*====================================================================*
+ *
+ *   signed function (struct plc * plc, char const * socket);
+ *
+ *   wait indefinitely for VS_HOST_ACTION messages; service the device
+ *   only; it will stop dead - like a bug! - on error;
+ *
+ *
+ *   Contributor(s):
+ *      Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+signed function (struct plc * plc, char const * socket)
+
+{
+	struct channel * channel = (struct channel *)(plc-&gt;channel);
+	struct message * message = (struct message *)(plc-&gt;message);
+
+#ifndef __GNUC__
+#pragma pack (push,1)
+#endif
+
+	struct __packed vs_host_action_ind
+	{
+		struct ethernet_hdr ethernet;
+		struct qualcomm_hdr qualcomm;
+		uint8_t MACTION;
+		uint8_t MAJOR_VERSION;
+		uint8_t MINOR_VERSION;
+	}
+	* indicate = (struct vs_host_action_ind *) (message);
+
+#ifndef __GNUC__
+#pragma pack (pop)
+#endif
+
+	byte buffer [3000];
+	struct plctopology * plctopology = (struct plctopology *)(buffer);
+	signed fd = opensocket (socket);
+	char const * FactoryNVM = plc-&gt;NVM.name;
+	char const * FactoryPIB = plc-&gt;PIB.name;
+	signed action;
+	signed status;
+	memset (buffer, 0, sizeof (buffer));
+	write (fd, MESSAGE, strlen (MESSAGE));
+	while (!done)
+	{
+		status = ReadMME (plc, 0, (VS_HOST_ACTION | MMTYPE_IND));
+		if (status &lt; 0)
+		{
+			break;
+		}
+		if (status &lt; 1)
+		{
+			PLCTopology (channel, message, plctopology);
+			PLCTopologyPrint (plctopology);
+			continue;
+		}
+		action = indicate-&gt;MACTION;
+		memcpy (channel-&gt;peer, indicate-&gt;ethernet.OSA, sizeof (channel-&gt;peer));
+		if (HostActionResponse (plc))
+		{
+			return (-1);
+		}
+		if (action == 0x00)
+		{
+			if (BootDevice2 (plc))
+			{
+				return (-1);
+			}
+			if (_anyset (plc-&gt;flags, PLC_FLASH_DEVICE))
+			{
+				FlashDevice2 (plc);
+			}
+			continue;
+		}
+		if (action == 0x01)
+		{
+			close (plc-&gt;NVM.file);
+			if (ReadFirmware1 (plc))
+			{
+				return (-1);
+			}
+			if ((plc-&gt;NVM.file = open (plc-&gt;NVM.name = plc-&gt;nvm.name, O_BINARY|O_RDONLY)) == -1)
+			{
+				error (1, errno, &quot;%s&quot;, plc-&gt;NVM.name);
+			}
+			if (ResetDevice (plc))
+			{
+				return (-1);
+			}
+			continue;
+		}
+		if (action == 0x02)
+		{
+			close (plc-&gt;PIB.file);
+			if (ReadParameters (plc))
+			{
+				return (-1);
+			}
+			if ((plc-&gt;PIB.file = open (plc-&gt;PIB.name = plc-&gt;pib.name, O_BINARY|O_RDONLY)) == -1)
+			{
+				error (1, errno, &quot;%s&quot;, plc-&gt;PIB.name);
+			}
+			if (ResetDevice (plc))
+			{
+				return (-1);
+			}
+			continue;
+		}
+		if (action == 0x03)
+		{
+			close (plc-&gt;PIB.file);
+			if (ReadParameters (plc))
+			{
+				return (-1);
+			}
+			if ((plc-&gt;PIB.file = open (plc-&gt;PIB.name = plc-&gt;pib.name, O_BINARY|O_RDONLY)) == -1)
+			{
+				error (1, errno, &quot;%s&quot;, plc-&gt;PIB.name);
+			}
+			close (plc-&gt;NVM.file);
+			if (ReadFirmware1 (plc))
+			{
+				return (-1);
+			}
+			if ((plc-&gt;NVM.file = open (plc-&gt;NVM.name = plc-&gt;nvm.name, O_BINARY|O_RDONLY)) == -1)
+			{
+				error (1, errno, &quot;%s&quot;, plc-&gt;NVM.name);
+			}
+			if (ResetDevice (plc))
+			{
+				return (-1);
+			}
+			continue;
+		}
+		if (action == 0x04)
+		{
+			if (InitDevice (plc))
+			{
+				return (-1);
+			}
+			continue;
+		}
+		if (action == 0x05)
+		{
+			close (plc-&gt;NVM.file);
+			if ((plc-&gt;NVM.file = open (plc-&gt;NVM.name = FactoryNVM, O_BINARY|O_RDONLY)) == -1)
+			{
+				error (1, errno, &quot;%s&quot;, plc-&gt;NVM.name);
+			}
+			close (plc-&gt;PIB.file);
+			if ((plc-&gt;PIB.file = open (plc-&gt;PIB.name = FactoryPIB, O_BINARY|O_RDONLY)) == -1)
+			{
+				error (1, errno, &quot;%s&quot;, plc-&gt;PIB.name);
+			}
+			if (ResetDevice (plc))
+			{
+				return (-1);
+			}
+			continue;
+		}
+		if (action == 0x06)
+		{
+			close (plc-&gt;PIB.file);
+			if (ReadParameters (plc))
+			{
+				return (-1);
+			}
+			if ((plc-&gt;PIB.file = open (plc-&gt;PIB.name = plc-&gt;pib.name, O_BINARY|O_RDONLY)) == -1)
+			{
+				error (1, errno, &quot;%s&quot;, plc-&gt;PIB.name);
+			}
+			continue;
+		}
+		error (0, ENOSYS, &quot;Host Action 0x%02X&quot;, action);
+	}
+	close (fd);
+	return (0);
+}
+
+/*====================================================================*
+ *
+ *   int main (int argc, char const * argv[]);
+ *
+ *   parse command line, populate plc structure and perform selected
+ *   operations; show help summary when asked; see getoptv and putoptv
+ *   to understand command line parsing and help summary display; see
+ *   plc.h for the definition of struct plc;
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+int main (int argc, char const * argv [])
+
+{
+	extern struct channel channel;
+	extern void terminate (signo_t);
+	static char const * optv [] =
+	{
+		&quot;dFi:n:N:p:P:qs:t:vw:x&quot;,
+		&quot;-N file -P file [-S file] [-n file] [-p file]&quot;,
+		&quot;Qualcomm Atheros PLC Host Daemon&quot;,
+		&quot;d\texecute in background as daemon&quot;,
+
+#if defined (WINPCAP) || defined (LIBPCAP)
+
+		&quot;i n\thost interface is (n) [&quot; LITERAL (CHANNEL_ETHNUMBER) &quot;]&quot;,
+
+#else
+
+		&quot;i s\thost interface is (s) [&quot; LITERAL (CHANNEL_ETHDEVICE) &quot;]&quot;,
+
+#endif
+
+		&quot;n f\tread firmware from device into file (f)&quot;,
+		&quot;N f\tfirmware file is (f)&quot;,
+		&quot;p f\tread parameters from device into file (f)&quot;,
+		&quot;P f\tparameter file is (f)&quot;,
+		&quot;q\tquiet mode&quot;,
+		&quot;s f\tbroadcast event status on socket (f) [&quot; SOCKETNAME &quot;]&quot;,
+		&quot;S f\tsoftloader file is (f)&quot;,
+		&quot;t n\tread timeout is (n) milliseconds [&quot; LITERAL (CHANNEL_TIMEOUT) &quot;]&quot;,
+		&quot;v\tverbose mode&quot;,
+		&quot;w n\twakeup every (n) seconds [&quot; LITERAL (PLC_LONGTIME) &quot;]&quot;,
+		&quot;x\texit on error&quot;,
+		(char const *) (0)
+	};
+
+#include &quot;../plc/plc.c&quot;
+
+	struct sigaction sa;
+	char const * socketname = SOCKETNAME;
+	signed c;
+	if (getenv (PLCDEVICE))
+	{
+
+#if defined (WINPCAP) || defined (LIBPCAP)
+
+		channel.ifindex = atoi (getenv (PLCDEVICE));
+
+#else
+
+		channel.ifname = strdup (getenv (PLCDEVICE));
+
+#endif
+
+	}
+	optind = 1;
+	plc.timer = PLC_LONGTIME;
+	while ((c = getoptv (argc, argv, optv)) != -1)
+	{
+		switch (c)
+		{
+		case 'd':
+			_setbits (plc.flags, PLC_DAEMON);
+			break;
+		case 'i':
+
+#if defined (WINPCAP) || defined (LIBPCAP)
+
+			channel.ifindex = atoi (optarg);
+
+#else
+
+			channel.ifname = optarg;
+
+#endif
+
+			break;
+		case 'N':
+			if (!checkfilename (optarg))
+			{
+				error (1, EINVAL, &quot;%s&quot;, optarg);
+			}
+			if ((plc.NVM.file = open (plc.NVM.name = optarg, O_BINARY|O_RDONLY)) == -1)
+			{
+				error (1, errno, &quot;%s&quot;, plc.NVM.name);
+			}
+			if (nvmfile (&amp;plc.NVM))
+			{
+				error (1, errno, &quot;Bad NVM file: %s&quot;, plc.NVM.name);
+			}
+			_setbits (plc.flags, PLC_WRITE_MAC);
+			break;
+		case 'n':
+			if (!checkfilename (optarg))
+			{
+				error (1, EINVAL, &quot;%s&quot;, optarg);
+			}
+			if ((plc.nvm.file = open (plc.nvm.name = optarg, O_BINARY|O_CREAT|O_RDWR|O_TRUNC, FILE_FILEMODE)) == -1)
+			{
+				error (1, errno, &quot;%s&quot;, plc.nvm.name);
+			}
+			break;
+		case 'P':
+			if (!checkfilename (optarg))
+			{
+				error (1, EINVAL, &quot;%s&quot;, optarg);
+			}
+			if ((plc.PIB.file = open (plc.PIB.name = optarg, O_BINARY|O_RDONLY)) == -1)
+			{
+				error (1, errno, &quot;%s&quot;, plc.PIB.name);
+			}
+			if (pibfile (&amp;plc.PIB))
+			{
+				error (1, errno, &quot;Bad PIB file: %s&quot;, plc.PIB.name);
+			}
+			_setbits (plc.flags, PLC_WRITE_PIB);
+			break;
+		case 'p':
+			if (!checkfilename (optarg))
+			{
+				error (1, EINVAL, &quot;%s&quot;, optarg);
+			}
+			if ((plc.pib.file = open (plc.pib.name = optarg, O_BINARY|O_CREAT|O_RDWR|O_TRUNC, FILE_FILEMODE)) == -1)
+			{
+				error (1, errno, &quot;%s&quot;, plc.pib.name);
+			}
+			break;
+		case 'q':
+			_setbits (channel.flags, CHANNEL_SILENCE);
+			_setbits (plc.flags, PLC_SILENCE);
+			break;
+		case 's':
+			break;
+		case 'S':
+			if (!checkfilename (optarg))
+			{
+				error (1, EINVAL, &quot;%s&quot;, optarg);
+			}
+			if ((plc.CFG.file = open (plc.CFG.name = optarg, O_BINARY|O_RDONLY)) == -1)
+			{
+				error (1, errno, &quot;%s&quot;, plc.CFG.name);
+			}
+			if (nvmfile (&amp;plc.CFG))
+			{
+				error (1, errno, &quot;Bad NVM file: %s&quot;, plc.CFG.name);
+			}
+			_setbits (plc.flags, PLC_FLASH_DEVICE);
+			break;
+		case 't':
+			channel.timeout = (signed)(uintspec (optarg, 0, UINT_MAX));
+			break;
+		case 'v':
+			_setbits (channel.flags, CHANNEL_VERBOSE);
+			_setbits (plc.flags, PLC_VERBOSE);
+			break;
+		case 'w':
+			plc.timer = (unsigned)(uintspec (optarg, 1, 3600));
+			break;
+		case 'x':
+			_setbits (plc.flags, PLC_BAILOUT);
+			break;
+		default:
+			break;
+		}
+	}
+	argc -= optind;
+	argv += optind;
+	if (argc)
+	{
+		error (1, ENOTSUP, ERROR_TOOMANY);
+	}
+	if (plc.NVM.file == -1)
+	{
+		error (1, ECANCELED, &quot;No host NVM file named&quot;);
+	}
+	if (plc.PIB.file == -1)
+	{
+		error (1, ECANCELED, &quot;No host PIB file named&quot;);
+	}
+	if (plc.nvm.file == -1)
+	{
+		error (1, ECANCELED, &quot;No user NVM file named&quot;);
+	}
+	if (plc.pib.file == -1)
+	{
+		error (1, ECANCELED, &quot;No user PIB file named&quot;);
+	}
+	if (plc.CFG.file == -1)
+	{
+		if (_anyset (plc.flags, PLC_FLASH_DEVICE))
+		{
+			error (1, ECANCELED, &quot;No Softloader file named&quot;);
+		}
+	}
+
+#ifndef WIN32
+
+	if (_anyset (plc.flags, PLC_DAEMON))
+	{
+		pid_t pid = fork ();
+		if (pid &lt; 0)
+		{
+			error (1, errno, &quot;Can't start daemon&quot;);
+		}
+		if (pid &gt; 0)
+		{
+			exit (0);
+		}
+	}
+	memset (&amp;sa, 0, sizeof (struct sigaction));
+	sa.sa_handler = terminate;
+	sigaction (SIGTERM, &amp;sa, (struct sigaction *)(0));
+	sigaction (SIGQUIT, &amp;sa, (struct sigaction *)(0));
+	sigaction (SIGTSTP, &amp;sa, (struct sigaction *)(0));
+	sigaction (SIGINT, &amp;sa, (struct sigaction *)(0));
+	sigaction (SIGHUP, &amp;sa, (struct sigaction *)(0));
+
+#endif
+
+	openchannel (&amp;channel);
+	if (!(plc.message = malloc (sizeof (* plc.message))))
+	{
+		error (1, errno, PLC_NOMEMORY);
+	}
+	function (&amp;plc, socketname);
+	free (plc.message);
+	closechannel (&amp;channel);
+	exit (0);
+}
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='plchost.c.html' title=' plchost.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='plcID.c.html' title=' plcID.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

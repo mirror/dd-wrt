@@ -1,0 +1,233 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			plcset.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='plcrule.1.html' title=' plcrule.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='plcstat.1.html' title=' plcstat.1 '>NEXT</a>]
+			</div>
+<pre>
+plcset(1)                                    Qualcomm Atheros Open Powerline Toolkit                                   plcset(1)
+
+NAME
+       plcset - Qualcomm Atheros PLC Set Property
+
+SYNOPSIS
+       plcset [options] [type data] [type data] [device] [device] [...]
+
+DESCRIPTION
+       Set  a specific property value on an Qualcomm Atheros powerline device using the VS_SET_PROPERTY message.  Properties are
+       specified using their numeric property identifier.  Property names are not supported.  Property values are entered  using
+       type and data pairs.  Users familiar with program setpib should already understand this method of entering data values.
+
+       Only  selected properties can be set using this message type.  See the Qualcomm Atheros Firmware Technical Reference Man‐
+       ual for supported property identifiers, versions, values and data formats.
+
+       This program is part of the Qualcomm Atheros Powerline Toolkit.
+
+OPTIONS
+       -e     Redirects stderr messages to stdout.  By convention status and error messages are printed on stderr while  primary
+              program output is printed on stdout.  This option prints all output on stdout in cases where this is desired.
+
+       -n number
+              The  property  identifier  or  peoperty  version.  Property identifiers and versions are entered as 32-bit decimal
+              integers.  Property names are not supported.  The default is 0.  This option may appear more than once on the com‐
+              mand  line.   The first occurance specifies the property identifier.  The second occurances specifies the property
+              version.  See the Firmware Technical Reference Manual for an list of valid property identifiers and versions.
+
+       -i interface
+              Select the host Ethernet interface.  All requests are sent via this interface and only reponses received via  this
+              interface  are  recognized.  The default interface is eth1 because most people use eth0 as their principle network
+              connection; however, if environment string &quot;PLC&quot; is defined then it takes precedence over the  default  interface.
+              This option then takes precedence over either default.
+
+       -o option
+              The  update  option  (or  method) expressed as an 8-bit hexadecimal integer.  The prefix &quot;0x&quot; is optional.  Option
+              values are constructed from the logical OR of 0x01=ApplyNow, 0x02=Persist and 0x04=Reset.  The only  legal  option
+              values are 0x01, 0x02, 0x03 and 0x06.
+
+       -q     Suppresses status messages on stderr.
+
+       -v     Prints additional information on stdout.  In particular, this option dumps outgoing Ethernet packets on stdout.
+
+       -?,--help
+              Displays  program  help information on stderr.  This option takes precedence over all other options on the command
+              line except version information.
+
+       -!,--version
+              Displays program version information on stderr.  This option takes precedence over all other options on  the  com‐
+              mand line except help information.  Use this option when sending screen dumps to Atheros technical staff.
+
+ARGUMENTS
+       device The  MAC  address  of some powerline device.  More than one address may be specified.  If more than one address is
+              specified then operations are performed on each device in turn.  The default address is local.   See  DEVICES  for
+              information about symbolic device addresses.
+
+FORMATS
+       Each  property  is  assigned one or more values.  Each value may have a different type and size.  The expected type, size
+       and order of property values is described in the Firmware Technical Reference Manual under  the  VS_SET_PROPERTY  message
+       description.  Expected data types and values must be entered on the command line in the order specified in the manual and
+       must appear on the command line before any device addresses appear.
+
+       byte integer
+              An unsigned integer stored as 8 bits or 1 byte.  The value is expressed in decimal by default.  A binary value may
+              be  expressed with a 0b prefix.  A hexadecimal value may be expressed using a 0x prefix.  The offset increments by
+              1 prior to the next insertion.
+
+       word integer
+              An unsigned integer stored as 16 bits or 2 bytes.  The value is expressed in decimal by default.  A  binary  value
+              may  be  expressed  with a 0b prefix.  A hexadecimal value may be expressed using a 0x prefix.  The result will be
+              sent in little endian byte order.  The offset increments by 2 prior to the next insertion.
+
+       long integer
+              An unsigned integer stored as 32 bits or 4 bytes.  The value is expressed in decimal by default.  A  binary  value
+              may  be  expressed  with a 0b prefix.  A hexadecimal value may be expressed using a 0x prefix.  The result will be
+              sent in little endian byte order.  The offset increments by 4 prior to the next insertions.
+
+       huge integer
+              An unsigned integer stored as 64 bits or 8 bytes.  The value is expressed in decimal by default.  A  binary  value
+              may be expressed with a 0b prefix.  A hexadecimal value may be expressed using a 0x prefix.  The offset increments
+              by 8 prior to the next insertion.  The result will be sent in little endian byte order.  This type is only  avail‐
+              able on hosts that support 64 bit data values.
+
+       data hex
+              A  sequence  of  hexadecimal octets.  Octets may be separated by a colon for clarity.  The number of octets deter‐
+              mines the number of bytes written.  The result is sent in the byte order specified on the command line.  The  off‐
+              set  increments  by  the  number  of bytes written.  This is similar to &quot;key&quot; and &quot;mac&quot; below but accepts variable
+              length input.
+
+       key hex
+              A sequence of hexadecimal octets.  Octets may be separated by a colon for clarity.  The number of octets must con‐
+              vert to 16 bytes or an error will occur.  The result is sent in the byte order specified on the command line.  The
+              offset increments by 16 prior to the next insertion.  This is similar &quot;data&quot; above but accepts  ony  fixed  length
+              input.  This option may be used to set the DAK, NMK or NVAK values.
+
+       mac hex
+              A sequence of hexadecimal octets.  Octets may be separated by a colon for clarity.  The number of octets must con‐
+              vert to 6 bytes or an error will occur.  The result is sent in the byte order specified on the command line.   The
+              offset  increments  by  6 prior to the next insertion.  This is similar &quot;data&quot; above but accepts only fixed length
+              input.  This option may be used to set the DAK, NMK or NVAK values.
+
+       hfid string
+              An ASCII character string.  The string is always stored as 64 bytes.  Short strings are padded on the  right  with
+              NUL  characters.   Long  strings are truncated on the right and the last byte is forced to NUL.  The offset incre‐
+              ments by 64 prior to the next insertion.  This option may be used to enter user, network and  manufacturer identi‐
+              fication strings.
+
+       zero count
+              An  unsigned integer representing the number of consecutive bytes to fill with 0x00.  The offset increments by the
+              number of bytes written.  This option may be used to erase regions of the PIB.
+
+       fill count
+              An unsigned integer representing the number of consecutive bytes to fill with 0xFF.  The offset increments by  the
+              number of bytes written.  This option may be used to erase regions of the PIB.
+
+       skip count
+              An  unsigned  integer indicating the number of bytes to skip over before staring another change.  Intervening data
+              data locations are unchanged.
+
+TR69 DATA TYPES
+       These data types are not currently recognized by the runtime firmware and so errors will certainly  result  if  they  are
+       used.
+
+       accesspassword string
+              An  ASCII character string.  The string is always stored as 257 bytes.  Short strings are padded on the right with
+              NUL characters.  Long strings are truncated on the right and the last byte is forced to NUL.   The  offset  incre‐
+              ments by 257 prior to the next insertion.
+
+       accessusername string
+              An  ASCII  character string.  The string is always stored as 33 bytes.  Short strings are padded on the right with
+              NUL characters.  Long strings are truncated on the right and the last byte is forced to NUL.   The  offset  incre‐
+              ments by 33 prior to the next insertion.
+
+       adminpassword string
+              An  ASCII  character string.  The string is always stored as 33 bytes.  Short strings are padded on the right with
+              NUL characters.  Long strings are truncated on the right and the last byte is forced to NUL.   The  offset  incre‐
+              ments by 33 prior to the next insertion.
+
+       adminusername string
+              An  ASCII  character string.  The string is always stored as 33 bytes.  Short strings are padded on the right with
+              NUL characters.  Long strings are truncated on the right and the last byte is forced to NUL.   The  offset  incre‐
+              ments by 33 prior to the next insertion.
+
+       password string
+              An  ASCII character string.  The string is always stored as 257 bytes.  Short strings are padded on the right with
+              NUL characters.  Long strings are truncated on the right and the last byte is forced to NUL.   The  offset  incre‐
+              ments by 257 prior to the next insertion.
+
+       url string
+              An  ASCII character string.  The string is always stored as 257 bytes.  Short strings are padded on the right with
+              NUL characters.  Long strings are truncated on the right and the last byte is forced to NUL.   The  offset  incre‐
+              ments by 257 prior to the next insertion.
+
+       username string
+              An  ASCII character string.  The string is always stored as 257 bytes.  Short strings are padded on the right with
+              NUL characters.  Long strings are truncated on the right and the last byte is forced to NUL.   The  offset  incre‐
+              ments by 257 prior to the next insertion.
+
+DEVICES
+       Powerline  devices use Ethernet Media Access Control (MAC) addresses.  A MAC address is a 48-bit value entered as 12 hex‐
+       adecimal digits in upper, lower or mixed character case.  Octets may be separated with colons for clarity.  For  example,
+       &quot;00b052000001&quot;, &quot;00:b0:52:00:00:01&quot; and &quot;00b052:000001&quot; are valid and equivalent.
+
+       The following MAC addresses are special and may be entered by name instead of number.
+
+       all    Same as &quot;broadcast&quot;.
+
+       broadcast
+              A  synonym  for  the Ethernet broadcast address, FF:FF:FF:FF:FF:FF.  All devices, whether local, remote or foreign
+              recognize messages sent to this address.  A remote device is any device at the far end of a powerline  connection.
+              A foreign device is any device not manufactured by Atheros.
+
+       local  A  synonym  for the Qualcomm Atheros vendor specific Local Management Address (LMA), 00:B0:52:00:00:01.  All local
+              Atheros devices recognize this address but remote and foreign devices do not.  A remote device is  any  device  at
+              the far end of a powerline connection.  A foreign device is any device not manufactured by Atheros.
+
+REFERENCES
+       See  the Qualcomm Atheros HomePlug AV Firmware Technical Reference Manual for the latest information on available proper‐
+       ties.
+
+DISCLAIMER
+       Atheros HomePlug AV Vendor Specific Management Message structure and content is proprietary to Qualcomm Atheros, Ocala FL
+       USA.   Consequently,  public  information  may  not  be available.  Qualcomm Atheros reserves the right to modify message
+       structure and content in future firmware releases without any obligation to notify or compensate users of this program.
+
+EXAMPLES
+       The following example sets the &quot;time-to-live&quot; property for each channel access priority type: CAP0, CAP1, CAP2, CAP3  and
+       MME.  The property identifier is 101.  It needs five 32-bit decimal integer values in microseconds.  Data type long spec‐
+       ifies a 32-bit decimal value that will be converted to little endian format on output.
+
+          # plcset -n 101 long 100 long 200 long 250 long 300 long 100
+
+       The next example set the User HFID.  The first occurance of option -n specifies the property by number as 105.  The  sec‐
+       ond  occurance specifies the property version as 1.  This is merely an example of how to specify the propery version.  At
+       the time of writing, property 105 is still version 0.
+
+          # plcset -n 105 -n 1 hfid &quot;Intergalactic Software Pirates&quot;
+
+SEE ALSO
+       plc(1), getpib(1), modpib(1), plcset(1), setpib(1)
+
+CREDITS
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                                plcset(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='plcrule.1.html' title=' plcrule.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='plcstat.1.html' title=' plcstat.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

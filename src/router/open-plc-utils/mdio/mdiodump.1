@@ -1,0 +1,86 @@
+.TH mdiodump 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+mdiodump - Qualcomm Atheros MDIO Custom Module Analyser
+
+.SH SYNOPSIS
+.BR mdiodump
+.RI [ options ]
+.RI file
+.RI [ file ]
+[...]
+
+.SH DESCRIPTION
+Read one or more binary MDIO program files and output MDIO instructions on stdout.
+These instructions are suitable as input to program \fBmdioblock\fR which outputs MDIO programs.
+See the \fBmdioblock\fR manpage for more information.
+
+.PP
+This program is part of the Qualcomm Atheros Powerline Toolkit.
+See the \fBPLC\fR man page for an overview and installation instructions.
+
+.SH OPTIONS
+
+.TP
+.RB - s
+Print summary information on stdout instead of MDIO instructions.
+
+.TP
+-\fBt \fIphy_type\fR
+Specify the PHY chipset that this MDIO module will be used with.
+The only supported option arguments are "ar8236" and "generic".
+Argument "ar8236" indicates that the MDIO register instructions are Atheros AR8236 specific.
+The AR8236 supports special MDIO registers and instructions in addition to generic MDIO registers and instructions.
+The default is "generic" which displays instructions as standard MDIO instructions.
+This option and option \fB-b\fR are mutually exclusive.
+
+.TP
+.RB - v
+Prints additional information on stdout.
+In particular, this option causes mdiodump to display every MDIO command present instead of just the simulation summary.
+
+.TP
+.RB - ? ,-- help   
+Displays program help information on stderr.
+This option takes precedence over all other options on the command line except version information.
+
+.TP
+.RB - ! ,-- version
+Displays program version information on stderr.
+This option takes precedence over all other options on the command line except help information.
+Use this option when sending screen dumps to Atheros technical staff.
+
+.SH ARGUMENTS
+
+.TP
+.IR file
+The MDIO custom module file to operate on.
+
+.SH REFERENCES
+See the Qualcomm Atheros \fIHomePlug AV Firmware Technical Reference Manual\fR for information about generic MDIO register instruction.
+See the Qualcomm Atheros \fIAR8236 Six-Port Fast Ethernet Switch Data Sheet\fR for detailed information about AR8236 specific MDIO registers and instructions.
+
+.SH DISCLAIMER
+Atheros HomePlug AV Vendor Specific Management Message structure and content is proprietary to Qualcomm Atheros, Ocala FL USA.
+Consequently, public information may not be available.
+Qualcomm Atheros reserves the right to modify message structure and content in future firmware releases without any obligation to notify or compensate users of this program.
+
+.SH EXAMPLES
+None.
+
+.SH SEE ALSO
+.BR amp ( 1 ),
+.BR int6kmod ( 1 ),
+.BR int6kmdio ( 1 ),
+.BR int6kmdio2 ( 1 ),
+.BR mdioblock ( 1 ),
+.BR mdioblock2 ( 1 ),
+.BR mdiogen ( 1 ),
+.BR plcmdio16 ( 1 ),
+.BR plcmdio32 ( 1 )
+
+.SH CREDITS
+ Nathaniel Houghton <nhoughto@qca.qualcomm.com>
+ Charles Maier <cmaier@qca.qualcomm.com>
+ Marc Bertola <marc.bertola@qca.qualcomm.com>
+

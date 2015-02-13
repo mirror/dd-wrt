@@ -1,0 +1,104 @@
+.TH mme 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+mme - Qualcomm Atheros vendor-specific message enumerator
+
+.SH SYNOPSIS
+.BR mme 
+.RI [ options ] 
+
+.SH DESCRIPTION
+Print Atheros vendor-specific message types and names with associated error codes and text on stdout.
+Output can be printed in various formats such as \fBHTML\fR, \fBCSV\fR and plain text.
+The plain text format is ideal for searching using a utility like \fBgrep\fR.
+
+.PP
+This program is part of the Qualcomm Atheros Powerline Toolkit.
+See the \fBAMP\fR man page for an overview and installation instructions.
+
+.SH OPTIONS
+
+.TP
+.RB - c
+Output in Comma Separated Value (CSV) format.
+This format is suitable for import into a spreadsheet or database.
+
+.TP
+.RB - h
+Output in Hypertext Markup Language (HTML) format.
+This format is suitable for inclusion on a basic webpage.
+
+.TP
+-\fB?\fR, --\fBhelp\fR
+Print program help summary on stdout.
+This option takes precedence over other options on the command line.
+
+.TP
+-\fB!\fR, --\fBversion\fR
+Print program version information on stdout.
+This option takes precedence over other options on the command line.
+Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of the Linux Toolkit you are using.
+See the HomePlug AV Specification for a description of all HomePlug AV message types.
+See the Qualcomm Atheros INT6000 Firmware Reference Manual for a description of Atheros Vendor Specific message types.
+
+.SH EXAMPLES
+The following example prints Atheros vendor-specific message codes and names, along with associated error codes and text, on stdout.
+The output format is plain text because no formatting options were specified on the command line.
+
+.PP
+   # mme
+   0xA005 VS_WR_MEM.CNF       0x14 "Bad Checksum"
+   0xA005 VS_WR_MEM.CNF       0x1C "Bad Length"
+   0xA005 VS_WR_MEM.CNF       0x38 "Bad Address"
+   0xA005 VS_WR_MEM.CNF       0x3C "Bad Data Alignment"
+   0xA009 VS_RD_MEM.CNF       0x10 "Bad Offset"
+   0xA009 VS_RD_MEM.CNF       0x14 "Bad Length"
+   0xA00D VS_ST_MAC.CNF       0x10 "Bad Module ID"
+   0xA00D VS_ST_MAC.CNF       0x14 "Bad Image Checksum"
+   0xA00D VS_ST_MAC.CNF       0x1C "Bad Image Length"
+   0xA00D VS_ST_MAC.CNF       0x38 "Bad Image Load Address"
+   0xA00D VS_ST_MAC.CNF       0x3C "Bad Data Alignment"
+   0xA00D VS_ST_MAC.CNF       0x40 "Bad Start Address"
+   0xA011 VS_GET_NVM.CNF      0x10 "No NVRAM"
+   0xA01D VS_RS_DEV.CNF       0x01 "Device Failed to Reset"
+   0xA01D VS_RS_DEV.CNF       0x02 "Device Busy"
+   0xA021 VS_WR_MOD.CNF       0x10 "Bad Module"
+   0xA021 VS_WR_MOD.CNF       0x12 "Bad Length"
+   0xA021 VS_WR_MOD.CNF       0x14 "Bad Checksum"
+   0xA021 VS_WR_MOD.CNF       0x20 "Bad Offset"
+   0xA021 VS_WR_MOD.CNF       0x40 "Operation Blocked"
+   0xA021 VS_WR_MOD.CNF       0x50 "Fail to lock NVM"
+   0xA025 VS_RD_MOD.CNF       0x10 "Bad Module"
+   0xA025 VS_RD_MOD.CNF       0x12 "Bad Length"
+   0xA025 VS_RD_MOD.CNF       0x14 "Bad Checksum"
+   ......
+.............
+....
+..............
+
+.PP
+The next example does the same thing but output is piped into the \fBgrep\fR utility which selects only those lines containing the substring "\fB0x40\fR".
+The result shows that this error code is used by two different Atheros vendor-specific messages.
+
+.PP
+   # mme | grep "0x40"
+   0xA00D VS_ST_MAC.CNF       0x40 "Bad Start Address"
+   0xA021 VS_WR_MOD.CNF       0x40 "Operation Blocked"
+   ......
+.............
+....
+..............
+
+.SH DISCLAIMER
+Atheros HomePlug AV Vendor Specific Management Message structure and content is proprietary to Qualcomm Atheros, Ocala FL USA.
+Consequently, public information is not available.
+Qualcomm Atheros reserves the right to modify management message structure and content in future firmware releases without any obligation to notify or compensate users of this program.
+
+.SH SEE ALSO
+.BR amp ( 1 ),
+.BR efsu ( 1 ),
+.BR hpav ( 1 )
+
+.SH CREDITS
+ Charles Maier <cmaier@qca.qualcomm.com>
+

@@ -1,0 +1,85 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Structure Packing</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="ch03.html" title="Chapter 3.  Software"><link rel="prev" href="ch03s11.html" title="LibPcap, WinPcap and BPF"><link rel="next" href="ch03s13.html" title="Endian-ness"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">
+				Structure Packing 
+				</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch03s11.html">Prev</a> </td><th width="60%" align="center">Chapter 3. 
+		Software 
+		</th><td width="20%" align="right"> <a accesskey="n" href="ch03s13.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="software-struct-packing"></a>
+				Structure Packing 
+				</h2></div></div></div><p>Programs in this toolkit make extensive use of packed data structures to simplify source code and guarantee reliability; however, this creates portability issues because different compilers implement structure packing in different ways. Three common structure packing mechanisms are:</p><div class="variablelist"><dl><dt><span class="term">
+					_packed 
+					</span></dt><dd><p>
+					The __packed keyword is not part of any C or C++ standard but it is recognized by some compilers, such as the ARM C/C++ and OpenBSD C compiler. This keyword only affects the data structure that it prefaces and it is an ideal way to selectively pack structures. It can be easily defined and undefined using a preprocessor macro. Atheros has elected to insert this keyword wherever it might be appropriate. The ARM C compilers accept this keyword.
+						</p><div class="example"><a name="idp9484912"></a><p class="title"><b>Example 3.5. 
+							Packing Structures with keyword “<span class="quote">__packed</span>” 
+							</b></p><div class="example-contents"><pre class="programlisting">
+typedef struct __packed header_eth 
+{ 
+	uint8_t source [ETHER_ADDR_LEN]; 
+	uint8_t target [ETHER_ADDR_LEN]; 
+	uint16_t protocol; 
+} 
+header_eth; 
+</pre></div></div><br class="example-break"></dd><dt><span class="term">
+					__attribute__ ((packed)) 
+					</span></dt><dd><p>
+					Attributes are not part of any C or C++ standard but they are recognized by the gcc and Sun Microsystems C compiler. Attributes only affect structures and functions that reference them in their declaration. This is convenient because we can use a preprocessor macro to define the keyword <code class="varname">__packed</code>, mentioned above, to be <code class="constant">__attribute__ ((packed))</code>. Atheros includes this definition in <code class="filename">tools/types.h</code> and OpenBSD does this in their system header files.
+						</p><div class="example"><a name="idp9488088"></a><p class="title"><b>Example 3.6. 
+							Packing Structures with Attribute “<span class="quote">packed</span>”
+							</b></p><div class="example-contents"><pre class="programlisting">
+typedef struct __attribute__ ((packed)) header_eth 
+{ 
+	uint8_t source [ETHER_ADDR_LEN]; 
+	uint8_t target [ETHER_ADDR_LEN]; 
+	uint16_t protocol; 
+} 
+header_eth; 
+</pre></div></div><br class="example-break"></dd><dt><span class="term">
+					#pragrma pack 
+					</span></dt><dd><p>
+					Pragmas are part of most C and C++ language standards but some compilers do not recognize or implement the <code class="varname">pack</code> pragma. In addition, different compilers implement it in different ways. The <code class="varname">pack</code> pragma affects all data structures up the next <code class="varname">pack</code> pragma or end of compile unit. Most pragma implementations accept the push and pop option for pragma nesting. Some pragma pack implementations accept no arguments, most permit either one or two arguments while others allow three arguments. OpenBSD does not recognize this pragma and generates warnings in all cases. Aside from all that, the pack pragma is the most widely supported method for declaring packed structures.
+						</p><div class="example"><a name="idp9491360"></a><p class="title"><b>Example 3.7. 
+							Packing Structures with the Pragma “<span class="quote">pack</span>”
+							</b></p><div class="example-contents"><pre class="programlisting">
+#pragma pack (push, 1) 
+struct header_eth 
+{ 
+	uint8_t source [ETHER_ADDR_LEN]; 
+	uint8_t target [ETHER_ADDR_LEN]; 
+	uint16_t protocol; 
+} 
+header_eth; 
+#pragma pack (pop)
+</pre></div></div><br class="example-break"></dd><dt><span class="term">
+					The Atheros Way 
+					</span></dt><dd><p>
+					Toolkit programs declares packed structures using all three methods, as shown below.
+						</p><div class="example"><a name="idp9661528"></a><p class="title"><b>Example 3.8. 
+							Packing Structures the Atheros Way 
+							</b></p><div class="example-contents"><pre class="programlisting">
+#ifndef __packed 
+#ifdef __GNUC__ 
+#define __packed __attribute__ ((packed)) 
+#else 
+#define __packed 
+#endif 
+#endif 
+
+#ifndef __GNUC__
+#pragma pack (push, 1)
+#endif
+ 
+struct __packed header_eth 
+{ 
+	uint8_t source [ETHER_ADDR_LEN]; 
+	uint8_t target [ETHER_ADDR_LEN]; 
+	uint16_t protocol; 
+} 
+header_eth; 
+
+#ifndef __GNUC__
+#pragma pack (pop)
+#endif 
+</pre></div></div><br class="example-break"></dd></dl></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch03s11.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="ch03.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch03s13.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">
+				<span class="application">LibPcap</span>,  <span class="application">WinPcap</span> and <span class="application">BPF</span>
+				 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 
+			Endian-ness 
+			</td></tr></table></div></body></html>0

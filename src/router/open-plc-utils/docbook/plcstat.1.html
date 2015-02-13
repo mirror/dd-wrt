@@ -1,0 +1,169 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			plcstat.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='plcset.1.html' title=' plcset.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='plctest.1.html' title=' plctest.1 '>NEXT</a>]
+			</div>
+<pre>
+plcstat(1)                                   Qualcomm Atheros Open Powerline Toolkit                                  plcstat(1)
+
+NAME
+       plcstat - Qualcomm Atheros AR7x00 Link Statistics
+
+SYNOPSIS
+       plcstat [options] [device] [device] [...]
+
+DESCRIPTION
+       The  Atheros  Device Statistics Utility polls a device and prints network and link statistics in various formats suitable
+       for use by other programs.  This is a work in progress so user feedback is encouraged.  Link statistics  are  only  valid
+       between one powerline device and another.
+
+       This  program  is  part of the Qualcomm Atheros Powerline Toolkit.  See the plc man page for an overview and installation
+       instructions.
+
+COMMENTS
+       This program is identical to legacy program int6kstat but uses version 1 of the Qualcomm Atheros VS_NW_INFO Atheros  ven‐
+       dor-specific message.  Older firmware versions may not recognize this message version.
+
+OPTIONS
+       -C     Clear  device link statistics using VS_LNK_STATS.  Statistics are read and cleared then displayed.  The statistics
+              that are read and displayed depend on options -d, -p and -s but all link statistics are cleared.
+
+       -d direction
+              Return statistics for the specified direction using VS_LNK_STATS.  Direction can be 0=tx, 1=rx,  2=both  or  &quot;rx&quot;,
+              &quot;tx&quot; or &quot;both&quot;.
+
+       -e     Redirects  stderr messages to stdout.  By convention status and error messages are printed on stderr while primary
+              program output is printed on stdout.  This option prints all output on stdout in cases where this is desired.
+
+       -i     Select the host Ethernet interface.  All requests are sent via this host interface and only reponses received  via
+              this host interface are recognized.  The default interface is eth1 because most people use eth0 as their principle
+              network connection; however, if environment string &quot;PLC&quot; is defined then it  takes  precedence  over  the  default
+              interface.  This option then takes precedence over either default.
+
+       -l count
+              Define the number of times that the command will be repeated for each device specified.  Normally, you will repeat
+              operations on one device only.
+
+       -m     Displays network membership information, as seen by one device, using VS_NW_INFO.  Use option -t for complete net‐
+              work topology seen by the local host.
+
+       -p peernode
+              Ethernet  hardware  address  of  the  peer  node for VS_LNK_STATS.  This option is required for all Link ID values
+              except 0xFC.  The default is 00:00:00:00:00:00.
+
+       -q     Enter quiet mode.  Progress messages are suppressed.
+
+       -s linkid
+              The Link ID for VS_LNK_STATS.  Link ID values range from 0 through 255 but not all  values  are  accepted  by  the
+              device  firmware.   Values may be expressed in decimal, binary prefixed with &quot;0b&quot; or hexadecimal prefixed by &quot;0x&quot;.
+              Many valid values can be expressed by name.  Valid values are listed and explained under LINKID.  The default Link
+              ID is 0xFC.
+
+       -t     Display  network  topology  using VS_SW_VER and VS_NW_INFO messages.  This option is similar to option -m but pro‐
+              vides complete network topology plus device hardware and firmware version.  Topology is  always  relative  to  the
+              local  host,  or  local hosts if present.  Powerline devices that appear on the command line are not used for this
+              operation.
+
+       -v     Enter verbose mode.  All Etherenet frames sent or received by the program are displayed on stdout.
+
+       -w seconds
+              Defines the number of seconds to wait before repeating command line options.  This option  has  no  effect  unless
+              option -l is also specified with a non-zero value.
+
+       -?, --help
+              Print program help summary on stdout.  This option takes precedence over other options on the command line.
+
+       -!, --version
+              Print program version information on stdout.  This option takes precedence over other options on the command line.
+              Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version  of
+              the Linux Toolkit you are using.
+
+ARGUMENTS
+       device The  MAC  address  of some powerline device.  More than one address may be specified.  If more than one address is
+              specified then operations are performed on each device in turn.  The default address is local.   See  DEVICES  for
+              information about symbolic device addresses.
+
+LINKID
+       0x00,CSMA-CAP0
+              Display  CSMA  statistics  for CAP0 traffic using a single peer node.  The peer node MAC address must be specified
+              using option -p.
+
+       0x01,CSMA-CAP1
+              Display CSMA statistics for CAP1 traffic using a single peer node.  The peer node MAC address  must  be  specified
+              using option -p.
+
+       0x02,CSMA-CAP2
+              Display  CSMA  statistics  for CAP2 traffic using a single peer node.  The peer node MAC address must be specified
+              using option -p.
+
+       0x03,CSMA-CAP3
+              Display CSMA statistics for CAP3 traffic using a single peer node.  The peer node MAC address  must  be  specified
+              using option -p.
+
+       0xF8,CSMA-PEER
+              Display  CSMA  statistics  for all traffic using a single  peer node.  The peer node MAC address must be specified
+              using option -p.
+
+       0xFC,CSMA-ALL
+              Display CSMA statistics for all traffic with all peer nodes.  A peer node MAC address is not needed  and  will  be
+              ignored if provided.  This value is the default for option -s.
+
+DEVICES
+       Powerline  devices use Ethernet Media Access Control (MAC) addresses.  A MAC address is a 48-bit value entered as 12 hex‐
+       adecimal digits in upper, lower or mixed character case.  Octets may be separated with colons for clarity.  For  example,
+       &quot;00b052000001&quot;, &quot;00:b0:52:00:00:01&quot; and &quot;00b052:000001&quot; are valid and equivalent.
+
+       The following MAC addresses are special and may be entered by name instead of number.
+
+       all    Same as &quot;broadcast&quot;.
+
+       broadcast
+              A  synonym  for  the Ethernet broadcast address, FF:FF:FF:FF:FF:FF.  All devices, whether local, remote or foreign
+              recognize messages sent to this address.  A remote device is any device at the far end of a powerline  connection.
+              A foreign device is any device not manufactured by Atheros.
+
+       local  A  synonym  for the Qualcomm Atheros vendor specific Local Management Address (LMA), 00:B0:52:00:00:01.  All local
+              Atheros devices recognize this address but remote and foreign devices do not.  A remote device is  any  device  at
+              the far end of a powerline connection.  A foreign device is any device not manufactured by Atheros.
+
+REFERENCES
+       See the Qualcomm Atheros HomePlug AV Firmware Technical Reference Manual for more information.
+
+DISCLAIMER
+       Atheros  HomePlug  AV  Vendor Specific Management Message Entry structure and content is proprietary to Qualcomm Atheros,
+       Ocala FL USA.  Consequently, public information may not be available.  Qualcomm Atheros reserves the right to modify mes‐
+       sage  structure and content in future firmware releases without any obligation to notify or compensate users of this pro‐
+       gram.
+
+EXAMPLES
+       None.
+
+SEE ALSO
+       plc(1), plcrate(1), plcstat(1), plctool(1)
+
+CREDITS
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                               plcstat(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='plcset.1.html' title=' plcset.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='plctest.1.html' title=' plctest.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

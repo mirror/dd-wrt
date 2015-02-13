@@ -1,0 +1,17 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Security Considerations</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="ch03.html" title="Chapter 3.  Software"><link rel="prev" href="ch03.html" title="Chapter 3.  Software"><link rel="next" href="ch03s03.html" title="Platform Options"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">
+			Security Considerations
+			</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch03.html">Prev</a> </td><th width="60%" align="center">Chapter 3. 
+		Software 
+		</th><td width="20%" align="right"> <a accesskey="n" href="ch03s03.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="software-security"></a>
+			Security Considerations
+			</h2></div></div></div><p>
+			Toolkit programs are installed in <code class="filename">/usr/local/bin</code> with owner <code class="constant">root</code> and group <code class="constant">root</code> (<span class="command"><strong>chown root:root</strong></span>) and with read and execute permissions for owner, group and others (<span class="command"><strong>chmod 0555</strong></span>). This lets anyone execute these programs even though they are owned by user <code class="constant">root</code>.
+			</p><p>
+			Additionally,  programs that send raw Ethernet frames are installed with seteuid owner (<span class="command"><strong>chmod 4555</strong></span>) so that they will execute with <code class="constant">root</code> user privileges, regardless of the user executing them. This lets any user send raw Ethernet frames but it also presents a security risk on the host computer. For example, program <span class="application">int6k</span> is intended to read and write <code class="filename">.nvm</code> and <code class="filename">.pib</code> files but a malicious user could use it to overwrite other files normally protected by standard file permissions. 
+			</p><p>
+			You can change the default file permissions by changing the <span class="command"><strong>-m 4555</strong></span> option on the <span class="command"><strong>install</strong></span> command in various <code class="filename">Makefiles</code>. Be aware that doing so will restrict program access to the the <code class="constant">root</code> user. 
+			</p></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch03.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="ch03.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch03s03.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Chapter 3. 
+		Software 
+		 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 
+			Platform Options 
+			</td></tr></table></div></body></html>0

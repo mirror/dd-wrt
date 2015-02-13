@@ -1,0 +1,31 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Device Communications</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="ch02.html" title="Chapter 2.  Hardware"><link rel="prev" href="ch02s02.html" title="Device Form Factors"><link rel="next" href="ch02s04.html" title="Device Configurations"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">
+			Device Communications 
+			</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch02s02.html">Prev</a> </td><th width="60%" align="center">Chapter 2. 
+		Hardware 
+		</th><td width="20%" align="right"> <a accesskey="n" href="ch02s04.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="hardware-device-communications"></a>
+			Device Communications 
+			</h2></div></div></div><p>
+			Atheros powerline communication chipsets serve as a transparent bridges between an Ethernet network and an active powerline or passive coax cable, effectively extending the Ethernet network. <span class="trademark">HomePlug</span>® AV devices on the powerline, or at either end of a coax cable, will automatically detect each other and establish communications. Normal Ethernet frames that are detected by one <span class="trademark">HomePlug</span>® AV device are passed over powerline or coax to other <span class="trademark">HomePlug</span>® AV devices which then pass the frames on to any Etherenet devices that may be connected to them. 
+			</p><p>
+			There are three levels of communication. 
+			</p><div class="variablelist"><dl><dt><span class="term">
+					Powerline Communications 
+					</span></dt><dd><p>
+						<span class="trademark">HomePlug</span>® AV devices use a proprietary protocol defined by the HomePlug Powerline Alliance. In most cases, <span class="trademark">HomePlug</span>® AV communications do not leave the powerline or coax media used to connect devices. Connected devices use this protocol to detect each other, establish connection, encapsulate Ethernet frames and route them between devices. This level of communications is proprietary and hidden. See the HomePlug Powerline Alliance <em class="citetitle"><span class="trademark">HomePlug</span>® AV Specification </em> for more information. 
+						</p></dd><dt><span class="term">
+					Atheros Device Communications 
+					</span></dt><dd><p>
+						Atheros devices use a subset of the <span class="trademark">HomePlug</span>® AV protocol, mentioned above, to communicate with a local host processor. The subset is known as 
+						<code class="varname">
+							vendor-specific messages 
+							</code>
+						. Atheros vendor-specific messages are intercepted and processed by Atheros devices. In some cases, they are forwared over powerline or coax to other Atheros devices. Atheros vendor-specific messages are used to interrogate, synchronize, configure and control Atheros devices without affecting <span class="trademark">HomePlug</span>® AV devices from other manufacturers. See the Atheros <em class="citetitle"><span class="trademark">HomePlug</span>® AV Firmware Technical Reference Manual</em> for more information. 
+						</p></dd><dt><span class="term">
+					Network Traffic 
+					</span></dt><dd><p>
+						This is the normal network traffic that passes transparently from local Ethernet, over powerline or coax, to remote Ethernet through <span class="trademark">HomePlug</span>® AV devices. 
+						</p></dd></dl></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch02s02.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="ch02.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch02s04.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">
+			Device Form Factors 
+			 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 
+			Device Configurations 
+			</td></tr></table></div></body></html>0

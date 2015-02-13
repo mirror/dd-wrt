@@ -1,0 +1,1245 @@
+<chapter id='library-functions'>
+	<title>
+		Support Function Reference
+		</title>
+	<section id="library-intro" >
+		<title>
+			Introduction
+			</title>
+		<para>
+			The Atheros <application>Open Powerline Toolkit</application> includes many functions that have application outside the <application>Open Powerline Toolkit</application>. They are distributed with the toolkit but may also appear in other Atheros applications or third party packages. Consequently, we describe them separately and store them in separate folders.
+			</para>
+		</section>
+
+	<section id="library-error">
+		<title>
+			tools/error.h
+			</title>
+		<para>
+			The functions in this group have general application beyond the Open Powerline Toolkit. In some cases, these functions may appear in other Atheros or Open Source software packages. In a few cases, the Toolkit may include complementary or supplementary support functions but only use one or two of them. For example, functions <function>memincr</function> and <function>memdecr</function> are both included but <function>memdecr</function> is not used.
+			</para>
+	<section id="function-alert">
+		<title>
+			alert
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>void <function>alert</function></funcdef>
+    				<paramdef>const char *<parameter>format</parameter></paramdef>
+    				<paramdef><parameter>...</parameter></paramdef>
+				</funcprototype>
+			</funcsynopsis>
+			<para>
+				This function is similar to function <function>printf</function> but messages are prefixed with the program name and appear on <constant>stderr</constant> instead of <constant>stdout</constant>. It is equivalent to calling function <link linkend='library-error'>error</link> with argument <varname>exitcode</varname> set to <constant>0</constant> and argument <varname>errno</varname> set to <constant>0</constant>. A typical use is to print progress messages. The function is declared in <ulink url='error.h.html'>error.h</ulink> and defined in <ulink url='alert.c.html'>alert.c</ulink>.
+				</para>
+		</section>
+	<section id="function-error">
+		<title>
+			error
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>void <function>error</function></funcdef>
+    				<paramdef>int<parameter>exitcode</parameter></paramdef>
+    				<paramdef>errno_t <parameter>number</parameter></paramdef>
+   				<paramdef>const char * <parameter>format</parameter></paramdef>
+   				<paramdef><parameter>...</parameter></paramdef>
+				</funcprototype>
+			</funcsynopsis>
+		<para>
+			This function works like printf except that printed messages appear on <constant>stderr</constant> and are prefixed with the program name and error information. If argument <varname>errno</varname> is non-zero then messages are prefixed with the system error description. If argument <varname>exitcode</varname> is non-zero then function <varname>error</varname> exits the program with value <varname>exitcode</varname> after printing the message and does not return to the caller. The function is declared in <ulink url='error.h.html'>error.h</ulink> and defined in <ulink url='error.c.html'>error.c</ulink>.
+			</para>
+		</section>
+		</section>
+	
+	<section id="library-files">
+		<title>
+			tools/files.h
+			</title>
+	<section id="function-checkfilename">
+		<title>
+			checkfilename
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>bool <function>checkfilename</function></funcdef>
+    				<paramdef>const char *<parameter>filename</parameter></paramdef>
+				</funcprototype>
+			</funcsynopsis>
+			<para>
+				Return logical <constant>true</constant> if the <varname>filename</varname> argument contains only letters, digits, slashes, periods, underscores and hyphens. This function can be used to detect cases where a user accidentally entered an Ethernet address in place of a filename on the command line. Ethernet address strings are, as it happens, also valid filenames. The function is declared in <ulink url='files.h.html'>files.h</ulink> and defined in <ulink url='checkfilename.c.html'>checkfilename.c</ulink>.
+				</para>
+		</section>
+	<section id="function-filepart">
+		<title>
+			filepart
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>const char * <function>filepart</function></funcdef>
+    				<paramdef>const char * <parameter>pathname</parameter></paramdef>
+				</funcprototype>
+			</funcsynopsis>
+			<para>
+				Return the address of the filename portion of a <varname>pathname</varname> string. The filename portion is everything after the rightmost path separator. If a path separator is not present then the address of the <varname>pathname</varname> string is returned. This function is similar to the <acronym>POSIX</acronym> <constant>basename</constant> function but it returns an empty string whenever the rightmost character is a path separator. The path separator can be either slash (<constant>'/'</constant>) or backslash (<constant>'\\'</constant>). The function is declared in <ulink url='files.h.html'>files.h</ulink> and defined in <ulink url='filepart.c.html'>filepart.c</ulink>.
+				</para>
+		</section>
+		</section>
+
+
+	<section id="library-format">
+		<title>
+			tools/format.h
+			</title>
+	<section id="function-strfbits">
+		<title>
+			strfbits
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>size_t <function>strfbits</function></funcdef>
+    				<paramdef>char <parameter>buffer</parameter> []</paramdef>
+    				<paramdef>size_t <parameter>length</parameter></paramdef>
+    				<paramdef>const char *<parameter>operands</parameter> []</paramdef>
+    				<paramdef>const char *<parameter>operator</parameter></paramdef>
+				<paramdef>unsigned <parameter>flagword</parameter></paramdef>
+  				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Encode a <varname>buffer</varname> with an enumerated list of the <varname>operands</varname> associated with the corresponding bits in <varname>flagword</varname>. separate enumerated <varname>operands</varname> with an <varname>operator</varname> string. For example, given <computeroutput>const char *operands [] = { "loop", "wait",  "busy" }</computeroutput> and <computeroutput>unsigned flagword = 0x05</computeroutput> then <computeroutput>strfbits (buffer,  length, operands, "|", flagword)</computeroutput> would encode buffer with <constant>"loop|busy"</constant>. Observe that each bit set in <varname>flagword</varname> appears in <varname>buffer</varname> as the corresponding string from <varname>operands</varname>. A typical application for this function is the enumeration of flagword states. The function is declared in <ulink url='tools.h.html'>tools.h</ulink> and defined in <ulink url='strfbits.c.html'>strfbits.c</ulink>.
+			</para>
+		</section>
+		</section>
+
+
+	<section id="library-getoptv">
+		<title>
+			tools/getoptv.h
+			</title>
+	<section id="function-getoptv">
+		<title>
+			getoptv
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>int <function>getoptv</function></funcdef>
+    				<paramdef>int <parameter>argc</parameter></paramdef>
+    				<paramdef>const char * <parameter>argv</parameter> []</paramdef>
+   				<paramdef>const char * <parameter>optv</parameter> []</paramdef>
+ 				</funcprototype>
+			</funcsynopsis>
+		<para>
+			A custom version of the <acronym>POSIX</acronym> function <function>getopt</function>. It supports standard global variables <varname>optind</varname>, <varname>opterr</varname>, <varname>optopt</varname> and <varname>optarg</varname> and the non-standard variable <varname>optmin</varname>. It extracts the program name from <varname>argv[0]</varname> and posts it for use by functions <function>alert</function>, <function>error</function> and other functions using the global string pointer <varname>program_name</varname>. Options <userinput>-?</userinput> and <userinput>--help</userinput> both display program information on <constant>stdout</constant>. Options <userinput>-!</userinput> and <userinput>--version</userinput> both display program version information on <constant>stdout</constant>. String vector <varname>optv</varname> includes both the standard argument <varname>optstring</varname> and usage text found in many programs. The function is declared in <ulink url='getoptv.h.html'>getoptv.h</ulink> and defined in <ulink url='getoptv.c.html'>getoptv.c</ulink>.
+			</para>
+		</section>
+		</section>
+
+	<section id="library-memory">
+		<title>
+			tools/memory.h
+			</title>
+	<section id="function-bytespec">
+		<title>
+			bytespec
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>void <function>bytespec</function></funcdef>
+    				<paramdef>const char * <parameter>string</parameter></paramdef>
+   				<paramdef>byte <parameter>memory</parameter> []</paramdef>
+   				<paramdef>size_t <parameter>extent</parameter></paramdef>
+   				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Encode a <varname>memory</varname> region with the binary equivalent of a fixed-length hexadecimal string. Print an error message on stderr and exit the program with status <constant>1</constant> if a syntax error occurs or the number of octets does not equal  <varname>extent</varname>. Hexadecimal octets may be separated by colons for readability but colons are not required. Empty octets are illegal. This function is typically used to enter fixed-length data, like hardware addresses and encryption keys, on the command line. The function is declared in <ulink url='memory.h.html'>memory.h</ulink> and defined in <ulink url='bytespec.c.html'>bytespec.c</ulink>.
+			</para>
+		</section>
+	<section id="function-checksum32">
+		<title>
+			checksum32
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>unint32_t <function>checksum32</function></funcdef>
+    				<paramdef>const uint32_t <parameter>memory</parameter> []</paramdef>
+    				<paramdef>size_t <parameter>length</parameter></paramdef>
+   				<paramdef>uint32_t <parameter>checksum</parameter></paramdef>
+				</funcprototype>
+			</funcsynopsis>
+			<para>
+				Return the 32 bit checksum of a <varname>memory</varname> region. The checksum is the one's complement of the XOR of all 32 bit words in the region. Argument <varname>length</varname> is the region extent in 32 bit words. Argument <varname>checksum</varname> is the reference checksum. When the <varname>checksum</varname> argument is <constant>0</constant>, the function value will be the computed checksum. When the <varname>checksum</varname> argument is the computed checksum, the function value will be <constant>0</constant> such that any other value indicates a checksum error. A typical use is to validate <acronym>PIB</acronym> and <acronym>NVM</acronym> files or compute new checksums when these files are created or modified. The function is declared in <ulink url='memory.h.html'>memory.h</ulink> and defined in <ulink url='checksum32.c.html'>checksum32.c</ulink>.
+				</para>
+		</section>
+	<section id="function-checksum-32">
+		<title>
+			checksum_32
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>unint32_t <function>checksum_32</function></funcdef>
+    				<paramdef>const void * <parameter>memory</parameter></paramdef>
+    				<paramdef>size_t <parameter>extent</parameter></paramdef>
+   				<paramdef>uint32_t <parameter>checksum</parameter></paramdef>
+				</funcprototype>
+			</funcsynopsis>
+			<para>
+				Return the 32 bit checksum of a <varname>memory</varname> region. The checksum is the one's complement of the XOR of all 32 bit words in the region. The region <varname>extent</varname> is specified in bytes but it will be rounded down to the nearest multiple of 4 bytes. Argument <varname>checksum</varname> is the reference checksum. The function will return the computed checksum when argument <varname>checksum</varname> is <constant>0</constant> and will return <constant>0</constant> if argument <varname>checksum</varname> equals the computed checksum. A typical use is to validate <acronym>PIB</acronym> and <acronym>NVM</acronym> files or compute new checksums when these files are created or modified. The function is declared in <ulink url='memory.h.html'>memory.h</ulink> and defined in <ulink url='checksum_32.c.html'>checksum_32.c</ulink>.
+				</para>
+			<para>
+				This function is similar to function <link linkend='library-checksum32'>checksum32</link> however there is no need to cast <varname>memory</varname> to <varname>uint32_t</varname> and there is no need to round <varname>extent</varname> down to a multiple of 4 bytes before calling the function because both operations are performed internally. Also, there is no unecessary endian manipulation of the checksum.
+				</para>
+		</section>
+	<section id="function-decout">
+		<title>
+			decout
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>void <function>decout</function></funcdef>
+    				<paramdef>const byte <parameter>memory</parameter> []</paramdef>
+    				<paramdef>size_t <parameter>length</parameter></paramdef>
+    				<paramdef>char <parameter>c</parameter></paramdef>
+    				<paramdef>FILE *<parameter>fp</parameter></paramdef>
+				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Print a <varname>memory</varname> region as a series of decimal octets separated by character <constant>c</constant>. Normally, character <constant>c</constant> will be <constant>DEC_EXTENDER</constant>, defined in file <ulink url="number.h.html">number.h</ulink>, but it could be any character value.  For example, specifying <varname>c</varname> as <constant>'.'</constant> and <varname>length</varname> as <constant>4</constant> would produce output looking something like <computeroutput>"192.168.099.001"</computeroutput> where each octet is expressed as a decimal integer. A typical use might be to print an <acronym>IP</acronym> or <acronym>MAC</acronym> address in readable format. The function is declared in <ulink url='memory.h.html'>memory.h</ulink> and defined in <ulink url='decout.c.html'>decout.c</ulink>.
+			</para>
+		</section>
+	<section id="function-endian">
+		<title>
+			endian
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>void <function>endian</function></funcdef>
+    				<paramdef>void * <parameter>memory</parameter></paramdef>
+    				<paramdef>size_t <parameter>extent</parameter></paramdef>
+				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Reverse the byte order of a <varname>memory</varname> region. It is a variable length version of functions like <function>_bswap_16</function>, <function>_bswap_32</function> and <function>_bswap_64</function>. The function is declared in <ulink url='memory.h.html'>memory.h</ulink> and defined in <ulink url='endian.c.html'>endian.c</ulink>.
+			</para>
+		</section>
+	<section id="function-hexdecode">
+		<title>
+			hexdecode
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>signed <function>hexdecode</function></funcdef>
+    				<paramdef>byte <parameter>memory</parameter> []</paramdef>
+    				<paramdef>size_t <parameter>extent</parameter></paramdef>
+   				<paramdef>const char <parameter>buffer</parameter> []</paramdef>
+   				<paramdef>size_t <parameter>length</parameter></paramdef>
+  				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Decode a <varname>memory</varname> region as a string of <acronym>ASCII</acronym> hexadecimal digits. Convert memory until the buffer or memory exhausts and return the string length. Allow three (3) string characters for each memory byte to be decoded. The number of bytes decoded will be the lesser of argument <varname>length</varname> divided by <constant>3</constant> or argument <varname>extent</varname>. The function is declared in <ulink url='memory.h.html'>memory.h</ulink> and defined in <ulink url='hexdecode.c.html'>hexdecode.c</ulink>.
+			</para>
+		</section>
+	<section id="function-hexdump">
+		<title>
+			hexdump
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+				<funcdef>void <function>hexdump</function></funcdef>
+				<paramdef>const void * <parameter>memory</parameter></paramdef>
+				<paramdef>size_t <parameter>offset</parameter></paramdef>
+				<paramdef>size_t <parameter>extent</parameter></paramdef>
+				<paramdef>FILE * <parameter>fp</parameter></paramdef>
+				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Print a full or partial <varname>memory</varname> region in hexadecimal format showing memory offsets, hexadecimal byte values and ASCII character values. Argument <varname>memory</varname> contains some memory region. Argument <varname>extent</varname> is the region length. Argument <varname>offset</varname> is the starting display location. Locations <constant>memory [offset]</constant> up to <constant>memory [extent]</constant> are displayed, allowing a partial dump of the memory region. An <varname>offset</varname> of <constant>0</constant> will display the entire region. The function is declared in <ulink url='memory.h.html'>memory.h</ulink> and defined in <ulink url='hexdump.c.html'>hexdump.c</ulink>. 			
+			</para>
+		<para>
+			This function is similar to but different from function <link linkend='library-hexview'>hexview</link> .
+			</para>
+		</section>
+	<section id="function-hexencode">
+		<title>
+			hexencode
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>signed <function>hexencode</function></funcdef>
+    				<paramdef>byte <parameter>memory</parameter> []</paramdef>
+    				<paramdef>size_t <parameter>extent</parameter></paramdef>
+   				<paramdef>const char * <parameter>string</parameter></paramdef>
+  				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Encode a <varname>memory</varname> region with the binary equivalent of an <acronym>ASCII</acronym> hexadecimal string. Return the number of bytes encoded or <constant>0</constant> on error. The value of <varname>errno</varname> is set to <constant>EINVAL</constant> if the number of bytes encoded is less than <varname>extent</varname> or the entire string cannot be converted due to illegal digits or excessive digits. Ignore optional <constant>HEX_EXTENDER</constant> characters separating octets in argument <varname>string</varname>. Constant <constant>HEX_EXTENDER</constant> is defined in file <ulink url='number.h.html'>number.h</ulink>. The function is declared in <ulink url='memory.h.html'>memory.h</ulink> and defined in <ulink url='hexencode.c.html'>hexencode.c</ulink>.
+			</para>
+		</section>
+	<section id="function-hexin">
+		<title>
+			hexin
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>void <function>hexin</function></funcdef>
+    				<paramdef>const byte <parameter>memory</parameter> []</paramdef>
+    				<paramdef>size_t <parameter>extent</parameter></paramdef>
+    				<paramdef>FILE *<parameter>fp</parameter></paramdef>
+				</funcprototype>
+			</funcsynopsis>
+		<para>
+			This function is similar to <link linkend="library-hexencode">hexencode</link> but it reads from file, instead of a string, and ignores any non-hexadecimal text and comments embedded within the input stream. Incoming text is binary encoded and written to the specified <varname>memory</varname> region. Reading terminates on the next occurance of a semicolon or end of file. The actual number of bytes encoded is returned. The function is declared in <ulink url='memory.h.html'>memory.h</ulink> and defined in <ulink url='hexin.c.html'>hexin.c</ulink>.
+			</para>
+		</section>
+	<section id="function-hexout">
+		<title>
+			hexout
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>void <function>hexout</function></funcdef>
+    				<paramdef>const byte <parameter>memory</parameter> []</paramdef>
+    				<paramdef>size_t <parameter>length</parameter></paramdef>
+    				<paramdef>char <parameter>c</parameter></paramdef>
+    				<paramdef>FILE *<parameter>fp</parameter></paramdef>
+				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Print a <varname>memory</varname> region as a series of decimal octets separated by character <constant>c</constant>. Normally, character <constant>c</constant> will be <constant>HEX_EXTENDER</constant>, defined in file <ulink url="number.h.html">number.h</ulink>, but it could be any character value.  For example, specifying <varname>c</varname> as <constant>':'</constant> and <varname>length</varname> as <constant>6</constant> would produce output looking something like <computeroutput>"00:B0:52:DA:DA:01"</computeroutput> where each octet is expressed as a hexadecimal integer. A typical use might be to print a <acronym>MAC</acronym> or <acronym>Ethernet</acronym> address in readable format. The function is declared in <ulink url='memory.h.html'>memory.h</ulink> and defined in <ulink url='hexout.c.html'>hexout.c</ulink>.
+			</para>
+		</section>
+	<section id="function-hexstring">
+		<title>
+			hexstring
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>char * <function>hexstring</function></funcdef>
+    				<paramdef>char <parameter>buffer</parameter> []</paramdef>
+				<paramdef>size_t <parameter>length</parameter></paramdef>
+				<paramdef>const byte <parameter>memory</parameter> []</paramdef>
+				<paramdef>size_t <parameter>extent</parameter></paramdef>
+ 				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Convert a <varname>memory</varname> region to a <constant>NUL</constant> terminated string and return the string address. This function is identical to function <link linkend='library-hexdecode'>hexdecode</link> but it return the string address instead of the number of characters decoded. The function is declared in <ulink url='memory.h.html'>memory.h</ulink> and defined in <ulink url='hexstring.c.html'>hexstring.c</ulink>.
+			</para>
+		</section>
+	<section id="function-hexview">
+		<title>
+			hexview
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+				<funcdef>void <function>hexview</function></funcdef>
+				<paramdef>const void * <parameter>memory</parameter></paramdef>
+				<paramdef>size_t <parameter>offset</parameter></paramdef>
+				<paramdef>size_t <parameter>extent</parameter></paramdef>
+				<paramdef>FILE * <parameter>fp</parameter></paramdef>
+				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Print a partial <varname>memory</varname> region in hexadecimal format showing memory offsets, hexadecimal byte values and ASCII character values. Argument <varname>memory</varname> contains part of a larger memory region, much like a file window. Argument <varname>extent</varname> is the window length. Argument <varname>offset</varname> is the relative offset of the window within the region. Locations <constant>memory [0]</constant> up to <constant>memory [extent]</constant> are displayed as a partial dump, providing a window into the region. The function is declared in <ulink url='memory.h.html'>memory.h</ulink> and defined in <ulink url='hexview.c.html'>hexview.c</ulink>. 			</para>
+		<para>
+			This function is similar to but different from function <link linkend='library-hexdump'>hexdump</link>.
+			</para>
+		</section>
+	<section id="library-ipv4spec">
+		<title>
+			ipv4spec
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>size_t <function>ipv4spec</function></funcdef>
+    				<paramdef>const char * <parameter>string</parameter></paramdef>
+   				<paramdef>byte <parameter>memory</parameter> []</paramdef>
+   				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Encode a 4-byte <varname>memory</varname> region with an IPv4 dotted-decimal <varname>string</varname> and return the number of bytes encoded. Terminate the program with an error message and exitcode of <constant>1</constant> on conversion error. The value returned by this function is always <constant>4</constant> and memory is always encoded in network byte order. This function is typically used to convert IPv4 strings entered as command line arguments. The function is declared in <ulink url='memory.h.html'>memory.h</ulink> and defined in <ulink url='ipv4spec.c.html'>ipv4spec.c</ulink>.
+			</para>
+		<para>
+			Dotted-decimal format consists of decimal values in the range 0 through 255. Each value represents one octet or 8-bit value. IPv4 addresses require 4 such values separated by one decimal point. This function permits empty octets and leading zeros within octets. For example,  <quote>...</quote> is equivalent to <quote>0.0.0.0</quote> and <quote>127.0.000.001</quote> is equivalent to <quote>127.0.0.1</quote>. The second example will encode memory as follows <constant>{ 0x7F, 0x00, 0x00, 0x01 }</constant> which is in network byte order, or big endian.
+			</para>
+		</section>
+	<section id="function-ipv6spec">
+		<title>
+			ipv6spec
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>size_t <function>ipv6spec</function></funcdef>
+    				<paramdef>const char * <parameter>string</parameter></paramdef>
+   				<paramdef>byte <parameter>memory</parameter> []</paramdef>
+   				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Encode a 16-byte <varname>memory</varname> region with an IPv6 colon-separated hexadecimal quartet <varname>string</varname> and return the number of bytes encoded. Terminate the program with an error message and exitcode of <constant>1</constant> on conversion error. The value returned by this function is always <constant>16</constant> and memory is always encoded in network byte order. This function is typically used to convert IPv6 strings entered as command line arguments. The function is declared in <ulink url='memory.h.html'>memory.h</ulink> and defined in <ulink url='ipv6spec.c.html'>ipv6spec.c</ulink>.
+			</para>
+		<para>
+			Colon-separated hexadecimal quartet notation consists of hexadecimal values in the range 0 through FFFF. Each value represents a quartet or a 32-bit value. IPv6 addresses require 8 quartets separated by one colon. By convention, an empty quartet expands with enough zeros to right-justify the remainder of the address. This function permits multiple empty quartets and leading zeros within quartets. When multiple empty quartets appear, only the right-most occurance expands to zeros. For example,  <quote>AA12::BB34::CC56::DD78</quote> is equivalent to <quote>AA12:0000:BB34:0000:CC56:0000:0000:DD78</quote> because only the right-most empty field expands. This will encode memory as follows <constant>{ 0xAA, 0x12, 0x00, 0x00, 0xBB, 0x34, 0x00, 0x00, 0xCC, 0x56, 0x00, 0x00, 0x00, 0x00, 0xDD, 0x78 }</constant> which is in network byte order, or big-endian.
+			</para>
+		</section>
+	<section id="function-memdecr">
+		<title>
+			memdecr
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>signed <function>memdecr</function></funcdef>
+    				<paramdef>byte <parameter>memory</parameter> []</paramdef>
+    				<paramdef>size_t <parameter>length</parameter></paramdef>
+  				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Decrement a multi-byte <varname>memory</varname> region. Return <constant>0</constant> on success or <constant>-1</constant> if all bytes have decremented to <constant>0x00</constant>. For example, <computeroutput>{ 0xFF, 0xFF, 0xFF }</computeroutput> decrements to <computeroutput>{ 0xFF, 0xFF, 0xFE }</computeroutput> and <computeroutput>{ 0xFF, 0x00, 0x00 }</computeroutput> decrements to <computeroutput>{ 0xFE, 0xFF, 0xFF }</computeroutput>. A typical use is to iterate through a range if <acronym>IP</acronym> or <acronym>MAC</acronym> address values. The function is declared in <ulink url='memory.h.html'>memory.h</ulink> and defined in <ulink url='memdecr.c.html'>memdecr.c</ulink>.
+			</para>
+		</section>
+	<section id="function-memincr">
+		<title>
+			memincr
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>signed <function>memincr</function></funcdef>
+    				<paramdef>byte <parameter>memory</parameter> []</paramdef>
+    				<paramdef>size_t <parameter>length</parameter></paramdef>
+  				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Increment a multi-byte <varname>memory</varname> region. Return <constant>0</constant> on success or <constant>-1</constant> once all bytes have been incremented to <constant>0xFF</constant>. For example <computeroutput>{ 0x00, 0x00, 0x00 }</computeroutput> increments to <computeroutput>{ 0x00, 0x00, 0x01 }</computeroutput> and <computeroutput>{ 0x00, 0xFF, 0xFF }</computeroutput> increments to <computeroutput>{ 0x01, 0x00, 0x00 }</computeroutput>. A typical use is to iterate through a range of <acronym>IP</acronym> or <acronym>MAC</acronym> address values. The function is declared in <ulink url='memory.h.html'>memory.h</ulink> and defined in <ulink url='memincr.c.html'>memincr.c</ulink>.
+			</para>
+		</section>
+	<section id="function-memswap">
+		<title>
+			memswap
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>void <function>memswap</function></funcdef>
+    				<paramdef>void * <parameter>buffer1</parameter></paramdef>
+    				<paramdef>void * <parameter>buffer2</parameter></paramdef>
+    				<paramdef>size_t <parameter>length</parameter></paramdef>
+  				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Exchange the contents of one buffer with that of another. No provision is made for buffer overlap. No value is returned. A typical use might be to exchange source and destination addresses in an ethernet packet. The function is declared in <ulink url='memory.h.html'>memory.h</ulink> and defined in <ulink url='memswap.c.html'>memswap.c</ulink>.
+			</para>
+		</section>
+	<section id="function-strdecr">
+		<title>
+			strdecr
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>signed <function>strdecr</function></funcdef>
+    				<paramdef>byte <parameter>memory</parameter> []</paramdef>
+    				<paramdef>size_t <parameter>length</parameter></paramdef>
+    				<paramdef>byte <parameter>min</parameter></paramdef>
+    				<paramdef>byte <parameter>max</parameter></paramdef>
+  				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Decrement a multi-byte <varname>memory</varname> region using only ASCII character values in the range <varname>min</varname> through <varname>max</varname>. Return <constant>0</constant> on success or <constant>-1</constant> once all characters have been decremented to the value of argument <varname>min</varname>. For example,  if argument <varname>min</varname> is <constant>'A'</constant> and argument <varname>max</varname> is <constant>'Z'</constant> then <computeroutput>{ 'A', 'B', 'C' }</computeroutput> decrements to <computeroutput>{ 'A', 'B', 'B' }</computeroutput> and <computeroutput>{ 'B', 'Z', 'Z' }</computeroutput> decrements to <computeroutput>{ 'A', 'A', 'A' }</computeroutput>. A typical use is to generate a sequence of distinct character strings to seed encryption key functions. The function is declared in <ulink url='memory.h.html'>memory.h</ulink> and defined in <ulink url='strdecr.c.html'>strdecr.c</ulink>.
+			</para>
+		</section>
+	<section id="function-strincr">
+		<title>
+			strincr
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>signed <function>strincr</function></funcdef>
+    				<paramdef>byte <parameter>memory</parameter> []</paramdef>
+    				<paramdef>size_t <parameter>length</parameter></paramdef>
+    				<paramdef>byte <parameter>min</parameter></paramdef>
+    				<paramdef>byte <parameter>max</parameter></paramdef>
+  				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Increment a multi-byte <varname>memory</varname> region using only ASCII character values in the range <varname>min</varname> through <varname>max</varname>. Return <constant>0</constant> on success or <constant>-1</constant> once all characters have been incremented to the value of argument <varname>max</varname>.  For example,  if argument <varname>min</varname> is <constant>'A'</constant> and argument <varname>max</varname> is <constant>'Z'</constant> then <computeroutput>{ 'A', 'B', 'C' }</computeroutput> increments to <computeroutput>{ 'A', 'B', 'D' }</computeroutput> and <computeroutput>{ 'A', 'Z', 'Z' }</computeroutput> increments to <computeroutput>{ 'B', 'A', 'A' }</computeroutput>. A typical use is to generate a sequence of distinct character strings to seed encryption key functions. The function is declared in <ulink url='memory.h.html'>memory.h</ulink> and defined in <ulink url='strincr.c.html'>strincr.c</ulink>.
+			</para>
+		</section>
+		</section>
+
+
+
+	<section id="library-number">
+		<title>
+			tools/number.h
+			</title>
+	<section id="function-todigit">
+		<title>
+			todigit
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>unsigned <function>todigit</function></funcdef>
+    				<paramdef>unsigned <parameter>c</parameter></paramdef>
+  				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Return the integer value of character <varname>c</varname> interpreted as digit in the base 36 number system. It is called by many encode functions to support number base conversion. If the value of <varname>c</varname> is <constant>'0'</constant> through <constant>'9'</constant> then integer <constant>0</constant> through <constant>9</constant> is returned.  If the value of <varname>c</varname> is <constant>'A'</constant> through <constant>'Z'</constant> or <constant>'a'</constant> through <constant>'z'</constant> then integer <constant>10</constant> through <constant>35</constant> is returned. The function is declared in <ulink url='number.h.html'>number.h</ulink> and defined in <ulink url='todigit.c.html'>todogit.c</ulink>.
+			</para>
+		</section>
+	<section id="function-basespec">
+		<title>
+			basespec
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>uint64_t <function>basespec</function></funcdef>
+    				<paramdef>const char * <parameter>string</parameter></paramdef>
+   				<paramdef>unsigned <parameter>base</parameter></paramdef>
+   				<paramdef>unsigned <parameter>size</parameter></paramdef>
+   				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Return the unsigned integer equivalent of a numeric <varname>string</varname>. Print an error message on <varname>stderr</varname> and exit the program with status <constant>1</constant> if a syntax error occurs or the result exceeds the capacity of the requested integer <varname>size</varname> in bytes. If <varname>base</varname> is <constant>0</constant>,  numeric values may be expressed in decimal, hexadecimal or binary notation where hexadecimal values start with <constant>"0x"</constant> and binary values start with <constant>"0b"</constant>. When <varname>base</varname> is non-zero, the notation in <varname>string</varname> must conform to the corresponding number base rules. Applications should cast the return value to the appropriate data type prevent loss-of-data compiler warnings. This function is typically used to convert and length-check integers entered as command line arguments. The function is declared in <ulink url='number.h.html'>number.h</ulink> and defined in <ulink url='basespec.c.html'>basespec.c</ulink>.
+			</para>
+		<para>
+			Like function <link linkend='library-uintspec'>uintspec</link>,  this function both converts and range checks numeric string values,  but the minimum and maximum value are implicit in the <varname>size</varname> of the integer. The minimum value is always <constant>0</constant> and the maximum value can be computed by  <constant>((1 &lt;&lt; size &lt;&lt; 3) - 1)</constant>.
+			</para>
+		</section>
+	<section id="function-dataspec">
+		<title>
+			dataspec
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>void <function>dataspec</function></funcdef>
+    				<paramdef>const char * <parameter>string</parameter></paramdef>
+   				<paramdef>byte <parameter>memory</parameter> []</paramdef>
+   				<paramdef>size_t <parameter>extent</parameter></paramdef>
+   				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Encode a <varname>memory</varname> region with the binary equivalent of a variable-length hexadecimal string. Print an error message on stderr and exit the program with the status <constant>1</constant> if a syntax error occurs or the number of octets exceeds <varname>extent</varname>. The number of octets may, however, be less than <constant>extent</constant>. Unlike function <link linkend='library-bytespec'>bytespec</link>, hexadecimal octets may not be separated by colons. This function is typically used to enter variable-length data from the command line. The function is declared in <ulink url='memory.h.html'>memory.h</ulink> and defined in <ulink url='dataspec.c.html'>dataspec.c</ulink>.
+			</para>
+		</section>
+	<section id="function-uintspec">
+		<title>
+			uintspec
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>uint64_t <function>uintspec</function></funcdef>
+    				<paramdef>const char * <parameter>string</parameter></paramdef>
+   				<paramdef>uint64_t <parameter>minimum</parameter></paramdef>
+   				<paramdef>uint64_t <parameter>maximum</parameter></paramdef>
+   				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Return the unsigned integer equivalent of a numeric <varname>string</varname>. Print an error message on <varname>stderr</varname> and exit the program with the value <constant>1</constant> when a syntax error occurs or the result exceeds the specified <varname>minimum</varname> or <varname>maximum</varname> value. Numeric values may be expressed in decimal, hexadecimal or binary notation where hexadecimal values start with <constant>"0x"</constant> and binary values start with <constant>"0b"</constant>. Applications should cast the return value to the appropriate data type to avoid loss-of-data warnings on some compilers. This function is typically used to convert and range-check integer values entered as command-line arguments. The function is declared in <ulink url='number.h.html'>number.h</ulink> and defined in <ulink url='uintspec.c.html'>uintspec.c</ulink>.
+			</para>
+		</section>
+		</section>
+
+
+	<section id="library-symbol">
+		<title>
+			tools/symbol.h
+			</title>
+	<section id="function-assist">
+		<title>
+			assist
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+				<funcdef>void <function>assist</function></funcdef>
+  				<paramdef>const char * <parameter>name</parameter></paramdef>
+   				<paramdef>const char * <parameter>type</parameter></paramdef>
+  				<paramdef>const struct _code_ <parameter>list</parameter> []</paramdef>
+    				<paramdef>size_t <parameter>size</parameter></paramdef>
+				<paramdef>FILE * <parameter>fp</parameter></paramdef>
+  				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Show why a symbolic <varname>name</varname> was rejected by function <link linkend='library-lookup'>lookup</link> or similar functions. Argument <varname>type</varname> contains a title for the class of names stored in <varname>list</varname>. This function prints an error message on file stream <constant>fp</constant> showing the program name,  the <varname>type</varname> string,  the symbolic <varname>name</varname> and all names stored in the <varname>list</varname>. The <constant>_code_</constant> structure is declared in <ulink url='types.h.html'>types.h</ulink>. The function is declared in <ulink url='symbol.h.html'>symbol.h</ulink> and defined in <ulink url='assist.c.html'>assist.c</ulink>. Function <link linkend='library-expect'>expect</link> is used to print list names.
+			</para>
+		</section>
+	<section id="function-expect">
+		<title>
+			expect
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+				<funcdef>void <function>expect</function></funcdef>
+  				<paramdef>const struct _code_ <parameter>list</parameter> []</paramdef>
+    				<paramdef>size_t <parameter>size</parameter></paramdef>
+     				<paramdef>FILE * <parameter>fp</parameter></paramdef>
+ 				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Display all names in argument <varname>list</varname> on file stream <varname>fp</varname>. This function is called by runction <link linkend='library-assist'>assist</link> to print the list of symbolic names but other function may have use for it. The <constant>_code_</constant> structure is declared in <ulink url='types.h.html'>types.h</ulink>. The function is declared in <ulink url='symbol.h.html'>symbol.h</ulink> and defined in <ulink url='expect.c.html'>expect.c</ulink>.
+			</para>
+		</section>
+	<section id="function-lookup">
+		<title>
+			lookup
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+				<funcdef>signed <function>lookup</function></funcdef>
+  				<paramdef>const char * <parameter>name</parameter></paramdef>
+   				<paramdef>const struct _code_ <parameter>list</parameter> []</paramdef>
+    				<paramdef>size_t <parameter>size</parameter></paramdef>
+  				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Lookup a symbolic <varname>name</varname> in a <varname>list</varname> and return an associated integer or <constant>-1</constant> if the <varname>name</varname> does not appear in the <varname>list</varname>. A typical use is the translation of symbolic command line arguments to integer codes. For example, some Toolkit programs assign symbolic names to field codes so that users can enter names instead of numbers. This approach becomes more useful as the number of permitted codes increases. The <constant>_code_</constant> structure is declared in <ulink url='types.h.html'>types.h</ulink>. The function is declared in <ulink url='symbol.h.html'>symbol.h</ulink> and defined in <ulink url='lookup.c.html'>lookup.c</ulink>.
+			</para>
+		<para>
+			This function offers two benefits: 1) multiple symbols can translate to one code and 2) names can be changed or new names added without affecting program logic. This function is similar to but different from function <link linkend='library-synonym'>synonym</link> which returns a character string instead of an integer. 
+			</para>
+		</section>
+	<section id="function-synonym">
+		<title>
+			synonym
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>const char * <function>synonym</function></funcdef>
+    				<paramdef>const char * <parameter>string</parameter></paramdef>
+    				<paramdef>const struct _term_ <parameter>list</parameter> []</paramdef>
+    				<paramdef>size_t <parameter>size</parameter></paramdef>
+  				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Lookup a symbolic <varname>name</varname> in a <varname>list</varname> and return an associated string or the original <name>string</name> if the <varname>name</varname> does not appear in the <varname>list</varname>. A typical use is the translation of symbolic command line arguments to their equivalent numeric strings before encoding them. For example, many Toolkit programs convert the command line argument <quote>local</quote> to <quote>00:B0:52:00:00:01</quote> before encoding the device MAC address. The <constant>_term_</constant> structure is declared in <ulink url='types.h.html'>types.h</ulink>. The function is declared in <ulink url='symbol.h.html'>symbol.h</ulink> and defined in <ulink url='synonym.c.html'>synonym.c</ulink>.
+			</para>
+		<para>
+			This function is similar to but different from function <link linkend='library-lookup'>lookup</link> which returns an integer instead of a character string.
+			</para>
+		</section>
+	<section id="function-typename">
+		<title>
+			typename
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>const char * <function>typename</function></funcdef>
+    				<paramdef>const struct _type_ <parameter>list</parameter> []</paramdef>
+   				<paramdef>size_t <parameter>size</parameter></paramdef>
+   				<paramdef>type_t <parameter>type</parameter></paramdef>
+   				<paramdef>const char * <parameter>name</parameter></paramdef>
+   				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Return the name associated with a message <varname>type</varname> by searching a list arranged in ascending order by message type. Return argument <varname>name</varname> as the function value if the message <varname>type</varname> is not present in the <varname>list</varname>. Data types <varname>struct _type_</varname> and <varname>type_t</varname> are defined in file <ulink url="types.h.html">types.h</ulink>. A typical use might be to return the name of message based on the message type. The function is declared in <ulink url='tools.h.html'>tools.h</ulink> and defined in <ulink url='typename.c.html'>typename.c</ulink>.
+			</para>
+		</section>
+		</section>
+
+
+
+
+	<section id="library-putoptv">
+		<title>
+			tools/putoptv.h
+			</title>
+	<section id="function-putoptv">
+		<title>
+			putoptv
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>void <function>putoptv</function></funcdef>
+    				<paramdef>const char * <parameter>optv</parameter> []</paramdef>
+ 				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Print program information on <constant>stdout</constant>. Program information is stored in string vector <varname>optv</varname>. String indexes are defined in file <filename>putoptv.h</filename>. String <varname>optv[0]</varname> is the <acronym>POSIX</acronym> standard argument <varname>optstring</varname>. This function is called by function <function>getoptv</function> whenever option <userinput>-?</userinput> or <userinput>--help</userinput> is detected on the command line. There is virtually no need to call this function directly. The function is declared in <ulink url='putoptv.h.html'>putoptv.h</ulink> and defined in <ulink url='putoptv.c.html'>putoptv.c</ulink>.
+			</para>
+		</section>
+		</section>
+
+	<section id="library-version">
+		<title>
+			tools/version.h
+			</title>
+	<section id="function-version">
+		<title>
+			version
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>void <function>version</function></funcdef>
+   				<void/>
+   				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Print package and program version information on <constant>stdout</constant>. This function is called by function <function>getoptv</function> whenever option <userinput>-!</userinput> or <userinput>--version</userinput> is detected on the command line. There is virtually no need to call this function directly. The function is declared in <ulink url='version.h.html'>version.h</ulink> and defined in <ulink url='version.c.html'>version.c</ulink>. Constants <constant>PACKAGE</constant> and <constant>VERSION</constant> define the information that is displayed. They are defined in file <ulink url="version.h.html">version.h</ulink> and must be maintained by developers. 
+			</para>
+		</section>
+		</section>
+
+	<section id="library-mme">
+		<title>
+			mme/mme.h
+			</title>
+	<section id="function-mmecode">
+		<title>
+			MMECode
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+				<funcdef>const char *<function>MMECode</function></funcdef>
+				<paramdef>uint16_t <parameter>MMTYPE</parameter></paramdef>
+				<paramdef>uint8_t <parameter>MSTATUS</parameter></paramdef>
+				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Return text that explains the status code for a given Atheros vendor-specific management message. Argument <varname>MMTYPE</varname> is an unsigned integer in the range <constant>0xA000</constant> through <constant>0xAFFF</constant> and must exactly match the <varname>MMTYPE</varname> of the message returning the status code. For example, the <varname>CNF</varname> variant of a message is currently the only variant that has an <varname>MSTATUS</varname> field and so other variants return a default string. The function is declared in <ulink url="mme.h.html">mme.h</ulink> and defined in <ulink url="MMECode.c.html">MMECode.c</ulink>. 
+			</para>
+		<para>
+			Inclusion of this function can increase application size by 3kb because the text associated with all Atheros vendor-specific management messages and errors are included whether needed or not. Conditional compilation statements are provided internally to suppress the full table with a terse substitute.
+			</para>
+		<para>
+			Although the <application>Bootloader</application> and firmware share some common Vendor Specific Management Messages, the two programs may return different codes for a given message and error condition. Where there are conflicts, Bootloader codes take precedence over firmware codes because it is unlikely that users will .issue the same messages to a device running firmware.
+			</para>
+		</section>
+	<section id="function-mmemode">
+		<title>
+			MMEMode
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+				<funcdef>const char *<function>MMEMode</function></funcdef>
+				<paramdef>uint16_t <parameter>MMTYPE</parameter></paramdef>
+				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Return the mode of a given management message type as a string. The mode is determined by the two least significant bits of argument  <varname>MMTYPE</varname>. The mode string will be one of <quote>REQ</quote>, <quote>CNF</quote>,  <quote>IND</quote> or <quote>RSP</quote>. The function is declared in <ulink url="ihp.h.html">ihp.h</ulink> and defined in <ulink url="MMEMode.c.html">MMEMode.c</ulink>. 
+			</para>
+		<para>
+			Most management messages have a request and a confirmation variant while a few have an indication and a response variant. Requests originate from the host and are acknolwedged by a confirmation from the device. Indications originate from a device and are acknowledged by a response from the host.
+			</para>
+		</section>
+	<section id="function-mmename">
+		<title>
+			MMEName
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+				<funcdef>const char *<function>MMEName</function></funcdef>
+				<paramdef>uint16_t <parameter>MMTYPE</parameter></paramdef>
+				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Return the name associated with a given management message type. The name is the mnemonic used to distinguish one message type from another in the <citetitle>HomePlug AV Specification</citetitle> or Atheros <citetitle>Firwmare Technical Reference Manual</citetitle>. Argument <varname>MMTYPE</varname> is an unsigned integer in the range <constant>0x0000</constant> through <constant>0xAFFF</constant>. The request, confirmation, indication and response variants of a management message will all return the same message name. The function is declared in <ulink url="mme.h.html">mme.h</ulink> and defined in <ulink url="MMEName.c.html">MMEName.c</ulink>. 
+			</para>
+		</section>
+	<section id="function-mmepeek">
+		<title>
+			MMEPeek
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+				<funcdef>void <function>MMEPeek</function></funcdef>
+				<paramdef>const byte <parameter>memory</parameter> []</paramdef>
+				<paramdef>size_t <parameter>length</parameter></paramdef>
+				<paramdef>size_t length, FILE *<parameter>fp</parameter></paramdef>
+				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Prints an Atheros vendor-specific management message to stream <constant>fp</constant> in human readable format. Argument <varname>buffer</varname> is the message address and argument <varname>length</varname> is the message length in bytes. Output consists of a formatted header showing decoded header. The function is declared in <ulink url="mme.h.html">mme.h</ulink> and defined in <ulink url="MMEPeek.c.html">MMEPeek.c</ulink>. 
+			</para>
+		</section>
+		</section>
+
+
+		<section id='library-keys'>
+			<title>
+				crypt/keys.h
+				</title>	
+		<section id="library-MACPasswords">
+			<title>
+				MACPasswords
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+  					<funcdef>void <function>MACPasswords</function></funcdef>
+   					<paramdef>uint32_t<parameter>vendor</parameter></paramdef>
+   					<paramdef>uint32_t<parameter>device</parameter></paramdef>
+   					<paramdef>uint32_t<parameter>number</parameter></paramdef>
+					<paramdef>unsigned <parameter>count</parameter></paramdef>
+ 					<paramdef>unsigned <parameter>bunch</parameter></paramdef>
+ 					<paramdef>unsigned <parameter>space</parameter></paramdef>
+ 					<paramdef>flag_t <parameter>flags</parameter></paramdef>
+					</funcprototype>
+				</funcsynopsis>
+			<para>
+				Print a range of device addresses and user passwords on stdout. The calling application must split the starting device address into a three-byte <acronym>OUI</acronym> and three-byte device number and pass them as the unsigned 32-bit integers <varname>vendor</varname> and <varname>device</varname>, respectively. Argument <varname>device</varname> is the first device number in the range and <varname>number</varname> is the final device number. Argument <varname>count</varname> is the number of uppercase letters comprising a password. Passwords contain this many letters but the letters are grouped for easy reading. Letter groups are separated by hyphens. Argument <varname>bunch</varname> defines how many letters form each group. Argument <varname>space</varname> is the character used to separate groups of letters. Argument <varname>flags</varname> enables or disables function features such as insertion of a <quote>used</quote> flag for use by the Atheros Production Test System or the omission of the device address on output. The output of this function is similar to that produced by the <application>DB Builder</application> utility distributed with the <acronym>PTS</acronym>. This function is declared in <ulink url="keys.h.html">keys.h</ulink> and defined in <ulink url="MACPasswords.c.html">MACPasswords.c</ulink>. 				</para>
+		</section>
+		</section>
+
+
+		<section id='library-HPAVKey.h'>
+			<title>
+				crypt/HPAVKey.h
+				</title>
+		<section id="function-HPAVKeyDAK">
+			<title>
+				HPAVKeyDAK
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+  					<funcdef>void <function>HPAVKeyDAK</function></funcdef>
+   					<paramdef> byte <parameter>DAK</parameter> []</paramdef>
+					<paramdef>const char <parameter>string</parameter></paramdef>
+  					</funcprototype>
+				</funcsynopsis>
+			<para>
+				Encode buffer <varname>DAK</varname> with the Device Access Key (<acronym>DAK</acronym>) derived from the <constant>NUL</constant> terminated <varname>string</varname>. The <varname>string</varname> is salted, hashed and re-hashed using the <acronym>SHA256</acronym> algorithm. The <varname>DAK</varname> is always <constant>HPAVKEY_DAK_LEN</constant> bytes, defined in <ulink url="HPAVKey.h.html">HPAVKey.h</ulink>,  so no length argument is needed. See the HomePlug AV Specification for more information. This function is declared in <ulink url="HPAVKey.h.html">HPAVKey.h</ulink> and defined in <ulink url="HPAVKeyDAK.c.html">HPAVKeyDAK.c</ulink>.				
+				</para>
+			</section>
+		<section id="function-HPAVKeyNMK">
+			<title>
+				HPAVKeyNMK
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+  					<funcdef>void <function>HPAVKeyNMK</function></funcdef>
+   					<paramdef> byte <parameter>digest</parameter> []</paramdef>
+					<paramdef>const char <parameter>string</parameter></paramdef>
+  					</funcprototype>
+				</funcsynopsis>
+			<para>
+				Encode buffer <varname>NMK</varname> with the Network Membership Key (<acronym>NMK</acronym>) derived from the <constant>NUL</constant> terminated <varname>string</varname>. The string is salted, hashed and re-hashed using the <acronym>SHA256</acronym> algorithm. The <varname>DAK</varname> is always <constant>HPAVKEY_NMK_LEN</constant> bytes,  as defined in <ulink url="HPAVKey.h.html">HPAVKey.h</ulink>,  so no length argument is needed. See the HomePlug AV Specification for more information. This function is declared in <ulink url="HPAVKey.h.html">HPAVKey.h</ulink> and defined in <ulink url="HPAVKeyNMK.c.html">HPAVKeyNMK.c</ulink>.				
+				</para>
+			</section>
+		<section id="function-HPAVKeyNID">
+			<title>
+				HPAVKeyNID
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+  					<funcdef>void <function>HPAVKeyNID</function></funcdef>
+   					<paramdef> byte <parameter>NID</parameter> []</paramdef>
+   					<paramdef>const byte <parameter>NMK</parameter> []</paramdef>
+					<paramdef>signed <parameter>level</parameter></paramdef>
+  					</funcprototype>
+				</funcsynopsis>
+			<para>
+				Encode buffer <varname>NID</varname> with the Network Identification Key (<acronym>NID</acronym>) derived from the 16-byte Network Membership Key (<acronym>NMK</acronym>). The <varname>NMK</varname> is hashed and re-hashed using the <acronym>SHA256</acronym> algorithm then encoded with the security <varname>level</varname>. The <varname>NID</varname> is always <constant>HPAVKEY_NID_LEN</constant> bytes,  as defined in <ulink url="HPAVKey.h.html">HPAVKey.h</ulink>,  so no length argument is needed. See the HomePlug AV Specification for more information. This function is declared in <ulink url="HPAVKey.h.html">HPAVKey.h</ulink> and defined in <ulink url="HPAVKeyNID.c.html">HPAVKeyNID.c</ulink>.				
+				</para>
+			</section>
+		<section id="function-HPAVKeyOut">
+			<title>
+				HPAVKeyOut
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+  					<funcdef>void <function>HPAVKeyOut</function></funcdef>
+   					<paramdef>const byte <parameter>digest</parameter> []</paramdef>
+					<paramdef>size_t <parameter>length</parameter></paramdef>
+   					<paramdef>const char * <parameter>phrase</parameter></paramdef>
+					<paramdef>flag_t <parameter>flags</parameter></paramdef>
+  					</funcprototype>
+				</funcsynopsis>
+			<para>
+				Decode and print up to <varname>length</varname> bytes from buffer <varname>digest</varname> on stdout. Print <constant>NUL</constant> terminated <varname>phrase</varname> on the same line following the digest when bit <varname>HPAVKEY_VERBOSE</varname>, defined in <ulink url='HPAVKey.h.html'>HPAVKey.h</ulink>, is set in <varname>flags</varname>. This procedure prints keys and phrases in a standard column-oriented format that other applications can easily read and use. This function is declared in <ulink url="HPAVKey.h.html">HPAVKey.h</ulink> and defined in <ulink url="HPAVKeyOut.c.html">HPAVKeyOut.c</ulink>.				
+				</para>
+			</section>
+			</section>
+		<section id='library-SHA256'>
+			<title>
+				crypt/SHA256.h
+				</title>
+		<section id="function-SHA256Block">
+			<title>
+				SHA256Block
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+  					<funcdef>void <function>SHA256Block</function></funcdef>
+   					<paramdef>struct sha256 *<parameter>sha256</parameter></paramdef>
+					<paramdef>const byte <parameter>buffer</parameter> []</paramdef>
+  					</funcprototype>
+				</funcsynopsis>
+			<para>
+				Merge one 64 byte block of information into the current <acronym>SHA256</acronym> digest. This function performs the core computations required by the <acronym>SHA256</acronym> algoithm. It is called by function <link linkend='library-SHA256Fetch'><varname>SHA256Fetch</varname></link> and there is no reason to call this function directly. This function is declared in <ulink url="SHA256.h.html">SHA256.h</ulink> and defined in <ulink url="SHA256Block.c.html">SHA256Block.c</ulink>. The sha256 structure is defined in <ulink url="SHA256.h.html">SHA256.h</ulink>.
+				</para>
+			</section>
+		<section id="function-SHA256Fetch">
+			<title>
+				SHA256Fetch
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+  					<funcdef>void <function>SHA256Fetch</function></funcdef>
+   					<paramdef>struct sha256 *<parameter>sha256</parameter></paramdef>
+					<paramdef> byte <parameter>digest</parameter> []</paramdef>
+  					</funcprototype>
+				</funcsynopsis>
+			<para>
+				 Conclude <acronym>SHA256</acronym> computation and copy the result to the specified 32-byte <varname>digest</varname> buffer. The <varname>digest</varname> is always 32 bytes long regardless of the amount of information written using function <link linkend='library-SHA256Write'>SHA256Write</link>. The <varname>sha256</varname> structure is defined in <ulink url="SHA256.h.html">SHA256.h</ulink>. This function is declared in <ulink url="SHA256.h.html">SHA256.h</ulink> and defined in <ulink url="SHA256Fetch.c.html">SHA256Fetch.c</ulink>.
+				</para>
+			</section>
+		<section id="function-SHA256Ident">
+			<title>
+				SHA256Ident
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+  					<funcdef>void <function>SHA256Ident</function></funcdef>
+   					<paramdef>int <parameter>fd</parameter></paramdef>
+   					<paramdef> byte <parameter>digest</parameter> []</paramdef>
+ 					</funcprototype>
+				</funcsynopsis>
+			<para>
+				Compute the SHA256 digest from the content of a file. The digest serves as the file <quote>fingerprint</quote> and can be used to identify identical content despite filename changes. File descriptor <varname>fd</varname> is the subject file which must be positioned to the start befor calling this function. Buffer <varname>digest</varname> will be written with the computed 256-digest and must be <constant>SHA256_DIGEST_SIZE</constant> bytes long, as defined in <ulink url="SHA256.h.html">SHA256.h</ulink>. This function is declared in <ulink url="SHA256.h.html">SHA256.h</ulink> and defined in <ulink url="SHA256Ident.c.html">SHA256Ident.c</ulink>.  
+				</para>
+			</section>
+		<section id="function-SHA256Match">
+			<title>
+				SHA256Match
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+  					<funcdef>void <function>SHA256Match</function></funcdef>
+   					<paramdef>int <parameter>fd</parameter></paramdef>
+   					<paramdef>const byte <parameter>digest</parameter> []</paramdef>
+ 					</funcprototype>
+				</funcsynopsis>
+			<para>
+				Search a registry file for a known SHA256 digest. Return <constant>true</constant> on success or <constant>false</constant> on failure. File descriptor <varname>fd</varname> is the registry file which must be positioned to the start before calling this function. Buffer <varname>digest</varname> contains the known 256-bit digest and must be <constant>SHA256_DIGEST_SIZE</constant> bytes long, as defined in <ulink url='SHA256.h.html'>SHA256.h</ulink>. A registry file consists of 64-digit hexadecimal strings that represent SHA256 digest values. Optional text may be appear between the digest and newline to document digest significance. This function ignores such text. This function is declared in <ulink url="SHA256.h.html">SHA256.h</ulink> and defined in <ulink url="SHA256Match.c.html">SHA256Match.c</ulink>.  
+				</para>
+			</section>
+		<section id="function-SHA256Print">
+			<title>
+				SHA256Print
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+  					<funcdef>void <function>SHA256Print</function></funcdef>
+   					<paramdef>const byte <parameter>digest</parameter> []</paramdef>
+   					<paramdef>const char * <parameter>string</parameter></paramdef>
+ 					</funcprototype>
+				</funcsynopsis>
+			<para>
+				Print an SHA256 <varname>digest</varname> and optional <varname>string</varname> on <constant>stdout</constant>. Buffer <varname>digest</varname> must be <constant>SHA256_DIGEST_SIZE</constant> bytes long, as defined in <ulink url='SHA256.h.html'>SHA256.h</ulink>, which results in 64 hexadecimal digits on output. Variable length string is <constant>NUL</constant> terminated but may be <constant>NULL</constant>. If <varname>string</varname> is not <constant>NULL</constant> and is not empty then a space is inserted between the digest and the string on output. This function may be used to print SHA256 digests and optional strings in standard format,  such as a registry file. This function is declared in <ulink url="SHA256.h.html">SHA256.h</ulink> and defined in <ulink url="SHA256Print.c.html">SHA256Print.c</ulink>.  
+				</para>
+			</section>
+		<section id="function-SHA256Reset">
+			<title>
+				SHA256Reset
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+  					<funcdef>void <function>SHA256Reset</function></funcdef>
+   					<paramdef>struct sha256 *<parameter>sha256</parameter></paramdef>
+ 					</funcprototype>
+				</funcsynopsis>
+			<para>
+				Initialize a <varname>sha256</varname> structure before computing a new <acronym>SHA256</acronym> digest. This function should be called once before calling <link linkend='library-SHA256Write'>SHA256Write</link> for the first time for a given digest. The <varname>sha256</varname> structure is defined in <ulink url="SHA256.h.html">SHA256.h</ulink>. This function is declared in <ulink url="SHA256.h.html">SHA256.h</ulink> and defined in <ulink url="SHA256Reset.c.html">SHA256Reset.c</ulink>.  
+				</para>
+			</section>
+		<section id="function-SHA256Write">
+			<title>
+				SHA256Write
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+  					<funcdef>void <function>SHA256Write</function></funcdef>
+   					<paramdef>struct sha256 *<parameter>sha256</parameter></paramdef>
+					<paramdef>const byte <parameter>buffer</parameter> []</paramdef>
+					<paramdef>size_t <parameter>length</parameter></paramdef>
+  					</funcprototype>
+				</funcsynopsis>
+			<para>
+				Writes a variable-length block of information to the current <acronym>SHA256</acronym> digest contained in an <varname>sha256</varname> structure. An application may call this function any number of times to concatinate multiple blocks of information before fetching the digest with function <function>SHA256Fetch</function>. The <varname>sha256</varname> structure is defined in <ulink url="SHA256.h.html">SHA256.h</ulink>.  This function is declared in <ulink url="SHA256.h.html">SHA256.h</ulink> and defined in <ulink url="SHA256Write.c.html">SHA256Write.c</ulink>.				
+				</para>
+			</section>
+		</section>
+
+
+
+	<section id="library-nodes">
+		<title>
+			nodes/node.h
+			</title>
+	<section id="function-xmledit">
+		<title>
+			xmledit
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>signed <function>xmledit</function></funcdef>
+   				<paramdef>struct node *<parameter>node</parameter></paramdef>
+				<paramdef> byte <parameter>buffer</parameter> []</paramdef>
+				<paramdef>size_t <parameter>length</parameter></paramdef>
+   				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Write data into <varname>buffer</varname> based on offset and length values defined in <acronym>XML</acronym> parse tree, <varname>node</varname>. This function will not apply modifications having malformed structure or having an invalid or an illegal offset, length or data value. Use function <link linkend='nodes-xmlschema'>xmlschema</link> to print the current schema. The function is declared in <ulink url='node.h.html'>node.h</ulink> and defined in <ulink url='xmledit.c.html'>xmledit.c</ulink>. The <varname>node</varname> structure is defined in <ulink url='node.h.html'>node.h</ulink>.
+			</para>
+		</section>
+	<section id="function-xmlfree">
+		<title>
+			xmlfree
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>void <function>xmlfree</function></funcdef>
+   				<paramdef>struct node *<parameter>node</parameter></paramdef>
+  				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Release memory associated with an XML parse tree. The function is declared in <ulink url='node.h.html'>node.h</ulink> and defined in <ulink url='xmlfree.c.html'>xmlfree.c</ulink>. The <varname>node</varname> structure is defined in <ulink url='node.h.html'>node.h</ulink>.
+			</para>
+		<para>
+			The <varname>text</varname> member if the parse tree root node points to memory allocated by <link linkend="nodes-xmlscan">xmlscan </link> to store the original <acronym>XML</acronym> string. The application must either deallocate that memory before calling this function or store the text address and deallocate that memory after calling this function;  otherwise, memory leaks will result. 
+			</para>
+		</section>
+	<section id="function-xmlnode">
+		<title>
+			xmlnode
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>struct node *<function>xmlnode</function></funcdef>
+   				<paramdef>struct node *<parameter>node</parameter></paramdef>
+  				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Create an empty node blow the specified node and return a pointer to it. A typical application can be seen in function <ulink url="xmlscan.c.html" >xmlscan.c</ulink>. The function is declared in <ulink url='node.h.html'>node.h</ulink> and defined in <ulink url='xmlnode.c.html'>xmlnode.c</ulink>. The <varname>node</varname> structure is defined in <ulink url='node.h.html'>node.h</ulink>.
+			</para>
+		</section>
+	<section id="function-xmlopen">
+		<title>
+			xmlopen
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>struct node *<function>xmlopen</function></funcdef>
+   				<paramdef>const char *<parameter>filename</parameter></paramdef>
+   				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Open the named XML file, parse it and return the XML parse tree. The parse tree contains, among other things, all XML elements,  attributes and values specified in the file. The function is declared in <ulink url='node.h.html'>node.h</ulink> and defined in <ulink url='xmlopen.c.html'>xmlopen.c</ulink>. The <varname>node</varname> structure is defined in <ulink url='node.h.html'>node.h</ulink>.
+			</para>
+		<para>
+			The returned parse tree is ready to traverse using struct <varname>node</varname> members <varname>above</varname>, <varname>below</varname>, <varname>prior</varname> and <varname>after</varname>. Each node has a <varname>line</varname>, <varname>type</varname> and <varname>test</varname> member. This function calls function <link linkend="nodes-xmlscan">xmlscan </link> to parse the file and generate the tree. The parse tree can be inspected by passing the root node to function <link linkend="nodes-xmltree">xmltree</link>.  
+			</para>
+		</section>
+	<section id="function-xmlscan">
+		<title>
+			xmlscan
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>signed <function>xmlscan </function></funcdef>
+   				<paramdef>struct node *<parameter>node</parameter></paramdef>
+  				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Scan the XML string attached to the specified <varname>node</varname> and create a parse tree below it. Return <constant>0</constant> if parsing is successrul or <constant>-1</constant> if not. The function is declared in <ulink url='node.h.html'>node.h</ulink> and defined in <ulink url='xmlscan.c.html'>xmlscan.c</ulink>. The <varname>node</varname> structure is defined in <ulink url='node.h.html'>node.h</ulink>.
+			</para>
+		<para>
+			The application must point the <varname>text</varname> member to a  copy of the XML string before calling this function because parsing is destructive and requires write access to the string. The application can search and manipulate the tree on return. The application should deallocate string memory before calling <link linkend="nodes-xmlfree">xmlfree</link>.   
+			</para>
+	<example id="nodes-example-1">
+		<title>
+			XML Source File
+			</title>
+		<para>
+			The following is sample input to function <function>xmlscan</function>. The element and attribute names shown are for illustration and were selected to that they can be easily identified in the output. The parse tree from this file can be seen in the example for function <link linkend="nodes-example-2">xmltree</link>.
+			</para>
+<screen><![CDATA[
+<?xml version="1.0" encoding="UTF-8" ?>
+<xmlfile 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xsi:noNamespaceSchemaLocation="myschema.xsd">
+	<element name="Element1">
+		<attribute name="Attribute1">
+			1234567890
+			</attribute>
+		<attribute name="Attribute2">
+			The quick brown fox jumped over the lazy dog.
+			</attribute>
+		</element>
+	<element name="Element2">
+		<attribute name="Attribute1">
+			</attribute>
+		<attribute name="Attribute2">
+			The quick brown 
+			fox jumped over 
+			the lazy dog.
+			</attribute>
+		</element>
+<!-- comments can go anywhere -->
+	<element name="Element2">
+		<attribute name="Attribute1"/>
+		<attribute name="Attribute2">
+			value2
+			</attribute>
+		</element>
+	</xmlfile>
+]]></screen>
+			</example>
+		</section>
+	<section id="nodes-xmlschema">
+		<title>
+			xmlschema
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>void <function>xmlschema</function></funcdef>
+   				<paramdef/>
+  				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Print an <acronym>XML</acronym> schema that supports function <link linkend='nodes-xmledit'>xmledit</link> on stdout. This function has no argument. The schema produced by this function is guaranteed to support the parse logic implemented by function <link linkend='nodes-xmledit'>xmledit</link>. Scheme element names are defined as constants in <ulink url='node.h.html'>node.h</ulink> so that they can be referenced by applications that create their own <acronym>XML</acronym> edit instructions. The function is declared in <ulink url='node.h.html'>node.h</ulink> and defined in <ulink url='xmlschema.c.html'>xmlschema.c</ulink>.
+			</para>
+		<para>
+			The <varname>text</varname> member in the parse tree root node points to memory allocated by <link linkend="nodes-xmlscan">xmlscan </link> to store the original <acronym>XML</acronym> string. The application must either deallocate that memory before calling this function or store the text address and deallocate that memory after calling this function;  otherwise, memory leaks will result. 
+			</para>
+		<example>
+			<title>
+				XML Edit Schema
+				</title>
+<screen><![CDATA[
+<?xml version='1.0' encoding='UTF-8'?>
+<xs:schema xmlns:xs='http://www.w3.org/2001/XMLSchema' elementFormDefault='qualified'>
+	<xs:element name='pib'>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element maxOccurs='unbounded' ref='object'/>
+				</xs:sequence>
+			</xs:complexType>
+		</xs:element>
+	<xs:element name='object'>
+		<xs:complexType>
+			<xs:attribute name='name' use='required' type='xs:NCName'/>
+			<xs:sequence>
+				<xs:sequence>
+					<xs:element ref='offset'/>
+					<xs:element ref='length'/>
+					</xs:sequence>
+				<xs:choice>
+					<xs:element ref='array'/>
+					<xs:element ref='dataString'/>
+					<xs:element ref='dataByte'/>
+					</xs:choice>
+				</xs:sequence>
+			</xs:complexType>
+		</xs:element>
+	<xs:element name='length' type='xs:positiveInteger'/>
+	<xs:element name='offset' type='xs:hexBinary'/>
+	<xs:element name='array'>
+		<xs:complexType>
+			<xs:choice maxOccurs='unbounded'>
+				<xs:element ref='dataByte'/>
+				<xs:element ref='dataHex'/>
+				</xs:choice>
+			</xs:complexType>
+		</xs:element>
+	<xs:element name='dataString' type='xs:string'/>
+	<xs:element name='dataHex' type='xs:hexBinary'/>
+	<xs:element name='dataByte' type='xs:unsignedByte'/>
+	</xs:schema>
+]]></screen>
+			<para>
+				The schema shown above was produced by function <link linkend='nodes-xmlschema'>xmlschema</link>. It is should be used to validate <acronym>XML</acronym> edit instructions before submitting them to program <ulink url='pxe.7.html'>pxe</ulink>. 
+				</para>
+			</example>
+		</section>
+	<section id="nodes-xmltree">
+		<title>
+			xmltree
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>void <function>xmltree</function></funcdef>
+   				<paramdef>struct node *<parameter>node</parameter></paramdef>
+  				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Print the XML parse tree on stdout. The function is declared in <ulink url='node.h.html'>node.h</ulink> and defined in <ulink url='xmltree.c.html'>xmltree.c</ulink>.
+			</para>
+		<example id="nodes-example-2">
+			<title>
+				XML Parse Tree 
+				</title>
+		<para>
+			The following is sample output from function <function>xmltree</function>. The XML source is shown in the example for function <link linkend="nodes-example-1">xmlscan </link>. The numbers appearing down the left margin indicate the input line number from the XML source file parsed by function <link linkend="nodes-xmlscan">xmlscan </link>. The character codes indicate the node type and are defined in <ulink url="node.h.html">node.h</ulink>. The <varname>node</varname> structure is defined in <ulink url='node.h.html'>node.h</ulink>.
+			</para>
+<screen><![CDATA[
+001 [?] [xml]
+001 [ ] 	[version]
+001 [=] 		[1.0]
+001 [ ] 	[encoding]
+001 [=] 		[UTF-8]
+002 [<] [xmlfile]
+002 [ ] 	[xmlns:xsi]
+002 [=] 		[http://www.w3.org/2001/XMLSchema-instance]
+002 [ ] 	[xsi:noNamespaceSchemaLocation]
+002 [=] 		[myschema.xsd]
+003 [<] 	[element]
+003 [ ] 		[name]
+003 [=] 			[Element1]
+004 [<] 		[attribute]
+004 [ ] 			[name]
+004 [=] 				[Attribute1]
+005 [>] 			[1234567890]
+006 [/] 			[attribute]
+007 [<] 		[attribute]
+007 [ ] 			[name]
+007 [=] 				[Attribute2]
+008 [>] 			[The quick brown fox jumped over the lazy dog.]
+009 [/] 			[attribute]
+010 [/] 		[element]
+011 [<] 	[element]
+011 [ ] 		[name]
+011 [=] 			[Element2]
+012 [<] 		[attribute]
+012 [ ] 			[name]
+012 [=] 				[Attribute1]
+013 [/] 			[attribute]
+014 [<] 		[attribute]
+014 [ ] 			[name]
+014 [=] 				[Attribute2]
+015 [>] 			[The quick brown fox jumped over the lazy dog.azy]
+018 [/] 			[attribute]
+019 [/] 		[element]
+020 [!] 	[-- comments can go anywhere --]
+021 [<] 	[element]
+021 [ ] 		[name]
+021 [=] 			[Element2]
+022 [<] 		[attribute]
+022 [ ] 			[name]
+022 [=] 				[Attribute1]
+023 [<] 		[attribute]
+023 [ ] 			[name]
+023 [=] 				[Attribute2]
+024 [>] 			[value2]
+025 [/] 			[attribute]
+026 [/] 		[element]
+027 [/] 	[xmlfile]
+]]></screen>
+			</example>
+			</section>
+		</section>
+	<section id="library-scan">
+		<title>
+			scan/scan.h
+			</title>
+		<section id="function-scaninput">
+			<title>
+				scaninput
+				</title>
+			<funcsynopsis>
+				<funcprototype>
+  					<funcdef>void <function>scaninput</function></funcdef>
+   					<paramdef>struct scan * <parameter>content</parameter></paramdef>
+    					<paramdef>const char <parameter>buffer</parameter> []</paramdef>
+    					<paramdef>signed <parameter>length</parameter></paramdef>
+ 					</funcprototype>
+				</funcsynopsis>
+			<para>
+				Initializes a <constant>SCAN</constant> structure for scanning by pointing the structure a <varname>buffer</varname> of given <varname>length</varname>, resetting intermmediate pointers and clearing the token <varname>class</varname> code.
+				</para>
+			</section>
+		</section>
+	</chapter>

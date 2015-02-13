@@ -1,0 +1,80 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			output.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='openport.c.html' title=' openport.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='ParseRule.c.html' title=' ParseRule.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   void output (signed indent, char const * format, ...);
+ *
+ *   format.h
+ *
+ *   print an indented and formatted string on stdout;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef OUTPUT_SOURCE
+#define OUTPUT_SOURCE
+
+#include &lt;stdio.h&gt;
+#include &lt;stdarg.h&gt;
+#include &lt;unistd.h&gt;
+
+#include &quot;../tools/format.h&quot;
+
+#ifdef __GNUC__
+
+__attribute__ ((format (printf, 2, 3)))
+
+#endif
+
+void output (signed indent, char const * format, ...)
+
+{
+	static char tab = '\t';
+	static char end = '\n';
+	while (indent-- &gt; 0)
+	{
+		putc (tab, stdout);
+	}
+	if ((format) &amp;&amp; (*format))
+	{
+		va_list arglist;
+		va_start (arglist, format);
+		vprintf (format, arglist);
+		va_end (arglist);
+	}
+	putc (end, stdout);
+	return;
+}
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='openport.c.html' title=' openport.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='ParseRule.c.html' title=' ParseRule.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

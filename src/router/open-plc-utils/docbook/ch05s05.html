@@ -1,0 +1,35 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Browse the Network</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="ch05.html" title="Chapter 5.  Procedures"><link rel="prev" href="ch05s04.html" title="Identify a Device"><link rel="next" href="ch05s06.html" title="Forming a Network"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">
+			Browse the Network
+			</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch05s04.html">Prev</a> </td><th width="60%" align="center">Chapter 5. 
+		Procedures 
+		</th><td width="20%" align="right"> <a accesskey="n" href="ch05s06.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="procedure-inspect-network"></a>
+			Browse the Network
+			</h2></div></div></div><p>
+			A powerline network consists of one or more powerline devices that share a common <acronym class="acronym">NMK</acronym>. One device on the network is in charge of the network and known as the Central Coordinator (<acronym class="acronym">CCo</acronym>). All other devices on that network are known as stations (<acronym class="acronym">STA</acronym>). Each device maintains internal information about the network to which it belongs. You can view that information at any time.
+			</p><div class="example"><a name="idp10995864"></a><p class="title"><b>Example 5.8. 
+				Display Network Information
+				</b></p><div class="example-contents"><pre class="screen">
+# int6k  -mieth3
+eth3 00:B0:52:00:00:01 Fetch Network Information
+eth3 00:B0:52:00:00:BB Found 1 Network(s)
+
+	network-&gt;NID = 77:23:0D:91:06:6E
+	network-&gt;SNID = 6
+	network-&gt;TEI = 1
+	network-&gt;ROLE = 0x02 (CCO)
+	network-&gt;CCO_DA = 00:B0:52:00:00:BB
+	network-&gt;CCO_TEI = 1
+	network-&gt;STATIONS = 1
+
+		station-&gt;DA = 00:B0:52:00:00:AA
+		station-&gt;TEI = 2
+		station-&gt;BDA = FF:FF:FF:FF:FF:FF
+		station-&gt;AvgPHYDR_TX = 0 mbps
+		station-&gt;AvgPHYDR_RX = 0 mbps
+</pre></div></div><br class="example-break"><p>
+			The example above prompts the local device on interface <strong class="userinput"><code>eth3</code></strong> for network membership (<strong class="userinput"><code>-m</code></strong>) information. Device <code class="computeroutput">00:B0:52:00:00:BB</code> responded and reported that it belongs to one powerline network. The first block of information identifies the network <acronym class="acronym">CCo</acronym>. The second block of information identifies a network <acronym class="acronym">STA</acronym>. This second block will repeat when multiple stations are present. Each device on the network has a unique Terminal Equipment Identifier (<acronym class="acronym">TEI</acronym>) within the network. The average <acronym class="acronym">PHY</acronym> rates show the data rates between the reporting device and each <acronym class="acronym">STA</acronym>. In this cases there has been no traffic.
+			</p></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch05s04.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="ch05.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch05s06.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">
+			Identify a Device 
+			 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 
+			Forming a Network                     
+			</td></tr></table></div></body></html>0

@@ -1,0 +1,337 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			hpavd.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='hpav.c.html' title=' hpav.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='hpavkey.c.html' title=' hpavkey.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *
+ *   hpavd.c - Qualcomm Atheros Homeplug AV Packet Daemon;
+ *
+ *   prints incoming Qualcomm Atheros HomePlug AV vendor-specific
+ *   management messages on stdout in hex dump format for analysis;
+ *
+ *   the program can be run in foreground or background, as a daemon;
+ *
+ *   this program receives raw ethernet frames and so requires root
+ *   privileges; if you install it using &quot;chmod 555&quot; and &quot;chown
+ *   root:root&quot; then you must login as root to run it; otherwise, you
+ *   can install it using &quot;chmod 4555&quot; and &quot;chown root:root&quot; so that
+ *   anyone can run it; the program will refuse to run until you get
+ *   thing right;
+ *
+ *
+ *   Contributor(s):
+ *      Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *   system header files;
+ *--------------------------------------------------------------------*/
+
+#include &lt;fcntl.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;ctype.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;sys/signal.h&gt;
+#include &lt;sys/ioctl.h&gt;
+#include &lt;errno.h&gt;
+
+#ifdef __linux__
+#include &lt;net/if.h&gt;
+#include &lt;net/if_arp.h&gt;
+#include &lt;netpacket/packet.h&gt;
+#include &lt;signal.h&gt;
+#endif
+
+/*====================================================================*
+ *   custom header files;
+ *--------------------------------------------------------------------*/
+
+#include &quot;../tools/getoptv.h&quot;
+#include &quot;../tools/putoptv.h&quot;
+#include &quot;../tools/memory.h&quot;
+#include &quot;../tools/number.h&quot;
+#include &quot;../tools/types.h&quot;
+#include &quot;../tools/flags.h&quot;
+#include &quot;../tools/error.h&quot;
+#include &quot;../plc/plc.h&quot;
+#include &quot;../mme/mme.h&quot;
+
+/*====================================================================*
+ *   custom source files;
+ *--------------------------------------------------------------------*/
+
+#ifndef MAKEFILE
+#include &quot;../tools/getoptv.c&quot;
+#include &quot;../tools/putoptv.c&quot;
+#include &quot;../tools/version.c&quot;
+#include &quot;../tools/hexdump.c&quot;
+#include &quot;../tools/hexstring.c&quot;
+#include &quot;../tools/hexdecode.c&quot;
+#include &quot;../tools/error.c&quot;
+#include &quot;../tools/emalloc.c&quot;
+#endif
+
+#ifndef MAKEFILE
+#include &quot;../mme/MMEPeek.c&quot;
+#include &quot;../mme/MMEName.c&quot;
+#include &quot;../mme/MMEMode.c&quot;
+#endif
+
+/*====================================================================*
+ *    program constants;
+ *--------------------------------------------------------------------*/
+
+#define HPAVD_DAEMON (1 &lt;&lt; 0)
+#define HPAVD_VERBOSE (1 &lt;&lt; 1)
+#define HPAVD_SILENCE (1 &lt;&lt; 2)
+#define HPAVD_ERROR (1 &lt;&lt; 3)
+
+#define PLCDEVICE &quot;PLC&quot;
+#define ETHDEVICE &quot;eth1&quot;
+#define ETHNUMBER 2
+
+/*====================================================================*
+ *   program variables;
+ *--------------------------------------------------------------------*/
+
+static bool done = false;
+
+/*====================================================================*
+ *
+ *   void terminate (signo_t signal);
+ *
+ *   terminate the program; we want to ensure an orgaized program
+ *   exit so that the original Ethernet adapter state is restored;
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+static void terminate (signo_t signal)
+
+{
+	done = true;
+	return;
+}
+
+/*====================================================================*
+ *
+ *   int main (int argc, char * argv[]);
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+int main (int argc, char const * argv [])
+
+{
+	struct sigaction sa;
+	struct ifreq ifreq;
+	struct sockaddr_ll sockaddr =
+	{
+		PF_PACKET,
+		htons (ETH_P_HPAV),
+		0x0000,
+		ARPHRD_ETHER,
+		PACKET_OTHERHOST,
+		ETHER_ADDR_LEN,
+		{
+			0x00,
+			0x00,
+			0x00,
+			0x00,
+			0x00,
+			0x00,
+			0x00,
+			0x00
+		}
+	};
+	static char const * optv [] =
+	{
+		&quot;di:qv&quot;,
+		PUTOPTV_S_DIVINE,
+		&quot;Qualcomm Atheros HomePlug AV Packet Daemon&quot;,
+		&quot;d\trun in background as daemon&quot;,
+		&quot;i s\thost interface is (s) [&quot; ETHDEVICE &quot;]&quot;,
+		&quot;q\tsuppress normal output&quot;,
+		&quot;v\tverbose messages on stdout&quot;,
+		(char const *) (0)
+	};
+	uint8_t packet [ETHER_MAX_LEN];
+	flag_t state = (flag_t)(0);
+	flag_t flags = (flag_t)(0);
+	sock_t fd = -1;
+	signed c;
+	memset (&amp;ifreq, 0, sizeof (ifreq));
+	memcpy (ifreq.ifr_name, ETHDEVICE, sizeof (ETHDEVICE));
+	if (getenv (PLCDEVICE))
+	{
+		memcpy (ifreq.ifr_name, getenv (PLCDEVICE), sizeof (ifreq.ifr_name));
+	}
+	optind = 1;
+	while ((c = getoptv (argc, argv, optv)) != -1)
+	{
+		switch ((char) (c))
+		{
+		case 'd':
+			_setbits (flags, HPAVD_DAEMON);
+			break;
+		case 'i':
+			memcpy (ifreq.ifr_name, optarg, sizeof (ifreq.ifr_name));
+			break;
+		case 'q':
+			_setbits (flags, HPAVD_SILENCE);
+			break;
+		case 'v':
+			_setbits (flags, HPAVD_VERBOSE);
+			break;
+		default:
+			break;
+		}
+	}
+	argc -= optind;
+	argv += optind;
+	if (geteuid ())
+	{
+		error (1, EPERM, ERROR_NOTROOT);
+	}
+	if (_anyset (flags, HPAVD_DAEMON))
+	{
+		pid_t pid = fork ();
+		if (pid &lt; 0)
+		{
+			error (1, errno, &quot;razzlefrats!&quot;);
+		}
+		if (pid &gt; 0)
+		{
+			exit (0);
+		}
+	}
+	memset (&amp;sa, 0, sizeof (struct sigaction));
+	sa.sa_handler = terminate;
+	sigaction (SIGTERM, &amp;sa, (struct sigaction *)(0));
+	sigaction (SIGQUIT, &amp;sa, (struct sigaction *)(0));
+	sigaction (SIGTSTP, &amp;sa, (struct sigaction *)(0));
+	sigaction (SIGINT, &amp;sa, (struct sigaction *)(0));
+	sigaction (SIGHUP, &amp;sa, (struct sigaction *)(0));
+	if ((fd = socket (sockaddr.sll_family, SOCK_RAW, sockaddr.sll_protocol)) == -1)
+	{
+		error (1, errno, &quot;Can't create socket for %s&quot;, ifreq.ifr_name);
+	}
+	if (ioctl (fd, SIOCGIFFLAGS, &amp;ifreq) &lt; 0)
+	{
+		error (1, errno, &quot;Can't read %s device state&quot;, ifreq.ifr_name);
+	}
+	state = ifreq.ifr_flags;
+	_setbits (ifreq.ifr_flags, (IFF_UP | IFF_BROADCAST));
+	_clrbits (ifreq.ifr_flags, (IFF_MULTICAST | IFF_ALLMULTI | IFF_PROMISC));
+	if (ioctl (fd, SIOCSIFFLAGS, &amp;ifreq) &lt; 0)
+	{
+		error (1, errno, &quot;Can't change %s device state&quot;, ifreq.ifr_name);
+	}
+	if (ioctl (fd, SIOCGIFINDEX, &amp;ifreq) == -1)
+	{
+		error (1, errno, &quot;Can't get %s interface index&quot;, ifreq.ifr_name);
+	}
+	sockaddr.sll_ifindex = ifreq.ifr_ifindex;
+	if (ioctl (fd, SIOCGIFHWADDR, &amp;ifreq) == -1)
+	{
+		error (1, errno, &quot;Can't get %s hardware address&quot;, ifreq.ifr_name);
+	}
+	memcpy (sockaddr.sll_addr, ifreq.ifr_ifru.ifru_hwaddr.sa_data, sizeof (sockaddr.sll_addr));
+	if (bind (fd, (struct sockaddr *) (&amp;sockaddr), sizeof (struct sockaddr_ll)) == -1)
+	{
+		error (1, errno, &quot;Can't bind socket to %s&quot;, ifreq.ifr_name);
+	}
+	while (!done)
+	{
+		signed length = recvfrom (fd, packet, sizeof (packet), 0, (struct sockaddr *) (0), (socklen_t *)(0));
+		if (length &gt; 0)
+		{
+			if (_allclr (flags, HPAVD_SILENCE))
+			{
+				MMEPeek (&amp;packet, length, stdout);
+			}
+			if (_anyset (flags, HPAVD_VERBOSE))
+			{
+				hexdump (&amp;packet, 0, length, stdout);
+			}
+		}
+	}
+	ifreq.ifr_flags = state;
+	if (ioctl (fd, SIOCSIFFLAGS, &amp;ifreq) &lt; 0)
+	{
+		error (1, errno, &quot;Can't restore %s device state&quot;, ifreq.ifr_name);
+	}
+	close (fd);
+	return (0);
+}
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='hpav.c.html' title=' hpav.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='hpavkey.c.html' title=' hpavkey.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

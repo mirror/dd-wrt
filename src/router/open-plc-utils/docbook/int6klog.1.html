@@ -1,0 +1,133 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			int6klog.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='int6klist.1.html' title=' int6klist.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='int6kmdio.1.html' title=' int6kmdio.1 '>NEXT</a>]
+			</div>
+<pre>
+int6klog(1)                                  Qualcomm Atheros Open Powerline Toolkit                                 int6klog(1)
+
+NAME
+       int6klog - Qualcomm Atheros Log Retrieval Utility
+
+SYNOPSIS
+       int6klog [options] [device] [device] [...]  [&gt;stdout]
+
+DESCRIPTION
+       Read  and print the device watchdog and checkpoint report on stdout for subsequent analysis by Atheros Technical Support.
+       Report output is in XML format and contains base-64 encoded binary data returned by the device.  Aside from the XML tags,
+       output is not in human readable format.
+
+       This  program  is  part of the Qualcomm Atheros Powerline Toolkit.  See the AMP man page for an overview and installation
+       instructions.
+
+OPTIONS
+       -C     Return customer log.  This option has no effect unless used with option -r and is for EoC only.
+
+       -c     Clear report.  This option is independent of options -r and -C.
+
+       -e     Redirects stderr messages to stdout.  By convention status and error messages are printed on stderr while  primary
+              program output is printed on stdout.  This option prints all output on stdout in cases where this is desired.
+
+       -f     Specifies  the output format.  Possible values are &quot;xml&quot; and &quot;raw&quot;.  &quot;xml&quot; will output the watchdog and checkpoint
+              log in the customer XML xlog format.  &quot;raw&quot; will output the watchdog log in the Engineering  Device  Manager  .log
+              format.
+
+       -i interface
+              Select  the host Ethernet interface.  All requests are sent via this host interface and only reponses received via
+              this host interface are recognized.  The default interface is eth1 because most people use eth0 as their principle
+              network  connection;  however,  if  environment  string &quot;PLC&quot; is defined then it takes precedence over the default
+              interface.  This option then takes precedence over either default.
+
+       -q     Suppresses status messages on stderr.
+
+       -r     Read watchdog log.  This is not the default option and must be specified when needed.
+
+       -v     Print additional information on stdout.  In particular, this option dumps incoming and outgoing packets which  can
+              be saved as text files for reference.
+
+       -?,--help
+              Print program help summary on stdout.  This option takes precedence over other options on the command line.
+
+       -?,--version
+              Print program version information on stdout.  This option takes precedence over other options on the command line.
+              Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version  of
+              the Linux Toolkit you are using.
+
+ARGUMENTS
+       device The  MAC  address  of some powerline device.  More than one address may be specified.  If more than one address is
+              specified then operations are performed on each device in turn.  The default address is local.   See  DEVICES  for
+              information about symbolic device addresses.
+
+LOGFILES
+       Log  files  are save in binary format by default but they can also be saved in XML format by adding option -x to the com‐
+       mand line.  By convention, binary log files have a .log extension and XML log files have a .xlog extension.   The  exten‐
+       sion is not critical but it helps us determine the format before we open the file.
+
+DEVICES
+       Powerline  devices  use  Ethernet  Media  Access  Control  (MAC)  addresses.   MAC  addresses  are  12 hexadecimal digits
+       (0123456789ABCDEFabcdef) in upper, lower or mixed case.  Individual octets may be separated by colons, for  clarity,  but
+       not  all octets need to be seperated.  For example, &quot;00b052000001&quot;, &quot;00:b0:52:00:00:01&quot; and &quot;00b052:000001&quot; are valid and
+       equivalent.
+
+       The following MAC addresses are special and may be expressed by name instead of number.
+
+       all    Equivalent to &quot;broadcast&quot;, described next.
+
+       broadcast
+              A synonym for the standard Ethernet broadcast address, FF:FF:FF:FF:FF:FF.  All devices, whether local,  remote  or
+              foreign will respond to this address.
+
+       local  A  synonym  for the Qualcomm Atheros vendor specific Local Management Address (LMA), 00:B0:52:00:00:01.  All local
+              Atheros devices will recognize this address but remote and foreign devices will  not.   A  remote  device  is  any
+              device at the far end of a powerline connection.  A foreign device is any device not manufactured by Atheros.
+
+REFERENCES
+       See the Qualcomm Atheros HomePlug AV Firmware Technical Reference Manual for more information.
+
+DISCLAIMER
+       Atheros  HomePlug  AV  Vendor Specific Management Message structure and content is proprietary to Atheros Communications,
+       Ocala FL USA.  Consequently, public information is not available.  Atheros Communications reserves the  right  to  modify
+       message  structure  or  content  in future firmware releases without any obligation to notify or compensate users of this
+       program.
+
+EXAMPLES
+       The following example reads the Watchdog and Checkpoint Report from device 00:B0:52:BA:BE:02 and prints them on stdout in
+       XML  format.  The output contains data segments formatted in base-64 notation which preserved data integrity when read or
+       transmitted in text format.
+
+          # int6klog 00:B0:52:BA:BE:02
+
+       The next example does the same thing but pipes output to file temp.log.  Atheros recommends using a  .log  extension  for
+       compatibility with the WIndows Device Manager.
+
+          # int6klog 00:B0:52:BA:BE:02 &gt; temp.log
+
+SEE ALSO
+       amp(1), int6k(1), int6kf(1), int6khost(1), int6kid(1), int6krate(1), int6krule(1), int6kstat(1), int6kwait(1)
+
+CREDITS
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                              int6klog(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='int6klist.1.html' title=' int6klist.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='int6kmdio.1.html' title=' int6kmdio.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

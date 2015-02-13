@@ -1,0 +1,232 @@
+.TH int6kbaud 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+int6kbaud - Qualcomm Atheros Serial Line Device Configuration
+
+.SH SYNOPSIS
+.BR int6kbaud
+.RI [ options ] 
+[...]
+
+.SH DESCRIPTION
+Set serial line parameters on a UART-enabled Atheros powerline device using the ATBR serial line command.
+
+.PP
+Serial line commands are 7-bit ASCII character strings sent to the local powerline device over the host serial port.
+They can be sent using any terminal emulator but this program will, in many cases, reduce typing and simplify scripting.
+It is especially useful for downloading device parameters and uploading device parameters or firmware because those operations involve large volumes of data.
+Also, this program permits decimal integer arguments in many cases where the serial line commands require hexadecimal integer values.
+See the \fBCOMMANDS\fR section below for a list of supported serial line commands;
+
+.PP
+This program is part of the Qualcomm Atheros Powerline Toolkit.
+See the \fBAMP\fR man page for an overview and installation instructions.
+
+.SH COMMENTS
+This program does not configure or reconfigure host serial port settings since most systems provide a utility to do that.
+Be sure to configure them before using this program since other programs may change them before or after use.
+Atheros factory default settings for UART-enabled powerline devices are \fB1115200\fR baud, \fB8\fR data bits, \fB1\fR stop bit, \fBno\fR parity and \fBno\fR flow control.
+
+.PP
+On Linux, use the \fBstty\fR utility to inspect and set serial port parameters.
+The following Linux command will configure serial device \fB/dev/ttyS0\fR speed to \fB115200\fR baud with \fB8\fR data bits, \fB1\fR stop bit, \fBno\fR parity bit and \fBno\fR flow control.
+Consult the \fBstty\fR man page for an explanation of these and other options.
+
+.PP
+   #stty -f /dev/ttyS0 115200 cs8 cstopb -cparenb -ixon
+
+.PP
+On Windows, use the the \fBDevice Manager\fR dialog to set serial \fBPort\fR properties.
+To open this dialog, select \fBStart Menu\fR, \fBControl Panel\fR, \fBSystem\fR, \fBHardware\fR, \fBDevice Manager\fR, \fBPorts\fR, \fBAdvanced\fR.
+
+.SH OPTIONS
+
+.TP
+-\fBB \fIbaudrate\fR
+The new baud rate.
+Any integer value may be entered here but only certain values may be accepted by the powerline device.
+Although the device may support some value, the local host may not support it.
+Supported values are \fB300\fR, \fB600\fR, \fB1200\fR, \fB2400\fR, \fB4800\fR, \fB9600\fR, \fB38400\fR, \fB57600\fR, \fB115200\fR, \fB230400\fR, \fB460800\fR and \fB921600\fR.
+The default is \fB115200\fR.
+
+.TP
+-\fBD \fIdatabits\fR
+The number of bits per data byte.
+Accepted values are \fB7\fR and \fB8\fR.
+The default is \fB8\fR.
+
+.TP
+-\fBF \fIflowctrl\fR
+The hardware flowcontrol state.
+Accepted values are \fB0\fR=\fBoff\fR and \fB1\fR=\fBon\fR where numeric values or keywords "\fBoff\fR" or "\fBon\fR" may be used.
+Keyword "\fBnone\fR" is synonymous with "\fBoff\fR" for this option.
+The default is \fBnone\fR.
+
+.TP
+-\fBm \fImode\fR
+Accepted values are \fB1\fR=\fBtransparent\fR and \fB2\fR=\fBcommand\fR where numeric values or keywords "\fBtransparent\fR" or "\fBcommand\fR" may be used.
+
+.TP
+-\fBP \fIparity\fR
+The number of parity bits and parity mode.
+Accepted values are \fB0\fR=\fBnone\fR, \fB1\fR=\fBodd\fR and \fB2\fR=\fBeven\fR where numeric values of keywords "\fBnone\fR", "\fBodd\fR" or "\fBeven\fR" may be used.
+The default is \fBnone\fR.
+
+.TP
+.RB - q
+Suppress progress and error information on stderr.
+
+.TP
+-\fBs \fItty\fR
+Communicate with the local powerline device over the named serial interface on the local host.
+The program default is "/dev/ttyUSB0" for Linux and "com1:" for Windows.
+The program default may be replace by defining environment variable \fBPLCUART\fR.
+This command line option will over-ride those defaults.
+
+.TP
+-\fBS \fIstopbits\fR
+The number of stop bits.
+Accepted values are \fB1\fR or \fB2\fR.
+The default is \fB1\fR.
+
+.TP
+.RB - u
+Force default host port settings to match the default setting for UART-enabled Atheros powerline devices.
+The setting are \fB115200\fR baud, \fB8\fR data bits, \fBno\fR parity bits and \fB1\fR stop bit.
+These settings will remain active when the program terminates and will not change unless changed by some other means, perhaps by another application.
+This option is an easy means of establishg an initial serial connection with a powerline device, unless it's settings have been changed.
+.TP
+.RB - v
+Display serial line commands and responses on stdout.
+.TP
+.RB - w
+Place the local powerline device in \fBCommand Mode\fR using the \fB+++\fR serial line command. The device will remain in command mode until it is reset or forced into \fBTransparaent Mode\fR or \fBHigh Speed Command Mode\fR.
+.TP
+.RB - ? ,-- help
+Print program help summary on stdout. This option takes precedence over other options on the command line. 
+.TP
+.RB - ! ,-- version
+Print program version information on stdout. This option takes precedence over other options on the command line. Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of the Linux Toolkit you are using.
+.SH ARGUMENTS
+None.
+.SH COMMANDS
+This section lists serial line commands recognized by local powerline devices when in \fBCommand Mode\fR. Commands can be issued interactively using a terminal emulator, like \fBminicom\fR on Linux or \fBHyperTerminal\fR on Windows or stored as text and copied to the serial port using system utilities, like \fBcat\fR on Linux or \fBtype\fR on Windows. This program merely converts command line options and arguments into one or more of the serial line commands shown below.
+.TP
+.BR +++
+Exit \fBTransparent Mode\fR and enter \fBCommand Mode\fR. See option \fB-w\fR above.
+.TP
+.BR AT
+Test for \fBCommand Mode\fR by doing nothing, successfully. See option \fB-t\fR above.    
+.TP
+.BI ATBR mode , baudrate , databits , parity , stopbits , flowctrl
+Set serial line parameters on the local powerline device. Beware that this will break the existing serial connection when the new parameters differ from those of the local host. 
+.TP
+.BI ATBSZ ?
+Get \fBTransparent Mode\fR buffer size. See option \fB-z\fR above.
+.TP
+.BI ATBSZ size
+Set \fBTransparent Mode\fR buffer size. See option \fB-Z\fR above.
+.TP
+.BI ATDST ?
+Get \fBTransparent Mode\fR destination device address. See option \fB-d\fR above.
+.TP
+.BI ATDST address             
+Set \fBTransparent Mode\fR destination device address. See option \fB-D\fR above.
+.TP
+.BR ATFD
+Reset local device to factory defaults. See option \fB-T\fR above.
+.TP
+.BR ATHSC
+Exit \FBCommand Mode\fR and enter \fBHigh Speed Command Mode\fR. Once the \fBOK\fR response is received, the local host should send commands to the device at successively higher speeds until a valid response is received.
+.TP
+.BI ATNI ?
+Read nework information and store the information internally. Return the number of associated stations and information about the first associated station. The information includes the peer station device address, TX rate and RX rate.
+.TP
+.BI ATNI station
+Extract and display previously stored network information for a specific peer \fIstation\fR. The information returned is that previosly stored using a \fBATNI\fR serial line command query.
+.TP
+.BR ATO
+Exit \fBCommand Mode\fR and enter \fBTransparent Mode\fR. Successful switch requires a valid destination MAC address, buffer size and aggregation timeout value. Use serial line commands \fBATDST\fR and \fBATBSZ\fR to get and/or set the first two values. Use serial line command \fBATTO\fR to set the timeout value.
+.TP
+.BI ATPS time
+Place the device in \FBPower Save Mode\fR for a specified \fItime\fR in seconds. Accepted values are \fB1\fR to \fB384\fR seconds. The default time is \fBA\fR seconds.
+.TP
+.BI ATRP length , offset
+Read and display a parameter block segment where \fIlength\fR is the number of bytes read and \fIoffset\fR is the relative position, in bytes, from the start of the parameter block. Valid \fBlength\fR values are \fB0\fR through \fB400\fR hexadecimal. See option \fB-p\fR above to read and save an entire parameter block.
+.TP
+.BR ATRPM
+Get PIB version and device MAC address.
+.TP
+.BR ATRV
+Get hardware and firmware revision. See option \fB-r\fR above.
+.TP
+.BI ATSK ? 
+Get device Network Membership Key. See option \fB-m\fR above.
+.TP
+.BI ATSK key 
+Set device Network Membership Key. See option \fB-M\fR above.
+.TP
+.BI ATTO ?
+Get the \fBTransparent Mode\fR aggregation \fItimeout\fR in milliseconds. 
+.TP
+.BI ATTO timeout
+Set the \fBTransparent Mode\fR aggregation \fItimeout\fR in milliseconds. See option \fB-W\fR above.
+.TP
+.BI ATWNV module
+Update NVM with PIB and/or Firmware module. See option \fB-C\fR above.
+.TP
+.BI ATWPF module , length , offset , checksum , data
+Write a parameter block or firmware segment to the local powerline device where \fImodule\fR is the module identifier, \fIlength\fR is the number of bytes to write, \fIoffset\fR is the relative position from the start of the module, \fIchecksum\fR is the 1's complement of the data and \fIdata\fR is the data to be written.
+Valid module identifiers are \fB1\fR=\fBFW\fR and \fB2\fR=\fBPIB\fR.
+Valid \fIlength\fR values are \fB0\fR up to \fB400\fR hexadecimal.
+See options \fB-N\fR and \fB-P\fR above to write an entire parameter block or firmware images.
+
+.TP
+.BR ATZ
+Reset device.
+See option \fB-R\fR above.
+
+.SH REFERENCES
+See the Qualcomm Atheros HomePlug AV Firmware Technical Reference Manual for more information.
+
+.SH DISCLAIMER
+Atheros serial line commands are proprietary to Qualcomm Atheros, Ocala FL USA.
+Consequently, public information is not available.
+Qualcomm Atheros reserves the right to modify command line syntax or command functionality in future firmware releases without any obligation to notify or compensate product or program users.
+
+.SH EXAMPLES
+The following example sets the baud speed to \fB115200\fR baud with \fB8\fR data bits, \fB1\fR stop bits, \fBno\fR flow control and \fBno\fR parity.
+The outgoing serial line command and incoming response are displayed on stderr because option \fB-f\fR is present.
+
+.PP
+   #int6kbaud -B 115200 -D 8 -F 0 -P 0 -S 1 -v 
+   ATBR00,000000000001C200,08,00,01,00
+   OK
+
+.PP
+Observe that decimal command line arguments are converted to hexadecimal on output.
+Although this program outputs fixed-length fields, including leaing zeros, device firmware ignores them.
+Leading zeros may be omitted when entering serial line commands manually.
+
+.PP 
+The next example set the speed to \fB38400\fR.
+Observe that program default values appear in the outgoing serial line command when the corresponding command line options are omitted.
+
+.PP
+   #int6kbaud -B 38400 -v 
+   ATBR00,0000000000009600,08,00,01,00
+   OK
+
+.PP
+The next command does the same thing as the first example except that keywords replace numeric values for some of the options.
+Since option \fB-v\fR is omitted the outgoing command and incoming response are not displayed.
+   #int6kbaud -B 115200 -D 8 -F off -P none -S 1 
+
+.SH SEE ALSO
+.BR amp ( 1 ),
+.BR int6kuart ( 1 ),
+.BR ttysig ( 1 )
+
+.SH CREDITS
+ Charles Maier <cmaier@qca.qualcomm.com>
+

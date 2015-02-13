@@ -1,0 +1,35 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Endian-ness</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="ch03.html" title="Chapter 3.  Software"><link rel="prev" href="ch03s12.html" title="Structure Packing"><link rel="next" href="ch03s14.html" title="Packet Basics"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">
+			Endian-ness 
+			</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch03s12.html">Prev</a> </td><th width="60%" align="center">Chapter 3. 
+		Software 
+		</th><td width="20%" align="right"> <a accesskey="n" href="ch03s14.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="endianess"></a>
+			Endian-ness 
+			</h2></div></div></div><p>
+			Atheros vendor-specific messages contain information in mixed endian format. The Ethernet header portion is sent <span class="emphasis"><em>big endian </em></span> but the Atheros header and payload are sent in <span class="emphasis"><em>little endian </em></span>. The traditional endian converstion functions <code class="function">htons()</code>, <code class="function">htonl()</code>, <code class="function">ntohs()</code> and <code class="function">ntohl()</code> can be used to perform platform independent conversions on the Ethernet header but not the Atheros header payload.
+			</p><p>
+			The Open Powerline Toolkit includes similar macros <code class="function">HTOLE16</code>, <code class="function">HTOLE32</code>, <code class="function">LE16TOH</code> and <code class="function">LE32TOH</code> in <a class="ulink" href="endian.h.html" target="_top">endian.h</a> which serve the same function but conform to recommendations for standarized byte order function on Linux, OpenBSD and FreeBSD. Observe that the names are independent of any network implications.
+			</p><pre class="programlisting">
+#if BYTE_ORDER == BIG_ENDIAN
+#	define LE16TOH(x) __bswap_16(x)
+#	define LE32TOH(x) __bswap_32(x)
+#	define LE64TOH(x) __bswap_64(x)
+#	define HTOLE16(x) __bswap_16(x)
+#	define HTOLE32(x) __bswap_32(x)
+#	define HTOLE64(x) __bswap_64(x)
+#elif BYTE_ORDER == LITTLE_ENDIAN
+#	define LE16TOH(x) (x)
+#	define LE32TOH(x) (x)
+#	define LE64TOH(x) (x)
+#	define HTOLE16(x) (x)
+#	define HTOLE32(x) (x)
+#	define HTOLE64(x) (x)
+#else
+#error "Undefined host byte order."
+#endif
+</pre><p> 
+			In addition, the Open Powerline Toolkit includes function <a class="link" href="ch07s05.html#support-endian" title="endian">endian</a> that reverses byte order over a variable-length memory region.
+			</p></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch03s12.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="ch03.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch03s14.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">
+				Structure Packing 
+				 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 
+			Packet Basics 
+</td></tr></table></div></body></html>0

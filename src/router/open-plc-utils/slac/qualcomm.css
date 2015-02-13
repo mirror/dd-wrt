@@ -1,0 +1,723 @@
+
+.alert 
+
+{
+	color: #0000ff;
+	font: normal 10pt courier;
+}
+
+.error 
+
+{
+	color: #ff0000;
+	font: normal 10pt courier;
+}
+
+.small 
+
+{
+	font: normal 8pt verdana;
+}
+
+.title 
+
+{
+	font: bold italic 10pt verdana;
+}
+
+.typewriter 
+
+{
+	font: normal 10pt courier;
+	color: black;
+}
+
+a.index 
+
+{
+	text-decoration: none;
+}
+
+
+a:active 
+
+{
+}
+
+a:hover 
+
+{
+}
+
+a:link 
+
+{
+}
+
+a:visited 
+
+{
+}
+
+abbr 
+
+{
+	font: italic bold 10pt verdana;
+}
+
+acronym 
+
+{
+	font: italic 10pt verdana;
+}
+
+body 
+
+{
+	background: white;
+	margin: 10px 20px 10px 20px;
+	font: normal 10pt verdana;
+}
+
+body.admin 
+
+{
+}
+
+body.company 
+
+{
+}
+
+body.contact 
+
+{
+}
+
+body.document 
+
+{
+}
+
+body.engineer 
+
+{
+}
+
+body.event 
+
+{
+}
+
+body.faedb 
+
+{
+}
+
+body.product 
+
+{
+}
+
+body.unit 
+
+{
+}
+
+br 
+
+{
+	clear: both;
+}
+
+cite 
+
+{
+	font: italic 10pt verdana;
+}
+
+code 
+
+{
+	font: normal 10pt courier;
+}
+
+dd 
+
+{
+	margin: 05px 00px 05px 50px;
+}
+
+del 
+
+{
+	background-color: lime;
+	text-decoration: line-through;
+}
+
+dfn 
+
+{
+	font: italic bold 10pt verdana;
+}
+
+div.button 
+
+{
+	margin: 10px 00px 00px 00px;
+}
+
+div.failure 
+
+{
+	margin: 100px 0px;
+	text-align: center;
+	font: bold 18pt verdana;
+	color: red;
+}
+
+div.footer 
+
+{
+	font: normal 7pt verdana;
+	margin: 20px 30px 20px 30px;
+	text-align: center;
+}
+
+div.footerlinks 
+
+{
+	font: normal 7pt verdana;
+	margin: 20px 30px 20px 30px;
+	text-align: right;
+}
+
+div.header 
+
+{
+	text-align: center;
+}
+
+div.headerlinks 
+
+{
+	font: normal 7pt verdana;
+	margin: 00px 00px 00px 00px;
+	text-align: left;
+}
+
+div.notice 
+
+{
+	background: silver;
+	border: solid 1px #800000;
+	font: normal 10pt courier;
+	margin: 20px 30px 20px 30px;
+	padding: 10px;
+}
+
+div.problem 
+
+{
+	margin: 100px 0px;
+	text-align: center;
+	font: bold 18pt verdana;
+	color: green;
+}
+
+div.source 
+
+{
+	background: silver;
+	border: solid 1px #000000;
+	font: normal 10pt courier;
+	margin: 20px 30px 20px 30px;
+	padding: 10px;
+}
+
+dt 
+
+{
+	margin: 10px 00px 05px 00px;
+	font: bold 10pt verdana;
+	color: Blue;
+}
+
+em 
+
+{
+	font: italic bold 10pt verdana;
+}
+
+h1 
+
+{
+	color: maroon;
+	font: bold 10pt verdana;
+	text-align: center;
+}
+
+h2 
+
+{
+	color: maroon;
+	font: bold 10pt verdana;
+	text-align: left;
+}
+
+h3 
+
+{
+	color: navy;
+	font: italic bold 10pt verdana;
+	text-align: left;
+}
+
+h4 
+
+{
+	color: navy;
+	font: bold 10pt verdana;
+	text-align: center;
+}
+
+h5 
+
+{
+	color: maroon;
+	font: bold 10pt verdana;
+	text-align: left;
+}
+
+h6 
+
+{
+	color: maroon;
+	font: italic bold 10pt verdana;
+	text-align: left;
+}
+
+hr 
+
+{
+	color: #000080;
+	text-align: center;
+	width: 65%;
+}
+
+img.paragraph 
+
+{
+	float: left;
+	margin: 3px 8px 0px 0px;
+}
+
+input.date 
+
+{
+	width: 100%;
+}
+
+input.half 
+
+{
+	width: 050%;
+}
+
+input.identity 
+
+{
+	width: 180px;
+}
+
+input.mailbox 
+
+{
+	width: 180px;
+}
+
+input.password 
+
+{
+	width: 180px;
+}
+
+input.text 
+
+{
+	width: 100%;
+}
+
+input.username 
+
+{
+	width: 180px;
+}
+
+ins 
+
+{
+	background-color: yellow;
+	text-decoration: none;
+}
+
+li.index 
+
+{
+	color: black;
+	list-style: outside;
+	padding: 00px 00px 00px 05px;
+}
+
+li.paragraph 
+
+{
+	padding: 05px 00px 05px 00px;
+}
+
+li.point 
+
+{
+	color: black;
+	list-style: outside;
+	padding: 05px 00px 05px 05px;
+}
+
+li.tight 
+
+{
+	color: black;
+	list-style: outside;
+	padding: 00px 00px 00px 05px;
+}
+
+ol 
+
+{
+	font: normal 10pt verdana;
+}
+
+option 
+
+{
+	color: blue;
+	font: normal 10pt courier;
+}
+
+pre 
+
+{
+	font: normal 10pt monospace;
+}
+
+pre.notice 
+
+{
+	background: #c0c0c0;
+	border: solid 1px #800000;
+	color: #800000;
+	font: normal 10pt monospace;
+	margin: 20px 00px 20px 00px;
+	padding: 10px;
+}
+
+pre.sample 
+
+{
+	background: #c0c0c0;
+	border: solid 1px #000080;
+	border: none;
+	color: #000080;
+	font: normal 10pt monospace;
+	margin: 20px 00px 20px 00px;
+	padding: 10px;
+}
+
+pre.screen 
+
+{
+	background: #000000;
+	border: solid 1px #800000;
+	border: none;
+	color: #00ff00;
+	font: normal 10pt monospace;
+	margin: 20px 00px 20px 00px;
+	padding: 10px;
+}
+
+pre.source 
+
+{
+	background: #c0c0c0;
+	border: solid 1px #000080;
+	border: none;
+	color: #000000;
+	font: normal 10pt monospace;
+	margin: 20px 00px 20px 00px;
+	padding: 10px;
+}
+
+samp 
+
+{
+	font: normal 10pt courier;
+}
+
+select.menubar 
+
+{
+	color: maroon;
+	width: 100%;
+}
+
+select.text 
+
+{
+	width: 100%;
+}
+
+strong 
+
+{
+	font: italic bold 10pt verdana;
+}
+
+table 
+
+{
+	table-layout: fixed;
+	border: solid 1px black;
+	border-collapse: separate;
+	border-spacing: 1px;
+	background: white;
+	font: normal 10pt monospace;
+	width: 100%;
+}
+
+table.box 
+
+{
+	background: white;
+	border: solid 1pt black;
+}
+
+table.input 
+
+{
+	background: inherit;
+	border: solid 1pt navy;
+	border-collapse: separate;
+	border-spacing: 0px;
+	font: normal 10pt verdana;
+	margin: 5px 0px;
+	padding: 5px;
+	table-layout: fixed;
+	width: 100%;
+}
+
+table.login 
+
+{
+	table-layout: fixed;
+	background: transparent;
+	border: solid 1pt navy;
+	border-collapse: separate;
+	border-spacing: 1px;
+	font: normal 10pt verdana;
+	color: maroon;
+	margin: 10px;
+	padding: 5px;
+	width: 360px;
+}
+
+td 
+
+{
+	border: solid 1pt silver;
+	padding: 2px 5px;
+	text-align: left;
+	vertical-align: top;
+}
+
+td.box 
+
+{
+}
+
+td.dark 
+
+{
+	background: #f0f0f0;
+}
+
+td.form 
+
+{
+	padding: 02px 10px;
+}
+
+td.label 
+
+{
+	color: maroon;
+	width: 25%;
+}
+
+td.lite 
+
+{
+	background: #f0f0f0;
+}
+
+td.map 
+
+{
+	text-align: center;
+	vertical-align: middle;
+}
+
+td.task 
+
+{
+	text-align: center;
+	vertical-align: middle;
+}
+
+td.value 
+
+{
+}
+
+textarea.note 
+
+{
+	width: 100%;
+	height: 100px;
+}
+
+th 
+
+{
+	border: solid 1pt silver;
+	text-align: center;
+	vertical-align: middle;
+	padding: 2px 5px;
+}
+
+th.box 
+
+{
+	border: solid 1pt silver;
+	text-align: center;
+	vertical-align: middle;
+}
+
+th.call 
+
+{
+	border: solid 1pt silver;
+	text-align: center;
+	vertical-align: top;
+	width: 150px;
+}
+
+th.code 
+
+{
+	border: solid 1pt silver;
+	text-align: center;
+	vertical-align: top;
+	width: 150px;
+}
+
+th.date 
+
+{
+	border: solid 1pt silver;
+	text-align: center;
+	vertical-align: top;
+	width: 100px;
+}
+
+th.link 
+
+{
+	border: solid 1pt silver;
+	text-align: center;
+	vertical-align: top;
+	width: 070px;
+}
+
+th.name 
+
+{
+	border: solid 1pt silver;
+	text-align: center;
+	vertical-align: top;
+	width: auto;
+}
+
+th.serial 
+
+{
+	border: solid 1pt silver;
+	text-align: center;
+	vertical-align: top;
+	width: 075px;
+}
+
+th.time 
+
+{
+	border: solid 1pt silver;
+	text-align: center;
+	vertical-align: top;
+	width: 150px;
+}
+
+th.type 
+
+{
+	border: solid 1pt silver;
+	text-align: center;
+	vertical-align: top;
+	width: 060px;
+}
+
+tr 
+
+{
+	background: inherit;
+	vertical-align: top;
+}
+
+tt 
+
+{
+	font: normal 10pt courier;
+}
+
+ul 
+
+{
+	font: normal 10pt verdana;
+}
+
+ul 
+
+{
+	list-style-type: square;
+}
+
+ul.check 
+
+{
+	font: normal 10pt verdana;
+}
+
+var 
+
+{
+	font: italic bold 10pt verdana;
+}
+

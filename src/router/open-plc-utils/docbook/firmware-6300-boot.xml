@@ -1,0 +1,119 @@
+<section id='firmware-6300-boot'>
+	<title>
+			Boot from Host (INT6300)
+			</title>
+	<para>
+			The boot-from-host operation downloads <acronym>SDRAM</acronym> configuration information, runtime parameters and runtime firmware from a local host and starts firmware execution. This method is initiated by the device bootloader after reset reset if the device has no flash memory, blank flash memory or corrupted flash memory. The method requires the bootloader aware software running on the local host to detect and service <constant>VS_HOST_ACTION</constant> messages from the device.
+			</para>
+	<para>
+			The <productname>INT6300</productname> boot-from-host method is similar to the <productname>INT6000</productname> method but it has an extra stage to download <acronym>SDRAM</acronym> configuration parameters and it uses <constant>VS_WR_MEM</constant> messages to download runtime parameters and firmware instead of <constant>VS_WR_MOD</constant> messages. The <constant>VS_WR_MEM</constant> messages write directly to <acronym>SDRAM</acronym> and an <constant>VS_ST_MAC</constant> message is needed to start firmware execution. Once the firmware is running, another method is used to write runtime parameters and firmware to flash memory.
+			</para>
+	<para>
+			The <productname>INT6300</productname> does not have a unique hardware address until runtime firmware starts and assigns one from the runtime parameter block. Until that time, the bootloader will accept messages addressed to <constant>00:B0:52:00:00:01</constant>. In addition, the bootloader does not know the hardware address of the local host and so it addresses <constant>VS_HOST_ACTION</constant> messages to <constant>FF:FF:FF:FF:FF:FF</constant>; however, these messages are not transmitted over the powerline.
+			</para>
+	<figure>
+		<title>
+				boot-from-host (INT6300)
+				</title>
+		<programlisting><![CDATA[
+
+         INT6300                             LOCAL-HOST
+        [01] |                                    |
+        [02] |-------- VS_HOST_ACTION.IND ------->| [03]
+        [05] |<------- VS_HOST_ACTION.RSP --------| [04]
+             |                                    |
+        [07] |<------- VS_SET_SDRAM.REQ ----------| [06]
+        [07] |-------- VS_SET_SDRAM.CNF --------->| [08]
+             |                                    | [09]
+        [10] |<------- VS_WR_MEM.REQ -------------| [10]
+        [10] |-------- VS_WR_MEM.CNF ------------>| [10]
+        [10] |<-----------------------------------| [10]
+        [10] |----------------------------------->| [10]
+             |                                    |
+        [11] |<------- VS_WR_MEM.REQ -------------| [11]
+        [11] |-------- VS_WR_MEM.CNF ------------>| [11]
+        [11] |<-----------------------------------| [11]
+        [11] |----------------------------------->| [11]
+             |                                    |
+        [13] |<------- VS_ST_MAC.REQ -------------| [12]
+        [14] |-------- VS_ST_MAC.CNF ------------>| [15]
+
+ ]]></programlisting>
+	</figure>
+	<orderedlist>
+		<listitem>
+			<para>
+					The bootloader automatically starts after device reset and attempts to read the runtime firmware image from flash memory, write it into <acronym>SDRAM</acronym> and start execution. If it succeeds then normal operation begins and no further action is required. If it fails, for any reason, then the bootloader starts the boot-from-host process.
+					</para>
+		</listitem>
+		<listitem>
+			<para>
+					The bootloader broadcasts <constant>VS_HOST_ACTION.IND</constant> with <varname>HOST_ACTION_REQ</varname> set to <constant>0x04</constant> to indicate that configuration is required. The destination address is <constant>FF:FF:FF:FF:FF:FF</constant> and the source address is <constant>00:B0:52:00:00:01</constant> as explained above. This message is sent every <constant>10</constant> seconds which differs from that of other chips. 
+					</para>
+		</listitem>
+		<listitem>
+			<para>
+					The host receives the <constant>VS_HOST_ACTION.IND</constant> message and inspects the HOST_ACTION_REQ field to determine the action requested. On a single-host system,  the local host must elect to service the request or the device will not start. On a multi-host system,  one of the hosts must elect to service the request of the device will not start.
+					</para>
+		</listitem>
+		<listitem>
+			<para>
+					The host sends a <constant>VS_HOST_ACTION.RSP</constant> message to the device to indicate an ability and willingness to service the request. The MSTATUS field is set to <constant>0x00</constant> for affirmative and <constant>0x01</constant> for negative. 
+					</para>
+		</listitem>
+		<listitem>
+			<para>
+					The bootloader receives the <constant>VS_HOST_ACTION.RSP</constant> from the host and inspects the MSTATUS field. On affirmative response, the bootloader stops broadcasting <constant>VS_HOST_ACTION.IND</constant> and waits indefinitely for <acronym>SDRAM</acronym> configuration information from the host. 
+					</para>
+		</listitem>
+		<listitem>
+			<para>
+					The host sends a <constant>VS_SET_SDRAM.REQ</constant> message to the device containing an SDRAM configuration block and the block checksum. 
+					</para>
+		</listitem>
+		<listitem>
+			<para>
+					The bootloader receives the <constant>VS_SET_SDRAM.REQ</constant>, validates the content, initializes <acronym>SDRAM</acronym> parameters and sends a <constant>VS_SET_SDRAM.CNF</constant> message to the servicing host to indicate either success or failure. 
+					</para>
+		</listitem>
+		<listitem>
+			<para>
+					The local host receives the <constant>VS_SET_SDRAM.CNF</constant> and inspects the <varname>MSTATUS</varname> field for success or failure. Assuming success, the local host waits indefinitely for further requests from the device. 
+					</para>
+		</listitem>
+		<listitem>
+			<para>
+					The local host determines which parameter block and firmware image to download. In some cases there may be no choice. In other cases, there may be a choice between default and custom software or between current and upgraded software. This is a principle design issue to consider. 
+					</para>
+		</listitem>
+		<listitem>
+			<para>
+					The local host downloads the firmware image to the device by sending <constant>VS_WR_MEM.REQ</constant> messages to the device and waiting for a <constant>VS_WR_MEM.CNF</constant> messages from the device after each request. Each message contains an image segment, the memory offset, the segment length and the checksum used to monitor and manage download progress. It a single transaction fails, the local host should detect it and repeat it.
+					</para>
+		</listitem>
+		<listitem>
+			<para>
+					The local host downloads a parameter block to the device by sending <constant>VS_WR_MEM.REQ</constant> messages to the device and waiting for a <constant>VS_WR_MEM.CNF</constant> message from the device after each request. Each message contains an image segment,  the memory offset, the segment length and the checksum used to monitor and manage download progress. If a single transaction fails, the local host should detect it and repeat it. 
+					</para>
+		</listitem>
+		<listitem>
+			<para>
+					The local host starts firmware execution by sending a <constant>VS_ST_MAC.REQ</constant> message to the device. The message contains the firmware start address.  
+					</para>
+		</listitem>
+		<listitem>
+			<para>
+					The bootloader receives the <constant>VS_ST_MAC.REQ</constant> from the local host, validates the content.
+					</para>
+		</listitem>
+		<listitem>
+			<para>The device sends a <constant>VS_ST_MAC.CNF</constant> message to indicate an ability or willingness to start firmware execution. The device immediately starts firmware execution which relinquishes device control to the firmware. It can take <constant>5</constant> to <constant>10</constant> seconds for the firmware to start.  
+					</para>
+		</listitem>
+		<listitem>
+			<para>
+					The host receives the <constant>VS_ST_MAC.CNF</constant> message from the device, inspects the <varname>MSTATUS</varname> field and acts accordingly. An afffirmative indication means that the firmware will start executing on the device in <constant>5</constant> to <constant>10</constant> seconds. Once the firmware starts, future messages will contain the unique hardware address for the device.
+					</para>
+		</listitem>
+	</orderedlist>
+</section>

@@ -1,0 +1,78 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			nics.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='modpib.1.html' title=' modpib.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='nvmmerge.1.html' title=' nvmmerge.1 '>NEXT</a>]
+			</div>
+<pre>
+nics(1)                                      Qualcomm Atheros Open Powerline Toolkit                                     nics(1)
+
+NAME
+       nics - Host Network Interface Enumerator
+
+SYNOPSIS
+       nics
+
+DESCRIPTION
+       Search  host  for  Ethernet  interfaces and display the interface index, hardware address, IP address, interface name and
+       interface description on stdout.  This provides a simple, consistent,  cross-platform  format  for  presenting  interface
+       information to scripts and user applications.
+
+COMMENTS
+       This  program  illustrates  use  of basic Atheros Ethernet interface C functions.  See program ifs for an alternative C++
+       implementation.
+
+OPTIONS
+       -?,--help
+              Print program help summary on stdout.  This option takes precedence over other options on the command line.
+
+       -!,--version
+              Print program version information on stdout.  This option takes precedence over other options on the command line.
+              Use this option when sending screen dumps to Intellon Technical Support so that they know exactly which version of
+              the Linux Toolkit you are using.
+
+ARGUMENTS
+       None.
+
+EXAMPLES
+       The following example searches a Linux host and displays information about available interfaces.
+
+          # nics
+          2 00:50:04:A5:D8:98 000.000.000.000 eth4 eth4
+          3 00:0F:EA:4B:98:CB 192.168.172.239 eth3 eth3
+
+       The following example searches a MacOSX host and displays information about available interfaces.  Observe that interface
+       names are varied.
+
+          # nics
+          4 00:26:BB:52:DD:A8 192.168.172.149 en0 en0
+          6 04:1E:64:F0:FB:EC 000.000.000.000 en1 en1
+
+SEE ALSO
+       amp(1), ifs(1), nics(1), pcapdevs(1), plcnets(1)
+
+CREDITS
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                                  nics(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='modpib.1.html' title=' modpib.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='nvmmerge.1.html' title=' nvmmerge.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

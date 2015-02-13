@@ -1,0 +1,435 @@
+<section id="support-generic">
+	<title>
+		Generic Functions
+		</title>
+	<para>
+		The functions in this chapter are generic and may have application beyond the Open Powerline Toolkit. In some cases, these functions appear in other Atheros or Open Source software packages. In a few cases, the Toolkit may include complementary or supplementary support functions but only use one or two of them. For example, functions <function>memincr</function> and <function>memdecr</function> are both included but <function>memdecr</function> is not used.
+		</para>
+	<section id="support-binout">
+		<title>
+			binout
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>void <function>binout</function></funcdef>
+    				<paramdef>void const * <parameter>memory</parameter></paramdef>
+    				<paramdef>size_t <parameter>extent</parameter></paramdef>
+    				<paramdef>char <parameter>c</parameter></paramdef>
+				<paramdef>char <parameter>e</parameter></paramdef>
+    				<paramdef>FILE * <parameter>fp</parameter></paramdef>
+				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Print a <varname>memory</varname> region as a series of binary octets separated by character <varname>c</varname> and terminated by character <varname>e</varname>. Normally, character <constant>c</constant> will be <constant>BIN_EXTENDER</constant>, defined in file <ulink url="number.h.html">number.h</ulink>, but it could be any character value. Normally, character <varname>e</varname> will be a space or newline, but it could be any character value. A typical use might be to print a <acronym>register</acronym> in readable format. For example, specifying <varname>c</varname> as <constant>'-'</constant>, <varname>e</varname> as <constant>';'</constant> and <varname>extent</varname> as <constant>4</constant> would produce output looking something like <computeroutput>"10101010-1111111-00000000-11001100;"</computeroutput> where each octet is expressed as a binary integer. The function is declared in <ulink url='memory.h.html'>memory.h</ulink> and defined in <ulink url='binout.c.html'>binout.c</ulink>.
+			</para>
+		</section>
+	<section id="support-checksum32">
+		<title>
+			checksum32
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>unint32_t <function>checksum32</function></funcdef>
+    				<paramdef>const uint32_t <parameter>memory</parameter> []</paramdef>
+    				<paramdef>size_t <parameter>extent</parameter></paramdef>
+   				<paramdef>uint32_t <parameter>checksum</parameter></paramdef>
+				</funcprototype>
+			</funcsynopsis>
+			<para>
+				Return the 32 bit checksum of a <varname>memory</varname> region. The checksum is the one's complement of the XOR of all 32 bit words in the region. Argument <varname>extent</varname> is the region extent in 32 bit words. Argument <varname>checksum</varname> is the reference checksum. The function will return the computed checksum when reference<varname>checksum</varname> is <constant>0</constant> and will return <constant>0</constant> if reference <varname>checksum</varname> equals the computed checksum. A typical use is to validate <acronym>PIB</acronym> and <acronym>NVM</acronym> files or compute new checksums when these files are created or modified. The function is declared in <ulink url='memory.h.html'>memory.h</ulink> and defined in <ulink url='checksum32.c.html'>checksum32.c</ulink>.
+				</para>
+			<para>
+				This function is similar to <link linkend='support-checksum-32'>checksum_32</link> but is used exclusively by API functions. It may be deprecated at some point in the future.
+				</para>
+		</section>
+	<section id="support-checksum-32">
+		<title>
+			checksum_32
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>unint32_t <function>checksum_32</function></funcdef>
+    				<paramdef>void const * <parameter>memory</parameter></paramdef>
+    				<paramdef>size_t <parameter>extent</parameter></paramdef>
+   				<paramdef>uint32_t <parameter>checksum</parameter></paramdef>
+				</funcprototype>
+			</funcsynopsis>
+			<para>
+				Return the 32 bit checksum of a <varname>memory</varname> region. The checksum is the one's complement of the XOR of all 32 bit words in the region. The region <varname>extent</varname> is specified in bytes but it will be rounded down to the nearest multiple of 4 bytes. Argument <varname>checksum</varname> is the reference checksum. The function will return the computed checksum when reference<varname>checksum</varname> is <constant>0</constant> and will return <constant>0</constant> if reference <varname>checksum</varname> equals the computed checksum. A typical use is to validate <acronym>PIB</acronym> and <acronym>NVM</acronym> files or compute new checksums when these files are created or modified. The function is declared in <ulink url='memory.h.html'>memory.h</ulink> and defined in <ulink url='checksum_32.c.html'>checksum_32.c</ulink>.
+				</para>
+			<para>
+				This function is similar to function <link linkend='support-checksum32'>checksum32</link> however there is no need to cast <varname>memory</varname> to <varname>uint32_t</varname> and there is no need to round <varname>extent</varname> down to a multiple of 4 bytes before calling the function because both operations are performed internally. Also, there is no unecessary endian manipulation of the checksum. It is the prefered method of computing a checksum.
+				</para>
+		</section>
+	<section id="support-chrout">
+		<title>
+			chrout
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>void <function>chrout</function></funcdef>
+    				<paramdef>void const * <parameter>memory</parameter></paramdef>
+    				<paramdef>size_t <parameter>extent</parameter></paramdef>
+    				<paramdef>char <parameter>c</parameter></paramdef>
+				<paramdef>char <parameter>e</parameter></paramdef>
+    				<paramdef>FILE * <parameter>fp</parameter></paramdef>
+				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Print a <varname>memory</varname> region as a string of printable ASCII characters terminated by character <varname>e</varname>. Character <varname>c</varname> is printed in place of non-printable characters. The string is terminated by character <constant>e</constant>. Normally, character <varname>c</varname> is <constant>'.'</constant> but it could be any character value. Normally, character <varname>e</varname> is space or newline but it could be any charcter value. A typical use might be to print a memory region that may (or may not) contain an <acronym>HFID</acronym> or other printable text. The function is declared in <ulink url='memory.h.html'>memory.h</ulink> and defined in <ulink url='chrout.c.html'>chrout.c</ulink>.
+			</para>
+		</section>
+	<section id="support-decout">
+		<title>
+			decout
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>void <function>decout</function></funcdef>
+    				<paramdef>void const * <parameter>memory</parameter></paramdef>
+    				<paramdef>size_t <parameter>extent</parameter></paramdef>
+    				<paramdef>char <parameter>c</parameter></paramdef>
+ 				<paramdef>char <parameter>e</parameter></paramdef>
+    				<paramdef>FILE * <parameter>fp</parameter></paramdef>
+				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Print a <varname>memory</varname> region as a series of decimal octets separated by character <varname>c</varname> and terminated by character <varname>e</varname>. Normally, character <varname>c</varname> will be <constant>DEC_EXTENDER</constant>, defined in file <ulink url="number.h.html">number.h</ulink>, but it could be any character value. Normally, character <varname>e</varname> will be a space or newline but it could be any character value.  A typical use might be to print an <acronym>IP</acronym> address in readable format. For example, specifying <varname>c</varname> as <constant>'.'</constant>, character <varname>e</varname> as <constant>'/'</constant> and <varname>extent</varname> as <constant>4</constant> would produce output looking something like <computeroutput>"192.168.099.001/"</computeroutput> where each octet is expressed as a decimal integer. The function is declared in <ulink url='memory.h.html'>memory.h</ulink> and defined in <ulink url='decout.c.html'>decout.c</ulink>.
+			</para>
+		</section>
+	<section id="support-endian">
+		<title>
+			endian
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>void <function>endian</function></funcdef>
+    				<paramdef>void  * <parameter>memory</parameter></paramdef>
+    				<paramdef>size_t <parameter>extent</parameter></paramdef>
+				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Reverse the byte order of a <varname>memory</varname> region. It is a variable extent version of functions like <function>__bswap_16</function>, <function>__bswap_32</function> and <function>__bswap_64</function>. The function is declared in <ulink url='memory.h.html'>memory.h</ulink> and defined in <ulink url='endian.c.html'>endian.c</ulink>.
+			</para>
+		</section>
+	<section id="support-fdchecksum32">
+		<title>
+			fdchecksum32
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>unit32_t <function>fdchecksum32</function></funcdef>
+    				<paramdef>int <parameter>fd</parameter></paramdef>
+    				<paramdef>size_t <parameter>extent</parameter></paramdef>
+   				<paramdef>unit32_t <parameter>checksum</parameter></paramdef>
+				</funcprototype>
+			</funcsynopsis>
+			<para>
+				Return the 32 bit checksum of a file region starting from the current file position. The checksum is the one's complement of the XOR or of all 32 bit words in the region. Argument <varname>extent</varname> must be specified in 32 bit words, not bytes. Argument <varname>checksum</varname> is the reference checksum. The function will return the computed checksum when reference<varname>checksum</varname> is <constant>0</constant> and will return <constant>0</constant> if reference <varname>checksum</varname> equals the computed checksum. A typical use is to validate <acronym>NVM</acronym> files header by header or section by section. The function is declared in <ulink url='memory.h.html'>memory.h</ulink> and defined in <ulink url='fdchecksum32.c.html'>fdchecksum32.c</ulink>.
+				</para>
+		</section>
+	<section id="support-fdchecksum-32">
+		<title>
+			fdchecksum_32
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>unit32_t <function>fdchecksum_32</function></funcdef>
+    				<paramdef>int <parameter>fd</parameter></paramdef>
+    				<paramdef>size_t <parameter>extent</parameter></paramdef>
+   				<paramdef>unit32_t <parameter>checksum</parameter></paramdef>
+				</funcprototype>
+			</funcsynopsis>
+			<para>
+				Return the 32 bit checksum of a file region starting from the current file position. The checksum is the one's complement of the XOR or of all 32 bit words in the region. Argument <varname>extent</varname> is specified in bytes but is rounded down to the nearest multiple of 4 bytes. Argument <varname>checksum</varname> is the reference checksum. The function will return the computed checksum when reference<varname>checksum</varname> is <constant>0</constant> and will return <constant>0</constant> if reference <varname>checksum</varname> equals the computed checksum. A typical use is to validate <acronym>NVM</acronym> files header by header or section by section. The function is declared in <ulink url='memory.h.html'>memory.h</ulink> and defined in <ulink url='fdchecksum_32.c.html'>fdchecksum_32.c</ulink>.
+				</para>
+			<para>
+				This function is similar to function <link linkend='support-fdchecksum32'>fdchecksum32</link> but there is no need to round <varname>extent</varname> down to the nearest multiple of 4 bytes before calling the function because that is done internally. Also, there is no unecessary endian manuipulation of the checksum.
+				</para>
+		</section>
+	<section id="support-filepar">
+		<title>
+			filepart
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>char const * <function>filepart</function></funcdef>
+    				<paramdef>char const * <parameter>pathname</parameter></paramdef>
+				</funcprototype>
+			</funcsynopsis>
+			<para>
+				Return the address of the filename portion of a <varname>pathname</varname> string. The filename portion is everything after the rightmost path separator. If a path separator is not present then the address of the <varname>pathname</varname> string is returned. This function is similar to the <acronym>POSIX</acronym> <constant>basename</constant> function but it returns an empty string whenever the rightmost character is a path separator. The path separator can be either slash (<constant>'/'</constant>) or backslash (<constant>'\\'</constant>). The function is declared in <ulink url='files.h.html'>files.h</ulink> and defined in <ulink url='filepart.c.html'>filepart.c</ulink>.
+				</para>
+		</section>
+	<section id="support-hexdecode">
+		<title>
+			hexdecode
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>signed <function>hexdecode</function></funcdef>
+    				<paramdef>void  * <parameter>memory</parameter></paramdef>
+    				<paramdef>size_t <parameter>extent</parameter></paramdef>
+   				<paramdef>char const <parameter>buffer</parameter> []</paramdef>
+   				<paramdef>size_t <parameter>extent</parameter></paramdef>
+  				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Decode a <varname>memory</varname> region as a string of <acronym>ASCII</acronym> hexadecimal digits. Convert memory until the buffer or memory exhausts and return the string extent. Allow three (3) string characters for each memory byte to be decoded. The number of bytes decoded will be the lesser of argument <varname>extent</varname> divided by <constant>3</constant> or argument <varname>extent</varname>. The function is declared in <ulink url='memory.h.html'>memory.h</ulink> and defined in <ulink url='hexdecode.c.html'>hexdecode.c</ulink>.
+			</para>
+		</section>
+	<section id="support-hexdump">
+		<title>
+			hexdump
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+				<funcdef>void <function>hexdump</function></funcdef>
+				<paramdef>void const * <parameter>memory</parameter></paramdef>
+				<paramdef>size_t <parameter>offset</parameter></paramdef>
+				<paramdef>size_t <parameter>extent</parameter></paramdef>
+				<paramdef>FILE * <parameter>fp</parameter></paramdef>
+				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Print a full or partial <varname>memory</varname> region in hexadecimal format showing memory offsets, hexadecimal byte values and ASCII character values. Argument <varname>memory</varname> contains some memory region. Argument <varname>extent</varname> is the region extent. Argument <varname>offset</varname> is the starting display location. Locations <varname>memory</varname> [<varname>offset</varname>] up to <varname>memory</varname> [<varname>extent</varname>] are displayed, allowing a partial dump of the memory region. An <varname>offset</varname> of <constant>0</constant> will display the entire region. The function is declared in <ulink url='memory.h.html'>memory.h</ulink> and defined in <ulink url='hexdump.c.html'>hexdump.c</ulink>. 			
+			</para>
+		<para>
+			This function is similar to but different from function <link linkend='support-hexview'>hexview</link> .
+			</para>
+		</section>
+	<section id="support-hexencode">
+		<title>
+			hexencode
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>signed <function>hexencode</function></funcdef>
+    				<paramdef>void  * <parameter>memory</parameter></paramdef>
+    				<paramdef>size_t <parameter>extent</parameter></paramdef>
+   				<paramdef>char const * <parameter>string</parameter></paramdef>
+  				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Encode a <varname>memory</varname> region with the binary equivalent of an <acronym>ASCII</acronym> hexadecimal string. Return the number of bytes encoded or <constant>0</constant> on error. The value of <varname>errno</varname> is set to <constant>EINVAL</constant> if the number of bytes encoded is less than <varname>extent</varname> or the entire string cannot be converted due to illegal digits or excessive digits. Ignore optional <constant>HEX_EXTENDER</constant> characters separating octets in argument <varname>string</varname>. Constant <constant>HEX_EXTENDER</constant> is defined in file <ulink url='number.h.html'>number.h</ulink>. The function is declared in <ulink url='memory.h.html'>memory.h</ulink> and defined in <ulink url='hexencode.c.html'>hexencode.c</ulink>.
+			</para>
+		</section>
+	<section id="support-hexin">
+		<title>
+			hexin
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>ssize_t <function>hexin</function></funcdef>
+    				<paramdef>void const * <parameter>memory</parameter></paramdef>
+    				<paramdef>size_t <parameter>extent</parameter></paramdef>
+    				<paramdef>FILE * <parameter>fp</parameter></paramdef>
+				</funcprototype>
+			</funcsynopsis>
+		<para>
+			This function is similar to <link linkend="support-hexencode">hexencode</link> but it reads from file, instead of a string and ignores non-hexadecimal text and comments within the input stream. Incoming text is binary encoded and written to the specified <varname>memory</varname> region. The actual number of bytes encoded is returned or <constant>-1</constant> on error. See the <ulink url='efsu.7.html'>efsu</ulink> man page for a thorough explanation of function behavior. The function is declared in <ulink url='memory.h.html'>memory.h</ulink> and defined in <ulink url='hexin.c.html'>hexin.c</ulink>.
+			</para>
+		</section>
+	<section id="support-hexout">
+		<title>
+			hexout
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>void <function>hexout</function></funcdef>
+    				<paramdef>void const * <parameter>memory</parameter></paramdef>
+    				<paramdef>size_t <parameter>extent</parameter></paramdef>
+    				<paramdef>char <parameter>c</parameter></paramdef>
+   				<paramdef>char <parameter>e</parameter></paramdef>
+     				<paramdef>FILE * <parameter>fp</parameter></paramdef>
+				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Print a <varname>memory</varname> region as a series of hexdecimal octets separated by character <varname>c</varname> and termianted by character <varname>e</varname>. Normally, character <varname>c</varname> will be <constant>HEX_EXTENDER</constant>, defined in file <ulink url="number.h.html">number.h</ulink>, but it could be any character value. Normally, character <varname>e</varname> will be a space or newline but it could be any character value. A typical use might be to print a <acronym>MAC</acronym> or <acronym>Ethernet</acronym> address in readable format. For example, specifying <varname>c</varname> as <constant>':'</constant>, character <varname>e</varname> as <constant>','</constant> and <varname>extent</varname> as <constant>6</constant> would produce output looking something like <computeroutput>"00:B0:52:DA:DA:01,"</computeroutput> where each octet is expressed as a hexadecimal integer. The function is declared in <ulink url='memory.h.html'>memory.h</ulink> and defined in <ulink url='hexout.c.html'>hexout.c</ulink>.
+			</para>
+		</section>
+	<section id="support-hexstring">
+		<title>
+			hexstring
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>char * <function>hexstring</function></funcdef>
+    				<paramdef>char <parameter>buffer</parameter> []</paramdef>
+				<paramdef>size_t <parameter>length</parameter></paramdef>
+				<paramdef>void const * <parameter>memory</parameter></paramdef>
+				<paramdef>size_t <parameter>extent</parameter></paramdef>
+ 				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Convert a <varname>memory</varname> region to a <constant>NUL</constant> terminated string and return the string address. This function is identical to function <link linkend='support-hexdecode'>hexdecode</link> but it return the string address instead of the number of characters decoded. The function is declared in <ulink url='memory.h.html'>memory.h</ulink> and defined in <ulink url='hexstring.c.html'>hexstring.c</ulink>.
+			</para>
+		</section>
+	<section id="support-hexview">
+		<title>
+			hexview
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+				<funcdef>void <function>hexview</function></funcdef>
+				<paramdef>void const * <parameter>memory</parameter></paramdef>
+				<paramdef>size_t <parameter>offset</parameter></paramdef>
+				<paramdef>size_t <parameter>extent</parameter></paramdef>
+				<paramdef>FILE * <parameter>fp</parameter></paramdef>
+				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Print a partial <varname>memory</varname> region in hexadecimal format showing memory offsets, hexadecimal byte values and ASCII character values. Argument <varname>memory</varname> contains part of a larger memory region, much like a file window. Argument <varname>extent</varname> is the window length. Argument <varname>offset</varname> is the relative offset of the window within the region. Locations <varname>memory</varname> [<constant>0</constant>] up to but excluding  <varname>memory</varname> [<varname>extent</varname>] are displayed as a partial dump, providing a window into the region. The function is declared in <ulink url='memory.h.html'>memory.h</ulink> and defined in <ulink url='hexview.c.html'>hexview.c</ulink>. 			</para>
+		<para>
+			This function is similar to but different from function <link linkend='support-hexdump'>hexdump</link>.
+			</para>
+		</section>
+	<section id="support-memdecr">
+		<title>
+			memdecr
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>signed <function>memdecr</function></funcdef>
+    				<paramdef>void  * <parameter>memory</parameter></paramdef>
+    				<paramdef>size_t <parameter>extent</parameter></paramdef>
+  				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Decrement a multi-byte <varname>memory</varname> region. Return <constant>0</constant> on success or <constant>-1</constant> if all bytes have decremented to <constant>0x00</constant>. For example, <computeroutput>{ 0xFF, 0xFF, 0xFF }</computeroutput> decrements to <computeroutput>{ 0xFF, 0xFF, 0xFE }</computeroutput> and <computeroutput>{ 0xFF, 0x00, 0x00 }</computeroutput> decrements to <computeroutput>{ 0xFE, 0xFF, 0xFF }</computeroutput>. A typical use is to iterate through a range if <acronym>IP</acronym> or <acronym>MAC</acronym> address values. The function is declared in <ulink url='memory.h.html'>memory.h</ulink> and defined in <ulink url='memdecr.c.html'>memdecr.c</ulink>.
+			</para>
+		</section>
+	<section id="support-memincr">
+		<title>
+			memincr
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>signed <function>memincr</function></funcdef>
+    				<paramdef>void  * <parameter>memory</parameter></paramdef>
+    				<paramdef>size_t <parameter>extent</parameter></paramdef>
+  				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Increment a multi-byte <varname>memory</varname> region. Return <constant>0</constant> on success or <constant>-1</constant> once all bytes have been incremented to <constant>0xFF</constant>. For example <computeroutput>{ 0x00, 0x00, 0x00 }</computeroutput> increments to <computeroutput>{ 0x00, 0x00, 0x01 }</computeroutput> and <computeroutput>{ 0x00, 0xFF, 0xFF }</computeroutput> increments to <computeroutput>{ 0x01, 0x00, 0x00 }</computeroutput>. A typical use is to iterate through a range of <acronym>IP</acronym> or <acronym>MAC</acronym> address values. The function is declared in <ulink url='memory.h.html'>memory.h</ulink> and defined in <ulink url='memincr.c.html'>memincr.c</ulink>.
+			</para>
+		</section>
+	<section id="support-memout">
+		<title>
+			memout
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>void <function>memout</function></funcdef>
+    				<paramdef>void const * <parameter>memory</parameter></paramdef>
+    				<paramdef>size_t <parameter>extent</parameter></paramdef>
+				<paramdef>char const * <parameter>format</parameter></paramdef>
+				<paramdef>unsigned <parameter>group</parameter></paramdef>
+    				<paramdef>signed <parameter>c</parameter></paramdef>
+    				<paramdef>FILE * <parameter>fp</parameter></paramdef>
+				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Print a <varname>memory</varname> region as a series of octet groups wach separated by character <constant>c</constant>. The <varname>group</varname> argument specifies the number of octets per group. The <varname>format</varname> argument determines how each octet is displayed. Normally, character <constant>c</constant> will be one of <constant>BIN_EXTENDER</constant>, <constant>DEC_EXTENDER</constant> or <constant>HEX_EXTENDER</constant> as defined in file <ulink url="number.h.html">number.h</ulink>, but it could be any character value. The function is declared in <ulink url='memory.h.html'>memory.h</ulink> and defined in <ulink url='memout.c.html'>memout.c</ulink>.
+			</para>
+		</section>
+	<section id="support-memswap">
+		<title>
+			memswap
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>void <function>memswap</function></funcdef>
+    				<paramdef>void  * <parameter>buffer1</parameter></paramdef>
+    				<paramdef>void  * <parameter>buffer2</parameter></paramdef>
+    				<paramdef>size_t <parameter>length</parameter></paramdef>
+  				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Exchange the contents of one buffer with that of another. No provision is made for buffer overlap. No value is returned. A typical use might be to exchange source and destination addresses in an ethernet packet. The function is declared in <ulink url='memory.h.html'>memory.h</ulink> and defined in <ulink url='memswap.c.html'>memswap.c</ulink>.
+			</para>
+		</section>
+	<section id="support-strdecr">
+		<title>
+			strdecr
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>signed <function>strdecr</function></funcdef>
+    				<paramdef>void  * <parameter>memory</parameter></paramdef>
+    				<paramdef>size_t <parameter>extent</parameter></paramdef>
+    				<paramdef>byte <parameter>min</parameter></paramdef>
+    				<paramdef>byte <parameter>max</parameter></paramdef>
+  				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Decrement a multi-byte <varname>memory</varname> region using only ASCII character values in the range <varname>min</varname> through <varname>max</varname>. Return <constant>0</constant> on success or <constant>-1</constant> once all characters have been decremented to the value of argument <varname>min</varname>. For example,  if argument <varname>min</varname> is <constant>'A'</constant> and argument <varname>max</varname> is <constant>'Z'</constant> then <computeroutput>{ 'A', 'B', 'C' }</computeroutput> decrements to <computeroutput>{ 'A', 'B', 'B' }</computeroutput> and <computeroutput>{ 'B', 'Z', 'Z' }</computeroutput> decrements to <computeroutput>{ 'A', 'A', 'A' }</computeroutput>. A typical use is to generate a sequence of distinct character strings to seed encryption key functions. The function is declared in <ulink url='memory.h.html'>memory.h</ulink> and defined in <ulink url='strdecr.c.html'>strdecr.c</ulink>.
+			</para>
+		</section>
+	<section id="support-strfbits">
+		<title>
+			strfbits
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>size_t <function>strfbits</function></funcdef>
+    				<paramdef>char const <parameter>buffer</parameter> []</paramdef>
+    				<paramdef>size_t <parameter>length</parameter></paramdef>
+    				<paramdef>char const * <parameter>operands</parameter> []</paramdef>
+    				<paramdef>char const * <parameter>operator</parameter></paramdef>
+				<paramdef>unsigned <parameter>flagword</parameter></paramdef>
+  				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Encode a <varname>buffer</varname> with an enumerated list of the <varname>operands</varname> associated with the corresponding bits in <varname>flagword</varname>. separate enumerated <varname>operands</varname> with an <varname>operator</varname> string. For example, given <computeroutput>char const *operands [] = { "loop", "wait",  "busy" }</computeroutput> and <computeroutput>unsigned flagword = 0x05</computeroutput> then <computeroutput>strfbits (buffer,  length, operands, "|", flagword)</computeroutput> would encode buffer with <constant>"loop|busy"</constant>. Observe that each bit set in <varname>flagword</varname> appears in <varname>buffer</varname> as the corresponding string from <varname>operands</varname>. A typical application for this function is the enumeration of flagword states. The function is declared in <ulink url='format.h.html'>format.h</ulink> and defined in <ulink url='strfbits.c.html'>strfbits.c</ulink>.
+			</para>
+		</section>
+	<section id="support-strincr">
+		<title>
+			strincr
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>signed <function>strincr</function></funcdef>
+    				<paramdef>void  * <parameter>memory</parameter></paramdef>
+    				<paramdef>size_t <parameter>extent</parameter></paramdef>
+    				<paramdef>byte <parameter>min</parameter></paramdef>
+    				<paramdef>byte <parameter>max</parameter></paramdef>
+  				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Increment a multi-byte <varname>memory</varname> region using only ASCII character values in the range <varname>min</varname> through <varname>max</varname>. Return <constant>0</constant> on success or <constant>-1</constant> once all characters have been incremented to the value of argument <varname>max</varname>.  For example,  if argument <varname>min</varname> is <constant>'A'</constant> and argument <varname>max</varname> is <constant>'Z'</constant> then <computeroutput>{ 'A', 'B', 'C' }</computeroutput> increments to <computeroutput>{ 'A', 'B', 'D' }</computeroutput> and <computeroutput>{ 'A', 'Z', 'Z' }</computeroutput> increments to <computeroutput>{ 'B', 'A', 'A' }</computeroutput>. A typical use is to generate a sequence of distinct character strings to seed encryption key functions. The function is declared in <ulink url='memory.h.html'>memory.h</ulink> and defined in <ulink url='strincr.c.html'>strincr.c</ulink>.
+			</para>
+		</section>
+	<section id="support-todigit">
+		<title>
+			todigit
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>unsigned <function>todigit</function></funcdef>
+    				<paramdef>unsigned <parameter>c</parameter></paramdef>
+  				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Return the integer value of character <varname>c</varname> interpreted as digit in the base 36 number system. It is called by many encode functions to support number base conversion. If the value of <varname>c</varname> is <constant>'0'</constant> through <constant>'9'</constant> then integer <constant>0</constant> through <constant>9</constant> is returned.  If the value of <varname>c</varname> is <constant>'A'</constant> through <constant>'Z'</constant> or <constant>'a'</constant> through <constant>'z'</constant> then integer <constant>10</constant> through <constant>35</constant> is returned. The function is declared in <ulink url='number.h.html'>number.h</ulink> and defined in <ulink url='todigit.c.html'>todigit.c</ulink>.
+			</para>
+		</section>
+	<section id="support-typename">
+		<title>
+			typename
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>char const * <function>typename</function></funcdef>
+    				<paramdef>const struct _type_ <parameter>list</parameter> []</paramdef>
+   				<paramdef>size_t <parameter>size</parameter></paramdef>
+   				<paramdef>type_t <parameter>type</parameter></paramdef>
+   				<paramdef>char const * <parameter>name</parameter></paramdef>
+   				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Return the name associated with a message <varname>type</varname> by searching a list arranged in ascending order by message type. Return argument <varname>name</varname> as the function value if the message <varname>type</varname> is not present in the <varname>list</varname>. Data types <varname>struct _type_</varname> and <varname>type_t</varname> are defined in file <ulink url="types.h.html">types.h</ulink>. A typical use might be to return the name of message based on the message type. The function is declared in <ulink url='symbol.h.html'>symbol.h</ulink> and defined in <ulink url='typename.c.html'>typename.c</ulink>.
+			</para>
+		</section>
+	</section>

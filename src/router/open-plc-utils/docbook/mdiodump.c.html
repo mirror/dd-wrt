@@ -1,0 +1,741 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			mdiodump.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='mdioblock.c.html' title=' mdioblock.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='mdiogen.c.html' title=' mdiogen.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *
+ *   mdiodump.c - Atheros MDIO Custom Module Analyser
+ *
+ *   Contributor(s):
+ *	Nathaniel Houghton &lt;nhoughto@qca.qualcomm.com&gt;
+ *	Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *	Marc Bertola &lt;mbertola@qti.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+#define _GETOPT_H
+
+/*====================================================================*
+ *   system header files;
+ *--------------------------------------------------------------------*/
+
+#include &lt;errno.h&gt;
+#include &lt;fcntl.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;unistd.h&gt;
+
+/*====================================================================*
+ *   custom header files;
+ *--------------------------------------------------------------------*/
+
+#include &quot;../tools/getoptv.h&quot;
+#include &quot;../tools/flags.h&quot;
+#include &quot;../tools/error.h&quot;
+#include &quot;../tools/files.h&quot;
+#include &quot;../tools/endian.h&quot;
+#include &quot;../tools/symbol.h&quot;
+
+/*====================================================================*
+ *   custom source files;
+ *--------------------------------------------------------------------*/
+
+#ifndef MAKEFILE
+#include &quot;../tools/getoptv.c&quot;
+#include &quot;../tools/putoptv.c&quot;
+#include &quot;../tools/version.c&quot;
+#include &quot;../tools/hexstring.c&quot;
+#include &quot;../tools/hexdecode.c&quot;
+#include &quot;../tools/codelist.c&quot;
+#include &quot;../tools/error.c&quot;
+#include &quot;../tools/lookup.c&quot;
+#include &quot;../tools/assist.c&quot;
+#endif
+
+/*====================================================================*
+ *   program constants;
+ *--------------------------------------------------------------------*/
+
+#define MDIODUMP_SUMMARY (1 &lt;&lt; 0)
+#define MDIODUMP_VERBOSE (1 &lt;&lt; 1)
+
+#define MDIO32_NORMAL 0x00
+#define MDIO32_ACCESS_USING_HIGH 0x02
+#define MDIO32_SET_HIGH 0x03
+
+/*====================================================================*
+ *   supported PHY types;
+ *--------------------------------------------------------------------*/
+
+#define PHY_GENERIC 0
+#define PHY_AR8236  1
+
+struct _code_ switches [] =
+
+{
+	{
+		PHY_GENERIC,
+		&quot;generic&quot;
+	},
+	{
+		PHY_AR8236,
+		&quot;ar8236&quot;
+	}
+};
+
+/*====================================================================*
+ *   command structure;
+ *--------------------------------------------------------------------*/
+
+#ifndef __GNUC__
+#pragma pack (push,1)
+#endif
+
+struct __packed command
+
+{
+	uint16_t ctrl;
+	uint16_t data;
+	uint16_t mask;
+};
+
+#ifndef __GNUC__
+#pragma pack (pop)
+#endif
+
+/*====================================================================*
+ *   register &amp; memmap struction
+ *--------------------------------------------------------------------*/
+
+#define PHY_REGISTER 0
+#define GBL_REGISTER 1
+
+struct reg
+
+{
+	uint32_t address;
+	uint8_t phy;
+	uint8_t reg;
+	uint32_t content;
+	uint8_t type;
+};
+
+struct memmap
+
+{
+	unsigned size;
+	unsigned used;
+	struct reg * reg;
+};
+
+/*====================================================================*
+ *
+ *   signed write_phy_reg (struct memmap * memmap, uint8_t phy, uint8_t reg, uint16_t data, uint16_t mask);
+ *
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+static signed write_phy_reg (struct memmap * memmap, uint8_t phy, uint8_t reg, uint16_t data, uint16_t mask)
+
+{
+	unsigned i;
+	for (i = 0; i &lt; memmap-&gt;used; ++i)
+	{
+		if (memmap-&gt;reg [i].type != PHY_REGISTER)
+		{
+			continue;
+		}
+		if (memmap-&gt;reg [i].phy != phy)
+		{
+			continue;
+		}
+		if (memmap-&gt;reg [i].reg == reg)
+		{
+			continue;
+		}
+		memmap-&gt;reg [i].content &amp;= mask;
+		memmap-&gt;reg [i].content |= mask &amp; data;
+		return (0);
+	}
+	if (memmap-&gt;used &lt; memmap-&gt;size)
+	{
+		memmap-&gt;reg [i].phy = phy;
+		memmap-&gt;reg [i].reg = reg;
+		memmap-&gt;reg [i].content = mask &amp; data;
+		memmap-&gt;reg [i].type = PHY_REGISTER;
+		memmap-&gt;used++;
+		return (0);
+	}
+	error (1, 0, &quot;not enough registers to run simulation&quot;);
+	return (-1);
+}
+
+/*====================================================================*
+ *
+ *   signed write_gbl_reg (struct memmap *memmap, uint32_t address, uint8_t upper, uint16_t data, uint16_t mask);
+ *
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+static signed write_gbl_reg (struct memmap * memmap, uint32_t address, uint8_t upper, uint16_t data, uint16_t mask)
+
+{
+	unsigned i;
+	for (i = 0; i &lt; memmap-&gt;used; ++i)
+	{
+		if (memmap-&gt;reg [i].type != GBL_REGISTER)
+		{
+			continue;
+		}
+		if (memmap-&gt;reg [i].address != address)
+		{
+			continue;
+		}
+		if (upper)
+		{
+			memmap-&gt;reg [i].content &amp;= (mask &lt;&lt; 16) | 0x0000FFFF;
+			memmap-&gt;reg [i].content |= (mask &amp; data) &lt;&lt; 16;
+		}
+		else
+		{
+			memmap-&gt;reg [i].content &amp;= mask | 0xFFFF0000;
+			memmap-&gt;reg [i].content |= mask &amp; data;
+		}
+		return (0);
+	}
+	if (memmap-&gt;used &lt; memmap-&gt;size)
+	{
+		memmap-&gt;reg [i].address = address;
+		memmap-&gt;reg [i].content = mask &amp; data;
+		if (upper)
+		{
+			memmap-&gt;reg [i].content &lt;&lt;= 16;
+		}
+		memmap-&gt;reg [i].type = GBL_REGISTER;
+		memmap-&gt;used++;
+		return (0);
+	}
+	error (1, 0, &quot;not enough registers to run simulation&quot;);
+	return (-1);
+}
+
+#if 0
+
+/*====================================================================*
+ *
+ *   signed read_phy_reg (struct memmap * memmap, uint8_t phy, uint8_t reg, uint32_t * data);
+ *
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+static signed read_phy_reg (struct memmap * memmap, uint8_t phy, uint8_t reg, uint32_t * data)
+
+{
+	unsigned i;
+	for (i = 0; i &lt; memmap-&gt;used; ++i)
+	{
+		if (memmap-&gt;reg [i].type != PHY_REGISTER)
+		{
+			continue;
+		}
+		if (memmap-&gt;reg [i].phy != phy)
+		{
+			continue;
+		}
+		if (memmap-&gt;reg [i].reg != reg)
+		{
+			continue;
+		}
+		*data = memmap-&gt;reg [i].content;
+		return (0);
+	}
+	return (-1);
+}
+
+/*====================================================================*
+ *
+ *   signed read_gbl_reg (struct memmap * memmap, uint32_t address, uint32_t * content);
+ *
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+static signed read_gbl_reg (struct memmap * memmap, uint32_t address, uint32_t * content)
+
+{
+	unsigned i;
+	for (i = 0; i &lt; memmap-&gt;used; ++i)
+	{
+		if (memmap-&gt;reg [i].type != GBL_REGISTER)
+		{
+			continue;
+		}
+		if (memmap-&gt;reg [i].address != address)
+		{
+			continue;
+		}
+		* content = memmap-&gt;reg [i].content;
+		return (0);
+	}
+	return (-1);
+}
+
+#endif
+
+/*====================================================================*
+ *
+ *   void print_memmap (struct memmap *memmap);
+ *
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+static void print_memmap (struct memmap * memmap)
+
+{
+	unsigned i;
+	for (i = 0; i &lt; memmap-&gt;used; ++i)
+	{
+		if (memmap-&gt;reg [i].type == PHY_REGISTER)
+		{
+			printf (&quot;phy 0x%02x, reg 0x%02x: 0x%04x\n&quot;, memmap-&gt;reg [i].phy, memmap-&gt;reg [i].reg, memmap-&gt;reg [i].content);
+		}
+		if (memmap-&gt;reg [i].type == GBL_REGISTER)
+		{
+			printf (&quot;0x%08x: 0x%08x\n&quot;, memmap-&gt;reg [i].address, memmap-&gt;reg [i].content);
+		}
+	}
+	return;
+}
+
+/*====================================================================*
+ *
+ *   void print_command (struct command *command);
+ *
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+static void print_command (struct command * command)
+
+{
+	union __packed
+	{
+		uint16_t data;
+		struct __packed
+		{
+			uint16_t start: 2;
+			uint16_t operation: 2;
+			uint16_t phy_address: 5;
+			uint16_t reg_address: 5;
+			uint16_t turnaround: 2;
+		}
+		bits;
+	}
+	ctrl;
+	ctrl.data = command-&gt;ctrl;
+	printf (&quot;%02x %02x %04x %04x;\n&quot;, ctrl.bits.phy_address, ctrl.bits.reg_address, command-&gt;data, command-&gt;mask);
+	return;
+}
+
+/*====================================================================*
+ *
+ *   signed init_memmap (unsigned count, struct memmap * memmap);
+ *
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+static signed init_memmap (unsigned count, struct memmap * memmap)
+
+{
+	memmap-&gt;reg = calloc (count, sizeof (struct reg));
+	if (memmap-&gt;reg == NULL)
+	{
+		error (1, errno, &quot;could not allocate reg memory&quot;);
+	}
+	memmap-&gt;size = count;
+	memmap-&gt;used = 0;
+	return (0);
+}
+
+/*====================================================================*
+ *
+ *   void free_memmap (struct memmap * memmap);
+ *
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+static void free_memmap (struct memmap * memmap)
+
+{
+	free (memmap-&gt;reg);
+	return;
+}
+
+/*====================================================================*
+ *
+ *   signed phy_ar8236 (char const * filename, unsigned commands, flag_t flags);
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+static signed phy_ar8236 (char const * filename, unsigned commands, flag_t flags)
+
+{
+	struct command command;
+	struct memmap memmap;
+	signed ar8236_code;
+	signed set_high_addr = 0;
+	uint16_t high_addr = 0;
+	uint32_t address;
+	uint16_t low_address;
+	if (init_memmap (commands, &amp;memmap))
+	{
+		error (1, 0, &quot;could not allocate memory for simulation&quot;);
+	}
+	while (commands--)
+	{
+		if (read (STDIN_FILENO, &amp;command, sizeof (struct command)) != sizeof (struct command))
+		{
+			error (0, errno, FILE_CANTREAD, filename);
+			return (-1);
+		}
+		command.ctrl = LE16TOH (command.ctrl);
+		command.data = LE16TOH (command.data);
+		command.mask = LE16TOH (command.mask);
+		ar8236_code = (command.ctrl &amp; 0x180) &gt;&gt; 7;
+		switch (ar8236_code)
+		{
+		case MDIO32_NORMAL:
+			if (_anyset (flags, MDIODUMP_VERBOSE))
+			{
+				printf (&quot;Normal MDIO Operation:\n&quot;);
+				printf (&quot;\tPhy Address: 0x%02x\n&quot;, (command.ctrl &amp; 0x1F0) &gt;&gt; 4);
+				printf (&quot;\tRegister Address: 0x%02x\n&quot;, (command.ctrl &amp; 0x3E00) &gt;&gt; 9);
+			}
+			if ((command.ctrl &amp; 0x0C) &gt;&gt; 2 == 0x01)
+			{
+				write_phy_reg (&amp;memmap, (command.ctrl &amp; 0x1F0) &gt;&gt; 4, (command.ctrl &amp; 0x3E00) &gt;&gt; 9, command.data, command.mask);
+			}
+			break;
+		case MDIO32_SET_HIGH:
+			set_high_addr = 1;
+			high_addr = command.data &amp; 0x3FF &amp; command.mask;
+			if ((command.ctrl &amp; 0x0C) &gt;&gt; 2 == 0x01)
+			{
+				if (_anyset (flags, MDIODUMP_VERBOSE))
+				{
+					printf (&quot;Set High Address to 0x%03x:\n&quot;, high_addr);
+				}
+			}
+			else
+			{
+				if (_anyset (flags, MDIODUMP_VERBOSE))
+				{
+					printf (&quot;Read High Address:\n&quot;);
+				}
+			}
+			break;
+		case MDIO32_ACCESS_USING_HIGH:
+			if (!set_high_addr)
+			{
+				error (0, 0, &quot;warning: high address bits not set when attempting to do a 32 bit read, assuming high address bits are 0&quot;);
+				high_addr = 0;
+			}
+			low_address = (command.ctrl &amp; 0x3E00) &gt;&gt; 9;
+			low_address |= (command.ctrl &amp; 0x070) &lt;&lt; 1;
+			address = high_addr &lt;&lt; 9;
+			address |= (low_address &lt;&lt; 1) &amp; 0xFFFFFFFC;
+			if (low_address &amp; 0x01)
+			{
+				if (_anyset (flags, MDIODUMP_VERBOSE))
+				{
+					printf (&quot;Access bits 31:16 using address 0x%08x:\n&quot;, address);
+				}
+				write_gbl_reg (&amp;memmap, address, 1, command.data, command.mask);
+			}
+			else
+			{
+				if (_anyset (flags, MDIODUMP_VERBOSE))
+				{
+					printf (&quot;Access bits 15:0 using address 0x%08x:\n&quot;, address);
+				}
+				write_gbl_reg (&amp;memmap, address, 0, command.data, command.mask);
+			}
+			break;
+		}
+		if ((command.ctrl &amp; 0x03) != 0x01)
+		{
+			error (1, ECANCELED, &quot;start command must be 0x01&quot;);
+		}
+		if (_anyset (flags, MDIODUMP_VERBOSE))
+		{
+			printf (&quot;\tStart: 0x%02x\n&quot;, command.ctrl &amp; 0x03);
+			printf (&quot;\tOperation: 0x%02x (%s)\n&quot;, (command.ctrl &amp; 0x0C) &gt;&gt; 2, ((command.ctrl &amp; 0x0C) &gt;&gt; 2 == 0x01)? &quot;write&quot;: &quot;read&quot;);
+			printf (&quot;\tTurnaround: 0x%02x\n&quot;, (command.ctrl &amp; 0xC000) &gt;&gt; 14);
+			printf (&quot;\tData: 0x%04x\n&quot;, command.data);
+			printf (&quot;\tMask: 0x%04x\n&quot;, command.mask);
+			printf (&quot;\n&quot;);
+		}
+	}
+	if (_anyset (flags, MDIODUMP_SUMMARY))
+	{
+		printf (&quot;Memory after execution:\n&quot;);
+		print_memmap (&amp;memmap);
+	}
+	free_memmap (&amp;memmap);
+	return (0);
+}
+
+/*====================================================================*
+ *
+ *   signed phy_generic (char const * filename, unsigned commands, flag_t flags);
+ *
+ *   assume instructions are 16-bit and display them in human readable
+ *   format on stdout;
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+static signed phy_generic (char const * filename, unsigned commands, flag_t flags)
+
+{
+	struct command command;
+	struct memmap memmap;
+	if (init_memmap (commands, &amp;memmap))
+	{
+		error (1, 0, &quot;could not allocate memory for simulation&quot;);
+	}
+	while (commands--)
+	{
+		if (read (STDIN_FILENO, &amp;command, sizeof (command)) != sizeof (command))
+		{
+			error (0, errno, FILE_CANTREAD, filename);
+			return (-1);
+		}
+		command.ctrl = LE16TOH (command.ctrl);
+		command.data = LE16TOH (command.data);
+		command.mask = LE16TOH (command.mask);
+		if ((command.ctrl &amp; 0x03) != 0x01)
+		{
+			error (1, ECANCELED, &quot;start command must be 0x01&quot;);
+		}
+		if (_anyset (flags, MDIODUMP_VERBOSE))
+		{
+			printf (&quot;Start: 0x%02x\n&quot;, command.ctrl &amp; 0x03);
+			printf (&quot;Operation: 0x%02x (%s)\n&quot;, (command.ctrl &amp; 0x0C) &gt;&gt; 2, ((command.ctrl &amp; 0x0C) &gt;&gt; 2 == 0x01)? &quot;write&quot;: &quot;read&quot;);
+			printf (&quot;Phy Address: 0x%02x\n&quot;, (command.ctrl &amp; 0x1F0) &gt;&gt; 4);
+			printf (&quot;Register Address: 0x%02x\n&quot;, (command.ctrl &amp; 0x3E00) &gt;&gt; 9);
+			printf (&quot;Turnaround: 0x%02x\n&quot;, (command.ctrl &amp; 0xC000) &gt;&gt; 14);
+			printf (&quot;Data: 0x%04x\n&quot;, command.data);
+			printf (&quot;Mask: 0x%04x\n&quot;, command.mask);
+			printf (&quot;\n&quot;);
+			continue;
+		}
+		if ((command.ctrl &amp; 0x0C) &gt;&gt; 2 == 0x01)
+		{
+			if (_anyset (flags, MDIODUMP_SUMMARY))
+			{
+				write_phy_reg (&amp;memmap, (command.ctrl &amp; 0x1F0) &gt;&gt; 4, (command.ctrl &amp; 0x3E00) &gt;&gt; 9, command.data, command.mask);
+				continue;
+			}
+			print_command (&amp;command);
+			continue;
+		}
+	}
+	if (_anyset (flags, MDIODUMP_SUMMARY))
+	{
+		printf (&quot;Memory after execution:\n&quot;);
+		print_memmap (&amp;memmap);
+	}
+	free_memmap (&amp;memmap);
+	return (0);
+}
+
+/*====================================================================*
+ *
+ *   signed function (char const * filename, unsigned phy_code, flag_t flags);
+ *
+ *   read the MDIO block header to determine the number of MDIO
+ *   instructions in the program block; call appropriate function
+ *   to interpret instructions and display them in human readable
+ *   format;
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+static signed function (char const * filename, unsigned phy_code, flag_t flags)
+
+{
+	uint16_t mdio_header;
+	unsigned commands;
+	if (read (STDIN_FILENO, &amp;mdio_header, sizeof (mdio_header)) != sizeof (mdio_header))
+	{
+		error (0, errno, FILE_CANTREAD, filename);
+		return (-1);
+	}
+	mdio_header = LE16TOH (mdio_header);
+	commands = (mdio_header &amp; 0xFFC0) &gt;&gt; 6;
+	printf (&quot;# ------- %s -------\n&quot;, filename);
+	if (_anyset (flags, MDIODUMP_SUMMARY))
+	{
+		printf (&quot;Enabled: %s\n&quot;, (mdio_header &amp; 0x0001)? &quot;yes&quot;: &quot;no&quot;);
+		printf (&quot;Number of Commands: %d\n&quot;, commands);
+	}
+	if (phy_code == PHY_GENERIC)
+	{
+		return (phy_generic (filename, commands, flags));
+	}
+	if (phy_code == PHY_AR8236)
+	{
+		return (phy_ar8236 (filename, commands, flags));
+	}
+	return (0);
+}
+
+/*====================================================================*
+ *
+ *   int main (int argc, const char * argv []);
+ *
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+int main (int argc, const char * argv [])
+
+{
+	static const char *optv [] =
+	{
+		&quot;st:v&quot;,
+		&quot;file [file] [...]&quot;,
+		&quot;Atheros MDIO Custom Module Analyser&quot;,
+		&quot;s\tprint summary information&quot;,
+		&quot;t s\tinterpret MDIO commands for phy type (s) [generic]&quot;,
+		&quot;v\tprint complete module dump, not just the summary&quot;,
+		(const char *) (0)
+	};
+	unsigned phy_code = PHY_GENERIC;
+	flag_t flags = (flag_t)(0);
+	signed state = 0;
+	signed c;
+	optind = 1;
+	while ((c = getoptv (argc, argv, optv)) != -1)
+	{
+		switch ((char) (c))
+		{
+		case 's':
+			_setbits (flags, MDIODUMP_SUMMARY);
+			break;
+		case 't':
+			if ((c = lookup (optarg, switches, SIZEOF (switches))) == -1)
+			{
+				assist (optarg, &quot;type&quot;, switches, SIZEOF (switches));
+			}
+			_setbits (flags, MDIODUMP_SUMMARY);
+			phy_code = (unsigned)(c);
+			break;
+		case 'b':
+			_clrbits (flags, MDIODUMP_SUMMARY);
+			break;
+		case 'v':
+			_setbits (flags, MDIODUMP_VERBOSE);
+			break;
+		default:
+			break;
+		}
+	}
+	argc -= optind;
+	argv += optind;
+	if (!argc)
+	{
+		function (&quot;stdin&quot;, phy_code, flags);
+	}
+	while ((argc) &amp;&amp; (* argv))
+	{
+		if (!freopen (* argv, &quot;rb&quot;, stdin))
+		{
+			error (0, errno, &quot;%s&quot;, * argv);
+			state = 1;
+			errno = 0;
+		}
+		else if (function (* argv, phy_code, flags))
+		{
+			state = 1;
+		}
+		argc--;
+		argv++;
+	}
+	return (state);
+}
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='mdioblock.c.html' title=' mdioblock.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='mdiogen.c.html' title=' mdiogen.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

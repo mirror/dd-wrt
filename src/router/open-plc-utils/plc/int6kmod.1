@@ -1,0 +1,208 @@
+.TH int6kmod 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+int6kmod - Qualcomm Atheros Powerline Device Module Manager
+
+.SH SYNOPSIS
+.BR int6kmod
+.RI [ options ] 
+.RI [ device ] 
+.RI [ device ] 
+[...]
+
+.SH DESCRIPTION
+Read or write Atheros custom powerline modules using VS_MODULE_OPERATION messages.
+Modules may be read from a device and written to a file or read from a file and written to a device.
+Modules may have any of several formats and purposes.
+Where the firmware permits, this program can now read modules in excess of 1400 bytes and can write multiple modules that exceed 1400 bytes in one operation.
+
+.PP
+This program is part of the Qualcomm Atheros Powerline Toolkit.
+See the \fBplc\fR man page for an overview and installation instructions.
+
+.SH OPTIONS
+
+.TP
+.RB - d
+Read the specified module from NVRAM and write to standard output in hexadecimal dump format.
+The module is identified by module and sub-module using options \fB-t\fR and \fB-s\fR.
+Runtime firmware will report an error if the module is not available.
+The session identifier is not required for a module read operation and is ignored.
+The largest module that can be read is 1400 bytes.
+This option and option \fB-m\fR are mutually exclusive.
+
+.TP
+.RB - e
+Redirects stderr messages to stdout.
+By convention status and error messages are printed on stderr while primary program output is printed on stdout.
+This option prints all output on stdout in cases where this is desired.
+
+.TP
+-\fBi \fIinterface\fR
+Select the host Ethernet interface.
+All requests are sent via this host interface and only reponses received via this host interface are recognized.
+The default interface is \fBeth1\fR because most people use \fBeth0\fR as their principle network connection; however, if environment string "PLC" is defined then it takes precedence over the default interface.
+This option then takes precedence over either default.
+
+.TP
+-\fBm \fIfilename\fR
+Read the specified module from NVRAM and write it to the named file.
+The module is identified by module and sub-module using options \fB-t\fR and \fB-s\fR.
+Runtime firmware will report an error if the module is not available.
+The session identifier is not required for a module read operation and is ignored.
+The largest module that can be read is 1400 bytes.
+This option and option \fB-d\fR are mutually exclusive.
+
+.TP
+-\fBM \fIfilename\fR
+Read the named module file and download it to the named device and commit NVRAM.
+The module is assigned to a module and sub-module identifier using options \fB-t\fR and \fB-s\fR.
+Runtime firmware will reject modules having invalid module and sub-mocule identifiers.
+Module files must be a multiple of four bytes or an error will occur.
+As implemented, int6kmod will reject files exceeding 1400 bytes but this restriction will be removed in later versions.
+
+.TP
+.RB - q
+Suppresses status messages on stderr.
+
+.TP
+-\fBs \fIsub-module-id\fR
+The sub-module identifier expressed as a 16-bit hexadecimal value with optional \fB0x\fR prefix.
+This identifier indicates a specific module with the module class specified using option \fB-t\fR.
+Any 16-bit value is permitted but only certain values are accepted by device firmware depending on firmware type and revision.
+The default value is \fB0x0000\fR.
+
+.TP
+-\fBS \fIsession-id\fR
+The session identifier expressed as a 32-bit hexadecimal value with optional \fB0x\fR prefix.
+The session identifier value is arbitrary and so any 32-bit value is permitted but 0x00000000 and 0xFFFFFFFF are illegal.
+The \fB0x\fR prefix is optional for this argument.
+The default \fIsession-id\fR is 0x78563412.
+
+.TP
+-\fBt \fImodule-id\fR
+The module identifier expressed as a 16-bit hexadecimal value with optional \fB0x\fR prefix.
+This identifier indicates the module type or class.
+Option \fB-s\fR indicates the specific member of a module class.
+Any 16-bit value is permitted but only certain values will be accepted by device firmware.
+The default value is \fB0x0000\fR.
+
+.TP
+-\fBv\fR
+Print additional information on stdout.
+In particular, this option dumps incoming and outgoing packets which can be saved as text files for reference.
+
+.TP
+.RB - w
+Write settings to the device instead of reading settings from the device.
+If omitted then settings are read from the device and displayed.
+If present, the user should specify all settings to avoid writing default values to the device.
+
+.TP
+.RB - ? ,-- help
+Print program help summary on stdout.
+This option takes precedence over other options on the command line.
+
+.TP
+.RB - ? ,-- version
+Print program version information on stdout.
+This option takes precedence over other options on the command line.
+Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of the Linux Toolkit you are using.
+
+.SH ARGUMENTS
+
+.TP
+.IR device
+The MAC address of some powerline device.
+More than one address may be specified on the command line.
+If more than one address is specified then operations are performed on each device in turn.
+The default address is \fBlocal\fR.
+See \fBDEVICES\fR for information.
+
+.SH DEVICES
+Powerline devices use Ethernet Media Access Control (MAC) addresses.
+A MAC address is a 48-bit value entered as 12 hexadecimal digits in upper, lower or mixed character case.
+Octets may be separated with colons for clarity.
+For example, "00b052000001", "00:b0:52:00:00:01" and "00b052:000001" are valid and equivalent.
+
+.PP
+The following MAC addresses are special and may be entered by name instead of number.
+
+.TP
+.BR all
+Same as "broadcast".
+
+.TP
+.BR broadcast
+A synonym for the Ethernet broadcast address, \fBFF:FF:FF:FF:FF:FF\fR.
+All devices, whether local, remote or foreign recognize messages sent to this address.
+A remote device is any device at the far end of a powerline connection.
+A foreign device is any device not manufactured by Atheros.
+
+.TP
+.BR local
+A synonym for the Qualcomm Atheros vendor specific Local Management Address (LMA), \fB00:B0:52:00:00:01\fR.
+All local Atheros devices recognize this address but remote and foreign devices do not.
+A remote device is any device at the far end of a powerline connection.
+A foreign device is any device not manufactured by Atheros.
+
+.SH REFERENCES
+See the Qualcomm Atheros HomePlug AV Firmware Technical Reference Manual for more information.
+
+.SH DISCLAIMER
+Atheros HomePlug AV Vendor Specific Management Message structure and content is proprietary to Qualcomm Atheros, Ocala FL USA.
+Consequently, public information is not available.
+Qualcomm Atheros reserves the right to modify message structure or content in future firmware releases without any obligation to notify or compensate users of this program.
+
+.SH EXAMPLES
+The following command reads module file \fBabc.bin\fR and writes it to the local device.
+The module identifier \fB0x1000\fR indicates that it is an \fBMDIO Init\fR module.
+The sub-module identifer defaults to \fB0x0000\fR because option \fB-s\fR is omitted.
+The session identifier defaults to \fB0x78563412\fR because option \fB-S\fR is omitted.
+The operation takes place in three steps.
+The last step may take 2 or 3 seconds to complete.
+
+.PP
+   # int6kmod -M abc.bin -t 0x1000 
+   eth1 00:B0:52:00:00:01 Request Session
+   eth1 00:B0:52:BE:EF:03 Request Granted
+   eth1 00:B0:52:00:00:01 Write abc.bin
+   eth1 00:B0:52:BE:EF:03 Written
+   eth1 00:B0:52:00:00:01 Commit Modules
+   eth1 00:B0:52:BE:EF:03 Committed
+
+.PP
+The next example does the same thing but writes module file \fBdef.bin\fR to remote device \fB00:B0:52:BA:BE:02\fR.
+The module identifier \fB0x4000\fR indicates that it is an \fBAdvanced Power Management uC\fR module.
+The session identifier used is \fB0xA5A5A5A5\fR.
+The sub-module identifer defaults to \fB0x0000\fR because option \fB-s\fR is omitted.
+
+.PP
+   # int6kmod -M def.bin -t 0x4000 -S A5A5A5A5 00:B0:52:BA:BE:02
+   eth1 00:B0:52:00:00:01 Request Session
+   eth1 00:B0:52:BE:EF:03 Request Granted
+   eth1 00:B0:52:00:00:01 Write abc.bin
+   eth1 00:B0:52:BE:EF:03 Written
+   eth1 00:B0:52:00:00:01 Commit Modules
+   eth1 00:B0:52:BE:EF:03 Committed
+
+.PP
+The next example reads back the module written in the first example and saves it in file \fBzyx.bin\fR.
+
+.PP
+   # int6kmod -m xyz.bin -t 0x1000
+   eth1 00:B0:52:00:00:01 Read zyx.bin
+   eth1 00:B0:52:BE:EF:03 Read
+
+.SH SEE ALSO
+.BR plc ( 1 ),
+.BR int6kmdio ( 1 ),
+.BR int6kmdio2 ( 1 ),
+.BR mdioblock ( 1 ),
+.BR mdioblock2 ( 1 ),
+.BR mdiodump ( 1 ),
+.BR mdiogen ( 1 )
+
+.SH CREDITS
+ Charles Maier <cmaier@qca.qualcomm.com>
+

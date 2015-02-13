@@ -1,0 +1,107 @@
+.TH weeder 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+weeder - Weeder Solid State Relay Module Controller 
+
+.SH SYNOPSIS
+.BR weeder
+.RI [ options ]
+.RI [ attenuation ]
+
+.SH DESCRIPTION
+Set or get the attenuation level on the Qualcomm Atheros Production Test System using a local RS-232 communication port.
+Attenuator settings are changed if an attenuation value is specified.
+Attenuator settings are read and displayed if no attenuation value is specified.
+The serial port settings must be configured before running this program.
+Settings are 9600 baud, no parity, 8 data and 1 stop bit.
+See datasheet \fIhttp://www.weedtech.com/wtssr-m.pdf\fR for more information.
+
+.SH OPTIONS
+
+.TP
+-\fBe\fI echo\fR
+Enable or disable echo mode.
+The value of \fBecho\fR can be \fB1\fR=on or \fB0\fR=off.
+Alternately, keywords "\fBon\fR" and "\fBoff\fR" can be used.
+Atheros recommends that you always disable echo when using this program to speed relay switching.
+
+.TP
+-\fBm\fI mode\fR
+Turn on or off the Device Under Test power.
+The value of \fBmode\fR can be \fB1\fR=on or \fB0\fR=off.
+Alternately, keywords "\fBon\fR" and "\fBoff\fR" can be used.
+
+.TP
+-\fBo\fI units\fR
+Change relay control module order.
+Individual relay control modules are assigned a digital address that can be referenced using the UTF-8 letters "[A-P]" then "[a-p]".
+The Atheros PTS is configured so that module "B" is activated before module "A".
+This options lets you specify some other module order.
+The default value is "BA" to indicate "B" before "A".
+
+.TP
+-\fBp\fI port\fR
+The name of the serial port.
+On Linux, the name is usually "/dev/ttyS[0-4]".
+On OS/X, the name is usually "/dev/cua[0-4]".
+On Windows, the name is "com[0-9]:".
+The default is "/dev/ttyS0" on Linux and "com1:" on Windows.
+If environment string "\fBWEEDER\fR" is defined then it takes precedence over the default serial port.
+This option then takes precedence over either default.
+Belkin USB-to-serial cables are named "/dev/ttyUSB0" on Linux.
+
+.TP
+-\fBw\fI wait\fR
+Wait time in milliseconds.
+Serial I/O operation are slow and a delay is needed after each write operation.
+Unfortunately, different operating systems require different wait times.
+This options lets you adjust the time.
+The default is 10 milliseconds which should be adequate on most systems.
+
+.SH ARGUMENTS
+
+.TP
+.IR attenuation
+The attenuation in decibels.
+The attenuation may be expressed in decimal, binary or hexadecimal when setting attenuator but is displayed in decimal when reading the attenuator.
+Binary values start with "0b" and hexadecimal values start with "0x".
+
+.SH EXAMPLES
+The following example turns the Device Under Test power on and configures the attenuator for \fB72\fRdb attenuation.
+Option \fB-m\fR is not necessary if the Device Under Test power is already on.
+
+.PP
+   # weeder -m 1 72
+
+.PP
+The next example configures the controller for \fB42\fRdb attenuation.
+There is no needed to turn the Device Under Test on again because it remains on until turned off.
+
+.PP
+   # weeder 42
+
+.PP
+The next example configures the controller for \fB56\fRdb attenuation and turns the Device Under Test off.
+
+.PP
+   # weeder -m off 56
+
+.PP
+The next example displays the current attenuation on the console because no attenuation value was specified.
+
+.PP
+   # weeder
+
+.PP
+
+.SH REFERENCES
+Information shown above applies to WTSSR-M Solid State Relay Module by Weeder Technologies, 90-A Beal Pkwy NW, Fort Walton Beach FL 32548 USA; Tel +44 850 863 5723.
+
+.SH SEE ALSO
+.BR amp ( 1 ),
+.BR ptsctl ( 1 ),
+.BR WTSSR-M ( 1 )
+
+.SH CREDITS
+ Charles Maier <cmaier@qca.qualcomm.com>
+

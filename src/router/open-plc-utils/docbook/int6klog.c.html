@@ -1,0 +1,739 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			int6klog.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='int6klist.c.html' title=' int6klist.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='int6kmdio2.c.html' title=' int6kmdio2.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *
+ *   int6klog.c - Atheros INT6x00 Log Retrieval Utility;
+ *
+ *
+ *   Contributor(s):
+ *      Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *      Nathaniel Houghton &lt;nhoughto@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*&quot;
+ *   system header files;
+ *--------------------------------------------------------------------*/
+
+#include &lt;unistd.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;ctype.h&gt;
+
+/*====================================================================*
+ *   custom header files;
+ *--------------------------------------------------------------------*/
+
+#include &quot;../tools/getoptv.h&quot;
+#include &quot;../tools/putoptv.h&quot;
+#include &quot;../tools/memory.h&quot;
+#include &quot;../tools/number.h&quot;
+#include &quot;../tools/symbol.h&quot;
+#include &quot;../tools/format.h&quot;
+#include &quot;../tools/base64.h&quot;
+#include &quot;../tools/types.h&quot;
+#include &quot;../tools/flags.h&quot;
+#include &quot;../tools/files.h&quot;
+#include &quot;../tools/error.h&quot;
+#include &quot;../ether/channel.h&quot;
+#include &quot;../plc/plc.h&quot;
+
+/*====================================================================*
+ *   custom source files;
+ *--------------------------------------------------------------------*/
+
+#ifndef MAKEFILE
+#include &quot;../plc/Devices.c&quot;
+#include &quot;../plc/Failure.c&quot;
+#include &quot;../plc/SendMME.c&quot;
+#include &quot;../plc/ReadMME.c&quot;
+#endif
+
+#ifndef MAKEFILE
+#include &quot;../tools/error.c&quot;
+#include &quot;../tools/getoptv.c&quot;
+#include &quot;../tools/putoptv.c&quot;
+#include &quot;../tools/version.c&quot;
+#include &quot;../tools/uintspec.c&quot;
+#include &quot;../tools/hexdump.c&quot;
+#include &quot;../tools/hexencode.c&quot;
+#include &quot;../tools/hexdecode.c&quot;
+#include &quot;../tools/hexstring.c&quot;
+#include &quot;../tools/todigit.c&quot;
+#include &quot;../tools/strfbits.c&quot;
+#include &quot;../tools/synonym.c&quot;
+#include &quot;../tools/lookup.c&quot;
+#include &quot;../tools/assist.c&quot;
+#include &quot;../tools/codelist.c&quot;
+#include &quot;../tools/b64dump.c&quot;
+#endif
+
+#ifndef MAKEFILE
+#include &quot;../ether/openchannel.c&quot;
+#include &quot;../ether/closechannel.c&quot;
+#include &quot;../ether/readpacket.c&quot;
+#include &quot;../ether/sendpacket.c&quot;
+#include &quot;../ether/channel.c&quot;
+#endif
+
+#ifndef MAKEFILE
+#include &quot;../mme/MMECode.c&quot;
+#include &quot;../mme/EthernetHeader.c&quot;
+#include &quot;../mme/QualcommHeader.c&quot;
+#include &quot;../mme/UnwantedMessage.c&quot;
+#endif
+
+/*====================================================================*
+ *   constants
+ *--------------------------------------------------------------------*/
+
+#define MSTATUS_STATUS (7 &lt;&lt; 0)
+#define MSTATUS_MAJORVERSION (1 &lt;&lt; 3)
+#define MSTATUS_BUFFERISLOCKED (1 &lt;&lt; 4)
+#define MSTATUS_AUTOLOCKONRESET (1 &lt;&lt; 5)
+#define MSTATUS_UNSOLICITEDUPDATES (1 &lt;&lt; 6)
+#define MSTATUS_UNSOLICITED (1 &lt;&lt; 7)
+
+#define INT6KLOG_FMT_RAW  1
+#define INT6KLOG_FMT_XML  2
+
+#define WD_ACTION_READ   (1 &lt;&lt; 0)
+#define WD_ACTION_CLEAR  (1 &lt;&lt; 1)
+#define WD_ACTION_CUSTOM (1 &lt;&lt; 2)
+
+/*====================================================================*
+ * program variables;
+ *--------------------------------------------------------------------*/
+
+static struct _code_ const formats [] =
+
+{
+	{
+		INT6KLOG_FMT_RAW,
+		&quot;raw&quot;,
+	},
+	{
+		INT6KLOG_FMT_XML,
+		&quot;xml&quot;,
+	}
+};
+
+/*====================================================================*
+ *
+ *   static signed PrintRawWatchdogReport (struct plc * plc);
+ *
+ *   Read the watchdog report using VS_WD_RPT and write to file in
+ *   binary format; the output can be sent to Atheros Support for
+ *   analysis;
+ *
+ *   VS_WD_RPT request returns an indication instead of a confirmation
+ *   message; this is unusual but so is life;
+ *
+ *
+ *   Contributor(s):
+ *      Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+static signed PrintRawWatchdogReport (struct plc * plc)
+
+{
+	struct channel * channel = (struct channel *)(plc-&gt;channel);
+	struct message * message = (struct message *)(plc-&gt;message);
+
+#ifndef __GNUC__
+#pragma pack (push,1)
+#endif
+
+	struct __packed vs_wd_rpt_request
+	{
+		struct ethernet_hdr ethernet;
+		struct qualcomm_hdr qualcomm;
+		uint16_t SESSIONID;
+		uint8_t CLR;
+	}
+	* request = (struct vs_wd_rpt_request *) (message);
+	struct __packed vs_wd_rpt_indicate
+	{
+		struct ethernet_hdr ethernet;
+		struct qualcomm_hdr qualcomm;
+		uint8_t MSTATUS;
+		uint16_t SESSIONID;
+		uint8_t NUMPARTS;
+		uint8_t CURPART;
+		uint16_t RDATALENGTH;
+		uint8_t RDATAOFFSET;
+		uint8_t RDATA [1];
+	}
+	* indicate = (struct vs_wd_rpt_indicate *) (message);
+
+#ifndef __GNUC__
+#pragma pack (pop)
+#endif
+
+	memset (message, 0, sizeof (* message));
+	EthernetHeader (&amp;request-&gt;ethernet, channel-&gt;peer, channel-&gt;host, channel-&gt;type);
+	QualcommHeader (&amp;request-&gt;qualcomm, 0, (VS_WD_RPT | MMTYPE_REQ));
+	plc-&gt;packetsize = (ETHER_MIN_LEN - ETHER_CRC_LEN);
+	request-&gt;SESSIONID = HTOLE16 (plc-&gt;cookie);
+	request-&gt;CLR = plc-&gt;readaction;
+	if (SendMME (plc) &lt;= 0)
+	{
+		error ((plc-&gt;flags &amp; PLC_BAILOUT), errno, CHANNEL_CANTSEND);
+		return (-1);
+	}
+	do
+	{
+		printf (&quot;%d %d\n&quot;, LE16TOH (indicate-&gt;RDATALENGTH), indicate-&gt;RDATAOFFSET);
+		if (ReadMME (plc, 0, (VS_WD_RPT | MMTYPE_IND)) &lt;= 0)
+		{
+			error ((plc-&gt;flags &amp; PLC_BAILOUT), errno, CHANNEL_CANTREAD);
+			return (-1);
+		}
+		printf (&quot;%d %d\n&quot;, LE16TOH (indicate-&gt;RDATALENGTH), indicate-&gt;RDATAOFFSET);
+		if (indicate-&gt;MSTATUS)
+		{
+			Failure (plc, PLC_WONTDOIT);
+			return (-1);
+		}
+		printf (&quot;%d %d\n&quot;, LE16TOH (indicate-&gt;RDATALENGTH), indicate-&gt;RDATAOFFSET);
+		write (STDOUT_FILENO, indicate-&gt;RDATA + indicate-&gt;RDATAOFFSET, LE16TOH (indicate-&gt;RDATALENGTH) - indicate-&gt;RDATAOFFSET);
+	}
+	while (indicate-&gt;CURPART &lt; indicate-&gt;NUMPARTS);
+	return (0);
+}
+
+/*====================================================================*
+ *
+ *   static signed PrintWatchdogReport (struct plc * plc, char const * version);
+ *
+ *   Read the watchdog report using VS_WD_RPT and print to file in
+ *   XML format; this file may be sent to QCA for analysis;
+ *
+ *   VS_WD_RPT request returns an indication instead of a confirmation
+ *   message; this is unusual but so is life;
+ *
+ *
+ *   Contributor(s):
+ *      Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+static signed PrintWatchdogReport (struct plc * plc, char const * version)
+
+{
+	struct channel * channel = (struct channel *)(plc-&gt;channel);
+	struct message * message = (struct message *)(plc-&gt;message);
+
+#ifndef __GNUC__
+#pragma pack (push,1)
+#endif
+
+	struct __packed vs_wd_rpt_request
+	{
+		struct ethernet_hdr ethernet;
+		struct qualcomm_hdr qualcomm;
+		uint16_t SESSIONID;
+		uint8_t CLR;
+	}
+	* request = (struct vs_wd_rpt_request *) (message);
+	struct __packed vs_wd_rpt_ind
+	{
+		struct ethernet_hdr ethernet;
+		struct qualcomm_hdr qualcomm;
+		uint8_t MSTATUS;
+		uint16_t SESSIONID;
+		uint8_t NUMPARTS;
+		uint8_t CURPART;
+		uint16_t RDATALENGTH;
+		uint8_t RDATAOFFSET;
+		uint8_t RDATA [1];
+	}
+	* indicate = (struct vs_wd_rpt_ind *) (message);
+
+#ifndef __GNUC__
+#pragma pack (pop)
+#endif
+
+	memset (message, 0, sizeof (* message));
+	EthernetHeader (&amp;request-&gt;ethernet, channel-&gt;peer, channel-&gt;host, channel-&gt;type);
+	QualcommHeader (&amp;request-&gt;qualcomm, 0, (VS_WD_RPT | MMTYPE_REQ));
+	plc-&gt;packetsize = (ETHER_MIN_LEN - ETHER_CRC_LEN);
+	request-&gt;SESSIONID = HTOLE16 (plc-&gt;cookie);
+	request-&gt;CLR = plc-&gt;readaction;
+	if (SendMME (plc) &lt;= 0)
+	{
+		error ((plc-&gt;flags &amp; PLC_BAILOUT), errno, CHANNEL_CANTSEND);
+		return (-1);
+	}
+	printf (&quot;&lt;WatchdogReport&gt;&quot;);
+	do
+	{
+		if (ReadMME (plc, 0, (VS_WD_RPT | MMTYPE_IND)) &lt; 0)
+		{
+			error ((plc-&gt;flags &amp; PLC_BAILOUT), errno, CHANNEL_CANTREAD);
+			return (-1);
+		}
+		if (indicate-&gt;MSTATUS)
+		{
+			Failure (plc, PLC_WONTDOIT);
+			return (-1);
+		}
+		printf (&quot;&lt;Packet&gt;&quot;);
+		printf (&quot;&lt;Version&gt;%s&lt;/Version&gt;&quot;, version);
+		printf (&quot;&lt;OUI&gt;%s&lt;/OUI&gt;&quot;, &quot;00B052&quot;);
+		printf (&quot;&lt;Status&gt;0&lt;/Status&gt;&quot;);
+		printf (&quot;&lt;SessionId&gt;0&lt;/SessionId&gt;&quot;);
+		printf (&quot;&lt;NumParts&gt;%d&lt;/NumParts&gt;&quot;, indicate-&gt;NUMPARTS);
+		printf (&quot;&lt;CurPart&gt;%d&lt;/CurPart&gt;&quot;, indicate-&gt;CURPART);
+		printf (&quot;&lt;DataLength&gt;%d&lt;/DataLength&gt;&quot;, LE16TOH (indicate-&gt;RDATALENGTH));
+		printf (&quot;&lt;DataOffset&gt;%d&lt;/DataOffset&gt;&quot;, indicate-&gt;RDATAOFFSET);
+		printf (&quot;&lt;Data&gt;&quot;);
+		b64dump (indicate-&gt;RDATA + indicate-&gt;RDATAOFFSET, LE16TOH (indicate-&gt;RDATALENGTH) - indicate-&gt;RDATAOFFSET, 0, stdout);
+		printf (&quot;&lt;/Data&gt;&quot;);
+		printf (&quot;&lt;/Packet&gt;&quot;);
+	}
+	while (indicate-&gt;CURPART &lt; indicate-&gt;NUMPARTS);
+	printf (&quot;&lt;/WatchdogReport&gt;&quot;);
+	return (0);
+}
+
+/*====================================================================*
+ *
+ *   static signed PrintCheckpointReport (struct plc * plc, char const * version);
+ *
+ *   Read the watchdog reqport using VS_CP_RPT and write to file in
+ *   binary or XML format; this file can be sent to Atheros Support
+ *   for analysis;
+ *
+ *   VS_CP_RPT request returns an indication instead of a confirmation
+ *   message; this is unusual but so is life;
+ *
+ *
+ *   Contributor(s):
+ *      Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *      Nathaniel Houghton &lt;nhoughto@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+static signed PrintCheckpointReport (struct plc * plc, char const * version)
+
+{
+	struct channel * channel = (struct channel *)(plc-&gt;channel);
+	struct message * message = (struct message *)(plc-&gt;message);
+
+#ifndef __GNUC__
+#pragma pack (push,1)
+#endif
+
+	struct __packed vs_cp_rpt_request
+	{
+		struct ethernet_hdr ethernet;
+		struct qualcomm_hdr qualcomm;
+		uint16_t SESSIONID;
+		uint8_t CLR;
+	}
+	* request = (struct vs_cp_rpt_request *) (message);
+	struct __packed vs_cp_rpt_ind
+	{
+		struct ethernet_hdr ethernet;
+		struct qualcomm_hdr qualcomm;
+		uint8_t MSTATUS;
+		uint8_t MAJORVERSION;
+		uint8_t MINORVERSION;
+		uint8_t RESERVED [14];
+		uint16_t SESSIONID;
+		uint32_t TOTALBUFFERSIZE;
+		uint32_t BLOCKOFFSET;
+		uint32_t BYTEINDEXOFNEXTPOSITION;
+		uint8_t NUMPARTS;
+		uint8_t CURPART;
+		uint16_t RDATALENGTH;
+		uint8_t RDATAOFFSET;
+		uint8_t RDATA [1];
+	}
+	* indicate = (struct vs_cp_rpt_ind *) (message);
+
+#ifndef __GNUC__
+#pragma pack (pop)
+#endif
+
+	memset (message, 0, sizeof (* message));
+	EthernetHeader (&amp;request-&gt;ethernet, channel-&gt;peer, channel-&gt;host, channel-&gt;type);
+	QualcommHeader (&amp;request-&gt;qualcomm, 0, (VS_CP_RPT | MMTYPE_REQ));
+	plc-&gt;packetsize = (ETHER_MIN_LEN - ETHER_CRC_LEN);
+	request-&gt;SESSIONID = HTOLE16 (plc-&gt;cookie);
+	request-&gt;CLR = plc-&gt;readaction;
+	if (SendMME (plc) &lt;= 0)
+	{
+		error ((plc-&gt;flags &amp; PLC_BAILOUT), errno, CHANNEL_CANTSEND);
+		return (-1);
+	}
+	printf (&quot;&lt;CheckpointReport&gt;&quot;);
+	do
+	{
+		if (ReadMME (plc, 0, (VS_CP_RPT | MMTYPE_IND)) &lt;= 0)
+		{
+			error ((plc-&gt;flags &amp; PLC_BAILOUT), errno, CHANNEL_CANTREAD);
+			return (-1);
+		}
+		if (_anyset (indicate-&gt;MSTATUS, MSTATUS_STATUS))
+		{
+			Failure (plc, PLC_WONTDOIT);
+			return (-1);
+		}
+		printf (&quot;&lt;Packet&gt;&quot;);
+		printf (&quot;&lt;Version&gt;%s&lt;/Version&gt;&quot;, version);
+		printf (&quot;&lt;Status&gt;0&lt;/Status&gt;&quot;);
+		printf (&quot;&lt;MajorVersionBit&gt;%d&lt;/MajorVersionBit&gt;&quot;, indicate-&gt;MSTATUS &amp; MSTATUS_MAJORVERSION? 1:0);
+		printf (&quot;&lt;BufferIsLocked&gt;%d&lt;/BufferIsLocked&gt;&quot;, indicate-&gt;MSTATUS &amp; MSTATUS_BUFFERISLOCKED? 1:0);
+		printf (&quot;&lt;AutoLockOnResetIsOn&gt;%d&lt;/AutoLockOnResetIsOn&gt;&quot;, indicate-&gt;MSTATUS &amp; MSTATUS_AUTOLOCKONRESET? 1:0);
+		printf (&quot;&lt;UnsolicitedUpdatesIsOn&gt;%d&lt;/UnsolicitedUpdatesIsOn&gt;&quot;, indicate-&gt;MSTATUS &amp; MSTATUS_UNSOLICITEDUPDATES? 1:0);
+		printf (&quot;&lt;Unsolicited&gt;%d&lt;/Unsolicited&gt;&quot;, indicate-&gt;MSTATUS &amp; MSTATUS_UNSOLICITED? 1:0);
+		printf (&quot;&lt;MajorVersion&gt;%d&lt;/MajorVersion&gt;&quot;, indicate-&gt;MAJORVERSION);
+		printf (&quot;&lt;MinorVersion&gt;%d&lt;/MinorVersion&gt;&quot;, indicate-&gt;MINORVERSION);
+		printf (&quot;&lt;Reserved1&gt;0&lt;/Reserved1&gt;&quot;);
+		printf (&quot;&lt;Reserved2&gt;0&lt;/Reserved2&gt;&quot;);
+		printf (&quot;&lt;Reserved3&gt;0&lt;/Reserved3&gt;&quot;);
+		printf (&quot;&lt;Reserved4&gt;0&lt;/Reserved4&gt;&quot;);
+		printf (&quot;&lt;SessionId&gt;1&lt;/SessionId&gt;&quot;);
+		printf (&quot;&lt;TotalBufferSize&gt;%d&lt;/TotalBufferSize&gt;&quot;, LE32TOH (indicate-&gt;TOTALBUFFERSIZE));
+		printf (&quot;&lt;BlockOffset&gt;%d&lt;/BlockOffset&gt;&quot;, LE32TOH (indicate-&gt;BLOCKOFFSET));
+		printf (&quot;&lt;ByteIndexOfNextPos&gt;%d&lt;/ByteIndexOfNextPos&gt;&quot;, LE32TOH (indicate-&gt;BYTEINDEXOFNEXTPOSITION));
+		printf (&quot;&lt;NumParts&gt;%d&lt;/NumParts&gt;&quot;, indicate-&gt;NUMPARTS);
+		printf (&quot;&lt;CurPart&gt;%d&lt;/CurPart&gt;&quot;, indicate-&gt;CURPART);
+		printf (&quot;&lt;RDataLength&gt;%d&lt;/RDataLength&gt;&quot;, LE16TOH (indicate-&gt;RDATALENGTH));
+		printf (&quot;&lt;RDataOffset&gt;%d&lt;/RDataOffset&gt;&quot;, indicate-&gt;RDATAOFFSET);
+		printf (&quot;&lt;RData&gt;&quot;);
+		b64dump (indicate-&gt;RDATA + indicate-&gt;RDATAOFFSET, LE16TOH (indicate-&gt;RDATALENGTH), 0, stdout);
+		printf (&quot;&lt;/RData&gt;&quot;);
+		printf (&quot;&lt;/Packet&gt;&quot;);
+	}
+	while (indicate-&gt;CURPART &lt; indicate-&gt;NUMPARTS);
+	printf (&quot;&lt;/CheckpointReport&gt;&quot;);
+	return (0);
+}
+
+/*====================================================================*
+ *
+ *   static signed Diagnostics (struct plc * plc)
+ *
+ *   read the firmware version string from a device before reading
+ *   and writing the watchdog and checkpoint reports in XML format;
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+static signed Diagnostics (struct plc * plc)
+
+{
+	char version [PLC_VERSION_STRING];
+	struct channel * channel = (struct channel *)(plc-&gt;channel);
+	struct message * message = (struct message *)(plc-&gt;message);
+
+#ifndef __GNUC__
+#pragma pack (push,1)
+#endif
+
+	struct __packed vs_sw_ver_request
+	{
+		struct ethernet_hdr ethernet;
+		struct qualcomm_hdr qualcomm;
+		uint8_t MSTATUS;
+		uint8_t MDEVICEID;
+		uint8_t MVERLENGTH;
+		char MVERSION [PLC_VERSION_STRING];
+	}
+	* request = (struct vs_sw_ver_request *) (message);
+	struct __packed vs_sw_ver_confirm
+	{
+		struct ethernet_hdr ethernet;
+		struct qualcomm_hdr qualcomm;
+		uint8_t MSTATUS;
+		uint8_t MDEVICEID;
+		uint8_t MVERLENGTH;
+		char MVERSION [PLC_VERSION_STRING];
+	}
+	* confirm = (struct vs_sw_ver_confirm *) (message);
+
+#ifndef __GNUC__
+#pragma pack (pop)
+#endif
+
+	memset (message, 0, sizeof (* message));
+	EthernetHeader (&amp;request-&gt;ethernet, channel-&gt;peer, channel-&gt;host, channel-&gt;type);
+	QualcommHeader (&amp;request-&gt;qualcomm, 0, (VS_SW_VER | MMTYPE_REQ));
+	plc-&gt;packetsize = (ETHER_MIN_LEN - ETHER_CRC_LEN);
+	if (SendMME (plc) &lt;= 0)
+	{
+		error ((plc-&gt;flags &amp; PLC_BAILOUT), errno, CHANNEL_CANTSEND);
+		return (-1);
+	}
+	if (ReadMME (plc, 0, (VS_SW_VER | MMTYPE_CNF)) &lt;= 0)
+	{
+		error ((plc-&gt;flags &amp; PLC_BAILOUT), errno, CHANNEL_CANTREAD);
+		return (-1);
+	}
+	if (confirm-&gt;MSTATUS)
+	{
+		Failure (plc, PLC_WONTDOIT);
+		return (-1);
+	}
+	memcpy (version, confirm-&gt;MVERSION, sizeof (version));
+	if (plc-&gt;action == INT6KLOG_FMT_XML)
+	{
+		printf (&quot;&lt;?xml version='1.0' encoding='utf-8' standalone='yes'?&gt;&quot;);
+		printf (&quot;&lt;Diagnostics&gt;&quot;);
+		PrintWatchdogReport (plc, version);
+		PrintCheckpointReport (plc, version);
+		printf (&quot;&lt;/Diagnostics&gt;\n&quot;);
+		return (0);
+	}
+	if (plc-&gt;action == INT6KLOG_FMT_RAW)
+	{
+		PrintRawWatchdogReport (plc);
+		return (0);
+	}
+	return (0);
+}
+
+/*====================================================================*
+ *
+ *   int main (int argc, char const * argv[]);
+ *
+ *   parse command line, populate plc structure and perform selected
+ *   operations; show help summary if asked; see getoptv and putoptv
+ *   to understand command line parsing and help summary display; see
+ *   plc.h for the definition of struct plc;
+ *
+ *   the command line accepts multiple MAC addresses and the program
+ *   performs the specified operations on each address, in turn; the
+ *   address order is significant but the option order is not; the
+ *   default address is a local broadcast that causes all devices on
+ *   the local H1 interface to respond but not those at the remote
+ *   end of the powerline;
+ *
+ *   the default address is 00:B0:52:00:00:01; omitting the address
+ *   will automatically address the local device; some options will
+ *   cancel themselves if this makes no sense;
+ *
+ *   the default interface is eth1 because most people use eth0 as
+ *   their principle network connection; you can specify another
+ *   interface with -i or define environment string PLC to make
+ *   that the default interface and save typing;
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+int main (int argc, char const * argv [])
+
+{
+	extern struct channel channel;
+	static char const * optv [] =
+	{
+		&quot;cCef:ri:qvz:&quot;,
+		&quot;device [device] [...] [&gt; stdout]&quot;,
+		&quot;Qualcomm Atheros INT6x00 Log Retrieval Utility&quot;,
+		&quot;c\tclear watchdog and checkpoint reports&quot;,
+		&quot;C\tcustom watchdog report&quot;,
+		&quot;e\tredirect stderr to stdout&quot;,
+		&quot;f s\tprint Watchdog Report in format (s) [xml]&quot;,
+
+#if defined (WINPCAP) || defined (LIBPCAP)
+
+		&quot;i n\thost interface is (n) [&quot; LITERAL (CHANNEL_ETHNUMBER) &quot;]&quot;,
+
+#else
+
+		&quot;i s\thost interface is (s) [&quot; LITERAL (CHANNEL_ETHDEVICE) &quot;]&quot;,
+
+#endif
+
+		&quot;q\tquiet mode&quot;,
+		&quot;r\tread &quot;,
+		&quot;v\tverbose mode&quot;,
+		(char const *) (0)
+	};
+
+#include &quot;../plc/plc.c&quot;
+
+	signed c;
+	if (getenv (PLCDEVICE))
+	{
+
+#if defined (WINPCAP) || defined (LIBPCAP)
+
+		channel.ifindex = atoi (getenv (PLCDEVICE));
+
+#else
+
+		channel.ifname = strdup (getenv (PLCDEVICE));
+
+#endif
+
+	}
+	optind = 1;
+	plc.readaction = 0;
+	plc.action = INT6KLOG_FMT_XML;
+	while ((c = getoptv (argc, argv, optv)) != -1)
+	{
+		switch (c)
+		{
+		case 'C':
+			_setbits (plc.readaction, WD_ACTION_CUSTOM);
+			break;
+		case 'c':
+			_setbits (plc.readaction, WD_ACTION_CLEAR);
+			break;
+		case 'e':
+			dup2 (STDOUT_FILENO, STDERR_FILENO);
+			break;
+		case 'f':
+			if ((c = lookup (optarg, formats, SIZEOF (formats))) == -1)
+			{
+				assist (optarg, &quot;format&quot;, formats, SIZEOF (formats));
+			}
+			plc.action = (uint8_t)(c);
+			break;
+		case 'i':
+
+#if defined (WINPCAP) || defined (LIBPCAP)
+
+			channel.ifindex = atoi (optarg);
+
+#else
+
+			channel.ifname = optarg;
+
+#endif
+
+			break;
+		case 'q':
+			_setbits (channel.flags, CHANNEL_SILENCE);
+			_setbits (plc.flags, PLC_SILENCE);
+			break;
+		case 'r':
+			_setbits (plc.readaction, WD_ACTION_READ);
+			break;
+		case 'v':
+			_setbits (channel.flags, CHANNEL_VERBOSE);
+			_setbits (plc.flags, PLC_VERBOSE);
+			break;
+		case 'z':
+			plc.readaction = (uint8_t)(uintspec (optarg, 0, 255));
+			break;
+		default:
+			break;
+		}
+	}
+	argc -= optind;
+	argv += optind;
+	if (argc != 1)
+	{
+		if (plc.rpt.file != -1)
+		{
+			error (1, ECANCELED, PLC_NODEVICE);
+		}
+	}
+	openchannel (&amp;channel);
+	if (!(plc.message = malloc (sizeof (* plc.message))))
+	{
+		error (1, errno, PLC_NOMEMORY);
+	}
+
+#ifdef WIN32
+
+	if (plc.action == INT6KLOG_FMT_RAW)
+	{
+		setmode (STDOUT_FILENO, O_BINARY);
+	}
+
+#endif
+
+	if (!argc)
+	{
+		Diagnostics (&amp;plc);
+	}
+	while ((argc) &amp;&amp; (* argv))
+	{
+		if (!hexencode (channel.peer, sizeof (channel.peer), synonym (* argv, devices, SIZEOF (devices))))
+		{
+			error (1, errno, PLC_BAD_MAC, * argv);
+		}
+		Diagnostics (&amp;plc);
+		argc--;
+		argv++;
+	}
+	free (plc.message);
+	closechannel (&amp;channel);
+	exit (0);
+}
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='int6klist.c.html' title=' int6klist.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='int6kmdio2.c.html' title=' int6kmdio2.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

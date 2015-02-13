@@ -1,0 +1,18 @@
+#!/usr/local/bin/efsu -ieth1
+# file: efsu/IGMP_JOIN.hex
+
+# ====================================================================
+#
+#   IGMP operation
+#   efsu -i usb2 -h IGMP.hex -l 100
+#   efsu -i usb3 -h IGMP_JOIN.hex -l 1
+#   efsu -i usb2 -h IGMP.hex -l 10000000
+#   efsu -i usb3 -h IGMP_LEAVE.hex -l 1
+#
+# --------------------------------------------------------------------
+
+01 00 5e 00 00 16 00 1d 7e 01 1d 18 08 00 46 00
+00 28 5d ca 00 00 01 02 22 e3 c0 a8 03 64 e0 00
+00 16 94 04 00 00 22 00 95 fb 00 00 00 01 04 00
+00 00 e0 01 64 01 ff ff ff ff ff ff ff ff ff
+

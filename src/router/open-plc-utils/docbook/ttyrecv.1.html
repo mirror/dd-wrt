@@ -1,0 +1,82 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			ttyrecv.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='ttycat.1.html' title=' ttycat.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='ttysend.1.html' title=' ttysend.1 '>NEXT</a>]
+			</div>
+<pre>
+ttyrecv(1)                                   Qualcomm Atheros Open Powerline Toolkit                                  ttyrecv(1)
+
+NAME
+       ttyrecv - Serial Line Rate Tester (Receive)
+
+SYNOPSIS
+       ttyrecv [options] [&gt;stdout]
+
+DESCRIPTION
+       Receive data from a serial device.  The primary purpose of this program is to receive data over a serial port for a spec‐
+       ified time duration.
+
+       The ttyrecv program exits after the receive time (see -t) has elapsed.
+
+       This program is part of the Qualcomm Atheros Powerline Toolkit.  See the AMP man page for an  overview  and  installation
+       instructions.
+
+COMMENTS
+       This program does not yet support Windows platforms.
+
+OPTIONS
+       -c     Consume all data received (do not print to standard output).
+
+       -l file
+              The serial port file to read data from.  The default is /dev/ttyS0.
+
+       -r     Print the receive rate to standard output after the receive time has elapsed.
+
+       -s speed
+              The  serial  baud rate.  Supported baud rates are 0, 50, 75, 110, 134, 150, 200, 300, 600, 1200, 1800, 2400, 4800,
+              9600, 19200, 38400, 57600, 115200, 230400, 460800, 500000 and 921600.
+
+       -t time
+              Receive for time seconds.  The default is 10 seconds.
+
+       -?,--help
+              Print program help summary on stdout.  This option takes precedence over other options on the command line.
+
+       -?,--version
+              Print program version information on stdout.  This option takes precedence over other options on the command line.
+              Use  this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of
+              the Linux Toolkit you are using.
+
+EXAMPLES
+       None.
+
+SEE ALSO
+       amp(1), int6kuart(1), ttysend(1),
+
+CREDITS
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+        Nathaniel Houghton &lt;nhoughto@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                               ttyrecv(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='ttycat.1.html' title=' ttycat.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='ttysend.1.html' title=' ttysend.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

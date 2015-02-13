@@ -1,0 +1,125 @@
+.TH pibruin 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+pibruin - Classification Rule Insert Utility                      
+
+.SH SYNOPSIS
+.BR pibruin
+.RI [ options ]
+.RI [< rules ]
+.RI file
+
+.SH DESCRIPTION
+Read a set of classification rules from stdin and insert them directly into a PIB file.
+This program is an alternative to program \fBint6krule\fR and a companion to program \fBpibrump\fR.
+Although it is possible to \fBruin\fR a PIB using this command, the name is short for "\fBru\fRle \fBin\fRsert".
+
+.PP
+Atheros recommends that users validate all classification rule sets used with this program before inserting them into an operational PIB.
+Individual rules may be syntactically valid but they can still be technically invalid or conflict with other.
+This program does not perform any technical or cross-rule validation what-so-ever.
+
+.PP
+Cross-rule validation is normally done by runtime firmware when a rule arrives in a VS_CLASSIFIER management message.
+This validation prevents the insertion of meaningless or conflicting rules into the PIB.
+It may be possible to commit a PIB containing mis-configured classification rule sets thus causing the device to lockup or misbehave on reboot.
+
+.PP
+One recommended method of rule set validation is to program a device with individual rules using program \fBint6krule\fR then read the PIB and extract the rule set with program \fBpibrump\fR.
+The rule set should be valid at that point.
+
+.PP
+This program is part of the Qualcomm Atheros Powerline Toolkit.
+See the \fBAMP\fR man page for an overview and installation instructions.
+
+.SH OPTIONS
+
+.TP
+-\fBo\fI offset\fR
+Specify an alternative PIB offset when inserting the classifier block.
+Customers should not use this option.
+It is provided to account for firmware changes that might occur in the future.
+Improper use of this option can render a PIB file unrecoverable.
+
+.TP
+.RB - q
+Suppresses progress messages.
+
+.TP
+.RB - v
+Print additional information on stdout.
+
+.TP
+.RB - ? ,-- help
+Print program help summary on stdout.
+This option takes precedence over other options on the command line.
+
+.TP
+.RB - ! ,-- version
+Print program version information on stdout.
+This option takes precedence over other options on the command line.
+Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of the Linux Toolkit you are using.
+
+.SH ARGUMENTS
+
+.TP
+.IR file
+The name of a valid Atheros runtime parameter file.
+The file is modified by this program only if the classification rule file is syntactically correct.
+See the \fBDISCLAIMER\fR section below.
+No backup file is created.
+By convention, runtime parameter files have a \fB.pib\fR extention but this program does not enforce that convention.
+The file must exist and be a valid PIB file or errors will occur.
+
+.TP
+.IR rules
+The name of a valid classifier rule file.
+The file is not modified by this program.
+Classifier rule files are standard ASCII text and may be created manually using a normal text editor or may be generated automatically using another program such as \fBpubrump\fR.
+By convention, classifier rule files have a .\fB.qos\fR extension but this program does not enforce that convention.
+If this file is omitted then rules are read from from the console, one rule per line.
+
+.SH DISCLAIMER
+PIB file structure and content is proprietary to Qualcomm Atheros, Ocala FL USA.
+Consequently, public information is not available.
+Qualcomm Atheros reserves the right to change the file structure or content in future firmware releases without any obligation to notify or compensate users of this program.
+
+.PP
+This program is provided for convenience only.
+It is possible to insert meaningless or confilicting rule sets into a PIB with this program because approved cross-rule validation is not performed.
+Incorrect application of perfectly valid rules may render a device ineffective or unusable on a powerline network.
+Program users are responsible for ensuring that their rule sets are verified by other means before using this program to insert them into an operational PIB file.
+
+.SH EXAMPLES
+The following is an example set of classification rules stored in file \fBrules.txt\fR.
+The file contains 5 rules, one rule per line.
+The rules are identical to command line arguments expected by program \fBint6krule\fR and one could type them, one at a time, into \fBint6krule\fR and wait for the device to reset each time.
+Alternately, we could insert all the rules directly into a PIB file at once then download and commit the PIB, resulting in only one reset.
+
+.PP
+   # cat rules.txt
+   Cap1 any VLANID is 20 add perm
+   DropRX any VLANID is 25 add perm
+   StripRx any VLANID is 5 VLANID is 10 VLANID is 15 add perm
+   StripRx any VLANID is 20 add perm
+   Cap1 any VLANID is 5 VLANID is 10 VLANID is 15 add perm
+
+.PP
+The following example reads file \fBrules.txt\fR from stdin and writes it into file \fBdef.pib\fR.
+This may be usefule if one wanted to distribute a known set of rules to other users or wanted to test various combinations of rules.
+Sincd rule files are
+
+.PP
+   # pibruin < rules.txt
+
+.PP
+The next example reads classification rules directly from file \fBabc.pib\fR using program \fBpibrump\fR and writes them directly into file \fBdef.pbi\fR using program \fBpibruin\fR.
+This is one means of transfering classification rules from one PIB to another.
+
+.SH SEE ALSO 
+.BR int6krule (7),
+.BR pibrump (7 )
+
+.SH CREDITS
+ Nathaniel Houghton <nhoughto@qca.qualcomm.com>
+

@@ -1,0 +1,236 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			WriteExecuteParameters2.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='WriteExecuteParameters1.c.html' title=' WriteExecuteParameters1.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='WriteExecuteParameters.c.html' title=' WriteExecuteParameters.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *
+ *   signed WriteExecuteParameters2 (struct plc * plc, unsigned module, const struct nvm_header2 * nvm_header);
+ *
+ *   plc.h
+ *
+ *   write parameters to SDRAM using VS_WRITE_AND_EXECUTE_APPLET;
+ *
+ *   we pass in the PIB image header because that is how the caller
+ *   located the PIB image in the file but we must write the entire
+ *   file into SDRAM at the address found in the PIB image header;
+ *   consequenctly, we have to rewind the file position and compute
+ *   the actual file size;
+ *
+ *
+ *   Contributor(s):
+ *      Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef WRITEEXECUTEPARAMETERS2_SOURCE
+#define WRITEEXECUTEPARAMETERS2_SOURCE
+
+#include &quot;../tools/files.h&quot;
+#include &quot;../tools/error.h&quot;
+#include &quot;../plc/plc.h&quot;
+
+signed WriteExecuteParameters2 (struct plc * plc, unsigned module, const struct nvm_header2 * nvm_header)
+
+{
+	struct channel * channel = (struct channel *)(plc-&gt;channel);
+	struct message * message = (struct message *)(plc-&gt;message);
+
+#ifndef __GNUC__
+#pragma pack (push,1)
+#endif
+
+	struct nvm_header2 tmp_header;
+	struct __packed vs_write_execute_request
+	{
+		struct ethernet_hdr ethernet;
+		struct qualcomm_hdr qualcomm;
+		uint32_t CLIENT_SESSION_ID;
+		uint32_t SERVER_SESSION_ID;
+		uint32_t FLAGS;
+		uint8_t ALLOWED_MEM_TYPES [8];
+		uint32_t TOTAL_LENGTH;
+		uint32_t CURR_PART_LENGTH;
+		uint32_t CURR_PART_OFFSET;
+		uint32_t START_ADDR;
+		uint32_t CHECKSUM;
+		uint8_t RESERVED2 [8];
+		uint8_t IMAGE [PLC_MODULE_SIZE];
+	}
+	* request = (struct vs_write_execute_request *) (message);
+	struct __packed vs_write_execute_confirm
+	{
+		struct ethernet_hdr ethernet;
+		struct qualcomm_hdr qualcomm;
+		uint32_t MSTATUS;
+		uint32_t CLIENT_SESSION_ID;
+		uint32_t SERVER_SESSION_ID;
+		uint32_t FLAGS;
+		uint8_t ALLOWED_MEM_TYPES [8];
+		uint32_t TOTAL_LENGTH;
+		uint32_t CURR_PART_LENGTH;
+		uint32_t CURR_PART_OFFSET;
+		uint32_t START_ADDR;
+		uint32_t CHECKSUM;
+		uint8_t RESERVED2 [8];
+		uint32_t CURR_PART_ABSOLUTE_ADDR;
+		uint32_t ABSOLUTE_START_ADDR;
+	}
+	* confirm = (struct vs_write_execute_confirm *) (message);
+
+#ifndef __GNUC__
+#pragma pack (pop)
+#endif
+
+	uint32_t length = PLC_MODULE_SIZE;
+	uint32_t offset = LE32TOH (nvm_header-&gt;ImageAddress);
+	uint32_t extent = LE32TOH (nvm_header-&gt;ImageLength);
+
+#if 1
+
+/*
+ *	adjust the file extent to include the the manifest image header, the manifest image, the PIB
+ *	image header and the PIB image; this should in principle, equal the PIB filesize for Panther
+ *	and Lynx .pib files;
+ */
+
+	if (lseek (plc-&gt;PIB.file, 0, SEEK_SET))
+	{
+		error (1, errno, FILE_CANTHOME, plc-&gt;PIB.name);
+	}
+	if (read (plc-&gt;PIB.file, &amp;tmp_header, sizeof (tmp_header)) != sizeof (tmp_header))
+	{
+		error (1, errno, FILE_CANTREAD, plc-&gt;PIB.name);
+	}
+	extent += sizeof (tmp_header);
+	extent += LE32TOH (tmp_header.ImageLength);
+	extent += sizeof (* nvm_header);
+	if (lseek (plc-&gt;PIB.file, 0, SEEK_SET))
+	{
+		error (1, errno, FILE_CANTHOME, plc-&gt;PIB.name);
+	}
+
+#endif
+
+	Request (plc, &quot;Write %s (%d) (%08X:%d)&quot;, plc-&gt;PIB.name, module, offset, extent);
+	while (extent)
+	{
+		memset (message, 0, sizeof (* message));
+		EthernetHeader (&amp;request-&gt;ethernet, channel-&gt;peer, channel-&gt;host, channel-&gt;type);
+		QualcommHeader (&amp;request-&gt;qualcomm, 0, (VS_WRITE_AND_EXECUTE_APPLET | MMTYPE_REQ));
+		if (length &gt; extent)
+		{
+			length = extent;
+		}
+		if (read (plc-&gt;PIB.file, request-&gt;IMAGE, length) != (signed)(length))
+		{
+			error (1, errno, FILE_CANTREAD, plc-&gt;PIB.name);
+		}
+		request-&gt;CLIENT_SESSION_ID = HTOLE32 (plc-&gt;cookie);
+		request-&gt;SERVER_SESSION_ID = HTOLE32 (0);
+		request-&gt;FLAGS = HTOLE32 (PLC_MODULE_ABSOLUTE);
+		request-&gt;ALLOWED_MEM_TYPES [0] = 0;
+		request-&gt;TOTAL_LENGTH = nvm_header-&gt;ImageLength;
+		request-&gt;CURR_PART_LENGTH = HTOLE32 (length);
+		request-&gt;CURR_PART_OFFSET = HTOLE32 (offset);
+		request-&gt;START_ADDR = nvm_header-&gt;EntryPoint;
+		request-&gt;CHECKSUM = nvm_header-&gt;ImageChecksum;
+		plc-&gt;packetsize = sizeof (* request);
+		if (SendMME (plc) &lt;= 0)
+		{
+			error ((plc-&gt;flags &amp; PLC_BAILOUT), errno, CHANNEL_CANTSEND);
+			return (-1);
+		}
+		if (ReadMME (plc, 0, (VS_WRITE_AND_EXECUTE_APPLET | MMTYPE_CNF)) &lt;= 0)
+		{
+			error ((plc-&gt;flags &amp; PLC_BAILOUT), errno, CHANNEL_CANTREAD);
+			return (-1);
+		}
+		if (confirm-&gt;MSTATUS)
+		{
+			Failure (plc, PLC_WONTDOIT);
+			return (-1);
+		}
+		if (LE32TOH (confirm-&gt;CURR_PART_LENGTH) != length)
+		{
+			error ((plc-&gt;flags &amp; PLC_BAILOUT), 0, PLC_ERR_LENGTH);
+			return (-1);
+		}
+		if (LE32TOH (confirm-&gt;CURR_PART_OFFSET) != offset)
+		{
+			error ((plc-&gt;flags &amp; PLC_BAILOUT), 0, PLC_ERR_OFFSET);
+			return (-1);
+		}
+		offset += length;
+		extent -= length;
+	}
+	return (0);
+}
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='WriteExecuteParameters1.c.html' title=' WriteExecuteParameters1.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='WriteExecuteParameters.c.html' title=' WriteExecuteParameters.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

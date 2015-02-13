@@ -1,0 +1,402 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			int6krule.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='int6krate.1.html' title=' int6krate.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='int6kstat.1.html' title=' int6kstat.1 '>NEXT</a>]
+			</div>
+<pre>
+int6krule(1)                                 Qualcomm Atheros Open Powerline Toolkit                                int6krule(1)
+
+NAME
+       int6krule - Stream Classification Utility
+
+SYNOPSIS
+       int6krule [options] action operand condition [condition] [condition] control volatility [device] [device] [...]
+
+       where condition is a field operator value sequence.
+
+DESCRIPTION
+       Format  and  send  stream  classification rules to one or more devices.  Rules specify an action to be taken when a frame
+       satisfies selection criteria.  Selection criteria consists of one, two or three conditions where any  or  all  conditions
+       must  be satisfied.  Each condition consists of a field type, a relational operator and a value.  Rules may be added to a
+       device, or removed from a device, so that they have permanent or temporary effect.
+
+       Classification rules are cumulative.  If a new rule set is identical to an old rule set then an error will  occur  unless
+       it  contains a different Transmission Action.  In that case the old rule will be replaced.  Identical classification rule
+       sets are permitted if one of the sets is associated with a VLAN tag action.  Classification  is  based  on  the  original
+       frame before is is altered by VLAN Tag insertion or removal.
+
+       Classification  is  multi-dimensional  and  the  terminology  used here may seem strange at first.  Refer to the Qualcomm
+       Atheros Firmware Techncial Reference Manual description of the VS_CLASSIFICATION management message for a  full  explana‐
+       tion.
+
+       This  program  is  part of the Qualcomm Atheros Powerline Toolkit.  See the plc man page for an overview and installation
+       instructions.
+
+OPTIONS
+       -e     Redirects stderr messages to stdout.  By convention status and error messages are printed on stderr while  primary
+              program output is printed on stdout.  This option prints all output on stdout in cases where this is desired.
+
+       -i interface
+              Select  the host Ethernet interface.  All requests are sent via this host interface and only reponses received via
+              this host interface are recognized.  The default interface is eth1 because most people use eth0 as their principle
+              network  connection;  however,  if  environment  string &quot;PLC&quot; is defined then it takes precedence over the default
+              interface.  This option then takes precedence over either default.
+
+       -r     Read rules from a device and display them on stdout.
+
+       -q     Suppresses status messages on stderr.
+
+       -s     Print a list of program keywords on stdout.  This option over-rides all others, except -? and -!, and the  program
+              will terminate without further action.
+
+       -t milliseconds
+              Read  timeout  in  milliseconds.   Values  range  from 0 through UINT_MAX.  This is the maximum time allowed for a
+              response.  The default is shown in brackets on the program menu.  -T tag The VLAN tag to be inserted  into  frames
+              before  they  are transmitted.  The tag is a 32-bit hexadecimal integer with optional &quot;0x&quot; prefix.  This option is
+              required for action TagTX and must be omitted for all other actions.
+
+       -v     Print additional information on stdout.  In particular, this option dumps incoming and outgoing packets which  can
+              be saved as text files for reference.
+
+       -V version
+              The  CSPEC  version  number  expressed  as a small decimal integer.  This option is required (and should be 2) for
+              action TagTX and must be omitted for all other actions.
+
+       -?,--help
+              Print program help summary on stdout.  This option takes precedence over other options on the command line.
+
+       -!,--version
+              Print program version information on stdout.  This option takes precedence over other options on the command line.
+              Use  this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of
+              the Linux Toolkit you are using.
+
+ARGUMENTS
+       action The action to be taken for frames that meet any (or  all)  selection  criteria.   Valid  actions  are  listed  and
+              described under ACTIONS.
+
+       operand
+              The  operand  specifies the logical relationship between conditions before the action to be taken.  Valid operands
+              are listed and described under OPERANDS.
+
+       condition
+              A conditional expression consisting of a field, operator and value.  See CONDITIONS for more information.
+
+       control
+              The control specifies the action to be taken by the device upon receipt of the rule.  The basic actions are to add
+              it to, or remove it from, the list of existing rules.  Valid controls are listed and described under CONTROLS.
+
+       volatility
+              The  volatility  specifies  the  effective lifetime of the rule.  Temoprary rules are stored in SDRAM and are lost
+              then the device is reset.  Permanent rules are stored in NVRAM and are restored after the device is reset.   Valid
+              volatilities are listed and described under VOLATILITY.
+
+       device The  MAC  address  of some powerline device.  More than one address may be specified on the command line.  If more
+              than one address is specified then operations are performed on each  device  in  turn.   The  default  address  is
+              &quot;local&quot;.  See DEVICES for more information.
+
+ACTIONS
+       Actions  indcate  the  disposition  of frames that match selection criteria.  They are expressed as discrete alphanumeric
+       strings entered in upper, lower or mixed character case.  They are position sensitive.  Failure to enter a  known  action
+       will results in an error message that lists permitted actions.
+
+       CAP0,CAP1,CAP2,CAP3
+              Assign a specific Channel Access Priority to frames.
+
+       Drop,DropTX
+              Do not forward frames over powerline.
+
+       DropRX Do not forward frames to host.
+
+       Boost  Boost frame priority to CAP3 for MMEs only.  At least one condition must be &quot;MME&quot;.
+
+       StripTX
+              Remove  the  VLAN Tag from frames before transmission over powerline.  This option checks for a VLAN Tag even when
+              there are no VLAN related conditions.
+
+       StripRX
+              Remove the VLAN Tag from frames before forwarding to host.  This option checks for a VLAN Tag even when there  are
+              no VLAN related conditions.
+
+       TagTX  Insert a given VLAN Tag into frames before transmission over powerline.  This action requires option -T to specify
+              the tag and option -V to specify the CSPEC version.
+
+OPERANDS
+       The operand indicates the logical relationship that must exist between conditions in the rule set before  the  action  is
+       applied  to  a frame.  Operands are expressed as discrete alphanumeric strings entered in upper, lower or mixed character
+       case.  Failure to enter a known operand will result in an error message that lists permitted operands.  They are  positon
+       sensitive.  One operand is allowed and it must appear after the action and before any condition.
+
+       Any    Apply the action to frames that satisfy any of the conditions.  This is equivalent to the logical or operation.
+
+       All    Apply the action to frames that satisfy all of the conditions.  This is equivalent to the logical and operation.
+
+       Always Apply the action to all frames.  All conditions are ignored.
+
+CONDITIONS
+       A  condition consists of a field, an operator and a value.  One condition is required but three are permitted.  Condition
+       order is not important but all conditions must appear after the operand and before the control.
+
+       field  The field is the part of the Ethernet frame to be examined.  Some fields are not valid for some actions  but  this
+              program  does not enforce such rules since validation is performed by runtime firmware on each device.  Recognized
+              fields are listed and described under FIELDS.
+
+       operator
+              The operator specifies the relationsip that must exist between the field and value in order for the  condition  to
+              evaluate  True.  Currently, only equality operators are supported.  Valid operators are listed and described under
+              OPERATORS.
+
+       value  The value must be appropriate to the field type.  Some fields are MAC or IP addresses, some are integers, some are
+              bitmaps  and  others  are states.  Integers and bitmaps may be expressed in binary, decimal or hexadecimal format.
+              Binary values staRt with 0b.  Hexadecimal values start with 0x.  States are expressed using keywords.   Users  are
+              responsible  for  knowing  how many bits are significant for each type of value.  Valid values are described along
+              with fields under FIELDS.
+
+FIELDS
+       Fields indicate the portion of the frame that is inspected during selection and the size and format of the value permited
+       in the condition statement.  They are expressed as discrete alphanumeric strings entered in upper, lower or mixed charac‐
+       ter case.  Failure to enter a known field will result in an error message that lists permitted fields.
+
+       ET     A 16-bit Ethertype expressed in hexadecimal with optional &quot;0x&quot; prefix.  The format is described in  IEEE  Standard
+              802-2001 [4].
+
+       EthDA  A  48-bit Ethernet destination address expressed in hexadecimal.  Octets may be separated with optional colons for
+              clarity.  The format is described in IEEE Standard 802-2001 [4].
+
+       EthSA  A 48-bit Ethernet source address expressed in hexadecimal.  Octets may be separated with optional colons for clar‐
+              ity.  The format is described in IEEE Standard 802-2001 [4].
+
+       IPSP   A  16-bit  IP  source  port  expressed as a decimal integer.  This condition applies to either TCP or UDP packets,
+              depending on the protocol used, and is valid only for actions &quot;CAP0&quot;, &quot;CAP1&quot;, &quot;CAP2&quot;, &quot;CAP3&quot; and &quot;Drop&quot;.
+
+       IPDP   A 16-bit IP destination port expressed as a decimal integer.  This condition applies to either TCP or UDP packets,
+              depending on the protocol used, and is valid only for actions &quot;CAP0&quot;, &quot;CAP1&quot;, &quot;CAP2&quot;, &quot;CAP3&quot; and &quot;Drop&quot;.
+
+       IPV4TOS
+              An 8-bit Type-of-Service code where the format is defined in the RFC 791 (Internet Protocol) [14].
+
+       IPV4PROT
+              An 8-bit Ethernet protocol code.  The format is defined in the RFC 791 (Internet Protocol) [14].
+
+       IPV4SA A 32-bit Internet Protocol source address expressed in dotted-decimal notation.  The official format is defined in
+              RFC 791 (Internet Protocol) [14].  Our implementation permits empty octets and leading zeros within  fields.   For
+              example, &quot;...&quot; is equivalent to &quot;0.0.0.0 and &quot;127..000.001&quot; is equivalent to &quot;127.0.0.1&quot;.
+
+       IPV4DA A  32-bit  Internet  Protocol  destination  address  expressed  in dotted-decimal notation. The official format is
+              defined in RFC 791 (internet Protocol) [14]. Our implementation permits empty  octets  and  leading  zeros  within
+              fields. For example, &quot;...&quot; is equivalent to &quot;0.0.0.0 and &quot;127..000.001&quot; is equivalent to &quot;127.0.0.1&quot;.
+
+       IPV6TC An 8-bit Internet Protocol V6 traffic class expressed as defined in RFC 2460 (Internet Protocol Version 6) [17].
+
+       IPV6FL A  24-bit  IPV6  flow label where the lower 20 bits are the IPv6 Flow Label defined in RFC 2460 (Internat Protocol
+              Version 6) [17].  The upper 4 bits should be zero.  The value can be entered either as a decimal,  binary  or  hex
+              integer.
+
+       IPV6SA A  128-bit IPV6 source address expressed as colon-separated hexadecmial quartets (octet pairs).  The official for‐
+              mat is defined in RFC 2460 (Internet Protocol Version 6) [17].  Our implementation permits multiple empty  fields,
+              abreviated  fields  and  leading zeros within fields.  When multiple empty fields appear, the right-most occurance
+              expands     to     multiple     zeros.      For     example,     &quot;AAAA::BBBB::CCCC&quot;     is      equivalent      to
+              &quot;AAAA:0000:BBBB:0000:0000:0000:0000:CCCC&quot;.
+
+       IPV6DA A  128-bit IPV6 destination address expressed as colon-separated hexadecimal quartets (octet pairs).  The official
+              format is defined in RFC 2460 (Internet Protocol Version 6)  [17].   Our  implementation  permits  multiple  empty
+              fields,  abbreviated  fields  and  leading zeros within fields.  When multiple empty fields appear, the right-most
+              occurance expands to zeros.  For example, &quot;:1::2&quot; is equivalent to &quot;0000:0001:0000:0000:0000:0000:0000:0002&quot;.
+
+       MME    A 24-bit Atheros HomePlugAV Management Message type expressed as a hex byte stream.  For clarity,  the  recommeded
+              format  it  &quot;xx:xxxx&quot;.   The  first  byte is the MMV.  The next two bytes are the MMTYPE.  Both are defined in the
+              HomePlug AV Specification.  The MMTYPE will match all  MME  variants,  such  as  Request,  Confirm,  Indicate  and
+              Response because the lower two bits are ignored.  This field is only valid for action &quot;Boost&quot;.
+
+       TCPAck The  string  &quot;True&quot;  or &quot;False&quot; to indicate that the frame is (or is not) a TCP Acknowledgement.  Double negatives
+              are allowed so &quot;Is True&quot; is equvalent to &quot;Not False&quot; and &quot;Is False&quot; is equivalent to &quot;Not True&quot;.
+
+       TCPSP  A 16-bit TCP source port as a decimal integer.  The format is defined in RFC 793  (Transmission  Control  Protocol
+              [15]).
+
+       TCPDP  A 16-bit TCP destination port expressed as a decimal integer.  The format is defined in RFC 793 (Transmission Con‐
+              trol Protocol [15]).
+
+       UDPSP  A 16-bit UDP source port expressed as a decimal integer.  The format is defined in RFC 768 (User Datagram Protocol
+              [13]).
+
+       UDPDP  A  16-bit  UDP  destination  port expressed as a decimal integer.  The format is defined in RFC 768 (User Datagram
+              Protocol [13]).
+
+       VLANID A 16-bit VLAN identifier where the lower 12 bits are the VLAN Identifier (VID) defined  in  IEEE  Std  802.1Q-1998
+              (Virtual Bridged Local Area Networks) [11].  The upper 4 bits should be zero.
+
+       VLANUP An  8-bit  Ethernet  VLAN tag where the lower 3 bits are the User Priority sub-field of a VLAN Tag defined in IEEE
+              Std 802.1Q-1998 (Virtual Bridged Local Area Networks) [11].  The upper 5 bits should be zero.
+
+       VLANTag
+              The string &quot;Present&quot; or &quot;Missing&quot; to indicate the presence (or absence) of one or more VLAN Tags within  a  frame.
+              This  classifier  is  essentially  equivalent  to &quot;ET Is 0x8100&quot;.  Double negatives are allowed so &quot;Is Present&quot; is
+              equivalent to &quot;Not Missing&quot; and &quot;Is Missing&quot; is equivalent to &quot;Not Present&quot;.
+
+OPERATORS
+       An operator indicates an equality between a field and a value.  An operator is an alphanumeric string entered  in  upper,
+       lower  or  mixed  character case.  Failure to enter a known operator will result in an error message that lists permitted
+       operators.  Operators are position sensitive and must appear between each field and value.
+
+       Is     Indicates that the frame field must equal the associated value for the condition to evaluate true.
+
+       Not    Indicates that the frame field must not equal the associated value for the condition to evaluate true.
+
+STATES
+       A state is a special case of value.
+
+       True,On,Yes,Present
+              Indicates a positive state or presence of some entity.  All are equivalent and can be used interchangeably.   Dou‐
+              ble negatives are permitted so &quot;Is True&quot; is equvalent to &quot;Not False&quot;.
+
+       False,Off,No,Missing
+              Indicates a negative state or absence of some entity.  All are equivalent and can be used interchangeably.  Double
+              negatives are permitted so &quot;Is False&quot; is equvalent to &quot;Not True&quot;.
+
+CONTROLS
+       The control determines how the devices will handle the rule after it  is  validated.   It  is  expressed  as  a  discrete
+       alphanumeric  string entered in upper, lower or mixed character case.  Failure to enter a known control will result in an
+       error message that lists permitted controls.  The control is position sensitive and must occur after condition and before
+       volatility.
+
+       Add    Adds the rule to the current list of rules unless a violation occurs.  In some cases, a rule may replace an exist‐
+              ing rule instead of being added.
+
+       Rem,Remove
+              Remove the rule from the current list of rules unless a violation occurs.
+
+VOLATILITY
+       The volatility determines which device rule set will be affected by the action.  It is expressed as a  discrete  alphanu‐
+       meric  string  entered  in  upper,  lower or mixed character case.  Failure to enter a known volatility will result in an
+       error message that lists permitted volatilities.  The volatility is position sensitive and must occur after control.
+
+       Temp   The temporary rule set will be modified.  The temporary rule set resides in the working PIB stored in SDRAM.
+
+       Perm   The permanent rule set will be modified.  The permanent rule set resides in the user PIB stored in NVRAM.
+
+DEVICES
+       Powerline devices use Ethernet Media Access Control (MAC) addresses.  A MAC address is a 48-bit value entered as 12  hex‐
+       adecimal  digits in upper, lower or mixed character case.  Octets may be separated with colons for clarity.  For example,
+       &quot;00b052000001&quot;, &quot;00:b0:52:00:00:01&quot; and &quot;00b052:000001&quot; are valid and equivalent.
+
+       The following MAC addresses are special and may be entered by name instead of number.
+
+       all    Same as &quot;broadcast&quot;.
+
+       broadcast
+              A synonym for the Ethernet broadcast address, FF:FF:FF:FF:FF:FF.  All devices, whether local,  remote  or  foreign
+              recognize  messages sent to this address.  A remote device is any device at the far end of a powerline connection.
+              A foreign device is any device not manufactured by Atheros.
+
+       local  A synonym for the Qualcomm Atheros vendor specific Local Management Address (LMA), 00:B0:52:00:00:01.   All  local
+              Atheros  devices  recognize  this address but remote and foreign devices do not.  A remote device is any device at
+              the far end of a powerline connection.  A foreign device is any device not manufactured by Atheros.
+
+REFERENCES
+       See the Qualcomm Atheros HomePlug AV Firmware Technical Reference Manual for more information.
+
+DISCLAIMER
+       Atheros HomePlug AV Vendor Specific Management Message structure and content is proprietary to Qualcomm Atheros, Ocala FL
+       USA.  Consequently, public information is not available.  Qualcomm Atheros reserves the right to modify message structure
+       or content in future firmware releases without any obligation to notify or compensate users of this program.
+
+EXAMPLES
+       This command adds a temporary classification rule to the classification table on  device  B00:B0:52:BA:BE:01.   The  rule
+       instructs  the device to drop frames that match either (any) of two conditions.  The first condition states that the IPv4
+       source address is 192.168.99.2.  The second conditon states that the IPv4 destination address is 192.168.99.100.
+
+          # int6krule drop any IPv4SA is 192.168.99.2 IPv4DA is 192.168.99.100 add temp 00:B0:52:BA:BE:01
+
+       Observe that the action, operand and conditions come first then the control and volatility then the affected devices.  Up
+       to three conditions may be specified.  Keyword order is important.  Character case is not important.
+
+       The  following  example  prints  a  list of programmed keywords on stdout for reference.  The example shown here has been
+       abbreviate due to formatting limitations.
+
+          # int6krule -s
+
+            Controls are ’Add’|’Rem’|’Remove’
+            Volatilities are ’Temp’|’Perm’
+            Actions are ’CAP0’|’CAP1’|’CAP2’|’CAP3’|’Boost’|...|’StripTX’|’StripRX’|’TagRX’
+            Operands are ’All’|’Any’|’Always’
+            Fields are ’EthDA’|’EthSA’|’VLANUP’|’VLANID’|’IPv4TOS’|...|’TCPAck’|’VLANTag’
+            Operators are ’Is’|’Not’
+
+       More example follow:
+
+       Ethernet Address Rules
+
+       Ethernet address rules have the following general format:
+
+          | CAP0 | ANY | EthSA | IS  | xx:xx:xx:xx:xx:xx | ADD    | TEMP | xx:xx:xx:xx:xx:xx
+          | CAP1 | ALL | EthDA | NOT |                   | REMOVE | PERM |
+          | CAP2 |
+          | CAP3 |
+          | DROP |
+
+       For example, instruct device 00:B0:52:BA:BE:FF to temporarily add a rule to  forward  frames  from  00:2B:FE:CA:FE:BA  at
+       CAP3.  Observe Ethernet hardware addresses are used both in the condition and for the affected powerline devices.
+
+          # int6krule cap3 any ethsa is 00:2b:fe:ca:fe:ba add temp 00:b0;52:ba:be:ff
+
+       IP Address Rules
+
+       IP address rules have the following general format:
+
+          | CAP0 | ANY | IPv4SA | IS  | ddd.ddd.ddd.ddd | ADD    | TEMP | xx:xx:xx:xx:xx:xx
+          | CAP1 | ALL | IPv4DA | NOT |                 | REMOVE | PERM |
+          | CAP2 |
+          | CAP3 |
+          | DROP |
+
+       For  example,  instruct  device  00:B0:52:BA:BE:FF  to  permanently remove the rule that drops packets from 192.168.99.1.
+       Notice that the IP address is specified in dotted decimal format but the device address is specified in hexadecimal octet
+       format.   Dotted decimal format permits empty and variable length octets but octet delimiters are mandatory.  Hexadecimal
+       octet format requires fixed length octets but octet delimiters are optional.
+
+          # int6krule drop any ipv4sa is 192.168.99.1 remove perm 00:b0:52:ba:be:ff
+
+       IP Protocol Rules
+
+       IP protocol rules have the following general format:
+
+          | CAP0 | ANY | IPv4PROT | IS  | xxxx | ADD    | TEMP | xx:xx:xx:xx:xx:xx
+          | CAP1 | ALL |          | NOT |      | REMOVE | PERM |
+          | CAP2 |
+          | CAP3 |
+          | DROP |
+
+       For example, to instruct device 00:B0:52:BA:BE:FF to permanently add a rule to forward non-IP packets at CAP2.   In  this
+       example, delmiters have been omitted from the device Ethernet address.
+
+          # int6krule CAP2 all ipv4prot not 0x0800 add perm 00b052babeff
+
+SEE ALSO
+       plc(1), int6krate(1), int6kstat(1), int6ktone(7)
+
+CREDITS
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                             int6krule(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='int6krate.1.html' title=' int6krate.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='int6kstat.1.html' title=' int6kstat.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

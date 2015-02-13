@@ -1,0 +1,128 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			xmlschema.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='xmlscan.c.html' title=' xmlscan.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='xmlselect.c.html' title=' xmlselect.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   void xmlschema ();
+ *
+ *   node.h
+ *
+ *   print an XML schema on stdout that is compatible with function
+ *   xmledit; the schema should be used to validate files before any
+ *   attempt is make to parse them;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef XMLSCHEMA_SOURCE
+#define XMLSCHEMA_SOURCE
+
+#include &quot;../nodes/node.h&quot;
+#include &quot;../tools/format.h&quot;
+
+void xmlschema ()
+
+{
+	unsigned margin = 0;
+	output (margin, &quot;&lt;?xml version='%s' encoding='%s'?&gt;&quot;, XML_VERSION, XML_CHARSET);
+	output (margin++, &quot;&lt;xs:schema xmlns:xs='%s' elementFormDefault='%s'&gt;&quot;, XML_SCHEMA, &quot;qualified&quot;);
+	output (margin++, &quot;&lt;xs:element name='%s'&gt;&quot;, DATA_OBJECT);
+	output (margin++, &quot;&lt;xs:complexType&gt;&quot;);
+
+#if 0
+
+	output (margin, &quot;&lt;xs:attribute name='%s' use='optional' type='xs:NCName'/&gt;&quot;, DATA_NAME);
+	output (margin, &quot;&lt;xs:attribute name='%s' use='optional' type='xs:string'/&gt;&quot;, DATA_TEXT);
+
+#endif
+
+	output (margin++, &quot;&lt;xs:sequence&gt;&quot;);
+	output (margin, &quot;&lt;xs:element maxOccurs='unbounded' ref='%s'/&gt;&quot;, DATA_MEMBER);
+	output (margin--, &quot;&lt;/xs:sequence&gt;&quot;);
+	output (margin--, &quot;&lt;/xs:complexType&gt;&quot;);
+	output (margin--, &quot;&lt;/xs:element&gt;&quot;);
+	output (margin++, &quot;&lt;xs:element name='%s'&gt;&quot;, DATA_MEMBER);
+	output (margin++, &quot;&lt;xs:complexType&gt;&quot;);
+	output (margin, &quot;&lt;xs:attribute name='%s' use='required' type='xs:NCName'/&gt;&quot;, DATA_NAME);
+
+#if 0
+
+	output (margin, &quot;&lt;xs:attribute name='%s' use='optional' type='xs:string'/&gt;&quot;, DATA_TEXT);
+
+#endif
+
+	output (margin++, &quot;&lt;xs:sequence&gt;&quot;);
+	output (margin++, &quot;&lt;xs:sequence&gt;&quot;);
+	output (margin, &quot;&lt;xs:element ref='%s'/&gt;&quot;, DATA_OFFSET);
+	output (margin, &quot;&lt;xs:element ref='%s'/&gt;&quot;, DATA_LENGTH);
+	output (margin--, &quot;&lt;/xs:sequence&gt;&quot;);
+	output (margin++, &quot;&lt;xs:choice&gt;&quot;);
+	output (margin, &quot;&lt;xs:element ref='%s'/&gt;&quot;, DATA_STRUCT);
+	output (margin, &quot;&lt;xs:element ref='%s'/&gt;&quot;, DATA_STRING);
+	output (margin, &quot;&lt;xs:element ref='%s'/&gt;&quot;, DATA_HUGE);
+	output (margin, &quot;&lt;xs:element ref='%s'/&gt;&quot;, DATA_LONG);
+	output (margin, &quot;&lt;xs:element ref='%s'/&gt;&quot;, DATA_WORD);
+	output (margin, &quot;&lt;xs:element ref='%s'/&gt;&quot;, DATA_BYTE);
+	output (margin--, &quot;&lt;/xs:choice&gt;&quot;);
+	output (margin--, &quot;&lt;/xs:sequence&gt;&quot;);
+	output (margin--, &quot;&lt;/xs:complexType&gt;&quot;);
+	output (margin--, &quot;&lt;/xs:element&gt;&quot;);
+	output (margin, &quot;&lt;xs:element name='%s' type='xs:positiveInteger'/&gt;&quot;, DATA_LENGTH);
+	output (margin, &quot;&lt;xs:element name='%s' type='xs:hexBinary'/&gt;&quot;, DATA_OFFSET);
+	output (margin++, &quot;&lt;xs:element name='%s'&gt;&quot;, DATA_STRUCT);
+	output (margin++, &quot;&lt;xs:complexType&gt;&quot;);
+
+#if 0
+
+	output (margin, &quot;&lt;xs:attribute name='%s' use='optional' type='xs:NCName'/&gt;&quot;, DATA_NAME);
+	output (margin, &quot;&lt;xs:attribute name='%s' use='optional' type='xs:string'/&gt;&quot;, DATA_TEXT);
+
+#endif
+
+	output (margin++, &quot;&lt;xs:choice maxOccurs='unbounded'&gt;&quot;);
+	output (margin, &quot;&lt;xs:element ref='%s'/&gt;&quot;, DATA_BYTE);
+	output (margin, &quot;&lt;xs:element ref='%s'/&gt;&quot;, DATA_MEMORY);
+	output (margin--, &quot;&lt;/xs:choice&gt;&quot;);
+	output (margin--, &quot;&lt;/xs:complexType&gt;&quot;);
+	output (margin--, &quot;&lt;/xs:element&gt;&quot;);
+	output (margin, &quot;&lt;xs:element name='%s' type='xs:string'/&gt;&quot;, DATA_STRING);
+	output (margin, &quot;&lt;xs:element name='%s' type='xs:hexBinary'/&gt;&quot;, DATA_MEMORY);
+	output (margin, &quot;&lt;xs:element name='%s' type='xs:unsignedLong'/&gt;&quot;, DATA_HUGE);
+	output (margin, &quot;&lt;xs:element name='%s' type='xs:unsignedInt'/&gt;&quot;, DATA_LONG);
+	output (margin, &quot;&lt;xs:element name='%s' type='xs:unsignedShort'/&gt;&quot;, DATA_WORD);
+	output (margin, &quot;&lt;xs:element name='%s' type='xs:unsignedByte'/&gt;&quot;, DATA_BYTE);
+	output (margin--, &quot;&lt;/xs:schema&gt;&quot;);
+	return;
+}
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='xmlscan.c.html' title=' xmlscan.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='xmlselect.c.html' title=' xmlselect.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

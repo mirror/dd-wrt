@@ -1,0 +1,24 @@
+<chapter id='support-functions'>
+	<title>
+		Support Function Reference
+		</title>
+	<section id="support-intro">
+		<title>
+			Introduction
+			</title>
+		<para>
+			The <application>Open Powerline Toolkit</application> includes many general-purpose or multi-purpose functions that may appear in other Qualcomm Atheros applications or in third party packages. Consequently, we describe them separately and store them in separate folders withing the toolkit.
+			</para>
+		</section>
+	&command;
+	&ethernet;
+	&network;
+	&generic;
+	&message;
+	&keys;
+	&xml;
+	&download;
+	&procrastinate;
+	&traffic;
+	&slac;
+	</chapter>

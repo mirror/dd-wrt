@@ -1,0 +1,167 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Liar! Liar! Pants on Fire!</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="ch04.html" title="Chapter 4.  Firmware"><link rel="prev" href="ch04s07.html" title="Every Little Bit Hurts"><link rel="next" href="ch04s09.html" title="But wait! There's more ..."></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">
+			Liar! Liar! Pants on Fire!
+			</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch04s07.html">Prev</a> </td><th width="60%" align="center">Chapter 4. 
+		Firmware 
+		</th><td width="20%" align="right"> <a accesskey="n" href="ch04s09.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="firmware-caveats-2"></a>
+			Liar! Liar! Pants on Fire!
+			</h2></div></div></div><p>
+			It is important to use the right Boot from Host sequence for each type of Atheros device. This means that you should query the device using a <code class="varname">VS_SW_VER</code> message beforehand to determine or confirm the device type. Although this should be a simple operation, there have been several changes that complicate matters.
+			</p><div class="orderedlist"><ol type="1"><li><p>
+					The <span class="productname">INT6300</span>™ <span class="application">Bootloader</span> incorrectly identifies the chipset as an <span class="productname">INT6000</span>™ chipset in the <code class="varname">MDEVICEID</code> field of the <code class="varname">VS_SW_VER</code> message. 
+					</p></li><li><p>
+					The <span class="productname">AR7400</span>™ <span class="application">Bootloader</span> incorrectly identifies the chipset as an <span class="productname">INT6400</span>™ chipset in the <code class="varname">MDEVICEID</code> field of the <code class="varname">VS_SW_VER</code> message. 
+					</p></li><li><p>
+					The <span class="application">Bootloader</span>, for <span class="productname">INT6400</span>™ chipsets and later, returns two additional field, <code class="varname">IDENT</code> and <code class="varname">STEP_NUMBER</code> in the <code class="varname">VS_SW_VER</code> confirmation message. These fields,  the hardware identifier and step number, are correct but are not returned in earlier chipsets. 
+					</p></li></ol></div><p>
+			The table below illustrates what is reported by various firmware, in the <code class="varname">DEVICEID</code> field of the <code class="varname">VS_SW_VER</code> message, on each type of hardware platform.
+			</p><div class="table"><a name="idp9988760"></a><p class="title"><b>Table 4.2. 
+				Legacy Device Identification
+				</b></p><div class="table-contents"><table summary="
+				Legacy Device Identification
+				" border="1"><colgroup><col><col><col><col><col></colgroup><thead><tr><th>
+						Chipset
+						</th><th>
+						DEVICEID/IDENT (Bootloader)
+						</th><th>
+						MVERSION (Bootloader)
+						</th><th>
+						DEVICEID/IDENT (Firmware)
+						</th><th>
+						MVERSION (Firmware)
+						</th></tr></thead><tbody><tr><td>
+						INT6000
+						</td><td>
+						0x01 / 0x00000042
+						</td><td>
+						BootLoader
+						</td><td>
+						0x01 / na
+						</td><td>
+						INT6000-MAC-0-0-3213-1206-20071224-FINAL	
+						</td></tr><tr><td>
+						INT6300
+						</td><td>
+						0x02 / 0x00006300
+						</td><td>
+						BootLoader
+						</td><td>
+						0x02 / na
+						</td><td>
+						INT6300-MAC-0-0-4203-00-4089-20091105-FINAL	
+						</td></tr><tr><td>
+						INT6400
+						</td><td>
+						0x03 / 0x00006400
+						</td><td>
+						BootLoader
+						</td><td>
+						0x03 / na
+						</td><td>
+						INT6400-MAC-4-3-4304-01-4397-20100924-FINAL	
+						</td></tr><tr><td>
+						INT7400
+						</td><td>
+						0x03 / 0x00007400
+						</td><td>
+						BootLoader
+						</td><td>
+						0x04 / na
+						</td><td>
+						INT7400-MAC-5-2-5213-01-1027-20110428-FINAL	
+						</td></tr><tr><td>
+						INT7450
+						</td><td>
+						0x03 / 0x0F001D1A
+						</td><td>
+						BootLoader
+						</td><td>
+						0x20 / 0x00001D1A
+						</td><td>
+						QCA7450-MAC-5-2-5213-01-1027-20110428-FINAL	
+						</td></tr><tr><td>
+						INT7451
+						</td><td>
+						0x03 / 0x00007400
+						</td><td>
+						BootLoader
+						</td><td>
+						0x20 / 0x0E001D1A
+						</td><td>
+						QCA7451-MAC-5-2-5213-01-1027-20110428-FINAL	
+						</td></tr><tr><td>
+						AR6405
+						</td><td>
+						0x03 / 0x00006400
+						</td><td>
+						BootLoader
+						</td><td>
+						0x05 / na
+						</td><td>
+						INT6405-MAC-4-3-4304-01-4397-20100924-FINAL
+						</td></tr><tr><td>
+						AR7420
+						</td><td>
+						0x05 / 0x001CFCFC
+						</td><td>
+						BootLoader
+						</td><td>
+						0x20 / 0x001CFCFC
+						</td><td>
+						MAC-QCA7420-2.5.14.2259-23-20110621-FINAL
+						</td></tr><tr><td>
+						QCA6410
+						</td><td>
+						0x05 / 0x001B58EC
+						</td><td>
+						BootLoader
+						</td><td>
+						0x21 / 0x001B58EC
+						</td><td>
+						MAC-QCA6410-2.5.14.2259-23-20110621-FINAL
+						</td></tr><tr><td>
+						QCA6411
+						</td><td>
+						0x05 / 0x001B58BC
+						</td><td>
+						BootLoader
+						</td><td>
+						0x21 / 0x001B58BC
+						</td><td>
+						MAC-QCA6411-2.5.14.2259-23-20110621-FINAL
+						</td></tr><tr><td>
+						QCA7000
+						</td><td>
+						0x05 / 0x001B589C
+						</td><td>
+						BootLoader
+						</td><td>
+						0x22 / 0x001B589C
+						</td><td>
+						MAC-QCA7000-1.4.13.3259-43-20110621-FINAL
+						</td></tr></tbody></table></div></div><br class="table-break"><p>
+			To properly detect the correct chipset perform the following steps.
+			</p><div class="orderedlist"><ol type="1"><li><p>
+					Send a <code class="varname">VS_SW_VER</code> request message from the local host to the local device using the Atheros Local Management Address.
+					</p></li><li><p>
+					Read the <code class="varname">VS_SW_VER</code> confirm message returned to the host by the device.
+					</p></li><li><p>
+					Extract and save the <code class="varname">MDEVICEID</code> field (a small integer) and the <code class="varname">MVERSION</code> field (a string).
+					</p></li><li><p>
+					If the <code class="varname">MVERSION</code> string is “<span class="quote">SoftLoader</span>” then the <code class="varname">MDEVICEID</code> field is valid. 
+					</p></li><li><p>
+					If the <code class="varname">MVERSION</code> string is not “<span class="quote">BootLoader</span>” then the <code class="varname">MDEVICEID</code> field is valid unless it is <code class="constant">0x07</code>. In that case, set the stored <code class="varname">DEVICEID</code> to <code class="constant">0x04</code> to indicate an <span class="productname">AR7400</span>™. Do not inspect the <code class="varname">IDENT</code> field because it does not exist in the firmware version of the <code class="varname">VS_SW_VER</code> message on any platform.
+					</p></li><li><p>
+					If the <code class="varname">MDEVICEID</code> field is <code class="constant">1</code>,  indicating an <span class="productname">INT6000</span>™, then the chipset is actually an <span class="productname">INT6300</span>™. Set the stored <code class="varname">MDEVICEID</code> to <code class="constant">2</code>,  indicating an <span class="productname">INT6300</span>™. Do not inspect the <code class="varname">IDENT</code> field because it does not exist in the <span class="application">BootLoader</span> version of the <code class="varname">VS_SW_VER</code> message for either of these two chipsets.
+					</p></li><li><p>
+					If the <code class="varname">MDEVICEID</code> field is <code class="constant">3</code>,  indicating an <span class="productname">INT6400</span>™, then the chipset could be either an <span class="productname">INT6300</span>™ or an <span class="productname">AR7400</span>™. Inspect the <code class="varname">IDENT</code> field.
+					</p></li><li><p>
+					If the <code class="varname">IDENT</code> field is <code class="constant">0x6400</code>,  indicating an <span class="productname">INT6400</span>™, then the stored <code class="varname">MDEVICEID</code> is valid. 
+					</p></li><li><p>
+					If the <code class="varname">IDENT</code> field is <code class="constant">0x7400</code>,  indicating an <span class="productname">AR7400</span>™, then set the stored <code class="varname">MDEVICEID</code> to <code class="constant">4</code>,  indicating an <span class="productname">AR7400</span>™. 
+					</p></li></ol></div><p>
+			Having performed the previous conversions, the expression (<code class="constant">1</code> &lt;&lt; (<code class="varname">DEVICEID</code> - <code class="constant">1</code>)) now indicates the proper <code class="varname">IGNORE</code> bit found in each <acronym class="acronym">NVM</acronym> file header. Unfortunately, this only works for <code class="varname">DeviceID</code> values from <code class="constant">0x01</code> through <code class="constant">0x06</code>. After that, the device identification scheme changes.
+			</p></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch04s07.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="ch04.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch04s09.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">
+			Every Little Bit Hurts
+			 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 
+			But wait! There's more ...
+			</td></tr></table></div></body></html>0

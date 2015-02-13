@@ -1,0 +1,307 @@
+<section id="support-xml">
+	<title>
+		XML Editing Functions
+		</title>
+	<para>
+		Atheros provides support for remote <acronym>PIB</acronym> management using <acronym>XML</acronym> instruction files. The concept is based on an <acronym>XML</acronym> schema that defines the elements and attributes needed to edit a <acronym>PIB</acronym> file. The schema is located in file <ulink url="piboffset.xsd">piboffset.xsd</ulink>. In practice, this schema could be used to edit any buffer containing data but we are only interested in editing <acronym>PIB</acronym> files here.
+		</para>
+	<para>
+		Users may create <acronym>XML</acronym> files that conform to the schema and specify the <acronym>PIB</acronym> objects they want to change and how they want each to change. In brief, the files specify an <varname>offset</varname>, a data <varname>length</varname> and a data value. A data value has type <varname>dataString</varname>, <varname>dataHex</varname> or <varname>dataByte</varname> and may be a single data item or an array of data items. Each <acronym>XML</acronym> file should include a reference to the Atheros schema and be submitted to a validating XML parser,  such as <application>Internet Explorer</application> or <application>Firefox</application>,  to ensure that file structure and syntax are correct before use. An example <acronym>XML</acronym> file can be seen in <ulink url="piboffset.xml">piboffset.xml</ulink>.
+		</para>
+	<para>
+		Editing involves the following steps. An example of these steps can be seen in the <ulink url="pxe.c.html">pxe</ulink> program source code and in function <ulink url="RdModWrPib2.c.html">RdModWrPib2.c</ulink> which is a component of the <ulink url="int6k2.7.html">int6k2</ulink> program.
+		<orderedlist>
+			<listitem>
+				<para>
+					Obtain a copy of the <acronym>PIB</acronym> to be edited. This can be done by opening a <acronym>PIB</acronym> file and reading the entire file into memory or by requesting the <acronym>PIB</acronym> directly from an active Atheros powerline device. The <acronym>PIB</acronym> length can be determined from the <acronym>PIB</acronym> header.
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					Open the <acronym>XML</acronym> file, generate an <acronym>XML</acronym> parse tree and close the file. This can be done by passing the filename to function <link linkend="nodes-xmlopen">xmlopen</link>. It will perform all these steps and return the parse tree root node.
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					Modify the <acronym>PIB</acronym> based to instructions stored in the parse tree. This is done by passing the parse tree, <acronym>PIB</acronym> buffer and <acronym>PIB</acronym> length to function <link linkend="nodes-xmledit">xmledit</link>. It will traverse the parse tree and apply changes to the buffer as defined in the parse tree.   
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					Discard the parse tree. This can be done by passing the parse tree to function <link linkend="nodes-xmlfree">xmlfree</link>.
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					Compute a new PIB checksum. This can be done by clearing the <acronym>PIB</acronym> checksum then passing the <acronym>PIB</acronym> buffer and <acronym>PIB</acronym> length to function <link linkend="support-checksum32">checksum32</link> with a checksum value of <constant>0</constant>.
+					</para>
+				</listitem>
+			<listitem>
+				<para>
+					Write the <acronym>PIB</acronym> to file or transmit it over the network to an Atheros powerline device.
+					</para>
+				</listitem>
+			</orderedlist>
+		</para>
+	<section id="nodes-xmledit">
+		<title>
+			xmledit
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>signed <function>xmledit</function></funcdef>
+   				<paramdef>struct node * <parameter>node</parameter></paramdef>
+				<paramdef>void  *<parameter>memory</parameter></paramdef>
+				<paramdef>unsigned <parameter>extent</parameter></paramdef>
+   				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Write data into <varname>memory</varname> based on the data offset and length defined in <acronym>XML</acronym> parse tree, <varname>node</varname>. This function will not apply modifications having malformed structure or having an invalid or illegal offset, length or data value. Use function <link linkend='nodes-xmlschema'>xmlschema</link> to print the current schema. The function is declared in <ulink url='node.h.html'>node.h</ulink> and defined in <ulink url='xmledit.c.html'>xmledit.c</ulink>. The <varname>node</varname> structure is defined in <ulink url='node.h.html'>node.h</ulink>.
+			</para>
+		</section>
+	<section id="nodes-xmlfree">
+		<title>
+			xmlfree
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>void <function>xmlfree</function></funcdef>
+   				<paramdef>struct node * <parameter>node</parameter></paramdef>
+  				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Release memory associated with an XML parse tree. The function is declared in <ulink url='node.h.html'>node.h</ulink> and defined in <ulink url='xmlfree.c.html'>xmlfree.c</ulink>. The <varname>node</varname> structure is defined in <ulink url='node.h.html'>node.h</ulink>.
+			</para>
+		<para>
+			The <varname>text</varname> member if the parse tree root node points to memory allocated by <link linkend="nodes-xmlscan">xmlscan </link> to store the original <acronym>XML</acronym> string. The application must either deallocate that memory before calling this function or store the text address and deallocate that memory after calling this function;  otherwise, memory leaks will result. 
+			</para>
+		</section>
+	<section id="nodes-xmlnode">
+		<title>
+			xmlnode
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>struct node *<function>xmlnode</function></funcdef>
+   				<paramdef>struct node *<parameter>node</parameter></paramdef>
+  				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Create an empty node blow the specified node and return a pointer to it. A typical application can be seen in function <ulink url="xmlscan.c.html" >xmlscan.c</ulink>. The function is declared in <ulink url='node.h.html'>node.h</ulink> and defined in <ulink url='xmlnode.c.html'>xmlnode.c</ulink>. The <varname>node</varname> structure is defined in <ulink url='node.h.html'>node.h</ulink>.
+			</para>
+		</section>
+	<section id="nodes-xmlopen">
+		<title>
+			xmlopen
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>struct node * <function>xmlopen</function></funcdef>
+   				<paramdef>char const * <parameter>filename</parameter></paramdef>
+   				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Open the named XML file, parse it and return the XML parse tree. The parse tree contains, among other things, all XML elements,  attributes and values specified in the file. The function is declared in <ulink url='node.h.html'>node.h</ulink> and defined in <ulink url='xmlopen.c.html'>xmlopen.c</ulink>. The <varname>node</varname> structure is defined in <ulink url='node.h.html'>node.h</ulink>.
+			</para>
+		<para>
+			The returned parse tree is ready to traverse using struct <varname>node</varname> members <varname>above</varname>, <varname>below</varname>, <varname>prior</varname> and <varname>after</varname>. Each node has a <varname>line</varname>, <varname>type</varname> and <varname>test</varname> member. This function calls function <link linkend="nodes-xmlscan">xmlscan </link> to parse the file and generate the tree. The parse tree can be inspected by passing the root node to function <link linkend="nodes-xmltree">xmltree</link>.  
+			</para>
+		</section>
+	<section id="nodes-xmlscan">
+		<title>
+			xmlscan
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>signed <function>xmlscan </function></funcdef>
+   				<paramdef>struct node * <parameter>node</parameter></paramdef>
+  				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Scan the XML string attached to the specified <varname>node</varname> and create a parse tree below it. Return <constant>0</constant> if parsing is successrul or <constant>-1</constant> if not. The function is declared in <ulink url='node.h.html'>node.h</ulink> and defined in <ulink url='xmlscan.c.html'>xmlscan.c</ulink>. The <varname>node</varname> structure is defined in <ulink url='node.h.html'>node.h</ulink>.
+			</para>
+		<para>
+			The application must point the <varname>text</varname> member to a  copy of the XML string before calling this function because parsing is destructive and requires write access to the string. The application can search and manipulate the tree on return. The application should deallocate string memory before calling <link linkend="nodes-xmlfree">xmlfree</link>.   
+			</para>
+	<example id="nodes-example-1">
+		<title>
+			XML Source File
+			</title>
+		<para>
+			The following is sample input to function <function>xmlscan</function>. The element and attribute names shown are for illustration and were selected to that they can be easily identified in the output. The parse tree from this file can be seen in the example for function <link linkend="nodes-example-2">xmltree</link>.
+			</para>
+<screen><![CDATA[
+<?xml version="1.0" encoding="UTF-8" ?>
+<xmlfile 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xsi:noNamespaceSchemaLocation="myschema.xsd">
+	<element name="Element1">
+		<attribute name="Attribute1">
+			1234567890
+			</attribute>
+		<attribute name="Attribute2">
+			The quick brown fox jumped over the lazy dog.
+			</attribute>
+		</element>
+	<element name="Element2">
+		<attribute name="Attribute1">
+			</attribute>
+		<attribute name="Attribute2">
+			The quick brown 
+			fox jumped over 
+			the lazy dog.
+			</attribute>
+		</element>
+<!-- comments can go anywhere -->
+	<element name="Element2">
+		<attribute name="Attribute1"/>
+		<attribute name="Attribute2">
+			value2
+			</attribute>
+		</element>
+	</xmlfile>
+]]></screen>
+			</example>
+		</section>
+	<section id="nodes-xmlschema">
+		<title>
+			xmlschema
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>void <function>xmlschema</function></funcdef>
+   				<paramdef/>
+  				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Print an <acronym>XML</acronym> schema that supports function <link linkend='nodes-xmledit'>xmledit</link> on stdout. This function has no argument. The schema produced by this function is guaranteed to support the parse logic implemented by function <link linkend='nodes-xmledit'>xmledit</link>. Scheme element names are defined as constants in <ulink url='node.h.html'>node.h</ulink> so that they can be referenced by applications that create their own <acronym>XML</acronym> edit instructions. The function is declared in <ulink url='node.h.html'>node.h</ulink> and defined in <ulink url='xmlschema.c.html'>xmlschema.c</ulink>.
+			</para>
+		<para>
+			The <varname>text</varname> member in the parse tree root node points to memory allocated by <link linkend="nodes-xmlscan">xmlscan </link> to store the original <acronym>XML</acronym> string. The application must either deallocate that memory before calling this function or store the text address and deallocate that memory after calling this function;  otherwise, memory leaks will result. 
+			</para>
+		<example>
+			<title>
+				XML Edit Schema
+				</title>
+<screen><![CDATA[
+<?xml version='1.0' encoding='UTF-8'?>
+<xs:schema xmlns:xs='http://www.w3.org/2001/XMLSchema' elementFormDefault='qualified'>
+	<xs:element name='pib'>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element maxOccurs='unbounded' ref='object'/>
+				</xs:sequence>
+			</xs:complexType>
+		</xs:element>
+	<xs:element name='object'>
+		<xs:complexType>
+			<xs:attribute name='name' use='required' type='xs:NCName'/>
+			<xs:sequence>
+				<xs:sequence>
+					<xs:element ref='offset'/>
+					<xs:element ref='length'/>
+					</xs:sequence>
+				<xs:choice>
+					<xs:element ref='array'/>
+					<xs:element ref='dataString'/>
+					<xs:element ref='dataByte'/>
+					</xs:choice>
+				</xs:sequence>
+			</xs:complexType>
+		</xs:element>
+	<xs:element name='length' type='xs:positiveInteger'/>
+	<xs:element name='offset' type='xs:hexBinary'/>
+	<xs:element name='array'>
+		<xs:complexType>
+			<xs:choice maxOccurs='unbounded'>
+				<xs:element ref='dataByte'/>
+				<xs:element ref='dataHex'/>
+				</xs:choice>
+			</xs:complexType>
+		</xs:element>
+	<xs:element name='dataString' type='xs:string'/>
+	<xs:element name='dataHex' type='xs:hexBinary'/>
+	<xs:element name='dataByte' type='xs:unsignedByte'/>
+	</xs:schema>
+]]></screen>
+			<para>
+				The schema shown above was produced by function <link linkend='nodes-xmlschema'>xmlschema</link>. It is should be used to validate <acronym>XML</acronym> edit instructions before submitting them to program <ulink url='pxe.7.html'>pxe</ulink>. 
+				</para>
+			</example>
+		</section>
+	<section id="nodes-xmltree">
+		<title>
+			xmltree
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>void <function>xmltree</function></funcdef>
+   				<paramdef>struct node * <parameter>node</parameter></paramdef>
+  				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Print the XML parse tree on stdout. The function is declared in <ulink url='node.h.html'>node.h</ulink> and defined in <ulink url='xmltree.c.html'>xmltree.c</ulink>.
+			</para>
+		<example id="nodes-example-2">
+			<title>
+				XML Parse Tree 
+				</title>
+		<para>
+			The following is sample output from function <function>xmltree</function>. The XML source is shown in the example for function <link linkend="nodes-example-1">xmlscan </link>. The numbers appearing down the left margin indicate the input line number from the XML source file parsed by function <link linkend="nodes-xmlscan">xmlscan </link>. The character codes indicate the node type and are defined in <ulink url="node.h.html">node.h</ulink>. The <varname>node</varname> structure is defined in <ulink url='node.h.html'>node.h</ulink>.
+			</para>
+<screen><![CDATA[
+001 [?] [xml]
+001 [ ] 	[version]
+001 [=] 		[1.0]
+001 [ ] 	[encoding]
+001 [=] 		[UTF-8]
+002 [<] [xmlfile]
+002 [ ] 	[xmlns:xsi]
+002 [=] 		[http://www.w3.org/2001/XMLSchema-instance]
+002 [ ] 	[xsi:noNamespaceSchemaLocation]
+002 [=] 		[myschema.xsd]
+003 [<] 	[element]
+003 [ ] 		[name]
+003 [=] 			[Element1]
+004 [<] 		[attribute]
+004 [ ] 			[name]
+004 [=] 				[Attribute1]
+005 [>] 			[1234567890]
+006 [/] 			[attribute]
+007 [<] 		[attribute]
+007 [ ] 			[name]
+007 [=] 				[Attribute2]
+008 [>] 			[The quick brown fox jumped over the lazy dog.]
+009 [/] 			[attribute]
+010 [/] 		[element]
+011 [<] 	[element]
+011 [ ] 		[name]
+011 [=] 			[Element2]
+012 [<] 		[attribute]
+012 [ ] 			[name]
+012 [=] 				[Attribute1]
+013 [/] 			[attribute]
+014 [<] 		[attribute]
+014 [ ] 			[name]
+014 [=] 				[Attribute2]
+015 [>] 			[The quick brown fox jumped over the lazy dog.azy]
+018 [/] 			[attribute]
+019 [/] 		[element]
+020 [!] 	[-- comments can go anywhere --]
+021 [<] 	[element]
+021 [ ] 		[name]
+021 [=] 			[Element2]
+022 [<] 		[attribute]
+022 [ ] 			[name]
+022 [=] 				[Attribute1]
+023 [<] 		[attribute]
+023 [ ] 			[name]
+023 [=] 				[Attribute2]
+024 [>] 			[value2]
+025 [/] 			[attribute]
+026 [/] 		[element]
+027 [/] 	[xmlfile]
+]]></screen>
+			</example>
+		</section>
+	</section>

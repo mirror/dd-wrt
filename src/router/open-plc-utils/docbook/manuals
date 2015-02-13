@@ -1,0 +1,43 @@
+#!/bin/sh
+# file: docbook/manuals
+
+# ====================================================================
+#
+# --------------------------------------------------------------------
+
+# unset LANG
+export MANWIDTH=132
+TOOLS=/usr/local/bin/cmassoc
+INDEX=toolkit.html
+STYLE=toolkit.css
+
+# ====================================================================
+# 
+# --------------------------------------------------------------------
+
+if [ ! -d ${TOOLS} ]; then
+	echo "You do not have Motley Tools installed. Bye!"
+	exit 1
+fi
+
+# ====================================================================
+#
+# --------------------------------------------------------------------
+
+cp ../pib/piboffset.* .
+for file in ../*/*.1;  do echo ${file}; ${TOOLS}/mp -s open-plc-utils ${file}; man ${file} > $(basename ${file}); done
+for file in ../scripts/*.sh; do cp ${file} .; done
+${TOOLS}/purge -vr ../t.c
+${TOOLS}/import -r . '../*.h' '../*.c' 
+
+# ====================================================================
+#
+# --------------------------------------------------------------------
+
+${TOOLS}/catalog -s ${STYLE} -gdp ${INDEX} -c 4 *.1 > manual.txt
+${TOOLS}/catalog -s ${STYLE} -gdp ${INDEX} -c 4 *.h > header.txt
+${TOOLS}/catalog -s ${STYLE} -gdp ${INDEX} -c 4 *.c > source.txt
+${TOOLS}/catalog -s ${STYLE} -gdp ${INDEX} -c 4 *.sh > script.txt
+cat part0.txt part1.txt manual.txt part2.txt header.txt part4.txt source.txt part6.txt script.txt part8.txt > ${INDEX}
+rm -f manual.txt header.txt source.txt script.txt 
+

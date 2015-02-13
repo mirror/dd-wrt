@@ -1,0 +1,201 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			endian.h
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='debug.h.html' title=' debug.h '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='error.h.html' title=' error.h '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   endian.h - integer byte order declarations and definitions;
+ *
+ *   this header is included to support recent moves to expand and
+ *   standardize endian conversion functions on Linux, FreeBSD and
+ *   NetBSD; Linux has implemented the following functions but OSX
+ *   and Microsoft have not yet done so;
+ *
+ *   These functions are similar to network byteorder functions.
+ *   For example, be32toh() is identical to ntohl().
+ *
+ *   #define _BSD_SOURCE
+ *   #include &lt;endian.h&gt;
+ *
+ *   uint16_t htobe16(uint16_t x);
+ *   uint16_t htole16(uint16_t x);
+ *   uint16_t be16toh(uint16_t x);
+ *   uint16_t le16toh(uint16_t x);
+ *
+ *   uint32_t htobe32(uint32_t x);
+ *   uint32_t htole32(uint32_t x);
+ *   uint32_t be32toh(uint32_t x);
+ *   uint32_t le32toh(uint32_t x);
+ *
+ *   uint64_t htobe64(uint64_t x);
+ *   uint64_t htole64(uint64_t x);
+ *   uint64_t be64toh(uint64_t x);
+ *   uint64_t le64toh(uint64_t x);
+ *
+ *   The advantage of network byteorder functions is that they are
+ *   available on all Unix systems but they were meant for network
+ *   applications and lack little-endian and 64-bit variants;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef ENDIAN_HEADER
+#define ENDIAN_HEADER
+
+/*====================================================================*
+ *   system header files;
+ *--------------------------------------------------------------------*/
+
+#include &lt;unistd.h&gt;
+
+#if defined (__linux__)
+#       include &lt;endian.h&gt;
+#       include &lt;byteswap.h&gt;
+#elif defined (__APPLE__)
+#       include &lt;netinet/in.h&gt;
+#       include &lt;libkern/OSByteOrder.h&gt;
+#elif defined (__OpenBSD__)
+#       include &lt;sys/types.h&gt;
+#elif defined (WIN32)
+#       include &lt;stdint.h&gt;
+#       define BYTE_ORDER LITTLE_ENDIAN
+#elif defined (__vxworks)
+#       include &lt;netinet/in.h&gt;
+#elif defined (__CYGWIN__)
+#	error &quot;Cygwin is unsupported&quot;
+#else
+#	error &quot;Unknown environment&quot;
+#endif
+
+/*====================================================================*
+ *   definitions;
+ *--------------------------------------------------------------------*/
+
+#if defined (BYTE_ORDER)
+#       if BYTE_ORDER == LITTLE_ENDIAN
+#               define BE16TOH(x) __bswap_16(x)
+#               define BE32TOH(x) __bswap_32(x)
+#               define BE64TOH(x) __bswap_64(x)
+#               define HTOBE16(x) __bswap_16(x)
+#               define HTOBE32(x) __bswap_32(x)
+#               define HTOBE64(x) __bswap_64(x)
+#               define LE16TOH(x) (x)
+#               define LE32TOH(x) (x)
+#               define LE64TOH(x) (x)
+#               define HTOLE16(x) (x)
+#               define HTOLE32(x) (x)
+#               define HTOLE64(x) (x)
+#       elif BYTE_ORDER == BIG_ENDIAN
+#               define BE16TOH(x) (x)
+#               define BE32TOH(x) (x)
+#               define BE64TOH(x) (x)
+#               define HTOBE16(x) (x)
+#               define HTOBE32(x) (x)
+#               define HTOBE64(x) (x)
+#               define LE16TOH(x) __bswap_16(x)
+#               define LE32TOH(x) __bswap_32(x)
+#               define LE64TOH(x) __bswap_64(x)
+#               define HTOLE16(x) __bswap_16(x)
+#               define HTOLE32(x) __bswap_32(x)
+#               define HTOLE64(x) __bswap_64(x)
+#       else
+#               error &quot;Undefined host byte order (2).&quot;
+#       endif
+#elif defined (__vxworks) &amp;&amp; defined (_BYTE_ORDER)
+#       if _BYTE_ORDER == _LITTLE_ENDIAN
+#               define BE16TOH(x) __bswap_16(x)
+#               define BE32TOH(x) __bswap_32(x)
+#               define BE64TOH(x) __bswap_64(x)
+#               define HTOBE16(x) __bswap_16(x)
+#               define HTOBE32(x) __bswap_32(x)
+#               define HTOBE64(x) __bswap_64(x)
+#               define LE16TOH(x) (x)
+#               define LE32TOH(x) (x)
+#               define LE64TOH(x) (x)
+#               define HTOLE16(x) (x)
+#               define HTOLE32(x) (x)
+#               define HTOLE64(x) (x)
+#       elif _BYTE_ORDER == _BIG_ENDIAN
+#               define __bswap_32(x)    ((((x) &amp; 0x000000ff) &lt;&lt; 24) | (((x) &amp; 0x0000ff00) &lt;&lt;  8) | (((x) &amp; 0x00ff0000) &gt;&gt;  8) | (((x) &amp; 0xff000000) &gt;&gt; 24))
+#               define __bswap_16(x)    ((((x) &amp; 0x00ff) &lt;&lt; 8) | (((x) &amp; 0xff00) &gt;&gt; 8))
+#               define BE16TOH(x) (x)
+#               define BE32TOH(x) (x)
+#               define BE64TOH(x) (x)
+#               define HTOBE16(x) (x)
+#               define HTOBE32(x) (x)
+#               define HTOBE64(x) (x)
+#               define LE16TOH(x) __bswap_16(x)
+#               define LE32TOH(x) __bswap_32(x)
+#               define LE64TOH(x) __bswap_64(x)
+#               define HTOLE16(x) __bswap_16(x)
+#               define HTOLE32(x) __bswap_32(x)
+#               define HTOLE64(x) __bswap_64(x)
+#       else
+#               error &quot;Undefined host byte order vxworks.&quot;
+#       endif
+#else
+#error &quot;Undefined host byte order (1).&quot;
+#endif
+
+/*====================================================================*
+ *   endian conversion functions;
+ *--------------------------------------------------------------------*/
+
+#if defined (WIN32)
+
+uint16_t __bswap_16 (uint16_t x);
+uint32_t __bswap_32 (uint32_t x);
+uint64_t __bswap_64 (uint64_t x);
+
+#elif defined (__OpenBSD__)
+
+#define __bswap_16(x) swap16(x)
+#define __bswap_32(x) swap32(x)
+#define __bswap_64(x) swap64(x)
+
+#elif defined (__APPLE__)
+
+#define __bswap_16(x) OSSwapInt16(x)
+#define __bswap_32(x) OSSwapInt32(x)
+#define __bswap_64(x) OSSwapInt64(x)
+
+#elif defined (__linux__)
+
+#else
+#error &quot;Unknown Environment&quot;
+#endif
+
+/*====================================================================*
+ *
+ *--------------------------------------------------------------------*/
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='debug.h.html' title=' debug.h '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='error.h.html' title=' error.h '>NEXT</a>]
+			</div>
+		</body>
+	</html>

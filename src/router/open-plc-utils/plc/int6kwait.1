@@ -1,0 +1,206 @@
+.TH int6kwait 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+int6kwait - Qualcomm Atheros INT6x00 Powerline Device Procrastinator
+
+.SH SYNOPSIS
+.BR int6kwait
+.RI [ options ] 
+.RI [ device ] 
+.RI [ device ] 
+[...]
+
+.SH DESCRIPTION
+Poll a Qualcomm Atheros powerline device, waiting for one or more events to occur before continuing or returning.
+The events include reset or power off, restart or power on and network association.
+It is used to pause shell scripts at critical points where a device must be in a known state before continuing.
+
+.P
+This program is part of the Qualcomm Atheros Powerline Toolkit.
+See the \fBplc\fR man page for an overview and installation instructions.
+
+.SH OPTIONS
+
+.TP
+-\fBa\fR
+Poll the device every few seconds using VS_NW_INFO messages until the device indicates that a networks exists and has at least one station.
+This option can give false readings if other devices have dropped off-line and the device bridging table still holds information about them.
+The program always checks for this event last if other event options are specified.
+
+.TP
+-\fBc \fIcount\fR
+The number of times the program will poll the device before declaring an event failure.
+The program will wait a fixed period of time between each poll attempt.
+Overall wait time is \fBcount/frequency\fR where count can be modified using option \fB-c\fR.
+Overall wait time is always approximate since operating system overhead and latency are not taken into account.
+The default count is \fB300\fR.
+
+.TP
+.RB - e
+Redirects stderr messages to stdout.
+By convention status and error messages are printed on stderr while primary program output is printed on stdout.
+This option prints all output on stdout in cases where this is desired.
+
+.TP
+-\fBf \fIfirmware\fR
+The identification string for firmware that should be running after the device starts.
+This option can be used to detect a failed firmware load.
+If the actual identification string does not match this one once the device starts then an error is reported.
+If option -\fBx\fR is present then the program terminates with a non-zero exit code.
+This option has no effect unless option -\fBs\fR is present.
+An identification string looks like "INT6000-MAC-3-1-3143-1690-20071107-FINAL-B" and can be obtained using \fBint6k -r\fB.
+
+.TP
+-\fBi\fR
+Select the host Ethernet interface.
+All requests are sent via this host interface and only reponses received via this host interface are recognized.
+The default interface is \fBeth1\fR because most people use \fBeth0\fR as their principle network connection; however, if environment string "PLC" is defined then it takes precedence over the default interface.
+This option then takes precedence over either default.
+
+.TP
+-\fBp \fIfrequency\fR
+The polling frequency expressed in polls-per-second.
+For example, 1 means one poll per second and 10 means ten polls per second.
+Overall wait time is \fBcount/frequency\fR where count may be modified using option \fB-c\fR.
+Overall wait time is always approximate since operating system overhead and latency are not taken into account.
+The default frequency is \fB5\fR.
+
+.TP
+.RB - q
+Enter quiet mode.
+Progress messages are suppressed.
+
+.TP 
+.RB - r
+Poll the device every few seconds using VS_SW_VER messages until the bootloader or runtime firmware fails to respond or the poll count exhausts.
+The absence of a response indicates that the device either lost connection to the host, lost power or has reset.
+The program always checks for this event first when other events are specified.
+
+.TP
+.RB - R
+Reset the device then check return status.
+Exit program on error if option \fB-x\fR is present; otherwise, repeat the reset request until the device either accepts the request or the wait time is exceeded.
+
+.TP
+-\fBs\fR
+Poll the device every few seconds using VS_SW_VER messages until the bootloader or runtime firmware responds or the poll count exhausts.
+The presence of a response indicates that the device has either connected to the host, received power or finished reboot.
+
+.TP
+.RB - t
+Display the actual time in seconds taken for successful completion, or waited for unsuccessful completion, of ecah event.
+
+.TP
+.RB - v
+Enter verbose mode.
+All Etherenet frames sent or received by the program are displayed on stdout.
+
+.TP
+-\fBw \fIseconds\fR
+Additional time to wait once all events have occured.
+This wait does not occur if any of the events timeout.
+When no other events are specified this option is effectively equivalent to \fBsleep\fR.
+This option can be used to allow the device or the network to settle.
+For example, a nominal 5 second wait is recommended after a device successfully associates before attempting to transfer data.
+
+.TP
+-\fBx\fR
+Exit program on first error with a non-zero exit code.
+This option allows shell scripts to detect failed or incomplete operations and take the appropriate action.
+
+.TP
+-\fB?\fR, --\fBhelp\fR
+Print program help summary on stdout.
+This option takes precedence over other options on the command line.
+
+.TP
+-\fB!\fR, --\fBversion\fR
+Print program version information on stdout.
+This option takes precedence over other options on the command line.
+Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of the Linux Toolkit you are using.
+
+.SH ARGUMENTS
+
+.TP
+\fIdevice\fR
+The Media Access Control (MAC) address of some device.
+Addresses are 6 hexadecimal octets optionally separated by colon.
+For example, the addresses "00b052000001", "00:b0:52:00:00:01" and "00b052:000001" are all valid and equivalent.
+For convenience, the symbolic address "\fBlocal\fR" resolves to "00:b0:52:00:00:01" and the symbolic addresses "\fBall\fR" and "\fBbroadcast\fR" both resolve to "ff:ff:ff:ff:ff:ff".
+
+.SH REFERENCES
+See the Qualcomm Atheros HomePlug AV Firmware Technical Reference Manual for more information.
+
+.SH DISCLAIMER
+Atheros HomePlug AV Vendor Specific Management Message Entry structure and content is proprietary to Qualcomm Atheros, Ocala FL USA.
+Consequently, public information may not be available.
+Qualcomm Atheros reserves the right to modify message structure and content in future firmware releases without any obligation to notify or compensate users of this program.
+
+.SH EXAMPLES
+The following command polls the local device until firmware stops running then polls the device until firmware starts running again.
+This command can be inserted into a shell script at a point where the device must reset and reboot before proceeding.
+Observer that the program waits up to 60 seconds for each event, in turn.
+The 60 seconds is the product of 60 poll attempts spaced 1 second apart.
+
+.PP
+   # int6kwait -rs
+   eth0 00:B0:52:BA:BA:01 Allow 60 seconds for Reset
+   eth0 00:B0:52:BA:BA:01 Allow 60 seconds for Start
+
+.PP
+The following example specifies 5 poll attempts spaced 10 seconds apart.
+Less frequent polling reduces network traffic but makes the program less responsive to events.
+Observe that the allotted time applies to each event in turn.
+
+.PP
+   # int6kwait -rs -p 10 -c 5
+   eth0 00:B0:52:BA:BA:01 Allow 50 seconds for Reset
+   eth0 00:B0:52:BA:BA:01 Allow 50 seconds for Start
+
+.PP
+The next example reports the actual amount of time taken for each event to occur.
+Observe that the last event, device association, did not occur within the allotted time.
+
+.PP
+   # int6kwait -rsat
+   eth0 00:B0:52:BA:BA:01 Allow 60 seconds for Reset
+   etho 00:B0:52:BA:BA:01 Waited 22 seconds to Reset
+   eth0 00:B0:52:BA:BA:01 Allow 60 seconds for Start
+   etho 00:B0:52:BA:BA:01 Waited 4 seconds to Start
+   eth0 00:B0:52:BA:BA:01 Allow 60 seconds for Assoc
+   etho 00:B0:52:BA:BA:01 Waited 60 seconds for Assoc
+   etho 00:B0:52:BA:BA:01 Device did not Assoc 
+
+.PP
+The following example illustrates use of the revision string to detect mismatched firmware.
+In this example, we reset the device first, using program \fBint6k\fR, then wait for it to reset then start up again.
+There are also operation that can cause the device to reset.
+
+.PP
+   # int6k -R
+   # int6kwait -xrsf INT6000-MAC-3-1-3143-1690-20071107-FINAL-B
+   eth0 00:B0:52:BA:BA:01 Device started wrong firmware
+
+.PP
+Immediately after a reset we wait for the firmware to stop responding, with option -\fBr\fR, and then start responding, with option -\fBs\fR, and then perform a string comparison against the actual firmware revision string, with option -\fBf\fR.
+If the strings do not match then an error is reported.
+In this case, the program will exit with a non-zero return code since option -\fBx\fR is present.
+
+.SH DISCLAIMER
+Atheros HomePlug AV Vendor Specific Management Message Entry structure and content is proprietary to Qualcomm Atheros, Ocala FL USA.
+Consequently, public information may not be available.
+Qualcomm Atheros reserves the right to modify message structure and content in future firmware releases without any obligation to notify or compensate users of this program.
+
+.SH SEE ALSO
+.BR plc ( 1 ),
+.BR int6k ( 1 ),
+.BR int6kf ( 1 ),
+.BR int6khost ( 1 ),
+.BR int6kid ( 1 ),
+.BR int6krate ( 1 ),
+.BR int6krule ( 1 ),
+.BR int6kstat ( 1 )
+
+.SH CREDITS
+ Charles Maier <cmaier@qca.qualcomm.com>
+

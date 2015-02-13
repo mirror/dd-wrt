@@ -1,0 +1,114 @@
+.TH pib2xml 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+pib2xml - print object driven xml editior intructions 
+
+.SH SYNOPSIS
+.BR pib2xml 
+.RI [ options ]
+.IR file 
+.RI [ file ]
+.RI [ ... ] 
+.RI [> stdout ]
+
+.SH DESCRIPTION
+Write XML editor instructions on stdout.
+This requires an object definition file that contains the size and name of data regions and members within a binary object or file.
+Individual data members are presented as XML instructions that can be used by program \fBpxe\fR to edit PIB files.
+
+.SH OPTIONS
+
+.TP
+-\fBf\fI definitions\fR
+The name of the object definition file that contains the size, name and description of objects within a binary file.
+The definition file is not modified.
+This option is required.
+There is no default file.
+
+.TP
+-\fBs\fI schema\fR
+The url for the XML schema.
+The default schema is \fBpiboffset.xsd\fR for the Qualcomm Atheros Powerline Toolkit verion of this program.
+
+.TP
+.RB - x
+Print an XML schema on stdout.
+This schema defines the elements and attributes used to define data objects and members read from input files.
+It can be used to validate XML files used with program \fBpxe\fR.
+
+.TP
+.RB - ? ,-- help
+Print program help summary on stdout.
+This option takes precedence over other options on the command line.
+
+.TP
+.RB - ! ,-- version
+Print program version information on stdout.
+This option takes precedence over other options on the command line.
+Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of the Linux Toolkit you are using.
+
+.SH ARGUMENTS
+
+.TP
+.IR file
+The name of a binary file.
+The file must have either Thunderbolt/Lightning or Panther/Lynx format or output will be incorrect.
+The file is not modified by this program.
+Only one such file is permitted on the command line.
+
+.SH EXAMPLES
+The following is an example object definition file that defines a standard ethernet frame and member fields within it.
+The comments and descriptions shown are optional.
+The field lengths and field names are not.
+Zero-length fields denote arbitrary field groups and are used by program \fBoffset\fR to print headings.
+
+.PP
+   # ========================================
+   #
+   # ----------------------------------------
+   
+   0 header
+   6 ODA Own Destination Address
+   6 OSA Own Source Address
+   2 ET Ethertype or frame length
+   
+   # ========================================
+   #
+   # ----------------------------------------
+   
+   0 body
+   1500 Payload
+   
+   # ========================================
+   #
+   # ----------------------------------------
+   
+   0 trailer
+   4 CRC Cyclical Redundancy Check
+
+.PP
+The following command uses object definition file \fBether.txt\fR to identify and display member fields within binary file \fBabc.bin\fR as a set of xml instructions that can be used by program \fBxde\fR to edit other files.
+
+.PP
+   # pib2xml -f ether.txt abc.bin
+
+.PP
+The next command writes the xml schema that defines the elements and attributes used in the edit instructions to file \fBdata.xsd\fR.
+This file can be used to validate xml edit instructions.
+
+.PP
+   # pib2xml -x > data.xsd
+
+.SH SEE ALSO
+.BR chkpib (7),
+.BR chkpib2 (7),
+.BR getpib (7 ),
+.BR modpib ( 1 ),
+.BR pibcomp ( 1 ),
+.BR pibdump ( 1 ),
+.BR setpib ( 1 ),
+.BR xml2pib ( 1 )
+
+.SH CREDITS
+ Charles Maier <cmaier@cmassoc.net>
+

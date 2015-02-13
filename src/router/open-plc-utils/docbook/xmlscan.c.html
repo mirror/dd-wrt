@@ -1,0 +1,553 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			xmlscan.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='xmlread.c.html' title=' xmlread.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='xmlschema.c.html' title=' xmlschema.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   xmlscan.c - markup scanner;
+ *
+ *   node.h
+ *
+ *   scan XML source and create a parse tree;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef XMLSCAN_SOURCE
+#define XMLSCAN_SOURCE
+
+/*====================================================================*
+ *  system header files;
+ *--------------------------------------------------------------------*/
+
+#include &lt;string.h&gt;
+#include &lt;ctype.h&gt;
+
+/*====================================================================*
+ *  custom header files;
+ *--------------------------------------------------------------------*/
+
+#include &quot;../nodes/node.h&quot;
+#include &quot;../tools/number.h&quot;
+#include &quot;../tools/error.h&quot;
+
+/*====================================================================*
+ *
+ *   char * advance (char * string, unsigned * line);
+ *
+ *   discard whitespace and count newlines up to the next meaningful
+ *   character;
+ *
+ *   this function is critical to the XML parsing engine because it
+ *   ensures that node strings are NUL terminated and line counts
+ *   are accurate;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+static char * advance (char * string, unsigned * lineno)
+
+{
+	while (isspace (*string))
+	{
+		if (*string == '\n')
+		{
+			(*lineno)++;
+		}
+		*string++ = (char)(0);
+	}
+	return (string);
+}
+
+/*====================================================================*
+ *
+ *   char * discard (char * string, unsigned * line);
+ *
+ *   discard current character; advance to next character;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+static char * discard (char * string, unsigned * lineno)
+
+{
+	*string++ = (char)(0);
+	string = advance (string, lineno);
+	return (string);
+}
+
+/*====================================================================*
+ *
+ *   char * nmtoken (char * string);
+ *
+ *   collect nmtoken as per w3c xml 1.0 specification;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+static char * nmtoken (char * string)
+
+{
+	while (isalnum (*string) || (*string == '-') || (*string == '_') || (*string == '.') || (*string == ':'))
+	{
+		string++;
+	}
+	return (string);
+}
+
+/*====================================================================*
+ *
+ *   char * content (char * string, char quote, unsigned * line);
+ *
+ *   collect literal string; discard quotes; preserve whitespace;
+ *   count newlines;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+static char * content (char * string, char quote, unsigned * lineno)
+
+{
+	if (*string == quote)
+	{
+		*string++ = (char)(0);
+	}
+	while (*string)
+	{
+		if (*string == quote)
+		{
+			break;
+		}
+		if (*string++ == '\n')
+		{
+			(*lineno)++;
+		}
+	}
+	if (*string == quote)
+	{
+		*string++ = (char)(0);
+	}
+	return (string);
+}
+
+/*====================================================================*
+ *
+ *   char * collect (char * string);
+ *
+ *   collect entity; an entity consists of non-blank characters
+ *   excluding common tag punctuation;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+static char * collect (char * string)
+
+{
+	while (*string)
+	{
+		if (*string == '&lt;')
+		{
+			break;
+		}
+		if (*string == '=')
+		{
+			break;
+		}
+		if (*string == '/')
+		{
+			break;
+		}
+		if (*string == '?')
+		{
+			break;
+		}
+		if (*string == '&gt;')
+		{
+			break;
+		}
+		if (isspace (*string))
+		{
+			break;
+		}
+		string++;
+	}
+	return (string);
+}
+
+/*====================================================================*
+ *
+ *   static char * comment (char * string, unsigned * line);
+ *
+ *   collect comment;
+ *   preserve delimiters;
+ *   preserve whitespace;
+ *   count newlines;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+static char * comment (char * string, unsigned * lineno)
+
+{
+	string++;
+	if (*string == '-')
+	{
+		while (*string == '-')
+		{
+			string++;
+		}
+		while ((*string) &amp;&amp; (*string != '-'))
+		{
+			while ((*string) &amp;&amp; (*string != '-'))
+			{
+				if (*string == '\n')
+				{
+					(*lineno)++;
+				}
+				string++;
+			}
+			string++;
+		}
+		while (*string == '-')
+		{
+			string++;
+		}
+	}
+	return (string);
+}
+
+/*====================================================================*
+ *
+ *   char * literal (char * string, char quote, unsigned * line);
+ *
+ *   collect literal;
+ *   preserve delimiters;
+ *   preserve whitespace;
+ *   count newlines;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+static char * literal (char *string, char quote, unsigned * lineno)
+
+{
+	if (*string == quote)
+	{
+		*string++ = (char)(0);
+	}
+	while (*string)
+	{
+		if (*string == quote)
+		{
+			break;
+		}
+		if (*string == '\n')
+		{
+			(*lineno)++;
+		}
+		string++;
+	}
+	if (*string == quote)
+	{
+		*string++ = (char)(0);
+	}
+	return (string);
+}
+
+/*====================================================================*
+ *
+ *   char * context (char * string, signed c, unsigned *line);
+ *
+ *   collect context;
+ *   preserve delimiters;
+ *   preserve whitespace;
+ *   count newlines;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+static char * context (char *string, signed c, unsigned * lineno)
+
+{
+	string++;
+	while (*string)
+	{
+		if (*string == (char)(c))
+		{
+			string++;
+			break;
+		}
+		if (*string == '{')
+		{
+			string = context (string, '}', lineno);
+			continue;
+		}
+		if (*string == '(')
+		{
+			string = context (string, ')', lineno);
+			continue;
+		}
+		if (*string == '[')
+		{
+			string = context (string, ']', lineno);
+			continue;
+		}
+		if ((*string == '\&quot;') || (*string == '\''))
+		{
+			string = literal (string, *string, lineno);
+			continue;
+		}
+		if (*string == '\n')
+		{
+			(*lineno)++;
+		}
+		string++;
+	}
+	return (string);
+}
+
+/*====================================================================*
+ *
+ *   void xmlscan (NODE * node);
+ *
+ *   node.h
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+signed xmlscan (NODE * node)
+
+{
+	NODE * section = node;
+	NODE * element;
+	NODE * attribute;
+	NODE * value;
+	char prefix = (char)(0);
+	char suffix = (char)(0);
+	char * string = node-&gt;text;
+	unsigned lineno = 1;
+	if (!section)
+	{
+		error (1, EFAULT, &quot;section is null&quot;);
+	}
+	if (!string)
+	{
+		error (1, EFAULT, &quot;string is null&quot;);
+	}
+	while (*string)
+	{
+		if (*string == '&lt;')
+		{
+			prefix = '&lt;';
+			suffix = '&gt;';
+			string = discard (string, &amp;lineno);
+			if ((*string == '/') || (*string == '?') || (*string == '!'))
+			{
+				prefix = *string;
+				string = discard (string, &amp;lineno);
+			}
+			element = xmlnode (section);
+			element-&gt;line = lineno;
+			element-&gt;type = NODE_ELEM;
+			element-&gt;text = string;
+			if (isalpha (*string))
+			{
+				string = nmtoken (string);
+			}
+			else if (*string == '-')
+			{
+				string = comment (string, &amp;lineno);
+			}
+			else if (*string == '[')
+			{
+				string = context (string, ']', &amp;lineno);
+			}
+			else
+			{
+				string = collect (string);
+			}
+			string = advance (string, &amp;lineno);
+			while ((*string) &amp;&amp; (*string != '&lt;') &amp;&amp; (*string != '/') &amp;&amp; (*string != '?') &amp;&amp; (*string != '&gt;'))
+			{
+				attribute = xmlnode (element);
+				attribute-&gt;line = lineno;
+				attribute-&gt;type = NODE_ATTR;
+				attribute-&gt;text = string;
+				if (isalpha (*string))
+				{
+					string = nmtoken (string);
+				}
+				else if (*string == '-')
+				{
+					string = comment (string, &amp;lineno);
+				}
+				else if (*string == '[')
+				{
+					string = context (string, ']', &amp;lineno);
+				}
+				else if ((*string == '\&quot;') || (*string == '\''))
+				{
+					string = content (string, *string, &amp;lineno);
+					attribute-&gt;text++;
+				}
+				else
+				{
+					string = collect (string);
+				}
+				string = advance (string, &amp;lineno);
+				if (*string == '=')
+				{
+					string = discard (string, &amp;lineno);
+					value = xmlnode (attribute);
+					value-&gt;line = lineno;
+					value-&gt;type = NODE_VALU;
+					value-&gt;text = string;
+					if ((*string == '\&quot;') || (*string == '\''))
+					{
+						string = content (string, *string, &amp;lineno);
+						value-&gt;text++;
+					}
+					else
+					{
+						string = collect (string);
+					}
+					string = advance (string, &amp;lineno);
+				}
+			}
+			if ((*string == '/') || (*string == '?'))
+			{
+				suffix = *string;
+				string = discard (string, &amp;lineno);
+			}
+		}
+		else if (*string == '&gt;')
+		{
+			string = discard (string, &amp;lineno);
+			if (prefix == '!')
+			{
+				element-&gt;type = NODE_SGML;
+			}
+			else if (prefix == '?')
+			{
+				element-&gt;type = NODE_INST;
+			}
+			else if (suffix == '?')
+			{
+			}
+			else if (prefix == '/')
+			{
+				element-&gt;type = NODE_ETAG;
+				if (element-&gt;below)
+				{
+					error (1, 0, &quot;Element &lt;/%s&gt; on line %d has attributes or content.&quot;, element-&gt;text, element-&gt;line);
+				}
+				if (strcmp (section-&gt;text, element-&gt;text))
+				{
+					error (1, 0, &quot;Element &lt;%s&gt; on line %d teminated by &lt;/%s&gt; on line %d&quot;, section-&gt;text, section-&gt;line, element-&gt;text, element-&gt;line);
+				}
+				if (section-&gt;above)
+				{
+					section = section-&gt;above;
+				}
+			}
+			else if (suffix == '/')
+			{
+			}
+			else
+			{
+				section = element;
+			}
+		}
+		else
+		{
+			signed space = 0;
+			char * output = string;
+			NODE * segment = xmlnode (section);
+			segment-&gt;line = lineno;
+			segment-&gt;type = NODE_DATA;
+			segment-&gt;text = string;
+			while (*string)
+			{
+				if (*string == '&lt;')
+				{
+					break;
+				}
+				if (isspace (*string))
+				{
+					string = advance (string, &amp;lineno);
+					space++;
+					continue;
+				}
+				if (space)
+				{
+					*output++ = ' ';
+					space--;
+				}
+				*output++ = *string++;
+			}
+			if (output &lt; string)
+			{
+				*output = (char)(0);
+			}
+		}
+	}
+	return (0);
+}
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='xmlread.c.html' title=' xmlread.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='xmlschema.c.html' title=' xmlschema.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

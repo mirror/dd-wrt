@@ -1,0 +1,86 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			chars.h
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='channel.h.html' title=' channel.h '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='config.h.html' title=' config.h '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   chars.h - character selection and matcing macros;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef CHARS_HEADER
+#define CHARS_HEADER
+
+/*====================================================================*
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef isblank
+#ifndef __CYGWIN__
+#define isblank(c) ((char)(c) == ' ') || ((char)(c) == '\t')
+#endif
+#endif
+
+#ifndef nobreak
+#define nobreak(c) ((char)(c) != '\n') &amp;&amp; ((int)(c) != EOF)
+#endif
+
+#ifndef isquote
+#define isquote(c) ((char)(c) == '\'') || ((char)(c) == '\&quot;')
+#endif
+
+#ifndef isslash
+#define isslash(c) ((char)(c) == '/') || ((char)(c) == '\\')
+#endif
+
+#ifndef isident
+#define isident(c) (isalnum (c) || (c == '_') || (c == '-') || (c == '.') || (c == ':'))
+#endif
+
+#ifndef isoctal
+#define isoctal(c) ((char)(c) &gt;= '0') &amp;&amp; ((char)(c) &lt;= '7')
+#endif
+
+#ifndef nomatch
+#define nomatch(c,o) ((char)(c) != (char)(o)) &amp;&amp; ((int)(c) != EOF)
+#endif
+
+#ifndef iskey
+#define iskey(c) ((int)(c) &lt; 0x20) || ((int)(c) &gt; 0x7E)
+#endif
+
+/*====================================================================*
+ *   end definitions;
+ *--------------------------------------------------------------------*/
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='channel.h.html' title=' channel.h '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='config.h.html' title=' config.h '>NEXT</a>]
+			</div>
+		</body>
+	</html>

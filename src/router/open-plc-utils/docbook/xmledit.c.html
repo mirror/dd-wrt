@@ -1,0 +1,512 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			xmledit.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='xmldata.c.html' title=' xmldata.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='xmlelement.c.html' title=' xmlelement.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   xmledit.c -
+ *
+ *   node.h
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef XMLEDIT_SOURCE
+#define XMLEDIT_SOURCE
+
+/*====================================================================*
+ *   system header files;
+ *--------------------------------------------------------------------*/
+
+#include &lt;stdint.h&gt;
+#include &lt;string.h&gt;
+#include &lt;limits.h&gt;
+#include &lt;ctype.h&gt;
+#include &lt;errno.h&gt;
+
+/*====================================================================*
+ *  custom header files;
+ *--------------------------------------------------------------------*/
+
+#include &quot;../tools/number.h&quot;
+#include &quot;../tools/memory.h&quot;
+#include &quot;../tools/error.h&quot;
+#include &quot;../nodes/node.h&quot;
+
+/*====================================================================*
+ *   constants;
+ *--------------------------------------------------------------------*/
+
+#define XML_BAD_NUMBER 1
+#define XML_BAD_OFFSET 2
+#define XML_BAD_EXTENT 3
+
+/*====================================================================*
+ *   variables;
+ *--------------------------------------------------------------------*/
+
+static char const * member = &quot;&quot;;
+static char const * string = &quot;&quot;;
+static unsigned offset = 0;
+static unsigned length = 0;
+static bool series = false;
+
+/*====================================================================*
+ *
+ *   void position (size_t extent);
+ *
+ *   sanity check offset and extent before editing memory;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+static void position (size_t extent)
+
+{
+	if (!length)
+	{
+		error (XML_BAD_EXTENT, EPERM, &quot;%s has no length&quot;, member);
+	}
+	if (offset &gt; extent)
+	{
+		error (XML_BAD_OFFSET, EPERM, &quot;%s offset of 0x%04X exceeds &quot; DATA_OBJECT &quot; offset of 0x%04X&quot;, member, offset, (unsigned int) extent);
+	}
+	if ((offset + length) &gt; extent)
+	{
+		error (XML_BAD_EXTENT, EPERM, &quot;%s length of %d bytes exceeds &quot; DATA_OBJECT &quot; length of &quot;SIZE_T_SPEC&quot; bytes&quot;, member, length, extent);
+	}
+	return;
+}
+
+/*====================================================================*
+ *
+ *   signed xmlinteger (NODE const * node, unsigned radix);
+ *
+ *   convert numeric string to an unsigned integer; all string digits
+ *   string digits must be valid for the specifid radix; radix can be
+ *   1 through 16 but 2, 8, 10 and 16 are the only sensible choices;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+static unsigned xmlinteger (NODE const * node, unsigned radix)
+
+{
+	unsigned digit;
+	unsigned value = 0;
+	while ((digit = todigit (*string)) &lt; radix)
+	{
+		value *= radix;
+		value += digit;
+		string++;
+	}
+	if (*string)
+	{
+		error (XML_BAD_NUMBER, EPERM, &quot;%s %s is not numeric&quot;, member, node-&gt;text);
+	}
+	return (value);
+}
+
+/*====================================================================*
+ *
+ *   void xmlstring (void * memory, size_t extent);
+ *
+ *   xmlstring is expressed as character text;  truncate string and
+ *   pad memory with NULs as needed;
+ *
+ *   per the schema, an series cannot have a string member;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+static void xmlstring (void * memory, size_t extent)
+
+{
+	char * buffer = (char *)(memory);
+	if (series)
+	{
+		error (XML_BAD_NUMBER, ENOTSUP, &quot;%s found inside struct&quot;, member);
+	}
+	if (length)
+	{
+		while (length &gt; 1)
+		{
+			if (isprint (*string))
+			{
+				buffer [offset] = *string++;
+			}
+			else
+			{
+				buffer [offset] = (char)(0);
+			}
+			offset++;
+			length--;
+		}
+		buffer [offset] = (char)(0);
+		offset++;
+		length--;
+	}
+	return;
+}
+
+/*====================================================================*
+ *
+ *   void xmlmemory (void * memory, size_t extent);
+ *
+ *   xmlmemory is a hexadecimal string of variable extent; an empty
+ *   string increments offset and decrements length but nothing is
+ *   written to the memory;
+ *
+ *   per the schema, if xmlmemory is not inside an series then it must
+ *   match the object extent;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+static void xmlmemory (void * memory, size_t extent)
+
+{
+	uint8_t * buffer = (uint8_t *)(memory);
+	if (!*string)
+	{
+		offset++;
+		length--;
+	}
+	while ((*string) &amp;&amp; (length))
+	{
+		uint8_t msb = todigit (*string++);
+		uint8_t lsb = todigit (*string++);
+		if ((msb &gt; 0x0F) || (lsb &gt; 0x0F))
+		{
+			error (XML_BAD_NUMBER, EINVAL, &quot;%s value is not hexadecimal&quot;, member);
+		}
+		buffer [offset] = (msb &lt;&lt; 4) + lsb;
+		offset++;
+		length--;
+	}
+	if ((length) &amp;&amp; (!series))
+	{
+		error (XML_BAD_NUMBER, EINVAL, &quot;%s value is too short&quot;, member);
+	}
+	if (*string)
+	{
+		error (XML_BAD_NUMBER, EINVAL, &quot;%s value is too long&quot;, member);
+	}
+	return;
+}
+
+/*====================================================================*
+ *
+ *   void xmlnumber (void * memory, size_t extent);
+ *
+ *   xmlnumber is a decimal integer string of variable length; the
+ *   value cannot exceed length bytes and offset is incremented by
+ *   length bytes;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+static void xmlnumber (void * memory, size_t extent)
+
+{
+	uint64_t number = 0;
+	uint64_t maximum = 0;
+	maximum = ~maximum;
+	if (length &lt; sizeof (number))
+	{
+		maximum &lt;&lt;= (length &lt;&lt; 3);
+		maximum = ~maximum;
+	}
+	while (isdigit (*string))
+	{
+		number *= 10;
+		number += *string - '0';
+		if (number &gt; maximum)
+		{
+			error (XML_BAD_NUMBER, EINVAL, &quot;%s value exceeds %d bytes&quot;, member, length);
+		}
+		string++;
+	}
+	if (*string)
+	{
+		error (XML_BAD_NUMBER, EINVAL, &quot;%s value is not decimal&quot;, member);
+	}
+	memcpy ((uint8_t *)(memory) + offset, &amp;number, length);
+	offset += length;
+	length -= length;
+	return;
+}
+
+/*====================================================================*
+ *
+ *   void xmlbyte (void * memory, unsigned extent);
+ *
+ *   xmlbyte is a decimal integer string of variable extent; the
+ *   value cannot exceed 255; an empty string increments offset and
+ *   decrements length but nothing is written to the memory;
+ *
+ *   per the schema, if xmlbyte is not inside an series then it must
+ *   it must match the object extent which must be 1 by implication;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+static void xmlbyte (void * memory, size_t extent)
+
+{
+	if (*string)
+	{
+		uint16_t number = 0;
+		while (isdigit (*string))
+		{
+			number *= 10;
+			number += *string - '0';
+			if (number &gt; 0xFF)
+			{
+				error (XML_BAD_NUMBER, EINVAL, &quot;%s value exceeds 8 bits&quot;, member);
+			}
+			string++;
+		}
+		if (*string)
+		{
+			error (XML_BAD_NUMBER, EINVAL, &quot;%s value is not decimal&quot;, member);
+		}
+		memcpy ((uint8_t *)(memory) + offset, &amp;number, sizeof (uint8_t));
+	}
+	offset++;
+	length--;
+	if ((length) &amp;&amp; (!series))
+	{
+		error (XML_BAD_NUMBER, EINVAL, &quot;%s is too short&quot;, member);
+	}
+	return;
+}
+
+/*====================================================================*
+ *
+ *   static char const * xmlcontent1 (struct node const * node);
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+static char const * xmlcontent1 (struct node const * node)
+
+{
+	if (node)
+	{
+		node = node-&gt;below;
+	}
+	while (node)
+	{
+		if (node-&gt;type == NODE_DATA)
+		{
+			return (node-&gt;text);
+		}
+		node = node-&gt;after;
+	}
+	return (&quot;&quot;);
+}
+
+/*====================================================================*
+ *
+ *   char const * xmlvalue1 (struct node const * node);
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+char const * xmlvalue1 (struct node const * node)
+
+{
+	if (node)
+	{
+		node = node-&gt;below;
+	}
+	while (node)
+	{
+		if (node-&gt;type == NODE_VALU)
+		{
+			return (node-&gt;text);
+		}
+		node = node-&gt;after;
+	}
+	return (&quot;&quot;);
+}
+
+/*====================================================================*
+ *
+ *   static char const * xmlattribute1 (struct node const * node, char const * name);
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+static char const * xmlattribute1 (struct node const * node, char const * name)
+
+{
+	if (node)
+	{
+		node = node-&gt;below;
+	}
+	while (node)
+	{
+		if (node-&gt;type == NODE_ATTR)
+		{
+			if (!strcmp (node-&gt;text, name))
+			{
+				name = xmlvalue1 (node);
+				return (name);
+			}
+		}
+		node=node-&gt;after;
+	}
+	return (&quot;&quot;);
+}
+
+/*====================================================================*
+ *
+ *   signed xmledit (struct node const * node, void * memory, size_t extent);
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+signed xmledit (struct node const * node, void * memory, size_t extent)
+
+{
+	if (node)
+	{
+		node = node-&gt;below;
+	}
+	while (node)
+	{
+		if (node-&gt;type == NODE_ELEM)
+		{
+			if (!strcmp (node-&gt;text, DATA_MEMBER))
+			{
+				member = xmlattribute1 (node, DATA_NAME);
+				offset = (unsigned)(-1);
+				length = (unsigned)(-1);
+				series = false;
+			}
+			else if (!strcmp (node-&gt;text, DATA_OFFSET))
+			{
+				string = xmlcontent1 (node);
+				offset = xmlinteger (node, 16);
+			}
+			else if (!strcmp (node-&gt;text, DATA_LENGTH))
+			{
+				string = xmlcontent1 (node);
+				length = xmlinteger (node, 10);
+			}
+			else if (!strcmp (node-&gt;text, DATA_STRUCT))
+			{
+				series = true;
+			}
+			else if (!strcmp (node-&gt;text, DATA_STRING))
+			{
+				string = xmlcontent1 (node);
+				position (extent);
+				xmlstring (memory, extent);
+			}
+			else if (!strcmp (node-&gt;text, DATA_MEMORY))
+			{
+				string = xmlcontent1 (node);
+				position (extent);
+				xmlmemory (memory, extent);
+			}
+			else if (!strcmp (node-&gt;text, DATA_HUGE))
+			{
+				length = sizeof (uint64_t);
+				position (extent);
+				string = xmlcontent1 (node);
+				xmlnumber (memory, extent);
+			}
+			else if (!strcmp (node-&gt;text, DATA_LONG))
+			{
+				length = sizeof (uint32_t);
+				position (extent);
+				string = xmlcontent1 (node);
+				xmlnumber (memory, extent);
+			}
+			else if (!strcmp (node-&gt;text, DATA_WORD))
+			{
+				length = sizeof (uint16_t);
+				position (extent);
+				string = xmlcontent1 (node);
+				xmlnumber (memory, extent);
+			}
+			else if (!strcmp (node-&gt;text, DATA_BYTE))
+			{
+				position (extent);
+				string = xmlcontent1 (node);
+				xmlbyte (memory, extent);
+			}
+			xmledit (node, memory, extent);
+		}
+		node = node-&gt;after;
+	}
+	return (0);
+}
+
+/*====================================================================*
+ *
+ *--------------------------------------------------------------------*/
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='xmldata.c.html' title=' xmldata.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='xmlelement.c.html' title=' xmlelement.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

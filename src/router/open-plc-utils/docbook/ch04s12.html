@@ -1,0 +1,60 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Boot from Host (INT6000)</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="ch04.html" title="Chapter 4.  Firmware"><link rel="prev" href="ch04s11.html" title="Update Local Host (INT6000/INT6300/INT6400)"><link rel="next" href="ch04s13.html" title="Boot from Host (INT6300)"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">
+			Boot from Host (INT6000)
+			</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch04s11.html">Prev</a> </td><th width="60%" align="center">Chapter 4. 
+		Firmware 
+		</th><td width="20%" align="right"> <a accesskey="n" href="ch04s13.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="firmware-6000-boot"></a>
+			Boot from Host (INT6000)
+			</h2></div></div></div><p>
+			The Boot from Host operation downloads a firmware image and <acronym class="acronym">PIB</acronym> image from the local host and starts firmware execution. The process is initiated by the <span class="trademark">INT6000</span>™ <span class="application">Bootloader</span> following a device reset. The <span class="application">Bootloader</span> passes control to the <span class="trademark">INT6000</span>™ <span class="application">Softloader</span> to negotiate with the local host. The process therefore requires <span class="application">Softloader</span> aware software running on the local host in order to complete.
+			</p><p>
+			The device does not have a unique hardware address until the firmware starts and assigns one. Until that time, the <span class="application">Softloader</span> accepts messages addressed to 00:B0:52:00:00:01. In addition, the <span class="application">Softloader</span> does not know the hardware address of the local host and so it addresses <code class="constant">VS_HST_ACTION</code> messages to FF:FF:FF:FF:FF:FF; however, these messages are not forwarded over powerline.
+			</p><div class="figure"><a name="idp10141288"></a><p class="title"><b>Figure 4.4. 
+				Boot from Host (INT6000)
+				</b></p><div class="figure-contents"><pre class="programlisting">
+
+          INT6000                             LOCAL-HOST
+        [01] |                                    |
+        [02] |-------- VS_HST_ACTION.IND --------&gt;| [03]
+        [05] |&lt;------- VS_HST_ACTION.RSP ---------| [04]
+             |                                    |
+        [07] |&lt;------- VS_WR_MOD.REQ -------------| [07]
+        [07] |-------- VS_WR_MOD.CNF ------------&gt;| [07]
+        [07] |&lt;-----------------------------------| [07]
+        [07] |-----------------------------------&gt;| [07]
+             |                                    |
+        [08] |&lt;------- VS_WR_MOD.REQ -------------| [08]
+        [08] |-------- VS_WR_MOD.CNF ------------&gt;| [08]
+        [08] |&lt;-----------------------------------| [08]
+        [08] |-----------------------------------&gt;| [08]
+             |                                    |
+        [10] |&lt;------- VS_ST_MAC.REQ -------------| [09]
+        [11] |-------- VS_ST_MAC.CNF ------------&gt;| [12]
+
+ </pre></div></div><br class="figure-break"><div class="orderedlist"><ol type="1"><li><p>
+					The <span class="trademark">INT6000</span>™ <span class="application">Bootloader</span> automatically starts after device reset. It reads the <span class="application">Softloader</span> from <acronym class="acronym">NVRAM</acronym>,  writes it into <acronym class="acronym">SDRAM</acronym> and starts execution. The <span class="application">Softloader</span> then manages the Boot from Host process.
+					</p></li><li><p>
+					The <span class="application">Softloader</span> broadcasts a <code class="constant">VS_HST_ACTION.IND</code> message every <code class="constant">500</code> milliseconds to request the download of runtime firmware and <acronym class="acronym">PIB</acronym>. The <code class="varname">HOST_ACTION_REQ</code> field of the message is 0x00 in this case. The message source address if <code class="constant">00:B0:52:00:00:01</code> as explained above. 
+					</p></li><li><p>
+					The local host receives the <code class="constant">VS_HST_ACTION.IND</code> message and inspects the HOST_ACTION_REQ field to determine action requested. It may then elect to service the request or ignore it. On a single-host system, the host must service the request or the device will not start. On a multi-host system,  one of the hosts must elect to service the request or the device will not start.
+					</p></li><li><p>
+					The local host sends a <code class="constant">VS_HST_ACTION.RSP</code> message to the device to indicate the ability and willingness to service the request. The MSTATUS field is set to 0x00 for affirmative and 0x01 for negative. 
+					</p></li><li><p>
+					The <span class="application">Softloader</span> receives the <code class="constant">VS_HST_ACTION.RSP</code> from the host and inspects the MSTATUS field. On affirmative status, the <span class="application">Softloader</span> stops sending <code class="varname">VS_HST_ACTION</code> messages and waits indefinitely for the firmware image and <acronym class="acronym">PIB</acronym>. 
+					</p></li><li><p>
+					The local host determines which firmware image and <acronym class="acronym">PIB</acronym> to download. In some cases there may be no choice. In other cases, there may be a choice between default and custom software or between current and upgraded software. This is a principle design issue to consider. 
+					</p></li><li><p>
+					The local host downloads a firmware image to the device by sending <code class="constant">VS_WR_MOD.REQ</code> messages to the device and waiting for a <code class="constant">VS_WR_MEM.CNF</code> messages from the device after each request. Each message contains an image segment, the memory offset, the segment length and the checksum used to monitor and manage download progress. If a single transaction fails, the local host should detect it and repeat it. 
+					</p></li><li><p>
+					The local host downloads a <acronym class="acronym">PIB</acronym> to the device by sending <code class="constant">VS_WR_MOD.REQ</code> messages to the device and waiting for a <code class="constant">VS_WR_MEM.CNF</code> message from the device after each request. Each message contains an image segement, the  memory offset, the segment length and the checksum used to monitor and manage download progress. If a single transaction fails, the local host should detect it and repeat it. 
+					</p></li><li><p>
+					The local host starts execution of the downloaded firmware by sending a <code class="constant">VS_ST_MAC.REQ</code> message to the device. The message contains the start address for the firmware. 
+					</p></li><li><p>
+					The <span class="application">Softloader</span> receives the <code class="constant">VS_ST_MAC.REQ</code> from the local host, validates the content.
+					</p></li><li><p>The <span class="application">Softloader</span> sends a <code class="constant">VS_ST_MAC.CNF</code> message to the local host to indicate an ability or willingness to start execution. Assuming an ability and willingness, the <span class="application">Softloader</span> immediately starts firmware execution which relinquishes device control to the firmware. 
+					</p></li><li><p>
+					The local host receives the <code class="constant">VS_ST_MAC.CNF</code> message from the device, inspects the MSTATUS field and acts accordingly. Assuming an affirmative status, this process terminates. 
+					</p></li></ol></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch04s11.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="ch04.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch04s13.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">
+			Update Local Host (INT6000/INT6300/INT6400)
+			 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 
+			Boot from Host (INT6300)
+			</td></tr></table></div></body></html>0

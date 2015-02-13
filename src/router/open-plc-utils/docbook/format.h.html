@@ -1,0 +1,83 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			format.h
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='flags.h.html' title=' flags.h '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='getoptv.h.html' title=' getoptv.h '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   format.h - format function definitions and declarations;;
+ *
+ *   this file is a subset of the original that includes only those
+ *   definitions and declaration needed for toolkit programs;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef FORMAT_HEADER
+#define FORMAT_HEADER
+
+/*====================================================================*
+ *   system header files;
+ *--------------------------------------------------------------------*/
+
+#include &lt;unistd.h&gt;
+
+/*====================================================================*
+ *   functions;
+ *--------------------------------------------------------------------*/
+
+size_t strfbits (char buffer [], size_t length, char const * operands [], char const *operator, unsigned flagword);
+
+/*====================================================================*
+ *   functions;
+ *--------------------------------------------------------------------*/
+
+#ifdef __GNUC__
+
+__attribute__ ((format (printf, 2, 3)))
+
+#endif
+
+void output (signed indent, char const * format, ...);
+
+#ifdef __GNUC__
+
+__attribute__ ((format (printf, 3, 4)))
+
+#endif
+
+void markup (signed fd, signed level, char const * format, ...);
+
+/*====================================================================*
+ *   end definitions;
+ *--------------------------------------------------------------------*/
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='flags.h.html' title=' flags.h '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='getoptv.h.html' title=' getoptv.h '>NEXT</a>]
+			</div>
+		</body>
+	</html>

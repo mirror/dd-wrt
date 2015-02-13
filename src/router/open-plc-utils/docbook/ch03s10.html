@@ -1,0 +1,77 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Compiler Constants</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="ch03.html" title="Chapter 3.  Software"><link rel="prev" href="ch03s09.html" title="Header Files"><link rel="next" href="ch03s11.html" title="LibPcap, WinPcap and BPF"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">
+				Compiler Constants
+				</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch03s09.html">Prev</a> </td><th width="60%" align="center">Chapter 3. 
+		Software 
+		</th><td width="20%" align="right"> <a accesskey="n" href="ch03s11.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="software-compiler-constants"></a>
+				Compiler Constants
+				</h2></div></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="software-constants-platform"></a>
+					Platform Constants
+					</h3></div></div></div><p>
+					Platform constants conditionaly compile source code blocks based on the hardware architecture and host operating system. Hardware architecture constants are normally defined in system header files. Operating system constants are often compiler intrinsic or defined in system header files. 
+					</p><div class="variablelist"><dl><dt><span class="term">
+							<code class="constant">__APPLE__</code>
+							</span></dt><dd><p>
+							A intrinsic compiler constant indicating <span class="productname">Mac OS X</span>™ operating system support.
+								</p></dd><dt><span class="term">
+							<code class="constant">__BYTE_ORDER</code>
+							</span></dt><dd><p>
+							A standard constant indicating big or little endian host architecture. Some systems may not define this constant and so an alternative should be used.
+								</p></dd><dt><span class="term">
+							<code class="constant">LIBPCAP</code>
+							</span></dt><dd><p>
+							An Atheros constant, that must be manually defined in your makefile or solution file, to indicate that the target host will have <span class="application">LibPcap</span> support. It is not used by the toolkit,  at this time,  and so the associated code has not been tested.				
+								</p></dd><dt><span class="term">
+							<code class="constant">__linux__</code>
+							</span></dt><dd><p>
+							A standard constant indicating <span class="productname">GNU/Linux</span>™ kernel support. It is automatically defined on <span class="productname">GNU/Linux</span>™ systems.
+								</p></dd><dt><span class="term">
+							<code class="constant">__OpenBSD__</code>
+							</span></dt><dd><p>
+							A standard constant indicating <span class="productname">OpenBSD</span>™ kernel support. It is automatically define on <span class="productname">OpenBSD</span>™ systems. It is not used by the toolkit,  at this time, and so the associated code has not been extensively tested.
+								</p></dd><dt><span class="term">
+							<code class="constant">WIN32</code>
+							</span></dt><dd><p>
+							A standard constant indicating Microsoft <span class="productname">Windows</span>™ support. It is automatically defined in Microsoft <span class="productname">Windows</span>™ environments.  					
+								</p></dd><dt><span class="term">
+							<code class="constant">WINPCAP</code>
+							</span></dt><dd><p>
+							An Atheros constant, that must be manually defined in your makefile or solution file, to indicate that the target host will have <span class="application">WinPcap</span> support. The toolkit only defines this constant in Windows Microsoft project files for programs that perform raw Ethernet I/O.  					
+								</p></dd></dl></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="software-constants-ethernet"></a>
+					Ethernet Constants
+					</h3></div></div></div><p>
+					The toolkit attempts to use existing definitions for Ethernet related constants where possible. This has been problematic due to inconsistencies in the way different systems structure their header files. Most of the following definitions already exist on <span class="productname">Linux</span>™,  <span class="productname">OpenBSD</span>™ and <span class="productname">OS X</span>™ but there are still some differences between <span class="productname">Linux</span>™ distributions and many constants are undefined on <span class="productname">Windows</span>™. 
+					</p><p>
+					The <span class="productname">Windows</span>™ version of the toolkit includes an abbreviated <code class="filename">net/ethernet.h</code> that provides constant definitions mentioned in this section.
+					</p><div class="variablelist"><dl><dt><span class="term">
+							ETHER_ADDR_LEN
+							</span></dt><dd><p>
+							The length of an Ethernet hardware address in bytes. The value is <code class="constant">6</code> bytes. On <span class="productname">Linux</span>™ and <span class="productname">OS X</span>™, this is defined in <code class="filename">net/ethernet.h</code>.
+								</p></dd><dt><span class="term">
+							ETHER_CRC_LEN
+							</span></dt><dd><p>
+							The length of an Ethernet frame <acronym class="acronym">FCS</acronym> trailer. The value is <code class="constant">4</code> bytes. On <span class="productname">Linux</span>™ and <span class="productname">OS X</span>™, this is defined in <code class="filename">net/ethernet.h</code>. Atheros also includes a conditional definition in <code class="filename">int6k/int6k.h</code> because some <span class="productname">Linux</span>™ system do not define it anywhere.
+								</p></dd><dt><span class="term">
+							ETHER_HDR_LEN
+							</span></dt><dd><p>
+							The length of an Ethernet frame header including the source address,  destination address and type/length field. The value is <code class="constant">14</code> bytes or <code class="constant">ETHER_ADDR_LEN</code> + <code class="constant">ETHER_ADDR_LEN</code> + <code class="constant">ETHER_TYPE_LEN</code>. On <span class="productname">Linux</span>™ and <span class="productname">OS X</span>™, this is defined in <code class="filename">net/ethernet.h</code>.
+								</p></dd><dt><span class="term">
+							ETHER_MAX_LEN
+							</span></dt><dd><p>
+							The maximum length of an Ethernet frame in bytes. The value is <code class="constant">1518</code> bytes of <code class="constant">ETHER_HDR_LEN</code> + <code class="constant">ETHERMTU</code> + <code class="constant">ETHER_CRC_LEN</code>. On <span class="productname">Linux</span>™ and <span class="productname">OS X</span>™,  this is defined in <code class="filename">net/ethernet.h</code>.
+								</p></dd><dt><span class="term">
+							ETHER_MIN_LEN
+							</span></dt><dd><p>
+							The minimum length of an Ethernet frame in bytes. The value is <code class="constant">64</code> bytes. On <span class="productname">Linux</span>™ and <span class="productname">OS X</span>™ this is defined in <code class="filename">net/ethernet.h</code>
+								</p></dd><dt><span class="term">
+							ETHER_TYPE_LEN
+							</span></dt><dd><p>
+							The length of Ethernet type/length,  or ethertype,  field in bytes. The value is <code class="constant">2</code>. On <span class="productname">Linux</span>™ and <span class="productname">OS X</span>™, it is defined in <code class="filename">net/ethernet.h</code>.
+								</p></dd><dt><span class="term">
+							ETHERMTU
+							</span></dt><dd><p>
+							The maximum transfer unit (ie; data handling capacity) for an Ethernet frame in bytes. The value is <code class="constant">1500</code> bytes. On <span class="productname">Linux</span>™ and <span class="productname">OS X</span>™,  this is defined in <code class="filename">net/ethernet.h</code>
+								</p></dd></dl></div></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch03s09.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="ch03.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch03s11.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">
+				Header Files 
+				 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 
+				<span class="application">LibPcap</span>,  <span class="application">WinPcap</span> and <span class="application">BPF</span>
+				</td></tr></table></div></body></html>0

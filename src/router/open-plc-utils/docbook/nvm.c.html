@@ -1,0 +1,120 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			nvm.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='nics.c.html' title=' nics.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='nvmfile1.c.html' title=' nvmfile1.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*&quot;
+ *
+ *   nvm.c -
+ *
+ *
+ *   Contributor(s):
+ *      Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef NVM_SOURCE
+#define NVM_SOURCE
+
+#include &quot;../nvm/nvm.h&quot;
+
+char const * nvm_platforms [NVM_PLATFORMS] =
+
+{
+	&quot;INT6000&quot;,
+	&quot;INT6300&quot;,
+	&quot;INT6400&quot;,
+	&quot;AR7400&quot;,
+	&quot;AR7420&quot;
+};
+
+char const * nvm_imagetypes [NVM_IMAGETYPES] =
+
+{
+	&quot;Generic Image&quot;,
+	&quot;Synopsis Configuration&quot;,
+	&quot;Denali Configuration&quot;,
+	&quot;Denali Applet&quot;,
+	&quot;Runtime Firmware&quot;,
+	&quot;OAS Client&quot;,
+	&quot;Custom Image&quot;,
+	&quot;Memory Control Applet&quot;,
+	&quot;Power Management Applet&quot;,
+	&quot;OAS Client IP Stack&quot;,
+	&quot;OAS Client TR069&quot;,
+	&quot;SoftLoader&quot;,
+	&quot;Flash Layout&quot;,
+	&quot;Unknown13&quot;,
+	&quot;Chain Manifest&quot;,
+	&quot;Runtime Parameters&quot;,
+	&quot;Custom Module In Scratch&quot;,
+	&quot;Custom Module Update Applet&quot;
+};
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='nics.c.html' title=' nics.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='nvmfile1.c.html' title=' nvmfile1.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

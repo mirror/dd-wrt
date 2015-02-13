@@ -1,0 +1,71 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			todigit.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='termlist.c.html' title=' termlist.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='ToneMaps1.c.html' title=' ToneMaps1.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   unsigned todigit (unsigned c);
+ *
+ *   number.h
+ *
+ *   return the unsigned integer equivalent of an ASCII digit or the
+ *   value UCHAR_MAX on error;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef TODIGIT_SOURCE
+#define TODIGIT_SOURCE
+
+#include &lt;limits.h&gt;
+
+#include &quot;../tools/number.h&quot;
+
+unsigned todigit (unsigned c)
+
+{
+	if ((c &gt;= '0') &amp;&amp; (c &lt;= '9'))
+	{
+		return (c - '0');
+	}
+	if ((c &gt;= 'A') &amp;&amp; (c &lt;= 'Z'))
+	{
+		return (c - 'A' + 10);
+	}
+	if ((c &gt;= 'a') &amp;&amp; (c &lt;= 'z'))
+	{
+		return (c - 'a' + 10);
+	}
+	return (UCHAR_MAX);
+}
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='termlist.c.html' title=' termlist.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='ToneMaps1.c.html' title=' ToneMaps1.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

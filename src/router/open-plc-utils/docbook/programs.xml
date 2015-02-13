@@ -1,0 +1,958 @@
+	<section id='overview-programs'> 
+		<title>
+			Toolkit Programs 
+			</title>
+		<para>
+			The Qualcomm Atheros <application>Open Powerline Toolkit</application> is a collection of small, command line programs. Each program deals with some aspect of powerline device management. Programs can be combined, in various ways, using shell scripts, to perform sophisticated and complex tasks. With these program, one can identify chipset and firmware version, reset devices, flash devices, identify other powerline network devices, validate <filename>*.pib</filename> and <filename>*.nvm</filename> files, sniff <trademark class='registered'>HomePlug</trademark> AV Ethernet frames, send generic Ethernet frames and so on. 
+			</para>
+		<para>
+			Program source code is designed to demonstrate device hardware and firmware features and to illustrate techniques for software developers and hardware engineers. The source code may be modified and distributed without obligation to Qualcomm Atheros; however Qualcomm Atheros would appreciate feedback concerning improvements to program useability, reliability or efficiency. Keep in mind that these tools, unlike some other tools, are intended to be simple and compact. 
+			</para>
+		<para>
+			Most programs in this toolkit start their life on Linux and are eventually ported to other environments. Consequently, not all programs are available in the Windows version of the toolkit but most of them are.
+			</para>
+		<para>
+			Program descriptions appear below in alphabetical order. Alternately, you may browse the latest program descriptions and source code <ulink url='toolkit.html'>here</ulink>.
+			</para>
+
+
+		<section id='programs-6400-Management'>
+			<title>
+				INT6400 Device Management
+				</title>
+			<para>
+				Programs in this group are older versions that communicate with INT6x00 chipsets. Many still work on AR7x00 chipsets. The main difference is due to the higher PHY data rates on AR7x00 chipsets. The higher data rates must be expressed using 16-bits instead of 8-bits. Consequently, some MME formats have changed.
+				</para>
+			<variablelist>
+				<varlistentry id="program-int64host">
+					<term>
+						<application>
+							int64host
+							</application>
+						</term>
+					<listitem>
+						<para>
+						A command line utility that waits for and services VS_HST_ACTION messages from a flash-less device <productname>INT6300</productname> or <productname>INT6400</productname> device. It is similar to program <link linkend='program-int6khost'>int6khost</link> but does not use an <acronym>SDRAM</acronym> configuration files. This program is installed in folder <filename>/usr/local/bin</filename> with 4555 file permissions. See the discussion on security for more information about file permissions. The main source code is located in folder <filename>./plc</filename>. See the <ulink url='int64host.7.html'>int64host</ulink> man page for more information. 
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-int6k">
+					<term>
+						<application>
+							int6k 
+							</application>
+						</term>
+					<listitem>
+						<para>
+							A command line utility to inspect and control <trademark>INT6000</trademark> and <trademark>INT6300</trademark> devices connected to the local host. It performs several of the device maintenance functions available in the  Atheros  <application>Windows Device Manager</application> but is small enough to run on an embedded system. This program is installed in folder <filename>/usr/local/bin</filename> with 4555 file permissions. See the discussion on security for more information about file permissions. The main source code is located in folder <filename>.int6k</filename>. See the <ulink url='int6k.7.html'>int6k</ulink> man page for more information. 
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-int6k2">
+					<term>
+						<application>
+							int6k2 
+							</application>
+						</term>
+					<listitem>
+						<para>
+							A command line utility to inspect and control <trademark>INT6000</trademark> and <productname>int6300</productname> devices connected to the local host. It is similar to <application>int6k</application> but calls the  Atheros  <application>Embedded API</application>, described in the  Atheros  <citetitle><trademark class='registered'>HomePlug</trademark> AV API User's Guide</citetitle>, to perform device management tasks. This program is installed in folder <filename>/usr/local/bin</filename> with 4555 file permissions. See the discussion on security for more information about file permissions. The main source code is located in folder <filename>./plc</filename>. See the <ulink url='int6k2.7.html'>int6k2</ulink> man page for more information. 
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-int6kboot">
+					<term>
+						<application>
+							int6kboot 
+							</application>
+						</term>
+					<listitem>
+						<para>
+						A command line utility to start and optionally flash <trademark>INT6300</trademark> and <trademark>INT6400</trademark>' devices that have no NVRAM or have a blank or corrupted <acronym>NVRAM</acronym>. It communicates with the Atheros  <application>Bootloader</application> to configure <acronym>SDRAM</acronym>, download runtime firmware and PIB and start firmware execution. Users can optionally request that the same PIB and firmware then be used to flash <acronym>NVRAM</acronym>. It is similar to program <ulink url='int6kf.7.html'>int6kf</ulink> but does not accept an <acronym>SDRAM</acronym> configuration file. Instead,  it uses on the <ulink url='memctl.7a.html'>memctl</ulink> applet. This program is installed in folder <filename>/usr/local/bin</filename> with 4555 file permissions. See the discussion on security for more information about file permissions. The main source code is located in folder <filename>./plc</filename>. See the <ulink url='int6kboot.7.html'>int6kboot</ulink> man page for more information. 
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-int6kf">
+					<term>
+						<application>
+							int6kf 
+							</application>
+						</term>
+					<listitem>
+						<para>
+							A command line utility to start and optionally flash <trademark>INT6000</trademark> and <trademark>INT6300</trademark> devices having no <acronym>NVRAM</acronym> or having a blank or corrupted <acronym>NVRAM</acronym>. It communicates with the Atheros  <application>Bootloader</application> to configure <acronym>SDRAM</acronym>, download runtime firmware and PIB and start firmwrae execution. It can also be used to force flash blank or corrupted <acronym>NVRAM</acronym>. It is similar to program <ulink url='int6kboot.7.html'>int6kboot</ulink> but requires an <acronym>SDRAM</acronym> parameter file. This program is installed in folder <filename>/usr/local/bin</filename> with 4555 file permissions. See the discussion on security for more information about file permissions. The main source code is located in folder <filename>./plc</filename>. See the <ulink url='int6kf.7.html'>int6kf</ulink> man page for more information. 
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-int6khost">
+					<term>
+						<application>
+							int6khost
+							</application>
+						</term>
+					<listitem> 
+						<para>
+							A command line utility that waits for and services VS_HST_ACTION messages from a flash-less <productname>INT6000</productname> or <productname>INT6300</productname> device. It is similar to program <link linkend='program-int64host'>in64host</link> but needs an <acronym>SDRAM</acronym> configuration file. This program is installed in folder <filename>/usr/local/bin</filename> with 4555 file permissions. See the discussion on security for more information about file permissions. The main source code is located in folder <filename>./plc</filename>. See the <ulink url='int6khost.7.html'>int6khost</ulink> man page for more information. 
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-int6kid">
+					<term>
+						<application>
+							int6kid
+							</application>
+						</term>
+					<listitem>
+						<para>
+							A command line utility that prints the DAK or NMK strings read from one or more devices. It can be used in shell scripts to dynamically obtain device keys and insert them on program command lines as arguments. This program is installed in folder <filename>/usr/local/bin</filename> with 4555 file permissions. See the discussion on security for more information about file permissions. The main source code is located in folder <filename>./plc</filename>. See the <ulink url='int6kid.7.html'>int6kid</ulink> man page for more information. 
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-int6klist">
+					<term>
+						<application>
+							int6klist
+							</application>
+						</term>
+					<listitem>
+						<para>
+							A command line utility that lists local devices, or remote devices associated with a specific device, on stdout in undecorated format. It can be used in shell scripts to dynamically determine, and then traverse, network topology. This program is installed in folder <filename>/usr/local/bin</filename> with 4555 file permissions. See the discussion on security for more information about file permissions. The main source code is located in folder <filename>./plc</filename>. See the <ulink url='int6klist.7.html'>int6klist</ulink> man page for more information. 
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-int6kprobe">
+					<term>
+						<application>
+							int6kprobe
+							</application>
+						</term>
+					<listitem>
+						<para>
+							A command line utility that probes for neighboring networks. This program is installed in folder <filename>/usr/local/bin</filename> with 4555 file permissions. See the discussion on security for more information about file permissions. The main source code is located in folder <filename>./plc</filename>. See the <ulink url='int6kprobe.7.html'>int6kprobe</ulink> man page for more information. 
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-int6krule">
+					<term>
+						<application>
+							int6krule
+							</application>
+						</term>
+					<listitem>
+						<para>
+							A command line utility to format and send classification rules to a device. Classification rules are specified using symbolic names for actions, options, conditions and frame fields. This program is installed in folder <filename>/usr/local/bin</filename> with 4555 file permissions. See the discussion on security for more information about file permissions. The main source code is located in folder <filename>./plc</filename>. See the <ulink url='int6krule.7.html'>int6krule</ulink> man page for more information.
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-int6ktest">
+					<term>
+						<application>
+							int6ktest
+							</application>
+						</term>
+					<listitem>
+						<para>
+							A command line utility that downloads and executes program images stored in an Atheros <filename>.nvm</filename> file. This program can be used to download and execute Atheros hardware diagnostic programs like those in the <filename>./applets</filename> folder. It is not intended to download and start runtime firmware, although it may be used for that. The program is installed in folder <filename>/usr/local/bin</filename> with 4555 file permissions. See the discussion on security for more information about file permissions. The main source code is located in folder <filename>./plc</filename>. See the <ulink url='int6ktest.7.html'>int6ktest</ulink> man page for more information. 
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-int6kuart">
+					<term>
+						<application>
+							int6kuart
+							</application>
+						</term>
+					<listitem>
+						<para>
+							A command line utility used to manage a local powerline device over a host serial line interface. Program command line options are translated to AT-style serial commands and sent to the device. THe primary benefits of using this program, in place of a terminal emulator, is the ability to download parameter blocks and upload paameter blocks and firmware images. The program is installed in folder <filename>/usr/local/bin</filename> with 4555 file permissions. See the discussion on security for more information about file permissions. The main source code is located in folder <filename>./serial</filename>. See the <ulink url='int6kuart.7.html'>int6kuart</ulink> man page for more information. 
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-int6kwait">
+					<term>
+						<application>
+							int6kwait
+							</application>
+						</term>
+					<listitem>
+						<para>
+							A command line utility that polls the local powerline device and waits for the bootloader or runtime firmware to either stop executing or start executing or wait for a device to associate with another device. It can be used to synchronize scripts with device or network events such as connection make or break, power on or off and firmware stop or start. This program is installed in folder <filename>/usr/local/bin</filename> with 4555 file permissions. See the discussion on security for more information about file permissions. The main source code is located in folder <filename>./plc</filename>. See the <ulink url='int6kwait.7.html'>int6kwait</ulink> man page for more information.
+							</para>
+						</listitem>
+					</varlistentry>
+				</variablelist>
+			</section>
+
+		<section id='programs-6400-Monitoring'> 
+			<title>
+				INT6400 Device Monitoring
+				</title>
+			<variablelist>
+				<varlistentry id="program-int6klog">
+					<term>
+						<application>
+							int6klog
+							</application>
+						</term>
+					<listitem>
+						<para>
+							A command line utility that exports the runtime watchdog report in binary or XML format. Output is suitable for input to the Atheros Windows Device Manager. This program is installed in folder <filename>/usr/local/bin</filename> with 4555 file permissions. See the discussion on security for more information about file permissions. The main source code is located in folder <filename>./plc</filename>. See the <ulink url='int6klog.7.html'>int6klog</ulink> man page for more information. 
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-int6krate">
+					<term>
+						<application>
+							int6krate
+							</application>
+						</term>
+					<listitem>
+						<para>
+							A command line utility that polls a device and prints the average transmit and receive PHY rates between it and each of it's network neighbors. Program output is suitable for loading into a spreadsheet or other program that can process column-oriented information. This program is installed in folder <filename>/usr/local/bin</filename> with 4555 file permissions. See the discussion on security for more information about file permissions. The main source code is located in folder <filename>./plc</filename>. See the <ulink url='int6krate.7.html'>int6krate</ulink> man page for more information.
+							</para>
+						<para>
+							This program is suitable for use with INT6x00 chipsets but not AR7x00 chipsets due to higher PHY rates. Use program <link linkend='program-amprate'>amprate</link> for AR7x00 chipsets and <link linkend='program-plcrate'>plcrate</link> for mixed chipset environments.
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-int6kstat">
+					<term>
+						<application>
+							int6kstat
+							</application>
+						</term>
+					<listitem>
+						<para>
+							A command line utility that polls a poserline device and prints various network and link statistics in a format suitable for processing by another program. It is a work in progress because we are investigating different ways to present the information. This program is installed in folder <filename>/usr/local/bin</filename> with 4555 file permissions. See the discussion on security for more information about file permissions. The main source code is located in folder <filename>./plc</filename>. See the <ulink url='int6kstat.7.html'>int6kstat</ulink> man page for more information.
+							</para>
+						</listitem>
+					</varlistentry>
+				</variablelist>
+			</section>
+
+		<section id='programs-7400-Management'> 
+			<title>
+				AR7400 Device Management
+				</title>
+			<para>
+				The programs in this group are essentially identical to those in the INT6x00 group but they support higher PHY data rates offered by the AR7x00 chipsets. Specifically, they handle the new  <constant>VS_NW_INFO</constant> and <constant>VS_LNK_STATS</constant> message formats.
+				</para>
+			<variablelist>
+				<varlistentry id="program-ampboot">
+					<term>
+						<application>
+							ampboot 
+							</application>
+						</term>
+					<listitem>
+						<para>
+							This program is installed in folder <filename>/usr/local/bin</filename> with 4555 file permissions. See the discussion on security for more information about file permissions. The main source code is located in folder <filename>./plc</filename>. See the <ulink url='ampboot.7.html'>ampboot</ulink> man page for more information.
+							</para> 
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-amphost">
+					<term>
+						<application>
+							amphost 
+							</application>
+						</term>
+					<listitem>
+						<para>
+							This program is installed in folder <filename>/usr/local/bin</filename> with 4555 file permissions. See the discussion on security for more information about file permissions. The main source code is located in folder <filename>./plc</filename>. See the <ulink url='amphost.7.html'>amphost</ulink> man page for more information.
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-ampinit">
+					<term>
+						<application>
+							ampinit 
+							</application>
+						</term>
+					<listitem>
+						<para>
+							This program is installed in folder <filename>/usr/local/bin</filename> with 4555 file permissions. See the discussion on security for more information about file permissions. The main source code is located in folder <filename>./plc</filename>. See the <ulink url='ampinit.7.html'>ampinit</ulink> man page for more information.
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-amplist">
+					<term>
+						<application>
+							amplist 
+							</application>
+						</term>
+					<listitem>
+						<para>
+							This program is installed in folder <filename>/usr/local/bin</filename> with 4555 file permissions. See the discussion on security for more information about file permissions. The main source code is located in folder <filename>./plc</filename>. See the <ulink url='amplist.7.html'>amplist</ulink> man page for more information.
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-amptest">
+					<term>
+						<application>
+							amptest 
+							</application>
+						</term>
+					<listitem>
+						<para>
+							A command line utility that downloads and executes program images stored in an Atheros <filename>.nvm</filename> file. It can be used to download and execute special Atheros hardware diagnostic programs. It is not intended to download and start runtime firmware. The program is installed in folder <filename>/usr/local/bin</filename> with 4555 file permissions. See the discussion on security for more information about file permissions. The main source code is located in folder <filename>./plc</filename>. See the <ulink url='amptest.7.html'>amptest</ulink> man page for more information. 
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-amptool">
+					<term>
+						<application>
+							amptool 
+							</application>
+						</term>
+					<listitem>
+						<para>
+							This program is installed in folder <filename>/usr/local/bin</filename> with 4555 file permissions. See the discussion on security for more information about file permissions. The main source code is located in folder <filename>./plc</filename>. See the <ulink url='amptool.7.html'>amptool</ulink> man page for more information.
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-ampwait">
+					<term>
+						<application>
+							ampwait 
+							</application>
+						</term>
+					<listitem>
+						<para>
+							This program is installed in folder <filename>/usr/local/bin</filename> with 4555 file permissions. See the discussion on security for more information about file permissions. The main source code is located in folder <filename>./plc</filename>. See the <ulink url='ampwait.7.html'>ampwait</ulink> man page for more information.
+							</para>
+						</listitem>
+					</varlistentry>
+				</variablelist>
+			</section>
+
+		<section id='programs-7400-Monitoring'> 
+			<title>
+				AR7400 Device Monitoring
+				</title>
+			<para>
+				The programs in this group are essentially identical to those in the INT6x00 group but they support higher PHY data rates offered by the AR7x00 chipsets. Specifically, they handle the new  <constant>VS_NW_INFO</constant> and <constant>VS_LNK_STATS</constant> message formats.
+				</para>
+			<variablelist>
+				<varlistentry id="program-amprate">
+					<term>
+						<application>
+							amprate 
+							</application>
+						</term>
+					<listitem>
+						<para>
+							A command line utility that polls a device and prints the average transmit and receive PHY rates between it and each of it's network neighbors. Program output is suitable for loading into a spreadsheet or other program that can process column-oriented information. This program is installed in folder <filename>/usr/local/bin</filename> with 4555 file permissions. See the discussion on security for more information about file permissions. The main source code is located in folder <filename>./plc</filename>. See the <ulink url='amprate.7.html'>amprate</ulink> man page for more information.
+							</para>
+						<para>
+							This program is suitable for use with AR7x00 chipsets and later that have higher PHY rates and newer firmware. Use program <link linkend='program-int6krate'>int6krate</link> for AR6x00 running earlier runtime firmware that may not recognize newer message formats. Use program <link linkend='program-plcrate'>plcrate</link> for mixed chipset environments
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-ampsnif">
+					<term>
+						<application>
+							ampsnif 
+							</application>
+						</term>
+					<listitem>
+						<para>
+							Enables or disables the powerline sniffer mode on the local powerline device using the VS_SNIFFER message. Use program <link linkend='program-ampsnot'>ampsnot</link> to display and/or record sniffer output. This program is installed in folder <filename>/usr/local/bin</filename> with 4555 file permissions. See the discussion on security for more information about file permissions. The main source code is located in folder <filename>./plc</filename>. See the <ulink url='ampsnif.7.html'>ampsnif</ulink> man page for more information.
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-ampsnot">
+					<term>
+						<application>
+							ampsnot 
+							</application>
+						</term>
+					<listitem>
+						<para>
+							Listens for sniffer output from the local powerline device and display results on the console. Use program <link linkend='program-ampsnif'>ampsnif</link> to enable or disable sniffer output. This program is installed in folder <filename>/usr/local/bin</filename> with 4555 file permissions. See the discussion on security for more information about file permissions. The main source code is located in folder <filename>./plc</filename>. See the <ulink url='ampsnot.7.html'>ampsnot</ulink> man page for more information.
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-ampstat">
+					<term>
+						<application>
+							ampstat 
+							</application>
+						</term>
+					<listitem>
+						<para>
+							This program is installed in folder <filename>/usr/local/bin</filename> with 4555 file permissions. See the discussion on security for more information about file permissions. The main source code is located in folder <filename>./plc</filename>. See the <ulink url='ampstat.7.html'>ampstat</ulink> man page for more information.
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-amptone">
+					<term>
+						<application>
+							amptone 
+							</application>
+						</term>
+					<listitem>
+						<para>
+							This program is installed in folder <filename>/usr/local/bin</filename> with 4555 file permissions. See the discussion on security for more information about file permissions. The main source code is located in folder <filename>./plc</filename>. See the <ulink url='amptone.7.html'>amptone</ulink> man page for more information.
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-mdustats">
+					<term>
+						mdustats
+						</term>
+					<listitem>
+						<para>
+							A command line utility to collect and display various MDU traffic statistics. This program is installed in folder <filename>/usr/local/bin</filename> with 0555 file permissions. The main source code is located in folder <filename>./plc</filename>. See the <ulink url="mdustats.7.html">mdustats</ulink> man page for more information.
+							</para>
+						</listitem>
+					</varlistentry>
+				</variablelist>
+			</section>
+
+		<section id='programs-7420'>
+			<title>
+				AR7420 Device Configuration 
+				</title>
+			<para>
+				Programs in this group understand changes to .nvm file formats and to the device boot and memory flash messages and sequences.
+				</para>
+			<variablelist>
+				<varlistentry id="program-plchost">
+					<term>
+						<application>
+							plchost 
+							</application>
+						</term>
+					<listitem>
+						<para>
+							This program is installed in folder <filename>/usr/local/bin</filename> with 4555 file permissions. See the discussion on security for more information about file permissions. The main source code is located in folder <filename>./plc</filename>. See the <ulink url='plchost.7.html'>plchost</ulink> man page for more information.
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-plctest">
+					<term>
+						<application>
+							plctest
+							</application>
+						</term>
+					<listitem>
+						<para>
+							A command line utility that downloads and executes small program images stored in older and newer <filename>.nvm</filename> files. It can be used to download and execute small powerline diagnostic programs. It is not intended to download and start runtime firmware. The program is installed in folder <filename>/usr/local/bin</filename> with 4555 file permissions. See the discussion on security for more information about file permissions. The main source code is located in folder <filename>./plc</filename>. See the <ulink url='plctest.7.html'>plctest</ulink> man page for more information. 
+							</para>
+						<para>
+							This program automatically detects the type of .nvm file format and adapts. 
+							</para>
+						</listitem>
+					</varlistentry>
+				</variablelist>
+			</section>
+
+
+		<section id='programs-configure'>
+			<title>
+				Parameter File Management
+				</title>
+			<para>
+				Programs in this group are used to inspect and change .pib files in various ways. The do not communicate directly with the powerline device. Use program int6k, amptool or plctool to read the PIB from a powerline device or write a PIB to the powerline device. 
+				</para>
+			<variablelist>
+				<varlistentry id="program-chkpib">
+					<term>
+						<application>
+							chkpib 
+							</application>
+						</term>
+					<listitem>
+						<para>
+							A command line utility to validate <filename>.pib</filename> files based on their internal checksum, file size and other characteristics. It can also be used to produce a text catalog of <filename>.pib</filename> files. This program is slower than program <link linkend='program-chkpib2'>chkpib2</link> but requires less memory to execute. This program is installed in folder <filename>/usr/local/bin</filename> with 0555 file permissions. The main source code is located in folder <filename>./pib</filename>. See the <ulink url='chkpib.7.html'>chkpib</ulink> man page for more information. 
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-chkpib2">
+					<term>
+						<application>
+							chkpib2 
+							</application>
+						</term>
+					<listitem>
+						<para>
+							A command line utility to validate <filename>.pib</filename> files based on their internal checksum, file size and other characteristics. It can also be used to produce a text catalog of <filename>.pib</filename> files. This program is faster than program <link linkend='program-chkpib'>chkpib</link> but requires more memory to execute. This program is installed in folder <filename>/usr/local/bin</filename> with 0555 file permissions. The main source code is located in folder <filename>./pib</filename>. See the <ulink url='chkpib2.7.html'>chkpib2</ulink> man page for more information. 
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-getpib">
+					<term>
+						<application>
+							getpib
+							</application>
+						</term>
+					<listitem>
+						<para>
+							A free-form means of extracting paremeters from a PIB file when the offset, length and format of the parameter is known. It is a companion to program <link linkend='program-setpib'>setpib</link>. The user specifies the filename, a starting offset and a sequence of type/data pairs. Values are echoed in order on the console in the specified format. This program is installed in folder <filename>/usr/local/bin</filename> with 0555 file permissions. The main source code is located in folder <filename>./pib</filename>. See the <ulink url='getpib.7.html'>getpib</ulink> man page for more information. 
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-modpib">
+					<term>
+						<application>
+							modpib 
+							</application>
+						</term>
+					<listitem>
+						<para>
+							A command line utility to change the MAC, DAK and/or NMK of an existing PIB file and recompute the checksum. It can also be used to change the manufacturer string, network name and username strings. This program is installed in folder <filename>/usr/local/bin</filename> with 0555 file permissions. The main source code is located in folder <filename>./pib</filename>. See the <ulink url='modpib.7.html'>modpib</ulink> man page for more information. 
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-mrgpib">
+					<term>
+						<application>
+							mrgpib 
+							</application>
+						</term>
+					<listitem>
+						<para>
+							A command line utility that transfers parameters from one PIB file to another. The two files needs not  have the same PIB version. This program is installed in folder <filename>/usr/local/bin</filename> with 0555 file permissions. The main source code is located in folder <filename>./pib</filename>. See the <ulink url='mrgpib.7.html'>mrgpib</ulink> man page for more information. 
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-pib2xml">
+					<term>
+						<application>
+							pib2xml
+							</application>
+						</term>
+					<listitem>
+						<para>
+							An offset-driven <acronym>XML</acronym> dump utility for the <acronym>PIB</acronym>. It requires an offset description file to be useful. The user specifies an offset description file and a PIB file. The program output an <acronym>XML</acronym> description of PIB fields. An example file, <filename>piboffset.txt</filename>,  is included as a basic example. The example offset description file is intentionally incomplete. Complete files are reserved for use by Atheros Field Application Engineers. This program is an alternative to program <link linkend='program-pibdump'>pibdump</link>. The main source code is located in folder <filename>./tools</filename>. See the <ulink url='pib2xml.7.html'>pib2xml</ulink> man page for more information.
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-pibcomp">
+					<term>
+						<application>
+							pibcomp
+							</application>
+						</term>
+					<listitem>
+						<para>
+							An offset-driven binary file compare utility for the <acronym>PIB</acronym>. It requires an offset description file to be useful. The user specifies an offset description file and two binary files. The files are compared,  field by field, and differences are printed on stdout,  field by field. An example file, <filename>piboffset.txt</filename>,  is included as a basic example. The example offset description file is intentionally incomplete. Complete files are reserved for use by Atheros Field Application Engineers. This program is an alternative to program <link linkend='program-pib2xml'>pib2xml</link> and a companion to program <link linkend='program-pibdump'>pibdump</link>. The main source code is located in folder <filename>./tools</filename>. See the <ulink url='pibcomp.7.html'>pibcomp</ulink> man page for more information.
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-pibdump">
+					<term>
+						<application>
+							pibdump
+							</application>
+						</term>
+					<listitem>
+						<para>
+							An offset-driven dump utility for the <acronym>PIB</acronym>. It requires an offset description file to be useful. An example file, <filename>piboffset.txt</filename>,  is included as a basic example. The example offset description file is intentionally incomplete. Complete files are reserved for use by Atheros Field Application Engineers. This program is a companion to program <link linkend='program-pibcomp'>pibcomp</link>. The main source code is located in folder <filename>./tools</filename>. See the <ulink url='pibdump.7.html'>pibdump</ulink> man page for more information.
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-pibruin">
+					<term>
+						<application>
+							pibruin
+							</application>
+						</term>
+					<listitem>
+						<para>
+							A command line utility that inserts classifier rules, read from a file, into a <acronym>PIB</acronym> file. It is an alternative to program <ulink url="int6krule.7.html">int6krule</ulink> and companion to program <ulink url="pibrump.7.html">pibrump</ulink>. The main source code is located in folder <filename>./pib</filename>. See the <ulink url='pibruin.7.html'>pibruin</ulink> man page for more information. 
+							</para>
+						<para>
+							This program supports INT6300, INT6400 and AR7400 PIBs only and is deprecated.
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-pibrump">
+					<term>
+						<application>
+							pibrump
+							</application>
+						</term>
+					<listitem>
+						<para>
+							A command line utility that reads classifier rules from a PIB file and prints them on stdout in a format suitable for input to program <ulink url="pibruin.7.html">pibruin</ulink>. The main source code is located in folder <filename>./pib</filename>. See the <ulink url='pibrump.7.html'>pibrump</ulink> man page for more information.
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-psin">
+					<term>
+						<application>
+							psin
+							</application>
+						</term>
+					<listitem>
+						<para>
+							A command line utility to insert an amplitude map into an existing PIB file. The map is read from stdin in text format allowing the output of program <ulink url='psout.7.html'>psout</ulink> to be piped directly into this program. The main source code is located in folder <filename>./pib</filename>. See the <ulink url='psin.7.html'>psin</ulink> man page for more information.
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-psout">
+					<term>
+						<application>
+							psout
+							</application>
+						</term>
+					<listitem>
+						<para>
+							A command line utility to that exports an amplitude map stored in an existing PIB file. The map is written directly to stdin in text format allowing the output of this program to be piped into the input of program <ulink url='psin.7.html'>psin</ulink>. The main source code is located in folder <filename>./pib</filename>. See the <ulink url='psout.7.html'>psout</ulink> man page for more information.
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-pxe">
+					<term>
+						<application>
+							pxe 
+							</application>
+						</term>
+					<listitem>
+						<para>
+							A generic 'Remote PIB Management' tool. One or more XML files define decimal, hexadecimal and string edits to be applied to a PIB file. The PIB is read, edits are applied, a new checksum is computed and the PIB is saved. This program is installed in folder <filename>/usr/local/bin</filename> with 0555 file permissions. The main source code is located in folder <filename>./pib</filename>. See the <ulink url='pxe.7.html'>pxe</ulink> man page for more information. 
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-setpib">
+					<term>
+						<application>
+							setpib
+							</application>
+						</term>
+					<listitem>
+						<para>
+							A simple means of setting PIB parameters when the parameter offset, length and format are known. It is an alternative to program <link linkend='program-pxe'>pxe</link> and a companion to program <link linkend='program-getpib'>getpib</link>. The user specifies the filename, a starting offset and a sequence of type/data pairs. Edits are applied in order and a new checksum is computed. A full or partial dump of the PIB displays the result. This program is installed in folder <filename>/usr/local/bin</filename> with 0555 file permissions. The main source code is located in folder <filename>./pib</filename>. See the <ulink url='setpib.7.html'>setpib</ulink> man page for more information. 
+							</para>
+						</listitem>
+					</varlistentry>
+				</variablelist>
+			</section>
+
+
+		<section id='programs-firmware'>
+			<title>
+				Firmware File Management
+				</title>
+			<variablelist>
+				<varlistentry id="program-chknvm">
+					<term>
+						<application>
+							chknvm 
+							</application>
+						</term>
+					<listitem>
+						<para>
+						A command line utility to validate <filename>.nvm</filename> files based on their internal checksum, file size and other characteristics. This program is slower than program <link linkend='program-chknvm2'>chknvm2</link> but requires less memory to execute. Optionally, it can be used to display the image headers inside the file. This program is installed in folder <filename>/usr/local/bin</filename> with 0555 file permissions. The main source code is located in folder <filename>./nvm</filename>. See the <ulink url='chknvm.7.html'>chknvm</ulink> man page for more information. 
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-chknvm2">
+					<term>
+						<application>
+							chknvm2 
+							</application>
+						</term>
+					<listitem>
+						<para>
+						A command line utility to validate <filename>.nvm</filename> files based on their internal checksum, file size and other characteristics. Optionally, it can be used to display the image headers inside the file. This program is faster than program <link linkend='program-chknvm'>chknvm</link> but requires more memory to execute. This program is installed in folder <filename>/usr/local/bin</filename> with 0555 file permissions. The main source code is located in folder <filename>./nvm</filename>. See the <ulink url='chknvm2.7.html'>chknvm2</ulink> man page for more information. 
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-config2cfg">
+					<term>
+						<application>
+							config2cfg 
+							</application>
+						</term>
+					<listitem>
+						<para>
+							A command line utility to convert an SDRAM configruation file used by the  Atheros  <application>Windows Device Manager</application> to the configuration file format used by the Open Powerline Toolkit applications. This program is installed in folder <filename>/usr/local/bin</filename> with 0555 file permissions. The main source code is located in folder <filename>./sdram</filename>. See the <ulink url='config2cfg.7.html'>config2cfg</ulink> man page for more information. 
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-nvmmerge">
+					<term>
+						<application>
+							nvmmerge
+							</application>
+						</term>
+					<listitem>
+						<para>
+							A command line utility to combine multiple Atheros image files into one. It is reserved for use by Atheros Field Application Engineers. Use of this probram could void some contractual obligations made by Atheros. This program is installed in folder <filename>/usr/local/bin</filename> with 0555 file permissions. The main source code is located in folder <filename>./nvm</filename>. See the <ulink url='nvmmerge.7.html'>nvmmerge</ulink> man page for more information. 
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-nvmsplit">
+					<term>
+						<application>
+							nvmsplit
+							</application>
+						</term>
+					<listitem>
+						<para>
+							A command line utility to extract all constituent images from an Atheros image file. It is reserved for use by Atheros Field Application Engineers. Use of this probram could void some contractual obligations made by Atheros. This program is installed in folder <filename>/usr/local/bin</filename> with 0555 file permissions. The main source code is located in folder <filename>./nvm</filename>. See the <ulink url='nvmsplit.7.html'>nvmsplit</ulink> man page for more information. 
+							</para>
+						</listitem>
+					</varlistentry>
+				</variablelist>
+			</section>
+
+
+		<section id='programs-ethernet'>
+			<title>
+				Ethernet Traffic
+				</title>
+			<variablelist>
+				<varlistentry id="program-edru">
+					<term>
+						<application>
+							edru 
+							</application>
+						</term>
+					<listitem>
+						<para>
+							A command line program that reads one or more Ethernet II (IEEE 802.2) frames and write frame data to stdout as a continuous stream. This program can be used to capture serial data sent from a remote UART-enabled powerline device. This program is installed in folder <filename>/usr/local/bin</filename> with 4555 file permissions. See the discussion on security for more information about file permissions. The main source code is located in folder <filename>./ether</filename>. See the <ulink url='edru.7.html'>edru</ulink> man page for more information. 
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-edsu">
+					<term>
+						<application>
+							edsu 
+							</application>
+						</term>
+					<listitem>
+						<para>
+							A command line program sends one or more files over the network using Ethernet II (IEEE 802.2) Frames. This program can be used to test remote UART-enabled powerline devices. This program is installed in folder <filename>/usr/local/bin</filename> with 4555 file permissions. See the discussion on security for more information about file permissions. The main source code is located in folder <filename>./ether</filename>. See the <ulink url='edsu.7.html'>edsu</ulink> man page for more information. 
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-efsu">
+					<term>
+						<application>
+							efsu 
+							</application>
+						</term>
+					<listitem>
+						<para>
+							A freeform Ethernet frame send utility used to define and send Ethernet packets. Packets are defined in text files containing hexadecimal byte codes plus optional comments and whitespace. Input files are stripped of comments and whitespace then transmitted as Ethernet frames. This program is installed in folder <filename>/usr/local/bin</filename> with 4555 file permissions. See the discussion on security for more information about file permissions. The main source code is located in folder <filename>./ether</filename>. See the <ulink url='efsu.7.html'>efsu</ulink> man page for more information. 
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-hpav">
+					<term>
+						<application>
+							hpav 
+							</application>
+						</term>
+					<listitem>
+						<para>
+							A basic <trademark class='registered'>HomePlug</trademark> AV packet sniffer that displays only <trademark class='registered'>HomePlug</trademark> AV protocol frames on the console as they are sent or arrive on a given interface. This program is installed in folder <filename>/usr/local/bin</filename> with 4555 file permissions. See the discussion on security for more information about file permissions. The main source code is located in folder <filename>./mme</filename>. See the <ulink url='hpav.7.html'>hpav</ulink> man page for more information. 
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-pcapdevs">
+					<term>
+						<application>
+							pcapdevs
+							</application>
+						</term>
+					<listitem>
+						<para>
+							A utility to enumerate <application>LibPcap</application> or <application>WinPcap</application> devices available on the host. It is compiled but only works if one of these two packages is installed on the host. At present, it is only needed with the Windows version of the Toolkit which is compiled against the <application>WinPcap</application> library.  The main source code is located in folder <filename>./ether</filename>. See the <ulink url='pcapdevs.7.html'>pcapdevs</ulink> man page for more information.
+							</para>
+						</listitem>
+					</varlistentry>
+				</variablelist>
+			</section>
+
+
+		<section id='programs-passwords'>
+			<title>
+				Passwords and Keys
+				</title>
+			<variablelist>
+				<varlistentry id="program-hpavkey">	
+					<term>
+						<application>
+							hpavkey
+							</application>
+						</term>
+					<listitem>
+						<para>
+							A <trademark class='registered'>HomePlug</trademark> AV key generator. Pass phrase arguments are hashed to form the corresponding Device Access Key (<acronym>DAK</acronym>), Network Membership Key (<acronym>NMK</acronym>) or Network Identifier (<acronym>NID</acronym>). This program is installed in folder <filename>/usr/local/bin</filename> with 4555 permissions. The main source code is located in folder <filename>./crypt</filename>. See the <ulink url='hpavkey.7.html'>hpavkey</ulink> man page for more information.
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-hpavkeys">	
+					<term>
+						<application>
+							hpavkeys
+							</application>
+						</term>
+					<listitem>
+						<para>
+							A <trademark class='registered'>HomePlug</trademark> AV key generator. Pass phrases are read from a file and hashed to form the corresponding Device Access Key (<acronym>DAK</acronym>), Network Membership Key (<acronym>NMK</acronym>) or Network Identifier (<acronym>NID</acronym>). This program is installed in folder <filename>/usr/local/bin</filename> with 4555 permissions. The main source code is located in folder <filename>./crypt</filename>. See the <ulink url='hpavkeys.7.html'>hpavkeys</ulink> man page for more information.
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-mac2pw">
+					<term>
+						<application>
+							mac2pw
+							</application>
+						</term>
+					<listitem>
+						<para>
+							A device password generator that prints a range of MAC address and passwords on stdout. It is an alternative to the Atheros Production Test System (<acronym>PTS</acronym>) DBBuilder Utility and toolkit program <link linkend='program-mac2pwd'>mac2pwd</link>. This program is installed in folder <filename>/usr/local/bin</filename> with 4555 file permissions. See the discussion on security for more information about file permissions. The main source code is located in folder <filename>./crypt</filename>. See the <ulink url='mac2pw.7.html'>mac2pw</ulink> man page for more information. 
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-mac2pwd">
+					<term>
+						<application>
+							mac2pwd
+							</application>
+						</term>
+					<listitem>
+						<para>
+							A device password generator that reads files containing MAC addresses and prints address/password pairs. It is an alternative to the Atheros Production Test System (<acronym>PTS</acronym>) DBBuilder Utility and toolkit program <link linkend='program-mac2pw'>mac2pw</link>. This program is installed in folder <filename>/usr/local/bin</filename> with 4555 file permissions. See the discussion on security for more information about file permissions. The main source code is located in folder <filename>./crypt</filename>. See the <ulink url='mac2pwd.7.html'>mac2pwd</ulink> man page for more information. 
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-rkey">
+					<term>
+						<application>
+							rkey 
+							</application>
+						</term>
+					<listitem>
+						<para>
+							A command line utility to dynamically generate distinct HomePlug AV compliant keys from a user created keyfile. It can be used in shell scripts to dynamically insert random and distinct keys on program command lines as arguments. For example, a Linux bash script can reference "$(rkey -i eth0 -D secret.key)" inline. This program is installed in folder <filename>/usr/local/bin</filename> with 4555 file permissions. See the discussion on security for more information about file permissions. The main source code is located in folder <filename>./crypt</filename>. See the <ulink url='rkey.7.html'>rkey</ulink> man page for more information. 
+							</para>
+						</listitem>
+					</varlistentry>
+				</variablelist>
+			</section>
+
+
+		<section id='programs-mdio'>
+			<title>
+				MDIO Programming
+				</title>
+			<variablelist>
+				<varlistentry id="program-int6kmdio">
+					<term>
+						int6kmdio
+						</term>
+					<listitem>
+						<para>
+							A command line utility that uses VS_MDIO_COMMAND messages to read and write MDIO registers on a switch chip connected to the local powerline device. MDIO instructions are specified and send as Clause 22 instructions. This program is installed in folder <filename>/usr/local/bin</filename> with 0555 file permissions. The main source code is located in folder <filename>./mdio</filename>. See the <ulink url="int6kmdio.7.html">mdioblock</ulink> man page for more information.
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-int6kmdio2">
+					<term>
+						int6kmdio2
+						</term>
+					<listitem>
+						<para>
+							A command line utility that uses VS_MDIO_COMMAND messages to read and write MDIO registers on a switch chip connected to the local powerline device. Instructions are read as Clause 45 instructions but send as Clause 22 instructions. This program is installed in folder <filename>/usr/local/bin</filename> with 0555 file permissions. The main source code is located in folder <filename>./mdio</filename>. See the <ulink url="int6kmdio2.7.html">mdioblock</ulink> man page for more information.
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-mdioblock">
+					<term>
+						mdioblock
+						</term>
+					<listitem>
+						<para>
+							A command line utility to assemble an Atheros MDIO instruction block from hexadecimal register instructions. MDIO instruction blocks are written to  Atheros powerline devices as modules using the VS_MOD_OP message type. This program is installed in folder <filename>/usr/local/bin</filename> with 0555 file permissions. The main source code is located in folder <filename>./mdio</filename>. See the <ulink url="mdioblock.7.html">mdioblock</ulink> man page for more information.
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-mdioblock2">
+					<term>
+						mdioblock2
+						</term>
+					<listitem>
+						<para>
+							A command line utility to assemble an Atheros MDIO instruction block from hexadecimal register instructions. MDIO instruction blocks are written to  Atheros powerline devices as modules using the VS_MOD_OP message type. This program is installed in folder <filename>/usr/local/bin</filename> with 0555 file permissions. The main source code is located in folder <filename>./mdio</filename>. See the <ulink url="mdioblock2.7.html">mdioblock2</ulink> man page for more information.
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-mdiodump">
+					<term>
+						mdiodump
+						</term>
+					<listitem>
+						<para>
+							A command line utility to read and display Atheros MDIO custom modules in human readable format. This program is installed in folder <filename>/usr/local/bin</filename> with 0555 file permissions. The main source code is located in folder <filename>./mdio</filename>. See the <ulink url="mdiodump.7.html">mdiodump</ulink> man page for more information.
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-mdiogen">
+					<term>
+						mdiogen
+						</term>
+					<listitem>
+						<para>
+							A rudimentary command line utility that write a custom MDIO block to a fixed file. The user must edit a data statements, in the main program, to define MDIO command fields. A series of macros then mask, shift and merge the fields to create complete Clause 22 or Clause 45 MDIO commands on output. The program has no dependencies on other toolkit modules and so it will compile anywhere. This program must be manually compiled and it is not automatically installed. The main source code is located in folder <filename>./mdio</filename> and file <ulink url='mdio.h.html'>mdio.h</ulink> is required for compilation. There are no help files available at this time. If you do not understand how to use it then you may not need it.
+							</para>
+						</listitem>
+					</varlistentry>
+				</variablelist>
+			</section>
+
+
+		<section id='programs-serial'>
+			<title>
+				Serial Programming
+				</title>
+			<variablelist>
+				<varlistentry id="program-ptsctl">
+					<term>
+						<application>
+							ptsctl
+							</application>
+						</term>
+					<listitem>
+						<para>
+							A command line program used to control a bank of three Weeder programmable attenuators. It may be used to construct a Production Test System (<acronym>PTS</acronym>) for Qualcomm Atheros <productname>SmartLink</productname> devices. See program <link linkend='program-weeder'>weeder</link> to control a bank of two Weeder programmable attenuators. This program is installed in folder <filename>/usr/local/bin</filename> with 0555 file permissions. The main source code is located in folder <filename>./serial</filename>. See the <ulink url='ptsctl.7.html'>ptsctl</ulink> man page for more information. 
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-ttycat">
+					<term>
+						<application>
+							ttycat
+							</application>
+						</term>
+					<listitem>
+						<para>
+							A command line program that copies one or more host files to a specific serial port. It can be used to stream serial data to the local UART-enabled powerline device for transmission over powerline. This program is installed in folder <filename>/usr/local/bin</filename> with 0555 file permissions. The main source code is located in folder <filename>./serial</filename>. See the <ulink url='ttycat.7.html'>ttycat</ulink> man page for more information. 
+							</para>
+						</listitem>
+					</varlistentry>
+				<varlistentry id="program-weeder">
+					<term>
+						<application>
+							weeder
+							</application>
+						</term>
+					<listitem>
+						<para>
+							A command line program used to control a bank of two Weeder programmable attenuators. It may be used to construct a Production Test System (<acronym>PTS</acronym>) for Qualcomm Atheros powerline devices. See program <link linkend='program-ptsctl'>ptsctl</link> to control a bank of three Weeder programmable attenuators. This program is installed in folder <filename>/usr/local/bin</filename> with 0555 file permissions. The main source code is located in folder <filename>./serial</filename>. See the <ulink url='weeder.7.html'>weeder</ulink> man page for more information. 
+							</para>
+						</listitem>
+					</varlistentry>
+				</variablelist>
+			<para>
+				 Atheros  Communications reserves the right to add, remove or rename utility programs or modify their command line options or their functionality in future software releases without any obligation to notify or compensate users of this software. 
+				</para>
+			</section>
+		</section>
+
+

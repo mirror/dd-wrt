@@ -1,0 +1,80 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			codename.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='codelist.c.html' title=' codelist.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='config2cfg.c.html' title=' config2cfg.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   char const * codename (struct _code_ const list [], size_t size, code_t code, char const * name);
+ *
+ *   symbol.h
+ *
+ *   return the name associated with a given code by searching a name
+ *   table arranged in ascending order by code; return the table name
+ *   if the code is found or argument name if not;
+ *
+ *   typedefs code_t and struct _code_ are defined in codes.h;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef CODENAME_SOURCE
+#define CODENAME_SOURCE
+
+#include &lt;unistd.h&gt;
+
+#include &quot;../tools/symbol.h&quot;
+
+char const * codename (struct _code_ const list [], size_t size, code_t code, char const * name)
+
+{
+	size_t lower = 0;
+	size_t upper = size;
+	while (lower &lt; upper)
+	{
+		size_t index = (lower + upper) &gt;&gt; 1;
+		signed order = code - list [index].code;
+		if (order &lt; 0)
+		{
+			upper = index - 0;
+			continue;
+		}
+		if (order &gt; 0)
+		{
+			lower = index + 1;
+			continue;
+		}
+		return (list [index].name);
+	}
+	return (name);
+}
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='codelist.c.html' title=' codelist.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='config2cfg.c.html' title=' config2cfg.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

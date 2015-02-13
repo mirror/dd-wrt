@@ -1,0 +1,112 @@
+#!/usr/bin/make -f
+# file: make.def
+
+# ====================================================================
+# Atheros Wifi Router Hardware Symbols;
+# --------------------------------------------------------------------
+
+# include ../../../../build/scripts/$(BOARD_TYPE)/config.$(BOARD_TYPE)
+
+# ====================================================================
+# Atheros Wifi Router Software Symbols; 
+# --------------------------------------------------------------------
+
+# TOOLPATH=../../../../build/$(TOOLCHAIN)/build_mips/bin
+# CROSS=$(TOOLPATH)/mips-linux-
+# CROSS_LINUX=$(TOOLPREFIX)
+
+# ====================================================================
+# Freescale PL-14/iMX35 Platform Symbols; 
+# --------------------------------------------------------------------
+
+# ROOTFS=~/ltib/rootfs
+# TOOLPATH=/opt/freescale/usr/local/gcc-4.1.2-glibc-2.5-nptl-3/arm-none-linux-gnueabi/bin/
+# CROSS=${TOOLPATH}/arm-none-linux-gnueabi-
+# CROSS_LINUX=$(TOOLPREFIX)
+
+# ====================================================================
+# Freescale PL-16/iMX28 Platform Symbols; 
+# --------------------------------------------------------------------
+
+# ROOTFS=~/ltib/rootfs
+# TOOLPATH=/opt/freescale/usr/local/gcc-4.4.4-glibc-2.11.1-multilib-1.0/arm-fsl-linux-gnueabi/bin/
+# CROSS=${TOOLPATH}/arm-none-linux-gnueabi-
+# CROSS_LINUX=$(TOOLPREFIX)
+
+# ====================================================================
+# MIPS/AMiLDA Software Symbols;
+# --------------------------------------------------------------------
+
+# CROSS=/export/tools/mipsel-linux-uclibc/bin/mipsel-uclibc-
+# CROSS_LINUX=/export/tools/bin/mipsel-linux-
+
+# ====================================================================
+# Edimax Gateway Hardware Symbols;
+# --------------------------------------------------------------------
+
+# PLATFORM=-D_ADM5120_
+# MODEL=-D_6104KP_
+# ENDIAN=-D_LITTLE_ENDIAN_
+# GATEWAY=y
+
+# ====================================================================
+# toolchain;
+# --------------------------------------------------------------------
+
+AR=$(CROSS)ar
+CAS=$(CROSS)gcc -c
+CC=$(CROSS)gcc
+CXX=$(CROSS)g++
+LD=$(CROSS)ld
+RANLIB=$(CROSS)ranlib
+STRIP=$(CROSS)strip
+
+# ====================================================================
+# installation folders;
+# --------------------------------------------------------------------
+
+ROOTFS=
+BIN=${ROOTFS}/usr/local/bin
+MAN=${ROOTFS}/usr/share/man/man1
+DOC=${ROOTFS}/home/www/software
+WWW=${ROOTFS}/home/www
+FTP=${ROOTFS}/home/ftp
+
+# ====================================================================
+# file ownership;
+# --------------------------------------------------------------------
+
+OWNER=0
+GROUP=0
+
+# ====================================================================
+# file permissions;
+# --------------------------------------------------------------------
+
+DIR_PERM=0755
+MAN_PERM=0444
+BIN_PERM=0555
+WWW_PERM=0666
+SUID_PERM=4555
+
+# ====================================================================
+# search folders;
+# --------------------------------------------------------------------
+
+VPATH=../applets:../debian:../docbook:../docbook2:../ether:../key:../mdio:../mme:../nda:../nodes:../nvm:../patches:../pib:../plc:../qca:../ram:../scripts:../serial:../support:../tools
+
+# ====================================================================
+# types and targets;
+# --------------------------------------------------------------------
+
+.SUFFIXES: .o .c .h .cpp .hpp
+.PHONY: all compile compact install scripts manuals uninstall library check fresh clean
+
+# ====================================================================
+# default compiler and linker flags;
+# --------------------------------------------------------------------
+
+CFLAGS=-Wall -Wextra -Wno-unused-parameter -DMAKEFILE -D__GETOPT_H__ -D_GETOPT_DEFINED_ $(EXTRA_CFLAGS)
+CXXFLAGS=-Wall -Wextra -Wno-unused-parameter -DMAKEFILE $(EXTRA_CXXFLAGS)
+LDFLAGS=$(EXTRA_LDFLAGS)
+

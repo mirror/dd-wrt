@@ -1,0 +1,84 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			extra.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='ExecuteApplets.c.html' title=' ExecuteApplets.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='FactoryDefaults.c.html' title=' FactoryDefaults.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   signed extra (signed status, errno_t number, int argc, char const * arg []);
+ *
+ *   error.h
+ *
+ *   print error message plus excess argments on stdout;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef EXTRA_SOURCE
+#define EXTRA_SOURCE
+
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdarg.h&gt;
+#include &lt;string.h&gt;
+
+#include &quot;../tools/types.h&quot;
+#include &quot;../tools/error.h&quot;
+
+signed extra (signed status, errno_t number, int argc, char const * argv [])
+
+{
+	extern char const *program_name;
+	if ((program_name) &amp;&amp; (*program_name))
+	{
+		fprintf (stderr, &quot;%s: &quot;, program_name);
+	}
+	if (number)
+	{
+		fprintf (stderr, &quot;%s: &quot;, strerror (number));
+	}
+	fprintf (stderr, &quot;Excess data: &quot;);
+	while ((argc) &amp;&amp; (* argv))
+	{
+		fprintf (stderr, &quot;%s &quot;, * argv);
+		argv++;
+		argc--;
+	}
+	fprintf (stderr, &quot;\n&quot;);
+	fflush (stderr);
+	if (status)
+	{
+		exit (status);
+	}
+	return (-1);
+}
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='ExecuteApplets.c.html' title=' ExecuteApplets.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='FactoryDefaults.c.html' title=' FactoryDefaults.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

@@ -1,0 +1,987 @@
+<chapter id='firmware'>
+	<title>
+		Firmware 
+		</title>
+	<section id='firmware-intro'>
+		<title>
+			Introduction 
+			</title>
+		<para>
+			An Atheros chipset consists of an integral <acronym>CPU</acronym>, <acronym>ROM</acronym> and proprietary circuitry. The <acronym>CPU</acronym> requires a minimum amount of external <acronym>SDRAM</acronym> to execute runtime software and store runtime configuration parameters. The <productname>INT6000</productname> chipset also requires a minimum amount of external flash memory in order to start. The <productname>INT6300</productname> can use external flash memory in the same way as the <productname>INT6000</productname> or it can use a local host processor as surrogate flash memory.			
+			</para>
+		<para>
+			On startup, the SDRAM memory controller must be configured before runtime firmware and parameters are loaded. On the <productname>INT6000</productname>, runtime firmware and configuration parameters must be loaded from external flash memory. On the <productname>INT6300</productname>, it may be loaded from external flash memory or from a external host processor. Runtime firmware determines device capability. Runtime configuration parameters determine device network identity and personality.
+			</para>
+		<para>
+			The following sections identify and describe firmware related components and discuss some of the routine actions required to manage them. Consult the Atheros <citetitle>HomePlug AV Hardware Technical Reference Manual</citetitle> and <citetitle>HomePlug AV Firmware Technical Reference Manual</citetitle> for more information.
+			</para>
+	</section>
+	<section id="firmware-components">
+		<title>Firmware Components</title>
+		<para>
+			Device initialization involves the following components. They are described here and then referenced throughout the toolkit documentation. You may want to read and re-read this page. 
+			</para>
+		<section id="firmware-bootloader">
+			<title>
+				Bootloader 
+				</title>
+			<para>
+				The <application>Bootloader</application> is permanent software burned into the chipset. The <productname>INT6000</productname> and <productname>INT6300</productname> both have a <application>Bootloader</application> program but they behave differently because the <productname>INT6000</productname> needs flash memory and the <productname>INT6300</productname> does not. Neither the <productname>INT6000</productname> <application>Bootloader</application> nor the <productname>INT6300</productname> <application>Bootloader</application> can write to flash memory.
+				</para>
+			<para>
+				On startup,  the <productname>INT6000</productname> <application>Bootloader</application> attempts to load runtime firmware from flash memory into <acronym>SDRAM</acronym>. If flash memory is not available,  or the runtime firmware stored there cannot be loaded,  then the <productname>INT6000</productname> <application>Bootloader</application> cannot continue so the device cannot function.
+				</para>
+			<para>
+				On startup,  the <productname>INT6300</productname> <application>Bootloader</application> attempts to load runtime firmware from flash memory into <acronym>SDRAM</acronym>. If flash memory is not available,  or the runtime firmware stored there cannot be loaded,  then <application>Bootloader</application> will request runtime firmware from the local host processor.
+				</para>
+		</section>
+		<section id="firmware-softloader">
+			<title>
+				Softloader 
+				</title>
+			<para>
+				An optional program stored in flash memory in place of runtime firmware. This program is used on the <productname>INT6000</productname> to support the Boot From Host operation, if needed. It is not used on the <productname>INT6300</productname> because the <productname>INT6300</productname> <application>Bootloader</application> now performs similar functions. The Softloader cannot write to flash memory.
+				</para>
+			<para>
+				On startup,  the <productname>INT6000</productname> <application>Bootloader</application> loads the <application>Softloader</application> from flash memory into <acronym>SDRAM</acronym>,  as it would do with runtime firmware. The <application>Softloader</application> then requests the actual runtime firmware from local host. 
+				</para>
+		</section>
+		<section id="firmware-memory-configuration">
+			<title>
+				Memory Configuration Parameters
+				</title>
+			<para>
+				A small block of information that describes the type, size and characteristics of the <acronym>SDRAM</acronym> available for the benefit of the <acronym>Bootloader</acronym>. On the INT6000, <acronym>SDRAM</acronym> configuration must be stored in flash memory. On the INT6300, it may be stored in flash memory or on the local host. The <productname>INT6300</productname> <application>Bootloader</application> attempts to read configuration information from flash memory when it is present; otherwise, it requests that information from the local host using a VS_HST_ACTION message and so the host must store this information until it is requested.  
+				</para>
+			<para>
+				There are two <acronym>SDRAM</acronym> configuration file formats. The first format is used by the <application>Windows Device Manager</application> and the <ulink url='int6k2.7.html'>
+					<application>int6k2</application>
+				</ulink> program and typically has a <filename>.config</filename> file extension. The second format is used by the <ulink url='int6k.7.html'>
+					<application>int6k</application>
+				</ulink> program and <ulink url='int6kf.7.html'>
+					<application>int6kf</application>
+				</ulink> program and typically has a <filename>.cfg</filename> file extension. The latter format is more robust and should eventually replace the format.
+				</para>
+			<para>
+				The Windows Device Manager form consists of 64 hexadecimal ASCII characters. Files are at least 64 bytes but only the first 64 bytes are used. Files can be modified using a text editor. ASCII hex to binary conversion and checksum computation is needed on input. The <ulink url="config2cfg.7.html">
+					<application>config2cfg</application>
+				</ulink> program can be used to convert this format to Open Powerline Toolkit format. 
+				</para>
+			<para>
+				The Open Powerline Toolkit format consists of 32 binary bytes plus a 4 byte checksum. The file size is exactly 36 bytes. No conversion or checksum computation is needed on input. The <ulink url="chkcfg.7.html">
+					<application>chkcfg</application>
+				</ulink> program can be used the validate this file format because it contains a checksum. 
+				</para>
+			<para>
+				The <productname>INT6400</productname> chipset does not need a memory configuration parameter file because it has a different memory controller than earlier chipsets. <acronym>SDRAM</acronym> is now configured dynamically by an applets stored in the <filename>.nvm</filename> file.
+				</para>
+		</section>
+		<section id="firmware-runtime">
+			<title>
+				Runtime Firmware (MAC Software)
+				</title>
+			<para>
+				The executable image that determines <productname>INT6000</productname> or <productname>INT6300</productname> capability and functionality. Runtime firmware refers to any executable image except the <link linkend="firmware-bootloader">Bootloader</link> which is considered to be boot firmware. Firmware files have a .nvm extension and can contain multiple firmware images. One of these images could be the parameter information block but Atheros currently distributes that as a separate file. The <ulink url='chknvm.7.html'>chknvm</ulink> program can be used to detect obsolete or corrupt .nvm files. Runtime firmware can write to flash memory and must be running in order to re-program the chipset. 
+				</para>
+		</section>
+		<section id="firmware-configuration">
+			<title>
+				Parameter Information Block (PIB)
+				</title>
+			<para>
+				The configuration image that determines device network identity, functional capability and operational mode. The PIB structure often changes from one major firmware release to the next and often is not portable across major releases. Parameter information files have a <filename>.pib</filename> extension by convention and contain one parameter set. The <ulink url='chkpib.7.html'>chkpib</ulink> program can be used to detect obsolete or corrupt PIB files.
+				</para>
+			<para>
+				Recent firmware releases support two <acronym>PIB</acronym> images in flash memory: the Factory <acronym>PIB</acronym> and the User <acronym>PIB</acronym>. The Factory <acronym>PIB</acronym> is the first <acronym>PIB</acronym> image written to flash memory. Once written, the Factory <acronym>PIB</acronym> cannot be changed without special software. The User <acronym>PIB</acronym> is created and over-written whenever the device needs to save new <acronym>PIB</acronym> parameters. Factory default values are restored by erasing the User <acronym>PIB</acronym> and rebooting the device. When a device reboots, it attempts to load the User <acronym>PIB</acronym> from flash memory. Failing that, it attempts to load the Factory <acronym>PIB</acronym> from flash memory. Failing that, it loads a Default <acronym>PIB</acronym> having minimum functionality. The loaded <acronym>PIB</acronym> becomes the Working <acronym>PIB</acronym> and determines runtime device identity and behavior. 
+				</para>
+		</section>
+	</section>
+	<section id='firmware-architecture'>
+		<title>
+			Architecture Overview 
+			</title>
+		<para>
+			The following figure illustrates a hypothetical powerline network consisting of two devices. Each device has an <productname>INT6300</productname>  with optional dedicated flash memory and an onboard processor with associated storage. The processor in each device is the local host for that device and the remote host for the other device. The processor storage is unspecified but it must be persistent. The two devices are connected via coax or powerline. The flash memory is optional in this design because it uses the <productname>INT6300</productname>  chipset. 
+			</para>
+		<figure>
+			<title>
+				Simple Network
+				</title>
+			<mediaobject>
+				<imageobject>
+					<imagedata fileref='SimpleNetwork.png' format='PNG' align='center' />
+				</imageobject>
+			</mediaobject>
+		</figure>
+		<para>
+			The Boot Loader is permanent program that executes on startup. It detects the presence of flash memory and attempts to read <acronym>SDRAM</acronym> configuration from flash memory then load and runtime the firmware image and <acronym>PIB</acronym> from flash memory. On success, the Boot runtime firmware starts and the device assumes HomePlug AV compliant behavior. On failure, the Boot Loader requests <acronym>SDRAM</acronym> configuration, runtime firmware image and <acronym>PIB</acronym> from the local host. The local host must be prepared to respond to these requests. 
+			</para>
+		<para>
+			On a system having no flash memory, the Boot Loader will request SDRAM configuration information from the local host. Once that is received, the Boot Loader will request a firmware image and <acronym>PIB</acronym> from the local host. The local host determines which firmware image and <acronym>PIB</acronym> to download, manages the download sequence and starts firmware execution. 
+			</para>
+		<para>
+			Atheros software, such as the Windows Device Manager, Linux Flash Utility and Embedded API all support the <emphasis>Boot from Host</emphasis> configuration.
+			</para>
+		<para>
+			Once the firmware is running on the <productname>INT6300</productname> , a remote host can forward runtime firmware and <acronym>PIB</acronym> to the local host via the <productname>INT6300</productname>  firmware. The remote host might reside on another<productname>INT6300</productname>  device, as shown in the previous figure, or be located anywhere on the <productname class='registered'>HomePlug</productname> AV network. In either case, the operations described are the same. 
+			</para>
+	</section>
+	<section id='firmware-bootload'>
+		<title>
+			Firmware Boot Process
+			</title>
+		<para>
+			The <productname>INT6300</productname>  can boot HomePlug AV firmware from either dedicated flash memory or a local host processor. This means that dedicated flash memory in not necessary when an onboard processor having persistent storage is available. The absence of dedicated flash memory and availability of an onboard host processor is called a <emphasis>Boot from Host</emphasis> configuration. 
+			</para>
+		<para>
+			The Boot from Host configuration is of interest to customers who are committed to using a host processor in their <productname>INT6300</productname> based product and want to use it to eliminate the additional cost of dedicated flash memory to store HomePlug AV firmware for <productname>INT6300</productname> devices. 
+			</para>
+		<para>
+			The Boot from Host configuration supports three operations: <link linkend="firmware-6000-flash">Upgrade Device</link>, <link linkend="firmware-6000-upload">Update Local Host</link> and <link linkend="firmware-6000-boot">Boot from Host</link>. Product designers must write host software to support all three operations as described later in this document. Atheros provides an Embedded Application Program Interface to assist product designers with this effort. Obtain a copy of the <citetitle>HomePlug AV Application Programming Interface User's Guide</citetitle> from Atheros Communications,  Ocala FL USA for more information.
+			</para>
+		<para>
+			Readers should not confuse a Boot from Host configuration with the <link linkend="firmware-6000-boot">Boot from Host</link> operation. The former is a hardware configuration having an <productname>INT6300</productname>  with no dedicated flash memory available. The latter is the process of downloading configuration information, firmware and <acronym>PIB</acronym> from the local host to the device and starting firmware execution on startup. 
+			</para>
+		<para>
+			This discussion assumes that the reader is familiar with the following: 
+			</para>
+		<orderedlist spacing="compact">
+			<listitem>
+				<para>
+					The distinction between a local and remote host
+					</para>
+			</listitem>
+			<listitem>
+				<para>
+					The relationship between the powerline device H1, M1 and PHY interfaces.
+					</para>
+			</listitem>
+			<listitem>
+				<para>
+					The structure of the following Atheros Management Message types: <constant>VS_HST_ACTION</constant>,  <constant>VS_SET_SDRAM</constant>, <constant>VS_WR_MEM</constant>, <constant>VS_WR_MOD</constant>, <constant>VS_RS_DEV</constant>, <constant>VS_ST_MAC</constant> and <constant>VS_WRITE_AND_EXECUTE</constant>. Be aware that message types <constant>VS_SET_SDRAM</constant>, <constant>VS_WR_MEM</constant>, <constant>VS_WR_MOD</constant> and <constant>VS_ST_MAC</constant> are deprecated and will no longer be supported by the newest firmware. 
+					</para>
+			</listitem>
+			<listitem>
+				<para>
+					Hardware architecture covered in the <citetitle>QCA Powerline Hardware Technical Reference Manual</citetitle> and the management message formats covered in the <citetitle>QCA Powerline Firmware Technical Reference Manual</citetitle>.
+					</para>
+			</listitem>
+		</orderedlist>
+	</section>
+
+	<section id='firmware-boot-from-host'>
+		<title>
+			Boot from Host Configuration 
+			</title>
+		<para>
+			The Boot from Host configuration requires a permanent connection between the powerline device and a local host having some type of persistent storage. In most cases, the powerline device and local host are co-located, possibly on the same board or same chip, and act together as an integral unit. Essentially, the local host provides persistent memory for the device.
+			</para>
+		<para>
+			The Boot from Host configuration lets the local host decide which runtime parameters and firmware to download on startup. This offers a considerable degree of product adaptability, allowing different parameter and firmware combinations to be downloaded based on external factors. 
+			</para>
+		<para>
+			In a Boot from Host configuration, the processor must act as local host while the device is booting but it can also act as remote host when upgrading other devices. The former is a design requirement and latter is a design option.
+			</para>
+	</section>
+	<section id="bootload-rules">
+		<title>
+			Things to Remember
+			</title>
+		<para>
+			The Boot from Host configuration offers design flexibility but also increases the possibilities. Remember that the processes described here are based on simple rules that ultimately dictate why each process step is needed. Readers may find it helpful to review these rules.
+			</para>
+		<orderedlist>
+			<listitem>
+				<para>
+					<emphasis>
+						The softloader and bootloader programs have limited vocabulary.
+						</emphasis>
+				</para>
+				<para>
+					The <productname>INT6000</productname> softloader recognizes only the <constant>VS_SW_VER</constant>, <constant>VS_ST_MAC</constant>, <constant>VS_RS_DEV</constant>, <constant>VS_WR_MOD</constant> requests. It does not recognize <constant>VS_WR_MEM</constant>. 
+					</para>
+				<para>
+					The <productname>INT6300</productname> bootloader recognizes only the <constant>VS_SW_VER</constant>, <constant>VS_WR_MEM</constant>, <constant>VS_ST_MAC</constant>, <constant>VS_RS_DEV</constant> and <constant>VS_SET_SDRAM</constant> requests. It does not recognize <constant>VS_WR_MOD</constant>.
+					</para>
+				<para>
+					The <productname>INT6400</productname> bootloader recognizes only the <constant>VS_SW_VER</constant>, <constant>VS_WR_MEM</constant>, <constant>VS_ST_MAC</constant>, <constant>VS_RS_DEV</constant> requests. It recognizes <constant>VS_SET_SDRAM</constant> and responds to it but ignores it. It does not recognize <constant>VS_WR_MOD</constant>.
+					</para>
+				<para>
+					The <productname>AR7400</productname> bootloader recognizes only <constant>VS_SW_VER</constant>, <constant>VS_WR_MEM</constant>, <constant>VS_ST_MAC</constant>, <constant>VS_RS_DEV</constant> requests. It recognizes <constant>VS_SET_SDRAM</constant> and responds to it but ignores it. It does not recognize <constant>VS_WR_MOD</constant>.
+					</para>
+				<para>
+					The <productname>AR7420</productname> bootloader recognizes only <constant>VS_SW_VER</constant>, <constant>VS_RS_DEV</constant>, <constant>VS_WRITE_AND_EXECUTE</constant> and <constant>VS_RAND_MAC_ADDRESS</constant> requests. Early versions recognize <constant>VS_WRITE_MEM</constant> and <constant>VS_ST_MAC</constant> requests but they must not be used. 
+					</para>
+				<table>
+					<title>
+				Softloader/Bootloader MMEs
+				</title>
+					<tgroup cols="4">
+						<colspec colname='bootload-code' />
+						<colspec colname='bootload-name' />
+						<colspec colname='bootload-softloader' />
+						<colspec colname='bootload-bootloader1' />
+						<colspec colname='bootload-bootloader2' />
+						<colspec colname='bootload-firmware' />
+						<thead>
+							<row>
+								<entry>
+						MME
+						</entry>
+								<entry>
+						NAME
+						</entry>
+								<entry>
+						INT6000 Softloader
+						</entry>
+								<entry>
+						INT6300 Bootloader
+						</entry>
+								<entry>
+						INT6400 Bootloader
+						</entry>
+								<entry>
+						AR7400 Bootloader
+						</entry>
+								<entry>
+						AR7420 Bootloader
+						</entry>
+							</row>
+						</thead>
+						<tbody>
+							<row>
+								<entry>
+						0xA000
+						</entry>
+								<entry>
+						VS_SW_VER
+						</entry>
+								<entry>
+						Yes
+						</entry>
+								<entry>
+						Yes
+						</entry>
+								<entry>
+						Yes
+						</entry>
+								<entry>
+						Yes
+						</entry>
+								<entry>
+						Yes
+						</entry>
+							</row>
+							<row>
+								<entry>
+						0xA008
+						</entry>
+								<entry>
+						VS_WR_MEM
+						</entry>
+								<entry>
+						No
+						</entry>
+								<entry>
+						Yes 
+						</entry>
+								<entry>
+						Yes
+						</entry>
+								<entry>
+						Yes
+						</entry>
+								<entry>
+						Deprecated
+						</entry>
+							</row>
+							<row>
+								<entry>
+						0xA00C
+						</entry>
+								<entry>
+						VS_ST_MAC
+						</entry>
+								<entry>
+						Yes
+						</entry>
+								<entry>
+						Yes 
+						</entry>
+								<entry>
+						Yes
+						</entry>
+								<entry>
+						Yes
+						</entry>
+								<entry>
+						Deprecated
+						</entry>
+							</row>
+							<row>
+								<entry>
+						0xA01C
+						</entry>
+								<entry>
+						VS_RS_DEV
+						</entry>
+								<entry>
+						Yes
+						</entry>
+								<entry>
+						Yes
+						</entry>
+								<entry>
+						Yes
+						</entry>
+								<entry>
+						Yes
+						</entry>
+								<entry>
+						Yes
+						</entry>
+							</row>
+							<row>
+								<entry>
+						0xA020
+						</entry>
+								<entry>
+						VS_WR_MOD
+						</entry>
+								<entry>
+						Yes
+						</entry>
+								<entry>
+						No
+						</entry>
+								<entry>
+						No
+						</entry>
+								<entry>
+						No
+						</entry>
+								<entry>
+						No
+						</entry>
+							</row>
+							<row>
+								<entry>
+						0xA05C
+						</entry>
+								<entry>
+						VS_SDRAM
+						</entry>
+								<entry>
+						No
+						</entry>
+								<entry>
+						Yes
+						</entry>
+								<entry>
+						Ignored
+						</entry>
+								<entry>
+						Ignored
+						</entry>
+								<entry>
+						No
+						</entry>
+							</row>
+							<row>
+								<entry>
+						0xA060
+						</entry>
+								<entry>
+						VS_HOST_ACTION
+						</entry>
+								<entry>
+						No
+						</entry>
+								<entry>
+						Yes
+						</entry>
+								<entry>
+						Yes
+						</entry>
+								<entry>
+						Yes
+						</entry>
+								<entry>
+						Yes
+						</entry>
+							</row>
+							<row>
+								<entry>
+						0xA098
+						</entry>
+								<entry>
+						VS_WRITE_AND_EXECUTE
+						</entry>
+								<entry>
+						No
+						</entry>
+								<entry>
+						No
+						</entry>
+								<entry>
+						No
+						</entry>
+								<entry>
+						Yes
+						</entry>
+								<entry>
+						Yes
+						</entry>
+							</row>
+							<row>
+								<entry>
+						0xA0D4
+						</entry>
+								<entry>
+						VS_RAND_MAC_ADDRESS
+						</entry>
+								<entry>
+						No
+						</entry>
+								<entry>
+						No
+						</entry>
+								<entry>
+						No
+						</entry>
+								<entry>
+						Yes
+						</entry>
+								<entry>
+						Yes
+						</entry>
+							</row>
+						</tbody>
+					</tgroup>
+				</table>
+			</listitem>
+			<listitem>
+				<para>
+					<emphasis>The Softloader, Bootloader and runtime firmware may treat the same MME differently</emphasis> because each is a different program. A notorious obvious example is the <constant>VS_SW_VER</constant> message type. This means that one may need to be aware of the device state when anticipating device behaviour or interpreting device response.
+					</para>
+			</listitem>
+			<listitem>
+				<para>
+					<emphasis>The local host is surrogate flash memory</emphasis>. When dedicated flash memory is not available to a device, the device will request firmware and parameter storage services from the local host using <constant>VS_HST_ACTION</constant> messages. The local host must be programmed to detect and respond to these messages or the firmware will appear to hang. See program <link linkend='program-int6khost'>int6khost</link>, <link linkend='program-int64host'>int64host</link>, <link linkend='program-amphost'>amphost</link> or <link linkend='program-plchost'>plchost</link> to demonstrate and experiment with this interaction.
+					</para>
+			</listitem>
+			<listitem>
+				<para>
+					<emphasis>Only runtime firmware can write flash memory</emphasis>. Runtime firmware must be executing in order to write flash memory or upload to the local host. The Softloader and Bootloader cannot perform either operation.
+					</para>
+			</listitem>
+			<listitem>
+				<para>
+					<emphasis>All <acronym>PIB</acronym> changes must be written in flash memory</emphasis>. There are several things that can cause <acronym>PIB</acronym> changes. When a <acronym>PIB</acronym> change is needed,  the Working <acronym>PIB</acronym> is copied to a scratch area and modified there. The Scratch <acronym>PIB</acronym> must then be written to flash memory or sent to the local host for storage. The device then resets causing the stored <acronym>PIB</acronym> to replace the Working <acronym>PIB</acronym>. If a freshly downloaded <acronym>PIB</acronym> changes for any reason then the cycle will repeat, automatically. 
+					</para>
+			</listitem>
+			<listitem>
+				<para>
+					<emphasis>Runtime firmware updates the PIB after joining and before leaving an AVLN</emphasis>. This will cause a device reset in each case. If the device is using the local host for persistent storage, runtime firmware will send the associated <constant>VS_HST_ACTION</constant> messages to the host and the host will send the associated <constant>VS_RD_MOD</constant> and <constant>VS_RS_DEV</constant> messages as per <link linkend="firmware-6000-upload">Update Local Host</link>.
+					</para>
+			</listitem>
+		</orderedlist>
+	</section>
+	<section id="firmware-caveats-1">
+		<title>
+			Every Little Bit Hurts
+			</title>
+		<para>
+			With the addition of <application>Push Button Encryption</application>, and other planned features, runtime firmware can now modify the PIB. Consequently, host applications must not assume that the <acronym>PIB</acronym> has not changed since it was last downloaded. Atheros strongly recommends that applications always perform a <emphasis>read-modify-write</emphasis> when making <acronym>PIB</acronym> modifications. Failure to do so can result in infinite reset loops caused when a device modifies the <acronym>PIB</acronym> that has just been downloaded. 
+			</para>
+		<para>
+			As one example, recent <acronym>PIB</acronym>s contain a network membership bit to indicate that the device has successfully joined the network associated with the current <acronym>NMK</acronym>. If the firmware detects the network and discovers that the membership bit is clear then it will join the network and set the bit. The firmware will then attempt to preserve the change by sending a <constant>VS_HOST_ACTION</constant> message to the local host. If the host application does not upload and store the changed <acronym>PIB</acronym> (as the device requested) before resetting the device then the original <acronym>PIB</acronym> will be downloaded again,  after reset, and the process will repeat. Of course, a similar situation will occur when the device leaves the network and again when it joins another network.
+			</para>
+	</section>
+	<section id="firmware-caveats-2">
+		<title>
+			Liar! Liar! Pants on Fire!
+			</title>
+		<para>
+			It is important to use the right Boot from Host sequence for each type of Atheros device. This means that you should query the device using a <varname>VS_SW_VER</varname> message beforehand to determine or confirm the device type. Although this should be a simple operation, there have been several changes that complicate matters.
+			</para>
+		<orderedlist>
+			<listitem>
+				<para>
+					The <productname>INT6300</productname> <application>Bootloader</application> incorrectly identifies the chipset as an <productname>INT6000</productname> chipset in the <varname>MDEVICEID</varname> field of the <varname>VS_SW_VER</varname> message. 
+					</para>
+			</listitem>
+			<listitem>
+				<para>
+					The <productname>AR7400</productname> <application>Bootloader</application> incorrectly identifies the chipset as an <productname>INT6400</productname> chipset in the <varname>MDEVICEID</varname> field of the <varname>VS_SW_VER</varname> message. 
+					</para>
+			</listitem>
+			<listitem>
+				<para>
+					The <application>Bootloader</application>, for <productname>INT6400</productname> chipsets and later, returns two additional field, <varname>IDENT</varname> and <varname>STEP_NUMBER</varname> in the <varname>VS_SW_VER</varname> confirmation message. These fields,  the hardware identifier and step number, are correct but are not returned in earlier chipsets. 
+					</para>
+			</listitem>
+		</orderedlist>
+		<para>
+			The table below illustrates what is reported by various firmware, in the <varname>DEVICEID</varname> field of the <varname>VS_SW_VER</varname> message, on each type of hardware platform.
+			</para>
+		<table>
+			<title>
+				Legacy Device Identification
+				</title>
+			<tgroup cols="5">
+				<colspec colname='bootload-device' />
+				<colspec colname='bootload-platform' />
+				<colspec colname='bootload-softloader' />
+				<colspec colname='bootload-bootloader' />
+				<colspec colname='bootload-firmware' />
+				<thead>
+					<row>
+						<entry>
+						Chipset
+						</entry>
+						<entry>
+						DEVICEID/IDENT (Bootloader)
+						</entry>
+						<entry>
+						MVERSION (Bootloader)
+						</entry>
+						<entry>
+						DEVICEID/IDENT (Firmware)
+						</entry>
+						<entry>
+						MVERSION (Firmware)
+						</entry>
+					</row>
+				</thead>
+				<tbody>
+					<row>
+						<entry>
+						INT6000
+						</entry>
+						<entry>
+						0x01 / 0x00000042
+						</entry>
+						<entry>
+						BootLoader
+						</entry>
+						<entry>
+						0x01 / na
+						</entry>
+						<entry>
+						INT6000-MAC-0-0-3213-1206-20071224-FINAL	
+						</entry>
+					</row>
+					<row>
+						<entry>
+						INT6300
+						</entry>
+						<entry>
+						0x02 / 0x00006300
+						</entry>
+						<entry>
+						BootLoader
+						</entry>
+						<entry>
+						0x02 / na
+						</entry>
+						<entry>
+						INT6300-MAC-0-0-4203-00-4089-20091105-FINAL	
+						</entry>
+					</row>
+					<row>
+						<entry>
+						INT6400
+						</entry>
+						<entry>
+						0x03 / 0x00006400
+						</entry>
+						<entry>
+						BootLoader
+						</entry>
+						<entry>
+						0x03 / na
+						</entry>
+						<entry>
+						INT6400-MAC-4-3-4304-01-4397-20100924-FINAL	
+						</entry>
+					</row>
+					<row>
+						<entry>
+						INT7400
+						</entry>
+						<entry>
+						0x03 / 0x00007400
+						</entry>
+						<entry>
+						BootLoader
+						</entry>
+						<entry>
+						0x04 / na
+						</entry>
+						<entry>
+						INT7400-MAC-5-2-5213-01-1027-20110428-FINAL	
+						</entry>
+					</row>
+					<row>
+						<entry>
+						INT7450
+						</entry>
+						<entry>
+						0x03 / 0x0F001D1A
+						</entry>
+						<entry>
+						BootLoader
+						</entry>
+						<entry>
+						0x20 / 0x00001D1A
+						</entry>
+						<entry>
+						QCA7450-MAC-5-2-5213-01-1027-20110428-FINAL	
+						</entry>
+					</row>
+					<row>
+						<entry>
+						INT7451
+						</entry>
+						<entry>
+						0x03 / 0x00007400
+						</entry>
+						<entry>
+						BootLoader
+						</entry>
+						<entry>
+						0x20 / 0x0E001D1A
+						</entry>
+						<entry>
+						QCA7451-MAC-5-2-5213-01-1027-20110428-FINAL	
+						</entry>
+					</row>
+					<row>
+						<entry>
+						AR6405
+						</entry>
+						<entry>
+						0x03 / 0x00006400
+						</entry>
+						<entry>
+						BootLoader
+						</entry>
+						<entry>
+						0x05 / na
+						</entry>
+						<entry>
+						INT6405-MAC-4-3-4304-01-4397-20100924-FINAL
+						</entry>
+					</row>
+					<row>
+						<entry>
+						AR7420
+						</entry>
+						<entry>
+						0x05 / 0x001CFCFC
+						</entry>
+						<entry>
+						BootLoader
+						</entry>
+						<entry>
+						0x20 / 0x001CFCFC
+						</entry>
+						<entry>
+						MAC-QCA7420-2.5.14.2259-23-20110621-FINAL
+						</entry>
+					</row>
+					<row>
+						<entry>
+						QCA6410
+						</entry>
+						<entry>
+						0x05 / 0x001B58EC
+						</entry>
+						<entry>
+						BootLoader
+						</entry>
+						<entry>
+						0x21 / 0x001B58EC
+						</entry>
+						<entry>
+						MAC-QCA6410-2.5.14.2259-23-20110621-FINAL
+						</entry>
+					</row>
+					<row>
+						<entry>
+						QCA6411
+						</entry>
+						<entry>
+						0x05 / 0x001B58BC
+						</entry>
+						<entry>
+						BootLoader
+						</entry>
+						<entry>
+						0x21 / 0x001B58BC
+						</entry>
+						<entry>
+						MAC-QCA6411-2.5.14.2259-23-20110621-FINAL
+						</entry>
+					</row>
+					<row>
+						<entry>
+						QCA7000
+						</entry>
+						<entry>
+						0x05 / 0x001B589C
+						</entry>
+						<entry>
+						BootLoader
+						</entry>
+						<entry>
+						0x22 / 0x001B589C
+						</entry>
+						<entry>
+						MAC-QCA7000-1.4.13.3259-43-20110621-FINAL
+						</entry>
+					</row>
+				</tbody>
+			</tgroup>
+		</table>
+		<para>
+			To properly detect the correct chipset perform the following steps.
+			</para>
+		<orderedlist>
+			<listitem>
+				<para>
+					Send a <varname>VS_SW_VER</varname> request message from the local host to the local device using the Atheros Local Management Address.
+					</para>
+			</listitem>
+			<listitem>
+				<para>
+					Read the <varname>VS_SW_VER</varname> confirm message returned to the host by the device.
+					</para>
+			</listitem>
+			<listitem>
+				<para>
+					Extract and save the <varname>MDEVICEID</varname> field (a small integer) and the <varname>MVERSION</varname> field (a string).
+					</para>
+			</listitem>
+			<listitem>
+				<para>
+					If the <varname>MVERSION</varname> string is <quote>SoftLoader</quote> then the <varname>MDEVICEID</varname> field is valid. 
+					</para>
+			</listitem>
+			<listitem>
+				<para>
+					If the <varname>MVERSION</varname> string is not <quote>BootLoader</quote> then the <varname>MDEVICEID</varname> field is valid unless it is <constant>0x07</constant>. In that case, set the stored <varname>DEVICEID</varname> to <constant>0x04</constant> to indicate an <productname>AR7400</productname>. Do not inspect the <varname>IDENT</varname> field because it does not exist in the firmware version of the <varname>VS_SW_VER</varname> message on any platform.
+					</para>
+			</listitem>
+			<listitem>
+				<para>
+					If the <varname>MDEVICEID</varname> field is <constant>1</constant>,  indicating an <productname>INT6000</productname>, then the chipset is actually an <productname>INT6300</productname>. Set the stored <varname>MDEVICEID</varname> to <constant>2</constant>,  indicating an <productname>INT6300</productname>. Do not inspect the <varname>IDENT</varname> field because it does not exist in the <application>BootLoader</application> version of the <varname>VS_SW_VER</varname> message for either of these two chipsets.
+					</para>
+			</listitem>
+			<listitem>
+				<para>
+					If the <varname>MDEVICEID</varname> field is <constant>3</constant>,  indicating an <productname>INT6400</productname>, then the chipset could be either an <productname>INT6300</productname> or an <productname>AR7400</productname>. Inspect the <varname>IDENT</varname> field.
+					</para>
+			</listitem>
+			<listitem>
+				<para>
+					If the <varname>IDENT</varname> field is <constant>0x6400</constant>,  indicating an <productname>INT6400</productname>, then the stored <varname>MDEVICEID</varname> is valid. 
+					</para>
+			</listitem>
+			<listitem>
+				<para>
+					If the <varname>IDENT</varname> field is <constant>0x7400</constant>,  indicating an <productname>AR7400</productname>, then set the stored <varname>MDEVICEID</varname> to <constant>4</constant>,  indicating an <productname>AR7400</productname>. 
+					</para>
+			</listitem>
+		</orderedlist>
+		<para>
+			Having performed the previous conversions, the expression (<constant>1</constant> &lt;&lt; (<varname>DEVICEID</varname> - <constant>1</constant>)) now indicates the proper <varname>IGNORE</varname> bit found in each <acronym>NVM</acronym> file header. Unfortunately, this only works for <varname>DeviceID</varname> values from <constant>0x01</constant> through <constant>0x06</constant>. After that, the device identification scheme changes.
+			</para>
+	</section>
+	<section id="firmware-caveats-3">
+		<title>
+			But wait! There's more ...
+			</title>
+		<para>
+			Starting with the <productname>AR7420</productname>, the <varname>DeviceID</varname> field in <constant>VS_SW_VER</constant> is now the <varname>DEVICE_CLASS</varname> field and identifies the <quote>Device Family</quote>, not the device type. Instead, the <varname>IDENT</varname> field in <constant>VS_SW_VER</constant> identifies the device type and the <varname>IDENT</varname> field is located at a variable offset within the message frame. Previously, the <varname>IDENT</varname> was located a fixed offset within the frame.
+			</para>
+		<table>
+			<title>
+				Device Identification
+				</title>
+			<tgroup cols="5">
+				<colspec colname='ident-device' />
+				<colspec colname='ident-softloader' />
+				<colspec colname='ident-bootloader' />
+				<colspec colname='ident-firmware' />
+				<colspec colname='ident-identity' />
+				<thead>
+					<row>
+						<entry>
+							Chipset
+							</entry>
+						<entry>
+							Softloader
+							</entry>
+						<entry>
+							Bootloader
+							</entry>
+						<entry>
+							Firmware
+							</entry>
+						<entry>
+							Identity
+							</entry>
+						</row>
+					</thead>
+				<tbody>
+					<row>
+						<entry>
+							INT6000
+							</entry>
+						<entry>
+							0x01
+							</entry>
+						<entry>
+							&nbsp;
+							</entry>
+						<entry>
+							0x01
+							</entry>
+						<entry>
+							0x00000042
+							</entry>
+						</row>
+					<row>
+						<entry>
+							INT6300
+							</entry>
+						<entry>
+							&nbsp;
+							</entry>
+						<entry>
+							0x01
+							</entry>
+						<entry>
+							0x02
+							</entry>
+						<entry>
+							0x00006300
+							</entry>
+						</row>
+					<row>
+						<entry>
+							INT6400
+							</entry>
+						<entry>
+							&nbsp;
+							</entry>
+						<entry>
+							0x03
+							</entry>
+						<entry>
+							0x03
+							</entry>
+						<entry>
+							0x00006400
+							</entry>
+						</row>
+					<row>
+						<entry>
+							AR7400
+							</entry>
+						<entry>
+							&nbsp;
+							</entry>
+						<entry>
+							0x03
+							</entry>
+						<entry>
+							0x04
+							</entry>
+						<entry>
+							0x00007400
+							</entry>
+						</row>
+					<row>
+						<entry>
+							AR6405
+							</entry>
+						<entry>
+							&nbsp;
+							</entry>
+						<entry>
+							0x03
+							</entry>
+						<entry>
+							0x05
+							</entry>
+						<entry>
+							0x00006400
+							</entry>
+						</row>
+					<row>
+						<entry>
+							AR7420
+							</entry>
+						<entry>
+							&nbsp;
+							</entry>
+						<entry>
+							0x05
+							</entry>
+						<entry>
+							0x20
+							</entry>
+						<entry>
+							0x001CFCFC
+							</entry>
+						</row>
+					<row>
+						<entry>
+							QCA6410
+							</entry>
+						<entry>
+							&nbsp;
+							</entry>
+						<entry>
+							0x05
+							</entry>
+						<entry>
+							0x21
+							</entry>
+						<entry>
+							0x001B58EC
+							</entry>
+						</row>
+					<row>
+						<entry>
+							QCA7000
+							</entry>
+						<entry>
+							&nbsp;
+							</entry>
+						<entry>
+							0x05
+							</entry>
+						<entry>
+							0x22
+							</entry>
+						<entry>
+							0x001B589C
+							</entry>
+						</row>
+					</tbody>
+				</tgroup>
+			</table>
+		</section>
+	&firmware-6000-flash;
+	&firmware-6000-upload;
+	&firmware-6000-boot;
+	&firmware-6300-boot;
+	&firmware-6400-boot;
+	&firmware-7400-boot;
+	&firmware-7420-boot;
+	&firmware-7420-flash;
+	</chapter>

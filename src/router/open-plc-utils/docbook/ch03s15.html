@@ -1,0 +1,45 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Frame Encoding</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="ch03.html" title="Chapter 3.  Software"><link rel="prev" href="ch03s14.html" title="Packet Basics"><link rel="next" href="ch04.html" title="Chapter 4.  Firmware"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">
+			Frame Encoding 
+			</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch03s14.html">Prev</a> </td><th width="60%" align="center">Chapter 3. 
+		Software 
+		</th><td width="20%" align="right"> <a accesskey="n" href="ch04.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="frame-encoding"></a>
+			Frame Encoding 
+			</h2></div></div></div><p>
+			The following technique illustrates one way to encode a frame buffer with an Ethernet header followed by an Atheros message header. We first declare the frame buffer then a length variable to keep track of how many bytes have actually been encoded. At any time, the value 'buffer + length' is the address of the next buffer position to encode and the expression 'sizeof (buffer) - length' is the number of un-encoded bytes remaining in the buffer. Each call to an encoding function will increment the length for the next operation. This technique minimizes the number of intermmediate application variables and makes maximum use of compiler generated constants.
+			</p><div class="example"><a name="idp9685064"></a><p class="title"><b>Example 3.9. 
+				Frame Encoding by Offset
+				</b></p><div class="example-contents"><pre class="programlisting">
+uint8_t buffer [ETHER_MAX_LEN];
+size_t length = 0; 
+
+uint8_t OSA [ETHER_ADDR_LEN] = { 0x00, 0xB0, 0x52, 0x00, 0xD4, 0x32 };
+uint8_t ODA [ETHER_ADDR_LEN] = { 0x00, 0xB0, 0x52, 0x00, 0x66, 0xF7 };
+uint16_t MMTYPE = 0xA050;
+
+length += EncodeEthernetHeader (buffer + length, sizeof (buffer) - length, uint8_t OSA, uint8_t ODA);
+length += EncodeAtherosHeader (buffer + length, sizeof (buffer) - length, unit16_t MMTYPE);
+
+if (length &lt; sizeof (MME))
+{
+	error (...);
+}
+</pre></div></div><br class="example-break"><p>
+			For those who prefer to use pointers, the following technique accomplishes the same thing because. At any given time, the value bp - buffer is the encoded length. 
+			</p><div class="example"><a name="idp9686104"></a><p class="title"><b>Example 3.10. 
+			Frame Encoding by Address
+			</b></p><div class="example-contents"><pre class="programlisting">
+uint8_t buffer [ETHER_MAX_LEN];
+uint8_t bp = buffer;
+
+bp += EncodeEthernetHeader (bp, buffer + sizeof (buffer) - bp, uint8_t OSA, uint8_t ODA);
+bp += EncodeAtherosHeader (bp, buffer + sizeof (buffer) - bp, unit16_t MMTYPE);
+
+if (bp &lt; (buffer + sizeof (MME)))
+{
+	error (...);
+}
+</pre></div></div><br class="example-break"></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch03s14.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="ch03.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch04.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">
+			Packet Basics 
+ </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> Chapter 4. 
+		Firmware 
+		</td></tr></table></div></body></html>0

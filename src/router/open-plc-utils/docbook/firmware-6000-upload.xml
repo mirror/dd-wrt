@@ -1,0 +1,76 @@
+<section id='firmware-6000-upload'>
+	<title>
+			Update Local Host (INT6000/INT6300/INT6400)
+			</title>
+	<para>
+			The Update Local Host operation transfers a firmware image and/or <acronym>PIB</acronym> image from the device to the local host for permanent storage. After the firmware and <acronym>PIB</acronym> are stored, the local host will reset the device and the device will retrieve parameters and firmware using the <link linkend="firmware-6000-boot">Boot from Host</link> operation described in the next section.
+			</para>
+	<para>
+			The firmware may initiate this operation after a remote host has downloaded new firmware or <acronym>PIB</acronym> and issued a <constant>VS_MOD_NVM.REQ</constant> to the device,  the device has been asked to restore factory default settings or the firmware has dynamically altered the runtime <acronym>PIB</acronym> in some way. Consequently, the device will be reset by the host in each case.
+			</para>
+	<para>
+			The device initiates this operation to complete an Upgrade Device operation when the device has no dedicated flash memory onboard. This operation requires running Atheros firmware on the device and custom software on the local host.
+			</para>
+	<figure>
+		<title>
+				Update Local Host (INT6000/INT6300/INT6400)
+				</title>
+		<programlisting><![CDATA[
+
+      INT6300/INT6400                           LOCAL-HOST
+        [01] |-------- VS_HOST_ACTION.IND ------->| [01]
+        [03] |<------- VS_HOST_ACTION.RSP --------| [02]
+             |                                    |
+        [04] |<------- VS_RD_MOD.REQ -------------| [04]
+        [04] |-------- VS_RD_MOD.CNF ------------>| [04]
+        [04] |<-----------------------------------| [04]
+        [04] |----------------------------------->| [04]
+             |                                    |
+        [05] |<------- VS_RD_MOD.REQ -------------| [05]
+        [05] |-------- VS_RD_MOD.CNF ------------>| [05]
+        [05] |<-----------------------------------| [05]
+        [05] |----------------------------------->| [05]
+             |                                    |
+        [06] |<------- VS_RS_DEV.REQ -------------| [06]
+        [07] |-------- VS_RS_DEV.CNF ------------>| [07]
+
+]]></programlisting>
+	</figure>
+	<orderedlist>
+		<listitem>
+			<para>
+					The runtime firmware initiates this operation by broadcasting <constant>VS_HOST_ACTION.IND</constant> messages every 500 milliseconds. The <constant>HOST_ACTION_REQ</constant> field of the message can be either <constant>0x01</constant>, <constant>0x02</constant> or <constant>0x03</constant> to indicate that a firmware image, a parameter block image or both are ready for upload by the local host. 
+					</para>
+		</listitem>
+		<listitem>
+			<para>
+					The local host sends a <constant>VS_HOST_ACTION.RSP</constant> message to the device to indicate the ability and willingness to upload the information. The <varname>MSTATUS</varname> field is set to <constant>0x00</constant> for affirmative and <constant>0x01</constant> for negative. 
+					</para>
+		</listitem>
+		<listitem>
+			<para>
+					Assuming an affirmative response, the device stops broadcasting and will wait indefinitely for local host action. 
+					</para>
+		</listitem>
+		<listitem>
+			<para>
+					Optionally, the local host reads the firmware image from the device by sending a series of VS_RD_MOD.REQ messages to the device and waiting for a <constant>VS_RD_MOD.CNF</constant> message after each one. The message <varname>MODULEID</varname> field is set to <constant>0x01</constant> for this operation. 
+					</para>
+		</listitem>
+		<listitem>
+			<para>
+					Optionally, the local host reads the <acronym>PIB</acronym> from the device by sending a series of <constant>VS_RD_MOD.REQ</constant> messages to the device and waiting for a <constant>VS_RD_MOD.CNF</constant> message after each one. The message <varname>MODULEID</varname> field is set to <constant>0x02</constant> for this operation. 
+					</para>
+		</listitem>
+		<listitem>
+			<para>
+					The local host sends a <constant>VS_RS_DEV.REQ</constant> message to the device to initiate a firmware reboot. 
+					</para>
+		</listitem>
+		<listitem>
+			<para>
+					The device sends a <constant>VS_RS_DEV.CNF</constant> to the host and performs a software reset. This forces a <link linkend='firmware-6000-boot'>Boot from Host</link>.
+					</para>
+		</listitem>
+	</orderedlist>
+</section>

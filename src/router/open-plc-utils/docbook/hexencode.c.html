@@ -1,0 +1,109 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			hexencode.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='hexdump.c.html' title=' hexdump.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='hexload.c.html' title=' hexload.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   size_t hexencode (void * memory, size_t extent, char const * string);
+ *
+ *   memory.h
+ *
+ *   encode a hexadecimal string into a fixed length memory region;
+ *   return the number of bytes encoded or 0 on error; an error will
+ *   occur of the entire region cannot be encoded or the entire
+ *   string cannot be converted due to illegal or excessive digits;
+ *
+ *   permit an optional HEX_EXTENDER character between successive
+ *   octets; constant character HEX_EXTENDER is defined in number.h;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef HEXENCODE_SOURCE
+#define HEXENCODE_SOURCE
+
+#include &lt;errno.h&gt;
+#include &lt;ctype.h&gt;
+
+#include &quot;../tools/memory.h&quot;
+#include &quot;../tools/number.h&quot;
+
+size_t hexencode (void * memory, register size_t extent, register char const * string)
+
+{
+	register byte * origin = (byte *)(memory);
+	register byte * offset = (byte *)(memory);
+	unsigned radix = RADIX_HEX;
+	unsigned digit = 0;
+	while ((extent) &amp;&amp; (*string))
+	{
+		unsigned field = HEX_DIGITS;
+		unsigned value = 0;
+		if ((offset &gt; origin) &amp;&amp; (*string == HEX_EXTENDER))
+		{
+			string++;
+		}
+		while (field--)
+		{
+			if ((digit = todigit (*string)) &lt; radix)
+			{
+				value *= radix;
+				value += digit;
+				string++;
+				continue;
+			}
+			errno = EINVAL;
+			return (0);
+		}
+		*offset = value;
+		offset++;
+		extent--;
+	}
+
+#if defined (WIN32)
+
+	while (isspace (*string))
+	{
+		string++;
+	}
+
+#endif
+
+	if ((extent) || (*string))
+	{
+		errno = EINVAL;
+		return (0);
+	}
+	return (offset - origin);
+}
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='hexdump.c.html' title=' hexdump.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='hexload.c.html' title=' hexload.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

@@ -1,0 +1,676 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			modpib.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='MMEPeek.c.html' title=' MMEPeek.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='ModuleCommit.c.html' title=' ModuleCommit.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*&quot;
+ *
+ *   modpib.c -
+ *
+ *
+ *   Contributor(s):
+ *      Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *      Nathaniel Houghton &lt;nhoughto@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *   system header files;
+ *--------------------------------------------------------------------*/
+
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;ctype.h&gt;
+#include &lt;errno.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;netinet/in.h&gt;
+#include &lt;arpa/inet.h&gt;
+
+/*====================================================================*
+ *   custom header files;
+ *--------------------------------------------------------------------*/
+
+#include &quot;../tools/getoptv.h&quot;
+#include &quot;../tools/number.h&quot;
+#include &quot;../tools/flags.h&quot;
+#include &quot;../tools/error.h&quot;
+#include &quot;../tools/files.h&quot;
+#include &quot;../tools/chars.h&quot;
+#include &quot;../plc/plc.h&quot;
+#include &quot;../key/HPAVKey.h&quot;
+#include &quot;../key/keys.h&quot;
+#include &quot;../pib/pib.h&quot;
+
+/*====================================================================*
+ *   custom source files;
+ *--------------------------------------------------------------------*/
+
+#ifndef MAKEFILE
+#include &quot;../tools/getoptv.c&quot;
+#include &quot;../tools/putoptv.c&quot;
+#include &quot;../tools/version.c&quot;
+#include &quot;../tools/checksum32.c&quot;
+#include &quot;../tools/fdchecksum32.c&quot;
+#include &quot;../tools/uintspec.c&quot;
+#include &quot;../tools/hexencode.c&quot;
+#include &quot;../tools/hexdecode.c&quot;
+#include &quot;../tools/hexstring.c&quot;
+#include &quot;../tools/todigit.c&quot;
+#include &quot;../tools/memincr.c&quot;
+#include &quot;../tools/error.c&quot;
+#endif
+
+#ifndef MAKEFILE
+#include &quot;../pib/pibfile.c&quot;
+#include &quot;../pib/pibfile1.c&quot;
+#include &quot;../pib/pibfile2.c&quot;
+#include &quot;../pib/pibpeek1.c&quot;
+#include &quot;../pib/pibpeek2.c&quot;
+#endif
+
+#ifndef MAKEFILE
+#include &quot;../key/HPAVKeyNID.c&quot;
+#include &quot;../key/SHA256Reset.c&quot;
+#include &quot;../key/SHA256Write.c&quot;
+#include &quot;../key/SHA256Block.c&quot;
+#include &quot;../key/SHA256Fetch.c&quot;
+#include &quot;../key/keys.c&quot;
+#endif
+
+/*====================================================================*
+ *   constants;
+ *--------------------------------------------------------------------*/
+
+#define MEMBERSHIP_OFFSET 0x00001E8C
+#define MEMBERSHIP_STATUS 0x00000000
+
+/*====================================================================*
+ *
+ *   signed pibimage1 (struct _file_ * file, simple_pib *sample_pib, signed level, flag_t flags);
+ *
+ *   modify selected PIB header values and compute a new checksum;
+ *   this function assumes that the file is open and positioned to
+ *   the start of the parameter block;
+ *
+ *
+ *   Contributor(s):
+ *	Nathaniel Houghton &lt;nhoughto@qca.qualcomm.com&gt;
+ *	Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+static signed pibimage1 (struct _file_ * file, simple_pib * sample_pib, signed level, flag_t flags)
+
+{
+	struct simple_pib simple_pib;
+	memset (&amp;simple_pib, 0, sizeof (simple_pib));
+	if (read (file-&gt;file, &amp;simple_pib, sizeof (simple_pib)) != sizeof (simple_pib))
+	{
+		error (1, errno, FILE_CANTREAD, file-&gt;name);
+	}
+	if (_anyset (flags, PIB_MAC))
+	{
+		memcpy (simple_pib.MAC, sample_pib-&gt;MAC, sizeof (simple_pib.MAC));
+	}
+	if (_anyset (flags, PIB_MACINC))
+	{
+		memincr (simple_pib.MAC, sizeof (simple_pib.MAC));
+	}
+	if (_anyset (flags, PIB_DAK))
+	{
+		memcpy (simple_pib.DAK, sample_pib-&gt;DAK, sizeof (simple_pib.DAK));
+	}
+	if (_anyset (flags, PIB_NMK))
+	{
+		memcpy (simple_pib.NMK, sample_pib-&gt;NMK, sizeof (simple_pib.NMK));
+	}
+	if (_anyset (flags, PIB_NETWORK))
+	{
+		memcpy (simple_pib.NET, sample_pib-&gt;NET, sizeof (simple_pib.NET));
+	}
+	if (_anyset (flags, PIB_MFGSTRING))
+	{
+		memcpy (simple_pib.MFG, sample_pib-&gt;MFG, sizeof (simple_pib.MFG));
+	}
+	if (_anyset (flags, PIB_USER))
+	{
+		memcpy (simple_pib.USR, sample_pib-&gt;USR, sizeof (simple_pib.USR));
+	}
+	if (_anyset (flags, PIB_CCO_MODE))
+	{
+		simple_pib.CCoSelection = sample_pib-&gt;CCoSelection;
+	}
+	if (_anyset (flags, PIB_NMK | PIB_NID))
+	{
+
+#if 0
+
+/*
+ *	clear the AVLNMembership bit whenever the NMK or NID change; this is an important
+ *	step because it prevents false network association;
+ */
+
+		if (BE16TOH (simple_pib.PIBVERSION) &gt; 0x0200)
+		{
+			uint32_t membership = MEMBERSHIP_STATUS;
+			if (lseek (file-&gt;file, MEMBERSHIP_OFFSET, SEEK_SET) != MEMBERSHIP_OFFSET)
+			{
+				error (1, errno, FILE_CANTHOME, file-&gt;name);
+			}
+			if (write (file-&gt;file, &amp;membership, sizeof (membership)) != sizeof (membership))
+			{
+				error (1, errno, FILE_CANTSAVE, file-&gt;name);
+			}
+		}
+
+#endif
+
+		if (_allclr (flags, PIB_NID))
+		{
+			level = simple_pib.PreferredNID [HPAVKEY_NID_LEN-1] &gt;&gt; 4;
+		}
+		HPAVKeyNID (simple_pib.PreferredNID, simple_pib.NMK, level &amp; 1);
+	}
+	if (lseek (file-&gt;file, (off_t)(0) - sizeof (simple_pib), SEEK_CUR) == -1)
+	{
+		error (1, errno, FILE_CANTHOME, file-&gt;name);
+	}
+	if (write (file-&gt;file, &amp;simple_pib, sizeof (simple_pib)) != sizeof (simple_pib))
+	{
+		error (1, errno, FILE_CANTSAVE, file-&gt;name);
+	}
+	if (lseek (file-&gt;file, (off_t)(0) - sizeof (simple_pib), SEEK_CUR) == -1)
+	{
+		error (1, errno, FILE_CANTHOME, file-&gt;name);
+	}
+	simple_pib.CHECKSUM = fdchecksum32 (file-&gt;file, LE16TOH (simple_pib.PIBLENGTH), simple_pib.CHECKSUM);
+	if (lseek (file-&gt;file, (off_t)(0) - LE16TOH (simple_pib.PIBLENGTH), SEEK_CUR) == -1)
+	{
+		error (1, errno, FILE_CANTHOME, file-&gt;name);
+	}
+	if (write (file-&gt;file, &amp;simple_pib, sizeof (simple_pib)) != sizeof (simple_pib))
+	{
+		error (1, errno, FILE_CANTSAVE, file-&gt;name);
+	}
+	if (_anyset (flags, PIB_VERBOSE))
+	{
+		pibpeek1 (&amp;simple_pib);
+	}
+	return (0);
+}
+
+/*====================================================================*
+ *
+ *   signed pibimage2 (struct _file_ * file, simple_pib *sample_pib, signed level, flag_t flags);
+ *
+ *   modify selected PIB header values but do not compute a checksum;
+ *
+ *
+ *   Contributor(s):
+ *	Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+static signed pibimage2 (struct _file_ * file, simple_pib * sample_pib, signed level, flag_t flags)
+
+{
+	struct simple_pib simple_pib;
+	memset (&amp;simple_pib, 0, sizeof (simple_pib));
+	if (read (file-&gt;file, &amp;simple_pib, sizeof (simple_pib)) != sizeof (simple_pib))
+	{
+		error (1, errno, FILE_CANTREAD, file-&gt;name);
+	}
+	if (_anyset (flags, PIB_MAC))
+	{
+		memcpy (simple_pib.MAC, sample_pib-&gt;MAC, sizeof (simple_pib.MAC));
+	}
+	if (_anyset (flags, PIB_MACINC))
+	{
+		memincr (simple_pib.MAC, sizeof (simple_pib.MAC));
+	}
+	if (_anyset (flags, PIB_DAK))
+	{
+		memcpy (simple_pib.DAK, sample_pib-&gt;DAK, sizeof (simple_pib.DAK));
+	}
+	if (_anyset (flags, PIB_NMK))
+	{
+		memcpy (simple_pib.NMK, sample_pib-&gt;NMK, sizeof (simple_pib.NMK));
+	}
+	if (_anyset (flags, PIB_NETWORK))
+	{
+		memcpy (simple_pib.NET, sample_pib-&gt;NET, sizeof (simple_pib.NET));
+	}
+	if (_anyset (flags, PIB_MFGSTRING))
+	{
+		memcpy (simple_pib.MFG, sample_pib-&gt;MFG, sizeof (simple_pib.MFG));
+	}
+	if (_anyset (flags, PIB_USER))
+	{
+		memcpy (simple_pib.USR, sample_pib-&gt;USR, sizeof (simple_pib.USR));
+	}
+	if (_anyset (flags, PIB_CCO_MODE))
+	{
+		simple_pib.CCoSelection = sample_pib-&gt;CCoSelection;
+	}
+	if (_anyset (flags, PIB_NMK | PIB_NID))
+	{
+
+#if 0
+
+/*
+ *	clear the AVLNMembership bit whenever the NMK or NID change; this is an important
+ *	step because it prevents false network association;
+ */
+
+		if (BE16TOH (simple_pib.PIBVERSION) &gt; 0x0200)
+		{
+			uint32_t membership = MEMBERSHIP_STATUS;
+			if (lseek (file-&gt;file, MEMBERSHIP_OFFSET, SEEK_SET) != MEMBERSHIP_OFFSET)
+			{
+				error (1, errno, FILE_CANTHOME, file-&gt;name);
+			}
+			if (write (file-&gt;file, &amp;membership, sizeof (membership)) != sizeof (membership))
+			{
+				error (1, errno, FILE_CANTSAVE, file-&gt;name);
+			}
+		}
+
+#endif
+
+		if (_allclr (flags, PIB_NID))
+		{
+			level = simple_pib.PreferredNID [HPAVKEY_NID_LEN-1] &gt;&gt; 4;
+		}
+		HPAVKeyNID (simple_pib.PreferredNID, simple_pib.NMK, level &amp; 1);
+	}
+	if (lseek (file-&gt;file, (off_t)(0) - sizeof (simple_pib), SEEK_CUR) == -1)
+	{
+		error (1, errno, FILE_CANTHOME, file-&gt;name);
+	}
+	if (write (file-&gt;file, &amp;simple_pib, sizeof (simple_pib)) != sizeof (simple_pib))
+	{
+		error (1, errno, FILE_CANTSAVE, file-&gt;name);
+	}
+	if (lseek (file-&gt;file, (off_t)(0) - sizeof (simple_pib), SEEK_CUR) == -1)
+	{
+		error (1, errno, FILE_CANTHOME, file-&gt;name);
+	}
+	if (_anyset (flags, PIB_VERBOSE))
+	{
+		pibpeek2 (&amp;simple_pib);
+	}
+	return (0);
+}
+
+/*====================================================================*
+ *
+ *   signed pibchain2 (struct _file_ * file, simple_pib * sample_pib, signed level, flag_t flags);
+ *
+ *
+ *
+ *   Contributor(s):
+ *	Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+static signed pibchain2 (struct _file_ * file, simple_pib * sample_pib, signed level, flag_t flags)
+
+{
+	unsigned module = 0;
+	struct nvm_header2 nvm_header;
+	uint32_t prev = ~0;
+	uint32_t next = 0;
+	if (lseek (file-&gt;file, 0, SEEK_SET))
+	{
+		error (1, errno, NVM_IMG_CHECKSUM, file-&gt;name, module);
+	}
+	do
+	{
+		if (read (file-&gt;file, &amp;nvm_header, sizeof (nvm_header)) != sizeof (nvm_header))
+		{
+			error (1, errno, NVM_HDR_CANTREAD, file-&gt;name, module);
+		}
+		if (LE16TOH (nvm_header.MajorVersion) != 1)
+		{
+			error (1, errno, NVM_HDR_VERSION, file-&gt;name, module);
+		}
+		if (LE16TOH (nvm_header.MinorVersion) != 1)
+		{
+			error (1, errno, NVM_HDR_VERSION, file-&gt;name, module);
+		}
+		if (checksum32 (&amp;nvm_header, sizeof (nvm_header), 0))
+		{
+			error (1, errno, NVM_HDR_CHECKSUM, file-&gt;name, module);
+		}
+		if (LE32TOH (nvm_header.PrevHeader) != prev)
+		{
+			error (1, errno, NVM_HDR_LINK, file-&gt;name, module);
+		}
+		if (LE32TOH (nvm_header.ImageType) == NVM_IMAGE_PIB)
+		{
+			pibimage2 (file, sample_pib, level, flags);
+			nvm_header.ImageChecksum = fdchecksum32 (file-&gt;file, LE32TOH (nvm_header.ImageLength), 0);
+			if (lseek (file-&gt;file, (off_t)(0) - LE32TOH (nvm_header.ImageLength), SEEK_CUR) == -1)
+			{
+				error (1, errno, FILE_CANTHOME, file-&gt;name);
+			}
+			nvm_header.HeaderChecksum = checksum32 (&amp;nvm_header, sizeof (nvm_header), nvm_header.HeaderChecksum);
+			if (lseek (file-&gt;file, (off_t)(0) - sizeof (nvm_header), SEEK_CUR) == -1)
+			{
+				error (1, errno, FILE_CANTHOME, file-&gt;name);
+			}
+			if (write (file-&gt;file, &amp;nvm_header, sizeof (nvm_header)) != sizeof (nvm_header))
+			{
+				error (1, errno, FILE_CANTSAVE, file-&gt;name);
+			}
+			if (lseek (file-&gt;file, (off_t)(0) - sizeof (nvm_header), SEEK_CUR) == -1)
+			{
+				error (1, errno, FILE_CANTHOME, file-&gt;name);
+			}
+			break;
+		}
+		if (fdchecksum32 (file-&gt;file, LE32TOH (nvm_header.ImageLength), nvm_header.ImageChecksum))
+		{
+			error (1, errno, NVM_IMG_CHECKSUM, file-&gt;name, module);
+		}
+		prev = next;
+		next = LE32TOH (nvm_header.NextHeader);
+		module++;
+	}
+	while (~nvm_header.NextHeader);
+	return (0);
+}
+
+/*====================================================================*
+ *
+ *   signed function (char const * filename, struct simple_pib * simple_pib, unsigned level, flag_t flags);
+ *
+ *
+ *
+ *   Contributor(s):
+ *	Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+static signed function (char const * filename, struct simple_pib * sample_pib, unsigned level, flag_t flags)
+
+{
+	uint32_t version;
+	signed status;
+	struct _file_ file;
+	file.name = filename;
+	if ((file.file = open (file.name, O_BINARY|O_RDWR, FILE_FILEMODE)) == -1)
+	{
+		if (_allclr (flags, PIB_SILENCE))
+		{
+			error (0, errno, FILE_CANTOPEN, file.name);
+		}
+		return (-1);
+	}
+	if (read (file.file, &amp;version, sizeof (version)) != sizeof (version))
+	{
+		if (_allclr (flags, PIB_SILENCE))
+		{
+			error (0, errno, FILE_CANTREAD, file.name);
+		}
+		return (-1);
+	}
+	if (lseek (file.file, 0, SEEK_SET))
+	{
+		error (1, errno, FILE_CANTHOME, file.name);
+	}
+	if (LE32TOH (version) == 0x00010001)
+	{
+		status = pibchain2 (&amp;file, sample_pib, level, flags);
+	}
+	else
+	{
+		status = pibimage1 (&amp;file, sample_pib, level, flags);
+	}
+	close (file.file);
+	return (status);
+}
+
+/*====================================================================*
+ *
+ *   int main (int argc, char const * argv [])
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+int main (int argc, char const * argv [])
+
+{
+	extern const struct key keys [];
+	static char const * optv [] =
+	{
+		&quot;C:D:L:M:N:S:T:U:v&quot;,
+		&quot;file [file] [...]&quot;,
+		&quot;modify selected PIB parameters and update checksum&quot;,
+		&quot;C n\tCCo Selection is n&quot;,
+		&quot;D x\tDAK as xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx&quot;,
+		&quot;L n\tsecurity level is n&quot;,
+		&quot;M x\tMAC as xx:xx:xx:xx:xx:xx&quot;,
+		&quot;N x\tNMK as xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx&quot;,
+		&quot;S s\tMFG string is s&quot;,
+		&quot;T s\tNET string is s&quot;,
+		&quot;U s\tUSR string is s&quot;,
+		&quot;v\tverbose messages&quot;,
+		(char const *) (0)
+	};
+	struct simple_pib sample_pib;
+	signed level = 0;
+	signed state = 0;
+	flag_t flags = (flag_t)(0);
+	signed c;
+	optind = 1;
+	memset (&amp;sample_pib, 0, sizeof (sample_pib));
+	while ((c = getoptv (argc, argv, optv)) != -1)
+	{
+		char const * sp;
+		switch ((char) (c))
+		{
+		case 'C':
+			_setbits (flags, PIB_CCO_MODE);
+			sample_pib.CCoSelection = (uint8_t)(uintspec (optarg, 0, 4));
+			break;
+		case 'D':
+			_setbits (flags, PIB_DAK);
+			if (!strcmp (optarg, &quot;none&quot;))
+			{
+				memcpy (sample_pib.DAK, keys [0].DAK, sizeof (sample_pib.DAK));
+				break;
+			}
+			if (!strcmp (optarg, &quot;key1&quot;))
+			{
+				memcpy (sample_pib.DAK, keys [1].DAK, sizeof (sample_pib.DAK));
+				break;
+			}
+			if (!strcmp (optarg, &quot;key2&quot;))
+			{
+				memcpy (sample_pib.DAK, keys [2].DAK, sizeof (sample_pib.DAK));
+				break;
+			}
+			if (!hexencode (sample_pib.DAK, sizeof (sample_pib.DAK), optarg))
+			{
+				error (1, errno, PLC_BAD_DAK, optarg);
+			}
+			break;
+		case 'L':
+			level = (uint8_t)(uintspec (optarg, 0, 1));
+			_setbits (flags, PIB_NID);
+			break;
+		case 'M':
+			if (!strcmp (optarg, &quot;auto&quot;))
+			{
+				_setbits (flags, PIB_MACINC);
+				break;
+			}
+			if (!strcmp (optarg, &quot;next&quot;))
+			{
+				_setbits (flags, PIB_MACINC);
+				break;
+			}
+			if (!strcmp (optarg, &quot;plus&quot;))
+			{
+				_setbits (flags, PIB_MACINC);
+				break;
+			}
+			if (!hexencode (sample_pib.MAC, sizeof (sample_pib.MAC), optarg))
+			{
+				error (1, errno, PLC_BAD_MAC, optarg);
+			}
+			_setbits (flags, PIB_MAC);
+			break;
+		case 'N':
+			_setbits (flags, PIB_NMK);
+			if (!strcmp (optarg, &quot;key0&quot;))
+			{
+				memcpy (sample_pib.NMK, keys [0].NMK, sizeof (sample_pib.NMK));
+				break;
+			}
+			if (!strcmp (optarg, &quot;key1&quot;))
+			{
+				memcpy (sample_pib.NMK, keys [1].NMK, sizeof (sample_pib.NMK));
+				break;
+			}
+			if (!strcmp (optarg, &quot;key2&quot;))
+			{
+				memcpy (sample_pib.NMK, keys [2].NMK, sizeof (sample_pib.NMK));
+				break;
+			}
+			if (!hexencode (sample_pib.NMK, sizeof (sample_pib.NMK), optarg))
+			{
+				error (1, errno, PLC_BAD_NMK, optarg);
+			}
+			break;
+		case 'S':
+			for (sp = optarg; isprint (*sp); ++sp);
+			if (*sp)
+			{
+				error (1, EINVAL, &quot;NMK contains illegal characters&quot;);
+			}
+			if ((sp - optarg) &gt; (signed)(sizeof (sample_pib.MFG) - 1))
+			{
+				error (1, 0, &quot;Manufacturing string is at most %u chars&quot;, (unsigned)(sizeof (sample_pib.MFG) - 1));
+			}
+			memcpy (sample_pib.MFG, optarg, strlen (optarg));
+			_setbits (flags, PIB_MFGSTRING);
+			break;
+		case 'T':
+			for (sp = optarg; isprint (*sp); ++sp);
+			if (*sp)
+			{
+				error (1, EINVAL, &quot;NMK contains illegal characters&quot;);
+			}
+			if ((sp - optarg) &gt; (signed)(sizeof (sample_pib.NET) - 1))
+			{
+				error (1, 0, &quot;NET string is at most %u chars&quot;, (unsigned)(sizeof (sample_pib.NET) - 1));
+			}
+			memcpy (sample_pib.NET, optarg, strlen (optarg));
+			_setbits (flags, PIB_NETWORK);
+			break;
+		case 'U':
+			for (sp = optarg; isprint (*sp); ++sp);
+			if (*sp)
+			{
+				error (1, EINVAL, &quot;NMK contains illegal characters&quot;);
+			}
+			if ((sp - optarg) &gt; (signed)(sizeof (sample_pib.USR) - 1))
+			{
+				error (1, 0, &quot;USR string is at most %u chars&quot;, (unsigned)(sizeof (sample_pib.USR) - 1));
+			}
+			memcpy (sample_pib.USR, optarg, strlen (optarg));
+			_setbits (flags, PIB_USER);
+			break;
+		case 'q':
+			_setbits (flags, PIB_SILENCE);
+			break;
+		case 'v':
+			_setbits (flags, PIB_VERBOSE);
+			break;
+		default:
+			break;
+		}
+	}
+	argc -= optind;
+	argv += optind;
+	while ((argc) &amp;&amp; (* argv))
+	{
+		if (function (* argv, &amp;sample_pib, level, flags))
+		{
+			state = 1;
+		}
+		argc--;
+		argv++;
+	}
+	exit (state);
+}
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='MMEPeek.c.html' title=' MMEPeek.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='ModuleCommit.c.html' title=' ModuleCommit.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

@@ -1,0 +1,152 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			VersionInfo1.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='version.c.html' title=' version.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='VersionInfo2.c.html' title=' VersionInfo2.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *
+ *   signed VersionInfo (struct plc * plc);
+ *
+ *   plc.h
+ *
+ *   read hardware and software version information from an INT6x00
+ *   using a VS_SW_VER Request Message;
+ *
+ *
+ *   Contributor(s):
+ *      Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef VERSIONINFO1_SOURCE
+#define VERSIONINFO1_SOURCE
+
+#include &lt;stdint.h&gt;
+#include &lt;memory.h&gt;
+
+#include &quot;../tools/error.h&quot;
+#include &quot;../tools/memory.h&quot;
+#include &quot;../tools/symbol.h&quot;
+#include &quot;../plc/plc.h&quot;
+
+signed VersionInfo1 (struct plc * plc)
+
+{
+	struct channel * channel = (struct channel *)(plc-&gt;channel);
+	struct message * message = (struct message *)(plc-&gt;message);
+
+#ifndef __GNUC__
+#pragma pack (push,1)
+#endif
+
+	struct __packed vs_sw_ver_request
+	{
+		struct ethernet_hdr ethernet;
+		struct qualcomm_hdr qualcomm;
+	}
+	* request = (struct vs_sw_ver_request *) (message);
+	struct __packed vs_sw_ver_confirm
+	{
+		struct ethernet_hdr ethernet;
+		struct qualcomm_hdr qualcomm;
+		uint8_t MSTATUS;
+		uint8_t MDEVICEID;
+		uint8_t MVERLENGTH;
+		char MVERSION [PLC_VERSION_STRING];
+	}
+	* confirm = (struct vs_sw_ver_confirm *) (message);
+
+#ifndef __GNUC__
+#pragma pack (pop)
+#endif
+
+	Request (plc, &quot;Request Version Information&quot;);
+	memset (message, 0, sizeof (* message));
+	EthernetHeader (&amp;request-&gt;ethernet, channel-&gt;peer, channel-&gt;host, channel-&gt;type);
+	QualcommHeader (&amp;request-&gt;qualcomm, 0, (VS_SW_VER | MMTYPE_REQ));
+	plc-&gt;packetsize = (ETHER_MIN_LEN - ETHER_CRC_LEN);
+	if (SendMME (plc) &lt;= 0)
+	{
+		error ((plc-&gt;flags &amp; PLC_BAILOUT), errno, CHANNEL_CANTSEND);
+		return (-1);
+	}
+	while (ReadMME (plc, 0, (VS_SW_VER | MMTYPE_CNF)) &gt; 0)
+	{
+		if (confirm-&gt;MSTATUS)
+		{
+			Failure (plc, PLC_WONTDOIT);
+			continue;
+		}
+		chipset (confirm);
+		Display (plc, &quot;%s %s&quot;, chipsetname (confirm-&gt;MDEVICEID), confirm-&gt;MVERSION);
+	}
+	return (0);
+}
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='version.c.html' title=' version.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='VersionInfo2.c.html' title=' VersionInfo2.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

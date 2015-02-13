@@ -1,0 +1,1137 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			plcfwd.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='plcdevs.c.html' title=' plcdevs.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='plcget.c.html' title=' plcget.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *
+ *   plcfwd.c - Atheros PLC Forward Configuration Manager;
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*&quot;
+ *   system header files;
+ *--------------------------------------------------------------------*/
+
+#include &lt;unistd.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;limits.h&gt;
+#include &lt;ctype.h&gt;
+
+/*====================================================================*
+ *   custom header files;
+ *--------------------------------------------------------------------*/
+
+#include &quot;../tools/getoptv.h&quot;
+#include &quot;../tools/putoptv.h&quot;
+#include &quot;../tools/memory.h&quot;
+#include &quot;../tools/number.h&quot;
+#include &quot;../tools/symbol.h&quot;
+#include &quot;../tools/types.h&quot;
+#include &quot;../tools/flags.h&quot;
+#include &quot;../tools/files.h&quot;
+#include &quot;../tools/error.h&quot;
+#include &quot;../plc/plc.h&quot;
+
+/*====================================================================*
+ *   custom source files;
+ *--------------------------------------------------------------------*/
+
+#ifndef MAKEFILE
+#include &quot;../plc/Confirm.c&quot;
+#include &quot;../plc/Display.c&quot;
+#include &quot;../plc/Failure.c&quot;
+#include &quot;../plc/Request.c&quot;
+#include &quot;../plc/ReadMME.c&quot;
+#include &quot;../plc/SendMME.c&quot;
+#include &quot;../plc/Devices.c&quot;
+#endif
+
+#ifndef MAKEFILE
+#include &quot;../tools/getoptv.c&quot;
+#include &quot;../tools/putoptv.c&quot;
+#include &quot;../tools/version.c&quot;
+#include &quot;../tools/uintspec.c&quot;
+#include &quot;../tools/basespec.c&quot;
+#include &quot;../tools/hexdump.c&quot;
+#include &quot;../tools/hexview.c&quot;
+#include &quot;../tools/hexencode.c&quot;
+#include &quot;../tools/hexdecode.c&quot;
+#include &quot;../tools/hexout.c&quot;
+#include &quot;../tools/todigit.c&quot;
+#include &quot;../tools/synonym.c&quot;
+#include &quot;../tools/binout.c&quot;
+#include &quot;../tools/error.c&quot;
+#endif
+
+#ifndef MAKEFILE
+#include &quot;../ether/openchannel.c&quot;
+#include &quot;../ether/closechannel.c&quot;
+#include &quot;../ether/readpacket.c&quot;
+#include &quot;../ether/sendpacket.c&quot;
+#include &quot;../ether/channel.c&quot;
+#endif
+
+#ifndef MAKEFILE
+#include &quot;../mme/MMECode.c&quot;
+#include &quot;../mme/EthernetHeader.c&quot;
+#include &quot;../mme/QualcommHeader.c&quot;
+#include &quot;../mme/UnwantedMessage.c&quot;
+#endif
+
+/*====================================================================*
+ *   program constants;
+ *--------------------------------------------------------------------*/
+
+#define PLCFWD_VERBOSE (1 &lt;&lt; 0)
+#define PLCFWD_SILENCE (1 &lt;&lt; 1)
+
+#define PLCFWD_LENGTH 0
+#define PLCFWD_OFFSET 0
+
+#define PLCFWD_GET 0
+#define PLCFWD_ADD 1
+#define PLCFWD_REM 2
+#define PLCFWD_STO 3
+#define PLCFWD_CTL 4
+#define PLCFWD_SET 5
+#define PLCFWD_FWD 6
+#define PLCFWD_VER 0
+
+/*====================================================================*
+ *   program variables;
+ *--------------------------------------------------------------------*/
+
+/*
+ *   this structure is only used in the VS_FORWARD_CONFIG message but
+ *   it is common to several variations of the message and is used in
+ *   arrays;
+ */
+
+#ifndef __GNUC__
+#pragma pack (push,1)
+#endif
+
+typedef struct item
+
+{
+	uint8_t MAC_ADDR [ETHER_ADDR_LEN];
+	uint16_t NUM_VLANIDS;
+	uint16_t VLANID [10];
+}
+
+item;
+
+#ifndef __GNUC__
+#pragma pack (pop)
+#endif
+
+/*
+ *   synonym table for options -M and -S;
+ */
+
+#define STATES (sizeof (states) / sizeof (struct _term_))
+
+static const struct _term_ states [] =
+
+{
+	{
+		&quot;disable&quot;,
+		&quot;0&quot;
+	},
+	{
+		&quot;enable&quot;,
+		&quot;1&quot;
+	},
+	{
+		&quot;off&quot;,
+		&quot;0&quot;
+	},
+	{
+		&quot;on&quot;,
+		&quot;1&quot;
+	}
+};
+
+/*====================================================================*
+ *
+ *   void readitem (struct item * item, char const * string);
+ *
+ *   encode a slave structure with infomation specified by a string
+ *   specification has the following production:
+ *
+ *   &lt;spec&gt; := &lt;mac_addr&gt;
+ *   &lt;spec&gt; := &lt;spec&gt;,&lt;vlan_id&gt;
+ *
+ *   basically, encode slave-&gt;MAC_ADDR then encode slave-&gt;VLANID[]
+ *   with hexadecimal VLANID values; we allow 10 VLANID values but
+ *   only 8 are legal;
+ *
+ *   the idea is to read multiple input strings and call this function
+ *   to initialize one or more slave structures; it is possible to fit
+ *   up to 128 slave structures in one message frame;
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+static void readitem (struct item * item, char const * string)
+
+{
+	register uint8_t * origin = (uint8_t *)(item-&gt;MAC_ADDR);
+	register uint8_t * offset = (uint8_t *)(item-&gt;MAC_ADDR);
+	size_t extent = sizeof (item-&gt;MAC_ADDR);
+	memset (item, 0, sizeof (* item));
+	while ((extent) &amp;&amp; (*string))
+	{
+		unsigned radix = RADIX_HEX;
+		unsigned field = sizeof (uint8_t) + sizeof (uint8_t);
+		unsigned value = 0;
+		unsigned digit = 0;
+		if ((offset != origin) &amp;&amp; (*string == HEX_EXTENDER))
+		{
+			string++;
+		}
+		while (field--)
+		{
+			if ((digit = todigit (*string)) &lt; radix)
+			{
+				value *= radix;
+				value += digit;
+				string++;
+				continue;
+			}
+			error (1, EINVAL, &quot;bad MAC address: ...[%s] (1)&quot;, string);
+		}
+		*offset = value;
+		offset++;
+		extent--;
+	}
+	if (extent)
+	{
+		error (1, EINVAL, &quot;bad MAC address: ...[%s] (2)&quot;, string);
+	}
+	while (isspace (*string))
+	{
+		string++;
+	}
+	if ((*string) &amp;&amp; (*string != ','))
+	{
+		error (1, EINVAL, &quot;bad MAC address: ...[%s] (3)&quot;, string);
+	}
+	while (*string == ',')
+	{
+		unsigned radix = RADIX_DEC;
+		unsigned digit = 0;
+		unsigned value = 0;
+		do
+		{
+			string++;
+		}
+		while (isspace (*string));
+		while ((digit = todigit (*string)) &lt; radix)
+		{
+			value *= radix;
+			value += digit;
+			string++;
+		}
+		while (isspace (*string))
+		{
+			string++;
+		}
+		if (item-&gt;NUM_VLANIDS &lt; (sizeof (item-&gt;VLANID) / sizeof (uint16_t)))
+		{
+			item-&gt;VLANID [item-&gt;NUM_VLANIDS++] = value;
+		}
+	}
+	while (isspace (*string))
+	{
+		string++;
+	}
+	if (*string)
+	{
+		error (1, EINVAL, &quot;bad VLAN ID: ...[%s]&quot;, string);
+	}
+	return;
+}
+
+/*====================================================================*
+ *
+ *   unsigned readlist (struct item list [], unsigned size);
+ *
+ *   read one or more items from stdin; discard comments; assume one
+ *   item per line; permit multiple items on one line when separated
+ *   by semicolon; items cannot straddle lines; readitem () controls
+ *   what consitutes one item;
+ *
+ *--------------------------------------------------------------------*/
+
+static unsigned readlist (struct item list [], unsigned size)
+
+{
+	struct item * item = list;
+	char string [1024];
+	char * sp = string;
+	signed c;
+	for (c = getc (stdin); c != EOF; c = getc (stdin))
+	{
+		if (isspace (c))
+		{
+			continue;
+		}
+		if (c == '#')
+		{
+			while ((c != '\n') &amp;&amp; (c != EOF))
+			{
+				c = getc (stdin);
+			}
+			continue;
+		}
+		sp = string;
+		while ((c != ';') &amp;&amp; (c != '\n') &amp;&amp; (c != EOF))
+		{
+			*sp++ = (char)(c);
+			c = getc (stdin);
+		}
+		*sp = (char)(0);
+		if (size)
+		{
+			readitem (item++, string);
+			size--;
+		}
+	}
+	return ((unsigned)(item - list));
+}
+
+/*====================================================================*
+ *
+ *   void showlist (struct item list [], unsigned items)
+ *
+ *   print item list on stdout in a format suitable for input using
+ *   readlist (); this function may be commented out if it not used;
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+#if 0
+
+static void showlist (struct item list [], unsigned items)
+
+{
+	while (items--)
+	{
+		uint16_t fields = list-&gt;NUM_VLANIDS;
+		uint16_t * field = list-&gt;VLANID;
+		hexout (list-&gt;MAC_ADDR, sizeof (list-&gt;MAC_ADDR), 0, 0, stdout);
+		while (fields--)
+		{
+			printf (&quot;, %d&quot;, *field);
+			field++;
+		}
+		printf (&quot;\n&quot;);
+		list++;
+	}
+	return;
+}
+
+#endif
+
+/*====================================================================*
+ *
+ *   signed ReadVLANIDs (struct plc * plc, uint32_t offset, uint32_t length);
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+static signed ReadVLANIDs (struct plc * plc, uint32_t offset, uint32_t length)
+
+{
+	struct channel * channel = (struct channel *)(plc-&gt;channel);
+	struct message * message = (struct message *)(plc-&gt;message);
+
+#ifndef __GNUC__
+#pragma pack (push,1)
+#endif
+
+	struct __packed vs_forward_config_request
+	{
+		struct ethernet_hdr ethernet;
+		struct qualcomm_hdr qualcomm;
+		uint8_t RESERVED1;
+		uint8_t MREQUEST;
+		uint8_t MVERSION;
+		uint32_t RESERVED2;
+		uint32_t DATA_LENGTH;
+		uint32_t DATA_OFFSET;
+		uint16_t RESERVED3;
+	}
+	* request = (struct vs_forward_config_request *) (message);
+	struct __packed vs_forward_config_confirm
+	{
+		struct ethernet_hdr ethernet;
+		struct qualcomm_hdr qualcomm;
+		uint8_t RESERVED1;
+		uint8_t RESULTCODE;
+		uint8_t OPERATION;
+		uint8_t MVERSION;
+		uint32_t RESERVED2;
+		uint32_t DATA_LENGTH;
+		uint32_t DATA_OFFSET;
+		uint8_t DATA [PLC_MODULE_SIZE];
+	}
+	* confirm = (struct vs_forward_config_confirm *) (message);
+
+#ifndef __GNUC__
+#pragma pack (pop)
+#endif
+
+	memset (message, 0, sizeof (* message));
+	EthernetHeader (&amp;request-&gt;ethernet, channel-&gt;peer, channel-&gt;host, channel-&gt;type);
+	QualcommHeader (&amp;request-&gt;qualcomm, 0, (VS_FORWARD_CONFIG | MMTYPE_REQ));
+	request-&gt;MREQUEST = PLCFWD_GET;
+	request-&gt;MVERSION = PLCFWD_VER;
+	request-&gt;DATA_OFFSET = HTOLE32 (offset);
+	request-&gt;DATA_LENGTH = HTOLE32 (length);
+	plc-&gt;packetsize = (ETHER_MIN_LEN - ETHER_CRC_LEN);
+	if (SendMME (plc) &lt;= 0)
+	{
+		error ((plc-&gt;flags &amp; PLC_BAILOUT), errno, CHANNEL_CANTSEND);
+		return (-1);
+	}
+	while (ReadMME (plc, 0, (VS_FORWARD_CONFIG | MMTYPE_CNF)) &gt; 0)
+	{
+		if (confirm-&gt;RESULTCODE)
+		{
+			Failure (plc, PLC_WONTDOIT);
+			continue;
+		}
+		hexview (confirm-&gt;DATA, LE32TOH (confirm-&gt;DATA_OFFSET), LE32TOH (confirm-&gt;DATA_LENGTH), stdout);
+	}
+	return (0);
+}
+
+/*====================================================================*
+ *
+ *   signed AddVLANIDs (struct plc * plc, struct item list [], unsigned items);
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+static signed AddVLANIDs (struct plc * plc, struct item list [], unsigned items)
+
+{
+	struct channel * channel = (struct channel *)(plc-&gt;channel);
+	struct message * message = (struct message *)(plc-&gt;message);
+
+#ifndef __GNUC__
+#pragma pack (push,1)
+#endif
+
+	struct __packed vs_forward_config_request
+	{
+		struct ethernet_hdr ethernet;
+		struct qualcomm_hdr qualcomm;
+		uint8_t RESERVED1;
+		uint8_t MREQUEST;
+		uint8_t MVERSION;
+		uint32_t RESERVED2;
+		uint16_t ITEMS;
+		struct item LIST [1];
+	}
+	* request = (struct vs_forward_config_request *) (message);
+	struct __packed vs_forward_config_confirm
+	{
+		struct ethernet_hdr ethernet;
+		struct qualcomm_hdr qualcomm;
+		uint8_t RESERVED1;
+		uint8_t RESULTCODE;
+		uint8_t OPERATION;
+		uint8_t MVERSION;
+		uint32_t RESERVED2;
+	}
+	* confirm = (struct vs_forward_config_confirm *) (message);
+
+#ifndef __GNUC__
+#pragma pack (pop)
+#endif
+
+	struct item * item = request-&gt;LIST;
+	memset (message, 0, sizeof (* message));
+	EthernetHeader (&amp;request-&gt;ethernet, channel-&gt;peer, channel-&gt;host, channel-&gt;type);
+	QualcommHeader (&amp;request-&gt;qualcomm, 0, (VS_FORWARD_CONFIG | MMTYPE_REQ));
+	request-&gt;MREQUEST = PLCFWD_ADD;
+	request-&gt;MVERSION = PLCFWD_VER;
+	request-&gt;ITEMS = HTOLE16 (items);
+	while (items--)
+	{
+		unsigned count;
+		memcpy (item-&gt;MAC_ADDR, list-&gt;MAC_ADDR, sizeof (item-&gt;MAC_ADDR));
+		item-&gt;NUM_VLANIDS = HTOLE16 (list-&gt;NUM_VLANIDS);
+		for (count = 0; count &lt; list-&gt;NUM_VLANIDS; count++)
+		{
+			item-&gt;VLANID [count] = HTOLE16 (list-&gt;VLANID [count]);
+		}
+
+// item++;
+
+		item = (struct item *)(&amp;item-&gt;VLANID [count]);
+		list++;
+	}
+	plc-&gt;packetsize = (signed)((uint8_t *)(item) - (uint8_t *)(request));
+	if (SendMME (plc) &lt;= 0)
+	{
+		error ((plc-&gt;flags &amp; PLC_BAILOUT), errno, CHANNEL_CANTSEND);
+		return (-1);
+	}
+	while (ReadMME (plc, 0, (VS_FORWARD_CONFIG | MMTYPE_CNF)) &gt; 0)
+	{
+		if (confirm-&gt;RESULTCODE)
+		{
+			Failure (plc, PLC_WONTDOIT);
+			continue;
+		}
+	}
+	return (0);
+}
+
+/*====================================================================*
+ *
+ *   signed RemoveVLANIDs (struct plc * plc, struct item list [], unsigned items);
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+static signed RemoveVLANIDs (struct plc * plc, struct item list [], unsigned items)
+
+{
+	struct channel * channel = (struct channel *)(plc-&gt;channel);
+	struct message * message = (struct message *)(plc-&gt;message);
+
+#ifndef __GNUC__
+#pragma pack (push,1)
+#endif
+
+	struct __packed vs_forward_config_request
+	{
+		struct ethernet_hdr ethernet;
+		struct qualcomm_hdr qualcomm;
+		uint8_t RESERVED1;
+		uint8_t MREQUEST;
+		uint8_t MVERSION;
+		uint32_t RESERVED2;
+		uint16_t ITEMS;
+		struct item LIST [1];
+	}
+	* request = (struct vs_forward_config_request *) (message);
+	struct __packed vs_forward_config_confirm
+	{
+		struct ethernet_hdr ethernet;
+		struct qualcomm_hdr qualcomm;
+		uint8_t RESERVED1;
+		uint8_t RESULTCODE;
+		uint8_t OPERATION;
+		uint8_t MVERSION;
+		uint32_t RESERVED2;
+	}
+	* confirm = (struct vs_forward_config_confirm *) (message);
+
+#ifndef __GNUC__
+#pragma pack (pop)
+#endif
+
+	struct item * item = request-&gt;LIST;
+	memset (message, 0, sizeof (* message));
+	EthernetHeader (&amp;request-&gt;ethernet, channel-&gt;peer, channel-&gt;host, channel-&gt;type);
+	QualcommHeader (&amp;request-&gt;qualcomm, 0, (VS_FORWARD_CONFIG | MMTYPE_REQ));
+	request-&gt;MREQUEST = PLCFWD_REM;
+	request-&gt;MVERSION = PLCFWD_VER;
+	request-&gt;ITEMS = HTOLE16 (items);
+	while (items--)
+	{
+		unsigned count;
+		memcpy (item-&gt;MAC_ADDR, list-&gt;MAC_ADDR, sizeof (item-&gt;MAC_ADDR));
+		item-&gt;NUM_VLANIDS = HTOLE16 (list-&gt;NUM_VLANIDS);
+		for (count = 0; count &lt; list-&gt;NUM_VLANIDS; count++)
+		{
+			item-&gt;VLANID [count] = HTOLE16 (list-&gt;VLANID [count]);
+		}
+
+// item++;
+
+		item = (struct item *)(&amp;item-&gt;VLANID [count]);
+		list++;
+	}
+	plc-&gt;packetsize = (signed)((uint8_t *)(item) - (uint8_t *)(request));
+	if (SendMME (plc) &lt;= 0)
+	{
+		error ((plc-&gt;flags &amp; PLC_BAILOUT), errno, CHANNEL_CANTSEND);
+		return (-1);
+	}
+	while (ReadMME (plc, 0, (VS_FORWARD_CONFIG | MMTYPE_CNF)) &gt; 0)
+	{
+		if (confirm-&gt;RESULTCODE)
+		{
+			Failure (plc, PLC_WONTDOIT);
+			continue;
+		}
+	}
+	return (0);
+}
+
+/*====================================================================*
+ *
+ *   signed CommitVLANIDs (struct plc * plc);
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+static signed CommitVLANIDs (struct plc * plc)
+
+{
+	struct channel * channel = (struct channel *)(plc-&gt;channel);
+	struct message * message = (struct message *)(plc-&gt;message);
+
+#ifndef __GNUC__
+#pragma pack (push,1)
+#endif
+
+	struct __packed vs_forward_config_request
+	{
+		struct ethernet_hdr ethernet;
+		struct qualcomm_hdr qualcomm;
+		uint8_t RESERVED1;
+		uint8_t MREQUEST;
+		uint8_t MVERSION;
+		uint32_t RESERVED2;
+	}
+	* request = (struct vs_forward_config_request *) (message);
+	struct __packed vs_forward_config_confirm
+	{
+		struct ethernet_hdr ethernet;
+		struct qualcomm_hdr qualcomm;
+		uint8_t RESERVED1;
+		uint8_t RESULTCODE;
+		uint8_t OPERATION;
+		uint8_t MVERSION;
+		uint32_t RESERVED2;
+	}
+	* confirm = (struct vs_forward_config_confirm *) (message);
+
+#ifndef __GNUC__
+#pragma pack (pop)
+#endif
+
+	memset (message, 0, sizeof (* message));
+	EthernetHeader (&amp;request-&gt;ethernet, channel-&gt;peer, channel-&gt;host, channel-&gt;type);
+	QualcommHeader (&amp;request-&gt;qualcomm, 0, (VS_FORWARD_CONFIG | MMTYPE_REQ));
+	request-&gt;MREQUEST = PLCFWD_STO;
+	request-&gt;MVERSION = PLCFWD_VER;
+	plc-&gt;packetsize = (ETHER_MIN_LEN - ETHER_CRC_LEN);
+	if (SendMME (plc) &lt;= 0)
+	{
+		error ((plc-&gt;flags &amp; PLC_BAILOUT), errno, CHANNEL_CANTSEND);
+		return (-1);
+	}
+	while (ReadMME (plc, 0, (VS_FORWARD_CONFIG | MMTYPE_CNF)) &gt; 0)
+	{
+		if (confirm-&gt;RESULTCODE)
+		{
+			Failure (plc, PLC_WONTDOIT);
+			continue;
+		}
+	}
+	return (0);
+}
+
+/*====================================================================*
+ *
+ *   signed ControlVLANIDs (struct plc * plc);
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+static signed ControlVLANIDs (struct plc * plc)
+
+{
+	struct channel * channel = (struct channel *)(plc-&gt;channel);
+	struct message * message = (struct message *)(plc-&gt;message);
+
+#ifndef __GNUC__
+#pragma pack (push,1)
+#endif
+
+	struct __packed vs_forward_config_request
+	{
+		struct ethernet_hdr ethernet;
+		struct qualcomm_hdr qualcomm;
+		uint8_t RESERVED1;
+		uint8_t MREQUEST;
+		uint8_t MVERSION;
+		uint32_t RESERVED2;
+		uint8_t ENABLE;
+		uint8_t UPSTREAMCHECK;
+		uint8_t RESERVED3;
+	}
+	* request = (struct vs_forward_config_request *) (message);
+	struct __packed vs_forward_config_confirm
+	{
+		struct ethernet_hdr ethernet;
+		struct qualcomm_hdr qualcomm;
+		uint8_t RESERVED1;
+		uint8_t RESULTCODE;
+		uint8_t OPERATION;
+		uint8_t MVERSION;
+		uint32_t RESERVED2;
+	}
+	* confirm = (struct vs_forward_config_confirm *) (message);
+
+#ifndef __GNUC__
+#pragma pack (pop)
+#endif
+
+	memset (message, 0, sizeof (* message));
+	EthernetHeader (&amp;request-&gt;ethernet, channel-&gt;peer, channel-&gt;host, channel-&gt;type);
+	QualcommHeader (&amp;request-&gt;qualcomm, 0, (VS_FORWARD_CONFIG | MMTYPE_REQ));
+	request-&gt;MREQUEST = PLCFWD_CTL;
+	request-&gt;MVERSION = PLCFWD_VER;
+	request-&gt;ENABLE = plc-&gt;module;
+	request-&gt;UPSTREAMCHECK = plc-&gt;pushbutton;
+	plc-&gt;packetsize = (ETHER_MIN_LEN - ETHER_CRC_LEN);
+	if (SendMME (plc) &lt;= 0)
+	{
+		error ((plc-&gt;flags &amp; PLC_BAILOUT), errno, CHANNEL_CANTSEND);
+		return (-1);
+	}
+	while (ReadMME (plc, 0, (VS_FORWARD_CONFIG | MMTYPE_CNF)) &gt; 0)
+	{
+		if (confirm-&gt;RESULTCODE)
+		{
+			Failure (plc, PLC_WONTDOIT);
+			continue;
+		}
+	}
+	return (0);
+}
+
+/*====================================================================*
+ *
+ *   signed DefaultVLANIDs (struct plc * plc);
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+static signed DefaultVLANIDs (struct plc * plc, struct item list [], unsigned items)
+
+{
+	struct channel * channel = (struct channel *)(plc-&gt;channel);
+	struct message * message = (struct message *)(plc-&gt;message);
+
+#ifndef __GNUC__
+#pragma pack (push,1)
+#endif
+
+	struct __packed vs_forward_config_request
+	{
+		struct ethernet_hdr ethernet;
+		struct qualcomm_hdr qualcomm;
+		uint8_t RESERVED1;
+		uint8_t MREQUEST;
+		uint8_t MVERSION;
+		uint32_t RESERVED2;
+		uint16_t VLANID;
+		uint16_t RESERVED3;
+	}
+	* request = (struct vs_forward_config_request *) (message);
+	struct __packed vs_forward_config_confirm
+	{
+		struct ethernet_hdr ethernet;
+		struct qualcomm_hdr qualcomm;
+		uint8_t RESERVED1;
+		uint8_t RESULTCODE;
+		uint8_t OPERATION;
+		uint8_t MVERSION;
+		uint32_t RESERVED2;
+	}
+	* confirm = (struct vs_forward_config_confirm *) (message);
+
+#ifndef __GNUC__
+#pragma pack (pop)
+#endif
+
+	memset (message, 0, sizeof (* message));
+	EthernetHeader (&amp;request-&gt;ethernet, channel-&gt;peer, channel-&gt;host, channel-&gt;type);
+	QualcommHeader (&amp;request-&gt;qualcomm, 0, (VS_FORWARD_CONFIG | MMTYPE_REQ));
+	request-&gt;MREQUEST = PLCFWD_SET;
+	request-&gt;MVERSION = PLCFWD_VER;
+	request-&gt;VLANID = HTOLE16 (list [0].VLANID [0]);
+	plc-&gt;packetsize = (ETHER_MIN_LEN - ETHER_CRC_LEN);
+	if (SendMME (plc) &lt;= 0)
+	{
+		error ((plc-&gt;flags &amp; PLC_BAILOUT), errno, CHANNEL_CANTSEND);
+		return (-1);
+	}
+	while (ReadMME (plc, 0, (VS_FORWARD_CONFIG | MMTYPE_CNF)) &gt; 0)
+	{
+		if (confirm-&gt;RESULTCODE)
+		{
+			Failure (plc, PLC_WONTDOIT);
+			continue;
+		}
+	}
+	return (0);
+}
+
+/*====================================================================*
+ *
+ *   signed ForwardVLANIDs (struct plc * plc);
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+static signed ForwardVLANIDs (struct plc * plc)
+
+{
+	struct channel * channel = (struct channel *)(plc-&gt;channel);
+	struct message * message = (struct message *)(plc-&gt;message);
+
+#ifndef __GNUC__
+#pragma pack (push,1)
+#endif
+
+	struct __packed vs_forward_config_request
+	{
+		struct ethernet_hdr ethernet;
+		struct qualcomm_hdr qualcomm;
+		uint8_t RESERVED1;
+		uint8_t MREQUEST;
+		uint8_t MVERSION;
+		uint32_t RESERVED2;
+		uint8_t ENABLED;
+		uint16_t VLANID;
+		uint16_t RESERVED3;
+		struct item ITEM;
+	}
+	* request = (struct vs_forward_config_request *) (message);
+	struct __packed vs_forward_config_confirm
+	{
+		struct ethernet_hdr ethernet;
+		struct qualcomm_hdr qualcomm;
+		uint8_t RESERVED1;
+		uint8_t RESULTCODE;
+		uint8_t OPERATION;
+		uint8_t MVERSION;
+		uint32_t RESERVED2;
+	}
+	* confirm = (struct vs_forward_config_confirm *) (message);
+
+#ifndef __GNUC__
+#pragma pack (pop)
+#endif
+
+	memset (message, 0, sizeof (* message));
+	EthernetHeader (&amp;request-&gt;ethernet, channel-&gt;peer, channel-&gt;host, channel-&gt;type);
+	QualcommHeader (&amp;request-&gt;qualcomm, 0, (VS_FORWARD_CONFIG | MMTYPE_REQ));
+	request-&gt;MREQUEST = PLCFWD_FWD;
+	request-&gt;MVERSION = PLCFWD_VER;
+	plc-&gt;packetsize = (ETHER_MIN_LEN - ETHER_CRC_LEN);
+	if (SendMME (plc) &lt;= 0)
+	{
+		error ((plc-&gt;flags &amp; PLC_BAILOUT), errno, CHANNEL_CANTSEND);
+		return (-1);
+	}
+	while (ReadMME (plc, 0, (VS_FORWARD_CONFIG | MMTYPE_CNF)) &gt; 0)
+	{
+		if (confirm-&gt;RESULTCODE)
+		{
+			Failure (plc, PLC_WONTDOIT);
+			continue;
+		}
+	}
+	return (0);
+}
+
+/*====================================================================*
+ *
+ *   void function (struct plc * plc, struct item list [], unsigned items);
+ *
+ *   perform the VLANID action specified by the action member
+ *   in struct plc as set in the main program; only one action
+ *   is performed;
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+static void function (struct plc * plc, uint32_t offset, uint32_t length, struct item * list, unsigned items)
+
+{
+	if (plc-&gt;action == PLCFWD_GET)
+	{
+		ReadVLANIDs (plc, offset, length);
+		return;
+	}
+	if (plc-&gt;action == PLCFWD_ADD)
+	{
+		AddVLANIDs (plc, list, items);
+		return;
+	}
+	if (plc-&gt;action == PLCFWD_REM)
+	{
+		RemoveVLANIDs (plc, list, items);
+		return;
+	}
+	if (plc-&gt;action == PLCFWD_STO)
+	{
+		CommitVLANIDs (plc);
+		return;
+	}
+	if (plc-&gt;action == PLCFWD_CTL)
+	{
+		ControlVLANIDs (plc);
+		return;
+	}
+	if (plc-&gt;action == PLCFWD_SET)
+	{
+		DefaultVLANIDs (plc, list, items);
+		return;
+	}
+	if (plc-&gt;action == PLCFWD_FWD)
+	{
+		ForwardVLANIDs (plc);
+		return;
+	}
+	return;
+}
+
+/*====================================================================*
+ *
+ *   int main (int argc, char const * argv[]);
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+int main (int argc, char const * argv [])
+
+{
+	extern struct channel channel;
+	static char const * optv [] =
+	{
+		&quot;ACD:ef:i:l:M:o:qRS:t:vxz:&quot;,
+		&quot;device [device] [...] [&gt; stdout]&quot;,
+		&quot;Qualcomm Atheros VLANID Forward Configuration Manager&quot;,
+		&quot;A\tadd VLAN ID of multiple slaves to memory&quot;,
+		&quot;C\tcommit configuration to flash memory&quot;,
+		&quot;D x\tset default VLAN ID&quot;,
+		&quot;e\tredirect stderr to stdout&quot;,
+		&quot;f s\tread VLANIDS from file (s)&quot;,
+
+#if defined (WINPCAP) || defined (LIBPCAP)
+
+		&quot;i n\thost interface is (n) [&quot; LITERAL (CHANNEL_ETHNUMBER) &quot;]&quot;,
+
+#else
+
+		&quot;i s\thost interface is (s) [&quot; LITERAL (CHANNEL_ETHDEVICE) &quot;]&quot;,
+
+#endif
+
+		&quot;l n\tdata length in bytes [&quot; LITERAL (PLCFWD_LENGTH) &quot;]&quot;,
+		&quot;M n\tenable VLANID forwarding on the master&quot;,
+		&quot;o x\tdata offset in bytes [&quot; LITERAL (PLCFWD_OFFSET) &quot;]&quot;,
+		&quot;q\tquiet mode&quot;,
+		&quot;R\tremove VLAN ID of multiple slaves from memory&quot;,
+		&quot;S n\tenable VLANID forwarding on all slaves&quot;,
+		&quot;t n\ttimeout is (n) millisecond [&quot; LITERAL (CHANNEL_TIMEOUT) &quot;]&quot;,
+		&quot;v\tverbose mode&quot;,
+		&quot;x\texit on error&quot;,
+		&quot;z s\tslavespec&quot;,
+		(char const *) (0)
+	};
+
+#include &quot;../plc/plc.c&quot;
+
+	struct item list [128];
+	unsigned size = sizeof (list) / sizeof (struct item);
+	unsigned items = 0;
+	uint32_t offset = 0;
+	uint32_t length = 0;
+	signed c;
+	memset (&amp;list, 0, sizeof (list));
+	if (getenv (PLCDEVICE))
+	{
+		channel.ifname = strdup (getenv (PLCDEVICE));
+	}
+	optind = 1;
+	while ((c = getoptv (argc, argv, optv)) != -1)
+	{
+		switch (c)
+		{
+		case 'A':
+			plc.action = PLCFWD_ADD;
+			break;
+		case 'C':
+			plc.action = PLCFWD_STO;
+			break;
+		case 'D':
+			plc.action = PLCFWD_SET;
+			list [0].VLANID [0] = (uint16_t)(basespec (optarg, 10, sizeof (uint16_t)));
+			break;
+		case 'e':
+			dup2 (STDOUT_FILENO, STDERR_FILENO);
+			break;
+		case 'f':
+			if (!freopen (optarg, &quot;rb&quot;, stdin))
+			{
+				error (1, errno, &quot;%s&quot;, optarg);
+			}
+			items += readlist (&amp;list [items], size - items);
+			break;
+		case 'i':
+
+#if defined (WINPCAP) || defined (LIBPCAP)
+
+			channel.ifindex = atoi (optarg);
+
+#else
+
+			channel.ifname = optarg;
+
+#endif
+
+			break;
+		case 'M':
+			plc.action = PLCFWD_CTL;
+			plc.module = (uint8_t)(uintspec (synonym (optarg, states, STATES), 0, UCHAR_MAX));
+			break;
+		case 'l':
+			length = (uint32_t) (basespec (optarg, 10, sizeof (length)));
+			break;
+		case 'o':
+			offset = (uint32_t) (basespec (optarg, 10, sizeof (offset)));
+			break;
+		case 'q':
+			_setbits (channel.flags, CHANNEL_SILENCE);
+			_setbits (plc.flags, PLC_SILENCE);
+			break;
+		case 'R':
+			plc.action = PLCFWD_REM;
+			break;
+		case 'S':
+			plc.action = PLCFWD_CTL;
+			plc.pushbutton = (uint8_t)(uintspec (synonym (optarg, states, STATES), 0, UCHAR_MAX));
+			break;
+		case 't':
+			channel.timeout = (signed)(uintspec (optarg, 0, UINT_MAX));
+			break;
+		case 'v':
+			_setbits (channel.flags, CHANNEL_VERBOSE);
+			_setbits (plc.flags, PLC_VERBOSE);
+			break;
+		case 'x':
+			_setbits (plc.flags, PLC_BAILOUT);
+			break;
+		case 'z':
+			readitem (&amp;list [items++], optarg);
+			break;
+		default:
+			break;
+		}
+	}
+	argc -= optind;
+	argv += optind;
+
+#if 0
+
+	showlist (list, items);
+
+#endif
+
+	openchannel (&amp;channel);
+	if (!(plc.message = malloc (sizeof (* plc.message))))
+	{
+		error (1, errno, PLC_NOMEMORY);
+	}
+	if (!argc)
+	{
+		function (&amp;plc, offset, length, list, items);
+	}
+	while ((argc) &amp;&amp; (* argv))
+	{
+		if (!hexencode (channel.peer, sizeof (channel.peer), synonym (* argv, devices, SIZEOF (devices))))
+		{
+			error (1, errno, PLC_BAD_MAC, * argv);
+		}
+		function (&amp;plc, offset, length, list, items);
+		argv++;
+		argc--;
+	}
+	free (plc.message);
+	closechannel (&amp;channel);
+	return (0);
+}
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='plcdevs.c.html' title=' plcdevs.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='plcget.c.html' title=' plcget.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

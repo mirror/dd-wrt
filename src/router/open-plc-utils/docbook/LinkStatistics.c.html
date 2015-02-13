@@ -1,0 +1,411 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			LinkStatistics.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='keys.c.html' title=' keys.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='LinkStatus.c.html' title=' LinkStatus.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *
+ *   signed LinkStatistics (struct plc * plc);
+ *
+ *   plc.h
+ *
+ *   this plugin for plcstat reads device link statistics using a
+ *   VS_LNK_STATS message and displays information on stdout; since
+ *   the output may not suite all requirements, users are encouraged
+ *   to modify as needed; there is way too much data displayed here;
+ *
+ *   some code is duplicated for the sake of modularity;
+ *
+ *
+ *   Contributor(s):
+ *      Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef LINKSTATISTICS_SOURCE
+#define LINKSTATISTICS_SOURCE
+
+#include &lt;stdint.h&gt;
+#include &lt;memory.h&gt;
+#include &lt;inttypes.h&gt;
+
+#include &quot;../plc/plc.h&quot;
+#include &quot;../tools/memory.h&quot;
+#include &quot;../tools/number.h&quot;
+#include &quot;../tools/error.h&quot;
+
+/*====================================================================*
+ *   constants;
+ *--------------------------------------------------------------------*/
+
+#define PAD ' '
+#define DIGITS 16
+
+/*====================================================================*
+ *   variables;
+ *--------------------------------------------------------------------*/
+
+#ifndef __GNUC__
+#pragma pack (push,1)
+#endif
+
+typedef struct __packed transmit
+
+{
+	uint64_t NUMTXMPDU_ACKD;
+	uint64_t NUMTXMPDU_COLL;
+	uint64_t NUMTXMPDU_FAIL;
+	uint64_t NUMTXPBS_PASS;
+	uint64_t NUMTXPBS_FAIL;
+}
+
+transmit;
+typedef struct __packed receive
+
+{
+	uint64_t NUMRXMPDU_ACKD;
+	uint64_t NUMRXMPDU_FAIL;
+	uint64_t NUMRXPBS_PASS;
+	uint64_t NUMRXPBS_FAIL;
+	uint64_t SUMTURBOBER_PASS;
+	uint64_t SUMTURBOBER_FAIL;
+	uint8_t NUMRXINTERVALS;
+	uint8_t RXINTERVALSTATS [1];
+}
+
+receive;
+typedef struct __packed interval
+
+{
+	uint8_t RXPHYRATE_MBPS_0;
+	uint64_t NUMRXPBS_PASS;
+	uint64_t NUMRXPBS_FAIL;
+	uint64_t SUMTURBOBER_PASS;
+	uint64_t SUMTURBOBER_FAIL;
+}
+
+interval;
+
+#ifndef __GNUC__
+#pragma pack (pop)
+#endif
+
+/*====================================================================*
+ *
+ *   unsigned error_rate (uint64_t passed, uint64_t failed);
+ *
+ *   compute error rate for a given quantity; the error rate is the
+ *   ratio of failures to attempts;
+ *
+ *--------------------------------------------------------------------*/
+
+static float error_rate (uint64_t passed, uint64_t failed)
+
+{
+	if ((passed) || (failed))
+	{
+		return ((float)(failed * 100) / (float)(passed + failed));
+	}
+	return (0);
+}
+
+/*====================================================================*
+ *
+ *   float fec_bit_error_rate (struct receive * receive);
+ *
+ *   compute the FEC-BER from the VS_LNK_STATS when DIRECTION=1 and
+ *   LID=0xF8;
+ *
+ *--------------------------------------------------------------------*/
+
+static float fec_bit_error_rate (struct receive * receive)
+
+{
+	float FECBitErrorRate = 0;
+	if (receive-&gt;SUMTURBOBER_PASS || receive-&gt;SUMTURBOBER_FAIL)
+	{
+		float TotalSumOfBitError = 100 * (float)(receive-&gt;SUMTURBOBER_PASS + receive-&gt;SUMTURBOBER_FAIL);
+		float TotalSumOfBits = 8 * 520 * (float)(receive-&gt;NUMRXPBS_PASS + receive-&gt;NUMRXPBS_FAIL);
+		FECBitErrorRate = TotalSumOfBitError / TotalSumOfBits;
+	}
+	return (FECBitErrorRate);
+}
+
+/*====================================================================*
+ *
+ *   void transmit (struct transmit * transmit);
+ *
+ *   display transmit statistics in fixed field format;
+ *
+ *--------------------------------------------------------------------*/
+
+static void TransmitStatistics (struct transmit * transmit)
+
+{
+	printf (&quot;    TX&quot;);
+	printf (&quot; %20&quot; PRId64, transmit-&gt;NUMTXPBS_PASS);
+	printf (&quot; %20&quot; PRId64, transmit-&gt;NUMTXPBS_FAIL);
+	printf (&quot; %6.2f%%&quot;, error_rate (transmit-&gt;NUMTXPBS_PASS, transmit-&gt;NUMTXPBS_FAIL));
+	printf (&quot; %20&quot; PRId64, transmit-&gt;NUMTXMPDU_ACKD);
+	printf (&quot; %20&quot; PRId64, transmit-&gt;NUMTXMPDU_FAIL);
+	printf (&quot; %20&quot; PRId64, transmit-&gt;NUMTXMPDU_COLL);
+	printf (&quot; %6.2f%%&quot;, error_rate (transmit-&gt;NUMTXMPDU_ACKD, transmit-&gt;NUMTXMPDU_FAIL));
+	printf (&quot;\n&quot;);
+	return;
+}
+
+/*====================================================================*
+ *
+ *   void Receive (struct receive * receive);
+ *
+ *   display receive statistics in fixed field format;
+ *
+ *--------------------------------------------------------------------*/
+
+static void ReceiveStatistics (struct receive * receive)
+
+{
+	printf (&quot;    RX&quot;);
+	printf (&quot; %20&quot; PRId64, receive-&gt;NUMRXPBS_PASS);
+	printf (&quot; %20&quot; PRId64, receive-&gt;NUMRXPBS_FAIL);
+	printf (&quot; %6.2f%%&quot;, error_rate (receive-&gt;NUMRXPBS_PASS, receive-&gt;NUMRXPBS_FAIL));
+	printf (&quot; %20&quot; PRId64, receive-&gt;NUMRXMPDU_ACKD);
+	printf (&quot; %20&quot; PRId64, receive-&gt;NUMRXMPDU_FAIL);
+	printf (&quot; %6.2f%%&quot;, error_rate (receive-&gt;NUMRXMPDU_ACKD, receive-&gt;NUMRXMPDU_FAIL));
+	printf (&quot;\n&quot;);
+	return;
+}
+
+/*====================================================================*
+ *
+ *   void Receive (struct receive * receive);
+ *
+ *   display receive statistics in fixed field format for each slot;
+ *   the last line sumarizes results for all slots;
+ *
+ *--------------------------------------------------------------------*/
+
+static void Receive2 (struct receive * receive)
+
+{
+	struct interval * interval = (struct interval *)(receive-&gt;RXINTERVALSTATS);
+	uint8_t slot = 0;
+	while (slot &lt; receive-&gt;NUMRXINTERVALS)
+	{
+		printf (&quot; %1d&quot;, slot);
+		printf (&quot; %3d&quot;, interval-&gt;RXPHYRATE_MBPS_0);
+		printf (&quot; %20&quot; PRId64, interval-&gt;NUMRXPBS_PASS);
+		printf (&quot; %20&quot; PRId64, interval-&gt;NUMRXPBS_FAIL);
+		printf (&quot; %6.2f%%&quot;, error_rate (interval-&gt;NUMRXPBS_PASS, interval-&gt;NUMRXPBS_FAIL));
+		printf (&quot; %20&quot; PRId64, interval-&gt;SUMTURBOBER_PASS);
+		printf (&quot; %20&quot; PRId64, interval-&gt;SUMTURBOBER_FAIL);
+		printf (&quot; %6.2f%%&quot;, error_rate (interval-&gt;SUMTURBOBER_PASS, interval-&gt;SUMTURBOBER_FAIL));
+		printf (&quot;\n&quot;);
+		interval++;
+		slot++;
+	}
+	printf (&quot;   ALL&quot;);
+	printf (&quot; %20&quot; PRId64, receive-&gt;NUMRXPBS_PASS);
+	printf (&quot; %20&quot; PRId64, receive-&gt;NUMRXPBS_FAIL);
+	printf (&quot; %6.2f%%&quot;, error_rate (receive-&gt;NUMRXPBS_PASS, receive-&gt;NUMRXPBS_FAIL));
+	printf (&quot; %20&quot; PRId64, receive-&gt;SUMTURBOBER_PASS);
+	printf (&quot; %20&quot; PRId64, receive-&gt;SUMTURBOBER_FAIL);
+	printf (&quot; %6.2f%%&quot;, error_rate (receive-&gt;SUMTURBOBER_PASS, receive-&gt;SUMTURBOBER_FAIL));
+	printf (&quot; %6.2f%%&quot;, fec_bit_error_rate (receive));
+	printf (&quot;\n&quot;);
+	return;
+}
+
+/*====================================================================*
+ *
+ *   signed LinkStatistics (struct plc * plc);
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+signed LinkStatistics (struct plc * plc)
+
+{
+	struct channel * channel = (struct channel *)(plc-&gt;channel);
+	struct message * message = (struct message *)(plc-&gt;message);
+
+#ifndef __GNUC__
+#pragma pack (push,1)
+#endif
+
+	struct __packed vs_lnk_stats_request
+	{
+		struct ethernet_hdr ethernet;
+		struct qualcomm_hdr qualcomm;
+		uint8_t MCONTROL;
+		uint8_t DIRECTION;
+		uint8_t LID;
+		uint8_t MACADDRESS [ETHER_ADDR_LEN];
+	}
+	* request = (struct vs_lnk_stats_request *) (message);
+	struct __packed vs_lnk_stats_confirm
+	{
+		struct ethernet_hdr ethernet;
+		struct qualcomm_hdr qualcomm;
+		uint8_t MSTATUS;
+		uint8_t DIRECTION;
+		uint8_t LID;
+		uint8_t TEI;
+		uint8_t LSTATS [1];
+	}
+	* confirm = (struct vs_lnk_stats_confirm *) (message);
+
+#ifndef __GNUC__
+#pragma pack (pop)
+#endif
+
+	memset (message, 0, sizeof (* message));
+	EthernetHeader (&amp;request-&gt;ethernet, channel-&gt;peer, channel-&gt;host, channel-&gt;type);
+	QualcommHeader (&amp;request-&gt;qualcomm, 0, (VS_LNK_STATS | MMTYPE_REQ));
+	plc-&gt;packetsize = (ETHER_MIN_LEN - ETHER_CRC_LEN);
+	request-&gt;MCONTROL = plc-&gt;pushbutton;
+	request-&gt;DIRECTION = plc-&gt;module;
+	request-&gt;LID = plc-&gt;action;
+	memcpy (request-&gt;MACADDRESS, plc-&gt;RDA, sizeof (request-&gt;MACADDRESS));
+	if (SendMME (plc) &lt;= 0)
+	{
+		error ((plc-&gt;flags &amp; PLC_BAILOUT), errno, CHANNEL_CANTSEND);
+		return (-1);
+	}
+	if (ReadMME (plc, 0, (VS_LNK_STATS | MMTYPE_CNF)) &lt;= 0)
+	{
+		error ((plc-&gt;flags &amp; PLC_BAILOUT), errno, CHANNEL_CANTREAD);
+		return (-1);
+	}
+	if (confirm-&gt;MSTATUS)
+	{
+		Failure (plc, PLC_WONTDOIT);
+		return (-1);
+	}
+	if (confirm-&gt;DIRECTION == 0)
+	{
+		printf (&quot;   DIR&quot;);
+		printf (&quot; ----------- PBs PASS&quot;);
+		printf (&quot; ----------- PBs FAIL&quot;);
+		printf (&quot; PBs ERR&quot;);
+		printf (&quot; ---------- MPDU ACKD&quot;);
+		printf (&quot; ---------- MPDU FAIL&quot;);
+		printf (&quot;\n&quot;);
+		TransmitStatistics ((struct transmit *)(confirm-&gt;LSTATS));
+		printf (&quot;\n&quot;);
+	}
+	if (confirm-&gt;DIRECTION == 1)
+	{
+		printf (&quot;   DIR&quot;);
+		printf (&quot; ----------- PBs PASS&quot;);
+		printf (&quot; ----------- PBs FAIL&quot;);
+		printf (&quot; PBs ERR&quot;);
+		printf (&quot; ---------- MPDU ACKD&quot;);
+		printf (&quot; ---------- MPDU FAIL&quot;);
+		printf (&quot;\n&quot;);
+		ReceiveStatistics ((struct receive *)(confirm-&gt;LSTATS));
+		printf (&quot;\n&quot;);
+		printf (&quot;   PHY&quot;);
+		printf (&quot; ----------- PBs PASS&quot;);
+		printf (&quot; ----------- PBs FAIL&quot;);
+		printf (&quot; PBs ERR&quot;);
+		printf (&quot; ----------- BER PASS&quot;);
+		printf (&quot; ----------- BER FAIL&quot;);
+		printf (&quot; BER ERR&quot;);
+		printf (&quot;\n&quot;);
+		Receive2 ((struct receive *)(confirm-&gt;LSTATS));
+		printf (&quot;\n&quot;);
+	}
+	if (confirm-&gt;DIRECTION == 2)
+	{
+		printf (&quot;   DIR&quot;);
+		printf (&quot; ----------- PBs PASS&quot;);
+		printf (&quot; ----------- PBs FAIL&quot;);
+		printf (&quot; PBs ERR&quot;);
+		printf (&quot; ---------- MPDU ACKD&quot;);
+		printf (&quot; ---------- MPDU FAIL&quot;);
+		printf (&quot;\n&quot;);
+		TransmitStatistics ((struct transmit *)(confirm-&gt;LSTATS));
+		ReceiveStatistics ((struct receive *)(confirm-&gt;LSTATS + sizeof (struct transmit)));
+		printf (&quot;\n&quot;);
+		printf (&quot;   PHY&quot;);
+		printf (&quot; ----------- PBs PASS&quot;);
+		printf (&quot; ----------- PBs FAIL&quot;);
+		printf (&quot; PBs ERR&quot;);
+		printf (&quot; ----------- BER PASS&quot;);
+		printf (&quot; ----------- BER FAIL&quot;);
+		printf (&quot; BER ERR&quot;);
+		printf (&quot;\n&quot;);
+		Receive2 ((struct receive *)(confirm-&gt;LSTATS + sizeof (struct transmit)));
+		printf (&quot;\n&quot;);
+	}
+	return (0);
+}
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='keys.c.html' title=' keys.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='LinkStatus.c.html' title=' LinkStatus.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

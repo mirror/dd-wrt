@@ -1,0 +1,59 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			set32bitmap.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='serial.c.html' title=' serial.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='SetNMK.c.html' title=' SetNMK.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   void set32bitmap (uint32_t * map, unsigned bit);
+ *
+ *   flags.h
+ *
+ *   set a given bit in a 32-bit flagword array; macro _bits () is
+ *   defined in flags.h;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef SET32BITMAP_SOURCE
+#define SET32BITMAP_SOURCE
+
+#include &quot;../tools/flags.h&quot;
+#include &quot;../tools/endian.h&quot;
+
+void set32bitmap (uint32_t * map, unsigned bit)
+
+{
+	map [bit / _bits (* map)] |= HTOLE32 (1 &lt;&lt; (bit % _bits (* map)));
+	return;
+}
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='serial.c.html' title=' serial.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='SetNMK.c.html' title=' SetNMK.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

@@ -1,0 +1,148 @@
+.TH plcotst 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+plcotst - PLC One-Time Self-Test Manager
+
+.SH SYNOPSIS
+.BR plcotst 
+.RI [ options ] 
+.RI [ device ] 
+.RI [ device ] 
+[...]
+
+.SH DESCRIPTION
+Manage the PLC One-Time Self-Test feature on Atheros powerline devices.
+Normally, selftest is performed once, on startup at the factory, but it can also be configured and run again using this utility.
+Selftest results are stored by the firmware and can be read using this utility, as well.
+The selftest is configured when configuration options are specified on the command line; otherwise, selftest results are read or cleared.
+
+.PP
+This program is part of the Qualcomm Atheros Powerline Toolkit.
+See the \fBplc\fR man page for an overview and installation instructions.
+
+.SH OPTIONS
+.Tp
+-\fBc\fI version\fR
+Configuration version number.
+Permitted values are \fB0\fR through \fB255\fR.
+The default is \fB0\fR.
+This option applies to both selftest configuration and selftest results.
+
+.TP
+.RB - C
+Clear stored selftest results.
+This option clears stored selftest results.
+This option implies selftest results and supercedes options \fB-d\fR, \fB-f\fR, \fB-m\fR, \fB-r\fR and \fB-R\fR, if present on the command line.
+
+.TP
+-\fBd\fI seconds\fR
+Delay selftest after reboot.
+Permitted delay times are \fB0\fR through \fBUINT_MAX\fR seconds.
+The default is \fB0\fR seconds.
+This option implies selftest configuration and supercedes option \fB-C\fR, if present on the command line.
+
+.TP
+.RB - e
+Redirects stderr messages to stdout.
+By convention status and error messages are printed on stderr while primary program output is printed on stdout.
+This option prints all output on stdout in cases where this is desired.
+
+.TP
+-\fBf\fI count\fR
+Run the flash memory selftest \fIcount\fR times.
+Valid values are \fB0\fR through \fBUINT_MAX\fR.
+The default is \fB0\fR which effectively suppresses the test.
+This option implies selftest configuration and supercedes option \fB-C\fR, if present on the command line.
+
+.TP
+-\fBm\fI count\fR
+Run the memory selftest \fIcount\fR times.
+Valid values are \fB0\fR through \fBUINT_MAX\fR.
+The default is \fB0\fR which suppresses effectively the test.
+This option implies selftest configuration and supercedes option \fB-C\fR, if present on the command line.
+
+.TP
+.RB - q
+Suppresses status messages on stderr.
+
+.TP
+-\fBr\fI flag\fR
+Run selftest after reboot.
+Permitted values are \fB0\fR through \fB255\fR.
+Expected values are \fB0\fR for \fBfalse\fR and \fB1\fR for \fBtrue\fR.
+The default is \fB1\fR.
+If the memory test \fIcount\fR and flash test \fIcount\fR are both \fB0\fR no testing will occur when the time comes.
+This option implies selftest configuration and supercedes option \fB-C\fR, if present on the command line.
+
+.TP
+-\fBR\fI flag\fR
+Reset device after selftest.
+Permitted values are \fB0\fR through \fB255\fR.
+Expected values are \fB0\fR for \fBfalse\fR and \fB1\fR for \fBtrue\fR.
+The default is \fB0\fR.
+This option applies to selftest configuration only and supercedes option \fB-C\fR, if present on the command line.
+
+.TP
+-\fBt \fItimeout\fR
+Read timeout in milliseconds.
+Values range from 0 through UINT_MAX.
+This is the maximum time allowed for a response.
+The default is shown in brackets on the program menu.
+
+.TP
+.RB - v
+Print additional information on stdout.
+In particular, this option dumps incoming and outgoing packets which can be saved as text files for reference.
+
+.TP
+.RB - ? ,-- help
+Print program help summary on stdout.
+This option takes precedence over other options on the command line.
+
+.TP
+.RB - ! ,-- version
+Print program version information on stdout.
+This option takes precedence over other options on the command line.
+Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of the Linux Toolkit you are using.
+
+.SH ARGUMENTS
+
+.TP
+.IR device
+The Ethernet hardware address of some powerline device.
+More than one address may be specified on the command line.
+If more than one address is specified then operations are performed on each device in turn.
+The default address is \fBlocal\fR.
+as explained in the \fBDEVICES\fR section.
+
+.SH EXAMPLES
+The following example prints stored test results for the local device on stdout because no options are specified on the command line.
+
+.PP
+   # plcotst  
+
+.PP
+The next example prints stored test results for remote device \fB00:B0:52:BA:BE:DE\fR and clears them afterwards.
+
+.PP
+   # plcotst -C
+
+.PP
+The next example configures the PLC selftest to wait \fB5\fR seconds before execution because option \fB-d\fR is present.
+It also configures the selftest to reset the device after execution because option \fB-R\fR is present
+
+.PP
+   # plcotst -d 5 -R
+
+.SH REFERENCES
+See the Qualcomm Atheros \fIPowerline Firmware Technical Reference Manual\fR for more information about firmware selftest.
+
+.SH DISCLAIMER
+None.
+
+.SH SEE ALSO
+.BR plc ( 1 )
+
+.SH CREDITS
+ Charles Maier <cmaier@qca.qualcomm.com>
+

@@ -1,0 +1,34 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Update a Device</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="ch06.html" title="Chapter 6.  Scripting"><link rel="prev" href="ch06s08.html" title="Initialize a Device"><link rel="next" href="ch06s10.html" title="Generating Powerline Traffic"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">
+			Update a Device
+			</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch06s08.html">Prev</a> </td><th width="60%" align="center">Chapter 6. 
+		Scripting
+		</th><td width="20%" align="right"> <a accesskey="n" href="ch06s10.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="scripting-update-device"></a>
+			Update a Device
+			</h2></div></div></div><p>
+			In some cases we want to replace the runtime firmware or runtime parameters stored in NVRAM. Program <a class="ulink" href="int6k.7.html" target="_top">int6k</a> can be used for this purpose when runtime firmware is running.
+			</p><p>
+			A device update may be necessary when new runtime firmware or new runtime parameters or both must be programmed into <acronym class="acronym">NVRAM</acronym>. It is only possible when <acronym class="acronym">NVRAM</acronym> is present and the runtime firmware is running.
+			</p><pre class="programlisting">
+int6k -i ${NIC1} -P ${PIB} -N ${NVM} -F
+if [ ${?} != 0 ]; then
+        exit 1
+fi
+</pre><p>
+			The example above uses <a class="ulink" href="int6k.7.html" target="_top">int6k</a> to download a <acronym class="acronym">PIB</acronym> file (<strong class="userinput"><code>-P</code></strong>) and <acronym class="acronym">NVM</acronym> file (<strong class="userinput"><code>-N</code></strong>) then flash <acronym class="acronym">NVRAM</acronym> (<strong class="userinput"><code>-F</code></strong>). Symbol <code class="varname">NIC1</code> must be defined earlier in the script, perhaps in file <a class="link" href="ch06s03.html#scripting-hardware-definitions" title="Example 6.1.  hardware.sh">hardware.sh</a>. Symbols PIB and NVM must also be defined earlier in the script, perhaps in file <a class="link" href="ch06s03.html#scripting-firmware-definitions" title="Example 6.2.  firmware.sh">firmware.sh</a>.
+			</p><p>
+			Program <a class="ulink" href="int6k.7.html" target="_top">int6k</a> returns a non-zero value on error. We can check the return code and exit the script on error to avoid subsequent errors. We could, of course, suppress normal output (<strong class="userinput"><code>-q</code></strong>) and print our own error message using the Linux <strong class="userinput"><code>echo</code></strong> utility.
+
+			</p><p>
+			In some cases, you may want to preserve the current firmware on a device and update only the <acronym class="acronym">PIB</acronym>. Program <a class="ulink" href="int6k.7.html" target="_top">int6k</a> can be used for this purpose, as well.
+			</p><pre class="programlisting">
+int6k -i ${NIC1} -P ${PIB} -C 2
+if [ ${?} != 0 ]; then
+        exit 1
+fi
+</pre><p>
+			The example above downloads a <acronym class="acronym">PIB</acronym> file (<strong class="userinput"><code>-P</code></strong>) and commits (<strong class="userinput"><code>-C</code></strong>) the <acronym class="acronym">PIB</acronym> only to <acronym class="acronym">NVRAM</acronym>. There are a variety of device flash scenarios and each requires some varation on one of the examples shown here.
+			</p></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch06s08.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="ch06.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch06s10.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">
+			Initialize a Device
+			 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 
+			Generating Powerline Traffic
+			</td></tr></table></div></body></html>0

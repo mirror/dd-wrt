@@ -1,0 +1,147 @@
+.TH plcmdio32 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+plcmdio32 - Qualcomm Atheros 32-bit MDIO Register Editor 
+
+.SH SYNOPSIS
+.BR plcmdio32
+.RI [ options ]
+.RI [ device ]
+.RI [ device ]
+[...]
+
+.SH DESCRIPTION
+Read or write global MDIO registers using multiple VS_MDIO_COMMAND vendor-specific management messages.
+Commands are entered using 32-bit register and data values then converted to threeequivalen  16-bit commands.
+The default operation is to read a register.
+Registers are written only if data is specified on the command line.
+Thsi program replaces program \fBint6kmdio2\fR.
+
+.PP
+This program writes MDIO instructions using \fB802.3ae Clause 45\fR (\fIaddress\fR, \fIdata\fR and \fImask\fR) format.
+See program \fBint6kmdio\fR for a similar program to write instructions using \fB802.3 Clause 22\fR (\fIphy\fR, \fIreg\fR, \fIdata\fR and \fImask\fR) format.
+
+.PP
+This program is part of the Qualcomm Atheros Powerline Toolkit.
+It replaces legacy program \fBint6kmdio2\fR.
+See the \fBplc\fR man page for an overview and installation instructions.
+
+.SH OPTIONS
+
+.TP
+-\fBa \fIaddress\fR
+The 19-bit global register address.
+Some devices may not support all possible addresses.
+Addresses may be expressed in decimal, hexadecimal or binary notation.
+Hexadecimal values must be prefixed with "0x" or "0X".
+Binary values must be prefixed with "0b" or "0B".
+
+.TP
+-\fBd \fIdata\fR
+A 32-bit data value to be inserted into the specified register.
+The specified data value is written when this option is present; otherwise the specified register is read and the content is displayed.
+Data values may be expressed in decimal, hexadecimal or binary notation.
+Hexadecimal values are prefixed with "0x" or "0X".
+Binary values are prefixed with "0b" or "0B".
+
+.TP
+.RB - e
+Redirects stderr messages to stdout.
+By convention status and error messages are printed on stderr while primary program output is printed on stdout.
+This option prints all output on stdout in cases where this is desired.
+
+.TP
+.RB - h
+When writing 32-bit values, write to the high-order register before the low-order register.
+This option is needed in cases where the value in one register may affect the interpretation of some value written to the other register.
+This is not a common situation.
+
+.TP
+-\fBi \fIinterface\fR
+Select the host Ethernet interface.
+All requests are sent via this host interface and only reponses received via this host interface are recognized.
+The default interface is \fBeth1\fR because most people use \fBeth0\fR as their principle network connection; 
+however, if environment string "PLC" is defined then it takes precedence over the default interface.
+This option then takes precedence over either default.
+
+.TP
+.RB - q
+Suppresses status messages on stderr.
+
+.TP
+.RB - v
+Prints additional information on stdout.
+In particular, this option dumps outgoing Ethernet packets on stdout.
+
+.TP
+.RB - ? ,-- help   
+Displays program help information on stderr.
+This option takes precedence over all other options on the command line except version information.
+
+.TP
+.RB - ! ,-- version
+Displays program version information on stderr.
+This option takes precedence over all other options on the command line except help information.
+Use this option when sending screen dumps to Atheros technical staff.
+
+.SH ARGUMENTS
+
+.TP
+.IR device
+The MAC address of some powerline device.
+More than one address may be specified.
+If more than one address is specified then operations are performed on each device in turn.
+The default address is \fBlocal\fR.
+See \fBDEVICES\fR for information about symbolic device addresses.
+
+.SH DEVICES
+Powerline devices use Ethernet Media Access Control (MAC) addresses.
+A MAC address is a 48-bit value entered as 12 hexadecimal digits in upper, lower or mixed character case.
+Octets may be separated with colons for clarity.
+For example, "00b052000001", "00:b0:52:00:00:01" and "00b052:000001" are valid and equivalent.
+
+.PP
+The following MAC addresses are special and may be entered by name instead of number.
+
+.TP
+.BR all
+Same as "broadcast".
+
+.TP
+.BR broadcast
+A synonym for the Ethernet broadcast address, \fBFF:FF:FF:FF:FF:FF\fR.
+All devices, whether local, remote or foreign recognize messages sent to this address.
+A remote device is any device at the far end of a powerline connection.
+A foreign device is any device not manufactured by Atheros.
+
+.TP
+.BR local
+A synonym for the Qualcomm Atheros vendor specific Local Management Address (LMA), \fB00:B0:52:00:00:01\fR.
+All local Atheros devices recognize this address but remote and foreign devices do not.
+A remote device is any device at the far end of a powerline connection.
+A foreign device is any device not manufactured by Atheros.
+
+.SH REFERENCES
+See the Qualcomm Atheros HomePlug AV Firmware Technical Reference Manual for technical information.
+
+.SH DISCLAIMER
+Atheros HomePlug AV Vendor Specific Management Message structure and content is proprietary to Qualcomm Atheros, Ocala FL USA.
+Consequently, public information may not be available.
+Qualcomm Atheros reserves the right to modify message structure and content in future firmware releases without any obligation to notify or compensate users of this program.
+
+.SH EXAMPLES
+None.
+
+.SH SEE ALSO
+.BR plc ( 1 ),
+.BR plcmod ( 1 ),
+.BR plcmdio16 ( 1 ),
+.BR mdioblock ( 1 ),
+.BR mdioblock2 ( 1 ),
+.BR mdiodump ( 1 ),
+.BR mdiogen ( 1 )
+
+.SH CREDITS
+ Nathaniel Houghton <nhoughto@qca.qualcomm.com>
+ Charles Maier <cmaier@qca.qualcomm.com>
+

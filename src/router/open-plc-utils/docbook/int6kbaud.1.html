@@ -1,0 +1,230 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			int6kbaud.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='int6k.1.html' title=' int6k.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='int6kboot.1.html' title=' int6kboot.1 '>NEXT</a>]
+			</div>
+<pre>
+int6kbaud(1)                                 Qualcomm Atheros Open Powerline Toolkit                                int6kbaud(1)
+
+NAME
+       int6kbaud - Qualcomm Atheros Serial Line Device Configuration
+
+SYNOPSIS
+       int6kbaud [options] [...]
+
+DESCRIPTION
+       Set serial line parameters on a UART-enabled Atheros powerline device using the ATBR serial line command.
+
+       Serial  line  commands  are  7-bit  ASCII character strings sent to the local powerline device over the host serial port.
+       They can be sent using any terminal emulator but this program will, in many cases, reduce typing and simplify  scripting.
+       It is especially useful for downloading device parameters and uploading device parameters or firmware because those oper‐
+       ations involve large volumes of data.  Also, this program permits decimal integer  arguments  in  many  cases  where  the
+       serial  line  commands require hexadecimal integer values.  See the COMMANDS section below for a list of supported serial
+       line commands;
+
+       This program is part of the Qualcomm Atheros Powerline Toolkit.  See the AMP man page for an  overview  and  installation
+       instructions.
+
+COMMENTS
+       This program does not configure or reconfigure host serial port settings since most systems provide a utility to do that.
+       Be sure to configure them before using this program since other programs may change them before or  after  use.   Atheros
+       factory  default  settings for UART-enabled powerline devices are 1115200 baud, 8 data bits, 1 stop bit, no parity and no
+       flow control.
+
+       On Linux, use the stty utility to inspect and set serial port parameters.  The following  Linux  command  will  configure
+       serial  device  /dev/ttyS0 speed to 115200 baud with 8 data bits, 1 stop bit, no parity bit and no flow control.  Consult
+       the stty man page for an explanation of these and other options.
+
+          #stty -f /dev/ttyS0 115200 cs8 cstopb -cparenb -ixon
+
+       On Windows, use the the Device Manager dialog to set serial Port properties.  To open this  dialog,  select  Start  Menu,
+       Control Panel, System, Hardware, Device Manager, Ports, Advanced.
+
+OPTIONS
+       -B baudrate
+              The new baud rate.  Any integer value may be entered here but only certain values may be accepted by the powerline
+              device.  Although the device may support some value, the local host may not support it.  Supported values are 300,
+              600, 1200, 2400, 4800, 9600, 38400, 57600, 115200, 230400, 460800 and 921600.  The default is 115200.
+
+       -D databits
+              The number of bits per data byte.  Accepted values are 7 and 8.  The default is 8.
+
+       -F flowctrl
+              The hardware flowcontrol state.  Accepted values are 0=off and 1=on where numeric values or keywords &quot;off&quot; or &quot;on&quot;
+              may be used.  Keyword &quot;none&quot; is synonymous with &quot;off&quot; for this option.  The default is none.
+
+       -m mode
+              Accepted values are 1=transparent and 2=command where numeric values or keywords &quot;transparent&quot; or &quot;command&quot; may be
+              used.
+
+       -P parity
+              The  number  of parity bits and parity mode.  Accepted values are 0=none, 1=odd and 2=even where numeric values of
+              keywords &quot;none&quot;, &quot;odd&quot; or &quot;even&quot; may be used.  The default is none.
+
+       -q     Suppress progress and error information on stderr.
+
+       -s tty Communicate with the local powerline device over the named serial  interface  on  the  local  host.   The  program
+              default is &quot;/dev/ttyUSB0&quot; for Linux and &quot;com1:&quot; for Windows.  The program default may be replace by defining envi‐
+              ronment variable PLCUART.  This command line option will over-ride those defaults.
+
+       -S stopbits
+              The number of stop bits.  Accepted values are 1 or 2.  The default is 1.
+
+       -u     Force default host port settings to match the default setting for UART-enabled  Atheros  powerline  devices.   The
+              setting  are  115200 baud, 8 data bits, no parity bits and 1 stop bit.  These settings will remain active when the
+              program terminates and will not change unless changed by some other means, perhaps by another  application.   This
+              option  is  an easy means of establishg an initial serial connection with a powerline device, unless it’s settings
+              have been changed.
+
+       -v     Display serial line commands and responses on stdout.
+
+       -w     Place the local powerline device in Command Mode using the +++ serial line command. The device will remain in com‐
+              mand mode until it is reset or forced into Transparaent Mode or High Speed Command Mode.
+
+       -?,--help
+              Print program help summary on stdout. This option takes precedence over other options on the command line.
+
+       -!,--version
+              Print  program version information on stdout. This option takes precedence over other options on the command line.
+              Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version  of
+              the Linux Toolkit you are using.
+
+ARGUMENTS
+       None.
+
+COMMANDS
+       This  section  lists  serial  line  commands  recognized by local powerline devices when in Command Mode. Commands can be
+       issued interactively using a terminal emulator, like minicom on Linux or HyperTerminal on Windows or stored as  text  and
+       copied to the serial port using system utilities, like cat on Linux or type on Windows. This program merely converts com‐
+       mand line options and arguments into one or more of the serial line commands shown below.
+
+       +++    Exit Transparent Mode and enter Command Mode. See option -w above.
+
+       AT     Test for Command Mode by doing nothing, successfully. See option -t above.
+
+       ATBRmode,baudrate,databits,parity,stopbits,flowctrl
+              Set serial line parameters on the local powerline device. Beware that this will break the existing serial  connec‐
+              tion when the new parameters differ from those of the local host.
+
+       ATBSZ? Get Transparent Mode buffer size. See option -z above.
+
+       ATBSZsize
+              Set Transparent Mode buffer size. See option -Z above.
+
+       ATDST? Get Transparent Mode destination device address. See option -d above.
+
+       ATDSTaddress
+              Set Transparent Mode destination device address. See option -D above.
+
+       ATFD   Reset local device to factory defaults. See option -T above.
+
+       ATHSC  Exit  Command Mode and enter High Speed Command Mode. Once the OK response is received, the local host should send
+              commands to the device at successively higher speeds until a valid response is received.
+
+       ATNI?  Read nework information and store the information internally. Return the number of associated stations and  infor‐
+              mation  about  the first associated station. The information includes the peer station device address, TX rate and
+              RX rate.
+
+       ATNIstation
+              Extract and display previously stored network information for a specific peer station. The information returned is
+              that previosly stored using a ATNI serial line command query.
+
+       ATO    Exit  Command  Mode and enter Transparent Mode. Successful switch requires a valid destination MAC address, buffer
+              size and aggregation timeout value. Use serial line commands ATDST and ATBSZ to get and/or set the first two  val‐
+              ues. Use serial line command ATTO to set the timeout value.
+
+       ATPStime
+              Place  the  device  in  Power Save Mode for a specified time in seconds. Accepted values are 1 to 384 seconds. The
+              default time is A seconds.
+
+       ATRPlength,offset
+              Read and display a parameter block segment where length is the number of bytes read and  offset  is  the  relative
+              position,  in bytes, from the start of the parameter block. Valid length values are 0 through 400 hexadecimal. See
+              option -p above to read and save an entire parameter block.
+
+       ATRPM  Get PIB version and device MAC address.
+
+       ATRV   Get hardware and firmware revision. See option -r above.
+
+       ATSK?  Get device Network Membership Key. See option -m above.
+
+       ATSKkey
+              Set device Network Membership Key. See option -M above.
+
+       ATTO?  Get the Transparent Mode aggregation timeout in milliseconds.
+
+       ATTOtimeout
+              Set the Transparent Mode aggregation timeout in milliseconds. See option -W above.
+
+       ATWNVmodule
+              Update NVM with PIB and/or Firmware module. See option -C above.
+
+       ATWPFmodule,length,offset,checksum,data
+              Write a parameter block or firmware segment to the local powerline device where module is the  module  identifier,
+              length  is the number of bytes to write, offset is the relative position from the start of the module, checksum is
+              the 1’s complement of the data and data is the data to be written.  Valid module identifiers are 1=FW  and  2=PIB.
+              Valid  length  values are 0 up to 400 hexadecimal.  See options -N and -P above to write an entire parameter block
+              or firmware images.
+
+       ATZ    Reset device.  See option -R above.
+
+REFERENCES
+       See the Qualcomm Atheros HomePlug AV Firmware Technical Reference Manual for more information.
+
+DISCLAIMER
+       Atheros serial line commands are proprietary to Qualcomm Atheros, Ocala FL USA.  Consequently, public information is  not
+       available.  Qualcomm Atheros reserves the right to modify command line syntax or command functionality in future firmware
+       releases without any obligation to notify or compensate product or program users.
+
+EXAMPLES
+       The following example sets the baud speed to 115200 baud with 8 data bits, 1 stop bits, no flow control  and  no  parity.
+       The outgoing serial line command and incoming response are displayed on stderr because option -f is present.
+
+          #int6kbaud -B 115200 -D 8 -F 0 -P 0 -S 1 -v
+          ATBR00,000000000001C200,08,00,01,00
+          OK
+
+       Observe that decimal command line arguments are converted to hexadecimal on output.  Although this program outputs fixed-
+       length fields, including leaing zeros, device firmware ignores them.  Leading zeros may be omitted when  entering  serial
+       line commands manually.
+
+       The  next example set the speed to 38400.  Observe that program default values appear in the outgoing serial line command
+       when the corresponding command line options are omitted.
+
+          #int6kbaud -B 38400 -v
+          ATBR00,0000000000009600,08,00,01,00
+          OK
+
+       The next command does the same thing as the first example except that keywords replace numeric values  for  some  of  the
+       options.  Since option -v is omitted the outgoing command and incoming response are not displayed.
+          #int6kbaud -B 115200 -D 8 -F off -P none -S 1
+
+SEE ALSO
+       amp(1), int6kuart(1), ttysig(1)
+
+CREDITS
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                             int6kbaud(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='int6k.1.html' title=' int6k.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='int6kboot.1.html' title=' int6kboot.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

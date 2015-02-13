@@ -1,0 +1,318 @@
+This Notice.txt file contains certain notices of software components included with the software that QUALCOMM ATHEROS Incorporated ("Qualcomm Atheros") is required to provide you. Notwithstanding anything in the notices in this file, your use of these software components together with the Qualcomm Atheros software (Qualcomm Atheros software hereinafter referred to as "Software") is subject to the terms of your license from Qualcomm Atheros. Compliance with all copyright laws and software license agreements included in the notice section of this file are the responsibility of the user. Except as may be granted by separate express written agreement, this file provides no license to any Qualcomm Atheros patents, trademarks, copyrights, or other intellectual property. 
+    
+Copyright (c) 2012 QUALCOMM ATHEROS Incorporated. All rights reserved. QUALCOMM ATHEROS is a registered trademark and registered service mark of QUALCOMM ATHEROS Incorporated.  All other trademarks and service marks are the property of their respective owners.  
+
+# ====================================================================
+# NOTICES:
+# --------------------------------------------------------------------
+
+1) Qualcomm Atheros has included selected modules from Motley Tools in the Qualcomm Atheros Powerline Toolkit. These modules are licensed under the Internet Software Consortium License which appears below.
+ 
+2) Qualcomm Atheros has included modified docbook stylesheets that format documentation for this version of the Qualcomm Atheros Powerline Toolkit. The docbook license and Norman Walsh license appear below.
+
+3) Qualcomm Atheros has elected to distribute example Microsoft Visual Studio solution files and associated project files with this source code. The Microsoft Visual Studio End User License Agreement. 
+
+4) Qualcomm Atheros has included WinPcap header files that are known to work with this version of the Qualcomm Atheros Powerline Toolkit. Winpcap files are only required when compiling the toolkit for Microsoft Windows. The WinPcap license appears below.
+
+5) As of 15-Oct-2013, Qualcomm Atheros, Inc. decided to migrate the license of this Powerline Toolkit to more clearly communicate our expectations regarding the licensing and usage of the Powerline Toolkit. We do not expect this will have a practical impact on any current or future users of the Powerline Toolkit. Older versions of the Powerline Toolkit continue to be available under the previous license. 
+
+# ====================================================================
+# Open Powerline Toolkit License (Clear BSD)
+# --------------------------------------------------------------------
+
+Copyright (c) 2013 Qualcomm Atheros, Inc.
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, are permitted (subject to the limitations in the disclaimer below) provided that the following conditions are met:
+
+* Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+
+* Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+
+* Neither the name of Qualcomm Atheros nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+
+NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+
+# ====================================================================
+# Motley Tools License (ISC)
+# --------------------------------------------------------------------
+
+Copyright (c) 2001-2005 by Charles Maier.
+
+Permission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted, provided that the above copyright notice and this permission notice appear in all copies. 
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+# ====================================================================
+# MIT/X Consortium License; (modified docbook stylesheets)
+# --------------------------------------------------------------------
+
+Copyright (c) 2005 Norman Walsh
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+Except as contained in this notice, the name(s) of the above copyright holders shall not be used in advertising or otherwise to promote the sale, use or other dealings in this Software without prior written authorization
+
+# ====================================================================
+# docbook license; (MIT/X Consortium)
+# --------------------------------------------------------------------
+
+Copyright (C) 1999-2005 Norman Walsh
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the ``Software''), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+Except as contained in this notice, the names of individuals credited with contribution to this software shall not be used in advertising or otherwise to promote the sale, use or other dealings in this Software without prior written authorization from the individuals in question.
+
+Any stylesheet derived from this Software that is publically distributed will be identified with a different name and the version strings in any derived Software will be changed so that no possibility of confusion between the derived package and this Software will exist.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL NORMAN WALSH OR ANY OTHER CONTRIBUTOR BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+# ====================================================================
+# Microsoft Visual Studio 2010 End User License Agreement; (Visual 
+# studio .filter, .user files)
+# --------------------------------------------------------------------
+
+MICROSOFT SOFTWARE LICENSE TERMS
+MICROSOFT VISUAL STUDIO 2010 PROFESSIONAL AND TRIAL EDITION
+
+These license terms are an agreement between Microsoft Corporation (or based on where you live, one of its affiliates) and you. Please read them. They apply to the software named above, which includes the media on which you received it, if any. The terms also apply to any Microsoft updates, supplements, Internet-based services, and support services for this software, unless other terms accompany those items. If so, those terms apply.
+
+BY USING THE SOFTWARE, YOU ACCEPT THESE TERMS. IF YOU DO NOT ACCEPT THEM, DO NOT USE THE SOFTWARE. INSTEAD, RETURN IT TO THE RETAILER FOR A REFUND OR CREDIT. If you cannot obtain a refund there, contact Microsoft or the Microsoft affiliate serving your country for information about Microsoft''s refund policies. See www.microsoft.com/worldwide. In the United States and Canada, call (800) MICROSOFT or see www.microsoft.com/info/nareturns.htm.
+
+AS DESCRIBED BELOW, USING SOME FEATURES ALSO OPERATES AS YOUR CONSENT TO THE TRANSMISSION OF CERTAIN STANDARD COMPUTER INFORMATION FOR INTERNET-BASED SERVICES.
+
+TRIAL USE RIGHTS and CONVERSION for Visual Studio 2010 Professional Trial Edition. If the software is a trial edition, then this Section applies to you. You may install and use any number of copies of the trial software on your devices. You may only use the trial software for internal evaluation purposes. For example, your trial rights do not include the right to deploy or distribute any programs you design or develop with the software for use in a production environment, except that you may deploy your programs internally solely to evaluate the software. You may convert your trial rights at any time to the full rights described in the rest of these license terms by purchasing a commercial license and obtaining a product key from Microsoft or one of its distributors. Your rights to use the trial software are limited to ninety (90) days. The trial software will present conversion options to you thirty (30) days after you install the trial software. At that time you may either request an additional 60-day trial period extension or purchase a commercial license to continue using the software. After the expiration of the 90-day trial period, without conversion, the trial software will stop running.
+
+	- Sections 1-3, 10 - 13, 15, 16, 19 and Limited Warranty do not apply. The remaining sections below apply.
+	- Disclaimer of Warranty. The software is licensed "as-is". You bear the risk of using it. Microsoft gives no express warranties, guarantees or conditions. You may have additional consumer rights under your local laws which this agreement cannot change. To the extent permitted under your local laws, Microsoft excludes the implied warranties of merchantability, fitness for a particular purpose and non-infringement.
+	- Because this software is "as is", we may not provide support services for it.
+	- Limitation on and Exclusion of Remedies and Damages. You can recover from Microsoft and its suppliers only direct damages up to U.S. $5.00. You cannot recover any other damages, including consequential, lost profits, special, indirect or incidental damages.
+
+This limitation applies to
+	- anything related to the software, services, content (including code) on third party Internet sites, or third party programs; and
+	- claims for breach of contract, breach of warranty, guarantee or condition, strict liability, negligence, or other tort to the extent permitted by applicable law.
+
+It also applies even if Microsoft knew or should have known about the possibility of the damages. The above limitation or exclusion may not apply to you because your country may not allow the exclusion or limitation of incidental, consequential or other damages.
+
+When you acquire the retail license of the software named above, all of the license terms below apply.
+
+IF YOU COMPLY WITH THESE LICENSE TERMS, YOU HAVE THE RIGHTS BELOW FOR EACH LICENSE YOU ACQUIRE.
+1. OVERVIEW.
+	a. Software. The software includes development tools, software programs and documentation.
+	b. License Model. The software is licensed on a per user basis.
+2. INSTALLATION AND USE RIGHTS.
+	a. General. One user may install and use copies of the software to design, develop, test and demonstrate your programs. You may not use the software on a server in a production environment.
+	b. Included Microsoft Programs. The software contains other Microsoft programs. These license terms apply to your use of those programs, except for those Microsoft programs identified in Sections 6, 7 and 8 which are governed by their own license terms.
+	c. Third Party Programs. The software contains third party programs. If other terms come with those third party programs, those terms determine your rights to use it and any other related rights or remedies you have.
+	d. Product Keys. The software requires a key to install or access it. You are responsible for the use of keys assigned to you. You should not share the keys with third parties.
+3. ADDITIONAL LICENSING REQUIREMENTS AND/OR USE RIGHTS.
+	a. User Testing. Your end users may access the software to perform acceptance tests on your programs.
+	b. Microsoft Office User Interface. These license terms grant you no rights to make, copy, use or distribute any elements of the Microsoft Office user interface such as the ribbon and quick access toolbar, the license terms for which are available separately. To learn more about the Office user interface licensing program, please visit http://msdn.microsoft.com/officeui.
+	c. Utilities. The software contains certain components that are identified in the Utilities List located at http://go.microsoft.com/fwlink/?LinkId=165518. Depending on the specific edition of the software, the number of Utility files you receive with the software may not be equal to the number of Utilities listed in the Utilities List. You may copy and install the Utilities you receive with the software on to other machines, and these Utilities may only be used to debug and deploy your programs and databases you have developed with the software. You must delete all the Utilities installed onto a machine within the earlier of (i) when you have finished debugging or deploying your programs; or (ii) thirty (30) days after installation of the Utilities onto that machine.
+	d. BUILDSERVER.TXT File. If your version of the software contains a BUILDSERVER.TXT file you may install copies of the files listed in it, onto your build machines, solely for the purpose of compiling and building your programs. We may list additional files at http://go.microsoft.com/fwlink/?LinkId=165518 to use for this same purpose.
+	e. Distributable Code. The software contains code that you are permitted to distribute or deploy in programs you develop if you comply with the terms below.
+	i. Right to Use and Distribute. The code and text files listed below are "Distributable Code".
+		- REDIST.TXT Files. You may copy and distribute the object code form of code listed in REDIST.TXT files, plus any files listed on the REDIST list located at: http://go.microsoft.com/fwlink/?LinkId=165518
+		- Sample Code. You may modify, copy, and distribute the source and object code form of code marked as "sample".
+		- Silverlight Libraries. You may copy and distribute the object code form of code marked as "Silverlight Libraries", Silverlight "Client Libraries" and Silverlight "Server Libraries".
+		- Microsoft Merge Modules. You may copy and distribute the unmodified output of Microsoft Merge Modules.
+		- Image Library. You may copy and distribute images and animations in the Image Library as described in the software documentation. You may also modify that content. If you modify the content, it must be for use that is consistent with the permitted use of the unmodified content.
+		- Third Party Distribution. You may permit distributors of your programs to copy and distribute the Distributable Code as part of those programs.
+	ii. Distribution Requirements. For any Distributable Code you distribute, you must
+		- add significant primary functionality to it in your programs;
+		- for any Distributable Code having a filename extension of .lib, distribute only the results of running such Distributable Code through a linker with your program;
+		- distribute Distributable Code included in a setup program only as part of that setup program without modification;
+		- require distributors and external end users to agree to terms that protect it at least as much as this agreement;
+		- display your valid copyright notice on your programs; and
+		- indemnify, defend, and hold harmless Microsoft from any claims, including attorneys’ fees, related to the distribution or use of your programs.
+	iii. Distribution Restrictions. You may not
+		- alter any copyright, trademark or patent notice in the Distributable Code;
+		- use Microsoft’s trademarks in your programs’ names or in a way that suggests your programs come from or are endorsed by Microsoft;
+		- distribute Distributable Code to run on a platform other than Microsoft operating systems, run-time technologies or application platforms;
+		- include Distributable Code in malicious, deceptive or unlawful programs; or
+		- modify or distribute the source code of any Distributable Code so that any part of it becomes subject to an Excluded License. An Excluded License is one that requires, as a condition of use, modification or distribution, that
+		- the code be disclosed or distributed in source code form; or
+		- others have the right to modify it.
+
+4. INTERNET-BASED SERVICES. Microsoft provides Internet-based services with the software. It may change or cancel them at any time.
+	a. Consent for Internet-Based Services. The software features described below connect to Microsoft or service provider computer systems over the Internet. In some cases, you will not receive a separate notice when they connect. BY USING THESE FEATURES, YOU CONSENT TO THE TRANSMISSION OF THIS INFORMATION. Microsoft does not use the information to identify or contact you.
+
+ Computer Information. The following features use Internet protocols, which send to the appropriate systems computer information, such as your Internet protocol address, the type of operating system, browser and name and version of the software you are using, and the language code of the device where you installed the software. Microsoft uses this information to make the Internet-based services available to you.
+		- Web Content Features. Features in the software can retrieve related content from Microsoft and provide it to you. To provide the content, these features send to Microsoft the type of operating system, name and version of the software you are using, type of browser and language code of the device where you installed the software. Examples of these features are clip art, templates, online training, online assistance and Appshelp. You may choose not to use these web content features.
+		- Extension Manager. The Extension Manager can retrieve other software through the internet from the Visual Studio Gallery website. To provide this other software, the Extension Manager sends to Microsoft the name and version of the software you are using and language code of the device where you installed the software. This other software is provided by third parties to Visual Studio Gallery. It is licensed to users under terms provided by the third parties, not from Microsoft. Read the Visual Studio Gallery terms of use for more information.
+		- Real Simple Syndication ("RSS") Feed. This software start page contains updated content that is supplied by means of an RSS feed online from Microsoft.
+	b. Misuse of Internet-based Services. You may not use these services in any way that could harm them or impair anyone else''s use of them. You may not use the services to try to gain unauthorized access to any service, data, account or network by any means.
+
+5. SILVERLIGHT 3 AND SILVERLIGHT 3 SOFTWARE DEVELOPMENT KIT
+INTERNET-BASED SERVICES. Microsoft provides Internet-based services with Silverlight. It may change or cancel them at any time.
+	a. Automatic Updates. Silverlight contains an Automatic Update feature that is on by default. For more information about this feature, including instructions for to turning it off, see http://go.microsoft.com/fwlink/?LinkId=147032. You may turn off this feature while Silverlight 3 is running ("opt out"). Unless you expressly opt out of this feature, this feature will (a) connect to Microsoft or service provider computer systems over the Internet, (b) use Internet protocols to send to the appropriate systems standard computer information, such as your computer''s Internet protocol address, the type of operating system, browser and name and version of Silverlight you are using, and the language code of the device where you installed Silverlight, and (c) automatically download and install, or prompt you to download and/or install, current Updates to Silverlight. In some cases, you will not receive a separate notice before this feature takes effect. By installing the software, you consent to the transmission of standard computer information and the automatic downloading and installation of Updates.
+	b. Microsoft Digital Rights Management. If you use Silverlight to access content that has been protected with Microsoft Digital Rights Management (DRM), in order to let you play the content, the software may automatically request media usage rights from a rights server on the Internet and download and install available DRM Updates. For more information, see http://go.microsoft.com/fwlink/?LinkId=147032.
+	c. NOTICE ABOUT THE H.264/AVC VISUAL STANDARD, AND THE VC-1 VIDEO STANDARD. Silverlight may include H.264/MPEG-4 AVC and/or VC-1decoding technology. MPEG LA, L.L.C. requires this notice:
+
+THIS PRODUCT IS LICENSED UNDER THE AVC AND THE VC-1 PATENT PORTFOLIO LICENSES FOR THE PERSONAL AND NON-COMMERCIAL USE OF A CONSUMER TO (A) ENCODE VIDEO IN COMPLIANCE WITH THE ABOVE STANDARDS ("VIDEO STANDARDS") AND/OR (B) DECODE AVC AND VC-1 VIDEO THAT WAS ENCODED BY A CONSUMER ENGAGED IN A PERSONAL AND NON-COMMERCIAL ACTIVITY AND/OR WAS OBTAINED FROM A VIDEO PROVIDER LICENSED TO PROVIDE SUCH VIDEO. NONE OF THE LICENSES EXTEND TO ANY OTHER PRODUCT REGARDLESS OF WHETHER SUCH PRODUCT IS INCLUDED WITH THIS SOFTWARE IN A SINGLE ARTICLE. NO LICENSE IS GRANTED OR SHALL BE IMPLIED FOR ANY OTHER USE. ADDITIONAL INFORMATION MAY BE OBTAINED FROM MPEG LA, L.L.C. SEE HTTP://WWW.MPEGLA.COM.
+
+For clarification purposes only, the Notice in this Section does not limit or inhibit the use of the software provided under this agreement for normal business uses that are personal to that business which do not include (i) redistribution of the software to third parties, or (ii) creation of content with the VIDEO STANDARDS compliant technologies for distribution to third parties.
+
+6. LICENSE TERMS FOR MICROSOFT SQL SERVER SOFTWARE COMPONENTS. The software is accompanied by Microsoft SQL Server software components, which are licensed to you under the terms of the respective SQL Server licenses located in the "Licenses" folder in the following installation directory: ..\Program Files\Microsoft Visual Studio 2010\Licenses.
+
+7. .NET FRAMEWORK SOFTWARE. The software contains Microsoft .NET Framework software. This software is part of Windows. The license terms for Windows apply to your use of the .NET Framework software.
+
+ MICROSOFT .NET FRAMEWORK BENCHMARK TESTING. The software includes one or more components of the .NET Framework (".NET Components"). You may conduct internal benchmark testing of those components. You may disclose the results of any benchmark test of those components, provided that you comply with the conditions set forth at http://go.microsoft.com/fwlink/?LinkID=66406. Notwithstanding any other agreement you may have with Microsoft, if you disclose such benchmark test results, Microsoft shall have the right to disclose the results of benchmark tests it conducts of your products that compete with the applicable .NET Component, provided it complies with the same conditions set forth at http://go.microsoft.com/fwlink/?LinkID=66406.
+
+8. OTHER WINDOWS COMPONENTS. The software contains certain .dll''s related to Microsoft Build and Microsoft Web Deploy technologies. These files are part of Windows. The license terms for Windows apply to your use of these .dll''s.
+
+9. SCOPE OF LICENSE. The software is licensed, not sold. This agreement only gives you some rights to use the software. Microsoft reserves all other rights. Unless applicable law gives you more rights despite this limitation, you may use the software only as expressly permitted in this agreement. In doing so, you must comply with any technical limitations in the software that only allow you to use it in certain ways. For more information, see www.microsoft.com/licensing/userights. You may not
+	- work around any technical limitations in the software;
+	- reverse engineer, decompile or disassemble the software, except and only to the extent that applicable law expressly permits, despite this limitation;
+	- make more copies of the software than specified in this agreement or allowed by applicable law, despite this limitation;
+	- publish the software for others to copy;
+	- rent, lease or lend the software; or
+	- use the software for commercial software hosting services.
+Rights to access the software on any device do not give you any right to implement Microsoft patents or other Microsoft intellectual property in software or devices that access that device.
+10. BACKUP COPY. You may make one backup copy of the software. You may use it only to reinstall the software.
+
+11. DOCUMENTATION. Any person that has valid access to your computer or internal network may copy and use the documentation for your internal, reference purposes.
+
+12. NOT FOR RESALE SOFTWARE. You may not sell software marked as "NF" or "Not for Resale".
+
+13. TRANSFER TO A THIRD PARTY. The first user of the software may transfer it, and this agreement, directly to a third party. Before the transfer, that party must agree that this agreement applies to the transfer and use of the software. The first user must uninstall the software before transferring it separately from the device. The first user may not retain any copies.
+
+14. EXPORT RESTRICTIONS. The software is subject to United States export laws and regulations. You must comply with all domestic and international export laws and regulations that apply to the software. These laws include restrictions on destinations, end users and end use. For additional information, see www.microsoft.com/exporting.
+
+15. SUPPORT SERVICES. Microsoft provides support services for the software as described at www.support.microsoft.com/common/international.aspx. Such support will be subject to the following clarification related to jQuery and jQuery Validation. The software may contain the jQuery javascript library and the jQuery validation javascript library, which is licensed under the MIT License. For a copy of that license please see www.opensource.org/licenses/mit-license.php. We do not claim to “own” jQuery or jQuery Validation. While we offer our regular support options for the rest of the Microsoft software, the support we offer for jQuery and jQuery Validation will be as follows:
+
+	- Support is for the particular jQuery and jQuery Validation code that is included in the software, and only for requests from users of the software.
+	- We will take in customer inquiries. We will, at our option, submit bug fixes to the jQuery or jQuery Validation team on behalf of our customers.
+	- Support does not include feature requests. For feature requests, we will direct you to contact the jQuery or jQuery Validation team directly.
+	- Support does not include distribution of fixes broadly, such as via a Service Level Agreement. We may, however, provide targeted fixes to our customers on a case-by-case basis or suggest a fix so that customers can apply it at their own discretion.
+	- If jQuery or jQuery Validation is discontinued as an ongoing project, then our ability to support it will also need to end at that time. We may also choose to discontinue this support for any other reason.
+
+16. ENTIRE AGREEMENT. This agreement (including the warranty below), and the terms for supplements, updates, Internet-based services and support services that you use, are the entire agreement for the software and support services.
+
+17. APPLICABLE LAW.
+	a. United States. If you acquired the software in the United States, Washington state law governs the interpretation of this agreement and applies to claims for breach of it, regardless of conflict of laws principles. The laws of the state where you live govern all other claims, including claims under state consumer protection laws, unfair competition laws, and in tort.
+	b. Outside the United States. If you acquired the software in any other country, the laws of that country apply.
+
+18. LEGAL EFFECT. This agreement describes certain legal rights. You may have other rights under the laws of your state or country. You may also have rights with respect to the party from whom you acquired the software. This agreement does not change your rights under the laws of your state or country if the laws of your state or country do not permit it to do so.
+
+19. LIMITATION ON AND EXCLUSION OF DAMAGES. YOU CAN RECOVER FROM MICROSOFT AND ITS SUPPLIERS ONLY DIRECT DAMAGES UP TO THE AMOUNT YOU PAID FOR THE SOFTWARE. YOU CANNOT RECOVER ANY OTHER DAMAGES, INCLUDING CONSEQUENTIAL, LOST PROFITS, SPECIAL, INDIRECT OR INCIDENTAL DAMAGES. This limitation applies to anything related to the software, services, content (including code) on third party Internet sites, or third party programs; and claims for breach of contract, breach of warranty, guarantee or condition, strict liability, negligence, or other tort to the extent permitted by applicable law.  It also applies even if repair, replacement or a refund for the software does not fully compensate you for any losses; or � Microsoft knew or should have known about the possibility of the damages. Some states do not allow the exclusion or limitation of incidental or consequential damages, so the above limitation or exclusion may not apply to you. They also may not apply to you because your country may not allow the exclusion or limitation of incidental, consequential or other damages.
+
+LIMITED WARRANTY
+
+A. LIMITED WARRANTY. If you follow the instructions, the software will perform substantially as described in the Microsoft materials that you receive in or with the software.
+
+B. TERM OF WARRANTY; WARRANTY RECIPIENT; LENGTH OF ANY IMPLIED WARRANTIES. THE LIMITED WARRANTY COVERS THE SOFTWARE FOR ONE YEAR AFTER ACQUIRED BY THE FIRST USER. IF YOU RECEIVE SUPPLEMENTS, UPDATES, OR REPLACEMENT SOFTWARE DURING THAT YEAR, THEY WILL BE COVERED FOR THE REMAINDER OF THE WARRANTY OR 30 DAYS, WHICHEVER IS LONGER. If the first user transfers the software, the remainder of the warranty will apply to the recipient. TO THE EXTENT PERMITTED BY LAW, ANY IMPLIED WARRANTIES, GUARANTEES OR CONDITIONS LAST ONLY DURING THE TERM OF THE LIMITED WARRANTY. Some states do not allow limitations on how long an implied warranty lasts, so these limitations may not apply to you. They also might not apply to you because some countries may not allow limitations on how long an implied warranty, guarantee or condition lasts.
+
+C. EXCLUSIONS FROM WARRANTY. This warranty does not cover problems caused by your acts (or failures to act), the acts of others, or events beyond Microsoft’s reasonable control.
+
+D. REMEDY FOR BREACH OF WARRANTY. MICROSOFT WILL REPAIR OR REPLACE THE SOFTWARE AT NO CHARGE. IF MICROSOFT CANNOT REPAIR OR REPLACE IT, MICROSOFT WILL REFUND THE AMOUNT SHOWN ON YOUR RECEIPT FOR THE SOFTWARE. IT WILL ALSO REPAIR OR REPLACE SUPPLEMENTS, UPDATES AND REPLACEMENT SOFTWARE AT NO CHARGE. IF MICROSOFT CANNOT REPAIR OR REPLACE THEM, IT WILL REFUND THE AMOUNT YOU PAID FOR THEM, IF ANY. YOU MUST UNINSTALL THE SOFTWARE AND RETURN ANY MEDIA AND OTHER ASSOCIATED MATERIALS TO MICROSOFT WITH PROOF OF PURCHASE TO OBTAIN A REFUND. THESE ARE YOUR ONLY REMEDIES FOR BREACH OF THE LIMITED WARRANTY.
+
+E. CONSUMER RIGHTS NOT AFFECTED. YOU MAY HAVE ADDITIONAL CONSUMER RIGHTS UNDER YOUR LOCAL LAWS, WHICH THIS AGREEMENT CANNOT CHANGE.
+
+F. WARRANTY PROCEDURES. You need proof of purchase for warranty service.
+	1. United States and Canada. For warranty service or information about how to obtain a refund for software acquired in the United States and Canada, contact Microsoft at (800) MICROSOFT; Microsoft Customer Service and Support, One Microsoft Way, Redmond, WA 98052-6399; or visit www.microsoft.com/info/nareturns.htm.
+	2. Europe, Middle East and Africa. If you acquired the software in Europe, the Middle East or Africa, Microsoft Ireland Operations Limited makes this limited warranty. To make a claim under this warranty, you should contact either Microsoft Ireland Operations Limited, Customer Care Centre, Atrium Building Block B, Carmanhall Road, Sandyford Industrial Estate, Dublin 18, Ireland; or the Microsoft affiliate serving your country (see www.microsoft.com/worldwide).
+	3. Outside United States, Canada, Europe, Middle East and Africa. If you acquired the software outside the United States, Canada, Europe, the Middle East and Africa, contact the Microsoft affiliate serving your country (see www.microsoft.com/worldwide).
+
+G. NO OTHER WARRANTIES. THE LIMITED WARRANTY IS THE ONLY DIRECT WARRANTY FROM MICROSOFT. MICROSOFT GIVES NO OTHER EXPRESS WARRANTIES, GUARANTEES OR CONDITIONS. WHERE ALLOWED BY YOUR LOCAL LAWS, MICROSOFT EXCLUDES IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. If your local laws give you any implied warranties, guarantees or conditions, despite this exclusion, your remedies are described in the Remedy for Breach of Warranty clause above, to the extent permitted by your local laws.
+
+H. LIMITATION ON AND EXCLUSION OF DAMAGES FOR BREACH OF WARRANTY. THE LIMITATION ON AND EXCLUSION OF DAMAGES CLAUSE ABOVE APPLIES TO BREACHES OF THIS LIMITED WARRANTY. THIS WARRANTY GIVES YOU SPECIFIC LEGAL RIGHTS, AND YOU MAY ALSO HAVE OTHER RIGHTS WHICH VARY FROM STATE TO STATE. YOU MAY ALSO HAVE OTHER RIGHTS WHICH VARY FROM COUNTRY TO COUNTRY.
+
+# ====================================================================
+# WinPcap License
+# --------------------------------------------------------------------
+
+Copyright (c) 1999 - 2005 NetGroup, Politecnico di Torino (Italy).
+Copyright (c) 2005 - 2010 CACE Technologies, Davis (California).
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+
+ 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer. 
+ 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution. 
+ 3. Neither the name of the Politecnico di Torino, CACE Technologies nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission. 
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+This product includes software developed by the University of California, Lawrence Berkeley Laboratory and its contributors. 
+This product includes software developed by the Kungliga Tekniska Högskolan and its contributors.
+This product includes software developed by Yen Yen Lim and North Dakota State University.
+
+--------------------------------------------------------------------------------
+ Portions Copyright (c) 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997 The Regents of the University of California. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ 3. All advertising materials mentioning features or use of this software must display the following acknowledgement: "This product includes software developed by the University of California, Berkeley and its contributors."
+ 4. Neither the name of the University nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+
+ THIS SOFTWARE IS PROVIDED BY THE INSTITUTE AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
+--------------------------------------------------------------------------------
+Portions Copyright (c) 1983 Regents of the University of California. All rights reserved.
+
+Redistribution and use in source and binary forms are permitted provided that the above copyright notice and this paragraph are duplicated in all such forms and that any documentation, advertising materials, and other materials related to such distribution and use acknowledge that the software was developed by the University of California, Berkeley. The name of the University may not be used to endorse or promote products derived from this software without specific prior written permission. THIS SOFTWARE IS PROVIDED "AS IS" AND WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE. 
+
+--------------------------------------------------------------------------------
+Portions Copyright (c) 1995, 1996, 1997 Kungliga Tekniska Högskolan (Royal Institute of Technology, Stockholm, Sweden). All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ 3. All advertising materials mentioning features or use of this software must display the following acknowledgement: "This product includes software developed by the Kungliga Tekniska Högskolan and its contributors."
+ 4. Neither the name of the University nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE INSTITUTE AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE INSTITUTE OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
+
+--------------------------------------------------------------------------------
+Portions Copyright (c) 1997 Yen Yen Lim and North Dakota State University. All rights reserved.
+
+ Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ 3. All advertising materials mentioning features or use of this software must display the following acknowledgement: "This product includes software developed by Yen Yen Lim and North Dakota State University"
+ 4. The name of the author may not be used to endorse or promote products derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE AUTHOR "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
+
+--------------------------------------------------------------------------------
+Portions Copyright (c) 1993 by Digital Equipment Corporation.
+
+Permission to use, copy, modify, and distribute this software for any purpose with or without fee is hereby granted, provided that the above copyright notice and this permission notice appear in all copies, and that the name of Digital Equipment Corporation not be used in advertising or publicity pertaining to distribution of the document or software without specific, written prior permission.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND DIGITAL EQUIPMENT CORP. DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL DIGITAL EQUIPMENT CORPORATION BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE. 
+--------------------------------------------------------------------------------
+Portions Copyright (C) 1995, 1996, 1997, 1998, and 1999 WIDE Project. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ 3. Neither the name of the project nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE PROJECT OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
+--------------------------------------------------------------------------------
+Portions Copyright (c) 1996 Juniper Networks, Inc. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that: (1) source code distributions retain the above copyright notice and this paragraph in its entirety, (2) distributions including binary code include the above copyright notice and this paragraph in its entirety in the documentation or other materials provided with the distribution. The name of Juniper Networks may not be used to endorse or promote products derived from this software without specific prior written permission.
+
+ THIS SOFTWARE IS PROVIDED "AS IS" AND WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. 
+--------------------------------------------------------------------------------
+Portions Copyright (c) 2001 Daniel Hartmeier All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+- Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer. 
+- Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution. 
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTOR "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
+--------------------------------------------------------------------------------
+Portions Copyright 1989 by Carnegie Mellon.
+
+Permission to use, copy, modify, and distribute this program for any purpose and without fee is hereby granted, provided that this copyright and permission notice appear on all copies and supporting documentation, the name of Carnegie Mellon not be used in advertising or publicity pertaining to distribution of the program without specific prior permission, and notice be given in supporting documentation that copying and distribution is by permission of Carnegie Mellon and Stanford University. Carnegie Mellon makes no representations about the suitability of this software for any purpose. It is provided "as is" without express or implied warranty. 
+

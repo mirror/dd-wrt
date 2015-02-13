@@ -1,0 +1,238 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			mme.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='memswap.c.html' title=' memswap.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='MMECode.c.html' title=' MMECode.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *
+ *   mme.c - Atheros vendor-specific message code and name printer;
+ *
+ *   print vendor-specific mesage codes and names and with associated
+ *   error codes and error text on stdout in various formats; options
+ *   are HTML, CSV and plain text;
+ *
+ *
+ *   Contributor(s):
+ *	Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *   system header files;
+ *--------------------------------------------------------------------*/
+
+#include &lt;stdio.h&gt;
+#include &lt;errno.h&gt;
+
+/*====================================================================*
+ *   custom header files;
+ *--------------------------------------------------------------------*/
+
+#include &quot;../tools/getoptv.h&quot;
+#include &quot;../tools/putoptv.h&quot;
+#include &quot;../tools/number.h&quot;
+#include &quot;../tools/format.h&quot;
+#include &quot;../tools/error.h&quot;
+#include &quot;../tools/flags.h&quot;
+
+/*====================================================================*
+ *   custom source files;
+ *--------------------------------------------------------------------*/
+
+#ifndef MAKEFILE
+#include &quot;../tools/getoptv.c&quot;
+#include &quot;../tools/putoptv.c&quot;
+#include &quot;../tools/version.c&quot;
+#include &quot;../tools/error.c&quot;
+#include &quot;../tools/uintspec.c&quot;
+#include &quot;../tools/todigit.c&quot;
+#include &quot;../tools/output.c&quot;
+#endif
+
+#ifndef MAKEFILE
+#include &quot;../mme/MMEName.c&quot;
+#include &quot;../mme/MMEMode.c&quot;
+#endif
+
+#include &quot;../mme/MMECode.c&quot;
+
+/*====================================================================*
+ *   program constants;
+ *--------------------------------------------------------------------*/
+
+#define MME_VERBOSE	(1 &lt;&lt; 0)
+#define MME_SILENCE	(1 &lt;&lt; 1)
+#define MME_TOCSV	(1 &lt;&lt; 2)
+#define MME_TOHTML	(1 &lt;&lt; 3)
+
+/*====================================================================*
+ *
+ *   int main (int argc, char * argv[]);
+ *
+ *   print vendor-specific message codes and names with associated
+ *   error codes and text on stdout; output options are HTML, CSV
+ *   and plain text;
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+#define DEFAULT_COLUMN 40
+
+int main (int argc, char const * argv [])
+
+{
+	static char const * optv [] =
+	{
+		&quot;cht:&quot;,
+		PUTOPTV_S_DIVINE,
+		&quot;Atheros vendor-specific message enumerator&quot;,
+		&quot;c\toutput CSV table&quot;,
+		&quot;h\toutput HTML table&quot;,
+		&quot;t n\ttab to column (n) [&quot; LITERAL (DEFAULT_COLUMN) &quot;]&quot;,
+		(char const *) (0)
+	};
+	signed column = DEFAULT_COLUMN;
+	signed index;
+	uint16_t type;
+	flag_t flags = (flag_t)(0);
+	signed c;
+	optind = 1;
+	while ((c = getoptv (argc, argv, optv)) != -1)
+	{
+		switch ((char) (c))
+		{
+		case 'c':
+			_setbits (flags, MME_TOCSV);
+			break;
+		case 'h':
+			_setbits (flags, MME_TOHTML);
+			break;
+		case 't':
+			column = (signed)(uintspec (optarg, 0, 255));
+		default:
+			break;
+		}
+	}
+	argc -= optind;
+	argv += optind;
+	if (argc)
+	{
+		error (1, ENOTSUP, ERROR_TOOMANY);
+	}
+	if (_anyset (flags, MME_TOHTML))
+	{
+		signed margin = 2;
+		output (margin++, &quot;&lt;table class='mme'&gt;&quot;);
+		output (margin++, &quot;&lt;tr class='mme'&gt;&quot;);
+		output (margin, &quot;&lt;th class='type'&gt;Type&lt;/th&gt;&quot;);
+		output (margin, &quot;&lt;th class='name'&gt;Name&lt;/th&gt;&quot;);
+		output (margin, &quot;&lt;th class='code'&gt;Code&lt;/th&gt;&quot;);
+		output (margin, &quot;&lt;th class='text'&gt;Text&lt;/th&gt;&quot;);
+		output (margin--, &quot;&lt;/tr&gt;&quot;);
+		for (index = 0; index &lt; (signed)(SIZEOF (mme_codes)); index++)
+		{
+			type = mme_codes [index].type;
+			output (margin++, &quot;&lt;tr class='mme'&gt;&quot;);
+			output (margin, &quot;&lt;td class='type'&gt;0x%04X&lt;/td&gt;&quot;, type);
+			output (margin, &quot;&lt;td class='name'&gt;%s.%s&lt;/td&gt;&quot;, MMEName (type), MMEMode (type));
+			output (margin, &quot;&lt;td class='code'&gt;0x%02X&lt;/td&gt;&quot;, mme_codes [index].code);
+			output (margin, &quot;&lt;td class='text'&gt;%s&lt;/td&gt;&quot;, mme_codes [index].text);
+			output (margin--, &quot;&lt;/tr&gt;&quot;);
+		}
+		output (margin--, &quot;&lt;/table&gt;&quot;);
+		return (0);
+	}
+	if (_anyset (flags, MME_TOCSV))
+	{
+		printf (&quot;Name,Type,Code,Text\n&quot;);
+		for (index = 0; index &lt; (signed)(SIZEOF (mme_codes)); index++)
+		{
+			type = mme_codes [index].type;
+			printf (&quot;0x%04X,&quot;, type);
+			printf (&quot;%s.%s,&quot;, MMEName (type), MMEMode (type));
+			printf (&quot;0x%02X,&quot;, mme_codes [index].code);
+			printf (&quot;\&quot;%s\&quot;\n&quot;, mme_codes [index].text);
+		}
+		return (0);
+	}
+	for (index = 0; index &lt; (signed)(SIZEOF (mme_codes)); index++)
+	{
+		signed indent = column;
+		type = mme_codes [index].type;
+		indent -= printf (&quot;0x%04X &quot;, type);
+		indent -= printf (&quot;%s.%s &quot;, MMEName (type), MMEMode (type));
+		while (indent-- &gt; 0)
+		{
+			putc (' ', stdout);
+		}
+		printf (&quot;0x%02X &quot;, mme_codes [index].code);
+		printf (&quot;\&quot;%s\&quot;\n&quot;, mme_codes [index].text);
+	}
+	return (0);
+}
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='memswap.c.html' title=' memswap.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='MMECode.c.html' title=' MMECode.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

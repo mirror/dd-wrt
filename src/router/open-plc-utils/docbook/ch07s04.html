@@ -1,0 +1,53 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Network Functions</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="ch07.html" title="Chapter 7.  Support Function Reference"><link rel="prev" href="ch07s03.html" title="Ethernet Functions"><link rel="next" href="ch07s05.html" title="Generic Functions"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">
+		Network Functions
+		</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch07s03.html">Prev</a> </td><th width="60%" align="center">Chapter 7. 
+		Support Function Reference
+		</th><td width="20%" align="right"> <a accesskey="n" href="ch07s05.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="support-network"></a>
+		Network Functions
+		</h2></div></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="support-networkbridges"></a>
+			NetworkBridges
+			</h3></div></div></div><div class="funcsynopsis"><table border="0" summary="Function synopsis" cellspacing="0" cellpadding="0"><tr><td><code class="funcdef">size_t <b class="fsfunc">NetworkBridges</b> (</code></td><td><code>struct channel * </code> </td><td><var class="pdparam">channel</var>, </td></tr><tr><td> </td><td><code>void  * </code> </td><td><var class="pdparam">memory</var>, </td></tr><tr><td> </td><td><code>size_t </code> </td><td><var class="pdparam">extent</var><code class="funcdef">)</code>;</td></tr></table></div><p>
+			Search a channel for local powerline devices (bridges) and store their Ethernet hardware in consecutive <code class="varname">memory</code> locations. The memory <code class="varname">extent</code> is specified in bytes. The number of devices found is returned as the function value,  provided enough space is available to store all addressed. Unlike function <a class="link" href="ch07s04.html#support-networkdevices" title="NetworkDevices">NetworkDevices</a>, the channel <code class="varname">peer</code> address is ignored. 
+			</p><p>
+			We call local devices “<span class="quote">bridges</span>” because each serves as an Ethernet-to-Powerline bridge for the local host.
+			</p><div class="example"><a name="idp12080448"></a><p class="title"><b>Example 7.1. 
+				Enumerating Local Devices
+				</b></p><div class="example-contents"><pre class="programlisting">
+#include &lt;net/if.h&gt;
+#include "../ether/channel.h"
+extern struct channel <code class="varname">channel</code>; 
+uint8_t <code class="varname">address</code> [<code class="constant">255</code>][<code class="constant">ETHER_ADDR_LEN</code>]; 
+size_t <code class="varname">bridges</code> = <code class="function">NetworkBridges</code> (&amp;<code class="varname">channel</code>, <code class="varname">address</code>, sizeof (<code class="varname">address</code>));
+size_t <code class="varname">bridge</code> = 0; 
+while (<code class="varname">bridge</code> &lt; <code class="varname">bridges</code>)
+{
+   <code class="function">binout</code> (<code class="varname">address</code> [<code class="varname">bridge</code>], <code class="constant">ETHER_ADDR_LEN</code>, <code class="constant">':'</code>, stdout);
+   <code class="function">putc</code> (<code class="constant">'\n'</code>, <code class="varname">stdout</code>);  
+} 
+</pre><p>
+				The code segment shown above illustrates how to use function <code class="varname">NetworkBridges</code> to identify all local devices. We do not need to set the <a class="link" href="ch07s03.html#support-channel" title="channel">channel</a> <code class="varname">peer</code> because <code class="varname">NetworkBridges</code> always uses the Atheros <code class="varname">localcast</code> address. Array <code class="varname">address</code> is declared with two dimensions to simplify access to individual addresses on return.  
+				</p></div></div><br class="example-break"></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="support-networkdevices"></a>
+			NetworkDevices
+			</h3></div></div></div><div class="funcsynopsis"><table border="0" summary="Function synopsis" cellspacing="0" cellpadding="0"><tr><td><code class="funcdef">size_t <b class="fsfunc">NetworkDevices</b> (</code></td><td><code>struct channel * </code> </td><td><var class="pdparam">channel</var>, </td></tr><tr><td> </td><td><code>void * </code> </td><td><var class="pdparam">memory</var>, </td></tr><tr><td> </td><td><code>size_t </code> </td><td><var class="pdparam">extent</var><code class="funcdef">)</code>;</td></tr></table></div><p>
+			Query a powerline device, specified by <a class="link" href="ch07s03.html#support-channel" title="channel">channel</a>, for neighboring network devices and store their Ethernet addresses in consecutive <code class="varname">memory</code> locations. The memory <code class="varname">extent</code> is specified in bytes. The number of devices found is returned as the function value, provided sufficient space is available to store all addresses. Unlike function <a class="link" href="ch07s04.html#support-networkbridges" title="NetworkBridges">NetworkBridges</a>, the <span class="structname">channel</span> <code class="varname">peer</code> address is identifies the device to be queried. 
+			</p><div class="example"><a name="idp12093656"></a><p class="title"><b>Example 7.2. 
+				Enumerating Network Devices
+				</b></p><div class="example-contents"><pre class="programlisting">
+#include &lt;net/if.h&gt;
+#include "../ether/channel.h"
+extern struct channel <code class="varname">channel</code>; 
+uint8_t <code class="varname">address</code> [<code class="constant">255</code>][<code class="constant">ETHER_ADDR_LEN</code>]; 
+size_t <code class="varname">devices</code> = <code class="function">NetworkDevices</code> (&amp;<code class="varname">channel</code>, <code class="varname">address</code>, sizeof (<code class="varname">address</code>));
+size_t <code class="varname">device</code> = <code class="constant">0</code>; 
+while (<code class="varname">device</code> &lt; <code class="varname">devices</code>)
+{
+   <code class="function">binout</code> (<code class="varname">address</code> [<code class="varname">device</code>], <code class="constant">ETHER_ADDR_LEN</code>, <code class="constant">':'</code>, <code class="varname">stdout</code>);
+   <code class="function">putc</code> (<code class="constant">'\n'</code>;, <code class="varname">stdout</code>);  
+} 
+</pre><p>
+				The code segment shown above illustrates how to use function <code class="varname">NetworkDevices</code> to identify all devices on a specific network. You must set the <a class="link" href="ch07s03.html#support-channel" title="channel">channel</a> <code class="varname">peer</code> address before calling <code class="varname">NetworkDevices</code>. Array <code class="varname">address</code> is declared with two dimensions to simplify access to individual addresses on return. If the <a class="link" href="ch07s03.html#support-channel" title="channel">channel</a> <code class="varname">peer</code> address is not the Ethernet <code class="varname">broadcast</code> or Atheros <code class="varname">localcast</code> address then the first address returned will be the <a class="link" href="ch07s03.html#support-channel" title="channel">channel</a> <code class="varname">peer</code> address.
+				</p></div></div><br class="example-break"></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch07s03.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="ch07.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch07s05.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">
+		Ethernet Functions
+		 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 
+		Generic Functions
+		</td></tr></table></div></body></html>0

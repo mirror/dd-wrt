@@ -1,0 +1,175 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			WriteCFG.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='weeder.c.html' title=' weeder.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='WriteExecuteApplet2.c.html' title=' WriteExecuteApplet2.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *
+ *   signed WriteCFG (struct plc * plc);
+ *
+ *   plc.h
+ *
+ *   This plugin for program plc writes the contents of an SDRAM
+ *   confirmation file to a device using a VS_SET_SDRAM message; the
+ *   CFG file in struct plc must be opened before this function is
+ *   called; the bootloader must be running for this to work;
+ *
+ *   the VS_SET_SDRAM message is recognized by the INT600 BootLoader
+ *   only; the INT6400 BootLoader recognizes it but does nothing with
+ *   it;
+ *
+ *
+ *   Contributor(s):
+ *      Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef WRITECFG_SOURCE
+#define WRITECFG_SOURCE
+
+#include &lt;stdint.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;memory.h&gt;
+
+#include &quot;../plc/plc.h&quot;
+#include &quot;../tools/memory.h&quot;
+#include &quot;../tools/error.h&quot;
+#include &quot;../tools/files.h&quot;
+#include &quot;../ram/sdram.h&quot;
+
+int WriteCFG (struct plc * plc)
+
+{
+	struct channel * channel = (struct channel *)(plc-&gt;channel);
+	struct message * message = (struct message *)(plc-&gt;message);
+
+#ifndef __GNUC__
+#pragma pack (push,1)
+#endif
+
+	struct __packed vs_set_sdram_request
+	{
+		struct ethernet_hdr ethernet;
+		struct qualcomm_hdr qualcomm;
+		struct config_ram config_ram;
+		uint32_t CHECKSUM;
+	}
+	* request = (struct vs_set_sdram_request *) (message);
+	struct __packed vs_set_sdram_confirm
+	{
+		struct ethernet_hdr ethernet;
+		struct qualcomm_hdr qualcomm;
+		uint8_t MSTATUS;
+	}
+	* confirm = (struct vs_set_sdram_confirm *) (message);
+
+#ifndef __GNUC__
+#pragma pack (pop)
+#endif
+
+	Request (plc, &quot;Write Configuration Applet from %s&quot;, plc-&gt;CFG.name);
+	memset (message, 0, sizeof (* message));
+	EthernetHeader (&amp;request-&gt;ethernet, channel-&gt;peer, channel-&gt;host, channel-&gt;type);
+	QualcommHeader (&amp;request-&gt;qualcomm, 0, (VS_SET_SDRAM | MMTYPE_REQ));
+	plc-&gt;packetsize = (ETHER_MIN_LEN - ETHER_CRC_LEN);
+	if (lseek (plc-&gt;CFG.file, 0, SEEK_SET))
+	{
+		error ((plc-&gt;flags &amp; PLC_BAILOUT), errno, FILE_CANTHOME, plc-&gt;CFG.name);
+		return (-1);
+	}
+	if (read (plc-&gt;CFG.file, &amp;request-&gt;config_ram, sizeof (struct config_ram)) != sizeof (struct config_ram))
+	{
+		error ((plc-&gt;flags &amp; PLC_BAILOUT), errno, FILE_CANTREAD, plc-&gt;CFG.name);
+		return (-1);
+	}
+	if (read (plc-&gt;CFG.file, &amp;request-&gt;CHECKSUM, sizeof (request-&gt;CHECKSUM)) != sizeof (request-&gt;CHECKSUM))
+	{
+		error ((plc-&gt;flags &amp; PLC_BAILOUT), errno, &quot;can't read %s checksum&quot;, plc-&gt;CFG.name);
+		return (-1);
+	}
+	if (SendMME (plc) &lt;= 0)
+	{
+		error ((plc-&gt;flags &amp; PLC_BAILOUT), errno, CHANNEL_CANTSEND);
+		return (-1);
+	}
+	if (ReadMME (plc, 0, (VS_SET_SDRAM | MMTYPE_CNF)) &lt;= 0)
+	{
+		error ((plc-&gt;flags &amp; PLC_BAILOUT), errno, CHANNEL_CANTREAD);
+		return (-1);
+	}
+	if (confirm-&gt;MSTATUS)
+	{
+		Failure (plc, PLC_WONTDOIT);
+		return (-1);
+	}
+	Confirm (plc, &quot;Written&quot;);
+	return (0);
+}
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='weeder.c.html' title=' weeder.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='WriteExecuteApplet2.c.html' title=' WriteExecuteApplet2.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

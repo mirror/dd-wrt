@@ -1,0 +1,110 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			pib2xml.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='pev.1.html' title=' pev.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='pibcomp.1.html' title=' pibcomp.1 '>NEXT</a>]
+			</div>
+<pre>
+pib2xml(1)                                   Qualcomm Atheros Open Powerline Toolkit                                  pib2xml(1)
+
+NAME
+       pib2xml - print object driven xml editior intructions
+
+SYNOPSIS
+       pib2xml [options] file [file] [...]  [&gt;stdout]
+
+DESCRIPTION
+       Write XML editor instructions on stdout.  This requires an object definition file that contains the size and name of data
+       regions and members within a binary object or file.  Individual data members are presented as XML instructions  that  can
+       be used by program pxe to edit PIB files.
+
+OPTIONS
+       -f definitions
+              The  name  of  the  object definition file that contains the size, name and description of objects within a binary
+              file.  The definition file is not modified.  This option is required.  There is no default file.
+
+       -s schema
+              The url for the XML schema.  The default schema is piboffset.xsd for the Qualcomm Atheros Powerline Toolkit verion
+              of this program.
+
+       -x     Print  an  XML  schema on stdout.  This schema defines the elements and attributes used to define data objects and
+              members read from input files.  It can be used to validate XML files used with program pxe.
+
+       -?,--help
+              Print program help summary on stdout.  This option takes precedence over other options on the command line.
+
+       -!,--version
+              Print program version information on stdout.  This option takes precedence over other options on the command line.
+              Use  this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of
+              the Linux Toolkit you are using.
+
+ARGUMENTS
+       file   The name of a binary file.  The file must have either Thunderbolt/Lightning or Panther/Lynx format or output  will
+              be incorrect.  The file is not modified by this program.  Only one such file is permitted on the command line.
+
+EXAMPLES
+       The  following  is  an example object definition file that defines a standard ethernet frame and member fields within it.
+       The comments and descriptions shown are optional.  The field lengths and field names are not.  Zero-length fields  denote
+       arbitrary field groups and are used by program offset to print headings.
+
+          # ========================================
+          #
+          # ----------------------------------------
+
+          0 header
+          6 ODA Own Destination Address
+          6 OSA Own Source Address
+          2 ET Ethertype or frame length
+
+          # ========================================
+          #
+          # ----------------------------------------
+
+          0 body
+          1500 Payload
+
+          # ========================================
+          #
+          # ----------------------------------------
+
+          0 trailer
+          4 CRC Cyclical Redundancy Check
+
+       The  following  command  uses  object  definition file ether.txt to identify and display member fields within binary file
+       abc.bin as a set of xml instructions that can be used by program xde to edit other files.
+
+          # pib2xml -f ether.txt abc.bin
+
+       The next command writes the xml schema that defines the elements and attributes used in the  edit  instructions  to  file
+       data.xsd.  This file can be used to validate xml edit instructions.
+
+          # pib2xml -x &gt; data.xsd
+
+SEE ALSO
+       chkpib(7), chkpib2(7), getpib(7), modpib(1), pibcomp(1), pibdump(1), setpib(1), xml2pib(1)
+
+CREDITS
+        Charles Maier &lt;cmaier@cmassoc.net&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                               pib2xml(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='pev.1.html' title=' pev.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='pibcomp.1.html' title=' pibcomp.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

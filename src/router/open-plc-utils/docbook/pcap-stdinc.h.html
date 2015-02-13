@@ -1,0 +1,121 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			pcap-stdinc.h
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='pcap-int.h.html' title=' pcap-int.h '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='pib.h.html' title=' pib.h '>NEXT</a>]
+			</div>
+<pre>
+/*
+ * Copyright (c) 2002 - 2005 NetGroup, Politecnico di Torino (Italy)
+ * Copyright (c) 2005 - 2009 CACE Technologies, Inc. Davis (California)
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the Politecnico di Torino nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * @(#) $Header: /tcpdump/master/libpcap/pcap-stdinc.h,v 1.10.2.1 2008-10-06 15:38:39 gianluca Exp $ (LBL)
+ */
+
+#define SIZEOF_CHAR 1
+#define SIZEOF_SHORT 2
+#define SIZEOF_INT 4
+#ifndef _MSC_EXTENSIONS
+#define SIZEOF_LONG_LONG 8
+#endif
+
+/*
+ * Avoids a compiler warning in case this was already defined      
+ * (someone defined _WINSOCKAPI_ when including 'windows.h', in order
+ * to prevent it from including 'winsock.h')
+ */
+#ifdef _WINSOCKAPI_
+#undef _WINSOCKAPI_
+#endif
+#include &lt;winsock2.h&gt;
+
+#include &lt;fcntl.h&gt;
+
+#include &quot;bittypes.h&quot;
+#include &lt;time.h&gt;
+#include &lt;io.h&gt;
+
+#ifndef __MINGW32__
+#include &quot;IP6_misc.h&quot;
+#endif
+
+#define caddr_t char*
+
+#if _MSC_VER &lt; 1500
+#define snprintf _snprintf
+#define vsnprintf _vsnprintf
+#define strdup _strdup
+#endif
+
+#define inline __inline 
+
+#ifdef __MINGW32__
+#include &lt;stdint.h&gt;
+#else /*__MINGW32__*/
+/* MSVC compiler */
+#ifndef _UINTPTR_T_DEFINED
+#ifdef  _WIN64
+typedef unsigned __int64    uintptr_t;
+#else
+typedef _W64 unsigned int   uintptr_t;
+#endif
+#define _UINTPTR_T_DEFINED
+#endif
+
+#ifndef _INTPTR_T_DEFINED
+#ifdef  _WIN64
+typedef __int64    intptr_t;
+#else
+typedef _W64 int   intptr_t;
+#endif
+#define _INTPTR_T_DEFINED
+#endif 
+
+#endif /*__MINGW32__*/
+</pre>
+		<div class='footerlink'>
+			[<a href='pcap-int.h.html' title=' pcap-int.h '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='pib.h.html' title=' pib.h '>NEXT</a>]
+			</div>
+		</body>
+	</html>

@@ -1,0 +1,234 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			hpavkey.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='hpavd.c.html' title=' hpavd.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='HPAVKeyDAK.c.html' title=' HPAVKeyDAK.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+#define _GETOPT_H
+
+/*====================================================================*
+ *   system header files;
+ *--------------------------------------------------------------------*/
+
+#include &lt;stdio.h&gt;
+#include &lt;ctype.h&gt;
+#include &lt;string.h&gt;
+#include &lt;unistd.h&gt;
+
+/*====================================================================*
+ *   custom header files;
+ *--------------------------------------------------------------------*/
+
+#include &quot;../tools/getoptv.h&quot;
+#include &quot;../tools/putoptv.h&quot;
+#include &quot;../tools/version.h&quot;
+#include &quot;../tools/number.h&quot;
+#include &quot;../tools/types.h&quot;
+#include &quot;../tools/flags.h&quot;
+#include &quot;../tools/error.h&quot;
+#include &quot;../key/HPAVKey.h&quot;
+#include &quot;../key/SHA256.h&quot;
+
+/*====================================================================*
+ *   custom source files;
+ *--------------------------------------------------------------------*/
+
+#ifndef MAKEFILE
+#include &quot;../tools/getoptv.c&quot;
+#include &quot;../tools/putoptv.c&quot;
+#include &quot;../tools/version.c&quot;
+#include &quot;../tools/uintspec.c&quot;
+#include &quot;../tools/todigit.c&quot;
+#include &quot;../tools/hexout.c&quot;
+#include &quot;../tools/error.c&quot;
+#endif
+
+#ifndef MAKEFILE
+#include &quot;../key/HPAVKeyDAK.c&quot;
+#include &quot;../key/HPAVKeyNMK.c&quot;
+#include &quot;../key/HPAVKeyNID.c&quot;
+#include &quot;../key/HPAVKeySHA.c&quot;
+#include &quot;../key/HPAVKeyOut.c&quot;
+#include &quot;../key/SHA256.c&quot;
+#endif
+
+/*====================================================================*
+ *
+ *   int main (int argc, const char * argv []);
+ *
+ *
+ *
+ *--------------------------------------------------------------------*/
+
+#define DEFAULT_LEVEL 0
+
+int main (int argc, const char * argv [])
+
+{
+	static const char * optv [] =
+	{
+		&quot;DeL:MNqv&quot;,
+		&quot;phrase [phrase] [...]&quot;,
+		&quot;HomePlug AV key generator&quot;,
+		&quot;D\tconvert password to Device Access Key&quot;,
+		&quot;e\tenforce HomePlug AV password rules&quot;,
+		&quot;M\tconvert password to Network Membership Key&quot;,
+		&quot;N\tconvert password to Network Identifier&quot;,
+		&quot;L n\tSecurity Level is (n) [&quot; LITERAL (DEFAULT_LEVEL) &quot;]&quot;,
+		&quot;q\tquiet mode&quot;,
+		&quot;v\tverbose mode&quot;,
+		(const char *) (0)
+	};
+	byte digest [SHA256_DIGEST_LENGTH];
+	const char * phrase;
+	const char * sp;
+	signed type = 0;
+	signed level = DEFAULT_LEVEL;
+	flag_t flags = (flag_t)(0);
+	signed c;
+	optind = 1;
+	while ((c = getoptv (argc, argv, optv)) != -1)
+	{
+		switch ((char) (c))
+		{
+		case 'D':
+			type = HPAVKEY_DAK;
+			break;
+		case 'M':
+			type = HPAVKEY_NMK;
+			break;
+		case 'N':
+			type = HPAVKEY_NID;
+			break;
+		case 'L':
+			level = (signed)(uintspec (optarg, 0, 1));
+			break;
+		case 'q':
+			_setbits (flags, HPAVKEY_SILENCE);
+			break;
+		case 'v':
+			_setbits (flags, HPAVKEY_VERBOSE);
+			break;
+		case 'e':
+			_setbits (flags, HPAVKEY_ENFORCE);
+			break;
+		default:
+			break;
+		}
+	}
+	argc -= optind;
+	argv += optind;
+	while ((argc--) &amp;&amp; (* argv))
+	{
+		sp = phrase = * argv++;
+		while (isprint (*sp))
+		{
+			sp++;
+		}
+		if (_anyset (flags, HPAVKEY_ENFORCE))
+		{
+			if (*sp)
+			{
+				error (0, ENOTSUP, &quot;Phrase \&quot;%s\&quot; contains illegal characters&quot;, phrase);
+				continue;
+			}
+			if ((sp - phrase) &lt; HPAVKEY_PHRASE_MIN)
+			{
+				error (0, ENOTSUP, &quot;Phrase \&quot;%s\&quot; less than %d characters&quot;, phrase, HPAVKEY_PHRASE_MIN);
+				continue;
+			}
+			if ((sp - phrase) &gt; HPAVKEY_PHRASE_MAX)
+			{
+				error (0, ENOTSUP, &quot;Phrase \&quot;%s\&quot; more than %d characters&quot;, phrase, HPAVKEY_PHRASE_MAX);
+				continue;
+			}
+		}
+		if (type == HPAVKEY_DAK)
+		{
+			HPAVKeyDAK (digest, phrase);
+			HPAVKeyOut (digest, HPAVKEY_DAK_LEN, phrase, flags);
+			continue;
+		}
+		if (type == HPAVKEY_NMK)
+		{
+			HPAVKeyNMK (digest, phrase);
+			HPAVKeyOut (digest, HPAVKEY_NMK_LEN, phrase, flags);
+			continue;
+		}
+		if (type == HPAVKEY_NID)
+		{
+			HPAVKeyNMK (digest, phrase);
+			HPAVKeyNID (digest, digest, level);
+			HPAVKeyOut (digest, HPAVKEY_NID_LEN, phrase, flags);
+			continue;
+		}
+		HPAVKeySHA (digest, phrase);
+		HPAVKeyOut (digest, HPAVKEY_SHA_LEN, phrase, flags);
+	}
+	return (0);
+}
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='hpavd.c.html' title=' hpavd.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='HPAVKeyDAK.c.html' title=' HPAVKeyDAK.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

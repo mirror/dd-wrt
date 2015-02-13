@@ -1,0 +1,88 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Ethernet Functions</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="ch07.html" title="Chapter 7.  Support Function Reference"><link rel="prev" href="ch07s02.html" title="Command Line Functions"><link rel="next" href="ch07s04.html" title="Network Functions"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">
+		Ethernet Functions
+		</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch07s02.html">Prev</a> </td><th width="60%" align="center">Chapter 7. 
+		Support Function Reference
+		</th><td width="20%" align="right"> <a accesskey="n" href="ch07s04.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="support-ethernet"></a>
+		Ethernet Functions
+		</h2></div></div></div><p>
+		The Open Powerline Toolkit supports raw Ethernet I/O on several popular operating systems, including <span class="productname">Linux</span>™,  <span class="productname">Mac OS X</span>™ and Microsoft <span class="productname">Windows</span>™. Other operating systems will probably be added over time. These functions are found in the <code class="filename">ether</code> folder.
+		</p><p>
+		Each operating system has a different raw Ethernet interface and so some abstraction was needed to support the toolkit for all environments. Our solution was the <span class="structname">channel</span> which is implemented like a <code class="varname">FILE</code> pointer but is used like a file descriptor. All toolkit programs, with a few exceptions, perform raw Ethernet I/O by opening a <span class="structname">channel</span>, reading and writing to it and then closing it.
+		</p><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="support-channel"></a>
+				channel
+				</h3></div></div></div><p>
+				The <span class="structname">channel</span> structure contains enough information to perform raw Ethernet I/O in several common runtime environments; however, portions of the structure vary depending on the environment. These differences are appled by compile time constants that include required structure members and exclude others. The common structure members are identified and described below. The others elements are not discussed because they may change.
+				</p><pre class="programlisting">
+typedef struct __packed <code class="varname">channel</code>
+{
+        signed <code class="varname">fd</code>;
+        signed <code class="varname">ifindex</code>;
+        char const * <code class="varname">ifname</code>;
+        uint8_t <code class="varname">peer</code> [<code class="constant">ETHER_ADDR_LEN</code>];
+        uint8_t <code class="varname">host</code> [<code class="constant">ETHER_ADDR_LEN</code>];
+        uint16_t <code class="varname">type</code>;
+
+	 ... &lt;operating system dependent data&gt; ...
+
+        signed <code class="varname">timeout</code>;
+        flag_t <code class="varname">flags</code>;
+} <code class="varname">CHANNEL</code>;
+</pre><div class="variablelist"><dl><dt><span class="term">
+					.<code class="varname">fd</code>
+					</span></dt><dd><p>
+					Socket file descriptor.
+						</p></dd><dt><span class="term">
+					.<code class="varname">ifindex</code>
+					</span></dt><dd><p>
+						Ethernet device index. The index only applies when the toolkit is compiled for <span class="application">LibPcap</span> or <span class="application">WinPcap</span>. This value is the same as that returned in the .<code class="varname">ifr_ifindex</code> member of the <code class="varname">ifreq</code> structure available on most operating systems. 
+						</p></dd><dt><span class="term">
+					.<code class="varname">ifname</code>
+					</span></dt><dd><p>
+					The interface name. On Linux, ethernet names are typically “<span class="quote">eth0</span>”,  “<span class="quote">eth1</span>” and so on. On Mac OS X, interface names are “<span class="quote">en0</span>”,  “<span class="quote">en1</span>” and so on. This string is the same as that returned by the <code class="varname">ifr_ifname</code> member of the <code class="varname">ifreq</code> structure available on most operating systems. 
+						</p></dd><dt><span class="term">
+					.<code class="varname">peer</code>
+					</span></dt><dd><p>
+					The Ethernet hardware address of some remote device. It is used to encode the <acronym class="acronym">ODA</acronym> field of outgoing Ethernet frames and format some console messages. It is initialized to the Atheros Local Management Address, <code class="constant">00:B0:52:00:00:01</code> for HomePlug AV applications. Application programs can,  and often do, replace this value at runtime.
+						</p></dd><dt><span class="term">
+					.<code class="varname">host</code>
+					</span></dt><dd><p>
+					The Ethernet hardware address of the host computer. It is used to encode the <acronym class="acronym">OSA</acronym> field of outgoing Ethernet frames and format some console messages. This address is initialized to the hardware address assigned to the interface by the host operating system. The value should not change.
+						</p></dd><dt><span class="term">
+					.<code class="varname">type</code>
+					</span></dt><dd><p>
+					The Ethernet type/length field. It is used to encode the <acronym class="acronym">MTYPE</acronym> field of outgoing Ethernet frames. The values is initialized to <code class="constant">0x88E1</code> for HomePlug AV application and <code class="constant">0x887B</code> for HomePlug 1.0 application. The value should not change.
+						</p></dd><dt><span class="term">
+					.<code class="varname">timeout</code>
+					</span></dt><dd><p>
+					A time interval. On <span class="productname">Linux</span>™ and <span class="productname">Mac OS X</span>™, it is the maximum time that the application will wait for a device to respond when a response is expected. With <span class="productname">LibPcap</span>™ and <span class="productname">WinPcap</span>™ it the mininum time the application will wait. It is initialized to <code class="constant">50</code> milliseconds which is a reasonable compromise but most toolkit programs allow the user to change this value.
+						</p></dd><dt><span class="term">
+					.<code class="varname">flags</code>
+					</span></dt><dd><p>
+					A bitmap where each bit enables a special behavior during channel open or close or packet read or write. Of general interest is the <code class="constant">CHANNEL_VERBOSE</code> bit which prints outgoing and incoming frames on stderr in hexadecimal dump format. The verbose feature is implemented in for all toolkit programs that perform raw Ethernet I/O and is helpful when debugging device behavior.
+						</p></dd></dl></div><p>
+			Since toolkit applications typically communicate with one powerline device at a time, this structure is statically initialized in a stand-alone module that is linked into each application. It is possible to dynamically initialize it, if needed. The structure is declared in <a class="ulink" href="channel.h.html" target="_top">channel.h</a> and statically defined in <a class="ulink" href="channel.c.html" target="_top">channel.c</a>.
+			</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="support-closechannel"></a>
+			closechannel
+			</h3></div></div></div><div class="funcsynopsis"><table border="0" summary="Function synopsis" cellspacing="0" cellpadding="0"><tr><td><code class="funcdef">signed <b class="fsfunc">closechannel</b> (</code></td><td><code>struct channel * </code> </td><td><var class="pdparam">channel</var><code class="funcdef">)</code>;</td></tr></table></div><p>
+			Close the Ethernet socket associated with a <span class="structname">channel</span> and free associated memory and data structures. Return <code class="constant">0</code> on success. Return <code class="constant">-1</code> on failure. This function is declared in <a class="ulink" href="channel.h.html" target="_top">channel.h</a> and defined in <a class="ulink" href="closechannel.c.html" target="_top">closechannel.c</a>.  
+			</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="support-openchannel"></a>
+			openchannel
+			</h3></div></div></div><div class="funcsynopsis"><table border="0" summary="Function synopsis" cellspacing="0" cellpadding="0"><tr><td><code class="funcdef">signed <b class="fsfunc">openchannel</b> (</code></td><td><code>struct channel * </code> </td><td><var class="pdparam">channel</var>, </td></tr><tr><td> </td><td><code>uint16_t </code> </td><td><var class="pdparam">protocol</var><code class="funcdef">)</code>;</td></tr></table></div><p>
+			Open an Ethernet socket that supports the specified protocol and associate it with the interface referenced by the <code class="varname">channel</code> structure <span class="structname">.name</span> member. Initialize the interface as needed. The <code class="varname">protocol</code> effectively filters incoming frames for the application. 
+			</p><p>
+			Interface initialization differs significantly from environment to environment. The socket descriptor is stored in the <code class="varname">channel</code> structure <span class="structname">.fd</span> member and the interface hardware address is stored in the <code class="varname">channel</code> structure <span class="structname">.host</span> member. Return <code class="constant">0</code> on success. Terminate the program with an error message on failure. This function is declared in <a class="ulink" href="channel.h.html" target="_top">channel.h</a> and defined in <a class="ulink" href="openchannel.c.html" target="_top">openchannel.c</a>.  
+			</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="support-readpacket"></a>
+			readpacket
+			</h3></div></div></div><div class="funcsynopsis"><table border="0" summary="Function synopsis" cellspacing="0" cellpadding="0"><tr><td><code class="funcdef">signed <b class="fsfunc">readpacket</b> (</code></td><td><code>struct channel * </code> </td><td><var class="pdparam">channel</var>, </td></tr><tr><td> </td><td><code>void * </code> </td><td><var class="pdparam">packet</var>, </td></tr><tr><td> </td><td><code>signed </code> </td><td><var class="pdparam">length</var><code class="funcdef">)</code>;</td></tr></table></div><p>
+			Read one Ethernet frame from the specified channel. The frame is written into memory starting at address <code class="varname">packet</code> and is truncated to the specified <code class="varname">length</code>,  if necessary. Return the actual number of bytes read on success. Return <code class="constant">0</code> on timeout. Return <code class="constant">-1</code> on network error. This function behaves like the standard library <code class="function">read</code> function. The target memory region remains unchanged on timeout or error. This function is declared in <a class="ulink" href="channel.h.html" target="_top">channel.h</a> and defined in <a class="ulink" href="readpacket.c.html" target="_top">readpacket.c</a>.  
+			</p><p>
+			On systems using Berkeley Packet Filters, such as MacOS X, the <code class="varname">ODA</code> field is automatically replaced on transmission to prevent Ethernet address spoofing. This may not be true on other systems but the practice is becoming more common.
+			</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="support-sendpacket"></a>
+			sendpacket
+			</h3></div></div></div><div class="funcsynopsis"><table border="0" summary="Function synopsis" cellspacing="0" cellpadding="0"><tr><td><code class="funcdef">signed <b class="fsfunc">sendpacket</b> (</code></td><td><code>struct channel * </code> </td><td><var class="pdparam">channel</var>, </td></tr><tr><td> </td><td><code>void * </code> </td><td><var class="pdparam">packet</var>, </td></tr><tr><td> </td><td><code>signed </code> </td><td><var class="pdparam">length</var><code class="funcdef">)</code>;</td></tr></table></div><p>
+			Write one Ethernet frame to the specified channel. The frame is read from memory starting at address <code class="varname"> packet</code> and ending at the specified <code class="varname">length</code>. Return the actual number of bytes sent on success. Return <code class="constant">0</code> on timeout. Return <code class="constant">-1</code> on network error. The frame should be properly formatted as an ethernet frame and must be at least 60 bytes long or it will not be sent. This function behaves like the standard library <code class="function">write</code> function. The source memory region is not modified. This function is declared in <a class="ulink" href="channel.h.html" target="_top">channel.h</a> and defined in <a class="ulink" href="sendpacket.c.html" target="_top">sendpacket.c</a>.  
+			</p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch07s02.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="ch07.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch07s04.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">
+			Command Line Functions
+			 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 
+		Network Functions
+		</td></tr></table></div></body></html>0

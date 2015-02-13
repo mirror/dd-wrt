@@ -1,0 +1,196 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			NetworkInformation1.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='NetworkDevices.c.html' title=' NetworkDevices.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='NetworkInformation2.c.html' title=' NetworkInformation2.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *
+ *   signed NetworkInformation1 (struct channel * channel);
+ *
+ *   plc.h
+ *
+ *   Request network membership information for the peer device using
+ *   a VS_NW_INFO message;
+ *
+ *   This function is similar to function NetworkInfo() but the output
+ *   format is different;
+ *
+ *
+ *   Contributor(s):
+ *      Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef NETWORKINFORMATION1_SOURCE
+#define NETWORKINFORMATION1_SOURCE
+
+#include &lt;stdint.h&gt;
+#include &lt;memory.h&gt;
+
+#include &quot;../plc/plc.h&quot;
+#include &quot;../tools/memory.h&quot;
+#include &quot;../tools/number.h&quot;
+#include &quot;../tools/error.h&quot;
+
+signed NetworkInformation1 (struct plc * plc)
+
+{
+	struct channel * channel = (struct channel *)(plc-&gt;channel);
+	struct message * message = (struct message *)(plc-&gt;message);
+
+#ifndef __GNUC__
+#pragma pack (push,1)
+#endif
+
+	struct __packed vs_nw_info_request
+	{
+		struct ethernet_hdr ethernet;
+		struct qualcomm_hdr qualcomm;
+	}
+	* request = (struct vs_nw_info_request *)(message);
+	struct __packed vs_nw_info_confirm
+	{
+		struct ethernet_hdr ethernet;
+		struct qualcomm_hdr qualcomm;
+		uint8_t data [1];
+	}
+	* confirm = (struct vs_nw_info_confirm *)(message);
+	struct __packed station
+	{
+		uint8_t MAC [ETHER_ADDR_LEN];
+		uint8_t TEI;
+		uint8_t BDA [ETHER_ADDR_LEN];
+		uint8_t AVGTX;
+		uint8_t AVGRX;
+	}
+	* station;
+	struct __packed network
+	{
+		uint8_t NID [7];
+		uint8_t SNID;
+		uint8_t TEI;
+		uint8_t ROLE;
+		uint8_t CCO_MAC [ETHER_ADDR_LEN];
+		uint8_t CCO_TEI;
+		uint8_t NUMSTAS;
+		struct station stations [1];
+	}
+	* network;
+	struct __packed networks
+	{
+		uint8_t NUMAVLNS;
+		struct network networks [1];
+	}
+	* networks = (struct networks *) (&amp;confirm-&gt;data);
+
+#ifndef __GNUC__
+#pragma pack (pop)
+#endif
+
+	memset (message, 0, sizeof (* message));
+	EthernetHeader (&amp;request-&gt;ethernet, channel-&gt;peer, channel-&gt;host, channel-&gt;type);
+	QualcommHeader (&amp;request-&gt;qualcomm, 0, (VS_NW_INFO | MMTYPE_REQ));
+	if (sendpacket (channel, message, (ETHER_MIN_LEN - ETHER_CRC_LEN)) &lt;= 0)
+	{
+		error (1, errno, CHANNEL_CANTSEND);
+	}
+	if (readpacket (channel, message, sizeof (* message)) &lt;= 0)
+	{
+		error (1, errno, CHANNEL_CANTREAD);
+	}
+	network = (struct network *)(&amp;networks-&gt;networks);
+	while (networks-&gt;NUMAVLNS--)
+	{
+		char string [24];
+		printf (&quot; NID %20s&quot;, hexstring (string, sizeof (string), network-&gt;NID, sizeof (network-&gt;NID)));
+		printf (&quot; SNID %03d&quot;, network-&gt;SNID);
+		printf (&quot;\n&quot;);
+		printf (&quot; %s&quot;, (network-&gt;TEI == network-&gt;CCO_TEI)? &quot;CCO&quot;: &quot;STA&quot;);
+		printf (&quot; TEI %03d&quot;, network-&gt;TEI);
+		printf (&quot; MAC %17s&quot;, hexstring (string, sizeof (string), request-&gt;ethernet.OSA, sizeof (request-&gt;ethernet.OSA)));
+		printf (&quot; BDA %17s&quot;, hexstring (string, sizeof (string), request-&gt;ethernet.ODA, sizeof (request-&gt;ethernet.ODA)));
+		printf (&quot;\n&quot;);
+		station = (struct station *)(&amp;network-&gt;stations);
+		while (network-&gt;NUMSTAS--)
+		{
+			printf (&quot; %s&quot;, (station-&gt;TEI == network-&gt;CCO_TEI)? &quot;CCO&quot;: &quot;STA&quot;);
+			printf (&quot; TEI %03d&quot;, station-&gt;TEI);
+			printf (&quot; MAC %17s&quot;, hexstring (string, sizeof (string), station-&gt;MAC, sizeof (station-&gt;MAC)));
+			printf (&quot; BDA %17s&quot;, hexstring (string, sizeof (string), station-&gt;BDA, sizeof (station-&gt;BDA)));
+			printf (&quot; TX %03d&quot;, station-&gt;AVGTX);
+			printf (&quot; RX %03d&quot;, station-&gt;AVGRX);
+			printf (&quot;\n&quot;);
+			station++;
+		}
+		network = (struct network *)(station);
+	}
+	return (0);
+}
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='NetworkDevices.c.html' title=' NetworkDevices.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='NetworkInformation2.c.html' title=' NetworkInformation2.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

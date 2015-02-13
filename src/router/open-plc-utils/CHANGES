@@ -1,0 +1,49 @@
+open-plc-utils-0.0.6
+---------------
+
+1. Programs mac2pw and mac2pwd implement a new method of generating device passwords. The old method is still supported but not by default. 
+
+
+open-plc-utils-0.0.5
+---------------
+
+open-plc-utils-0.0.4
+---------------
+
+open-plc-utils-0.0.3
+---------------
+
+1. Added header VisualStudioNET/include/inttype.h to define print specifier constant PRId64 for Windows systems.
+
+2. Replaced conditional compiler code around print specifiers "lld" and "I64d" and replaced single specifier PRId64 as defined by the system.
+
+3. Renamed man pages ending in .7 with .1 to reflect that fact that they will now be installed man1 instead of man7.
+
+4. Replaced const HOMEPLUG_MTYPE with constant ETH_P_HPAV throughout.
+
+5. Correct endianess of FIELD_ETH_TYPE in module coqos_add.c.
+
+6. Updated chipset codes and implemented table-driven chipset detection algorithm.
+
+7. Moved TLVNode structure definition from nvm/nvm.h to tools/tlv.h to prepare for exanded use of TLV structures in future MMEs.
+
+
+open-plc-utils-0.0.2
+---------------
+
+1. Removed references to private vendor-specific MMEs
+
+2. Removed unused archive targets in primary Makefile.
+
+3. Added .gitignore to subdirectories where programs and other objects are compiled.
+
+4. Added conditional __UCLIBC__ compile statement to ARCPPrint.c to account for variable argument definition error during compile; 
+
+5. Added 'ignore' target to cascading Makefiles to re-write local .gitignore files.
+
+6. Corrected email address for Florian Fainelli in module ARPCPrint.
+
+7. Added new HomePlug AV SLAC Protocol MMEs definitions to homeplug.h.
+
+8. Modified makefile 'ignore' target to use tr instead of sed because some sed implementations do not accept '\n'.
+

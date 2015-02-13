@@ -1,0 +1,98 @@
+.TH efeu 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+efeu - HomePlug AV Packet Reflector
+
+.SH SYNOPSIS
+.BR efeu 
+.RI [ options ] 
+
+.SH DESCRIPTION
+Read and reflect 802.3 Ethernet messages addressed to this host or the broadcast address.
+Do not display reflected frames.
+
+.PP
+The program is one example of a simple packet listener.
+Engineers and software developers can extend it to build custom sniffers or servers.
+The framework is present but additional features must be added.
+
+.PP
+This program is part of the Qualcomm Atheros Powerline Toolkit.
+See the \fBplc\fR man page for an overview and installation instructions.
+
+.SH OPTIONS
+
+.TP
+-\fBe \fIethertype\fR
+The protocol (or ethertype) of interest expressed as a 16-bit hexadecimal integer.
+Prefix "\fB0x\fR" is optional.
+This filters out frames having any other ethertype.
+The default is \fBETH_P_802_2\fR as defined in \fBif_ether.h\fR.
+
+.TP
+-\fBi \fIinterface\fR
+Names the host ethernet interface to watch.
+The named interface, such as eth0, eth1 and so on, must be connected to a HomePlug AV ethernet-to-powerline bridge adapter to receive any HomePlug AV traffic.
+The default interface is \fBeth1\fR.
+
+.TP
+.RB - q
+Quiet mode.
+Suppress the printing of the normal message descriptions on \fBstdout\fR.
+
+.TP
+-\fBt \fImilliseconds\fR
+Read timeout in milliseconds.
+Values range from 0 through UINT_MAX.
+This is the maximum time allowed for a response.
+The default is 50 milliseconds.
+
+.TP
+.RB - v
+Verbose mode.
+Displays incoming frames in hexadecimal dump format on \fBstdout\fR.
+This option is independent of option \fB-a\fR which prints VS_ARPC message text on stderr.
+
+.TP
+-\fB?\fR, --\fBhelp\fR
+Print program help summary on stdout.
+This option takes precedence over other options on the command line.
+.Tp
+-\fB!\fR, --\fBversion\fR
+Print program version information on stdout.
+This option takes precedence over other options on the command line.
+Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of the Linux Toolkit you are using.
+See the HomePlug AV Specification for a description of all HomePlug AV message types.
+See the Qualcomm Atheros INT6000 Firmware Reference Manual for a description of Atheros Vendor Specific message types.
+
+.SH EXAMPLES
+The following command monitors the default interface \fBeth1\fR for HomePlug AV traffic and dumps detected frames on the console as they occur.
+Terminate the foreground process by typing \fB^C\fR or \fB^Z\fR at the console.
+This program is usually run in a separate console window when performing other toolkit operations.
+
+.PP
+   # efeu
+
+.PP
+The following command monitors host interface \fBeth4\fR for incoming HomePlug AV frames and dumps writes them to file \fBefeu.log\fR.
+Frames are printed in hexadecimal dump format because option \fB-v\fR is present.
+Terminate the foreground process by typing ^C or ^Z at the console.
+
+.PP
+   # efeu -v -i eth4 > efeu.log
+
+.SH DISCLAIMER
+Atheros HomePlug AV Vendor Specific Management Message structure and content is proprietary to Qualcomm Atheros, Ocala FL USA.
+Consequently, public information is not available.
+Qualcomm Atheros reserves the right to modify management message structure and content in future firmware releases without any obligation to notify or compensate users of this program.
+
+.SH SEE ALSO
+.BR plc ( 1 ),
+.BR efru ( 1 ),
+.BR efsu ( 1 ),
+.BR hpav ( 1 ),
+.BR mme ( 1 )
+
+.SH CREDITS
+ Charles Maier <cmaier@qca.qualcomm.com>
+

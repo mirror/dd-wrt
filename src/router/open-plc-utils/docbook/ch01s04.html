@@ -1,0 +1,49 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Toolkit Installation on Linux</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="ch01.html" title="Chapter 1.  Overview"><link rel="prev" href="ch01s03.html" title="Toolkit Distribution"><link rel="next" href="ch01s05.html" title="Toolkit Installation on Mac OS X"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">
+			Toolkit Installation on Linux
+			</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch01s03.html">Prev</a> </td><th width="60%" align="center">Chapter 1. 
+		Overview 
+		</th><td width="20%" align="right"> <a accesskey="n" href="ch01s05.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="install-linux"></a>
+			Toolkit Installation on Linux
+			</h2></div></div></div><p>
+			The Linux version of the toolkit must be compiled from source code. The only requirement is the standard <span class="application">GNU/Linux</span> toolchain consisting of <span class="application">make</span>, <span class="application">gcc</span> and <span class="application">ld</span>. These are included with most <span class="application">Linux</span> distributions but may require installation. On <span class="productname">Debian</span>™ based distributions, such as <span class="productname">Ubuntu</span>™, they may be installed using <span class="application">apt-get</span>. On <span class="productname">RedHat</span>™ distributions, such as <span class="productname">Fedora</span>™, they may be installed using <span class="application">rpm</span>. On <span class="productname">SuSE</span>™ based distributions, they may be installed using <span class="application">YaST2</span>.
+			</p><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="idp7250408"></a>
+				Toolkit Installation on GNU/<span class="productname">Linux</span>™
+				</h3></div></div></div><div class="example"><a name="idp7251080"></a><p class="title"><b>Example 1.1. 
+					Toolkit Installation on GNU/<span class="productname">Linux</span>™
+					</b></p><div class="example-contents"><pre class="screen">
+# cp plc-utils-1.2.1.tar.gz /home/mydir
+# cd /home/mydir
+# tar -vzxf plc-utils-1.2.1.tar.gz
+# cd plc-utils-1.2.1
+# make
+# make install
+# make manuals
+</pre></div></div><br class="example-break"><p> 
+				Decompress the archive and extract the contents with the <span class="application">tar</span> utility. This will create a folder having the same basename as the archive such that one version will not over-write another. Consult the <span class="application">tar</span> man page on your system for detailed instructions. Change directory to the appropriate folder.
+				</p><p>
+				The main package folder contains a recursive <code class="filename">Makefile</code> that will compile and install all toolkit programs. If you do not want to compile and install all programs then change directory to the appropriate folder and run <span class="application">make</span> from there. To compile binary files, type <strong class="userinput"><code>make</code></strong>. To install binary files, type <strong class="userinput"><code>make install</code></strong>. To install man pages, type <strong class="userinput"><code>make manuals</code></strong>. The package does not automatically install examples, scripts, applets or man pages. 
+				</p><p>
+				We recommend that you <span class="command"><strong>login</strong></span> as <code class="constant">root</code> user before installing the toolkit; otherwise, you will be prompted for the <code class="constant">root</code> password as each program or component is installed. 
+				</p><p>
+				Programs are installed in folder <code class="filename">/usr/local/bin</code> and man pages are installed in folders <code class="filename">/usr/share/man/man1</code>. If these folders are not correct for your system, or if you want to install in other folders, then edit the folder names defined in the <a class="link" href="ch03s06.html" title="Cross-Compiling on GNU/Linux">make.def</a> file found in main toolkit folder or over-ride these definitions in subordinate makefiles.
+				</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="idp7264368"></a>
+				Toolkit Documentation on GNU/Linux
+				</h3></div></div></div><p>
+				Toolkit web pages are not automatically installed. To access toolkit documentation, point your browser to <a class="ulink" href="index.html" target="_top">docbook/index.html</a> and add the page to the browser bookmark or favorites list. If you are interested in how the toolkit has been implemented then do the same for page <a class="ulink" href="toolkit.html" target="_top">docbook/toolkit.html</a>. 				</p><p>
+				The method described above is only recommended if you do not plan to move or remove toolkit folders. Otherwise, you can merely copy the entire contents of the toolkit <code class="filename">docbook</code> folder to another folder of your choice and point your browser to the new file locations.
+				</p><pre class="screen">
+cp -rv docbook/* /home/mydir/toolkit
+</pre></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="idp7267056"></a>
+				Toolkit Removal on GNU/<span class="productname">Linux</span>™
+				</h3></div></div></div><p>
+				To uninstall installed programs and man pages on Linux, change to the main toolkit folder and type <strong class="userinput"><code>make uninstall</code></strong>.
+				</p><div class="example"><a name="idp7268344"></a><p class="title"><b>Example 1.2. 
+					Toolkit Removal on GNU/<span class="productname">Linux</span>™
+					</b></p><div class="example-contents"><pre class="screen">
+# cd /home/mydir/plc-utils-1.2.1
+make uninstall
+</pre></div></div><br class="example-break"></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch01s03.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="ch01.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch01s05.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">
+			Toolkit Distribution
+			 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 
+			Toolkit Installation on Mac OS X
+			</td></tr></table></div></body></html>0

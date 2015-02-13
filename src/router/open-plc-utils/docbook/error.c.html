@@ -1,0 +1,111 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			error.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='EmulateHost.c.html' title=' EmulateHost.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='EthernetHeader.c.html' title=' EthernetHeader.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   signed error (signed status, errno_t number, char const * format, ...);
+ *
+ *   error.h
+ *
+ *   custom implementation of GNU error() function for systems
+ *   that do not have it; this version always returns -1;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef ERROR_SOURCE
+#define ERROR_SOURCE
+
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdarg.h&gt;
+#include &lt;string.h&gt;
+
+#include &quot;../tools/types.h&quot;
+#include &quot;../tools/error.h&quot;
+
+#ifdef __GNUC__
+
+__attribute__ ((format (printf, 3, 4)))
+
+#endif
+
+signed error (signed status, errno_t number, char const * format, ...)
+
+{
+	extern char const *program_name;
+	if ((program_name) &amp;&amp; (*program_name))
+	{
+		fprintf (stderr, &quot;%s: &quot;, program_name);
+	}
+
+#if 1
+
+	if ((format) &amp;&amp; (*format))
+	{
+		va_list arglist;
+		va_start (arglist, format);
+		vfprintf (stderr, format, arglist);
+		va_end (arglist);
+	}
+	if (number)
+	{
+		fprintf (stderr, &quot;: %s&quot;, strerror (number));
+	}
+
+#else
+
+	if (number)
+	{
+		fprintf (stderr, &quot;%s: &quot;, strerror (number));
+	}
+	if ((format) &amp;&amp; (*format))
+	{
+		va_list arglist;
+		va_start (arglist, format);
+		vfprintf (stderr, format, arglist);
+		va_end (arglist);
+	}
+
+#endif
+
+	fprintf (stderr, &quot;\n&quot;);
+	fflush (stderr);
+	if (status)
+	{
+		exit (status);
+	}
+	return (-1);
+}
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='EmulateHost.c.html' title=' EmulateHost.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='EthernetHeader.c.html' title=' EthernetHeader.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

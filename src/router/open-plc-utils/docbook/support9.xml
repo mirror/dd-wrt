@@ -1,0 +1,80 @@
+<section id="support-procrastination">
+	<title>
+		Procrastination Functions
+		</title>
+	<para>
+		Procrastinations functions wait for specific events to occur or fail to occur.
+		</para>
+	<section id="WaitForAssoc">
+		<title>
+			WaitForAssoc
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>signed <function>WaitForAssoc</function></funcdef>
+   				<paramdef>struct plc * <parameter>plc</parameter></paramdef>
+    				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Poll a powerline device using <constant>VS_NW_INFO</constant> messages until the device forms or joins a network. The host ethernet interface, destination hardware address and source hardware address are specified in structure <varname>plc</varname>. It calls either <link linkend='WaitForAssoc1'>WaitForAssoc1</link> or <link linkend='WaitForAssoc2'>WaitForAssoc2</link> to procrastinate based on the <varname>hardwareID</varname> member of structure <varname>plc</varname>. The function is declared in <ulink url='plc.h.html'>plc.h</ulink> and defined in file <ulink url='WaitForAssoc.c.html'>WaitForAssoc.c</ulink>. Struct <varname>plc</varname> is declared in file <ulink url='plc.h.html'>plc.h</ulink> and defined in file <ulink url='plc.c.html'>plc.c</ulink>.
+			</para>
+		</section>
+	<section id="WaitForAssoc1">
+		<title>
+			WaitForAssoc1
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>signed <function>WaitForAssoc1</function></funcdef>
+   				<paramdef>struct plc * <parameter>plc</parameter></paramdef>
+    				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Poll a 200mbs powerline device using <constant>VS_NW_INFO</constant> version <constant>0</constant> messages until the device joins or forms a network. The host ethernet interface, destination hardware address and source hardware address are specified in structure <varname>plc</varname>. The function is declared in file <ulink url='plc.h.html'>plc.h</ulink> and defined in file <ulink url='WaitForAssoc1.c.html'>WaitForAssoc1.c</ulink>. Struct <varname>plc</varname> is declared in file <ulink url='plc.h.html'>plc.h</ulink> and defined in file <ulink url='plc.c.html'>plc.c</ulink>.
+			</para>
+		</section>
+	<section id="WaitForAssoc2">
+		<title>
+			WaitForAssoc2
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>signed <function>WaitForAssoc2</function></funcdef>
+   				<paramdef>struct plc * <parameter>plc</parameter></paramdef>
+    				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Poll a 1000mbs powerline device using <constant>VS_NW_INFO</constant> version <constant>1</constant> messages until the device joins or forms a network. The host ethernet interface, destination hardware address and source hardware address are specified in structure <varname>plc</varname>. Structure <varname>plc</varname> is declared in file <ulink url='plc.h.html'>plc.h</ulink> and defined in file <ulink url='plc.c.html'>plc.c</ulink>. The function is declared in file <ulink url='plc.h.html'>plc.h</ulink> and defined in file <ulink url='WaitForAssoc2.c.html'>WaitForAssoc2.c</ulink>.
+			</para>
+		</section>
+	<section id="WaitForReset">
+		<title>
+			WaitForReset
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>signed <function>WaitForReset</function></funcdef>
+   				<paramdef>struct plc * <parameter>plc</parameter></paramdef>
+    				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Poll a powerline device using <constant>VS_SW_VER</constant> messages until the device stops responding. The host ethernet interface, destination hardware address and source hardware address are specified in structure <varname>plc</varname>. Structure <varname>plc</varname> is declared in file <ulink url='plc.h.html'>plc.h</ulink> and define in file <ulink url='plc.c.html'>plc.c</ulink>. The function is declared in <ulink url='plc.h.html'>plc.h</ulink> and defined in file <ulink url='WaitForReset.c.html'>WaitForReset.c</ulink>.
+			</para>
+		</section>
+	<section id="WaitForStart">
+		<title>
+			WaitForStart
+			</title>
+		<funcsynopsis>
+			<funcprototype>
+  				<funcdef>signed <function>WaitForStart</function></funcdef>
+   				<paramdef>struct plc * <parameter>plc</parameter></paramdef>
+				<paramdef>char <parameter>firmware</parameter></paramdef>
+				<paramdef>size_t <parameter>length</parameter></paramdef>
+    				</funcprototype>
+			</funcsynopsis>
+		<para>
+			Poll a powerline device using <constant>VS_SW_VER</constant> messages until the device responds. The host ethernet interface, destination hardware address and source hardware address are specified in structure <varname>plc</varname>. Update the <varname>hardwareID</varname> member of the <varname>plc</varname> structure. Return the firmware revision string contained in the confirmation message. Structure <varname>plc</varname> is declared in file <ulink url='plc.h.html'>plc.h</ulink> and defined in file <ulink url='plc.c.html'>plc.c</ulink>. The function is declared in file <ulink url='plc.h.html'>plc.h</ulink> and defined in file <ulink url='WaitForStart.c.html'>WaitForStart.c</ulink>.
+			</para>
+		</section>
+	</section>

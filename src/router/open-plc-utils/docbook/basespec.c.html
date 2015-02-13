@@ -1,0 +1,147 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			basespec.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='b64dump.c.html' title=' b64dump.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='baudrate.c.html' title=' baudrate.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   uint64_t basespec (char const * string, unsigned base, unsigned size);
+ *
+ *   number.h
+ *
+ *   convert a character string to an equivalent unsigned integer and
+ *   return the result; terminate the program on failure;
+ *
+ *   the base argument is the number base to be used for conversion;
+ *   base 0 permits the number base to be determined by the string
+ *   string prefix; 0b, 0d or 0x for binary, decimal or hex;
+ *
+ *   this implementation accepts a minus sign in order to negate any
+ *   number in any base;
+ *
+ *   the size argument is the maximum number of bytes permitted in the
+ *   result;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef BASESPEC_SOURCE
+#define BASESPEC_SOURCE
+
+#include &lt;stdlib.h&gt;
+#include &lt;ctype.h&gt;
+
+#include &quot;../tools/number.h&quot;
+#include &quot;../tools/error.h&quot;
+
+uint64_t basespec (char const * string, unsigned base, unsigned size)
+
+{
+	char const * number = string;
+	unsigned radix = RADIX_DEC;
+	signed scale = 1;
+	uint64_t limit = 0;
+	uint64_t value = 0;
+	unsigned digit = 0;
+	limit = ~limit;
+	if (size &lt; sizeof (limit))
+	{
+		limit &lt;&lt;= size &lt;&lt; 3;
+		limit = ~limit;
+	}
+	if (base)
+	{
+		radix = base;
+	}
+	if (* number == '=')
+	{
+		number++;
+	}
+	else if (* number == '+')
+	{
+		number++;
+	}
+	else if (* number == '-')
+	{
+		number++;
+		scale = -1;
+	}
+	if (*number == '0')
+	{
+		number++;
+		if ((*number == 'b') || (*number == 'B'))
+		{
+			radix = RADIX_BIN;
+			number++;
+		}
+		else if ((*number == 'd') || (*number == 'D'))
+		{
+			radix = RADIX_DEC;
+			number++;
+		}
+		else if ((*number == 'x') || (*number == 'X'))
+		{
+			radix = RADIX_HEX;
+			number++;
+		}
+	}
+	if ((base) &amp;&amp; (base != radix))
+	{
+		error (1, EINVAL, &quot;%s is not base %d notation&quot;, string, base);
+	}
+	while ((digit = todigit (*number)) &lt; radix)
+	{
+		value *= radix;
+		value += digit;
+		if (value &gt; limit)
+		{
+			error (1, ERANGE, &quot;%s exceeds %d bits&quot;, string, (size &lt;&lt; 3));
+		}
+		number++;
+	}
+
+#ifdef WIN32
+
+	while (isspace (*number))
+	{
+		number++;
+	}
+
+#endif
+
+	if (*number)
+	{
+		error (1, EINVAL, &quot;%s is not base %d notation&quot;, string, radix);
+	}
+	return (scale * value);
+}
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='b64dump.c.html' title=' b64dump.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='baudrate.c.html' title=' baudrate.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

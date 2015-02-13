@@ -1,0 +1,82 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Host Independence</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="ch06.html" title="Chapter 6.  Scripting"><link rel="prev" href="ch06s02.html" title="Linux Script Basics"><link rel="next" href="ch06s04.html" title="Checking Device Connection"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">
+			Host Independence
+			</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch06s02.html">Prev</a> </td><th width="60%" align="center">Chapter 6. 
+		Scripting
+		</th><td width="20%" align="right"> <a accesskey="n" href="ch06s04.html">Next</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="scripting-independence"></a>
+			Host Independence
+			</h2></div></div></div><p>
+			Different hosts may use interfaces for different purposes. For example, one host might use <code class="varname">eth0</code> for local network communications and <code class="varname">eth1</code> for powerline communications. Another host might do the opposite. A portability problem is created when scripts use the literal interface names on the command line,  as illustrated below:
+			</p><pre class="programlisting">
+#!/bin/bash
+int6k -i eth1 -r
+int6k -i eth2 -r
+</pre><p>
+			The commands shown above will work on a host where <code class="varname">eth1</code> and <code class="varname">eth2</code> are used for powerline communications but will not work on another host where <code class="varname">eth1</code> or <code class="varname">eth2</code> are configured differently. Editing scripts can become a chore when they contain many interface references. One solution is the consistent use of symbols. For example, the following example provides some degree of portability.
+			</p><pre class="programlisting">
+#!/bin/bash
+
+NIC1=eth1
+NIC2=eth2
+
+int6k -i ${NIC1} -r
+int6k -i ${NIC2} -r
+</pre><p>
+			The commands shown above are an improvment because symbols <code class="varname">NIC1</code> and <code class="varname">NIC2</code> can be edited once;  however, if you frequently move many scripts from one host to another then each script must be changed. That can also become a chore. A better solution is to define the symbols <code class="varname">NIC1</code> and <code class="varname">NIC2</code> once in a single file and then include the definitions in scripts that need them. For example,  if we created file <code class="filename">hardware.sh</code> like so ...
+			</p><pre class="programlisting">
+#!/bin/bash 
+# file: scripts/hardware.sh
+
+NIC1=eth1
+NIC2=eth2
+</pre><p>
+			... then we could include it in one or more other scripts,  like so ...
+			</p><pre class="programlisting">
+. ../scripts/hardware.sh
+
+int6k -i ${NIC1} -r
+int6k -i ${NIC2} -r
+</pre><p>
+			On Linux, the <strong class="userinput"><code>.</code></strong> command causes the named file to be included in-line as though it were part of the including file. This elminates the need to <strong class="userinput"><code>export</code></strong> symbol definitions. A full discussion of Linux environment variable scope can be found on the internet. The point is that each host should have it's own definitions files stored in a common folder so that other scripts can include them and reference them in a consistent manner.
+			</p><p>
+			Atheros example scripts include two definitions files: <code class="filename">hardware.sh</code> and <code class="filename">firmware.sh</code>. File <code class="filename">hardware.sh</code> defines hardware related symbols as shown below and file <code class="filename">firmware.sh</code> defines firmware and configuration filenames. They reside in a <code class="filename">scripts</code> folder and relative path is used to access them. This has proven to work well in most situations.
+			</p><div class="example"><a name="scripting-hardware-definitions"></a><p class="title"><b>Example 6.1. 
+				hardware.sh
+				</b></p><div class="example-contents"><p>
+				You should create a <code class="filename">hardware.sh</code> file in a common folder on each host where you want to execute toolkit scripts. In this way, a script created on one host can be executed on another host without modification.  
+				</p><pre class="programlisting">
+#!/bin/bash
+# file: scripts/hardware.sh
+
+NIC1=eth1
+NIC2=eth2
+MAC1=00:50:04:A5:D9:5A
+MAC2=00:01:03:2B:03:67
+
+DUT=eth1
+</pre><p>
+				File <code class="filename">hardware.sh</code> assigns specific values to symbols that are used in many of the scripts found in the <code class="filename">scripts</code> folder. Some Atheros scripts uses all these symbols and some do not. By convention,  <code class="varname">NIC1</code> and <code class="varname">NIC2</code> name the Ethernet interfaces connected to a Golden Node and Device Under Test. <code class="varname">MAC1</code> and <code class="varname">MAC2</code> are the hardware addresses of <code class="varname">NIC1</code> and <code class="varname">NIC2</code>,  respectively. These symbols can be referenced in scripts with references like <code class="varname">${NIC1}</code> or <code class="varname">${MAC1}</code>. Of course, you could define other symbols here, as well. See the script under <a class="link" href="ch05s08.html" title="Upgrading Firmware and PIB">Device Upgrade</a> as one example of how file <code class="filename">hardware.sh</code> can be included in another script.
+				</p><p>
+				Some scripts, such as <a class="ulink" href="flash.sh.html" target="_top">flash.sh</a> and <a class="ulink" href="upgrade.sh.html" target="_top">upgrade.sh</a>, only operate on one device and do not need to define both <code class="varname">NIC1</code> and <code class="varname">NIC2</code>. By convention, these scripts reference interface <code class="varname">DUT</code> only.
+				</p></div></div><br class="example-break"><div class="example"><a name="scripting-firmware-definitions"></a><p class="title"><b>Example 6.2. 
+				firmware.sh
+				</b></p><div class="example-contents"><p>
+				You should create a <code class="filename">firmware.sh</code> file in a common folder on each host where you want to execute toolkit scripts. In this way, a script created on one host can be executed on another host without modification. 
+				</p><pre class="programlisting">
+#!/bin/bash
+# file: scripts/firmware.sh
+
+CFG=sdram16mb.cfg
+CFG=sdram64mb.cfg
+
+PIB=v3.3.0.pib
+NVM=v3.3.0-0-5-A-FINAL.nvm
+NVM=v3.3.0-0-5-B-FINAL.nvm
+</pre><p>
+				File <code class="filename">firmware.sh</code> assigns specific filenames to symbols that are used in some of the scripts found in the <code class="filename">scripts</code> folder. Some Atheros scripts use all of these symbols and some do not. By convention,  <code class="varname">CFG</code> defines the SDRAM configuration file used to initialize an <span class="productname">INT6000</span>™ or <span class="productname">INT6300</span>™ device, <code class="varname">PIB</code> defines the Parameter Information Block file to be used and <code class="varname">NVM</code> defines the firmware image file to be used.
+				</p><p>
+				This file is especially useful when working with a specific version of firmware. If there are multiple definitions for a symbol, the last definition is the one that takes effect. At Atheros, this file often contains dozens of definitions and we merely move or copy the ones we want to the end of the file. Our custom scripts then operate on the same configuration, parameter and firmware files until we reorder the definitions in <code class="filename">firmware.sh</code>. 
+				</p></div></div><br class="example-break"></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch06s02.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="ch06.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch06s04.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">
+			Linux Script Basics 
+			 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 
+			Checking Device Connection
+			</td></tr></table></div></body></html>0

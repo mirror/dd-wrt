@@ -1,0 +1,170 @@
+.TH int6keth 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+int6keth - Qualcomm Atheros Ethernet PHY Settings
+
+.SH SYNOPSIS
+.BR int6keth
+.RI [ options ] 
+.RI [ device ] 
+.RI [ device ] 
+[...]
+
+.SH DESCRIPTION
+Read or write INT6x00 Ethernet PHY Settings using VS_ENET_SETTINGS.
+
+.PP
+This program is part of the Qualcomm Atheros Powerline Toolkit.
+See the \fBplc\fR man page for an overview and installation instructions.
+
+.SH OPTIONS
+
+.TP
+-\fBa \fImode\fR
+Advertise auto-negotiate capabilities.
+This option takes effect when option \fB-w\fR is present.
+It is ignored when option \fB-r\fR is present.
+Valid values are "\fB1000Full\fR", "\fB100Full\fR", "\fB100Half\fR", "\fB10Full\fR" and "\fB10Half\fR".
+The default value is no advertisement of capabilities.
+
+.TP
+-\fBd \fImode\fR
+Device duplex transmission mode.
+This option takes effect when option \fB-w\fR is present.
+It is ignored when option \fB-r\fR is present.
+Valid values are "\fBHalf\fR" and "\fBFull\fR".
+The default value is "\fBHalf\fR".
+
+.TP
+.RB - e
+Redirects stderr messages to stdout.
+By convention status and error messages are printed on stderr while primary program output is printed on stdout.
+This option prints all output on stdout in cases where this is desired.
+
+.TP
+-\fBf \fIcontrol\fR
+Flow control enable.
+This option takes effect when option \fB-w\fR is present.
+It is ignored when option \fB-r\fR is present.
+Valid values are "\fBOn\fR", "\fBOff\fR", "\fBTx\fR" and "\fBRx\fR".
+The default value is "\fBOff\fR".
+
+.TP
+-\fBn \fImode\fR
+Auto-negotiate mode.
+This option takes effect when option \fB-w\fR is present.
+It is ignored when option \fB-r\fR is present.
+Valid values are "\fBOn\fR" and "\fBOff\fR".
+The default value is "\fBOn\fR".
+
+.TP
+-\fBp\fI number\fR
+The ethernet port number.
+Available port numbers differ with chipset and firmware version so consult the appropriate technical documentation.
+Permitted values are \fB0\fR through \fB7\fR.
+The default port is \fB0\fR.
+
+.TP
+-\fBs \fIspeed\fR
+Network transmission speed in mbps.
+This option takes effect when option \fB-w\fR is present.
+It is ignored when option \fB-r\fR is present.
+Valid values are "\fB10\fR", "\fB100\fR" and "\fB1000\fR".
+The default value is "\fB10\fR".
+
+.TP
+-\fBi \fIinterface\fR
+Select the host Ethernet interface.
+All requests are sent via this host interface and only reponses received via this host interface are recognized.
+The default interface is \fBeth1\fR because most people use \fBeth0\fR as their principle network connection; however, if environment string "PLC" is defined then it takes precedence over the default interface.
+This option then takes precedence over either default.
+
+.TP
+-\fBq\fR
+Suppresses status messages on stderr.
+
+.TP
+.RB - r
+Read settings from the Ethernet interface on the designated port.
+If present, or implied by default, then options \fB-a\fR, \fB-d\fR, \fB-f\fR, \fB-n\fR and \fB-s\fR have no effect.
+This option and option \fB-w\fR are mutually exclusive.
+
+.TP
+-\fBv\fR
+Print additional information on stdout.
+In particular, this option dumps incoming and outgoing packets which can be saved as text files for reference.
+
+.TP
+.RB - w
+Write settings to the Ethernet interface on the specified port.
+Be sure to specify all settings to avoid writing default values.
+This option and option \fB-r\fR are mutually exclusive.
+
+.TP
+.RB - ? ,-- help
+Print program help summary on stdout.
+This option takes precedence over other options on the command line.
+
+.TP
+.RB - ? ,-- version
+Print program version information on stdout.
+This option takes precedence over other options on the command line.
+Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of the Linux Toolkit you are using.
+
+.SH ARGUMENTS
+
+.TP
+.IR device
+The MAC address of some powerline device.
+More than one address may be specified on the command line.
+If more than one address is specified then operations are performed on each device in turn.
+The default address is \fBlocal\fR.
+See \fBDEVICES\fR for information.
+
+.SH DEVICES
+Powerline devices use Ethernet Media Access Control (MAC) addresses.
+A MAC address is a 48-bit value entered as 12 hexadecimal digits in upper, lower or mixed character case.
+Octets may be separated with colons for clarity.
+For example, "00b052000001", "00:b0:52:00:00:01" and "00b052:000001" are valid and equivalent.
+
+.PP
+The following MAC addresses are special and may be entered by name instead of number.
+
+.TP
+.BR all
+Same as "broadcast".
+
+.TP
+.BR broadcast
+A synonym for the Ethernet broadcast address, \fBFF:FF:FF:FF:FF:FF\fR.
+All devices, whether local, remote or foreign recognize messages sent to this address.
+A remote device is any device at the far end of a powerline connection.
+A foreign device is any device not manufactured by Atheros.
+
+.TP
+.BR local
+A synonym for the Qualcomm Atheros vendor specific Local Management Address (LMA), \fB00:B0:52:00:00:01\fR.
+All local Atheros devices recognize this address but remote and foreign devices do not.
+A remote device is any device at the far end of a powerline connection.
+A foreign device is any device not manufactured by Atheros.
+
+.SH REFERENCES
+See the Qualcomm Atheros HomePlug AV Firmware Technical Reference Manual for more information.
+
+.SH DISCLAIMER
+Atheros HomePlug AV Vendor Specific Management Message structure and content is proprietary to Qualcomm Atheros, Ocala FL USA.
+Consequently, public information is not available.
+Qualcomm Atheros reserves the right to modify message structure or content in future firmware releases without any obligation to notify or compensate users of this program.
+
+.SH EXAMPLES
+None.
+
+.SH SEE ALSO
+.BR plc ( 1 )
+.BR int6kid ( 1 ),
+.BR int6krule ( 1 ),
+.BR int6kstat ( 1 )
+
+.SH CREDITS
+ Charles Maier <cmaier@qca.qualcomm.com>
+

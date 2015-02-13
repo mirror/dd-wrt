@@ -1,0 +1,586 @@
+<chapter id='procedures'>
+	<title>
+		Procedures 
+		</title>
+	<section id='procedure-intro'>
+		<title>
+			Introduction
+			</title>
+		<para>
+			The Open Powerline Toolkit can perform all sorts of operations on Atheros powerline devices. Many operations are simple and can be accomplished using one command. Others are more complex and may require several commands. This section demonstrates common console commands that you might want to use when experimenting or working with Atheros powerline devices. Multi-command procedures can be generalized and automated using any programming or scripting language that can execute console commands.
+			</para>
+		</section>
+	<section id='procedure-select-interface-linux'>
+		<title>
+			Select an Interface on Linux
+			</title>
+		<para>
+			<application>Linux</application> network interfaces are referenced by name. Use Linux utility <application>ifconfig</application> to determine the names of interfaces on your host. By default, Toolkit programs communicate with powerline devices on interface <varname>eth1</varname> but another interface can be specified on the command line with the <userinput>-i</userinput> option:
+			</para>
+		<example>
+			<title>
+				Selecting another Interface on Linux
+				</title>
+<screen>
+# int6k -i eth3 ...
+</screen>
+		</example>
+		<para>
+			In the previous example, <command>int6k</command> will send and receive frames on interface <varname>eth3</varname> instead of the default interface. Having to specify the interface can become become tedious when entering commands manually. An alternative method involves setting environment variable <constant>PLC</constant> to your preferred Ethernet interfaces, as follows: 
+			</para>
+		<example>
+			<title>
+				Changing the Default Interface on Linux
+				</title>
+<screen>
+# export PLC="eth2"
+</screen>
+			</example>
+		<para>
+			In the previous example, environment variable <constant>PLC</constant> is defined and exported, making it available to all programs running under the current console session. This command can be included in <filename>~/.profile</filename> or <filename>/etc/profile</filename> or in <filename>/etc/environment</filename> on <productname>Debian </productname> and <productname>Ubuntu</productname> systems.
+			</para>
+		<example>
+			<title>
+				Finding Interfaces on Linux
+				</title>
+<screen>
+# ifconfig
+eth0      Link encap:Ethernet  HWaddr 00:60:97:05:97:0C  
+          inet addr:192.168.170.179  Bcast:192.168.170.255  Mask:255.255.255.0
+          inet6 addr: fe80::260:97ff:fe05:970c/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:52130758 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:59629414 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000 
+          RX bytes:43781526 (41.7 MiB)  TX bytes:4226651392 (3.9 GiB)
+          Interrupt:209 Base address:0xe000 
+
+eth1      Link encap:Ethernet  HWaddr 00:0F:EA:10:D5:1C  
+          inet addr:192.168.99.1  Bcast:192.168.99.255  Mask:255.255.255.0
+          inet6 addr: fe80::20f:eaff:fe10:d51c/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:68711621 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:70059644 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000 
+          RX bytes:3449044517 (3.2 GiB)  TX bytes:1328494982 (1.2 GiB)
+          Interrupt:217 
+
+lo        Link encap:Local Loopback  
+          inet addr:127.0.0.1  Mask:255.0.0.0
+          inet6 addr: ::1/128 Scope:Host
+          UP LOOPBACK RUNNING  MTU:16436  Metric:1
+          RX packets:177789 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:177789 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0 
+          RX bytes:599522176 (571.7 MiB)  TX bytes:599522176 (571.7 MiB)
+</screen>
+			</example>
+		<para>
+			The previous example demonstrates the use of Linux <application>ifconfig</application> utility to identify available network interfaces by name and <acronym>MAC</acronym> address.
+			</para>
+		<para>
+			If your computer has multiple Ethernet interface cards installed, you can connect each card to a different Atheros powerline device and communicate with each device, independently, from one console session (window) by specifying the appropriate interface card with each command. It is also possible to open multiple console sessions (windows), each having a unique enviroment, and assign a different value for <constant>PLC</constant> in each enviroment.
+			</para>
+		</section>
+	<section id='procedure-select-interface-windows'>
+		<title>
+			Select an Interface on Windows
+			</title>
+		<para>
+			<application>Winpcap</application> references host network interfaces by number, not name. This means that you must determine the proper interface number for the network adapter that you plan to use. Use Toolkit <ulink url='pcapdevs.7.html'>pcapdevs</ulink>  utility will enumerate available host network adapters by number,  <acronym>MAC</acronym> address and description. By default, Toolkit programs communicate with powerline devices on pcap interface <varname>2</varname> but another interface can be specified on the command line with the <userinput>-i</userinput> option:
+			</para>
+		<example>
+			<title>
+				Selecting another Interface on Windows
+				</title>
+<screen>
+# int6k -i 3 ...
+</screen>
+			</example>
+		<para>
+			In the previous example, <command>int6k</command> will send and receive frames using host interface <varname>3</varname> instead of the default interface. Having to specify the interface can become tedious when entering commands manually. Presently there is no way to specify a default interface on WIndows platforms.
+			</para>
+		<example>
+			<title>
+				Finding Interfaces on Windows
+				</title>
+<screen>
+# pcapdevs
+ 1 00:00:00:00:00:00 \Device\NPF_GenericDialupAdapter	(Adapter for generic dialup
+ 2 00:0E:2E:03:5F:B8 \Device\NPF_{4CFAABD5-C929-4942-914B-BDFE72B13611} (Realtek R
+ 3 00:C0:49:D5:CB:14 \Device\NPF_{73E0D2EF-6069-4831-B379-507025F2BDCD} (Realtek R
+ 4 00:0C:76:87:3E:3D \Device\NPF_{86B96905-3AA7-46F1-969A-6C23E3BBBA8B} (Broadcom
+</screen>
+			</example>
+		<para>
+			The previous example illustrates the use of Toolkit <ulink url='pcapdevs.7.html'>pcapdevs</ulink> utility to identify available network interfaces by interface number, <acronym>MAC</acronym> address and description. The descriptions have been truncated in this example because they are too long. Devices having <acronym>MAC</acronym> address <constant>00:00:00:00:00:00</constant> are unavailable.
+			</para>
+		</section>
+	<section id='procedure-identify-device'>
+		<title>
+			Identify a Device 
+			</title>
+		<para>
+			Before you start working with Atheros powerline devices, you should determine the chipset and firmware revision because that will determine the types of operations that can be performed and the order in which some operations should be performed. The following example illustrates how to determine this information.  
+			</para>
+		<example id="script-example-device-identification">
+			<title>
+				Device Identification
+				</title>
+<screen>
+# int6k -r
+eth1 00:B0:52:00:00:01 Fetch Version Information
+eth1 00:B0:52:DA:DA:23 INT6300A0 INT6000-MAC-3-0-3001-1081-LA-A NOT_UPGRADEABLE
+eth1 00:B0:52:FE:87:2D INT6000A1 INT6000-SL-0-1-0110-200-2006-0415-BETA NOT_UPGRADEABLE
+</screen>
+		</example>
+		<para>
+			This example  demonstrates several things. 
+			</para>
+		<para>
+			First, the <ulink url='int6k.7.html'>int6k</ulink> <userinput>-r</userinput> option requests hardware and software revision information from a device by sending an Atheros <constant>VS_SW_VER</constant> vendor-specific managerment message and waiting for a response. Atheros vendor-specific management messages are described in the <citetitle>Atheros HomePlug AV Firmware Technical Reference Manual</citetitle>. It you do not have access to this document then many toolkit features may be difficult to understand.
+			</para>
+		<para>
+			Since we did not specify an Ethernet interface on the command line, the default interface was used. In this case, the default interface was <varname>eth1</varname> and so we observe that <varname>eth1</varname> was used to both send requests and receive responses.
+			</para>
+		<para>
+			Since we did not specify a device address on the command line, the default address was used. Device addresses are also known as <acronym>MAC</acronym>, <quote>Ethernet</quote> or <quote>hardware</quote> addresses. They uniquely identify a device on a network. Unlike Ethernet cards,  powlerlines device do not have IP addresses. 
+			</para>
+		<para>
+			The default device address for toolkit programs is <constant>00:B0:52:00:00:01</constant>. This address is the Local Management Address (<acronym>LMA</acronym>). All Atheros devices connected to the local host will respond to this address and include their actual address in the response. In the above example, two devices responded. This means that both were connected directly to <varname>eth1</varname>, perhaps via a network hub. Observer that device <constant>00:B0:52:DA:DA:23</constant> is an INT6300 and device <constant>00:B0:52:FE:87:2D</constant> is an INT6000. The first device is running Atheros firmware and the second device is running the Atheros Softloader. 
+			</para>
+		<example id="script-example-device-configuration">
+			<title>
+				Inspecting Device Configuration
+				</title>
+			<para>
+				To find out more about device <constant>00:B0:52:DA:DA:23</constant> we might issue the following command where option <userinput>-I</userinput> requests identity information stored in the device <acronym>PIB</acronym>. In this case, we specified the device by <acronym>MAC</acronym> address to prevent other local devices from responding. There is no harm in having both devices respond so we could have specified both hardware addresses.
+ 				</para>
+<screen><![CDATA[
+# int6k -I 00:B0:52:DA:DA:23
+eth1 00:B0:52:DA:DA:23 Device Identity
+eth1 00:B0:52:DA:DA:23 -------
+        PIB 3-2 7864 bytes
+        MAC 00:B0:52:DA:DA:23
+        DAK 24:03:D7:84:09:A0:9A:78:8D:F6:82:75:AF:0D:0F:D8
+        NMK 50:D3:E4:93:3F:85:5B:70:40:78:4D:F8:15:AA:8D:B7 (HomePlugAV)
+        NID B0:F2:E6:95:66:6B:03
+        NET Jupiter-23
+        MFG Intergalactic Death Rays Inc.
+        USR Rattin Tordo
+        CCo Auto
+]]></screen>
+			<para>
+				Pay special attention to the <acronym>MAC</acronym> address after flashing <acronym>NVRAM</acronym>. Hardware address <constant>00:B0:52:00:00:03</constant> indicates the Default <acronym>PIB</acronym> used when no other <acronym>PIB</acronym> is available. The Default <acronym>PIB</acronym> disables communication over powerline.
+				</para>
+			<para>
+				Pay special attention to the <acronym>NMK</acronym> when devices cannot communicate. Devices having different <acronym>NMK</acronym> values will not form a network. Conversely, all devices having the same <acronym>NMK</acronym> will form a network. This becomes important when programming large numbers of devices. You must have an out-of-the-box networking strategy that balances user convenience and network security.
+				</para>
+			<para>
+				The string next to the <acronym>NMK</acronym> indicates that password <quote>HomePlugAV</quote> was used to generate that key. This is one of two default passwords and keys used by Atheros. In some cases, it may be another clue that the device is using the default <acronym>PIB</acronym>.
+				</para>
+			</example>
+		</section>
+	<section id='procedure-inspect-network'>
+		<title>
+			Browse the Network
+			</title>
+		<para>
+			A powerline network consists of one or more powerline devices that share a common <acronym>NMK</acronym>. One device on the network is in charge of the network and known as the Central Coordinator (<acronym>CCo</acronym>). All other devices on that network are known as stations (<acronym>STA</acronym>). Each device maintains internal information about the network to which it belongs. You can view that information at any time.
+			</para>
+		<example>
+			<title>
+				Display Network Information
+				</title>
+<screen><![CDATA[
+# int6k  -mieth3
+eth3 00:B0:52:00:00:01 Fetch Network Information
+eth3 00:B0:52:00:00:BB Found 1 Network(s)
+
+	network->NID = 77:23:0D:91:06:6E
+	network->SNID = 6
+	network->TEI = 1
+	network->ROLE = 0x02 (CCO)
+	network->CCO_DA = 00:B0:52:00:00:BB
+	network->CCO_TEI = 1
+	network->STATIONS = 1
+
+		station->DA = 00:B0:52:00:00:AA
+		station->TEI = 2
+		station->BDA = FF:FF:FF:FF:FF:FF
+		station->AvgPHYDR_TX = 0 mbps
+		station->AvgPHYDR_RX = 0 mbps
+]]></screen>
+			</example>
+		<para>
+			The example above prompts the local device on interface <userinput>eth3</userinput> for network membership (<userinput>-m</userinput>) information. Device <computeroutput>00:B0:52:00:00:BB</computeroutput> responded and reported that it belongs to one powerline network. The first block of information identifies the network <acronym>CCo</acronym>. The second block of information identifies a network <acronym>STA</acronym>. This second block will repeat when multiple stations are present. Each device on the network has a unique Terminal Equipment Identifier (<acronym>TEI</acronym>) within the network. The average <acronym>PHY</acronym> rates show the data rates between the reporting device and each <acronym>STA</acronym>. In this cases there has been no traffic.
+			</para>
+		</section>
+	<section id='procedure-change-network'>
+		<title>
+			Forming a Network                     
+			</title>
+		<para>
+			A powerline network is formed when two or more devices share a common Network Membership Key (<acronym>NMK</acronym>). An <acronym>NMK</acronym> is always 16 bytes (32 hexadecimal digits) in length and can have any value,  including all zeros. Devices programmed with the same <acronym>NMK</acronym> value can communicate while those programmed with different <acronym>NMK</acronym> values cannot. Program <ulink url='int6k.7.html'>int6k</ulink> can be used to program a local or remote device with a specific <acronym>NMK</acronym> value.
+			</para>
+		<example>
+			<title>
+				Setting the Network Membership Key
+				</title>
+<screen><![CDATA[
+# int6k -M 
+eth1 00:B0:52:00:00:01 Set Local Network Membership Key
+eth1 00:B0:52:BA:BA:56 Setting ...
+]]></screen>
+			</example>
+		<para>
+			This example programs the local device with the default <acronym>NMK</acronym>. Option <userinput>-M</userinput> sets the network membership key with the default key value. The default key is used because we omitted option <userinput>-K</userinput> and the local device is programmed because we omitted the device <acronym>MAC</acronym> address. 
+			</para>
+		<para>
+			One can quickly and easily create a default network by connecting each device,  in turn, to the local host and executing this command shown above. The devices will then form a network when connected via the powerline. Although fast and simple, this method is not very secure because the default <acronym>NMK</acronym> is used by many Atheros tools and is well known.
+				</para>
+		<para>
+			There are cases where one wants to create separate, independent networks on the powerline. This is accomplished by programming some devices with one <acronym>NMK</acronym> and other devices with another <acronym>NMK</acronym>. In such cases we need to specify an <acronym>NMK</acronym> value.
+			</para>
+		<example>
+			<title>
+				Forming a Custom Network
+				</title>
+<screen><![CDATA[
+# int6k -M -K 00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF 
+eth1 00:B0:52:00:00:01 Set Local Network Membership Key
+eth1 00:B0:52:BA:BA:56 Setting ...
+]]></screen>
+		<para>
+			This example programs the local device <acronym>NMK</acronym> with the value <userinput>00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF</userinput>. Option <userinput>-K</userinput> sets the default key value used by option <userinput>-M</userinput>. The default device is programmed because we omitted a target <acronym>MAC</acronym> address from the command line but we could have specified the local device using the actual device MAC address or the Local Management Address (<acronym>LMA</acronym>) of <userinput>00:B0:52:00:00:01</userinput> or the keyword <userinput>local</userinput>,  like so ...
+			</para>
+<screen><![CDATA[
+# int6k -M -K 00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF 
+# int6k -M -K 00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF 00:B0:52:BA:BE:56
+# int6k -M -K 00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF local
+]]></screen>
+			</example>
+		<example>
+			<title>
+				Remote Network Configuration
+				</title>
+			<para>
+				Once a network has been established, one can change the <acronym>NMK</acronym> of remote devices over the powerline but once the <acronym>NMK</acronym> on the remote device has changed, it is no longer part of original network and can no longer be returned to the network in the same way. Additionally, one cannot change the <acronym>NMK</acronym> on a remote device without specifying the <acronym>DAK</acronym> of the device to be changed. 
+				</para>
+<screen>
+# int6k -M -K 00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF \
+        -J 00:B0:52:BA:BE:57 \
+        -D A7:8E:11:FB:6A:90:2C:CB:A7:8E:11:FB:6A:90:2C:CB
+eth1 00:B0:52:00:00:01 Set Remote Network Membership Key
+eth1 00:B0:52:BA:BA:56 Setting ...
+</screen>
+		<para>
+			This example sets the <acronym>NMK</acronym> on remote device via the local device. Option <userinput>-J</userinput> specified the <acronym>MAC</acronym> address of the remote device. Option <userinput>-D</userinput> specified the DAK of the remote device. The request is sent to the local device, because we omitted the target <acronym>MAC</acronym> address, and the local device forwards our request to the remote device. The request will fail if the remote device is not accessible or the remote device <acronym>DAK</acronym> is incorrect.
+			</para>
+		<para>
+			This command is one of the more complicated <ulink url='int6k.7.html'>int6k</ulink> commands,  requires lots of typing and is consequently prone to typing errors. The order of command line options is not important.
+			</para>
+			</example>
+		</section>
+	<section id='procedure-configure-device'>
+		<title>
+			Configuring a Device
+			</title>
+		<para>
+			Device identity, capability and behavior are controlled by runtime parameters stored in the device <acronym>PIB</acronym>. To change device identity,  capability or behavior you must alter a template <acronym>PIB</acronym> file, download it to the device and flash it into <acronym>NVRAM</acronym>. A template PIB can come from several sources but an excellent souce is the device, itself. Configuration changes then become a simple read, modify and write back operation.
+			</para>
+		<example>
+			<title>
+				Read a PIB File
+				</title>
+<screen><![CDATA[
+# int6k  -i eth2 -p old.pib local
+eth2 00:B0:52:00:00:01 Read Parameters from Device
+eth2 00:B0:52:00:00:BE Read.
+]]></screen>
+			<para>
+				This example reads the <acronym>PIB</acronym> from the local device and writes it to a file. The toolkit has a growing number of programs designed to inspect and change pibfiles in various ways. Program <ulink url='modpib.7.html'>modpib</ulink> is one program that can be used for this purpose.
+				</para>
+			</example>
+		<example>
+			<title>
+				Modify a PIB File
+				</title>
+<screen><![CDATA[
+# modpib old.pib -M 00:B0:52:00:BA:BE \
+                 -N 00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF \
+                 -D FF:EE:DD:CC:BB:AA:99:88:77:66:55:44:33:22:11:00 \
+                 -S "Intergalactic Death Rays, Inc." \
+                 -T "Global Spy Network" \
+                 -U "Bedroom"
+]]></screen>
+			</example>
+		<para>
+			The example above edits identity parameters in <acronym>PIB</acronym> file,  <filename>old.pib</filename>, recomputes the internal checksum and re-writes the file. The network identity parameters are <acronym>MAC</acronym> (<userinput>-M</userinput>), <acronym>NMK</acronym> (<userinput>-N</userinput>) and <acronym>DAK</acronym> (<userinput>-D</userinput>). The user identity parameters are <acronym>MFG_HFID</acronym> (<userinput>-S</userinput>),  <acronym>NET_HFID</acronym> (<userinput>-T</userinput>) and <acronym>USR_HFID</acronym> (<userinput>-U</userinput>). The <acronym>PIB</acronym> file is ready for download and flash.
+			</para>
+		<para>
+			Program <ulink url='modpib.7.html'>modpib</ulink> is a safe way to edit a <acronym>PIB</acronym> file because it only change selected parameters. Use program <ulink url='setpib.7.html'>setpib</ulink> to edit other parameters if required.
+			</para>
+		<example>
+			<title>
+				Save a PIB File
+				</title>
+<screen><![CDATA[
+# int6k  -i eth2 -P old.pib -C pib
+eth2 00:B0:52:00:00:01 Write Parameters to Device
+eth2 00:B0:52:00:00:BE Written.
+]]></screen>
+			</example>
+		<para>
+			This example writes the modified <acronym>PIB</acronym> file, <filename>old.pib</filename>, to the local device and commits it to <acronym>NVRAM</acronym>. Option <userinput>-P</userinput> writes the <acronym>PIB</acronym> file to the device instead of reading it from the device. Option <userinput>-C</userinput> with argument <userinput>pib</userinput> commits only the <acronym>PIB</acronym>, and not firmware, to <acronym>NVRAM</acronym>. 
+			</para>
+		</section>
+	<section id='procedure-upgrade-device'>
+		<title>
+			Upgrading Firmware and PIB
+			</title>
+		<para>
+			Eventually,  you may want to upgrade (or downgrade) the runtime firmware stored in <acronym>NVRAM</acronym>. To do this, you must locate a copy of the new <filename>.nvm</filename> file on the Atheros <acronym>FTP</acronym> site and download it to your host. You must then download the file to the device and ask the runtime firmware on the device to write the file to <acronym>NVRAM</acronym>. Writing firmware to <acronym>NVRAM</acronym> is also called <quote>flashing the device</quote>. Program <ulink url='int6k.7.html'>int6k</ulink> can be used for this purpose when runtime firmware is executing on the device.
+			</para>
+		<para>
+			Program <application>int6k</application> instructs runtime firmware to write to <acronym>NVRAM</acronym> but the firmware will behave differently depending on how it was loaded and started. The first time <acronym>NVRAM</acronym> is written by runtime firmware, the Factory <acronym>PIB</acronym> is created in <acronym>NVRAM</acronym>. The second time, the User <acronym>PIB</acronym> is created. Thereafter, the User <acronym>PIB</acronym> will be re-written each time. This preserves original factory settings and permits their restoration regardless of intervening parameter changes. This means that you should make an effort to get things right the first time.
+			</para>
+		<example>
+			<title>
+				Upgrade Firmware and PIB
+				</title>
+<screen><![CDATA[
+# int6k  -i eth2 -P ../firmware/new.pib -N ../firmware/new.nvm -F
+eth2 00:B0:52:00:00:01 Write Firmware to Device
+eth2 00:B0:52:00:00:BE Wrote ../firmware/new.nvm
+eth2 00:B0:52:00:00:01 Write Parameters to Device
+eth2 00:B0:52:00:00:BE Wrote ../firmware/new.pib
+eth2 00:B0:52:00:00:01 Flash NVRAM
+eth2 00:B0:52:00:00:BE Flashing ...
+eth2 00:B0:52:00:00:BE Started INT6000-MAC-3-3-3325-00-2443-20080414-FINAL-B
+]]></screen>
+			</example>
+		<para>
+			This example downloads a <acronym>PIB</acronym> file (<userinput>-P</userinput>) and an <acronym>NVM</acronym> file (<userinput>-N</userinput>) to the device then instructs the runtime firmware to write (or flash) (<userinput>-F</userinput>) both of them to <acronym>NVRAM</acronym>. Option <userinput>-F</userinput> always writes both to <acronym>NVRAM</acronym> but option <userinput>-C</userinput> can be used to write only one or the other or both.
+			</para> 
+		<para>
+			Observe that options <userinput>-P</userinput>, <userinput>-N</userinput> and <userinput>-F</userinput> are all in uppercase. As a rule, uppercase options modify the device and lowercase options do not. One notable exception to this rule is <userinput>-I</userinput> which merely displays device identity.
+			</para>
+		</section>
+	<section id='procedure-upgrade-pib'>
+		<title>
+			Upgrading PIB Only
+			</title>
+		<para>
+			When flashing a <acronym>PIB</acronym> to the local device, the <acronym>PIB</acronym> <acronym>DAK</acronym> must match that of the local device or you will get a <quote>DAK Not Zero</quote> error message. This message is incorrect and should probably read <quote>DAK Mismatch</quote>. The following two toolkit commands should prevent this error from occuring on Linux. The first command reads the actual <acronym>MAC</acronym> (<userinput>-A</userinput>) and <acronym>DAK</acronym> (<userinput>-D</userinput>) from the device using program <ulink url='int6kid.7.html'>int6kid</ulink> and inserts them on the command lise as <ulink url='modpib.7.html'>modpib</ulink> arguments using options <userinput>-M</userinput> and <userinput>-D</userinput>. We need not include the station <acronym>MAC</acronym> address on the <ulink url='int6k.7.html'>int6k</ulink> command line because the device is local, but we could include it.
+			</para>
+		<example>
+			<title>
+				Upgrade local device PIB
+				</title>
+ <screen><![CDATA[
+ # modpib abc.pib -ieth1 -M $(int6kid -ieth1 -A) -D $(int6kid -ieth1 -D)
+ # int6k -P abc.pib -C pib 
+ ]]></screen>
+			</example>
+		<para>
+			When flashing a <acronym>PIB</acronym> to a remote device, the <acronym>PIB</acronym> <acronym>DAK</acronym> must be all zeros or you will get a <quote>DAK Not Zero</quote> error message. This message occurs because the <productname>HomePlug</productname> AV Specification does not permit a <acronym>DAK</acronym> to be transmitted over powerline in any form. The following two toolkit commands should prevent this error on Linux. We must include the device <acronym>MAC</acronym> on the command line when invoking each program because the device is remote. Notice that symbol <constant>none</constant> can be used as shorthand <constant>00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00</constant> when specifying the <acronym>DAK</acronym>.
+			</para>
+ 		<example>
+			<title>
+				Upgrade remote PIB
+				</title>
+<screen><![CDATA[
+ # modpib abc.pib -ieth1 -M $(int6kid -ieth1 -A 00B052BEEF03) -D none 
+ # int6k -P abc.pib -C2 00B052BEEF03
+ ]]></screen>
+			</example>
+		<para>
+			The <acronym>MAC</acronym> address stored in the <acronym>PIB</acronym> can have any value but it is good practice to preserve the original value. This avoids the common mistake of flashing multiple network stations with the same <acronym>MAC</acronym> address because the PIB was not updated. 
+			</para>
+		</section>
+	<section id='procedure-initialize-device'>
+		<title>
+			Starting a Device
+			</title>
+		<para>
+			Some device configurations have no flash memory to store runtime parameters and firmware so the local host must store them until needed then write them into device <acronym>SDRAM</acronym> and start execution. This is also needed when the flash memory is blank or corrupted because the runtime firmware is the only way to write flash memory. Programs <ulink url="int6kf.7.html">int6kf</ulink>,  <ulink url="int6kboot.7.html">int6kboot</ulink>, <ulink url="ampboot.7.html">ampboot</ulink> and <ulink url="plcboot.7.html">plcboot</ulink> are used to configure a blank device then download runtime parameters and firmware and start execution. They all perform the same basic function but in different ways.
+			</para>
+		<example>
+			<title>
+				Start Firmware on <productname>INT6000</productname>
+				</title>
+<screen>
+# int6kf -C abc.cfg -N abc.nvm -P abc.pib 
+</screen>
+			<para>
+				Program <ulink url='int6kf.7.html'>int6kf</ulink> can be used to download runtime firmware and parameters and start execution on and <productname>INT6000</productname> chipset. The process involves downloading a <filename>.cfg</filename> file using <constant>VS_SET_SDRAM</constant>, downloading a <filename>.nvm</filename> file using <constant>VS_WR_MEM</constant>, downloading a <filename>.pib</filename> file using <constant>VS_WR_MEM</constant> then starting firmware execution using <constant>VS_ST_MAC</constant>. See the <ulink url='int6kf.7.html'>int6kf</ulink> man page for an explanation of the command line options and arguments used here. 
+				</para>
+			</example>
+		<example>
+			<title>
+				Start Firmware on <productname>INT6300</productname> and <productname>INT6400</productname>
+				</title>
+<screen>
+# int6kboot -N abc.nvm -P abc.pib 
+</screen>
+			<para>
+				Program <ulink url='int6kboot.7.html'>int6kboot</ulink> can be used to download runtime firmware and parameters and start execution on an <productname>INT6300</productname> or <productname>INT6400</productname> chipset. The process involves downloading a <filename>.nvm</filename> file using <constant>VS_WR_MEM</constant>, downloading a <filename>.pib</filename> file using <constant>VS_WR_MEM</constant> then starting firmware execution using <constant>VS_ST_MAC</constant>. No <filename>.cfg</filename> file is needed or permitted with this application. 
+				</para>
+			</example>
+		<example>
+			<title>
+				Start Firmware on <productname>AR7400</productname>
+				</title>
+<screen>
+# ampboot -N abc.nvm -P abc.pib 
+</screen>
+			<para>
+				Program <ulink url='ampboot.7.html'>ampboot</ulink> can be used to download runtime firmware and parameters and start execution of runtime firmware on an <productname>INT6300</productname>, <productname>INT6400</productname> or <productname>AR7400</productname> chipset. The process involves downloading a <filename>.pib</filename> file using <constant>VS_WR_MEM</constant>, downloading a <filename>.nvm</filename> file using <constant>VS_WR_MEM</constant> then starting firmware execution using <constant>VS_ST_MAC</constant>. A general purpose applet, stored in the <filename>.nvm</filename> file, configures <acronym>SDRAM</acronym>. No <filename>.cfg</filename> file is needed or permitted with this application. 
+				</para>
+			</example>
+		<example>
+			<title>
+				Start Firmware on <productname>AR7420</productname>
+				</title>
+<screen>
+# plcboot -N abc.nvm -P abc.pib 
+</screen>
+			<para>
+				Program <ulink url='plcboot.7.html'>plcboot</ulink> can be used to download runtime firmware and parameters and start execution an <productname>INT6300</productname>, <productname>INT6400</productname>, <productname>AR7400</productname> or <productname>AR7420</productname> chipset. This program detects the type of chipset and the image file format. The boot process varies depending on the chipset that is detected and the image file format. For the <productname>AR7420</productname> chipset, this process involves downloading a <filename>.pib</filename> and <filename>.nvm</filename> file using only <constant>VS_WRITE_EXECUTE</constant> messages. For earlier chipsets, the process is as described above.
+				</para>
+			</example>
+		</section>
+	<section id="procedure-testing-device">
+		<title>
+			Testing a Device
+			</title>
+		<para>
+			When the <application>Bootloader</application> is running, it is possible to perform systematic diagnostic testing by downloading and executing a variety of small programs, called <quote>applets</quote>. A collection of applets can be found in the toolkit <filename>Applets</filename> folder. Applet <ulink url='toolkit.html#applet-files'>manpages</ulink> describe the purpose of each one. Some applets are more useful than others. Start by reading the <ulink url='applets.7a.html'>applets</ulink> manpage.		
+			</para>
+		<para>
+			Program <ulink url='int6ktest.7.html'>int6ktest</ulink> can be used to sequentially download and execute a series of applets. Applets have evolved over time and some are more useful or informative than others. Newer applets report progress and errors on the console. Older applets report progress or errors by flashing the onboard <acronym>LED</acronym>s. This means of testing cannot be used after the flash memory has been programmed unless you erase, corrupt or remove the flash.
+			</para>
+<screen>
+# int6ktest -i eth4 connection.nvm memctl.nvm marchloop.nvm
+eth4 00:B0:52:00:00:01 Write Memory (00000000:32)
+eth4 00:B0:52:00:00:01 Wrote connection.nvm
+eth4 00:B0:52:00:00:01 Start connection.nvm (0)
+eth4 00:B0:52:00:00:01 Write Memory (00001000:664)
+eth4 00:B0:52:00:00:01 Wrote connection.nvm
+eth4 00:B0:52:00:00:01 Start connection.nvm (1)
+eth4 00:B0:52:00:00:01 Write Memory (00000040:6076)
+eth4 00:B0:52:00:00:01 Wrote memctl.nvm
+eth4 00:B0:52:00:00:01 Start memctl.nvm (0)
+eth4 00:B0:52:00:00:01 Write Memory (00001000:2212)
+eth4 00:B0:52:00:00:01 Wrote marchloop.nvm
+eth4 00:B0:52:00:00:01 Start marchloop.nvm (0)
+eth4 00:B0:52:00:00:01 0x00 March2 test - Pass
+</screen>
+		<para>
+			This example uses program <ulink url='int6ktest.7.html'>int6ktest</ulink> to download and execute applets <ulink url='connection.7a.html'>connection.nvm</ulink>, <ulink url='memctl.7a.html'>memctl.nvm</ulink> and <ulink url='marchloop.7a.html'>marchloop.nvm</ulink> to the powerline device on host interface <quote>eth4</quote>. The first applet checks circuit board connections to memory and reports progress and errors by flashing onboard <acronym>LED</acronym>s. The second configures the <acronym>SDRAM</acronym> controller and exits without any indication. The third performs a systematic test of <acronym>SDRAM</acronym> and reports progress and errors on the console. In this case the test passed.
+			</para>
+		<para>
+			See programs <ulink url="amptest.7.html">amptest</ulink> and <ulink url="plctest.7.html">plctest</ulink> for updated versions of this program for use with <productname>AR7400</productname> and <productname>QCA7420</productname> chipsets.
+			</para>
+		</section>
+	<section id='procedure-inialize-nvram'>
+		<title>
+			Programming NVRAM  
+			</title>
+		<note>
+			<title>
+				int6kf and int6kboot
+				</title>
+			<para>
+				The <productname>INT6300</productname> and <productname>INT6400</productname> do not require a special <acronym>SDRAM</acronym> configuration file and so program <ulink url='int6kboot.7.html'>int6kboot</ulink> may be used in place of <ulink url='int6kf.7.html'>int6kf</ulink> which is described here. The only real difference between the two programs is the presence or absence of option <command>-C</command> on the command line.
+				</para>
+			</note>
+		<para>
+			The <ulink url='int6kf.7.html'>int6kf</ulink> program can program a blank or corrupted <acronym>NVRAM</acronym> on the INT6300. The process involves starting the runtime firmware as shown in the previous example then downloading a .nvm file using a <constant>VS_WR_MOD</constant> message, downloading a .pib file using another WR_WR_MOD message then writing both to <acronym>NVRAM</acronym> using a <constant>VS_MOD_NVM</constant> message. An example <ulink url='int6kf.7.html'>int6kf</ulink> command line is shown below. It is identical to the one shown above except for the addition of the flash option at the end. 
+			</para>
+		<example>
+			<title>
+				Flash NVRAM with int6kf
+				</title>
+<screen>
+# int6kf -C abc.cfg -N abc.nvm -P abc.pib -F
+</screen>
+			</example>
+		<para>
+			The example above starts the firmware then uses it to program the <acronym>NVRAM</acronym>. This was done in one step rather than two seperate steps as shown in the examples before it. The only difference is that <command>int6k</command> needs to use the 'force flash' option when using downloaded firmware to write <acronym>NVRAM</acronym>. The following example accomplishes the same thing as the previous example but uses <command>int6k</command> to program <acronym>NVRAM</acronym>. See the <ulink url='int6k.7.html'>int6k</ulink> man page for an explanation of the command line options and arguments used here.
+			</para>
+		<para>
+			The <ulink url='int6kf.7.html'>int6kf</ulink> program cannot program blank or corrupted <acronym>NVRAM</acronym> on the INT6000 unless the <application>Softloader</application> is running. Since the <application>Softloader</application> resides in <acronym>NVRAM</acronym>, the NVRAM must be either pre-programmed before use or removed and externally re-programmed if it corrupts.
+			</para>
+		<example>
+			<title>
+				Flash NVRAM with int6k
+				</title>
+<screen>
+# int6kf -C abc.cfg -N abc.nvm -P abc.pib 
+# int6k -N abc.nvm -P abc.pib -FF 
+</screen>
+			</example>
+		</section>
+	<section id="procedure-uart-pairing">
+		<title>
+			Pairing UART Devices post PTS
+			</title>
+		<para>
+			This procedure describes how to pair two UART-enabled powerline adapters once they have been programmed,  personalized and tested. This example assumes you are using a Windows host and two powerline adapters having MAC addresses <constant>00:B0:52:00:05:F9</constant> and <constant>00:B0:52:00:05:FA</constant>.
+			</para>
+		<para>
+			Start with the first device, <constant>00:B0:52)(00:05:F9</constant>. Plug the host serial cable into the RJ45 port on the device and plug the device into an AC power source.
+			</para>
+		<para>
+			Change to transparent mode using program int6kuart. Option -v displays outgoing command and incoming serial responses. The <quote>+++</quote> is the serial data sent to the device and the <quote>OK</quote> is the device response. 
+<screen>
+# int6kuart -s com3 -wv
++++
+OK
+</screen>
+			</para>
+		<para>
+			Read the adapter PIB into a temporary file using program  <ulink url="int6kuart.7.html">int6kuart</ulink>. The following command reads the PIB from serial device <filename>com3</filename> and saves it to file <filename>temp.pib</filename> on the host. You will see a series of dots appear on the console as the PIB is read from the device. The filename used is not important.
+<screen>
+# int6kuart -s com3 -p temp.pib
+....................
+</screen>
+			</para>
+		<para>
+			Program the PIB file with the default destination address using program <ulink url="setpib.7.html">setpib</ulink>. The following command inserts the MAC address of the second device, <constant>00B0520005FA</constant>, at fixed offset <constant>0x2C8A</constant> in file <filename>temp.pib</filename> downloaded in the previous step.
+<screen>
+# setpib temp.pib 2C8A data 00B0520005FA
+</screen>
+			</para>
+		<para>
+			Write the modified PIB file back to the adapter and commit it to flash memory using program <ulink url="int6kuart.7.html">int6kuart</ulink>. The following command write file <filename>temp.pib</filename> to serial device <filename>com3</filename> then commits the PIB to flash memory. You will see a series of dots appear on the console as the PIB is written to the device. The device will reboot.
+<screen>
+# int6kuart -s com3 -P temp.pib -C2
+....................
+</screen>
+			</para>
+		<para>
+			Change the device to Transparent Mode using program <ulink url="int6kuart.7.html">int6kuart</ulink> once the device resets.
+<screen>
+# inc6kuart -s com3 -wv
++++
+OK
+</screen>
+			</para>
+		<para>
+			Verify that the destination MAC address is correct using program <ulink url="int6kuart.7.html">int6kuart</ulink>.
+<screen>
+# int6kuart -s com3 -d
+00B0520005FA
+</screen>
+			</para>	
+		<para>
+			Repeat this process on the second adapter, <constant>00:B0:52:00:05:FA</constant>, using the MAC address of the first device, <constant>00:B0:52:00:05:F9</constant>, as the destination address.
+			</para>	
+		</section>
+	&procedure-trouble-shooting;
+	&procedure-slac-config;
+	&procedure-slac-demo;
+</chapter>

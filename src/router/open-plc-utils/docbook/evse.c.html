@@ -1,0 +1,529 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			evse.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='EthernetHeader.c.html' title=' EthernetHeader.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='evse_cm_atten_char.c.html' title=' evse_cm_atten_char.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *
+ *   evse.c - QCA Electric Vehicle Supply Equipment Emulator;
+ *
+ *   This program, in the current state, is not a finished product;
+ *   It has been released so that interested parties can begin to 
+ *   see how the SLAC protocol might be implemented;
+ *
+ *   Some key design features are:
+ *
+ *   1) the use of a channel variable to abstract ISO Layer 2 I/O;
+ *      the variable is used by functions openchannel, readmessage,
+ *      sendmessage and closechannel;
+ *
+ *   2) the use of a message variable to represent an IEEE 802.3 
+ *      Ethernet frame; the variable allows one frame to be used
+ *      and re-used throughout the program but supports multiple
+ *      frame buffers if needed;
+ *
+ *   3) the use of a session variable to support multiple PEV-EVSE
+ *      interactions without using threads or subrocesses; this has
+ *      not demonstrated in this version of the program; some more
+ *      work is needed;
+ *
+ *   4) the absence of threads or subprocesses so that the  program 
+ *      can be ported to hosts without a multi-tasking operating 
+ *      system;
+ *
+ *   5) lots of debugging messages; these can be suppressed or 
+ *      deleted if not wanted;
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *   system header files;
+ *--------------------------------------------------------------------*/
+
+#include &lt;unistd.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;limits.h&gt;
+#include &lt;errno.h&gt;
+#include &lt;sys/time.h&gt;
+
+/*====================================================================*
+ *   custom header files;
+ *--------------------------------------------------------------------*/
+
+#include &quot;../ether/channel.h&quot;
+#include &quot;../tools/getoptv.h&quot;
+#include &quot;../tools/putoptv.h&quot;
+#include &quot;../tools/memory.h&quot;
+#include &quot;../tools/number.h&quot;
+#include &quot;../tools/config.h&quot;
+#include &quot;../tools/types.h&quot;
+#include &quot;../tools/timer.h&quot;
+#include &quot;../tools/flags.h&quot;
+#include &quot;../tools/error.h&quot;
+#include &quot;../ether/channel.h&quot;
+#include &quot;../slac/slac.h&quot;
+
+/*====================================================================*
+ *   custom source files;
+ *--------------------------------------------------------------------*/
+
+#ifndef MAKEFILE
+#include &quot;../tools/getoptv.c&quot;
+#include &quot;../tools/putoptv.c&quot;
+#include &quot;../tools/version.c&quot;
+#include &quot;../tools/uintspec.c&quot;
+#include &quot;../tools/hexdecode.c&quot;
+#include &quot;../tools/hexencode.c&quot;
+#include &quot;../tools/hexdump.c&quot;
+#include &quot;../tools/hexout.c&quot;
+#include &quot;../tools/hexstring.c&quot;
+#include &quot;../tools/decdecode.c&quot;
+#include &quot;../tools/decstring.c&quot;
+#include &quot;../tools/todigit.c&quot;
+#include &quot;../tools/strfbits.c&quot;
+#include &quot;../tools/error.c&quot;
+#include &quot;../tools/config.c&quot;
+#include &quot;../tools/debug.c&quot;
+#endif
+
+#ifndef MAKEFILE
+#include &quot;../ether/openchannel.c&quot;
+#include &quot;../ether/closechannel.c&quot;
+#include &quot;../ether/readpacket.c&quot;
+#include &quot;../ether/sendpacket.c&quot;
+#include &quot;../ether/channel.c&quot;
+#endif
+
+#ifndef MAKEFILE
+#include &quot;../plc/Devices.c&quot;
+#endif
+
+#ifndef MAKEFILE
+#include &quot;../mme/EthernetHeader.c&quot;
+#include &quot;../mme/QualcommHeader.c&quot;
+#include &quot;../mme/HomePlugHeader1.c&quot;
+#include &quot;../mme/UnwantedMessage.c&quot;
+#include &quot;../mme/readmessage.c&quot;
+#include &quot;../mme/sendmessage.c&quot;
+#endif
+
+#ifndef MAKEFILE
+#include &quot;../slac/slac_session.c&quot;
+#include &quot;../slac/evse_cm_slac_param.c&quot;
+#include &quot;../slac/evse_cm_start_atten_char.c&quot;
+#include &quot;../slac/evse_cm_atten_char.c&quot;
+#include &quot;../slac/evse_cm_mnbc_sound.c&quot;
+#include &quot;../slac/evse_cm_slac_match.c&quot;
+#include &quot;../slac/evse_cm_set_key.c&quot;
+#endif
+
+/*====================================================================*
+ *   program constants;
+ *--------------------------------------------------------------------*/
+
+#define PLCDEVICE &quot;PLC&quot;
+#define PROFILE &quot;evse.ini&quot;
+#define SECTION &quot;default&quot; 
+#define STATION &quot;&quot;
+
+#define EVSE_STATE_UNAVAILABLE 0
+#define EVSE_STATE_UNOCCUPIED 1
+#define EVSE_STATE_UNMATCHED 2
+#define EVSE_STATE_MATCHED 3
+
+#define EVSE_SID &quot;BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB&quot;	// Station Identifier
+#define EVSE_NMK &quot;B59319D7E8157BA001B018669CCEE30D&quot; 	// HomePlugAV0123
+#define EVSE_NID &quot;026BCBA5354E08&quot;		    	// HomePlugAV0123
+
+/*====================================================================*
+ *
+ *   void configure ()
+ *
+ *   print default EVSE-HLE configuration file on stdout so that the
+ *   profile, section and element names match; 
+ *
+ *--------------------------------------------------------------------*/
+
+static void configure () 
+
+{ 
+	printf (&quot;# file: %s\n&quot;, PROFILE); 
+	printf (&quot;# ====================================================================\n&quot;); 
+	printf (&quot;# EVSE-HLE initiaization;\n&quot;); 
+	printf (&quot;# --------------------------------------------------------------------\n&quot;); 
+	printf (&quot;[%s]\n&quot;, SECTION); 
+	printf (&quot;station identifier = %s\n&quot;, EVSE_SID); 
+	printf (&quot;network membership key = %s\n&quot;, EVSE_NMK); 
+	printf (&quot;network identifier = %s\n&quot;, EVSE_NID); 
+	printf (&quot;number of sounds = %d\n&quot;, SLAC_MSOUNDS); 
+	printf (&quot;time to sound = %d\n&quot;, SLAC_TIMETOSOUND); 
+	printf (&quot;response type = %d\n&quot;, SLAC_RESPONSE_TYPE); 
+	printf (&quot;settle time = %d\n&quot;, SLAC_SETTLETIME); 
+	printf (&quot;charge time = %d\n&quot;, SLAC_CHARGETIME); 
+	return; 
+} 
+
+/*====================================================================*
+ *
+ *   char void initialize (struct session * session, char const * profile, char const * section) 
+ *
+ *   read EVSE-HLE configuration profile; initialize session variable;
+ *   
+ *--------------------------------------------------------------------*/
+
+static void initialize (struct session * session, char const * profile, char const * section) 
+
+{ 
+	session-&gt;next = session-&gt;prev = session; 
+	hexencode (session-&gt;EVSE_ID, sizeof (session-&gt;EVSE_ID), configstring (profile, section, &quot;StationIdentifier&quot;, EVSE_SID)); 
+	hexencode (session-&gt;NMK, sizeof (session-&gt;NMK), configstring (profile, section, &quot;NetworkMembershipKey&quot;, EVSE_NMK)); 
+	hexencode (session-&gt;NID, sizeof (session-&gt;NID), configstring (profile, section, &quot;NetworkIdentifier&quot;, EVSE_NID)); 
+	session-&gt;NUM_SOUNDS = confignumber (profile, section, &quot;NumberOfSounds&quot;, SLAC_MSOUNDS); 
+	session-&gt;TIME_OUT = confignumber (profile, section, &quot;TimeToSound&quot;, SLAC_TIMETOSOUND); 
+	session-&gt;RESP_TYPE = confignumber (profile, section, &quot;ResponseType&quot;, SLAC_RESPONSE_TYPE); 
+	session-&gt;chargetime = confignumber (profile, section, &quot;ChargeTime&quot;, SLAC_CHARGETIME); 
+	session-&gt;settletime = confignumber (profile, section, &quot;SettleTime&quot;, SLAC_SETTLETIME); 
+	memcpy (session-&gt;original_nmk, session-&gt;NMK, sizeof (session-&gt;original_nmk)); 
+	memcpy (session-&gt;original_nid, session-&gt;NID, sizeof (session-&gt;original_nid)); 
+	session-&gt;state = EVSE_STATE_UNOCCUPIED; 
+	slac_session (session); 
+	return; 
+} 
+
+/*====================================================================*
+ *
+ *   signed identifier (struct session * session, struct channel * channel);
+ *
+ *   copy channel host address to session EVSE MAC address; set session
+ *   EVSE identifier to zeros;
+ *
+ *--------------------------------------------------------------------*/
+
+static signed identifier (struct session * session, struct channel * channel) 
+
+{ 
+	memcpy (session-&gt;EVSE_MAC, channel-&gt;host, sizeof (session-&gt;EVSE_MAC)); 
+	return (0); 
+} 
+
+/*====================================================================*
+ *
+ *   void UnoccupiedState (struct session * session, struct channel * channel, struct message * message);
+ *
+ *--------------------------------------------------------------------*/
+
+static void UnoccupiedState (struct session * session, struct channel * channel, struct message * message) 
+
+{ 
+	slac_session (session); 
+	debug (0, __func__, &quot;Listening ...&quot;); 
+	while (evse_cm_slac_param (session, channel, message)); 
+	session-&gt;state = EVSE_STATE_UNMATCHED; 
+	return; 
+} 
+
+/*====================================================================*
+ *
+ *   void MatchingState (struct session * session, struct channel * channel, struct message * message);
+ *
+ *   the cm_start_atten_char message establishes msound count and 
+ *   timeout;
+ *
+ *--------------------------------------------------------------------*/
+
+static void UnmatchedState (struct session * session, struct channel * channel, struct message * message) 
+
+{ 
+	slac_session (session); 
+	debug (0, __func__, &quot;Sounding ...&quot;); 
+	if (evse_cm_start_atten_char (session, channel, message)) 
+	{ 
+		session-&gt;state = EVSE_STATE_UNOCCUPIED; 
+		return; 
+	} 
+	if (evse_cm_mnbc_sound (session, channel, message)) 
+	{ 
+		session-&gt;state = EVSE_STATE_UNOCCUPIED; 
+		return; 
+	} 
+	if (evse_cm_atten_char (session, channel, message)) 
+	{ 
+		session-&gt;state = EVSE_STATE_UNOCCUPIED; 
+		return; 
+	} 
+	debug (0, __func__, &quot;Matching ...&quot;); 
+	if (evse_cm_slac_match (session, channel, message)) 
+	{ 
+		session-&gt;state = EVSE_STATE_UNOCCUPIED; 
+		return; 
+	} 
+	session-&gt;state = EVSE_STATE_MATCHED; 
+	return; 
+} 
+
+/*====================================================================*
+ *
+ *   void MatchedState (struct session * session, struct channel * channel, struct message * message);
+ *
+ *--------------------------------------------------------------------*/
+
+static void MatchedState (struct session * session, struct channel * channel, struct message * message) 
+
+{ 
+	debug (0, __func__, &quot;Connecting ...&quot;); 
+
+#if SLAC_AVLN_EVSE
+
+	if (evse_cm_set_key (session, channel, message)) 
+	{ 
+		session-&gt;state = EVSE_STATE_UNOCCUPIED; 
+		return; 
+	} 
+	sleep (session-&gt;settletime); 
+
+#endif
+#if SLAC_AVLN_PEV
+
+	debug (0, __func__, &quot;waiting for pev to settle ...&quot;); 
+	sleep (session-&gt;settletime); 
+
+#endif
+
+	debug (0, __func__, &quot;Charging (%d) ...\n\n&quot;, session-&gt;counter++); 
+	sleep (session-&gt;chargetime); 
+	debug (0, __func__, &quot;Disconnecting ...&quot;); 
+
+#if SLAC_AVLN_EVSE
+
+	memcpy (session-&gt;NMK, session-&gt;original_nmk, sizeof (session-&gt;NMK)); 
+	memcpy (session-&gt;NID, session-&gt;original_nid, sizeof (session-&gt;NID)); 
+	if (evse_cm_set_key (session, channel, message)) 
+	{ 
+		session-&gt;state = EVSE_STATE_UNOCCUPIED; 
+		return; 
+	} 
+	sleep (session-&gt;settletime); 
+
+#endif
+#if SLAC_AVLN_PEV
+
+	debug (0, __func__, &quot;waiting for pev to settle ...&quot;); 
+	sleep (session-&gt;settletime); 
+
+#endif
+
+	session-&gt;state = EVSE_STATE_UNOCCUPIED; 
+	return; 
+} 
+
+/*====================================================================*
+ *   
+ *   int main (int argc, char const * argv[]);
+ *   
+ *--------------------------------------------------------------------*/
+
+int main (int argc, char const * argv []) 
+
+{ 
+	extern struct channel channel; 
+	static char const * optv [] = 
+	{ 
+		&quot;cCdi:p:qs:t:vw:x&quot;, 
+		&quot;&quot;, 
+		&quot;Qualcomm Atheros Electric Vehicle Supply Equipment Emulator&quot;, 
+		&quot;c\tprint template configuration file on stdout&quot;, 
+		&quot;C\tstop on count mismatch&quot;, 
+		&quot;d\tdisplay debug information&quot;, 
+
+#if defined (WINPCAP) || defined (LIBPCAP)
+
+		&quot;i n\thost interface is (n) [&quot; LITERAL (CHANNEL_ETHNUMBER) &quot;]&quot;, 
+
+#else
+
+		&quot;i s\thost interface is (s) [&quot; LITERAL (CHANNEL_ETHDEVICE) &quot;]&quot;, 
+
+#endif
+
+		&quot;p s\tconfiguration profile is (s) [&quot; LITERAL (PROFILE) &quot;]&quot;, 
+		&quot;s s\tconfiguration section is (s) [&quot; LITERAL (SECTION) &quot;]&quot;, 
+		&quot;q\tquiet mode&quot;, 
+		&quot;t n\tread timeout is (n) milliseconds [&quot; LITERAL (SLAC_TIMEOUT) &quot;]&quot;, 
+		&quot;v\tverbose mode&quot;, 
+		&quot;x\texit on error&quot;, 
+		(char const *) (0)
+	}; 
+	struct session session; 
+	struct message message; 
+	char const * profile = PROFILE; 
+	char const * section = SECTION; 
+	signed c; 
+	memset (&amp; session, 0, sizeof (session)); 
+	memset (&amp; message, 0, sizeof (message)); 
+	channel.timeout = SLAC_TIMEOUT; 
+	if (getenv (PLCDEVICE)) 
+	{ 
+
+#if defined (WINPCAP) || defined (LIBPCAP)
+
+		channel.ifindex = atoi (getenv (PLCDEVICE)); 
+
+#else
+
+		channel.ifname = strdup (getenv (PLCDEVICE)); 
+
+#endif
+
+	} 
+	optind = 1; 
+	while (~ (c = getoptv (argc, argv, optv))) 
+	{ 
+		switch (c) 
+		{ 
+		case 'c': 
+			configure (); 
+			return (0); 
+		case 'C': 
+			_setbits (session.flags, SLAC_COMPARE); 
+			break; 
+		case 'd': 
+			_setbits (session.flags, (SLAC_VERBOSE | SLAC_SESSION)); 
+			break; 
+		case 'i': 
+
+#if defined (WINPCAP) || defined (LIBPCAP)
+
+			channel.ifindex = atoi (optarg); 
+
+#else
+
+			channel.ifname = optarg; 
+
+#endif
+
+			break; 
+		case 'p': 
+			profile = optarg; 
+			break; 
+		case 's': 
+			section = optarg; 
+			break; 
+		case 'q': 
+			_setbits (channel.flags, CHANNEL_SILENCE); 
+			break; 
+		case 't': 
+			channel.timeout = (signed) (uintspec (optarg, 0, UINT_MAX)); 
+			break; 
+		case 'v': 
+			_setbits (channel.flags, CHANNEL_VERBOSE); 
+			break; 
+		case 'x': 
+			session.exit = session.exit? 0: 1; 
+			break; 
+		default: 
+			break; 
+		} 
+	} 
+	argc -= optind; 
+	argv += optind; 
+	if (argc) 
+	{ 
+		debug (1, __func__, ERROR_TOOMANY); 
+	} 
+	openchannel (&amp; channel); 
+	initialize (&amp; session, profile, section); 
+	identifier (&amp; session, &amp; channel); 
+	if (evse_cm_set_key (&amp; session, &amp; channel, &amp; message)) 
+	{ 
+		debug (1, __func__, &quot;Can't set key.&quot;); 
+	} 
+	sleep (session.settletime); 
+	while (session.state) 
+	{ 
+		if (session.state == EVSE_STATE_UNOCCUPIED) 
+		{ 
+			UnoccupiedState (&amp; session, &amp; channel, &amp; message); 
+			continue; 
+		} 
+		if (session.state == EVSE_STATE_UNMATCHED) 
+		{ 
+			UnmatchedState (&amp; session, &amp; channel, &amp; message); 
+			continue; 
+		} 
+		if (session.state == EVSE_STATE_MATCHED) 
+		{ 
+			MatchedState (&amp; session, &amp; channel, &amp; message); 
+			continue; 
+		} 
+		debug (1, __func__, &quot;Illegal state!&quot;); 
+	} 
+	closechannel (&amp; channel); 
+	exit (0); 
+} 
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='EthernetHeader.c.html' title=' EthernetHeader.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='evse_cm_atten_char.c.html' title=' evse_cm_atten_char.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

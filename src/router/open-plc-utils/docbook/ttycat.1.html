@@ -1,0 +1,85 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			ttycat.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='setpib.1.html' title=' setpib.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='ttyrecv.1.html' title=' ttyrecv.1 '>NEXT</a>]
+			</div>
+<pre>
+ttycat(1)                                    Qualcomm Atheros Open Powerline Toolkit                                   ttycat(1)
+
+NAME
+       ttycat - Serial Line Output Utility
+
+SYNOPSIS
+       ttycat [options] [file] [file] [&gt;stdout]
+
+       ttycat [options] [&lt;stdin] [&gt;stdout]
+
+DESCRIPTION
+       Copy one or more files to a serial device.  This program is similar to traditional cat utility but expects stdout to be a
+       serial tty device.  It will configure stdout before writing and will restore the original configuration  afterwards.   It
+       can be used to send data to the local Atheros UART-enabled powerline device.  If the remote powerline device is not UART-
+       enabled, use program edru to capture and display arriving at the remote host and program edsu to send files in the  oppo‐
+       site direction.
+
+       This  program  is  part of the Qualcomm Atheros Powerline Toolkit.  See the AMP man page for an overview and installation
+       instructions.
+
+COMMENTS
+       This program only supports the Linux and MacOSX  platforms, at present.
+
+OPTIONS
+       -s speed
+              The serial baud rate.  Supported baud rates are 0, 50, 75, 110, 134, 150, 200, 300, 600, 1200, 1800,  2400,  4800,
+              9600, 19200, 38400, 57600, 115200, 230400, 460800, 500000 and 921600.
+
+       -?,--help
+              Print program help summary on stdout.  This option takes precedence over other options on the command line.
+
+       -?,--version
+              Print program version information on stdout.  This option takes precedence over other options on the command line.
+              Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version  of
+              the Linux Toolkit you are using.
+
+ARGUMENTS
+       file   The  name  of  an  input  file.  No assumptions are made about the file based on the filename or extension.  Input
+              files are not modified.
+
+       stdout The name of a serial output device.  A error will occur if the device is not a true tty device according as deter‐
+              mined  by  the  isatty  function.  Depending on the amount of input data and the baud rate, serial output may take
+              several seconds or several minutes.
+
+EXAMPLES
+       The following command copies files abc.txt and def.bin to stdout which must be an active serial device or an  error  will
+       occur.
+
+          # ttycat abc.txt def.bin &gt; /dev/ttyUSB1
+
+SEE ALSO
+       amp(1), edru(1), edsu(1), int6kuart(1),
+
+CREDITS
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                                ttycat(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='setpib.1.html' title=' setpib.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='ttyrecv.1.html' title=' ttyrecv.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

@@ -1,0 +1,235 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Chapter 7.  Support Function Reference</title><link rel="stylesheet" href="docbook.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.73.2"><meta name="keywords" content="Intellon, Atheros, Qualcomm, HomePlug, powerline, communications, INT6000, INT6300, INT6400, AR7400, AR7420"><link rel="start" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="up" href="index.html" title="Qualcomm Atheros Open Powerline Toolkit"><link rel="prev" href="ch06s12.html" title="User Interaction"><link rel="next" href="ch07s02.html" title="Command Line Functions"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Chapter 7. 
+		Support Function Reference
+		</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch06s12.html">Prev</a> </td><th width="60%" align="center"> </th><td width="20%" align="right"> <a accesskey="n" href="ch07s02.html">Next</a></td></tr></table><hr></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="support-functions"></a>Chapter 7. 
+		Support Function Reference
+		</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="section"><a href="ch07.html#support-intro">
+			Introduction
+			</a></span></dt><dt><span class="section"><a href="ch07s02.html">
+			Command Line Functions
+			</a></span></dt><dd><dl><dt><span class="section"><a href="ch07s02.html#support-assist">
+			assist
+			</a></span></dt><dt><span class="section"><a href="ch07s02.html#support-basespec">
+			basespec
+			</a></span></dt><dt><span class="section"><a href="ch07s02.html#support-bytespec">
+			bytespec
+			</a></span></dt><dt><span class="section"><a href="ch07s02.html#support-checkfilename">
+			checkfilename
+			</a></span></dt><dt><span class="section"><a href="ch07s02.html#support-dataspec">
+			dataspec
+			</a></span></dt><dt><span class="section"><a href="ch07s02.html#support-error">
+			error
+			</a></span></dt><dt><span class="section"><a href="ch07s02.html#support-expect">
+			expect
+			</a></span></dt><dt><span class="section"><a href="ch07s02.html#support-getoptv">
+			getoptv
+			</a></span></dt><dt><span class="section"><a href="ch07s02.html#support-ipv4spec">
+			ipv4spec
+			</a></span></dt><dt><span class="section"><a href="ch07s02.html#support-ipv6spec">
+			ipv6spec
+			</a></span></dt><dt><span class="section"><a href="ch07s02.html#support-lookup">
+			lookup
+			</a></span></dt><dt><span class="section"><a href="ch07s02.html#support-putoptv">
+			putoptv
+			</a></span></dt><dt><span class="section"><a href="ch07s02.html#support-synonym">
+			synonym
+			</a></span></dt><dt><span class="section"><a href="ch07s02.html#support-uintspec">
+			uintspec
+			</a></span></dt><dt><span class="section"><a href="ch07s02.html#support-version">
+			version
+			</a></span></dt></dl></dd><dt><span class="section"><a href="ch07s03.html">
+		Ethernet Functions
+		</a></span></dt><dd><dl><dt><span class="section"><a href="ch07s03.html#support-channel">
+				channel
+				</a></span></dt><dt><span class="section"><a href="ch07s03.html#support-closechannel">
+			closechannel
+			</a></span></dt><dt><span class="section"><a href="ch07s03.html#support-openchannel">
+			openchannel
+			</a></span></dt><dt><span class="section"><a href="ch07s03.html#support-readpacket">
+			readpacket
+			</a></span></dt><dt><span class="section"><a href="ch07s03.html#support-sendpacket">
+			sendpacket
+			</a></span></dt></dl></dd><dt><span class="section"><a href="ch07s04.html">
+		Network Functions
+		</a></span></dt><dd><dl><dt><span class="section"><a href="ch07s04.html#support-networkbridges">
+			NetworkBridges
+			</a></span></dt><dt><span class="section"><a href="ch07s04.html#support-networkdevices">
+			NetworkDevices
+			</a></span></dt></dl></dd><dt><span class="section"><a href="ch07s05.html">
+		Generic Functions
+		</a></span></dt><dd><dl><dt><span class="section"><a href="ch07s05.html#support-binout">
+			binout
+			</a></span></dt><dt><span class="section"><a href="ch07s05.html#support-checksum32">
+			checksum32
+			</a></span></dt><dt><span class="section"><a href="ch07s05.html#support-checksum-32">
+			checksum_32
+			</a></span></dt><dt><span class="section"><a href="ch07s05.html#support-chrout">
+			chrout
+			</a></span></dt><dt><span class="section"><a href="ch07s05.html#support-decout">
+			decout
+			</a></span></dt><dt><span class="section"><a href="ch07s05.html#support-endian">
+			endian
+			</a></span></dt><dt><span class="section"><a href="ch07s05.html#support-fdchecksum32">
+			fdchecksum32
+			</a></span></dt><dt><span class="section"><a href="ch07s05.html#support-fdchecksum-32">
+			fdchecksum_32
+			</a></span></dt><dt><span class="section"><a href="ch07s05.html#support-filepar">
+			filepart
+			</a></span></dt><dt><span class="section"><a href="ch07s05.html#support-hexdecode">
+			hexdecode
+			</a></span></dt><dt><span class="section"><a href="ch07s05.html#support-hexdump">
+			hexdump
+			</a></span></dt><dt><span class="section"><a href="ch07s05.html#support-hexencode">
+			hexencode
+			</a></span></dt><dt><span class="section"><a href="ch07s05.html#support-hexin">
+			hexin
+			</a></span></dt><dt><span class="section"><a href="ch07s05.html#support-hexout">
+			hexout
+			</a></span></dt><dt><span class="section"><a href="ch07s05.html#support-hexstring">
+			hexstring
+			</a></span></dt><dt><span class="section"><a href="ch07s05.html#support-hexview">
+			hexview
+			</a></span></dt><dt><span class="section"><a href="ch07s05.html#support-memdecr">
+			memdecr
+			</a></span></dt><dt><span class="section"><a href="ch07s05.html#support-memincr">
+			memincr
+			</a></span></dt><dt><span class="section"><a href="ch07s05.html#support-memout">
+			memout
+			</a></span></dt><dt><span class="section"><a href="ch07s05.html#support-memswap">
+			memswap
+			</a></span></dt><dt><span class="section"><a href="ch07s05.html#support-strdecr">
+			strdecr
+			</a></span></dt><dt><span class="section"><a href="ch07s05.html#support-strfbits">
+			strfbits
+			</a></span></dt><dt><span class="section"><a href="ch07s05.html#support-strincr">
+			strincr
+			</a></span></dt><dt><span class="section"><a href="ch07s05.html#support-todigit">
+			todigit
+			</a></span></dt><dt><span class="section"><a href="ch07s05.html#support-typename">
+			typename
+			</a></span></dt></dl></dd><dt><span class="section"><a href="ch07s06.html">
+		Message Debug Functions
+		</a></span></dt><dd><dl><dt><span class="section"><a href="ch07s06.html#support-mmecode">
+			MMECode
+			</a></span></dt><dt><span class="section"><a href="ch07s06.html#support-mmemode">
+			MMEMode
+			</a></span></dt><dt><span class="section"><a href="ch07s06.html#support-mmename">
+			MMEName
+			</a></span></dt><dt><span class="section"><a href="ch07s06.html#support-mmepeek">
+			MMEPeek
+			</a></span></dt></dl></dd><dt><span class="section"><a href="ch07s07.html">
+			Key Generation Functions
+			</a></span></dt><dd><dl><dt><span class="section"><a href="ch07s07.html#support-MACPasswords">
+				MACPasswords
+				</a></span></dt><dt><span class="section"><a href="ch07s07.html#support-HPAVKeyDAK">
+				HPAVKeyDAK
+				</a></span></dt><dt><span class="section"><a href="ch07s07.html#support-HPAVKeyNMK">
+				HPAVKeyNMK
+				</a></span></dt><dt><span class="section"><a href="ch07s07.html#support-HPAVKeyNID">
+				HPAVKeyNID
+				</a></span></dt><dt><span class="section"><a href="ch07s07.html#support-HPAVKeyOut">
+				HPAVKeyOut
+				</a></span></dt><dt><span class="section"><a href="ch07s07.html#support-SHA256Block">
+				SHA256Block
+				</a></span></dt><dt><span class="section"><a href="ch07s07.html#support-SHA256Fetch">
+				SHA256Fetch
+				</a></span></dt><dt><span class="section"><a href="ch07s07.html#support-SHA256Ident">
+				SHA256Ident
+				</a></span></dt><dt><span class="section"><a href="ch07s07.html#support-SHA256Match">
+				SHA256Match
+				</a></span></dt><dt><span class="section"><a href="ch07s07.html#support-SHA256Print">
+				SHA256Print
+				</a></span></dt><dt><span class="section"><a href="ch07s07.html#support-SHA256Reset">
+				SHA256Reset
+				</a></span></dt><dt><span class="section"><a href="ch07s07.html#support-SHA256Write">
+				SHA256Write
+				</a></span></dt></dl></dd><dt><span class="section"><a href="ch07s08.html">
+		XML Editing Functions
+		</a></span></dt><dd><dl><dt><span class="section"><a href="ch07s08.html#nodes-xmledit">
+			xmledit
+			</a></span></dt><dt><span class="section"><a href="ch07s08.html#nodes-xmlfree">
+			xmlfree
+			</a></span></dt><dt><span class="section"><a href="ch07s08.html#nodes-xmlnode">
+			xmlnode
+			</a></span></dt><dt><span class="section"><a href="ch07s08.html#nodes-xmlopen">
+			xmlopen
+			</a></span></dt><dt><span class="section"><a href="ch07s08.html#nodes-xmlscan">
+			xmlscan
+			</a></span></dt><dt><span class="section"><a href="ch07s08.html#nodes-xmlschema">
+			xmlschema
+			</a></span></dt><dt><span class="section"><a href="ch07s08.html#nodes-xmltree">
+			xmltree
+			</a></span></dt></dl></dd><dt><span class="section"><a href="ch07s09.html">
+		Download Functions
+		</a></span></dt><dd><dl><dt><span class="section"><a href="ch07s09.html#WriteExecuteApplet">
+			WriteExecuteApplet
+			</a></span></dt><dt><span class="section"><a href="ch07s09.html#WriteExecuteApplet1">
+			WriteExecuteApplet1
+			</a></span></dt><dt><span class="section"><a href="ch07s09.html#WriteExecuteApplet2">
+			WriteExecuteApplet2
+			</a></span></dt></dl></dd><dt><span class="section"><a href="ch07s10.html">
+		Procrastination Functions
+		</a></span></dt><dd><dl><dt><span class="section"><a href="ch07s10.html#WaitForAssoc">
+			WaitForAssoc
+			</a></span></dt><dt><span class="section"><a href="ch07s10.html#WaitForAssoc1">
+			WaitForAssoc1
+			</a></span></dt><dt><span class="section"><a href="ch07s10.html#WaitForAssoc2">
+			WaitForAssoc2
+			</a></span></dt><dt><span class="section"><a href="ch07s10.html#WaitForReset">
+			WaitForReset
+			</a></span></dt><dt><span class="section"><a href="ch07s10.html#WaitForStart">
+			WaitForStart
+			</a></span></dt></dl></dd><dt><span class="section"><a href="ch07s11.html">
+		Traffic Functions
+		</a></span></dt><dd><dl><dt><span class="section"><a href="ch07s11.html#support-CrossTraffic1">
+			CrossTraffic1
+			</a></span></dt><dt><span class="section"><a href="ch07s11.html#support-CrossTraffic2">
+			CrossTraffic2
+			</a></span></dt><dt><span class="section"><a href="ch07s11.html#support-LocalTraffic1">
+			LocalTraffic1
+			</a></span></dt><dt><span class="section"><a href="ch07s11.html#support-LocalTraffic2">
+			LocalTraffic2
+			</a></span></dt><dt><span class="section"><a href="ch07s11.html#support-NetworkTraffic1">
+			NetworkTraffic1
+			</a></span></dt><dt><span class="section"><a href="ch07s11.html#support-NetworkTraffic2">
+			NetworkTraffic2
+			</a></span></dt><dt><span class="section"><a href="ch07s11.html#support-Traffic1">
+			Traffic1
+			</a></span></dt><dt><span class="section"><a href="ch07s11.html#support-Traffic2">
+			Traffic2
+			</a></span></dt></dl></dd><dt><span class="section"><a href="ch07s12.html">
+		SLAC Functions and Variables
+		</a></span></dt><dd><dl><dt><span class="section"><a href="ch07s12.html#session-variable">
+			The Session Variable
+			</a></span></dt><dt><span class="section"><a href="ch07s12.html#pev_cm_slac_param">
+			pev_cm_slac_param
+			</a></span></dt><dt><span class="section"><a href="ch07s12.html#evse_cm_slac_param">
+			evse_cm_slac_param
+			</a></span></dt><dt><span class="section"><a href="ch07s12.html#pev_cm_start_atten_char">
+			pev_cm_start_atten_char
+			</a></span></dt><dt><span class="section"><a href="ch07s12.html#evse_cm_start_atten_char">
+			evse_cm_start_atten_char
+			</a></span></dt><dt><span class="section"><a href="ch07s12.html#pev_cm_mnbc_sound">
+			pev_cm_mnbc_sound
+			</a></span></dt><dt><span class="section"><a href="ch07s12.html#evse_cm_mnbc_sound">
+			evse_cm_mnbc_sound
+			</a></span></dt><dt><span class="section"><a href="ch07s12.html#evse_cm_atten_char">
+			evse_cm_atten_char
+			</a></span></dt><dt><span class="section"><a href="ch07s12.html#pev_cm_atten_char">
+			pev_cm_atten_char
+			</a></span></dt><dt><span class="section"><a href="ch07s12.html#pev_cm_slac_match">
+			pev_cm_slac_match
+			</a></span></dt><dt><span class="section"><a href="ch07s12.html#evse_cm_slac_match">
+			evse_cm_slac_match
+			</a></span></dt><dt><span class="section"><a href="ch07s12.html#evse_cm_set_key">
+			evse_cm_set_key
+			</a></span></dt><dt><span class="section"><a href="ch07s12.html#pev_cm_set_key">
+			pev_cm_set_key
+			</a></span></dt></dl></dd></dl></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="support-intro"></a>
+			Introduction
+			</h2></div></div></div><p>
+			The <span class="application">Open Powerline Toolkit</span> includes many general-purpose or multi-purpose functions that may appear in other Qualcomm Atheros applications or in third party packages. Consequently, we describe them separately and store them in separate folders withing the toolkit.
+			</p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch06s12.html">Prev</a> </td><td width="20%" align="center"> </td><td width="40%" align="right"> <a accesskey="n" href="ch07s02.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">
+			User Interaction
+			 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 
+			Command Line Functions
+			</td></tr></table></div></body></html>0

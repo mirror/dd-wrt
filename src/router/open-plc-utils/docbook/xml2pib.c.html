@@ -1,0 +1,348 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			xml2pib.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='WritePIB.c.html' title=' WritePIB.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='xmlattribute.c.html' title=' xmlattribute.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   Copyright (c) 2013 Qualcomm Atheros, Inc.
+ *
+ *   All rights reserved.
+ *
+ *   Redistribution and use in source and binary forms, with or 
+ *   without modification, are permitted (subject to the limitations 
+ *   in the disclaimer below) provided that the following conditions 
+ *   are met:
+ *
+ *   * Redistributions of source code must retain the above copyright 
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above 
+ *     copyright notice, this list of conditions and the following 
+ *     disclaimer in the documentation and/or other materials 
+ *     provided with the distribution.
+ *
+ *   * Neither the name of Qualcomm Atheros nor the names of 
+ *     its contributors may be used to endorse or promote products 
+ *     derived from this software without specific prior written 
+ *     permission.
+ *
+ *   NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE 
+ *   GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE 
+ *   COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR 
+ *   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ *   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+ *   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+ *   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ *   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ *   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ *   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ *   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*&quot;
+ *
+ *   xml2pib.c -
+ *
+ *   Contributor(s):
+ *      Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+/*====================================================================*
+ *   system header files;
+ *--------------------------------------------------------------------*/
+
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;fcntl.h&gt;
+#include &lt;errno.h&gt;
+
+/*====================================================================*
+ *   custom header files;
+ *--------------------------------------------------------------------*/
+
+#include &quot;../tools/getoptv.h&quot;
+#include &quot;../tools/flags.h&quot;
+#include &quot;../tools/error.h&quot;
+#include &quot;../tools/files.h&quot;
+#include &quot;../nodes/node.h&quot;
+#include &quot;../key/HPAVKey.h&quot;
+#include &quot;../nvm/nvm.h&quot;
+#include &quot;../pib/pib.h&quot;
+
+/*====================================================================*
+ *   custom source files;
+ *--------------------------------------------------------------------*/
+
+#ifndef MAKEFILE
+#include &quot;../tools/getoptv.c&quot;
+#include &quot;../tools/putoptv.c&quot;
+#include &quot;../tools/version.c&quot;
+#include &quot;../tools/checksum32.c&quot;
+#include &quot;../tools/fdchecksum32.c&quot;
+#include &quot;../tools/checksum32.c&quot;
+#include &quot;../tools/hexstring.c&quot;
+#include &quot;../tools/hexdecode.c&quot;
+#include &quot;../tools/strfbits.c&quot;
+#include &quot;../tools/todigit.c&quot;
+#include &quot;../tools/output.c&quot;
+#include &quot;../tools/emalloc.c&quot;
+#include &quot;../tools/error.c&quot;
+#endif
+
+#ifndef MAKEFILE
+#include &quot;../key/SHA256Reset.c&quot;
+#include &quot;../key/SHA256Block.c&quot;
+#include &quot;../key/SHA256Write.c&quot;
+#include &quot;../key/SHA256Fetch.c&quot;
+#include &quot;../key/HPAVKeyNID.c&quot;
+#include &quot;../key/keys.c&quot;
+#endif
+
+#ifndef MAKEFILE
+#include &quot;../nodes/xmlopen.c&quot;
+#include &quot;../nodes/xmlnode.c&quot;
+#include &quot;../nodes/xmlscan.c&quot;
+#include &quot;../nodes/xmledit.c&quot;
+#include &quot;../nodes/xmltree.c&quot;
+#include &quot;../nodes/xmlfree.c&quot;
+#endif
+
+/*====================================================================*
+ *
+ *   signed pibedit1 (struct node const * node, void * memory, size_t extent);
+ *
+ *   Contributor(s):
+ *	Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+static signed pibedit1 (struct node const * node, void * memory, size_t extent)
+
+{
+	struct simple_pib * simple_pib = (struct simple_pib *)(memory);
+	xmledit (node, memory, extent);
+	checksum32 (memory, extent, simple_pib-&gt;CHECKSUM);
+	return (0);
+}
+
+/*====================================================================*
+ *
+ *   signed pibedit2 (char const * filename, struct node const * node, char * memory, size_t extent);
+ *
+ *   search a panther/lynx image chain looking for PIB images and
+ *   verify each one; return 0 on success or -1 on error; errors
+ *   occur due to an invalid image chain or a bad parameter block;
+ *
+ *   this implementation reads the parameter block from file into
+ *   into memory and checks it there;
+ *
+ *   Contributor(s):
+ *	Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+static signed pibedit2 (char const * filename, struct node const * node, char * memory, size_t extent)
+
+{
+	struct nvm_header2 * nvm_header;
+	uint32_t origin = ~0;
+	uint32_t offset = 0;
+	unsigned length = 0;
+	unsigned module = 0;
+	do
+	{
+		nvm_header = (struct nvm_header2 *)(memory + offset);
+		if (LE16TOH (nvm_header-&gt;MajorVersion) != 1)
+		{
+			error (1, 0, NVM_HDR_VERSION, filename, module);
+		}
+		if (LE16TOH (nvm_header-&gt;MinorVersion) != 1)
+		{
+			error (1, 0, NVM_HDR_VERSION, filename, module);
+		}
+		if (LE32TOH (nvm_header-&gt;PrevHeader) != origin)
+		{
+			error (1, 0, NVM_HDR_LINK, filename, module);
+		}
+		if (checksum32 (nvm_header, sizeof (* nvm_header), 0))
+		{
+			error (1, 0, NVM_HDR_CHECKSUM, filename, module);
+		}
+		origin = offset;
+		offset += sizeof (* nvm_header);
+		extent -= sizeof (* nvm_header);
+		length = LE32TOH (nvm_header-&gt;ImageLength);
+		if (checksum32 (memory + offset, length, nvm_header-&gt;ImageChecksum))
+		{
+			error (1, 0, NVM_IMG_CHECKSUM, filename, module);
+		}
+		if (LE32TOH (nvm_header-&gt;ImageType) == NVM_IMAGE_PIB)
+		{
+			xmledit (node, memory + offset, length);
+			nvm_header-&gt;ImageChecksum = checksum32 (memory + offset, length, 0);
+			nvm_header-&gt;HeaderChecksum = checksum32 (nvm_header, sizeof (* nvm_header), nvm_header-&gt;HeaderChecksum);
+			return (0);
+		}
+		offset += length;
+		extent -= length;
+		module++;
+	}
+	while (~nvm_header-&gt;NextHeader);
+	return (-1);
+}
+
+/*====================================================================*
+ *
+ *   signed function (char const * filename);
+ *
+ *   determine the type of file and call appropriate functions;
+ *
+ *   Contributor(s):
+ *	Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+static signed function (char const * filename, struct node const * node)
+
+{
+	char * memory = 0;
+	signed extent = 0;
+	signed fd;
+	if ((fd = open (filename, O_BINARY | O_RDWR)) == -1)
+	{
+		error (1, errno, FILE_CANTOPEN, filename);
+	}
+	if ((extent = lseek (fd, 0, SEEK_END)) == -1)
+	{
+		error (1, errno, FILE_CANTSIZE, filename);
+	}
+	if (!(memory = (char *)(malloc (extent))))
+	{
+		error (1, errno, FILE_CANTLOAD, filename);
+	}
+	if (lseek (fd, 0, SEEK_SET))
+	{
+		error (1, errno, FILE_CANTHOME, filename);
+	}
+	if (read (fd, memory, extent) != extent)
+	{
+		error (1, errno, FILE_CANTREAD, filename);
+	}
+	if (LE32TOH (* (uint32_t *)(memory)) == 0x60000000)
+	{
+		error (1, 0, FILE_WONTREAD, filename);
+	}
+	if (LE32TOH (* (uint32_t *)(memory)) == 0x00010001)
+	{
+		pibedit2 (filename, node, memory, extent);
+	}
+	else
+	{
+		pibedit1 (node, memory, extent);
+	}
+	if (lseek (fd, 0, SEEK_SET))
+	{
+		error (1, errno, FILE_CANTHOME, filename);
+	}
+	if (write (fd, memory, extent) != extent)
+	{
+		error (1, errno, FILE_CANTSAVE, filename);
+	}
+	close (fd);
+	return (0);
+}
+
+/*====================================================================*
+ *
+ *   int main (int argc, char const * argv []);
+ *
+ *
+ *   Contributor(s):
+ *	Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+ *
+ *--------------------------------------------------------------------*/
+
+int main (int argc, char const * argv [])
+
+{
+	static char const * optv [] =
+	{
+		&quot;f:qv&quot;,
+		&quot;pib-file [pib-file] [...]&quot;,
+		&quot;Qualcomm Atheros PLC Parameter File Editor&quot;,
+		&quot;f f\txmlfile is (f)&quot;,
+		&quot;q\tquiet&quot;,
+		&quot;v\tverbose&quot;,
+		(char const *) (0)
+	};
+	struct node * node = (struct node *)(0);
+	flag_t flags = (flag_t)(0);
+	signed c;
+	optind = 1;
+	while ((c = getoptv (argc, argv, optv)) != -1)
+	{
+		switch (c)
+		{
+		case 'f':
+			node = xmlopen (optarg);
+			break;
+		case 'm':
+			_setbits (flags, PIB_MANIFEST);
+			break;
+		case 'q':
+			_setbits (flags, PIB_SILENCE);
+			break;
+		case 'v':
+			_setbits (flags, PIB_VERBOSE);
+			break;
+		default:
+			break;
+		}
+	}
+	argc -= optind;
+	argv += optind;
+	while ((argc) &amp;&amp; (* argv))
+	{
+		function (* argv, node);
+		argc--;
+		argv++;
+	}
+	if (_anyset (flags, PIB_VERBOSE))
+	{
+		xmltree (node);
+	}
+	xmlfree (node);
+	return (0);
+}
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='WritePIB.c.html' title=' WritePIB.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='xmlattribute.c.html' title=' xmlattribute.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

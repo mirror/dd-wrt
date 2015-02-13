@@ -1,0 +1,84 @@
+.TH hpav 1 "November 2013" "open-plc-utils-0.0.3" "Qualcomm Atheros Open Powerline Toolkit"
+
+.SH NAME
+hpav - HomePlug AV Packet Listener
+
+.SH SYNOPSIS
+.BR hpav 
+.RI [ options ] 
+
+.SH DESCRIPTION
+Display HomePlug AV Ethernet messages sent by a local powerline device to the host or the broadcast address.
+Do not display HomePlug AV frames sent from the host to powerline devices or forwarded over powerline through the local powerline devices.
+
+.PP
+The program is an example of a simple packet listener and daemon.
+Engineers and software developers can extend it to build custom sniffers or servers.
+The framework is present but additional features must be added.
+
+.PP
+This program is part of the Qualcomm Atheros Powerline Toolkit.
+See the \fBplc\fR man page for an overview and installation instructions.
+
+.SH OPTIONS
+
+.TP
+-\fBi \fIinterface\fR
+Names the host ethernet interface to watch.
+The named interface, such as eth0, eth1 and so on, must be connected to a HomePlug AV ethernet-to-powerline bridge adapter to receive any HomePlug AV traffic.
+The default interface is \fBeth1\fR.
+
+.TP
+.RB - q
+Quiet mode.
+Suppress the printing of the normal message descriptions on \fBstdout\fR.
+
+.TP
+.RB - v
+Verbose mode.
+Displays incoming frames in hexadecimal dump format on \fBstdout\fR.
+This option is independent of option \fB-a\fR which prints VS_ARPC message text on stderr.
+
+.TP
+-\fB?\fR, --\fBhelp\fR
+Print program help summary on stdout.
+This option takes precedence over other options on the command line.
+
+.TP
+-\fB!\fR, --\fBversion\fR
+Print program version information on stdout.
+This option takes precedence over other options on the command line.
+Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of the Linux Toolkit you are using.
+See the HomePlug AV Specification for a description of all HomePlug AV message types.
+See the Qualcomm Atheros INT6000 Firmware Reference Manual for a description of Atheros Vendor Specific message types.
+
+.SH EXAMPLES
+The following command monitors the default host interface \fBeth1\fR for HomePlug AV traffic and dumps detected frames on the console as they arrive.
+To terminate the process, type \fB^C\fR or \fB^Z\fR at the console.
+This program is usually run in a separate console window while performing powerline operations.
+
+.PP
+   # hpav
+
+.PP
+The following command monitors host interface \fBeth4\fR for incoming HomePlug AV frames and dumps writes them to file \fBhpav.log\fR.
+Frames are printed in hexadecimal dump format because option \fB-v\fR is present.
+Terminate the foreground process by typing ^C or ^Z at the console.
+
+.PP
+   # hpav -v -i eth4 > hpav.log
+
+.SH DISCLAIMER
+Atheros HomePlug AV Vendor Specific Management Message structure and content is proprietary to Qualcomm Atheros, Ocala FL USA.
+Consequently, public information is not available.
+Qualcomm Atheros reserves the right to modify management message structure and content in future firmware releases without any obligation to notify or compensate users of this program.
+
+.SH SEE ALSO
+.BR plc ( 1 ),
+.BR efru ( 1 ),
+.BR efsu ( 1 ),
+.BR mme ( 1 )
+
+.SH CREDITS
+ Charles Maier <cmaier@qca.qualcomm.com>
+

@@ -1,0 +1,111 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			mme.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='mdustats.1.html' title=' mdustats.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='modpib.1.html' title=' modpib.1 '>NEXT</a>]
+			</div>
+<pre>
+mme(1)                                       Qualcomm Atheros Open Powerline Toolkit                                      mme(1)
+
+NAME
+       mme - Qualcomm Atheros vendor-specific message enumerator
+
+SYNOPSIS
+       mme [options]
+
+DESCRIPTION
+       Print  Atheros  vendor-specific  message  types  and names with associated error codes and text on stdout.  Output can be
+       printed in various formats such as HTML, CSV and plain text.  The plain text format is ideal for searching using a  util‐
+       ity like grep.
+
+       This  program  is  part of the Qualcomm Atheros Powerline Toolkit.  See the AMP man page for an overview and installation
+       instructions.
+
+OPTIONS
+       -c     Output in Comma Separated Value (CSV) format.  This format is suitable for import into a spreadsheet or  database.
+
+       -h     Output in Hypertext Markup Language (HTML) format.  This format is suitable for inclusion on a basic webpage.
+
+       -?, --help
+              Print program help summary on stdout.  This option takes precedence over other options on the command line.
+
+       -!, --version
+              Print program version information on stdout.  This option takes precedence over other options on the command line.
+              Use this option when sending screen dumps to Atheros Technical Support so that they know exactly which version  of
+              the  Linux  Toolkit you are using.  See the HomePlug AV Specification for a description of all HomePlug AV message
+              types.  See the Qualcomm Atheros INT6000 Firmware Reference Manual for a description of  Atheros  Vendor  Specific
+              message types.
+
+EXAMPLES
+       The following example prints Atheros vendor-specific message codes and names, along with associated error codes and text,
+       on stdout.  The output format is plain text because no formatting options were specified on the command line.
+
+          # mme
+          0xA005 VS_WR_MEM.CNF       0x14 &quot;Bad Checksum&quot;
+          0xA005 VS_WR_MEM.CNF       0x1C &quot;Bad Length&quot;
+          0xA005 VS_WR_MEM.CNF       0x38 &quot;Bad Address&quot;
+          0xA005 VS_WR_MEM.CNF       0x3C &quot;Bad Data Alignment&quot;
+          0xA009 VS_RD_MEM.CNF       0x10 &quot;Bad Offset&quot;
+          0xA009 VS_RD_MEM.CNF       0x14 &quot;Bad Length&quot;
+          0xA00D VS_ST_MAC.CNF       0x10 &quot;Bad Module ID&quot;
+          0xA00D VS_ST_MAC.CNF       0x14 &quot;Bad Image Checksum&quot;
+          0xA00D VS_ST_MAC.CNF       0x1C &quot;Bad Image Length&quot;
+          0xA00D VS_ST_MAC.CNF       0x38 &quot;Bad Image Load Address&quot;
+          0xA00D VS_ST_MAC.CNF       0x3C &quot;Bad Data Alignment&quot;
+          0xA00D VS_ST_MAC.CNF       0x40 &quot;Bad Start Address&quot;
+          0xA011 VS_GET_NVM.CNF      0x10 &quot;No NVRAM&quot;
+          0xA01D VS_RS_DEV.CNF       0x01 &quot;Device Failed to Reset&quot;
+          0xA01D VS_RS_DEV.CNF       0x02 &quot;Device Busy&quot;
+          0xA021 VS_WR_MOD.CNF       0x10 &quot;Bad Module&quot;
+          0xA021 VS_WR_MOD.CNF       0x12 &quot;Bad Length&quot;
+          0xA021 VS_WR_MOD.CNF       0x14 &quot;Bad Checksum&quot;
+          0xA021 VS_WR_MOD.CNF       0x20 &quot;Bad Offset&quot;
+          0xA021 VS_WR_MOD.CNF       0x40 &quot;Operation Blocked&quot;
+          0xA021 VS_WR_MOD.CNF       0x50 &quot;Fail to lock NVM&quot;
+          0xA025 VS_RD_MOD.CNF       0x10 &quot;Bad Module&quot;
+          0xA025 VS_RD_MOD.CNF       0x12 &quot;Bad Length&quot;
+          0xA025 VS_RD_MOD.CNF       0x14 &quot;Bad Checksum&quot;
+          ......
+
+       The next example does the same thing but output is piped into the grep utility which selects only those lines  containing
+       the substring &quot;0x40&quot;.  The result shows that this error code is used by two different Atheros vendor-specific messages.
+
+          # mme | grep &quot;0x40&quot;
+          0xA00D VS_ST_MAC.CNF       0x40 &quot;Bad Start Address&quot;
+          0xA021 VS_WR_MOD.CNF       0x40 &quot;Operation Blocked&quot;
+          ......
+
+DISCLAIMER
+       Atheros HomePlug AV Vendor Specific Management Message structure and content is proprietary to Qualcomm Atheros, Ocala FL
+       USA.  Consequently, public information is not available.  Qualcomm Atheros reserves the right to modify  management  mes‐
+       sage  structure and content in future firmware releases without any obligation to notify or compensate users of this pro‐
+       gram.
+
+SEE ALSO
+       amp(1), efsu(1), hpav(1)
+
+CREDITS
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                                   mme(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='mdustats.1.html' title=' mdustats.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='modpib.1.html' title=' modpib.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>

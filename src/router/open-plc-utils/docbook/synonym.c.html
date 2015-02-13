@@ -1,0 +1,78 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			synonym.c
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='strincr.c.html' title=' strincr.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='termlist.c.html' title=' termlist.c '>NEXT</a>]
+			</div>
+<pre>
+/*====================================================================*
+ *
+ *   char const * synonym (char const * term, const struct _term_ list [], size_t size);
+ *
+ *   symbol.h
+ *
+ *   lookup term and return corresponding text; return the original
+ *   term if lookup fails; the list must be in lexographic order by
+ *   term or lookups may fail; struct _term_ is defined in types.h;
+ *
+ *   Motley Tools by Charles Maier &lt;cmaier@cmassoc.net&gt;;
+ *   Copyright (c) 2001-2006 by Charles Maier Associates;
+ *   Licensed under the Internet Software Consortium License;
+ *
+ *--------------------------------------------------------------------*/
+
+#ifndef SYNONYM_SOURCE
+#define SYNONYM_SOURCE
+
+#include &lt;string.h&gt;
+
+#include &quot;../tools/types.h&quot;
+
+char const * synonym (char const * term, const struct _term_ list [], size_t size)
+
+{
+	size_t lower = 0;
+	size_t upper = size;
+	while (lower &lt; upper)
+	{
+		size_t index = (lower + upper) &gt;&gt; 1;
+		signed order = strcmp (term, list [index].term);
+		if (order &lt; 0)
+		{
+			upper = index - 0;
+			continue;
+		}
+		if (order &gt; 0)
+		{
+			lower = index + 1;
+			continue;
+		}
+		return (list [index].text);
+	}
+	return (term);
+}
+
+#endif
+
+
+</pre>
+		<div class='footerlink'>
+			[<a href='strincr.c.html' title=' strincr.c '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='termlist.c.html' title=' termlist.c '>NEXT</a>]
+			</div>
+		</body>
+	</html>

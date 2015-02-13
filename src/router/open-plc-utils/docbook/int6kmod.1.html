@@ -1,0 +1,175 @@
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!doctype html public '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3c.org/1999/xhtml' lang='en-us'>
+	<head>
+		<title>
+			int6kmod.1
+			</title>
+		<meta http-equiv='content-type' content='text/html;iso-8859-1'/>
+		<meta name='generator' content='motley-tools 1.9.1 14:44:01 Oct 24 2013'/>
+		<meta name='author' content='cmaier@cmassoc.net'/>
+		<meta name='robots' content='noindex,nofollow'/>
+		<link href='toolkit.css' rel='stylesheet' type='text/css'/>
+		</head>
+	<body>
+		<div class='headerlink'>
+			[<a href='int6kmdio2.1.html' title=' int6kmdio2.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='int6krate.1.html' title=' int6krate.1 '>NEXT</a>]
+			</div>
+<pre>
+int6kmod(1)                                  Qualcomm Atheros Open Powerline Toolkit                                 int6kmod(1)
+
+NAME
+       int6kmod - Qualcomm Atheros Powerline Device Module Manager
+
+SYNOPSIS
+       int6kmod [options] [device] [device] [...]
+
+DESCRIPTION
+       Read or write Atheros custom powerline modules using VS_MODULE_OPERATION messages.  Modules may be read from a device and
+       written to a file or read from a file and written to a device.  Modules may have any of  several  formats  and  purposes.
+       Where the firmware permits, this program can now read modules in excess of 1400 bytes and can write multiple modules that
+       exceed 1400 bytes in one operation.
+
+       This program is part of the Qualcomm Atheros Powerline Toolkit.  See the plc man page for an  overview  and  installation
+       instructions.
+
+OPTIONS
+       -d     Read the specified module from NVRAM and write to standard output in hexadecimal dump format.  The module is iden‐
+              tified by module and sub-module using options -t and -s.  Runtime firmware will report an error if the  module  is
+              not  available.   The  session identifier is not required for a module read operation and is ignored.  The largest
+              module that can be read is 1400 bytes.  This option and option -m are mutually exclusive.
+
+       -e     Redirects stderr messages to stdout.  By convention status and error messages are printed on stderr while  primary
+              program output is printed on stdout.  This option prints all output on stdout in cases where this is desired.
+
+       -i interface
+              Select  the host Ethernet interface.  All requests are sent via this host interface and only reponses received via
+              this host interface are recognized.  The default interface is eth1 because most people use eth0 as their principle
+              network  connection;  however,  if  environment  string &quot;PLC&quot; is defined then it takes precedence over the default
+              interface.  This option then takes precedence over either default.
+
+       -m filename
+              Read the specified module from NVRAM and write it to the named file.  The module is identified by module and  sub-
+              module  using  options -t and -s.  Runtime firmware will report an error if the module is not available.  The ses‐
+              sion identifier is not required for a module read operation and is ignored.  The largest module that can  be  read
+              is 1400 bytes.  This option and option -d are mutually exclusive.
+
+       -M filename
+              Read the named module file and download it to the named device and commit NVRAM.  The module is assigned to a mod‐
+              ule and sub-module identifier using options -t and -s.  Runtime firmware will reject modules having invalid module
+              and  sub-mocule  identifiers.   Module  files  must be a multiple of four bytes or an error will occur.  As imple‐
+              mented, int6kmod will reject files exceeding 1400 bytes but this restriction will be removed in later versions.
+
+       -q     Suppresses status messages on stderr.
+
+       -s sub-module-id
+              The sub-module identifier expressed as a 16-bit hexadecimal value with optional 0x prefix.  This identifier  indi‐
+              cates  a  specific module with the module class specified using option -t.  Any 16-bit value is permitted but only
+              certain values are accepted by device firmware depending on firmware type and  revision.   The  default  value  is
+              0x0000.
+
+       -S session-id
+              The  session  identifier  expressed as a 32-bit hexadecimal value with optional 0x prefix.  The session identifier
+              value is arbitrary and so any 32-bit value is permitted but 0x00000000 and 0xFFFFFFFF are illegal.  The 0x  prefix
+              is optional for this argument.  The default session-id is 0x78563412.
+
+       -t module-id
+              The  module identifier expressed as a 16-bit hexadecimal value with optional 0x prefix.  This identifier indicates
+              the module type or class.  Option -s indicates the specific member of a module class.  Any 16-bit value is permit‐
+              ted but only certain values will be accepted by device firmware.  The default value is 0x0000.
+
+       -v     Print  additional information on stdout.  In particular, this option dumps incoming and outgoing packets which can
+              be saved as text files for reference.
+
+       -w     Write settings to the device instead of reading settings from the device.  If omitted then settings are read  from
+              the device and displayed.  If present, the user should specify all settings to avoid writing default values to the
+              device.
+
+       -?,--help
+              Print program help summary on stdout.  This option takes precedence over other options on the command line.
+
+       -?,--version
+              Print program version information on stdout.  This option takes precedence over other options on the command line.
+              Use  this option when sending screen dumps to Atheros Technical Support so that they know exactly which version of
+              the Linux Toolkit you are using.
+
+ARGUMENTS
+       device The MAC address of some powerline device.  More than one address may be specified on the command  line.   If  more
+              than one address is specified then operations are performed on each device in turn.  The default address is local.
+              See DEVICES for information.
+
+DEVICES
+       Powerline devices use Ethernet Media Access Control (MAC) addresses.  A MAC address is a 48-bit value entered as 12  hex‐
+       adecimal  digits in upper, lower or mixed character case.  Octets may be separated with colons for clarity.  For example,
+       &quot;00b052000001&quot;, &quot;00:b0:52:00:00:01&quot; and &quot;00b052:000001&quot; are valid and equivalent.
+
+       The following MAC addresses are special and may be entered by name instead of number.
+
+       all    Same as &quot;broadcast&quot;.
+
+       broadcast
+              A synonym for the Ethernet broadcast address, FF:FF:FF:FF:FF:FF.  All devices, whether local,  remote  or  foreign
+              recognize  messages sent to this address.  A remote device is any device at the far end of a powerline connection.
+              A foreign device is any device not manufactured by Atheros.
+
+       local  A synonym for the Qualcomm Atheros vendor specific Local Management Address (LMA), 00:B0:52:00:00:01.   All  local
+              Atheros  devices  recognize  this address but remote and foreign devices do not.  A remote device is any device at
+              the far end of a powerline connection.  A foreign device is any device not manufactured by Atheros.
+
+REFERENCES
+       See the Qualcomm Atheros HomePlug AV Firmware Technical Reference Manual for more information.
+
+DISCLAIMER
+       Atheros HomePlug AV Vendor Specific Management Message structure and content is proprietary to Qualcomm Atheros, Ocala FL
+       USA.  Consequently, public information is not available.  Qualcomm Atheros reserves the right to modify message structure
+       or content in future firmware releases without any obligation to notify or compensate users of this program.
+
+EXAMPLES
+       The following command reads module file abc.bin and writes it to the local device.  The module  identifier  0x1000  indi‐
+       cates  that  it  is  an MDIO Init module.  The sub-module identifer defaults to 0x0000 because option -s is omitted.  The
+       session identifier defaults to 0x78563412 because option -S is omitted.  The operation takes place in three  steps.   The
+       last step may take 2 or 3 seconds to complete.
+
+          # int6kmod -M abc.bin -t 0x1000
+          eth1 00:B0:52:00:00:01 Request Session
+          eth1 00:B0:52:BE:EF:03 Request Granted
+          eth1 00:B0:52:00:00:01 Write abc.bin
+          eth1 00:B0:52:BE:EF:03 Written
+          eth1 00:B0:52:00:00:01 Commit Modules
+          eth1 00:B0:52:BE:EF:03 Committed
+
+       The next example does the same thing but writes module file def.bin to remote device 00:B0:52:BA:BE:02.  The module iden‐
+       tifier 0x4000 indicates that it is an Advanced Power Management uC module.  The session identifier  used  is  0xA5A5A5A5.
+       The sub-module identifer defaults to 0x0000 because option -s is omitted.
+
+          # int6kmod -M def.bin -t 0x4000 -S A5A5A5A5 00:B0:52:BA:BE:02
+          eth1 00:B0:52:00:00:01 Request Session
+          eth1 00:B0:52:BE:EF:03 Request Granted
+          eth1 00:B0:52:00:00:01 Write abc.bin
+          eth1 00:B0:52:BE:EF:03 Written
+          eth1 00:B0:52:00:00:01 Commit Modules
+          eth1 00:B0:52:BE:EF:03 Committed
+
+       The next example reads back the module written in the first example and saves it in file zyx.bin.
+
+          # int6kmod -m xyz.bin -t 0x1000
+          eth1 00:B0:52:00:00:01 Read zyx.bin
+          eth1 00:B0:52:BE:EF:03 Read
+
+SEE ALSO
+       plc(1), int6kmdio(1), int6kmdio2(1), mdioblock(1), mdioblock2(1), mdiodump(1), mdiogen(1)
+
+CREDITS
+        Charles Maier &lt;cmaier@qca.qualcomm.com&gt;
+
+open-plc-utils-0.0.3                                      November 2013                                              int6kmod(1)
+</pre>
+		<div class='footerlink'>
+			[<a href='int6kmdio2.1.html' title=' int6kmdio2.1 '>PREV</a>]
+			[<a href='toolkit.html' title=' Index '>HOME</a>]
+			[<a href='int6krate.1.html' title=' int6krate.1 '>NEXT</a>]
+			</div>
+		</body>
+	</html>
