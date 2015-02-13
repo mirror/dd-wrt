@@ -1561,15 +1561,15 @@ cprintf("set apsta flag %s\n",name);
 	/* Set mode: WET */
 cprintf("set wet flag %s\n",name);
 //fprintf(stderr, "set wet flag %s\n",name);
-	if (wet)
-		WL_IOCTL(name, WLC_SET_WET, &wet, sizeof(wet));
+	WL_IOCTL(name, WLC_SET_WET, &wet, sizeof(wet));
 
 cprintf("set spoof flag %s\n",name);
 //fprintf(stderr, "set spoof flag %s\n",name);
 	if (mac_spoof) {
 		sta = 1;
 		WL_IOVAR_SETINT(name, "mac_spoof", 1);
-	}
+	}else
+		WL_IOVAR_SETINT(name, "mac_spoof", 0);
 
 	/* For STA configurations, configure association retry time.
 	 * Use specified time (capped), or mode-specific defaults.
