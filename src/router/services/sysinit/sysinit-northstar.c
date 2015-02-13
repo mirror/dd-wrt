@@ -1797,7 +1797,7 @@ void start_sysinit(void)
 
 		break;
 	case ROUTER_DLINK_DIR890:
-		{
+		if (!strncmp(nvram_safe_get("et0macaddr"), "00:90", 5)) {
 			char buf[64];
 			FILE *fp = popen("cat /dev/mtdblock0|grep lanmac", "r");
 			fread(buf, 1, 24, fp);
