@@ -66,6 +66,7 @@
 #include <stdint.h>
 #include <memory.h>
 #include <errno.h>
+#include <sys/select.h>
 
 #if defined (WIN32)
 #include <Windows.h>
