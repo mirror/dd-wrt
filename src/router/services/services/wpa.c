@@ -515,7 +515,8 @@ void start_nas_single(char *type, char *prefix)
 			if (nvram_nmatch("wet", "%s_mode", prefix)
 			    || nvram_nmatch("apstawet", "%s_mode", prefix)) {
 				argv = (char *[]) {
-				"nas", "-P", pidfile, "-H", "34954", "-l", getBridge(iface), "-i", iface, mode, "-m", auth_mode, "-k", key, "-s", nvram_safe_get(ssid), "-w", sec_mode, "-g", nvram_default_get(rekey, "3600"), NULL};
+				"nas", "-P", pidfile, "-H", "34954", "-l", getBridge(iface), "-i", iface, mode, "-m", auth_mode, "-k", key, "-s", nvram_safe_get(ssid), "-w", sec_mode, "-g",
+					    nvram_default_get(rekey, "3600"), NULL};
 			} else {
 				argv = (char *[]) {
 				"nas", "-P", pidfile, "-H", "34954", "-i", iface, mode, "-m", auth_mode, "-k", key, "-s", nvram_safe_get(ssid), "-w", sec_mode, "-g", nvram_default_get(rekey, "3600"), NULL};
