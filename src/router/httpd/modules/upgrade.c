@@ -227,7 +227,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 
 			if (seama->magic == HOST_TO_BE32(SEAMA_MAGIC)) {
 				unsigned int skip = HOST_TO_BE16(seama->metasize) + sizeof(seamahdr_t);
-				fprintf(stderr,"found seama header, sip seal header of %d bytes\n",skip);
+				fprintf(stderr, "found seama header, skip seal header of %d bytes\n", skip);
 				if (skip > count)
 					goto err;
 				memcpy(buf, buf + skip, count - skip);
