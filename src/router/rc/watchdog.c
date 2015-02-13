@@ -60,12 +60,10 @@ static void watchdog(void)
 #else
 			wl_ioctl(get_wl_instance_name(0), WLC_GET_RADIO, &radiostate0, sizeof(int));
 #ifndef HAVE_QTN
-			if (cnt == 2)
+			if (cnt > 1)
 				wl_ioctl(get_wl_instance_name(1), WLC_GET_RADIO, &radiostate1, sizeof(int));
-			if (cnt == 3){
+			if (cnt > 2)
 				wl_ioctl(get_wl_instance_name(2), WLC_GET_RADIO, &radiostate2, sizeof(int));
-				wl_ioctl(get_wl_instance_name(1), WLC_GET_RADIO, &radiostate1, sizeof(int));
-			}
 #endif
 #endif
 
@@ -110,13 +108,13 @@ static void watchdog(void)
 
 				oldstate1 = radiostate1;
 			}
-		
+
 			if (radiostate2 != oldstate2) {
 #ifdef HAVE_MADWIFI
 				if (radiostate2 == 1)
 #else
 				if ((radiostate2 & WL_RADIO_SW_DISABLE) == 0)
-#endif	
+#endif
 					led_control(LED_WLAN2, LED_ON);
 				else {
 					led_control(LED_WLAN2, LED_OFF);

@@ -146,7 +146,7 @@ void softcontrol_wlan_led(void)	// done in watchdog.c for non-micro builds.
 	wl_ioctl(get_wl_instance_name(0), WLC_GET_RADIO, &radiostate0, sizeof(int));
 	if (cnt == 2)
 		wl_ioctl(get_wl_instance_name(1), WLC_GET_RADIO, &radiostate1, sizeof(int));
-	if (cnt == 3){
+	if (cnt == 3) {
 		wl_ioctl(get_wl_instance_name(1), WLC_GET_RADIO, &radiostate1, sizeof(int));
 		wl_ioctl(get_wl_instance_name(2), WLC_GET_RADIO, &radiostate2, sizeof(int));
 	}
@@ -194,7 +194,7 @@ void softcontrol_wlan_led(void)	// done in watchdog.c for non-micro builds.
 
 		oldstate1 = radiostate1;
 	}
-	
+
 	if (radiostate2 != oldstate2) {
 #ifdef HAVE_MADWIFI
 		if (radiostate2 == 1)
