@@ -523,7 +523,7 @@ static void handle_hotspot(void)
 	start_service("bridging");
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-	start_service("wlconf");
+//	start_service("wlconf");
 #endif
 	start_service("lan");
 #ifdef HAVE_BONDING
@@ -1042,7 +1042,7 @@ static void handle_wireless(void)
 	start_service("bridging");
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-	start_service("wlconf");
+//	start_service("wlconf");
 #endif
 	start_service("lan");
 #ifdef HAVE_BONDING
@@ -1141,7 +1141,7 @@ static void handle_wireless_2(void)
 #endif
 	stop_running_main(0, NULL);
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-	start_service("wlconf");
+//	start_service("wlconf");
 #endif
 #ifdef HAVE_VLANTAGGING
 	start_service("bridging");
