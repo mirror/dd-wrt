@@ -3228,7 +3228,7 @@ static void save_prefix(webs_t wp, char *prefix)
 			nvram_set("wl_wchannel", wl);
 		else if (wl && !strcmp(prefix, "wl1"))
 			nvram_set("wl1_wchannel", wl);
-		else 
+		else
 			nvram_set("wl2_wchannel", wl);
 
 	}
