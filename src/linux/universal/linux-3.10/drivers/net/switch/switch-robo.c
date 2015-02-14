@@ -1130,9 +1130,14 @@ static int handle_reset(void *driver, char *buf, int nr)
 {
 	int j;
 	switch_driver *d = (switch_driver *) driver;
+	
+	char *boardnum = nvram_get("boardnum");
+	char *boardrev = nvram_get("boardrev");
+	char *boardtype = nvram_get("boardtype");
 
 	/* disable switching */
 	set_switch(0);
+
 
 	if (robo.devid != ROBO_DEVICE_ID_5325)
 		handle_reset_new(d, buf, nr);
@@ -1140,10 +1145,15 @@ static int handle_reset(void *driver, char *buf, int nr)
 		handle_reset_old(d, buf, nr);
 
 	/* reset ports to a known good state */
-	for (j = 0; j < d->ports; j++) {
-		robo_write16(ROBO_CTRL_PAGE, robo.port[j], 0x0000);
-		robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_PORT0_DEF_TAG + (j << 1), 0);
+	if (!strcmp(boardnum, "32") && !strcmp(boardtype, "0x0665") && !strcmp(boardrev, "0x1101")) {
+		//do nothing
+	} else {
+		for (j = 0; j < d->ports; j++) {
+			robo_write16(ROBO_CTRL_PAGE, robo.port[j], 0x0000);
+			robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_PORT0_DEF_TAG + (j << 1), 0);
+		}
 	}
+
 
 	/* enable switching */
 	set_switch(1);
