@@ -129,8 +129,6 @@ void start_sysinit(void)
 	klogctl(8, NULL, atoi(nvram_safe_get("console_loglevel")));
 	cprintf("sysinit() get router\n");
 
-	int brand = getRouterBrand();
-
 	//for extension board
 	struct ifreq ifr;
 	int s;
@@ -1616,7 +1614,9 @@ void start_sysinit(void)
 			nvram_unset("et1macaddr");
 			nvram_commit();
 		}
-		//nvram_set("fwd_cpumap", "d:x:2:169:1 d:l:5:169:1 d:u:5:163:0");
+		nvram_set("fwd_cpumap", "d:x:2:169:1 d:l:5:169:1 d:u:5:163:0");
+		nvram_set("fwd_wlandevs", "eth1 eth2 eth3");
+		nvram_set("fwddevs", "fwd0 fwd1");
 		set_gpio(6, 1);	//reset button
 		break;
 	case ROUTER_ASUS_AC87U:
