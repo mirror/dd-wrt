@@ -1038,9 +1038,7 @@ wlconf_aburn_ampdu_amsdu_set(char *name, char prefix[PREFIX_LEN], int nmode, int
 	int ret;
 	int phytype;
 	wlc_rev_info_t rev;
-#ifdef __CONFIG_DHDAP__
 	int is_dhd = 0;
-#endif
 	struct utsname unamebuf;
 
 	uname(&unamebuf);
