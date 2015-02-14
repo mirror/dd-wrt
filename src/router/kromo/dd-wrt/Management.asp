@@ -6,8 +6,9 @@ function SelPort(num,F)	{
 	if(num == 1 && F.PasswdModify.value == 1){
 		 if(ChangePasswd(F) == true)
 			port_enable_disable(F,num);
-	} else
+	} else {
 		port_enable_disable(F,num);
+	}
 }
 
 function port_enable_disable(F,I) {
@@ -117,35 +118,41 @@ function submitcheck(F) {
 	}
 	
 	if(F._remote_mgt_https) {
-		if(F.http_enable.checked == true && F.https_enable.checked == false)
+		if(F.http_enable.checked == true && F.https_enable.checked == false) {
 			F._remote_mgt_https.checked == false;
-		if(F.http_enable.checked == false && F.https_enable.checked == true)
+		}
+		if(F.http_enable.checked == false && F.https_enable.checked == true) {
 			F._remote_mgt_https.checked == true;
-		if(F._remote_mgt_https.checked == true)
+		}
+		if(F._remote_mgt_https.checked == true) {
 			F.remote_mgt_https.value = 1;
-		else
+		} else {
 			F.remote_mgt_https.value = 0;
+		}
 	}
 	
 	if(F._https_enable) {
-		if(F._https_enable.checked == true)
+		if(F._https_enable.checked == true) {
 			F.https_enable.value = 1;
-		else
+		} else {
 			F.https_enable.value = 0;
+		}
 	}
 
 	if(F._http_enable) {
-		if(F._http_enable.checked == true)
+		if(F._http_enable.checked == true) {
 			F.http_enable.value = 1;
-		else
+		} else {
 			F.http_enable.value = 0;
+		}
 	}
 	
 	if(F._info_passwd) {
-		if(F._info_passwd.checked == true)
+		if(F._info_passwd.checked == true) {
 			F.info_passwd.value = 1;
-		else
+		} else {
 			F.info_passwd.value = 0;
+		}
 	}
 	if (F.remote_ip_any)
 	if (F.remote_ip_any[1].checked == true){
