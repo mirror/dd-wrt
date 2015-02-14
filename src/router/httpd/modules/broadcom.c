@@ -1950,7 +1950,13 @@ static char *scanfile(char *buf, char *tran)
 	return NULL;
 }
 
-char *live_translate(char *tran)
+struct cacheentry {
+	char *request;
+	char *translation;
+};
+static int cachecount = 0;
+static struct cacheentry *translationcache;
+static char *private_live_translate(char *tran)
 {
 
 	if (tran == NULL || !strlen(tran))
@@ -1970,6 +1976,22 @@ char *live_translate(char *tran)
 		return result;
 	return "Error";
 
+}
+
+char *live_translate(char *tran)
+{
+	if (translationcache) {
+		int i;
+		for (i = 0; i < cachecount; i++) {
+			if (!strcmp(translationcache[i].request, tran))
+				return translationcache[i].translation;
+		}
+	}
+	char *ret = private_live_translate(tran);
+	translationcache = (struct cacheentry *)realloc(translationcache, sizeof(struct cacheentry) * (cachecount + 1));
+	translationcache[cachecount].request = strdup(tran);
+	translationcache[cachecount].translation = strdup(ret);
+	return translationcache[cachecount++].translation;
 }
 
 static void do_syslog(struct mime_handler *handler, char *url, webs_t stream, char *query)
