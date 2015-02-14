@@ -1038,7 +1038,9 @@ wlconf_aburn_ampdu_amsdu_set(char *name, char prefix[PREFIX_LEN], int nmode, int
 	int ret;
 	int phytype;
 	wlc_rev_info_t rev;
+#ifdef __CONFIG_DHDAP__
 	int is_dhd = 0;
+#endif
 	struct utsname unamebuf;
 
 	uname(&unamebuf);
@@ -1316,9 +1318,7 @@ wlconf(char *name)
 	bool ure_enab = FALSE;
 	bool radar_enab = FALSE;
 	bool obss_coex = FALSE;
-#ifdef __CONFIG_DHDAP__
 	int is_dhd;
-#endif
 
 	/* wlconf doesn't work for virtual i/f, so if we are given a
 	 * virtual i/f return 0 if that interface is in it's parent's "vifs"
