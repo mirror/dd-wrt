@@ -6876,12 +6876,6 @@ void getPortMapping(int *vlanmap)
 			vlanmap[3] = 3;
 			vlanmap[4] = 4;
 		}
-		if (nvram_match("vlan1ports", "3 2 1 0 5 7 8*") && nvram_match("boardnum", "32")) {
-			vlanmap[1] = 1;
-			vlanmap[2] = 2;
-			vlanmap[3] = 3;
-			vlanmap[4] = 4;
-		}
 	} else if (nvram_match("vlan1ports", "4 5")) {
 		vlanmap[0] = 4;
 		vlanmap[5] = 5;
@@ -6930,6 +6924,12 @@ void getPortMapping(int *vlanmap)
 			vlanmap[2] = 2;
 			vlanmap[3] = 1;
 			vlanmap[4] = 0;
+		}
+		if (nvram_match("vlan1ports", "3 2 1 0 5 7 8*") && nvram_match("boardnum", "32")) {
+			vlanmap[1] = 0;
+			vlanmap[2] = 1;
+			vlanmap[3] = 2;
+			vlanmap[4] = 3;
 		}
 	} else if (nvram_match("vlan1ports", "4 8")) {
 		vlanmap[0] = 4;
