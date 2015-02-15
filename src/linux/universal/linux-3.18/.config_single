@@ -183,7 +183,7 @@ CONFIG_PERF_EVENTS=y
 # CONFIG_SLUB_DEBUG is not set
 # CONFIG_COMPAT_BRK is not set
 CONFIG_SLAB=y
- CONFIG_SLUB is not set
+# CONFIG_SLUB is not set
 # CONFIG_SLOB is not set
 # CONFIG_SYSTEM_TRUSTED_KEYRING is not set
 # CONFIG_PROFILING is not set
