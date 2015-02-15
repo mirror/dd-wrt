@@ -177,6 +177,11 @@ typedef struct {
 
 } ETHERNET_STRUCT;
 
+typedef struct {
+	volatile unsigned int mii_addr;
+	volatile unsigned int mii_data;
+} MII;
+
 /********************************************************************
  * Interrupt controller
  ********************************************************************/

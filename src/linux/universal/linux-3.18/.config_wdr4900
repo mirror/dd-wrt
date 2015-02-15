@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/powerpc 3.18.7-rc1 Kernel Configuration
+# Linux/powerpc 3.18.7 Kernel Configuration
 #
 # CONFIG_PPC64 is not set
 
@@ -909,7 +909,8 @@ CONFIG_WEXT_PRIV=y
 #
 # Generic Driver Options
 #
-# CONFIG_UEVENT_HELPER is not set
+CONFIG_UEVENT_HELPER=y
+CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
 # CONFIG_DEVTMPFS is not set
 CONFIG_STANDALONE=y
 CONFIG_PREVENT_FIRMWARE_BUILD=y
