@@ -54,7 +54,6 @@
 #define AR2313_QUEUES                  (2*AR2313_PRIOS)
 #define AR2313_DESCR_ENTRIES           64
 
-
 #ifndef min
 #define min(a,b)	(((a)<(b))?(a):(b))
 #endif
@@ -147,7 +146,7 @@ static void ar231x_tx_timeout(struct net_device *dev);
 static int ar231x_mdiobus_read(struct mii_bus *bus, int phy_addr, int regnum);
 static int ar231x_mdiobus_write(struct mii_bus *bus, int phy_addr, int regnum, u16 value);
 static int ar231x_mdiobus_reset(struct mii_bus *bus);
-static int ar231x_mdiobus_probe (struct net_device *dev);
+static int ar231x_mdiobus_probe(struct net_device *dev);
 static void ar231x_adjust_link(struct net_device *dev);
 static bool no_phy = false;
 
@@ -156,31 +155,56 @@ static bool no_phy = false;
 #endif
 
 #ifdef CONFIG_NET_POLL_CONTROLLER
-static void
-ar231x_netpoll(struct net_device *dev)
+static void ar231x_netpoll(struct net_device *dev)
 {
-      unsigned long flags;
+	unsigned long flags;
 
-      local_irq_save(flags);
-      ar231x_interrupt(dev->irq, dev);
-      local_irq_restore(flags);
+	local_irq_save(flags);
+	ar231x_interrupt(dev->irq, dev);
+	local_irq_restore(flags);
 }
 #endif
 
 static const struct net_device_ops ar231x_ops = {
-	.ndo_open 		= ar231x_open,
-	.ndo_stop 		= ar231x_close,
-	.ndo_start_xmit 	= ar231x_start_xmit,
-	.ndo_set_rx_mode 	= ar231x_multicast_list,
-	.ndo_do_ioctl 		= ar231x_ioctl,
-	.ndo_change_mtu 	= eth_change_mtu,
-	.ndo_validate_addr	= eth_validate_addr,
-	.ndo_set_mac_address 	= eth_mac_addr,
-	.ndo_tx_timeout		= ar231x_tx_timeout,
+	.ndo_open = ar231x_open,
+	.ndo_stop = ar231x_close,
+	.ndo_start_xmit = ar231x_start_xmit,
+	.ndo_set_rx_mode = ar231x_multicast_list,
+	.ndo_do_ioctl = ar231x_ioctl,
+	.ndo_change_mtu = eth_change_mtu,
+	.ndo_validate_addr = eth_validate_addr,
+	.ndo_set_mac_address = eth_mac_addr,
+	.ndo_tx_timeout = ar231x_tx_timeout,
 #ifdef CONFIG_NET_POLL_CONTROLLER
-	.ndo_poll_controller	= ar231x_netpoll,
+	.ndo_poll_controller = ar231x_netpoll,
 #endif
 };
+
+static int get_phy_id(struct mii_bus *bus, int addr, u32 *phy_id)
+{
+	int phy_reg;
+
+	/**
+	 * Grab the bits from PHYIR1, and put them
+	 * in the upper half.
+	 */
+	phy_reg = mdiobus_read(bus, addr, MII_PHYSID1);
+
+	if (phy_reg < 0)
+		return -EIO;
+
+	*phy_id = (phy_reg & 0xffff) << 16;
+
+	/* Grab the bits from PHYIR2, and put them in the lower half */
+	phy_reg = mdiobus_read(bus, addr, MII_PHYSID2);
+
+	if (phy_reg < 0)
+		return -EIO;
+
+	*phy_id |= (phy_reg & 0xffff);
+
+	return 0;
+}
 
 int __init ar231x_probe(struct platform_device *pdev)
 {
@@ -193,8 +217,7 @@ int __init ar231x_probe(struct platform_device *pdev)
 	dev = alloc_etherdev(sizeof(struct ar231x_private));
 
 	if (dev == NULL) {
-		printk(KERN_ERR
-			   "ar231x: Unable to allocate net_device structure!\n");
+		printk(KERN_ERR "ar231x: Unable to allocate net_device structure!\n");
 		return -ENOMEM;
 	}
 
@@ -220,11 +243,10 @@ int __init ar231x_probe(struct platform_device *pdev)
 	dev->features |= NETIF_F_HIGHDMA;
 	dev->netdev_ops = &ar231x_ops;
 
-	tasklet_init(&sp->rx_tasklet, rx_tasklet_func, (unsigned long) dev);
+	tasklet_init(&sp->rx_tasklet, rx_tasklet_func, (unsigned long)dev);
 	tasklet_disable(&sp->rx_tasklet);
 
-	sp->eth_regs =
-		ioremap_nocache(virt_to_phys(ar_eth_base), sizeof(*sp->eth_regs));
+	sp->eth_regs = ioremap_nocache(virt_to_phys(ar_eth_base), sizeof(*sp->eth_regs));
 	if (!sp->eth_regs) {
 		printk("Can't remap eth registers\n");
 		return (-ENXIO);
@@ -238,19 +260,15 @@ int __init ar231x_probe(struct platform_device *pdev)
 	if (virt_to_phys(ar_eth_base) == virt_to_phys(sp->phy_regs))
 		sp->phy_regs = sp->eth_regs;
 	else {
-		sp->phy_regs =
-			ioremap_nocache(virt_to_phys(sp->cfg->phy_base),
-							sizeof(*sp->phy_regs));
+		sp->phy_regs = ioremap_nocache(virt_to_phys(sp->cfg->phy_base), sizeof(*sp->phy_regs));
 		if (!sp->phy_regs) {
 			printk("Can't remap phy registers\n");
 			return (-ENXIO);
 		}
 	}
 
-	sp->dma_regs =
-		ioremap_nocache(virt_to_phys(ar_eth_base + 0x1000),
-						sizeof(*sp->dma_regs));
-	dev->base_addr = (unsigned int) sp->dma_regs;
+	sp->dma_regs = ioremap_nocache(virt_to_phys(ar_eth_base + 0x1000), sizeof(*sp->dma_regs));
+	dev->base_addr = (unsigned int)sp->dma_regs;
 	if (!sp->dma_regs) {
 		printk("Can't remap DMA registers\n");
 		return (-ENXIO);
@@ -279,10 +297,7 @@ int __init ar231x_probe(struct platform_device *pdev)
 		return -1;
 	}
 
-	printk("%s: %s: %02x:%02x:%02x:%02x:%02x:%02x, irq %d\n",
-		   dev->name, sp->name,
-		   dev->dev_addr[0], dev->dev_addr[1], dev->dev_addr[2],
-		   dev->dev_addr[3], dev->dev_addr[4], dev->dev_addr[5], dev->irq);
+	printk("%s: %s: %02x:%02x:%02x:%02x:%02x:%02x, irq %d\n", dev->name, sp->name, dev->dev_addr[0], dev->dev_addr[1], dev->dev_addr[2], dev->dev_addr[3], dev->dev_addr[4], dev->dev_addr[5], dev->irq);
 
 	sp->mii_bus = mdiobus_alloc();
 	if (sp->mii_bus == NULL)
@@ -303,7 +318,7 @@ int __init ar231x_probe(struct platform_device *pdev)
 	 * one PHY and cannot be configured through MDIO */
 	if (!no_phy) {
 		u32 phy_id = 0;
-		get_phy_id(sp->mii_bus, 1, &phy_id, 0, NULL);
+		get_phy_id(sp->mii_bus, 1, &phy_id);
 		if (phy_id == 0x00221450)
 			no_phy = true;
 	}
@@ -328,7 +343,6 @@ int __init ar231x_probe(struct platform_device *pdev)
 
 	return 0;
 }
-
 
 static void ar231x_multicast_list(struct net_device *dev)
 {
@@ -378,7 +392,6 @@ static int ar231x_remove(struct platform_device *pdev)
 	return 0;
 }
 
-
 /*
  * Restart the AR2313 ethernet controller.
  */
@@ -405,21 +418,17 @@ static struct platform_driver ar231x_driver = {
 	.remove = ar231x_remove,
 };
 
-
-
 module_platform_driver(ar231x_driver);
-
 
 static void ar231x_free_descriptors(struct net_device *dev)
 {
 	struct ar231x_private *sp = netdev_priv(dev);
 	if (sp->rx_ring != NULL) {
-		kfree((void *) KSEG0ADDR(sp->rx_ring));
+		kfree((void *)KSEG0ADDR(sp->rx_ring));
 		sp->rx_ring = NULL;
 		sp->tx_ring = NULL;
 	}
 }
-
 
 static int ar231x_allocate_descriptors(struct net_device *dev)
 {
@@ -433,19 +442,18 @@ static int ar231x_allocate_descriptors(struct net_device *dev)
 		return 0;
 	}
 
-	size =
-		(sizeof(ar231x_descr_t) * (AR2313_DESCR_ENTRIES * AR2313_QUEUES));
+	size = (sizeof(ar231x_descr_t) * (AR2313_DESCR_ENTRIES * AR2313_QUEUES));
 	space = kmalloc(size, GFP_KERNEL);
 	if (space == NULL)
 		return 1;
 
 	/* invalidate caches */
-	dma_cache_inv((unsigned int) space, size);
+	dma_cache_inv((unsigned int)space, size);
 
 	/* now convert pointer to KSEG1 */
 	space = (ar231x_descr_t *) KSEG1ADDR(space);
 
-	memset((void *) space, 0, size);
+	memset((void *)space, 0, size);
 
 	sp->rx_ring = space;
 	space += AR2313_DESCR_ENTRIES;
@@ -459,14 +467,11 @@ static int ar231x_allocate_descriptors(struct net_device *dev)
 		td->status = 0;
 		td->devcs = DMA_TX1_CHAINED;
 		td->addr = 0;
-		td->descr =
-			virt_to_phys(&sp->
-						 tx_ring[(j + 1) & (AR2313_DESCR_ENTRIES - 1)]);
+		td->descr = virt_to_phys(&sp->tx_ring[(j + 1) & (AR2313_DESCR_ENTRIES - 1)]);
 	}
 
 	return 0;
 }
-
 
 /*
  * Generic cleanup handling data allocated during init. Used when the
@@ -481,9 +486,9 @@ static void ar231x_init_cleanup(struct net_device *dev)
 	ar231x_free_descriptors(dev);
 
 	if (sp->eth_regs)
-		iounmap((void *) sp->eth_regs);
+		iounmap((void *)sp->eth_regs);
 	if (sp->dma_regs)
-		iounmap((void *) sp->dma_regs);
+		iounmap((void *)sp->dma_regs);
 
 	if (sp->rx_skb) {
 		for (j = 0; j < AR2313_DESCR_ENTRIES; j++) {
@@ -517,7 +522,7 @@ static int ar231x_setup_timer(struct net_device *dev)
 	init_timer(&sp->link_timer);
 
 	sp->link_timer.function = ar231x_link_timer_fn;
-	sp->link_timer.data = (int) dev;
+	sp->link_timer.data = (int)dev;
 	sp->link_timer.expires = jiffies + HZ;
 
 	add_timer(&sp->link_timer);
@@ -527,7 +532,7 @@ static int ar231x_setup_timer(struct net_device *dev)
 
 static void ar231x_link_timer_fn(unsigned long data)
 {
-	struct net_device *dev = (struct net_device *) data;
+	struct net_device *dev = (struct net_device *)data;
 	struct ar231x_private *sp = netdev_priv(dev);
 
 	// see if the link status changed
@@ -568,19 +573,14 @@ static void ar231x_check_link(struct net_device *dev)
 				duplex = (reg & BMCR_FULLDPLX) ? 1 : 0;
 			}
 
-			printk(KERN_INFO "%s: Configuring MAC for %s duplex\n",
-				   dev->name, (duplex) ? "full" : "half");
+			printk(KERN_INFO "%s: Configuring MAC for %s duplex\n", dev->name, (duplex) ? "full" : "half");
 
 			if (duplex) {
 				/* full duplex */
-				sp->eth_regs->mac_control =
-					((sp->eth_regs->
-					  mac_control | MAC_CONTROL_F) & ~MAC_CONTROL_DRO);
+				sp->eth_regs->mac_control = ((sp->eth_regs->mac_control | MAC_CONTROL_F) & ~MAC_CONTROL_DRO);
 			} else {
 				/* half duplex */
-				sp->eth_regs->mac_control =
-					((sp->eth_regs->
-					  mac_control | MAC_CONTROL_DRO) & ~MAC_CONTROL_F);
+				sp->eth_regs->mac_control = ((sp->eth_regs->mac_control | MAC_CONTROL_DRO) & ~MAC_CONTROL_F);
 			}
 		} else {
 			/* no link */
@@ -607,27 +607,22 @@ static int ar231x_reset_reg(struct net_device *dev)
 
 	sp->dma_regs->bus_mode = (DMA_BUS_MODE_SWR);
 	mdelay(10);
-	sp->dma_regs->bus_mode =
-		((32 << DMA_BUS_MODE_PBL_SHIFT) | DMA_BUS_MODE_BLE);
+	sp->dma_regs->bus_mode = ((32 << DMA_BUS_MODE_PBL_SHIFT) | DMA_BUS_MODE_BLE);
 
 	/* enable interrupts */
-	sp->dma_regs->intr_ena = (DMA_STATUS_AIS |
-							  DMA_STATUS_NIS |
-							  DMA_STATUS_RI |
-							  DMA_STATUS_TI | DMA_STATUS_FBE);
+	sp->dma_regs->intr_ena = (DMA_STATUS_AIS | DMA_STATUS_NIS | DMA_STATUS_RI | DMA_STATUS_TI | DMA_STATUS_FBE);
 	sp->dma_regs->xmt_base = virt_to_phys(sp->tx_ring);
 	sp->dma_regs->rcv_base = virt_to_phys(sp->rx_ring);
-	sp->dma_regs->control =
-		(DMA_CONTROL_SR | DMA_CONTROL_ST | DMA_CONTROL_SF);
+	sp->dma_regs->control = (DMA_CONTROL_SR | DMA_CONTROL_ST | DMA_CONTROL_SF);
 
 	sp->eth_regs->flow_control = (FLOW_CONTROL_FCE);
 	sp->eth_regs->vlan_tag = (0x8100);
 
 	/* Enable Ethernet Interface */
 	flags = (MAC_CONTROL_TE |	/* transmit enable */
-			 MAC_CONTROL_PM |	/* pass mcast */
-			 MAC_CONTROL_F |	/* full duplex */
-			 MAC_CONTROL_HBD);	/* heart beat disabled */
+		 MAC_CONTROL_PM |	/* pass mcast */
+		 MAC_CONTROL_F |	/* full duplex */
+		 MAC_CONTROL_HBD);	/* heart beat disabled */
 
 	if (dev->flags & IFF_PROMISC) {	/* set promiscuous mode */
 		flags |= MAC_CONTROL_PR;
@@ -635,13 +630,10 @@ static int ar231x_reset_reg(struct net_device *dev)
 	sp->eth_regs->mac_control = flags;
 
 	/* Set all Ethernet station address registers to their initial values */
-	ethsah = ((((u_int) (dev->dev_addr[5]) << 8) & (u_int) 0x0000FF00) |
-			  (((u_int) (dev->dev_addr[4]) << 0) & (u_int) 0x000000FF));
+	ethsah = ((((u_int) (dev->dev_addr[5]) << 8) & (u_int) 0x0000FF00) | (((u_int) (dev->dev_addr[4]) << 0) & (u_int) 0x000000FF));
 
 	ethsal = ((((u_int) (dev->dev_addr[3]) << 24) & (u_int) 0xFF000000) |
-			  (((u_int) (dev->dev_addr[2]) << 16) & (u_int) 0x00FF0000) |
-			  (((u_int) (dev->dev_addr[1]) << 8) & (u_int) 0x0000FF00) |
-			  (((u_int) (dev->dev_addr[0]) << 0) & (u_int) 0x000000FF));
+		  (((u_int) (dev->dev_addr[2]) << 16) & (u_int) 0x00FF0000) | (((u_int) (dev->dev_addr[1]) << 8) & (u_int) 0x0000FF00) | (((u_int) (dev->dev_addr[0]) << 0) & (u_int) 0x000000FF));
 
 	sp->eth_regs->mac_addr[0] = ethsah;
 	sp->eth_regs->mac_addr[1] = ethsal;
@@ -650,7 +642,6 @@ static int ar231x_reset_reg(struct net_device *dev)
 
 	return (0);
 }
-
 
 static int ar231x_init(struct net_device *dev)
 {
@@ -661,8 +652,7 @@ static int ar231x_init(struct net_device *dev)
 	 * Allocate descriptors
 	 */
 	if (ar231x_allocate_descriptors(dev)) {
-		printk("%s: %s: ar231x_allocate_descriptors failed\n",
-			   dev->name, __FUNCTION__);
+		printk("%s: %s: ar231x_allocate_descriptors failed\n", dev->name, __FUNCTION__);
 		ecode = -EAGAIN;
 		goto init_error;
 	}
@@ -671,12 +661,9 @@ static int ar231x_init(struct net_device *dev)
 	 * Get the memory for the skb rings.
 	 */
 	if (sp->rx_skb == NULL) {
-		sp->rx_skb =
-			kmalloc(sizeof(struct sk_buff *) * AR2313_DESCR_ENTRIES,
-					GFP_KERNEL);
+		sp->rx_skb = kmalloc(sizeof(struct sk_buff *) * AR2313_DESCR_ENTRIES, GFP_KERNEL);
 		if (!(sp->rx_skb)) {
-			printk("%s: %s: rx_skb kmalloc failed\n",
-				   dev->name, __FUNCTION__);
+			printk("%s: %s: rx_skb kmalloc failed\n", dev->name, __FUNCTION__);
 			ecode = -EAGAIN;
 			goto init_error;
 		}
@@ -684,12 +671,9 @@ static int ar231x_init(struct net_device *dev)
 	memset(sp->rx_skb, 0, sizeof(struct sk_buff *) * AR2313_DESCR_ENTRIES);
 
 	if (sp->tx_skb == NULL) {
-		sp->tx_skb =
-			kmalloc(sizeof(struct sk_buff *) * AR2313_DESCR_ENTRIES,
-					GFP_KERNEL);
+		sp->tx_skb = kmalloc(sizeof(struct sk_buff *) * AR2313_DESCR_ENTRIES, GFP_KERNEL);
 		if (!(sp->tx_skb)) {
-			printk("%s: %s: tx_skb kmalloc failed\n",
-				   dev->name, __FUNCTION__);
+			printk("%s: %s: tx_skb kmalloc failed\n", dev->name, __FUNCTION__);
 			ecode = -EAGAIN;
 			goto init_error;
 		}
@@ -726,22 +710,17 @@ static int ar231x_init(struct net_device *dev)
 	/*
 	 * Get the IRQ
 	 */
-	ecode =
-		request_irq(dev->irq, &ar231x_interrupt,
-					IRQF_DISABLED,
-					dev->name, dev);
+	ecode = request_irq(dev->irq, &ar231x_interrupt, IRQF_DISABLED, dev->name, dev);
 	if (ecode) {
-		printk(KERN_WARNING "%s: %s: Requested IRQ %d is busy\n",
-			   dev->name, __FUNCTION__, dev->irq);
+		printk(KERN_WARNING "%s: %s: Requested IRQ %d is busy\n", dev->name, __FUNCTION__, dev->irq);
 		goto init_error;
 	}
-
 
 	tasklet_enable(&sp->rx_tasklet);
 
 	return 0;
 
-  init_error:
+init_error:
 	ar231x_init_cleanup(dev);
 	return ecode;
 }
@@ -771,8 +750,7 @@ static void ar231x_load_rx_ring(struct net_device *dev, int nr_bufs)
 
 		skb = netdev_alloc_skb_ip_align(dev, AR2313_BUFSIZE);
 		if (!skb) {
-			printk("\n\n\n\n %s: No memory in system\n\n\n\n",
-				   __FUNCTION__);
+			printk("\n\n\n\n %s: No memory in system\n\n\n\n", __FUNCTION__);
 			break;
 		}
 
@@ -788,12 +766,9 @@ static void ar231x_load_rx_ring(struct net_device *dev, int nr_bufs)
 		rd = (ar231x_descr_t *) & sp->rx_ring[idx];
 
 		/* initialize dma descriptor */
-		rd->devcs = ((AR2313_BUFSIZE << DMA_RX1_BSIZE_SHIFT) |
-					 DMA_RX1_CHAINED);
+		rd->devcs = ((AR2313_BUFSIZE << DMA_RX1_BSIZE_SHIFT) | DMA_RX1_CHAINED);
 		rd->addr = virt_to_phys(skb->data);
-		rd->descr =
-			virt_to_phys(&sp->
-						 rx_ring[(idx + 1) & (AR2313_DESCR_ENTRIES - 1)]);
+		rd->descr = virt_to_phys(&sp->rx_ring[(idx + 1) & (AR2313_DESCR_ENTRIES - 1)]);
 		rd->status = DMA_RX_OWN;
 
 		idx = DSC_NEXT(idx);
@@ -860,8 +835,7 @@ static int ar231x_rx_int(struct net_device *dev)
 
 				skb = sp->rx_skb[idx];
 				/* set skb */
-				skb_put(skb,
-						((status >> DMA_RX_LEN_SHIFT) & 0x3fff) - CRC_LEN);
+				skb_put(skb, ((status >> DMA_RX_LEN_SHIFT) & 0x3fff) - CRC_LEN);
 				dev->stats.rx_bytes += skb->len;
 
 				/* pass the packet to upper layers */
@@ -888,8 +862,7 @@ static int ar231x_rx_int(struct net_device *dev)
 			}
 		}
 
-		rxdesc->devcs = ((AR2313_BUFSIZE << DMA_RX1_BSIZE_SHIFT) |
-						 DMA_RX1_CHAINED);
+		rxdesc->devcs = ((AR2313_BUFSIZE << DMA_RX1_BSIZE_SHIFT) | DMA_RX1_CHAINED);
 		rxdesc->status = DMA_RX_OWN;
 
 		idx = DSC_NEXT(idx);
@@ -899,7 +872,6 @@ static int ar231x_rx_int(struct net_device *dev)
 
 	return rval;
 }
-
 
 static void ar231x_tx_int(struct net_device *dev)
 {
@@ -919,9 +891,7 @@ static void ar231x_tx_int(struct net_device *dev)
 			break;
 		}
 		/* done with this descriptor */
-		dma_unmap_single(NULL, txdesc->addr,
-						 txdesc->devcs & DMA_TX1_BSIZE_MASK,
-						 DMA_TO_DEVICE);
+		dma_unmap_single(NULL, txdesc->addr, txdesc->devcs & DMA_TX1_BSIZE_MASK, DMA_TO_DEVICE);
 		txdesc->status = 0;
 
 		if (status & DMA_TX_ERROR) {
@@ -933,9 +903,7 @@ static void ar231x_tx_int(struct net_device *dev)
 				dev->stats.tx_heartbeat_errors++;
 			if (status & (DMA_TX_ERR_LOSS | DMA_TX_ERR_LINK))
 				dev->stats.tx_carrier_errors++;
-			if (status & (DMA_TX_ERR_LATE |
-						  DMA_TX_ERR_COL |
-						  DMA_TX_ERR_JABBER | DMA_TX_ERR_DEFER))
+			if (status & (DMA_TX_ERR_LATE | DMA_TX_ERR_COL | DMA_TX_ERR_JABBER | DMA_TX_ERR_DEFER))
 				dev->stats.tx_aborted_errors++;
 		} else {
 			/* transmit OK */
@@ -954,10 +922,9 @@ static void ar231x_tx_int(struct net_device *dev)
 	return;
 }
 
-
 static void rx_tasklet_func(unsigned long data)
 {
-	struct net_device *dev = (struct net_device *) data;
+	struct net_device *dev = (struct net_device *)data;
 	struct ar231x_private *sp = netdev_priv(dev);
 
 	if (sp->unloading) {
@@ -985,7 +952,7 @@ static void rx_schedule(struct net_device *dev)
 
 static irqreturn_t ar231x_interrupt(int irq, void *dev_id)
 {
-	struct net_device *dev = (struct net_device *) dev_id;
+	struct net_device *dev = (struct net_device *)dev_id;
 	struct ar231x_private *sp = netdev_priv(dev);
 	unsigned int status, enabled;
 
@@ -1020,20 +987,16 @@ static irqreturn_t ar231x_interrupt(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-
 static int ar231x_open(struct net_device *dev)
 {
 	struct ar231x_private *sp = netdev_priv(dev);
 	unsigned int ethsal, ethsah;
 
 	/* reset the hardware, in case the MAC address changed */
-	ethsah = ((((u_int) (dev->dev_addr[5]) << 8) & (u_int) 0x0000FF00) |
-			  (((u_int) (dev->dev_addr[4]) << 0) & (u_int) 0x000000FF));
+	ethsah = ((((u_int) (dev->dev_addr[5]) << 8) & (u_int) 0x0000FF00) | (((u_int) (dev->dev_addr[4]) << 0) & (u_int) 0x000000FF));
 
 	ethsal = ((((u_int) (dev->dev_addr[3]) << 24) & (u_int) 0xFF000000) |
-			  (((u_int) (dev->dev_addr[2]) << 16) & (u_int) 0x00FF0000) |
-			  (((u_int) (dev->dev_addr[1]) << 8) & (u_int) 0x0000FF00) |
-			  (((u_int) (dev->dev_addr[0]) << 0) & (u_int) 0x000000FF));
+		  (((u_int) (dev->dev_addr[2]) << 16) & (u_int) 0x00FF0000) | (((u_int) (dev->dev_addr[1]) << 8) & (u_int) 0x0000FF00) | (((u_int) (dev->dev_addr[0]) << 0) & (u_int) 0x000000FF));
 
 	sp->eth_regs->mac_addr[0] = ethsah;
 	sp->eth_regs->mac_addr[1] = ethsal;
@@ -1067,7 +1030,7 @@ static void ar231x_halt(struct net_device *dev)
 
 	/* kill the MAC */
 	sp->eth_regs->mac_control &= ~(MAC_CONTROL_RE |	/* disable Receives */
-								   MAC_CONTROL_TE);	/* disable Transmits */
+				       MAC_CONTROL_TE);	/* disable Transmits */
 	/* stop dma */
 	sp->dma_regs->control = 0;
 	sp->dma_regs->bus_mode = DMA_BUS_MODE_SWR;
@@ -1146,8 +1109,7 @@ static int ar231x_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	}
 
 	/* Setup the transmit descriptor. */
-	td->devcs = ((skb->len << DMA_TX1_BSIZE_SHIFT) |
-				 (DMA_TX1_LS | DMA_TX1_IC | DMA_TX1_CHAINED));
+	td->devcs = ((skb->len << DMA_TX1_BSIZE_SHIFT) | (DMA_TX1_LS | DMA_TX1_IC | DMA_TX1_CHAINED));
 	td->addr = dma_map_single(NULL, skb->data, skb->len, DMA_TO_DEVICE);
 	td->status = DMA_TX_OWN;
 
@@ -1163,7 +1125,7 @@ static int ar231x_start_xmit(struct sk_buff *skb, struct net_device *dev)
 
 static int ar231x_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 {
-	struct mii_ioctl_data *data = (struct mii_ioctl_data *) &ifr->ifr_data;
+	struct mii_ioctl_data *data = (struct mii_ioctl_data *)&ifr->ifr_data;
 	struct ar231x_private *sp = netdev_priv(dev);
 	int ret;
 
@@ -1174,19 +1136,17 @@ static int ar231x_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 
 	case SIOCETHTOOL:
 		spin_lock_irq(&sp->lock);
-		ret = phy_ethtool_ioctl(sp->phy_dev, (void *) ifr->ifr_data);
+		ret = phy_ethtool_ioctl(sp->phy_dev, (void *)ifr->ifr_data);
 		spin_unlock_irq(&sp->lock);
 		return ret;
 
 	case SIOCSIFHWADDR:
-		if (copy_from_user
-			(dev->dev_addr, ifr->ifr_data, sizeof(dev->dev_addr)))
+		if (copy_from_user(dev->dev_addr, ifr->ifr_data, sizeof(dev->dev_addr)))
 			return -EFAULT;
 		return 0;
 
 	case SIOCGIFHWADDR:
-		if (copy_to_user
-			(ifr->ifr_data, dev->dev_addr, sizeof(dev->dev_addr)))
+		if (copy_to_user(ifr->ifr_data, dev->dev_addr, sizeof(dev->dev_addr)))
 			return -EFAULT;
 		return 0;
 
@@ -1225,27 +1185,24 @@ static void ar231x_adjust_link(struct net_device *dev)
 #define MII_ADDR(phy, reg) \
 	((reg << MII_ADDR_REG_SHIFT) | (phy << MII_ADDR_PHY_SHIFT))
 
-static int
-ar231x_mdiobus_read(struct mii_bus *bus, int phy_addr, int regnum)
+static int ar231x_mdiobus_read(struct mii_bus *bus, int phy_addr, int regnum)
 {
 	struct net_device *const dev = bus->priv;
 	struct ar231x_private *sp = netdev_priv(dev);
 	volatile ETHERNET_STRUCT *ethernet = sp->phy_regs;
 
 	ethernet->mii_addr = MII_ADDR(phy_addr, regnum);
-	while (ethernet->mii_addr & MII_ADDR_BUSY);
+	while (ethernet->mii_addr & MII_ADDR_BUSY) ;
 	return (ethernet->mii_data >> MII_DATA_SHIFT);
 }
 
-static int
-ar231x_mdiobus_write(struct mii_bus *bus, int phy_addr, int regnum,
-             u16 value)
+static int ar231x_mdiobus_write(struct mii_bus *bus, int phy_addr, int regnum, u16 value)
 {
 	struct net_device *const dev = bus->priv;
 	struct ar231x_private *sp = netdev_priv(dev);
 	volatile ETHERNET_STRUCT *ethernet = sp->phy_regs;
 
-	while (ethernet->mii_addr & MII_ADDR_BUSY);
+	while (ethernet->mii_addr & MII_ADDR_BUSY) ;
 	ethernet->mii_data = value << MII_DATA_SHIFT;
 	ethernet->mii_addr = MII_ADDR(phy_addr, regnum) | MII_ADDR_WRITE;
 
@@ -1261,7 +1218,7 @@ static int ar231x_mdiobus_reset(struct mii_bus *bus)
 	return 0;
 }
 
-static int ar231x_mdiobus_probe (struct net_device *dev)
+static int ar231x_mdiobus_probe(struct net_device *dev)
 {
 	struct ar231x_private *const sp = netdev_priv(dev);
 	struct phy_device *phydev = NULL;
@@ -1272,11 +1229,11 @@ static int ar231x_mdiobus_probe (struct net_device *dev)
 		if (sp->mii_bus->phy_map[phy_addr]) {
 			phydev = sp->mii_bus->phy_map[phy_addr];
 			sp->phy = phy_addr;
-			break; /* break out with first one found */
+			break;	/* break out with first one found */
 		}
 
 	if (!phydev) {
-		printk (KERN_ERR "ar231x: %s: no PHY found\n", dev->name);
+		printk(KERN_ERR "ar231x: %s: no PHY found\n", dev->name);
 		return -1;
 	}
 
@@ -1284,8 +1241,7 @@ static int ar231x_mdiobus_probe (struct net_device *dev)
 	BUG_ON(!phydev);
 	BUG_ON(phydev->attached_dev);
 
-	phydev = phy_connect(dev, dev_name(&phydev->dev), &ar231x_adjust_link,
-		PHY_INTERFACE_MODE_MII);
+	phydev = phy_connect(dev, dev_name(&phydev->dev), &ar231x_adjust_link, PHY_INTERFACE_MODE_MII);
 
 	if (IS_ERR(phydev)) {
 		printk(KERN_ERR "%s: Could not attach to PHY\n", dev->name);
@@ -1295,24 +1251,16 @@ static int ar231x_mdiobus_probe (struct net_device *dev)
 	sp->rx = phydev->netif_rx;
 
 	/* mask with MAC supported features */
-	phydev->supported &= (SUPPORTED_10baseT_Half
-		| SUPPORTED_10baseT_Full
-		| SUPPORTED_100baseT_Half
-		| SUPPORTED_100baseT_Full
-		| SUPPORTED_Autoneg
-		/* | SUPPORTED_Pause | SUPPORTED_Asym_Pause */
-		| SUPPORTED_MII
-		| SUPPORTED_TP);
+	phydev->supported &= (SUPPORTED_10baseT_Half | SUPPORTED_10baseT_Full | SUPPORTED_100baseT_Half | SUPPORTED_100baseT_Full | SUPPORTED_Autoneg
+			      /* | SUPPORTED_Pause | SUPPORTED_Asym_Pause */
+			      | SUPPORTED_MII | SUPPORTED_TP);
 
 	phydev->advertising = phydev->supported;
 
 	sp->oldduplex = -1;
 	sp->phy_dev = phydev;
 
-	printk(KERN_INFO "%s: attached PHY driver [%s] "
-		"(mii_bus:phy_addr=%s)\n",
-		dev->name, phydev->drv->name, dev_name(&phydev->dev));
+	printk(KERN_INFO "%s: attached PHY driver [%s] " "(mii_bus:phy_addr=%s)\n", dev->name, phydev->drv->name, dev_name(&phydev->dev));
 
 	return 0;
 }
-
