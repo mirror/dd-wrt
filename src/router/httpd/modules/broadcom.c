@@ -1892,7 +1892,7 @@ static char *scanfile(char *buf, char *tran)
 				val = getc(fp);
 				if (val == EOF)
 					return NULL;
-				if (!count && val == ' ')
+				if (!count && (val == ' ' || val == '\r' || val == '\t' || val == '\n'))
 					continue;
 			} else {
 				int a, v;
