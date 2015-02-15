@@ -537,8 +537,6 @@ static inline int phy_write(struct phy_device *phydev, u32 regnum, u16 val)
 {
 	return mdiobus_write(phydev->bus, phydev->addr, regnum, val);
 }
-int get_phy_id(struct mii_bus *bus, int addr, u32 *phy_id,
-		      bool is_c45, struct phy_c45_device_ids *c45_ids);
 struct phy_device *phy_device_create(struct mii_bus *bus, int addr, int phy_id,
 		bool is_c45, struct phy_c45_device_ids *c45_ids);
 struct phy_device *get_phy_device(struct mii_bus *bus, int addr, bool is_c45);
