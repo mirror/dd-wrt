@@ -337,7 +337,9 @@ else
 endif
 ifeq ($(CONFIG_AP135),y)
 	echo CONFIG_AP135=y >> $(LINUXDIR)/.config
+ifneq ($(CONFIG_MMS344),y)
 	sed -i 's/\CONFIG_USB_EHCI_AR9130=y/# CONFIG_USB_EHCI_AR9130 is not set/g' $(LINUXDIR)/.config
+endif
 else
 	echo "# CONFIG_AP135 is not set" >> $(LINUXDIR)/.config
 endif
@@ -413,6 +415,7 @@ else
 endif
 ifeq ($(CONFIG_MMS344),y)
 	echo CONFIG_MMS344=y >> $(LINUXDIR)/.config
+	sed -i 's/\# CONFIG_USB_SERIAL_QUALCOMM is not set/CONFIG_USB_SERIAL_QUALCOMM=m/g' $(LINUXDIR)/.config
 else
 	echo "# CONFIG_MMS344 is not set" >> $(LINUXDIR)/.config
 endif
