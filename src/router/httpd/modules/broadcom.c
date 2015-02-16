@@ -1246,7 +1246,10 @@ void do_logout(void)		// static functions are not exportable,
 				// additionally this is no ej function
 {
 	send_authenticate(auth_realm);
-} static char *getdisc(void)	// works only for squashfs 
+} 
+
+
+static char *getdisc(void)	// works only for squashfs 
 {
 	int i;
 	static char ret[4];
@@ -1872,7 +1875,7 @@ static char *getLanguageName()
 
 static char *scanfile(char *buf, char *tran)
 {
-	static char temp[256], temp1[256];
+	char temp[256], temp1[256];
 	char *temp2;
 	FILE *fp = getWebsFile(buf);
 	if (fp) {
