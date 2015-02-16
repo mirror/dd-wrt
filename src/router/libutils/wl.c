@@ -2328,7 +2328,7 @@ void radio_on(int idx)
 		int cc = getdevicecount();
 		int i;
 		for (i = 0; i < cc; i++) {
-			writevaproc("0", "/proc/sys/dev/wifi%d/silent", idx);
+			writevaproc("0", "/proc/sys/dev/wifi%d/silent", i);
 		}
 		led_control(LED_WLAN0, LED_ON);
 		led_control(LED_WLAN1, LED_ON);
