@@ -358,6 +358,7 @@ endif
 	$(LINUXDIR)/scripts/rstrip.sh $(TARGETDIR)
 #	cp lib.$(ARCH)/libgcc_s.so.1 $(TARGETDIR)/lib
 	cd $(TARGETDIR) && $(TOP)/misc/rootprep.sh
+	$(TOP)/../../tools/removewhitespace.sh $(TOP)/../../tools $(TARGETDIR)/etc/config
 
 	mkdir -p $(ARCH)-uclibc/target/boot
 	echo "mem=59M root=/dev/hda" > $(ARCH)-uclibc/target/boot/kparam
