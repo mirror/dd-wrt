@@ -363,10 +363,10 @@ void start_sysinit(void)
 				nvram_nset(extra_params->value, "pci/2/1/%s", extra_params->name);
 				extra_params++;
 			}
-			nvram_unset("et1macaddr");
 			nvram_set("pci/1/1/vendid", "0x14E4");
 			nvram_commit();
 		}
+		nvram_unset("et1macaddr");
 		set_gpio(6, 1);	//reset button
 		set_gpio(2, 0);	//power led
 		set_gpio(3, 1);	//power led
@@ -594,9 +594,9 @@ void start_sysinit(void)
 				extra_params++;
 			}
 			nvram_set("pci/1/1/vendid", "0x14E4");
-			nvram_unset("et1macaddr");
 			nvram_commit();
 		}
+		nvram_unset("et1macaddr");
 		set_gpio(6, 1);	//reset button
 		set_gpio(2, 0);	//power led
 		set_gpio(3, 1);	//power led
@@ -818,9 +818,9 @@ void start_sysinit(void)
 				extra_params++;
 			}
 			nvram_set("pci/1/1/vendid", "0x14E4");
-			nvram_unset("et1macaddr");
 			nvram_commit();
 		}
+		nvram_unset("et1macaddr");
 		set_gpio(6, 1);	//reset button
 		set_gpio(2, 0);	//power led
 		set_gpio(3, 1);	//power led
@@ -1107,9 +1107,9 @@ void start_sysinit(void)
 			nvram_set("wl0_pcie_mrrs", "128");
 			nvram_set("wl1_pcie_mrrs", "128");
 			nvram_set("pci/1/1/vendid", "0x14E4");
-			nvram_unset("et1macaddr");
 			nvram_commit();
 		}
+		nvram_unset("et1macaddr");
 		set_gpio(15, 1);	//wlan button led on
 		set_gpio(4, 1);
 		set_gpio(9, 1);
@@ -1313,9 +1313,9 @@ void start_sysinit(void)
 			nvram_set("devpath0", "pci/1/1");
 			nvram_set("devpath1", "pci/2/1");
 			nvram_set("wl_pcie_mrrs", "128");
-			nvram_unset("et1macaddr");
 			nvram_commit();
 		}
+		nvram_unset("et1macaddr");
 		set_gpio(0, 1);	//USB
 		set_gpio(4, 1);	//wifi
 		set_gpio(6, 1);	//reset button
@@ -1324,7 +1324,7 @@ void start_sysinit(void)
 		set_gpio(12, 1);	//green 5
 		break;
 	case ROUTER_NETGEAR_R8000:
-		if (nvram_get("0:venid") == NULL) {
+		if (nvram_get("0:vendid") == NULL) {
 			char mac[20];
 			strcpy(mac, nvram_safe_get("et2macaddr"));
 			MAC_ADD(mac);
@@ -1334,6 +1334,9 @@ void start_sysinit(void)
 			nvram_set("1:macaddr", mac);
 			MAC_ADD(mac);
 			nvram_set("2:macaddr", mac);
+			nvram_set("0:vendid", "0x14e4");
+			nvram_set("0:watchdog", "3000");
+			nvram_set("0:deadman_to", "720000000");
 			nvram_set("0:rxgains5gmelnagaina0", "1");
 			nvram_set("0:rxgains5gmelnagaina1", "1");
 			nvram_set("0:rxgains5gmelnagaina2", "1");
@@ -1362,8 +1365,8 @@ void start_sysinit(void)
 			nvram_set("0:maxp5ga2", "54,90,90,106");
 			nvram_set("0:regrev", "86");
 			nvram_set("0:rxgainerr5ga0", "63,63,63,-9");
-			nvram_set("0:rxgainerr5ga1", "31,31,31,-11");
-			nvram_set("0:rxgainerr5ga2", "31,31,31,-14");
+			nvram_set("0:rxgainerr5ga1", "31,31,31,-2");
+			nvram_set("0:rxgainerr5ga2", "31,31,31,-5");
 			nvram_set("0:pdoffset40ma0", "0");
 			nvram_set("0:mcsbw405ghpo", "0x98658640");
 			nvram_set("0:pdoffset40ma1", "0");
@@ -1434,8 +1437,11 @@ void start_sysinit(void)
 			nvram_set("0:mcsbw805gmpo", "0x98658640");
 			nvram_set("0:aga2", "0x0");
 			nvram_set("0:mcsbw205ghpo", "0x98658640");
-			nvram_set("1:rxgainerr2ga1", "-1");
-			nvram_set("1:rxgainerr2ga2", "-2");
+			nvram_set("1:venid", "0x14e4");
+			nvram_set("1:watchdog", "3000");
+			nvram_set("1:deadman_to", "720000000");
+			nvram_set("1:rxgainerr2ga1", "0");
+			nvram_set("1:rxgainerr2ga2", "-1");
 			nvram_set("1:rxgains2gtrisoa0", "6");
 			nvram_set("1:boardflags", "0x1000");
 			nvram_set("1:antswitch", "0");
@@ -1507,6 +1513,8 @@ void start_sysinit(void)
 			nvram_set("1:xtalfreq", "40000");
 			nvram_set("1:txchain", "7");
 			nvram_set("1:rxgainerr2ga0", "-1");
+			nvram_set("2:watchdog", "3000");
+			nvram_set("2:deadman_to", "720000000");
 			nvram_set("2:mcsbw405glpo", "0x87657531");
 			nvram_set("2:devid", "0x43BC");
 			nvram_set("2:mcsbw405ghpo", "0x87657531");
@@ -1515,8 +1523,8 @@ void start_sysinit(void)
 			nvram_set("2:rxgains5ghtrisoa2", "6");
 			nvram_set("2:tempthresh", "120");
 			nvram_set("2:rxgainerr5ga0", "-9,63,63,63");
-			nvram_set("2:rxgainerr5ga1", "-13,31,31,31");
-			nvram_set("2:rxgainerr5ga2", "-14,31,31,31");
+			nvram_set("2:rxgainerr5ga1", "-4,31,31,31");
+			nvram_set("2:rxgainerr5ga2", "-5,31,31,31");
 			nvram_set("2:pdoffset40ma0", "0x5444");
 			nvram_set("2:pdoffset40ma1", "0x5444");
 			nvram_set("2:pdoffset40ma2", "0x5344");
@@ -1610,14 +1618,17 @@ void start_sysinit(void)
 			nvram_set("devpath0", "pcie/1/1");
 			nvram_set("devpath1", "pcie/2/3");
 			nvram_set("devpath2", "pcie/2/4");
-			nvram_unset("et0macaddr");
-			nvram_unset("et1macaddr");
+			nvram_set("wl2_channel", "48");
+			nvram_set("wl0_channel", "161");
 			nvram_commit();
 		}
-		nvram_set("fwd_cpumap", "d:x:2:169:1 d:l:5:169:1 d:u:5:163:0");
-		nvram_set("fwd_wlandevs", "eth1 eth2 eth3");
-		nvram_set("fwddevs", "fwd0 fwd1");
+		set_regulation(0, "Q2", "86");
+		set_regulation(1, "Q2", "86");
+		set_regulation(2, "Q2", "86");
+		nvram_unset("et0macaddr");
+		nvram_unset("et1macaddr");
 		set_gpio(6, 1);	//reset button
+		set_gpio(15, 1);
 		break;
 	case ROUTER_ASUS_AC87U:
 		set_gpio(11, 1);	// fixup reset button
