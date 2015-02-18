@@ -71,7 +71,7 @@ function previewStyle(val) {
 }
 document.forms[0].onreset = function() { 
 	previewStyle("<% nvram_get("router_style"); %>"); 
-}
+};
 //]]>
 </script>
 <fieldset>
