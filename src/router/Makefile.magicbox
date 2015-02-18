@@ -408,6 +408,7 @@ ifeq ($(CONFIG_KAID),y)
 endif
 	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
 
+	$(TOP)/../../tools/removewhitespace.sh $(TOP)/../../tools $(TARGETDIR)/etc/config
 ifneq ($(CONFIG_RB600),y)
 	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -noappend -be
 	cp $(LINUXDIR)/arch/ppc/boot/images/uImage $(ARCH)-uclibc/dd-wrt-uImage
