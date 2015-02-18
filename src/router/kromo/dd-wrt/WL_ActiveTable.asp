@@ -48,7 +48,7 @@ refreshParent = function() {
 	var elements = opener.document.forms["macfilter"].elements;
 	var url = elements["submit_button"].value + '-' + elements["ifname"].value + ".asp";
 	opener.window.location = url;
-}
+};
 		
 		//]]>
 		</script>
