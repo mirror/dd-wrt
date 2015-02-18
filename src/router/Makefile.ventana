@@ -460,6 +460,7 @@ endif
 	export STRIP="sstrip" && \
 	$(LINUXDIR)/scripts/rstrip.sh $(TARGETDIR)
 	cd $(TARGETDIR) && $(TOP)/misc/rootprep.sh
+	$(TOP)/../../tools/removewhitespace.sh $(TOP)/../../tools $(TARGETDIR)/etc/config
 	mkdir $(TARGETDIR)/boot
 	mkimage -A arm -O linux -T kernel -C none -a 0x10008000 -e 0x10008000 -n 'DD-WRT' -d $(LINUXDIR)/arch/arm/boot/zImage $(ARCH)-uclibc/uImage
 	cp $(ARCH)-uclibc/uImage $(TARGETDIR)/boot 

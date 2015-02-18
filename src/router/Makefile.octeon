@@ -641,6 +641,7 @@ endif
 #endif
 
 
+	$(TOP)/../../tools/removewhitespace.sh $(TOP)/../../tools $(TARGETDIR)/etc/config
 #ifeq ($(CONFIG_DLNA),y)
 #	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -noappend -be -b 262144
 #else
