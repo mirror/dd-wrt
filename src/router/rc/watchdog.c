@@ -52,6 +52,7 @@ static void watchdog(void)
 				radioledinitcount++;
 				oldstate0 = -1;
 				oldstate1 = -1;
+				oldstate2 = -1;
 			}
 #ifdef HAVE_MADWIFI
 			radiostate0 = get_radiostate("ath0");
@@ -127,6 +128,7 @@ static void watchdog(void)
 			 */
 #endif
 		}
+
 		sleep(5);
 		if (nvram_match("warn_enabled", "1")) {
 			counter++;
