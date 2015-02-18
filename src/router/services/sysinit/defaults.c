@@ -776,7 +776,11 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl0_nctrlsb", "none", 0},	/* N-CTRL SB */
 	{"wl1_nctrlsb", "none", 0},	/* N-CTRL SB */
 	{"wl2_nctrlsb", "none", 0},	/* N-CTRL SB */
+#ifdef HAVE_NORTHSTAR
+	{"wl0_nband", "1", 0},	/* N-BAND */
+#else
 	{"wl0_nband", "-1", 0},	/* N-BAND */
+#endif
 	{"wl1_nband", "1", 0},	/* N-BAND */
 	{"wl2_nband", "1", 0},	/* N-BAND */
 	{"wl0_nmcsidx", "-1", 0},	/* N-MCS Index - rate */
@@ -818,9 +822,9 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl2_wmf_ucast_upnp", "1", 0},	/* Disable Converting upnp to ucast (default) */
 	{"wl2_wmf_igmpq_filter", "0", 0},	/* Disable igmp query filter */
 	/* Airtime fairness */
-	{"wl0_atf", "0", 0},	/* 0= off 1= on */
-	{"wl1_atf", "0", 0},
-	{"wl2_atf", "0", 0},
+	{"wl0_atf", "1", 0},	/* 0= off 1= on */
+	{"wl1_atf", "1", 0},
+	{"wl2_atf", "1", 0},
 
 	{"wl0_txbf", "0", 0},
 	{"wl1_txbf", "0", 0},
@@ -880,6 +884,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl0_rx_amsdu_in_ampdu", "auto", 0},	/* Disable AMSDU Rx by default */
 	{"wl0_cal_period", "0", 0},	/* Disable periodic cal */
 	{"wl0_obss_coex", "0", 0},	/* Default OBSS Coexistence setting - OFF */
+	{"wl0_bss_opmode_cap_reqd", "0", 0},
 	{"wl1_stbc_tx", "auto", 0},	/* Default STBC TX setting */
 	{"wl1_stbc_rx", "1", 0},	/* Default STBC RX setting */
 	{"wl1_ampdu", "auto", 0},	/* Default AMPDU setting */
@@ -2830,6 +2835,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl2_wme_apsd", "on", 0},	/* WME APSD mode */
 
 	{"wl_maxassoc", "128", 0},	/* Max associations driver could support */
+	{"wl0_maxassoc", "128", 0},	/* Max associations driver could support */
 	{"wl1_maxassoc", "128", 0},	/* Max associations driver could support */
 	{"wl2_maxassoc", "128", 0},	/* Max associations driver could support */
 
