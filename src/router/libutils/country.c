@@ -1010,12 +1010,22 @@ char *getCountryList(void)
 
 void setRegulationDomain(char *reg)
 {
+
 	char ccode[4] = "";
 	char ccode0[4] = "";
 	char ccode1[4] = "";
 
 	char rrev0[4] = "";
 	char rrev1[4] = "";
+	
+	char *tmp = nvram_get("wl_reg_mode");
+	nvram_set("wl0_reg_mode", tmp);
+	nvram_set("wl1_reg_mode", tmp);
+	nvram_set("wl2_reg_mode", tmp);
+	tmp = nvram_get("wl_tpc_db");
+	nvram_set("wl0_tpc_db", tmp);
+	nvram_set("wl1_tpc_db", tmp);
+	nvram_set("wl2_tpc_db", tmp);
 
 	strncpy(ccode, getIsoName(reg), 3);
 
@@ -1061,6 +1071,8 @@ void setRegulationDomain(char *reg)
 		nvram_set("pci/1/1/ccode", ccode1);
 		nvram_set("pci/2/1/ccode", ccode0);
 		return;
+	case ROUTER_NETGEAR_R8000:
+		return;
 	case ROUTER_LINKSYS_EA6500:
 	case ROUTER_NETGEAR_WNDR4500:
 	case ROUTER_NETGEAR_WNDR4500V2:
@@ -1080,14 +1092,6 @@ void setRegulationDomain(char *reg)
 		nvram_set("pci/1/1/ccode", ccode0);
 		nvram_set("pci/2/1/ccode", ccode1);
 		break;
-	case ROUTER_NETGEAR_R8000:
-		nvram_set("0:regrev", rrev1);
-		nvram_set("1:regrev", rrev0);
-		nvram_set("2:regrev", rrev1);
-		nvram_set("0:ccode", ccode1);
-		nvram_set("1:ccode", ccode0);
-		nvram_set("2:ccode", ccode1);
-		break;
 	default:
 		nvram_set("0:regrev", rrev0);
 		nvram_set("1:regrev", rrev1);
@@ -1096,6 +1100,7 @@ void setRegulationDomain(char *reg)
 		nvram_set("1:ccode", ccode1);
 		nvram_set("2:ccode", ccode1);
 	}
+	
 	nvram_set("wl_country_rev", rrev0);
 	nvram_set("wl0_country_rev", rrev0);
 	nvram_set("wl1_country_rev", rrev1);
@@ -1104,4 +1109,5 @@ void setRegulationDomain(char *reg)
 	nvram_set("wl0_country_code", ccode0);
 	nvram_set("wl1_country_code", ccode1);
 	nvram_set("wl2_country_code", ccode1);
+	
 }
