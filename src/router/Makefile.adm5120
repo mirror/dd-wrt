@@ -279,6 +279,7 @@ endif
 endif
 #	mipsel-linux-strip $(TARGETDIR)/lib/modules/$(LINUXVER)/*.ko		
 	-./strip_libs.sh $(ARCH)
+	$(TOP)/../../tools/removewhitespace.sh $(TOP)/../../tools $(TARGETDIR)/etc/config
 #	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -noappend -root-owned -le -b 1048576 -nopad
 ifneq ($(CONFIG_WP54G),y)
 ifneq ($(CONFIG_NP28G),y)

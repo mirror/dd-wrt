@@ -583,6 +583,7 @@ endif
 	export STRIP_KMOD="$(LINUXDIR)/scripts/strip-kmod.sh" && \
 	export STRIP="sstrip" && \
 	$(LINUXDIR)/scripts/rstrip.sh $(TARGETDIR)
+	$(TOP)/../../tools/removewhitespace.sh $(TOP)/../../tools $(TARGETDIR)/etc/config
 	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -noappend -root-owned -le -nopad
 ifeq ($(CONFIG_MT7620),y)
 	dd if=mipsel-uclibc/root-mt7620.uimage of=mipsel-uclibc/aligned-mt7620.uimage bs=4096 conv=sync
