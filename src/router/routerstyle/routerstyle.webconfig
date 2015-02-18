@@ -1,6 +1,6 @@
 <script type="text/javascript">
 //<![CDATA[
-if(!document.head)// Stoupid IE 8
+if(!document.head)
 	document.head=document.getElementsByTagName('head')[0];
 function previewStyle(val) {
 	var httpRequest = new XMLHttpRequest();
