@@ -11,7 +11,7 @@
 			//document.forms['redirectform'].action = "index.asp?ias_detect";
 			//document.forms['redirectform'].submit();
     		}
-	}
+	};
     </script>
   </head>
 <body onload="detect();">
