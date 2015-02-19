@@ -776,11 +776,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl0_nctrlsb", "none", 0},	/* N-CTRL SB */
 	{"wl1_nctrlsb", "none", 0},	/* N-CTRL SB */
 	{"wl2_nctrlsb", "none", 0},	/* N-CTRL SB */
-#ifdef HAVE_NORTHSTAR
-	{"wl0_nband", "1", 0},	/* N-BAND */
-#else
-	{"wl0_nband", "-1", 0},	/* N-BAND */
-#endif
+	{"wl0_nband", "0", 0},	/* N-BAND */
 	{"wl1_nband", "1", 0},	/* N-BAND */
 	{"wl2_nband", "1", 0},	/* N-BAND */
 	{"wl0_nmcsidx", "-1", 0},	/* N-MCS Index - rate */
