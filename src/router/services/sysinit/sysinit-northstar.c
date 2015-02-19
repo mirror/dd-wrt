@@ -154,7 +154,7 @@ void start_sysinit(void)
 	switch (getRouterBrand()) {
 	case ROUTER_NETGEAR_AC1450:
 
-		if (nvram_get("pci/1/1/vendid") == NULL) {
+		if (nvram_get("pci/1/1/venid") == NULL) {
 			if (!sv_valid_hwaddr(nvram_safe_get("pci/1/1/macaddr"))
 			    || startswith(nvram_safe_get("pci/1/1/macaddr"), "00:90:4C")
 			    || !sv_valid_hwaddr(nvram_safe_get("pci/2/1/macaddr"))
@@ -363,7 +363,7 @@ void start_sysinit(void)
 				nvram_nset(extra_params->value, "pci/2/1/%s", extra_params->name);
 				extra_params++;
 			}
-			nvram_set("pci/1/1/vendid", "0x14E4");
+			nvram_set("pci/1/1/venid", "0x14E4");
 			nvram_commit();
 		}
 		nvram_unset("et1macaddr");
@@ -377,7 +377,7 @@ void start_sysinit(void)
 		break;
 	case ROUTER_NETGEAR_R6250:
 
-		if (nvram_get("pci/1/1/vendid") == NULL) {
+		if (nvram_get("pci/1/1/venid") == NULL) {
 			if (!sv_valid_hwaddr(nvram_safe_get("pci/1/1/macaddr"))
 			    || startswith(nvram_safe_get("pci/1/1/macaddr"), "00:90:4C")
 			    || !sv_valid_hwaddr(nvram_safe_get("pci/2/1/macaddr"))
@@ -593,7 +593,7 @@ void start_sysinit(void)
 				nvram_nset(extra_params->value, "pci/2/1/%s", extra_params->name);
 				extra_params++;
 			}
-			nvram_set("pci/1/1/vendid", "0x14E4");
+			nvram_set("pci/1/1/venid", "0x14E4");
 			nvram_commit();
 		}
 		nvram_unset("et1macaddr");
@@ -607,7 +607,7 @@ void start_sysinit(void)
 		break;
 	case ROUTER_NETGEAR_R6300V2:
 
-		if (nvram_get("pci/1/1/vendid") == NULL) {
+		if (nvram_get("pci/1/1/venid") == NULL) {
 			if (!sv_valid_hwaddr(nvram_safe_get("pci/1/1/macaddr"))
 			    || startswith(nvram_safe_get("pci/1/1/macaddr"), "00:90:4C")
 			    || !sv_valid_hwaddr(nvram_safe_get("pci/2/1/macaddr"))
@@ -817,7 +817,7 @@ void start_sysinit(void)
 				nvram_nset(extra_params->value, "pci/2/1/%s", extra_params->name);
 				extra_params++;
 			}
-			nvram_set("pci/1/1/vendid", "0x14E4");
+			nvram_set("pci/1/1/venid", "0x14E4");
 			nvram_commit();
 		}
 		nvram_unset("et1macaddr");
@@ -831,7 +831,7 @@ void start_sysinit(void)
 		break;
 	case ROUTER_NETGEAR_R7000:
 
-		if (nvram_get("pci/1/1/vendid") == NULL) {
+		if (nvram_get("pci/1/1/venid") == NULL) {
 			if (!sv_valid_hwaddr(nvram_safe_get("pci/1/1/macaddr"))
 			    || startswith(nvram_safe_get("pci/1/1/macaddr"), "00:90:4C")
 			    || !sv_valid_hwaddr(nvram_safe_get("pci/2/1/macaddr"))
@@ -1106,7 +1106,7 @@ void start_sysinit(void)
 			nvram_set("wl_pcie_mrrs", "128");
 			nvram_set("wl0_pcie_mrrs", "128");
 			nvram_set("wl1_pcie_mrrs", "128");
-			nvram_set("pci/1/1/vendid", "0x14E4");
+			nvram_set("pci/1/1/venid", "0x14E4");
 			nvram_commit();
 		}
 		nvram_unset("et1macaddr");
@@ -1324,7 +1324,7 @@ void start_sysinit(void)
 		set_gpio(12, 1);	//green 5
 		break;
 	case ROUTER_NETGEAR_R8000:
-		if (nvram_get("0:vendid") == NULL) {
+		if (nvram_get("0:venid") == NULL) {
 			char mac[20];
 			strcpy(mac, nvram_safe_get("et2macaddr"));
 			MAC_ADD(mac);
@@ -1334,7 +1334,7 @@ void start_sysinit(void)
 			nvram_set("1:macaddr", mac);
 			MAC_ADD(mac);
 			nvram_set("2:macaddr", mac);
-			nvram_set("0:vendid", "0x14e4");
+			nvram_set("0:venid", "0x14e4");
 			nvram_set("0:watchdog", "3000");
 			nvram_set("0:deadman_to", "720000000");
 			nvram_set("0:rxgains5gmelnagaina0", "1");
@@ -2067,7 +2067,7 @@ void start_sysinit(void)
 	case ROUTER_DLINK_DIR868:
 	case ROUTER_DLINK_DIR865:
 
-		if (nvram_get("pci/1/1/vendid") == NULL) {
+		if (nvram_get("pci/1/1/venid") == NULL) {
 
 			char buf[64];
 			FILE *fp = popen("cat /dev/mtdblock0|grep lanmac", "r");
@@ -2120,7 +2120,7 @@ void start_sysinit(void)
 			struct nvram_tuple dir868_2_1params[] = {
 				{"sromrev", "11", 0},
 				{"venid", "0x14E4", 0},
-				{"vendid", "0x14E4", 0},
+				{"venid", "0x14E4", 0},
 				{"boardvendor", "0x14E4", 0},
 				{"devid", "0x43a2", 0},
 				{"boardrev", "0x1450", 0},
@@ -2291,7 +2291,7 @@ void start_sysinit(void)
 				t++;
 			}
 
-			nvram_set("pci/1/1/vendid", "0x14E4");
+			nvram_set("pci/1/1/venid", "0x14E4");
 			nvram_commit();
 
 		}
