@@ -24,27 +24,38 @@
 		} \
 
 
-
-void main(int argc,char *argv[])
+void main(int argc, char *argv[])
 {
-FILE *fp;
-char *mem;
-fp=fopen(argv[1],"rb");
-fseek(fp,0,SEEK_END);
-long l;
-l = ftell(fp);
-rewind(fp);
-mem=malloc(l);
-fread(mem,l,1,fp);
-fclose(fp);
-fp = fopen(argv[1],"wb");
-int i;
-for (i=0;i<l;i++)
-{
-    FILTER_pre("//<![CDATA[");
-    FILTER_pre("//]]>");
-    if (mem[i]!='\r' &&  mem[i]!='\n' && mem[i]!='\t' && mem[i]!='\f')
-	putc(mem[i],fp);
-}
-fclose(fp);
+	FILE *fp;
+	char *mem;
+	fp = fopen(argv[1], "rb");
+	fseek(fp, 0, SEEK_END);
+	long l;
+	l = ftell(fp);
+	rewind(fp);
+	mem = malloc(l + 16);
+	fread(mem, l, 1, fp);
+	fclose(fp);
+	fp = fopen(argv[1], "wb");
+	int i;
+	for (i = 0; i < l; i++) {
+		FILTER_pre("//<![CDATA[");
+		FILTER_pre("//]]>");
+		if (!strncmp(&mem[i], "//", 2)) {
+			while (mem[i] != 0xa) {
+				i++;
+			}
+		}
+		if (!memcmp(&mem[i], "else\n", 5)) {
+			i += 5;
+			fprintf(fp, "else ");
+		}
+		if (!memcmp(&mem[i], "else\r\n", 6)) {
+			i += 6;
+			fprintf(fp, "else ");
+		}
+		if (mem[i] != '\r' && mem[i] != '\n' && mem[i] != '\t' && mem[i] != '\f')
+			putc(mem[i], fp);
+	}
+	fclose(fp);
 }
