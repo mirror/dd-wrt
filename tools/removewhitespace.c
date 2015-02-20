@@ -41,19 +41,19 @@ void main(int argc, char *argv[])
 	for (i = 0; i < l; i++) {
 		FILTER_pre("//<![CDATA[");
 		FILTER_pre("//]]>");
-		if (!strncmp(&mem[i], "//", 2)) {
-			while (mem[i] != 0xa) {
-				i++;
-			}
-		}
-		if (!memcmp(&mem[i], "else\n", 5)) {
-			i += 5;
-			fprintf(fp, "else ");
-		}
-		if (!memcmp(&mem[i], "else\r\n", 6)) {
-			i += 6;
-			fprintf(fp, "else ");
-		}
+//		if (!strncmp(&mem[i], "//", 2)) {
+//			while (mem[i] != 0xa) {
+//				i++;
+//			}
+//		}
+//		if (!memcmp(&mem[i], "else\n", 5)) {
+//			i += 5;
+//			fprintf(fp, "else ");
+//		}
+//		if (!memcmp(&mem[i], "else\r\n", 6)) {
+//			i += 6;
+//			fprintf(fp, "else ");
+//		}
 		if (mem[i] != '\r' && mem[i] != '\n' && mem[i] != '\t' && mem[i] != '\f')
 			putc(mem[i], fp);
 	}
