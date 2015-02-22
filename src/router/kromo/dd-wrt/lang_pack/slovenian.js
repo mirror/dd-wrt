@@ -452,7 +452,7 @@ bmenu.adminBackup="Varnostna kop.";
 
 bmenu.services="Storitve";
 bmenu.servicesServices="Storitve";
-bmenu.servicesRadius="FreeRadius"
+bmenu.servicesRadius="FreeRadius";
 bmenu.servicesPppoesrv="PPPoE strežnik";
 bmenu.servicesPptp="VPN";
 bmenu.servicesUSB="USB";
@@ -1359,7 +1359,7 @@ service.pppoesrv_srvopt="RP-PPPoE strežnik: možnosti";
 service.pppoesrv_compr="Kompresija";
 service.pppoesrv_lcpei="LCP Echo interval";
 service.pppoesrv_lcpef="LCP Echo neuspeh";
-service.pppoesrv_limit="Meja seje po MACu"
+service.pppoesrv_limit="Meja seje po MACu";
 service.pppoesrv_idlet="Nedejavni čas";
 service.pppoesrv_auth="Overjanje";
 service.pppoesrv_radip="Radius strežnikov IP";
@@ -1435,7 +1435,7 @@ service.vpn_route="Usmerjanje po politiki";
 
 hstatus_vpn.right1="Usmerjanje po politiki:<br><i>Dodaj IPje v obliki 0.0.0.0/0 da prisiliš odjemalce k uporabi tunela za privzeti prehod. Ena vrstica za IP. Presmeritveni prehod MORA biti izključen.</i>";
 hstatus_vpn.right2="Dodatne nastavitve:<br><i>Da prisiliš poti odjemalcem dodaj \'push \"route 0.0.0.0\"\', da prisiliš DNS/WINS dodaj \'push \"dhcp-option DNS (ali WINS) 0.0.0.0\"\' k konfiguraciji.</i>";
-status_vpn.right3="Splošno:<br><i>Podprti so 3 auth načini: pkcs12 (+dh na strežniku), static, standard certs</i>. Omogoči MSS samo na eni strani zveze, fragmentiranje na obeh.</i>";";
+status_vpn.right3="Splošno:<br><i>Podprti so 3 auth načini: pkcs12 (+dh na strežniku), static, standard certs</i>. Omogoči MSS samo na eni strani zveze, fragmentiranje na obeh.</i>";
 
 //vnc.repeater
 service.vncrepeater_legend="VNC";

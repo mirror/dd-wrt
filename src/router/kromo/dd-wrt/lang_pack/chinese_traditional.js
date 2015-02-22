@@ -247,7 +247,7 @@ sbutton.allways_off="持續關閉";
 errmsg.err0="必須輸入一個帳號.";
 errmsg.err1="必須輸入一個路由器名稱.";
 errmsg.err2="超出範圍,請調整 IP 開始位址 或 用戶的個數.";
-errmsg.err3="必須至少選擇一個日期."
+errmsg.err3="必須至少選擇一個日期.";
 errmsg.err4="結束時間必須比開始時間大.";
 errmsg.err5="MAC位址長度不正確.";
 errmsg.err6="必須輸入一個密碼.";
@@ -267,7 +267,7 @@ errmsg.err15="WAN MAC位址超出範圍 [00 - ff].";
 errmsg.err16="MAC位址的第二個字元必須是偶數 : [0, 2, 4, 6, 8, A, C, E].";
 errmsg.err17="MAC位址不正確.";
 errmsg.err18="MAC位址長度不正確.";
-errmsg.err19="MAC位址不能是廣播MAC位址."
+errmsg.err19="MAC位址不能是廣播MAC位址.";
 errmsg.err20="輸入MAC位址,如 (xx:xx:xx:xx:xx:xx) 的格式";
 errmsg.err21="無效的MAC位址格式";
 errmsg.err22="WAN MAC位址不正確";
@@ -1586,7 +1586,7 @@ wol.pass="安全的密碼";
 //
 hwol.right2="本頁面允許您 <em>喚醒</em> 在您本地網路上的主機 (例如. 本地連接你的路由器). 您可以手動喚醒主機 <em>"+sbutton.wol+"</em> 或是透過程式自動排程來喚醒 "+wol.srv+".";
 hwol.right4="MAC位址使用如下格式輸入 xx:xx:xx:xx:xx:xx (例如. 01:23:45:67:89:AB) 並且必須分開用 <em>空白</em>";
-hwol.right6="IP位址通常是本地網路的廣播位址,但是如果目標主機並為連接到路由器的本地網路,則應該設定為遠端位址."
+hwol.right6="IP位址通常是本地網路的廣播位址,但是如果目標主機並為連接到路由器的本地網路,則應該設定為遠端位址.";
 
 
 // ** WanMAC.asp **//
