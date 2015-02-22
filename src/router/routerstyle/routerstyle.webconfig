@@ -48,7 +48,7 @@ function previewStyle(val) {
 									theme2.textContent=httpRequest2.responseText;
 							}
 						}
-					}
+					};
 					httpRequest2.open('GET', '/style/elegant/fresh.css');
 					httpRequest2.send(null);
 				}
