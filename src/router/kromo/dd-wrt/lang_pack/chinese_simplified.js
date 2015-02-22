@@ -245,7 +245,7 @@ sbutton.allways_off="总是关闭";
 errmsg.err0="您必须输入一个用户名。";
 errmsg.err1="您必须输入一个路由器名称。";
 errmsg.err2="超出范围，请调整IP起始地址或用户的个数。";
-errmsg.err3="您必须至少选择一个日期。"
+errmsg.err3="您必须至少选择一个日期。";
 errmsg.err4="结束时间必须大于起始时间。";
 errmsg.err5="MAC地址长度不正确。";
 errmsg.err6="您必须输入一个密码。";
@@ -263,7 +263,7 @@ errmsg.err15="WAM MAC地址超出范围 [00 - ff]。";
 errmsg.err16="MAC地址的第二个字符必须是偶数 : [0, 2, 4, 6, 8, A, C, E]。";
 errmsg.err17="MAC地址不正确。";
 errmsg.err18="MAC地址长度不正确。";
-errmsg.err19="MAC地址不能是广播的MAC地址。"
+errmsg.err19="MAC地址不能是广播的MAC地址。";
 errmsg.err20="输入MAC地址，格式为(xx:xx:xx:xx:xx:xx)。";
 errmsg.err21="无效的MAC地址格式。";
 errmsg.err22="WAN MAC地址不正确。";
@@ -1317,7 +1317,7 @@ wol.pass="SecureOn Password";
 
 hwol.right2="本页面允许您 <em>唤醒</em> 同一本地网络上的主机（比如，已连接到您的路由器上的本地主机）。您可以通过点击<em>"+sbutton.wol+"</em>手动唤醒主机，或编写一个借助于"+wol.srv+"的定时自动唤醒。";
 hwol.right4="MAC地址使用如下格式输入 xx:xx:xx:xx:xx:xx （例如 01:23:45:67:89:AB），且必须以<em>空格</em>分隔";
-hwol.right6="IP地址通常是本地网络的广播地址，但是如果目标主机并未连接到路由器上的本地网络，则应该设置为远程地址。"
+hwol.right6="IP地址通常是本地网络的广播地址，但是如果目标主机并未连接到路由器上的本地网络，则应该设置为远程地址。";
 
 wanmac.titl="MAC地址克隆";
 wanmac.h2="MAC地址克隆";
