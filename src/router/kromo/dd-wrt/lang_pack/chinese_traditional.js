@@ -292,7 +292,7 @@ errmsg.err37="你必須輸入一個 UDP 埠來執行操作.";
 //WL_WPATable.asp error messages
 //WPA.asp error messages
 errmsg.err38="請輸入共用金鑰 （Shared Key）!";
-errmsg.err39="無效金鑰, 必須是長度為8到63個ASCII字元或者64個十六進位數值"
+errmsg.err39="無效金鑰, 必須是長度為8到63個ASCII字元或者64個十六進位數值";
 errmsg.err40="你必須為如下金鑰輸入一個關鍵字 ";
 errmsg.err41="關鍵字長度無效 ";
 errmsg.err43="重新獲取金鑰間隔";
