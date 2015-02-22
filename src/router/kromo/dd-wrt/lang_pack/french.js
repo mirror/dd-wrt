@@ -541,7 +541,7 @@ filter.mess2="Veuillez sélectionner au moins un jour du calendrier.";
 filter.mess3="L'heure de fin doit être postérieure à l'heure de début.";
 
 //help container
-hfilter.right2="Vous pouvez contrôler l'accès à Internet à l'aide d'une stratégie. Pour supprimer une stratégie, sélectionnez son numéro, puis cliquez sur le bouton <em>" + sbutton.del + "</em>. Pour afficher l'ensemble des stratégies, cliquez sur le bouton <em>" + sbutton.summary + "</em>."
+hfilter.right2="Vous pouvez contrôler l'accès à Internet à l'aide d'une stratégie. Pour supprimer une stratégie, sélectionnez son numéro, puis cliquez sur le bouton <em>" + sbutton.del + "</em>. Pour afficher l'ensemble des stratégies, cliquez sur le bouton <em>" + sbutton.summary + "</em>.";
 hfilter.right4="Par défaut, les stratégies sont activées. Pour activer une stratégie, sélectionnez son numéro dans le menu déroulant, puis cliquez sur le bouton radio en regard de l'option <em>Activer</em>.";
 hfilter.right6="Saisissez le nom de la stratégie.";
 hfilter.right8="Définissez les jours pendant lesquels vous souhaitez appliquer cette stratégie. Sélectionnez individuellement les jours pendant lesquels la stratégie doit être en vigueur ou bien sélectionnez l'option <em>Tous les jours</em>.";
