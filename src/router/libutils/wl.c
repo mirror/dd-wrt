@@ -722,6 +722,8 @@ int has_beamforming(char *prefix)
 		c = 0;
 	else if (!strcmp(prefix, "wl1"))
 		c = 1;
+	else if (!strcmp(prefix, "wl2"))
+		c = 2;
 
 	char *name = get_wl_instance_name(c);
 	wl_ioctl(name, WLC_GET_REVINFO, &rev, sizeof(rev));

@@ -425,6 +425,9 @@ void start_nas_single(char *type, char *prefix)
 		led_control(LED_SEC1, LED_OFF);
 		convert_wds(1);
 	}
+	if (!strcmp(prefix, "wl2")) {
+		convert_wds(2);
+	}
 
 	snprintf(pidfile, sizeof(pidfile), "/tmp/nas.%s%s.pid", prefix, type);
 
