@@ -1,7 +1,9 @@
 <script type="text/javascript">
 //<![CDATA[
-if(!document.head)
+if(!document.head) {
 	document.head=document.getElementsByTagName('head')[0];
+}
+
 function previewStyle(val) {
 	var httpRequest = new XMLHttpRequest();
 	httpRequest.onreadystatechange = function(){
@@ -68,7 +70,7 @@ function previewStyle(val) {
 	httpRequest.open('GET', '/style/'+val+'/style.css?'+val);
 	httpRequest.send(null);
 	return true;
-}
+};
 document.forms[0].onreset = function() { 
 	previewStyle("<% nvram_get("router_style"); %>"); 
 };
