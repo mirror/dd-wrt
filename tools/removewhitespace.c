@@ -4,7 +4,7 @@
 		{ \
 		fwrite(&mem[i],strlen(a),1,fp); \
 		i+=strlen(a); \
-		while(mem[i]!=0xa) { \
+		while(i<l && mem[i]!=0xa) { \
 		    putc(mem[i++],fp); \
 		} \
 		putc(mem[i],fp); \
@@ -16,7 +16,7 @@
 		putc(0xa,fp); \
 		fwrite(&mem[i],strlen(a),1,fp); \
 		i+=strlen(a); \
-		while(mem[i]!=0xa) { \
+		while(i<l && mem[i]!=0xa) { \
 		    putc(mem[i++],fp); \
 		} \
 		putc(mem[i],fp); \
@@ -54,6 +54,8 @@ void main(int argc, char *argv[])
 //			i += 6;
 //			fprintf(fp, "else ");
 //		}
+		if (i>=l)
+		    break;
 		if (mem[i] != '\r' && mem[i] != '\n' && mem[i] != '\t' && mem[i] != '\f')
 			putc(mem[i], fp);
 	}
