@@ -1417,7 +1417,7 @@ wlconf(char *name)
 	bool ure_enab = FALSE;
 	bool radar_enab = FALSE;
 	bool obss_coex = FALSE;
-	int is_dhd;
+	int is_dhd = 0;
 
 	/* wlconf doesn't work for virtual i/f, so if we are given a
 	 * virtual i/f return 0 if that interface is in it's parent's "vifs"
