@@ -1,0 +1,21 @@
+if SOC_RT288X
+
+choice
+        prompt "Soc Hardware Type"
+	default RT2880_ASIC
+
+config  RT2880_ASIC 
+        bool "RT2880-ASIC"
+
+endchoice
+
+endif
+
+if SOC_RT288X
+
+config  RT2860V2_2850
+        bool "Dual Band"
+        depends on RALINK_RT2880
+
+endif
+
