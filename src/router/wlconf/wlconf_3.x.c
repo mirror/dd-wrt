@@ -32,7 +32,9 @@
 		fprintf(stderr, fmt, ## args); \
 } while (0)
 #endif
+#define WLCONF_DBG(fmt, arg...)
 
+//#define WLCONF_DBG(fmt, arg...)	fprintf(stderr, "%s: "fmt, __FUNCTION__ , ## arg)
 
 #define	BCM4306_CHIP_ID		0x4306		/* 4306 chipcommon chipid */
 #define	BCM4311_CHIP_ID		0x4311		/* 4311 PCIe 802.11a/b/g */
@@ -176,7 +178,6 @@
 		        __FUNCTION__, __LINE__, ifname, bssidx, iovar, (unsigned int)val, ret);
 #endif
 #else
-#define WLCONF_DBG(fmt, arg...)
 #define WL_IOCTL(name, cmd, buf, len)			(ret = wl_ioctl(name, cmd, buf, len))
 #define WL_SETINT(name, cmd, val)			(ret = wlconf_setint(name, cmd, val))
 #define WL_GETINT(name, cmd, pval)			(ret = wlconf_getint(name, cmd, pval))
@@ -1266,6 +1267,104 @@ static void wlconf_set_txbf_timer(char *name, char *prefix)
 }
 
 
+#define VIFNAME_LEN 16
+
+static void
+wlconf_set_taf(char *name, bool enable)
+{
+#if defined(__CONFIG_TOAD__)
+	static const char toad_ifnames[] = "toad_ifnames";
+#endif
+	char iobuf[sizeof( "taf" )		/* Need some space for the iovar itself, + nul */
+		+ sizeof(wl_taf_define_t)-1	/* struct size -1 byte for text[1] declaration */
+		+ sizeof("enable")		/* "enable" string + terminating nul byte */
+		+ sizeof("0")			/* "0" or "1" string + terminating nul byte */
+		+ sizeof("")];			/* Final terminating nul byte */
+
+	wl_taf_define_t *taf_def;
+	char *ptr;
+	int ret;				/* Variable name "ret" is required by WL_IOCTL() */
+
+	memset(iobuf, 0, sizeof(iobuf));
+	strcpy(iobuf, "taf");
+
+	taf_def = (wl_taf_define_t *)&iobuf[ sizeof("taf") ];
+	memset(&taf_def->ea, 0xff, sizeof(taf_def->ea));
+
+	taf_def->version = 1;
+
+	ptr = taf_def->text;
+	ptr += sprintf(ptr, "enable");	/* Set up the command name argument */
+	*ptr++ = '\0';			/* add the NUL separator */
+	*ptr++ = (enable) ? '1' : '0';	/* enable or disable taf */
+	*ptr++ = '\0';			/* add the NUL separator */
+	*ptr = '\0';			/* and another NUL to terminate the argument list */
+
+	WL_IOCTL(name, WLC_SET_VAR, iobuf, sizeof(iobuf));
+
+#if defined(__CONFIG_TOAD__)
+
+	/* Update the "toad_ifnames" nvram variable by adding or removing the interface name */
+
+	ptr = nvram_get(toad_ifnames);
+
+	if (!ptr && enable) {		/* Creating nvram with the first ifname */
+
+		nvram_set(toad_ifnames, name);
+
+	} else if (ptr && enable) {	/* Possibly need to add a new ifname */
+
+		if (!strstr(ptr, name)) {
+			char *tmp;
+
+			tmp = malloc(strlen(ptr) + sizeof(" ") + strlen(name));
+
+			if (tmp) {
+				sprintf(tmp, "%s %s", ptr, name);
+				nvram_set(toad_ifnames, tmp);
+				free(tmp);
+			}
+		}
+
+	} else if (ptr && !enable) {	/* Possibly need to remove an existing ifname */
+
+		if (strstr(ptr, name)) {
+			int tlen;
+
+			tlen = strlen(ptr) - strlen(name);
+			if (tlen == 0) {
+				nvram_unset(toad_ifnames);
+			} else {
+				char *tmp;
+				tmp = malloc(tlen + sizeof(""));
+				if (tmp) {
+					char ifname[VIFNAME_LEN];
+					char *next;
+					char *cp;
+
+					memset(tmp, 0, tlen + sizeof(""));
+					cp = tmp;
+
+					foreach(ifname, ptr, next) {
+						if (strcmp(ifname, name) != 0) {
+							cp += sprintf(cp, "%s%s",
+								(cp == tmp) ? "":" ", name);
+						}
+					}
+					nvram_set(toad_ifnames, tmp);
+					free(tmp);
+				}
+			}
+		}
+	} /* otherwise this must be (!ptr && !enable), no action needed here. */
+
+#endif /* __CONFIG_TOAD__ */
+
+}
+
+
+
+
 /* configure the specified wireless interface */
 int
 wlconf(char *name)
@@ -1404,7 +1503,6 @@ cprintf("get wl addr\n");
 	/* Get MAC address */
 	(void) wl_hwaddr(name, (uchar *)buf);
 	memcpy(vif_addr, buf, ETHER_ADDR_LEN);
-
 	/* Get instance */
 cprintf("get instance\n");
 	WL_IOCTL(name, WLC_GET_INSTANCE, &unit, sizeof(unit));
@@ -1426,6 +1524,7 @@ cprintf("get instance\n");
 	wlconf_validate_all(prefix, restore_defaults);
 	nvram_set(strcat_r(prefix, "ifname", tmp), name);
 	nvram_set(strcat_r(prefix, "hwaddr", tmp), ether_etoa((uchar *)buf, eaddr));
+
 	snprintf(buf, sizeof(buf), "%d", unit);
 	nvram_set(strcat_r(prefix, "unit", tmp), buf);
 
@@ -1485,7 +1584,7 @@ cprintf("disable bss %s\n",name);
 	if (wet && apsta) { /* URE is enabled */
 		ure_enab = TRUE;
 	}
-cprintf("set mssid flags %s\n",name);
+
 	if (wl_ap_build) {
 		/* Enable MSSID mode if appropriate */
 		WL_IOVAR_SETINT(name, "mssid", (bclist->count > 1));
@@ -1518,13 +1617,8 @@ cprintf("set mssid flags %s\n",name);
 		/* construct and set other wlX.Y_hwaddr */
 		for (i = 1; i < bclist->count; i++) {
 			snprintf(tmp, sizeof(tmp), "wl%d.%d_hwaddr", unit, i);
-			addr = nvram_safe_get(tmp);
-			if (!strcmp(addr, "")) {
-				vif_addr[5] = (vif_addr[5] & ~(max_no_vifs-1))
-				        | ((max_no_vifs-1) & (vif_addr[5]+1));
-
-				nvram_set(tmp, ether_etoa((uchar *)vif_addr, eaddr));
-			}
+			vif_addr[5] = (vif_addr[5] & ~(max_no_vifs-1)) | ((max_no_vifs-1) & (vif_addr[5]+1));
+			nvram_set(tmp, ether_etoa((uchar *)vif_addr, eaddr));
 		}
 
 		for (i = 0; i < bclist->count; i++) {
@@ -2557,14 +2651,17 @@ cprintf("set ba mode %s\n",name);
 	else if (!strcmp(ba, "off"))
 		wl_iovar_setint(name, "ba", OFF);
 
+cprintf("%d\n",__LINE__);
 	if (WLCONF_PHYTYPE_11N(phytype)) {
 		val = AVG_DMA_XFER_RATE;
 		wl_iovar_set(name, "avg_dma_xfer_rate", &val, sizeof(val));
 	}
+cprintf("%d\n",__LINE__);
 
 	/* Set up TxBF */
 	wlconf_set_txbf(name, prefix);
 
+cprintf("%d\n",__LINE__);
 
 	/* set airtime fairness */
 	val = 0;
@@ -2573,6 +2670,7 @@ cprintf("set ba mode %s\n",name);
 		val = atoi(str);
 	}
 	WL_IOVAR_SETINT(name, "atf", val);
+cprintf("%d\n",__LINE__);
 
 	str = nvram_get(strcat_r(prefix, "ampdu_atf_us", tmp));
 	if (str) {
@@ -2582,6 +2680,7 @@ cprintf("set ba mode %s\n",name);
 			WL_IOVAR_SETINT(name, "nar_atf_us", val);
 		}
 	}
+cprintf("%d\n",__LINE__);
 
 
 	/* set TAF */
@@ -2590,7 +2689,8 @@ cprintf("set ba mode %s\n",name);
 	if (str && (bandtype == WLC_BAND_5G)) {
 		val = atoi(str);
 	}
-	WL_IOVAR_SETINT(name, "taf", val);
+	wlconf_set_taf(name, val);
+cprintf("%d\n",__LINE__);
 
 	val = 0;
 	str = nvram_get(strcat_r(prefix, "taf_rule", tmp));
