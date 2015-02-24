@@ -1081,12 +1081,12 @@ function openBW(iface) {
 /* reference values (200 Mhz cpu): 60 sec for a reboot or restore config file, 120 for a reset nvram + reboot */
 function getTimeOut(clk, rest_default, flags) {
 
-	var wait_time = 60;								// 60 seconds without rest to factory default ==> need to be tested
-	var scroll_count = (wait_time / 5) - 3;			// a scroll is during about 5 seconds
+	var wait_time = 60;			// 60 seconds without rest to factory default ==> need to be tested
+	var scroll_count = (wait_time / 5) - 3;	// a scroll is during about 5 seconds
 	var coef = 1;
 
-    if (clk < 200 || clk == 240) {	                // some slow cpus need some more....
-		coef = 2.0;									// also bcm5354 need more
+	if (clk < 200 || clk == 240) {	// some slow cpus need some more....
+		coef = 2.0;		// also bcm5354 need more
 	}
 	
 	if (rest_default == 1) {	// if restore default is ask (in upgrade process or restore default process) then timeout is doubled
@@ -1094,12 +1094,12 @@ function getTimeOut(clk, rest_default, flags) {
 	}
 	if (flags == 1) {
 		coef = coef * 3;
-	}
-	if (flags == 2) {
+	} else if (flags == 2) {
 		coef = coef * 1.8;
-	}
-	if (flags == 3) {
+	} else if (flags == 3) {
 		coef = coef * 1.3;
+	} else if (flags == 4) {
+		coef = coef * 1.1;
 	}
 
 	this.wait_time = coef * wait_time;
