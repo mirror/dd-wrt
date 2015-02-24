@@ -78,7 +78,41 @@ int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifnam
 //              if (wc->inactive_time < it) {
 		if (cnt)
 			websWrite(wp, ",");
-		websWrite(wp, "'%s','%s','%s','%dM','%dM','%d','%d','%d','N/A','%d'", mac, wc->ifname, UPTIME(wc->uptime), wc->txrate / 10, wc->rxrate / 10, wc->signal + bias, wc->noise + bias, wc->signal - wc->noise, qual);
+
+		int ht = 0;
+		int sgi = 0;
+		int vht = 0;
+		char info[32];
+
+		if (wc->is_40mhz)
+			ht = 1;
+		if (wc->is_80mhz)
+			ht = 2;
+		if (wc->is_160mhz)
+			ht = 3;
+		if (wc->is_vht)
+			vht = 1;
+		if (wc->is_short_gi)
+			sgi = 1;
+
+		if (sgi)
+			sprintf(info, "SGI-");
+		if (vht)
+			sprintf(info, "VHT-");
+		else
+			sprintf(info, "HT-");
+
+		if (ht == 0)
+			sprintf(info, "%s20", info);
+		if (ht == 1)
+			sprintf(info, "%s40", info);
+		if (ht == 2)
+			sprintf(info, "%s80", info);
+		if (ht == 3)
+			sprintf(info, "%s160", info);
+
+		websWrite(wp, "'%s','%s','%s','%dM','%dM','%d','%d','%d','%s','%d'", mac, wc->ifname, UPTIME(wc->uptime), wc->txrate / 10, wc->rxrate / 10, wc->signal + bias, wc->noise + bias, wc->signal - wc->noise,
+			  info, qual);
 		cnt++;
 //              }
 	}
