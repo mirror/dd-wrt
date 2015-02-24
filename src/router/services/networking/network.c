@@ -2748,7 +2748,8 @@ void stop_lan(void)
 	 * Bring down bridged interfaces 
 	 */
 	if (strncmp(lan_ifname, "br", 2) == 0) {
-		foreach(name, nvram_safe_get("lan_ifnames"), next) {
+		char *lanifnames = nvram_safe_get("lan_ifnames");
+		foreach(name, lanifnames, next) {
 			if (nvram_match("wan_ifname", name))
 				continue;
 			if (!ifexists(name))
