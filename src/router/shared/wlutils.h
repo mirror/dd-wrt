@@ -193,8 +193,16 @@ struct wifi_client_info {
     int8_t mcs;
     int8_t rx_mcs;
     char is_40mhz;
+    char is_80mhz;
+    char is_160mhz;
+    char is_ht;
+    char is_vht;
     char is_short_gi;
     char rx_is_40mhz;
+    char rx_is_80mhz;
+    char rx_is_160mhz;
+    char rx_is_ht;
+    char rx_is_vht;
     char rx_is_short_gi;
     uint32_t inactive_time;
     uint32_t rx_packets;
