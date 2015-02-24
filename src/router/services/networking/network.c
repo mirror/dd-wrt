@@ -457,7 +457,8 @@ static int enable_dhcprelay(char *ifname)
 	return 0;
 }
 #endif
-static int wlconf_up(char *name)
+
+int wlconf_up(char *name)
 {
 
 	int phytype, gmode, val, ret;
@@ -487,7 +488,6 @@ static int wlconf_up(char *name)
 	} else {
 		nvram_nset("1", "wl%d_infra", instance);
 	}
-
 #ifdef HAVE_80211AC
 	if (has_beamforming(prefix)) {
 		if (nvram_nmatch("1", "wl%d_txbf", instance)) {
