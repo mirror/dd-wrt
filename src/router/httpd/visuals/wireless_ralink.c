@@ -89,7 +89,15 @@ static const char *ieee80211_ntoa(const uint8_t mac[6])
 	i = snprintf(a, sizeof(a), "%02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 	return (i < 17 ? NULL : a);
 }
-
+/*
+		USHORT MCS:7;
+		USHORT BW:2;
+		USHORT ShortGI:1;
+		USHORT STBC:1;
+		USHORT eTxBF:1;
+		USHORT iTxBF:1;
+		USHORT MODE:3;
+*/
 typedef union _MACHTTRANSMIT_SETTING {
 	struct {
 		unsigned short MCS:7;	// MCS
@@ -125,7 +133,16 @@ typedef struct _RT_802_11_MAC_ENTRY {
 //                              ((lastRxRate>>8) & 0x1)? 'S': 'L',
 //                              phyMode[(lastRxRate>>14) & 0x3],
 //                              ((lastRxRate>>9) & 0x3)? ", STBC": " ");
-
+/*
+// need chipset detection. AC chipsets using the following structure
+		USHORT MCS:7;
+		USHORT BW:2;
+		USHORT ShortGI:1;
+		USHORT STBC:1;
+		USHORT eTxBF:1;
+		USHORT iTxBF:1;
+		USHORT MODE:3;
+*/
 typedef union _HTTRANSMIT_SETTING {
 	struct {
 		unsigned short MCS:7;	// MCS
@@ -303,6 +320,33 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 				HTSetting.field.MODE = (table.Entry[i].LastRxRate >> 14) & 0x3;
 				TxRxRateFor11n(&HTSetting, &rate);
 				snprintf(rx, 8, "%.1f", rate);
+
+
+		int ht = 0;
+		int sgi = 0;
+		int vht = 0;
+		char info[32];
+
+		if (HTSetting.field.BW)
+			ht = 1;
+		if (HTSetting.field.ShortGI)
+			sgi = 1;
+
+		if (sgi)
+			sprintf(info, "SGI");
+		if (vht)
+			sprintf(info, "VHT");
+		else
+			sprintf(info, "HT");
+
+		if (ht == 0)
+			sprintf(info, "%s20", info);
+		if (ht == 1)
+			sprintf(info, "%s40", info);
+		if (ht == 2)
+			sprintf(info, "%s80", info);
+		if (ht == 3)
+			sprintf(info, "%s160", info);
 
 				websWrite(wp,
 					  "'%s','%s','%s','%s','%s','%d','%d','%d','N/A','%d'", mac, getRADev(ifname), UPTIME(table.Entry[i].ConnectedTime), tx, rx, table.Entry[i].AvgRssi0, -95,
