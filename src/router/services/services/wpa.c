@@ -662,6 +662,8 @@ void start_nas_single(char *type, char *prefix)
 
 		cprintf("done\n");
 	}
+	wlconf_up(iface); // touble tip
+	
 	return;
 
 }
