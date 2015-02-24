@@ -360,9 +360,19 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 
 			if (rinfo[NL80211_RATE_INFO_MCS]) {
 				mac80211_info->wci->mcs = nla_get_u8(rinfo[NL80211_RATE_INFO_MCS]);
+				mac80211_info->wci->is_ht = 1;
 			}
 			if (rinfo[NL80211_RATE_INFO_40_MHZ_WIDTH]) {
 				mac80211_info->wci->is_40mhz = 1;
+			}
+			if (rinfo[NL80211_RATE_INFO_80_MHZ_WIDTH]) {
+				mac80211_info->wci->is_80mhz = 1;
+			}
+			if (rinfo[NL80211_RATE_INFO_160_MHZ_WIDTH]) {
+				mac80211_info->wci->is_160mhz = 1;
+			}
+			if (rinfo[NL80211_RATE_INFO_VHT_MCS]) {
+				mac80211_info->wci->is_vht = 1;
 			}
 			if (rinfo[NL80211_RATE_INFO_SHORT_GI]) {
 				mac80211_info->wci->is_short_gi = 1;
@@ -380,9 +390,19 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 
 			if (rinfo[NL80211_RATE_INFO_MCS]) {
 				mac80211_info->wci->rx_mcs = nla_get_u8(rinfo[NL80211_RATE_INFO_MCS]);
+				mac80211_info->wci->rx_is_ht = 1;
 			}
 			if (rinfo[NL80211_RATE_INFO_40_MHZ_WIDTH]) {
 				mac80211_info->wci->rx_is_40mhz = 1;
+			}
+			if (rinfo[NL80211_RATE_INFO_80_MHZ_WIDTH]) {
+				mac80211_info->wci->rx_is_80mhz = 1;
+			}
+			if (rinfo[NL80211_RATE_INFO_160_MHZ_WIDTH]) {
+				mac80211_info->wci->rx_is_160mhz = 1;
+			}
+			if (rinfo[NL80211_RATE_INFO_VHT_MCS]) {
+				mac80211_info->wci->rx_is_vht = 1;
 			}
 			if (rinfo[NL80211_RATE_INFO_SHORT_GI]) {
 				mac80211_info->wci->rx_is_short_gi = 1;
