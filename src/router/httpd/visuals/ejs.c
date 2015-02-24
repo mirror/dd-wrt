@@ -2149,6 +2149,8 @@ void ej_getrebootflags(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "3");
 #elif HAVE_WZR600DHP
 	websWrite(wp, "3");
+#elif HAVE_NORTHSTAR
+	websWrite(wp, "4");
 #else
 	websWrite(wp, "0");
 #endif
