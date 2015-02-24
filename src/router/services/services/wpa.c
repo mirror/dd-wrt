@@ -208,7 +208,7 @@ void start_guest_nas(void)
 	return;
 }
 
-char *getSecMode(char *prefix)
+static char *getSecMode(char *prefix)
 {
 	char wep[32];
 	char crypto[32];
@@ -231,7 +231,7 @@ char *getSecMode(char *prefix)
 		return "0";
 }
 
-char *getAuthMode(char *prefix)
+static char *getAuthMode(char *prefix)
 {
 	char akm[32];
 
@@ -688,12 +688,17 @@ void stop_nas(void)
 	unlink("/tmp/nas.wl0lan.pid");
 	unlink("/tmp/nas.wl1wan.pid");
 	unlink("/tmp/nas.wl1lan.pid");
+	unlink("/tmp/nas.wl2wan.pid");
+	unlink("/tmp/nas.wl2lan.pid");
 	unlink("/tmp/nas.wl0.1lan.pid");
 	unlink("/tmp/nas.wl0.2lan.pid");
 	unlink("/tmp/nas.wl0.3lan.pid");
 	unlink("/tmp/nas.wl1.1lan.pid");
 	unlink("/tmp/nas.wl1.2lan.pid");
 	unlink("/tmp/nas.wl1.3lan.pid");
+	unlink("/tmp/nas.wl2.1lan.pid");
+	unlink("/tmp/nas.wl2.2lan.pid");
+	unlink("/tmp/nas.wl2.3lan.pid");
 
 	cprintf("done\n");
 	return;
