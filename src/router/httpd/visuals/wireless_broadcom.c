@@ -258,7 +258,7 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 		if (cnt)
 			websWrite(wp, ",");
 		cnt++;
-		char info[128];
+		char info[32];
 		strcpy(info, "N/A");
 #ifdef HAVE_QTN
 		if (!has_qtn(iface)) {
