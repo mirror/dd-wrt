@@ -47,10 +47,10 @@
 
 #include "wireless_generic.c"
 
-typedef struct wl_rateset_compat {
+typedef struct wl_rateset3 {
 	uint32 count;		/* # rates in this set */
 	uint8 rates[16];	/* rates in 500kbps units w/hi bit set if basic */
-} wl_rateset_compat_t;
+} wl_rateset3_t;
 
 typedef struct {
 	uint16 ver;		/* version of this struct */
@@ -59,7 +59,63 @@ typedef struct {
 	uint32 flags;		/* flags defined below */
 	uint32 idle;		/* time since data pkt rx'd from sta */
 	struct ether_addr ea;	/* Station address */
-	wl_rateset_compat_t rateset;	/* rateset in use */
+	wl_rateset3_t rateset;	/* rateset in use */
+	uint32 in;		/* seconds elapsed since associated */
+	uint32 listen_interval_inms;	/* Min Listen interval in ms for this STA */
+	uint32 tx_pkts;		/* # of user packets transmitted (unicast) */
+	uint32 tx_failures;	/* # of user packets failed */
+	uint32 rx_ucast_pkts;	/* # of unicast packets received */
+	uint32 rx_mcast_pkts;	/* # of multicast packets received */
+	uint32 tx_rate;		/* Rate used by last tx frame */
+	uint32 rx_rate;		/* Rate of last successful rx frame */
+	uint32 rx_decrypt_succeeds;	/* # of packet decrypted successfully */
+	uint32 rx_decrypt_failures;	/* # of packet decrypted unsuccessfully */
+	uint32 tx_tot_pkts;	/* # of user tx pkts (ucast + mcast) */
+	uint32 rx_tot_pkts;	/* # of data packets recvd (uni + mcast) */
+	uint32 tx_mcast_pkts;	/* # of mcast pkts txed */
+	uint64 tx_tot_bytes;	/* data bytes txed (ucast + mcast) */
+	uint64 rx_tot_bytes;	/* data bytes recvd (ucast + mcast) */
+	uint64 tx_ucast_bytes;	/* data bytes txed (ucast) */
+	uint64 tx_mcast_bytes;	/* # data bytes txed (mcast) */
+	uint64 rx_ucast_bytes;	/* data bytes recvd (ucast) */
+	uint64 rx_mcast_bytes;	/* data bytes recvd (mcast) */
+	int8 rssi[WL_STA_ANT_MAX];	/* per antenna rssi */
+	int8 nf[WL_STA_ANT_MAX];	/* per antenna noise floor */
+	uint16 aid;		/* association ID */
+	uint16 ht_capabilities;	/* advertised ht caps */
+	uint16 vht_flags;	/* converted vht flags */
+	uint32 tx_pkts_retry_cnt;	/* # of frames where a retry was
+					 * necessary (obsolete)
+					 */
+	uint32 tx_pkts_retry_exhausted;	/* # of user frames where a retry
+					 * was exhausted
+					 */
+	int8 rx_lastpkt_rssi[WL_STA_ANT_MAX];	/* Per antenna RSSI of last
+						 * received data frame.
+						 */
+	/* TX WLAN retry/failure statistics:
+	 * Separated for host requested frames and WLAN locally generated frames.
+	 * Include unicast frame only where the retries/failures can be counted.
+	 */
+	uint32 tx_pkts_total;	/* # user frames sent successfully */
+	uint32 tx_pkts_retries;	/* # user frames retries */
+	uint32 tx_pkts_fw_total;	/* # FW generated sent successfully */
+	uint32 tx_pkts_fw_retries;	/* # retries for FW generated frames */
+	uint32 tx_pkts_fw_retry_exhausted;	/* # FW generated where a retry
+						 * was exhausted
+						 */
+	uint32 rx_pkts_retried;	/* # rx with retry bit set */
+	uint32 tx_rate_fallback;	/* lowest fallback TX rate */
+} sta_info_compat4_t;
+
+typedef struct {
+	uint16 ver;		/* version of this struct */
+	uint16 len;		/* length in bytes of this structure */
+	uint16 cap;		/* sta's advertised capabilities */
+	uint32 flags;		/* flags defined below */
+	uint32 idle;		/* time since data pkt rx'd from sta */
+	struct ether_addr ea;	/* Station address */
+	wl_rateset3_t rateset;	/* rateset in use */
 	uint32 in;		/* seconds elapsed since associated */
 	uint32 listen_interval_inms;	/* Min Listen interval in ms for this STA */
 	uint32 tx_pkts;		/* # of packets transmitted */
@@ -70,12 +126,12 @@ typedef struct {
 	uint32 rx_rate;		/* Rate of last successful rx frame */
 	uint32 rx_decrypt_succeeds;	/* # of packet decrypted successfully */
 	uint32 rx_decrypt_failures;	/* # of packet decrypted unsuccessfully */
-} sta_info_compat_t;
+} sta_info_compat3_t;
 
-typedef struct wl_rateset_old_compat {
+typedef struct wl_rateset2_compat {
 	uint32 count;		/* # rates in this set */
 	uint8 rates[255];	/* rates in 500kbps units w/hi bit set if basic */
-} wl_rateset_compat_old_t;
+} wl_rateset2_compat_t;
 
 typedef struct {
 	uint16 ver;		/* version of this struct */
@@ -84,7 +140,7 @@ typedef struct {
 	uint32 flags;		/* flags defined below */
 	uint32 idle;		/* time since data pkt rx'd from sta */
 	struct ether_addr ea;	/* Station address */
-	wl_rateset_compat_old_t rateset;	/* rateset in use */
+	wl_rateset2_compat_t rateset;	/* rateset in use */
 	uint32 in;		/* seconds elapsed since associated */
 	uint32 listen_interval_inms;	/* Min Listen interval in ms for this STA */
 	uint32 tx_pkts;		/* # of packets transmitted */
@@ -95,7 +151,7 @@ typedef struct {
 	uint32 rx_rate;		/* Rate of last successful rx frame */
 	uint32 rx_decrypt_succeeds;	/* # of packet decrypted successfully */
 	uint32 rx_decrypt_failures;	/* # of packet decrypted unsuccessfully */
-} sta_info_compat_old_t;
+} sta_info_compat2_t;
 
 #define RSSI_TMP	"/tmp/.rssi"
 #define ASSOCLIST_CMD	"wl assoclist"
@@ -140,9 +196,9 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 		rssi = 0;
 		noise = 0;
 		// get rssi value
-		int rxrate[32];
-		int txrate[32];
-		int time[32];
+		char rxrate[32];
+		char txrate[32];
+		char time[32];
 		strcpy(rxrate, "N/A");
 		strcpy(txrate, "N/A");
 		strcpy(time, "N/A");
@@ -202,14 +258,17 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 		if (cnt)
 			websWrite(wp, ",");
 		cnt++;
+		char info[128];
+		strcpy(info, "N/A");
 #ifdef HAVE_QTN
 		if (!has_qtn(iface)) {
 #endif
 #ifndef WL_STA_SCBSTATS
 #define WL_STA_SCBSTATS		0x4000	/* Per STA debug stats */
 #endif
-			sta_info_compat_t *sta;
-			sta_info_compat_old_t *staold;
+			sta_info_compat4_t *sta4;
+			sta_info_compat3_t *sta3;
+			sta_info_compat2_t *sta2;
 			char *param;
 			int buflen;
 			char buf[WLC_IOCTL_MEDLEN];
@@ -219,31 +278,118 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 			memcpy(param, (char *)&maclist->ea[i], ETHER_ADDR_LEN);
 			if (!wl_ioctl(iface, WLC_GET_VAR, &buf[0], WLC_IOCTL_MEDLEN)) {
 				/* display the sta info */
-				sta = (sta_info_compat_t *) buf;
-				if (sta->ver == 2) {
-					staold = (sta_info_compat_old_t *) buf;
-					if (staold->flags & WL_STA_SCBSTATS) {
-						int tx = staold->tx_rate;
-						int rx = staold->rx_rate;
+				sta4 = (sta_info_compat4_t *) buf;
+				switch (sta4->ver) {
+				case 2:
+
+					sta2 = (sta_info_compat2_t *) buf;
+					if (sta2->flags & WL_STA_SCBSTATS) {
+						int tx = sta2->tx_rate;
+						int rx = sta2->rx_rate;
 						if (tx > 0)
 							sprintf(txrate, "%dM", tx / 1000);
 
 						if (rx > 0)
 							sprintf(rxrate, "%dM", rx / 1000);
-						strcpy(time, UPTIME(staold->in));
+						strcpy(time, UPTIME(sta2->in));
 					}
-				} else {	// sta->ver == 3
-					if (sta->flags & WL_STA_SCBSTATS) {
-						int tx = sta->tx_rate;
-						int rx = sta->rx_rate;
+					break;
+				case 3:
+					sta3 = (sta_info_compat3_t *) buf;
+					if (sta3->flags & WL_STA_SCBSTATS) {
+						int tx = sta3->tx_rate;
+						int rx = sta3->rx_rate;
 						if (tx > 0)
 							sprintf(txrate, "%dM", tx / 1000);
 
 						if (rx > 0)
 							sprintf(rxrate, "%dM", rx / 1000);
-						strcpy(time, UPTIME(sta->in));
+						strcpy(time, UPTIME(sta3->in));
 					}
+					break;
+				case 4:
+					if (sta4->flags & WL_STA_SCBSTATS) {
+						int tx = sta4->tx_rate;
+						int rx = sta4->rx_rate;
+						if (tx > 0)
+							sprintf(txrate, "%dM", tx / 1000);
+
+						if (rx > 0)
+							sprintf(rxrate, "%dM", rx / 1000);
+						strcpy(time, UPTIME(sta4->in));
+					}
+					if (sta4->ht_capabilities || sta4->flags & WL_STA_VHT_CAP)
+						info[0] = 0;
+					int ht=0;
+					int sgi=0;
+					int vht=0;
+					if (sta4->ht_capabilities) {
+						if (sta4->ht_capabilities & WL_STA_CAP_40MHZ)
+						    ht=1;
+						if (sta4->ht_capabilities & WL_STA_CAP_SHORT_GI_20)
+						    sgi=1;
+						if (sta4->ht_capabilities & WL_STA_CAP_SHORT_GI_40){
+						    sgi=1;
+						    ht=1;
+						}
+					}
+					if (sta4->flags & WL_STA_VHT_CAP) {
+						vht=1;
+						if (sta4->vht_flags & WL_STA_SGI80) {
+						    sgi=1;
+						    ht=2;
+						}
+						if (sta4->vht_flags & WL_STA_SGI160) {
+						    sgi=1;
+						    ht=3;
+						}
+					}
+					if (sgi)
+						sprintf(info,"SGI-");
+					if (vht)
+						sprintf(info,"VHT-");
+					else
+						sprintf(info,"HT-");
+					
+					if (ht==0)
+						sprintf(info,"%s20",info);
+					if (ht==1)
+						sprintf(info,"%s40",info);
+					if (ht==2)
+						sprintf(info,"%s80",info);
+					if (ht==3)
+						sprintf(info,"%s160",info);
+
+
+/*					sprintf(info, "%s%s%s%s%s%s%s%s%s%s", info,
+						(sta4->ht_capabilities & WL_STA_CAP_LDPC_CODING) ? " LDPC" : "",
+						(sta4->ht_capabilities & WL_STA_CAP_40MHZ) ? " 40MHz" : " ",
+						(sta4->ht_capabilities & WL_STA_CAP_GF) ? " GF" : "",
+						(sta4->ht_capabilities & WL_STA_CAP_SHORT_GI_20) ? " SGI20" : "",
+						(sta4->ht_capabilities & WL_STA_CAP_SHORT_GI_40) ? " SGI40" : "",
+						(sta4->ht_capabilities & WL_STA_CAP_TX_STBC) ? " STBC-Tx" : "",
+						(sta4->ht_capabilities & WL_STA_CAP_RX_STBC_MASK) ? " STBC-Rx" : "",
+						(sta4->ht_capabilities & WL_STA_CAP_DELAYED_BA) ? " D-BlockAck" : "", 
+						(sta4->ht_capabilities & WL_STA_CAP_40MHZ_INTOLERANT) ? " 40-Intl" : "");
+					}
+					if (sta4->flags & WL_STA_VHT_CAP) {
+						sprintf(info, "%s%s%s%s%s%s%s%s%s%s%s%s", info,
+							(sta4->vht_flags & WL_STA_VHT_LDPCCAP) ? " LDPC" : "",
+							(sta4->vht_flags & WL_STA_SGI80) ? " SGI80" : "",
+							(sta4->vht_flags & WL_STA_SGI160) ? " SGI160" : "",
+							(sta4->vht_flags & WL_STA_VHT_TX_STBCCAP) ? " STBC-Tx" : "",
+							(sta4->vht_flags & WL_STA_VHT_RX_STBCCAP) ? " STBC-Rx" : "",
+							(sta4->vht_flags & WL_STA_SU_BEAMFORMER) ? " SU-BFR" : "",
+							(sta4->vht_flags & WL_STA_SU_BEAMFORMEE) ? " SU-BFE" : "",
+							(sta4->vht_flags & WL_STA_MU_BEAMFORMER) ? " MU-BFR" : "",
+							(sta4->vht_flags & WL_STA_MU_BEAMFORMEE) ? " MU-BFE" : "", 
+							(sta4->vht_flags & WL_STA_VHT_TXOP_PS) ? " TXOPPS" : "",
+							(sta4->vht_flags & WL_STA_HTC_VHT_CAP) ? " VHT-HTC" : "");
+					}*/
+
+					break;
 				}
+
 			}
 #ifdef HAVE_QTN
 		}
@@ -255,8 +401,9 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 		 */
 		int qual = rssi * 124 + 11600;
 		qual /= 10;
-		websWrite(wp, "'%s','%s','%s','%s','%s','%d','%d','%d','%d'", mac, iface, time, txrate, rxrate, rssi, noise, rssi - noise, qual);
+		websWrite(wp, "'%s','%s','%s','%s','%s','%d','%d','%d','%s','%d'", mac, iface, time, txrate, rxrate, rssi, noise, rssi - noise, info, qual);
 	}
+
 	unlink(RSSI_TMP);
 
 	return cnt;

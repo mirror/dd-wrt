@@ -15,7 +15,7 @@ function setWirelessTable() {
 		cell.innerHTML = "- " + share.none + " -";
 		return;
 	}
-	for(var i = 0; i < val.length; i = i + 9) {
+	for(var i = 0; i < val.length; i = i + 10) {
 		var row = table.insertRow(-1);
 		
 		var mac = val[i];
@@ -44,7 +44,8 @@ function setWirelessTable() {
 		row.insertCell(-1).innerHTML = val[i + 5];		
 		row.insertCell(-1).innerHTML = val[i + 6];		
 		row.insertCell(-1).innerHTML = val[i + 7];		
-		setMeterBar(row.insertCell(-1), (val[i + 8] == "0" ? 0 : parseInt(val[i + 8]) * 0.1), "");
+		row.insertCell(-1).innerHTML = val[i + 8];		
+		setMeterBar(row.insertCell(-1), (val[i + 9] == "0" ? 0 : parseInt(val[i + 9]) * 0.1), "");
 	}
 }
 
@@ -485,13 +486,14 @@ function refresh(F)
 								<table class="table center" cellspacing="5" id="wireless_table" summary="wireless clients table">
 									<tr>
 										<th width="16%"><% tran("share.mac"); %></th>
-										<th width="10%"><% tran("share.intrface"); %></th>
+										<th width="8%"><% tran("share.intrface"); %></th>
 										<th width="10%"><% tran("status_router.sys_up"); %></th>
 										<th width="8%"><% tran("share.txrate"); %></th>
 										<th width="8%"><% tran("share.rxrate"); %></th>
 										<th width="8%"><% tran("share.signal"); %></th>
 										<th width="8%"><% tran("share.noise"); %></th>
 										<th width="8%">SNR</th>
+										<th width="10%">INFO</th>
 										<th width="24%"><% tran("status_wireless.signal_qual"); %></th>
 									</tr>
 								</table>
