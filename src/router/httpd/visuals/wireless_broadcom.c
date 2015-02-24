@@ -320,72 +320,45 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 					}
 					if (sta4->ht_capabilities || sta4->flags & WL_STA_VHT_CAP)
 						info[0] = 0;
-					int ht=0;
-					int sgi=0;
-					int vht=0;
+					int ht = 0;
+					int sgi = 0;
+					int vht = 0;
 					if (sta4->ht_capabilities) {
 						if (sta4->ht_capabilities & WL_STA_CAP_40MHZ)
-						    ht=1;
+							ht = 1;
 						if (sta4->ht_capabilities & WL_STA_CAP_SHORT_GI_20)
-						    sgi=1;
-						if (sta4->ht_capabilities & WL_STA_CAP_SHORT_GI_40){
-						    sgi=1;
-						    ht=1;
+							sgi = 1;
+						if (sta4->ht_capabilities & WL_STA_CAP_SHORT_GI_40) {
+							sgi = 1;
+							ht = 1;
 						}
 					}
 					if (sta4->flags & WL_STA_VHT_CAP) {
-						vht=1;
+						vht = 1;
 						if (sta4->vht_flags & WL_STA_SGI80) {
-						    sgi=1;
-						    ht=2;
+							sgi = 1;
+							ht = 2;
 						}
 						if (sta4->vht_flags & WL_STA_SGI160) {
-						    sgi=1;
-						    ht=3;
+							sgi = 1;
+							ht = 3;
 						}
 					}
 					if (sgi)
-						sprintf(info,"SGI-");
+						sprintf(info, "SGI-");
 					if (vht)
-						sprintf(info,"VHT-");
+						sprintf(info, "VHT-");
 					else
-						sprintf(info,"HT-");
-					
-					if (ht==0)
-						sprintf(info,"%s20",info);
-					if (ht==1)
-						sprintf(info,"%s40",info);
-					if (ht==2)
-						sprintf(info,"%s80",info);
-					if (ht==3)
-						sprintf(info,"%s160",info);
+						sprintf(info, "HT-");
 
-
-/*					sprintf(info, "%s%s%s%s%s%s%s%s%s%s", info,
-						(sta4->ht_capabilities & WL_STA_CAP_LDPC_CODING) ? " LDPC" : "",
-						(sta4->ht_capabilities & WL_STA_CAP_40MHZ) ? " 40MHz" : " ",
-						(sta4->ht_capabilities & WL_STA_CAP_GF) ? " GF" : "",
-						(sta4->ht_capabilities & WL_STA_CAP_SHORT_GI_20) ? " SGI20" : "",
-						(sta4->ht_capabilities & WL_STA_CAP_SHORT_GI_40) ? " SGI40" : "",
-						(sta4->ht_capabilities & WL_STA_CAP_TX_STBC) ? " STBC-Tx" : "",
-						(sta4->ht_capabilities & WL_STA_CAP_RX_STBC_MASK) ? " STBC-Rx" : "",
-						(sta4->ht_capabilities & WL_STA_CAP_DELAYED_BA) ? " D-BlockAck" : "", 
-						(sta4->ht_capabilities & WL_STA_CAP_40MHZ_INTOLERANT) ? " 40-Intl" : "");
-					}
-					if (sta4->flags & WL_STA_VHT_CAP) {
-						sprintf(info, "%s%s%s%s%s%s%s%s%s%s%s%s", info,
-							(sta4->vht_flags & WL_STA_VHT_LDPCCAP) ? " LDPC" : "",
-							(sta4->vht_flags & WL_STA_SGI80) ? " SGI80" : "",
-							(sta4->vht_flags & WL_STA_SGI160) ? " SGI160" : "",
-							(sta4->vht_flags & WL_STA_VHT_TX_STBCCAP) ? " STBC-Tx" : "",
-							(sta4->vht_flags & WL_STA_VHT_RX_STBCCAP) ? " STBC-Rx" : "",
-							(sta4->vht_flags & WL_STA_SU_BEAMFORMER) ? " SU-BFR" : "",
-							(sta4->vht_flags & WL_STA_SU_BEAMFORMEE) ? " SU-BFE" : "",
-							(sta4->vht_flags & WL_STA_MU_BEAMFORMER) ? " MU-BFR" : "",
-							(sta4->vht_flags & WL_STA_MU_BEAMFORMEE) ? " MU-BFE" : "", 
-							(sta4->vht_flags & WL_STA_VHT_TXOP_PS) ? " TXOPPS" : "",
-							(sta4->vht_flags & WL_STA_HTC_VHT_CAP) ? " VHT-HTC" : "");
-					}*/
+					if (ht == 0)
+						sprintf(info, "%s20", info);
+					if (ht == 1)
+						sprintf(info, "%s40", info);
+					if (ht == 2)
+						sprintf(info, "%s80", info);
+					if (ht == 3)
+						sprintf(info, "%s160", info);
 
 					break;
 				}
