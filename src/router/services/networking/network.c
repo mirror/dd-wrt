@@ -2730,18 +2730,19 @@ void stop_lan(void)
 #endif
 
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
-	br_del_interface(lan_ifname, "wl0.1");
-	ifconfig("wl0.1", 0, NULL, NULL);
-	br_del_interface(lan_ifname, "wl0.2");
-	ifconfig("wl0.2", 0, NULL, NULL);
-	br_del_interface(lan_ifname, "wl0.3");
-	ifconfig("wl0.3", 0, NULL, NULL);
-	br_del_interface(lan_ifname, "wl1.1");
-	ifconfig("wl1.1", 0, NULL, NULL);
-	br_del_interface(lan_ifname, "wl1.2");
-	ifconfig("wl1.2", 0, NULL, NULL);
-	br_del_interface(lan_ifname, "wl1.3");
-	ifconfig("wl1.3", 0, NULL, NULL);
+	int cnt = get_wl_instances();
+	int c;
+	char vifs_name[32];
+
+	for (c = 0; c < cnt; c++) {
+		sprintf(vifs_name, "wl%d_vifs", c);
+		char *vifs = nvram_safe_get(vifs_name);
+		foreach(name, vifs, next) {
+			br_del_interface(lan_ifname, vifs);
+			ifconfig(vifs, 0, NULL, NULL);
+		}
+	}
+
 #endif
 	/*
 	 * Bring down bridged interfaces 
