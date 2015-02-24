@@ -96,11 +96,11 @@ int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifnam
 			sgi = 1;
 
 		if (sgi)
-			sprintf(info, "SGI-");
+			sprintf(info, "SGI");
 		if (vht)
-			sprintf(info, "VHT-");
+			sprintf(info, "VHT");
 		else
-			sprintf(info, "HT-");
+			sprintf(info, "HT");
 
 		if (ht == 0)
 			sprintf(info, "%s20", info);
