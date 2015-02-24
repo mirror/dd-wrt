@@ -671,6 +671,7 @@ void start_nas_single(char *type, char *prefix)
 void stop_nas(void)
 {
 	int ret = 0;
+	char name[80], *next;
 
 	unlink("/tmp/.nas");
 
@@ -683,22 +684,23 @@ void stop_nas(void)
 #ifdef HAVE_WPA_SUPPLICANT
 	killall("wpa_supplicant", SIGKILL);
 #endif
-	// clean
-	unlink("/tmp/nas.wl0wan.pid");
-	unlink("/tmp/nas.wl0lan.pid");
-	unlink("/tmp/nas.wl1wan.pid");
-	unlink("/tmp/nas.wl1lan.pid");
-	unlink("/tmp/nas.wl2wan.pid");
-	unlink("/tmp/nas.wl2lan.pid");
-	unlink("/tmp/nas.wl0.1lan.pid");
-	unlink("/tmp/nas.wl0.2lan.pid");
-	unlink("/tmp/nas.wl0.3lan.pid");
-	unlink("/tmp/nas.wl1.1lan.pid");
-	unlink("/tmp/nas.wl1.2lan.pid");
-	unlink("/tmp/nas.wl1.3lan.pid");
-	unlink("/tmp/nas.wl2.1lan.pid");
-	unlink("/tmp/nas.wl2.2lan.pid");
-	unlink("/tmp/nas.wl2.3lan.pid");
+	int cnt = get_wl_instances();
+	int c;
+	char vifs_name[32];
+
+	for (c = 0; c < cnt; c++) {
+		char pidname[32];
+		sprintf(pidname,"/tmp/nas.wl%dlan.pid",c);
+		unlink(pidname);
+		sprintf(pidname,"/tmp/nas.wl%dwan.pid",c);
+		unlink(pidname);
+		sprintf(vifs_name, "wl%d_vifs", c);
+		char *vifs = nvram_safe_get(vifs_name);
+		foreach(name, vifs, next) {
+			sprintf(pidname,"/tmp/nas.%slan.pid",name);
+			unlink(pidname);
+		}
+	}
 
 	cprintf("done\n");
 	return;
