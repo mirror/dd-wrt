@@ -292,7 +292,7 @@ FILE *getWebsFile(char *path)
 
 		if (!strcmp(websRomPageIndex[i].path, path)) {
 			/* to prevent stack overwrite problems */
-			web = fopen("/etc/www", "rb");
+			web = fopen("/tmp/www", "rb");
 			if (web == NULL)
 				return NULL;
 			fseek(web, curoffset, SEEK_SET);
@@ -333,7 +333,7 @@ void do_ej(struct mime_handler *handler, char *path, webs_t stream, char *query)
 	unsigned int curoffset = 0;
 	while (websRomPageIndex[i].path != NULL) {
 		if (!strcmp(websRomPageIndex[i].path, path)) {
-			fp = fopen("/etc/www", "rb");
+			fp = fopen("/tmp/www", "rb");
 			if (fp == NULL)
 				return;
 			fseek(fp, curoffset, SEEK_SET);
