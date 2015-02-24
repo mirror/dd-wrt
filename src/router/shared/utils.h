@@ -865,6 +865,11 @@ struct wl_assoc_mac {
 	char mac[18];
 };
 
+struct nvram_param {
+	char *name;
+	char *value;
+};
+
 struct mtu_lists {
 	char *proto;		/* protocol */
 	char *min;		/* min mtu */

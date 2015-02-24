@@ -78,7 +78,7 @@ static char *filter[] = { "lan_ifnames",
 	NULL
 };
 
-extern struct nvram_tuple *srouter_defaults;
+extern struct nvram_param *srouter_defaults;
 
 static int isCritical(char *name)
 {
@@ -106,7 +106,7 @@ void start_defaults(void)
 	fprintf(stderr, "restore nvram to defaults\n");
 	char *buf = (char *)malloc(NVRAMSPACE);
 	int i;
-	struct nvram_tuple *t;
+	struct nvram_param *t;
 
 	nvram_getall(buf, NVRAMSPACE);
 	char *p = buf;
