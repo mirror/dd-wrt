@@ -161,6 +161,7 @@ struct slave {
 	struct bonding *bond; /* our master */
 	int    delay;
 	/* all three in jiffies */
+	unsigned int  weight;
 	unsigned long last_link_up;
 	unsigned long last_rx;
 	unsigned long target_last_arp_rx[BOND_MAX_ARP_TARGETS];

@@ -172,7 +172,7 @@ static unsigned int nf_rtcache_in(const struct nf_hook_ops *ops,
 	dst = dst_check(dst, cookie);
 	pr_debug("obtained dst %p for skb %p, cookie %d\n", dst, skb, cookie);
 	if (likely(dst))
-		skb_dst_set_noref_force(skb, dst);
+		skb_dst_set_noref(skb, dst);
 	else
 		nf_conn_rtcache_dst_obsolete(rtc, dir);
 
