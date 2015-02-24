@@ -78,6 +78,8 @@ typedef struct httpinfo {
     int urllen;
 } httpinfo_t;
 
+#define strnicmp strncasecmp
+
 /* Return 1 for match, 0 for accept, -1 for partial. */
 static int find_pattern2(const char *data, size_t dlen,
 	const char *pattern, size_t plen,
