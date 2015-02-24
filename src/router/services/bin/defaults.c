@@ -31,9 +31,9 @@ int main(int argc, char *argv[])
 	FILE *out;
 	out = fopen("defaults.bin", "wb");
 	int i;
-	int len = sizeof(srouter_defaults) / sizeof(struct nvram_tuple);
+	int len = sizeof(srouter_defaults) / sizeof(struct nvram_param);
 	fwrite(&len, 4, 1, out);
-	for (i = 0; i < sizeof(srouter_defaults) / sizeof(struct nvram_tuple);
+	for (i = 0; i < sizeof(srouter_defaults) / sizeof(struct nvram_param);
 	     i++) {
 		if (srouter_defaults[i].name) {
 			putc(strlen(srouter_defaults[i].name), out);

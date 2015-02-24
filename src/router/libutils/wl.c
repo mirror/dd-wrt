@@ -27,8 +27,8 @@
 #include <glob.h>
 #endif
 
-struct nvram_tuple router_defaults[] = {
-	{0, 0, 0}
+struct nvram_param router_defaults[] = {
+	{0, 0}
 };
 
 /*
