@@ -806,12 +806,13 @@ int main(int argc, char **argv)
 				start_service_force("radio_off");
 				led_control(LED_SEC0, LED_OFF);
 				led_control(LED_SEC1, LED_OFF);
-			} else {
+			} else
 #endif
+#endif
+			{
 				start_service_force("radio_off");
 				start_service_force("radio_on");
 			}
-#endif
 			start_service_f("radio_timer");
 #ifdef HAVE_EMF
 			start_service("emf");
