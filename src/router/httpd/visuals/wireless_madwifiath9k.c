@@ -78,7 +78,7 @@ int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifnam
 //              if (wc->inactive_time < it) {
 		if (cnt)
 			websWrite(wp, ",");
-		websWrite(wp, "'%s','%s','%s','%dM','%dM','%d','%d','%d','%d'", mac, wc->ifname, UPTIME(wc->uptime), wc->txrate / 10, wc->rxrate / 10, wc->signal + bias, wc->noise + bias, wc->signal - wc->noise, qual);
+		websWrite(wp, "'%s','%s','%s','%dM','%dM','%d','%d','%d','N/A','%d'", mac, wc->ifname, UPTIME(wc->uptime), wc->txrate / 10, wc->rxrate / 10, wc->signal + bias, wc->noise + bias, wc->signal - wc->noise, qual);
 		cnt++;
 //              }
 	}
