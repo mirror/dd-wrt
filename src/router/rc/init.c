@@ -179,7 +179,7 @@ pid_t ddrun_shell(int timeout, int nowait)
 		 * nothing further in init.c should be run. 
 		 */
 #ifdef HAVE_REGISTER
-		if (1 || isregistered_real())
+		if (isregistered_real())
 #endif
 		{
 			execve(SHELL, (char *[]) {
