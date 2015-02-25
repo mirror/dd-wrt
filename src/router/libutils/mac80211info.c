@@ -365,6 +365,7 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 			if (rinfo[NL80211_RATE_INFO_40_MHZ_WIDTH]) {
 				mac80211_info->wci->is_40mhz = 1;
 			}
+#ifdef NL80211_VHT_CAPABILITY_LEN
 			if (rinfo[NL80211_RATE_INFO_80_MHZ_WIDTH]) {
 				mac80211_info->wci->is_80mhz = 1;
 			}
@@ -374,6 +375,7 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 			if (rinfo[NL80211_RATE_INFO_VHT_MCS]) {
 				mac80211_info->wci->is_vht = 1;
 			}
+#endif
 			if (rinfo[NL80211_RATE_INFO_SHORT_GI]) {
 				mac80211_info->wci->is_short_gi = 1;
 			}
@@ -395,6 +397,7 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 			if (rinfo[NL80211_RATE_INFO_40_MHZ_WIDTH]) {
 				mac80211_info->wci->rx_is_40mhz = 1;
 			}
+#ifdef NL80211_VHT_CAPABILITY_LEN
 			if (rinfo[NL80211_RATE_INFO_80_MHZ_WIDTH]) {
 				mac80211_info->wci->rx_is_80mhz = 1;
 			}
@@ -404,6 +407,7 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 			if (rinfo[NL80211_RATE_INFO_VHT_MCS]) {
 				mac80211_info->wci->rx_is_vht = 1;
 			}
+#endif
 			if (rinfo[NL80211_RATE_INFO_SHORT_GI]) {
 				mac80211_info->wci->rx_is_short_gi = 1;
 				printf(" short GI");
