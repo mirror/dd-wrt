@@ -179,7 +179,7 @@ pid_t ddrun_shell(int timeout, int nowait)
 		 * nothing further in init.c should be run. 
 		 */
 #ifdef HAVE_REGISTER
-		if (isregistered_real())
+		if (1 || isregistered_real())
 #endif
 		{
 			execve(SHELL, (char *[]) {
@@ -819,7 +819,9 @@ int main(int argc, char **argv)
 #endif
 			cprintf("run rc file\n");
 #ifdef HAVE_REGISTER
+#ifndef HAVE_ERC
 			if (isregistered_real())
+#endif
 #endif
 			{
 				startstop_f("run_rc_startup");
