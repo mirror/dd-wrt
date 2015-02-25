@@ -51,7 +51,7 @@ typedef struct wl_rateset3 {
 	uint32 count;		/* # rates in this set */
 	uint8 rates[16];	/* rates in 500kbps units w/hi bit set if basic */
 } wl_rateset3_t;
-
+#ifdef WL_STA_ANT_MAX
 typedef struct {
 	uint16 ver;		/* version of this struct */
 	uint16 len;		/* length in bytes of this structure */
@@ -107,7 +107,7 @@ typedef struct {
 	uint32 rx_pkts_retried;	/* # rx with retry bit set */
 	uint32 tx_rate_fallback;	/* lowest fallback TX rate */
 } sta_info_compat4_t;
-
+#endif
 typedef struct {
 	uint16 ver;		/* version of this struct */
 	uint16 len;		/* length in bytes of this structure */
@@ -266,7 +266,9 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 #ifndef WL_STA_SCBSTATS
 #define WL_STA_SCBSTATS		0x4000	/* Per STA debug stats */
 #endif
+#ifdef WL_STA_ANT_MAX			
 			sta_info_compat4_t *sta4;
+#endif
 			sta_info_compat3_t *sta3;
 			sta_info_compat2_t *sta2;
 			char *param;
@@ -278,8 +280,8 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 			memcpy(param, (char *)&maclist->ea[i], ETHER_ADDR_LEN);
 			if (!wl_ioctl(iface, WLC_GET_VAR, &buf[0], WLC_IOCTL_MEDLEN)) {
 				/* display the sta info */
-				sta4 = (sta_info_compat4_t *) buf;
-				switch (sta4->ver) {
+				sta2 = (sta_info_compat2_t *) buf;
+				switch (sta2->ver) {
 				case 2:
 
 					sta2 = (sta_info_compat2_t *) buf;
@@ -307,7 +309,9 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 						strcpy(time, UPTIME(sta3->in));
 					}
 					break;
+#ifdef WL_STA_ANT_MAX			
 				case 4:
+					sta4 = (sta_info_compat4_t *) buf;
 					if (sta4->flags & WL_STA_SCBSTATS) {
 						int tx = sta4->tx_rate;
 						int rx = sta4->rx_rate;
@@ -361,6 +365,7 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 						sprintf(info, "%s160", info);
 
 					break;
+#endif
 				}
 
 			}
