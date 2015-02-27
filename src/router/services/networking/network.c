@@ -481,6 +481,10 @@ int wlconf_up(char *name)
 
 	if (instance == -1)
 		return -1;	// no wireless device
+
+	if(nvram_nmatch("disabled", "wl%d_net_mode", instance))
+		return -1;
+	
 	char prefix[16];
 	sprintf(prefix, "wl%d", instance);
 	if (nvram_nmatch("infra", "wl%d_mode", instance)) {
@@ -2224,7 +2228,6 @@ void start_lan(void)
 #endif
 
 				if (nvram_match(wl_name, "ap")) {
-
 					do_portsetup(lan_ifname, name);
 					// br_add_interface (getBridge (name), name); //eval
 					// ("brctl", "addif", lan_ifname, name);
