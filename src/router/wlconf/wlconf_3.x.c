@@ -1369,6 +1369,7 @@ wlconf_set_taf(char *name, bool enable)
 int
 wlconf(char *name)
 {
+
 	int restore_defaults, val, unit, phytype, bandtype, gmode = 0, ret = 0;
 	int buflen;
 	uint32 *val_ptr; /* required for iovars */
@@ -1524,14 +1525,12 @@ cprintf("get instance\n");
 	wlconf_validate_all(prefix, restore_defaults);
 	nvram_set(strcat_r(prefix, "ifname", tmp), name);
 	nvram_set(strcat_r(prefix, "hwaddr", tmp), ether_etoa((uchar *)buf, eaddr));
-
 	snprintf(buf, sizeof(buf), "%d", unit);
 	nvram_set(strcat_r(prefix, "unit", tmp), buf);
 
-
 cprintf("shut down %s\n",name);
 	/* Bring the interface down */
-	WL_IOCTL(name, WLC_DOWN, NULL, sizeof(val));
+	WL_IOCTL(name, WLC_DOWN, NULL, 0);
 
 cprintf("disable bss %s\n",name);
 	/* Disable all BSS Configs */
@@ -1539,8 +1538,15 @@ cprintf("disable bss %s\n",name);
 		struct {int bsscfg_idx; int enable;} setbuf;
 		setbuf.bsscfg_idx = i;
 		setbuf.enable = 0;
-
+#ifdef __CONFIG_DHDAP__
+		if (is_dhd) {
+			ret = dhd_iovar_setint(name, "bss", setbuf.bsscfg_idx, setbuf.enable);
+		}else{
+#endif
 		ret = wl_iovar_set(name, "bss", &setbuf, sizeof(setbuf));
+#ifdef __CONFIG_DHDAP__
+		}
+#endif
 		if (ret) {
 			wl_iovar_getint(name, "bcmerror", &bcmerr);
 			/* fail quietly on a range error since the driver may
@@ -2885,7 +2891,15 @@ cprintf("set enable bss %s\n",name);
 		if (((ap || apsta) && !nas_will_run) || sta || wet) {
 			for (ii = 0; ii < MAX_BSS_UP_RETRIES; ii++) {
 				if (wl_ap_build) {
+#ifdef __CONFIG_DHDAP__
+					if (is_dhd) {
+					DHD_BSSIOVAR_SETINT(name, "bss", setbuf.bsscfg_idx, setbuf.enable);
+					}else{
+#endif
 					WL_IOVAR_SET(name, "bss", &setbuf, sizeof(setbuf));
+#ifdef __CONFIG_DHDAP__
+					}
+#endif
 				}
 				{
 					strcat_r(prefix, "ssid", tmp);
@@ -2956,6 +2970,7 @@ wlconf_down(char *name)
 	char caps[WLC_IOCTL_MEDLEN];
 	char *next;
 	wlc_ssid_t ssid;
+	int is_dhd = 0;
 
 	/* wlconf doesn't work for virtual i/f */
 	if (get_ifname_unit(name, NULL, &wlsubunit) == 0 && wlsubunit >= 0) {
@@ -2966,7 +2981,12 @@ wlconf_down(char *name)
 	/* Check interface (fail silently for non-wl interfaces) */
 	if ((ret = wl_probe(name)))
 		return ret;
-
+	
+#ifdef __CONFIG_DHDAP__
+	/* Check if interface uses dhd adapter */
+	is_dhd = !dhd_probe(name);
+#endif /* __CONFIG_DHDAP__ */
+	
 	/* because of ifdefs in wl driver,  when we don't have AP capabilities we
 	 * can't use the same iovars to configure the wl.
 	 * so we use "wl_ap_build" to help us know how to configure the driver
@@ -2982,14 +3002,21 @@ wlconf_down(char *name)
 
 	if (wl_ap_build) {
 		/* Bring down the interface */
-		WL_IOCTL(name, WLC_DOWN, NULL, sizeof(val));
+		WL_IOCTL(name, WLC_DOWN, NULL, 0);
 
 		/* Disable all BSS Configs */
 		for (i = 0; i < WL_MAXBSSCFG; i++) {
 			setbuf.bsscfg_idx = i;
 			setbuf.enable = 0;
-
-			ret = wl_iovar_set(name, "bss", &setbuf, sizeof(setbuf));
+#ifdef __CONFIG_DHDAP__
+			if (is_dhd) {
+				ret = dhd_iovar_setint(name, "bss", setbuf.bsscfg_idx, setbuf.enable);
+					}else{
+#endif
+				ret = wl_iovar_set(name, "bss", &setbuf, sizeof(setbuf));
+#ifdef __CONFIG_DHDAP__
+			}
+#endif
 			if (ret) {
 				wl_iovar_getint(name, "bcmerror", &bcmerr);
 				/* fail quietly on a range error since the driver may
@@ -3009,7 +3036,7 @@ wlconf_down(char *name)
 			WL_IOCTL(name, WLC_SET_SSID, &ssid, sizeof(ssid));
 
 			/* Bring down the interface */
-			WL_IOCTL(name, WLC_DOWN, NULL, sizeof(val));
+			WL_IOCTL(name, WLC_DOWN, NULL, 0);
 		}
 	}
 
