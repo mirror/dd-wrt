@@ -2388,7 +2388,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 			instance = 2;
 		{
 
-			unsigned int chanlist[128];
+			unsigned int chanlist[128] = {0};
 			char *ifn = get_wl_instance_name(instance);
 			int chancount = getchannels(chanlist, ifn);
 			int net_is_a = 0;
@@ -6566,7 +6566,7 @@ void ej_get_qosmacs(webs_t wp, int argc, char_t ** argv)
 			  "<td nowrap>\n"
 			  "<input name=\"svqos_maclanlvl%d\" class=\"num\" size=\"5\" maxlength=\"6\" value=\"%s\" style=\"text-align:right;\" %s /> kBits\n"
 			  "</td>\n"
-			  "<td>\n", i, i, mac, mac, i, level, strcmp(prio, "0") == 0 ? "" : "disabled", i, level2, strcmp(prio, "0") == 0 ? "" : "disabled", i, lanlevel, strcmp(prio, "0") == 0 ? "" : "disabled");
+			  "<td>\n", i, i, mac, mac, i, level2, strcmp(prio, "0") == 0 ? "" : "disabled", i, level, strcmp(prio, "0") == 0 ? "" : "disabled", i, lanlevel, strcmp(prio, "0") == 0 ? "" : "disabled");
 
 		websWrite(wp, "<select name=\"svqos_macprio%d\" onChange=\"maclvl_grey(%d,this,this.form,false)\"> \n"
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"0\\\" %s >\" + qos.prio_m + \"</option>\");\n"
