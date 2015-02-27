@@ -2370,7 +2370,7 @@ static void filter_forward(void)
 			if (nvram_nmatch("1", "%s_isolation", var)) {
 				save2file("-I FORWARD -i %s -d %s/%s -m state --state NEW -j %s\n", var, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"), log_drop);
 				save2file("-A FORWARD -i br0 -o %s -m state --state NEW -j %s\n", var, log_drop);
-				if (nvram_nmatch("1", "privoxy_transp_enable")) {
+				if (nvram_match("privoxy_transp_enable", "1")) {
 					save2file("-I INPUT -i %s -d %s/%s -p tcp --dport 8118 -j %s\n", var, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"), log_accept);
 				}
 			}
