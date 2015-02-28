@@ -379,7 +379,7 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 		 */
 		int qual = rssi * 124 + 11600;
 		qual /= 10;
-		websWrite(wp, "'%s','%s','%s','%s','%s','%d','%d','%d','%s','%d'", mac, iface, time, txrate, rxrate, rssi, noise, rssi - noise, info, qual);
+		websWrite(wp, "'%s','%s','%s','%s','%s','%s','%d','%d','%d','%d'", mac, iface, time, txrate, rxrate, info,  rssi, noise, rssi - noise, qual);
 	}
 
 	unlink(RSSI_TMP);

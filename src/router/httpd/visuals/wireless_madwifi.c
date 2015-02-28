@@ -169,12 +169,12 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 		if (si->isi_rates && ((si->isi_rates[si->isi_txrate] & IEEE80211_RATE_VAL) != 0)
 		    && ((si->isi_rates[si->isi_rxrate] & IEEE80211_RATE_VAL) != 0)) {
 			websWrite(wp,
-				  "'%s','%s%s','%s','%3dM','%3dM','%d','%d','%d','N/A','%d'",
+				  "'%s','%s%s','%s','%3dM','%3dM','N/A','%d','%d','%d','%d'",
 				  mac, type, ifname, UPTIME(si->isi_uptime),
 				  ((si->isi_rates[si->isi_txrate] &
 				    IEEE80211_RATE_VAL) / 2) * turbo, ((si->isi_rates[si->isi_rxrate] & IEEE80211_RATE_VAL) / 2) * turbo, si->isi_noise + si->isi_rssi + bias, si->isi_noise + bias, si->isi_rssi, qual);
 		} else {
-			websWrite(wp, "'%s','%s%s','%s','N/A','N/A','%d','%d','%d','N/A','%d'", mac, type, ifname, UPTIME(si->isi_uptime), si->isi_noise + si->isi_rssi + bias, si->isi_noise + bias, si->isi_rssi, qual);
+			websWrite(wp, "'%s','%s%s','%s','N/A','N/A','N/A','%d','%d','%d','%d'", mac, type, ifname, UPTIME(si->isi_uptime), si->isi_noise + si->isi_rssi + bias, si->isi_noise + bias, si->isi_rssi, qual);
 		}
 		bufcount += si->isi_len;
 		cp += si->isi_len;
