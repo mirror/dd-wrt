@@ -229,10 +229,10 @@ addEvent(window, "unload", function() {
 										<th width="10%"><% tran("status_router.sys_up"); %></th>
 										<th width="8%"><% tran("share.txrate"); %></th>
 										<th width="8%"><% tran("share.rxrate"); %></th>
+										<th width="15%">Info</th>
 										<th width="8%"><% tran("share.signal"); %></th>
 										<th width="8%"><% tran("share.noise"); %></th>
 										<th width="8%">SNR</th>
-										<th width="15%">Info</th>
 										<th width="24%"><% tran("status_wireless.signal_qual"); %></th>
 									</tr>
 								</table>
