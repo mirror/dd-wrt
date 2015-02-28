@@ -360,7 +360,7 @@ int olsr_new_netlink_route(unsigned char family, uint32_t rttable, unsigned int 
 
   req.r.rtm_flags = flags;
   req.r.rtm_family = family;
-#ifndef __ANDROID__
+#ifdef RTM_GETDCB
   if (rttable < 256)
     req.r.rtm_table = rttable;
   else {
