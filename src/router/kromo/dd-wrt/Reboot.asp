@@ -12,17 +12,19 @@ var browserName=navigator.appName;
 
 function to_submit()
 {
-	if(submit_button == ".asp")
+	if(submit_button == ".asp") {
 		history.go(-1);
-	else
+	\ else {
 		document.location.href =  submit_button;
+	}
 }
 function to_apply()
 {
-	if(submit_button == ".asp")
+	if(submit_button == ".asp") {
 		history.go(-1);
-	else
+	} else {
 		document.location.href =  submit_button;
+	}
 }
 
 function message()
