@@ -62,12 +62,12 @@ static_install(struct proto *p, struct static_route *r, struct iface *ifa)
   rta a, *aa;
   rte *e;
 
-  if (r->installed)
+  if (r->installed > 0)
     return;
 
   DBG("Installing static route %I/%d, rtd=%d\n", r->net, r->masklen, r->dest);
   bzero(&a, sizeof(a));
-  a.proto = p;
+  a.src = p->main_source;
   a.source = (r->dest == RTD_DEVICE) ? RTS_STATIC_DEVICE : RTS_STATIC;
   a.scope = SCOPE_UNIVERSE;
   a.cast = RTC_UNICAST;
@@ -113,7 +113,7 @@ static_install(struct proto *p, struct static_route *r, struct iface *ifa)
   e = rte_get_temp(aa);
   e->net = n;
   e->pflags = 0;
-  rte_update(p->table, n, p, p, e);
+  rte_update(p, n, e);
   r->installed = 1;
 }
 
@@ -125,10 +125,9 @@ static_remove(struct proto *p, struct static_route *r)
   if (!r->installed)
     return;
 
-  DBG("Removing static route %I/%d\n", r->net, r->masklen);
+  DBG("Removing static route %I/%d via %I\n", r->net, r->masklen, r->via);
   n = net_find(p->table, r->net, r->masklen);
-  if (n)
-    rte_update(p->table, n, p, p, NULL);
+  rte_update(p, n, NULL);
   r->installed = 0;
 }
 
@@ -367,6 +366,7 @@ static_init(struct proto_config *c)
 
   p->neigh_notify = static_neigh_notify;
   p->if_notify = static_if_notify;
+
   return p;
 }
 
@@ -420,19 +420,24 @@ static_match(struct proto *p, struct static_route *r, struct static_config *n)
 
   if (r->neigh)
     r->neigh->data = NULL;
+
   WALK_LIST(t, n->iface_routes)
     if (static_same_net(r, t))
-      {
-	t->installed = r->installed && static_same_dest(r, t);
-	return;
-      }
+      goto found;
+
   WALK_LIST(t, n->other_routes)
     if (static_same_net(r, t))
-      {
-	t->installed = r->installed && static_same_dest(r, t);
-	return;
-      }
+      goto found;
+
   static_remove(p, r);
+  return;
+
+ found:
+  /* If destination is different, force reinstall */
+  if ((r->installed > 0) && !static_same_dest(r, t))
+    t->installed = -1;
+  else
+    t->installed = r->installed;
 }
 
 static inline rtable *

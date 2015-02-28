@@ -133,6 +133,18 @@ if test "$bird_cv_struct_ip_mreqn" = yes ; then
 fi
 ])
 
+AC_DEFUN(BIRD_CHECK_PTHREADS,
+[
+  bird_tmp_cflags="$CFLAGS"
+
+  CFLAGS="$CFLAGS -pthread"
+  AC_CACHE_CHECK([whether POSIX threads are available], bird_cv_lib_pthreads,
+    [AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <pthread.h>]], [[pthread_t pt; pthread_create(&pt, NULL, NULL, NULL); pthread_spinlock_t lock; pthread_spin_lock(&lock); ]])],
+		    [bird_cv_lib_pthreads=yes], [bird_cv_lib_pthreads=no])])
+
+  CFLAGS="$bird_tmp_cflags"
+])
+
 AC_DEFUN(BIRD_CHECK_GCC_OPTION,
 [
   bird_tmp_cflags="$CFLAGS"

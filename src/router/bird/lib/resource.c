@@ -157,13 +157,13 @@ rfree(void *res)
 {
   resource *r = res;
 
-  if (r)
-    {
-      if (r->n.next)
-	rem_node(&r->n);
-      r->class->free(r);
-      xfree(r);
-    }
+  if (!r)
+    return;
+
+  if (r->n.next)
+    rem_node(&r->n);
+  r->class->free(r);
+  xfree(r);
 }
 
 /**
@@ -220,7 +220,8 @@ ralloc(pool *p, struct resclass *c)
   bzero(r, c->size);
 
   r->class = c;
-  add_tail(&p->inside, &r->n);
+  if (p)
+    add_tail(&p->inside, &r->n);
   return r;
 }
 
@@ -366,21 +367,21 @@ mb_allocz(pool *p, unsigned size)
 
 /**
  * mb_realloc - reallocate a memory block
- * @p: pool
  * @m: memory block
  * @size: new size of the block
  *
  * mb_realloc() changes the size of the memory block @m to a given size.
  * The contents will be unchanged to the minimum of the old and new sizes;
- * newly allocated memory will be uninitialized. If @m is NULL, the call
- * is equivalent to mb_alloc(@p, @size).
+ * newly allocated memory will be uninitialized. Contrary to realloc()
+ * behavior, @m must be non-NULL, because the resource pool is inherited
+ * from it.
  *
  * Like mb_alloc(), mb_realloc() also returns a pointer to the memory
- * chunk , not to the resource, hence you have to free it using
+ * chunk, not to the resource, hence you have to free it using
  * mb_free(), not rfree().
  */
 void *
-mb_realloc(pool *p, void *m, unsigned size)
+mb_realloc(void *m, unsigned size)
 {
   struct mblock *ob = NULL;
 
@@ -392,9 +393,7 @@ mb_realloc(pool *p, void *m, unsigned size)
     }
 
   struct mblock *b = xrealloc(ob, sizeof(struct mblock) + size);
-
-  b->r.class = &mb_class;
-  add_tail(&p->inside, &b->r.n);
+  replace_node(&b->r.n, &b->r.n);
   b->size = size;
   return b->data;
 }
@@ -409,7 +408,25 @@ mb_realloc(pool *p, void *m, unsigned size)
 void
 mb_free(void *m)
 {
+  if (!m)
+    return;
+
   struct mblock *b = SKIP_BACK(struct mblock, data, m);
   rfree(b);
 }
 
+
+
+#define STEP_UP(x) ((x) + (x)/2 + 4)
+
+void
+buffer_realloc(void **buf, unsigned *size, unsigned need, unsigned item_size)
+{
+  unsigned nsize = MIN(*size, need);
+
+  while (nsize < need)
+    nsize = STEP_UP(nsize);
+
+  *buf = mb_realloc(*buf, nsize * item_size);
+  *size = nsize;
+}

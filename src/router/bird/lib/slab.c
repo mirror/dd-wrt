@@ -123,7 +123,7 @@ static size_t
 slab_memsize(resource *r)
 {
   slab *s = (slab *) r;
-  int cnt = 0;
+  size_t cnt = 0;
   struct sl_obj *o;
 
   WALK_LIST(o, s->objs)
@@ -346,7 +346,7 @@ static size_t
 slab_memsize(resource *r)
 {
   slab *s = (slab *) r;
-  int heads = 0;
+  size_t heads = 0;
   struct sl_head *h;
 
   WALK_LIST(h, s->empty_heads)

@@ -48,9 +48,25 @@ operation (okay too).
 <DT><I>struct f_val</I> <B>v2</B><DD><P>second value
 </DL>
 <H3>Description</H3>
-<P>Compares two values and returns -1, 0, 1 on &lt;, =, &gt; or 999 on error.
-Tree module relies on this giving consistent results so that it can
-build balanced trees.
+<P>Compares two values and returns -1, 0, 1 on &lt;, =, &gt; or CMP_ERROR on
+error. Tree module relies on this giving consistent results so
+that it can be used for building balanced trees.
+
+
+<HR><H3>Function</H3>
+<P><I>int</I>
+<B>val_same</B>
+(<I>struct f_val</I> <B>v1</B>, <I>struct f_val</I> <B>v2</B>) --     compare two values
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct f_val</I> <B>v1</B><DD><P>first value
+<DT><I>struct f_val</I> <B>v2</B><DD><P>second value
+</DL>
+<H3>Description</H3>
+<P>Compares two values and returns 1 if they are same and 0 if not.
+Comparison of values of different types is valid and returns 0.
 
 
 <HR><H3>Function</H3>
@@ -65,8 +81,7 @@ build balanced trees.
 <DT><I>struct f_val</I> <B>v2</B><DD><P>set
 </DL>
 <H3>Description</H3>
-<P>Checks if <B>v1</B> is element (<CODE>~</CODE> operator) of <B>v2</B>. Sets are internally represented as balanced trees, see
-<CODE>tree.c</CODE> module (this is not limited to sets, but for non-set cases, <B>val_simple_in_range()</B> is called early).
+<P>Checks if <B>v1</B> is element (<CODE>~</CODE> operator) of <B>v2</B>.
 
 
 <HR><H3>Function</H3>
@@ -306,15 +321,16 @@ is such prefix pattern in the trie.
 
 <HR><H3>Function</H3>
 <P><I>void</I>
-<B>trie_print</B>
-(<I>struct f_trie *</I> <B>t</B>)
+<B>trie_format</B>
+(<I>struct f_trie *</I> <B>t</B>, <I>buffer *</I> <B>buf</B>)
 <H3>Arguments</H3>
 <P>
 <DL>
-<DT><I>struct f_trie *</I> <B>t</B><DD><P>trie to be printed
+<DT><I>struct f_trie *</I> <B>t</B><DD><P>trie to be formatted
+<DT><I>buffer *</I> <B>buf</B><DD><P>destination buffer
 </DL>
 <H3>Description</H3>
-<P>Prints the trie to the log buffer.
+<P>Prints the trie to the supplied buffer.
 
 <HR>
 <A HREF="prog-5.html">Next</A>

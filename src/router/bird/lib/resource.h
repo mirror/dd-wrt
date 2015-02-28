@@ -52,7 +52,7 @@ extern pool root_pool;
 
 void *mb_alloc(pool *, unsigned size);
 void *mb_allocz(pool *, unsigned size);
-void *mb_realloc(pool *p, void *m, unsigned size);
+void *mb_realloc(void *m, unsigned size);
 void mb_free(void *);
 
 /* Memory pools with linear allocation */
@@ -77,6 +77,9 @@ void sl_free(slab *, void *);
  * Low-level memory allocation functions, please don't use
  * outside resource manager and possibly sysdep code.
  */
+
+void buffer_realloc(void **buf, unsigned *size, unsigned need, unsigned item_size);
+
 
 #ifdef HAVE_LIBDMALLOC
 /*
@@ -103,3 +106,4 @@ void *xrealloc(void *, unsigned);
 #endif
 
 #endif
+

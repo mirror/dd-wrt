@@ -52,6 +52,7 @@ typedef u32 ip_addr;
 #define ipa_mkmask(x) _MI(u32_mkmask(x))
 #define ipa_mklen(x) u32_masklen(_I(x))
 #define ipa_hash(x) ipv4_hash(_I(x))
+#define ipa_hash32(x) ipv4_hash32(_I(x))
 #define ipa_hton(x) x = _MI(htonl(_I(x)))
 #define ipa_ntoh(x) x = _MI(ntohl(_I(x)))
 #define ipa_classify(x) ipv4_classify(_I(x))
@@ -84,6 +85,14 @@ static inline unsigned ipv4_hash(u32 a)
   a ^= a >> 16;
   a ^= a << 10;
   return a & 0xffff;
+}
+
+static inline u32 ipv4_hash32(u32 a)
+{
+  /* Returns a 32-bit value, although low-order bits are not mixed */
+  a ^= a << 16;
+  a ^= a << 12;
+  return a;
 }
 
 static inline int ipv4_compare(u32 x, u32 y)

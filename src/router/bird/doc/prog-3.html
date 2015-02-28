@@ -247,6 +247,17 @@ automatically added to the symbol table with class <I>SYM_VOID</I>.
 using the <CODE>gen_keywords.m4</CODE> script.
 <P>
 <P><HR><H3>Function</H3>
+<P><I>void</I>
+<B>cf_lex_unwind</B>
+(<B>void</B>) --     unwind lexer state during error
+<P>
+<H3>Lexical analyzer</H3>
+<P>
+<P><B>cf_lex_unwind()</B> frees the internal state on IFS stack when the lexical
+analyzer is terminated by <B>cf_error()</B>.
+
+
+<HR><H3>Function</H3>
 <P><I>struct symbol *</I>
 <B>cf_find_symbol</B>
 (<I>byte *</I> <B>c</B>) --     find a symbol by name

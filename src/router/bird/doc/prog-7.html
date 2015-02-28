@@ -449,6 +449,40 @@ node <B>after</B>.
 
 <HR><H3>Function</H3>
 <P><I>LIST_INLINE void</I>
+<B>rem2_node</B>
+(<I>node *</I> <B>n</B>) --     remove a node from a list, with cleanup
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>node *</I> <B>n</B><DD><P>node to be removed
+</DL>
+<H3>Description</H3>
+<P>Removes a node <B>n</B> from the list it's linked in and resets its pointers to NULL.
+Useful if you want to distinguish between linked and unlinked nodes.
+
+
+<HR><H3>Function</H3>
+<P><I>LIST_INLINE void</I>
+<B>replace_node</B>
+(<I>node *</I> <B>old</B>, <I>node *</I> <B>new</B>) --     replace a node in a list with another one
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>node *</I> <B>old</B><DD><P>node to be removed
+<DT><I>node *</I> <B>new</B><DD><P>node to be inserted
+</DL>
+<H3>Description</H3>
+<P>Replaces node <B>old</B> in the list it's linked in with node <B>new</B>.  Node
+<B>old</B> may be a copy of the original node, which is not accessed
+through the list. The function could be called with <B>old</B> == <B>new</B>,
+which just fixes neighbors' pointers in the case that the node
+was reallocated.
+
+
+<HR><H3>Function</H3>
+<P><I>LIST_INLINE void</I>
 <B>init_list</B>
 (<I>list *</I> <B>l</B>) --     create an empty list
 <P>

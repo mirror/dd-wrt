@@ -251,9 +251,9 @@ krt_send_route(struct krt_proto *p, int cmd, rte *e)
     _I0(gw) = 0xfe800000 | (i->index & 0x0000ffff);
 #endif
 
-  fill_in_sockaddr(&dst, net->n.prefix, NULL, 0);
-  fill_in_sockaddr(&mask, ipa_mkmask(net->n.pxlen), NULL, 0);
-  fill_in_sockaddr(&gate, gw, NULL, 0);
+  sockaddr_fill(&dst,  BIRD_AF, net->n.prefix, NULL, 0);
+  sockaddr_fill(&mask, BIRD_AF, ipa_mkmask(net->n.pxlen), NULL, 0);
+  sockaddr_fill(&gate, BIRD_AF, gw, NULL, 0);
 
   switch (a->dest)
   {
@@ -261,6 +261,7 @@ krt_send_route(struct krt_proto *p, int cmd, rte *e)
       msg.rtm.rtm_flags |= RTF_GATEWAY;
       msg.rtm.rtm_addrs |= RTA_GATEWAY;
       break;
+
 #ifdef RTF_REJECT
     case RTD_UNREACHABLE:
 #endif
@@ -280,7 +281,7 @@ krt_send_route(struct krt_proto *p, int cmd, rte *e)
           return -1;
         }
 
-        fill_in_sockaddr(&gate, i->addr->ip, NULL, 0);
+	sockaddr_fill(&gate, BIRD_AF, i->addr->ip, NULL, 0);
         msg.rtm.rtm_addrs |= RTA_GATEWAY;
       }
       break;
@@ -366,20 +367,16 @@ krt_read_route(struct ks_msg *msg, struct krt_proto *p, int scan)
   GETADDR(&gate, RTA_GATEWAY);
   GETADDR(&mask, RTA_NETMASK);
 
-  if (sa_family_check(&dst))
-    get_sockaddr(&dst, &idst, NULL, NULL, 0);
-  else
+  if (dst.sa.sa_family != BIRD_AF)
     SKIP("invalid DST");
 
-  /* We will check later whether we have valid gateway addr */
-  if (sa_family_check(&gate))
-    get_sockaddr(&gate, &igate, NULL, NULL, 0);
-  else
-    igate = IPA_NONE;
+  idst  = ipa_from_sa(&dst);
+  imask = ipa_from_sa(&mask);
+  igate = (gate.sa.sa_family == BIRD_AF) ? ipa_from_sa(&gate) : IPA_NONE;
 
   /* We do not test family for RTA_NETMASK, because BSD sends us
      some strange values, but interpreting them as IPv4/IPv6 works */
-  get_sockaddr(&mask, &imask, NULL, NULL, 0);
+
 
   int c = ipa_classify_net(idst);
   if ((c < 0) || !(c & IADDR_HOST) || ((c & IADDR_SCOPE_MASK) <= SCOPE_LINK))
@@ -432,7 +429,7 @@ krt_read_route(struct ks_msg *msg, struct krt_proto *p, int scan)
   net = net_get(p->p.table, idst, pxlen);
 
   rta a = {
-    .proto = &p->p,
+    .src = p->p.main_source,
     .source = RTS_INHERIT,
     .scope = SCOPE_UNIVERSE,
     .cast = RTC_UNICAST
@@ -535,7 +532,7 @@ krt_read_ifannounce(struct ks_msg *msg)
 }
 
 static void
-krt_read_ifinfo(struct ks_msg *msg)
+krt_read_ifinfo(struct ks_msg *msg, int scan)
 {
   struct if_msghdr *ifm = (struct if_msghdr *)&msg->rtm;
   void *body = (void *)(ifm + 1);
@@ -608,11 +605,14 @@ krt_read_ifinfo(struct ks_msg *msg)
   else
     f.flags |= IF_MULTIACCESS;      /* NBMA */
 
-  if_update(&f);
+  iface = if_update(&f);
+
+  if (!scan)
+    if_end_partial_update(iface);
 }
 
 static void
-krt_read_addr(struct ks_msg *msg)
+krt_read_addr(struct ks_msg *msg, int scan)
 {
   struct ifa_msghdr *ifam = (struct ifa_msghdr *)&msg->rtm;
   void *body = (void *)(ifam + 1);
@@ -645,26 +645,35 @@ krt_read_addr(struct ks_msg *msg)
   GETADDR (&brd, RTA_BRD);
 
   /* Some other family address */
-  if (!sa_family_check(&addr))
+  if (addr.sa.sa_family != BIRD_AF)
     return;
 
-  get_sockaddr(&addr, &iaddr, NULL, NULL, 0);
-  get_sockaddr(&mask, &imask, NULL, NULL, 0);
-  get_sockaddr(&brd, &ibrd, NULL, NULL, 0);
+  iaddr = ipa_from_sa(&addr);
+  imask = ipa_from_sa(&mask);
+  ibrd  = ipa_from_sa(&brd);
+
 
   if ((masklen = ipa_mklen(imask)) < 0)
   {
-    log("Invalid masklen");
+    log(L_ERR "KIF: Invalid masklen %I for %s", imask, iface->name);
     return;
   }
 
+#ifdef IPV6
+  /* Clean up embedded interface ID returned in link-local address */
+
+  if (ipa_has_link_scope(iaddr))
+    _I0(iaddr) = 0xfe800000;
+
+  if (ipa_has_link_scope(ibrd))
+    _I0(ibrd) = 0xfe800000;
+#endif
+
+
   bzero(&ifa, sizeof(ifa));
-
   ifa.iface = iface;
-
-  memcpy(&ifa.ip, &iaddr, sizeof(ip_addr));
+  ifa.ip = iaddr;
   ifa.pxlen = masklen;
-  memcpy(&ifa.brd, &ibrd, sizeof(ip_addr));
 
   scope = ipa_classify(ifa.ip);
   if (scope < 0)
@@ -674,23 +683,9 @@ krt_read_addr(struct ks_msg *msg)
   }
   ifa.scope = scope & IADDR_SCOPE_MASK;
 
-#ifdef IPV6
-  /* Clean up embedded interface ID returned in link-local address */
-  if (ipa_has_link_scope(ifa.ip))
-    _I0(ifa.ip) = 0xfe800000;
-#endif
-
-#ifdef IPV6
-  /* Why not the same check also for IPv4? */
-  if ((iface->flags & IF_MULTIACCESS) || (masklen != BITS_PER_IP_ADDRESS))
-#else
-  if (iface->flags & IF_MULTIACCESS)
-#endif
+  if (masklen < BITS_PER_IP_ADDRESS)
   {
     ifa.prefix = ipa_and(ifa.ip, ipa_mkmask(masklen));
-
-    if (masklen == BITS_PER_IP_ADDRESS)
-      ifa.flags |= IA_HOST;
 
     if (masklen == (BITS_PER_IP_ADDRESS - 1))
       ifa.opposite = ipa_opposite_m1(ifa.ip);
@@ -699,17 +694,31 @@ krt_read_addr(struct ks_msg *msg)
     if (masklen == (BITS_PER_IP_ADDRESS - 2))
       ifa.opposite = ipa_opposite_m2(ifa.ip);
 #endif
+
+    if (iface->flags & IF_BROADCAST)
+      ifa.brd = ibrd;
+
+    if (!(iface->flags & IF_MULTIACCESS))
+      ifa.opposite = ibrd;
   }
-  else         /* PtP iface */
+  else if (!(iface->flags & IF_MULTIACCESS) && ipa_nonzero(ibrd))
   {
+    ifa.prefix = ifa.opposite = ibrd;
     ifa.flags |= IA_PEER;
-    ifa.prefix = ifa.opposite = ifa.brd;
+  }
+  else
+  {
+    ifa.prefix = ifa.ip;
+    ifa.flags |= IA_HOST;
   }
 
   if (new)
     ifa_update(&ifa);
   else
     ifa_delete(&ifa);
+
+  if (!scan)
+    if_end_partial_update(iface);
 }
 
 static void
@@ -729,11 +738,11 @@ krt_read_msg(struct proto *p, struct ks_msg *msg, int scan)
       krt_read_ifannounce(msg);
       break;
     case RTM_IFINFO:
-      krt_read_ifinfo(msg);
+      krt_read_ifinfo(msg, scan);
       break;
     case RTM_NEWADDR:
     case RTM_DELADDR:
-      krt_read_addr(msg);
+      krt_read_addr(msg, scan);
       break;
     default:
       break;
@@ -795,7 +804,7 @@ krt_sysctl_scan(struct proto *p, int cmd, int table_id)
   mib[0] = CTL_NET;
   mib[1] = PF_ROUTE;
   mib[2] = 0;
-  mib[3] = BIRD_PF;
+  mib[3] = BIRD_AF;
   mib[4] = cmd;
   mib[5] = 0;
   mcnt = 6;
@@ -1053,3 +1062,36 @@ kif_sys_shutdown(struct kif_proto *p)
   krt_buffer_release(&p->p);
 }
 
+
+struct ifa *
+kif_get_primary_ip(struct iface *i)
+{
+#ifndef IPV6
+  static int fd = -1;
+  
+  if (fd < 0)
+    fd = socket(AF_INET, SOCK_DGRAM, 0);
+
+  struct ifreq ifr;
+  memset(&ifr, 0, sizeof(ifr));
+  strncpy(ifr.ifr_name, i->name, IFNAMSIZ);
+
+  int rv = ioctl(fd, SIOCGIFADDR, (char *) &ifr);
+  if (rv < 0)
+    return NULL;
+
+  ip_addr addr;
+  struct sockaddr_in *sin = (struct sockaddr_in *) &ifr.ifr_addr;
+  memcpy(&addr, &sin->sin_addr.s_addr, sizeof(ip_addr));
+  ipa_ntoh(addr);
+
+  struct ifa *a;
+  WALK_LIST(a, i->addrs)
+  {
+    if (ipa_equal(a->ip, addr))
+      return a;
+  }
+#endif
+
+  return NULL;
+}
