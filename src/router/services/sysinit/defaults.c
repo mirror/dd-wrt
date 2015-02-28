@@ -492,8 +492,8 @@ struct nvram_param srouter_defaults[] = {
 #endif
 	{"wan_lease", "86400"},	/* WAN lease time in seconds */
 	{"static_route", ""},	/* Static routes
-					 * (ipaddr:netmask:gateway:metric:ifname ...) 
-					 */
+				 * (ipaddr:netmask:gateway:metric:ifname ...) 
+				 */
 	{"static_route_name", ""},	/* Static routes name ($NAME:name) */
 
 	{"ses_enable", "1"},	/* enable ses */
@@ -514,7 +514,7 @@ struct nvram_param srouter_defaults[] = {
 	{"filter_macmode", "deny"},	/* "allow" only, "deny" only, or
 					 * "disabled" (allow all) */
 	{"filter_client0", ""},	/* [lan_ipaddr0-lan_ipaddr1|*]:lan_port0-lan_port1,proto,enable,day_start-day_end,sec_start-sec_end,desc 
-					 */
+				 */
 
 	{"filter_port", ""},	/* [lan_ipaddr|*]:lan_port0-lan_port1 */
 	{"filter_rule1", ""},	/* $STAT: $NAME:$$ */
@@ -630,7 +630,7 @@ struct nvram_param srouter_defaults[] = {
 	{"dmz_ipaddr", "0"},	/* x.x.x.x (equivalent to
 				 * 0-60999>dmz_ipaddr:0-60999) */
 	{"autofw_port0", ""},	/* out_proto:out_port,in_proto:in_port0-in_port1>to_port0-to_port1,enable,desc 
-					 */
+				 */
 
 	/*
 	 * DHCP server parameters 
@@ -657,7 +657,7 @@ struct nvram_param srouter_defaults[] = {
 	{"dhcp_lease", "1440"},	/* LAN lease time in minutes */
 #endif
 	{"dhcp_domain", "wan"},	/* Use WAN domain name first if available
-					 * (wan|lan) */
+				 * (wan|lan) */
 	{"dhcp_wins", "wan"},	/* Use WAN WINS first if available (wan|lan) */
 	{"wan_get_dns", ""},	/* DNS IP address which get by dhcpc *//* Add */
 
@@ -753,7 +753,7 @@ struct nvram_param srouter_defaults[] = {
 	{"ppp_demand", "0"},	/* Dial on demand */
 	{"ppp_redialperiod", "30"},	/* Redial Period (seconds) */
 	{"ppp_service", ""},	/* PPPoE service name */
-	{"ppp_ac", ""},	/* PPPoE access concentrator name */
+	{"ppp_ac", ""},		/* PPPoE access concentrator name */
 	{"ppp_static", "0"},	/* Enable / Disable Static IP */
 	{"ppp_static_ip", ""},	/* PPPoE Static IP */
 	{"ppp_get_ac", ""},	/* PPPoE Server ac name */
@@ -794,11 +794,11 @@ struct nvram_param srouter_defaults[] = {
 	{"wl2_vlan_prio_mode", "off"},	/* VLAN Priority support */
 	{"wl0_leddc", "0x640000"},	/* 100% duty cycle for LED on router */
 	{"wl_rxstreams", "0"},	/* 802.11n Rx Streams, 0 is invalid, WLCONF will
-					 * change it to a radio appropriate default
-					 */
+				 * change it to a radio appropriate default
+				 */
 	{"wl_txstreams", "0"},	/* 802.11n Tx Streams 0, 0 is invalid, WLCONF will
-					 * change it to a radio appropriate default
-					 */
+				 * change it to a radio appropriate default
+				 */
 #ifdef HAVE_80211AC
 	{"wl0_wmf_bss_enable", "0"},	/* 0= off 1= on */
 	{"wl1_wmf_bss_enable", "0"},
@@ -974,7 +974,6 @@ struct nvram_param srouter_defaults[] = {
 
 #if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K)
 #ifdef HAVE_MAKSAT
-	{"show_hidden", "1"},
 	{"ath0_regulatory", "0"},
 	{"ath1_regulatory", "0"},
 	{"ath2_regulatory", "0"},
@@ -1259,7 +1258,7 @@ struct nvram_param srouter_defaults[] = {
 #else
 	{"wl_lazywds", "0"},	/* Enable "lazy" WDS mode (0|1) */
 #endif
-	{"wl_wds", ""},	/* xx:xx:xx:xx:xx:xx ... */
+	{"wl_wds", ""},		/* xx:xx:xx:xx:xx:xx ... */
 	{"wl_wep", "disabled"},	/* Data encryption (off|wep|tkip|aes) */
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_ATH9K)
 #ifndef HAVE_BUFFALO
@@ -1329,7 +1328,7 @@ struct nvram_param srouter_defaults[] = {
 
 #endif
 	{"wl_reg_mode", "off"},	/* Regulatory: 802.11H(h)/802.11D(d)/off(off) 
-					 */
+				 */
 	{"wl_dfs_preism", "60"},	/* 802.11H pre network CAC time */
 	{"wl_dfs_postism", "60"},	/* 802.11H In Service Monitoring CAC
 					 * time */
@@ -1366,7 +1365,7 @@ struct nvram_param srouter_defaults[] = {
 	{"wl_net_mode", "disabled"},	/* Wireless mode
 					 * (mixed|g-only|b-only|disable) */
 	{"wl0_net_mode", "disabled"},	/* Wireless mode
-						 * (mixed|g-only|b-only|disable) */
+					 * (mixed|g-only|b-only|disable) */
 #elif HAVE_DDLAN
 #ifdef HAVE_NS5
 	{"ath0_net_mode", "a-only"},
@@ -1433,7 +1432,7 @@ struct nvram_param srouter_defaults[] = {
 	{"security_mode_last", ""},	/* Save last WPA mode *//* Add */
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_ATH9K)
 	{"wl0_auth_mode", "disabled"},	/* WPA mode (disabled|radius|wpa|psk) 
-						 */
+					 */
 #ifndef HAVE_BUFFALO
 	{"wl0_akm", "disabled"},
 	{"wl0_wpa_psk", ""},	/* WPA pre-shared key */
@@ -1510,7 +1509,7 @@ struct nvram_param srouter_defaults[] = {
 	{"ath1_wpa_gtk_rekey", "3600"},	/* WPA GTK rekey interval *//* Modify */
 	{"ath1_radius_port", "1812"},	/* RADIUS server UDP port */
 	{"ath1_auth_mode", "disabled"},	/* WPA mode (disabled|radius|wpa|psk) 
-						 */
+					 */
 #ifndef HAVE_BUFFALO
 #ifdef HAVE_IDEXX
 	{"ath1_akm", "psk psk2"},
@@ -1526,7 +1525,7 @@ struct nvram_param srouter_defaults[] = {
 	{"ath2_wpa_gtk_rekey", "3600"},	/* WPA GTK rekey interval *//* Modify */
 	{"ath2_radius_port", "1812"},	/* RADIUS server UDP port */
 	{"ath2_auth_mode", "disabled"},	/* WPA mode (disabled|radius|wpa|psk) 
-						 */
+					 */
 	{"ath2_akm", "disabled"},
 	{"ath2_wpa_psk", ""},	/* WPA pre-shared key */
 	{"ath2_radius_ipaddr", ""},	/* RADIUS server IP address */
@@ -1535,7 +1534,7 @@ struct nvram_param srouter_defaults[] = {
 	{"ath3_wpa_gtk_rekey", "3600"},	/* WPA GTK rekey interval *//* Modify */
 	{"ath3_radius_port", "1812"},	/* RADIUS server UDP port */
 	{"ath3_auth_mode", "disabled"},	/* WPA mode (disabled|radius|wpa|psk) 
-						 */
+					 */
 	{"ath3_akm", "disabled"},
 	{"ath3_wpa_psk", ""},	/* WPA pre-shared key */
 	{"ath3_radius_ipaddr", ""},	/* RADIUS server IP address */
@@ -1544,7 +1543,7 @@ struct nvram_param srouter_defaults[] = {
 	{"ath4_wpa_gtk_rekey", "3600"},	/* WPA GTK rekey interval *//* Modify */
 	{"ath4_radius_port", "1812"},	/* RADIUS server UDP port */
 	{"ath4_auth_mode", "disabled"},	/* WPA mode (disabled|radius|wpa|psk) 
-						 */
+					 */
 	{"ath4_akm", "disabled"},
 	{"ath4_wpa_psk", ""},	/* WPA pre-shared key */
 	{"ath4_radius_ipaddr", ""},	/* RADIUS server IP address */
@@ -1552,7 +1551,7 @@ struct nvram_param srouter_defaults[] = {
 	{"ath5_wpa_gtk_rekey", "3600"},	/* WPA GTK rekey interval *//* Modify */
 	{"ath5_radius_port", "1812"},	/* RADIUS server UDP port */
 	{"ath5_auth_mode", "disabled"},	/* WPA mode (disabled|radius|wpa|psk) 
-						 */
+					 */
 	{"ath5_akm", "disabled"},
 	{"ath5_wpa_psk", ""},	/* WPA pre-shared key */
 	{"ath5_radius_ipaddr", ""},	/* RADIUS server IP address */
@@ -1856,12 +1855,12 @@ struct nvram_param srouter_defaults[] = {
 	 * for forward 
 	 */
 	{"forward_port", ""},	/* name:[on|off]:[tcp|udp|both]:wan_port>lan_ipaddr:lan_port0 
-					 */
+				 */
 	{"forward_spec", ""},	/* name:[on|off]:[tcp|udp|both]:wan_port>lan_ipaddr:lan_port0 
-					 */
+				 */
 
 	{"port_trigger", ""},	/* name:[on|off]:[tcp|udp|both]:wan_port0-wan_port1>lan_port0-lan_port1 
-					 */
+				 */
 
 	/*
 	 * for dynamic route 
@@ -1910,7 +1909,7 @@ struct nvram_param srouter_defaults[] = {
 	 */
 	// for dyndns
 	{"ddns_enable", "0"},	/* 0:Disable 1:dyndns 2:afraid 3:zoneedit
-					 * 4:no-ip 5:custom 6:3322.org */
+				 * 4:no-ip 5:custom 6:3322.org */
 	{"ddns_wan_ip", "1"},
 	{"ddns_username", ""},
 	{"ddns_passwd", ""},
@@ -2572,7 +2571,7 @@ struct nvram_param srouter_defaults[] = {
 	{"hs_image", ""},
 
 	{"def_whwaddr", "00:00:00:00:00:00"},	/* User define wireless
-							 * interface MAC address */
+						 * interface MAC address */
 
 	{"sv_restore_defaults", "0"},	// fix for vlan stuff side effects
 
@@ -3344,7 +3343,7 @@ struct nvram_param srouter_defaults[] = {
 #ifdef HAVE_MILKFISH
 	{"milkfish_enabled", "0"},	/* MILKFISH enable=1|disable=0 */
 	{"openser_cfg", "/var/openser/milkfish_openser.cfg"},	/* MILKFISH
-									 * SETTING */
+								 * SETTING */
 	{"milkfish_fromdomain", ""},	/* MILKFISH SETTING */
 	{"milkfish_fromswitch", "off"},	/* MILKFISH SETTING */
 	{"milkfish_username", ""},	/* MILKFISH SETTING */
