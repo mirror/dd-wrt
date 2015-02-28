@@ -78,7 +78,7 @@ void start_sysinit(void)
 
 #ifdef HAVE_WDR3500
 	system("swconfig dev eth0 set reset 1");
-	system("swconfig dev eth0 set enable_vlan 0");
+	system("swconfig dev eth0 set enable_vlan 1");
 	system("swconfig dev eth0 vlan 0 set ports \"0 1 2 3 4\"");
 #else
 #ifdef HAVE_WDR4300
