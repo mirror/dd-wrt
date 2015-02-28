@@ -86,7 +86,7 @@
 	} \
 } while (0)
 #endif
-
+extern char *request_url;
 int websWrite(webs_t wp, char *fmt, ...);
 char *websGetVar(webs_t wp, char *var, char *d)
 {
@@ -181,6 +181,7 @@ static int initWeb(void *handle)
 	env.Plive_translate = live_translate;
 	env.PGOZILA_GET = GOZILA_GET;
 	env.Pvalidate_cgi = validate_cgi;
+	env.Prequest_url = request_url;
 	init(&env);
 	return 0;
 }
