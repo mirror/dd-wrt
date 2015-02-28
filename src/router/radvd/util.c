@@ -16,21 +16,93 @@
 #include "includes.h"
 #include "radvd.h"
 
+#ifdef UNIT_TEST
+#include "test/util.c"
+#endif
+
+struct safe_buffer * new_safe_buffer(void)
+{
+	struct safe_buffer * sb = malloc(sizeof(struct safe_buffer));
+	*sb = SAFE_BUFFER_INIT;
+	sb->should_free = 1;
+	return sb;
+}
+
+void safe_buffer_free(struct safe_buffer * sb)
+{
+	if (sb->buffer) {
+		free(sb->buffer);
+	}
+
+	if (sb->should_free) {
+		free(sb);
+	}
+}
+
+size_t safe_buffer_pad(struct safe_buffer * sb, size_t count)
+{
+	size_t rc = 0;
+	unsigned char zero = 0;
+
+	while (count--) {
+		rc += safe_buffer_append(sb, &zero, 1);
+	}
+
+	return rc;
+}
+
+size_t safe_buffer_append(struct safe_buffer * sb, void const * v, size_t count)
+{
+	if (sb) {
+		unsigned const char * m = (unsigned const char *)v;
+		if (sb->allocated <= sb->used + count) {
+			sb->allocated = sb->used + count + MSG_SIZE_SEND;
+			sb->buffer = realloc(sb->buffer, sb->allocated);
+		}
+		memcpy(&sb->buffer[sb->used], m, count);
+		sb->used += count;
+
+		if (sb->used >= MSG_SIZE_SEND) {
+			flog(LOG_ERR, "Too many prefixes, routes, rdnss or dnssl to fit in buffer.  Exiting.");
+			exit(1);
+		}
+	}
+
+	return count;
+}
+
+__attribute__ ((format(printf, 1, 2)))
+char * strdupf(char const * format, ...)
+{
+	va_list va;
+	va_start(va, format);
+	char * strp = 0;
+	int rc = vasprintf(&strp, format, va);
+	if (rc == -1 || !strp) {
+		flog(LOG_ERR, "vasprintf failed: %s", strerror(errno));
+		exit(-1);
+	}
+	va_end(va);
+
+	return strp;
+}
+
 double rand_between(double lower, double upper)
 {
 	return ((upper - lower) / (RAND_MAX + 1.0) * rand() + lower);
 }
 
-void print_addr(struct in6_addr *addr, char *str)
+/* This assumes that str is not null and str_size > 0 */
+void addrtostr(struct in6_addr *addr, char *str, size_t str_size)
 {
 	const char *res;
 
-	/* XXX: overflows 'str' if it isn't big enough */
-	res = inet_ntop(AF_INET6, (void *)addr, str, INET6_ADDRSTRLEN);
+	res = inet_ntop(AF_INET6, (void *)addr, str, str_size);
 
 	if (res == NULL) {
-		flog(LOG_ERR, "print_addr: inet_ntop: %s", strerror(errno));
-		strcpy(str, "[invalid address]");
+		flog(LOG_ERR, "addrtostr: inet_ntop: %s", strerror(errno));
+		strncpy(str, "[invalid address]", str_size);
+		str[str_size - 1] = '\0';
 	}
 }
 
@@ -41,28 +113,23 @@ int check_rdnss_presence(struct AdvRDNSS *rdnss, struct in6_addr *addr)
 		if (!memcmp(&rdnss->AdvRDNSSAddr1, addr, sizeof(struct in6_addr))
 		    || !memcmp(&rdnss->AdvRDNSSAddr2, addr, sizeof(struct in6_addr))
 		    || !memcmp(&rdnss->AdvRDNSSAddr3, addr, sizeof(struct in6_addr)))
-			break;	/* rdnss address found in the list */
-		else
-			rdnss = rdnss->next;	/* no match */
+			return 1;	/* rdnss address found in the list */
+		rdnss = rdnss->next;
 	}
-	return (rdnss != NULL);
+	return 0;
 }
 
 /* Check if a suffix exists in the dnssl list */
 int check_dnssl_presence(struct AdvDNSSL *dnssl, const char *suffix)
 {
-	int i;
 	while (dnssl) {
-		for (i = 0; i < dnssl->AdvDNSSLNumber; i++) {
-			if (strcmp(dnssl->AdvDNSSLSuffixes[i], suffix) == 0)
-				break;	/* suffix found in the list */
+		for (int i = 0; i < dnssl->AdvDNSSLNumber; ++i) {
+			if (0 == strcmp(dnssl->AdvDNSSLSuffixes[i], suffix))
+				return 1;	/* suffix found in the list */
 		}
-		if (i != dnssl->AdvDNSSLNumber)
-			break;
-
-		dnssl = dnssl->next;	/* no match */
+		dnssl = dnssl->next;
 	}
-	return (dnssl != NULL);
+	return 0;
 }
 
 /* Like read(), but retries in case of partial read */

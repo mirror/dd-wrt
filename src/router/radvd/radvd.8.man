@@ -37,16 +37,7 @@ addresses and some other parameters. It also defines "Neighbor Discovery
 Optimization for IPv6 over Low-Power Wireless Personal Area Networks (6LoWPANs)" (RFC6775).
 They also can choose a default router based on these advertisements.
 
-Note that if debugging is not enabled,
-.B radvd
-will not start if IPv6 forwarding is disabled.  IPv6 forwarding can be
-controlled via sysctl(8),
-.B net.ipv6.conf.all.forwarding
-on Linux or
-.B net.inet6.ip6.forwarding
-on BSD.
-
-Similarly, the configuration file must not be writable by others, and if
+The configuration file must not be writable by others, and if
 non-root operation is requested, not even by self/own group.
 
 .SH OPTIONS

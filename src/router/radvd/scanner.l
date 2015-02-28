@@ -13,7 +13,7 @@
  *
  */
 
-%option nounput noinput noyywrap
+%option nounput noinput noyywrap yylineno
 
 %{
 #include "config.h"
@@ -21,9 +21,8 @@
 #include "log.h"
 #include "gram.h"
 
-extern char *conf_file;
+int num_lines;
 
-int num_lines = 1;
 %}
 
 digit		[0-9]
@@ -104,7 +103,7 @@ AdvMobRtrSupportFlag	{ return T_AdvMobRtrSupportFlag; }
 AdvContextLength	{ return T_AdvContextLength; }
 AdvContextCompressionFlag { return T_AdvContextCompressionFlag; }
 AdvContextID		{ return T_AdvContextID; }
-AdvLifeTIme		{ return T_AdvLifeTime; }
+AdvLifeTime		{ return T_AdvLifeTime; }
 AdvContextPrefix	{ return T_AdvContextPrefix; }
 
 AdvVersionLow		{ return T_AdvVersionLow; }
@@ -115,8 +114,6 @@ Adv6LBRaddress		{ return T_Adv6LBRaddress; }
 {addr}		{
 			static struct in6_addr addr;
 			if (inet_pton(AF_INET6, yytext, &addr) < 1) {
-				flog(LOG_ERR, "invalid address in %s, line %d", conf_file,
-					num_lines);
 				return T_BAD_TOKEN;
 			}
 
