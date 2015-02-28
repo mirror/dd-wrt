@@ -176,7 +176,7 @@ int ej_active_wireless_if_11n(webs_t wp, int argc, char_t ** argv, char *ifname,
 			sprintf(tx, "%3dM", txrate);
 		else
 			sprintf(tx, "N/A");
-		websWrite(wp, "'%s','%s','%s','%s','%s','%d','%d','%d','N/A','%d'", mac, ifname, UPTIME(si->isi_uptime), tx, rx, si->isi_noise + si->isi_rssi + bias, si->isi_noise + bias, si->isi_rssi, qual);
+		websWrite(wp, "'%s','%s','%s','%s','%s','N/A','%d','%d','%d','%d'", mac, ifname, UPTIME(si->isi_uptime), tx, rx, si->isi_noise + si->isi_rssi + bias, si->isi_noise + bias, si->isi_rssi, qual);
 		bufcount += si->isi_len;
 		cp += si->isi_len;
 		len -= si->isi_len;

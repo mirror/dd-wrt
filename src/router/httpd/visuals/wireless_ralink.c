@@ -349,8 +349,8 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 			sprintf(info, "%s160", info);
 
 				websWrite(wp,
-					  "'%s','%s','%s','%s','%s','%d','%d','%d','%s','%d'", mac, getRADev(ifname), UPTIME(table.Entry[i].ConnectedTime), tx, rx, table.Entry[i].AvgRssi0, -95,
-					  (table.Entry[i].AvgRssi0 - (-95)), info, qual);
+					  "'%s','%s','%s','%s','%s','%s','%d','%d','%d','%d'", mac, getRADev(ifname), UPTIME(table.Entry[i].ConnectedTime), tx, rx, info, table.Entry[i].AvgRssi0, -95,
+					  (table.Entry[i].AvgRssi0 - (-95)), qual);
 			}
 		}
 	STAINFO *sta = getRaStaInfo(ifname);
@@ -372,7 +372,7 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 
 		qual /= 10;
 		strcpy(mac, ieee80211_ntoa(sta->mac));
-		websWrite(wp, "'%s','%s','N/A','%s','%s','%d','%d','%d','N/A','%d'", mac, sta->ifname, tx, rx, sta->rssi, sta->noise, (sta->rssi - (sta->noise)), qual);
+		websWrite(wp, "'%s','%s','N/A','%s','%s','N/A','%d','%d','%d','%d'", mac, sta->ifname, tx, rx, sta->rssi, sta->noise, (sta->rssi - (sta->noise)), qual);
 		free(sta);
 
 	}
