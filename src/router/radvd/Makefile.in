@@ -593,8 +593,7 @@ ENABLE_WARNINGS = \
 
 DISABLE_WARNINGS = \
 	-Wno-strict-aliasing \
-	-Wno-cast-align \
-	-Wno-strict-overflow
+	-Wno-cast-align
 
 AM_CFLAGS = \
 	-fno-strict-aliasing \
