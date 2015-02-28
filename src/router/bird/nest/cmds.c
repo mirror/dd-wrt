@@ -7,6 +7,7 @@
  */
 
 #include "nest/bird.h"
+#include "nest/protocol.h"
 #include "nest/route.h"
 #include "nest/cli.h"
 #include "conf/conf.h"
@@ -31,6 +32,8 @@ cmd_show_status(void)
   cli_msg(-1011, "Last reboot on %s", tim);
   tm_format_datetime(tim, &config->tf_base, config->load_time);
   cli_msg(-1011, "Last reconfiguration on %s", tim);
+
+  graceful_restart_show_status();
 
   if (shutting_down)
     cli_msg(13, "Shutdown in progress");
@@ -92,14 +95,10 @@ cmd_show_memory(void)
   cli_msg(0, "");
 }
 
-#ifdef NEED_PRINTF
-extern const char *log_buffer_ptr;
-#endif
 void
 cmd_eval(struct f_inst *expr)
 {
   struct f_val v = f_eval(expr, this_cli->parser_pool);
-  log_reset();
 
   if (v.type == T_RETURN)
     {
@@ -107,9 +106,10 @@ cmd_eval(struct f_inst *expr)
       return;
     }
 
-  val_print(v);
 #ifdef NEED_PRINTF
-  cli_msg(23, "%s", log_buffer_ptr);
+  buffer buf;
+  LOG_BUFFER_INIT(buf);
+  val_format(v, &buf);
+  cli_msg(23, "%s", buf.start);
 #endif
-  log_reset();
 }

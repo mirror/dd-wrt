@@ -24,6 +24,17 @@ static list *this_p_list;
 static struct password_item *this_p_item;
 static int password_id;
 
+static void
+iface_patt_check(void)
+{
+  struct iface_patt_node *pn;
+
+  WALK_LIST(pn, this_ipatt->ipn_list)
+    if (!pn->pattern || pn->pxlen)
+      cf_error("Interface name/mask expected, not IP prefix");
+}
+
+
 static inline void
 reset_passwords(void)
 {
@@ -46,9 +57,10 @@ CF_KEYWORDS(ROUTER, ID, PROTOCOL, TEMPLATE, PREFERENCE, DISABLED, DEBUG, ALL, OF
 CF_KEYWORDS(INTERFACE, IMPORT, EXPORT, FILTER, NONE, TABLE, STATES, ROUTES, FILTERS)
 CF_KEYWORDS(RECEIVE, LIMIT, ACTION, WARN, BLOCK, RESTART, DISABLE, KEEP, FILTERED)
 CF_KEYWORDS(PASSWORD, FROM, PASSIVE, TO, ID, EVENTS, PACKETS, PROTOCOLS, INTERFACES)
-CF_KEYWORDS(PRIMARY, STATS, COUNT, FOR, COMMANDS, PREEXPORT, GENERATE, ROA, MAX, FLUSH)
+CF_KEYWORDS(PRIMARY, STATS, COUNT, FOR, COMMANDS, PREEXPORT, NOEXPORT, GENERATE, ROA)
 CF_KEYWORDS(LISTEN, BGP, V6ONLY, DUAL, ADDRESS, PORT, PASSWORDS, DESCRIPTION, SORTED)
 CF_KEYWORDS(RELOAD, IN, OUT, MRTDUMP, MESSAGES, RESTRICT, MEMORY, IGP_METRIC, CLASS, DSCP)
+CF_KEYWORDS(GRACEFUL, RESTART, WAIT, MAX, FLUSH, AS)
 
 CF_ENUM(T_ENUM_RTS, RTS_, DUMMY, STATIC, INHERIT, DEVICE, STATIC_DEVICE, REDIRECT,
 	RIP, OSPF, OSPF_IA, OSPF_EXT1, OSPF_EXT2, BGP, PIPE)
@@ -65,7 +77,7 @@ CF_ENUM(T_ENUM_ROA, ROA_, UNKNOWN, VALID, INVALID)
 %type <ro> roa_args
 %type <rot> roa_table_arg
 %type <sd> sym_args
-%type <i> proto_start echo_mask echo_size debug_mask debug_list debug_flag mrtdump_mask mrtdump_list mrtdump_flag export_or_preexport roa_mode limit_action tab_sorted tos
+%type <i> proto_start echo_mask echo_size debug_mask debug_list debug_flag mrtdump_mask mrtdump_list mrtdump_flag export_mode roa_mode limit_action tab_sorted tos
 %type <ps> proto_patt proto_patt2
 %type <g> limit_spec
 
@@ -108,6 +120,11 @@ listen_opt:
  | V6ONLY { new_config->listen_bgp_flags = 0; }
  | DUAL { new_config->listen_bgp_flags = 1; }
  ;
+
+
+CF_ADDTO(conf, gr_opts)
+
+gr_opts: GRACEFUL RESTART WAIT expr ';' { new_config->gr_wait = $4; } ;
 
 
 /* Creation of routing tables */
@@ -191,7 +208,7 @@ proto_item:
  | IMPORT KEEP FILTERED bool { this_proto->in_keep_filtered = $4; }
  | TABLE rtable { this_proto->table = $2; }
  | ROUTER ID idval { this_proto->router_id = $3; }
- | DESCRIPTION TEXT { this_proto->dsc = $2; }
+ | DESCRIPTION text { this_proto->dsc = $2; }
  ;
 
 imexport:
@@ -265,6 +282,9 @@ iface_patt_list:
    iface_patt_node
  | iface_patt_list ',' iface_patt_node
  ;
+
+/* For name/mask-only iface patterns */
+iface_patt_list_nopx: iface_patt_list { iface_patt_check(); }
 
 iface_patt_init: {
    /* Generic this_ipatt init */
@@ -368,7 +388,7 @@ password_item:
 ;
 
 password_item_begin:
-   PASSWORD TEXT {
+   PASSWORD text {
      if (!this_p_list) {
      	this_p_list = cfg_alloc(sizeof(list));
      	init_list(this_p_list);
@@ -423,7 +443,7 @@ CF_CLI(SHOW INTERFACES SUMMARY,,, [[Show summary of network interfaces]])
 { if_show_summary(); } ;
 
 CF_CLI_HELP(SHOW ROUTE, ..., [[Show routing table]])
-CF_CLI(SHOW ROUTE, r_args, [[[<prefix>|for <prefix>|for <ip>] [table <t>] [filter <f>|where <cond>] [all] [primary] [filtered] [(export|preexport) <p>] [protocol <p>] [stats|count]]], [[Show routing table]])
+CF_CLI(SHOW ROUTE, r_args, [[[<prefix>|for <prefix>|for <ip>] [table <t>] [filter <f>|where <cond>] [all] [primary] [filtered] [(export|preexport|noexport) <p>] [protocol <p>] [stats|count]]], [[Show routing table]])
 { rt_show($3); } ;
 
 r_args:
@@ -472,13 +492,12 @@ r_args:
      $$ = $1;
      $$->filtered = 1;
    }
- | r_args export_or_preexport SYM {
+ | r_args export_mode SYM {
      struct proto_config *c = (struct proto_config *) $3->def;
      $$ = $1;
      if ($$->export_mode) cf_error("Protocol specified twice");
      if ($3->class != SYM_PROTO || !c->proto) cf_error("%s is not a protocol", $3->name);
      $$->export_mode = $2;
-     $$->primary_only = 1;
      $$->export_protocol = c->proto;
      $$->running_on_config = c->proto->cf->global;
    }
@@ -500,9 +519,10 @@ r_args:
    }
  ;
 
-export_or_preexport:
-   PREEXPORT { $$ = 1; }
- | EXPORT { $$ = 2; }
+export_mode:
+   PREEXPORT	{ $$ = RSEM_PREEXPORT; }
+ | EXPORT	{ $$ = RSEM_EXPORT; }
+ | NOEXPORT	{ $$ = RSEM_NOEXPORT; }
  ;
 
 

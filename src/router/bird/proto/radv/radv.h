@@ -80,6 +80,7 @@ struct radv_iface_config
   u32 current_hop_limit;
   u32 default_lifetime;
   u8 default_lifetime_sensitive; /* Whether default_lifetime depends on trigger */
+  u8 default_preference;	/* Default Router Preference (RFC 4191) */
 };
 
 struct radv_prefix_config
@@ -144,6 +145,11 @@ struct radv_iface
 #define RA_EV_CHANGE 2		/* Change of options or prefixes */
 #define RA_EV_RS 3		/* Received RS */
 
+/* Default Router Preferences (RFC 4191) */
+#define RA_PREF_LOW	0x18
+#define RA_PREF_MEDIUM	0x00
+#define RA_PREF_HIGH	0x08
+#define RA_PREF_MASK	0x18
 
 
 #ifdef LOCAL_DEBUG

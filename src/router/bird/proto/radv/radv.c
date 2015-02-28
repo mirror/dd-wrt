@@ -15,7 +15,7 @@
  * The RAdv protocol is implemented in two files: |radv.c| containing
  * the interface with BIRD core and the protocol logic and |packets.c|
  * handling low level protocol stuff (RX, TX and packet formats).
- * The protocol does not import or export any routes.
+ * The protocol does not export any routes.
  *
  * The RAdv is structured in the usual way - for each handled interface
  * there is a structure &radv_iface that contains a state related to
@@ -40,6 +40,7 @@
  * Supported standards:
  * - RFC 4861 - main RA standard
  * - RFC 6106 - DNS extensions (RDDNS, DNSSL)
+ * - RFC 4191 (partial) - Default Router Preference
  */
 
 static void

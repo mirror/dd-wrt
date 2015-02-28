@@ -58,6 +58,7 @@ typedef struct ipv6_addr {
 #define ipa_mkmask(x) ipv6_mkmask(x)
 #define ipa_mklen(x) ipv6_mklen(&(x))
 #define ipa_hash(x) ipv6_hash(&(x))
+#define ipa_hash32(x) ipv6_hash32(&(x))
 #define ipa_hton(x) ipv6_hton(&(x))
 #define ipa_ntoh(x) ipv6_ntoh(&(x))
 #define ipa_classify(x) ipv6_classify(&(x))
@@ -102,6 +103,13 @@ static inline unsigned ipv6_hash(ip_addr *a)
   /* Returns a 16-bit hash key */
   u32 x = _I0(*a) ^ _I1(*a) ^ _I2(*a) ^ _I3(*a);
   return (x ^ (x >> 16) ^ (x >> 8)) & 0xffff;
+}
+
+static inline u32 ipv6_hash32(ip_addr *a)
+{
+  /* Returns a 32-bit hash key, although low-order bits are not ixed */
+  u32 x = _I0(*a) ^ _I1(*a) ^ _I2(*a) ^ _I3(*a);
+  return x ^ (x << 16) ^ (x << 24);
 }
 
 static inline u32 ipv6_getbit(ip_addr a, u32 y)

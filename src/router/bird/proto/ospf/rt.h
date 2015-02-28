@@ -16,7 +16,8 @@
 
 typedef struct orta
 {
-  int type;
+  u8 type;			/* RTS_OSPF_* */
+  u8 nhs_reuse;			/* Whether nhs nodes can be reused during merging */
   u32 options;
   /*
    * For ORT_ROUTER routes, options field are router-LSA style
@@ -93,16 +94,24 @@ static inline int rt_is_nssa(ort *nf)
  * - n.metric1 may be at most a small multiple of LSINFINITY,
  *   therefore sums do not overflow
  * - n.oa is always non-NULL
- * - n.nhs is always non-NULL with one exception - configured stubnet
- *   nodes (in po->rtf).
+ * - n.nhs is always non-NULL unless it is configured stubnet
+ * - n.en is non-NULL for external routes, NULL for intra/inter area routes.
  * - oa->rtr does not contain calculating router itself
  *
- * There are three types of nexthops in nhs fields:
+ * There are four types of nexthops in nhs fields:
  * - gateway nexthops (non-NULL iface, gw != IPA_NONE)
  * - device nexthops (non-NULL iface, gw == IPA_NONE)
  * - dummy vlink nexthops (NULL iface, gw == IPA_NONE)
- * These three types don't mix, nhs field contains either
- * one device, one vlink node, or one/more gateway nodes.
+ * - configured stubnets (nhs is NULL, only RTS_OSPF orta nodes in po->rtf)
+ *
+ * Dummy vlink nexthops and configured stubnets cannot be mixed with
+ * regular ones, nhs field contains either list of gateway+device nodes,
+ * one vlink node, or NULL for configured stubnet.
+ *
+ * Dummy vlink nexthops can appear in both network (rtf) and backbone area router
+ * (rtr) tables for regular and inter-area routes, but only if areano > 1. They are
+ * replaced in ospf_rt_sum_tr() and removed in ospf_rt_abr1(), therefore cannot
+ * appear in ASBR pre-selection and external routes processing.
  */
 
 void ospf_rt_spf(struct proto_ospf *po);

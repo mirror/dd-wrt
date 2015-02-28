@@ -36,6 +36,8 @@ typedef struct list {			/* In fact two overlayed nodes */
 #define NODE_NEXT(n) ((void *)((NODE (n))->next))
 #define NODE_VALID(n) ((NODE (n))->next)
 #define WALK_LIST(n,list) for(n=HEAD(list); NODE_VALID(n); n=NODE_NEXT(n))
+#define WALK_LIST2(n,nn,list,pos) \
+  for(nn=(list).head; NODE_VALID(nn) && (n=SKIP_BACK(typeof(*n),pos,nn)); nn=nn->next)
 #define WALK_LIST_DELSAFE(n,nxt,list) \
      for(n=HEAD(list); nxt=NODE_NEXT(n); n=(void *) nxt)
 /* WALK_LIST_FIRST supposes that called code removes each processed node */
@@ -51,6 +53,7 @@ typedef struct list {			/* In fact two overlayed nodes */
 void add_tail(list *, node *);
 void add_head(list *, node *);
 void rem_node(node *);
+void rem2_node(node *);
 void add_tail_list(list *, list *);
 void init_list(list *);
 void insert_node(node *, node *);

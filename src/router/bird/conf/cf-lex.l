@@ -172,7 +172,7 @@ else: {
   return ELSECOL;
 }
 
-({ALPHA}{ALNUM}*|[']({ALNUM}|[-]|[\.])*[']) {
+({ALPHA}{ALNUM}*|[']({ALNUM}|[-]|[\.]|[:])*[']) {
   if(*yytext == '\'') {
     yytext[yyleng-1] = 0;
     yytext++;
@@ -275,9 +275,6 @@ cf_hash(byte *c)
  * match - these do not have fd and flex buffer yet).
  *
  * FIXME: Most of these ifs and include functions are really sysdep/unix.
- *
- * FIXME: Resources (fd, flex buffers and glob data) in IFS stack
- * are not freed when cf_error() is called.
  */
 
 static struct include_file_stack *
@@ -316,13 +313,36 @@ enter_ifs(struct include_file_stack *new)
   yy_switch_to_buffer(new->buffer);
 }
 
+/**
+ * cf_lex_unwind - unwind lexer state during error
+ *
+ * cf_lex_unwind() frees the internal state on IFS stack when the lexical
+ * analyzer is terminated by cf_error().
+ */
+void
+cf_lex_unwind(void)
+{
+  struct include_file_stack *n;
+
+  for (n = ifs; n != ifs_head; n = n->prev)
+    {
+      /* Memory is freed automatically */
+      if (n->buffer)
+	yy_delete_buffer(n->buffer);
+      if (n->fd)
+        close(n->fd);
+    }
+
+  ifs = ifs_head;
+}
+
 static void
 cf_include(char *arg, int alen)
 {
   struct include_file_stack *base_ifs = ifs;
   int new_depth, rv, i;
   char *patt;
-  glob_t g;
+  glob_t g = {};
 
   new_depth = ifs->depth + 1;
   if (new_depth > MAX_INCLUDE_DEPTH)
@@ -370,7 +390,10 @@ cf_include(char *arg, int alen)
       struct stat fs;
 
       if (stat(fname, &fs) < 0)
-        cf_error("Unable to stat included file %s: %m", fname);
+	{
+	  globfree(&g);
+	  cf_error("Unable to stat included file %s: %m", fname);
+	}
 
       if (fs.st_mode & S_IFDIR)
         continue;
@@ -623,7 +646,7 @@ cf_walk_symbols(struct config *cf, struct symbol *sym, int *pos)
 char *
 cf_symbol_class_name(struct symbol *sym)
 {
-  if ((sym->class & 0xff00) == SYM_CONSTANT)
+  if (cf_symbol_is_constant(sym))
     return "constant";
 
   switch (sym->class)

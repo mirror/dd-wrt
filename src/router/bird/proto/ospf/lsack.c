@@ -92,7 +92,7 @@ ospf_lsack_send(struct ospf_neighbor *n, int queue)
 	op->length = htons(len);
 	DBG("Sending and continuing! Len=%u\n", len);
 
-	OSPF_PACKET(ospf_dump_lsack, pk, "LSACK packet sent via %s", ifa->iface->name);
+	OSPF_PACKET(ospf_dump_lsack, pk, "LSACK packet sent via %s", ifa->ifname);
 
 	if (ifa->type == OSPF_IT_BCAST)
 	{
@@ -121,7 +121,7 @@ ospf_lsack_send(struct ospf_neighbor *n, int queue)
   op->length = htons(len);
   DBG("Sending! Len=%u\n", len);
 
-  OSPF_PACKET(ospf_dump_lsack, pk, "LSACK packet sent via %s", ifa->iface->name);
+  OSPF_PACKET(ospf_dump_lsack, pk, "LSACK packet sent via %s", ifa->ifname);
 
   if (ifa->type == OSPF_IT_BCAST)
   {
@@ -153,7 +153,7 @@ ospf_lsack_receive(struct ospf_packet *ps_i, struct ospf_iface *ifa,
   }
 
   struct ospf_lsack_packet *ps = (void *) ps_i;
-  OSPF_PACKET(ospf_dump_lsack, ps, "LSACK packet received from %I via %s", n->ip, ifa->iface->name);
+  OSPF_PACKET(ospf_dump_lsack, ps, "LSACK packet received from %I via %s", n->ip, ifa->ifname);
 
   ospf_neigh_sm(n, INM_HELLOREC);
 

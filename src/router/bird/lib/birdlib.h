@@ -10,6 +10,7 @@
 #define _BIRD_BIRDLIB_H_
 
 #include "timer.h"
+#include "alloca.h"
 
 /* Ugly structure offset handling macros */
 
@@ -19,12 +20,14 @@
 
 /* Utility macros */
 
-#ifdef PARSER
-#define _MIN(a,b) (((a)<(b))?(a):(b))
-#define _MAX(a,b) (((a)>(b))?(a):(b))
-#else
-#define MIN(a,b) (((a)<(b))?(a):(b))
-#define MAX(a,b) (((a)>(b))?(a):(b))
+#define MIN_(a,b) (((a)<(b))?(a):(b))
+#define MAX_(a,b) (((a)>(b))?(a):(b))
+
+#ifndef PARSER
+#undef MIN
+#undef MAX
+#define MIN(a,b) MIN_(a,b)
+#define MAX(a,b) MAX_(a,b)
 #endif
 
 #define ABS(a)   ((a)>=0 ? (a) : -(a))
@@ -34,38 +37,107 @@
 #define NULL ((void *) 0)
 #endif
 
+#ifndef IPV6
+#define IP_VERSION 4
+#else
+#define IP_VERSION 6
+#endif
+
+
 /* Macros for gcc attributes */
 
 #define NORET __attribute__((noreturn))
 #define UNUSED __attribute__((unused))
 
-/* Logging and dying */
 
-struct rate_limit {
-  bird_clock_t timestamp;
-  int count;
+/* Microsecond time */
+
+typedef s64 btime;
+
+#define S_	*1000000
+#define MS_	*1000
+#define US_	*1
+#define TO_S	/1000000
+#define TO_MS	/1000
+#define TO_US	/1
+
+#ifndef PARSER
+#define S	S_
+#define MS	MS_
+#define US	US_
+#endif
+
+
+/* Rate limiting */
+
+struct tbf {
+  bird_clock_t timestamp;		/* Last update */
+  u16 count;				/* Available tokens */
+  u16 burst;				/* Max number of tokens */
+  u16 rate;				/* Rate of replenishment */
+  u16 mark;				/* Whether last op was limited */
 };
 
+/* Default TBF values for rate limiting log messages */
+#define TBF_DEFAULT_LOG_LIMITS { .rate = 1, .burst = 5 }
+
+void tbf_update(struct tbf *f);
+
+static inline int
+tbf_limit(struct tbf *f)
+{
+  tbf_update(f);
+
+  if (!f->count)
+  {
+    f->mark = 1;
+    return 1;
+  }
+
+  f->count--;
+  f->mark = 0;
+  return 0;
+}
+
+
+/* Logging and dying */
+
+typedef struct buffer {
+  byte *start;
+  byte *pos;
+  byte *end;
+} buffer;
+
+#define STACK_BUFFER_INIT(buf,size)		\
+  do {						\
+    buf.start = alloca(size);			\
+    buf.pos = buf.start;			\
+    buf.end = buf.start + size;			\
+  } while(0)
+
+#define LOG_BUFFER_INIT(buf)			\
+  STACK_BUFFER_INIT(buf, LOG_BUFFER_SIZE)
+
+#define LOG_BUFFER_SIZE 1024
+
 #define log log_msg
+
 #ifdef NEED_PRINTF
-void log_reset(void);
-void log_commit(int class);
+void log_commit(int class, buffer *buf);
 void log_msg(char *msg, ...);
 void log_rl(struct rate_limit *rl, char *msg, ...);
-void logn(char *msg, ...);
 void die(char *msg, ...) NORET;
 void bug(char *msg, ...) NORET;
 void debug(char *msg, ...);		/* Printf to debug output */
 #else
-#define log_reset() do { } while(0)
-#define log_commit(class) do { } while(0)
+#define log_commit(class, buf) do { } while(0)
 #define log_msg(msg, ...) do { } while(0)
 #define log_rl(rl, msg, ...) do { } while(0)
-#define logn(msg, ...) do { } while(0)
 #define die(msg, ...) do {  exit(-1); } while(0)
 #define bug(msg, ...) do {  exit(-1); } while(0)
 #define debug(msg, ...) do { } while(0)
 #endif
+
 #define L_DEBUG "\001"			/* Debugging messages */
 #define L_TRACE "\002"			/* Protocol tracing */
 #define L_INFO "\003"			/* Informational messages */
@@ -75,6 +147,7 @@ void debug(char *msg, ...);		/* Printf to debug output */
 #define L_AUTH "\007"			/* Authorization failed etc. */
 #define L_FATAL "\010"			/* Fatal errors */
 #define L_BUG "\011"			/* BIRD bugs */
+
 
 /* Debugging */
 

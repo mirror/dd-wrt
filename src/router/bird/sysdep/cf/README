@@ -8,6 +8,8 @@ CONFIG_ALL_TABLES_AT_ONCE	Kernel scanner wants to process all tables at once
 
 CONFIG_MC_PROPER_SRC	Multicast packets have source address according to socket saddr field
 CONFIG_SKIP_MC_BIND	Don't call bind on multicast socket (def for *BSD)
+CONFIG_NO_IFACE_BIND	Bind to iface is not available, use workarounds (def for *BSD)
 CONFIG_UNIX_DONTROUTE	Use setsockopts DONTROUTE (undef for *BSD)
+CONFIG_USE_HDRINCL	Use IP_HDRINCL instead of control messages for source address on raw IP sockets.
 
 CONFIG_RESTRICTED_PRIVILEGES	Implements restricted privileges using drop_uid()

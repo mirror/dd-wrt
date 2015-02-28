@@ -39,7 +39,6 @@ ospf_pkt_fill_hdr(struct ospf_iface *ifa, void *buf, u8 h_type)
 unsigned
 ospf_pkt_maxsize(struct ospf_iface *ifa)
 {
-  unsigned mtu = (ifa->type == OSPF_IT_VLINK) ? OSPF_VLINK_MTU : ifa->iface->mtu;
   unsigned headers = SIZE_OF_IP_HEADER;
 
 #ifdef OSPFv2
@@ -47,7 +46,7 @@ ospf_pkt_maxsize(struct ospf_iface *ifa)
     headers += OSPF_AUTH_CRYPT_SIZE;
 #endif
 
-  return mtu - headers;
+  return ifa->tx_length - headers;
 }
 
 #ifdef OSPFv2
@@ -263,7 +262,7 @@ ospf_rx_hook(sock *sk, int size)
     return 1;
 
   DBG("OSPF: RX hook called (iface %s, src %I, dst %I)\n",
-      sk->iface->name, sk->faddr, sk->laddr);
+      sk->ifname, sk->faddr, sk->laddr);
 
   /* Initially, the packet is associated with the 'master' iface */
   struct ospf_iface *ifa = sk->data;
@@ -309,9 +308,9 @@ ospf_rx_hook(sock *sk, int size)
     return 1;
   }
 
-  if (ifa->check_ttl && (sk->ttl < 255))
+  if (ifa->check_ttl && (sk->rcv_ttl < 255))
   {
-    log(L_ERR "%s%I - TTL %d (< 255)", mesg, sk->faddr, sk->ttl);
+    log(L_ERR "%s%I - TTL %d (< 255)", mesg, sk->faddr, sk->rcv_ttl);
     return 1;
   }
 
@@ -321,22 +320,31 @@ ospf_rx_hook(sock *sk, int size)
     return 1;
   }
 
-  int osize = ntohs(ps->length);
-  if ((unsigned) osize < sizeof(struct ospf_packet))
+  uint plen = ntohs(ps->length);
+  if ((plen < sizeof(struct ospf_packet)) || ((plen % 4) != 0))
   {
-    log(L_ERR "%s%I - too low value in size field (%u bytes)", mesg, sk->faddr, osize);
+    log(L_ERR "%s%I - invalid length (%u)", mesg, sk->faddr, plen);
     return 1;
   }
 
-  if ((osize > size) || ((osize % 4) != 0))
+  if (sk->flags & SKF_TRUNCATED)
   {
-    log(L_ERR "%s%I - size field does not match (%d/%d)", mesg, sk->faddr, osize, size);
+    log(L_WARN "%s%I - too large (%d/%d)", mesg, sk->faddr, plen, size);
+
+    /* If we have dynamic buffers and received truncated message, we expand RX buffer */
+
+    uint bs = plen + 256;
+    bs = BIRD_ALIGN(bs, 1024);
+
+    if (!ifa->cf->rx_buffer && (bs > sk->rbsize))
+      sk_set_rbsize(sk, bs);
+
     return 1;
   }
 
-  if ((unsigned) size > sk->rbsize)
+  if (plen > size)
   {
-    log(L_ERR "%s%I - too large (%d vs %d)", mesg, sk->faddr, size, sk->rbsize);
+    log(L_ERR "%s%I - size field does not match (%d/%d)", mesg, sk->faddr, plen, size);
     return 1;
   }
 
@@ -349,7 +357,7 @@ ospf_rx_hook(sock *sk, int size)
 #ifdef OSPFv2
   if ((ps->autype != htons(OSPF_AUTH_CRYPT)) &&
       (!ipsum_verify(ps, 16, (void *) ps + sizeof(struct ospf_packet),
-		     osize - sizeof(struct ospf_packet), NULL)))
+		     plen - sizeof(struct ospf_packet), NULL)))
   {
     log(L_ERR "%s%I - bad checksum", mesg, sk->faddr);
     return 1;
@@ -448,7 +456,7 @@ ospf_rx_hook(sock *sk, int size)
   if(!n && (ps->type != HELLO_P))
   {
     log(L_WARN "OSPF: Received non-hello packet from unknown neighbor (src %I, iface %s)",
-	sk->faddr, ifa->iface->name);
+	sk->faddr, ifa->ifname);
     return 1;
   }
 
@@ -495,20 +503,30 @@ ospf_rx_hook(sock *sk, int size)
   return 1;
 }
 
+/*
 void
 ospf_tx_hook(sock * sk)
 {
   struct ospf_iface *ifa= (struct ospf_iface *) (sk->data);
 //  struct proto *p = (struct proto *) (ifa->oa->po);
-  log(L_ERR "OSPF: TX hook called on %s", ifa->iface->name);
+  log(L_ERR "OSPF: TX hook called on %s", ifa->ifname);
 }
+*/
 
 void
 ospf_err_hook(sock * sk, int err)
 {
   struct ospf_iface *ifa= (struct ospf_iface *) (sk->data);
-//  struct proto *p = (struct proto *) (ifa->oa->po);
-  log(L_ERR "OSPF: Socket error on %s: %M", ifa->iface->name, err);
+  struct proto *p = &(ifa->oa->po->proto);
+  log(L_ERR "%s: Socket error on %s: %M", p->name, ifa->ifname, err);
+}
+
+void
+ospf_verr_hook(sock *sk, int err)
+{
+  struct proto_ospf *po = (struct proto_ospf *) (sk->data);
+  struct proto *p =  &po->proto;
+  log(L_ERR "%s: Vlink socket error: %M", p->name, err);
 }
 
 void
@@ -543,9 +561,9 @@ ospf_send_to(struct ospf_iface *ifa, ip_addr dst)
 #endif
 
   ospf_pkt_finalize(ifa, pkt);
-  if (sk->tbuf != sk->tpos)
-    log(L_ERR "Aiee, old packet was overwritten in TX buffer");
 
-  sk_send_to(sk, len, dst, 0);
+  int done = sk_send_to(sk, len, dst, 0);
+  if (!done)
+    log(L_WARN "OSPF: TX queue full on %s", ifa->ifname);
 }
 
