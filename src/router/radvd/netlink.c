@@ -32,86 +32,110 @@
 #define SOL_NETLINK	270
 #endif
 
-#ifndef RTM_SETLINK
-#define RTM_SETLINK (RTM_BASE+3)
-#endif
-
-void process_netlink_msg(int sock)
+void process_netlink_msg(int sock, struct Interface * ifaces)
 {
-	int len;
+	int rc = 0;
+
 	char buf[4096];
 	struct iovec iov = { buf, sizeof(buf) };
 	struct sockaddr_nl sa;
 	struct msghdr msg = { (void *)&sa, sizeof(sa), &iov, 1, NULL, 0, 0 };
-	struct nlmsghdr *nh;
-	struct ifinfomsg *ifinfo;
-	struct rtattr *rta;
-	int rta_len;
-	char ifname[IF_NAMESIZE] = { "" };
-	int reloaded = 0;
-
-	len = recvmsg(sock, &msg, 0);
+	int len = recvmsg(sock, &msg, 0);
 	if (len == -1) {
-		flog(LOG_ERR, "recvmsg failed: %s", strerror(errno));
+		flog(LOG_ERR, "netlink: recvmsg failed: %s", strerror(errno));
 	}
 
-	for (nh = (struct nlmsghdr *)buf; NLMSG_OK(nh, len); nh = NLMSG_NEXT(nh, len)) {
+	for (struct nlmsghdr * nh = (struct nlmsghdr *)buf; NLMSG_OK(nh, len); nh = NLMSG_NEXT(nh, len)) {
+		char ifnamebuf[IF_NAMESIZE];
 		/* The end of multipart message. */
 		if (nh->nlmsg_type == NLMSG_DONE)
 			return;
 
 		if (nh->nlmsg_type == NLMSG_ERROR) {
-			flog(LOG_ERR, "%s:%d Some type of netlink error.\n", __FILE__, __LINE__);
+			flog(LOG_ERR, "netlink: unknown error");
 			abort();
 		}
 
 		/* Continue with parsing payload. */
 		if (nh->nlmsg_type == RTM_NEWLINK || nh->nlmsg_type == RTM_DELLINK || nh->nlmsg_type == RTM_SETLINK) {
-			ifinfo = (struct ifinfomsg *)NLMSG_DATA(nh);
-			if_indextoname(ifinfo->ifi_index, ifname);
-			rta = IFLA_RTA(NLMSG_DATA(nh));
-			rta_len = nh->nlmsg_len - NLMSG_LENGTH(sizeof(struct ifinfomsg));
-#ifdef IFLA_LINKINFO
+			struct ifinfomsg *ifinfo = (struct ifinfomsg *)NLMSG_DATA(nh);
+			const char *ifname = if_indextoname(ifinfo->ifi_index, ifnamebuf);
+
+			struct rtattr *rta = IFLA_RTA(NLMSG_DATA(nh));
+			int rta_len = nh->nlmsg_len - NLMSG_LENGTH(sizeof(struct ifinfomsg));
 			for (; RTA_OK(rta, rta_len); rta = RTA_NEXT(rta, rta_len)) {
 				if (rta->rta_type == IFLA_OPERSTATE || rta->rta_type == IFLA_LINKMODE) {
-#endif
 					if (ifinfo->ifi_flags & IFF_RUNNING) {
-						dlog(LOG_DEBUG, 3, "%s, ifindex %d, flags is running", ifname, ifinfo->ifi_index);
+						dlog(LOG_DEBUG, 3, "netlink: %s, ifindex %d, flags is running", ifname,
+						     ifinfo->ifi_index);
 					} else {
-						dlog(LOG_DEBUG, 3, "%s, ifindex %d, flags is *NOT* running", ifname, ifinfo->ifi_index);
+						dlog(LOG_DEBUG, 3, "netlink: %s, ifindex %d, flags is *NOT* running", ifname,
+						     ifinfo->ifi_index);
 					}
-					if (!reloaded) {
-						reload_config();
-						reloaded = 1;
-					}
-#ifdef IFLA_LINKINFO
+					++rc;
 				}
 			}
-#endif
+
+			/* Reinit the interfaces which need it. */
+			struct Interface *iface;
+			switch (nh->nlmsg_type) {
+			case RTM_NEWLINK:
+				iface = find_iface_by_name(ifaces, ifname);
+				break;
+			default:
+				iface = find_iface_by_index(ifaces, ifinfo->ifi_index);
+				break;
+			}
+			if (iface) {
+				touch_iface(iface);
+			}
+
+		} else if (nh->nlmsg_type == RTM_NEWADDR || nh->nlmsg_type == RTM_DELADDR) {
+			struct ifaddrmsg *ifaddr = (struct ifaddrmsg *)NLMSG_DATA(nh);
+			const char *ifname = if_indextoname(ifaddr->ifa_index, ifnamebuf);
+
+			switch (nh->nlmsg_type) {
+
+			case RTM_DELADDR:
+				dlog(LOG_DEBUG, 3, "netlink: %s, ifindex %d, address deleted", ifname, ifaddr->ifa_index);
+				break;
+
+			case RTM_NEWADDR:
+				dlog(LOG_DEBUG, 3, "netlink: %s, ifindex %d, new address", ifname, ifaddr->ifa_index);
+				break;
+
+			default:
+				flog(LOG_ERR, "netlink: unhandled event: %d", nh->nlmsg_type);
+				break;
+			}
+
+			++rc;
+
+			struct Interface *iface = find_iface_by_index(ifaces, ifaddr->ifa_index);
+			if (iface) {
+				touch_iface(iface);
+			}
 		}
 	}
 }
 
 int netlink_socket(void)
 {
-	int rc, sock;
-	unsigned int val = 1;
-	struct sockaddr_nl snl;
-
-	sock = socket(PF_NETLINK, SOCK_RAW, NETLINK_ROUTE);
+	int sock = socket(PF_NETLINK, SOCK_RAW, NETLINK_ROUTE);
 	if (sock == -1) {
 		flog(LOG_ERR, "Unable to open netlink socket: %s", strerror(errno));
 	}
 #if defined SOL_NETLINK && defined NETLINK_NO_ENOBUFS
-	else if (setsockopt(sock, SOL_NETLINK, NETLINK_NO_ENOBUFS, &val, sizeof(val)) < 0) {
+	else if (setsockopt(sock, SOL_NETLINK, NETLINK_NO_ENOBUFS, (int[]){1}, sizeof(int)) < 0) {
 		flog(LOG_ERR, "Unable to setsockopt NETLINK_NO_ENOBUFS: %s", strerror(errno));
 	}
 #endif
+	struct sockaddr_nl snl;
 	memset(&snl, 0, sizeof(snl));
 	snl.nl_family = AF_NETLINK;
-	snl.nl_groups = RTMGRP_LINK;
+	snl.nl_groups = RTMGRP_LINK | RTMGRP_IPV6_IFADDR;
 
-	rc = bind(sock, (struct sockaddr *)&snl, sizeof(snl));
+	int rc = bind(sock, (struct sockaddr *)&snl, sizeof(snl));
 	if (rc == -1) {
 		flog(LOG_ERR, "Unable to bind netlink socket: %s", strerror(errno));
 		close(sock);
