@@ -31,6 +31,10 @@
 #ifndef SOL_NETLINK
 #define SOL_NETLINK	270
 #endif
+#ifndef RTM_SETLINK
+#define RTM_SETLINK (RTM_BASE+3)
+#endif
+
 
 void process_netlink_msg(int sock, struct Interface * ifaces)
 {
@@ -61,10 +65,12 @@ void process_netlink_msg(int sock, struct Interface * ifaces)
 			struct ifinfomsg *ifinfo = (struct ifinfomsg *)NLMSG_DATA(nh);
 			const char *ifname = if_indextoname(ifinfo->ifi_index, ifnamebuf);
 
+#ifdef IFLA_LINKINFO
 			struct rtattr *rta = IFLA_RTA(NLMSG_DATA(nh));
 			int rta_len = nh->nlmsg_len - NLMSG_LENGTH(sizeof(struct ifinfomsg));
 			for (; RTA_OK(rta, rta_len); rta = RTA_NEXT(rta, rta_len)) {
 				if (rta->rta_type == IFLA_OPERSTATE || rta->rta_type == IFLA_LINKMODE) {
+#endif
 					if (ifinfo->ifi_flags & IFF_RUNNING) {
 						dlog(LOG_DEBUG, 3, "netlink: %s, ifindex %d, flags is running", ifname,
 						     ifinfo->ifi_index);
@@ -73,9 +79,10 @@ void process_netlink_msg(int sock, struct Interface * ifaces)
 						     ifinfo->ifi_index);
 					}
 					++rc;
+#ifdef IFLA_LINKINFO
 				}
 			}
-
+#endif
 			/* Reinit the interfaces which need it. */
 			struct Interface *iface;
 			switch (nh->nlmsg_type) {
