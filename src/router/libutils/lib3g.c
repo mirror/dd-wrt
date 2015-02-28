@@ -1256,8 +1256,8 @@ static struct DEVICES devicelist[] = {
 
 // Puchuang
 	{0x20a6, 0x1000, "option", "0", "0", 2, &modeswitch_std_eject, "E003 (cdrom)"},	//
-	{0x20a6, 0x1105, "option", "0", "0", 2 | GENERIC, NULL, "Intex 3.5G (modem)"},	//
-	{0x20a6, 0x1106, "option", "0", "0", 2 | GENERIC, NULL, "Haier TE W130 (modem)"},	//
+	{0x20a6, 0x1105, "option", "2", "0", 2 | GENERIC, NULL, "Intex 3.5G (modem)"},	//
+	{0x20a6, 0x1106, "option", "2", "0", 2 | GENERIC, NULL, "Haier TE W130 (modem)"},	//
 	{0x20a6, 0xf00a, "option", "0", "0", 2, &modeswitch_std_eject, "E003 (cdrom)"},	//
 	{0x20a6, 0xf00e, "option", "0", "0", 2, &modeswitch_std_eject, "Intex 3.5G (cdrom)"},	//
 
