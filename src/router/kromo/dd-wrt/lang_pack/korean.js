@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-//                Korean translation file - DD-WRT V24 SP2        2015-01-18                //
-//              This translation file is based on R25914 English language file              //
+//                Korean translation file - DD-WRT V24 SP2        2015-02-28                //
+//              This translation file is based on R26107 English language file              //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
@@ -21,7 +21,7 @@ share.mode_3g_3g2g="3G 우선, 오류 발생시 2G";
 share.firmware="펌웨어";
 share.time="시간";
 share.interipaddr="WAN IP 주소";
-share.more="더 상세히...";
+share.more="상세히...";
 share.help="도움말";
 share.enable="사용함";
 share.enabled="사용함";
@@ -39,8 +39,8 @@ share.wan_dualaccess="듀얼-액세스 모드";
 share.compression="PPP 압축 (MPPC)";
 share.mlppp="단일 라인 멀티 링크";
 share.vpi_vci="VPI/VCI";
-share.encaps="Encapsulation";
-share.payload="Payload 타입";
+share.encaps="캡슐화";
+share.payload="페이로드 타입";
 share.domainname="도메인 이름";
 share.wandomainname="WAN 도메인 이름";
 share.landomainname="LAN 도메인 이름";
@@ -53,7 +53,7 @@ share.localip="로컬 IP";
 share.remoteip="원격 IP";
 share.mac="MAC 주소";
 share.none="없음";
-share.none2="없음";
+share.none2="no";
 share.both="양방";
 share.add="첨가";
 share.del="삭제";
@@ -131,18 +131,18 @@ share.point2point="포인트 투 포인트";
 share.nat="NAT";
 share.subnet="서브넷 마스크";
 share.unmask="표시하기";
-share.deflt="기본";  //don't use share.default!!!"
+share.deflt="기본";  //don't use share.default!!!
 share.all="모두";
 share.auto="자동";
 share.right="오른쪽";
 share.left="왼쪽";
-share.share_key="공유키";
+share.share_key="공유 키";
 share.inter="간격 (초)";
 share.srv="서비스 이름";
 share.port_range="포트 범위";
 share.priority="우선순위";
 share.gateway="게이트웨이";
-share.intrface="인터페이스";  //share.interface은 를 사용하지 마십시오, Mozilla와 호환성의 문제가 있습니다!!!"
+share.intrface="인터페이스";  //don't use share.interface, Mozilla problem!!!
 share.ccq="CCQ";
 share.pintrface="물리 인터페이스";
 share.vintrface="가상 인터페이스";
@@ -179,12 +179,12 @@ share.full="Full (20 MHz)";
 share.half="Half (10 MHz)";
 share.quarter="Quarter (5 MHz)";
 share.subquarter="Eighth (2.5 MHz)";
-share.seealso="다음을 참조하십시오";
+share.seealso="참조";
 share.never="하지않음";
-share.unknown="알수없음";
-share.expired="기간 만료되었습니다";
+share.unknown="알 수 없음";
+share.expired="기간 만료";
 share.logout="로그아웃";
-share.nmounted="장착되지 않았습니다";
+share.nmounted="마운트 되지 않음";
 share.fssize="전체 / 사용가능한 용량";
 share.src="송신측 주소";
 share.dst="수신측 주소";
@@ -202,7 +202,7 @@ share._12h="12시간마다";
 share._24h="매일";
 share._48h="이틀마다";
 share._168h="매주";
-share.days="일자";
+share.days="일";
 share.from2=share.from;
 share.to2=share.to;
 share.days_genetive=share.days;
@@ -214,20 +214,20 @@ share.bytes="bytes";
 share.kbytes="KB";
 share.mbytes="MB";
 share.gbytes="GB";
-share.preempt="Preemption";
+share.preempt="선점";
 share.acktiming="ACK 타이밍";
 share.broadcast="브로드캐스트 지원";
 share.secondcharacter="s";
 share.change="사용자 암호 변경";
 
 sbutton.save="저장";
-sbutton.savetitle="설정을 저정합니다(동작에는 반영하지 않음)";
+sbutton.savetitle="설정을 저장합니다";
 sbutton.apply="설정 적용";
-sbutton.applytitle="설정 즉시 적용";
-sbutton.saving="저장되었습니다";
-sbutton.cmd="실행중입니다";
-sbutton.cancel="설정변경 취소";
-sbutton.canceltitle="현재 페이지의 설정변경 취소";
+sbutton.applytitle="설정울 즉시 적용합니다";
+sbutton.saving="저장됨";
+sbutton.cmd="실행중";
+sbutton.cancel="변경 취소";
+sbutton.canceltitle="현재 페이지의 변경을 취소합니다";
 sbutton.refres="표시를 갱신합니다";
 sbutton.clos="닫기";
 sbutton.del="삭제";
@@ -237,15 +237,15 @@ sbutton.remove="삭제";
 sbutton.modify="변경";
 sbutton.deleted="삭제";
 sbutton.delall="전체 삭제";
-sbutton.autorefresh="표시내용이 자동으로 갱신이 됩니다";
-sbutton.backup="설정보존";
-sbutton.restore="설정복원";
+sbutton.autorefresh="자동 새로고침 켜짐";
+sbutton.backup="백업";
+sbutton.restore="복원";
 sbutton.cptotext="편집";
 sbutton.runcmd="명령 실행";
-sbutton.startup="기동시 스크립트로 저장합니다";
-sbutton.shutdown="셧다운 저장";
-sbutton.firewall="방화벽 스크립트로 저장합니다";
-sbutton.custom="수동 스크립트로 저장합니다";
+sbutton.startup="시작 스크립트로 저장";
+sbutton.shutdown="종료 스크립트로 저장";
+sbutton.firewall="방화벽 스크립트로 저장";
+sbutton.custom="커스텀 스크립트로 저장";
 sbutton.wol="장치 기동";
 sbutton.add_wol="호스트 추가";
 sbutton.manual_wol="수동 기동";
@@ -262,10 +262,10 @@ sbutton.log_in="수신 로그";
 sbutton.log_out="송신 로그";
 sbutton.edit_srv="서비스 추가/편집";
 sbutton.routingtab="라우팅 테이블 표시";
-sbutton.wanmac="현재 설정중인 PC의 MAC 주소 취득";
+sbutton.wanmac="현재 PC의 MAC 주소 취득";
 sbutton.dhcprel="DHCP 할당";
 sbutton.dhcpren="DHCP 갱신";
-sbutton.survey="사이트 검색";
+sbutton.survey="Site Survey";
 sbutton.upgrading="업그레이드중";
 sbutton.upgrade="업그레이드 실행";
 sbutton.preview="미리보기";
@@ -295,8 +295,8 @@ errmsg.err45="HTTPS접속을 지원하지 않습니다! HTTP 모드로 접속하
 errmsg.err46="HTTPS접속을 지원하지 않습니다";
 
 //common.js error messages
-errmsg.err14=" 입력한 값이 범위를 넘었습니다[";
-errmsg.err15="WAN MAC 주소가 범위를 벗어났습니다[00 - ff].";
+errmsg.err14=" 입력한 값이 범위를 넘었습니다 [";
+errmsg.err15="WAN MAC 주소가 범위를 벗어났습니다 [00 - ff].";
 errmsg.err16="MAC의 두번째 문자는 다음의[0, 2, 4, 6, 8, A, C, E] 기호에서 선택해야 합니다.";
 errmsg.err17="MAC 주소가 틀렸습니다.";
 errmsg.err18="MAC 주소의 길이가 맞지 않습니다.";
@@ -310,7 +310,7 @@ errmsg.err25="키 값이 틀렸습니다.";
 errmsg.err26="키의 입력 길이가 틀렸습니다.";
 errmsg.err27="허용되지 않은 서브넷 마스크 입니다.";
 errmsg.err28=" 허용되지 않은 문자가 포함되어 있습니다, 반드시 [ 0 - 9 ]의 숫자를 사용하여 주십시오.";
-errmsg.err29=" 허용되지 않은 ascii 코드가 포함되어 있습니다.";
+errmsg.err29=" 허용되지 않은 아스키 코드가 포함되어 있습니다.";
 errmsg.err30=" 허용되지 않은 16진수 숫자가 포함되어 있습니다.";
 errmsg.err31=" 허용되지 않은 값입니다.";
 errmsg.err32="IP 주소와 게이트웨이가 같은 서브넷 마스크에 있지 않습니다.";
@@ -327,7 +327,7 @@ errmsg.err37="실행을 위해서 반드시 UDP 포트를 입력하여 주십시
 
 //WL_WPATable.asp error messages
 //WPA.asp error messages
-errmsg.err38="공유키를 입력하여 주십시오!";
+errmsg.err38="공유 키를 입력하여 주십시오!";
 errmsg.err39="유효하지 않은 키입니다, 반드시 8에서 63자리 사이의 ASCII 문자 혹은 64자리 16진수 숫자를 입력하여 주십시오";
 errmsg.err40="키를 위해서 키값을 입력하여 주십시오";
 errmsg.err41="유효하지 않은 키값의 길이입니다 ";
@@ -409,6 +409,7 @@ bmenu.wirelessMac="MAC 필터";
 bmenu.wirelessAdvanced="고급 설정";
 bmenu.wirelessAdvancedwl0="WL0-고급";
 bmenu.wirelessAdvancedwl1="WL1-고급";
+bmenu.wirelessAdvancedwl2="WL2-고급";
 bmenu.wirelessWds="WDS";
 bmenu.wirelessWds0="Ath0-WDS";
 bmenu.wirelessWds1="Ath1-WDS";
@@ -416,10 +417,11 @@ bmenu.wirelessWds2="Ath2-WDS";
 bmenu.wirelessWds3="Ath3-WDS";
 bmenu.wirelessWdswl0="WL0-WDS";
 bmenu.wirelessWdswl1="WL1-WDS";
+bmenu.wirelessWdswl2="WL2-WDS";
 
 bmenu.security="보안";
 bmenu.firwall="방화벽";
-bmenu.vpn="VPN Passthrough";
+bmenu.vpn="VPN 패스 스루";
 
 bmenu.accrestriction="접근 제한";
 bmenu.webaccess="WAN 액세스";
@@ -441,7 +443,7 @@ bmenu.sipathstatus="상태";
 
 bmenu.admin="관리자 메뉴";
 bmenu.adminManagement="관리메뉴";
-bmenu.adminAlive="켜진 상태 유지";
+bmenu.adminAlive="상태 유지";
 bmenu.adminLog="로그";
 bmenu.adminDiag="명령";
 bmenu.adminWol="WOL";
@@ -463,12 +465,12 @@ bmenu.servicesPrivoxy="광고 차단";
 bmenu.servicesLighttpd="웹서버";
 //bmenu.servicesAnchorFree="My Ad Network";
 
-bmenu.statu="공유기상태";
-bmenu.statuRouter="공유기정보";
+bmenu.statu="상태";
+bmenu.statuRouter="공유기";
 bmenu.statuInet="WAN";
 bmenu.statuLAN="LAN";
-bmenu.statuSputnik="Sputnik Agent";
-bmenu.statuWLAN="무선 LAN";
+bmenu.statuSputnik="Sputnik 에이전트";
+bmenu.statuWLAN="무선";
 bmenu.statuVPN="OpenVPN";
 bmenu.statuBand="대역폭";
 bmenu.statuSysInfo="시스템 정보";
@@ -481,8 +483,8 @@ bmenu.setupnetw="네트워크";
 bmenu.adminman="관리메뉴";
 
 // ** Alive.asp **//
-alive.titl="켜진 상태 유지";
-alive.h2="켜진 상태 유지";
+alive.titl="상태 유지";
+alive.h2="상태 유지";
 alive.legend="일정주기로 리부팅하기";
 alive.sevr1="일정주기로 리부팅하기";
 alive.hour="지정 시각에 재기동 실시";
@@ -504,13 +506,13 @@ halive.page2="<dd></dd><dd>Check all values and click <em>Save Settings</em> to 
 
 
 // ** config.asp **//
-config.titl="설정보존 & 복원";
-config.h2="설정 파라미터 보존";
-config.legend="설정 보존";
-config.mess1="\"" + sbutton.backup + "\" 버튼을 클릭하시면 설정을 보존한 파일이 컴퓨터에 다운로드됩니다.";
-config.h22="설정 파라미터 복원";
+config.titl="백업 & 복원";
+config.h2="설정 백업";
+config.legend="설정 백업";
+config.mess1="\"" + sbutton.backup + "\" 버튼을 클릭하시면 설정을 백업한 파일이 컴퓨터에 다운로드됩니다.";
+config.h22="설정 복원";
 config.legend2="설정 복원";
-config.mess2="복원을 위한 파일을 선택해 주십시오";
+config.mess2="복원을 위한 파일 선택";
 config.mess3=" !!! 경  고 !!! ";
 config.mess4="같은 펌웨어와 같은 모델의 공유기에서 백업된 파일만을 업로드하여 주십시오.<br />현재와 다른 인터페이스에서 작성된 파일을 업로드하시면 안됩니다!";
 
@@ -528,16 +530,16 @@ ddns.titl="동적 DNS";
 ddns.h2="동적 도메인 이름 시스템 (DDNS)";
 ddns.legend="DDNS";
 ddns.srv="DDNS 서비스";
-ddns.emailaddr="E-mail 주소";
+ddns.emailaddr="이메일 주소";
 ddns.typ="타입";
-ddns.dynamic="Dynamic";
-ddns.custom="Custom";
+ddns.dynamic="다이나믹";
+ddns.custom="커스텀";
 ddns.wildcard="와일드카드";
 ddns.statu="DDNS 상태";
 ddns.system="DYNDNS 서버";
 ddns.options="추가 DDNS 옵션";
 ddns.forceupd="강제 업데이트 간격";
-ddns.wanip="외부 ip 체크를 사용합니다";
+ddns.wanip="외부 ip 체크 사용";
 
 ddnsm.all_closed="DDNS 서버와 연결이 끊어져 있습니다";
 ddnsm.all_resolving="도메인 이름을 확인하고 있습니다";
@@ -564,8 +566,8 @@ diag.titl="진단";
 diag.h2="진단";
 diag.legend="명령 셸";
 diag.cmd="명령";
-diag.startup="기동시 스크립트";
-diag.shutdown="종료시 스크립트";
+diag.startup="시작 스크립트";
+diag.shutdown="종료 스크립트";
 diag.firewall="방화벽 스크립트";
 diag.custom="커스텀 스크립트";
 
@@ -621,25 +623,25 @@ filter.h2="인터넷 액세스";
 filter.legend="액세스 사용자 정의";
 filter.pol="사용자 정의";
 filter.polname="사용자 정의 이름";
-filter.pcs="PCs(단말 지정)";
+filter.pcs="클라이언트";
 filter.polallow="지정한 날과 시간에 한해서 인터넷 접속허가.";
 filter.legend2="날짜";
 filter.time="시간";
 filter.h24="항상";
 filter.legend3="서비스 차단";
 filter.catchall="모든 P2P 프로토콜을 차단";
-filter.legend4="특정 웹사이트 차단(URL 지정)";
-filter.legend5="특정 키워드로 관련 웹사이트 차단";
+filter.legend4="URL 주소로 웹사이트 차단";
+filter.legend5="키워드로 웹사이트 차단";
 filter.mess1="사용자 정의를 삭제하시겠습니까?";
 filter.mess2="최소한 하루 이상의 요일/일자를 지정하여 주십시오.";
 filter.mess3="종료 시간은 시작 시간보다 빠르게 설정 할 수 없습니다.";
-filter.nat="WAN NAT 리다이렉션을 필터링합니다";
-filter.port113="IDENT(포트 113)를 필터링합니다";
-filter.snmp="WAN SNMP 접근을 차단합니다";
+filter.nat="WAN NAT 리다이렉션 필터링";
+filter.port113="IDENT(포트 113) 필터링";
+filter.snmp="WAN SNMP 접근 차단";
 filter.none="";
 
 //help container
-hfilter.right2="최대 10 개의 사용자 정의를 설정할 수 있습니다. <em>"+ sbutton.del + "</ em>을 클릭하면 선택한 사용자 정의가 삭제됩니다. 또한 <em>"+ sbutton.summary + "</ em>을 클릭하면 현재 설정된 사용자 정의 목록이 표시됩니다.";
+hfilter.right2="최대 10 개의 사용자 정의를 설정할 수 있습니다. <em>"+ sbutton.del + "</ em>를 클릭하면 선택한 사용자 정의가 삭제됩니다. 또한 <em>"+ sbutton.summary + "</ em>을 클릭하면 현재 설정된 사용자 정의 목록이 표시됩니다.";
 hfilter.right4="사용자 정의를 활성화 혹은 비활성화 하실 수 있습니다.";
 hfilter.right6="사용자 정의에 임의의 이름을 부여할 수 있습니다.";
 hfilter.right8="사용자 정의를 실행할 요일을 지정하실 수 있습니다.";
@@ -664,18 +666,18 @@ firewall.h2="보안";
 firewall.legend="방화벽 보호";
 firewall.firewall="SPI 방화벽";
 firewall.legend2="추가 필터";
-firewall.proxy="프록시를 필터링합니다";
-firewall.cookies="쿠키를 필터링합니다";
-firewall.applet="Java 애플릿을 필터링합니다";
-firewall.activex="ActiveX를 필터링합니다";
-firewall.legend3="WAN측의 패킷을 끊습니다";
-firewall.legend4="WAN DoS/무차별 대입 공격을 지연시킵니다";
-firewall.ping="알수 없는 WAN측의 요구를 막습니다 (ping에 응답하지 않습니다)";
-firewall.muticast="멀티캐스트 패킷을 필터링합니다";
-firewall.ssh="SSH 접근을 제한합니다";
-firewall.telnet="Telnet 접근은 제한합니다";
-firewall.pptp="PPTP 서버 접근을 제한합니다";
-firewall.ftp="FTP 서버 접근을 제한합니다";
+firewall.proxy="프록시 필터링";
+firewall.cookies="쿠키 필터링";
+firewall.applet="Java 애플릿 필터링";
+firewall.activex="ActiveX 필터링";
+firewall.legend3="WAN 요청 차단";
+firewall.legend4="WAN DoS/Bruteforce 지연";
+firewall.ping="익명 WAN 요청 차단 (ping)";
+firewall.muticast="멀티캐스트 패킷 필터링";
+firewall.ssh="SSH 접근 제한";
+firewall.telnet="텔넷 접근 제한";
+firewall.pptp="PPTP 서버 접근 제한";
+firewall.ftp="FTP 서버 접근 제한";
 
 //help container
 hfirewall.right2="SPI 방화벽 기능을 활성화 혹은 비활성화의 변경이 가능합니다.";
@@ -715,9 +717,9 @@ hprforward.page7="<dd>Click the <i>Enable</i> checkbox to enable port forwarding
 
 // ** P2P.asp **//
 p2p.titl="Peer-to-Peer 어플";
-p2p.h2="BitTorrent 클라이언트";
-p2p.legend="CTorrent";
-p2p.ctorrent_srv="Ctorrent 서비스";
+p2p.h2="비트토렌트 클라이언트";
+p2p.legend="C토렌트";
+p2p.ctorrent_srv="C토렌트 서비스";
 
 //help container
 //hpp2p.right2="인터넷을 이용하는 일부 응용 프로그램 (네트워크 게임 등)은 특정 포트를 개방하도록 하는 설정이 필요한 경우가 있습니다. 여기에서는 인터넷 측에서 특정 포트의 통신을 요구하는 경우 지정한 컴퓨터로 경로를 설정하실 수 있습니다. 보안을 위해 여기서 지정하신 포트는 응용 프로그램을 동작시키기위한 최소한으로 제한하시고, 또한 응용 프로그램의 사용이 끝나면,  <em>" + share.enable +"</em> 체크박스를 해제하시길 부탁드립니다.";
@@ -755,7 +757,7 @@ usb.usb_ehci="USB 2.0 지원";
 usb.usb_storage="USB 저장장치 지원";
 usb.usb_ip="USB Over IP";
 usb.usb_printer="USB 프린터 지원";
-usb.usb_automnt="드라이브 자동 인식";
+usb.usb_automnt="드라이브 자동 마운트";
 usb.usb_mntpoint="디스크 마운트 포인트";
 usb.usb_runonmount="Run-on-mount Script Name";
 usb.usb_diskinfo="디스크 정보";
@@ -780,7 +782,7 @@ nas.proftpd_srv="ProFTPD";
 nas.proftpd_port="서버 포트";
 nas.proftpd_dir="파일 디렉터리";
 nas.proftpd_passw="사용자 암호 리스트";
-nas.proftpd_writeen="내용기입 허가";
+nas.proftpd_writeen="쓰기 허가";
 nas.proftpd_anon="익명으로 로그인 (읽기만 가능)";
 nas.proftpd_anon_dir="익명 홈 디렉터리";
 nas.samba3_legend="파일 공유";
@@ -789,7 +791,7 @@ nas.samba3="Samba 서버";
 nas.dlna_legend="DLNA 서버";
 nas.dlna_srv="MiniDLNA";
 nas.dlna_merge="미디어 디렉터리들을 병합";
-nas.dlna_thumb="Cover 아트워크 포함";
+nas.dlna_thumb="커버 아트워크 포함";
 nas.dlna_dir="파일 디렉터리";
 nas.dlna_cleandb="데이터베이스를 정리";
 // ** Common **
@@ -850,12 +852,12 @@ hotspot.url="URL 리다이렉트";
 hotspot.dhcp="DHCP 인터페이스";
 hotspot.radnas="Radius NAS ID";
 hotspot.net="핫스팟 네트워크";
-hotspot.uam="UAM Secret";
+hotspot.uam="UAM 암호";
 hotspot.uamserver="UAM 서버";
 hotspot.uamport="UAM 포트";
 hotspot.uamdns="UAM Any DNS";
-hotspot.allowuam="UAM Allowed (comma seperated)";
-hotspot.allowuad="UAM 도메인 (space separated)";
+hotspot.allowuam="UAM 허가 (컴마로 구분)";
+hotspot.allowuad="UAM 도메인 (공백으로 구분)";
 hotspot.macauth="MAC 주소 인증";
 hotspot.macpasswd="MAC 주소 암호";
 hotspot.sec8021Xauth="802.1X 인증 (EAP)";
@@ -864,9 +866,9 @@ hotspot.fon_chilli="Chillispot 로컬 사용자 관리";
 hotspot.fon_user="사용자 리스트";
 hotspot.http_legend="HTTP 리다이렉트";
 hotspot.http_srv="HTTP 리다이렉트";
-hotspot.http_ip="HTTP 수신자 IP";
-hotspot.http_port="HTTP 수신자 포트";
-hotspot.http_net="HTTP Source 네트워크";
+hotspot.http_ip="HTTP 목적지 IP";
+hotspot.http_port="HTTP 목적지 포트";
+hotspot.http_net="HTTP 발신원 네트워크";
 hotspot.nocat_legend="NoCatSplash";
 hotspot.nocat_srv="NoCatSplash";
 hotspot.nocat_gateway="게이트웨이 이름";
@@ -876,7 +878,7 @@ hotspot.nocat_extifname="외부 인터페이스";
 hotspot.nocat_ifname="내부 인터페이스";
 hotspot.nocat_redirect="홈페이지 리다이렉트";
 hotspot.nocat_allowweb="허가된 웹 호스트";
-hotspot.nocat_docroot="문서 Root";
+hotspot.nocat_docroot="문서 루트";
 hotspot.nocat_splash="Splash URL";
 hotspot.nocat_port="거부할 포트";
 hotspot.nocat_timeout="로그인 타임아웃";
@@ -886,18 +888,18 @@ hotspot.nocat_MAClist="MAC 화이트 리스트";
 hotspot.smtp_legend="SMTP 리다이렉트";
 hotspot.smtp_srv="SMTP 리다이렉트";
 hotspot.smtp_ip="SMTP 수신자 IP";
-hotspot.smtp_net="SMTP Source 네트워크";
+hotspot.smtp_net="SMTP 발신원 네트워크";
 hotspot.shat_legend="Zero IP 설정";
 hotspot.shat_srv="Zero IP 설정";
 hotspot.shat_srv2="Zero IP 설정 사용";
 hotspot.sputnik_legend="Sputnik";
-hotspot.sputnik_srv="Sputnik Agent";
+hotspot.sputnik_srv="Sputnik 에이전트";
 hotspot.sputnik_mode="Sputnik 모드";
 hotspot.sputnik_id="Sputnik 서버 ID";
 hotspot.sputnik_instant="Sputnik Instant 설정 사용";
 hotspot.sputnik_express="SputnikNet Express 사용";
-hotspot.sputnik_about="Sputnik 에 관하여";
-hotspot.sputnik_learn="상세한 설정방법은 여기에";
+hotspot.sputnik_about="Sputnik에 대해서";
+hotspot.sputnik_learn="상세히";
 hotspot.wifidog_legend="Wifidog";
 hotspot.wifidog_srv="Wifidog 게이트웨이";
 hotspot.wifidog_id="게이트웨이 ID";
@@ -913,8 +915,8 @@ hotspot.wifidog_authsrvssl="인증서버접속에 SSL을 이용";
 hotspot.wifidog_authsrvsslport="인증서버의 SSL 포트";
 hotspot.wifidog_authsrvhttpport="인증서버의 HTTP 포트";
 hotspot.wifidog_authsrvpath="인증서버 경로";
-hotspot.wifidog_config="방화벽 Ruleset";
-hotspot.wifidog_messagefile="Wifidog을 위한HTML 메세지 파일";
+hotspot.wifidog_config="방화벽 룰셋";
+hotspot.wifidog_messagefile="Wifidog을 위한 HTML 메세지 파일";
 hotspot.wifidog_realm="HTTP 서버 Realm";
 hotspot.wifidog_username="HTTP 서버 사용자 이름";
 hotspot.wifidog_password="HTTP 서버 사용자 암호";
@@ -957,15 +959,15 @@ hstatus_hots.page30="<dd>Required only if you DO NOT want your gateway to act as
 
 // ** Hotspotsystem **//
 hotspotsys.legend="핫스팟 시스템";
-hotspotsys.nobridge="LAN 브리지에서 Wifi를 분리시킴";
+hotspotsys.nobridge="LAN 브리지에서 Wifi 분리";
 hotspotsys.uamenable="특수 설정";
 hotspotsys.loginonsplash="Splash 페이지에 로그온";
 hotspotsys.allowuam="UAM 허가";
-hotspotsys.allowuad="UAM 도메인 (space separated)";
-hotspotsys.whitelabelproto="화이트 라벨 프로토콜";
-hotspotsys.whitelabel="화이트 라벨 도메인";
+hotspotsys.allowuad="UAM 도메인 (공백으로 구분)";
+hotspotsys.whitelabelproto="화이트 레이블 프로토콜";
+hotspotsys.whitelabel="화이트 레이블 도메인";
 hotspotsys.operatorid="운영자 사용자 이름";
-hotspotsys.locationid="Location ID";
+hotspotsys.locationid="위치 ID";
 hotspotsys.dhcp="DHCP 인터페이스";
 hotspotsys.net="원격 네트워크";
 hotspotsys.customsplash="커스텀 Splash 페이지 (Walled Garden)";
@@ -1015,8 +1017,8 @@ info.ap="액세스 포인트";
 // ** index_heartbeat.asp **//
 idx_h.srv="Heart Beat 서버";
 idx_h.con_strgy="접속 확인 방법";
-idx_h.max_idle="On Demand 접속: 최대 대기 시간";
-idx_h.alive="켜진 상태 유지: 재다이얼 주기";
+idx_h.max_idle="온디맨드 접속: 최대 대기 시간";
+idx_h.alive="상태 유지: 재다이얼 주기";
 idx_h.reconnect="강제 재접속";
 
 // ** index_l2tp.asp **//
@@ -1052,7 +1054,7 @@ idx.stp="STP";
 idx.stp_mess="(COMCAST ISP를 이용시 사용할 수 없습니다)";
 idx.optional="선택적 설정";
 idx.mtu="MTU";
-idx.txqlen="송신 대기열 길이";
+idx.txqlen="송신 큐 길이";
 idx.h23="네트워크 설정";
 idx.routerip="공유기 IP";
 idx.lanip="로컬 IP 주소";
@@ -1066,8 +1068,8 @@ idx.dhcp_legend="네트워크 주소 서버 설정 (DHCP)";
 idx.dhcp_type="DHCP 타입";
 idx.dhcp_srv="DHCP 서버";
 idx.dhcp_fwd="DHCP 포워더";
-idx.dhcp_start="할당이 시작되는 IP 주소";
-idx.dhcp_end="할당이 끝나는 IP 주소"; //used in Status_Lan.asp"
+idx.dhcp_start="시작 IP 주소";
+idx.dhcp_end="끝 IP 주소"; //used in Status_Lan.asp"
 idx.dhcp_maxusers="최대 DHCP 사용자수";
 idx.dhcp_lease="할당 시간";
 idx.dhcp_dnsmasq="DHCP할당에 DNSMasq을 사용";
@@ -1150,7 +1152,7 @@ log_in.th_port="수신측 포트 넘버";
 log_out.titl="송신 로그 테이블";
 log_out.h2="송신 로그 테이블";
 log_out.th_lanip="LAN IP";
-log_out.th_wanip="수신측 URL/IP";
+log_out.th_wanip="목적지 URL/IP";
 log_out.th_port="서비스/포트 번호";
 
 
@@ -1178,8 +1180,8 @@ management.remote_https="HTTPS 사용";
 management.remote_guiport="웹 GUI 포트";
 management.remote_ssh="SSH 관리 인터페이스";
 management.remote_sshport="SSH 원격 포트";
-management.remote_telnet="Telnet 관리";
-management.remote_telnetport="Telnet 원격 포트";
+management.remote_telnet="텔넷 관리";
+management.remote_telnetport="텔넷 원격 포트";
 management.remote_allowanyip="모든 원격 IP를 허가";
 management.remote_ip="허가된 원격 IP 범위";
 management.web_legend="웹 관리 인터페이스";
@@ -1204,22 +1206,22 @@ management.routing_srv="라우팅";
 management.ipv6_legend="IPv6 지원";
 management.ipv6_srv="IPv6";
 management.ipv6_typ="IPv6 타입";
-management.ipv6_pf_len="Prefix 길이";
+management.ipv6_pf_len="접두사 길이";
 management.ipv6_rad_enable="Radvd";
 management.ipv6_rad="Radvd 커스텀";
 management.ipv6_radconf="Radvd 설정";
 management.ipv6_dns="고정 DNS";
-management.ipv6_prefix="Assigned / Routed Prefix";
+management.ipv6_prefix="할당 / 라우팅 접두사";
 management.ipv6_addr="공유기 IPv6 주소";
 management.ipv6_dhcp6c_cust="Dhcp6c 커스텀";
 management.ipv6_dhcp6c_conf="Dhcp6c 설정";
 management.ipv6_dhcp6s="Dhcp6s";
-management.ipv6_dhcp6s_seq_ips="Sequential IPs";
+management.ipv6_dhcp6s_seq_ips="순차적 IPs";
 management.ipv6_dhcp6s_hosts="커스텀 hosts";
 management.ipv6_dhcp6s_cust="Dhcp6s 커스텀";
 management.ipv6_dhcp6s_conf="Dhcp6s 설정";
-management.ipv6_tun_end_ipv4="Tunnel Endpoint IPv4 주소";
-management.ipv6_tun_client_addr="Tunnel Client IPv6 주소";
+management.ipv6_tun_end_ipv4="터널 종점 IPv4 주소";
+management.ipv6_tun_client_addr="터널 클라이언트 IPv6 주소";
 management.jffs_legend="JFFS2 지원";
 management.jffs_srv="JFFS2";
 management.jffs_clean="JFFS2의 보존 영역을 초기화";
@@ -1264,9 +1266,9 @@ management.mmc_gpiosel="GPIO 핀 번호 선택";
 management.mmc_gpiopins="GPIO pins";
 management.mmc_cardinfo="Card Info";
 management.samba_legend="CIFS 자동 마운트";
-management.samba_srv="Common Internet File System";
+management.samba_srv="공통 인터넷 파일 시스템";
 management.samba_share="파일 공유";
-management.samba_stscript="Startscript";
+management.samba_stscript="시작스크립트";
 management.SIPatH_srv="SIPatH";
 management.SIPatH_port="SIP 포트";
 management.SIPatH_domain="SIP 도메인";
@@ -1398,27 +1400,27 @@ routetbl.th1="목적지 LAN NET";
 // ** Routing.asp **//
 route.titl="라우팅";
 route.h2="고급 라우팅";
-route.metric="Metric";
+route.metric="메트릭";
 route.flags="Flags";
 route.mod="동작 모드";
 route.bgp_legend="BGP 설정";
-route.bgp_ip="Neighbor IP 주소";
-route.bgp_own_as="BGP Own AS#(자기 조직의 AS번호)";
-route.bgp_as="Neighbor AS#";
+route.bgp_ip="인접 IP 주소";
+route.bgp_own_as="BGP 소유 AS#";
+route.bgp_as="인접 AS#";
 route.rip2_mod="RIP2 라우터";
 route.olsrd_mod="OLSR 라우터";
 route.olsrd_legend="OLSR 라우팅(Optimized Link State Routing)";
-route.olsrd_poll="Poll Rate(초)";
+route.olsrd_poll="폴링 레이트(초)";
 route.olsrd_gateway="게이트웨이 모드";
-route.olsrd_hna="Host Net Announce";
-route.olsrd_tc="TC Redundancy(중복/잉여)";
+route.olsrd_hna="호스트 Net 알림";
+route.olsrd_tc="TC 중복성";
 route.olsrd_mpr="MPR 커버리지";
 route.olsrd_lqfe="링크 품질 Fish Eye";
-route.olsrd_lqag="링크 품질 Aging";
+route.olsrd_lqag="링크 품질 에이징";
 route.olsrd_lqdmin="링크 품질 Dijkstra 최소";
 route.olsrd_lqdmax="링크 품질 Dijkstra 최대";
 route.olsrd_lqlvl="링크 품질 레벨";
-route.olsrd_hysteresis="Hysteresis(이력현상)";
+route.olsrd_hysteresis="이력현상";
 route.olsrd_newiface="새 인터페이스";
 route.olsrd_smartgw="스마트 게이트웨이";
 route.zebra_legend="Zebra 설정";
@@ -1454,9 +1456,9 @@ hroute.page4="<dd>A static route is a pre-determined pathway that network inform
 hroute.page5="<dd>Click the <i>Show Routing Table</i> button to view all of the valid route entries in use. The following data will be displayed for each entry.<ul class=\"wide\"><li>Destination IP Address &ndash; The Destination IP Address is the address of the network or host to which the static route is assigned.</li><li>Subnet Mask &ndash; The Subnet Mask determines which portion of an IP address is the network portion, and which portion is the host portion.</li><li>Gateway &ndash; This is the IP address of the gateway device that allows for contact between the router and the network or host.</li><li>Interface &ndash; This interface tells you whether the Destination IP Address is on the LAN &amp; WLAN (internal wired and wireless networks), the WAN (Internet), or Loopback (a dummy network in which one PC acts like a network, necessary for certain software programs).</li></ul><br />Click the <i>Refresh</i> button to refresh the data displayed. Click the <i>Close</i> button to return to the Routing screen.</dd>";
 
 // ** Site_Survey.asp **//
-survey.titl="Site 조사";
+survey.titl="Site Survey";
 survey.h2="인접 무선 네트워크";
-survey.thjoin="Site에 들어가기";
+survey.thjoin="Site에 참가";
 
 
 // ** Services.asp **//
@@ -1476,7 +1478,7 @@ service.kaid_orbdeepport="ORB Deep 포트";
 
 //DHCPd
 service.dhcp_legend="DHCP 클라이언트";
-service.dhcp_vendor="Vendorclass 설정";
+service.dhcp_vendor="벤더 클래스 설정";
 service.dhcp_reqip="요구하는 IP 주소 지정";
 service.dhcp_legend2="DHCP 서버";
 service.dhcp_srv="DHCP 서비스";
@@ -1501,7 +1503,7 @@ service.tor_dir="디렉터리 미러";
 service.tor_bridge="Tor 브리지 모드";
 service.tor_transparent="Transparent 프록시";
 service.tor_bwrate="대역폭 속도";
-service.tor_bwburst="대역폭 Burst";
+service.tor_bwburst="대역폭 버스트";
 
 
 //pptp.webservices
@@ -1516,17 +1518,17 @@ service.syslog_srv="Syslog 송수신 서비스";
 service.syslog_ip="전송 서버";
 
 //telnet.webservices
-service.telnet_legend="Telnet";
-service.telnet_srv="Telnet 서비스";
+service.telnet_legend="텔넷";
+service.telnet_srv="텔넷 서비스";
 
-service.mactelnetd_legend="Mikrotik MAC Telnet";
-service.mactelnetd="MAC Telnet";
+service.mactelnetd_legend="Mikrotik MAC 텔넷";
+service.mactelnetd="MAC 텔넷";
 
 //pptpd_client.webservices
 service.pptpd_legend="PPTP 클라이언트";
 service.pptpd_option="PPTP 클라이언트 옵션";
 service.pptpd_ipdns="서버 IP 혹은 DNS 이름";
-service.pptpd_subnet="Remote Subnet(접속 상대측 네트워크 주소)";
+service.pptpd_subnet="원격 서브넷";
 service.pptpd_subnetmask="원격 서브넷 마스크";
 service.pptpd_encry="MPPE 암호화";
 service.pptpd_mtu="MTU";
@@ -1554,14 +1556,14 @@ service.pppoesrv_srvopt="RP-PPPoE 서버 옵션";
 service.pppoesrv_compr="압축";
 service.pppoesrv_lcpei="LCP Echo 간격";
 service.pppoesrv_lcpef="LCP Echo 실패";
-service.pppoesrv_limit="Session Limit per MAC (MAC 주소 당 기한 제한)";
+service.pppoesrv_limit="MAC 주소별 세션 제한";
 service.pppoesrv_idlet="클라이언트 대기 시간";
 service.pppoesrv_auth="인증";
 service.pppoesrv_radip="Radius 서버 IP 주소";
 service.pppoesrv_radauthport="Radius 인증 포트";
-service.pppoesrv_radaccport="Radius Accounting 포트";
-service.pppoesrv_radkey="Radius 공유키";
-service.pppoesrv_chaps="로컬 유저 관리 (CHAP Secrets)";
+service.pppoesrv_radaccport="Radius 어카운팅 포트";
+service.pppoesrv_radkey="Radius 공유 키";
+service.pppoesrv_chaps="로컬 사용자 관리 (CHAP Secrets)";
 
 //help container
 hpppoesrv.right2="IP: 0.0.0.0 -> 형식에 의거하여 IP주소를 정하실 수 있습니다";
@@ -1577,8 +1579,8 @@ service.snmp_srv="SNMP";
 service.snmp_loc="위치";
 service.snmp_contact="연락처";
 service.snmp_name="이름";
-service.snmp_read="RO Community";
-service.snmp_write="RW Community";
+service.snmp_read="RO 커뮤니티";
+service.snmp_write="RW 커뮤니티";
 
 //openvpn.webvpn
 service.vpnd_legend="OpenVPN 서버/데몬";
@@ -1586,51 +1588,51 @@ service.vpnd_srv="OpenVPN";
 service.vpnd_starttype="시작 타입";
 service.vpnd_startWanup="WAN Up";
 service.vpnd_startSystem="시스템";
-service.vpnd_crl="Revoke 리스트 인증";
+service.vpnd_crl="인증 폐지 리스트";
 service.vpnd_config="추가 설정";
 service.vpnd_dhpem="DH PEM";
-service.vpnd_tlsauth="TLS 인증키";
-service.vpnd_cert="Public 서버 인증";
+service.vpnd_tlsauth="TLS 인증 키";
+service.vpnd_cert="공개 서버 인증서";
 service.vpnd_key="개인 서버 키";
 service.vpnd_pkcs="PKCS12 키";
 service.vpnd_mode="서버 모드";
 service.vpnd_net="네트워크";
-service.vpnd_mask="Netmask";
-service.vpnd_startip="Pool start IP";
-service.vpnd_endip="Pool end IP";
-service.vpnd_cl2cl="단말에서 단말로의 접속 허가";
+service.vpnd_mask="넷마스크";
+service.vpnd_startip="풀 시작 IP";
+service.vpnd_endip="풀 끝 IP";
+service.vpnd_cl2cl="클라이언트 대 클라이언트 접속 허가";
 service.vpnd_switch="Config as";
 service.vpnd_dupcn="Allow duplicate cn";
 service.vpnd_proxy="DHCP-Proxy 모드";
-service.vpnd_clcon="Client connect script";
-service.vpnd_cldiscon="Client disconnect script";
-service.vpnd_ccddef="CCD-Dir DEFAULT file";
+service.vpnd_clcon="클라이언트 연결 스트립트";
+service.vpnd_cldiscon="클라이언트 절단 스크립트";
+service.vpnd_ccddef="CCD-Dir 기본 파일";
 service.vpnd_dhcpbl="터널을 교차하여 DHCP 차단";
 service.vpnd_static="고정 키";
-service.vpn_redirgate="초기설정된 게이트웨이로 리다이렉트";
+service.vpn_redirgate="기본 게이트웨이로 리다이렉트";
 service.vpn_legend="OpenVPN 클라이언트";
 service.vpn_srv="OpenVPN 클라이언트 시작";
 service.vpn_ipname="서버 IP 주소/서버 이름";
-service.vpn_mtu="Tunnel MTU 설정";
-service.vpn_mss="Tunnel UDP MSS-Fix";
-service.vpn_fragment="Tunnel UDP Fragment(세분화)";
-service.vpn_compress="LZO 압축사용";
-service.vpn_cl2cl="lient 에서 클라이언트로 접속 허가";
-service.vpn_tunnel="Tunnel 프로토콜";
-service.vpn_tuntap="Tunnel 장치";
+service.vpn_mtu="터널 MTU 설정";
+service.vpn_mss="터널 UDP MSS-Fix";
+service.vpn_fragment="터널 UDP 프래그먼트";
+service.vpn_compress="LZO 압축";
+service.vpn_cl2cl="클라이언트 대 클라이언트 접속 허가";
+service.vpn_tunnel="터널 프로토콜";
+service.vpn_tuntap="터널 장치";
 service.vpn_srvcert="공개 서버 증명서";
 service.vpn_clicert="공개 클라이언트 증명서";
-service.vpn_certtype="nsCertType verification";
+service.vpn_certtype="nsCertType 검증";
 service.vpn_clikey="사설 클라이언트 키";
 service.vpn_nat="NAT";
-service.vpn_cipher="Cipher 암호화";
+service.vpn_cipher="암호화";
 service.vpn_auth="Hash 알고리즘";
-service.vpn_bridge="TAP 에서 br0으로 중계";
+service.vpn_bridge="TAP과 br0을 브리지";
 service.vpn_adv="고급 옵션";
-service.vpn_tlscip="TLS Cipher";
-service.vpn_route="사용자 정의에 따른 라우팅";
-service.vpn_scramble="XOR scrambling method";
-service.vpn_upauth="User Pass Authentication";
+service.vpn_tlscip="TLS 암호";
+service.vpn_route="정의 기반 라우팅";
+service.vpn_scramble="XOR 재배치 메소드";
+service.vpn_upauth="사용자 패스 인증";
 service.vpnd_server="서버";
 service.vpnd_deamon="데몬";
 service.vpnd_lzoyes="예";
@@ -1665,7 +1667,7 @@ service.vncrepeater="VNC 리피터";
 //sshd.webservices
 service.ssh_legend="Secure 쉘";
 service.ssh_srv="SSH 서비스";
-service.ssh_password="로그인시 사용자 암호 사용";
+service.ssh_password="암호 로그인";
 service.ssh_key="인증키";
 service.ssh_forwarding="SSH TCP 포워딩";
 
@@ -1696,9 +1698,9 @@ service.rstats_time="보존가격";
 service.rstats_usrdir="사용자 디렉터리";
 
 //nstx.webservices
-service.nstx_legend="IP over DNS Tunneling";
+service.nstx_legend="IP over DNS 터널링";
 service.nstx_srv="nstx 데몬";
-service.nstx_ipenable="Bind to this IP only";
+service.nstx_ipenable="오직 이 IP에만 바인드";
 service.nstx_log="디버그 메세지 교환";
 
 //ttraff.webservices
@@ -1709,10 +1711,10 @@ service.ttraff_daemon="ttraff 데몬";
 service.warn_legend="접속 경고 알림";
 service.warn="경고 알림";
 service.warn_limit="접속제한";
-service.warn_server="Email SMTP 서버";
-service.warn_from="발신자 Email 주소";
+service.warn_server="이메일 SMTP 서버";
+service.warn_from="발신자 이메일 주소";
 service.warn_fromfull="발신자 성명";
-service.warn_to="수신자 Email 주소";
+service.warn_to="수신자 이메일 주소";
 service.warn_domain="수신자 도메인 이름";
 service.warn_user="SMTP 인증 사용자 이름";
 service.warn_pass="SMTP 인증 사용자 암호";
@@ -1722,43 +1724,43 @@ service.milkfish_siprouter="Milkfish SIP 라우터";
 service.milkfish_alias="Alias";
 service.milkfish_uri="SIP URI";
 service.milkfish_mainswitch="SIP 라우터";
-service.milkfish_fromswitch="From-Substitution(대리)";
+service.milkfish_fromswitch="From-Substitution";
 service.milkfish_fromdomain="From-Domain";
 service.milkfish_username="Milkfish 사용자 이름";
 service.milkfish_password="Milkfish 사용자 암호";
 service.milkfish_audit="Milkfish 심사";
-service.milkfish_siptrace="SIP Trace(추적)";
-service.milkfish_subscribers="Local Subscribers(가입자)";
-service.milkfish_aliases="Local Aliases(가명)";
-service.milkfish_dynsip="변동 SIP";
+service.milkfish_siptrace="SIP 추적";
+service.milkfish_subscribers="로컬 구독자";
+service.milkfish_aliases="로컬 별명";
+service.milkfish_dynsip="다이나믹 SIP";
 service.milkfish_status="SIP 상태";
 service.milkfish_database="SIP 데이터베이스";
 service.milkfish_messaging="SIP 메세지";
 service.milkfish_phonebook="SIP 전화번호부";
 service.milkfish_dynsipdomain="DynSIP 도메인";
-service.milkfish_dynsipurl="DynSIP Update URL";
+service.milkfish_dynsipurl="DynSIP 업데이트 URL";
 service.milkfish_dsusername="DynSIP 사용자 이름";
 service.milkfish_dspassword="DynSIP 사용자 암호";
 service.milkfish_sipmessage="SIP 메세지";
-service.milkfish_destination="SIP Destination";
+service.milkfish_destination="SIP 목적지";
 service.milkfish_contact="연락처";
-service.milkfish_agent="User Agent";
+service.milkfish_agent="사용자 에이전트";
 service.milkfish_registrations="등록 활성화";
-service.milkfish_localsubscr="Local Subscribers";
-service.milkfish_localalias="Local Aliases";
-service.milkfish_messaging="SIP Messaging";
-service.milkfish_siptrace="SIP Trace";
+service.milkfish_localsubscr="로컬 구독자";
+service.milkfish_localalias="로컬 별명";
+service.milkfish_messaging="SIP 메시징";
+service.milkfish_siptrace="SIP 추적";
 service.milkfish_advdynsip="고급 DynSIP 설정";
-service.milkfish_answers="Problems, Questions, Suggestions? - Find answers in the <a href=\"http:\/\/forum.milkfish.org\" target=\"_blank\">Milkfish-dd User Forum</a>";
+service.milkfish_answers="문제, 질문, 제안이 있나요? - <a href=\"http:\/\/forum.milkfish.org\" target=\"_blank\">Milkfish-dd User Forum</a>에서 답을 찾으세요";
 //service.milkfish_="";//
 service.hmilkfish_right2="Milkfish SIP 라우터를 활성화 혹은 비활성화 합니다.";
 service.hmilkfish_right4="다음의 경우 설정을 활성화 혹은 비활성화 합니다:-발신 SIP 메세지에서 WAN IP 주소의 헤더필드를 대신합니다. 만일 WAN IP 주소가 변경되었을 시, 피호출자로부터 회신을 허락할 경우 이 설정을 활성화 시켜야 합니다.";
 service.hmilkfish_right6="피호출자가 이 도메인으로 발신을 할 경우(현재 사용자의 WAN IP 주소를 대신하여), 호출자가 WAN IP 주소를 대신하여 도메인으로 부터 발송할 경우. From-Substitution은 이 설정이 유효하도록 활성화 시켜야 합니다.";
 service.hmilkfish_right8="Milkfish 커뮤니티 포럼의 사용자 이름을 이곳에 입력하십시오. yourname.homesip.net에 등록하십시오.";
 service.hmilkfish_right10="Milkfish 커뮤니티 포럼의 사용자 암호를 이곳에 입력하십시오. yourname.homesip.net에 등록하여 주십시오.";
-service.hmilkfish_right12="공유기에 기본적인 SIP tracing을 활성화 혹은 비활성화 합니다.";
-service.hmilkfish_right14="Local SIP 신청자는 현지에서 SIP 계정이 관리되어집니다..";
-service.hmilkfish_right16="가명의 Local SIP은 Email 전송과 유사하게 SIP을 전송합니다. alphanumeric-to-numeric(알파벳&숫자 조합 번호를 숫자로 변환하는) 전화의 사용자 계정 혹은 vice versa를 통하여 전송되어 집니다.";
+service.hmilkfish_right12="공유기에 기본적인 SIP 추적을 활성화 혹은 비활성화 합니다.";
+service.hmilkfish_right14="로컬 SIP 신청자는 현지에서 SIP 계정이 관리되어집니다..";
+service.hmilkfish_right16="가명의 로컬 SIP은 이메일 전송과 유사하게 SIP을 전송합니다. alphanumeric-to-numeric(알파벳&숫자 조합 번호를 숫자로 변환하는) 전화의 사용자 계정 혹은 vice versa를 통하여 전송되어 집니다.";
 service.hmilkfish_right18="변동 SIP를 활성화 혹은 비활성화시킵니다 (예. Homesip.net service). 사용자 이름과 암호를 설정하셔야 합니다.";
 service.hmilkfish_right20="정의되지 않은 영역입니다 - 비워두시길 바랍니다";
 service.hmilkfish_right22="정의되지 않은 영역입니다 - 비워두시길 바랍니다";
@@ -1771,10 +1773,10 @@ service.hmilkfish_page1="<dt>Milkfish-dd - Professional VoIP/IM Router - v1.0</d
 service.hmilkfish_page2="<div class=\"note\"><h4>Legal</h4><div>Copyright &copy; 2005-2008 by <a href=\"http:\/\/www.milkfish.org\" target=\"new\">The Milkfish Project</a>. All rights reserved.<br />Logos and trademarks are the property of their respective owners.<br />The Milkfish software is licensed under the <a href=\"http:\/\/www.gnu.org/licenses/gpl.html\" target=\"new\">GNU General Public License</a>.<br />Please note that this software is under development and comes with absolutely no warranty, to the extend permitted by applicable law.</div></div><br /><div class=\"note\"><div class=\"center\">Milkfish is developed by...<br><a target=\"_blank\" href=\"http:\/\/www.sipwerk.com\"><img border=\"1\" src=\"../images/sipwerk.png\" alt=\"sipwerk logo\" /></a><br></div><br /></div><br /></dd><dd>Click <i>Save Settings</i> to save your settings or click <i>Cancel Changes</i> to cancel your unsaved changes.</dd>";
 
 service.samba3_srv="Samba";
-service.samba3_srvstr="서버 String";
+service.samba3_srvstr="서버 설명";
 service.samba3_pub="공유 공개";
 service.samba3_config="수동 환경 설정";
-service.samba3_workgrp="Workgroup";
+service.samba3_workgrp="작업 그룹";
 service.samba3_dirpath="파일 경로";
 service.samba3_usr1="사용자 1";
 service.samba3_pass1=" 암호 1";
@@ -1791,7 +1793,7 @@ service.samba3_share_access="접근";
 service.samba3_users="사용자";
 service.samba3_username="사용자 이름";
 service.samba3_password="사용자 암호";
-service.samba3_user_shares="접근 공유";
+service.samba3_user_shares="공유 접근";
 service.dlna_type_audio="오디오";
 service.dlna_type_video="비디오";
 service.dlna_type_images="이미지";
@@ -1803,20 +1805,20 @@ service.zabbix_serverip="Zabbix 서버 IP";
 service.zabbix_usrpara="사용자 매개변수";
 
 //TRansmission
-service.transmission_legend="Bittorrent";
-service.transmission_srv="Transmission 데몬";
-service.transmission_dir="Transmission 디렉터리";
+service.transmission_legend="비트토렌트";
+service.transmission_srv="트랜스미션 데몬";
+service.transmission_dir="트랜스미션 디렉터리";
 
 // ** eop-tunnel.asp **//
-eoip.titl="EoIP Tunnel";
-eoip.tunnel="Tunnel";
-eoip.legend="Ethernet Over IP Tunneling";
-eoip.srv="EoIP Tunnel";
+eoip.titl="EoIP 터널";
+eoip.tunnel="터널";
+eoip.legend="이더넷 Over IP 터널링";
+eoip.srv="EoIP 터널";
 eoip.remoteIP="원격 IP 주소";
-eoip.tunnelID="Tunnel ID";
+eoip.tunnelID="터널 ID";
 eoip.comp="압축";
 eoip.passtos="TOS 통과";
-eoip.frag="fragment";
+eoip.frag="프래그먼트";
 eoip.mssfix="mssfix";
 eoip.shaper="shaper";
 eoip.bridging="브리징";
@@ -1832,7 +1834,7 @@ sipath.status_titl="상태";
 
 // ** Status_Lan.asp **//
 status_lan.titl="LAN 상태";
-status_lan.h2="Local(LAN측) 네트워크";
+status_lan.h2="Local 네트워크";
 status_lan.legend="LAN 상태";
 status_lan.h22="Dynamic Host Configuration Protocol";
 status_lan.legend2="DHCP 서버";
@@ -1840,8 +1842,8 @@ status_lan.legend3="DHCP 클라이언트";
 status_lan.legend4="이용중인 클라이언트";
 status_lan.legend5="접속된 PPTP 클라이언트";
 status_lan.legend6="접속된 PPPOE 클라이언트";
-status_lan.concount="접속수";
-status_lan.conratio="이용률";
+status_lan.concount="접속 수";
+status_lan.conratio="비율";
 
 //help container
 hstatus_lan.right2="이 기기의 유선 LAN에 할당된 MAC 주소를 표시합니다.";
@@ -1871,8 +1873,8 @@ hstatus_band.right1="단위를 변경하는 것이 가능합니다. (bytes/s 혹
 hstatus_band.right2="대역축 기준을 변경하실 수 있습니다.";
 
 // ** Status_Router.asp **//
-status_router.titl="기기상태";
-status_router.h2="장비 정보";
+status_router.titl="공유기 상태";
+status_router.h2="공유기 정보";
 status_router.legend="시스템";
 status_router.sys_model="공유기 모델";
 status_router.sys_firmver="펌웨어 버전";
@@ -1892,12 +1894,12 @@ status_router.mem_buf="버퍼";
 status_router.mem_cached="캐쉬이용";
 status_router.mem_active="활성화";
 status_router.mem_inactive="비활성화";
-status_router.mem_hidden="Hidden"; // do not translate this line, this is bogus (BrainSlayer)"
+status_router.mem_hidden="Hidden"; // do not translate this line, this is bogus (BrainSlayer)
 status_router.legend4="네트워크";
 status_router.net_maxports="IP 필터 최대 포트 수";
 status_router.net_conntrack="사용중인 IP 접속수";
 status_router.notavail="사용할 수 없습니다";
-status_router.legend6="비어있는 공간";
+status_router.legend6="공간 사용량";
 status_router.inpvolt="입력 전압";
 status_router.cputemp="CPU 온도";
 
@@ -1942,16 +1944,16 @@ status_conn.h2="접속중인 IP 주소";
 
 
 // ** Status_SputnikAPD.asp **//
-status_sputnik.titl="Sputnik Agent 정보";
+status_sputnik.titl="Sputnik 에이전트 정보";
 status_sputnik.h2="Sputnik&reg; Agent&trade;";
 status_sputnik.manage="관리자";
 status_sputnik.license="SCC 라이센스 No.";
 
 //help container
-hstatus_sputnik.right1="Sputnik Agent 정보";
-hstatus_sputnik.right2="Sputnik Agent process에 관한 정보를 표시합니다.";
+hstatus_sputnik.right1="Sputnik 에이전트 정보";
+hstatus_sputnik.right2="Sputnik 에이전트 프로세스에 관한 정보를 표시합니다.";
 hstatus_sputnik.right4="이 기기가 접속하는 Sputnik 제어 센터를 표시합니다.";
-hstatus_sputnik.right6="현재의 Agent 상태를 나타냅니다.";
+hstatus_sputnik.right6="현재의 에이전트 상태를 나타냅니다.";
 hstatus_sputnik.right8="Sputnik 제어 센터의 접속에 사용되는 라이센스 번호를 표시합니다.";
 
 
@@ -2020,10 +2022,10 @@ htrforward.page2="</a> or <a href=\"Forward_range.asp\">Port Range Forwarding</a
 upgrad.titl="펌웨어 업그레이드";
 upgrad.h2="펌웨어 관리";
 upgrad.legend="펌웨어 업그레이드";
-upgrad.info1="갱신후, 재설정하십시오";
-upgrad.resetOff="재설정 하지 않음";
-upgrad.resetOn="공장 출하상태로 재설정";
-upgrad.file="갱신을 진행할 파일을 선택하여 주십시오";
+upgrad.info1="업그레이드 후";
+upgrad.resetOff="리셋 하지 않음";
+upgrad.resetOn="기본 설정으로 리셋";
+upgrad.file="업그레이드를 위한 파일 선택";
 upgrad.warning="!!!경고!!!";
 upgrad.mess1="펌웨어 업데이트는 보통 몇 분 정도 걸립니다. <br /> 업데이트 중 전원을 끄거나 리셋 버튼을 누르지 마십시오!";
 
@@ -2056,15 +2058,15 @@ hupnp.page4="<dd>If enabled, all UPnP port forwardings are deleted when the rout
 hupnp.page5="<dd>If enabled, a presentation url tag is sent with the device description. This allows the router to show up in <em>Windows's My Network Places</em>. <br/><br/>div class=\"note\"><h4>Note</h4><div>When enabling this option you may need to reboot your PC.</div></div></dd><dd>Click <i>Save Settings</i> to save your settings. Click <i>Cancel Changes</i> to cancel your unsaved changes.</dd>";
 
 // ** VPN.asp **//
-vpn.titl="VPN Passthrough";
+vpn.titl="VPN 패스 스루";
 vpn.h2="가상 사설 네트워크 (VPN)";
-vpn.legend="VPN Passthrough";
-vpn.ipsec="IPSec Passthrough";
-vpn.pptp="PPTP Passthrough";
-vpn.l2tp="L2TP Passthrough";
+vpn.legend="VPN 패스 스루";
+vpn.ipsec="IPSec 패스 스루";
+vpn.pptp="PPTP 패스 스루";
+vpn.l2tp="L2TP 패스 스루";
 
 //help container
-hvpn.right1="이 기능을 사용하여 IPSec, PPTP 그리고/혹은 L2TP passthrough의 활성화를 선택하시면, LAN 쪽 네트워크 장비가 VPN 프로토콜을 사용하여 외부 서버와 통신 할 수 있습니다.";
+hvpn.right1="이 기능을 사용하여 IPSec, PPTP 그리고/혹은 L2TP 패스 스루의 활성화를 선택하시면, LAN 쪽 네트워크 장비가 VPN 프로토콜을 사용하여 외부 서버와 통신 할 수 있습니다.";
 
 //help page
 hvpn.page1="<dd>Virtual Private Networking (VPN) is typically used for work-related networking. For VPN tunnels, the router supports IPSec, PPTP and L2TP Passthrough.</dd>";
@@ -2088,7 +2090,7 @@ vlan.gigabit="기가비트";
 
 // ** WEP.asp **//
 wep.defkey="초기설정 전송 키";
-wep.passphrase="Passphrase";
+wep.passphrase="패스 프레이즈";
 wep.opt_64="64 bits 10 hex digits";
 wep.opt_128="128 bits 26 hex digits";
 wep.generate="생성";
@@ -2147,12 +2149,12 @@ wpa.auth_mode="네트워크 인증";
 wpa.wpa="WPA";
 wpa.radius="Radius";
 wpa.gtk_rekey="WPA 그룹 키 갱신 간격(초)";
-wpa.rekey="Key 갱신 간격(초)";
+wpa.rekey="키 갱신 간격(초)";
 wpa.radius_ipaddr="RADIUS 서버 주소";
 wpa.radius_port="RADIUS 서버 포트";
 wpa.radius_key="RADIUS 키";
 wpa.algorithms="WPA 알고리즘";
-wpa.shared_key="WPA 공유키";
+wpa.shared_key="WPA 공유 키";
 
 
 aoss.titl="AOSS 보안";
@@ -2178,10 +2180,10 @@ aoss.wpspin="WPS 클라이언트 PIN";
 aoss.wpsactivate="PIN 활성화";
 aoss.wpsregister="PIN 등록";
 aoss.wpsgenerate="PIN 생성";
-aoss.pinnotvalid="유효하지 않은 PIN입니다, checksum이 맞지 않습니다.!";
+aoss.pinnotvalid="유효하지 않은 PIN입니다, 체크섬이 맞지 않습니다.!";
 aoss.wpsenable="WPS 버튼";
 aoss.wpsstatus="WPS 상태";
-aoss.externalregistrar="PIN Method";
+aoss.externalregistrar="PIN 메소드";
 aoss.release="개방";
 aoss.configure="환경설정";
 
@@ -2197,12 +2199,12 @@ nintendo.spotpass.titl="닌텐도 SpotPass";
 nintendo.spotpass.enable="닌텐도 SpotPass 활성화";
 nintendo.spotpass.servers="서비스 허가";
 
-sec80211x.xsuptype="XSupplicant Type(동작 타입)";
-sec80211x.keyxchng="EAP Key-Management";
-sec80211x.servercertif="Public Server Certificate(CA증명서)";
-sec80211x.clientcertif="클라이언트 증명서";
+sec80211x.xsuptype="XSupplicant 타입";
+sec80211x.keyxchng="EAP 키-관리";
+sec80211x.servercertif="공개 서버 인증서";
+sec80211x.clientcertif="클라이언트 인증서";
 sec80211x.phase2="Phase2";
-sec80211x.anon="Anonymous Identity(익명신분)";
+sec80211x.anon="익명 신분";
 sec80211x.options="추가 네트워크 옵션";
 
 //help container
@@ -2235,7 +2237,7 @@ wds.titl="WDS";
 wds.h2="Wireless Distribution System (WDS)";
 wds.legend="WDS 설정";
 wds.label="Lazy WDS";
-wds.label2="WDS Subnet";
+wds.label2="WDS 서브넷";
 wds.wl_mac="무선 MAC";
 wds.lazy_default="초기설정: 사용안함";
 wds.nat1="wLAN->WDS";
@@ -2255,19 +2257,19 @@ radius.label="MAC Radius 클라이언트";
 radius.label2="MAC 주소 형식";
 radius.label3="Radius 인증서버 주소";
 radius.label4="Radius 인증서버 포트";
-radius.label7="Radius Auth Shared Secret";
+radius.label7="Radius 인증 공유 암호";
 
 radius.label23="Radius 인증 백업 서버 주소";
 radius.label24="Radius 인증 백업 서버 포트";
-radius.label27="Radius Auth Backup Shared Secret";
+radius.label27="Radius 인증 백업 공유 암호";
 
 radius.label5="인증받지 않고 통신가능한 최대 상용자수";
 radius.label6="인증 암호";
 radius.label8="서버와 접속이 끊어졌을 경우 Radius 무효화";
-radius.label13="Radius Acct Server Address";
-radius.label14="Radius Acct Server Port";
-radius.label17="Radius Acct Shared Secret";
-radius.label18="Radius Accounting";
+radius.label13="Radius 계정 서버 주소";
+radius.label14="Radius 계정 서버 포트";
+radius.label17="Radius 계정 공유 암호";
+radius.label18="Radius 어카운팅";
 
 // help page
 hradauth.page1="<dd>RADIUS (Remote Authentication Dial-In User Service) is a security service for authenticating and authorizing dial-up users. A typical enterprise network may have an access server attached to a modem pool, along with a RADIUS server to provide authentication services. Remote users dial into the access server, and the access server sends authentication requests to the RADIUS server. The RADIUS server authenticates users and authorizes access to internal network resources. Remote users are clients to the access server and the access server is a client to the RADIUS server.<br /><br /><div class=\"note\"><h4>Note</h4><div>RADIUS is only available in <em>AP</em> mode.</div></div></dd>";
@@ -2284,27 +2286,27 @@ wl_mac.h2="무선 MAC 주소 필터";
 wl_mac.legend="MAC 주소 필터";
 wl_mac.label="필터 사용";
 wl_mac.label2="필터 모드";
-wl_mac.deny="리스트에 등록되어 있는 클라이언트의 통신을 거부합니다";
-wl_mac.allow="리스트에 등록되어 있는 클라이언트만 무선 네트워크의 접속을 허락합니다";
+wl_mac.deny="리스트의 클라이언트만 무선 네트워크에 접속을 거부합니다";
+wl_mac.allow="리스트의 클라이언트만 무선 네트워크에 접속을 허락합니다";
 
 //help page
 hwl_mac.page1="<dd>The Wireless MAC Filter allows you to control which wireless-equipped PCs may or may not communicate with the router depending on their MAC addresses. For information how to get MAC addresses from Windows-PCs, see <a href=\"HWanMAC.asp\">MAC Address Cloning</a> for detailed instructions.</dd><dd>To set up a filter, click <i>Enable</i>, and follow these instructions:<ol class=\"wide\"><li>If you want to block specific wireless-equipped PCs from communicating with the router, then keep the default setting, <i>Prevent PCs listed from accessing the wireless network</i>. If you want to allow specific wireless-equipped PCs to communicate with the router, then click the radio button next to <i>Permit only PCs listed to access the wireless network</i>.</li><li>Click the <i>Edit MAC Filter List</i> button. Enter the appropriate MAC addresses into the MAC fields.<br /><br /><div class=\"note\"><b>Note:</b><br />The MAC address should be entered in this format: xxxxxxxxxxxx (the x's represent the actual characters of the MAC address).</div></li><li>Click the <i>Save Settings</i> button to save your changes. Click the <i>Cancel Changes</i> button to cancel your unsaved changes. Click the <i>Close</i> button to return to the previous screen without saving changes.</li></ol><br />To disable the Wireless MAC Filter, keep the default setting, <i>Disable</i>./dd>";
 
 // ** WiMAX
-wl_wimax.titl="WiMAX";
+wl_wimax.titl="와이맥스";
 wl_wimax.h2="Worldwide Interoperability for Microwave Access";
-wl_wimax.downstream="Downstream Frequency";
-wl_wimax.upstream="Upstream Frequency";
-wl_wimax.width="Channel Width";
-wl_wimax.duplex="Duplex Mode";
-wl_wimax.mode="Operation Mode";
-wl_wimax.mac="Subscriber MAC Address";
+wl_wimax.downstream="다운스트림 주파수";
+wl_wimax.upstream="업스트림 주파수";
+wl_wimax.width="채널 대역폭";
+wl_wimax.duplex="Duplex 모드";
+wl_wimax.mode="가동 모드";
+wl_wimax.mac="구독자 MAC 주소";
 
 // ** Gpio **//
-gpio.titl="Gpio Inputs / Outputs";
-gpio.h2="Gpio Inputs / Outputs";
-gpio.oplegend="Gpio Outputs";
-gpio.iplegend="Gpio Inputs";
+gpio.titl="Gpio 입력 / 출력";
+gpio.h2="Gpio 입력 / 출력";
+gpio.oplegend="Gpio 출력";
+gpio.iplegend="Gpio 입력";
 
 // ** FreeRadius.asp **//
 freeradius.titl="FreeRadius";
@@ -2319,17 +2321,17 @@ freeradius.username="사용자 이름";
 freeradius.password="사용자 암호";
 freeradius.downstream="다운속도";
 freeradius.upstream="업속도";
-freeradius.sharedkey="공유키";
+freeradius.sharedkey="공유 키";
 
 
 freeradius.countrycode="국가 코드";
 freeradius.state="주, 도시, 현 혹은 도";
 freeradius.locality="지역";
 freeradius.organisation="조직 / 회사";
-freeradius.email="Email 주소";
+freeradius.email="이메일 주소";
 freeradius.common="증명서명";
-freeradius.expiration="유효기간(일자)";
-freeradius.passphrase="Passphrase";
+freeradius.expiration="유효기간(일)";
+freeradius.passphrase="패스 프레이즈";
 //freeradius.generate="증명서 생성";
 freeradius.cert_status="증명서 상태";
 freeradius.port="Radius 포트";
@@ -2346,22 +2348,22 @@ wl_adv.label="인증 타입";
 wl_adv.label2="기본 속도";
 wl_adv.label3="전송 고정 속도";
 wl_adv.label4="CTS 보호 모드";
-wl_adv.label5="Frame Burst";
+wl_adv.label5="프레임 버스트";
 wl_adv.label6="Beacon 간격";
 wl_adv.label7="DTIM 간격";
 wl_adv.label8="단편화 임계값";
 wl_adv.label9="RTS 임계값";
 wl_adv.label10="최대 동시 접속 대수";
-wl_adv.label11="AP Isolation";
+wl_adv.label11="AP 격리";
 wl_adv.label12="송신 안테나";
 wl_adv.label13="수신 안테나";
-wl_adv.label14="Preamble";
-wl_adv.reference="노이즈 참조";
+wl_adv.label14="프리앰블";
+wl_adv.reference="노이즈 기준";
 wl_adv.label16="Afterburner";
 wl_adv.label17="무선기기 웹 설정 접속 허용";
 wl_adv.label18="WMM 지원";
 wl_adv.label19="No-Acknowledgement";
-wl_adv.label20="Shortslot Override";
+wl_adv.label20="Shortslot 오버라이드";
 wl_adv.label21="최대 전송 속도";
 wl_adv.label23="최소 전송 속도";
 wl_adv.label22="블루투스 공존 모드";
@@ -2392,17 +2394,17 @@ wl_adv.txprow3="AC VI TX 파라미터";
 wl_adv.txprow4="AC VO TX 파라미터";
 
 wl_adv.col6="Admin Forced";
-wl_adv.row1="Background(낮게)";
-wl_adv.row2="Best Effort(보통)";
-wl_adv.row3="Video(우선)";
-wl_adv.row4="Voice(최우선)";
+wl_adv.row1="Background";
+wl_adv.row2="Best Effort";
+wl_adv.row3="Video";
+wl_adv.row4="Voice";
 wl_adv.table2="EDCA STA Parameters (클라이언트 -> AP)";
 wl_adv.lng="Long"; 					//************* don't use .long! *************
 wl_adv.shrt="Short"; 				//************* don't use .short! **************
 wl_adv.mpbs="Mbps";
 
 //help container
-hwl_adv.right2="자동 혹은 공유키(Shared Key)를 선택할 수 있습니다. 공유키 인증을 선택하신 경유 보안선택에서 WEP를 선택하셔야 합니다, 공유키를 선택하신 경우 네트워크상의 모든 장치에서 공유키 인증을 지원하여야 합니다.";
+hwl_adv.right2="자동 혹은 공유 키를 선택할 수 있습니다. 공유 키 인증을 선택하신 경유 보안선택에서 WEP를 선택하셔야 합니다, 공유 키를 선택하신 경우 네트워크상의 모든 장치에서 공유 키 인증을 지원하여야 합니다.";
 
 //help page
 hwl_adv.page1="<dd>The Wireless Advanced Settings screen allows you to customize data transmission settings. In most cases, the advanced settings on this screen should remain at their default values.</dd>";
@@ -2447,10 +2449,10 @@ wl_basic.label5="무선 SSID 공개";
 wl_basic.label6="감도 범위 (ACK 타이밍)";
 wl_basic.label7="802.11n 전송 모드";
 wl_basic.igmpsnooping="멀티캐스트 트래픽 최적화";
-wl_basic.turboqam="TurboQAM (QAM256) 지원";
+wl_basic.turboqam="터보QAM (QAM256) 지원";
 wl_basic.scanlist="스캔리스트";
 wl_basic.duallink="듀얼 링크";
-wl_basic.parent="Parent IP";
+wl_basic.parent="부모 IP";
 wl_basic.masquerade="가상모드 / NAT";
 wl_basic.ap="AP";
 wl_basic.client="클라이언트";
@@ -2459,13 +2461,13 @@ wl_basic.repeaterbridge="리피터 브리지";
 wl_basic.clientBridge="클라이언트 브리지";
 wl_basic.clientRelayd="클라이언트 브리지 (라우티드)";
 wl_basic.adhoc="Adhoc";
-wl_basic.wdssta="WDS Station";
+wl_basic.wdssta="WDS 스테이션";
 wl_basic.wdsap="WDS AP";
 wl_basic.mixed="Mixed";
-wl_basic.bft="Explicit Beamforming";
-wl_basic.bfr="Implicit Beamforming";
-wl_basic.greenfield="Greenfield";
-wl_basic.preamble="Short Preamble";
+wl_basic.bft="Explicit 빔포밍";
+wl_basic.bfr="Implicit 빔포밍";
+wl_basic.greenfield="그린필드";
+wl_basic.preamble="짧은 프리앰블";
 wl_basic.clientRelaydDefaultGwMode="기본 GW 모드";
 wl_basic.b="B-Only";
 wl_basic.a="A-Only";
@@ -2481,7 +2483,7 @@ wl_basic.n="N-Only";
 wl_basic.rts="RTS 임계값";
 wl_basic.rtsvalue="임계값";
 wl_basic.protmode="보호 모드";
-wl_basic.legend2="Radio Time Restrictions";
+wl_basic.legend2="무선 시간 제한";
 wl_basic.radio="무선";
 wl_basic.radiotimer="무선 스케줄링";
 wl_basic.radio_on="켜짐";
@@ -2489,8 +2491,8 @@ wl_basic.radio_off="꺼짐";
 wl_basic.h2_v24="무선 물리 인터페이스";
 wl_basic.h2_vi="무선 가상 인터페이스";
 wl_basic.regdom="규제 도메인";
-wl_basic.regmode="Regulatory Mode";
-wl_basic.tpcdb="TPC Mitigation Factor";
+wl_basic.regmode="규제 모드";
+wl_basic.tpcdb="TPC 완화 요소";
 wl_basic.TXpower="송신 출력";
 wl_basic.TXpowerFcc="최대 송신 출력 (FCC)";
 wl_basic.AntGain="안테나 이득";
@@ -2505,12 +2507,12 @@ wl_basic.external="외부";
 wl_basic.ghz24="2.4 GHz 출력";
 wl_basic.ghz5="5 GHz 출력";
 wl_basic.network="네트워크 설정";
-wl_basic.unbridged="브리지 하지 않기";
+wl_basic.unbridged="브리지 안 함";
 wl_basic.bridged="브리지 하기";
 wl_basic.turbo="터보모드";
 wl_basic.extrange="확장 범위";
-wl_basic.supergcomp="Super G 데이터 압축";
-wl_basic.supergff="Super G Fram 고속 전송";
+wl_basic.supergcomp="슈퍼 G 압축";
+wl_basic.supergff="슈퍼 G 고속 Framing";
 wl_basic.extchannel="확장채널모드";
 wl_basic.outband="아웃도어 밴드";
 wl_basic.channel_width="채널 대역";
@@ -2519,28 +2521,28 @@ wl_basic.regulatory="슈퍼채널";
 wl_basic.chanshift="채널 이동";
 wl_basic.specialmode="2.3 GHz 모드";
 wl_basic.wifi_bonding="Wifi 본딩";
-wl_basic.sifstime="OFDM SIFS Time";
-wl_basic.preambletime="OFDM Preamble Time";
+wl_basic.sifstime="OFDM SIFS 시간";
+wl_basic.preambletime="OFDM 프리앰블 시간";
 wl_basic.multicast="멀티 캐스트 포워딩";
-wl_basic.intmit="노이즈 면역";
-wl_basic.noise_immunity="노이즈 면역 레벨";
-wl_basic.ofdm_weak_det="OFDM Weak 검출";
+wl_basic.intmit="노이즈 내성";
+wl_basic.noise_immunity="노이즈 내성 레벨";
+wl_basic.ofdm_weak_det="약한 OFDM 검출";
 wl_basic.radar="레이더 탐지";
 wl_basic.mtikie="MTik 호환성";
-wl_basic.csma="Carrier Sense";
-wl_basic.if_label="Label (옵션)";
-wl_basic.if_info="Info (옵션)";
+wl_basic.csma="캐리어 감지";
+wl_basic.if_label="레이블 (옵션)";
+wl_basic.if_info="정보 (옵션)";
 wl_basic.advanced_options="고급 옵션";
 wl_basic.rate_control="속도 컨트롤 알고리즘";
 wl_basic.ap83_vap_note="3개 이상의 가상 인터페이스를 추가하시면 추가된 가상 인터페이스의 일부 클라이언트에서 성능저하가 일어날수 있습니다.";
-wl_basic.isolation="Net Isolation";
+wl_basic.isolation="Net 격리";
 wl_basic.country_settings="나라 설정";
 wl_basic.ch_pos_auto="자동";
 wl_basic.ch_pos_upr="상위";
 wl_basic.ch_pos_lwr="하위";
 wl_basic.ghz="GHz";
 wl_basic.mhz="MHz";
-wl_basic.tbqam="TurboQAM";
+wl_basic.tbqam="터보QAM";
 wl_basic.upper="상위";
 wl_basic.lower="하위";
 
@@ -2566,10 +2568,10 @@ fail.mess2="업그레이드 실패.";
 
 // ** Success*.asp / Reboot.asp  **//
 success.saved="설정이 저장되었습니다.";
-success.restore="설정이 복원되었습니다.<br/>장치가 재부팅을 합니다. 잠시만 기다려 주십시오...";
-success.upgrade="성공적으로 업그레이드 되었습니다.<br/>장치가 재부팅을 합니다. 잠시만 기다려 주십시오...";
+success.restore="설정이 복원되었습니다.<br/>장치가 재부팅 됩니다. 잠시만 기다려 주십시오...";
+success.upgrade="성공적으로 업그레이드 되었습니다.<br/>장치가 재부팅 됩니다. 잠시만 기다려 주십시오...";
 success.success_noreboot="설정이 완료되었습니다.";
-success.success_reboot=success.success_noreboot + "<br />장치가 재부팅을 합니다. 잠시만 기다려 주십시오...";
+success.success_reboot=success.success_noreboot + "<br />장치가 재부팅 됩니다. 잠시만 기다려 주십시오...";
 
 success.alert_reset="모든 설정이 초기 값으로 복원되었습니다.<br /><br />";
 success.alert1="다음 항목을 확인 하시고 한번 더 접속을 시작하여 주십시오:";
@@ -2585,10 +2587,10 @@ sas.internet_connection="인터넷 접속";
 sas.network_settings="네트워크 설정";
 sas.wireless_settings="무선 설정";
 sas.other_settings="기타 설정";
-sas.hwan="인터넷(WAN) 설정";
+sas.hwan="인터넷 (WAN) 설정";
 
 hsas.wan="WAN 인터페이스는 공유기를 인터넷 혹은 다른 네트워크에 접속시켜 줍니다. 이미 네트워크가 인터넷이 연결되어있는 환경에서 공유기를 액세스 포인트(AP)로써 사용할고자 할 경우  WAN 모드를 \무효(disabled)\"로 설정 변경하여 주십시오.";
-hsas.h_routerip="Router IP(LAN측 접속)";
+hsas.h_routerip="공유기 IP";
 hsas.routerip="내부 네트워크에서 할당된 IP 주소 입니다. 만일 주소를 변경하신 경우, 변경을 적용하신 후 새 주소를 이용하여 Router Management(공유기 관리) 기능에 접속하셔야 합니다";
 hsas.h_dhcp="DHCP";
 hsas.dhcp="DHCP를 사용하시면 수동 설정이 필요없이 컴퓨터 또는 기타 네트워크 장치에 IP 주소를 자동으로 설정할 수 있습니다. DHCP 서버가 이미 로컬 네트워크상에 존재하는 경우 충돌을 피하기 위해 이 설정 무효화하여 주십시오.";
@@ -2603,18 +2605,18 @@ hsas.wireless="무선 설정 도움말";
 hsas.other="기타 설정 도움말";
 
 // ** AOSS **//
-haoss.basic="버팔로 에어스테이션 원터치 보안 시스템 (AOSS) 기능을 사용하시면 자동으로 AOSS 대응 클라이언트가 액세스포인트에 접속할 수 있게 합니다.";
+haoss.basic="에어스테이션 원터치 보안 시스템 (AOSS) 기능을 사용하시면 자동으로 AOSS 대응 클라이언트가 액세스포인트에 접속할 수 있게 합니다.";
 haoss.securitymodes="AOSS 보안 모드는 어떠한 타입의 보안모드를 AOSS에 사용할 것인지를 설정합니다. 만일 클라이언트에서 지원하는 보안방식이 유효하지 않을 경우 접속하실 수 없습니다.";
 haoss.wps="라우터의 버튼 혹은 사용자 단말의 PIN을 사용하여 WPS에서 Wi-Fi 보호 설정을 지원합니다.";
 
 ias.title="설정";
 ias.card_info="설정 카드";
-ias.edit_note="설정카드상의 임의의 정보를 클릭하셔서 편집하여 주십시오.";
+ias.edit_note="설정 카드상의 임의의 정보를 클릭하셔서 편집하여 주십시오.";
 ias.assistant="설정 도우미 실행";
-ias.assistant_iptv="Run IPTV Setup";
+ias.assistant_iptv="IPTV 설정 실행";
 ias.print_setup_card="설정 카드 인쇄";
 ias.print_guest_card="게스트 카드 인쇄";
-ias.apply_changes="설정변경 적용";
+ias.apply_changes="변경 적용";
 ias.wlnetwork="무선 네트워크";
 ias.wlinfo_2_4_GHz="(2.4 Ghz) - 802.11n/g/b와 호환됩니다";
 ias.wlinfo_5_GHz="(5 Ghz) - 802.11n/a와 호환됩니다";
