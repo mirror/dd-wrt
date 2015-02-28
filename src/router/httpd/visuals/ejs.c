@@ -72,7 +72,7 @@ websRomPageIndexType *PwebsRomPageIndex = NULL;
 char *(*GOZILA_GET) (webs_t wp, char *name) = NULL;
 void (*validate_cgi) (webs_t fp) = NULL;
 
-extern char *request_url;
+char *request_url;
 
 #ifdef HAVE_HTTPS
 int do_ssl;
@@ -99,6 +99,7 @@ void initWeb(struct Webenvironment *env)
 	live_translate = env->Plive_translate;
 	GOZILA_GET = env->PGOZILA_GET;
 	validate_cgi = env->Pvalidate_cgi;
+	request_url = env->Prequest_url;
 }
 
 struct onload onloads[] = {
