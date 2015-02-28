@@ -7,10 +7,11 @@
 var submit_button = "<% get_web_page_name(); %>";
 
 function to_submit() {
-	if(submit_button == ".asp")
+	if(submit_button == ".asp"){
 		history.go(-1);
-	else
+	}else{
 		document.location.href =  submit_button;
+	}
 }
 		
 		//]]>
