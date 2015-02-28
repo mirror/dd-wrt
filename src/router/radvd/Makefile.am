@@ -43,7 +43,6 @@ DISABLE_WARNINGS = \
 
 AM_CFLAGS = \
 	-fno-strict-aliasing \
-	-fstack-protector \
 	$(ENABLE_WARNINGS) \
 	$(DISABLE_WARNINGS)
 
