@@ -30,51 +30,46 @@ int open_icmpv6_socket(void)
 {
 	int sock;
 	struct icmp6_filter filter;
-	int err, val;
+	int err;
 
 	sock = socket(AF_INET6, SOCK_RAW, IPPROTO_ICMPV6);
 	if (sock < 0) {
 		flog(LOG_ERR, "can't create socket(AF_INET6): %s", strerror(errno));
-		return (-1);
+		return -1;
 	}
 
-	val = 1;
-	err = setsockopt(sock, IPPROTO_IPV6, IPV6_RECVPKTINFO, &val, sizeof(val));
+	err = setsockopt(sock, IPPROTO_IPV6, IPV6_RECVPKTINFO, (int[]){1}, sizeof(int));
 	if (err < 0) {
 		flog(LOG_ERR, "setsockopt(IPV6_RECVPKTINFO): %s", strerror(errno));
-		return (-1);
+		return -1;
 	}
 
-	val = 2;
 #ifdef __linux__
-	err = setsockopt(sock, IPPROTO_RAW, IPV6_CHECKSUM, &val, sizeof(val));
+	err = setsockopt(sock, IPPROTO_RAW, IPV6_CHECKSUM, (int[]){2}, sizeof(int));
 #else
-	err = setsockopt(sock, IPPROTO_IPV6, IPV6_CHECKSUM, &val, sizeof(val));
+	err = setsockopt(sock, IPPROTO_IPV6, IPV6_CHECKSUM, (int[]){2}, sizeof(int));
 #endif
 	if (err < 0) {
 		flog(LOG_ERR, "setsockopt(IPV6_CHECKSUM): %s", strerror(errno));
-		return (-1);
+		return -1;
 	}
 
-	val = 255;
-	err = setsockopt(sock, IPPROTO_IPV6, IPV6_UNICAST_HOPS, &val, sizeof(val));
+	err = setsockopt(sock, IPPROTO_IPV6, IPV6_UNICAST_HOPS, (int[]){255}, sizeof(int));
 	if (err < 0) {
 		flog(LOG_ERR, "setsockopt(IPV6_UNICAST_HOPS): %s", strerror(errno));
-		return (-1);
+		return -1;
 	}
 
-	val = 255;
-	err = setsockopt(sock, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &val, sizeof(val));
+	err = setsockopt(sock, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, (int[]){255}, sizeof(int));
 	if (err < 0) {
 		flog(LOG_ERR, "setsockopt(IPV6_MULTICAST_HOPS): %s", strerror(errno));
-		return (-1);
+		return -1;
 	}
 #ifdef IPV6_RECVHOPLIMIT
-	val = 1;
-	err = setsockopt(sock, IPPROTO_IPV6, IPV6_RECVHOPLIMIT, &val, sizeof(val));
+	err = setsockopt(sock, IPPROTO_IPV6, IPV6_RECVHOPLIMIT, (int[]){1}, sizeof(int));
 	if (err < 0) {
 		flog(LOG_ERR, "setsockopt(IPV6_RECVHOPLIMIT): %s", strerror(errno));
-		return (-1);
+		return -1;
 	}
 #endif
 
@@ -89,7 +84,7 @@ int open_icmpv6_socket(void)
 	err = setsockopt(sock, IPPROTO_ICMPV6, ICMP6_FILTER, &filter, sizeof(filter));
 	if (err < 0) {
 		flog(LOG_ERR, "setsockopt(ICMPV6_FILTER): %s", strerror(errno));
-		return (-1);
+		return -1;
 	}
 
 	return sock;

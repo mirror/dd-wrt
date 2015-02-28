@@ -15,5 +15,7 @@
 
 #pragma once
 
-void process_netlink_msg(int sock);
+#include "radvd.h"
+
+void process_netlink_msg(int sock, struct Interface * ifaces);
 int netlink_socket(void);

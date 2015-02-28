@@ -80,7 +80,7 @@
 #define MAX_FINAL_RTR_ADVERTISEMENTS	3
 #define MIN_DELAY_BETWEEN_RAS		3.0
 #define MIN_DELAY_BETWEEN_RAS_MIPv6     (30.0/1000.0)
-#define MAX_RA_DELAY_TIME		(1000.0/2.0)	/* milliseconds */
+#define MAX_RA_DELAY_SECONDS		(0.5)
 
 /* Host constants: */
 
@@ -217,7 +217,7 @@ struct nd_opt_dnssl_info_local {
 /* Configurable values */
 
 #define DFLT_HomeAgentPreference	0
-#define DFLT_HomeAgentLifetime(iface)	((iface)->AdvDefaultLifetime)
+#define DFLT_HomeAgentLifetime(iface)	((iface)->ra_header_info.AdvDefaultLifetime)
 
 /* Other */
 
