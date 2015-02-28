@@ -129,6 +129,7 @@ struct Webenvironment {
 	char *(*Plive_translate) (char *tran);
 	void (*Pvalidate_cgi) (webs_t fp);
 	websRomPageIndexType *PwebsRomPageIndex;
+	char *Prequest_url;
 #ifdef HAVE_HTTPS
 	int Pdo_ssl;
 #endif
