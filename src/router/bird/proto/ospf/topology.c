@@ -103,7 +103,8 @@ lsab_alloc(struct proto_ospf *po, unsigned size)
   if (po->lsab_used > po->lsab_size)
     {
       po->lsab_size = MAX(po->lsab_used, 2 * po->lsab_size);
-      po->lsab = mb_realloc(po->proto.pool, po->lsab, po->lsab_size);
+      po->lsab = po->lsab ? mb_realloc(po->lsab, po->lsab_size):
+	mb_alloc(po->proto.pool, po->lsab_size);
     }
   return ((byte *) po->lsab) + offset;
 }
@@ -305,7 +306,7 @@ originate_rt_lsa_body(struct ospf_area *oa, u16 *length)
         break;
 
       default:
-        log("Unknown interface type %s", ifa->iface->name);
+        log("Unknown interface type %s", ifa->ifname);
         break;
       }
 
@@ -446,7 +447,7 @@ originate_rt_lsa_body(struct ospf_area *oa, u16 *length)
         break;
 
       default:
-        log("Unknown interface type %s", ifa->iface->name);
+        log("Unknown interface type %s", ifa->ifname);
         break;
       }
 
@@ -595,8 +596,7 @@ originate_net_lsa(struct ospf_iface *ifa)
   
   void *body;
 
-  OSPF_TRACE(D_EVENTS, "Originating network-LSA for iface %s",
-	     ifa->iface->name);
+  OSPF_TRACE(D_EVENTS, "Originating network-LSA for iface %s", ifa->ifname);
 
   lsa.age = 0;
   lsa.type = LSA_T_NET;
@@ -627,8 +627,7 @@ flush_net_lsa(struct ospf_iface *ifa)
   if (ifa->net_lsa == NULL)
     return;
 
-  OSPF_TRACE(D_EVENTS, "Flushing network-LSA for iface %s",
-	     ifa->iface->name);
+  OSPF_TRACE(D_EVENTS, "Flushing network-LSA for iface %s", ifa->ifname);
   ifa->net_lsa->lsa.sn += 1;
   ifa->net_lsa->lsa.age = LSA_MAXAGE;
   lsasum_calculate(&ifa->net_lsa->lsa, ifa->net_lsa->lsa_body);
@@ -1211,8 +1210,11 @@ originate_link_lsa(struct ospf_iface *ifa)
   struct proto *p = &po->proto;
   void *body;
 
-  /* FIXME check for vlink and skip that? */
-  OSPF_TRACE(D_EVENTS, "Originating link-LSA for iface %s", ifa->iface->name);
+  /* Vlinks do not have link-LSAs */
+  if (ifa->type == OSPF_IT_VLINK)
+    return;
+
+  OSPF_TRACE(D_EVENTS, "Originating link-LSA for iface %s", ifa->ifname);
 
   lsa.age = 0;
   lsa.type = LSA_T_LINK;
@@ -1497,8 +1499,7 @@ originate_prefix_net_lsa(struct ospf_iface *ifa)
   struct ospf_lsa_header lsa;
   void *body;
 
-  OSPF_TRACE(D_EVENTS, "Originating network prefix-LSA for iface %s",
-	     ifa->iface->name);
+  OSPF_TRACE(D_EVENTS, "Originating network prefix-LSA for iface %s", ifa->ifname);
 
   lsa.age = 0;
   lsa.type = LSA_T_PREFIX;
@@ -1524,8 +1525,7 @@ flush_prefix_net_lsa(struct ospf_iface *ifa)
   if (en == NULL)
     return;
 
-  OSPF_TRACE(D_EVENTS, "Flushing network prefix-LSA for iface %s",
-	     ifa->iface->name);
+  OSPF_TRACE(D_EVENTS, "Flushing network prefix-LSA for iface %s", ifa->ifname);
 
   en->lsa.sn += 1;
   en->lsa.age = LSA_MAXAGE;

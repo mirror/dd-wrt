@@ -205,7 +205,7 @@ ospf_lsupd_flood(struct proto_ospf *po,
 	    en->lsa_body = NULL;
 	    DBG("Removing from lsreq list for neigh %R\n", nn->rid);
 	    ospf_hash_delete(nn->lsrqh, en);
-	    if (EMPTY_SLIST(nn->lsrql))
+	    if ((EMPTY_SLIST(nn->lsrql)) && (nn->state == NEIGHBOR_LOADING))
 	      ospf_neigh_sm(nn, INM_LOADDONE);
 	    continue;
 	    break;
@@ -216,7 +216,7 @@ ospf_lsupd_flood(struct proto_ospf *po,
 	    en->lsa_body = NULL;
 	    DBG("Removing from lsreq list for neigh %R\n", nn->rid);
 	    ospf_hash_delete(nn->lsrqh, en);
-	    if (EMPTY_SLIST(nn->lsrql))
+	    if ((EMPTY_SLIST(nn->lsrql)) && (nn->state == NEIGHBOR_LOADING))
 	      ospf_neigh_sm(nn, INM_LOADDONE);
 	    break;
 	  default:
@@ -278,6 +278,16 @@ ospf_lsupd_flood(struct proto_ospf *po,
       struct ospf_packet *op;
       struct ospf_lsa_header *lh;
 
+      /* Check iface buffer size */
+      uint len2 = sizeof(struct ospf_lsupd_packet) + (hn ? ntohs(hn->length) : hh->length);
+      if (ospf_iface_assure_bufsize(ifa, len2) < 0)
+      {
+	/* Cannot fit in a tx buffer, skip that iface */
+	log(L_ERR "OSPF: LSA too large to flood on %s (Type: %04x, Id: %R, Rt: %R)", 
+	    ifa->ifname, hh->type, hh->id, hh->rt);
+	continue;
+      }
+
       pk = ospf_tx_buffer(ifa);
       op = &pk->ospf_packet;
 
@@ -312,7 +322,7 @@ ospf_lsupd_flood(struct proto_ospf *po,
 
       op->length = htons(len);
 
-      OSPF_PACKET(ospf_dump_lsupd, pk, "LSUPD packet flooded via %s", ifa->iface->name);
+      OSPF_PACKET(ospf_dump_lsupd, pk, "LSUPD packet flooded via %s", ifa->ifname);
 
       switch (ifa->type)
       {
@@ -382,8 +392,7 @@ ospf_lsupd_send_list(struct ospf_neighbor *n, list * l)
       if (en == NULL)
       {
 	/* Probably flushed LSA, this should not happen */
-	log(L_WARN "OSPF: LSA disappeared (Type: %04x, Id: %R, Rt: %R)", 
-	    lsr->lsh.type, lsr->lsh.id, lsr->lsh.rt);
+	// log(L_WARN "OSPF: LSA disappeared (Type: %04x, Id: %R, Rt: %R)", lsr->lsh.type, lsr->lsh.id, lsr->lsh.rt);
 	lsr = NODE_NEXT(lsr);
 	continue;			
       }
@@ -396,14 +405,18 @@ ospf_lsupd_send_list(struct ospf_neighbor *n, list * l)
 	  break;
 
 	/* LSA is larger than MTU, check buffer size */
-	if (len2 > ospf_pkt_bufsize(n->ifa))
+	if (ospf_iface_assure_bufsize(n->ifa, len2) < 0)
 	{
 	  /* Cannot fit in a tx buffer, skip that */
-	  log(L_WARN "OSPF: LSA too large to send (Type: %04x, Id: %R, Rt: %R)", 
+	  log(L_ERR "OSPF: LSA too large to send (Type: %04x, Id: %R, Rt: %R)", 
 	      lsr->lsh.type, lsr->lsh.id, lsr->lsh.rt);
 	  lsr = NODE_NEXT(lsr);
 	  continue;
 	}
+
+	/* TX buffer could be reallocated */
+	pkt = ospf_tx_buffer(n->ifa);
+	buf = (void *) pkt;
       }
 
       /* Copy the LSA to the packet */
@@ -422,7 +435,7 @@ ospf_lsupd_send_list(struct ospf_neighbor *n, list * l)
     pkt->lsano = htonl(lsano);
     pkt->ospf_packet.length = htons(len);
     OSPF_PACKET(ospf_dump_lsupd, pkt, "LSUPD packet sent to %I via %s",
-		n->ip, n->ifa->iface->name);
+		n->ip, n->ifa->ifname);
     ospf_send_to(n->ifa, n->ip);
   }
 }
@@ -445,7 +458,7 @@ ospf_lsupd_receive(struct ospf_packet *ps_i, struct ospf_iface *ifa,
   }
 
   struct ospf_lsupd_packet *ps = (void *) ps_i;
-  OSPF_PACKET(ospf_dump_lsupd, ps, "LSUPD packet received from %I via %s", n->ip, ifa->iface->name);
+  OSPF_PACKET(ospf_dump_lsupd, ps, "LSUPD packet received from %I via %s", n->ip, ifa->ifname);
 
   if (n->state < NEIGHBOR_EXCHANGE)
   {

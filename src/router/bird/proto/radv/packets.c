@@ -251,10 +251,11 @@ radv_prepare_ra(struct radv_iface *ifa)
   pkt->code = 0;
   pkt->checksum = 0;
   pkt->current_hop_limit = ic->current_hop_limit;
-  pkt->flags = (ic->managed ? OPT_RA_MANAGED : 0) |
-    (ic->other_config ? OPT_RA_OTHER_CFG : 0);
   pkt->router_lifetime = (ra->active || !ic->default_lifetime_sensitive) ?
     htons(ic->default_lifetime) : 0;
+  pkt->flags = (ic->managed ? OPT_RA_MANAGED : 0) |
+    (ic->other_config ? OPT_RA_OTHER_CFG : 0) |
+    (pkt->router_lifetime ? ic->default_preference : 0);
   pkt->reachable_time = htonl(ic->reachable_time);
   pkt->retrans_timer = htonl(ic->retrans_timer);
   buf += sizeof(*pkt);
@@ -330,10 +331,15 @@ radv_send_ra(struct radv_iface *ifa, int shutdown)
 
   if (shutdown)
   {
-    /* Modify router lifetime to 0, it is not restored because
-       we suppose that the iface will be removed */
+    /*
+     * Modify router lifetime to 0, it is not restored because we suppose that
+     * the iface will be removed. The preference value also has to be zeroed.
+     * (RFC 4191 2.2: If router lifetime is 0, the preference value must be 0.)
+     */
+
     struct radv_ra_packet *pkt = (void *) ifa->sk->tbuf;
     pkt->router_lifetime = 0;
+    pkt->flags &= ~RA_PREF_MASK;
   }
 
   RADV_TRACE(D_PACKETS, "Sending RA via %s", ifa->iface->name);
@@ -404,7 +410,7 @@ radv_sk_open(struct radv_iface *ifa)
   sock *sk = sk_new(ifa->ra->p.pool);
   sk->type = SK_IP;
   sk->dport = ICMPV6_PROTO;
-  sk->saddr = IPA_NONE;
+  sk->saddr = ifa->addr->ip;
 
   sk->ttl = 255; /* Mandatory for Neighbor Discovery packets */
   sk->rx_hook = radv_rx_hook;
@@ -416,13 +422,11 @@ radv_sk_open(struct radv_iface *ifa)
   sk->data = ifa;
   sk->flags = SKF_LADDR_RX;
 
-  if (sk_open(sk) != 0)
+  if (sk_open(sk) < 0)
     goto err;
 
-  sk->saddr = ifa->addr->ip;
-
   /* We want listen just to ICMPv6 messages of type RS and RA */
-  if (sk_set_icmp_filter(sk, ICMPV6_RS, ICMPV6_RA) < 0)
+  if (sk_set_icmp6_filter(sk, ICMPV6_RS, ICMPV6_RA) < 0)
     goto err;
 
   if (sk_setup_multicast(sk) < 0)
@@ -435,6 +439,7 @@ radv_sk_open(struct radv_iface *ifa)
   return 1;
 
  err:
+  sk_log_error(sk, ifa->ra->p.name);
   rfree(sk);
   return 0;
 }

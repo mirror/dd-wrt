@@ -51,6 +51,7 @@
 #include "nest/cli.h"
 #include "nest/attrs.h"
 #include "lib/alloca.h"
+#include "lib/hash.h"
 #include "lib/resource.h"
 #include "lib/string.h"
 
@@ -58,8 +59,141 @@ pool *rta_pool;
 
 static slab *rta_slab;
 static slab *mpnh_slab;
+static slab *rte_src_slab;
+
+/* rte source ID bitmap */
+static u32 *src_ids;
+static u32 src_id_size, src_id_used, src_id_pos;
+#define SRC_ID_INIT_SIZE 4
+
+/* rte source hash */
+
+#define RSH_KEY(n)		n->proto, n->private_id
+#define RSH_NEXT(n)		n->next
+#define RSH_EQ(p1,n1,p2,n2)	p1 == p2 && n1 == n2
+#define RSH_FN(p,n)		p->hash_key ^ u32_hash(n)
+
+#define RSH_REHASH		rte_src_rehash
+#define RSH_PARAMS		/2, *2, 1, 1, 8, 20
+#define RSH_INIT_ORDER		6
+
+static HASH(struct rte_src) src_hash;
 
 struct protocol *attr_class_to_protocol[EAP_MAX];
+
+
+static void
+rte_src_init(void)
+{
+  rte_src_slab = sl_new(rta_pool, sizeof(struct rte_src));
+
+  src_id_pos = 0;
+  src_id_size = SRC_ID_INIT_SIZE;
+  src_ids = mb_allocz(rta_pool, src_id_size * sizeof(u32));
+
+ /* ID 0 is reserved */
+  src_ids[0] = 1;
+  src_id_used = 1;
+
+  HASH_INIT(src_hash, rta_pool, RSH_INIT_ORDER);
+}
+
+static inline int u32_cto(unsigned int x) { return ffs(~x) - 1; }
+
+static inline u32
+rte_src_alloc_id(void)
+{
+  int i, j;
+  for (i = src_id_pos; i < src_id_size; i++)
+    if (src_ids[i] != 0xffffffff)
+      goto found;
+
+  /* If we are at least 7/8 full, expand */
+  if (src_id_used > (src_id_size * 28))
+    {
+      src_id_size *= 2;
+      src_ids = mb_realloc(src_ids, src_id_size * sizeof(u32));
+      bzero(src_ids + i, (src_id_size - i) * sizeof(u32));
+      goto found;
+    }
+
+  for (i = 0; i < src_id_pos; i++)
+    if (src_ids[i] != 0xffffffff)
+      goto found;
+
+  ASSERT(0);
+
+ found:
+  ASSERT(i < 0x8000000);
+
+  src_id_pos = i;
+  j = u32_cto(src_ids[i]);
+
+  src_ids[i] |= (1 << j);
+  src_id_used++;
+  return 32 * i + j;
+}
+
+static inline void
+rte_src_free_id(u32 id)
+{
+  int i = id / 32;
+  int j = id % 32;
+
+  ASSERT((i < src_id_size) && (src_ids[i] & (1 << j)));
+  src_ids[i] &= ~(1 << j);
+  src_id_used--;
+}
+
+
+HASH_DEFINE_REHASH_FN(RSH, struct rte_src)
+
+struct rte_src *
+rt_find_source(struct proto *p, u32 id)
+{
+  return HASH_FIND(src_hash, RSH, p, id);
+}
+
+struct rte_src *
+rt_get_source(struct proto *p, u32 id)
+{
+  struct rte_src *src = rt_find_source(p, id);
+
+  if (src)
+    return src;
+
+  src = sl_alloc(rte_src_slab);
+  src->proto = p;
+  src->private_id = id;
+  src->global_id = rte_src_alloc_id();
+  src->uc = 0;
+  
+  HASH_INSERT2(src_hash, RSH, rta_pool, src);
+
+  return src;
+}
+
+void
+rt_prune_sources(void)
+{
+  HASH_WALK_FILTER(src_hash, next, src, sp)
+  {
+    if (src->uc == 0)
+    {
+      HASH_DO_REMOVE(src_hash, RSH, sp);
+      rte_src_free_id(src->global_id);
+      sl_free(rte_src_slab, src);
+    }
+  }
+  HASH_WALK_FILTER_END;
+
+  HASH_MAY_RESIZE_DOWN(src_hash, RSH, rta_pool);
+}
+
+
+/*
+ *	Multipath Next Hop
+ */
 
 static inline unsigned int
 mpnh_hash(struct mpnh *x)
@@ -366,8 +500,7 @@ ea_same(ea_list *x, ea_list *y)
       if (a->id != b->id ||
 	  a->flags != b->flags ||
 	  a->type != b->type ||
-	  ((a->type & EAF_EMBEDDED) ? a->u.data != b->u.data :
-	   (a->u.ptr->length != b->u.ptr->length || memcmp(a->u.ptr->data, b->u.ptr->data, a->u.ptr->length))))
+	  ((a->type & EAF_EMBEDDED) ? a->u.data != b->u.data : !adata_same(a->u.ptr, b->u.ptr)))
 	return 0;
     }
   return 1;
@@ -682,14 +815,14 @@ rta_alloc_hash(void)
 static inline unsigned int
 rta_hash(rta *a)
 {
-  return (a->proto->hash_key ^ ipa_hash(a->gw) ^
+  return (((uint) (uintptr_t) a->src) ^ ipa_hash(a->gw) ^
 	  mpnh_hash(a->nexthops) ^ ea_hash(a->eattrs)) & 0xffff;
 }
 
 static inline int
 rta_same(rta *x, rta *y)
 {
-  return (x->proto == y->proto &&
+  return (x->src == y->src &&
 	  x->source == y->source &&
 	  x->scope == y->scope &&
 	  x->cast == y->cast &&
@@ -786,6 +919,7 @@ rta_lookup(rta *o)
   r = rta_copy(o);
   r->hash_key = h;
   r->aflags = RTAF_CACHED;
+  rt_lock_source(r->src);
   rt_lock_hostentry(r->hostentry);
   rta_insert(r);
 
@@ -805,6 +939,7 @@ rta__free(rta *a)
     a->next->pprev = a->pprev;
   a->aflags = 0;		/* Poison the entry */
   rt_unlock_hostentry(a->hostentry);
+  rt_unlock_source(a->src);
   mpnh_free(a->nexthops);
   ea_free(a->eattrs);
   sl_free(rta_slab, a);
@@ -827,7 +962,7 @@ rta_dump(rta *a)
   static char *rtd[] = { "", " DEV", " HOLE", " UNREACH", " PROHIBIT" };
 
   debug("p=%s uc=%d %s %s%s%s h=%04x",
-	a->proto->name, a->uc, rts[a->source], ip_scope_text(a->scope), rtc[a->cast],
+	a->src->proto->name, a->uc, rts[a->source], ip_scope_text(a->scope), rtc[a->cast],
 	rtd[a->dest], a->hash_key);
   if (!(a->aflags & RTAF_CACHED))
     debug(" !CACHED");
@@ -895,6 +1030,7 @@ rta_init(void)
   rta_slab = sl_new(rta_pool, sizeof(rta));
   mpnh_slab = sl_new(rta_pool, sizeof(struct mpnh));
   rta_alloc_hash();
+  rte_src_init();
 }
 
 /*

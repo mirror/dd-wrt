@@ -1,3 +1,52 @@
+Version 1.4.5 (2014-10-06)
+  o New 'show route noexport' command option.
+  o Port option for BGP sessions.
+  o Better constant handling in set literals.
+  o Better rate filtering of log messages.
+  o Several minor bugfixes.
+
+Version 1.4.4 (2014-07-09)
+  o Extended OSPF multipath support.
+  o Default router preference for RAdv.
+  o Significant changes in socket layer.
+  o Important bugfix in BGP.
+  o Several minor bugfixes.
+
+Version 1.4.3 (2014-04-14)
+  o Important bugfix in IPv6 BGP.
+
+Version 1.4.2 (2014-04-02)
+  o Important bugfix in BFD.
+
+Version 1.4.1 (2014-03-31)
+  o BGP add-path support (RFC draft).
+  o BGP graceful restart (RFC 4724).
+  o OSPF: many changes in socket layer.
+  o OSPF: support for secondary addresses in BSD.
+  o OSPF: names for vlink pseudointerfaces (vlinkX).
+  o Several bugfixes.
+
+Version 1.4.0 (2013-11-25)
+  o BFD protocol (RFC 5880).
+  o BFD support for OSPF and BGP.
+  o New 'allow local as' option for BGP.
+  o Filters allows setting gw, ifname and ifindex.
+  o Filter operator 'delete/filter' extended to bgp_paths.
+  o Filter operator 'len' extended to [e]clists.
+  o BIRD client now allows shorthands for noninteractive commands.
+  o Flag -P for PID file support.
+  o Flag -f added to force BIRD to run in foreground.
+  o Protocol export/import/receive limits are checked during reconfiguration.
+  o Several bugfixes and minor improvements.
+  o Several minor but incompatible changes:
+     - IBGP is multihop by default.
+     - Changes primary address selection on BSD to the first one.
+     - Integers in filters are handled as unsigned.
+     - ISO 8601 time formats used by default.
+     - Import of device routes from kernel protocol allowed.
+     - Last state change now tracks just protocol state change.
+     - Minor changes to default router ID calculation.
+
 Version 1.3.11 (2013-07-27)
   o OSPF stub router option (RFC 3137).
   o TTL security for OSPF and RIP.

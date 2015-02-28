@@ -199,7 +199,7 @@ unix_read_config(struct config **cp, char *name)
   return ret;
 }
 
-static void
+static struct config *
 read_config(void)
 {
   struct config *conf;
@@ -211,7 +211,8 @@ read_config(void)
       else
 	die("Unable to open configuration file %s: %m", config_name);
     }
-  config_commit(conf, RECONFIG_HARD, 0);
+
+  return conf;
 }
 
 void
@@ -462,7 +463,12 @@ cli_init_unix(uid_t use_uid, gid_t use_gid)
   s->type = SK_UNIX_PASSIVE;
   s->rx_hook = cli_connect;
   s->rbsize = 1024;
-  sk_open_unix(s, path_control_socket);
+
+  /* Return value intentionally ignored */
+  unlink(path_control_socket);
+
+  if (sk_open_unix(s, path_control_socket) < 0)
+    die("Cannot create control socket %s: %m", path_control_socket);
 
   if (use_uid || use_gid)
     if (chown(path_control_socket, use_uid, use_gid) < 0)
@@ -471,6 +477,58 @@ cli_init_unix(uid_t use_uid, gid_t use_gid)
   if (chmod(path_control_socket, 0660) < 0)
     die("chmod: %m");
 }
+
+/*
+ *	PID file
+ */
+
+static char *pid_file;
+static int pid_fd;
+
+static inline void
+open_pid_file(void)
+{
+  if (!pid_file)
+    return;
+
+  pid_fd = open(pid_file, O_WRONLY|O_CREAT, 0664);
+  if (pid_fd < 0)
+    die("Cannot create PID file %s: %m", pid_file);
+}
+
+static inline void
+write_pid_file(void)
+{
+  int pl, rv;
+  char ps[24];
+
+  if (!pid_file)
+    return;
+
+  /* We don't use PID file for uniqueness, so no need for locking */
+
+  pl = bsnprintf(ps, sizeof(ps), "%ld\n", (long) getpid());
+  if (pl < 0)
+    bug("PID buffer too small");
+
+  rv = ftruncate(pid_fd, 0);
+  if (rv < 0)
+    die("fruncate: %m");
+    
+  rv = write(pid_fd, ps, pl);
+  if(rv < 0)
+    die("write: %m");
+
+  close(pid_fd);
+}
+
+static inline void
+unlink_pid_file(void)
+{
+  if (pid_file)
+    unlink(pid_file);
+}
+
 
 /*
  *	Shutdown
@@ -496,6 +554,7 @@ async_shutdown(void)
 void
 sysdep_shutdown_done(void)
 {
+  unlink_pid_file();
   unlink(path_control_socket);
   log_msg(L_FATAL "Shutdown completed");
   exit(0);
@@ -548,16 +607,17 @@ signal_init(void)
  *	Parsing of command-line arguments
  */
 
-static char *opt_list = "c:dD:ps:u:g:";
+static char *opt_list = "c:dD:ps:P:u:g:fR";
 static int parse_and_exit;
 char *bird_name;
 static char *use_user;
 static char *use_group;
+static int run_in_foreground = 0;
 
 static void
 usage(void)
 {
-  fprintf(stderr, "Usage: %s [-c <config-file>] [-d] [-D <debug-file>] [-p] [-s <control-socket>] [-u <user>] [-g <group>]\n", bird_name);
+  fprintf(stderr, "Usage: %s [-c <config-file>] [-d] [-D <debug-file>] [-p] [-s <control-socket>] [-P <pid-file>] [-u <user>] [-g <group>] [-f] [-R]\n", bird_name);
   exit(1);
 }
 
@@ -656,11 +716,20 @@ parse_args(int argc, char **argv)
       case 's':
 	path_control_socket = optarg;
 	break;
+      case 'P':
+	pid_file = optarg;
+	break;
       case 'u':
 	use_user = optarg;
 	break;
       case 'g':
 	use_group = optarg;
+	break;
+      case 'f':
+	run_in_foreground = 1;
+	break;
+      case 'R':
+	graceful_restart_recovery();
 	break;
       default:
 	usage();
@@ -709,16 +778,19 @@ main(int argc, char **argv)
   if (use_uid)
     drop_uid(use_uid);
 
+  if (!parse_and_exit)
+    open_pid_file();
+
   protos_build();
   proto_build(&proto_unix_kernel);
   proto_build(&proto_unix_iface);
 
-  read_config();
+  struct config *conf = read_config();
 
   if (parse_and_exit)
     exit(0);
 
-  if (!debug_flag)
+  if (!(debug_flag||run_in_foreground))
     {
       pid_t pid = fork();
       if (pid < 0)
@@ -733,7 +805,15 @@ main(int argc, char **argv)
       dup2(0, 2);
     }
 
+  main_thread_init();
+
+  write_pid_file();
+
   signal_init();
+
+  config_commit(conf, RECONFIG_HARD, 0);
+
+  graceful_restart_init();
 
 #ifdef LOCAL_DEBUG
   async_dump_flag = 1;

@@ -110,7 +110,7 @@ rip_iface_init:
    }
  ;
 
-rip_iface:
+rip_iface:	/* TODO: switch to iface_patt_list_nopx */
    rip_iface_init iface_patt_list rip_iface_opt_list
  ;
 

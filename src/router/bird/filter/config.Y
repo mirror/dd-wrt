@@ -25,6 +25,23 @@ static inline u32 pair_b(u32 p) { return p & 0xFFFF; }
  * to the last item in a list (right ptr). For convenience, even items
  * are handled as one-item lists. Lists are merged by f_merge_items().
  */
+static int
+f_valid_set_type(int type)
+{
+  switch (type)
+  {
+  case T_INT:
+  case T_PAIR:
+  case T_QUAD:
+  case T_ENUM:
+  case T_IP:
+  case T_EC:
+    return 1;
+
+  default:
+    return 0;
+  }
+}
 
 static inline struct f_tree *
 f_new_item(struct f_val from, struct f_val to)
@@ -261,7 +278,8 @@ CF_KEYWORDS(FUNCTION, PRINT, PRINTN, UNSET, RETURN,
 	SET, STRING, BGPMASK, BGPPATH, CLIST, ECLIST,
 	IF, THEN, ELSE, CASE,
 	TRUE, FALSE, RT, RO, UNKNOWN, GENERIC,
-	FROM, GW, NET, MASK, PROTO, SOURCE, SCOPE, CAST, DEST, PREFERENCE,
+	FROM, GW, NET, MASK, PROTO, SOURCE, SCOPE, CAST, DEST, IFNAME, IFINDEX,
+	PREFERENCE,
 	LEN,
 	DEFINED,
 	ADD, DELETE, CONTAINS, RESET,
@@ -472,10 +490,19 @@ fipa:
  */
 
 set_atom:
-   expr  { $$.type = T_INT; $$.val.i = $1; }
+   NUM   { $$.type = T_INT; $$.val.i = $1; }
  | RTRID { $$.type = T_QUAD; $$.val.i = $1; }
  | fipa  { $$ = $1; }
  | ENUM  { $$.type = pair_a($1); $$.val.i = pair_b($1); }
+ | '(' term ')' {
+     $$ = f_eval($2, cfg_mem);
+     if (!f_valid_set_type($$.type)) cf_error("Set-incompatible type");
+   }
+ | SYM {
+     if (!cf_symbol_is_constant($1)) cf_error("%s: constant expected", $1->name);
+     if (!f_valid_set_type(SYM_TYPE($1))) cf_error("%s: set-incompatible type", $1->name);
+     $$ = *(struct f_val *)($1->def);
+   }
  ;
 
 switch_atom:
@@ -680,15 +707,16 @@ symbol:
    }
 
 static_attr:
-   FROM    { $$ = f_new_inst(); $$->aux = T_IP;         $$->a2.i = OFFSETOF(struct rta, from);   $$->a1.i = 1; }
-
- | GW      { $$ = f_new_inst(); $$->aux = T_IP;         $$->a2.i = OFFSETOF(struct rta, gw);     $$->a1.i = 1; }
- | NET     { $$ = f_new_inst(); $$->aux = T_PREFIX;     $$->a2.i = 0x12345678; /* This is actually ok - T_PREFIX is special-cased. */ }
- | PROTO   { $$ = f_new_inst(); $$->aux = T_STRING;     $$->a2.i = 0x12345678; /* T_STRING is also special-cased. */ }
- | SOURCE  { $$ = f_new_inst(); $$->aux = T_ENUM_RTS;   $$->a2.i = OFFSETOF(struct rta, source); }
- | SCOPE   { $$ = f_new_inst(); $$->aux = T_ENUM_SCOPE; $$->a2.i = OFFSETOF(struct rta, scope);  $$->a1.i = 1; }
- | CAST    { $$ = f_new_inst(); $$->aux = T_ENUM_RTC;   $$->a2.i = OFFSETOF(struct rta, cast); }
- | DEST    { $$ = f_new_inst(); $$->aux = T_ENUM_RTD;   $$->a2.i = OFFSETOF(struct rta, dest);   $$->a1.i = 1; }
+   FROM    { $$ = f_new_inst(); $$->aux = T_IP;         $$->a2.i = SA_FROM;	$$->a1.i = 1; }
+ | GW      { $$ = f_new_inst(); $$->aux = T_IP;         $$->a2.i = SA_GW;	$$->a1.i = 1; }
+ | NET     { $$ = f_new_inst(); $$->aux = T_PREFIX;     $$->a2.i = SA_NET; }
+ | PROTO   { $$ = f_new_inst(); $$->aux = T_STRING;     $$->a2.i = SA_PROTO; }
+ | SOURCE  { $$ = f_new_inst(); $$->aux = T_ENUM_RTS;   $$->a2.i = SA_SOURCE; }
+ | SCOPE   { $$ = f_new_inst(); $$->aux = T_ENUM_SCOPE; $$->a2.i = SA_SCOPE;	$$->a1.i = 1; }
+ | CAST    { $$ = f_new_inst(); $$->aux = T_ENUM_RTC;   $$->a2.i = SA_CAST; }
+ | DEST    { $$ = f_new_inst(); $$->aux = T_ENUM_RTD;   $$->a2.i = SA_DEST;	$$->a1.i = 1; }
+ | IFNAME  { $$ = f_new_inst(); $$->aux = T_STRING;     $$->a2.i = SA_IFNAME; }
+ | IFINDEX { $$ = f_new_inst(); $$->aux = T_INT;        $$->a2.i = SA_IFINDEX; }
  ;
 
 term:

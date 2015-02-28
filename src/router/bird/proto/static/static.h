@@ -31,7 +31,7 @@ struct static_route {
   struct neighbor *neigh;
   byte *if_name;			/* Name for RTD_DEVICE routes */
   struct static_route *mp_next;		/* Nexthops for RTD_MULTIPATH routes */
-  int installed;			/* Installed in master table */
+  int installed;			/* Installed in rt table, -1 for reinstall */
 };
 
 /* Dummy nodes (parts of multipath route) abuses masklen field for weight

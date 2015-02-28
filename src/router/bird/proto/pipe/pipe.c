@@ -49,7 +49,7 @@ pipe_rt_notify(struct proto *P, rtable *src_table, net *n, rte *new, rte *old, e
   struct pipe_proto *p = (struct pipe_proto *) P;
   struct announce_hook *ah = (src_table == P->table) ? p->peer_ahook : P->main_ahook;
   rtable *dst_table = ah->table;
-  struct proto *src;
+  struct rte_src *src;
 
   net *nn;
   rte *e;
@@ -72,7 +72,7 @@ pipe_rt_notify(struct proto *P, rtable *src_table, net *n, rte *new, rte *old, e
 
       if (p->mode == PIPE_OPAQUE)
 	{
-	  a.proto = &p->p;
+	  a.src = P->main_source;
 	  a.source = RTS_PIPE;
 	}
 
@@ -91,16 +91,16 @@ pipe_rt_notify(struct proto *P, rtable *src_table, net *n, rte *new, rte *old, e
 	  e->pflags = new->pflags;
 	}
 
-      src = new->attrs->proto;
+      src = a.src;
     }
   else
     {
       e = NULL;
-      src = old->attrs->proto;
+      src = old->attrs->src;
     }
 
   src_table->pipe_busy = 1;
-  rte_update2(ah, nn, e, (p->mode == PIPE_OPAQUE) ? &p->p : src);
+  rte_update2(ah, nn, e, src);
   src_table->pipe_busy = 0;
 }
 
@@ -173,6 +173,12 @@ pipe_start(struct proto *P)
   p->peer_ahook->in_limit = cf->c.out_limit;
   proto_reset_limit(p->peer_ahook->in_limit);
 
+  if (p->mode == PIPE_OPAQUE)
+    {
+      P->main_source = rt_get_source(P, 0);
+      rt_lock_source(P->main_source);
+    }
+
   return PS_UP;
 }
 
@@ -186,6 +192,10 @@ pipe_cleanup(struct proto *P)
 
   P->main_ahook = NULL;
   p->peer_ahook = NULL;
+
+  if (p->mode == PIPE_OPAQUE)
+    rt_unlock_source(P->main_source);
+  P->main_source = NULL;
 
   rt_unlock_table(P->table);
   rt_unlock_table(p->peer_table);
@@ -225,12 +235,14 @@ pipe_reconfigure(struct proto *P, struct proto_config *new)
     {
       P->main_ahook->out_filter = new->out_filter;
       P->main_ahook->in_limit = new->in_limit;
+      proto_verify_limits(P->main_ahook);
     }
 
   if (p->peer_ahook)
     {
       p->peer_ahook->out_filter = new->in_filter;
       p->peer_ahook->in_limit = new->out_limit;
+      proto_verify_limits(p->peer_ahook);
     }
 
   if ((P->proto_state != PS_UP) || (proto_reconfig_type == RECONFIG_SOFT))

@@ -35,27 +35,53 @@ static struct proto *initial_device_proto;
 
 static event *proto_flush_event;
 static timer *proto_shutdown_timer;
+static timer *gr_wait_timer;
+
+#define GRS_NONE	0
+#define GRS_INIT	1
+#define GRS_ACTIVE	2
+#define GRS_DONE	3
+
+static int graceful_restart_state;
+static u32 graceful_restart_locks;
 
 static char *p_states[] = { "DOWN", "START", "UP", "STOP" };
-static char *c_states[] = { "HUNGRY", "FEEDING", "HAPPY", "FLUSHING" };
+static char *c_states[] = { "HUNGRY", "???", "HAPPY", "FLUSHING" };
 
 static void proto_flush_loop(void *);
 static void proto_shutdown_loop(struct timer *);
 static void proto_rethink_goal(struct proto *p);
+static void proto_want_export_up(struct proto *p);
+static void proto_fell_down(struct proto *p);
 static char *proto_state_name(struct proto *p);
-
-static void
-proto_enqueue(list *l, struct proto *p)
-{
-  add_tail(l, &p->n);
-  p->last_state_change = now;
-}
 
 static void
 proto_relink(struct proto *p)
 {
   list *l = NULL;
 
+  switch (p->core_state)
+    {
+    case FS_HUNGRY:
+      l = &inactive_proto_list;
+      break;
+    case FS_HAPPY:
+      l = &active_proto_list;
+      break;
+    case FS_FLUSHING:
+      l = &flush_proto_list;
+      break;
+    default:
+      ASSERT(0);
+    }
+
+  rem_node(&p->n);
+  add_tail(l, &p->n);
+}
+
+static void
+proto_log_state_change(struct proto *p)
+{
   if (p->debug & D_STATES)
     {
       char *name = proto_state_name(p);
@@ -67,24 +93,8 @@ proto_relink(struct proto *p)
     }
   else
     p->last_state_name_announced = NULL;
-  rem_node(&p->n);
-  switch (p->core_state)
-    {
-    case FS_HUNGRY:
-      l = &inactive_proto_list;
-      break;
-    case FS_FEEDING:
-    case FS_HAPPY:
-      l = &active_proto_list;
-      break;
-    case FS_FLUSHING:
-      l = &flush_proto_list;
-      break;
-    default:
-      ASSERT(0);
-    }
-  proto_enqueue(l, p);
 }
+
 
 /**
  * proto_new - create a new protocol instance
@@ -127,6 +137,9 @@ proto_init_instance(struct proto *p)
   p->attn = ev_new(p->pool);
   p->attn->data = p;
 
+  if (graceful_restart_state == GRS_INIT)
+    p->gr_recovery = 1;
+
   if (! p->proto->multitable)
     rt_lock_table(p->table);
 }
@@ -138,21 +151,20 @@ extern pool *rt_table_pool;
  * @t: routing table to connect to
  * @stats: per-table protocol statistics
  *
- * This function creates a connection between the protocol instance @p
- * and the routing table @t, making the protocol hear all changes in
- * the table.
+ * This function creates a connection between the protocol instance @p and the
+ * routing table @t, making the protocol hear all changes in the table.
  *
- * The announce hook is linked in the protocol ahook list and, if the
- * protocol accepts routes, also in the table ahook list. Announce
- * hooks are allocated from the routing table resource pool, they are
- * unlinked from the table ahook list after the protocol went down,
- * (in proto_schedule_flush()) and they are automatically freed after the
- * protocol is flushed (in proto_fell_down()).
+ * The announce hook is linked in the protocol ahook list. Announce hooks are
+ * allocated from the routing table resource pool and when protocol accepts
+ * routes also in the table ahook list. The are linked to the table ahook list
+ * and unlinked from it depending on export_state (in proto_want_export_up() and
+ * proto_want_export_down()) and they are automatically freed after the protocol
+ * is flushed (in proto_fell_down()).
  *
- * Unless you want to listen to multiple routing tables (as the Pipe
- * protocol does), you needn't to worry about this function since the
- * connection to the protocol's primary routing table is initialized
- * automatically by the core code.
+ * Unless you want to listen to multiple routing tables (as the Pipe protocol
+ * does), you needn't to worry about this function since the connection to the
+ * protocol's primary routing table is initialized automatically by the core
+ * code.
  */
 struct announce_hook *
 proto_add_announce_hook(struct proto *p, struct rtable *t, struct proto_stats *stats)
@@ -170,7 +182,7 @@ proto_add_announce_hook(struct proto *p, struct rtable *t, struct proto_stats *s
   h->next = p->ahooks;
   p->ahooks = h;
 
-  if (p->rt_notify)
+  if (p->rt_notify && (p->export_state != ES_DOWN))
     add_tail(&t->hooks, &h->n);
   return h;
 }
@@ -192,6 +204,16 @@ proto_find_announce_hook(struct proto *p, struct rtable *t)
       return a;
 
   return NULL;
+}
+
+static void
+proto_link_ahooks(struct proto *p)
+{
+  struct announce_hook *h;
+
+  if (p->rt_notify)
+    for(h=p->ahooks; h; h=h->next)
+      add_tail(&h->table->hooks, &h->n);
 }
 
 static void
@@ -218,6 +240,7 @@ proto_free_ahooks(struct proto *p)
   p->ahooks = NULL;
   p->main_ahook = NULL;
 }
+
 
 /**
  * proto_config_new - create a new protocol configuration
@@ -362,7 +385,11 @@ proto_init(struct proto_config *c)
 
   q->proto_state = PS_DOWN;
   q->core_state = FS_HUNGRY;
-  proto_enqueue(&initial_proto_list, q);
+  q->export_state = ES_DOWN;
+  q->last_state_change = now;
+
+  add_tail(&initial_proto_list, &q->n);
+
   if (p == &proto_unix_iface)
     initial_device_proto = q;
 
@@ -408,13 +435,15 @@ proto_reconfigure(struct proto *p, struct proto_config *oc, struct proto_config 
   /* Update filters and limits in the main announce hook
      Note that this also resets limit state */
   if (p->main_ahook)
-    {
-      p->main_ahook->in_filter = nc->in_filter;
-      p->main_ahook->out_filter = nc->out_filter;
-      p->main_ahook->rx_limit = nc->rx_limit;
-      p->main_ahook->in_limit = nc->in_limit;
-      p->main_ahook->out_limit = nc->out_limit;
-      p->main_ahook->in_keep_filtered = nc->in_keep_filtered;
+    {  
+      struct announce_hook *ah = p->main_ahook;
+      ah->in_filter = nc->in_filter;
+      ah->out_filter = nc->out_filter;
+      ah->rx_limit = nc->rx_limit;
+      ah->in_limit = nc->in_limit;
+      ah->out_limit = nc->out_limit;
+      ah->in_keep_filtered = nc->in_keep_filtered;
+      proto_verify_limits(ah);
     }
 
   /* Update routes when filters changed. If the protocol in not UP,
@@ -570,11 +599,13 @@ static void
 proto_rethink_goal(struct proto *p)
 {
   struct protocol *q;
+  byte goal;
 
   if (p->reconfiguring && p->core_state == FS_HUNGRY && p->proto_state == PS_DOWN)
     {
       struct proto_config *nc = p->cf_new;
       DBG("%s has shut down for reconfiguration\n", p->name);
+      p->cf->proto = NULL;
       config_del_obstacle(p->cf->global);
       rem_node(&p->n);
       rem_node(&p->glob_node);
@@ -586,22 +617,14 @@ proto_rethink_goal(struct proto *p)
 
   /* Determine what state we want to reach */
   if (p->disabled || p->reconfiguring)
-    {
-      p->core_goal = FS_HUNGRY;
-      if (p->core_state == FS_HUNGRY && p->proto_state == PS_DOWN)
-	return;
-    }
+    goal = PS_DOWN;
   else
-    {
-      p->core_goal = FS_HAPPY;
-      if (p->core_state == FS_HAPPY && p->proto_state == PS_UP)
-	return;
-    }
+    goal = PS_UP;
 
   q = p->proto;
-  if (p->core_goal == FS_HAPPY)		/* Going up */
+  if (goal == PS_UP) 			/* Going up */
     {
-      if (p->core_state == FS_HUNGRY && p->proto_state == PS_DOWN)
+      if (p->proto_state == PS_DOWN && p->core_state == FS_HUNGRY)
 	{
 	  DBG("Kicking %s up\n", p->name);
 	  PD(p, "Starting");
@@ -619,6 +642,178 @@ proto_rethink_goal(struct proto *p)
 	}
     }
 }
+
+
+/**
+ * DOC: Graceful restart recovery
+ *
+ * Graceful restart of a router is a process when the routing plane (e.g. BIRD)
+ * restarts but both the forwarding plane (e.g kernel routing table) and routing
+ * neighbors keep proper routes, and therefore uninterrupted packet forwarding
+ * is maintained.
+ *
+ * BIRD implements graceful restart recovery by deferring export of routes to
+ * protocols until routing tables are refilled with the expected content. After
+ * start, protocols generate routes as usual, but routes are not propagated to
+ * them, until protocols report that they generated all routes. After that,
+ * graceful restart recovery is finished and the export (and the initial feed)
+ * to protocols is enabled.
+ *
+ * When graceful restart recovery need is detected during initialization, then
+ * enabled protocols are marked with @gr_recovery flag before start. Such
+ * protocols then decide how to proceed with graceful restart, participation is
+ * voluntary. Protocols could lock the recovery by proto_graceful_restart_lock()
+ * (stored in @gr_lock flag), which means that they want to postpone the end of
+ * the recovery until they converge and then unlock it. They also could set
+ * @gr_wait before advancing to %PS_UP, which means that the core should defer
+ * route export to that protocol until the end of the recovery. This should be
+ * done by protocols that expect their neigbors to keep the proper routes
+ * (kernel table, BGP sessions with BGP graceful restart capability).
+ *
+ * The graceful restart recovery is finished when either all graceful restart
+ * locks are unlocked or when graceful restart wait timer fires.
+ *
+ */
+
+static void graceful_restart_done(struct timer *t);
+
+/**
+ * graceful_restart_recovery - request initial graceful restart recovery
+ *
+ * Called by the platform initialization code if the need for recovery
+ * after graceful restart is detected during boot. Have to be called
+ * before protos_commit().
+ */
+void
+graceful_restart_recovery(void)
+{
+  graceful_restart_state = GRS_INIT;
+}
+
+/**
+ * graceful_restart_init - initialize graceful restart
+ *
+ * When graceful restart recovery was requested, the function starts an active
+ * phase of the recovery and initializes graceful restart wait timer. The
+ * function have to be called after protos_commit().
+ */
+void
+graceful_restart_init(void)
+{
+  if (!graceful_restart_state)
+    return;
+
+  log(L_INFO "Graceful restart started");
+
+  if (!graceful_restart_locks)
+    {
+      graceful_restart_done(NULL);
+      return;
+    }
+
+  graceful_restart_state = GRS_ACTIVE;
+  gr_wait_timer = tm_new(proto_pool);
+  gr_wait_timer->hook = graceful_restart_done;
+  tm_start(gr_wait_timer, config->gr_wait);
+}
+
+/**
+ * graceful_restart_done - finalize graceful restart
+ *
+ * When there are no locks on graceful restart, the functions finalizes the
+ * graceful restart recovery. Protocols postponing route export until the end of
+ * the recovery are awakened and the export to them is enabled. All other
+ * related state is cleared. The function is also called when the graceful
+ * restart wait timer fires (but there are still some locks).
+ */
+static void
+graceful_restart_done(struct timer *t UNUSED)
+{
+  struct proto *p;
+  node *n;
+
+  log(L_INFO "Graceful restart done");
+  graceful_restart_state = GRS_DONE;
+
+  WALK_LIST2(p, n, proto_list, glob_node)
+    {
+      if (!p->gr_recovery)
+	continue;
+
+      /* Resume postponed export of routes */
+      if ((p->proto_state == PS_UP) && p->gr_wait)
+      {
+	proto_want_export_up(p);
+	proto_log_state_change(p);
+      }
+
+      /* Cleanup */
+      p->gr_recovery = 0;
+      p->gr_wait = 0;
+      p->gr_lock = 0;
+    }
+
+  graceful_restart_locks = 0;
+}
+
+void
+graceful_restart_show_status(void)
+{
+  if (graceful_restart_state != GRS_ACTIVE)
+    return;
+
+  cli_msg(-24, "Graceful restart recovery in progress");
+  cli_msg(-24, "  Waiting for %d protocols to recover", graceful_restart_locks);
+  cli_msg(-24, "  Wait timer is %d/%d", tm_remains(gr_wait_timer), config->gr_wait);
+}
+
+/**
+ * proto_graceful_restart_lock - lock graceful restart by protocol
+ * @p: protocol instance
+ *
+ * This function allows a protocol to postpone the end of graceful restart
+ * recovery until it converges. The lock is removed when the protocol calls
+ * proto_graceful_restart_unlock() or when the protocol is stopped.
+ *
+ * The function have to be called during the initial phase of graceful restart
+ * recovery and only for protocols that are part of graceful restart (i.e. their
+ * @gr_recovery is set), which means it should be called from protocol start
+ * hooks.
+ */
+void
+proto_graceful_restart_lock(struct proto *p)
+{
+  ASSERT(graceful_restart_state == GRS_INIT);
+  ASSERT(p->gr_recovery);
+
+  if (p->gr_lock)
+    return;
+
+  p->gr_lock = 1;
+  graceful_restart_locks++;
+}
+
+/**
+ * proto_graceful_restart_unlock - unlock graceful restart by protocol
+ * @p: protocol instance
+ *
+ * This function unlocks a lock from proto_graceful_restart_lock(). It is also
+ * automatically called when the lock holding protocol went down.
+ */
+void
+proto_graceful_restart_unlock(struct proto *p)
+{
+  if (!p->gr_lock)
+    return;
+
+  p->gr_lock = 0;
+  graceful_restart_locks--;
+
+  if ((graceful_restart_state == GRS_ACTIVE) && !graceful_restart_locks)
+    tm_start(gr_wait_timer, 0);
+}
+
+
 
 /**
  * protos_dump_all - dump status of all protocols
@@ -681,6 +876,9 @@ proto_build(struct protocol *p)
     }
 }
 
+/* FIXME: convert this call to some protocol hook */
+extern void bfd_init_all(void);
+
 /**
  * protos_build - build a protocol list
  *
@@ -718,6 +916,11 @@ protos_build(void)
 #ifdef CONFIG_BGP
   proto_build(&proto_bgp);
 #endif
+#ifdef CONFIG_BFD
+  proto_build(&proto_bfd);
+  bfd_init_all();
+#endif
+
   proto_pool = rp_new(&root_pool, "Protocols");
   proto_flush_event = ev_new(proto_pool);
   proto_flush_event->hook = proto_flush_loop;
@@ -726,40 +929,22 @@ protos_build(void)
 }
 
 static void
-proto_fell_down(struct proto *p)
-{
-  DBG("Protocol %s down\n", p->name);
-
-  u32 all_routes = p->stats.imp_routes + p->stats.filt_routes;
-  if (all_routes != 0)
-    log(L_ERR "Protocol %s is down but still has %d routes", p->name, all_routes);
-
-  bzero(&p->stats, sizeof(struct proto_stats));
-  proto_free_ahooks(p);
-
-  if (! p->proto->multitable)
-    rt_unlock_table(p->table);
-
-  if (p->proto->cleanup)
-    p->proto->cleanup(p);
-
-  proto_rethink_goal(p);
-}
-
-static void
 proto_feed_more(void *P)
 {
   struct proto *p = P;
 
-  if (p->core_state != FS_FEEDING)
+  if (p->export_state != ES_FEEDING)
     return;
 
   DBG("Feeding protocol %s continued\n", p->name);
   if (rt_feed_baby(p))
     {
-      p->core_state = FS_HAPPY;
-      proto_relink(p);
-      DBG("Protocol %s up and running\n", p->name);
+      DBG("Feeding protocol %s finished\n", p->name);
+      p->export_state = ES_READY;
+      proto_log_state_change(p);
+
+      if (p->feed_done)
+	p->feed_done(p);
     }
   else
     {
@@ -773,7 +958,7 @@ proto_feed_initial(void *P)
 {
   struct proto *p = P;
 
-  if (p->core_state != FS_FEEDING)
+  if (p->export_state != ES_FEEDING)
     return;
 
   DBG("Feeding protocol %s\n", p->name);
@@ -786,36 +971,10 @@ static void
 proto_schedule_feed(struct proto *p, int initial)
 {
   DBG("%s: Scheduling meal\n", p->name);
-  p->core_state = FS_FEEDING;
+
+  p->export_state = ES_FEEDING;
   p->refeeding = !initial;
 
-  /* FIXME: This should be changed for better support of multitable protos */
-  if (!initial)
-    {
-      struct announce_hook *ah;
-      for (ah = p->ahooks; ah; ah = ah->next)
-	proto_reset_limit(ah->out_limit);
-
-      /* Hack: reset exp_routes during refeed, and do not decrease it later */
-      p->stats.exp_routes = 0;
-    }
-
-  /* Connect protocol to routing table */
-  if (initial && !p->proto->multitable)
-    {
-      p->main_ahook = proto_add_announce_hook(p, p->table, &p->stats);
-      p->main_ahook->in_filter = p->cf->in_filter;
-      p->main_ahook->out_filter = p->cf->out_filter;
-      p->main_ahook->rx_limit = p->cf->rx_limit;
-      p->main_ahook->in_limit = p->cf->in_limit;
-      p->main_ahook->out_limit = p->cf->out_limit;
-      p->main_ahook->in_keep_filtered = p->cf->in_keep_filtered;
-      proto_reset_limit(p->main_ahook->rx_limit);
-      proto_reset_limit(p->main_ahook->in_limit);
-      proto_reset_limit(p->main_ahook->out_limit);
-    }
-
-  proto_relink(p);
   p->attn->hook = initial ? proto_feed_initial : proto_feed_more;
   ev_schedule(p->attn);
 }
@@ -845,7 +1004,7 @@ proto_schedule_flush_loop(void)
   {
     p->flushing = 1;
     for (h=p->ahooks; h; h=h->next)
-      h->table->prune_state = 1;
+      rt_mark_for_prune(h->table);
   }
 
   ev_schedule(proto_flush_event);
@@ -863,6 +1022,8 @@ proto_flush_loop(void *unused UNUSED)
       return;
     }
 
+  rt_prune_sources();
+
  again:
   WALK_LIST(p, flush_proto_list)
     if (p->flushing)
@@ -876,6 +1037,7 @@ proto_flush_loop(void *unused UNUSED)
 	p->flushing = 0;
 	p->core_state = FS_HUNGRY;
 	proto_relink(p);
+	proto_log_state_change(p);
 	if (p->proto_state == PS_DOWN)
 	  proto_fell_down(p);
 	goto again;
@@ -887,19 +1049,6 @@ proto_flush_loop(void *unused UNUSED)
     proto_schedule_flush_loop();
 }
 
-static void
-proto_schedule_flush(struct proto *p)
-{
-  /* Need to abort feeding */
-  if (p->core_state == FS_FEEDING)
-    rt_feed_baby_abort(p);
-
-  DBG("%s: Scheduling flush\n", p->name);
-  p->core_state = FS_FLUSHING;
-  proto_relink(p);
-  proto_unlink_ahooks(p);
-  proto_schedule_flush_loop();
-}
 
 /* Temporary hack to propagate restart to BGP */
 int proto_restart;
@@ -946,9 +1095,9 @@ proto_schedule_down(struct proto *p, byte restart, byte code)
  *
  * Sometimes it is needed to send again all routes to the
  * protocol. This is called feeding and can be requested by this
- * function. This would cause protocol core state transition
- * to FS_FEEDING (during feeding) and when completed, it will
- * switch back to FS_HAPPY. This function can be called even
+ * function. This would cause protocol export state transition
+ * to ES_FEEDING (during feeding) and when completed, it will
+ * switch back to ES_READY. This function can be called even
  * when feeding is already running, in that case it is restarted.
  */
 void
@@ -956,8 +1105,12 @@ proto_request_feeding(struct proto *p)
 {
   ASSERT(p->proto_state == PS_UP);
 
+  /* Do nothing if we are still waiting for feeding */
+  if (p->export_state == ES_DOWN)
+    return;
+
   /* If we are already feeding, we want to restart it */
-  if (p->core_state == FS_FEEDING)
+  if (p->export_state == ES_FEEDING)
     {
       /* Unless feeding is in initial state */
       if (p->attn->hook == proto_feed_initial)
@@ -966,7 +1119,16 @@ proto_request_feeding(struct proto *p)
       rt_feed_baby_abort(p);
     }
 
+  /* FIXME: This should be changed for better support of multitable protos */
+  struct announce_hook *ah;
+  for (ah = p->ahooks; ah; ah = ah->next)
+    proto_reset_limit(ah->out_limit);
+
+  /* Hack: reset exp_routes during refeed, and do not decrease it later */
+  p->stats.exp_routes = 0;
+
   proto_schedule_feed(p, 0);
+  proto_log_state_change(p);
 }
 
 static const char *
@@ -1021,10 +1183,131 @@ proto_notify_limit(struct announce_hook *ah, struct proto_limit *l, int dir, u32
     case PLA_RESTART:
     case PLA_DISABLE:
       l->state = PLS_BLOCKED;
-      proto_schedule_down(p, l->action == PLA_RESTART, dir_down[dir]);
+      if (p->proto_state == PS_UP)
+	proto_schedule_down(p, l->action == PLA_RESTART, dir_down[dir]);
       break;
     }
 }
+
+void
+proto_verify_limits(struct announce_hook *ah)
+{
+  struct proto_limit *l;
+  struct proto_stats *stats = ah->stats;
+  u32 all_routes = stats->imp_routes + stats->filt_routes;
+
+  l = ah->rx_limit;
+  if (l && (all_routes > l->limit))
+    proto_notify_limit(ah, l, PLD_RX, all_routes);
+
+  l = ah->in_limit;
+  if (l && (stats->imp_routes > l->limit))
+    proto_notify_limit(ah, l, PLD_IN, stats->imp_routes);
+
+  l = ah->out_limit;
+  if (l && (stats->exp_routes > l->limit))
+    proto_notify_limit(ah, l, PLD_OUT, stats->exp_routes);
+}
+
+
+static void
+proto_want_core_up(struct proto *p)
+{
+  ASSERT(p->core_state == FS_HUNGRY);
+
+  if (!p->proto->multitable)
+    {
+      p->main_source = rt_get_source(p, 0);
+      rt_lock_source(p->main_source);
+
+      /* Connect protocol to routing table */
+      p->main_ahook = proto_add_announce_hook(p, p->table, &p->stats);
+      p->main_ahook->in_filter = p->cf->in_filter;
+      p->main_ahook->out_filter = p->cf->out_filter;
+      p->main_ahook->rx_limit = p->cf->rx_limit;
+      p->main_ahook->in_limit = p->cf->in_limit;
+      p->main_ahook->out_limit = p->cf->out_limit;
+      p->main_ahook->in_keep_filtered = p->cf->in_keep_filtered;
+
+      proto_reset_limit(p->main_ahook->rx_limit);
+      proto_reset_limit(p->main_ahook->in_limit);
+      proto_reset_limit(p->main_ahook->out_limit);
+    }
+
+  p->core_state = FS_HAPPY;
+  proto_relink(p);
+}
+
+static void
+proto_want_export_up(struct proto *p)
+{
+  ASSERT(p->core_state == FS_HAPPY);
+  ASSERT(p->export_state == ES_DOWN);
+
+  proto_link_ahooks(p);
+  proto_schedule_feed(p, 1); /* Sets ES_FEEDING */
+}
+
+static void
+proto_want_export_down(struct proto *p)
+{
+  ASSERT(p->export_state != ES_DOWN);
+
+  /* Need to abort feeding */
+  if (p->export_state == ES_FEEDING)
+    rt_feed_baby_abort(p);
+
+  p->export_state = ES_DOWN;
+  proto_unlink_ahooks(p);
+}
+
+static void
+proto_want_core_down(struct proto *p)
+{
+  ASSERT(p->core_state == FS_HAPPY);
+  ASSERT(p->export_state == ES_DOWN);
+
+  p->core_state = FS_FLUSHING;
+  proto_relink(p);
+  proto_schedule_flush_loop();
+
+  if (!p->proto->multitable)
+    {
+      rt_unlock_source(p->main_source);
+      p->main_source = NULL;
+    }
+}
+
+static void
+proto_falling_down(struct proto *p)
+{
+  p->gr_recovery = 0;
+  p->gr_wait = 0;
+  if (p->gr_lock)
+    proto_graceful_restart_unlock(p);
+}
+
+static void
+proto_fell_down(struct proto *p)
+{
+  DBG("Protocol %s down\n", p->name);
+
+  u32 all_routes = p->stats.imp_routes + p->stats.filt_routes;
+  if (all_routes != 0)
+    log(L_ERR "Protocol %s is down but still has %d routes", p->name, all_routes);
+
+  bzero(&p->stats, sizeof(struct proto_stats));
+  proto_free_ahooks(p);
+
+  if (! p->proto->multitable)
+    rt_unlock_table(p->table);
+
+  if (p->proto->cleanup)
+    p->proto->cleanup(p);
+
+  proto_rethink_goal(p);
+}
+
 
 /**
  * proto_notify_state - notify core about protocol state change
@@ -1045,20 +1328,58 @@ proto_notify_state(struct proto *p, unsigned ps)
 {
   unsigned ops = p->proto_state;
   unsigned cs = p->core_state;
+  unsigned es = p->export_state;
 
   DBG("%s reporting state transition %s/%s -> */%s\n", p->name, c_states[cs], p_states[ops], p_states[ps]);
   if (ops == ps)
     return;
 
   p->proto_state = ps;
+  p->last_state_change = now;
 
   switch (ps)
     {
+    case PS_START:
+      ASSERT(ops == PS_DOWN || ops == PS_UP);
+      ASSERT(cs == FS_HUNGRY || cs == FS_HAPPY);
+
+      if (es != ES_DOWN)
+	proto_want_export_down(p);
+      break;
+
+    case PS_UP:
+      ASSERT(ops == PS_DOWN || ops == PS_START);
+      ASSERT(cs == FS_HUNGRY || cs == FS_HAPPY);
+      ASSERT(es == ES_DOWN);
+
+      if (cs == FS_HUNGRY)
+	proto_want_core_up(p);
+      if (!p->gr_wait)
+	proto_want_export_up(p);
+      break;
+
+    case PS_STOP:
+      ASSERT(ops == PS_START || ops == PS_UP);
+
+      p->down_sched = 0;
+
+      if (es != ES_DOWN)
+	proto_want_export_down(p);
+      if (cs == FS_HAPPY)
+	proto_want_core_down(p);
+      proto_falling_down(p);
+      break;
+
     case PS_DOWN:
       p->down_code = 0;
       p->down_sched = 0;
-      if ((cs == FS_FEEDING) || (cs == FS_HAPPY))
-	proto_schedule_flush(p);
+
+      if (es != ES_DOWN)
+	proto_want_export_down(p);
+      if (cs == FS_HAPPY)
+	proto_want_core_down(p);
+      if (ops != PS_STOP)
+	proto_falling_down(p);
 
       neigh_prune(); // FIXME convert neighbors to resource?
       rfree(p->pool);
@@ -1066,27 +1387,17 @@ proto_notify_state(struct proto *p, unsigned ps)
 
       if (cs == FS_HUNGRY)		/* Shutdown finished */
 	{
+	  proto_log_state_change(p);
 	  proto_fell_down(p);
 	  return;			/* The protocol might have ceased to exist */
 	}
       break;
-    case PS_START:
-      ASSERT(ops == PS_DOWN);
-      ASSERT(cs == FS_HUNGRY);
-      break;
-    case PS_UP:
-      ASSERT(ops == PS_DOWN || ops == PS_START);
-      ASSERT(cs == FS_HUNGRY);
-      proto_schedule_feed(p, 1);
-      break;
-    case PS_STOP:
-      p->down_sched = 0;
-      if ((cs == FS_FEEDING) || (cs == FS_HAPPY))
-	proto_schedule_flush(p);
-      break;
+
     default:
-      bug("Invalid state transition for %s from %s/%s to */%s", p->name, c_states[cs], p_states[ops], p_states[ps]);
+      bug("%s: Invalid state %d", p->name, ps);
     }
+
+  proto_log_state_change(p);
 }
 
 /*
@@ -1100,12 +1411,18 @@ proto_state_name(struct proto *p)
   switch (P(p->proto_state, p->core_state))
     {
     case P(PS_DOWN, FS_HUNGRY):		return "down";
-    case P(PS_START, FS_HUNGRY):	return "start";
-    case P(PS_UP, FS_HUNGRY):
-    case P(PS_UP, FS_FEEDING):		return "feed";
-    case P(PS_STOP, FS_HUNGRY):		return "stop";
-    case P(PS_UP, FS_HAPPY):		return "up";
-    case P(PS_STOP, FS_FLUSHING):
+    case P(PS_START, FS_HUNGRY):
+    case P(PS_START, FS_HAPPY):		return "start";
+    case P(PS_UP, FS_HAPPY):
+      switch (p->export_state)
+	{
+	case ES_DOWN:			return "wait";
+	case ES_FEEDING:		return "feed";
+	case ES_READY:			return "up";
+	default:      			return "???";
+	}
+    case P(PS_STOP, FS_HUNGRY):
+    case P(PS_STOP, FS_FLUSHING):	return "stop";
     case P(PS_DOWN, FS_FLUSHING):	return "flush";
     default:      			return "???";
     }
@@ -1154,6 +1471,11 @@ proto_show_basic_info(struct proto *p)
   cli_msg(-1006, "  Preference:     %d", p->preference);
   cli_msg(-1006, "  Input filter:   %s", filter_name(p->cf->in_filter));
   cli_msg(-1006, "  Output filter:  %s", filter_name(p->cf->out_filter));
+
+  if (graceful_restart_state == GRS_ACTIVE)
+    cli_msg(-1006, "  GR recovery:   %s%s",
+	    p->gr_lock ? " pending" : "",
+	    p->gr_wait ? " waiting" : "");
 
   proto_show_limit(p->cf->rx_limit, "Receive limit:");
   proto_show_limit(p->cf->in_limit, "Import limit:");

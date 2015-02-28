@@ -137,6 +137,21 @@ submit_server_command(char *cmd)
   server_send(cmd);
 }
 
+static inline void
+submit_init_command(char *cmd_raw)
+{
+  char *cmd = cmd_expand(cmd_raw);
+
+  if (!cmd)
+  {
+    cleanup();
+    exit(0);
+  }
+
+  submit_server_command(cmd);
+  free(cmd);
+}
+
 void
 submit_command(char *cmd_raw)
 {
@@ -165,7 +180,7 @@ init_commands(void)
     {
       /* First transition - client received hello from BIRD
 	 and there is waiting initial command */
-      submit_server_command(init_cmd);
+      submit_init_command(init_cmd);
       init_cmd = NULL;
       return;
     }
@@ -178,6 +193,10 @@ init_commands(void)
     }
 
   input_init();
+
+  term_lns = (term_lns > 0) ? term_lns : 25;
+  term_cls = (term_cls > 0) ? term_cls : 80;
+
   init = 0;
 }
 

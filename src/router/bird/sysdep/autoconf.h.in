@@ -39,9 +39,13 @@
 #undef CONFIG_STATIC
 #undef CONFIG_RIP
 #undef CONFIG_RADV
+#undef CONFIG_BFD
 #undef CONFIG_BGP
 #undef CONFIG_OSPF
 #undef CONFIG_PIPE
+
+/* We use multithreading */
+#undef USE_PTHREADS
 
 /* We have <syslog.h> and syslog() */
 #undef HAVE_SYSLOG

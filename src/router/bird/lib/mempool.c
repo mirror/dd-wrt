@@ -250,7 +250,7 @@ lp_memsize(resource *r)
     cnt++;
 
   return ALLOC_OVERHEAD + sizeof(struct linpool) +
-    cnt * (ALLOC_OVERHEAD + sizeof(sizeof(struct lp_chunk))) +
+    cnt * (ALLOC_OVERHEAD + sizeof(struct lp_chunk)) +
     m->total + m->total_large;
 }
 

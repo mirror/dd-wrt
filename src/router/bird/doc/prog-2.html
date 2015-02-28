@@ -180,17 +180,17 @@ routes in order to conserve memory.
 <P><HR><H3>Function</H3>
 <P><I>rte *</I>
 <B>rte_find</B>
-(<I>net *</I> <B>net</B>, <I>struct proto *</I> <B>p</B>) --     find a route
+(<I>net *</I> <B>net</B>, <I>struct rte_src *</I> <B>src</B>) --     find a route
 <P>
 <H3>Arguments</H3>
 <P>
 <DL>
 <DT><I>net *</I> <B>net</B><DD><P>network node
-<DT><I>struct proto *</I> <B>p</B><DD><P>protocol
+<DT><I>struct rte_src *</I> <B>src</B><DD><P>route source
 </DL>
 <H3>Description</H3>
 <P>The <B>rte_find()</B> function returns a route for destination <B>net</B>
-which belongs has been defined by protocol <B>p</B>.
+which is from route source <B>src</B>.
 
 
 <HR><H3>Function</H3>
@@ -262,7 +262,7 @@ the protocol gets called.
 <HR><H3>Function</H3>
 <P><I>void</I>
 <B>rte_update2</B>
-(<I>struct announce_hook *</I> <B>ah</B>, <I>net *</I> <B>net</B>, <I>rte *</I> <B>new</B>, <I>struct proto *</I> <B>src</B>) --     enter a new update to a routing table
+(<I>struct announce_hook *</I> <B>ah</B>, <I>net *</I> <B>net</B>, <I>rte *</I> <B>new</B>, <I>struct rte_src *</I> <B>src</B>) --     enter a new update to a routing table
 <P>
 <H3>Arguments</H3>
 <P>
@@ -270,7 +270,7 @@ the protocol gets called.
 <DT><I>struct announce_hook *</I> <B>ah</B><DD><P>pointer to table announce hook
 <DT><I>net *</I> <B>net</B><DD><P>network node
 <DT><I>rte *</I> <B>new</B><DD><P>a <I>rte</I> representing the new route or <I>NULL</I> for route removal.
-<DT><I>struct proto *</I> <B>src</B><DD><P>protocol originating the update
+<DT><I>struct rte_src *</I> <B>src</B><DD><P>protocol originating the update
 </DL>
 <H3>Description</H3>
 <P>This function is called by the routing protocols whenever they discover
@@ -300,6 +300,44 @@ the change (if any) to all routing protocols by calling <B>rte_announce()</B>.
 <P>All memory used for attribute lists and other temporary allocations is taken
 from a special linear pool <B>rte_update_pool</B> and freed when <B>rte_update()</B>
 finishes.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>rt_refresh_begin</B>
+(<I>rtable *</I> <B>t</B>, <I>struct announce_hook *</I> <B>ah</B>) --     start a refresh cycle
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>rtable *</I> <B>t</B><DD><P>related routing table
+<DT><I>struct announce_hook *</I> <B>ah</B><DD><P>related announce hook 
+</DL>
+<H3>Description</H3>
+<P>This function starts a refresh cycle for given routing table and announce
+hook. The refresh cycle is a sequence where the protocol sends all its valid
+routes to the routing table (by <B>rte_update()</B>). After that, all protocol
+routes (more precisely routes with <B>ah</B> as <B>sender</B>) not sent during the
+refresh cycle but still in the table from the past are pruned. This is
+implemented by marking all related routes as stale by REF_STALE flag in
+<B>rt_refresh_begin()</B>, then marking all related stale routes with REF_DISCARD
+flag in <B>rt_refresh_end()</B> and then removing such routes in the prune loop.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>rt_refresh_end</B>
+(<I>rtable *</I> <B>t</B>, <I>struct announce_hook *</I> <B>ah</B>) --     end a refresh cycle
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>rtable *</I> <B>t</B><DD><P>related routing table
+<DT><I>struct announce_hook *</I> <B>ah</B><DD><P>related announce hook 
+</DL>
+<H3>Description</H3>
+<P>This function starts a refresh cycle for given routing table and announce
+hook. See <B>rt_refresh_begin()</B> for description of refresh cycles.
 
 
 <HR><H3>Function</H3>
@@ -353,20 +391,41 @@ routing table module.
 
 <HR><H3>Function</H3>
 <P><I>int</I>
+<B>rt_prune_table</B>
+(<I>rtable *</I> <B>tab</B>) --     prune a routing table
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>rtable *</I> <B>tab</B><DD><P>-- undescribed --
+</DL>
+<H3>Description</H3>
+<P>
+<P>This function scans the routing table <B>tab</B> and removes routes belonging to
+flushing protocols, discarded routes and also stale network entries, in a
+similar fashion like <B>rt_prune_loop()</B>. Returns 1 when all such routes are
+pruned. Contrary to <B>rt_prune_loop()</B>, this function is not a part of the
+protocol flushing loop, but it is called from <B>rt_event()</B> for just one routing
+table.
+<P>Note that <B>rt_prune_table()</B> and <B>rt_prune_loop()</B> share (for each table) the
+prune state (<B>prune_state</B>) and also the pruning iterator (<B>prune_fit</B>).
+
+
+<HR><H3>Function</H3>
+<P><I>int</I>
 <B>rt_prune_loop</B>
 (<B>void</B>) --     prune routing tables
 <P>
 <H3>Description</H3>
 <P>
-<P>The prune loop scans routing tables and removes routes belonging to
-flushing protocols and also stale network entries. Returns 1 when
-all such routes are pruned. It is a part of the protocol flushing
-loop.
-<P>The prune loop runs in two steps. In the first step it prunes just
-the routes with flushing senders (in explicitly marked tables) so
-the route removal is propagated as usual. In the second step, all
-remaining relevant routes are removed. Ideally, there shouldn't be
-any, but it happens when pipe filters are changed.
+<P>The prune loop scans routing tables and removes routes belonging to flushing
+protocols, discarded routes and also stale network entries. Returns 1 when
+all such routes are pruned. It is a part of the protocol flushing loop.
+<P>The prune loop runs in two steps. In the first step it prunes just the routes
+with flushing senders (in explicitly marked tables) so the route removal is
+propagated as usual. In the second step, all remaining relevant routes are
+removed. Ideally, there shouldn't be any, but it happens when pipe filters
+are changed.
 
 
 <HR><H3>Function</H3>
@@ -925,19 +984,18 @@ to values wanted by the protocol.
 <DT><I>struct proto_stats *</I> <B>stats</B><DD><P>per-table protocol statistics
 </DL>
 <H3>Description</H3>
-<P>This function creates a connection between the protocol instance <B>p</B>
-and the routing table <B>t</B>, making the protocol hear all changes in
-the table.
-<P>The announce hook is linked in the protocol ahook list and, if the
-protocol accepts routes, also in the table ahook list. Announce
-hooks are allocated from the routing table resource pool, they are
-unlinked from the table ahook list after the protocol went down,
-(in <B>proto_schedule_flush()</B>) and they are automatically freed after the
-protocol is flushed (in <B>proto_fell_down()</B>).
-<P>Unless you want to listen to multiple routing tables (as the Pipe
-protocol does), you needn't to worry about this function since the
-connection to the protocol's primary routing table is initialized
-automatically by the core code.
+<P>This function creates a connection between the protocol instance <B>p</B> and the
+routing table <B>t</B>, making the protocol hear all changes in the table.
+<P>The announce hook is linked in the protocol ahook list. Announce hooks are
+allocated from the routing table resource pool and when protocol accepts
+routes also in the table ahook list. The are linked to the table ahook list
+and unlinked from it depending on export_state (in <B>proto_want_export_up()</B> and
+<B>proto_want_export_down()</B>) and they are automatically freed after the protocol
+is flushed (in <B>proto_fell_down()</B>).
+<P>Unless you want to listen to multiple routing tables (as the Pipe protocol
+does), you needn't to worry about this function since the connection to the
+protocol's primary routing table is initialized automatically by the core
+code.
 
 
 <HR><H3>Function</H3>
@@ -1064,11 +1122,115 @@ to switch to the new configuration.  If it isn't possible, the
 protocol is shut down and a new instance is started with the new
 configuration after the shutdown is completed.
 
+<H2><A NAME="ss2.5">2.5</A> <A HREF="prog.html#toc2.5">Graceful restart recovery</A>
+</H2>
+
+<P>
+<P>Graceful restart of a router is a process when the routing plane (e.g. BIRD)
+restarts but both the forwarding plane (e.g kernel routing table) and routing
+neighbors keep proper routes, and therefore uninterrupted packet forwarding
+is maintained.
+<P>BIRD implements graceful restart recovery by deferring export of routes to
+protocols until routing tables are refilled with the expected content. After
+start, protocols generate routes as usual, but routes are not propagated to
+them, until protocols report that they generated all routes. After that,
+graceful restart recovery is finished and the export (and the initial feed)
+to protocols is enabled.
+<P>When graceful restart recovery need is detected during initialization, then
+enabled protocols are marked with <B>gr_recovery</B> flag before start. Such
+protocols then decide how to proceed with graceful restart, participation is
+voluntary. Protocols could lock the recovery by <B>proto_graceful_restart_lock()</B>
+(stored in <B>gr_lock</B> flag), which means that they want to postpone the end of
+the recovery until they converge and then unlock it. They also could set
+<B>gr_wait</B> before advancing to <I>PS_UP</I>, which means that the core should defer
+route export to that protocol until the end of the recovery. This should be
+done by protocols that expect their neigbors to keep the proper routes
+(kernel table, BGP sessions with BGP graceful restart capability).
+<P>The graceful restart recovery is finished when either all graceful restart
+locks are unlocked or when graceful restart wait timer fires.
+<P>
+<P><HR><H3>Function</H3>
+<P><I>void</I>
+<B>graceful_restart_recovery</B>
+(<B>void</B>) --     request initial graceful restart recovery
+<P>
+<H3>Graceful restart recovery</H3>
+<P>
+<P>Called by the platform initialization code if the need for recovery
+after graceful restart is detected during boot. Have to be called
+before <B>protos_commit()</B>.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>graceful_restart_init</B>
+(<B>void</B>) --     initialize graceful restart
+<P>
+<H3>Description</H3>
+<P>
+<P>When graceful restart recovery was requested, the function starts an active
+phase of the recovery and initializes graceful restart wait timer. The
+function have to be called after <B>protos_commit()</B>.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>graceful_restart_done</B>
+(<I>struct timer *t</I> <B>UNUSED</B>) --     finalize graceful restart
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct timer *t</I> <B>UNUSED</B><DD><P>-- undescribed --
+</DL>
+<H3>Description</H3>
+<P>
+<P>When there are no locks on graceful restart, the functions finalizes the
+graceful restart recovery. Protocols postponing route export until the end of
+the recovery are awakened and the export to them is enabled. All other
+related state is cleared. The function is also called when the graceful
+restart wait timer fires (but there are still some locks).
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>proto_graceful_restart_lock</B>
+(<I>struct proto *</I> <B>p</B>) --     lock graceful restart by protocol
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct proto *</I> <B>p</B><DD><P>protocol instance
+</DL>
+<H3>Description</H3>
+<P>This function allows a protocol to postpone the end of graceful restart
+recovery until it converges. The lock is removed when the protocol calls
+<B>proto_graceful_restart_unlock()</B> or when the protocol is stopped.
+<P>The function have to be called during the initial phase of graceful restart
+recovery and only for protocols that are part of graceful restart (i.e. their
+<B>gr_recovery</B> is set), which means it should be called from protocol start
+hooks.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>proto_graceful_restart_unlock</B>
+(<I>struct proto *</I> <B>p</B>) --     unlock graceful restart by protocol
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct proto *</I> <B>p</B><DD><P>protocol instance
+</DL>
+<H3>Description</H3>
+<P>This function unlocks a lock from <B>proto_graceful_restart_lock()</B>. It is also
+automatically called when the lock holding protocol went down.
+
 
 <HR><H3>Function</H3>
 <P><I>void</I>
 <B>protos_dump_all</B>
-(<B>void</B>) --  dump status of all protocols
+(<B>void</B>) --     dump status of all protocols
 <P>
 <H3>Description</H3>
 <P>
@@ -1082,7 +1244,7 @@ the internals.
 <HR><H3>Function</H3>
 <P><I>void</I>
 <B>proto_build</B>
-(<I>struct protocol *</I> <B>p</B>) --  make a single protocol available
+(<I>struct protocol *</I> <B>p</B>) --     make a single protocol available
 <P>
 <H3>Arguments</H3>
 <P>
@@ -1098,7 +1260,7 @@ all platform specific protocols to inform the core that they exist.
 <HR><H3>Function</H3>
 <P><I>void</I>
 <B>protos_build</B>
-(<B>void</B>) --  build a protocol list
+(<B>void</B>) --     build a protocol list
 <P>
 <H3>Description</H3>
 <P>
@@ -1112,7 +1274,7 @@ startup code.
 <HR><H3>Function</H3>
 <P><I>void</I>
 <B>proto_request_feeding</B>
-(<I>struct proto *</I> <B>p</B>) --  request feeding routes to the protocol
+(<I>struct proto *</I> <B>p</B>) --     request feeding routes to the protocol
 <P>
 <H3>Arguments</H3>
 <P>
@@ -1122,9 +1284,9 @@ startup code.
 <H3>Description</H3>
 <P>Sometimes it is needed to send again all routes to the
 protocol. This is called feeding and can be requested by this
-function. This would cause protocol core state transition
-to FS_FEEDING (during feeding) and when completed, it will
-switch back to FS_HAPPY. This function can be called even
+function. This would cause protocol export state transition
+to ES_FEEDING (during feeding) and when completed, it will
+switch back to ES_READY. This function can be called even
 when feeding is already running, in that case it is restarted.
 
 
@@ -1149,7 +1311,7 @@ according to <B>l</B>-&gt;action.
 <HR><H3>Function</H3>
 <P><I>void</I>
 <B>proto_notify_state</B>
-(<I>struct proto *</I> <B>p</B>, <I>unsigned</I> <B>ps</B>) --  notify core about protocol state change
+(<I>struct proto *</I> <B>p</B>, <I>unsigned</I> <B>ps</B>) --     notify core about protocol state change
 <P>
 <H3>Arguments</H3>
 <P>
@@ -1167,7 +1329,7 @@ state. State change to PS_DOWN immediately frees resources of protocol
 and might execute start callback of protocol; therefore,
 it should be used at tail positions of protocol callbacks.
 
-<H2><A NAME="ss2.5">2.5</A> <A HREF="prog.html#toc2.5">Protocol hooks</A>
+<H2><A NAME="ss2.6">2.6</A> <A HREF="prog.html#toc2.6">Protocol hooks</A>
 </H2>
 
 <P>
@@ -1626,7 +1788,7 @@ is accepted for insertion to a routing table.
 is removed from a routing table.
 <P>Please avoid using this function in new protocols.
 
-<H2><A NAME="ss2.6">2.6</A> <A HREF="prog.html#toc2.6">Interfaces</A>
+<H2><A NAME="ss2.7">2.7</A> <A HREF="prog.html#toc2.7">Interfaces</A>
 </H2>
 
 <P>
@@ -1808,7 +1970,7 @@ the interface update process described under <B>if_update()</B>.
 <P>This function is called during BIRD startup to initialize
 all data structures of the interface module.
 
-<H2><A NAME="ss2.7">2.7</A> <A HREF="prog.html#toc2.7">Neighbor cache</A>
+<H2><A NAME="ss2.8">2.8</A> <A HREF="prog.html#toc2.8">Neighbor cache</A>
 </H2>
 
 <P>
@@ -1973,7 +2135,7 @@ is shut down to get rid of all its heritage.
 <P>This function is called during BIRD startup to initialize
 the neighbor cache module.
 
-<H2><A NAME="ss2.8">2.8</A> <A HREF="prog.html#toc2.8">Command line interface</A>
+<H2><A NAME="ss2.9">2.9</A> <A HREF="prog.html#toc2.9">Command line interface</A>
 </H2>
 
 <P>
@@ -2058,7 +2220,7 @@ macro instead.
 <P>This function is called during BIRD startup to initialize
 the internal data structures of the CLI module.
 
-<H2><A NAME="ss2.9">2.9</A> <A HREF="prog.html#toc2.9">Object locks</A>
+<H2><A NAME="ss2.10">2.10</A> <A HREF="prog.html#toc2.10">Object locks</A>
 </H2>
 
 <P>

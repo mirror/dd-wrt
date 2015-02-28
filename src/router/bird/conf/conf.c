@@ -96,7 +96,9 @@ config_alloc(byte *name)
   cfg_mem = c->mem = l;
   c->file_name = cfg_strdup(name);
   c->load_time = now;
-  c->tf_base.fmt1 = c->tf_log.fmt1 = "%d-%m-%Y %T";
+  c->tf_route = c->tf_proto = (struct timeformat){"%T", "%F", 20*3600};
+  c->tf_base = c->tf_log = (struct timeformat){"%F %T", NULL, 0};
+  c->gr_wait = DEFAULT_GR_WAIT;
 
   return c;
 }
@@ -500,6 +502,7 @@ cf_error(char *msg, ...)
   new_config->err_msg = cfg_strdup(buf);
   new_config->err_lino = ifs->lino;
   new_config->err_file_name = ifs->file_name;
+  cf_lex_unwind();
   longjmp(conf_jmpbuf, 1);
 }
 
