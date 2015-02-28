@@ -489,7 +489,7 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 					websWrite(wp, " + %d", channel - 6);
 			}
 		}
-		websWrite(wp, " (%d)", freq);
+		websWrite(wp, " (%d MHz)", freq);
 
 	} else
 		websWrite(wp, "%s", live_translate("share.unknown"));
