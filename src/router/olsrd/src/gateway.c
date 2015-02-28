@@ -26,6 +26,8 @@
 #include "egressFile.h"
 
 #include <assert.h>
+#include <net/if.h>
+#include <asm/types.h>
 #include <linux/rtnetlink.h>
 
 /*
