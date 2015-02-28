@@ -69,12 +69,12 @@ void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 	}
 #endif
 #ifdef HAVE_BUFFALO
-	websWrite(wp, "%s%s %s%s", CYBERTAN_VERSION, MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
+	websWrite(wp, " %s%s %s%s", CYBERTAN_VERSION, MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
 #else
 
 #ifdef HAVE_REGISTER
 	if (isregistered() && !isregistered_real()) {
-		websWrite(wp, "Click here to ACTIVATE %d Hour Trial", getTrialCount());
+		websWrite(wp, " Click here to ACTIVATE %d Hour Trial", getTrialCount());
 	} else
 #endif
 	{
@@ -86,7 +86,7 @@ void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 #else
 #define V "Excellent"
 #endif
-		websWrite(wp, "Excel Networks (%s series) V 2.10", V);
+		websWrite(wp, " Excel Networks (%s series) V 2.10", V);
 #undef V
 #elif HAVE_ESPOD
 #ifdef HAVE_SUB3
@@ -101,61 +101,61 @@ void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 #define V "MIMO"
 #endif
 		if (argc == 2) {
-			websWrite(wp, "ESPOD v1.0611 (%s) / ESPOD %s Series", date, V);
+			websWrite(wp, " ESPOD v1.0611 (%s) / ESPOD %s Series", date, V);
 		} else {
-			websWrite(wp, "ESPOD v1.0611 (%s)</a><div>\");document.write(\"<div class=\\\"info\\\">Device: ESPOD %s Series<a>", date, V);
+			websWrite(wp, " ESPOD v1.0611 (%s)</a><div>\");document.write(\"<div class=\\\"info\\\">Device: ESPOD %s Series<a>", date, V);
 		}
 #undef V
 #elif HAVE_CARLSONWIRELESS
 		websWrite(wp, "Carlson Wireless v5.3 (%s)", SVN_REVISION);
 #elif HAVE_IMMERSIVE
 		if (argc == 2) {
-			websWrite(wp, "Build date %s", date);
+			websWrite(wp, " Build date %s", date);
 		} else {
-			websWrite(wp, "SUPPORT %s (%s)", SVN_REVISION, date);
+			websWrite(wp, " SUPPORT %s (%s)", SVN_REVISION, date);
 		}
 #elif HAVE_HDWIFI
 		if (argc == 2) {
-			websWrite(wp, "Build date %s", date);
+			websWrite(wp, " Build date %s", date);
 		} else {
-			websWrite(wp, "HDWIFI r%s (%s)", SVN_REVISION, date);
+			websWrite(wp, " HDWIFI r%s (%s)", SVN_REVISION, date);
 		}
 #elif HAVE_IPR
-		websWrite(wp, "IPR-CP v1.0 (%s)", SVN_REVISION);
+		websWrite(wp, " IPR-CP v1.0 (%s)", SVN_REVISION);
 #elif HAVE_ONNET_BLANK
-		websWrite(wp, "Enterprise AP (%s)", date);
+		websWrite(wp, " Enterprise AP (%s)", date);
 #elif HAVE_ONNET
 		if (nvram_match("DD_BOARD", "Atheros Hornet")) {
-			websWrite(wp, "OTAi 9331 (%s)", date);
+			websWrite(wp, " OTAi 9331 (%s)", date);
 		} else if (nvram_match("DD_BOARD", "Compex WPE72")) {
-			websWrite(wp, "OTAi 724 (%s)", date);
+			websWrite(wp, " OTAi 724 (%s)", date);
 		} else if (nvram_match("DD_BOARD", "ACCTON AC622")) {
 			if (iscpe()) {
-				websWrite(wp, "OTAi 724S (%s)", date);
+				websWrite(wp, " OTAi 724S (%s)", date);
 			} else {
-				websWrite(wp, "OTAi 724AP (%s)", date);
+				websWrite(wp, " OTAi 724AP (%s)", date);
 			}
 		} else if (nvram_match("DD_BOARD", "ACCTON AC722")) {
 			if (iscpe()) {
-				websWrite(wp, "OTAi 724S (%s)", date);
+				websWrite(wp, " OTAi 724S (%s)", date);
 			} else {
-				websWrite(wp, "OTAi 724AP (%s)", date);
+				websWrite(wp, " OTAi 724AP (%s)", date);
 			}
 		} else if (nvram_match("DD_BOARD", "Compex WP546")) {
-			websWrite(wp, "OTAi 724S (%s)", date);
+			websWrite(wp, " OTAi 724S (%s)", date);
 		} else {
-			websWrite(wp, "OTAi %s (%s)", nvram_get("DD_BOARD"), date);
+			websWrite(wp, " OTAi %s (%s)", nvram_get("DD_BOARD"), date);
 		}
 #elif HAVE_KORENRON
-		websWrite(wp, "KORENRON %s %s%s", MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
+		websWrite(wp, " KORENRON %s %s%s", MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
 #elif HAVE_TESTEM
-		websWrite(wp, "TESTEM %s %s%s", MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
+		websWrite(wp, " TESTEM %s %s%s", MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
 #elif HAVE_SANSFIL
-		websWrite(wp, "SANSFIL %s %s%s", MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
+		websWrite(wp, " SANSFIL %s %s%s", MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
 #elif HAVE_HOBBIT
-		websWrite(wp, "Hobb-IT %s %s%s", MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
+		websWrite(wp, " Hobb-IT %s %s%s", MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
 #else
-		websWrite(wp, "%s%s %s%s", CYBERTAN_VERSION, MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
+		websWrite(wp, " %s%s %s%s", CYBERTAN_VERSION, MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
 #endif
 	}
 #endif
