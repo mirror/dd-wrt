@@ -90,11 +90,6 @@ int init_network (void)
     if(setsockopt(server_socket, IPPROTO_IP, IP_PKTINFO, (char*)&arg, sizeof(arg)) != 0) {
 	    l2tp_log(LOG_CRIT, "setsockopt IP_PKTINFO: %s\n", strerror(errno));
     }
-    
-    arg=1;
-    if(setsockopt(server_socket, IPPROTO_IP, IP_PKTINFO, (char*)&arg, sizeof(arg)) != 0) {
-	    l2tp_log(LOG_CRIT, "setsockopt IP_PKTINFO: %s\n", strerror(errno));
-    }
 #else
     {
 	l2tp_log(LOG_INFO, "No attempt being made to use IPsec SAref's since we're not on a Linux machine.\n");
@@ -104,11 +99,12 @@ int init_network (void)
 
     /* turn off UDP checksums */
     arg=1;
+#ifdef SO_NO_CHECK
     if (setsockopt(server_socket, SOL_SOCKET, SO_NO_CHECK , (void*)&arg,
                    sizeof(arg)) ==-1) {
       l2tp_log(LOG_INFO, "unable to turn off UDP checksums");
     }
-
+#endif
 #ifdef USE_KERNEL
     if (gconfig.forceuserspace)
     {
