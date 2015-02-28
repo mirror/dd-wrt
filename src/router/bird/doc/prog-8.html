@@ -227,22 +227,22 @@ chunk, not to the resource, hence you have to free it using
 <HR><H3>Function</H3>
 <P><I>void *</I>
 <B>mb_realloc</B>
-(<I>pool *</I> <B>p</B>, <I>void *</I> <B>m</B>, <I>unsigned</I> <B>size</B>) --     reallocate a memory block
+(<I>void *</I> <B>m</B>, <I>unsigned</I> <B>size</B>) --     reallocate a memory block
 <P>
 <H3>Arguments</H3>
 <P>
 <DL>
-<DT><I>pool *</I> <B>p</B><DD><P>pool
 <DT><I>void *</I> <B>m</B><DD><P>memory block
 <DT><I>unsigned</I> <B>size</B><DD><P>new size of the block
 </DL>
 <H3>Description</H3>
 <P><B>mb_realloc()</B> changes the size of the memory block <B>m</B> to a given size.
 The contents will be unchanged to the minimum of the old and new sizes;
-newly allocated memory will be uninitialized. If <B>m</B> is NULL, the call
-is equivalent to mb_alloc(<B>p</B>, <B>size</B>).
+newly allocated memory will be uninitialized. Contrary to <B>realloc()</B>
+behavior, <B>m</B> must be non-NULL, because the resource pool is inherited
+from it.
 <P>Like <B>mb_alloc()</B>, <B>mb_realloc()</B> also returns a pointer to the memory
-chunk , not to the resource, hence you have to free it using
+chunk, not to the resource, hence you have to free it using
 <B>mb_free()</B>, not <B>rfree()</B>.
 
 
@@ -638,6 +638,157 @@ hook functions to be called when new data have arrived to the receive buffer
 <P>Freeing of sockets from inside socket hooks is perfectly safe.
 <P>
 <P><HR><H3>Function</H3>
+<P><I>int</I>
+<B>sk_setup_multicast</B>
+(<I>sock *</I> <B>s</B>) --     enable multicast for given socket
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>sock *</I> <B>s</B><DD><P>socket
+</DL>
+<H3>Description</H3>
+<P>Prepare transmission of multicast packets for given datagram socket.
+The socket must have defined <B>iface</B>.
+<H3>Result</H3>
+<P>0 for success, -1 for an error.
+
+
+<HR><H3>Function</H3>
+<P><I>int</I>
+<B>sk_join_group</B>
+(<I>sock *</I> <B>s</B>, <I>ip_addr</I> <B>maddr</B>) --     join multicast group for given socket
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>sock *</I> <B>s</B><DD><P>socket
+<DT><I>ip_addr</I> <B>maddr</B><DD><P>multicast address
+</DL>
+<H3>Description</H3>
+<P>Join multicast group for given datagram socket and associated interface.
+The socket must have defined <B>iface</B>.
+<H3>Result</H3>
+<P>0 for success, -1 for an error.
+
+
+<HR><H3>Function</H3>
+<P><I>int</I>
+<B>sk_leave_group</B>
+(<I>sock *</I> <B>s</B>, <I>ip_addr</I> <B>maddr</B>) --     leave multicast group for given socket
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>sock *</I> <B>s</B><DD><P>socket
+<DT><I>ip_addr</I> <B>maddr</B><DD><P>multicast address
+</DL>
+<H3>Description</H3>
+<P>Leave multicast group for given datagram socket and associated interface.
+The socket must have defined <B>iface</B>.
+<H3>Result</H3>
+<P>0 for success, -1 for an error.
+
+
+<HR><H3>Function</H3>
+<P><I>int</I>
+<B>sk_setup_broadcast</B>
+(<I>sock *</I> <B>s</B>) --     enable broadcast for given socket
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>sock *</I> <B>s</B><DD><P>socket
+</DL>
+<H3>Description</H3>
+<P>Allow reception and transmission of broadcast packets for given datagram
+socket. The socket must have defined <B>iface</B>. For transmission, packets should
+be send to <B>brd</B> address of <B>iface</B>.
+<H3>Result</H3>
+<P>0 for success, -1 for an error.
+
+
+<HR><H3>Function</H3>
+<P><I>int</I>
+<B>sk_set_ttl</B>
+(<I>sock *</I> <B>s</B>, <I>int</I> <B>ttl</B>) --     set transmit TTL for given socket
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>sock *</I> <B>s</B><DD><P>socket
+<DT><I>int</I> <B>ttl</B><DD><P>TTL value
+</DL>
+<H3>Description</H3>
+<P>Set TTL for already opened connections when TTL was not set before. Useful
+for accepted connections when different ones should have different TTL.
+<H3>Result</H3>
+<P>0 for success, -1 for an error.
+
+
+<HR><H3>Function</H3>
+<P><I>int</I>
+<B>sk_set_min_ttl</B>
+(<I>sock *</I> <B>s</B>, <I>int</I> <B>ttl</B>) --     set minimal accepted TTL for given socket
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>sock *</I> <B>s</B><DD><P>socket
+<DT><I>int</I> <B>ttl</B><DD><P>TTL value
+</DL>
+<H3>Description</H3>
+<P>Set minimal accepted TTL for given socket. Can be used for TTL security.
+implementations.
+<H3>Result</H3>
+<P>0 for success, -1 for an error.
+
+
+<HR><H3>Function</H3>
+<P><I>int</I>
+<B>sk_set_md5_auth</B>
+(<I>sock *</I> <B>s</B>, <I>ip_addr</I> <B>a</B>, <I>struct iface *</I> <B>ifa</B>, <I>char *</I> <B>passwd</B>) --     add / remove MD5 security association for given socket
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>sock *</I> <B>s</B><DD><P>socket
+<DT><I>ip_addr</I> <B>a</B><DD><P>IP address of the other side
+<DT><I>struct iface *</I> <B>ifa</B><DD><P>Interface for link-local IP address
+<DT><I>char *</I> <B>passwd</B><DD><P>password used for MD5 authentication
+</DL>
+<H3>Description</H3>
+<P>In TCP MD5 handling code in kernel, there is a set of pairs (address,
+password) used to choose password according to address of the other side.
+This function is useful for listening socket, for active sockets it is enough
+to set s-&gt;password field.
+<P>When called with passwd != NULL, the new pair is added,
+When called with passwd == NULL, the existing pair is removed.
+<H3>Result</H3>
+<P>0 for success, -1 for an error.
+
+
+<HR><H3>Function</H3>
+<P><I>int</I>
+<B>sk_set_ipv6_checksum</B>
+(<I>sock *</I> <B>s</B>, <I>int</I> <B>offset</B>) --     specify IPv6 checksum offset for given socket
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>sock *</I> <B>s</B><DD><P>socket
+<DT><I>int</I> <B>offset</B><DD><P>offset
+</DL>
+<H3>Description</H3>
+<P>Specify IPv6 checksum field offset for given raw IPv6 socket. After that, the
+kernel will automatically fill it for outgoing packets and check it for
+incoming packets. Should not be used on ICMPv6 sockets, where the position is
+known to the kernel.
+<H3>Result</H3>
+<P>0 for success, -1 for an error.
+
+
+<HR><H3>Function</H3>
 <P><I>sock *</I>
 <B>sock_new</B>
 (<I>pool *</I> <B>p</B>) --     create a socket
@@ -653,67 +804,6 @@ you need to fill in all the required fields of the structure and
 call <B>sk_open()</B> to do the actual opening of the socket.
 <P>The real function name is <B>sock_new()</B>, <B>sk_new()</B> is a macro wrapper
 to avoid collision with OpenSSL.
-
-
-<HR><H3>Function</H3>
-<P><I>int</I>
-<B>sk_set_ttl</B>
-(<I>sock *</I> <B>s</B>, <I>int</I> <B>ttl</B>) --     set transmit TTL for given socket.
-<P>
-<H3>Arguments</H3>
-<P>
-<DL>
-<DT><I>sock *</I> <B>s</B><DD><P>socket
-<DT><I>int</I> <B>ttl</B><DD><P>TTL value
-</DL>
-<H3>Description</H3>
-<P>Set TTL for already opened connections when TTL was not set before.
-Useful for accepted connections when different ones should have 
-different TTL.
-<H3>Result</H3>
-<P>0 for success, -1 for an error.
-
-
-<HR><H3>Function</H3>
-<P><I>int</I>
-<B>sk_set_min_ttl</B>
-(<I>sock *</I> <B>s</B>, <I>int</I> <B>ttl</B>) --     set minimal accepted TTL for given socket.
-<P>
-<H3>Arguments</H3>
-<P>
-<DL>
-<DT><I>sock *</I> <B>s</B><DD><P>socket
-<DT><I>int</I> <B>ttl</B><DD><P>TTL value
-</DL>
-<H3>Description</H3>
-<P>Can be used in TTL security implementation
-<H3>Result</H3>
-<P>0 for success, -1 for an error.
-
-
-<HR><H3>Function</H3>
-<P><I>int</I>
-<B>sk_set_md5_auth</B>
-(<I>sock *</I> <B>s</B>, <I>ip_addr</I> <B>a</B>, <I>struct iface *</I> <B>ifa</B>, <I>char *</I> <B>passwd</B>) --     add / remove MD5 security association for given socket.
-<P>
-<H3>Arguments</H3>
-<P>
-<DL>
-<DT><I>sock *</I> <B>s</B><DD><P>socket
-<DT><I>ip_addr</I> <B>a</B><DD><P>IP address of the other side
-<DT><I>struct iface *</I> <B>ifa</B><DD><P>Interface for link-local IP address
-<DT><I>char *</I> <B>passwd</B><DD><P>password used for MD5 authentication
-</DL>
-<H3>Description</H3>
-<P>In TCP MD5 handling code in kernel, there is a set of pairs
-(address, password) used to choose password according to
-address of the other side. This function is useful for
-listening socket, for active sockets it is enough to set
-s-&gt;password field.
-<P>When called with passwd != NULL, the new pair is added,
-When called with passwd == NULL, the existing pair is removed.
-<H3>Result</H3>
-<P>0 for success, -1 for an error.
 
 
 <HR><H3>Function</H3>
@@ -770,6 +860,7 @@ takes place.
 <H3>Description</H3>
 <P>This is a <B>sk_send()</B> replacement for connection-less packet sockets
 which allows destination of the packet to be chosen dynamically.
+Raw IP sockets should use 0 for <B>port</B>.
 
 <P>
 <HR>

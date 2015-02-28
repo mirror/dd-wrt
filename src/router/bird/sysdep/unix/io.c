@@ -22,7 +22,10 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <net/if.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
+#include <netinet/udp.h>
 #include <netinet/icmp6.h>
 
 #include "nest/bird.h"
@@ -468,6 +471,7 @@ tm_format_datetime(char *x, struct timeformat *fmt_spec, bird_clock_t t)
     strcpy(x, "<too-long>");
 }
 
+
 /**
  * DOC: Sockets
  *
@@ -488,6 +492,480 @@ tm_format_datetime(char *x, struct timeformat *fmt_spec, bird_clock_t t)
 #ifndef SOL_IPV6
 #define SOL_IPV6 IPPROTO_IPV6
 #endif
+
+#ifndef SOL_ICMPV6
+#define SOL_ICMPV6 IPPROTO_ICMPV6
+#endif
+
+
+/*
+ *	Sockaddr helper functions
+ */
+
+static inline int sockaddr_length(int af)
+{ return (af == AF_INET) ? sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6); }
+
+static inline void
+sockaddr_fill4(struct sockaddr_in *sa, ip_addr a, struct iface *ifa, uint port)
+{
+  memset(sa, 0, sizeof(struct sockaddr_in));
+#ifdef HAVE_SIN_LEN
+  sa->sin_len = sizeof(struct sockaddr_in);
+#endif
+  sa->sin_family = AF_INET;
+  sa->sin_port = htons(port);
+  sa->sin_addr = ipa_to_in4(a);
+}
+
+static inline void
+sockaddr_fill6(struct sockaddr_in6 *sa, ip_addr a, struct iface *ifa, uint port)
+{
+  memset(sa, 0, sizeof(struct sockaddr_in6));
+#ifdef SIN6_LEN
+  sa->sin6_len = sizeof(struct sockaddr_in6);
+#endif
+  sa->sin6_family = AF_INET6;
+  sa->sin6_port = htons(port);
+  sa->sin6_flowinfo = 0;
+  sa->sin6_addr = ipa_to_in6(a);
+
+  if (ifa && ipa_is_link_local(a))
+    sa->sin6_scope_id = ifa->index;
+}
+
+void
+sockaddr_fill(sockaddr *sa, int af, ip_addr a, struct iface *ifa, uint port)
+{
+  if (af == AF_INET)
+    sockaddr_fill4((struct sockaddr_in *) sa, a, ifa, port);
+  else if (af == AF_INET6)
+    sockaddr_fill6((struct sockaddr_in6 *) sa, a, ifa, port);
+  else
+    bug("Unknown AF");
+}
+
+static inline void
+sockaddr_read4(struct sockaddr_in *sa, ip_addr *a, struct iface **ifa, uint *port)
+{
+  *port = ntohs(sa->sin_port);
+  *a = ipa_from_in4(sa->sin_addr);
+}
+
+static inline void
+sockaddr_read6(struct sockaddr_in6 *sa, ip_addr *a, struct iface **ifa, uint *port)
+{
+  *port = ntohs(sa->sin6_port);
+  *a = ipa_from_in6(sa->sin6_addr);
+
+  if (ifa && ipa_is_link_local(*a))
+    *ifa = if_find_by_index(sa->sin6_scope_id);
+}
+
+int
+sockaddr_read(sockaddr *sa, int af, ip_addr *a, struct iface **ifa, uint *port)
+{
+  if (sa->sa.sa_family != af)
+    goto fail;
+
+  if (af == AF_INET)
+    sockaddr_read4((struct sockaddr_in *) sa, a, ifa, port);
+  else if (af == AF_INET6)
+    sockaddr_read6((struct sockaddr_in6 *) sa, a, ifa, port);
+  else
+    goto fail;
+
+  return 0;
+
+ fail:
+  *a = IPA_NONE;
+  *port = 0;
+  return -1;
+}
+
+
+/*
+ *	IPv6 multicast syscalls
+ */
+
+/* Fortunately standardized in RFC 3493 */
+
+#define INIT_MREQ6(maddr,ifa) \
+  { .ipv6mr_multiaddr = ipa_to_in6(maddr), .ipv6mr_interface = ifa->index }
+
+static inline int
+sk_setup_multicast6(sock *s)
+{
+  int index = s->iface->index;
+  int ttl = s->ttl;
+  int n = 0;
+
+  if (setsockopt(s->fd, SOL_IPV6, IPV6_MULTICAST_IF, &index, sizeof(index)) < 0)
+    ERR("IPV6_MULTICAST_IF");
+
+  if (setsockopt(s->fd, SOL_IPV6, IPV6_MULTICAST_HOPS, &ttl, sizeof(ttl)) < 0)
+    ERR("IPV6_MULTICAST_HOPS");
+
+  if (setsockopt(s->fd, SOL_IPV6, IPV6_MULTICAST_LOOP, &n, sizeof(n)) < 0)
+    ERR("IPV6_MULTICAST_LOOP");
+
+  return 0;
+}
+
+static inline int
+sk_join_group6(sock *s, ip_addr maddr)
+{
+  struct ipv6_mreq mr = INIT_MREQ6(maddr, s->iface);
+
+  if (setsockopt(s->fd, SOL_IPV6, IPV6_JOIN_GROUP, &mr, sizeof(mr)) < 0)
+    ERR("IPV6_JOIN_GROUP");
+
+  return 0;
+}
+
+static inline int
+sk_leave_group6(sock *s, ip_addr maddr)
+{
+  struct ipv6_mreq mr = INIT_MREQ6(maddr, s->iface);
+
+  if (setsockopt(s->fd, SOL_IPV6, IPV6_LEAVE_GROUP, &mr, sizeof(mr)) < 0)
+    ERR("IPV6_LEAVE_GROUP");
+
+  return 0;
+}
+
+
+/*
+ *	IPv6 packet control messages
+ */
+
+/* Also standardized, in RFC 3542 */
+
+/*
+ * RFC 2292 uses IPV6_PKTINFO for both the socket option and the cmsg
+ * type, RFC 3542 changed the socket option to IPV6_RECVPKTINFO. If we
+ * don't have IPV6_RECVPKTINFO we suppose the OS implements the older
+ * RFC and we use IPV6_PKTINFO.
+ */
+#ifndef IPV6_RECVPKTINFO
+#define IPV6_RECVPKTINFO IPV6_PKTINFO
+#endif
+/*
+ * Same goes for IPV6_HOPLIMIT -> IPV6_RECVHOPLIMIT.
+ */
+#ifndef IPV6_RECVHOPLIMIT
+#define IPV6_RECVHOPLIMIT IPV6_HOPLIMIT
+#endif
+
+
+#define CMSG6_SPACE_PKTINFO CMSG_SPACE(sizeof(struct in6_pktinfo))
+#define CMSG6_SPACE_TTL CMSG_SPACE(sizeof(int))
+
+static inline int
+sk_request_cmsg6_pktinfo(sock *s)
+{
+  int y = 1;
+
+  if (setsockopt(s->fd, SOL_IPV6, IPV6_RECVPKTINFO, &y, sizeof(y)) < 0)
+    ERR("IPV6_RECVPKTINFO");
+
+  return 0;
+}
+
+static inline int
+sk_request_cmsg6_ttl(sock *s)
+{
+  int y = 1;
+
+  if (setsockopt(s->fd, SOL_IPV6, IPV6_RECVHOPLIMIT, &y, sizeof(y)) < 0)
+    ERR("IPV6_RECVHOPLIMIT");
+
+  return 0;
+}
+
+static inline void
+sk_process_cmsg6_pktinfo(sock *s, struct cmsghdr *cm)
+{
+  if (cm->cmsg_type == IPV6_PKTINFO)
+  {
+    struct in6_pktinfo *pi = (struct in6_pktinfo *) CMSG_DATA(cm);
+    s->laddr = ipa_from_in6(pi->ipi6_addr);
+    s->lifindex = pi->ipi6_ifindex;
+  }
+}
+
+static inline void
+sk_process_cmsg6_ttl(sock *s, struct cmsghdr *cm)
+{
+  if (cm->cmsg_type == IPV6_HOPLIMIT)
+    s->rcv_ttl = * (int *) CMSG_DATA(cm);
+}
+
+static inline void
+sk_prepare_cmsgs6(sock *s, struct msghdr *msg, void *cbuf, size_t cbuflen)
+{
+  struct cmsghdr *cm;
+  struct in6_pktinfo *pi;
+  int controllen = 0;
+
+  msg->msg_control = cbuf;
+  msg->msg_controllen = cbuflen;
+
+  cm = CMSG_FIRSTHDR(msg);
+  cm->cmsg_level = SOL_IPV6;
+  cm->cmsg_type = IPV6_PKTINFO;
+  cm->cmsg_len = CMSG_LEN(sizeof(*pi));
+  controllen += CMSG_SPACE(sizeof(*pi));
+
+  pi = (struct in6_pktinfo *) CMSG_DATA(cm);
+  pi->ipi6_ifindex = s->iface ? s->iface->index : 0;
+  pi->ipi6_addr = ipa_to_in6(s->saddr);
+
+  msg->msg_controllen = controllen;
+}
+
+
+/*
+ *	Miscellaneous socket syscalls
+ */
+
+static inline int
+sk_set_ttl4(sock *s, int ttl)
+{
+  if (setsockopt(s->fd, SOL_IP, IP_TTL, &ttl, sizeof(ttl)) < 0)
+    ERR("IP_TTL");
+
+  return 0;
+}
+
+static inline int
+sk_set_ttl6(sock *s, int ttl)
+{
+  if (setsockopt(s->fd, SOL_IPV6, IPV6_UNICAST_HOPS, &ttl, sizeof(ttl)) < 0)
+    ERR("IPV6_UNICAST_HOPS");
+
+  return 0;
+}
+
+static inline int
+sk_set_tos4(sock *s, int tos)
+{
+  if (setsockopt(s->fd, SOL_IP, IP_TOS, &tos, sizeof(tos)) < 0)
+    ERR("IP_TOS");
+
+  return 0;
+}
+
+static inline int
+sk_set_tos6(sock *s, int tos)
+{
+  if (setsockopt(s->fd, SOL_IPV6, IPV6_TCLASS, &tos, sizeof(tos)) < 0)
+    ERR("IPV6_TCLASS");
+
+  return 0;
+}
+
+
+/*
+ *	Public socket functions
+ */
+
+/**
+ * sk_setup_multicast - enable multicast for given socket
+ * @s: socket
+ *
+ * Prepare transmission of multicast packets for given datagram socket.
+ * The socket must have defined @iface.
+ *
+ * Result: 0 for success, -1 for an error.
+ */
+
+int
+sk_setup_multicast(sock *s)
+{
+  ASSERT(s->iface);
+
+  if (sk_is_ipv4(s))
+    return sk_setup_multicast4(s);
+  else
+    return sk_setup_multicast6(s);
+}
+
+/**
+ * sk_join_group - join multicast group for given socket
+ * @s: socket
+ * @maddr: multicast address
+ *
+ * Join multicast group for given datagram socket and associated interface.
+ * The socket must have defined @iface.
+ *
+ * Result: 0 for success, -1 for an error.
+ */
+
+int
+sk_join_group(sock *s, ip_addr maddr)
+{
+  if (sk_is_ipv4(s))
+    return sk_join_group4(s, maddr);
+  else
+    return sk_join_group6(s, maddr);
+}
+
+/**
+ * sk_leave_group - leave multicast group for given socket
+ * @s: socket
+ * @maddr: multicast address
+ *
+ * Leave multicast group for given datagram socket and associated interface.
+ * The socket must have defined @iface.
+ *
+ * Result: 0 for success, -1 for an error.
+ */
+
+int
+sk_leave_group(sock *s, ip_addr maddr)
+{
+  if (sk_is_ipv4(s))
+    return sk_leave_group4(s, maddr);
+  else
+    return sk_leave_group6(s, maddr);
+}
+
+/**
+ * sk_setup_broadcast - enable broadcast for given socket
+ * @s: socket
+ *
+ * Allow reception and transmission of broadcast packets for given datagram
+ * socket. The socket must have defined @iface. For transmission, packets should
+ * be send to @brd address of @iface.
+ *
+ * Result: 0 for success, -1 for an error.
+ */
+
+int
+sk_setup_broadcast(sock *s)
+{
+  int y = 1;
+
+  if (setsockopt(s->fd, SOL_SOCKET, SO_BROADCAST, &y, sizeof(y)) < 0)
+    ERR("SO_BROADCAST");
+
+  return 0;
+}
+
+/**
+ * sk_set_ttl - set transmit TTL for given socket
+ * @s: socket
+ * @ttl: TTL value
+ *
+ * Set TTL for already opened connections when TTL was not set before. Useful
+ * for accepted connections when different ones should have different TTL.
+ *
+ * Result: 0 for success, -1 for an error.
+ */
+
+int
+sk_set_ttl(sock *s, int ttl)
+{
+  s->ttl = ttl;
+
+  if (sk_is_ipv4(s))
+    return sk_set_ttl4(s, ttl);
+  else
+    return sk_set_ttl6(s, ttl);
+}
+
+/**
+ * sk_set_min_ttl - set minimal accepted TTL for given socket
+ * @s: socket
+ * @ttl: TTL value
+ *
+ * Set minimal accepted TTL for given socket. Can be used for TTL security.
+ * implementations.
+ *
+ * Result: 0 for success, -1 for an error.
+ */
+
+int
+sk_set_min_ttl(sock *s, int ttl)
+{
+  if (sk_is_ipv4(s))
+    return sk_set_min_ttl4(s, ttl);
+  else
+    return sk_set_min_ttl6(s, ttl);
+}
+
+#if 0
+/**
+ * sk_set_md5_auth - add / remove MD5 security association for given socket
+ * @s: socket
+ * @a: IP address of the other side
+ * @ifa: Interface for link-local IP address
+ * @passwd: password used for MD5 authentication
+ *
+ * In TCP MD5 handling code in kernel, there is a set of pairs (address,
+ * password) used to choose password according to address of the other side.
+ * This function is useful for listening socket, for active sockets it is enough
+ * to set s->password field.
+ *
+ * When called with passwd != NULL, the new pair is added,
+ * When called with passwd == NULL, the existing pair is removed.
+ *
+ * Result: 0 for success, -1 for an error.
+ */
+
+int
+sk_set_md5_auth(sock *s, ip_addr a, struct iface *ifa, char *passwd)
+{ DUMMY; }
+#endif
+
+/**
+ * sk_set_ipv6_checksum - specify IPv6 checksum offset for given socket
+ * @s: socket
+ * @offset: offset
+ *
+ * Specify IPv6 checksum field offset for given raw IPv6 socket. After that, the
+ * kernel will automatically fill it for outgoing packets and check it for
+ * incoming packets. Should not be used on ICMPv6 sockets, where the position is
+ * known to the kernel.
+ *
+ * Result: 0 for success, -1 for an error.
+ */
+
+int
+sk_set_ipv6_checksum(sock *s, int offset)
+{
+  if (setsockopt(s->fd, SOL_IPV6, IPV6_CHECKSUM, &offset, sizeof(offset)) < 0)
+    ERR("IPV6_CHECKSUM");
+
+  return 0;
+}
+
+int
+sk_set_icmp6_filter(sock *s, int p1, int p2)
+{
+  /* a bit of lame interface, but it is here only for Radv */
+  struct icmp6_filter f;
+
+  ICMP6_FILTER_SETBLOCKALL(&f);
+  ICMP6_FILTER_SETPASS(p1, &f);
+  ICMP6_FILTER_SETPASS(p2, &f);
+
+  if (setsockopt(s->fd, SOL_ICMPV6, ICMP6_FILTER, &f, sizeof(f)) < 0)
+    ERR("ICMP6_FILTER");
+
+  return 0;
+}
+
+void
+sk_log_error(sock *s, const char *p)
+{
+  log(L_ERR "%s: Socket error: %s%#m", p, s->err);
+}
+
+
+/*
+ *	Actual struct birdsock code
+ */
 
 static list sock_list;
 static struct birdsock *current_sock;
@@ -518,15 +996,15 @@ static void
 sk_free_bufs(sock *s)
 {
   if (s->rbuf_alloc)
-    {
-      xfree(s->rbuf_alloc);
-      s->rbuf = s->rbuf_alloc = NULL;
-    }
+  {
+    xfree(s->rbuf_alloc);
+    s->rbuf = s->rbuf_alloc = NULL;
+  }
   if (s->tbuf_alloc)
-    {
-      xfree(s->tbuf_alloc);
-      s->tbuf = s->tbuf_alloc = NULL;
-    }
+  {
+    xfree(s->tbuf_alloc);
+    s->tbuf = s->tbuf_alloc = NULL;
+  }
 }
 
 static void
@@ -536,15 +1014,57 @@ sk_free(resource *r)
 
   sk_free_bufs(s);
   if (s->fd >= 0)
-    {
-      close(s->fd);
-      if (s == current_sock)
-	current_sock = sk_next(s);
-      if (s == stored_sock)
-	stored_sock = sk_next(s);
-      rem_node(&s->n);
-      sock_recalc_fdsets_p = 1;
-    }
+  {
+    close(s->fd);
+
+    /* FIXME: we should call sk_stop() for SKF_THREAD sockets */
+    if (s->flags & SKF_THREAD)
+      return;
+
+    if (s == current_sock)
+      current_sock = sk_next(s);
+    if (s == stored_sock)
+      stored_sock = sk_next(s);
+    rem_node(&s->n);
+    sock_recalc_fdsets_p = 1;
+  }
+}
+
+void
+sk_set_rbsize(sock *s, uint val)
+{
+  ASSERT(s->rbuf_alloc == s->rbuf);
+
+  if (s->rbsize == val)
+    return;
+
+  s->rbsize = val;
+  xfree(s->rbuf_alloc);
+  s->rbuf_alloc = xmalloc(val);
+  s->rpos = s->rbuf = s->rbuf_alloc;
+}
+
+void
+sk_set_tbsize(sock *s, uint val)
+{
+  ASSERT(s->tbuf_alloc == s->tbuf);
+
+  if (s->tbsize == val)
+    return;
+
+  byte *old_tbuf = s->tbuf;
+
+  s->tbsize = val;
+  s->tbuf = s->tbuf_alloc = xrealloc(s->tbuf_alloc, val);
+  s->tpos = s->tbuf + (s->tpos - old_tbuf);
+  s->ttx  = s->tbuf + (s->ttx  - old_tbuf);
+}
+
+void
+sk_set_tbuf(sock *s, void *tbuf)
+{
+  s->tbuf = tbuf ?: s->tbuf_alloc;
+  s->ttx = s->tpos = s->tbuf;
 }
 
 void
@@ -558,7 +1078,7 @@ static void
 sk_dump(resource *r)
 {
   sock *s = (sock *) r;
-  static char *sk_type_names[] = { "TCP<", "TCP>", "TCP", "UDP", "UDP/MC", "IP", "IP/MC", "MAGIC", "UNIX<", "UNIX", "DEL!" };
+  static char *sk_type_names[] = { "TCP<", "TCP>", "TCP", "UDP", NULL, "IP", NULL, "MAGIC", "UNIX<", "UNIX", "DEL!" };
 
   debug("(%s, ud=%p, sa=%08x, sp=%d, da=%08x, dp=%d, tos=%d, ttl=%d, if=%s)\n",
 	sk_type_names[s->type],
@@ -603,6 +1123,103 @@ sock_new(pool *p)
   return s;
 }
 
+static int
+sk_setup(sock *s)
+{
+  int y = 1;
+  int fd = s->fd;
+
+  if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0)
+    ERR("O_NONBLOCK");
+
+  if (!s->af)
+    return 0;
+
+  if (ipa_nonzero(s->saddr) && !(s->flags & SKF_BIND))
+    s->flags |= SKF_PKTINFO;
+
+#ifdef CONFIG_USE_HDRINCL
+  if (sk_is_ipv4(s) && (s->type == SK_IP) && (s->flags & SKF_PKTINFO))
+  {
+    s->flags &= ~SKF_PKTINFO;
+    s->flags |= SKF_HDRINCL;
+    if (setsockopt(fd, SOL_IP, IP_HDRINCL, &y, sizeof(y)) < 0)
+      ERR("IP_HDRINCL");
+  }
+#endif
+
+  if (s->iface)
+  {
+#ifdef SO_BINDTODEVICE
+    struct ifreq ifr;
+    strcpy(ifr.ifr_name, s->iface->name);
+    if (setsockopt(s->fd, SOL_SOCKET, SO_BINDTODEVICE, &ifr, sizeof(ifr)) < 0)
+      ERR("SO_BINDTODEVICE");
+#endif
+
+#ifdef CONFIG_UNIX_DONTROUTE
+    if (setsockopt(s->fd, SOL_SOCKET, SO_DONTROUTE, &y, sizeof(y)) < 0)
+      ERR("SO_DONTROUTE");
+#endif
+  }
+
+  if (s->priority >= 0)
+    if (sk_set_priority(s, s->priority) < 0)
+      return -1;
+
+  if (sk_is_ipv4(s))
+  {
+    if (s->flags & SKF_LADDR_RX)
+      if (sk_request_cmsg4_pktinfo(s) < 0)
+	return -1;
+
+    if (s->flags & SKF_TTL_RX)
+      if (sk_request_cmsg4_ttl(s) < 0)
+	return -1;
+
+    if ((s->type == SK_UDP) || (s->type == SK_IP))
+      if (sk_disable_mtu_disc4(s) < 0)
+	return -1;
+
+    if (s->ttl >= 0)
+      if (sk_set_ttl4(s, s->ttl) < 0)
+	return -1;
+
+    if (s->tos >= 0)
+      if (sk_set_tos4(s, s->tos) < 0)
+	return -1;
+  }
+
+  if (sk_is_ipv6(s))
+  {
+    if (s->flags & SKF_V6ONLY)
+      if (setsockopt(fd, SOL_IPV6, IPV6_V6ONLY, &y, sizeof(y)) < 0)
+	ERR("IPV6_V6ONLY");
+
+    if (s->flags & SKF_LADDR_RX)
+      if (sk_request_cmsg6_pktinfo(s) < 0)
+	return -1;
+
+    if (s->flags & SKF_TTL_RX)
+      if (sk_request_cmsg6_ttl(s) < 0)
+	return -1;
+
+    if ((s->type == SK_UDP) || (s->type == SK_IP))
+      if (sk_disable_mtu_disc6(s) < 0)
+	return -1;
+
+    if (s->ttl >= 0)
+      if (sk_set_ttl6(s, s->ttl) < 0)
+	return -1;
+
+    if (s->tos >= 0)
+      if (sk_set_tos6(s, s->tos) < 0)
+	return -1;
+  }
+
+  return 0;
+}
+
 static void
 sk_insert(sock *s)
 {
@@ -610,472 +1227,15 @@ sk_insert(sock *s)
   sock_recalc_fdsets_p = 1;
 }
 
-#ifdef IPV6
-
-void
-fill_in_sockaddr(struct sockaddr_in6 *sa, ip_addr a, struct iface *ifa, unsigned port)
-{
-  memset(sa, 0, sizeof (struct sockaddr_in6));
-  sa->sin6_family = AF_INET6;
-  sa->sin6_port = htons(port);
-  sa->sin6_flowinfo = 0;
-#ifdef HAVE_SIN_LEN
-  sa->sin6_len = sizeof(struct sockaddr_in6);
-#endif
-  set_inaddr(&sa->sin6_addr, a);
-
-  if (ifa && ipa_has_link_scope(a))
-    sa->sin6_scope_id = ifa->index;
-}
-
-void
-get_sockaddr(struct sockaddr_in6 *sa, ip_addr *a, struct iface **ifa, unsigned *port, int check)
-{
-  if (check && sa->sin6_family != AF_INET6)
-    bug("get_sockaddr called for wrong address family (%d)", sa->sin6_family);
-  if (port)
-    *port = ntohs(sa->sin6_port);
-  memcpy(a, &sa->sin6_addr, sizeof(*a));
-  ipa_ntoh(*a);
-
-  if (ifa && ipa_has_link_scope(*a))
-    *ifa = if_find_by_index(sa->sin6_scope_id);
-}
-
-#else
-
-void
-fill_in_sockaddr(struct sockaddr_in *sa, ip_addr a, struct iface *ifa, unsigned port)
-{
-  memset (sa, 0, sizeof (struct sockaddr_in));
-  sa->sin_family = AF_INET;
-  sa->sin_port = htons(port);
-#ifdef HAVE_SIN_LEN
-  sa->sin_len = sizeof(struct sockaddr_in);
-#endif
-  set_inaddr(&sa->sin_addr, a);
-}
-
-void
-get_sockaddr(struct sockaddr_in *sa, ip_addr *a, struct iface **ifa, unsigned *port, int check)
-{
-  if (check && sa->sin_family != AF_INET)
-    bug("get_sockaddr called for wrong address family (%d)", sa->sin_family);
-  if (port)
-    *port = ntohs(sa->sin_port);
-  memcpy(a, &sa->sin_addr.s_addr, sizeof(*a));
-  ipa_ntoh(*a);
-}
-
-#endif
-
-
-#ifdef IPV6
-
-/* PKTINFO handling is also standardized in IPv6 */
-#define CMSG_RX_SPACE (CMSG_SPACE(sizeof(struct in6_pktinfo)) + CMSG_SPACE(sizeof(int)))
-#define CMSG_TX_SPACE CMSG_SPACE(sizeof(struct in6_pktinfo))
-
-/*
- * RFC 2292 uses IPV6_PKTINFO for both the socket option and the cmsg
- * type, RFC 3542 changed the socket option to IPV6_RECVPKTINFO. If we
- * don't have IPV6_RECVPKTINFO we suppose the OS implements the older
- * RFC and we use IPV6_PKTINFO.
- */
-#ifndef IPV6_RECVPKTINFO
-#define IPV6_RECVPKTINFO IPV6_PKTINFO
-#endif
-/*
- * Same goes for IPV6_HOPLIMIT -> IPV6_RECVHOPLIMIT.
- */
-#ifndef IPV6_RECVHOPLIMIT
-#define IPV6_RECVHOPLIMIT IPV6_HOPLIMIT
-#endif
-
-static char *
-sysio_register_cmsgs(sock *s)
-{
-  int ok = 1;
-
-  if ((s->flags & SKF_LADDR_RX) &&
-      (setsockopt(s->fd, IPPROTO_IPV6, IPV6_RECVPKTINFO, &ok, sizeof(ok)) < 0))
-    return "IPV6_RECVPKTINFO";
-
-  if ((s->flags & SKF_TTL_RX) &&
-      (setsockopt(s->fd, IPPROTO_IPV6, IPV6_RECVHOPLIMIT, &ok, sizeof(ok)) < 0))
-    return "IPV6_RECVHOPLIMIT";
-
-  return NULL;
-}
-
-static void
-sysio_process_rx_cmsgs(sock *s, struct msghdr *msg)
-{
-  struct cmsghdr *cm;
-  struct in6_pktinfo *pi = NULL;
-  int *hlim = NULL;
-
-  for (cm = CMSG_FIRSTHDR(msg); cm != NULL; cm = CMSG_NXTHDR(msg, cm))
-  {
-    if (cm->cmsg_level == IPPROTO_IPV6 && cm->cmsg_type == IPV6_PKTINFO)
-      pi = (struct in6_pktinfo *) CMSG_DATA(cm);
-
-    if (cm->cmsg_level == IPPROTO_IPV6 && cm->cmsg_type == IPV6_HOPLIMIT)
-      hlim = (int *) CMSG_DATA(cm);
-  }
-
-  if (s->flags & SKF_LADDR_RX)
-  {
-    if (pi)
-    {
-      get_inaddr(&s->laddr, &pi->ipi6_addr);
-      s->lifindex = pi->ipi6_ifindex;
-    }
-    else
-    {
-      s->laddr = IPA_NONE;
-      s->lifindex = 0;
-    }
-  }
-
-  if (s->flags & SKF_TTL_RX)
-    s->ttl = hlim ? *hlim : -1;
-
-  return;
-}
-
-/*
-static void
-sysio_prepare_tx_cmsgs(sock *s, struct msghdr *msg, void *cbuf, size_t cbuflen)
-{
-  struct cmsghdr *cm;
-  struct in6_pktinfo *pi;
-
-  if (!(s->flags & SKF_LADDR_TX))
-    return;
-
-  msg->msg_control = cbuf;
-  msg->msg_controllen = cbuflen;
-
-  cm = CMSG_FIRSTHDR(msg);
-  cm->cmsg_level = IPPROTO_IPV6;
-  cm->cmsg_type = IPV6_PKTINFO;
-  cm->cmsg_len = CMSG_LEN(sizeof(*pi));
-
-  pi = (struct in6_pktinfo *) CMSG_DATA(cm);
-  set_inaddr(&pi->ipi6_addr, s->saddr);
-  pi->ipi6_ifindex = s->iface ? s->iface->index : 0;
-
-  msg->msg_controllen = cm->cmsg_len;
-  return;
-}
-*/
-#endif
-
-static char *
-sk_set_ttl_int(sock *s)
-{
-#ifdef IPV6
-  if (setsockopt(s->fd, SOL_IPV6, IPV6_UNICAST_HOPS, &s->ttl, sizeof(s->ttl)) < 0)
-    return "IPV6_UNICAST_HOPS";
-#else
-  if (setsockopt(s->fd, SOL_IP, IP_TTL, &s->ttl, sizeof(s->ttl)) < 0)
-    return "IP_TTL";
-#ifdef CONFIG_UNIX_DONTROUTE
-  int one = 1;
-  if (s->ttl == 1 && setsockopt(s->fd, SOL_SOCKET, SO_DONTROUTE, &one, sizeof(one)) < 0)
-    return "SO_DONTROUTE";
-#endif 
-#endif
-  return NULL;
-}
-
-#define ERR(x) do { err = x; goto bad; } while(0)
-#define WARN(x) log(L_WARN "sk_setup: %s: %m", x)
-
-static char *
-sk_setup(sock *s)
-{
-  int fd = s->fd;
-  char *err = NULL;
-
-  if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0)
-    ERR("fcntl(O_NONBLOCK)");
-  if (s->type == SK_UNIX)
-    return NULL;
-
-#ifdef IPV6
-  if ((s->tos >= 0) && setsockopt(fd, SOL_IPV6, IPV6_TCLASS, &s->tos, sizeof(s->tos)) < 0)
-    WARN("IPV6_TCLASS");
-#else
-  if ((s->tos >= 0) && setsockopt(fd, SOL_IP, IP_TOS, &s->tos, sizeof(s->tos)) < 0)
-    WARN("IP_TOS");
-#endif
-
-  if (s->priority >= 0)
-    sk_set_priority(s, s->priority);
-
-#ifdef IPV6
-  int v = 1;
-  if ((s->flags & SKF_V6ONLY) && setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &v, sizeof(v)) < 0)
-    WARN("IPV6_V6ONLY");
-#endif
-
-  if ((s->ttl >= 0) && (err = sk_set_ttl_int(s)))
-    goto bad;
-
-  err = sysio_register_cmsgs(s);
-bad:
-  return err;
-}
-
-/**
- * sk_set_ttl - set transmit TTL for given socket.
- * @s: socket
- * @ttl: TTL value
- *
- * Set TTL for already opened connections when TTL was not set before.
- * Useful for accepted connections when different ones should have 
- * different TTL.
- *
- * Result: 0 for success, -1 for an error.
- */
-
-int
-sk_set_ttl(sock *s, int ttl)
-{
-  char *err;
-
-  s->ttl = ttl;
-  if (err = sk_set_ttl_int(s))
-    log(L_ERR "sk_set_ttl: %s: %m", err);
-
-  return (err ? -1 : 0);
-}
-
-/**
- * sk_set_min_ttl - set minimal accepted TTL for given socket.
- * @s: socket
- * @ttl: TTL value
- *
- * Can be used in TTL security implementation
- *
- * Result: 0 for success, -1 for an error.
- */
-
-int
-sk_set_min_ttl(sock *s, int ttl)
-{
-  int err;
-#ifdef IPV6
-  err = sk_set_min_ttl6(s, ttl);
-#else
-  err = sk_set_min_ttl4(s, ttl);
-#endif
-
-  return err;
-}
-
-/**
- * sk_set_md5_auth - add / remove MD5 security association for given socket.
- * @s: socket
- * @a: IP address of the other side
- * @ifa: Interface for link-local IP address
- * @passwd: password used for MD5 authentication
- *
- * In TCP MD5 handling code in kernel, there is a set of pairs
- * (address, password) used to choose password according to
- * address of the other side. This function is useful for
- * listening socket, for active sockets it is enough to set
- * s->password field.
- *
- * When called with passwd != NULL, the new pair is added,
- * When called with passwd == NULL, the existing pair is removed.
- *
- * Result: 0 for success, -1 for an error.
- */
-
-int
-sk_set_md5_auth(sock *s, ip_addr a, struct iface *ifa, char *passwd)
-{
-  sockaddr sa;
-  fill_in_sockaddr(&sa, a, ifa, 0);
-  return sk_set_md5_auth_int(s, &sa, passwd);
-}
-
-int
-sk_set_broadcast(sock *s, int enable)
-{
-  if (setsockopt(s->fd, SOL_SOCKET, SO_BROADCAST, &enable, sizeof(enable)) < 0)
-    {
-      log(L_ERR "sk_set_broadcast: SO_BROADCAST: %m");
-      return -1;
-    }
-
-  return 0;
-}
-
-
-#ifdef IPV6
-
-int
-sk_set_ipv6_checksum(sock *s, int offset)
-{
-  if (setsockopt(s->fd, IPPROTO_IPV6, IPV6_CHECKSUM, &offset, sizeof(offset)) < 0)
-    {
-      log(L_ERR "sk_set_ipv6_checksum: IPV6_CHECKSUM: %m");
-      return -1;
-    }
-
-  return 0;
-}
-
-int
-sk_set_icmp_filter(sock *s, int p1, int p2)
-{
-  /* a bit of lame interface, but it is here only for Radv */
-  struct icmp6_filter f;
-
-  ICMP6_FILTER_SETBLOCKALL(&f);
-  ICMP6_FILTER_SETPASS(p1, &f);
-  ICMP6_FILTER_SETPASS(p2, &f);
-
-  if (setsockopt(s->fd, IPPROTO_ICMPV6, ICMP6_FILTER, &f, sizeof(f)) < 0)
-    {
-      log(L_ERR "sk_setup_icmp_filter: ICMP6_FILTER: %m");
-      return -1;
-    }
-
-  return 0;
-}
-
-int
-sk_setup_multicast(sock *s)
-{
-  char *err;
-  int zero = 0;
-  int index;
-
-  ASSERT(s->iface && s->iface->addr);
-
-  index = s->iface->index;
-  if (setsockopt(s->fd, SOL_IPV6, IPV6_MULTICAST_HOPS, &s->ttl, sizeof(s->ttl)) < 0)
-    ERR("IPV6_MULTICAST_HOPS");
-  if (setsockopt(s->fd, SOL_IPV6, IPV6_MULTICAST_LOOP, &zero, sizeof(zero)) < 0)
-    ERR("IPV6_MULTICAST_LOOP");
-  if (setsockopt(s->fd, SOL_IPV6, IPV6_MULTICAST_IF, &index, sizeof(index)) < 0)
-    ERR("IPV6_MULTICAST_IF");
-
-  if (err = sysio_bind_to_iface(s))
-    goto bad;
-
-  return 0;
-
-bad:
-  log(L_ERR "sk_setup_multicast: %s: %m", err);
-  return -1;
-}
-
-int
-sk_join_group(sock *s, ip_addr maddr)
-{
-  struct ipv6_mreq mreq;
-
-  set_inaddr(&mreq.ipv6mr_multiaddr, maddr);
-
-#ifdef CONFIG_IPV6_GLIBC_20
-  mreq.ipv6mr_ifindex = s->iface->index;
-#else
-  mreq.ipv6mr_interface = s->iface->index;
-#endif
-
-  if (setsockopt(s->fd, SOL_IPV6, IPV6_JOIN_GROUP, &mreq, sizeof(mreq)) < 0)
-    {
-      log(L_ERR "sk_join_group: IPV6_JOIN_GROUP: %m");
-      return -1;
-    }
-
-  return 0;
-}
-
-int
-sk_leave_group(sock *s, ip_addr maddr)
-{
-  struct ipv6_mreq mreq;
-	
-  set_inaddr(&mreq.ipv6mr_multiaddr, maddr);
-
-#ifdef CONFIG_IPV6_GLIBC_20
-  mreq.ipv6mr_ifindex = s->iface->index;
-#else
-  mreq.ipv6mr_interface = s->iface->index;
-#endif
-
-  if (setsockopt(s->fd, SOL_IPV6, IPV6_LEAVE_GROUP, &mreq, sizeof(mreq)) < 0)
-    {
-      log(L_ERR "sk_leave_group: IPV6_LEAVE_GROUP: %m");
-      return -1;
-    }
-
-  return 0;
-}
-
-#else /* IPV4 */
-
-int
-sk_setup_multicast(sock *s)
-{
-  char *err;
-
-  ASSERT(s->iface && s->iface->addr);
-
-  if (err = sysio_setup_multicast(s))
-    {
-      log(L_ERR "sk_setup_multicast: %s: %m", err);
-      return -1;
-    }
-
-  return 0;
-}
-
-int
-sk_join_group(sock *s, ip_addr maddr)
-{
- char *err;
-
- if (err = sysio_join_group(s, maddr))
-    {
-      log(L_ERR "sk_join_group: %s: %m", err);
-      return -1;
-    }
-
-  return 0;
-}
-
-int
-sk_leave_group(sock *s, ip_addr maddr)
-{
- char *err;
-
- if (err = sysio_leave_group(s, maddr))
-    {
-      log(L_ERR "sk_leave_group: %s: %m", err);
-      return -1;
-    }
-
-  return 0;
-}
-
-#endif 
-
-
 static void
 sk_tcp_connected(sock *s)
 {
-  sockaddr lsa;
-  int lsa_len = sizeof(lsa);
-  if (getsockname(s->fd, (struct sockaddr *) &lsa, &lsa_len) == 0)
-    get_sockaddr(&lsa, &s->saddr, &s->iface, &s->sport, 1);
+  sockaddr sa;
+  int sa_len = sizeof(sa);
+
+  if ((getsockname(s->fd, &sa.sa, &sa_len) < 0) ||
+      (sockaddr_read(&sa, s->af, &s->saddr, &s->iface, &s->sport) < 0))
+    log(L_WARN "SOCK: Cannot get local IP address for TCP>");
 
   s->type = SK_TCP;
   sk_alloc_bufs(s);
@@ -1083,44 +1243,55 @@ sk_tcp_connected(sock *s)
 }
 
 static int
-sk_passive_connected(sock *s, struct sockaddr *sa, int al, int type)
+sk_passive_connected(sock *s, int type)
 {
-  int fd = accept(s->fd, sa, &al);
-  if (fd >= 0)
-    {
-      sock *t = sk_new(s->pool);
-      char *err;
-      t->type = type;
-      t->fd = fd;
-      t->ttl = s->ttl;
-      t->tos = s->tos;
-      t->rbsize = s->rbsize;
-      t->tbsize = s->tbsize;
-      if (type == SK_TCP)
-	{
-	  sockaddr lsa;
-	  int lsa_len = sizeof(lsa);
-	  if (getsockname(fd, (struct sockaddr *) &lsa, &lsa_len) == 0)
-	    get_sockaddr(&lsa, &t->saddr, &t->iface, &t->sport, 1);
+  sockaddr loc_sa, rem_sa;
+  int loc_sa_len = sizeof(loc_sa);
+  int rem_sa_len = sizeof(rem_sa);
 
-	  get_sockaddr((sockaddr *) sa, &t->daddr, &t->iface, &t->dport, 1);
-	}
-      sk_insert(t);
-      if (err = sk_setup(t))
-	{
-	  log(L_ERR "Incoming connection: %s: %m", err);
-	  rfree(t);
-	  return 1;
-	}
-      sk_alloc_bufs(t);
-      s->rx_hook(t, 0);
-      return 1;
-    }
-  else if (errno != EINTR && errno != EAGAIN)
-    {
+  int fd = accept(s->fd, ((type == SK_TCP) ? &rem_sa.sa : NULL), &rem_sa_len);
+  if (fd < 0)
+  {
+    if ((errno != EINTR) && (errno != EAGAIN))
       s->err_hook(s, errno);
-    }
-  return 0;
+    return 0;
+  }
+
+  sock *t = sk_new(s->pool);
+  t->type = type;
+  t->fd = fd;
+  t->af = s->af;
+  t->ttl = s->ttl;
+  t->tos = s->tos;
+  t->rbsize = s->rbsize;
+  t->tbsize = s->tbsize;
+
+  if (type == SK_TCP)
+  {
+    if ((getsockname(fd, &loc_sa.sa, &loc_sa_len) < 0) ||
+	(sockaddr_read(&loc_sa, s->af, &t->saddr, &t->iface, &t->sport) < 0))
+      log(L_WARN "SOCK: Cannot get local IP address for TCP<");
+
+    if (sockaddr_read(&rem_sa, s->af, &t->daddr, &t->iface, &t->dport) < 0)
+      log(L_WARN "SOCK: Cannot get remote IP address for TCP<");
+  }
+
+  if (sk_setup(t) < 0)
+  {
+    /* FIXME: Call err_hook instead ? */
+    log(L_ERR "SOCK: Incoming connection: %s%#m", t->err);
+
+    /* FIXME: handle it better in rfree() */
+    close(t->fd);	
+    t->fd = -1;
+    rfree(t);
+    return 1;
+  }
+
+  sk_insert(t);
+  sk_alloc_bufs(t);
+  s->rx_hook(t, 0);
+  return 1;
 }
 
 /**
@@ -1136,141 +1307,259 @@ sk_passive_connected(sock *s, struct sockaddr *sa, int al, int type)
 int
 sk_open(sock *s)
 {
-  int fd;
+  int af = BIRD_AF;
+  int fd = -1;
+  int do_bind = 0;
+  int bind_port = 0;
+  ip_addr bind_addr = IPA_NONE;
   sockaddr sa;
-  int one = 1;
-  int type = s->type;
-  int has_src = ipa_nonzero(s->saddr) || s->sport;
-  char *err;
 
-  switch (type)
-    {
-    case SK_TCP_ACTIVE:
-      s->ttx = "";			/* Force s->ttx != s->tpos */
-      /* Fall thru */
-    case SK_TCP_PASSIVE:
-      fd = socket(BIRD_PF, SOCK_STREAM, IPPROTO_TCP);
-      break;
-    case SK_UDP:
-      fd = socket(BIRD_PF, SOCK_DGRAM, IPPROTO_UDP);
-      break;
-    case SK_IP:
-      fd = socket(BIRD_PF, SOCK_RAW, s->dport);
-      break;
-    case SK_MAGIC:
-      fd = s->fd;
-      break;
-    default:
-      bug("sk_open() called for invalid sock type %d", type);
-    }
+  switch (s->type)
+  {
+  case SK_TCP_ACTIVE:
+    s->ttx = "";			/* Force s->ttx != s->tpos */
+    /* Fall thru */
+  case SK_TCP_PASSIVE:
+    fd = socket(af, SOCK_STREAM, IPPROTO_TCP);
+    bind_port = s->sport;
+    bind_addr = s->saddr;
+    do_bind = bind_port || ipa_nonzero(bind_addr);
+    break;
+  
+  case SK_UDP:
+    fd = socket(af, SOCK_DGRAM, IPPROTO_UDP);
+    bind_port = s->sport;
+    bind_addr = (s->flags & SKF_BIND) ? s->saddr : IPA_NONE;
+    do_bind = 1;
+    break;
+
+  case SK_IP:
+    fd = socket(af, SOCK_RAW, s->dport);
+    bind_port = 0;
+    bind_addr = (s->flags & SKF_BIND) ? s->saddr : IPA_NONE;
+    do_bind = ipa_nonzero(bind_addr);
+    break;
+
+  case SK_MAGIC:
+    af = 0;
+    fd = s->fd;
+    break;
+
+  default:
+    bug("sk_open() called for invalid sock type %d", s->type);
+  }
+
   if (fd < 0)
-    die("sk_open: socket: %m");
+    ERR("socket");
+
+  s->af = af;
   s->fd = fd;
 
-  if (err = sk_setup(s))
-    goto bad;
+  if (sk_setup(s) < 0)
+    goto err;
 
-  if (has_src)
+  if (do_bind)
+  {
+    if (bind_port)
     {
-      int port;
+      int y = 1;
 
-      if (type == SK_IP)
-	port = 0;
-      else
-	{
-	  port = s->sport;
-	  if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one)) < 0)
-	    ERR("SO_REUSEADDR");
-	}
-      fill_in_sockaddr(&sa, s->saddr, s->iface, port);
-      if (bind(fd, (struct sockaddr *) &sa, sizeof(sa)) < 0)
-	ERR("bind");
+      if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &y, sizeof(y)) < 0)
+	ERR2("SO_REUSEADDR");
+
+#ifdef CONFIG_NO_IFACE_BIND
+      /* Workaround missing ability to bind to an iface */
+      if ((s->type == SK_UDP) && s->iface && ipa_zero(bind_addr))
+      {
+	if (setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &y, sizeof(y)) < 0)
+	  ERR2("SO_REUSEPORT");
+      }
+#endif
     }
-  fill_in_sockaddr(&sa, s->daddr, s->iface, s->dport);
+
+    sockaddr_fill(&sa, af, bind_addr, s->iface, bind_port);
+    if (bind(fd, &sa.sa, SA_LEN(sa)) < 0)
+      ERR2("bind");
+  }
 
   if (s->password)
-    {
-      int rv = sk_set_md5_auth_int(s, &sa, s->password);
-      if (rv < 0)
-	goto bad_no_log;
-    }
+    if (sk_set_md5_auth(s, s->daddr, s->iface, s->password) < 0)
+      goto err;
 
-  switch (type)
-    {
-    case SK_TCP_ACTIVE:
-      if (connect(fd, (struct sockaddr *) &sa, sizeof(sa)) >= 0)
-	sk_tcp_connected(s);
-      else if (errno != EINTR && errno != EAGAIN && errno != EINPROGRESS &&
-	       errno != ECONNREFUSED && errno != EHOSTUNREACH && errno != ENETUNREACH)
-	ERR("connect");
-      break;
-    case SK_TCP_PASSIVE:
-      if (listen(fd, 8))
-	ERR("listen");
-      break;
-    case SK_MAGIC:
-      break;
-    default:
-      sk_alloc_bufs(s);
-#ifdef IPV6
-#ifdef IPV6_MTU_DISCOVER
-      {
-	int dont = IPV6_PMTUDISC_DONT;
-	if (setsockopt(fd, SOL_IPV6, IPV6_MTU_DISCOVER, &dont, sizeof(dont)) < 0)
-	  ERR("IPV6_MTU_DISCOVER");
-      }
-#endif
-#else
-#ifdef IP_PMTUDISC
-      {
-	int dont = IP_PMTUDISC_DONT;
-	if (setsockopt(fd, SOL_IP, IP_PMTUDISC, &dont, sizeof(dont)) < 0)
-	  ERR("IP_PMTUDISC");
-      }
-#endif
-#endif
-    }
+  switch (s->type)
+  {
+  case SK_TCP_ACTIVE:
+    sockaddr_fill(&sa, af, s->daddr, s->iface, s->dport);
+    if (connect(fd, &sa.sa, SA_LEN(sa)) >= 0)
+      sk_tcp_connected(s);
+    else if (errno != EINTR && errno != EAGAIN && errno != EINPROGRESS &&
+	     errno != ECONNREFUSED && errno != EHOSTUNREACH && errno != ENETUNREACH)
+      ERR2("connect");
+    break;
 
-  sk_insert(s);
+  case SK_TCP_PASSIVE:
+    if (listen(fd, 8) < 0)
+      ERR2("listen");
+    break;
+
+  case SK_MAGIC:
+    break;
+
+  default:
+    sk_alloc_bufs(s);
+  }
+
+  if (!(s->flags & SKF_THREAD))
+    sk_insert(s);
   return 0;
 
-bad:
-  log(L_ERR "sk_open: %s: %m", err);
-bad_no_log:
+err:
   close(fd);
   s->fd = -1;
   return -1;
 }
 
-void
+int
 sk_open_unix(sock *s, char *name)
 {
-  int fd;
   struct sockaddr_un sa;
-  char *err;
+  int fd;
+
+  /* We are sloppy during error (leak fd and not set s->err), but we die anyway */
 
   fd = socket(AF_UNIX, SOCK_STREAM, 0);
   if (fd < 0)
-    ERR("socket");
-  s->fd = fd;
-  if (err = sk_setup(s))
-    goto bad;
-  unlink(name);
+    return -1;
+
+  if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0)
+    return -1;
 
   /* Path length checked in test_old_bird() */
   sa.sun_family = AF_UNIX;
   strcpy(sa.sun_path, name);
-  if (bind(fd, (struct sockaddr *) &sa, SUN_LEN(&sa)) < 0)
-    ERR("bind");
-  if (listen(fd, 8))
-    ERR("listen");
-  sk_insert(s);
-  return;
 
- bad:
-  log(L_ERR "sk_open_unix: %s: %m", err);
-  die("Unable to create control socket %s", name);
+  if (bind(fd, (struct sockaddr *) &sa, SUN_LEN(&sa)) < 0)
+    return -1;
+
+  if (listen(fd, 8) < 0)
+    return -1;
+
+  s->fd = fd;
+  sk_insert(s);
+  return 0;
 }
+
+
+#define CMSG_RX_SPACE MAX(CMSG4_SPACE_PKTINFO+CMSG4_SPACE_TTL, \
+			  CMSG6_SPACE_PKTINFO+CMSG6_SPACE_TTL)
+#define CMSG_TX_SPACE MAX(CMSG4_SPACE_PKTINFO,CMSG6_SPACE_PKTINFO)
+
+static void
+sk_prepare_cmsgs(sock *s, struct msghdr *msg, void *cbuf, size_t cbuflen)
+{
+  if (sk_is_ipv4(s))
+    sk_prepare_cmsgs4(s, msg, cbuf, cbuflen);
+  else
+    sk_prepare_cmsgs6(s, msg, cbuf, cbuflen);
+}
+
+static void
+sk_process_cmsgs(sock *s, struct msghdr *msg)
+{
+  struct cmsghdr *cm;
+
+  s->laddr = IPA_NONE;
+  s->lifindex = 0;
+  s->rcv_ttl = -1;
+
+  for (cm = CMSG_FIRSTHDR(msg); cm != NULL; cm = CMSG_NXTHDR(msg, cm))
+  {
+    if ((cm->cmsg_level == SOL_IP) && sk_is_ipv4(s))
+    {
+      sk_process_cmsg4_pktinfo(s, cm);
+      sk_process_cmsg4_ttl(s, cm);
+    }
+
+    if ((cm->cmsg_level == SOL_IPV6) && sk_is_ipv6(s))
+    {
+      sk_process_cmsg6_pktinfo(s, cm);
+      sk_process_cmsg6_ttl(s, cm);
+    }
+  }
+}
+
+
+static inline int
+sk_sendmsg(sock *s)
+{
+  struct iovec iov = {s->tbuf, s->tpos - s->tbuf};
+  byte cmsg_buf[CMSG_TX_SPACE];
+  sockaddr dst;
+
+  sockaddr_fill(&dst, s->af, s->daddr, s->iface, s->dport);
+
+  struct msghdr msg = {
+    .msg_name = &dst.sa,
+    .msg_namelen = SA_LEN(dst),
+    .msg_iov = &iov,
+    .msg_iovlen = 1
+  };
+
+#ifdef CONFIG_USE_HDRINCL
+  byte hdr[20];
+  struct iovec iov2[2] = { {hdr, 20}, iov };
+
+  if (s->flags & SKF_HDRINCL)
+  {
+    sk_prepare_ip_header(s, hdr, iov.iov_len);
+    msg.msg_iov = iov2;
+    msg.msg_iovlen = 2;
+  }
+#endif
+
+  if (s->flags & SKF_PKTINFO)
+    sk_prepare_cmsgs(s, &msg, cmsg_buf, sizeof(cmsg_buf));
+
+  return sendmsg(s->fd, &msg, 0);
+}
+
+static inline int
+sk_recvmsg(sock *s)
+{
+  struct iovec iov = {s->rbuf, s->rbsize};
+  byte cmsg_buf[CMSG_RX_SPACE];
+  sockaddr src;
+
+  struct msghdr msg = {
+    .msg_name = &src.sa,
+    .msg_namelen = sizeof(src), // XXXX ??
+    .msg_iov = &iov,
+    .msg_iovlen = 1,
+    .msg_control = cmsg_buf,
+    .msg_controllen = sizeof(cmsg_buf),
+    .msg_flags = 0
+  };
+
+  int rv = recvmsg(s->fd, &msg, 0);
+  if (rv < 0)
+    return rv;
+
+  //ifdef IPV4
+  //  if (cf_type == SK_IP)
+  //    rv = ipv4_skip_header(pbuf, rv);
+  //endif
+
+  sockaddr_read(&src, s->af, &s->faddr, NULL, &s->fport);
+  sk_process_cmsgs(s, &msg);
+
+  if (msg.msg_flags & MSG_TRUNC)
+    s->flags |= SKF_TRUNCATED;
+  else
+    s->flags &= ~SKF_TRUNCATED;
+
+  return rv;
+}
+
 
 static inline void reset_tx_buffer(sock *s) { s->ttx = s->tpos = s->tbuf; }
 
@@ -1280,65 +1569,57 @@ sk_maybe_write(sock *s)
   int e;
 
   switch (s->type)
+  {
+  case SK_TCP:
+  case SK_MAGIC:
+  case SK_UNIX:
+    while (s->ttx != s->tpos)
     {
-    case SK_TCP:
-    case SK_MAGIC:
-    case SK_UNIX:
-      while (s->ttx != s->tpos)
+      e = write(s->fd, s->ttx, s->tpos - s->ttx);
+
+      if (e < 0)
+      {
+	if (errno != EINTR && errno != EAGAIN)
 	{
-	  e = write(s->fd, s->ttx, s->tpos - s->ttx);
-	  if (e < 0)
-	    {
-	      if (errno != EINTR && errno != EAGAIN)
-		{
-		  reset_tx_buffer(s);
-		  /* EPIPE is just a connection close notification during TX */
-		  s->err_hook(s, (errno != EPIPE) ? errno : 0);
-		  return -1;
-		}
-	      return 0;
-	    }
-	  s->ttx += e;
+	  reset_tx_buffer(s);
+	  /* EPIPE is just a connection close notification during TX */
+	  s->err_hook(s, (errno != EPIPE) ? errno : 0);
+	  return -1;
 	}
+	return 0;
+      }
+      s->ttx += e;
+    }
+    reset_tx_buffer(s);
+    return 1;
+
+  case SK_UDP:
+  case SK_IP:
+    {
+      if (s->tbuf == s->tpos)
+	return 1;
+
+      e = sk_sendmsg(s);
+
+      if (e < 0)
+      {
+	if (errno != EINTR && errno != EAGAIN)
+	{
+	  reset_tx_buffer(s);
+	  s->err_hook(s, errno);
+	  return -1;
+	}
+
+	if (!s->tx_hook)
+	  reset_tx_buffer(s);
+	return 0;
+      }
       reset_tx_buffer(s);
       return 1;
-    case SK_UDP:
-    case SK_IP:
-      {
-	if (s->tbuf == s->tpos)
-	  return 1;
-
-	sockaddr sa;
-	fill_in_sockaddr(&sa, s->daddr, s->iface, s->dport);
-
-	struct iovec iov = {s->tbuf, s->tpos - s->tbuf};
-	// byte cmsg_buf[CMSG_TX_SPACE];
-
-	struct msghdr msg = {
-	  .msg_name = &sa,
-	  .msg_namelen = sizeof(sa),
-	  .msg_iov = &iov,
-	  .msg_iovlen = 1};
-
-	// sysio_prepare_tx_cmsgs(s, &msg, cmsg_buf, sizeof(cmsg_buf));
-	e = sendmsg(s->fd, &msg, 0);
-
-	if (e < 0)
-	  {
-	    if (errno != EINTR && errno != EAGAIN)
-	      {
-		reset_tx_buffer(s);
-		s->err_hook(s, errno);
-		return -1;
-	      }
-	    return 0;
-	  }
-	reset_tx_buffer(s);
-	return 1;
-      }
-    default:
-      bug("sk_maybe_write: unknown socket type %d", s->type);
     }
+  default:
+    bug("sk_maybe_write: unknown socket type %d", s->type);
+  }
 }
 
 int
@@ -1393,12 +1674,15 @@ sk_send(sock *s, unsigned len)
  *
  * This is a sk_send() replacement for connection-less packet sockets
  * which allows destination of the packet to be chosen dynamically.
+ * Raw IP sockets should use 0 for @port.
  */
 int
 sk_send_to(sock *s, unsigned len, ip_addr addr, unsigned port)
 {
   s->daddr = addr;
-  s->dport = port;
+  if (port)
+    s->dport = port;
+
   s->ttx = s->tbuf;
   s->tpos = s->tbuf + len;
   return sk_maybe_write(s);
@@ -1419,106 +1703,92 @@ sk_send_full(sock *s, unsigned len, struct iface *ifa,
 }
 */
 
-static int
+ /* sk_read() and sk_write() are called from BFD's event loop */
+
+int
 sk_read(sock *s)
 {
   switch (s->type)
+  {
+  case SK_TCP_PASSIVE:
+    return sk_passive_connected(s, SK_TCP);
+
+  case SK_UNIX_PASSIVE:
+    return sk_passive_connected(s, SK_UNIX);
+
+  case SK_TCP:
+  case SK_UNIX:
     {
-    case SK_TCP_PASSIVE:
+      int c = read(s->fd, s->rpos, s->rbuf + s->rbsize - s->rpos);
+
+      if (c < 0)
       {
-	sockaddr sa;
-	return sk_passive_connected(s, (struct sockaddr *) &sa, sizeof(sa), SK_TCP);
+	if (errno != EINTR && errno != EAGAIN)
+	  s->err_hook(s, errno);
       }
-    case SK_UNIX_PASSIVE:
+      else if (!c)
+	s->err_hook(s, 0);
+      else
       {
-	struct sockaddr_un sa;
-	return sk_passive_connected(s, (struct sockaddr *) &sa, sizeof(sa), SK_UNIX);
-      }
-    case SK_TCP:
-    case SK_UNIX:
-      {
-	int c = read(s->fd, s->rpos, s->rbuf + s->rbsize - s->rpos);
-
-	if (c < 0)
-	  {
-	    if (errno != EINTR && errno != EAGAIN)
-	      s->err_hook(s, errno);
-	  }
-	else if (!c)
-	  s->err_hook(s, 0);
-	else
-	  {
-	    s->rpos += c;
-	    if (s->rx_hook(s, s->rpos - s->rbuf))
-	      {
-		/* We need to be careful since the socket could have been deleted by the hook */
-		if (current_sock == s)
-		  s->rpos = s->rbuf;
-	      }
-	    return 1;
-	  }
-	return 0;
-      }
-    case SK_MAGIC:
-      return s->rx_hook(s, 0);
-    default:
-      {
-	sockaddr sa;
-	int e;
-
-	struct iovec iov = {s->rbuf, s->rbsize};
-	byte cmsg_buf[CMSG_RX_SPACE];
-
-	struct msghdr msg = {
-	  .msg_name = &sa,
-	  .msg_namelen = sizeof(sa),
-	  .msg_iov = &iov,
-	  .msg_iovlen = 1,
-	  .msg_control = cmsg_buf,
-	  .msg_controllen = sizeof(cmsg_buf),
-	  .msg_flags = 0};
-
-	e = recvmsg(s->fd, &msg, 0);
-
-	if (e < 0)
-	  {
-	    if (errno != EINTR && errno != EAGAIN)
-	      s->err_hook(s, errno);
-	    return 0;
-	  }
-	s->rpos = s->rbuf + e;
-	get_sockaddr(&sa, &s->faddr, NULL, &s->fport, 1);
-	sysio_process_rx_cmsgs(s, &msg);
-
-	s->rx_hook(s, e);
+	s->rpos += c;
+	if (s->rx_hook(s, s->rpos - s->rbuf))
+	{
+	  /* We need to be careful since the socket could have been deleted by the hook */
+	  if (current_sock == s)
+	    s->rpos = s->rbuf;
+	}
 	return 1;
       }
+      return 0;
     }
-}
 
-static int
-sk_write(sock *s)
-{
-  switch (s->type)
+  case SK_MAGIC:
+    return s->rx_hook(s, 0);
+
+  default:
     {
-    case SK_TCP_ACTIVE:
+      int e = sk_recvmsg(s);
+
+      if (e < 0)
       {
-	sockaddr sa;
-	fill_in_sockaddr(&sa, s->daddr, s->iface, s->dport);
-	if (connect(s->fd, (struct sockaddr *) &sa, sizeof(sa)) >= 0 || errno == EISCONN)
-	  sk_tcp_connected(s);
-	else if (errno != EINTR && errno != EAGAIN && errno != EINPROGRESS)
+	if (errno != EINTR && errno != EAGAIN)
 	  s->err_hook(s, errno);
 	return 0;
       }
-    default:
-      if (s->ttx != s->tpos && sk_maybe_write(s) > 0)
-	{
-	  s->tx_hook(s);
-	  return 1;
-	}
+
+      s->rpos = s->rbuf + e;
+      s->rx_hook(s, e);
+      return 1;
+    }
+  }
+}
+
+int
+sk_write(sock *s)
+{
+  switch (s->type)
+  {
+  case SK_TCP_ACTIVE:
+    {
+      sockaddr sa;
+      sockaddr_fill(&sa, s->af, s->daddr, s->iface, s->dport);
+
+      if (connect(s->fd, &sa.sa, SA_LEN(sa)) >= 0 || errno == EISCONN)
+	sk_tcp_connected(s);
+      else if (errno != EINTR && errno != EAGAIN && errno != EINPROGRESS)
+	s->err_hook(s, errno);
       return 0;
     }
+
+  default:
+    if (s->ttx != s->tpos && sk_maybe_write(s) > 0)
+    {
+      if (s->tx_hook)
+	s->tx_hook(s);
+      return 1;
+    }
+    return 0;
+  }
 }
 
 void
@@ -1529,16 +1799,14 @@ sk_dump_all(void)
 
   debug("Open sockets:\n");
   WALK_LIST(n, sock_list)
-    {
-      s = SKIP_BACK(sock, n, n);
-      debug("%p ", s);
-      sk_dump(&s->r);
-    }
+  {
+    s = SKIP_BACK(sock, n, n);
+    debug("%p ", s);
+    sk_dump(&s->r);
+  }
   debug("\n");
 }
 
-#undef ERR
-#undef WARN
 
 /*
  *	Main I/O Loop
@@ -1699,7 +1967,7 @@ io_loop(void)
 	  while (current_sock && count < MAX_RX_STEPS)
 	    {
 	      sock *s = current_sock;
-	      int e;
+	      int e UNUSED;
 
 	      if ((s->type < SK_MAGIC) && FD_ISSET(s->fd, &rd) && s->rx_hook)
 		{

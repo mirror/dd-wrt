@@ -37,9 +37,15 @@ ospf_rt_initort(struct fib_node *fn)
 }
 
 static inline int
-unresolved_vlink(struct mpnh *nhs)
+nh_is_vlink(struct mpnh *nhs)
 {
-  return nhs && !nhs->iface;
+  return !nhs->iface;
+}
+
+static inline int
+unresolved_vlink(ort *ort)
+{
+  return ort->n.nhs && nh_is_vlink(ort->n.nhs);
 }
 
 static inline struct mpnh *
@@ -54,7 +60,7 @@ new_nexthop(struct proto_ospf *po, ip_addr gw, struct iface *iface, unsigned cha
 }
 
 static inline struct mpnh *
-copy_nexthop(struct proto_ospf *po, struct mpnh *src)
+copy_nexthop(struct proto_ospf *po, const struct mpnh *src)
 {
   struct mpnh *nh = lp_alloc(po->nhpool, sizeof(struct mpnh));
   nh->gw = src->gw;
@@ -64,72 +70,138 @@ copy_nexthop(struct proto_ospf *po, struct mpnh *src)
   return nh;
 }
 
-
-/* If new is better return 1 */
+/* Compare nexthops during merge.
+   We need to maintain nhs sorted to eliminate duplicities */
 static int
-ri_better(struct proto_ospf *po, orta *new, orta *old)
+cmp_nhs(struct mpnh *s1, struct mpnh *s2)
 {
-  if (old->type == RTS_DUMMY)
+  int r;
+
+  if (!s1)
     return 1;
 
-  if (new->type < old->type)
-    return 1;
+  if (!s2)
+    return -1;
 
-  if (new->type > old->type)
-    return 0;
+  r = ((int) s2->weight) - ((int) s1->weight);
+  if (r)
+    return r;
 
-  if (new->metric1 < old->metric1)
-    return 1;
+  r = ipa_compare(s1->gw, s2->gw);
+  if (r)
+    return r;
 
-  if (new->metric1 > old->metric1)
-    return 0;
+  return ((int) s1->iface->index) - ((int) s2->iface->index);
+}
+
+static struct mpnh *
+merge_nexthops(struct proto_ospf *po, struct mpnh *s1, struct mpnh *s2, int r1, int r2)
+{
+  struct mpnh *root = NULL;
+  struct mpnh **n = &root;
+  int count = po->ecmp;
+
+  /*
+   * r1, r2 signalize whether we can reuse nexthops from s1, s2.
+   * New nexthops (s2, new) can be reused if they are not inherited
+   * from the parent (i.e. it is allocated in calc_next_hop()).
+   * Current nexthops (s1, en->nhs) can be reused if they weren't
+   * inherited in previous steps (that is stored in nhs_reuse,
+   * i.e. created by merging or allocalted in calc_next_hop()).
+   *
+   * Generally, a node first inherits shared nexthops from its
+   * parent and later possibly gets reusable copy during merging.
+   */
+
+  while ((s1 || s2) && count--)
+  {
+    int cmp = cmp_nhs(s1, s2);
+    if (cmp < 0)
+    {
+      *n = r1 ? s1 : copy_nexthop(po, s1);
+      s1 = s1->next;
+    }
+    else if (cmp > 0)
+    {
+      *n = r2 ? s2 : copy_nexthop(po, s2);
+      s2 = s2->next;
+    }
+    else
+    {
+      *n = r1 ? s1 : (r2 ? s2 : copy_nexthop(po, s1));
+      s1 = s1->next;
+      s2 = s2->next;
+    }
+    n = &((*n)->next);
+  }
+  *n = NULL;
+
+  return root;
+}
+
+/* Returns true if there are device nexthops in n */
+static inline int
+has_device_nexthops(const struct mpnh *n)
+{
+  for (; n; n = n->next)
+    if (ipa_zero(n->gw))
+      return 1;
 
   return 0;
+}
+
+/* Replace device nexthops with nexthops to gw */
+static struct mpnh *
+fix_device_nexthops(struct proto_ospf *po, const struct mpnh *n, ip_addr gw)
+{
+  struct mpnh *root1 = NULL;
+  struct mpnh *root2 = NULL;
+  struct mpnh **nn1 = &root1;
+  struct mpnh **nn2 = &root2;
+
+  /* This is a bit tricky. We cannot just copy the list and update n->gw,
+     because the list should stay sorted, so we create two lists, one with new
+     gateways and one with old ones, and then merge them. */
+
+  for (; n; n = n->next)
+  {
+    struct mpnh *nn = new_nexthop(po, ipa_zero(n->gw) ? gw : n->gw, n->iface, n->weight);
+
+    if (ipa_zero(n->gw))
+    {
+      *nn1 = nn;
+      nn1 = &(nn->next);
+    }
+    else
+    {
+      *nn2 = nn;
+      nn2 = &(nn->next);
+    }
+  }
+
+  return merge_nexthops(po, root1, root2, 1, 1);
 }
 
 
 /* Whether the ASBR or the forward address destination is preferred
    in AS external route selection according to 16.4.1. */
 static inline int
-epath_preferred(orta *ep)
+epath_preferred(const orta *ep)
 {
   return (ep->type == RTS_OSPF) && (ep->oa->areaid != 0);
 }
 
-/* 16.4. (3), return 1 if new is better */
-static int
-ri_better_asbr(struct proto_ospf *po, orta *new, orta *old)
+/* Whether the ext route has ASBR/next_hop marked as preferred. */
+static inline int
+orta_pref(const orta *nf)
 {
-  if (old->type == RTS_DUMMY)
-    return 1;
-
-  if (!po->rfc1583)
-  {
-    int new_pref = epath_preferred(new);
-    int old_pref = epath_preferred(old);
-
-    if (new_pref > old_pref)
-      return 1;
-
-    if (new_pref < old_pref)
-      return 0;
-  }
-
-  if (new->metric1 < old->metric1)
-    return 1;
-
-  if (new->metric1 > old->metric1)
-    return 0;
-
-  /* Larger area ID is preferred */
-  if (new->oa->areaid > old->oa->areaid)
-    return 1;
-
-  return 0;
+  return !!(nf->options & ORTA_PREF);
 }
 
+/* Classify orta entries according to RFC 3101 2.5 (6e) priorities:
+   Type-7 LSA with P-bit, Type-5 LSA, Type-7 LSA without P-bit */
 static int
-orta_prio(orta *nf)
+orta_prio(const orta *nf)
 {
   /* RFC 3103 2.5 (6e) priorities */
   u32 opts = nf->options & (ORTA_NSSA | ORTA_PROP);
@@ -145,98 +217,246 @@ orta_prio(orta *nf)
   return 0;
 }
 
-/* 16.4. (6), return 1 if new is better */
+/* Whether the route is better according to RFC 3101 2.5 (6e):
+   Prioritize Type-7 LSA with P-bit, then Type-5 LSA, then higher router ID */
 static int
-ri_better_ext(struct proto_ospf *po, orta *new, orta *old)
+orta_prefer_lsa(const orta *new, const orta *old)
 {
+  int pn = orta_prio(new);
+  int po = orta_prio(old);
+
+  return (pn > po) || ((pn == po) && (new->en->lsa.rt > old->en->lsa.rt));
+}
+
+/*
+ * Compare an existing routing table entry with a new one. Applicable for
+ * intra-area routes, inter-area routes and router entries. Returns integer
+ * <, = or > than 0 if the new orta is less, equal or more preferred than
+ * the old orta.
+ */
+static int
+orta_compare(const struct proto_ospf *po, const orta *new, const orta *old)
+{
+  int r;
+
   if (old->type == RTS_DUMMY)
     return 1;
 
-  /* 16.4. (6a) */
-  if (new->type < old->type)
+  /* Prefer intra-area to inter-area to externals */
+  r = ((int) old->type) - ((int) new->type);
+  if (r) return r;
+
+  /* Prefer lowest type 1 metric */
+  r = ((int) old->metric1) - ((int) new->metric1);
+  if (r) return r;
+
+
+  /* Rest is BIRD-specific */
+
+  /* Area-wide routes should not mix next-hops from different areas.
+     This generally should not happen unless there is some misconfiguration. */
+  if (new->oa->areaid != old->oa->areaid)
+    return (new->oa->areaid > old->oa->areaid) ? 1 : -1;
+
+  /* Prefer routes for configured stubnets (!nhs) to regular routes to dummy
+     vlink nexthops. We intentionally return -1 if both are stubnets or vlinks. */
+  if (!old->nhs)
+    return -1;
+  if (!new->nhs)
+    return 1;
+  if (nh_is_vlink(new->nhs))
+    return -1;
+  if (nh_is_vlink(old->nhs))
     return 1;
 
-  if (new->type > old->type)
+
+  if (po->ecmp)
     return 0;
 
-  /* 16.4. (6b), same type */
-  if (new->type == RTS_OSPF_EXT2)
-  {
-    if (new->metric2 < old->metric2)
-      return 1;
-
-    if (new->metric2 > old->metric2)
-      return 0;
-  }
-
-  /* 16.4. (6c) */
-  if (!po->rfc1583)
-  {
-    u32 new_pref = new->options & ORTA_PREF;
-    u32 old_pref = old->options & ORTA_PREF;
-
-    if (new_pref > old_pref)
-      return 1;
-
-    if (new_pref < old_pref)
-      return 0;
-  }
-
-  /* 16.4. (6d) */
-  if (new->metric1 < old->metric1)
-    return 1;
-
-  if (new->metric1 > old->metric1)
-    return 0;
-
-  /* RFC 3103, 2.5. (6e) */
-  int new_prio = orta_prio(new);
-  int old_prio = orta_prio(old);
-
-  if (new_prio > old_prio)
-    return 1;
-
-  if (old_prio > new_prio)
-    return 0;
-
-  /* make it more deterministic */
+  /* Prefer routes with higher Router ID, just to be more deterministic */
   if (new->rid > old->rid)
     return 1;
-
-  return 0;
+  
+  return -1;
 }
 
+/*
+ * Compare ASBR routing table entry with a new one, used for precompute ASBRs
+ * for AS external route selection (RFC 2328 16.4 (3)), Returns integer < or >
+ * than 0 if the new ASBR is less or more preferred than the old ASBR.
+ */
+static int
+orta_compare_asbr(const struct proto_ospf *po, const orta *new, const orta *old)
+{
+  int r;
+
+  if (old->type == RTS_DUMMY)
+    return 1;
+
+  if (!po->rfc1583)
+  {
+    r = epath_preferred(new) - epath_preferred(old);
+    if (r) return r;
+  }
+
+  r = ((int) old->metric1) - ((int) new->metric1);
+  if (r) return r;
+
+  /* Larger area ID is preferred */
+  if (new->oa->areaid > old->oa->areaid)
+    return 1;
+
+  /* There is just one ASBR of that RID per area, so tie is not possible */
+  return -1;
+}
+
+/*
+ * Compare a routing table entry with a new one, for AS external routes
+ * (RFC 2328 16.4) and NSSA routes (RFC 3103 2.5), Returns integer <, = or >
+ * than 0 if the new orta is less, equal or more preferred than the old orta.
+ */
+static int
+orta_compare_ext(const struct proto_ospf *po, const orta *new, const orta *old)
+{
+  int r;
+
+  if (old->type == RTS_DUMMY)
+    return 1;
+
+  /* 16.4 (6a) - prefer routes with lower type */
+  r = ((int) old->type) - ((int) new->type);
+  if (r) return r;
+
+  /* 16.4 (6b) - prefer routes with lower type 2 metric */
+  if (new->type == RTS_OSPF_EXT2)
+  {
+    r = ((int) old->metric2) - ((int) new->metric2);
+    if (r) return r;
+  }
+
+  /* 16.4 (6c) - if not RFC1583, prefer routes with preferred ASBR/next_hop */
+  if (!po->rfc1583)
+  {
+    r = orta_pref(new) - orta_pref(old);
+    if (r) return r;
+  }
+
+  /* 16.4 (6d) - prefer routes with lower type 1 metric */
+  r = ((int) old->metric1) - ((int) new->metric1);
+  if (r) return r;
+
+
+  if (po->ecmp && po->merge_external)
+    return 0;
+
+  /*
+   * RFC 3101 2.5 (6e) - prioritize Type-7 LSA with P-bit, then Type-5 LSA, then
+   * LSA with higher router ID. Although this should apply just to functionally
+   * equivalent LSAs (i.e. ones with the same non-zero forwarding address), we
+   * use it also to disambiguate otherwise equally preferred nexthops.
+   */
+  if (orta_prefer_lsa(new, old))
+    return 1;
+
+  return -1;
+}
+
+
 static inline void
-ri_install_net(struct proto_ospf *po, ip_addr prefix, int pxlen, orta *new)
+ort_replace(ort *o, const orta *new)
+{
+  memcpy(&o->n, new, sizeof(orta));
+}
+
+static void
+ort_merge(struct proto_ospf *po, ort *o, const orta *new)
+{
+  orta *old = &o->n;
+
+  if (old->nhs != new->nhs)
+  {
+    old->nhs = merge_nexthops(po, old->nhs, new->nhs, old->nhs_reuse, new->nhs_reuse);
+    old->nhs_reuse = 1;
+  }
+
+  if (old->rid < new->rid)
+    old->rid = new->rid;
+}
+
+static void
+ort_merge_ext(struct proto_ospf *po, ort *o, const orta *new)
+{
+  orta *old = &o->n;
+
+  if (old->nhs != new->nhs)
+  {
+    old->nhs = merge_nexthops(po, old->nhs, new->nhs, old->nhs_reuse, new->nhs_reuse);
+    old->nhs_reuse = 1;
+  }
+
+  if (old->tag != new->tag)
+    old->tag = 0;
+
+  /*
+   * Even with multipath, we store only one LSA in orta.en for the purpose of
+   * NSSA/ext translation. Therefore, we apply procedures from RFC 3101 2.5 (6e)
+   * to all chosen LSAs for given network, not just to functionally equivalent
+   * ones (i.e. ones with the same non-zero forwarding address).
+   */
+  if (orta_prefer_lsa(new, old))
+  {
+    old->options = new->options;
+    old->rid = new->rid;
+    old->oa = new->oa;
+    old->en = new->en;
+  }
+}
+
+
+
+static inline void
+ri_install_net(struct proto_ospf *po, ip_addr prefix, int pxlen, const orta *new)
 {
   ort *old = (ort *) fib_get(&po->rtf, &prefix, pxlen);
-  if (ri_better(po, new, &old->n))
-    memcpy(&old->n, new, sizeof(orta));
+  int cmp = orta_compare(po, new, &old->n);
+
+  if (cmp > 0)
+    ort_replace(old, new);
+  else if (cmp == 0)
+    ort_merge(po, old, new);
 }
 
 static inline void
-ri_install_rt(struct ospf_area *oa, u32 rid, orta *new)
+ri_install_rt(struct ospf_area *oa, u32 rid, const orta *new)
 {
   ip_addr addr = ipa_from_rid(rid);
   ort *old = (ort *) fib_get(&oa->rtr, &addr, MAX_PREFIX_LENGTH);
-  if (ri_better(oa->po, new, &old->n))
-    memcpy(&old->n, new, sizeof(orta));
+  int cmp = orta_compare(oa->po, new, &old->n);
+
+  if (cmp > 0)
+    ort_replace(old, new);
+  else if (cmp == 0)
+    ort_merge(oa->po, old, new);
 }
 
 static inline void
-ri_install_asbr(struct proto_ospf *po, ip_addr *addr, orta *new)
+ri_install_asbr(struct proto_ospf *po, ip_addr *addr, const orta *new)
 {
   ort *old = (ort *) fib_get(&po->backbone->rtr, addr, MAX_PREFIX_LENGTH);
-  if (ri_better_asbr(po, new, &old->n))
-    memcpy(&old->n, new, sizeof(orta));
+  if (orta_compare_asbr(po, new, &old->n) > 0)
+    ort_replace(old, new);
 }
 
 static inline void
-ri_install_ext(struct proto_ospf *po, ip_addr prefix, int pxlen, orta *new)
+ri_install_ext(struct proto_ospf *po, ip_addr prefix, int pxlen, const orta *new)
 {
   ort *old = (ort *) fib_get(&po->rtf, &prefix, pxlen);
-  if (ri_better_ext(po, new, &old->n))
-    memcpy(&old->n, new, sizeof(orta));
+  int cmp = orta_compare_ext(po, new, &old->n);
+
+  if (cmp > 0)
+    ort_replace(old, new);
+  else if (cmp == 0)
+    ort_merge_ext(po, old, new);
 }
 
 static inline struct ospf_iface *
@@ -842,7 +1062,7 @@ ospf_rt_sum_tr(struct ospf_area *oa)
 
     /* 16.3. (5) */
     if ((metric < re->n.metric1) || 
-	((metric == re->n.metric1) && unresolved_vlink(re->n.nhs)))
+	((metric == re->n.metric1) && unresolved_vlink(re)))
     {
       /* We want to replace the next-hop even if the metric is equal
 	 to replace a virtual next-hop through vlink with a real one.
@@ -1079,44 +1299,42 @@ ospf_check_vlinks(struct proto_ospf *po)
 {
   struct proto *p = &po->proto;
 
-  struct ospf_iface *iface;
-  WALK_LIST(iface, po->iface_list)
+  struct ospf_iface *ifa;
+  WALK_LIST(ifa, po->iface_list)
   {
-    if (iface->type == OSPF_IT_VLINK)
+    if (ifa->type == OSPF_IT_VLINK)
     {
       struct top_hash_entry *tmp;
-      tmp = ospf_hash_find_rt(po->gr, iface->voa->areaid, iface->vid);
+      tmp = ospf_hash_find_rt(po->gr, ifa->voa->areaid, ifa->vid);
 
       if (tmp && (tmp->color == INSPF) && ipa_nonzero(tmp->lb) && tmp->nhs)
       {
 	struct ospf_iface *nhi = ospf_iface_find(po, tmp->nhs->iface);
 
-        if ((iface->state != OSPF_IS_PTP)
-	    || (iface->vifa != nhi)
-	    || !ipa_equal(iface->vip, tmp->lb))
+        if ((ifa->state != OSPF_IS_PTP)
+	    || (ifa->vifa != nhi)
+	    || !ipa_equal(ifa->vip, tmp->lb))
         {
           OSPF_TRACE(D_EVENTS, "Vlink peer %R found", tmp->lsa.id);
-          ospf_iface_sm(iface, ISM_DOWN);
-	  iface->vifa = nhi;
-          iface->iface = nhi->iface;
-	  iface->addr = nhi->addr;
-	  iface->sk = nhi->sk;
-	  iface->cost = tmp->dist;
-          iface->vip = tmp->lb;
-          ospf_iface_sm(iface, ISM_UP);
+          ospf_iface_sm(ifa, ISM_DOWN);
+	  ifa->vifa = nhi;
+	  ifa->addr = nhi->addr;
+	  ifa->cost = tmp->dist;
+          ifa->vip = tmp->lb;
+          ospf_iface_sm(ifa, ISM_UP);
         }
-	else if ((iface->state == OSPF_IS_PTP) && (iface->cost != tmp->dist))
+	else if ((ifa->state == OSPF_IS_PTP) && (ifa->cost != tmp->dist))
 	{
-	  iface->cost = tmp->dist;
+	  ifa->cost = tmp->dist;
 	  schedule_rt_lsa(po->backbone);
 	}
       }
       else
       {
-        if (iface->state > OSPF_IS_DOWN)
+        if (ifa->state > OSPF_IS_DOWN)
         {
-          OSPF_TRACE(D_EVENTS, "Vlink peer %R lost", iface->vid);
-	  ospf_iface_sm(iface, ISM_DOWN);
+          OSPF_TRACE(D_EVENTS, "Vlink peer %R lost", ifa->vid);
+	  ospf_iface_sm(ifa, ISM_DOWN);
         }
       }
     }
@@ -1131,13 +1349,24 @@ ospf_rt_abr1(struct proto_ospf *po)
   struct area_net *anet;
   ort *nf, *default_nf;
 
+  /* RFC 2328 G.3 - incomplete resolution of virtual next hops - routers */
+  FIB_WALK(&po->backbone->rtr, nftmp)
+  {
+    nf = (ort *) nftmp;
+
+    if (nf->n.type && unresolved_vlink(nf))
+      reset_ri(nf);
+  }
+  FIB_WALK_END;
+
+
   FIB_WALK(&po->rtf, nftmp)
   {
     nf = (ort *) nftmp;
 
 
-    /* RFC 2328 G.3 - incomplete resolution of virtual next hops */
-    if (nf->n.type && unresolved_vlink(nf->n.nhs))
+    /* RFC 2328 G.3 - incomplete resolution of virtual next hops - networks */
+    if (nf->n.type && unresolved_vlink(nf))
       reset_ri(nf);
 
 
@@ -1363,7 +1592,7 @@ static void
 ospf_ext_spf(struct proto_ospf *po)
 {
   ort *nf1, *nf2;
-  orta nfa;
+  orta nfa = {};
   struct top_hash_entry *en;
   struct proto *p = &po->proto;
   struct ospf_lsa_ext *le;
@@ -1371,7 +1600,6 @@ ospf_ext_spf(struct proto_ospf *po)
   ip_addr ip, rtid, rt_fwaddr;
   u32 br_metric, rt_metric, rt_tag;
   struct ospf_area *atmp;
-  struct mpnh* nhs = NULL;
 
   OSPF_TRACE(D_EVENTS, "Starting routing table calculation for ext routes");
 
@@ -1467,7 +1695,7 @@ ospf_ext_spf(struct proto_ospf *po)
     if (!rt_fwaddr_valid)
     {
       nf2 = nf1;
-      nhs = nf1->n.nhs;
+      nfa.nhs = nf1->n.nhs;
       br_metric = nf1->n.metric1;
     }
     else
@@ -1493,11 +1721,15 @@ ospf_ext_spf(struct proto_ospf *po)
       if (!nf2->n.nhs)
 	continue;
 
-      nhs = nf2->n.nhs;
-      /* If gw is zero, it is a device route */
-      if (ipa_zero(nhs->gw))
-	nhs = new_nexthop(po, rt_fwaddr, nhs->iface, nhs->weight);
+      nfa.nhs = nf2->n.nhs;
       br_metric = nf2->n.metric1;
+
+      /* Replace device nexthops with nexthops to forwarding address from LSA */
+      if (has_device_nexthops(nfa.nhs))
+      {
+	nfa.nhs = fix_device_nexthops(po, nfa.nhs, rt_fwaddr);
+	nfa.nhs_reuse = 1;
+      }
     }
 
     if (ebit)
@@ -1528,8 +1760,6 @@ ospf_ext_spf(struct proto_ospf *po)
     nfa.tag = rt_tag;
     nfa.rid = en->lsa.rt;
     nfa.oa = atmp; /* undefined in RFC 2328 */
-    nfa.voa = NULL;
-    nfa.nhs = nhs;
     nfa.en = en; /* store LSA for later (NSSA processing) */
 
     ri_install_ext(po, ip, pxlen, &nfa);
@@ -1747,81 +1977,6 @@ calc_next_hop(struct ospf_area *oa, struct top_hash_entry *en,
   return NULL;
 }
 
-/* Compare nexthops during merge.
-   We need to maintain nhs sorted to eliminate duplicities */
-static int
-cmp_nhs(struct mpnh *s1, struct mpnh *s2)
-{
-  int r;
-
-  if (!s1)
-    return 1;
-
-  if (!s2)
-    return -1;
-
-  r = ((int) s2->weight) - ((int) s1->weight);
-  if (r)
-    return r;
-
-  r = ipa_compare(s1->gw, s2->gw);
-  if (r)
-    return r;
-
-  return ((int) s1->iface->index) - ((int) s2->iface->index);
-}
-
-static void
-merge_nexthops(struct proto_ospf *po, struct top_hash_entry *en,
-	       struct top_hash_entry *par, struct mpnh *new)
-{
-  if (en->nhs == new)
-    return;
-
-  int r1 = en->nhs_reuse;
-  int r2 = (par->nhs != new);
-  int count = po->ecmp;
-  struct mpnh *s1 = en->nhs;
-  struct mpnh *s2 = new;
-  struct mpnh **n = &(en->nhs);
-
-  /*
-   * r1, r2 signalize whether we can reuse nexthops from s1, s2.
-   * New nexthops (s2, new) can be reused if they are not inherited
-   * from the parent (i.e. it is allocated in calc_next_hop()).
-   * Current nexthops (s1, en->nhs) can be reused if they weren't
-   * inherited in previous steps (that is stored in nhs_reuse,
-   * i.e. created by merging or allocalted in calc_next_hop()).
-   *
-   * Generally, a node first inherits shared nexthops from its
-   * parent and later possibly gets reusable copy during merging.
-   */
-
-  while ((s1 || s2) && count--)
-  {
-    int cmp = cmp_nhs(s1, s2);
-    if (cmp < 0)
-    {
-      *n = r1 ? s1 : copy_nexthop(po, s1);
-      s1 = s1->next;
-    }
-    else if (cmp > 0)
-    {
-      *n = r2 ? s2 : copy_nexthop(po, s2);
-      s2 = s2->next;
-    }
-    else
-    {
-      *n = r1 ? s1 : (r2 ? s2 : copy_nexthop(po, s1));
-      s1 = s1->next;
-      s2 = s2->next;
-    }
-    n = &((*n)->next);
-  }
-  *n = NULL;
-
-  en->nhs_reuse=1;
-}
 
 /* Add LSA into list of candidates in Dijkstra's algorithm */
 static void
@@ -1868,31 +2023,33 @@ add_cand(list * l, struct top_hash_entry *en, struct top_hash_entry *par,
     return;
   }
 
-  if (dist == en->dist)
+  /* We know that en->color == CANDIDATE and en->nhs is defined. */
+
+  if ((dist == en->dist) && !nh_is_vlink(en->nhs))
   {
     /*
-     * For multipath, we should merge nexthops. We do not mix dummy
-     * vlink nexthops, device nexthops and gateway nexthops. We merge
-     * gateway nexthops only. We prefer device nexthops over gateway
-     * nexthops and gateway nexthops over vlink nexthops. We either
-     * keep old nexthops, merge old and new, or replace old with new.
-     * 
-     * We know that en->color == CANDIDATE and en->nhs is defined.
+     * For multipath, we should merge nexthops. We merge regular nexthops only.
+     * Dummy vlink nexthops are less preferred and handled as a special case.
+     *
+     * During merging, new nexthops (nhs) can be reused if they are not
+     * inherited from the parent (i.e. they are allocated in calc_next_hop()).
+     * Current nexthops (en->nhs) can be reused if they weren't inherited in
+     * previous steps (that is stored in nhs_reuse, i.e. created by merging or
+     * allocated in calc_next_hop()).
+     *
+     * Generally, a node first inherits shared nexthops from its parent and
+     * later possibly gets reusable copy during merging.
      */
-    struct mpnh *onhs = en->nhs;
 
     /* Keep old ones */
-    if (!po->ecmp || !nhs->iface || (onhs->iface && ipa_zero(onhs->gw)))
+    if (!po->ecmp || nh_is_vlink(nhs) || (nhs == en->nhs))
       return;
 
     /* Merge old and new */
-    if (ipa_nonzero(nhs->gw) && ipa_nonzero(onhs->gw))
-    {
-      merge_nexthops(po, en, par, nhs);
-      return;
-    }
-
-    /* Fallback to replace old ones */
+    int new_reuse = (par->nhs != nhs);
+    en->nhs = merge_nexthops(po, en->nhs, nhs, en->nhs_reuse, new_reuse);
+    en->nhs_reuse = 1;
+    return;
   }
 
   DBG("     Adding candidate: rt: %R, id: %R, type: %u\n",
@@ -1991,10 +2148,10 @@ again1:
     if (nf->n.type) /* Add the route */
     {
       rta a0 = {
-	.proto = p,
+	.src = p->main_source,
 	.source = nf->n.type,
 	.scope = SCOPE_UNIVERSE,
-	.cast = RTC_UNICAST,
+	.cast = RTC_UNICAST
       };
 
       if (nf->n.nhs->next)
@@ -2032,7 +2189,7 @@ again1:
 
 	DBG("Mod rte type %d - %I/%d via %I on iface %s, met %d\n",
 	    a0.source, nf->fn.prefix, nf->fn.pxlen, a0.gw, a0.iface ? a0.iface->name : "(none)", nf->n.metric1);
-	rte_update(p->table, ne, p, p, e);
+	rte_update(p, ne, e);
       }
     }
     else if (nf->old_rta)
@@ -2042,7 +2199,7 @@ again1:
       nf->old_rta = NULL;
 
       net *ne = net_get(p->table, nf->fn.prefix, nf->fn.pxlen);
-      rte_update(p->table, ne, p, p, NULL);
+      rte_update(p, ne, NULL);
     }
 
     /* Remove unused rt entry. Entries with fn.x0 == 1 are persistent. */

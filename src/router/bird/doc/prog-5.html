@@ -14,7 +14,95 @@
 <HR>
 <H2><A NAME="s5">5.</A> <A HREF="prog.html#toc5">Protocols</A></H2>
 
-<H2><A NAME="ss5.1">5.1</A> <A HREF="prog.html#toc5.1">Border Gateway Protocol</A>
+<H2><A NAME="ss5.1">5.1</A> <A HREF="prog.html#toc5.1">Bidirectional Forwarding Detection</A>
+</H2>
+
+<P>
+<P>The BFD protocol is implemented in three files: <CODE>bfd.c</CODE> containing the
+protocol logic and the protocol glue with BIRD core, <CODE>packets.c</CODE> handling BFD
+packet processing, RX, TX and protocol sockets. <CODE>io.c</CODE> then contains generic
+code for the event loop, threads and event sources (sockets, microsecond
+timers). This generic code will be merged to the main BIRD I/O code in the
+future.
+<P>The BFD implementation uses a separate thread with an internal event loop for
+handling the protocol logic, which requires high-res and low-latency timing,
+so it is not affected by the rest of BIRD, which has several low-granularity
+hooks in the main loop, uses second-based timers and cannot offer good
+latency. The core of BFD protocol (the code related to BFD sessions,
+interfaces and packets) runs in the BFD thread, while the rest (the code
+related to BFD requests, BFD neighbors and the protocol glue) runs in the
+main thread.
+<P>BFD sessions are represented by structure <I>bfd_session</I> that contains a state
+related to the session and two timers (TX timer for periodic packets and hold
+timer for session timeout). These sessions are allocated from <B>session_slab</B>
+and are accessible by two hash tables, <B>session_hash_id</B> (by session ID) and
+<B>session_hash_ip</B> (by IP addresses of neighbors). Slab and both hashes are in
+the main protocol structure <I>bfd_proto</I>. The protocol logic related to BFD
+sessions is implemented in internal functions bfd_session_*(), which are
+expected to be called from the context of BFD thread, and external functions
+<B>bfd_add_session()</B>, <B>bfd_remove_session()</B> and <B>bfd_reconfigure_session()</B>, which
+form an interface to the BFD core for the rest and are expected to be called
+from the context of main thread.
+<P>Each BFD session has an associated BFD interface, represented by structure
+<I>bfd_iface</I>. A BFD interface contains a socket used for TX (the one for RX is
+shared in <I>bfd_proto</I>), an interface configuration and reference counter.
+Compared to interface structures of other protocols, these structures are not
+created and removed based on interface notification events, but according to
+the needs of BFD sessions. When a new session is created, it requests a
+proper BFD interface by function <B>bfd_get_iface()</B>, which either finds an
+existing one in <I>iface_list</I> (from <I>bfd_proto</I>) or allocates a new one. When a
+session is removed, an associated iface is dicharged by <B>bfd_free_iface()</B>.
+<P>BFD requests are the external API for the other protocols. When a protocol
+wants a BFD session, it calls <B>bfd_request_session()</B>, which creates a
+structure <I>bfd_request</I> containing approprite information and an notify hook.
+This structure is a resource associated with the caller's resource pool. When
+a BFD protocol is available, a BFD request is submitted to the protocol, an
+appropriate BFD session is found or created and the request is attached to
+the session. When a session changes state, all attached requests (and related
+protocols) are notified. Note that BFD requests do not depend on BFD protocol
+running. When the BFD protocol is stopped or removed (or not available from
+beginning), related BFD requests are stored in <B>bfd_wait_list</B>, where waits
+for a new protocol.
+<P>BFD neighbors are just a way to statically configure BFD sessions without
+requests from other protocol. Structures <I>bfd_neighbor</I> are part of BFD
+configuration (like static routes in the static protocol). BFD neighbors are
+handled by BFD protocol like it is a BFD client -- when a BFD neighbor is
+ready, the protocol just creates a BFD request like any other protocol.
+<P>The protocol uses a new generic event loop (structure <I>birdloop</I>) from <CODE>io.c</CODE>,
+which supports sockets, timers and events like the main loop. Timers
+(structure <I>timer2</I>) are new microsecond based timers, while sockets and
+events are the same. A birdloop is associated with a thread (field <B>thread</B>)
+in which event hooks are executed. Most functions for setting event sources
+(like <B>sk_start()</B> or <B>tm2_start()</B>) must be called from the context of that
+thread. Birdloop allows to temporarily acquire the context of that thread for
+the main thread by calling <B>birdloop_enter()</B> and then <B>birdloop_leave()</B>, which
+also ensures mutual exclusion with all event hooks. Note that resources
+associated with a birdloop (like timers) should be attached to the
+independent resource pool, detached from the main resource tree.
+<P>There are two kinds of interaction between the BFD core (running in the BFD
+thread) and the rest of BFD (running in the main thread). The first kind are
+configuration calls from main thread to the BFD thread (like <B>bfd_add_session()</B>).
+These calls are synchronous and use <B>birdloop_enter()</B> mechanism for mutual
+exclusion. The second kind is a notification about session changes from the
+BFD thread to the main thread. This is done in an asynchronous way, sesions
+with pending notifications are linked (in the BFD thread) to <B>notify_list</B> in
+<I>bfd_proto</I>, and then <B>bfd_notify_hook()</B> in the main thread is activated using
+<B>bfd_notify_kick()</B> and a pipe. The hook then processes scheduled sessions and
+calls hooks from associated BFD requests. This <B>notify_list</B> (and state fields
+in structure <I>bfd_session</I>) is protected by a spinlock in <I>bfd_proto</I> and
+functions <B>bfd_lock_sessions()</B> / <B>bfd_unlock_sessions()</B>.
+<P>There are few data races (accessing <B>p</B>-&gt;p.debug from <B>TRACE()</B> from the BFD
+thread and accessing some some private fields of <I>bfd_session</I> from
+<B>bfd_show_sessions()</B> from the main thread, but these are harmless (i hope).
+<P>TODO: document functions and access restrictions for fields in BFD structures.
+<P>Supported standards:
+- RFC 5880 - main BFD standard
+- RFC 5881 - BFD for IP links
+- RFC 5882 - generic application of BFD
+- RFC 5883 - BFD for multihop paths
+<P>
+<P>
+<H2><A NAME="ss5.2">5.2</A> <A HREF="prog.html#toc5.2">Border Gateway Protocol</A>
 </H2>
 
 <P>
@@ -55,6 +143,15 @@ of the attribute blocks and translating them to the language of BIRD's extended 
 and <B>bgp_encode_attrs()</B> which does the converse. Both functions are built around a
 <B>bgp_attr_table</B> array describing all important characteristics of all known attributes.
 Unknown transitive attributes are attached to the route as <I>EAF_TYPE_OPAQUE</I> byte streams.
+<P>BGP protocol implements graceful restart in both restarting (local restart)
+and receiving (neighbor restart) roles. The first is handled mostly by the
+graceful restart code in the nest, BGP protocol just handles capabilities,
+sets <B>gr_wait</B> and locks graceful restart until end-of-RIB mark is received.
+The second is implemented by internal restart of the BGP state to <I>BS_IDLE</I>
+and protocol state to <I>PS_START</I>, but keeping the protocol up from the core
+point of view and therefore maintaining received routes. Routing table
+refresh cycle (<B>rt_refresh_begin()</B>, <B>rt_refresh_end()</B>) is used for removing
+stale routes after reestablishment of BGP session during graceful restart.
 <P>
 <P><HR><H3>Function</H3>
 <P><I>int</I>
@@ -138,6 +235,59 @@ closes its socket and frees all resources associated with it.
 It also handles disable_after_error and might stop BGP instance when error
 happened and disable_after_error is on.
 <P>It should be called when BGP protocol error happened.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>bgp_handle_graceful_restart</B>
+(<I>struct bgp_proto *</I> <B>p</B>) --     handle detected BGP graceful restart
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct bgp_proto *</I> <B>p</B><DD><P>BGP instance
+</DL>
+<H3>Description</H3>
+<P>This function is called when a BGP graceful restart of the neighbor is
+detected (when the TCP connection fails or when a new TCP connection
+appears). The function activates processing of the restart - starts routing
+table refresh cycle and activates BGP restart timer. The protocol state goes
+back to <I>PS_START</I>, but changing BGP state back to <I>BS_IDLE</I> is left for the
+caller.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>bgp_graceful_restart_done</B>
+(<I>struct bgp_proto *</I> <B>p</B>) --     finish active BGP graceful restart
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct bgp_proto *</I> <B>p</B><DD><P>BGP instance
+</DL>
+<H3>Description</H3>
+<P>This function is called when the active BGP graceful restart of the neighbor
+should be finished - either successfully (the neighbor sends all paths and
+reports end-of-RIB on the new session) or unsuccessfully (the neighbor does
+not support BGP graceful restart on the new session). The function ends
+routing table refresh cycle and stops BGP restart timer.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>bgp_graceful_restart_timeout</B>
+(<I>timer *</I> <B>t</B>) --     timeout of graceful restart 'restart timer'
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>timer *</I> <B>t</B><DD><P>timer
+</DL>
+<H3>Description</H3>
+<P>This function is a timeout hook for <B>gr_timer</B>, implementing BGP restart time
+limit for reestablisment of the BGP session after the graceful restart. When
+fired, we just proceed with the usual protocol restart.
 
 
 <HR><H3>Function</H3>
@@ -337,7 +487,7 @@ and converts it to its BGP representation (a part of an Update message).
 its consistency and converts it to a list of BIRD route attributes represented
 by a <I>rta</I>.
 
-<H2><A NAME="ss5.2">5.2</A> <A HREF="prog.html#toc5.2">Open Shortest Path First (OSPF)</A>
+<H2><A NAME="ss5.3">5.3</A> <A HREF="prog.html#toc5.3">Open Shortest Path First (OSPF)</A>
 </H2>
 
 <P>
@@ -774,7 +924,7 @@ of the buffer.
 It's based on Dijkstra's shortest path tree algorithms.
 This function is invoked from <B>ospf_disp()</B>.
 
-<H2><A NAME="ss5.3">5.3</A> <A HREF="prog.html#toc5.3">Pipe</A>
+<H2><A NAME="ss5.4">5.4</A> <A HREF="prog.html#toc5.4">Pipe</A>
 </H2>
 
 <P>
@@ -797,7 +947,7 @@ are used as export filters in ahooks 2 and 1. Route limits are
 handled similarly, but on the import side of ahooks.
 <P>
 <P>
-<H2><A NAME="ss5.4">5.4</A> <A HREF="prog.html#toc5.4">Routing Information Protocol</A>
+<H2><A NAME="ss5.5">5.5</A> <A HREF="prog.html#toc5.5">Routing Information Protocol</A>
 </H2>
 
 <P>
@@ -855,14 +1005,14 @@ sending requested responses.
 <H3>Description</H3>
 <P>Create an interface structure and start listening on the interface.
 
-<H2><A NAME="ss5.5">5.5</A> <A HREF="prog.html#toc5.5">Router Advertisements</A>
+<H2><A NAME="ss5.6">5.6</A> <A HREF="prog.html#toc5.6">Router Advertisements</A>
 </H2>
 
 <P>
 <P>The RAdv protocol is implemented in two files: <CODE>radv.c</CODE> containing
 the interface with BIRD core and the protocol logic and <CODE>packets.c</CODE>
 handling low level protocol stuff (RX, TX and packet formats).
-The protocol does not import or export any routes.
+The protocol does not export any routes.
 <P>The RAdv is structured in the usual way - for each handled interface
 there is a structure <I>radv_iface</I> that contains a state related to
 that interface together with its resources (a socket, a timer).
@@ -883,9 +1033,10 @@ the specified trigger prefix was changed.
 <P>Supported standards:
 - RFC 4861 - main RA standard
 - RFC 6106 - DNS extensions (RDDNS, DNSSL)
+- RFC 4191 (partial) - Default Router Preference
 <P>
 <P>
-<H2><A NAME="ss5.6">5.6</A> <A HREF="prog.html#toc5.6">Static</A>
+<H2><A NAME="ss5.7">5.7</A> <A HREF="prog.html#toc5.7">Static</A>
 </H2>
 
 <P>
@@ -912,7 +1063,7 @@ difference between the lists of static routes and it just inserts the
 newly added routes and removes the obsolete ones.
 <P>
 <P>
-<H2><A NAME="ss5.7">5.7</A> <A HREF="prog.html#toc5.7">Direct</A>
+<H2><A NAME="ss5.8">5.8</A> <A HREF="prog.html#toc5.8">Direct</A>
 </H2>
 
 <P>

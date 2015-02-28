@@ -6,6 +6,9 @@
  *	Can be freely distributed and used under the terms of the GNU GPL.
  */
 
+#ifndef _BIRD_BITOPTS_H_
+#define _BIRD_BITOPTS_H_
+
 /*
  *	Bit mask operations:
  *
@@ -19,3 +22,8 @@ u32 u32_mkmask(unsigned n);
 int u32_masklen(u32 x);
 
 u32 u32_log2(u32 v);
+
+static inline u32 u32_hash(u32 v) { return v * 2902958171u; }
+
+#endif
+

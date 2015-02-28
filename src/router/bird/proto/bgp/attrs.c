@@ -58,6 +58,7 @@
  * bgp_reconstruct_4b_attrs()).
  */
 
+
 static byte bgp_mandatory_attrs[] = { BA_ORIGIN, BA_AS_PATH
 #ifndef IPV6
 ,BA_NEXT_HOP
@@ -621,12 +622,14 @@ bgp_encode_attrs(struct bgp_proto *p, byte *w, ea_list *attrs, int remains)
   return -1;
 }
 
+/*
 static void
 bgp_init_prefix(struct fib_node *N)
 {
   struct bgp_prefix *p = (struct bgp_prefix *) N;
   p->bucket_node.next = NULL;
 }
+*/
 
 static int
 bgp_compare_u32(const u32 *x, const u32 *y)
@@ -870,30 +873,84 @@ bgp_free_bucket(struct bgp_proto *p, struct bgp_bucket *buck)
   mb_free(buck);
 }
 
+
+/* Prefix hash table */
+
+#define PXH_KEY(n1)		n1->n.prefix, n1->n.pxlen, n1->path_id
+#define PXH_NEXT(n)		n->next
+#define PXH_EQ(p1,l1,i1,p2,l2,i2) ipa_equal(p1, p2) && l1 == l2 && i1 == i2
+#define PXH_FN(p,l,i)		ipa_hash32(p) ^ u32_hash((l << 16) ^ i)
+
+#define PXH_REHASH		bgp_pxh_rehash
+#define PXH_PARAMS		/8, *2, 2, 2, 8, 20
+
+
+HASH_DEFINE_REHASH_FN(PXH, struct bgp_prefix)
+
+void
+bgp_init_prefix_table(struct bgp_proto *p, u32 order)
+{
+  HASH_INIT(p->prefix_hash, p->p.pool, order);
+
+  p->prefix_slab = sl_new(p->p.pool, sizeof(struct bgp_prefix));
+}
+
+static struct bgp_prefix *
+bgp_get_prefix(struct bgp_proto *p, ip_addr prefix, int pxlen, u32 path_id)
+{
+  struct bgp_prefix *bp = HASH_FIND(p->prefix_hash, PXH, prefix, pxlen, path_id);
+
+  if (bp)
+    return bp;
+
+  bp = sl_alloc(p->prefix_slab);
+  bp->n.prefix = prefix;
+  bp->n.pxlen = pxlen;
+  bp->path_id = path_id;
+  bp->bucket_node.next = NULL;
+
+  HASH_INSERT2(p->prefix_hash, PXH, p->p.pool, bp);
+
+  return bp;
+}
+
+void
+bgp_free_prefix(struct bgp_proto *p, struct bgp_prefix *bp)
+{
+  HASH_REMOVE2(p->prefix_hash, PXH, p->p.pool, bp);
+  sl_free(p->prefix_slab, bp);
+}
+
+
 void
 bgp_rt_notify(struct proto *P, rtable *tbl UNUSED, net *n, rte *new, rte *old UNUSED, ea_list *attrs)
 {
   struct bgp_proto *p = (struct bgp_proto *) P;
   struct bgp_bucket *buck;
   struct bgp_prefix *px;
+  rte *key;
+  u32 path_id;
 
   DBG("BGP: Got route %I/%d %s\n", n->n.prefix, n->n.pxlen, new ? "up" : "down");
 
   if (new)
     {
+      key = new;
       buck = bgp_get_bucket(p, n, attrs, new->attrs->source != RTS_BGP);
       if (!buck)			/* Inconsistent attribute list */
 	return;
     }
   else
     {
+      key = old;
       if (!(buck = p->withdraw_bucket))
 	{
 	  buck = p->withdraw_bucket = mb_alloc(P->pool, sizeof(struct bgp_bucket));
 	  init_list(&buck->prefixes);
 	}
     }
-  px = fib_get(&p->prefix_fib, &n->n.prefix, n->n.pxlen);
+  path_id = p->add_path_tx ? key->attrs->src->global_id : 0;
+  px = bgp_get_prefix(p, n->n.prefix, n->n.pxlen, path_id);
   if (px->bucket_node.next)
     {
       DBG("\tRemoving old entry.\n");
@@ -950,8 +1007,9 @@ bgp_create_attrs(struct bgp_proto *p, rte *e, ea_list **attrs, struct linpool *p
 static inline int
 bgp_as_path_loopy(struct bgp_proto *p, rta *a)
 {
+  int num = p->cf->allow_local_as + 1;
   eattr *e = ea_find(a->eattrs, EA_CODE(EAP_BGP, BA_AS_PATH));
-  return (e && as_path_is_member(e->u.ptr, p->local_as));
+  return (e && (num > 0) && as_path_contains(e->u.ptr, p->local_as, num));
 }
 
 static inline int
@@ -1025,7 +1083,7 @@ bgp_update_attrs(struct bgp_proto *p, rte *e, ea_list **attrs, struct linpool *p
   if (rr)
     {
       /* Handling route reflection, RFC 4456 */
-      struct bgp_proto *src = (struct bgp_proto *) e->attrs->proto;
+      struct bgp_proto *src = (struct bgp_proto *) e->attrs->src->proto;
 
       a = ea_find(e->attrs->eattrs, EA_CODE(EAP_BGP, BA_ORIGINATOR_ID));
       if (!a)
@@ -1075,7 +1133,8 @@ bgp_import_control(struct proto *P, rte **new, ea_list **attrs, struct linpool *
 {
   rte *e = *new;
   struct bgp_proto *p = (struct bgp_proto *) P;
-  struct bgp_proto *new_bgp = (e->attrs->proto->proto == &proto_bgp) ? (struct bgp_proto *) e->attrs->proto : NULL;
+  struct bgp_proto *new_bgp = (e->attrs->src->proto->proto == &proto_bgp) ?
+    (struct bgp_proto *) e->attrs->src->proto : NULL;
 
   if (p == new_bgp)			/* Poison reverse updates */
     return -1;
@@ -1114,7 +1173,7 @@ bgp_get_neighbor(rte *r)
   if (e && as_path_get_first(e->u.ptr, &as))
     return as;
   else
-    return ((struct bgp_proto *) r->attrs->proto)->remote_as;
+    return ((struct bgp_proto *) r->attrs->src->proto)->remote_as;
 }
 
 static inline int
@@ -1127,8 +1186,8 @@ rte_resolvable(rte *rt)
 int
 bgp_rte_better(rte *new, rte *old)
 {
-  struct bgp_proto *new_bgp = (struct bgp_proto *) new->attrs->proto;
-  struct bgp_proto *old_bgp = (struct bgp_proto *) old->attrs->proto;
+  struct bgp_proto *new_bgp = (struct bgp_proto *) new->attrs->src->proto;
+  struct bgp_proto *old_bgp = (struct bgp_proto *) old->attrs->src->proto;
   eattr *x, *y;
   u32 n, o;
 
@@ -1262,7 +1321,7 @@ same_group(rte *r, u32 lpref, u32 lasn)
 static inline int
 use_deterministic_med(rte *r)
 {
-  struct proto *P = r->attrs->proto;
+  struct proto *P = r->attrs->src->proto;
   return (P->proto == &proto_bgp) && ((struct bgp_proto *) P)->cf->deterministic_med;
 }
 
@@ -1547,7 +1606,6 @@ bgp_decode_attrs(struct bgp_conn *conn, byte *attr, unsigned int len, struct lin
   int withdraw = 0;
 
   bzero(a, sizeof(rta));
-  a->proto = &bgp->p;
   a->source = RTS_BGP;
   a->scope = SCOPE_UNIVERSE;
   a->cast = RTC_UNICAST;
@@ -1756,14 +1814,14 @@ bgp_get_attr(eattr *a, byte *buf, int buflen)
 }
 
 void
-bgp_attr_init(struct bgp_proto *p)
+bgp_init_bucket_table(struct bgp_proto *p)
 {
   p->hash_size = 256;
   p->hash_limit = p->hash_size * 4;
   p->bucket_hash = mb_allocz(p->p.pool, p->hash_size * sizeof(struct bgp_bucket *));
   init_list(&p->bucket_queue);
   p->withdraw_bucket = NULL;
-  fib_init(&p->prefix_fib, p->p.pool, sizeof(struct bgp_prefix), 0, bgp_init_prefix);
+  // fib_init(&p->prefix_fib, p->p.pool, sizeof(struct bgp_prefix), 0, bgp_init_prefix);
 }
 
 void

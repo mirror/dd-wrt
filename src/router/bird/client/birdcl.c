@@ -150,11 +150,6 @@ input_init(void)
       term_lns = tws.ws_row;
       term_cls = tws.ws_col;
     }
-  else
-    {
-       term_lns = 25;
-       term_cls = 80;
-    }
 }
 
 void

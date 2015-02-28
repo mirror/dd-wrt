@@ -600,20 +600,8 @@ if_choose_router_id(struct iface_patt *mask, u32 old_id)
 	  if (a->scope <= SCOPE_LINK)
 	    continue;
 
-	  /* FIXME: This should go away */
-	  if (a->flags & IA_PEER)
-	    continue;
-
-	  /* FIXME: This should go away too */
-	  if (!mask && (a != i->addr))
-	    continue;
-
 	  /* Check pattern if specified */
 	  if (mask && !iface_patt_match(mask, i, a))
-	    continue;
-
-	  /* FIXME: This should go away too */
-	  if ((i->flags & IF_IGNORE) && !mask)
 	    continue;
 
 	  /* No pattern or pattern matched */

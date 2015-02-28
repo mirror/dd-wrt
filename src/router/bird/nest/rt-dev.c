@@ -34,6 +34,9 @@ dev_ifa_notify(struct proto *p, unsigned c, struct ifa *ad)
     /* Empty list is automagically treated as "*" */
     return;
 
+  if (ad->flags & IA_SECONDARY)
+    return;
+
   if (ad->scope <= SCOPE_LINK)
     return;
 
@@ -48,29 +51,31 @@ dev_ifa_notify(struct proto *p, unsigned c, struct ifa *ad)
 	  DBG("dev_if_notify: device shutdown: prefix not found\n");
 	  return;
 	}
-      rte_update(p->table, n, p, p, NULL);
+      rte_update(p, n, NULL);
     }
   else if (c & IF_CHANGE_UP)
     {
-      rta *a, A;
+      rta *a;
       net *n;
       rte *e;
 
       DBG("dev_if_notify: %s:%I going up\n", ad->iface->name, ad->ip);
-      bzero(&A, sizeof(A));
-      A.proto = p;
-      A.source = RTS_DEVICE;
-      A.scope = SCOPE_UNIVERSE;
-      A.cast = RTC_UNICAST;
-      A.dest = RTD_DEVICE;
-      A.iface = ad->iface;
-      A.eattrs = NULL;
-      a = rta_lookup(&A);
+
+      rta a0 = {
+	.src = p->main_source,
+	.source = RTS_DEVICE,
+	.scope = SCOPE_UNIVERSE,
+	.cast = RTC_UNICAST,
+	.dest = RTD_DEVICE,
+	.iface = ad->iface
+      };
+
+      a = rta_lookup(&a0);
       n = net_get(p->table, ad->prefix, ad->pxlen);
       e = rte_get_temp(a);
       e->net = n;
       e->pflags = 0;
-      rte_update(p->table, n, p, p, e);
+      rte_update(p, n, e);
     }
 }
 

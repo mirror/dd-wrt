@@ -10,6 +10,7 @@ AC_ARG_ENABLE(debug,	[  --enable-debug          enable internal debugging routin
 AC_ARG_ENABLE(memcheck,	[  --enable-memcheck       check memory allocations when debugging (default: enabled)],,enable_memcheck=yes)
 AC_ARG_ENABLE(client,	[  --enable-client         enable building of BIRD client (default: enabled)],,enable_client=yes)
 AC_ARG_ENABLE(ipv6,	[  --enable-ipv6           enable building of IPv6 version (default: disabled)],,enable_ipv6=no)
+AC_ARG_ENABLE(pthreads,	[  --enable-pthreads       enable POSIX threads support (default: detect)],,enable_pthreads=try)
 AC_ARG_WITH(suffix,	[  --with-suffix=STRING    use specified suffix for BIRD files (default: 6 for IPv6 version)],[given_suffix="yes"])
 AC_ARG_WITH(sysconfig,	[  --with-sysconfig=FILE   use specified BIRD system configuration file])
 AC_ARG_WITH(protocols,	[  --with-protocols=LIST   include specified routing protocols (default: all)],,[with_protocols="all"])
@@ -47,21 +48,16 @@ AC_SUBST(runtimedir)
 if test "$enable_ipv6" = yes ; then
 	ip=ipv6
 	SUFFIX=6
-	all_protocols=bgp,ospf,pipe,radv,rip,static
+	proto_radv=radv
 else
 	ip=ipv4
 	SUFFIX=""
-	all_protocols=bgp,ospf,pipe,rip,static
 fi
 
 if test "$given_suffix" = yes ; then
    	SUFFIX="$with_suffix"
 fi
 AC_SUBST(SUFFIX)
-
-if test "$with_protocols" = all ; then
-	with_protocols="$all_protocols"
-fi
 
 if test "$enable_debug" = yes ; then
 	CONFIG_FILE="bird$SUFFIX.conf"
@@ -73,7 +69,8 @@ fi
 AC_SUBST(CONFIG_FILE)
 AC_SUBST(CONTROL_SOCKET)
 
-AC_SEARCH_LIBS(clock_gettime,[c rt posix4])
+AC_SEARCH_LIBS(clock_gettime, [c rt posix4], ,
+	AC_MSG_ERROR([[Function clock_gettime not available.]]))
 
 AC_CANONICAL_HOST
 
@@ -85,6 +82,31 @@ fi
 AC_PROG_CC
 if test -z "$GCC" ; then
 	AC_MSG_ERROR([This program requires the GNU C Compiler.])
+fi
+
+# Enable threads by default just in Linux and FreeBSD
+if test "$enable_pthreads" = try ; then
+	case "$host_os" in
+		(linux* | freebsd*)	enable_pthreads=try ;;
+		(*)			enable_pthreads=no ;;
+	esac
+fi
+
+if test "$enable_pthreads" != no ; then
+	BIRD_CHECK_PTHREADS
+
+	if test "$bird_cv_lib_pthreads" = yes ; then
+		AC_DEFINE(USE_PTHREADS)
+		CFLAGS="$CFLAGS -pthread"
+		LDFLAGS="$LDFLAGS -pthread"
+		proto_bfd=bfd
+	elif test "$enable_pthreads" = yes ; then
+		AC_MSG_ERROR([POSIX threads not available.])
+	fi
+
+	if test "$enable_pthreads" = try ; then
+		enable_pthreads="$bird_cv_lib_pthreads"
+	fi
 fi
 
 if test "$bird_cflags_default" = yes ; then
@@ -183,6 +205,13 @@ fi
 
 AC_SUBST(iproutedir)
 
+all_protocols="$proto_bfd bgp ospf pipe $proto_radv rip static"
+all_protocols=`echo $all_protocols | sed 's/ /,/g'`
+
+if test "$with_protocols" = all ; then
+	with_protocols="$all_protocols"
+fi
+
 AC_MSG_CHECKING([protocols])
 protocols=`echo "$with_protocols" | sed 's/,/ /g'`
 if test "$protocols" = no ; then protocols= ; fi
@@ -241,8 +270,9 @@ if test "$enable_client" = yes ; then
 	AC_CHECK_LIB(ncurses, tgetent, USE_TERMCAP_LIB=-lncurses,
 		AC_CHECK_LIB(curses, tgetent, USE_TERMCAP_LIB=-lcurses,
 			AC_CHECK_LIB(tinfow, tgetent, USE_TERMCAP_LIB=-ltinfow,
-				AC_CHECK_LIB(tinfo, tgetent, USE_TERMCAP_LIB=-ltinfo
-					AC_CHECK_LIB(termcap, tgetent, USE_TERMCAP_LIB=-ltermcap)))))
+				AC_CHECK_LIB(tinfo, tgetent, USE_TERMCAP_LIB=-ltinfo,
+					AC_CHECK_LIB(termcap, tgetent, USE_TERMCAP_LIB=-ltermcap,
+						AC_MSG_ERROR([[The client requires ncurses library. Either install the library or use --disable-client to compile without the client.]]))))))
 	AC_CHECK_LIB(readline, rl_callback_read_char, CLIENT_LIBS="-lreadline $CLIENT_LIBS $USE_TERMCAP_LIB",
 		AC_MSG_ERROR([[The client requires GNU readline library 2.1 or newer. Either install the library or use --disable-client to compile without the client.]]), $USE_TERMCAP_LIB)
 	AC_CHECK_LIB(readline, rl_crlf, AC_DEFINE(HAVE_RL_CRLF),,$USE_TERMCAP_LIB)
@@ -272,6 +302,7 @@ BIRD was configured with the following options:
 	Iproute2 directory:	$iproutedir
 	System configuration:	$sysdesc
 	Debugging:		$enable_debug
+	POSIX threads:		$enable_pthreads
 	Routing protocols:	$protocols
 	Client:			$enable_client
 EOF

@@ -108,6 +108,7 @@ typedef struct neighbor {
   node n;				/* Node in global neighbor list */
   node if_n;				/* Node in per-interface neighbor list */
   ip_addr addr;				/* Address of the neighbor */
+  struct ifa *ifa;			/* Ifa on related iface */
   struct iface *iface;			/* Interface it's connected to */
   struct proto *proto;			/* Protocol this belongs to */
   void *data;				/* Protocol-specific data */

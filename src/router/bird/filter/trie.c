@@ -265,37 +265,37 @@ trie_same(struct f_trie *t1, struct f_trie *t2)
 }
 
 static void
-trie_node_print(struct f_trie_node *t, char **sep)
+trie_node_format(struct f_trie_node *t, buffer *buf)
 {
   if (t == NULL)
     return;
 
   if (ipa_nonzero(t->accept))
-    {
-      logn("%s%I/%d{%I}", *sep, t->addr, t->plen, t->accept);
-      *sep = ", ";
-    }
+    buffer_print(buf, "%I/%d{%I}, ", t->addr, t->plen, t->accept);
 
-  trie_node_print(t->c[0], sep);
-  trie_node_print(t->c[1], sep);
+  trie_node_format(t->c[0], buf);
+  trie_node_format(t->c[1], buf);
 }
 
 /**
- * trie_print
- * @t: trie to be printed
+ * trie_format
+ * @t: trie to be formatted
+ * @buf: destination buffer
  *
- * Prints the trie to the log buffer.
+ * Prints the trie to the supplied buffer.
  */
 void
-trie_print(struct f_trie *t)
+trie_format(struct f_trie *t, buffer *buf)
 {
-  char *sep = "";
-  logn("[");
+  buffer_puts(buf, "[");
+
   if (t->zero)
-    {
-      logn("0.0.0.0/0");
-      sep = ", ";
-    }
-  trie_node_print(&t->root, &sep);
-  logn("]");
+    buffer_print(buf, "%I/%d", IPA_NONE, 0);
+  trie_node_format(&t->root, buf);
+
+  /* Undo last separator */
+  if (buf->pos[-1] != '[')
+    buf->pos -= 2;
+
+  buffer_puts(buf, "]");
 }

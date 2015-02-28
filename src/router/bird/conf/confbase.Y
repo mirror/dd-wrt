@@ -72,10 +72,12 @@ CF_DECLS
 %token <t> TEXT
 %type <iface> ipa_scope
 
-%type <i> expr bool pxlen
+%type <i> expr bool pxlen ipa_port
+%type <i32> expr_us
 %type <time> datetime
 %type <a> ipa
 %type <px> prefix prefix_or_ipa
+%type <t> text
 %type <t> text_or_none
 
 %nonassoc PREFIX_DUMMY
@@ -86,7 +88,7 @@ CF_DECLS
 %left '!'
 %nonassoc '.'
 
-CF_KEYWORDS(DEFINE, ON, OFF, YES, NO)
+CF_KEYWORDS(DEFINE, ON, OFF, YES, NO, S, MS, US, PORT)
 
 CF_GRAMMAR
 
@@ -124,6 +126,13 @@ expr:
      $$ = SYM_VAL($1).i; }
  ;
 
+
+expr_us:
+   expr S  { $$ = (u32) $1 * 1000000; }
+ | expr MS { $$ = (u32) $1 * 1000; }
+ | expr US { $$ = (u32) $1 * 1; }
+ ;
+
 /* expr_u16: expr { check_u16($1); $$ = $1; }; */
 
 /* Switches */
@@ -150,6 +159,14 @@ ipa:
 ipa_scope:
    /* empty */ { $$ = NULL; }
  | '%' SYM { $$ = if_get_by_name($2->name); }
+ ;
+
+ipa_port:
+   /* empty */ { $$ = 0; }
+ | PORT expr {
+     if (($2 < 1) || ($2 > 65535)) cf_error("Invalid port number");
+     $$ = $2;
+   }
  ;
 
 prefix:
@@ -180,6 +197,14 @@ datetime:
      $$ = tm_parse_datetime($1);
      if (!$$)
        cf_error("Invalid date and time");
+   }
+ ;
+
+text:
+   TEXT
+ | SYM {
+     if ($1->class != (SYM_CONSTANT | T_STRING)) cf_error("String expected");
+     $$ = SYM_VAL($1).s;
    }
  ;
 

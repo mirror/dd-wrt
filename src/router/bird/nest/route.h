@@ -148,6 +148,10 @@ typedef struct rtable {
   struct fib_iterator nhu_fit;		/* Next Hop Update FIB iterator */
 } rtable;
 
+#define RPS_NONE	0
+#define RPS_SCHEDULED	1
+#define RPS_RUNNING	2
+
 typedef struct network {
   struct fib_node n;			/* FIB flags reserved for kernel syncer */
   struct rte *routes;			/* Available routes for this network */
@@ -222,6 +226,8 @@ typedef struct rte {
 
 #define REF_COW		1		/* Copy this rte on write */
 #define REF_FILTERED	2		/* Route is rejected by import filter */
+#define REF_STALE	4		/* Route is stale in a refresh cycle */
+#define REF_DISCARD	8		/* Route is scheduled for discard */
 
 /* Route is valid for propagation (may depend on other flags in the future), accepts NULL */
 static inline int rte_is_valid(rte *r) { return r && !(r->flags & REF_FILTERED); }
@@ -251,12 +257,14 @@ void rt_unlock_table(rtable *);
 void rt_setup(pool *, rtable *, char *, struct rtable_config *);
 static inline net *net_find(rtable *tab, ip_addr addr, unsigned len) { return (net *) fib_find(&tab->fib, &addr, len); }
 static inline net *net_get(rtable *tab, ip_addr addr, unsigned len) { return (net *) fib_get(&tab->fib, &addr, len); }
-rte *rte_find(net *net, struct proto *p);
+rte *rte_find(net *net, struct rte_src *src);
 rte *rte_get_temp(struct rta *);
-void rte_update2(struct announce_hook *ah, net *net, rte *new, struct proto *src);
-static inline void rte_update(rtable *tab, net *net, struct proto *p, struct proto *src, rte *new) { rte_update2(p->main_ahook, net, new, src); }
+void rte_update2(struct announce_hook *ah, net *net, rte *new, struct rte_src *src);
+static inline void rte_update(struct proto *p, net *net, rte *new) { rte_update2(p->main_ahook, net, new, p->main_source); }
 void rte_discard(rtable *tab, rte *old);
 int rt_examine(rtable *t, ip_addr prefix, int pxlen, struct proto *p, struct filter *filter);
+void rt_refresh_begin(rtable *t, struct announce_hook *ah);
+void rt_refresh_end(rtable *t, struct announce_hook *ah);
 void rte_dump(rte *);
 void rte_free(rte *);
 rte *rte_do_cow(rte *);
@@ -267,6 +275,15 @@ int rt_feed_baby(struct proto *p);
 void rt_feed_baby_abort(struct proto *p);
 int rt_prune_loop(void);
 struct rtable_config *rt_new_table(struct symbol *s);
+
+static inline void
+rt_mark_for_prune(rtable *tab)
+{
+  if (tab->prune_state == RPS_RUNNING)
+    fit_get(&tab->fib, &tab->prune_fit);
+
+  tab->prune_state = RPS_SCHEDULED;
+}
 
 struct rt_show_data {
   ip_addr prefix;
@@ -284,6 +301,12 @@ struct rt_show_data {
 };
 void rt_show(struct rt_show_data *);
 
+/* Value of export_mode in struct rt_show_data */
+#define RSEM_NONE	0		/* Export mode not used */
+#define RSEM_PREEXPORT	1		/* Routes ready for export, before filtering */
+#define RSEM_EXPORT	2		/* Routes accepted by export filter */
+#define RSEM_NOEXPORT	3		/* Routes rejected by export filter */
+
 /*
  *	Route Attributes
  *
@@ -300,9 +323,18 @@ struct mpnh {
   unsigned char weight;
 };
 
+struct rte_src {
+  struct rte_src *next;			/* Hash chain */
+  struct proto *proto;			/* Protocol the source is based on */
+  u32 private_id;			/* Private ID, assigned by the protocol */
+  u32 global_id;			/* Globally unique ID of the source */
+  unsigned uc;				/* Use count */
+};
+
+
 typedef struct rta {
   struct rta *next, **pprev;		/* Hash chain */
-  struct proto *proto;			/* Protocol instance that originally created the route */
+  struct rte_src *src;			/* Route source that created the route */
   unsigned uc;				/* Use count */
   byte source;				/* Route source (RTS_...) */
   byte scope;				/* Route scope (SCOPE_... -- see ip.h) */
@@ -405,6 +437,10 @@ struct adata {
   byte data[0];
 };
 
+static inline int adata_same(struct adata *a, struct adata *b)
+{ return (a->length == b->length && !memcmp(a->data, b->data, a->length)); }
+
+
 typedef struct ea_list {
   struct ea_list *next;			/* In case we have an override list */
   byte flags;				/* Flags: EALF_... */
@@ -416,6 +452,13 @@ typedef struct ea_list {
 #define EALF_SORTED 1			/* Attributes are sorted by code */
 #define EALF_BISECT 2			/* Use interval bisection for searching */
 #define EALF_CACHED 4			/* Attributes belonging to cached rta */
+
+struct rte_src *rt_find_source(struct proto *p, u32 id);
+struct rte_src *rt_get_source(struct proto *p, u32 id);
+static inline void rt_lock_source(struct rte_src *src) { src->uc++; }
+static inline void rt_unlock_source(struct rte_src *src) { src->uc--; }
+void rt_prune_sources(void);
+
 
 eattr *ea_find(ea_list *, unsigned ea);
 int ea_get_int(ea_list *, unsigned ea, int def);
@@ -433,6 +476,7 @@ static inline int mpnh_same(struct mpnh *x, struct mpnh *y)
 
 void rta_init(void);
 rta *rta_lookup(rta *);			/* Get rta equivalent to this one, uc++ */
+static inline int rta_is_cached(rta *r) { return r->aflags & RTAF_CACHED; }
 static inline rta *rta_clone(rta *r) { r->uc++; return r; }
 void rta__free(rta *r);
 static inline void rta_free(rta *r) { if (r && !--r->uc) rta__free(r); }

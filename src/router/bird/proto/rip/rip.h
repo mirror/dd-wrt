@@ -177,7 +177,6 @@ struct rip_proto {
 #endif
 
 
-void rip_init_instance(struct proto *p);
 void rip_init_config(struct rip_proto_config *c);
 
 /* Authentication functions */

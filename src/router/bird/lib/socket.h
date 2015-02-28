@@ -10,6 +10,7 @@
 #define _BIRD_SOCKET_H_
 
 #include <errno.h>
+// #include <sys/socket.h>
 
 #include "lib/resource.h"
 
@@ -43,54 +44,68 @@ typedef struct birdsock {
   unsigned lifindex;			/* local interface that received the datagram */
   /* laddr and lifindex are valid only if SKF_LADDR_RX flag is set to request it */
 
+  int af;				/* Address family (AF_INET, AF_INET6 or 0 for non-IP) of fd */
   int fd;				/* System-dependent data */
+  int index;				/* Index in poll buffer */
+  int rcv_ttl;				/* TTL of last received datagram */
   node n;
   void *rbuf_alloc, *tbuf_alloc;
-  char *password;				/* Password for MD5 authentication */
+  char *password;			/* Password for MD5 authentication */
+  char *err;				/* Error message */
 } sock;
 
 sock *sock_new(pool *);			/* Allocate new socket */
 #define sk_new(X) sock_new(X)		/* Wrapper to avoid name collision with OpenSSL */
 
 int sk_open(sock *);			/* Open socket */
+int sk_rx_ready(sock *s);
 int sk_send(sock *, unsigned len);	/* Send data, <0=err, >0=ok, 0=sleep */
 int sk_send_to(sock *, unsigned len, ip_addr to, unsigned port); /* sk_send to given destination */
 void sk_reallocate(sock *);		/* Free and allocate tbuf & rbuf */
+void sk_set_rbsize(sock *s, uint val);	/* Resize RX buffer */
+void sk_set_tbsize(sock *s, uint val);	/* Resize TX buffer, keeping content */
+void sk_set_tbuf(sock *s, void *tbuf);	/* Switch TX buffer, NULL-> return to internal */
 void sk_dump_all(void);
-int sk_set_ttl(sock *s, int ttl);	/* Set transmit TTL for given socket */
-int sk_set_min_ttl(sock *s, int ttl);	/* Set minimal accepted TTL for given socket */
 
-/* Add or remove security associations for given passive socket */
-int sk_set_md5_auth(sock *s, ip_addr a, struct iface *ifa, char *passwd);
-int sk_rx_ready(sock *s);
+static inline int sk_send_buffer_empty(sock *sk)
+{ return sk->tbuf == sk->tpos; }
 
-/* Prepare UDP or IP socket to multicasting. s->iface and s->ttl must be set */
-int sk_setup_multicast(sock *s);	
-int sk_join_group(sock *s, ip_addr maddr);
-int sk_leave_group(sock *s, ip_addr maddr);
 
 #ifdef IPV6
-int sk_set_ipv6_checksum(sock *s, int offset);
-int sk_set_icmp_filter(sock *s, int p1, int p2);
+#define sk_is_ipv4(X) 0
+#define sk_is_ipv6(X) 1
+#else
+#define sk_is_ipv4(X) 1
+#define sk_is_ipv6(X) 0
 #endif
 
-int sk_set_broadcast(sock *s, int enable);
 
-static inline int
-sk_send_buffer_empty(sock *sk)
-{
-	return sk->tbuf == sk->tpos;
-}
+int sk_setup_multicast(sock *s);	/* Prepare UDP or IP socket for multicasting */
+int sk_join_group(sock *s, ip_addr maddr);	/* Join multicast group on sk iface */
+int sk_leave_group(sock *s, ip_addr maddr);	/* Leave multicast group on sk iface */
+int sk_setup_broadcast(sock *s);
+int sk_set_ttl(sock *s, int ttl);	/* Set transmit TTL for given socket */
+int sk_set_min_ttl(sock *s, int ttl);	/* Set minimal accepted TTL for given socket */
+int sk_set_md5_auth(sock *s, ip_addr a, struct iface *ifa, char *passwd);
+int sk_set_ipv6_checksum(sock *s, int offset);
+int sk_set_icmp6_filter(sock *s, int p1, int p2);
+void sk_log_error(sock *s, const char *p);
 
-extern int sk_priority_control;	/* Suggested priority for control traffic, should be sysdep define */
+extern int sk_priority_control;		/* Suggested priority for control traffic, should be sysdep define */
+
 
 /* Socket flags */
 
-#define SKF_V6ONLY	1	/* Use IPV6_V6ONLY socket option */
-#define SKF_LADDR_RX	2	/* Report local address for RX packets */
-#define SKF_LADDR_TX	4	/* Allow to specify local address for TX packets */
-#define SKF_TTL_RX	8	/* Report TTL / Hop Limit for RX packets */
+#define SKF_V4ONLY	0x01	/* Use IPv4 for IP sockets */
+#define SKF_V6ONLY	0x02	/* Use IPV6_V6ONLY socket option */
+#define SKF_LADDR_RX	0x04	/* Report local address for RX packets */
+#define SKF_TTL_RX	0x08	/* Report TTL / Hop Limit for RX packets */
+#define SKF_BIND	0x10	/* Bind datagram socket to given source address */
 
+#define SKF_THREAD	0x100	/* Socked used in thread, Do not add to main loop */
+#define SKF_TRUNCATED	0x200	/* Received packet was truncated, set by IO layer */
+#define SKF_HDRINCL	0x400	/* Used internally */
+#define SKF_PKTINFO	0x800	/* Used internally */
 
 /*
  *	Socket types		     SA SP DA DP IF  TTL SendTo	(?=may, -=must not, *=must)
@@ -116,6 +131,14 @@ extern int sk_priority_control;	/* Suggested priority for control traffic, shoul
  *  call sk_setup_multicast() to enable multicast on that socket,
  *  and then use sk_join_group() and sk_leave_group() to manage
  *  a set of received multicast groups.
+ *
+ *  For datagram (SK_UDP, SK_IP) sockets, there are two ways to handle
+ *  source address. The socket could be bound to it using bind()
+ *  syscall, but that also forbids the reception of multicast packets,
+ *  or the address could be set on per-packet basis using platform
+ *  dependent options (but these are not available in some corner
+ *  cases). The first way is used when SKF_BIND is specified, the
+ *  second way is used otherwise.
  */
 
 #endif

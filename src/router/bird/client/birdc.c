@@ -19,7 +19,6 @@
 #include "lib/resource.h"
 #include "lib/string.h"
 #include "client/client.h"
-#include "sysdep/unix/unix.h"
 
 static int input_hidden_end;
 static int prompt_active;
@@ -29,7 +28,6 @@ static int prompt_active;
 /* HACK: libreadline internals we need to access */
 extern int _rl_vis_botlin;
 extern void _rl_move_vert(int);
-extern Function *rl_last_func;
 
 static void
 add_history_dedup(char *cmd)
@@ -148,8 +146,8 @@ input_init(void)
   rl_callback_handler_install("bird> ", input_got_line);
 
   // rl_get_screen_size();
-  term_lns = LINES ? LINES : 25;
-  term_cls = COLS ? COLS : 80;
+  term_lns = LINES;
+  term_cls = COLS;
 
   prompt_active = 1;
 
