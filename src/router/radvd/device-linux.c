@@ -371,9 +371,11 @@ static char const *hwstr(unsigned short sa_family)
 	case ARPHRD_IEEE802154:
 		rc = "ARPHRD_IEEE802154";
 		break;
+#ifdef ARPHRD_IEEE802154_PHY
 	case ARPHRD_IEEE802154_PHY:
 		rc = "ARPHRD_IEEE802154_PHY";
 		break;
+#endif
 	case ARPHRD_VOID:
 		rc = "ARPHRD_VOID";
 		break;
