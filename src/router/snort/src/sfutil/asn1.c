@@ -1,6 +1,7 @@
 /****************************************************************************
  *
- * Copyright (C) 2004-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2004-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -15,10 +16,10 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************/
- 
+
 /**
 **  @file       asn1.c
 **
@@ -32,7 +33,7 @@
 **  processing.  That way we don't have to worry about attackers trying
 **  to overload the machine stack.
 **
-**  Handles both DER and BER encodings, and also the indefinite encoding 
+**  Handles both DER and BER encodings, and also the indefinite encoding
 **  that BER supports.  Lots of functionality can be added on top of
 **  this library.  SNMP will probably be the first.
 **
@@ -205,7 +206,7 @@ static int asn1_decode_tag_num_ext(ASN1_DATA *asn1_data, u_int *tag_num)
         {
             return ASN1_ERR_OOB;
         }
-        
+
     } while(iExtension);
 
     return ASN1_OK;
@@ -308,7 +309,7 @@ static int asn1_decode_len_type(const u_char *data)
 **  Decode the extended length version.  Basically we read the first
 **  byte for the number of bytes in the extended length.  We then read
 **  that number of bytes to determine the length.  If the number of bytes
-**  in the length is greater than our variable, then we return 
+**  in the length is greater than our variable, then we return
 **  ASN1_ERR_OVERLONG_LEN, and exit decoding.
 **
 **  @return integer
@@ -330,7 +331,7 @@ static int asn1_decode_len_ext(ASN1_DATA *asn1_data, u_int *size)
     *size = 0;
 
     iBytes = (*asn1_data->data & 0x7f);
-    
+
     asn1_data->data++;
     if(ASN1_OOB(asn1_data->start, asn1_data->end, asn1_data->data))
     {
@@ -357,7 +358,7 @@ static int asn1_decode_len_ext(ASN1_DATA *asn1_data, u_int *size)
         if(ASN1_OOB(asn1_data->start, asn1_data->end, asn1_data->data))
         {
             /*
-            **  Check to see if this was just an extended length that was zero at 
+            **  Check to see if this was just an extended length that was zero at
             **  the end of the buffer.  If it was, then return normal.
             */
             if(*size == 0 && (iCtr+1) == iBytes)
@@ -401,7 +402,7 @@ static int asn1_decode_len(ASN1_TYPE *asn1_type, ASN1_DATA *asn1_data)
     {
         case SF_BER_LEN_DEF_SHORT:
             len->size = *asn1_data->data;
-            
+
             (asn1_data->data)++;
             if(ASN1_OOB(asn1_data->start, asn1_data->end, asn1_data->data))
             {
@@ -434,7 +435,7 @@ static int asn1_decode_len(ASN1_TYPE *asn1_type, ASN1_DATA *asn1_data)
                 return ASN1_ERR_OOB;
 
             break;
-            
+
         default:
             /*
             **  This should be one of the three values.  So we are in
@@ -464,7 +465,7 @@ static int asn1_is_eoc(ASN1_TYPE *asn1)
     if(!asn1)
         return 0;
 
-    if(asn1->ident.asn1_class == 0x00 && asn1->ident.flag == 0x00 && 
+    if(asn1->ident.asn1_class == 0x00 && asn1->ident.flag == 0x00 &&
        asn1->ident.tag == 0x00 && asn1->len.type == SF_BER_LEN_DEF_SHORT &&
        asn1->len.size == 0)
     {
@@ -528,7 +529,7 @@ static int asn1_decode_type(const u_char **data, u_int *len, ASN1_TYPE **asn1_ty
         return ASN1_ERR_MEM_ALLOC;
     }
     memset(*asn1_type, 0x00, sizeof(ASN1_TYPE));
-    
+
     asn1data.start = *data;
     asn1data.end   = (*data) + *len;
     asn1data.data  = *data;
@@ -577,7 +578,7 @@ static int asn1_decode_type(const u_char **data, u_int *len, ASN1_TYPE **asn1_ty
                 **  see if we are an eoc, so we don't have to check again.
                 */
                 (*asn1_type)->data_len = 0;
-            
+
                 if(asn1_is_eoc(*asn1_type))
                     (*asn1_type)->eoc = 1;
             }
@@ -714,7 +715,7 @@ int asn1_decode(const u_char *data, u_int len, ASN1_TYPE **asn1_type)
             {
                 return iRet;
             }
-            
+
             /*
             **  Check next child for ending of indefinite encodings.
             */
@@ -864,7 +865,7 @@ int asn1_decode(const u_char *data, u_int len, ASN1_TYPE **asn1_type)
             if(!index && !(cur->next) && (data < end))
             {
                 len = (end - data);
-                
+
                 iRet = asn1_decode_type(&data, &len, &cur->next);
                 if(iRet)
                     return iRet;
@@ -897,7 +898,7 @@ int asn1_decode(const u_char *data, u_int len, ASN1_TYPE **asn1_type)
 **  @retval 1 detection function successful
 **  @retval 0 detection function unsuccessful
 */
-int asn1_traverse(ASN1_TYPE *asn1, void *user, 
+int asn1_traverse(ASN1_TYPE *asn1, void *user,
                   int (*DetectFunc)(ASN1_TYPE *, void *))
 {
     ASN1_TYPE *asnstack[ASN1_MAX_STACK];
@@ -980,8 +981,8 @@ int asn1_print_types(ASN1_TYPE *asn1_type, void *user)
 
     for(iCtr = 0; iCtr < iTabs; iCtr++)
         printf("    ");
-    
-    printf("LEN - type: %d | size: %u\n", asn1_type->len.type, 
+
+    printf("LEN - type: %d | size: %u\n", asn1_type->len.type,
            asn1_type->len.size);
 
     for(iCtr = 0; iCtr < iTabs; iCtr++)
@@ -1008,7 +1009,7 @@ int asn1_print_types(ASN1_TYPE *asn1_type, void *user)
     //    printf("!! BITSTRING OVERFLOW\n");
     //}
     printf("\n");
-    
+
     if(asn1_type->cnext)
         asn1_print_types(asn1_type->cnext, iTabs+1);
 
@@ -1065,7 +1066,7 @@ int main(int argc, char **argv)
         printf("** No valid characters in data string.\n");
         return 1;
     }
-    
+
     if(buf_size % 2)
     {
         printf("** Data must be represent in hex, meaning that there is an "
@@ -1075,7 +1076,7 @@ int main(int argc, char **argv)
 
     buf_size >>= 1;
 
-    buf = (char *)calloc(1,buf_size + 1);
+    buf = calloc(1,buf_size + 1);
     if(!buf)
     {
         return 1;
@@ -1095,11 +1096,7 @@ int main(int argc, char **argv)
 
     buf[iCtr] = 0x00;
 
-    if(asn1_init_mem(256))
-    {
-        printf("** asn1_init_mem() failed\n");
-        return 1;
-    }
+    asn1_init_mem(256);
 
     iRet = asn1_decode(buf, buf_size, &asn1_type);
     if(iRet && !asn1_type)

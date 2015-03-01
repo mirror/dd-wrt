@@ -187,7 +187,8 @@ Option syntax
     max_frag_len            <max-frag-len>        NO      OFF
     events                  <events>              NO      OFF
     reassemble_threshold    <re-thresh>           NO      OFF
-    disabled                NONE		  NO	  OFF
+    disabled                NONE                  NO      OFF
+    smb_fingerprint_policy  <fp-policy>           NO      OFF
 
     memcap           = 1024-4194303 (kilobytes)
     max-frag-len     = 1514-65535
@@ -196,6 +197,7 @@ Option syntax
     event-list       = event | event ',' event-list
     event            = "memcap" | "smb" | "co" | "cl"
     re-thresh        = 0-65535
+    fp-policy        = "server" | "client" | "both"
 
 Option explanations
     memcap
@@ -204,7 +206,7 @@ Option explanations
         Default is 100 MB.
     disabled
         This optional keyword is allowed with any policy to avoid packet processing. 
-	This option disables the preprocessor. When the preprocessor is disabled
+        This option disables the preprocessor. When the preprocessor is disabled
         only the memcap option is applied when specified with the configuration.
         The other options are parsed but not used. Any valid configuration may have
         "disabled" added to it.
@@ -213,9 +215,9 @@ Option explanations
         to do defragmentation.
     max_frag_len
         Specifies the maximum fragment size that will be added to the
-        defragmention module. If a fragment is greater than this size, it is
-        truncated before being added to the defragmentation module.  Default is
-        set to -1. The allowed ranges for this option are 1514 - 65535.
+        defragmentation module. If a fragment is greater than this size, it is
+        truncated before being added to the defragmentation module. The allowed
+        ranges for this option are 1514 - 65535.
     events
         Specifies the classes of events to enable.  (See Events section for an
         enumeration and explanation of events.)
@@ -236,6 +238,13 @@ Option explanations
         potentially catch an exploit early before full defragmentation is done.
         A value of 0 supplied as an argument to this option will, in effect,
         disable this option.  Default is disabled.
+    smb_fingerprint_policy
+        In the initial phase of an SMB session, the client needs to authenticate
+        with a SessionSetupAndX.  Both the request and response to this command
+        contain OS and version information that can allow the preprocessor to
+        dynamically set the policy for a session which allows for better
+        protection against Windows and Samba specific evasions.
+        
 
 Option examples
      memcap 30000
@@ -248,6 +257,8 @@ Option examples
      events [smb, co]
      events [memcap, smb, co, cl]
      reassemble_threshold 500
+     smb_fingerprint_policy both
+     smb_fingerprint_policy client
 
 Configuration examples
      preprocessor dcerpc2
@@ -257,6 +268,8 @@ Configuration examples
                            max_frag_len 14440
      preprocessor dcerpc2: disable_defrag, events [memcap, smb]
      preprocessor dcerpc2: reassemble_threshold 500
+     preprocessor dcerpc2: memcap 50000, events [memcap, smb, co, cl], \
+                           max_frag_len 14440, smb_fingerprint_policy both
 
 Default configuration
      preprocessor dcerpc2: memcap 102400
@@ -301,6 +314,7 @@ Option syntax
                                                  by default)
     smb_invalid_shares     <shares>        NO  NONE
     smb_max_chain       <max-chain>        NO  smb_max_chain 3
+    smb_file_inspection <file-inspect>     NO  smb_file_inspection off
 
     net          = ip | '[' ip-list ']'
     ip-list      = ip | ip ',' ip-list
@@ -332,6 +346,9 @@ Option syntax
     tries to expand it, shares with '$' must be enclosed quotes.
 
     max-chain    = 0-255
+    file-inspect = file-arg | '[' file-list ']'
+    file-arg     = "off" | "on" | "only" 
+    file-list    = file-arg [ ',' "file-depth" <int64_t> ]
 
 Option explanations
    default
@@ -375,6 +392,21 @@ Option explanations
         Specifies the maximum amount of AndX command chaining that is allowed
         before an alert is generated.  Default maximum is 3 chained commands.
         A value of 0 disables this option.
+   smb_file_inspection
+        Instructs the preprocessor to do inspection of normal SMB file
+        transfers.  This includes doing file type and signature through
+        the file API as well as setting a pointer for the "file_data"
+        rule option.  Note that the "file-depth" option only applies to the
+        maximum amount of file data for which it will set the pointer for the
+        "file_data" rule option.  For file type and signature it will use the
+        value configured for the file API.  If "only" is specified, the
+        preprocessor will only do SMB file inspection, i.e. it will not do any
+        DCE/RPC tracking or inspection.  If "on" is specified with no
+        arguments, the default file depth is 16384 bytes.  An argument of -1 to
+        "file-depth" disables setting the pointer for "file_data", effectively
+        disabling SMB file inspection in rules.  An argument of 0 to
+        "file-depth" means unlimited.  Default is "off", i.e. no SMB file
+        inspection is done in the preprocessor.
 
 Option examples
    net 192.168.0.10
@@ -415,6 +447,12 @@ Option examples
    smb_invalid_shares [private, "C$"]
    smb_invalid_shares ["private", "C$"]
    smb_max_chain 1
+   smb_file_inspection on
+   smb_file_inspection off
+   smb_file_inspection [ on, file-depth -1 ]
+   smb_file_inspection [ on, file-depth 0 ]
+   smb_file_inspection [ on, file-depth 4294967296 ]
+   smb_file_inspection [ only, file-depth -1 ]
 
 Configuration examples
    preprocessor dcerpc2_server: default
@@ -430,12 +468,14 @@ Configuration examples
      smb_invalid_shares ["C$", "ADMIN$"], no_autodetect_http_proxy_ports
    preprocessor dcerpc2_server: net [10.4.11.56,10.4.11.57], policy Samba, \
      detect smb, autodetect none
+   preprocessor dcerpc2_server: default, policy WinXP, \
+     smb_file_inspection [ on, file-depth 0 ]
 
 Default configuration
    preprocessor dcerpc2_server: default, policy WinXP, \
      detect [smb [139,445], tcp 135, udp 135, rpc-over-http-server 593], \
      autodetect [tcp 1025:, udp 1025:, rpc-over-http-server 1025:], \
-     smb_max_chain 3
+     smb_max_chain 3, smb_file_inspection off
 
 Complete dcerpc2 default configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -443,7 +483,7 @@ Complete dcerpc2 default configuration
    preprocessor dcerpc2_server: default, policy WinXP, \
      detect [smb [139,445], tcp 135, udp 135, rpc-over-http-server 593], \
      autodetect [tcp 1025:, udp 1025:, rpc-over-http-server 1025:], \
-     smb_max_chain 3
+     smb_max_chain 3, smb_file_inspection off
 
 
 Events
@@ -573,6 +613,52 @@ SMB events
   26   The preprocessor will alert if it sees any of the invalid SMB shares
        configured. It looks for a Tree Connect or Tree Connect AndX to the
        share.
+  48   The preprocessor will alert if a data count for a Core dialect write
+       command is zero.
+  49   For some of the Core dialect commands such as Write and Read, there are
+       two data count fields, one in the main command header and one in the
+       data format section.  If these aren't the same, the preprocessor will
+       alert.
+  50   In the initial negotiation phase of an SMB session, the server in a
+       Negotiate response and the client in a SessionSetupAndX request will
+       advertise the maximum number of outstanding requests supported.  The
+       preprocessor will alert if the lesser of the two is exceeded.
+  51   When a client sends a request it uses a value called the MID (multiplex
+       id) to match a response, which the server is supposed to echo, to a
+       request.  If there are multiple outstanding requests with the same
+       MID, the preprocessor will alert.
+  52   In the Negotiate request a client gives a list of SMB dialects it
+       supports, normally in order from least desirable to most desirable
+       and the server responds with the index of the dialect to be used on
+       the SMB session.  Anything less than "NT LM 0.12" would be very odd
+       these days (even Windows 98 supports it) and the preprocessor will
+       alert if the client doesn't offer it as a supported dialect or the
+       server chooses a lesser dialect.
+  53   There are a number of commands that are considered deprecated and/or
+       obsolete by Microsoft (see MS-CIFS and MS-SMB).  If the preprocessor
+       detects the use of a deprecated/obsolete command used it will alert.
+  54   There are some commands that can be used that can be considered unusual
+       in the context they are used.  These include some of the transaction
+       commands such as:
+       SMB_COM_TRANSACTION / TRANS_READ_NMPIPE
+       SMB_COM_TRANSACTION / TRANS_WRITE_NMPIPE
+       SMB_COM_TRANSACTION2 / TRANS2_OPEN2
+       SMB_COM_NT_TRANSACT / NT_TRANSACT_CREATE
+       The preprocessor will alert if it detects unusual use of a command.
+  55   Transaction commands have a setup count field that indicates the
+       number of 16bit words in the transaction setup.  The preprocessor
+       will alert if the setup count is invalid for the transaction
+       command / sub command.
+  56   There can be only one Negotiate transaction per session and it is the
+       first thing a client and server do to determine the SMB dialect each
+       supports.  The preprocessor will alert if the client attempts multiple
+       dialect negotiations.
+  57   Malware will often set a file's attributes to ReadOnly/Hidden/System if
+       it is successful in installing itself as a Windows service or is able to
+       write an autorun.inf file since it doesn't want the user to see the file
+       and the default folder options in Windows is not to display Hidden files.
+       The preprocessor will alert if it detects a client attempt to set a
+       file's attributes to ReadOnly/Hidden/System.
 
 Connection-oriented DCE/RPC events
  SID   Description 
@@ -788,6 +874,15 @@ rules processing) at the beginning of the DCE/RPC stub data, regardless of
 preceding rule options. There are no arguments to this option.  This option
 matches if there is DCE/RPC stub data.
 
+The cursor is moved to the beginning of the stub data.  All ensuing rule
+options will be considered "sticky" to this buffer.  The first rule option
+following dce_stub_data should use absolute location modifiers if it is
+position-dependent.  Subsequent rule options should use a relative modifier if
+they are meant to be relative to a previous rule option match in the stub data
+buffer.  Any rule option that does not specify a relative modifier will be
+evaluated from the start of the stub data buffer.  To leave the stub data buffer
+and return to the main payload buffer, use the "pkt_data" rule option.
+
 byte_test and byte_jump
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 A DCE/RPC request can specify whether numbers are represented in big or little
@@ -839,7 +934,7 @@ Example of rule complexity reduction
 The following two rules using the new rule options replace 64 (set and isset
 flowbit) rules that are necessary if the new rule options are not used:
 
-alert tcp $EXTERNAL_NET any -> $HOME_NET [135,139,445,593,1024:] (msg:"dns R_Dnssrv funcs2 overflow attempt"; flow:established,to_server; dce_iface:50abc2a4-574d-40b3-9d66-ee4fd5fba076; dce_opnum:0-11; dce_stub_data; pcre:"/^.{12}(\x00\x00\x00\x00|.{12})/sR"; byte_jump:4,-4,relative,align,dce; byte_test:4,>,256,4,relative,dce; reference:bugtraq,23470; reference:cve,2007-1748; classtype:attempted-admin; sid:1000068;)
+alert tcp $EXTERNAL_NET any -> $HOME_NET [135,139,445,593,1024:] (msg:"dns R_Dnssrv funcs2 overflow attempt"; flow:established,to_server; dce_iface:50abc2a4-574d-40b3-9d66-ee4fd5fba076; dce_opnum:0-11; dce_stub_data; pcre:"/^.{12}(\x00\x00\x00\x00|.{12})/s"; byte_jump:4,-4,relative,align,dce; byte_test:4,>,256,4,relative,dce; reference:bugtraq,23470; reference:cve,2007-1748; classtype:attempted-admin; sid:1000068;)
 
-alert udp $EXTERNAL_NET any -> $HOME_NET [135,1024:] (msg:"dns R_Dnssrv funcs2 overflow attempt"; flow:established,to_server; dce_iface:50abc2a4-574d-40b3-9d66-ee4fd5fba076; dce_opnum:0-11; dce_stub_data; pcre:"/^.{12}(\x00\x00\x00\x00|.{12})/sR"; byte_jump:4,-4,relative,align,dce; byte_test:4,>,256,4,relative,dce; reference:bugtraq,23470; reference:cve,2007-1748; classtype:attempted-admin; sid:1000069;)
+alert udp $EXTERNAL_NET any -> $HOME_NET [135,1024:] (msg:"dns R_Dnssrv funcs2 overflow attempt"; flow:established,to_server; dce_iface:50abc2a4-574d-40b3-9d66-ee4fd5fba076; dce_opnum:0-11; dce_stub_data; pcre:"/^.{12}(\x00\x00\x00\x00|.{12})/s"; byte_jump:4,-4,relative,align,dce; byte_test:4,>,256,4,relative,dce; reference:bugtraq,23470; reference:cve,2007-1748; classtype:attempted-admin; sid:1000069;)
 

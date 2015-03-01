@@ -5,7 +5,8 @@
 *
 *
 *  Copyright (C) 2001 Marc Norton
-** Copyright (C) 2003-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2003-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License Version 2 as
@@ -20,7 +21,7 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 #ifndef KTRIE_H
@@ -42,7 +43,7 @@ typedef struct _ktriepattern {
 
   struct  _ktriepattern * next;  /* global list of all patterns */
   struct  _ktriepattern * mnext;  /* matching list of duplicate keywords */
-  
+
   unsigned char * P;    /* no case */
   unsigned char * Pcase; /* case sensitive */
   int             n;
@@ -62,10 +63,10 @@ typedef struct _ktrienode {
 
   int     edge; /* character */
 
-  struct  _ktrienode * sibling; 
-  struct  _ktrienode * child; 
+  struct  _ktrienode * sibling;
+  struct  _ktrienode * child;
 
-  KTRIEPATTERN *pkeyword; 
+  KTRIEPATTERN *pkeyword;
 
 } KTRIENODE;
 
@@ -73,7 +74,7 @@ typedef struct _ktrienode {
 #define KTRIE_ROOT_NODES     256
 
 #define SFK_MAX_INQ 32
-typedef struct 
+typedef struct
 {
     unsigned inq;
     unsigned inq_flush;
@@ -87,9 +88,9 @@ typedef struct {
 
   KTRIEPATTERN * patrn; /* List of patterns, built as they are added */
 
-  
+
   KTRIENODE    * root[KTRIE_ROOT_NODES];  /* KTrie nodes */
- 
+
   int            memory;
   int            nchars;
   int            npats;
@@ -98,12 +99,12 @@ typedef struct {
   int            end_states; /* should equal npats - duplicates */
 
   int            bcSize;
-  unsigned short bcShift[KTRIE_ROOT_NODES];  
+  unsigned short bcShift[KTRIE_ROOT_NODES];
   void           (*userfree)(void *p);
   void           (*optiontreefree)(void **p);
   void           (*neg_list_free)(void **p);
   SFK_PMQ        q;
- 
+
 } KTRIE_STRUCT;
 
 
@@ -116,6 +117,10 @@ int            KTrieAddPattern( KTRIE_STRUCT *ts, unsigned char * P, int n,
 int            KTrieCompile(KTRIE_STRUCT * ts,
                             int (*build_tree)(void * id, void **existing_tree),
                             int (*neg_list_func)(void *id, void **list));
+struct _SnortConfig;
+int            KTrieCompileWithSnortConf(struct _SnortConfig *, KTRIE_STRUCT * ts,
+                                         int (*build_tree)(struct _SnortConfig *, void * id, void **existing_tree),
+                                         int (*neg_list_func)(void *id, void **list));
 int            KTrieSearch( KTRIE_STRUCT * ts, unsigned char * T,  int n,
                             int(*match)(void * id, void *tree, int index, void *data, void *neg_list),
                             void *data );

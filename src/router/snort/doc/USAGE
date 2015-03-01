@@ -85,7 +85,7 @@ Note the command line changes here.  We don't need to specify a home network
 any longer because binary mode logs everything into a single file, which 
 eliminates the need to tell it how to format the output directory structure.  
 Additionally, you don't need to run in verbose mode or specify the -d or -e 
-switches becuase in binary mode the entire packet is logged, not just sections
+switches because in binary mode the entire packet is logged, not just sections
 of it.  All that is really required to place Snort into logger mode is the 
 specification of a logging directory at the command line with the -l switch, 
 the -b binary logging switch merely provides a modifier to tell it to log the
@@ -192,7 +192,7 @@ format and produce minimal alerts.  For example:
 
 ./snort -b -A fast -c snort-lib
 
-In this configuration, Snort has been able to log multiple simultaneuos probes
+In this configuration, Snort has been able to log multiple simultaneous probes
 and attacks on a 100 Mbps LAN running at a saturation level of approximately 
 80 Mbps.  In this configuration the logs are written in binary format to the
 snort.log tcpdump-formatted file.  To read this file back and break out the

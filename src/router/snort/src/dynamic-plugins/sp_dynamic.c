@@ -15,9 +15,10 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (C) 2005-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * Author: Steven Sturges
  *
@@ -43,8 +44,6 @@
  *
  *
  */
-#ifdef DYNAMIC_PLUGIN
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -57,13 +56,14 @@
 #endif
 #include <errno.h>
 
+#include "sf_types.h"
 #include "rules.h"
 #include "treenodes.h"
 #include "decode.h"
 #include "bitop_funcs.h"
 #include "plugbase.h"
 #include "parser.h"
-#include "debug.h"
+#include "snort_debug.h"
 #include "util.h"
 #include "plugin_enum.h"
 #include "sp_dynamic.h"
@@ -75,6 +75,8 @@
 #include "sfhashfcn.h"
 #include "sp_preprocopt.h"
 #include "sfutil/sf_base64decode.h"
+#include "detection_util.h"
+#include "stream_api.h"
 
 #include "snort.h"
 #include "profiler.h"
@@ -84,60 +86,57 @@ PreprocStats dynamicRuleEvalPerfStats;
 extern PreprocStats ruleOTNEvalPerfStats;
 #endif
 
-extern const unsigned int giFlowbitSize;
 extern SFGHASH *flowbits_hash;
 extern SF_QUEUE *flowbits_bit_queue;
-extern u_int32_t flowbits_count;
-extern int flowbits_toggle;
-extern volatile int snort_initializing;
+extern uint32_t flowbits_count;
 extern DynamicRuleNode *dynamic_rules;
 
 
-void DynamicInit(char *, OptTreeNode *, int);
+void DynamicInit(struct _SnortConfig *, char *, OptTreeNode *, int);
 void DynamicParse(char *, OptTreeNode *);
 int DynamicCheck(void *option_data, Packet *p);
 
-u_int32_t DynamicRuleHash(void *d)
+uint32_t DynamicRuleHash(void *d)
 {
-    u_int32_t a,b,c;
+    uint32_t a,b,c;
     DynamicData *dynData = (DynamicData *)d;
 #if (defined(__ia64) || defined(__amd64) || defined(_LP64))
     {
         /* Cleanup warning because of cast from 64bit ptr to 32bit int
          * warning on 64bit OSs */
-        u_int64_t ptr; /* Addresses are 64bits */
-        ptr = (u_int64_t)dynData->contextData;
-        a = (ptr << 32) & 0XFFFFFFFF;
+        uint64_t ptr; /* Addresses are 64bits */
+        ptr = (uint64_t)dynData->contextData;
+        a = (ptr >> 32);
         b = (ptr & 0xFFFFFFFF);
-        
-        ptr = (u_int64_t)dynData->checkFunction;
-        c = (ptr << 32) & 0XFFFFFFFF;
-        
+
+        ptr = (uint64_t)dynData->checkFunction;
+        c = (ptr >> 32);
+
         mix (a,b,c);
-        
+
         a += (ptr & 0xFFFFFFFF);
 
-        ptr = (u_int64_t)dynData->hasOptionFunction;
-        b += (ptr << 32) & 0XFFFFFFFF;
+        ptr = (uint64_t)dynData->hasOptionFunction;
+        b += (ptr >> 32);
         c += (ptr & 0xFFFFFFFF);
 
-        ptr = (u_int64_t)dynData->getDynamicContents;
-        a += (ptr << 32) & 0XFFFFFFFF;
+        ptr = (uint64_t)dynData->getDynamicContents;
+        a += (ptr >> 32);
         b += (ptr & 0xFFFFFFFF);
         c += dynData->contentFlags;
 
         mix (a,b,c);
-    
+
         a += RULE_OPTION_TYPE_DYNAMIC;
     }
 #else
     {
-        a = (u_int32_t)dynData->contextData;
-        b = (u_int32_t)dynData->checkFunction;
-        c = (u_int32_t)dynData->hasOptionFunction;
+        a = (uint32_t)dynData->contextData;
+        b = (uint32_t)dynData->checkFunction;
+        c = (uint32_t)dynData->hasOptionFunction;
         mix(a,b,c);
 
-        a += (u_int32_t)dynData->getDynamicContents;
+        a += (uint32_t)dynData->getDynamicContents;
         b += dynData->contentFlags;
         c += RULE_OPTION_TYPE_DYNAMIC;
     }
@@ -169,7 +168,7 @@ int DynamicRuleCompare(void *l, void *r)
 }
 
 /****************************************************************************
- * 
+ *
  * Function: SetupDynamic()
  *
  * Purpose: Load it up
@@ -192,10 +191,10 @@ void SetupDynamic(void)
 
 
 /****************************************************************************
- * 
- * Function: DynamicInit(char *, OptTreeNode *)
  *
- * Purpose: Configuration function.  Handles parsing the rule 
+ * Function: DynamicInit(struct _SnortConfig *, char *, OptTreeNode *)
+ *
+ * Purpose: Configuration function.  Handles parsing the rule
  *          information and attaching the associated detection function to
  *          the OTN.
  *
@@ -206,7 +205,7 @@ void SetupDynamic(void)
  * Returns: void function
  *
  ****************************************************************************/
-void DynamicInit(char *data, OptTreeNode *otn, int protocol)
+void DynamicInit(struct _SnortConfig *sc, char *data, OptTreeNode *otn, int protocol)
 {
     OptFpList *fpl;
     DynamicData *dynData;
@@ -221,7 +220,7 @@ void DynamicInit(char *data, OptTreeNode *otn, int protocol)
      */
     fpl->context = (void *) dynData;
 
-    if (add_detection_option(RULE_OPTION_TYPE_DYNAMIC, (void *)dynData, &option_dup) == DETECTION_OPTION_EQUAL)
+    if (add_detection_option(sc, RULE_OPTION_TYPE_DYNAMIC, (void *)dynData, &option_dup) == DETECTION_OPTION_EQUAL)
     {
         free(dynData);
         fpl->context = dynData = option_dup;
@@ -230,7 +229,7 @@ void DynamicInit(char *data, OptTreeNode *otn, int protocol)
 }
 
 /****************************************************************************
- * 
+ *
  * Function: DynamicCheck(char *, OptTreeNode *, OptFpList *)
  *
  * Purpose: Use this function to perform the particular detection routine
@@ -241,7 +240,7 @@ void DynamicInit(char *data, OptTreeNode *otn, int protocol)
  *            fp_list => pointer to the function pointer list
  *
  * Returns: If the detection test fails, this function *must* return a zero!
- *          On success, it calls the next function in the detection list 
+ *          On success, it calls the next function in the detection list
  *
  ****************************************************************************/
 int DynamicCheck(void *option_data, Packet *p)
@@ -286,8 +285,9 @@ void DynamicRuleListFree(DynamicRuleNode *head)
 }
 
 /****************************************************************************
- * 
- * Function: RegisterDynamicRule(u_int32_t, u_int32_t, char *, void *,
+ *
+ * Function: RegisterDynamicRule(Snortconfig *, uint32_t, uint32_t, char *,
+ *                               void *,
  *                               OTNCheckFunction, int, GetFPContentFunction)
  *
  * Purpose: A dynamically loaded detection engine library can use this
@@ -297,7 +297,7 @@ void DynamicRuleListFree(DynamicRuleNode *head)
  *          check the rule.
  *
  * Arguments: sid => Signature ID
- *            gid => Generator ID  
+ *            gid => Generator ID
  *            info => context specific data
  *            chkFunc => Function to call to check if the rule matches
  *            has*Funcs => Functions used to categorize this rule
@@ -308,8 +308,9 @@ void DynamicRuleListFree(DynamicRuleNode *head)
  *
  ****************************************************************************/
 int RegisterDynamicRule(
-    u_int32_t sid,
-    u_int32_t gid,
+    SnortConfig *sc,
+    uint32_t sid,
+    uint32_t gid,
     void *info,
     OTNCheckFunction chkFunc,
     OTNHasFunction hasFunc,
@@ -325,7 +326,6 @@ int RegisterDynamicRule(
     OptFpList *fpl;
     char done_once = 0;
     void *option_dup;
-    SnortConfig *sc = snort_conf_for_parsing;
     DynamicRuleNode *node = NULL;
 
     if (sc == NULL)
@@ -334,7 +334,7 @@ int RegisterDynamicRule(
                    __FILE__, __LINE__);
     }
 
-    if (snort_initializing)
+    if ( SnortIsInitializing() )
     {
         node = (DynamicRuleNode *)SnortAlloc(sizeof(DynamicRuleNode));
 
@@ -371,7 +371,7 @@ int RegisterDynamicRule(
         }
         else
         {
-#ifndef SOURCEFIRE 
+#ifndef SOURCEFIRE
             LogMessage("DynamicPlugin: Rule [%u:%u] not enabled in "
                        "configuration, rule will not be used.\n", gid, sid);
 #endif
@@ -382,7 +382,7 @@ int RegisterDynamicRule(
 
     /* If this dynamic rule can be expressed as a regular rule, break it down
      * and convert it to use the rule option tree. */
-    if (ConvertDynamicRule((Rule *)info, otn) > 0)
+    if (ConvertDynamicRule(sc, (Rule *)info, otn) > 0)
     {
         if (node != NULL)
             node->converted = 1;
@@ -413,7 +413,7 @@ int RegisterDynamicRule(
 
         if (done_once == 0)
         {
-            if (add_detection_option(RULE_OPTION_TYPE_DYNAMIC,
+            if (add_detection_option(sc, RULE_OPTION_TYPE_DYNAMIC,
                                      (void *)dynData, &option_dup) == DETECTION_OPTION_EQUAL)
             {
                 free(dynData);
@@ -465,8 +465,6 @@ int ReloadDynamicRules(SnortConfig *sc)
 {
     DynamicRuleNode *node = dynamic_rules;
 
-    snort_conf_for_parsing = sc;
-
     for (; node != NULL; node = node->next)
     {
         int i;
@@ -483,7 +481,7 @@ int ReloadDynamicRules(SnortConfig *sc)
                 case OPTION_TYPE_FLOWBIT:
                     {
                         FlowBitsInfo *flowbits = option->option_u.flowBit;
-                        flowbits->id = DynamicFlowbitRegister(flowbits->flowBitsName, flowbits->operation);
+                        flowbits = DynamicFlowbitRegister(flowbits);
                     }
 
                     break;
@@ -493,19 +491,36 @@ int ReloadDynamicRules(SnortConfig *sc)
             }
         }
 
-        RegisterDynamicRule(node->rule->info.sigID, node->rule->info.genID,
-                            (void *)node->rule, node->chkFunc, node->hasFunc,
-                            node->contentFlags, node->contentsFunc,
-                            node->freeFunc, node->preprocFpContentsFunc);
-    }
+        if (RegisterDynamicRule(sc, node->rule->info.sigID, node->rule->info.genID,
+                    (void *)node->rule, node->chkFunc, node->hasFunc,
+                    node->contentFlags, node->contentsFunc,
+                    node->freeFunc, node->preprocFpContentsFunc) == -1)
+        {
+            for (i = 0; node->rule->options[i] != NULL; i++)
+            {
+                RuleOption *option = node->rule->options[i];
+                switch (option->optionType)
+                {
+                    case OPTION_TYPE_FLOWBIT:
+                        {
+                            FlowBitsInfo *flowbits = option->option_u.flowBit;
+                            DynamicFlowbitUnregister(flowbits);
+                        }
+                        break;
 
-    snort_conf_for_parsing = NULL;
+                    default:
+                        break;
+                }
+            }
+
+        }
+    }
 
     return 0;
 }
 #endif
 
-int DynamicPreprocRuleOptInit(void *opt)
+int DynamicPreprocRuleOptInit(struct _SnortConfig *sc, void *opt)
 {
     PreprocessorOption *preprocOpt = (PreprocessorOption *)opt;
     PreprocOptionInit optionInit;
@@ -521,7 +536,7 @@ int DynamicPreprocRuleOptInit(void *opt)
     if (preprocOpt->optionName == NULL)
         return -1;
 
-    result = GetPreprocessorRuleOptionFuncs((char *)preprocOpt->optionName,
+    result = GetPreprocessorRuleOptionFuncs(sc, (char *)preprocOpt->optionName,
                                      &preprocOpt->optionInit,
                                      &preprocOpt->optionEval,
                                      &otnHandler,
@@ -547,9 +562,9 @@ int DynamicPreprocRuleOptInit(void *opt)
     if (preprocOpt->optionParameters != NULL)
         option_params = SnortStrdup(preprocOpt->optionParameters);
 
-    result = optionInit(option_name, option_params, &preprocOpt->dataPtr);
+    result = optionInit(sc, option_name, option_params, &preprocOpt->dataPtr);
 
-    if (option_name != NULL) free(option_name);
+    free(option_name);
     if (option_params != NULL) free(option_params);
 
     if (!result)
@@ -558,80 +573,45 @@ int DynamicPreprocRuleOptInit(void *opt)
     return 0;
 }
 
-u_int32_t DynamicFlowbitRegister(char *name, int op)
+void *DynamicFlowbitRegister(void *info)
 {
-    u_int32_t retFlowId; /* ID */
-    int hashRet;
-    FLOWBITS_OBJECT *flowbits_item;
+    FlowBitsInfo *flowbitsInfo = (FlowBitsInfo *)info;
+    FLOWBITS_OP *flowbits;
 
-    /* Auto init hash table and queue */
-    if (flowbits_hash == NULL)
-        FlowBitsHashInit();
+    if (!info)
+        return NULL;
 
-    flowbits_item = sfghash_find(flowbits_hash, name);
+    flowbits = (FLOWBITS_OP *) SnortAlloc(sizeof(FLOWBITS_OP));
+    flowbits->type = flowbitsInfo->operation;
+    processFlowBitsWithGroup(flowbitsInfo->flowBitsName, flowbitsInfo->groupName, flowbits);
 
-    if (flowbits_item != NULL) 
+    // SO rules sometimes reuse the same option structure for multiple rule
+    // definitions.  Also on snort reload we can't muck with the structure
+    // since it'll possibly be in use.  So if flowbitsInfo->ids is already set,
+    // the flowbits structure has already been parsed and flowbits->ids will
+    // remain unchanged, so just return.
+    // processFlowBitsWithGroup() is called again, mainly for reload in
+    // case flowbits have been removed or added and/or the actual id values
+    // have changed.
+    if (flowbitsInfo->ids != NULL)
     {
-        retFlowId = flowbits_item->id;
-    }
-    else
-    {
-        flowbits_item = 
-            (FLOWBITS_OBJECT *)SnortAlloc(sizeof(FLOWBITS_OBJECT));
-
-        if (sfqueue_count(flowbits_bit_queue) > 0)
-        {
-            retFlowId = (u_int32_t)(uintptr_t)sfqueue_remove(flowbits_bit_queue);
-            flowbits_item->id = retFlowId;
-        }
-        else
-        {
-            retFlowId = flowbits_count;
-            flowbits_item->id = flowbits_count;
-
-            hashRet = sfghash_add(flowbits_hash, name, flowbits_item);
-            if (hashRet != SFGHASH_OK) 
-            {
-                FatalError("Could not add flowbits key (%s) to hash.\n", name);
-            }
-
-            flowbits_count++;
-
-            if(flowbits_count > (giFlowbitSize<<3) )
-            {
-                FatalError("FLOWBITS: The number of flowbit IDs in the "
-                           "current ruleset (%d) exceed the maximum number of IDs "
-                           "that are allowed (%d).\n", flowbits_count,giFlowbitSize<<3);
-            }
-        }
+        if (flowbits->ids != NULL)
+            free(flowbits->ids);
+        free(flowbits);
+        return flowbitsInfo;
     }
 
-    flowbits_item->toggle = flowbits_toggle;
-    flowbits_item->types |= op;
-    switch (op)
-    {
-        case FLOWBITS_SET:
-        case FLOWBITS_UNSET:
-        case FLOWBITS_TOGGLE:
-        case FLOWBITS_RESET:
-            flowbits_item->set++;
-            break;
-        case FLOWBITS_ISSET:
-        case FLOWBITS_ISNOTSET:
-            flowbits_item->isset++;
-            break;
-        default:
-            break;
-    }
-
-    return retFlowId;
+    flowbitsInfo->eval = flowbits->eval;
+    flowbitsInfo->ids = flowbits->ids;
+    flowbitsInfo->num_ids = flowbits->num_ids;
+    free(flowbits);
+    return flowbitsInfo;
 }
 
-void DynamicFlowbitUnregister(char *name, int op)
+static void unregisterFlowbit(char *name, int op)
 {
     FLOWBITS_OBJECT *flowbits_item;
 
-    /* Auto init hash table and queue */
     if (flowbits_hash == NULL)
         return;
 
@@ -642,6 +622,7 @@ void DynamicFlowbitUnregister(char *name, int op)
     switch (op)
     {
         case FLOWBITS_SET:
+        case FLOWBITS_SETX:
         case FLOWBITS_UNSET:
         case FLOWBITS_TOGGLE:
         case FLOWBITS_RESET:
@@ -662,101 +643,90 @@ void DynamicFlowbitUnregister(char *name, int op)
     }
 }
 
-int DynamicFlowbitCheck(void *pkt, int op, u_int32_t id)
+void DynamicFlowbitUnregister(void *info)
 {
-    StreamFlowData *flowdata;
-    Packet *p = (Packet *)pkt;
-    int result = 0;
+    FlowBitsInfo *flowbitsInfo = (FlowBitsInfo *)info;
+    char *names;
+    char *flowbitName;
+    char *nextName;
+    int op;
 
-    if ((stream_api == NULL) || (p->ssnptr == NULL))
-        return 0;
+    if ((!flowbitsInfo)||(!flowbitsInfo->flowBitsName))
+        return;
 
-    flowdata = stream_api->get_flow_data(p);
-    if (!flowdata)
-        return 0;
-
-    switch(op)
+    op = flowbitsInfo->operation;
+    names = SnortStrdup(flowbitsInfo->flowBitsName);
+    flowbitName = strtok_r(names, "|&", &nextName);
+    while ( flowbitName )
     {
-        case FLOWBITS_SET:
-            boSetBit(&(flowdata->boFlowbits), id);
-            result = 1;
-            break;
-
-        case FLOWBITS_UNSET:
-            boClearBit(&(flowdata->boFlowbits), id);
-            result = 1;
-            break;
-
-        case FLOWBITS_RESET:
-            boResetBITOP(&(flowdata->boFlowbits));
-            result = 1;
-
-        case FLOWBITS_ISSET:
-            if (boIsBitSet(&(flowdata->boFlowbits), id))
-                result = 1;
-            break;
-
-        case FLOWBITS_ISNOTSET:
-            if (boIsBitSet(&(flowdata->boFlowbits), id))
-                result = 0;
-            else
-                result = 1;
-            break;
-
-        case FLOWBITS_TOGGLE:
-            if (boIsBitSet(&(flowdata->boFlowbits), id))
-            {
-                boClearBit(&(flowdata->boFlowbits), id);
-            }
-            else
-            {
-                boSetBit(&(flowdata->boFlowbits), id);
-            }
-            result = 1;
-            break;
-        case FLOWBITS_NOALERT:
-            /* Shouldn't see this case here... But, just for
-             * safety sake, return 0.
-             */
-            result = 0;
-            break;
-
-        default:
-            /* Shouldn't see this case here... But, just for
-             * safety sake, return 0.
-             */
-            result = 0;
-            break;
+        unregisterFlowbit(flowbitName, op);
+        flowbitName = strtok_r(nextName, "|&", &nextName);
     }
 
+    // Don't free flowbits->ids here for SO rules as it may cause a segfault
+    // with rules that share the same flowbits structure when not all of the
+    // stub rules are enabled.  The ids array will be free'd at shutdown in
+    // FreeOneRule().
+
+    free(names);
+}
+
+int DynamicFlowbitCheck(void *pkt, void *info)
+{
+    Packet *p = (Packet *)pkt;
+    FlowBitsInfo *flowbitsInfo = (FlowBitsInfo *)info;
+    int result = 0;
+    result = checkFlowBits(flowbitsInfo->operation, flowbitsInfo->eval, flowbitsInfo->ids,
+            flowbitsInfo->num_ids,flowbitsInfo->groupName, p);
     return result;
 }
 
 
-int DynamicAsn1Detect(void *pkt, void *ctxt, const u_int8_t *cursor)
+int DynamicAsn1Detect(void *pkt, void *ctxt, const uint8_t *cursor)
 {
     Packet *p    = (Packet *) pkt;
-    ASN1_CTXT *c = (ASN1_CTXT *) ctxt;   
-    
+    ASN1_CTXT *c = (ASN1_CTXT *) ctxt;
+
     /* Call same detection function that snort calls */
     return Asn1DoDetect(p->data, p->dsize, c, cursor);
 }
 
-int DynamicsfUnfold(const u_int8_t *inbuf, u_int32_t insize, u_int8_t *outbuf, u_int32_t outsize, u_int32_t *read)
+int DynamicsfUnfold(const uint8_t *inbuf, uint32_t insize, uint8_t *outbuf, uint32_t outsize, uint32_t *read)
 {
-    return sf_unfold_header(inbuf, insize, outbuf, outsize, read);
+    return sf_unfold_header(inbuf, insize, outbuf, outsize, read, 0, 0);
 }
 
-int Dynamicsfbase64decode(u_int8_t *inbuf, u_int32_t insize, u_int8_t *outbuf, u_int32_t outsize, u_int32_t *read)
+int Dynamicsfbase64decode(uint8_t *inbuf, uint32_t insize, uint8_t *outbuf, uint32_t outsize, uint32_t *read)
 {
     return sf_base64decode(inbuf, insize, outbuf, outsize, read);
 }
 
-static INLINE int DynamicHasOption(
+int DynamicGetAltDetect(uint8_t **bufPtr, uint16_t *altLenPtr)
+{
+    return GetAltDetect(bufPtr, altLenPtr);
+}
+
+void DynamicSetAltDetect(uint8_t *buf, uint16_t altLen)
+{
+    SetAltDetect(buf, altLen);
+}
+
+int DynamicIsDetectFlag(SFDetectFlagType df)
+{
+    return Is_DetectFlag((DetectFlagType)df);
+}
+
+void DynamicDetectFlagDisable(SFDetectFlagType df)
+{
+        DetectFlag_Disable((DetectFlagType)df);
+}
+
+
+static inline int DynamicHasOption(
     OptTreeNode *otn, DynamicOptionType optionType, int flowFlag
 ) {
     DynamicData *dynData;
-    
+
     dynData = (DynamicData *)otn->ds_list[PLUGIN_DYNAMIC];
     if (!dynData)
     {
@@ -790,6 +760,3 @@ int DynamicHasPCRE(OptTreeNode *otn)
 {
     return DynamicHasOption(otn, OPTION_TYPE_PCRE, 0);
 }
-
-#endif /* DYNAMIC_PLUGIN */
-

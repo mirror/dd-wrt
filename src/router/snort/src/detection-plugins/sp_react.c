@@ -1,7 +1,8 @@
 /* $Id$ */
 /****************************************************************************
  *
- * Copyright (C) 2005-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -16,15 +17,18 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************/
+
+// @file    sp_react.c
+// @author  Russ Combs <rcombs@sourcefire.com>
 
 /* The original Snort React Plugin was contributed by Maciej Szarpak, Warsaw
  * University of Technology.  The module has been entirely rewritten by
  * Sourcefire as part of the effort to overhaul active response.  Some of the
  * changes include:
- * 
+ *
  * - elimination of unworkable warn mode
  * - elimination of proxy port (rule header has ports)
  * - integration with unified active response mechanism
@@ -36,7 +40,7 @@
  *
  * This version will send a web page to the client and then reset both
  * ends of the session.  The web page may be configured or the default
- * may be used.  The web page can have the default warning message 
+ * may be used.  The web page can have the default warning message
  * inserted or the message from the rule.
  *
  * If you wish to just reset the session, use the resp keyword instead.
@@ -55,7 +59,8 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "debug.h"
+#include "sf_types.h"
+#include "snort_debug.h"
 #include "decode.h"
 #include "encode.h"
 #include "detection_options.h"
@@ -74,15 +79,17 @@ static PreprocStats reactPerfStats;
 extern PreprocStats ruleOTNEvalPerfStats;
 #endif
 
-extern SnortConfig* snort_conf_for_parsing;
-
 static const char* MSG_KEY = "<>";
+static const char* MSG_PERCENT = "%";
 
-static const char* DEFAULT_PAGE =
+static const char* DEFAULT_HTTP =
     "HTTP/1.1 403 Forbidden\r\n"
     "Connection: close\r\n"
     "Content-Type: text/html; charset=utf-8\r\n"
-    "\r\n"
+    "Content-Length: %d\r\n"
+    "\r\n";
+
+static const char* DEFAULT_HTML =
     "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\"\r\n"
     "    \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">\r\n"
     "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\">\r\n"
@@ -110,13 +117,14 @@ typedef struct _ReactData
 
 } ReactData;
 
+static int s_init = 1;
 static int s_deprecated = 0;
 static char* s_page = NULL;
 
 // When React_Init() is called the rule msg keyword may not have
 // been processed.  This necessitates two things:
 //
-// * A unique instance id is used in the hash in lieu of the 
+// * A unique instance id is used in the hash in lieu of the
 //   message text.  The id starts at 1 since 0 is reserved for
 //   the default msg.  Assuming all rules have different msg
 //   strings, the id is a valid proxy.
@@ -131,12 +139,12 @@ static char* s_page = NULL;
 static uint32_t s_id = 1;
 
 // callback functions
-static void React_Init(char *, OptTreeNode *, int);
-static void React_Config(int signal, void *data);
+static void React_Init(struct _SnortConfig *, char *, OptTreeNode *, int);
 static void React_Cleanup(int signal, void *data);
+static void React_Config (struct _SnortConfig *, void *data);
 
 // core functions
-static void React_GetPage(void);
+static void React_GetPage(struct _SnortConfig *);
 static void React_Parse(char *, OptTreeNode *, ReactData *);
 static int React_Queue(Packet*, void*);
 static void React_Send(Packet*,  void*);
@@ -158,7 +166,7 @@ uint32_t ReactHash(void *d)
     unsigned int i,j,k,l;
     ReactData *data = (ReactData *)d;
 
-    const char* s = s_page ? s_page : DEFAULT_PAGE;
+    const char* s = s_page ? s_page : DEFAULT_HTML;
     unsigned n = strlen(s);
 
     a = data->rule_msg;
@@ -173,7 +181,7 @@ uint32_t ReactHash(void *d)
         k = n - i;
         if (k > 4)
             k=4;
-                                                               
+
         for (l=0;l<k;l++)
         {
             tmp |= s[i + l] << l*8;
@@ -243,7 +251,7 @@ void SetupReact(void)
 //--------------------------------------------------------------------
 // callback functions
 
-static void React_Init(char *data, OptTreeNode *otn, int protocol)
+static void React_Init(struct _SnortConfig *sc, char *data, OptTreeNode *otn, int protocol)
 {
     ReactData* rd;
     void *idx_dup;
@@ -257,32 +265,35 @@ static void React_Init(char *data, OptTreeNode *otn, int protocol)
             file_name, file_line);
 
     DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN,"In React_Init()\n"););
-    React_GetPage();
 
-    rd = SnortAlloc(sizeof(*rd));
+    if ( s_init )
+    {
+        AddFuncToCleanExitList(React_Cleanup, NULL);
+
+        React_GetPage(sc);
+
+        Active_SetEnabled(1);
+        s_init = 0;
+    }
 
     /* parse the react keywords */
+    rd = SnortAlloc(sizeof(*rd));
     React_Parse(data, otn, rd);
     rd->otn = otn;
 
-    // this prevent multiple response options in rule
-    otn->ds_list[PLUGIN_RESPONSE] = rd;
-
-    if (add_detection_option(RULE_OPTION_TYPE_REACT, (void*)rd, &idx_dup)
+    if (add_detection_option(sc, RULE_OPTION_TYPE_REACT, (void*)rd, &idx_dup)
         == DETECTION_OPTION_EQUAL)
     {
         free(rd);
-        return;
+        rd = idx_dup;
     }
-
-    /* finally, attach the option's detection function to the rule's 
+    /* finally, attach the option's detection function to the rule's
        detect function pointer list */
-    AddFuncToPostConfigList(React_Config, rd);
-    AddFuncToCleanExitList(React_Cleanup, NULL);
-    AddFuncToRestartList(React_Cleanup, NULL);
     AddRspFuncToList(React_Queue, otn, (void*)rd);
+    AddFuncToPreprocPostConfigList(sc, React_Config, rd);
 
-    Active_SetEnabled(1);
+    // this prevents multiple response options in rule
+    otn->ds_list[PLUGIN_RESPONSE] = rd;
 }
 
 static void React_Cleanup(int signal, void* data)
@@ -292,19 +303,19 @@ static void React_Cleanup(int signal, void* data)
         free(s_page);
         s_page = NULL;
     }
+    s_init = 1;
 }
 
 //--------------------------------------------------------------------
 // core functions
 
-static void React_GetPage (void)
+static void React_GetPage (struct _SnortConfig *sc)
 {
     char* msg;
+    char* percent_s;
     struct stat fs;
     FILE* fd;
     size_t n;
-
-    SnortConfig* sc = snort_conf_for_parsing;
 
     if ( !sc )
         FatalError("react: %s(%d) Snort config for parsing is NULL.\n",
@@ -316,7 +327,7 @@ static void React_GetPage (void)
         FatalError("react: %s(%d) can't stat react page file '%s'.\n",
             file_name, file_line, sc->react_page);
 
-    s_page = SnortAlloc(fs.st_size);
+    s_page = SnortAlloc(fs.st_size+1);
     fd = fopen(sc->react_page, "r");
 
     if ( !fd )
@@ -324,13 +335,30 @@ static void React_GetPage (void)
             file_name, file_line, sc->react_page);
 
     n = fread(s_page, 1, fs.st_size, fd);
+    fclose(fd);
 
     if ( n != (size_t)fs.st_size )
         FatalError("react: %s(%d) can't load react page file '%s'.\n",
             file_name, file_line, sc->react_page);
 
+    s_page[n] = '\0';
     msg = strstr(s_page, MSG_KEY);
     if ( msg ) strncpy(msg, "%s", 2);
+
+    // search for %
+    percent_s = strstr(s_page, MSG_PERCENT);
+    if (percent_s)
+    {
+        percent_s += strlen(MSG_PERCENT); // move past current
+        // search for % again
+        percent_s = strstr(percent_s, MSG_PERCENT);
+        if (percent_s)
+        {
+            FatalError("react: %s(%d) can't specify more than one %%s or other "
+                "printf style formatting characters in react page '%s'.\n",
+                file_name, file_line, sc->react_page);
+        }
+    }
 }
 
 //--------------------------------------------------------------------
@@ -367,7 +395,7 @@ static void React_Parse(char* data, OptTreeNode* otn, ReactData* rd)
             FatalError("%s(%d): invalid react option: %s\n",
                 file_name, file_line, tok);
 
-        tok = strtok(NULL, ","); 
+        tok = strtok(NULL, ",");
 
         /* get rid of spaces */
         while ( tok && isspace((int)*tok) ) tok++;
@@ -378,41 +406,37 @@ static void React_Parse(char* data, OptTreeNode* otn, ReactData* rd)
 }
 
 //--------------------------------------------------------------------
+// format response buffer
 
-static void React_Config (int unused, void* data)
+static void React_Config (struct _SnortConfig *sc, void *data)
 {
-    ReactData* rd = (ReactData*)data;
-    size_t len; 
-    int ret;
+    ReactData *rd = (ReactData *)data;
+    size_t body_len, head_len, total_len;
+    char dummy;
 
-    // format response buffer
-    const char* page = s_page ? s_page : DEFAULT_PAGE;
+    const char* head = DEFAULT_HTTP;
+    const char* body = s_page ? s_page : DEFAULT_HTML;
 
-    if ( strstr(page, "%s") )
-    {
-        const char* msg = rd->otn->sigInfo.message;
-        if ( !msg || !rd->rule_msg ) msg = DEFAULT_MSG;
-        len = strlen(page) + strlen(msg) - 1;  // due to %s in page
-        rd->resp_buf = (char*)SnortAlloc(len);
-        ret = SnortSnprintf((char*)rd->resp_buf, len, page, msg);
-    }
-    else
-    {
-        len = strlen(page) + 1;  // for \0
-        rd->resp_buf = (char*)SnortAlloc(len);
-        ret = SnortSnprintf((char*)rd->resp_buf, len, "%s", page);
-    }
+    const char* msg = rd->otn->sigInfo.message;
+    if ( !msg || !rd->rule_msg ) msg = DEFAULT_MSG;
 
-    if ( ret != SNORT_SNPRINTF_SUCCESS )
-        FatalError("%s(%d): SnortSnprintf failed\n", file_name, file_line);
+    body_len = snprintf(&dummy, 1, body, msg);
+    head_len = snprintf(&dummy, 1, head, body_len);
+    total_len = head_len + body_len + 1;
 
-    // set actual length (should be len-1)
+    rd->resp_buf = (char*)SnortAlloc(total_len);
+
+    SnortSnprintf((char*)rd->resp_buf, head_len+1, head, body_len);
+    SnortSnprintf((char*)rd->resp_buf+head_len, body_len+1, body, msg);
+
+    // set actual length
+    rd->resp_buf[total_len-1] = '\0';
     rd->buf_len = strlen(rd->resp_buf);
 }
 
 //--------------------------------------------------------------------
 
-static int React_Queue (Packet* p, void* pv) 
+static int React_Queue (Packet* p, void* pv)
 {
     ReactData* rd = (ReactData*)pv;
     PROFILE_VARS;
@@ -422,7 +446,7 @@ static int React_Queue (Packet* p, void* pv)
     if ( Active_IsRSTCandidate(p) )
         Active_QueueResponse(React_Send, rd);
 
-    Active_DropSession();
+    Active_DropSession(p);
 
     PREPROC_PROFILE_END(reactPerfStats);
     return 0;
@@ -434,18 +458,19 @@ static void React_Send (Packet* p,  void* pv)
 {
     ReactData* rd = (ReactData*)pv;
     EncodeFlags df = (p->packet_flags & PKT_FROM_SERVER) ? ENC_FLAG_FWD : 0;
-    EncodeFlags rf = ENC_FLAG_SEQ | (ENC_FLAG_VAL & rd->buf_len); 
+    EncodeFlags rf = ENC_FLAG_SEQ | (ENC_FLAG_VAL & rd->buf_len);
     PROFILE_VARS;
 
     PREPROC_PROFILE_START(reactPerfStats);
     Active_IgnoreSession(p);
 
-    Active_SendData(p, df, (uint8_t*)rd->resp_buf, rd->buf_len);
+    if (p->packet_flags & PKT_STREAM_EST)
+        Active_SendData(p, df, (uint8_t*)rd->resp_buf, rd->buf_len);
     Active_SendReset(p, rf);
     Active_SendReset(p, ENC_FLAG_FWD);
 
     PREPROC_PROFILE_END(reactPerfStats);
-}    
+}
 
 #endif /* ENABLE_REACT */
 

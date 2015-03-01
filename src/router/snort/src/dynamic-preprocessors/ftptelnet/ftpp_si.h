@@ -1,7 +1,8 @@
 /*
  * ftpp_si.h
  *
- * Copyright (C) 2004-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2004-2013 Sourcefire, Inc.
  * Steven A. Sturges <ssturges@sourcefire.com>
  * Daniel J. Roelker <droelker@sourcefire.com>
  * Marc A. Norton <mnorton@sourcefire.com>
@@ -19,7 +20,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  * Description:
  *
@@ -37,15 +38,18 @@
 #ifndef __FTPP_SI_H__
 #define __FTPP_SI_H__
 
+#include <stdint.h>
+
 #include "ftpp_include.h"
 #include "ftpp_ui_config.h"
 #include "ftp_client.h"
 #include "ftp_server.h"
-//#include "decode.h"
+
 #include "sf_snort_packet.h"
 #include "ftpp_eo.h"
 #include "sfPolicy.h"
 #include "sfPolicyUserData.h"
+#include "session_api.h"
 
 /*
  * These are the defines for the different types of
@@ -55,9 +59,19 @@
 #define FTPP_SI_CLIENT_MODE 1
 #define FTPP_SI_SERVER_MODE 2
 
-#define FTPP_SI_PROTO_UNKNOWN 0
-#define FTPP_SI_PROTO_TELNET  1
-#define FTPP_SI_PROTO_FTP     2
+#define FTPP_SI_PROTO_UNKNOWN   0
+#define FTPP_SI_PROTO_TELNET    1
+#define FTPP_SI_PROTO_FTP       2
+#define FTPP_SI_PROTO_FTP_DATA  3
+
+#define FTPP_FILE_IGNORE    -1
+#define FTPP_FILE_UNKNOWN    0
+
+/* Macros for testing the type of FTP_TELNET_SESSION */
+#define FTPP_SI_IS_PROTO(Ssn, Pro)      ((Ssn) && ((Ssn)->ft_ssn.proto == (Pro)))
+#define PROTO_IS_FTP(ssn)               FTPP_SI_IS_PROTO(ssn, FTPP_SI_PROTO_FTP)
+#define PROTO_IS_FTP_DATA(ssn)          FTPP_SI_IS_PROTO(ssn, FTPP_SI_PROTO_FTP_DATA)
+#define PROTO_IS_TELNET(ssn)            FTPP_SI_IS_PROTO(ssn, FTPP_SI_PROTO_TELNET)
 
 typedef struct s_FTP_TELNET_SESSION
 {
@@ -66,7 +80,7 @@ typedef struct s_FTP_TELNET_SESSION
 } FTP_TELNET_SESSION;
 
 /*
- * The TELNET_SESSION structure contains the complete TELNET session.  
+ * The TELNET_SESSION structure contains the complete TELNET session.
  * This structure is the structure that is saved per session in the
  * Stream Interface Module.  This structure gets sent through the
  * detection engine process (Normalization, Detection).
@@ -113,20 +127,20 @@ typedef struct s_TELNET_SESSION
 
 /*
  * The FTP_SESSION structure contains the complete FTP session, both the
- * client and the server constructs.  This structure is the structure that 
- * is saved per session in the Stream Interface Module.  This structure 
- * gets sent through the detection engine process (Normalization, 
+ * client and the server constructs.  This structure is the structure that
+ * is saved per session in the Stream Interface Module.  This structure
+ * gets sent through the detection engine process (Normalization,
  * Detection).
  */
 typedef struct s_FTP_SESSION
 {
     FTP_TELNET_SESSION ft_ssn;
 
-    /* The client construct contains all the info associated with a 
+    /* The client construct contains all the info associated with a
      * client request. */
     FTP_CLIENT client;
 
-    /* The server construct contains all the info associated with a 
+    /* The server construct contains all the info associated with a
      * server response. */
     FTP_SERVER server;
 
@@ -144,18 +158,52 @@ typedef struct s_FTP_SESSION
     int data_chan_state;
     int data_chan_index;
     int data_xfer_index;
+    bool data_xfer_dir;
     snort_ip      clientIP;
     uint16_t clientPort;
     snort_ip      serverIP;
     uint16_t serverPort;
 
+    /* A file is being transfered on ftp-data channel */
+    char *filename;
+    int file_xfer_info; /* -1: ignore, 0: unknown, >0: filename length */
+
     /* Command/data channel encryption */
     int encr_state;
+    bool encr_state_chello;
+    uint32_t flow_id;
 
     /* Alertable event list */
     FTP_EVENTS event_list;
 
 } FTP_SESSION;
+
+#ifdef TARGET_BASED
+
+/* FTP-Data Transfer Modes */
+enum {
+    FTPP_XFER_PASSIVE = 0,
+    FTPP_XFER_ACTIVE  = 1
+};
+
+typedef struct s_FTP_DATA_SESSION
+{
+    FTP_TELNET_SESSION ft_ssn;
+    StreamSessionKey * ftp_key;
+    char *filename;
+    int data_chan;
+    int file_xfer_info;
+    FilePosition position;
+    bool direction;
+    unsigned char mode;
+    unsigned char flags;
+} FTP_DATA_SESSION;
+
+#define FTPDATA_FLG_REASSEMBLY_SET  (1<<0)
+#define FTPDATA_FLG_FILENAME_SET    (1<<1)
+#define FTPDATA_FLG_STOP            (1<<2)
+
+#endif
 
 /*
  * The FTPP_SI_INPUT structure holds the information that the Session
@@ -163,7 +211,7 @@ typedef struct s_FTP_SESSION
  * (client, server, neither) and to retrieve the appropriate server
  * configuration.
  *
- * The input is the source and destination IP addresses, and the 
+ * The input is the source and destination IP addresses, and the
  * source and destination ports (since this should always be a
  * TCP packet).
  */
@@ -182,5 +230,12 @@ int ftpp_si_determine_proto(SFSnortPacket *p, FTPTELNET_GLOBAL_CONF *GlobalConf,
         FTP_TELNET_SESSION **, FTPP_SI_INPUT *SiInput, int *piInspectMode);
 int FTPGetPacketDir(SFSnortPacket *);
 
+#ifdef TARGET_BASED
+/* FTP-Data file processing */
+FTP_DATA_SESSION * FTPDataSessionNew(SFSnortPacket *p);
+void FTPDataSessionFree(void *p_ssn);
+bool FTPDataDirection(SFSnortPacket *p, FTP_DATA_SESSION *ftpdata);
 #endif
+
+#endif /* ! __FTPP_SI_H__ */
 

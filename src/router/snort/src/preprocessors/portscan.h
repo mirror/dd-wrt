@@ -1,6 +1,7 @@
 /****************************************************************************
  *
- * Copyright (C) 2004-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2004-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -15,10 +16,10 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************/
- 
+
 #ifndef __PORTSCAN_H__
 #define __PORTSCAN_H__
 
@@ -41,7 +42,7 @@
 typedef struct _PortscanConfig
 {
     int disabled;
-    int memcap;
+    unsigned long memcap;
     int detect_scans;
     int detect_scan_type;
     int sense_level;
@@ -80,7 +81,7 @@ typedef struct s_PS_PROTO
 
     time_t         window;
 
-} PS_PROTO;    
+} PS_PROTO;
 
 typedef struct s_PS_TRACKER
 {
@@ -131,15 +132,15 @@ typedef struct s_PS_PKT
 
 #define PS_ALERT_GENERATED                 255
 
-int ps_init(PortscanConfig *, int, int, int, IPSET *, IPSET *, IPSET *, int);
+int ps_init(struct _SnortConfig *, PortscanConfig *, int, int, int, IPSET *, IPSET *, IPSET *, unsigned long);
 void ps_cleanup(void);
 void ps_reset(void);
-        
+
 int  ps_detect(PS_PKT *p);
 void ps_tracker_print(PS_TRACKER *tracker);
 
-int ps_get_protocols(tSfPolicyId policyId);
-void ps_init_hash(int);
+int ps_get_protocols(struct _SnortConfig *sc, tSfPolicyId policyId);
+void ps_init_hash(unsigned long);
 
 #endif
 

@@ -1,14 +1,17 @@
 Overview
 ========
-The Stream5 preprocessor is a target-based TCP reassembly module
-for Snort.  It is intended to replace both the Stream4 and flow 
-preprocessors, and it is capable of tracking sessions for both
-TCP and UDP.  With Stream5, the rule 'flow' and 'flowbits' keywords
-are usable with TCP as well as UDP traffic.
+The Stream preprocessor is a target-based TCP reassembly module
+for Snort.  It replaces both the Stream5 and the earlier Stream4
+and flow preprocessors, and it is capable of tracking sessions 
+for both TCP and UDP.
 
-Since Stream5 replaces Stream4, both cannot be used simultaneously.
-Remove the Stream4 and flow configurations from snort.conf when the
-Stream5 configuration is added.
+Since Stream replaces Stream5, both cannot be used simultaneously.
+Stream registers for the same configuration keywords as Stream5 
+with the exception of 'stream5_global', which is now  processed
+by the Session preprocessor.  Existing configuration files should
+continure to work with the Stream as long as there is only one
+'stream5_global' and it is included with the global options of
+the base policy.
 
 Transport Protocols
 -------------------
@@ -21,20 +24,20 @@ session.
 
 Target-Based
 ------------
-Stream5, like Frag3, introduces target-based actions for handling
+Stream, like Frag3, introduces target-based actions for handling
 of overlapping data and other TCP anomalies.  The methods for handling
 overlapping data, TCP Timestamps, Data on SYN, FIN and Reset sequence
-numbers, etc. and the policies supported by Stream5 are the results of
+numbers, etc. and the policies supported by Stream are the results of
 extensive research with many target operating systems.
 
 Stream API
 ----------
-Stream5 fully supports the Stream API (partly supported by Stream4),
-allowing other protocol normalizers/preprocessors to dynamically
-configure reassembly behavior as required by the application layer
-protocol, identify sessions that may be ignored (large data transfers,
-etc), and update the identifying information about the session
-(application protocol, direction, etc) that can later be used by rules.
+Stream supports the modified Stream API that is now focused on
+functions specific to reassembly and protocol aware flushing
+operations.  Session management functions have been moved to the
+Session API.  The remaining API functions enable other protocol 
+normalizers/preprocessors to dynamically configure reassembly 
+behavior as required by the application layer protocol.
 
 Anomaly Detection
 -----------------
@@ -44,9 +47,22 @@ option to the TCP configuration.  Some of these anomalies are
 detected on a per-target basis.  For example, a few operating systems
 allow data in TCP SYN packets, while others do not.
 
+Protocol Aware Flushing (PAF)
+-----------------------------
+Protocol aware flushing of HTTP, SMB and DCE/RPC can be enabled with this option:
+
+config paf_max: <max pdu>
+
+where <max-pdu> is between zero (off) and 63780.  This allows Snort to
+statefully scan a stream and reassemble a complete PDU regardless of 
+segmentation.  For example, multiple PDUs within a single TCP segment,
+as well as one PDU spanning multiple TCP segments will be reassembled 
+into one PDU per packet for each PDU.  PDUs larger than the configured
+maximum will be split into multiple packets.
+
 Rule Options
 ============
-Stream5 adds support for a few rule options described below.
+Stream adds support for a few rule options described below.
 
 stream_size
 -----------
@@ -102,41 +118,9 @@ Configuration
 =============
 Global Configuration
 --------------------
-Global settings for the Stream5 preprocessor
-
-- Preprocessor name: stream5_global
-- Options:
-    track_tcp <yes|no>      - Track sessions for TCP.  The default is "yes".
-    max_tcp <number>        - Max concurrent sessions for TCP.  The default
-                              is "262144", maximum is "1048576", minimum is "1".
-    memcap <bytes>          - Memcap for TCP packet storage.  The default
-                              is "8388608" (8MB), maximum is "1073741824" (1GB),
-                              minimum is "32768" (32KB).
-    track_udp <yes|no>      - Track sessions for UDP.  The default is "yes".
-    max_udp <number>        - Max concurrent sessions for UDP.  The default
-                              is "131072", maximum is "1048576", minimum is "1".
-    track_icmp <yes|no>     - Track sessions for ICMP.  The default is "no".
-    max_icmp <number>       - Max concurrent sessions for ICMP.  The default
-                              is "65536", maximum is "1048576", minimum is "1".
-    flush_on_alert          - Backwards compatibility.  Flush a TCP stream
-                              when an alert is generated on that stream.  The
-                              default is set to off.
-    show_rebuilt_packets    - Print/display packet after rebuilt (for
-                              debugging).  The default is set to off.
-    prune_log_max <bytes>   - Print a message when a session terminates that
-                              was consuming more than the specified number of
-                              bytes.  The default is "1048576" (1MB), minimum
-                              can be either "0" (disabled) or if not disabled 
-			      the minimum is "1024" and maximum is "1073741824".
-    disabled		    - This optional keyword is allowed with any policy
-			      to avoid packet processing. This option disables
-			      the preprocessor. When the preprocessor is disabled 
-			      only the options memcap, max_tcp, max_udp and 
-			      max_icmp are applied when specified with the 
-		              configuration. The other options are parsed but 
-		              not used. Any valid configuration may have 
-		              "disabled" added to it.
-			      
+Global settings prevousily processed by Stream5 are now handled by Session.  Stream calls
+as Session API method to get a copy of these settings for its use.  Refer to README.session
+for details on the global configuration options.
 
 TCP Configuration
 -----------------
@@ -182,7 +166,7 @@ is not bound to an IP address or network.
                               is "1073725440" (65535 left shift 14).  That is
                               the highest possible TCP window per RFCs.  This
                               option is intended to prevent a DoS against
-                              Stream5 by an attacker using an abnormally large
+                              Stream by an attacker using an abnormally large
                               window, so using a value near the maximum is
                               discouraged.
     detect_anomalies        - Detect TCP protocol anomalies.  The default is set
@@ -342,23 +326,8 @@ preprocessor stream5_tcp: policy solaris
 
 Alerts
 ======
-Stream5 uses generator ID 129.  It is capable of alerting on 10
+Stream uses generator ID 129.  It is capable of alerting on 10
 anomalies, all of which relate to TCP anomalies.  There are no
-anomaly detection capabilities for UDP or ICMP.
+anomaly detection capabilities for UDP or ICMP.  Check etc/gen-msg.map
+for the current list of GID 129 alerts.
 
-SID   Description
----   -----------
-1     SYN on established session
-2     Data on SYN packet
-3     Data sent on stream not accepting data
-4     TCP Timestamp is outside of PAWS window
-5     Bad segment, overlap adjusted size less than/equal 0
-6     Window size (after scaling) larger than policy allows
-7     Limit on number of overlapping TCP packets reached
-8     Data after Reset packet
-9     Possible Hijacked Client
-10    Possible Hijacked Server
-11    TCP packet with any control flags set
-12    Limit on number of consecutive small segments reached
-13    4-way handshake detected
-14    Packet missing timestamp

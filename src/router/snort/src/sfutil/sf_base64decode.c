@@ -1,5 +1,6 @@
 /*
- ** Copyright (C) 1998-2011 Sourcefire, Inc.
+ ** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 1998-2013 Sourcefire, Inc.
  **
  ** Writen by Patrick Mullen <pmullen@sourcefire.com>
  **
@@ -16,8 +17,12 @@
  **
  ** You should have received a copy of the GNU General Public License
  ** along with this program; if not, write to the Free Software
- ** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "sf_base64decode.h"
 
@@ -39,91 +44,6 @@ uint8_t sf_decode64tab[256] = {
         100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,
         100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100};
 
-/* Given a string, removes header folding (\r\n followed by linear whitespace)
- * and exits when the end of a header is found, defined as \n followed by a
- * non-whitespace.  This is especially helpful for HTML.
-*/
-int sf_unfold_header(const uint8_t *inbuf, uint32_t inbuf_size, uint8_t *outbuf,
-                  uint32_t outbuf_size, uint32_t *output_bytes) {
-   const uint8_t *cursor, *endofinbuf;
-   uint8_t *outbuf_ptr;
-
-   uint32_t n = 0;
-
-   int httpheaderfolding = 0;
-
-   cursor = inbuf;
-   endofinbuf = inbuf + inbuf_size;
-   outbuf_ptr = outbuf;
-
-   /* Keep adding chars until we get to the end of the line.  If we get to the
-      end of the line and the next line starts with a tab or space, add the space
-      to the buffer and keep reading.  If the next line does not start with a
-      tab or space, stop reading because that's the end of the header. */
-   while((cursor < endofinbuf) && (n < outbuf_size)) {
-      if(((*cursor == ' ') || (*cursor == '\t')) && (httpheaderfolding != 2)) {
-         /* Spaces are valid except after CRs */
-         *outbuf_ptr++ = *cursor;
-         httpheaderfolding = 0;
-      }  else if((*cursor == '\n') && (httpheaderfolding != 1)) {
-         /* Can't have multiple LFs in a row, but if we get one it
-            needs to be followed by at least one space */
-         httpheaderfolding = 1;
-      }  else if((*cursor == '\r') && !httpheaderfolding) {
-         /* CR needs to be followed by LF and can't start a line */
-         httpheaderfolding = 2;
-      }  else if(!httpheaderfolding) {
-         *outbuf_ptr++ = *cursor;
-         n++;
-      }  else {
-         /* We have reached the end of the header */
-         /* Unless we get multiple CRs, which is suspicious, but not for us to decide */
-         break;
-      }
-      cursor++;
-   }
-
-   if(n < outbuf_size)
-      *outbuf_ptr = '\0';
-   else
-      outbuf[outbuf_size - 1] = '\0';
-
-   *output_bytes = outbuf_ptr - outbuf;
-   return(0);
-}
-
-
-int sf_unfold_smtp(const uint8_t *inbuf, uint32_t inbuf_size, uint8_t *outbuf,
-                  uint32_t outbuf_size, uint32_t *output_bytes) {
-   const uint8_t *cursor, *endofinbuf;
-   uint8_t *outbuf_ptr;
-
-   uint32_t n = 0;
-
-
-   cursor = inbuf;
-   endofinbuf = inbuf + inbuf_size;
-   outbuf_ptr = outbuf;
-
-   while((cursor < endofinbuf) && (n < outbuf_size)) {
-      if((*cursor != '\n') && (*cursor != '\r')) 
-      {
-          *outbuf_ptr++ = *cursor;
-          n++;
-      }  
-      cursor++;
-   }
-
-   if(n < outbuf_size)
-      *outbuf_ptr = '\0';
-   else
-      outbuf[outbuf_size - 1] = '\0';
-
-   *output_bytes = outbuf_ptr - outbuf;
-   return(0);
-}
-
-
 /* base64decode assumes the input data terminates with '=' and/or at the end of the input buffer
  * at inbuf_size.  If extra characters exist within inbuf before inbuf_size is reached, it will
  * happily decode what it can and skip over what it can't.  This is consistent with other decoders
@@ -131,7 +51,7 @@ int sf_unfold_smtp(const uint8_t *inbuf, uint32_t inbuf_size, uint8_t *outbuf,
  * data is valid up until the point you care about.  Note base64 data does NOT have to end with
  * '=' and won't if the number of bytes of input data is evenly divisible by 3.
 */
-int sf_base64decode(uint8_t *inbuf, uint32_t inbuf_size, uint8_t *outbuf, uint32_t outbuf_size, uint32_t *bytes_written) 
+int sf_base64decode(uint8_t *inbuf, uint32_t inbuf_size, uint8_t *outbuf, uint32_t outbuf_size, uint32_t *bytes_written)
 {
    uint8_t *cursor, *endofinbuf;
    uint8_t *outbuf_ptr;
@@ -201,14 +121,8 @@ int sf_base64decode(uint8_t *inbuf, uint32_t inbuf_size, uint8_t *outbuf, uint32
       cursor++;
    }
 
-   if(n < max_base64_chars)
-      *outbuf_ptr = '\0';
-   else
-      outbuf_ptr[max_base64_chars - 1] = '\0';
-
    if(error)
       return(-1);
    else
       return(0);
 }
-

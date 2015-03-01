@@ -14,9 +14,10 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (C) 2005-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * Author: Steve Sturges
  *         Andy Mullican
@@ -30,10 +31,6 @@
 #ifndef _SF_SNORT_PACKET_H_
 #define _SF_SNORT_PACKET_H_
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 #ifndef WIN32
 #include <sys/types.h>
 #include <netinet/in.h>
@@ -46,22 +43,29 @@
 #include <sfbpf_dlt.h>
 
 #include "sf_ip.h"
+#include "sf_protocols.h"
 
 #define VLAN_HDR_LEN  4
 
-// for vrt backwards compatibility
+/* for vrt backwards compatibility */
 #define pcap_header pkt_header
+
+typedef int (*LogFunction)(void *ssnptr, uint8_t **buf, uint32_t *len, uint32_t *type);
 
 typedef DAQ_PktHdr_t SFDAQ_PktHdr_t;
 
+#define VTH_PRIORITY(vh)  ((ntohs((vh)->vth_pri_cfi_vlan) & 0xe000) >> 13)
+#define VTH_CFI(vh)       ((ntohs((vh)->vth_pri_cfi_vlan) & 0x1000) >> 12)
+#define VTH_VLAN(vh)      ((uint16_t)(ntohs((vh)->vth_pri_cfi_vlan) & 0x0FFF))
+
 typedef struct _VlanHeader
 {
-    u_int16_t vth_pri_cfi_vlan;
-    u_int16_t vth_proto;  /* protocol field... */
+    uint16_t vth_pri_cfi_vlan;
+    uint16_t vth_proto;  /* protocol field... */
 
 } VlanHeader;
 
-//#define NO_NON_ETHER_DECODER
+/*#define NO_NON_ETHER_DECODER */
 #define ETHER_HDR_LEN  14
 #define ETHERNET_TYPE_IP    0x0800
 #define ETHERNET_TYPE_IPV6  0x86dd
@@ -69,9 +73,9 @@ typedef struct _VlanHeader
 
 typedef struct _EtherHeader
 {
-    u_int8_t ether_destination[6];
-    u_int8_t ether_source[6];
-    u_int16_t ethernet_type;
+    uint8_t ether_destination[6];
+    uint8_t ether_source[6];
+    uint16_t ethernet_type;
 
 } EtherHeader;
 
@@ -99,20 +103,21 @@ typedef struct _EtherHeader
 
 typedef struct _IPV4Header
 {
-    u_int8_t version_headerlength;
-    u_int8_t type_service;
-    u_int16_t data_length;
-    u_int16_t identifier;
-    u_int16_t offset;
-    u_int8_t time_to_live;
-    u_int8_t proto;
-    u_int16_t checksum;
+    uint8_t version_headerlength;
+    uint8_t type_service;
+    uint16_t data_length;
+    uint16_t identifier;
+    uint16_t offset;
+    uint8_t time_to_live;
+    uint8_t proto;
+    uint16_t checksum;
     struct in_addr source;
     struct in_addr destination;
 } IPV4Header;
 
+#define MAX_LOG_FUNC   32
 #define MAX_IP_OPTIONS 40
-#define MAX_IP6_EXTENSIONS 40
+
 /* ip option codes */
 #define IPOPTION_EOL            0x00
 #define IPOPTION_NOP            0x01
@@ -127,9 +132,9 @@ typedef struct _IPV4Header
 
 typedef struct _IPOptions
 {
-    u_int8_t option_code;
-    u_int8_t length;
-    u_int8_t *option_data;
+    uint8_t option_code;
+    uint8_t length;
+    uint8_t *option_data;
 } IPOptions;
 
 
@@ -137,15 +142,15 @@ typedef struct _IPOptions
 
 typedef struct _TCPHeader
 {
-    u_int16_t source_port;
-    u_int16_t destination_port;
-    u_int32_t sequence;
-    u_int32_t acknowledgement;
-    u_int8_t offset_reserved;
-    u_int8_t flags;
-    u_int16_t window;
-    u_int16_t checksum;
-    u_int16_t urgent_pointer;
+    uint16_t source_port;
+    uint16_t destination_port;
+    uint32_t sequence;
+    uint32_t acknowledgement;
+    uint8_t offset_reserved;
+    uint8_t flags;
+    uint16_t window;
+    uint16_t checksum;
+    uint16_t urgent_pointer;
 } TCPHeader;
 
 #define TCPHEADER_FIN  0x01
@@ -154,8 +159,8 @@ typedef struct _TCPHeader
 #define TCPHEADER_PUSH 0x08
 #define TCPHEADER_ACK  0x10
 #define TCPHEADER_URG  0x20
-#define TCPHEADER_RES2 0x40
-#define TCPHEADER_RES1 0x80
+#define TCPHEADER_ECE  0x40
+#define TCPHEADER_CWR  0x80
 #define TCPHEADER_NORESERVED (TCPHEADER_FIN|TCPHEADER_SYN|TCPHEADER_RST \
                             |TCPHEADER_PUSH|TCPHEADER_ACK|TCPHEADER_URG)
 
@@ -180,28 +185,28 @@ typedef IPOptions TCPOptions;
 
 typedef struct _UDPHeader
 {
-    u_int16_t source_port;
-    u_int16_t destination_port;
-    u_int16_t data_length;
-    u_int16_t checksum;
+    uint16_t source_port;
+    uint16_t destination_port;
+    uint16_t data_length;
+    uint16_t checksum;
 } UDPHeader;
 
 typedef struct _ICMPSequenceID
 {
-    u_int16_t id;
-    u_int16_t seq;
+    uint16_t id;
+    uint16_t seq;
 } ICMPSequenceID;
 
 typedef struct _ICMPHeader
 {
-    u_int8_t type;
-    u_int8_t code;
-    u_int16_t checksum;
+    uint8_t type;
+    uint8_t code;
+    uint16_t checksum;
 
     union
     {
         /* type 12 */
-        u_int8_t parameter_problem_ptr; 
+        uint8_t parameter_problem_ptr;
 
         /* type 5 */
         struct in_addr gateway_addr;
@@ -211,25 +216,25 @@ typedef struct _ICMPHeader
 
         /* type 13, 14 */
         ICMPSequenceID timestamp;
-        
+
         /* type 15, 16 */
         ICMPSequenceID info;
-        
+
         int voidInfo;
 
         /* type 3/code=4 (Path MTU, RFC 1191) */
         struct path_mtu
         {
-            u_int16_t voidInfo;
-            u_int16_t next_mtu;
+            uint16_t voidInfo;
+            uint16_t next_mtu;
         } path_mtu;
 
         /* type 9 */
-        struct router_advertisement 
+        struct router_advertisement
         {
-            u_int8_t number_addrs;
-            u_int8_t entry_size;
-            u_int16_t lifetime;
+            uint8_t number_addrs;
+            uint8_t entry_size;
+            uint16_t lifetime;
         } router_advertisement;
     } icmp_header_union;
 
@@ -247,32 +252,32 @@ typedef struct _ICMPHeader
 #define icmp_ra_entry_size  icmp_header_union.router_advertisement.entry_size
 #define icmp_ra_lifetime    icmp_header_union.router_advertisement.lifetime
 
-    union 
+    union
     {
         /* timestamp */
-        struct timestamp 
+        struct timestamp
         {
-            u_int32_t orig;
-            u_int32_t receive;
-            u_int32_t transmit;
+            uint32_t orig;
+            uint32_t receive;
+            uint32_t transmit;
         } timestamp;
-        
+
         /* IP header for unreach */
-        struct ipv4_header  
+        struct ipv4_header
         {
             IPV4Header *ip;
             /* options and then 64 bits of data */
         } ipv4_header;
-       
-        /* Router Advertisement */ 
-        struct router_address 
+
+        /* Router Advertisement */
+        struct router_address
         {
-            u_int32_t addr;
-            u_int32_t preference;
+            uint32_t addr;
+            uint32_t preference;
         } router_address;
 
         /* type 17, 18 */
-        u_int32_t mask;
+        uint32_t mask;
 
         char    data[1];
 
@@ -312,60 +317,66 @@ typedef struct _ICMPHeader
 
 typedef struct _IPv6Extension
 {
-    u_int8_t option_type;
-    const u_int8_t *option_data;
+    uint8_t option_type;
+    const uint8_t *option_data;
 } IP6Extension;
 
 typedef struct _IPv4Hdr
 {
-    u_int8_t ip_verhl;      /* version & header length */
-    u_int8_t ip_tos;        /* type of service */
-    u_int16_t ip_len;       /* datagram length */
-    u_int16_t ip_id;        /* identification  */
-    u_int16_t ip_off;       /* fragment offset */
-    u_int8_t ip_ttl;        /* time to live field */
-    u_int8_t ip_proto;      /* datagram protocol */ 
-    u_int16_t ip_csum;      /* checksum */
+    uint8_t ip_verhl;      /* version & header length */
+    uint8_t ip_tos;        /* type of service */
+    uint16_t ip_len;       /* datagram length */
+    uint16_t ip_id;        /* identification  */
+    uint16_t ip_off;       /* fragment offset */
+    uint8_t ip_ttl;        /* time to live field */
+    uint8_t ip_proto;      /* datagram protocol */
+    uint16_t ip_csum;      /* checksum */
     sfip_t ip_src;          /* source IP */
     sfip_t ip_dst;          /* dest IP */
 } IP4Hdr;
 
 typedef struct _IP6RawHdr
 {
-    u_int32_t vcl;          // version, class, and label */
-    u_int16_t payload_len;  // length of the payload */
-    u_int8_t  next_header;  // same values as ip4 protocol field + new ip6 values
-    u_int8_t  hop_limit;    // same usage as ip4 ttl
+    uint32_t vcl;          /* version, class, and label */
+    uint16_t payload_len;  /* length of the payload */
+    uint8_t  next_header;  /* same values as ip4 protocol field + new ip6 values */
+    uint8_t  hop_limit;    /* same usage as ip4 ttl */
 
     struct in6_addr src_addr;
     struct in6_addr dst_addr;
 } IP6RawHdr;
 
+#define ip6_vcl          vcl
+#define ip6_payload_len  payload_len
+#define ip6_next_header  next_header
+#define ip6_hop_limit    hop_limit
+#define ip6_hops         hop_limit
+
 typedef struct _IPv6Hdr
-{ 
-    u_int32_t vcl;      /* version, class, and label */
-    u_int16_t len;      /* length of the payload */
-    u_int8_t  next;     /* next header
+{
+    uint32_t vcl;      /* version, class, and label */
+    uint16_t len;      /* length of the payload */
+    uint8_t  next;     /* next header
                          * Uses the same flags as
                          * the IPv4 protocol field */
-    u_int8_t  hop_lmt;  /* hop limit */ 
+    uint8_t  hop_lmt;  /* hop limit */
     sfip_t ip_src;
     sfip_t ip_dst;
-} IP6Hdr; 
+} IP6Hdr;
 
-typedef struct _IP6FragHdr 
+typedef struct _IP6FragHdr
 {
-    u_int8_t   ip6f_nxt;     /* next header */
-    u_int8_t   ip6f_reserved;    /* reserved field */
-    u_int16_t  ip6f_offlg;   /* offset, reserved, and flag */
-    u_int32_t  ip6f_ident;   /* identification */
+    uint8_t   ip6f_nxt;     /* next header */
+    uint8_t   ip6f_reserved;    /* reserved field */
+    uint16_t  ip6f_offlg;   /* offset, reserved, and flag */
+    uint32_t  ip6f_ident;   /* identification */
 } IP6FragHdr;
 
 typedef struct _ICMP6
 {
-    u_int8_t type;
-    u_int8_t code;
-    u_int16_t csum;
+    uint8_t type;
+    uint8_t code;
+    uint16_t csum;
 
 } ICMP6Hdr;
 
@@ -381,79 +392,44 @@ typedef struct _ICMP6
 
 struct _SFSnortPacket;
 
-
-/* IPHeader access calls */
-sfip_t *    ip4_ret_src(struct _SFSnortPacket *);
-sfip_t *    ip4_ret_dst(struct _SFSnortPacket *);
-u_int16_t   ip4_ret_tos(struct _SFSnortPacket *);
-u_int8_t    ip4_ret_ttl(struct _SFSnortPacket *);
-u_int16_t   ip4_ret_len(struct _SFSnortPacket *);
-u_int32_t   ip4_ret_id(struct _SFSnortPacket *);
-u_int8_t    ip4_ret_proto(struct _SFSnortPacket *);
-u_int16_t   ip4_ret_off(struct _SFSnortPacket *);
-u_int8_t    ip4_ret_ver(struct _SFSnortPacket *);
-u_int8_t    ip4_ret_hlen(struct _SFSnortPacket *);
-
-sfip_t *    orig_ip4_ret_src(struct _SFSnortPacket *);
-sfip_t *    orig_ip4_ret_dst(struct _SFSnortPacket *);
-u_int16_t   orig_ip4_ret_tos(struct _SFSnortPacket *);
-u_int8_t    orig_ip4_ret_ttl(struct _SFSnortPacket *);
-u_int16_t   orig_ip4_ret_len(struct _SFSnortPacket *);
-u_int32_t   orig_ip4_ret_id(struct _SFSnortPacket *);
-u_int8_t    orig_ip4_ret_proto(struct _SFSnortPacket *);
-u_int16_t   orig_ip4_ret_off(struct _SFSnortPacket *);
-u_int8_t    orig_ip4_ret_ver(struct _SFSnortPacket *);
-u_int8_t    orig_ip4_ret_hlen(struct _SFSnortPacket *);
-
-sfip_t *    ip6_ret_src(struct _SFSnortPacket *);
-sfip_t *    ip6_ret_dst(struct _SFSnortPacket *);
-u_int16_t   ip6_ret_toc(struct _SFSnortPacket *);
-u_int8_t    ip6_ret_hops(struct _SFSnortPacket *);
-u_int16_t   ip6_ret_len(struct _SFSnortPacket *);
-u_int32_t   ip6_ret_id(struct _SFSnortPacket *);
-u_int8_t    ip6_ret_next(struct _SFSnortPacket *);
-u_int16_t   ip6_ret_off(struct _SFSnortPacket *);
-u_int8_t    ip6_ret_ver(struct _SFSnortPacket *);
-u_int8_t    ip6_ret_hlen(struct _SFSnortPacket *);
-
-sfip_t *    orig_ip6_ret_src(struct _SFSnortPacket *);
-sfip_t *    orig_ip6_ret_dst(struct _SFSnortPacket *);
-u_int16_t   orig_ip6_ret_toc(struct _SFSnortPacket *);
-u_int8_t    orig_ip6_ret_hops(struct _SFSnortPacket *);
-u_int16_t   orig_ip6_ret_len(struct _SFSnortPacket *);
-u_int32_t   orig_ip6_ret_id(struct _SFSnortPacket *);
-u_int8_t    orig_ip6_ret_next(struct _SFSnortPacket *);
-u_int16_t   orig_ip6_ret_off(struct _SFSnortPacket *);
-u_int8_t    orig_ip6_ret_ver(struct _SFSnortPacket *);
-u_int8_t    orig_ip6_ret_hlen(struct _SFSnortPacket *);
-
-typedef struct _IPH_API 
+typedef struct _IPH_API
 {
-    sfip_t *    (*iph_ret_src)(struct _SFSnortPacket *);
-    sfip_t *    (*iph_ret_dst)(struct _SFSnortPacket *);
-    u_int16_t   (*iph_ret_tos)(struct _SFSnortPacket *);
-    u_int8_t    (*iph_ret_ttl)(struct _SFSnortPacket *);
-    u_int16_t   (*iph_ret_len)(struct _SFSnortPacket *);
-    u_int32_t   (*iph_ret_id)(struct _SFSnortPacket *);
-    u_int8_t    (*iph_ret_proto)(struct _SFSnortPacket *);
-    u_int16_t   (*iph_ret_off)(struct _SFSnortPacket *);
-    u_int8_t    (*iph_ret_ver)(struct _SFSnortPacket *);
-    u_int8_t    (*iph_ret_hlen)(struct _SFSnortPacket *);
+    sfip_t *    (*iph_ret_src)(const struct _SFSnortPacket *);
+    sfip_t *    (*iph_ret_dst)(const struct _SFSnortPacket *);
+    uint16_t   (*iph_ret_tos)(const struct _SFSnortPacket *);
+    uint8_t    (*iph_ret_ttl)(const struct _SFSnortPacket *);
+    uint16_t   (*iph_ret_len)(const struct _SFSnortPacket *);
+    uint32_t   (*iph_ret_id)(const struct _SFSnortPacket *);
+    uint8_t    (*iph_ret_proto)(const struct _SFSnortPacket *);
+    uint16_t   (*iph_ret_off)(const struct _SFSnortPacket *);
+    uint8_t    (*iph_ret_ver)(const struct _SFSnortPacket *);
+    uint8_t    (*iph_ret_hlen)(const struct _SFSnortPacket *);
 
-    sfip_t *    (*orig_iph_ret_src)(struct _SFSnortPacket *);
-    sfip_t *    (*orig_iph_ret_dst)(struct _SFSnortPacket *);
-    u_int16_t   (*orig_iph_ret_tos)(struct _SFSnortPacket *);
-    u_int8_t    (*orig_iph_ret_ttl)(struct _SFSnortPacket *);
-    u_int16_t   (*orig_iph_ret_len)(struct _SFSnortPacket *);
-    u_int16_t   (*orig_iph_ret_id)(struct _SFSnortPacket *);
-    u_int8_t    (*orig_iph_ret_proto)(struct _SFSnortPacket *);
-    u_int16_t   (*orig_iph_ret_off)(struct _SFSnortPacket *);
-    u_int8_t    (*orig_iph_ret_ver)(struct _SFSnortPacket *);
-    u_int8_t    (*orig_iph_ret_hlen)(struct _SFSnortPacket *);
+    sfip_t *    (*orig_iph_ret_src)(const struct _SFSnortPacket *);
+    sfip_t *    (*orig_iph_ret_dst)(const struct _SFSnortPacket *);
+    uint16_t   (*orig_iph_ret_tos)(const struct _SFSnortPacket *);
+    uint8_t    (*orig_iph_ret_ttl)(const struct _SFSnortPacket *);
+    uint16_t   (*orig_iph_ret_len)(const struct _SFSnortPacket *);
+    uint32_t   (*orig_iph_ret_id)(const struct _SFSnortPacket *);
+    uint8_t    (*orig_iph_ret_proto)(const struct _SFSnortPacket *);
+    uint16_t   (*orig_iph_ret_off)(const struct _SFSnortPacket *);
+    uint8_t    (*orig_iph_ret_ver)(const struct _SFSnortPacket *);
+    uint8_t    (*orig_iph_ret_hlen)(const struct _SFSnortPacket *);
     char version;
 } IPH_API;
 
-#ifdef SUP_IP6
+typedef enum {
+    PSEUDO_PKT_IP,
+    PSEUDO_PKT_TCP,
+    PSEUDO_PKT_DCE_RPKT,
+    PSEUDO_PKT_SMB_SEG,
+    PSEUDO_PKT_DCE_SEG,
+    PSEUDO_PKT_DCE_FRAG,
+    PSEUDO_PKT_SMB_TRANS,
+    PSEUDO_PKT_PS,
+    PSEUDO_PKT_SDF,
+    PSEUDO_PKT_MAX
+} PseudoPacketType;
 
 #include "ipv6_port.h"
 
@@ -465,50 +441,44 @@ typedef struct _IPH_API
 extern IPH_API ip4;
 extern IPH_API ip6;
 
-#define iph_is_valid(p) (p->family != NO_IP)
+#define iph_is_valid(p) ((p)->family != NO_IP)
 
 #define NO_IP 0
 
 #define IP6_HDR_LEN     40
-#endif
 
 typedef struct _MplsHdr
 {
-    u_int32_t label;
-    u_int8_t  exp;
-    u_int8_t  bos; 
-    u_int8_t  ttl;
+    uint32_t label;
+    uint8_t  exp;
+    uint8_t  bos;
+    uint8_t  ttl;
 } MplsHdr;
 
 #define MAX_PROTO_LAYERS 32
 
-typedef enum {
-    PROTOCOL_ETH,
-    PROTOCOL_IP4,
-    PROTOCOL_ICMP4,
-    PROTOCOL_UDP,
-    PROTOCOL_TCP,
-    PROTOCOL_MAX
-} PROTOCOL_ID;
-
 typedef struct {
-    PROTOCOL_ID proto_id;
+    PROTO_ID proto_id;
     uint16_t proto_length;
     uint8_t* proto_start;
 } ProtoLayer;
 
+// for backwards compatibility with VRT .so rules
+#define stream_session_ptr stream_session
+
 typedef struct _SFSnortPacket
 {
     const SFDAQ_PktHdr_t *pkt_header; /* Is this GPF'd? */
-    const u_int8_t *pkt_data;
+    const uint8_t *pkt_data;
 
     void *ether_arp_header;
     const EtherHeader *ether_header;
     const void *vlan_tag_header;
     void *ether_header_llc;
     void *ether_header_other;
+    const void *ppp_over_ether_header;
     const void *gre_header;
-    u_int32_t *mpls;
+    uint32_t *mpls;
 
     const IPV4Header *ip4_header, *orig_ip4_header;
     const IPV4Header *inner_ip4_header;
@@ -519,17 +489,12 @@ typedef struct _SFSnortPacket
     const UDPHeader *outer_udph;   /* if Teredo + UDP, this will be the outer UDP header */
     const ICMPHeader *icmp_header, *orig_icmp_header;
 
-    const u_int8_t *payload;
-    const u_int8_t *ip_payload;
-    const u_int8_t *outer_ip_payload;
-    const u_int8_t *ip_frag_start;
-    const u_int8_t *ip4_options_data;
-    const u_int8_t *tcp_options_data;
+    const uint8_t *payload;
+    const uint8_t *ip_payload;
+    const uint8_t *outer_ip_payload;
 
-    void *stream_session_ptr;
+    void *stream_session;
     void *fragmentation_tracking_ptr;
-    void *flow_ptr;
-    void *stream_ptr;
 
     IP4Hdr *ip4h, *orig_ip4h;
     IP6Hdr *ip6h, *orig_ip6h;
@@ -540,66 +505,52 @@ typedef struct _SFSnortPacket
     IPH_API* outer_iph_api;
     IPH_API* outer_orig_iph_api;
 
-    IP4Hdr inner_ip4h, inner_orig_ip4h;
-    IP6Hdr inner_ip6h, inner_orig_ip6h;
-    IP4Hdr outer_ip4h, outer_orig_ip4h;
-    IP6Hdr outer_ip6h, outer_orig_ip6h;
-
-    MplsHdr   mplsHdr;
-
     int family;
     int orig_family;
     int outer_family;
-    int number_bytes_to_check;
 
-    //int ip_payload_length;
-    //int ip_payload_offset;
+    uint32_t preprocessor_bit_mask;
+    uint32_t preproc_reassembly_pkt_bit_mask;
 
-    u_int32_t preprocessor_bit_mask;
-    u_int32_t preproc_reassembly_pkt_bit_mask;
+    uint32_t flags;
 
-    u_int32_t pcap_cap_len;
-    u_int32_t http_pipeline_count;
-    u_int32_t flags;
-    u_int16_t proto_bits;
-    u_int16_t data_flags;
+    uint32_t xtradata_mask;
 
-    u_int16_t payload_size;
-    u_int16_t ip_payload_size;
-    u_int16_t normalized_payload_size;
-    u_int16_t actual_ip_length;
-    u_int16_t outer_ip_payload_size;
+    uint16_t proto_bits;
 
-    u_int16_t ip_fragment_offset;
-    u_int16_t ip_frag_length;
-    u_int16_t ip4_options_length;
-    u_int16_t tcp_options_length;
+    uint16_t payload_size;
+    uint16_t ip_payload_size;
+    uint16_t normalized_payload_size;
+    uint16_t actual_ip_length;
+    uint16_t outer_ip_payload_size;
 
-    u_int16_t src_port;
-    u_int16_t dst_port;
-    u_int16_t orig_src_port;
-    u_int16_t orig_dst_port;
+    uint16_t ip_fragment_offset;
+    uint16_t ip_frag_length;
+    uint16_t ip4_options_length;
+    uint16_t tcp_options_length;
+
+    uint16_t src_port;
+    uint16_t dst_port;
+    uint16_t orig_src_port;
+    uint16_t orig_dst_port;
 
     int16_t application_protocol_ordinal;
 
-    u_int8_t ip_fragmented;
-    u_int8_t ip_more_fragments;
-    u_int8_t ip_dont_fragment;
-    u_int8_t ip_reserved;
+    uint8_t ip_fragmented;
+    uint8_t ip_more_fragments;
+    uint8_t ip_dont_fragment;
+    uint8_t ip_reserved;
 
-    u_int8_t num_uris;
-    u_int8_t invalid_flags;
-    u_int8_t encapsulated;
+    uint8_t num_ip_options;
+    uint8_t num_tcp_options;
+    uint8_t num_ip6_extensions;
+    uint8_t ip6_frag_extension;
 
-    u_int8_t num_ip_options;
-    u_int8_t num_tcp_options;
-    u_int8_t num_ip6_extensions;
-    u_int8_t ip6_frag_extension;
-
-    u_char ip_last_option_invalid_flag;
-    u_char tcp_last_option_invalid_flag;
-
+    uint8_t invalid_flags;
+    uint8_t encapsulated;
+    uint8_t GTPencapsulated;
     uint8_t next_layer_index;
+
 #ifndef NO_NON_ETHER_DECODER
     const void *fddi_header;
     void *fddi_saps;
@@ -614,6 +565,7 @@ typedef struct _SFSnortPacket
     void *pflog1_header;
     void *pflog2_header;
     void *pflog3_header;
+    void *pflog4_header;
 
 #ifdef DLT_LINUX_SLL
     const void *sll_header;
@@ -621,28 +573,49 @@ typedef struct _SFSnortPacket
 #ifdef DLT_IEEE802_11
     const void *wifi_header;
 #endif
-    const void *ppp_over_ether_header;
-
     const void *ether_eapol_header;
     const void *eapol_headear;
-    const u_int8_t *eapol_type;
+    const uint8_t *eapol_type;
     void *eapol_key;
 #endif
 
     IPOptions ip_options[MAX_IP_OPTIONS];
     TCPOptions tcp_options[MAX_TCP_OPTIONS];
-    IP6Extension ip6_extensions[MAX_IP6_EXTENSIONS];
+    IP6Extension *ip6_extensions;
+
+    const uint8_t *ip_frag_start;
+    const uint8_t *ip4_options_data;
+    const uint8_t *tcp_options_data;
 
     const IP6RawHdr* raw_ip6_header;
     ProtoLayer proto_layers[MAX_PROTO_LAYERS];
+
+    IP4Hdr inner_ip4h, inner_orig_ip4h;
+    IP6Hdr inner_ip6h, inner_orig_ip6h;
+    IP4Hdr outer_ip4h, outer_orig_ip4h;
+    IP6Hdr outer_ip6h, outer_orig_ip6h;
+
+    MplsHdr mplsHdr;
+
+    PseudoPacketType pseudo_type;
     uint16_t max_payload;
 
-    /**policyId provided in configuration file. Used for correlating configuration 
+    /**policyId provided in configuration file. Used for correlating configuration
      * with event output
      */
     uint16_t configPolicyId;
 
+    uint32_t iplist_id;
+    unsigned char iprep_layer;
+
+    uint8_t ps_proto;  /* Used for portscan and unified2 logging */
+
+    uint8_t ips_os_selected; 
+    void    *cur_pp;
 } SFSnortPacket;
+
+#define IP_INNER_LAYER   1
+#define IP_OUTTER_LAYER  0
 
 #define PKT_ZERO_LEN offsetof(SFSnortPacket, ip_options)
 
@@ -654,14 +627,10 @@ typedef struct _SFSnortPacket
 #define PROTO_BIT__TEREDO   0x0020
 #define PROTO_BIT__ALL      0xffff
 
-#define DATA_FLAGS_TRUE_IP  0x0001
-#define DATA_FLAGS_GZIP     0x0002
-#define DATA_FLAGS_RESP_BODY 0x0004
-
 #define IsIP(p) (IPH_IS_VALID(p))
-#define IsTCP(p) (IsIP(p) && (GET_IPH_PROTO(p) == IPPROTO_TCP))
-#define IsUDP(p) (IsIP(p) && (GET_IPH_PROTO(p) == IPPROTO_UDP))
-#define IsICMP(p) (IsIP(p) && (GET_IPH_PROTO(p) == IPPROTO_ICMP))
+#define IsTCP(p) (IsIP(p) && p->tcp_header)
+#define IsUDP(p) (IsIP(p) && p->udp_header)
+#define IsICMP(p) (IsIP(p) && p->icmp_header)
 
 #define SET_IP4_VER(ip_header, value) \
     ((ip_header)->version_headerlength = \
@@ -674,65 +643,101 @@ typedef struct _SFSnortPacket
     ((tcp_header)->offset_reserved = \
      (unsigned char)(((tcp_header)->offset_reserved & 0x0f) | (value << 4)))
 
-#define FLAG_REBUILT_FRAG     0x00000001
-#define FLAG_REBUILT_STREAM   0x00000002
-#define FLAG_STREAM_UNEST_UNI 0x00000004
-#define FLAG_PSEUDO           0x00000008
+#define BIT(i) (0x1 << (i-1))
 
-//--------------------------------------
-// beware:  these are redefined in dynamic-plugins/sf_dynamic_define.h!
-#define FLAG_STREAM_EST       0x00000010
-#define FLAG_STATELESS        0x00000020  /* packet has matched a stateless rule */
-#define FLAG_FROM_SERVER      0x00000040	
-#define FLAG_FROM_CLIENT      0x00000080
-//--------------------------------------
 
-#define FLAG_HTTP_DECODE      0x00000100
-#define FLAG_OBFUSCATED       0x00000200
-#define FLAG_STREAM_INSERT    0x00000400
-#define FLAG_ALT_DECODE       0x00000800
+/* beware:  some flags are redefined in dynamic-plugins/sf_dynamic_define.h! */
+#define FLAG_REBUILT_FRAG     0x00000001  /* is a rebuilt fragment */
+#define FLAG_REBUILT_STREAM   0x00000002  /* is a rebuilt stream */
+#define FLAG_STREAM_UNEST_UNI 0x00000004  /* is from an unestablished stream and
+                                           * we've only seen traffic in one direction */
+#define FLAG_STREAM_EST       0x00000008  /* is from an established stream */
 
-#define FLAG_STREAM_TWH       0x00001000
-#define FLAG_IGNORE_PORT      0x00002000  /* this packet should be ignored, based on port */
-#define FLAG_PASS_RULE        0x00004000  /* this packet has matched a pass rule */
-#define FLAG_NO_DETECT        0x00008000  /* this packet should not be preprocessed */
+#define FLAG_STREAM_INSERT    0x00000010  /* this packet has been queued for stream reassembly */
+#define FLAG_STREAM_TWH       0x00000020  /* packet completes the 3-way handshake */
+#define FLAG_FROM_SERVER      0x00000040  /* this packet came from the server
+                                             side of a connection (TCP) */
+#define FLAG_FROM_CLIENT      0x00000080  /* this packet came from the client
+                                             side of a connection (TCP) */
 
-#define FLAG_PREPROC_RPKT     0x00010000  /* set in original packet to indicate a pp
-                                           * has a reassembled packet */
-#define FLAG_DCE_RPKT         0x00020000  /* this is a DCE/RPC reassembled packet */
-#define FLAG_IP_RULE          0x00040000  /* this packet being evaluated against an ip rule */
+#define FLAG_PDU_HEAD         0x00000100  /* start of PDU */
+#define FLAG_PDU_TAIL         0x00000200  /* end of PDU */
+#define FLAG_UNSURE_ENCAP     0x00000400  /* packet may have incorrect encapsulation layer. */
+                                          /* don't alert if "next layer" is invalid. */
+#define FLAG_HTTP_DECODE      0x00000800  /* this packet has normalized http */
+
+#define FLAG_IGNORE_PORT           0x00001000  /* this packet should be ignored, based on port */
+#define FLAG_NO_DETECT             0x00002000  /* this packet should not be preprocessed */
+#define FLAG_ALLOW_MULTIPLE_DETECT 0x00004000  /* packet has either pipelined mime attachements */
+                                               /* or pipeline http requests */
+#define FLAG_PAYLOAD_OBFUSCATE     0x00008000
+
+#define FLAG_STATELESS        0x00010000  /* Packet has matched a stateless rule */
+#define FLAG_PASS_RULE        0x00020000  /* this packet has matched a pass rule */
+#define FLAG_IP_RULE          0x00040000  /* this packet is being evaluated against an IP rule */
 #define FLAG_IP_RULE_2ND      0x00080000  /* this packet is being evaluated against an IP rule */
 
-#define FLAG_SMB_SEG          0x00100000  /* this is an SMB desegmented packet */
-#define FLAG_DCE_SEG          0x00200000  /* this is a DCE/RPC desegmented packet */
-#define FLAG_DCE_FRAG         0x00400000  /* this is a DCE/RPC defragmented packet */
-#define FLAG_SMB_TRANS        0x00800000  /* this is an SMB Transact reassembled packet */
-
-#define FLAG_DCE_PKT          0x01000000  /* a DCE packet processed by DCE/RPC pp */
-#define FLAG_RPC_PKT          0x02000000  /* an ONC RPC packet processed by rpc decode pp */
-#define FLAG_LOGGED           0x04000000  /* this packet has been logged */
+#define FLAG_LOGGED           0x00100000  /* this packet has been logged */
+#define FLAG_PSEUDO           0x00200000  /* is a pseudo packet */
+#define FLAG_MODIFIED         0x00400000  /* packet had normalizations, etc. */
 #ifdef NORMALIZER
-#define FLAG_RESIZED          0x08000000  /* packet has new size; must set modified too */
+#define FLAG_RESIZED          0x00800000  /* packet has new size; must set modified too */
 #endif
-#define FLAG_MODIFIED         0x10000000  /* packet had normalizations, etc. */
 
-#define FLAG_HTTP_RESP_BODY   0x20000000  /* packet contains non-zipped HTTP response Body */
-#define FLAG_ALLOW_MULTIPLE_DETECT 0x40000000
+/* neither of these flags will be set for (full) retransmissions or non-data segments */
+/* a partial overlap results in out of sequence condition */
+/* out of sequence condition is sticky */
+#define FLAG_STREAM_ORDER_OK  0x01000000  /* this segment is in order, w/o gaps */
+#define FLAG_STREAM_ORDER_BAD 0x02000000  /* this stream had at least one gap */
+#define FLAG_REASSEMBLED_OLD  0x04000000  /* for backwards compat with so rules */
+
+#define FLAG_IPREP_SOURCE_TRIGGERED  0x08000000
+#define FLAG_IPREP_DATA_SET          0x10000000
+#define FLAG_FILE_EVENT_SET          0x20000000
+/* 0x40000000 are available */
+
+#define FLAG_PDU_FULL (FLAG_PDU_HEAD | FLAG_PDU_TAIL)
+
+#define REASSEMBLED_PACKET_FLAGS (FLAG_REBUILT_STREAM|FLAG_REASSEMBLED_OLD)
 
 #define SFTARGET_UNKNOWN_PROTOCOL -1
 
-static INLINE int PacketWasCooked(SFSnortPacket* p)
+static inline int PacketWasCooked(const SFSnortPacket* p)
 {
-    return ( p->flags &
-        ( FLAG_REBUILT_STREAM | FLAG_REBUILT_FRAG |
-          FLAG_DCE_RPKT | FLAG_DCE_SEG | FLAG_DCE_FRAG |
-          FLAG_SMB_SEG | FLAG_SMB_TRANS | FLAG_PSEUDO) ) != 0;
+    return ( p->flags & FLAG_PSEUDO ) != 0;
 }
 
-/* Only include application layer reassembled data
- * flags here - no PKT_REBUILT_FRAG */
-#define REASSEMBLED_PACKET_FLAGS \
-    (FLAG_REBUILT_STREAM|FLAG_SMB_SEG|FLAG_DCE_SEG|FLAG_DCE_FRAG|FLAG_SMB_TRANS)
+static inline int IsPortscanPacket(const SFSnortPacket *p)
+{
+    return ((p->flags & FLAG_PSEUDO) && (p->pseudo_type == PSEUDO_PKT_PS));
+}
+
+static inline uint8_t GetEventProto(const SFSnortPacket *p)
+{
+    if (IsPortscanPacket(p))
+        return p->ps_proto;
+    return IPH_IS_VALID(p) ? GET_IPH_PROTO(p) : 0;
+}
+
+static inline int PacketHasFullPDU (const SFSnortPacket* p)
+{
+    return ( (p->flags & FLAG_PDU_FULL) == FLAG_PDU_FULL );
+}
+
+static inline int PacketHasStartOfPDU (const SFSnortPacket* p)
+{
+    return ( (p->flags & FLAG_PDU_HEAD) != 0 );
+}
+
+static inline int PacketHasPAFPayload (const SFSnortPacket* p)
+{
+    return ( (p->flags & FLAG_REBUILT_STREAM) || PacketHasFullPDU(p) );
+}
+
+static inline void SetExtraData (SFSnortPacket* p, uint32_t xid)
+{
+    p->xtradata_mask |= BIT(xid);
+}
 
 #endif /* _SF_SNORT_PACKET_H_ */
 

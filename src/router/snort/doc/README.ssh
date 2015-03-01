@@ -38,7 +38,7 @@ to.
 
 * max_encrypted_packets *
 
-The number of encrypted packets that Snort will inspect before ignoring a given
+The number of stream reassembled encrypted packets that Snort will inspect before ignoring a given
 SSH session. The SSH vulnerabilities that Snort can detect all happen at the
 very beginning of an SSH session. Once max_encrypted_packets packets have been
 seen, Snort ignores the session to increase performance.

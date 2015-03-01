@@ -1,5 +1,6 @@
 /*
-** Copyright (C) 2009-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2009-2013 Sourcefire, Inc.
 **
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -15,17 +16,23 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#include "sf_types.h"
 #include "spp_sdf.h"
 #include "sdf_us_ssn.h"
+#include "sf_dynamic_preprocessor.h"
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
-
+#include <errno.h>
 
 static int SDFCompareGroupNumbers(int group, int max_group);
 static int SSNGroupCategory(int group);
@@ -70,6 +77,13 @@ int SDFSocialCheck(char *buf, uint32_t buflen, struct _SDFConfig *config)
     serial = (numbuf[5] - '0') * 1000 + (numbuf[6] - '0') * 100 +
              (numbuf[7] - '0') * 10 + (numbuf[8] - '0');
 
+    /* This range was reserved for advertising */
+    if (area == 987 && group == 65)
+    {
+        if (serial >= 4320 && serial <= 4329)
+            return 0;
+    }
+
     /* Start validating */
     if (area > MAX_AREA ||
         area == 666 ||
@@ -79,13 +93,6 @@ int SDFSocialCheck(char *buf, uint32_t buflen, struct _SDFConfig *config)
         serial <= 0 ||
         serial > 9999)
             return 0;
-
-    /* This range was reserved for advertising */
-    if (area == 987 && group == 65)
-    {
-        if (serial >= 4320 && serial <= 4329)
-            return 0;
-    }
 
     return SDFCompareGroupNumbers(group, config->ssn_max_group[area]);
 }
@@ -99,7 +106,7 @@ static int SDFCompareGroupNumbers(int group, int max_group)
         4. ODD numbers from 11 through 99
        For this reason, the group check is not simple.
      */
-    
+
     int group_category = SSNGroupCategory(group);
     int max_group_category = SSNGroupCategory(max_group);
 
@@ -110,7 +117,7 @@ static int SDFCompareGroupNumbers(int group, int max_group)
         return 1;
     if ((group_category == max_group_category) && (group <= max_group))
         return 1;
-    
+
     return 0;
 }
 
@@ -141,31 +148,63 @@ int ParseSSNGroups(char *filename, struct _SDFConfig *config)
     ssn_file = fopen(filename, "r");
     if (ssn_file == NULL)
     {
-        /* TODO: Print error */
+        _dpd.logMsg("Sensitive Data preprocessor: Failed to open SSN groups "
+                "file \"%s\": %s.\n", filename, strerror(errno));
         return -1;
     }
 
     /* Determine size of file */
-    fseek(ssn_file, 0, SEEK_END);
-    length = ftell(ssn_file);
-    rewind(ssn_file);
-
-    if (length <= 0)
+    if (fseek(ssn_file, 0, SEEK_END) == -1)
     {
-        /* TODO: Print error */
+        _dpd.logMsg("Sensitive Data preprocessor: Failed to fseek() to end of "
+                "SSN groups file \"%s\": %s.\n", filename, strerror(errno));
+
+        fclose(ssn_file);
         return -1;
     }
 
-    contents = calloc(length, sizeof(char));
+    if ((length = ftell(ssn_file)) <= 0)
+    {
+        if (length == -1)
+        {
+            _dpd.logMsg("Sensitive Data preprocessor: Failed to get size of SSN "
+                    "groups file \"%s\": %s.\n", filename, strerror(errno));
+        }
+        else
+        {
+            _dpd.logMsg("Sensitive Data preprocessor: SSN groups file \"%s\" "
+                    "is empty.\n", filename);
+        }
+
+        fclose(ssn_file);
+        return -1;
+    }
+
+    rewind(ssn_file);
+
+    contents = (char *)malloc(length + 1);
     if (contents == NULL)
     {
-        /* TODO: print error */
+        _dpd.logMsg("Sensitive Data preprocessor: Failed to allocate memory "
+                "for SSN groups.\n");
+
+        fclose(ssn_file);
         return -1;
     }
 
     /* Read file into memory */
-    fread(contents, sizeof(char), length, ssn_file);
+    if (fread(contents, sizeof(char), length, ssn_file) != (size_t)length)
+    {
+        _dpd.logMsg("Sensitive Data preprocessor: Failed read contents of "
+                "SSN groups file \"%s\".\n", filename);
+
+        fclose(ssn_file);
+        return -1;
+    }
+
     fclose(ssn_file);
+
+    contents[length] = '\0';
 
     /* Parse! */
     token = strtok_r(contents, " ,\n", &saveptr);
@@ -184,7 +223,7 @@ int ParseSSNGroups(char *filename, struct _SDFConfig *config)
             free(contents);
             return -1;
         }
- 
+
         token = strtok_r(NULL, " ,\n", &saveptr);
     }
 
@@ -198,45 +237,45 @@ int SSNSetDefaultGroups(struct _SDFConfig *config)
 {
     int i;
     int default_max_group[MAX_AREA+1] = { 0,
-        8, 8, 6, 11, 11, 11, 8, 92, 92, 92, 92, 92, 92, 92, 92, 92, 92, 92, 92, 
-        92, 92, 92, 92, 92, 92, 92, 92, 92, 90, 90, 90, 90, 90, 90, 74, 74, 72, 72, 
-        72, 15, 13, 13, 13, 13, 13, 13, 13, 13, 13, 98, 98, 98, 98, 98, 98, 98, 98, 
-        98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 
-        98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 
-        98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 
-        98, 98, 98, 98, 98, 96, 96, 96, 96, 96, 96, 96, 96, 96, 96, 96, 96, 96, 96, 
-        96, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 
-        21, 21, 21, 21, 21, 21, 86, 86, 86, 86, 86, 86, 86, 86, 84, 84, 84, 84, 84, 
-        84, 84, 84, 84, 84, 84, 84, 84, 84, 84, 84, 84, 84, 84, 84, 84, 84, 84, 84, 
-        84, 84, 84, 84, 84, 84, 84, 84, 84, 84, 84, 84, 84, 84, 84, 84, 84, 84, 84, 
-        84, 84, 85, 85, 85, 85, 85, 85, 85, 85, 85, 8, 8, 99, 99, 99, 99, 99, 99, 
-        99, 99, 99, 55, 55, 55, 55, 55, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 
-        99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 
-        99, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 
-        15, 15, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 35, 35, 
-        35, 35, 35, 35, 35, 35, 33, 33, 33, 33, 33, 33, 33, 8, 8, 8, 8, 8, 8, 
-        8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 
-        8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 6, 6, 6, 6, 6, 6, 6, 6, 
-        37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 35, 35, 35, 35, 35, 35, 35, 35, 
-        35, 35, 35, 35, 35, 35, 31, 31, 31, 31, 31, 31, 31, 31, 31, 31, 31, 31, 29, 
-        71, 71, 71, 71, 71, 71, 69, 69, 99, 99, 99, 99, 99, 99, 99, 99, 65, 65, 65, 
-        65, 65, 65, 65, 63, 63, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 
-        99, 99, 27, 25, 25, 25, 25, 25, 25, 25, 25, 99, 99, 99, 99, 99, 99, 99, 99, 
-        99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 55, 53, 53, 53, 53, 53, 53, 53, 
-        53, 53, 41, 41, 39, 39, 39, 39, 39, 39, 27, 27, 27, 27, 27, 27, 27, 27, 27, 
-        27, 27, 27, 27, 27, 27, 35, 35, 43, 43, 55, 55, 55, 55, 31, 31, 31, 29, 29, 
-        29, 29, 47, 47, 83, 83, 59, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 67, 67, 
-        67, 67, 67, 67, 67, 67, 65, 79, 79, 79, 77, 77, 99, 99, 99, 99, 99, 99, 99, 
-        99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 
-        99, 99, 99, 57, 99, 99, 49, 49, 49, 39, 99, 99, 99, 99, 99, 65, 99, 5, 99, 
-        99, 99, 99, 99, 99, 99, 90, 88, 88, 88, 99, 99, 79, 79, 79, 79, 79, 77, 77, 
-        77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 23, 
-        23, 23, 23, 23, 23, 23, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 13, 
-        11, 52, 52, 56, 56, 54, 54, 32, 32, 32, 32, 32, 20, 20, 20, 20, 18, 18, 18, 
-        44, 42, 42, 42, 42, 42, 42, 42, 42, 18, 18, 18, 16, 17, 20, 20, 20, 20, 18, 
-        18, 18, 18, 18, 18, 12, 12, 12, 12, 12, 12, 12, 12, 12, 18, 18, 18, 18, 18, 
-        18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 
-        28, 18, 18, 10, 14, 20, 18, 18, 18, 18, 14, 14, 5, 5, 5, 5, 10, 9, 9, 
+        8, 8, 6, 11, 11, 11, 8, 92, 92, 92, 92, 92, 92, 92, 92, 92, 92, 92, 92,
+        92, 92, 92, 92, 92, 92, 92, 92, 92, 90, 90, 90, 90, 90, 90, 74, 74, 72, 72,
+        72, 15, 13, 13, 13, 13, 13, 13, 13, 13, 13, 98, 98, 98, 98, 98, 98, 98, 98,
+        98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98,
+        98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98,
+        98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98,
+        98, 98, 98, 98, 98, 96, 96, 96, 96, 96, 96, 96, 96, 96, 96, 96, 96, 96, 96,
+        96, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21,
+        21, 21, 21, 21, 21, 21, 86, 86, 86, 86, 86, 86, 86, 86, 84, 84, 84, 84, 84,
+        84, 84, 84, 84, 84, 84, 84, 84, 84, 84, 84, 84, 84, 84, 84, 84, 84, 84, 84,
+        84, 84, 84, 84, 84, 84, 84, 84, 84, 84, 84, 84, 84, 84, 84, 84, 84, 84, 84,
+        84, 84, 85, 85, 85, 85, 85, 85, 85, 85, 85, 8, 8, 99, 99, 99, 99, 99, 99,
+        99, 99, 99, 55, 55, 55, 55, 55, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99,
+        99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99,
+        99, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15,
+        15, 15, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 35, 35,
+        35, 35, 35, 35, 35, 35, 33, 33, 33, 33, 33, 33, 33, 8, 8, 8, 8, 8, 8,
+        8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+        8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 6, 6, 6, 6, 6, 6, 6, 6,
+        37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 35, 35, 35, 35, 35, 35, 35, 35,
+        35, 35, 35, 35, 35, 35, 31, 31, 31, 31, 31, 31, 31, 31, 31, 31, 31, 31, 29,
+        71, 71, 71, 71, 71, 71, 69, 69, 99, 99, 99, 99, 99, 99, 99, 99, 65, 65, 65,
+        65, 65, 65, 65, 63, 63, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99,
+        99, 99, 27, 25, 25, 25, 25, 25, 25, 25, 25, 99, 99, 99, 99, 99, 99, 99, 99,
+        99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 55, 53, 53, 53, 53, 53, 53, 53,
+        53, 53, 41, 41, 39, 39, 39, 39, 39, 39, 27, 27, 27, 27, 27, 27, 27, 27, 27,
+        27, 27, 27, 27, 27, 27, 35, 35, 43, 43, 55, 55, 55, 55, 31, 31, 31, 29, 29,
+        29, 29, 47, 47, 83, 83, 59, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 67, 67,
+        67, 67, 67, 67, 67, 67, 65, 79, 79, 79, 77, 77, 99, 99, 99, 99, 99, 99, 99,
+        99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99,
+        99, 99, 99, 57, 99, 99, 49, 49, 49, 39, 99, 99, 99, 99, 99, 65, 99, 5, 99,
+        99, 99, 99, 99, 99, 99, 90, 88, 88, 88, 99, 99, 79, 79, 79, 79, 79, 77, 77,
+        77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 23,
+        23, 23, 23, 23, 23, 23, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 13,
+        11, 52, 52, 56, 56, 54, 54, 32, 32, 32, 32, 32, 20, 20, 20, 20, 18, 18, 18,
+        44, 42, 42, 42, 42, 42, 42, 42, 42, 18, 18, 18, 16, 17, 20, 20, 20, 20, 18,
+        18, 18, 18, 18, 18, 12, 12, 12, 12, 12, 12, 12, 12, 12, 18, 18, 18, 18, 18,
+        18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18,
+        28, 18, 18, 10, 14, 20, 18, 18, 18, 18, 14, 14, 5, 5, 5, 5, 10, 9, 9,
         9, 9, 9, 9, 9, 11, 8, 86, 86, 86, 86, 84, 84, 84
     };
 

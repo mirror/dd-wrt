@@ -3,9 +3,9 @@ AUTOMAKE_OPTIONS=foreign no-dependencies
 
 INCLUDES = -I../include
 
-noinst_libdir = ${exec_prefix}/lib/snort_dynamicpreprocessor
+noinst_dynamicpreprocessordir = ${libdir}/snort_dynamicpreprocessor
 
-noinst_lib_LTLIBRARIES = lib_sfdynamic_preprocessor_example.la
+noinst_dynamicpreprocessor_LTLIBRARIES = lib_sfdynamic_preprocessor_example.la
 
 lib_sfdynamic_preprocessor_example_la_LDFLAGS = -export-dynamic
 

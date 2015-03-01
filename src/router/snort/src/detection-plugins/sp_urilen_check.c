@@ -1,26 +1,27 @@
 /* $Id */
-/*  
-** Copyright (C) 2005-2011 Sourcefire, Inc.
-**
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License Version 2 as
-** published by the Free Software Foundation.  You may not use, modify or
-** distribute this program under any other version of the GNU General
-** Public License.
-**
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-** GNU General Public License for more details.
-**
-** You should have received a copy of the GNU General Public License
-** along with this program; if nto, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Bosotn, MA 02111-1307, USA.
-*/
+/*
+ ** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2005-2013 Sourcefire, Inc.
+ **
+ ** This program is free software; you can redistribute it and/or modify
+ ** it under the terms of the GNU General Public License Version 2 as
+ ** published by the Free Software Foundation.  You may not use, modify or
+ ** distribute this program under any other version of the GNU General
+ ** Public License.
+ **
+ ** This program is distributed in the hope that it will be useful,
+ ** but WITHOUT ANY WARRANTY; without even the implied warranty of
+ ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ ** GNU General Public License for more details.
+ **
+ ** You should have received a copy of the GNU General Public License
+ ** along with this program; if nto, write to the Free Software
+ ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
+ ** USA
+ */
 
 /*
- * sp_urilen_check.c: Detection plugin to expose URI length to 
- * 			user rules.
+ * sp_urilen_check.c: Detection plugin to expose URI length to user rules.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -31,15 +32,17 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "sf_types.h"
 #include "rules.h"
 #include "treenodes.h"
 #include "decode.h"
 #include "plugbase.h"
-#include "debug.h"
+#include "snort_debug.h"
 #include "parser.h"
 #include "plugin_enum.h"
 #include "util.h"
 #include "sfhashfcn.h"
+#include "mstring.h"
 
 #include "sp_urilen_check.h"
 
@@ -54,8 +57,8 @@ extern PreprocStats ruleOTNEvalPerfStats;
 #include "detection_options.h"
 #include "detection_util.h"
 
-void UriLenCheckInit( char*, OptTreeNode*, int );
-void ParseUriLen( char*, OptTreeNode* );
+void UriLenCheckInit( struct _SnortConfig *, char*, OptTreeNode*, int );
+void ParseUriLen( struct _SnortConfig *, char*, OptTreeNode* );
 int CheckUriLen(void *option_data, Packet*p);
 
 uint32_t UriLenCheckHash(void *d)
@@ -69,7 +72,8 @@ uint32_t UriLenCheckHash(void *d)
 
     mix(a,b,c);
 
-    a += RULE_OPTION_TYPE_URILEN;
+    a += data->uri_buf;
+    b += RULE_OPTION_TYPE_URILEN;
 
     final(a,b,c);
 
@@ -84,9 +88,10 @@ int UriLenCheckCompare(void *l, void *r)
     if (!left || !right)
         return DETECTION_OPTION_NOT_EQUAL;
 
-    if ((left->urilen == right->urilen) &&
-        (left->urilen2 == right->urilen2) &&
-        (left->oper == right->oper))
+    if ((left->urilen == right->urilen)
+            && (left->urilen2 == right->urilen2)
+            && (left->oper == right->oper)
+            && (left->uri_buf == right->uri_buf))
     {
         return DETECTION_OPTION_EQUAL;
     }
@@ -96,57 +101,53 @@ int UriLenCheckCompare(void *l, void *r)
 
 
 /* Called from plugbase to register any detection plugin keywords.
-* 
+ *
  * PARAMETERS:	None.
  *
  * RETURNS:	Nothing.
  */
-void 
-SetupUriLenCheck(void)
+void SetupUriLenCheck(void)
 {
-	RegisterRuleOption("urilen", UriLenCheckInit, NULL, OPT_TYPE_DETECTION, NULL);
+    RegisterRuleOption("urilen", UriLenCheckInit, NULL, OPT_TYPE_DETECTION, NULL);
 #ifdef PERF_PROFILING
     RegisterPreprocessorProfile("urilen_check", &urilenCheckPerfStats, 3, &ruleOTNEvalPerfStats);
 #endif
 }
 
-/* Parses the urilen rule arguments and attaches info to 
+/* Parses the urilen rule arguments and attaches info to
  * the rule data structure for later use. Attaches detection
  * function to OTN function list.
- * 
- * PARAMETERS: 
+ *
+ * PARAMETERS:
  *
  * argp:	Rule arguments
  * otnp:  	Pointer to the current rule option list node
- * protocol:    Pointer specified for the rule currently being parsed	
+ * protocol:    Pointer specified for the rule currently being parsed
  *
  * RETURNS:	Nothing.
  */
-void 
-UriLenCheckInit( char* argp, OptTreeNode* otnp, int protocol )
+void UriLenCheckInit( struct _SnortConfig *sc, char* argp, OptTreeNode* otnp, int protocol )
 {
-	/* Sanity check(s) */
-	if ( !otnp )
-		return;
+    /* Sanity check(s) */
+    if ( !otnp )
+        return;
 
-	/* Check if there have been multiple urilen options specified
- 	 * in the same rule.
-	 */
-	if ( otnp->ds_list[PLUGIN_URILEN_CHECK] )
-	{
-		FatalError("%s(%d): Multiple urilen options in rule\n",
-			file_name, file_line );
-	}
+    /* Check if there have been multiple urilen options specified
+     * in the same rule.
+     */
+    if ( otnp->ds_list[PLUGIN_URILEN_CHECK] )
+    {
+        FatalError("%s(%d): Multiple urilen options in rule\n",
+                file_name, file_line );
+    }
 
-	otnp->ds_list[PLUGIN_URILEN_CHECK] = 
-		(UriLenCheckData*) SnortAlloc(sizeof(UriLenCheckData));
+    otnp->ds_list[PLUGIN_URILEN_CHECK] = SnortAlloc(sizeof(UriLenCheckData));
 
-	ParseUriLen( argp, otnp );
-
+    ParseUriLen( sc, argp, otnp );
 }
 
 /* Parses the urilen rule arguments and attaches the resulting
- * parameters to the rule data structure. Based on arguments, 
+ * parameters to the rule data structure. Based on arguments,
  * attaches the appropriate callback/processing function
  * to be used when the OTN is evaluated.
  *
@@ -158,141 +159,178 @@ UriLenCheckInit( char* argp, OptTreeNode* otnp, int protocol )
  *
  * RETURNS:	Nothing.
  */
-void
-ParseUriLen( char* argp, OptTreeNode* otnp )
+void ParseUriLen( struct _SnortConfig *sc, char* argp, OptTreeNode* otnp )
 {
     OptFpList *fpl;
-	UriLenCheckData* datap = NULL;
+    UriLenCheckData* datap = (UriLenCheckData*)otnp->ds_list[PLUGIN_URILEN_CHECK];
     void *datap_dup;
-	char* curp = NULL; 
- 	char* cur_tokenp = NULL;
-	char* endp = NULL;
-	int val;
+    char* curp = NULL;
+    char **toks;
+    int num_toks;
 
-	/* Get the Urilen parameter block */
-	datap = (UriLenCheckData*) 
-			otnp->ds_list[PLUGIN_URILEN_CHECK];
+    toks = mSplit(argp, ",", 2, &num_toks, '\\');
+    if (!num_toks)
+    {
+        FatalError("%s(%d): 'urilen' requires arguments.\n",
+                file_name, file_line);
+    }
 
-	curp = argp;
+    curp = toks[0];
 
-	while(isspace((int)*curp)) 
-		curp++;
+    /* Parse the string */
+    if (isdigit((int)*curp) && strstr(curp, "<>"))
+    {
+        char **mtoks;
+        int num_mtoks;
+        char* endp = NULL;
+        long int val;
 
-	/* Parse the string */
-	if(isdigit((int)*curp) && strchr(curp, '<') && strchr(curp, '>'))
-	{
-		cur_tokenp = strtok(curp, " <>");
-		if(!cur_tokenp)
-		{
-			FatalError("%s(%d): Invalid 'urilen' argument.\n",
-	       			file_name, file_line);
-		}
-
-		val = strtol(cur_tokenp, &endp, 10);
-		if(val < 0 || *endp)
-		{
-			FatalError("%s(%d): Invalid 'urilen' argument.\n",
-	       			file_name, file_line);
-		}
-
-		datap->urilen = (unsigned short)val;
-
-		cur_tokenp = strtok(NULL, " <>");
-		if(!cur_tokenp)
-		{
-			FatalError("%s(%d): Invalid 'urilen' argument.\n",
-	       			file_name, file_line);
-		}
-
-		val = strtol(cur_tokenp, &endp, 10);
-		if(val < 0 || *endp)
-		{
-			FatalError("%s(%d): Invalid 'urilen' argument.\n",
-	       			file_name, file_line);
-		}
-
-		datap->urilen2 = (unsigned short)val;
-		fpl = AddOptFuncToList(CheckUriLen, otnp );
-        datap->oper = URILEN_CHECK_RG;
-        if (add_detection_option(RULE_OPTION_TYPE_URILEN, (void *)datap, &datap_dup) == DETECTION_OPTION_EQUAL)
+        mtoks = mSplit(curp, "<>", 2, &num_mtoks, '\\');
+        if (num_mtoks != 2)
         {
-            otnp->ds_list[PLUGIN_URILEN_CHECK] = datap_dup;
-            free(datap);
+            FatalError("%s(%d): Invalid 'urilen' argument.\n",
+                    file_name, file_line);
         }
-        fpl->type = RULE_OPTION_TYPE_URILEN;
-        fpl->context = otnp->ds_list[PLUGIN_URILEN_CHECK];
 
-		return;
-	}
-	else if(*curp == '>')
-	{
-		curp++;
-		fpl = AddOptFuncToList(CheckUriLen, otnp );
-        datap->oper = URILEN_CHECK_GT;
-	}
-	else if(*curp == '<')
-	{
-		curp++;
-		fpl = AddOptFuncToList(CheckUriLen, otnp );
-        datap->oper = URILEN_CHECK_LT;
-	}
-	else
-	{
-		fpl = AddOptFuncToList(CheckUriLen, otnp );
-        datap->oper = URILEN_CHECK_EQ;
-	}
+        val = strtol(mtoks[0], &endp, 0);
+        if ((val < 0) || *endp || (val > UINT16_MAX))
+        {
+            FatalError("%s(%d): Invalid 'urilen' argument.\n",
+                    file_name, file_line);
+        }
 
-	while(isspace((int)*curp)) curp++;
+        datap->urilen = (uint16_t)val;
 
-	val = strtol(curp, &endp, 10);
-	if(val < 0 || *endp)
-	{
-		FatalError("%s(%d): Invalid 'urilen' argument.\n",
-	   		file_name, file_line);
-	}
+        val = strtol(mtoks[1], &endp, 0);
+        if ((val < 0) || *endp || (val > UINT16_MAX))
+        {
+            FatalError("%s(%d): Invalid 'urilen' argument.\n",
+                    file_name, file_line);
+        }
 
-	datap->urilen = (unsigned short)val;
-    if (add_detection_option(RULE_OPTION_TYPE_URILEN, (void *)datap, &datap_dup) == DETECTION_OPTION_EQUAL)
+        datap->urilen2 = (uint16_t)val;
+
+        if (datap->urilen2 < datap->urilen)
+        {
+            uint16_t tmp = datap->urilen;
+            datap->urilen = datap->urilen2;
+            datap->urilen2 = tmp;
+        }
+
+        datap->oper = URILEN_CHECK_RG;
+
+        mSplitFree(&mtoks, num_mtoks);
+    }
+    else
+    {
+        char* endp = NULL;
+        long int val;
+
+        if(*curp == '>')
+        {
+            curp++;
+            datap->oper = URILEN_CHECK_GT;
+        }
+        else if(*curp == '<')
+        {
+            curp++;
+            datap->oper = URILEN_CHECK_LT;
+        }
+        else
+        {
+            datap->oper = URILEN_CHECK_EQ;
+        }
+
+        while(isspace((int)*curp)) curp++;
+
+        if (!*curp)
+        {
+            FatalError("%s(%d): Invalid 'urilen' argument.\n",
+                    file_name, file_line);
+        }
+
+        val = strtol(curp, &endp, 0);
+        if ((val < 0) || *endp || (val > UINT16_MAX))
+        {
+            FatalError("%s(%d): Invalid 'urilen' argument.\n",
+                    file_name, file_line);
+        }
+
+        if ((datap->oper == URILEN_CHECK_LT) && (val == 0))
+        {
+            FatalError("%s(%d): Invalid 'urilen' argument.\n",
+                    file_name, file_line);
+        }
+
+        datap->urilen = (uint16_t)val;
+    }
+
+    if (num_toks > 1)
+    {
+        if (!strcmp(toks[1], URI_LEN_BUF_NORM))
+            datap->uri_buf = HTTP_BUFFER_URI;
+        else if (!strcmp(toks[1], URI_LEN_BUF_RAW))
+            datap->uri_buf = HTTP_BUFFER_RAW_URI;
+        else
+            FatalError("%s(%d): Invalid 'urilen' argument.\n",
+                    file_name, file_line);
+    }
+    else
+    {
+        if (strchr(argp, ','))
+        {
+            FatalError("%s(%d): Invalid 'urilen' argument.\n",
+                    file_name, file_line);
+        }
+
+        datap->uri_buf = HTTP_BUFFER_RAW_URI;
+    }
+
+    mSplitFree(&toks, num_toks);
+
+    fpl = AddOptFuncToList(CheckUriLen, otnp);
+    fpl->type = RULE_OPTION_TYPE_URILEN;
+
+    if (add_detection_option(sc, RULE_OPTION_TYPE_URILEN, (void *)datap, &datap_dup) == DETECTION_OPTION_EQUAL)
     {
         otnp->ds_list[PLUGIN_URILEN_CHECK] = datap_dup;
         free(datap);
     }
-    fpl->type = RULE_OPTION_TYPE_URILEN;
+
     fpl->context = otnp->ds_list[PLUGIN_URILEN_CHECK];
 }
 
-int 
-CheckUriLen(void *option_data, Packet *p)
+int CheckUriLen(void *option_data, Packet *p)
 {
-    UriLenCheckData *urilenCheckData = (UriLenCheckData *)option_data;
+    UriLenCheckData *udata = (UriLenCheckData *)option_data;
     int rval = DETECTION_OPTION_NO_MATCH;
+    const HttpBuffer* hb = GetHttpBuffer(udata->uri_buf);
     PROFILE_VARS;
 
     PREPROC_PROFILE_START(urilenCheckPerfStats);
 
-    if ((p->packet_flags & PKT_REBUILT_STREAM) || ( !UriBufs[0].uri  ))
+    if ( !hb )
     {
         PREPROC_PROFILE_END(urilenCheckPerfStats);
         return rval;
     }
 
-    switch (urilenCheckData->oper)
+    switch (udata->oper)
     {
         case URILEN_CHECK_EQ:
-            if (urilenCheckData->urilen == UriBufs[0].length )
+            if (udata->urilen == hb->length)
                 rval = DETECTION_OPTION_MATCH;
             break;
         case URILEN_CHECK_GT:
-            if (urilenCheckData->urilen < UriBufs[0].length )
+            if (udata->urilen < hb->length)
                 rval = DETECTION_OPTION_MATCH;
             break;
         case URILEN_CHECK_LT:
-            if (urilenCheckData->urilen > UriBufs[0].length )
+            if (udata->urilen > hb->length)
                 rval = DETECTION_OPTION_MATCH;
             break;
         case URILEN_CHECK_RG:
-            if ((urilenCheckData->urilen <= UriBufs[0].length ) &&
-                (urilenCheckData->urilen2 >= UriBufs[0].length ))
+            if ((udata->urilen <= hb->length) && (udata->urilen2 >= hb->length))
                 rval = DETECTION_OPTION_MATCH;
             break;
         default:

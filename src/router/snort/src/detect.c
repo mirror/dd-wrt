@@ -1,7 +1,8 @@
 /* $Id$ */
 /*
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
-** Copyright (C) 2002-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2002-2013 Sourcefire, Inc.
 **    Dan Roelker <droelker@sourcefire.com>
 **    Marc Norton <mnorton@sourcefire.com>
 **
@@ -18,7 +19,7 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **
 ** NOTES
 **   5.7.02: Added interface for new detection engine. (Norton/Roelker)
@@ -34,12 +35,11 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <assert.h>
 
 #include "snort.h"
 #include "detect.h"
 #include "plugbase.h"
-#include "debug.h"
+#include "snort_debug.h"
 #include "util.h"
 #include "mstring.h"
 #include "tag.h"
@@ -51,6 +51,8 @@
 #include "event_queue.h"
 #include "obfuscation.h"
 #include "profiler.h"
+#include "session_api.h"
+#include "session_common.h"
 #include "stream_api.h"
 #include "active.h"
 #include "signature.h"
@@ -59,6 +61,9 @@
 #include "sf_types.h"
 #include "active.h"
 #include "detection_util.h"
+#if defined(FEAT_OPEN_APPID)
+#include "sp_appid.h"
+#endif /* defined(FEAT_OPEN_APPID) */
 
 #ifdef PORTLISTS
 #include "sfutil/sfportobject.h"
@@ -66,10 +71,6 @@
 #ifdef PERF_PROFILING
 PreprocStats detectPerfStats;
 #endif
-
-extern int preproc_proto_mask;
-extern OutputFuncNode *AlertList;
-extern OutputFuncNode *LogList;
 
 #ifdef TARGET_BASED
 #include "target-based/sftarget_protocol_reference.h"
@@ -91,10 +92,77 @@ static int CheckTagging(Packet *);
 PreprocStats eventqPerfStats;
 #endif
 
+static inline int preprocHandlesProto( Packet *p, PreprocEvalFuncNode *ppn )
+{
+    return ( ( p->proto_bits & ppn->proto_mask ) || ( ppn->proto_mask == PROTO_BIT__ALL ) );
+}
+
+static inline bool processDecoderAlertsActionQ( Packet *p )
+{
+    // with policy selected, process any decoder alerts and queued actions
+    DecodePolicySpecific(p);
+    // actions are queued only for IDS case
+    sfActionQueueExecAll(decoderActionQ);
+    return true;
+}
+
+static void DispatchPreprocessors( Packet *p, tSfPolicyId policy_id, SnortPolicy *policy )
+{
+    SessionControlBlock *scb = NULL;
+    PreprocEvalFuncNode *ppn;
+    uint32_t pps_enabled_foo;
+    bool alerts_processed = false;
+
+    // until we are in a Session context dispatch preprocs from the policy list if there is one
+    p->cur_pp = policy->preproc_eval_funcs;
+    if( p->cur_pp == NULL )
+    {
+        alerts_processed = processDecoderAlertsActionQ( p );
+        LogMessage("WARNING: No preprocessors configured for policy %d.\n", policy_id);
+        return;
+    }
+   
+    pps_enabled_foo = policy->pp_enabled[ p->dp ] | policy->pp_enabled[ p->sp ];
+    EnablePreprocessors( p, pps_enabled_foo );
+    do {
+        ppn = p->cur_pp;
+        p->cur_pp = ppn->next;
+
+        // if packet has no data and we are up to APP preprocs then get out
+        if( p->dsize == 0 && ppn->priority >= PRIORITY_APPLICATION )
+            break;
+
+        if ( preprocHandlesProto( p, ppn ) && IsPreprocessorEnabled( p, ppn->preproc_bit ) )
+            ppn->func( p, ppn->context );
+
+        if( !alerts_processed && ( p->ips_os_selected || ppn->preproc_id == PP_FW_RULE_ENGINE ) )
+            alerts_processed = processDecoderAlertsActionQ( p );
+
+        if( scb == NULL && p->ssnptr != NULL )
+            scb = ( SessionControlBlock * ) p->ssnptr;
+        // if we now have session, update enabled pps if changed by previous preproc 
+        if( scb != NULL && pps_enabled_foo != scb->enabled_pps )
+        {
+            EnablePreprocessors( p, scb->enabled_pps );
+            pps_enabled_foo = scb->enabled_pps;
+        }
+
+    } while ( ( p->cur_pp != NULL ) && !( p->packet_flags & PKT_PASS_RULE ) ); 
+
+    // queued decoder alerts are processed after the selection of the
+    // IPS rule config for the flow, if not yet done then process them now
+    if( !alerts_processed )
+        alerts_processed = processDecoderAlertsActionQ( p );
+
+    if( p->dsize == 0 )
+        DisableDetect( p );
+}
+
+
 int Preprocess(Packet * p)
 {
     int retval = 0;
-    tSfPolicyId policy_id = getRuntimePolicy();
+    tSfPolicyId policy_id = getNapRuntimePolicy();
     SnortPolicy *policy = snort_conf->targeted_policies[policy_id];
 #ifdef PPM_MGR
     uint64_t pktcnt=0;
@@ -111,6 +179,7 @@ int Preprocess(Packet * p)
         pktcnt = PPM_INC_PKT_CNT();
         PPM_GET_TIME();
         PPM_INIT_PKT_TIMER();
+#ifdef DEBUG
         if( PPM_DEBUG_PKTS() )
         {
            /* for debugging, info gathering, so don't worry about
@@ -120,12 +189,18 @@ int Preprocess(Packet * p)
            LogMessage("PPM: Process-BeginPkt[%u] caplen=%u\n",
              (unsigned)pktcnt,p->pkth->caplen);
         }
+#endif
     }
 #endif
-    
+
     // If the packet has errors, we won't analyze it.
     if ( p->error_flags )
     {
+        // process any decoder alerts now that policy has been selected... 
+        DecodePolicySpecific(p);
+
+        //actions are queued only for IDS case
+        sfActionQueueExecAll(decoderActionQ);
         DEBUG_WRAP(DebugMessage(DEBUG_DETECT,
             "Packet errors = 0x%x, ignoring traffic!\n", p->error_flags););
 
@@ -146,63 +221,32 @@ int Preprocess(Packet * p)
          * have the advantage of fewer entries per logging cycle */
         obApi->resetObfuscationEntries();
 
-        do_detect = do_detect_content = 1;
+        do_detect = do_detect_content = !snort_conf->disable_all_policies;
 
         /*
         **  Reset the appropriate application-layer protocol fields
         */
-        p->uri_count = 0;
-        DetectReset();
+        ClearHttpBuffers();
         p->alt_dsize = 0;
+        DetectReset((uint8_t *)p->data, p->dsize);
 
-        /* Most preprocessor protocols are over TCP and 90+ percent of traffic in most
-         * environments is TCP so this check almost always passes.  Initial performance
-         * tests indicate this check hinders performance slightly, but keep it here
-         * commented in case initial performance tests are wrong.  Its main purpose is
-         * to filter out traffic that no preprocessors are going to look at thus
-         * avoiding iterating through each preprocessor */
-        //if (p->proto_bits & preproc_proto_mask)
-        {
-            PreprocEvalFuncNode *idx = policy->preproc_eval_funcs;
+        // ok, dispatch all preprocs enabled for this packet/session
+        DispatchPreprocessors( p, policy_id, policy );
 
-            /* Turn on all preprocessors */
-            EnablePreprocessors(p);
-
-            for (; (idx != NULL) && !(p->packet_flags & PKT_PASS_RULE); idx = idx->next)
-            {
-                if (((p->proto_bits & idx->proto_mask) || (idx->proto_mask == PROTO_BIT__ALL)) &&
-                    IsPreprocBitSet(p, idx->preproc_bit))
-                {
-                    idx->func(p, idx->context);
-                }
-            }
-        }
-
-        if ((do_detect) && (p->bytes_to_inspect != -1))
-        {
-            /* Check if we are only inspecting a portion of this packet... */
-            if (p->bytes_to_inspect > 0)
-            {
-                DEBUG_WRAP(DebugMessage(DEBUG_DETECT, "Ignoring part of server "
-                    "traffic -- only looking at %d of %d bytes!!!\n",
-                    p->bytes_to_inspect, p->dsize););
-                p->dsize = (uint16_t)p->bytes_to_inspect;
-            }
-
+        if ( do_detect )
             Detect(p);
-        }
-        else if (p->bytes_to_inspect == -1)
-        {
-            DEBUG_WRAP(DebugMessage(DEBUG_DETECT, "Ignoring server traffic!!!\n"););
-        }
     }
 
     check_tags_flag = 1;
-    
+
     PREPROC_PROFILE_START(eventqPerfStats);
     retval = SnortEventqLog(snort_conf->event_queue, p);
     SnortEventqReset();
     PREPROC_PROFILE_END(eventqPerfStats);
+
+    /* Check for normally closed session */
+    if( session_api )
+        session_api->check_session_closed(p);
 
     /*
     ** By checking tagging here, we make sure that we log the
@@ -210,45 +254,6 @@ int Preprocess(Packet * p)
     */
     if (IPH_IS_VALID(p))
         CheckTagging(p);
-
-    /* Simulate above behavior for preprocessor reassembled packets */
-    if ((p->packet_flags & PKT_PREPROC_RPKT) && do_detect && (p->bytes_to_inspect != -1))
-    {
-        PreprocReassemblyPktFuncNode *rpkt_idx = policy->preproc_reassembly_pkt_funcs;
-
-        /* Loop through the preprocessors that have registered a 
-         * function to get a reassembled packet */
-        while (rpkt_idx != NULL)
-        {
-            Packet *pp = NULL;
-
-            assert(rpkt_idx->func != NULL);
-
-            /* If the preprocessor bit is set, get the reassembled packet */
-            if (IsPreprocReassemblyPktBitSet(p, rpkt_idx->preproc_id))
-            {
-                pp = (Packet *)rpkt_idx->func();
-            }
-
-            if (pp != NULL)
-            {
-                /* If the original packet's bytes to inspect is set,
-                 * set it for the reassembled packet */
-                if (p->bytes_to_inspect > 0)
-                    pp->dsize = (uint16_t)p->bytes_to_inspect;
-
-                if (Detect(pp))
-                {
-                    PREPROC_PROFILE_START(eventqPerfStats);
-                    retval |= SnortEventqLog(snort_conf->event_queue, pp);
-                    SnortEventqReset();
-                    PREPROC_PROFILE_END(eventqPerfStats);
-                }
-            }
-
-            rpkt_idx = rpkt_idx->next;
-        }
-    }
 
     otn_tmp = NULL;
 
@@ -266,14 +271,16 @@ int Preprocess(Packet * p)
         PPM_GET_TIME();
         PPM_TOTAL_PKT_TIME();
         PPM_ACCUM_PKT_TIME();
+#ifdef DEBUG
         if( PPM_DEBUG_PKTS() )
         {
             LogMessage("PPM: Pkt[%u] Used= ",(unsigned)pktcnt);
             PPM_PRINT_PKT_TIME("%g usecs\n");
             LogMessage("PPM: Process-EndPkt[%u]\n\n",(unsigned)pktcnt);
         }
+#endif
 
-        PPM_PKT_LOG();
+        PPM_PKT_LOG(p);
     }
     if( PPM_RULES_ENABLED() )
     {
@@ -307,11 +314,12 @@ static int CheckTagging(Packet *p)
 {
     Event event;
 
-    if(check_tags_flag == 1 && !(p->packet_flags & PKT_REBUILT_STREAM)) 
+    if(check_tags_flag == 1 && !(p->packet_flags & PKT_REBUILT_STREAM))
     {
+        void* listhead = NULL;
         DEBUG_WRAP(DebugMessage(DEBUG_FLOW, "calling CheckTagList\n"););
 
-        if(CheckTagList(p, &event))
+        if(CheckTagList(p, &event, &listhead))
         {
             DEBUG_WRAP(DebugMessage(DEBUG_FLOW, "Matching tag node found, "
                         "calling log functions\n"););
@@ -319,64 +327,88 @@ static int CheckTagging(Packet *p)
             /* if we find a match, we want to send the packet to the
              * logging mechanism
              */
-            CallLogFuncs(p, "Tagged Packet", NULL, &event);
-        } 
+            CallLogFuncs(p, "Tagged Packet", listhead, &event);
+        }
     }
 
     return 0;
 }
 
-/*
- *  11/2/05 marc norton
- *  removed thresholding from this function. This function should only
- *  be called by fpLogEvent, which already does the thresholding test.
- */
+#if defined(FEAT_OPEN_APPID)
+static void updateEventAppName (Packet *p, OptTreeNode *otn, Event *event)
+{
+    const char *appName;
+    AppIdOptionData *app_data = (AppIdOptionData*)otn->ds_list[PLUGIN_APPID];
+
+    if (app_data && (app_data->matched_appid) && (appName = FindProtocolName(app_data->matched_appid)))
+        memcpy(event->app_name, appName, sizeof(event->app_name));
+    else if (p->ssnptr)
+    {
+        //log most specific appid when rule didn't have any appId
+        int16_t serviceProtoId, clientProtoId, payloadProtoId, miscProtoId, pickedProtoId;
+
+        stream_api->get_application_id(p->ssnptr, &serviceProtoId, &clientProtoId, &payloadProtoId, &miscProtoId);
+        if ((p->packet_flags & PKT_FROM_CLIENT))
+        {
+            if (!(pickedProtoId = payloadProtoId) &&  !(pickedProtoId = miscProtoId) && !(pickedProtoId = clientProtoId))
+                pickedProtoId = serviceProtoId;
+        }
+        else
+        {
+            if (!(pickedProtoId = payloadProtoId) &&  !(pickedProtoId = miscProtoId) && !(pickedProtoId = serviceProtoId))
+                pickedProtoId = clientProtoId;
+        }
+
+        if ((pickedProtoId) && (appName = FindProtocolName(pickedProtoId)))
+        {
+            memcpy(event->app_name, appName, sizeof(event->app_name));
+        }
+        else
+        {
+            event->app_name[0] = 0;
+        }
+    }
+    else
+    {
+        event->app_name[0] = 0;
+    }
+}
+#endif /* defined(FEAT_OPEN_APPID) */
 void CallLogFuncs(Packet *p, char *message, ListHead *head, Event *event)
 {
     OutputFuncNode *idx = NULL;
 
-    event->ref_time.tv_sec = p->pkth->ts.tv_sec;
-    event->ref_time.tv_usec = p->pkth->ts.tv_usec;
-
+    if (event->sig_generator != GENERATOR_TAG)
+    {
+        event->ref_time.tv_sec = p->pkth->ts.tv_sec;
+        event->ref_time.tv_usec = p->pkth->ts.tv_usec;
+    }
     /* set the event number */
     event->event_id = event_id | ScEventLogId();
 
-#ifndef SUP_IP6
-    if(BsdPseudoPacket) 
-    {
-        p = BsdPseudoPacket;
-    }
-#endif
     check_tags_flag = 0;
 
-    if(head == NULL)
+    pc.log_pkts++;
+
+    if ( head == NULL || head->LogList == NULL )
     {
-        CallLogPlugins(p, message, NULL, event);
+        CallLogPlugins(p, message, event);
         return;
     }
 
-    pc.log_pkts++;
-     
     idx = head->LogList;
-    if(idx == NULL)
-        idx = LogList;
-
-    while(idx != NULL)
+    while ( idx != NULL )
     {
         idx->func(p, message, idx->arg, event);
         idx = idx->next;
     }
 }
 
-void CallLogPlugins(Packet * p, char *message, void *args, Event *event)
+void CallLogPlugins(Packet * p, char *message, Event *event)
 {
-    OutputFuncNode *idx;
+    OutputFuncNode *idx = LogList;
 
-    idx = LogList;
-
-    pc.log_pkts++;
-
-    while(idx != NULL)
+    while ( idx != NULL )
     {
         idx->func(p, message, idx->arg, event);
         idx = idx->next;
@@ -397,11 +429,6 @@ void CallSigOutputFuncs(Packet *p, OptTreeNode *otn, Event *event)
     }
 }
 
-/*
- *  11/2/05 marc norton
- *  removed thresholding from this function. This function should only
- *  be called by fpLogEvent, which already does the thresholding test.
- */
 void CallAlertFuncs(Packet * p, char *message, ListHead * head, Event *event)
 {
     OutputFuncNode *idx = NULL;
@@ -414,25 +441,22 @@ void CallAlertFuncs(Packet * p, char *message, ListHead * head, Event *event)
     /* set the event reference info */
     event->event_reference = event->event_id;
 
-#ifndef SUP_IP6
-    if(BsdPseudoPacket) 
-    {
-        p = BsdPseudoPacket;
-    }
-#endif
+    pc.total_alert_pkts++;
 
-    if(head == NULL)
+    if ( event->sig_generator != GENERATOR_SPP_REPUTATION )
     {
-        CallAlertPlugins(p, message, NULL, event);
+        /* Don't include IP Reputation events in count */
+        pc.alert_pkts++;
+    }
+
+    if ( head == NULL || head->AlertList == NULL )
+    {
+        CallAlertPlugins(p, message, event);
         return;
     }
 
-    pc.alert_pkts++;
     idx = head->AlertList;
-    if(idx == NULL)
-        idx = AlertList;
-
-    while(idx != NULL)
+    while ( idx != NULL )
     {
         idx->func(p, message, idx->arg, event);
         idx = idx->next;
@@ -440,15 +464,11 @@ void CallAlertFuncs(Packet * p, char *message, ListHead * head, Event *event)
 }
 
 
-void CallAlertPlugins(Packet * p, char *message, void *args, Event *event)
+void CallAlertPlugins(Packet * p, char *message, Event *event)
 {
-    OutputFuncNode *idx;
+    OutputFuncNode *idx = AlertList;
 
-    DEBUG_WRAP(DebugMessage(DEBUG_DETECT, "Call Alert Plugins\n"););
-    idx = AlertList;
-
-    pc.alert_pkts++;
-    while(idx != NULL)
+    while ( idx != NULL )
     {
         idx->func(p, message, idx->arg, event);
         idx = idx->next;
@@ -481,7 +501,6 @@ int Detect(Packet * p)
     if (!snort_conf->ip_proto_array[GET_IPH_PROTO(p)])
     {
 #ifdef GRE
-# ifdef SUP_IP6
         switch (p->outer_family)
         {
             case AF_INET:
@@ -497,10 +516,6 @@ int Detect(Packet * p)
             default:
                 return 0;
         }
-# else
-        if ((p->outer_iph == NULL) || !snort_conf->ip_proto_array[p->outer_iph->ip_proto])
-            return 0;
-# endif  /* SUP_IP6 */
 #else
         return 0;
 #endif  /* GRE */
@@ -525,12 +540,12 @@ int Detect(Packet * p)
         PPM_PACKET_TEST();
 
         if( PPM_PACKET_ABORT_FLAG() )
-            return 0; 
+            return 0;
     }
 #endif
 
     /*
-    **  This is where we short circuit so 
+    **  This is where we short circuit so
     **  that we can do IP checks.
     */
     PREPROC_PROFILE_START(detectPerfStats);
@@ -558,13 +573,9 @@ void TriggerResponses(Packet * p, OptTreeNode * otn)
 }
 
 int CheckAddrPort(
-#ifdef SUP_IP6
                 sfip_var_t *rule_addr,
-#else
-                IpAddrSet *rule_addr,
-#endif
-                PortObject * po, 
-                Packet *p, 
+                PortObject * po,
+                Packet *p,
                 uint32_t flags, int mode)
 {
     snort_ip_p pkt_addr;              /* packet IP address */
@@ -573,9 +584,6 @@ int CheckAddrPort(
     int any_port_flag = 0;           /* any port flag set */
     int except_port_flag = 0;        /* port exception flag set */
     int ip_match = 0;                /* flag to indicate addr match made */
-#ifndef SUP_IP6
-    IpAddrNode *idx;            /* ip addr struct indexer */
-#endif
 
     DEBUG_WRAP(DebugMessage(DEBUG_DETECT, "CheckAddrPort: "););
     /* set up the packet particulars */
@@ -620,7 +628,7 @@ int CheckAddrPort(
         }
     }
 
-    DEBUG_WRAP(DebugMessage(DEBUG_DETECT, "addr %lx, port %d ", pkt_addr, 
+    DEBUG_WRAP(DebugMessage(DEBUG_DETECT, "addr %lx, port %d ", pkt_addr,
                 pkt_port););
 
     if(!rule_addr)
@@ -628,83 +636,20 @@ int CheckAddrPort(
 
     if(!(global_except_addr_flag)) /*modeled after Check{Src,Dst}IP function*/
     {
-#ifdef SUP_IP6
-        if(sfvar_ip_in(rule_addr, pkt_addr)) 
+        if(sfvar_ip_in(rule_addr, pkt_addr))
             ip_match = 1;
-#else
-        ip_match = 0;
-
-        if(rule_addr->iplist)
-        {
-            for(idx=rule_addr->iplist; idx; idx=idx->next)
-            {
-                if(idx->ip_addr == (pkt_addr & idx->netmask)) 
-                {
-                    ip_match = 1; 
-                    break;
-                }
-            }
-        }
-        else 
-            ip_match = 1;
-        
-        if(ip_match)
-        {
-            for(idx=rule_addr->neg_iplist; idx; idx=idx->next)
-            {
-                if(idx->ip_addr == (pkt_addr & idx->netmask)) 
-                {
-                    ip_match = 0; break;
-                }
-            }
-        }
-        
-        if(ip_match) 
-            goto bail;
-#endif
     }
     else
     {
         DEBUG_WRAP(DebugMessage(DEBUG_DETECT, ", global exception flag set"););
-        /* global exception flag is up, we can't match on *any* 
-         * of the source addresses 
+        /* global exception flag is up, we can't match on *any*
+         * of the source addresses
          */
 
-#ifdef SUP_IP6
-        if(sfvar_ip_in(rule_addr, pkt_addr)) 
+        if(sfvar_ip_in(rule_addr, pkt_addr))
             return 0;
 
         ip_match=1;
-#else
-        if(rule_addr->iplist)
-        {
-            ip_match = 0;
-            for(idx=rule_addr->iplist; idx; idx=idx->next)
-            {
-                if(idx->ip_addr == (pkt_addr & idx->netmask)) 
-                {
-                    ip_match = 1; 
-                    break;
-                }
-            }
-        }
-        else 
-            ip_match = 1;
-        
-        if(ip_match)
-        {
-            for(idx=rule_addr->neg_iplist; idx; idx=idx->next)
-            {
-                if(idx->ip_addr == (pkt_addr & idx->netmask)) 
-                {
-                    ip_match = 0; break;
-                }
-            }
-        }
-       
-        if(!ip_match) 
-            return 0;
-#endif
     }
 
 bail:
@@ -716,7 +661,7 @@ bail:
     }
 
     DEBUG_WRAP(DebugMessage(DEBUG_DETECT, ", addresses accepted"););
-    
+
     /* if the any port flag is up, we're all done (success) */
     if(any_port_flag)
     {
@@ -780,7 +725,7 @@ bail:
  * Purpose: print out the chain lists by header block node group
  *
  * Arguments: node => the head node
- *           
+ *
  * Returns: void function
  *
  ***************************************************************************/
@@ -792,20 +737,13 @@ void DumpList(IpAddrNode *idx, int negated)
 
     while(idx != NULL)
     {
-#ifdef SUP_IP6
        DEBUG_WRAP(DebugMessage(DEBUG_RULES,
                         "[%d]    %s",
                         i++, sfip_ntoa(idx->ip)););
-#else
-       DEBUG_WRAP(DebugMessage(DEBUG_RULES,
-                        "[%d]    0x%.8lX / 0x%.8lX",
-                        i++, (u_long) idx->ip_addr,
-                        (u_long) idx->netmask););
-#endif
 
        if(negated)
        {
-           DEBUG_WRAP(DebugMessage(DEBUG_RULES, 
+           DEBUG_WRAP(DebugMessage(DEBUG_RULES,
                        "    (EXCEPTION_FLAG Active)\n"););
        }
        else
@@ -814,7 +752,7 @@ void DumpList(IpAddrNode *idx, int negated)
        }
 
        idx = idx->next;
-    }    
+    }
 }
 
 
@@ -833,28 +771,13 @@ void DumpList(IpAddrNode *idx, int negated)
  ***************************************************************************/
 void DumpChain(RuleTreeNode * rtn_head, char *rulename, char *listname)
 {
-#ifdef SUP_IP6
     // XXX Not yet implemented - Rule chain dumping
-#else
-
-    RuleTreeNode *rtn_idx;
-
-    DEBUG_WRAP(DebugMessage(DEBUG_RULES, "%s %s\n", rulename, listname););
-
-    rtn_idx = rtn_head;
-
-    if(rtn_idx == NULL)
-    {
-        DEBUG_WRAP(DebugMessage(DEBUG_RULES, "    Empty!\n\n"););
-    }
-
-#endif
 }
 
 #define CHECK_ADDR_SRC_ARGS(x) (x)->src_portobject
 #define CHECK_ADDR_DST_ARGS(x) (x)->dst_portobject
 
-int CheckBidirectional(Packet *p, struct _RuleTreeNode *rtn_idx, 
+int CheckBidirectional(Packet *p, struct _RuleTreeNode *rtn_idx,
         RuleFpList *fp_list, int check_ports)
 {
     DEBUG_WRAP(DebugMessage(DEBUG_DETECT, "Checking bidirectional rule...\n"););
@@ -908,7 +831,7 @@ int CheckBidirectional(Packet *p, struct _RuleTreeNode *rtn_idx,
             DEBUG_WRAP(DebugMessage(DEBUG_DETECT,
                         "   Dst->Src check passed\n"););
 
-            if(!CheckAddrPort(rtn_idx->sip, CHECK_ADDR_SRC_ARGS(rtn_idx), p, 
+            if(!CheckAddrPort(rtn_idx->sip, CHECK_ADDR_SRC_ARGS(rtn_idx), p,
                         rtn_idx->flags, CHECK_DST_IP | INVERSE | (check_ports ? CHECK_DST_PORT : 0)))
             {
                 DEBUG_WRAP(DebugMessage(DEBUG_DETECT,
@@ -922,7 +845,7 @@ int CheckBidirectional(Packet *p, struct _RuleTreeNode *rtn_idx,
             }
         }
         else
-        { 
+        {
             DEBUG_WRAP(DebugMessage(DEBUG_DETECT,"   Inverse test failed, "
                         "testing next rule...\n"););
             return 0;
@@ -949,32 +872,27 @@ int CheckBidirectional(Packet *p, struct _RuleTreeNode *rtn_idx,
  ***************************************************************************/
 int CheckSrcIP(Packet * p, struct _RuleTreeNode * rtn_idx, RuleFpList * fp_list, int check_ports)
 {
-#ifndef SUP_IP6
-    int match = 0;
-    IpAddrNode *pos_idx, *neg_idx; /* ip address indexer */
-#endif
 
     DEBUG_WRAP(DebugMessage(DEBUG_DETECT,"CheckSrcIPEqual: "););
 
-#ifdef SUP_IP6
-    if(!(rtn_idx->flags & EXCEPT_SRC_IP)) 
+    if(!(rtn_idx->flags & EXCEPT_SRC_IP))
     {
         if( sfvar_ip_in(rtn_idx->sip, GET_SRC_IP(p)) )
         {
 // XXX NOT YET IMPLEMENTED - debugging in Snort6
 #if 0
-#ifdef DEBUG
+#ifdef DEBUG_MSGS
             sfip_t ip;
             if(idx->addr_flags & EXCEPT_IP) {
                 DebugMessage(DEBUG_DETECT, "  SIP exception match\n");
-            } 
+            }
             else
             {
                 DebugMessage(DEBUG_DETECT, "  SIP match\n");
             }
- 
+
             ip = *iph_ret_src(p);    /* necessary due to referencing/dereferencing */
-            DebugMessage(DEBUG_DETECT, "Rule: %s     Packet: %s\n", 
+            DebugMessage(DEBUG_DETECT, "Rule: %s     Packet: %s\n",
                    inet_ntoa(idx->ip_addr), inet_ntoa(ip));
 #endif /* DEBUG */
 #endif
@@ -985,8 +903,8 @@ int CheckSrcIP(Packet * p, struct _RuleTreeNode * rtn_idx, RuleFpList * fp_list,
     }
     else
     {
-        /* global exception flag is up, we can't match on *any* 
-         * of the source addresses 
+        /* global exception flag is up, we can't match on *any*
+         * of the source addresses
          */
         DEBUG_WRAP(DebugMessage(DEBUG_DETECT,"  global exception flag, \n"););
 
@@ -999,69 +917,6 @@ int CheckSrcIP(Packet * p, struct _RuleTreeNode * rtn_idx, RuleFpList * fp_list,
 
     return 0;
 
-#else
-
-    if(rtn_idx->sip)
-    {
-        match = 0;
-
-        pos_idx = rtn_idx->sip->iplist;                  
-        neg_idx = rtn_idx->sip->neg_iplist;                  
-
-        if(!pos_idx) 
-        {
-            for( ; neg_idx; neg_idx = neg_idx->next) 
-            {
-                if(neg_idx->ip_addr == 
-                           (p->iph->ip_src.s_addr & neg_idx->netmask)) 
-                {
-                    DEBUG_WRAP(DebugMessage(DEBUG_DETECT,"  Mismatch on SIP\n"););
-                    return 0;
-                }
-            } 
-
-            DEBUG_WRAP(DebugMessage(DEBUG_DETECT,"  SIP match\n"););
-            return fp_list->next->RuleHeadFunc(p, rtn_idx, fp_list->next, check_ports);
-        }
-    
-        while(pos_idx)              
-        {
-            if(neg_idx)
-            {
-                if(neg_idx->ip_addr == 
-                           (p->iph->ip_src.s_addr & neg_idx->netmask)) 
-                {
-                    DEBUG_WRAP(DebugMessage(DEBUG_DETECT,"  Mismatch on SIP\n"););
-                    return 0;
-                }
-            
-                neg_idx = neg_idx->next;
-            } 
-            /* No more potential negations.  Check if we've already matched. */
-            else if(match)
-            {
-                DEBUG_WRAP(DebugMessage(DEBUG_DETECT,"  SIP match\n"););
-                return fp_list->next->RuleHeadFunc(p, rtn_idx, fp_list->next, check_ports);
-            }
-
-            if(!match) 
-            {
-                if(pos_idx->ip_addr == 
-                   (p->iph->ip_src.s_addr & pos_idx->netmask)) 
-                {
-                     match = 1;
-                }
-                else
-                {
-                    pos_idx = pos_idx->next;
-                }
-            }
-        } 
-    }
-
-    DEBUG_WRAP(DebugMessage(DEBUG_DETECT,"  Mismatch on SIP\n"););
-
-#endif
     /* return 0 on a failed test */
     return 0;
 }
@@ -1082,19 +937,14 @@ int CheckSrcIP(Packet * p, struct _RuleTreeNode * rtn_idx, RuleFpList * fp_list,
  ***************************************************************************/
 int CheckDstIP(Packet *p, struct _RuleTreeNode *rtn_idx, RuleFpList *fp_list, int check_ports)
 {
-#ifndef SUP_IP6
-    IpAddrNode *pos_idx, *neg_idx;  /* ip address indexer */
-    int match;
-#endif
 
     DEBUG_WRAP(DebugMessage(DEBUG_DETECT, "CheckDstIPEqual: ");)
 
-#ifdef SUP_IP6
-    if(!(rtn_idx->flags & EXCEPT_DST_IP)) 
+    if(!(rtn_idx->flags & EXCEPT_DST_IP))
     {
         if( sfvar_ip_in(rtn_idx->dip, GET_DST_IP(p)) )
         {
-// #ifdef DEBUG
+// #ifdef DEBUG_MSGS
 // XXX idx's equivalent is lost inside of sfvar_ip_in
 //            DebugMessage(DEBUG_DETECT, "Rule: %s     Packet: ",
 //                   inet_ntoa(idx->ip_addr));
@@ -1107,7 +957,7 @@ int CheckDstIP(Packet *p, struct _RuleTreeNode *rtn_idx, RuleFpList *fp_list, in
     }
     else
     {
-        /* global exception flag is up, we can't match on *any* 
+        /* global exception flag is up, we can't match on *any*
          * of the source addresses */
         DEBUG_WRAP(DebugMessage(DEBUG_DETECT,"  global exception flag, \n"););
 
@@ -1117,73 +967,10 @@ int CheckDstIP(Packet *p, struct _RuleTreeNode *rtn_idx, RuleFpList *fp_list, in
     }
 
     return 0;
-#else
-
-    if(rtn_idx->dip)
-    {
-        match = 0;
-
-        pos_idx = rtn_idx->dip->iplist;                  
-        neg_idx = rtn_idx->dip->neg_iplist;                  
-
-        if(!pos_idx) 
-        {
-            for( ; neg_idx; neg_idx = neg_idx->next) 
-            {
-                if(neg_idx->ip_addr == 
-                           (p->iph->ip_dst.s_addr & neg_idx->netmask)) 
-                {
-                    DEBUG_WRAP(DebugMessage(DEBUG_DETECT,"  Mismatch on DIP\n"););
-                    return 0;
-                }
-            } 
-
-            DEBUG_WRAP(DebugMessage(DEBUG_DETECT,"  DIP match\n"););
-            return fp_list->next->RuleHeadFunc(p, rtn_idx, fp_list->next, check_ports);
-        }
-
-        while(pos_idx)              
-        {
-            if(neg_idx)
-            {
-                if(neg_idx->ip_addr == 
-                           (p->iph->ip_dst.s_addr & neg_idx->netmask)) 
-                {
-                    DEBUG_WRAP(DebugMessage(DEBUG_DETECT, "  DIP exception match\n"););
-                    return 0;
-                }
-            
-                neg_idx = neg_idx->next;
-            } 
-            /* No more potential negations.  Check if we've already matched. */
-            else if(match)
-            {
-                DEBUG_WRAP(DebugMessage(DEBUG_DETECT, "  DIP match\n"););
-                return fp_list->next->RuleHeadFunc(p, rtn_idx, fp_list->next, check_ports);
-            }
-
-            if(!match) 
-            {
-                if(pos_idx->ip_addr == 
-                   (p->iph->ip_dst.s_addr & pos_idx->netmask)) 
-                {
-                     match = 1;
-                }
-                else 
-                {
-                    pos_idx = pos_idx->next;
-                }
-            }
-        } 
-    }
-
-    DEBUG_WRAP(DebugMessage(DEBUG_DETECT, "  DIP exception match\n"););
-    return 0;
-#endif
 }
 
 
-int CheckSrcPortEqual(Packet *p, struct _RuleTreeNode *rtn_idx, 
+int CheckSrcPortEqual(Packet *p, struct _RuleTreeNode *rtn_idx,
         RuleFpList *fp_list, int check_ports)
 {
     DEBUG_WRAP(DebugMessage(DEBUG_DETECT,"CheckSrcPortEqual: "););
@@ -1219,7 +1006,7 @@ int CheckSrcPortEqual(Packet *p, struct _RuleTreeNode *rtn_idx,
     return 0;
 }
 
-int CheckSrcPortNotEq(Packet *p, struct _RuleTreeNode *rtn_idx, 
+int CheckSrcPortNotEq(Packet *p, struct _RuleTreeNode *rtn_idx,
         RuleFpList *fp_list, int check_ports)
 {
     DEBUG_WRAP(DebugMessage(DEBUG_DETECT,"CheckSrcPortNotEq: "););
@@ -1255,7 +1042,7 @@ int CheckSrcPortNotEq(Packet *p, struct _RuleTreeNode *rtn_idx,
     return 0;
 }
 
-int CheckDstPortEqual(Packet *p, struct _RuleTreeNode *rtn_idx, 
+int CheckDstPortEqual(Packet *p, struct _RuleTreeNode *rtn_idx,
         RuleFpList *fp_list, int check_ports)
 {
     DEBUG_WRAP(DebugMessage(DEBUG_DETECT,"CheckDstPortEqual: "););
@@ -1291,7 +1078,7 @@ int CheckDstPortEqual(Packet *p, struct _RuleTreeNode *rtn_idx,
 }
 
 
-int CheckDstPortNotEq(Packet *p, struct _RuleTreeNode *rtn_idx, 
+int CheckDstPortNotEq(Packet *p, struct _RuleTreeNode *rtn_idx,
         RuleFpList *fp_list, int check_ports)
 {
     DEBUG_WRAP(DebugMessage(DEBUG_DETECT,"CheckDstPortNotEq: "););
@@ -1355,28 +1142,31 @@ int ActivateAction(Packet * p, OptTreeNode * otn, Event *event)
     DEBUG_WRAP(DebugMessage(DEBUG_DETECT,
                    "        <!!> Activating and generating alert! \"%s\"\n",
                    otn->sigInfo.message););
+#if defined(FEAT_OPEN_APPID)
+    updateEventAppName (p, otn, event);
+#endif /* defined(FEAT_OPEN_APPID) */
     CallAlertFuncs(p, otn->sigInfo.message, rtn->listhead, event);
 
     if (otn->OTN_activation_ptr == NULL)
     {
         LogMessage("WARNING: an activation rule with no "
-                "dynamic rules matched!\n");
+                "dynamic rules matched.\n");
         return 0;
     }
 
     otn->OTN_activation_ptr->active_flag = 1;
-    otn->OTN_activation_ptr->countdown = 
+    otn->OTN_activation_ptr->countdown =
         otn->OTN_activation_ptr->activation_counter;
 
     otn->RTN_activation_ptr->active_flag = 1;
-    otn->RTN_activation_ptr->countdown += 
+    otn->RTN_activation_ptr->countdown +=
         otn->OTN_activation_ptr->activation_counter;
 
     snort_conf->active_dynamic_nodes++;
     DEBUG_WRAP(DebugMessage(DEBUG_DETECT,"   => Finishing activation packet!\n"););
-    
+
     CallLogFuncs(p, otn->sigInfo.message, rtn->listhead, event);
-    DEBUG_WRAP(DebugMessage(DEBUG_DETECT, 
+    DEBUG_WRAP(DebugMessage(DEBUG_DETECT,
                 "   => Activation packet finished, returning!\n"););
 
     return 1;
@@ -1386,13 +1176,19 @@ int AlertAction(Packet * p, OptTreeNode * otn, Event *event)
 {
     RuleTreeNode *rtn = getRuntimeRtnFromOtn(otn);
 
+    if (rtn == NULL)
+        return 0;
+
     DEBUG_WRAP(DebugMessage(DEBUG_DETECT,
-                "        <!!> Generating alert! \"%s\", policyId %d\n", otn->sigInfo.message, getRuntimePolicy()););
+                "        <!!> Generating alert! \"%s\", policyId %d\n", otn->sigInfo.message, getIpsRuntimePolicy()););
+#if defined(FEAT_OPEN_APPID)
+    updateEventAppName (p, otn, event);
+#endif /* defined(FEAT_OPEN_APPID) */
 
     /* Call OptTreeNode specific output functions */
     if(otn->outputFuncs)
         CallSigOutputFuncs(p, otn, event);
-    
+
     if (ScAlertPacketCount())
         print_packet_count();
 
@@ -1428,16 +1224,16 @@ int DropAction(Packet * p, OptTreeNode * otn, Event *event)
     DEBUG_WRAP(DebugMessage(DEBUG_DETECT,
                "        <!!> Generating Alert and dropping! \"%s\"\n",
                otn->sigInfo.message););
-    
+
     if(stream_api && !stream_api->alert_inline_midstream_drops())
     {
-        if(stream_api->get_session_flags(p->ssnptr) & SSNFLAG_MIDSTREAM) 
+        if(session_api->get_session_flags(p->ssnptr) & SSNFLAG_MIDSTREAM)
         {
             DEBUG_WRAP(DebugMessage(DEBUG_DETECT,
                 " <!!> Alert Came From Midstream Session Silently Drop! "
-                "\"%s\"\n", otn->sigInfo.message);); 
+                "\"%s\"\n", otn->sigInfo.message););
 
-            Active_DropSession();
+            Active_DropSession(p);
             return 1;
         }
     }
@@ -1446,7 +1242,10 @@ int DropAction(Packet * p, OptTreeNode * otn, Event *event)
     **  Set packet flag so output plugins will know we dropped the
     **  packet we just logged.
     */
-    Active_DropSession();
+    Active_DropSession(p);
+#if defined(FEAT_OPEN_APPID)
+    updateEventAppName (p, otn, event);
+#endif /* defined(FEAT_OPEN_APPID) */
 
     CallAlertFuncs(p, otn->sigInfo.message, rtn->listhead, event);
 
@@ -1462,7 +1261,7 @@ int SDropAction(Packet * p, OptTreeNode * otn, Event *event)
                otn->sigInfo.message););
 
     // Let's silently drop the packet
-    Active_DropSession();
+    Active_DropSession(p);
 
     return 1;
 }
@@ -1485,7 +1284,7 @@ int DynamicAction(Packet * p, OptTreeNode * otn, Event *event)
         snort_conf->active_dynamic_nodes--;
         DEBUG_WRAP(DebugMessage(DEBUG_DETECT, "   <!!> Shutting down dynamic OTN node\n"););
     }
-    
+
     rtn->countdown--;
 
     if( rtn->countdown <= 0 )

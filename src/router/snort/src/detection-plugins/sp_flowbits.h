@@ -1,7 +1,8 @@
 /* $Id$ */
 /****************************************************************************
  *
- * Copyright (C) 2004-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2004-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -16,7 +17,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************/
  
@@ -25,11 +26,11 @@
 #ifndef __SP_FLOWBITS_H__
 #define __SP_FLOWBITS_H__
 
-#include "stream_api.h"
 #include "sfghash.h"
 #include "sf_types.h"
 #include "decode.h"
 #include "bitop_funcs.h"
+#include "snort_debug.h"
 
 /* Normally exported functions, for plugin registration. */
 void SetupFlowBits(void);
@@ -39,6 +40,8 @@ uint32_t FlowBitsHash(void *d);
 int FlowBitsCompare(void *l, void *r);
 int FlowBitsCheck(void *, Packet *);
 void FlowBitsHashInit(void);
+void FlowbitResetCounts(void);
+
 
 /**
 **  The FLOWBITS_OBJECT is used to track the different
@@ -52,14 +55,21 @@ void FlowBitsHashInit(void);
 */
 typedef struct _FLOWBITS_OBJECT
 {
-    uint32_t id;
+    uint16_t id;
     uint8_t  types;
     int toggle;
-    char *group;
     int set;
     int isset;
 
 } FLOWBITS_OBJECT;
+
+typedef enum
+{
+    FLOWBITS_AND,
+    FLOWBITS_OR,
+    FLOWBITS_ANY,
+    FLOWBITS_ALL
+}Flowbits_eval;
 
 /**
 **  This structure is the context ptr for each detection option
@@ -69,28 +79,48 @@ typedef struct _FLOWBITS_OBJECT
 */
 typedef struct _FLOWBITS_OP
 {
-    uint32_t id;
+    uint16_t *ids;
+    uint8_t  num_ids;
     uint8_t  type;        /* Set, Unset, Invert, IsSet, IsNotSet, Reset  */
+    Flowbits_eval  eval;  /* and , or, all, any*/
     char *name;
     char *group;
+    uint32_t group_id;
 } FLOWBITS_OP;
 
 typedef struct _FLOWBITS_GRP
 {
-    uint32_t count;
-    uint32_t max_id;
+    uint16_t count;
+    uint16_t max_id;
     char *name;
+    uint32_t group_id;
     BITOP GrpBitOp;
 } FLOWBITS_GRP;
 
-
-
-#define FLOWBITS_SET       0x01  
+#define FLOWBITS_SET       0x01
 #define FLOWBITS_UNSET     0x02
 #define FLOWBITS_TOGGLE    0x04
 #define FLOWBITS_ISSET     0x08
 #define FLOWBITS_ISNOTSET  0x10
 #define FLOWBITS_RESET     0x20
 #define FLOWBITS_NOALERT   0x40
+#define FLOWBITS_SETX      0x80
+
+void processFlowBitsWithGroup(char *flowbitsName, char *groupName, FLOWBITS_OP *flowbits);
+int checkFlowBits( uint8_t type, uint8_t evalType, uint16_t *ids, uint16_t num_ids, char *group, Packet *p);
+
+static inline int FlowBits_SetOperation(void *option_data)
+{
+    FLOWBITS_OP *flowbits = (FLOWBITS_OP*)option_data;
+    if (flowbits->type & (FLOWBITS_SET | FLOWBITS_SETX |FLOWBITS_UNSET | FLOWBITS_TOGGLE | FLOWBITS_RESET))
+    {
+        return 1;
+    }
+    return 0;
+}
+
+void setFlowbitSize(char *);
+unsigned int getFlowbitSize(void);
+unsigned int getFlowbitSizeInBytes(void);
 
 #endif  /* __SP_FLOWBITS_H__ */

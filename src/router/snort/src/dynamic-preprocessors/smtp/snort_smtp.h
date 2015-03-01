@@ -1,6 +1,7 @@
 /****************************************************************************
- * 
- * Copyright (C) 2005-2011 Sourcefire, Inc.
+ *
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -15,7 +16,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  * **************************************************************************/
 
@@ -46,6 +47,9 @@
 #include "sfPolicy.h"
 #include "sfPolicyUserData.h"
 #include "mempool.h"
+#include "sf_email_attach_decode.h"
+#include "file_mail_common.h"
+#include "file_api.h"
 
 #ifdef DEBUG
 #include "sf_types.h"
@@ -73,15 +77,16 @@
 
 #define BOUNDARY     0
 
-#define MAX_BOUNDARY_LEN  70  /* Max length of boundary string, defined in RFC 2046 */
-
 #define STATE_CONNECT          0
 #define STATE_COMMAND          1    /* Command state of SMTP transaction */
 #define STATE_DATA             2    /* Data state */
-#define STATE_TLS_CLIENT_PEND  3    /* Got STARTTLS */
-#define STATE_TLS_SERVER_PEND  4    /* Got STARTTLS */
-#define STATE_TLS_DATA         5    /* Successful handshake, TLS encrypted data */
-#define STATE_UNKNOWN          6
+#define STATE_BDATA            3    /* Binary data state */
+#define STATE_TLS_CLIENT_PEND  4    /* Got STARTTLS */
+#define STATE_TLS_SERVER_PEND  5    /* Got STARTTLS */
+#define STATE_TLS_DATA         6    /* Successful handshake, TLS encrypted data */
+#define STATE_AUTH             7
+#define STATE_XEXCH50          8
+#define STATE_UNKNOWN          9
 
 #define STATE_DATA_INIT    0
 #define STATE_DATA_HEADER  1    /* Data header section of data state */
@@ -92,13 +97,8 @@
 /* state flags */
 #define SMTP_FLAG_GOT_MAIL_CMD               0x00000001
 #define SMTP_FLAG_GOT_RCPT_CMD               0x00000002
-#define SMTP_FLAG_FOLDING                    0x00000004
-#define SMTP_FLAG_IN_CONTENT_TYPE            0x00000008
-#define SMTP_FLAG_GOT_BOUNDARY               0x00000010
-#define SMTP_FLAG_DATA_HEADER_CONT           0x00000020
-#define SMTP_FLAG_IN_CONT_TRANS_ENC          0x00000040
-#define SMTP_FLAG_BASE64_DATA                0x00000080
-#define SMTP_FLAG_MULTIPLE_BASE64            0x00000100
+#define SMTP_FLAG_BDAT                       0x00001000
+#define SMTP_FLAG_ABORT                      0x00002000
 
 /* session flags */
 #define SMTP_FLAG_XLINK2STATE_GOTFIRSTCHUNK  0x00000001
@@ -116,6 +116,8 @@
 #define MAX_HEADER_NAME_LEN 64
 
 #define SMTP_PROTO_REF_STR  "smtp"
+
+#define MAX_AUTH_NAME_LEN  20  /* Max length of SASL mechanisms, defined in RFC 4422 */
 
 /**************************************************************************/
 
@@ -170,6 +172,7 @@ typedef enum _SMTPCmdEnum
     CMD_XSTA,
     CMD_XTRN,
     CMD_XUSR,
+    CMD_ABORT,
     CMD_LAST
 
 } SMTPCmdEnum;
@@ -178,7 +181,9 @@ typedef enum _SMTPRespEnum
 {
     RESP_220 = 0,
     RESP_221,
+    RESP_235,
     RESP_250,
+    RESP_334,
     RESP_354,
     RESP_421,
     RESP_450,
@@ -189,6 +194,7 @@ typedef enum _SMTPRespEnum
     RESP_502,
     RESP_503,
     RESP_504,
+    RESP_535,
     RESP_550,
     RESP_551,
     RESP_552,
@@ -202,6 +208,7 @@ typedef enum _SMTPHdrEnum
 {
     HDR_CONTENT_TYPE = 0,
     HDR_CONT_TRANS_ENC,
+    HDR_CONT_DISP,
     HDR_LAST
 
 } SMTPHdrEnum;
@@ -224,47 +231,21 @@ typedef struct _SMTPSearchInfo
 
 } SMTPSearchInfo;
 
-typedef struct _SMTPMimeBoundary
+typedef struct _SMTPAuthName
 {
-    char   boundary[2 + MAX_BOUNDARY_LEN + 1];  /* '--' + MIME boundary string + '\0' */
-    int    boundary_len;
-    void  *boundary_search;
-
-} SMTPMimeBoundary;
-
-typedef struct _SMTPPcre
-{
-    pcre       *re;
-    pcre_extra *pe;
-
-} SMTPPcre;
-
-typedef struct s_SMTP_DecodeState
-{
-    uint8_t decode_present;
-    int prev_encoded_bytes;
-    unsigned char *prev_encoded_buf;
-    int encode_bytes_read;
-    int decode_bytes_read;
-    int encode_depth;
-    int decode_depth;
-    uint32_t decoded_bytes;
-    MemBucket *mime_bucket;
-    unsigned char *encodeBuf;
-    unsigned char *decodeBuf;
-
-} SMTP_DecodeState;
-
+    int length;
+    char name[MAX_AUTH_NAME_LEN];
+} SMTPAuthName;
 
 typedef struct _SMTP
 {
     int state;
-    int data_state;
     int state_flags;
     int session_flags;
     int alert_mask;
     int reassembling;
-#ifdef DEBUG
+    uint32_t dat_chunk;
+#ifdef DEBUG_MSGS
     uint64_t session_number;
 #endif
 
@@ -273,9 +254,8 @@ typedef struct _SMTP
     int               cur_server_line_len;
     */
 
-    SMTPMimeBoundary  mime_boundary;
-    SMTP_DecodeState *decode_state;
-
+    MimeState mime_ssn;
+    SMTPAuthName *auth_name;
     /* In future if we look at forwarded mail (message/rfc822) we may
      * need to keep track of additional mime boundaries
      * SMTPMimeBoundary  mime_boundary[8];
@@ -284,6 +264,7 @@ typedef struct _SMTP
 
     tSfPolicyId policy_id;
     tSfPolicyUserContextId config;
+    uint32_t flow_id;
 
 } SMTP;
 
@@ -300,29 +281,13 @@ void SnortSMTP(SFSnortPacket *);
 int  SMTP_IsServer(uint16_t);
 void SMTP_FreeConfig(SMTPConfig *);
 void SMTP_FreeConfigs(tSfPolicyUserContextId);
+int SMTP_GetFilename(void *data, uint8_t **buf, uint32_t *len, uint32_t *type);
+int SMTP_GetMailFrom(void *data, uint8_t **buf, uint32_t *len, uint32_t *type);
+int SMTP_GetRcptTo(void *data, uint8_t **buf, uint32_t *len, uint32_t *type);
+int SMTP_GetEmailHdrs(void *data, uint8_t **buf, uint32_t *len, uint32_t *type);
+void SMTP_MempoolInit(uint32_t, uint32_t);
 
 /**************************************************************************/
-
-static INLINE void ResetDecodeState(SMTP_DecodeState *ds)
-{
-    if (ds == NULL)
-        return;
-
-/*    memset(ds->mime_bucket->data, 0, ds->encode_depth + ds->decode_depth);*/
-    ds->prev_encoded_bytes = 0;
-    ds->prev_encoded_buf = NULL;
-    ds->encode_bytes_read = 0;
-    ds->decode_bytes_read = 0;
-    ds->decoded_bytes = 0;
-    ds->decode_present = 0;
-}
-
-static INLINE void ClearPrevEncode(SMTP_DecodeState *ds)
-{
-        ds->prev_encoded_bytes = 0; 
-        ds->prev_encoded_buf = NULL;
-}
-
 
 #endif  /* __SMTP_H__ */
 

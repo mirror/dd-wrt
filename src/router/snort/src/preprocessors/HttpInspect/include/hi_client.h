@@ -1,7 +1,8 @@
 /* $Id$ */
 /****************************************************************************
  *
- * Copyright (C) 2003-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -16,7 +17,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************/
 
@@ -30,12 +31,26 @@
 
 #include <sys/types.h>
 
+#include "snort_httpinspect.h"
 #include "hi_include.h"
 #include "hi_eo.h"
 #include "hi_eo_events.h"
 #define URI_END  99
 #define POST_END 100
 #define NO_URI   101
+
+#define XFF_MODE_MASK      (0x000f)
+#define XFF_EXFF_MASK      (0x000c)
+
+#define TRUE_CLIENT_IP_HDR (0x01)
+#define XFF_HDR            (0x02)
+#define HDRS_BOTH          (0x03)
+#define XFF_HEADERS        (0x04)  // Using xff_headers list
+#define XFF_HEADERS_ACTIVE (0x08)  // Looking for highest precedence xff header
+#define XFF_INIT (XFF_HEADERS | XFF_HEADERS_ACTIVE)
+
+#define XFF_TOP_PRECEDENCE (1)
+#define XFF_BOT_PRECEDENCE (255)
 
 typedef struct s_COOKIE_PTR
 {
@@ -49,7 +64,7 @@ typedef struct s_CONTLEN_PTR
 {
     const u_char *cont_len_start;
     const u_char *cont_len_end;
-    int len;
+    uint32_t len;
 }CONTLEN_PTR;
 
 typedef struct s_CONT_ENCODING_PTR
@@ -66,7 +81,7 @@ typedef struct s_HEADER_FIELD_PTR
     CONT_ENCODING_PTR *content_encoding;
 } HEADER_FIELD_PTR;
 
-/* These numbers were chosen to avoid conflicting with 
+/* These numbers were chosen to avoid conflicting with
  * the return codes in hi_return_codes.h */
 
 /**
@@ -77,7 +92,7 @@ typedef struct s_HEADER_FIELD_PTR
  **  For example,
  **
  **  GET     / HTTP/1.0
- **     ^   ^          
+ **     ^   ^
  **   start end
  **
  **  The end space pointers are set to NULL if there is space until the end
@@ -106,6 +121,10 @@ typedef struct s_HEADER_PTR
     COOKIE_PTR cookie;
     CONTLEN_PTR content_len;
     CONT_ENCODING_PTR content_encoding;
+    bool is_chunked;
+#if defined(FEAT_OPEN_APPID)
+    HEADER_LOCATION userAgent, referer, method, via, responseCode, server, xWorkingWith, contentType;
+#endif /* defined(FEAT_OPEN_APPID) */
 } HEADER_PTR;
 
 
@@ -158,7 +177,7 @@ typedef struct s_HI_CLIENT_REQ
     uint16_t header_encode_type;
     uint16_t cookie_encode_type;
     uint16_t post_encode_type;
-
+    const u_char *content_type;
 
 }  HI_CLIENT_REQ;
 
@@ -170,7 +189,24 @@ typedef struct s_HI_CLIENT
 
 }  HI_CLIENT;
 
-int hi_client_inspection(void *Session, const unsigned char *data, int dsize, sfip_t **true_ip);
+typedef struct s_HI_CLIENT_HDR_ARGS
+{
+    HEADER_PTR *hdr_ptr;
+    HEADER_FIELD_PTR *hdr_field_ptr;
+    HttpSessionData *sd; 
+    int strm_ins; 
+    int hst_name_hdr;
+    uint8_t true_clnt_xff;
+    uint8_t top_precedence;
+    uint8_t new_precedence;
+} HI_CLIENT_HDR_ARGS;
+
+int hi_client_inspection(Packet *p, void *Session, HttpSessionData *hsd, int stream_ins);
 int hi_client_init(HTTPINSPECT_GLOBAL_CONF *GlobalConf);
 
-#endif 
+char **hi_client_get_field_names();
+
+extern const u_char *proxy_start;
+extern const u_char *proxy_end;
+
+#endif

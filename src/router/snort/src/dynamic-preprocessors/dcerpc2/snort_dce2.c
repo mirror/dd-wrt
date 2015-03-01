@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (C) 2008-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2008-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -14,14 +15,20 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************
- * 
+ *
  ****************************************************************************/
 
 #include <daq.h>
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#include "sf_types.h"
 #include "snort_dce2.h"
+#include "spp_dce2.h"
 #include "dce2_config.h"
 #include "dce2_utils.h"
 #include "dce2_list.h"
@@ -40,11 +47,11 @@
 #include "sfrt.h"
 #include "profiler.h"
 #include "sfPolicy.h"
+#include "sf_seqnums.h"
 
 /********************************************************************
  * Global variables
  ********************************************************************/
-
 DCE2_CStack *dce2_pkt_stack = NULL;
 DCE2_ProtoIds dce2_proto_ids;
 
@@ -54,21 +61,10 @@ static SFSnortPacket* dce2_rpkt[DCE2_RPKT_TYPE__MAX] = {
 
 static int dce2_detected = 0;
 
-/********************************************************************
- * Extern variables
- ********************************************************************/
-extern DynamicPreprocessorData _dpd;
-extern DCE2_MemState dce2_mem_state;
-extern DCE2_Stats dce2_stats;
-
-#ifdef PERF_PROFILING
-extern PreprocStats dce2_pstat_session;
-extern PreprocStats dce2_pstat_detect;
-extern PreprocStats dce2_pstat_log;
-#endif
-
-extern tSfPolicyUserContextId dce2_config;
-extern DCE2_Config *dce2_eval_config;
+// Used to indicate that a session is no longer being looked at
+// It will be the session data that is returned so a pointer check
+// is sufficient to tell if the preprocessor shouldn't look at the session.
+uint8_t dce2_no_inspect;
 
 /********************************************************************
  * Macros
@@ -82,11 +78,7 @@ static DCE2_SsnData * DCE2_NewSession(SFSnortPacket *, tSfPolicyId);
 static DCE2_TransType DCE2_GetTransport(SFSnortPacket *, const DCE2_ServerConfig *, int *);
 static DCE2_TransType DCE2_GetDetectTransport(SFSnortPacket *, const DCE2_ServerConfig *);
 static DCE2_TransType DCE2_GetAutodetectTransport(SFSnortPacket *, const DCE2_ServerConfig *);
-static DCE2_Ret DCE2_ConfirmTransport(DCE2_SsnData *, SFSnortPacket *);
-
 static DCE2_Ret DCE2_SetSsnState(DCE2_SsnData *, SFSnortPacket *);
-static void DCE2_SetNoInspect(DCE2_SsnData *);
-
 static void DCE2_SsnFree(void *);
 
 /*********************************************************************
@@ -105,57 +97,69 @@ static DCE2_SsnData * DCE2_NewSession(SFSnortPacket *p, tSfPolicyId policy_id)
     DCE2_TransType trans;
     const DCE2_ServerConfig *sc = DCE2_ScGetConfig(p);
     int autodetected = 0;
+    PROFILE_VARS;
 
+    PREPROC_PROFILE_START(dce2_pstat_new_session);
+
+    DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Creating new session: "));
     trans = DCE2_GetTransport(p, sc, &autodetected);
     switch (trans)
     {
         case DCE2_TRANS_TYPE__SMB:
-            DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "SMB transport.\n"));
-            sd = (DCE2_SsnData *)DCE2_SmbSsnInit();
+            DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "SMB transport ... "));
+            sd = (DCE2_SsnData *)DCE2_SmbSsnInit(p);
             break;
 
         case DCE2_TRANS_TYPE__TCP:
-            DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "TCP transport.\n"));
+            DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "TCP transport ... "));
             sd = (DCE2_SsnData *)DCE2_TcpSsnInit();
             break;
 
         case DCE2_TRANS_TYPE__UDP:
-            DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "UDP transport.\n"));
+            DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "UDP transport ... "));
             sd = (DCE2_SsnData *)DCE2_UdpSsnInit();
             break;
 
         case DCE2_TRANS_TYPE__HTTP_PROXY:
-            DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "RPC over HTTP proxy transport.\n"));
+            DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "RPC over HTTP proxy transport ... "));
             sd = (DCE2_SsnData *)DCE2_HttpProxySsnInit();
             break;
 
         case DCE2_TRANS_TYPE__HTTP_SERVER:
-            DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "RPC over HTTP server transport.\n"));
+            DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "RPC over HTTP server transport ... "));
             sd = (DCE2_SsnData *)DCE2_HttpServerSsnInit();
             break;
 
         case DCE2_TRANS_TYPE__NONE:
-            DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Not configured to look at this traffic "
-                           "or unable to autodetect - not inspecting.\n"));
+            DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Not configured to "
+                        "look at this traffic or unable to autodetect - not inspecting.\n"));
+            PREPROC_PROFILE_END(dce2_pstat_new_session);
             return NULL;
 
         default:
             DCE2_Log(DCE2_LOG_TYPE__ERROR,
                      "%s(%d) Invalid transport type: %d",
                      __FILE__, __LINE__, trans);
+            PREPROC_PROFILE_END(dce2_pstat_new_session);
             return NULL;
     }
 
     if (sd == NULL)
+    {
+        PREPROC_PROFILE_END(dce2_pstat_new_session);
         return NULL;
+    }
 
     DCE2_SsnSetAppData(p, (void *)sd, DCE2_SsnFree);
 
     dce2_stats.sessions++;
-    DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Created new session.\n"));
+    DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Created (%p)\n", (void *)sd));
 
     sd->trans = trans;
+    sd->server_policy = DCE2_ScPolicy(sc);
+    sd->client_policy = DCE2_POLICY__WINXP;  // Default to Windows XP
     sd->sconfig = sc;
+    sd->wire_pkt = p;
 
     sd->policy_id = policy_id;
     sd->config = dce2_config;
@@ -181,25 +185,37 @@ static DCE2_SsnData * DCE2_NewSession(SFSnortPacket *p, tSfPolicyId policy_id)
     {
         int rs_dir = DCE2_SsnGetReassembly(p);
 
-        if (rs_dir != SSN_DIR_BOTH)
+        if (!_dpd.isPafEnabled() && (rs_dir != SSN_DIR_BOTH))
         {
-            DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Setting client/server reassembly for this session.\n"));
+            DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN,
+                        "Setting client/server reassembly to FOOTPRINT for this session.\n"));
             DCE2_SsnSetReassembly(p);
         }
 
         if (!DCE2_SsnIsRebuilt(p))
         {
-            DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Got non-rebuilt packet - flushing.\n"));
-            DCE2_SsnFlush(p);
+            DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Got non-rebuilt packet\n"));
 
             if (DCE2_SsnIsStreamInsert(p))
             {
                 DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Stream inserted - not inspecting.\n"));
+                PREPROC_PROFILE_END(dce2_pstat_new_session);
+                return NULL;
+            }
+            else if ((DCE2_SsnFromClient(p) && (rs_dir == SSN_DIR_FROM_SERVER))
+                     || (DCE2_SsnFromServer(p) && (rs_dir == SSN_DIR_FROM_CLIENT))
+                     || (rs_dir == SSN_DIR_BOTH))
+            {
+                /* Reassembly was already set for this session, but stream
+                 * decided not to use the packet so it's probably not good */
+                DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Got non-stream inserted packet - not inspecting\n"));
+                PREPROC_PROFILE_END(dce2_pstat_new_session);
                 return NULL;
             }
         }
     }
 
+    PREPROC_PROFILE_END(dce2_pstat_new_session);
     return sd;
 }
 
@@ -217,14 +233,21 @@ static DCE2_SsnData * DCE2_NewSession(SFSnortPacket *p, tSfPolicyId policy_id)
  *********************************************************************/
 DCE2_Ret DCE2_Process(SFSnortPacket *p)
 {
-    tSfPolicyId policy_id = _dpd.getRuntimePolicy();
+    tSfPolicyId policy_id = _dpd.getNapRuntimePolicy();
     DCE2_SsnData *sd = (DCE2_SsnData *)DCE2_SsnGetAppData(p);
     PROFILE_VARS;
 
     PREPROC_PROFILE_START(dce2_pstat_session);
 
-    dce2_eval_config = (DCE2_Config *)sfPolicyUserDataGet(dce2_config, policy_id);
+    if ((sd != NULL) && DCE2_SsnNoInspect(sd))
+    {
+        DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Session set to "
+                    "not inspect.  Returning\n"));
+        PREPROC_PROFILE_END(dce2_pstat_session);
+        return DCE2_RET__NOT_INSPECTED;
+    }
 
+    dce2_eval_config = (DCE2_Config *)sfPolicyUserDataGet(dce2_config, policy_id);
     if (sd != NULL)
         dce2_eval_config = (DCE2_Config *)sfPolicyUserDataGet(sd->config, sd->policy_id);
 
@@ -243,50 +266,64 @@ DCE2_Ret DCE2_Process(SFSnortPacket *p)
             return DCE2_RET__NOT_INSPECTED;
         }
     }
-    else if (DCE2_SsnNoInspect(sd))
+    else
     {
-        DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Session set to not inspect.  Returning\n"));
-        PREPROC_PROFILE_END(dce2_pstat_session);
-        return DCE2_RET__NOT_INSPECTED;
-    }
-    else if (IsTCP(p) && !DCE2_SsnIsRebuilt(p))
-    {
+        sd->wire_pkt = p;
 
-        DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Got non-rebuilt packet - flushing opposite direction.\n"));
-        DCE2_SsnFlush(p);
-
-        if (DCE2_SsnIsStreamInsert(p))
+        if (_dpd.isPafEnabled() && !DCE2_SsnIsPafActive(p))
         {
-            DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Stream inserted - not inspecting.\n"));
-            PREPROC_PROFILE_END(dce2_pstat_session);
-            return DCE2_RET__NOT_INSPECTED;
-        }
-        else
-        {
-            /* We should be doing reassembly both ways at this point */
-            DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Got non-stream inserted packet - not inspecting\n"));
-            PREPROC_PROFILE_END(dce2_pstat_session);
-            return DCE2_RET__NOT_INSPECTED;
-        }
-    }
-    else if (DCE2_SsnAutodetected(sd) && !(p->flags & sd->autodetect_dir))
-    {
-        /* Try to autodetect in opposite direction */
-        if ((sd->trans != DCE2_TRANS_TYPE__HTTP_PROXY) &&
-            (sd->trans != DCE2_TRANS_TYPE__HTTP_SERVER) &&
-            (DCE2_GetAutodetectTransport(p, sd->sconfig) != sd->trans))
-        {
-            DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Bad autodetect.\n"));
-
+            DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "PAF was aborted on "
+                        "one or both sides - aborting session inspection\n"));
             DCE2_SetNoInspect(sd);
-            dce2_stats.bad_autodetects++;
-
             PREPROC_PROFILE_END(dce2_pstat_session);
             return DCE2_RET__NOT_INSPECTED;
         }
 
-        DCE2_SsnClearAutodetected(sd);
+        if (IsTCP(p) && !DCE2_SsnIsRebuilt(p))
+        {
+            DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Got non-rebuilt packet "
+                        "on session (%p)\n", (void *)sd));
+
+            if (DCE2_SsnIsStreamInsert(p))
+            {
+                if (!_dpd.isPafEnabled())
+                {
+                    DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Flushing opposite direction.\n"));
+                    DCE2_SsnFlush(p);
+                }
+
+                DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Stream inserted - not inspecting.\n"));
+            }
+            else
+            {
+                DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Got non-stream inserted packet "
+                            "- not inspecting\n"));
+            }
+
+            PREPROC_PROFILE_END(dce2_pstat_session);
+            return DCE2_RET__NOT_INSPECTED;
+        }
+        else if (DCE2_SsnAutodetected(sd) && !(p->flags & sd->autodetect_dir))
+        {
+            /* Try to autodetect in opposite direction */
+            if ((sd->trans != DCE2_TRANS_TYPE__HTTP_PROXY) &&
+                    (sd->trans != DCE2_TRANS_TYPE__HTTP_SERVER) &&
+                    (DCE2_GetAutodetectTransport(p, sd->sconfig) != sd->trans))
+            {
+                DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Bad autodetect.\n"));
+
+                DCE2_SetNoInspect(sd);
+                dce2_stats.bad_autodetects++;
+
+                PREPROC_PROFILE_END(dce2_pstat_session);
+                return DCE2_RET__NOT_INSPECTED;
+            }
+
+            DCE2_SsnClearAutodetected(sd);
+        }
     }
+
+    DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Session pointer: %p\n", (void *)sd));
 
     if (IsTCP(p) && (DCE2_SetSsnState(sd, p) != DCE2_RET__SUCCESS))
     {
@@ -294,7 +331,6 @@ DCE2_Ret DCE2_Process(SFSnortPacket *p)
         return DCE2_RET__NOT_INSPECTED;
     }
 
-    sd->wire_pkt = p;
     if (DCE2_PushPkt((void *)p) != DCE2_RET__SUCCESS)
     {
         DCE2_Log(DCE2_LOG_TYPE__ERROR,
@@ -304,7 +340,7 @@ DCE2_Ret DCE2_Process(SFSnortPacket *p)
         return DCE2_RET__NOT_INSPECTED;
     }
 
-    p->flags |= FLAG_DCE_PKT;
+    p->flags |= FLAG_ALLOW_MULTIPLE_DETECT;
     dce2_detected = 0;
 
     PREPROC_PROFILE_END(dce2_pstat_session);
@@ -333,13 +369,26 @@ DCE2_Ret DCE2_Process(SFSnortPacket *p)
             return DCE2_RET__NOT_INSPECTED;
     }
 
+    if (sd->flags & DCE2_SSN_FLAG__NO_INSPECT)
+    {
+        DCE2_SetNoInspect(sd);
+        DCE2_PopPkt();
+        PREPROC_PROFILE_END(dce2_pstat_session);
+        return DCE2_RET__NOT_INSPECTED;
+    }
+
     if (!dce2_detected)
         DCE2_Detect(sd);
 
+    DCE2_ResetRopts(&sd->ropts);
     DCE2_PopPkt();
 
     if (dce2_mem_state == DCE2_MEM_STATE__MEMCAP)
+    {
         DCE2_SetNoInspect(sd);
+        dce2_mem_state = DCE2_MEM_STATE__OKAY;
+        return DCE2_RET__NOT_INSPECTED;
+    }
 
     if (DCE2_SsnAutodetected(sd))
         return DCE2_RET__NOT_INSPECTED;
@@ -357,220 +406,146 @@ DCE2_Ret DCE2_Process(SFSnortPacket *p)
  * Returns:
  *
  ********************************************************************/
-static void DCE2_SetNoInspect(DCE2_SsnData *sd)
+void DCE2_SetNoInspect(DCE2_SsnData *sd)
 {
     if (sd == NULL)
         return;
 
-    switch (sd->trans)
-    {
-        case DCE2_TRANS_TYPE__SMB:
-            DCE2_SmbDataFree((DCE2_SmbSsnData *)sd);
-            break;
-
-        case DCE2_TRANS_TYPE__TCP:
-            DCE2_TcpDataFree((DCE2_TcpSsnData *)sd);
-            break;
-
-        case DCE2_TRANS_TYPE__UDP:
-            DCE2_UdpDataFree((DCE2_UdpSsnData *)sd);
-            break;
-
-        case DCE2_TRANS_TYPE__HTTP_PROXY:
-        case DCE2_TRANS_TYPE__HTTP_SERVER:
-            DCE2_HttpDataFree((DCE2_HttpSsnData *)sd);
-            break;
-
-        default:
-            DCE2_Log(DCE2_LOG_TYPE__ERROR,
-                     "%s(%d) Invalid transport type: %d",
-                     __FILE__, __LINE__, sd->trans);
-            break;
-    }
-
-    DCE2_SsnSetNoInspect(sd);
+    dce2_stats.sessions_aborted++;
+    DCE2_SsnSetNoInspect(sd->wire_pkt);
 }
 
 /********************************************************************
- * Function:
+ * Function: DCE2_SetSsnState()
  *
  * Purpose:
+ *  Checks for missing packets and overlapping data on session
  *
  * Arguments:
+ *  DCE2_SsnData *  - session data pointer
+ *  SFSnortPacket * - packet structure
  *
  * Returns:
  *  DCE2_RET__SUCCESS
- *  DCE2_RET__INSPECTED
- *  DCE2_RET__NOT_INSPECTED
+ *  DCE2_RET__ERROR
  *
  ********************************************************************/
 static DCE2_Ret DCE2_SetSsnState(DCE2_SsnData *sd, SFSnortPacket *p)
 {
     uint32_t pkt_seq = ntohl(p->tcp_header->sequence);
+    PROFILE_VARS;
+
+    PREPROC_PROFILE_START(dce2_pstat_session_state);
 
     DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Payload size: %u\n", p->payload_size));
 
     if (DCE2_SsnFromClient(p) && !DCE2_SsnSeenClient(sd))
     {
-        /* Check to make sure we can continue processing */
-        if (DCE2_ConfirmTransport(sd, p) != DCE2_RET__SUCCESS)
+        uint32_t pkt_ack = ntohl(p->tcp_header->acknowledgement);
+
+        if (DCE2_SsnSeenServer(sd) && SEQ_LT(sd->cli_seq, pkt_seq)
+                && (sd->trans != DCE2_TRANS_TYPE__HTTP_SERVER))
         {
-            DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Couldn't confirm transport - "
-                                     "not inspecting\n"));
-
-            sd->cli_seq = pkt_seq;
-            sd->cli_nseq = pkt_seq;
-
-            DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Initial client => seq: %u, next seq: %u\n"
-                                     "Setting current and next to the same thing, since we're "
-                                     "not inspecting this packet.\n", sd->cli_seq, sd->cli_nseq));
-
-            return DCE2_RET__NOT_INSPECTED;
+            DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN,
+                        "Missing packets on session - aborting session inspection\n"));
+            DCE2_SetNoInspect(sd);
+            PREPROC_PROFILE_END(dce2_pstat_session_state);
+            return DCE2_RET__ERROR;
         }
 
         DCE2_SsnSetSeenClient(sd);
-
         sd->cli_seq = pkt_seq;
         sd->cli_nseq = pkt_seq + p->payload_size;
 
-        DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Initial client => seq: %u, next seq: %u\n",
-                       sd->cli_seq, sd->cli_nseq));
+        if (!DCE2_SsnSeenServer(sd))
+            sd->srv_seq = sd->srv_nseq = pkt_ack;
+
+        DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Initial client => seq: %u, "
+                    "next seq: %u\n", sd->cli_seq, sd->cli_nseq));
     }
     else if (DCE2_SsnFromServer(p) && !DCE2_SsnSeenServer(sd))
     {
-        /* Check to make sure we can continue processing */
-        if (DCE2_ConfirmTransport(sd, p) != DCE2_RET__SUCCESS)
+        uint32_t pkt_ack = ntohl(p->tcp_header->acknowledgement);
+
+        if ((DCE2_SsnSeenClient(sd) && SEQ_LT(sd->srv_seq, pkt_seq))
+                || (!DCE2_SsnSeenClient(sd) && (sd->trans != DCE2_TRANS_TYPE__HTTP_SERVER)))
         {
-            DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Couldn't confirm transport - "
-                                     "not inspecting\n"));
-
-            sd->srv_seq = pkt_seq;
-            sd->srv_nseq = pkt_seq;
-
-            DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Initial client => seq: %u, next seq: %u\n"
-                                     "Setting current and next to the same thing, since we're "
-                                     "not inspecting this packet.\n", sd->cli_seq, sd->cli_nseq));
-
-            return DCE2_RET__NOT_INSPECTED;
+            DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN,
+                        "Missing packets on session - aborting session inspection\n"));
+            PREPROC_PROFILE_END(dce2_pstat_session_state);
+            DCE2_SetNoInspect(sd);
+            return DCE2_RET__ERROR;
         }
 
         DCE2_SsnSetSeenServer(sd);
-
         sd->srv_seq = pkt_seq;
         sd->srv_nseq = pkt_seq + p->payload_size;
 
-        DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Initial server => seq: %u, next seq: %u\n",
-                       sd->srv_seq, sd->srv_nseq));
+        if (!DCE2_SsnSeenClient(sd))
+            sd->cli_seq = sd->cli_nseq = pkt_ack;
+
+        DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Initial server => seq: %u, "
+                    "next seq: %u\n", sd->srv_seq, sd->srv_nseq));
     }
     else
     {
         uint32_t *ssn_seq;
         uint32_t *ssn_nseq;
-        uint32_t *missed_bytes;
-        uint16_t *overlap_bytes;
 
         if (DCE2_SsnFromClient(p))
         {
             ssn_seq = &sd->cli_seq;
             ssn_nseq = &sd->cli_nseq;
-            missed_bytes = &sd->cli_missed_bytes;
-            overlap_bytes = &sd->cli_overlap_bytes;
 
-            DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Client last => seq: %u, next seq: %u\n",
-                           sd->cli_seq, sd->cli_nseq));
+            DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Client last => seq: %u, "
+                        "next seq: %u\n", sd->cli_seq, sd->cli_nseq));
+            DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "This packet => seq: %u, "
+                        "next seq: %u\n", pkt_seq, pkt_seq + p->payload_size));
         }
         else
         {
             ssn_seq = &sd->srv_seq;
             ssn_nseq = &sd->srv_nseq;
-            missed_bytes = &sd->srv_missed_bytes;
-            overlap_bytes = &sd->srv_overlap_bytes;
 
-            DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Server last => seq: %u, next seq: %u\n",
-                           sd->srv_seq, sd->srv_nseq));
+            DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Server last => seq: %u, "
+                        "next seq: %u\n", sd->srv_seq, sd->srv_nseq));
+            DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "This packet => seq: %u, "
+                        "next seq: %u\n", pkt_seq, pkt_seq + p->payload_size));
         }
-
-        *overlap_bytes = 0;
 
         if (*ssn_nseq != pkt_seq)
         {
-            if (*ssn_nseq < pkt_seq)
+            if (SEQ_LT(*ssn_nseq, pkt_seq))
             {
-                /* Missed packets */
                 DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Next expected sequence number (%u) is less than "
                                "this sequence number (%u).\n", *ssn_nseq, pkt_seq));
+                DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN,
+                            "Missing packets on session - aborting session inspection\n"));
 
-                DCE2_SsnSetMissedPkts(sd);
+                DCE2_SetNoInspect(sd);
+                PREPROC_PROFILE_END(dce2_pstat_session_state);
+                return DCE2_RET__ERROR;
             }
             else
             {
                 /* Got some kind of overlap.  This shouldn't happen since we're doing
                  * reassembly on both sides and not looking at non-reassembled packets
                  * Actually this can happen if the stream seg list is empty */
-                DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Overlap => seq: %u, next seq: %u\n",
-                               pkt_seq, pkt_seq + p->payload_size));
+                DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Overlap => seq: %u, "
+                            "next seq: %u - aborting session inspection\n",
+                            pkt_seq, pkt_seq + p->payload_size));
 
-                if (DCE2_SsnMissedPkts(sd))
-                    DCE2_SsnClearMissedPkts(sd);
-
-                /* Do what we can and take the difference and only inspect what we
-                 * haven't already inspected */
-                if ((pkt_seq + p->payload_size) > *ssn_nseq)
-                {
-                    *overlap_bytes = (uint16_t)(*ssn_nseq - pkt_seq);
-                    dce2_stats.overlapped_bytes += *overlap_bytes;
-
-                    DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN,
-                                   "Setting overlap bytes: %u\n", *overlap_bytes));
-                }
-                else
-                {
-                    return DCE2_RET__NOT_INSPECTED;
-                }
+                DCE2_SetNoInspect(sd);
+                PREPROC_PROFILE_END(dce2_pstat_session_state);
+                return DCE2_RET__ERROR;
             }
-        }
-        else if (DCE2_SsnMissedPkts(sd))
-        {
-            DCE2_SsnClearMissedPkts(sd);
-        }
-
-        if (DCE2_SsnMissedPkts(sd))
-        {
-            *missed_bytes += (pkt_seq - *ssn_nseq);
-            dce2_stats.missed_bytes += (pkt_seq - *ssn_nseq);
-
-            DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Missed %u bytes.\n", (pkt_seq - *ssn_nseq)));
-            DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Currently missing %u bytes.\n", *missed_bytes));
-
-            if (DCE2_ConfirmTransport(sd, p) != DCE2_RET__SUCCESS)
-            {
-                DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Couldn't confirm transport - "
-                               "not inspecting\n"));
-
-                DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "This packet => seq: %u, next seq: %u\n"
-                               "Setting current and next to the same thing, since we're "
-                               "not inspecting this packet.\n", sd->cli_seq, sd->cli_nseq));
-
-                *ssn_seq = pkt_seq;
-                *ssn_nseq = pkt_seq;
-
-                return DCE2_RET__NOT_INSPECTED;
-            }
-
-            DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Autodetected - continue to inspect.\n"));
-        }
-        else if (*missed_bytes != 0)
-        {
-            *missed_bytes = 0;
         }
 
         *ssn_seq = pkt_seq;
         *ssn_nseq = pkt_seq + p->payload_size;
-
-        DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "This packet => seq: %u, next seq: %u\n",
-                       *ssn_seq, *ssn_nseq));
     }
 
+    PREPROC_PROFILE_END(dce2_pstat_session_state);
     return DCE2_RET__SUCCESS;
 }
 
@@ -593,7 +568,7 @@ static DCE2_Ret DCE2_SetSsnState(DCE2_SsnData *sd, SFSnortPacket *p)
  *
  * Returns:
  *  DCE2_TransType
- *      DCE2_TRANS_TYPE__NONE if a transport could not be 
+ *      DCE2_TRANS_TYPE__NONE if a transport could not be
  *          determined or target based labeled the session as
  *          traffic we are not interested in.
  *      DCE2_TRANS_TYPE__SMB if the traffic is determined to be
@@ -618,9 +593,9 @@ static DCE2_TransType DCE2_GetTransport(SFSnortPacket *p, const DCE2_ServerConfi
     *autodetected = 0;
 
 #ifdef TARGET_BASED
-    if (_dpd.isAdaptiveConfigured(_dpd.getRuntimePolicy(), 0))
+    if (_dpd.isAdaptiveConfigured())
     {
-        proto_id = _dpd.streamAPI->get_application_protocol_id(p->stream_session_ptr);
+        proto_id = _dpd.sessionAPI->get_application_protocol_id(p->stream_session);
 
         if (proto_id == SFTARGET_UNKNOWN_PROTOCOL)
             return DCE2_TRANS_TYPE__NONE;
@@ -770,98 +745,6 @@ static DCE2_TransType DCE2_GetAutodetectTransport(SFSnortPacket *p, const DCE2_S
 }
 
 /*********************************************************************
- * Function: DCE2_ConfirmTransport()
- *
- * Called when we're not sure where we are, e.g. because of missed
- * packets.  This function makes sure we can process this packet, with
- * a decent amount of certainty, avoiding false positives.
- *
- * Arguments:
- *  SFSnortPacket *
- *      Pointer to packet structure.
- *  DCE2_TransType
- *      The transport to check.
- *
- * Returns:
- *  DCE2_Ret
- *      DCE2_RET__SUCCESS if we can autodetect the transport for
- *          which the session was created.
- *      DCE2_RET__ERROR if we can't autodetect the transport for
- *          which the session was created.
- *
- *********************************************************************/
-static DCE2_Ret DCE2_ConfirmTransport(DCE2_SsnData *sd, SFSnortPacket *p)
-{
-    if (IsTCP(p))
-    {
-        switch (sd->trans)
-        {
-            case DCE2_TRANS_TYPE__SMB:
-                if (DCE2_SmbAutodetect(p) == DCE2_TRANS_TYPE__NONE)
-                    return DCE2_RET__ERROR;
-                break;
-
-            case DCE2_TRANS_TYPE__TCP:
-                if (DCE2_TcpAutodetect(p) == DCE2_TRANS_TYPE__NONE)
-                    return DCE2_RET__ERROR;
-                break;
-
-            case DCE2_TRANS_TYPE__HTTP_SERVER:
-                if (!DCE2_SsnSeenServer(sd) && DCE2_SsnFromServer(p))
-                {
-                    if (DCE2_HttpAutodetectServer(p) == DCE2_TRANS_TYPE__NONE)
-                        return DCE2_RET__ERROR;
-                }
-                else if (DCE2_SsnSeenServer(sd) && DCE2_SsnSeenClient(sd))
-                {
-                    if (DCE2_TcpAutodetect(p) == DCE2_TRANS_TYPE__NONE)
-                        return DCE2_RET__ERROR;
-                }
-
-                break;
-
-            case DCE2_TRANS_TYPE__HTTP_PROXY:
-                if (!DCE2_SsnSeenClient(sd) && DCE2_SsnFromClient(p))
-                {
-                    if (DCE2_HttpAutodetectProxy(p) == DCE2_TRANS_TYPE__NONE)
-                        return DCE2_RET__ERROR;
-                }
-                else if (DCE2_SsnSeenServer(sd) && DCE2_SsnSeenClient(sd))
-                {
-                    if (DCE2_TcpAutodetect(p) == DCE2_TRANS_TYPE__NONE)
-                        return DCE2_RET__ERROR;
-                }
-
-                break;
-
-            default:
-                DCE2_Log(DCE2_LOG_TYPE__ERROR,
-                         "%s(%d) Invalid transport type: %d",
-                         __FILE__, __LINE__, sd->trans);
-                return DCE2_RET__ERROR;
-        }
-    }
-    else  /* it's UDP */
-    {
-        switch (sd->trans)
-        {
-            case DCE2_TRANS_TYPE__UDP:
-                if (DCE2_UdpAutodetect(p) == DCE2_TRANS_TYPE__NONE)
-                    return DCE2_RET__ERROR;
-                break;
-
-            default:
-                DCE2_Log(DCE2_LOG_TYPE__ERROR,
-                         "%s(%d) Invalid transport type: %d",
-                         __FILE__, __LINE__, sd->trans);
-                return DCE2_RET__ERROR;
-        }
-    }
-
-    return DCE2_RET__SUCCESS;
-}
-
-/*********************************************************************
  * Function: DCE2_InitRpkts()
  *
  * Purpose: Allocate and initialize reassembly packets.
@@ -893,13 +776,12 @@ void DCE2_InitRpkts(void)
  * Arguments:
  *  SFSnortPacket *  - pointer to packet off wire
  *  const uint8_t *  - pointer to data to attach to reassembly packet
- *  uint16_t - length of data 
+ *  uint16_t - length of data
  *
  * Returns:
  *  SFSnortPacket * - pointer to reassembly packet
  *
  *********************************************************************/
-
 SFSnortPacket * DCE2_GetRpkt(const SFSnortPacket *wire_pkt, DCE2_RpktType rpkt_type,
                              const uint8_t *data, uint32_t data_len)
 {
@@ -907,15 +789,13 @@ SFSnortPacket * DCE2_GetRpkt(const SFSnortPacket *wire_pkt, DCE2_RpktType rpkt_t
     SFSnortPacket *rpkt;
     uint16_t payload_len = 0;
     uint16_t data_overhead = 0;
-    int rpkt_flag;
 
     rpkt = dce2_rpkt[rpkt_type];
-    _dpd.encodeFormat(ENC_DYN_FWD, wire_pkt, rpkt);
 
     switch (rpkt_type)
     {
         case DCE2_RPKT_TYPE__SMB_SEG:
-            rpkt_flag = FLAG_SMB_SEG;
+            _dpd.encodeFormat(ENC_DYN_FWD, wire_pkt, rpkt, PSEUDO_PKT_SMB_SEG);
             break;
 
         case DCE2_RPKT_TYPE__SMB_TRANS:
@@ -924,13 +804,8 @@ SFSnortPacket * DCE2_GetRpkt(const SFSnortPacket *wire_pkt, DCE2_RpktType rpkt_t
             // Better still pass in rpkt and let the init function update
             // payload, etc.  Also, some memsets could probably be avoided
             // by explicitly setting the unitialized header fields.
-            data_overhead = DCE2_MOCK_HDR_LEN__SMB_CLI;
-            memset((void*)rpkt->payload, 0, data_overhead);
-            DCE2_SmbInitRdata((uint8_t *)rpkt->payload, FLAG_FROM_CLIENT);
-            rpkt_flag = FLAG_SMB_TRANS;
-            break;
+            _dpd.encodeFormat(ENC_DYN_FWD, wire_pkt, rpkt, PSEUDO_PKT_SMB_TRANS);
 
-        case DCE2_RPKT_TYPE__SMB_CO_SEG:
             if (DCE2_SsnFromClient(wire_pkt))
             {
                 data_overhead = DCE2_MOCK_HDR_LEN__SMB_CLI;
@@ -943,10 +818,28 @@ SFSnortPacket * DCE2_GetRpkt(const SFSnortPacket *wire_pkt, DCE2_RpktType rpkt_t
                 memset((void*)rpkt->payload, 0, data_overhead);
                 DCE2_SmbInitRdata((uint8_t *)rpkt->payload, FLAG_FROM_SERVER);
             }
-            rpkt_flag = FLAG_DCE_SEG;
+            break;
+
+        case DCE2_RPKT_TYPE__SMB_CO_SEG:
+            _dpd.encodeFormat(ENC_DYN_FWD, wire_pkt, rpkt, PSEUDO_PKT_DCE_SEG);
+
+            if (DCE2_SsnFromClient(wire_pkt))
+            {
+                data_overhead = DCE2_MOCK_HDR_LEN__SMB_CLI;
+                memset((void*)rpkt->payload, 0, data_overhead);
+                DCE2_SmbInitRdata((uint8_t *)rpkt->payload, FLAG_FROM_CLIENT);
+            }
+            else
+            {
+                data_overhead = DCE2_MOCK_HDR_LEN__SMB_SRV;
+                memset((void*)rpkt->payload, 0, data_overhead);
+                DCE2_SmbInitRdata((uint8_t *)rpkt->payload, FLAG_FROM_SERVER);
+            }
             break;
 
         case DCE2_RPKT_TYPE__SMB_CO_FRAG:
+            _dpd.encodeFormat(ENC_DYN_FWD, wire_pkt, rpkt, PSEUDO_PKT_DCE_FRAG);
+
             if (DCE2_SsnFromClient(wire_pkt))
             {
                 data_overhead = DCE2_MOCK_HDR_LEN__SMB_CLI + DCE2_MOCK_HDR_LEN__CO_CLI;
@@ -963,14 +856,15 @@ SFSnortPacket * DCE2_GetRpkt(const SFSnortPacket *wire_pkt, DCE2_RpktType rpkt_t
                 DCE2_CoInitRdata((uint8_t *)rpkt->payload +
                     DCE2_MOCK_HDR_LEN__SMB_SRV, FLAG_FROM_SERVER);
             }
-            rpkt_flag = FLAG_DCE_FRAG;
             break;
 
         case DCE2_RPKT_TYPE__TCP_CO_SEG:
-            rpkt_flag = FLAG_DCE_SEG;
+            _dpd.encodeFormat(ENC_DYN_FWD, wire_pkt, rpkt, PSEUDO_PKT_DCE_SEG);
             break;
 
         case DCE2_RPKT_TYPE__TCP_CO_FRAG:
+            _dpd.encodeFormat(ENC_DYN_FWD, wire_pkt, rpkt, PSEUDO_PKT_DCE_FRAG);
+
             if (DCE2_SsnFromClient(wire_pkt))
             {
                 data_overhead = DCE2_MOCK_HDR_LEN__CO_CLI;
@@ -983,14 +877,13 @@ SFSnortPacket * DCE2_GetRpkt(const SFSnortPacket *wire_pkt, DCE2_RpktType rpkt_t
                 memset((void*)rpkt->payload, 0, data_overhead);
                 DCE2_CoInitRdata((uint8_t *)rpkt->payload, FLAG_FROM_SERVER);
             }
-            rpkt_flag = FLAG_DCE_FRAG;
             break;
 
         case DCE2_RPKT_TYPE__UDP_CL_FRAG:
+            _dpd.encodeFormat(ENC_DYN_FWD, wire_pkt, rpkt, PSEUDO_PKT_DCE_FRAG);
             data_overhead = DCE2_MOCK_HDR_LEN__CL;
             memset((void*)rpkt->payload, 0, data_overhead);
             DCE2_ClInitRdata((uint8_t *)rpkt->payload);
-            rpkt_flag = FLAG_DCE_FRAG;
             break;
 
         default:
@@ -1002,8 +895,8 @@ SFSnortPacket * DCE2_GetRpkt(const SFSnortPacket *wire_pkt, DCE2_RpktType rpkt_t
 
     payload_len = rpkt->max_payload;
 
-    if ((data_len + data_overhead) > payload_len)
-        data_len = payload_len - data_overhead;
+    if ((data_overhead + data_len) > payload_len)
+        data_len -= (data_overhead + data_len) - payload_len;
 
     status = DCE2_Memcpy(
         (void *)(rpkt->payload + data_overhead),
@@ -1021,25 +914,22 @@ SFSnortPacket * DCE2_GetRpkt(const SFSnortPacket *wire_pkt, DCE2_RpktType rpkt_t
     rpkt->payload_size = (uint16_t)(data_overhead + data_len);
     _dpd.encodeUpdate(rpkt);
 
-#ifdef SUP_IP6
     if (wire_pkt->family == AF_INET)
-    {   
+    {
         rpkt->ip4h->ip_len = rpkt->ip4_header->data_length;
     }
     else
     {
         IP6RawHdr* ip6h = (IP6RawHdr*)rpkt->raw_ip6_header;
-        if ( ip6h ) rpkt->ip6h->len = ip6h->payload_len;
+        if ( ip6h ) rpkt->ip6h->len = ip6h->ip6_payload_len;
     }
-#endif
 
-    rpkt->flags = FLAG_STREAM_EST;
+    rpkt->flags |= FLAG_STREAM_EST;
     if (DCE2_SsnFromClient(wire_pkt))
         rpkt->flags |= FLAG_FROM_CLIENT;
     else
         rpkt->flags |= FLAG_FROM_SERVER;
-    rpkt->flags |= (rpkt_flag | FLAG_DCE_PKT);
-    rpkt->stream_session_ptr = wire_pkt->stream_session_ptr;
+    rpkt->stream_session = wire_pkt->stream_session;
 
     return rpkt;
 }
@@ -1128,17 +1018,15 @@ DCE2_Ret DCE2_AddDataToRpkt(SFSnortPacket *rpkt, DCE2_RpktType rtype,
     // will suffice.
     _dpd.encodeUpdate(rpkt);
 
-#ifdef SUP_IP6
     if (rpkt->family == AF_INET)
-    {   
+    {
         rpkt->ip4h->ip_len = rpkt->ip4_header->data_length;
     }
     else
     {
         IP6RawHdr* ip6h = (IP6RawHdr*)rpkt->raw_ip6_header;
-        if ( ip6h ) rpkt->ip6h->len = ip6h->payload_len;
+        if ( ip6h ) rpkt->ip6h->len = ip6h->ip6_payload_len;
     }
-#endif
     return DCE2_RET__SUCCESS;
 }
 
@@ -1233,11 +1121,16 @@ void DCE2_Detect(DCE2_SsnData *sd)
         return;
     }
 
-    DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Detecting\n"));
-    DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__ROPTIONS, "Rule options:\n"));
+    DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Detecting ------------------------------------------------\n"));
+    DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__ROPTIONS, " Rule options:\n"));
     DCE2_DEBUG_CODE(DCE2_DEBUG__ROPTIONS, DCE2_PrintRoptions(&sd->ropts););
-    DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__ROPTIONS, "Payload:\n"));
+    DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Payload:\n"));
     DCE2_DEBUG_CODE(DCE2_DEBUG__MAIN, DCE2_PrintPktData(top_pkt->payload, top_pkt->payload_size););
+    DCE2_DEBUG_CODE(DCE2_DEBUG__ROPTIONS,
+            if (sd->ropts.stub_data != NULL) {
+            printf("\nStub data:\n");
+            DCE2_PrintPktData(sd->ropts.stub_data,
+                top_pkt->payload_size - (sd->ropts.stub_data - top_pkt->payload)); });
 
     PREPROC_PROFILE_START(dce2_pstat_detect);
 
@@ -1250,6 +1143,38 @@ void DCE2_Detect(DCE2_SsnData *sd)
     /* Always reset rule option data after detecting */
     DCE2_ResetRopts(&sd->ropts);
     dce2_detected = 1;
+    DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "----------------------------------------------------------\n"));
+}
+
+void DCE2_FileDetect(DCE2_SsnData *sd)
+{
+    SFSnortPacket *top_pkt = (SFSnortPacket *)DCE2_CStackTop(dce2_pkt_stack);
+    PROFILE_VARS;
+
+    if (top_pkt == NULL)
+    {
+        DCE2_Log(DCE2_LOG_TYPE__ERROR,
+                 "%s(%d) No packet on top of stack.",
+                 __FILE__, __LINE__);
+        return;
+    }
+
+    DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Detecting ------------------------------------------------\n"));
+    DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Payload:\n"));
+    DCE2_DEBUG_CODE(DCE2_DEBUG__MAIN, DCE2_PrintPktData(top_pkt->payload, top_pkt->payload_size););
+
+    PREPROC_PROFILE_START(dce2_pstat_smb_file_detect);
+
+    _dpd.pushAlerts();
+    _dpd.detect(top_pkt);
+    _dpd.popAlerts();
+
+    PREPROC_PROFILE_END(dce2_pstat_smb_file_detect);
+
+    // Reset file data pointer after detecting
+    _dpd.setFileDataPtr(NULL, 0);
+    dce2_detected = 1;
+    DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "----------------------------------------------------------\n"));
 }
 
 /*********************************************************************
@@ -1330,10 +1255,10 @@ uint16_t DCE2_GetRpktMaxData(DCE2_SsnData *sd, DCE2_RpktType rtype)
  * Purpose:
  *
  * Arguments:
- *       
+ *
  * Returns:
  *
- ******************************************************************/ 
+ ******************************************************************/
 void DCE2_FreeGlobals(void)
 {
     int i;

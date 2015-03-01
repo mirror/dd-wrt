@@ -158,7 +158,7 @@ The parameters you can use to configure the portscan module are:
 * watch_ip { <ip1|ip2/cidr[ [port1|port2-port3]]> }
 
   Defines which IPs, networks, and specific ports on those hosts to watch.
-  The list is a comma seperated list of IP addresses, IP address using CIDR
+  The list is a comma separated list of IP addresses, IP address using CIDR
   notation.  Optionally, ports are specified after the IP address/CIDR using
   a space and can be either a single port or a range denoted by a dash.
   IPs or networks not falling into this range are ignored if this option
@@ -342,7 +342,7 @@ for your network(s).  Here are some tuning tips:
      level, but for now the user must manually do this.  The easiest way to
      determine false positives is through simple ratio estimations.  The
      following is a list of ratios to estimate and the associated values that
-     indicate a legitmate scan and not a false positive.
+     indicate a legitimate scan and not a false positive.
      
      Connection Count / IP Count:  This ratio indicates an estimated average of
      connections per IP.  For portscans, this ratio should be high, the higher

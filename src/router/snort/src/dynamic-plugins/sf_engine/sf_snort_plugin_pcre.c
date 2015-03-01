@@ -14,9 +14,10 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (C) 2005-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * Author: Steve Sturges
  *         Andy Mullican
@@ -26,18 +27,25 @@
  *
  * PCRE operations for dynamic rule engine
  */
-#include "debug.h"
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#include "pcre.h"
+#include "sf_types.h"
+#include "snort_debug.h"
 #include "sf_dynamic_define.h"
 #include "sf_snort_packet.h"
 #include "sf_snort_plugin_api.h"
 #include "sf_dynamic_engine.h"
+#include "sf_snort_detection_engine.h"
 
 /* Need access to the snort-isms that were passed to the engine */
-extern DynamicEngineData _ded; /* sf_detection_engine.c */
-extern int checkCursorInternal(void *p, int flags, int offset, const u_int8_t *cursor);
+extern int checkCursorSimple(const uint8_t *cursor, int flags, const uint8_t *start, const uint8_t *end, int offset);
+extern int checkCursorInternal(void *p, int flags, int offset, const uint8_t *cursor);
+static int pcreMatchInternal(void *, PCREInfo*, const uint8_t **);
 
-
-int PCRESetup(Rule *rule, PCREInfo *pcreInfo)
+int PCRESetup(struct _SnortConfig *sc, Rule *rule, PCREInfo *pcreInfo)
 {
     const char *error;
     int erroffset;
@@ -67,6 +75,9 @@ int PCRESetup(Rule *rule, PCREInfo *pcreInfo)
             rule->info.genID, rule->info.sigID);
         return -1;
     }
+
+    _ded.pcreCapture(sc, pcreInfo->compiled_expr, pcreInfo->compiled_extra);
+
 
     return 0;
 }
@@ -116,17 +127,17 @@ ENGINE_LINKAGE int pcreExecWrapper(const PCREInfo *pcre_info, const char *buf, i
     return matched;
 }
 
-/* 
- * we need to specify the vector length for our pcre_exec call.  we only care 
+/*
+ * we need to specify the vector length for our pcre_exec call.  we only care
  * about the first vector, which if the match is successful will include the
  * offset to the end of the full pattern match.  If we decide to store other
  * matches, make *SURE* that this is a multiple of 3 as pcre requires it.
  */
 #define SNORT_PCRE_OVECTOR_SIZE 3
 
-/** 
+/**
  * Perform a search of the PCRE data.
- * 
+ *
  * @param pcre_data structure that options and patterns are passed in
  * @param buf buffer to search
  * @param len size of buffer
@@ -143,10 +154,14 @@ static int pcre_test(const PCREInfo *pcre_info,
                        int start_offset,
                        int *found_offset)
 {
-    int ovector[SNORT_PCRE_OVECTOR_SIZE];
     int matched;
     int result;
-    
+
+    int *ovector;
+    int ovector_size;
+
+    _ded.pcreOvectorInfo(&ovector, &ovector_size);
+
     if(pcre_info == NULL
        || buf == NULL
        || len <= 0
@@ -160,15 +175,15 @@ static int pcre_test(const PCREInfo *pcre_info,
     }
 
     *found_offset = -1;
-    
-    result = _ded.pcreExec(pcre_info->compiled_expr,    /* result of pcre_compile() */
+
+    result = _ded.pcreExec(pcre_info->compiled_expr,/* result of pcre_compile() */
                        pcre_info->compiled_extra,   /* result of pcre_study()   */
                        buf,                         /* the subject string */
                        len,                         /* the length of the subject string */
                        start_offset,                /* start at offset 0 in the subject */
                        0,                           /* options(handled at compile time */
                        ovector,                     /* vector for substring information */
-                       SNORT_PCRE_OVECTOR_SIZE);    /* number of elements in the vector */
+                       ovector_size);               /* number of elements in the vector */
 
     if(result >= 0)
     {
@@ -186,7 +201,7 @@ static int pcre_test(const PCREInfo *pcre_info,
 
     if (found_offset)
     {
-        *found_offset = ovector[1];        
+        *found_offset = ovector[1];
         DEBUG_WRAP(DebugMessage(DEBUG_PATTERN_MATCH,
                                 "Setting buffer and found_offset: %p %d\n",
                                 buf, found_offset););
@@ -195,15 +210,22 @@ static int pcre_test(const PCREInfo *pcre_info,
     return matched;
 }
 
-ENGINE_LINKAGE int pcreMatch(void *p, PCREInfo* pcre_info, const u_int8_t **cursor)
+ENGINE_LINKAGE int pcreMatch(void *p, PCREInfo* pcre_info, const uint8_t **cursor)
 {
-    const u_int8_t *buffer_start;
-    const u_int8_t *buffer_end;
+    if (pcre_info->flags & NOT_FLAG)
+        return invertMatchResult(pcreMatchInternal(p, pcre_info, cursor));
+    return pcreMatchInternal(p, pcre_info, cursor);
+}
+
+static int pcreMatchInternal(void *p, PCREInfo* pcre_info, const uint8_t **cursor)
+{
+    const uint8_t *buffer_start;
     int buffer_len;
     int pcre_offset;
     int pcre_found;
     int relative = 0;
     SFSnortPacket *sp = (SFSnortPacket *) p;
+    unsigned hb_type, len;
 
     /* Input validation */
     if (!p || !pcre_info)
@@ -221,132 +243,57 @@ ENGINE_LINKAGE int pcreMatch(void *p, PCREInfo* pcre_info, const u_int8_t **curs
         relative = 1;
     }
 
-    if (pcre_info->flags & (CONTENT_BUF_URI | CONTENT_BUF_POST | CONTENT_BUF_HEADER | CONTENT_BUF_METHOD | CONTENT_BUF_COOKIE | CONTENT_BUF_RAW_URI | CONTENT_BUF_RAW_HEADER |CONTENT_BUF_RAW_COOKIE | CONTENT_BUF_STAT_CODE | CONTENT_BUF_STAT_MSG))
+    hb_type = HTTP_CONTENT(pcre_info->flags);
+    buffer_start = _ded.getHttpBuffer(hb_type, &len);
+
+    if ( buffer_start )
     {
-        int i;
-        for (i=0; i<sp->num_uris; i++)
+        buffer_len = len;
+        if (relative)
         {
-            switch (i)
-            {
-                case HTTP_BUFFER_URI:
-                    if (!(pcre_info->flags & CONTENT_BUF_URI))
-                        continue; /* Go to next, not looking at URI buffer */
-                    break;
-                case HTTP_BUFFER_HEADER:
-                    if (!(pcre_info->flags & CONTENT_BUF_HEADER))
-                        continue; /* Go to next, not looking at HEADER buffer */
-                    break;
-                case HTTP_BUFFER_CLIENT_BODY:
-                    if (!(pcre_info->flags & CONTENT_BUF_POST))
-                        continue; /* Go to next, not looking at POST buffer */
-                    break;
-                case HTTP_BUFFER_METHOD:
-                    if (!(pcre_info->flags & CONTENT_BUF_METHOD))
-                        continue; /* Go to next, not looking at METHOD buffer */
-                    break;
-                case HTTP_BUFFER_COOKIE:
-                    if (!(pcre_info->flags & CONTENT_BUF_COOKIE))
-                        continue; /* Go to next, not looking at COOKIE buffer */
-                    break;
-                case HTTP_BUFFER_RAW_URI:
-                    if (!(pcre_info->flags & CONTENT_BUF_RAW_URI))
-                        continue;
-                    break;
-                case HTTP_BUFFER_RAW_HEADER:
-                    if (!(pcre_info->flags & CONTENT_BUF_RAW_HEADER))
-                        continue;
-                    break;
-                case HTTP_BUFFER_RAW_COOKIE:
-                    if (!(pcre_info->flags & CONTENT_BUF_RAW_COOKIE))
-                        continue;
-                    break;
-                case HTTP_BUFFER_STAT_CODE:
-                    if (!(pcre_info->flags & CONTENT_BUF_STAT_CODE))
-                        continue;
-                    break;
-                case HTTP_BUFFER_STAT_MSG:
-                    if (!(pcre_info->flags & CONTENT_BUF_STAT_MSG))
-                        continue;
-                    break;
-                default:
-                    /* Uh, what buffer is this? */
-                    return CONTENT_NOMATCH;
-            }
-        
-            if (!_ded.uriBuffers[i]->uriBuffer || (_ded.uriBuffers[i]->uriLength == 0))
-                continue;
-
-            if (relative)
-            {
-                if (checkCursorInternal(p, pcre_info->flags, 0, *cursor) <= 0)
-                {
-                    /* Okay, cursor is NOT within this buffer... */
-                    continue;
-                }
-                buffer_start = *cursor;
-                buffer_end = _ded.uriBuffers[i]->uriBuffer + _ded.uriBuffers[i]->uriLength;
-                buffer_len = buffer_end - buffer_start;
-            }
-            else
-            {
-                buffer_start = _ded.uriBuffers[i]->uriBuffer;
-                buffer_len = _ded.uriBuffers[i]->uriLength;
-                buffer_end = buffer_start + buffer_len;
-            }
-            pcre_found = pcre_test(pcre_info, (const char *)buffer_start, buffer_len, 0, &pcre_offset);
-
-            if (pcre_found)
-            {
-                if (cursor)
-                {
-                    *cursor = buffer_start + pcre_offset;
-                }
-                return RULE_MATCH;
-            }
-        }
-        return RULE_NOMATCH;
-    }
-
-    if (relative)
-    {
-        if (checkCursorInternal(p, pcre_info->flags, pcre_info->offset, *cursor) <= 0)
-        {
+            DEBUG_WRAP(DebugMessage(DEBUG_PATTERN_MATCH,"PCRE unsupported configuration : both relative & uri options specified\n"););
             return RULE_NOMATCH;
         }
-
-        if ((pcre_info->flags & CONTENT_BUF_NORMALIZED) && (sp->flags & FLAG_ALT_DECODE))
-        {
-            buffer_start = _ded.altBuffer->data;
-            buffer_end = buffer_start + _ded.altBuffer->len;
-        }
-        else
-        {
-            buffer_start = sp->payload;
-            if(sp->normalized_payload_size)
-                buffer_end = buffer_start + sp->normalized_payload_size;
-            else
-                buffer_end = buffer_start + sp->payload_size;
-        }
-        buffer_start = *cursor;
-        buffer_len = buffer_end - buffer_start;
     }
     else
     {
-        if ((pcre_info->flags & CONTENT_BUF_NORMALIZED) && (sp->flags & FLAG_ALT_DECODE))
+
+        if ((pcre_info->flags & CONTENT_BUF_NORMALIZED) && _ded.Is_DetectFlag(SF_FLAG_DETECT_ALL))
         {
-            buffer_start = _ded.altBuffer->data;
-            buffer_len = _ded.altBuffer->len;
+            if(_ded.Is_DetectFlag(SF_FLAG_ALT_DETECT))
+            {
+                buffer_start = _ded.altDetect->data;
+                buffer_len = _ded.altDetect->len;
+            }
+            else
+            {
+                buffer_start = _ded.altBuffer->data;
+                buffer_len = _ded.altBuffer->len;
+            }
         }
         else
         {
             buffer_start = sp->payload;
+
             if(sp->normalized_payload_size)
                 buffer_len = sp->normalized_payload_size;
             else
                 buffer_len = sp->payload_size;
         }
-        buffer_end = buffer_start + buffer_len;
+
+        if (!buffer_start || !buffer_len)
+            return RULE_NOMATCH;
+        if (relative)
+        {
+            if ( checkCursorSimple(*cursor, pcre_info->flags, buffer_start, buffer_start+buffer_len,
+                pcre_info->offset) == CURSOR_OUT_OF_BOUNDS )
+                return RULE_NOMATCH;
+
+            buffer_len = (buffer_start + buffer_len) - *cursor;
+            buffer_start = *cursor;
+        }
     }
+
 
     pcre_found = pcre_test(pcre_info, (const char *)buffer_start, buffer_len, pcre_info->offset, &pcre_offset);
 

@@ -1,7 +1,8 @@
 /* $Id$ */
 /****************************************************************************
  *
- * Copyright (C) 2003-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -16,23 +17,23 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************/
 
-/* sp_ip_proto 
- * 
+/* sp_ip_proto
+ *
  * Purpose:
  *
  * Check the IP header's protocol field value.
  *
  * Arguments:
- *   
+ *
  *   Number, protocol name, ! for negation
  *
  * Effect:
  *
- *  Success on protocol match, failure otherwise 
+ *  Success on protocol match, failure otherwise
  *
  * Comments:
  *
@@ -57,7 +58,7 @@
 #include "decode.h"
 #include "plugbase.h"
 #include "parser.h"
-#include "debug.h"
+#include "snort_debug.h"
 #include "util.h"
 #include "plugin_enum.h"
 #include "sp_ip_proto.h"
@@ -73,7 +74,7 @@ extern PreprocStats ruleOTNEvalPerfStats;
 #include "detection_options.h"
 
 #define IP_PROTO__EQUAL         0
-#define IP_PROTO__NOT_EQUAL     1 
+#define IP_PROTO__NOT_EQUAL     1
 #define IP_PROTO__GREATER_THAN  2
 #define IP_PROTO__LESS_THAN     3
 
@@ -85,7 +86,7 @@ typedef struct _IpProtoData
 } IpProtoData;
 
 
-void IpProtoInit(char *, OptTreeNode *, int);
+void IpProtoInit(struct _SnortConfig *, char *, OptTreeNode *, int);
 void IpProtoRuleParseFunction(char *, IpProtoData *);
 int IpProtoDetectorFunction(void *option_data, Packet *p);
 
@@ -122,7 +123,7 @@ int IpProtoCheckCompare(void *l, void *r)
 
 
 /****************************************************************************
- * 
+ *
  * Function: SetupIpProto()
  *
  * Purpose: Generic detection engine plugin ip_proto.  Registers the
@@ -146,10 +147,10 @@ void SetupIpProto(void)
 
 
 /****************************************************************************
- * 
- * Function: IpProtoInit(char *, OptTreeNode *)
  *
- * Purpose: Generic rule configuration function.  Handles parsing the rule 
+ * Function: IpProtoInit(struct _SnortConfig *, char *, OptTreeNode *)
+ *
+ * Purpose: Generic rule configuration function.  Handles parsing the rule
  *          information and attaching the associated detection function to
  *          the OTN.
  *
@@ -159,7 +160,7 @@ void SetupIpProto(void)
  * Returns: void function
  *
  ****************************************************************************/
-void IpProtoInit(char *data, OptTreeNode *otn, int protocol)
+void IpProtoInit(struct _SnortConfig *sc, char *data, OptTreeNode *otn, int protocol)
 {
     OptFpList *ofl;
     IpProtoData *ipd;
@@ -172,7 +173,7 @@ void IpProtoInit(char *data, OptTreeNode *otn, int protocol)
                    "\"ip\" rule.\n", file_name, file_line);
     }
 
-    /* multiple declaration check */ 
+    /* multiple declaration check */
     /*if(otn->ds_list[PLUGIN_IP_PROTO_CHECK])
     {
         FatalError("%s(%d): Multiple ip_proto options in rule\n", file_name,
@@ -185,11 +186,11 @@ void IpProtoInit(char *data, OptTreeNode *otn, int protocol)
        rule's data struct list */
     //otn->ds_list[PLUGIN_IP_PROTO_CHECK] = (IpProtoData *) calloc(sizeof(IpProtoData), sizeof(char));
 
-    /* this is where the keyword arguments are processed and placed into the 
+    /* this is where the keyword arguments are processed and placed into the
        rule option's data structure */
     IpProtoRuleParseFunction(data, ipd);
 
-    /* finally, attach the option's detection function to the rule's 
+    /* finally, attach the option's detection function to the rule's
        detect function pointer list */
     ofl = AddOptFuncToList(IpProtoDetectorFunction, otn);
     ofl->type = RULE_OPTION_TYPE_IP_PROTO;
@@ -201,7 +202,7 @@ void IpProtoInit(char *data, OptTreeNode *otn, int protocol)
     if(!otn->ds_list[PLUGIN_IP_PROTO_CHECK])
         otn->ds_list[PLUGIN_IP_PROTO_CHECK] = ipd;
 
-    if (add_detection_option(RULE_OPTION_TYPE_IP_PROTO, (void *)ipd, &ds_ptr_dup) == DETECTION_OPTION_EQUAL)
+    if (add_detection_option(sc, RULE_OPTION_TYPE_IP_PROTO, (void *)ipd, &ds_ptr_dup) == DETECTION_OPTION_EQUAL)
     {
         free(ipd);
         ipd = otn->ds_list[PLUGIN_IP_PROTO_CHECK] = ds_ptr_dup;
@@ -212,7 +213,7 @@ void IpProtoInit(char *data, OptTreeNode *otn, int protocol)
 
 
 /****************************************************************************
- * 
+ *
  * Function: IpProtoRuleParseFunction(char *, OptTreeNode *)
  *
  * Purpose: This is the function that is used to process the option keyword's
@@ -234,22 +235,22 @@ void IpProtoRuleParseFunction(char *data, IpProtoData *ds_ptr)
 
     if (*data == '!')
     {
-        ds_ptr->comparison_flag = IP_PROTO__NOT_EQUAL; 
+        ds_ptr->comparison_flag = IP_PROTO__NOT_EQUAL;
         data++;
     }
     else if (*data == '>')
     {
-        ds_ptr->comparison_flag = IP_PROTO__GREATER_THAN; 
+        ds_ptr->comparison_flag = IP_PROTO__GREATER_THAN;
         data++;
     }
     else if (*data == '<')
     {
-        ds_ptr->comparison_flag = IP_PROTO__LESS_THAN; 
+        ds_ptr->comparison_flag = IP_PROTO__LESS_THAN;
         data++;
     }
     else
     {
-        ds_ptr->comparison_flag = IP_PROTO__EQUAL; 
+        ds_ptr->comparison_flag = IP_PROTO__EQUAL;
     }
 
     /* check for a number or a protocol name */
@@ -287,7 +288,7 @@ void IpProtoRuleParseFunction(char *data, IpProtoData *ds_ptr)
 
 
 /****************************************************************************
- * 
+ *
  * Function: IpProtoDetectorFunction(char *, OptTreeNode *)
  *
  * Purpose: Use this function to perform the particular detection routine
@@ -297,7 +298,7 @@ void IpProtoRuleParseFunction(char *data, IpProtoData *ds_ptr)
  *            otn => pointer to the current rule's OTN
  *
  * Returns: If the detection test fails, this function *must* return a zero!
- *          On success, it calls the next function in the detection list 
+ *          On success, it calls the next function in the detection list
  *
  ****************************************************************************/
 int IpProtoDetectorFunction(void *option_data, Packet *p)
@@ -316,12 +317,12 @@ int IpProtoDetectorFunction(void *option_data, Packet *p)
 
     switch (ipd->comparison_flag)
     {
-        case IP_PROTO__EQUAL: 
+        case IP_PROTO__EQUAL:
             if (GET_IPH_PROTO(p) == ipd->protocol)
                 rval = DETECTION_OPTION_MATCH;
             break;
 
-        case IP_PROTO__NOT_EQUAL: 
+        case IP_PROTO__NOT_EQUAL:
             if (GET_IPH_PROTO(p) != ipd->protocol)
                 rval = DETECTION_OPTION_MATCH;
             break;
@@ -370,7 +371,7 @@ int GetIpProtos(void *option_data, uint8_t *proto_array, int pa_size)
             proto_array[ipd->protocol] = 1;
             break;
 
-        case IP_PROTO__NOT_EQUAL: 
+        case IP_PROTO__NOT_EQUAL:
             for (i = 0; i < ipd->protocol; i++)
                 proto_array[i] = 1;
             for (i = i + 1; i < NUM_IP_PROTOS; i++)
@@ -397,7 +398,7 @@ int GetIpProtos(void *option_data, uint8_t *proto_array, int pa_size)
 }
 
 /*
- * Extract the IP Protocol field.  
+ * Extract the IP Protocol field.
 */
 int GetOtnIpProto(OptTreeNode *otn)
 {
@@ -405,9 +406,9 @@ int GetOtnIpProto(OptTreeNode *otn)
 
    if (otn == NULL)
        return -1;
-       
+
    ipd = (IpProtoData *)otn->ds_list[PLUGIN_IP_PROTO_CHECK];
-   
+
    if ((ipd != NULL) && (ipd->comparison_flag == IP_PROTO__EQUAL))
        return (int)ipd->protocol;
 

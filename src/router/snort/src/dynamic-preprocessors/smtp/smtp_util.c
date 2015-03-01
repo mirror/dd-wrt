@@ -14,9 +14,10 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (C) 2005-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * Author: Andy  Mullican
  *
@@ -39,16 +40,19 @@
 #include <ctype.h>
 #include <string.h>
 
-#include "debug.h"
-#include "bounds.h"
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#include "sf_types.h"
+#include "snort_debug.h"
+#include "snort_bounds.h"
 
 #include "snort_smtp.h"
 #include "smtp_util.h"
 #include "sf_dynamic_preprocessor.h"
 #include "sf_snort_packet.h"
-#include "sf_base64decode.h"
 
-extern DynamicPreprocessorData _dpd;
 extern SMTP *smtp_ssn;
 extern char smtp_normalizing;
 
@@ -58,7 +62,7 @@ void SMTP_GetEOL(const uint8_t *ptr, const uint8_t *end,
     const uint8_t *tmp_eol;
     const uint8_t *tmp_eolm;
 
-    /* XXX maybe should fatal error here since none of these 
+    /* XXX maybe should fatal error here since none of these
      * pointers should be NULL */
     if (ptr == NULL || end == NULL || eol == NULL || eolm == NULL)
         return;
@@ -71,7 +75,7 @@ void SMTP_GetEOL(const uint8_t *ptr, const uint8_t *end,
     }
     else
     {
-        /* end of line marker (eolm) should point to marker and 
+        /* end of line marker (eolm) should point to marker and
          * end of line (eol) should point to end of marker */
         if ((tmp_eol > ptr) && (*(tmp_eol - 1) == '\r'))
         {
@@ -99,7 +103,6 @@ int SMTP_CopyToAltBuffer(SFSnortPacket *p, const uint8_t *start, int length)
 
     /* if we make a call to this it means we want to use the alt buffer
      * regardless of whether we copy any data into it or not - barring a failure */
-    p->flags |= FLAG_ALT_DECODE;
     smtp_normalizing = 1;
 
     /* if start and end the same, nothing to copy */
@@ -114,8 +117,120 @@ int SMTP_CopyToAltBuffer(SFSnortPacket *p, const uint8_t *start, int length)
 
     if (ret != SAFEMEM_SUCCESS)
     {
-        ResetAltBuffer(p);
+        _dpd.DetectFlag_Disable(SF_FLAG_ALT_DECODE);
         smtp_normalizing = 0;
+        return -1;
+    }
+    *alt_len += length;
+
+    _dpd.SetAltDecode(*alt_len);
+
+    return 0;
+}
+/* Accumulate EOL seperated headers, one or more at a time */
+int SMTP_CopyEmailHdrs(const uint8_t *start, int length, MAIL_LogState *log_state)
+{
+    int log_avail = 0;
+    uint8_t *log_buf;
+    uint32_t *hdrs_logged;
+    int ret = 0;
+
+    if ((log_state == NULL) || (length <= 0))
+        return -1;
+
+
+    log_avail = (log_state->log_depth - log_state->hdrs_logged);
+    hdrs_logged = &(log_state->hdrs_logged);
+    log_buf = (uint8_t *)log_state->emailHdrs;
+
+    if(log_avail <= 0)
+    {
+        return -1;
+    }
+
+    if(length > log_avail )
+    {
+        length = log_avail;
+    }
+
+    /* appended by the EOL \r\n */
+
+    ret = SafeMemcpy(log_buf + *hdrs_logged, start, length, log_buf, log_buf+(log_state->log_depth));
+
+    if (ret != SAFEMEM_SUCCESS)
+    {
+        return -1;
+    }
+
+    *hdrs_logged += length;
+
+    return 0;
+}
+
+/* Accumulate email addresses from RCPT TO and/or MAIL FROM commands. Email addresses are separated by comma */
+int SMTP_CopyEmailID(const uint8_t *start, int length, int command_type, MAIL_LogState *log_state)
+{
+    uint8_t *alt_buf;
+    int alt_size;
+    uint16_t *alt_len;
+    int ret;
+    int log_avail=0;
+    const uint8_t *tmp_eol;
+
+    if ((log_state == NULL) || (length <= 0))
+        return -1;
+
+    tmp_eol = (uint8_t *)memchr(start, ':', length);
+    if(tmp_eol == NULL)
+        return -1;
+
+    if((tmp_eol+1) < (start+length))
+    {
+        length = length - ( (tmp_eol+1) - start );
+        start = tmp_eol+1;
+    }
+    else
+        return -1;
+
+
+
+    switch (command_type)
+    {
+        case CMD_MAIL:
+            alt_buf = log_state->senders;
+            alt_size = MAX_EMAIL;
+            alt_len = &(log_state->snds_logged);
+            break;
+
+        case CMD_RCPT:
+            alt_buf = log_state->recipients;
+            alt_size = MAX_EMAIL;
+            alt_len = &(log_state->rcpts_logged);
+            break;
+
+        default:
+            return -1;
+    }
+
+    log_avail = alt_size - *alt_len;
+
+    if(log_avail <= 0 || !alt_buf)
+        return -1;
+    else if(log_avail < length)
+        length = log_avail;
+
+    if ( *alt_len > 0 && ((*alt_len + 1) < alt_size))
+    {
+        alt_buf[*alt_len] = ',';
+        *alt_len = *alt_len + 1;
+    }
+
+    ret = SafeMemcpy(alt_buf + *alt_len, start, length, alt_buf, alt_buf + alt_size);
+
+    if (ret != SAFEMEM_SUCCESS)
+    {
+        if(*alt_len != 0)
+            *alt_len = *alt_len - 1;
         return -1;
     }
 
@@ -124,100 +239,35 @@ int SMTP_CopyToAltBuffer(SFSnortPacket *p, const uint8_t *start, int length)
     return 0;
 }
 
-int SMTP_IsBase64Data(const char *start, int length)
+
+void SMTP_LogFuncs(SMTPConfig *config, SFSnortPacket *p, MimeState *mime_ssn)
 {
-    const char *tmp = NULL;
-    
-    tmp = _dpd.SnortStrnStr(start, length, "base64");
+    if((mime_ssn->log_flags == 0) || !config)
+        return;
 
-    if( tmp == NULL )
-        return -1;
+    if(mime_ssn->log_flags & FLAG_FILENAME_PRESENT)
+    {
+        _dpd.streamAPI->set_extra_data(p->stream_session, p, config->xtra_filename_id);
+    }
 
-    return 0;
+    if(mime_ssn->log_flags & FLAG_MAIL_FROM_PRESENT)
+    {
+        _dpd.streamAPI->set_extra_data(p->stream_session, p, config->xtra_mfrom_id);
+    }
+
+    if(mime_ssn->log_flags & FLAG_RCPT_TO_PRESENT)
+    {
+        _dpd.streamAPI->set_extra_data(p->stream_session, p, config->xtra_rcptto_id);
+    }
+
+    if(mime_ssn->log_flags & FLAG_EMAIL_HDRS_PRESENT)
+    {
+        _dpd.streamAPI->set_extra_data(p->stream_session, p, config->xtra_ehdrs_id);
+    }
+
 }
 
-void SMTP_Base64Decode(const uint8_t *start, const uint8_t *end)
-{
-    uint32_t encode_avail = 0, decode_avail = 0 ;
-    uint8_t *encode_buf, *decode_buf;
-    uint32_t act_encode_size = 0, act_decode_size = 0;
-    uint32_t prev_bytes = 0;
-    int i = 0;
-
-    if (smtp_ssn == NULL || smtp_ssn->decode_state == NULL )
-        return;
-
-    
-    encode_avail = (smtp_ssn->decode_state->encode_depth - smtp_ssn->decode_state->encode_bytes_read);
-    decode_avail = (smtp_ssn->decode_state->decode_depth - smtp_ssn->decode_state->decode_bytes_read);
-    encode_buf = (uint8_t *)smtp_ssn->decode_state->encodeBuf;
-    decode_buf = (uint8_t *)smtp_ssn->decode_state->decodeBuf;
-
-    /* 1. Stop decoding when we have reached either the decode depth or encode depth.
-     * 2. Stop decoding when we are out of memory */
-    if(encode_avail ==0 || decode_avail ==0 ||
-            (!encode_buf) || (!decode_buf))
-    {
-        ResetDecodeState(smtp_ssn->decode_state);
-        return;
-    }
-  
-   /*The non decoded encoded data in the previous packet is required for successful decoding
-    * in case of base64 data spanned across packets*/
-    if( smtp_ssn->decode_state->prev_encoded_bytes && 
-            (smtp_ssn->decode_state->prev_encoded_bytes <= (int) encode_avail))
-    {
-        if(smtp_ssn->decode_state->prev_encoded_buf)
-        {
-            prev_bytes = smtp_ssn->decode_state->prev_encoded_bytes;
-            while(smtp_ssn->decode_state->prev_encoded_bytes)
-            {
-                /* Since this data cannot be more than 3 bytes*/
-                encode_buf[i] = smtp_ssn->decode_state->prev_encoded_buf[i];
-                i++;
-                smtp_ssn->decode_state->prev_encoded_bytes--;
-            }
-        }
-    }
-
-    if(sf_unfold_smtp(start, (end-start), encode_buf + prev_bytes, encode_avail, &act_encode_size) != 0)
-    {
-        ResetDecodeState(smtp_ssn->decode_state);
-        return;
-    }
-
-    act_encode_size = act_encode_size + prev_bytes;
-
-    i = (act_encode_size)%4 ;
-
-    /* Encoded data should be in multiples of 4. Then we need to wait for the remainder encoded data to
-     * successfully decode the base64 data. This happens when base64 data is spanned across packets*/
-    if(i)
-    {
-        smtp_ssn->decode_state->prev_encoded_bytes = i;
-        act_encode_size = act_encode_size - i;
-        smtp_ssn->decode_state->prev_encoded_buf = encode_buf + act_encode_size;
-    }
-    
-    smtp_ssn->decode_state->encode_bytes_read += act_encode_size;
-
-    if(sf_base64decode(encode_buf, act_encode_size, decode_buf, decode_avail, &act_decode_size) != 0)
-    {
-        ResetDecodeState(smtp_ssn->decode_state);
-        return;
-    }
-
-
-    
-    smtp_ssn->decode_state->decode_present = 1;
-    smtp_ssn->decode_state->decoded_bytes = act_decode_size;
-    smtp_ssn->decode_state->decode_bytes_read += act_decode_size;
-
-
-    return;
-}
-
-#ifdef DEBUG
+#ifdef DEBUG_MSGS
 char smtp_print_buffer[65537];
 
 const char * SMTP_PrintBuffer(SFSnortPacket *p)

@@ -45,13 +45,20 @@ sent, iff attempts > 0.
 
     ./configure --enable-active-response
 
-    config response: [device <dev>] attempts <att>
+    config response: [device <dev>] [dst_mac <MAC address>] attempts <att>
 
     <dev> ::= ip | eth0 | etc.
     <att> ::= (1..20)
-
+    <MAC address> ::= nn:nn:nn:nn:nn:nn    
+     (n is a hex number from 0-F)
+     
 device ip will perform network layer injection.  It is probably a better choice
 to specify an interface and avoid kernel routing tables, etc.
+
+dst_mac will change response destination MAC address, if the device is eth0, eth1, eth2 etc.
+Otherwise, response destination MAC address is derived from packet.
+Example:
+    config response: device eth0 dst_mac 00:06:76:DD:5F:E3 attempts 2 
 
 
 FLEXRESP CHANGES
@@ -59,12 +66,12 @@ FLEXRESP CHANGES
 
 Flexresp and flexresp2 are replaced with flexresp3.
 
-* Flexresp is deleted; these features are no longer avaliable:
+* Flexresp is deleted; these features are no longer available:
 
     ./configure --enable-flexresp
     config flexresp: attempts 1
 
-* Flexresp2 is deleted; these features are no longer avaliable:
+* Flexresp2 is deleted; these features are no longer available:
 
     ./configure --enable-flexresp2
 
@@ -86,8 +93,6 @@ Flexresp and flexresp2 are replaced with flexresp3.
         rst_snd | rst_rcv | rst_all | \
         reset_source | reset_dest | reset_both | icmp_net | \
         icmp_host | icmp_port | icmp_all
-
-See README.flexresp3 for more.
 
 
 REACT CHANGES
@@ -122,7 +127,7 @@ or else the default is used:
         "</body>\r\n" \
         "</html>\r\n";
 
-Note that the file must contain the entire response, includeing any HTTP headers.
+Note that the file must contain the entire response, including any HTTP headers.
 In fact, the response isn't strictly limited to HTTP.  You could craft a binary
 payload of arbitrary content. 
 
@@ -132,6 +137,10 @@ selected message, which defaults to:
     <default_msg> ::= \
         "You are attempting to access a forbidden site.<br />" \
         "Consult your system administrator for details.";
+
+Additional formatting operators beyond a single %s are prohibited, including
+%d, %x, %s, as well as any URL encodings such as as %20 (space) that may be
+within a reference URL.
 
 This is an example rule:
 
@@ -155,7 +164,7 @@ RULE ACTION CHANGES
 ===================
 
 The block and sblock actions have been introduced as synonyms for drop and
-sdrop to help avoid confusion between packets dropped due to load (eg lack of
+sdrop to help avoid confusion between packets dropped due to load (e.g. lack of
 available buffers for incoming packets) and packets dropped due to Snort's
 analysis.
 

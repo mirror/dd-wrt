@@ -40,7 +40,7 @@ $ kill -SIGHUP <snort pid>
 NOTE: If reload support is not enabled, Snort will restart (as it always has)
 upon receipt of a SIGHUP.
 
-NOTE: An invalid configuration will still result in Snort fatal erroring, so
+NOTE: An invalid configuration will still result in a fatal error, so
 you should test your new configuration before issuing a reload, e.g.
 
 $ snort -c snort.conf -T
@@ -76,12 +76,12 @@ config flowbits_size
 config interface
 config logdir
 config max_attribute_hosts
+config max_attribute_services_per_host
 config nolog
 config no_promisc
 config pkt_count
 config rate_filter
 config response
-config read_bin_file
 config set_gid
 config set_uid
 config snaplen
@@ -115,6 +115,8 @@ preprocessor frag3_global
 preprocessor perfmonitor
  file
  snortfile
+ flow-file
+ flow-ip-file
 preprocessor sfportscan
  memcap
  logfile
@@ -127,3 +129,8 @@ preprocessor stream5_global
  track_udp
  track_icmp
 
+
+Caveats:
+========
+
+When Snort is run on the primary network interface of an OpenBSD system, the reload and failopen operations may not function as expected.

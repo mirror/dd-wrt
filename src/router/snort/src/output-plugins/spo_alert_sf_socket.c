@@ -1,5 +1,6 @@
 /*
-** Copyright (C) 2003-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2003-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License Version 2 as
@@ -14,7 +15,7 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 /* $Id$ */
@@ -27,13 +28,14 @@
 
 #ifdef LINUX
 
+#include "sf_types.h"
 #include "spo_plugbase.h"
 #include "plugbase.h"
 
 #include "event.h"
 #include "rules.h"
 #include "treenodes.h"
-#include "debug.h"
+#include "snort_debug.h"
 #include "util.h"
 #include "sfPolicy.h"
 #include <sys/socket.h>
@@ -61,8 +63,8 @@ typedef struct _SnortActionRequest
     uint32_t tv_sec;
     uint32_t generator;
     uint32_t sid;
-    snort_ip      src_ip;
-    snort_ip      dest_ip;
+    uint32_t src_ip;
+    uint32_t dest_ip;
     uint16_t sport;
     uint16_t dport;
     uint8_t  protocol;
@@ -79,14 +81,14 @@ typedef struct _AlertSFSocketGidSid
 } AlertSFSocketGidSid;
 static AlertSFSocketGidSid *sid_list = NULL;
 
-static void AlertSFSocket_Init(char *args);
-static void AlertSFSocketSid_Init(char *args);
-void AlertSFSocketSid_InitFinalize(int unused, void *also_unused);
+static void AlertSFSocket_Init(struct _SnortConfig *, char *args);
+static void AlertSFSocketSid_Init(struct _SnortConfig *, char *args);
+void AlertSFSocketSid_InitFinalize(struct _SnortConfig *sc, int unused, void *also_unused);
 void AlertSFSocket(Packet *packet, char *msg, void *arg, Event *event);
 
 static int AlertSFSocket_Connect(void);
 static OptTreeNode *OptTreeNode_Search(uint32_t gid, uint32_t sid);
-static int SignatureAddOutputFunc(uint32_t gid, uint32_t sid, 
+static int SignatureAddOutputFunc(uint32_t gid, uint32_t sid,
         void (*outputFunc)(Packet *, char *, void *, Event *),
         void *args);
 int String2ULong(char *string, unsigned long *result);
@@ -108,7 +110,7 @@ void AlertSFSocket_Setup(void)
 #define UNIX_PATH_MAX 108
 #endif
 
-static void AlertSFSocket_Init(char *args)
+static void AlertSFSocket_Init(struct _SnortConfig *sc, char *args)
 {
     /* process argument */
     char *sockname;
@@ -120,11 +122,11 @@ static void AlertSFSocket_Init(char *args)
 
     if(strlen(sockname) == 0)
         FatalError("AlertSFSocket: must specify a socket name\n");
-    
+
     if(strlen(sockname) > UNIX_PATH_MAX - 1)
         FatalError("AlertSFSocket: socket name must be less than %i "
                 "characters\n", UNIX_PATH_MAX - 1);
-    
+
     /* create socket */
     if((sock = socket(AF_UNIX, SOCK_DGRAM, 0)) == -1)
     {
@@ -134,7 +136,7 @@ static void AlertSFSocket_Init(char *args)
     memset(&sockAddr, 0, sizeof(sockAddr));
     sockAddr.sun_family = AF_UNIX;
     memcpy(sockAddr.sun_path + 1, sockname, strlen(sockname));
-    
+
     if(AlertSFSocket_Connect() == 0)
         connected = 1;
 
@@ -153,7 +155,7 @@ int GidSid2UInt(char * args, uint32_t * sidValue, uint32_t * gidValue)
 
     *gidValue=GENERATOR_SNORT_ENGINE;
     *sidValue=0;
-    
+
     i=0;
     while( args && *args && (i < 20) )
     {
@@ -163,17 +165,17 @@ int GidSid2UInt(char * args, uint32_t * sidValue, uint32_t * gidValue)
         i++;
     }
     sbuff[i]=0;
-    
+
     if( i >= 20 )
     {
        return SNORT_EINVAL;
     }
 
-    if( *args == ':' ) 
+    if( *args == ':' )
     {
         memcpy(gbuff,sbuff,i);
         gbuff[i]=0;
-        
+
         if(String2ULong(gbuff,&glong))
         {
             return SNORT_EINVAL;
@@ -209,21 +211,21 @@ int GidSid2UInt(char * args, uint32_t * sidValue, uint32_t * gidValue)
         }
         *sidValue=(uint32_t)slong;
     }
-    
+
     return SNORT_SUCCESS;
 }
 
-static void AlertSFSocketSid_Init(char *args)
+static void AlertSFSocketSid_Init(struct _SnortConfig *sc, char *args)
 {
     uint32_t sidValue;
     uint32_t gidValue;
     AlertSFSocketGidSid *new_sid = NULL;
-    
+
     /* check configured value */
     if(!configured)
         FatalError("AlertSFSocket must be configured before attaching it to a "
                 "sid");
-    
+
     if (GidSid2UInt((char*)args, &sidValue, &gidValue) )
         FatalError("Invalid argument '%s' to alert_sf_socket_sid\n", args);
 
@@ -239,12 +241,12 @@ static void AlertSFSocketSid_Init(char *args)
     }
     else
     {
-        AddFuncToPostConfigList(AlertSFSocketSid_InitFinalize, NULL);
+        AddFuncToPostConfigList(sc, AlertSFSocketSid_InitFinalize, NULL);
     }
     sid_list = new_sid;
 }
 
-void AlertSFSocketSid_InitFinalize(int unused, void *also_unused)
+void AlertSFSocketSid_InitFinalize(struct _SnortConfig *sc, int unused, void *also_unused)
 {
     AlertSFSocketGidSid *new_sid = sid_list;
     AlertSFSocketGidSid *next_sid;
@@ -267,7 +269,7 @@ void AlertSFSocketSid_InitFinalize(int unused, void *also_unused)
                 break;
             case SNORT_EINVAL:
                 DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN, "Invalid argument "
-                            "attempting to attach output for sid %u.\n", 
+                            "attempting to attach output for sid %u.\n",
                             sidValue););
                 break;
             case SNORT_ENOENT:
@@ -299,7 +301,7 @@ static int AlertSFSocket_Connect(void)
         if(errno == ECONNREFUSED || errno == ENOENT)
         {
             LogMessage("WARNING: AlertSFSocket: Unable to connect to socket: "
-                    "%s\n", strerror(errno));
+                    "%s.\n", strerror(errno));
             return 1;
         }
         else
@@ -310,8 +312,8 @@ static int AlertSFSocket_Connect(void)
     }
     return 0;
 }
-        
-                   
+
+
 static SnortActionRequest sar;
 
 void AlertSFSocket(Packet *packet, char *msg, void *arg, Event *event)
@@ -321,18 +323,26 @@ void AlertSFSocket(Packet *packet, char *msg, void *arg, Event *event)
     if(!event || !packet || !IPH_IS_VALID(packet))
         return;
 
+    // for now, only support ip4
+    if ( !IS_IP4(packet) )
+        return;
+
     /* construct the action request */
     sar.event_id = event->event_id;
     sar.tv_sec = packet->pkth->ts.tv_sec;
     sar.generator = event->sig_generator;
     sar.sid = event->sig_id;
-#ifdef SUP_IP6
-    sar.src_ip =  *GET_SRC_IP(packet);
-    sar.dest_ip = *GET_DST_IP(packet);
-#else
-    sar.src_ip = ntohl(packet->iph->ip_src.s_addr);
-    sar.dest_ip = ntohl(packet->iph->ip_dst.s_addr);
-#endif
+
+    // when ip6 is supported:
+    // * suggest TLV format where T == family, L is implied by
+    //   T (and not sent), and V is just the address octets in
+    //   network order
+    // * if T is made the 1st octet of struct, bytes to read
+    //   can be determined by reading 1 byte
+    // * addresses could be moved to end of struct in uint8_t[32]
+    //   and only 1st 8 used for ip4
+    sar.src_ip =  ntohl(GET_SRC_IP(packet)->ip32[0]);
+    sar.dest_ip = ntohl(GET_DST_IP(packet)->ip32[0]);
     sar.protocol = GET_IPH_PROTO(packet);
 
     if(sar.protocol == IPPROTO_UDP || sar.protocol == IPPROTO_TCP)
@@ -376,18 +386,18 @@ void AlertSFSocket(Packet *packet, char *msg, void *arg, Event *event)
         {
             connected = 0;
             LogMessage("WARNING: AlertSFSocket: connection reset, will attempt "
-                    "to reconnect\n");
+                    "to reconnect.\n");
         }
         else if(errno == ECONNREFUSED)
         {
             LogMessage("WARNING: AlertSFSocket: connection refused, "
-                    "will attempt to reconnect\n");
+                    "will attempt to reconnect.\n");
             connected = 0;
         }
         else if(errno == ENOTCONN)
         {
             LogMessage("WARNING: AlertSFSocket: not connected, "
-                    "will attempt to reconnect\n");
+                    "will attempt to reconnect.\n");
             connected = 0;
         }
         else
@@ -401,16 +411,16 @@ void AlertSFSocket(Packet *packet, char *msg, void *arg, Event *event)
     return;
 }
 
-static int SignatureAddOutputFunc( uint32_t gid, uint32_t sid, 
+static int SignatureAddOutputFunc( uint32_t gid, uint32_t sid,
         void (*outputFunc)(Packet *, char *, void *, Event *),
         void *args)
 {
     OptTreeNode *optTreeNode = NULL;
     OutputFuncNode *outputFuncs = NULL;
-    
+
     if(!outputFunc)
         return SNORT_EINVAL;  /* Invalid argument */
-                       
+
     if(!(optTreeNode = OptTreeNode_Search(gid,sid)))
     {
         LogMessage("Unable to find OptTreeNode for SID %u\n", sid);
@@ -425,11 +435,11 @@ static int SignatureAddOutputFunc( uint32_t gid, uint32_t sid,
 
     outputFuncs->func = outputFunc;
     outputFuncs->arg = args;
-    
+
     outputFuncs->next = optTreeNode->outputFuncs;
 
     optTreeNode->outputFuncs = outputFuncs;
-    
+
     return SNORT_SUCCESS;
 }
 
@@ -443,7 +453,7 @@ static OptTreeNode *OptTreeNode_Search(uint32_t gid, uint32_t sid)
 
     if(sid == 0)
         return NULL;
-    
+
     for (hashNode = sfghash_findfirst(snort_conf->otn_map);
             hashNode;
             hashNode = sfghash_findnext(snort_conf->otn_map))
@@ -453,8 +463,8 @@ static OptTreeNode *OptTreeNode_Search(uint32_t gid, uint32_t sid)
         if (rtn)
         {
             if ((rtn->proto == IPPROTO_TCP) || (rtn->proto == IPPROTO_UDP)
-                    || (rtn->proto == IPPROTO_ICMP) || (rtn->proto == ETHERNET_TYPE_IP)) 
-            { 
+                    || (rtn->proto == IPPROTO_ICMP) || (rtn->proto == ETHERNET_TYPE_IP))
+            {
                 if (otn->sigInfo.id == sid)
                 {
                     return otn;

@@ -1,5 +1,6 @@
 /*
-** Copyright (C) 2002-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 ** Copyright (C) 2001 Phil Wood <cpw@lanl.gov>
 **
@@ -16,7 +17,7 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 /* $Id$ */
@@ -29,12 +30,13 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+#include "sf_types.h"
 #include "rules.h"
 #include "treenodes.h"
 #include "decode.h"
 #include "plugbase.h"
 #include "parser.h"
-#include "debug.h"
+#include "snort_debug.h"
 #include "util.h"
 #include "plugin_enum.h"
 
@@ -53,7 +55,7 @@ typedef struct _IpSameData
 
 } IpSameData;
 
-void IpSameCheckInit(char *, OptTreeNode *, int);
+void IpSameCheckInit(struct _SnortConfig *, char *, OptTreeNode *, int);
 void ParseIpSame(char *, OptTreeNode *);
 int IpSameCheck(void *option_data, Packet *p);
 
@@ -80,7 +82,7 @@ int IpSameCheckCompare(void *l, void *r)
 
 
 /****************************************************************************
- * 
+ *
  * Function: SetupIpSameCheck()
  *
  * Purpose: Associate the same keyword with IpSameCheckInit
@@ -102,8 +104,8 @@ void SetupIpSameCheck(void)
 
 
 /****************************************************************************
- * 
- * Function: IpSameCheckInit(char *, OptTreeNode *)
+ *
+ * Function: IpSameCheckInit(struct _SnortConfig *, char *, OptTreeNode *)
  *
  * Purpose: Setup the same data struct and link the function into option
  *          function pointer list
@@ -114,12 +116,12 @@ void SetupIpSameCheck(void)
  * Returns: void function
  *
  ****************************************************************************/
-void IpSameCheckInit(char *data, OptTreeNode *otn, int protocol)
+void IpSameCheckInit(struct _SnortConfig *sc, char *data, OptTreeNode *otn, int protocol)
 {
     OptFpList *fpl;
     void *ds_ptr_dup;
 
-    /* multiple declaration check */ 
+    /* multiple declaration check */
     if(otn->ds_list[PLUGIN_IP_SAME_CHECK])
     {
         FatalError("%s(%d): Multiple sameip options in rule\n", file_name,
@@ -132,16 +134,16 @@ void IpSameCheckInit(char *data, OptTreeNode *otn, int protocol)
     //otn->ds_list[PLUGIN_IP_SAME_CHECK] = (IpSameData *)
     //        SnortAlloc(sizeof(IpSameData));
 
-    /* this is where the keyword arguments are processed and placed into the 
+    /* this is where the keyword arguments are processed and placed into the
        rule option's data structure */
     ParseIpSame(data, otn);
 
-    if (add_detection_option(RULE_OPTION_TYPE_IP_SAME, (void *)NULL, &ds_ptr_dup) == DETECTION_OPTION_EQUAL)
+    if (add_detection_option(sc, RULE_OPTION_TYPE_IP_SAME, (void *)NULL, &ds_ptr_dup) == DETECTION_OPTION_EQUAL)
     {
         //otn->ds_list[PLUGIN_IP_SAME_CHECK] = ds_ptr_dup;
     }
 
-    /* finally, attach the option's detection function to the rule's 
+    /* finally, attach the option's detection function to the rule's
        detect function pointer list */
     fpl = AddOptFuncToList(IpSameCheck, otn);
     fpl->type = RULE_OPTION_TYPE_IP_SAME;
@@ -150,10 +152,10 @@ void IpSameCheckInit(char *data, OptTreeNode *otn, int protocol)
 
 
 /****************************************************************************
- * 
+ *
  * Function: ParseIpSame(char *, OptTreeNode *)
  *
- * Purpose: Convert the id option argument to data and plug it into the 
+ * Purpose: Convert the id option argument to data and plug it into the
  *          data structure
  *
  * Arguments: data => argument data
@@ -186,7 +188,7 @@ void ParseIpSame(char *data, OptTreeNode *otn)
 
 
 /****************************************************************************
- * 
+ *
  * Function: IpSameCheck(char *, OptTreeNode *)
  *
  * Purpose: Test the ip header's id field to see if its value is equal to the
@@ -211,7 +213,6 @@ int IpSameCheck(void *option_data, Packet *p)
     PREPROC_PROFILE_START(ipSamePerfStats);
 
     if (IP_EQUALITY( GET_SRC_IP(p), GET_DST_IP(p)))
-#ifdef SUP_IP6
     {
 	    DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN,"Match!  %x ->",
                     sfip_ntoa(GET_SRC_IP(p)));
@@ -226,19 +227,6 @@ int IpSameCheck(void *option_data, Packet *p)
                DebugMessage(DEBUG_PLUGIN, " %x\n",
                     sfip_ntoa(GET_DST_IP(p))));
     }
-#else
-    {
-	    DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN,"Match!  %x -> %x\n",
-				p->iph->ip_src.s_addr,  p->iph->ip_dst.s_addr););
-        rval = DETECTION_OPTION_MATCH;
-    }
-    else
-    {
-        /* you can put debug comments here or not */
-        DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN,"No match %x -> %x\n",
-				p->iph->ip_src.s_addr,  p->iph->ip_dst.s_addr););
-    }
-#endif
 
     /* if the test isn't successful, return 0 */
     PREPROC_PROFILE_END(ipSamePerfStats);

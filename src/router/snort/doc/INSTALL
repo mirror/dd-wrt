@@ -7,7 +7,7 @@ short version.
 
 2.) *** Make sure you have libdnet, libpcap, libpcre installed!!! ***
     Also make sure that dnet-config, pcre-config, and daq-modules-config are in
-    your PATH (eg you should be able to `which` these).
+    your PATH (e.g. you should be able to `which` these).
 
 3.) ./configure
 
@@ -15,14 +15,16 @@ short version.
 
 5.) sudo make install
 
-6.) Create a sample rules file (if you want to use rules, check out the 
-    included snort.conf file)
+6.) Check your rules file.  By default, step 3 configures Snort for the features 
+    required by the included etc/snort.conf.  You can validate it with:
+
+    src/snort -c etc/snort.conf -T
 
 7.) snort -?
 
 8.) If you've used previous versions of Snort, you may need to rewrite your
-    rules to make them compliant to the rules format.  See 
-    snort_manual.pdf or http://www.snort.org for more information. 
+    rules to make them compliant to the rules format.  See snort_manual.pdf
+    or http://www.snort.org for more information. 
 
 9.) If you used previous versions of Snort and the new Snort dies upon startup,
     try this and then restart:
@@ -43,20 +45,14 @@ Snort Configure-time switches
 `--enable-pthread'
      Enable pthread support (causes snort to be linked with libpthread).
 
-`--enable-prelude'
-     Enable Prelude Hydrid IDS support.
-
 `--enable-rulestate'
      Enable rule state configuration feature that separates the rule
      state (enabled/disabled) from the action (alert, drop, log, etc)
      and definition.
 
-`--enable-dynamicplugin'
-     Enable dynamically loadable preprocessors, detection engine
-     and rules libraries.
-
-`--enable-timestats'
-     Enable real-time performance statistics.
+`--enable-so-with-static-lib`
+     Enable linking of dynamically loaded preprocessors with a static
+     preprocessor library.
 
 `--enable-perfprofiling'
      Enable performance profiling of individual rules and preprocessors.
@@ -71,11 +67,6 @@ Snort Configure-time switches
      Enable the 'Flexible Response, version 3' code, that allows you to
      reset hostile sessions.  See README.active for details.
 
-`--enable-aruba'
-     Enable the Aruba output plugin capability that allows you to
-     send information to an Aruba Networks Mobility Controller.  See
-     README.ARUBA for details.
-
 `--enable-gre'
      Enable GRE decoder. Allows Snort to decode GRE encapsulated traffic.
      Only supports GRE over IP.  Only one layer of encapsulation will be
@@ -83,49 +74,17 @@ Snort Configure-time switches
      discarded/blocked.
      
 `--enable-sourcefire'
-     Enable Sourcefire specific build options, encompasing --enable-perfprofiling,
-     --enable-decoder-preprocessor-rules, --enable-ppm.
+     Enable Sourcefire specific build options, encompasing
+     --enable-perfprofiling and --enable-ppm.
      
 `--with-snmp'
      Enable SNMP alerting code.
 
-` --with-dnet-includes=DIR'
+`--with-dnet-includes=DIR'
      Specify libdnet include directory.
 
-` --with-dnet-libraries=DIR'
+`--with-dnet-libraries=DIR'
      Specify libdnet library directory.
-
-`--with-mysql=DIR'
-    Support for mysql, turn this on if you want to use ACID with MySQL.
-    NOTE: Specifying a directory will be deprecated in the future.
-    
-`--with-mysql-libraries=DIR'
-    Specify location for mysql client library.
-    
-`--with-mysql-includes=DIR'
-    Specify location for mysql header files.
-    
-`--with-odbc=DIR'
-    Support for ODBC databases, turn this on if you want to use ACID with a
-    non-listed DB.
-    
-`--with-postgresql=DIR'
-    Support for Postgresql databases, turn this on if you want to use ACID with
-    PostgreSQL.
-    
-`--with-oracle=DIR'
-    Support for Oracle databases, turn this on if you want to use ACID with 
-    Oracle.
-    
-`--with-openssl=DIR'
-    Support for openssl (used by the XML output plugin).
-
-`--with-libpq-includes=DIR'
-     Set the include directories for Postgres SQL database support to DIR.
-
-`--with-libpq-libraries=DIR'
-     Set the library directories for Postgres SQL database support to DIR.  
-     Setting both of these values enables the Postgres output plugin module.
 
 `--with-libpcap-includes=DIR'
      If the configuration script can't find the libpcap include files on its 
@@ -134,21 +93,6 @@ Snort Configure-time switches
 `--with-libpcap-libraries=DIR'
      If the configuration script can't find the libpcap library files on its 
      own, the path can be set manually with this switch.
-
-`--with-libxml2-includes=DIR'  
-    Libxml2 include directory.
-
-`--with-libxml2-libraries=DIR'  
-    Libxml2 library directory.
-    
-`--with-libntp-libraries=DIR' 
-    Libntp library directory.
-    
-`--with-libidmef-includes=DIR'  
-    Libidmef include directory.
-    
-`--with-libidmef-libraries=DIR'  
-    Libidmef library directory.
 
 Basic Installation
 ==================
@@ -333,63 +277,6 @@ Operation Controls
 Platform Specific Notes
 =======================
 
-* 64bit platforms:
-------------------
-On some 64bit Linux systems (e.g. with Fedora distributions), when configuring
-snort with MySQL output support, the necessary library may not be found
-automatically by the configure script, giving the following error when
-'configure' is run:
-
-**********************************************
-  ERROR: unable to find mysqlclient library (libmysqlclient.*)
-  checked in the following places
-        /usr
-        /usr/lib
-        /usr/mysql
-        /usr/mysql/lib
-        /usr/local
-        /usr/local/lib
-        /usr/local/mysql
-        /usr/local/mysql/lib
-**********************************************
-
-In this case, libmysqlclient.* may actually be found in /usr/lib64/mysql, and
-the path will need to be explicitly specified in this manner: configure
---with-mysql-libraries=/usr/lib64/mysql
-
-Note, you may also specify alternate locations for the mysql header files using
---with-mysql-includes.  Specifying a directory as part of the --with-mysql
-option to configure will be deprecated in the future.
-
-Problems may also be encountered if both the 32bit and 64bit libraries are
-installed on the system, and configuring snort with MySQL support may result in
-a different error:
-
-checking for mysql... yes
-checking for compress in -lz... yes
-checking for dlsym in -ldl... no
-checking for dlsym in -lc... no
-
-   ERROR!  programmatic interface to dynamic link loader
-   not found.  Cannot use dynamic plugin libraries.
-
-Reading through config.log, you may see something like this (the numbers are
-the line number and may differ):
-
-configure:24280: checking for dlsym in -ldl
-configure:24310: gcc -o conftest -g -O2 -Wall  -DDYNAMIC_PLUGIN   -I/usr/include/mysql -DENABLE_MYSQL  -lpcre -L/usr/lib/mysql conftest.c -ldl  -lmysqlclient -lz -lpcre -lpcap -lm -lnsl  >&5
-/usr/bin/ld: skipping incompatible /usr/lib/mysql/libmysqlclient.so when searching for -lmysqlclient
-/usr/bin/ld: skipping incompatible /usr/lib/mysql/libmysqlclient.a when searching for -lmysqlclient
-/usr/bin/ld: cannot find -lmysqlclient
-collect2: ld returned 1 exit status
-configure:24316: $? = 1 
-
-This likely indicates a compatibility issue between a 32bit library from mysql
-(found in its normal location), and a 64bit library for libdl (dynamic loader).
-Use the --with-mysql-libraries option to specify the location of the 64bit
-mysql library (e.g. /usr/lib64/mysql).
-
-
 * Linux:
 -------- With kernels 2.2.x and higher you may get `snort [pid] uses obsolete
 (PF_INET, SOCK_PACKET)' warnings. This is because you use some older
@@ -483,7 +370,7 @@ On certain BSD-based platforms, the make install may not symlink the version
 specific shared libraries to the non-versioned shared library.  This could
 cause a failure to load when using dynamic libraries.
 
-Work arounds:
+Workarounds:
 
 1) Create the symlinks by hand after make install.  The shared libraries can
 be located under /usr/local/lib/snort_dynamicengine and
@@ -496,17 +383,26 @@ be located under /usr/local/lib/snort_dynamicengine and
 3) Use the config directive dynamicpreprocessor file (rather than
 dynamicpreprocessor directory) to load the version specific shared library.
 
+4) open-appid feature has additional requirements for OpenBSD and FreeBSD 
+   platforms. Please see README.appid if using open-appid in snort.
+   
 Note that on FreeBSD and OpenBSD, divert sockets don't work with bridges. Please 
-refer to the DAQ distro README for work arounds and more details.
+refer to the DAQ distro README for workarounds and more details.
 
-* FreeBSD 6.x
+When using the alert_unixsock output plugin on FreeBSD, please refer to the
+Output Modules section of the Snort Manual.
+
+* FreeBSD 6.x / FreeBSD 10.x
 -------------
 If you run the auto tools (instead of using the delivered configure script),
 you may need to include -I /usr/local/share/aclocal (in addition to -I m4) as
 arguments to aclocal.  This is required to set up the correct info for using
 LIBTOOL with aclocal version 1.9 that ships with FreeBSD.
 
-In this case, the following recommended commands should be used to configure
+Due to changes within LIBTOOL, it may also be necessary to regenerate the configure
+script on FreeBSD 10 systems to ensure the Snort dynamic libraries are generated.
+
+In either case, the following recommended commands should be used to configure
 snort prior to using make:
 
 libtoolize --automake --copy
@@ -515,6 +411,273 @@ autoheader
 automake --add-missing --copy
 autoconf
 
-Then run configure with any desired options (--enable-dynamicplugin,
---enable-inline, etc).
+Then run configure with any desired options.
 
+
+
+Potential Problem between a Network Interface Card (NIC) and Snort
+==================================================================
+
+There are two common problems that occur when running Snort for the
+first time. The first is that the NIC is not in promiscuous
+mode. That means traffic may be stopped at the NIC and in such a 
+case, Snort will not see the data. To resolve this problem, enable
+promiscuous mode on the interface which Snort is using. 
+
+A second common problem is that NIC's found in PC's and
+Servers have features that cause problems in Snort's Stream6
+reassembly. For instance, when large receive offload (LRO)
+or generic receive offload (GRO) are enabled, the NIC will
+reassembles packets. Those reassembled packets, which can be 
+significantly larger than the standard snaplen of 1518 bytes,
+are then sent to the operating system and Snort. However,
+Snort will truncate packets larger than the default snaplen
+of 1518 bytes.
+
+Before making any changes to production hardware, it is
+strongly recommended that you test the instructions below
+in a lab environment or non-mission critical
+hardware,
+
+Also, this is by no means a full list of parameters that may
+cause issues with Snort. This is simply a guide suggesting places
+to start looking when snort appears to drop or block traffic
+for reasons which cannot be explained by configuration or enabled
+rules in Snort.
+
+
+Linux Based Systems 
+-------------------
+
+In Linux based systems, you can get a listing of the capabilities
+of a given network card by using the following command (eth0 is
+used in this example):
+
+# ethtool -k eth0
+
+which should produce the following output:
+
+Features for eth0:
+rx-checksumming: off <--- (ethtool setting is 'rx')
+tx-checksumming: off <--- (ethtool setting is 'tx')
+        tx-checksum-ipv4: off [fixed]
+        tx-checksum-ip-generic: off
+        tx-checksum-ipv6: off [fixed]
+        tx-checksum-fcoe-crc: off [fixed]
+        tx-checksum-sctp: off [fixed]
+scatter-gather: on
+        tx-scatter-gather: on
+        tx-scatter-gather-fraglist: off [fixed]
+tcp-segmentation-offload: off <--- (ethtool setting is 'tso')
+        tx-tcp-segmentation: off
+        tx-tcp-ecn-segmentation: off [fixed]
+        tx-tcp6-segmentation: off [fixed]
+udp-fragmentation-offload: off [fixed]
+generic-segmentation-offload: off <--- (ethtool setting is 'gso')
+generic-receive-offload: off <--- (ethtool setting is 'gro')
+large-receive-offload: off [fixed] <--- (ethtool setting is 'lro')
+rx-vlan-offload: on
+tx-vlan-offload: on [fixed]
+ntuple-filters: off [fixed]
+receive-hashing: off [fixed]
+highdma: off [fixed]
+rx-vlan-filter: on [fixed]
+vlan-challenged: off [fixed]
+tx-lockless: off [fixed]
+netns-local: off [fixed]
+tx-gso-robust: off [fixed]
+tx-fcoe-segmentation: off [fixed]
+tx-gre-segmentation: off [fixed]
+tx-udp_tnl-segmentation: off [fixed]
+tx-mpls-segmentation: off [fixed]
+fcoe-mtu: off [fixed]
+tx-nocache-copy: on
+loopback: off [fixed]
+rx-fcs: off
+rx-all: off
+tx-vlan-stag-hw-insert: off [fixed]
+rx-vlan-stag-hw-parse: off [fixed]
+rx-vlan-stag-filter: off [fixed]
+
+In addition, if a given parameter has the term [fixed] next to it,
+that means that the parameter may NOT be adjusted by ethtool. Frequently,
+an option is [fixed] because the snort is running is in a virtual 
+environment (i.e. - VMWare, VirtualBox, etc) and the 
+guest operating is unable to change the host operating system's
+options.  Also, to disable these options under Linux, you can use the 'ethtool'
+command with the following parameters:
+
+# ethtool -K eth0 tx off rx off tso off gso off gro off
+
+if you need more help with ethtool options, you may
+use 'info ethtool' or 'man ethtool'. You may also wish to keep these 
+options disabled across system shutdowns or restarts. In OpenSuSE 13.x,
+permanently setting these options can be done as follows (should be 
+done as root user):
+
+# `cd /etc/sysconfig/network'
+# `cat ifcfg-eth0' (which should produce the listing below):
+
+BOOTPROTO='static'
+BROADCAST=''
+ETHTOOL_OPTIONS=''       // <-- <-- <-- <-- <-- (permanent ethtool options)
+IFPLUGD_PRIORITY='0'
+IPADDR='192.168.1.40/24'
+MTU=''
+NAME='82540EM Gigabit Ethernet Controller'
+NETWORK=''
+REMOTE_IPADDR=''
+STARTMODE='auto'
+USERCONTROL='no'
+
+Next, open up the file ifcfg-eth0 with a text editor and edit the
+line beginning with ETHTOOL_OPTION='' to look like the following:
+
+ETHTOOL_OPTIONS='-K eth0 tx off rx off tso off gso off gro off'
+
+Now, the options will be permanently turned off. In Fedora 19, 
+the network scripts are located in '/etc/sysconfig/network-scripts'.
+
+Other Linux distributions may have similar configurations, or
+in the case where you are using a distribution which supports
+'rc.local' you can insert the 'ethtool -K' command into that
+file as well.
+
+
+Unix Based Systems
+------------------
+
+In BSD based systems, the parameters may be changed via the
+'ifconfig' command. For example, in FreeBSD 9.x, 
+to disable transmit checksum offloading, receive checksum 
+offloading, and large receive offloading for device 'em0'
+(ethernet 0) type the following command:
+
+/sbin/ifconfig em0 -txcsum -rxcsum -lro
+
+Enabled options for a given interface appear 
+on the OPTIONS line, as shown below:
+
+# /sbin/ifconfig
+
+em0: flags=28943<UP,BROADCAST,RUNNING,PROMISC,SIMPLEX,MULTICAST,PPROMISC> metric 0 mtu 1500
+        options=98<VLAN_MTU,VLAN_HWTAGGING,VLAN_HWCSUM>
+        ether 08:00:27:8e:a0:85
+        inet 192.168.1.125 netmask 0xffffff00 broadcast 192.168.1.255
+        inet6 fe80::a00:27ff:fe8e:a085%em0 prefixlen 64 scopeid 0x1 
+        nd6 options=29<PERFORMNUD,IFDISABLED,AUTO_LINKLOCAL>
+        media: Ethernet autoselect (1000baseT <full-duplex>)
+        status: active
+em1: flags=28943<UP,BROADCAST,RUNNING,PROMISC,SIMPLEX,MULTICAST,PPROMISC> metric 0 mtu 1500
+        options=98<VLAN_MTU,VLAN_HWTAGGING,VLAN_HWCSUM>
+        ether 08:00:27:4c:36:49
+        inet 192.168.56.125 netmask 0xffffff00 broadcast 192.168.56.255
+        inet6 fe80::a00:27ff:fe4c:3649%em1 prefixlen 64 scopeid 0x3 
+        nd6 options=29<PERFORMNUD,IFDISABLED,AUTO_LINKLOCAL>
+        media: Ethernet autoselect (1000baseT <full-duplex>)
+        status: active
+lo0: flags=8049<UP,LOOPBACK,RUNNING,MULTICAST> metric 0 mtu 16384
+        options=600003<RXCSUM,TXCSUM,RXCSUM_IPV6,TXCSUM_IPV6>
+        inet6 ::1 prefixlen 128 
+        inet6 fe80::1%lo0 prefixlen 64 scopeid 0x4 
+        inet 127.0.0.1 netmask 0xff000000 
+        nd6 options=21<PERFORMNUD,AUTO_LINKLOCAL>
+
+On interfaces 'em0' and 'em1' you will see that the network cards
+are in PROMISC mode, but transmit checksum offloading,
+receive checksum offloading, and large receive offloading
+are not listed, indicating they are disabled.
+
+You can add the parameters to the file /etc/rc.conf so that they
+will be enabled across system restarts network interface restarts. 
+Here is a sample rc.conf file from FreeBSD 9.1:
+
+hostname="barnyard.foobar.com"
+ifconfig_em0=" inet 192.168.1.125 netmask 255.255.255.0"
+ifconfig em0 promisc -rxcsum -txcsum -lro
+ifconfig_em1=" inet 192.168.56.125 netmask 255.255.255.0"
+ifconfig em1 promisc -rxcsum -txcsum -lro
+defaultrouter="192.168.1.1"
+sshd_enable="YES"
+# Set dumpdev to "AUTO" to enable crash dumps, "NO" to disable
+dumpdev="NO"
+
+In the above case, interfaces 'em0' and 'em1' will be set to
+promiscuous mode, and have transmit checksum offload, receive
+checksum offload, and large receive offload disabled.
+
+In OpenBSD based systems, you can use the command:
+
+/sbin/ifconfig <interface> hwfeatures
+
+to get a list of hardware features that your network cards
+and device drivers support.
+
+On NetBSD based systems, available hardware options for
+network cards may be listed with the command below:
+
+# /sbin/ifconfig <interface_name>
+
+For example:
+
+# /sbin/ifconfig wm0
+
+wm0: flags=8b43<UP,BROADCAST,RUNNING,PROMISC,ALLMULTI,SIMPLEX,MULTICAST> mtu 1500
+        capabilities=2bf80<TSO4,IP4CSUM_Rx,IP4CSUM_Tx,TCP4CSUM_Rx,TCP4CSUM_Tx,
+        UDP4CSUM_Rx,UDP4CSUM_Tx,TCP6CSUM_Tx,UDP6CSUM_Tx>
+        enabled=0
+        address: 08:00:27:cf:55:48
+        media: Ethernet autoselect (1000baseT full-duplex)
+        status: active
+        inet 192.168.1.50 netmask 0xffffff00 broadcast 192.168.1.255
+        inet6 fe80::a00:27ff:fecf:5548%wm0 prefixlen 64 scopeid 0x1
+        
+Shows that this interface supports IPv4 checksum offloading (transmit
+and receive), TCPv4 checksum offloading (transmit and receive), UDPv4
+checksum offloading (transmit and receive), and UDPv6/TCPv6 checksum
+offloading (transmit only).
+
+To disable these features, use the line below:
+
+# /sbin/ifconfig wm0 -ip4csum -tcp4csum -udp4csum -tcp6csum-tx -udp6csum-tx
+
+For more help, use 'man ifconfig'.
+ 
+
+Windows Based Systems
+-------------------
+
+Common options found in Windows Based network cards and
+drivers may include (there may be others):
+
+Generic Receive Offload (IPv4 or IPv6)
+Large Send Offload (IPv4 or IPv6)
+Large Receive Offload (IPv4 or IPv6)
+TCP Chimney (IPv4/IPv6)
+TCP/UDP Checksum Offload (IPv4/IPv6)
+
+In Windows based systems these may be displayed in:
+
+>> 'Network Connections' | LAN | Properties | Configure | Advanced:
+
+These parameters may be disabled by going to 
+
+>> 'Control Panel' | 'Network Connections' | 'Local Area Network' | 
+   'Properties' | 'Configure' | Advanced (or some variant of this)
+
+and scrolling down the list in advanced and selecting 'disable' or 'off',
+then clicking Ok.
+
+
+Virtual Environments
+--------------------
+
+In addition to physical computer systems, many organizations
+and home users may choose to run products which allow the use of 
+multiple operating systems on a single (physical) computer by use 
+of Virtualization Software (VMWare, VirtualBox, Xen, etc).
+
+These issues may still be present since the virtual environment
+is mostly dependent upon the physical hardware on which it is running.
+The above issues with LRO and GRO may not be present at the Virtual
+Machine level but rather on the 'host' operating system's physical hardware. 

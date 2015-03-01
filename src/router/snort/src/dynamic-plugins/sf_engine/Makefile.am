@@ -3,11 +3,21 @@ AUTOMAKE_OPTIONS=foreign no-dependencies
 
 INCLUDES = @INCLUDES@
 
-lib_LTLIBRARIES = libsf_engine.la
+dynamicengine_LTLIBRARIES = libsf_engine.la
 
-libdir = ${exec_prefix}/lib/snort_dynamicengine
+dynamicenginedir = $(libdir)/snort_dynamicengine
 
-libsf_engine_la_LDFLAGS = -shared -export-dynamic -module @XCCFLAGS@
+libsf_engine_la_LDFLAGS = -export-dynamic -module @XCCFLAGS@
+
+if BUILD_OPENSSL_MD5
+OPENSSL_MD5 = \
+    md5.c md5.h 
+endif
+
+if BUILD_OPENSSL_SHA
+OPENSSL_SHA = \
+    sha2.c sha2.h
+endif
 
 BUILT_SOURCES = \
 sfhashfcn.c \
@@ -19,8 +29,14 @@ sfprimetable.h \
 ipv6_port.h \
 sf_ip.c \
 sf_ip.h \
-debug.h \
-sf_types.h
+sf_iph.h \
+snort_debug.h \
+sf_types.h \
+sf_protocols.h \
+sf_sechash.h \
+sf_sechash.c \
+$(OPENSSL_MD5) \
+$(OPENSSL_SHA)
 
 nodist_libsf_engine_la_SOURCES = \
 sfhashfcn.c \
@@ -32,13 +48,20 @@ sfprimetable.h \
 ipv6_port.h \
 sf_ip.c \
 sf_ip.h \
-debug.h \
-sf_types.h
+sf_iph.h \
+snort_debug.h \
+sf_types.h \
+sf_protocols.h \
+sf_sechash.h \
+sf_sechash.c \
+$(OPENSSL_MD5) \
+$(OPENSSL_SHA)
 
 libsf_engine_la_SOURCES = \
 bmh.c \
 bmh.h \
 sf_snort_detection_engine.c \
+sf_snort_detection_engine.h \
 sf_snort_packet.h \
 sf_snort_plugin_api.c \
 sf_snort_plugin_api.h \
@@ -47,7 +70,9 @@ sf_snort_plugin_content.c \
 sf_snort_plugin_hdropts.c \
 sf_snort_plugin_loop.c \
 sf_snort_plugin_pcre.c \
-sf_snort_plugin_rc4.c
+sf_snort_plugin_rc4.c \
+sf_decompression.c \
+sf_decompression.h
 
 copy_files = \
 	if test -f $$dst_file; then \
@@ -126,8 +151,11 @@ massage_ipv6_headers = \
 		$(sed_ipv6_headers); \
 	fi
 
-ipv6_port.h: ../../ipv6_port.h 
+ipv6_port.h: ../../ipv6_port.h
 	@src_header=$?; dst_header=$@; $(massage_ipv6_headers)
+
+sf_iph.h: ../../sfutil/sf_iph.h
+	@src_file=$?; dst_file=$@; $(copy_files)
 
 sf_ip.h: ../../sfutil/sf_ip.h
 	@src_file=$?; dst_file=$@; $(copy_files)
@@ -135,7 +163,7 @@ sf_ip.h: ../../sfutil/sf_ip.h
 sf_ip.c: ../../sfutil/sf_ip.c
 	@src_file=$?; dst_file=$@; $(copy_files)
 
-debug.h: ../../debug.h
+snort_debug.h: ../../snort_debug.h
 	@src_file=$?; dst_file=$@; $(copy_debug_header)
 
 sfghash.h: ../../sfutil/sfghash.h
@@ -159,7 +187,28 @@ sfprimetable.c: ../../sfutil/sfprimetable.c
 sf_types.h: ../../sf_types.h
 	@src_file=$?; dst_file=$@; $(copy_files)
 
+sf_protocols.h: ../../sf_protocols.h
+	@src_file=$?; dst_file=$@; $(copy_files)
+
+sf_sechash.h: ../../sfutil/sf_sechash.h
+	@src_file=$?; dst_file=$@; $(copy_files)
+
+sf_sechash.c: ../../sfutil/sf_sechash.c
+	@src_file=$?; dst_file=$@; $(copy_files)
+
+md5.h: ../../sfutil/md5.h
+	@src_file=$?; dst_file=$@; $(copy_files)
+
+md5.c: ../../sfutil/md5.c
+	@src_file=$?; dst_file=$@; $(copy_files)
+
+sha2.h: ../../sfutil/sha2.h
+	@src_file=$?; dst_file=$@; $(copy_files)
+
+sha2.c: ../../sfutil/sha2.c
+	@src_file=$?; dst_file=$@; $(copy_files)
+
 SUBDIRS = examples
 
 clean-local:
-	rm -rf sfhashfcn.c sfhashfcn.c.new sfghash.c sfprimetable.c sf_ip.c sf_ip.h ipv6_port.h debug.h debug.h.new sfprimetable.h sfghash.h ipv6_port.h.new sfhashfcn.h sf_types.h
+	rm -rf sfhashfcn.c sfhashfcn.c.new sfghash.c sfprimetable.c sf_ip.c sf_ip.h sf_iph.h ipv6_port.h snort_debug.h snort_debug.h.new sfprimetable.h sfghash.h ipv6_port.h.new sfhashfcn.h sf_types.h sf_protocols.h sf_sechash.h sf_sechash.c md5.h md5.c sha2.h sha2.c

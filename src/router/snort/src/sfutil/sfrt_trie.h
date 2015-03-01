@@ -1,6 +1,7 @@
 /****************************************************************************
  *
- * Copyright (C) 2006-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2006-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -15,7 +16,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************/
 
@@ -130,7 +131,7 @@ typedef struct { /* compact version of above */
    int len;
    int pre;
    int policy;
-} comp_pre_t; 
+} comp_pre_t;
 
 /* The complete routing table data structure consists of
    a trie, a base vector, a prefix vector, and a next-hop table. */
@@ -145,23 +146,8 @@ struct routtablerec {
    int presize;
    policy_t *policy;     /* the next-hop table */
    int policysize;
-   
+
    int dirty;            /* Whether or not the table needs to be rebuilt */
 };
-
-/* utilities */
-#ifndef boolean
-#ifndef HAVE_BOOLEAN
-typedef unsigned char boolean;
-#endif
-#endif
-
-#ifndef TRUE
-# define TRUE 1
-#endif
-
-#ifndef FALSE
-# define FALSE 0
-#endif
 
 #endif

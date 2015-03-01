@@ -1,7 +1,8 @@
 /* $Id$ */
 
 /*
-** Copyright (C) 2002-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -17,20 +18,20 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 /* Snort Session Logging Plugin */
 
-/* sp_session 
- * 
+/* sp_session
+ *
  * Purpose:
  *
- * Drops data (printable or otherwise) into a SESSION file.  Useful for 
+ * Drops data (printable or otherwise) into a SESSION file.  Useful for
  * logging user sessions (telnet, http, ftp, etc).
  *
  * Arguments:
- *   
+ *
  * This plugin can take two arguments:
  *    printable => only log the "printable" ASCII characters.
  *    all       => log all traffic in the session, logging non-printable
@@ -71,7 +72,7 @@
 #include "decode.h"
 #include "plugbase.h"
 #include "parser.h"
-#include "debug.h"
+#include "snort_debug.h"
 #include "util.h"
 #include "plugin_enum.h"
 #include "snort.h"
@@ -95,7 +96,7 @@ typedef struct _SessionData
     int session_flag;
 } SessionData;
 
-void SessionInit(char *, OptTreeNode *, int);
+void SessionInit(struct _SnortConfig *, char *, OptTreeNode *, int);
 void ParseSession(char *, OptTreeNode *);
 int LogSessionData(void *option_data, Packet *p);
 void DumpSessionData(FILE *, Packet *, SessionData *);
@@ -122,7 +123,7 @@ int SessionCompare(void *l, void *r)
 
     if (!left || !right)
         return DETECTION_OPTION_NOT_EQUAL;
-    
+
     if (left->session_flag == right->session_flag)
     {
         return DETECTION_OPTION_EQUAL;
@@ -133,7 +134,7 @@ int SessionCompare(void *l, void *r)
 
 
 /****************************************************************************
- * 
+ *
  * Function: SetupSession()
  *
  * Purpose: Init the session plugin module.
@@ -155,8 +156,8 @@ void SetupSession(void)
 
 
 /**************************************************************************
- * 
- * Function: SessionInit(char *, OptTreeNode *)
+ *
+ * Function: SessionInit(struct _SnortConfig *, char *, OptTreeNode *)
  *
  * Purpose: Initialize the sesion plugin, parsing the rule parameters and
  *          setting up any necessary data structures.
@@ -167,13 +168,13 @@ void SetupSession(void)
  * Returns: void function
  *
  *************************************************************************/
-void SessionInit(char *data, OptTreeNode *otn, int protocol)
+void SessionInit(struct _SnortConfig *sc, char *data, OptTreeNode *otn, int protocol)
 {
     OptFpList *fpl;
 
     /*
-     * Theoretically we should only all this plugin to be used when there's a 
-     * possibility of a session happening (i.e. TCP), but I get enough 
+     * Theoretically we should only all this plugin to be used when there's a
+     * possibility of a session happening (i.e. TCP), but I get enough
      * requests that I'm going to pull the verifier so that things should work
      * for everyone
      */
@@ -183,7 +184,7 @@ void SessionInit(char *data, OptTreeNode *otn, int protocol)
                 file_name, file_line);
     }*/
 
-    /* multiple declaration check */ 
+    /* multiple declaration check */
     if(otn->ds_list[PLUGIN_SESSION])
     {
         FatalError("%s(%d): Multiple session options in rule\n", file_name,
@@ -198,11 +199,11 @@ void SessionInit(char *data, OptTreeNode *otn, int protocol)
     /* be sure to check that the protocol that is passed in matches the
        transport layer protocol that you're using for this rule! */
 
-    /* this is where the keyword arguments are processed and placed into 
+    /* this is where the keyword arguments are processed and placed into
        the rule option's data structure */
     ParseSession(data, otn);
 
-    /* finally, attach the option's detection function to the rule's 
+    /* finally, attach the option's detection function to the rule's
        detect function pointer list */
     fpl = AddOptFuncToList(LogSessionData, otn);
     fpl->context = otn->ds_list[PLUGIN_SESSION];
@@ -212,7 +213,7 @@ void SessionInit(char *data, OptTreeNode *otn, int protocol)
 
 
 /****************************************************************************
- * 
+ *
  * Function: ParseSession(char *, OptTreeNode *)
  *
  * Purpose: Figure out how much of the session data we're collecting
@@ -257,7 +258,7 @@ void ParseSession(char *data, OptTreeNode *otn)
     FatalError("%s(%d): invalid session modifier: %s\n", file_name, file_line, data);
 
 #if 0
-    if (add_detection_option(RULE_OPTION_TYPE_SESSION, (void *)ds_ptr, &ds_ptr_dup) == DETECTION_OPTION_EQUAL)
+    if (add_detection_option(sc, RULE_OPTION_TYPE_SESSION, (void *)ds_ptr, &ds_ptr_dup) == DETECTION_OPTION_EQUAL)
     {
         free(ds_ptr);
         ds_ptr = otn->ds_list[PLUGIN_SESSION] = ds_ptr_dup;
@@ -268,7 +269,7 @@ void ParseSession(char *data, OptTreeNode *otn)
 
 
 /****************************************************************************
- * 
+ *
  * Function: LogSessionData(char *, OptTreeNode *)
  *
  * Purpose: Dumps the session data to the log file.
@@ -289,8 +290,8 @@ int LogSessionData(void *option_data, Packet *p)
     PREPROC_PROFILE_START(sessionPerfStats);
 
     /* if there's data in this packet */
-    if(p != NULL) 
-    { 
+    if(p != NULL)
+    {
         if((p->dsize != 0 && p->data != NULL) || p->frag_flag != 1)
         {
              session = OpenSessionFile(p);
@@ -368,31 +369,23 @@ FILE *OpenSessionFile(Packet *p)
     char filename[STD_BUF];
     char log_path[STD_BUF];
     char session_file[STD_BUF]; /* name of session file */
-#ifdef SUP_IP6
     sfip_t *dst, *src;
-#endif        
 
     FILE *ret;
 
-    if(p->frag_flag)  
+    if(p->frag_flag)
     {
         return NULL;
     }
 
-    bzero((char *)session_file, STD_BUF);
-    bzero((char *)log_path, STD_BUF);
+    memset((char *)session_file, 0, STD_BUF);
+    memset((char *)log_path, 0, STD_BUF);
 
     /* figure out which way this packet is headed in relation to the homenet */
-#ifdef SUP_IP6
     dst = GET_DST_IP(p);
     src = GET_SRC_IP(p);
     if(sfip_contains(&snort_conf->homenet, dst) == SFIP_CONTAINS) {
         if(sfip_contains(&snort_conf->homenet, src) == SFIP_NOT_CONTAINS)
-#else
-    if((p->iph->ip_dst.s_addr & snort_conf->netmask) == snort_conf->homenet)
-    {
-        if((p->iph->ip_src.s_addr & snort_conf->netmask) != snort_conf->homenet)
-#endif
         {
             SnortSnprintf(log_path, STD_BUF, "%s/%s", snort_conf->log_dir, inet_ntoa(GET_SRC_ADDR(p)));
         }
@@ -410,11 +403,7 @@ FILE *OpenSessionFile(Packet *p)
     }
     else
     {
-#ifdef SUP_IP6
         if(sfip_contains(&snort_conf->homenet, src) == SFIP_CONTAINS)
-#else
-        if((p->iph->ip_src.s_addr & snort_conf->netmask) == snort_conf->homenet)
-#endif
         {
             SnortSnprintf(log_path, STD_BUF, "%s/%s", snort_conf->log_dir, inet_ntoa(GET_DST_ADDR(p)));
         }
@@ -458,7 +447,7 @@ FILE *OpenSessionFile(Packet *p)
 #endif
     }
 
-    
+
     strncpy(filename, session_file, STD_BUF - 1);
     filename[STD_BUF - 1] = '\0';
 

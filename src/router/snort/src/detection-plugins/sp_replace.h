@@ -1,7 +1,8 @@
 /* $Id$ */
 
 /*
-** Copyright (C) 2002-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -17,7 +18,7 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 #ifndef __SP_REPLACE_H__
@@ -25,23 +26,23 @@
 
 #include "sp_pattern_match.h"
 
-void PayloadReplaceInit(char *, OptTreeNode *, int);
+void PayloadReplaceInit(struct _SnortConfig *, char *, OptTreeNode *, int);
 
 extern void Replace_ResetQueue(void);
 extern void Replace_QueueChange(PatternMatchData*);
 extern void Replace_ModifyPacket(Packet*);
 
-static INLINE void Replace_ResetOffset(PatternMatchData* pmd)
+static inline void Replace_ResetOffset(PatternMatchData* pmd)
 {
     pmd->replace_depth = -1;
 }
 
-static INLINE void Replace_StoreOffset(PatternMatchData* pmd, int detect_depth)
+static inline void Replace_StoreOffset(PatternMatchData* pmd, int detect_depth)
 {
     pmd->replace_depth = detect_depth;
 }
 
-static INLINE int Replace_OffsetStored(PatternMatchData* pmd)
+static inline int Replace_OffsetStored(PatternMatchData* pmd)
 {
     return pmd->replace_depth >= 0;
 }

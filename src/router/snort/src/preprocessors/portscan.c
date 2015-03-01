@@ -1,6 +1,7 @@
 /****************************************************************************
  *
- * Copyright (C) 2004-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2004-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -15,10 +16,10 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************/
- 
+
 /*
 **  @file       portscan.c
 **
@@ -50,7 +51,7 @@
 **  and take the form of either an invalid response (TCP RSTs, ICMP
 **  unreachables) or no response (in which case the host is firewalled or
 **  filtered).  We detect portscans from these negative queries.
-**  
+**
 **  The primary goal of this portscan detection engine is to catch nmap and
 **  variant scanners.  The engine tracks connection attempts on TCP, UDP,
 **  ICMP, and IP Protocols.  If there is a valid response, the connection
@@ -95,7 +96,7 @@
 **  Each of these scans can also be detected as a filtered portscan, or a
 **  portscan where there wasn't invalid responses and the responses have
 **  been firewalled in some way.
-** 
+**
 */
 #include <stdlib.h>
 #include <string.h>
@@ -107,19 +108,23 @@
 # include <arpa/inet.h>
 #endif /* !WIN32 */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#include "snort.h"
 #include "decode.h"
 #include "portscan.h"
 #include "packet_time.h"
 #include "sfxhash.h"
 #include "ipobj.h"
+#include "session_common.h"
+#include "session_api.h"
 #include "stream_api.h"
+#include "sfPolicyData.h"
 #include "sfPolicyUserData.h"
 
-#ifdef SUP_IP6
 # define CLEARED &cleared
-#else
-# define CLEARED cleared
-#endif
 
 typedef struct s_PS_HASH_KEY
 {
@@ -140,10 +145,6 @@ typedef struct s_PS_ALERT_CONF
 
 extern tSfPolicyUserContextId portscan_config;
 extern PortscanConfig *portscan_eval_config;
-
-#ifdef SNORT_RELOAD
-extern tSfPolicyUserContextId portscan_swap_config;
-#endif
 
 static SFXHASH *portscan_hash = NULL;
 
@@ -240,7 +241,7 @@ static int ps_tracker_free(void *key, void *data)
     **  Cycle through the protos to see if it's past the time.
     **  We only get here if we ARE a priority node.
     */
-    if(tracker->proto.window >= packet_timeofday())
+    if(tracker->proto.window >= packet_time())
         return 1;
 
     return 0;
@@ -253,15 +254,15 @@ static int ps_tracker_free(void *key, void *data)
 /*
 **  Initialize the portscan infrastructure.  We check to make sure that
 **  we have enough memory to support at least 100 nodes.
-** 
+**
 **  @return int
-**  
+**
 **  @retval -2 memcap is too low
 */
-int ps_init(PortscanConfig *config, int detect_scans, int detect_scan_type,
-            int sense_level, IPSET *scanner, IPSET *scanned, IPSET *watch, int memcap)
+int ps_init(struct _SnortConfig *sc, PortscanConfig *config, int detect_scans, int detect_scan_type,
+            int sense_level, IPSET *scanner, IPSET *scanned, IPSET *watch, unsigned long memcap)
 {
-    if (getParserPolicy() != getDefaultPolicy())
+    if (getParserPolicy(sc) != getDefaultPolicy())
     {
         /**checks valid for non-default policy only. Default is allowed to specify
          * just memcap.
@@ -269,7 +270,7 @@ int ps_init(PortscanConfig *config, int detect_scans, int detect_scan_type,
         if (!(detect_scans & PS_PROTO_ALL))
             return -1;
 
-        if(!(detect_scan_type & PS_TYPE_ALL)) 
+        if(!(detect_scan_type & PS_TYPE_ALL))
             return -1;
 
         if(sense_level < 1 || sense_level > 3)
@@ -312,7 +313,7 @@ void ps_cleanup(void)
     }
 }
 
-void ps_init_hash(int memcap)
+void ps_init_hash(unsigned long memcap)
 {
     int rows = 0;
     int factor = 0;
@@ -323,7 +324,6 @@ void ps_init_hash(int memcap)
 #endif
 
     rows = memcap/factor;
-
 
     portscan_hash = sfxhash_new(rows, sizeof(PS_HASH_KEY), sizeof(PS_TRACKER),
                                 memcap, 1, ps_tracker_free, NULL, 1);
@@ -352,34 +352,19 @@ void ps_reset(void)
 /**
 **  Check scanner and scanned ips to see if we can filter them out.
 */
-#ifdef SUP_IP6
 static int ps_ignore_ip(snort_ip_p scanner, uint16_t scanner_port,
                         snort_ip_p scanned, uint16_t scanned_port)
-#else
-static int ps_ignore_ip(uint32_t scanner, uint16_t scanner_port,
-                        uint32_t scanned, uint16_t scanned_port)
-#endif
 {
     if (portscan_eval_config->ignore_scanners)
     {
-#ifdef SUP_IP6
         if (ipset_contains(portscan_eval_config->ignore_scanners, scanner, &scanner_port))
             return 1;
-#else
-        if(ipset_contains(portscan_eval_config->ignore_scanners, &scanner, &scanner_port, IPV4_FAMILY))
-            return 1;
-#endif
     }
 
     if(portscan_eval_config->ignore_scanned)
     {
-#ifdef SUP_IP6
         if (ipset_contains(portscan_eval_config->ignore_scanned, scanned, &scanned_port))
             return 1;
-#else
-        if(ipset_contains(portscan_eval_config->ignore_scanned, &scanned, &scanned_port, IPV4_FAMILY))
-            return 1;
-#endif
     }
 
     return 0;
@@ -397,11 +382,7 @@ static int ps_filter_ignore(PS_PKT *ps_pkt)
 {
     Packet  *p;
     int      reverse_pkt = 0;
-#ifdef SUP_IP6
     snort_ip_p scanner, scanned;
-#else
-    uint32_t scanner, scanned;
-#endif
 
     p = (Packet *)ps_pkt->pkt;
 
@@ -412,7 +393,7 @@ static int ps_filter_ignore(PS_PKT *ps_pkt)
     {
         if(!(portscan_eval_config->detect_scans & PS_PROTO_TCP))
             return 1;
-   
+
         /*
         **  This is where we check all of snort's flags for different
         **  TCP session scenarios.  The checks cover:
@@ -424,9 +405,9 @@ static int ps_filter_ignore(PS_PKT *ps_pkt)
         */
         /*
         **  Ignore packets that are already part of an established TCP
-        **  stream. 
+        **  stream.
         */
-        if(((p->packet_flags & (PKT_STREAM_EST | PKT_STREAM_TWH)) 
+        if(((p->packet_flags & (PKT_STREAM_EST | PKT_STREAM_TWH))
                 == PKT_STREAM_EST) && !(p->tcph->th_flags & TH_RST))
         {
             return 1;
@@ -475,21 +456,17 @@ static int ps_filter_ignore(PS_PKT *ps_pkt)
     {
         reverse_pkt = 1;
     }
-    else if (p->udph && p->ssnptr &&
-             stream_api && stream_api->version >= STREAM_API_VERSION5)
+    else if (p->udph && ( p->ssnptr != NULL ) &&
+             ( ( SessionControlBlock * ) p->ssnptr )->session_established &&
+             session_api && session_api->version >= SESSION_API_VERSION1)
     {
-        if (stream_api->get_packet_direction(p) & PKT_FROM_SERVER)
+        if (session_api->get_packet_direction(p) & PKT_FROM_SERVER)
             reverse_pkt = 1;
     }
 
-#ifdef SUP_IP6
     scanner = GET_SRC_IP(p);
     scanned = GET_DST_IP(p);
-#else
-    scanner = ntohl(p->iph->ip_src.s_addr);
-    scanned = ntohl(p->iph->ip_dst.s_addr);
-#endif
-    
+
     if(reverse_pkt)
     {
         if(ps_ignore_ip(scanned, p->dp, scanner, p->sp))
@@ -500,22 +477,15 @@ static int ps_filter_ignore(PS_PKT *ps_pkt)
         if(ps_ignore_ip(scanner, p->sp, scanned, p->dp))
             return 1;
     }
-    
+
     ps_pkt->reverse_pkt = reverse_pkt;
 
     if(portscan_eval_config->watch_ip)
     {
-#ifdef SUP_IP6 
         if(ipset_contains(portscan_eval_config->watch_ip, scanner, &(p->sp)))
             return 0;
         if(ipset_contains(portscan_eval_config->watch_ip, scanned, &(p->dp)))
             return 0;
-#else
-        if(ipset_contains(portscan_eval_config->watch_ip, &scanner, &(p->sp), IPV4_FAMILY))
-            return 0;
-        if(ipset_contains(portscan_eval_config->watch_ip, &scanned, &(p->dp), IPV4_FAMILY))
-            return 0;
-#endif
 
         return 1;
     }
@@ -585,17 +555,17 @@ static int ps_tracker_lookup(PS_PKT *ps_pkt, PS_TRACKER **scanner,
         return -1;
 
     ps_pkt->proto = key.protocol;
-    key.policyId = getRuntimePolicy();
+    key.policyId = getNapRuntimePolicy();
 
     /*
     **  Let's lookup the host that is being scanned, taking into account
     **  the pkt may be reversed.
     */
-    if (portscan_eval_config->detect_scan_type & 
+    if (portscan_eval_config->detect_scan_type &
         (PS_TYPE_PORTSCAN | PS_TYPE_DECOYSCAN | PS_TYPE_DISTPORTSCAN))
     {
         IP_CLEAR(key.scanner);
-        
+
         if(ps_pkt->reverse_pkt)
             IP_COPY_VALUE(key.scanned, GET_SRC_IP(p));
         else
@@ -604,8 +574,7 @@ static int ps_tracker_lookup(PS_PKT *ps_pkt, PS_TRACKER **scanner,
         /*
         **  Get the scanned tracker.
         */
-        if(ps_tracker_get(scanned, &key))
-            return -1;
+        ps_tracker_get(scanned, &key);
     }
 
     /*
@@ -614,7 +583,7 @@ static int ps_tracker_lookup(PS_PKT *ps_pkt, PS_TRACKER **scanner,
     if(portscan_eval_config->detect_scan_type & PS_TYPE_PORTSWEEP)
     {
         IP_CLEAR(key.scanned);
-        
+
         if(ps_pkt->reverse_pkt)
             IP_COPY_VALUE(key.scanner, GET_DST_IP(p));
         else
@@ -623,9 +592,11 @@ static int ps_tracker_lookup(PS_PKT *ps_pkt, PS_TRACKER **scanner,
         /*
         **  Get the scanner tracker
         */
-        if(ps_tracker_get(scanner, &key))
-            return -1;
+        ps_tracker_get(scanner, &key);
     }
+
+    if ((*scanner == NULL) && (*scanned == NULL))
+        return -1;
 
     return 0;
 }
@@ -636,7 +607,7 @@ static int ps_tracker_lookup(PS_PKT *ps_pkt, PS_TRACKER **scanner,
 */
 /**
 **  This logic finds the index to the proto array based on the
-**  portscan configuration.  We need special logic because the 
+**  portscan configuration.  We need special logic because the
 **  index of the protocol changes based on the configuration.
 */
 static int ps_get_proto(PS_PKT *ps_pkt, int *proto)
@@ -651,9 +622,11 @@ static int ps_get_proto(PS_PKT *ps_pkt, int *proto)
 
     if (portscan_eval_config->detect_scans & PS_PROTO_TCP)
     {
-        if ((p->tcph != NULL) ||
-            ((p->icmph != NULL) && (p->icmph->type == ICMP_DEST_UNREACH) &&
-             (p->icmph->code == ICMP_PORT_UNREACH) && (p->orig_tcph != NULL)))
+        if ((p->tcph != NULL)
+                || ((p->icmph != NULL) && (p->icmph->type == ICMP_DEST_UNREACH)
+                    && ((p->icmph->code == ICMP_PORT_UNREACH)
+                        || (p->icmph->code == ICMP_PKT_FILTERED))
+                    && (p->orig_tcph != NULL)))
         {
             *proto = PS_PROTO_TCP;
             return 0;
@@ -662,10 +635,12 @@ static int ps_get_proto(PS_PKT *ps_pkt, int *proto)
 
     if (portscan_eval_config->detect_scans & PS_PROTO_UDP)
     {
-        if ((p->udph != NULL) ||
-            ((p->icmph != NULL) && (p->icmph->type == ICMP_DEST_UNREACH) &&
-             (p->icmph->code == ICMP_PORT_UNREACH) && (p->orig_udph != NULL)))
-        { 
+        if ((p->udph != NULL)
+                || ((p->icmph != NULL) && (p->icmph->type == ICMP_DEST_UNREACH)
+                    && ((p->icmph->code == ICMP_PORT_UNREACH)
+                        || (p->icmph->code == ICMP_PKT_FILTERED))
+                    && (p->orig_udph != NULL)))
+        {
             *proto = PS_PROTO_UDP;
             return 0;
         }
@@ -673,9 +648,10 @@ static int ps_get_proto(PS_PKT *ps_pkt, int *proto)
 
     if (portscan_eval_config->detect_scans & PS_PROTO_IP)
     {
-        if ((IPH_IS_VALID(p) && (p->icmph == NULL)) ||
-            ((p->icmph != NULL) && (p->icmph->type == ICMP_DEST_UNREACH) &&
-             (p->icmph->code == ICMP_PROT_UNREACH)))
+        if ((IPH_IS_VALID(p) && (p->icmph == NULL))
+                || ((p->icmph != NULL) && (p->icmph->type == ICMP_DEST_UNREACH)
+                    && ((p->icmph->code == ICMP_PROT_UNREACH)
+                        || (p->icmph->code == ICMP_PKT_FILTERED))))
         {
             *proto = PS_PROTO_IP;
             return 0;
@@ -684,7 +660,7 @@ static int ps_get_proto(PS_PKT *ps_pkt, int *proto)
 
     if (portscan_eval_config->detect_scans & PS_PROTO_ICMP)
     {
-        if (p->icmph != NULL) 
+        if (p->icmph != NULL)
         {
             *proto = PS_PROTO_ICMP;
             return 0;
@@ -803,46 +779,27 @@ static int ps_proto_update(PS_PROTO *proto, int ps_cnt, int pri_cnt, snort_ip_p 
     if(proto->connection_count < 0)
         proto->connection_count = 0;
 
-#ifdef SUP_IP6
     if(!IP_EQUALITY_UNSET(&proto->u_ips, ip))
-#else
-    if(!IP_EQUALITY_UNSET(proto->u_ips, ip))
-#endif
     {
         proto->u_ip_count++;
         IP_COPY_VALUE(proto->u_ips, ip);
     }
 
     /* we need to do the IP comparisons in host order */
-#ifndef SUP_IP6
-    ip = ntohl(ip);
-#endif
 
-#ifdef SUP_IP6
     if(sfip_is_set(&proto->low_ip))
     {
         if(IP_GREATER(&proto->low_ip, ip))
             IP_COPY_VALUE(proto->low_ip, ip);
     }
-#else
-    if(IS_SET(proto->low_ip))
-    {
-        if(IP_GREATER(proto->low_ip, ip))
-            IP_COPY_VALUE(proto->low_ip, ip);
-    }
-#endif
     else
     {
         IP_COPY_VALUE(proto->low_ip, ip);
     }
 
-    if(IS_SET(proto->high_ip))
+    if(IP_IS_SET(proto->high_ip))
     {
-#ifdef SUP_IP6
         if(IP_LESSER(&proto->high_ip, ip))
-#else
-        if(IP_LESSER(proto->high_ip, ip))
-#endif
             IP_COPY_VALUE(proto->high_ip, ip);
     }
     else
@@ -855,7 +812,7 @@ static int ps_proto_update(PS_PROTO *proto, int ps_cnt, int pri_cnt, snort_ip_p 
         proto->u_port_count++;
         proto->u_ports = port;
     }
-    
+
     if(proto->low_p)
     {
         if(proto->low_p > port)
@@ -882,13 +839,13 @@ static int ps_proto_update(PS_PROTO *proto, int ps_cnt, int pri_cnt, snort_ip_p 
 static int ps_update_open_ports(PS_PROTO *proto, unsigned short port)
 {
     int iCtr;
-    
+
     for(iCtr = 0; iCtr < proto->open_ports_cnt; iCtr++)
     {
         if(port == proto->open_ports[iCtr])
             return 0;
     }
-    
+
     if(iCtr < (PS_OPEN_PORTS - 1))
     {
         proto->open_ports[iCtr] = port;
@@ -902,7 +859,7 @@ static int ps_update_open_ports(PS_PROTO *proto, unsigned short port)
 
     return 0;
 }
-    
+
 /*
 **  NAME
 **    ps_tracker_update_tcp::
@@ -912,7 +869,7 @@ static int ps_update_open_ports(PS_PROTO *proto, unsigned short port)
 **  of TCP packet we have.
 **
 **  We are concerned with three types of TCP packets:
-**  
+**
 **    - initiating TCP packets (we don't care about flags)
 **    - TCP 3-way handshake packets (we decrement the counter)
 **    - TCP reset packets on unestablished streams.
@@ -921,13 +878,11 @@ static int ps_tracker_update_tcp(PS_PKT *ps_pkt, PS_TRACKER *scanner,
                                  PS_TRACKER *scanned)
 {
     Packet  *p;
-    time_t  pkt_time;
     uint32_t session_flags;
     snort_ip cleared;
     IP_CLEAR(cleared);
-    
+
     p = (Packet *)ps_pkt->pkt;
-    pkt_time = packet_timeofday();
 
     /*
     **  Handle the initiating packet.
@@ -936,8 +891,8 @@ static int ps_tracker_update_tcp(PS_PKT *ps_pkt, PS_TRACKER *scanner,
     **  we will use the available stream4 information.  Otherwise, we
     **  can just revert to flow and look for initiators and responders.
     **
-    **  For Stream5, depending on the configuration, there might not
-    **  be a session created only based on the SYN packet.  Stream5
+    **  For Stream, depending on the configuration, there might not
+    **  be a session created only based on the SYN packet.  Stream
     **  by default has code that helps deal with SYN flood attacks,
     **  and may simply ignore the SYN.  In this case, we fall through
     **  to the checks for specific TCP header files (SYN, SYN-ACK, RST).
@@ -946,24 +901,25 @@ static int ps_tracker_update_tcp(PS_PKT *ps_pkt, PS_TRACKER *scanner,
     **  picked up midstream, then we don't care about the MIDSTREAM flag.
     **  Otherwise, only consider streams not picked up midstream.
     */
-    if(p->ssnptr && stream_api)
+    if( ( p->ssnptr != NULL ) &&
+        ( ( SessionControlBlock * ) p->ssnptr )->session_established && session_api )
     {
-        session_flags = stream_api->get_session_flags(p->ssnptr);
+        session_flags = session_api->get_session_flags(p->ssnptr);
 
-        if((session_flags & SSNFLAG_SEEN_CLIENT) && 
+        if((session_flags & SSNFLAG_SEEN_CLIENT) &&
            !(session_flags & SSNFLAG_SEEN_SERVER) &&
            (portscan_eval_config->include_midstream || !(session_flags & SSNFLAG_MIDSTREAM)))
         {
             if(scanned)
             {
                 ps_proto_update(&scanned->proto,1,0,
-                                 GET_SRC_IP(p),p->dp, pkt_time);
+                                 GET_SRC_IP(p),p->dp, packet_time());
             }
 
             if(scanner)
             {
                 ps_proto_update(&scanner->proto,1,0,
-                                 GET_DST_IP(p),p->dp, pkt_time);
+                                 GET_DST_IP(p),p->dp, packet_time());
             }
         }
         /*
@@ -1015,7 +971,7 @@ static int ps_tracker_update_tcp(PS_PKT *ps_pkt, PS_TRACKER *scanner,
             {
                 ps_update_open_ports(&scanned->proto, p->sp);
             }
-        
+
             if(scanner)
             {
                 if(scanner->proto.alerts == PS_ALERT_GENERATED)
@@ -1035,13 +991,13 @@ static int ps_tracker_update_tcp(PS_PKT *ps_pkt, PS_TRACKER *scanner,
         if(scanned)
         {
             ps_proto_update(&scanned->proto,1,0,
-                             GET_SRC_IP(p),p->dp, pkt_time);
+                             GET_SRC_IP(p),p->dp, packet_time());
         }
 
         if(scanner)
         {
             ps_proto_update(&scanner->proto,1,0,
-                             GET_DST_IP(p),p->dp, pkt_time);
+                             GET_DST_IP(p),p->dp, packet_time());
         }
     }
     /*
@@ -1082,7 +1038,7 @@ static int ps_tracker_update_tcp(PS_PKT *ps_pkt, PS_TRACKER *scanner,
     /*
     **  If we are an icmp unreachable, deal with it here.
     */
-    else if(p->icmph && p->orig_tcph)
+    else if(p->icmph)
     {
         if(scanned)
         {
@@ -1103,31 +1059,25 @@ static int ps_tracker_update_ip(PS_PKT *ps_pkt, PS_TRACKER *scanner,
                                 PS_TRACKER *scanned)
 {
     Packet *p;
-    time_t  pkt_time;
     snort_ip cleared;
     IP_CLEAR(cleared);
-    
+
     p = (Packet *)ps_pkt->pkt;
-    pkt_time = packet_timeofday();
 
     if(p->iph)
     {
         if(p->icmph)
         {
-            if(p->icmph->type == ICMP_DEST_UNREACH &&
-               p->icmph->code == ICMP_PROT_UNREACH)
+            if(scanned)
             {
-                if(scanned)
-                {
-                    ps_proto_update(&scanned->proto,0,1,CLEARED,0,0);
-                    scanned->priority_node = 1;
-                }
+                ps_proto_update(&scanned->proto,0,1,CLEARED,0,0);
+                scanned->priority_node = 1;
+            }
 
-                if(scanner)
-                {
-                    ps_proto_update(&scanner->proto,0,1,CLEARED,0,0);
-                    scanner->priority_node = 1;
-                }
+            if(scanner)
+            {
+                ps_proto_update(&scanner->proto,0,1,CLEARED,0,0);
+                scanner->priority_node = 1;
             }
 
             return 0;
@@ -1141,51 +1091,44 @@ static int ps_tracker_update_udp(PS_PKT *ps_pkt, PS_TRACKER *scanner,
                                  PS_TRACKER *scanned)
 {
     Packet  *p;
-    time_t  pkt_time;
     snort_ip    cleared;
     IP_CLEAR(cleared);
-    
+
     p = (Packet *)ps_pkt->pkt;
-    pkt_time = packet_timeofday();
 
     if(p->icmph)
-    { 
-        if(p->icmph->type == ICMP_DEST_UNREACH &&
-           p->icmph->code == ICMP_PORT_UNREACH)
+    {
+        if(scanned)
         {
-            if(scanned)
-            {
-                ps_proto_update(&scanned->proto,0,1,CLEARED,0,0);
-                scanned->priority_node = 1;
-            }
+            ps_proto_update(&scanned->proto,0,1,CLEARED,0,0);
+            scanned->priority_node = 1;
+        }
 
-            if(scanner)
-            {
-                ps_proto_update(&scanner->proto,0,1,CLEARED,0,0);
-                scanner->priority_node = 1;
-            }
+        if(scanner)
+        {
+            ps_proto_update(&scanner->proto,0,1,CLEARED,0,0);
+            scanner->priority_node = 1;
         }
     }
     else if(p->udph)
     {
-        if (stream_api && (stream_api->version >= STREAM_API_VERSION5) &&
-            p->ssnptr)
+        if (session_api && (session_api->version >= SESSION_API_VERSION1) &&
+            ( p->ssnptr != NULL ) && ( ( SessionControlBlock * ) p->ssnptr )->session_established)
         {
-            uint32_t direction = stream_api->get_packet_direction(p);
+            uint32_t direction = session_api->get_packet_direction(p);
 
-#ifdef SUP_IP6
             if (direction == PKT_FROM_CLIENT)
             {
                 if(scanned)
                 {
                     ps_proto_update(&scanned->proto,1,0,
-                                     GET_SRC_IP(p),p->dp, pkt_time);
+                                     GET_SRC_IP(p),p->dp, packet_time());
                 }
 
                 if(scanner)
                 {
                     ps_proto_update(&scanner->proto,1,0,
-                                     GET_DST_IP(p),p->dp, pkt_time);
+                                     GET_DST_IP(p),p->dp, packet_time());
                 }
             }
             else if (direction == PKT_FROM_SERVER)
@@ -1196,30 +1139,6 @@ static int ps_tracker_update_udp(PS_PKT *ps_pkt, PS_TRACKER *scanner,
                 if(scanner)
                     ps_proto_update(&scanner->proto,-1,0,CLEARED,0,0);
             }
-#else
-            if (direction == PKT_FROM_CLIENT)
-            {
-                if(scanned)
-                {
-                    ps_proto_update(&scanned->proto,1,0,
-                                     p->iph->ip_src.s_addr,p->dp, pkt_time);
-                }
-
-                if(scanner)
-                {
-                    ps_proto_update(&scanner->proto,1,0,
-                                     p->iph->ip_dst.s_addr,p->dp, pkt_time);
-                }
-            }
-            else if (direction == PKT_FROM_SERVER)
-            {
-                if(scanned)
-                    ps_proto_update(&scanned->proto,-1,0,0,0,0);
-
-                if(scanner)
-                    ps_proto_update(&scanner->proto,-1,0,0,0,0);
-            }
-#endif
         }
     }
 
@@ -1230,12 +1149,10 @@ static int ps_tracker_update_icmp(PS_PKT *ps_pkt, PS_TRACKER *scanner,
                                   PS_TRACKER *scanned)
 {
     Packet  *p;
-    time_t  pkt_time;
     snort_ip cleared;
     IP_CLEAR(cleared);
-    
+
     p = (Packet *)ps_pkt->pkt;
-    pkt_time = packet_timeofday();
 
     if(p->icmph)
     {
@@ -1249,9 +1166,9 @@ static int ps_tracker_update_icmp(PS_PKT *ps_pkt, PS_TRACKER *scanner,
                 if(scanner)
                 {
                     ps_proto_update(&scanner->proto,1,0,
-                                     GET_DST_IP(p), 0, pkt_time);
+                                     GET_DST_IP(p), 0, packet_time());
                 }
-                
+
                 break;
 
             case ICMP_DEST_UNREACH:
@@ -1288,16 +1205,12 @@ static int ps_tracker_update_icmp(PS_PKT *ps_pkt, PS_TRACKER *scanner,
 static int ps_tracker_update(PS_PKT *ps_pkt, PS_TRACKER *scanner,
                              PS_TRACKER *scanned)
 {
-    Packet *p;
-
-    p = (Packet *)ps_pkt->pkt;
-
     if(scanner && scanner->proto.alerts)
         scanner->proto.alerts = PS_ALERT_GENERATED;
 
     if(scanned && scanned->proto.alerts)
         scanned->proto.alerts = PS_ALERT_GENERATED;
-    
+
     switch (ps_pkt->proto)
     {
         case PS_PROTO_TCP:
@@ -1451,7 +1364,7 @@ static int ps_alert_many_to_one(PS_PROTO *scanner, PS_PROTO *scanned,
             }
         }
     }
-            
+
     return 0;
 }
 
@@ -1460,7 +1373,7 @@ static int ps_alert_one_to_many(PS_PROTO *scanner, PS_PROTO *scanned,
 {
     if(!conf)
         return -1;
-     
+
     if(scanner && !scanner->alerts)
     {
         if(scanner->priority_count >= conf->priority_count)
@@ -1485,7 +1398,7 @@ static int ps_alert_one_to_many(PS_PROTO *scanner, PS_PROTO *scanned,
             }
         }
     }
-            
+
     return 0;
 }
 
@@ -1544,8 +1457,8 @@ static int ps_alert_tcp(PS_PROTO *scanner, PS_PROTO *scanned)
     {
         return 0;
     }
-    
-    if((portscan_eval_config->detect_scan_type & PS_TYPE_PORTSWEEP) && 
+
+    if((portscan_eval_config->detect_scan_type & PS_TYPE_PORTSWEEP) &&
         ps_alert_one_to_many(scanner, scanned, one_to_many))
     {
         return 0;
@@ -1556,7 +1469,7 @@ static int ps_alert_tcp(PS_PROTO *scanner, PS_PROTO *scanned)
     {
         return 0;
     }
-    
+
     return 0;
 }
 
@@ -1615,8 +1528,8 @@ static int ps_alert_ip(PS_PROTO *scanner, PS_PROTO *scanned)
     {
         return 0;
     }
-    
-    if((portscan_eval_config->detect_scan_type & PS_TYPE_PORTSWEEP) && 
+
+    if((portscan_eval_config->detect_scan_type & PS_TYPE_PORTSWEEP) &&
         ps_alert_one_to_many(scanner, scanned, one_to_many))
     {
         return 0;
@@ -1627,7 +1540,7 @@ static int ps_alert_ip(PS_PROTO *scanner, PS_PROTO *scanned)
     {
         return 0;
     }
-    
+
     return 0;
 }
 
@@ -1686,8 +1599,8 @@ static int ps_alert_udp(PS_PROTO *scanner, PS_PROTO *scanned)
     {
         return 0;
     }
-    
-    if((portscan_eval_config->detect_scan_type & PS_TYPE_PORTSWEEP) && 
+
+    if((portscan_eval_config->detect_scan_type & PS_TYPE_PORTSWEEP) &&
         ps_alert_one_to_many(scanner, scanned, one_to_many))
     {
         return 0;
@@ -1698,7 +1611,7 @@ static int ps_alert_udp(PS_PROTO *scanner, PS_PROTO *scanned)
     {
         return 0;
     }
-    
+
     return 0;
 }
 
@@ -1714,7 +1627,7 @@ static int ps_alert_icmp(PS_PROTO *scanner, PS_PROTO *scanned)
     {
         case PS_SENSE_HIGH:
             one_to_many = &g_icmp_hi_sweep;
-     
+
             break;
 
         case PS_SENSE_MEDIUM:
@@ -1734,12 +1647,12 @@ static int ps_alert_icmp(PS_PROTO *scanner, PS_PROTO *scanned)
     /*
     **  Do detection on the different portscan types.
     */
-    if((portscan_eval_config->detect_scan_type & PS_TYPE_PORTSWEEP) && 
+    if((portscan_eval_config->detect_scan_type & PS_TYPE_PORTSWEEP) &&
         ps_alert_one_to_many(scanner, scanned, one_to_many))
     {
         return 0;
     }
-    
+
     return 0;
 }
 /*
@@ -1820,7 +1733,7 @@ int ps_detect(PS_PKT *ps_pkt)
     PS_TRACKER *scanner = NULL;
     PS_TRACKER *scanned = NULL;
     int check_tcp_rst_other_dir = 1;
-    Packet     *p;
+    Packet *p;
 
     if(!ps_pkt || !ps_pkt->pkt)
         return -1;
@@ -1841,11 +1754,11 @@ int ps_detect(PS_PKT *ps_pkt)
         if(ps_tracker_alert(ps_pkt, scanner, scanned))
             return 0;
 
-        /* This is added to address the case of no Stream5
+        /* This is added to address the case of no Stream
          * session and a RST packet going back from the Server. */
         if (p->tcph && (p->tcph->th_flags & TH_RST)
-            && !p->ssnptr &&
-            stream_api && (stream_api->version >= STREAM_API_VERSION5))
+            && ( p->ssnptr != NULL ) && !( ( SessionControlBlock * ) p->ssnptr )->session_established
+            && stream_api )
         {
             if (ps_pkt->reverse_pkt == 1)
             {
@@ -1865,7 +1778,7 @@ int ps_detect(PS_PKT *ps_pkt)
     //printf("** alert\n");
     ps_pkt->scanner = scanner;
     ps_pkt->scanned = scanned;
-    
+
     return 1;
 }
 
@@ -1873,43 +1786,7 @@ int ps_detect(PS_PKT *ps_pkt)
 /* Not currently used */
 static void ps_proto_print(PS_PROTO *proto)
 {
-#ifdef SUP_IP6
 // XXX-IPv6 debugging
-#else
-    int            iCtr;
-    struct in_addr ip;
-
-    if(!proto)
-        return;
-
-    printf("    priority count    = %d\n", proto->priority_count);
-    printf("    connection count  = %d\n", proto->connection_count);
-    printf("    unique IP count   = %d\n", proto->u_ip_count);
-    
-    ip.s_addr = proto->low_ip;
-    printf("    IP range          = %s:", inet_ntoa(ip));
-    ip.s_addr = proto->high_ip;
-    printf("%s\n", inet_ntoa(ip));
-            
-    printf("    unique port count = %d\n", proto->u_port_count);
-    printf("    port range        = %d:%d\n", proto->low_p, proto->high_p);
-
-    printf("    open ports        = ");
-
-    for(iCtr = 0; iCtr < proto->open_ports_cnt; iCtr++)
-    {
-        printf("%d ", proto->open_ports[iCtr]);
-    }
-    printf("\n");
-
-    printf("    alerts            = %.2x\n", proto->alerts);
-
-    ip.s_addr = proto->u_ips;
-    printf("    Last IP:   %s\n", inet_ntoa(ip));
-    printf("    Last Port: %d\n", proto->u_ports);
-
-    printf("    Time:      %s\n", ctime(&proto->window));
-#endif
 
     return;
 }
@@ -1956,7 +1833,7 @@ void ps_tracker_print(PS_TRACKER* ps_tracker)
 }
 #endif
 
-int ps_get_protocols(tSfPolicyId policyId)
+int ps_get_protocols(struct _SnortConfig *sc, tSfPolicyId policyId)
 {
     tSfPolicyUserContextId config = portscan_config;
     PortscanConfig *pPolicyConfig = NULL;
@@ -1964,6 +1841,8 @@ int ps_get_protocols(tSfPolicyId policyId)
 #ifdef SNORT_RELOAD
     /* This is called during configuration time so use the swap
      * config if it exists */
+    tSfPolicyUserContextId portscan_swap_config;
+    portscan_swap_config = (tSfPolicyUserContextId)GetRelatedReloadData(sc, "sfportscan");
     if (portscan_swap_config != NULL)
         config = portscan_swap_config;
 #endif

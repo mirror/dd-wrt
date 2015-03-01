@@ -13,7 +13,7 @@ as TLS data.
 
 SMTP handles stateless and stateful processing.  It saves state
 between individual packets.  However maintaining correct state is
-dependent on the reassembly of the client side of the stream (ie, a
+dependent on the reassembly of the client side of the stream (i.e., a
 loss of coherent stream data results in a loss of state).
 
 -- Configuration --
@@ -85,6 +85,22 @@ DEFAULT empty list, but preprocessor has this list hard-coded:
 { STARTTLS TICK TIME TURN TURNME VERB VRFY X-EXPS X-LINK2STATE }
 { XADR XAUTH XCIR XEXCH50 XGEN XLICENSE XQUE XSTA XTRN XUSR  }
 
+* data_cmds { <Space-delimited list of commands> } *
+List of commands that initiate sending of data with an end of data delimiter
+the same as that of the DATA command per RFC 5321 - "<CRLF>.<CRLF>".
+DEFAULT { DATA }
+
+* binary_data_cmds { <Space-delimited list of commands> } *
+List of commands that initiate sending of data and use a length value after
+the command to indicate the amount of data to be sent, similar to that of the
+BDAT command per RFC 3030.
+DEFAULT { BDAT XEXCH50 }
+
+* auth_cmds { <Space-delimited list of commands> } *
+List of commands that initiate an authentication exchange between client
+and server.
+DEFAULT { AUTH XAUTH X-EXPS }
+
 * alert_unknown_cmds *
 Alert if we don't recognize command.
 DEFAULT off
@@ -104,9 +120,86 @@ List all commands understood by the preprocessor.  This not normally
 printed out with the configuration because it prints so much data.
 
 * disabled *
-Disables the SMTP preprocessor in a policy. This is useful when specifying
-the max_mime_depth and max_mime_mem in default policy without turning on 
-the SMTP preprocessor.
+Disables the SMTP preprocessor in a config. This is useful when specifying
+the decoding depths such as b64_decode_depth, qp_decode_depth, uu_decode_depth, 
+bitenc_decode_depth or the memcap used for decoding max_mime_mem in default config 
+without turning on the SMTP preprocessor.
+
+* b64_decode_depth *
+This config option is used to turn off/on or set the base64 decoding depth used to 
+decode the base64 encoded MIME attachments. The value ranges from -1 to 65535. 
+A value of -1 turns off the base64 decoding of MIME attachments. The value of 0 
+sets the decoding of base64 encoded MIME attachments to unlimited. A value other 
+than 0 or -1 restricts the decoding of base64 MIME attachments, and applies per attachment. 
+A SMTP preprocessor alert with sid 10 is generated (if enabled) when the decoding fails. 
+
+Multiple MIME attachments/data in one packet are pipelined. When stateful inspection 
+is turned on the base64 encoded MIME attachments/data across multiple packets are 
+decoded too.
+
+The decoded data is available for detection using the rule option file_data. 
+See file_data rule option for more details.
+
+This option replaces the deprecated options, enable_mime_decoding and max_mime_depth. 
+It is recommended that user inputs a value that is a multiple of 4. When the value 
+specified is not a multiple of 4, the SMTP preprocessor will round it up to the next 
+multiple of 4.
+
+In case of multiple configs, the value specified in the non-default config cannot 
+exceed the value specified in the default config.
+
+* qp_decode_depth *
+This config option is used to turn off/on or set the Quoted-Printable decoding depth 
+used to decode the Quoted-Printable(QP) encoded MIME attachments. The value ranges 
+from -1 to 65535. A value of -1 turns off the QP decoding of MIME attachments. 
+The value of 0 sets the decoding of QP encoded MIME attachments to unlimited. A 
+value other than 0 or -1 restricts the decoding of QP MIME attachments, and applies 
+per attachment. A SMTP preprocessor alert with sid 11 is generated (if enabled) when 
+the decoding fails.
+
+Multiple MIME attachments/data in one packet are pipelined. When stateful inspection 
+is turned on the QP encoded MIME attachments/data across multiple packets are decoded too.
+
+The decoded data is available for detection using the rule option file_data. 
+See file_data rule option for more details.
+
+In case of multiple configs, the value specified in the non-default config cannot exceed 
+the value specified in the default config.
+
+* bitenc_decode_depth *
+This config option is used to turn off/on or set the non-encoded MIME extraction 
+depth used to extract the non-encoded MIME attachments. The value ranges from -1 
+to 65535. A value of -1 turns off the extraction of these MIME attachments. 
+The value of 0 sets the extraction of these MIME attachments to unlimited. 
+A value other than 0 or -1 restricts the extraction of these MIME attachments, and applies 
+per attachment.
+
+Multiple MIME attachments/data in one packet are pipelined. When stateful inspection 
+is turned on the non-encoded MIME attachments/data across multiple packets are 
+extracted too.
+
+The extracted data is available for detection using the rule option file_data. 
+See file_data rule option for more details.
+
+In case of multiple configs, the value specified in the non-default config cannot exceed 
+the value specified in the default config.
+
+* uu_decode_depth *
+This config option is used to turn off/on or set the Unix-to-Unix decoding depth 
+used to decode the Unix-to-Unix(UU) encoded attachments. The value ranges 
+from -1 to 65535. A value of -1 turns off the UU decoding of SMTP attachments. 
+The value of 0 sets the decoding of UU encoded SMTP attachments to unlimited. A 
+value other than 0 or -1 restricts the decoding of UU SMTP attachments, and applies per 
+attachment. A SMTP preprocessor alert with sid 13 is generated (if enabled) when the decoding fails.
+
+Multiple UU Encoded attachments/data in one packet are pipelined. When stateful inspection 
+is turned on the UU encoded attachments/data across multiple packets are decoded too.
+
+The decoded data is available for detection using the rule option file_data. 
+See file_data rule option for more details.
+
+In case of multiple configs, the value specified in the non-default config cannot exceed 
+the value specified in the default config.
 
 * enable_mime_decoding *
 Enables Base64 decoding of Mime attachments/data. Multiple base64 encoded MIME 
@@ -115,30 +208,103 @@ on the base64 encoded MIME attachments/data across multiple packets are decoded 
 The decoding of base64 encoded attachments/data ends when either the max_mime_depth
 or maximum MIME sessions (calculated using max_mime_depth and max_mime_mem) is 
 reached or when the encoded data ends. The decoded data is available for detection
-using the rule option file_data:mime. See file_data rule option for more details.
+using the rule option file_data. See file_data rule option for more details.
+
+Please note, this option is deprecated. Use the option b64_decode_depth to turn off 
+or on the base64 decoding instead.
 
 * max_mime_depth <int> *
-Specifies the maximum number of base64 encoded data to decode per SMTP session.
-The option take values ranging from 5 to 20480 bytes. The default value for this
+Specifies the maximum number of base64 encoded data to decode per attachment.
+The option take values ranging from 4 to 20480 bytes. The default value for this
 in snort in 1460 bytes.
+
+It is recommended that user inputs a value that is a multiple of 4. When the value
+specified is not a multiple of 4, the SMTP preprocessor will round it up to the next
+multiple of 4.
+
+Please note, this option is deprecated. Use the b64_decode_depth to set the decoding 
+depth for base64 decoding instead.
 
 * max_mime_mem <int> *
 This option determines (in bytes) the maximum amount of memory the SMTP preprocessor
-will use for decoding base64 encode MIME attachments/data. This value can be set from 
-3276 bytes to 100MB. This option along with max_mime_depth determines the base64 encoded
-MIME/SMTP sessions that will be decoded at any given instant. The default value for 
-this option is 838860.
+will use for decoding base64 encoded/quoted-printable/non-encoded MIME attachments/data 
+or Unix-to-Unix encoded attachments. This value can be set from 3276 bytes to 100MB. 
 
-Note: It is suggested to set this value such that the max mime session calculated as
-follows is atleast 1.
+This option along with the maximum of the decoding depths will determine the SMTP 
+sessions that will be decoded at any given instant. The default value for this option 
+is 838860.
 
-max mime session = max_mime_mem /(max_mime_depth + max decoded bytes)
+Note: It is suggested to set this value such that the max smtp session calculated as
+follows is at least 1.
 
-max decoded bytes = (max_mime_depth/4)*3
+max smtp session = max_mime_mem /(2 * max of (b64_decode_depth, uu_decode_depth, qp_decode_depth 
+					or bitenc_decode_depth))
 
-Also note that these values for max_mime_mem and max_mime_depth need to be same across
-all policy. Hence user needs to define it in the default policy with the new keyword
-disabled (used to disable SMTP preprocessor in a policy)
+For example, if b64_decode_depth is 0 (indicates unlimited decoding) and qp_decode_depth is 100, then
+
+max smtp session = max_mime_mem/2*65535 (max value for b64_decode_depth)
+
+In case of multiple configs, the max_mime_mem of the non-default configs will be overwritten by the
+default config's value. Hence user needs to define it in the default config with the new keyword
+disabled (used to disable SMTP preprocessor in a config).
+
+* log_mailfrom *
+This option enables SMTP preprocessor to parse and log the sender's email address extracted 
+from the "MAIL FROM" command along with all the generated events for that session. The maximum 
+number of bytes logged for this option is 1024.
+
+Please note, this is logged only with the unified2 output and is not logged with console output (-A cmg).
+u2spewfoo can be used to read this data from the unified2.
+
+* log_rcptto *
+This option enables SMTP preprocessor to parse and log the recipient email addresses 
+extracted from the "RCPT TO" command along with all the generated events for that session. 
+Multiple recipients are appended with commas. The maximum number of bytes logged for this option is 1024.
+
+Please note, this is loggged only with the unified2 output and is not logged with console output (-A cmg).
+U2spewfoo can be used to read this data from the unified2.
+
+* log_filename *
+This option enables SMTP preprocessor to parse and log the MIME attachment filenames extracted 
+from the Content-Disposition header within the MIME body along with all the generated events 
+for that session. Multiple filenames are appended with commas. The maximum number of bytes 
+logged for this option is 1024.
+
+Please note,this is logged only with the unified2 output and is not logged with the
+console output (-A cmg). u2spewfoo can be used to read this data from the unified2.
+
+* log_email_hdrs *
+This option enables SMTP preprocessor to parse and log the SMTP email headers extracted from 
+SMTP data along with all generated events for that session. The number of bytes extracted and 
+logged depends upon the email_hdrs_log_depth.
+
+Please note, this is logged only with the unified2 output and is not logged with the console output (-A cmg).
+u2spewfoo can be used to read this data from the unified2.
+
+* email_hdrs_log_depth <int> *
+This option specifies the depth for logging email headers. The allowed range for this option is 
+0 - 20480. A value of 0 will disable email headers logging. The default value for this option is 1464. 
+
+Please note, in case of multiple configs, this default config's value is used. The values specified in
+ the non-default config will be ignored and overwritten by the default config's values.
+This option must be configured in the default config even if the SMTP configuration is disabled.
+
+* memcap <int>*
+This option determines in bytes the maximum amount of memory the SMTP preprocessor will
+use for logging of filename, MAIL FROM addresses, RCPT TO addresses and email headers. This value 
+along with the buffer size used to log MAIL FROM, RCPT TO, filenames and email_hdrs_log_depth will 
+determine the maximum SMTP sessions that will log the email headers at any given time. When this memcap is 
+reached SMTP will stop logging the filename, MAIL FROM address, RCPT TO addresses and email headers 
+until memory becomes available.
+
+Max SMTP sessions logging email headers at any given time 
+		= memcap/(1024 + 1024 + 1024 + email_hdrs_log_depth)
+
+The size 1024 is the maximum buffer size used for logging filename, RCPTTO and MAIL FROM addresses.
+
+Default value for this option is 838860. The allowed range for this option is 3276 to 104857600.
+The value specified in the default config is used when this option is specified in multiple configs.
+This option must be configured in the default config even if the SMTP configuration is disabled.
 
 
 Example:
@@ -157,11 +323,21 @@ preprocessor SMTP: \
   invalid_cmds { } \
   valid_cmds { } \
   xlink2state { disable } \
-  print_cmds
+  print_cmds \
+  log_filename \
+  log_email_hdrs \
+  log_mailfrom \
+  log_rcptto \
+  email_hdrs_log_depth 2920 \
+  memcap 6000
+
+ 
 
 preprocessor SMTP: \
   max_mime_depth 100 \
-  max_mime_mem 1000 \
+  max_mime_mem 4000 \
+  memcap 6000 \
+  email_hdrs_log_depth 2920 \
   disabled
 
 Default:

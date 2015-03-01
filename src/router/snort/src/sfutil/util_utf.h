@@ -1,6 +1,7 @@
 /****************************************************************************
  *
- * Copyright (C) 2010-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -15,7 +16,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************/
 
@@ -34,6 +35,7 @@
 #define CHARSET_UTF16BE 3
 #define CHARSET_UTF32LE 4
 #define CHARSET_UTF32BE 5
+#define CHARSET_UNKNOWN 255
 
 /* Since payloads don't have to end on 2/4-byte boundaries, callers to
    DecodeUTF are responsible for keeping a decode_utf_state_t. This carries

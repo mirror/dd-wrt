@@ -7,11 +7,11 @@ noinst_libdir = ${exec_prefix}/lib/snort_dynamicrules
 
 noinst_lib_LTLIBRARIES = lib_sfdynamic_example_rule.la
 
-lib_sfdynamic_example_rule_la_LDFLAGS = -export-dynamic
+lib_sfdynamic_example_rule_la_LDFLAGS = -export-dynamic @XCCFLAGS@
 
 BUILT_SOURCES = \
 sfsnort_dynamic_detection_lib.c \
-sfsnort_dynamic_detection_lib.h 
+sfsnort_dynamic_detection_lib.h
 
 nodist_lib_sfdynamic_example_rule_la_SOURCES = \
 sfsnort_dynamic_detection_lib.c \

@@ -5,11 +5,12 @@
  * @author  Martin Roesch <roesch@sourcefire.com>
  * @date    Thu Sep 30 14:12:37 EDT 2004
  *
- * @brief   Frag3: IP defragmentation preprocessor for Snort. 
+ * @brief   Frag3: IP defragmentation preprocessor for Snort.
  */
 
 /*
- ** Copyright (C) 2004-2011 Sourcefire, Inc.
+ ** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2004-2013 Sourcefire, Inc.
  **
  ** This program is free software; you can redistribute it and/or modify
  ** it under the terms of the GNU General Public License Version 2 as
@@ -24,11 +25,11 @@
  **
  ** You should have received a copy of the GNU General Public License
  ** along with this program; if not, write to the Free Software
- ** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
 /*
- * Notes: 
+ * Notes:
  * Frag3 sports the following improvements over frag2:
  *  - Target-based IP defragmentation, harder to evade
  *  - 8 Anomaly detection event types
@@ -36,29 +37,29 @@
  *    performance for specific environments
  *  - Up to 250% faster than frag2.
  *
- *  The mechanism for processing frags is based on the Linux IP stack 
+ *  The mechanism for processing frags is based on the Linux IP stack
  *  implementation of IP defragmentation with proper amounts of paranoia
- *  and an IDS perspective applied.  Some of this code was derived from 
+ *  and an IDS perspective applied.  Some of this code was derived from
  *  frag2 originally, but it's basically unrecognizeable if you compare
  *  it to frag2 IMO.
  *
- *  I switched from using the UBI libs to using sfxhash and linked lists for 
- *  fragment management because I suspected that the management code was 
- *  the cause of performance issues that we were observing at Sourcefire 
+ *  I switched from using the UBI libs to using sfxhash and linked lists for
+ *  fragment management because I suspected that the management code was
+ *  the cause of performance issues that we were observing at Sourcefire
  *  in certain customer situations.  Splay trees are cool and really hard
- *  to screw with from an attack perspective, but they also incur a lot 
- *  of overhead for managing the tree and lose the order of the fragments in 
+ *  to screw with from an attack perspective, but they also incur a lot
+ *  of overhead for managing the tree and lose the order of the fragments in
  *  the FragTracker's fraglist, so I dropped them.  Originally the
  *  frag3 code was just supposed to migrate away from the splay tree system
  *  that I was using in frag2, but I figured since I was doing the work to
  *  pull out the splay trees I may as well solve some of the other problems
- *  we were seeing.  
+ *  we were seeing.
  *
  *  Initial performance testing that I've done shows that frag3 can be as much
- *  as 250% faster than frag2, but we still need to do more testing and 
+ *  as 250% faster than frag2, but we still need to do more testing and
  *  optimization, we may be able to squeeze out some more performance.
  *
- *  Frag3 is also capable of performing "Target-based" IP defragmentation.  
+ *  Frag3 is also capable of performing "Target-based" IP defragmentation.
  *  What this means practically is that frag3 can model the IP stack of a
  *  target on the network to avoid Ptacek-Newsham evasions of the IDS through
  *  sensor/target desynchronization.  In terms of implentation, this is
@@ -79,6 +80,7 @@
 #include "config.h"
 #endif
 
+#include <assert.h>
 #include <sys/types.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -86,7 +88,7 @@
 #include <errno.h>
 
 #include "spp_frag3.h"
-#include "bounds.h"
+#include "snort_bounds.h"
 #include "generators.h"
 #include "log.h"
 #include "detect.h"
@@ -94,7 +96,7 @@
 #include "encode.h"
 #include "event.h"
 #include "util.h"
-#include "debug.h"
+#include "snort_debug.h"
 #include "plugbase.h"
 #include "parser.h"
 #include "mstring.h"
@@ -111,6 +113,8 @@
 #include "profiler.h"
 
 #include "active.h"
+#include "session_api.h"
+#include "spp_normalize.h"
 
 #ifdef TARGET_BASED
 #include "sftarget_hostentry.h"
@@ -121,6 +125,7 @@
 extern OptTreeNode *otn_tmp;
 
 /*  D E F I N E S  **************************************************/
+#define PP_FRAG3_PRIORITY PRIORITY_CORE + PP_CORE_ORDER_FRAG3
 
 /* flags for the FragTracker->frag_flags field */
 #define FRAG_GOT_FIRST      0x00000001
@@ -130,7 +135,7 @@ extern OptTreeNode *otn_tmp;
 #define FRAG_NO_BSD_VULN    0x00000010
 #define FRAG_DROP_FRAGMENTS 0x00000020
 
-/* default frag timeout, 90-120 might be better values, can we do 
+/* default frag timeout, 90-120 might be better values, can we do
  * target-based quanta?  */
 #define FRAG_PRUNE_QUANTA   60
 
@@ -227,16 +232,9 @@ typedef struct _Frag3Frag
 
 typedef struct _fragkey
 {
-#ifdef SUP_IP6
     uint32_t   sip[4];
     uint32_t   dip[4];
     uint32_t   id;
-#else
-    uint32_t   sip;
-    uint32_t   dip;
-    uint16_t   id;           /* IP ID */
-    uint16_t   pad;
-#endif
     uint16_t   vlan_tag;
     uint8_t    proto;         /* IP protocol, unused for IPv6 */
     uint8_t    ipver;         /* Version */
@@ -244,7 +242,18 @@ typedef struct _fragkey
     uint32_t   mlabel;
     /* For 64 bit alignment since this is allocated in front of a FragTracker
      * and the structures are laid on top of that allocated memory */
+#ifdef HAVE_DAQ_ADDRESS_SPACE_ID
+    uint16_t   addressSpaceId;
+    uint16_t   addressSpaceIdPad1;
+#else
     uint32_t   mpad;
+#endif
+#else
+#ifdef HAVE_DAQ_ADDRESS_SPACE_ID
+    uint16_t   addressSpaceId;
+    uint16_t   addressSpaceIdPad1;
+    uint32_t   addressSpaceIdPad2;
+#endif
 #endif
 } FRAGKEY;
 
@@ -256,10 +265,11 @@ typedef struct _Frag3Config
 {
     int disabled;
     uint32_t   max_frags;            /* max frags to track */
-    uint32_t   memcap;               /* memcap for frag3 */
-    int ten_percent;                  /* holder for self preservation data */
+    unsigned long memcap;            /* memcap for frag3 */
+    int ten_percent;                 /* holder for self preservation data */
     uint32_t   static_frags;         /* static frag nodes to keep around */
     uint8_t    use_prealloc;         /* flag to indicate prealloc nodes in use */
+    uint8_t    use_prealloc_frags;   /* flag to indicate prealloc nodes in use */
     Frag3Context *default_context;
     Frag3Context **frag3ContextList;  /* List of Frag3 Contexts configured */
     uint8_t numFrag3Contexts;
@@ -270,15 +280,9 @@ typedef struct _Frag3Config
 /* tracker for a fragmented packet set */
 typedef struct _FragTracker
 {
-#ifdef SUP_IP6
     uint32_t sip[4];
     uint32_t dip[4];
     uint32_t id;           /* IP ID */
-#else
-    uint32_t sip;          /* src IP */
-    uint32_t dip;          /* dst IP */
-    uint16_t id;           /* IP ID */
-#endif
     uint8_t protocol;      /* IP protocol */
     uint8_t ipver;         /* Version */
 
@@ -286,11 +290,11 @@ typedef struct _FragTracker
     uint8_t alerted;
     uint32_t frag_flags;   /* bit field */
 
-    uint32_t frag_bytes;   /* number of fragment bytes stored, based 
+    uint32_t frag_bytes;   /* number of fragment bytes stored, based
                              * on aligned fragment offsets/sizes
                              */
 
-    uint32_t calculated_size; /* calculated size of reassembled pkt, based on 
+    uint32_t calculated_size; /* calculated size of reassembled pkt, based on
                                 * last frag offset
                                 */
 
@@ -323,7 +327,7 @@ typedef struct _FragTracker
     uint32_t frag_policy;
     /**Count of IP fragment overlap for each packet id.
      */
-    uint32_t overlap_count;      
+    uint32_t overlap_count;
 
     /* Configuration in use when this tracker was created */
     tSfPolicyId policy_id;
@@ -360,14 +364,10 @@ static tSfPolicyUserContextId frag3_config = NULL;  /* current configuration */
  * which it was created will be used */
 static Frag3Config *frag3_eval_config = NULL;
 
-#ifdef SNORT_RELOAD
-static tSfPolicyUserContextId frag3_swap_config = NULL;
-#endif
-
 static SFXHASH *f_cache = NULL;                 /* fragment hash table */
 static Frag3Frag *prealloc_frag_list = NULL;    /* head for prealloc queue */
 
-static uint32_t mem_in_use;             /* memory in use, used for self pres */
+static unsigned long frag3_mem_in_use = 0;            /* memory in use, used for self pres */
 
 static uint32_t prealloc_nodes_in_use;  /* counter for debug */
 
@@ -399,28 +399,29 @@ PreprocStats frag3RebuildPerfStats;
 /*
  * external globals for startup
  */
-extern char *file_name;             
-extern int file_line;                
+extern char *file_name;
+extern int file_line;
 
 
 /*  P R O T O T Y P E S  ********************************************/
 static void Frag3ParseGlobalArgs(Frag3Config *, char *);
-static void Frag3ParseArgs(char *, Frag3Context *);
+static void Frag3ParseArgs(struct _SnortConfig *, char *, Frag3Context *);
+static inline int Frag3Expire(Packet *, FragTracker *, Frag3Context *);
 static FragTracker *Frag3GetTracker(Packet *, FRAGKEY *);
 static int Frag3NewTracker(Packet *p, FRAGKEY *fkey, Frag3Context *);
 static int Frag3Insert(Packet *, FragTracker *, FRAGKEY *, Frag3Context *);
 static void Frag3Rebuild(FragTracker *, Packet *);
-static INLINE int Frag3IsComplete(FragTracker *);
+static inline int Frag3IsComplete(FragTracker *);
 static int Frag3HandleIPOptions(FragTracker *, Packet *);
 static void Frag3PrintStats(int);
 static void Frag3FreeConfig(Frag3Config *);
 static void Frag3FreeConfigs(tSfPolicyUserContextId);
 
 #ifdef SNORT_RELOAD
-static void Frag3ReloadGlobal(char *);
-static void Frag3ReloadEngine(char *);
-static int Frag3ReloadVerify(void);
-static void * Frag3ReloadSwap(void);
+static void Frag3ReloadGlobal(struct _SnortConfig *, char *, void **);
+static void Frag3ReloadEngine(struct _SnortConfig *, char *, void **);
+static int Frag3ReloadVerify(struct _SnortConfig *, void *);
+static void * Frag3ReloadSwap(struct _SnortConfig *, void *);
 static void Frag3ReloadSwapFree(void *);
 #endif
 
@@ -434,42 +435,32 @@ static int Frag3AutoFree(void *, void *);
 static int Frag3UserFree(void *, void *);
 
 /* fraglist handler funcs */
-static INLINE void Frag3FraglistAddNode(FragTracker *, Frag3Frag *, Frag3Frag *); 
-static INLINE void Frag3FraglistDeleteNode(FragTracker *, Frag3Frag *);
+static inline void Frag3FraglistAddNode(FragTracker *, Frag3Frag *, Frag3Frag *);
+static inline void Frag3FraglistDeleteNode(FragTracker *, Frag3Frag *);
 
 /* prealloc queue handler funcs */
-static INLINE Frag3Frag *Frag3PreallocPop();
-static INLINE void Frag3PreallocPush(Frag3Frag *);
+static inline Frag3Frag *Frag3PreallocPop();
+static inline void Frag3PreallocPush(Frag3Frag *);
 
 /* main preprocessor functions */
 static void Frag3Defrag(Packet *, void *);
 static void Frag3CleanExit(int, void *);
 static void Frag3Reset(int, void *);
 static void Frag3ResetStats(int, void *);
-static void Frag3Init(char *);
-static void Frag3GlobalInit(char *);
-static void Frag3VerifyConfig(void);
-static void Frag3PostConfigInit(void *);
+static void Frag3Init(struct _SnortConfig *, char *);
+static void Frag3GlobalInit(struct _SnortConfig *, char *);
+static int Frag3VerifyConfig(struct _SnortConfig *);
+static void Frag3PostConfigInit(struct _SnortConfig *, void *);
 
-#ifdef SUP_IP6
 char *FragIPToStr(uint32_t ip[4], uint8_t proto)
 {
     char *ret_str;
     sfip_t srcip;
     sfip_set_raw(&srcip, ip, proto == 4 ? AF_INET : AF_INET6);
-   
+
     ret_str = sfip_to_str(&srcip);
     return ret_str;
 }
-#else
-char *FragIPToStr(uint32_t ip, uint8_t proto)
-{
-    struct in_addr srcip;
-    srcip.s_addr = ip;
-
-    return inet_ntoa(srcip);
-}
-#endif
 
 #ifdef DEBUG_FRAG3
 /**
@@ -495,7 +486,7 @@ static void PrintFragTracker(FragTracker *ft)
         LogMessage(" frag_bytes: %d\n", ft->frag_bytes);
         LogMessage("  calc_size: %d\n", ft->calculated_size);
         LogMessage("  frag_pkts: %d\n", ft->frag_pkts);
-        LogMessage("  frag_time: %lu %lu\n", ft->frag_time.tv_sec, 
+        LogMessage("  frag_time: %lu %lu\n", ft->frag_time.tv_sec,
                 ft->frag_time.tv_usec);
         LogMessage("   fraglist: %p\n", ft->fraglist);
         LogMessage("    fl_tail: %p\n", ft->fraglist_tail);
@@ -522,6 +513,9 @@ static void PrintFragKey(FRAGKEY *fkey)
         LogMessage("  proto: 0x%X\n", fkey->proto);
 #ifdef MPLS
         LogMessage(" mlabel: 0x%08X\n", fkey->mlabel);
+#endif
+#ifdef HAVE_DAQ_ADDRESS_SPACE_ID
+        LogMessage(" addr id: %d\n", fkey->addressSpaceId);
 #endif
     }
 }
@@ -564,13 +558,23 @@ static void Frag3PrintGlobalConfig(Frag3Config *gconfig)
         return;
 
     LogMessage("Frag3 global config:\n");
+    if(gconfig->disabled)
+    {
+        LogMessage("      Frag3: INACTIVE\n");
+    }
     LogMessage("    Max frags: %d\n", gconfig->max_frags);
     if(!gconfig->use_prealloc)
-        LogMessage("    Fragment memory cap: %lu bytes\n", 
-                (unsigned long)gconfig->memcap);
+        LogMessage("    Fragment memory cap: %lu bytes\n",
+                gconfig->memcap);
     else
-        LogMessage("    Preallocated frag nodes: %u\n", 
+    {
+        if (gconfig->static_frags)
+            LogMessage("    Preallocated frag nodes: %u\n",
                 gconfig->static_frags);
+        if (!gconfig->use_prealloc_frags)
+            LogMessage("    Memory cap used to determine preallocated frag nodes: %lu\n",
+                    gconfig->memcap);
+    }
 }
 
 
@@ -583,26 +587,27 @@ static void Frag3PrintGlobalConfig(Frag3Config *gconfig)
  */
 static void Frag3PrintEngineConfig(Frag3Context *context)
 {
-    LogMessage("Frag3 engine config:\n");
-    LogMessage("    Target-based policy: %s\n", 
-            frag_policy_names[context->frag_policy]);
-    LogMessage("    Fragment timeout: %d seconds\n", 
-            context->frag_timeout);
-    LogMessage("    Fragment min_ttl:   %d\n", context->min_ttl);
-    LogMessage("    Fragment Problems: %X\n", context->frag3_alerts);
 
+    LogMessage("Frag3 engine config:\n");
     if (context->bound_addrs != NULL)
     {
-#ifdef SUP_IP6
-        // XXX NOT YET IMPLEMENTED - debugging
-#else
         IpAddrSetPrint("    Bound Addresses: ", context->bound_addrs);
-#endif
     }
+    else
+    {
+        LogMessage("    Bound Address: default\n");
+    }
+    LogMessage("    Target-based policy: %s\n",
+            frag_policy_names[context->frag_policy]);
+    LogMessage("    Fragment timeout: %d seconds\n",
+            context->frag_timeout);
+    LogMessage("    Fragment min_ttl:   %d\n", context->min_ttl);
+    LogMessage("    Fragment Anomalies: %s\n",
+            context->frag3_alerts ? "Alert" : "No Alert");
 
-    LogMessage("    Overlap Limit:     %d\n", 
+    LogMessage("    Overlap Limit:     %d\n",
             context->overlap_limit);
-    LogMessage("    Min fragment Length:     %d\n", 
+    LogMessage("    Min fragment Length:     %d\n",
             context->min_fragment_length);
 }
 
@@ -613,12 +618,12 @@ static void Frag3PrintEngineConfig(Frag3Context *context)
  *
  * @return none
  */
-static INLINE void EventAnomIpOpts(Frag3Context *context)
+static inline void EventAnomIpOpts(Frag3Context *context)
 {
     if(!(context->frag3_alerts & FRAG3_DETECT_ANOMALIES))
         return;
 
-    SnortEventqAdd(GENERATOR_SPP_FRAG3,     /* GID */ 
+    SnortEventqAdd(GENERATOR_SPP_FRAG3,     /* GID */
             FRAG3_IPOPTIONS,         /* SID */
             1,                       /* rev */
             0,                       /* classification enum */
@@ -636,12 +641,12 @@ static INLINE void EventAnomIpOpts(Frag3Context *context)
  *
  * @return none
  */
-static INLINE void EventAttackTeardrop(Frag3Context *context)
+static inline void EventAttackTeardrop(Frag3Context *context)
 {
     if(!(context->frag3_alerts & FRAG3_DETECT_ANOMALIES))
         return;
 
-    SnortEventqAdd(GENERATOR_SPP_FRAG3,     /* GID */ 
+    SnortEventqAdd(GENERATOR_SPP_FRAG3,     /* GID */
             FRAG3_TEARDROP,          /* SID */
             1,                       /* rev */
             0,                       /* classification enum */
@@ -653,18 +658,18 @@ static INLINE void EventAttackTeardrop(Frag3Context *context)
 }
 
 /**
- * Generate an event for very small fragment 
+ * Generate an event for very small fragment
  *
  * @param context Current run context
  *
  * @return none
  */
-static INLINE void EventTinyFragments(Frag3Context *context)
+static inline void EventTinyFragments(Frag3Context *context)
 {
     if(!(context->frag3_alerts & FRAG3_DETECT_ANOMALIES))
         return;
 
-    SnortEventqAdd(GENERATOR_SPP_FRAG3,     /* GID */ 
+    SnortEventqAdd(GENERATOR_SPP_FRAG3,     /* GID */
             FRAG3_TINY_FRAGMENT,          /* SID */
             1,                       /* rev */
             0,                       /* classification enum */
@@ -682,13 +687,13 @@ static INLINE void EventTinyFragments(Frag3Context *context)
  *
  * @return none
  */
-static INLINE void EventExcessiveOverlap(Frag3Context *context)
+static inline void EventExcessiveOverlap(Frag3Context *context)
 {
     //@TBD dschahal do I need this
     if(!(context->frag3_alerts & FRAG3_DETECT_ANOMALIES))
         return;
 
-    SnortEventqAdd(GENERATOR_SPP_FRAG3,     /* GID */ 
+    SnortEventqAdd(GENERATOR_SPP_FRAG3,     /* GID */
             FRAG3_EXCESSIVE_OVERLAP,          /* SID */
             1,                       /* rev */
             0,                       /* classification enum */
@@ -707,12 +712,12 @@ static INLINE void EventExcessiveOverlap(Frag3Context *context)
  *
  * @return none
  */
-static INLINE void EventAnomShortFrag(Frag3Context *context)
+static inline void EventAnomShortFrag(Frag3Context *context)
 {
     if(!(context->frag3_alerts & FRAG3_DETECT_ANOMALIES))
         return;
 
-    SnortEventqAdd(GENERATOR_SPP_FRAG3,   /* GID */ 
+    SnortEventqAdd(GENERATOR_SPP_FRAG3,   /* GID */
             FRAG3_SHORT_FRAG,             /* SID */
             1,                            /* rev */
             0,                            /* classification enum */
@@ -732,12 +737,12 @@ static INLINE void EventAnomShortFrag(Frag3Context *context)
  *
  * @return none
  */
-static INLINE void EventAnomOversize(Frag3Context *context)
+static inline void EventAnomOversize(Frag3Context *context)
 {
     if(!(context->frag3_alerts & FRAG3_DETECT_ANOMALIES))
         return;
 
-    SnortEventqAdd(GENERATOR_SPP_FRAG3,/* GID */ 
+    SnortEventqAdd(GENERATOR_SPP_FRAG3,/* GID */
             FRAG3_ANOMALY_OVERSIZE,  /* SID */
             1,                       /* rev */
             0,                       /* classification enum */
@@ -757,12 +762,12 @@ static INLINE void EventAnomOversize(Frag3Context *context)
  *
  * @return none
  */
-static INLINE void EventAnomZeroFrag(Frag3Context *context)
+static inline void EventAnomZeroFrag(Frag3Context *context)
 {
     if(!(context->frag3_alerts & FRAG3_DETECT_ANOMALIES))
         return;
 
-    SnortEventqAdd(GENERATOR_SPP_FRAG3,/* GID */ 
+    SnortEventqAdd(GENERATOR_SPP_FRAG3,/* GID */
             FRAG3_ANOMALY_ZERO,      /* SID */
             1,                       /* rev */
             0,                       /* classification enum */
@@ -781,12 +786,12 @@ static INLINE void EventAnomZeroFrag(Frag3Context *context)
  *
  * @return none
  */
-static INLINE void EventAnomBadsizeLg(Frag3Context *context)
+static inline void EventAnomBadsizeLg(Frag3Context *context)
 {
     if(!(context->frag3_alerts & FRAG3_DETECT_ANOMALIES))
         return;
 
-    SnortEventqAdd(GENERATOR_SPP_FRAG3,/* GID */ 
+    SnortEventqAdd(GENERATOR_SPP_FRAG3,/* GID */
             FRAG3_ANOMALY_BADSIZE_LG,   /* SID */
             1,                       /* rev */
             0,                       /* classification enum */
@@ -805,12 +810,12 @@ static INLINE void EventAnomBadsizeLg(Frag3Context *context)
  *
  * @return none
  */
-static INLINE void EventAnomBadsizeSm(Frag3Context *context)
+static inline void EventAnomBadsizeSm(Frag3Context *context)
 {
     if(!(context->frag3_alerts & FRAG3_DETECT_ANOMALIES))
         return;
 
-    SnortEventqAdd(GENERATOR_SPP_FRAG3,/* GID */ 
+    SnortEventqAdd(GENERATOR_SPP_FRAG3,/* GID */
             FRAG3_ANOMALY_BADSIZE_SM,  /* SID */
             1,                         /* rev */
             0,                         /* classification enum */
@@ -829,12 +834,12 @@ static INLINE void EventAnomBadsizeSm(Frag3Context *context)
  *
  * @return none
  */
-static INLINE void EventAnomOverlap(Frag3Context *context)
+static inline void EventAnomOverlap(Frag3Context *context)
 {
     if(!(context->frag3_alerts & FRAG3_DETECT_ANOMALIES))
         return;
 
-    SnortEventqAdd(GENERATOR_SPP_FRAG3,/* GID */ 
+    SnortEventqAdd(GENERATOR_SPP_FRAG3,/* GID */
             FRAG3_ANOMALY_OVLP,   /* SID */
             1,                    /* rev */
             0,                    /* classification enum */
@@ -853,12 +858,12 @@ static INLINE void EventAnomOverlap(Frag3Context *context)
  *
  * @return none
  */
-static INLINE void EventAnomScMinTTL(Frag3Context *context)
+static inline void EventAnomScMinTTL(Frag3Context *context)
 {
     if(!(context->frag3_alerts & FRAG3_DETECT_ANOMALIES))
         return;
 
-    SnortEventqAdd(GENERATOR_SPP_FRAG3, /* GID */ 
+    SnortEventqAdd(GENERATOR_SPP_FRAG3, /* GID */
             FRAG3_MIN_TTL_EVASION,   /* SID */
             1,                       /* rev */
             0,                       /* classification enum */
@@ -883,9 +888,10 @@ void SetupFrag3(void)
     RegisterPreprocessor("frag3_engine", Frag3Init);
 #else
     RegisterPreprocessor("frag3_global", Frag3GlobalInit,
-                         Frag3ReloadGlobal, Frag3ReloadSwap, Frag3ReloadSwapFree);
-    RegisterPreprocessor("frag3_engine", Frag3Init,
-                         Frag3ReloadEngine, NULL, NULL);
+                         Frag3ReloadGlobal, Frag3ReloadVerify, Frag3ReloadSwap,
+                         Frag3ReloadSwapFree);
+    RegisterPreprocessor("frag3_engine", Frag3Init, Frag3ReloadEngine,
+                         NULL, NULL, NULL);
 #endif
 
     DEBUG_WRAP(DebugMessage(DEBUG_FRAG, "Preprocessor: frag3 is setup...\n"););
@@ -898,8 +904,10 @@ uint32_t Frag3KeyHashFunc(SFHASHFCN *p, unsigned char *d, int n)
 #ifdef MPLS
     uint32_t tmp = 0;
 #endif
+#ifdef HAVE_DAQ_ADDRESS_SPACE_ID
+    uint32_t tmp2 = 0;
+#endif
 
-#ifdef SUP_IP6
     a = *(uint32_t *)d;        /* IPv6 sip[0] */
     b = *(uint32_t *)(d+4);    /* IPv6 sip[1] */
     c = *(uint32_t *)(d+8);    /* IPv6 sip[2] */
@@ -916,14 +924,6 @@ uint32_t Frag3KeyHashFunc(SFHASHFCN *p, unsigned char *d, int n)
     mix(a,b,c);
 
     offset = 36;
-#else
-
-    a = *(uint32_t *)(d);      /* IPv4 sip */
-    b = *(uint32_t *)(d+4);    /* IPv4 dip */
-    c = *(uint32_t *)(d+8);    /* IPv6 id/pad */
-    mix(a,b,c);
-    offset = 12;
-#endif
 
     a += *(uint32_t *)(d+offset);  /* vlan, proto, ipver */
 #ifdef MPLS
@@ -932,9 +932,18 @@ uint32_t Frag3KeyHashFunc(SFHASHFCN *p, unsigned char *d, int n)
     {
         b += tmp;   /* mpls label */
     }
+    offset += 8;    /* skip past vlan/proto/ipver & mpls label */
+#else
+    offset += 4;    /* skip past vlan/proto/ipver */
 #endif
+
+#ifdef HAVE_DAQ_ADDRESS_SPACE_ID
+    tmp2 = *(uint32_t*)(d+offset); /* after offset that has been moved */
+    c += tmp2; /* address space id and 16bits of zero'd pad */
+#endif
+
     final(a,b,c);
-   
+
     return c;
 }
 
@@ -946,37 +955,52 @@ int Frag3KeyCmpFunc(const void *s1, const void *s2, size_t n)
     a = (uint64_t*)s1;
     b = (uint64_t*)s2;
     if (*a - *b) return 1;      /* Compares IPv4 sip/dip */
-                                /* SUP_IP6 Compares IPv6 sip[0,1] */
-#ifdef SUP_IP6
+                                /* Compares IPv6 sip[0,1] */
     a++;
     b++;
-    if (*a - *b) return 1;      /* SUP_IP6 Compares IPv6 sip[2,3] */
+    if (*a - *b) return 1;      /* Compares IPv6 sip[2,3] */
 
     a++;
     b++;
-    if (*a - *b) return 1;      /* SUP_IP6 Compares IPv6 dip[0,1] */
+    if (*a - *b) return 1;      /* Compares IPv6 dip[0,1] */
 
     a++;
     b++;
-    if (*a - *b) return 1;      /* SUP_IP6 Compares IPv6 dip[2,3] */
-#endif
+    if (*a - *b) return 1;      /* Compares IPv6 dip[2,3] */
 
     a++;
     b++;
     if (*a - *b) return 1;      /* Compares IPv4 id/pad, vlan/proto/ipver */
-                                /* SUP_IP6 Compares IPv6 id, vlan/proto/ipver */
+                                /* Compares IPv6 id, vlan/proto/ipver */
 
 #ifdef MPLS
     a++;
     b++;
+#ifdef HAVE_DAQ_ADDRESS_SPACE_ID
+    if (*a - *b) return 1;      /* Compares MPLS label, AddressSpace ID and 16bit pad */
+#else
     {
         uint32_t *x, *y;
         x = (uint32_t *)a;
         y = (uint32_t *)b;
         //x++;
         //y++;
-        if (*x - *y) return 1;  /* Compares mpls label */
+        if (*x - *y) return 1;  /* Compares mpls label, no pad */
     }
+#endif
+#else
+#ifdef HAVE_DAQ_ADDRESS_SPACE_ID
+    a++;
+    b++;
+    {
+        uint16_t *x, *y;
+        x = (uint16_t *)a;
+        y = (uint16_t *)b;
+        //x++;
+        //y++;
+        if (*x - *y) return 1;  /* Compares addressSpaceID, no pad */
+    }
+#endif
 #endif
 
 #else /* SPARCV9 */
@@ -985,25 +1009,23 @@ int Frag3KeyCmpFunc(const void *s1, const void *s2, size_t n)
     a = (uint32_t*)s1;
     b = (uint32_t*)s2;
     if ((*a - *b) || (*(a+1) - *(b+1))) return 1;       /* Compares IPv4 sip/dip */
-                                /* SUP_IP6 Compares IPv6 sip[0,1] */
-#ifdef SUP_IP6
+                                /* Compares IPv6 sip[0,1] */
     a+=2;
     b+=2;
-    if ((*a - *b) || (*(a+1) - *(b+1))) return 1;       /* SUP_IP6 Compares IPv6 sip[2,3] */
+    if ((*a - *b) || (*(a+1) - *(b+1))) return 1;       /* Compares IPv6 sip[2,3] */
 
     a+=2;
     b+=2;
-    if ((*a - *b) || (*(a+1) - *(b+1))) return 1;       /* SUP_IP6 Compares IPv6 dip[0,1] */
+    if ((*a - *b) || (*(a+1) - *(b+1))) return 1;       /* Compares IPv6 dip[0,1] */
 
     a+=2;
     b+=2;
-    if ((*a - *b) || (*(a+1) - *(b+1))) return 1;       /* SUP_IP6 Compares IPv6 dip[2,3] */
-#endif
+    if ((*a - *b) || (*(a+1) - *(b+1))) return 1;       /* Compares IPv6 dip[2,3] */
 
     a+=2;
     b+=2;
     if ((*a - *b) || (*(a+1) - *(b+1))) return 1;       /* Compares IPv4 id/pad, vlan/proto/ipver */
-                                /* SUP_IP6 Compares IPv6 id, vlan/proto/ipver */
+                                /* Compares IPv6 id, vlan/proto/ipver */
 
 #ifdef MPLS
     a+=2;
@@ -1017,25 +1039,42 @@ int Frag3KeyCmpFunc(const void *s1, const void *s2, size_t n)
         if (*x - *y) return 1;  /* Compares mpls label */
     }
 #endif
+#ifdef HAVE_DAQ_ADDRESS_SPACE_ID
+#ifdef MPLS
+    a++;
+    b++;
+#else
+    a+=2;
+    b+=2;
+#endif
+    {
+        uint16_t *x, *y;
+        x = (uint16_t *)a;
+        y = (uint16_t *)b;
+        //x++;
+        //y++;
+        if (*x - *y) return 1;  /* Compares addressSpaceID, no pad */
+    }
+#endif
 #endif /* SPARCV9 */
 
     return 0;
 }
 
 /**
- * Global init function, handles setting up the runtime hash table and 
- * memory management mode. Global configuration applies only to default configuration, 
+ * Global init function, handles setting up the runtime hash table and
+ * memory management mode. Global configuration applies only to default configuration,
  * which is in vlanGroup 0
  *
  * @param args argument string to process for config data
  *
  * @return none
  */
-static void Frag3GlobalInit(char *args)
+static void Frag3GlobalInit(struct _SnortConfig *sc, char *args)
 {
     Frag3Config *pCurrentPolicyConfig = NULL;
     Frag3Config *pDefaultPolicyConfig = NULL;
-    tSfPolicyId policy_id = getParserPolicy();
+    tSfPolicyId policy_id = getParserPolicy(sc);
 
     if (frag3_config == NULL)
     {
@@ -1053,11 +1092,11 @@ static void Frag3GlobalInit(char *args)
         RegisterPreprocessorProfile("frag3rebuild", &frag3RebuildPerfStats, 1, &frag3PerfStats);
 #endif
 
-        AddFuncToPreprocCleanExitList(Frag3CleanExit, NULL, PRIORITY_NETWORK, PP_FRAG3);
-        AddFuncToPreprocResetList(Frag3Reset, NULL, PRIORITY_NETWORK, PP_FRAG3);
-        AddFuncToPreprocResetStatsList(Frag3ResetStats, NULL, PRIORITY_NETWORK, PP_FRAG3);
-        AddFuncToConfigCheckList(Frag3VerifyConfig);
-        AddFuncToPreprocPostConfigList(Frag3PostConfigInit, NULL);
+        AddFuncToPreprocCleanExitList(Frag3CleanExit, NULL, PP_FRAG3_PRIORITY, PP_FRAG3);
+        AddFuncToPreprocResetList(Frag3Reset, NULL, PP_FRAG3_PRIORITY, PP_FRAG3);
+        AddFuncToPreprocResetStatsList(Frag3ResetStats, NULL, PP_FRAG3_PRIORITY, PP_FRAG3);
+        AddFuncToConfigCheckList(sc, Frag3VerifyConfig);
+        AddFuncToPreprocPostConfigList(sc, Frag3PostConfigInit, NULL);
         RegisterPreprocStats("frag3", Frag3PrintStats);
     }
 
@@ -1085,6 +1124,7 @@ static void Frag3GlobalInit(char *args)
     pCurrentPolicyConfig->memcap = FRAG_MEMCAP;
     pCurrentPolicyConfig->static_frags = 0;
     pCurrentPolicyConfig->use_prealloc = 0;
+    pCurrentPolicyConfig->use_prealloc_frags = 0;
 
     Frag3ParseGlobalArgs(pCurrentPolicyConfig, args);
 
@@ -1094,24 +1134,25 @@ static void Frag3GlobalInit(char *args)
         pCurrentPolicyConfig->memcap = pDefaultPolicyConfig->memcap;
         pCurrentPolicyConfig->max_frags = pDefaultPolicyConfig->max_frags;
         pCurrentPolicyConfig->use_prealloc = pDefaultPolicyConfig->use_prealloc;
+        pCurrentPolicyConfig->use_prealloc_frags = pDefaultPolicyConfig->use_prealloc_frags;
         pCurrentPolicyConfig->static_frags = pDefaultPolicyConfig->static_frags;
     }
 
-    /* 
+    /*
      * we really only need one frag cache no matter how many different
      * contexts we have loaded
      */
     if(f_cache == NULL)
     {
         /* we keep FragTrackers in the hash table.. */
-        int hashTableSize = (int) (pCurrentPolicyConfig->max_frags * 1.4);
-        int maxFragMem = pCurrentPolicyConfig->max_frags * (
-                            sizeof(FragTracker) + 
+        unsigned long hashTableSize = (unsigned long) (pCurrentPolicyConfig->max_frags * 1.4);
+        unsigned long maxFragMem = pCurrentPolicyConfig->max_frags * (
+                            sizeof(FragTracker) +
                             sizeof(SFXHASH_NODE) +
                             sizeof (FRAGKEY) +
                             sizeof(SFXHASH_NODE *));
-        int tableMem = (hashTableSize + 1) * sizeof(SFXHASH_NODE *);
-        int maxMem = maxFragMem + tableMem;
+        unsigned long tableMem = (hashTableSize + 1) * sizeof(SFXHASH_NODE *);
+        unsigned long maxMem = maxFragMem + tableMem;
         f_cache = sfxhash_new(
                 hashTableSize,       /* number of hash buckets */
                 sizeof(FRAGKEY),     /* size of the key we're going to use */
@@ -1126,7 +1167,7 @@ static void Frag3GlobalInit(char *args)
         if(!f_cache)
         {
             LogMessage("WARNING: Unable to generate new sfxhash for frag3, "
-                       "defragmentation disabled!\n");
+                       "defragmentation disabled.\n");
             return;
         }
 
@@ -1136,9 +1177,18 @@ static void Frag3GlobalInit(char *args)
     /* display the global config for the user */
     Frag3PrintGlobalConfig(pCurrentPolicyConfig);
 
+#ifdef REG_TEST
+    LogMessage("\n");
+    LogMessage("    FragTracker Size: %lu\n",sizeof(FragTracker));
+    LogMessage("\n");
+#endif
+
     /* register the preprocessor func node */
     if ( !pCurrentPolicyConfig->disabled )
-        AddFuncToPreprocList(Frag3Defrag, PRIORITY_NETWORK, PP_FRAG3, PROTO_BIT__IP);
+    {
+        AddFuncToPreprocList(sc, Frag3Defrag, PP_FRAG3_PRIORITY, PP_FRAG3, PROTO_BIT__IP);
+        session_api->enable_preproc_all_ports( sc, PP_FRAG3, PROTO_BIT__IP );
+    }
 }
 
 /**
@@ -1148,10 +1198,10 @@ static void Frag3GlobalInit(char *args)
  *
  * @return none
  */
-static void Frag3Init(char *args)
+static void Frag3Init(struct _SnortConfig *sc, char *args)
 {
-    Frag3Context *context;      /* context pointer */ 
-    tSfPolicyId policy_id = getParserPolicy();
+    Frag3Context *context;      /* context pointer */
+    tSfPolicyId policy_id = getParserPolicy(sc);
     Frag3Config *config = NULL;
 
     DEBUG_WRAP(DebugMessage(DEBUG_FRAG, "Initializing frag3\n"););
@@ -1168,7 +1218,7 @@ static void Frag3Init(char *args)
 
 
     /*
-     * setup default context config.  Thinking maybe we should go with 
+     * setup default context config.  Thinking maybe we should go with
      * FRAG_POLICY_FIRST or FRAG_POLICY_LINUX as the default instead of
      * BSD since Win32/Linux have a higher incidence of occurrence.  Anyone
      * with an opinion on the matter feel free to email me...
@@ -1180,7 +1230,7 @@ static void Frag3Init(char *args)
     context->frag3_alerts = 0;
 
     /* parse the configuration for this engine */
-    Frag3ParseArgs(args, context);
+    Frag3ParseArgs(sc, args, context);
 
     if (context->bound_addrs == NULL)
     {
@@ -1259,22 +1309,18 @@ static int FragPolicyIdFromName(char *name)
 #ifdef TARGET_BASED
 int FragPolicyIdFromHostAttributeEntry(HostAttributeEntry *host_entry)
 {
-    if (!host_entry || !host_entry->hostInfo.fragPolicyName)
+    if (!host_entry)
         return 0;
 
     host_entry->hostInfo.fragPolicy = FragPolicyIdFromName(host_entry->hostInfo.fragPolicyName);
     host_entry->hostInfo.fragPolicySet = 1;
 
-    DEBUG_WRAP(
-        DebugMessage(DEBUG_FRAG,
-            "Frag3 INIT: %s(%d) for Entry %s:%s:%s (%s)\n",
-            frag_policy_names[host_entry->hostInfo.fragPolicy],
-            host_entry->hostInfo.fragPolicy,
-            host_entry->hostInfo.operatingSystem.value.s_value,
-            host_entry->hostInfo.vendor.value.s_value,
-            host_entry->hostInfo.version.value.s_value,
-            host_entry->hostInfo.fragPolicyName););
-    
+    DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
+        "Frag3 INIT: %s(%d) for Entry %s\n",
+        frag_policy_names[host_entry->hostInfo.fragPolicy],
+        host_entry->hostInfo.fragPolicy,
+        host_entry->hostInfo.fragPolicyName););
+
     return 0;
 }
 #endif
@@ -1287,8 +1333,9 @@ int FragPolicyIdFromHostAttributeEntry(HostAttributeEntry *host_entry)
  * @return none
  */
 static int Frag3VerifyConfigPolicy(
+        struct _SnortConfig *sc,
         tSfPolicyUserContextId config,
-        tSfPolicyId policyId, 
+        tSfPolicyId policyId,
         void* pData
         )
 {
@@ -1298,11 +1345,12 @@ static int Frag3VerifyConfigPolicy(
         return 0;
 
     //do any housekeeping before processingFrag3Config
-    if ((policyId != getDefaultPolicy()) 
+    if ((policyId != getDefaultPolicy())
         && (pPolicyConfig->numFrag3Contexts == 0))
     {
-        FatalError("Frag3VerifyConfig: PolicyId %d, policy engine required "
+        WarningMessage("Frag3VerifyConfig: PolicyId %d, policy engine required "
                 "but not configured.\n", policyId);
+        return -1;
     }
 
 #ifdef TARGET_BASED
@@ -1312,9 +1360,12 @@ static int Frag3VerifyConfigPolicy(
     return 0;
 }
 
-static void Frag3VerifyConfig(void)
+static int Frag3VerifyConfig(struct _SnortConfig *sc)
 {
-    sfPolicyUserDataIterate (frag3_config, Frag3VerifyConfigPolicy);
+    if (sfPolicyUserDataIterate (sc, frag3_config, Frag3VerifyConfigPolicy))
+        return -1;
+
+    return 0;
 }
 
 /**
@@ -1326,27 +1377,27 @@ static void Frag3VerifyConfig(void)
  *
  * @return none
  */
-static void Frag3PostConfigInit(void *arg)
+static void Frag3PostConfigInit(struct _SnortConfig *sc, void *arg)
 {
     Frag3Frag *tmp; /* for initializing the prealloc queue */
     unsigned int i;          /* counter */
     Frag3Config *config = NULL;
-    
+
     config = sfPolicyUserDataGetDefault(frag3_config);
     if (config == NULL)
         return;
 
     pkt_snaplen = DAQ_GetSnapLen();
 
-    /* 
-     * user has decided to prealloc the node structs for performance 
+    /*
+     * user has decided to prealloc the node structs for performance
      */
     if(config->use_prealloc)
     {
         if (config->static_frags == 0)
         {
-            config->static_frags = (uint32_t)config->memcap /
-                (sizeof(Frag3Frag) + sizeof(uint8_t) * pkt_snaplen) + 1;
+            config->static_frags = (uint32_t)(config->memcap /
+                (sizeof(Frag3Frag) + sizeof(uint8_t) * pkt_snaplen) + 1);
 
             config->ten_percent = config->static_frags >> 5;
         }
@@ -1363,7 +1414,7 @@ static void Frag3PostConfigInit(void *arg)
 }
 
 /**
- * Config parser for global config.  
+ * Config parser for global config.
  *
  * @param args List of configuration parameters
  *
@@ -1378,7 +1429,8 @@ static void Frag3ParseGlobalArgs(Frag3Config *gconfig, char *args)
     char **stoks = NULL;
     int s_toks;
     char *endPtr;
-    int32_t value;
+    long ivalue;
+    unsigned long value;
 
     if ((args == NULL) || (gconfig == NULL))
         return;
@@ -1399,12 +1451,12 @@ static void Frag3ParseGlobalArgs(Frag3Config *gconfig, char *args)
                            file_name, file_line);
             }
 
-            gconfig->max_frags = value = strtoul(stoks[1], &endPtr, 10);
+            gconfig->max_frags = ivalue = strtol(stoks[1], &endPtr, 10);
 
-            if ((endPtr == &stoks[1][0]) || (value <= 0))
+            if ((endPtr == &stoks[1][0]) || (ivalue <= 0))
             {
                 FatalError("%s(%d) => Invalid max_frags in config file. "
-                           "Integer parameter required.\n", file_name, 
+                           "Integer parameter required.\n", file_name,
                            file_line);
             }
         }
@@ -1419,17 +1471,17 @@ static void Frag3ParseGlobalArgs(Frag3Config *gconfig, char *args)
 
             gconfig->memcap = value = strtoul(stoks[1], &endPtr, 10);
 
-            if ((endPtr == &stoks[1][0]) || (value <= 0))
+            if (!*stoks[1] || *stoks[1] == '-' || *endPtr)
             {
                 FatalError("%s(%d) => Invalid memcap in config file. "
-                           "Integer parameter required.\n", file_name, 
+                           "Integer parameter required.\n", file_name,
                            file_line);
             }
 
             if (gconfig->memcap < 16384)
             {
-                LogMessage("WARNING %s(%d) => Ludicrous (<16k) memcap "
-                           "size, setting to default (%d bytes)\n", 
+                LogMessage("WARNING: %s(%d) => Ludicrous (<16k) memcap "
+                           "size, setting to default (%d bytes)\n",
                            file_name, file_line, FRAG_MEMCAP);
 
                 gconfig->memcap = FRAG_MEMCAP;
@@ -1441,7 +1493,7 @@ static void Frag3ParseGlobalArgs(Frag3Config *gconfig, char *args)
         else if(!strcasecmp(stoks[0], "prealloc_memcap"))
         {
             /* Use memcap to calculate prealloc_frag value */
-            int memcap = FRAG_MEMCAP;
+            unsigned long memcap = FRAG_MEMCAP;
 
             if (s_toks != 2)
             {
@@ -1452,17 +1504,17 @@ static void Frag3ParseGlobalArgs(Frag3Config *gconfig, char *args)
 
             memcap = value = strtoul(stoks[1], &endPtr, 10);
 
-            if ((endPtr == &stoks[1][0]) || (value <= 0))
+            if (!*stoks[1] || *stoks[1] == '-' || *endPtr)
             {
                 FatalError("%s(%d) => Invalid prealloc_memcap in config file. "
-                           "Integer parameter required.\n", file_name, 
+                           "Integer parameter required.\n", file_name,
                            file_line);
             }
 
             if(memcap < 16384)
             {
-                LogMessage("WARNING %s(%d) => Ludicrous (<16k) prealloc_memcap "
-                           "size, setting to default (%d bytes)\n", 
+                LogMessage("WARNING: %s(%d) => Ludicrous (<16k) prealloc_memcap "
+                           "size, setting to default (%d bytes)\n",
                            file_name, file_line, FRAG_MEMCAP);
                 memcap = FRAG_MEMCAP;
             }
@@ -1480,12 +1532,12 @@ static void Frag3ParseGlobalArgs(Frag3Config *gconfig, char *args)
             }
 
             gconfig->static_frags = value = strtoul(stoks[1], &endPtr, 10);
-            gconfig->use_prealloc = 1;
+            gconfig->use_prealloc_frags = gconfig->use_prealloc = 1;
 
-            if ((endPtr == &stoks[1][0]) || (value <= 0))
+            if (!*stoks[1] || *stoks[1] == '-' || *endPtr)
             {
                 FatalError("%s(%d) => Invalid prealloc_frags in config file. "
-                           "Integer parameter required.\n", file_name, 
+                           "Integer parameter required.\n", file_name,
                            file_line);
             }
         }
@@ -1506,13 +1558,13 @@ static void Frag3ParseGlobalArgs(Frag3Config *gconfig, char *args)
 }
 
 /**
- * Config parser for engine context config.  
+ * Config parser for engine context config.
  *
  * @param args List of configuration parameters
  *
  * @return none
  */
-static void Frag3ParseArgs(char *args, Frag3Context *context)
+static void Frag3ParseArgs(struct _SnortConfig *sc, char *args, Frag3Context *context)
 {
     char **toks;
     int num_toks;
@@ -1610,7 +1662,7 @@ static void Frag3ParseArgs(char *args, Frag3Context *context)
             }
 
             /* Fatals on bad ip address */
-            context->bound_addrs = IpAddrSetParse(arg);
+            context->bound_addrs = IpAddrSetParse(sc, arg);
             increment = 2;
         }
         else if(!strcasecmp(index, "min_fragment_length"))
@@ -1683,16 +1735,15 @@ static void Frag3Defrag(Packet *p, void *context)
     Frag3Context *f3context = NULL; /* engine context */
     int engineIndex;
     int insert_return = 0;   /* return value from the insert function */
-    tSfPolicyId policy_id = getRuntimePolicy();
+    tSfPolicyId policy_id = getNapRuntimePolicy();
     PROFILE_VARS;
 
+    // preconditions - what we registered for
+    assert(IPH_IS_VALID(p) && !(p->error_flags & PKT_ERR_CKSUM_IP));
+
     /* check to make sure this preprocessor should run */
-    if( (p == NULL) || 
-            !IPH_IS_VALID(p) || !p->frag_flag ||
-            (p->error_flags & PKT_ERR_CKSUM_IP) )
-    {
+    if ( !p->frag_flag )
         return;
-    }
 
     frag3_eval_config = (Frag3Config *)sfPolicyUserDataGet(frag3_config, policy_id);
 
@@ -1718,13 +1769,9 @@ static void Frag3Defrag(Packet *p, void *context)
                 continue;
 
             /* Does this engine context handle fragments to this IP address? */
-#ifdef SUP_IP6
             if(sfvar_ip_in(f3context->bound_addrs, GET_DST_ADDR(p)))
-#else
-                if(IpAddrSetContains(f3context->bound_addrs, GET_DST_ADDR(p)))
-#endif
                 {
-                    DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
+                    DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
                                             "[FRAG3] Found engine context in IpAddrSet\n"););
                     break;
                 }
@@ -1735,43 +1782,48 @@ static void Frag3Defrag(Packet *p, void *context)
 
         if (!f3context)
         {
-            DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
+            DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
                                     "[FRAG3] Could not find Frag3 engine context "
                                     "for IP %s\n", inet_ntoa(GET_SRC_ADDR(p))););
             return;
         }
     }
 
-    /* Ugly HACK -- if frag offset is 0 & UDP, let that packet go
-     * through the rest of the system.  This results in the
-     * first packet going through detection.  If we do see
-     * the rest of the frags, the contents of that first frag
-     * will go through again with the defrag'd (built) packet.
+    /*
+     * First case: if frag offset is 0 & UDP, let that packet go
+     * through the rest of the system.  Ugly HACK to detect DNS
+     * attack on 0 offset UDP.
+     *
+     * Second case: If frag offset is 0 & !more frags, this is a
+     * full-frame "fragment", let the packet go through the rest
+     * of the system.
+     *
+     * In other words:
+     *   a = frag_offset != 0
+     *   b = !UDP
+     *   c = More Fragments
+     *
+     * if (a | (b & c))
+     *    Disable Inspection since we'll look at the payload in
+     *    a rebuilt packet later.  So don't process it further.
      */
-    if ((p->frag_offset != 0) || (GET_IPH_PROTO(p) != IPPROTO_UDP))
+    if ((p->frag_offset != 0) || ((GET_IPH_PROTO(p) != IPPROTO_UDP) && (p->mf)))
     {
-        /*
-         * This packet is fragmented, will either be dropped
-         * or payload included in a rebuilt packet later.  Don't
-         * process it further.
-         */
-         DisableDetect(p);
-         SetPreprocBit(p, PP_SFPORTSCAN);
-         SetPreprocBit(p, PP_PERFMONITOR);
-         otn_tmp = NULL;
+        DisableDetect( p );
+        otn_tmp = NULL;
     }
 
     /*
-     * pkt's not going to make it to the target, bail 
+     * pkt's not going to make it to the target, bail
      */
     if(GET_IPH_TTL(p) < f3context->min_ttl)
     {
         DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
                 "[FRAG3] Fragment discarded due to low TTL "
-                "[0x%X->0x%X], TTL: %d  " "Offset: %d Length: %d\n", 
-                ntohl(p->iph->ip_src.s_addr), 
-                ntohl(p->iph->ip_dst.s_addr), 
-                GET_IPH_TTL(p), p->frag_offset, 
+                "[0x%X->0x%X], TTL: %d  " "Offset: %d Length: %d\n",
+                ntohl(p->iph->ip_src.s_addr),
+                ntohl(p->iph->ip_dst.s_addr),
+                GET_IPH_TTL(p), p->frag_offset,
                 p->dsize););
 
         EventAnomScMinTTL(f3context);
@@ -1784,49 +1836,89 @@ static void Frag3Defrag(Packet *p, void *context)
 
     PREPROC_PROFILE_START(frag3PerfStats);
 
-    DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
+    DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
                 "\n++++++++++++++++++++++++++++++++++++++++++++++\n"););
-    DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
+    DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
                 "[**] [FRAG3] Inspecting fragment...\n"););
-    DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
+    DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
                 "[FRAG3] Got frag packet (mem use: %ld frag "
                 "trackers: %d  p->pkt_flags: 0x%X "
-                "prealloc nodes in use: %lu/%lu)\n", 
-                mem_in_use,
-                sfxhash_count(f_cache), 
-                p->packet_flags, prealloc_nodes_in_use, 
+                "prealloc nodes in use: %lu/%lu)\n",
+                frag3_mem_in_use,
+                sfxhash_count(f_cache),
+                p->packet_flags, prealloc_nodes_in_use,
                 frag3_eval_config->static_frags););
 
     pkttime = (struct timeval *) &p->pkth->ts;
 
-    /* 
-     * try to get the tracker that this frag should go with 
+    /*
+     * try to get the tracker that this frag should go with
      */
     if (ft == NULL)
     {
         DEBUG_WRAP(DebugMessage(DEBUG_FRAG, "Adding New FragTracker...\n"););
 
-        /* 
-         * first frag for this packet, start a new tracker 
+        /*
+         * first frag for this packet, start a new tracker
          */
         Frag3NewTracker(p, &fkey, f3context);
 
-        DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
+        DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
                     "[FRAG3] mem use: %ld frag "
                     "trackers: %d  prealloc "
-                    "nodes in use: %lu/%lu\n", 
-                    mem_in_use,
-                    sfxhash_count(f_cache), 
-                    prealloc_nodes_in_use, 
+                    "nodes in use: %lu/%lu\n",
+                    frag3_mem_in_use,
+                    sfxhash_count(f_cache),
+                    prealloc_nodes_in_use,
                     frag3_eval_config->static_frags););
-        /* 
+        /*
          * all done, return control to Snort
          */
         PREPROC_PROFILE_END(frag3PerfStats);
         return;
     }
+    else if (Frag3Expire(p, ft, f3context) == FRAG_TRACKER_TIMEOUT)
+    {
+        /* Time'd out FragTrackers are just purged of their packets.
+         * Reset the timestamp per this packet.
+         * And reset the rest of the tracker as if this is the
+         * first packet on the tracker, and continue. */
+
+        /* This fixes an issue raised on bugtraq relating to
+         * timeout frags not getting purged correctly when
+         * the entire set of frags show up later. */
+
+        ft->ttl = GET_IPH_TTL(p); /* store the first ttl we got */
+        ft->calculated_size = 0;
+        ft->alerted = 0;
+        ft->frag_flags = 0;
+        ft->frag_bytes = 0;
+        ft->frag_pkts = 0;
+        ft->alert_count = 0;
+        ft->ip_options_len = 0;
+        ft->ip_option_count = 0;
+        ft->ip_options_data = NULL;
+        ft->copied_ip_options_len = 0;
+        ft->copied_ip_option_count = 0;
+        ft->context = f3context;
+        ft->ordinal = 0;
+    }
+
+    // Update frag time when we get a frag associated with this tracker
+    ft->frag_time.tv_sec = p->pkth->ts.tv_sec;
+    ft->frag_time.tv_usec = p->pkth->ts.tv_usec;
 
     DEBUG_WRAP(DebugMessage(DEBUG_FRAG, "Found frag tracker\n"););
+
+    //dont forward fragments to target if some previous fragment was dropped
+    if ( ft->frag_flags & FRAG_DROP_FRAGMENTS )
+    {
+        DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
+                    "Blocking fragments due to earlier fragment drop\n"););
+        DisableDetect( p );
+        Active_DAQDropPacket( p ); 
+        f3stats.drops++;
+    }
 
     /*
      * insert the fragment into the FragTracker
@@ -1842,7 +1934,7 @@ static void Frag3Defrag(Packet *p, void *context)
             case FRAG_INSERT_FAILED:
 #ifdef DEBUG
                 LogMessage("WARNING: Insert into Fraglist failed, "
-                           "(offset: %u)\n", p->frag_offset);
+                           "(offset: %u).\n", p->frag_offset);
 #endif
                 PREPROC_PROFILE_END(frag3PerfStats);
                 return;
@@ -1850,10 +1942,10 @@ static void Frag3Defrag(Packet *p, void *context)
                 DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
                         "[FRAG3] Fragment discarded due to large TTL Delta "
                         "[0x%X->0x%X], TTL: %d  orig TTL: %d "
-                        "Offset: %d Length: %d\n", 
-                        ntohl(p->iph->ip_src.s_addr), 
-                        ntohl(p->iph->ip_dst.s_addr), 
-                        GET_IPH_TTL(p), ft->ttl, p->frag_offset, 
+                        "Offset: %d Length: %d\n",
+                        ntohl(p->iph->ip_src.s_addr),
+                        ntohl(p->iph->ip_dst.s_addr),
+                        GET_IPH_TTL(p), ft->ttl, p->frag_offset,
                         p->dsize););
                 f3stats.discards++;
                 PREPROC_PROFILE_END(frag3PerfStats);
@@ -1866,14 +1958,14 @@ static void Frag3Defrag(Packet *p, void *context)
             case FRAG_INSERT_TIMEOUT:
 #ifdef DEBUG
                 LogMessage("WARNING: Insert into Fraglist failed due to timeout, "
-                           "(offset: %u)\n", p->frag_offset);
+                           "(offset: %u).\n", p->frag_offset);
 #endif
                 PREPROC_PROFILE_END(frag3PerfStats);
                 return;
             case FRAG_INSERT_OVERLAP_LIMIT:
 #ifdef DEBUG
                 LogMessage("WARNING: Excessive IP fragment overlap, "
-                           "(More: %u, offset: %u, offsetSize: %u)\n", 
+                           "(More: %u, offset: %u, offsetSize: %u).\n",
                            p->mf, (p->frag_offset<<3), p->ip_frag_len);
 #endif
                 f3stats.discards++;
@@ -1886,26 +1978,15 @@ static void Frag3Defrag(Packet *p, void *context)
 
     p->fragtracker = (void *)ft;
 
-    //dont forward fragments to target if some previous fragment was dropped
-    if ( ft->frag_flags & FRAG_DROP_FRAGMENTS )
-    {
-        DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
-                    "Blocking fragments due to earlier fragment drop\n"););
-        DisableDetect(p);
-        SetPreprocBit(p, PP_PERFMONITOR);
-        Active_DropPacket();
-        f3stats.drops++;
-    }
-
-    /* 
-     * check to see if it's reassembly time 
+    /*
+     * check to see if it's reassembly time
      */
     if(Frag3IsComplete(ft))
     {
-        DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
+        DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
                     "[*] Fragment is complete, rebuilding!\n"););
 
-        /* 
+        /*
          * if the frag completes but it's bad we're just going to drop it
          * instead of wasting time on putting it back together
          */
@@ -1922,25 +2003,26 @@ static void Frag3Defrag(Packet *p, void *context)
                  */
                 do_detect_content = do_detect = 0;
                 otn_tmp = NULL;
-                /* And unset the frag tracker for this packet since
-                 * we're going to blow it away in a few usecs...
-                 */
-                p->fragtracker = NULL;
             }
         }
 
-        Frag3RemoveTracker(&fkey, ft);
+        if (Active_PacketWasDropped())
+        {
+            Frag3DeleteTracker(ft);
+            ft->frag_flags |= FRAG_DROP_FRAGMENTS;
+        }
+        else
+        {
+            Frag3RemoveTracker(&fkey, ft);
+            p->fragtracker = NULL;
 
+            DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
+                        "[FRAG3] Dumped fragtracker (mem use: %ld frag "
+                        "trackers: %d  prealloc nodes in use: %lu/%lu)\n",
+                        frag3_mem_in_use, sfxhash_count(f_cache),
+                        prealloc_nodes_in_use, frag3_eval_config->static_frags););
+        }
     }
-
-    DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
-                "[FRAG3] Dumped fragtracker (mem use: %ld frag "
-                "trackers: %d  prealloc "
-                "nodes in use: %lu/%lu)\n", 
-                mem_in_use,
-                sfxhash_count(f_cache), 
-                prealloc_nodes_in_use, 
-                frag3_eval_config->static_frags););
 
     PREPROC_PROFILE_END(frag3PerfStats);
     return;
@@ -1954,20 +2036,20 @@ static void Frag3Defrag(Packet *p, void *context)
  * @param f3context Engine context
  *
  * @return status
- * @retval  FRAG_TIMEOUT Current time diff is greater than the current 
+ * @retval  FRAG_TIMEOUT Current time diff is greater than the current
  *                       context's timeout value
  * @retval  FRAG_TIME_OK Current time diff is within the context's prune
- *                       window                      
+ *                       window
  */
-static INLINE int CheckTimeout(struct timeval *current_time, 
-        struct timeval *start_time, 
+static inline int CheckTimeout(struct timeval *current_time,
+        struct timeval *start_time,
         Frag3Context *f3context)
 {
-    struct timeval tv_diff; /* storage struct for the difference between 
+    struct timeval tv_diff; /* storage struct for the difference between
                                current_time and start_time */
 
     TIMERSUB(current_time, start_time, &tv_diff);
-    
+
     if(tv_diff.tv_sec >= (int)f3context->frag_timeout)
     {
         return FRAG_TIMEOUT;
@@ -1978,7 +2060,7 @@ static INLINE int CheckTimeout(struct timeval *current_time,
 
 /**
  * Time-related expiration of fragments from the system.  Checks the current
- * FragTracker for timeout, then walks up the LRU list looking to see if 
+ * FragTracker for timeout, then walks up the LRU list looking to see if
  * anyone should have timed out.
  *
  * @param p Current packet (contains pointer to the current timestamp)
@@ -1990,18 +2072,14 @@ static INLINE int CheckTimeout(struct timeval *current_time,
  * @retval FRAG_TRACKER_TIMEOUT The current FragTracker has timed out
  * @retval FRAG_OK The current FragTracker has not timed out
  */
-static int Frag3Expire(
-        Packet *p, 
-        FragTracker *ft, 
-        FRAGKEY *fkey, 
-        Frag3Context *f3context)
+static inline int Frag3Expire(Packet *p, FragTracker *ft, Frag3Context *f3context)
 {
     /*
      * Check the FragTracker that was passed in first
      */
     if(CheckTimeout(
                 pkttime,
-                &(ft)->frag_time, 
+                &(ft)->frag_time,
                 f3context) == FRAG_TIMEOUT)
     {
         /*
@@ -2036,8 +2114,7 @@ static int Frag3Expire(
     return FRAG_OK;
 }
 
-#ifdef SUP_IP6
-static INLINE void FragEvent(Packet *p, int gid, char *str,
+static inline void FragEvent(Packet *p, int gid, char *str,
                              int event_flag, int drop_flag)
 {
     if (ScIdsMode() && event_flag)
@@ -2048,84 +2125,28 @@ static INLINE void FragEvent(Packet *p, int gid, char *str,
         if ( drop_flag )
         {
             DEBUG_WRAP(DebugMessage(DEBUG_DECODE, "Dropping bad packet\n"););
-            Active_DropSession();
+            Active_DropSession(p);
         }
     }
 
     f3stats.alerts++;
     f3stats.anomalies++;
 }
-#endif
 
 /**
  * Check to see if we've got the first or last fragment on a FragTracker and
  * set the appropriate frag_flags
  *
  * @param p Packet to get the info from
- * @param ft FragTracker to set the flags on 
+ * @param ft FragTracker to set the flags on
  *
  * @return none
  */
-static INLINE int Frag3CheckFirstLast(Packet *p, FragTracker *ft, char timeout)
+static inline int Frag3CheckFirstLast(Packet *p, FragTracker *ft)
 {
     uint16_t fragLength;
     int retVal = FRAG_FIRSTLAST_OK;
     uint16_t endOfThisFrag;
-#ifdef SUP_IP6
-    char alerted = 0;
-#endif
-
-#ifdef SUP_IP6
-    /* Migrated over from decode.c */
-    if (IS_IP6(p))
-    {
-        if (p->frag_offset == 0)
-        {
-            if (!p->mf)
-            {
-                /* The 0 offset header, and more flag not set */
-
-                /* Possible vuln */
-                if ((ft->frag_flags & FRAG_GOT_FIRST) &&
-                    !(ft->frag_flags & FRAG_NO_BSD_VULN))
-                {
-                    if (p->ip_dsize > 100)
-                    {
-                        FragEvent(p, FRAG3_IPV6_BSD_ICMP_FRAG,
-                                  FRAG3_IPV6_BSD_ICMP_FRAG_STR ,
-                                  ScDecoderIpv6BadFragAlerts(),
-                                  ScDecoderIpv6BadFragDrops());
-
-                        alerted = 1;
-                    }
-                    else
-                    {
-                        FragEvent(p, FRAG3_IPV6_BAD_FRAG_PKT,
-                                  FRAG3_IPV6_BAD_FRAG_PKT_STR ,
-                                  ScDecoderIpv6BadFragAlerts(),
-                                  ScDecoderIpv6BadFragDrops());
-
-                        alerted = 1;
-                    }
-                }
-                else
-                {
-                    FragEvent(p, FRAG3_IPV6_BAD_FRAG_PKT,
-                              FRAG3_IPV6_BAD_FRAG_PKT_STR ,
-                              ScDecoderIpv6BadFragAlerts(),
-                              ScDecoderIpv6BadFragDrops());
-
-                    alerted = 1;
-                }
-            }
-            else
-            {
-                /* The 0 offset header, and more flag set */
-                /* Nothing to do */
-            }
-        }
-    }
-#endif
 
     /* set the frag flag if this is the first fragment */
     if(p->mf && p->frag_offset == 0)
@@ -2217,17 +2238,15 @@ static INLINE int Frag3CheckFirstLast(Packet *p, FragTracker *ft, char timeout)
         }
     }
 
-#ifdef SUP_IP6
     if (p->frag_offset != 0)
     {
         ft->frag_flags |= FRAG_NO_BSD_VULN;
     }
-#endif
 
-    DEBUG_WRAP(DebugMessage(DEBUG_FRAG, "Frag Status: %s:%s\n", 
-                ft->frag_flags&FRAG_GOT_FIRST?"FIRST":"No FIRST", 
+    DEBUG_WRAP(DebugMessage(DEBUG_FRAG, "Frag Status: %s:%s\n",
+                ft->frag_flags&FRAG_GOT_FIRST?"FIRST":"No FIRST",
                 ft->frag_flags&FRAG_GOT_LAST?"LAST":"No LAST"););
-    return retVal; 
+    return retVal;
 }
 
 /**
@@ -2236,18 +2255,17 @@ static INLINE int Frag3CheckFirstLast(Packet *p, FragTracker *ft, char timeout)
  * @param p The current packet to get the key info from
  * @param fkey Pointer to a container for the FragKey
  *
- * @return Pointer to the FragTracker in the hash bucket or NULL if there is 
+ * @return Pointer to the FragTracker in the hash bucket or NULL if there is
  *         no fragment in the hash bucket
  */
 static FragTracker *Frag3GetTracker(Packet *p, FRAGKEY *fkey)
 {
     FragTracker *returned; /* FragTracker ptr returned by the lookup */
 
-    /* 
+    /*
      * we have to setup the key first, downstream functions depend on
      * it being setup here
      */
-#ifdef SUP_IP6
     if (IS_IP4(p))
     {
         COPY4(fkey->sip, p->ip4h->ip_src.ip32);
@@ -2262,7 +2280,7 @@ static FragTracker *Frag3GetTracker(Packet *p, FRAGKEY *fkey)
         COPY4(fkey->sip, p->ip6h->ip_src.ip32);
         COPY4(fkey->dip, p->ip6h->ip_dst.ip32);
         fkey->ipver = 6;
-        /* Data points to the offset, and does not include the next hdr 
+        /* Data points to the offset, and does not include the next hdr
          * and reserved.  Offset it by -2 to get there */
         fragHdr = (IP6Frag *)p->ip6_extensions[p->ip6_frag_index].data;
         /* Can't rely on the next header.  Only the 0 offset packet
@@ -2271,15 +2289,7 @@ static FragTracker *Frag3GetTracker(Packet *p, FRAGKEY *fkey)
         fkey->proto = 0;
         fkey->id = fragHdr->ip6f_ident;
     }
-#else
-    fkey->sip = p->iph->ip_src.s_addr;
-    fkey->dip = p->iph->ip_dst.s_addr;
-    fkey->id = GET_IPH_ID(p);
-    fkey->pad = 0;
-    fkey->ipver = 4;
-    fkey->proto = GET_IPH_PROTO(p);
-#endif
-    if (p->vh)
+    if (p->vh && !ScVlanAgnostic())
         fkey->vlan_tag = (uint16_t)VTH_VLAN(p->vh);
     else
         fkey->vlan_tag = 0;
@@ -2291,13 +2301,20 @@ static FragTracker *Frag3GetTracker(Packet *p, FRAGKEY *fkey)
         fkey->mlabel = 0;
 #endif
 
+#ifdef HAVE_DAQ_ADDRESS_SPACE_ID
+    if (!ScAddressSpaceAgnostic())
+        fkey->addressSpaceId = DAQ_GetAddressSpaceID(p->pkth);
+    else
+        fkey->addressSpaceId = 0;
+#endif
+
     /*
      * if the hash table is empty we're done
      */
     if(sfxhash_count(f_cache) == 0)
         return NULL;
 
-    DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
+    DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
                 "[*] Looking up FragTracker using key:\n"););
 
 #ifdef DEBUG_FRAG3
@@ -2306,7 +2323,7 @@ static FragTracker *Frag3GetTracker(Packet *p, FRAGKEY *fkey)
 
     returned = (FragTracker *) sfxhash_find(f_cache, fkey);
 
-    DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
+    DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
                 "Frag3GetTracker returning %p for\n", returned););
 
     return returned;
@@ -2335,12 +2352,11 @@ static int Frag3HandleIPOptions(FragTracker *ft,
          */
         if (p->ip_options_len)
         {
-            ft->ip_options_len = p->ip_options_len;
-            ft->ip_option_count = p->ip_option_count;
             if (ft->ip_options_data)
             {
                 /* Already seen 0 offset packet and copied some IP options */
-                if (ft->copied_ip_option_count && (ft->copied_ip_option_count != p->ip_option_count))
+                if ((ft->frag_flags & FRAG_GOT_FIRST)
+                        && (ft->ip_option_count != p->ip_option_count))
                 {
                     EventAnomIpOpts(ft->context);
                 }
@@ -2350,6 +2366,8 @@ static int Frag3HandleIPOptions(FragTracker *ft,
                 /* Allocate and copy in the options */
                 ft->ip_options_data = SnortAlloc(p->ip_options_len);
                 memcpy(ft->ip_options_data, p->ip_options_data, p->ip_options_len);
+                ft->ip_options_len = p->ip_options_len;
+                ft->ip_option_count = p->ip_option_count;
             }
         }
     }
@@ -2392,7 +2410,7 @@ int FragGetPolicy(Packet *p, Frag3Context *f3context)
      * to.  */
     HostAttributeEntry *host_entry;
 
-    if (!IsAdaptiveConfigured(getRuntimePolicy(), 0))
+    if (!IsAdaptiveConfigured())
         return f3context->frag_policy;
 
     host_entry = SFAT_LookupHostEntryByDst(p);
@@ -2404,11 +2422,9 @@ int FragGetPolicy(Packet *p, Frag3Context *f3context)
         if (frag_policy != SFAT_UNKNOWN_FRAG_POLICY)
         {
             DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
-                "FragGetPolicy: Policy Map Entry: %s %s %s %d(%s)\n",
-                host_entry->hostInfo.vendor.value.s_value,
-                host_entry->hostInfo.operatingSystem.value.s_value,
-                host_entry->hostInfo.version.value.s_value,
+                "FragGetPolicy: Policy Map Entry: %d(%s)\n",
                 frag_policy, frag_policy_names[frag_policy]););
+
             return frag_policy;
         }
     }
@@ -2441,7 +2457,7 @@ static int Frag3NewTracker(Packet *p, FRAGKEY *fkey, Frag3Context *f3context)
     uint16_t fragLength;
     uint16_t frag_end;
     SFXHASH_NODE *hnode;
-    tSfPolicyId policy_id = getRuntimePolicy();
+    tSfPolicyId policy_id = getNapRuntimePolicy();
 
     fragStart = p->ip_frag_start;
     //fragStart = (uint8_t *)p->iph + GET_IPH_HLEN(p) * 4;
@@ -2450,7 +2466,7 @@ static int Frag3NewTracker(Packet *p, FRAGKEY *fkey, Frag3Context *f3context)
      * captured. */
     //fragLength = p->actual_ip_len - GET_IPH_HLEN(p) * 4;
     fragLength = p->ip_frag_len;
-#ifdef DEBUG
+#ifdef DEBUG_MSGS
     if (p->actual_ip_len != ntohs(GET_IPH_LEN(p)))
     {
         DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
@@ -2471,41 +2487,23 @@ static int Frag3NewTracker(Packet *p, FRAGKEY *fkey, Frag3Context *f3context)
         /* Ah, crap.  Return that tracker. */
         return 0;
     }
-    /* Get a node from the hash table */
-    hnode = sfxhash_get_node(f_cache, fkey);
-    if (!hnode)
+
+    // Try to get a new one
+    if (!(hnode = sfxhash_get_node(f_cache, fkey)) || !hnode->data)
     {
         DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
                     "Frag3NewTracker: sfxhash_get_node() failed\n"););
-
         return 0;
     }
-    else
-    {
-        if (hnode->data)
-        {
-            tmp = hnode->data;
-            memset(tmp, 0, sizeof(FragTracker));
-        }
-        else
-        {
-            DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
-                    "Frag3NewTracker: sfxhash_get_node() failed\n"););
 
-            return 0;
-        }
-    }
-
-    /* 
-     * setup the frag tracker 
+    tmp = (FragTracker *)hnode->data;
+    memset(tmp, 0, sizeof(FragTracker));
+    
+    /*
+     * setup the frag tracker
      */
-#ifdef SUP_IP6
     COPY4(tmp->sip,fkey->sip);
     COPY4(tmp->dip,fkey->dip);
-#else
-    tmp->sip = fkey->sip;
-    tmp->dip = fkey->dip;
-#endif
     tmp->id = fkey->id;
     if (IS_IP4(p))
     {
@@ -2543,12 +2541,12 @@ static int Frag3NewTracker(Packet *p, FRAGKEY *fkey, Frag3Context *f3context)
     tmp->config = frag3_config;
     ((Frag3Config *)sfPolicyUserDataGet(tmp->config, tmp->policy_id))->ref_count++;
 
-    /* 
-     * get our first fragment storage struct 
+    /*
+     * get our first fragment storage struct
      */
     if(!frag3_eval_config->use_prealloc)
     {
-        if(mem_in_use > frag3_eval_config->memcap)
+        if(frag3_mem_in_use > frag3_eval_config->memcap)
         {
             if (Frag3Prune(tmp) == 0)
             {
@@ -2560,12 +2558,12 @@ static int Frag3NewTracker(Packet *p, FRAGKEY *fkey, Frag3Context *f3context)
         }
 
         f = (Frag3Frag *) SnortAlloc(sizeof(Frag3Frag));
-        mem_in_use += sizeof(Frag3Frag);
+        frag3_mem_in_use += sizeof(Frag3Frag);
 
         f->fptr = (uint8_t *) SnortAlloc(fragLength);
-        mem_in_use += fragLength;
-    
+        frag3_mem_in_use += fragLength;
 
+        sfBase.frag3_mem_in_use = frag3_mem_in_use;
     }
     else
     {
@@ -2606,15 +2604,15 @@ static int Frag3NewTracker(Packet *p, FRAGKEY *fkey, Frag3Context *f3context)
     }
     else
     {
-        /* 
-         * all non-last frags are supposed to end on 8-byte boundries 
+        /*
+         * all non-last frags are supposed to end on 8-byte boundries
          */
         if(frag_end & 7)
         {
-            /* 
-             * bonk/boink/jolt/etc attack... 
+            /*
+             * bonk/boink/jolt/etc attack...
              */
-            DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
+            DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
                         "[..] Short frag (Bonk, etc) attack!\n"););
 
             EventAnomShortFrag(f3context);
@@ -2638,14 +2636,14 @@ static int Frag3NewTracker(Packet *p, FRAGKEY *fkey, Frag3Context *f3context)
     /*
      * mark the FragTracker if this is the first/last frag
      */
-    Frag3CheckFirstLast(p, tmp, 0);
+    Frag3CheckFirstLast(p, tmp);
 
     tmp->frag_bytes += fragLength;
 
     Frag3HandleIPOptions(tmp, p);
 
-    DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
-                "[#] accumulated bytes on FragTracker: %d\n", 
+    DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
+                "[#] accumulated bytes on FragTracker: %d\n",
                 tmp->frag_bytes););
 
     DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
@@ -2654,10 +2652,10 @@ static int Frag3NewTracker(Packet *p, FRAGKEY *fkey, Frag3Context *f3context)
 
 #ifdef DEBUG_FRAG3
     PrintFragKey(fkey);
-#endif 
+#endif
 
     DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
-                "Calling sfxhash(add), overhead at %lu\n", 
+                "Calling sfxhash(add), overhead at %lu\n",
                 f_cache->overhead_bytes););
 
     f3stats.fragtrackers_created++;
@@ -2704,17 +2702,17 @@ static int AddFragNode(FragTracker *ft,
 
     if (newSize <= 0)
     {
-        /* 
+        /*
          * zero size frag
          */
-        DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
+        DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
             "zero size frag after left & right trimming "
-            "(len: %d  slide: %d  trunc: %d)\n", 
+            "(len: %d  slide: %d  trunc: %d)\n",
             len, slide, trunc););
 
         f3stats.discards++;
 
-#ifdef DEBUG
+#ifdef DEBUG_MSGS
         newfrag = ft->fraglist;
         while (newfrag)
         {
@@ -2737,7 +2735,7 @@ static int AddFragNode(FragTracker *ft,
      */
     if(!frag3_eval_config->use_prealloc)
     {
-        if(mem_in_use > frag3_eval_config->memcap)
+        if(frag3_mem_in_use > frag3_eval_config->memcap)
         {
             if (Frag3Prune(ft) == 0)
             {
@@ -2748,22 +2746,24 @@ static int AddFragNode(FragTracker *ft,
             }
         }
 
-        /* 
-         * build a frag struct to track this particular fragment 
+        /*
+         * build a frag struct to track this particular fragment
          */
-        newfrag = (Frag3Frag *) SnortAlloc(sizeof(Frag3Frag)); 
-        mem_in_use += sizeof(Frag3Frag);
+        newfrag = (Frag3Frag *) SnortAlloc(sizeof(Frag3Frag));
+        frag3_mem_in_use += sizeof(Frag3Frag);
 
-        /* 
-         * allocate some space to hold the actual data 
+        /*
+         * allocate some space to hold the actual data
          */
         newfrag->fptr = (uint8_t*)SnortAlloc(fragLength);
-        mem_in_use += fragLength;
+        frag3_mem_in_use += fragLength;
+
+        sfBase.frag3_mem_in_use = frag3_mem_in_use;
     }
     else
     {
-        /* 
-         * fragments are preallocated, grab one from the list 
+        /*
+         * fragments are preallocated, grab one from the list
          */
         while((newfrag = Frag3PreallocPop()) == NULL)
         {
@@ -2776,17 +2776,17 @@ static int AddFragNode(FragTracker *ft,
             }
         }
 
-        DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
+        DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
                     "got newfrag (%p) from prealloc\n", newfrag););
     }
 
     f3stats.fragnodes_created++;
 
-    newfrag->flen = fragLength;  
+    newfrag->flen = fragLength;
     memcpy(newfrag->fptr, fragStart, fragLength);
     newfrag->ord = ft->ordinal++;
 
-    /* 
+    /*
      * twiddle the frag values for overlaps
      */
     newfrag->data = newfrag->fptr + slide;
@@ -2794,7 +2794,7 @@ static int AddFragNode(FragTracker *ft,
     newfrag->offset = frag_offset;
     newfrag->last = lastfrag;
 
-    DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
+    DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
                 "[+] Adding new frag, offset %d, size %d\n"
                 "   nf->data = nf->fptr(%p) + slide (%d)\n"
                 "   nf->size = len(%d) - slide(%d) - trunc(%d)\n",
@@ -2802,12 +2802,12 @@ static int AddFragNode(FragTracker *ft,
                 slide, fragLength, slide, trunc););
 
     /*
-     * insert the new frag into the list 
+     * insert the new frag into the list
      */
     Frag3FraglistAddNode(ft, left, newfrag);
 
-    DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
-                "[*] Inserted new frag %d@%d ptr %p data %p prv %p nxt %p\n", 
+    DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
+                "[*] Inserted new frag %d@%d ptr %p data %p prv %p nxt %p\n",
                 newfrag->size, newfrag->offset, newfrag, newfrag->data,
                 newfrag->prev, newfrag->next););
 
@@ -2816,7 +2816,7 @@ static int AddFragNode(FragTracker *ft,
      */
     ft->frag_bytes += newfrag->size;
 
-    DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
+    DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
                 "[#] accumulated bytes on FragTracker %d, count"
                 " %d\n", ft->frag_bytes, ft->fraglist_count););
 
@@ -2846,7 +2846,7 @@ static int DupFragNode(FragTracker *ft,
      */
     if(!frag3_eval_config->use_prealloc)
     {
-        if(mem_in_use > frag3_eval_config->memcap)
+        if(frag3_mem_in_use > frag3_eval_config->memcap)
         {
             if (Frag3Prune(ft) == 0)
             {
@@ -2857,22 +2857,24 @@ static int DupFragNode(FragTracker *ft,
             }
         }
 
-        /* 
-         * build a frag struct to track this particular fragment 
+        /*
+         * build a frag struct to track this particular fragment
          */
-        newfrag = (Frag3Frag *) SnortAlloc(sizeof(Frag3Frag)); 
-        mem_in_use += sizeof(Frag3Frag);
+        newfrag = (Frag3Frag *) SnortAlloc(sizeof(Frag3Frag));
+        frag3_mem_in_use += sizeof(Frag3Frag);
 
-        /* 
-         * allocate some space to hold the actual data 
+        /*
+         * allocate some space to hold the actual data
          */
         newfrag->fptr = (uint8_t*)SnortAlloc(left->flen);
-        mem_in_use += left->flen;
+        frag3_mem_in_use += left->flen;
+
+        sfBase.frag3_mem_in_use = frag3_mem_in_use;
     }
     else
     {
-        /* 
-         * fragments are preallocated, grab one from the list 
+        /*
+         * fragments are preallocated, grab one from the list
          */
         while((newfrag = Frag3PreallocPop()) == NULL)
         {
@@ -2885,14 +2887,14 @@ static int DupFragNode(FragTracker *ft,
             }
         }
 
-        DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
+        DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
                     "got newfrag (%p) from prealloc\n", newfrag););
     }
 
     f3stats.fragnodes_created++;
 
     newfrag->ord = ft->ordinal++;
-    /* 
+    /*
      * twiddle the frag values for overlaps
      */
     newfrag->flen = left->flen;
@@ -2903,12 +2905,12 @@ static int DupFragNode(FragTracker *ft,
     newfrag->last = left->last;
 
     /*
-     * insert the new frag into the list 
+     * insert the new frag into the list
      */
     Frag3FraglistAddNode(ft, left, newfrag);
 
-    DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
-                "[*] Inserted new frag %d@%d ptr %p data %p prv %p nxt %p\n", 
+    DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
+                "[*] Inserted new frag %d@%d ptr %p data %p prv %p nxt %p\n",
                 newfrag->size, newfrag->offset, newfrag, newfrag->data,
                 newfrag->prev, newfrag->next););
 
@@ -2917,7 +2919,7 @@ static int DupFragNode(FragTracker *ft,
      */
     ft->frag_bytes += newfrag->size;
 
-    DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
+    DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
                 "[#] accumulated bytes on FragTracker %d, count"
                 " %d\n", ft->frag_bytes, ft->fraglist_count););
 
@@ -2935,19 +2937,19 @@ static int DupFragNode(FragTracker *ft,
  * @returns 1 if tiny fragment was detected, 0 otherwise
  */
 static inline int checkTinyFragments(
-        Frag3Context *f3context, 
-        Packet *p, 
+        Frag3Context *f3context,
+        Packet *p,
         unsigned int trimmedLength
         )
 {
     //Snort may need to raise a separate event if
-    //only trimmed length is tiny. 
+    //only trimmed length is tiny.
     if(p->mf)
     {
         ///detect tiny fragments before processing overlaps.
         if (f3context->min_fragment_length)
         {
-            if (p->ip_frag_len <= f3context->min_fragment_length) 
+            if (p->ip_frag_len <= f3context->min_fragment_length)
             {
                 DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
                             "Frag3: Received fragment size(%d) is not more than configured min_fragment_length (%d)\n",
@@ -2972,7 +2974,7 @@ static inline int checkTinyFragments(
 }
 
 int  frag3DropAllFragments(
-        Packet *p 
+        Packet *p
         )
 {
     FragTracker *ft = (FragTracker *)p->fragtracker;
@@ -2989,7 +2991,7 @@ int  frag3DropAllFragments(
 }
 
 /**
- * This is where the rubber hits the road.  Insert the new fragment's data 
+ * This is where the rubber hits the road.  Insert the new fragment's data
  * into the current FragTracker's fraglist, doing anomaly detection and
  * handling overlaps in a target-based manner.
  *
@@ -3005,7 +3007,7 @@ int  frag3DropAllFragments(
  * @retval FRAG_INSERT_TTL Delta of TTL values beyond configured value
  * @retval FRAG_INSERT_OK Fragment has been inserted successfully
  */
-static int Frag3Insert(Packet *p, FragTracker *ft, FRAGKEY *fkey, 
+static int Frag3Insert(Packet *p, FragTracker *ft, FRAGKEY *fkey,
         Frag3Context *f3context)
 {
     uint16_t orig_offset;    /* offset specified in this fragment header */
@@ -3029,55 +3031,12 @@ static int Frag3Insert(Packet *p, FragTracker *ft, FRAGKEY *fkey,
     Frag3Frag *dump_me = NULL;  /* frag ptr for complete overlaps to dump */
     const uint8_t *fragStart;
     int16_t fragLength;
-    char timeout = 0;    
     PROFILE_VARS;
-    
+
     sfBase.iFragInserts++;
 
     PREPROC_PROFILE_START(frag3InsertPerfStats);
 
-    /* 
-     * check this fragtracker for expiration as well as 
-     * the rest of the hash table
-     */
-    if(Frag3Expire(p, ft, fkey, f3context) == FRAG_TRACKER_TIMEOUT)
-    {
-        /* Time'd out FragTrackers are just purged of their packets.
-         * Reset the timestamp per this packet.
-         * And reset the rest of the tracker as if this is the
-         * first packet on the tracker, and continue. */
-
-        /* This fixes an issue raised on bugtraq relating to
-         * timeout frags not getting purged correctly when
-         * the entire set of frags show up later.
-         */
-        ft->frag_time.tv_sec = p->pkth->ts.tv_sec;
-        ft->frag_time.tv_usec = p->pkth->ts.tv_usec;
-
-        ft->ttl = GET_IPH_TTL(p); /* store the first ttl we got */
-        ft->calculated_size = 0;
-        ft->alerted = 0;
-        ft->frag_flags = 0;
-        ft->frag_bytes = 0;
-        ft->frag_pkts = 0;
-        ft->alert_count = 0;
-        ft->ip_options_len = 0;
-        ft->ip_option_count = 0;
-        ft->ip_options_data = NULL;
-        ft->copied_ip_options_len = 0;
-        ft->copied_ip_option_count = 0;
-        ft->context = f3context;
-        ft->ordinal = 0;
-        timeout = 1;
-
-        //DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
-        //            "[..] Deleting fragtracker due to timeout!\n"););
-
-        //PREPROC_PROFILE_END(frag3InsertPerfStats);
-        //return FRAG_INSERT_TIMEOUT;
-    }
-
-#ifdef SUP_IP6
     if (IS_IP6(p) && (p->frag_offset == 0))
     {
         IP6Frag *fragHdr = (IP6Frag *)p->ip6_extensions[p->ip6_frag_index].data;
@@ -3086,13 +3045,12 @@ static int Frag3Insert(Packet *p, FragTracker *ft, FRAGKEY *fkey,
             ft->protocol = fragHdr->ip6f_nxt;
         }
     }
-#endif
 
     /*
      * Check to see if this fragment is the first or last one and
      * set the appropriate flags and values in the FragTracker
      */
-    firstLastOk = Frag3CheckFirstLast(p, ft, timeout);
+    firstLastOk = Frag3CheckFirstLast(p, ft);
 
     fragStart = p->ip_frag_start;
     //fragStart = (uint8_t *)p->iph + GET_IPH_HLEN(p) * 4;
@@ -3101,7 +3059,7 @@ static int Frag3Insert(Packet *p, FragTracker *ft, FRAGKEY *fkey,
      * captured. */
     //len = fragLength = p->actual_ip_len - GET_IPH_HLEN(p) * 4;
     len = fragLength = p->ip_frag_len;
-#ifdef DEBUG
+#ifdef DEBUG_MSGS
     if (p->actual_ip_len != ntohs(GET_IPH_LEN(p)))
     {
         DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
@@ -3109,7 +3067,7 @@ static int Frag3Insert(Packet *p, FragTracker *ft, FRAGKEY *fkey,
             "truncated packet (%d)?\n",
             p->actual_ip_len, ntohs(GET_IPH_LEN(p)), pkt_snaplen););
     }
-#endif    
+#endif
 
     /*
      * setup local variables for tracking this frag
@@ -3120,7 +3078,7 @@ static int Frag3Insert(Packet *p, FragTracker *ft, FRAGKEY *fkey,
         frag_offset = (uint16_t)ft->calculated_size;
     frag_end = frag_offset + fragLength;
 
-    /* 
+    /*
      * might have last frag...
      */
     if(!p->mf)
@@ -3138,15 +3096,15 @@ static int Frag3Insert(Packet *p, FragTracker *ft, FRAGKEY *fkey,
     else
     {
         uint16_t oldfrag_end;
-        /* 
-         * all non-last frags are supposed to end on 8-byte boundries 
+        /*
+         * all non-last frags are supposed to end on 8-byte boundries
          */
         if(frag_end & 7)
         {
-            /* 
-             * bonk/boink/jolt/etc attack... 
+            /*
+             * bonk/boink/jolt/etc attack...
              */
-            DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
+            DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
                         "[..] Short frag (Bonk, etc) attack!\n"););
 
             EventAnomShortFrag(f3context);
@@ -3170,7 +3128,7 @@ static int Frag3Insert(Packet *p, FragTracker *ft, FRAGKEY *fkey,
             if(ft->frag_flags & FRAG_GOT_LAST)
             {
                 /* oversize frag attack */
-                DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
+                DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
                             "[..] Oversize frag pkt!\n"););
 
                 EventAnomOversize(f3context);
@@ -3184,10 +3142,10 @@ static int Frag3Insert(Packet *p, FragTracker *ft, FRAGKEY *fkey,
 
     if(frag_end == frag_offset)
     {
-        /* 
-         * zero size frag... 
+        /*
+         * zero size frag...
          */
-        DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
+        DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
                     "[..] Zero size frag!\n"););
 
         if(f3context->frag3_alerts & FRAG3_DETECT_ANOMALIES)
@@ -3201,10 +3159,10 @@ static int Frag3Insert(Packet *p, FragTracker *ft, FRAGKEY *fkey,
 
     if(ft->calculated_size > IP_MAXPACKET)
     {
-        /* 
-         * oversize pkt... 
+        /*
+         * oversize pkt...
          */
-        DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
+        DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
                     "[..] Oversize frag!\n"););
 
             EventAnomBadsizeLg(f3context);
@@ -3215,7 +3173,7 @@ static int Frag3Insert(Packet *p, FragTracker *ft, FRAGKEY *fkey,
         return FRAG_INSERT_ANOMALY;
     }
 
-    /* 
+    /*
      * This may alert on bad options, but we still want to
      * insert the packet
      */
@@ -3223,11 +3181,11 @@ static int Frag3Insert(Packet *p, FragTracker *ft, FRAGKEY *fkey,
 
     ft->frag_pkts++;
 
-    DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
+    DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
                 "Walking frag list (%d nodes), new frag %d@%d\n",
                 ft->fraglist_count, fragLength, frag_offset););
 
-    /* 
+    /*
      * Need to figure out where in the frag list this frag should go
      * and who its neighbors are
      */
@@ -3236,8 +3194,8 @@ static int Frag3Insert(Packet *p, FragTracker *ft, FRAGKEY *fkey,
         i++;
         right = idx;
 
-        DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
-                    "%d right o %d s %d ptr %p prv %p nxt %p\n", 
+        DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
+                    "%d right o %d s %d ptr %p prv %p nxt %p\n",
                     i, right->offset, right->size, right,
                     right->prev, right->next););
 
@@ -3249,22 +3207,22 @@ static int Frag3Insert(Packet *p, FragTracker *ft, FRAGKEY *fkey,
         left = right;
     }
 
-    /* 
-     * null things out if we walk to the end of the list 
+    /*
+     * null things out if we walk to the end of the list
      */
     if(idx == NULL) right = NULL;
 
-    /* 
-     * handle forward (left-side) overlaps... 
+    /*
+     * handle forward (left-side) overlaps...
      */
     if(left)
     {
-        DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
-                    "Dealing with previous (left) frag %d@%d\n", 
+        DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
+                    "Dealing with previous (left) frag %d@%d\n",
                     left->size, left->offset););
 
         /*
-         * generate the overlap of the current packet fragment 
+         * generate the overlap of the current packet fragment
          * over this left-side fragment
          */
         /* NOTE: If frag_offset is really large, overlap can be
@@ -3278,15 +3236,15 @@ static int Frag3Insert(Packet *p, FragTracker *ft, FRAGKEY *fkey,
             ft->overlap_count++;
 
             if(frag_end < ft->calculated_size ||
-                    ((ft->frag_flags & FRAG_GOT_LAST) && 
+                    ((ft->frag_flags & FRAG_GOT_LAST) &&
                      frag_end != ft->calculated_size))
             {
                 if (!p->mf)
                 {
-                    /* 
-                     * teardrop attack... 
+                    /*
+                     * teardrop attack...
                      */
-                    DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
+                    DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
                                 "[..] Teardrop attack!\n"););
 
                     EventAttackTeardrop(f3context);
@@ -3301,13 +3259,13 @@ static int Frag3Insert(Packet *p, FragTracker *ft, FRAGKEY *fkey,
             /*
              * Ok, we've got an overlap so we need to handle it.
              *
-             * The target-based modes here match the data generated by 
+             * The target-based modes here match the data generated by
              * Paxson's Active Mapping paper as do the policy types.
              */
             switch(ft->frag_policy)
             {
-                /* 
-                 * new frag gets moved around 
+                /*
+                 * new frag gets moved around
                  */
                 case FRAG_POLICY_LINUX:
                 case FRAG_POLICY_FIRST:
@@ -3317,16 +3275,16 @@ static int Frag3Insert(Packet *p, FragTracker *ft, FRAGKEY *fkey,
                     frag_offset += (int16_t)overlap;
                     slide = (int16_t)overlap;
 
-                    DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
+                    DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
                                 "left overlap, new frag moves: %d bytes, "
                                 "slide: %d\n", overlap, slide););
 
                     if(frag_end <= frag_offset)
                     {
-                        /* 
+                        /*
                          * zero size frag
                          */
-                        DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
+                        DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
                                     "zero size frag\n"););
 
                         EventAnomZeroFrag(f3context);
@@ -3340,9 +3298,9 @@ static int Frag3Insert(Packet *p, FragTracker *ft, FRAGKEY *fkey,
 
                     break;
 
-                    /* 
-                     * new frag stays where it is, overlapee (existing frag) 
-                     * gets whacked 
+                    /*
+                     * new frag stays where it is, overlapee (existing frag)
+                     * gets whacked
                      */
                 case FRAG_POLICY_BSD_RIGHT:
                     if (left->offset + left->size >= frag_offset + len)
@@ -3362,7 +3320,7 @@ static int Frag3Insert(Packet *p, FragTracker *ft, FRAGKEY *fkey,
                         /* The new frag is overlapped on both sides by an
                          * existing frag -- existing frag needs to be split
                          * and the new frag inserted in the middle.
-                         * 
+                         *
                          * Need to duplciate left.  Adjust that guys
                          * offset by + (frag_offset + len) and
                          * size by - (frag_offset + len - left->offset).
@@ -3399,7 +3357,7 @@ left_overlap_last:
                         dump_me = left;
 
                         DEBUG_WRAP(DebugMessage(DEBUG_FRAG, "retrans, "
-                                "dumping old frag (offset: %d overlap: %d)\n", 
+                                "dumping old frag (offset: %d overlap: %d)\n",
                                 dump_me->offset, overlap););
 
                         left = left->prev;
@@ -3415,7 +3373,7 @@ left_overlap_last:
              */
             if(frag_end < frag_offset)
             {
-                DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
+                DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
                             "frag_end < frag_offset!"););
 
                 if(f3context->frag3_alerts & FRAG3_DETECT_ANOMALIES)
@@ -3443,7 +3401,7 @@ left_overlap_last:
         return FRAG_INSERT_FAILED;
     }
 
-    /* 
+    /*
      * handle tail (right-side) overlaps
      *
      * We have to walk thru all the right side frags until the offset of the
@@ -3451,8 +3409,8 @@ left_overlap_last:
      */
     while(right && (right->offset < frag_end) && !done)
     {
-        DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
-                    "Next (right)fragment %d@%d\n", 
+        DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
+                    "Next (right)fragment %d@%d\n",
                     right->size, right->offset););
 
 #ifdef DEBUG_FRAG3
@@ -3464,15 +3422,15 @@ left_overlap_last:
         if (overlap)
         {
             if(frag_end < ft->calculated_size ||
-                    ((ft->frag_flags & FRAG_GOT_LAST) && 
+                    ((ft->frag_flags & FRAG_GOT_LAST) &&
                      frag_end != ft->calculated_size))
             {
                 if (!p->mf)
                 {
-                    /* 
-                     * teardrop attack... 
+                    /*
+                     * teardrop attack...
                      */
-                    DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
+                    DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
                                 "[..] Teardrop attack!\n"););
 
                     EventAttackTeardrop(f3context);
@@ -3485,24 +3443,24 @@ left_overlap_last:
             }
         }
 
-        /* 
-         * partial right-side overlap, this will be the last frag to check 
+        /*
+         * partial right-side overlap, this will be the last frag to check
          */
         if(overlap < right->size)
         {
             f3stats.overlaps++;
             ft->overlap_count++;
 
-            DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
+            DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
                         "Right-side overlap %d bytes\n", overlap););
 
-            /* 
+            /*
              * once again, target-based policy processing
              */
             switch(ft->frag_policy)
             {
-                /* 
-                 * existing fragment gets truncated 
+                /*
+                 * existing fragment gets truncated
                  */
                 case FRAG_POLICY_LAST:
                 case FRAG_POLICY_LINUX:
@@ -3523,14 +3481,14 @@ left_overlap_last:
                     DEBUG_WRAP(DebugMessage(DEBUG_FRAG, "[!!] right overlap, "
                                 "truncating old frag (offset: %d, "
                                 "overlap: %d)\n", right->offset, overlap);
-                            DebugMessage(DEBUG_FRAG, 
+                            DebugMessage(DEBUG_FRAG,
                                 "Exiting right overlap loop...\n"););
                     if (right->size <= 0)
                     {
                         dump_me = right;
 
                         DEBUG_WRAP(DebugMessage(DEBUG_FRAG, "retrans, "
-                                "dumping old frag (offset: %d overlap: %d)\n", 
+                                "dumping old frag (offset: %d overlap: %d)\n",
                                 dump_me->offset, overlap););
 
                         right = right->next;
@@ -3539,8 +3497,8 @@ left_overlap_last:
                     }
                     break;
 
-                /* 
-                 * new frag gets truncated 
+                /*
+                 * new frag gets truncated
                  */
                 case FRAG_POLICY_FIRST:
                 case FRAG_POLICY_WINDOWS:
@@ -3549,9 +3507,9 @@ left_overlap_last:
                     trunc = (int16_t)overlap;
                     DEBUG_WRAP(DebugMessage(DEBUG_FRAG, "[!!] right overlap, "
                                 "truncating new frag (offset: %d "
-                                "overlap: %d)\n", 
+                                "overlap: %d)\n",
                                 right->offset, overlap);
-                            DebugMessage(DEBUG_FRAG, 
+                            DebugMessage(DEBUG_FRAG,
                                 "Exiting right overlap loop...\n"););
                     break;
             }
@@ -3568,7 +3526,7 @@ left_overlap_last:
              */
             if(!alerted_overlap && (f3context->frag3_alerts & FRAG3_DETECT_ANOMALIES))
             {
-                /* 
+                /*
                  * retrans/full overlap
                  */
                 EventAnomOverlap(f3context);
@@ -3601,7 +3559,7 @@ left_overlap_last:
                         ft->frag_bytes -= right->size;
 
                         DEBUG_WRAP(DebugMessage(DEBUG_FRAG, "retrans, "
-                                "dumping old frag (offset: %d overlap: %d)\n", 
+                                "dumping old frag (offset: %d overlap: %d)\n",
                                 dump_me->offset, overlap););
 
                         right = right->next;
@@ -3631,7 +3589,7 @@ left_overlap_last:
 
                     /* ie, fall through to the next case */
 
-                /* 
+                /*
                  * overlap is rejected
                  */
                 case FRAG_POLICY_FIRST:
@@ -3654,11 +3612,11 @@ left_overlap_last:
 
                     if (frag_end - trunc <= frag_offset)
                     {
-                        /* 
+                        /*
                          * zero size frag
                          */
-                        DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
-                                    "zero size frag (len: %d  overlap: %d)\n", 
+                        DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
+                                    "zero size frag (len: %d  overlap: %d)\n",
                                     fragLength, overlap););
 
                         f3stats.discards++;
@@ -3695,7 +3653,7 @@ left_overlap_last:
                         {
                             curr_end = right->offset + right->size;
                             left = right;
-                            right = right->next;                            
+                            right = right->next;
                         }
 
                         if (right && (right->offset < frag_end))
@@ -3736,8 +3694,8 @@ left_overlap_last:
                     }
                     break;
 
-                    /* 
-                     * retrans accepted, dump old frag 
+                    /*
+                     * retrans accepted, dump old frag
                      */
 right_overlap_last:
                 case FRAG_POLICY_BSD_RIGHT:
@@ -3747,7 +3705,7 @@ right_overlap_last:
                     ft->frag_bytes -= right->size;
 
                     DEBUG_WRAP(DebugMessage(DEBUG_FRAG, "retrans, "
-                                "dumping old frag (offset: %d overlap: %d)\n", 
+                                "dumping old frag (offset: %d overlap: %d)\n",
                                 dump_me->offset, overlap););
 
                     right = right->next;
@@ -3762,7 +3720,7 @@ right_overlap_last:
     ///detect tiny fragments but continue processing
     checkTinyFragments(f3context, p, len-slide-trunc);
 
-    if ((f3context->overlap_limit) && 
+    if ((f3context->overlap_limit) &&
             (ft->overlap_count >= f3context->overlap_limit))
     {
         //overlap limit exceeded. Raise event on all subsequent fragments
@@ -3785,7 +3743,7 @@ right_overlap_last:
                     "Fully truncated right overlap\n"););
     }
 
-    DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
+    DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
                 "Frag3Insert(): returning normally\n"););
 
     PREPROC_PROFILE_END(frag3InsertPerfStats);
@@ -3801,9 +3759,9 @@ right_overlap_last:
  * @retval 1 If the FragTracker is ready to be rebuilt
  * @retval 0 If the FragTracker hasn't fulfilled its completion criteria
  */
-static INLINE int Frag3IsComplete(FragTracker *ft)
+static inline int Frag3IsComplete(FragTracker *ft)
 {
-    DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
+    DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
                 "[$] Checking completion criteria\n"););
 
     /*
@@ -3812,7 +3770,7 @@ static INLINE int Frag3IsComplete(FragTracker *ft)
     if((ft->frag_flags & FRAG_GOT_FIRST) &&
             (ft->frag_flags & FRAG_GOT_LAST))
     {
-        DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
+        DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
                     "   Got First and Last frags\n"););
 
         /*
@@ -3821,7 +3779,7 @@ static INLINE int Frag3IsComplete(FragTracker *ft)
          */
         if(ft->frag_bytes == ft->calculated_size)
         {
-            DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
+            DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
                         "   [!] frag_bytes = calculated_size!\n"););
 
             sfBase.iFragCompletes++;
@@ -3831,7 +3789,7 @@ static INLINE int Frag3IsComplete(FragTracker *ft)
 
         if (ft->frag_bytes > ft->calculated_size)
         {
-            DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
+            DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
                         "   [!] frag_bytes > calculated_size!\n"););
 
             sfBase.iFragCompletes++;
@@ -3839,7 +3797,7 @@ static INLINE int Frag3IsComplete(FragTracker *ft)
             return 1;
         }
 
-        DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
+        DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
                     "   Calc size (%d) != frag bytes (%d)\n",
                     ft->calculated_size, ft->frag_bytes););
 
@@ -3849,8 +3807,8 @@ static INLINE int Frag3IsComplete(FragTracker *ft)
         return 0;
     }
 
-    DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
-                "   Missing First or Last frags (frag_flags: 0x%X)\n", 
+    DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
+                "   Missing First or Last frags (frag_flags: 0x%X)\n",
                 ft->frag_flags););
 
     return 0;
@@ -3874,17 +3832,7 @@ static void Frag3Rebuild(FragTracker *ft, Packet *p)
     Packet* dpkt;
     PROFILE_VARS;
 
-#ifdef SUP_IP6
 // XXX NOT YET IMPLEMENTED - debugging
-#else
-    DEBUG_WRAP(DebugMessage(DEBUG_FRAG, "Rebuilding pkt [0x%X:%d  0x%X:%d]\n", 
-                p->iph->ip_src.s_addr, p->sp, 
-                p->iph->ip_dst.s_addr, p->dp);
-            DebugMessage(DEBUG_FRAG, "Calculated size: %d\n", 
-                ft->calculated_size);
-            DebugMessage(DEBUG_FRAG, "Frag Bytes: %d\n", ft->frag_bytes);
-            );
-#endif
 
     PREPROC_PROFILE_START(frag3RebuildPerfStats);
 
@@ -3895,18 +3843,19 @@ static void Frag3Rebuild(FragTracker *ft, Packet *p)
 #endif
         dpkt = defrag_pkt;
 
-    Encode_Format(ENC_FLAG_DEF|ENC_FLAG_FWD, p, dpkt);
-    /* 
+    Encode_Format(ENC_FLAG_DEF|ENC_FLAG_FWD, p, dpkt, PSEUDO_PKT_IP);
+    /*
      * set the pointer to the end of the rebuild packet
      */
     rebuild_ptr = (uint8_t*)dpkt->data;
-    rebuild_end = (uint8_t*)dpkt->data + dpkt->max_dsize;
+    // the encoder ensures enough space for a maximum datagram
+    rebuild_end = (uint8_t*)dpkt->data + IP_MAXPACKET;
 
     if (IS_IP4(p))
     {
         /*
          * if there are IP options, copy those in as well
-         * these are for the inner IP... 
+         * these are for the inner IP...
          */
         if (ft->ip_options_data && ft->ip_options_len)
         {
@@ -3917,7 +3866,7 @@ static void Frag3Rebuild(FragTracker *ft, Packet *p)
                     "Adjusting IP Header to %d bytes\n",
                     new_ip_hlen););
             SET_IP_HLEN((IPHdr *)dpkt->iph, new_ip_hlen>>2);
-    
+
             ret = SafeMemcpy(rebuild_ptr, ft->ip_options_data,
                 ft->ip_options_len, rebuild_ptr, rebuild_end);
 
@@ -3936,29 +3885,29 @@ static void Frag3Rebuild(FragTracker *ft, Packet *p)
              */
         }
 
-        /* 
-         * clear the packet fragment fields 
-         */ 
+        /*
+         * clear the packet fragment fields
+         */
         ((IPHdr *)dpkt->iph)->ip_off = 0x0000;
         dpkt->frag_flag = 0;
 
-        DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
+        DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
                     "[^^] Walking fraglist:\n"););
     }
 
-    /* 
-     * walk the fragment list and rebuild the packet 
+    /*
+     * walk the fragment list and rebuild the packet
      */
     for(frag = ft->fraglist; frag; frag = frag->next)
     {
-        DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
+        DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
                     "   frag: %p\n"
                     "   frag->data: %p\n"
                     "   frag->offset: %d\n"
                     "   frag->size: %d\n"
                     "   frag->prev: %p\n"
                     "   frag->next: %p\n",
-                    frag, frag->data, frag->offset, 
+                    frag, frag->data, frag->offset,
                     frag->size, frag->prev, frag->next););
 
         /*
@@ -3968,12 +3917,12 @@ static void Frag3Rebuild(FragTracker *ft, Packet *p)
         if ((frag->offset + frag->size) > (uint16_t)ft->calculated_size)
             continue;
 
-        /* 
+        /*
          * try to avoid buffer overflows...
          */
         if (frag->size)
         {
-            ret = SafeMemcpy(rebuild_ptr+frag->offset, frag->data, frag->size, 
+            ret = SafeMemcpy(rebuild_ptr+frag->offset, frag->data, frag->size,
                              rebuild_ptr, rebuild_end);
 
             if (ret == SAFEMEM_ERROR)
@@ -3987,8 +3936,8 @@ static void Frag3Rebuild(FragTracker *ft, Packet *p)
 
     if (IS_IP4(p))
     {
-        /* 
-         * tell the rest of the system that this is a rebuilt fragment 
+        /*
+         * tell the rest of the system that this is a rebuilt fragment
          */
         dpkt->packet_flags |= PKT_REBUILT_FRAG;
         dpkt->frag_flag = 0;
@@ -3996,7 +3945,6 @@ static void Frag3Rebuild(FragTracker *ft, Packet *p)
 
         Encode_Update(dpkt);
     }
-#ifdef SUP_IP6
     else /* Inner/only is IP6 */
     {
         IP6RawHdr* rawHdr = (IP6RawHdr*)dpkt->raw_ip6h;
@@ -4026,18 +3974,17 @@ static void Frag3Rebuild(FragTracker *ft, Packet *p)
         dpkt->dsize = (uint16_t)ft->calculated_size;
         Encode_Update(dpkt);
     }
-#endif
-    
+
     pc.rebuilt_frags++;
     sfBase.iFragFlushes++;
 
     /* Rebuild is complete */
     PREPROC_PROFILE_END(frag3RebuildPerfStats);
 
-    /* 
-     * process the packet through the detection engine 
+    /*
+     * process the packet through the detection engine
      */
-    DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
+    DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
                 "Processing rebuilt packet:\n"););
 
     f3stats.reassembles++;
@@ -4059,10 +4006,10 @@ static void Frag3Rebuild(FragTracker *ft, Packet *p)
     }
 #endif
     SnortEventqPush();
-    ProcessPacket(NULL, dpkt->pkth, dpkt->pkt, ft);
+    ProcessPacket(dpkt, dpkt->pkth, dpkt->pkt, ft);
     SnortEventqPop();
 
-    DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
+    DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
                 "Done with rebuilt packet, marking rebuilt...\n"););
 
     ft->frag_flags = ft->frag_flags | FRAG_REBUILT;
@@ -4077,20 +4024,22 @@ static void Frag3Rebuild(FragTracker *ft, Packet *p)
  */
 static void Frag3DeleteFrag(Frag3Frag *frag)
 {
-    /* 
+    /*
      * delete the fragment either in prealloc or dynamic mode
      */
     if(!frag3_eval_config->use_prealloc)
     {
         free(frag->fptr);
-        mem_in_use -= frag->flen;
+        frag3_mem_in_use -= frag->flen;
 
         free(frag);
-        mem_in_use -= sizeof(Frag3Frag);
+        frag3_mem_in_use -= sizeof(Frag3Frag);
+
+        sfBase.frag3_mem_in_use = frag3_mem_in_use;
     }
     else
     {
-        DEBUG_WRAP(DebugMessage(DEBUG_FRAG, "o %d s %d ptr %p prv %p nxt %p\n", 
+        DEBUG_WRAP(DebugMessage(DEBUG_FRAG, "o %d s %d ptr %p prv %p nxt %p\n",
                     frag->offset, frag->size, frag, frag->prev, frag->next););
         Frag3PreallocPush(frag);
     }
@@ -4099,7 +4048,7 @@ static void Frag3DeleteFrag(Frag3Frag *frag)
 }
 
 /**
- * Delete the contents of a FragTracker, in this instance that just means to 
+ * Delete the contents of a FragTracker, in this instance that just means to
  * dump the fraglist.  The sfxhash system deletes the actual FragTracker mem.
  *
  * @param ft FragTracker to delete
@@ -4111,8 +4060,8 @@ static void Frag3DeleteTracker(FragTracker *ft)
     Frag3Frag *idx = ft->fraglist;  /* pointer to the fraglist to delete */
     Frag3Frag *dump_me = NULL;      /* ptr to the Frag3Frag element to drop */
 
-    DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
-                "Frag3DeleteTracker %d nodes to dump\n", ft->fraglist_count);); 
+    DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
+                "Frag3DeleteTracker %d nodes to dump\n", ft->fraglist_count););
 
     /*
      * delete all the nodes in a fraglist
@@ -4143,7 +4092,7 @@ static void Frag3DeleteTracker(FragTracker *ft)
  */
 static void Frag3RemoveTracker(void *key, void *data)
 {
-    /* 
+    /*
      * sfxhash maintains its own self preservation stuff/node freeing stuff
      */
     if(sfxhash_remove(f_cache, key) != SFXHASH_OK)
@@ -4177,7 +4126,7 @@ static int Frag3AutoFree(void *key, void *data)
     policy_id = ft->policy_id;
     pPolicyConfig = (Frag3Config *)sfPolicyUserDataGet(config, policy_id);
 
-    DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
+    DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
                 "Calling Frag3DeleteTracker()\n"););
 
     Frag3DeleteTracker(ft);
@@ -4228,7 +4177,7 @@ static int Frag3UserFree(void *key, void *data)
     policy_id = ft->policy_id;
     pPolicyConfig = (Frag3Config *)sfPolicyUserDataGet(config, policy_id);
 
-    DEBUG_WRAP(DebugMessage(DEBUG_FRAG, 
+    DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
                 "Calling Frag3DeleteTracker()\n"););
 
     Frag3DeleteTracker(ft);
@@ -4286,18 +4235,18 @@ static int Frag3Prune(FragTracker *not_me)
 
     if(!frag3_eval_config->use_prealloc)
     {
-        //while(mem_in_use > (frag3_eval_config->memcap-globa_config->ten_percent))
+        //while(frag3_mem_in_use > (frag3_eval_config->memcap-globa_config->ten_percent))
         DEBUG_WRAP(DebugMessage(DEBUG_FRAG,
                     "(spp_frag3) Frag3Prune: Pruning by memcap! "););
-        while((mem_in_use > frag3_eval_config->memcap) ||
+        while((frag3_mem_in_use > frag3_eval_config->memcap) ||
               (f_cache->count > (frag3_eval_config->max_frags - 5)))
         {
             hnode = sfxhash_lru_node(f_cache);
-            if(!hnode) 
+            if(!hnode)
             {
                 break;
             }
-                    
+
             if (hnode && hnode->data == not_me)
             {
                 if (found_this)
@@ -4319,7 +4268,7 @@ static int Frag3Prune(FragTracker *not_me)
             {
                 char *src_str = SnortStrdup(FragIPToStr(ft->sip, ft->ipver));
                 LogMessage("(spp_frag3) Frag3Prune: Fragment dropped (timeout)! "
-                    "[%s->%s ID: %d Count: %d]\n", src_str, FragIPToStr(ft->dip, ft->ipver), 
+                    "[%s->%s ID: %d Count: %d]\n", src_str, FragIPToStr(ft->dip, ft->ipver),
                     ft->id, ft->fraglist_count);
                 free(src_str);
                 f3stats.timeouts++;
@@ -4329,7 +4278,7 @@ static int Frag3Prune(FragTracker *not_me)
             {
                 char *src_str = SnortStrdup(FragIPToStr(ft->sip, ft->ipver));
                 LogMessage("(spp_frag3) Frag3Prune: Fragment dropped (memory)! "
-                    "[%s->%s ID: %d Count: %d]\n", src_str, FragIPToStr(ft->dip, ft->ipver), 
+                    "[%s->%s ID: %d Count: %d]\n", src_str, FragIPToStr(ft->dip, ft->ipver),
                     ft->id, ft->fraglist_count);
                 free(src_str);
             }
@@ -4348,7 +4297,7 @@ static int Frag3Prune(FragTracker *not_me)
                (frag3_eval_config->static_frags - frag3_eval_config->ten_percent))
         {
             hnode = sfxhash_lru_node(f_cache);
-            if(!hnode) 
+            if(!hnode)
             {
                 break;
             }
@@ -4375,7 +4324,7 @@ static int Frag3Prune(FragTracker *not_me)
             {
                 char *src_str = SnortStrdup(FragIPToStr(ft->sip, ft->ipver));
                 LogMessage("(spp_frag3) Frag3Prune: Fragment dropped (timeout)! "
-                    "[%s->%s ID: %d Count: %d]\n", src_str, FragIPToStr(ft->dip, ft->ipver), 
+                    "[%s->%s ID: %d Count: %d]\n", src_str, FragIPToStr(ft->dip, ft->ipver),
                     ft->id, ft->fraglist_count);
                 free(src_str);
                 f3stats.timeouts++;
@@ -4385,7 +4334,7 @@ static int Frag3Prune(FragTracker *not_me)
             {
                 char *src_str = SnortStrdup(FragIPToStr(ft->sip, ft->ipver));
                 LogMessage("(spp_frag3) Frag3Prune: Fragment dropped (memory)! "
-                    "[%s->%s ID: %d Count: %d]\n", src_str, FragIPToStr(ft->dip, ft->ipver), 
+                    "[%s->%s ID: %d Count: %d]\n", src_str, FragIPToStr(ft->dip, ft->ipver),
                     ft->id, ft->fraglist_count);
                 free(src_str);
             }
@@ -4431,7 +4380,7 @@ static void Frag3PrintStats(int exiting)
 
 static int Frag3FreeConfigsPolicy(
         tSfPolicyUserContextId config,
-        tSfPolicyId policyId, 
+        tSfPolicyId policyId,
         void* pData
         )
 {
@@ -4449,7 +4398,7 @@ static void Frag3FreeConfigs(tSfPolicyUserContextId config)
     if (config == NULL)
         return;
 
-    sfPolicyUserDataIterate (config, Frag3FreeConfigsPolicy);
+    sfPolicyUserDataFreeIterate (config, Frag3FreeConfigsPolicy);
 
     sfPolicyConfigDelete(config);
 }
@@ -4468,12 +4417,7 @@ static void Frag3FreeConfig(Frag3Config *config)
         f3context = config->frag3ContextList[engineIndex];
         if (f3context->bound_addrs != NULL)
         {
-#ifdef SUP_IP6
             sfvar_free(f3context->bound_addrs);
-#else
-            IpAddrSetDestroy(f3context->bound_addrs);
-            free(f3context->bound_addrs);
-#endif
         }
 
         free(f3context);
@@ -4539,14 +4483,14 @@ static void Frag3ResetStats(int signal, void *foo)
  * @return pointer to a Frag3Frag preallocated structure or NULL if the list
  * is empty
  */
-static INLINE Frag3Frag *Frag3PreallocPop(void)
+static inline Frag3Frag *Frag3PreallocPop(void)
 {
     Frag3Frag *node;
 
     if(prealloc_frag_list)
     {
         node = prealloc_frag_list;
-        prealloc_frag_list = prealloc_frag_list->next; 
+        prealloc_frag_list = prealloc_frag_list->next;
         if (prealloc_frag_list)
         {
             prealloc_frag_list->prev = NULL;
@@ -4578,14 +4522,14 @@ static INLINE Frag3Frag *Frag3PreallocPop(void)
     return node;
 }
 
-/** 
+/**
  * Put a prealloc node back into the prealloc_cache pool
  *
  * @param node Prealloc node to place back in the pool
  *
  * @return none
  */
-static INLINE void Frag3PreallocPush(Frag3Frag *node)
+static inline void Frag3PreallocPush(Frag3Frag *node)
 {
     if (!prealloc_frag_list)
     {
@@ -4621,8 +4565,8 @@ static INLINE void Frag3PreallocPush(Frag3Frag *node)
  *
  * @return none
  */
-static INLINE void Frag3FraglistAddNode(FragTracker *ft, Frag3Frag *prev, 
-        Frag3Frag *node) 
+static inline void Frag3FraglistAddNode(FragTracker *ft, Frag3Frag *prev,
+        Frag3Frag *node)
 {
     if(prev)
     {
@@ -4656,7 +4600,7 @@ static INLINE void Frag3FraglistAddNode(FragTracker *ft, Frag3Frag *prev,
  *
  * @return none
  */
-static INLINE void Frag3FraglistDeleteNode(FragTracker *ft, Frag3Frag *node)
+static inline void Frag3FraglistDeleteNode(FragTracker *ft, Frag3Frag *node)
 {
     DEBUG_WRAP(DebugMessage(DEBUG_FRAG, "Deleting list node %p (p %p n %p)\n",
                 node, node->prev, node->next););
@@ -4684,7 +4628,7 @@ static INLINE void Frag3FraglistDeleteNode(FragTracker *ft, Frag3Frag *node)
 }
 
 /*
-**  
+**
 **  NAME
 **    fpAddFragAlert::
 **
@@ -4692,8 +4636,8 @@ static INLINE void Frag3FraglistDeleteNode(FragTracker *ft, Frag3Frag *node)
 **    This function flags an alert per frag tracker.
 **
 **  FORMAL INPUTS
-**    Packet *     - the packet to inspect
-**    OTNX *       - the rule that generated the alert
+**    Packet *      - the packet to inspect
+**    OptTreeNode * - the rule that generated the alert
 **
 **  FORMAL OUTPUTS
 **    int - 0 if not flagged
@@ -4722,7 +4666,7 @@ int fpAddFragAlert(Packet *p, OptTreeNode *otn)
 }
 
 /*
-**  
+**
 **  NAME
 **    fpFragAlerted::
 **
@@ -4731,8 +4675,8 @@ int fpAddFragAlert(Packet *p, OptTreeNode *otn)
 **    in this session, but only if this is a rebuilt packet.
 **
 **  FORMAL INPUTS
-**    Packet *     - the packet to inspect
-**    OTNX *       - the rule that generated the alert
+**    Packet *      - the packet to inspect
+**    OptTreeNode * - the rule that generated the alert
 **
 **  FORMAL OUTPUTS
 **    int - 0 if alert NOT previously generated
@@ -4794,17 +4738,17 @@ int fragGetApplicationProtocolId(Packet *p)
     switch (GET_IPH_PROTO(p))
     {
         case IPPROTO_TCP:
-            ft->ipprotocol = FindProtocolReference("tcp");
+            ft->ipprotocol = protocolReferenceTCP;
             src_port = p->sp;
             dst_port = p->dp;
             break;
         case IPPROTO_UDP:
-            ft->ipprotocol = FindProtocolReference("udp");
+            ft->ipprotocol = protocolReferenceUDP;
             src_port = p->sp;
             dst_port = p->dp;
             break;
         case IPPROTO_ICMP:
-            ft->ipprotocol = FindProtocolReference("icmp");
+            ft->ipprotocol = protocolReferenceICMP;
             break;
     }
 
@@ -4840,17 +4784,17 @@ int fragGetApplicationProtocolId(Packet *p)
 
 
 #ifdef SNORT_RELOAD
-static void Frag3ReloadGlobal(char *args)
+static void Frag3ReloadGlobal(struct _SnortConfig *sc, char *args, void **new_config)
 {
+    tSfPolicyUserContextId frag3_swap_config = (tSfPolicyUserContextId)*new_config;
     Frag3Config *pDefaultPolicyConfig = NULL;
     Frag3Config *pCurrentPolicyConfig = NULL;
-    tSfPolicyId policy_id = getParserPolicy();
+    tSfPolicyId policy_id = getParserPolicy(sc);
 
-    if (frag3_swap_config == NULL)
+    if (!frag3_swap_config)
     {
         frag3_swap_config = sfPolicyConfigCreate();
-
-        AddFuncToPreprocReloadVerifyList(Frag3ReloadVerify);
+        *new_config = (void *)frag3_swap_config;
     }
 
     sfPolicyUserPolicySet (frag3_swap_config, policy_id);
@@ -4900,15 +4844,20 @@ static void Frag3ReloadGlobal(char *args)
     Frag3PrintGlobalConfig(pCurrentPolicyConfig);
 
     if ( !pCurrentPolicyConfig->disabled )
-        AddFuncToPreprocList(Frag3Defrag, PRIORITY_NETWORK, PP_FRAG3, PROTO_BIT__IP);
+    {
+        AddFuncToPreprocList(sc, Frag3Defrag, PP_FRAG3_PRIORITY, PP_FRAG3, PROTO_BIT__IP);
+        session_api->enable_preproc_all_ports( sc, PP_FRAG3, PROTO_BIT__IP );
+    }
 }
 
-static void Frag3ReloadEngine(char *args)
+static void Frag3ReloadEngine(struct _SnortConfig *sc, char *args, void **new_config)
 {
-    Frag3Context *context;      /* context pointer */ 
-    tSfPolicyId policy_id = getParserPolicy();
+    tSfPolicyUserContextId frag3_swap_config;
+    Frag3Context *context;      /* context pointer */
+    tSfPolicyId policy_id = getParserPolicy(sc);
     Frag3Config *config = NULL;
 
+    frag3_swap_config = (tSfPolicyUserContextId)GetRelatedReloadData(sc, "frag3_global");
     config = (Frag3Config *)sfPolicyUserDataGet(frag3_swap_config, policy_id);
     if (config == NULL)
     {
@@ -4924,7 +4873,7 @@ static void Frag3ReloadEngine(char *args)
     context->min_ttl = FRAG3_MIN_TTL;
     context->frag3_alerts = 0;
 
-    Frag3ParseArgs(args, context);
+    Frag3ParseArgs(sc, args, context);
 
     if (context->bound_addrs == NULL)
     {
@@ -4961,8 +4910,9 @@ static void Frag3ReloadEngine(char *args)
 }
 
 static int Frag3ReloadVerifyPolicy(
+        struct _SnortConfig *sc,
         tSfPolicyUserContextId config,
-        tSfPolicyId policyId, 
+        tSfPolicyId policyId,
         void* pData
         )
 {
@@ -4974,15 +4924,18 @@ static int Frag3ReloadVerifyPolicy(
     if ((policyId != getDefaultPolicy())
            && (pPolicyConfig->numFrag3Contexts == 0))
     {
-        FatalError("Frag3VerifyConfig() policy engine required "
+        WarningMessage("Frag3VerifyConfig() policy engine required "
                 "but not configured.\n");
+        return -1;
     }
 
     return 0;
 }
 
-static int Frag3ReloadVerify(void)
+static int Frag3ReloadVerify(struct _SnortConfig *sc, void *swap_config)
 {
+    int rval;
+    tSfPolicyUserContextId frag3_swap_config = (tSfPolicyUserContextId)swap_config;
     Frag3Config *pCurrDefaultPolicyConfig = NULL;
     Frag3Config *pSwapDefaultPolicyConfig = NULL;
 
@@ -4992,7 +4945,8 @@ static int Frag3ReloadVerify(void)
     if ((frag3_swap_config == NULL) || (frag3_config == NULL))
         return 0;
 
-    sfPolicyUserDataIterate (frag3_swap_config, Frag3ReloadVerifyPolicy);
+    if ((rval = sfPolicyUserDataIterate (sc, frag3_swap_config, Frag3ReloadVerifyPolicy)))
+        return rval;
 
     if ((pSwapDefaultPolicyConfig->memcap != pCurrDefaultPolicyConfig->memcap) ||
         (pSwapDefaultPolicyConfig->max_frags != pCurrDefaultPolicyConfig->max_frags) ||
@@ -5001,9 +4955,6 @@ static int Frag3ReloadVerify(void)
     {
         ErrorMessage("Frag3 Reload: Changing \"prealloc_frags\", \"memcap\", "
                      "\"max_frags\" or \"prealloc_memcap\" requires a restart.\n");
-
-        Frag3FreeConfigs(frag3_swap_config);
-        frag3_swap_config = NULL;
         return -1;
     }
 
@@ -5012,7 +4963,7 @@ static int Frag3ReloadVerify(void)
 
 static int Frag3ReloadSwapPolicy(
         tSfPolicyUserContextId config,
-        tSfPolicyId policyId, 
+        tSfPolicyId policyId,
         void* pData
         )
 {
@@ -5028,17 +4979,17 @@ static int Frag3ReloadSwapPolicy(
     return 0;
 }
 
-static void * Frag3ReloadSwap(void)
+static void * Frag3ReloadSwap(struct _SnortConfig *sc, void *swap_config)
 {
+    tSfPolicyUserContextId frag3_swap_config = (tSfPolicyUserContextId)swap_config;
     tSfPolicyUserContextId old_config = frag3_config;
 
     if (frag3_swap_config == NULL)
         return NULL;
 
     frag3_config = frag3_swap_config;
-    frag3_swap_config = NULL;
 
-    sfPolicyUserDataIterate (old_config, Frag3ReloadSwapPolicy);
+    sfPolicyUserDataFreeIterate (old_config, Frag3ReloadSwapPolicy);
 
     if (sfPolicyUserPolicyGetActive(old_config) == 0)
         return (void *)old_config;

@@ -1,5 +1,6 @@
 /*
-** Copyright (C) 2002-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -15,11 +16,10 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 /* $Id$ */
-
 
 #ifndef __DECODE_H__
 #define __DECODE_H__
@@ -51,9 +51,12 @@
 #include "bitop.h"
 #include "ipv6_port.h"
 #include "sf_ip.h"
-#include "protocols.h"
-#include "sfdaq.h"
+#include "sf_iph.h"
+#include "sf_protocols.h"
 #include "util.h"
+#include "sf_types.h"
+
+struct _SnortConfig;
 
 /*  D E F I N E S  ************************************************************/
 
@@ -70,6 +73,8 @@
 #define ETHERNET_TYPE_LOOP            0x9000
 #define ETHERNET_TYPE_MPLS_UNICAST    0x8847
 #define ETHERNET_TYPE_MPLS_MULTICAST  0x8848
+#define ETHERNET_TYPE_ERSPAN_TYPE2    0x88be
+#define ETHERNET_TYPE_ERSPAN_TYPE3    0x22eb
 
 #define ETH_DSAP_SNA                  0x08    /* SNA */
 #define ETH_SSAP_SNA                  0x00    /* SNA */
@@ -83,9 +88,10 @@
 
 #define ETHERNET_HEADER_LEN             14
 #define ETHERNET_MAX_LEN_ENCAP          1518    /* 802.3 (+LLC) or ether II ? */
-#define PPPOE_HEADER_LEN                20    /* ETHERNET_HEADER_LEN + 6 */
+#define PPPOE_HEADER_LEN                6
 
 #define VLAN_HEADER_LEN                  4
+
 #ifndef NO_NON_ETHER_DECODER
 #define MINIMAL_TOKENRING_HEADER_LEN    22
 #define MINIMAL_IEEE80211_HEADER_LEN    10    /* Ack frames and others */
@@ -101,7 +107,7 @@
 #define WLAN_TYPE_MGMT_REREQ   0x20     /* 0010    00  Reassoc. Req.   */
 #define WLAN_TYPE_MGMT_RERES   0x30     /* 0011    00  Reassoc. Resp.  */
 #define WLAN_TYPE_MGMT_PRREQ   0x40     /* 0100    00  Probe Request   */
-#define WLAN_TYPE_MGMT_PRRES   0x50     /* 0101    00  Probe Response  */ 
+#define WLAN_TYPE_MGMT_PRRES   0x50     /* 0101    00  Probe Response  */
 #define WLAN_TYPE_MGMT_BEACON  0x80     /* 1000    00  Beacon          */
 #define WLAN_TYPE_MGMT_ATIM    0x90     /* 1001    00  ATIM message    */
 #define WLAN_TYPE_MGMT_DIS     0xa0     /* 1010    00  Disassociation  */
@@ -143,7 +149,7 @@
 #define EAPOL_TYPE_ASF      0x04      /* EAPOL Encapsulated ASF-Alert */
 
 /* Extensible Authentication Protocol Codes RFC 2284*/
-#define EAP_CODE_REQUEST    0x01   
+#define EAP_CODE_REQUEST    0x01
 #define EAP_CODE_RESPONSE   0x02
 #define EAP_CODE_SUCCESS    0x03
 #define EAP_CODE_FAILURE    0x04
@@ -172,6 +178,11 @@
 #define TEREDO_INDICATOR_AUTH_MIN_LEN 13
 #define TEREDO_MIN_LEN 2
 
+/* GTP values */
+
+#define GTP_MIN_LEN 8
+#define GTP_V0_HEADER_LEN 20
+#define GTP_V1_HEADER_LEN 12
 /* ESP constants */
 #define ESP_HEADER_LEN 8
 #define ESP_AUTH_DATA_LEN 12
@@ -196,6 +207,7 @@ struct ppp_header {
 #endif
 
 #define PPP_IP         0x0021        /* Internet Protocol */
+#define PPP_IPV6       0x0057        /* Internet Protocol v6 */
 #define PPP_VJ_COMP    0x002d        /* VJ compressed TCP/IP */
 #define PPP_VJ_UCOMP   0x002f        /* VJ uncompressed TCP/IP */
 #define PPP_IPX        0x002b        /* Novell IPX Protocol */
@@ -224,8 +236,9 @@ struct enc_header {
 #define ICMP_NORMAL_LEN         8
 
 #define IP_OPTMAX               40
-#define IP6_EXTMAX              40
 #define TCP_OPTLENMAX           40 /* (((2^4) - 1) * 4  - TCP_HEADER_LEN) */
+
+#define LOG_FUNC_MAX            32
 
 #ifndef IP_MAXPACKET
 #define IP_MAXPACKET    65535        /* maximum packet size */
@@ -309,7 +322,7 @@ struct enc_header {
 #define TCPOPT_BUBBA            17  /* Bubba   [Knowles] */
 
 #define TCPOPT_TRAILER_CSUM     18  /* Trailer Checksum Option [Subbu & Monroe] */
-#define TCPOLEN_TRAILER_CSUM  3  
+#define TCPOLEN_TRAILER_CSUM  3
 
 #define TCPOPT_MD5SIG           19  /* MD5 Signature Option [RFC2385] */
 #define TCPOLEN_MD5SIG        18
@@ -324,6 +337,9 @@ struct enc_header {
 #define TCPOPT_UNASSIGNED          25  /* Unassigned (released 12/18/00) */
 #define TCPOPT_COMPRESSION         26  /* TCP Compression Filter [Bellovin] */
 /* http://www.research.att.com/~smb/papers/draft-bellovin-tcpcomp-00.txt*/
+
+#define TCPOPT_AUTH   29  /* [RFC5925] - The TCP Authentication Option
+                             Intended to replace MD5 Signature Option [RFC2385] */
 
 #define TCP_OPT_TRUNC -1
 #define TCP_OPT_BADLEN -2
@@ -348,7 +364,7 @@ struct enc_header {
     #define    TCP_MAXWIN   65535    /* largest value for (unscaled) window */
 #endif
 
-#ifndef TCP_MAX_WINSHIFT 
+#ifndef TCP_MAX_WINSHIFT
     #define TCP_MAX_WINSHIFT    14    /* maximum window shift */
 #endif
 
@@ -585,53 +601,68 @@ struct enc_header {
 #define PKT_REBUILT_STREAM   0x00000002  /* is a rebuilt stream */
 #define PKT_STREAM_UNEST_UNI 0x00000004  /* is from an unestablished stream and
                                           * we've only seen traffic in one direction */
-#define PKT_PSEUDO           0x00000008  /* pseudo packet */
+#define PKT_STREAM_EST       0x00000008  /* is from an established stream */
 
-#define PKT_STREAM_EST       0x00000010  /* is from an established stream */
-#define PKT_STATELESS        0x00000020  /* Packet has matched a stateless rule */
+#define PKT_STREAM_INSERT    0x00000010  /* this packet has been queued for stream reassembly */
+#define PKT_STREAM_TWH       0x00000020  /* packet completes the 3-way handshake */
 #define PKT_FROM_SERVER      0x00000040  /* this packet came from the server
                                             side of a connection (TCP) */
 #define PKT_FROM_CLIENT      0x00000080  /* this packet came from the client
                                             side of a connection (TCP) */
 
-#define PKT_HTTP_DECODE      0x00000100  /* this packet has normalized http */
-/* Replaces PKT_OBFUSCATED which is no longer in use because we no longer
- * modify the packet when doing IP obfuscation */
-#define PKT_PAYLOAD_OBFUSCATE  0x00000200
-#define PKT_STREAM_INSERT    0x00000400  /* this packet has been inserted into stream4 */
-#define PKT_ALT_DECODE       0x00000800  /* this packet has been normalized by telnet
+#define PKT_PDU_HEAD         0x00000100  /* start of PDU */
+#define PKT_PDU_TAIL         0x00000200  /* end of PDU */
+#define PKT_UNSURE_ENCAP     0x00000400  /* packet may have incorrect encapsulation layer. */
+                                         /* don't alert if "next layer" is invalid. */
+#define PKT_HTTP_DECODE      0x00000800  /* this packet has normalized http */
 
-                                    (only set when we must look at an alernative buffer) */
+#define PKT_IGNORE           0x00001000  /* this packet should be ignored, based on port */
+#define PKT_TRUST            0x00002000  /* this packet should fallback to being whitelisted if no other verdict was specified */
+#define PKT_ALLOW_MULTIPLE_DETECT 0x00004000  /* packet has either pipelined mime attachements */
+                                              /* or pipeline http requests */
+#define PKT_PAYLOAD_OBFUSCATE     0x00008000
 
-#define PKT_STREAM_TWH       0x00001000
-#define PKT_IGNORE_PORT      0x00002000  /* this packet should be ignored, based on port */
-#define PKT_PASS_RULE        0x00004000  /* this packet has matched a pass rule */
-#define PKT_NO_DETECT        0x00008000  /* this packet should not be preprocessed */
-
-#define PKT_PREPROC_RPKT     0x00010000  /* set in original packet to indicate a preprocessor
-                                          * has a reassembled packet */
-#define PKT_DCE_RPKT         0x00020000  /* this packet is a DCE/RPC reassembled one */
+#define PKT_STATELESS        0x00010000  /* Packet has matched a stateless rule */
+#define PKT_PASS_RULE        0x00020000  /* this packet has matched a pass rule */
 #define PKT_IP_RULE          0x00040000  /* this packet is being evaluated against an IP rule */
 #define PKT_IP_RULE_2ND      0x00080000  /* this packet is being evaluated against an IP rule */
 
-#define PKT_SMB_SEG          0x00100000  /* this is an SMB desegmented packet */
-#define PKT_DCE_SEG          0x00200000  /* this is a DCE/RPC desegmented packet */
-#define PKT_DCE_FRAG         0x00400000  /* this is a DCE/RPC defragmented packet */
-#define PKT_SMB_TRANS        0x00800000  /* this is an SMB Transact reassembled packet */
-
-#define PKT_DCE_PKT          0x01000000  /* a DCE packet processed by DCE/RPC pp */
-#define PKT_RPC_PKT          0x02000000  /* an ONC RPC packet processed by rpc decode pp */
-
-#define PKT_LOGGED           0x04000000  /* this packet has been logged */
+#define PKT_LOGGED           0x00100000  /* this packet has been logged */
+#define PKT_PSEUDO           0x00200000  /* is a pseudo packet */
+#define PKT_MODIFIED         0x00400000  /* packet had normalizations, etc. */
 #ifdef NORMALIZER
-#define PKT_RESIZED          0x08000000  /* packet has new size; must set modified too */
+#define PKT_RESIZED          0x00800000  /* packet has new size; must set modified too */
 #endif
-#define PKT_MODIFIED         0x10000000  /* packet had normalizations, etc. */
+#define PKT_EARLY_REASSEMBLY 0x01000000  /* this packet. part of the expected stream, shoudl have stream reassembly set */ 
 
-#define PKT_HTTP_RESP_BODY   0x20000000  /* packet has non-zipped HTTP response Body */
-#define PKT_ALLOW_MULTIPLE_DETECT 0x40000000  /* packet has either pipelined mime attachements or pipeline http requests */
+// neither of these flags will be set for (full) retransmissions or non-data segments
+// a partial overlap results in out of sequence condition
+// out of sequence condition is sticky
+#define PKT_STREAM_ORDER_OK  0x01000000  /* this segment is in order, w/o gaps */
+#define PKT_STREAM_ORDER_BAD 0x02000000  /* this stream had at least one gap */
+#define PKT_REASSEMBLED_OLD  0x04000000  /* for backwards compat with so rules */
 
-#define PKT_UNSURE_ENCAP     0x80000000  /* packet has a potentially incorrect encapsulation layer. don't alert if "next layer" is invalid. */
+#define PKT_IPREP_SOURCE_TRIGGERED  0x08000000
+#define PKT_IPREP_DATA_SET          0x10000000
+#define PKT_FILE_EVENT_SET          0x20000000
+// 0x40000000 are available
+
+#define PKT_PDU_FULL (PKT_PDU_HEAD | PKT_PDU_TAIL)
+
+#define REASSEMBLED_PACKET_FLAGS (PKT_REBUILT_STREAM|PKT_REASSEMBLED_OLD)
+
+typedef enum {
+    PSEUDO_PKT_IP,
+    PSEUDO_PKT_TCP,
+    PSEUDO_PKT_DCE_RPKT,
+    PSEUDO_PKT_SMB_SEG,
+    PSEUDO_PKT_DCE_SEG,
+    PSEUDO_PKT_DCE_FRAG,
+    PSEUDO_PKT_SMB_TRANS,
+    PSEUDO_PKT_PS,
+    PSEUDO_PKT_SDF,
+    PSEUDO_PKT_MAX
+} PseudoPacketType;
 
 /* error flags */
 #define PKT_ERR_CKSUM_IP     0x01
@@ -642,19 +673,15 @@ struct enc_header {
 #define PKT_ERR_CKSUM_ANY    0x1F
 #define PKT_ERR_BAD_TTL      0x20
 
-/* Only include application layer reassembled data
- * flags here - no PKT_REBUILT_FRAG */
-#define REASSEMBLED_PACKET_FLAGS \
-    (PKT_REBUILT_STREAM|PKT_SMB_SEG|PKT_DCE_SEG|PKT_DCE_FRAG|PKT_SMB_TRANS)
-
 /*  D A T A  S T R U C T U R E S  *********************************************/
+typedef int (*LogFunction)(void *ssnptr, uint8_t **buf, uint32_t *len, uint32_t *type);
 
 #ifndef NO_NON_ETHER_DECODER
 /* Start Token Ring Data Structures */
 
 #ifdef _MSC_VER
     /* Visual C++ pragma to disable warning messages about nonstandard bit field type */
-    #pragma warning( disable : 4214 )  
+    #pragma warning( disable : 4214 )
 #endif
 
 /* LLC structure */
@@ -674,7 +701,7 @@ typedef struct _Trh_llc
 
 #ifdef _MSC_VER
   /* Visual C++ pragma to disable warning messages about nonstandard bit field type */
-  #pragma warning( disable : 4214 )  
+  #pragma warning( disable : 4214 )
 #endif
 
 
@@ -687,16 +714,16 @@ typedef struct _Trh_llc
       uint16_t bcast:3, len:5, dir:1, lf:3, res:4;
    #else
       uint16_t len:5,         length of RIF field, including RC itself
-      bcast:3,       broadcast indicator 
-      res:4,         reserved 
-      lf:3,      largest frame size 
+      bcast:3,       broadcast indicator
+      res:4,         reserved
+      lf:3,      largest frame size
       dir:1;         direction
 */
 
 #define TRH_MR_BCAST(trhmr)  ((ntohs((trhmr)->bcast_len_dir_lf_res) & 0xe000) >> 13)
 #define TRH_MR_LEN(trhmr)    ((ntohs((trhmr)->bcast_len_dir_lf_res) & 0x1F00) >> 8)
-#define TRH_MR_DIR(trhmr)    ((ntohs((trhmr)->bcast_len_dir_lf_res) & 0x0080) >> 8)
-#define TRH_MR_LF(trhmr)     ((ntohs((trhmr)->bcast_len_dir_lf_res) & 0x0070) >> 7)
+#define TRH_MR_DIR(trhmr)    ((ntohs((trhmr)->bcast_len_dir_lf_res) & 0x0080) >> 7)
+#define TRH_MR_LF(trhmr)     ((ntohs((trhmr)->bcast_len_dir_lf_res) & 0x0070) >> 4)
 #define TRH_MR_RES(trhmr)     ((ntohs((trhmr)->bcast_len_dir_lf_res) & 0x000F))
 
 typedef struct _Trh_mr
@@ -788,6 +815,7 @@ typedef struct _SLLHdr {
  * Pflog1_Hdr:  CVS = 1.3,  DLT_OLD_PFLOG = 17,  Length = 28
  * Pflog2_Hdr:  CVS = 1.8,  DLT_PFLOG     = 117, Length = 48
  * Pflog3_Hdr:  CVS = 1.12, DLT_PFLOG     = 117, Length = 64
+ * Pflog3_Hdr:  CVS = 1.172, DLT_PFLOG     = 117, Length = 100
  *
  * Since they have the same DLT, Pflog{2,3}Hdr are distinguished
  * by their actual length.  The minimum required length excludes
@@ -857,6 +885,33 @@ typedef struct _Pflog3_hdr
 #define PFLOG3_HDRLEN (sizeof(struct _Pflog3_hdr))
 #define PFLOG3_HDRMIN (PFLOG3_HDRLEN - PFLOG_PADLEN)
 
+
+typedef struct _Pflog4_hdr
+{
+    uint8_t  length;
+    uint8_t  af;
+    uint8_t  action;
+    uint8_t  reason;
+    char     ifname[IFNAMSIZ];
+    char     ruleset[PFLOG_RULELEN];
+    uint32_t rulenr;
+    uint32_t subrulenr;
+    uint32_t uid;
+    uint32_t pid;
+    uint32_t rule_uid;
+    uint32_t rule_pid;
+    uint8_t  dir;
+    uint8_t  rewritten;
+    uint8_t  pad[2];
+    uint8_t saddr[16];
+    uint8_t daddr[16];
+    uint16_t sport;
+    uint16_t dport;
+} Pflog4Hdr;
+
+#define PFLOG4_HDRLEN sizeof(struct _Pflog4_hdr)
+#define PFLOG4_HDRMIN sizeof(struct _Pflog4_hdr)
+
 /*
  * ssl_pkttype values.
  */
@@ -875,15 +930,15 @@ typedef struct _Pflog3_hdr
 
 
 #ifdef _MSC_VER
-  /* Visual C++ pragma to disable warning messages 
-   * about nonstandard bit field type 
+  /* Visual C++ pragma to disable warning messages
+   * about nonstandard bit field type
    */
-  #pragma warning( disable : 4214 )  
+  #pragma warning( disable : 4214 )
 #endif
 
 #define VTH_PRIORITY(vh)  ((ntohs((vh)->vth_pri_cfi_vlan) & 0xe000) >> 13)
-#define VTH_CFI(vh)       ((ntohs((vh)->vth_pri_cfi_vlan) & 0x0100) >> 12)
-#define VTH_VLAN(vh)      ((unsigned short)(ntohs((vh)->vth_pri_cfi_vlan) & 0x0FFF))
+#define VTH_CFI(vh)       ((ntohs((vh)->vth_pri_cfi_vlan) & 0x1000) >> 12)
+#define VTH_VLAN(vh)      ((uint16_t)(ntohs((vh)->vth_pri_cfi_vlan) & 0x0FFF))
 
 typedef struct _VlanTagHdr
 {
@@ -918,7 +973,7 @@ typedef struct _EthLlcOther
 #define SPARC_TWIDDLE       0
 #endif
 
-/* 
+/*
  * Ethernet header
  */
 
@@ -948,13 +1003,13 @@ typedef struct _WifiHdr
 #endif  // NO_NON_ETHER_DECODER
 
 
-/* Can't add any fields not in the real header here 
+/* Can't add any fields not in the real header here
    because of how the decoder uses structure overlaying */
 #ifdef _MSC_VER
-  /* Visual C++ pragma to disable warning messages 
-   * about nonstandard bit field type 
+  /* Visual C++ pragma to disable warning messages
+   * about nonstandard bit field type
    */
-  #pragma warning( disable : 4214 )  
+  #pragma warning( disable : 4214 )
 #endif
 
 /* tcpdump shows us the way to cross platform compatibility */
@@ -983,6 +1038,9 @@ typedef struct _WifiHdr
 #ifndef IPPROTO_PIM
 #define IPPROTO_PIM             103
 #endif
+#ifndef IPPROTO_PGM
+#define IPPROTO_PGM             113
+#endif
 
 typedef struct _IPHdr
 {
@@ -1006,23 +1064,23 @@ typedef struct _IPv4Hdr
     uint16_t ip_id;        /* identification  */
     uint16_t ip_off;       /* fragment offset */
     uint8_t ip_ttl;        /* time to live field */
-    uint8_t ip_proto;      /* datagram protocol */ 
+    uint8_t ip_proto;      /* datagram protocol */
     uint16_t ip_csum;      /* checksum */
     sfip_t ip_src;          /* source IP */
     sfip_t ip_dst;          /* dest IP */
 } IP4Hdr;
 
 typedef struct _IPv6Hdr
-{ 
+{
     uint32_t vcl;      /* version, class, and label */
     uint16_t len;      /* length of the payload */
     uint8_t  next;     /* next header
                          * Uses the same flags as
                          * the IPv4 protocol field */
-    uint8_t  hop_lmt;  /* hop limit */ 
+    uint8_t  hop_lmt;  /* hop limit */
     sfip_t ip_src;
     sfip_t ip_dst;
-} IP6Hdr; 
+} IP6Hdr;
 
 /* IPv6 address */
 #ifndef s6_addr
@@ -1042,29 +1100,24 @@ struct in6_addr
 
 typedef struct _IP6RawHdr
 {
-    union
-    {
-        struct _IP6HdrCtl
-        {
-            uint32_t ip6_un1_flow;   /* 4 bits version, 8 bits TC,
+    uint32_t ip6_vtf;               /* 4 bits version, 8 bits TC,
                                         20 bits flow-ID */
-            uint16_t ip6_un1_plen;   /* payload length */
-            uint8_t  ip6_un1_nxt;    /* next header */
-            uint8_t  ip6_un1_hlim;   /* hop limit */
-        } IP6HdrCtl;
-        uint8_t ip6_un2_vfc;       /* 4 bits version, top 4 bits tclass */
-    } IP6Ctl;
+    uint16_t ip6_payload_len;               /* payload length */
+    uint8_t  ip6_next;                /* next header */
+    uint8_t  ip6_hoplim;               /* hop limit */
 
     struct in6_addr ip6_src;      /* source address */
     struct in6_addr ip6_dst;      /* destination address */
 } IP6RawHdr;
 
-#define ip6vfc   IP6Ctl.ip6_un2_vfc
-#define ip6flow  IP6Ctl.IP6HdrCtl.ip6_un1_flow
-#define ip6plen  IP6Ctl.IP6HdrCtl.ip6_un1_plen
-#define ip6nxt   IP6Ctl.IP6HdrCtl.ip6_un1_nxt
-#define ip6hlim  IP6Ctl.IP6HdrCtl.ip6_un1_hlim
-#define ip6hops  IP6Ctl.IP6HdrCtl.ip6_un1_hlim
+#define ip6flow  ip6_vtf
+#define ip6plen  ip6_payload_len
+#define ip6nxt   ip6_next
+#define ip6hlim  ip6_hoplim
+#define ip6hops  ip6_hoplim
+
+#define IPRAW_HDR_VER(p_rawiph) \
+   (ntohl(p_rawiph->ip6_vtf) >> 28)
 
 #define IP6_HDR_LEN 40
 
@@ -1185,6 +1238,16 @@ typedef struct _ICMP6RouterSolicitation
     uint32_t reserved;
 } ICMP6RouterSolicitation;
 
+typedef struct _ICMP6NodeInfo
+{
+    uint8_t type;
+    uint8_t code;
+    uint16_t csum;
+    uint16_t qtype;
+    uint16_t flags;
+    uint64_t nonce;
+} ICMP6NodeInfo;
+
 #define ICMP6_UNREACH 1
 #define ICMP6_BIG    2
 #define ICMP6_TIME   3
@@ -1193,93 +1256,11 @@ typedef struct _ICMP6RouterSolicitation
 #define ICMP6_REPLY  129
 #define ICMP6_SOLICITATION 133
 #define ICMP6_ADVERTISEMENT 134
+#define ICMP6_NODE_INFO_QUERY 139
+#define ICMP6_NODE_INFO_RESPONSE 140
 
 /* Minus 1 due to the 'body' field  */
 #define ICMP6_MIN_HEADER_LEN (sizeof(ICMP6Hdr) )
-
-struct _Packet;
-
-/* IPHeader access calls */
-sfip_t *    ip4_ret_src(struct _Packet *);
-sfip_t *    ip4_ret_dst(struct _Packet *);
-uint16_t   ip4_ret_tos(struct _Packet *);
-uint8_t    ip4_ret_ttl(struct _Packet *);
-uint16_t   ip4_ret_len(struct _Packet *);
-uint32_t   ip4_ret_id(struct _Packet *);
-uint8_t    ip4_ret_proto(struct _Packet *);
-uint16_t   ip4_ret_off(struct _Packet *);
-uint8_t    ip4_ret_ver(struct _Packet *);
-uint8_t    ip4_ret_hlen(struct _Packet *);
-
-sfip_t *    orig_ip4_ret_src(struct _Packet *);
-sfip_t *    orig_ip4_ret_dst(struct _Packet *);
-uint16_t   orig_ip4_ret_tos(struct _Packet *);
-uint8_t    orig_ip4_ret_ttl(struct _Packet *);
-uint16_t   orig_ip4_ret_len(struct _Packet *);
-uint32_t   orig_ip4_ret_id(struct _Packet *);
-uint8_t    orig_ip4_ret_proto(struct _Packet *);
-uint16_t   orig_ip4_ret_off(struct _Packet *);
-uint8_t    orig_ip4_ret_ver(struct _Packet *);
-uint8_t    orig_ip4_ret_hlen(struct _Packet *);
-
-sfip_t *    ip6_ret_src(struct _Packet *);
-sfip_t *    ip6_ret_dst(struct _Packet *);
-uint16_t   ip6_ret_toc(struct _Packet *);
-uint8_t    ip6_ret_hops(struct _Packet *);
-uint16_t   ip6_ret_len(struct _Packet *);
-uint32_t   ip6_ret_id(struct _Packet *);
-uint8_t    ip6_ret_next(struct _Packet *);
-uint16_t   ip6_ret_off(struct _Packet *);
-uint8_t    ip6_ret_ver(struct _Packet *);
-uint8_t    ip6_ret_hlen(struct _Packet *);
-
-sfip_t *    orig_ip6_ret_src(struct _Packet *);
-sfip_t *    orig_ip6_ret_dst(struct _Packet *);
-uint16_t   orig_ip6_ret_toc(struct _Packet *);
-uint8_t    orig_ip6_ret_hops(struct _Packet *);
-uint16_t   orig_ip6_ret_len(struct _Packet *);
-uint32_t   orig_ip6_ret_id(struct _Packet *);
-uint8_t    orig_ip6_ret_next(struct _Packet *);
-uint16_t   orig_ip6_ret_off(struct _Packet *);
-uint8_t    orig_ip6_ret_ver(struct _Packet *);
-uint8_t    orig_ip6_ret_hlen(struct _Packet *);
-
-typedef struct _IPH_API 
-{
-    sfip_t *    (*iph_ret_src)(struct _Packet *);
-    sfip_t *    (*iph_ret_dst)(struct _Packet *);
-    uint16_t   (*iph_ret_tos)(struct _Packet *);
-    uint8_t    (*iph_ret_ttl)(struct _Packet *);
-    uint16_t   (*iph_ret_len)(struct _Packet *);
-    uint32_t   (*iph_ret_id)(struct _Packet *);
-    uint8_t    (*iph_ret_proto)(struct _Packet *);
-    uint16_t   (*iph_ret_off)(struct _Packet *);
-    uint8_t    (*iph_ret_ver)(struct _Packet *);
-    uint8_t    (*iph_ret_hlen)(struct _Packet *);
-
-    sfip_t *    (*orig_iph_ret_src)(struct _Packet *);
-    sfip_t *    (*orig_iph_ret_dst)(struct _Packet *);
-    uint16_t   (*orig_iph_ret_tos)(struct _Packet *);
-    uint8_t    (*orig_iph_ret_ttl)(struct _Packet *);
-    uint16_t   (*orig_iph_ret_len)(struct _Packet *);
-    uint32_t   (*orig_iph_ret_id)(struct _Packet *);
-    uint8_t    (*orig_iph_ret_proto)(struct _Packet *);
-    uint16_t   (*orig_iph_ret_off)(struct _Packet *);
-    uint8_t    (*orig_iph_ret_ver)(struct _Packet *);
-    uint8_t    (*orig_iph_ret_hlen)(struct _Packet *);
-    char ver;
-} IPH_API;
-
-#ifdef SUP_IP6
-extern IPH_API ip4;
-extern IPH_API ip6;
-
-#define IPH_API_V4 4
-#define IPH_API_V6 6
-
-#define iph_is_valid(p) (p->family != NO_IP)
-#define NO_IP 0
-#endif
 
 #ifdef _MSC_VER
   /* Visual C++ pragma to enable warning messages about nonstandard bit field type */
@@ -1287,13 +1268,13 @@ extern IPH_API ip6;
 #endif
 
 
-/* Can't add any fields not in the real header here 
+/* Can't add any fields not in the real header here
    because of how the decoder uses structure overlaying */
 #ifdef _MSC_VER
-  /* Visual C++ pragma to disable warning 
-   * messages about nonstandard bit field type 
+  /* Visual C++ pragma to disable warning
+   * messages about nonstandard bit field type
    */
-  #pragma warning( disable : 4214 )  
+  #pragma warning( disable : 4214 )
 #endif
 
 #ifndef IPPROTO_IPIP
@@ -1341,6 +1322,29 @@ typedef struct _GREHdr
 #define GRE_V1_FLAGS(x)  (x->version & 0x78)
 #define GRE_V1_ACK(x)    (x->version & 0x80)
 
+typedef struct _ERSpanType2Hdr
+{
+    uint16_t ver_vlan;
+    uint16_t flags_spanId;
+    uint32_t pad;
+} ERSpanType2Hdr;
+
+typedef struct _ERSpanType3Hdr
+{
+    uint16_t ver_vlan;
+    uint16_t flags_spanId;
+    uint32_t timestamp;
+    uint16_t pad0;
+    uint16_t pad1;
+    uint32_t pad2;
+    uint32_t pad3;
+} ERSpanType3Hdr;
+
+#define ERSPAN_VERSION(x) ((ntohs(x->ver_vlan) & 0xf000) >> 12)
+#define ERSPAN_VLAN(x) (ntohs(x->ver_vlan) & 0x0fff)
+#define ERSPAN_SPAN_ID(x) (ntohs(x->flags_spanId) & 0x03ff)
+#define ERSPAN3_TIMESTAMP(x) (x->timestamp)
+
 #endif  /* GRE */
 
 
@@ -1368,8 +1372,8 @@ typedef struct _TCPHdr
 
 }       TCPHdr;
 #ifdef _MSC_VER
-  /* Visual C++ pragma to enable warning messages 
-   * about nonstandard bit field type 
+  /* Visual C++ pragma to enable warning messages
+   * about nonstandard bit field type
    */
   #pragma warning( default : 4214 )
 #endif
@@ -1409,13 +1413,13 @@ typedef struct _ICMPHdr
 
         uint32_t sih_void;
 
-        struct pmtu 
+        struct pmtu
         {
             uint16_t ipm_void;
             uint16_t nextmtu;
         } pmtu;
 
-        struct rtradv 
+        struct rtradv
         {
             uint8_t num_addrs;
             uint8_t wpa;
@@ -1434,24 +1438,24 @@ typedef struct _ICMPHdr
 #define s_icmp_wpa        icmp_hun.rtradv.wpa
 #define s_icmp_lifetime   icmp_hun.rtradv.lifetime
 
-    union 
+    union
     {
         /* timestamp */
-        struct ts 
+        struct ts
         {
             uint32_t otime;
             uint32_t rtime;
             uint32_t ttime;
         } ts;
-        
+
         /* IP header for unreach */
-        struct ih_ip  
+        struct ih_ip
         {
             IPHdr *ip;
             /* options and then 64 bits of data */
         } ip;
-        
-        struct ra_addr 
+
+        struct ra_addr
         {
             uint32_t addr;
             uint32_t preference;
@@ -1530,7 +1534,6 @@ typedef struct _Options
 /* PPPoEHdr Header; EtherHdr plus the PPPoE Header */
 typedef struct _PPPoEHdr
 {
-    EtherHdr ethhdr;            /* ethernet header */
     unsigned char ver_type;     /* pppoe version/type */
     unsigned char code;         /* pppoe code CODE_* */
     unsigned short session;     /* session id */
@@ -1557,6 +1560,51 @@ typedef struct _MplsHdr
     uint8_t  ttl;
 } MplsHdr;
 
+#define PGM_NAK_ERR -1
+#define PGM_NAK_OK 0
+#define PGM_NAK_VULN 1
+
+typedef struct _PGM_NAK_OPT
+{
+    uint8_t type;     /* 02 = vuln */
+    uint8_t len;
+    uint8_t res[2];
+    uint32_t seq[1];    /* could be many many more, but 1 is sufficient */
+} PGM_NAK_OPT;
+
+typedef struct _PGM_NAK
+{
+    uint32_t  seqnum;
+    uint16_t  afil1;
+    uint16_t  res1;
+    uint32_t  src;
+    uint16_t  afi2;
+    uint16_t  res2;
+    uint32_t  multi;
+    PGM_NAK_OPT opt;
+} PGM_NAK;
+
+typedef struct _PGM_HEADER
+{
+    uint16_t srcport;
+    uint16_t dstport;
+    uint8_t  type;
+    uint8_t  opt;
+    uint16_t checksum;
+    uint8_t  gsd[6];
+    uint16_t length;
+    PGM_NAK  nak;
+} PGM_HEADER;
+
+/* GTP basic Header  */
+typedef struct _GTPHdr
+{
+    uint8_t  flag;              /* flag: version (bit 6-8), PT (5), E (3), S (2), PN (1) */
+    uint8_t  type;              /* message type */
+    uint16_t length;            /* length */
+
+} GTPHdr;
+
 #define LAYER_MAX  32
 
 // REMEMBER match any changes you make here in:
@@ -1576,6 +1624,7 @@ typedef struct _Packet
     const VlanTagHdr *vh;
     EthLlc *ehllc;
     EthLlcOther *ehllcother;
+    const PPPoEHdr *pppoeh;     /* Encapsulated PPP of Ether header */
     const GREHdr *greh;
     uint32_t *mpls;
 
@@ -1591,18 +1640,13 @@ typedef struct _Packet
     const uint8_t *data;        /* packet payload pointer */
     const uint8_t *ip_data;     /* IP payload pointer */
     const uint8_t *outer_ip_data;  /* Outer IP payload pointer */
-    const uint8_t *ip_frag_start;
-    const uint8_t *ip_options_data;
-    const uint8_t *tcp_options_data;
     //^^^-----------------------------
 
     void *ssnptr;               /* for tcp session tracking info... */
     void *fragtracker;          /* for ip fragmentation tracking info... */
-    void *flow;                 /* for flow info */
-    void *streamptr;            /* for tcp pkt dump */
-    
+
     //vvv-----------------------------
-    IP4Hdr *ip4h, *orig_ip4h;   /* SUP_IP6 members */
+    IP4Hdr *ip4h, *orig_ip4h;
     IP6Hdr *ip6h, *orig_ip6h;
     ICMP6Hdr *icmp6h, *orig_icmp6h;
 
@@ -1611,31 +1655,19 @@ typedef struct _Packet
     IPH_API* outer_iph_api;
     IPH_API* outer_orig_iph_api;
 
-    IP4Hdr inner_ip4h, inner_orig_ip4h;
-    IP6Hdr inner_ip6h, inner_orig_ip6h;
-    IP4Hdr outer_ip4h, outer_orig_ip4h;
-    IP6Hdr outer_ip6h, outer_orig_ip6h;
-
-    MplsHdr   mplsHdr;
-
     int family;
     int orig_family;
     int outer_family;
-    int bytes_to_inspect;       /* Number of bytes to check against rules */
-                                /* this is not set - always 0 (inspect all) */
-
-    /* int ip_payload_len; */   /* Replacement for IP_LEN(p->iph->ip_len) << 2 */
-    /* int ip_payload_off; */   /* IP_LEN(p->iph->ip_len) << 2 + p->data */
     //^^^-----------------------------
 
     uint32_t preprocessor_bits; /* flags for preprocessors to check */
     uint32_t preproc_reassembly_pkt_bits;
 
-    uint32_t caplen;
-    uint32_t http_pipeline_count; /* Counter for HTTP pipelined requests */
     uint32_t packet_flags;      /* special flags for the packet */
+
+    uint32_t xtradata_mask;
+
     uint16_t proto_bits;
-    uint16_t data_flags;
 
     //vvv-----------------------------
     uint16_t dsize;             /* packet payload size */
@@ -1665,27 +1697,21 @@ typedef struct _Packet
     uint8_t df;                 /* don't fragment flag */
     uint8_t rf;                 /* IP reserved bit */
 
-    uint8_t uri_count;          /* number of URIs in this packet */
-    uint8_t error_flags;        /* flags indicate checksum errors, bad TTLs, etc. */
-    uint8_t encapsulated;
-
     uint8_t ip_option_count;    /* number of options in this packet */
     uint8_t tcp_option_count;
     uint8_t ip6_extension_count;
     uint8_t ip6_frag_index;
 
-    uint8_t ip_lastopt_bad;     /* flag to indicate that option decoding was
-                                   halted due to a bad option */
-    uint8_t tcp_lastopt_bad;    /* flag to indicate that option decoding was
-                                   halted due to a bad option */
-
+    uint8_t error_flags;        /* flags indicate checksum errors, bad TTLs, etc. */
+    uint8_t encapsulated;
+    uint8_t GTPencapsulated;
     uint8_t next_layer;         /* index into layers for next encap */
 
 #ifndef NO_NON_ETHER_DECODER
     const Fddi_hdr *fddihdr;    /* FDDI support headers */
     Fddi_llc_saps *fddisaps;
     Fddi_llc_sna *fddisna;
-    Fddi_llc_iparp *fddiiparp;    
+    Fddi_llc_iparp *fddiiparp;
     Fddi_llc_other *fddiother;
 
     const Trh_hdr *trh;         /* Token Ring support headers */
@@ -1695,6 +1721,7 @@ typedef struct _Packet
     Pflog1Hdr *pf1h;            /* OpenBSD pflog interface header - version 1 */
     Pflog2Hdr *pf2h;            /* OpenBSD pflog interface header - version 2 */
     Pflog3Hdr *pf3h;            /* OpenBSD pflog interface header - version 3 */
+    Pflog4Hdr *pf4h;            /* OpenBSD pflog interface header - version 4 */
 
 #ifdef DLT_LINUX_SLL
     const SLLHdr *sllh;         /* Linux cooked sockets header */
@@ -1702,8 +1729,6 @@ typedef struct _Packet
 #ifdef DLT_IEEE802_11
     const WifiHdr *wifih;       /* wireless LAN header */
 #endif
-    const PPPoEHdr *pppoeh;     /* Encapsulated PPP of Ether header */
-
     const EtherEapol *eplh;     /* 802.1x EAPOL header */
     const EAPHdr *eaph;
     const uint8_t *eaptype;
@@ -1713,17 +1738,37 @@ typedef struct _Packet
     // nothing after this point is zeroed ...
     Options ip_options[IP_OPTMAX];         /* ip options decode structure */
     Options tcp_options[TCP_OPTLENMAX];    /* tcp options decode struct */
-    IP6Option ip6_extensions[IP6_EXTMAX];  /* IPv6 Extension References */
+    IP6Option *ip6_extensions;  /* IPv6 Extension References */
+
+    const uint8_t *ip_frag_start;
+    const uint8_t *ip_options_data;
+    const uint8_t *tcp_options_data;
 
     const IP6RawHdr* raw_ip6h;  // innermost raw ip6 header
     Layer layers[LAYER_MAX];    /* decoded encapsulations */
+
+    IP4Hdr inner_ip4h, inner_orig_ip4h;
+    IP6Hdr inner_ip6h, inner_orig_ip6h;
+    IP4Hdr outer_ip4h, outer_orig_ip4h;
+    IP6Hdr outer_ip6h, outer_orig_ip6h;
+
+    MplsHdr mplsHdr;
+
+    PseudoPacketType pseudo_type;    // valid only when PKT_PSEUDO is set
     uint16_t max_dsize;
 
-    /**policyId provided in configuration file. Used for correlating configuration 
+    /**policyId provided in configuration file. Used for correlating configuration
      * with event output
      */
     uint16_t configPolicyId;
 
+    uint32_t iplist_id;
+    unsigned char iprep_layer;
+
+    uint8_t ps_proto;  // Used for portscan and unified2 logging
+
+    uint8_t ips_os_selected; 
+    void    *cur_pp;
 } Packet;
 
 #define PKT_ZERO_LEN offsetof(Packet, ip_options)
@@ -1735,16 +1780,14 @@ typedef struct _Packet
 #define PROTO_BIT__UDP      0x0008
 #define PROTO_BIT__ICMP     0x0010
 #define PROTO_BIT__TEREDO   0x0020
+#define PROTO_BIT__GTP      0x0040
+#define PROTO_BIT__OTHER    0x8000
 #define PROTO_BIT__ALL      0xffff
 
-#define DATA_FLAGS_TRUE_IP  0x0001
-#define DATA_FLAGS_GZIP     0x0002
-#define DATA_FLAGS_RESP_BODY 0x0004
-
 #define IsIP(p) (IPH_IS_VALID(p))
-#define IsTCP(p) (IsIP(p) && (GET_IPH_PROTO(p) == IPPROTO_TCP))
-#define IsUDP(p) (IsIP(p) && (GET_IPH_PROTO(p) == IPPROTO_UDP))
-#define IsICMP(p) (IsIP(p) && (GET_IPH_PROTO(p) == IPPROTO_ICMP))
+#define IsTCP(p) (IsIP(p) && p->tcph)
+#define IsUDP(p) (IsIP(p) && p->udph)
+#define IsICMP(p) (IsIP(p) && p->icmph)
 #define GET_PKT_SEQ(p) (ntohl(p->tcph->th_seq))
 
 /* Macros to deal with sequence numbers - p810 TCP Illustrated vol 2 */
@@ -1754,59 +1797,19 @@ typedef struct _Packet
 #define SEQ_GEQ(a,b) ((int)((a) - (b)) >= 0)
 #define SEQ_EQ(a,b)  ((int)((a) - (b)) == 0)
 
-#ifdef SUP_IP6 
-/* Sets the callbacks to point at the family selected by 
- *  * "family".  "family" is either AF_INET or AF_INET6 */
-#define CALLBACK_IP 0
-#define CALLBACK_ICMP_ORIG 1
-
-static INLINE void set_callbacks(struct _Packet *p, int family, char orig)
-{
-    if (p == NULL) 
-    {
-        ErrorMessage("%s(%d) Can't set iph api callback: Packet is NULL.\n",
-                     __FILE__, __LINE__);
-        return;
-    }
-
-    if (orig == CALLBACK_IP)
-    {
-        if(family == AF_INET)
-            p->iph_api = &ip4;
-        else
-            p->iph_api = &ip6;
-
-        p->family = family;
-    }
-    else if (orig == CALLBACK_ICMP_ORIG)
-    {
-        if(family == AF_INET)
-            p->orig_iph_api = &ip4;
-        else
-            p->orig_iph_api = &ip6;
-
-        p->orig_family = family;
-    }
-    else
-    {
-        ErrorMessage("%s(%d) Can't set iph api callback: Invalid callback "
-                     "type: %c.\n", __FILE__, __LINE__, orig);
-        return;
-    }
-}
-#endif
+#define BIT(i) (0x1 << (i-1))
 
 typedef struct s_pseudoheader
 {
-    uint32_t sip, dip; 
-    uint8_t  zero;     
-    uint8_t  protocol; 
-    uint16_t len; 
+    uint32_t sip, dip;
+    uint8_t  zero;
+    uint8_t  protocol;
+    uint16_t len;
 
 } PSEUDO_HDR;
 
 /* Default classification for decoder alerts */
-#define DECODE_CLASS 25 
+#define DECODE_CLASS 25
 
 typedef struct _DecoderFlags
 {
@@ -1828,7 +1831,7 @@ typedef struct _DecoderFlags
     /* To be moved to the frag preprocessor once it supports IPv6 */
     char ipv6_bad_frag_pkt;
     char bsd_icmp_frag;
-    char drop_bad_ipv6_frag;    
+    char drop_bad_ipv6_frag;
 
 } DecoderFlags;
 
@@ -1839,28 +1842,30 @@ typedef struct _DecoderFlags
 
 // root decoders
 void DecodeEthPkt(Packet *, const DAQ_PktHdr_t*, const uint8_t *);
-void DecodePppPkt(Packet *, const DAQ_PktHdr_t*, const uint8_t *);
 void DecodeNullPkt(Packet *, const DAQ_PktHdr_t*, const uint8_t *);
 void DecodeRawPkt(Packet *, const DAQ_PktHdr_t*, const uint8_t *);
 void DecodeRawPkt6(Packet *, const DAQ_PktHdr_t*, const uint8_t *);
-void DecodePPPoEPkt(Packet *, const DAQ_PktHdr_t*, const uint8_t *);
 
 // chained decoders
 void DecodeARP(const uint8_t *, uint32_t, Packet *);
 void DecodeEthLoopback(const uint8_t *, uint32_t, Packet *);
 void DecodeVlan(const uint8_t *, const uint32_t, Packet *);
-void DecodePppPktEncapsulated(Packet *, const uint32_t, const uint8_t *);
+void DecodePppPktEncapsulated(const uint8_t *, const uint32_t, Packet *);
+void DecodePPPoEPkt(const uint8_t *, const uint32_t, Packet *);
 void DecodeIP(const uint8_t *, const uint32_t, Packet *);
 void DecodeIPV6(const uint8_t *, uint32_t, Packet *);
 void DecodeTCP(const uint8_t *, const uint32_t, Packet *);
 void DecodeUDP(const uint8_t *, const uint32_t, Packet *);
 void DecodeICMP(const uint8_t *, const uint32_t, Packet *);
+void DecodeICMP6(const uint8_t *, const uint32_t, Packet *);
 void DecodeICMPEmbeddedIP(const uint8_t *, const uint32_t, Packet *);
 void DecodeICMPEmbeddedIP6(const uint8_t *, const uint32_t, Packet *);
 void DecodeIPOptions(const uint8_t *, uint32_t, Packet *);
 void DecodeTCPOptions(const uint8_t *, uint32_t, Packet *);
 void DecodeTeredo(const uint8_t *, uint32_t, Packet *);
+void DecodeAH(const uint8_t *, uint32_t, Packet *);
 void DecodeESP(const uint8_t *, uint32_t, Packet *);
+void DecodeGTP(const uint8_t *, uint32_t, Packet *);
 
 #ifdef GRE
 void DecodeGRE(const uint8_t *, const uint32_t, Packet *);
@@ -1870,11 +1875,12 @@ void DecoderAlertEncapsulated(Packet *, int, const char *, const uint8_t *, uint
 
 #ifdef MPLS
 int isPrivateIP(uint32_t addr);
-void DecodeEthOverMPLS(Packet * p, const DAQ_PktHdr_t* pkthdr, const uint8_t * pkt);
-void DecodeMPLS(const uint8_t * pkt, DAQ_PktHdr_t * pkthdr, Packet * p);
+void DecodeEthOverMPLS(const uint8_t*, const uint32_t, Packet*);
+void DecodeMPLS(const uint8_t*, const uint32_t, Packet*);
 #endif
 
 #ifndef NO_NON_ETHER_DECODER
+// root decoders
 void DecodeTRPkt(Packet *, const DAQ_PktHdr_t*, const uint8_t *);
 void DecodeFDDIPkt(Packet *, const DAQ_PktHdr_t*, const uint8_t *);
 void DecodeLinuxSLLPkt(Packet *, const DAQ_PktHdr_t*, const uint8_t *);
@@ -1885,9 +1891,11 @@ void DecodeI4LCiscoIPPkt(Packet *, const DAQ_PktHdr_t*, const uint8_t *);
 void DecodeChdlcPkt(Packet *, const DAQ_PktHdr_t*, const uint8_t *);
 void DecodePflog(Packet *, const DAQ_PktHdr_t*, const uint8_t *);
 void DecodeOldPflog(Packet *, const DAQ_PktHdr_t*, const uint8_t *);
+void DecodePppPkt(Packet *, const DAQ_PktHdr_t*, const uint8_t *);
 void DecodePppSerialPkt(Packet *, const DAQ_PktHdr_t*, const uint8_t *);
 void DecodeEncPkt(Packet *, const DAQ_PktHdr_t*, const uint8_t *);
 
+// chained decoders
 void DecodeEAP(const uint8_t *, const uint32_t, Packet *);
 void DecodeEapol(const uint8_t *, uint32_t, Packet *);
 void DecodeEapolKey(const uint8_t *, uint32_t, Packet *);
@@ -1916,17 +1924,51 @@ typedef struct _PortList
 
 } PortList;
 
-void InitSynToMulticastDstIp( void );
+void InitSynToMulticastDstIp( struct _SnortConfig * );
 void SynToMulticastDstIpDestroy( void );
 
 #define SFTARGET_UNKNOWN_PROTOCOL -1
 
-static INLINE int PacketWasCooked(Packet* p)
+static inline int PacketWasCooked(Packet* p)
 {
-    return ( p->packet_flags &
-        ( PKT_REBUILT_STREAM | PKT_REBUILT_FRAG |
-          PKT_DCE_RPKT | PKT_DCE_SEG | PKT_DCE_FRAG |
-          PKT_SMB_SEG | PKT_SMB_TRANS | PKT_PSEUDO) ) != 0;
+    return ( p->packet_flags & PKT_PSEUDO ) != 0;
+}
+
+static inline bool IsPortscanPacket(const Packet *p)
+{
+    return ((p->packet_flags & PKT_PSEUDO) && (p->pseudo_type == PSEUDO_PKT_PS));
+}
+
+static inline uint8_t GetEventProto(const Packet *p)
+{
+    if (IsPortscanPacket(p))
+        return p->ps_proto;
+    return IPH_IS_VALID(p) ? GET_IPH_PROTO(p) : 0;
+}
+
+static inline bool PacketHasFullPDU (const Packet* p)
+{
+    return ( (p->packet_flags & PKT_PDU_FULL) == PKT_PDU_FULL );
+}
+
+static inline bool PacketHasStartOfPDU (const Packet* p)
+{
+    return ( (p->packet_flags & PKT_PDU_HEAD) != 0 );
+}
+
+static inline bool PacketHasPAFPayload (const Packet* p)
+{
+    return ( (p->packet_flags & PKT_REBUILT_STREAM) || PacketHasFullPDU(p) );
+}
+
+static inline bool PacketIsRebuilt (const Packet* p)
+{
+    return ( (p->packet_flags & (PKT_REBUILT_STREAM|PKT_REBUILT_FRAG)) != 0 );
+}
+
+static inline void SetExtraData (Packet* p, uint32_t xid)
+{
+    p->xtradata_mask |= BIT(xid);
 }
 
 #endif  /* __DECODE_H__ */

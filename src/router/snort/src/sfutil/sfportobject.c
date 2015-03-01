@@ -1,6 +1,7 @@
 /****************************************************************************
  *
- * Copyright (C) 2005-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -15,49 +16,49 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************/
 
 /*
    sfportobject.c
-   
+
    author:  marc norton
    date:    11/05/2005
 
-   description: 
-   
-   Port objects provides support for generic ports lists comprised of 
+   description:
+
+   Port objects provides support for generic ports lists comprised of
    individual ports, port ranges, and negation of ports and port ranges.
-   
+
    Port lists require a somewhat more complex scheme to determine the proper
-   grouping of rules for each port while minimizing the number of rule groups 
+   grouping of rules for each port while minimizing the number of rule groups
    created. We can use a single group of rules in the multi-pattern detection phase,
-   however that can have a huge impact on performance.  Instead we try to create 
+   however that can have a huge impact on performance.  Instead we try to create
    a smaller grouping of rules that might be applicable to each port.
-   
+
    As rules are defined using port ranges, and port lists there will be port
    overlapps between rules. This requires us to determine whether we should
-   create one larger rule group to apply to all relevant ports, or to 
-   create multiple rule groups and apply the smallest applicable one to 
+   create one larger rule group to apply to all relevant ports, or to
+   create multiple rule groups and apply the smallest applicable one to
    each port. In practice snort has some rules which span almost all 64K ports
    which might cause all rules in all port-rule groups to be merged into one set
    unless we apply a more complex logic than simply merging rule-port groups
    with common ports.  This is the problem addressed by the sfportobject
    module.
-  
+
    port list examples of acceptable usage:
 
    - var has been overloaded, if it includes _port we add as a port-object also.
    var http_ports 80
-   var http_range_ports 80:81 
+   var http_range_ports 80:81
    var http_list_ports  [80,8080,8138]
-   
+
    - portvar has been added to indicate portvariables, this form does not require _port
    portvar http 80
    portvar http_range 80:81
    portvar http_list  [80,8080,8138]
-   
+
    80
    $http
    !90
@@ -69,51 +70,51 @@
    [$http,$http_list]
    [2001,2008,20022,8100:8150,!8121,!8123]
    [!any] - uhhh, why do people ask about this ?
-  
-   Rules are defined using a port, a port-range or a list of these, we call 
-   these port objects. 
+
+   Rules are defined using a port, a port-range or a list of these, we call
+   these port objects.
 
    As rules are loaded we generate some large rule counts on some ports, and
-   small rule counts on most ports.  If for each port you build a list of 
+   small rule counts on most ports.  If for each port you build a list of
    rules on that port, we may end up with some ports with a large rule set that
-   differs by the addition of a few rules on each port (relative to the group sizes) 
-   we don't want to generate compeletely different rule groups for these as that 
-   would than generate multiple large state machines for the multi-pattern matching 
+   differs by the addition of a few rules on each port (relative to the group sizes)
+   we don't want to generate compeletely different rule groups for these as that
+   would than generate multiple large state machines for the multi-pattern matching
    phase of the detection engine which in turn could use a lot of memory.
 
    It turns out that one scheme, the one used herein, provides some blending
    of rule groups to minimize memory, and tries to minimize large group sizes
    to keep performance more optimal - although this is at the expense of memory.
-  
+
    --- Port variables
-   Var - has been overloaded. If it's name includes _port as part of the var name it is 
-   added to the PortVarTable.  
+   Var - has been overloaded. If it's name includes _port as part of the var name it is
+   added to the PortVarTable.
    PortVar - has been added. These are always added to the PortVarTable.
-  
+
    --- Loading Port lists and rules
-   PortTables - we support src and dst tables for tcp/udp/icmp/ip/arp rules. 
+   PortTables - we support src and dst tables for tcp/udp/icmp/ip/arp rules.
    PortVar References - we dup the PortVar entries as needed into each table if referenced,
    so HTTP_PORTS for tcp and udp contain different rules.  If a rule references a PortVar
    we look it up in the table, if its not present we dup it from the PortVarTable, otherwise
-   we just add the rule index to the PortVar HTTP_PORTS in the proper table. If a PortVar 
-   is not used to specify a Port entry in a rule we create a temp port-object, and check if 
-   it's port-list is already in the table. If it's not we make the temp port-object the 
-   permanent entry in the  table. If it is, we just add the rule index to the existing entry, 
-   and delete the temp port-object. When the rules are done loading we should have a set of 
-   port-objects with port-lists that differ by at least one port.  The next step handles the 
+   we just add the rule index to the PortVar HTTP_PORTS in the proper table. If a PortVar
+   is not used to specify a Port entry in a rule we create a temp port-object, and check if
+   it's port-list is already in the table. If it's not we make the temp port-object the
+   permanent entry in the  table. If it is, we just add the rule index to the existing entry,
+   and delete the temp port-object. When the rules are done loading we should have a set of
+   port-objects with port-lists that differ by at least one port.  The next step handles the
    cases where we have multiple port-objects with at least one common port.
-   
+
    --- Merging Ports and Rules
-   We maintain for each port a list of port objects and their rules that apply 
+   We maintain for each port a list of port objects and their rules that apply
    to it. This allows us to view combining the rules associated with each port
-   object using a few heuristics. A list of port objects applicable to each port 
+   object using a few heuristics. A list of port objects applicable to each port
    presents rules in one of four catagories:
 
    1) a single port object, and all rules associated with it.
    2) multiple port objects each with a small set of rules associated with it.
-   3) one port object with a large rule set, and one or more port objects  
+   3) one port object with a large rule set, and one or more port objects
       with a small set of rules associated with each.
-   4) multiple port objects with large rule sets, and zero or more port objects 
+   4) multiple port objects with large rule sets, and zero or more port objects
       each with a small set of rules associated with it.
 
     We process these four categories as follows:
@@ -121,32 +122,32 @@
     1) -a single port object (large or small)
         do nothing, each port referencing this port object is complete.
     2) -multiple small port objects
-        merge the rules for all port objects into one virtual object,  
+        merge the rules for all port objects into one virtual object,
        for each port in this category lookup it's combined port object
        to see if it's already defined, if not create one.  This way
-       all ports that have the same port groups point to the same virtual 
-       port object.   
+       all ports that have the same port groups point to the same virtual
+       port object.
     3) -one large port object, and one or more small port objects
-        add the small rule groups into the large rule set, using the existing 
+        add the small rule groups into the large rule set, using the existing
        port object.
     4) -multiple large port objects and zero or more small port objects
-        merge the large port objects into a virtual port object and 
+        merge the large port objects into a virtual port object and
        add all rules from both large and small sets into it's rule set.
-       we use the combined large group ports to form a key, so any ports 
+       we use the combined large group ports to form a key, so any ports
        referencing just these large rule groups, and some small ones
        will be recognized as the same.  This handles cases where we have
-       2,3,4.etc large rule groups combined.  Any time we see a 'n' grouping 
-       of the same large rule sets we'll look it up and point to it for that 
+       2,3,4.etc large rule groups combined.  Any time we see a 'n' grouping
+       of the same large rule sets we'll look it up and point to it for that
        port.
 
-    To determine when a port object has a large rule set or a small one we use 
-    a simple threshold value. In theory the larger this value is the more 
-    merging of rules in category 2 and 3 will occur. When this value is 
+    To determine when a port object has a large rule set or a small one we use
+    a simple threshold value. In theory the larger this value is the more
+    merging of rules in category 2 and 3 will occur. When this value is
     small category 4 should become a more prevalent situation.  However,
     the behavior of groupings for a given threshold can change as more rules
     are added to port groups.  Therefore generous statistics are printed after
     the rules and port objects are compiled into their final groupings.
-    
+
 
   Procedure for using PortLists
 
@@ -158,29 +159,29 @@
     a) Read port numbers and lists
         1) Dereference PortVar/Var Names if any are referenced.
     b) Create a Port Object
-    c) Test if this Port object exists already, 
+    c) Test if this Port object exists already,
         1) If so, add the sid to it.
         2) If not add it ....
-     
+
 
 
   Notes:
 
-    All any-any port rules are managed separately, and added in to the final 
+    All any-any port rules are managed separately, and added in to the final
     rules lists of each port group after this analysis. Rules defined with
     ranges are no longer considered any-any rules for the purpose of organizing
     port-rule groupings.  This should help prevent some cross fertilization of
-    rule groups with rules that are unneccessary, this causes rule group 
+    rule groups with rules that are unneccessary, this causes rule group
     sizes to bloat and performance to slow.
 
   Hierarchy:
 
-    PortTable -> PortObject's 
+    PortTable -> PortObject's
 
     PortVar -> PortObject ( These are pure, and are dup'ed for use in the PortTables )
 
     PortObject -> PortObjectItems (port or port range)
-    
+
 */
 
 
@@ -189,8 +190,15 @@
 #include <sys/types.h>
 #include <ctype.h>
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#include "sf_types.h"
+
 #include "snort.h"
-#include "debug.h"
+#include "snort_bounds.h"
+#include "snort_debug.h"
 #include "sfportobject.h"
 #include "sfrim.h"
 #include "util.h"
@@ -244,13 +252,13 @@ plx_t * plx_new( void * pv_array[], int n )
 static void plx_free(void * p )
 {
     plx_t * plx=(plx_t*)p;
-    
+
     if( !plx ) return;
     if( plx->p ) free(plx->p);
     free( p );
 }
 
-#ifdef DEBUG
+#ifdef DEBUG_MSGS
 static
 void plx_print(plx_t * p)
 {
@@ -272,9 +280,9 @@ unsigned plx_hash( SFHASHFCN * p, unsigned char *d, int n )
     unsigned k, hash = p->seed;
     int i;
     plx_t* plx;
-   
+
     n = n;  /* To silence a Win32 warning */
- 
+
     plx = *(plx_t**)d;
 
     for(i=0;i<plx->n;i++)
@@ -291,7 +299,7 @@ unsigned plx_hash( SFHASHFCN * p, unsigned char *d, int n )
 
 
 /* for sorting an array of pointers */
-static INLINE
+static inline
 int p_keycmp( const void *a , const void *b )
 {
     if( *(unsigned long**)a < *(unsigned long**)b ) return -1;
@@ -307,7 +315,7 @@ int p_keycmp( const void *a , const void *b )
    return values memcmp style
 
    this only needs to produce 0 => exact match, otherwise not.
-   -1, and +1 are not strictly needed, they could both return 
+   -1, and +1 are not strictly needed, they could both return
    a non zero value for the purposes of hashing and searching.
 */
 static
@@ -322,7 +330,7 @@ int plx_keycmp( const void *a , const void *b, size_t n )
     if( pla->n < plb->n ) return -1;
 
     if( pla->n > plb->n ) return  1;
-    
+
     for(i=0;i<pla->n;i++)
     {
         if((cmp = p_keycmp(&pla->p[i], &plb->p[i])) != 0)
@@ -355,7 +363,7 @@ PortObject * PortObjectNew(void)
         free( po );
         return 0;
     }
-    
+
     po->rule_list =(SF_LIST*) sflist_new();
     if( !po->rule_list )
     {
@@ -363,8 +371,8 @@ PortObject * PortObjectNew(void)
         free( po );
         return 0;
     }
-    
-    return po;    
+
+    return po;
 }
 
 /* This is the opposite of ntohl/htonl defines, and does the
@@ -408,8 +416,8 @@ PortObject2 * PortObject2New(int nrules)
         free( po );
         return 0;
     }
-    
-    po->rule_hash =(SFGHASH*) sfghash_new(nrules,sizeof(int),0,free /* frees data - should be rule id ptrs == (int*) */); 
+
+    po->rule_hash =(SFGHASH*) sfghash_new(nrules,sizeof(int),0,free /* frees data - should be rule id ptrs == (int*) */);
     if( !po->rule_hash )
     {
         sflist_free_all( po->item_list, free );
@@ -420,9 +428,9 @@ PortObject2 * PortObject2New(int nrules)
     /* Use hash function defined above for hashing the key as an int. */
     sfghash_set_keyops(po->rule_hash, po_rule_hash_func, memcmp);
 
-    //sfhashfcn_static( po->rule_hash->sfhashfcn ); /* TODO: Leave this in, else we get different events */ 
-    
-    return po;    
+    //sfhashfcn_static( po->rule_hash->sfhashfcn ); /* TODO: Leave this in, else we get different events */
+
+    return po;
 }
 /*
  *  Set the name of the Port Object
@@ -431,15 +439,15 @@ int PortObjectSetName(PortObject * po, char * name)
 {
     if( !po )
         return -1;
-    
+
     if( !name )
         return -1;
-    
+
     /* free the old name */
     if(po->name)
         free(po->name);
 
-    /* alloc a new name */    
+    /* alloc a new name */
     po->name = SnortStrdup(name);
     if( !po->name )
         return -1;
@@ -458,13 +466,13 @@ void PortObjectItemFree (PortObjectItem * poi)
 /*
  *  Free the PortObject
  */
-void PortObjectFree( void * pvoid ) 
+void PortObjectFree( void * pvoid )
 {
-    PortObject * po = (PortObject *)pvoid; 
+    PortObject * po = (PortObject *)pvoid;
     DEBUG_WRAP(static int pof_cnt = 0; pof_cnt++;);
-   
+
     DEBUG_WRAP(DebugMessage(DEBUG_PORTLISTS,"PortObjectFree-Cnt: %d ptr=%p\n",pof_cnt,pvoid););
-    
+
     if( !po ) return ;
 
     if( po->name ) free (po->name );
@@ -481,13 +489,13 @@ void PortObjectFree( void * pvoid )
 /*
  *  Free the PortObject2
  */
-void PortObject2Free( void * pvoid ) 
+void PortObject2Free( void * pvoid )
 {
-    PortObject2 * po = (PortObject2 *)pvoid; 
+    PortObject2 * po = (PortObject2 *)pvoid;
     DEBUG_WRAP(static int pof2_cnt = 0; pof2_cnt++;);
-   
+
     DEBUG_WRAP(DebugMessage(DEBUG_PORTLISTS,"PortObjectFree2-Cnt: %d ptr=%p\n",pof2_cnt,pvoid););
-    
+
     if( !po ) return;
 
     if( po->name ) free (po->name );
@@ -574,7 +582,7 @@ int PortObjectAddPortObject(PortObject * podst, PortObject * posrc, int *errflag
 PortObjectItem * PortObjectItemDup( PortObjectItem * poi)
 {
    PortObjectItem * poinew;
-   
+
    if( !poi )
        return 0;
 
@@ -612,9 +620,9 @@ PortObject * PortObjectDup( PortObject * po )
     if( !ponew->name )
     {
         free( ponew );
-        return NULL;    
+        return NULL;
     }
-   
+
     /* Dup the Item List */
     if( po->item_list )
     {
@@ -679,9 +687,9 @@ PortObject * PortObjectDupPorts( PortObject * po )
     if( !ponew->name )
     {
         free( ponew );
-        return NULL;    
+        return NULL;
     }
-   
+
     /* Dup the Item List */
     if( po->item_list )
     {
@@ -710,12 +718,12 @@ PortObject2 * PortObject2Dup( PortObject * po )
     int            * prid = NULL;
     int            * prule = NULL;
 
-    if( !po ) 
+    if( !po )
         return NULL;
-    
+
     if( !po->rule_list )
         return NULL;
-    
+
     ponew = PortObject2New(po->rule_list->count + PO_EXTRA_RULE_CNT);
     if( !ponew )
         return NULL;
@@ -729,9 +737,9 @@ PortObject2 * PortObject2Dup( PortObject * po )
     if( !ponew->name )
     {
         free( ponew );
-        return NULL;    
+        return NULL;
     }
-   
+
     /* Dup the Item List */
     if( po->item_list )
     {
@@ -742,7 +750,7 @@ PortObject2 * PortObject2Dup( PortObject * po )
         poinew = PortObjectItemDup( poi );
         if(!poinew)
               return 0;
-        
+
         PortObjectAddItem( (PortObject*)ponew, poinew, NULL );
       }
     }
@@ -844,7 +852,7 @@ int PortObjectAddPortAny( PortObject * po )
 }
 
 /*
- *  Check if we have any ANY ports 
+ *  Check if we have any ANY ports
  */
 int PortObjectHasAny (PortObject * po )
 {
@@ -852,12 +860,12 @@ int PortObjectHasAny (PortObject * po )
 
      if( !po )
          return 0;
-     
+
      for(poi=(PortObjectItem*)sflist_first(po->item_list);
          poi != 0;
          poi=(PortObjectItem*)sflist_next(po->item_list) )
      {
-         if( poi->type == PORT_OBJECT_ANY ) 
+         if( poi->type == PORT_OBJECT_ANY )
              return 1;
      }
      return 0;
@@ -868,7 +876,7 @@ int PortObjectHasNot (PortObject * po )
 
      if( !po )
          return 0;
-     
+
      for(poi=(PortObjectItem*)sflist_first(po->item_list);
          poi != 0;
          poi=(PortObjectItem*)sflist_next(po->item_list) )
@@ -884,7 +892,7 @@ int PortObjectIsPureNot (PortObject * po )
 
      if( !po )
          return 0;
-     
+
      for(poi=(PortObjectItem*)sflist_first(po->item_list);
          poi != 0;
          poi=(PortObjectItem*)sflist_next(po->item_list) )
@@ -895,12 +903,12 @@ int PortObjectIsPureNot (PortObject * po )
      }
 
      if( cnt == 0 ) return 0;
-     
+
      return 1;
 }
 
 /*
- * This does NOT return true if the object is an ANY port 
+ * This does NOT return true if the object is an ANY port
 */
 int PortObjectHasPort (PortObject * po, int port )
 {
@@ -926,7 +934,7 @@ int PortObjectHasPort (PortObject * po, int port )
             break;
 
         case PORT_OBJECT_RANGE:
-            if( (uint16_t)port >= poi->lport && 
+            if( (uint16_t)port >= poi->lport &&
                 (uint16_t)port <= poi->hport )
                 return 1;
             if( poi->flags & PORT_OBJECT_NOT_FLAG  )
@@ -936,8 +944,8 @@ int PortObjectHasPort (PortObject * po, int port )
      }
      return 0;
 }
-/* 
- * This returns true if the object is an ANY port 
+/*
+ * This returns true if the object is an ANY port
  */
 int PortObjectIncludesPort (PortObject * po, int port )
 {
@@ -963,7 +971,7 @@ int PortObjectIncludesPort (PortObject * po, int port )
             break;
 
         case PORT_OBJECT_RANGE:
-            if( (uint16_t)port >= poi->lport && 
+            if( (uint16_t)port >= poi->lport &&
                 (uint16_t)port <= poi->hport )
                 return 1;
             if( poi->flags & PORT_OBJECT_NOT_FLAG  )
@@ -999,9 +1007,9 @@ PortObject * PortTableFindPortObjectByPort(  PortTable * p , int port )
 /*
  * Calcs number of ports in this object,
  * object do not have to  be normalized,
- * but if the same ports are referenced 
+ * but if the same ports are referenced
  * twice, the count will be off.
- * 
+ *
  * returns:
  *  any = -1
  *  0   = none/empty
@@ -1012,7 +1020,7 @@ int PortObjectPortCount (PortObject * po )
      PortObjectItem *poi;
      int cnt=0;
      int nports;
-     
+
      if( !po )
          return 0;
 
@@ -1037,7 +1045,7 @@ int PortObjectPortCount (PortObject * po )
             break;
 
         case PORT_OBJECT_RANGE:
-            nports = poi->hport - poi->lport + 1; 
+            nports = poi->hport - poi->lport + 1;
             if( poi->flags & PORT_OBJECT_NOT_FLAG  )
             {
                 cnt-=nports;
@@ -1051,28 +1059,28 @@ int PortObjectPortCount (PortObject * po )
 
      if( cnt < 0 )
      {
-         /* we have a pure not port or port range 
+         /* we have a pure not port or port range
           *
           * !80    = -1, add 64K (65535 -1 = 65534)
           * !80:81 = -2, (65535 - 2 = 65533)
           *
           * [:1023,!80]  = 1024 - 1 = 1023 ports
-          * 
+          *
           */
          cnt += SFPO_MAX_PORTS; /* add back in the acceptable ports */
      }
-     
+
      return cnt;
 }
 
 /*
- *  Build a PortMap Char Array 
+ *  Build a PortMap Char Array
  *  returns:  0 if an  ANY port.
  *            n number of unique ports.
  */
 char * PortObjectCharPortArray ( char * parray, PortObject * po, int * nports )
 {
-     int cnt = 0; 
+     int cnt = 0;
      unsigned not_cnt=0;
      PortObjectItem * poi;
      SF_LNODE * pos;
@@ -1099,10 +1107,10 @@ char * PortObjectCharPortArray ( char * parray, PortObject * po, int * nports )
              not_cnt++;
              continue;
          }
-         
-         if( poi->type == PORT_OBJECT_PORT  ) 
+
+         if( poi->type == PORT_OBJECT_PORT  )
          {
-             if( !parray[poi->lport] ) 
+             if( !parray[poi->lport] )
                 cnt++;
 
              parray[poi->lport] = 1;
@@ -1113,13 +1121,13 @@ char * PortObjectCharPortArray ( char * parray, PortObject * po, int * nports )
              int i;
              for(i=poi->lport;i<=poi->hport;i++)
              {
-                if( !parray[i] ) 
+                if( !parray[i] )
                     cnt++;
                 parray[i] = 1;
              }
          }
      }
-    
+
      /* Remove any NOT'd ports that may have been added above */
      for(poi=(PortObjectItem*)sflist_firstpos(po->item_list,&pos);
          poi != 0;
@@ -1127,10 +1135,10 @@ char * PortObjectCharPortArray ( char * parray, PortObject * po, int * nports )
      {
          if( !( poi->flags & PORT_OBJECT_NOT_FLAG)  )
              continue;
-         
-         if( poi->type == PORT_OBJECT_PORT  ) 
+
+         if( poi->type == PORT_OBJECT_PORT  )
          {
-            if( parray[poi->lport] ) 
+            if( parray[poi->lport] )
                 cnt--;
 
             parray[poi->lport] =0;
@@ -1168,10 +1176,10 @@ char * PortObjectCharPortArray ( char * parray, PortObject * po, int * nports )
         {
             if( !( poi->flags & PORT_OBJECT_NOT_FLAG)  )
                 continue; /* should not happen */
-         
-            if( poi->type == PORT_OBJECT_PORT  ) 
+
+            if( poi->type == PORT_OBJECT_PORT  )
             {
-              if( parray[poi->lport] ) 
+              if( parray[poi->lport] )
                   cnt--;
               parray[poi->lport] =0;
             }
@@ -1191,15 +1199,15 @@ char * PortObjectCharPortArray ( char * parray, PortObject * po, int * nports )
     }
 
     *nports = cnt;
-         
-    return parray; 
+
+    return parray;
 }
-             
+
 /*
- *  Make a list of ports form the char array, each char is either 
+ *  Make a list of ports form the char array, each char is either
  *  on or off.
  */
-static 
+static
 SF_LIST * PortObjectItemListFromCharPortArray( char * parray, int n )
 {
    int i, lport ,hport;
@@ -1217,7 +1225,7 @@ SF_LIST * PortObjectItemListFromCharPortArray( char * parray, int n )
        /* Either a port or the start of a range */
        lport = hport = i;
 
-       for(i++;i<n;i++) 
+       for(i++;i<n;i++)
        {
            if( parray[i] )
            {
@@ -1226,7 +1234,7 @@ SF_LIST * PortObjectItemListFromCharPortArray( char * parray, int n )
            }
            break;
       }
-   
+
       poi = PortObjectItemNew();
       if( !poi )
       {
@@ -1234,7 +1242,7 @@ SF_LIST * PortObjectItemListFromCharPortArray( char * parray, int n )
           return 0;
       }
 
-      if( hport == lport ) 
+      if( hport == lport )
       {
           poi->type = PORT_OBJECT_PORT;
           poi->lport = (unsigned short)lport;
@@ -1245,17 +1253,17 @@ SF_LIST * PortObjectItemListFromCharPortArray( char * parray, int n )
           poi->lport =(unsigned short)lport;
           poi->hport =(unsigned short)hport;
       }
-   
+
       if( sflist_add_tail( plist, poi ) )
       {
           sflist_free_all( plist, free );
           return 0;
       }
    }
-  
+
    return plist;
 }
-          
+
 /*
  *  Removes Ports in B from A ... A = A - B
  */
@@ -1267,13 +1275,13 @@ int PortObjectRemovePorts( PortObject * a,  PortObject * b )
     SF_LIST * plist;
     static char pA[SFPO_MAX_PORTS];
     static char pB[SFPO_MAX_PORTS];
-    
+
     memset(pA,0,SFPO_MAX_PORTS);
     memset(pB,0,SFPO_MAX_PORTS);
-    
+
     /* Create a char array of ports */
     PortObjectCharPortArray ( pA, a, &nportsa );
-    
+
     /* Create a char array of ports */
     PortObjectCharPortArray ( pB, b, &nportsb );
 
@@ -1281,13 +1289,13 @@ int PortObjectRemovePorts( PortObject * a,  PortObject * b )
     {
        if( pB[i] ) pA[i] = 0; /* remove portB from A */
     }
-    
+
     /* Convert the array into a Port Object list */
     plist = PortObjectItemListFromCharPortArray( pA, SFPO_MAX_PORTS );
-    
+
     /* Release the old port list */
     sflist_free_all( a->item_list, free );
-    
+
     /* Replace the old PortObject list */
     a->item_list = plist;
 
@@ -1295,8 +1303,8 @@ int PortObjectRemovePorts( PortObject * a,  PortObject * b )
 }
 
 /*
- *   Normalize a port object 
- *   
+ *   Normalize a port object
+ *
  *   The reduces multiple references to a given port to a single unique reference
  *   This function should be used on each PortObject, once it's completed. After
  *   the normalized PortObject is created, the input PortObject may be deleted.
@@ -1304,31 +1312,31 @@ int PortObjectRemovePorts( PortObject * a,  PortObject * b )
 int  PortObjectNormalize (PortObject * po )
 {
      SF_LIST * plist;
-     int nports = 0; 
-    
+     int nports = 0;
+
      static char parray[SFPO_MAX_PORTS];
-  
+
      if( PortObjectHasAny ( po ) )
      {
          return  0; /* ANY =65K */
      }
-     
+
      memset(parray,0,SFPO_MAX_PORTS);
-  
+
      /* Create a char array of ports */
      PortObjectCharPortArray ( parray, po, &nports );
-  
+
      /* Convert the array into a Port Object list */
      plist = PortObjectItemListFromCharPortArray( parray, SFPO_MAX_PORTS );
-     if( !plist ) 
-         return -1; 
-             
+     if( !plist )
+         return -1;
+
      /* Release the old port list */
      sflist_free_all( po->item_list, free );
-     
+
      /* Replace the old PortObject list */
      po->item_list = plist;
-     
+
      return nports;
 }
 
@@ -1339,17 +1347,17 @@ int  PortObjectNegate (PortObject * po )
 {
      int i;
      SF_LIST * plist;
-     int nports = 0; 
-    
+     int nports = 0;
+
      static char parray[SFPO_MAX_PORTS];
-  
+
      if( PortObjectHasAny ( po ) )
      {
          return  0; /* ANY =65K */
      }
-     
+
      memset(parray,0,SFPO_MAX_PORTS);
-  
+
      /* Create a char array of ports */
      PortObjectCharPortArray ( parray, po, &nports );
 
@@ -1357,28 +1365,28 @@ int  PortObjectNegate (PortObject * po )
      {
          if(  parray[i] ) /* negate */
               parray[i] = 0;
-         else 
-              parray[i] = 1; 
+         else
+              parray[i] = 1;
      }
-  
+
      /* Convert the array into a Port Object list */
      plist = PortObjectItemListFromCharPortArray( parray, SFPO_MAX_PORTS );
-     
+
      /* Release the old port list */
      sflist_free_all( po->item_list, free );
-     
+
      /* Replace the old PortObject list */
      po->item_list = plist;
-     
+
      return nports;
 }
 
 
-/* 
+/*
    PortObjects should be normalized, prior to testing
 */
 static
-int PortObjectItemsEqual(PortObjectItem * a, PortObjectItem * b ) 
+int PortObjectItemsEqual(PortObjectItem * a, PortObjectItem * b )
 {
     if( a->type != b->type )
         return 0;
@@ -1400,7 +1408,7 @@ int PortObjectItemsEqual(PortObjectItem * a, PortObjectItem * b )
     return 0;
 }
 
-/* 
+/*
    PortObjects should be normalized, prior to testing
 */
 int PortObjectEqual( PortObject * a, PortObject *b )
@@ -1409,25 +1417,25 @@ int PortObjectEqual( PortObject * a, PortObject *b )
     PortObjectItem *pb;
     SF_LNODE * posa;
     SF_LNODE * posb;
-    
+
     if( a->item_list->count != b->item_list->count )
         return 0;
-    
+
     pa = (PortObjectItem*)sflist_firstpos(a->item_list,&posa);
     pb = (PortObjectItem*)sflist_firstpos(b->item_list,&posb);
-    
+
     while( pa && pb )
     {
       if( !PortObjectItemsEqual( pa, pb) )
           return 0;
-      
+
       pa = (PortObjectItem*)sflist_nextpos(a->item_list,&posa);
       pb = (PortObjectItem*)sflist_nextpos(b->item_list,&posb);
     }
-    
+
     if( pa || pb ) /* both are not done - cannot match */
         return 0;
-    
+
     return 1; /* match */
 }
 
@@ -1438,18 +1446,18 @@ PortObject * PortObjectAppend(PortObject * poa, PortObject * pob )
 {
    PortObjectItem * poia;
    PortObjectItem * poib;
-   
+
    for( poib = (PortObjectItem*) sflist_first(pob->item_list);
         poib!= 0;
         poib = (PortObjectItem*)sflist_next(pob->item_list) )
    {
        poia = PortObjectItemNew();
-      
+
        if(!poia)
            return 0;
-       
+
        memcpy(poia,poib,sizeof(PortObjectItem));
-      
+
        sflist_add_tail(poa->item_list,poia);
    }
    return poa;
@@ -1460,7 +1468,7 @@ PortObject * PortObjectAppendPortObject(PortObject * poa, PortObject * pob )
    int * prid;
    int * prid2;
    SF_LNODE * lpos;
-   
+
    for( prid = (int*) sflist_firstpos(pob->rule_list,&lpos);
         prid!= 0;
         prid = (int*)sflist_nextpos(pob->rule_list,&lpos) )
@@ -1479,7 +1487,7 @@ PortObject2 * PortObject2AppendPortObject(PortObject2 * poa, PortObject * pob )
    int * prid;
    int * prid2;
    SF_LNODE * lpos;
-   
+
    for( prid = (int*) sflist_firstpos(pob->rule_list,&lpos);
         prid!= 0;
         prid = (int*)sflist_nextpos(pob->rule_list,&lpos) )
@@ -1501,7 +1509,7 @@ PortObject2 * PortObject2AppendPortObject2(PortObject2 * poa, PortObject2 * pob 
    int * prid;
    int * prid2;
    SFGHASH_NODE * node;
-   
+
    for( node = sfghash_findfirst(pob->rule_hash);
         node!= NULL;
         node = sfghash_findnext(pob->rule_hash) )
@@ -1513,7 +1521,7 @@ PortObject2 * PortObject2AppendPortObject2(PortObject2 * poa, PortObject2 * pob 
        prid2 = calloc( 1, sizeof(int));
        if( !prid2 )
            return 0;
-       
+
        *prid2 = *prid;
        if( sfghash_add(poa->rule_hash,prid2,prid2) != SFGHASH_OK )
        {
@@ -1529,7 +1537,7 @@ PortObject * PortObjectAppendEx(PortObject * poa, PortObject * pob )
 {
    // LogMessage("PortObjectAppendEx: appending ports\n");
    if( !PortObjectAppend( poa, pob ) ) return 0;
-   
+
    //LogMessage("PortObjectAppendEx: appending rules\n");
    if( !PortObjectAppendPortObject( poa, pob ) ) return 0;
 
@@ -1570,7 +1578,7 @@ PortTable * PortTableNew(void)
         free(p);
         return 0;
     }
-    
+
     p->pt_lrc      =  PTBL_LRC_DEFAULT; /* 10 rules, user should really control these */
     p->pt_optimize =  1; /* if disabled, only one merged rule group is used */
 
@@ -1624,7 +1632,7 @@ void PortTableFree(PortTable *p)
     for (i=0;i<SFPO_MAX_PORTS;i++)
     {
 #if 0
-        if (p->pt_port_object[i]) 
+        if (p->pt_port_object[i])
         {
             PortObject2Free(p->pt_port_object[i]);
         }
@@ -1641,7 +1649,7 @@ PortObject * PortTableFindInputPortObjectName(PortTable * pt, char * po_name)
 
     if( !pt ) return NULL;
     if( !po_name ) return NULL;
-    
+
     /* Normalize each of the input port objects */
     for(po =(PortObject*)sflist_firstpos(pt->pt_polist,&lpos);
         po!=0;
@@ -1655,11 +1663,11 @@ PortObject * PortTableFindInputPortObjectName(PortTable * pt, char * po_name)
             }
         }
     }
-    return NULL; 
+    return NULL;
 }
 
-/* 
- * Find PortObject by PortItem Info 
+/*
+ * Find PortObject by PortItem Info
  */
 PortObject * PortTableFindInputPortObjectPorts( PortTable * pt, PortObject * pox )
 {
@@ -1668,7 +1676,7 @@ PortObject * PortTableFindInputPortObjectPorts( PortTable * pt, PortObject * pox
 
     if( !pt ) return NULL;
     if( !pox ) return NULL;
-    
+
     for(po =(PortObject*)sflist_firstpos(pt->pt_polist,&lpos);
         po!=0;
         po =(PortObject*)sflist_nextpos(pt->pt_polist,&lpos) )
@@ -1678,7 +1686,7 @@ PortObject * PortTableFindInputPortObjectPorts( PortTable * pt, PortObject * pox
             return po;
         }
     }
-    return NULL; 
+    return NULL;
 }
 
 
@@ -1700,7 +1708,7 @@ int PortTableNormalizeInputPortObjects( PortTable *p )
 int PortObjectAddRule( PortObject * po , int rule )
 {
     int * pruleid;
-  
+
     //LogMessage("Adding Rule %d to Port Object '%s'\n",rule,po->name);
     if( !po )
         return -1;
@@ -1714,12 +1722,12 @@ int PortObjectAddRule( PortObject * po , int rule )
     {
       return -1;
     }
-    
+
     *pruleid = rule;
-    
+
     sflist_add_tail( po->rule_list, pruleid );
 
-    return 0; 
+    return 0;
 }
 
 /*
@@ -1758,7 +1766,7 @@ int PortTableAddObject( PortTable *p, PortObject * po )
     Hash routine for hashing PortObjects as Keys
 
     p - SFHASHFCN *
-    d - PortObject * 
+    d - PortObject *
     n = 4 bytes (sizeof*) - not used
 
    Don't use this for type=ANY port objects
@@ -1772,7 +1780,7 @@ unsigned PortObject_hash( SFHASHFCN * p, unsigned char *d, int n )
     SF_LNODE       * pos;
 
     n = n; /* This quiets a Win32 warning */
-    
+
     po = *(PortObject**) d;
 
     /* hash up each item */
@@ -1820,11 +1828,11 @@ unsigned PortObject_hash( SFHASHFCN * p, unsigned char *d, int n )
  *  3) make a merged PortObject2
  *  4) Try adding the PortObject2 to it's table - mhash
  *     a) if it adds go on, else
- *     b) if it's already in the table 
+ *     b) if it's already in the table
  *        1) get the one in the table
  *        2) add any ports in the just created one
  *        3) free the one just created
- *  5) Create a plx object 
+ *  5) Create a plx object
  *  6) Add the plx object to the plx Table
  *      1) if it's already in the object - fail this contradicts 1)
  *  7) return the create PortObject2, or the one retrived from the
@@ -1832,14 +1840,14 @@ unsigned PortObject_hash( SFHASHFCN * p, unsigned char *d, int n )
  *
  * pol    - list of input PortObject pointers
  * pol_cnt- count in 'pol'
- * mhash  - stores the merged ports, using the merged port objects port list as a key. 
+ * mhash  - stores the merged ports, using the merged port objects port list as a key.
  * mhashx - stores plx keys, and PortObject2 *'s as data for the final merged port objects,
  *          the plx keys provide a quicker way to compare port lists to ensure if two ports
  *          are using the same set of rules (port objects).
  * mhash and mhashx reference the same port objects as data, but use different keys for lookup
  * purposes. Once we perform a merge we store the results, using the 'plx' as the key for future lookup.
  * plx    - key to use to lookup and store the merged port object
- * 
+ *
  *
  */
 static
@@ -1850,11 +1858,11 @@ PortObject2 * _merge_N_pol( SFGHASH * mhash, SFGHASH * mhashx,
     PortObject2 * ponew;
     PortObject2 * pox;
     plx_t       * plx_tmp;
-    int           stat; 
+    int           stat;
     int           i;
-       
-    /* 
-    * Check for the merged port object in the plx table 
+
+    /*
+    * Check for the merged port object in the plx table
     */
     DEBUG_WRAP(DebugMessage(DEBUG_PORTLISTS,
                             "++++n=%d sfghash_find-mhashx\n",pol_cnt););
@@ -1868,8 +1876,8 @@ PortObject2 * _merge_N_pol( SFGHASH * mhash, SFGHASH * mhashx,
     DEBUG_WRAP(DebugMessage(DEBUG_PORTLISTS,
                             "n=%d posnew not found in mhashx\n",pol_cnt););
 
-    /* 
-    *  Merge the port objects together - ports and rules 
+    /*
+    *  Merge the port objects together - ports and rules
     */
 
 
@@ -1900,7 +1908,7 @@ PortObject2 * _merge_N_pol( SFGHASH * mhash, SFGHASH * mhashx,
                     pol_cnt,ponew->rule_hash->count););
     DEBUG_WRAP(DebugMessage(DEBUG_PORTLISTS,"*** merged ponew - follows: \n"););
     // PortObjectPrint2(ponew);
-      
+
     /*
     * Add the Merged PortObject2 to the PortObject2 hash table
     * keyed by ports.
@@ -1917,7 +1925,7 @@ PortObject2 * _merge_N_pol( SFGHASH * mhash, SFGHASH * mhashx,
             pox = sfghash_find(mhash,&ponew);
             if( pox )
             {
-                PortObject2AppendPortObject2(pox,ponew); 
+                PortObject2AppendPortObject2(pox,ponew);
                 DEBUG_WRAP(DebugMessage(DEBUG_PORTLISTS,"sfportobject.c: merge_N_pol() line=%d  SFGHASH_INTABLE\n",__LINE__););
                 PortObject2Free( ponew );
                 ponew = pox;
@@ -1935,9 +1943,9 @@ PortObject2 * _merge_N_pol( SFGHASH * mhash, SFGHASH * mhashx,
     }
 
     DEBUG_WRAP(DebugMessage(DEBUG_PORTLISTS,"***%d ports merged object added to mhash  table\n",pol_cnt););
-         
+
     /*
-    * Create a plx node and add it to plx table 
+    * Create a plx node and add it to plx table
     * as the key with the merged port object as the data
     */
     plx_tmp = plx_new( pol, pol_cnt);
@@ -1946,8 +1954,8 @@ PortObject2 * _merge_N_pol( SFGHASH * mhash, SFGHASH * mhashx,
         FatalError("plx_new: memory alloc error\n");
     }
     sflist_add_head(plx_list, (void *)plx_tmp);
-   
-    /* 
+
+    /*
      * Add the plx node to the PLX hash table
      */
     DEBUG_WRAP(DebugMessage(DEBUG_PORTLISTS,"n=%d sfghash_add-mhashx\n",pol_cnt););
@@ -1965,7 +1973,7 @@ PortObject2 * _merge_N_pol( SFGHASH * mhash, SFGHASH * mhashx,
     }
 
     DEBUG_WRAP(DebugMessage(DEBUG_PORTLISTS,"Added-%d Merged Rule Groups to PLX HASH\n",pol_cnt););
-   
+
     /*
     *  Validate hash table entry
     */
@@ -1973,26 +1981,26 @@ PortObject2 * _merge_N_pol( SFGHASH * mhash, SFGHASH * mhashx,
     {
         FatalError("Find after add failed on PLX HASH table key\n");
     }
-   
+
     return ponew;
 }
 /*
  * Merge Input Port Objects into rule collections that are particular to
- * each port.  We store the results as objects and point to these in the 
+ * each port.  We store the results as objects and point to these in the
  * pt_port_object[MAX_PORTS] array.
- * 
- * We use plx_t types to manage tracking and testing for merged large 
+ *
+ * We use plx_t types to manage tracking and testing for merged large
  * rule groups, and merged small port groups.
- * 
+ *
  * mhash   - table of merged port objects ( built and used here )
  * mhashx  - table of plx_t objects ( built and used here )
  * pol     - list of input port objects touching the current port
  * pol_cnt - number of port objects in port list
  * lcnt    - large rule count
- * 
+ *
  */
 static
-PortObject2 * PortTableCompileMergePortObjectList2(SFGHASH   * mhash, 
+PortObject2 * PortTableCompileMergePortObjectList2(SFGHASH   * mhash,
                                                   SFGHASH    * mhashx,
                                                   SF_LIST    * plx_list,
                                                   PortObject * pol[],
@@ -2009,8 +2017,8 @@ PortObject2 * PortTableCompileMergePortObjectList2(SFGHASH   * mhash,
     plx_t plx_large;
     unsigned largest;
     int i;
-    
-    /* 
+
+    /*
     * Find the largest rule count of all of the port objects
     */
     largest = 0;
@@ -2023,7 +2031,7 @@ PortObject2 * PortTableCompileMergePortObjectList2(SFGHASH   * mhash,
       }
     }
 
-    /* 
+    /*
     * Classify PortObjects as large or small based on rule set size
     * and copy them into separate lists
     */
@@ -2040,7 +2048,7 @@ PortObject2 * PortTableCompileMergePortObjectList2(SFGHASH   * mhash,
              posmall[ nsmall++ ] = (void *)pol[i];
       }
     }
-    
+
     DEBUG_WRAP(DebugMessage(DEBUG_PORTLISTS,"*** %d small rule groups, %d large rule groups\n",nsmall,nlarge););
 
     /*
@@ -2051,13 +2059,13 @@ PortObject2 * PortTableCompileMergePortObjectList2(SFGHASH   * mhash,
         qsort( polarge, nlarge, sizeof(void*), p_keycmp );
     if( nsmall > 1 )
         qsort( posmall, nsmall, sizeof(void*), p_keycmp );
-    
+
     DEBUG_WRAP(
         for(i=0;i<nsmall;i++) DebugMessage(DEBUG_PORTLISTS, "posmall[%d]=%lu\n",i,posmall[i]);
         for(i=0;i<nlarge;i++) DebugMessage(DEBUG_PORTLISTS, "polarge[%d]=%lu\n",i,polarge[i]);
     );
-    
-    /* 
+
+    /*
     * Setup plx_t representation of port list pointers
     */
     plx_small.n = nsmall;
@@ -2065,8 +2073,8 @@ PortObject2 * PortTableCompileMergePortObjectList2(SFGHASH   * mhash,
 
     plx_large.n = nlarge;
     plx_large.p = (void**)&polarge[0];
-    
-#ifdef DEBUG
+
+#ifdef DEBUG_MSGS
     if( nlarge )
     {
         DebugMessage(DEBUG_PORTLISTS, "large "); plx_print(&plx_large);
@@ -2076,25 +2084,25 @@ PortObject2 * PortTableCompileMergePortObjectList2(SFGHASH   * mhash,
         DebugMessage(DEBUG_PORTLISTS, "small "); plx_print(&plx_small);
     }
 #endif
-   
+
     /*
-    * Merge Large PortObjects   
+    * Merge Large PortObjects
     */
     if( nlarge )
     {
         DEBUG_WRAP(DebugMessage(DEBUG_PORTLISTS,"***nlarge=%d \n",nlarge););
         ponew =  _merge_N_pol( mhash, mhashx, plx_list, polarge, nlarge, &plx_large);
     }
-    
-    /* 
-    * Merge Small PortObjects 
+
+    /*
+    * Merge Small PortObjects
     */
     if( nsmall )
     {
         DEBUG_WRAP(DebugMessage(DEBUG_PORTLISTS,"***nsmall=%d \n",nsmall););
         posnew =  _merge_N_pol( mhash, mhashx, plx_list, posmall, nsmall, &plx_small);
     }
-    /* 
+    /*
     * Merge Large and Small (rule groups) PortObject2's together
     * append small port object rule sets to the large port objects,
     * remove the large port objects ports from the smaller port objects
@@ -2104,21 +2112,21 @@ PortObject2 * PortTableCompileMergePortObjectList2(SFGHASH   * mhash,
         DEBUG_WRAP(DebugMessage(DEBUG_PORTLISTS,"*** appending small rules to larger rule group\n"););
         if (ponew != posnew)
         {
-            
-            /* Append small port object, just the rules */ 
+
+            /* Append small port object, just the rules */
             PortObject2AppendPortObject2( ponew, posnew );
-             
+
             /* Remove Ports in ponew from posnew */
             PortObjectRemovePorts( (PortObject*)posnew, (PortObject*)ponew );
         }
-          
+
         DEBUG_WRAP(DebugMessage(DEBUG_PORTLISTS,"*** final - using small+large rule group \n"););
     }
-    else if( nsmall ) 
+    else if( nsmall )
     {
         /* Only a small port object */
         ponew = posnew;
-          
+
         DEBUG_WRAP(DebugMessage(DEBUG_PORTLISTS,"*** final - using small rule group only \n"););
     }
     else if( nlarge )
@@ -2131,7 +2139,7 @@ PortObject2 * PortTableCompileMergePortObjectList2(SFGHASH   * mhash,
     return ponew;
 }
 /*
- *   
+ *
  *
  * mhash
  * mhashx
@@ -2140,8 +2148,8 @@ PortObject2 * PortTableCompileMergePortObjectList2(SFGHASH   * mhash,
 int PortTableCompileMergePortObjects( PortTable * p )
 {
     SF_LNODE   * lpos;
-    SFGHASH    * mhash; 
-    SFGHASH    * mhashx; 
+    SFGHASH    * mhash;
+    SFGHASH    * mhashx;
     SFGHASH_NODE * node;
     SF_LIST    * plx_list;
     int          id = PO_INIT_ID;
@@ -2149,30 +2157,30 @@ int PortTableCompileMergePortObjects( PortTable * p )
     int          pol_cnt;
     char  *      parray = NULL;
     int i;
-   
+
     DEBUG_WRAP(DebugMessage(DEBUG_PORTLISTS,"***\n***Merging PortObjects->PortObjects2\n***\n"););
 
     /* Create a Merged Port Object Table  - hash by ports */
     mhash = sfghash_new(PO_HASH_TBL_ROWS, sizeof(PortObject *), 0 /*userkeys-no*/, 0 /*free data-don't*/);
     if( !mhash )
         return -1;
-    
+
     /* Setup hashing function and key comparison function */
     sfhashfcn_set_keyops( mhash->sfhashfcn, PortObject_hash, PortObject_keycmp );
-   
+
     /* remove randomness */
     if (ScStaticHash())
         sfhashfcn_static( mhash->sfhashfcn );
-    
+
     p->pt_mpo_hash = mhash;
-    
+
     /* Create a Merged Port Object Table  - hash by ports */
     mhashx = sfghash_new(PO_HASH_TBL_ROWS, sizeof(plx_t *), 0/*userkeys-no*/, 0/*freedata()-don't*/);
     if( !mhashx )
         return -1;
     /* Setup hashing function and key comparison function */
     sfhashfcn_set_keyops( mhashx->sfhashfcn,plx_hash,plx_keycmp );
-    
+
     /* remove randomness */
     if (ScStaticHash())
         sfhashfcn_static( mhashx->sfhashfcn );
@@ -2188,7 +2196,7 @@ int PortTableCompileMergePortObjects( PortTable * p )
 
     /*
      *  For each port, merge rules from all port objects that touch the port
-     *  into an optimal object, that may be shared with other ports.  
+     *  into an optimal object, that may be shared with other ports.
      */
     for(i=0;i<SFPO_MAX_PORTS;i++)
     {
@@ -2204,13 +2212,13 @@ int PortTableCompileMergePortObjects( PortTable * p )
             {
                 if( pol_cnt < SFPO_MAX_LPORTS )
                 {
-                    pol[ pol_cnt++ ] = po; 
+                    pol[ pol_cnt++ ] = po;
                 }
             }
         }
         p->pt_port_object[i] = 0;
 
-        if( !pol_cnt ) 
+        if( !pol_cnt )
         {
             //port not contained in any PortObject
             continue;
@@ -2219,7 +2227,7 @@ int PortTableCompileMergePortObjects( PortTable * p )
         DEBUG_WRAP(DebugMessage(DEBUG_PORTLISTS,"*** merging list for port[%d] \n",i);fflush(stdout););
 
         /* merge the rules into an optimal port object */
-        p->pt_port_object[i] = 
+        p->pt_port_object[i] =
             PortTableCompileMergePortObjectList2( mhash, mhashx, plx_list, pol, pol_cnt, p->pt_lrc );
         if( !p->pt_port_object[i] )
         {
@@ -2227,16 +2235,16 @@ int PortTableCompileMergePortObjects( PortTable * p )
         }
 
         /* give the new compiled port object an id of its own */
-        p->pt_port_object[i]->id = id++; 
+        p->pt_port_object[i]->id = id++;
 
         DEBUG_WRAP(DebugMessage(DEBUG_PORTLISTS,"\n");fflush(stdout););
-    } 
-   
-    /* 
-     * Normalize the Ports so they indicate only the ports that 
+    }
+
+    /*
+     * Normalize the Ports so they indicate only the ports that
      * reference the composite port object
      */
-    
+
     /* 1st- Setup bitmasks for collecting ports */
     for(node=sfghash_findfirst(mhashx);
         node;
@@ -2244,9 +2252,9 @@ int PortTableCompileMergePortObjects( PortTable * p )
     {
         unsigned char * buf;
         PortObject2 * poa;
-    
+
         poa = (PortObject2*)node->data;
-        if( !poa ) 
+        if( !poa )
             continue;
 
         if (!poa->bitop)
@@ -2278,7 +2286,7 @@ int PortTableCompileMergePortObjects( PortTable * p )
             poa->port_cnt++;
             if( poa->bitop )
             {
-                if( boSetBit(poa->bitop, (unsigned int) i ) ) 
+                if( boSetBit(poa->bitop, (unsigned int) i ) )
                 {
                     FatalError("BitOp-Set error\n");
                 }
@@ -2296,7 +2304,7 @@ int PortTableCompileMergePortObjects( PortTable * p )
     {
         FatalError("Memory error in PortTableCompile()\n");
     }
-    
+
     /* Process Port-Bitop map and print final port-object usage stats */
     for(node=sfghash_findfirst(mhashx);
         node;
@@ -2304,22 +2312,22 @@ int PortTableCompileMergePortObjects( PortTable * p )
     {
         SF_LIST     * plist;
         PortObject2 * po;
-        
+
         po = (PortObject2*)node->data;
         if( !po )
         {
             FatalError("MergePortOBject-NormalizePorts -NULL po\n");
         }
-        
+
         if( !po->port_cnt )/* port object is not used ignore it */
             continue;
-        
+
         if( !po->bitop )
         {
             //FatalError("MergePortOBject-NormalizePorts -NULL po->bitop\n");
             continue;
         }
-        
+
         /* Convert the bitop bits to a char array */
         memset(parray,0,SFPO_MAX_PORTS);
         for(i=0;i<SFPO_MAX_PORTS;i++)
@@ -2329,7 +2337,7 @@ int PortTableCompileMergePortObjects( PortTable * p )
              parray[ i ] = 1;
           }
         }
-         
+
         /* Release bit buffer for each port object */
         if( po->bitop )
         {
@@ -2349,16 +2357,16 @@ int PortTableCompileMergePortObjects( PortTable * p )
         {
            FatalError("MergePortObjects: No PortObjectItems in portobject\n");
         }
-           
+
         /* free the original list */
         sflist_free_all( po->item_list, free );
-           
+
         /* set the new list - this is a list of port itmes for this port object */
         po->item_list = plist;
-            
+
         DEBUG_WRAP(DebugMessage(DEBUG_PORTLISTS,"port-object id = %d, port cnt = %d\n",po->id,po->port_cnt););
     }
-    
+
     if(parray) free(parray);
 
     return 0;
@@ -2367,17 +2375,17 @@ int PortTableCompileMergePortObjects( PortTable * p )
  *
  *  Verify all rules in 'po' list are in 'po2' hash
  *
- *  return  0 - OK 
+ *  return  0 - OK
  *         !0 - a rule in po is not in po2
  */
-static 
+static
 int _po2_include_po_rules( PortObject2 * po2, PortObject * po  )
 {
     //SFGHASH_NODE * node;
     int * pid;
     int * id;
     SF_LNODE * rpos;
-   
+
     /* get each rule in po */
     for(pid=sflist_firstpos(po->rule_list,&rpos);
         pid;
@@ -2389,7 +2397,7 @@ int _po2_include_po_rules( PortObject2 * po2, PortObject * po  )
        /* make sure it's in po2 */
        if(!id )
        {
-          return 1; /* error */ 
+          return 1; /* error */
        }
     }
 
@@ -2417,7 +2425,7 @@ int PortTableConsistencyCheck( PortTable *p )
     {
         FatalError("Memory eror in PortTableComopile\n");
     }
-    
+
     /*  Make sure each port is only in one composite port object */
     for(node=sfghash_findfirst(p->pt_mpo_hash);
         node;
@@ -2425,7 +2433,7 @@ int PortTableConsistencyCheck( PortTable *p )
     {
         PortObject2 * po;
         po = (PortObject2*)node->data;
-        
+
         if( !po )
         {
           FatalError("PortObject consistency Check failed, hash table problem\n");
@@ -2448,24 +2456,24 @@ int PortTableConsistencyCheck( PortTable *p )
     }
 
     if( parray ) free(parray);
-  
+
     DEBUG_WRAP(DebugMessage(DEBUG_PORTLISTS,"***\n***Port Table Compiler Consistency Check Phase-I Passed !\n"););
-   
+
 
     /*
-    * This phase checks the Input port object rules/ports against 
+    * This phase checks the Input port object rules/ports against
     * the composite port objects.
     *
     * For each input object
-    *    check that each port it reference has all of the rules 
+    *    check that each port it reference has all of the rules
     *    referenced to that port in the composit object
-    */ 
+    */
     for(ipo=sflist_firstpos(p->pt_polist,&pos);
         ipo;
         ipo=sflist_nextpos(p->pt_polist,&pos) )
     {
         /*
-         * for each port in this object get the composite port object 
+         * for each port in this object get the composite port object
          * assigned to that port and verify all of the input objects rules
          * are in the composite object.  This verifies all rules are applied
          * to the originally intended port.
@@ -2488,7 +2496,7 @@ int PortTableConsistencyCheck( PortTable *p )
 
                 case PORT_OBJECT_RANGE:
                 {
-                    for(i=poi->lport;i<=poi->hport;i++) 
+                    for(i=poi->lport;i<=poi->hport;i++)
                     {
                         /* small optimization*/
                         if( lastpo != p->pt_port_object[ i ] )
@@ -2505,32 +2513,32 @@ int PortTableConsistencyCheck( PortTable *p )
             }
         }
     }
-    
+
    DEBUG_WRAP(DebugMessage(DEBUG_PORTLISTS,
               "***\n***Port Table Compiler Consistency Check Phase-II Passed !!! - Good to go Houston\n****\n"););
-   return 0; 
+   return 0;
 }
 
 /*
-* Compile the PortTable 
-*   
+* Compile the PortTable
+*
 * This builds a set of Port+Rule objects that are in some way an optimal
-* set of objects to indicate which rules to apply to which ports. Since 
+* set of objects to indicate which rules to apply to which ports. Since
 * these groups are calculated consistency checking is done witht he finished
 * objects.
 */
 int PortTableCompile( PortTable * p )
 {
-    /* 
+    /*
     *  If not using an optimized Table use the rule_index_map in parser.c
     */
-    if( !p->pt_optimize ) 
+    if( !p->pt_optimize )
     {
         return 0;
     }
-    
+
     DEBUG_WRAP(DebugMessage(DEBUG_PORTLISTS,"#PortTableCompile: Compiling Port Array Lists\n"););
-    
+
     if( PortTableCompileMergePortObjects( p ) )
     {
         FatalError("Could not create PortArryayLists\n");
@@ -2539,10 +2547,10 @@ int PortTableCompile( PortTable * p )
     DEBUG_WRAP(DebugMessage(DEBUG_PORTLISTS,"Done\n");fflush(stdout););
 
     PortTableConsistencyCheck(p);
-    
+
     return 0;
 }
-static 
+static
 int integer_compare( const void *arg1, const void *arg2 )
 {
    if( *(int*)arg1 <  *(int*)arg2 ) return -1;
@@ -2550,7 +2558,7 @@ int integer_compare( const void *arg1, const void *arg2 )
    return  0;
 }
 
-static 
+static
 int * RuleListToSortedArray( SF_LIST * rl )
 {
     SF_LNODE       * pos = NULL;
@@ -2560,7 +2568,7 @@ int * RuleListToSortedArray( SF_LIST * rl )
 
     if( !rl )
         return 0;
-    
+
     if(!rl->count)
         return NULL;
 
@@ -2572,7 +2580,7 @@ int * RuleListToSortedArray( SF_LIST * rl )
     {
         ra[k++] = *prid;
     }
-   
+
     /* sort the array */
     qsort(ra,rl->count,sizeof(int),integer_compare);
 
@@ -2580,8 +2588,8 @@ int * RuleListToSortedArray( SF_LIST * rl )
 }
 /**sort and uniq rule list.
  */
-void RuleListSortUniq( 
-        SF_LIST * rl 
+void RuleListSortUniq(
+        SF_LIST * rl
         )
 {
     unsigned i;
@@ -2599,6 +2607,8 @@ void RuleListSortUniq(
     }
 
     currNode = sflist_firstpos(rl,&pos);
+    if (currNode == NULL)
+        return;
 
     for(i=0; i < rl->count; i++)
     {
@@ -2624,8 +2634,8 @@ void RuleListSortUniq(
 /**Sort and make rule index in all port objects unique. Multiple policies may add
  * the same rule which can lead to duplication.
  */
-void PortTableSortUniqRules( 
-        PortTable * p 
+void PortTableSortUniqRules(
+        PortTable * p
         )
 {
     PortObject * po;
@@ -2638,18 +2648,18 @@ void PortTableSortUniqRules(
         RuleListSortUniq(po->rule_list);
     }
 }
-    
-static 
+
+static
 int * RuleHashToSortedArray( SFGHASH * rh )
 {
     int          * prid;
     int          * ra;
     int            k = 0;
     SFGHASH_NODE * node;
-    
+
     if( !rh )
         return 0;
-    
+
     if(!rh->count)
         return NULL;
 
@@ -2665,7 +2675,7 @@ int * RuleHashToSortedArray( SFGHASH * rh )
             ra[k++] = *prid;
         }
     }
-   
+
     /* sort the array */
     qsort(ra,rh->count,sizeof(int),integer_compare);
 
@@ -2689,7 +2699,7 @@ void PortTablePrintInput( PortTable * p )
     }
 }
 
-void PortTablePrintInputEx( PortTable * p, 
+void PortTablePrintInputEx( PortTable * p,
         void (*print_index_map)(int index, char *buf, int bufsize) )
 {
     PortObject * po;
@@ -2702,9 +2712,9 @@ void PortTablePrintInputEx( PortTable * p,
     }
 }
 /*
-   Prints Compiled Ports/Rules Objects 
+   Prints Compiled Ports/Rules Objects
 */
-int PortTablePrintCompiledEx( PortTable * p , 
+int PortTablePrintCompiledEx( PortTable * p ,
         void (*print_index_map)(int index, char *buf, int bufsize) )
 {
     PortObject2  * po = NULL;
@@ -2726,7 +2736,7 @@ int PortTablePrintCompiledEx( PortTable * p ,
 }
 
 /*
-   Print port items.  Used internally by sfportobject.c.  
+   Print port items.  Used internally by sfportobject.c.
    Buffer assumed trusted.
 */
 static void PortObjectItemPrint ( PortObjectItem * poi, char *dstbuf, int bufsize )
@@ -2735,7 +2745,7 @@ static void PortObjectItemPrint ( PortObjectItem * poi, char *dstbuf, int bufsiz
 
     if( poi->flags & PORT_OBJECT_NOT_FLAG )
         SnortSnprintfAppend(dstbuf, bufsize, "!");
-       
+
     switch( poi->type )
     {
         case PORT_OBJECT_PORT :
@@ -2749,7 +2759,7 @@ static void PortObjectItemPrint ( PortObjectItem * poi, char *dstbuf, int bufsiz
         case PORT_OBJECT_ANY:
             SnortSnprintfAppend(dstbuf, bufsize, "any");
         break;
-     
+
         default:
             SnortSnprintfAppend(dstbuf, bufsize, " unknown port type @ %p", (void*)poi);
         break;
@@ -2763,18 +2773,18 @@ void PortObjectPrintPortsRaw(PortObject * po )
     char           * buf;
     int              bufsize;
 
-    /* Need to buffer the string so we only do one LogMessage, 
+    /* Need to buffer the string so we only do one LogMessage,
      * due to syslog output.  The largest string needed to represent
      * each portobject is the length required to represent:
      * " unknown port type @ 0x<8 max bytes>" (See PortObjectItemPrint), or:
-     * 30 bytes.  For the entire list, need room for spaces and brackets and 
+     * 30 bytes.  For the entire list, need room for spaces and brackets and
      * potential negations. Or:
-     *      list_size * (30 + 1space_for_each_element, + 
+     *      list_size * (30 + 1space_for_each_element, +
      *       1potential_negation) + surrounding_whitespace + brackets + NULL */
-    
+
     bufsize = po->item_list->count * (30 + 1 + 1) + 5;
     buf = (char*)SnortAlloc(bufsize);
-    
+
     SnortSnprintfAppend(buf, bufsize, " [");
 
     for(poi=(PortObjectItem*)sflist_firstpos(po->item_list, &pos);
@@ -2786,7 +2796,7 @@ void PortObjectPrintPortsRaw(PortObject * po )
 
     SnortSnprintfAppend(buf, bufsize, " ]");
 
-    LogMessage("%s", buf);      
+    LogMessage("%s", buf);
 
     free(buf);
 }
@@ -2801,19 +2811,19 @@ void PortObject2PrintPorts(PortObject2 * po )
     po_print_buf[0] = '\0';
 
     SnortSnprintfAppend(po_print_buf, bufsize, " PortObject ");
-    
-    if( po->name ) 
-    {   
+
+    if( po->name )
+    {
         SnortSnprintfAppend(po_print_buf, bufsize, "%s ", po->name);
     }
-    
-    SnortSnprintfAppend(po_print_buf, bufsize, 
-                 " Id:%d  Ports:%d Rules:%d\n {\n Ports [", 
+
+    SnortSnprintfAppend(po_print_buf, bufsize,
+                 " Id:%d  Ports:%d Rules:%d\n {\n Ports [",
                  po->id, po->item_list->count, po->rule_hash->count);
 
     if( PortObjectHasAny( (PortObject*)po ) )
     {
-        SnortSnprintfAppend(po_print_buf, bufsize, "any");      
+        SnortSnprintfAppend(po_print_buf, bufsize, "any");
     }
     else
     {
@@ -2821,7 +2831,7 @@ void PortObject2PrintPorts(PortObject2 * po )
             poi != 0;
             poi=(PortObjectItem*)sflist_nextpos(po->item_list,&pos) )
         {
-            PortObjectItemPrint(poi, po_print_buf, bufsize);  
+            PortObjectItemPrint(poi, po_print_buf, bufsize);
         }
     }
 
@@ -2831,7 +2841,7 @@ void PortObject2PrintPorts(PortObject2 * po )
 
 /*
    Print Port Object - Prints input ports and rules (uncompiled)
-    ports  
+    ports
     rules (input by user)
 
 */
@@ -2849,24 +2859,24 @@ void PortObjectPrintEx(PortObject * po,
 
     if( !po )
         return ;
-    
+
     if( !po->rule_list )
         return ;
-    
+
     if( !po->rule_list->count )
         return ;
 
     SnortSnprintfAppend(po_print_buf, bufsize, " PortObject ");
-    
-    if( po->name ) 
+
+    if( po->name )
     {
         SnortSnprintfAppend(po_print_buf, bufsize, "%s ", po->name);
     }
-    
-    SnortSnprintfAppend(po_print_buf, bufsize, 
+
+    SnortSnprintfAppend(po_print_buf, bufsize,
             " Id:%d  Ports:%d Rules:%d\n {\n",
-            po->id, po->item_list->count,po->rule_list->count ); 
-    
+            po->id, po->item_list->count,po->rule_list->count );
+
     SnortSnprintfAppend(po_print_buf, bufsize, "  Ports [\n  ");
 
     if( PortObjectHasAny( po ) )
@@ -2879,7 +2889,7 @@ void PortObjectPrintEx(PortObject * po,
           poi != 0;
           poi=(PortObjectItem*)sflist_nextpos(po->item_list,&pos) )
           {
-             PortObjectItemPrint(poi, po_print_buf, bufsize);  
+             PortObjectItemPrint(poi, po_print_buf, bufsize);
           }
     }
     SnortSnprintfAppend(po_print_buf, bufsize, "  ]\n");
@@ -2889,13 +2899,13 @@ void PortObjectPrintEx(PortObject * po,
     {
         return ;
     }
-    
+
     SnortSnprintfAppend(po_print_buf, bufsize, "  Rules [ \n ");
     for(i=0;i<po->rule_list->count;i++)
     {
         if( print_index_map )
         {
-          print_index_map( rlist[i], po_print_buf, bufsize ); 
+          print_index_map( rlist[i], po_print_buf, bufsize );
         }
         else
         {
@@ -2909,8 +2919,8 @@ void PortObjectPrintEx(PortObject * po,
         }
     }
     SnortSnprintfAppend(po_print_buf, bufsize, "  ]\n }\n");
-    
-    LogMessage("%s", po_print_buf); 
+
+    LogMessage("%s", po_print_buf);
     free(rlist);
 }
  // extern void  rule_index_map_print_index( int index );
@@ -2919,7 +2929,7 @@ void PortObjectPrint (PortObject * po )
     PortObjectPrintEx( po, rule_index_map_print_index );
 }
 
-void PortObject2PrintEx(PortObject2 * po, 
+void PortObject2PrintEx(PortObject2 * po,
             void (*print_index_map)(int index, char *buf, int bufsize) )
 {
     PortObjectItem * poi = NULL;
@@ -2932,12 +2942,12 @@ void PortObject2PrintEx(PortObject2 * po,
     po_print_buf[0] = '\0';
 
     SnortSnprintfAppend(po_print_buf, bufsize, " PortObject2 ");
-    
+
     if( po->name ) SnortSnprintfAppend(po_print_buf, bufsize, "%s ",po->name);
-    
+
     SnortSnprintfAppend(po_print_buf, bufsize, " Id:%d  Ports:%d Rules:%d PortUsageCnt=%d\n {\n",
             po->id, po->item_list->count, po->rule_hash->count, po->port_cnt );
-    
+
     SnortSnprintfAppend(po_print_buf, bufsize, "  Ports [\n  ");
 
     if( PortObjectHasAny( (PortObject*)po ) )
@@ -2959,13 +2969,13 @@ void PortObject2PrintEx(PortObject2 * po,
     rlist = RuleHashToSortedArray( po->rule_hash );
     if(!rlist )
         return ;
-    
+
     SnortSnprintfAppend(po_print_buf, bufsize, "  Rules [ \n ");
     for(i=0;i<po->rule_hash->count;i++)
     {
         if( print_index_map )
         {
-            print_index_map( rlist[i], po_print_buf, bufsize ); 
+            print_index_map( rlist[i], po_print_buf, bufsize );
         }
         else
         {
@@ -2979,7 +2989,7 @@ void PortObject2PrintEx(PortObject2 * po,
         }
     }
     SnortSnprintfAppend(po_print_buf, bufsize, "  ]\n }\n");
-    
+
     LogMessage("%s", po_print_buf);
 
     free(rlist);
@@ -2990,7 +3000,7 @@ void PortObject2Print (PortObject2 * po )
     PortObject2PrintEx( po, rule_index_map_print_index );
 }
 /*
-   Prints the original (normalized) PortGroups and 
+   Prints the original (normalized) PortGroups and
    as sepcified by the user
 */
 void PortTablePrintUserRules( PortTable * p )
@@ -3014,7 +3024,7 @@ void PortTablePrintUserRules( PortTable * p )
 void PortTablePrintPortGroups( PortTable * p )
 {
     PortObject2 * po;
-    SFGHASH_NODE * ponode; 
+    SFGHASH_NODE * ponode;
 
     /* normalized user PortObjects and rule ids */
     LogMessage(">>>PortTable - Compiled Port Groups\n");
@@ -3024,15 +3034,15 @@ void PortTablePrintPortGroups( PortTable * p )
         ponode!= 0;
         ponode = sfghash_findnext(p->pt_mpo_hash) )
     {
-        po = ponode->data;  
-        
+        po = ponode->data;
+
         PortObject2Print(po);
     }
     /* port array of rule ids */
 }
 
 /*
-   Print   
+   Print
 */
 void PortTablePrintPortPortObjects( PortTable * p )
 {
@@ -3044,7 +3054,7 @@ void PortTablePrintPortPortObjects( PortTable * p )
    po_print_buf[0] = '\0';
 
    LogMessage(">>>Port PortObjects\n");
-   
+
    for(i=0;i<SFPO_MAX_PORTS;i++)
    {
       if( !p->pt_port_lists[i] ) continue;
@@ -3077,7 +3087,7 @@ void PortTablePrintPortPortObjects( PortTable * p )
 *
 */
 
-static 
+static
 int POParserInit( POParser * pop, char * s, PortVarTable * pvTable )
 {
    memset(pop,0,sizeof(POParser));
@@ -3091,7 +3101,7 @@ int POParserInit( POParser * pop, char * s, PortVarTable * pvTable )
 }
 
 /*
-    Get a Char 
+    Get a Char
 */
 static
 int POPGetChar( POParser * pop )
@@ -3108,16 +3118,16 @@ int POPGetChar( POParser * pop )
    }
    return 0;
 }
-/* 
-   Skip whitespace till we find a non-whitespace char 
+/*
+   Skip whitespace till we find a non-whitespace char
 */
 static
 int POPGetChar2( POParser * pop )
 {
    int c;
-   for(;;) 
+   for(;;)
    {
-       c=POPGetChar( pop ) ; 
+       c=POPGetChar( pop ) ;
        if( !c )
              return 0;
 
@@ -3129,7 +3139,7 @@ int POPGetChar2( POParser * pop )
    return c;
 }
 /*
-   Restore last char 
+   Restore last char
 */
 static
 void POPUnGetChar( POParser * pop )
@@ -3169,7 +3179,7 @@ void POPeekString(POParser * p, char * s, int smax)
     while( k > 0  && cnt < smax )
     {
         c = p->s[ cnt ];
-        
+
         if( c ==  0     ) break;
         if( !isalpha(c) ) break;
 
@@ -3191,7 +3201,7 @@ void POGetString(POParser * p, char * s, int smax)
     while( p->slen > 0  && cnt < smax )
     {
         c = p->s[ 0 ];
-        
+
         if( c ==  0     ) break;
         if( !isalpha(c) ) break;
 
@@ -3210,8 +3220,8 @@ static
 int POPSkipSpace( POParser * p )
 {
    int c;
-   for( c  = POPPeekChar(p); 
-        c != 0 ; 
+   for( c  = POPPeekChar(p);
+        c != 0 ;
         c  = POPPeekChar(p) )
    {
         if( !isspace(c) && c != ',' )
@@ -3231,18 +3241,18 @@ char * POParserName( POParser * pop )
     int c;
 
     /* check if were done  */
-    if( !pop || !pop->s || !*(pop->s) ) 
-        return 0; 
+    if( !pop || !pop->s || !*(pop->s) )
+        return 0;
 
     /* Start the name - skip space */
     c = POPGetChar2(pop) ;
-    if( !c ) 
+    if( !c )
         return 0;
 
     if( c== '$' )/* skip leading '$' - old Var indicator */
     {
         c = POPGetChar2(pop) ;
-        if( !c ) 
+        if( !c )
             return 0;
     }
 
@@ -3258,7 +3268,7 @@ char * POParserName( POParser * pop )
     }
 
     for( c  = POPGetChar(pop);
-         c != 0 && k < POP_MAX_BUFFER_SIZE; 
+         c != 0 && k < POP_MAX_BUFFER_SIZE;
          c  = POPGetChar(pop) )
     {
         if( isalnum(c) || c== '_' || c=='-' || c=='.' )
@@ -3341,7 +3351,7 @@ static PortObject *_POParseVar(POParser *pop)
         return NULL;
     }
 
-    pox = PortVarTableFind(pop->pvTable, name); 
+    pox = PortVarTableFind(pop->pvTable, name);
     free(name);
 
     if(!pox)
@@ -3355,16 +3365,16 @@ static PortObject *_POParseVar(POParser *pop)
     if(!pox)
     {
         pop->errflag = POPERR_MALLOC_FAILED;
-        return NULL; 
+        return NULL;
     }
 
     return pox;
 }
 
-/* 
- * Sets the PORT_OBJECT_NOT_FLAG flag on each port object item in the list 
+/*
+ * Sets the PORT_OBJECT_NOT_FLAG flag on each port object item in the list
  */
-static void _PONegateList(PortObject *po) 
+static void _PONegateList(PortObject *po)
 {
     PortObjectItem *poi;
     SF_LNODE * pos;
@@ -3380,7 +3390,7 @@ static void _PONegateList(PortObject *po)
     }
 }
 
-static PortObject *_POParsePort(POParser *pop) 
+static PortObject *_POParsePort(POParser *pop)
 {
     uint16_t hport, lport;
     char c;
@@ -3497,7 +3507,7 @@ static PortObject* _POParseString(POParser *pop)
                 PortObjectFree(po);
                 return NULL;
             }
-            
+
             if( (tok = SnortStrndup(pop->s, end - pop->s)) == NULL)
             {
                 pop->errflag = POPERR_MALLOC_FAILED;
@@ -3511,21 +3521,21 @@ static PortObject* _POParseString(POParser *pop)
             potmp = _POParseString(&local_pop);
             free(tok);
 
-            if(!potmp) 
-            {   
+            if(!potmp)
+            {
                 pop->errflag = local_pop.errflag;
                 PortObjectFree(po);
                 return NULL;
             }
 
             /* Advance "cursor" to end of this list */
-            for(; c && pop->s != end; c = POPGetChar2(pop)) 
+            for(; c && pop->s != end; c = POPGetChar2(pop))
                 ;
         }
         else if(c == ']')
         {
             list_count--;
-            
+
             if(list_count < 0)
             {
                 pop->errflag = POPERR_EXTRA_BRACKET;
@@ -3542,7 +3552,7 @@ static PortObject* _POParseString(POParser *pop)
             potmp = _POParsePort(pop);
         }
 
-        if(!potmp) 
+        if(!potmp)
         {
             PortObjectFree(po);
             return NULL;
@@ -3553,10 +3563,10 @@ static PortObject* _POParseString(POParser *pop)
             /* Note: this intentionally only sets the negation flag! */
             /* The actual negation will take place when normalization is called */
             _PONegateList(potmp);
-            
+
             local_neg = 0;
         }
-        
+
         if(PortObjectAddPortObject(po, potmp, &pop->errflag))
         {
             PortObjectFree(po);
@@ -3588,7 +3598,7 @@ static PortObject* _POParseString(POParser *pop)
 *   PortObject : name value
 *   PortObject : name [!][ value value value ... ]
 *
-*   value : [!]port   
+*   value : [!]port
 *           [!]low-port[:high-port]
 *
 *  inputs:
@@ -3596,18 +3606,18 @@ static PortObject* _POParseString(POParser *pop)
 *      pop - parsing structure
 *        s - string with port object text
 *
-* nameflag - indicates a name must be present, this allows usage for 
+* nameflag - indicates a name must be present, this allows usage for
 *            embedded rule or portvar declarations of portlists
 * returns:
 *      (PortObject *) - a normalized version
 */
-PortObject * PortObjectParseString ( PortVarTable * pvTable, POParser * pop, 
+PortObject * PortObjectParseString ( PortVarTable * pvTable, POParser * pop,
                                      char * name, char * s , int nameflag )
 {
     PortObject      *po, *potmp;
 
     DEBUG_WRAP(DebugMessage(DEBUG_PORTLISTS,"PortObjectParseString: %s\n",s););
-    
+
     POParserInit( pop, s, pvTable );
 
     po = PortObjectNew();
@@ -3634,7 +3644,7 @@ PortObject * PortObjectParseString ( PortVarTable * pvTable, POParser * pop,
         else
             po->name = SnortStrdup("noname");
     }
-    
+
    // LogMessage("PortObjectParseString: po->name=%s\n",po->name);
 
     potmp = _POParseString(pop);
@@ -3645,7 +3655,7 @@ PortObject * PortObjectParseString ( PortVarTable * pvTable, POParser * pop,
         return NULL;
     }
 
-    PortObjectNormalize(potmp); 
+    PortObjectNormalize(potmp);
 
     if(PortObjectAddPortObject(po, potmp, &pop->errflag))
     {
@@ -3684,13 +3694,13 @@ char * PortObjectParseError( POParser * pop )
 
 
 /*
-* 
+*
 *    PORT VAR TABLE FUNCTIONS
-*    
+*
 */
 
 /*
-*  Create a PortVar Table 
+*  Create a PortVar Table
 *
 *  The PortVar table used to store and lookup Named PortObjects
 */
@@ -3725,7 +3735,7 @@ PortVarTable * PortVarTableCreate(void)
 /*
 *   PortVarTableAdd()
 *
-*   returns 
+*   returns
 *       -1 : error, no memory...
 *        0 : added
 *        1 : in table
@@ -3734,9 +3744,9 @@ int PortVarTableAdd( PortVarTable * h, PortObject * po )
 {
     int stat;
     stat = sfghash_add(h,po->name,po);
-    if( stat == SFGHASH_INTABLE ) 
+    if( stat == SFGHASH_INTABLE )
         return 1;
-    if( stat == SFGHASH_OK ) 
+    if( stat == SFGHASH_OK )
         return 0;
     return -1;
 }
@@ -3752,7 +3762,7 @@ PortObject * PortVarTableFind( PortVarTable * h, char * name )
 /*
     This deletes the table, the PortObjects and PortObjectItems,
     and rule list.
-*/ 
+*/
 int PortVarTableFree(PortVarTable * pvt)
 {
      if( pvt )
@@ -3764,7 +3774,7 @@ int PortVarTableFree(PortVarTable * pvt)
 
 
 /*
-   TEST DRIVER 
+   TEST DRIVER
 
   PorObjects use the follow creation strategy
 
@@ -3806,7 +3816,7 @@ int main( int argc, char ** argv )
          if( strcmp(argv[i],"-lrp")==0 ) lrp=atoi(argv[++i]);
      }
 
-     /* 
+     /*
      Create a PortVar table - this is automatic and not necessary
      */
      pvTable=PortVarTableCreate();
@@ -3816,13 +3826,13 @@ int main( int argc, char ** argv )
          exit(1);
      }
 
-     /* 
-     Create a table for src and one for dst 
+     /*
+     Create a table for src and one for dst
      we'll only add specific ports, no ANY ports,
-     but ranges are ok. 
+     but ranges are ok.
      */
      p = PortTableNew();
-     if(!p) 
+     if(!p)
      {
          LogMessage("no memory\n");
          exit(0);
@@ -3831,7 +3841,7 @@ int main( int argc, char ** argv )
 
      for(i=1;i<argc;i++)
      {
-        if( argv[i][0] == '-' ) 
+        if( argv[i][0] == '-' )
         {
             if( strcmp(argv[i],"-names")==0 ) names=0;/* disable names in var input*/
             continue;
@@ -3842,7 +3852,7 @@ int main( int argc, char ** argv )
         //if( i==2) portlist = sample2;
         //LogMessage("PortObject : '%s' \n",portlist);
 
-        /* 
+        /*
         This is seperate fom PortVar's since some rules may declare these inline
         */
         po = PortObjectParseString ( pvTable, &pop, argv[i], PORTLISTS, names/* bool 0/1 - name required in parse */);
@@ -3867,9 +3877,9 @@ int main( int argc, char ** argv )
             exit(0);
         }
 
-        /* 
-        Assume each PortVar object has one rule and add it to the PortTable 
-        PortObjects that are defined in rules have no names and are not 
+        /*
+        Assume each PortVar object has one rule and add it to the PortTable
+        PortObjects that are defined in rules have no names and are not
         added to the PortVar table
         */
         PortTableAddObject(p,po,k++/*rule id*/);

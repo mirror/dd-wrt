@@ -1,5 +1,6 @@
 /*
-** Copyright (C) 2007-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2007-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License Version 2 as
@@ -14,7 +15,7 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 #ifndef __SF_TYPES_H__
@@ -135,6 +136,7 @@ typedef unsigned int  uintptr_t;
 #  endif  /* SIZEOF_UNSIGNED_LONG_INT == 8 */
 #  define PRIu64 _SF_PREFIX "u"
 #  define PRIi64 _SF_PREFIX "i"
+#  define PRIx64 _SF_PREFIX "x"
 #endif  /* PRIu64 */
 
 /* use these macros (and those in <inttypes.h>)
@@ -147,6 +149,10 @@ typedef unsigned int  uintptr_t;
 #define STDi64 "%" PRIi64
 #define CSVi64 STDi64 ","
 #define FMTi64(fmt) "%" fmt PRIi64
+
+#define STDx64 "%" PRIx64
+#define CSVx64 STDx64 ","
+#define FMTx64(fmt) "%" fmt PRIx64
 
 #ifndef UINT8_MAX
 #  define UINT8_MAX 0xff
@@ -175,8 +181,36 @@ typedef unsigned int  uintptr_t;
 #  define PATH_MAX 4096
 #endif
 
-#define MAXPORTS 65536
-#define MAXPORTS_STORAGE 8192
+/* utilities */
+#ifndef boolean
+#ifndef HAVE_BOOLEAN
+typedef unsigned char boolean;
+#endif
+#endif
+
+#ifndef TRUE
+# define TRUE 1
+#endif
+
+#ifndef FALSE
+# define FALSE 0
+#endif
+
+#ifdef HAVE_STDBOOL_H
+# include <stdbool.h>
+#else
+# ifndef HAVE__BOOL
+#  ifdef __cplusplus
+typedef bool _Bool;
+#  else
+#   define _Bool signed char
+#  endif
+# endif
+# define bool _Bool
+# define false 0
+# define true 1
+# define __bool_true_false_are_defined 1
+#endif
 
 #endif  /* __SF_TYPES_H__ */
 

@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (C) 2009-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2009-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -14,7 +15,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ***************************************************************************/
 
@@ -24,7 +25,7 @@
 #include "cpa.h"
 #include "pm/cpa_pm.h"
 #include "cpa_types.h"
-#include "debug.h"
+#include "snort_debug.h"
 
 
 /* DATA TYPES *****************************************************************/
@@ -43,6 +44,8 @@ typedef struct _IntelPmPattern
 
 } IntelPmPattern;
 
+struct _SnortConfig;
+struct _IntelPmHandles;
 typedef struct _IntelPm
 {
     Cpa16U patternGroupId;
@@ -50,7 +53,7 @@ typedef struct _IntelPm
     CpaPmSessionCtx sessionCtx;
 
     /* Temporary data for building trees */
-    int (*build_tree)(void *id, void **existing_tree);
+    int (*build_tree)(struct _SnortConfig *, void *id, void **existing_tree);
     int (*neg_list_func)(void *id, void **list);
 
     void *match_queue;
@@ -67,7 +70,7 @@ typedef struct _IntelPm
     Cpa32U pattern_array_len;
 
     /* Every IntelPm has a reference to this */
-    void *handles;
+    struct _IntelPmHandles *handles;
 
 } IntelPm;
 
@@ -75,24 +78,25 @@ typedef struct _IntelPm
 /* PROTOTYPES *****************************************************************/
 void IntelPmStartInstance(void);
 void IntelPmStopInstance(void);
-void * IntelPmNew(void (*user_free)(void *p),
+void * IntelPmNew(struct _SnortConfig *, void (*user_free)(void *p),
         void (*option_tree_free)(void **p),
         void (*neg_list_free)(void **p));
 void IntelPmDelete(IntelPm *ipm);
-int IntelPmAddPattern(IntelPm *ipm, unsigned char *pat, int pat_len,
+int IntelPmAddPattern(struct _SnortConfig *sc, IntelPm *ipm, unsigned char *pat, int pat_len,
         unsigned no_case, unsigned negative, void *pat_data, int pat_id);
-int IntelPmFinishGroup(IntelPm *ipm,
-       int (*build_tree)(void *id, void **existing_tree),
+int IntelPmFinishGroup(struct _SnortConfig *, IntelPm *ipm,
+       int (*build_tree)(struct _SnortConfig *, void *id, void **existing_tree),
        int (*neg_list_func)(void *id, void **list));
-void IntelPmCompile(void);
-void IntelPmActivate(void);
+void IntelPmCompile(struct _SnortConfig *);
+void IntelPmActivate(struct _SnortConfig *);
 void IntelPmDeactivate(void);
 int IntelPmSearch(IntelPm *ipm, unsigned char *buffer, int buffer_len,
         int (*match)(void * id, void *tree, int index, void *data, void *neg_list),
         void *data);
 int IntelGetPatternCount(IntelPm *ipm);
 int IntelPmPrintInfo(IntelPm *ipm);
-void IntelPmPrintSummary(void);
+void IntelPmPrintSummary(struct _SnortConfig *);
 void IntelPmPrintBufferStats(void);
+int IntelPmRelease(struct _IntelPmHandles *);
 
 #endif  /* _INTEL_H_ */

@@ -20,7 +20,7 @@ The ASN.1 keywords provide programmatic detection capabilities as well as some
 more dynamic type detection.  Most of the keywords don't have arguments as the
 detection is looking for non-configurable information.  If a keyword does have
 an argument, the keyword is followed by a comma and the argument is the next
-word.  If a keyword has multiple arguments, then a comman separates each.
+word.  If a keyword has multiple arguments, then a command separates each.
 
 bitstring_overflow
 ------------------
@@ -54,9 +54,9 @@ positive or negative.
 relative_offset
 ----------
 
-This is the relative offset from the last content match or byte_test/jump. 
+This is the relative offset from the last content match, pcre or byte_jump.
 relative_offset has one argument and that is the offset number.  So if you 
-wanted to start decoding and ASN.1 sequence right after the content "foo", 
+wanted to start decoding an ASN.1 sequence right after the content "foo", 
 you would specify 'content:"foo"; asn1: bitstring_overflow, 
 relative_offset, 0'.  Offset may be positive or negative.
 

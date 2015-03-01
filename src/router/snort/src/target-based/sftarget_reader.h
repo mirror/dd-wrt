@@ -1,5 +1,6 @@
 /*
-** Copyright (C) 2006-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2006-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License Version 2 as
@@ -14,7 +15,7 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 /*
@@ -72,15 +73,16 @@ typedef struct _AttributeData
 #define APPLICATION_ENTRY_PROTO 0x04
 #define APPLICATION_ENTRY_APPLICATION 0x08
 #define APPLICATION_ENTRY_VERSION 0x10
+
 typedef struct _ApplicationEntry
 {
-    AttributeData port;
-    AttributeData ipproto;
-    AttributeData protocol;
-    AttributeData application;
-    AttributeData version;
-    uint8_t fields;
     struct _ApplicationEntry *next;
+
+    uint16_t port;
+    uint16_t ipproto;
+    uint16_t protocol;
+
+    uint8_t fields;
 } ApplicationEntry;
 
 typedef ApplicationEntry ApplicationList;
@@ -94,28 +96,21 @@ typedef ApplicationEntry ApplicationList;
 #define POLICY_NOT_SET 0
 typedef struct _HostInfo
 {
-    AttributeData operatingSystem;
-    AttributeData vendor;
-    AttributeData version;
+    char streamPolicyName[16];
+    char fragPolicyName[16];
+
+    uint16_t streamPolicy;
+    uint16_t fragPolicy;
 
     char streamPolicySet;
-    uint16_t streamPolicy;
-    char streamPolicyName[STD_BUF];
     char fragPolicySet;
-    uint16_t fragPolicy;
-    char fragPolicyName[STD_BUF];
 } HostInfo;
 
 #define SFAT_SERVICE 1
 #define SFAT_CLIENT 2
 typedef struct _HostAttributeEntry
 {
-#ifdef SUP_IP6
     sfip_t ipAddr;
-#else
-    uint32_t ipAddr;
-    uint8_t bits;
-#endif
 
     HostInfo hostInfo;
     ApplicationList *services;
@@ -127,11 +122,7 @@ int SFAT_AddMapEntry(MapEntry *);
 char *SFAT_LookupAttributeNameById(int id);
 HostAttributeEntry * SFAT_CreateHostEntry(void);
 int SFAT_AddHostEntryToMap(void);
-#ifdef SUP_IP6
 int SFAT_SetHostIp(char *);
-#else
-int SFAT_SetHostIp4(char *);
-#endif
 int SFAT_SetOSAttribute(AttributeData *data, int attribute);
 int SFAT_SetOSPolicy(char *policy_name, int attribute);
 ApplicationEntry * SFAT_CreateApplicationEntry(void);
@@ -162,17 +153,18 @@ void AttributeTableReloadCheck(void);
 uint32_t SFAT_NumberOfHosts(void);
 
 /* API Lookup functions, to be called by Stream & Frag */
-#ifdef SUP_IP6
 HostAttributeEntry *SFAT_LookupHostEntryByIP(sfip_t *ipAddr);
-#else
-HostAttributeEntry *SFAT_LookupHostEntryByIp4Addr(uint32_t ipAddr);
-#endif
 HostAttributeEntry *SFAT_LookupHostEntryBySrc(Packet *p);
 HostAttributeEntry *SFAT_LookupHostEntryByDst(Packet *p);
+void SFAT_UpdateApplicationProtocol(sfip_t *ipAddr, uint16_t port, uint16_t protocol, uint16_t id);
 
 /* Returns whether this has been configured */
-int IsAdaptiveConfigured(tSfPolicyId, int);
+int IsAdaptiveConfigured( void );
+int IsAdaptiveConfiguredForSnortConfig(struct _SnortConfig *);
 
 void SFAT_StartReloadThread(void);
 
+void SFLAT_init(void);
+void SFLAT_fini(void);
+int  SFLAT_isEnabled(tSfPolicyId id, int parsing);
 #endif /* SF_TARGET_READER_H_ */
