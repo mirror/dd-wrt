@@ -10,7 +10,7 @@ snort-configure: daq-configure pcre-configure daq pcre
 	cd snort && ./configure \
 		--enable-reload \
 		--enable-ipv6 \
-		--libdir=/tmp \
+		--libdir=/usr/lib \
 		--prefix=/usr \
 		--build=$(ARCH)-linux \
 		--host=$(ARCH)-linux-gnu \
@@ -42,6 +42,11 @@ snort-install:
 	$(MAKE) -C snort install DESTDIR=$(INSTALLDIR)/snort CFLAGS="$(COPTS) -DNEED_PRINTF -I$(TOP)/librpc"
 	rm -rf $(INSTALLDIR)/snort/usr/src
 	rm -rf $(INSTALLDIR)/snort/usr/share
+	rm -rf $(INSTALLDIR)/snort/usr/include
 	rm -rf $(INSTALLDIR)/snort/usr/lib/pkgconfig
+	rm -rf $(INSTALLDIR)/snort/usr/lib/snort
 	rm -f $(INSTALLDIR)/snort/usr/lib/snort_dynamicengine/*.la
+	rm -f $(INSTALLDIR)/snort/usr/lib/snort_dynamicengine/*.a
 	rm -f $(INSTALLDIR)/snort/usr/lib/snort_dynamicpreprocessor/*.la
+	rm -f $(INSTALLDIR)/snort/usr/lib/snort_dynamicpreprocessor/*.a
+	rm -rf $(INSTALLDIR)/snort/tmp
