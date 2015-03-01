@@ -1,0 +1,18 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+bindir=@bindir@
+libdir=@libdir@
+package=@PACKAGE@
+includedir=@includedir@
+datarootdir=@datarootdir@
+datadir=@datadir@
+mandir=@infodir@
+infodir=@infodir@
+
+Name: Snort
+Description: Snort dynamic side channel modules
+URL: www.snort.org
+Version: @VERSION@
+Libs: -L${libdir}/${package}/dynamic_side_channel -lsf_dynamic_side_channel
+Cflags: -I${includedir}/${package}/dynamic_side_channel @CONFIGFLAGS@ @CCONFIGFLAGS@ @ICONFIGFLAGS@
+
