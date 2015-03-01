@@ -14387,42 +14387,7 @@ fi
 
 
 # In case INADDR_NONE is not defined (like on Solaris)
-have_inaddr_none="no"
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for INADDR_NONE" >&5
-$as_echo_n "checking for INADDR_NONE... " >&6; }
-if test "$cross_compiling" = yes; then :
-  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
-$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "cannot run test program while cross compiling
-See \`config.log' for more details" "$LINENO" 5; }
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#include <sys/types.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-
-int
-main ()
-{
-
-	if (inet_addr("10,5,2") == INADDR_NONE);
-    return 0;
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
-  have_inaddr_none="yes"
-else
-  have_inaddr_none="no"
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
+have_inaddr_none="yes"
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_inaddr_none" >&5
 $as_echo "$have_inaddr_none" >&6; }
 if test "x$have_inaddr_none" = "xno"; then
@@ -14842,66 +14807,7 @@ fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pcap_lex_destroy" >&5
 $as_echo_n "checking for pcap_lex_destroy... " >&6; }
-if test "$cross_compiling" = yes; then :
-  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
-$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "cannot run test program while cross compiling
-See \`config.log' for more details" "$LINENO" 5; }
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#include <pcap.h>
-
-int
-main ()
-{
-
-   pcap_lex_destroy();
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
-  have_pcap_lex_destroy="yes"
-else
-  have_pcap_lex_destroy="no"
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_pcap_lex_destroy" >&5
-$as_echo "$have_pcap_lex_destroy" >&6; }
-if test "x$have_pcap_lex_destroy" = "xyes"; then
-
-$as_echo "#define HAVE_PCAP_LEX_DESTROY 1" >>confdefs.h
-
-fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for pcap_lib_version" >&5
-$as_echo_n "checking for pcap_lib_version... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <pcap.h>
-int
-main ()
-{
-pcap_lib_version();
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  have_pcap_lib_version="yes"
-else
-  have_pcap_lib_version="no"
-
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
+have_pcap_lib_version="yes"
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_pcap_lib_version" >&5
 $as_echo "$have_pcap_lib_version" >&6; }
 
@@ -15722,37 +15628,7 @@ fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for daq address space ID" >&5
 $as_echo_n "checking for daq address space ID... " >&6; }
-if test "$cross_compiling" = yes; then :
-  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
-$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "cannot run test program while cross compiling
-See \`config.log' for more details" "$LINENO" 5; }
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#include <daq.h>
-
-int
-main ()
-{
-
-   DAQ_PktHdr_t hdr;
-   hdr.address_space_id = 0;
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
-  have_daq_address_space_id="yes"
-else
-  have_daq_address_space_id="no"
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
+have_daq_address_space_id="yes"
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_daq_address_space_id" >&5
 $as_echo "$have_daq_address_space_id" >&6; }
 if test "x$have_daq_address_space_id" = "xyes"; then
@@ -15763,37 +15639,7 @@ fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for daq flow ID" >&5
 $as_echo_n "checking for daq flow ID... " >&6; }
-if test "$cross_compiling" = yes; then :
-  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
-$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "cannot run test program while cross compiling
-See \`config.log' for more details" "$LINENO" 5; }
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#include <daq.h>
-
-int
-main ()
-{
-
-   DAQ_PktHdr_t hdr;
-   hdr.flow_id = 0;
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
-  have_daq_flow_id="yes"
-else
-  have_daq_flow_id="no"
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
+have_daq_flow_id="yes"
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_daq_flow_id" >&5
 $as_echo "$have_daq_flow_id" >&6; }
 if test "x$have_daq_flow_id" = "xyes"; then
@@ -15804,37 +15650,7 @@ fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DAQ_VERDICT_RETRY" >&5
 $as_echo_n "checking for DAQ_VERDICT_RETRY... " >&6; }
-if test "$cross_compiling" = yes; then :
-  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
-$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "cannot run test program while cross compiling
-See \`config.log' for more details" "$LINENO" 5; }
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#include <daq.h>
-
-int
-main ()
-{
-
-   DAQ_Verdict verdict;
-   verdict = DAQ_VERDICT_RETRY;
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
-  have_daq_verdict_retry="yes"
-else
-  have_daq_verdict_retry="no"
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
+have_daq_verdict_retry="yes"
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_daq_verdict_retry" >&5
 $as_echo "$have_daq_verdict_retry" >&6; }
 if test "x$have_daq_verdict_retry" = "xyes"; then
