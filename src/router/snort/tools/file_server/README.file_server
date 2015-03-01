@@ -1,0 +1,28 @@
+file-server - Tool to received captured files from snort
+--------------------------------------------
+
+file server is used along with file inspect preprocessor, to receive and store
+files captured by file inspect preprocessor. This simple program should run on 
+the directory that you want to store files. In other words, file will be saved
+on current directory. File name will be be SHA for that file (from file inspect
+preprocessor)
+
+Use -v option if you want to see what files are received/stored.
+Use -d option if you want to run it in daemon mode
+Use -h option for help
+
+Use Ctrl - c to stop file server
+
+Usage
+-----
+
+   $ file_server  <portno>  <-vdh>
+
+Example: 
+   
+   file_server 8000 -v
+
+
+
+
+
