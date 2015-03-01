@@ -198,7 +198,7 @@ document.write("<option value=\"0\" <%% nvsm("%s_wds5_enable", "0", "selected");
 //]]>
 </script>
 					<script type="text/javascript">
-//<![CDATA{
+//<![CDATA[
 document.write("<option value=\"1\" <%% nvsm("%s_wds5_enable", "1", "selected"); %%>>" + share.point2point + "</option>");
 //]]>
 </script>
@@ -384,23 +384,17 @@ document.write("(" + share.deflt + ": " + share.disable + ")");
 					<select name="%s_br1_nat">
 						<script type="text/javascript">
 //<![CDATA[
-
 document.write("<option value='<%% nvsm("%s_br1_nat", "0", "selected"); %%>'>" + share.disable + "</option>");
-
 //]]>
 </script>
 						<script type="text/javascript">
 //<![CDATA[
-
 document.write("<option value='<%% nvsm("%s_br1_nat", "1", "selected"); %%>'>" + wds.nat1 + "</option>");
-
 //]]>
 </script>
 						<script type="text/javascript">
 //<![CDATA[
-
 document.write("<option value='<%% nvsm("%s_br1_nat", "2", "selected"); %%>'>" + wds.nat2 + "</option>");
-
 //]]>
 </script>
 					  </select>
