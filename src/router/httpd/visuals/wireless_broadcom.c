@@ -266,7 +266,7 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 #ifndef WL_STA_SCBSTATS
 #define WL_STA_SCBSTATS		0x4000	/* Per STA debug stats */
 #endif
-#ifdef WL_STA_ANT_MAX			
+#ifdef WL_STA_ANT_MAX
 			sta_info_compat4_t *sta4;
 #endif
 			sta_info_compat3_t *sta3;
@@ -309,7 +309,7 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 						strcpy(time, UPTIME(sta3->in));
 					}
 					break;
-#ifdef WL_STA_ANT_MAX			
+#ifdef WL_STA_ANT_MAX
 				case 4:
 					sta4 = (sta_info_compat4_t *) buf;
 					if (sta4->flags & WL_STA_SCBSTATS) {
@@ -379,7 +379,7 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 		 */
 		int qual = rssi * 124 + 11600;
 		qual /= 10;
-		websWrite(wp, "'%s','%s','%s','%s','%s','%s','%d','%d','%d','%d'", mac, iface, time, txrate, rxrate, info,  rssi, noise, rssi - noise, qual);
+		websWrite(wp, "'%s','%s','%s','%s','%s','%s','%d','%d','%d','%d'", mac, iface, time, txrate, rxrate, info, rssi, noise, rssi - noise, qual);
 	}
 
 	unlink(RSSI_TMP);
@@ -447,48 +447,35 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 	char *prefix = nvram_safe_get("wifi_display");
 	sprintf(name, "%s_ifname", prefix);
 	char *ifname = nvram_safe_get(name);
-
+	wl_bss_info_t *bi;
+	char buf[WLC_IOCTL_MAXLEN + 4];
+	*(unsigned int *)&buf[0] = WLC_IOCTL_MAXLEN;
 	memset(&ci, 0, sizeof(ci));
 	wl_ioctl(ifname, WLC_GET_CHANNEL, &ci, sizeof(ci));
+	wl_ioctl(ifname, WLC_GET_BSS_INFO, &buf[0], WLC_IOCTL_MAXLEN);
+	bi = (wl_bss_info_t *) (&buf[4]);
+
 	if (ci.scan_channel > 0) {
 		websWrite(wp, "%d (scanning)", ci.scan_channel);
-	} else if (ci.hw_channel > 0) {
-		if (has_mimo(prefix)
-		    && (nvram_nmatch("n-only", "%s_net_mode", prefix)
-			|| nvram_nmatch("mixed", "%s_net_mode", prefix)
-			|| nvram_nmatch("na-only", "%s_net_mode", prefix)
-			|| nvram_nmatch("n2-only", "%s_net_mode", prefix)
-			|| nvram_nmatch("n5-only", "%s_net_mode", prefix)
-			|| nvram_nmatch("ac-only", "%s_net_mode", prefix)
-			|| nvram_nmatch("acn-mixed", "%s_net_mode", prefix)
-			|| nvram_nmatch("ng-only", "%s_net_mode", prefix))
-		    && (nvram_nmatch("ap", "%s_mode", prefix)
-			|| nvram_nmatch("wdsap", "%s_mode", prefix)
-			|| nvram_nmatch("infra", "%s_mode", prefix))) {
-			if (nvram_nmatch("40", "%s_nbw", prefix)) {
-				websWrite(wp, "%d + ", nvram_nmatch("upper", "%s_nctrlsb", prefix) ? ci.hw_channel + 2 : ci.hw_channel - 2);
-			}
-			if (nvram_nmatch("80", "%s_nbw", prefix)) {
-				int channel = ci.hw_channel - 6;
-				if (nvram_nmatch("ll", "%s_nctrlsb", prefix))
-					websWrite(wp, "%d + ", channel);
-				if (nvram_nmatch("lu", "%s_nctrlsb", prefix))
-					websWrite(wp, "%d + ", channel + 4);
-				if (nvram_nmatch("ul", "%s_nctrlsb", prefix))
-					websWrite(wp, "%d + ", channel + 8);
-				if (nvram_nmatch("uu", "%s_nctrlsb", prefix))
-					websWrite(wp, "%d + ", channel + 12);
-
-			}
+	} else {
+		if (ci.hw_channel == 0) {
+			websWrite(wp, "%s", live_translate("share.unknown"));
+			return;
 		}
-		if (nvram_nmatch("40", "%s_nbw", prefix)) {
-			websWrite(wp, "%d", nvram_nmatch("upper", "%s_nctrlsb", prefix) ? ci.hw_channel - 2 : ci.hw_channel + 2);
-		} else {
-			websWrite(wp, "%d", ci.hw_channel);
+		switch ((bi->chanspec & 0x3800)) {
+		case 0:
+		case 0x800:
+		case 0x1000:
+			websWrite(wp, "%d", bi->chanspec & 0xff);
+			break;
+		case 0x0C00:	// for older version
+		case 0x1800:
+		case 0x2000:
+		case 0x2800:
+		case 0x3000:
+			websWrite(wp, "%d + %d", bi->chanspec & 0xff, bi->ctl_ch);
 		}
-	} else
-		// websWrite (wp, "unknown");
-		websWrite(wp, "%s", live_translate("share.unknown"));
+	}
 	return;
 
 }
