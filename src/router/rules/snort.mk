@@ -1,11 +1,12 @@
 snort-configure: daq-configure pcre-configure daq pcre
 
 	export ac_cv_func_malloc_0_nonnull=yes  ; \
+	export have_inaddr_none=yes ; \
 	export lt_sys_lib_dlsearch_path_spec="$(ARCH)-uclibc" ; \
 	export lt_sys_lib_search_path_spec="$(ARCH)-uclibc" ; \
-	export CFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC -DNEED_PRINTF -DHAVE_MALLOC=1 -Drpl_malloc=malloc -I$(TOP)/iptables/include -I$(TOP)/iptables/include/libipq/ -I$(TOP)/libnetfilter_queue/include -I$(TOP)/libnfnetlink/include -I$(TOP)/libnet/include" ; \
-	export CPPFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC -DNEED_PRINTF  -DHAVE_MALLOC=1 -Drpl_malloc=malloc -I$(TOP)/iptables/include -I$(TOP)/iptables/include/libipq/ -I$(TOP)/libnetfilter_queue/include -I$(TOP)/libnfnetlink/include -I$(TOP)/libnet/include" ; \
-	export LDFLAGS="-L$(TOP)/iptables/libipq -L$(TOP)/libnetfilter_queue/src/.libs $(TOP)/libnetfilter_queue/src/.libs/libnetfilter_queue.a -L$(TOP)/libnet/lib -L$(TOP)/libnfnetlink/src/.libs $(TOP)/libnfnetlink/src/.libs/libnfnetlink.so  -L$(TOP)/libdnet/src/.libs -ldnet -lipq -lnet -L$(TOP)/libpcap_noring -lpcap" ;\
+	export CFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC -DNEED_PRINTF -DHAVE_MALLOC=1 -Drpl_malloc=malloc -I$(TOP)/iptables/include -I$(TOP)/zlib -I$(TOP)/iptables/include/libipq/ -I$(TOP)/libnetfilter_queue/include -I$(TOP)/libnfnetlink/include -I$(TOP)/libnet/include" ; \
+	export CPPFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC -DNEED_PRINTF  -DHAVE_MALLOC=1 -Drpl_malloc=malloc -I$(TOP)/iptables/include -I$(TOP)/zlib -I$(TOP)/iptables/include/libipq/ -I$(TOP)/libnetfilter_queue/include -I$(TOP)/libnfnetlink/include -I$(TOP)/libnet/include" ; \
+	export LDFLAGS="-L$(TOP)/iptables/libipq -L$(TOP)/libnetfilter_queue/src/.libs $(TOP)/libnetfilter_queue/src/.libs/libnetfilter_queue.a -L$(TOP)/libnet/lib -L$(TOP)/zlib -L$(TOP)/libnfnetlink/src/.libs $(TOP)/libnfnetlink/src/.libs/libnfnetlink.so  -L$(TOP)/libdnet/src/.libs -ldnet -lipq -lnet -L$(TOP)/libpcap_noring -lpcap" ;\
 	cd snort && ./configure \
 		--enable-reload \
 		--enable-ipv6 \
