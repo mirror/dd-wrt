@@ -1,0 +1,171 @@
+IMAP
+====
+
+-- Overview --
+IMAP is an IMAP4 decoder for user applications. Given a data buffer,
+IMAP will decode the buffer and find IMAP4 commands and responses.
+It will also mark the command, data header data body sections and 
+extract the IMAP4 attachments and decode it appropriately.
+
+IMAP will handle stateful processing. It saves state between individual 
+packets. However maintaining correct state is dependent on the reassembly
+of the server side of the stream (i.e., a loss of coherent stream data results
+in a loss of state).
+
+Stream5 should be turned on for IMAP. Please ensure that the IMAP ports are added
+ to the stream5 ports for proper reassembly.
+
+
+-- Configuration --
+
+The configuration options are described below:
+
+* ports { port [port] ... } *
+This specifies on what ports to check for IMAP data.  Typically, this will
+include 143. Default ports if none are specified are 143 .
+
+* disabled *
+Disables the IMAP preprocessor in a config. This is useful when specifying
+the decoding depths such as b64_decode_depth, qp_decode_depth, uu_decode_depth, 
+bitenc_decode_depth or the memcap used for decoding in default config 
+without turning on the IMAP preprocessor.
+
+* b64_decode_depth *
+This config option is used to turn off/on or set the base64 decoding depth used to 
+decode the base64 encoded MIME attachments. The value ranges from -1 to 65535. 
+A value of -1 turns off the base64 decoding of MIME attachments. The value of 0 
+sets the decoding of base64 encoded MIME attachments to unlimited. A value other 
+than 0 or -1 restricts the decoding of base64 MIME attachments, and applies per 
+attachment. A IMAP preprocessor alert with sid 4 is generated (if enabled) when 
+the decoding fails.
+
+Multiple MIME attachments/data in one packet are pipelined. When stateful inspection 
+is turned on the base64 encoded MIME attachments/data across multiple packets are 
+decoded too.
+
+The decoded data is available for detection using the rule option file_data. 
+See file_data rule option for more details.
+
+It is recommended that user inputs a value that is a multiple of 4. When the value
+specified is not a multiple of 4, the IMAP preprocessor will round it up to the next
+multiple of 4.
+
+In case of multiple configs, the value specified in the non-default config cannot 
+exceed the value specified in the default config.
+
+* qp_decode_depth *
+This config option is used to turn off/on or set the Quoted-Printable decoding depth 
+used to decode the Quoted-Printable(QP) encoded MIME attachments. The value ranges 
+from -1 to 65535. A value of -1 turns off the QP decoding of MIME attachments. 
+The value of 0 sets the decoding of QP encoded MIME attachments to unlimited. A 
+value other than 0 or -1 restricts the decoding of QP MIME attachments, and applies per 
+attachment. A IMAP preprocessor alert with sid 5 is generated (if enabled) when the decoding fails.
+
+Multiple MIME attachments/data in one packet are pipelined. When stateful inspection 
+is turned on the QP encoded MIME attachments/data across multiple packets are decoded too.
+
+The decoded data is available for detection using the rule option file_data. 
+See file_data rule option for more details.
+
+In case of multiple configs, the value specified in the non-default config cannot exceed 
+the value specified in the default config.
+
+* bitenc_decode_depth *
+This config option is used to turn off/on or set the non-encoded MIME extraction 
+depth used to extract the non-encoded MIME attachments. The value ranges from -1 to 65535. 
+A value of -1 turns off the extraction of these MIME attachments. The value of 0 sets 
+the extraction of these MIME attachments to unlimited.  A value other than 0 or -1 
+restricts the extraction of these MIME attachment, and applies per attachments.
+
+Multiple MIME attachments/data in one packet are pipelined. When stateful inspection 
+is turned on the non-encoded MIME attachments/data across multiple packets are 
+extracted too.
+
+The extracted data is available for detection using the rule option file_data. 
+See file_data rule option for more details.
+
+In case of multiple configs, the value specified in the non-default config cannot exceed 
+the value specified in the default config.
+
+* uu_decode_depth *
+This config option is used to turn off/on or set the Unix-to-Unix decoding depth 
+used to decode the Unix-to-Unix(UU) encoded attachments. The value ranges 
+from -1 to 65535. A value of -1 turns off the UU decoding of IMAP attachments. 
+The value of 0 sets the decoding of UU encoded IMAP attachments to unlimited. A 
+value other than 0 or -1 restricts the decoding of UU IMAP attachments, and applies per 
+attachment. A IMAP preprocessor alert with sid 7 is generated (if enabled) when the decoding fails.
+
+Multiple UU Encoded attachments/data in one packet are pipelined. When stateful inspection 
+is turned on the UU encoded attachments/data across multiple packets are decoded too.
+
+The decoded data is available for detection using the rule option file_data. 
+See file_data rule option for more details.
+
+In case of multiple configs, the value specified in the non-default config cannot exceed 
+the value specified in the default config.
+
+* memcap <int> *
+This option determines (in bytes) the maximum amount of memory the IMAP preprocessor
+will use for decoding base64 encoded/quoted-printable/non-encoded MIME attachments/data 
+or Unix-to-Unix encoded attachments. This value can be set from 3276 bytes to 100MB. 
+
+This option along with the maximum of the decoding depths will determine the IMAP 
+sessions that will be decoded at any given instant. The default value for this option 
+is 838860.
+
+Note: It is suggested to set this value such that the max imap session calculated as
+follows is at least 1.
+
+max imap session = memcap /(2 * max of (b64_decode_depth, uu_decode_depth, qp_decode_depth 
+					or bitenc_decode_depth))
+
+For example, if b64_decode_depth is 0 (indicates unlimited decoding) and qp_decode_depth is 100, then
+
+max imap session = memcap/2*65535 (max value for b64_decode_depth)
+
+In case of multiple configs, the memcap of the non-default configs will be overwritten by the
+default config's value. Hence user needs to define it in the default config with the new keyword
+disabled (used to disable IMAP preprocessor in a config).
+
+When the memcap for decoding (memcap) is exceeded the IMAP preprocessor alert with sid 3 is 
+generated (when enabled). 
+
+Example:
+preprocessor imap: \
+  ports { 143 } \
+  memcap 1310700 \
+  qp_decode_depth -1 \
+  b64_decode_depth 0 \
+  bitenc_decode_depth 100
+ 
+
+preprocessor imap: \
+  memcap 1310700 \
+  qp_decode_depth 0 \
+  disabled
+
+Default:
+preprocessor imap: \
+  ports { 143 } \
+  b64_decode_depth 1460 \
+  qp_decode_depth 1460 \
+  bitenc_decode_depth 1460 \
+  uu_decode_depth 1460
+
+Events
+================================================================================
+The IMAP preprocessor uses GID 141 to register events.
+
+
+SID   Description
+--------------------------------------------------------------------------------
+  1   Alert if IMAP encounters an invalid IMAP4 command.
+  2   Alert if IMAP encounters an invalid IMAP4 response.
+  3   If the decoding memory cap (memcap) is reached and the preprocessor is configured to alert,
+       this alert will be created.
+  4   If the decoding of a base64 MIME attachments fails or when the decoding stops due to exceeded
+      b64_decode_depth.
+  5   If the decoding of a Quoted-Printable MIME attachments fails or when the decoding stops due to exceeded
+      qp_decode_depth.
+  7   If the decoding of a Unix-to-Unix encoded attachments fails or when the decoding stops due to exceeded
+      uu_decode_depth.

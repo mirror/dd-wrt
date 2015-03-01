@@ -1,0 +1,366 @@
+File services
+================================================================================
+Hui Cao
+
+##########################################
+# THIS CODE IS STILL EXPERIMENTAL!
+# DO NOT USE IN PRODUCTION ENVIRONMENTS.
+# Please send any issues to the Snort team
+##########################################
+
+Overview
+================================================================================
+With the volume of malwares transferred through network increasing, network file 
+inspection becomes more and more important. This feature will provide file type 
+identification, file signature creation, and file capture capabilities to help 
+user deal with those challenges. 
+
+There are two parts of file services: file APIs and file inspect preprocessor.
+File APIs provides all the file inspection functionalities, such as file type 
+identification, file signature calculation, and file capture. 
+File inspect preprocessor provides users ability to control file services, such
+as enable/disable/configure file type identification, file signature, or file 
+capture.  
+
+Supported protocols: HTTP, SMTP, IMAP, POP3, FTP, and SMB.
+Supported file signature calculation: SHA256
+
+Sections:
+    Dependency Requirements
+    File Services Configuration
+    File Inspect Preprocessor Configuration
+    File Type Identification
+    File Signature
+    File Capture
+
+Dependency Requirements
+================================================================================
+For proper functioning of the file processing:
+ 
+    Stream session tracking must be enabled, i.e. stream5. TCP must be
+    enabled in stream5. The preprocessor requires a session tracker to keep 
+    its data. 
+    
+    IP defragmentation should be enabled, i.e. the frag3 preprocessor should be
+    enabled and configured.
+
+    At lease one of preprocessors supported protocols must be enabled.
+
+File Services Configuration
+================================================================================
+File services are configured through snort "conf" keyword. 
+The configuration name is "file": 
+
+config file: <options>
+
+Option                   Argument     Required  Default
+file_type_depth          <depth>      No        1460 bytes
+file_signature_depth     <depth>      No        10485760 bytes 
+file_block_timeout       <timeout>    No        1 day
+file_capture_memcap      <memcap>     No        100 megabytes
+file_capture_max         <max>        No        1048576 bytes
+file_capture_min         <min>        No        0 bytes
+file_capture_block_size  <size>       No        32768 bytes
+
+depth         = 0 - 4G bytes
+timeout       = 0 - 4G seconds
+memcap        = 1 - 4G megabytes
+max           = 0 - 4G bytes
+min           = 0 - 4G bytes
+size          = 8 - 4G bytes
+
+config file:\ 
+            < file_type_depth  depth >,\
+            < file_signature_depth  depth >, \
+            < file_block_timeout  timeout >, \
+            < file_capture_memcap  memcap >, \
+            < file_capture_max  max >, \
+            < file_capture_min  min >, \
+            < file_capture_block_size  size >            
+
+Options:
+ 
+  < file_type_depth  depth >: 
+      Maximum file depth to identify file type. If file type is not identified
+      beyond this value, file type will be set "unknown". 0 means unlimited
+ 
+  < file_signature_depth  depth >: 
+      Maximum file depth to calculate file signature. If file size is larger
+      than this value, file signature will not be calculated. 0 means unlimited  
+
+  < file_block_timeout  timeout >: 
+      When a file transferred through HTTP is blocked , browser might resume 
+      file transfer with partial content in HTTP protocol. Snort block file 
+      even if it is transferred through resume. This timeout is to set how long
+      it will keep blocking that file.
+    
+  < file_capture_memcap  memcap >: 
+      This sets the memory limit for file buffers, in megabytes.
+
+  < file_capture_max  max >: 
+      Maximum file size we can capture. If file size is greater than this value
+      file will not be captured.
+      
+  < file_capture_min  min >: 
+      Minimum file size we can capture. If file size is smaller than this value
+      file will not be captured.
+      
+  < file_capture_block_size  size >: 
+      This sets the memory block size for file buffer. Smaller value might save 
+      memory but may hurt performance. Default is 32k bytes.  
+
+Example:
+   config file: file_type_depth 16384, file_signature_depth 10485760, \
+               file_block_timeout 3600, file_capture_memcap 200, \
+               file_capture_max 1048576, file_capture_min 200, \
+               file_capture_block_size 65536, 
+   
+   This set the file type depth 16K bytes, file signature depth 10M bytes,
+   file block timeout 1 hour, file capture memcap 200M bytes, maximum file size
+   to capture is 1M file, minimum file size to capture is 200 bytes, file block
+   size is 64k.
+      
+File Inspect Configuration
+================================================================================
+File inspect dynamic preprocessor can be enabled during build time. The 
+following options must be included in ./configure:
+
+--enable-file-inspect
+
+The configuration name is "file_inspect": 
+
+Option             Argument          Required  Default
+type_id            NONE              No        DISABLED
+signature          NONE              No        DISABLED
+capture_memory     NONE              No        DISABLED
+capture_disk       <dir> <disk size> No        DISABLED
+capture_network    <hostname portno> No        DISABLED       
+capture_queue_size <size>            No        3000
+blacklist          <file>            No        NULL
+greylist           <file>            No        NULL
+
+portno         = 0 - 65535
+size           = 0 - 4G files
+disk size      = 0 - 4G megabytes
+
+preprocessor file_inspect:\ 
+            < type_id >,\
+            < signature >, \
+            < capture_memory >, \
+            < capture_disk dir <disk size> >, \
+            < capture_network hostname portno >, \
+            < capture_queue_size  size >, \
+            < blacklist file>, \  
+            < greylist file>     
+Options:
+ 
+  < type_id  >: 
+      Enable file type identification
+      
+  < signature  >: 
+      Enable file signature calculation
+      
+  < capture_memory >: 
+      Capture file to memory (file buffers). File analysis can be done on file
+      buffers directly without the overhead of storing to disk.
+      
+  < capture_disk dir  <disk size> >: 
+      Store files to the directory specified in dir, and capture no more than 
+      disk size (in megabytes). If this limit is reached, no more file capture.  
+      
+  < capture_network hostname portno >: 
+      Send files to other host, specified by hostname (or IP address) and 
+      port number.
+
+  < capture_queue_size size >: 
+      Set the maximum number of files can be queued to process (saved to disk 
+      or sent to network).
+      
+  < blacklist file >: 
+      Specify a SHA256 list file. Files match SHA256 will be blocked.
+      
+  < greylist file >: 
+      Specify a SHA256 list file. Files match SHA256 will be alerted.
+   
+SHA list file format
+    one SHA per line. 
+    Use # for comments.
+    
+    #start of block.txt
+    BDC68D4C856558E618BB5C992A2A6B0276D4809F46A8C44E4D4993DDC31E91B2
+    69DABBDB754B358AC4FE4B22DE04C0E4C93076816F14BB0730CAA9FD223996FC
+    #end of block.txt
+
+Example:
+   preprocessor file_inspect: type_id, signature, \
+                capture_disk /home/file_capture/tmp/ 300, \
+                capture_network localhost 8000, \
+                capture_queue_size 5000, \
+                blacklist block.txt
+
+File Type Identification
+================================================================================
+
+File magic rule:
+
+file type: <name>; id: <number>; ver: <version>; category: <name>;  \
+    group: <group>[,<group>]; msg: <message>;                       \
+    content: |<hex values>|; offset:<number>; rev: <number>
+
+  type:     defines the name of file type. Name should be limited to any
+            alphanumeric string including periods, dashes, and underscores. 
+
+  id:       used to uniquely identify different file types, similarly to rule ID.
+
+  ver:      used to indicate different versions for the same file type.
+
+  category: defines the categories of file type. Name should be limited to
+            any alphanumeric string including periods, dashes, and underscores. 
+            Categories can be Executables, PDF files, FLASH files, Office Documents,
+            Archive, Graphics, Multimedia etc.
+ 
+  group:    logical grouping of file rules, used for IPS rule keyword `file_group`.
+            See README.file_ips for more information on 'file_group'.
+
+  msg:      the message to print when file type information needs to be described.
+
+  content:  defines the file magic using binary data. The binary data is
+            enclosed within the pipe (|) character and represented as bytecode, 
+            i.e hexadecimal numbers.
+
+  offset:   defines the location of file magic relative to the start of file.
+
+  rev:      used to uniquely identify revisions of file type definition.
+  
+Similar to snort rule, it can be used through include directives. Similar file
+types can be put into the same file. Multiple file type configurations can be
+included in snort configuration.
+
+Pre-packaged file magic rules:
+
+A set of file magic rules is packaged with Snort. They can be located at
+"etc/file_magic.conf". To use this feature, it is recommended that the 
+these pre-packaged rules are used; doing so requires that you include
+the file in your Snort configuration as such:
+
+  include etc/filemagic.conf 
+
+
+Example:
+
+  file type:GIF; ver:87; category:graphics; msg:"GIF87a"; id: 1; 
+                 content: |47 49 46 38 37 61|; offset:0; rev:1;
+  file type:GIF; ver:89; category:graphics; msg:"GIF89a"; id: 1; 
+                 content: |47 49 46 38 39 61|; offset:0; rev:1;
+
+The previous two rules define GIF format, because file magics are different.
+
+Full set of file type magic rules are not included. Future release will include 
+file type magic and rule options to use file type information.
+
+Enable file type
+
+File type events are generated when file type preprocessor rules are enabled. 
+Each file magic rule requires one file type preprocessor rule. File type use 
+146 as generator ID.
+
+Example:
+
+  alert ( msg: "GIF87a file "; sid: 87; gid: 146; rev: 1; 
+          metadata: rule-type preproc; )
+  alert ( msg: "GIF89a file "; sid: 89; gid: 146; rev: 1; 
+          metadata: rule-type preproc; )
+
+  preprocessor file_inspect: type_id
+
+File Signature Calculation
+================================================================================
+
+File signature events are generated when file signature preprocessor rules are 
+enabled. File signature use 147 as generator ID.
+
+Example:
+
+  alert ( msg: "File signature "; sid: 1; gid: 147; rev: 1; 
+          metadata: rule-type preproc; )
+
+Enable Openssl support
+
+File services provide its own SHA calculations, but users can optionally enable
+openssl implementation. Openssl might provide performance optimization based on
+the platform snort runs. To enable it, the following options should be included
+in the ./configure command.
+
+--with-openssl-includes= <path to openssl include> 
+--with-openssl-libraries= <path to openssl lib> 
+
+Example: 
+   --with-openssl-includes=/usr/local/ssl/include 
+   --with-openssl-libraries=/usr/local/ssl/lib
+   
+File Capture
+================================================================================
+File capture relies on file type and file signature enabled. If file type is
+unknown, that file will not be captured. File signature is used as file ID to
+avoid downloading duplicated files.
+
+Example:
+   preprocessor file_inspect: type_id, signature, \
+                capture_disk /home/file_capture/tmp/, \
+                capture_queue_size 5000
+   
+   All files captured will be saved to directory "tmp". File capture queue is
+   set to 5000 files.
+
+Sending captured files to another host
+
+File inspect preprocessor provides a simple way to sending files to another
+host for further analysis. In tools/ directory, file_server is provided to 
+receive and save all the files to disk. 
+
+Example:
+   preprocessor file_inspect: type_id, signature, \
+                capture_network 192.168.1.1 8000, \
+                capture_queue_size 5000
+                
+   All files captured will be sent to host 192.168.1.1,  to port number 8000
+
+   On the host 192.168.1.1, you can start file_server before starting snort:
+   
+     file_server 8000
+   
+   All the files will be saved to the directory where the command is running.
+
+File Events
+================================================================================
+
+File inspect preprocessor also works as a dynamic output plugins for file 
+events. It logs basic information about file. 
+
+Format
+
+  output filelog: [<filename> [<limit>]]
+  <limit> ::= <number>[(’G’|’M’|K’)]
+  
+  filename: the name of the log file. The default name is <logdir>/file. 
+       You may specify ”stdout” for terminal output. The name may include an 
+       absolute or relative path.
+  limit: an optional limit on file size which defaults to 128 MB. 
+       The minimum is 1 KB. 
+
+Example:
+
+  dynamicoutput file / path to /libsf_file_preproc.so
+  output filelog:file
+  
+  All file events will be logged in "file" in the log directory.
+  
+File event example:
+
+  07/02-16:42:50.253157  [**]  [File: /wp-content/themes/images/logo.jpg, 
+  size: 4633 bytes] [signature: 
+  8D68FA32E67624D409247FEF10D32A413D55C125970AFA533B9CA5E7DDF07A5E] [**] 
+  [147:1:1]  [**] {TCP} 108.161.189.192:80 -> 10.4.33.54:40736
+
+
+    
