@@ -11,13 +11,13 @@ EXT_LIBSI+=$(foreach T,$(EXT_FUNC), -lebt_$(T))
 EXT_LIBSI+=$(foreach T,$(EXT_TABLES), -lebtable_$(T))
 
 extensions/ebt_%.so: extensions/ebt_%.o
-	$(CC) -shared -o $@ -lc $< -nostartfiles
+	$(CC) $(LDFLAGS) -shared -o $@ -lc $< -nostartfiles
 
 extensions/libebt_%.so: extensions/ebt_%.so
 	mv $< $@
 
 extensions/ebtable_%.so: extensions/ebtable_%.o
-	$(CC) -shared -o $@ -lc $< -nostartfiles
+	$(CC) $(LDFLAGS) -shared -o $@ -lc $< -nostartfiles
 
 extensions/libebtable_%.so: extensions/ebtable_%.so
 	mv $< $@
