@@ -2,7 +2,8 @@
  * Copyright (c) 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998
  *	The Regents of the University of California.  All rights reserved.
  *
- * Some portions Copyright (C) 2010 Sourcefire, Inc.
+ * Some portions Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Some portions Copyright (C) 2010-2013 Sourcefire, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that: (1) source code distributions
@@ -24,16 +25,12 @@
 #ifndef _SFBPF_INT_H
 #define _SFBPF_INT_H
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 #ifdef HAVE_VISIBILITY
-#  define SO_PUBLIC  __attribute__ ((visibility("default")))
-#  define SO_PRIVATE __attribute__ ((visibility("hidden")))
+#  define DAQ_SO_PUBLIC  __attribute__ ((visibility("default")))
+#  define DAQ_SO_PRIVATE __attribute__ ((visibility("hidden")))
 #else
-#  define SO_PUBLIC
-#  define SO_PRIVATE
+#  define DAQ_SO_PUBLIC
+#  define DAQ_SO_PRIVATE
 #endif
 
 #include "sfbpf.h"

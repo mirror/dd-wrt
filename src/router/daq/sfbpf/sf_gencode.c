@@ -3,7 +3,8 @@
  * Copyright (c) 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998
  *	The Regents of the University of California.  All rights reserved.
  *
- * Some portions Copyright (C) 2010 Sourcefire, Inc.
+ * Some portions Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Some portions Copyright (C) 2010-2013 Sourcefire, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that: (1) source code distributions
@@ -23,7 +24,7 @@
  */
 #ifndef lint
 static const char rcsid[] =
-    "@(#) $Header: /usr/cvsroot/sfeng/ims/src/libraries/daq/daq/sfbpf/sf_gencode.c,v 1.3 2010/05/06 22:33:33 maltizer Exp $ (LBL)";
+    "@(#) $Header: /usr/cvsroot/sfeng/ims/src/libraries/daq/daq/sfbpf/sf_gencode.c,v 1.6 2014/06/10 13:38:55 cwaxman Exp $ (LBL)";
 #endif
 
 #ifdef HAVE_CONFIG_H
@@ -380,7 +381,7 @@ static bpf_u_int32 netmask;
 static int snaplen;
 int no_optimize;
 
-SO_PUBLIC int pcap_compile(int snaplen_arg, int linktype_arg, struct bpf_program *program, const char *buf, int optimize, bpf_u_int32 mask)
+DAQ_SO_PUBLIC int pcap_compile(int snaplen_arg, int linktype_arg, struct bpf_program *program, const char *buf, int optimize, bpf_u_int32 mask)
 {
     extern int n_errors;
     const char *volatile xbuf = buf;
@@ -441,7 +442,7 @@ SO_PUBLIC int pcap_compile(int snaplen_arg, int linktype_arg, struct bpf_program
  * Clean up a "struct bpf_program" by freeing all the memory allocated
  * in it.
  */
-SO_PUBLIC void pcap_freecode(struct bpf_program *program)
+DAQ_SO_PUBLIC void pcap_freecode(struct bpf_program *program)
 {
     program->bf_len = 0;
     if (program->bf_insns != NULL)
@@ -1051,7 +1052,7 @@ static void init_linktype(type)
             return;
 
         case DLT_PPI:
-            /* 
+            /*
              * At the moment we treat PPI the same way that we treat
              * normal Radiotap encoded packets. The difference is in
              * the function that generates the code at the beginning
@@ -2358,7 +2359,7 @@ static struct slist *gen_load_radiotap_llprefixlen()
         return (NULL);
 }
 
-/* 
+/*
  * At the moment we treat PPI as normal Radiotap encoded
  * packets. The difference is in the function that generates
  * the code at the beginning to compute the header length.
@@ -2806,7 +2807,7 @@ static struct slist *gen_radiotap_llprefixlen(void)
     return s;
 }
 
-/* 
+/*
  * At the moment we treat PPI as normal Radiotap encoded
  * packets. The difference is in the function that generates
  * the code at the beginning to compute the header length.
@@ -8068,7 +8069,7 @@ struct block *gen_atmtype_abbrev(type)
     return b1;
 }
 
-/* 
+/*
  * Filtering for MTP2 messages based on li value
  * FISU, length is null
  * LSSU, length is 1 or 2

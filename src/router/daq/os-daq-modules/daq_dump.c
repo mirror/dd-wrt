@@ -1,7 +1,6 @@
-/* $Id: daq_dump.c,v 1.7 2010/10/21 16:15:28 rcombs Exp $*/
 /****************************************************************************
  *
- * Copyright (C) 2007-2010 Sourcefire, Inc.
+ * Copyright (C) 2007-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -16,7 +15,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************/
 #ifdef HAVE_CONFIG_H
@@ -30,7 +29,7 @@
 #include "daq.h"
 #include "daq_api.h"
 
-#define DAQ_MOD_VERSION 1
+#define DAQ_MOD_VERSION 2
 
 #define DAQ_NAME "dump"
 #define DAQ_TYPE (DAQ_TYPE_FILE_CAPABLE | DAQ_TYPE_INTF_CAPABLE | \
@@ -143,14 +142,15 @@ static void dump_daq_shutdown (void* handle)
 {
     DumpImpl* impl = (DumpImpl*)handle;
     impl->module->shutdown(impl->handle);
-    if ( impl->name ) free(impl->name);
+    if ( impl->name )
+        free(impl->name);
     free(impl);
 }
 
 //-------------------------------------------------------------------------
 // packet processing functions:
-// forward all but blocks and blacklists:
-static const int s_fwd[MAX_DAQ_VERDICT] = { 1, 0, 1, 1, 0, 1 };
+// forward all but blocks, retries and blacklists:
+static const int s_fwd[MAX_DAQ_VERDICT] = { 1, 0, 1, 1, 0, 1, 0 };
 
 static DAQ_Verdict daq_dump_capture (
     void* user, const DAQ_PktHdr_t* hdr, const uint8_t* pkt)
@@ -158,7 +158,7 @@ static DAQ_Verdict daq_dump_capture (
     DumpImpl* impl = (DumpImpl*)user;
     DAQ_Verdict verdict = impl->callback(impl->user, hdr, pkt);
 
-    if ( verdict > MAX_DAQ_VERDICT )
+    if ( verdict >= MAX_DAQ_VERDICT )
         verdict = DAQ_VERDICT_BLOCK;
 
     impl->stats.verdicts[verdict]++;
@@ -170,12 +170,12 @@ static DAQ_Verdict daq_dump_capture (
 }
 
 static int dump_daq_acquire (
-    void* handle, int cnt, DAQ_Analysis_Func_t callback, void* user)
+    void* handle, int cnt, DAQ_Analysis_Func_t callback, DAQ_Meta_Func_t metaback, void* user)
 {
     DumpImpl* impl = (DumpImpl*)handle;
     impl->callback = callback;
     impl->user = user;
-    return impl->module->acquire(impl->handle, cnt, daq_dump_capture, impl);
+    return impl->module->acquire(impl->handle, cnt, daq_dump_capture, metaback, impl);
 }
 
 static int dump_daq_inject (
@@ -331,9 +331,9 @@ static int dump_daq_get_device_index(void* handle, const char* device)
 //-------------------------------------------------------------------------
 
 #ifdef BUILDING_SO
-SO_PUBLIC DAQ_Module_t DAQ_MODULE_DATA = 
+DAQ_SO_PUBLIC DAQ_Module_t DAQ_MODULE_DATA =
 #else
-DAQ_Module_t dump_daq_module_data = 
+DAQ_Module_t dump_daq_module_data =
 #endif
 {
     .api_version = DAQ_API_VERSION,
@@ -356,6 +356,10 @@ DAQ_Module_t dump_daq_module_data =
     .get_datalink_type = dump_daq_get_datalink_type,
     .get_errbuf = dump_daq_get_errbuf,
     .set_errbuf = dump_daq_set_errbuf,
-    .get_device_index = dump_daq_get_device_index
+    .get_device_index = dump_daq_get_device_index,
+    .modify_flow = NULL,
+    .hup_prep = NULL,
+    .hup_apply = NULL,
+    .hup_post = NULL,
 };
 
