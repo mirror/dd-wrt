@@ -1,10 +1,12 @@
 # ebtables Makefile
 
 PROGNAME:=ebtables
-PROGRELEASE:=2
-PROGVERSION_:=2.0.9
+PROGRELEASE:=4
+PROGVERSION_:=2.0.10
 PROGVERSION:=$(PROGVERSION_)-$(PROGRELEASE)
-PROGDATE:=June\ 2009
+PROGDATE:=December\ 2011
+LOCKFILE?=/var/lib/ebtables/lock
+LOCKDIR:=$(shell echo $(LOCKFILE) | sed 's/\(.*\)\/.*/\1/')/
 
 # default paths
 LIBDIR:=/usr/lib
@@ -73,7 +75,9 @@ PROGSPECS:=-DPROGVERSION=\"$(PROGVERSION)\" \
 	-DPROGDATE=\"$(PROGDATE)\" \
 	-D_PATH_ETHERTYPES=\"$(ETHERTYPESFILE)\" \
 	-DEBTD_ARGC_MAX=$(EBTD_ARGC_MAX) \
-	-DEBTD_CMDLINE_MAXLN=$(EBTD_CMDLINE_MAXLN)
+	-DEBTD_CMDLINE_MAXLN=$(EBTD_CMDLINE_MAXLN) \
+	-DLOCKFILE=\"$(LOCKFILE)\" \
+	-DLOCKDIR=\"$(LOCKDIR)\"
 
 # You can probably ignore this, ebtables{u,d} are normally not used
 PROGSPECSD:=-DPROGVERSION=\"$(PROGVERSION)\" \
@@ -181,22 +185,26 @@ tmp3:=$(shell printf $(PIPE) | sed 's/\//\\\//g')
 .PHONY: scripts
 scripts: ebtables-save ebtables.sysv ebtables-config
 	cat ebtables-save | sed 's/__EXEC_PATH__/$(tmp1)/g' > ebtables-save_
+	mkdir -p $(DESTDIR)$(BINDIR)
 	install -m 0755 -o root -g root ebtables-save_ $(DESTDIR)$(BINDIR)/ebtables-save
 	cat ebtables.sysv | sed 's/__EXEC_PATH__/$(tmp1)/g' | sed 's/__SYSCONFIG__/$(tmp2)/g' > ebtables.sysv_
-	install -m 0755 -o root -g root ebtables.sysv_ $(DESTDIR)$(INITDIR)/ebtables
+	if [ "$(DESTDIR)" != "" ]; then mkdir -p $(DESTDIR)$(INITDIR); fi
+	if test -d $(DESTDIR)$(INITDIR); then install -m 0755 -o root -g root ebtables.sysv_ $(DESTDIR)$(INITDIR)/ebtables; fi
 	cat ebtables-config | sed 's/__SYSCONFIG__/$(tmp2)/g' > ebtables-config_
-	install -m 0600 -o root -g root ebtables-config_ $(DESTDIR)$(SYSCONFIGDIR)/ebtables-config
+	if [ "$(DESTDIR)" != "" ]; then mkdir -p $(DESTDIR)$(SYSCONFIGDIR); fi
+	if test -d $(DESTDIR)$(SYSCONFIGDIR); then install -m 0600 -o root -g root ebtables-config_ $(DESTDIR)$(SYSCONFIGDIR)/ebtables-config; fi
 	rm -f ebtables-save_ ebtables.sysv_ ebtables-config_
 
+tmp4:=$(shell printf $(LOCKFILE) | sed 's/\//\\\//g')
 $(MANDIR)/man8/ebtables.8: ebtables.8
 	mkdir -p $(DESTDIR)$(@D)
-	sed 's/$$(VERSION)/$(PROGVERSION)/' ebtables.8 | sed 's/$$(DATE)/$(PROGDATE)/' > ebtables.8_
+	sed -e 's/$$(VERSION)/$(PROGVERSION)/' -e 's/$$(DATE)/$(PROGDATE)/' -e 's/$$(LOCKFILE)/$(tmp4)/' ebtables.8 > ebtables.8_
 	install -m 0644 -o root -g root ebtables.8_ $(DESTDIR)$@
 	rm -f ebtables.8_
 
-$(ETHERTYPESFILE): ethertypes
-	mkdir -p $(DESTDIR)$(@D)
-	install -m 0644 -o root -g root $< $(DESTDIR)$@
+$(DESTDIR)$(ETHERTYPESFILE): ethertypes
+	mkdir -p $(@D)
+	install -m 0644 -o root -g root $< $@
 
 .PHONY: exec
 exec: ebtables ebtables-restore
@@ -205,7 +213,7 @@ exec: ebtables ebtables-restore
 	install -m 0755 -o root -g root ebtables-restore $(DESTDIR)$(BINDIR)/ebtables-restore
 
 .PHONY: install
-install: $(MANDIR)/man8/ebtables.8 $(ETHERTYPESFILE) exec scripts
+install: $(MANDIR)/man8/ebtables.8 $(DESTDIR)$(ETHERTYPESFILE) exec scripts
 	mkdir -p $(DESTDIR)$(LIBDIR)
 	install -m 0755 extensions/*.so $(DESTDIR)$(LIBDIR)
 	install -m 0755 *.so $(DESTDIR)$(LIBDIR)
@@ -245,10 +253,8 @@ release:
 	touch include/*
 	touch include/linux/*
 	touch include/linux/netfilter_bridge/*
-	sed -i 's/$$(VERSION)/$(PROGVERSION)/' ebtables.8
-	sed -i 's/$$(DATE)/$(PROGDATE)/' ebtables.8
-	sed -i 's/$$(VERSION)/$(PROGVERSION_)/' ebtables.spec
-	sed -i 's/$$(RELEASE)/$(PROGRELEASE)/' ebtables.spec
+	sed -i -e 's/$$(VERSION)/$(PROGVERSION)/' -e 's/$$(DATE)/$(PROGDATE)/' -e 's/$$(LOCKFILE)/$(tmp4)/' ebtables.8
+	sed -i -e 's/$$(VERSION)/$(PROGVERSION_)/' -e 's/$$(RELEASE)/$(PROGRELEASE)/' ebtables.spec
 	cd ..;tar -c $(DIR) | gzip >$(DIR).tar.gz; cd -
 	rm -rf include/linux
 
