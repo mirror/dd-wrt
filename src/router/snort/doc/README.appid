@@ -1,0 +1,251 @@
+Application Identification (AppId) Service
+================================================================================
+Dilbagh Chahal
+
+##########################################
+# THIS CODE IS STILL EXPERIMENTAL!
+# DO NOT USE IN PRODUCTION ENVIRONMENTS.
+# Please send any issues to the Snort team
+##########################################
+
+Overview
+================================================================================
+With increasingly complex networks and growing network traffic, network adminstrators 
+require application awareness in managing networks. An administrator may allow only 
+applications that are business relevant, low bandwidth and/or deal with certain
+subject matter. 
+
+Past snort releases have supported this requirement by allowing users to
+specify service meta data, urls and contents. This new preprocessor adds a
+simplified single point application awareness by making a set of application
+identifiers (AppId) available to Snort Rule writers. One would just specify an
+appId instead of URLs and contents in a rule.
+
+To provide network usage awareness, the new preprocessor outputs statistics to
+show network bandwidth used by each application seen on network. Administrators can
+monitor bandwidth usage and may decide to block applications that are wasteful.
+
+The preprocessor enables admintrators to create their own application detectors
+to detect new applications. The detectors are written in Lua and interface with Snort
+using a well-defined C-Lua API.
+
+Sections:
+    Dependency Requirements
+    Portability
+    Application Identification Configuration
+    Session Application Identifiers
+    AppId Rule Detection Option
+    AppId Events
+    AppId Usage Statistics
+    Open Detector Package (ODP) Installation
+    User Created Application Detectors
+
+Dependency Requirements
+================================================================================
+For proper functioning of the file processing:
+ 
+    Stream session tracking must be enabled, i.e. stream5. TCP and UDP must be
+    enabled in stream5. The preprocessor requires a session tracker to keep 
+    its data. 
+    
+    IP defragmentation should be enabled, i.e. the frag3 preprocessor should be
+    enabled and configured.
+
+    HTTP preprocessor must be enabled and configured. There are no appId specific
+    configuration. The preprocessor uses HTTP preprocessor for parsing HTTP headers
+    for application determination. Without HTTP preprocessor, appId preprocessor will
+    identify only non-HTTP applications.
+
+    LuaJIT version 2.0.2 must be installed on host where snort is being compiled and run. 
+    Newer versions of LuaJIT are not tested for compatibility.
+
+Portability
+================================================================================
+Some Operating Systems require additional steps to compile and run snort. The following
+sections identify these steps.
+
+OpenBSD/FreeBSD
+    use 'gmake' for LuaJIT compilation and installation:
+
+    Before running './configure' command for snort, set environment with the following commands
+        export PKG_CONFIG=/usr/bin/pkg-config
+        export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
+        sudo ln -f -s  /usr/local/lib/libluajit-5.1.so.2.0.2 /usr/local/lib/libluajit-5.1.so
+
+
+Application Identification Configuration
+================================================================================
+AppId dynamic preprocessor can be enabled during build time. The 
+following options must be included in ./configure:
+
+--enable-open-appid
+
+The configuration name is "appid": 
+
+ app_stats_filename appstats-unified.log, app_stats_period 60, app_detector_dir /usr/local/cisco/apps
+
+
+
+Option                  Argument             Required  Default
+app_detector_dir        <directory>          No        /usr/local/etc/appid
+app_stats_filename      <filename>           No        NULL
+app_stats_period        <time in seconds>    No        300 seconds
+app_stats_rollover_size <disk size in bytes> No        20 MB
+app_stats_rollover_time <time in seconds>    No        1 day
+memcap                  <memory limit bytes> No        256MB       
+debug                   <"yes">              No        disabled
+dump_ports              No                   No        disabled
+
+preprocessor appid :\
+            < app_detector_dir <directory>>, \
+            < app_stats_filename <file name>>, \
+            < app_stats_period <time in seconds>>, \
+            < app_stats_rollover_size <disk size in bytes>>, \
+            < app_stats_rollover_time <time in seconds>>, \
+            < memcap <memory limit in bytes>>, \
+            < debug <"yes">>, \
+            < dump_ports >
+
+Options:
+  < app_detector_dir >:
+      specifies base path where Cisco provided detectors and application
+      configuration files are installed by ODP (Open Detector Package) package.
+      The package contains Lua detectors and some application metadata. Customer
+      written detectors are stored in subdirectory ‘custom’ under the same base path.
+
+  < app_stats_filename >:
+      name of file. If this configuration is missing, application stats are disabled.
+
+  < app_stats_period >:
+      bucket size in seconds. Default 5 minutes.
+
+  < app_stats_rollover_size >:
+      file size which will cause file rollover. Default 20 MB.
+
+  < app_stats_rollover_time >:
+      time since file creation which will cause of rollover. Default 1 day.
+
+  < memcap >:
+      upper bound for memory used by appId internal structures. Default 32MB.
+
+  < dump_ports >:
+      prints port only detectors and information on active detectors. Used for troubleshooting.
+ 
+  < debug >:
+      Used in some old detectors for debugging.
+ 
+Example:
+
+   preprocessor appid : app_stats_filename appstats-unified.log, \
+                app_stats_period 60, \
+                app_detector_dir /usr/local/cisco/apps
+
+
+Session Application Identifiers
+================================================================================
+There are upto four appId stored in a session as defined below:
+    serviceAppId - appId associated with server side of a session. Example http server.
+    clientAppId - appId associated with application on client side of a session. Example 
+          Firefox. 
+    payloadAppId - For services like http, this is appId associated with webserver host. 
+          Example Facebook.
+    miscAppId - For some encapsulated protocols, this is the highest encapsulated application.
+
+AppId Rule Detection Option
+================================================================================
+Snort rules have new detection option "appid" that allows users to customize
+rules to specific application in a simple manner. The option can take upto 10
+application names separated by spaces, tabs, or commas. Application names in
+rules are the names you will see in last column in appMapping.data file.  A
+rule is considered a match if one of the appId in a rule match an appId in a
+session. 
+
+For client side packets, payloadAppid in a session is matched with all AppIds
+in a rule.  Thereafter miscAppId, clientAppId and serviceAppId are matched.
+Since Alert Events contain one AppId, only the first match is reported. If rule
+without appId option matches, then the most specific appId (in order of
+payload, misc, client, server) is reported.
+
+The same logic is followed for server side packets with one exception. Order of
+matching is changed to make serviceAppId higher then clientAppId.
+
+Examples:
+    alert tcp any any -> any any  (msg:"test for app HTTP";     appid: http;     sid:18759; rev:4; )
+    alert tcp any any -> any any  (msg:"test for app FTP";      appid: ftp;      sid:18760; rev:4; )
+    alert tcp any any -> any any  (msg:"test for app FTP Data"; appid: ftp-data; sid:18761; rev:4; )
+    alert tcp any any -> any any  (msg:"test for app CNN zappos"; appid: cnn.com zappos;  sid:18762; rev:4; )
+
+AppId Events
+================================================================================
+This feature defined new event types for logging application name in Snort
+Alerts in unified2 format only. These events contain only one application name.
+The Events can be enabled for unified2 output using 'appid_event_types keyword. 
+
+For example, the following configuration will log alert in my.alert file with
+application name.
+
+    output alert_unified2: filename my.alert, appid_event_types
+
+u2spewfoo, u2openappid, u2streamer tools can be used to print alerts in new format. 
+Events will contains additional application name at the end of event.
+
+Example: u2spewfoo output the following event
+(Event)
+        sensor id: 0    event id: 6     event second: 1292962302        event microsecond: 227323
+        sig id: 18763   gen id: 1       revision: 4      classification: 0
+        priority: 0     ip source: 98.27.88.56  ip destination: 10.4.10.79
+        src port: 80    dest port: 54767        protocol: 6     impact_flag: 0  blocked: 0
+        mpls label: 0   vland id: 0     policy id: 0    appid: zappos
+
+AppId Usage Statistics
+================================================================================
+AppId preprocessor prints application network usage periodically in snort
+log directory in unified2 format. File name, time interval for statistic and
+file rollover are controlled by appId preprocessor configuration. u2spewfoo,
+u2openappid, u2streamer tools can be used to print contents of these files. An
+example output from u2openappid tools is as follows:
+
+    statTime="1292962290",appName="firefox",txBytes="9395",rxBytes="77021"
+    statTime="1292962290",appName="google_analytic",txBytes="2024",rxBytes="928"
+    statTime="1292962290",appName="http",txBytes="28954",rxBytes="238000"
+    statTime="1292962290",appName="zappos",txBytes="26930",rxBytes="237072"
+
+Open Detector Package (ODP) Installation
+================================================================================
+Application detectors from Snort team will be delivered in a separate package
+called Open Detector Package. ODP is a package that contains the following
+artifacts:
+
+a. Application detectors in Lua language. 
+
+b. Port detectors, which are port only application detectors, in  meta-data in YAML format.
+
+c. appMapping.data file containing application metadata. This file should not
+   be modified.  The first column contains application identifier and second column 
+   contains application name.  Other columns contain internal information.
+
+d. Lua library files DetectorCommon.lua, flowTrackerModule.lua and
+   hostServiceTrackerModule.lua 
+
+User can install ODP package in any directory of its choosing and configure
+this directory in app_detector_dir option in appId preprocessor configuration.
+Installing ODP will not modify any subdirectory named custom, where
+user-created detectors are located. 
+
+When installed, ODP will create following sub-directories:
+    odp/port    //Cisco port-only detectors
+    odp/lua     //Cisco Lua detectors
+    odp/libs    //Cisco Lua modules
+
+User Created Application Detectors
+================================================================================
+Users can create new applications by coding detectors in Lua language. A
+document will be posted on Snort Website with details on API. Users can also
+copy over Snort team provided detectors and modify it.
+
+Users must organize their Lua detectors and libraries by creating the following
+directory structure, under ODP installation directory.
+    custom/port    //port-only detectors
+    custom/lua     //Lua detectors
+    custom/libs    //Lua modules
+    

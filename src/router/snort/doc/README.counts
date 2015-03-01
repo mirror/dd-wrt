@@ -1,0 +1,217 @@
+Snort does a lot of work and outputs some useful statistics when it is done.
+Many of these are self-explanatory.  The others are summarized below.  This
+does not include all possible output data, just the basics.
+
+
+-----------------
+Timing Statistics
+-----------------
+
+This section provides basic timing statistics.  It includes total seconds and
+packets as well as packet processing rates.  The rates are based on whole
+seconds, minutes, etc. and only shown when non-zero.
+
+Example:
+
+===============================================================================
+Run time for packet processing was 175.856509 seconds
+Snort processed 3716022 packets.
+Snort ran for 0 days 0 hours 2 minutes 55 seconds
+   Pkts/min:      1858011
+   Pkts/sec:        21234
+===============================================================================
+
+
+-----------------
+Packet I/O Totals
+-----------------
+
+This section shows basic packet acquisition and injection peg counts obtained
+from the DAQ.  If you are reading pcaps, the totals are for all pcaps combined,
+unless you use --pcap-reset, in which case it is shown per pcap.
+
+* Outstanding indicates how many packets are buffered awaiting processing.  The
+  way this is counted varies per DAQ so the DAQ documentation should be
+  consulted for more info.
+
+* Filtered packets are not shown for pcap DAQs.
+
+* Injected packets are the result of active response which can be configured for
+  inline or passive modes.
+
+Example:
+
+===============================================================================
+Packet I/O Totals:
+   Received:      3716022
+   Analyzed:      3716022 (100.000%)
+    Dropped:            0 (  0.000%)
+   Filtered:            0 (  0.000%)
+Outstanding:            0 (  0.000%)
+   Injected:            0
+===============================================================================
+
+
+-------------------
+Protocol Statistics
+-------------------
+
+Traffic for all the protocols decoded by Snort is summarized in the breakdown
+section.  This traffic includes internal "pseudo-packets" if preprocessors such
+as frag3 and stream5 are enabled so the total may be greater than the number of
+analyzed packets in the packet I/O section.
+
+* Disc counts are discards due to basic encoding integrity flaws that prevents
+  Snort from decoding the packet.
+
+* Other includes packets that contained an encapsulation that Snort doesn't
+  decode.
+
+* S5 G 1/2 is the number of client/server sessions stream5 flushed due to cache
+  limit, session timeout, session reset.
+
+Example:
+
+===============================================================================
+Breakdown by protocol (includes rebuilt packets):
+        Eth:      3722347 (100.000%)
+       VLAN:            0 (  0.000%)
+        IP4:      1782394 ( 47.884%)
+       Frag:         3839 (  0.103%)
+       ICMP:        38860 (  1.044%)
+        UDP:       137162 (  3.685%)
+        TCP:      1619621 ( 43.511%)
+        IP6:      1781159 ( 47.850%)
+    IP6 Ext:      1787327 ( 48.016%)
+   IP6 Opts:         6168 (  0.166%)
+      Frag6:         3839 (  0.103%)
+      ICMP6:         1650 (  0.044%)
+       UDP6:       140446 (  3.773%)
+       TCP6:      1619633 ( 43.511%)
+     Teredo:           18 (  0.000%)
+    ICMP-IP:            0 (  0.000%)
+      EAPOL:            0 (  0.000%)
+    IP4/IP4:            0 (  0.000%)
+    IP4/IP6:            0 (  0.000%)
+    IP6/IP4:            0 (  0.000%)
+    IP6/IP6:            0 (  0.000%)
+        GRE:          202 (  0.005%)
+    GRE Eth:            0 (  0.000%)
+   GRE VLAN:            0 (  0.000%)
+    GRE IP4:            0 (  0.000%)
+    GRE IP6:            0 (  0.000%)
+GRE IP6 Ext:            0 (  0.000%)
+   GRE PPTP:          202 (  0.005%)
+    GRE ARP:            0 (  0.000%)
+    GRE IPX:            0 (  0.000%)
+   GRE Loop:            0 (  0.000%)
+       MPLS:            0 (  0.000%)
+        ARP:       104840 (  2.817%)
+        IPX:           60 (  0.002%)
+   Eth Loop:            0 (  0.000%)
+   Eth Disc:            0 (  0.000%)
+   IP4 Disc:            0 (  0.000%)
+   IP6 Disc:            0 (  0.000%)
+   TCP Disc:            0 (  0.000%)
+   UDP Disc:         1385 (  0.037%)
+  ICMP Disc:            0 (  0.000%)
+All Discard:         1385 (  0.037%)
+      Other:        57876 (  1.555%)
+Bad Chk Sum:        32135 (  0.863%)
+    Bad TTL:            0 (  0.000%)
+     S5 G 1:         1494 (  0.040%)
+     S5 G 2:         1654 (  0.044%)
+      Total:      3722347
+===============================================================================
+
+
+-----------------------------
+Actions, Limits, and Verdicts
+-----------------------------
+
+Action and verdict counts show what Snort did with the packets it analyzed.
+This information is only output in IDS mode (when snort is run with the -c
+<conf> option).
+
+* Alerts is the number of activate, alert, and block actions processed as
+  determined by the rule actions.  Here block includes block, drop, and reject
+  actions.
+
+Limits arise due to real world constraints on processing time and available
+memory.  These indicate potential actions that did not happen:
+
+* Match Limit > 0 means that rule matches were not processed due to the 
+  config detection: max_queue_events setting.  The default is 5.
+
+* Queue Limit > 0 means that events couldn't be stored in the event queue
+  due to the config event_queue: max_queue setting.  The default is 8.
+
+* Log Limit > 0 means that events were not alerted due to the 
+  config event_queue: log setting.  The default is 3.
+
+* Event Limit > 0 means that events were not alerted due to event_filter
+  limits.
+
+* Alert Limit > 0 means that events were not alerted because they already
+  were triggered on the session.
+
+Verdicts are rendered by Snort on each packet:
+
+* Allow = packets Snort analyzed and did not take action on. 
+
+* Block = packets Snort did not forward, e.g. due to a block rule.  "Block" is
+  used instead of "Drop" to avoid confusion between dropped packets (those
+  Snort didn't actually see) and blocked packets (those Snort did not allow to
+  pass).
+
+* Replace = packets Snort modified, for example, due to normalization or
+  replace rules.  This can only happen in inline mode with a compatible DAQ.
+
+* Whitelist = packets that caused Snort to allow a flow to pass w/o inspection
+  by any analysis program.  Like blacklist, this is done by the DAQ or by Snort
+  on subsequent packets.
+
+* Blacklist = packets that caused Snort to block a flow from passing.  This is
+  the case when a block TCP rule fires.  If the DAQ supports this in hardware,
+  no further packets will be seen by Snort for that session.  If not, snort
+  will block each packet and this count will be higher.
+
+* Ignore = packets that caused Snort to allow a flow to pass w/o inspection
+  by this instance of Snort.  Like blacklist, this is done by the DAQ or by
+  Snort on subsequent packets.
+
+* Int Blklst = packets that are GTP, Teredo, 6in4 or 4in6 encapsulated that
+  are being blocked.  These packets could get the Blacklist verdict if 
+  config tunnel_verdicts was set for the given protocol.  Note that these 
+  counts are output only if non-zero.  Also, this count is incremented on 
+  the first packet in the flow that alerts.  The alerting packet and all
+  following packets on the flow will be counted under Block.
+
+* Int Whtlst = packets that are GTP, Teredo, 6in4 or 4in6 encapsulated that
+  are being allowed.  These packets could get the Whitelist verdict if 
+  config tunnel_verdicts was set for the given protocol.  Note that these
+  counts are output only if non-zero.  Also, this count is incremented
+  for all packets on the flow starting with the alerting packet.
+
+Example:
+
+===============================================================================
+Action Stats:
+     Alerts:            0 (  0.000%)
+     Logged:            0 (  0.000%)
+     Passed:            0 (  0.000%)
+Limits:
+      Match:            0
+      Queue:            0
+        Log:            0
+      Event:            0
+      Alert:            0
+Verdicts:
+      Allow:      3716022 (100.000%)
+      Block:            0 (  0.000%)
+    Replace:            0 (  0.000%)
+  Whitelist:            0 (  0.000%)
+  Blacklist:            0 (  0.000%)
+     Ignore:            0 (  0.000%)
+===============================================================================
+

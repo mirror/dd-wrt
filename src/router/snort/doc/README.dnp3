@@ -1,0 +1,237 @@
+DNP3 Preprocessor
+=================
+
+
+Overview
+========
+The DNP3 preprocessor is a Snort module that decodes and reassembles the DNP3
+protocol. It also provides rule options to access certain protocol fields.
+This allows a user to write rules for DNP3 packets without decoding the
+protocol with a series of "content" and "byte_test" options.
+
+DNP3 is a protocol used in SCADA networks. If your network does not contain any
+DNP3-enabled devices, we recommend leaving this preprocessor turned off.
+
+Dependencies
+============
+The Stream5 preprocessor must be enabled for the DNP3 preprocessor to work.
+Protocol-Aware Flushing (PAF) is also required. See README.stream5 for more
+information.
+
+Preprocessor Configuration
+==========================
+DNP3 configuration is split into two parts: the preprocessor config, and the
+rule options. The preprocessor config starts with:
+
+preprocesor dnp3:
+
+Options are as follows:
+
+    Option              Argument        Required    Default
+    --------------------------------------------------------------
+    ports               <number>, or          NO    ports 20000
+                        { port [port] ... }
+    memcap              <number>              NO    memcap 262144
+    check_crc           NONE                  NO    OFF
+    disabled            NONE                  NO    OFF
+
+Option explanations
+    ports
+        This sets the port numbers on which DNP3 traffic is inspected.
+        A single port number may be provided, or a space-separated list
+        enclosed in curly brackets. The default is port 20000.
+
+    memcap
+        This sets a maximum to the amount of memory allocated to the DNP3
+        preprocessor for session-tracking purposes. The argument is given
+        in bytes.
+        Each session requires about 4 KB to track, and the default is 256 kB.
+        This gives the preprocessor the ability to track 63 DNP3 sessions
+        simultaneously.
+        Setting the memcap below 4144 bytes will cause a fatal error.
+        When multiple configs are used, the memcap in the non-default configs
+        will be overwritten by the memcap in the default config. If the default
+        config isn't intended to inspect DNP3 traffic, use the "disabled"
+        keyword. (See README.multipleconfigs for more info)
+
+    check_crc
+        This option makes the preprocessor validate the checksums contained in
+        DNP3 Link-Layer Frames. Frames with invalid checksums will be ignored.
+        If the corresponding preprocessor rule is enabled, invalid checksums
+        will generate alerts.
+        The corresponding rule is GID 145, SID 1.
+
+    disabled
+        This option is used for loading the preprocessor without inspecting
+        any DNP3 traffic. The "disabled" keyword is only useful when the DNP3
+        preprocessor is turned on in a separate policy.
+        (See README.multipleconfigs for information on Multiple Policies)
+
+Example preprocessor config
+
+preprocessor dnp3: ports { 20000 } \
+                   memcap 262144 \
+                   check_crc
+
+Multiple policy example:
+
+snort.conf
+----------
+<Stream5, PAF, other preprocessors...>
+preprocessor dnp3: memcap 262144 disabled
+config binding: snort.conf.dnp3net net <ipList>
+
+snort.conf.dnp3net
+------------------
+preprocessor dnp3: ports 20000, check_crc
+
+
+Rule Options
+============
+The DNP3 preprocessor adds 4 new rule options. These rule options match on
+various pieces of the DNP3 headers.
+
+The preprocessor must be enabled for these rule options to work.
+
+dnp3_func
+---------
+This option matches against the Function Code inside of a DNP3
+Application-Layer request/response header. The code may be a number
+(in decimal format), or a string from the list provided below.
+
+Syntax:
+    dnp3_func:<code>
+
+    code = 0-255
+           confirm
+           read
+           write
+           select
+           operate
+           direct_operate
+           direct_operate_nr
+           immed_freeze
+           immed_freeze_nr
+           freeze_clear
+           freeze_clear_nr
+           freeze_at_time
+           freeze_at_time_nr
+           cold_restart
+           warm_restart
+           initialize_data
+           initialize_appl
+           start_appl
+           stop_appl
+           save_config
+           enable_unsolicited
+           disable_unsolicited
+           assign_class
+           delay_measure
+           record_current_time
+           open_file
+           close_file
+           delete_file
+           get_file_info
+           authenticate_file
+           abort_file
+           activate_config
+           authenticate_req
+           authenticate_err
+           response
+           unsolicited_response
+           authenticate_resp
+
+Example:
+    alert tcp any any -> any 20000 (msg:"DNP3 Write request"; dnp3_func:write; sid:1;)
+
+dnp3_ind
+--------
+This option matches on the Internal Indicators flags present in a
+DNP3 Application Response Header. Much like the TCP flags rule option,
+providing multiple flags in one option will cause the rule to fire if *ANY* one
+of the flags is set. To alert on a combination of flags, use multiple rule
+options.
+
+Syntax:
+    dnp3_ind:<flag>[,<flag>...]
+    
+    flag =  all_stations
+            class_1_events
+            class_2_events
+            class_3_events
+            need_time
+            local_control
+            device_trouble
+            device_restart
+            no_func_code_support
+            object_unknown
+            parameter_error
+            event_buffer_overflow
+            already_executing
+            config_corrupt
+            reserved_2
+            reserved_1
+
+Examples:
+    # Alerts on reserved_1 OR reserved_2 being set
+    alert tcp any 20000 -> any any (msg:"Reserved DNP3 Indicator set"; \
+        dnp3_ind:reserved_1,reserved_2; sid:1;)
+
+    # Alerts on class_1 AND class_2 AND class_3 events being set
+    alert tcp any 20000 -> any any (msg:"Lots of DNP3 events"; \
+        dnp3_ind:class_1_events; dnp3_ind:class_2_events; dnp3_ind:class_3_events; \
+        sid:2;)
+
+dnp3_obj
+--------
+This option matches on DNP3 object headers present in a request or response.
+
+Syntax:
+    dnp3_obj:<group>,<var>
+
+    group = 0 - 255
+    var   = 0 - 255
+
+Example:
+    alert tcp any any -> any any (msg:"DNP3 Time and Date object"; \
+        dnp3_obj:50,1; sid:1;)
+
+dnp3_data
+---------
+As Snort processes DNP3 packets, the DNP3 preprocessor collects Link-Layer
+Frames and reassembles them back into Application-Layer Fragments. This rule
+option sets the cursor to the beginning of an Application-Layer
+Fragment, so that other rule options can work on the reassembled data.
+
+With the dnp3_data rule option, you can write rules based on the data within
+Fragments without splitting up the data and adding CRCs every 16 bytes.
+
+Syntax:
+    dnp3_data;
+    
+    No options.
+
+Example:
+
+alert tcp any any -> any any (msg:"String 'badstuff' in DNP3 message"; \
+    dnp3_data; content:"badstuff"; sid:1;)
+
+
+Preprocessor Rules
+==================
+The DNP3 preprocessor uses GID 145 for its preprocessor events.
+
+SID     Description
+--------------------------------------------------------------------
+  1     A Link-Layer Frame contained an invalid CRC.
+        (Enable "check_crc" in the preprocessor config to get this alert.)
+  2     A DNP3 Link-Layer Frame was dropped, due to an invalid length.
+  3     A Transport-Layer Segment was dropped during reassembly.
+        This happens when segments have invalid sequence numbers.
+  4     The DNP3 Reassembly buffer was cleared before a complete fragment
+        could be reassembled.
+        This happens when a segment carrying the "FIR" flag appears after
+        some other segments have been queued.
+  5     A DNP3 Link-Layer Frame is larger than 260 bytes.
+  6     A DNP3 Link-Layer Frame uses an address that is reserved.
+  7     A DNP3 request or response uses a reserved function code.
