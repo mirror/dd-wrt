@@ -14386,7 +14386,50 @@ _ACEOF
 fi
 
 
+# In case INADDR_NONE is not defined (like on Solaris)
+have_inaddr_none="no"
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for INADDR_NONE" >&5
+$as_echo_n "checking for INADDR_NONE... " >&6; }
+if test "$cross_compiling" = yes; then :
+  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "cannot run test program while cross compiling
+See \`config.log' for more details" "$LINENO" 5; }
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+int
+main ()
+{
+
+	if (inet_addr("10,5,2") == INADDR_NONE);
+    return 0;
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_run "$LINENO"; then :
+  have_inaddr_none="yes"
+else
+  have_inaddr_none="no"
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_inaddr_none" >&5
+$as_echo "$have_inaddr_none" >&6; }
+if test "x$have_inaddr_none" = "xno"; then
+
 $as_echo "#define INADDR_NONE -1" >>confdefs.h
+
+fi
 
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -14530,10 +14573,91 @@ if test "x$with_libpfring_libraries" != "xno"; then
    LDFLAGS="${LDFLAGS} -L${with_libpfring_libraries}"
 fi
 
+
+# Check whether --with-daq_includes was given.
+if test "${with_daq_includes+set}" = set; then :
+  withval=$with_daq_includes; with_daq_includes="$withval"
+else
+  with_daq_includes="no"
+fi
+
+
+
+# Check whether --with-daq_libraries was given.
+if test "${with_daq_libraries+set}" = set; then :
+  withval=$with_daq_libraries; with_daq_libraries="$withval"
+else
+  with_daq_libraries="no"
+fi
+
+
+if test "x$with_daq_includes" != "xno"; then
+   CPPFLAGS="${CPPFLAGS} -I${with_daq_includes}"
+   ICONFIGFLAGS="${ICONFIGFLAGS} -I${with_daq_includes}"
+fi
+
+if test "x$with_daq_libraries" != "xno"; then
+   LDFLAGS="${LDFLAGS} -L${with_daq_libraries}"
+fi
+
+if test "x$enable_control_socket" = "xyes"; then
+    LSFBPF=""
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sfbpf_compile in -lsfbpf" >&5
+$as_echo_n "checking for sfbpf_compile in -lsfbpf... " >&6; }
+if ${ac_cv_lib_sfbpf_sfbpf_compile+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lsfbpf   $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char sfbpf_compile ();
+int
+main ()
+{
+return sfbpf_compile ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_sfbpf_sfbpf_compile=yes
+else
+  ac_cv_lib_sfbpf_sfbpf_compile=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_sfbpf_sfbpf_compile" >&5
+$as_echo "$ac_cv_lib_sfbpf_sfbpf_compile" >&6; }
+if test "x$ac_cv_lib_sfbpf_sfbpf_compile" = xyes; then :
+  LIBS="${LIBS} -lsfbpf"
+else
+  LSFBPF="no"
+fi
+
+
+    if test "x$LSFBPF" = "xno"; then
+        echo
+        echo "   ERROR!  sfbpf library not found, go get it from"
+        echo "   http://www.snort.org/."
+        #AC_MSG_ERROR("Fatal!")
+        exit 1
+    fi
+fi
+
 LPCAP=""
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pcap_datalink in -lpcap" >&5
 $as_echo_n "checking for pcap_datalink in -lpcap... " >&6; }
-if test "${ac_cv_lib_pcap_pcap_datalink+set}" = set; then :
+if ${ac_cv_lib_pcap_pcap_datalink+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
@@ -14567,7 +14691,7 @@ LIBS=$ac_check_lib_save_LIBS
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_pcap_pcap_datalink" >&5
 $as_echo "$ac_cv_lib_pcap_pcap_datalink" >&6; }
-if test "x$ac_cv_lib_pcap_pcap_datalink" = x""yes; then :
+if test "x$ac_cv_lib_pcap_pcap_datalink" = xyes; then :
   cat >>confdefs.h <<_ACEOF
 #define HAVE_LIBPCAP 1
 _ACEOF
@@ -14586,7 +14710,7 @@ if test "x$LPCAP" = "xno"; then
   for ac_header in pfring.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "pfring.h" "ac_cv_header_pfring_h" "$ac_includes_default"
-if test "x$ac_cv_header_pfring_h" = x""yes; then :
+if test "x$ac_cv_header_pfring_h" = xyes; then :
   cat >>confdefs.h <<_ACEOF
 #define HAVE_PFRING_H 1
 _ACEOF
@@ -14607,7 +14731,7 @@ done
   PFRING_L=""
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pfring_open in -lpfring" >&5
 $as_echo_n "checking for pfring_open in -lpfring... " >&6; }
-if test "${ac_cv_lib_pfring_pfring_open+set}" = set; then :
+if ${ac_cv_lib_pfring_pfring_open+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
@@ -14641,7 +14765,7 @@ LIBS=$ac_check_lib_save_LIBS
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_pfring_pfring_open" >&5
 $as_echo "$ac_cv_lib_pfring_pfring_open" >&6; }
-if test "x$ac_cv_lib_pfring_pfring_open" = x""yes; then :
+if test "x$ac_cv_lib_pfring_pfring_open" = xyes; then :
   cat >>confdefs.h <<_ACEOF
 #define HAVE_LIBPFRING 1
 _ACEOF
@@ -14656,7 +14780,7 @@ fi
   LPFRING_PCAP=""
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pfring_open in -lpcap" >&5
 $as_echo_n "checking for pfring_open in -lpcap... " >&6; }
-if test "${ac_cv_lib_pcap_pfring_open+set}" = set; then :
+if ${ac_cv_lib_pcap_pfring_open+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
@@ -14690,7 +14814,7 @@ LIBS=$ac_check_lib_save_LIBS
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_pcap_pfring_open" >&5
 $as_echo "$ac_cv_lib_pcap_pfring_open" >&6; }
-if test "x$ac_cv_lib_pcap_pfring_open" = x""yes; then :
+if test "x$ac_cv_lib_pcap_pfring_open" = xyes; then :
   cat >>confdefs.h <<_ACEOF
 #define HAVE_LIBPCAP 1
 _ACEOF
@@ -14714,6 +14838,46 @@ if test "x$LPCAP" = "xno"; then
     echo "   shared library that may be installed in an unusual place"
     exit 1
   fi
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for pcap_lex_destroy" >&5
+$as_echo_n "checking for pcap_lex_destroy... " >&6; }
+if test "$cross_compiling" = yes; then :
+  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "cannot run test program while cross compiling
+See \`config.log' for more details" "$LINENO" 5; }
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <pcap.h>
+
+int
+main ()
+{
+
+   pcap_lex_destroy();
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_run "$LINENO"; then :
+  have_pcap_lex_destroy="yes"
+else
+  have_pcap_lex_destroy="no"
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_pcap_lex_destroy" >&5
+$as_echo "$have_pcap_lex_destroy" >&6; }
+if test "x$have_pcap_lex_destroy" = "xyes"; then
+
+$as_echo "#define HAVE_PCAP_LEX_DESTROY 1" >>confdefs.h
+
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pcap_lib_version" >&5
@@ -14769,6 +14933,7 @@ fi
 
 if test "x$with_libpcre_includes" != "xno"; then
     CPPFLAGS="${CPPFLAGS} -I${with_libpcre_includes}"
+    ICONFIGFLAGS="${ICONFIGFLAGS} -I${with_libpcre_includes}"
 else
     CPPFLAGS="${CPPFLAGS} `pcre-config --cflags`"
 fi
@@ -14785,7 +14950,7 @@ PCRE_H=""
 for ac_header in pcre.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "pcre.h" "ac_cv_header_pcre_h" "$ac_includes_default"
-if test "x$ac_cv_header_pcre_h" = x""yes; then :
+if test "x$ac_cv_header_pcre_h" = xyes; then :
   cat >>confdefs.h <<_ACEOF
 #define HAVE_PCRE_H 1
 _ACEOF
@@ -14808,7 +14973,7 @@ PCRE_L=""
 pcre_version_six=""
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pcre_compile in -lpcre" >&5
 $as_echo_n "checking for pcre_compile in -lpcre... " >&6; }
-if test "${ac_cv_lib_pcre_pcre_compile+set}" = set; then :
+if ${ac_cv_lib_pcre_pcre_compile+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
@@ -14842,7 +15007,7 @@ LIBS=$ac_check_lib_save_LIBS
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_pcre_pcre_compile" >&5
 $as_echo "$ac_cv_lib_pcre_pcre_compile" >&6; }
-if test "x$ac_cv_lib_pcre_pcre_compile" = x""yes; then :
+if test "x$ac_cv_lib_pcre_pcre_compile" = xyes; then :
   cat >>confdefs.h <<_ACEOF
 #define HAVE_LIBPCRE 1
 _ACEOF
@@ -14903,24 +15068,240 @@ else
 $as_echo "yes" >&6; }
 fi
 
-# Check whether --enable-dynamicplugin was given.
-if test "${enable_dynamicplugin+set}" = set; then :
-  enableval=$enable_dynamicplugin; enable_dynamicplugin="$enableval"
-else
-  enable_dynamicplugin="yes"
-fi
+# OPENSSL SHA configuration (optional)
 
- if test "x$enable_dynamicplugin" = "xyes"; then
-  HAVE_DYNAMIC_PLUGINS_TRUE=
-  HAVE_DYNAMIC_PLUGINS_FALSE='#'
+# Check whether --with-openssl_includes was given.
+if test "${with_openssl_includes+set}" = set; then :
+  withval=$with_openssl_includes; with_openssl_includes="$withval"
 else
-  HAVE_DYNAMIC_PLUGINS_TRUE='#'
-  HAVE_DYNAMIC_PLUGINS_FALSE=
+  with_openssl_includes="no"
 fi
 
 
-if test "x$enable_dynamicplugin" = "xyes"; then
-    CPPFLAGS="$CPPFLAGS -DDYNAMIC_PLUGIN"
+
+# Check whether --with-openssl_libraries was given.
+if test "${with_openssl_libraries+set}" = set; then :
+  withval=$with_openssl_libraries; with_openssl_libraries="$withval"
+else
+  with_openssl_libraries="no"
+fi
+
+
+if test "x$with_openssl_includes" != "xno"; then
+    CPPFLAGS="${CPPFLAGS} -I${with_openssl_includes}"
+    ICONFIGFLAGS="${ICONFIGFLAGS} -I${with_openssl_includes}"
+fi
+
+if test "x$with_openssl_libraries" != "xno"; then
+    LDFLAGS="${LDFLAGS}  -L${with_openssl_libraries}"
+fi
+# Verify that we have the headers
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for SHA256_Init in -lcrypto" >&5
+$as_echo_n "checking for SHA256_Init in -lcrypto... " >&6; }
+if ${ac_cv_lib_crypto_SHA256_Init+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lcrypto  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char SHA256_Init ();
+int
+main ()
+{
+return SHA256_Init ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_crypto_SHA256_Init=yes
+else
+  ac_cv_lib_crypto_SHA256_Init=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_crypto_SHA256_Init" >&5
+$as_echo "$ac_cv_lib_crypto_SHA256_Init" >&6; }
+if test "x$ac_cv_lib_crypto_SHA256_Init" = xyes; then :
+
+$as_echo "#define HAVE_OPENSSL_SHA 1" >>confdefs.h
+
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for MD5_Init in -lcrypto" >&5
+$as_echo_n "checking for MD5_Init in -lcrypto... " >&6; }
+if ${ac_cv_lib_crypto_MD5_Init+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lcrypto  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char MD5_Init ();
+int
+main ()
+{
+return MD5_Init ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_crypto_MD5_Init=yes
+else
+  ac_cv_lib_crypto_MD5_Init=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_crypto_MD5_Init" >&5
+$as_echo "$ac_cv_lib_crypto_MD5_Init" >&6; }
+if test "x$ac_cv_lib_crypto_MD5_Init" = xyes; then :
+
+$as_echo "#define HAVE_OPENSSL_MD5 1" >>confdefs.h
+
+fi
+
+ if test "$ac_cv_lib_crypto_MD5_Init" != "yes" ; then
+  BUILD_OPENSSL_MD5_TRUE=
+  BUILD_OPENSSL_MD5_FALSE='#'
+else
+  BUILD_OPENSSL_MD5_TRUE='#'
+  BUILD_OPENSSL_MD5_FALSE=
+fi
+
+ if test "$ac_cv_lib_crypto_SHA256_Init" != "yes" ; then
+  BUILD_OPENSSL_SHA_TRUE=
+  BUILD_OPENSSL_SHA_FALSE='#'
+else
+  BUILD_OPENSSL_SHA_TRUE='#'
+  BUILD_OPENSSL_SHA_FALSE=
+fi
+
+if test "$ac_cv_lib_crypto_MD5_Init" = "yes"; then
+    LIBS="${LIBS} -lcrypto"
+fi
+
+
+if test "x$SIGNAL_SNORT_RELOAD" != "x" ; then
+
+cat >>confdefs.h <<_ACEOF
+#define SIGNAL_SNORT_RELOAD $SIGNAL_SNORT_RELOAD
+_ACEOF
+
+fi
+
+
+if test "x$SIGNAL_SNORT_DUMP_STATS" != "x" ; then
+
+cat >>confdefs.h <<_ACEOF
+#define SIGNAL_SNORT_DUMP_STATS $SIGNAL_SNORT_DUMP_STATS
+_ACEOF
+
+fi
+
+
+if test "x$SIGNAL_SNORT_ROTATE_STATS" != "x" ; then
+
+cat >>confdefs.h <<_ACEOF
+#define SIGNAL_SNORT_ROTATE_STATS $SIGNAL_SNORT_ROTATE_STATS
+_ACEOF
+
+fi
+
+
+if test "x$SIGNAL_SNORT_READ_ATTR_TBL" != "x" ; then
+
+cat >>confdefs.h <<_ACEOF
+#define SIGNAL_SNORT_READ_ATTR_TBL $SIGNAL_SNORT_READ_ATTR_TBL
+_ACEOF
+
+fi
+
+# Check whether --enable-so_with_static_lib was given.
+if test "${enable_so_with_static_lib+set}" = set; then :
+  enableval=$enable_so_with_static_lib; enable_so_with_static_lib="$enableval"
+else
+  enable_so_with_static_lib=$so_with_static_lib
+fi
+
+ if test "x$enable_so_with_static_lib" = "xyes"; then
+  SO_WITH_STATIC_LIB_TRUE=
+  SO_WITH_STATIC_LIB_FALSE='#'
+else
+  SO_WITH_STATIC_LIB_TRUE='#'
+  SO_WITH_STATIC_LIB_FALSE=
+fi
+
+
+# Check whether --enable-control_socket was given.
+if test "${enable_control_socket+set}" = set; then :
+  enableval=$enable_control_socket; enable_control_socket="$enableval"
+else
+  enable_control_socket="no"
+fi
+
+if test "x$linux" != "xyes"; then
+    if test "x$enable_control_socket" = "xyes"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: The control socket is only supported on Linux systems." >&5
+$as_echo "$as_me: WARNING: The control socket is only supported on Linux systems." >&2;}
+        enable_control_socket="no"
+    fi
+fi
+ if test "x$enable_control_socket" = "xyes"; then
+  BUILD_CONTROL_SOCKET_TRUE=
+  BUILD_CONTROL_SOCKET_FALSE='#'
+else
+  BUILD_CONTROL_SOCKET_TRUE='#'
+  BUILD_CONTROL_SOCKET_FALSE=
+fi
+
+if test "x$enable_control_socket" = "xyes"; then
+    CONFIGFLAGS="$CONFIGFLAGS -DCONTROL_SOCKET"
+fi
+
+# Check whether --enable-side_channel was given.
+if test "${enable_side_channel+set}" = set; then :
+  enableval=$enable_side_channel; enable_side_channel="$enableval"
+else
+  enable_side_channel="no"
+fi
+
+if test "x$linux" != "xyes"; then
+    if test "x$enable_side_channel" = "xyes"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: The side channel is only supported on Linux systems." >&5
+$as_echo "$as_me: WARNING: The side channel is only supported on Linux systems." >&2;}
+        enable_side_channel="no"
+    fi
+fi
+ if test "x$enable_side_channel" = "xyes"; then
+  BUILD_SIDE_CHANNEL_TRUE=
+  BUILD_SIDE_CHANNEL_FALSE='#'
+else
+  BUILD_SIDE_CHANNEL_TRUE='#'
+  BUILD_SIDE_CHANNEL_FALSE=
+fi
+
+if test "x$enable_side_channel" = "xyes"; then
+    CONFIGFLAGS="$CONFIGFLAGS -DSIDE_CHANNEL"
 fi
 
 # check for dnet first since some DAQs need it
@@ -14945,30 +15326,45 @@ fi
 if test "x$with_dnet_includes" != "xno"; then
     CPPFLAGS="${CPPFLAGS} -I${with_dnet_includes}"
 else
-    CPPFLAGS="${CPPFLAGS} `dnet-config --cflags`"
+    CPPFLAGS="${CPPFLAGS} `dnet-config --cflags 2>/dev/null`"
 fi
 
 if test "x$with_dnet_libraries" != "xno"; then
-    LDFLAGS="${LDFLAGS} -L${with_dnet_libraries} -ldnet"
+    LDFLAGS="${LDFLAGS} -L${with_dnet_libraries}"
 else
-    LDFLAGS="${LDFLAGS} `dnet-config --libs`"
+    LDFLAGS="${LDFLAGS} `dnet-config --libs 2>/dev/null`"
 fi
 
 for ac_header in dnet.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "dnet.h" "ac_cv_header_dnet_h" "$ac_includes_default"
-if test "x$ac_cv_header_dnet_h" = x""yes; then :
+if test "x$ac_cv_header_dnet_h" = xyes; then :
   cat >>confdefs.h <<_ACEOF
 #define HAVE_DNET_H 1
 _ACEOF
- DNET="yes"
+
 else
-  DNET="no"
+  DNET_H="no"
 fi
 
 done
 
-if test "x$DNET" = "xno"; then
+for ac_header in dumbnet.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "dumbnet.h" "ac_cv_header_dumbnet_h" "$ac_includes_default"
+if test "x$ac_cv_header_dumbnet_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_DUMBNET_H 1
+_ACEOF
+
+else
+  DUMBNET_H="no"
+fi
+
+done
+
+
+if test "x$DNET_H" = "xno" -a "x$DUMBNET_H" = "xno"; then
     echo
     echo "   ERROR!  dnet header not found, go get it from"
     echo "   http://code.google.com/p/libdnet/ or use the --with-dnet-*"
@@ -14978,7 +15374,7 @@ fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for eth_set in -ldnet" >&5
 $as_echo_n "checking for eth_set in -ldnet... " >&6; }
-if test "${ac_cv_lib_dnet_eth_set+set}" = set; then :
+if ${ac_cv_lib_dnet_eth_set+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
@@ -15012,44 +15408,71 @@ LIBS=$ac_check_lib_save_LIBS
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_dnet_eth_set" >&5
 $as_echo "$ac_cv_lib_dnet_eth_set" >&6; }
-if test "x$ac_cv_lib_dnet_eth_set" = x""yes; then :
-  DNET="yes"
+if test "x$ac_cv_lib_dnet_eth_set" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBDNET 1
+_ACEOF
+
+  LIBS="-ldnet $LIBS"
+
 else
   DNET="no"
 fi
 
-if test "x$DNET" = "xno"; then
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for eth_set in -ldumbnet" >&5
+$as_echo_n "checking for eth_set in -ldumbnet... " >&6; }
+if ${ac_cv_lib_dumbnet_eth_set+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-ldumbnet  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char eth_set ();
+int
+main ()
+{
+return eth_set ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_dumbnet_eth_set=yes
+else
+  ac_cv_lib_dumbnet_eth_set=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_dumbnet_eth_set" >&5
+$as_echo "$ac_cv_lib_dumbnet_eth_set" >&6; }
+if test "x$ac_cv_lib_dumbnet_eth_set" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBDUMBNET 1
+_ACEOF
+
+  LIBS="-ldumbnet $LIBS"
+
+else
+  DUMBNET="no"
+fi
+
+
+if test "x$DNET" = "xno" -a "x$DUMBNET" = "xno"; then
     echo
     echo "   ERROR!  dnet library not found, go get it from"
     echo "   http://code.google.com/p/libdnet/ or use the --with-dnet-*"
     echo "   options, if you have it installed in an unusual place"
     exit
-fi
-
-
-# Check whether --with-daq_includes was given.
-if test "${with_daq_includes+set}" = set; then :
-  withval=$with_daq_includes; with_daq_includes="$withval"
-else
-  with_daq_includes="no"
-fi
-
-
-
-# Check whether --with-daq_libraries was given.
-if test "${with_daq_libraries+set}" = set; then :
-  withval=$with_daq_libraries; with_daq_libraries="$withval"
-else
-  with_daq_libraries="no"
-fi
-
-
-if test "x$with_daq_includes" != "xno"; then
-   CPPFLAGS="${CPPFLAGS} -I${with_daq_includes}"
-fi
-
-if test "x$with_daq_libraries" != "xno"; then
-   LDFLAGS="${LDFLAGS} -L${with_daq_libraries}"
 fi
 
 # Check whether --enable-static_daq was given.
@@ -15060,12 +15483,9 @@ else
 fi
 
 
-if test "x$enable_static_daq" = "xyes" \
-     -o "x$enable_dynamicplugin" = "xyes" ; \
-then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for dlsym in -ldl" >&5
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for dlsym in -ldl" >&5
 $as_echo_n "checking for dlsym in -ldl... " >&6; }
-if test "${ac_cv_lib_dl_dlsym+set}" = set; then :
+if ${ac_cv_lib_dl_dlsym+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
@@ -15099,19 +15519,19 @@ LIBS=$ac_check_lib_save_LIBS
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_dl_dlsym" >&5
 $as_echo "$ac_cv_lib_dl_dlsym" >&6; }
-if test "x$ac_cv_lib_dl_dlsym" = x""yes; then :
+if test "x$ac_cv_lib_dl_dlsym" = xyes; then :
   DLLIB="yes"
 else
   DLLIB="no"
 fi
 
 
-    if test "$DLLIB" != "no"; then
-        LIBS="${LIBS} -ldl"
-    else
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for dlsym in -lc" >&5
+if test "$DLLIB" != "no"; then
+    LIBS="${LIBS} -ldl"
+else
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for dlsym in -lc" >&5
 $as_echo_n "checking for dlsym in -lc... " >&6; }
-if test "${ac_cv_lib_c_dlsym+set}" = set; then :
+if ${ac_cv_lib_c_dlsym+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
@@ -15145,19 +15565,18 @@ LIBS=$ac_check_lib_save_LIBS
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_c_dlsym" >&5
 $as_echo "$ac_cv_lib_c_dlsym" >&6; }
-if test "x$ac_cv_lib_c_dlsym" = x""yes; then :
+if test "x$ac_cv_lib_c_dlsym" = xyes; then :
   DLLIB="yes"
 else
   DLLIB="no"
 fi
 
-        if test "$DLLIB" = "no"; then
-           echo
-           echo "   ERROR!  programmatic interface to dynamic link loader"
-           echo "   not found.  Cannot build Snort."
-           echo
-           exit 1
-        fi
+    if test "$DLLIB" = "no"; then
+       echo
+       echo "   ERROR!  programmatic interface to dynamic link loader"
+       echo "   not found.  Cannot build Snort."
+       echo
+       exit 1
     fi
 fi
 
@@ -15166,7 +15585,7 @@ if test "x$enable_static_daq" = "xyes"; then
     LIBS="${LIBS} `daq-modules-config --static --libs`"
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for daq_load_modules in -ldaq_static" >&5
 $as_echo_n "checking for daq_load_modules in -ldaq_static... " >&6; }
-if test "${ac_cv_lib_daq_static_daq_load_modules+set}" = set; then :
+if ${ac_cv_lib_daq_static_daq_load_modules+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
@@ -15200,7 +15619,7 @@ LIBS=$ac_check_lib_save_LIBS
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_daq_static_daq_load_modules" >&5
 $as_echo "$ac_cv_lib_daq_static_daq_load_modules" >&6; }
-if test "x$ac_cv_lib_daq_static_daq_load_modules" = x""yes; then :
+if test "x$ac_cv_lib_daq_static_daq_load_modules" = xyes; then :
   LIBS="-ldaq_static ${LIBS}"
 else
   LDAQ="no"
@@ -15218,7 +15637,7 @@ else
     LDAQ=""
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for daq_load_modules in -ldaq" >&5
 $as_echo_n "checking for daq_load_modules in -ldaq... " >&6; }
-if test "${ac_cv_lib_daq_daq_load_modules+set}" = set; then :
+if ${ac_cv_lib_daq_daq_load_modules+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
@@ -15252,7 +15671,7 @@ LIBS=$ac_check_lib_save_LIBS
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_daq_daq_load_modules" >&5
 $as_echo "$ac_cv_lib_daq_daq_load_modules" >&6; }
-if test "x$ac_cv_lib_daq_daq_load_modules" = x""yes; then :
+if test "x$ac_cv_lib_daq_daq_load_modules" = xyes; then :
   LIBS="${LIBS} -ldaq"
 else
   LDAQ="no"
@@ -15266,6 +15685,162 @@ fi
         #AC_MSG_ERROR("Fatal!")
         exit 1
     fi
+fi
+
+for ac_func in daq_hup_apply daq_acquire_with_meta daq_dp_add_dc
+do :
+  as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
+ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
+if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
+  cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
+_ACEOF
+
+fi
+done
+
+
+if test "x$ac_cv_func_daq_dp_add_dc" = "xyes"; then
+
+    ac_fn_c_check_member "$LINENO" "struct _DAQ_DP_key_t" "sa.src_ip4" "ac_cv_member_struct__DAQ_DP_key_t_sa_src_ip4" "#include <daq_common.h>
+"
+if test "x$ac_cv_member_struct__DAQ_DP_key_t_sa_src_ip4" = xyes; then :
+
+else
+  DAQ_C99_STRUCT="no"
+fi
+
+
+    if test "x$DAQ_C99_STRUCT" = "xno" ; then
+        echo
+        echo "   ERROR!  daq library missing C99 patch, upgrade to >=2.0.4, go get it from"
+        echo "   http://www.snort.org/."
+        exit 1
+    fi
+
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for daq address space ID" >&5
+$as_echo_n "checking for daq address space ID... " >&6; }
+if test "$cross_compiling" = yes; then :
+  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "cannot run test program while cross compiling
+See \`config.log' for more details" "$LINENO" 5; }
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <daq.h>
+
+int
+main ()
+{
+
+   DAQ_PktHdr_t hdr;
+   hdr.address_space_id = 0;
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_run "$LINENO"; then :
+  have_daq_address_space_id="yes"
+else
+  have_daq_address_space_id="no"
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_daq_address_space_id" >&5
+$as_echo "$have_daq_address_space_id" >&6; }
+if test "x$have_daq_address_space_id" = "xyes"; then
+
+$as_echo "#define HAVE_DAQ_ADDRESS_SPACE_ID 1" >>confdefs.h
+
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for daq flow ID" >&5
+$as_echo_n "checking for daq flow ID... " >&6; }
+if test "$cross_compiling" = yes; then :
+  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "cannot run test program while cross compiling
+See \`config.log' for more details" "$LINENO" 5; }
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <daq.h>
+
+int
+main ()
+{
+
+   DAQ_PktHdr_t hdr;
+   hdr.flow_id = 0;
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_run "$LINENO"; then :
+  have_daq_flow_id="yes"
+else
+  have_daq_flow_id="no"
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_daq_flow_id" >&5
+$as_echo "$have_daq_flow_id" >&6; }
+if test "x$have_daq_flow_id" = "xyes"; then
+
+$as_echo "#define HAVE_DAQ_FLOW_ID 1" >>confdefs.h
+
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for DAQ_VERDICT_RETRY" >&5
+$as_echo_n "checking for DAQ_VERDICT_RETRY... " >&6; }
+if test "$cross_compiling" = yes; then :
+  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "cannot run test program while cross compiling
+See \`config.log' for more details" "$LINENO" 5; }
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <daq.h>
+
+int
+main ()
+{
+
+   DAQ_Verdict verdict;
+   verdict = DAQ_VERDICT_RETRY;
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_run "$LINENO"; then :
+  have_daq_verdict_retry="yes"
+else
+  have_daq_verdict_retry="no"
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_daq_verdict_retry" >&5
+$as_echo "$have_daq_verdict_retry" >&6; }
+if test "x$have_daq_verdict_retry" = "xyes"; then
+
+$as_echo "#define HAVE_DAQ_VERDICT_RETRY 1" >>confdefs.h
+
 fi
 
 # any sparc platform has to have this one defined.
@@ -15339,7 +15914,7 @@ fi
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for visibility support" >&5
 $as_echo_n "checking for visibility support... " >&6; }
-    if test "${gl_cv_cc_visibility+set}" = set; then :
+    if ${gl_cv_cc_visibility+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
@@ -15373,13 +15948,12 @@ fi
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: $gl_cv_cc_visibility" >&5
 $as_echo "$gl_cv_cc_visibility" >&6; }
+    CFLAGS="$gl_save_CFLAGS"
     if test "x$gl_cv_cc_visibility" = "xyes"; then
-        CFLAGS="$gl_save_CFLAGS -fvisibility=hidden"
+        CCONFIGFLAGS="${CCONFIGFLAGS} -DSF_VISIBILITY -fvisibility=hidden"
 
 $as_echo "#define HAVE_VISIBILITY 1" >>confdefs.h
 
-    else
-        CFLAGS="$gl_save_CFLAGS"
     fi
 
 
@@ -15398,14 +15972,6 @@ else
   BUILD_DYNAMIC_EXAMPLES_FALSE=
 fi
 
-if test "x$build_dynamic_examples" = "xyes"; then
-    if test "x$enable_dynamicplugin" = "xno"; then
-       echo "   ERROR!  attempting to build dynamic examples without"
-       echo "   enabling dynamic plugins."
-       echo
-       exit 1
-    fi
-fi
 
 # Check whether --enable-dlclose was given.
 if test "${enable_dlclose+set}" = set; then :
@@ -15420,46 +15986,11 @@ $as_echo "#define DISABLE_DLCLOSE_FOR_VALGRIND_TESTING 1" >>confdefs.h
 
 fi
 
-# Check whether --enable-ipv6 was given.
-if test "${enable_ipv6+set}" = set; then :
-  enableval=$enable_ipv6; enable_ipv6="$enableval"
-else
-  enable_ipv6="no"
-fi
-
-if test "x$enable_ipv6" = "xyes"; then
-    CPPFLAGS="$CPPFLAGS -DSUP_IP6"
-fi
- if test "x$enable_ipv6" = "xyes"; then
-  HAVE_SUP_IP6_TRUE=
-  HAVE_SUP_IP6_FALSE='#'
-else
-  HAVE_SUP_IP6_TRUE='#'
-  HAVE_SUP_IP6_FALSE=
-fi
-
-
-# Check whether --enable-zlib was given.
-if test "${enable_zlib+set}" = set; then :
-  enableval=$enable_zlib; enable_zlib="$enableval"
-else
-  enable_zlib="no"
-fi
-
- if test "x$enable_zlib" = "xyes"; then
-  HAVE_ZLIB_TRUE=
-  HAVE_ZLIB_FALSE='#'
-else
-  HAVE_ZLIB_TRUE='#'
-  HAVE_ZLIB_FALSE=
-fi
-
-if test "x$enable_zlib" = "xyes"; then
-    Z_LIB=""
-    for ac_header in zlib.h
+Z_LIB=""
+for ac_header in zlib.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "zlib.h" "ac_cv_header_zlib_h" "$ac_includes_default"
-if test "x$ac_cv_header_zlib_h" = x""yes; then :
+if test "x$ac_cv_header_zlib_h" = xyes; then :
   cat >>confdefs.h <<_ACEOF
 #define HAVE_ZLIB_H 1
 _ACEOF
@@ -15470,17 +16001,17 @@ fi
 
 done
 
-    if test "x$ZLIB" = "xno"; then
-        echo
-        echo "   ERROR!  zlib header not found, go get it from"
-        echo "   http://www.zlib.net"
-        exit
-    fi
+if test "x$Z_LIB" = "xno"; then
+    echo
+    echo "   ERROR!  zlib header not found, go get it from"
+    echo "   http://www.zlib.net"
+    exit
+fi
 
-    Z_LIB=""
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for inflate in -lz" >&5
+Z_LIB=""
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for inflate in -lz" >&5
 $as_echo_n "checking for inflate in -lz... " >&6; }
-if test "${ac_cv_lib_z_inflate+set}" = set; then :
+if ${ac_cv_lib_z_inflate+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
@@ -15514,7 +16045,7 @@ LIBS=$ac_check_lib_save_LIBS
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_z_inflate" >&5
 $as_echo "$ac_cv_lib_z_inflate" >&6; }
-if test "x$ac_cv_lib_z_inflate" = x""yes; then :
+if test "x$ac_cv_lib_z_inflate" = xyes; then :
   cat >>confdefs.h <<_ACEOF
 #define HAVE_LIBZ 1
 _ACEOF
@@ -15525,21 +16056,131 @@ else
   Z_LIB="no"
 fi
 
-    if test "x$ZLIB" = "xno"; then
-        echo
-        echo "   ERROR!  zlib library not found, go get it from"
-        echo "   http://www.zlib.net"
-        exit
+if test "x$Z_LIB" = "xno"; then
+    echo
+    echo "   ERROR!  zlib library not found, go get it from"
+    echo "   http://www.zlib.net"
+     exit
+ fi
+LIBS="$LIBS -lz"
+
+# Check whether --enable-lzma was given.
+if test "${enable_lzma+set}" = set; then :
+  enableval=$enable_lzma; enable_lzma="$enableval"
+else
+  enable_lzma="yes"
+fi
+
+
+
+# Check whether --with-lzma_includes was given.
+if test "${with_lzma_includes+set}" = set; then :
+  withval=$with_lzma_includes; with_lzma_includes="$withval"
+else
+  with_lzma_includes="no"
+fi
+
+
+
+# Check whether --with-lzma_libraries was given.
+if test "${with_lzma_libraries+set}" = set; then :
+  withval=$with_lzma_libraries; with_lzma_libraries="$withval"
+else
+  with_lzma_libraries="no"
+fi
+
+
+ if test "x$enable_lzma" = "xyes"; then
+  HAVE_LZMA_TRUE=
+  HAVE_LZMA_FALSE='#'
+else
+  HAVE_LZMA_TRUE='#'
+  HAVE_LZMA_FALSE=
+fi
+
+if test "x$enable_lzma" = "xyes"; then
+
+    if test "x$with_lzma_includes" != "xno"; then
+        CPPFLAGS="${CPPFLAGS} -I${with_lzma_includes}"
+        LZMA_HEADERS="yes"
+    else
+        for ac_header in lzma.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "lzma.h" "ac_cv_header_lzma_h" "$ac_includes_default"
+if test "x$ac_cv_header_lzma_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LZMA_H 1
+_ACEOF
+ LZMA_HEADERS="yes"
+else
+  LZMA_HEADERS="no"
+fi
+
+done
+
     fi
-    CPPFLAGS="$CPPFLAGS -DZLIB"
-    LIBS="$LIBS -lz"
+
+    if test "x$with_lzma_libraries" != "xno"; then
+        LDFLAGS="${LDFLAGS} -L${with_lzma_libraries}"
+        LZMA_LIB="yes"
+    else
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for lzma_stream_decoder in -llzma" >&5
+$as_echo_n "checking for lzma_stream_decoder in -llzma... " >&6; }
+if ${ac_cv_lib_lzma_lzma_stream_decoder+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-llzma  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char lzma_stream_decoder ();
+int
+main ()
+{
+return lzma_stream_decoder ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_lzma_lzma_stream_decoder=yes
+else
+  ac_cv_lib_lzma_lzma_stream_decoder=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_lzma_lzma_stream_decoder" >&5
+$as_echo "$ac_cv_lib_lzma_lzma_stream_decoder" >&6; }
+if test "x$ac_cv_lib_lzma_lzma_stream_decoder" = xyes; then :
+  LZMA_LIB="yes"
+else
+  LZMA_LIB="no"
+fi
+
+    fi
+
+    if test "x$LZMA_LIB" != "xno"; then
+        if test "x$LZMA_HEADERS" != "xno"; then
+            CPPFLAGS="$CPPFLAGS -DLZMA"
+            LIBS="$LIBS -llzma"
+        fi
+    fi
 fi
 
 # Check whether --enable-gre was given.
 if test "${enable_gre+set}" = set; then :
   enableval=$enable_gre; enable_gre="$enableval"
 else
-  enable_gre="no"
+  enable_gre="yes"
 fi
 
 if test "x$enable_gre" = "xyes"; then
@@ -15550,7 +16191,7 @@ fi
 if test "${enable_mpls+set}" = set; then :
   enableval=$enable_mpls; enable_mpls="$enableval"
 else
-  enable_mpls="no"
+  enable_mpls="yes"
 fi
 
 if test "x$enable_mpls" = "xyes"; then
@@ -15561,7 +16202,7 @@ fi
 if test "${enable_targetbased+set}" = set; then :
   enableval=$enable_targetbased; enable_targetbased="$enableval"
 else
-  enable_targetbased="no"
+  enable_targetbased="yes"
 fi
 
 
@@ -15574,7 +16215,7 @@ else
 fi
 
 if test "x$enable_targetbased" = "xyes"; then
-    CPPFLAGS="$CPPFLAGS -DTARGET_BASED"
+    CONFIGFLAGS="$CONFIGFLAGS -DTARGET_BASED"
     LIBS="$LIBS -lpthread"
     if test "$LEX" = "none"; then
       echo
@@ -15594,22 +16235,11 @@ if test "x$enable_targetbased" = "xyes"; then
     fi
 fi
 
-# Check whether --enable-decoder-preprocessor-rules was given.
-if test "${enable_decoder_preprocessor_rules+set}" = set; then :
-  enableval=$enable_decoder_preprocessor_rules; enable_decoder_preprocessor_rules="$enableval"
-else
-  enable_decoder_preprocessor_rules="no"
-fi
-
-if test "x$enable_decoder_preprocessor_rules" = "xyes"; then
-    CPPFLAGS="$CPPFLAGS -DPREPROCESSOR_AND_DECODER_RULE_EVENTS"
-fi
-
 # Check whether --enable-ppm was given.
 if test "${enable_ppm+set}" = set; then :
   enableval=$enable_ppm; enable_ppm="$enableval"
 else
-  enable_ppm="no"
+  enable_ppm="yes"
 fi
 
 if test "x$enable_ppm" = "xyes"; then
@@ -15620,11 +16250,11 @@ fi
 if test "${enable_perfprofiling+set}" = set; then :
   enableval=$enable_perfprofiling; enable_perfprofiling="$enableval"
 else
-  enable_perfprofiling="no"
+  enable_perfprofiling="yes"
 fi
 
 if test "x$enable_perfprofiling" = "xyes"; then
-    CPPFLAGS="$CPPFLAGS -DPERF_PROFILING"
+    CONFIGFLAGS="$CONFIGFLAGS -DPERF_PROFILING"
 fi
 
 # Check whether --enable-linux-smp-stats was given.
@@ -15658,269 +16288,11 @@ if test "x$enable_inline_init_failopen" = "xyes"; then
     LIBS="$LIBS -lpthread"
 fi
 
-# Check whether --enable-prelude was given.
-if test "${enable_prelude+set}" = set; then :
-  enableval=$enable_prelude; enable_prelude="$enableval"
-else
-  enable_prelude="no"
-fi
-
-
- if test "x$enable_prelude" = "xyes"; then
-  BUILD_PRELUDE_TRUE=
-  BUILD_PRELUDE_FALSE='#'
-else
-  BUILD_PRELUDE_TRUE='#'
-  BUILD_PRELUDE_FALSE=
-fi
-
-if test "x$enable_prelude" = "xyes"; then
-
-# Check whether --with-libprelude-prefix was given.
-if test "${with_libprelude_prefix+set}" = set; then :
-  withval=$with_libprelude_prefix; libprelude_config_prefix="$withval"
-else
-  libprelude_config_prefix=""
-fi
-
-
-  if test x$libprelude_config_prefix != x ; then
-     if test x${LIBPRELUDE_CONFIG+set} != xset ; then
-        LIBPRELUDE_CONFIG=$libprelude_config_prefix/bin/libprelude-config
-     fi
-  fi
-
-  # Extract the first word of "libprelude-config", so it can be a program name with args.
-set dummy libprelude-config; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_LIBPRELUDE_CONFIG+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $LIBPRELUDE_CONFIG in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_LIBPRELUDE_CONFIG="$LIBPRELUDE_CONFIG" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_LIBPRELUDE_CONFIG="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  test -z "$ac_cv_path_LIBPRELUDE_CONFIG" && ac_cv_path_LIBPRELUDE_CONFIG="no"
-  ;;
-esac
-fi
-LIBPRELUDE_CONFIG=$ac_cv_path_LIBPRELUDE_CONFIG
-if test -n "$LIBPRELUDE_CONFIG"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LIBPRELUDE_CONFIG" >&5
-$as_echo "$LIBPRELUDE_CONFIG" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  min_libprelude_version=0.9.6
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libprelude - version >= $min_libprelude_version" >&5
-$as_echo_n "checking for libprelude - version >= $min_libprelude_version... " >&6; }
-  no_libprelude=""
-  if test "$LIBPRELUDE_CONFIG" = "no" ; then
-    no_libprelude=yes
-  else
-    LIBPRELUDE_CFLAGS=`$LIBPRELUDE_CONFIG $libprelude_config_args --cflags`
-    LIBPRELUDE_PTHREAD_CFLAGS=`$LIBPRELUDE_CONFIG $libprelude_config_args --pthread-cflags`
-    LIBPRELUDE_LDFLAGS=`$LIBPRELUDE_CONFIG $libprelude_config_args --ldflags`
-    LIBPRELUDE_LIBS=`$LIBPRELUDE_CONFIG $libprelude_config_args --libs`
-    LIBPRELUDE_PREFIX=`$LIBPRELUDE_CONFIG $libprelude_config_args --prefix`
-    LIBPRELUDE_CONFIG_PREFIX=`$LIBPRELUDE_CONFIG $libprelude_config_args --config-prefix`
-    libprelude_config_version=`$LIBPRELUDE_CONFIG $libprelude_config_args --version`
-
-
-      ac_save_CFLAGS="$CFLAGS"
-      ac_save_LDFLAGS="$LDFLAGS"
-      ac_save_LIBS="$LIBS"
-      CFLAGS="$CFLAGS $LIBPRELUDE_CFLAGS"
-      LDFLAGS="$LDFLAGS $LIBPRELUDE_LDFLAGS"
-      LIBS="$LIBS $LIBPRELUDE_LIBS"
-      rm -f conf.libpreludetest
-      if test "$cross_compiling" = yes; then :
-  echo $ac_n "cross compiling; assumed OK... $ac_c"
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <libprelude/prelude.h>
-
-int
-main ()
-{
-    system ("touch conf.libpreludetest");
-
-    if( strcmp( prelude_check_version(NULL), "$libprelude_config_version" ) )
-    {
-      printf("\n*** 'libprelude-config --version' returned %s, but LIBPRELUDE (%s)\n",
-             "$libprelude_config_version", prelude_check_version(NULL) );
-      printf("*** was found! If libprelude-config was correct, then it is best\n");
-      printf("*** to remove the old version of LIBPRELUDE. You may also be able to fix the error\n");
-      printf("*** by modifying your LD_LIBRARY_PATH enviroment variable, or by editing\n");
-      printf("*** /etc/ld.so.conf. Make sure you have run ldconfig if that is\n");
-      printf("*** required on your system.\n");
-      printf("*** If libprelude-config was wrong, set the environment variable LIBPRELUDE_CONFIG\n");
-      printf("*** to point to the correct copy of libprelude-config, and remove the file config.cache\n");
-      printf("*** before re-running configure\n");
-    }
-    else if ( strcmp(prelude_check_version(NULL), LIBPRELUDE_VERSION ) )
-    {
-      printf("\n*** LIBPRELUDE header file (version %s) does not match\n", LIBPRELUDE_VERSION);
-      printf("*** library (version %s)\n", prelude_check_version(NULL) );
-    }
-    else
-    {
-      if ( prelude_check_version( "$min_libprelude_version" ) )
-      {
-        return 0;
-      }
-     else
-      {
-        printf("no\n*** An old version of LIBPRELUDE (%s) was found.\n",
-                prelude_check_version(NULL) );
-        printf("*** You need a version of LIBPRELUDE newer than %s. The latest version of\n",
-               "$min_libprelude_version" );
-        printf("*** LIBPRELUDE is always available from http://www.prelude-ids.org/download/releases.\n");
-        printf("*** \n");
-        printf("*** If you have already installed a sufficiently new version, this error\n");
-        printf("*** probably means that the wrong copy of the libprelude-config shell script is\n");
-        printf("*** being found. The easiest way to fix this is to remove the old version\n");
-        printf("*** of LIBPRELUDE, but you can also set the LIBPRELUDE_CONFIG environment to point to the\n");
-        printf("*** correct copy of libprelude-config. (In this case, you will have to\n");
-        printf("*** modify your LD_LIBRARY_PATH enviroment variable, or edit /etc/ld.so.conf\n");
-        printf("*** so that the correct libraries are found at run-time))\n");
-      }
-    }
-  return 1;
-}
-
-_ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
-
-else
-  no_libprelude=yes
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
-       CFLAGS="$ac_save_CFLAGS"
-       LIBS="$ac_save_LIBS"
-       LDFLAGS="$ac_save_LDFLAGS"
-  fi
-
-  if test "x$no_libprelude" = x ; then
-     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-     use_prelude="yes"
-  else
-     if test -f conf.libpreludetest ; then
-        :
-     else
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-     fi
-     if test "$LIBPRELUDE_CONFIG" = "no" ; then
-       echo "*** The libprelude-config script installed by LIBPRELUDE could not be found"
-       echo "*** If LIBPRELUDE was installed in PREFIX, make sure PREFIX/bin is in"
-       echo "*** your path, or set the LIBPRELUDE_CONFIG environment variable to the"
-       echo "*** full path to libprelude-config."
-     else
-       if test -f conf.libpreludetest ; then
-        :
-       else
-          echo "*** Could not run libprelude test program, checking why..."
-          CFLAGS="$CFLAGS $LIBPRELUDE_CFLAGS"
-	  LDFLAGS="$LDFLAGS $LIBPRELUDE_LDFLAGS"
-          LIBS="$LIBS $LIBPRELUDE_LIBS"
-          cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <libprelude/prelude.h>
-
-int
-main ()
-{
- return !!prelude_check_version(NULL);
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-   echo "*** The test program compiled, but did not run. This usually means"
-          echo "*** that the run-time linker is not finding LIBPRELUDE or finding the wrong"
-          echo "*** version of LIBPRELUDE. If it is not finding LIBPRELUDE, you'll need to set your"
-          echo "*** LD_LIBRARY_PATH environment variable, or edit /etc/ld.so.conf to point"
-          echo "*** to the installed location  Also, make sure you have run ldconfig if that"
-          echo "*** is required on your system"
-          echo "***"
-          echo "*** If you have an old version installed, it is best to remove it, although"
-          echo "*** you may also be able to get things to work by modifying LD_LIBRARY_PATH"
-          echo "***"
-else
-   echo "*** The test program failed to compile or link. See the file config.log for the"
-          echo "*** exact error that occured. This usually means LIBPRELUDE was incorrectly installed"
-          echo "*** or that you have moved LIBPRELUDE since it was installed. In the latter case, you"
-          echo "*** may want to edit the libprelude-config script: $LIBPRELUDE_CONFIG"
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-          CFLAGS="$ac_save_CFLAGS"
-	  LDFLAGS="$ac_save_LDFLAGS"
-          LIBS="$ac_save_LIBS"
-       fi
-     fi
-     LIBPRELUDE_CFLAGS=""
-     LIBPRELUDE_LDFLAGS=""
-     LIBPRELUDE_LIBS=""
-     use_prelude="no"
-  fi
-  rm -f conf.libpreludetest
-
-
-
-
-
-
-
-    if test "$use_prelude" = "yes"; then
-        LDFLAGS="${LDFLAGS} ${LIBPRELUDE_LDFLAGS}"
-        LIBS="$LIBS ${LIBPRELUDE_LIBS}"
-        CFLAGS="$CFLAGS ${LIBPRELUDE_PTHREAD_CFLAGS}"
-
-$as_echo "#define HAVE_LIBPRELUDE 1" >>confdefs.h
-
-    fi
-fi
-
 # Check whether --enable-pthread was given.
 if test "${enable_pthread+set}" = set; then :
   enableval=$enable_pthread; enable_pthread="$enableval"
 else
-  enable_pthread="no"
+  enable_pthread="yes"
 fi
 
 
@@ -15936,7 +16308,7 @@ else
 fi
 
 if test "x$enable_debug_msgs" = "xyes"; then
-    CPPFLAGS="$CPPFLAGS -DDEBUG"
+    CPPFLAGS="$CPPFLAGS -DDEBUG_MSGS"
 fi
 
 # Check whether --enable-debug was given.
@@ -15954,6 +16326,23 @@ if test "x$enable_debug" = "xyes"; then
     if echo $CFLAGS | grep -qve -g ; then
         CFLAGS="$CFLAGS -g"
     fi
+
+    CPPFLAGS="$CPPFLAGS -DDEBUG"
+else
+    # disable assert()ions
+    CPPFLAGS="$CPPFLAGS -DNDEBUG"
+fi
+
+# Check whether --enable-gdb was given.
+if test "${enable_gdb+set}" = set; then :
+  enableval=$enable_gdb; enable_gdb="$enableval"
+else
+  enable_gdb="no"
+fi
+
+
+if test "x$enable_gdb" = "xyes"; then
+    CFLAGS="$CFLAGS -g -ggdb"
 fi
 
 # Check whether --enable-profile was given.
@@ -15994,7 +16383,8 @@ fi
 
 
 if test "x$enable_sourcefire" = "xyes"; then
-    CPPFLAGS="$CPPFLAGS -DSOURCEFIRE -DPERF_PROFILING -DPREPROCESSOR_AND_DECODER_RULE_EVENTS -DPPM_MGR"
+    CPPFLAGS="$CPPFLAGS -DSOURCEFIRE -DPPM_MGR"
+    CONFIGFLAGS="$CONFIGFLAGS -DPERF_PROFILING"
 fi
 
 # Check whether --enable-corefiles was given.
@@ -16009,11 +16399,12 @@ if test "x$enable_corefiles" = "xno"; then
     CPPFLAGS="$CPPFLAGS -DNOCOREFILE"
 fi
 
+
 # Check whether --enable-active-response was given.
 if test "${enable_active_response+set}" = set; then :
   enableval=$enable_active_response; enable_active_response="$enableval"
 else
-  enable_active_response="no"
+  enable_active_response="yes"
 fi
 
 
@@ -16021,7 +16412,7 @@ fi
 if test "${enable_normalizer+set}" = set; then :
   enableval=$enable_normalizer; enable_normalizer="$enableval"
 else
-  enable_normalizer="no"
+  enable_normalizer="yes"
 fi
 
 
@@ -16029,7 +16420,7 @@ fi
 if test "${enable_reload+set}" = set; then :
   enableval=$enable_reload; enable_reload="$enableval"
 else
-  enable_reload="no"
+  enable_reload="yes"
 fi
 
 
@@ -16043,734 +16434,52 @@ fi
 
 if test "x$enable_reload" = "xyes"; then
     if test "x$enable_reload_error_restart" = "xyes"; then
-        CPPFLAGS="$CPPFLAGS -DSNORT_RELOAD"
+        CONFIGFLAGS="$CONFIGFLAGS -DSNORT_RELOAD"
     else
-        CPPFLAGS="$CPPFLAGS -DSNORT_RELOAD -DRELOAD_ERROR_FATAL"
+        CONFIGFLAGS="$CONFIGFLAGS -DSNORT_RELOAD -DRELOAD_ERROR_FATAL"
     fi
 
     LIBS="$LIBS -lpthread"
 fi
 
-
-# Check whether --with-mysql was given.
-if test "${with_mysql+set}" = set; then :
-  withval=$with_mysql;  with_mysql="$withval"
+# Check whether --enable-ha was given.
+if test "${enable_ha+set}" = set; then :
+  enableval=$enable_ha; enable_ha="$enableval"
 else
-   with_mysql="no"
+  enable_ha="no"
 fi
 
 
-
-# Check whether --with-mysql_includes was given.
-if test "${with_mysql_includes+set}" = set; then :
-  withval=$with_mysql_includes; with_mysql_includes="$withval"; with_mysql="yes"
+ if test "x$enable_ha" = "xyes"; then
+  BUILD_HA_TRUE=
+  BUILD_HA_FALSE='#'
 else
-  with_mysql_includes="no"
+  BUILD_HA_TRUE='#'
+  BUILD_HA_FALSE=
 fi
 
+if test "x$enable_ha" = "xyes"; then
+    CONFIGFLAGS="$CONFIGFLAGS -DENABLE_HA"
+fi
 
-
-# Check whether --with-mysql_libraries was given.
-if test "${with_mysql_libraries+set}" = set; then :
-  withval=$with_mysql_libraries; with_mysql_libraries="$withval"; with_mysql="yes"
+# define NO_NON_ETHER_DECODERS by default
+# Check whether --enable-non-ether-decoders was given.
+if test "${enable_non_ether_decoders+set}" = set; then :
+  enableval=$enable_non_ether_decoders; enable_non_ether_decoders="$enableval"
 else
-  with_mysql_libraries="no"
+  enable_non_ether_decoders="no"
 fi
 
 
-default_directory="/usr /usr/local"
-if test "x$with_mysql" != "xno"; then
-  if test "x$with_mysql" = "xyes"; then
-    if test "x$with_mysql_includes" != "xno"; then
-        mysql_inc_directory="$with_mysql_includes";
-    else
-        mysql_inc_directory="$default_directory";
-    fi
-    if test "x$with_mysql_libraries" != "xno"; then
-        mysql_lib_directory="$with_mysql_libraries";
-    else
-        mysql_lib_directory="$default_directory";
-    fi
-    mysql_fail="yes"
-  elif test -d "$withval"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Providing a directory for the --with-mysql option" >&5
-$as_echo "$as_me: WARNING: Providing a directory for the --with-mysql option" >&2;}
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: will be deprecated in the future in favour of" >&5
-$as_echo "$as_me: WARNING: will be deprecated in the future in favour of" >&2;}
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: --with-mysql-libraries and --with-mysql-includes" >&5
-$as_echo "$as_me: WARNING: --with-mysql-libraries and --with-mysql-includes" >&2;}
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: options to address issues with non-standard" >&5
-$as_echo "$as_me: WARNING: options to address issues with non-standard" >&2;}
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: installations and 64bit platforms." >&5
-$as_echo "$as_me: WARNING: installations and 64bit platforms." >&2;}
-    mysql_inc_directory="$withval"
-    mysql_lib_directory="$withval"
-    mysql_fail="yes"
-  elif test "x$with_mysql" = "x"; then
-    mysql_inc_directory="$default_directory"
-    mysql_lib_directory="$default_directory"
-    mysql_fail="yes"
-  fi
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for mysql" >&5
-$as_echo_n "checking for mysql... " >&6; }
-
-  for i in $mysql_inc_directory; do
-      if test -r "$i/mysql.h"; then
-        MYSQL_INC_DIR="$i"
-      elif test -r "$i/include/mysql.h"; then
-        MYSQL_INC_DIR="$i/include"
-      elif test -r "$i/include/mysql/mysql.h"; then
-        MYSQL_INC_DIR="$i/include/mysql"
-      elif test -r "$i/mysql/mysql.h"; then
-        MYSQL_INC_DIR="$i/mysql"
-      elif test -r "$i/mysql/include/mysql.h"; then
-        MYSQL_INC_DIR="$i/mysql/include"
-      fi
-  done
-
-  for i in $mysql_lib_directory; do
-      if test -z "$MYSQL_LIB_DIR"; then
-        str="$i/libmysqlclient.*"
-        for j in `echo $str`; do
-          if test -r $j; then
-            MYSQL_LIB_DIR=$i
-            break 2
-          fi
-        done
-      fi
-      if test -z "$MYSQL_LIB_DIR"; then
-        str="$i/lib/libmysqlclient.*"
-        for j in `echo $str`; do
-          if test -r "$j"; then
-            MYSQL_LIB_DIR="$i/lib"
-            break 2
-          fi
-        done
-      fi
-      if test -z "$MYSQL_LIB_DIR"; then
-        str="$i/mysql/libmysqlclient.*"
-        for j in `echo $str`; do
-          if test -r "$j"; then
-            MYSQL_LIB_DIR="$i/mysql"
-            break 2
-          fi
-        done
-      fi
-      if test -z "$MYSQL_LIB_DIR"; then
-        str="$i/mysql/lib/libmysqlclient.*"
-        for j in `echo $str`; do
-          if test -r "$j"; then
-            MYSQL_LIB_DIR="$i/mysql/lib"
-            break 2
-          fi
-        done
-      fi
-      if test -z "$MYSQL_LIB_DIR"; then
-        str="$i/lib/mysql/libmysqlclient.*"
-        for j in `echo $str`; do
-          if test -r "$j"; then
-            MYSQL_LIB_DIR="$i/lib/mysql"
-            break 2
-          fi
-        done
-      fi
-  done
-
-  if test -z "$MYSQL_INC_DIR"; then
-    if test "x$mysql_fail" != "xno"; then
-      tmp=""
-      for i in $mysql_inc_directory; do
-        tmp="$tmp $i $i/include $i/include/mysql $i/mysql $i/mysql/include"
-      done
-
-   echo
-   echo
-   echo "**********************************************"
-   echo "  ERROR: unable to find" "mysql headers (mysql.h)"
-   echo "  checked in the following places"
-   for i in `echo $tmp`; do
-     echo "        $i"
-   done
-   echo "**********************************************"
-   echo
-   exit 1
-
-    else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-    fi
-  else
-
-    if test -z "$MYSQL_LIB_DIR"; then
-      if test "x$mysql_fail" != "xno"; then
-        tmp=""
-        for i in $mysql_lib_directory; do
-          tmp="$tmp $i $i/lib $i/mysql $i/mysql/lib $i/lib/mysql"
-        done
-
-   echo
-   echo
-   echo "**********************************************"
-   echo "  ERROR: unable to find" "mysqlclient library (libmysqlclient.*)"
-   echo "  checked in the following places"
-   for i in `echo $tmp`; do
-     echo "        $i"
-   done
-   echo "**********************************************"
-   echo
-   exit 1
-
-      else
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-      fi
-    else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-      LDFLAGS="${LDFLAGS} -L${MYSQL_LIB_DIR}"
-      CPPFLAGS="${CPPFLAGS} -I${MYSQL_INC_DIR} -DENABLE_MYSQL"
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for compress in -lz" >&5
-$as_echo_n "checking for compress in -lz... " >&6; }
-if test "${ac_cv_lib_z_compress+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lz  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char compress ();
-int
-main ()
-{
-return compress ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_z_compress=yes
-else
-  ac_cv_lib_z_compress=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_z_compress" >&5
-$as_echo "$ac_cv_lib_z_compress" >&6; }
-if test "x$ac_cv_lib_z_compress" = x""yes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBZ 1
-_ACEOF
-
-  LIBS="-lz $LIBS"
-
-fi
-
-      LIBS="-lmysqlclient ${LIBS}"
-    fi
-  fi
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for mysql default client reconnect" >&5
-$as_echo_n "checking for mysql default client reconnect... " >&6; }
-
-  if test "$cross_compiling" = yes; then :
-  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
-$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "cannot run test program while cross compiling
-See \`config.log' for more details" "$LINENO" 5; }
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-  #include <mysql.h>
-
-int
-main ()
-{
-
-      if (mysql_get_client_version() < 50003)
-          return 1;
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
-  mysql_default_reconnect="no"
-else
-  mysql_default_reconnect="yes"
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $mysql_default_reconnect" >&5
-$as_echo "$mysql_default_reconnect" >&6; }
-
-  if test "x$mysql_default_reconnect" = "xno"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for mysql reconnect option" >&5
-$as_echo_n "checking for mysql reconnect option... " >&6; }
-
-      if test "$cross_compiling" = yes; then :
-  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
-$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error "cannot run test program while cross compiling
-See \`config.log' for more details." "$LINENO" 5; }
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-      #include <mysql.h>
-
-int
-main ()
-{
-
-          if (mysql_get_client_version() < 50013)
-              return 1;
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
-  mysql_has_reconnect="yes"
-else
-  mysql_has_reconnect="no"
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $mysql_has_reconnect" >&5
-$as_echo "$mysql_has_reconnect" >&6; }
-
-      if test "x$mysql_has_reconnect" = "xyes"; then
-
-$as_echo "#define MYSQL_HAS_OPT_RECONNECT 1" >>confdefs.h
-
-
-          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for mysql setting of reconnect option before connect bug" >&5
-$as_echo_n "checking for mysql setting of reconnect option before connect bug... " >&6; }
-
-          if test "$cross_compiling" = yes; then :
-  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
-$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "cannot run test program while cross compiling
-See \`config.log' for more details" "$LINENO" 5; }
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-          #include <mysql.h>
-
-int
-main ()
-{
-
-              if (mysql_get_client_version() < 50019)
-                  return 1;
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
-  mysql_has_reconnect_bug="no"
-else
-  mysql_has_reconnect_bug="yes"
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
-
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $mysql_has_reconnect_bug" >&5
-$as_echo "$mysql_has_reconnect_bug" >&6; }
-
-          if test "x$mysql_has_reconnect_bug" = "xyes"; then
-
-$as_echo "#define MYSQL_HAS_OPT_RECONNECT_BUG 1" >>confdefs.h
-
-          fi
-      fi
-  fi
-fi
-
-
-# Check whether --with-odbc was given.
-if test "${with_odbc+set}" = set; then :
-  withval=$with_odbc;  with_odbc="$withval"
-else
-   with_odbc="no"
-fi
-
-
-if test "x$with_odbc" != "xno"; then
-  if test "x$with_odbc" = "xyes"; then
-    odbc_directory="$default_directory"
-    odbc_fail="yes"
-  elif test -d $withval; then
-    odbc_directory="$withval $default_directory";
-    odbc_fail="yes"
-  elif test "x$with_odbc" = "x"; then
-    odbc_directory="$default_directory"
-    odbc_fail="no"
-  fi
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking \"for odbc\"" >&5
-$as_echo_n "checking \"for odbc\"... " >&6; }
-
-  for i in $odbc_directory; do
-    if test -r "$i/include/sql.h"; then
-    if test -r "$i/include/sqlext.h"; then
-    if test -r "$i/include/sqltypes.h"; then
-      ODBC_DIR="$i"
-      ODBC_INC_DIR="$i/include"
-    fi fi fi
-  done
-
-  if test -z "$ODBC_DIR"; then
-    if test "x$odbc_fail" != "xno"; then
-      tmp=""
-      for i in $odbc_directory; do
-        tmp="$tmp $i/include"
-      done
-
-   echo
-   echo
-   echo "**********************************************"
-   echo "  ERROR: unable to find" "odbc headers (sql.h sqlext.h sqltypes.h)"
-   echo "  checked in the following places"
-   for i in `echo $tmp`; do
-     echo "        $i"
-   done
-   echo "**********************************************"
-   echo
-   exit 1
-
-    else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-    fi
-  else
-
-    str="$ODBC_DIR/lib/libodbc.*"
-    for j in `echo $str`; do
-      if test -r "$j"; then
-        ODBC_LIB_DIR="$ODBC_DIR/lib"
-        ODBC_LIB="odbc"
-      fi
-    done
-
-
-    if test -z "$ODBC_LIB_DIR"; then
-      if test "x$odbc_fail" != "xno"; then
-
-   echo
-   echo
-   echo "**********************************************"
-   echo "  ERROR: unable to find" "odbc library (libodbc)"
-   echo "  checked in the following places"
-   for i in `echo "$ODBC_DIR/lib"`; do
-     echo "        $i"
-   done
-   echo "**********************************************"
-   echo
-   exit 1
-
-      else
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-      fi
-    else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-      LDFLAGS="${LDFLAGS} -L${ODBC_LIB_DIR}"
-      CPPFLAGS="${CPPFLAGS} -I${ODBC_INC_DIR} -DENABLE_ODBC"
-      LIBS="${LIBS} -l$ODBC_LIB"
-    fi
-  fi
-fi
-
-
-# Check whether --with-postgresql was given.
-if test "${with_postgresql+set}" = set; then :
-  withval=$with_postgresql;  with_postgresql="$withval"
-else
-   with_postgresql="no"
-fi
-
-
-
-# Check whether --with-pgsql_includes was given.
-if test "${with_pgsql_includes+set}" = set; then :
-  withval=$with_pgsql_includes; with_pgsql_includes="$withval"
-else
-  with_pgsql_includes="no"
-fi
-
-
-if test "x$with_postgresql" != "xno"; then
-  if test "x$with_postgresql" = "xyes"; then
-    postgresql_directory="$default_directory /usr/local/pgsql /usr/pgsql /usr/local"
-    postgresql_fail="yes"
-  elif test -d $withval; then
-    postgresql_directory="$withval $default_directory /usr/local/pgsql /usr/pgsql"
-    postgresql_fail="yes"
-  elif test "$with_postgresql" = ""; then
-    postgresql_directory="$default_directory /usr/local/pgsql /usr/pgsql"
-    postgresql_fail="no"
-  fi
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for postgresql" >&5
-$as_echo_n "checking for postgresql... " >&6; }
-
-  if test "x$with_pgsql_includes" != "xno"; then
-    for i in $with_pgsql_includes $postgresql_directory; do
-      if test -r "$i/libpq-fe.h"; then
-        POSTGRESQL_INC_DIR="$i"
-      elif test -r "$i/include/pgsql/libpq-fe.h"; then
-        POSTGRESQL_INC_DIR="$i/include/pgsql"
-      elif test -r "$i/include/libpq-fe.h"; then
-        POSTGRESQL_INC_DIR="$i/include"
-      elif test -r "$i/include/postgresql/libpq-fe.h"; then
-        POSTGRESQL_INC_DIR="$i/include/postgresql"
-      fi
-    done
-  fi
-
-  if test -z "$POSTGRESQL_INC_DIR"; then
-    for i in $postgresql_directory; do
-      if test -r "$i/include/pgsql/libpq-fe.h"; then
-        POSTGRESQL_DIR="$i"
-        POSTGRESQL_INC_DIR="$i/include/pgsql"
-      elif test -r "$i/include/libpq-fe.h"; then
-        POSTGRESQL_DIR="$i"
-        POSTGRESQL_INC_DIR="$i/include"
-      elif test -r "$i/include/postgresql/libpq-fe.h"; then
-        POSTGRESQL_DIR="$i"
-        POSTGRESQL_INC_DIR="$i/include/postgresql"
-      fi
-    done
-  fi
-
-  if test -z "$POSTGRESQL_INC_DIR"; then
-    if test "x$postgresql_fail" != "xno"; then
-      tmp=""
-      if test "x$with_pgsql_includes" != "xno"; then
-        tmp="$tmp $with_pgsql_includes"
-      fi
-      for i in $postgresql_directory; do
-        tmp="$tmp $i/include $i/include/pgsql"
-      done
-
-   echo
-   echo
-   echo "**********************************************"
-   echo "  ERROR: unable to find" "postgresql header file (libpq-fe.h)"
-   echo "  checked in the following places"
-   for i in `echo $tmp`; do
-     echo "        $i"
-   done
-   echo "**********************************************"
-   echo
-   exit 1
-
-    else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-    fi
-  fi
-
-  if test -z "$POSTGRESQL_DIR"; then
-    for dir in $postgresql_directory; do
-       for i in "lib" "lib/pgsql"; do
-         str="$dir/$i/libpq.*"
-         for j in `echo $str`; do
-           if test -r $j; then
-  	     POSTGRESQL_LIB_DIR="$dir/$i"
-             break 2
-           fi
-         done
-       done
-   done
-  else
-   POSTGRESQL_LIB_DIR="$POSTGRESQL_DIR/lib"
-  fi
-
-  if test -z "$POSTGRESQL_LIB_DIR"; then
-     if test "$postgresql_fail" != "no"; then
-
-   echo
-   echo
-   echo "**********************************************"
-   echo "  ERROR: unable to find" "postgresql library libpq"
-   echo "  checked in the following places"
-   for i in `echo "$POSTGRESQL_DIR/lib $POSTGRESQL_DIR/lib/pgsql"`; do
-     echo "        $i"
-   done
-   echo "**********************************************"
-   echo
-   exit 1
-
-     else
-       { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; };
-     fi
-  else
-     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-     LDFLAGS="${LDFLAGS} -L${POSTGRESQL_LIB_DIR}"
-     CPPFLAGS="${CPPFLAGS} -I${POSTGRESQL_INC_DIR} -DENABLE_POSTGRESQL"
-     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for PQexec in -lpq" >&5
-$as_echo_n "checking for PQexec in -lpq... " >&6; }
-if test "${ac_cv_lib_pq_PQexec+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lpq  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char PQexec ();
-int
-main ()
-{
-return PQexec ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_pq_PQexec=yes
-else
-  ac_cv_lib_pq_PQexec=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_pq_PQexec" >&5
-$as_echo "$ac_cv_lib_pq_PQexec" >&6; }
-if test "x$ac_cv_lib_pq_PQexec" = x""yes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBPQ 1
-_ACEOF
-
-  LIBS="-lpq $LIBS"
-
-else
-  PQLIB="no"
-fi
-
-     if test "x$PQLIB" != "xno"; then
-        LIBS="${LIBS} -lpq"
-     else
-        echo
-        echo "   ERROR!  libpq (postgresql) not found!"
-        echo
-        exit 1
-     fi
-  fi
-fi
-
-
-# Check whether --with-oracle was given.
-if test "${with_oracle+set}" = set; then :
-  withval=$with_oracle;  with_oracle="$withval"
-else
-   with_oracle="no"
-fi
-
-
-if test "x$with_oracle" != "xno"; then
-  if test "x$with_oracle" = "xyes"; then
-    oracle_directory="$default_directory ${ORACLE_HOME}"
-    oracle_fail="yes"
-  elif test -d $withval; then
-    oracle_directory="$withval $default_directory ${ORACLE_HOME}"
-    oracle_fail="yes"
-  elif test "x$with_oracle" = "x"; then
-    oracle_directory="$default_directory ${ORACLE_HOME}"
-    oracle_fail="no"
-  fi
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for oracle" >&5
-$as_echo_n "checking for oracle... " >&6; }
-
-  for i in $oracle_directory; do
-    if test -r "$i/rdbms/demo/oci.h"; then
-      ORACLE_DIR="$i"
-    fi
-  done
-
-  if test -z "$ORACLE_DIR"; then
-    if test "x$oracle_fail" != "xno"; then
-      tmp=""
-      for i in $oracle_directory; do
-        tmp="$tmp $i/rdbms/demo"
-      done
-
-   echo
-   echo
-   echo "**********************************************"
-   echo "  ERROR: unable to find" "OCI header file (oci.h)"
-   echo "  checked in the following places"
-   for i in `echo $tmp`; do
-     echo "        $i"
-   done
-   echo "**********************************************"
-   echo
-   exit 1
-
-    else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-    fi
-  else
-    for i in "rdbms/demo" "rdbms/public" "network/public"; do
-      ORACLE_CPP_FLAGS="$ORACLE_CPP_FLAGS -I$ORACLE_DIR/$i"
-    done
-    ORACLE_LIB_DIR="$ORACLE_DIR/lib"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-
-    LDFLAGS="${LDFLAGS} -L${ORACLE_LIB_DIR}"
-    CPPFLAGS="${CPPFLAGS} ${ORACLE_CPP_FLAGS} -DENABLE_ORACLE"
-
-    ORACLE_LIBS="-lclntsh"
-    if test -r "$ORACLE_LIB_DIR/libwtc9.so"; then
-      ORACLE_LIBS="${ORACLE_LIBS} -lwtc9"
-    elif test -r "$ORACLE_LIB_DIR/libwtc8.so"; then
-      ORACLE_LIBS="${ORACLE_LIBS} -lwtc8"
-    fi
-    LIBS="${LIBS} ${ORACLE_LIBS}"
-  fi
+if test "x$enable_non_ether_decoders" = "xno"; then
+    CONFIGFLAGS="$CONFIGFLAGS -DNO_NON_ETHER_DECODER"
 fi
 
 # Check whether --enable-react was given.
 if test "${enable_react+set}" = set; then :
   enableval=$enable_react; enable_react="$enableval"
 else
-  enable_react="no"
+  enable_react="yes"
 fi
 
 
@@ -16778,27 +16487,16 @@ fi
 if test "${enable_flexresp3+set}" = set; then :
   enableval=$enable_flexresp3; enable_flexresp3="$enableval"
 else
-  enable_flexresp3="no"
+  enable_flexresp3="yes"
 fi
 
-
-# Check whether --enable-aruba was given.
-if test "${enable_aruba+set}" = set; then :
-  enableval=$enable_aruba; enable_aruba="$enableval"
-else
-  enable_aruba="no"
-fi
-
-if test "x$enable_aruba" = "xyes"; then
-    CPPFLAGS="$CPPFLAGS -DARUBA"
-fi
 
 # test for invalid configurations here after all AC_ARG_ENABLEs
 if test "x$enable_flexresp3" = "xyes"; then
     # flexresp3 options are a union of flexresp (deleted) and flexresp2
     # options so we assume flexresp3 if multiple are enabled.
     if test "x$enable_flexresp2" = "xyes"; then
-        echo "WARNING: multiple flexresp versions enabled; using flexresp3"
+        echo "WARNING: multiple flexresp versions enabled; using flexresp3."
         enable_flexresp2="no"
     fi
 fi
@@ -16830,7 +16528,7 @@ fi
 if test "x$enable_normalizer" = "xyes" \
      -o "x$enable_sourcefire" = "xyes" ; \
 then
-    CPPFLAGS="${CPPFLAGS} -DNORMALIZER"
+    CONFIGFLAGS="${CONFIGFLAGS} -DNORMALIZER"
 fi
 
 if test "x$enable_active_response" = "xyes" \
@@ -16838,7 +16536,7 @@ if test "x$enable_active_response" = "xyes" \
      -o "x$enable_react" = "xyes" \
      -o "x$enable_sourcefire" = "xyes" ; \
 then
-    CPPFLAGS="${CPPFLAGS} -DACTIVE_RESPONSE"
+    CONFIGFLAGS="${CONFIGFLAGS} -DACTIVE_RESPONSE"
 fi
 
 # Check whether --enable-intel_soft_cpm was given.
@@ -16890,58 +16588,320 @@ if test "x$enable_intel_soft_cpm" = "xyes"; then
     CPPFLAGS="${CPPFLAGS} -DINTEL_SOFT_CPM"
 fi
 
-# Check whether --enable-rzb-saac was given.
-if test "${enable_rzb_saac+set}" = set; then :
-  enableval=$enable_rzb_saac; enable_rzb_saac="$enableval"
+# Check whether --enable-shared_rep was given.
+if test "${enable_shared_rep+set}" = set; then :
+  enableval=$enable_shared_rep; enable_shared_rep="$enableval"
 else
-  enable_rzb_saac="no"
+  enable_shared_rep="no"
 fi
 
 
+if test "x$enable_shared_rep" = "xyes"; then
+    if test "x$linux" = "xyes"; then
+        CPPFLAGS="${CPPFLAGS} -DSHARED_REP"
+        LIBS="$LIBS -lrt"
+    else
+        echo "WARNING: shared reputation is only available on linux."
+        enable_shared_rep="no"
+    fi
+fi
 
-# Check whether --with-librzb_api_includes was given.
-if test "${with_librzb_api_includes+set}" = set; then :
-  withval=$with_librzb_api_includes; with_librzb_api_includes="$withval"
+ if test "x$enable_shared_rep" = "xyes"; then
+  HAVE_SHARED_REP_TRUE=
+  HAVE_SHARED_REP_FALSE='#'
 else
-  with_librzb_api_includes="no"
+  HAVE_SHARED_REP_TRUE='#'
+  HAVE_SHARED_REP_FALSE=
 fi
 
 
+# Define PKG_CHECK_MODULES if it doesnt already exist.
+#file_ This prevents './configure' from erroring on machines that dont have
+# 'pkgconfig' installed.
+#m4_ifdef([PKG_CHECK_MODULES],[], [m4_define([PKG_CHECK_MODULES],
+#     [echo "PKG_CHECK_MODULES not defined"])])
 
-# Check whether --with-librzb_api_libraries was given.
-if test "${with_librzb_api_libraries+set}" = set; then :
-  withval=$with_librzb_api_libraries; with_librzb_api_libraries="$withval"
+# Check whether --enable-large-pcap was given.
+if test "${enable_large_pcap+set}" = set; then :
+  enableval=$enable_large_pcap; enable_large_pcap="$enableval"
 else
-  with_librzb_api_libraries="no"
+  enable_large_pcap="no"
 fi
 
 
-if test "x$with_librzb_api_includes" != "xno"; then
-   RZBCFLAGS="-I${with_librzb_api_includes}"
+if test "x$enable_large_pcap" = "xyes"; then
+    CPPFLAGS="${CPPFLAGS} -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64"
+fi
+
+###################################################
+##    [!] File Type Inspection (Experimental)    ##
+###################################################
+
+# Check whether --enable-file-inspect was given.
+if test "${enable_file_inspect+set}" = set; then :
+  enableval=$enable_file_inspect; enable_file_inspect=$enableval
 else
-   RZBCFLAGS="`pkg-config --cflags razorback`"
+  enable_file_inspect=no
 fi
 
-if test "x$with_librzb_api_libraries" != "xno"; then
-   RZBLIBS="-L${with_librzb_api_libraries} -lrazorback_api"
+
+if test x$enable_file_inspect = xyes; then :
+
+$as_echo "#define FEAT_FILE_INSPECT 1" >>confdefs.h
+
+fi
+ if test x$enable_file_inspect = xyes; then
+  FEAT_FILE_INSPECT_TRUE=
+  FEAT_FILE_INSPECT_FALSE='#'
 else
-   RZBLIBS="`pkg-config --libs razorback`"
+  FEAT_FILE_INSPECT_TRUE='#'
+  FEAT_FILE_INSPECT_FALSE=
 fi
 
-if test "x$RZBLIBS" = "x"; then
-   RZBLIBS="-lrazorback_api"
+
+export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH
+
+###### Start OpenAppId
+# Check whether --enable-open-appid was given.
+if test "${enable_open_appid+set}" = set; then :
+  enableval=$enable_open_appid; enable_open_appid=$enableval
+else
+  enable_open_appid=no
 fi
 
-if test "x$enable_rzb_saac" = "xyes"; then
-    tmp_LIBS="${LIBS}"
-    LIBS="${tmp_LIBS} ${RZBLIBS}"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for rzb_collection in -lrazorback_api" >&5
-$as_echo_n "checking for rzb_collection in -lrazorback_api... " >&6; }
-if test "${ac_cv_lib_razorback_api_rzb_collection+set}" = set; then :
+
+ if test x$enable_open_appid = xyes; then
+  FEAT_OPEN_APPID_TRUE=
+  FEAT_OPEN_APPID_FALSE='#'
+else
+  FEAT_OPEN_APPID_TRUE='#'
+  FEAT_OPEN_APPID_FALSE=
+fi
+
+
+if test "x$enable_open_appid" = "xyes"; then
+
+$as_echo "#define FEAT_OPEN_APPID 1" >>confdefs.h
+
+    CONFIGFLAGS="$CONFIGFLAGS -DFEAT_OPEN_APPID"
+
+
+
+
+
+
+
+
+if test "x$ac_cv_env_PKG_CONFIG_set" != "xset"; then
+	if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}pkg-config", so it can be a program name with args.
+set dummy ${ac_tool_prefix}pkg-config; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_PKG_CONFIG+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $PKG_CONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_PKG_CONFIG="$PKG_CONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_PKG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+PKG_CONFIG=$ac_cv_path_PKG_CONFIG
+if test -n "$PKG_CONFIG"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PKG_CONFIG" >&5
+$as_echo "$PKG_CONFIG" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+fi
+if test -z "$ac_cv_path_PKG_CONFIG"; then
+  ac_pt_PKG_CONFIG=$PKG_CONFIG
+  # Extract the first word of "pkg-config", so it can be a program name with args.
+set dummy pkg-config; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_ac_pt_PKG_CONFIG+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $ac_pt_PKG_CONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ac_pt_PKG_CONFIG="$ac_pt_PKG_CONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_ac_pt_PKG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+ac_pt_PKG_CONFIG=$ac_cv_path_ac_pt_PKG_CONFIG
+if test -n "$ac_pt_PKG_CONFIG"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_pt_PKG_CONFIG" >&5
+$as_echo "$ac_pt_PKG_CONFIG" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+  if test "x$ac_pt_PKG_CONFIG" = x; then
+    PKG_CONFIG=""
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
+$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    PKG_CONFIG=$ac_pt_PKG_CONFIG
+  fi
+else
+  PKG_CONFIG="$ac_cv_path_PKG_CONFIG"
+fi
+
+fi
+if test -n "$PKG_CONFIG"; then
+	_pkg_min_version=0.9.0
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking pkg-config is at least version $_pkg_min_version" >&5
+$as_echo_n "checking pkg-config is at least version $_pkg_min_version... " >&6; }
+	if $PKG_CONFIG --atleast-pkgconfig-version $_pkg_min_version; then
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	else
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+		PKG_CONFIG=""
+	fi
+fi
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for luajit" >&5
+$as_echo_n "checking for luajit... " >&6; }
+
+if test -n "$luajit_CFLAGS"; then
+    pkg_cv_luajit_CFLAGS="$luajit_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"luajit\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "luajit") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_luajit_CFLAGS=`$PKG_CONFIG --cflags "luajit" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$luajit_LIBS"; then
+    pkg_cv_luajit_LIBS="$luajit_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"luajit\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "luajit") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_luajit_LIBS=`$PKG_CONFIG --libs "luajit" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        luajit_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "luajit" 2>&1`
+        else
+	        luajit_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "luajit" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$luajit_PKG_ERRORS" >&5
+
+	LLUAJIT="no"
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	LLUAJIT="no"
+else
+	luajit_CFLAGS=$pkg_cv_luajit_CFLAGS
+	luajit_LIBS=$pkg_cv_luajit_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	LLUAJIT="yes"
+fi
+    if test "x$LLUAJIT" = "xyes"; then
+        CONFIGFLAGS="$CONFIGFLAGS -DHAVE_LIBLUAJIT"
+        LUA_CFLAGS="$luajit_CFLAGS"
+        LUA_LIBS="$luajit_LIBS"
+
+
+        if test "x$macos" != "xno"; then
+            LDFLAGS="${LDFLAGS} -pagezero_size 10000 -image_base 100000000"
+        fi
+
+    else
+        echo
+        echo "   ERROR!  LuaJIT library not found. For better performance, go get it from"
+        echo "   http://www.luajit.org/."
+        as_fn_error $? "\"Fatal!\"" "$LINENO" 5
+    fi
+
+    ac_fn_c_check_header_mongrel "$LINENO" "openssl/x509.h" "ac_cv_header_openssl_x509_h" "$ac_includes_default"
+if test "x$ac_cv_header_openssl_x509_h" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for d2i_X509 in -lcrypto" >&5
+$as_echo_n "checking for d2i_X509 in -lcrypto... " >&6; }
+if ${ac_cv_lib_crypto_d2i_X509+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
-LIBS="-lrazorback_api  $LIBS"
+LIBS="-lcrypto  $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -16951,55 +16911,50 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 #ifdef __cplusplus
 extern "C"
 #endif
-char rzb_collection ();
+char d2i_X509 ();
 int
 main ()
 {
-return rzb_collection ();
+return d2i_X509 ();
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_razorback_api_rzb_collection=yes
+  ac_cv_lib_crypto_d2i_X509=yes
 else
-  ac_cv_lib_razorback_api_rzb_collection=no
+  ac_cv_lib_crypto_d2i_X509=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_razorback_api_rzb_collection" >&5
-$as_echo "$ac_cv_lib_razorback_api_rzb_collection" >&6; }
-if test "x$ac_cv_lib_razorback_api_rzb_collection" = x""yes; then :
-  LRZB="yes"
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_crypto_d2i_X509" >&5
+$as_echo "$ac_cv_lib_crypto_d2i_X509" >&6; }
+if test "x$ac_cv_lib_crypto_d2i_X509" = xyes; then :
+  openssl_x509=yes
 else
-  LRZB="no"
+  openssl_x509=no
 fi
 
-    LIBS="${tmp_LIBS}"
-    if test "x$LRZB" = "xno"; then
+else
+  openssl_x509=no
+fi
+
+
+    if test "x$openssl_x509" = "xno"; then
         echo
-        echo "   ERROR!  razorback_api library not found, go get it from"
-        echo "   http://sourceforge.net/projects/razorbacktm/"
-        exit
+        echo "   ERROR!  openssl/x509.h or openssl library not found."
+        as_fn_error $? "\"Fatal!\"" "$LINENO" 5
     fi
 fi
 
- if test x$enable_rzb_saac = xyes; then
-  WANT_SF_SAAC_TRUE=
-  WANT_SF_SAAC_FALSE='#'
-else
-  WANT_SF_SAAC_TRUE='#'
-  WANT_SF_SAAC_FALSE=
-fi
-
-
-
-
+###### End OpenAppId
 # let's make some fixes..
 
+CFLAGS="${CFLAGS} ${CCONFIGFLAGS}"
 CFLAGS=`echo $CFLAGS | sed -e 's/-I\/usr\/include //g'`
+CPPFLAGS="${CPPFLAGS} ${CONFIGFLAGS}"
 CPPFLAGS=`echo $CPPFLAGS | sed -e 's/-I\/usr\/include //g'`
 
 if test "x$GCC" = "xyes" ; then
@@ -17039,23 +16994,6 @@ $as_echo "yes" >&6; }
 $as_echo "no" >&6; }
         fi
     fi
-
-    CPPFLAGS="$CPPFLAGS -DDEBUG"
-else
-    # disable assert()ions
-    CPPFLAGS="$CPPFLAGS -DNDEBUG"
-fi
-
-# Check whether --enable-gdb was given.
-if test "${enable_gdb+set}" = set; then :
-  enableval=$enable_gdb; enable_gdb="$enableval"
-else
-  enable_gdb="no"
-fi
-
-
-if test "x$enable_gdb" = "xyes"; then
-    CFLAGS="$CFLAGS -g -ggdb"
 fi
 
 if test "$LEX" != "none"; then
