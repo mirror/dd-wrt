@@ -1,0 +1,43 @@
+snort_dump_packets_control - Tool to connect to the snort control channel and issue a packet dump command
+--------------------------------------------
+
+About
+-----
+
+   The current version of Snort can be configured to provide a Unix socket
+that can be used to issue commands to the running process. One command causes
+packets that match a given BPF to be dumped to pcap file of a given name.
+The file that is generated has ".<n>" appended to it, where "n" is the value
+of the "-G" option or "0", if not specified.
+To stop the packet dump, issues the command without a file name or BPF.
+
+Installation
+------------
+
+   snort_dump_packets_control is made and installed along with snort in the
+same bin directory when configured with the --enable-control-socket option.
+The control socket functionality is supported on Linux only.
+
+Usage
+-----
+
+   $ snort_dump_packets_control [-a daq address space id (0-65535)] <log path> [<file name> [<bpf>]]
+
+"-a <n>" specifies the address space ID that is presented with the packets by the DAQ
+
+"log path" specifies the directory passed to snort with the -l option
+
+"file name" is the name of the pcap file, including the path, to generate
+
+"bpf" is the BPF that packets must match to be written to the file
+
+Examples:
+
+The following would generate a /var/tmp/dump.pcap.0 pcap file with HTTP packets:
+
+snort_dump_packets_control -a 3 <log path> /var/tmp/dump.pcap "tcp and port 80"
+
+The following would generate terminate the dump:
+
+snort_dump_packets_control <log path>
+
