@@ -2,7 +2,8 @@
  * Copyright (c) 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998
  *	The Regents of the University of California.  All rights reserved.
  *
- * Some portions Copyright (C) 2010 Sourcefire, Inc.
+ * Some portions Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Some portions Copyright (C) 2010-2013 Sourcefire, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that: (1) source code distributions
@@ -26,7 +27,7 @@
 
 #ifndef lint
 static const char rcsid[] =
-    "@(#) $Header: /usr/cvsroot/sfeng/ims/src/libraries/daq/daq/sfbpf/sf_nametoaddr.c,v 1.2 2010/05/06 19:13:26 maltizer Exp $ (LBL)";
+    "@(#) $Header: /usr/cvsroot/sfeng/ims/src/libraries/daq/daq/sfbpf/sf_nametoaddr.c,v 1.5 2014/06/10 13:38:55 cwaxman Exp $ (LBL)";
 #endif
 
 #ifdef HAVE_CONFIG_H
@@ -416,6 +417,8 @@ u_char *pcap_ether_aton(const char *s)
     register u_int d;
 
     e = ep = (u_char *) malloc(6);
+    if (!e)
+        return(NULL);
 
     while (*s)
     {

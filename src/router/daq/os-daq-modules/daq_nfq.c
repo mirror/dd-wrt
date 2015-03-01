@@ -1,6 +1,5 @@
-/* $Id: daq_nfq.c,v 1.19 2010/12/08 15:53:58 rcombs Exp $ */
 /*
- ** Portions Copyright (C) 1998-2010 Sourcefire, Inc.
+ ** Portions Copyright (C) 1998-2013 Sourcefire, Inc.
  **
  ** This program is free software; you can redistribute it and/or modify
  ** it under the terms of the GNU General Public License as published by
@@ -14,7 +13,7 @@
  **
  ** You should have received a copy of the GNU General Public License
  ** along with this program; if not, write to the Free Software
- ** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -28,18 +27,22 @@
 
 #include <sys/types.h>
 #include <sys/time.h>
-#include <unistd.h>
+#include <sys/unistd.h>
 
 #include <netinet/ip.h>
 
+#ifdef HAVE_DUMBNET_H
+#include <dumbnet.h>
+#else
 #include <dnet.h>
+#endif
 #include <linux/netfilter.h>
 #include <libnetfilter_queue/libnetfilter_queue.h>
 
 #include "daq_api.h"
 #include "sfbpf.h"
 
-#define DAQ_MOD_VERSION  4
+#define DAQ_MOD_VERSION  7
 
 #define DAQ_NAME "nfq"
 #define DAQ_TYPE (DAQ_TYPE_INTF_CAPABLE | DAQ_TYPE_INLINE_CAPABLE | \
@@ -183,7 +186,7 @@ static int nfq_daq_get_setup (
     }
 
     impl->snaplen = cfg->snaplen ? cfg->snaplen : IP_MAXPACKET;
-    impl->timeout = cfg->timeout;
+    impl->timeout = cfg->timeout / 1000;    // convert ms to secs
     impl->passive = ( cfg->mode == DAQ_MODE_PASSIVE );
 
     return DAQ_SUCCESS;
@@ -334,6 +337,15 @@ static int nfq_daq_initialize (
         }
     }
 
+    // from Florign Westphal ...
+    // tell kernel that we do not need to know about queue overflows.
+    // Without this, read operations on the netlink socket will fail
+    // with ENOBUFS on queue overrun.
+    {
+        int option = 1;
+        setsockopt(impl->sock, SOL_NETLINK, NETLINK_NO_ENOBUFS,
+                   &option, sizeof(option));
+    }
     impl->state = DAQ_STATE_INITIALIZED;
 
     *handle = impl;
@@ -387,17 +399,24 @@ static inline int SetPktHdr (
     hdr->caplen = ((uint32_t)len <= impl->snaplen) ? (uint32_t)len : impl->snaplen;
     hdr->pktlen = len;
     hdr->flags = 0;
+    hdr->address_space_id = 0;
 
-    nfq_get_timestamp(nfad, &hdr->ts);
-    hdr->device_index = nfq_get_physindev(nfad);
+    // if nfq fails to provide a timestamp, we fall back on tod
+    if ( nfq_get_timestamp(nfad, &hdr->ts) )
+        gettimeofday(&hdr->ts, NULL);
+
+    hdr->ingress_index = nfq_get_physindev(nfad);
+    hdr->egress_index = -1;
+    hdr->ingress_group = -1;
+    hdr->egress_group = -1;
 
     return 0;
 }
 
 //-------------------------------------------------------------------------
 
-// forward all but blocks and blacklists:
-static const int s_fwd[MAX_DAQ_VERDICT] = { 1, 0, 1, 1, 0, 1 };
+// forward all but blocks, retries and blacklists:
+static const int s_fwd[MAX_DAQ_VERDICT] = { 1, 0, 1, 1, 0, 1, 0 };
 
 static int daq_nfq_callback(
     struct nfq_q_handle* qh,
@@ -434,6 +453,10 @@ static int daq_nfq_callback(
     else
     {
         verdict = impl->user_func(impl->user_data, &hdr, pkt);
+
+        if ( verdict >= MAX_DAQ_VERDICT )
+            verdict = DAQ_VERDICT_BLOCK;
+
         impl->stats.verdicts[verdict]++;
         impl->stats.packets_received++;
     }
@@ -464,7 +487,7 @@ static int daq_nfq_callback(
 // 7. this unwinds and we repeat back at step 2.
 
 static int nfq_daq_acquire (
-    void* handle, int c, DAQ_Analysis_Func_t callback, void* user)
+    void* handle, int c, DAQ_Analysis_Func_t callback, DAQ_Meta_Func_t metaback, void* user)
 {
     NfqImpl *impl = (NfqImpl*)handle;
 
@@ -658,7 +681,7 @@ static int nfq_daq_get_device_index(void* handle, const char* device)
 //-------------------------------------------------------------------------
 
 #ifdef BUILDING_SO
-SO_PUBLIC DAQ_Module_t DAQ_MODULE_DATA =
+DAQ_SO_PUBLIC DAQ_Module_t DAQ_MODULE_DATA =
 #else
 DAQ_Module_t nfq_daq_module_data =
 #endif
@@ -683,6 +706,10 @@ DAQ_Module_t nfq_daq_module_data =
     .get_datalink_type = nfq_daq_get_datalink_type,
     .get_errbuf = nfq_daq_get_errbuf,
     .set_errbuf = nfq_daq_set_errbuf,
-    .get_device_index = nfq_daq_get_device_index
+    .get_device_index = nfq_daq_get_device_index,
+    .modify_flow = NULL,
+    .hup_prep = NULL,
+    .hup_apply = NULL,
+    .hup_post = NULL,
 };
 

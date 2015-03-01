@@ -5,8 +5,10 @@
 # to use when building code that uses LibDAQ modules.
 #
 
-LIBDIR=@LIBDIR@
-STATIC_LIBS=@STATIC_LIBS@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+LIBDIR=@libdir@
+STATIC_LIBS="@STATIC_LIBS@"
 
 static=0
 show_libs=0

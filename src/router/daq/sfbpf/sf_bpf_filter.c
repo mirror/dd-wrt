@@ -2,7 +2,8 @@
  * Copyright (c) 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997
  *	The Regents of the University of California.  All rights reserved.
  *
- * Some portions Copyright (C) 2010 Sourcefire, Inc.
+ * Some Portions Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Some portions Copyright (C) 2010-2013 Sourcefire, Inc.
  *
  * This code is derived from the Stanford/CMU enet packet filter,
  * (net/enet.c) distributed as part of 4.3BSD, and code contributed
@@ -42,7 +43,7 @@
 
 #if !(defined(lint) || defined(KERNEL) || defined(_KERNEL))
 static const char rcsid[] =
-    "@(#) $Header: /usr/cvsroot/sfeng/ims/src/libraries/daq/daq/sfbpf/sf_bpf_filter.c,v 1.2 2010/05/06 19:13:25 maltizer Exp $ (LBL)";
+    "@(#) $Header: /usr/cvsroot/sfeng/ims/src/libraries/daq/daq/sfbpf/sf_bpf_filter.c,v 1.5 2014/06/10 13:38:55 cwaxman Exp $ (LBL)";
 #endif
 
 #ifdef HAVE_CONFIG_H
@@ -210,7 +211,7 @@ static int m_xhalf(m, k, err)
  * For the kernel, p is assumed to be a pointer to an mbuf if buflen is 0,
  * in all other cases, p is a pointer to a buffer and buflen is its size.
  */
-SO_PUBLIC u_int bpf_filter(pc, p, wirelen, buflen)
+DAQ_SO_PUBLIC u_int bpf_filter(pc, p, wirelen, buflen)
      register const struct bpf_insn *pc;
      register const u_char *p;
      u_int wirelen;
@@ -545,7 +546,7 @@ SO_PUBLIC u_int bpf_filter(pc, p, wirelen, buflen)
  * The kernel needs to be able to verify an application's filter code.
  * Otherwise, a bogus program could easily crash the system.
  */
-SO_PUBLIC int bpf_validate(f, len)
+DAQ_SO_PUBLIC int bpf_validate(f, len)
      const struct bpf_insn *f;
      int len;
 {

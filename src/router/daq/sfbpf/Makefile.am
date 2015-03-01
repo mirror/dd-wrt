@@ -37,20 +37,22 @@ sfbpf-int.h \
 sfbpf-int.c \
 runlex.sh
 
-nodist_libsfbpf_la_SOURCES = sf_grammar.c sf_scanner.c tokdefs.h
+nodist_libsfbpf_la_SOURCES = ${builddir}/sf_grammar.c ${builddir}/sf_scanner.c ${builddir}/tokdefs.h
 
 libsfbpf_la_CFLAGS = -Dyylval=sfbpf_lval
 libsfbpf_la_LDFLAGS = -version-info 0:1:0 @XCCFLAGS@
 
 # use of $@ and $< here is a GNU idiom that borks BSD
-sf_scanner.c: scanner.l
-	@rm -f sf_scanner.c
-	./runlex.sh $(V_LEX) -osf_scanner.c scanner.l
+${builddir}/sf_scanner.c: ${srcdir}/scanner.l ${builddir}/tokdefs.h
+	@rm -f ${builddir}/sf_scanner.c
+	${srcdir}/runlex.sh $(V_LEX) -osf_scanner.c ${srcdir}/scanner.l
 
-tokdefs.h sf_grammar.c: grammar.y
-	@rm -f sf_grammar.c tokdefs.h
-	$(V_YACC) -d grammar.y
+${builddir}/sf_grammar.c: ${srcdir}/grammar.y
+	@rm -f ${builddir}/sf_grammar.c ${builddir}/tokdefs.h
+	$(V_YACC) -d ${srcdir}/grammar.y
 	mv y.tab.c sf_grammar.c
 	mv y.tab.h tokdefs.h
 
-CLEANFILES = sf_scanner.c sf_grammar.c tokdefs.h sf_scanner.h
+${builddir}/tokdefs.h: ${builddir}/sf_grammar.c ; @true
+
+CLEANFILES = ${builddir}/sf_scanner.c ${builddir}/sf_grammar.c ${builddir}/tokdefs.h ${builddir}/sf_scanner.h

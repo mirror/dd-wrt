@@ -1,5 +1,6 @@
 /*
-** Copyright (C) 2010 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2010-2013 Sourcefire, Inc.
 ** Author: Michael R. Altizer <maltizer@sourcefire.com>
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -15,7 +16,7 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 #ifdef HAVE_CONFIG_H
@@ -216,7 +217,7 @@ static int pcap_daq_initialize(const DAQ_Config_t *config, void **ctxt_ptr, char
     for (entry = config->values; entry; entry = entry->next)
     {
         if (!strcmp(entry->key, "buffer_size"))
-            context->buffer_size = strtol(entry->key, NULL, 10);
+            context->buffer_size = strtol(entry->value, NULL, 10);
     }
     /* Try to account for legacy PCAP_FRAMES environment variable if we weren't passed a buffer size. */
     if (context->buffer_size == 0)
@@ -347,8 +348,12 @@ static void pcap_process_loop(u_char *user, const struct pcap_pkthdr *pkth, cons
     hdr.caplen = pkth->caplen;
     hdr.pktlen = pkth->len;
     hdr.ts = pkth->ts;
-    hdr.device_index = -1;
+    hdr.ingress_index = -1;
+    hdr.egress_index = -1;
+    hdr.ingress_group = -1;
+    hdr.egress_group = -1;
     hdr.flags = 0;
+    hdr.address_space_id = 0;
 
     /* Increment the current acquire loop's packet counter. */
     context->packets++;
@@ -361,7 +366,7 @@ static void pcap_process_loop(u_char *user, const struct pcap_pkthdr *pkth, cons
 }
 
 static int pcap_daq_acquire(
-    void *handle, int cnt, DAQ_Analysis_Func_t callback, void *user)
+    void *handle, int cnt, DAQ_Analysis_Func_t callback, DAQ_Meta_Func_t metaback, void *user)
 {
     Pcap_Context_t *context = (Pcap_Context_t *) handle;
     int ret;
@@ -373,7 +378,7 @@ static int pcap_daq_acquire(
     while (context->packets < cnt || cnt <= 0)
     {
         ret = pcap_dispatch(
-            context->handle, cnt-context->packets, pcap_process_loop, (void *) context);
+            context->handle, (cnt <= 0) ? -1 : cnt-context->packets, pcap_process_loop, (void *) context);
         if (ret == -1)
         {
             DPE(context->errbuf, "%s", pcap_geterr(context->handle));
@@ -544,7 +549,7 @@ static int pcap_daq_get_device_index(void *handle, const char *device)
 }
 
 #ifdef BUILDING_SO
-SO_PUBLIC const DAQ_Module_t DAQ_MODULE_DATA =
+DAQ_SO_PUBLIC const DAQ_Module_t DAQ_MODULE_DATA =
 #else
 const DAQ_Module_t pcap_daq_module_data =
 #endif
@@ -570,7 +575,11 @@ const DAQ_Module_t pcap_daq_module_data =
     .get_datalink_type = pcap_daq_get_datalink_type,
     .get_errbuf = pcap_daq_get_errbuf,
     .set_errbuf = pcap_daq_set_errbuf,
-    .get_device_index = pcap_daq_get_device_index
+    .get_device_index = pcap_daq_get_device_index,
+    .modify_flow = NULL,
+    .hup_prep = NULL,
+    .hup_apply = NULL,
+    .hup_post = NULL,
 #else
     DAQ_API_VERSION,
     DAQ_PCAP_VERSION,
@@ -592,6 +601,10 @@ const DAQ_Module_t pcap_daq_module_data =
     pcap_daq_get_datalink_type,
     pcap_daq_get_errbuf,
     pcap_daq_set_errbuf,
-    pcap_daq_get_device_index
+    pcap_daq_get_device_index,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
 #endif
 };

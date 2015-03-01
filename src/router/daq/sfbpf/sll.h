@@ -35,7 +35,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * @(#) $Header: /usr/cvsroot/sfeng/ims/src/libraries/daq/daq/sfbpf/sll.h,v 1.2 2010/05/06 19:13:26 maltizer Exp $ (LBL)
+ * @(#) $Header: /usr/cvsroot/sfeng/ims/src/libraries/daq/daq/sfbpf/sll.h,v 1.3 2012/09/07 19:30:43 maltizer Exp $ (LBL)
  */
 
 /*
@@ -81,6 +81,13 @@
  */
 #define SLL_HDR_LEN	16          /* total header length */
 #define SLL_ADDRLEN	8           /* length of address field */
+
+#if defined (__SVR4) && defined (__sun)
+
+typedef uint8_t u_int8_t;
+typedef uint16_t u_int16_t;
+
+#endif /* defined (__SVR4) && defined (__sun) */
 
 struct sll_header
 {
