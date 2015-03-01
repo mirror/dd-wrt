@@ -1,0 +1,670 @@
+GTP Decoder and Preprocessor
+================================================================================
+Hui Cao
+
+Overview
+================================================================================
+GTP (GPRS Tunneling Protocol) is used in core communication networks to establish
+a channel between GSNs (GPRS Serving Node). GTP decoding & preprocessor provides
+ways to tackle intrusion attempts to those networks through GTP. It also makes 
+detecting new attacks easier.
+
+Two components are developed: GTP decoder and GTP preprocessor. 
+GTP decoder extracts payload inside GTP PDU; 
+GTP preprocessor inspects all the signaling messages and provide keywords for
+further inspection
+
+When the decoder is enabled and configured, the decoder strips the GTP headers 
+and parses the underlying IP/TCP/UDP encapsulated packets. Therefore all rules
+and detection work as if there was no GTP header.
+
+Example:
+
+Most GTP packets look like this
+
+IP -> UDP -> GTP -> IP -> TCP -> HTTP
+
+If you had a standard HTTP rule "alert tcp any any ->  any $HTTP_PORTS (msg:
+"Test HTTP"; flow:to_server,established; content:"SOMETHINGEVIL"; http_uri; 
+ .... sid:X; rev:Y;)",  it would alert on the inner HTTP data that is encapsulated
+in GTP without any changes to the rule other than enabling and configuring the GTP
+decoder.
+
+
+Sections:
+    Dependency Requirements
+    GTP Data Channel Decoder Configuration
+    GTP Control Channel Preprocessor Configuration
+    GTP Decoder Events
+    GTP Preprocessor Events
+    Rule Options
+
+Dependency Requirements
+================================================================================
+For proper functioning of the preprocessor:
+ 
+    Stream session tracking must be enabled, i.e. stream5. UDP must be
+    enabled in stream5. The preprocessor requires a session tracker to keep 
+    its data. 
+    IP defragmentation should be enabled, i.e. the frag3 preprocessor should be
+    enabled and configured.
+
+
+GTP Data Channel Decoder Configuration
+================================================================================
+GTP decoder extracts payload from GTP PDU. The following configuration sets 
+GTP decoding:
+
+config enable_gtp
+
+By default, GTP decoder uses port number 2152 (GTPv1) and 3386 (GTPv0). 
+If users want to change those values, they can use portvar GTP_PORTS:
+
+portvar GTP_PORTS [2152,3386]
+
+
+GTP Control Channel Preprocessor Configuration
+================================================================================
+Different from GTP decoder, GTP preprocessor examines all signaling messages.
+The preprocessor configuration name is "gtp".
+
+preprocessor gtp
+
+Option              Argument          Required   Default
+ports               <ports>               No     ports { 2123 3386 }
+
+Option explanations
+   
+  ports
+      This specifies on what ports to check for GTP control messages. Typically, 
+      this includes 2123 3386.
+      
+      Syntax:
+      ports { <port> [<port>< ... >] }
+      
+      Examples:
+      ports { 2123 3386 }
+      
+      Note: there are spaces before and after '{' and '}'      
+ 
+
+Configuration examples
+     preprocessor gtp
+     preprocessor gtp: ports { 2123 3386 2152  }
+
+Default configuration
+     preprocessor gtp
+
+GTP Decoder Events
+================================================================================
+
+SID   Description 
+--------------------------------------------------------------------------------
+  297   Two or more GTP encapsulation layers present
+  298   GTP header length is invalid  
+
+GTP Preprocessor Events
+================================================================================
+The preprocessor uses GID 143 to register events.
+ 
+
+SID   Description 
+--------------------------------------------------------------------------------
+  1   Message length is invalid.
+  2   Information element length is invalid.
+  3   Information elements are out of order.
+ 
+Rule Options
+================================================================================
+New rule options are supported by enabling the GTP preprocessor:
+
+gtp_type
+gtp_info
+gtp_version
+
+
+  gtp_type
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  The gtp_type keyword is used to check for specific GTP types. User can input 
+  message type value, an integer in [0, 255], or a string defined in the Table
+  below. More than one type can be specified, via a comma separated list, and 
+  are OR'ed together. If the type used in a rule is not listed in the 
+  preprocessor configuration, an error will be thrown. 
+
+  Same message type might have different message type value in different GTP 
+  versions. For example, sgsn_context_request has message type value 50 in 
+  GTPv0 and GTPv1, but 130 in GTPv2. gtp_type will match to a different value 
+  depending on the version number in the packet. In this example, evaluating 
+  a GTPv0 or GTPv1 packet will check whether the message type value is 50; 
+  evaluating a GTPv2 packet will check whether the message type value is 130.  
+  When a message type is not defined in a version, any packet in that version
+  will always return "No match". 
+  
+  If an integer is used to specify message type, every GTP packet is evaluated,
+  no matter what version the packet is. If the message type matches the value
+  in packet, it will return "Match". 
+  
+  Syntax:
+    gtp_type:<type-list>;
+    type-list = type|type, type-list
+    type      = "0-255"|
+            | "echo_request" | "echo_response" ...
+  Examples:            
+    gtp_type:10, 11, echo_request;
+    
+  GTPv0 message types:
+  
+  Value                             Message Type
+  **********************************************  
+      1                             echo_request 
+      2                            echo_response 
+      3                    version_not_supported 
+      4                       node_alive_request 
+      5                      node_alive_response 
+      6                      redirection_request 
+      7                     redirection_response 
+     16               create_pdp_context_request 
+     17              create_pdp_context_response 
+     18               update_pdp_context_request 
+     19              update_pdp_context_response 
+     20               delete_pdp_context_request 
+     21              delete_pdp_context_response 
+     22            create_aa_pdp_context_request 
+     23           create_aa_pdp_context_response 
+     24            delete_aa_pdp_context_request 
+     25           delete_aa_pdp_context_response 
+     26                         error_indication 
+     27                 pdu_notification_request 
+     28                pdu_notification_response 
+     29          pdu_notification_reject_request 
+     30         pdu_notification_reject_response 
+     32                send_routing_info_request 
+     33               send_routing_info_response 
+     34                   failure_report_request 
+     35                  failure_report_response 
+     36                  note_ms_present_request 
+     37                 note_ms_present_response 
+     48                   identification_request 
+     49                  identification_response 
+     50                     sgsn_context_request 
+     51                    sgsn_context_response 
+     52                         sgsn_context_ack 
+    240             data_record_transfer_request 
+    241            data_record_transfer_response 
+    255                                      pdu 
+    
+  GTPv1 message types:
+  
+  Value                             Message Type
+  **********************************************
+      1                             echo_request 
+      2                            echo_response 
+      3                    version_not_supported 
+      4                       node_alive_request 
+      5                      node_alive_response 
+      6                      redirection_request 
+      7                     redirection_response 
+     16               create_pdp_context_request 
+     17              create_pdp_context_response 
+     18               update_pdp_context_request 
+     19              update_pdp_context_response 
+     20               delete_pdp_context_request 
+     21              delete_pdp_context_response 
+     22      init_pdp_context_activation_request 
+     23     init_pdp_context_activation_response 
+     26                         error_indication 
+     27                 pdu_notification_request 
+     28                pdu_notification_response 
+     29          pdu_notification_reject_request 
+     30         pdu_notification_reject_response 
+     31        supported_ext_header_notification 
+     32                send_routing_info_request 
+     33               send_routing_info_response 
+     34                   failure_report_request 
+     35                  failure_report_response 
+     36                  note_ms_present_request 
+     37                 note_ms_present_response 
+     48                   identification_request 
+     49                  identification_response 
+     50                     sgsn_context_request 
+     51                    sgsn_context_response 
+     52                         sgsn_context_ack 
+     53               forward_relocation_request 
+     54              forward_relocation_response 
+     55              forward_relocation_complete 
+     56                relocation_cancel_request 
+     57               relocation_cancel_response 
+     58                      forward_srns_contex 
+     59          forward_relocation_complete_ack 
+     60                  forward_srns_contex_ack 
+     70                           ran_info_relay 
+     96                mbms_notification_request 
+     97               mbms_notification_response 
+     98         mbms_notification_reject_request 
+     99        mbms_notification_reject_response 
+    100              create_mbms_context_request 
+    101             create_mbms_context_response 
+    102              update_mbms_context_request 
+    103             update_mbms_context_response 
+    104              delete_mbms_context_request 
+    105             delete_mbms_context_response 
+    112                    mbms_register_request 
+    113                   mbms_register_response 
+    114                  mbms_deregister_request 
+    115                 mbms_deregister_response 
+    116               mbms_session_start_request 
+    117              mbms_session_start_response 
+    118                mbms_session_stop_request 
+    119               mbms_session_stop_response 
+    120              mbms_session_update_request 
+    121             mbms_session_update_response 
+    128                   ms_info_change_request 
+    129                  ms_info_change_response 
+    240             data_record_transfer_request 
+    241            data_record_transfer_response 
+    254                               end_marker 
+    255                                      pdu 
+   
+  GTPv2 message types:
+  
+  Value                             Message Type
+  ********************************************** 
+      1                             echo_request 
+      2                            echo_response 
+      3                    version_not_supported 
+     32                   create_session_request 
+     33                  create_session_response 
+     34                    modify_bearer_request 
+     35                   modify_bearer_response 
+     36                   delete_session_request 
+     37                  delete_session_response 
+     38              change_notification_request 
+     39             change_notification_response 
+     64                    modify_bearer_command 
+     65         modify_bearer_failure_indication 
+     66                    delete_bearer_command 
+     67         delete_bearer_failure_indication 
+     68                  bearer_resource_command 
+     69       bearer_resource_failure_indication 
+     70              downlink_failure_indication 
+     71                 trace_session_activation 
+     72               trace_session_deactivation 
+     73                   stop_paging_indication 
+     95                    create_bearer_request 
+     96                   create_bearer_response 
+     97                    update_bearer_request 
+     98                   update_bearer_response 
+     99                    delete_bearer_request 
+    100                   delete_bearer_response 
+    101                       delete_pdn_request 
+    102                      delete_pdn_response 
+    128                   identification_request 
+    129                  identification_response 
+    130                     sgsn_context_request 
+    131                    sgsn_context_response 
+    132                         sgsn_context_ack 
+    133               forward_relocation_request 
+    134              forward_relocation_response 
+    135              forward_relocation_complete 
+    136          forward_relocation_complete_ack 
+    137                           forward_access 
+    138                       forward_access_ack 
+    139                relocation_cancel_request 
+    140               relocation_cancel_response 
+    141            configuration_transfer_tunnel 
+    149                                   detach 
+    150                               detach_ack 
+    151                                cs_paging 
+    152                           ran_info_relay 
+    153                                alert_mme 
+    154                            alert_mme_ack 
+    155                              ue_activity 
+    156                          ue_activity_ack 
+    160            create_forward_tunnel_request 
+    161           create_forward_tunnel_response 
+    162                                  suspend 
+    163                              suspend_ack 
+    164                                   resume 
+    165                               resume_ack 
+    166   create_indirect_forward_tunnel_request 
+    167  create_indirect_forward_tunnel_response 
+    168   delete_indirect_forward_tunnel_request 
+    169  delete_indirect_forward_tunnel_response 
+    170            release_access_bearer_request 
+    171           release_access_bearer_response 
+    176                            downlink_data 
+    177                        downlink_data_ack 
+    179                              pgw_restart 
+    180                          pgw_restart_ack 
+    200                       update_pdn_request 
+    201                      update_pdn_response 
+    211             modify_access_bearer_request 
+    212            modify_access_bearer_response 
+    231               mbms_session_start_request 
+    232              mbms_session_start_response 
+    233              mbms_session_update_request 
+    234             mbms_session_update_response 
+    235                mbms_session_stop_request 
+    236               mbms_session_stop_response 
+      
+  gtp_info
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  The gtp_info keyword is used to check for specific GTP information element. 
+  This keyword restricts the search to the information element field. User can
+  input information element value, an integer in [0, 255], or a string defined
+  in the Table below.  If the information element used in this rule is not 
+  listed in the preprocessor configuration, an error will be thrown.
+   
+  When there are several information elements with the same type in the message,
+  this keyword restricts the search to the total consecutive buffer. Because 
+  the standard requires same types group together, this feature will be 
+  available for all valid messages. In the case of "out of order information 
+  elements", this keyword restricts the search to the last buffer.
+   
+  Similar to message type, same information element might have different 
+  information element value in different GTP versions. For example, "cause" has
+  value 1 in GTPv0 and GTPv1, but 2 in GTPv2. gtp_info will match to different
+  value depending on the version number in the packet. When an information 
+  element is not defined in a version, any packet in that version will always
+  return "No match".
+  
+  If an integer is used to specify information element type, every GTP packet
+  is evaluated, no matter what version the packet is. If the message type 
+  matches the value in packet, it will return "Match".
+  
+  Syntax:
+    gtp_info:<ie>;
+    ie      = "0-255"|
+              "rai" | "tmsi"...
+  Examples:
+    gtp_info: 16;
+    gtp_info: tmsi
+    
+  GTPv0 information elements:
+  
+  Value                      Information elements
+  ***********************************************  
+      1                                     cause 
+      2                                      imsi 
+      3                                       rai 
+      4                                      tlli 
+      5                                    p_tmsi 
+      6                                       qos 
+      8                        recording_required 
+      9                            authentication 
+     11                                 map_cause 
+     12                                p_tmsi_sig 
+     13                              ms_validated 
+     14                                  recovery 
+     15                            selection_mode 
+     16                         flow_label_data_1 
+     17                     flow_label_signalling 
+     18                         flow_label_data_2 
+     19                            ms_unreachable 
+    127                                 charge_id 
+    128                          end_user_address 
+    129                                mm_context 
+    130                               pdp_context 
+    131                                       apn 
+    132                           protocol_config 
+    133                                       gsn 
+    134                                    msisdn 
+    251                     charging_gateway_addr 
+    255                         private_extension 
+    
+  GTPv1 information elements:
+  
+  Value                      Information elements
+  ***********************************************
+      1                                     cause 
+      2                                      imsi 
+      3                                       rai 
+      4                                      tlli 
+      5                                    p_tmsi 
+      8                        recording_required 
+      9                            authentication 
+     11                                 map_cause 
+     12                                p_tmsi_sig 
+     13                              ms_validated 
+     14                                  recovery 
+     15                            selection_mode 
+     16                                    teid_1 
+     17                              teid_control 
+     18                                    teid_2 
+     19                              teardown_ind 
+     20                                     nsapi 
+     21                                     ranap 
+     22                               rab_context 
+     23                        radio_priority_sms 
+     24                            radio_priority 
+     25                            packet_flow_id 
+     26                             charging_char 
+     27                                 trace_ref 
+     28                                trace_type 
+     29                            ms_unreachable 
+    127                                 charge_id 
+    128                          end_user_address 
+    129                                mm_context 
+    130                               pdp_context 
+    131                                       apn 
+    132                           protocol_config 
+    133                                       gsn 
+    134                                    msisdn 
+    135                                       qos 
+    136                         authentication_qu 
+    137                                       tft 
+    138                                 target_id 
+    139                               utran_trans 
+    140                                 rab_setup 
+    141                                ext_header 
+    142                                trigger_id 
+    143                                    omc_id 
+    144                                 ran_trans 
+    145                           pdp_context_pri 
+    146                            addi_rab_setup 
+    147                               sgsn_number 
+    148                               common_flag 
+    149                           apn_restriction 
+    150                        radio_priority_lcs 
+    151                                  rat_type 
+    152                             user_loc_info 
+    153                              ms_time_zone 
+    154                                   imei_sv 
+    155                                     camel 
+    156                           mbms_ue_context 
+    157                       tmp_mobile_group_id 
+    158                          rim_routing_addr 
+    159                               mbms_config 
+    160                         mbms_service_area 
+    161                              src_rnc_pdcp 
+    162                           addi_trace_info 
+    163                               hop_counter 
+    164                                   plmn_id 
+    165                           mbms_session_id 
+    166                       mbms_2g3g_indicator 
+    167                            enhanced_nsapi 
+    168                     mbms_session_duration 
+    169                      addi_mbms_trace_info 
+    170               mbms_session_repetition_num 
+    171                         mbms_time_to_data 
+    173                                       bss 
+    174                                   cell_id 
+    175                                   pdu_num 
+    177                         mbms_bearer_capab 
+    178                          rim_routing_disc 
+    179                                  list_pfc 
+    180                                    ps_xid 
+    181                     ms_info_change_report 
+    182                       direct_tunnel_flags 
+    183                            correlation_id 
+    184                       bearer_control_mode 
+    185                              mbms_flow_id 
+    186                         mbms_ip_multicast 
+    187                     mbms_distribution_ack 
+    188               reliable_inter_rat_handover 
+    189                                rfsp_index 
+    190                                      fqdn 
+    191                       evolved_allocation1 
+    192                       evolved_allocation2 
+    193                            extended_flags 
+    194                                       uci 
+    195                                  csg_info 
+    196                                    csg_id 
+    197                                       cmi 
+    198                                  apn_ambr 
+    199                                ue_network 
+    200                                   ue_ambr 
+    201                            apn_ambr_nsapi 
+    202                        ggsn_backoff_timer 
+    203            signalling_priority_indication 
+    204      signalling_priority_indication_nsapi 
+    205                              high_bitrate 
+    206                                   max_mbr 
+    251                     charging_gateway_addr 
+    255                         private_extension 
+  
+  GTPv2 information elements:
+  
+  Value                      Information elements
+  ***********************************************
+      1                                      imsi 
+      1                              echo_request 
+      2                                     cause 
+      2                             echo_response 
+      3                                  recovery 
+      3                     version_not_supported 
+      4                        node_alive_request 
+      5                       node_alive_response 
+      6                       redirection_request 
+      7                      redirection_response 
+     16                create_pdp_context_request 
+     17               create_pdp_context_response 
+     18                update_pdp_context_request 
+     19               update_pdp_context_response 
+     20                delete_pdp_context_request 
+     21               delete_pdp_context_response 
+     22             create_aa_pdp_context_request 
+     23            create_aa_pdp_context_response 
+     24             delete_aa_pdp_context_request 
+     25            delete_aa_pdp_context_response 
+     26                          error_indication 
+     27                  pdu_notification_request 
+     28                 pdu_notification_response 
+     29           pdu_notification_reject_request 
+     30          pdu_notification_reject_response 
+     32                 send_routing_info_request 
+     33                send_routing_info_response 
+     34                    failure_report_request 
+     35                   failure_report_response 
+     36                   note_ms_present_request 
+     37                  note_ms_present_response 
+     48                    identification_request 
+     49                   identification_response 
+     50                      sgsn_context_request 
+     51                     sgsn_context_response 
+     52                          sgsn_context_ack 
+     71                                       apn 
+     72                                      ambr 
+     73                                       ebi 
+     74                                   ip_addr 
+     75                                       mei 
+     76                                    msisdn 
+     77                                indication 
+     78                                       pco 
+     79                                       paa 
+     80                                bearer_qos 
+     81                                  flow_qos 
+     82                                  rat_type 
+     83                           serving_network 
+     84                                bearer_tft 
+     85                                       tad 
+     86                                       uli 
+     87                                    f_teid 
+     88                                      tmsi 
+     89                                     cn_id 
+     90                                   s103pdf 
+     91                                     s1udf 
+     92                               delay_value 
+     93                            bearer_context 
+     94                               charging_id 
+     95                             charging_char 
+     96                                trace_info 
+     97                               bearer_flag 
+     99                                  pdn_type 
+    100                                       pti 
+    101                             drx_parameter 
+    103                               gsm_key_tri 
+    104                      umts_key_cipher_quin 
+    105                       gsm_key_cipher_quin 
+    106                             umts_key_quin 
+    107                                  eps_quad 
+    108                        umts_key_quad_quin 
+    109                            pdn_connection 
+    110                                pdn_number 
+    111                                    p_tmsi 
+    112                                p_tmsi_sig 
+    113                               hop_counter 
+    114                              ue_time_zone 
+    115                                 trace_ref 
+    116                      complete_request_msg 
+    117                                      guti 
+    118                               f_container 
+    119                                   f_cause 
+    120                                   plmn_id 
+    121                                 target_id 
+    123                            packet_flow_id 
+    124                                rab_contex 
+    125                              src_rnc_pdcp 
+    126                              udp_src_port 
+    127                           apn_restriction 
+    128                            selection_mode 
+    129                                    src_id 
+    131                      change_report_action 
+    132                                   fq_csid 
+    133                                   channel 
+    134                                 emlpp_pri 
+    135                                 node_type 
+    136                                      fqdn 
+    137                                        ti 
+    138                     mbms_session_duration 
+    139                         mbms_service_area 
+    140                           mbms_session_id 
+    141                              mbms_flow_id 
+    142                         mbms_ip_multicast 
+    143                     mbms_distribution_ack 
+    144                                rfsp_index 
+    145                                       uci 
+    146                                  csg_info 
+    147                                    csg_id 
+    148                                       cmi 
+    149                         service_indicator 
+    150                               detach_type 
+    151                                       ldn 
+    152                              node_feature 
+    153                     mbms_time_to_transfer 
+    154                                throttling 
+    155                                       arp 
+    156                                 epc_timer 
+    157            signalling_priority_indication 
+    158                                      tmgi 
+    159                                  mm_srvcc 
+    160                               flags_srvcc 
+    161                                      mmbr 
+    240              data_record_transfer_request 
+    241             data_record_transfer_response 
+    255                         private_extension 
+    255                                       pdu 
+  
+  gtp_version
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  The gtp_version keyword is used to check for specific GTP version.  
+  Because different GTP version defines different message types and information
+  elements, this keyword should combine with gtp_type and gtp_info.
+  
+  Syntax:
+    gtp_version:<version>;
+    version   = "0, 1, 2'
+
+  Example:
+    gtp_version: 1;
+  

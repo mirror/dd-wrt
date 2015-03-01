@@ -1,0 +1,490 @@
+
+I. Configuring Unified2 Output
+
+  Unified2 can work in one of three modes, packet logging, alert
+  logging, or true unified logging. Packet logging includes a capture
+  of the entire packet and is specified with log_unified2. Likewise,
+  alert logging will only log events and is specified with alert
+  unified2. To include both logging styles in a single, unified file,
+  simply specify unified2.
+
+  When MPLS support is turned on, MPLS labels can be included in
+  unified2 events. Use option mpls_event_types to enable this. If
+  option mpls event types is not used, then MPLS labels will be not be
+  included in unified2 events.
+
+  * Note that by default, unified2 files have the create time (in Unix
+    Epoch format) appended to each file when it is created.
+
+  Format:
+    output alert_unified2: \
+        filename <base filename> [, limit <size in MB>] [, nostamp] \
+        [,mpls_event_types] [, vlan_event_types]
+
+    output log_unified2: \
+        filename <base filename> [, limit <size in MB>] [, nostamp]
+
+    output unified2: \
+        filename <base filename> [, limit <size in MB>] [, nostamp] \
+        [,mpls_event_types] [, vlan_event_types]
+
+  * Note that you'll need to have compiled snort with --enable-mpls as
+    well as use the mpls_event_types to obtain mpls events.
+
+  Example:
+    output alert_unified2: filename snort.alert limit 128, nostamp
+    output log_unified2: filename snort.log, limit 128, nostamp
+    output unified2: filename merged.log, limit 128, nostamp
+    output unified2: filename merged.log, limit 128, nostamp, \
+        mpls_event_types
+    output unified2: filename merged.log, limit 128, \
+        mpls_event_types, vlan_event_types
+
+  Unified2 also has logging support for various extra data. The
+  following configuration items will enable these extra data logging
+  facilities.
+
+    config log_ipv6_extra_data
+
+    This option enables Snort to log IPv6 source and destination
+    address as unified2 extra data events.
+
+    enable_xff
+
+    This option enables HTTP Inspect to parse and log the original
+    client IP present in the X-Forwarded-For or True-Client- IP HTTP
+    request headers along with the generated events.
+    * see README.http_inspect for more information
+
+    log_uri
+
+    This option enables HTTP Inspect to parse and log the URI data
+    from the HTTP request and log it along with all the generated
+    events for that session.
+    * see README.http_inspect for more information
+
+    log_hostname 
+
+    This option enables HTTP Inspect to parse and log the Host header
+    data from the HTTP request and log it along with all the generated
+    events for that session.
+    * see README.http_inspect for more information
+
+    log_hostname 
+
+    This option enables HTTP Inspect to parse and log the Host header
+    data from the HTTP request and log it along with all the generated
+    events for that session.
+    * see README.http_inspect for more information
+
+    log_mailfrom
+
+    This option enables SMTP preprocessor to parse and log the senders
+    email address extracted from the "MAIL FROM" command along with
+    all the generated events for that session.
+    * see README.SMTP for more information
+
+    log_rcptto
+
+    This option enables SMTP preprocessor to parse and log the
+    recipients email address extracted from the "RCPT FROM" command
+    along with all the generated events for that session.
+    * see README.SMTP for more information
+
+    log_rcptto
+
+    This option enables SMTP preprocessor to parse and log the MIME
+    attachment filenames extracted from the Content-Disposition header
+    within the MIME body along with all the generated events for that
+    session.
+    * see README.SMTP for more information
+
+    log_email_hdrs
+
+    This option enables SMTP preprocessor to parse and log the SMTP
+    email headers extracted from the SMTP data along with all the
+    generated events for that session.
+    * see README.SMTP for more information
+
+
+II. Reading Unified2 Files
+
+  A. U2SpewFoo
+
+  U2SpewFoo is a lightweight tool for dumping the contents of unified2
+  files to stdout.
+  
+  Example usage:
+    
+    $ u2spewfoo snort.log
+
+
+  Example Output:
+
+    (Event)
+        sensor id: 0    event id: 4 event second: 1299698138    event microsecond: 146591
+        sig id: 1   gen id: 1   revision: 0  classification: 0
+        priority: 0 ip source: 10.1.2.3 ip destination: 10.9.8.7
+        src port: 60710 dest port: 80   protocol: 6 impact_flag: 0  blocked: 0
+
+    Packet
+        sensor id: 0    event id: 4 event second: 1299698138
+        packet second: 1299698138   packet microsecond: 146591
+        linktype: 1 packet_length: 54
+    [    0] 02 09 08 07 06 05 02 01 02 03 04 05 08 00 45 00  ..............E.
+    [   16] 00 28 00 06 00 00 40 06 5C B7 0A 01 02 03 0A 09  .(....@.\.......
+    [   32] 08 07 ED 26 00 50 00 00 00 62 00 00 00 2D 50 10  ...&.P...b...-P.
+    [   48] 01 00 A2 BB 00 00                                ......
+
+    (ExtraDataHdr)
+        event type: 4   event length: 33
+
+    (ExtraData)
+        sensor id: 0    event id: 2 event second: 1299698138
+        type: 9 datatype: 1 bloblength: 9   HTTP URI: /
+
+    (ExtraDataHdr)
+        event type: 4   event length: 78
+
+    (ExtraData)
+        sensor id: 0    event id: 2 event second: 1299698138
+        type: 10    datatype: 1 bloblength: 54  HTTP Hostname: србијаицрнагора.иком.museum
+
+  B. U2Boat
+
+  U2boat is a tool for converting unified2 files into different
+  formats.
+
+  Currently supported conversion formats are: pcap
+
+  Example usage:
+    u2boat -t pcap <infile> <outfile>
+
+
+III. Unified2 File Format
+
+  Unified 2 records should not be assumed to be in any order.  All
+  values are stored in network byte order.
+
+    An example structure of unified2 files
+
+    [ Serial Unified2 Header    ]
+    [ Unified2 IDS Event        ]
+    [ Unified2 Packet           ]
+    [ Unified2 Extra Data       ]
+    .
+    .
+    .
+    [ Serial Unified2 Header    ]
+    [ Unified2 IDS Event        ]
+    [ Unified2 Packet           ]
+    [ Unified2 Extra Data       ]
+
+  A. Serial Unified2 Header:
+
+    record type             4 bytes
+    record length           4 bytes
+
+  All unified2 records are preceded by a Serial Unified2 header.  This
+  unified2 record allows an interpreting application to skip past and
+  apply simple heuristics against records.
+  
+  The Record Type indicates one of the following unified2 records
+  follows the Serial Unified2 Header:
+
+    Value           Record Type
+    ----------      -----------
+    2               Unified2 Packet
+    7               Unified2 IDS Event
+    72              Unified2 IDS Event IP6
+    104             Unified2 IDS Event      (Version 2)
+    105             Unified2 IDS Event IP6  (Version 2)
+    110             Unified2 Extra Data
+
+  The record length field specifies the entire length of the record 
+  (not including the Serial Unified2 Header itself) up to the next 
+  Serial Unified2 Header or EOF.
+
+  B. Unified2 Packet
+    
+    sensor id               4 bytes
+    event id                4 bytes
+    event seconds           4 bytes
+    event microseconds      4 bytes
+    linktype                4 bytes
+    packet length           4 bytes
+    packet data             <variable length>
+
+  A Unified2 Packet is provided with each Unified2 Event record. This
+  packet is the `alerting' packet that caused a given event.
+
+  Unified2 Packet records contain contain a copy of the packet that
+  caused an alert (Packet Data) and is packet length octets long.
+
+  C. Unified2 IDS Event
+
+    sensor id               4 bytes
+    event id                4 bytes
+    event second            4 bytes
+    event microsecond       4 bytes
+    signature id            4 bytes
+    generator id            4 bytes
+    signature revision      4 bytes
+    classification id       4 bytes
+    priority id             4 bytes
+    ip source               4 bytes
+    ip destination          4 bytes
+    source port/icmp type   2 bytes
+    dest. port/icmp code    2 bytes
+    protocol                1 byte
+    impact flag             1 byte
+    impact                  1 byte
+    blocked                 1 byte
+
+  Unified2 IDS Event is logged for IPv4 Events without VLAN or MPLS
+  tagging. 
+
+  D. Unified2 IDS Event IP6
+
+    sensor id               4 bytes
+    event id                4 bytes
+    event second            4 bytes
+    event microsecond       4 bytes
+    signature id            4 bytes
+    generator id            4 bytes
+    signature revision      4 bytes
+    classification id       4 bytes
+    priority id             4 bytes
+    ip source               16 bytes
+    ip destination          16 bytes
+    source port/icmp type   2 bytes
+    dest. port/icmp code    2 bytes
+    protocol                1 byte
+    impact flag             1 byte
+    impact                  1 byte
+    blocked                 1 byte
+
+  Unified2 IDS Event IP6 is logged for IPv6 Events without VLAN or 
+  MPLS tagging. 
+
+  E. Unified2 IDS Event (Version 2)
+
+    sensor id               4 bytes
+    event id                4 bytes
+    event second            4 bytes
+    event microsecond       4 bytes
+    signature id            4 bytes
+    generator id            4 bytes
+    signature revision      4 bytes
+    classification id       4 bytes
+    priority id             4 bytes
+    ip source               4 bytes
+    ip destination          4 bytes
+    source port/icmp type   2 bytes
+    dest. port/icmp code    2 bytes
+    protocol                1 byte
+    impact flag             1 byte
+    impact                  1 byte
+    blocked                 1 byte
+    mpls label              4 bytes
+    vlan id                 2 bytes
+    padding                 2 bytes
+  
+
+  Unified2 IDS Event (Version 2) are logged for IPv4 packets which
+  contain either  MPLS or VLAN headers. Otherwise a Unified2 IDS Event
+  is logged.
+
+  * Note that you'll need to pass --enable-mpls to configure in order
+    to have Snort fill in the mpls label field.
+
+  * Note that you'll need to configure unified2 logging with either
+    mpls_event_types or vlan_event_types to get this record type.
+
+  F. Unified2 IDS Event IP6 (Version 2)
+
+    sensor id               4 bytes
+    event id                4 bytes
+    event second            4 bytes
+    event microsecond       4 bytes
+    signature id            4 bytes
+    generator id            4 bytes
+    signature revision      4 bytes
+    classification id       4 bytes
+    priority id             4 bytes
+    ip source               16 bytes
+    ip destination          16 bytes
+    source port/icmp type   2 bytes
+    dest. port/icmp code    2 bytes
+    protocol                1 byte
+    impact flag             1 byte
+    impact                  1 byte
+    blocked                 1 byte
+    mpls label              4 bytes
+    vlan id                 2 bytes
+    padding                 2 bytes
+
+  Unified2 IDS Event IP6 (Version 2) are logged for IPv6 packets which
+  contain either MPLS or VLAN headers. Otherwise a Unified2 IDS Event
+  IP6 is logged.
+
+  * Note that you'll need to pass --enable-mpls to configure in order
+    to have Snort fill in the mpls label field.
+
+  * Note that you'll need to configure unified2 logging with either
+    mpls_event_types or vlan_event_types to get this record type.
+
+
+  G. Unified2 Extra Data
+
+    sensor id               4 bytes
+    event id                4 bytes
+    event second            4 bytes
+    type                    4 bytes
+    data type               4 bytes
+    data length             4 bytes
+    data                    <variable length>
+
+
+  H. Description of Fields
+
+  Sensor ID
+    Unused 
+  
+  Event ID
+    The upper 2 bytes represent the snort instance, if specified by
+    passing the -G option to Snort.
+
+    The lower 2 bytes indicate the unique id of the event.
+
+    The Event ID field is used to facilitate the task of coalescing
+    events with packet data.
+
+  Event Seconds and Event Microseconds
+    Timestamp represented as seconds since the epoch of when the alert
+    was generated.
+
+  Link Type (Unified2 Packet)
+    The Datalink type of the packet, typically EN10M but could be any
+    of the values as returned by pcap_datalink that Snort handles.
+   
+  Packet Length (Unified2 Packet)
+    Length of the Packet Data.
+  
+  Packet Data (Unified2 Packet)
+    The alerting packet, of Packet Length bytes long.
+
+  Type (Unified2 Extra Data)
+    Type specifies the type of extra data that was logged, the valid
+    types are:
+
+    Value           Description 
+    ----------      -----------
+    1               Original Client IPv4 
+    2               Original Client IPv6
+    3               UNUSED
+    4               GZIP Decompressed Data
+    5               SMTP Filename
+    6               SMTP Mail From
+    7               SMTP RCPT To
+    8               SMTP Email Headers
+    9               HTTP URI
+    10              HTTP Hostname
+    11              IPv6 Source Address
+    12              IPv6 Destination Address
+    13              Normalized Javascript Data
+    
+
+  Data Type (Unified2 Extra Data)
+    The type of extra data in the record.
+
+    Value           Description 
+    ----------      -----------
+    1               Blob  
+
+  Data Length (Unified2 Extra Data)
+    Length of the data stored in the extra data record
+
+  Data (Unified2 Extra Data)
+    Raw extra event data up to Data Length bytes in size.
+
+    All of these Extra data types, with the exception of 1, 2, 11, and
+    12 (IP Addresses) are stored in plain-text. The IP Address types
+    need to be interpreted as if they were coming off the wire.
+
+  Signature ID
+    The Signature ID of the alerting rule, as specified by the sid
+    keyword.
+
+  Generator ID
+    The Generator ID of the alerting rule, as specified by the gid
+    keyword.
+
+  Signature Revision
+    Revision of the rule as specified by the rev keyword.
+
+  Classification ID
+    Classification ID as mapped in the file classifications.conf 
+
+  Priority ID
+    Priority of the rule as mapped in the file classifications.conf or
+    overridden by the priority keyword for text rules. 
+
+  IP Source
+    Source IP of the packet that generated the event.
+
+  IP Destination
+    Destination IP of the packet that generated the event.
+
+  Source Port/ICMP Type
+    If Protocol is TCP or UDP than this field contains the source port
+    of the alerting packet.
+
+    If Protocol is ICMP than this field contains the ICMP type of the
+    alerting packet.
+
+  Destination Port/ICMP Code
+    If protocol is TCP or UDP than this field contains the source port
+    of the alerting packet.
+
+    If protocol is icmp than this field contains the icmp code of the
+    alerting packet.
+  
+  Protocol
+    Transport protocol of the alerting packet. One of: ip, tcp, udp, or
+    icmp.
+
+  Impact flag
+    Legacy field, specifies whether a packet was dropped or not.
+
+    Value           Description 
+    ----------      -----------
+    32              Blocked 
+
+  Impact
+    UNUSED; deprecated.
+
+  Blocked
+    Whether the packet was not dropped, was dropped or would have been
+    dropped. 
+
+    Value           Description 
+    ----------      -----------
+    0               Was NOT Dropped 
+    1               Was Dropped
+    2               Would Have Dropped*
+
+    * Note that you'll only obtain Would Have Dropped on rules which
+      are set to drop while Snort is running in inline-test mode.
+
+  MPLS Label (4 bytes)
+    The extracted mpls label from the mpls header in the alerting
+    packet.
+
+  VLAN ID
+    The extracted vlan id from the vlan header in the alerting packet.
+
+  Padding
+    Padding is used to keep the event structures aligned on a 4 byte
+    boundary.
+
