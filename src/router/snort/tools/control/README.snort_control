@@ -1,0 +1,25 @@
+snort_control - Tool to connect to the snort control channel and issue a command
+--------------------------------------------
+
+About
+-----
+
+   The current version of Snort can be configured to provide a Unix socket
+that can be used to issue commands to the running process.
+
+Installation
+------------
+
+   snort_control is made and installed along with snort in the same bin directory
+when configured with the --enable-control-socket option.  The control socket
+functionality is supported on Linux only.
+
+Usage
+-----
+
+   $ snort_control <log path> <command>
+
+"log path" specifies the directory passed to snort with the -l option
+
+"command" is an unsigned 32-bit command value
+
