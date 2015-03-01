@@ -13,12 +13,13 @@ sf_dynamic_define.h \
 sf_dynamic_meta.h \
 sf_dynamic_plugins.c \
 sf_dynamic_preprocessor.h \
+sf_dynamic_side_channel.h \
 sp_dynamic.c \
 sp_dynamic.h \
 sp_preprocopt.c \
 sp_preprocopt.h \
 sf_convert_dynamic.c \
-sf_convert_dynamic.h 
+sf_convert_dynamic.h
 
 INCLUDES = @INCLUDES@
 

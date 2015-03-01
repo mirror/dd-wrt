@@ -12,9 +12,10 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (C) 2005-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * Author: Steven Sturges
  *
@@ -24,11 +25,22 @@
 #ifndef _SF_DYNAMIC_META_H_
 #define _SF_DYNAMIC_META_H_
 
+/* Required version and name of the engine */
+#ifndef REQ_ENGINE_LIB_MAJOR
+#define REQ_ENGINE_LIB_MAJOR 2
+#endif
+#ifndef REQ_ENGINE_LIB_MINOR
+/* FIXTHIS need to update dynamic-plugins/sf_engine/examples/sfsnort_dynamic_detection_lib.c */
+#define REQ_ENGINE_LIB_MINOR 4
+#endif
+#define REQ_ENGINE_LIB_NAME "SF_SNORT_DETECTION_ENGINE"
+
 #define MAX_NAME_LEN 1024
 
 #define TYPE_ENGINE 0x01
 #define TYPE_DETECTION 0x02
 #define TYPE_PREPROCESSOR 0x04
+#define TYPE_SIDE_CHANNEL 0x08
 
 typedef struct _DynamicPluginMeta
 {

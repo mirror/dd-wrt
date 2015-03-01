@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (C) 2008-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2008-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -14,7 +15,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************
  * 8/17/2008 - Initial implementation ... Todd Wease <twease@sourcefire.com>
@@ -42,8 +43,8 @@
  ********************************************************************/
 typedef struct _DCE2_CoFragTracker
 {
-    DCE2_Buffer *cli_frag_buf;
-    DCE2_Buffer *srv_frag_buf;
+    DCE2_Buffer *cli_stub_buf;
+    DCE2_Buffer *srv_stub_buf;
 
     int opnum;    /* Opnum that is ultimatley used for request */
     int ctx_id;   /* Context id that is ultimatley used for request */
@@ -60,7 +61,7 @@ typedef struct _DCE2_CoSeg
     DCE2_Buffer *buf;
 
     /* If there is enough data in segmentation buffer for header,
-     * this will be set the frag length in the header */
+     * this will be set to the frag length in the header */
     uint16_t frag_len;
 
 } DCE2_CoSeg;
@@ -90,9 +91,6 @@ typedef struct _DCE2_CoTracker
     /* For transport segmentation */
     DCE2_CoSeg cli_seg;
     DCE2_CoSeg srv_seg;
-
-    /* Boolean for whether or not packets have been currently been missed */
-    char missed_pkts;
 
 } DCE2_CoTracker;
 

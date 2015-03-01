@@ -21,7 +21,9 @@ having bad checksums.  Stream and Frag will not process packets that have
 been flagged as having bad checksums.
 
 Note:
-To enable decoding of GRE encapsulated traffic pass --enable-gre to configure.
+To disable decoding of GRE encapsulated traffic, pass --disable-gre to configure,
+and to disable decoding of MPLS encapsulated traffic, pass -disable-mpls to
+configure.
 
 
 Configuration
@@ -192,7 +194,7 @@ SID   Description
 255   The ICMP encapsulated IP was fragmented, but the fragment offset is not 0
       (an ICMP message is only returned for the first fragment)
 
-If GRE is enabled (--enable-gre was given to configure)
+If GRE is enabled (--disable-gre was not given to configure)
 160   The length of the captured packet (starting from GRE header) is less than the
       length of a GRE header
 161   There are multiple GRE encapsulations in the packet (currently not allowed)

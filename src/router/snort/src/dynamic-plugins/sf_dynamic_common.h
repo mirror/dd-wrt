@@ -12,9 +12,10 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (C) 2005-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  */
 #ifndef _SF_DYNAMIC_COMMON_H_
@@ -26,55 +27,57 @@
 #include <stdint.h>
 #endif
 
-typedef void (*LogMsgFunc)(const char *, ...);
-typedef void (*DebugMsgFunc)(int, char *, ...);
-#ifdef HAVE_WCHAR_H
-typedef void (*DebugWideMsgFunc)(int, wchar_t *, ...);
+typedef enum {
+    SF_FLAG_ALT_DECODE         = 0x0001,
+    SF_FLAG_ALT_DETECT         = 0x0002,
+    SF_FLAG_DETECT_ALL         = 0xffff
+} SFDetectFlagType;
+
+#ifdef SF_WCHAR
+#include <wchar.h>
+typedef void (*DebugWideMsgFunc)(uint64_t, const wchar_t *, ...);
 #endif
+typedef uint32_t (*GetSnortInstance)(void);
 
 #define STD_BUF 1024
 
 #ifndef DECODE_BLEN
 #define DECODE_BLEN 65535
+/* must be defined the same as in detection_util.h */
 typedef enum
 {
+    HTTP_BUFFER_NONE,
     HTTP_BUFFER_URI,
-    HTTP_BUFFER_RAW_URI,
     HTTP_BUFFER_HEADER,
-    HTTP_BUFFER_RAW_HEADER,
     HTTP_BUFFER_CLIENT_BODY,
     HTTP_BUFFER_METHOD,
     HTTP_BUFFER_COOKIE,
-    HTTP_BUFFER_RAW_COOKIE,
     HTTP_BUFFER_STAT_CODE,
     HTTP_BUFFER_STAT_MSG,
+    HTTP_BUFFER_RAW_URI,
+    HTTP_BUFFER_RAW_HEADER,
+    HTTP_BUFFER_RAW_COOKIE,
     HTTP_BUFFER_MAX
 } HTTP_BUFFER;
 #endif
 
-typedef struct _UriInfo
-{
-    uint8_t *uriBuffer;
-    uint16_t uriLength;
-    uint32_t uriDecodeFlags;
-
-} UriInfo;
+typedef struct {
+    uint8_t *data;
+    uint16_t len;
+} SFDataPointer;
 
 typedef struct {
     uint8_t data[DECODE_BLEN];
     uint16_t len;
 } SFDataBuffer;
 
-#define SetAltBuffer(pktPtr, altLen) \
-{ \
-    pktPtr->flags |= FLAG_ALT_DECODE; \
-    _dpd.altBuffer->len = altLen; \
-}
-
-#define ResetAltBuffer(pktPtr) \
-{ \
-    pktPtr->flags &= ~FLAG_ALT_DECODE; \
-    _dpd.altBuffer->len = 0; \
-}
+typedef void (*LogMsgFunc)(const char *, ...);
+typedef void (*DebugMsgFunc)(uint64_t, const char *, ...);
+typedef int (*GetAltDetectFunc)(uint8_t **, uint16_t *);
+typedef void (*SetAltDetectFunc)(uint8_t *,uint16_t );
+typedef int (*IsDetectFlagFunc)(SFDetectFlagType);
+typedef void (*DetectFlagDisableFunc)(SFDetectFlagType);
+typedef void (*SetHttpBufferFunc)(HTTP_BUFFER, const uint8_t*, unsigned);
+typedef const uint8_t* (*GetHttpBufferFunc)(HTTP_BUFFER, unsigned*);
 
 #endif /* _SF_DYNAMIC_COMMON_H_ */

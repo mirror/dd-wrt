@@ -1,5 +1,6 @@
 /*
-** Copyright (C) 2002-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -15,7 +16,7 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 /* $Id$ */
@@ -29,12 +30,13 @@
 #include <string.h>
 #include <ctype.h>
 
+#include "sf_types.h"
 #include "rules.h"
 #include "treenodes.h"
 #include "decode.h"
 #include "plugbase.h"
 #include "parser.h"
-#include "debug.h"
+#include "snort_debug.h"
 #include "util.h"
 #include "plugin_enum.h"
 
@@ -56,13 +58,13 @@ extern PreprocStats ruleOTNEvalPerfStats;
 typedef struct _TCPFlagCheckData
 {
     u_char mode;
-    u_char tcp_flags; 
+    u_char tcp_flags;
     u_char tcp_mask; /* Mask to take away from the flags check */
 
 } TCPFlagCheckData;
 
-void TCPFlagCheckInit(char *, OptTreeNode *, int);
-void ParseTCPFlags(char *, OptTreeNode *);
+void TCPFlagCheckInit(struct _SnortConfig *, char *, OptTreeNode *, int);
+void ParseTCPFlags(struct _SnortConfig *, char *, OptTreeNode *);
 int CheckTcpFlags(void *option_data, Packet *p);
 
 uint32_t TcpFlagCheckHash(void *d)
@@ -109,7 +111,7 @@ void SetupTCPFlagCheck(void)
 
 
 
-void TCPFlagCheckInit(char *data, OptTreeNode *otn, int protocol)
+void TCPFlagCheckInit(struct _SnortConfig *sc, char *data, OptTreeNode *otn, int protocol)
 {
     OptFpList *fpl;
 
@@ -118,7 +120,7 @@ void TCPFlagCheckInit(char *data, OptTreeNode *otn, int protocol)
         FatalError("Line %s (%d): TCP Options on non-TCP rule\n", file_name, file_line);
     }
 
-    /* multiple declaration check */ 
+    /* multiple declaration check */
     if(otn->ds_list[PLUGIN_TCP_FLAG_CHECK])
     {
         FatalError("%s(%d): Multiple TCP flags options in rule\n", file_name,
@@ -129,7 +131,7 @@ void TCPFlagCheckInit(char *data, OptTreeNode *otn, int protocol)
             SnortAlloc(sizeof(TCPFlagCheckData));
 
     /* set up the pattern buffer */
-    ParseTCPFlags(data, otn);
+    ParseTCPFlags(sc, data, otn);
 
     DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN, "Adding TCP flag check function (%p) to list\n",
 			    CheckTcpFlags););
@@ -146,16 +148,16 @@ void TCPFlagCheckInit(char *data, OptTreeNode *otn, int protocol)
 
 /****************************************************************************
  *
- * Function: ParseTCPflags(char *)
+ * Function: ParseTCPflags(struct _SnortConfig *, char *, OptTreeNode *)
  *
  * Purpose: Figure out which TCP flags the current rule is interested in
  *
- * Arguments: rule => the rule string 
+ * Arguments: rule => the rule string
  *
  * Returns: void function
  *
  ***************************************************************************/
-void ParseTCPFlags(char *rule, OptTreeNode *otn)
+void ParseTCPFlags(struct _SnortConfig *sc, char *rule, OptTreeNode *otn)
 {
     char *fptr;
     char *fend;
@@ -168,7 +170,7 @@ void ParseTCPFlags(char *rule, OptTreeNode *otn)
     fptr = rule;
 
     /* make sure there is atleast a split pointer */
-    if(fptr == NULL) 
+    if(fptr == NULL)
     {
         FatalError("[!] Line %s (%d): Flags missing in TCP flag rule\n", file_name, file_line);
     }
@@ -182,7 +184,7 @@ void ParseTCPFlags(char *rule, OptTreeNode *otn)
     }
 
     /* find the end of the alert string */
-    fend = fptr + strlen(fptr); 
+    fend = fptr + strlen(fptr);
 
     idx->mode = M_NORMAL; /* this is the default, unless overridden */
 
@@ -225,18 +227,22 @@ void ParseTCPFlags(char *rule, OptTreeNode *otn)
                 break;
 
             case '1': /* reserved bit flags */
-                idx->tcp_flags |= R_RES1;
+            case 'c':
+            case 'C':
+                idx->tcp_flags |= R_CWR; /* Congestion Window Reduced, RFC 3168 */
                 break;
 
             case '2': /* reserved bit flags */
-                idx->tcp_flags |= R_RES2;
+            case 'e':
+            case 'E':
+                idx->tcp_flags |= R_ECE; /* ECN echo, RFC 3168 */
                 break;
 
             case '!': /* not, fire if all flags specified are not present,
                          other are don't care */
                 idx->mode = M_NOT;
                 break;
-            case '*': /* star or any, fire if any flags specified are 
+            case '*': /* star or any, fire if any flags specified are
                          present, other are don't care */
                 idx->mode = M_ANY;
                 break;
@@ -249,7 +255,7 @@ void ParseTCPFlags(char *rule, OptTreeNode *otn)
                 break;
             default:
                 FatalError("%s(%d): bad TCP flag = \"%c\"\n"
-                           "Valid otions: UAPRSF12 or 0 for NO flags (e.g. NULL scan),"
+                           "Valid otions: UAPRSFCE or 0 for NO flags (e.g. NULL scan),"
                            " and !, + or * for modifiers\n",
                            file_name, file_line, *fptr);
         }
@@ -260,7 +266,7 @@ void ParseTCPFlags(char *rule, OptTreeNode *otn)
     while(isspace((u_char) *fptr))
         fptr++;
 
-    
+
     /* create the mask portion now */
     while(fptr < fend && comma_set == 1)
     {
@@ -285,33 +291,37 @@ void ParseTCPFlags(char *rule, OptTreeNode *otn)
             case 'P':
                 idx->tcp_mask |= R_PSH;
                 break;
-                
+
             case 'a':
             case 'A':
                 idx->tcp_mask |= R_ACK;
                 break;
-                
+
             case 'u':
             case 'U':
                 idx->tcp_mask |= R_URG;
                 break;
-                
+
             case '1': /* reserved bit flags */
-                idx->tcp_mask |= R_RES1;
+            case 'c':
+            case 'C':
+                idx->tcp_mask |= R_CWR; /* Congestion Window Reduced, RFC 3168 */
                 break;
 
             case '2': /* reserved bit flags */
-                idx->tcp_mask |= R_RES2;
+            case 'e':
+            case 'E':
+                idx->tcp_mask |= R_ECE; /* ECN echo, RFC 3168 */
                 break;
             default:
-                FatalError(" Line %s (%d): bad TCP flag = \"%c\"\n  Valid otions: UAPRS12 \n",
+                FatalError(" Line %s (%d): bad TCP flag = \"%c\"\n  Valid otions: UAPRSFCE \n",
                            file_name, file_line, *fptr);
         }
 
         fptr++;
     }
 
-    if (add_detection_option(RULE_OPTION_TYPE_TCP_FLAG, (void *)idx, &ds_ptr_dup) == DETECTION_OPTION_EQUAL)
+    if (add_detection_option(sc, RULE_OPTION_TYPE_TCP_FLAG, (void *)idx, &ds_ptr_dup) == DETECTION_OPTION_EQUAL)
     {
         otn->ds_list[PLUGIN_TCP_FLAG_CHECK] = ds_ptr_dup;
         free(idx);
@@ -326,13 +336,13 @@ int CheckTcpFlags(void *option_data, Packet *p)
     PROFILE_VARS;
 
     PREPROC_PROFILE_START(tcpFlagsPerfStats);
-    
+
     if(!p->tcph)
     {
         /* if error appeared when tcp header was processed,
          * test fails automagically */
         PREPROC_PROFILE_END(tcpFlagsPerfStats);
-        return rval; 
+        return rval;
     }
 
     /* the flags we really want to check are all the ones

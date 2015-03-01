@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (C) 2008-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2008-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -14,10 +15,10 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************
- * 
+ *
  ****************************************************************************/
 
 #ifndef _DCE2_UDP_H_
@@ -30,7 +31,7 @@
 #include "dcerpc.h"
 #include "sf_snort_packet.h"
 #include "sf_types.h"
-#include "debug.h"
+#include "snort_debug.h"
 
 /********************************************************************
  * Structures
@@ -45,7 +46,7 @@ typedef struct _DCE2_UdpSsnData
 /********************************************************************
  * Inline function prototypes
  ********************************************************************/
-static INLINE DCE2_TransType DCE2_UdpAutodetect(const SFSnortPacket *);
+static inline DCE2_TransType DCE2_UdpAutodetect(const SFSnortPacket *);
 
 /********************************************************************
  * Public function prototypes
@@ -69,7 +70,7 @@ void DCE2_UdpSsnFree(void *);
  *  DCE2_TranType
  *
  *********************************************************************/
-static INLINE DCE2_TransType DCE2_UdpAutodetect(const SFSnortPacket *p)
+static inline DCE2_TransType DCE2_UdpAutodetect(const SFSnortPacket *p)
 {
     if (p->payload_size >= sizeof(DceRpcClHdr))
     {

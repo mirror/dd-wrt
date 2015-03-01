@@ -1,7 +1,7 @@
 04-06-03   Wow, over a year since the last update.  Well, this is "2.0" but not
            quite the 2.0 we were expecting.  It's vastly more capable than the 
            1.8.x and 1.9.x releases, more stable, audited, well tested in a 
-           commericial test environment (thanks to Sourcefire) and generally
+           commercial test environment (thanks to Sourcefire) and generally
            just "better" than what has come before, but it's not the 
            revolutionary leap that I had envisioned.  Will that leap happen
            someday?  Probably, but the timeline will shift and things will 
@@ -306,7 +306,7 @@
             reassembly, and port scan detection.  Fortunately, the new
             plugin architecture implemented in this version of Snort
             makes the addition of these huge features relatively painless
-            from a development standpoint.  The modules can simpley be
+            from a development standpoint.  The modules can simply be
             developed and then dropped right into every copy of Snort
             out there.
 
@@ -438,7 +438,7 @@
 
 04-06-99    Ok, this is the big one, I think everything is stable enough 
             now for a general release.  If this one doesn't do anything 
-            bizzare once it gets out into the real world, it's going to be
+            bizarre once it gets out into the real world, it's going to be
             version 1.0, and this time I mean it! :) Note that I'm 
             including the snort-lib template file, which has some useful
             patterns and rules that people may want to use.  Also note that
@@ -461,7 +461,7 @@
             handling, and some bug fixing.  I'm not quite sure what else I'd
             like to put in before the 1.0 release, so I thinking this is
             going to be it.  If there's any big feature you've been wishing
-            for, now's the time to ask!
+            for, now is the time to ask!
 
 03-08-99    Got a request to do more precise timestamping, so I ripped off
             the TCPDump timestamp routine and stuffed it in Snort.  You
@@ -508,7 +508,7 @@
             file or the "RULES.SAMPLE" file to see how rules work.  I also
             fixed the seriously porked logging code, now all conversations
             end up in single files based upon the homenet address command
-            line parameter, or in its absense, hi port/lo port.  I highly
+            line parameter, or in its absence, hi port/lo port.  I highly
             recommend using the homenet capability (-h option).
 
             Coming soon: Content based logging!

@@ -1,6 +1,7 @@
 /****************************************************************************
  *
- * Copyright (C) 2009-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2009-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -15,15 +16,15 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************/
- 
+
 #ifndef _SFRF_H_
 #define _SFRF_H_
 /* @file  sfrf.h
  * @brief rate filter implementation for Snort
- * @ingroup rate_filter 
+ * @ingroup rate_filter
  * @author Dilbagh Chahal
  */
 /* @defgroup rate_filter sourcefire.rate_filter
@@ -42,21 +43,21 @@
 // define to use over rate threshold
 #define SFRF_OVER_RATE
 
-// used for the dimensions of the gid lookup array.  
+// used for the dimensions of the gid lookup array.
 #define SFRF_MAX_GENID 8129
 
 // rate_filter tracking by src, by dst, or by rule
-typedef enum 
+typedef enum
 {
     SFRF_TRACK_BY_SRC = 1,
-    SFRF_TRACK_BY_DST, 
+    SFRF_TRACK_BY_DST,
     SFRF_TRACK_BY_RULE,
     SFRF_TRACK_BY_MAX
 } SFRF_TRACK;
 
 /* Type of operation for threshold tracking nodes.
  */
-typedef enum 
+typedef enum
 {
     SFRF_COUNT_NOP,
     SFRF_COUNT_RESET,
@@ -70,27 +71,27 @@ typedef enum {
 } FilterState;
 
 /* A threshold configuration object, created for each configured rate_filter.
- * These are created at initialization, and remain static. 
+ * These are created at initialization, and remain static.
  */
-typedef struct 
+typedef struct
 {
     // Internally generated unique threshold identity
-    int      tid;  
+    int      tid;
 
-    // Generator id from configured threshold 
-    unsigned gid; 
+    // Generator id from configured threshold
+    unsigned gid;
 
-    // Signature id from configured threshold 
+    // Signature id from configured threshold
     unsigned sid;
 
-    // Signature id from configured threshold 
+    // Signature id from configured threshold
     tSfPolicyId policyId;
 
-    // Threshold tracking by src, dst or rule 
-    SFRF_TRACK tracking; 
+    // Threshold tracking by src, dst or rule
+    SFRF_TRACK tracking;
 
     // Number of rule matching before rate limit is reached.
-    unsigned count;      
+    unsigned count;
 
     // Duration in seconds for determining rate of rule matching
     unsigned seconds;
@@ -107,32 +108,32 @@ typedef struct
 } tSFRFConfigNode;
 
 /* tSFRFSidNode acts as a container of gid+sid based threshold objects,
- * this allows multiple threshold objects to be applied to a single 
+ * this allows multiple threshold objects to be applied to a single
  * gid+sid pair. This is static data elements, built at initialization.
  */
-typedef struct 
+typedef struct
 {
     // List of threshold configuration nodes of type tSFRFConfigNode
     tSfPolicyId policyId;
-    
-    // Generator id from configured threshold 
-    unsigned gid; 
 
-    // Signature id from configured threshold 
-    unsigned sid; 
-    
+    // Generator id from configured threshold
+    unsigned gid;
+
+    // Signature id from configured threshold
+    unsigned sid;
+
     // List of threshold configuration nodes of type tSFRFConfigNode
     SF_LIST* configNodeList;
 
 } tSFRFSidNode;
 
-typedef struct 
+typedef struct
 {
-    ///policy identifier 
+    ///policy identifier
     tSfPolicyId policyId;
 
-    // Signature id from configured threshold 
-    unsigned sid; 
+    // Signature id from configured threshold
+    unsigned sid;
 
 } tSFRFGenHashKey;
 
@@ -141,10 +142,10 @@ typedef struct
  */
 typedef struct _RateFilterConfig
 {
-    /* Array of hash, indexed by gid. Each array element is a hash, which 
+    /* Array of hash, indexed by gid. Each array element is a hash, which
      * is keyed on sid/policyId and data is a tSFRFSidNode node.
      */
-    SFGHASH* genHash [SFRF_MAX_GENID]; 
+    SFGHASH* genHash [SFRF_MAX_GENID];
 
     // Number of DOS thresholds added.
     int count;
@@ -159,18 +160,19 @@ typedef struct _RateFilterConfig
 } RateFilterConfig;
 
 /*
- * Prototypes 
+ * Prototypes
  */
 void SFRF_Delete(void);
 void SFRF_Flush(void);
 
-int SFRF_ConfigAdd(RateFilterConfig *, tSFRFConfigNode* );
+struct _SnortConfig;
+int SFRF_ConfigAdd(struct _SnortConfig *, RateFilterConfig *, tSFRFConfigNode* );
 
 int SFRF_TestThreshold(
     RateFilterConfig *config,
-    unsigned gid,  
+    unsigned gid,
     unsigned sid,
-    snort_ip_p sip,   
+    snort_ip_p sip,
     snort_ip_p dip,
     time_t curTime,
     SFRF_COUNT_OPERATION

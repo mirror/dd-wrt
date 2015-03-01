@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (C) 2008-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2008-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -14,7 +15,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************/
 
@@ -103,6 +104,9 @@ typedef struct _OptTreeNode
     unsigned short proto_node_num;
 
     uint8_t failedCheckBits;
+    char generated;
+
+    uint16_t longestPatternLen;
 
     int rule_state; /* Enabled or Disabled */
 
@@ -120,7 +124,6 @@ typedef struct _OptTreeNode
     uint64_t ppm_suspend_time; /* PPM */
     uint64_t ppm_disable_cnt; /*PPM */
 
-    char generated;
     uint32_t num_detection_opts;
 
     /**unique index generated in ruleIndexMap.

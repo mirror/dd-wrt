@@ -1,9 +1,10 @@
 /*
 ** $Id$
 **
-**  mpse.h       
+**  mpse.h
 **
-** Copyright (C) 2002-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Marc Norton <mnorton@sourcefire.com>
 **
 ** Multi-Pattern Search Engine
@@ -11,7 +12,7 @@
 **  Supports:
 **
 **    Modified Wu-Manber mwm.c/.h
-**    Aho-Corasick - Deterministic Finite Automatum   
+**    Aho-Corasick - Deterministic Finite Automatum
 **    Keyword Trie with Boyer Moore Bad Character Shifts
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -41,36 +42,15 @@
 
 #include "sf_types.h"
 #include "bitop.h"
+#include "mpse_methods.h"
 
 /*
-*   Move these defines to a generic Win32/Unix compatability file, 
+*   Move these defines to a generic Win32/Unix compatability file,
 *   there must be one somewhere...
 */
-#ifndef CDECL 
-#define CDECL 
+#ifndef CDECL
+#define CDECL
 #endif
-
-
-/*
-*  Pattern Matching Methods 
-*/
-//#define MPSE_MWM       1
-#define MPSE_AC        2
-//#define MPSE_KTBM      3
-#define MPSE_LOWMEM    4
-//#define MPSE_AUTO      5
-#define MPSE_ACF       6
-#define MPSE_ACS       7
-#define MPSE_ACB       8
-#define MPSE_ACSB      9
-#define MPSE_AC_BNFA   10 
-#define MPSE_AC_BNFA_Q 11 
-#define MPSE_ACF_Q     12 
-#define MPSE_LOWMEM_Q  13 
-
-#ifdef INTEL_SOFT_CPM
-#define MPSE_INTEL_CPM 14 
-#endif /* INTEL_SOFT_CPM */
 
 #define MPSE_INCREMENT_GLOBAL_CNT 1
 #define MPSE_DONT_INCREMENT_GLOBAL_COUNT 0
@@ -78,27 +58,44 @@
 /*
 ** PROTOTYPES
 */
+struct _SnortConfig;
 void * mpseNew( int method, int use_global_counter_flag,
+                void (*userfree)(void *p),
+                void (*optiontreefree)(void **p),
+                void (*neg_list_free)(void **p));
+void * mpseNewWithSnortConfig( struct _SnortConfig *sc,
+                int method, int use_global_counter_flag,
                 void (*userfree)(void *p),
                 void (*optiontreefree)(void **p),
                 void (*neg_list_free)(void **p));
 void   mpseFree( void * pv );
 
-int  mpseAddPattern  ( void * pv, void * P, int m, 
+int  mpseAddPattern  ( void * pv, void * P, int m,
                        unsigned noCase, unsigned offset, unsigned depth,
                        unsigned negative, void* ID, int IID );
+int  mpseAddPatternWithSnortConfig ( struct _SnortConfig *sc, void * pvoid, void * P, int m,
+                      unsigned noCase, unsigned offset, unsigned depth,
+                      unsigned negative, void* ID, int IID );
 
 void mpseLargeShifts   ( void * pvoid, int flag );
 
 int  mpsePrepPatterns  ( void * pvoid,
                          int ( *build_tree )(void *id, void **existing_tree),
                          int ( *neg_list_func )(void *id, void **list) );
+struct _SnortConfig;
+int  mpsePrepPatternsWithSnortConf  ( struct _SnortConfig *, void * pvoid,
+                                      int ( *build_tree )(struct _SnortConfig *, void *id, void **existing_tree),
+                                      int ( *neg_list_func )(void *id, void **list) );
 
 void mpseSetRuleMask   ( void *pv, BITOP * rm );
 
-int  mpseSearch( void *pv, const unsigned char * T, int n, 
-                 int ( *action )(void* id, void * tree, int index, void *data, void *neg_list), 
-                 void * data, int* current_state ); 
+int  mpseSearch( void *pv, const unsigned char * T, int n,
+                 int ( *action )(void* id, void * tree, int index, void *data, void *neg_list),
+                 void * data, int* current_state );
+
+int  mpseSearchAll( void *pv, const unsigned char * T, int n,
+                 int ( *action )(void* id, void * tree, int index, void *data, void *neg_list),
+                 void * data, int* current_state );
 
 int mpseGetPatternCount(void *pv);
 
@@ -107,7 +104,8 @@ void   mpseResetByteCount(void);
 
 int mpsePrintInfo( void * obj );
 int mpsePrintSummary(int);
-  
+int mpsePrintSummaryWithSnortConfig(struct _SnortConfig *, int);
+
 void   mpseVerbose( void * pvoid );
 void   mpseSetOpt( void * pvoid,int flag);
 

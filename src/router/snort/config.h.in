@@ -19,17 +19,47 @@
 /* Define if errlist is predefined */
 #undef ERRLIST_PREDEFINED
 
+/* Build with extended file inspection features. (Experimental) */
+#undef FEAT_FILE_INSPECT
+
+/* Build with application id support. (Experimental) */
+#undef FEAT_OPEN_APPID
+
 /* Define if FreeBSD */
 #undef FREEBSD
 
 /* Define to 1 if the system has the type `boolean'. */
 #undef HAVE_BOOLEAN
 
+/* Define to 1 if you have the `daq_acquire_with_meta' function. */
+#undef HAVE_DAQ_ACQUIRE_WITH_META
+
+/* DAQ version supports address space ID in header. */
+#undef HAVE_DAQ_ADDRESS_SPACE_ID
+
+/* Define to 1 if you have the `daq_dp_add_dc' function. */
+#undef HAVE_DAQ_DP_ADD_DC
+
+/* DAQ version supports flow ID in header. */
+#undef HAVE_DAQ_FLOW_ID
+
+/* Define to 1 if you have the `daq_hup_apply' function. */
+#undef HAVE_DAQ_HUP_APPLY
+
+/* DAQ version supports DAQ_VERDICT_RETRY in DAQ_Verdict. */
+#undef HAVE_DAQ_VERDICT_RETRY
+
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
 /* Define to 1 if you have the <dnet.h> header file. */
 #undef HAVE_DNET_H
+
+/* Define to 1 if you have the <dumbnet.h> header file. */
+#undef HAVE_DUMBNET_H
+
+/* Define to 1 if you have the `inet_ntop' function. */
+#undef HAVE_INET_NTOP
 
 /* Define to 1 if the system has the type `int16_t'. */
 #undef HAVE_INT16_T
@@ -46,6 +76,12 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
+/* Define to 1 if you have the `dnet' library (-ldnet). */
+#undef HAVE_LIBDNET
+
+/* Define to 1 if you have the `dumbnet' library (-ldumbnet). */
+#undef HAVE_LIBDUMBNET
+
 /* Define to 1 if you have the `m' library (-lm). */
 #undef HAVE_LIBM
 
@@ -61,17 +97,14 @@
 /* Define to 1 if you have the `pfring' library (-lpfring). */
 #undef HAVE_LIBPFRING
 
-/* Define to 1 if you have the `pq' library (-lpq). */
-#undef HAVE_LIBPQ
-
-/* Define whether Prelude support is enabled */
-#undef HAVE_LIBPRELUDE
-
 /* Define to 1 if you have the `rt' library (-lrt). */
 #undef HAVE_LIBRT
 
 /* Define to 1 if you have the `socket' library (-lsocket). */
 #undef HAVE_LIBSOCKET
+
+/* Define to 1 if you have the `uuid' library (-luuid). */
+#undef HAVE_LIBUUID
 
 /* Define to 1 if you have the `z' library (-lz). */
 #undef HAVE_LIBZ
@@ -79,11 +112,29 @@
 /* Define whether linuxthreads is being used */
 #undef HAVE_LINUXTHREADS
 
+/* Define to 1 if you have the <lzma.h> header file. */
+#undef HAVE_LZMA_H
+
+/* Define to 1 if you have the `mallinfo' function. */
+#undef HAVE_MALLINFO
+
+/* Define to 1 if you have the `malloc_trim' function. */
+#undef HAVE_MALLOC_TRIM
+
 /* Define to 1 if you have the <math.h> header file. */
 #undef HAVE_MATH_H
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
+
+/* Define to 1 if you have the `memrchr' function. */
+#undef HAVE_MEMRCHR
+
+/* openssl MD5 available */
+#undef HAVE_OPENSSL_MD5
+
+/* openssl SHA available */
+#undef HAVE_OPENSSL_SHA
 
 /* Define to 1 if you have the <paths.h> header file. */
 #undef HAVE_PATHS_H
@@ -100,8 +151,14 @@
 /* Define to 1 if you have the <pfring.h> header file. */
 #undef HAVE_PFRING_H
 
+/* Define to 1 if you have the `sigaction' function. */
+#undef HAVE_SIGACTION
+
 /* snprintf function is available */
 #undef HAVE_SNPRINTF
+
+/* Define to 1 if stdbool.h conforms to C99. */
+#undef HAVE_STDBOOL_H
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
@@ -151,6 +208,9 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
+/* Define to 1 if you have the <uuid/uuid.h> header file. */
+#undef HAVE_UUID_UUID_H
+
 /* Define to 1 if the system has the type `u_int16_t'. */
 #undef HAVE_U_INT16_T
 
@@ -184,6 +244,9 @@
 /* Define to 1 if you have the <zlib.h> header file. */
 #undef HAVE_ZLIB_H
 
+/* Define to 1 if the system has the type `_Bool'. */
+#undef HAVE__BOOL
+
 /* Define if the compiler understands __FUNCTION__. */
 #undef HAVE___FUNCTION__
 
@@ -208,12 +271,6 @@
 
 /* Define if MacOS */
 #undef MACOS
-
-/* For MySQL versions 5.0.13 and greater */
-#undef MYSQL_HAS_OPT_RECONNECT
-
-/* For MySQL versions 5.0.13 to 5.0.18 */
-#undef MYSQL_HAS_OPT_RECONNECT_BUG
 
 /* Define if OpenBSD < 2.3 */
 #undef OPENBSD
@@ -241,6 +298,18 @@
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
+
+/* Set by user */
+#undef SIGNAL_SNORT_DUMP_STATS
+
+/* Set by user */
+#undef SIGNAL_SNORT_READ_ATTR_TBL
+
+/* Set by user */
+#undef SIGNAL_SNORT_RELOAD
+
+/* Set by user */
+#undef SIGNAL_SNORT_ROTATE_STATS
 
 /* The size of `char', as computed by sizeof. */
 #undef SIZEOF_CHAR
@@ -289,3 +358,9 @@
 
 /* Define __FUNCTION__ as required. */
 #undef __FUNCTION__
+
+/* Define to `__inline__' or `__inline' if that's what the C compiler
+   calls it, or to nothing if 'inline' is not supported under any name.  */
+#ifndef __cplusplus
+#undef inline
+#endif

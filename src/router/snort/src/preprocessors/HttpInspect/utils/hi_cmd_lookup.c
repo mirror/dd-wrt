@@ -1,6 +1,7 @@
 /****************************************************************************
 *
-* Copyright (C) 2003-2011 Sourcefire, Inc.
+* Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+* Copyright (C) 2003-2013 Sourcefire, Inc.
 *
 * This program is free software; you can redistribute it and/or modify
 * it under the terms of the GNU General Public License Version 2 as
@@ -15,12 +16,16 @@
 *
 * You should have received a copy of the GNU General Public License
 * along with this program; if not, write to the Free Software
-* Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+* Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 *
 ****************************************************************************/
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "hi_util_kmap.h"
 #include "hi_cmd_lookup.h"
@@ -42,7 +47,7 @@
  */
 int http_cmd_lookup_init(CMD_LOOKUP **CmdLookup)
 {
-    KMAP *km = KMapNew((KMapUserFreeFunc)HttpInspectCleanupHttpMethodsConf); 
+    KMAP *km = KMapNew((KMapUserFreeFunc)HttpInspectCleanupHttpMethodsConf);
     *CmdLookup = km;
     if(*CmdLookup == NULL)
     {
@@ -86,9 +91,9 @@ int http_cmd_lookup_cleanup(CMD_LOOKUP **CmdLookup)
 
 /*
  * Function: http_cmd_lookup_add(CMD_LOOKUP *CmdLookup,
- *                                 char *ip, int len, 
+ *                                 char *ip, int len,
  *                                 HTTP_CMD_CONF *HTTPCmd)
- * 
+ *
  * Purpose: Add a cmd configuration to the list.
  *          We add these keys like you would normally think to add
  *          them, because on low endian machines the least significant
@@ -104,7 +109,7 @@ int http_cmd_lookup_cleanup(CMD_LOOKUP **CmdLookup)
  * Returns: int => return code indicating error or success
  *
  */
-int http_cmd_lookup_add(CMD_LOOKUP *CmdLookup, char *cmd, int len, 
+int http_cmd_lookup_add(CMD_LOOKUP *CmdLookup, char *cmd, int len,
                             HTTP_CMD_CONF *HTTPCmd)
 {
     int iRet;
@@ -153,7 +158,7 @@ int http_cmd_lookup_add(CMD_LOOKUP *CmdLookup, char *cmd, int len,
  *                            matching IP if found, NULL otherwise.
  *
  */
-HTTP_CMD_CONF  *http_cmd_lookup_find(CMD_LOOKUP *CmdLookup, 
+HTTP_CMD_CONF  *http_cmd_lookup_find(CMD_LOOKUP *CmdLookup,
                                             const char *cmd, int len, int *iError)
 {
     HTTP_CMD_CONF *HTTPCmd = NULL;

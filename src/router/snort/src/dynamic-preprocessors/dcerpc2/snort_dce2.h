@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (C) 2008-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2008-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -14,10 +15,10 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************
- * 
+ *
  ****************************************************************************/
 
 #ifndef _SNORT_DCE2_H_
@@ -27,7 +28,7 @@
 #include "dce2_session.h"
 #include "sf_snort_packet.h"
 #include "sf_types.h"
-#include "debug.h"
+#include "snort_debug.h"
 
 /********************************************************************
  * Macros
@@ -63,6 +64,12 @@ typedef struct _DCE2_ProtoIds
 } DCE2_ProtoIds;
 
 /********************************************************************
+ * Extern variables
+ ********************************************************************/
+extern DCE2_ProtoIds dce2_proto_ids;
+extern DCE2_CStack *dce2_pkt_stack;
+
+/********************************************************************
  * Public function prototypes
  ********************************************************************/
 DCE2_Ret DCE2_Process(SFSnortPacket *);
@@ -72,14 +79,16 @@ DCE2_Ret DCE2_AddDataToRpkt(SFSnortPacket *, DCE2_RpktType, const uint8_t *, uin
 DCE2_Ret DCE2_PushPkt(SFSnortPacket *);
 void DCE2_PopPkt(void);
 void DCE2_Detect(DCE2_SsnData *);
+void DCE2_FileDetect(DCE2_SsnData *);
 uint16_t DCE2_GetRpktMaxData(DCE2_SsnData *, DCE2_RpktType);
 void DCE2_FreeGlobals(void);
+void DCE2_SetNoInspect(DCE2_SsnData *);
 
 /********************************************************************
  * Inline function prototypes
  ********************************************************************/
-static INLINE void DCE2_ResetRopts(DCE2_Roptions *);
-static INLINE void DCE2_DisableDetect(SFSnortPacket *);
+static inline void DCE2_ResetRopts(DCE2_Roptions *);
+static inline void DCE2_DisableDetect(SFSnortPacket *);
 
 /********************************************************************
  * Function:
@@ -91,7 +100,7 @@ static INLINE void DCE2_DisableDetect(SFSnortPacket *);
  * Returns: None
  *
  ********************************************************************/
-static INLINE void DCE2_ResetRopts(DCE2_Roptions *ropts)
+static inline void DCE2_ResetRopts(DCE2_Roptions *ropts)
 {
     ropts->first_frag = DCE2_SENTINEL;
     ropts->opnum = DCE2_SENTINEL;
@@ -110,12 +119,9 @@ static INLINE void DCE2_ResetRopts(DCE2_Roptions *ropts)
  * Returns:
  *
  *********************************************************************/
-static INLINE void DCE2_DisableDetect(SFSnortPacket *p)
+static inline void DCE2_DisableDetect(SFSnortPacket *p)
 {
     _dpd.disableAllDetect(p);
-    _dpd.setPreprocBit(p, PP_SFPORTSCAN);
-    _dpd.setPreprocBit(p, PP_PERFMONITOR);
-    _dpd.setPreprocBit(p, PP_SDF);
 }
 
 #endif  /* _SNORT_DCE2_H_ */

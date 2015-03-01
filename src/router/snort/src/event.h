@@ -1,6 +1,7 @@
 /* $Id$ */
 /*
-** Copyright (C) 2002-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -16,28 +17,25 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 /*  D E F I N E S  ************************************************************/
 #ifndef __EVENT_H__
 #define __EVENT_H__
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 #ifdef OSF1
 #include <sys/bitypes.h>
 #endif
 
 #include <sys/types.h>
-#ifndef WIN32
-#include <sys/time.h>
-#endif
 
 #include "pcap_pkthdr32.h"
 
+#if defined(FEAT_OPEN_APPID)
+#define MAX_EVENT_APPNAME_LEN  16
+
+#endif /* defined(FEAT_OPEN_APPID) */
 typedef struct _Event
 {
     uint32_t sig_generator;   /* which part of snort generated the alert? */
@@ -51,6 +49,9 @@ typedef struct _Event
                                 */
     struct sf_timeval32 ref_time;   /* reference time for the event reference */
 
+#if defined(FEAT_OPEN_APPID)
+    char     app_name[MAX_EVENT_APPNAME_LEN];
+#endif /* defined(FEAT_OPEN_APPID) */
     /* Don't add to this structure because this is the serialized data
      * struct for unified logging.
      */

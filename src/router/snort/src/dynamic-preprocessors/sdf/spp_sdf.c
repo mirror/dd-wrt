@@ -1,5 +1,6 @@
 /*
-** Copyright (C) 2009-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2009-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License Version 2 as
@@ -14,13 +15,14 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
+#include <assert.h>
 #include <sys/types.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -32,13 +34,14 @@
 #include <strings.h>
 #endif
 
+#include "sf_types.h"
 /*
 #include "snort.h"
 #include "parser.h"
 #include "util.h"
 #include "plugbase.h"
 */
-#include "debug.h"
+#include "snort_debug.h"
 #include "stream_api.h"
 #include "sfPolicy.h"
 #include "sfPolicyUserData.h"
@@ -53,16 +56,22 @@
 #include "profiler.h"
 
 #include "spp_sdf.h"
+#include "sf_preproc_info.h"
 #include "sdf_us_ssn.h"
 #include "sdf_detection_option.h"
 #include "sdf_pattern_match.h"
 
-extern DynamicPreprocessorData _dpd;
+const int MAJOR_VERSION = 1;
+const int MINOR_VERSION = 1;
+const int BUILD_VERSION = 1;
+const char *PREPROC_NAME = "SF_SDF";
+
+#define SetupSDF DYNAMIC_PREPROC_SETUP
 
 /* PROTOTYPES */
-static void SDFInit(char *args);
+static void SDFInit(struct _SnortConfig *, char *args);
 static void ProcessSDF(void *p, void *context);
-static SDFConfig * NewSDFConfig(tSfPolicyUserContextId);
+static SDFConfig * NewSDFConfig(struct _SnortConfig *, tSfPolicyUserContextId);
 static void ParseSDFArgs(SDFConfig *config, char *args);
 static void SDFCleanExit(int signal, void *unused);
 static int SDFFreeConfig(tSfPolicyUserContextId context, tSfPolicyId id, void *pData);
@@ -72,20 +81,18 @@ static void SDFPrintPseudoPacket(SDFConfig *config, SDFSessionData *session,
                                  SFSnortPacket *real_packet);
 
 #ifdef SNORT_RELOAD
-static void SDFReload(char *);
-static void * SDFReloadSwap(void);
+static void SDFReload(struct _SnortConfig *, char *, void **);
+static void * SDFReloadSwap(struct _SnortConfig *, void *);
 static void SDFReloadSwapFree(void *);
 #endif
 
 /* GLOBALS :( */
-sdf_tree_node *head_node = NULL;
-uint32_t num_patterns = 0;
-tSfPolicyUserContextId sdf_context_id = NULL;
+SDFContext *sdf_context = NULL;
+static uint32_t sdf_config_count = 0;
 
 #ifdef SNORT_RELOAD
 sdf_tree_node *swap_head_node = NULL;
 uint32_t swap_num_patterns = 0;
-tSfPolicyUserContextId sdf_swap_context_id = NULL;
 #endif
 
 #ifdef PERF_PROFILING
@@ -110,7 +117,7 @@ void SetupSDF(void)
 #ifndef SNORT_RELOAD
     _dpd.registerPreproc("sensitive_data", SDFInit);
 #else
-    _dpd.registerPreproc("sensitive_data", SDFInit, SDFReload, SDFReloadSwap, 
+    _dpd.registerPreproc("sensitive_data", SDFInit, SDFReload, NULL, SDFReloadSwap,
                          SDFReloadSwapFree);
 #endif
 }
@@ -126,7 +133,7 @@ void SetupSDF(void)
  * Returns: void
  *
  */
-void SDFInit(char *args)
+void SDFInit(struct _SnortConfig *sc, char *args)
 {
     SDFConfig *config = NULL;
 
@@ -137,12 +144,18 @@ void SDFInit(char *args)
     }
 
     /* Create context id, register callbacks. This is only done once. */
-    if (sdf_context_id == NULL)
+    if (sdf_context == NULL)
     {
-        sdf_context_id = sfPolicyConfigCreate();
-        /* Allocate the head of the pattern-matching tree */
-        head_node = (sdf_tree_node *)calloc(1, sizeof(sdf_tree_node));
-        if (!head_node)
+        sdf_context = (SDFContext *)calloc(1, sizeof(*sdf_context));
+        if (!sdf_context)
+            DynamicPreprocessorFatalMessage("Failed to allocate memory for SDF "
+                                            "configuration.\n");
+        sdf_context->context_id = sfPolicyConfigCreate();
+        if (!sdf_context->context_id)
+            DynamicPreprocessorFatalMessage("Failed to allocate memory for SDF "
+                                            "configuration.\n");
+        sdf_context->head_node = (sdf_tree_node *)calloc(1, sizeof(*sdf_context->head_node));
+        if (!sdf_context->head_node)
             DynamicPreprocessorFatalMessage("Failed to allocate memory for SDF "
                                             "configuration.\n");
 
@@ -154,13 +167,13 @@ void SDFInit(char *args)
     }
 
     /* Handle configuration. This is done once for each policy. */
-    config = NewSDFConfig(sdf_context_id);
+    config = NewSDFConfig(sc, sdf_context->context_id);
     ParseSDFArgs(config, args);
 
     /* Register callbacks */
-    _dpd.addDetect(ProcessSDF, PRIORITY_FIRST, PP_SDF,
+    _dpd.addDetect(sc, ProcessSDF, PRIORITY_FIRST, PP_SDF,
                     PROTO_BIT__TCP | PROTO_BIT__UDP);
-    _dpd.preprocOptRegister(SDF_OPTION_NAME, SDFOptionInit, SDFOptionEval,
+    _dpd.preprocOptRegister(sc, SDF_OPTION_NAME, SDFOptionInit, SDFOptionEval,
                             NULL, NULL, NULL, SDFOtnHandler, NULL);
 }
 
@@ -176,7 +189,7 @@ static int SDFCheckPorts(SDFConfig *config, SFSnortPacket *packet)
     int16_t app_ordinal = SFTARGET_UNKNOWN_PROTOCOL;
 
     /* Do port checks */
-    app_ordinal = _dpd.streamAPI->get_application_protocol_id(packet->stream_session_ptr);
+    app_ordinal = _dpd.sessionAPI->get_application_protocol_id(packet->stream_session);
     if (app_ordinal == SFTARGET_UNKNOWN_PROTOCOL)
         return 0;
     if (app_ordinal && (config->protocol_ordinals[app_ordinal] == 0))
@@ -221,21 +234,25 @@ static SDFSessionData * NewSDFSession(SDFConfig *config, SFSnortPacket *packet)
     SDFSessionData *session;
 
     /* Allocate new session data. */
-    session = (SDFSessionData *) calloc(1, sizeof(SDFSessionData));
+    session = (SDFSessionData *) malloc(sizeof(SDFSessionData));
     if (session == NULL)
     {
         DynamicPreprocessorFatalMessage("Failed to allocate memory for "
                 "SDF preprocessor session data.\n");
     }
 
-    if (packet->stream_session_ptr)
+    if (packet->stream_session)
     {
-        _dpd.streamAPI->set_application_data(packet->stream_session_ptr,
+        _dpd.sessionAPI->set_application_data(packet->stream_session,
                                              PP_SDF, session, FreeSDFSession);
     }
 
+    session->part_match_node= NULL;
+    session->part_match_index = 0;
+    session->global_counter = 0;
+    session->config_num = config->config_num;
     /* Allocate counters in the session data */
-    session->num_patterns = num_patterns;
+    session->num_patterns = sdf_context->num_patterns;
     session->counters = calloc(session->num_patterns, sizeof(uint8_t));
     session->rtns_matched = calloc(session->num_patterns, sizeof(int8_t));
     if (session->counters == NULL || session->rtns_matched == NULL)
@@ -247,6 +264,123 @@ static SDFSessionData * NewSDFSession(SDFConfig *config, SFSnortPacket *packet)
     return session;
 }
 
+static void SDFSearchRecursively(SDFConfig *config, SFSnortPacket *packet,
+                      SDFSessionData *session, sdf_tree_node *matched_node, 
+                      char **position, uint16_t *buflen, uint16_t match_length)
+{
+    /* Iterate through the SDFOptionData that matches this pattern. */
+    uint16_t i;
+    for (i = 0; i < matched_node->num_option_data; i++)
+    {
+        SDFOptionData *found_pattern = matched_node->option_data_list[i];
+        if (found_pattern->match_success)
+        {
+            int index;
+            /* Reset the match_success flag for subsequent matches */
+            found_pattern->match_success = 0;
+
+            /* Check the RTN for the PII we found. The IPs & ports might not match.
+               We only want to do this once per session */
+            index = found_pattern->counter_index;
+            if (session->rtns_matched[index] == 0)
+            {
+                bool check_ports = true;
+                OptTreeNode *otn = found_pattern->otn;
+                RuleTreeNode *rtn = NULL;
+#ifdef TARGET_BASED
+                int16_t app_ordinal;
+#endif
+
+                if (_dpd.getIpsRuntimePolicy() < otn->proto_node_num)
+                    rtn = otn->proto_nodes[_dpd.getIpsRuntimePolicy()];
+
+#ifdef TARGET_BASED
+                /* Check the service against the matched OTN. */
+                app_ordinal = _dpd.sessionAPI->get_application_protocol_id(packet->stream_session);
+                if( app_ordinal != SFTARGET_UNKNOWN_PROTOCOL )
+                {
+                    unsigned int i;
+                    for (i = 0; i < otn->sigInfo.num_services; i++)
+                    {
+                        if (otn->sigInfo.services[i].service_ordinal == app_ordinal)
+                        {
+                            check_ports = false;
+                            break;
+                        }
+                    }
+                }
+#endif
+                if (rtn != NULL && _dpd.fpEvalRTN(rtn, packet, check_ports))
+                    session->rtns_matched[index] = 1;
+                else
+                    session->rtns_matched[index] = -1;
+            }
+
+            if (session->rtns_matched[index] == 1)
+            {
+                /* Increment counters */
+                session->counters[found_pattern->counter_index]++;
+
+                /* Obfuscate the data.
+                   We do this even if it's not time to alert, to obfuscate each match. */
+                if (config->mask_output)
+                {
+
+                    /* Only obfuscate built-in patterns */
+                    if (found_pattern->validate_func)
+                    {
+                        uint16_t offset, ob_length = 0;
+                        offset = (uint16_t) ((*position) - (char *)packet->payload);
+
+                        if (match_length > SDF_OBFUSCATION_DIGITS_SHOWN)
+                            ob_length = match_length - SDF_OBFUSCATION_DIGITS_SHOWN;
+
+                        /* The CC# and SS# patterns now contain non-digits on either
+                           side of the actual number. Adjust the mask to match. */
+                        offset = offset + 1;
+                        ob_length = ob_length - 2;
+
+                        _dpd.obApi->addObfuscationEntry(packet, offset, ob_length,
+                                                        SDF_OBFUSCATION_CHAR);
+                    }
+                }
+
+                if (session->counters[found_pattern->counter_index] == found_pattern->count)
+                {
+
+                    /* Raise the alert for this particular pattern */
+                    _dpd.alertAdd(GENERATOR_SPP_SDF_RULES,
+                                  found_pattern->otn->sigInfo.id,
+                                  found_pattern->otn->sigInfo.rev,
+                                  found_pattern->otn->sigInfo.class_id,
+                                  found_pattern->otn->sigInfo.priority,
+                                  found_pattern->otn->sigInfo.message,
+                                  0);
+                }
+            }
+        }
+    }
+
+    /* Check the global counter and alert */
+    session->global_counter++;
+    if (session->global_counter == config->threshold)
+    {
+        /* Do our "combo alert" */
+        SDFPrintPseudoPacket(config, session, packet);
+        _dpd.genSnortEvent(config->pseudo_packet,
+                           GENERATOR_SPP_SDF_PREPROC,
+                           SDF_COMBO_ALERT_SID,
+                           SDF_COMBO_ALERT_REV,
+                           SDF_COMBO_ALERT_CLASS,
+                           SDF_COMBO_ALERT_PRIORITY,
+                           SDF_COMBO_ALERT_STR);
+    }
+
+    /* Update position */
+    (*position) += match_length;
+    (*buflen) -= match_length;
+}
+
 /* Search a buffer for PII. Generates alerts when enough PII is found.
    Returns: void
 */
@@ -254,120 +388,59 @@ static void SDFSearch(SDFConfig *config, SFSnortPacket *packet,
                       SDFSessionData *session, char *position, char *end,
                       uint16_t buflen)
 {
-    while (position < end)
+    uint16_t match_length = 0;
+    sdf_tree_node *matched_node = NULL;
+    uint16_t *partial_index = &(session->part_match_index);
+    sdf_tree_node **partial_node = &(session->part_match_node);
+    /* Check to see if there was a partial match */ 
+    if(*partial_index > 0)
     {
-        uint16_t match_length = 0;
-        int index;
-        sdf_tree_node *matched_node = NULL;
-
-        /* Traverse the pattern tree and match PII against our data */
-        matched_node = FindPii(head_node, position, &match_length,
-                               buflen, config);
-
-        /* Iterate through the SDFOptionData that matches this pattern. */
-        if (matched_node)
+        if( position < end )
         {
-            uint16_t i;
-            for (i = 0; i < matched_node->num_option_data; i++)
+            sdf_tree_node *node = *partial_node;
+            if(strlen(node->pattern) == *partial_index)
             {
-                SDFOptionData *found_pattern = matched_node->option_data_list[i];
-                if (found_pattern->match_success)
+                int i = 0;
+                while ((i < node->num_children) && matched_node == NULL)
                 {
-                    /* Reset the match_success flag for subsequent matches */
-                    found_pattern->match_success = 0;
-
-                    /* Check the RTN for the PII we found. The IPs & ports might not match.
-                       We only want to do this once per session */
-                    index = found_pattern->counter_index;
-                    if (session->rtns_matched[index] == 0)
-                    {
-                        int check_ports = 1;
-                        OptTreeNode *otn = found_pattern->otn;
-                        RuleTreeNode *rtn = NULL;
-#ifdef TARGET_BASED
-                        uint16_t app_ordinal;
-                        unsigned int i;
-#endif
-
-                        if (_dpd.getRuntimePolicy() < otn->proto_node_num)
-                            rtn = otn->proto_nodes[_dpd.getRuntimePolicy()];
-
-#ifdef TARGET_BASED
-                        /* Check the service against the matched OTN. */
-                        app_ordinal = _dpd.streamAPI->get_application_protocol_id(packet->stream_session_ptr);
-                        for (i = 0; i < otn->sigInfo.num_services; i++)
-                        {
-                            if (otn->sigInfo.services[i].service_ordinal == app_ordinal)
-                                check_ports = 0;
-                        }
-#endif
-                        if (rtn != NULL && _dpd.fpEvalRTN(rtn, packet, check_ports))
-                            session->rtns_matched[index] = 1;
-                        else
-                            session->rtns_matched[index] = -1;
-                    }
-
-                    if (session->rtns_matched[index] == 1)
-                    {
-                        /* Increment counters */
-                        session->counters[found_pattern->counter_index]++;
-
-                        /* Obfuscate the data.
-                           We do this even if it's not time to alert, to obfuscate each match. */
-                        if (config->mask_output)
-                        {
-                            uint16_t offset, ob_length = 0;
-
-                            /* Only obfuscate built-in patterns */
-                            if (found_pattern->validate_func)
-                            {
-                                offset = (uint16_t) (position - (char *)packet->payload);
-
-                                if (match_length > SDF_OBFUSCATION_DIGITS_SHOWN)
-                                    ob_length = match_length - SDF_OBFUSCATION_DIGITS_SHOWN;
-
-                                /* The CC# and SS# patterns now contain non-digits on either
-                                   side of the actual number. Adjust the mask to match. */
-                                offset = offset + 1;
-                                ob_length = ob_length - 2;
-
-                                _dpd.obApi->addObfuscationEntry(packet, offset, ob_length,
-                                                                SDF_OBFUSCATION_CHAR);
-                            }
-                        }
-
-                        if (session->counters[found_pattern->counter_index] == found_pattern->count)
-                        {
-                            
-                            /* Raise the alert for this particular pattern */
-                            _dpd.alertAdd(GENERATOR_SPP_SDF_RULES,
-                                          found_pattern->otn->sigInfo.id,
-                                          found_pattern->otn->sigInfo.rev,
-                                          found_pattern->otn->sigInfo.class_id,
-                                          found_pattern->otn->sigInfo.priority,
-                                          found_pattern->otn->sigInfo.message,
-                                          0);
-                        }
-                    }
+                    *partial_index = 0;
+                    matched_node = FindPiiRecursively(node->children[i], position, &match_length, buflen, config, partial_index, partial_node);
+                    i++;
                 }
             }
-
-            /* Check the global counter and alert */
-            session->global_counter++;
-            if (session->global_counter == config->threshold)
+            else
             {
-                /* Do our "combo alert" */
-                SDFPrintPseudoPacket(config, session, packet);
-                _dpd.genSnortEvent(config->pseudo_packet,
-                                   GENERATOR_SPP_SDF_PREPROC,
-                                   SDF_COMBO_ALERT_SID,
-                                   SDF_COMBO_ALERT_REV,
-                                   SDF_COMBO_ALERT_CLASS,
-                                   SDF_COMBO_ALERT_PRIORITY,
-                                   SDF_COMBO_ALERT_STR);
+                matched_node = FindPiiRecursively(node, position, &match_length, buflen, config, partial_index, partial_node);
             }
 
-            /* Update position */
+            /* only when matched update the position ptr. FindPiiRecursively only checks one node unlike FindPii */
+            if (matched_node)
+                SDFSearchRecursively(config, packet, session, matched_node, &position, &buflen, match_length);
+            else if (*partial_index)
+            {
+                position += match_length;
+                buflen -= match_length;
+            }
+        }
+        else
+        {
+            return;
+        }
+    }
+
+    while (position < end)
+    {
+        match_length = 0;
+        matched_node = NULL;
+
+        /* Traverse the pattern tree and match PII against our data */
+        matched_node = FindPii(sdf_context->head_node, position, &match_length,
+                               buflen, config, session);
+
+        if (matched_node)
+            SDFSearchRecursively(config, packet, session, matched_node, &position, &buflen, match_length);
+        else if (*partial_index)
+        {
             position += match_length;
             buflen -= match_length;
         }
@@ -397,27 +470,24 @@ static void ProcessSDF(void *p, void *context)
     SFSnortPacket *packet = (SFSnortPacket *)p;
     SDFSessionData *session;
     char *begin, *end;
-    u_int16_t buflen;
+    uint16_t buflen;
     PROFILE_VARS;
 
+    // preconditions - what we registered for
+    assert((IsUDP(packet) || IsTCP(packet)) &&
+        packet->payload && packet->payload_size);
+
     /* Check if we should be working on this packet */
-    if (( !packet ) ||                                      // No packet
-        ( !packet->payload ) ||                             // No data
-        ( !packet->payload_size ) ||                        // No data size
-        ( !IPH_IS_VALID(packet) ) ||                        // Invalid IP Header
-        ( !packet->tcp_header && !packet->udp_header) ||    // No TCP/UDP Header
-        ( packet->flags & FLAG_STREAM_INSERT ))             // Waiting on stream reassembly
-    {
-        return;
-    }
+    if ( packet->flags & FLAG_STREAM_INSERT && !PacketHasFullPDU(p) )
+        return;  // Waiting on stream reassembly
 
     /* Retrieve the corresponding config for this packet */
-    policy_id = _dpd.getRuntimePolicy();
-    sfPolicyUserPolicySet (sdf_context_id, policy_id);
-    config = sfPolicyUserDataGetCurrent(sdf_context_id);
+    policy_id = _dpd.getIpsRuntimePolicy();
+    sfPolicyUserPolicySet (sdf_context->context_id, policy_id);
+    config = sfPolicyUserDataGetCurrent(sdf_context->context_id);
 
     /* Retrieve stream session data. Create one if it doesn't exist. */
-    session = _dpd.streamAPI->get_application_data(packet->stream_session_ptr, PP_SDF);
+    session = _dpd.sessionAPI->get_application_data(packet->stream_session, PP_SDF);
     if (session == NULL)
     {
         /* Do port checks */
@@ -427,7 +497,7 @@ static void ProcessSDF(void *p, void *context)
         }
 
         /* If there's no stream session, we'll just count PII for one packet */
-        if (packet->stream_session_ptr == NULL)
+        if (packet->stream_session == NULL)
         {
             if (config->stateless_session == NULL)
                 config->stateless_session = NewSDFSession(config, packet);
@@ -439,31 +509,31 @@ static void ProcessSDF(void *p, void *context)
         else
             session = NewSDFSession(config, packet);
     }
+    else if( session->config_num != config->config_num )
+    {
+        /* Config has changed. Don't use rule tree nodes from previous config */
+        session->part_match_index = 0;
+        session->part_match_node = NULL;
+        /* Update the session's config num */
+        session->config_num = config->config_num;
+    }
 
     PREPROC_PROFILE_START(sdfPerfStats);
 
-    /* If HTTP Inspect left decoded buffers for us, we'll search those. */
-    if (packet->num_uris > 0)
+    /* Inspect HTTP Body or Email attachments. */
+    if (_dpd.fileDataBuf->len > 0)
     {
-        if (_dpd.uriBuffers[HTTP_BUFFER_URI]->uriLength > 0)
-        {
-            begin = (char *) _dpd.uriBuffers[HTTP_BUFFER_URI]->uriBuffer;
-            buflen = _dpd.uriBuffers[HTTP_BUFFER_URI]->uriLength;
-            end = begin + buflen;
+        begin = (char *) _dpd.fileDataBuf->data;
+        buflen = _dpd.fileDataBuf->len;
+        end = begin + buflen;
 
-            SDFSearch(config, packet, session, begin, end, buflen);
-        }
-        if (_dpd.uriBuffers[HTTP_BUFFER_CLIENT_BODY]->uriLength > 0)
-        {
-            begin = (char *) _dpd.uriBuffers[HTTP_BUFFER_CLIENT_BODY]->uriBuffer;
-            buflen = _dpd.uriBuffers[HTTP_BUFFER_CLIENT_BODY]->uriLength;
-            end = begin + buflen;
-
-            SDFSearch(config, packet, session, begin, end, buflen);
-        }
+        SDFSearch(config, packet, session, begin, end, buflen);
     }
-    else
+    else if ( PacketHasPAFPayload(packet) )
     {
+        /* SDF already requires stream to be enabled, might as well look
+         * at the rebuilt packet */
+
         begin = (char *)packet->payload;
         buflen = packet->payload_size;
         end = begin + buflen;
@@ -471,6 +541,28 @@ static void ProcessSDF(void *p, void *context)
         SDFSearch(config, packet, session, begin, end, buflen);
     }
 
+    /* If this packet is HTTP, inspect the URI and Client Body while ignoring
+     * headers. */
+    if (packet->flags & FLAG_HTTP_DECODE)
+    {
+        unsigned len;
+        begin = (char*)_dpd.getHttpBuffer(HTTP_BUFFER_URI, &len);
+
+        if ( begin )
+        {
+            buflen = (uint16_t)len;
+            end = begin + buflen;
+            SDFSearch(config, packet, session, begin, end, buflen);
+        }
+        begin = (char*)_dpd.getHttpBuffer(HTTP_BUFFER_CLIENT_BODY, &len);
+
+        if ( begin )
+        {
+            buflen = (uint16_t)len;
+            end = begin + buflen;
+            SDFSearch(config, packet, session, begin, end, buflen);
+        }
+    }
     /* End. */
     PREPROC_PROFILE_END(sdfPerfStats);
     return;
@@ -513,7 +605,7 @@ static void ParseSDFArgs(SDFConfig *config, char *args)
     /* Copy args so that we can break them up wtih strtok */
     argcpy = strdup(args);
     if (argcpy == NULL)
-        DynamicPreprocessorFatalMessage("Could not allocate memory to parse " 
+        DynamicPreprocessorFatalMessage("Could not allocate memory to parse "
                                         "SDF options.\n");
 
     cur_tokenp = strtok(argcpy, " ");
@@ -525,7 +617,7 @@ static void ParseSDFArgs(SDFConfig *config, char *args)
         if (!strcmp(cur_tokenp, SDF_THRESHOLD_KEYWORD))
         {
             char *endptr;
-            
+
             cur_tokenp = strtok(NULL, " ");
             if (cur_tokenp == NULL)
             {
@@ -607,11 +699,11 @@ static int SDFPacketInit(SDFConfig *config)
  * Returns: Pointer to newly created SDFConfig struct.
  *
  */
-static SDFConfig * NewSDFConfig(tSfPolicyUserContextId context)
+static SDFConfig * NewSDFConfig(struct _SnortConfig *sc, tSfPolicyUserContextId context)
 {
     SDFConfig *config = NULL;
-    tSfPolicyId policy_id = _dpd.getParserPolicy();
-   
+    tSfPolicyId policy_id = _dpd.getParserPolicy(sc);
+
     /* Check for an existing configuration in this policy */
     sfPolicyUserPolicySet(context, policy_id);
 
@@ -629,6 +721,7 @@ static SDFConfig * NewSDFConfig(tSfPolicyUserContextId context)
 
     /* Allocate the pseudo-packet used for logging */
     SDFPacketInit(config);
+    config->config_num = sdf_config_count++;
 
     return config;
 }
@@ -646,15 +739,14 @@ static SDFConfig * NewSDFConfig(tSfPolicyUserContextId context)
 static void SDFCleanExit(int signal, void *unused)
 {
     /* Free the individual configs. */
-    if (sdf_context_id == NULL)
+    if (sdf_context == NULL)
         return;
 
-    sfPolicyUserDataIterate(sdf_context_id, SDFFreeConfig);
-    sfPolicyConfigDelete(sdf_context_id);
-    sdf_context_id = NULL;
-
-    if (head_node)
-        FreePiiTree(head_node);
+    sfPolicyUserDataFreeIterate(sdf_context->context_id, SDFFreeConfig);
+    sfPolicyConfigDelete(sdf_context->context_id);
+    FreePiiTree(sdf_context->head_node);
+    free(sdf_context);
+    sdf_context = NULL;
 }
 
 /*
@@ -684,72 +776,64 @@ static int SDFFreeConfig(tSfPolicyUserContextId context, tSfPolicyId id, void *p
 }
 
 #ifdef SNORT_RELOAD
-static void SDFReload(char *args)
+static void SDFReload(struct _SnortConfig *sc, char *args, void **new_config)
 {
+    SDFContext *sdf_swap_context = (SDFContext *)*new_config;
     SDFConfig *config = NULL;
 
-    if (sdf_swap_context_id == NULL)
+    if (sdf_swap_context == NULL)
     {
-        sdf_swap_context_id = sfPolicyConfigCreate();
-
-        if (sdf_swap_context_id == NULL)
-        {
-            DynamicPreprocessorFatalMessage("Failed to allocate "
-                                            "memory for SDF config.\n");
-        }
-
-        if (_dpd.streamAPI == NULL)
-        {
+        if (!_dpd.streamAPI)
             DynamicPreprocessorFatalMessage("SetupSDF(): The Stream preprocessor "
                                             "must be enabled.\n");
-        }
 
-        /* Allocate the head of the pattern-matching tree */
-        swap_head_node = (sdf_tree_node *)calloc(1, sizeof(sdf_tree_node));
-        if (!swap_head_node)
-        DynamicPreprocessorFatalMessage("Failed to allocate memory for SDF "
-                                        "configuration.\n"); 
+        sdf_swap_context = (SDFContext *)calloc(1, sizeof(*sdf_context));
+        if (!sdf_swap_context)
+            DynamicPreprocessorFatalMessage("Failed to allocate memory for SDF "
+                                            "configuration.\n");
+        sdf_swap_context->context_id = sfPolicyConfigCreate();
+        if (!sdf_swap_context->context_id)
+            DynamicPreprocessorFatalMessage("Failed to allocate memory for SDF "
+                                            "configuration.\n");
+        sdf_swap_context->head_node = (sdf_tree_node *)calloc(1, sizeof(*sdf_swap_context->head_node));
+        if (!sdf_swap_context->head_node)
+            DynamicPreprocessorFatalMessage("Failed to allocate memory for SDF "
+                                            "configuration.\n");
+        *new_config = (void *)sdf_swap_context;
     }
 
-    config = NewSDFConfig(sdf_swap_context_id);
+    config = NewSDFConfig(sc, sdf_swap_context->context_id);
     ParseSDFArgs(config, args);
 
-    _dpd.addDetect(ProcessSDF, PRIORITY_FIRST, PP_SDF,
+    _dpd.addDetect(sc, ProcessSDF, PRIORITY_FIRST, PP_SDF,
             PROTO_BIT__TCP | PROTO_BIT__UDP);
-    _dpd.preprocOptRegister(SDF_OPTION_NAME, SDFOptionInit, SDFOptionEval,
+    _dpd.preprocOptRegister(sc, SDF_OPTION_NAME, SDFOptionInit, SDFOptionEval,
                                 NULL, NULL, NULL, SDFOtnHandler, NULL);
 }
 
-static void * SDFReloadSwap(void)
+static void * SDFReloadSwap(struct _SnortConfig *sc, void *swap_config)
 {
-    tSfPolicyUserContextId old_context_id = sdf_context_id;
-    sdf_tree_node *old_head_node = head_node;
+    SDFContext *sdf_swap_context = (SDFContext *)swap_config;
+    SDFContext *old_context = sdf_context;
 
-    if (old_context_id == NULL || sdf_swap_context_id == NULL ||
-        old_head_node == NULL || swap_head_node == NULL)
+    if (old_context == NULL || sdf_swap_context == NULL)
         return NULL;
 
-    sdf_context_id = sdf_swap_context_id;
-    sdf_swap_context_id = NULL;
+    sdf_context = sdf_swap_context;
 
-    head_node = swap_head_node;
-    num_patterns = swap_num_patterns;
-
-    FreePiiTree(old_head_node);
-    swap_head_node = NULL;
-    swap_num_patterns = 0;
-
-    return (void *) old_context_id;
+    return (void *) old_context;
 }
 
 static void SDFReloadSwapFree(void *data)
 {
-    tSfPolicyUserContextId context = (tSfPolicyUserContextId) data;
+    SDFContext *context = (SDFContext *) data;
     if (context == NULL)
         return;
 
-    sfPolicyUserDataIterate(context, SDFFreeConfig);
-    sfPolicyConfigDelete(context);
+    sfPolicyUserDataFreeIterate(context->context_id, SDFFreeConfig);
+    sfPolicyConfigDelete(context->context_id);
+    FreePiiTree(context->head_node);
+    free(context);
 }
 #endif
 
@@ -758,9 +842,9 @@ static void SDFReloadSwapFree(void *data)
 *
 *  w - short words of data
 *  blen - byte length
-* 
+*
 */
-static INLINE unsigned short in_chksum_ip(  unsigned short * w, int blen )
+static inline unsigned short in_chksum_ip(  unsigned short * w, int blen )
 {
    unsigned int cksum;
 
@@ -796,45 +880,41 @@ static INLINE unsigned short in_chksum_ip(  unsigned short * w, int blen )
 static void SDFPrintPseudoPacket(SDFConfig *config, SDFSessionData *session,
                                  SFSnortPacket *real_packet)
 {
-    SFSnortPacket* p = config->pseudo_packet;
+    SFSnortPacket* p;
 
     if (config == NULL || session == NULL || real_packet == NULL)
         return;
 
-    _dpd.encodeFormat(ENC_DYN_FWD|ENC_DYN_NET, real_packet, config->pseudo_packet);
+    p = config->pseudo_packet;
 
-    if ( IS_IP4(real_packet) )    
+    _dpd.encodeFormat(ENC_DYN_FWD|ENC_DYN_NET, real_packet, config->pseudo_packet, PSEUDO_PKT_SDF);
+
+    if ( IS_IP4(real_packet) )
     {
         ((IPV4Header *)p->ip4_header)->proto = IPPROTO_SDF;
-#ifdef SUP_IP6
         p->inner_ip4h.ip_proto = IPPROTO_SDF;
-#endif
     }
-#ifdef SUP_IP6
     else if (IS_IP6(p))
     {
         // FIXTHIS assumes there are no ip6 extension headers
         p->inner_ip6h.next = IPPROTO_SDF;
         p->ip6h = &p->inner_ip6h;
     }
-#endif
 
     /* Fill in the payload with SDF alert info */
-    SDFFillPacket(head_node, session, p, &p->payload_size);
+    SDFFillPacket(sdf_context->head_node, session, p, &p->payload_size);
 
     _dpd.encodeUpdate(config->pseudo_packet);
 
-#ifdef SUP_IP6
     if (real_packet->family == AF_INET)
-    {    
+    {
         p->ip4h->ip_len = p->ip4_header->data_length;
-    }    
-    else 
-    {    
+    }
+    else
+    {
         IP6RawHdr* ip6h = (IP6RawHdr*)p->raw_ip6_header;
-        if ( ip6h ) p->ip6h->len = ip6h->payload_len;
-    }    
-#endif
+        if ( ip6h ) p->ip6h->len = ip6h->ip6_payload_len;
+    }
 }
 
 /* This function traverses the pattern tree and prints out the relevant
@@ -866,14 +946,14 @@ static void SDFFillPacket(sdf_tree_node *node, SDFSessionData *session,
             {
                 /* Print line */
                 char *sigmessage = option_data->otn->sigInfo.message;
-                uint8_t *dest = (u_int8_t*)p->payload + *dlen;
+                uint8_t *dest = (uint8_t*)p->payload + *dlen;
                 size_t siglen = strlen(sigmessage);
                 uint16_t space_left = p->max_payload - *dlen;
 
                 if (space_left < siglen + SDF_ALERT_LENGTH)
                     return;
 
-                *dlen += (siglen + SDF_ALERT_LENGTH); 
+                *dlen += (siglen + SDF_ALERT_LENGTH);
                 snprintf((char *)dest, space_left, "%s: %3d", sigmessage, counter);
             }
         }

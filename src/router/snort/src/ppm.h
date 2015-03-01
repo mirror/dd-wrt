@@ -1,6 +1,7 @@
 /****************************************************************************
  *
- * Copyright (C) 2006-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2006-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -15,7 +16,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************/
 
@@ -52,14 +53,17 @@ typedef struct
     PPM_TICKS max_pkt_ticks;  
     int pkt_log;     /* alert,console,syslog */
     int pkt_action;  /* suspend */
-    int debug_pkts;
 
     PPM_TICKS max_rule_ticks;
     uint64_t rule_threshold; /* rules must fail this many times in a row to suspend */
 
     int rule_log;    /* alert,console,syslog */
     int rule_action; /* suspend */
+
+#ifdef DEBUG
+    int debug_pkts;
     int debug_rules;
+#endif
 
     /* stats section */
     unsigned int rule_event_cnt;
@@ -128,7 +132,7 @@ extern int ppm_suspend_this_rule;
 
 #define PPM_INC_PKT_CNT()         snort_conf->ppm_cfg.tot_pkts++ 
 #define PPM_PKT_CNT()             ppm_pt->pktcnt 
-#define PPM_PKT_LOG()             if (ppm_abort_this_pkt) ppm_pkt_log(&snort_conf->ppm_cfg)
+#define PPM_PKT_LOG(p)            if (ppm_abort_this_pkt) ppm_pkt_log(&snort_conf->ppm_cfg,p)
 #define PPM_RULE_LOG(cnt,p)       ppm_rule_log(&snort_conf->ppm_cfg,cnt,p)
 #define PPM_ACCUM_PKT_TIME()      snort_conf->ppm_cfg.tot_pkt_time += ppm_pt->tot;
 #define PPM_ACCUM_RULE_TIME() \
@@ -147,7 +151,9 @@ extern int ppm_suspend_this_rule;
 #define PPM_INC_PKT_RULE_TESTS()      if(ppm_pt)ppm_pt->rule_tests++
 #define PPM_INC_PKT_PCRE_RULE_TESTS() if(ppm_pt)ppm_pt->pcre_rule_tests++
 #define PPM_INC_PKT_NC_RULE_TESTS()   if(ppm_pt)ppm_pt->nc_rule_tests++
+#ifdef DEBUG
 #define PPM_DEBUG_PKTS()           snort_conf->ppm_cfg.debug_pkts
+#endif
 
 #define PPM_PRINT_PKT_TIME(a)    LogMessage(a, ppm_ticks_to_usecs((PPM_TICKS)ppm_pt->tot) );
 
@@ -293,8 +299,10 @@ extern int ppm_suspend_this_rule;
 }
 
 void ppm_init(ppm_cfg_t *);
+#ifdef DEBUG
 void ppm_set_debug_rules(ppm_cfg_t *, int);
 void ppm_set_debug_pkts(ppm_cfg_t *, int);
+#endif
 
 void ppm_set_pkt_action(ppm_cfg_t *, int);
 void ppm_set_pkt_log(ppm_cfg_t *, int);
@@ -311,7 +319,7 @@ void   ppm_print_cfg(ppm_cfg_t *);
 void   ppm_print_summary(ppm_cfg_t *);
 double ppm_ticks_to_usecs( PPM_TICKS );
 
-void ppm_pkt_log(ppm_cfg_t *);
+void ppm_pkt_log(ppm_cfg_t*, Packet*);
 void ppm_set_rule_event (ppm_cfg_t *, detection_option_tree_root_t *);
 void ppm_clear_rule_event (ppm_cfg_t *, detection_option_tree_root_t *);
 void ppm_rule_log(ppm_cfg_t *, uint64_t, Packet *);

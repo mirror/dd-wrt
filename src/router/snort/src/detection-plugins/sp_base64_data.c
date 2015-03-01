@@ -1,5 +1,6 @@
 /*
- ** Copyright (C) 1998-2011 Sourcefire, Inc.
+ ** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 1998-2013 Sourcefire, Inc.
  **
  ** This program is free software; you can redistribute it and/or modify
  ** it under the terms of the GNU General Public License Version 2 as
@@ -14,11 +15,11 @@
  **
  ** You should have received a copy of the GNU General Public License
  ** along with this program; if not, write to the Free Software
- ** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
 /* sp_base64_data
- * 
+ *
  */
 
 #ifdef HAVE_CONFIG_H
@@ -33,12 +34,13 @@
 #endif
 #include <errno.h>
 
-#include "bounds.h"
+#include "sf_types.h"
+#include "snort_bounds.h"
 #include "rules.h"
 #include "decode.h"
 #include "plugbase.h"
 #include "parser.h"
-#include "debug.h"
+#include "snort_debug.h"
 #include "util.h"
 #include "mstring.h"
 
@@ -59,12 +61,12 @@ extern char *file_name;  /* this is the file name from rules.c, generally used
 extern int file_line;    /* this is the file line number from rules.c that is
                             used to indicate file lines for error messages */
 
-static void Base64DataInit(char *, OptTreeNode *, int);
+static void Base64DataInit(struct _SnortConfig *, char *, OptTreeNode *, int);
 void Base64DataParse(char *, OptTreeNode *);
 int  Base64DataEval(void *option_data, Packet *p);
 
 /****************************************************************************
- * 
+ *
  * Function: SetupBase64Data()
  *
  * Purpose: Load 'er up
@@ -87,10 +89,10 @@ void SetupBase64Data(void)
 
 
 /****************************************************************************
- * 
- * Function: Base64DataInit(char *, OptTreeNode *, int protocol)
  *
- * Purpose: Generic rule configuration function.  Handles parsing the rule 
+ * Function: Base64DataInit(struct _SnortConfig *, char *, OptTreeNode *, int protocol)
+ *
+ * Purpose: Generic rule configuration function.  Handles parsing the rule
  *          information and attaching the associated detection function to
  *          the OTN.
  *
@@ -101,7 +103,7 @@ void SetupBase64Data(void)
  * Returns: void function
  *
  ****************************************************************************/
-static void Base64DataInit(char *data, OptTreeNode *otn, int protocol)
+static void Base64DataInit(struct _SnortConfig *sc, char *data, OptTreeNode *otn, int protocol)
 {
     OptFpList *fpl;
     if(otn->ds_list[PLUGIN_BASE64_DECODE] == NULL )
@@ -121,7 +123,7 @@ static void Base64DataInit(char *data, OptTreeNode *otn, int protocol)
 
 
 /****************************************************************************
- * 
+ *
  * Function: Base64DataParse(char *, OptTreeNode *)
  *
  * Purpose: This is the function that is used to process the option keyword's
@@ -145,7 +147,7 @@ void Base64DataParse(char *data, OptTreeNode *otn)
 
 
 /****************************************************************************
- * 
+ *
  * Function: Base64DataEval(char *, OptTreeNode *, OptFpList *)
  *
  * Purpose: Use this function to perform the particular detection routine
@@ -156,7 +158,7 @@ void Base64DataParse(char *data, OptTreeNode *otn)
  *            fp_list => pointer to the function pointer list
  *
  * Returns: If the detection test fails, this function *must* return a zero!
- *          On success, it calls the next function in the detection list 
+ *          On success, it calls the next function in the detection list
  *
  ****************************************************************************/
 int Base64DataEval(void *option_data, Packet *p)
@@ -166,13 +168,14 @@ int Base64DataEval(void *option_data, Packet *p)
 
     PREPROC_PROFILE_START(base64DataPerfStats);
 
-    if ((p->dsize == 0) || (!IsTCP(p) && !IsUDP(p)) )
+    if ((p->dsize == 0) || !base64_decode_size )
     {
         PREPROC_PROFILE_END(base64DataPerfStats);
         return rval;
     }
 
     SetDoePtr(base64_decode_buf, DOE_BUF_STD);
+    SetAltDetect(base64_decode_buf, (uint16_t)base64_decode_size);
     rval = DETECTION_OPTION_MATCH;
 
     PREPROC_PROFILE_END(base64DataPerfStats);

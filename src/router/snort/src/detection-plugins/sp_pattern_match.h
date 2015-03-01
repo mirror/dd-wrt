@@ -1,6 +1,7 @@
 /* $Id$ */
 /*
-** Copyright (C) 2002-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -16,36 +17,27 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 #ifndef __SP_PATTERN_MATCH_H__
 #define __SP_PATTERN_MATCH_H__
 
+#include <ctype.h>
+
 #include "snort.h"
-#include "debug.h"
+#include "snort_debug.h"
 #include "rules.h" /* needed for OptTreeNode defintion */
 #include "treenodes.h"
-#include <ctype.h>
+#include "detection_util.h"
+#include "hashstring.h"
 
 /********************************************************************
  * Macros
  ********************************************************************/
 #define CHECK_AND_PATTERN_MATCH 1
 #define CHECK_URI_PATTERN_MATCH 2
-
-#define HTTP_SEARCH_URI 0x01
-#define HTTP_SEARCH_RAW_URI 0x02
-#define HTTP_SEARCH_HEADER 0x04
-#define HTTP_SEARCH_RAW_HEADER 0x08
-#define HTTP_SEARCH_CLIENT_BODY 0x10
-#define HTTP_SEARCH_METHOD 0x20
-#define HTTP_SEARCH_COOKIE 0x40
-#define HTTP_SEARCH_RAW_COOKIE 0x80
-#define HTTP_SEARCH_STAT_CODE 0x100
-#define HTTP_SEARCH_STAT_MSG 0x200
-/*Only these Http buffers are eligible for fast pattern match */
-#define FAST_PATTERN_HTTP_BUFS ( HTTP_SEARCH_URI | HTTP_SEARCH_HEADER | HTTP_SEARCH_CLIENT_BODY | HTTP_SEARCH_METHOD)
+#define PMD_WITHIN_UNDEFINED ((unsigned) -1)
 
 /********************************************************************
  * Data structures
@@ -56,7 +48,7 @@ typedef struct _PatternMatchData
     int depth;              /* pattern search depth */
 
     int distance;           /* offset to start from based on last match */
-    u_int within;           /* this pattern must be found 
+    u_int within;           /* this pattern must be found
                                within X bytes of last match*/
 
     int8_t offset_var;      /* byte_extract variable indices for offset, */
@@ -70,7 +62,7 @@ typedef struct _PatternMatchData
 
     int nocase;             /* Toggle case insensitity */
     int use_doe;            /* Use the doe_ptr for relative pattern searching */
-    int uri_buffer;         /* Index of the URI buffer */
+    HTTP_BUFFER http_buffer;/* Index of the URI buffer */
     int buffer_func;        /* buffer function CheckAND or CheckUri */
     u_int pattern_size;     /* size of app layer pattern */
     u_int replace_size;     /* size of app layer replace pattern */
@@ -85,9 +77,9 @@ typedef struct _PatternMatchData
                             /* Needed to be able to set the isRelative flag */
 
     /* Set if fast pattern matcher found a content in the packet,
-       but the rule option specifies a negated content. Only 
+       but the rule option specifies a negated content. Only
        applies to negative contents that are not relative */
-    struct 
+    struct
     {
         struct timeval ts;
         uint64_t packet_number;
@@ -109,6 +101,9 @@ typedef struct _PatternMatchData
     struct _PatternMatchData *prev; /* ptr to previous match struct */
     struct _PatternMatchData *next; /* ptr to next match struct */
 
+    Secure_Hash_Type pattern_type;
+    int protected_length;
+    bool protected_pattern;
 } PatternMatchData;
 
 /********************************************************************
@@ -119,28 +114,38 @@ PatternMatchData * NewNode(OptTreeNode *, int);
 void PatternMatchFree(void *d);
 uint32_t PatternMatchHash(void *d);
 int PatternMatchCompare(void *l, void *r);
-void FinalizeContentUniqueness(OptTreeNode *otn);
+void FinalizeContentUniqueness(struct _SnortConfig *sc, OptTreeNode *otn);
+void ValidateFastPattern(OptTreeNode *otn);
 void make_precomp(PatternMatchData *);
 void ParsePattern(char *, OptTreeNode *, int);
+void ParseProtectedPattern(char *, OptTreeNode *, int);
 int uniSearchCI(const char *, int, PatternMatchData *);
 int CheckANDPatternMatch(void *, Packet *);
 int CheckUriPatternMatch(void *, Packet *);
 void PatternMatchDuplicatePmd(void *, PatternMatchData *);
 int PatternMatchAdjustRelativeOffsets(PatternMatchData *orig_pmd, PatternMatchData *dup_pmd,
-        const u_int8_t *current_cursor, const u_int8_t *orig_cursor);
+        const uint8_t *current_cursor, const uint8_t *orig_cursor);
 
 #if 0
 /* Not implemented */
 int CheckORPatternMatch(Packet *, OptTreeNode *, OptFpList *);
 #endif
 
-
-static INLINE int IsHttpBufFpEligible(int uri_buffer)
+static inline bool IsHttpBufFpEligible (HTTP_BUFFER http_buffer)
 {
-    return uri_buffer & FAST_PATTERN_HTTP_BUFS;
+    switch ( http_buffer )
+    {
+    case HTTP_BUFFER_URI:
+    case HTTP_BUFFER_HEADER:
+    case HTTP_BUFFER_CLIENT_BODY:
+        return true;
+    default:
+        break;
+    }
+    return false;
 }
 
-static INLINE PatternMatchData * RemovePmdFromList(PatternMatchData *pmd)
+static inline PatternMatchData * RemovePmdFromList(PatternMatchData *pmd)
 {
     if (pmd == NULL)
         return NULL;
@@ -156,7 +161,7 @@ static INLINE PatternMatchData * RemovePmdFromList(PatternMatchData *pmd)
     return pmd;
 }
 
-static INLINE int InsertPmdAtFront(PatternMatchData **head, PatternMatchData *ins)
+static inline int InsertPmdAtFront(PatternMatchData **head, PatternMatchData *ins)
 {
     if (head == NULL)
         return -1;
@@ -172,7 +177,7 @@ static INLINE int InsertPmdAtFront(PatternMatchData **head, PatternMatchData *in
     return 0;
 }
 
-static INLINE int AppendPmdToList(PatternMatchData **head, PatternMatchData *ins)
+static inline int AppendPmdToList(PatternMatchData **head, PatternMatchData *ins)
 {
     PatternMatchData *tmp;
 
@@ -197,7 +202,7 @@ static INLINE int AppendPmdToList(PatternMatchData **head, PatternMatchData *ins
 }
 
 
-static INLINE void FreePmdList(PatternMatchData *pmd_list)
+static inline void FreePmdList(PatternMatchData *pmd_list)
 {
     if (pmd_list == NULL)
         return;

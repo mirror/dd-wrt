@@ -1,5 +1,6 @@
 /*
-** Copyright (C) 2002-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -15,7 +16,7 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 /* $Id$ */
@@ -32,13 +33,14 @@
 #endif
 #include <ctype.h>
 
+#include "sf_types.h"
 #include "rules.h"
 #include "treenodes.h"
 #include "decode.h"
 #include "plugbase.h"
 #include "parser.h"
 #include "util.h"
-#include "debug.h"
+#include "snort_debug.h"
 #include "plugin_enum.h"
 
 #include "snort.h"
@@ -58,8 +60,8 @@ typedef struct _TcpWinCheckData
 
 } TcpWinCheckData;
 
-void TcpWinCheckInit(char *, OptTreeNode *, int);
-void ParseTcpWin(char *, OptTreeNode *);
+void TcpWinCheckInit(struct _SnortConfig *, char *, OptTreeNode *, int);
+void ParseTcpWin(struct _SnortConfig *, char *, OptTreeNode *);
 int TcpWinCheckEq(void *option_data, Packet *p);
 
 uint32_t TcpWinCheckHash(void *d)
@@ -96,7 +98,7 @@ int TcpWinCheckCompare(void *l, void *r)
 
 
 /****************************************************************************
- * 
+ *
  * Function: SetupTcpWinCheck()
  *
  * Purpose: Associate the window keyword with TcpWinCheckInit
@@ -117,8 +119,8 @@ void SetupTcpWinCheck(void)
 
 
 /****************************************************************************
- * 
- * Function: TcpWinCheckInit(char *, OptTreeNode *)
+ *
+ * Function: TcpWinCheckInit(struct _SnortConfig *, char *, OptTreeNode *)
  *
  * Purpose: Setup the window data struct and link the function into option
  *          function pointer list
@@ -129,32 +131,32 @@ void SetupTcpWinCheck(void)
  * Returns: void function
  *
  ****************************************************************************/
-void TcpWinCheckInit(char *data, OptTreeNode *otn, int protocol)
+void TcpWinCheckInit(struct _SnortConfig *sc, char *data, OptTreeNode *otn, int protocol)
 {
     OptFpList *fpl;
     if(protocol != IPPROTO_TCP)
     {
-        FatalError("%s(%d): TCP Options on non-TCP rule\n", 
+        FatalError("%s(%d): TCP Options on non-TCP rule\n",
                    file_name, file_line);
     }
 
-    /* multiple declaration check */ 
+    /* multiple declaration check */
     if(otn->ds_list[PLUGIN_TCP_WIN_CHECK])
     {
         FatalError("%s(%d): Multiple TCP window options in rule\n", file_name,
                 file_line);
     }
-        
+
     /* allocate the data structure and attach it to the
        rule's data struct list */
     otn->ds_list[PLUGIN_TCP_WIN_CHECK] = (TcpWinCheckData *)
             SnortAlloc(sizeof(TcpWinCheckData));
 
-    /* this is where the keyword arguments are processed and placed into the 
+    /* this is where the keyword arguments are processed and placed into the
        rule option's data structure */
-    ParseTcpWin(data, otn);
+    ParseTcpWin(sc, data, otn);
 
-    /* finally, attach the option's detection function to the rule's 
+    /* finally, attach the option's detection function to the rule's
        detect function pointer list */
     fpl = AddOptFuncToList(TcpWinCheckEq, otn);
     fpl->type = RULE_OPTION_TYPE_TCP_WIN;
@@ -164,10 +166,10 @@ void TcpWinCheckInit(char *data, OptTreeNode *otn, int protocol)
 
 
 /****************************************************************************
- * 
- * Function: ParseTcpWin(char *, OptTreeNode *)
  *
- * Purpose: Convert the tos option argument to data and plug it into the 
+ * Function: ParseTcpWin(struct _SnortConfig *, char *, OptTreeNode *)
+ *
+ * Purpose: Convert the tos option argument to data and plug it into the
  *          data structure
  *
  * Arguments: data => argument data
@@ -176,11 +178,11 @@ void TcpWinCheckInit(char *data, OptTreeNode *otn, int protocol)
  * Returns: void function
  *
  ****************************************************************************/
-void ParseTcpWin(char *data, OptTreeNode *otn)
+void ParseTcpWin(struct _SnortConfig *sc, char *data, OptTreeNode *otn)
 {
     TcpWinCheckData *ds_ptr;  /* data struct pointer */
     void *ds_ptr_dup;
-    int win_size;
+    int win_size = 0;
     char *endTok;
     char *start;
 
@@ -204,7 +206,7 @@ void ParseTcpWin(char *data, OptTreeNode *otn)
         start = &data[0];
     }
 
-    if(index(start, (int) 'x') == NULL && index(start, (int)'X') == NULL)
+    if(strchr(start, (int) 'x') == NULL && strchr(start, (int)'X') == NULL)
     {
         win_size = SnortStrtolRange(start, &endTok, 10, 0, UINT16_MAX);
         if ((endTok == start) || (*endTok != '\0'))
@@ -216,10 +218,10 @@ void ParseTcpWin(char *data, OptTreeNode *otn)
     else
     {
         /* hex? */
-        start = index(data,(int)'x');
+        start = strchr(data,(int)'x');
         if(!start)
         {
-            start = index(data,(int)'X');
+            start = strchr(data,(int)'X');
         }
         if (start)
         {
@@ -234,11 +236,11 @@ void ParseTcpWin(char *data, OptTreeNode *otn)
 
     ds_ptr->tcp_win = htons((uint16_t)win_size);
 
-#ifdef DEBUG
-    printf("TCP Window set to 0x%X\n", ds_ptr->tcp_win);
+#ifdef DEBUG_MSGS
+    DebugMessage(DEBUG_PLUGIN,"TCP Window set to 0x%X\n", ds_ptr->tcp_win);
 #endif
 
-    if (add_detection_option(RULE_OPTION_TYPE_TCP_WIN, (void *)ds_ptr, &ds_ptr_dup) == DETECTION_OPTION_EQUAL)
+    if (add_detection_option(sc, RULE_OPTION_TYPE_TCP_WIN, (void *)ds_ptr, &ds_ptr_dup) == DETECTION_OPTION_EQUAL)
     {
         otn->ds_list[PLUGIN_TCP_WIN_CHECK] = ds_ptr_dup;
         free(ds_ptr);
@@ -247,11 +249,11 @@ void ParseTcpWin(char *data, OptTreeNode *otn)
 
 
 /****************************************************************************
- * 
+ *
  * Function: TcpWinCheckEq(char *, OptTreeNode *)
  *
  * Purpose: Test the TCP header's window to see if its value is equal to the
- *          value in the rule.  
+ *          value in the rule.
  *
  * Arguments: data => argument data
  *            otn => pointer to the current rule's OTN
@@ -275,7 +277,7 @@ int TcpWinCheckEq(void *option_data, Packet *p)
     {
         rval = DETECTION_OPTION_MATCH;
     }
-#ifdef DEBUG
+#ifdef DEBUG_MSGS
     else
     {
         /* you can put debug comments here or not */

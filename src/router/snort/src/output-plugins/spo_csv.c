@@ -1,5 +1,6 @@
 /*
-** Copyright (C) 2002-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 ** Copyright (C) 2001 Brian Caswell <bmc@mitre.org>
 **
@@ -16,17 +17,17 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 /* $Id$ */
 
 /* spo_csv
- * 
+ *
  * Purpose:  output plugin for csv alerting
  *
  * Arguments:  alert file (eventually)
- *   
+ *
  * Effect:
  *
  * Alerts are written to a file in the snort csv alert format
@@ -58,7 +59,7 @@
 #include "plugbase.h"
 #include "spo_plugbase.h"
 #include "parser.h"
-#include "debug.h"
+#include "snort_debug.h"
 #include "mstring.h"
 #include "util.h"
 #include "log.h"
@@ -91,11 +92,10 @@ typedef struct _AlertCSVData
 
 
 /* list of function prototypes for this preprocessor */
-static void AlertCSVInit(char *);
-static AlertCSVData *AlertCSVParseArgs(char *);
+static void AlertCSVInit(struct _SnortConfig *, char *);
+static AlertCSVData *AlertCSVParseArgs(struct _SnortConfig *, char *);
 static void AlertCSV(Packet *, char *, void *, Event *);
 static void AlertCSVCleanExit(int, void *);
-static void AlertCSVRestart(int, void *);
 static void RealAlertCSV(
     Packet*, char* msg, char **args, int numargs, Event*, TextLog*
 );
@@ -103,7 +103,7 @@ static void RealAlertCSV(
 /*
  * Function: SetupCSV()
  *
- * Purpose: Registers the output plugin keyword and initialization 
+ * Purpose: Registers the output plugin keyword and initialization
  *          function into the output plugin list.  This is the function that
  *          gets called from InitOutputPlugins() in plugbase.c.
  *
@@ -114,7 +114,7 @@ static void RealAlertCSV(
  */
 void AlertCSVSetup(void)
 {
-    /* link the preprocessor keyword to the init function in 
+    /* link the preprocessor keyword to the init function in
        the preproc list */
     RegisterOutputPlugin("alert_CSV", OUTPUT_TYPE_FLAG__ALERT, AlertCSVInit);
 
@@ -133,20 +133,19 @@ void AlertCSVSetup(void)
  * Returns: void function
  *
  */
-static void AlertCSVInit(char *args)
+static void AlertCSVInit(struct _SnortConfig *sc, char *args)
 {
     AlertCSVData *data;
     DEBUG_WRAP(DebugMessage(DEBUG_INIT, "Output: CSV Initialized\n"););
 
     /* parse the argument list from the rules file */
-    data = AlertCSVParseArgs(args);
+    data = AlertCSVParseArgs(sc, args);
 
     DEBUG_WRAP(DebugMessage(DEBUG_INIT, "Linking CSV functions to call lists...\n"););
 
     /* Set the preprocessor function into the function list */
-    AddFuncToOutputList(AlertCSV, OUTPUT_TYPE__ALERT, data);
+    AddFuncToOutputList(sc, AlertCSV, OUTPUT_TYPE__ALERT, data);
     AddFuncToCleanExitList(AlertCSVCleanExit, data);
-    AddFuncToRestartList(AlertCSVRestart, data);
 }
 
 /*
@@ -162,7 +161,7 @@ static void AlertCSVInit(char *args)
  *
  * Returns: void function
  */
-static AlertCSVData *AlertCSVParseArgs(char *args)
+static AlertCSVData *AlertCSVParseArgs(struct _SnortConfig *sc, char *args)
 {
     char **toks;
     int num_toks;
@@ -188,14 +187,14 @@ static AlertCSVData *AlertCSVParseArgs(char *args)
                 if ( !strcasecmp(tok, "stdout") )
                     filename = SnortStrdup(tok);
                 else
-                    filename = ProcessFileOption(snort_conf_for_parsing, tok);
+                    filename = ProcessFileOption(sc, tok);
                 break;
 
             case 1:
                 if ( !strcasecmp("default", tok) )
                     data->csvargs = SnortStrdup(DEFAULT_CSV);
                 else
-                    data->csvargs = SnortStrdup(toks[i]); 
+                    data->csvargs = SnortStrdup(toks[i]);
                 break;
 
             case 2:
@@ -222,7 +221,7 @@ static AlertCSVData *AlertCSVParseArgs(char *args)
         }
     }
     if ( !data->csvargs ) data->csvargs = strdup(DEFAULT_CSV);
-    if ( !filename ) filename = ProcessFileOption(snort_conf_for_parsing, DEFAULT_FILE);
+    if ( !filename ) filename = ProcessFileOption(sc, DEFAULT_FILE);
 
     mSplitFree(&toks, num_toks);
     toks = mSplit(data->csvargs, ",", 0, &num_toks, 0);
@@ -244,8 +243,8 @@ static void AlertCSVCleanup(int signal, void *arg, const char* msg)
     AlertCSVData *data = (AlertCSVData *)arg;
     /* close alert file */
     DEBUG_WRAP(DebugMessage(DEBUG_LOG,"%s\n", msg););
-    
-    if(data) 
+
+    if(data)
     {
         mSplitFree(&data->args, data->numargs);
         if (data->log) TextLog_Term(data->log);
@@ -260,16 +259,10 @@ static void AlertCSVCleanExit(int signal, void *arg)
     AlertCSVCleanup(signal, arg, "AlertCSVCleanExit");
 }
 
-static void AlertCSVRestart(int signal, void *arg)
-{
-    AlertCSVCleanup(signal, arg, "AlertCSVRestart");
-}
-
-
 static void AlertCSV(Packet *p, char *msg, void *arg, Event *event)
 {
     AlertCSVData *data = (AlertCSVData *)arg;
-    RealAlertCSV(p, msg, data->args, data->numargs, event, data->log); 
+    RealAlertCSV(p, msg, data->args, data->numargs, event, data->log);
 }
 
 /*
@@ -280,29 +273,29 @@ static void AlertCSV(Packet *p, char *msg, void *arg, Event *event)
  *
  * Arguments:     p => packet. (could be NULL)
  *              msg => the message to send
- *             args => CSV output arguements 
+ *             args => CSV output arguements
  *          numargs => number of arguements
  *             log => Log
  * Returns: void function
  *
  */
-static void RealAlertCSV(Packet * p, char *msg, char **args, 
+static void RealAlertCSV(Packet * p, char *msg, char **args,
         int numargs, Event *event, TextLog* log)
 {
-    int num; 
+    int num;
     char *type;
     char tcpFlags[9];
 
     if(p == NULL)
         return;
 
-    DEBUG_WRAP(DebugMessage(DEBUG_LOG,"Logging CSV Alert data\n");); 
+    DEBUG_WRAP(DebugMessage(DEBUG_LOG,"Logging CSV Alert data\n"););
 
     for (num = 0; num < numargs; num++)
     {
         type = args[num];
 
-        DEBUG_WRAP(DebugMessage(DEBUG_LOG, "CSV Got type %s %d\n", type, num);); 
+        DEBUG_WRAP(DebugMessage(DEBUG_LOG, "CSV Got type %s %d\n", type, num););
 
         if (!strcasecmp("timestamp", type))
         {
@@ -355,7 +348,7 @@ static void RealAlertCSV(Packet * p, char *msg, char **args,
                         p->eh->ether_src[1], p->eh->ether_src[2], p->eh->ether_src[3],
                         p->eh->ether_src[4], p->eh->ether_src[5]);
             }
-        } 
+        }
         else if (!strcasecmp("ethdst", type))
         {
             if (p->eh != NULL)
@@ -399,7 +392,7 @@ static void RealAlertCSV(Packet * p, char *msg, char **args,
                         break;
                     default:
                         break;
-                }    
+                }
             }
         }
         else if (!strcasecmp("dstport", type))
@@ -414,7 +407,7 @@ static void RealAlertCSV(Packet * p, char *msg, char **args,
                         break;
                     default:
                         break;
-                }    
+                }
             }
         }
         else if (!strcasecmp("src", type))
@@ -425,7 +418,7 @@ static void RealAlertCSV(Packet * p, char *msg, char **args,
         else if (!strcasecmp("dst", type))
         {
             if (IPH_IS_VALID(p))
-                TextLog_Puts(log, inet_ntoa(GET_DST_ADDR(p))); 
+                TextLog_Puts(log, inet_ntoa(GET_DST_ADDR(p)));
         }
         else if (!strcasecmp("icmptype", type))
         {
@@ -440,7 +433,7 @@ static void RealAlertCSV(Packet * p, char *msg, char **args,
         else if (!strcasecmp("icmpid", type))
         {
             if (p->icmph != NULL)
-                TextLog_Print(log, "%d", ntohs(p->icmph->s_icmp_id));	   
+                TextLog_Print(log, "%d", ntohs(p->icmph->s_icmp_id));
         }
         else if (!strcasecmp("icmpseq", type))
         {
@@ -501,13 +494,13 @@ static void RealAlertCSV(Packet * p, char *msg, char **args,
         else if (!strcasecmp("tcpflags",type))
         {
             if (p->tcph != NULL)
-            {   
+            {
                 CreateTCPFlagString(p, tcpFlags);
                 TextLog_Print(log, "%s", tcpFlags);
             }
         }
 
-        if (num < numargs - 1) 
+        if (num < numargs - 1)
             TextLog_Putc(log, ',');
     }
 

@@ -1,5 +1,6 @@
 /*
- * Copyright (C) 2002-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2002-2013 Sourcefire, Inc.
  * Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -15,16 +16,16 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
 /* Snort Preprocessor for Telnet Negotiation Normalization*/
 /* $Id$ */
 
-/* pp_telnet.c 
- * 
- * Purpose:  Telnet sessions can contain telnet negotiation strings 
- *           that can disrupt pattern matching.  This plugin detects 
+/* pp_telnet.c
+ *
+ * Purpose:  Telnet sessions can contain telnet negotiation strings
+ *           that can disrupt pattern matching.  This plugin detects
  *           negotiation strings in stream and "normalizes" them much like
  *           the http_decode preprocessor normalizes encoded URLs
  *
@@ -33,7 +34,7 @@
  * http://www.iana.org/assignments/telnet-options
  *
  * Arguments:  None
- *   
+ *
  * Effect:  The telnet nogiation data is removed from the payload
  *
  * Comments:
@@ -55,7 +56,7 @@
 #include "ftpp_eo_log.h"
 #include "pp_telnet.h"
 #include "ftpp_return_codes.h"
-#include "debug.h"
+#include "snort_debug.h"
 #include "stream_api.h"
 
 #define NUL 0x00
@@ -76,7 +77,7 @@
  *          as you like.  Try not to destroy the performance of the whole
  *          system by trying to do too much....
  *
- * Arguments: p => pointer to the current packet data struct 
+ * Arguments: p => pointer to the current packet data struct
  *
  * Returns: void function
  *
@@ -93,7 +94,7 @@ int normalize_telnet(FTPTELNET_GLOBAL_CONF *GlobalConf,
     const unsigned char *end;
     int normalization_required = 0;
     int consec_8bit_chars = 0;
-    
+
     /* Telnet commands are handled in here.
     * They can be 2 bytes long -- ie, IAC NOP, IAC AYT, etc.
     * Sub-negotiation strings are at least 4 bytes, IAC SB x IAC SE */
@@ -103,11 +104,11 @@ int normalize_telnet(FTPTELNET_GLOBAL_CONF *GlobalConf,
             tnssn->consec_ayt = 0;
         return FTPP_SUCCESS;
     }
-    
+
     /* setup the pointers */
     read_ptr = p->payload;
     end = p->payload + p->payload_size;
-    
+
     /* look to see if we have any telnet negotiaion codes in the payload */
     while(!normalization_required && (read_ptr < end))
     {
@@ -119,8 +120,8 @@ int normalize_telnet(FTPTELNET_GLOBAL_CONF *GlobalConf,
         }
         else
         {
-            /* Okay, it wasn't an IAC */
-            if (*read_ptr > 0x7F)
+            /* Okay, it wasn't an IAC also its a midstream pickup */
+            if (*read_ptr > 0x7F && _dpd.sessionAPI->get_session_flags(p->stream_session) & SSNFLAG_MIDSTREAM)
             {
                 consec_8bit_chars++;
                 if (consec_8bit_chars > CONSECUTIVE_8BIT_THRESHOLD)
@@ -143,7 +144,7 @@ int normalize_telnet(FTPTELNET_GLOBAL_CONF *GlobalConf,
                         if (!GlobalConf->check_encrypted_data)
                         {
                             /* Mark this session & packet as one to ignore */
-                            _dpd.streamAPI->stop_inspection(p->stream_session_ptr, p,
+                            _dpd.sessionAPI->stop_inspection(p->stream_session, p,
                                                         SSN_DIR_BOTH, -1, 0);
                             /* No point to do further normalization */
                             return FTPP_ALERT;
@@ -157,10 +158,10 @@ int normalize_telnet(FTPTELNET_GLOBAL_CONF *GlobalConf,
                 consec_8bit_chars = 0;
             }
         }
-        
+
         read_ptr++;
     }
-    
+
     if(!normalization_required)
     {
         DEBUG_WRAP(DebugMessage(DEBUG_FTPTELNET, "Nothing to process!\n"););
@@ -168,25 +169,25 @@ int normalize_telnet(FTPTELNET_GLOBAL_CONF *GlobalConf,
             tnssn->consec_ayt = 0;
         return FTPP_SUCCESS;
     }
-    
+
     /*
     * if we found telnet negotiation strings OR backspace characters,
     * we're going to have to normalize the data
     *
     * Note that this is always ( now: 2002-08-12 ) done to a
     * alternative data buffer.
-    */    
+    */
     /* rewind the data stream to p->data */
     read_ptr = p->payload;
-    
-    /* setup for overwriting the negotaiation strings with 
+
+    /* setup for overwriting the negotaiation strings with
     * the follow-on data
-    */ 
-    write_ptr = (unsigned char *) _dpd.altBuffer->data;
-    
+    */
+    write_ptr = (unsigned char *) _dpd.altBuffer;
+
     /* walk thru the remainder of the packet */
     while((read_ptr < end) &&
-          (write_ptr < ((unsigned char *) _dpd.altBuffer->data) + sizeof(_dpd.altBuffer->data)))
+            (write_ptr < ((unsigned char *) _dpd.altBuffer->data) + sizeof(_dpd.altBuffer->data)))
     {
         saw_ayt = 0;
         /* if the following byte isn't a subnegotiation initialization */
@@ -221,7 +222,7 @@ int normalize_telnet(FTPTELNET_GLOBAL_CONF *GlobalConf,
                     {
                         /* Go to previous char */
                         write_ptr--;
-                    
+
                         if ((*write_ptr == CR) &&
                            ((*(write_ptr+1) == NUL) || (*(write_ptr+1) == LF)) )
                         {
@@ -347,7 +348,7 @@ int normalize_telnet(FTPTELNET_GLOBAL_CONF *GlobalConf,
                             if (!GlobalConf->check_encrypted_data)
                             {
                                 /* Mark this session & packet as one to ignore */
-                                _dpd.streamAPI->stop_inspection(p->stream_session_ptr, p,
+                                _dpd.sessionAPI->stop_inspection(p->stream_session, p,
                                                         SSN_DIR_BOTH, -1, 0);
                                 /* No point to do further normalization */
                                 return FTPP_ALERT;
@@ -358,7 +359,7 @@ int normalize_telnet(FTPTELNET_GLOBAL_CONF *GlobalConf,
                 }
                 break;
             }
-            
+
             /* find the end of the subneg -- this handles when there are
              * embedded IAC IACs within a sub negotiation.  Just looking
              * for the TNC_SE could cause problems.  Similarly, just looking
@@ -396,13 +397,13 @@ int normalize_telnet(FTPTELNET_GLOBAL_CONF *GlobalConf,
 
                 continue;
             }
-            
+
             /* Okay, found the IAC SE -- move past it */
             if (read_ptr < end)
             {
                 read_ptr += 2;
             }
-            
+
             if (tnssn && iMode == FTPP_SI_CLIENT_MODE)
                 tnssn->consec_ayt = 0;
         }
@@ -410,9 +411,9 @@ int normalize_telnet(FTPTELNET_GLOBAL_CONF *GlobalConf,
         {
             DEBUG_WRAP(DebugMessage(DEBUG_FTPTELNET,
                 "overwriting %2X(%c) with %2X(%c)\n",
-                (unsigned char)(*write_ptr&0xFF), *write_ptr, 
+                (unsigned char)(*write_ptr&0xFF), *write_ptr,
                 (unsigned char)(*read_ptr & 0xFF), *read_ptr););
-            
+
             /* overwrite the negotiation bytes with the follow-on bytes */
             switch(* ((unsigned char *)(read_ptr)))
             {
@@ -429,15 +430,15 @@ int normalize_telnet(FTPTELNET_GLOBAL_CONF *GlobalConf,
                 *write_ptr++ = *read_ptr++;
                 break;
             }
-            
+
             if (tnssn && iMode == FTPP_SI_CLIENT_MODE)
                 tnssn->consec_ayt = 0;
         }
     }
-    
-    SetAltBuffer(p, write_ptr - start);
-    
-    /* DEBUG_WRAP(DebugMessage(DEBUG_FTPTELNET, 
+
+    _dpd.SetAltDecode((uint16_t)(write_ptr - start));
+
+    /* DEBUG_WRAP(DebugMessage(DEBUG_FTPTELNET,
     "Converted buffer after telnet normalization:\n");
     PrintNetData(stdout, (char *) _dpd.altBuffer->data, _dpd.altBuffer->len););
     */

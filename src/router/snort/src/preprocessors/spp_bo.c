@@ -1,5 +1,6 @@
 /*
-** Copyright (C) 2005-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2005-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2005 Martin Roesch <roesch@sourcefire.com>
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -15,21 +16,21 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 /* $Id$ */
 /* Snort Preprocessor Plugin Source File Bo */
 
-/* spp_bo 
- * 
+/* spp_bo
+ *
  * Purpose: Detects Back Orifice traffic by brute forcing the weak encryption
  *          of the program's network protocol and detects the magic cookie
- *          that it's servers and clients require to communicate with each 
+ *          that it's servers and clients require to communicate with each
  *          other.
  *
  * Arguments: none
- *   
+ *
  * Effect: Analyzes UDP traffic for the BO magic cookie, reports if it finds
  *         traffic matching the profile.
  *
@@ -56,7 +57,7 @@
  *   Random:  E4 42 FB 83 41 B3 4A F0
  *   -------  -- -- -- -- -- -- -- --
  *   Result:  CE 63 D1 D2 16 E7 13 CF  (XOR'd result)
- * 
+ *
  * For demonstration purposes:
  *
  *   static long holdrand = 1L;
@@ -88,7 +89,7 @@
  *   Random:  26 27 F6 85 97 15 AD 1D
  *   -------  -- -- -- -- -- -- -- --
  *   Result:  0C 06 DC D4 C0 41 F4 22  (XOR'd result)
- * 
+ *
  * For demonstration purposes:
  *
  *   int BoRandValues_DefaultKey[8];
@@ -101,21 +102,28 @@
  *   BoRandValues_DefaultKey[5] = LocalBoRand() % 256;  -->  21 (0x15)
  *   BoRandValues_DefaultKey[6] = LocalBoRand() % 256;  --> 173 (0xad)
  *   BoRandValues_DefaultKey[7] = LocalBoRand() % 256;  -->  29 (0x1d)
- * 
+ *
  * Notes:
- * 
- *   10/13/2005 marc norton - This has a lot of changes  to the runtime 
- *   decoding and testing.  The '% 256' op was removed, 
- *   the xor op is bit wise so modulo is not needed, 
+ *
+ *   10/13/2005 marc norton - This has a lot of changes  to the runtime
+ *   decoding and testing.  The '% 256' op was removed,
+ *   the xor op is bit wise so modulo is not needed,
  *   the char casting truncates to one byte,
- *   and len testing has been modified as was the xor decode copy and 
+ *   and len testing has been modified as was the xor decode copy and
  *   final PONG test.
  */
 
+#include <assert.h>
 #include <sys/types.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <string.h>
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#include "sf_types.h"
 #include "generators.h"
 #include "log.h"
 #include "detect.h"
@@ -123,7 +131,7 @@
 #include "event.h"
 #include "plugbase.h"
 #include "parser.h"
-#include "debug.h"
+#include "snort_debug.h"
 #include "mstring.h"
 #include "util.h"
 #include "event_queue.h"
@@ -134,6 +142,7 @@
 #include "sf_types.h"
 #include "sfPolicy.h"
 #include "sfPolicyUserData.h"
+#include "session_api.h"
 
 #define BACKORIFICE_DEFAULT_KEY   31337
 #define BACKORIFICE_MAGIC_SIZE    8
@@ -177,7 +186,7 @@ PreprocStats boPerfStats;
 static tSfPolicyUserContextId bo_config = NULL;
 
 /* list of function prototypes for this preprocessor */
-static void BoInit(char *);
+static void BoInit(struct _SnortConfig *, char *);
 static void BoFind(Packet *, void *);
 
 /* list of private functions */
@@ -191,17 +200,16 @@ static void BoFreeConfig(tSfPolicyUserContextId bo);
 static void BoCleanExit(int, void *);
 
 #ifdef SNORT_RELOAD
-static tSfPolicyUserContextId bo_swap_config = NULL;
-static void BoReload(char *);
-static void * BoReloadSwap(void);
+static void BoReload(struct _SnortConfig *, char *, void **);
+static void * BoReloadSwap(struct _SnortConfig *, void *);
 static void BoReloadSwapFree(void *);
 #endif
 
 /*
  * Function: SetupBo()
  *
- * Purpose: Registers the preprocessor keyword and initialization 
- *          function into the preprocessor list.  
+ * Purpose: Registers the preprocessor keyword and initialization
+ *          function into the preprocessor list.
  *
  * Arguments: None.
  *
@@ -210,15 +218,15 @@ static void BoReloadSwapFree(void *);
  */
 void SetupBo(void)
 {
-    /* link the preprocessor keyword to the init function in 
+    /* link the preprocessor keyword to the init function in
        the preproc list */
 #ifndef SNORT_RELOAD
     RegisterPreprocessor("bo", BoInit);
 #else
-    RegisterPreprocessor("bo", BoInit, BoReload, BoReloadSwap, BoReloadSwapFree);
+    RegisterPreprocessor("bo", BoInit, BoReload, NULL, BoReloadSwap, BoReloadSwapFree);
 #endif
 
-    DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN, 
+    DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN,
                 "Preprocessor: Back Orifice is setup...\n"););
 }
 
@@ -233,16 +241,16 @@ void SetupBo(void)
  * Returns: void function
  *
  */
-static void BoInit(char *args)
+static void BoInit(struct _SnortConfig *sc, char *args)
 {
-    int policy_id = (int)getParserPolicy();
+    int policy_id = (int)getParserPolicy(sc);
     BoConfig *pPolicyConfig = NULL;
 
     if (bo_config == NULL)
     {
         //create a context
         bo_config = sfPolicyConfigCreate();
-        
+
         DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN,"Preprocessor: Bo Initialized\n"););
 
         /* we no longer need to take args */
@@ -274,7 +282,8 @@ static void BoInit(char *args)
     ProcessArgs(pPolicyConfig, args);
 
     /* Set the preprocessor function into the function list */
-    AddFuncToPreprocList(BoFind, PRIORITY_LAST, PP_BO, PROTO_BIT__UDP);
+    AddFuncToPreprocList(sc, BoFind, PRIORITY_APPLICATION, PP_BO, PROTO_BIT__UDP);
+    session_api->enable_preproc_all_ports( sc, PP_BO, PROTO_BIT__UDP );
 }
 
 
@@ -297,12 +306,12 @@ static void BoInit(char *args)
 static void ProcessArgs(BoConfig *bo, char *args)
 {
     char *arg;
-   
+
     if ((args == NULL) || (bo == NULL))
         return;
 
     arg = strtok(args, CONF_SEPARATORS);
-    
+
     while ( arg != NULL )
     {
         if ( !strcasecmp("noalert", arg) )
@@ -315,7 +324,7 @@ static void ProcessArgs(BoConfig *bo, char *args)
         }
         else
         {
-            FatalError("%s(%d) => Unknown bo option %s.\n", 
+            FatalError("%s(%d) => Unknown bo option %s.\n",
                         file_name, file_line, arg);
         }
 
@@ -346,10 +355,10 @@ static int ProcessOptionList(void)
 
     if ( arg == NULL || strcmp(START_LIST, arg) )
     {
-        FatalError("%s(%d) => Invalid bo option.\n", file_name, file_line);        
+        FatalError("%s(%d) => Invalid bo option.\n", file_name, file_line);
         //return 0;
     }
-    
+
     while ((arg = strtok(NULL, CONF_SEPARATORS)) != NULL)
     {
         if ( !strcmp(END_LIST, arg) )
@@ -376,15 +385,15 @@ static int ProcessOptionList(void)
         }
         else
         {
-            FatalError("%s(%d) => Invalid bo option argument %s.\n", 
-                        file_name, file_line, arg);        
+            FatalError("%s(%d) => Invalid bo option argument %s.\n",
+                        file_name, file_line, arg);
         }
     }
 
     if ( !endList )
     {
-        FatalError("%s(%d) => Must end configuration list with %s.\n", 
-                   file_name, file_line, END_LIST);      
+        FatalError("%s(%d) => Must end configuration list with %s.\n",
+                   file_name, file_line, END_LIST);
         //return 0;
     }
 
@@ -408,7 +417,7 @@ static void PrintConfig(BoConfig *bo)
 
     if ( bo->noalert_flags != 0 || bo->drop_flags != 0 )
         LogMessage("Back Orifice Config:\n");
-    
+
     if ( bo->noalert_flags != 0 )
     {
         LogMessage("    Disable alerts:");
@@ -454,7 +463,7 @@ static char BoRand(void)
 
 
 /*
- * Precalculate the known cyphertext into a prefix and suffix lookup table 
+ * Precalculate the known cyphertext into a prefix and suffix lookup table
  * to recover the key.  Using this in the BoFind() function below is much
  * faster than the old brute force method
  */
@@ -467,9 +476,9 @@ static void PrecalcPrefix(void)
     char *cp_ptr;       /* cookie plaintext indexing pointer */
     uint16_t cyphertext_referent;
 
-    memset(&lookup1[0], 0, sizeof(lookup1));
-    memset(&lookup2[0], 0, sizeof(lookup2));
-    
+    memset(lookup1, 0, sizeof(lookup1));
+    memset(lookup2, 0, sizeof(lookup2));
+
     for(key=0;key<65536;key++)
     {
         /* setup to generate cyphertext for this key */
@@ -483,7 +492,7 @@ static void PrecalcPrefix(void)
             cp_ptr++;
         }
 
-        /* 
+        /*
          * generate the key lookup mechanism from the first 2 characters of
          * the cyphertext
          */
@@ -507,8 +516,8 @@ static void PrecalcPrefix(void)
             lookup1[cyphertext_referent][0] = (uint16_t)key;
         }
 
-        /* 
-         * generate the second lookup from the last two characters of 
+        /*
+         * generate the second lookup from the last two characters of
          * the cyphertext
          */
         cyphertext_referent = (uint16_t) (cookie_cyphertext[6] << 8) & 0xFF00;
@@ -527,7 +536,7 @@ static void PrecalcPrefix(void)
  *
  * Purpose: Look for the magic cookie, squawk if you find it.
  *
- * Arguments: p => pointer to the current packet data struct 
+ * Arguments: p => pointer to the current packet data struct
  *
  * Returns: void function
  *
@@ -548,21 +557,17 @@ static void BoFind(Packet *p, void *context)
     BoConfig *bo = NULL;
     PROFILE_VARS;
 
-    sfPolicyUserPolicySet (bo_config, getRuntimePolicy());
+    sfPolicyUserPolicySet (bo_config, getNapRuntimePolicy());
     bo = (BoConfig *)sfPolicyUserDataGetCurrent(bo_config);
 
     /* Not configured in this policy */
     if (bo == NULL)
         return;
 
-    /* make sure it's UDP and that it's at least 19 bytes long */
-    if(!IsUDP(p))
-    {
-        DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN, 
-                    "   -> spp_bo: Not UDP\n"););
-        return;
-    }
+    // preconditions - what we registered for
+    assert(IsUDP(p));
 
+    /* make sure it's at least 19 bytes long */
     if(p->dsize < BACKORIFICE_MIN_SIZE)
     {
         return;
@@ -571,13 +576,13 @@ static void BoFind(Packet *p, void *context)
     PREPROC_PROFILE_START(boPerfStats);
 
     /*
-     * take the first two characters of the packet and generate the 
+     * take the first two characters of the packet and generate the
      * first reference that gives us a reference key
      */
     cyphertext_referent = (uint16_t) (p->data[0] << 8) & 0xFF00;
     cyphertext_referent |= (uint16_t) (p->data[1]) & 0x00FF;
 
-    /* 
+    /*
      * generate the second referent from the last two characters
      * of the cyphertext
      */
@@ -589,12 +594,12 @@ static void BoFind(Packet *p, void *context)
         /* get the key from the cyphertext */
         key = lookup1[cyphertext_referent][i];
 
-        /* 
+        /*
          * if the lookup from the proposed key matches the cyphertext reference
-         * then we've probably go the right key and can proceed to full 
+         * then we've probably go the right key and can proceed to full
          * decryption using the key
          *
-         * moral of the story: don't use a lame keyspace 
+         * moral of the story: don't use a lame keyspace
          */
         if(lookup2[key] == cyphertext_suffix)
         {
@@ -609,8 +614,8 @@ static void BoFind(Packet *p, void *context)
 
                 if(*magic_data != plaintext)
                 {
-                    DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN, 
-                            "Failed check one on 0x%X : 0x%X\n", 
+                    DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN,
+                            "Failed check one on 0x%X : 0x%X\n",
                             *magic_data, plaintext););
                     PREPROC_PROFILE_END(boPerfStats);
                     return;
@@ -619,9 +624,9 @@ static void BoFind(Packet *p, void *context)
                 magic_data++;
                 pkt_data++;
             }
-            
+
             /* if we fall thru there's a detect */
-            DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN, 
+            DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN,
                         "Detected Back Orifice Data!\n");
             DebugMessage(DEBUG_PLUGIN, "hash value: %d\n", key););
 
@@ -636,7 +641,7 @@ static void BoFind(Packet *p, void *context)
                 }
                 if ( (bo->drop_flags & BO_ALERT_CLIENT) )
                 {
-                    Active_DropSession();
+                    Active_DropSession(p);
                 }
                 DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN, "Client packet\n"););
             }
@@ -649,7 +654,7 @@ static void BoFind(Packet *p, void *context)
                 }
                 if ( (bo->drop_flags & BO_ALERT_SERVER) )
                 {
-                    Active_DropSession();
+                    Active_DropSession(p);
                 }
                 DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN, "Server packet\n"););
             }
@@ -662,9 +667,9 @@ static void BoFind(Packet *p, void *context)
                 }
                 if ( (bo->drop_flags & BO_ALERT_GENERAL) )
                 {
-                    Active_DropSession();
+                    Active_DropSession(p);
                 }
-            }           
+            }
         }
     }
 
@@ -716,9 +721,9 @@ static int BoGetDirection(BoConfig *bo, Packet *p, char *pkt_data)
     {
         return BO_FROM_SERVER;
     }
-    
-    /* Didn't find default port, so look for ping packet */  
-    
+
+    /* Didn't find default port, so look for ping packet */
+
     /* Get length from BO header - 32 bit int */
     for ( i = 0; i < 4; i++ )
     {
@@ -736,12 +741,12 @@ static int BoGetDirection(BoConfig *bo, Packet *p, char *pkt_data)
         id += l << (8*i);
         pkt_data++;
     }
-    
+
     DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN, "Data length = %lu\n", len););
     DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN, "ID = %lu\n", id););
 
     /* Do more len checking */
-    
+
     if ( len >= BO_BUF_ATTACK_SIZE )
     {
         if ( !(bo->noalert_flags & BO_ALERT_SNORT_ATTACK) )
@@ -751,7 +756,7 @@ static int BoGetDirection(BoConfig *bo, Packet *p, char *pkt_data)
         }
         if ( (bo->drop_flags & BO_ALERT_SNORT_ATTACK) )
         {
-            Active_DropSession();
+            Active_DropSession(p);
         }
 
         return BO_FROM_UNKNOWN;
@@ -761,7 +766,7 @@ static int BoGetDirection(BoConfig *bo, Packet *p, char *pkt_data)
     if (len <= BACKORIFICE_MIN_SIZE)
     {
         /* Need some data, or we can't figure out client or server */
-        return BO_FROM_UNKNOWN; 
+        return BO_FROM_UNKNOWN;
     }
     else
     {
@@ -783,7 +788,7 @@ static int BoGetDirection(BoConfig *bo, Packet *p, char *pkt_data)
         /* We don't have enough data to inspect */
         return BO_FROM_UNKNOWN;
     }
-    
+
     if ( type & 0x80 )
     {
         DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN, "Partial packet\n"););
@@ -811,13 +816,13 @@ static int BoGetDirection(BoConfig *bo, Packet *p, char *pkt_data)
             buf1[i] = (char) (pkt_data[i] ^ BoRand());
             if ( buf1[i] == 0 )
             {
-                return BO_FROM_UNKNOWN; 
+                return BO_FROM_UNKNOWN;
             }
         }
 
         if( ( buf1[3] == 'P' || buf1[3] == 'p' ) &&
-            ( buf1[4] == 'O' || buf1[4] == 'o' ) && 
-            ( buf1[5] == 'N' || buf1[5] == 'n' ) && 
+            ( buf1[4] == 'O' || buf1[4] == 'o' ) &&
+            ( buf1[5] == 'N' || buf1[5] == 'n' ) &&
             ( buf1[6] == 'G' || buf1[6] == 'g' ) )
         {
             return BO_FROM_SERVER;
@@ -826,15 +831,15 @@ static int BoGetDirection(BoConfig *bo, Packet *p, char *pkt_data)
         {
             return BO_FROM_CLIENT;
         }
-    } 
-   
+    }
+
     return BO_FROM_UNKNOWN;
 }
 
 
 static int BoFreeConfigPolicy(
         tSfPolicyUserContextId bo,
-        tSfPolicyId policyId, 
+        tSfPolicyId policyId,
         void* pData
         )
 {
@@ -852,7 +857,7 @@ static void BoFreeConfig(tSfPolicyUserContextId bo)
     if (bo == NULL)
         return;
 
-    sfPolicyUserDataIterate (bo, BoFreeConfigPolicy);
+    sfPolicyUserDataFreeIterate (bo, BoFreeConfigPolicy);
 
     sfPolicyConfigDelete(bo);
 }
@@ -864,15 +869,16 @@ static void BoCleanExit(int signal, void *unused)
 }
 
 #ifdef SNORT_RELOAD
-static void BoReload(char *args)
+static void BoReload(struct _SnortConfig *sc, char *args, void **new_config)
 {
-    int policy_id = (int)getParserPolicy();
+    tSfPolicyUserContextId bo_swap_config = (tSfPolicyUserContextId)*new_config;
+    int policy_id = (int)getParserPolicy(sc);
     BoConfig *pPolicyConfig = NULL;
 
-    if (bo_swap_config == NULL)
+    if (!bo_swap_config)
     {
-        //create a context
         bo_swap_config = sfPolicyConfigCreate();
+        *new_config = (void *)bo_swap_config;
     }
 
     sfPolicyUserPolicySet (bo_swap_config, policy_id);
@@ -893,11 +899,13 @@ static void BoReload(char *args)
 
     ProcessArgs(pPolicyConfig, args);
 
-    AddFuncToPreprocList(BoFind, PRIORITY_LAST, PP_BO, PROTO_BIT__UDP);
+    AddFuncToPreprocList(sc, BoFind, PRIORITY_LAST, PP_BO, PROTO_BIT__UDP);
+    session_api->enable_preproc_all_ports( sc, PP_BO, PROTO_BIT__UDP );
 }
 
-static void * BoReloadSwap(void)
+static void * BoReloadSwap(struct _SnortConfig *sc, void *swap_config)
 {
+    tSfPolicyUserContextId bo_swap_config = (tSfPolicyUserContextId)swap_config;
     tSfPolicyUserContextId old_config = bo_config;
 
     if (bo_swap_config == NULL)

@@ -1,5 +1,6 @@
 /*
-** Copyright (C) 2007-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2007-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License Version 2 as
@@ -14,13 +15,13 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 /* $Id$ */
 
 /* spo_alert_test_
- * 
+ *
  * Purpose:  output plugin for test alerting
  *
  * Arguments: file <file>, stdout, rebuilt, session, msg
@@ -31,7 +32,7 @@
  *           S - Stream rebuilt
  *           F - IP frag rebuilt
  *           outputs: <rebuilt type>:<rebuilt count>
- * session - include src/dst IPs and ports  
+ * session - include src/dst IPs and ports
  *           outputs: <sip>:<sport>-<dip>:<dport>
  * msg - include alert message
  *
@@ -45,7 +46,7 @@
  * output alert_test: rebuilt, session, msg
  * output alert_test: stdout, rebuilt, session, msg
  * output alert_test: file test.alert, rebuilt, session, msg
- *   
+ *
  * Effect:
  *
  * Alerts are written to a file in the snort test alert format
@@ -59,9 +60,10 @@
 #include "config.h"
 #endif
 
+#include "sf_types.h"
 #include "event.h"
 #include "decode.h"
-#include "debug.h"
+#include "snort_debug.h"
 #include "plugbase.h"
 #include "spo_plugbase.h"
 #include "parser.h"
@@ -100,19 +102,18 @@ typedef struct _SpoAlertTestData
 
 } SpoAlertTestData;
 
-void AlertTestInit(char *);
-SpoAlertTestData *ParseAlertTestArgs(char *);
+void AlertTestInit(struct _SnortConfig *, char *);
+SpoAlertTestData *ParseAlertTestArgs(struct _SnortConfig *, char *);
 void AlertTestCleanExitFunc(int, void *);
-void AlertTestRestartFunc(int, void *);
 void AlertTest(Packet *, char *, void *, Event *);
 
-extern PacketCount pc; 
+extern PacketCount pc;
 
 
 /*
  * Function: SetupAlertTest()
  *
- * Purpose: Registers the output plugin keyword and initialization 
+ * Purpose: Registers the output plugin keyword and initialization
  *          function into the output plugin list.  This is the function that
  *          gets called from InitOutputPlugins() in plugbase.c.
  *
@@ -123,7 +124,7 @@ extern PacketCount pc;
  */
 void AlertTestSetup(void)
 {
-    /* link the preprocessor keyword to the init function in 
+    /* link the preprocessor keyword to the init function in
        the preproc list */
     RegisterOutputPlugin("alert_test", OUTPUT_TYPE_FLAG__ALERT, AlertTestInit);
     DEBUG_WRAP(DebugMessage(DEBUG_INIT,"Output plugin: AlertTest is setup...\n"););
@@ -141,21 +142,20 @@ void AlertTestSetup(void)
  * Returns: void function
  *
  */
-void AlertTestInit(char *args)
+void AlertTestInit(struct _SnortConfig *sc, char *args)
 {
     SpoAlertTestData *data;
 
     DEBUG_WRAP(DebugMessage(DEBUG_INIT,"Output: AlertTest Initialized\n"););
 
     /* parse the argument list from the rules file */
-    data = ParseAlertTestArgs(args);
+    data = ParseAlertTestArgs(sc, args);
 
     DEBUG_WRAP(DebugMessage(DEBUG_INIT,"Linking AlertTest functions to call lists...\n"););
-    
+
     /* Set the preprocessor function into the function list */
-    AddFuncToOutputList(AlertTest, OUTPUT_TYPE__ALERT, data);
+    AddFuncToOutputList(sc, AlertTest, OUTPUT_TYPE__ALERT, data);
     AddFuncToCleanExitList(AlertTestCleanExitFunc, data);
-    AddFuncToRestartList(AlertTestRestartFunc, data);
 }
 
 void AlertTest(Packet *p, char *msg, void *arg, Event *event)
@@ -180,7 +180,7 @@ void AlertTest(Packet *p, char *msg, void *arg, Event *event)
     if (data->flags & TEST_FLAG_MSG)
     {
         if (msg != NULL)
-            fprintf(data->file, "%s\t", msg); 
+            fprintf(data->file, "%s\t", msg);
     }
 
     if (data->flags & TEST_FLAG_SESSION)
@@ -201,9 +201,9 @@ void AlertTest(Packet *p, char *msg, void *arg, Event *event)
 /*
  * Function: ParseAlertTestArgs(char *)
  *
- * Purpose: Process the preprocessor arguements from the rules file and 
+ * Purpose: Process the preprocessor arguements from the rules file and
  *          initialize the preprocessor's data struct.  This function doesn't
- *          have to exist if it makes sense to parse the args in the init 
+ *          have to exist if it makes sense to parse the args in the init
  *          function.
  *
  * Arguments: args => argument list
@@ -211,7 +211,7 @@ void AlertTest(Packet *p, char *msg, void *arg, Event *event)
  * Returns: void function
  *
  */
-SpoAlertTestData * ParseAlertTestArgs(char *args)
+SpoAlertTestData * ParseAlertTestArgs(struct _SnortConfig *sc, char *args)
 {
     char **toks;
     int num_toks;
@@ -273,7 +273,7 @@ SpoAlertTestData * ParseAlertTestArgs(char *args)
             }
             else if (num_atoks == 2)
             {
-                char *outfile = ProcessFileOption(snort_conf_for_parsing, atoks[1]);
+                char *outfile = ProcessFileOption(sc, atoks[1]);
                 data->file = OpenAlertFile(outfile);
                 free(outfile);
             }
@@ -309,18 +309,6 @@ void AlertTestCleanExitFunc(int signal, void *arg)
 
     /* close alert file */
     DEBUG_WRAP(DebugMessage(DEBUG_LOG,"AlertTestCleanExitFunc\n"););
-    fclose(data->file);
-
-    /*free memory from SpoAlertTestData */
-    free(data);
-}
-
-void AlertTestRestartFunc(int signal, void *arg)
-{
-    SpoAlertTestData *data = (SpoAlertTestData *)arg;
-
-    /* close alert file */
-    DEBUG_WRAP(DebugMessage(DEBUG_LOG,"AlertTestRestartFunc\n"););
     fclose(data->file);
 
     /*free memory from SpoAlertTestData */

@@ -1,5 +1,6 @@
 /*
- ** Copyright (C) 1998-2011 Sourcefire, Inc.
+ ** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 1998-2013 Sourcefire, Inc.
  **
  ** This program is free software; you can redistribute it and/or modify
  ** it under the terms of the GNU General Public License Version 2 as
@@ -14,11 +15,11 @@
  **
  ** You should have received a copy of the GNU General Public License
  ** along with this program; if not, write to the Free Software
- ** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
 /* sp_base64_decode
- * 
+ *
  */
 
 #ifdef HAVE_CONFIG_H
@@ -33,12 +34,13 @@
 #endif
 #include <errno.h>
 
-#include "bounds.h"
+#include "sf_types.h"
+#include "snort_bounds.h"
 #include "rules.h"
 #include "decode.h"
 #include "plugbase.h"
 #include "parser.h"
-#include "debug.h"
+#include "snort_debug.h"
 #include "util.h"
 #include "mstring.h"
 
@@ -61,7 +63,7 @@ extern char *file_name;  /* this is the file name from rules.c, generally used
 extern int file_line;    /* this is the file line number from rules.c that is
                             used to indicate file lines for error messages */
 
-void Base64DecodeInit(char *, OptTreeNode *, int);
+void Base64DecodeInit(struct _SnortConfig *, char *, OptTreeNode *, int);
 void Base64DecodeParse(char *, Base64DecodeData *, OptTreeNode *);
 int  Base64DecodeEval(void *option_data, Packet *p);
 
@@ -77,7 +79,7 @@ uint32_t Base64DecodeHash(void *d)
     mix(a,b,c);
 
     a += RULE_OPTION_TYPE_BASE64_DECODE;
-     
+
     final(a,b,c);
 
     return c;
@@ -103,7 +105,7 @@ int Base64DecodeCompare(void *l, void *r)
 
 
 /****************************************************************************
- * 
+ *
  * Function: SetupBase64Decode()
  *
  * Purpose: Load 'er up
@@ -126,10 +128,10 @@ void SetupBase64Decode(void)
 
 
 /****************************************************************************
- * 
- * Function: Base64DecodeInit(char *, OptTreeNode *, int protocol)
  *
- * Purpose: Generic rule configuration function.  Handles parsing the rule 
+ * Function: Base64DecodeInit(struct _SnortConfig *, char *, OptTreeNode *, int protocol)
+ *
+ * Purpose: Generic rule configuration function.  Handles parsing the rule
  *          information and attaching the associated detection function to
  *          the OTN.
  *
@@ -140,7 +142,7 @@ void SetupBase64Decode(void)
  * Returns: void function
  *
  ****************************************************************************/
-void Base64DecodeInit(char *data, OptTreeNode *otn, int protocol)
+void Base64DecodeInit(struct _SnortConfig *sc, char *data, OptTreeNode *otn, int protocol)
 {
     Base64DecodeData *idx;
     OptFpList *fpl;
@@ -165,7 +167,7 @@ void Base64DecodeInit(char *data, OptTreeNode *otn, int protocol)
 
     Base64DecodeParse(data, idx, otn);
 
-    if (add_detection_option(RULE_OPTION_TYPE_BASE64_DECODE, (void *)idx, &idx_dup) == DETECTION_OPTION_EQUAL)
+    if (add_detection_option(sc, RULE_OPTION_TYPE_BASE64_DECODE, (void *)idx, &idx_dup) == DETECTION_OPTION_EQUAL)
     {
         free(idx);
         idx = otn->ds_list[PLUGIN_BASE64_DECODE] = idx_dup;
@@ -181,7 +183,7 @@ void Base64DecodeInit(char *data, OptTreeNode *otn, int protocol)
 }
 
 /****************************************************************************
- * 
+ *
  * Function: Base64DecodeParse(char *, Base64DecodeData *, OptTreeNode *)
  *
  * Purpose: This is the function that is used to process the option keyword's
@@ -274,7 +276,7 @@ void Base64DecodeParse(char *data, Base64DecodeData *idx, OptTreeNode *otn)
                      file_name, file_line);
         }
 
-        mSplitFree(&toks1,num_toks1); 
+        mSplitFree(&toks1,num_toks1);
         i++;
     }
 
@@ -285,7 +287,7 @@ void Base64DecodeParse(char *data, Base64DecodeData *idx, OptTreeNode *otn)
 
 
 /****************************************************************************
- * 
+ *
  * Function: Base64DecodeEval(char *, OptTreeNode *, OptFpList *)
  *
  * Purpose: Use this function to perform the particular detection routine
@@ -296,7 +298,7 @@ void Base64DecodeParse(char *data, Base64DecodeData *idx, OptTreeNode *otn)
  *            fp_list => pointer to the function pointer list
  *
  * Returns: If the detection test fails, this function *must* return a zero!
- *          On success, it calls the next function in the detection list 
+ *          On success, it calls the next function in the detection list
  *
  ****************************************************************************/
 int Base64DecodeEval(void *option_data, Packet *p)
@@ -306,6 +308,7 @@ int Base64DecodeEval(void *option_data, Packet *p)
     uint8_t base64_buf[DECODE_BLEN];
     uint32_t base64_size =0;
     Base64DecodeData *idx;
+    uint32_t buff_size;
     PROFILE_VARS;
 
     PREPROC_PROFILE_START(base64DecodePerfStats);
@@ -316,7 +319,7 @@ int Base64DecodeEval(void *option_data, Packet *p)
     {
         PREPROC_PROFILE_END(base64DecodePerfStats);
         return rval;
-    } 
+    }
 
     idx = (Base64DecodeData *)option_data;
 
@@ -344,13 +347,15 @@ int Base64DecodeEval(void *option_data, Packet *p)
         start_ptr = p->data + idx->offset;
     }
 
-    if(start_ptr > (p->data + p->dsize) )
+    if(start_ptr >= (p->data + p->dsize) )
     {
         PREPROC_PROFILE_END(base64DecodePerfStats);
         return rval;
     }
 
-    if(sf_unfold_header(start_ptr, p->dsize, base64_buf, sizeof(base64_buf), &base64_size) != 0)
+    buff_size = p->data + p->dsize - start_ptr;
+
+    if(sf_unfold_header(start_ptr, buff_size, base64_buf, sizeof(base64_buf), &base64_size, 0, 0) != 0)
     {
         PREPROC_PROFILE_END(base64DecodePerfStats);
         return rval;

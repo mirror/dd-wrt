@@ -1,6 +1,7 @@
 /****************************************************************************
- * 
- * Copyright (C) 2005-2011 Sourcefire, Inc.
+ *
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -15,7 +16,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************/
 
@@ -42,8 +43,16 @@
 #define SMTP_ILLEGAL_CMD            6
 #define SMTP_HEADER_NAME_OVERFLOW   7
 #define SMTP_XLINK2STATE_OVERFLOW   8
+#define SMTP_DECODE_MEMCAP_EXCEEDED 9
+#define SMTP_B64_DECODING_FAILED    10
+#define SMTP_QP_DECODING_FAILED     11
+/* Do not delete or reuse this SID. Commenting this SID as this alert is no longer valid.*
+* #define SMTP_BITENC_DECODING_FAILED 12
+*/
+#define SMTP_UU_DECODING_FAILED     13
+#define SMTP_AUTH_ABORT_AUTH        14
 
-#define SMTP_EVENT_MAX  9
+#define SMTP_EVENT_MAX  15
 
 /* Messages for each event */
 #define SMTP_COMMAND_OVERFLOW_STR        "(smtp) Attempted command buffer overflow"
@@ -54,13 +63,19 @@
 #define SMTP_ILLEGAL_CMD_STR             "(smtp) Illegal command"
 #define SMTP_HEADER_NAME_OVERFLOW_STR    "(smtp) Attempted header name buffer overflow"
 #define SMTP_XLINK2STATE_OVERFLOW_STR    "(smtp) Attempted X-Link2State command buffer overflow"
+#define SMTP_DECODE_MEMCAP_EXCEEDED_STR  "(smtp) No memory available for decoding. Max Mime Mem exceeded"
+#define SMTP_B64_DECODING_FAILED_STR     "(smtp) Base64 Decoding failed."
+#define SMTP_QP_DECODING_FAILED_STR      "(smtp) Quoted-Printable Decoding failed."
+#define SMTP_UU_DECODING_FAILED_STR      "(smtp) Unix-to-Unix Decoding failed."
+#define SMTP_AUTH_ABORT_AUTH_STR         "(smtp) Cyrus SASL authentication attack."
 
 #define EVENT_STR_LEN  256
 
 
 /* Function prototypes  */
 void SMTP_GenerateAlert(int, char *, ...);
-
+void SMTP_Decode( void );
+void SMTP_DecodeAlert(void *ds);
 
 #endif
 

@@ -15,9 +15,10 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (C) 2005-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * Author: Steven Sturges
  *
@@ -41,8 +42,6 @@
  *
  *
  */
-#ifdef DYNAMIC_PLUGIN
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -55,11 +54,12 @@
 #endif
 #include <errno.h>
 
+#include "sf_types.h"
 #include "plugbase.h"
 #include "rules.h"
 #include "treenodes.h"
 
-#include "debug.h"
+#include "snort_debug.h"
 #include "util.h"
 
 #include "sf_dynamic_engine.h"
@@ -77,7 +77,7 @@
 PreprocStats preprocRuleOptionPerfStats;
 #endif
 
-extern const u_int8_t *doe_ptr;
+extern const uint8_t *doe_ptr;
 
 SFGHASH * PreprocessorRuleOptionsNew(void)
 {
@@ -106,6 +106,7 @@ void PreprocessorRuleOptionsFree(SFGHASH *preproc_rule_options)
 }
 
 int RegisterPreprocessorRuleOption(
+        struct _SnortConfig *sc,
         char *optionName,
         PreprocOptionInit initFunc,
         PreprocOptionEval evalFunc,
@@ -118,8 +119,6 @@ int RegisterPreprocessorRuleOption(
 {
     int ret;
     PreprocessorOptionInfo *optionInfo;
-    SnortConfig *sc = snort_conf_for_parsing;
-    SnortPolicy *p;
 
     if (sc == NULL)
     {
@@ -127,19 +126,16 @@ int RegisterPreprocessorRuleOption(
                    __FILE__, __LINE__);
     }
 
-    p = sc->targeted_policies[getParserPolicy()];
-    if (p == NULL)
-        FatalError("%s(%d) Targeted policy is NULL.\n", __FILE__, __LINE__);
-
-    if (p->preproc_rule_options == NULL)
+    if (sc->preproc_rule_options == NULL)
     {
         FatalError("Preprocessor Rule Option storage not initialized\n");
     }
 
-    optionInfo = sfghash_find(p->preproc_rule_options, optionName);
+    optionInfo = sfghash_find(sc->preproc_rule_options, optionName);
     if (optionInfo != NULL)
     {
-        FatalError("Duplicate Preprocessor Rule Option '%s'\n", optionName);
+        DEBUG_WRAP(DebugMessage(DEBUG_STREAM, "Duplicate Preprocessor Rule Option '%s'\n", optionName););
+        return 0;
     }
 
     optionInfo = (PreprocessorOptionInfo *)SnortAlloc(sizeof(PreprocessorOptionInfo));
@@ -151,7 +147,7 @@ int RegisterPreprocessorRuleOption(
     optionInfo->optionFpFunc = fpFunc;
     optionInfo->otnHandler = otnHandler;
 
-    ret = sfghash_add(p->preproc_rule_options, optionName, optionInfo);
+    ret = sfghash_add(sc->preproc_rule_options, optionName, optionInfo);
     if (ret != SFGHASH_OK)
     {
         FatalError("Failed to initialize Preprocessor Rule Option '%s'\n",
@@ -162,6 +158,7 @@ int RegisterPreprocessorRuleOption(
 }
 
 int GetPreprocessorRuleOptionFuncs(
+    SnortConfig *sc,
     char *optionName,
     PreprocOptionInit* initFunc,
     PreprocOptionEval* evalFunc,
@@ -171,25 +168,18 @@ int GetPreprocessorRuleOptionFuncs(
     )
 {
     PreprocessorOptionInfo *optionInfo;
-    SnortConfig *sc = snort_conf_for_parsing;
-    SnortPolicy *p;
 
     if (sc == NULL)
     {
-        FatalError("%s(%d) Snort conf for parsing is NULL.\n",
-                   __FILE__, __LINE__);
+        FatalError("%s(%d) Snort conf for parsing is NULL.\n", __FILE__, __LINE__);
     }
 
-    p = sc->targeted_policies[getParserPolicy()];
-    if (p == NULL)
-        return 0;
-
-    if (p->preproc_rule_options == NULL)
+    if (sc->preproc_rule_options == NULL)
     {
         FatalError("Preprocessor Rule Option storage not initialized\n");
     }
 
-    optionInfo = sfghash_find(p->preproc_rule_options, optionName);
+    optionInfo = sfghash_find(sc->preproc_rule_options, optionName);
     if (!optionInfo)
     {
         return 0;
@@ -204,16 +194,16 @@ int GetPreprocessorRuleOptionFuncs(
     return 1;
 }
 
-u_int32_t PreprocessorRuleOptionHash(void *d)
+uint32_t PreprocessorRuleOptionHash(void *d)
 {
-    u_int32_t a,b,c;
+    uint32_t a,b,c;
     PreprocessorOptionInfo *option_data = (PreprocessorOptionInfo *)d;
-            
+
 #if (defined(__ia64) || defined(__amd64) || defined(_LP64))
     {
         /* Cleanup warning because of cast from 64bit ptr to 32bit int
          * warning on 64bit OSs */
-        u_int64_t ptr; /* Addresses are 64bits */
+        uint64_t ptr; /* Addresses are 64bits */
 
         if (option_data->optionHash != NULL)
         {
@@ -222,19 +212,19 @@ u_int32_t PreprocessorRuleOptionHash(void *d)
         }
         else
         {
-            ptr = (u_int64_t)option_data->data;
-            a = (ptr << 32) & 0XFFFFFFFF;
+            ptr = (uint64_t)option_data->data;
+            a = (ptr >> 32);
             b = (ptr & 0xFFFFFFFF);
         }
 
-        ptr = (u_int64_t)option_data->optionInit;
-        c = (ptr << 32) & 0XFFFFFFFF;
+        ptr = (uint64_t)option_data->optionInit;
+        c = (ptr >> 32);
         mix(a,b,c);
 
         a += (ptr & 0xFFFFFFFF); /* mix in the last half of optionInit */
 
-        ptr = (u_int64_t)option_data->optionEval;
-        b += (ptr << 32) & 0XFFFFFFFF;
+        ptr = (uint64_t)option_data->optionEval;
+        b += (ptr >> 32);
         c += (ptr & 0xFFFFFFFF);
 
         mix(a,b,c);
@@ -243,16 +233,16 @@ u_int32_t PreprocessorRuleOptionHash(void *d)
     if (option_data->optionHash != NULL)
         a = option_data->optionHash(option_data->data);
     else
-        a = (u_int32_t)option_data->data;
+        a = (uint32_t)option_data->data;
 
-    b = (u_int32_t)option_data->optionInit;
-    c = (u_int32_t)option_data->optionEval;
+    b = (uint32_t)option_data->optionInit;
+    c = (uint32_t)option_data->optionEval;
     mix(a,b,c);
 #endif
     a += RULE_OPTION_TYPE_PREPROCESSOR;
 
     final(a,b,c);
-                                    
+
     return c;
 }
 
@@ -260,7 +250,7 @@ int PreprocessorRuleOptionCompare(void *l, void *r)
 {
     PreprocessorOptionInfo *left = (PreprocessorOptionInfo *)l;
     PreprocessorOptionInfo *right = (PreprocessorOptionInfo *)r;
-            
+
     if (!left || !right)
         return DETECTION_OPTION_NOT_EQUAL;
 
@@ -279,7 +269,7 @@ int PreprocessorRuleOptionCompare(void *l, void *r)
             return DETECTION_OPTION_EQUAL;
         }
     }
-                                                        
+
     return DETECTION_OPTION_NOT_EQUAL;
 }
 
@@ -287,7 +277,7 @@ int PreprocessorRuleOptionCompare(void *l, void *r)
 int PreprocessorOptionFunc(void *option_data, Packet *p)
 {
     PreprocessorOptionInfo *optionInfo = (PreprocessorOptionInfo *)option_data;
-    const u_int8_t *cursor = doe_ptr;
+    const uint8_t *cursor = doe_ptr;
     int       rval;
     PROFILE_VARS;
 
@@ -317,27 +307,20 @@ int GetPreprocFastPatterns(void *data, int proto, int direction, FPContentInfo *
     return -1;
 }
 
-int AddPreprocessorRuleOption(char *optionName, OptTreeNode *otn, void *data, PreprocOptionEval evalFunc)
+int AddPreprocessorRuleOption(SnortConfig *sc, char *optionName, OptTreeNode *otn, void *data, PreprocOptionEval evalFunc)
 {
     OptFpList *fpl;
     PreprocessorOptionInfo *optionInfo;
     PreprocessorOptionInfo *saveOptionInfo;
     void *option_dup;
-    SnortConfig *sc = snort_conf_for_parsing;
-    SnortPolicy *p;
 
     if (sc == NULL)
     {
-        FatalError("%s(%d) Snort conf for parsing is NULL.\n",
-                   __FILE__, __LINE__);
+        FatalError("%s(%d) Snort conf for parsing is NULL.\n", __FILE__, __LINE__);
     }
 
-    p = sc->targeted_policies[getParserPolicy()];
-    if (p == NULL)
-        return 0;
+    optionInfo = sfghash_find(sc->preproc_rule_options, optionName);
 
-    optionInfo = sfghash_find(p->preproc_rule_options, optionName);
-    
     if (!optionInfo)
         return 0;
 
@@ -356,7 +339,7 @@ int AddPreprocessorRuleOption(char *optionName, OptTreeNode *otn, void *data, Pr
      */
     fpl->context = (void *) saveOptionInfo;
 
-    if (add_detection_option(RULE_OPTION_TYPE_PREPROCESSOR,
+    if (add_detection_option(sc, RULE_OPTION_TYPE_PREPROCESSOR,
                              (void *)saveOptionInfo, &option_dup) == DETECTION_OPTION_EQUAL)
     {
         PreprocessorRuleOptionsFreeFunc(saveOptionInfo);
@@ -367,39 +350,37 @@ int AddPreprocessorRuleOption(char *optionName, OptTreeNode *otn, void *data, Pr
     return 1;
 }
 
-void PreprocessorRuleOptionOverrideFunc(char *keyword, char *option, char *args, OptTreeNode *otn, int protocol)
+void PreprocessorRuleOptionOverrideFunc(SnortConfig *sc, char *keyword, char *option,
+                                        char *args, OptTreeNode *otn, int protocol)
 {
     PreprocessorOptionInfo *optionInfo;
     char *keyword_plus_option;
     void *opt_data;
     int name_len = strlen(keyword) + strlen(option) + 2;
-    SnortConfig *sc = snort_conf_for_parsing;
-    SnortPolicy *p;
 
     if (sc == NULL)
     {
-        FatalError("%s(%d) Snort conf for parsing is NULL.\n",
-                   __FILE__, __LINE__);
+        FatalError("%s(%d) Snort conf for parsing is NULL.\n", __FILE__, __LINE__);
     }
-
-    p = sc->targeted_policies[getParserPolicy()];
-    if (p == NULL)
-        FatalError("%s(%d) Targeted policy is NULL.\n", __FILE__, __LINE__);
 
     keyword_plus_option = (char *)SnortAlloc(name_len);
     SnortSnprintf(keyword_plus_option, name_len, "%s %s", keyword, option);
 
-    optionInfo = sfghash_find(p->preproc_rule_options, keyword_plus_option);
+    optionInfo = sfghash_find(sc->preproc_rule_options, keyword_plus_option);
     if (optionInfo == NULL)
+    {
+        free(keyword_plus_option);
         return;
+    }
 
-    optionInfo->optionInit(keyword, args, &opt_data);
-    AddPreprocessorRuleOption(keyword_plus_option, otn, opt_data, optionInfo->optionEval);
+    optionInfo->optionInit(sc, keyword, args, &opt_data);
+    AddPreprocessorRuleOption(sc, keyword_plus_option, otn, opt_data, optionInfo->optionEval);
 
     free(keyword_plus_option);
 }
 
 void RegisterPreprocessorRuleOptionOverride(
+        struct _SnortConfig *sc,
         char *keyword,
         char *option,
         PreprocOptionInit initFunc,
@@ -418,7 +399,7 @@ void RegisterPreprocessorRuleOptionOverride(
     keyword_plus_option = (char *)SnortAlloc(name_len);
     SnortSnprintf(keyword_plus_option, name_len, "%s %s", keyword, option);
 
-    ret = RegisterPreprocessorRuleOption(keyword_plus_option, initFunc, evalFunc,
+    ret = RegisterPreprocessorRuleOption(sc, keyword_plus_option, initFunc, evalFunc,
             cleanupFunc, hashFunc, keyCompareFunc, otnHandler, fpFunc);
 
     /* Hash table allocs and manages keys internally */
@@ -434,5 +415,3 @@ void RegisterPreprocessorRuleOptionByteOrder(char *keyword, PreprocOptionByteOrd
 {
     RegisterByteOrderKeyword(keyword, boo_func);
 }
-
-#endif /* DYNAMIC_PLUGIN */

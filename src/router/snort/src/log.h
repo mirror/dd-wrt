@@ -1,5 +1,6 @@
 /*
-** Copyright (C) 2002-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -15,7 +16,7 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 /* $Id$ */
@@ -85,12 +86,20 @@ int RollAlertFile(const char *);
 
 #ifndef WIN32
 void SetEvent(Event *, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, 
+#if !defined(FEAT_OPEN_APPID)
         uint32_t); 
+#else /* defined(FEAT_OPEN_APPID) */
+        uint32_t, char *); 
+#endif /* defined(FEAT_OPEN_APPID) */
 #else
 /* There is a naming conflict with a Win32 standard function, so compensate */
 #define SetEvent SnortSetEvent
 void SnortSetEvent(Event *, uint32_t, uint32_t, uint32_t, uint32_t, 
+#if !defined(FEAT_OPEN_APPID)
         uint32_t, uint32_t); 
+#else /* defined(FEAT_OPEN_APPID) */
+        uint32_t, uint32_t, char *); 
+#endif /* defined(FEAT_OPEN_APPID) */
 #endif
 
 #endif /* __LOG_H__ */

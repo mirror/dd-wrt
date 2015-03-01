@@ -1,5 +1,6 @@
 /*
-** Copyright (C) 2006-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2006-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License Version 2 as
@@ -14,7 +15,7 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 /*
@@ -28,7 +29,7 @@
 #include "decode.h"
 #include "util.h"
 
-#define MAX_PROTOCOL_ORDINAL 8192 
+#define MAX_PROTOCOL_ORDINAL 8192
 
 typedef struct _SFTargetProtocolReference
 {
@@ -36,10 +37,17 @@ typedef struct _SFTargetProtocolReference
     int16_t ordinal;
 } SFTargetProtocolReference;
 
+extern int16_t protocolReferenceTCP;
+extern int16_t protocolReferenceUDP;
+extern int16_t protocolReferenceICMP;
+
 void InitializeProtocolReferenceTable(void);
 void FreeProtoocolReferenceTable(void);
-int16_t AddProtocolReference(char *protocol);
-int16_t FindProtocolReference(char *protocol);
+int16_t AddProtocolReference(const char *protocol);
+int16_t FindProtocolReference(const char *protocol);
+#if defined(FEAT_OPEN_APPID)
+const char * FindProtocolName(int16_t protocol_id);
+#endif /* defined(FEAT_OPEN_APPID) */
 
 int16_t GetProtocolReference(Packet *p);
 

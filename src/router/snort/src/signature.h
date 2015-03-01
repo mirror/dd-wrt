@@ -1,6 +1,7 @@
 /* $Id$ */
 /*
-** Copyright (C) 2002-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Author(s):   Andrew R. Baker <andrewb@sourcefire.com>
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -16,14 +17,11 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 #ifndef __SIGNATURE_H__
 #define __SIGNATURE_H__
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
 #ifdef OSF1
 #include <sys/bitypes.h>
 #endif
@@ -123,8 +121,13 @@ typedef struct _SigInfo
 #ifdef TARGET_BASED
     unsigned int num_services;
     ServiceInfo *services;
+#if 0
     char          *os;
 #endif
+#endif
+#if defined(FEAT_OPEN_APPID)
+    unsigned int num_appid;
+#endif /* defined(FEAT_OPEN_APPID) */
 } SigInfo;
 
 SFGHASH * SoRuleOtnLookupNew(void);
@@ -141,5 +144,13 @@ void OtnLookupFree(SFGHASH *);
 void OtnRemove(SFGHASH *, SFGHASH *, struct _OptTreeNode *);
 void OtnDeleteData(void *data);
 void OtnFree(void *data);
+
+static inline bool IsPreprocDecoderRule(char rule_type)
+{
+    if ((rule_type == SI_RULE_TYPE_DECODE)
+            || (rule_type == SI_RULE_TYPE_PREPROC))
+        return true;
+    return false;
+}
 
 #endif /* SIGNATURE */

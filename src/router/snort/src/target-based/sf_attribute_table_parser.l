@@ -1,5 +1,6 @@
 /*
-** Copyright (C) 2006-2009 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2006-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License Version 2 as
@@ -14,7 +15,7 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 /*
@@ -24,10 +25,10 @@
 
 /*
  * Lex for Attribute Table
- */ 
+ */
 
 /* Definitions Section.
- * Definitions required by the rules section are in here prior to first  
+ * Definitions required by the rules section are in here prior to first
  * "%%" seperator
  */
 
@@ -153,7 +154,7 @@ comment        {commentStart}.*{commentEnd}
 
 {numericValue}          {
                             sfat_lval.numericValue = strtol( yytext, NULL, 10 );
-#ifdef DEBUG
+#ifdef DEBUG_MSGS
                             DebugMessage(DEBUG_ATTRIBUTE,
                                 "Number Value: [%d]\n", sfat_lval.numericValue);
 #endif
@@ -163,12 +164,13 @@ comment        {commentStart}.*{commentEnd}
                             /* Store the value of the string, but not
                              * more than STD_BUF. */
                             int i;
-                            for (i=0; i < yyleng && i < STD_BUF; i++)
+                            for (i=0; i < yyleng && i < STD_BUF-1; i++)
                             {
                                 sfat_lval.stringValue[i] = yytext[i];
                             }
+
                             sfat_lval.stringValue[i] = '\0';
-#ifdef DEBUG
+#ifdef DEBUG_MSGS
                             DebugMessage(DEBUG_ATTRIBUTE,
                                 "String Value: [%s]\n", sfat_lval.stringValue);
 #endif

@@ -1,7 +1,8 @@
 /*
  * ftpp_ui_config.c
  *
- * Copyright (C) 2004-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2004-2013 Sourcefire, Inc.
  * Steven A. Sturges <ssturges@sourcefire.com>
  * Daniel J. Roelker <droelker@sourcefire.com>
  * Marc A. Norton <mnorton@sourcefire.com>
@@ -19,7 +20,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  * Description:
  *
@@ -40,6 +41,10 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#endif
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
 #endif
 
 #include "ftpp_return_codes.h"
@@ -88,7 +93,7 @@ int ftpp_ui_config_init_global_conf(FTPTELNET_GLOBAL_CONF *GlobalConf)
  *          of FTPTelnet, you must change this function.
  *
  * Arguments: GlobalConf    => pointer to the global configuration structure
- * 
+ *
  * Returns: int => return code indicating error or success
  *
  */
@@ -147,7 +152,7 @@ int ftpp_ui_config_reset_global(FTPTELNET_GLOBAL_CONF *GlobalConf)
 
     return FTPP_SUCCESS;
 }
-    
+
 /*
  * Function: ftpp_ui_config_reset_telnet_proto(TELNET_PROTO_CONF *TelnetConf)
  *

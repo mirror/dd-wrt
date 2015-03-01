@@ -1,12 +1,13 @@
 /*
  * ftp_bounce_lookup.c
  *
- * Copyright (C) 2004-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2004-2013 Sourcefire, Inc.
  * Steven A. Sturges <ssturges@sourcefire.com>
  * Daniel J. Roelker <droelker@sourcefire.com>
  * Marc A. Norton <mnorton@sourcefire.com>
  * Kevin Liu <kliu@sourcefire.com>
- * 
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
  * published by the Free Software Foundation.  You may not use, modify or
@@ -20,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  * Description:
  *
@@ -37,6 +38,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "hi_util_kmap.h"
 #include "ftpp_ui_config.h"
@@ -60,7 +65,7 @@
  */
 int ftp_bounce_lookup_init(BOUNCE_LOOKUP **BounceLookup)
 {
-    KMAP *km = KMapNew((KMapUserFreeFunc)FTPTelnetCleanupFTPBounceTo); 
+    KMAP *km = KMapNew((KMapUserFreeFunc)FTPTelnetCleanupFTPBounceTo);
     *BounceLookup = km;
     if(*BounceLookup == NULL)
     {
@@ -104,21 +109,21 @@ int ftp_bounce_lookup_cleanup(BOUNCE_LOOKUP **BounceLookup)
 
 /*
  * Function: ftp_bounce_lookup_add(BOUNCE_LOOKUP *BounceLookup,
- *                                 char *ip, int len, 
+ *                                 char *ip, int len,
  *                                 FTP_BOUNCE_TO *BounceTo)
- * 
+ *
  * Purpose: Add a bounce configuration to the list.  IP is stored
  *          in dot notation order.  When the lookup happens, we
  *          compare up to len bytes of the address.
  *
  * Arguments: BounceLookup => a pointer to the lookup structure
- *            IP           => the ftp bounce address 
+ *            IP           => the ftp bounce address
  *            BounceTo     => a pointer to the bounce configuration structure
  *
  * Returns: int => return code indicating error or success
  *
  */
-int ftp_bounce_lookup_add(BOUNCE_LOOKUP *BounceLookup, 
+int ftp_bounce_lookup_add(BOUNCE_LOOKUP *BounceLookup,
 		snort_ip_p Ip, FTP_BOUNCE_TO *BounceTo)
 {
     int iRet;
@@ -167,7 +172,7 @@ int ftp_bounce_lookup_add(BOUNCE_LOOKUP *BounceLookup,
  *
  */
 FTP_BOUNCE_TO  *ftp_bounce_lookup_find(
-        BOUNCE_LOOKUP *BounceLookup, snort_ip_p Ip, int *iError ) 
+        BOUNCE_LOOKUP *BounceLookup, snort_ip_p Ip, int *iError )
 {
     FTP_BOUNCE_TO *BounceTo = NULL;
 

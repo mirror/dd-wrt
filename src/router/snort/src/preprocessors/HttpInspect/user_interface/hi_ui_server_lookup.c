@@ -1,6 +1,7 @@
 /****************************************************************************
  *
- * Copyright (C) 2003-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -15,10 +16,10 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************/
- 
+
 /**
 **  @file       hi_ui_server_lookup.c
 **
@@ -38,6 +39,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "hi_util_xmalloc.h"
 #include "hi_util_kmap.h"
@@ -68,11 +73,7 @@ static void serverConfFree(void *pData);
 */
 int hi_ui_server_lookup_init(SERVER_LOOKUP **ServerLookup)
 {
-#ifdef SUP_IP6
     *ServerLookup =  sfrt_new(DIR_16_4x4_16x5_4x4, IPv6, HI_UI_CONFIG_MAX_SERVERS, 20);
-#else
-    *ServerLookup =  sfrt_new(DIR_16x2, IPv4, HI_UI_CONFIG_MAX_SERVERS, 20);
-#endif
     if(*ServerLookup == NULL)
     {
         return HI_MEM_ALLOC_FAIL;
@@ -100,8 +101,8 @@ int hi_ui_server_lookup_init(SERVER_LOOKUP **ServerLookup)
 **  @return integer
 **
 **  @retval HI_SUCCESS        function successful
-**  @retval HI_INVALID_ARG    invalid argument, most likely NULL pointer 
-**  @retval HI_MEM_ALLOC_FAIL memory allocation failed 
+**  @retval HI_INVALID_ARG    invalid argument, most likely NULL pointer
+**  @retval HI_MEM_ALLOC_FAIL memory allocation failed
 **  @retval HI_NONFATAL_ERR   key is already in table, don't overwrite
 **                            configuration.
 */
@@ -115,11 +116,7 @@ int hi_ui_server_lookup_add(SERVER_LOOKUP *ServerLookup, sfip_t *Ip,
         return HI_INVALID_ARG;
     }
 
-#ifdef SUP_IP6
     iRet = sfrt_insert((void *)Ip, (unsigned char)Ip->bits, (void *)ServerConf, RT_FAVOR_SPECIFIC, ServerLookup);
-#else
-    iRet = sfrt_insert((void *)&(Ip->ip.u6_addr32[0]), (unsigned char)Ip->bits, (void *)ServerConf, RT_FAVOR_SPECIFIC, ServerLookup);
-#endif
     if (iRet)
     {
         return HI_MEM_ALLOC_FAIL;
@@ -148,7 +145,7 @@ int hi_ui_server_lookup_add(SERVER_LOOKUP *ServerLookup, sfip_t *Ip,
 **  @retval HI_INVALID_ARG argument(s) are invalid
 **  @retval HI_NOT_FOUND IP not found
 */
-HTTPINSPECT_CONF  *hi_ui_server_lookup_find(SERVER_LOOKUP *ServerLookup, 
+HTTPINSPECT_CONF  *hi_ui_server_lookup_find(SERVER_LOOKUP *ServerLookup,
                                             snort_ip_p Ip, int *iError)
 {
     HTTPINSPECT_CONF *ServerConf;
@@ -166,11 +163,7 @@ HTTPINSPECT_CONF  *hi_ui_server_lookup_find(SERVER_LOOKUP *ServerLookup,
 
     *iError = HI_SUCCESS;
 
-#ifdef SUP_IP6
     ServerConf = (HTTPINSPECT_CONF *)sfrt_lookup((void *)Ip, ServerLookup);
-#else
-    ServerConf = (HTTPINSPECT_CONF *)sfrt_lookup((void *)&Ip, ServerLookup);
-#endif
     if (!ServerConf)
     {
         *iError = HI_NOT_FOUND;
@@ -180,14 +173,15 @@ HTTPINSPECT_CONF  *hi_ui_server_lookup_find(SERVER_LOOKUP *ServerLookup,
 }
 
 void hi_ui_server_iterate(
-        SERVER_LOOKUP *ServerLookup, 
-        void (*userfunc)(void *)
+        struct _SnortConfig *sc,
+        SERVER_LOOKUP *ServerLookup,
+        void (*userfunc)(struct _SnortConfig *, void *)
         )
 {
-     sfrt_iterate(ServerLookup, userfunc);
+     sfrt_iterate_with_snort_config(sc, ServerLookup, userfunc);
 }
 #if 0
-/** Obsoleted. After changing underlying KMAP to SFRT. SFRT provides an iterator with 
+/** Obsoleted. After changing underlying KMAP to SFRT. SFRT provides an iterator with
  * a callback function but does not support getFirst, getNext operations.
  */
 
@@ -278,7 +272,7 @@ HTTPINSPECT_CONF *hi_ui_server_lookup_next(SERVER_LOOKUP *ServerLookup,
 
     return ServerConf;
 }
-#endif    
+#endif
 
 void  hi_ui_server_lookup_destroy(SERVER_LOOKUP *ServerLookup)
 {
@@ -286,9 +280,9 @@ void  hi_ui_server_lookup_destroy(SERVER_LOOKUP *ServerLookup)
     sfrt_free(ServerLookup);
 }
 
-/**Free pData buffer, which may be referenced multiple times. ReferenceCount 
- * is the number of times the buffer is referenced.  For freeing the buffer, 
- * we just decrement referenceCount till it reaches 0, at which time the 
+/**Free pData buffer, which may be referenced multiple times. ReferenceCount
+ * is the number of times the buffer is referenced.  For freeing the buffer,
+ * we just decrement referenceCount till it reaches 0, at which time the
  * buffer is also freed.
  */
 static void serverConfFree(void *pData)

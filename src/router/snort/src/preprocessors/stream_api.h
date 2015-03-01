@@ -1,7 +1,7 @@
 /* $Id$ */
-
 /*
- * ** Copyright (C) 2005-2011 Sourcefire, Inc.
+ ** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * ** Copyright (C) 2005-2013 Sourcefire, Inc.
  * ** AUTHOR: Steven Sturges
  * **
  * ** This program is free software; you can redistribute it and/or modify
@@ -17,13 +17,13 @@
  * **
  * ** You should have received a copy of the GNU General Public License
  * ** along with this program; if not, write to the Free Software
- * ** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  * */
 
 /* stream_api.h
  *
  * Purpose: Definition of the StreamAPI.  To be used as a common interface
- *          for TCP (and later UDP & ICMP) Stream access for other 
+ *          for TCP (and later UDP & ICMP) Stream access for other
  *          preprocessors and detection plugins.
  *
  * Arguments:
@@ -39,6 +39,10 @@
 #ifndef STREAM_API_H_
 #define STREAM_API_H_
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <sys/types.h>
 
 #include "ipv6_port.h"
@@ -46,89 +50,104 @@
 #include "bitop.h"
 #include "decode.h"
 #include "sfPolicy.h"
+#include "session_api.h"
 
-#define IGNORE_FLAG_ALWAYS 0x01
-
-#define SSN_MISSING_NONE   0x00
-#define SSN_MISSING_BEFORE 0x01
-#define SSN_MISSING_AFTER  0x02
-#define SSN_MISSING_BOTH   (SSN_MISSING_BEFORE | SSN_MISSING_AFTER)
-
-#define SSN_DIR_NONE 0x0
-#define SSN_DIR_CLIENT 0x1
-#define SSN_DIR_SENDER 0x1
-#define SSN_DIR_SERVER 0x2
-#define SSN_DIR_RESPONDER 0x2
-#define SSN_DIR_BOTH 0x03
-
-#define SSNFLAG_SEEN_CLIENT         0x00000001
-#define SSNFLAG_SEEN_SENDER         0x00000001
-#define SSNFLAG_SEEN_SERVER         0x00000002
-#define SSNFLAG_SEEN_RESPONDER      0x00000002
-#define SSNFLAG_ESTABLISHED         0x00000004
-#define SSNFLAG_NMAP                0x00000008
-#define SSNFLAG_ECN_CLIENT_QUERY    0x00000010
-#define SSNFLAG_ECN_SERVER_REPLY    0x00000020
-#define SSNFLAG_HTTP_1_1            0x00000040 /* has stream seen HTTP 1.1? */
-#define SSNFLAG_SEEN_PMATCH         0x00000080 /* seen pattern match? */
-#define SSNFLAG_MIDSTREAM           0x00000100 /* picked up midstream */
-#define SSNFLAG_CLIENT_FIN          0x00000200 /* server sent fin */
-#define SSNFLAG_SERVER_FIN          0x00000400 /* client sent fin */
-#define SSNFLAG_CLIENT_PKT          0x00000800 /* packet is from the client */
-#define SSNFLAG_SERVER_PKT          0x00001000 /* packet is from the server */
-#define SSNFLAG_COUNTED_INITIALIZE  0x00002000
-#define SSNFLAG_COUNTED_ESTABLISH   0x00004000
-#define SSNFLAG_COUNTED_CLOSING     0x00008000
-#define SSNFLAG_TIMEDOUT            0x00010000
-#define SSNFLAG_PRUNED              0x00020000
-#define SSNFLAG_RESET               0x00040000
-#define SSNFLAG_DROP_CLIENT         0x00080000
-#define SSNFLAG_DROP_SERVER         0x00100000
-#define SSNFLAG_LOGGED_QUEUE_FULL   0x00200000
-#define SSNFLAG_ALL                 0xFFFFFFFF /* all that and a bag of chips */
-#define SSNFLAG_NONE                0x00000000 /* nothing, an MT bag of chips */
-
-#define STREAM_FLPOLICY_NONE            0x00
-#define STREAM_FLPOLICY_FOOTPRINT       0x01 /* size-based footprint flush */
-#define STREAM_FLPOLICY_LOGICAL         0x02 /* queued bytes-based flush */
-#define STREAM_FLPOLICY_RESPONSE        0x03 /* flush when we see response */
-#define STREAM_FLPOLICY_SLIDING_WINDOW  0x04 /* flush on sliding window */
+typedef enum {
+    STREAM_FLPOLICY_NONE,
+    STREAM_FLPOLICY_FOOTPRINT,       /* size-based footprint flush */
+    STREAM_FLPOLICY_LOGICAL,         /* queued bytes-based flush */
+    STREAM_FLPOLICY_RESPONSE,        /* flush when we see response */
+    STREAM_FLPOLICY_SLIDING_WINDOW,  /* flush on sliding window */
 #if 0
-#define STREAM_FLPOLICY_CONSUMED        0x05 /* purge consumed bytes */
+    STREAM_FLPOLICY_CONSUMED,        /* purge consumed bytes */
 #endif
-#define STREAM_FLPOLICY_IGNORE          0x06 /* ignore this traffic */
+    STREAM_FLPOLICY_IGNORE,          /* ignore this traffic */
+    STREAM_FLPOLICY_PROTOCOL,        /* protocol aware flushing (PAF) */
+#ifdef NORMALIZER
+    STREAM_FLPOLICY_FOOTPRINT_IPS,   /* protocol agnostic ips */
+    STREAM_FLPOLICY_PROTOCOL_IPS,    /* protocol aware ips */
+#endif
+    STREAM_FLPOLICY_FOOTPRINT_NOACK,    /* protocol aware ips */
+    STREAM_FLPOLICY_PROTOCOL_NOACK,    /* protocol aware ips */
 
-#define STREAM_FLPOLICY_MAX STREAM_FLPOLICY_IGNORE
+    STREAM_FLPOLICY_DISABLED,       /* reassembly disabled for this traffic */
+
+    STREAM_FLPOLICY_MAX
+} FlushPolicy;
+
+typedef enum {
+    PAF_TYPE_SERVICE,
+    PAF_TYPE_PORT
+}PafType;
 
 #define STREAM_FLPOLICY_SET_ABSOLUTE    0x01
 #define STREAM_FLPOLICY_SET_APPEND      0x02
 
-#define UNKNOWN_PORT 0
+#define STREAM_API_VERSION5 6
 
-#define STREAM_API_VERSION5 5
+typedef void (*LogExtraData)(void *ssnptr, void *config, LogFunction *funcs, uint32_t max_count, uint32_t xtradata_mask, uint32_t id, uint32_t sec);
 
-typedef void (*StreamAppDataFree)(void *);
-typedef int (*PacketIterator)
-    (
-     DAQ_PktHdr_t *,
+typedef int (*PacketIterator)( DAQ_PktHdr_t *,
      uint8_t *,  /* pkt pointer */
      void *      /* user-defined data pointer */
     );
 
-typedef int (*StreamSegmentIterator)
-    (
-     DAQ_PktHdr_t *,
+typedef int (*StreamSegmentIterator)(  DAQ_PktHdr_t *,
      uint8_t *,  /* pkt pointer */
      uint8_t *,  /* payload pointer */
      uint32_t,   /* sequence number */
      void *      /* user-defined data pointer */
     );
 
-typedef struct _StreamFlowData
+
+/* for protocol aware flushing (PAF): */
+typedef enum {
+    PAF_ABORT,   /* non-paf operation */
+    PAF_START,   /* internal use only */
+    PAF_SEARCH,  /* searching for next flush point */
+    PAF_FLUSH,   /* flush at given offset */
+    PAF_LIMIT,   /* if paf_max is reached, flush up to given offset*/
+    PAF_SKIP,    /* skip ahead to given offset */
+    PAF_PERFORMED_LMT_FLUSH /* previously performed PAF_LIMIT  */
+} PAF_Status;
+
+typedef PAF_Status (*PAF_Callback)(  /* return your scan state */
+    void* session,         /* session pointer */
+    void** user,           /* arbitrary user data hook */
+    const uint8_t* data,   /* in order segment data as it arrives */
+    uint32_t len,          /* length of data */
+    uint32_t flags,        /* packet flags indicating direction of data */
+    uint32_t* fp           /* flush point (offset) relative to data */
+);
+#if defined(FEAT_OPEN_APPID)
+typedef struct s_HEADER_LOCATION {
+    const uint8_t *start;
+    unsigned len;
+} HEADER_LOCATION;
+
+typedef struct _HttpParsedHeaders
 {
-    BITOP boFlowbits;
-    unsigned char flowb[1];
-} StreamFlowData;
+    HEADER_LOCATION host, url, method, userAgent, referer, via, responseCode, server, xWorkingWith, contentType;
+} HttpParsedHeaders;
+
+typedef void (*Http_Processor_Callback)(
+    Packet *p,
+    HttpParsedHeaders *headers
+);
+typedef enum {
+    APP_PROTOID_SERVICE,
+    APP_PROTOID_CLIENT,
+    APP_PROTOID_PAYLOAD,
+    APP_PROTOID_MISC,
+    APP_PROTOID_MAX
+} AppProtoIdIndex;
+#endif /* defined(FEAT_OPEN_APPID) */
+
+typedef  unsigned int ServiceEventType;
+
+typedef void (*ServiceEventNotifierFunc)(void *ssnptr, ServiceEventType eventType, void *eventData);
+
+typedef void (*Stream_Callback)(Packet *);
 
 typedef struct _stream_api
 {
@@ -145,127 +164,6 @@ typedef struct _stream_api
      */
     int (*alert_inline_midstream_drops)(void);
 
-    /* Set direction of session
-     *
-     * Parameters:
-     *     Session Ptr
-     *     New Direction
-     *     IP
-     *     Port
-     */
-    void (*update_direction)(void *, char, snort_ip_p, uint16_t );
-
-    /* Get direction of packet
-     *
-     * Parameters:
-     *     Packet
-     */
-    uint32_t (*get_packet_direction)(Packet *);
-
-    /* Stop inspection for session, up to count bytes (-1 to ignore
-     * for life or until resume).
-     *
-     * If response flag is set, automatically resume inspection up to
-     * count bytes when a data packet in the other direction is seen.
-     *
-     * Also marks the packet to be ignored
-     *
-     * Parameters
-     *     Session Ptr
-     *     Packet
-     *     Direction
-     *     Bytes
-     *     Response Flag
-     */
-    void (*stop_inspection)(void *, Packet *, char, int32_t, int);
-
-    /* Turn off inspection for potential session.
-     * Adds session identifiers to a hash table.
-     * TCP only.
-     *
-     * Parameters
-     *     IP addr #1
-     *     Port #1
-     *     IP addr #2
-     *     Port #2
-     *     Protocol
-     *     Direction
-     *     Flags (permanent)
-     *
-     * Returns
-     *     0 on success
-     *     -1 on failure
-     */
-    int (*ignore_session)(snort_ip_p, uint16_t, snort_ip_p, uint16_t,
-                          char, char, char);
-
-    /* Resume inspection for session.
-     *
-     * Parameters
-     *     Session Ptr
-     *     Direction
-     */
-    void (*resume_inspection)(void *, char);
-
-    /* Drop traffic arriving on session.
-     *
-     * Parameters
-     *     Session Ptr
-     *     Direction
-     */
-    void (*drop_traffic)(Packet *, void *, char);
-
-    /* Drop retransmitted packet arriving on session.
-     *
-     * Parameters
-     *     Packet
-     */
-    void (*drop_packet)(Packet *);
-
-    /* Set a reference to application data for a session
-     *
-     * Parameters
-     *     Session Ptr
-     *     Application Protocol
-     *     Application Data reference (pointer)
-     *     Application Data free function
-     *
-     * Returns
-     *     0 on success
-     *     -1 on failure
-     */
-    int (*set_application_data)(void *, uint32_t, void *, StreamAppDataFree);
-
-    /* Set a reference to application data for a session
-     *
-     * Parameters
-     *     Session Ptr
-     *     Application Protocol
-     *
-     * Returns
-     *     Application Data reference (pointer)
-     */
-    void *(*get_application_data)(void *, uint32_t);
-
-    /* Sets the flags for a session
-     * This ORs the supplied flags with the previous values
-     * 
-     * Parameters
-     *     Session Ptr
-     *     Flags
-     *
-     * Returns
-     *     New Flags
-     */
-    uint32_t (*set_session_flags)(void *, uint32_t);
-
-    /* Gets the flags for a session
-     *
-     * Parameters
-     *     Session Ptr
-     */
-    uint32_t (*get_session_flags)(void *);
-
     /* Flushes the stream on an alert
      * Side that is flushed is the same as the packet.
      *
@@ -273,6 +171,14 @@ typedef struct _stream_api
      *     Packet
      */
     int (*alert_flush_stream)(Packet *);
+
+    /* Flushes the stream on arrival of packet
+     * Side that is flushed is the same side of the packet.
+     *
+     * Parameters
+     *     Packet
+     */
+    int (*request_flush_stream)(Packet *);
 
     /* Flushes the stream on arrival of another packet
      * Side that is flushed is the opposite of the packet.
@@ -338,15 +244,19 @@ typedef struct _stream_api
      */
     int (*check_session_alerted)(void *, Packet *p, uint32_t, uint32_t);
 
-    /* Get Flowbits data
+    /* Set Extra Data Logging
      *
      * Parameters
-     *     Packet
-     *
+     *      Session Ptr
+     *      Packet
+     *      gen ID
+     *      sig ID
      * Returns
-     *     Ptr to Flowbits Data
+     *      0 success
+     *      -1 failure ( no alerts )
+     *
      */
-    StreamFlowData *(*get_flow_data)(Packet *p);
+    int (*update_session_alert)(void *, Packet *p, uint32_t, uint32_t, uint32_t, uint32_t);
 
     /* Set reassembly flush policy/direction for given session
      *
@@ -359,7 +269,18 @@ typedef struct _stream_api
      * Returns
      *     direction(s) of reassembly for session
      */
+    /* XXX Do not attempt to set flush policy to PROTOCOL or PROTOCOL_IPS. */
     char (*set_reassembly)(void *, uint8_t, char, char);
+
+    /* Set direction of session
+     *
+     * Parameters:
+     *     Session Ptr
+     *     New Direction
+     *     IP
+     *     Port
+     */
+    void (*update_direction)(void *, char, snort_ip_p, uint16_t );
 
     /* Get reassembly direction for given session
      *
@@ -421,49 +342,12 @@ typedef struct _stream_api
      */
     char (*missed_packets)(void *, char);
 
-#ifdef TARGET_BASED
-    /* Get the protocol identifier from a stream
+    /* Drop retransmitted packet arriving on session.
      *
      * Parameters
-     *     Session Ptr
-     * 
-     * Returns
-     *     integer protocol identifier
+     *     Packet
      */
-    int16_t (*get_application_protocol_id)(void *);
-
-    /* Set the protocol identifier for a stream
-     *
-     * Parameters
-     *     Session Ptr
-     *     ID
-     * 
-     * Returns
-     *     integer protocol identifier
-     */
-    int16_t (*set_application_protocol_id)(void *, int16_t);
-
-    /** Set service to either ignore, inspect or maintain session state.
-     *  If this is called during parsing a preprocessor configuration, make
-     *  sure to set the parsing argument to 1.
-     */
-    void (*set_service_filter_status)(int service, int status, tSfPolicyId policyId, int parsing);
-#endif
-
-    /** Set port to either ignore, inspect or maintain session state. 
-     *  If this is called during parsing a preprocessor configuration, make
-     *  sure to set the parsing argument to 1.
-     */
-    void (*set_port_filter_status)(int protocol, uint16_t port, int status, tSfPolicyId policyId, int parsing);
-
-#ifdef ACTIVE_RESPONSE
-    // initialize response count and expiration time
-    void (*init_active_response)(Packet *, void *);
-#endif
-
-    // Get the TTL value used at session setup
-    // outer=0 to get inner ip ttl for ip in ip; else outer=1
-    uint8_t (*get_session_ttl)(void *ssnptr, char direction, int outer);
+    void (*drop_packet)(Packet *);
 
     /* Get the current flush point
      *
@@ -485,45 +369,184 @@ typedef struct _stream_api
      */
     void (*set_flush_point)(void *, char, uint32_t);
 
-#ifdef TARGET_BASED
+    // register for stateful scanning of in-order payload to determine flush points
+    // autoEnable allows PAF regardless of s5 ports config
+    bool (*register_paf_port)( struct _SnortConfig *sc, tSfPolicyId, uint16_t server_port, bool toServer,
+        PAF_Callback, bool autoEnable);
+
+    // get any paf user data stored for this session
+    void** (*get_paf_user_data)(void* ssnptr, bool toServer);
+
+    bool (*is_paf_active)(void* ssn, bool toServer);
+    bool (*activate_paf)(void* ssn, int dir, int16_t service, uint8_t type);
+
+    /** Set flag to force sessions to be created on SYN packets.
+     *  This function can only be used with independent bits
+     *  acquired from get_preprocessor_status_bit. If this is called
+     *  during parsing a preprocessor configuration, make sure to
+     *  set the parsing argument to 1.
+     */
+    void (*set_tcp_syn_session_status)(struct _SnortConfig *sc, uint16_t status, tSfPolicyId policyId, int parsing);
+
+    /** Unset flag that forces sessions to be created on SYN
+     *  packets. This function can only be used with independent
+     *  bits acquired from get_preprocessor_status_bit. If this is
+     *  called during parsing a preprocessor configuration, make
+     *  sure to set the parsing argument to 1.
+     */
+    void (*unset_tcp_syn_session_status)(struct _SnortConfig *sc, uint16_t status, tSfPolicyId policyId, int parsing);
+
+    //Register callbacks for extra data logging
+    uint32_t (*reg_xtra_data_cb)(LogFunction );
+
+    //Register Extra Data Log Function
+    void (*reg_xtra_data_log)(LogExtraData, void *);
+
+    //Get the Extra data map
+    uint32_t (*get_xtra_data_map)(LogFunction **);
+
+    // register for stateful scanning of in-order payload to determine flush points
+    // autoEnable allows PAF regardless of s5 ports config
+    bool (*register_paf_service)(
+        struct _SnortConfig *sc, tSfPolicyId, uint16_t service, bool toServer,
+        PAF_Callback, bool autoEnable);
+
+    void (*set_extra_data)(void*, Packet *, uint32_t);
+    void (*clear_extra_data)(void*, Packet *, uint32_t);
+
+// These methods may move to Session:
+//
+    /* Set port to either ignore, inspect or maintain session state.
+     * If this is called during parsing a preprocessor configuration, make
+     * sure to set the parsing argument to 1.
+     */
+    void (*set_port_filter_status)(struct _SnortConfig *sc, IpProto protocol, uint16_t port, uint16_t status,
+                                   tSfPolicyId policyId, int parsing);
+
+    /* Unset port to maintain session state. This function can only
+     *  be used with independent bits acquired from
+     *  get_preprocessor_status_bit. If this is called during
+     *  parsing a preprocessor configuration, make sure to set the
+     *  parsing argument to 1.
+     */
+    void (*unset_port_filter_status)(struct _SnortConfig *sc, IpProto protocol, uint16_t port, uint16_t status,
+                                      tSfPolicyId policyId, int parsing);
+
+
+    /* Set service to either ignore, inspect or maintain session state.
+     * If this is called during parsing a preprocessor configuration, make
+     * sure to set the parsing argument to 1.
+     */
+    void (*set_service_filter_status)( struct _SnortConfig *sc, int service, int status,
+                                       tSfPolicyId policyId, int parsing );
+
+    /* Register specified port for reassembly on specified network.  If network is NULL the
+     *  port is register for reassembly on the default stream network policy
+     */
+    void (*register_reassembly_port)( char *, uint16_t, int );
+
+    /* Unregister specified port for reassembly on specified network.  If network is NULL the
+     *  port is unregistered for reassembly on the default stream network policy
+     */
+    void (*unregister_reassembly_port)( char *, uint16_t, int );
+
+    /* Time out the specified session.
+     *
+     * Parameters
+     *     Session Ptr
+     */
+    void (*expire_session)(void *);
+
+    /* register returns a non-zero id for use with set; zero is error */
+    unsigned (*register_event_handler)(Stream_Callback);
+    bool (*set_event_handler)(void* ssnptr, unsigned id, Stream_Event);
+    void (*set_reset_policy)(void* ssn, int dir, uint16_t policy, uint16_t mss);
+    void (*set_session_decrypted)(void *ssn, bool enable);
+    bool (*is_session_decrypted)(void *ssn);
+
     /* Turn off inspection for potential session.
      * Adds session identifiers to a hash table.
      * TCP only.
      *
      * Parameters
+     *     Control Channel Packet
      *     IP addr #1
      *     Port #1
      *     IP addr #2
      *     Port #2
      *     Protocol
-     *     ID
+     *     ID,
+     *     Preprocessor ID calling this function,
+     *     Preprocessor specific data,
+     *     Preprocessor data free function. If NULL, then static buffer is assumed.
+     *     Preprocessor event handler callback ID (used when calling set_event_handler)
+     *     Preprocessor event on which to callback (only used when cbId is not NULL )
      *
      * Returns
      *     0 on success
      *     -1 on failure
      */
-    int (*set_application_protocol_id_expected)(snort_ip_p, uint16_t, snort_ip_p, uint16_t,
-                          char, int16_t);
-#endif
+    int (*set_application_protocol_id_expected_preassign_callback)(const Packet *, snort_ip_p, uint16_t,
+                snort_ip_p, uint16_t, uint8_t, int16_t, uint32_t, void*, void (*)(void*), unsigned, Stream_Event);
+
+    // print and reset normalization statistics
+    void (*print_normalization_stats)(void);
+    void (*reset_normalization_stats)(void);
+
+#if defined(FEAT_OPEN_APPID)
+    /* set detected service, client, payload and misc Applicaiton Id.
+     *
+     * Parameters
+     *      Session Ptr
+     *      Snort Protocol Id for service application    
+     *      Snort Protocol Id for client application    
+     *      Snort Protocol Id for payload application    
+     *      Snort Protocol Id for misc application    
+     */
+    void (*set_application_id)(void* ssnptr, int16_t serviceAppid, int16_t clientAppid, int16_t payloadAppId, int16_t miscAppid);
+
+    /* get detected service, client, payload and misc Applicaiton Id.
+     *
+     * Parameters
+     *      Session Ptr
+     *      Snort Protocol Id for service application    
+     *      Snort Protocol Id for client application    
+     *      Snort Protocol Id for payload application    
+     *      Snort Protocol Id for misc application    
+     */
+    void (*get_application_id)(void* ssnptr, int16_t *serviceAppid, int16_t *clientAppid, int16_t *payloadAppId, int16_t *miscAppid);
+
+
+    /* Register callback function for processing HTTP headers extracted by HTTP preprocessor.
+     *
+     * Parameters
+     *      Callback function pointer
+     */
+    int (*register_http_header_callback)(Http_Processor_Callback);
+#endif /* defined(FEAT_OPEN_APPID) */
+
+    /* function to publish events
+     *
+     * Parameters
+     *      preprocId - preprocess identifier
+     *      ssnptr - sesssion pointer
+     *      eventType - type of event enumerated in ServiceEventType
+     *      eventData - void data pointer. Structure must be agreed between publisher and subscriber.
+     */
+    bool (*service_event_publish)(unsigned int preprocId, void *ssnptr, ServiceEventType eventType, void *eventData);
+
+    /* function for subcribing to events.
+     *
+     * Parameters
+     *      preprocId - preprocess identifier
+     *      eventType - type of event enumerated in ServiceEventType
+     *      Callback function pointer
+     */
+    bool (*service_event_subscribe)(unsigned int preprocId, ServiceEventType eventType, ServiceEventNotifierFunc cb);
+
 } StreamAPI;
-
-/* To be set by Stream5 (or Stream4) */
+/* To be set by Stream */
 extern StreamAPI *stream_api;
-
-/**Port Inspection States. Port can be either ignored,
- * or inspected or session tracked. The values are bitmasks.
- */
-typedef enum { 
-    /**Dont monitor the port. */
-    PORT_MONITOR_NONE = 0x00, 
-
-    /**Inspect the port. */
-    PORT_MONITOR_INSPECT = 0x01,
-
-    /**perform session tracking on the port. */
-    PORT_MONITOR_SESSION = 0x02
-
-} PortMonitorStates;
 
 #endif /* STREAM_API_H_ */
 

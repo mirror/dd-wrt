@@ -51,14 +51,7 @@ session.  A session here is based only on socket (IP address:port) pairs, so
 that a session could end, but if a new session is started using the same socket
 pair, packets will continue to get tagged.
 
-The default direction for host type tagging is by source, so
-
-    tag:host,100,packets
-
-is the same as
-
-    tag:host,100,packets,src
-
+A tag option with the "host" type MUST specify a direction.
 
 Tagged Packet Limit
 -------------------

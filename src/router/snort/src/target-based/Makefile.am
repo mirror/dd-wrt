@@ -24,6 +24,7 @@ sftarget_protocol_reference.c \
 sftarget_protocol_reference.h \
 sf_attribute_table_parser.l \
 sf_attribute_table.y
+
 else
 libtarget_based_a_SOURCES = sftarget_reader.c
 endif

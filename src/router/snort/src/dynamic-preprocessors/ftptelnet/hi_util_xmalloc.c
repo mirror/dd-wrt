@@ -1,6 +1,7 @@
 /****************************************************************************
  *
- * Copyright (C) 2005-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -15,10 +16,10 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************/
- 
+
 /*
 **  util.c
 */
@@ -27,6 +28,10 @@
 #include <string.h>
 #include <time.h>
 #include <sys/types.h>
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 //#define MDEBUG
 
@@ -78,14 +83,14 @@ void xfree( void * p )
    msize -= *q;
 
    free(q);
-      
+
 #else
-   
+
    free(p);
 
 #endif
 
-   
+
 }
 
 void xshowmem(void)
@@ -102,7 +107,7 @@ char *xstrdup(const char *str)
 
     data_size = strlen(str) + 1;
     data = (char *)xmalloc(data_size);
-    
+
 	if(data == NULL)
     {
         return NULL;

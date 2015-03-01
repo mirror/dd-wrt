@@ -8,13 +8,6 @@ HttpInspect is a generic HTTP decoder for user applications.  Given a data
 buffer, HttpInspect will decode the buffer, find HTTP fields, and normalize 
 the fields.  HttpInspect works on both client requests and server responses.
 
-The current version of HTTP Inspect only handles stateless processing.  This
-means that HTTP Inspect looks for HTTP fields on a packet-by-packet basis, and
-will be fooled if packets are not reassembled.  This works fine when there is
-another module handling the reassembly, but there are limitations in analyzing
-the protocol.  Future versions will have a stateful processing mode which will
-hook into various reassembly modules.
-
 - Configuration --
 HttpInspect has a very "rich" user configuration.  Users can configure 
 individual HTTP servers with a variety of options, which should allow the 
@@ -60,10 +53,10 @@ a rogue proxy server.
 This option specifies the maximum amount of packet payload to decompress. This
 value can be set from 1 to 65535. The default for this option is 1460.
 
-Please note, in case of multiple policies, the value specified in the default policy
-is used and this value overwrites the values specified in the other policies. In case
+Please note, in case of multiple policies, the value specified in the default policy 
+is used and this value overwrites the values specified in the other policies. In case 
 of unlimited_decompress this should be set to its max value. This value should be specified
-in the default policy even when the HTTP inspect is turned off using the disabled keyword.
+in the default policy even when the HTTP inspect preprocessor is turned off using the disabled keyword.
 
 * decompress_depth *
 This option specifies the maximum amount of decompressed data to obtain from the
@@ -72,25 +65,42 @@ this option is 2920.
 
 Please note, in case of multiple policies, the value specified in the default policy
 is used and this value overwrites the values specified in the other policies. In case
-of unlimited_decompress this should be set to its max value. This value should be specified
-in the default policy even when the HTTP inspect is turned off using the disabled keyword.
+of unlimited_decompress this should be set to its max value. This value should be specified 
+in the default policy even when the HTTP inspect preprocessor is turned off using the disabled keyword.
 
 * max_gzip_mem *
 This option determines (in bytes) the maximum amount of memory the HTTP Inspect preprocessor 
-will use for decompression. This value can be set from 3276 bytes to 100MB. This option
-along with compress and decompress depth determines the gzip sessions that will be 
-decompressed at any given instant. The default value for this option is 838860.
+will use for decompression. The minimum allowed value for this option is 3276 bytes. This option
+determines the number of concurrent sessions that can be decompressed at any given instant.
+The default value for this option is 838860.
 
-Note: This value should be specified in the default policy even when the HTTP inspect is
-turned off using the disabled keyword. It is suggested to set this value such that the max gzip
-session calculated as follows is atleast 1.
+Additionally, this value is used as the memory limit for the options SWF/PDF file decompression
+functionality.  If these features are enabled, then a second block of memory of the same size
+is allocated for decompression session state information.
 
-max gzip session = max_gzip_mem /(decompress_depth + compress_depth)
+Note: This value should be specified in the default policy even when the HTTP inspect preprocessor is 
+turned off using the disabled keyword.
+
+* memcap <num> *
+This option determines (in bytes) the maximum amount of memory the HTTP Inspect preprocessor 
+will use for logging the URI and Hostname data. This value can be set from 2304 to 603979776 (576 MB).
+This option along with the maximum uri and hostname logging size (which is defined in snort) will 
+determine the maximum HTTP sessions that will log the URI and hostname data at any given instant. The 
+maximum size for logging URI data is 2048 and for hostname is 256. The default value for this 
+option is 150994944 (144 MB).
+
+Note: This value should be specified in the default policy even when the HTTP inspect preprocessor is 
+turned off using the "disabled" keyword. In case of multiple policies, the value specified in the 
+default policy will overwrite the value specified in other policies. 
+
+max http sessions logged = memcap /( max uri logging size + max hostname logging size )
+max uri logging size defined in snort : 2048
+max hostname logging size defined in snort : 256
 
 * disabled *
 This optional keyword is allowed with any policy to avoid packet processing.
 This option disables the preprocessor. When the preprocessor is disabled
-only the "max_gzip_mem", "compress_depth" and "decompress_depth" options 
+only the "memcap", "max_gzip_mem", "compress_depth" and "decompress_depth" options 
 are applied when specified with the configuration. Other options are 
 parsed but not used. Any valid configuration may have "disabled" added to it.
 
@@ -144,12 +154,19 @@ cannot be combined with any other options except:
   - normalize_utf
   - max_header_length
   - max_headers
+  - max_spaces
   - enable_cookie
   - extended_response_inspection
   - inspect_gzip
+  - normalize_javascript
+  - max_javascript_whitespaces
   - enable_xff
   - unlimited_decompress
   - http_methods
+  - log_uri
+  - log_hostname
+  - decompress_swf
+  - decompress_pdf
 These options must be specified after the 'profile' option.
 
 Example:
@@ -215,16 +232,22 @@ content such as http_header, http_stat_code, http_stat_msg and http_cookie.
 
 * enable_cookie *
 This options turns on the cookie extraction from HTTP requests and HTTP response.
-By default the cookie inspection and extraction will be turned off. The "Cookie" 
-header line is extracted and stored in HTTP Cookie buffer for HTTP requests and
-"Set-Cookie" is extracted and stored in HTTP Cookie buffer for HTTP responses.
-In both cases the header name is also stored along with the cookie.
+By default the cookie inspection and extraction will be turned off. The cookie 
+from the "Cookie" header line is extracted and stored in HTTP Cookie buffer for 
+HTTP requests and cookie from the "Set-Cookie" is extracted and stored in HTTP 
+Cookie buffer for HTTP responses. The "Cookie:" and "Set-Cookie:" header names 
+itself along with the leading spaces and the CRLF terminating the header line 
+are stored in the HTTP header buffer and are not stored in the HTTP cookie buffer.
+
+Ex: Set-Cookie: mycookie \r\n
+
+In this case, Set-Cookie: \r\n will be in the HTTP header buffer and the pattern 
+mycookie will be in the HTTP cookie buffer.
 
 * inspect_gzip *
 This option specifies the HTTP inspect module to uncompress the compressed
 data(gzip/deflate) in HTTP response. You should select the config option 
-"extended_response_inspection" before configuring this option. Snort should 
-be configured with --enable-zlib for this option to work as expected. 
+"extended_response_inspection" before configuring this option.
 Decompression is done across packets. So the decompression will end when 
 either the 'compress_depth' or 'decompress_depth' is reached or when the 
 compressed data ends. When the compressed data is spanned across multiple
@@ -234,13 +257,119 @@ inspected. (i.e. the decompressed data from different packets are not combined
 while inspecting). Also the amount of decompressed data that will be inspected
 depends on the server_flow_depth configured. 
 
+Http Inspect generates a preprocessor alert with gid 120 and sid 6 when the decompression 
+fails. When the decompression fails due to a CRC error encountered by zlib, HTTP Inspect 
+will also provide the detection module with the data that was decompressed by zlib.
+
 * unlimited_decompress *
 This option enables the user to decompress unlimited gzip data (across multiple 
 packets).Decompression will stop when the compressed data ends or when a out of 
-sequence packet is received. To ensure unlimited decompression, user should set
-the 'compress_depth' and 'decompress_depth' to its maximum values in the default policy.
-The decompression in a single packet is still limited by the 'compress_depth' and 
+sequence packet is received. To ensure unlimited decompression, user should set 
+the 'compress_depth' and 'decompress_depth' to its maximum values in the default policy. 
+The decompression in a single packet is still limited by the 'compress_depth' and
 'decompress_depth'.
+
+* decompress_swf { deflate lzma } *
+This option will enable decompression of compressed SWF (Adobe Flash content) files
+encountered as the HTTP Response body in a GET transaction.  A prerequisite is enabling
+extended_response_inspection (described above).  When enabled, the preprocessor will
+examine the response body for the corresponding file signature.  'CWS' for Deflate/ZLIB
+compressed and 'ZWS' for LZMA compressed.  Each decompression mode can be individually enabled.
+e.g. ... { lzma } or { deflate } or { lzma deflate }.  The compressed content is decompressed
+'in-place' with the content made available to the detection/rules 'file_data' option.
+If enabled and located, the compressed SWF file signature is converted to 'FWS' to indicate
+an uncompressed file.
+
+The 'decompress_depth', 'compress_depth', and 'unlimited_decompress' are optionally used to 
+place limits on the decompression process.  The semantics for SWF files are similar to the
+gzip decompression process.
+
+LZMA decompression is only available if Snort is built with the liblzma package present
+and functional.  If the LZMA package is not present, then the { lzma } option will indicate
+a fatal parsing error.  If the liblzma package IS present, but one desires to disable LZMA
+support, then the --disable-lzma option on configure will disable usage of the library.
+
+During the decompression process, the preprocessor may generate alert 120:12 if Deflate
+decompression fails or alert 120:13 if LZMA decompression fails.
+
+* decompress_pdf { deflate } *
+This option will enable decompression of the compressed portions of PDF files encountered
+as the HTTP Response body in a GET transaction.  A prerequisite is enabling
+extended_response_inspection (described above).
+
+When enabled, the preprocessor will examine the response body for the '%PDF-' file signature.
+PDF files are then parsed, locating PDF 'streams' with a single '/FlateDecode' filter.  These
+streams are decompressed in-place, replacing the compressed content.
+
+The 'decompress_depth', 'compress_depth', and 'unlimited_decompress' are optionally used to 
+place limits on the decompression process.  The semantics for PDF files are similar to the
+gzip decompression process.
+
+During the file parsing/decompression process, the preprocessor may generate several alerts:
+    120:14 - Deflate decompression error
+    120:15 - Located a 'stream' with an unsupported compression ('/Filter') algorithm
+    120:16 - Located a 'stream' with cascaded '/FlateDecode' options
+                 (e.g. /Filter [ /FlateDecode /FlateDecode ])
+    120:17 - PDF File parsing error
+
+* normalize_javascript *
+This option enables the normalization of Javascript within the HTTP response body.
+You should select the config option "extended_response_inspection" before configuring this option.
+When this option is turned on, Http Inspect searches for a Javascript within the 
+HTTP response body by searching for the <script> tags and starts normalizing it. 
+When Http Inspect sees the <script> tag without a type, it is considered as a javascript.
+The obfuscated data within the javascript functions such as unescape, String.fromCharCode, decodeURI, 
+decodeURIComponent will be normalized. The different encodings handled within the unescape/
+decodeURI/decodeURIComponent are %XX, %uXXXX, \XX and \uXXXX. Apart from these encodings, 
+Http Inspect will also detect the consecutive whitespaces and normalize it to a single space.
+Http Inspect will also normalize the plus and concatenate the strings. The rule option file_data 
+can be used to access this normalized buffer from the rule.A preprocessor alert with SID 9 and 
+GID 120 is generated when the obfuscation levels within the Http Inspect is equal to or greater than 2.
+
+Example:
+
+HTTP/1.1 200 OK\r\n
+Date: Wed, 29 Jul 2009 13:35:26 GMT\r\n
+Server: Apache/2.2.3 (Debian) PHP/5.2.0-8+etch10 mod_ssl/2.2.3 OpenSSL/0.9.8c\r\n
+Last-Modified: Sun, 20 Jan 2008 12:01:21 GMT\r\n
+Accept-Ranges: bytes\r\n
+Content-Length: 214\r\n
+Keep-Alive: timeout=15, max=99\r\n
+Connection: Keep-Alive\r\n
+Content-Type: application/octet-stream\r\n\r\n 
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>FIXME</title>
+</head>
+<body>
+<script>document.write(unescape(unescape("%48%65%6C%6C%6F%2C%20%73%6E%6F%72%74%20%74%65%61%6D%21")));
+</script>
+</body>
+</html>
+
+The above javascript will generate the preprocessor alert with SID 9 and GIDF 120 when normalize_javascript 
+is turned on.
+
+Http Inspect will also generate a preprocessor alert with GID 120 and SID 11 when there are more than one type 
+of encodings within the escaped/encoded data.
+
+For example:
+
+unescape("%48\x65%6C%6C%6F%2C%20%73%6E%6F%72%74%20%74%65%61%6D%21");
+String.fromCharCode(0x48, 0x65, 0x6c, 0x6c, 111, 44, 32, 115, 110, 111, 114, 116, 32, 116, 101, 97, 109, 33)
+
+The above obfuscation will generate the preprocessor alert with GID 120 and SID 11.
+
+This option is turned off by default in HTTP Inspect.
+
+* max_javascript_whitespaces [positive integer] *
+This option takes an integer as an argument.  The integer determines the maximum number
+of consecutive whitespaces allowed within the Javascript obfuscated data in a HTTP
+response body. The config option "normalize_javascript" should be turned on before configuring
+ this config option. When the whitespaces in the javascript obfuscated data is equal to or more
+than this value a preprocessor alert with GID 120 and SID 10 is generated. The default value for 
+this option is 200.  To enable, specify an integer argument to max_spaces of 1 to 65535.
+Specifying a value of 0 is treated as disabling the alert.
 
 * enable_xff *
 This option enables Snort to parse and log the original client IP present in the
@@ -251,6 +380,53 @@ unified2 output and is not logged with console (-A cmg) output.
 NOTE: The original client IP from XFF/True-Client-IP in unified2 logs can be viewed 
 using the tool u2spewfoo. This tool is present in the tools/u2spewfoo directory of 
 snort source tree.
+
+* xff_headers *
+If/When the enable_xff option is present, the xff_headers option specifies a set of custom 'xff'
+headers.  This option allows the definition of up to six custom headers in addition to the
+two default (and always present) X-Forwarded-For and True-Client-IP headers.  The option
+permits both the custom and default headers to be prioritized.  The headers/priority pairs
+are specified as a list.  Lower numerical values imply a higher priority.  The headers do
+not need to be specified in priority order.  Nor do the priorities need to be contiguous.
+Priority values can range from 1 to 255.  The priority values and header names must be unique.
+The header names must not collide with known http headers such as 'host', 'cookie',
+'content-length', etc.
+
+A example of the xff_header syntax is:
+xff_headers { [ x-forwarded-highest-priority 1 ] [ x-forwarded-second-highest-priority 2 ] \
+              [ x-forwarded-lowest-priority-custom 3 ] }
+
+HTTP_Inspect will locate the highest priority xff header and return that one address in the unified2
+log file.  From the example, if both exff_2 and exff_1 exist in the request header, then the exff_1
+value (which has the higher priority) will be logged.
+
+The default X-Forwarded-For and True-Client-IP headers are always present.  They may be explicitly
+specified in the xff_headers config in order to determine their priority.  If not specified, they
+will be automatically added to the xff list as the lowest priority headers.
+
+For example, let us say that we have the following (abbreviated) HTTP request header:
+
+...
+Host: www.snort.org
+X-Forwarded-For: 192.168.1.1
+X-Was-Originally-Forwarded-From: 10.1.1.1
+...
+ 
+With the default xff behavior (no xff_headers), the 'X-Forwarded-For' header would be used to
+provide a 192.168.1.1 Original Client IP address in the unified2 log.  Custom headers are not
+parsed.
+
+With:
+xff_headers { [ x-was-originally-forwarded-from 1 ] [ x-another-forwarding-header 2 ] [ x-forwarded-for 3 ] }
+
+The X-Was-Originally-Forwarded-From header is the highest priority present and its value
+of 10.1.1.1 will be logged as the Original Client IP in the unified2 log.
+
+But with:
+xff_headers { [ x-was-originally-forwarded-from 3 ] [ x-another-forwarding-header 2 ] [ x-forwarded-for 1 ] }
+
+Now the X-Forwarded-For header is the highest priority and its value of 192.168.1.1 is logged.
+
 
 * server_flow_depth [integer] *
 * flow_depth [integer] *  (to be deprecated)
@@ -353,17 +529,6 @@ emulate an IIS server and interpret non-standard encodings correctly.
 The alert on this decoding should be enabled, because there are no legitimate
 clients that encoded UTF-8 this way, since it is non-standard.
 
-* base36 [yes/no] *
-This is an option to decode base36 encoded chars.  I didn't have access to 
-a server with this option, since it appears that this is related to certain
-Asian versions of windows.  I'm going off of info from:
-http://www.yk.rim.or.jp/~shikap/patch/spp_http_decode.patch
-So I hope that works for any of you with this option.  Please note that if you
-have enabled %u encoding, this option will not work.  You have to use the
-base36 option with the utf_8 option.  Don't use the %u option, because base36
-won't work.  When base36 is enabled, so is ascii encoding to enforce correct
-behavior.
-
 * iis_unicode [yes/no] *
 The iis_unicode option turns on the unicode codepoint mapping.  If there is no
 iis_unicode_map option specified with the server config, iis_unicode uses the
@@ -428,6 +593,20 @@ This option is an anomaly detector for abnormally large chunk sizes.  This picks
 up the apache chunk encoding exploits, and may also alert on HTTP tunneling that
 uses chunk encoding.
 
+* small_chunk_length { <chunk size> <consecutive chunks> } *
+This option is an evasion detector for consecutive small chunk sizes when
+either the client or server use Transfer-Encoding: chunked.
+<chunk size> specifies the maximum chunk size for which a chunk will be
+considered small.  <consecutive chunks> specifies the number of consecutive
+small chunks <= <chunk size> before an event will be generated.
+This option is turned off by default.  Maximum values for each are 255 and
+a <chunk size> of 0 disables.
+Events generated are gid:119,sid:27 for client small chunks and gid:120,sid:7
+for server small chunks.
+Example:
+    small_chunk_length { 10 5 }
+Meaning alert if we see 5 consecutive chunk sizes of 10 or less.
+
 * no_pipeline_req *
 This option turns HTTP pipeline decoding off, and is a performance enhancement
 if needed.  By default pipeline requests are inspected for attacks, but when
@@ -488,6 +667,14 @@ length will cause a "Long Header" alert.  This alert is off by default.  To
 enable, specify an integer argument to max_header_length of 1 to 65535.
 Specifying a value of 0 is treated as disabling the alert.
 
+* max_spaces [positive integer] *
+This option takes an integer as an argument.  The integer determines the maximum number 
+of whitespaces allowed with HTTP client request line folding. Requests headers 
+folded with whitespaces equal to or more than this value will cause a 
+"Space Saturation" alert with SID 26 and GID 119.  The default value for this 
+option is 200.  To enable, specify an integer argument to max_spaces of 1 to 65535.
+Specifying a value of 0 is treated as disabling the alert.
+
 * webroot *
 This option generates an alert when a directory traversal traverses past
 the web server root directory.  This generates much less false positives than 
@@ -504,13 +691,13 @@ whitespace_chars section above.
 
 * normalize_headers *
 This option turns on normalization for HTTP Header Fields, not including
-Cookies (using the same configuration parameters as the URI normalization (ie,
+Cookies (using the same configuration parameters as the URI normalization (i.e.,
 multi-slash, directory, etc.).  It is useful for normalizing Referrer URIs
 that may appear in the HTTP Header.
 
 * normalize_cookies *
 This option turns on normalization for HTTP Cookie Fields (using the same
-configuration parameters as the URI normalization (ie, multi-slash, directory,
+configuration parameters as the URI normalization (i.e., multi-slash, directory,
 etc.).  It is useful for normalizing data in HTTP Cookies that may be
 encoded.
 
@@ -535,7 +722,31 @@ methods also needs to be separated by braces.
 
 Example : http_methods { PUT CONNECT }
 
-Please note the maximum length for a method name is 7.
+Please note the maximum length for a method name is 256.
+
+* log_uri *
+This option enables HTTP Inspect preprocessor to parse the URI data from the 
+HTTP request and log it along with all the generated events for that session.
+Stream5 reassembly needs to be turned on HTTP ports to enable the logging. 
+If there are multiple HTTP requests in the session, the URI data of the most recent 
+HTTP request during the alert will be logged. The maximum URI logged is 2048.
+
+Please note, this is logged only with the unified2 output and is not logged 
+with console output (-A cmg). u2spewfoo can be used to read this data from 
+the unified2.
+
+* log_hostname *
+This option enables HTTP Inspect preprocessor to parse the hostname data from the 
+"Host" header of the HTTP request and log it along with all the generated events 
+for that session. Stream5 reassembly needs to be turned on HTTP ports to enable 
+the logging. If there are multiple HTTP requests in the session, the Hostname data 
+of the most recent HTTP request during the alert will be logged. In case of 
+multiple "Host" headers within one HTTP request, a preprocessor alert with sid 24 is 
+generated. The maximum hostname length logged is 256.
+
+Please note, this is logged only with the unified2 output and is not logged 
+with console output (-A cmg). u2spewfoo can be used to read this data from 
+the unified2.
 
 -- Profile Breakout --
 There are three profiles that users can select.  Only the configuration 
@@ -556,6 +767,7 @@ apache whitespace (alert off)
 utf_8 encoding (alert off)
 max_header_length 0 (header length not checked)
 max_headers 0 (number of headers not checked)
+max_sapces 200 (number of allowed white spaces)
 
 * IIS *
 
@@ -678,14 +890,18 @@ post_depth is set to -1.
 * http_cookie *
 
 The http_cookie keyword is a content modifier that restricts the search to the
-extracted Cookie Header field of a HTTP client request or a HTTP server 
-response. The Cookie buffer also includes the header name ("Cookie" for HTTP requests or 
-"Set-Cookie" for HTTP responses). As this keyword is a modifier to the previous 
-'content' keyword, there must be a content in the rule before 'http_cookie' is 
-specified. This keyword is dependent on the 'enable_cookie' config option. 
-The Cookie Header field will be extracted only when this option is configured.
-If enable_cookie is not specified, the cookie still ends up in HTTP header. 
-When enable_cookie is not specified, using http_cookie is the same as using http_header.
+extracted Cookie Header field (excluding the header name itself and the CRLF terminating 
+the header line) of a HTTP client request or a HTTP server response. The Cookie buffer 
+does not include the header names ("Cookie:" for HTTP requests or "Set-Cookie:" for 
+HTTP responses) or leading spaces and the CRLF terminating the header line. 
+These are included in the HTTP header buffer. 
+
+As this keyword is a modifier to the previous 'content' keyword, there must be a 
+content in the rule before 'http_cookie' is specified. This keyword is dependent 
+on the 'enable_cookie' config option. The Cookie Header field will be extracted 
+only when this option is configured.  If enable_cookie is not specified, 
+the cookie still ends up in HTTP header.  When enable_cookie is not specified, 
+using http_cookie is the same as using http_header.
 
 The extracted Cookie Header field will be NORMALIZED if the normalize_cookies is 
 configured with HttpInspect.
@@ -745,7 +961,7 @@ extracted Status code field from a HTTP server response. As this keyword is a
 modifier to the previous 'content' keyword, there must be a content in the rule 
 before 'http_stat_code' is specified. 
 
-The Status Code field will be extracted only if the extended_reponse_inspection is 
+The Status Code field will be extracted only if the extended_response_inspection is 
 configured for the HttpInspect.
 
 * http_stat_msg *
@@ -755,7 +971,7 @@ extracted Status Message field from a HTTP server response. As this keyword is a
 modifier to the previous 'content' keyword, there must be a content in the rule 
 before 'http_stat_msg' is specified.
 
-The Status Message field will be extracted only if the extended_reponse_inspection is
+The Status Message field will be extracted only if the extended_response_inspection is
 configured for the HttpInspect.
 
 * http_encode *
@@ -763,9 +979,9 @@ configured for the HttpInspect.
 The http_encode keyword will enable alerting based on encoding type present
 in a HTTP client request or a HTTP server response.
 
-There are eleven keywords associated with http_encode. The keywords 'uri', 'header' 
+There are several keywords associated with http_encode. The keywords 'uri', 'header' 
 and 'cookie' determine the HTTP fields used to search for a particular encoding type.
-The keywords 'utf8', 'double_encode', 'non_ascii', 'base36', 'uencode', 'ascii', 'iis_encode' and 'bare_byte' 
+The keywords 'utf8', 'double_encode', 'non_ascii', 'uencode', 'ascii', 'iis_encode' and 'bare_byte' 
 determine the encoding type which would trigger the alert. These keywords can be combined 
 using a OR operation. Negation is allowed on these keywords.
 
@@ -794,7 +1010,7 @@ SID   Description
 2     Double decoding attack
 3     U encoding
 4     Bare byte Unicode encoding
-5     Base36 encoding
+5     Base36 encoding   # Deprecated in Snort 2.9.1
 6     UTF-8 encoding
 7     IIS Unicode codepoint encoding
 8     multi-slash encoding
@@ -809,9 +1025,39 @@ SID   Description
 17    Unauthorized proxy use detected
 18    Webroot directory traversal
 19    Long header
+20    Max headers
+21    Multiple Content-Length headers
+22    Chunk size mismatch
+23    Invalid True-IP/XFF Orginal Client IP
+24    Multiple Host headers
+25    Hostname exceeds 255 characters
+27    Chunked encoding - excessive consecutive small chunks
+28    Unbounded POST (without Content-Length or Transfer-Encoding: chunked)
+29    multiple true IPs in a session
+30    both true_client_ip and XFF hdrs present
+31    unknown method
+32    simple request (HTTP/0.9)
+
 
 The following alert is generated with generator ID 120:
 
 SID   Description
 ---   -----------
 1     Anomalous HTTP server on undefined HTTP port
+2     Invalid HTTP response status code
+3     No Content-Length or Transfer-Encoding in HTTP response
+4     UTF Normalization failure
+5     HTTP response has UTF-7 charset
+6     HTTP response gzip decompression failed
+7     Chunked encoding - excessive consecutive small chunks
+8     Invalid Content-Length or chunk size in request or response
+9     Javascript obfuscation levels exceeds 1
+10    Javascript consecutive whitespaces exceeds max allowed
+11    Multiple encodings within Javascript obfuscated data
+12    SWF file Deflate decompression failed
+13    SWF file LZMA decompression failed
+14    PDF file Deflate decompression failed
+15    PDF file with unsupported compression type
+16    PDF file with cascaded FlateDecode filters
+17    PDF file parsing error
+

@@ -1,5 +1,6 @@
 /*
-** Copyright (C) 2009-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2009-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License Version 2 as
@@ -14,13 +15,18 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#include "sf_types.h"
 #include "sdf_pattern_match.h"
 #include "treenodes.h"
 #include "sf_dynamic_preprocessor.h"
@@ -77,7 +83,7 @@ static void ExpandBrackets(char **pii)
         return;
 
     /* Locate first '{' */
-    bracket_index = index(*pii, '{');
+    bracket_index = strchr(*pii, '{');
 
     /* Brackets at the beginning have nothing to modify. */
     if (bracket_index == *pii)
@@ -92,7 +98,7 @@ static void ExpandBrackets(char **pii)
         /* Ignore escaped brackets */
         if ((bracket_index > *pii) && (*(bracket_index-1) == '\\'))
         {
-            bracket_index = index(bracket_index+1, '{');
+            bracket_index = strchr(bracket_index+1, '{');
             continue;
         }
 
@@ -128,13 +134,13 @@ static void ExpandBrackets(char **pii)
         num_brackets++;
 
         /* Next bracket */
-        bracket_index = index(bracket_index+1, '{');
+        bracket_index = strchr(bracket_index+1, '{');
     }
 
     /* By this point, the brackets all match up. */
     if (num_brackets == 0)
         return;
-        
+
     /* Allocate the new pii string. */
     new_pii_size = (strlen(*pii) + total_reps - 2*num_brackets + 1);
     new_pii = (char *) calloc(new_pii_size, sizeof(char));
@@ -159,7 +165,7 @@ static void ExpandBrackets(char **pii)
             repeated_section[1] = pii_position[0];
             pii_position++;
         }
-    
+
         if (pii_position[0] == '{')
         {
             reps = strtoul(pii_position+1, &endptr, 10);
@@ -195,7 +201,7 @@ int AddPii(sdf_tree_node *head, SDFOptionData *data)
  *   0: pattern did not go in this subtree
  *   1: pattern was added in this subtree
  */
-int AddPiiPiece(sdf_tree_node *node, char *new_pattern, SDFOptionData *data) 
+int AddPiiPiece(sdf_tree_node *node, char *new_pattern, SDFOptionData *data)
 {
     /* Potential cases:
         1) node->pattern and new_pattern overlap by some number of bytes,
@@ -479,14 +485,19 @@ int FreePiiTree(sdf_tree_node *node)
 }
 
 /* Returns an sdf_tree_node that matches the pattern */
-static sdf_tree_node * FindPiiRecursively(sdf_tree_node *node, char *buf, uint16_t *buf_index, uint16_t buflen, SDFConfig *config)
+sdf_tree_node * FindPiiRecursively(sdf_tree_node *node, char *buf, uint16_t *buf_index, uint16_t buflen, 
+        SDFConfig *config, uint16_t *partial_index, sdf_tree_node **partial_node)
 {
-    uint16_t old_buf_index, pattern_index = 0;
+    uint16_t old_buf_index;
+    uint16_t pattern_index = *partial_index;
     int node_match = 1;
-    sdf_tree_node *matched_node = NULL;
+
+    *partial_index = 0;
+    *partial_node = NULL;
 
     if (node == NULL || buf == NULL || buflen == 0 || *buf_index >= buflen)
         return NULL;
+
 
     /* Save the value of buf_index that was passed in. We revert to this value
        if a pattern is not matched here. Ultimately, it should hold the number
@@ -502,7 +513,7 @@ static sdf_tree_node * FindPiiRecursively(sdf_tree_node *node, char *buf, uint16
            node_match )
     {
         /* Match a byte at a time. */
-        if ( *(node->pattern + pattern_index) == '\\' && 
+        if ( *(node->pattern + pattern_index) == '\\' &&
              *(node->pattern + pattern_index + 1) != '\0' )
         {
             /* Escape sequence found */
@@ -516,7 +527,7 @@ static sdf_tree_node * FindPiiRecursively(sdf_tree_node *node, char *buf, uint16
                 case '?':
                     node_match = (*(buf + *buf_index) == *(node->pattern + pattern_index));
                     break;
-               
+
                 /* \d : match digit */
                 case 'd':
                     node_match = isdigit( (int)(*(buf + *buf_index)) );
@@ -573,17 +584,31 @@ static sdf_tree_node * FindPiiRecursively(sdf_tree_node *node, char *buf, uint16
     if (node_match)
     {
         int i = 0;
-        uint16_t j = 0;
-        int node_contains_matches = 0;
+        uint16_t j;
+        bool node_contains_matches = false;
+        sdf_tree_node *matched_node = NULL;
+
+
+        if(*buf_index == buflen)
+        {
+            if( (*(node->pattern + pattern_index) != '\0') ||
+            ((strlen(node->pattern) == pattern_index) && node->num_children))
+            {
+                *partial_index = pattern_index;
+                *partial_node = node;
+                return NULL;
+            }
+        }
 
         /* Check the children first. Always err on the side of a larger match. */
-        while (i < node->num_children && matched_node == NULL)
+        while (i < node->num_children && (matched_node == NULL) && !(*partial_index) )
         {
-            matched_node = FindPiiRecursively(node->children[i], buf, buf_index, buflen, config);
+            matched_node = FindPiiRecursively(node->children[i], buf, buf_index, buflen, config,
+                    partial_index, partial_node);
             i++;
         }
 
-        if (matched_node != NULL)
+        if ((matched_node != NULL) || *partial_index)
             return matched_node;
 
         /* An sdf_tree_node holds multiple SDFOptionData. It's possible to get
@@ -603,10 +628,10 @@ static sdf_tree_node * FindPiiRecursively(sdf_tree_node *node, char *buf, uint16
             {
                 /* No eval func necessary, or an eval func existed and returned 1 */
                 option_data->match_success = 1;
-                node_contains_matches = 1;
+                node_contains_matches = true;
             }
         }
-        
+
         if (node_contains_matches)
             return node;
     }
@@ -626,10 +651,13 @@ static sdf_tree_node * FindPiiRecursively(sdf_tree_node *node, char *buf, uint16
  *
  * returns: sdf_tree_node ptr for matched pattern, or NULL if no match.
  */
-sdf_tree_node * FindPii(sdf_tree_node *head, char *buf, uint16_t *buf_index, uint16_t buflen,
-                        SDFConfig *config)
+sdf_tree_node * FindPii(const sdf_tree_node *head, char *buf, uint16_t *buf_index, uint16_t buflen,
+                        SDFConfig *config, SDFSessionData *session)
 {
     uint16_t i;
+    uint16_t *partial_index = &(session->part_match_index);
+    sdf_tree_node **partial_node = &(session->part_match_node);
+    *partial_index = 0;
 
     if (head == NULL)
         return NULL;
@@ -637,8 +665,8 @@ sdf_tree_node * FindPii(sdf_tree_node *head, char *buf, uint16_t *buf_index, uin
     for (i = 0; i < head->num_children; i++)
     {
         sdf_tree_node * matched_node;
-        matched_node = FindPiiRecursively(head->children[i], buf, buf_index, buflen, config);
-        if (matched_node)
+        matched_node = FindPiiRecursively(head->children[i], buf, buf_index, buflen, config, partial_index, partial_node);
+        if (matched_node || *partial_index)
             return matched_node;
     }
 

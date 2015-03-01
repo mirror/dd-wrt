@@ -15,17 +15,16 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (C) 2005-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * Author: Steven Sturges
  *
  * Dynamic Library Loading for Snort
  *
  */
-#ifdef DYNAMIC_PLUGIN
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -52,7 +51,7 @@ typedef HANDLE PluginHandle;
 /* Of course, WIN32 couldn't do things the unix way...
  * Define a few of these to get around portability issues.
  */
-#define getcwd _getcwd  
+#define getcwd _getcwd
 #ifndef PATH_MAX
 #define PATH_MAX MAX_PATH
 #endif
@@ -63,7 +62,7 @@ typedef HANDLE PluginHandle;
 #include "config.h"
 #include "decode.h"
 #include "encode.h"
-#include "debug.h"
+#include "snort_debug.h"
 #include "detect.h"
 #include "util.h"
 #include "snort.h"
@@ -72,6 +71,7 @@ typedef HANDLE PluginHandle;
 #include "sf_dynamic_preprocessor.h"
 #include "sp_dynamic.h"
 #include "sp_preprocopt.h"
+#include "sp_pcre.h"
 #include "util.h"
 #include "event_queue.h"
 #include "plugbase.h"
@@ -79,6 +79,7 @@ typedef HANDLE PluginHandle;
 #include "active.h"
 #include "mstring.h"
 #include "sfsnprintfappend.h"
+#include "session_api.h"
 #include "stream_api.h"
 #include "sf_iph.h"
 #include "fpdetect.h"
@@ -88,20 +89,30 @@ typedef HANDLE PluginHandle;
 #include "event_wrapper.h"
 #include "util.h"
 #include "detection_util.h"
+#include "sfcontrol_funcs.h"
+#include "idle_processing_funcs.h"
+#include "../dynamic-output/plugins/output.h"
+#include "file_api.h"
+#include "packet_time.h"
 
 #ifdef TARGET_BASED
 #include "target-based/sftarget_protocol_reference.h"
 #include "target-based/sftarget_reader.h"
 #endif
 
-#ifndef DEBUG
+#ifdef SIDE_CHANNEL
+#include "sidechannel.h"
+#include "sf_dynamic_side_channel.h"
+#endif
+
+#ifndef DEBUG_MSGS
 char *no_file = "unknown";
 int no_line = 0;
 #endif
 
 /* Predeclare this */
 void VerifySharedLibUniqueness();
-typedef int (*LoadLibraryFunc)(char *path, int indent);
+typedef int (*LoadLibraryFunc)(const char * const path, int indent);
 
 typedef struct _DynamicEnginePlugin
 {
@@ -135,6 +146,8 @@ typedef struct _DynamicPreprocessorPlugin
     struct _DynamicPreprocessorPlugin *prev;
 } DynamicPreprocessorPlugin;
 
+static DynamicPreprocessorPlugin *loadedPreprocessorPlugins = NULL;
+
 typedef struct _LoadableModule
 {
     char *prefix;
@@ -142,8 +155,6 @@ typedef struct _LoadableModule
     struct _LoadableModule *next;
 
 } LoadableModule;
-
-static DynamicPreprocessorPlugin *loadedPreprocessorPlugins = NULL;
 
 void CloseDynamicLibrary(PluginHandle handle)
 {
@@ -214,7 +225,7 @@ void GetPluginVersion(PluginHandle handle, DynamicPluginMeta* meta)
     }
 }
 
-PluginHandle openDynamicLibrary(char *library_name, int useGlobal)
+PluginHandle openDynamicLibrary(const char * const library_name, int useGlobal)
 {
     PluginHandle handle;
 #ifndef WIN32
@@ -233,7 +244,7 @@ PluginHandle openDynamicLibrary(char *library_name, int useGlobal)
     return handle;
 }
 
-void LoadAllLibs(char *path, LoadLibraryFunc loadFunc)
+void LoadAllLibs(const char * const path, LoadLibraryFunc loadFunc)
 {
 #ifndef WIN32
     char path_buf[PATH_MAX];
@@ -248,8 +259,7 @@ void LoadAllLibs(char *path, LoadLibraryFunc loadFunc)
         dir_entry = readdir(directory);
         while (dir_entry != NULL)
         {
-            if ((dir_entry->d_reclen != 0) &&
-                (fnmatch(MODULE_EXT, dir_entry->d_name, FNM_PATHNAME | FNM_PERIOD) == 0))
+            if (fnmatch(MODULE_EXT, dir_entry->d_name, FNM_PATHNAME | FNM_PERIOD) == 0)
             {
                 /* Get the string up until the first dot.  This will be
                  * considered the file prefix. */
@@ -345,12 +355,12 @@ void LoadAllLibs(char *path, LoadLibraryFunc loadFunc)
 
         if ( count == 0 )
         {
-            LogMessage("Warning: No dynamic libraries found in directory %s!\n", path);
+            LogMessage("WARNING: No dynamic libraries found in directory %s.\n", path);
         }
     }
     else
     {
-        LogMessage("Warning: Directory %s does not exist!\n", path);
+        LogMessage("WARNING: Directory %s does not exist.\n", path);
     }
 #else
     /* Find all shared library files in path */
@@ -363,7 +373,7 @@ void LoadAllLibs(char *path, LoadLibraryFunc loadFunc)
     HANDLE fSearch;
     WIN32_FIND_DATA FindFileData;
     int pathLen = 0;
-    char *directory;
+    const char *directory;
     int useDrive = 0;
 
     if (SnortStrncpy(path_buf, path, PATH_MAX) != SNORT_STRNCPY_SUCCESS)
@@ -463,7 +473,7 @@ int ValidateDynamicEngines(void)
     int testNum = 0;
     DynamicEnginePlugin *curPlugin = loadedEngines;
     CompatibilityFunc versFunc = NULL;
-	
+
     while( curPlugin != NULL)
     {
         versFunc = (CompatibilityFunc)curPlugin->versCheck;
@@ -472,25 +482,28 @@ int ValidateDynamicEngines(void)
         {
             DynamicDetectionPlugin *lib = loadedDetectionPlugins;
             while( lib != NULL)
-            {				
-                if (lib->metaData.type == TYPE_DETECTION)					
+            {
+                if (lib->metaData.type == TYPE_DETECTION)
                 {
                     RequiredEngineLibFunc engineFunc;
                     DynamicPluginMeta reqEngineMeta;
-					            
+
                     engineFunc = (RequiredEngineLibFunc) getSymbol(lib->handle, "EngineVersion", &(lib->metaData), 1);
                     if( engineFunc != NULL)
                     {
                         engineFunc(&reqEngineMeta);
                     }
                     testNum = versFunc(&curPlugin->metaData, &reqEngineMeta);
-                    if( testNum ) 
+                    if( testNum )
                     {
-                        FatalError("Dynamic detection lib %s %d.%d isn't compatible with the current dynamic engine library "
-                                "%s %d.%d.\n"
-                                "The dynamic detection lib is compiled with an older version of the dynamic engine.\n",
-                                lib->metaData.libraryPath, lib->metaData.major, lib->metaData.minor,
-                                curPlugin->metaData.libraryPath, curPlugin->metaData.major, curPlugin->metaData.minor);
+                        FatalError("The dynamic detection library \"%s\" version "
+                                "%d.%d compiled with dynamic engine library "
+                                "version %d.%d isn't compatible with the current "
+                                "dynamic engine library \"%s\" version %d.%d.\n",
+                                lib->metaData.libraryPath, lib->metaData.major,
+                                lib->metaData.minor, reqEngineMeta.major,
+                                reqEngineMeta.minor, curPlugin->metaData.libraryPath,
+                                curPlugin->metaData.major, curPlugin->metaData.minor);
                     }
 
                 }
@@ -500,11 +513,11 @@ int ValidateDynamicEngines(void)
         if( testNum ) break;
         curPlugin = curPlugin->next;
     }
-	
-    return(testNum);	
+
+    return(testNum);
 }
 
-int LoadDynamicEngineLib(char *library_name, int indent)
+int LoadDynamicEngineLib(const char * const library_name, int indent)
 {
     /* Presume here, that library name is full path */
     InitEngineLibFunc engineInit;
@@ -513,19 +526,17 @@ int LoadDynamicEngineLib(char *library_name, int indent)
     PluginHandle handle;
 
 #if 0
-#ifdef SUP_IP6
     LogMessage("%sDynamic engine will not be loaded since dynamic detection "
-                 "libraries are not yet supported with IPv6.\n", 
+                 "libraries are not yet supported with IPv6.\n",
                 indent?"  ":"");
     return 0;
-#endif
 #endif
 
     LogMessage("%sLoading dynamic engine %s... ",
                indent ? "  " : "", library_name);
 
     handle = openDynamicLibrary(library_name, 1);
-    metaData.libraryPath = library_name;
+    metaData.libraryPath = (char *) library_name;
 
     GetPluginVersion(handle, &metaData);
 
@@ -538,15 +549,15 @@ int LoadDynamicEngineLib(char *library_name, int indent)
         CloseDynamicLibrary(handle);
         LogMessage("failed, not an Engine\n");
         return 0;
-    }   
-    
+    }
+
     AddEnginePlugin(handle, engineInit, compatFunc, &metaData);
-  
+
     LogMessage("done\n");
     return 0;
 }
 
-void LoadAllDynamicEngineLibs(char *path)
+void LoadAllDynamicEngineLibs(const char * const path)
 {
     LogMessage("Loading all dynamic engine libs from %s...\n", path);
     LoadAllLibs(path, LoadDynamicEngineLib);
@@ -675,7 +686,7 @@ void RemoveDetectionPlugin(DynamicDetectionPlugin *plugin)
     free(plugin);
 }
 
-int LoadDynamicDetectionLib(char *library_name, int indent)
+int LoadDynamicDetectionLib(const char * const library_name, int indent)
 {
     DynamicPluginMeta metaData;
     /* Presume here, that library name is full path */
@@ -683,18 +694,16 @@ int LoadDynamicDetectionLib(char *library_name, int indent)
     PluginHandle handle;
 
 #if 0
-#ifdef SUP_IP6
     LogMessage("%sDynamic detection library \"%s\" will not be loaded. Not "
                  "supported with IPv6.\n", indent ? "  " : "", library_name);
     return 0;
-#endif
 #endif
 
     LogMessage("%sLoading dynamic detection library %s... ",
                indent ? "  " : "", library_name);
 
     handle = openDynamicLibrary(library_name, 0);
-    metaData.libraryPath = library_name;
+    metaData.libraryPath = (char *) library_name;
 
     GetPluginVersion(handle, &metaData);
 
@@ -737,27 +746,11 @@ void CloseDynamicDetectionLibs(void)
     loadedDetectionPlugins = NULL;
 }
 
-void LoadAllDynamicDetectionLibs(char *path)
+void LoadAllDynamicDetectionLibs(const char * const path)
 {
     LogMessage("Loading all dynamic detection libs from %s...\n", path);
     LoadAllLibs(path, LoadDynamicDetectionLib);
     LogMessage("  Finished Loading all dynamic detection libs from %s\n", path);
-}
-
-void LoadAllDynamicDetectionLibsCurrPath(void)
-{
-    char path_buf[PATH_MAX];
-    char *ret = NULL;
-
-    ret = getcwd(path_buf, PATH_MAX);
-    if (ret == NULL)
-    {
-        FatalError("Path to current working directory longer than %d bytes: %s\n"
-                   "Could not load dynamic detection libs\n",
-                   PATH_MAX, strerror(errno));
-    }
-
-    LoadAllDynamicDetectionLibs(path_buf);
 }
 
 void RemoveDuplicateEngines(void)
@@ -793,7 +786,6 @@ void RemoveDuplicateEngines(void)
                             /* Lib1 is newer */
                             RemoveEnginePlugin(engine2);
                             removed = 1;
-                            break;
                         }
                         else if ((meta2->major > meta1->major) ||
                             ((meta2->major == meta1->major) && (meta2->minor > meta1->minor)) ||
@@ -802,14 +794,12 @@ void RemoveDuplicateEngines(void)
                             /* Lib2 is newer */
                             RemoveEnginePlugin(engine1);
                             removed = 1;
-                            break;
                         }
                         else if ((meta1->major == meta2->major) && (meta1->minor == meta2->minor) && (meta1->build == meta2->build) )
                         {
                             /* Duplicate */
                             RemoveEnginePlugin(engine2);
                             removed = 1;
-                            break;
                         }
                     }
                 }
@@ -859,7 +849,6 @@ void RemoveDuplicateDetectionPlugins(void)
                             /* Lib1 is newer */
                             RemoveDetectionPlugin(lib2);
                             removed = 1;
-                            break;
                         }
                         else if ((meta2->major > meta1->major) ||
                             ((meta2->major == meta1->major) && (meta2->minor > meta1->minor)) ||
@@ -868,14 +857,12 @@ void RemoveDuplicateDetectionPlugins(void)
                             /* Lib2 is newer */
                             RemoveDetectionPlugin(lib1);
                             removed = 1;
-                            break;
                         }
                         else if ((meta1->major == meta2->major) && (meta1->minor == meta2->minor) && (meta1->build == meta2->build) )
                         {
                             /* Duplicate */
                             RemoveDetectionPlugin(lib2);
                             removed = 1;
-                            break;
                         }
                     }
                 }
@@ -925,7 +912,6 @@ void RemoveDuplicatePreprocessorPlugins(void)
                             /* Lib1 is newer */
                             RemovePreprocessorPlugin(pp2);
                             removed = 1;
-                            break;
                         }
                         else if ((meta2->major > meta1->major) ||
                             ((meta2->major == meta1->major) && (meta2->minor > meta1->minor)) ||
@@ -934,14 +920,12 @@ void RemoveDuplicatePreprocessorPlugins(void)
                             /* Lib2 is newer */
                             RemovePreprocessorPlugin(pp1);
                             removed = 1;
-                            break;
                         }
                         else if ((meta1->major == meta2->major) && (meta1->minor == meta2->minor) && (meta1->build == meta2->build) )
                         {
                             /* Duplicate */
                             RemovePreprocessorPlugin(pp2);
                             removed = 1;
-                            break;
                         }
                     }
                 }
@@ -994,7 +978,7 @@ void VerifyDetectionPluginRequirements(void)
                     detectionLibOkay = 1;
                     break;
                 }
-    
+
                 /* Major match, minor must be >= */
                 if (!strcmp(plugin->metaData.uniqueName, reqEngineMeta.uniqueName) &&
                     plugin->metaData.major == reqEngineMeta.major &&
@@ -1038,7 +1022,7 @@ int InitDynamicEnginePlugins(DynamicEngineData *info)
     {
         if (plugin->initFunc(info))
         {
-            FatalError("Failed to initialize dynamic engine: %s version %d.%d.%d\n", 
+            FatalError("Failed to initialize dynamic engine: %s version %d.%d.%d\n",
                        plugin->metaData.uniqueName, plugin->metaData.major,
                        plugin->metaData.minor, plugin->metaData.build);
             //return -1;
@@ -1059,6 +1043,8 @@ typedef struct _DynamicRuleSessionData
 } DynamicRuleSessionData;
 
 static uint32_t so_rule_memory = 0;
+/*Only only message will be logged within 60 seconds*/
+static ThrottleInfo error_throttleInfo = {0,60,0};
 
 static void * DynamicRuleDataAlloc(size_t size)
 {
@@ -1068,7 +1054,7 @@ static void * DynamicRuleDataAlloc(size_t size)
     if ((ScSoRuleMemcap() > 0)
             && (so_rule_memory + alloc_size) > ScSoRuleMemcap())
     {
-        ErrorMessage("SO rule memcap exceeded: Wanted to allocate "
+        ErrorMessageThrottled(&error_throttleInfo,"SO rule memcap exceeded: Wanted to allocate "
                 "%u bytes (and %d overhead) with memcap: %u and "
                 "current memory: %u\n", (uint32_t)size,
                 (int)sizeof(size_t), ScSoRuleMemcap(), so_rule_memory);
@@ -1119,7 +1105,7 @@ int DynamicSetRuleData(void *p, void *data, uint32_t sid, SessionDataFree sdf)
     if (stream_api && pkt && pkt->ssnptr)
     {
         DynamicRuleSessionData *head =
-            (DynamicRuleSessionData *)stream_api->get_application_data(pkt->ssnptr, PP_RULES);
+            (DynamicRuleSessionData *)session_api->get_application_data(pkt->ssnptr, PP_SHARED_RULES);
         DynamicRuleSessionData *tmp = head;
         DynamicRuleSessionData *tail = NULL;
 
@@ -1157,7 +1143,7 @@ int DynamicSetRuleData(void *p, void *data, uint32_t sid, SessionDataFree sdf)
 
         if (head == NULL)
         {
-            if (stream_api->set_application_data(pkt->ssnptr, PP_RULES,
+            if (session_api->set_application_data(pkt->ssnptr, PP_SHARED_RULES,
                         (void *)tmp, DynamicRuleDataFreeSession) != 0)
             {
                 DynamicRuleDataFree(tmp);
@@ -1182,7 +1168,7 @@ void * DynamicGetRuleData(void *p, uint32_t sid)
     if (stream_api && pkt && pkt->ssnptr)
     {
         DynamicRuleSessionData *head =
-            (DynamicRuleSessionData *)stream_api->get_application_data(pkt->ssnptr, PP_RULES);
+            (DynamicRuleSessionData *)session_api->get_application_data(pkt->ssnptr, PP_SHARED_RULES);
 
         while (head != NULL)
         {
@@ -1264,22 +1250,46 @@ void *pcreStudy(const void *code, int options, const char **errptr)
     return extra_extra;
 }
 
+/* pcreOvectorInfo
+ *
+ * Get the Ovector configuration for PCRE from the snort.conf
+ */
+void pcreOvectorInfo(int **ovector, int *ovector_size)
+{
+    *ovector = snort_conf->pcre_ovector;
+    *ovector_size = snort_conf->pcre_ovector_size;
+}
+
 int pcreExec(const void *code, const void *extra, const char *subj,
              int len, int start, int options, int *ovec, int ovecsize)
 {
     return pcre_exec((const pcre *)code, (const pcre_extra *)extra, subj, len, start, options, ovec, ovecsize);
 }
 
+static int setFlowId(const void* p, uint32_t id)
+{
+    return DAQ_ModifyFlow(p, id);
+}
+
+static const uint8_t* getHttpBuffer (HTTP_BUFFER hb_type, unsigned* len)
+{
+    const HttpBuffer* hb = GetHttpBuffer(hb_type);
+    if ( !hb )
+        return NULL;
+
+    *len = hb->length;
+    return hb->buf;
+}
+
 int InitDynamicEngines(char *dynamic_rules_path)
 {
-    int i;
     DynamicEngineData engineData;
 
     engineData.version = ENGINE_DATA_VERSION;
-    engineData.altBuffer = (SFDataBuffer*)&DecodeBuffer;
+    engineData.altBuffer = (SFDataBuffer *)&DecodeBuffer;
+    engineData.altDetect = (SFDataPointer *)&DetectBuffer;
+    engineData.fileDataBuf = (SFDataPointer *)&file_data_ptr;
 
-    for (i=0;i<HTTP_BUFFER_MAX;i++)
-        engineData.uriBuffers[i] = (UriInfo*)&UriBufs[i];
     /* This is defined in dynamic-plugins/sp_dynamic.h */
     engineData.ruleRegister = &RegisterDynamicRule;
     engineData.flowbitRegister = &DynamicFlowbitRegister;
@@ -1302,12 +1312,16 @@ int InitDynamicEngines(char *dynamic_rules_path)
 
     engineData.sfUnfold = &DynamicsfUnfold;
     engineData.sfbase64decode = &Dynamicsfbase64decode;
+    engineData.GetAltDetect = &DynamicGetAltDetect;
+    engineData.SetAltDetect = &DynamicSetAltDetect;
+    engineData.Is_DetectFlag = &DynamicIsDetectFlag;
+    engineData.DetectFlag_Disable = &DynamicDetectFlagDisable;
 
     engineData.debugMsg = &DebugMessageFunc;
-#ifdef HAVE_WCHAR_H
+#ifdef SF_WCHAR
     engineData.debugWideMsg = &DebugWideMessageFunc;
 #endif
-#ifdef DEBUG
+#ifdef DEBUG_MSGS
     engineData.debugMsgFile = &DebugMessageFile;
     engineData.debugMsgLine = &DebugMessageLine;
 #else
@@ -1318,13 +1332,15 @@ int InitDynamicEngines(char *dynamic_rules_path)
     engineData.pcreStudy = &pcreStudy;
     engineData.pcreCompile = &pcreCompile;
     engineData.pcreExec = &pcreExec;
-    engineData.fileDataBuf = &file_data_ptr;
-    engineData.mime_size = &mime_decode_size;
 
     engineData.allocRuleData = &DynamicRuleDataAlloc;
     engineData.freeRuleData = &DynamicRuleDataFree;
 
     engineData.flowbitUnregister = &DynamicFlowbitUnregister;
+
+    engineData.pcreCapture = &PcreCapture;
+    engineData.pcreOvectorInfo = &pcreOvectorInfo;
+    engineData.getHttpBuffer = getHttpBuffer;
 
     return InitDynamicEnginePlugins(&engineData);
 }
@@ -1340,7 +1356,7 @@ int InitDynamicPreprocessorPlugins(DynamicPreprocessorData *info)
         int i = plugin->initFunc(info);
         if (i)
         {
-            FatalError("Failed to initialize dynamic preprocessor: %s version %d.%d.%d (%d)\n", 
+            FatalError("Failed to initialize dynamic preprocessor: %s version %d.%d.%d (%d)\n",
                        plugin->metaData.uniqueName, plugin->metaData.major,
                        plugin->metaData.minor, plugin->metaData.build, i);
             //return -1;
@@ -1354,33 +1370,54 @@ int InitDynamicPreprocessorPlugins(DynamicPreprocessorData *info)
 /* Do this to avoid exposing Packet & PreprocessFuncNode from
  * snort to non-GPL code */
 typedef void (*SnortPacketProcessFunc)(Packet *, void *);
-void *AddPreprocessor(void (*pp_func)(void *, void *), u_int16_t priority,
-                      u_int32_t preproc_id, u_int32_t proto_mask)
+void *AddPreprocessor(struct _SnortConfig *sc, void (*pp_func)(void *, void *), uint16_t priority,
+                      uint32_t preproc_id, uint32_t proto_mask)
 {
     SnortPacketProcessFunc preprocessorFunc = (SnortPacketProcessFunc)pp_func;
-    return (void *)AddFuncToPreprocList(preprocessorFunc, priority, preproc_id, proto_mask);
+    return (void *)AddFuncToPreprocList(sc, preprocessorFunc, priority, preproc_id, proto_mask);
 }
 
-void *AddDetection(void (*det_func)(void *, void *), u_int16_t priority,
-                      u_int32_t det_id, u_int32_t proto_mask)
+void *AddPreprocessorAllPolicies(struct _SnortConfig *sc, void (*pp_func)(void *, void *),
+                                 uint16_t priority, uint32_t preproc_id, uint32_t proto_mask)
+{
+    SnortPacketProcessFunc preprocessorFunc = (SnortPacketProcessFunc)pp_func;
+    AddFuncToPreprocListAllNapPolicies(sc, preprocessorFunc, priority, preproc_id, proto_mask);
+    return NULL;
+}
+
+typedef void (*MetadataProcessFunc)(int, const uint8_t *);
+void *AddMetaEval(struct _SnortConfig *sc, void (*meta_eval_func)(int, const uint8_t *), uint16_t priority,
+                      uint32_t preproc_id)
+{
+    MetadataProcessFunc metaEvalFunc = (MetadataProcessFunc)meta_eval_func;
+    return (void *)AddFuncToPreprocMetaEvalList(sc, metaEvalFunc, priority, preproc_id);
+}
+
+void *AddDetection(struct _SnortConfig *sc, void (*det_func)(void *, void *), uint16_t priority,
+                      uint32_t det_id, uint32_t proto_mask)
 {
     SnortPacketProcessFunc detectionFunc = (SnortPacketProcessFunc)det_func;
-    return (void *)AddFuncToDetectionList(detectionFunc, priority, det_id, proto_mask);
+    return (void *)AddFuncToDetectionList(sc, detectionFunc, priority, det_id, proto_mask);
 }
 
-void AddPreprocessorCheck(void (*pp_chk_func)(void))
+void AddPreprocessorCheck(struct _SnortConfig *sc, int (*pp_chk_func)(struct _SnortConfig *sc))
 {
-    AddFuncToConfigCheckList(pp_chk_func);
+    AddFuncToConfigCheckList(sc, pp_chk_func);
 }
 
-void DynamicDisableDetection(void *p)
+void DynamicDisableDetection( void *p )
 {
-    DisableDetect((Packet *)p);
+    DisableDetect( ( Packet * ) p );
 }
 
-void DynamicDisableAllDetection(void *p)
+void DynamicDisableAllDetection( void *p )
 {
-    DisableAllDetect((Packet *)p);
+    DisableAllDetect( ( Packet * ) p );
+}
+
+void DynamicDisablePacketAnalysis( void *p )
+{
+    DisablePacketAnalysis( ( Packet * ) p );
 }
 
 int DynamicDetect(void *p)
@@ -1388,20 +1425,32 @@ int DynamicDetect(void *p)
     return Detect((Packet *)p);
 }
 
-int DynamicSetPreprocessorBit(void *p, u_int32_t preprocId)
+int DynamicEnablePreprocessor(void *p, uint32_t preprocId)
 {
-    return SetPreprocBit((Packet *)p, preprocId);
+    return EnablePreprocessor((Packet *)p, preprocId);
 }
 
-int DynamicSetPreprocessorReassemblyPktBit(void *p, u_int32_t preprocId)
+void DynamicDropReset(void *p)
 {
-    return SetPreprocReassemblyPktBit((Packet *)p, preprocId);
+    Active_DropSession((Packet*)p);
 }
 
-void DynamicDropInline(void *p)
+void DynamicForceDropPacket(void *p)
 {
-    Active_DropSession();
+    Active_ForceDropSession();
 }
+
+void DynamicForceDropReset(void *p)
+{
+    Active_ForceDropResetAction((Packet *)p);
+}
+
+#ifdef ACTIVE_RESPONSE
+void DynamicActiveSetEnabled(int on_off)
+{
+     Active_SetEnabled(on_off);
+}
+#endif
 
 void *DynamicGetRuleClassByName(char *name)
 {
@@ -1413,7 +1462,7 @@ void *DynamicGetRuleClassById(int id)
     return (void *)ClassTypeLookupById(snort_conf, id);
 }
 
-void DynamicRegisterPreprocessorProfile(char *keyword, void *stats, int layer, void *parent)
+void DynamicRegisterPreprocessorProfile(const char *keyword, void *stats, int layer, void *parent)
 {
 #ifdef PERF_PROFILING
     RegisterPreprocessorProfile(keyword, (PreprocStats *)stats, layer, (PreprocStats *)parent);
@@ -1431,44 +1480,67 @@ int DynamicProfilingPreprocs(void)
 
 int DynamicPreprocess(void *packet)
 {
-    return Preprocess((Packet*)packet);
+    return Preprocess( ( Packet * ) packet );
 }
 
 void DynamicDisablePreprocessors(void *p)
 {
-    DisablePreprocessors((Packet *)p);
+    DisableAppPreprocessors( ( Packet * ) p );
 }
 
-#ifdef SUP_IP6
 void DynamicIP6Build(void *p, const void *hdr, int family)
 {
     sfiph_build((Packet *)p, hdr, family);
 }
 
-static INLINE void DynamicIP6SetCallbacks(void *p, int family, char orig)
+static inline void DynamicIP6SetCallbacks(void *p, int family, char orig)
 {
     set_callbacks((Packet *)p, family, orig);
 }
-#endif
 
 int DynamicSnortEventqLog(void *p)
 {
     return SnortEventqLog(snort_conf->event_queue, (Packet *)p);
 }
 
-tSfPolicyId DynamicGetParserPolicy(void)
+tSfPolicyId DynamicGetParserPolicy(struct _SnortConfig *sc)
 {
-    return getParserPolicy();
+    return getParserPolicy(sc);
 }
 
-tSfPolicyId DynamicGetRuntimePolicy(void)
+tSfPolicyId DynamicGetNapRuntimePolicy(void)
 {
-    return getRuntimePolicy();
+    return getNapRuntimePolicy();
+}
+
+tSfPolicyId DynamicGetIpsRuntimePolicy(void)
+{
+    return getIpsRuntimePolicy();
 }
 
 tSfPolicyId DynamicGetDefaultPolicy(void)
 {
     return getDefaultPolicy();
+}
+
+tSfPolicyId DynamicGetPolicyFromId(uint16_t id)
+{
+    return sfPolicyIdGetBinding(snort_conf->policy_config, id);
+}
+
+void DynamicChangeNapRuntimePolicy(tSfPolicyId new_id, void *scb)
+{
+    session_api->set_runtime_policy( scb, SNORT_NAP_POLICY, new_id );
+    setNapRuntimePolicy(new_id);
+}
+
+void DynamicChangeIpsRuntimePolicy(tSfPolicyId new_id, void *p)
+{
+    Packet *pkt = (Packet *) p;
+
+    session_api->set_runtime_policy( pkt->ssnptr, SNORT_IPS_POLICY, new_id );
+    setIpsRuntimePolicy(new_id);
+    pkt->configPolicyId = snort_conf->targeted_policies[new_id]->configPolicyId;
 }
 
 static void* DynamicEncodeNew (void)
@@ -1481,9 +1553,19 @@ static void DynamicEncodeDelete (void *p)
     Encode_Delete((Packet*)p);
 }
 
-static int DynamicEncodeFormat (uint32_t f, const void* p, void *c)
+static void *DynamicNewGrinderPkt(void *p, void *phdr, uint8_t *pkt)
 {
-    return Encode_Format(f, (Packet*)p, (Packet*)c);
+    return (void*)NewGrinderPkt((Packet *)p, (DAQ_PktHdr_t *)phdr, pkt);
+}
+
+static void DynamicDeleteGrinderPkt(void *p)
+{
+    DeleteGrinderPkt((Packet*)p);
+}
+
+static int DynamicEncodeFormat (uint32_t f, const void* p, void *c, int t)
+{
+    return Encode_Format(f, (Packet*)p, (Packet*)c, (PseudoPacketType)t);
 }
 
 static void DynamicEncodeUpdate (void* p)
@@ -1491,19 +1573,63 @@ static void DynamicEncodeUpdate (void* p)
     Encode_Update((Packet*)p);
 }
 
-void DynamicSetParserPolicy(tSfPolicyId id)
+#ifdef ACTIVE_RESPONSE
+void DynamicSendBlockResponseMsg(void *p, const uint8_t* buffer, uint32_t buffer_len, unsigned flags)
 {
-    setParserPolicy(id);
+    Packet *packet = (Packet *)p;
+    EncodeFlags df = (packet->packet_flags & PKT_FROM_SERVER) ? ENC_FLAG_FWD:0;
+
+    if ( !packet->data || packet->dsize == 0 )
+        return;
+
+    if (flags & SND_BLK_RESP_FLAG_DO_CLIENT)
+        df |= ENC_FLAG_RST_CLNT;
+    if (flags & SND_BLK_RESP_FLAG_DO_SERVER)
+        df |= ENC_FLAG_RST_SRVR;
+    if (packet->packet_flags & PKT_STREAM_EST)
+        Active_SendData(packet, df, buffer, buffer_len);
 }
 
-void DynamicSetFileDataPtr(const u_char *ptr, uint32_t decode_size)
+void DynamicActiveInjectData(void *p, uint32_t flags, const uint8_t *buf, uint32_t blen)
+{
+    Active_InjectData((Packet *)p, (EncodeFlags)flags, buf, blen);
+}
+#endif
+
+void DynamicDropPacket(void *p)
+{
+    Active_DropPacket((Packet*)p);
+}
+
+void DynamicSetParserPolicy(SnortConfig *sc, tSfPolicyId id)
+{
+    setParserPolicy(sc, id);
+}
+
+void DynamicSetFileDataPtr(uint8_t *ptr, uint16_t decode_size)
 {
     setFileDataPtr(ptr, decode_size);
 }
 
-int DynamicGetInlineMode(void)
+void DynamicDetectResetPtr(uint8_t *ptr, uint16_t decode_size)
 {
-    return ScInlineMode();
+    DetectReset(ptr, decode_size);
+}
+
+
+void DynamicSetAltDecode(uint16_t altLen)
+{
+    SetAltDecode(altLen);
+}
+
+int DynamicGetNapInlineMode(void)
+{
+    return ScNapInlineMode();
+}
+
+int DynamicGetIpsInlineMode(void)
+{
+    return ScIpsInlineMode();
 }
 
 long DynamicSnortStrtol(const char *nptr, char **endptr, int base)
@@ -1522,36 +1648,314 @@ const char *DynamicSnortStrnStr(const char *s, int slen, const char *accept)
 }
 
 
+const char *DynamicSnortStrcasestr(const char *s, int slen, const char *accept)
+{
+    return SnortStrcasestr(s, slen, accept);
+}
+
+int DynamicSnortStrncpy(char *dst, const char *src, size_t dst_size)
+{
+    return SnortStrncpy(dst, src, dst_size);
+}
+
+const char *DynamicSnortStrnPbrk(const char *s, int slen, const char *accept)
+{
+    return SnortStrnPbrk(s, slen, accept);
+}
+
 int DynamicEvalRTN(void *rtn, void *p, int check_ports)
 {
     return fpEvalRTN((RuleTreeNode *)rtn, (Packet *)p, check_ports);
 }
 
+char *DynamicGetLogDirectory(void)
+{
+    return SnortStrdup(snort_conf->log_dir);
+}
+
+uint32_t DynamicGetSnortInstance(void)
+{
+    return (snort_conf->event_log_id >> 16);
+}
+
+bool DynamicIsPafEnabled(void)
+{
+    return ScPafEnabled();
+}
+
+time_t DynamicPktTime(void)
+{
+    return packet_time();
+}
+
+void DynamicGetPktTimeOfDay(struct timeval *tv)
+{
+    packet_gettimeofday(tv);
+}
+
+#ifdef SIDE_CHANNEL
+bool DynamicIsSCEnabled(void)
+{
+    return ScSideChannelEnabled();
+}
+
+int DynamicSCRegisterRXHandler(uint16_t type, SCMProcessMsgFunc processMsgFunc, void *data)
+{
+    return SideChannelRegisterRXHandler(type, processMsgFunc, data);
+}
+
+int DynamicSCPreallocMessageTX(uint32_t length, SCMsgHdr **hdr_ptr, uint8_t **msg_ptr, void **msg_handle)
+{
+    return SideChannelPreallocMessageTX(length, hdr_ptr, msg_ptr, msg_handle);
+}
+
+int DynamicSCEnqueueMessageTX(SCMsgHdr *hdr, const uint8_t *msg, uint32_t length, void *msg_handle, SCMQMsgFreeFunc msgFreeFunc)
+{
+    return SideChannelEnqueueMessageTX(hdr, msg, length, msg_handle, msgFreeFunc);
+}
+#endif
+
+int DynamicCanWhitelist(void)
+{
+    return DAQ_CanWhitelist();
+}
+
+int DynamicSnortIsStrEmpty(const char *s)
+{
+    return IsEmptyStr((char*)s);
+}
+
+static void DynamicDisableAllPolicies(struct _SnortConfig *sc)
+{
+    DisableAllPolicies(sc);
+}
+
+static int DynamicReenablePreprocBitFunc(struct _SnortConfig *sc, unsigned int preproc_id)
+{
+    return ReenablePreprocBit(sc, preproc_id);
+}
+
+#ifdef SIDE_CHANNEL
+static sigset_t DynamicSnortSignalMask(void)
+{
+    sigset_t mask;
+
+    sigemptyset(&mask);
+    sigaddset(&mask, SIGTERM);
+    sigaddset(&mask, SIGQUIT);
+    sigaddset(&mask, SIGPIPE);
+    sigaddset(&mask, SIGINT);
+    sigaddset(&mask, SIGNAL_SNORT_RELOAD);
+    sigaddset(&mask, SIGNAL_SNORT_DUMP_STATS);
+    sigaddset(&mask, SIGUSR1);
+    sigaddset(&mask, SIGUSR2);
+    sigaddset(&mask, SIGNAL_SNORT_ROTATE_STATS);
+    sigaddset(&mask, SIGNAL_SNORT_CHILD_READY);
+#ifdef TARGET_BASED
+    sigaddset(&mask, SIGNAL_SNORT_READ_ATTR_TBL);
+    sigaddset(&mask, SIGVTALRM);
+#endif
+    pthread_sigmask(SIG_SETMASK, &mask, NULL);
+
+    return mask;
+}
+#endif
+
+static SslAppIdLookupFunc sslAppIdLookupFnPtr;
+
+static void registerSslAppIdLookup(SslAppIdLookupFunc fnptr)
+{
+    sslAppIdLookupFnPtr = fnptr;
+}
+
+static int sslAppIdLookup(void *ssnptr, const char * serverName, const char * commonName, int32_t *serviceAppId, int32_t *clientAppId, int32_t *payloadAppId)
+{
+    if (sslAppIdLookupFnPtr)
+        return (sslAppIdLookupFnPtr)(ssnptr, serverName, commonName, serviceAppId, clientAppId, payloadAppId);
+    return 0;
+}
+
+static GetAppIdFunc getAppIdFnPtr = NULL;
+
+static void registerGetAppId(GetAppIdFunc fnptr)
+{
+    getAppIdFnPtr = fnptr;
+}
+
+static int32_t getAppId(void *ssnptr)
+{
+    if(getAppIdFnPtr)
+        return (getAppIdFnPtr)(ssnptr);
+    return 0;
+}
+
+
+static UrlQueryCreateFunc urlQueryCreateFnPtr;
+static UrlQueryDestroyFunc urlQueryDestroyFnPtr;
+static UrlQueryMatchFunc urlQueryMatchFnPtr;
+static UserGroupIdGetFunc userGroupIdGetFnPtr;
+static GeoIpAddressLookupFunc geoIpAddressLookupFnPtr;
+static UpdateSSLSSnLogDataFunc updateSSLSSnLogDataFnPtr;
+static EndSSLSSnLogDataFunc endSSLSSnLogDataFnPtr;
+static GetIntfDataFunc getIntfDataFnPtr;
+
+void registerUrlQuery(UrlQueryCreateFunc createFn, UrlQueryDestroyFunc destroyFn, UrlQueryMatchFunc matchFn)
+{
+    urlQueryCreateFnPtr = createFn;
+    urlQueryDestroyFnPtr = destroyFn;
+    urlQueryMatchFnPtr = matchFn;
+}
+static struct urlQueryContext* urlQueryCreate(const char *url)
+{
+    if (urlQueryCreateFnPtr)
+    {
+        return ((urlQueryCreateFnPtr)(url));
+    }
+
+    return NULL;
+}
+static void urlQueryDestroy(struct urlQueryContext *context)
+{
+    if (urlQueryDestroyFnPtr)
+        (urlQueryDestroyFnPtr)(context);
+}
+static int urlQueryMatch(struct urlQueryContext *context, uint16_t inUrlCat, uint16_t inUrlMinRep, uint16_t inUrlMaxRep)
+{
+    if (urlQueryMatchFnPtr)
+        return (urlQueryMatchFnPtr)(context, inUrlCat, inUrlMinRep, inUrlMaxRep);
+    return -1;
+}
+
+static void registerUserGroupIdGet(UserGroupIdGetFunc userIdFn)
+{
+    userGroupIdGetFnPtr = userIdFn;
+}
+static int userGroupIdGet(const snort_ip *snortIp, uint32_t *userId, unsigned *groupIdArray, unsigned groupIdArrayLen)
+{
+    if (userGroupIdGetFnPtr)
+        return (userGroupIdGetFnPtr)(snortIp, userId, groupIdArray, groupIdArrayLen);
+    return -1;
+}
+
+static void registerGeoIpAddressLookup(GeoIpAddressLookupFunc fn)
+{
+    geoIpAddressLookupFnPtr = fn;
+}
+static int geoIpAddressLookup(const snort_ip *snortIp, uint16_t* geo)
+{
+    if (geoIpAddressLookupFnPtr)
+        return (geoIpAddressLookupFnPtr)(snortIp, geo);
+    return -1;
+}
+
+static void registerGetIntfData(GetIntfDataFunc fn)
+{
+    getIntfDataFnPtr = fn;
+}
+
+static void getIntfData(void *ssnptr, int32_t *ingressIntfIndex, int32_t *egressIntfIndex,
+                int32_t *ingressZoneIndex, int32_t *egressZoneIndex)
+{
+    if (getIntfDataFnPtr)
+    {
+        (getIntfDataFnPtr)(ssnptr, ingressIntfIndex, egressIntfIndex, ingressZoneIndex, egressZoneIndex);
+    }
+}
+
+static void registerUpdateSSLSSnLogData(UpdateSSLSSnLogDataFunc fn)
+{
+    updateSSLSSnLogDataFnPtr = fn;
+}
+
+static void updateSSLSSnLogData(void *ssnptr, uint8_t logging_on, uint8_t action_is_block, const char *ssl_cert_fingerprint,
+    uint32_t ssl_cert_fingerprint_len, uint16_t ssl_cert_status, uint8_t *ssl_policy_id,
+    uint32_t ssl_policy_id_len, uint32_t ssl_rule_id, uint16_t ssl_cipher_suite, uint8_t ssl_version,
+    uint16_t ssl_actual_action, uint16_t ssl_expected_action, uint32_t ssl_url_category,
+    uint16_t ssl_flow_status, uint32_t ssl_flow_error, uint32_t ssl_flow_messages,
+    uint64_t ssl_flow_flags, char *ssl_server_name, uint8_t *ssl_session_id, uint8_t session_id_len,
+    uint8_t *ssl_ticket_id, uint8_t ticket_id_len)
+{
+    if (updateSSLSSnLogDataFnPtr)
+    {
+        (updateSSLSSnLogDataFnPtr)(ssnptr, logging_on, action_is_block, ssl_cert_fingerprint,
+                ssl_cert_fingerprint_len, ssl_cert_status, ssl_policy_id,
+                ssl_policy_id_len, ssl_rule_id, ssl_cipher_suite, ssl_version,
+                ssl_actual_action, ssl_expected_action, ssl_url_category,
+                ssl_flow_status, ssl_flow_error, ssl_flow_messages,
+                ssl_flow_flags, ssl_server_name, ssl_session_id, session_id_len, ssl_ticket_id, ticket_id_len);
+    }
+}
+
+
+static void registerEndSSLSSnLogData(EndSSLSSnLogDataFunc fn)
+{
+    endSSLSSnLogDataFnPtr = fn;
+}
+
+static void endSSLSSnLogData(void *ssnptr, uint32_t ssl_flow_messages, uint64_t ssl_flow_flags)
+{
+    if (endSSLSSnLogDataFnPtr)
+    {
+        (endSSLSSnLogDataFnPtr)(ssnptr, ssl_flow_messages, ssl_flow_flags);
+    }
+}
+static inline bool DynamicReadyForProcess (void* pkt)
+{
+    Packet *p = (Packet *)pkt;
+
+    if ( ScPafEnabled() )
+        return PacketHasPAFPayload(p);
+
+    return !(p->packet_flags & PKT_STREAM_INSERT);
+}
+
+void DynamicSetSSLCallback(void *p)
+{
+    SetSSLCallback(p);
+}
+
+void *DynamicGetSSLCallback(void)
+{
+    return GetSSLCallback();
+}
+bool DynamicIsSSLPolicyEnabled(void)
+{
+    tSfPolicyId policy = getNapRuntimePolicy();
+    return (snort_conf->targeted_policies[policy]->ssl_policy_enabled );
+}
+
+void DynamicSetSSLPolicyEnabled(struct _SnortConfig *sc, tSfPolicyId policy, bool value)
+{
+    sc->targeted_policies[policy]->ssl_policy_enabled = value;
+}
+
 int InitDynamicPreprocessors(void)
 {
-    int i;
     DynamicPreprocessorData preprocData;
 
     preprocData.version = PREPROCESSOR_DATA_VERSION;
     preprocData.size = sizeof(DynamicPreprocessorData);
 
-    preprocData.altBuffer = (SFDataBuffer*)&DecodeBuffer;
-    preprocData.altBufferSize = sizeof(DecodeBuffer.data);
-
-    for (i=0;i<HTTP_BUFFER_MAX;i++)
-        preprocData.uriBuffers[i] = (UriInfo*)&UriBufs[i];
+    preprocData.altBuffer = (SFDataBuffer *)&DecodeBuffer;
+    preprocData.altDetect = (SFDataPointer *)&DetectBuffer;
+    preprocData.fileDataBuf = (SFDataPointer *)&file_data_ptr;
 
     preprocData.logMsg = &LogMessage;
     preprocData.errMsg = &ErrorMessage;
     preprocData.fatalMsg = &FatalError;
     preprocData.debugMsg = &DebugMessageFunc;
-#ifdef HAVE_WCHAR_H
+#ifdef SF_WCHAR
     preprocData.debugWideMsg = &DebugWideMessageFunc;
 #endif
-    
+
     preprocData.registerPreproc = &RegisterPreprocessor;
+#ifdef SNORT_RELOAD
+    preprocData.getRelatedReloadData = GetRelatedReloadData;
+#endif
     preprocData.addPreproc = &AddPreprocessor;
-    preprocData.addPreprocUnused = NULL;
+    preprocData.addPreprocAllPolicies = &AddPreprocessorAllPolicies;
+    preprocData.addMetaEval = &AddMetaEval;
+    preprocData.getSnortInstance = DynamicGetSnortInstance;
     preprocData.addPreprocExit = &AddFuncToPreprocCleanExitList;
     preprocData.addPreprocConfCheck = &AddPreprocessorCheck;
     preprocData.preprocOptRegister = &RegisterPreprocessorRuleOption;
@@ -1566,13 +1970,15 @@ int InitDynamicPreprocessors(void)
     preprocData.alertAdd = &SnortEventqAdd;
     preprocData.genSnortEvent = &GenerateSnortEvent;
     preprocData.thresholdCheck = &sfthreshold_test;
-    preprocData.inlineDrop = &DynamicDropInline;
+    preprocData.inlineDropAndReset = &DynamicDropReset;
 
     preprocData.detect = &DynamicDetect;
     preprocData.disableDetect = &DynamicDisableDetection;
     preprocData.disableAllDetect = &DynamicDisableAllDetection;
-    preprocData.setPreprocBit = &DynamicSetPreprocessorBit;
+    preprocData.disablePacketAnalysis = &DynamicDisablePacketAnalysis;
+    preprocData.enablePreprocessor = &DynamicEnablePreprocessor;
 
+    preprocData.sessionAPI = session_api;
     preprocData.streamAPI = stream_api;
     preprocData.searchAPI = search_api;
 
@@ -1587,7 +1993,7 @@ int InitDynamicPreprocessors(void)
 
     preprocData.preprocess = &DynamicPreprocess;
 
-#ifdef DEBUG
+#ifdef DEBUG_MSGS
     preprocData.debugMsgFile = &DebugMessageFile;
     preprocData.debugMsgLine = &DebugMessageLine;
 #else
@@ -1598,14 +2004,10 @@ int InitDynamicPreprocessors(void)
     preprocData.registerPreprocStats = &RegisterPreprocStats;
     preprocData.addPreprocReset = &AddFuncToPreprocResetList;
     preprocData.addPreprocResetStats = &AddFuncToPreprocResetStatsList;
-    preprocData.addPreprocReassemblyPkt = &AddFuncToPreprocReassemblyPktList;
-    preprocData.setPreprocReassemblyPktBit = &DynamicSetPreprocessorReassemblyPktBit;
     preprocData.disablePreprocessors = &DynamicDisablePreprocessors;
 
-#ifdef SUP_IP6
     preprocData.ip6Build = &DynamicIP6Build;
     preprocData.ip6SetCallbacks = &DynamicIP6SetCallbacks;
-#endif
 
     preprocData.logAlerts = &DynamicSnortEventqLog;
     preprocData.resetAlerts = &SnortEventqReset;
@@ -1615,25 +2017,35 @@ int InitDynamicPreprocessors(void)
 #ifdef TARGET_BASED
     preprocData.findProtocolReference = &FindProtocolReference;
     preprocData.addProtocolReference = &AddProtocolReference;
+#if defined(FEAT_OPEN_APPID)
+    preprocData.findProtocolName = &FindProtocolName;
+#endif /* defined(FEAT_OPEN_APPID) */
     preprocData.isAdaptiveConfigured = &IsAdaptiveConfigured;
+    preprocData.isAdaptiveConfiguredForSnortConfig = &IsAdaptiveConfiguredForSnortConfig;
 #endif
 
     preprocData.preprocOptOverrideKeyword = &RegisterPreprocessorRuleOptionOverride;
     preprocData.preprocOptByteOrderKeyword = &RegisterPreprocessorRuleOptionByteOrder;
     preprocData.isPreprocEnabled = &IsPreprocEnabled;
 
-#ifdef SNORT_RELOAD
-    preprocData.addPreprocReloadVerify = AddFuncToPreprocReloadVerifyList;
-#endif
-
-    preprocData.getRuntimePolicy = DynamicGetRuntimePolicy;
+    preprocData.getNapRuntimePolicy = DynamicGetNapRuntimePolicy;
+    preprocData.getIpsRuntimePolicy = DynamicGetIpsRuntimePolicy;
     preprocData.getParserPolicy = DynamicGetParserPolicy;
     preprocData.getDefaultPolicy = DynamicGetDefaultPolicy;
     preprocData.setParserPolicy = DynamicSetParserPolicy;
     preprocData.setFileDataPtr = DynamicSetFileDataPtr;
+    preprocData.DetectReset = DynamicDetectResetPtr;
+    preprocData.SetAltDecode = &DynamicSetAltDecode;
+    preprocData.GetAltDetect = &DynamicGetAltDetect;
+    preprocData.SetAltDetect = &DynamicSetAltDetect;
+    preprocData.Is_DetectFlag = &DynamicIsDetectFlag;
+    preprocData.DetectFlag_Disable = &DynamicDetectFlagDisable;
     preprocData.SnortStrtol = DynamicSnortStrtol;
     preprocData.SnortStrtoul = DynamicSnortStrtoul;
     preprocData.SnortStrnStr = DynamicSnortStrnStr;
+    preprocData.SnortStrncpy = DynamicSnortStrncpy;
+    preprocData.SnortStrnPbrk = DynamicSnortStrnPbrk;
+    preprocData.SnortStrcasestr = DynamicSnortStrcasestr;
 
     preprocData.portObjectCharPortArray = PortObjectCharPortArray;
     preprocData.fpEvalRTN = DynamicEvalRTN;
@@ -1645,10 +2057,91 @@ int InitDynamicPreprocessors(void)
     preprocData.encodeFormat = DynamicEncodeFormat;
     preprocData.encodeUpdate = DynamicEncodeUpdate;
 
+    preprocData.newGrinderPkt = DynamicNewGrinderPkt;
+    preprocData.deleteGrinderPkt = DynamicDeleteGrinderPkt;
+
     preprocData.portObjectCharPortArray = PortObjectCharPortArray;
 
     preprocData.addDetect = &AddDetection;
 
+    preprocData.getLogDirectory = DynamicGetLogDirectory;
+
+    preprocData.controlSocketRegisterHandler = &ControlSocketRegisterHandler;
+
+    preprocData.registerIdleHandler = &IdleProcessingRegisterHandler;
+
+    preprocData.isPafEnabled = DynamicIsPafEnabled;
+
+    preprocData.pktTime = DynamicPktTime;
+    preprocData.getPktTimeOfDay = DynamicGetPktTimeOfDay;
+#ifdef SIDE_CHANNEL
+    preprocData.isSCEnabled = DynamicIsSCEnabled;
+    preprocData.scRegisterRXHandler = &DynamicSCRegisterRXHandler;
+    preprocData.scAllocMessageTX = &DynamicSCPreallocMessageTX;
+    preprocData.scEnqueueMessageTX = &DynamicSCEnqueueMessageTX;
+#endif
+
+    preprocData.getPolicyFromId = &DynamicGetPolicyFromId;
+    preprocData.changeNapRuntimePolicy = &DynamicChangeNapRuntimePolicy;
+    preprocData.changeIpsRuntimePolicy = &DynamicChangeIpsRuntimePolicy;
+
+    preprocData.inlineForceDropPacket = &DynamicForceDropPacket;
+    preprocData.inlineForceDropAndReset = &DynamicForceDropReset;
+#ifdef ACTIVE_RESPONSE
+    preprocData.activeSetEnabled = &DynamicActiveSetEnabled;
+#endif
+    preprocData.SnortIsStrEmpty = DynamicSnortIsStrEmpty;
+#ifdef ACTIVE_RESPONSE
+    preprocData.dynamicSendBlockResponse = &DynamicSendBlockResponseMsg;
+#endif
+    preprocData.dynamicSetFlowId = &setFlowId;
+    preprocData.addPeriodicCheck = &AddFuncToPeriodicCheckList;
+    preprocData.addPostConfigFunc = &AddFuncToPreprocPostConfigList;
+    preprocData.addFuncToPostConfigList = &AddFuncToPostConfigList;
+    preprocData.snort_conf_dir = &snort_conf_dir;
+    preprocData.addOutputModule = &output_load_module;
+    preprocData.canWhitelist = DynamicCanWhitelist;
+    preprocData.fileAPI = file_api;
+    preprocData.disableAllPolicies = &DynamicDisableAllPolicies;
+    preprocData.reenablePreprocBit = &DynamicReenablePreprocBitFunc;
+    preprocData.checkValueInRange = &CheckValueInRange;
+
+    preprocData.setHttpBuffer = SetHttpBuffer;
+    preprocData.getHttpBuffer = getHttpBuffer;
+
+#ifdef ACTIVE_RESPONSE
+    preprocData.activeInjectData = &DynamicActiveInjectData;
+#endif
+    preprocData.inlineDropPacket = &DynamicDropPacket;
+    preprocData.readyForProcess = &DynamicReadyForProcess;
+
+    preprocData.getSSLCallback = &DynamicGetSSLCallback;
+    preprocData.setSSLCallback = &DynamicSetSSLCallback;
+
+    preprocData.sslAppIdLookup = &sslAppIdLookup;
+    preprocData.registerSslAppIdLookup = &registerSslAppIdLookup;
+
+    preprocData.getAppId = &getAppId;
+    preprocData.registerGetAppId = &registerGetAppId;
+
+    preprocData.urlQueryCreate = &urlQueryCreate;
+    preprocData.urlQueryDestroy = &urlQueryDestroy;
+    preprocData.urlQueryMatch = &urlQueryMatch;
+    preprocData.registerUrlQuery = &registerUrlQuery;
+
+    preprocData.userGroupIdGet = &userGroupIdGet;
+    preprocData.registerUserGroupIdGet = &registerUserGroupIdGet;
+
+    preprocData.geoIpAddressLookup = &geoIpAddressLookup;
+    preprocData.registerGeoIpAddressLookup = &registerGeoIpAddressLookup;
+    preprocData.updateSSLSSnLogData = &updateSSLSSnLogData;
+    preprocData.registerUpdateSSLSSnLogData = &registerUpdateSSLSSnLogData;
+    preprocData.endSSLSSnLogData = &endSSLSSnLogData;
+    preprocData.registerEndSSLSSnLogData = &registerEndSSLSSnLogData;
+    preprocData.getIntfData = &getIntfData;
+    preprocData.registerGetIntfData = &registerGetIntfData;
+    preprocData.isSSLPolicyEnabled = &DynamicIsSSLPolicyEnabled;
+    preprocData.setSSLPolicyEnabled = &DynamicSetSSLPolicyEnabled;
     return InitDynamicPreprocessorPlugins(&preprocData);
 }
 
@@ -1659,31 +2152,25 @@ int InitDynamicDetectionPlugins(SnortConfig *sc)
     if (sc == NULL)
         return -1;
 
-    snort_conf_for_parsing = sc;
-
     VerifyDetectionPluginRequirements();
 
     plugin = loadedDetectionPlugins;
     while (plugin)
     {
-        if (plugin->initFunc())
+        if (plugin->initFunc(sc))
         {
             ErrorMessage("Failed to initialize dynamic detection library: "
-                    "%s version %d.%d.%d\n", 
+                    "%s version %d.%d.%d\n",
                     plugin->metaData.uniqueName,
                     plugin->metaData.major,
                     plugin->metaData.minor,
                     plugin->metaData.build);
-
-            snort_conf_for_parsing = NULL;
 
             return -1;
         }
 
         plugin = plugin->next;
     }
-
-    snort_conf_for_parsing = NULL;
 
     return 0;
 }
@@ -1709,7 +2196,7 @@ int DumpDetectionLibRules(void)
         {
             if (ruleDumpFunc())
             {
-                LogMessage("Failed to dump the rules for Library %s %d.%d.%d\n", 
+                LogMessage("Failed to dump the rules for Library %s %d.%d.%d\n",
                     plugin->metaData.uniqueName,
                     plugin->metaData.major,
                     plugin->metaData.minor,
@@ -1726,7 +2213,7 @@ int DumpDetectionLibRules(void)
     return retVal;
 }
 
-int LoadDynamicPreprocessor(char *library_name, int indent)
+int LoadDynamicPreprocessor(const char * const library_name, int indent)
 {
     DynamicPluginMeta metaData;
     /* Presume here, that library name is full path */
@@ -1737,7 +2224,7 @@ int LoadDynamicPreprocessor(char *library_name, int indent)
                indent ? "  " : "", library_name);
 
     handle = openDynamicLibrary(library_name, 0);
-    metaData.libraryPath = library_name;
+    metaData.libraryPath = (char *) library_name;
 
     GetPluginVersion(handle, &metaData);
 
@@ -1757,7 +2244,7 @@ int LoadDynamicPreprocessor(char *library_name, int indent)
     return 0;
 }
 
-void LoadAllDynamicPreprocessors(char *path)
+void LoadAllDynamicPreprocessors(const char * const path)
 {
     LogMessage("Loading all dynamic preprocessor libs from %s...\n", path);
     LoadAllLibs(path, LoadDynamicPreprocessor);
@@ -1777,6 +2264,7 @@ void CloseDynamicPreprocessorLibs(void)
     }
     loadedPreprocessorPlugins = NULL;
 }
+
 void *GetNextEnginePluginVersion(void *p)
 {
     DynamicEnginePlugin *lib = (DynamicEnginePlugin *) p;
@@ -1795,7 +2283,7 @@ void *GetNextEnginePluginVersion(void *p)
         return lib;
     }
 
-    return (void *) lib;      
+    return (void *) lib;
 }
 
 void *GetNextDetectionPluginVersion(void *p)
@@ -1816,7 +2304,7 @@ void *GetNextDetectionPluginVersion(void *p)
         return lib;
     }
 
-    return (void *) lib;      
+    return (void *) lib;
 }
 
 void *GetNextPreprocessorPluginVersion(void *p)
@@ -1837,7 +2325,7 @@ void *GetNextPreprocessorPluginVersion(void *p)
         return lib;
     }
 
-    return (void *) lib;      
+    return (void *) lib;
 }
 
 DynamicPluginMeta *GetDetectionPluginMetaData(void *p)
@@ -1847,7 +2335,7 @@ DynamicPluginMeta *GetDetectionPluginMetaData(void *p)
 
     meta = &(lib->metaData);
 
-    return meta;    
+    return meta;
 }
 
 DynamicPluginMeta *GetEnginePluginMetaData(void *p)
@@ -1857,7 +2345,7 @@ DynamicPluginMeta *GetEnginePluginMetaData(void *p)
 
     meta = &(lib->metaData);
 
-    return meta;    
+    return meta;
 }
 
 DynamicPluginMeta *GetPreprocessorPluginMetaData(void *p)
@@ -1867,8 +2355,270 @@ DynamicPluginMeta *GetPreprocessorPluginMetaData(void *p)
 
     meta = &(lib->metaData);
 
-    return meta;    
+    return meta;
 }
 
-#endif /* DYNAMIC_PLUGIN */
+#ifdef SIDE_CHANNEL
 
+/*
+ * Dynamic Side Channel Plugin Support
+ */
+
+typedef struct _DynamicSideChannelPlugin
+{
+    PluginHandle handle;
+    DynamicPluginMeta metaData;
+    InitSideChannelLibFunc initFunc;
+    struct _DynamicSideChannelPlugin *next;
+    struct _DynamicSideChannelPlugin *prev;
+} DynamicSideChannelPlugin;
+
+static DynamicSideChannelPlugin *loadedSideChannelPlugins = NULL;
+
+void AddSideChannelPlugin(PluginHandle handle,
+                        InitSideChannelLibFunc initFunc,
+                        DynamicPluginMeta *meta)
+{
+    DynamicSideChannelPlugin *newPlugin = NULL;
+    newPlugin = (DynamicSideChannelPlugin *)SnortAlloc(sizeof(DynamicSideChannelPlugin));
+    newPlugin->handle = handle;
+
+    if (!loadedSideChannelPlugins)
+    {
+        loadedSideChannelPlugins = newPlugin;
+    }
+    else
+    {
+        newPlugin->next = loadedSideChannelPlugins;
+        loadedSideChannelPlugins->prev = newPlugin;
+        loadedSideChannelPlugins = newPlugin;
+    }
+
+    memcpy(&(newPlugin->metaData), meta, sizeof(DynamicPluginMeta));
+    newPlugin->metaData.libraryPath = SnortStrdup(meta->libraryPath);
+    newPlugin->initFunc = initFunc;
+}
+
+void RemoveSideChannelPlugin(DynamicSideChannelPlugin *plugin)
+{
+    if (!plugin)
+        return;
+
+    if (plugin == loadedSideChannelPlugins)
+    {
+        loadedSideChannelPlugins = loadedSideChannelPlugins->next;
+        loadedSideChannelPlugins->prev = NULL;
+    }
+    else
+    {
+        if (plugin->prev)
+            plugin->prev->next = plugin->next;
+        if (plugin->next)
+            plugin->next->prev = plugin->prev;
+    }
+    LogMessage("Unloading dynamic side channel library %s version %d.%d.%d\n",
+            plugin->metaData.uniqueName,
+            plugin->metaData.major,
+            plugin->metaData.minor,
+            plugin->metaData.build);
+    CloseDynamicLibrary(plugin->handle);
+    if (plugin->metaData.libraryPath != NULL)
+        free(plugin->metaData.libraryPath);
+    free(plugin);
+}
+
+int LoadDynamicSideChannelLib(const char * const library_name, int indent)
+{
+    DynamicPluginMeta metaData;
+    /* Presume here, that library name is full path */
+    InitSideChannelLibFunc sideChannelInit;
+    PluginHandle handle;
+
+    LogMessage("%sLoading dynamic side channel library %s... ",
+               indent ? "  " : "", library_name);
+
+    handle = openDynamicLibrary(library_name, 0);
+    metaData.libraryPath = (char *) library_name;
+
+    GetPluginVersion(handle, &metaData);
+
+    /* Just to ensure that the function exists */
+    sideChannelInit = (InitSideChannelLibFunc)getSymbol(handle, "InitializeSideChannel", &metaData, FATAL);
+
+    if (!(metaData.type & TYPE_SIDE_CHANNEL))
+    {
+        CloseDynamicLibrary(handle);
+        LogMessage("failed, not a side channel library\n");
+        return 0;
+    }
+
+    AddSideChannelPlugin(handle, sideChannelInit, &metaData);
+
+    LogMessage("done\n");
+    return 0;
+}
+
+void CloseDynamicSideChannelLibs(void)
+{
+    DynamicSideChannelPlugin *tmpplugin, *plugin = loadedSideChannelPlugins;
+    while (plugin)
+    {
+        tmpplugin = plugin->next;
+        CloseDynamicLibrary(plugin->handle);
+        free(plugin->metaData.libraryPath);
+        free(plugin);
+        plugin = tmpplugin;
+    }
+    loadedSideChannelPlugins = NULL;
+}
+
+void LoadAllDynamicSideChannelLibs(const char * const path)
+{
+    LogMessage("Loading all dynamic side channel libs from %s...\n", path);
+    LoadAllLibs(path, LoadDynamicSideChannelLib);
+    LogMessage("  Finished Loading all dynamic side channel libs from %s\n", path);
+}
+
+int InitDynamicSideChannelPlugins(void)
+{
+    DynamicSideChannelPlugin *plugin;
+    DynamicSideChannelData sideChannelData;
+
+    RemoveDuplicateSideChannelPlugins();
+
+    sideChannelData.version = SIDE_CHANNEL_DATA_VERSION;
+    sideChannelData.size = sizeof(DynamicSideChannelData);
+    sideChannelData.registerModule = &RegisterSideChannelModule;
+    sideChannelData.registerRXHandler = &SideChannelRegisterRXHandler;
+    sideChannelData.registerTXHandler = &SideChannelRegisterTXHandler;
+    sideChannelData.unregisterRXHandler = &SideChannelUnregisterRXHandler;
+    sideChannelData.unregisterTXHandler = &SideChannelUnregisterTXHandler;
+    sideChannelData.allocMessageRX = &SideChannelPreallocMessageRX;
+    sideChannelData.allocMessageTX = &SideChannelPreallocMessageTX;
+    sideChannelData.discardMessageRX = &SideChannelDiscardMessageRX;
+    sideChannelData.discardMessageTX = &SideChannelDiscardMessageTX;
+    sideChannelData.enqueueMessageRX = &SideChannelEnqueueMessageRX;
+    sideChannelData.enqueueMessageTX = &SideChannelEnqueueMessageTX;
+    sideChannelData.enqueueDataRX = &SideChannelEnqueueDataRX;
+    sideChannelData.enqueueDataTX = &SideChannelEnqueueDataTX;
+
+    sideChannelData.getSnortInstance = &DynamicGetSnortInstance;
+    sideChannelData.snortSignalMask = &DynamicSnortSignalMask;
+
+    sideChannelData.logMsg = &LogMessage;
+    sideChannelData.errMsg = &ErrorMessage;
+    sideChannelData.fatalMsg = &FatalError;
+    sideChannelData.debugMsg = &DebugMessageFunc;
+
+    plugin = loadedSideChannelPlugins;
+    while (plugin)
+    {
+        if (plugin->initFunc(&sideChannelData))
+        {
+            ErrorMessage("Failed to initialize dynamic side channel library: %s version %d.%d.%d\n",
+                    plugin->metaData.uniqueName,
+                    plugin->metaData.major,
+                    plugin->metaData.minor,
+                    plugin->metaData.build);
+
+            return -1;
+        }
+
+        plugin = plugin->next;
+    }
+
+    return 0;
+}
+
+void *GetNextSideChannelPluginVersion(void *p)
+{
+    DynamicSideChannelPlugin *lib = (DynamicSideChannelPlugin *) p;
+
+    if (lib != NULL)
+        lib = lib->next;
+    else
+        lib = loadedSideChannelPlugins;
+
+    if (lib == NULL)
+        return lib;
+
+    return (void *) lib;
+}
+
+DynamicPluginMeta *GetSideChannelPluginMetaData(void *p)
+{
+    DynamicSideChannelPlugin *lib = (DynamicSideChannelPlugin *) p;
+    DynamicPluginMeta *meta;
+
+    meta = &(lib->metaData);
+
+    return meta;
+}
+
+void RemoveDuplicateSideChannelPlugins(void)
+{
+    int removed = 0;
+    DynamicSideChannelPlugin *lib1 = NULL;
+    DynamicSideChannelPlugin *lib2 = NULL;
+    DynamicPluginMeta *meta1;
+    DynamicPluginMeta *meta2;
+
+    /* Side Channel Plugins */
+    do
+    {
+        removed = 0;
+        lib1 = loadedSideChannelPlugins;
+        while (lib1 != NULL)
+        {
+            lib2 = loadedSideChannelPlugins;
+            while (lib2 != NULL)
+            {
+                /* Obviously, the same ones will be the same */
+                if (lib1 != lib2)
+                {
+                    meta1 = &lib1->metaData;
+                    meta2 = &lib2->metaData;
+                    if (!strcmp(meta1->uniqueName, meta2->uniqueName))
+                    {
+                        /* Uh, same uniqueName. */
+                        if ((meta1->major > meta2->major) ||
+                            ((meta1->major == meta2->major) && (meta1->minor > meta2->minor)) ||
+                            ((meta1->major == meta2->major) && (meta1->minor == meta2->minor) && (meta1->build > meta2->build)) )
+                        {
+                            /* Lib1 is newer */
+                            RemoveSideChannelPlugin(lib2);
+                            removed = 1;
+                            break;
+                        }
+                        else if ((meta2->major > meta1->major) ||
+                            ((meta2->major == meta1->major) && (meta2->minor > meta1->minor)) ||
+                            ((meta2->major == meta1->major) && (meta2->minor == meta1->minor) && (meta2->build > meta1->build)) )
+                        {
+                            /* Lib2 is newer */
+                            RemoveSideChannelPlugin(lib1);
+                            removed = 1;
+                            break;
+                        }
+                        else if ((meta1->major == meta2->major) && (meta1->minor == meta2->minor) && (meta1->build == meta2->build) )
+                        {
+                            /* Duplicate */
+                            RemoveSideChannelPlugin(lib2);
+                            removed = 1;
+                            break;
+                        }
+                    }
+                }
+                /* If we removed anything, start back at the beginning */
+                if (removed)
+                    break;
+                lib2 = lib2->next;
+            }
+            /* If we removed anything, start back at the beginning */
+            if (removed)
+                break;
+            lib1 = lib1->next;
+        }
+    } while (removed);
+}
+
+#endif /* SIDE_CHANNEL */

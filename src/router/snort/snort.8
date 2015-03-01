@@ -2,7 +2,7 @@
 .\" groff -man -Tascii snort.8
 .\"
 .\" $Id$
-.TH SNORT 8 "February 2009"
+.TH SNORT 8 "December 2011"
 .SH NAME
 Snort \- open source network intrusion detection system
 .SH SYNOPSIS
@@ -15,7 +15,7 @@ Snort \- open source network intrusion detection system
 .B ] [-F
 .I bpf-file
 .B ] [-g
-.I grpname
+.I group-name
 .B ] [-G
 .I id
 .B ] [-h
@@ -45,7 +45,7 @@ Snort \- open source network intrusion detection system
 .B ] [-t
 .I chroot_directory
 .B ] [-u
-.I usrname
+.I user-name
 .B ] [-Z
 .I pathname
 .B ] [--logid
@@ -72,6 +72,10 @@ Snort \- open source network intrusion detection system
 .I file
 .B ] [--dynamic-preprocessor-lib-dir
 .I directory
+.B ] [--dynamic-output-lib
+.I file
+.B ] [--dynamic-output-lib-dir
+.I directory
 .B ] [--alert-before-pass
 .B ] [--treat-drop-as-alert
 .B ] [--treat-drop-as-ignore
@@ -79,6 +83,8 @@ Snort \- open source network intrusion detection system
 .B ] [--enable-inline-test
 .B ] [--create-pidfile
 .B ] [--nolock-pidfile
+.B ] [--no-interface-pidfile
+.B ] [--disable-attribute-reload-thread
 .B ] [--pcap-single=
 .I tcpdump-file
 .B ] [--pcap-filter=
@@ -91,10 +97,15 @@ Snort \- open source network intrusion detection system
 .I file
 .B ] [--pcap-no-filter
 .B ] [--pcap-reset
+.B ] [--pcap-reload
 .B ] [--pcap-show
 .B ] [--exit-check
 .I count
 .B ] [--conf-error-out
+.B ] [--enable-mpls-multicast
+.B ] [--enable-mpls-overlapping-ip
+.B ] [--max-mpls-labelchain-len
+.B ] [--mpls-payload-type
 .B ] [--require-rule-sid
 .B ] [--daq
 .I type
@@ -106,6 +117,14 @@ Snort \- open source network intrusion detection system
 .I dir
 .B ] [--daq-list
 .I [dir]
+.B ] [--dirty-pig
+.B ] [--cs-dir
+.I dir
+.B ] [--ha-peer
+.B ] [--ha-out
+.I file
+.B ] [--ha-in
+.I file
 .B ]
 .I expression
 .SH DESCRIPTION
@@ -118,8 +137,7 @@ CGI attacks, SMB probes, OS fingerprinting attempts, and much more.  Snort uses
 a flexible rules language to describe traffic that it should collect or pass,
 as well as a detection engine that utilizes a modular plugin architecture.
 Snort also has a modular real-time alerting capability, incorporating alerting
-and logging plugins for syslog, a ASCII text files, UNIX sockets, database
-(Mysql/PostgreSQL/Oracle/ODBC) or XML.
+and logging plugins for syslog, a ASCII text files, UNIX sockets or XML.
 .PP
 Snort has three primary uses.  It can be used as a straight packet sniffer like
 .BR tcpdump (1),
@@ -128,7 +146,7 @@ blown network intrusion detection system.
 .PP
 Snort logs packets in
 .BR tcpdump (1)
-binary format, to a database or in Snort's decoded ASCII format to a hierarchy
+binary format or in Snort's decoded ASCII format to a hierarchy
 of logging directories that are named based on the IP address of the "foreign"
 host.
 .SH OPTIONS
@@ -192,15 +210,14 @@ Read BPF filters from
 .I bpf-file.
 This is handy for people running Snort as a SHADOW replacement or with a love
 Of super complex BPF filters.  See the "expressions" section of this man page
-for more info on writing BPF fileters.
+for more info on writing BPF filters.
 .IP "-g group"
 Change the group/GID Snort runs under to
 .I group
-after initialization.  This switch allows Snort to drop root priveleges after
+after initialization.  This switch allows Snort to drop root privileges after
 it's initialization phase has completed as a security measure.
 .IP "-G id"
-Use id as a base event ID when logging events.  Useful for distinguishing
-events logged to the same database from multiple snort instances.
+Use id as a base event ID when logging events.
 .IP "-h home-net"
 Set the "home network" to
 .I home-net.
@@ -341,7 +358,7 @@ drop packets.
 .IP -V
 Show the version number and exit.
 .IP "-w"
-Show management frames if runnong on an 802.11 (wireless) network.
+Show management frames if running on an 802.11 (wireless) network.
 .IP "-W"
 .B *WIN32 ONLY*
 Enumerate the network interfaces available.
@@ -390,7 +407,7 @@ Default is pass before alert, drop, etc.
 .IP "--treat-drop-as-alert"
 Converts drop, sdrop, and reject rules into alert rules during startup.
 .IP "--treat-drop-as-ignore"
-Use drop, dsrop, and reject rules to ignore session traffic when not inline.
+Use drop, sdrop, and reject rules to ignore session traffic when not inline.
 .IP "--process-all-events"
 Process all triggered events in group order, per Rule Ordering
 configuration.  Default stops after first group.
@@ -402,6 +419,8 @@ Specify the path for Snort's PID file.
 Create PID file, even when not in Daemon mode.
 .IP "--nolock-pidfile"
 Do not try to lock Snort PID file.
+.IP "--no-interface-pidfile"
+Do not include the interface name in Snort PID file
 .IP "--pcap-single=\fItcpdump-file\fP"
 Same as -r.  Added for completeness.
 .IP "--pcap-filter=\fIfilter\fP"
@@ -409,7 +428,7 @@ Shell style filter to apply when getting pcaps from
 file or directory.  This filter will apply to any
 --pcap-file or --pcap-dir arguments following.  Use
 --pcap-no-filter to delete filter for following
---pcap-file or --pcap-dir arguments or specifiy
+--pcap-file or --pcap-dir arguments or specify
 --pcap-filter again to forget previous filter and
 to apply to following --pcap-file or --pcap-dir arguments.
 .IP "--pcap-list=\fI""list""\fP"
@@ -417,7 +436,7 @@ A space separated list of pcaps to read.
 .IP "--pcap-dir=\fIdirectory\fP"
 A directory to recurse to look for pcaps.  Sorted in ascii order.
 .IP "--pcap-file=\fIfile\fP"
-File that contains a list of pcaps to read.  Can specifiy path to
+File that contains a list of pcaps to read.  Can specify path to
 pcap or directory to recurse to get pcaps.
 .IP "--pcap-no-filter"
 Reset to use no filter when getting pcaps from file or directory.
@@ -433,7 +452,7 @@ time it takes from signaling until DAQ_Stop() is called.
 .IP "--conf-error-out"
 Same as -x.
 .IP "--require-rule-sid"
-Require an SID for every rule to be correctly hreshold all rules.
+Require an SID for every rule to be correctly threshold all rules.
 .IP "--daq <type>"
 Select packet acquisition module (default is pcap).
 .IP "--daq-mode <mode>"
@@ -444,6 +463,8 @@ Specify extra DAQ configuration variable.
 Tell Snort where to find desired DAQ.
 .IP "--daq-list [<dir>]"
 List packet acquisition modules available in dir.
+.IP "--cs-dir <dir>"
+Tell Snort to use control socket and create the socket in dir.
 
 .IP "\fI expression\fP"
 .RS
@@ -909,18 +930,24 @@ The following signals have the specified effect when sent to the daemon process 
 Causes the daemon to close all opened files and restart.
 Please \fBnote\fR that this will only work if the \fBfull\fR pathname is
 used to invoke snort in daemon mode, otherwise snort will just exit with an
-error message being sent to
-.B syslogd(8)
-.
+error message being sent to \fBsyslogd(8)\fR.
 .PP
 .IP SIGUSR1
 Causes the program to dump its current packet statistical information to the
-console or
-.B syslogd(8)
-if in daemon mode.
-.
+console or \fBsyslogd(8)\fR if in daemon mode.
 .PP
-Any other signal causes the daemon to close all opened files and exit.
+.IP SIGUSR2
+Causes the program to rotate Perfmonitor statistical information to the 
+console or \fBsyslogd(8)\fR if in daemon mode.
+.PP
+.IP SIGURG
+Causes the program to reload attribute table.
+.PP
+.IP SIGCHLD
+Used internally.
+.PP
+Please refer to manual for more details. Any other signal might cause the 
+daemon to close all opened files and exit.
 
 .SH HISTORY
 .B Snort

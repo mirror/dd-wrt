@@ -14,9 +14,10 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (C) 2005-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * Author: Steve Sturges
  *         Andy  Mullican
@@ -35,7 +36,8 @@
 #include <ctype.h>
 #include <sys/types.h>
 #include <stdarg.h>
-#include "debug.h"
+#include "sf_types.h"
+#include "snort_debug.h"
 #include "sf_dynamic_define.h"
 #include "sf_snort_packet.h"
 #include "sf_snort_plugin_api.h"
@@ -43,11 +45,12 @@
 #include "sf_dynamic_engine.h"
 #include "sfghash.h"
 #include "bmh.h"
+#include "sf_snort_detection_engine.h"
 
-#define MAJOR_VERSION   1
-#define MINOR_VERSION   13
-#define BUILD_VERSION   18
-#define DETECT_NAME     "SF_SNORT_DETECTION_ENGINE"
+#define MAJOR_VERSION   REQ_ENGINE_LIB_MAJOR
+#define MINOR_VERSION   REQ_ENGINE_LIB_MINOR
+#define BUILD_VERSION   1
+#define DETECT_NAME     REQ_ENGINE_LIB_NAME
 
 #ifdef WIN32
 #ifndef PATH_MAX
@@ -79,70 +82,26 @@ NORETURN void DynamicEngineFatalMessage(const char *format, ...)
     exit(1);
 }
 
-extern int BoyerContentSetup(Rule *rule, ContentInfo *content);
-extern int PCRESetup(Rule *rule, PCREInfo *pcreInfo);
-extern int ValidateHeaderCheck(Rule *rule, HdrOptCheck *optData);
-extern void ContentSetup(void);
-extern int ByteExtractInitialize(Rule *rule, ByteExtract *extractData);
-extern int LoopInfoInitialize(Rule *rule, LoopInfo *loopInfo);
-
 ENGINE_LINKAGE int InitializeEngine(DynamicEngineData *ded)
 {
-    int i;
     if (ded->version < ENGINE_DATA_VERSION)
     {
         return -1;
     }
 
-    _ded.version = ded->version;
-    _ded.altBuffer = ded->altBuffer;
-    for (i=0;i<HTTP_BUFFER_MAX;i++)
-    {
-        _ded.uriBuffers[i] = ded->uriBuffers[i];
-    }
-    _ded.ruleRegister = ded->ruleRegister;
-    _ded.flowbitRegister = ded->flowbitRegister;
-    _ded.flowbitCheck = ded->flowbitCheck;
-    _ded.asn1Detect = ded->asn1Detect;
-    _ded.dataDumpDirectory = ded->dataDumpDirectory;
-    _ded.logMsg = ded->logMsg;
-    _ded.errMsg = ded->errMsg;
-    _ded.fatalMsg = ded->fatalMsg;
-    _ded.preprocRuleOptInit = ded->preprocRuleOptInit;
-    _ded.setRuleData = ded->setRuleData;
-    _ded.getRuleData = ded->getRuleData;
-
-    _ded.debugMsg = ded->debugMsg;
-#ifdef HAVE_WCHAR_H
-    _ded.debugWideMsg = ded->debugWideMsg;
-#endif
-    _ded.debugMsgFile = ded->debugMsgFile;
-    _ded.debugMsgLine = ded->debugMsgLine;
-
-    _ded.pcreStudy = ded->pcreStudy;
-    _ded.pcreCompile = ded->pcreCompile;
-    _ded.pcreExec = ded->pcreExec;
-    _ded.fileDataBuf = ded->fileDataBuf;
-    _ded.mime_size = ded->mime_size;
-    _ded.sfUnfold = ded->sfUnfold;
-    _ded.sfbase64decode = ded->sfbase64decode;
-
-    _ded.allocRuleData = ded->allocRuleData;
-    _ded.freeRuleData = ded->freeRuleData;
-
-    _ded.flowbitUnregister = ded->flowbitUnregister;
+    _ded = *ded;
 
     return 0;
 }
 
 ENGINE_LINKAGE int LibVersion(DynamicPluginMeta *dpm)
 {
-
     dpm->type  = TYPE_ENGINE;
     dpm->major = MAJOR_VERSION;
     dpm->minor = MINOR_VERSION;
     dpm->build = BUILD_VERSION;
-    strncpy(dpm->uniqueName, DETECT_NAME, MAX_NAME_LEN);
+    strncpy(dpm->uniqueName, DETECT_NAME, MAX_NAME_LEN-1);
+    dpm->uniqueName[MAX_NAME_LEN-1] = '\0';
     return 0;
 }
 
@@ -157,9 +116,8 @@ ENGINE_LINKAGE int CheckCompatibility(DynamicPluginMeta* eng, DynamicPluginMeta*
     if ( !eng || !req ) return 1;
     if ( eng->type != req->type ) return 2;
     if ( strcmp(eng->uniqueName, req->uniqueName) ) return 3;
-    if ( eng->major < req->major ) return 4;
-    if ( eng->major > req->major ) return 0;
-    if ( eng->minor < req->minor ) return 5;
+    if ( eng->major != req->major ) return 4;
+    if ( eng->minor != req->minor ) return 5;
     return 0;
 }
 
@@ -237,103 +195,114 @@ static int GetDynamicContents(void *r, int type, FPContentInfo **contents)
             option != NULL;
             option = rule->options[++i])
     {
-        if (option->optionType == OPTION_TYPE_CONTENT)
+        switch(option->optionType)
         {
-            FPContentInfo *fp_content;
-            ContentInfo *content = option->option_u.content;
-            int flags = content->flags;
+            case OPTION_TYPE_CONTENT:
+                {
+                    FPContentInfo *fp_content;
+                    ContentInfo *content = option->option_u.content;
+                    int flags = content->flags;
 
-            switch (type)
-            {
-                case CONTENT_NORMAL:
-                    if (!(flags & NORMAL_CONTENT_BUFS))
-                        continue;
-                    if (!(flags & CONTENT_RELATIVE))
+                    switch (type)
                     {
-                        base64_buf_flag = 0;
-                        mime_buf_flag = 0;
+                        case CONTENT_NORMAL:
+                            if (!(flags & NORMAL_CONTENT_BUFS))
+                                continue;
+                            else if(base64_buf_flag || mime_buf_flag)
+                                continue;
+                            break;
+                        case CONTENT_HTTP:
+                            base64_buf_flag = 0;
+                            mime_buf_flag = 0;
+                            if ( !IsHttpFastPattern(flags) )
+                                continue;
+                            break;
+                        default:
+                            break;  /* Just get them all */
                     }
-                    else if(base64_buf_flag || mime_buf_flag)
-                        continue;
-                    break;
-                case CONTENT_HTTP:
-                    if (!(flags & URI_CONTENT_BUFS)
-                            || (!(flags & URI_FAST_PATTERN_BUFS)))
-                        continue;
-                    base64_buf_flag = 0;
-                    mime_buf_flag = 0;
-                    break;
-                default:
-                    break;  /* Just get them all */
-            }
 
-            fp_content = (FPContentInfo *)calloc(1, sizeof(FPContentInfo));
-            if (fp_content == NULL)
-                DynamicEngineFatalMessage("Failed to allocate memory\n");
+                    fp_content = (FPContentInfo *)calloc(1, sizeof(FPContentInfo));
+                    if (fp_content == NULL)
+                        DynamicEngineFatalMessage("Failed to allocate memory\n");
 
-            fp_content->length = content->patternByteFormLength;
-            fp_content->content = (char *)malloc(fp_content->length);
-            if (fp_content->content == NULL)
-                DynamicEngineFatalMessage("Failed to allocate memory\n");
-            memcpy(fp_content->content, content->patternByteForm, fp_content->length);
-            fp_content->offset = content->offset;
-            fp_content->depth = content->depth;
-            if (content->flags & CONTENT_RELATIVE)
-                fp_content->is_relative = 1;
-            if (content->flags & CONTENT_NOCASE)
-                fp_content->noCaseFlag = 1;
-            if (content->flags & CONTENT_FAST_PATTERN)
-                fp_content->fp = 1;
-            if (content->flags & NOT_FLAG)
-                fp_content->exception_flag = 1;
-            if (content->flags & CONTENT_BUF_URI)
-                fp_content->uri_buffer |= CONTENT_HTTP_URI;
-            if (content->flags & CONTENT_BUF_HEADER)
-                fp_content->uri_buffer |= CONTENT_HTTP_HEADER;
-            if (content->flags & CONTENT_BUF_POST)
-                fp_content->uri_buffer |= CONTENT_HTTP_CLIENT_BODY;
-            if (content->flags & CONTENT_BUF_METHOD)
-                fp_content->uri_buffer |= CONTENT_HTTP_METHOD;
+                    fp_content->length = content->patternByteFormLength;
+                    fp_content->content = (char *)malloc(fp_content->length);
+                    if (fp_content->content == NULL)
+                        DynamicEngineFatalMessage("Failed to allocate memory\n");
+                    memcpy(fp_content->content, content->patternByteForm, fp_content->length);
+                    fp_content->offset = content->offset;
+                    fp_content->depth = content->depth;
 
-            /* Fast pattern only and specifying an offset and length are
-             * technically mutually exclusive - see
-             * detection-plugins/sp_pattern_match.c */
-            if (option->option_u.content->flags & CONTENT_FAST_PATTERN_ONLY)
-            {
-                fp_content->fp_only = 1;
-            }
-            else
-            {
-                fp_content->fp_offset = option->option_u.content->fp_offset;
-                fp_content->fp_length = option->option_u.content->fp_length;
-            }
+                    if (content->flags & CONTENT_RELATIVE)
+                        fp_content->is_relative = 1;
+                    if (content->flags & CONTENT_NOCASE)
+                        fp_content->noCaseFlag = 1;
+                    if (content->flags & CONTENT_FAST_PATTERN)
+                        fp_content->fp = 1;
+                    if (content->flags & NOT_FLAG)
+                        fp_content->exception_flag = 1;
 
-            if (tail == NULL)
-                *contents = fp_content;
-            else
-                tail->next = fp_content;
+                    if ( HTTP_CONTENT(content->flags) == CONTENT_BUF_URI )
+                        fp_content->uri_buffer |= CONTENT_HTTP_URI;
+                    else if ( HTTP_CONTENT(content->flags) == CONTENT_BUF_HEADER )
+                        fp_content->uri_buffer |= CONTENT_HTTP_HEADER;
+                    else if ( HTTP_CONTENT(content->flags) == CONTENT_BUF_POST )
+                        fp_content->uri_buffer |= CONTENT_HTTP_CLIENT_BODY;
 
-            tail = fp_content;
-        }
-        else if (option->optionType == OPTION_TYPE_BASE64_DECODE)
-        {
-            base64_buf_flag =1;
-            continue;
-        }
-        else if (option->optionType == OPTION_TYPE_FILE_DATA)
-        {
-            CursorInfo *cursor = option->option_u.cursor;
-            if (cursor->flags & BUF_FILE_DATA_MIME)
-            {
-                mime_buf_flag = 1;
+                    /* Fast pattern only and specifying an offset and length are
+                     * technically mutually exclusive - see
+                     * detection-plugins/sp_pattern_match.c */
+                    if (option->option_u.content->flags & CONTENT_FAST_PATTERN_ONLY)
+                    {
+                        fp_content->fp_only = 1;
+                    }
+                    else
+                    {
+                        fp_content->fp_offset = option->option_u.content->fp_offset;
+                        fp_content->fp_length = option->option_u.content->fp_length;
+                    }
+
+                    if (tail == NULL)
+                        *contents = fp_content;
+                    else
+                        tail->next = fp_content;
+
+                    tail = fp_content;
+                }
+                break;
+
+            case OPTION_TYPE_BASE64_DECODE:
+                base64_buf_flag =1;
                 continue;
-            }
+
+            case OPTION_TYPE_FILE_DATA:
+                {
+                    CursorInfo *cursor = option->option_u.cursor;
+                    if (cursor->flags & BUF_FILE_DATA_MIME)
+                    {
+                        mime_buf_flag = 1;
+                        continue;
+                    }
+                }
+                break;
+
+            case OPTION_TYPE_PKT_DATA:
+                base64_buf_flag = 0;
+                mime_buf_flag = 0;
+                continue;
+
+            case OPTION_TYPE_BASE64_DATA:
+                base64_buf_flag =1;
+                continue;
+
+            default:
+                continue;
         }
     }
 
     if (*contents == NULL)
         return -1;
-    
+
     return 0;
 }
 
@@ -404,9 +373,9 @@ static int GetDynamicPreprocOptFpContents(void *r, FPContentInfo **fp_contents)
 static int DecodeContentPattern(Rule *rule, ContentInfo *content)
 {
     int pat_len;
-    const u_int8_t *pat_begin = content->pattern;
-    const u_int8_t *pat_idx;
-    const u_int8_t *pat_end;
+    const uint8_t *pat_begin = content->pattern;
+    const uint8_t *pat_idx;
+    const uint8_t *pat_end;
     char tmp_buf[2048];
     char *raw_idx;
     char *raw_end;
@@ -462,7 +431,7 @@ static int DecodeContentPattern(Rule *rule, ContentInfo *content)
                         if(!hex_len || hex_len % 2)
                         {
                             DynamicEngineFatalMessage("Content hexmode argument has invalid "
-                                                      "number of hex digits for dynamic rule [%d:%d].\n", 
+                                                      "number of hex digits for dynamic rule [%d:%d].\n",
                                                       rule->info.genID, rule->info.sigID);
                         }
 
@@ -526,8 +495,8 @@ static int DecodeContentPattern(Rule *rule, ContentInfo *content)
                             pending--;
 
                             if(raw_idx < raw_end)
-                            {                            
-                                tmp_buf[tmp_len] = (u_char) 
+                            {
+                                tmp_buf[tmp_len] = (u_char)
                                     strtol(hex_encoded, (char **) NULL, 16)&0xFF;
 
                                 tmp_len++;
@@ -551,7 +520,7 @@ static int DecodeContentPattern(Rule *rule, ContentInfo *content)
                                                       "binary buffer for dynamic rule [%d:%d]? "
                                                       "Valid hex values only please! "
                                                       "(0x0 - 0xF) Position: %d\n",
-                                                      (char) *pat_idx, (char) *pat_idx, 
+                                                      (char) *pat_idx, (char) *pat_idx,
                                                       rule->info.genID, rule->info.sigID, char_count);
                         }
                     }
@@ -589,7 +558,7 @@ static int DecodeContentPattern(Rule *rule, ContentInfo *content)
                         else
                         {
                             DynamicEngineFatalMessage("character value out of range, try a "
-                                                      "binary buffer for dynamic rule [%d:%d]\n", 
+                                                      "binary buffer for dynamic rule [%d:%d]\n",
                                                       rule->info.genID, rule->info.sigID);
                         }
                     }
@@ -602,9 +571,9 @@ static int DecodeContentPattern(Rule *rule, ContentInfo *content)
         pat_idx++;
         char_count++;
     }
-    
+
     /* Now, tmp_buf contains the decoded ascii & raw binary from the patter */
-    content->patternByteForm = (u_int8_t *)calloc(tmp_len, sizeof(u_int8_t));
+    content->patternByteForm = (uint8_t *)calloc(tmp_len, sizeof(uint8_t));
     if (content->patternByteForm == NULL)
     {
         DynamicEngineFatalMessage("Failed to allocate memory\n");
@@ -616,10 +585,95 @@ static int DecodeContentPattern(Rule *rule, ContentInfo *content)
     return 0;
 }
 
+static bool HexToNybble( char Chr, uint8_t *Val )
+{
+    if( !isxdigit( (int)Chr ) )
+    {
+        *Val = 0;
+        return( false );
+    }
+
+    if( isdigit( Chr ) )
+        *Val = (uint8_t)(Chr - '0');
+    else
+        *Val = (uint8_t)(((char)toupper(Chr) - 'A') + 10);
+
+    return( true );
+}
+
+static bool HexToByte( char *Str, uint8_t *Val )
+{
+    uint8_t nybble;
+
+    *Val = 0;
+
+    if( HexToNybble( *Str++, &nybble ) )
+    {
+        *Val = ((nybble & 0xf) << 4);
+        if( HexToNybble( *Str, &nybble ) )
+        {
+            *Val |= (nybble & 0xf);
+            return( true );
+        }
+    }
+
+    return( false );
+}
+
+static int DecodeProtectedContentPattern(Rule *rule, ProtectedContentInfo *content)
+{
+    unsigned int index;
+    const uint8_t *pat_idx = content->pattern;
+    uint8_t tmp_buf[2048];
+
+    /* First, setup the raw data by parsing content */
+
+    index = 0;
+
+    while((*pat_idx != '\0') && (index < 2048))
+    {
+        if( !HexToByte( (char *)pat_idx, &(tmp_buf[index]) ) )
+        {
+            DynamicEngineFatalMessage("Content argument has invalid "
+                                      "number of hex digits for dynamic rule [%d:%d].\n",
+                                      rule->info.genID, rule->info.sigID);
+        }
+
+        pat_idx += 2;
+        index += 1;
+    }
+
+    if( (*pat_idx == '\0') && (index == 0) )
+    {
+        DynamicEngineFatalMessage("ParseProtectedPattern() zero length pattern in "
+                                  "dynamic rule [%d:%d]!\n",
+                                  rule->info.genID, rule->info.sigID);
+    }
+
+
+    if( (*pat_idx != '\0') && (index == 2048) )
+    {
+        DynamicEngineFatalMessage("ParsePattern() buffer overflow in "
+                                  "dynamic rule [%d:%d]!\n",
+                                  rule->info.genID, rule->info.sigID);
+    }
+
+    /* Now, tmp_buf contains the decoded ascii & raw binary from the patter */
+    content->patternByteForm = (uint8_t *)calloc(index, sizeof(uint8_t));
+    if (content->patternByteForm == NULL)
+    {
+        DynamicEngineFatalMessage("Failed to allocate memory\n");
+    }
+
+    memcpy(content->patternByteForm, tmp_buf, index);
+    content->patternByteFormLength = index;
+
+    return 0;
+}
 static unsigned int getNonRepeatingLength(char *data, int data_len)
 {
     int i, j;
-    
+
     j = 0;
     for ( i = 1; i < data_len; i++ )
     {
@@ -639,7 +693,7 @@ static unsigned int getNonRepeatingLength(char *data, int data_len)
 
 static int ValidateContentInfo(Rule *rule, ContentInfo *content, int fast_pattern)
 {
-    char *content_error = "WARNING: Invalid content option in shared "
+    const char *content_error = "WARNING: Invalid content option in shared "
         "object rule: gid:%u, sid:%u : %s.  Rule will not be registered.\n";
 
     if (content->flags & CONTENT_FAST_PATTERN)
@@ -667,7 +721,7 @@ static int ValidateContentInfo(Rule *rule, ContentInfo *content, int fast_patter
             return -1;
         }
 
-        if ((content->flags & URI_CONTENT_BUFS) && !(content->flags & URI_FAST_PATTERN_BUFS))
+        if ( HTTP_CONTENT(content->flags) && !IsHttpFastPattern(content->flags) )
         {
             _ded.errMsg(content_error,
                     rule->info.genID, rule->info.sigID,
@@ -760,7 +814,7 @@ static int ValidateContentInfo(Rule *rule, ContentInfo *content, int fast_patter
 
 static int Base64DecodeInitialize(Rule *rule, base64DecodeData *content)
 {
-    char *content_error = "WARNING: Invalid base64decode option in shared "
+    const char *content_error = "WARNING: Invalid base64decode option in shared "
         "object rule: gid:%u, sid:%u : %s.  Rule will not be registered.\n";
 
     if( content->relative !=0 && content->relative !=1)
@@ -770,17 +824,10 @@ static int Base64DecodeInitialize(Rule *rule, base64DecodeData *content)
                 "Base64Decode relative flag needs to 0 or 1");
     }
 
-    if(content->bytes <= 0)
-    {
-        _ded.errMsg(content_error,
-                    rule->info.genID, rule->info.sigID,
-                    "Base64Decode bytes to decode cannot be negative or zero");
-        return -1;
-    }
     return 0;
 }
 
-int RegisterOneRule(Rule *rule, int registerRule)
+int RegisterOneRule(struct _SnortConfig *sc, Rule *rule, int registerRule)
 {
     int i;
     int contentFlags = 0;
@@ -817,7 +864,7 @@ int RegisterOneRule(Rule *rule, int registerRule)
                         content->flags |= CONTENT_FAST_PATTERN_ONLY;
                     }
 
-                    if (content->flags & URI_CONTENT_BUFS)
+                    if ( HTTP_CONTENT(content->flags) )
                         contentFlags |= CONTENT_HTTP;
                     else
                         contentFlags |= CONTENT_NORMAL;
@@ -833,13 +880,26 @@ int RegisterOneRule(Rule *rule, int registerRule)
                         fast_pattern = 1;
                 }
                 break;
+           case OPTION_TYPE_PROTECTED_CONTENT:
+                {
+                    ProtectedContentInfo *content = option->option_u.protectedContent;
+
+                    if (!content->patternByteForm)
+                        DecodeProtectedContentPattern(rule, content);
+
+                    if ( HTTP_CONTENT(content->flags) )
+                        contentFlags |= CONTENT_HTTP;
+                    else
+                        contentFlags |= CONTENT_NORMAL;
+                }
+                break;
             case OPTION_TYPE_PCRE:
                 {
                     PCREInfo *pcre = option->option_u.pcre;
 
                     if (pcre->compiled_expr == NULL)
                     {
-                        if (PCRESetup(rule, pcre))
+                        if (PCRESetup(sc, rule, pcre))
                         {
                             rule->initialized = 0;
                             FreeOneRule(rule);
@@ -851,7 +911,7 @@ int RegisterOneRule(Rule *rule, int registerRule)
             case OPTION_TYPE_FLOWBIT:
                 {
                     FlowBitsInfo *flowbits = option->option_u.flowBit;
-                    flowbits->id = _ded.flowbitRegister(flowbits->flowBitsName, flowbits->operation);
+                    flowbits = (FlowBitsInfo *)_ded.flowbitRegister(flowbits);
                     if (flowbits->operation & FLOWBIT_NOALERT)
                         rule->noAlert = 1;
                 }
@@ -900,7 +960,7 @@ int RegisterOneRule(Rule *rule, int registerRule)
             case OPTION_TYPE_LOOP:
                 {
                     LoopInfo *loopInfo = option->option_u.loop;
-                    result = LoopInfoInitialize(rule, loopInfo);
+                    result = LoopInfoInitialize(sc, rule, loopInfo);
                     if (result)
                     {
                         /* Don't initialize this rule */
@@ -915,7 +975,7 @@ int RegisterOneRule(Rule *rule, int registerRule)
                 {
                     PreprocessorOption *preprocOpt = option->option_u.preprocOpt;
 
-                    if (_ded.preprocRuleOptInit((void *)preprocOpt) == -1)
+                    if (_ded.preprocRuleOptInit(sc, (void *)preprocOpt) == -1)
                     {
                         /* Don't initialize this rule */
                         rule->initialized = 0;
@@ -928,7 +988,38 @@ int RegisterOneRule(Rule *rule, int registerRule)
 
             case OPTION_TYPE_BYTE_TEST:
             case OPTION_TYPE_BYTE_JUMP:
+                {
+                    ByteData *byte = option->option_u.byte;
+                    result = ByteDataInitialize(rule, byte);
+
+                    if (result)
+                    {
+                        rule->initialized = 0;
+                        FreeOneRule(rule);
+                        return -1;
+                    }
+                }
+
+                break;
+
+            case OPTION_TYPE_CURSOR:
+                {
+                    CursorInfo *cursor = option->option_u.cursor;
+                    result = CursorInfoInitialize(rule, cursor);
+
+                    if (result)
+                    {
+                        rule->initialized = 0;
+                        FreeOneRule(rule);
+                        return -1;
+                    }
+                }
+
+                break;
+
             case OPTION_TYPE_FILE_DATA:
+            case OPTION_TYPE_PKT_DATA:
+            case OPTION_TYPE_BASE64_DATA:
             default:
                 /* nada */
                 break;
@@ -952,6 +1043,7 @@ int RegisterOneRule(Rule *rule, int registerRule)
     {
         /* Allocate an OTN and link it in with snort */
         if (_ded.ruleRegister(
+                    sc,
                     rule->info.sigID,
                     rule->info.genID,
                     (void *)rule,
@@ -970,7 +1062,7 @@ int RegisterOneRule(Rule *rule, int registerRule)
                     case OPTION_TYPE_FLOWBIT:
                         {
                             FlowBitsInfo *flowbits = option->option_u.flowBit;
-                            _ded.flowbitUnregister(flowbits->flowBitsName, flowbits->operation);
+                            _ded.flowbitUnregister(flowbits);
                         }
                         break;
 
@@ -1074,10 +1166,22 @@ static void FreeOneRule(void *data)
             case OPTION_TYPE_HDR_CHECK:
             case OPTION_TYPE_BASE64_DECODE:
             case OPTION_TYPE_ASN1:
+                break;
+
             case OPTION_TYPE_FLOWBIT:
+                {
+                    FlowBitsInfo *flowbits = option->option_u.flowBit;
+                    if (flowbits && flowbits->ids)
+                    {
+                        free(flowbits->ids);
+                        flowbits->ids = NULL;
+                    }
+                }
             case OPTION_TYPE_BYTE_TEST:
             case OPTION_TYPE_BYTE_JUMP:
             case OPTION_TYPE_FILE_DATA:
+            case OPTION_TYPE_PKT_DATA:
+            case OPTION_TYPE_BASE64_DATA:
             default:
                 break;
         }
@@ -1137,6 +1241,9 @@ static int DumpRule(FILE *fp, Rule *rule)
                 case FLOWBIT_SET:
                     fprintf(fp, "set,");
                     break;
+                case FLOWBIT_SETX:
+                    fprintf(fp, "setx,");
+                    break;
                 case FLOWBIT_UNSET:
                     fprintf(fp, "unset,");
                     break;
@@ -1146,12 +1253,15 @@ static int DumpRule(FILE *fp, Rule *rule)
                 case FLOWBIT_ISNOTSET:
                     fprintf(fp, "isnotset,");
                     break;
+                case FLOWBIT_TOGGLE:
+                    fprintf(fp, "toggle,");
+                    break;
                 case FLOWBIT_RESET:
-                    fprintf(fp, "reset; ");
+                    fprintf(fp, "reset");
                     print_name = 0;
                     break;
                 case FLOWBIT_NOALERT:
-                    fprintf(fp, "noalert; ");
+                    fprintf(fp, "noalert");
                     print_name = 0;
                     break;
                 default:
@@ -1159,7 +1269,11 @@ static int DumpRule(FILE *fp, Rule *rule)
                     break;
             }
             if (print_name)
-                fprintf(fp, "%s; ", flowbit->flowBitsName);
+                fprintf(fp, "%s", flowbit->flowBitsName);
+            if(flowbit->groupName)
+                fprintf(fp, ",%s; ", flowbit->groupName);
+            else
+                fprintf(fp, "; ");
         }
     }
 
@@ -1191,14 +1305,14 @@ static int DumpRule(FILE *fp, Rule *rule)
     return 0;
 }
 
-ENGINE_LINKAGE int RegisterRules(Rule **rules)
+ENGINE_LINKAGE int RegisterRules(struct _SnortConfig *sc, Rule **rules)
 {
     int i;
 
     for (i=0; rules[i] != NULL; i++)
     {
         if (rules[i]->initialized == 0)
-            RegisterOneRule(rules[i], REGISTER_RULE);
+            RegisterOneRule(sc, rules[i], REGISTER_RULE);
     }
 
     return 0;
@@ -1221,7 +1335,7 @@ ENGINE_LINKAGE int DumpRules(char *rulesFileName, Rule **rules)
     if ((strlen(_ded.dataDumpDirectory) + strlen(DIR_SEP) + strlen(rulesFileName) + strlen(".rules")) > PATH_MAX)
         return -1;
 
-    snprintf(ruleFile, PATH_MAX, "%s%s%s.rules", 
+    snprintf(ruleFile, PATH_MAX, "%s%s%s.rules",
                 _ded.dataDumpDirectory, DIR_SEP, rulesFileName);
     ruleFile[PATH_MAX] = '\0';
     ruleFP = fopen(ruleFile, "w");

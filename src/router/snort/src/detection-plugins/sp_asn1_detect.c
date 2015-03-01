@@ -1,6 +1,7 @@
 /* $Id$ */
 /*
- ** Copyright (C) 2002-2011 Sourcefire, Inc.
+ ** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2002-2013 Sourcefire, Inc.
  ** Author: Daniel Roelker
  **
  ** This program is free software; you can redistribute it and/or modify
@@ -16,20 +17,20 @@
  **
  ** You should have received a copy of the GNU General Public License
  ** along with this program; if not, write to the Free Software
- ** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
 /**
 **  @file        sp_asn1_detect.c
 **
 **  @author      Daniel Roelker <droelker@sourcefire.com>
-** 
+**
 **  @brief       Decode and detect ASN.1 types, lengths, and data.
 **
 **  This detection plugin adds ASN.1 detection functions on a per rule
 **  basis.  ASN.1 detection plugins can be added by editing this file and
 **  providing an interface in the configuration code.
-**  
+**
 **  Detection Plugin Interface:
 **
 **  asn1: [detection function],[arguments],[offset type],[size]
@@ -59,15 +60,16 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+#include "sf_types.h"
+
 #ifndef SF_SNORT_ENGINE_DLL
-#include "debug.h"
+#include "snort_debug.h"
 #else
 /* Ignore debug statements */
 #include <stdint.h>
 #define DEBUG_WRAP(x)
 #endif
 
-#include "sf_types.h"
 #include "sfutil/asn1.h"
 #include "sp_asn1_detect.h"
 #include "snort.h"
@@ -78,14 +80,14 @@
  *
  * 1 means it's in bounds, 0 means it's not
  */
-static INLINE int inBounds(
+static inline int inBounds(
     const uint8_t *start, const uint8_t *end, const uint8_t *p)
 {
     if(p >= start && p < end)
     {
         return 1;
     }
-    
+
     return 0;
 }
 
@@ -118,7 +120,7 @@ static int BitStringOverflow(ASN1_TYPE *asn1, void * user)
     */
     if(asn1->ident.tag == SF_ASN1_TAG_BIT_STR && !asn1->ident.flag)
     {
-        if(asn1->len.size && asn1->data && 
+        if(asn1->len.size && asn1->data &&
            (((asn1->len.size - 1)<<3) < (unsigned int)asn1->data[0]))
         {
             return 1;
@@ -176,7 +178,7 @@ static int DoubleOverflow(ASN1_TYPE *asn1, void *user)
     if(asn1->ident.tag == SF_ASN1_TAG_REAL && !asn1->ident.flag)
     {
         if(asn1->len.size && asn1->data &&
-           ((asn1->data[0] & 0xc0) == 0x00) && 
+           ((asn1->data[0] & 0xc0) == 0x00) &&
            (asn1->len.size > 256))
         {
             return 1;
@@ -212,7 +214,7 @@ static int DetectDoubleOverflow(ASN1_TYPE *asn1)
 **  This is the most generic of our ASN.1 detection functionalities.  This
 **  will compare the ASN.1 type lengths against the user defined max
 **  length and alert if the length is greater than the user supplied length.
-**  
+**
 **  @return integer
 **
 **  @retval 0 failed
@@ -270,7 +272,7 @@ static int Asn1DetectFuncs(ASN1_TYPE *asn1, ASN1_CTXT *ctxt, int dec_ret_val)
     /*
     **  Print first, before we do other detection.  If print is the only
     **  option, then we want to evaluate this option as true and continue.
-    **  Otherwise, if another option is wrong, then we 
+    **  Otherwise, if another option is wrong, then we
     */
     if(ctxt->print)
     {
@@ -302,7 +304,7 @@ static int Asn1DetectFuncs(ASN1_TYPE *asn1, ASN1_CTXT *ctxt, int dec_ret_val)
         /*
         **  If we didn't detect any oversize length in the decoded structs,
         **  that might be because we had a really overlong length that is
-        **  bigger than our data type could hold.  In this case, it's 
+        **  bigger than our data type could hold.  In this case, it's
         **  overlong too.
         */
         if(!iRet && dec_ret_val == ASN1_ERR_OVERLONG_LEN)
@@ -360,11 +362,14 @@ int Asn1DoDetect(const uint8_t *data, uint16_t dsize, ASN1_CTXT *ctxt, const uin
                            "relative offset, so we are bailing.\n"););
                 return 0;
             }
-                           
+
             /*
             **  Check that it is in bounds first.
+            **  Because rel_ptr can be "end" in the last match,
+            **  use end + 1 for upper bound
+            **  Bound checked also after offset is applied
             */
-            if(!inBounds(start, end, rel_ptr))
+            if(!inBounds(start, end + 1, rel_ptr))
             {
                 DEBUG_WRAP(DebugMessage(DEBUG_ASN1, "[*] ASN.1 bounds "
                            "check failed for rel_ptr.\n"););

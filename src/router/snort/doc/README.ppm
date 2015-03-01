@@ -43,10 +43,12 @@ fastpath-expensive-packets
       exceeded
     - default is off
 
-pkt-log
+pkt-log [log] [alert]
     - enables logging packet event if packet exceeds max-pkt-time
-    - logging is to syslog or console depending upon snort configuration
     - default is no logging
+    - if no option is given for 'pkt-log', 'pkt-log log' is implied
+    - the log option enables output to syslog or console depending 
+      upon snort configuration
 
 debug-pkts
     - enables per packet timing stats to be printed after each packet
@@ -137,7 +139,7 @@ PPM: Process-BeginPkt[62] caplen=342
 PPM: Pkt[62] Used= 65.3659 usecs
 PPM: Process-EndPkt[62]
 
-PPM: Pkt-Event Pkt[63] used=56.0438 usecs, 0 rules, 1 nc-rules tested, packet fastpathed.
+PPM: Pkt-Event Pkt[63] used=56.0438 usecs, 0 rules, 1 nc-rules tested, packet fastpathed (10.4.12.224:80 -> 10.4.14.108:54321).
 PPM: Process-BeginPkt[63] caplen=60
 PPM: Pkt[63] Used= 8.394 usecs
 PPM: Process-EndPkt[63]

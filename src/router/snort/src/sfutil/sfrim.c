@@ -1,6 +1,7 @@
 /****************************************************************************
  *
- * Copyright (C) 2005-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -15,12 +16,12 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************/
 
 /*
- *   sfrim.c    
+ *   sfrim.c
  *
  *   Rule Index Map
  *
@@ -29,6 +30,10 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "sfrim.h"
 
 /*
@@ -39,7 +44,7 @@ unsigned RuleIndexMapSid( rule_index_map_t * map, int index )
 {
     if( ! map )
         return 0;
-    
+
     if( index < map->num_rules )
     {
         return map->map[index].sid;
@@ -63,7 +68,7 @@ unsigned RuleIndexMapGid(rule_index_map_t * map, int index )
     return 0;
 }
 /*
- * Create a rule index map table 
+ * Create a rule index map table
  * author: marc norton
  */
 rule_index_map_t * RuleIndexMapCreate( int max_rules )
@@ -84,7 +89,7 @@ rule_index_map_t * RuleIndexMapCreate( int max_rules )
         return p;
 }
 /*
- * Free a rule index map table 
+ * Free a rule index map table
  * author: marc norton
  */
 void RuleIndexMapFree( rule_index_map_t ** p )
@@ -103,14 +108,14 @@ void RuleIndexMapFree( rule_index_map_t ** p )
 }
 
 /*
- * Add a rule to a rule index map table 
+ * Add a rule to a rule index map table
  * author: marc norton
  */
 int RuleIndexMapAdd( rule_index_map_t * p, unsigned gid, unsigned sid )
 {
         int index;
-       
-        if( !p ) 
+
+        if( !p )
         {
             return -1;
         }
@@ -118,7 +123,7 @@ int RuleIndexMapAdd( rule_index_map_t * p, unsigned gid, unsigned sid )
         {
             return -1;
         }
-        index = p->num_rules  ;   
+        index = p->num_rules  ;
         p->map[ index ].gid = gid;
         p->map[ index ].sid = sid;
         p->num_rules++;
@@ -127,7 +132,7 @@ int RuleIndexMapAdd( rule_index_map_t * p, unsigned gid, unsigned sid )
         return index;
 }
 /*
- * print a rule index map table to stdout 
+ * print a rule index map table to stdout
  * author: marc norton
  */
 void print_rule_index_map( rule_index_map_t * p )

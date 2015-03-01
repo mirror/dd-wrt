@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (C) 2008-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2008-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -14,7 +15,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************/
 #ifndef RULE_OPTION_TYPES__H
@@ -45,8 +46,10 @@ typedef enum _option_type_t
     RULE_OPTION_TYPE_IP_TOS,
     RULE_OPTION_TYPE_IS_DATA_AT,
     RULE_OPTION_TYPE_FILE_DATA,
+    RULE_OPTION_TYPE_FILE_TYPE,
     RULE_OPTION_TYPE_BASE64_DECODE,
     RULE_OPTION_TYPE_BASE64_DATA,
+    RULE_OPTION_TYPE_PKT_DATA,
     RULE_OPTION_TYPE_CONTENT,
     RULE_OPTION_TYPE_CONTENT_URI,
     RULE_OPTION_TYPE_PCRE,
@@ -63,13 +66,16 @@ typedef enum _option_type_t
     RULE_OPTION_TYPE_TCP_SEQ,
     RULE_OPTION_TYPE_TCP_WIN,
     RULE_OPTION_TYPE_TTL,
-    RULE_OPTION_TYPE_URILEN
-#ifdef DYNAMIC_PLUGIN
-    ,
+    RULE_OPTION_TYPE_URILEN,
     RULE_OPTION_TYPE_HDR_OPT_CHECK,
     RULE_OPTION_TYPE_PREPROCESSOR,
+#if !defined(FEAT_OPEN_APPID)
     RULE_OPTION_TYPE_DYNAMIC
-#endif
+#else /* defined(FEAT_OPEN_APPID) */
+    RULE_OPTION_TYPE_DYNAMIC,
+    RULE_OPTION_TYPE_APPID
+#endif /* defined(FEAT_OPEN_APPID) */
+
 } option_type_t;
 
 #endif /* RULE_OPTION_TYPES__H */
