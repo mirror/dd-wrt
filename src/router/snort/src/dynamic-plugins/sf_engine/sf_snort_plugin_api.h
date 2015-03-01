@@ -14,9 +14,10 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (C) 2005-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * Author: Steve Sturges
  *         Andy Mullican
@@ -28,10 +29,6 @@
  */
 #ifndef SF_SNORT_PLUGIN_API_H_
 #define SF_SNORT_PLUGIN_API_H_
-
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
 
 #include "pcre.h"
 #include "stdio.h"
@@ -59,7 +56,7 @@
 # ifdef SF_SNORT_ENGINE_DLL
 #  define ENGINE_LINKAGE SO_PUBLIC
 # else
-#  define ENGINE_LINKAGE 
+#  define ENGINE_LINKAGE
 # endif
 #else /* WIN32 */
 # define ENGINE_LINKAGE SO_PUBLIC
@@ -78,53 +75,65 @@
 #define CONTENT_TYPE_MISMATCH -1
 #define CONTENT_TYPE_MISSING  -2
 #define CONTENT_CURSOR_ERROR  -3
+#define CONTENT_HASH_ERROR    -4
 #define CURSOR_IN_BOUNDS       1
 #define CURSOR_OUT_OF_BOUNDS   0
 
-/* Defined in sf_dynamic_define.h */
-//#define SNORT_PCRE_OVERRIDE_MATCH_LIMIT 0x80000000
+//==========================================
+// these are all part of the same mask:
+//------------------------------------------
+// low nibble must be same as HTTP_BUFFER_*
+// see detection_util.h for enum
+// TBD include BUF_* as well in a single enum?
+#define CONTENT_BUF_NONE          0x00000000
+#define CONTENT_BUF_URI           0x00000001
+#define CONTENT_BUF_HEADER        0x00000002
+#define CONTENT_BUF_POST          0x00000003
 
-#define CONTENT_NOCASE          0x01
-#define CONTENT_RELATIVE        0x02
-#define CONTENT_UNICODE2BYTE    0x04
-#define CONTENT_UNICODE4BYTE    0x08
-#define CONTENT_FAST_PATTERN    0x10
-#define CONTENT_END_BUFFER      0x20
+#define CONTENT_BUF_METHOD        0x00000004
+#define CONTENT_BUF_COOKIE        0x00000005
+#define CONTENT_BUF_STAT_CODE     0x00000006
+#define CONTENT_BUF_STAT_MSG      0x00000007
 
-#define CONTENT_BUF_NORMALIZED  0x100
-#define CONTENT_BUF_RAW         0x200
-#define CONTENT_BUF_URI         0x400
-#define CONTENT_BUF_POST        0x800
-#define CONTENT_BUF_HEADER      0x2000
-#define CONTENT_BUF_METHOD      0x4000
-#define CONTENT_BUF_COOKIE      0x8000
-#define CONTENT_BUF_RAW_URI     0x10000
-#define CONTENT_BUF_RAW_HEADER  0x20000
-#define CONTENT_BUF_RAW_COOKIE  0x40000
-#define CONTENT_BUF_STAT_CODE   0x80000
-#define CONTENT_BUF_STAT_MSG    0x40
+#define CONTENT_BUF_RAW_URI       0x00000008
+#define CONTENT_BUF_RAW_HEADER    0x00000009
+#define CONTENT_BUF_RAW_COOKIE    0x0000000A
+#define CONTENT_BUF_HTTP          0x0000000F
+//------------------------------------------
 
-/* This option implies the fast pattern flag */
-#define CONTENT_FAST_PATTERN_ONLY  0x80
+#define BUF_FILE_DATA             0x00000010
+#define BUF_FILE_DATA_MIME        0x00000020
+#define BUF_BASE64_DECODE         0x00000040
 
-#define BYTE_LITTLE_ENDIAN      0x0000
-#define BYTE_BIG_ENDIAN         0x1000
+#define CONTENT_BUF_NORMALIZED    0x00000100
+#define CONTENT_BUF_RAW           0x00000200
+#define CONTENT_END_BUFFER        0x00000400
 
-#define EXTRACT_AS_DEC          0x100000
-#define EXTRACT_AS_OCT          0x200000
-#define EXTRACT_AS_HEX          0x400000
-#define EXTRACT_AS_BIN          0x800000
-#define EXTRACT_AS_BYTE         0x20000000
-#define EXTRACT_AS_STRING       0x40000000
+#define CONTENT_NOCASE            0x00001000
+#define CONTENT_RELATIVE          0x00002000
+#define NOT_FLAG                  0x00004000
 
-#define JUMP_FROM_BEGINNING     0x01000000
-#define JUMP_ALIGN              0x02000000
+#define CONTENT_FAST_PATTERN      0x00010000
+#define CONTENT_FAST_PATTERN_ONLY 0x00020000  // implies fast pattern
+#define JUMP_FROM_BEGINNING       0x00040000
+#define JUMP_ALIGN                0x00080000
 
-#define BUF_FILE_DATA           0x04000000
-#define BUF_FILE_DATA_MIME      0x08000000
-#define BUF_BASE64_DECODE       0x10000000
+#define CONTENT_UNICODE2BYTE      0x00100000
+#define CONTENT_UNICODE4BYTE      0x00200000
+#define BYTE_LITTLE_ENDIAN        0x00400000
+#define BYTE_BIG_ENDIAN           0x00800000
 
-#define NOT_FLAG                0x80000000
+#define EXTRACT_AS_DEC            0x01000000
+#define EXTRACT_AS_OCT            0x02000000
+#define EXTRACT_AS_HEX            0x04000000
+#define EXTRACT_AS_BIN            0x08000000
+
+#define EXTRACT_AS_BYTE           0x10000000
+#define EXTRACT_AS_STRING         0x20000000
+#define PROTECTED_CONTENT_HASH_MD5    (1)
+#define PROTECTED_CONTENT_HASH_SHA256 (2)
+#define PROTECTED_CONTENT_HASH_SHA512 (3)
+//==========================================
 
 #define CHECK_EQ            0
 #define CHECK_NEQ           1
@@ -138,33 +147,58 @@
 #define CHECK_ATLEASTONE    9
 #define CHECK_NONE          10
 
+#define HTTP_CONTENT(cf) (cf & CONTENT_BUF_HTTP)
+
 #define NORMAL_CONTENT_BUFS ( CONTENT_BUF_NORMALIZED | CONTENT_BUF_RAW )
-#define URI_CONTENT_BUFS  ( CONTENT_BUF_URI | CONTENT_BUF_POST \
-        | CONTENT_BUF_COOKIE | CONTENT_BUF_HEADER | CONTENT_BUF_METHOD \
-        | CONTENT_BUF_RAW_URI | CONTENT_BUF_RAW_HEADER | CONTENT_BUF_RAW_COOKIE \
-        | CONTENT_BUF_STAT_CODE | CONTENT_BUF_STAT_MSG )
-#define URI_FAST_PATTERN_BUFS ( CONTENT_BUF_URI | CONTENT_BUF_METHOD \
-        | CONTENT_BUF_HEADER | CONTENT_BUF_POST )
+
+static inline int IsHttpFastPattern (uint32_t cf)
+{
+    cf = HTTP_CONTENT(cf);
+
+    return ( cf == CONTENT_BUF_URI || cf == CONTENT_BUF_HEADER ||
+             cf == CONTENT_BUF_POST );
+}
 
 typedef struct _ContentInfo
 {
-    const u_int8_t *pattern;
-    u_int32_t depth;
+    const uint8_t *pattern;
+    uint32_t depth;
     int32_t   offset;
-    u_int32_t flags;        /* must include a CONTENT_BUF_X */
+    uint32_t flags;        /* must include a CONTENT_BUF_X */
     void     *boyer_ptr;
-    u_int8_t *patternByteForm;
-    u_int32_t patternByteFormLength;
-    u_int32_t incrementLength;
-    u_int16_t fp_offset;
-    u_int16_t fp_length;
-    u_int8_t fp_only;
+    uint8_t *patternByteForm;
+    uint32_t patternByteFormLength;
+    uint32_t incrementLength;
+    uint16_t fp_offset;
+    uint16_t fp_length;
+    uint8_t fp_only;
+    char *offset_refId;     /* To match up with a DynamicElement refId */
+    char *depth_refId;      /* To match up with a DynamicElement refId */
+    int32_t *offset_location;
+    uint32_t *depth_location;
 } ContentInfo;
+typedef struct _ProtectedContentInfo
+{
+    const uint8_t *pattern;
+    uint32_t depth;
+    int32_t offset;
+    uint32_t flags;        /* must include a CONTENT_BUF_X */
+    uint8_t hash_type;
+    uint32_t protected_length;
+    uint8_t *patternByteForm;
+    uint32_t patternByteFormLength;
+    char *offset_refId;     /* To match up with a DynamicElement refId */
+    char *depth_refId;      /* To match up with a DynamicElement refId */
+    int32_t *offset_location;
+    uint32_t *depth_location;
+} ProtectedContentInfo;
 
 typedef struct _CursorInfo
 {
     int32_t   offset;
-    u_int32_t flags;        /* specify one of CONTENT_BUF_X */
+    uint32_t flags;        /* specify one of CONTENT_BUF_X */
+    char *offset_refId;     /* To match up with a DynamicElement refId */
+    int32_t *offset_location;
 } CursorInfo;
 
 /*
@@ -184,51 +218,62 @@ typedef struct _PCREInfo
     char     *expr;
     void     *compiled_expr;
     void     *compiled_extra;
-    u_int32_t compile_flags;
-    u_int32_t flags; /* must include a CONTENT_BUF_X */
+    uint32_t compile_flags;
+    uint32_t flags; /* must include a CONTENT_BUF_X */
     int32_t   offset;
 } PCREInfo;
 
-#define FLOWBIT_SET       0x01  
+#define FLOWBIT_SET       0x01
 #define FLOWBIT_UNSET     0x02
 #define FLOWBIT_TOGGLE    0x04
 #define FLOWBIT_ISSET     0x08
 #define FLOWBIT_ISNOTSET  0x10
 #define FLOWBIT_RESET     0x20
 #define FLOWBIT_NOALERT   0x40
+#define FLOWBIT_SETX      0x80
+
 
 typedef struct _FlowBitsInfo
 {
-    char      *flowBitsName;
-    u_int8_t   operation;
-    u_int32_t  id;
-    u_int32_t  flags;
+    char     *flowBitsName;
+    uint8_t   operation;
+    uint16_t id;
+    uint32_t flags;
+    char     *groupName;
+    uint8_t   eval;
+    uint16_t *ids;
+    uint8_t  num_ids;
 } FlowBitsInfo;
 
 typedef struct _ByteData
 {
-    u_int32_t bytes;      /* Number of bytes to extract */
-    u_int32_t op;         /* Type of byte comparison, for checkValue */
-    u_int32_t value;      /* Value to compare value against, for checkValue, or extracted value */
+    uint32_t bytes;      /* Number of bytes to extract */
+    uint32_t op;         /* Type of byte comparison, for checkValue */
+    uint32_t value;      /* Value to compare value against, for checkValue, or extracted value */
     int32_t   offset;     /* Offset from cursor */
-    u_int32_t multiplier; /* Used for byte jump -- 32bits is MORE than enough */
-    u_int32_t flags;      /* must include a CONTENT_BUF_X */
+    uint32_t multiplier; /* Used for byte jump -- 32bits is MORE than enough */
+    uint32_t flags;      /* must include a CONTENT_BUF_X */
     int32_t   post_offset;/* Use for byte jump -- adjust cusor by this much after the jump */
+    char *offset_refId;     /* To match up with a DynamicElement refId */
+    char *value_refId;      /* To match up with a DynamicElement refId */
+    int32_t *offset_location;
+    uint32_t *value_location;
 } ByteData;
 
 typedef struct _ByteExtract
 {
-    u_int32_t bytes;      /* Number of bytes to extract */
+    uint32_t bytes;      /* Number of bytes to extract */
     int32_t   offset;     /* Offset from cursor */
-    u_int32_t multiplier; /* Multiply value by this (similar to byte jump) */
-    u_int32_t flags;      /* must include a CONTENT_BUF_X */
+    uint32_t multiplier; /* Multiply value by this (similar to byte jump) */
+    uint32_t flags;      /* must include a CONTENT_BUF_X */
     char *refId;          /* To match up with a DynamicElement refId */
     void *memoryLocation; /* Location to store the data extracted */
+    uint8_t  align;      /* Align to 2 or 4 bit boundary after extraction */
 } ByteExtract;
 
 typedef struct _FlowFlags
 {
-    u_int32_t   flags;    /* FLOW_* values */
+    uint32_t   flags;    /* FLOW_* values */
 } FlowFlags;
 
 
@@ -244,7 +289,7 @@ typedef struct _Asn1Context
     unsigned int max_length;
     int offset;
     int offset_type;
-    u_int32_t  flags;
+    uint32_t  flags;
 } Asn1Context;
 
 #define IP_HDR_ID           0x0001  /* IP Header ID */
@@ -271,11 +316,11 @@ typedef struct _Asn1Context
 
 typedef struct _HdrOptCheck
 {
-    u_int16_t hdrField;   /* Field to check */
-    u_int32_t op;         /* Type of comparison */
-    u_int32_t value;      /* Value to compare value against */
-    u_int32_t mask_value; /* bits of value to ignore */
-    u_int32_t flags;
+    uint16_t hdrField;   /* Field to check */
+    uint32_t op;         /* Type of comparison */
+    uint32_t value;      /* Value to compare value against */
+    uint32_t mask_value; /* bits of value to ignore */
+    uint32_t flags;
 } HdrOptCheck;
 
 #define DYNAMIC_TYPE_INT_STATIC 1
@@ -298,27 +343,27 @@ typedef struct _LoopInfo
     DynamicElement *start;      /* Starting value of FOR loop (i=start) */
     DynamicElement *end;        /* Ending value of FOR loop (i OP end) */
     DynamicElement *increment;  /* Increment value of FOR loop (i+= increment) */
-    u_int32_t op;               /* Type of comparison for loop termination */
+    uint32_t op;               /* Type of comparison for loop termination */
     CursorInfo *cursorAdjust;   /* How to move cursor each iteration of loop */
     struct _Rule *subRule;      /* Pointer to SubRule & options to evaluate within
                                  * the loop */
-    u_int8_t initialized;       /* Loop initialized properly (safeguard) */
-    u_int32_t flags;            /* can be used to negate loop results, specifies
+    uint8_t initialized;       /* Loop initialized properly (safeguard) */
+    uint32_t flags;            /* can be used to negate loop results, specifies
                                  * relative. */
 } LoopInfo;
 
 typedef struct _base64DecodeData
 {
-    u_int32_t bytes;
-    u_int32_t offset;
-    u_int8_t relative;
+    uint32_t bytes;
+    uint32_t offset;
+    uint8_t relative;
 }base64DecodeData;
 
 typedef struct _PreprocessorOption
 {
     const char *optionName;
     const char *optionParameters;
-    u_int32_t flags;
+    uint32_t flags;
     PreprocOptionInit optionInit;
     PreprocOptionEval optionEval;
     void *dataPtr;
@@ -333,6 +378,7 @@ typedef struct _RuleOption
     {
         void *ptr;
         ContentInfo *content;
+        ProtectedContentInfo *protectedContent;
         CursorInfo *cursor;
         PCREInfo *pcre;
         FlowBitsInfo *flowBit;
@@ -349,7 +395,7 @@ typedef struct _RuleOption
 
 typedef struct _IPInfo
 {
-    u_int8_t protocol;
+    uint8_t protocol;
     char *   src_addr;
     char *   src_port; /* 0 for non TCP/UDP */
     char     direction;     /* non-zero is bi-directional */
@@ -372,11 +418,11 @@ typedef struct _RuleMetaData {
 
 typedef struct _RuleInformation
 {
-    u_int32_t genID;
-    u_int32_t sigID;
-    u_int32_t revision;
+    uint32_t genID;
+    uint32_t sigID;
+    uint32_t revision;
     char     *classification; /* String format of classification name */
-    u_int32_t priority;
+    uint32_t priority;
     char     *message;
     RuleReference **references; /* NULL terminated array of references */
     RuleMetaData **meta; /* NULL terminated array of references */
@@ -388,53 +434,69 @@ typedef struct _Rule
 {
     IPInfo ip;
     RuleInformation info;
-    
+
     RuleOption **options; /* NULL terminated array of RuleOption union */
 
     ruleEvalFunc evalFunc;
 
     char initialized;     /* Rule Initialized, used internally */
-    u_int32_t numOptions; /* Rule option count, used internally */
+    uint32_t numOptions; /* Rule option count, used internally */
     char noAlert;         /* Flag with no alert, used internally */
     void *ruleData;    /* Hash table for dynamic data pointers */
 
 } Rule;
 
 
-ENGINE_LINKAGE int RegisterRules(Rule **rules);
+struct _SnortConfig;
+ENGINE_LINKAGE int RegisterRules(struct _SnortConfig *sc, Rule **rules);
 ENGINE_LINKAGE int DumpRules(char *rulesFileName, Rule **rules);
 
-ENGINE_LINKAGE int contentMatch(void *p, ContentInfo* content, const u_int8_t **cursor);
+ENGINE_LINKAGE int contentMatch(void *p, ContentInfo* content, const uint8_t **cursor);
+ENGINE_LINKAGE int protectedContentMatch(void *p, ProtectedContentInfo* content, const uint8_t **cursor);
 ENGINE_LINKAGE int checkFlow(void *p, FlowFlags *flowFlags);
-ENGINE_LINKAGE int extractValue(void *p, ByteExtract *byteExtract, const u_int8_t *cursor);
+ENGINE_LINKAGE int extractValue(void *p, ByteExtract *byteExtract, const uint8_t *cursor);
 ENGINE_LINKAGE int processFlowbits(void *p, FlowBitsInfo *flowBits);
-ENGINE_LINKAGE int getBuffer(void *p, int flags, const u_int8_t **start, const u_int8_t **end);
-ENGINE_LINKAGE int setCursor(void *p, CursorInfo *cursorInfo, const u_int8_t **cursor);
-ENGINE_LINKAGE int checkCursor(void *p, CursorInfo *cursorInfo, const u_int8_t *cursor);
-ENGINE_LINKAGE int checkValue(void *p, ByteData *byteData, u_int32_t value, const u_int8_t *cursor);
+ENGINE_LINKAGE int getBuffer(void *p, int flags, const uint8_t **start, const uint8_t **end);
+ENGINE_LINKAGE int setCursor(void *p, CursorInfo *cursorInfo, const uint8_t **cursor);
+ENGINE_LINKAGE int fileData(void *p, CursorInfo* cursorInfo, const uint8_t **cursor);
+ENGINE_LINKAGE int pktData(void *p, CursorInfo* cursorInfo, const uint8_t **cursor);
+ENGINE_LINKAGE int base64Data(void *p, CursorInfo* cursorInfo, const uint8_t **cursor);
+ENGINE_LINKAGE int base64Decode(void *p, base64DecodeData *data, const uint8_t *cursor);
+ENGINE_LINKAGE int checkCursor(void *p, CursorInfo *cursorInfo, const uint8_t *cursor);
+ENGINE_LINKAGE int checkValue(void *p, ByteData *byteData, uint32_t value, const uint8_t *cursor);
 /* Same as extractValue plus checkValue */
-ENGINE_LINKAGE int byteTest(void *p, ByteData *byteData, const u_int8_t *cursor);
+ENGINE_LINKAGE int byteTest(void *p, ByteData *byteData, const uint8_t *cursor);
 /* Same as extractValue plus setCursor */
-ENGINE_LINKAGE int byteJump(void *p, ByteData *byteData, const u_int8_t **cursor);
-ENGINE_LINKAGE int pcreMatch(void *p, PCREInfo* pcre, const u_int8_t **cursor);
-ENGINE_LINKAGE int detectAsn1(void *p, Asn1Context* asn1, const u_int8_t *cursor);
+ENGINE_LINKAGE int byteJump(void *p, ByteData *byteData, const uint8_t **cursor);
+ENGINE_LINKAGE int pcreMatch(void *p, PCREInfo* pcre, const uint8_t **cursor);
+ENGINE_LINKAGE int detectAsn1(void *p, Asn1Context* asn1, const uint8_t *cursor);
 ENGINE_LINKAGE int checkHdrOpt(void *p, HdrOptCheck *optData);
-ENGINE_LINKAGE int loopEval(void *p, LoopInfo *loop, const u_int8_t **cursor);
-ENGINE_LINKAGE int preprocOptionEval(void *p, PreprocessorOption *preprocOpt, const u_int8_t **cursor);
-ENGINE_LINKAGE void setTempCursor(const u_int8_t **temp_cursor, const u_int8_t **cursor);
-ENGINE_LINKAGE void revertTempCursor(const u_int8_t **temp_cursor, const u_int8_t **cursor);
+ENGINE_LINKAGE int loopEval(void *p, LoopInfo *loop, const uint8_t **cursor);
+ENGINE_LINKAGE int preprocOptionEval(void *p, PreprocessorOption *preprocOpt, const uint8_t **cursor);
+ENGINE_LINKAGE void setTempCursor(const uint8_t **temp_cursor, const uint8_t **cursor);
+ENGINE_LINKAGE void revertTempCursor(const uint8_t **temp_cursor, const uint8_t **cursor);
 ENGINE_LINKAGE int ruleMatch(void *p, Rule *rule);
 ENGINE_LINKAGE int MatchDecryptedRC4(
-    const u_int8_t *key, u_int16_t keylen, const u_int8_t *encrypted_data, 
-    u_int8_t *plain_data, u_int16_t datalen
+    const uint8_t *key, uint16_t keylen, const uint8_t *encrypted_data,
+    uint8_t *plain_data, uint16_t datalen
 );
 ENGINE_LINKAGE int storeRuleData(void *, void *, uint32_t, SessionDataFree);
 ENGINE_LINKAGE void *getRuleData(void *, uint32_t);
 ENGINE_LINKAGE void *allocRuleData(size_t);
 ENGINE_LINKAGE void freeRuleData(void *);
 
+ENGINE_LINKAGE int isDetectFlag(SFDetectFlagType df);
+ENGINE_LINKAGE void detectFlagDisable(SFDetectFlagType df);
+ENGINE_LINKAGE int getAltDetect(uint8_t **bufPtr, uint16_t *altLenPtr);
+ENGINE_LINKAGE void setAltDetect(uint8_t *buf, uint16_t altLen);
+
 ENGINE_LINKAGE int pcreExecWrapper(const PCREInfo *pcre_info, const char *buf, int len, int start_offset,
                                     int options, int *ovector, int ovecsize);
+
+static inline int invertMatchResult(int retVal)
+{
+    return (retVal <= RULE_NOMATCH) ? RULE_MATCH : RULE_NOMATCH;
+}
 
 #endif /* SF_SNORT_PLUGIN_API_H_ */
 

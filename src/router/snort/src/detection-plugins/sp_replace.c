@@ -1,5 +1,6 @@
 /*
-** Copyright (C) 2002-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -15,7 +16,7 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 /* $Id$ */
@@ -28,8 +29,9 @@
 #include <strings.h>
 #endif
 
-#include "bounds.h"
-#include "debug.h"
+#include "sf_types.h"
+#include "snort_bounds.h"
+#include "snort_debug.h"
 #include "decode.h"
 #include "parser.h"
 #include "sp_replace.h"
@@ -41,20 +43,19 @@ extern int lastType;
 
 static PatternMatchData* Replace_Parse(char*, OptTreeNode*);
 
-void PayloadReplaceInit(char *data, OptTreeNode * otn, int protocol)
+void PayloadReplaceInit(struct _SnortConfig *sc, char *data, OptTreeNode * otn, int protocol)
 {
     static int warned = 0;
     PatternMatchData *idx;
-    PatternMatchData *test_idx;
 
-    if( !ScInlineMode() )
+    if( !ScIpsInlineMode() )
         return;
 
     if ( !DAQ_CanReplace() )
     {
         if ( !warned )
         {
-            LogMessage("Warning: payload replacements disabled because DAQ "
+            LogMessage("WARNING: payload replacements disabled because DAQ "
                 " can't replace packets.\n");
             warned = 1;
         }
@@ -63,7 +64,7 @@ void PayloadReplaceInit(char *data, OptTreeNode * otn, int protocol)
     if ( lastType ==  PLUGIN_PATTERN_MATCH_URI )
     {
         FatalError("%s(%d) => \"replace\" option is not supported "
-                "with uricontent, nor in conjunction with http_uri, " 
+                "with uricontent, nor in conjunction with http_uri, "
                 "http_header, http_method http_cookie,"
                 "http_raw_uri, http_raw_header, or "
                 "http_raw_cookie modifiers.\n",
@@ -78,7 +79,7 @@ void PayloadReplaceInit(char *data, OptTreeNode * otn, int protocol)
                    file_name, file_line);
     }
 
-    test_idx = Replace_Parse(data, otn);
+    Replace_Parse(data, otn);
 
 }
 
@@ -100,7 +101,6 @@ static PatternMatchData * Replace_Parse(char *rule, OptTreeNode * otn)
     int pending = 0;
     int cnt = 0;
     int literal = 0;
-    int exception_flag = 0;
     PatternMatchData *ds_idx;
     int ret;
 
@@ -110,18 +110,13 @@ static PatternMatchData * Replace_Parse(char *rule, OptTreeNode * otn)
             file_name, file_line);
     }
     /* clear out the temp buffer */
-    bzero(tmp_buf, MAX_PATTERN_SIZE);
+    memset(tmp_buf, 0, MAX_PATTERN_SIZE);
 
     while(isspace((int)*rule))
         rule++;
 
-    if(*rule == '!')
-    {
-        exception_flag = 1;
-    }
-
     /* find the start of the data */
-    start_ptr = index(rule, '"');
+    start_ptr = strchr(rule, '"');
 
     if(start_ptr == NULL)
     {
@@ -162,8 +157,9 @@ static PatternMatchData * Replace_Parse(char *rule, OptTreeNode * otn)
     dummy_end = (dummy_idx + size);
 
     /* why is this buffer so small? */
-    bzero(hex_buf, 3);
     memset(hex_buf, '0', 2);
+    hex_buf[2] = '\0';
+
 
     /* BEGIN BAD JUJU..... */
     while(idx < end_ptr)
@@ -181,28 +177,28 @@ static PatternMatchData * Replace_Parse(char *rule, OptTreeNode * otn)
         switch(*idx)
         {
             case '|':
-            
+
                 DEBUG_WRAP(DebugMessage(DEBUG_PARSER, "Got bar... "););
-        
+
                 if(!literal)
                 {
-            
+
                     DEBUG_WRAP(DebugMessage(DEBUG_PARSER,
                         "not in literal mode... "););
-            
+
                     if(!hexmode)
                     {
-                        DEBUG_WRAP(DebugMessage(DEBUG_PARSER, 
+                        DEBUG_WRAP(DebugMessage(DEBUG_PARSER,
                         "Entering hexmode\n"););
 
                         hexmode = 1;
                     }
                     else
                     {
-                
-                        DEBUG_WRAP(DebugMessage(DEBUG_PARSER, 
+
+                        DEBUG_WRAP(DebugMessage(DEBUG_PARSER,
                         "Exiting hexmode\n"););
-            
+
                         hexmode = 0;
                         pending = 0;
                     }
@@ -213,7 +209,7 @@ static PatternMatchData * Replace_Parse(char *rule, OptTreeNode * otn)
                 else
                 {
 
-                    DEBUG_WRAP(DebugMessage(DEBUG_PARSER, 
+                    DEBUG_WRAP(DebugMessage(DEBUG_PARSER,
                         "literal set, Clearing\n"););
 
                     literal = 0;
@@ -224,21 +220,21 @@ static PatternMatchData * Replace_Parse(char *rule, OptTreeNode * otn)
                 break;
 
             case '\\':
-        
+
                 DEBUG_WRAP(DebugMessage(DEBUG_PARSER, "Got literal char... "););
 
                 if(!literal)
                 {
-                    DEBUG_WRAP(DebugMessage(DEBUG_PARSER, 
+                    DEBUG_WRAP(DebugMessage(DEBUG_PARSER,
                         "Setting literal\n"););
-            
+
                     literal = 1;
                 }
                 else
                 {
-                    DEBUG_WRAP(DebugMessage(DEBUG_PARSER, 
+                    DEBUG_WRAP(DebugMessage(DEBUG_PARSER,
                         "Clearing literal\n"););
-            
+
                     tmp_buf[dummy_size] = start_ptr[cnt];
                     literal = 0;
                     dummy_size++;
@@ -268,8 +264,8 @@ static PatternMatchData * Replace_Parse(char *rule, OptTreeNode * otn)
                                     strtol(hex_buf, (char **) NULL, 16)&0xFF;
 
                                 dummy_size++;
-                                bzero(hex_buf, 3);
                                 memset(hex_buf, '0', 2);
+                                hex_buf[2] = '\0';
                             }
                             else
                             {
@@ -316,10 +312,10 @@ static PatternMatchData * Replace_Parse(char *rule, OptTreeNode * otn)
                         {
                             tmp_buf[dummy_size] = start_ptr[cnt];
                             dummy_size++;
-                
-                            DEBUG_WRAP(DebugMessage(DEBUG_PARSER, 
+
+                            DEBUG_WRAP(DebugMessage(DEBUG_PARSER,
                             "Clearing literal\n"););
-                
+
                             literal = 0;
                         }
                         else
@@ -364,7 +360,7 @@ static PatternMatchData * Replace_Parse(char *rule, OptTreeNode * otn)
             file_name, file_line);
     }
 
-    ret = SafeMemcpy(ds_idx->replace_buf, tmp_buf, dummy_size, 
+    ret = SafeMemcpy(ds_idx->replace_buf, tmp_buf, dummy_size,
                      ds_idx->replace_buf, (ds_idx->replace_buf+dummy_size));
 
     if (ret == SAFEMEM_ERROR)
@@ -374,7 +370,7 @@ static PatternMatchData * Replace_Parse(char *rule, OptTreeNode * otn)
 
     ds_idx->replace_size = dummy_size;
 
-    DEBUG_WRAP(DebugMessage(DEBUG_PARSER, 
+    DEBUG_WRAP(DebugMessage(DEBUG_PARSER,
                 "ds_idx (%p) replace_size(%d) replace_buf(%s)\n", ds_idx,
                 ds_idx->replace_size, ds_idx->replace_buf););
 
@@ -410,7 +406,7 @@ void Replace_QueueChange(PatternMatchData* pmd)
     r->depth = pmd->replace_depth;
 }
 
-static INLINE void Replace_ApplyChange(Packet *p, Replacement* r)
+static inline void Replace_ApplyChange(Packet *p, Replacement* r)
 {
     int err;
     int rsize;
@@ -426,7 +422,7 @@ static INLINE void Replace_ApplyChange(Packet *p, Replacement* r)
 
     if ( err == SAFEMEM_ERROR )
     {
-        DEBUG_WRAP(DebugMessage(DEBUG_PATTERN_MATCH, 
+        DEBUG_WRAP(DebugMessage(DEBUG_PATTERN_MATCH,
                 "Replace_Apply() => SafeMemcpy() failed\n"););
         return;
     }

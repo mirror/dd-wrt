@@ -1,7 +1,8 @@
 /*
  * ftpp_include.h
  *
- * Copyright (C) 2004-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2004-2013 Sourcefire, Inc.
  * Steven A. Sturges <ssturges@sourcefire.com>
  * Daniel J. Roelker <droelker@sourcefire.com>
  * Marc A. Norton <mnorton@sourcefire.com>
@@ -19,7 +20,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  * Description:
  *
@@ -32,13 +33,13 @@
 #ifndef __FTP_INCLUDE_H__
 #define __FTP_INCLUDE_H__
 
+#include "sf_types.h"
 #include "sf_ip.h"
-#include "debug.h"
+#include "snort_debug.h"
 #include "sf_snort_packet.h"
 #include "sf_dynamic_preprocessor.h"
 
 #define GENERATOR_SPP_FTPP_FTP                     125
 #define GENERATOR_SPP_FTPP_TELNET                  126
-extern DynamicPreprocessorData _dpd;
 
 #endif

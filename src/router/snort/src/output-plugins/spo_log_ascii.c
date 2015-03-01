@@ -1,7 +1,7 @@
 /*
-** Copyright (C) 2002-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
-**           (C) 2002 Sourcefire, Inc.
 **
 ** Author(s):   Martin Roesch <roesch@sourcefire.com>
 **              Andrew R. Baker <andrewb@sourcefire.com>
@@ -19,18 +19,18 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 /* $Id$ */
 
 /* spo_log_ascii
- * 
+ *
  * Purpose:
  *
  * This output module provides the default packet logging funtionality
  *
  * Arguments:
- *   
+ *
  * None.
  *
  * Effect:
@@ -63,7 +63,7 @@
 #include "plugbase.h"
 #include "spo_plugbase.h"
 #include "parser.h"
-#include "debug.h"
+#include "snort_debug.h"
 #include "decode.h"
 #include "event.h"
 #include "log.h"
@@ -75,10 +75,9 @@
 extern OptTreeNode *otn_tmp;
 
 /* internal functions */
-static void LogAsciiInit(char *args);
+static void LogAsciiInit(struct _SnortConfig *, char *args);
 static void LogAscii(Packet *p, char *msg, void *arg, Event *event);
 static void LogAsciiCleanExit(int signal, void *arg);
-static void LogAsciiRestart(int signal, void *arg);
 static char *IcmpFileName(Packet * p);
 static FILE *OpenLogFile(int mode, Packet * p);
 
@@ -91,21 +90,20 @@ static FILE *OpenLogFile(int mode, Packet * p);
 
 void LogAsciiSetup(void)
 {
-    /* link the preprocessor keyword to the init function in 
+    /* link the preprocessor keyword to the init function in
        the preproc list */
     RegisterOutputPlugin("log_ascii", OUTPUT_TYPE_FLAG__LOG, LogAsciiInit);
 
     DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN, "Output: LogAscii is setup\n"););
 }
 
-static void LogAsciiInit(char *args)
+static void LogAsciiInit(struct _SnortConfig *sc, char *args)
 {
     DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN, "Output: Ascii logging initialized\n"););
 
     /* Set the preprocessor function into the function list */
-    AddFuncToOutputList(LogAscii, OUTPUT_TYPE__LOG, NULL);
+    AddFuncToOutputList(sc, LogAscii, OUTPUT_TYPE__LOG, NULL);
     AddFuncToCleanExitList(LogAsciiCleanExit, NULL);
-    AddFuncToRestartList(LogAsciiRestart, NULL);
 }
 
 static void LogAscii(Packet *p, char *msg, void *arg, Event *event)
@@ -113,7 +111,7 @@ static void LogAscii(Packet *p, char *msg, void *arg, Event *event)
     FILE *log_ptr = NULL;
     DEBUG_WRAP(DebugMessage(DEBUG_LOG, "LogPkt started\n"););
     if(p)
-    { 
+    {
         if(IPH_IS_VALID(p))
             log_ptr = OpenLogFile(0, p);
 #ifndef NO_NON_ETHER_DECODER
@@ -128,14 +126,14 @@ static void LogAscii(Packet *p, char *msg, void *arg, Event *event)
 
     if(!log_ptr)
         FatalError("Unable to open packet log file\n");
-    
+
     if(msg)
     {
         fwrite("[**] ", 5, 1, log_ptr);
 
         /*
          * Protect against potential log injection,
-         * check for delimiters and newlines in msg 
+         * check for delimiters and newlines in msg
          */
         if(  !strstr(msg,"[**]") && !strchr(msg,'\n') )
         {
@@ -162,11 +160,6 @@ static void LogAsciiCleanExit(int signal, void *arg)
     return;
 }
 
-static void LogAsciiRestart(int signal, void *arg)
-{
-    return;
-}
-
 static char *logfile[] =
         { "", "PACKET_FRAG", "PACKET_BOGUS", "PACKET_NONIP", "ARP", "log" };
 
@@ -188,9 +181,7 @@ static FILE *OpenLogFile(int mode, Packet * p)
     char proto[5];      /* logged packet protocol */
     char suffix[5];     /* filename suffix */
     FILE *log_ptr = NULL;
-#ifdef SUP_IP6
     snort_ip_p ip;
-#endif
 
 #ifdef WIN32
     SnortStrncpy(suffix, ".ids", sizeof(suffix));
@@ -199,9 +190,9 @@ static FILE *OpenLogFile(int mode, Packet * p)
 #endif
 
     /* zero out our buffers */
-    bzero((char *) log_path, STD_BUF);
-    bzero((char *) log_file, STD_BUF);
-    bzero((char *) proto, 5);
+    memset((char *) log_path, 0, STD_BUF);
+    memset((char *) log_file, 0, STD_BUF);
+    memset((char *) proto, 0, 5);
 
     if (mode == GENERIC_LOG || mode == DUMP || mode == BOGUS ||
         mode == NON_IP || mode == ARP)
@@ -227,64 +218,52 @@ static FILE *OpenLogFile(int mode, Packet * p)
             log_ptr = fopen(log_file, "a");
             if (!log_ptr)
             {
-                FatalError("OpenLogFile() => fopen(%s) log file: %s\n", 
+                FatalError("OpenLogFile() => fopen(%s) log file: %s\n",
                            log_file, strerror(errno));
             }
             return log_ptr;
         }
     }
-#ifdef SUP_IP6
     ip = GET_DST_IP(p);
     if(sfip_contains(&snort_conf->homenet, ip) == SFIP_CONTAINS)
-#else
-    if((p->iph->ip_dst.s_addr & snort_conf->netmask) == snort_conf->homenet)
-#endif
     {
-#ifdef SUP_IP6
         if(sfip_contains(&snort_conf->homenet, ip) == SFIP_CONTAINS)
-#else
-        if((p->iph->ip_src.s_addr & snort_conf->netmask) != snort_conf->homenet)
-#endif
         {
-            SnortSnprintf(log_path, STD_BUF, "%s/%s", snort_conf->log_dir, 
+            SnortSnprintf(log_path, STD_BUF, "%s/%s", snort_conf->log_dir,
                     inet_ntoa(GET_SRC_ADDR(p)));
         }
         else
         {
             if(p->sp >= p->dp)
             {
-                SnortSnprintf(log_path, STD_BUF, "%s/%s", snort_conf->log_dir, 
+                SnortSnprintf(log_path, STD_BUF, "%s/%s", snort_conf->log_dir,
                         inet_ntoa(GET_SRC_ADDR(p)));
             }
             else
             {
-                SnortSnprintf(log_path, STD_BUF, "%s/%s", snort_conf->log_dir, 
+                SnortSnprintf(log_path, STD_BUF, "%s/%s", snort_conf->log_dir,
                         inet_ntoa(GET_DST_ADDR(p)));
             }
         }
     }
     else
     {
-#ifdef SUP_IP6
         ip = GET_SRC_IP(p);
         if(sfip_contains(&snort_conf->homenet, ip) == SFIP_CONTAINS)
-#else
-        if((p->iph->ip_src.s_addr & snort_conf->netmask) == snort_conf->homenet)
-#endif
         {
-            SnortSnprintf(log_path, STD_BUF, "%s/%s", snort_conf->log_dir, 
+            SnortSnprintf(log_path, STD_BUF, "%s/%s", snort_conf->log_dir,
                     inet_ntoa(GET_DST_ADDR(p)));
         }
         else
         {
             if(p->sp >= p->dp)
             {
-                SnortSnprintf(log_path, STD_BUF, "%s/%s", snort_conf->log_dir, 
+                SnortSnprintf(log_path, STD_BUF, "%s/%s", snort_conf->log_dir,
                         inet_ntoa(GET_SRC_ADDR(p)));
             }
             else
             {
-                SnortSnprintf(log_path, STD_BUF, "%s/%s", snort_conf->log_dir, 
+                SnortSnprintf(log_path, STD_BUF, "%s/%s", snort_conf->log_dir,
                         inet_ntoa(GET_DST_ADDR(p)));
             }
         }

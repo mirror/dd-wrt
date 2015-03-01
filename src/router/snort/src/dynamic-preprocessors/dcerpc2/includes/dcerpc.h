@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (C) 2008-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2008-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -14,10 +15,10 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************
- * 
+ *
  ****************************************************************************/
 
 #ifndef DCERPC_H
@@ -26,9 +27,6 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"  /* For WORDS_BIGENDIAN */
 #endif
-
-#include "debug.h"   /* For INLINE */
-#include "sf_types.h"
 
 /********************************************************************
  * Enumerations
@@ -72,7 +70,7 @@ typedef enum _DceRpcPduType
 
 } DceRpcPduType;
 
-/* Version 4 is for Connectionless 
+/* Version 4 is for Connectionless
  * Version 5 is for Connection oriented */
 typedef enum _DceRpcProtoMajorVers
 {
@@ -473,7 +471,7 @@ typedef struct _DceRpcCoResponse
 typedef struct _DceRpcCoShutdown
 {
     // nothing
- 
+
 } DceRpcCoShutdown;
 #endif
 
@@ -527,52 +525,52 @@ typedef DceRpcCoRejHdr DceRpcCoDiscHdr;
 /********************************************************************
  * Inline functions prototypes
  ********************************************************************/
-static INLINE DceRpcBoFlag DceRpcByteOrder(const uint8_t);
-static INLINE uint16_t DceRpcNtohs(const uint16_t *, const DceRpcBoFlag);
-static INLINE uint16_t DceRpcHtons(const uint16_t *, const DceRpcBoFlag);
-static INLINE uint32_t DceRpcNtohl(const uint32_t *, const DceRpcBoFlag);
-static INLINE uint32_t DceRpcHtonl(const uint32_t *, const DceRpcBoFlag);
+static inline DceRpcBoFlag DceRpcByteOrder(const uint8_t);
+static inline uint16_t DceRpcNtohs(const uint16_t *, const DceRpcBoFlag);
+static inline uint16_t DceRpcHtons(const uint16_t *, const DceRpcBoFlag);
+static inline uint32_t DceRpcNtohl(const uint32_t *, const DceRpcBoFlag);
+static inline uint32_t DceRpcHtonl(const uint32_t *, const DceRpcBoFlag);
 
 /* Connectionless */
-static INLINE uint8_t DceRpcClRpcVers(const DceRpcClHdr *);
-static INLINE DceRpcBoFlag DceRpcClByteOrder(const DceRpcClHdr *);
-static INLINE uint32_t DceRpcClIfaceVers(const DceRpcClHdr *);
-static INLINE uint16_t DceRpcClOpnum(const DceRpcClHdr *);
-static INLINE uint32_t DceRpcClSeqNum(const DceRpcClHdr *);
-static INLINE uint16_t DceRpcClFragNum(const DceRpcClHdr *);
-static INLINE int DceRpcClFragFlag(const DceRpcClHdr *);
-static INLINE int DceRpcClLastFrag(const DceRpcClHdr *);
-static INLINE int DceRpcClFirstFrag(const DceRpcClHdr *);
-static INLINE uint16_t DceRpcClLen(const DceRpcClHdr *);
-static INLINE int DceRpcClFrag(const DceRpcClHdr *);
+static inline uint8_t DceRpcClRpcVers(const DceRpcClHdr *);
+static inline DceRpcBoFlag DceRpcClByteOrder(const DceRpcClHdr *);
+static inline uint32_t DceRpcClIfaceVers(const DceRpcClHdr *);
+static inline uint16_t DceRpcClOpnum(const DceRpcClHdr *);
+static inline uint32_t DceRpcClSeqNum(const DceRpcClHdr *);
+static inline uint16_t DceRpcClFragNum(const DceRpcClHdr *);
+static inline int DceRpcClFragFlag(const DceRpcClHdr *);
+static inline int DceRpcClLastFrag(const DceRpcClHdr *);
+static inline int DceRpcClFirstFrag(const DceRpcClHdr *);
+static inline uint16_t DceRpcClLen(const DceRpcClHdr *);
+static inline int DceRpcClFrag(const DceRpcClHdr *);
 
 /* Connection oriented */
-static INLINE uint8_t DceRpcCoVersMaj(const DceRpcCoHdr *);
-static INLINE uint8_t DceRpcCoVersMin(const DceRpcCoHdr *);
-static INLINE DceRpcPduType DceRpcCoPduType(const DceRpcCoHdr *);
-static INLINE int DceRpcCoFirstFrag(const DceRpcCoHdr *);
-static INLINE int DceRpcCoLastFrag(const DceRpcCoHdr *);
-static INLINE int DceRpcCoObjectFlag(const DceRpcCoHdr *);
-static INLINE DceRpcBoFlag DceRpcCoByteOrder(const DceRpcCoHdr *);
-static INLINE uint16_t DceRpcCoFragLen(const DceRpcCoHdr *);
-static INLINE uint16_t DceRpcCoAuthLen(const DceRpcCoHdr *);
-static INLINE uint32_t DceRpcCoCallId(const DceRpcCoHdr *);
-static INLINE uint16_t DceRpcCoCtxId(const DceRpcCoHdr *, const DceRpcCoRequest *);
-static INLINE uint16_t DceRpcCoCtxIdResp(const DceRpcCoHdr *, const DceRpcCoResponse *);
-static INLINE uint16_t DceRpcCoOpnum(const DceRpcCoHdr *, const DceRpcCoRequest *);
-static INLINE uint16_t DceRpcCoBindMaxXmitFrag(const DceRpcCoHdr *, const DceRpcCoBind *);
-static INLINE uint16_t DceRpcCoBindAckMaxRecvFrag(const DceRpcCoHdr *, const DceRpcCoBindAck *);
-static INLINE uint8_t DceRpcCoNumCtxItems(const DceRpcCoBind *);
-static INLINE uint16_t DceRpcCoContElemCtxId(const DceRpcCoHdr *, const DceRpcCoContElem *);
-static INLINE uint8_t DceRpcCoContElemNumTransSyntaxes(const DceRpcCoContElem *);
-static INLINE const Uuid * DceRpcCoContElemIface(const DceRpcCoContElem *);
-static INLINE uint16_t DceRpcCoContElemIfaceVersMaj(const DceRpcCoHdr *, const DceRpcCoContElem *);
-static INLINE uint16_t DceRpcCoContElemIfaceVersMin(const DceRpcCoHdr *, const DceRpcCoContElem *);
-static INLINE uint16_t DceRpcCoSecAddrLen(const DceRpcCoHdr *, const DceRpcCoBindAck *);
-static INLINE uint8_t DceRpcCoContNumResults(const DceRpcCoContResultList *);
-static INLINE uint16_t DceRpcCoContRes(const DceRpcCoHdr *, const DceRpcCoContResult *);
-static INLINE uint16_t DceRpcCoAuthPad(const DceRpcCoAuthVerifier *);
-static INLINE uint8_t DceRpcCoAuthLevel(const DceRpcCoAuthVerifier *);
+static inline uint8_t DceRpcCoVersMaj(const DceRpcCoHdr *);
+static inline uint8_t DceRpcCoVersMin(const DceRpcCoHdr *);
+static inline DceRpcPduType DceRpcCoPduType(const DceRpcCoHdr *);
+static inline int DceRpcCoFirstFrag(const DceRpcCoHdr *);
+static inline int DceRpcCoLastFrag(const DceRpcCoHdr *);
+static inline int DceRpcCoObjectFlag(const DceRpcCoHdr *);
+static inline DceRpcBoFlag DceRpcCoByteOrder(const DceRpcCoHdr *);
+static inline uint16_t DceRpcCoFragLen(const DceRpcCoHdr *);
+static inline uint16_t DceRpcCoAuthLen(const DceRpcCoHdr *);
+static inline uint32_t DceRpcCoCallId(const DceRpcCoHdr *);
+static inline uint16_t DceRpcCoCtxId(const DceRpcCoHdr *, const DceRpcCoRequest *);
+static inline uint16_t DceRpcCoCtxIdResp(const DceRpcCoHdr *, const DceRpcCoResponse *);
+static inline uint16_t DceRpcCoOpnum(const DceRpcCoHdr *, const DceRpcCoRequest *);
+static inline uint16_t DceRpcCoBindMaxXmitFrag(const DceRpcCoHdr *, const DceRpcCoBind *);
+static inline uint16_t DceRpcCoBindAckMaxRecvFrag(const DceRpcCoHdr *, const DceRpcCoBindAck *);
+static inline uint8_t DceRpcCoNumCtxItems(const DceRpcCoBind *);
+static inline uint16_t DceRpcCoContElemCtxId(const DceRpcCoHdr *, const DceRpcCoContElem *);
+static inline uint8_t DceRpcCoContElemNumTransSyntaxes(const DceRpcCoContElem *);
+static inline const Uuid * DceRpcCoContElemIface(const DceRpcCoContElem *);
+static inline uint16_t DceRpcCoContElemIfaceVersMaj(const DceRpcCoHdr *, const DceRpcCoContElem *);
+static inline uint16_t DceRpcCoContElemIfaceVersMin(const DceRpcCoHdr *, const DceRpcCoContElem *);
+static inline uint16_t DceRpcCoSecAddrLen(const DceRpcCoHdr *, const DceRpcCoBindAck *);
+static inline uint8_t DceRpcCoContNumResults(const DceRpcCoContResultList *);
+static inline uint16_t DceRpcCoContRes(const DceRpcCoHdr *, const DceRpcCoContResult *);
+static inline uint16_t DceRpcCoAuthPad(const DceRpcCoAuthVerifier *);
+static inline uint8_t DceRpcCoAuthLevel(const DceRpcCoAuthVerifier *);
 
 /********************************************************************
  * Function:
@@ -584,7 +582,7 @@ static INLINE uint8_t DceRpcCoAuthLevel(const DceRpcCoAuthVerifier *);
  * Returns:
  *
  ********************************************************************/
-static INLINE DceRpcBoFlag DceRpcByteOrder(const uint8_t value)
+static inline DceRpcBoFlag DceRpcByteOrder(const uint8_t value)
 {
     if ((value & 0x10) >> 4)
         return DCERPC_BO_FLAG__LITTLE_ENDIAN;
@@ -602,7 +600,7 @@ static INLINE DceRpcBoFlag DceRpcByteOrder(const uint8_t value)
  * Returns:
  *
  ********************************************************************/
-static INLINE uint16_t DceRpcNtohs(const uint16_t *ptr, const DceRpcBoFlag bo_flag)
+static inline uint16_t DceRpcNtohs(const uint16_t *ptr, const DceRpcBoFlag bo_flag)
 {
     uint16_t value;
 
@@ -638,7 +636,7 @@ static INLINE uint16_t DceRpcNtohs(const uint16_t *ptr, const DceRpcBoFlag bo_fl
  * Returns:
  *
  ********************************************************************/
-static INLINE uint16_t DceRpcHtons(const uint16_t *ptr, const DceRpcBoFlag bo_flag)
+static inline uint16_t DceRpcHtons(const uint16_t *ptr, const DceRpcBoFlag bo_flag)
 {
     return DceRpcNtohs(ptr, bo_flag);
 }
@@ -653,7 +651,7 @@ static INLINE uint16_t DceRpcHtons(const uint16_t *ptr, const DceRpcBoFlag bo_fl
  * Returns:
  *
  ********************************************************************/
-static INLINE uint32_t DceRpcNtohl(const uint32_t *ptr, const DceRpcBoFlag bo_flag)
+static inline uint32_t DceRpcNtohl(const uint32_t *ptr, const DceRpcBoFlag bo_flag)
 {
     uint32_t value;
 
@@ -691,7 +689,7 @@ static INLINE uint32_t DceRpcNtohl(const uint32_t *ptr, const DceRpcBoFlag bo_fl
  * Returns:
  *
  ********************************************************************/
-static INLINE uint32_t DceRpcHtonl(const uint32_t *ptr, const DceRpcBoFlag bo_flag)
+static inline uint32_t DceRpcHtonl(const uint32_t *ptr, const DceRpcBoFlag bo_flag)
 {
     return DceRpcNtohl(ptr, bo_flag);
 }
@@ -706,7 +704,7 @@ static INLINE uint32_t DceRpcHtonl(const uint32_t *ptr, const DceRpcBoFlag bo_fl
  * Returns:
  *
  ********************************************************************/
-static INLINE uint8_t DceRpcClRpcVers(const DceRpcClHdr *cl)
+static inline uint8_t DceRpcClRpcVers(const DceRpcClHdr *cl)
 {
     return cl->rpc_vers;
 }
@@ -721,7 +719,7 @@ static INLINE uint8_t DceRpcClRpcVers(const DceRpcClHdr *cl)
  * Returns:
  *
  ********************************************************************/
-static INLINE uint8_t DceRpcClPduType(const DceRpcClHdr *cl)
+static inline uint8_t DceRpcClPduType(const DceRpcClHdr *cl)
 {
     return cl->ptype;
 }
@@ -736,7 +734,7 @@ static INLINE uint8_t DceRpcClPduType(const DceRpcClHdr *cl)
  * Returns:
  *
  ********************************************************************/
-static INLINE DceRpcBoFlag DceRpcClByteOrder(const DceRpcClHdr *cl)
+static inline DceRpcBoFlag DceRpcClByteOrder(const DceRpcClHdr *cl)
 {
     return DceRpcByteOrder(cl->drep[0]);
 }
@@ -751,7 +749,7 @@ static INLINE DceRpcBoFlag DceRpcClByteOrder(const DceRpcClHdr *cl)
  * Returns:
  *
  ********************************************************************/
-static INLINE const Uuid * DceRpcClIface(const DceRpcClHdr *cl)
+static inline const Uuid * DceRpcClIface(const DceRpcClHdr *cl)
 {
     return &cl->if_id;
 }
@@ -766,7 +764,7 @@ static INLINE const Uuid * DceRpcClIface(const DceRpcClHdr *cl)
  * Returns:
  *
  ********************************************************************/
-static INLINE uint32_t DceRpcClIfaceVers(const DceRpcClHdr *cl)
+static inline uint32_t DceRpcClIfaceVers(const DceRpcClHdr *cl)
 {
     return DceRpcNtohl(&cl->if_vers, DceRpcClByteOrder(cl));
 }
@@ -781,7 +779,7 @@ static INLINE uint32_t DceRpcClIfaceVers(const DceRpcClHdr *cl)
  * Returns:
  *
  ********************************************************************/
-static INLINE uint16_t DceRpcClOpnum(const DceRpcClHdr *cl)
+static inline uint16_t DceRpcClOpnum(const DceRpcClHdr *cl)
 {
     return DceRpcNtohs(&cl->opnum, DceRpcClByteOrder(cl));
 }
@@ -796,7 +794,7 @@ static INLINE uint16_t DceRpcClOpnum(const DceRpcClHdr *cl)
  * Returns:
  *
  ********************************************************************/
-static INLINE uint32_t DceRpcClSeqNum(const DceRpcClHdr *cl)
+static inline uint32_t DceRpcClSeqNum(const DceRpcClHdr *cl)
 {
     return DceRpcNtohl(&cl->seqnum, DceRpcClByteOrder(cl));
 }
@@ -811,7 +809,7 @@ static INLINE uint32_t DceRpcClSeqNum(const DceRpcClHdr *cl)
  * Returns:
  *
  ********************************************************************/
-static INLINE uint16_t DceRpcClFragNum(const DceRpcClHdr *cl)
+static inline uint16_t DceRpcClFragNum(const DceRpcClHdr *cl)
 {
     return DceRpcNtohs(&cl->fragnum, DceRpcClByteOrder(cl));
 }
@@ -826,7 +824,7 @@ static INLINE uint16_t DceRpcClFragNum(const DceRpcClHdr *cl)
  * Returns:
  *
  ********************************************************************/
-static INLINE int DceRpcClFragFlag(const DceRpcClHdr *cl)
+static inline int DceRpcClFragFlag(const DceRpcClHdr *cl)
 {
     return cl->flags1 & DCERPC_CL_FLAGS1__FRAG;
 }
@@ -841,7 +839,7 @@ static INLINE int DceRpcClFragFlag(const DceRpcClHdr *cl)
  * Returns:
  *
  ********************************************************************/
-static INLINE int DceRpcClLastFrag(const DceRpcClHdr *cl)
+static inline int DceRpcClLastFrag(const DceRpcClHdr *cl)
 {
     return cl->flags1 & DCERPC_CL_FLAGS1__LASTFRAG;
 }
@@ -856,7 +854,7 @@ static INLINE int DceRpcClLastFrag(const DceRpcClHdr *cl)
  * Returns:
  *
  ********************************************************************/
-static INLINE int DceRpcClFirstFrag(const DceRpcClHdr *cl)
+static inline int DceRpcClFirstFrag(const DceRpcClHdr *cl)
 {
     return (DceRpcClFragFlag(cl) && (DceRpcClFragNum(cl) == 0));
 }
@@ -871,7 +869,7 @@ static INLINE int DceRpcClFirstFrag(const DceRpcClHdr *cl)
  * Returns:
  *
  ********************************************************************/
-static INLINE uint16_t DceRpcClLen(const DceRpcClHdr *cl)
+static inline uint16_t DceRpcClLen(const DceRpcClHdr *cl)
 {
     return DceRpcNtohs(&cl->len, DceRpcClByteOrder(cl));
 }
@@ -886,7 +884,7 @@ static INLINE uint16_t DceRpcClLen(const DceRpcClHdr *cl)
  * Returns:
  *
  ********************************************************************/
-static INLINE int DceRpcClFrag(const DceRpcClHdr *cl)
+static inline int DceRpcClFrag(const DceRpcClHdr *cl)
 {
     if (DceRpcClFragFlag(cl))
     {
@@ -909,7 +907,7 @@ static INLINE int DceRpcClFrag(const DceRpcClHdr *cl)
  * Returns:
  *
  ********************************************************************/
-static INLINE uint8_t DceRpcCoVersMaj(const DceRpcCoHdr *co)
+static inline uint8_t DceRpcCoVersMaj(const DceRpcCoHdr *co)
 {
     return co->pversion.major;
 }
@@ -924,7 +922,7 @@ static INLINE uint8_t DceRpcCoVersMaj(const DceRpcCoHdr *co)
  * Returns:
  *
  ********************************************************************/
-static INLINE uint8_t DceRpcCoVersMin(const DceRpcCoHdr *co)
+static inline uint8_t DceRpcCoVersMin(const DceRpcCoHdr *co)
 {
     return co->pversion.minor;
 }
@@ -939,7 +937,7 @@ static INLINE uint8_t DceRpcCoVersMin(const DceRpcCoHdr *co)
  * Returns:
  *
  ********************************************************************/
-static INLINE DceRpcPduType DceRpcCoPduType(const DceRpcCoHdr *co)
+static inline DceRpcPduType DceRpcCoPduType(const DceRpcCoHdr *co)
 {
     return (DceRpcPduType)co->ptype;
 }
@@ -954,7 +952,7 @@ static INLINE DceRpcPduType DceRpcCoPduType(const DceRpcCoHdr *co)
  * Returns:
  *
  ********************************************************************/
-static INLINE int DceRpcCoFirstFrag(const DceRpcCoHdr *co)
+static inline int DceRpcCoFirstFrag(const DceRpcCoHdr *co)
 {
     return co->pfc_flags & DCERPC_CO_PFC_FLAGS__FIRST_FRAG;
 }
@@ -969,7 +967,7 @@ static INLINE int DceRpcCoFirstFrag(const DceRpcCoHdr *co)
  * Returns:
  *
  ********************************************************************/
-static INLINE int DceRpcCoLastFrag(const DceRpcCoHdr *co)
+static inline int DceRpcCoLastFrag(const DceRpcCoHdr *co)
 {
     return co->pfc_flags & DCERPC_CO_PFC_FLAGS__LAST_FRAG;
 }
@@ -984,7 +982,7 @@ static INLINE int DceRpcCoLastFrag(const DceRpcCoHdr *co)
  * Returns:
  *
  ********************************************************************/
-static INLINE int DceRpcCoObjectFlag(const DceRpcCoHdr *co)
+static inline int DceRpcCoObjectFlag(const DceRpcCoHdr *co)
 {
     return co->pfc_flags & DCERPC_CO_PFC_FLAGS__OBJECT_UUID;
 }
@@ -999,7 +997,7 @@ static INLINE int DceRpcCoObjectFlag(const DceRpcCoHdr *co)
  * Returns:
  *
  ********************************************************************/
-static INLINE DceRpcBoFlag DceRpcCoByteOrder(const DceRpcCoHdr *co)
+static inline DceRpcBoFlag DceRpcCoByteOrder(const DceRpcCoHdr *co)
 {
     return DceRpcByteOrder(co->packed_drep[0]);
 }
@@ -1014,7 +1012,7 @@ static INLINE DceRpcBoFlag DceRpcCoByteOrder(const DceRpcCoHdr *co)
  * Returns:
  *
  ********************************************************************/
-static INLINE uint16_t DceRpcCoFragLen(const DceRpcCoHdr *co)
+static inline uint16_t DceRpcCoFragLen(const DceRpcCoHdr *co)
 {
     return DceRpcNtohs(&co->frag_length, DceRpcCoByteOrder(co));
 }
@@ -1029,7 +1027,7 @@ static INLINE uint16_t DceRpcCoFragLen(const DceRpcCoHdr *co)
  * Returns:
  *
  ********************************************************************/
-static INLINE uint16_t DceRpcCoAuthLen(const DceRpcCoHdr *co)
+static inline uint16_t DceRpcCoAuthLen(const DceRpcCoHdr *co)
 {
     return DceRpcNtohs(&co->auth_length, DceRpcCoByteOrder(co));
 }
@@ -1044,7 +1042,7 @@ static INLINE uint16_t DceRpcCoAuthLen(const DceRpcCoHdr *co)
  * Returns:
  *
  ********************************************************************/
-static INLINE uint32_t DceRpcCoCallId(const DceRpcCoHdr *co)
+static inline uint32_t DceRpcCoCallId(const DceRpcCoHdr *co)
 {
     return DceRpcNtohl(&co->call_id, DceRpcCoByteOrder(co));
 }
@@ -1059,7 +1057,7 @@ static INLINE uint32_t DceRpcCoCallId(const DceRpcCoHdr *co)
  * Returns:
  *
  ********************************************************************/
-static INLINE uint16_t DceRpcCoOpnum(const DceRpcCoHdr *co, const DceRpcCoRequest *cor)
+static inline uint16_t DceRpcCoOpnum(const DceRpcCoHdr *co, const DceRpcCoRequest *cor)
 {
     return DceRpcNtohs(&cor->opnum, DceRpcCoByteOrder(co));
 }
@@ -1074,7 +1072,7 @@ static INLINE uint16_t DceRpcCoOpnum(const DceRpcCoHdr *co, const DceRpcCoReques
  * Returns:
  *
  ********************************************************************/
-static INLINE uint16_t DceRpcCoCtxId(const DceRpcCoHdr *co, const DceRpcCoRequest *cor)
+static inline uint16_t DceRpcCoCtxId(const DceRpcCoHdr *co, const DceRpcCoRequest *cor)
 {
     return DceRpcNtohs(&cor->context_id, DceRpcCoByteOrder(co));
 }
@@ -1089,7 +1087,7 @@ static INLINE uint16_t DceRpcCoCtxId(const DceRpcCoHdr *co, const DceRpcCoReques
  * Returns:
  *
  ********************************************************************/
-static INLINE uint16_t DceRpcCoCtxIdResp(const DceRpcCoHdr *co, const DceRpcCoResponse *cor)
+static inline uint16_t DceRpcCoCtxIdResp(const DceRpcCoHdr *co, const DceRpcCoResponse *cor)
 {
     return DceRpcNtohs(&cor->context_id, DceRpcCoByteOrder(co));
 }
@@ -1104,7 +1102,7 @@ static INLINE uint16_t DceRpcCoCtxIdResp(const DceRpcCoHdr *co, const DceRpcCoRe
  * Returns:
  *
  ********************************************************************/
-static INLINE uint16_t DceRpcCoBindMaxXmitFrag(const DceRpcCoHdr *co, const DceRpcCoBind *cob)
+static inline uint16_t DceRpcCoBindMaxXmitFrag(const DceRpcCoHdr *co, const DceRpcCoBind *cob)
 {
     return DceRpcNtohs(&cob->max_xmit_frag, DceRpcCoByteOrder(co));
 }
@@ -1119,7 +1117,7 @@ static INLINE uint16_t DceRpcCoBindMaxXmitFrag(const DceRpcCoHdr *co, const DceR
  * Returns:
  *
  ********************************************************************/
-static INLINE uint16_t DceRpcCoBindAckMaxRecvFrag(const DceRpcCoHdr *co, const DceRpcCoBindAck *coba)
+static inline uint16_t DceRpcCoBindAckMaxRecvFrag(const DceRpcCoHdr *co, const DceRpcCoBindAck *coba)
 {
     return DceRpcNtohs(&coba->max_recv_frag, DceRpcCoByteOrder(co));
 }
@@ -1134,7 +1132,7 @@ static INLINE uint16_t DceRpcCoBindAckMaxRecvFrag(const DceRpcCoHdr *co, const D
  * Returns:
  *
  ********************************************************************/
-static INLINE uint8_t DceRpcCoNumCtxItems(const DceRpcCoBind *cob)
+static inline uint8_t DceRpcCoNumCtxItems(const DceRpcCoBind *cob)
 {
     return cob->n_context_elem;
 }
@@ -1149,7 +1147,7 @@ static INLINE uint8_t DceRpcCoNumCtxItems(const DceRpcCoBind *cob)
  * Returns:
  *
  ********************************************************************/
-static INLINE uint16_t DceRpcCoContElemCtxId(const DceRpcCoHdr *co, const DceRpcCoContElem *coce)
+static inline uint16_t DceRpcCoContElemCtxId(const DceRpcCoHdr *co, const DceRpcCoContElem *coce)
 {
     return DceRpcNtohs(&coce->p_cont_id, DceRpcCoByteOrder(co));
 }
@@ -1164,7 +1162,7 @@ static INLINE uint16_t DceRpcCoContElemCtxId(const DceRpcCoHdr *co, const DceRpc
  * Returns:
  *
  ********************************************************************/
-static INLINE uint8_t DceRpcCoContElemNumTransSyntaxes(const DceRpcCoContElem *coce)
+static inline uint8_t DceRpcCoContElemNumTransSyntaxes(const DceRpcCoContElem *coce)
 {
     return coce->n_transfer_syn;
 }
@@ -1179,7 +1177,7 @@ static INLINE uint8_t DceRpcCoContElemNumTransSyntaxes(const DceRpcCoContElem *c
  * Returns:
  *
  ********************************************************************/
-static INLINE const Uuid * DceRpcCoContElemIface(const DceRpcCoContElem *coce)
+static inline const Uuid * DceRpcCoContElemIface(const DceRpcCoContElem *coce)
 {
     return &coce->abstract_syntax.if_uuid;
 }
@@ -1194,7 +1192,7 @@ static INLINE const Uuid * DceRpcCoContElemIface(const DceRpcCoContElem *coce)
  * Returns:
  *
  ********************************************************************/
-static INLINE uint16_t DceRpcCoContElemIfaceVersMaj(const DceRpcCoHdr *co, const DceRpcCoContElem *coce)
+static inline uint16_t DceRpcCoContElemIfaceVersMaj(const DceRpcCoHdr *co, const DceRpcCoContElem *coce)
 {
     return (uint16_t)(DceRpcNtohl(&coce->abstract_syntax.if_version, DceRpcCoByteOrder(co)) & 0x0000ffff);
 }
@@ -1209,7 +1207,7 @@ static INLINE uint16_t DceRpcCoContElemIfaceVersMaj(const DceRpcCoHdr *co, const
  * Returns:
  *
  ********************************************************************/
-static INLINE uint16_t DceRpcCoContElemIfaceVersMin(const DceRpcCoHdr *co, const DceRpcCoContElem *coce)
+static inline uint16_t DceRpcCoContElemIfaceVersMin(const DceRpcCoHdr *co, const DceRpcCoContElem *coce)
 {
     return (uint16_t)(DceRpcNtohl(&coce->abstract_syntax.if_version, DceRpcCoByteOrder(co)) >> 16);
 }
@@ -1224,7 +1222,7 @@ static INLINE uint16_t DceRpcCoContElemIfaceVersMin(const DceRpcCoHdr *co, const
  * Returns:
  *
  ********************************************************************/
-static INLINE uint16_t DceRpcCoSecAddrLen(const DceRpcCoHdr *co, const DceRpcCoBindAck *coba)
+static inline uint16_t DceRpcCoSecAddrLen(const DceRpcCoHdr *co, const DceRpcCoBindAck *coba)
 {
     return DceRpcNtohs(&coba->sec_addr_len, DceRpcCoByteOrder(co));
 }
@@ -1239,7 +1237,7 @@ static INLINE uint16_t DceRpcCoSecAddrLen(const DceRpcCoHdr *co, const DceRpcCoB
  * Returns:
  *
  ********************************************************************/
-static INLINE uint8_t DceRpcCoContNumResults(const DceRpcCoContResultList *cocrl)
+static inline uint8_t DceRpcCoContNumResults(const DceRpcCoContResultList *cocrl)
 {
     return cocrl->n_results;
 }
@@ -1254,7 +1252,7 @@ static INLINE uint8_t DceRpcCoContNumResults(const DceRpcCoContResultList *cocrl
  * Returns:
  *
  ********************************************************************/
-static INLINE uint16_t DceRpcCoContRes(const DceRpcCoHdr *co, const DceRpcCoContResult *cocr)
+static inline uint16_t DceRpcCoContRes(const DceRpcCoHdr *co, const DceRpcCoContResult *cocr)
 {
     return DceRpcNtohs(&cocr->result, DceRpcCoByteOrder(co));
 }
@@ -1269,7 +1267,7 @@ static INLINE uint16_t DceRpcCoContRes(const DceRpcCoHdr *co, const DceRpcCoCont
  * Returns:
  *
  ********************************************************************/
-static INLINE uint16_t DceRpcCoAuthPad(const DceRpcCoAuthVerifier *coav)
+static inline uint16_t DceRpcCoAuthPad(const DceRpcCoAuthVerifier *coav)
 {
     return coav->auth_pad_length;
 }
@@ -1284,7 +1282,7 @@ static INLINE uint16_t DceRpcCoAuthPad(const DceRpcCoAuthVerifier *coav)
  * Returns:
  *
  ********************************************************************/
-static INLINE uint8_t DceRpcCoAuthLevel(const DceRpcCoAuthVerifier *coav)
+static inline uint8_t DceRpcCoAuthLevel(const DceRpcCoAuthVerifier *coav)
 {
     return coav->auth_level;
 }

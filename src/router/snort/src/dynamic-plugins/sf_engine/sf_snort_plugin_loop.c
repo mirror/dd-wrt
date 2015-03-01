@@ -14,9 +14,10 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (C) 2005-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * Author: Steve Sturges
  *         Andy Mullican
@@ -26,20 +27,23 @@
  *
  * Loop Option operations for dynamic rule engine
  */
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "sf_dynamic_define.h"
 #include "sf_snort_packet.h"
 #include "sf_snort_plugin_api.h"
 #include "sfghash.h"
 
 #include "sf_dynamic_engine.h"
-
-extern DynamicEngineData _ded;
+#include "sf_snort_detection_engine.h"
 
 /* From sf_snort_plugin_api.c -- not exported from shared lib,
  * but available to other code within the shared lib.
  */
-extern int RegisterOneRule(Rule *rule, int registerRule);
-extern int ruleMatchInternal(SFSnortPacket *p, Rule* rule, u_int32_t optIndex, const u_int8_t **cursor);
+extern int RegisterOneRule(struct _SnortConfig *sc, Rule *rule, int registerRule);
+extern int ruleMatchInternal(SFSnortPacket *p, Rule* rule, uint32_t optIndex, const uint8_t **cursor);
 
 /* Initialize a byteExtract structure. */
 int ByteExtractInitialize(Rule *rule, ByteExtract *extractData)
@@ -69,7 +73,7 @@ int ByteExtractInitialize(Rule *rule, ByteExtract *extractData)
         //return -1;
     }
 
-    memoryLocation = calloc(sizeof(u_int32_t), 1);
+    memoryLocation = calloc(sizeof(uint32_t), 1);
     if (memoryLocation == NULL)
     {
         DynamicEngineFatalMessage("Failed to allocate memory\n");
@@ -95,7 +99,7 @@ int DynamicElementInitialize(Rule *rule, DynamicElement *element)
 
     if (!rule->ruleData)
     {
-        DynamicEngineFatalMessage("Runtime rule data location '%s' for rule [%d:%d] is unknown\n",
+        DynamicEngineFatalMessage("ByteExtract variable '%s' in rule [%d:%d] is used before it is defined.\n",
                                   element->refId, rule->info.genID, rule->info.sigID);
     }
 
@@ -110,7 +114,7 @@ int DynamicElementInitialize(Rule *rule, DynamicElement *element)
         else
         {
             element->data.dynamicInt = NULL;
-            DynamicEngineFatalMessage("Runtime rule data location '%s' for rule [%d:%d] is unknown\n",
+            DynamicEngineFatalMessage("ByteExtract variable '%s' in rule [%d:%d] is used before it is defined.\n",
                                       element->refId, rule->info.genID, rule->info.sigID);
             //return -1;
         }
@@ -124,7 +128,7 @@ int DynamicElementInitialize(Rule *rule, DynamicElement *element)
     return 0;
 }
 
-int LoopInfoInitialize(Rule *rule, LoopInfo *loopInfo)
+int LoopInfoInitialize(struct _SnortConfig *sc, Rule *rule, LoopInfo *loopInfo)
 {
     int ret;
 
@@ -148,7 +152,7 @@ int LoopInfoInitialize(Rule *rule, LoopInfo *loopInfo)
     }
 
     /* Do all of the initialization for the subrule */
-    ret = RegisterOneRule(loopInfo->subRule, DONT_REGISTER_RULE);
+    ret = RegisterOneRule(sc, loopInfo->subRule, DONT_REGISTER_RULE);
     if (ret)
     {
         return ret;
@@ -162,28 +166,28 @@ int LoopInfoInitialize(Rule *rule, LoopInfo *loopInfo)
 }
 
 
-/* 
+/*
  *  Get buffer size remaining
- * 
+ *
  *          p: packet data structure, same as the one found in snort.
  *      flags: defines what kind of content buffer to look at
  *     cursor: current position within buffer
  *
- * Returns: 
+ * Returns:
  *    > 0 : size of buffer remaining
  *    = 0 : no buffer remaining
  *    < 0 : error
  *
  */
-int getSizeRemaining(void *p, u_int32_t flags, const u_int8_t *cursor)
+int getSizeRemaining(void *p, uint32_t flags, const uint8_t *cursor)
 {
-    const u_int8_t *start;
-    const u_int8_t *end;
+    const uint8_t *start;
+    const uint8_t *end;
     SFSnortPacket *sp = (SFSnortPacket *) p;
     int ret;
     int size;
 
-    ret = getBuffer((void *)sp, (int)flags, (const u_int8_t **)&start, (const u_int8_t **)&end);
+    ret = getBuffer((void *)sp, (int)flags, (const uint8_t **)&start, (const uint8_t **)&end);
 
     if ( ret < 0 )
         return 0;
@@ -203,14 +207,14 @@ int getSizeRemaining(void *p, u_int32_t flags, const u_int8_t *cursor)
     return size;
 }
 
-/* 
+/*
  *  Get maximum loop iterations possible
- * 
+ *
  *          p: packet data structure, same as the one found in snort.
  *       loop: structure that defines buffer via flags, and has cursor increment
  *     cursor: current position within buffer
  *
- * Returns: 
+ * Returns:
  *    >= 0 : calculated max possible loop count
  *     < 0 : error
  *
@@ -221,7 +225,7 @@ int getSizeRemaining(void *p, u_int32_t flags, const u_int8_t *cursor)
  *    a cursor of NULL means look at the whole buffer.
  *
  */
-int32_t getLoopLimit(void *p, LoopInfo *loop, const u_int8_t *cursor)
+int32_t getLoopLimit(void *p, LoopInfo *loop, const uint8_t *cursor)
 {
     int32_t loop_max;
     int size;
@@ -242,7 +246,7 @@ int32_t getLoopLimit(void *p, LoopInfo *loop, const u_int8_t *cursor)
     return loop_max & 0xFFFF;
 }
 
-int checkLoopEnd(u_int32_t op, int32_t index, int32_t end)
+int checkLoopEnd(uint32_t op, int32_t index, int32_t end)
 {
     switch (op)
     {
@@ -293,10 +297,10 @@ int checkLoopEnd(u_int32_t op, int32_t index, int32_t end)
 }
 
 /* Function to evaluate a loop (ie, a series of nested options) */
-ENGINE_LINKAGE int loopEval(void *p, LoopInfo *loop, const u_int8_t **cursor)
+ENGINE_LINKAGE int loopEval(void *p, LoopInfo *loop, const uint8_t **cursor)
 {
-    const u_int8_t *startingCursor;
-    const u_int8_t *tmpCursor;
+    const uint8_t *startingCursor;
+    const uint8_t *tmpCursor;
     int32_t i;
     int32_t startValue;
     int32_t endValue;
@@ -317,7 +321,7 @@ ENGINE_LINKAGE int loopEval(void *p, LoopInfo *loop, const u_int8_t **cursor)
         startValue = loop->start->data.staticInt;
     else
         startValue = *(loop->start->data.dynamicInt);
-   
+
     if (loop->end->dynamicType == DYNAMIC_TYPE_INT_STATIC)
         endValue = loop->end->data.staticInt;
     else

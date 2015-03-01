@@ -1,39 +1,28 @@
 ## $Id
 AUTOMAKE_OPTIONS=foreign no-dependencies
 
-INCLUDES = -I../include
+INCLUDES = -I../include -I${srcdir}/../libs
 
-libdir = ${exec_prefix}/lib/snort_dynamicpreprocessor
+dynamicpreprocessordir = ${libdir}/snort_dynamicpreprocessor
 
-lib_LTLIBRARIES = libsf_ssh_preproc.la
+dynamicpreprocessor_LTLIBRARIES = libsf_ssh_preproc.la
 
-libsf_ssh_preproc_la_LDFLAGS = -shared -export-dynamic -module @XCCFLAGS@
-
-BUILT_SOURCES = \
-sf_dynamic_preproc_lib.c \
-sfPolicyUserData.c
-
+libsf_ssh_preproc_la_LDFLAGS = -export-dynamic -module @XCCFLAGS@
+if SO_WITH_STATIC_LIB
+libsf_ssh_preproc_la_LIBADD = ../libsf_dynamic_preproc.la
+else
 nodist_libsf_ssh_preproc_la_SOURCES = \
-sf_dynamic_preproc_lib.c \
-sfPolicyUserData.c
+../include/sf_dynamic_preproc_lib.c \
+../include/sfPolicyUserData.c
+endif
 
 libsf_ssh_preproc_la_SOURCES = \
 spp_ssh.c \
-spp_ssh.h \
-sf_preproc_info.h
+spp_ssh.h
 
 EXTRA_DIST = \
 sf_ssh.dsp
 
-sf_dynamic_preproc_lib.c: ../include/sf_dynamic_preproc_lib.c
-	cp $? $@
-
-sfPolicyUserData.c: ../include/sfPolicyUserData.c
-	cp $? $@
-
 all-local: $(LTLIBRARIES)
-	$(MAKE) DESTDIR=`pwd`/../build install-libLTLIBRARIES
+	$(MAKE) DESTDIR=`pwd`/../build install-dynamicpreprocessorLTLIBRARIES
 
-clean-local:
-	rm -f sf_dynamic_preproc_lib.c
-	rm -f sfPolicyUserData.c

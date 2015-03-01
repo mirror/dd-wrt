@@ -1,6 +1,7 @@
 /****************************************************************************
  *
- * Copyright (C) 2004-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2004-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -15,12 +16,12 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************/
- 
+
 /*
-**   ACSMX2.H 
+**   ACSMX2.H
 **
 **   Version 2.0
 **
@@ -37,7 +38,7 @@
 /*
 *   DEFINES and Typedef's
 */
-#define MAX_ALPHABET_SIZE 256     
+#define MAX_ALPHABET_SIZE 256
 
 /*
    FAIL STATE for 1,2,or 4 bytes for state transitions
@@ -63,9 +64,9 @@ typedef    unsigned short acstate_t;
 /*
 *
 */
-typedef 
+typedef
 struct _acsm_pattern2
-{      
+{
     struct  _acsm_pattern2 *next;
 
     unsigned char         *patrn;
@@ -85,7 +86,7 @@ struct _acsm_pattern2
 /*
 *    transition nodes  - either 8 or 12 bytes
 */
-typedef 
+typedef
 struct trans_node_s {
 
   acstate_t    key;           /* The character that got us here - sized to keep structure aligned on 4 bytes */
@@ -112,8 +113,8 @@ enum {
 *   User specified machine types
 *
 *   TRIE : Keyword trie
-*   NFA  : 
-*   DFA  : 
+*   NFA  :
+*   DFA  :
 */
 enum {
   FSA_TRIE,
@@ -122,7 +123,7 @@ enum {
 };
 
 #define AC_MAX_INQ 32
-typedef struct 
+typedef struct
 {
     unsigned inq;
     unsigned inq_flush;
@@ -133,9 +134,9 @@ typedef struct
 *   Aho-Corasick State Machine Struct - one per group of pattterns
 */
 typedef struct {
-  
-    int acsmMaxStates;  
-    int acsmNumStates;  
+
+    int acsmMaxStates;
+    int acsmNumStates;
 
     ACSM_PATTERN2    * acsmPatterns;
     acstate_t        * acsmFailState;
@@ -150,7 +151,7 @@ typedef struct {
     int          acsmFormat;
     int          acsmSparseMaxRowNodes;
     int          acsmSparseMaxZcnt;
-    
+
     int          acsmNumTrans;
     int          acsmAlphabetSize;
     int          acsmFSA;
@@ -175,7 +176,14 @@ int acsmAddPattern2( ACSM_STRUCT2 * p, unsigned char * pat, int n,
 int acsmCompile2 ( ACSM_STRUCT2 * acsm,
                    int (*build_tree)(void * id, void **existing_tree),
                    int (*neg_list_func)(void *id, void **list));
-int acsmSearch2 ( ACSM_STRUCT2 * acsm,unsigned char * T, int n, 
+struct _SnortConfig;
+int acsmCompile2WithSnortConf ( struct _SnortConfig *, ACSM_STRUCT2 * acsm,
+                                int (*build_tree)(struct _SnortConfig *, void * id, void **existing_tree),
+                                int (*neg_list_func)(void *id, void **list));
+int acsmSearch2 ( ACSM_STRUCT2 * acsm,unsigned char * T, int n,
+                  int (*Match)(void * id, void *tree, int index, void *data, void *neg_list),
+                  void * data, int* current_state );
+int acsmSearchAll2 ( ACSM_STRUCT2 * acsm,unsigned char * T, int n,
                   int (*Match)(void * id, void *tree, int index, void *data, void *neg_list),
                   void * data, int* current_state );
 void acsmFree2 ( ACSM_STRUCT2 * acsm );

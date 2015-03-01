@@ -1,7 +1,8 @@
 /* $Id$ */
 /****************************************************************************
  *
- * Copyright (C) 2005-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -16,7 +17,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************/
 #ifndef __NORMALIZE_H__
@@ -39,6 +40,7 @@ typedef struct _NormalizerContext
 {
     uint32_t normalizer_flags;
     uint8_t normalizer_options[32];
+    NormMode normMode;
 
     // these must be in the same order PROTO_IDs are defined!
     // if entry is NULL, proto doesn't have normalization or it is disabled
@@ -48,34 +50,34 @@ typedef struct _NormalizerContext
 int Norm_SetConfig(NormalizerContext*);
 int Norm_Packet(NormalizerContext*, Packet*);
 
-static INLINE void Norm_Enable(NormalizerContext* nc, NormFlags nf)
+static inline void Norm_Enable(NormalizerContext* nc, NormFlags nf)
 {
     nc->normalizer_flags |= nf;
 }
 
-static INLINE void Norm_Disable(NormalizerContext* nc, NormFlags nf)
+static inline void Norm_Disable(NormalizerContext* nc, NormFlags nf)
 {
     nc->normalizer_flags &= ~nf;
 }
 
-static INLINE int Norm_IsEnabled(const NormalizerContext* nc, NormFlags nf)
+static inline int Norm_IsEnabled(const NormalizerContext* nc, NormFlags nf)
 {
     return ( (nc->normalizer_flags & nf) != 0 );
 }
 
-static INLINE void Norm_TcpPassOption(NormalizerContext* nc, uint8_t opt)
+static inline void Norm_TcpPassOption(NormalizerContext* nc, uint8_t opt)
 {
     uint8_t byte = (opt >> 3), bit = (1 << (opt & 0x07));
     nc->normalizer_options[byte] |= bit;
 }
 
-static INLINE void Norm_TcpDropOption(NormalizerContext* nc, uint8_t opt)
+static inline void Norm_TcpDropOption(NormalizerContext* nc, uint8_t opt)
 {
     uint8_t byte = (opt >> 3), bit = (1 << (opt & 0x07));
     nc->normalizer_options[byte] &= ~bit;
 }
 
-static INLINE int Norm_TcpIsOptional(const NormalizerContext* nc, uint8_t opt)
+static inline int Norm_TcpIsOptional(const NormalizerContext* nc, uint8_t opt)
 {
     uint8_t byte = (opt >> 3), bit = (1 << (opt & 0x07));
     return ( (nc->normalizer_options[byte] & bit) != 0 );

@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (C) 2007-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2007-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -14,7 +15,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************/
 
@@ -27,6 +28,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <errno.h>
+#include "sf_types.h"
 #include "sfcommon.h"
 #include "ctype.h"
 
@@ -38,7 +40,7 @@
         /* tok exceeded errstr.  Overwrite trailing characters for \
          * printability */ \
         strcpy(((char*)errstr) + SFP_MIN_ERR_STR-4, "..."); \
-    } 
+    }
 
 #define CLR_ERR() ((char*)errstr)[0] = 0;
 
@@ -48,10 +50,10 @@ SFP_ret_t SFP_ports(ports_tbl_t port_tbl, char *str, SFP_errstr_t errstr) {
     char end_brace_found = 0;
     char port_found = 0;
 
-    if(!str) 
+    if(!str)
     {
         SET_ERR("%s", "Invalid pointer");
-        return SFP_ERROR; 
+        return SFP_ERROR;
     }
 
     if((tok = strtok_r(str, " ", &saveptr)) == NULL)
@@ -61,7 +63,7 @@ SFP_ret_t SFP_ports(ports_tbl_t port_tbl, char *str, SFP_errstr_t errstr) {
     }
 
     /* This string had better start with a '{' and end with a '}', or else! */
-    if(strcmp(tok, "{")) 
+    if(strcmp(tok, "{"))
     {
         SET_ERR("Malformed port list: %s. Expecting a leading '{ '", tok);
         return SFP_ERROR;
@@ -104,7 +106,7 @@ SFP_ret_t SFP_ports(ports_tbl_t port_tbl, char *str, SFP_errstr_t errstr) {
 
         port_tbl[ PORT_INDEX(port) ] |= CONV_PORT(port);
         port_found = 1;
-    } 
+    }
 
     if(!end_brace_found)
     {

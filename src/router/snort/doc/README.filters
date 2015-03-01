@@ -190,7 +190,8 @@ This format supports the following options - all are required:
   source IP addresses, or unique destination IP addresses.
 
 * count c:  number of rule matching in s seconds that will cause event filter
-  limit to exceed.  C must be nonzero value.
+  limit to exceed.  C must be nonzero value.  A count of -1 disables the
+  event filter and can be used to override the global event_filter.
 
 * seconds s:  time period over which count is accrued.  S must be nonzero value.
 

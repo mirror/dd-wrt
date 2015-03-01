@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (C) 2008-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2008-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -14,10 +15,10 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************
- * 
+ *
  ****************************************************************************/
 
 #ifndef _DCE2_SESSION_H_
@@ -33,11 +34,6 @@
 #include "sf_dynamic_preprocessor.h"
 
 /********************************************************************
- * Extern variables
- ********************************************************************/
-extern DynamicPreprocessorData _dpd;
-
-/********************************************************************
  * Enumerations
  ********************************************************************/
 typedef enum _DCE2_SsnFlag
@@ -45,9 +41,9 @@ typedef enum _DCE2_SsnFlag
     DCE2_SSN_FLAG__NONE               = 0x0000,
     DCE2_SSN_FLAG__SEEN_CLIENT        = 0x0001,
     DCE2_SSN_FLAG__SEEN_SERVER        = 0x0002,
-    DCE2_SSN_FLAG__MISSED_PKTS        = 0x0004,
-    DCE2_SSN_FLAG__AUTODETECTED       = 0x0008,
-    DCE2_SSN_FLAG__NO_INSPECT         = 0x0010,
+    DCE2_SSN_FLAG__AUTODETECTED       = 0x0010,
+    DCE2_SSN_FLAG__PAF_ABORT          = 0x0020,
+    DCE2_SSN_FLAG__NO_INSPECT         = 0x0040,
     DCE2_SSN_FLAG__ALL                = 0xffff
 
 } DCE2_SsnFlag;
@@ -58,21 +54,19 @@ typedef enum _DCE2_SsnFlag
 typedef struct _DCE2_SsnData
 {
     DCE2_TransType trans;
+    DCE2_Policy server_policy;
+    DCE2_Policy client_policy;
     int flags;
     const DCE2_ServerConfig *sconfig;
     const SFSnortPacket *wire_pkt;
-    int alert_mask;
+    uint64_t alert_mask;
     DCE2_Roptions ropts;
     int autodetect_dir;
 
     uint32_t cli_seq;
     uint32_t cli_nseq;
-    uint32_t cli_missed_bytes;
-    uint16_t cli_overlap_bytes;
     uint32_t srv_seq;
     uint32_t srv_nseq;
-    uint32_t srv_missed_bytes;
-    uint16_t srv_overlap_bytes;
 
     tSfPolicyId policy_id;
     tSfPolicyUserContextId config;
@@ -80,36 +74,42 @@ typedef struct _DCE2_SsnData
 } DCE2_SsnData;
 
 /********************************************************************
+ * Extern variables
+ ********************************************************************/
+extern uint8_t dce2_no_inspect;
+
+/********************************************************************
  * Inline function prototypes
  ********************************************************************/
-static INLINE int DCE2_SsnIsEstablished(const SFSnortPacket *);
-static INLINE int DCE2_SsnIsMidstream(const SFSnortPacket *);
-static INLINE void DCE2_SsnSetAppData(const SFSnortPacket *, void *, StreamAppDataFree);
-static INLINE void * DCE2_SsnGetAppData(const SFSnortPacket *);
-static INLINE int DCE2_SsnGetReassembly(const SFSnortPacket *);
-static INLINE void DCE2_SsnSetReassembly(const SFSnortPacket *);
-static INLINE int DCE2_SsnIsRebuilt(const SFSnortPacket *);
-static INLINE int DCE2_SsnIsStreamInsert(const SFSnortPacket *);
-static INLINE void DCE2_SsnFlush(SFSnortPacket *);
-static INLINE int DCE2_SsnFromServer(const SFSnortPacket *);
-static INLINE int DCE2_SsnFromClient(const SFSnortPacket *);
-static INLINE int DCE2_SsnClientMissedInReassembled(const SFSnortPacket *);
-static INLINE int DCE2_SsnServerMissedInReassembled(const SFSnortPacket *);
-static INLINE void DCE2_SsnSetMissedPkts(DCE2_SsnData *);
-static INLINE int DCE2_SsnMissedPkts(DCE2_SsnData *);
-static INLINE void DCE2_SsnClearMissedPkts(DCE2_SsnData *);
-static INLINE void DCE2_SsnSetSeenClient(DCE2_SsnData *);
-static INLINE int DCE2_SsnSeenClient(DCE2_SsnData *);
-static INLINE void DCE2_SsnSetSeenServer(DCE2_SsnData *);
-static INLINE int DCE2_SsnSeenServer(DCE2_SsnData *);
-static INLINE void DCE2_SsnSetAutodetected(DCE2_SsnData *, const SFSnortPacket *);
-static INLINE int DCE2_SsnAutodetected(DCE2_SsnData *);
-static INLINE int DCE2_SsnAutodetectDir(DCE2_SsnData *);
-static INLINE void DCE2_SsnSetNoInspect(DCE2_SsnData *);
-static INLINE int DCE2_SsnNoInspect(DCE2_SsnData *sd);
-
-static INLINE uint16_t DCE2_SsnGetOverlap(DCE2_SsnData *);
-static INLINE uint32_t DCE2_SsnGetMissedBytes(DCE2_SsnData *sd);
+static inline int DCE2_SsnIsEstablished(const SFSnortPacket *);
+static inline int DCE2_SsnIsMidstream(const SFSnortPacket *);
+static inline void DCE2_SsnSetAppData(const SFSnortPacket *, void *, StreamAppDataFree);
+static inline void * DCE2_SsnGetAppData(const SFSnortPacket *);
+static inline int DCE2_SsnGetReassembly(const SFSnortPacket *);
+static inline void DCE2_SsnSetReassembly(const SFSnortPacket *);
+static inline int DCE2_SsnIsRebuilt(const SFSnortPacket *);
+static inline int DCE2_SsnIsStreamInsert(const SFSnortPacket *);
+static inline void DCE2_SsnFlush(SFSnortPacket *);
+static inline int DCE2_SsnFromServer(const SFSnortPacket *);
+static inline int DCE2_SsnFromClient(const SFSnortPacket *);
+static inline bool DCE2_SsnIsPafActive(const SFSnortPacket *);
+static inline void DCE2_SsnSetSeenClient(DCE2_SsnData *);
+static inline int DCE2_SsnSeenClient(DCE2_SsnData *);
+static inline void DCE2_SsnSetSeenServer(DCE2_SsnData *);
+static inline int DCE2_SsnSeenServer(DCE2_SsnData *);
+static inline void DCE2_SsnSetAutodetected(DCE2_SsnData *, const SFSnortPacket *);
+static inline int DCE2_SsnAutodetected(DCE2_SsnData *);
+static inline int DCE2_SsnAutodetectDir(DCE2_SsnData *);
+static inline void DCE2_SsnSetNoInspect(const SFSnortPacket *);
+static inline int DCE2_SsnNoInspect(DCE2_SsnData *sd);
+static inline void DCE2_SsnSetPolicy(DCE2_SsnData *, DCE2_Policy);
+static inline DCE2_Policy DCE2_SsnGetPolicy(DCE2_SsnData *);
+static inline DCE2_Policy DCE2_SsnGetServerPolicy(DCE2_SsnData *);
+static inline DCE2_Policy DCE2_SsnGetClientPolicy(DCE2_SsnData *);
+static inline bool DCE2_SsnIsWindowsPolicy(DCE2_SsnData *);
+static inline bool DCE2_SsnIsSambaPolicy(DCE2_SsnData *);
+static inline bool DCE2_SsnIsServerWindowsPolicy(DCE2_SsnData *);
+static inline bool DCE2_SsnIsServerSambaPolicy(DCE2_SsnData *);
 
 /********************************************************************
  * Function: DCE2_SsnIsEstablished()
@@ -124,10 +124,9 @@ static INLINE uint32_t DCE2_SsnGetMissedBytes(DCE2_SsnData *sd);
  *        zero if the session is not established.
  *
  ********************************************************************/
-static INLINE int DCE2_SsnIsEstablished(const SFSnortPacket *p)
+static inline int DCE2_SsnIsEstablished(const SFSnortPacket *p)
 {
-    return _dpd.streamAPI->get_session_flags
-        (p->stream_session_ptr) & SSNFLAG_ESTABLISHED;
+    return _dpd.sessionAPI->get_session_flags(p->stream_session) & SSNFLAG_ESTABLISHED;
 }
 
 /********************************************************************
@@ -144,10 +143,10 @@ static INLINE int DCE2_SsnIsEstablished(const SFSnortPacket *p)
  *        zero if the session was not picked up midstream.
  *
  ********************************************************************/
-static INLINE int DCE2_SsnIsMidstream(const SFSnortPacket *p)
+static inline int DCE2_SsnIsMidstream(const SFSnortPacket *p)
 {
-    return _dpd.streamAPI->get_session_flags
-        (p->stream_session_ptr) & SSNFLAG_MIDSTREAM;
+    return _dpd.sessionAPI->get_session_flags
+        (p->stream_session) & SSNFLAG_MIDSTREAM;
 }
 
 /********************************************************************
@@ -167,9 +166,9 @@ static INLINE int DCE2_SsnIsMidstream(const SFSnortPacket *p)
  * Returns: None
  *
  ********************************************************************/
-static INLINE void DCE2_SsnSetAppData(const SFSnortPacket *p, void *data, StreamAppDataFree sdfree)
+static inline void DCE2_SsnSetAppData(const SFSnortPacket *p, void *data, StreamAppDataFree sdfree)
 {
-    _dpd.streamAPI->set_application_data(p->stream_session_ptr, PP_DCE2, data, sdfree);
+    _dpd.sessionAPI->set_application_data(p->stream_session, PP_DCE2, data, sdfree);
 }
 
 /********************************************************************
@@ -184,9 +183,9 @@ static INLINE void DCE2_SsnSetAppData(const SFSnortPacket *p, void *data, Stream
  *  void * - the data stored on the session.
  *
  ********************************************************************/
-static INLINE void * DCE2_SsnGetAppData(const SFSnortPacket *p)
+static inline void * DCE2_SsnGetAppData(const SFSnortPacket *p)
 {
-    return _dpd.streamAPI->get_application_data(p->stream_session_ptr, PP_DCE2);
+    return _dpd.sessionAPI->get_application_data(p->stream_session, PP_DCE2);
 }
 
 /********************************************************************
@@ -195,16 +194,16 @@ static INLINE void * DCE2_SsnGetAppData(const SFSnortPacket *p)
  * Purpose: Gets reassembly direction for the session.
  *
  * Arguments:
- *  SFSnortPacket * - pointer to packet
+ *  DCE2_SsnData * - session data pointer
  *
  * Returns:
  *  int - the reassembly direction
- *        SSN_DIR_NONE, SSN_DIR_CLIENT, SSN_DIR_SERVER or SSN_DIR_BOTH
+ *        SSN_DIR_NONE, SSN_DIR_FROM_CLIENT, SSN_DIR_FROM_SERVER or SSN_DIR_BOTH
  *
  ********************************************************************/
-static INLINE int DCE2_SsnGetReassembly(const SFSnortPacket *p)
+static inline int DCE2_SsnGetReassembly(const SFSnortPacket *p)
 {
-    return (int)_dpd.streamAPI->get_reassembly_direction(p->stream_session_ptr);
+    return (int)_dpd.streamAPI->get_reassembly_direction(p->stream_session);
 }
 
 /********************************************************************
@@ -215,15 +214,15 @@ static INLINE int DCE2_SsnGetReassembly(const SFSnortPacket *p)
  *          client and server packets.
  *
  * Arguments:
- *  SFSnortPacket * - pointer to packet
+ *  DCE2_SsnData * - session data pointer
  *
  * Returns: None
  *
  ********************************************************************/
-static INLINE void DCE2_SsnSetReassembly(const SFSnortPacket *p)
+static inline void DCE2_SsnSetReassembly(const SFSnortPacket *p)
 {
-    _dpd.streamAPI->set_reassembly(p->stream_session_ptr, STREAM_FLPOLICY_FOOTPRINT,
-                                   SSN_DIR_BOTH, STREAM_FLPOLICY_SET_ABSOLUTE);
+    _dpd.streamAPI->set_reassembly(p->stream_session, STREAM_FLPOLICY_FOOTPRINT,
+            SSN_DIR_BOTH, STREAM_FLPOLICY_SET_ABSOLUTE);
 }
 
 /********************************************************************
@@ -240,9 +239,9 @@ static INLINE void DCE2_SsnSetReassembly(const SFSnortPacket *p)
  *        zero if the packet is not stream reassembled.
  *
  ********************************************************************/
-static INLINE int DCE2_SsnIsRebuilt(const SFSnortPacket *p)
+static inline int DCE2_SsnIsRebuilt(const SFSnortPacket *p)
 {
-    return p->flags & FLAG_REBUILT_STREAM;
+    return PacketHasFullPDU(p) || (p->flags & FLAG_REBUILT_STREAM);
 }
 
 /********************************************************************
@@ -259,7 +258,7 @@ static INLINE int DCE2_SsnIsRebuilt(const SFSnortPacket *p)
  *        zero if the packet is not stream inserted.
  *
  ********************************************************************/
-static INLINE int DCE2_SsnIsStreamInsert(const SFSnortPacket *p)
+static inline int DCE2_SsnIsStreamInsert(const SFSnortPacket *p)
 {
     return p->flags & FLAG_STREAM_INSERT;
 }
@@ -276,7 +275,7 @@ static INLINE int DCE2_SsnIsStreamInsert(const SFSnortPacket *p)
  * Returns: None
  *
  ********************************************************************/
-static INLINE void DCE2_SsnFlush(SFSnortPacket *p)
+static inline void DCE2_SsnFlush(SFSnortPacket *p)
 {
     _dpd.streamAPI->response_flush_stream(p);
 }
@@ -285,7 +284,7 @@ static INLINE void DCE2_SsnFlush(SFSnortPacket *p)
  * Function: DCE2_SsnFromServer()
  *
  * Purpose: Returns whether or not this packet is from
- *          the server. 
+ *          the server.
  *
  * Arguments:
  *  SFSnortPacket * - pointer to packet
@@ -295,7 +294,7 @@ static INLINE void DCE2_SsnFlush(SFSnortPacket *p)
  *        zero if the packet is not from the server.
  *
  ********************************************************************/
-static INLINE int DCE2_SsnFromServer(const SFSnortPacket *p)
+static inline int DCE2_SsnFromServer(const SFSnortPacket *p)
 {
     return p->flags & FLAG_FROM_SERVER;
 }
@@ -304,7 +303,7 @@ static INLINE int DCE2_SsnFromServer(const SFSnortPacket *p)
  * Function: DCE2_SsnFromClient()
  *
  * Purpose: Returns whether or not this packet is from
- *          the client. 
+ *          the client.
  *
  * Arguments:
  *  SFSnortPacket * - pointer to packet
@@ -314,101 +313,33 @@ static INLINE int DCE2_SsnFromServer(const SFSnortPacket *p)
  *        zero if the packet is not from the client.
  *
  ********************************************************************/
-static INLINE int DCE2_SsnFromClient(const SFSnortPacket *p)
+static inline int DCE2_SsnFromClient(const SFSnortPacket *p)
 {
     return p->flags & FLAG_FROM_CLIENT;
 }
 
 /********************************************************************
- * Function: DCE2_SsnClientMissedInReassembled()
+ * Function: DCE2_SsnIsPafActive()
  *
- * Purpose: Returns if and how we missed packets from the client
- *          on the session, as determined by stream reassembly.
- *
- * Arguments:
- *  SFSnortPacket * - pointer to packet
- *
- * Returns:
- *  int - missing packets before, after, before and after or none
- *        SSN_MISSING_BEFORE, SSN_MISSING_AFTER,
- *        SSN_MISSING_BOTH or SSN_MISSING_NONE
- *
- ********************************************************************/
-static INLINE int DCE2_SsnClientMissedInReassembled(const SFSnortPacket *p)
-{
-    return _dpd.streamAPI->missing_in_reassembled(p->stream_session_ptr, SSN_DIR_CLIENT);
-}
-
-/********************************************************************
- * Function: DCE2_SsnServerMissedInReassembled()
- *
- * Purpose: Returns if and how we missed packets from the server
- *          on the session, as determined by stream reassembly.
- *
- * Arguments:
- *  SFSnortPacket * - pointer to packet
- *
- * Returns:
- *  int - missing packets before, after, before and after or none
- *        SSN_MISSING_BEFORE, SSN_MISSING_AFTER,
- *        SSN_MISSING_BOTH or SSN_MISSING_NONE
- *
- ********************************************************************/
-static INLINE int DCE2_SsnServerMissedInReassembled(const SFSnortPacket *p)
-{
-    return _dpd.streamAPI->missing_in_reassembled(p->stream_session_ptr, SSN_DIR_SERVER);
-}
-
-/********************************************************************
- * Function: DCE2_SsnSetMissedPkts()
- *
- * Purpose: Sets flag that we have missed packets on this session
- *
- * Arguments:
- *  DCE2_SsnData * - pointer to session data
- *
- * Returns: None
- *
- ********************************************************************/
-static INLINE void DCE2_SsnSetMissedPkts(DCE2_SsnData *sd)
-{
-    sd->flags |= DCE2_SSN_FLAG__MISSED_PKTS;
-}
-
-/********************************************************************
- * Function: DCE2_SsnMissedPkts()
- *
- * Purpose: Returns whether or not we've missed packets
- *          on this session.
+ * Purpose: Checks stream api to see if PAF is active for both sides
+ *          of the session.
  *
  * Arguments:
  *  DCE2_SsnData * - pointer to session data
  *
  * Returns:
- *  int - non-zero if packets were missed
- *        zero if no packets were missed
+ *  bool - true if paf is active
+ *         false if not
  *
  ********************************************************************/
-static INLINE int DCE2_SsnMissedPkts(DCE2_SsnData *sd)
+static inline bool DCE2_SsnIsPafActive(const SFSnortPacket *p)
 {
-    return sd->flags & DCE2_SSN_FLAG__MISSED_PKTS;
-}
+    if ((p->stream_session == NULL)
+            || (_dpd.streamAPI->is_paf_active(p->stream_session, true)
+                && _dpd.streamAPI->is_paf_active(p->stream_session, false)))
+        return true;
 
-/********************************************************************
- * Function: DCE2_SsnClearMissedPkts()
- *
- * Purpose: Clears the flag that indicates that we've missed
- *          packets on the session.
- *
- * Arguments:
- *  DCE2_SsnData * - pointer to session data
- *
- * Returns: None
- *
- ********************************************************************/
-static INLINE void DCE2_SsnClearMissedPkts(DCE2_SsnData *sd)
-{
-    sd->flags &= ~DCE2_SSN_FLAG__MISSED_PKTS;
+    return false;
 }
 
 /********************************************************************
@@ -423,7 +354,7 @@ static INLINE void DCE2_SsnClearMissedPkts(DCE2_SsnData *sd)
  * Returns: None
  *
  ********************************************************************/
-static INLINE void DCE2_SsnSetSeenClient(DCE2_SsnData *sd)
+static inline void DCE2_SsnSetSeenClient(DCE2_SsnData *sd)
 {
     sd->flags |= DCE2_SSN_FLAG__SEEN_CLIENT;
 }
@@ -442,7 +373,7 @@ static INLINE void DCE2_SsnSetSeenClient(DCE2_SsnData *sd)
  *        zero if we haven't seen the client
  *
  ********************************************************************/
-static INLINE int DCE2_SsnSeenClient(DCE2_SsnData *sd)
+static inline int DCE2_SsnSeenClient(DCE2_SsnData *sd)
 {
     return sd->flags & DCE2_SSN_FLAG__SEEN_CLIENT;
 }
@@ -459,7 +390,7 @@ static INLINE int DCE2_SsnSeenClient(DCE2_SsnData *sd)
  * Returns: None
  *
  ********************************************************************/
-static INLINE void DCE2_SsnSetSeenServer(DCE2_SsnData *sd)
+static inline void DCE2_SsnSetSeenServer(DCE2_SsnData *sd)
 {
     sd->flags |= DCE2_SSN_FLAG__SEEN_SERVER;
 }
@@ -478,7 +409,7 @@ static INLINE void DCE2_SsnSetSeenServer(DCE2_SsnData *sd)
  *        zero if we haven't seen the server
  *
  ********************************************************************/
-static INLINE int DCE2_SsnSeenServer(DCE2_SsnData *sd)
+static inline int DCE2_SsnSeenServer(DCE2_SsnData *sd)
 {
     return sd->flags & DCE2_SSN_FLAG__SEEN_SERVER;
 }
@@ -495,7 +426,7 @@ static INLINE int DCE2_SsnSeenServer(DCE2_SsnData *sd)
  * Returns: None
  *
  ********************************************************************/
-static INLINE void DCE2_SsnSetAutodetected(DCE2_SsnData *sd, const SFSnortPacket *p)
+static inline void DCE2_SsnSetAutodetected(DCE2_SsnData *sd, const SFSnortPacket *p)
 {
     sd->flags |= DCE2_SSN_FLAG__AUTODETECTED;
     sd->autodetect_dir = p->flags & (FLAG_FROM_CLIENT | FLAG_FROM_SERVER);
@@ -514,7 +445,7 @@ static INLINE void DCE2_SsnSetAutodetected(DCE2_SsnData *sd, const SFSnortPacket
  *        zero if session was not autodetected
  *
  ********************************************************************/
-static INLINE int DCE2_SsnAutodetected(DCE2_SsnData *sd)
+static inline int DCE2_SsnAutodetected(DCE2_SsnData *sd)
 {
     return sd->flags & DCE2_SSN_FLAG__AUTODETECTED;
 }
@@ -533,7 +464,7 @@ static INLINE int DCE2_SsnAutodetected(DCE2_SsnData *sd)
  *        zero if session was not autodetected
  *
  ********************************************************************/
-static INLINE int DCE2_SsnAutodetectDir(DCE2_SsnData *sd)
+static inline int DCE2_SsnAutodetectDir(DCE2_SsnData *sd)
 {
     return sd->autodetect_dir;
 }
@@ -550,7 +481,7 @@ static INLINE int DCE2_SsnAutodetectDir(DCE2_SsnData *sd)
  * Returns: None
  *
  ********************************************************************/
-static INLINE void DCE2_SsnClearAutodetected(DCE2_SsnData *sd)
+static inline void DCE2_SsnClearAutodetected(DCE2_SsnData *sd)
 {
     sd->flags &= ~DCE2_SSN_FLAG__AUTODETECTED;
     sd->autodetect_dir = 0;
@@ -566,9 +497,10 @@ static INLINE void DCE2_SsnClearAutodetected(DCE2_SsnData *sd)
  * Returns:
  *
  ********************************************************************/
-static INLINE void DCE2_SsnSetNoInspect(DCE2_SsnData *sd)
+static inline void DCE2_SsnSetNoInspect(const SFSnortPacket *p)
 {
-    sd->flags |= DCE2_SSN_FLAG__NO_INSPECT;
+    _dpd.sessionAPI->set_application_data(p->stream_session, PP_DCE2,
+            (void *)&dce2_no_inspect, NULL);
 }
 
 /********************************************************************
@@ -581,62 +513,222 @@ static INLINE void DCE2_SsnSetNoInspect(DCE2_SsnData *sd)
  * Returns:
  *
  ********************************************************************/
-static INLINE int DCE2_SsnNoInspect(DCE2_SsnData *sd)
+static inline int DCE2_SsnNoInspect(DCE2_SsnData *sd)
 {
-    return sd->flags & DCE2_SSN_FLAG__NO_INSPECT;
+    return (void *)sd == (void *)&dce2_no_inspect;
 }
 
 /********************************************************************
- * Function: DCE2_SsnGetOverlap()
+ * Function: DCE2_SsnSetPolicy()
  *
- * Purpose: Returns the number of overlapped bytes, i.e. bytes
- *          that the preprocessor has already inspected.
+ * Purpose:
+ *  Convenience function to set policy for session, client or server.
+ *  Sets policy for the current direction packet is from.
+ *
+ * Arguments:
+ *  DCE2_SsnData * - pointer to session data
+ *  DCE2_Policy    - the policy to set client/server to
+ *
+ * Returns: None
+ *
+ ********************************************************************/
+static inline void DCE2_SsnSetPolicy(DCE2_SsnData *sd, DCE2_Policy policy)
+{
+    if (DCE2_SsnFromClient(sd->wire_pkt))
+        sd->client_policy = policy;
+    else
+        sd->server_policy = policy;
+}
+
+/********************************************************************
+ * Function: DCE2_SsnGetPolicy()
+ *
+ * Purpose:
+ *  Convenience function to get policy for session, client or server
+ *  determined by the direction the traffic is flowing to.
+ *
+ * Arguments:
+ *  DCE2_SsnData * - pointer to session data
+ *
+ * Returns: None
+ *  DCE2_Policy - If from the client returns server policy.
+ *                If from server returns client policy.
+ *
+ ********************************************************************/
+static inline DCE2_Policy DCE2_SsnGetPolicy(DCE2_SsnData *sd)
+{
+    if (DCE2_SsnFromClient(sd->wire_pkt))
+        return sd->server_policy;
+    else
+        return sd->client_policy;
+}
+
+/********************************************************************
+ * Function: DCE2_SsnGetServerPolicy()
+ *
+ * Purpose:
+ *  Returns server policy for session
+ *
+ * Arguments:
+ *  DCE2_SsnData * - pointer to session data
+ *
+ * Returns: None
+ *  DCE2_Policy - The server policy
+ *
+ ********************************************************************/
+static inline DCE2_Policy DCE2_SsnGetServerPolicy(DCE2_SsnData *sd)
+{
+    return sd->server_policy;
+}
+
+/********************************************************************
+ * Function: DCE2_SsnGetClientPolicy()
+ *
+ * Purpose:
+ *  Returns client policy for session
+ *
+ * Arguments:
+ *  DCE2_SsnData * - pointer to session data
+ *
+ * Returns: None
+ *  DCE2_Policy - The client policy
+ *
+ ********************************************************************/
+static inline DCE2_Policy DCE2_SsnGetClientPolicy(DCE2_SsnData *sd)
+{
+    return sd->client_policy;
+}
+
+/********************************************************************
+ * Function: DCE2_SsnIsWindowsPolicy()
+ *
+ * Purpose:
+ *  Convenience function to determine if policy traffic is going to
+ *  is a Windows one.
  *
  * Arguments:
  *  DCE2_SsnData * - pointer to session data
  *
  * Returns:
- *  uint16_t - the number of overlapped bytes
+ *  bool  -  true if Samba, false if not
  *
  ********************************************************************/
-static INLINE uint16_t DCE2_SsnGetOverlap(DCE2_SsnData *sd)
+static inline bool DCE2_SsnIsWindowsPolicy(DCE2_SsnData *sd)
 {
-    if ((sd->cli_overlap_bytes != 0) && DCE2_SsnFromClient(sd->wire_pkt))
+    DCE2_Policy policy = DCE2_SsnGetPolicy(sd);
+
+    switch (policy)
     {
-        return sd->cli_overlap_bytes;
-    }
-    else if ((sd->srv_overlap_bytes != 0) && DCE2_SsnFromServer(sd->wire_pkt))
-    {
-        return sd->srv_overlap_bytes;
+        case DCE2_POLICY__WIN2000:
+        case DCE2_POLICY__WINXP:
+        case DCE2_POLICY__WINVISTA:
+        case DCE2_POLICY__WIN2003:
+        case DCE2_POLICY__WIN2008:
+        case DCE2_POLICY__WIN7:
+            return true;
+        default:
+            break;
     }
 
-    return 0;
+    return false;
 }
 
 /********************************************************************
- * Function: DCE2_SsnGetMissedBytes()
+ * Function: DCE2_SsnIsSambaPolicy()
  *
- * Purpose: Returns the number of missed bytes.
+ * Purpose:
+ *  Convenience function to determine if policy traffic is going to
+ *  is a Samba one.
  *
  * Arguments:
  *  DCE2_SsnData * - pointer to session data
  *
  * Returns:
- *  uint16_t - the number of overlapped bytes
+ *  bool  -  true if Samba, false if not
  *
  ********************************************************************/
-static INLINE uint32_t DCE2_SsnGetMissedBytes(DCE2_SsnData *sd)
+static inline bool DCE2_SsnIsSambaPolicy(DCE2_SsnData *sd)
 {
-    if ((sd->cli_missed_bytes != 0) && DCE2_SsnFromClient(sd->wire_pkt))
+    DCE2_Policy policy = DCE2_SsnGetPolicy(sd);
+
+    switch (policy)
     {
-        return sd->cli_missed_bytes;
-    }
-    else if ((sd->srv_missed_bytes != 0) && DCE2_SsnFromServer(sd->wire_pkt))
-    {
-        return sd->srv_missed_bytes;
+        case DCE2_POLICY__SAMBA:
+        case DCE2_POLICY__SAMBA_3_0_37:
+        case DCE2_POLICY__SAMBA_3_0_22:
+        case DCE2_POLICY__SAMBA_3_0_20:
+            return true;
+        default:
+            break;
     }
 
-    return 0;
+    return false;
+}
+
+/********************************************************************
+ * Function: DCE2_SsnIsServerWindowsPolicy()
+ *
+ * Purpose:
+ *  Convenience function to determine if server policy is a
+ *  Windows one.
+ *
+ * Arguments:
+ *  DCE2_SsnData * - pointer to session data
+ *
+ * Returns:
+ *  bool  -  true if Samba, false if not
+ *
+ ********************************************************************/
+static inline bool DCE2_SsnIsServerWindowsPolicy(DCE2_SsnData *sd)
+{
+    DCE2_Policy policy = DCE2_SsnGetServerPolicy(sd);
+
+    switch (policy)
+    {
+        case DCE2_POLICY__WIN2000:
+        case DCE2_POLICY__WINXP:
+        case DCE2_POLICY__WINVISTA:
+        case DCE2_POLICY__WIN2003:
+        case DCE2_POLICY__WIN2008:
+        case DCE2_POLICY__WIN7:
+            return true;
+        default:
+            break;
+    }
+
+    return false;
+}
+
+/********************************************************************
+ * Function: DCE2_SsnIsServerSambaPolicy()
+ *
+ * Purpose:
+ *  Convenience function to determine if server policy is a
+ *  Samba one.
+ *
+ * Arguments:
+ *  DCE2_SsnData * - pointer to session data
+ *
+ * Returns:
+ *  bool  -  true if Samba, false if not
+ *
+ ********************************************************************/
+static inline bool DCE2_SsnIsServerSambaPolicy(DCE2_SsnData *sd)
+{
+    DCE2_Policy policy = DCE2_SsnGetServerPolicy(sd);
+
+    switch (policy)
+    {
+        case DCE2_POLICY__SAMBA:
+        case DCE2_POLICY__SAMBA_3_0_37:
+        case DCE2_POLICY__SAMBA_3_0_22:
+        case DCE2_POLICY__SAMBA_3_0_20:
+            return true;
+        default:
+            break;
+    }
+
+    return false;
 }
 
 #endif  /* _DCE2_SESSION_H_ */

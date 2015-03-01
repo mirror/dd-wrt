@@ -92,6 +92,17 @@ SSLPP supports the following options:
                             Application data must be observed (default off)
                             This requires noinspect_encrypted to be useful.
 
+  max_heartbeat_length -   Maximum length of heartbeat record allowed.  This 
+			   config option is used to detect the heartbleed attacks.
+ 			   The allowed range is 0 to 65535. Setting the value to 
+			   0 turns off the heartbeat length checks. For 
+			   heartbeat requests, if the payload size of the request
+			   record is greater than the max_heartbeat_length
+			   an alert with sid 3 and gid 137 is generated. 
+		           For heartbeat responses, if the record size itself 
+			   is greater than the max_heartbeat_length an alert 
+  			   with sid 4 and gid 137 is generated. Default is off.
+
 For example, to make SSLPP observe ports 443 and 994, and if you trust the
 servers to not be comprised or potentially malicious, use:
 

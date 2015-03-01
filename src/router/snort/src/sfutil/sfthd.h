@@ -1,6 +1,7 @@
 /****************************************************************************
  *
- * Copyright (C) 2003-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -15,10 +16,10 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************/
- 
+
 /*!
     \file sfthd.h
 */
@@ -36,7 +37,7 @@
 
 /*!
     Max GEN_ID value - Set this to the Max Used by Snort, this is used for the
-    dimensions of the gen_id lookup array.  
+    dimensions of the gen_id lookup array.
 
     Rows in each hash table, by gen_id.
 */
@@ -46,12 +47,12 @@
 
 #define THD_NO_THRESHOLD -1
 
-#define THD_TOO_MANY_THDOBJ -15 
+#define THD_TOO_MANY_THDOBJ -15
 
 /*!
    Type of Thresholding
 */
-enum 
+enum
 {
     THD_TYPE_LIMIT,
     THD_TYPE_THRESHOLD,
@@ -61,8 +62,8 @@ enum
 };
 
 /*
-   Very high priority for suppression objects 
-   users priorities are limited to this minus one  
+   Very high priority for suppression objects
+   users priorities are limited to this minus one
 */
 #define THD_PRIORITY_SUPPRESS 1000000
 
@@ -84,7 +85,7 @@ enum
     These are added during run-time, and recycled if we max out memory usage.
 */
 typedef struct {
- 
+
     unsigned count;
     unsigned prev;
     time_t tstart;
@@ -97,7 +98,7 @@ typedef struct {
     THD_IP_NODE_KEY
 
     HASH Key to lookup and store Ip nodes. The structure now tracks thresholds for different
-    policies. This destroys locality of reference and may cause poor performance. 
+    policies. This destroys locality of reference and may cause poor performance.
 */
 typedef struct{
 
@@ -121,11 +122,11 @@ typedef struct{
     THD_NODE
 
     A Thresholding Object
-    These are created at program startup, and remain static. 
+    These are created at program startup, and remain static.
     The THD_IP_NODE elements are dynamic.
 */
 typedef struct {
- 
+
     int      thd_id;   /* Id of this node */
     unsigned gen_id;   /* Keep these around if needed */
     unsigned sig_id;
@@ -144,10 +145,10 @@ typedef struct {
     THD_ITEM
 
     The THD_ITEM acts as a container of gen_id+sig_id based threshold objects,
-    this allows multiple threshold objects to be applied to a single 
-    gen_id+sig_id pair. The sflist is created using the priority field, 
-    so highest priority objects are first in the list. When processing the 
-    highest priority object will trigger first.  
+    this allows multiple threshold objects to be applied to a single
+    gen_id+sig_id pair. The sflist is created using the priority field,
+    so highest priority objects are first in the list. When processing the
+    highest priority object will trigger first.
 
     These are static data elements, built at program startup.
 */
@@ -155,13 +156,13 @@ typedef struct {
 
     tSfPolicyId policyId;
     unsigned gen_id; /* just so we know what gen_id we are */
-    unsigned sig_id; 
+    unsigned sig_id;
     /*
      * List of THD_NODE's - walk this list and hash the
      * 'THD_NODE->sfthd_id + src_ip or dst_ip' to get the correct THD_IP_NODE.
      */
     SF_LIST* sfthd_node_list;
- 
+
 } THD_ITEM;
 
 // Temporary structure useful when parsing the Snort rules
@@ -181,16 +182,16 @@ typedef struct _THDX_STRUCT
 typedef struct {
 
     tSfPolicyId policyId;
-    unsigned sig_id; 
+    unsigned sig_id;
 
 } tThdItemKey;
 
 /*!
-    THD_STRUCT 
+    THD_STRUCT
 
-    The main thresholding data structure. 
+    The main thresholding data structure.
 
-    Local and global threshold thd_id's are all unqiue, so we use just one 
+    Local and global threshold thd_id's are all unqiue, so we use just one
     ip_nodes lookup table
  */
 typedef struct _THD_STRUCT
@@ -206,20 +207,20 @@ typedef struct _ThresholdObjects
     SFGHASH *sfthd_array[THD_MAX_GENID];    /* Local Hash of THD_ITEM nodes,  lookup by key=sig_id */
 
     /* Double array of THD_NODE pointers. First index is policyId and therefore variable length.
-     * Second index is genId and of fixed length, A simpler definition could be 
+     * Second index is genId and of fixed length, A simpler definition could be
      * THD_NODE * sfthd_garray[0][THD_MAX_GENID] and we could intentionally overflow first index,
      * but we may have to deal with compiler warnings if the array is indexed by value known at
      * compile time.
      */
-    //THD_NODE * (*sfthd_garray)[THD_MAX_GENID]; 
-    THD_NODE* **sfthd_garray; 
+    //THD_NODE * (*sfthd_garray)[THD_MAX_GENID];
+    THD_NODE* **sfthd_garray;
     tSfPolicyId numPoliciesAllocated;
 
 } ThresholdObjects;
 
 
 /*
- * Prototypes 
+ * Prototypes
  */
 // lbytes = local threshold memcap
 // gbytes = global threshold memcap (0 to disable global)
@@ -234,14 +235,16 @@ int sfthd_test_rule(SFXHASH *rule_hash, THD_NODE *sfthd_node,
                     snort_ip_p sip, snort_ip_p dip, long curtime);
 
 void * sfthd_create_rule_threshold(
-   int id, 
+   int id,
    int tracking,
    int type,
    int count,
    unsigned int seconds
 );
 
+struct _SnortConfig;
 int sfthd_create_threshold(
+    struct _SnortConfig *,
     ThresholdObjects *,
     unsigned     gen_id,
     unsigned     sig_id,
@@ -251,7 +254,7 @@ int sfthd_create_threshold(
     int          count,
     int          seconds,
     IpAddrSet*   ip_address
-); 
+);
 
 //  1: don't log due to event_filter
 //  0: log
@@ -259,9 +262,9 @@ int sfthd_create_threshold(
 int sfthd_test_threshold(
     ThresholdObjects *,
     THD_STRUCT *,
-    unsigned     gen_id,  
+    unsigned     gen_id,
     unsigned     sig_id,
-    snort_ip_p   sip,   
+    snort_ip_p   sip,
     snort_ip_p   dip,
     long         curtime ) ;
 

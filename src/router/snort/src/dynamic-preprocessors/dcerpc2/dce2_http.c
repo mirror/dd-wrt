@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (C) 2008-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2008-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -14,15 +15,20 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************
  * Provides session handling of an RPC over HTTP transport.
- * 
+ *
  * 8/17/2008 - Initial implementation ... Todd Wease <twease@sourcefire.com>
  *
  ****************************************************************************/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#include "sf_types.h"
 #include "dce2_http.h"
 #include "snort_dce2.h"
 #include "dce2_co.h"
@@ -30,12 +36,6 @@
 #include "dce2_stats.h"
 #include "sf_snort_packet.h"
 #include "sf_dynamic_preprocessor.h"
-
-/********************************************************************
- * Extern variables
- ********************************************************************/
-extern DynamicPreprocessorData _dpd;
-extern DCE2_Stats dce2_stats;
 
 /********************************************************************
  * Private function prototypes
@@ -74,7 +74,7 @@ static DCE2_HttpSsnData * DCE2_HttpSsnInit(void)
 /********************************************************************
  * Function: DCE2_HttpProxySsnInit()
  *
- * Wrapper around main session data initialization.  Adds 
+ * Wrapper around main session data initialization.  Adds
  * statistical info for a proxy specific rpc over http session.
  *
  * Arguments: None
@@ -100,7 +100,7 @@ DCE2_HttpSsnData * DCE2_HttpProxySsnInit(void)
 /********************************************************************
  * Function: DCE2_HttpServerSsnInit()
  *
- * Wrapper around main session data initialization.  Adds 
+ * Wrapper around main session data initialization.  Adds
  * statistical info for a server specific rpc over http session.
  *
  * Arguments: None
@@ -198,7 +198,6 @@ static void DCE2_HttpProcess(DCE2_HttpSsnData *hsd)
     const SFSnortPacket *p = hsd->sd.wire_pkt;
     const uint8_t *data_ptr = p->payload;
     uint16_t data_len = p->payload_size;
-    uint16_t overlap_bytes = DCE2_SsnGetOverlap(&hsd->sd);
 
     switch (hsd->state)
     {
@@ -214,16 +213,7 @@ static void DCE2_HttpProcess(DCE2_HttpSsnData *hsd)
             break;
 
         case DCE2_HTTP_STATE__RPC_DATA:
-            if (overlap_bytes != 0)
-            {
-                if (overlap_bytes >= data_len)
-                    return;
-
-                DCE2_MOVE(data_ptr, data_len, overlap_bytes);
-            }
-
             DCE2_CoProcess(&hsd->sd, &hsd->co_tracker, data_ptr, data_len);
-
             break;
 
         default:

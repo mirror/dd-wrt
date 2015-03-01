@@ -1,5 +1,6 @@
 /*
-** Copyright (C) 2007-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2007-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License Version 2 as
@@ -14,7 +15,7 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 /**
@@ -22,7 +23,7 @@
 **
 **  @author      Taimur Aslam
 **  @author      Todd Wease
-** 
+**
 **  @brief       Decode and detect CVS vulnerabilities
 **
 **  This CVS detection plugin provides support for detecting published CVS vulnerabilities. The
@@ -46,15 +47,16 @@
 #include <sys/types.h>
 #include <errno.h>
 
+#include "sf_types.h"
 #include "rules.h"
 #include "treenodes.h"
 #include "decode.h"
 #include "plugbase.h"
 #include "parser.h"
-#include "debug.h"
+#include "snort_debug.h"
 #include "util.h"
 #include "mstring.h"
-#include "bounds.h"
+#include "snort_bounds.h"
 
 #include "sp_cvs.h"
 
@@ -68,7 +70,7 @@ extern PreprocStats ruleOTNEvalPerfStats;
 #include "detection_options.h"
 
 /* function prototypes */
-static void CvsInit(char *, OptTreeNode *, int);
+static void CvsInit(struct _SnortConfig *, char *, OptTreeNode *, int);
 static void CvsRuleParse(char *, CvsRuleOption *);
 static int CvsDetect(void *option_data, Packet *p);
 static int CvsDecode(const uint8_t *, uint16_t, CvsRuleOption *);
@@ -99,7 +101,7 @@ int CvsCompare(void *l, void *r)
 
     if (!left || !right)
         return DETECTION_OPTION_NOT_EQUAL;
-    
+
     if (left->type == right->type)
     {
         return DETECTION_OPTION_EQUAL;
@@ -110,18 +112,18 @@ int CvsCompare(void *l, void *r)
 
 /*
 **  NAME
-**     SetupCvs   
+**     SetupCvs
 **        Register the CVS detection plugin.
-**            
+**
 */
 /**
-**  
+**
 **  @return None
 **
 */
 
 void SetupCvs(void)
-{ 
+{
     RegisterRuleOption("cvs", CvsInit, NULL, OPT_TYPE_DETECTION, NULL);
 
 #ifdef PERF_PROFILING
@@ -137,25 +139,25 @@ void SetupCvs(void)
 **  NAME
 **    CvsInit
 **       Initialize the CVS context and set it up so we can detect commands.
-**            
+**
 */
 /**
-**  
+**
 **  @return None
 **
 */
 
-static void CvsInit(char *data, OptTreeNode *otn, int protocol)
+static void CvsInit(struct _SnortConfig *sc, char *data, OptTreeNode *otn, int protocol)
 {
     CvsRuleOption *cvs_rule_option;
     void *ds_ptr_dup;
     OptFpList *ofl;
 
     cvs_rule_option = (CvsRuleOption *)SnortAlloc(sizeof(CvsRuleOption));
-    
+
     CvsRuleParse(data, cvs_rule_option);
 
-    if (add_detection_option(RULE_OPTION_TYPE_CVS, (void *)cvs_rule_option, &ds_ptr_dup) == DETECTION_OPTION_EQUAL)
+    if (add_detection_option(sc, RULE_OPTION_TYPE_CVS, (void *)cvs_rule_option, &ds_ptr_dup) == DETECTION_OPTION_EQUAL)
     {
         free(cvs_rule_option);
         cvs_rule_option = ds_ptr_dup;
@@ -175,7 +177,7 @@ static void CvsInit(char *data, OptTreeNode *otn, int protocol)
 **       Parse the CVS rules and set the threshold criteria.
 */
 /**
-**  
+**
 **  @return None
 **
 */
@@ -186,7 +188,7 @@ static void CvsRuleParse(char *rule_args, CvsRuleOption *cvs_rule_option)
     int num_toks = 0;
 
 
-    toks = mSplit(rule_args, CVS_CONFIG_DELIMITERS, 2, &num_toks, 0); 
+    toks = mSplit(rule_args, CVS_CONFIG_DELIMITERS, 2, &num_toks, 0);
 
     switch (num_toks)
     {
@@ -211,7 +213,7 @@ static void CvsRuleParse(char *rule_args, CvsRuleOption *cvs_rule_option)
             break;
     }
 
-    mSplitFree(&toks, num_toks); 
+    mSplitFree(&toks, num_toks);
 }
 
 
@@ -219,10 +221,10 @@ static void CvsRuleParse(char *rule_args, CvsRuleOption *cvs_rule_option)
 **  NAME
 **    CvsDetect
 **    This function is called on a per rule basis for CVS detection.
-**            
+**
 */
 /**
-**  
+**
 **  @return integer
 **  @retval CVS_NO_ALERT
 **  @retval CVS_ALERT
@@ -267,10 +269,10 @@ static int CvsDetect(void *option_data, Packet *p)
 **  NAME
 **    CvsDecode
 **    This main decode function. Decode the CVS commands and detect the vulnerabilities.
-**            
+**
 */
 /**
-**  
+**
 **  @return integer
 **
 */
@@ -314,7 +316,7 @@ static int CvsDecode(const uint8_t *data, uint16_t data_len,
                 {
                     ret = CvsValidateEntry(command.cmd_arg,
                                            (command.cmd_arg + command.cmd_arg_len));
-                    
+
                     if ((ret == CVS_ENTRY_INVALID)&&(eol < end))
                     {
                         return CVS_ALERT;
@@ -358,7 +360,7 @@ static int CvsCmdCompare(const char *cmd, const uint8_t *pkt_cmd, int pkt_cmd_le
 
     return 1;
 }
- 
+
 
 /*
 **  NAME
@@ -370,7 +372,7 @@ static int CvsCmdCompare(const char *cmd, const uint8_t *pkt_cmd, int pkt_cmd_le
 **       command member.  A pointer to the rest of the string after
 **       the replacement '\0' is put into the structure's command
 **       argument member.  If there isn't a space, the entire line
-**       is put in the command and the command argument is set to 
+**       is put in the command and the command argument is set to
 **       NULL.
 **
 */
@@ -446,24 +448,25 @@ static int CvsValidateEntry(const uint8_t *entry_arg, const uint8_t *end_arg)
     /* There should be exactly 5 slashes in the string */
     while (entry_arg < end_arg)
     {
-    	/* if on the 3rd slash, check for next char == '/' or '+'
-    	 * This is where the heap overflow on multiple Is-Modified
-    	 * commands occurs */
-    	if (slashes == 3)
-    	{
-    		if((*entry_arg != '/')&&(*entry_arg != '+'))
-    		{
-    			return CVS_ENTRY_INVALID;
-    		}
-    	}
-    	if (*entry_arg != '/')
-    	{
-    		entry_arg = memchr(entry_arg, '/', end_arg - entry_arg);
-    		if (entry_arg == NULL)
-    			break;
-    	}
-    	slashes++;
-    	entry_arg++;
+        /* if on the 3rd slash, check for next char == '/' or '+'
+         * This is where the heap overflow on multiple Is-Modified
+         * commands occurs */
+        if (slashes == 3)
+        {
+            if((*entry_arg != '/')&&(*entry_arg != '+'))
+            {
+                return CVS_ENTRY_INVALID;
+            }
+        }
+        if (*entry_arg != '/')
+        {
+            entry_arg = memchr(entry_arg, '/', end_arg - entry_arg);
+            if (entry_arg == NULL)
+                break;
+        }
+
+        slashes++;
+        entry_arg++;
     }
 
     if (slashes != 5)

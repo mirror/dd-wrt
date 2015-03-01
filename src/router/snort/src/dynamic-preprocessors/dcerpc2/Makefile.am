@@ -1,27 +1,23 @@
 ## $Id
 AUTOMAKE_OPTIONS=foreign no-dependencies
 
-INCLUDES = -I../include -I$(srcdir)/includes
+INCLUDES = -I../include -I${srcdir}/../libs -I$(srcdir)/includes
 
-libdir = ${exec_prefix}/lib/snort_dynamicpreprocessor
+dynamicpreprocessordir = ${libdir}/snort_dynamicpreprocessor
 
-lib_LTLIBRARIES = libsf_dce2_preproc.la
+dynamicpreprocessor_LTLIBRARIES = libsf_dce2_preproc.la
 
-libsf_dce2_preproc_la_LDFLAGS = -shared -export-dynamic -module @XCCFLAGS@
-
-BUILT_SOURCES = \
-sf_dynamic_preproc_lib.c \
-sf_ip.c \
-sfrt.c \
-sfrt_dir.c \
-sfPolicyUserData.c 
-
+libsf_dce2_preproc_la_LDFLAGS = -export-dynamic -module @XCCFLAGS@
+if SO_WITH_STATIC_LIB
+libsf_dce2_preproc_la_LIBADD = ../libsf_dynamic_preproc.la
+else
 nodist_libsf_dce2_preproc_la_SOURCES = \
-sf_dynamic_preproc_lib.c \
-sf_ip.c \
-sfrt.c \
-sfrt_dir.c \
-sfPolicyUserData.c 
+../include/sf_dynamic_preproc_lib.c \
+../include/sf_ip.c \
+../include/sfrt.c \
+../include/sfrt_dir.c \
+../include/sfPolicyUserData.c
+endif
 
 libsf_dce2_preproc_la_SOURCES = \
 includes/dcerpc.h \
@@ -59,28 +55,12 @@ dce2_cl.c \
 dce2_cl.h \
 dce2_http.c \
 dce2_http.h \
-sf_preproc_info.h
+dce2_paf.c \
+dce2_paf.h
 
 EXTRA_DIST = \
 sf_dce2.dsp
 
-sf_dynamic_preproc_lib.c: ../include/sf_dynamic_preproc_lib.c
-	cp $? $@
-
-sf_ip.c: ../include/sf_ip.c
-	cp $? $@
-
-sfrt.c: ../include/sfrt.c
-	cp $? $@
-
-sfrt_dir.c: ../include/sfrt_dir.c
-	cp $? $@
-
-sfPolicyUserData.c: ../include/sfPolicyUserData.c
-	cp $? $@
-
 all-local: $(LTLIBRARIES)
-	$(MAKE) DESTDIR=`pwd`/../build install-libLTLIBRARIES
+	$(MAKE) DESTDIR=`pwd`/../build install-dynamicpreprocessorLTLIBRARIES
 
-clean-local:
-	rm -f *~ sf_dynamic_preproc_lib.c sf_ip.c sfrt.c sfrt_dir.c sfPolicyUserData.c

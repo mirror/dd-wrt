@@ -7,78 +7,141 @@ it allows rules to generically track the state of an application protocol.
 
 The general configuration of the flowbits rule option is:
 
-    flowbits:<keyword>[,<STATE_NAME>][,<GROUP_NAME>];
+    flowbits:<keyword>[bits/bats>],[<GROUP_NAME>];
+    bits ::= bit[|bits]
+    bats ::= bit[&bats]
 
 <GROUP_NAME> : This specifies the group to which the flowbits belong. When the
-GROUP_NAME isnt specified the flowbits belong to the default group. All the flowbits
-in a particular group (with an exception of default group) are mutually exclusive. 
-This means when one flowbits is set in a particular group all the other flowbits 
-in that group will be unset. A particular flow cannot belong to more than one 
-group. The group name should be limited to any alphanumeric string including periods, 
-dashes, and underscores. This argument is allowed only with set and toggle keywords.
+GROUP_NAME isnt specified the flowbits belong to the default group. A particular 
+flowbit can belong to more than one group. The group name should be limited to any 
+alphanumeric string including periods, dashes, and underscores. 
 
 
 Flowbits Keywords
 -----------------
 
-There are seven keywords associated with flowbits, most of the options need a
+There are several keywords associated with flowbits, most of the options need a
 user defined name for the specific state that is being checked.  This string
 should be limited to any alphanumeric string including periods, dashes, and
 underscores.  
 
 set
 ---
-This keyword sets a STATE_NAME for a particular flow and unsets all the other flowbits
-in a group when the GROUP_NAME is passed. This keyword always returns true.
+This keyword sets bits to group for a particular flow. When no group specified, 
+set the default group. This keyword always returns true.
 
-Usage:  flowbits:set,FOO[,BAR];
+Syntax:
+    flowbits:set,bats[,group]
+Usage:  
+    flowbits:set,bit1,doc;
+    flowbits:set,bit2&bit3,doc;
+    First rule sets bit1 in doc group, second rule sets bit2 and bit3 in doc group. 
+    So doc group has bit 1, bit2 and bit3 set  
 
+setx
+---
+This keyword sets bits to group exclusively. This clears other bits in group. 
+Group must present.This keyword always returns true.
+
+Syntax:
+    flowbits:setx,bats,group
+Usage:  
+    flowbits: setx, bit1, doc
+    flowbits: setx, bit2&bit3, doc
+    First rule sets bit1 in doc group, second rule sets bit2 and bit3 in doc group.
+    So doc group has bit2 and bit3 set, because bit1 is cleared by rule 2.
+    
 unset
 -----
-This keyword unsets a STATE_NAME for a particular flow.  This keyword always
-returns true.
+This keyword clears bits specified for a particular flow or clears all bits in the 
+group (Group must present). This keyword always returns true.
 
-Usage:  flowbits:unset,FOO;
+Syntax:
+   flowbits:unset,bats
+   flowbits:unset,all,group
+   
+Usage:  
+   flowbits: unset, bit1  
+   Clear bit1.
+   
+   flowbits: unset, bit1&bit2
+   After this rule, both bit1 and bit2 are cleared.
+   
+   flowbits: unset, all, doc
+   This clears all bits in the doc group.
 
 toggle
 ------
-This keyword sets a STATE_NAME if unset and clears out all the other flowbits in a
-group when the GROUP_NAME is passed, and unsets a STATE_NAME if set. This keyword 
-always returns true.
+If flowbit is set, unset it. If it is unset, set it. Toggle every bit specified or
+toggle all the bits in group (Group must be present). This keyword always returns true.
 
-Usage:  flowbits:toggle,FOO[,BAR];
+Syntax:  
+   flowbits:toggle,bats
+   flowbits:toggle,all,group
+   
+Usage:
+   flowbits: toggle, bit1&bit2
+   If bit1 is 0 and bit2 is 1 before, after this rule, bit1 is 1 and bit2 is 0.
+   
+   flowbits:toggle,all,doc
+   Toggle all the bits in group doc as described above. 
 
 isset
 -----
-This keyword checks a STATE_NAME to see if it is set.  It returns true if the
-STATE_NAME is set, and returns false if the STATE_NAME is not set.
+This keyword checks a bit or several bits to see if it is set.  It returns true or
+false based on the following syntax.
 
-Usage:  flowbits:isset,FOO;
+Syntax:  
+   flowbits:isset, bits => Check whether any bit is set
+   flowbits:isset, bats => Check whether all bits are set
+   flowbits:isset, any, group => Check whether any bit in the group is set.
+   flowbits:isset, all, group => Check whether all bits in the group are set. 
+   
+Usage
+   flowbits:isset, bit1|bit2 => If either bit1 or bit2 is set, return true
+   flowbits:isset, bit1&bit2 => If both bit1 and bit2 are set, return true, otherwise false
+   flowbits:isset, any, doc => If any bit in group doc is set, return true
+   flowbits:isset, all, doc => If all the bits in doc group are set, return true 
 
 isnotset
 --------
-This keyword checks a STATE_NAME to see if it is not set.  It returns true if
-the STATE_NAME is not set, and returns false if the STATE_NAME is set.
+This keyword is the reverse of isset.  It returns true if isset is false, it returns
+false if isset is true. Isnotset works on the final result, not on individual bits.
 
-Usage:  flowbits:isnotset,FOO;
+Syntax:  
+   flowbits:isnotset, bits => Check whether not any bit is set
+   flowbits:isnotset, bats => Check whether not all bits are set
+   flowbits:isnotset, any, group => Check whether not bit in the group is set.
+   flowbits:isnotset, all, group => Check whether not all bits in the group are set. 
+   
+Usage
+   flowbits:isnotset, bit1|bit2 => If either bit1 or bit2 is set, return true
+   flowbits:isnotset, bit1&bit2 => If both bit1 and bit2 are set, return true, otherwise false
+   flowbits:isnotset, any, doc => If any bit in group doc is set, return true
+   flowbits:isnotset, all, doc => If all the bits in doc group are set, return true 
 
 noalert
 -------
 This keyword always returns false.  It allows users to write rules that set,
-unset, and toggle STATE_NAME without generating an alert.  This is most useful
-for writing flowbit rules that set STATE_NAME on normal traffic and
-significantly reduces unwanted alerts.  There is no STATE_NAME specified with
-this keyword.
+unset, and toggle bit without generating an alert.  This is most useful
+for writing flowbit rules that set bit on normal traffic and significantly reduces 
+unwanted alerts.  There is no bit specified with this keyword.
 
 Usage:  flowbits:noalert;
 
 reset
 -----
 
-This keyword resets all of the states on a given flow.  This always returns
-true.  There is no STATE_NAME specified with this keyword.
+This keyword resets all of the states on a given flow if no group specified, otherwise, 
+reset all the bits in a group. This always returns true.  There is no bit specified with
+ this keyword.
 
-Usage:  flowbits:reset;
+Syntax: 
+   flowbits:reset[,group]
+
+Usage:  
+   flowbits:reset => reset all the bits in the flow
+   flowbits: reset, doc => reset all the bits in the doc group
 
 Sample Rules
 ------------

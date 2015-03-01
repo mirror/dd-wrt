@@ -1,6 +1,7 @@
 /****************************************************************************
  *
- * Copyright (C) 2003-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -15,7 +16,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************/
  
@@ -51,6 +52,7 @@ typedef struct sf_lnode
 }
 SF_QNODE,SF_SNODE,SF_LNODE;
 
+#define SFLIST_NODE_TO_DATA(node)  (node)->ndata
 
 /*
 *	Integer Stack - uses an array from the subroutines stack
@@ -96,7 +98,7 @@ int       sflist_add_before ( SF_LIST* s, SF_LNODE * lnode, NODE_DATA ndata );
 int       sflist_add_after ( SF_LIST* s, SF_LNODE * lnode, NODE_DATA ndata );
 NODE_DATA sflist_remove_head ( SF_LIST * s);
 NODE_DATA sflist_remove_tail ( SF_LIST * s); 
-void      sflist_remove_node (SF_LIST * s, SF_LNODE * n, void (*free)(void*) );
+void      sflist_remove_node (SF_LIST * s, SF_LNODE * n);
 int       sflist_count ( SF_LIST* s); 
 NODE_DATA sflist_first( SF_LIST * s);
 NODE_DATA sflist_next( SF_LIST * s);

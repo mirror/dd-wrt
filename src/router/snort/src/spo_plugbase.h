@@ -1,5 +1,6 @@
 /*
-** Copyright (C) 2002-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -15,7 +16,7 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 /* $Id$ */
@@ -47,7 +48,7 @@ typedef enum _OutputTypeFlag
 
 
 /***************************** Output Plugin API  *****************************/
-typedef void (*OutputConfigFunc)(char *);
+typedef void (*OutputConfigFunc)(struct _SnortConfig *, char *);
 typedef void (*OutputFunc)(Packet *, char *, void *, Event *);
 
 typedef struct _OutputConfigFuncNode
@@ -76,9 +77,10 @@ typedef struct _OutputFuncNode
 void RegisterOutputPlugins(void);
 void RegisterOutputPlugin(char *, int, OutputConfigFunc);
 OutputConfigFunc GetOutputConfigFunc(char *);
+void RemoveOutputPlugin(char *);
 int GetOutputTypeFlags(char *);
 void DumpOutputPlugins(void);
-void AddFuncToOutputList(OutputFunc, OutputType, void *);
+void AddFuncToOutputList(struct _SnortConfig *, OutputFunc, OutputType, void *);
 void FreeOutputConfigFuncs(void);
 void FreeOutputList(OutputFuncNode *);
 

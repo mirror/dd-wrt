@@ -1,12 +1,13 @@
 /*
  * spp_ftptelnet.c
  *
- * Copyright (C) 2004-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2004-2013 Sourcefire, Inc.
  * Steven A. Sturges <ssturges@sourcefire.com>
  * Daniel J. Roelker <droelker@sourcefire.com>
  * Marc A. Norton <mnorton@sourcefire.com>
  * Kevin Liu <kliu@sourcefire.com>
- * 
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
  * published by the Free Software Foundation.  You may not use, modify or
@@ -20,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  * Description:
  *
@@ -40,6 +41,7 @@
  *
  */
 
+#include <assert.h>
 #include <string.h>
 #include <stdio.h>
 #include <sys/types.h>
@@ -48,26 +50,26 @@
 #include "config.h"
 #endif
 
-//#include "decode.h"
-//#include "plugbase.h"
-#include "debug.h"
-//#include "util.h"
+#include "sf_types.h"
+#include "snort_debug.h"
 
 #include "ftpp_ui_config.h"
-#ifdef CLIENT_READY
-#include "ftp_client.h"
-#include "ftp_norm.h"
-#endif
 #include "snort_ftptelnet.h"
+#include "spp_ftptelnet.h"
+#include "sf_preproc_info.h"
 
 #include "profiler.h"
 
 #include "sfPolicy.h"
 #include "sfPolicyUserData.h"
 
-#ifdef DYNAMIC_PLUGIN
-//#include "dynamic-plugins/sp_preprocopt.h"
-#endif
+const int MAJOR_VERSION = 1;
+const int MINOR_VERSION = 2;
+const int BUILD_VERSION = 13;
+const char *PREPROC_NAME = "SF_FTPTELNET";
+
+#define SetupFTPTelnet DYNAMIC_PREPROC_SETUP
+
 
 /*
  * Defines for preprocessor initialization
@@ -90,6 +92,9 @@
 #ifdef PERF_PROFILING
 PreprocStats ftpPerfStats;
 PreprocStats telnetPerfStats;
+#ifdef TARGET_BASED
+PreprocStats ftpdataPerfStats;
+#endif
 #endif
 
 /*
@@ -113,10 +118,10 @@ static void FTPTelnetReset(int, void *);
 static void FTPTelnetResetStats(int, void *);
 
 #ifdef SNORT_RELOAD
-tSfPolicyUserContextId ftp_telnet_swap_config = NULL;
-static void FtpTelnetReload(char *);
-static int FtpTelnetReloadVerify(void);
-static void * FtpTelnetReloadSwap(void);
+static void FtpTelnetReloadGlobal(struct _SnortConfig *, char *, void **);
+static void FtpTelnetReload(struct _SnortConfig *, char *, void **);
+static int FtpTelnetReloadVerify(struct _SnortConfig *, void *);
+static void * FtpTelnetReloadSwap(struct _SnortConfig *, void *);
 static void FtpTelnetReloadSwapFree(void *);
 #endif
 
@@ -137,28 +142,42 @@ extern char *maxToken;
  * Returns: None
  *
  */
-static void FTPTelnetChecks(void *pkt, void *context)
+void FTPTelnetChecks(void *pkt, void *context)
 {
-    /*
-     * IMPORTANT:
-     * This is where we initialize any variables that can impact other
-     * aspects of detection/processing.
-     *
-     */
     SFSnortPacket *p = (SFSnortPacket*)pkt;
 
-    /*
-     * Check for valid packet
-     * if neither header or data is good, then we just abort.
-     */
-    if (!p->payload_size || !IsTCP(p) || (p->payload == NULL))
-        return;
+    // precondition - what we registered for
+    assert(IsTCP(p) && p->payload && p->payload_size);
 
-    /*
-     * Pass in the configuration and the packet.
-     */
     SnortFTPTelnet(p);
 }
+
+#ifdef TARGET_BASED
+void FTPDataTelnetChecks(void *pkt, void *context)
+{
+    SFSnortPacket *p = (SFSnortPacket*)pkt;
+
+    // precondition - what we registered for
+    assert(IsTCP(p));
+
+    if ( _dpd.fileAPI->get_max_file_depth() >= 0 )
+    {
+        if ( _dpd.sessionAPI->get_application_protocol_id(p->stream_session)
+            == ftp_data_app_id )
+        {
+            PROFILE_VARS;
+            PREPROC_PROFILE_START(ftpdataPerfStats);
+            SnortFTPData(p);
+            PREPROC_PROFILE_END(ftpdataPerfStats);
+            return;
+        }
+    }
+    if ( !p->payload_size || (p->payload == NULL) )
+        return;
+
+    SnortFTPTelnet(p);
+}
+#endif
 
 /*
  * Function: FTPTelnetInit(char *args)
@@ -200,13 +219,15 @@ void FTPTelnetCleanExit(int sig, void *args)
  *
  */
 
-static void FTPTelnetInit(char *args)
+extern char* mystrtok (char* s, const char* delim);
+
+static void FTPTelnetInit(struct _SnortConfig *sc, char *args)
 {
     char  *pcToken;
     char ErrorString[ERRSTRLEN];
     int iErrStrLen = ERRSTRLEN;
     int iRet = 0;
-    tSfPolicyId policy_id = _dpd.getParserPolicy();
+    tSfPolicyId policy_id = _dpd.getParserPolicy(sc);
     FTPTELNET_GLOBAL_CONF *pPolicyConfig = NULL;
 
     ErrorString[0] = '\0';
@@ -219,10 +240,10 @@ static void FTPTelnetInit(char *args)
 
     /* Find out what is getting configured */
     maxToken = args + strlen(args);
-    pcToken = strtok(args, CONF_SEPARATORS);
+    pcToken = mystrtok(args, CONF_SEPARATORS);
     if (pcToken == NULL)
     {
-        DynamicPreprocessorFatalMessage("%s(%d)strtok returned NULL when it "
+        DynamicPreprocessorFatalMessage("%s(%d)mystrtok returned NULL when it "
                                         "should not.", __FILE__, __LINE__);
     }
 
@@ -240,11 +261,12 @@ static void FTPTelnetInit(char *args)
         _dpd.addPreprocExit(FTPTelnetCleanExit, NULL, PRIORITY_APPLICATION, PP_FTPTELNET);
         _dpd.addPreprocReset(FTPTelnetReset, NULL, PRIORITY_APPLICATION, PP_FTPTELNET);
         _dpd.addPreprocResetStats(FTPTelnetResetStats, NULL, PRIORITY_APPLICATION, PP_FTPTELNET);
-        _dpd.addPreprocConfCheck(FTPConfigCheck);
+        _dpd.addPreprocConfCheck(sc, FTPConfigCheck);
 
 #ifdef PERF_PROFILING
         _dpd.addPreprocProfileFunc("ftptelnet_ftp", (void*)&ftpPerfStats, 0, _dpd.totalPerfStats);
         _dpd.addPreprocProfileFunc("ftptelnet_telnet", (void*)&telnetPerfStats, 0, _dpd.totalPerfStats);
+        _dpd.addPreprocProfileFunc("ftptelnet_ftpdata", (void*)&ftpdataPerfStats, 0, _dpd.totalPerfStats);
 #endif
 
 #ifdef TARGET_BASED
@@ -255,6 +277,11 @@ static void FTPTelnetInit(char *args)
             ftp_data_app_id = _dpd.addProtocolReference("ftp-data");
             telnet_app_id = _dpd.addProtocolReference("telnet");
         }
+
+        // register with session to handle applications
+        _dpd.sessionAPI->register_service_handler( PP_FTPTELNET, ftp_app_id );
+        _dpd.sessionAPI->register_service_handler( PP_FTPTELNET, ftp_data_app_id );
+        _dpd.sessionAPI->register_service_handler( PP_FTPTELNET, telnet_app_id );
 #endif
     }
 
@@ -268,7 +295,7 @@ static void FTPTelnetInit(char *args)
     pPolicyConfig = (FTPTELNET_GLOBAL_CONF *)sfPolicyUserDataGetCurrent(ftp_telnet_config);
     if (pPolicyConfig == NULL)
     {
-        if (strcasecmp(pcToken, GLOBAL) != 0) 
+        if (strcasecmp(pcToken, GLOBAL) != 0)
         {
             DynamicPreprocessorFatalMessage("%s(%d) Must configure the "
                 "ftptelnet global configuration first.\n",
@@ -298,19 +325,17 @@ static void FTPTelnetInit(char *args)
             {
                 PrintFTPGlobalConf(pPolicyConfig);
 
-                /* Add FTPTelnet into the preprocessor list */
-                _dpd.addPreproc(FTPTelnetChecks, PRIORITY_APPLICATION, PP_FTPTELNET, PROTO_BIT__TCP);
-                _dpd.preprocOptRegister("ftp.bounce", &FTPPBounceInit, &FTPPBounceEval,
+                _dpd.preprocOptRegister(sc, "ftp.bounce", &FTPPBounceInit, &FTPPBounceEval,
                         NULL, NULL, NULL, NULL, NULL);
 
 #ifdef TARGET_BASED
                 if (_dpd.streamAPI != NULL)
                 {
                     _dpd.streamAPI->set_service_filter_status
-                        (ftp_app_id, PORT_MONITOR_SESSION, policy_id, 1);
+                        (sc, ftp_app_id, PORT_MONITOR_SESSION, policy_id, 1);
 
                     _dpd.streamAPI->set_service_filter_status
-                        (telnet_app_id, PORT_MONITOR_SESSION, policy_id, 1);
+                        (sc, telnet_app_id, PORT_MONITOR_SESSION, policy_id, 1);
                 }
 #endif
             }
@@ -319,6 +344,8 @@ static void FTPTelnetInit(char *args)
     else if (strcasecmp(pcToken, TELNET) == 0)
     {
         iRet = ProcessTelnetConf(pPolicyConfig, ErrorString, iErrStrLen);
+        enableFtpTelnetPortStreamServices( sc, &pPolicyConfig->telnet_config->proto_ports, NULL,
+                                           SSN_DIR_FROM_SERVER | SSN_DIR_FROM_CLIENT ); 
     }
     else if (strcasecmp(pcToken, FTP) == 0)
     {
@@ -332,11 +359,11 @@ static void FTPTelnetInit(char *args)
         }
         else if (strcasecmp(pcToken, SERVER) == 0)
         {
-            iRet = ProcessFTPServerConf(pPolicyConfig, ErrorString, iErrStrLen);
+            iRet = ProcessFTPServerConf(sc, pPolicyConfig, ErrorString, iErrStrLen);
         }
         else if (strcasecmp(pcToken, CLIENT) == 0)
         {
-            iRet = ProcessFTPClientConf(pPolicyConfig, ErrorString, iErrStrLen);
+            iRet = ProcessFTPClientConf(sc, pPolicyConfig, ErrorString, iErrStrLen);
         }
         else
         {
@@ -359,7 +386,7 @@ static void FTPTelnetInit(char *args)
              */
             if(*ErrorString)
             {
-                _dpd.errMsg("WARNING: %s(%d) => %s\n", 
+                _dpd.errMsg("WARNING: %s(%d) => %s\n",
                             *(_dpd.config_file), *(_dpd.config_line), ErrorString);
             }
         }
@@ -370,7 +397,7 @@ static void FTPTelnetInit(char *args)
              */
             if(*ErrorString)
             {
-                DynamicPreprocessorFatalMessage("%s(%d) => %s\n", 
+                DynamicPreprocessorFatalMessage("%s(%d) => %s\n",
                                                 *(_dpd.config_file), *(_dpd.config_line), ErrorString);
             }
             else
@@ -380,12 +407,12 @@ static void FTPTelnetInit(char *args)
                  */
                 if(iRet == -2)
                 {
-                    DynamicPreprocessorFatalMessage("%s(%d) => ErrorString is undefined.\n", 
+                    DynamicPreprocessorFatalMessage("%s(%d) => ErrorString is undefined.\n",
                                                     *(_dpd.config_file), *(_dpd.config_line));
                 }
                 else
                 {
-                    DynamicPreprocessorFatalMessage("%s(%d) => Undefined Error.\n", 
+                    DynamicPreprocessorFatalMessage("%s(%d) => Undefined Error.\n",
                                                     *(_dpd.config_file), *(_dpd.config_line));
                 }
             }
@@ -416,10 +443,11 @@ void SetupFTPTelnet(void)
     _dpd.registerPreproc(GLOBAL_KEYWORD, FTPTelnetInit);
     _dpd.registerPreproc(PROTOCOL_KEYWORD, FTPTelnetInit);
 #else
-    _dpd.registerPreproc(GLOBAL_KEYWORD, FTPTelnetInit, FtpTelnetReload,
-                         FtpTelnetReloadSwap, FtpTelnetReloadSwapFree);
+    _dpd.registerPreproc(GLOBAL_KEYWORD, FTPTelnetInit, FtpTelnetReloadGlobal,
+                         FtpTelnetReloadVerify, FtpTelnetReloadSwap,
+                         FtpTelnetReloadSwapFree);
     _dpd.registerPreproc(PROTOCOL_KEYWORD, FTPTelnetInit,
-                         FtpTelnetReload, NULL, NULL);
+                         FtpTelnetReload, NULL, NULL, NULL);
 #endif
 
     DEBUG_WRAP(DebugMessage(DEBUG_FTPTELNET, "Preprocessor: FTPTelnet is "
@@ -437,13 +465,13 @@ static void FTPTelnetResetStats(int signal, void *data)
 }
 
 #ifdef SNORT_RELOAD
-static void FtpTelnetReload(char *args)
+static void _FtpTelnetReload(struct _SnortConfig *sc, tSfPolicyUserContextId ftp_telnet_swap_config, char *args)
 {
     char  *pcToken;
     char ErrorString[ERRSTRLEN];
     int iErrStrLen = ERRSTRLEN;
     int iRet = 0;
-    tSfPolicyId policy_id = _dpd.getParserPolicy();
+    tSfPolicyId policy_id = _dpd.getParserPolicy(sc);
     FTPTELNET_GLOBAL_CONF *pPolicyConfig = NULL;
 
     ErrorString[0] = '\0';
@@ -456,25 +484,11 @@ static void FtpTelnetReload(char *args)
 
     /* Find out what is getting configured */
     maxToken = args + strlen(args);
-    pcToken = strtok(args, CONF_SEPARATORS);
+    pcToken = mystrtok(args, CONF_SEPARATORS);
     if (pcToken == NULL)
     {
-        DynamicPreprocessorFatalMessage("%s(%d)strtok returned NULL when it "
+        DynamicPreprocessorFatalMessage("%s(%d)mystrtok returned NULL when it "
                                         "should not.", __FILE__, __LINE__);
-    }
-
-    if (ftp_telnet_swap_config == NULL)
-    {
-        //create a context
-        ftp_telnet_swap_config = sfPolicyConfigCreate();
-
-        if (ftp_telnet_swap_config == NULL)
-        {
-            DynamicPreprocessorFatalMessage("No memory to allocate "
-                                            "FTP/Telnet swap_configuration.\n");
-        }
-
-        _dpd.addPreprocReloadVerify(FtpTelnetReloadVerify);
     }
 
     /*
@@ -488,7 +502,7 @@ static void FtpTelnetReload(char *args)
 
     if (pPolicyConfig == NULL)
     {
-        if (strcasecmp(pcToken, GLOBAL) != 0) 
+        if (strcasecmp(pcToken, GLOBAL) != 0)
         {
             DynamicPreprocessorFatalMessage("%s(%d) Must configure the "
                 "ftptelnet global configuration first.\n",
@@ -518,9 +532,7 @@ static void FtpTelnetReload(char *args)
             {
                 PrintFTPGlobalConf(pPolicyConfig);
 
-                /* Add FTPTelnet into the preprocessor list */
-                _dpd.addPreproc(FTPTelnetChecks, PRIORITY_APPLICATION, PP_FTPTELNET, PROTO_BIT__TCP);
-                _dpd.preprocOptRegister("ftp.bounce", &FTPPBounceInit, &FTPPBounceEval,
+                _dpd.preprocOptRegister(sc, "ftp.bounce", &FTPPBounceInit, &FTPPBounceEval,
                         NULL, NULL, NULL, NULL, NULL);
             }
         }
@@ -528,6 +540,8 @@ static void FtpTelnetReload(char *args)
     else if (strcasecmp(pcToken, TELNET) == 0)
     {
         iRet = ProcessTelnetConf(pPolicyConfig, ErrorString, iErrStrLen);
+        enableFtpTelnetPortStreamServices( sc, &pPolicyConfig->telnet_config->proto_ports, NULL,
+                                           SSN_DIR_FROM_SERVER | SSN_DIR_FROM_CLIENT ); 
     }
     else if (strcasecmp(pcToken, FTP) == 0)
     {
@@ -541,11 +555,11 @@ static void FtpTelnetReload(char *args)
         }
         else if (strcasecmp(pcToken, SERVER) == 0)
         {
-            iRet = ProcessFTPServerConf(pPolicyConfig, ErrorString, iErrStrLen);
+            iRet = ProcessFTPServerConf(sc, pPolicyConfig, ErrorString, iErrStrLen);
         }
         else if (strcasecmp(pcToken, CLIENT) == 0)
         {
-            iRet = ProcessFTPClientConf(pPolicyConfig, ErrorString, iErrStrLen);
+            iRet = ProcessFTPClientConf(sc, pPolicyConfig, ErrorString, iErrStrLen);
         }
         else
         {
@@ -568,7 +582,7 @@ static void FtpTelnetReload(char *args)
              */
             if(*ErrorString)
             {
-                _dpd.errMsg("WARNING: %s(%d) => %s\n", 
+                _dpd.errMsg("WARNING: %s(%d) => %s\n",
                             *(_dpd.config_file), *(_dpd.config_line), ErrorString);
             }
         }
@@ -579,7 +593,7 @@ static void FtpTelnetReload(char *args)
              */
             if(*ErrorString)
             {
-                DynamicPreprocessorFatalMessage("%s(%d) => %s\n", 
+                DynamicPreprocessorFatalMessage("%s(%d) => %s\n",
                                                 *(_dpd.config_file), *(_dpd.config_line), ErrorString);
             }
             else
@@ -589,12 +603,12 @@ static void FtpTelnetReload(char *args)
                  */
                 if(iRet == -2)
                 {
-                    DynamicPreprocessorFatalMessage("%s(%d) => ErrorString is undefined.\n", 
+                    DynamicPreprocessorFatalMessage("%s(%d) => ErrorString is undefined.\n",
                                                     *(_dpd.config_file), *(_dpd.config_line));
                 }
                 else
                 {
-                    DynamicPreprocessorFatalMessage("%s(%d) => Undefined Error.\n", 
+                    DynamicPreprocessorFatalMessage("%s(%d) => Undefined Error.\n",
                                                     *(_dpd.config_file), *(_dpd.config_line));
                 }
             }
@@ -602,29 +616,58 @@ static void FtpTelnetReload(char *args)
     }
 }
 
+static void FtpTelnetReloadGlobal(struct _SnortConfig *sc, char *args, void **new_config)
+{
+    tSfPolicyUserContextId ftp_telnet_swap_config = (tSfPolicyUserContextId)*new_config;
+
+    if (ftp_telnet_swap_config == NULL)
+    {
+        //create a context
+        ftp_telnet_swap_config = sfPolicyConfigCreate();
+
+        if (ftp_telnet_swap_config == NULL)
+        {
+            DynamicPreprocessorFatalMessage("No memory to allocate "
+                                            "FTP/Telnet swap_configuration.\n");
+        }
+        *new_config = (void *)ftp_telnet_swap_config;
+    }
+    _FtpTelnetReload(sc, ftp_telnet_swap_config, args);
+}
+
+static void FtpTelnetReload(struct _SnortConfig *sc, char *args, void **new_config)
+{
+    tSfPolicyUserContextId ftp_telnet_swap_config;
+    ftp_telnet_swap_config = (tSfPolicyUserContextId)_dpd.getRelatedReloadData(sc, GLOBAL_KEYWORD);
+    _FtpTelnetReload(sc, ftp_telnet_swap_config, args);
+}
+
 static int FtpTelnetReloadVerifyPolicy(
+        struct _SnortConfig *sc,
         tSfPolicyUserContextId config,
-        tSfPolicyId policyId, 
+        tSfPolicyId policyId,
         void* pData
         )
 {
-    FTPTelnetCheckConfigs( pData, policyId );
-    return 0;
+    return FTPTelnetCheckConfigs( sc, pData, policyId );
 }
 
-static int FtpTelnetReloadVerify(void)
+static int FtpTelnetReloadVerify(struct _SnortConfig *sc, void *new_config)
 {
+    tSfPolicyUserContextId ftp_telnet_swap_config = (tSfPolicyUserContextId)new_config;
     if (ftp_telnet_swap_config == NULL)
         return 0;
 
-    sfPolicyUserDataIterate (ftp_telnet_swap_config, FtpTelnetReloadVerifyPolicy);
+    if (sfPolicyUserDataIterate (sc, ftp_telnet_swap_config, FtpTelnetReloadVerifyPolicy))
+        return -1;
 
     return 0;
 }
 
 static int FtpTelnetReloadSwapPolicy(
+        struct _SnortConfig *sc,
         tSfPolicyUserContextId config,
-        tSfPolicyId policyId, 
+        tSfPolicyId policyId,
         void* pData
         )
 {
@@ -640,17 +683,17 @@ static int FtpTelnetReloadSwapPolicy(
     return 0;
 }
 
-static void * FtpTelnetReloadSwap(void)
+static void * FtpTelnetReloadSwap(struct _SnortConfig *sc, void *new_config)
 {
+    tSfPolicyUserContextId ftp_telnet_swap_config = (tSfPolicyUserContextId)new_config;
     tSfPolicyUserContextId old_config = ftp_telnet_config;
 
     if (ftp_telnet_swap_config == NULL)
         return NULL;
 
     ftp_telnet_config = ftp_telnet_swap_config;
-    ftp_telnet_swap_config = NULL;
 
-    sfPolicyUserDataIterate (old_config, FtpTelnetReloadSwapPolicy);
+    sfPolicyUserDataIterate (sc, old_config, FtpTelnetReloadSwapPolicy);
 
     if (sfPolicyUserPolicyGetActive(old_config) == 0)
         return (void *)old_config;

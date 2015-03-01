@@ -1,6 +1,7 @@
 /****************************************************************************
  *
- * Copyright (C) 2006-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2006-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -15,7 +16,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************/
 
@@ -50,6 +51,10 @@
 #include <unistd.h>
 #include <syslog.h>
 #include <time.h>
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "snort.h"
 #include "rules.h"
@@ -170,8 +175,14 @@ void ppm_print_cfg(ppm_cfg_t *ppm_cfg)
             LogMessage("fastpath-expensive-packets\n");
         else
             LogMessage("none\n");
-        LogMessage("  packet logging  : %s\n", ppm_cfg->pkt_log ? "log" : "none");
+        LogMessage("  packet logging  : ");
+        if(ppm_cfg->pkt_log&PPM_LOG_ALERT) LogMessage("alert " );
+        if(ppm_cfg->pkt_log&PPM_LOG_MESSAGE) LogMessage("log ");
+        if(!ppm_cfg->pkt_log) LogMessage("none ");
+        LogMessage("\n");
+#ifdef DEBUG
         LogMessage("  debug-pkts      : %s\n",(ppm_cfg->debug_pkts)? "enabled":"disabled");
+#endif
     }
 
     if( ppm_cfg->max_rule_ticks)
@@ -201,7 +212,9 @@ void ppm_print_cfg(ppm_cfg_t *ppm_cfg)
         if(ppm_cfg->rule_log&PPM_LOG_MESSAGE) LogMessage("log ");
         if(!ppm_cfg->rule_log) LogMessage("none ");
         LogMessage("\n");
+#ifdef DEBUG
         /*LogMessage("  debug-rules     : %s\n",(ppm_cfg->debug_rules)?"enabled":"disabled"); unsupported */
+#endif
     }
 }
 
@@ -304,46 +317,142 @@ void ppm_init(ppm_cfg_t *ppm_cfg)
 /*
  *  Logging functions - syslog and/or events
  */
-#define PPM_FMT_FASTPATH "PPM: Pkt-Event Pkt[" STDi64 "] used=%g usecs, %u rules, %u nc-rules tested, packet fastpathed.\n"
-#define PPM_FMT_PACKET   "PPM: Pkt-Event Pkt[" STDi64 "] used=%g usecs, %u rules, %u nc-rules tested.\n"
+#define PPM_FMT_FASTPATH "PPM: Pkt-Event Pkt[" STDi64 "] used=%g usecs, %u rules, %u nc-rules tested, packet fastpathed (%s:%d -> %s:%d).\n"
+#define PPM_FMT_PACKET   "PPM: Pkt-Event Pkt[" STDi64 "] used=%g usecs, %u rules, %u nc-rules tested (%s:%d -> %s:%d).\n"
 
-void ppm_pkt_log(ppm_cfg_t *ppm_cfg)
+void ppm_pkt_log(ppm_cfg_t *ppm_cfg, Packet* p)
 {
+    int filterEvent = 0;
     if (!ppm_cfg->max_pkt_ticks)
         return;
 
     ppm_cfg->pkt_event_cnt++;
 
-    if (ppm_cfg->pkt_log)
+    if (ppm_cfg->pkt_log & PPM_LOG_ALERT)
     {
+        OptTreeNode* potn;
+        Event ev;
+
+        /* make sure we have an otn already in our table for this event */
+        potn = OtnLookup(snort_conf->otn_map, GENERATOR_PPM, PPM_EVENT_PACKET_ABORTED);
+        if (potn == NULL)
+        {
+            /* have to make one */
+            potn = GenerateSnortEventOtn(GENERATOR_PPM, /* GID */
+                                         PPM_EVENT_PACKET_ABORTED, /* SID */
+                                         1, /* Rev */
+                                         0, /* classification */
+                                         3, /* priority (low) */
+                                         PPM_EVENT_PACKET_ABORTED_STR /* msg string */);
+
+            if (potn == NULL)
+                return;
+
+            OtnLookupAdd(snort_conf->otn_map, potn);
+        }
+
+        SetEvent(&ev,
+                 potn->sigInfo.generator, /* GID */
+                 potn->sigInfo.id, /* SID */
+                 potn->sigInfo.rev, /* Rev */
+                 potn->sigInfo.class_id, /* classification */
+                 potn->sigInfo.priority, /* priority (low) */
+#if !defined(FEAT_OPEN_APPID)
+                 0);
+#else /* defined(FEAT_OPEN_APPID) */
+                 0, NULL);
+#endif /* defined(FEAT_OPEN_APPID) */
+
+        if ( IPH_IS_VALID(p) )
+        {
+            filterEvent = sfthreshold_test(
+                        potn->event_data.sig_generator,
+                        potn->event_data.sig_id,
+                        GET_SRC_IP(p), GET_DST_IP(p),
+                        p->pkth->ts.tv_sec);
+        }
+        else
+        {
+            snort_ip cleared;
+            IP_CLEAR(cleared);
+
+            filterEvent = sfthreshold_test(
+                        potn->event_data.sig_generator,
+                        potn->event_data.sig_id,
+                        IP_ARG(cleared), IP_ARG(cleared),
+                        p->pkth->ts.tv_sec);
+        }
+
+        if(filterEvent < 0)
+            filterEvent = 0;
+        else
+            AlertAction(p, potn, &ev);
+    }
+
+    if (ppm_cfg->pkt_log & PPM_LOG_MESSAGE)
+    {
+        char src[INET6_ADDRSTRLEN];
+        char dst[INET6_ADDRSTRLEN];
+
+        sfip_t* addr = GET_SRC_IP(p);
+        sfip_ntop(addr, src, sizeof(src));
+
+        addr = GET_DST_IP(p);
+        sfip_ntop(addr, dst, sizeof(dst));
+
         if (ppm_abort_this_pkt)
         {
             LogMessage(PPM_FMT_FASTPATH,
                        ppm_pt->pktcnt,
                        ppm_ticks_to_usecs((PPM_TICKS)ppm_pt->tot),
-                       ppm_pt->rule_tests,
-                       ppm_pt->nc_rule_tests );
+                       ppm_pt->rule_tests, ppm_pt->nc_rule_tests,
+                       src, p->sp, dst, p->dp);
         }
         else
         {
             LogMessage(PPM_FMT_PACKET,
                        ppm_pt->pktcnt,
                        ppm_ticks_to_usecs((PPM_TICKS)ppm_pt->tot),
-                       ppm_pt->rule_tests,
-                       ppm_pt->nc_rule_tests );
+                       ppm_pt->rule_tests, ppm_pt->nc_rule_tests,
+                       src, p->sp, dst, p->dp);
         }
     }
 }
 
-#define PPM_FMT_SUSPENDED "PPM: Rule-Event address=0x%p Pkt[" STDi64 "] used=%g usecs suspended %s"
-#define PPM_FMT_REENABLED "PPM: Rule-Event address=0x%p Pkt[" STDi64 "] re-enabled %s"
+#define PPM_FMT_SUS_PKT   "PPM: Rule-Event Pkt[" STDi64 "] suspended (%s:%d -> %s:%d).\n"
+#define PPM_FMT_SUSPENDED "PPM: Rule-Event Pkt[" STDi64 "] address=0x%p used=%g usecs suspended %s\n"
+#define PPM_FMT_REENABLED "PPM: Rule-Event Pkt[" STDi64 "] address=0x%p re-enabled %s\n"
+
+static inline OptTreeNode * PPMGetOTN(uint32_t sid, char *msg)
+{
+    OptTreeNode *otn = OtnLookup(snort_conf->otn_map, GENERATOR_PPM, sid);
+
+    if (otn == NULL)
+    {
+        otn = GenerateSnortEventOtn(GENERATOR_PPM, sid, 1, 0, 3, msg);
+        if (otn == NULL)
+            return NULL;
+
+        OtnLookupAdd(snort_conf->otn_map, otn);
+    }
+    else
+    {
+        tSfPolicyId policy_id = getIpsRuntimePolicy();
+
+        if ((getRtnFromOtn(otn, policy_id) == NULL)
+                && (GenerateSnortEventRtn(otn, policy_id) == NULL))
+            return NULL;
+    }
+
+    return otn;
+}
 
 void ppm_rule_log(ppm_cfg_t *ppm_cfg, uint64_t pktcnt, Packet *p)
 {
-    //char buf[STD_BUF];
     detection_option_tree_root_t *proot;
-    OptTreeNode * potn;
+    OptTreeNode *otn;
     char timestamp[TIMEBUF_SIZE];
+    int filterEvent = 0;
     *timestamp = '\0';
 
     if (!ppm_cfg->max_rule_ticks)
@@ -355,36 +464,56 @@ void ppm_rule_log(ppm_cfg_t *ppm_cfg, uint64_t pktcnt, Packet *p)
         {
             Event ev;
 
-            /* make sure we have an otn already in our table for this event */
-            potn = OtnLookup(snort_conf->otn_map, GENERATOR_PPM, PPM_EVENT_RULE_TREE_ENABLED);
-            if (potn == NULL)
+            otn = PPMGetOTN(PPM_EVENT_RULE_TREE_ENABLED,
+                    PPM_EVENT_RULE_TREE_ENABLED_STR);
+
+            if (otn != NULL)
             {
-                /* have to make one */
-                potn = GenerateSnortEventOtn(GENERATOR_PPM, /* GID */
-                                             PPM_EVENT_RULE_TREE_ENABLED, /* SID */
-                                             1, /* Rev */
-                                             0, /* classification */
-                                             3, /* priority (low) */
-                                             PPM_EVENT_RULE_TREE_ENABLED_STR /* msg string */);
-                if (potn == NULL)
-                    return;
+                char *tmp = otn->sigInfo.message;
 
-                /* add it */
-                OtnLookupAdd(snort_conf->otn_map, potn);
+                SetEvent(&ev,
+                        otn->sigInfo.generator, /* GID */
+                        otn->sigInfo.id, /* SID */
+                        otn->sigInfo.rev, /* Rev */
+                        otn->sigInfo.class_id, /* classification */
+                        otn->sigInfo.priority, /* priority (low) */
+#if !defined(FEAT_OPEN_APPID)
+                        0);
+#else /* defined(FEAT_OPEN_APPID) */
+                        0, NULL);
+#endif /* defined(FEAT_OPEN_APPID) */
+
+                otn->sigInfo.message = PPM_EVENT_RULE_TREE_ENABLED_STR;
+                if ( IPH_IS_VALID(p) )
+                {
+                    filterEvent = sfthreshold_test(
+                                otn->event_data.sig_generator,
+                                otn->event_data.sig_id,
+                                GET_SRC_IP(p), GET_DST_IP(p),
+                                p->pkth->ts.tv_sec);
+                }
+                else
+                {
+                    snort_ip cleared;
+                    IP_CLEAR(cleared);
+
+                    filterEvent = sfthreshold_test(
+                                otn->event_data.sig_generator,
+                                otn->event_data.sig_id,
+                                IP_ARG(cleared), IP_ARG(cleared),
+                                p->pkth->ts.tv_sec);
+                }
+
+                if(filterEvent < 0)
+                    filterEvent = 0;
+                else
+                    AlertAction(p, otn, &ev);
+
+                otn->sigInfo.message = tmp;
             }
-
-            SetEvent(&ev,
-                     potn->sigInfo.generator, /* GID */
-                     potn->sigInfo.id, /* SID */
-                     potn->sigInfo.rev, /* Rev */
-                     potn->sigInfo.class_id, /* classification */
-                     potn->sigInfo.priority, /* priority (low) */
-                     0);
-
-            AlertAction(p, potn, &ev);
         }
 
-        if (ppm_cfg->rule_log & PPM_LOG_MESSAGE) 
+        if (ppm_cfg->rule_log & PPM_LOG_MESSAGE)
         {
             int i;
 
@@ -396,9 +525,7 @@ void ppm_rule_log(ppm_cfg_t *ppm_cfg, uint64_t pktcnt, Packet *p)
                 proot = ppm_crules[i];
 
                 LogMessage(PPM_FMT_REENABLED,
-                           (void*)proot,
-                           pktcnt,
-                           timestamp);
+                           pktcnt, (void*)proot, timestamp);
             }
         }
 
@@ -411,38 +538,67 @@ void ppm_rule_log(ppm_cfg_t *ppm_cfg, uint64_t pktcnt, Packet *p)
         {
             Event ev;
 
-            /* make sure we have an otn already in our table for this event */
-            potn = OtnLookup(snort_conf->otn_map, GENERATOR_PPM, PPM_EVENT_RULE_TREE_DISABLED);
-            if (potn == NULL)
+            otn = PPMGetOTN(PPM_EVENT_RULE_TREE_DISABLED,
+                    PPM_EVENT_RULE_TREE_DISABLED_STR);
+
+            if (otn != NULL)
             {
-                /* have to make one */
-                potn = GenerateSnortEventOtn(GENERATOR_PPM, /* GID */
-                                             PPM_EVENT_RULE_TREE_DISABLED, /* SID */
-                                             1, /* Rev */
-                                             0, /* classification */
-                                             3, /* priority (low) */
-                                             PPM_EVENT_RULE_TREE_DISABLED_STR /* msg string */);
+                char *tmp = otn->sigInfo.message;
 
-                if (potn == NULL)
-                    return;
+                SetEvent(&ev,
+                        otn->sigInfo.generator, /* GID */
+                        otn->sigInfo.id, /* SID */
+                        otn->sigInfo.rev, /* Rev */
+                        otn->sigInfo.class_id, /* classification */
+                        otn->sigInfo.priority, /* priority (low) */
+#if !defined(FEAT_OPEN_APPID)
+                        0);
+#else /* defined(FEAT_OPEN_APPID) */
+                        0, NULL);
+#endif /* defined(FEAT_OPEN_APPID) */
 
-                OtnLookupAdd(snort_conf->otn_map, potn);
+                otn->sigInfo.message = PPM_EVENT_RULE_TREE_DISABLED_STR;
+                if ( IPH_IS_VALID(p) )
+                {
+                    filterEvent = sfthreshold_test(
+                                otn->event_data.sig_generator,
+                                otn->event_data.sig_id,
+                                GET_SRC_IP(p), GET_DST_IP(p),
+                                p->pkth->ts.tv_sec);
+                }
+                else
+                {
+                    snort_ip cleared;
+                    IP_CLEAR(cleared);
+
+                    filterEvent = sfthreshold_test(
+                                otn->event_data.sig_generator,
+                                otn->event_data.sig_id,
+                                IP_ARG(cleared), IP_ARG(cleared),
+                                p->pkth->ts.tv_sec);
+                }
+
+                if(filterEvent < 0)
+                    filterEvent = 0;
+                else
+                    AlertAction(p, otn, &ev);
+                otn->sigInfo.message = tmp;
             }
-
-            SetEvent(&ev,
-                     potn->sigInfo.generator, /* GID */
-                     potn->sigInfo.id, /* SID */
-                     potn->sigInfo.rev, /* Rev */
-                     potn->sigInfo.class_id, /* classification */
-                     potn->sigInfo.priority, /* priority (low) */
-                     0);
-
-            AlertAction(p, potn, &ev);
         }
 
         if (ppm_cfg->rule_log & PPM_LOG_MESSAGE)
         {
             int i;
+            char src[INET6_ADDRSTRLEN];
+            char dst[INET6_ADDRSTRLEN];
+
+            sfip_t* addr = GET_SRC_IP(p);
+            sfip_ntop(addr, src, sizeof(src));
+
+            addr = GET_DST_IP(p);
+            sfip_ntop(addr, dst, sizeof(dst));
+
+            LogMessage(PPM_FMT_SUS_PKT, pktcnt, src, p->sp, dst, p->dp);
 
             if(!*timestamp)
                 ts_print((struct timeval*)&p->pkth->ts, timestamp);
@@ -452,8 +608,7 @@ void ppm_rule_log(ppm_cfg_t *ppm_cfg, uint64_t pktcnt, Packet *p)
                 proot = ppm_rules[i].tree;
 
                 LogMessage(PPM_FMT_SUSPENDED,
-                           (void*)proot,
-                           pktcnt,
+                           pktcnt, (void*)proot,
                            ppm_ticks_to_usecs((PPM_TICKS)ppm_rules[i].ticks),
                            timestamp);
             }
@@ -534,6 +689,7 @@ void ppm_set_rule_threshold(ppm_cfg_t *ppm_cfg, unsigned int cnt)
     ppm_cfg->rule_threshold = cnt;
 }
 
+#ifdef DEBUG
 void ppm_set_debug_rules(ppm_cfg_t *ppm_cfg, int flag)
 {
     ppm_cfg->debug_rules = flag;
@@ -543,6 +699,7 @@ void ppm_set_debug_pkts(ppm_cfg_t *ppm_cfg, int flag)
 {
     ppm_cfg->debug_pkts = flag;
 }
+#endif
 
 #endif
 

@@ -4,7 +4,7 @@
 
 # TARGTYPE "Win32 (x86) Generic Project" 0x010a
 
-CFG=dynamic_preprocessors - Win32 IPv6 Debug
+CFG=dynamic_preprocessors - Win32 IPv6 Release
 !MESSAGE This is not a valid makefile. To build this project using NMAKE,
 !MESSAGE use the Export Makefile command and run
 !MESSAGE 
@@ -13,14 +13,12 @@ CFG=dynamic_preprocessors - Win32 IPv6 Debug
 !MESSAGE You can specify a configuration when running NMAKE
 !MESSAGE by defining the macro CFG on the command line. For example:
 !MESSAGE 
-!MESSAGE NMAKE /f "dynamic_preprocessors.mak" CFG="dynamic_preprocessors - Win32 IPv6 Debug"
+!MESSAGE NMAKE /f "dynamic_preprocessors.mak" CFG="dynamic_preprocessors - Win32 IPv6 Release"
 !MESSAGE 
 !MESSAGE Possible choices for configuration are:
 !MESSAGE 
 !MESSAGE "dynamic_preprocessors - Win32 Release" (based on "Win32 (x86) Generic Project")
 !MESSAGE "dynamic_preprocessors - Win32 Debug" (based on "Win32 (x86) Generic Project")
-!MESSAGE "dynamic_preprocessors - Win32 IPv6 Debug" (based on "Win32 (x86) Generic Project")
-!MESSAGE "dynamic_preprocessors - Win32 IPv6 Release" (based on "Win32 (x86) Generic Project")
 !MESSAGE 
 
 # Begin Project
@@ -55,39 +53,11 @@ MTL=midl.exe
 # PROP Intermediate_Dir "Debug"
 # PROP Target_Dir ""
 
-!ELSEIF  "$(CFG)" == "dynamic_preprocessors - Win32 IPv6 Debug"
-
-# PROP BASE Use_MFC 0
-# PROP BASE Use_Debug_Libraries 1
-# PROP BASE Output_Dir "dynamic_preprocessors___Win32_IPv6_Debug"
-# PROP BASE Intermediate_Dir "dynamic_preprocessors___Win32_IPv6_Debug"
-# PROP BASE Target_Dir ""
-# PROP Use_MFC 0
-# PROP Use_Debug_Libraries 1
-# PROP Output_Dir "IPv6_Debug"
-# PROP Intermediate_Dir "IPv6_Debug"
-# PROP Target_Dir ""
-
-!ELSEIF  "$(CFG)" == "dynamic_preprocessors - Win32 IPv6 Release"
-
-# PROP BASE Use_MFC 0
-# PROP BASE Use_Debug_Libraries 0
-# PROP BASE Output_Dir "dynamic_preprocessors___Win32_IPv6_Release"
-# PROP BASE Intermediate_Dir "dynamic_preprocessors___Win32_IPv6_Release"
-# PROP BASE Target_Dir ""
-# PROP Use_MFC 0
-# PROP Use_Debug_Libraries 0
-# PROP Output_Dir "IPv6_Release"
-# PROP Intermediate_Dir "IPv6_Release"
-# PROP Target_Dir ""
-
 !ENDIF 
 
 # Begin Target
 
 # Name "dynamic_preprocessors - Win32 Release"
 # Name "dynamic_preprocessors - Win32 Debug"
-# Name "dynamic_preprocessors - Win32 IPv6 Debug"
-# Name "dynamic_preprocessors - Win32 IPv6 Release"
 # End Target
 # End Project

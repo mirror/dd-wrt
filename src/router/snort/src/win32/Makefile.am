@@ -36,14 +36,6 @@ EXTRA_DIST= \
 ./WIN32-Includes/libdnet/dnet/tcp.h \
 ./WIN32-Includes/libdnet/dnet/tun.h \
 ./WIN32-Includes/libdnet/dnet/udp.h \
-./WIN32-Includes/mysql/errmsg.h \
-./WIN32-Includes/mysql/my_alloc.h \
-./WIN32-Includes/mysql/my_list.h \
-./WIN32-Includes/mysql/mysql.h \
-./WIN32-Includes/mysql/mysql_com.h \
-./WIN32-Includes/mysql/mysql_time.h \
-./WIN32-Includes/mysql/mysql_version.h \
-./WIN32-Includes/mysql/typelib.h \
 ./WIN32-Includes/NET/Bpf.h \
 ./WIN32-Includes/NETINET/IF_ETHER.H \
 ./WIN32-Includes/NETINET/IN_SYSTM.H \
@@ -108,8 +100,6 @@ EXTRA_DIST= \
 ./WIN32-Includes/zlib/zlib.h \
 ./WIN32-Libraries/libdnet/dnet.lib \
 ./WIN32-Libraries/.cvswrappers \
-./WIN32-Libraries/mysql/.cvswrappers \
-./WIN32-Libraries/mysql/mysqlclient.lib \
 ./WIN32-Libraries/Packet.lib \
 ./WIN32-Libraries/pcre.lib \
 ./WIN32-Libraries/wpcap.lib \

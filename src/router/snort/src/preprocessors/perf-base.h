@@ -3,7 +3,8 @@
 **
 ** perf-base.h
 **
-** Copyright (C) 2002-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Dan Roelker (droelker@sourcefire.com)
 ** Marc Norton (mnorton@sourcefire.com)
 ** Chris Green (stream4 instrumentation)
@@ -22,7 +23,7 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **
 ** 9.1.04  : Added SFBASE iReset (MAN)
 **	     This is set by perfmonitor 'accrure' and 'reset' commands
@@ -35,13 +36,16 @@
 #endif
 
 #include "sfprocpidstats.h"
-#include "debug.h"
 #include "sf_types.h"
+#include "snort_debug.h"
+#include "decode.h"
+
+#ifdef NORMALIZER
+#include "spp_normalize.h"
+#endif
 
 #include <time.h>
 #include <stdio.h>
-
-#define MAX_PERF_STATS 1
 
 typedef struct _PKTSTATS
 {
@@ -58,25 +62,28 @@ typedef enum {
     PERF_COUNT_IP4_TTL,
     PERF_COUNT_IP4_OPTS,
     PERF_COUNT_ICMP4_ECHO,
-#ifdef SUP_IP6
     PERF_COUNT_IP6_TTL,
     PERF_COUNT_IP6_OPTS,
     PERF_COUNT_ICMP6_ECHO,
-#endif
     PERF_COUNT_TCP_SYN_OPT,
     PERF_COUNT_TCP_OPT,
     PERF_COUNT_TCP_PAD,
     PERF_COUNT_TCP_RSV,
     PERF_COUNT_TCP_NS,
-    PERF_COUNT_TCP_URG,
     PERF_COUNT_TCP_URP,
-    PERF_COUNT_TCP_TRIM,
     PERF_COUNT_TCP_ECN_PKT,
     PERF_COUNT_TCP_ECN_SSN,
     PERF_COUNT_TCP_TS_ECR,
     PERF_COUNT_TCP_TS_NOP,
     PERF_COUNT_TCP_IPS_DATA,
     PERF_COUNT_TCP_BLOCK,
+    PERF_COUNT_TCP_REQ_URG,
+    PERF_COUNT_TCP_REQ_PAY,
+    PERF_COUNT_TCP_REQ_URP,
+    PERF_COUNT_TCP_TRIM_SYN,
+    PERF_COUNT_TCP_TRIM_RST,
+    PERF_COUNT_TCP_TRIM_WIN,
+    PERF_COUNT_TCP_TRIM_MSS,
     PERF_COUNT_MAX
 } PerfCounts;
 
@@ -90,7 +97,7 @@ typedef struct _SFBASE
                               */
     uint64_t   total_blocked_packets;
     uint64_t   total_injected_packets;  // due to normalize_ip4: trim blocks
-    
+
     uint64_t   total_rebuilt_packets;
     uint64_t   total_wire_bytes;
     uint64_t   total_ipfragmented_bytes;
@@ -120,7 +127,7 @@ typedef struct _SFBASE
     uint64_t   iStreamFlushes;  /* # of fake packet is flushed */
     uint64_t   iStreamFaults;  /* # of times we run out of memory */
     uint64_t   iStreamTimeouts; /* # of timeouts we get in this quanta */
-    
+
     uint64_t   iFragCreates;    /* # of times we call Frag3NewTracker() */
     uint64_t   iFragCompletes;  /* # of times we call FragIsComplete() */
     uint64_t   iFragInserts;    /* # of fraginserts */
@@ -130,10 +137,10 @@ typedef struct _SFBASE
     uint64_t   iMaxFrags;
     uint64_t   iCurrentFrags;
     uint64_t   iFragTimeouts;   /* # of times we've reached timeout */
-    uint64_t   iFragFaults;     /* # of times we've run out of memory */    
+    uint64_t   iFragFaults;     /* # of times we've run out of memory */
 
 #ifdef NORMALIZER
-    uint64_t   iPegs[PERF_COUNT_MAX];
+    uint64_t   iPegs[PERF_COUNT_MAX][NORM_MODE_MAX];
 #endif
 
 #ifdef LINUX_SMP
@@ -167,6 +174,9 @@ typedef struct _SFBASE
     /**UDP packets ignored due to port/service filtering.*/
     uint64_t   total_udp_filtered_packets;
 
+    uint64_t   frag3_mem_in_use;
+    uint64_t   stream5_mem_in_use;
+    uint64_t   total_iAlerts;
 }  SFBASE;
 
 typedef struct _SYSTIMES {
@@ -203,7 +213,7 @@ typedef struct _SFBASE_STATS {
     double   user_cpu_time;
     double   system_cpu_time;
     PKTSTATS pkt_stats;
-    double   pkt_drop_percent; 
+    double   pkt_drop_percent;
     double   alerts_per_second;
     double   syns_per_second;
     double   synacks_per_second;
@@ -224,12 +234,12 @@ typedef struct _SFBASE_STATS {
     uint64_t frag_faults;
     uint64_t current_frags;
     uint64_t max_frags;
-    
+
     double   patmatch_percent;
     time_t   time;
 
 #ifdef NORMALIZER
-    uint64_t   pegs[PERF_COUNT_MAX];
+    uint64_t   pegs[PERF_COUNT_MAX][NORM_MODE_MAX];
 #endif
 
 #ifdef LINUX_SMP
@@ -269,11 +279,15 @@ typedef struct _SFBASE_STATS {
     uint64_t   total_tcp_filtered_packets;
     /**UDP packets ignored due to port/service filtering.*/
     uint64_t   total_udp_filtered_packets;
+
+    uint64_t   frag3_mem_in_use;
+    uint64_t   stream5_mem_in_use;
+    double     total_alerts_per_second;
 }  SFBASE_STATS;
 
 int InitBaseStats(SFBASE *sfBase);
-int UpdateBaseStats(SFBASE *sfBase, uint32_t len, int iRebuiltPkt);
-int ProcessBaseStats(SFBASE *sfBase,int console, int file, FILE * fh);
+void UpdateBaseStats(SFBASE *, Packet *, bool);
+void ProcessBaseStats(SFBASE *, FILE *, int, int);
 int AddStreamSession(SFBASE *sfBase, uint32_t flags);
 #define SESSION_CLOSED_NORMALLY 0x01
 #define SESSION_CLOSED_TIMEDOUT 0x02
@@ -284,12 +298,14 @@ int RemoveStreamSession(SFBASE *sfBase);
 int AddUDPSession(SFBASE *sfBase);
 int RemoveUDPSession(SFBASE *sfBase);
 
-void UpdateWireStats(SFBASE *sfBase, int len, int dropped, int injected);  
+void UpdateWireStats(SFBASE *sfBase, int len, int dropped, int injected);
 void UpdateMPLSStats(SFBASE *sfBase, int len, int dropped);
 void UpdateIPFragStats(SFBASE *sfBase, int len);
 void UpdateIPReassStats(SFBASE *sfBase, int len);
-void UpdateFilteredPacketStats(SFBASE *sfBase, unsigned int proto);
+void UpdateStreamReassStats(SFBASE *sfBase, int len);
+void UpdateFilteredPacketStats(SFBASE *sfBase, IpProto proto);
 
+void LogBasePerfHeader(FILE*);
 #endif
 
 

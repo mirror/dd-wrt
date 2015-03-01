@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (C) 2008-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2008-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -14,7 +15,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  **************************************************************************** 
  *
@@ -22,8 +23,6 @@
 
 #ifndef _DCE2_MEMORY_H_
 #define _DCE2_MEMORY_H_
-
-#include "sf_types.h"
 
 /********************************************************************
  * Enumerations
@@ -39,8 +38,8 @@ typedef enum _DCE2_MemType
     DCE2_MEM_TYPE__SMB_UID,  /* SMB uid tracking */
     DCE2_MEM_TYPE__SMB_TID,  /* SMB tid tracking */
     DCE2_MEM_TYPE__SMB_FID,  /* SMB fid tracking */
-    DCE2_MEM_TYPE__SMB_UT,   /* SMB uid/tid tracking */
-    DCE2_MEM_TYPE__SMB_PM,   /* SMB pid/mid tracking */
+    DCE2_MEM_TYPE__SMB_FILE, /* SMB file tracking */
+    DCE2_MEM_TYPE__SMB_REQ,  /* SMB request/response tracking */
     DCE2_MEM_TYPE__TCP_SSN,  /* TCP session data */
     DCE2_MEM_TYPE__CO_SEG,   /* TCP segmentation buffer */
     DCE2_MEM_TYPE__CO_FRAG,  /* TCP fragmentation data */
@@ -89,10 +88,10 @@ typedef struct _DCE2_Memory
     uint32_t smb_tid_max;   /* max amount allocated for tid tracking */
     uint32_t smb_fid;       /* amount allocated for fid tracking */
     uint32_t smb_fid_max;   /* max amount allocated for fid tracking */
-    uint32_t smb_ut;        /* amount allocated for uid/tid tracking */
-    uint32_t smb_ut_max;    /* max amount allocated for uid/tid tracking */
-    uint32_t smb_pm;        /* amount allocated for pid/mid tracking */
-    uint32_t smb_pm_max;    /* max amount allocated for pid/mid tracking */
+    uint32_t smb_file;      /* amount allocated for file tracking */
+    uint32_t smb_file_max;  /* max amount allocated for file tracking */
+    uint32_t smb_req;       /* amount allocated for request tracking */
+    uint32_t smb_req_max;   /* max amount allocated for request tracking */
 
     uint32_t tcp_total;     /* total memory allocated for TCP */
     uint32_t tcp_total_max; /* max total memory allocated for TCP */
@@ -128,7 +127,13 @@ typedef struct _DCE2_Memory
 } DCE2_Memory;
 
 /********************************************************************
- *
+ * Extern variables
+ ********************************************************************/
+extern DCE2_Memory dce2_memory;
+extern DCE2_MemState dce2_mem_state;
+
+/********************************************************************
+ * Public functions
  ********************************************************************/
 void DCE2_RegMem(uint32_t, DCE2_MemType);
 void DCE2_UnRegMem(uint32_t, DCE2_MemType);

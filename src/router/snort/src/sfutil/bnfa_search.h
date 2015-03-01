@@ -1,5 +1,5 @@
 /*
-** bnfa_search.h  
+** bnfa_search.h
 **
 ** Basic NFA based multi-pattern search using Aho_corasick construction,
 ** and compacted sparse storage.
@@ -8,7 +8,8 @@
 **
 ** author: marc norton
 ** date:   12/21/05
-** Copyright (C) 2005-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** LICENSE (GPL)
 **
@@ -25,8 +26,9 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 0 111-1307, USA.
-**
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
+** USA
+k**
 */
 
 #include <stdio.h>
@@ -46,7 +48,7 @@
 *   DEFINES and Typedef's
 */
 //#define SPARSE_FULL_STATE_0
-#define BNFA_MAX_ALPHABET_SIZE          256     
+#define BNFA_MAX_ALPHABET_SIZE          256
 #define BNFA_FAIL_STATE                 0xffffffff
 #define BNFA_SPARSE_LINEAR_SEARCH_LIMIT 6
 
@@ -65,12 +67,12 @@ typedef  unsigned int   bnfa_state_t;
 /*
 *   Internal Pattern Representation
 */
-typedef struct bnfa_pattern 
-{      
+typedef struct bnfa_pattern
+{
     struct bnfa_pattern * next;
 
     unsigned char       * casepatrn;   /* case specific */
-    int                   n;           /* pattern len */ 
+    int                   n;           /* pattern len */
     int                   nocase;      /* nocase flag */
     int                   negative;    /* pattern is negated */
     void                * userdata;    /* ptr to users pattern data/info  */
@@ -80,23 +82,23 @@ typedef struct bnfa_pattern
 /*
 *  List format transition node
 */
-typedef struct bnfa_trans_node_s 
+typedef struct bnfa_trans_node_s
 {
-  bnfa_state_t               key;           
-  bnfa_state_t               next_state;    
-  struct bnfa_trans_node_s * next; 
+  bnfa_state_t               key;
+  bnfa_state_t               next_state;
+  struct bnfa_trans_node_s * next;
 
 } bnfa_trans_node_t;
 
 /*
-*  List format patterns 
+*  List format patterns
 */
-typedef struct bnfa_match_node_s 
+typedef struct bnfa_match_node_s
 {
     void                     * data;
     void                     * rule_option_tree;
     void                     * neg_list;
-    struct bnfa_match_node_s * next; 
+    struct bnfa_match_node_s * next;
 
 } bnfa_match_node_t;
 
@@ -108,14 +110,14 @@ enum {
   BNFA_SPARSE
 };
 
-enum { 
+enum {
   BNFA_PER_PAT_CASE,
   BNFA_CASE,
   BNFA_NOCASE
 };
 
 /*
-*   Aho-Corasick State Machine Struct 
+*   Aho-Corasick State Machine Struct
 */
 typedef struct {
 	int                bnfaMethod;
@@ -153,7 +155,7 @@ typedef struct {
     void               (*optiontreefree)(void **);
     void               (*neg_list_free)(void **);
 
-#define MAX_INQ 32 
+#define MAX_INQ 32
     unsigned inq;
     unsigned inq_flush;
     void * q[MAX_INQ];
@@ -169,16 +171,20 @@ void bnfaSetOpt(bnfa_struct_t  * p, int flag);
 void bnfaSetCase(bnfa_struct_t  * p, int flag);
 void bnfaFree( bnfa_struct_t  * pstruct );
 
-int bnfaAddPattern( bnfa_struct_t * pstruct, 
-					unsigned char * pat, int patlen, int nocase, 
+int bnfaAddPattern( bnfa_struct_t * pstruct,
+					unsigned char * pat, int patlen, int nocase,
 					int negative, void * userdata);
 
 int bnfaCompile( bnfa_struct_t * pstruct,
 			     int (*build_tree)(void * id, void **existing_tree),
                  int (*neg_list_func)(void *id, void **list));
+struct _SnortConfig;
+int bnfaCompileWithSnortConf( struct _SnortConfig *, bnfa_struct_t * pstruct,
+			     int (*build_tree)(struct _SnortConfig *, void * id, void **existing_tree),
+                 int (*neg_list_func)(void *id, void **list));
 
-unsigned bnfaSearch( bnfa_struct_t * pstruct, unsigned char * t, int tlen, 
-        		    int (*match)(void * id, void *tree, int index, void *data, void *neg_list), 
+unsigned bnfaSearch( bnfa_struct_t * pstruct, unsigned char * t, int tlen,
+        		    int (*match)(void * id, void *tree, int index, void *data, void *neg_list),
 					void * sdata,
 					unsigned sindex,
                     int* current_state );
@@ -188,7 +194,7 @@ int bnfaPatternCount( bnfa_struct_t * p);
 void bnfaPrint(	bnfa_struct_t * pstruct); /* prints the nfa states-verbose!! */
 void bnfaPrintInfo( bnfa_struct_t  * pstruct); /* print info on this search engine */
 
-/* 
+/*
  * Summary - this tracks search engine information accross multiple instances of
  * search engines.  It helps in snort where we have many search engines, each using
  * rule grouping, to track total patterns, states, memory, etc...

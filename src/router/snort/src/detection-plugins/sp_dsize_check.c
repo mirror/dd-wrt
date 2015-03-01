@@ -1,6 +1,7 @@
 /* $Id$ */
 /*
-** Copyright (C) 2002-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -16,7 +17,7 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 #ifdef HAVE_CONFIG_H
@@ -27,11 +28,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "sf_types.h"
 #include "rules.h"
 #include "treenodes.h"
 #include "decode.h"
 #include "plugbase.h"
-#include "debug.h"
+#include "snort_debug.h"
 #include "parser.h"
 #include "plugin_enum.h"
 #include "util.h"
@@ -59,8 +61,8 @@ typedef struct _DsizeCheckData
     char operator;
 } DsizeCheckData;
 
-void DsizeCheckInit(char *, OptTreeNode *, int);
-void ParseDsize(char *, OptTreeNode *);
+void DsizeCheckInit(struct _SnortConfig *, char *, OptTreeNode *, int);
+void ParseDsize(struct _SnortConfig *, char *, OptTreeNode *);
 
 int CheckDsize(void *option_data, Packet *p);
 
@@ -89,7 +91,7 @@ int DSizeCheckCompare(void *l, void *r)
 
     if (!left || !right)
         return DETECTION_OPTION_NOT_EQUAL;
-                                
+
     if (( left->dsize == right->dsize) &&
         ( left->dsize2 == right->dsize2) &&
         ( left->operator == right->operator))
@@ -101,7 +103,7 @@ int DSizeCheckCompare(void *l, void *r)
 }
 
 /****************************************************************************
- * 
+ *
  * Function: SetupDsizeCheck()
  *
  * Purpose: Attach the dsize keyword to the rule parse function
@@ -123,10 +125,10 @@ void SetupDsizeCheck(void)
 
 
 /****************************************************************************
- * 
- * Function: DsizeCheckInit(char *, OptTreeNode *)
  *
- * Purpose: Parse the rule argument and attach it to the rule data struct, 
+ * Function: DsizeCheckInit(struct _SnortConfig *, char *, OptTreeNode *)
+ *
+ * Purpose: Parse the rule argument and attach it to the rule data struct,
  *          then attach the detection function to the function list
  *
  * Arguments: data => rule arguments/data
@@ -135,7 +137,7 @@ void SetupDsizeCheck(void)
  * Returns: void function
  *
  ****************************************************************************/
-void DsizeCheckInit(char *data, OptTreeNode *otn, int protocol)
+void DsizeCheckInit(struct _SnortConfig *sc, char *data, OptTreeNode *otn, int protocol)
 {
     /* multiple declaration check */
     if(otn->ds_list[PLUGIN_DSIZE_CHECK])
@@ -150,9 +152,9 @@ void DsizeCheckInit(char *data, OptTreeNode *otn, int protocol)
     otn->ds_list[PLUGIN_DSIZE_CHECK] = (DsizeCheckData *)
         SnortAlloc(sizeof(DsizeCheckData));
 
-    /* this is where the keyword arguments are processed and placed into the 
+    /* this is where the keyword arguments are processed and placed into the
        rule option's data structure */
-    ParseDsize(data, otn);
+    ParseDsize(sc, data, otn);
 
     /* NOTE: I moved the AddOptFuncToList call to the parsing function since
        the linking is best determined within that function */
@@ -161,11 +163,11 @@ void DsizeCheckInit(char *data, OptTreeNode *otn, int protocol)
 
 
 /****************************************************************************
- * 
- * Function: ParseDsize(char *, OptTreeNode *)
+ *
+ * Function: ParseDsize(struct _SnortConfig *, char *, OptTreeNode *)
  *
  * Purpose: Parse the dsize function argument and attach the detection
- *          function to the rule list as well.  
+ *          function to the rule list as well.
  *
  * Arguments: data => argument data
  *            otn => pointer to the current rule's OTN
@@ -173,7 +175,7 @@ void DsizeCheckInit(char *data, OptTreeNode *otn, int protocol)
  * Returns: void function
  *
  ****************************************************************************/
-void ParseDsize(char *data, OptTreeNode *otn)
+void ParseDsize(struct _SnortConfig *sc, char *data, OptTreeNode *otn)
 {
     DsizeCheckData *ds_ptr;  /* data struct pointer */
     char *pcEnd;
@@ -190,7 +192,7 @@ void ParseDsize(char *data, OptTreeNode *otn)
 
     /* If a range is specified, put min in ds_ptr->dsize and max in
        ds_ptr->dsize2 */
-    
+
     if(isdigit((int)*data) && strchr(data, '<') && strchr(data, '>'))
     {
         pcTok = strtok(data, " <>");
@@ -230,14 +232,14 @@ void ParseDsize(char *data, OptTreeNode *otn)
 
         ds_ptr->operator = DSIZE_RANGE;
 
-#ifdef DEBUG
-        printf("min dsize: %d\n", ds_ptr->dsize);
-        printf("max dsize: %d\n", ds_ptr->dsize2);
+#ifdef DEBUG_MSGS
+        DebugMessage(DEBUG_PLUGIN, "min dsize: %d\n", ds_ptr->dsize);
+        DebugMessage(DEBUG_PLUGIN, "max dsize: %d\n", ds_ptr->dsize2);
 #endif
         fpl = AddOptFuncToList(CheckDsize, otn);
         fpl->type = RULE_OPTION_TYPE_DSIZE;
 
-        if (add_detection_option(RULE_OPTION_TYPE_DSIZE, (void *)ds_ptr, &ds_ptr_dup) == DETECTION_OPTION_EQUAL)
+        if (add_detection_option(sc, RULE_OPTION_TYPE_DSIZE, (void *)ds_ptr, &ds_ptr_dup) == DETECTION_OPTION_EQUAL)
         {
             free(ds_ptr);
             ds_ptr = otn->ds_list[PLUGIN_DSIZE_CHECK] = ds_ptr_dup;
@@ -277,7 +279,7 @@ void ParseDsize(char *data, OptTreeNode *otn)
 
     ds_ptr->dsize = (unsigned short)iDsize;
 
-    if (add_detection_option(RULE_OPTION_TYPE_DSIZE, (void *)ds_ptr, &ds_ptr_dup) == DETECTION_OPTION_EQUAL)
+    if (add_detection_option(sc, RULE_OPTION_TYPE_DSIZE, (void *)ds_ptr, &ds_ptr_dup) == DETECTION_OPTION_EQUAL)
     {
         free(ds_ptr);
         ds_ptr = otn->ds_list[PLUGIN_DSIZE_CHECK] = ds_ptr_dup;
@@ -289,7 +291,7 @@ void ParseDsize(char *data, OptTreeNode *otn)
 }
 
 /****************************************************************************
- * 
+ *
  * Function: CheckDsizeEq(char *, OptTreeNode *)
  *
  * Purpose: Test the packet's payload size against the rule payload size value
@@ -308,10 +310,13 @@ int CheckDsize(void *option_data, Packet *p)
     if (!ds_ptr)
         return rval;
 
-    PREPROC_PROFILE_END(dsizePerfStats);
+    PREPROC_PROFILE_START(dsizePerfStats);
 
     /* fake packet dsizes are always wrong */
-    if(p->packet_flags & PKT_REBUILT_STREAM)
+    /* (unless they are PDUs) */
+    if (
+        (p->packet_flags & PKT_REBUILT_STREAM) &&
+        !(p->packet_flags & PKT_PDU_HEAD) )
     {
         PREPROC_PROFILE_END(dsizePerfStats);
         return rval;

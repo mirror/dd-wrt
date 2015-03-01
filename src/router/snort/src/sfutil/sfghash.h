@@ -1,6 +1,7 @@
 /****************************************************************************
  *
- * Copyright (C) 2003-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -15,7 +16,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************/
  
@@ -46,8 +47,8 @@
 #define SFGHASH_OK        0
 #define SFGHASH_INTABLE   1
 
-/* 
-*  Flags for ghash_new: userkeys 
+/*
+*  Flags for ghash_new: userkeys
 */
 #define GH_COPYKEYS 0
 #define GH_USERKEYS 1
@@ -59,9 +60,9 @@ typedef struct _sfghash_node
 {
   struct _sfghash_node * next, * prev;
 
-  void * key;   /* Copy of, or Pointer to, the Users key */
-  void * data;  /* Pointer to the users data, this is never copied! */
-     
+  const void * key;   /* Copy of, or Pointer to, the Users key */
+  void *data;  /* The users data, this is never copied! */
+
 } SFGHASH_NODE;
 
 /*
@@ -78,10 +79,10 @@ typedef struct _sfghash
 
   unsigned       count;  /* total # nodes in table */
 
-  void         (*userfree)( void * );  
+  void         (*userfree)( void * );
 
-  int            crow;    // findfirst/next row in table
-  SFGHASH_NODE * cnode; // findfirst/next node ptr
+  int            crow;    /* findfirst/next row in table */
+  SFGHASH_NODE * cnode; /* findfirst/next node ptr */
 
   int splay;
 
@@ -93,14 +94,13 @@ typedef struct _sfghash
 */
 SFGHASH * sfghash_new( int nrows, int keysize, int userkeys, void (*userfree)(void*p) );
 void      sfghash_delete( SFGHASH * h );
-int       sfghash_add ( SFGHASH * h, void * key, void * data );
-int       sfghash_remove( SFGHASH * h, void * key);
+int       sfghash_add( SFGHASH * t, const void * const key, void * const data );
+int       sfghash_remove( SFGHASH * h, const void * const key);
 int       sfghash_count( SFGHASH * h);
-void    * sfghash_find( SFGHASH * h, void * key );
+void    * sfghash_find( SFGHASH * h, const void * const key );
 int       sfghash_find2(SFGHASH *, void *, void **);
 SFGHASH_NODE * sfghash_findfirst( SFGHASH * h );
 SFGHASH_NODE * sfghash_findnext ( SFGHASH * h );
-void sfghash_splaymode( SFGHASH * t, int n );
 
 int sfghash_set_keyops( SFGHASH *h ,
                         unsigned (*hash_fcn)( SFHASHFCN * p,

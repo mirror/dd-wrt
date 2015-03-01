@@ -1,7 +1,8 @@
 /*
  * snort_ftptelnet.h
  *
- * Copyright (C) 2004-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2004-2013 Sourcefire, Inc.
  * Steven A. Sturges <ssturges@sourcefire.com>
  * Daniel J. Roelker <droelker@sourcefire.com>
  * Marc A. Norton <mnorton@sourcefire.com>
@@ -19,7 +20,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  * Description:
  *
@@ -45,7 +46,7 @@
 #define CONF_SEPARATORS " \t\n\r"
 
 /*
- * These are the definitions of the parser section delimiting 
+ * These are the definitions of the parser section delimiting
  * keywords to configure FtpTelnet.  When one of these keywords
  * are seen, we begin a new section.
  */
@@ -56,28 +57,42 @@
 #define CLIENT        "client"
 #define SERVER        "server"
 
+#ifdef TARGET_BASED
+extern int16_t ftp_app_id;
+extern int16_t ftp_data_app_id;
+extern int16_t telnet_app_id;
+#endif
 
 void FTPTelnetFreeConfigs(tSfPolicyUserContextId GlobalConf);
 void FTPTelnetFreeConfig(FTPTELNET_GLOBAL_CONF *GlobalConf);
 int SnortFTPTelnet(SFSnortPacket *p);
-void FTPConfigCheck(void);
+#ifdef TARGET_BASED
+void SnortFTPData_EOF(SFSnortPacket *p);
+int SnortFTPData(SFSnortPacket *p);
+#endif
+int FTPConfigCheck(struct _SnortConfig *);
 int FtpTelnetInitGlobalConfig(FTPTELNET_GLOBAL_CONF *, char *, int);
 char *NextToken(char *delimiters);
 
-int FTPPBounceInit(char *name, char *parameters, void **dataPtr);
+int FTPPBounceInit(struct _SnortConfig *sc, char *name, char *parameters, void **dataPtr);
 int FTPPBounceEval(void *p, const uint8_t **cursor, void *dataPtr);
+
+void FTPTelnetChecks(void *pkt, void *context);
+#ifdef TARGET_BASED
+void FTPDataTelnetChecks(void *pkt, void *context);
+#endif
 
 void FTPTelnetCleanupFTPServerConf(void *serverConf);
 void FTPTelnetCleanupFTPCMDConf(void *ftpCmd);
 void FTPTelnetCleanupFTPClientConf(void *clientConf);
 void FTPTelnetCleanupFTPBounceTo(void *ftpBounce);
-void FTPTelnetCheckFTPServerConfigs(FTPTELNET_GLOBAL_CONF *);
-void _FTPTelnetAddPortsOfInterest(FTPTELNET_GLOBAL_CONF *, tSfPolicyId);
+int FTPTelnetCheckFTPServerConfigs(struct _SnortConfig *, FTPTELNET_GLOBAL_CONF *);
 
 int ProcessFTPGlobalConf(FTPTELNET_GLOBAL_CONF *, char *, int);
 int ProcessTelnetConf(FTPTELNET_GLOBAL_CONF *, char *, int);
-int ProcessFTPClientConf(FTPTELNET_GLOBAL_CONF *, char *, int);
-int ProcessFTPServerConf(FTPTELNET_GLOBAL_CONF *, char *, int);
+int ProcessFTPClientConf(struct _SnortConfig *sc, FTPTELNET_GLOBAL_CONF *, char *, int);
+int ProcessFTPServerConf(struct _SnortConfig *sc, FTPTELNET_GLOBAL_CONF *, char *, int);
 int PrintFTPGlobalConf(FTPTELNET_GLOBAL_CONF *);
-int FTPTelnetCheckConfigs( void* , tSfPolicyId );
+int FTPTelnetCheckConfigs(struct _SnortConfig *, void* , tSfPolicyId );
+void enableFtpTelnetPortStreamServices( struct _SnortConfig *sc, PROTO_CONF *pc, char *network, int direction );
 #endif

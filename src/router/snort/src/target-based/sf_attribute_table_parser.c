@@ -28,7 +28,7 @@
 #define FLEX_SCANNER
 #define YY_FLEX_MAJOR_VERSION 2
 #define YY_FLEX_MINOR_VERSION 5
-#define YY_FLEX_SUBMINOR_VERSION 35
+#define YY_FLEX_SUBMINOR_VERSION 37
 #if YY_FLEX_SUBMINOR_VERSION > 0
 #define FLEX_BETA
 #endif
@@ -73,7 +73,6 @@ typedef int flex_int32_t;
 typedef unsigned char flex_uint8_t; 
 typedef unsigned short int flex_uint16_t;
 typedef unsigned int flex_uint32_t;
-#endif /* ! C99 */
 
 /* Limits of integral types. */
 #ifndef INT8_MIN
@@ -103,6 +102,8 @@ typedef unsigned int flex_uint32_t;
 #ifndef UINT32_MAX
 #define UINT32_MAX             (4294967295U)
 #endif
+
+#endif /* ! C99 */
 
 #endif /* ! FLEXINT_H */
 
@@ -172,7 +173,12 @@ typedef unsigned int flex_uint32_t;
 typedef struct yy_buffer_state *YY_BUFFER_STATE;
 #endif
 
-extern int sfatleng;
+#ifndef YY_TYPEDEF_YY_SIZE_T
+#define YY_TYPEDEF_YY_SIZE_T
+typedef size_t yy_size_t;
+#endif
+
+extern yy_size_t sfatleng;
 
 extern FILE *sfatin, *sfatout;
 
@@ -198,11 +204,6 @@ extern FILE *sfatin, *sfatout;
 
 #define unput(c) yyunput( c, (yytext_ptr)  )
 
-#ifndef YY_TYPEDEF_YY_SIZE_T
-#define YY_TYPEDEF_YY_SIZE_T
-typedef size_t yy_size_t;
-#endif
-
 #ifndef YY_STRUCT_YY_BUFFER_STATE
 #define YY_STRUCT_YY_BUFFER_STATE
 struct yy_buffer_state
@@ -220,7 +221,7 @@ struct yy_buffer_state
 	/* Number of characters read into yy_ch_buf, not including EOB
 	 * characters.
 	 */
-	int yy_n_chars;
+	yy_size_t yy_n_chars;
 
 	/* Whether we "own" the buffer - i.e., we know we created it,
 	 * and can realloc() it to grow it, and should free() it to
@@ -290,8 +291,8 @@ static YY_BUFFER_STATE * yy_buffer_stack = 0; /**< Stack as an array. */
 
 /* yy_hold_char holds the character lost when sfattext is formed. */
 static char yy_hold_char;
-static int yy_n_chars;		/* number of characters read into yy_ch_buf */
-int sfatleng;
+static yy_size_t yy_n_chars;		/* number of characters read into yy_ch_buf */
+yy_size_t sfatleng;
 
 /* Points to current character in buffer. */
 static char *yy_c_buf_p = (char *) 0;
@@ -319,7 +320,7 @@ static void sfat_init_buffer (YY_BUFFER_STATE b,FILE *file  );
 
 YY_BUFFER_STATE sfat_scan_buffer (char *base,yy_size_t size  );
 YY_BUFFER_STATE sfat_scan_string (yyconst char *yy_str  );
-YY_BUFFER_STATE sfat_scan_bytes (yyconst char *bytes,int len  );
+YY_BUFFER_STATE sfat_scan_bytes (yyconst char *bytes,yy_size_t len  );
 
 void *sfatalloc (yy_size_t  );
 void *sfatrealloc (void *,yy_size_t  );
@@ -351,7 +352,7 @@ void sfatfree (void *  );
 
 /* Begin user sect3 */
 
-#define sfatwrap(n) 1
+#define sfatwrap() 1
 #define YY_SKIP_YYWRAP
 
 typedef unsigned char YY_CHAR;
@@ -6191,7 +6192,8 @@ int sfat_flex_debug = 0;
 char *sfattext;
 #line 1 "sf_attribute_table_parser.l"
 /*
-** Copyright (C) 2006-2009 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2006-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License Version 2 as
@@ -6206,7 +6208,7 @@ char *sfattext;
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 /*
  * Author: Steven Sturges
@@ -6214,15 +6216,15 @@ char *sfattext;
  */
 /*
  * Lex for Attribute Table
- */ 
+ */
 /* Definitions Section.
- * Definitions required by the rules section are in here prior to first  
+ * Definitions required by the rules section are in here prior to first
  * "%%" seperator
  */
 /* Include code between "%{ %}" separators at top of generated
  * lexer source file
  */
-#line 38 "sf_attribute_table_parser.l"
+#line 39 "sf_attribute_table_parser.l"
 #ifdef TARGET_BASED
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -6264,7 +6266,7 @@ int sfat_parse(void);
 /* Rules Section.
  * All rules are in here prior to second "%%" seperator
  */
-#line 6268 "sf_attribute_table_parser.c"
+#line 6270 "sf_attribute_table_parser.c"
 
 #define INITIAL 0
 #define waiting_for_comma_prior_to_data 1
@@ -6305,7 +6307,7 @@ FILE *sfatget_out (void );
 
 void sfatset_out  (FILE * out_str  );
 
-int sfatget_leng (void );
+yy_size_t sfatget_leng (void );
 
 char *sfatget_text (void );
 
@@ -6364,7 +6366,7 @@ static int input (void );
 	if ( YY_CURRENT_BUFFER_LVALUE->yy_is_interactive ) \
 		{ \
 		int c = '*'; \
-		unsigned n; \
+		size_t n; \
 		for ( n = 0; n < max_size && \
 			     (c = getc( sfatin )) != EOF && c != '\n'; ++n ) \
 			buf[n] = (char) c; \
@@ -6446,9 +6448,9 @@ YY_DECL
 	register char *yy_cp, *yy_bp;
 	register int yy_act;
     
-#line 100 "sf_attribute_table_parser.l"
+#line 101 "sf_attribute_table_parser.l"
 
-#line 6452 "sf_attribute_table_parser.c"
+#line 6454 "sf_attribute_table_parser.c"
 
 	if ( !(yy_init) )
 		{
@@ -6529,265 +6531,265 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 101 "sf_attribute_table_parser.l"
+#line 102 "sf_attribute_table_parser.l"
 { ; }  /* Handle empty whitespace */
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 102 "sf_attribute_table_parser.l"
+#line 103 "sf_attribute_table_parser.l"
 { return SF_START_SNORT_ATTRIBUTES; }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 103 "sf_attribute_table_parser.l"
+#line 104 "sf_attribute_table_parser.l"
 { return SF_END_SNORT_ATTRIBUTES; }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 105 "sf_attribute_table_parser.l"
+#line 106 "sf_attribute_table_parser.l"
 { return SF_AT_START_MAP_TABLE; }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 106 "sf_attribute_table_parser.l"
+#line 107 "sf_attribute_table_parser.l"
 { return SF_AT_END_MAP_TABLE; }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 107 "sf_attribute_table_parser.l"
+#line 108 "sf_attribute_table_parser.l"
 { return SF_AT_START_ENTRY; }
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 108 "sf_attribute_table_parser.l"
+#line 109 "sf_attribute_table_parser.l"
 { return SF_AT_END_ENTRY; }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 109 "sf_attribute_table_parser.l"
+#line 110 "sf_attribute_table_parser.l"
 { return SF_AT_START_ENTRY_ID; }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 110 "sf_attribute_table_parser.l"
+#line 111 "sf_attribute_table_parser.l"
 { return SF_AT_END_ENTRY_ID; }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 111 "sf_attribute_table_parser.l"
+#line 112 "sf_attribute_table_parser.l"
 { return SF_AT_START_ENTRY_VALUE; }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 112 "sf_attribute_table_parser.l"
+#line 113 "sf_attribute_table_parser.l"
 { return SF_AT_END_ENTRY_VALUE; }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 113 "sf_attribute_table_parser.l"
+#line 114 "sf_attribute_table_parser.l"
 { return SF_AT_START_ATTRIBUTE_TABLE; }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 114 "sf_attribute_table_parser.l"
+#line 115 "sf_attribute_table_parser.l"
 { return SF_AT_END_ATTRIBUTE_TABLE; }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 115 "sf_attribute_table_parser.l"
+#line 116 "sf_attribute_table_parser.l"
 { return SF_AT_START_HOST; }
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 116 "sf_attribute_table_parser.l"
+#line 117 "sf_attribute_table_parser.l"
 { return SF_AT_END_HOST; }
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 117 "sf_attribute_table_parser.l"
+#line 118 "sf_attribute_table_parser.l"
 { return SF_AT_START_HOST_IP; }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 118 "sf_attribute_table_parser.l"
+#line 119 "sf_attribute_table_parser.l"
 { return SF_AT_END_HOST_IP; }
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 119 "sf_attribute_table_parser.l"
+#line 120 "sf_attribute_table_parser.l"
 { return SF_AT_START_OS; }
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 120 "sf_attribute_table_parser.l"
+#line 121 "sf_attribute_table_parser.l"
 { return SF_AT_END_OS; }
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 121 "sf_attribute_table_parser.l"
+#line 122 "sf_attribute_table_parser.l"
 { return SF_AT_START_ATTRIBUTE_VALUE; }
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 122 "sf_attribute_table_parser.l"
+#line 123 "sf_attribute_table_parser.l"
 { return SF_AT_END_ATTRIBUTE_VALUE; }
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 123 "sf_attribute_table_parser.l"
+#line 124 "sf_attribute_table_parser.l"
 { return SF_AT_START_ATTRIBUTE_ID; }
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 124 "sf_attribute_table_parser.l"
+#line 125 "sf_attribute_table_parser.l"
 { return SF_AT_END_ATTRIBUTE_ID; }
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 125 "sf_attribute_table_parser.l"
+#line 126 "sf_attribute_table_parser.l"
 { return SF_AT_START_CONFIDENCE; }
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 126 "sf_attribute_table_parser.l"
+#line 127 "sf_attribute_table_parser.l"
 { return SF_AT_END_CONFIDENCE; }
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 127 "sf_attribute_table_parser.l"
+#line 128 "sf_attribute_table_parser.l"
 { return SF_AT_START_NAME; }
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 128 "sf_attribute_table_parser.l"
+#line 129 "sf_attribute_table_parser.l"
 { return SF_AT_END_NAME; }
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 129 "sf_attribute_table_parser.l"
+#line 130 "sf_attribute_table_parser.l"
 { return SF_AT_START_VENDOR; }
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 130 "sf_attribute_table_parser.l"
+#line 131 "sf_attribute_table_parser.l"
 { return SF_AT_END_VENDOR; }
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 131 "sf_attribute_table_parser.l"
+#line 132 "sf_attribute_table_parser.l"
 { return SF_AT_START_VERSION; }
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 132 "sf_attribute_table_parser.l"
+#line 133 "sf_attribute_table_parser.l"
 { return SF_AT_END_VERSION; }
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 133 "sf_attribute_table_parser.l"
+#line 134 "sf_attribute_table_parser.l"
 { return SF_AT_START_FRAG_POLICY; }
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 134 "sf_attribute_table_parser.l"
+#line 135 "sf_attribute_table_parser.l"
 { return SF_AT_END_FRAG_POLICY; }
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 135 "sf_attribute_table_parser.l"
+#line 136 "sf_attribute_table_parser.l"
 { return SF_AT_START_STREAM_POLICY; }
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 136 "sf_attribute_table_parser.l"
+#line 137 "sf_attribute_table_parser.l"
 { return SF_AT_END_STREAM_POLICY; }
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 137 "sf_attribute_table_parser.l"
+#line 138 "sf_attribute_table_parser.l"
 { return SF_AT_START_SERVICES; }
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 138 "sf_attribute_table_parser.l"
+#line 139 "sf_attribute_table_parser.l"
 { return SF_AT_END_SERVICES; }
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 139 "sf_attribute_table_parser.l"
+#line 140 "sf_attribute_table_parser.l"
 { return SF_AT_START_SERVICE; }
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 140 "sf_attribute_table_parser.l"
+#line 141 "sf_attribute_table_parser.l"
 { return SF_AT_END_SERVICE; }
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 141 "sf_attribute_table_parser.l"
+#line 142 "sf_attribute_table_parser.l"
 { return SF_AT_START_CLIENTS; }
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
-#line 142 "sf_attribute_table_parser.l"
+#line 143 "sf_attribute_table_parser.l"
 { return SF_AT_END_CLIENTS; }
 	YY_BREAK
 case 42:
 YY_RULE_SETUP
-#line 143 "sf_attribute_table_parser.l"
+#line 144 "sf_attribute_table_parser.l"
 { return SF_AT_START_CLIENT; }
 	YY_BREAK
 case 43:
 YY_RULE_SETUP
-#line 144 "sf_attribute_table_parser.l"
+#line 145 "sf_attribute_table_parser.l"
 { return SF_AT_END_CLIENT; }
 	YY_BREAK
 case 44:
 YY_RULE_SETUP
-#line 145 "sf_attribute_table_parser.l"
+#line 146 "sf_attribute_table_parser.l"
 { return SF_AT_START_IPPROTO; }
 	YY_BREAK
 case 45:
 YY_RULE_SETUP
-#line 146 "sf_attribute_table_parser.l"
+#line 147 "sf_attribute_table_parser.l"
 { return SF_AT_END_IPPROTO; }
 	YY_BREAK
 case 46:
 YY_RULE_SETUP
-#line 147 "sf_attribute_table_parser.l"
+#line 148 "sf_attribute_table_parser.l"
 { return SF_AT_START_PROTOCOL; }
 	YY_BREAK
 case 47:
 YY_RULE_SETUP
-#line 148 "sf_attribute_table_parser.l"
+#line 149 "sf_attribute_table_parser.l"
 { return SF_AT_END_PROTOCOL; }
 	YY_BREAK
 case 48:
 YY_RULE_SETUP
-#line 149 "sf_attribute_table_parser.l"
+#line 150 "sf_attribute_table_parser.l"
 { return SF_AT_START_PORT; }
 	YY_BREAK
 case 49:
 YY_RULE_SETUP
-#line 150 "sf_attribute_table_parser.l"
+#line 151 "sf_attribute_table_parser.l"
 { return SF_AT_END_PORT; }
 	YY_BREAK
 case 50:
 YY_RULE_SETUP
-#line 151 "sf_attribute_table_parser.l"
+#line 152 "sf_attribute_table_parser.l"
 { return SF_AT_START_APPLICATION; }
 	YY_BREAK
 case 51:
 YY_RULE_SETUP
-#line 152 "sf_attribute_table_parser.l"
+#line 153 "sf_attribute_table_parser.l"
 { return SF_AT_END_APPLICATION; }
 	YY_BREAK
 case 52:
 YY_RULE_SETUP
-#line 154 "sf_attribute_table_parser.l"
+#line 155 "sf_attribute_table_parser.l"
 {
                             sfat_lval.numericValue = strtol( sfattext, NULL, 10 );
-#ifdef DEBUG
+#ifdef DEBUG_MSGS
                             DebugMessage(DEBUG_ATTRIBUTE,
                                 "Number Value: [%d]\n", sfat_lval.numericValue);
 #endif
@@ -6796,17 +6798,18 @@ YY_RULE_SETUP
 	YY_BREAK
 case 53:
 YY_RULE_SETUP
-#line 162 "sf_attribute_table_parser.l"
+#line 163 "sf_attribute_table_parser.l"
 {
                             /* Store the value of the string, but not
                              * more than STD_BUF. */
                             int i;
-                            for (i=0; i < sfatleng && i < STD_BUF; i++)
+                            for (i=0; i < sfatleng && i < STD_BUF-1; i++)
                             {
                                 sfat_lval.stringValue[i] = sfattext[i];
                             }
+
                             sfat_lval.stringValue[i] = '\0';
-#ifdef DEBUG
+#ifdef DEBUG_MSGS
                             DebugMessage(DEBUG_ATTRIBUTE,
                                 "String Value: [%s]\n", sfat_lval.stringValue);
 #endif
@@ -6816,32 +6819,32 @@ YY_RULE_SETUP
 case 54:
 /* rule 54 can match eol */
 YY_RULE_SETUP
-#line 177 "sf_attribute_table_parser.l"
+#line 179 "sf_attribute_table_parser.l"
 { sfat_linenumber++; }
 	YY_BREAK
 case 55:
 YY_RULE_SETUP
-#line 178 "sf_attribute_table_parser.l"
+#line 180 "sf_attribute_table_parser.l"
 { ; /* Do nothing -- ignore it */}
 	YY_BREAK
 case 56:
 YY_RULE_SETUP
-#line 180 "sf_attribute_table_parser.l"
+#line 182 "sf_attribute_table_parser.l"
 { return 0; }
 	YY_BREAK
 /* Error, no meaningful input provided */
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(waiting_for_comma_prior_to_data):
 case YY_STATE_EOF(waiting_for_data):
-#line 183 "sf_attribute_table_parser.l"
+#line 185 "sf_attribute_table_parser.l"
 { yyterminate(); }
 	YY_BREAK
 case 57:
 YY_RULE_SETUP
-#line 185 "sf_attribute_table_parser.l"
+#line 187 "sf_attribute_table_parser.l"
 ECHO;
 	YY_BREAK
-#line 6845 "sf_attribute_table_parser.c"
+#line 6848 "sf_attribute_table_parser.c"
 
 	case YY_END_OF_BUFFER:
 		{
@@ -7026,21 +7029,21 @@ static int yy_get_next_buffer (void)
 
 	else
 		{
-			int num_to_read =
+			yy_size_t num_to_read =
 			YY_CURRENT_BUFFER_LVALUE->yy_buf_size - number_to_move - 1;
 
 		while ( num_to_read <= 0 )
 			{ /* Not enough room in the buffer - grow it. */
 
 			/* just a shorter name for the current buffer */
-			YY_BUFFER_STATE b = YY_CURRENT_BUFFER;
+			YY_BUFFER_STATE b = YY_CURRENT_BUFFER_LVALUE;
 
 			int yy_c_buf_p_offset =
 				(int) ((yy_c_buf_p) - b->yy_ch_buf);
 
 			if ( b->yy_is_our_buffer )
 				{
-				int new_size = b->yy_buf_size * 2;
+				yy_size_t new_size = b->yy_buf_size * 2;
 
 				if ( new_size <= 0 )
 					b->yy_buf_size += b->yy_buf_size / 8;
@@ -7071,7 +7074,7 @@ static int yy_get_next_buffer (void)
 
 		/* Read in more data. */
 		YY_INPUT( (&YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[number_to_move]),
-			(yy_n_chars), (size_t) num_to_read );
+			(yy_n_chars), num_to_read );
 
 		YY_CURRENT_BUFFER_LVALUE->yy_n_chars = (yy_n_chars);
 		}
@@ -7166,7 +7169,7 @@ static int yy_get_next_buffer (void)
 	yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
 	yy_is_jam = (yy_current_state == 8614);
 
-	return yy_is_jam ? 0 : yy_current_state;
+		return yy_is_jam ? 0 : yy_current_state;
 }
 
 #ifndef YY_NO_INPUT
@@ -7193,7 +7196,7 @@ static int yy_get_next_buffer (void)
 
 		else
 			{ /* need more input */
-			int offset = (yy_c_buf_p) - (yytext_ptr);
+			yy_size_t offset = (yy_c_buf_p) - (yytext_ptr);
 			++(yy_c_buf_p);
 
 			switch ( yy_get_next_buffer(  ) )
@@ -7465,7 +7468,7 @@ void sfatpop_buffer_state (void)
  */
 static void sfatensure_buffer_stack (void)
 {
-	int num_to_alloc;
+	yy_size_t num_to_alloc;
     
 	if (!(yy_buffer_stack)) {
 
@@ -7557,17 +7560,17 @@ YY_BUFFER_STATE sfat_scan_string (yyconst char * yystr )
 
 /** Setup the input buffer state to scan the given bytes. The next call to sfatlex() will
  * scan from a @e copy of @a bytes.
- * @param bytes the byte buffer to scan
- * @param len the number of bytes in the buffer pointed to by @a bytes.
+ * @param yybytes the byte buffer to scan
+ * @param _yybytes_len the number of bytes in the buffer pointed to by @a bytes.
  * 
  * @return the newly allocated buffer state object.
  */
-YY_BUFFER_STATE sfat_scan_bytes  (yyconst char * yybytes, int  _yybytes_len )
+YY_BUFFER_STATE sfat_scan_bytes  (yyconst char * yybytes, yy_size_t  _yybytes_len )
 {
 	YY_BUFFER_STATE b;
 	char *buf;
 	yy_size_t n;
-	int i;
+	yy_size_t i;
     
 	/* Get memory for full buffer, including space for trailing EOB's. */
 	n = _yybytes_len + 2;
@@ -7649,7 +7652,7 @@ FILE *sfatget_out  (void)
 /** Get the length of the current token.
  * 
  */
-int sfatget_leng  (void)
+yy_size_t sfatget_leng  (void)
 {
         return sfatleng;
 }
@@ -7797,7 +7800,7 @@ void sfatfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 185 "sf_attribute_table_parser.l"
+#line 187 "sf_attribute_table_parser.l"
 
 
 char *sfat_grammar_error=NULL;

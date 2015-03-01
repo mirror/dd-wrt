@@ -15,7 +15,7 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 #ifndef __STDINT_H__
@@ -116,6 +116,10 @@ typedef uint64_t  u_int64_t;
    /* No MSC_VER, make it signed */
 #  define UINT64_MAX _I64_MAX
 # endif
+#endif
+
+#ifndef SIZE_MAX
+#define SIZE_MAX UINT32_MAX
 #endif
 
 #endif  /* __STDINT_H__ */

@@ -1,6 +1,7 @@
 /* $Id$ */
 /*
-** Copyright (C) 2002-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 2002 Martin Roesch <roesch@sourcefire.com>
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -16,12 +17,12 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 
 /*
-**   ACSMX.H 
+**   ACSMX.H
 **
 **
 */
@@ -43,9 +44,9 @@
 */
 
 
-#define ALPHABET_SIZE    256     
+#define ALPHABET_SIZE    256
 
-#define ACSM_FAIL_STATE   -1     
+#define ACSM_FAIL_STATE   -1
 
 typedef struct _acsm_userdata
 {
@@ -54,7 +55,7 @@ typedef struct _acsm_userdata
 
 } ACSM_USERDATA;
 
-typedef struct _acsm_pattern {      
+typedef struct _acsm_pattern {
 
     struct  _acsm_pattern *next;
     unsigned char         *patrn;
@@ -72,27 +73,27 @@ typedef struct _acsm_pattern {
 } ACSM_PATTERN;
 
 
-typedef struct  {    
+typedef struct  {
 
     /* Next state - based on input character */
-    int      NextState[ ALPHABET_SIZE ];  
+    int      NextState[ ALPHABET_SIZE ];
 
     /* Failure state - used while building NFA & DFA  */
-    int      FailState;   
+    int      FailState;
 
     /* List of patterns that end here, if any */
-    ACSM_PATTERN *MatchList;   
+    ACSM_PATTERN *MatchList;
 
-}ACSM_STATETABLE; 
+}ACSM_STATETABLE;
 
 
 /*
 * State machine Struct
 */
 typedef struct {
-  
-    int acsmMaxStates;  
-    int acsmNumStates;  
+
+    int acsmMaxStates;
+    int acsmNumStates;
 
     ACSM_PATTERN    * acsmPatterns;
     ACSM_STATETABLE * acsmStateTable;
@@ -120,8 +121,12 @@ int acsmAddPattern( ACSM_STRUCT * p, unsigned char * pat, int n,
 int acsmCompile ( ACSM_STRUCT * acsm,
              int (*build_tree)(void * id, void **existing_tree),
              int (*neg_list_func)(void *id, void **list));
+struct _SnortConfig;
+int acsmCompileWithSnortConf ( struct _SnortConfig *, ACSM_STRUCT * acsm,
+                               int (*build_tree)(struct _SnortConfig *, void * id, void **existing_tree),
+                               int (*neg_list_func)(void *id, void **list));
 
-int acsmSearch ( ACSM_STRUCT * acsm,unsigned char * T, int n, 
+int acsmSearch ( ACSM_STRUCT * acsm,unsigned char * T, int n,
                  int (*Match)(void * id, void *tree, int index, void *data, void *neg_list),
                  void * data, int* current_state );
 

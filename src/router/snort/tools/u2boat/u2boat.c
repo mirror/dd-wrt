@@ -1,5 +1,6 @@
 /*
- * Copyright (C) 2002-2010 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2002-2013 Sourcefire, Inc.
  * Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
  * Author: Ryan Jordan <ryan.jordan@sourcefire.com>
  *
@@ -16,7 +17,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
 #include <stdio.h>
@@ -27,8 +28,15 @@
 #include <errno.h>
 #include <stdint.h>
 
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 #include <arpa/inet.h>
 #include <pcap.h>
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "u2boat.h"
 
@@ -62,6 +70,12 @@ static int ConvertLog(FILE *input, FILE *output, char *format)
         ConvertRecord = PcapConversion;
     }
 
+    if (ConvertRecord == NULL)
+    {
+        fprintf(stderr, "Error setting conversion routine, aborting...\n");
+        return FAILURE;
+    }
+
     /* Initialize the record's data pointer */
     tmp_record.data = malloc(MAX_U2RECORD_DATA_LENGTH * sizeof(uint8_t));
     if (tmp_record.data == NULL)
@@ -89,7 +103,7 @@ static int ConvertLog(FILE *input, FILE *output, char *format)
     }
     if (ferror(input))
     {
-        fprintf(stderr, "Error reading input file, aborting...\n"); 
+        fprintf(stderr, "Error reading input file, aborting...\n");
         return FAILURE;
     }
     if (ferror(output))
@@ -223,7 +237,7 @@ static int GetRecord(FILE *input, u2record *rec)
                 items_read, rec->length);
         return FAILURE;
     }
-    
+
     return SUCCESS;
 }
 
@@ -297,7 +311,7 @@ int main (int argc, char *argv[])
     }
 
     /* Open the files */
-    if ((input_file = fopen(input_filename, "r")) == NULL) 
+    if ((input_file = fopen(input_filename, "r")) == NULL)
     {
         fprintf(stderr, "Unable to open file: %s\n", input_filename);
         return FAILURE;

@@ -1,6 +1,7 @@
 /****************************************************************************
  *
- * Copyright (C) 2010-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -15,13 +16,17 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************/
 
 /* Some UTF-{16,32}{le,be} normalization functions */
 
 #include <stdlib.h>
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "util_utf.h"
 
@@ -60,6 +65,7 @@ int set_decode_utf_state_charset(decode_utf_state_t *dstate, int charset)
     if (dstate == NULL)
         return DECODE_UTF_FAILURE;
 
+    dstate->state = DSTATE_FIRST;
     dstate->charset = charset;
     return DECODE_UTF_SUCCESS;
 }
@@ -83,7 +89,7 @@ int get_decode_utf_state_charset(decode_utf_state_t *dstate)
  *
  * returns: DECODE_UTF_SUCCESS or DECODE_UTF_FAILURE
  */
-   
+
 static int DecodeUTF16LE(char *src, unsigned int src_len, char *dst, unsigned int dst_len, int *bytes_copied, decode_utf_state_t *dstate)
 {
     char *src_index = src;
@@ -108,6 +114,8 @@ static int DecodeUTF16LE(char *src, unsigned int src_len, char *dst, unsigned in
                     result = DECODE_UTF_FAILURE;
                 dstate->state = DSTATE_FIRST;
                 break;
+            default:
+                return DECODE_UTF_FAILURE;
         }
     }
 
@@ -127,7 +135,7 @@ static int DecodeUTF16LE(char *src, unsigned int src_len, char *dst, unsigned in
  *
  * returns: DECODE_UTF_SUCCESS or DECODE_UTF_FAILURE
  */
-   
+
 static int DecodeUTF16BE(char *src, unsigned int src_len, char *dst, unsigned int dst_len, int *bytes_copied, decode_utf_state_t *dstate)
 {
     char *src_index = src;
@@ -152,6 +160,8 @@ static int DecodeUTF16BE(char *src, unsigned int src_len, char *dst, unsigned in
                 *dst_index++ = *src_index++;
                 dstate->state = DSTATE_FIRST;
                 break;
+            default:
+                return DECODE_UTF_FAILURE;
         }
     }
 
@@ -171,7 +181,7 @@ static int DecodeUTF16BE(char *src, unsigned int src_len, char *dst, unsigned in
  *
  * returns: DECODE_UTF_SUCCESS or DECODE_UTF_FAILURE
  */
-   
+
 static int DecodeUTF32LE(char *src, unsigned int src_len, char *dst, unsigned int dst_len, int *bytes_copied, decode_utf_state_t *dstate)
 {
     char *src_index = src;
@@ -201,9 +211,11 @@ static int DecodeUTF32LE(char *src, unsigned int src_len, char *dst, unsigned in
                 else
                     dstate->state++;
                 break;
+            default:
+                return DECODE_UTF_FAILURE;
         }
     }
-    
+
     *bytes_copied = (int) (dst_index - dst);
 
     return result;
@@ -220,7 +232,7 @@ static int DecodeUTF32LE(char *src, unsigned int src_len, char *dst, unsigned in
  *
  * returns: DECODE_UTF_SUCCESS or DECODE_UTF_FAILURE
  */
-   
+
 static int DecodeUTF32BE(char *src, unsigned int src_len, char *dst, unsigned int dst_len, int *bytes_copied, decode_utf_state_t *dstate)
 {
     char *src_index = src;
@@ -247,9 +259,11 @@ static int DecodeUTF32BE(char *src, unsigned int src_len, char *dst, unsigned in
                 *dst_index++ = *src_index++;
                 dstate->state = DSTATE_FIRST;
                 break;
+            default:
+                return DECODE_UTF_FAILURE;
         }
     }
-    
+
     *bytes_copied = (int) (dst_index - dst);
 
     return result;

@@ -21,11 +21,6 @@ options that control decoder events.
 
 Configuring
 ===========
-The following options to configure will enable decoder and preprocessor
-rules:
-
-$ ./configure --enable-decoder-preprocessor-rules
-
 The decoder and preprocessor rules are located in the 'preproc_rules/'
 directory in the top level source tree, and have the names 
 'decoder.rules' and 'preprocessor.rules' respectively.  These files
@@ -73,8 +68,7 @@ descriptions of the rules in 'decoder.rules' and 'preprocessor.rules'.
 
 Reverting to original behavior
 ==============================
-If you have configured snort to use decoder and preprocessor rules, the 
-following config option in snort.conf will make Snort revert to the old
+The following config option in snort.conf will make Snort revert to the old
 behavior:
 
 config autogenerate_preprocessor_decoder_rules

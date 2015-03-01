@@ -1,5 +1,6 @@
 /*
-** Copyright (C) 2009-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2009-2013 Sourcefire, Inc.
 **
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -15,7 +16,7 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 /*
@@ -28,11 +29,15 @@
 
 /*#include "sdf_pattern_match.h"*/
 #include <stdint.h>
+#include "sfPolicyUserData.h"
 #include "sdf_us_ssn.h"
 #include "sdf_detection_option.h"
 
 #define GENERATOR_SPP_SDF_RULES 138
 #define GENERATOR_SPP_SDF_PREPROC 139
+
+/* This is the maximum defined area number */
+#define MAX_AREA 772
 
 #define MAX_PORTS 65536
 #define PORT_INDEX(port) port/8
@@ -50,10 +55,20 @@ typedef struct _sdf_tree_node
 
 typedef struct _SDFSessionData
 {
+    sdf_tree_node *part_match_node;
+    uint16_t part_match_index;
     uint32_t num_patterns, global_counter;
     uint8_t *counters;
     int8_t *rtns_matched;
+    uint32_t config_num;
 } SDFSessionData;
+
+typedef struct _SDFContext
+{
+    tSfPolicyUserContextId context_id;
+    sdf_tree_node *head_node;
+    uint32_t num_patterns;
+} SDFContext;
 
 typedef struct _SDFConfig
 {
@@ -65,6 +80,7 @@ typedef struct _SDFConfig
     unsigned char src_ports[MAX_PORTS/8];
     unsigned char dst_ports[MAX_PORTS/8];
     unsigned char protocol_ordinals[MAX_PROTOCOL_ORDINAL];
+    uint32_t config_num;
 } SDFConfig;
 
 /* Definitions of config options */
@@ -108,5 +124,7 @@ typedef struct _SDFConfig
 #define SDF_COMBO_ALERT_CLASS 1
 #define SDF_COMBO_ALERT_PRIORITY 1
 #define SDF_COMBO_ALERT_STR "(spp_sdf) SDF Combination Alert"
+
+extern SDFContext *sdf_context;
 
 #endif

@@ -1,6 +1,7 @@
 /* $Id$ */
 /*
- ** Copyright (C) 2002-2011 Sourcefire, Inc.
+ ** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2002-2013 Sourcefire, Inc.
  ** Author: Martin Roesch
  **
  ** This program is free software; you can redistribute it and/or modify
@@ -16,21 +17,21 @@
  **
  ** You should have received a copy of the GNU General Public License
  ** along with this program; if not, write to the Free Software
- ** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-/* sp_clientserver 
- * 
+/* sp_clientserver
+ *
  * Purpose:
  *
- * Wouldn't be nice if we could tell a TCP rule to only apply if it's going 
- * to or from the client or server side of a connection?  Think of all the 
+ * Wouldn't be nice if we could tell a TCP rule to only apply if it's going
+ * to or from the client or server side of a connection?  Think of all the
  * false alarms we could elminate!  That's what we're doing with this one,
  * it allows you to write rules that only apply to client or server packets.
  * One thing though, you *must* have stream4 enabled for it to work!
  *
  * Arguments:
- *   
+ *
  *   None.
  *
  * Effect:
@@ -55,12 +56,13 @@
 #include <string.h>
 #include <ctype.h>
 
+#include "sf_types.h"
 #include "rules.h"
 #include "treenodes.h"
 #include "decode.h"
 #include "plugbase.h"
 #include "parser.h"
-#include "debug.h"
+#include "snort_debug.h"
 #include "util.h"
 #include "plugin_enum.h"
 #include "snort.h"
@@ -80,8 +82,8 @@ extern PreprocStats ruleOTNEvalPerfStats;
 #include "sfhashfcn.h"
 #include "detection_options.h"
 
-void FlowInit(char *, OptTreeNode *, int);
-void ParseFlowArgs(char *, OptTreeNode *);
+void FlowInit(struct _SnortConfig *, char *, OptTreeNode *, int);
+void ParseFlowArgs(struct _SnortConfig *, char *, OptTreeNode *);
 void InitFlowData(OptTreeNode *);
 int CheckFlow(void *option_data, Packet *p);
 
@@ -105,13 +107,13 @@ uint32_t FlowHash(void *d)
 }
 
 int FlowCompare(void *l, void *r)
-{   
+{
     ClientServerData *left = (ClientServerData *)l;
     ClientServerData *right = (ClientServerData *)r;
 
     if (!left || !right)
         return DETECTION_OPTION_NOT_EQUAL;
-                                                             
+
     if (( left->from_server == right->from_server) &&
         ( left->from_client == right->from_client) &&
         ( left->ignore_reassembled == right->ignore_reassembled) &&
@@ -135,7 +137,7 @@ int OtnFlowFromServer( OptTreeNode * otn )
     {
         if( csd->from_server ) return 1;
     }
-    return 0; 
+    return 0;
 }
 int OtnFlowFromClient( OptTreeNode * otn )
 {
@@ -146,7 +148,7 @@ int OtnFlowFromClient( OptTreeNode * otn )
     {
         if( csd->from_client ) return 1;
     }
-    return 0; 
+    return 0;
 }
 int OtnFlowIgnoreReassembled( OptTreeNode * otn )
 {
@@ -157,7 +159,7 @@ int OtnFlowIgnoreReassembled( OptTreeNode * otn )
     {
         if( csd->ignore_reassembled ) return 1;
     }
-    return 0; 
+    return 0;
 }
 int OtnFlowOnlyReassembled( OptTreeNode * otn )
 {
@@ -168,11 +170,11 @@ int OtnFlowOnlyReassembled( OptTreeNode * otn )
     {
         if( csd->only_reassembled ) return 1;
     }
-    return 0; 
+    return 0;
 }
 
 /****************************************************************************
- * 
+ *
  * Function: SetupClientServer()
  *
  * Purpose: Generic detection engine plugin template.  Registers the
@@ -193,14 +195,14 @@ void SetupClientServer(void)
     RegisterPreprocessorProfile("flow", &flowCheckPerfStats, 3, &ruleOTNEvalPerfStats);
 #endif
 
-    DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN, 
+    DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN,
                             "Plugin: ClientServerName(Flow) Setup\n"););
 }
 
 
 /****************************************************************************
- * 
- * Function: FlowInit(char *, OptTreeNode *)
+ *
+ * Function: FlowInit(struct _SnortConfig *, char *, OptTreeNode *)
  *
  * Purpose: Configure the flow init option to register the appropriate checks
  *
@@ -210,19 +212,19 @@ void SetupClientServer(void)
  * Returns: void function
  *
  ****************************************************************************/
-void FlowInit(char *data, OptTreeNode *otn, int protocol)
+void FlowInit(struct _SnortConfig *sc, char *data, OptTreeNode *otn, int protocol)
 {
     ClientServerData *csd;
     /* multiple declaration check */
     if(otn->ds_list[PLUGIN_CLIENTSERVER])
     {
-        FatalError("%s(%d): Multiple flow options in rule\n", file_name, 
+        FatalError("%s(%d): Multiple flow options in rule\n", file_name,
                 file_line);
     }
-        
+
 
     InitFlowData(otn);
-    ParseFlowArgs(data, otn);
+    ParseFlowArgs(sc, data, otn);
     csd = (ClientServerData *)otn->ds_list[PLUGIN_CLIENTSERVER];
 
     if(protocol == IPPROTO_UDP)
@@ -233,7 +235,7 @@ void FlowInit(char *data, OptTreeNode *otn, int protocol)
                    "for UDP traffic\n", file_name, file_line);
         }
     }
-   
+
     if (protocol == IPPROTO_ICMP)
     {
         if ((csd->only_reassembled != ONLY_FRAG) && (csd->ignore_reassembled != IGNORE_FRAG))
@@ -245,18 +247,18 @@ void FlowInit(char *data, OptTreeNode *otn, int protocol)
 }
 
 
-static INLINE void CheckStream(char *token)
+static inline void CheckStream(char *token)
 {
     if (!stream_api)
     {
-        FatalError("%s(%d): Stream5 must be enabled to use the '%s' option.\n",
+        FatalError("%s(%d): Stream must be enabled to use the '%s' option.\n",
             file_name, file_line, token);
     }
 }
 
 /****************************************************************************
- * 
- * Function: ParseFlowArgs(char *, OptTreeNode *)
+ *
+ * Function: ParseFlowArgs(struct _SnortConfig *, char *, OptTreeNode *)
  *
  * Purpose: parse the arguments to the flow plugin and alter the otn
  *          accordingly
@@ -266,7 +268,7 @@ static INLINE void CheckStream(char *token)
  * Returns: void function
  *
  ****************************************************************************/
-void ParseFlowArgs(char *data, OptTreeNode *otn)
+void ParseFlowArgs(struct _SnortConfig *sc, char *data, OptTreeNode *otn)
 {
     char *token, *str, *p;
     ClientServerData *csd;
@@ -284,9 +286,9 @@ void ParseFlowArgs(char *data, OptTreeNode *otn)
 
     token = strtok(p, ",");
 
-    while(token) 
+    while(token)
     {
-        DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN, 
+        DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN,
                     "parsed %s,(%d)\n", token,strlen(token)););
 
         while(isspace((int)*token))
@@ -301,12 +303,12 @@ void ParseFlowArgs(char *data, OptTreeNode *otn)
         {
             CheckStream(token);
             csd->from_server = 1;
-        } 
+        }
         else if(!strcasecmp(token, "from_server"))
         {
             CheckStream(token);
             csd->from_server = 1;
-        } 
+        }
         else if(!strcasecmp(token, "from_client"))
         {
             CheckStream(token);
@@ -376,7 +378,7 @@ void ParseFlowArgs(char *data, OptTreeNode *otn)
                    " only_frag", file_name,file_line);
     }
 
-    if(otn->stateless && (csd->from_client || csd->from_server)) 
+    if(otn->stateless && (csd->from_client || csd->from_server))
     {
         FatalError("%s:%d: Can't use flow: stateless option with"
                    " other options", file_name, file_line);
@@ -400,7 +402,7 @@ void ParseFlowArgs(char *data, OptTreeNode *otn)
                    "options in same rule\n", file_name, file_line);
     }
 
-    if (add_detection_option(RULE_OPTION_TYPE_FLOW, (void *)csd, &idx_dup) == DETECTION_OPTION_EQUAL)
+    if (add_detection_option(sc, RULE_OPTION_TYPE_FLOW, (void *)csd, &idx_dup) == DETECTION_OPTION_EQUAL)
     {
 #ifdef DEBUG_RULE_OPTION_TREE
         LogMessage("Duplicate Flow:\n%c %c %c %c\n%c %c %c %c\n\n",
@@ -423,12 +425,12 @@ void ParseFlowArgs(char *data, OptTreeNode *otn)
         fpl->type = RULE_OPTION_TYPE_FLOW;
         fpl->context = (void *)csd;
     }
-    
+
     free(str);
 }
 
 /****************************************************************************
- * 
+ *
  * Function: InitFlowData(OptTreeNode *)
  *
  * Purpose: calloc the clientserver data node
@@ -443,10 +445,10 @@ void InitFlowData(OptTreeNode * otn)
 
     /* allocate the data structure and attach it to the
        rule's data struct list */
-    otn->ds_list[PLUGIN_CLIENTSERVER] = (ClientServerData *) 
+    otn->ds_list[PLUGIN_CLIENTSERVER] = (ClientServerData *)
         calloc(sizeof(ClientServerData), sizeof(char));
 
-    if(otn->ds_list[PLUGIN_CLIENTSERVER] == NULL) 
+    if(otn->ds_list[PLUGIN_CLIENTSERVER] == NULL)
     {
         FatalError("FlowData calloc Failed!\n");
     }
@@ -464,7 +466,7 @@ int CheckFlow(void *option_data, Packet *p)
     {
         if ((csd->established == 1) && !(p->packet_flags & PKT_STREAM_EST))
         {
-            /* 
+            /*
             ** This option requires an established connection and it isn't
             ** in that state yet, so no match.
             */
@@ -487,7 +489,7 @@ int CheckFlow(void *option_data, Packet *p)
     {
         if (ScStateful())
         {
-            if (!(p->packet_flags & PKT_FROM_CLIENT) && 
+            if (!(p->packet_flags & PKT_FROM_CLIENT) &&
                 (p->packet_flags & PKT_FROM_SERVER))
             {
                 /* No match on from_client */
@@ -502,7 +504,7 @@ int CheckFlow(void *option_data, Packet *p)
     {
         if (ScStateful())
         {
-            if (!(p->packet_flags & PKT_FROM_SERVER) && 
+            if (!(p->packet_flags & PKT_FROM_SERVER) &&
                 (p->packet_flags & PKT_FROM_CLIENT))
             {
                 /* No match on from_server */
@@ -534,8 +536,9 @@ int CheckFlow(void *option_data, Packet *p)
     /* ...only_reassembled */
     if (csd->only_reassembled & ONLY_STREAM)
     {
-        if (!(p->packet_flags & PKT_REBUILT_STREAM))
-        {
+        if ( !(p->packet_flags & PKT_REBUILT_STREAM)
+            && !PacketHasFullPDU(p)
+        ) {
             PREPROC_PROFILE_END(flowCheckPerfStats);
             return DETECTION_OPTION_NO_MATCH;
         }

@@ -1,6 +1,7 @@
 /****************************************************************************
  *
- * Copyright (C) 2003-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -15,10 +16,10 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************/
- 
+
 /*
 **  sfmemcap.h
 */
@@ -27,19 +28,19 @@
 
 typedef struct
 {
-   unsigned memused;
-   unsigned memcap;
+   unsigned long memused;
+   unsigned long memcap;
    int      nblocks;
 
 }MEMCAP;
 
-void     sfmemcap_init(MEMCAP * mc, unsigned nbytes);
+void     sfmemcap_init(MEMCAP * mc, unsigned long nbytes);
 MEMCAP * sfmemcap_new( unsigned nbytes );
 void     sfmemcap_delete( MEMCAP * mc );
-void   * sfmemcap_alloc(MEMCAP * mc, unsigned nbytes);
+void   * sfmemcap_alloc(MEMCAP * mc, unsigned long nbytes);
 void     sfmemcap_showmem(MEMCAP * mc );
 void     sfmemcap_free( MEMCAP * mc, void * memory);
 char   * sfmemcap_strdup(MEMCAP * mc, const char *str);
-void   * sfmemcap_dupmem(MEMCAP * mc, void * src, int n );
+void   * sfmemcap_dupmem(MEMCAP * mc, void * src, unsigned long n );
 
 #endif

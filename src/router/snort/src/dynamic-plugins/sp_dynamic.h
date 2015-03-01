@@ -12,9 +12,10 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (C) 2005-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * Author: Steven Sturges
  *
@@ -32,6 +33,8 @@
 #include "sf_engine/sf_snort_plugin_api.h"
 #include "detection-plugins/sp_pattern_match.h"
 
+extern char *snort_conf_dir;
+
 typedef struct _DynamicData
 {
     void *contextData;
@@ -47,8 +50,9 @@ typedef struct _DynamicData
 void SetupDynamic(void);
 
 int RegisterDynamicRule(
-    u_int32_t gid,
-    u_int32_t sid,
+    SnortConfig *,
+    uint32_t gid,
+    uint32_t sid,
     void *info,
     OTNCheckFunction,
     OTNHasFunction,
@@ -78,20 +82,25 @@ void DynamicRuleListFree(DynamicRuleNode *);
 int ReloadDynamicRules(SnortConfig *);
 #endif
 
-int DynamicPreprocRuleOptInit(void *);
-u_int32_t DynamicFlowbitRegister(char *name, int op);
-void DynamicFlowbitUnregister(char *name, int op);
-int DynamicFlowbitCheck(void *pkt, int op, u_int32_t id);
-int DynamicAsn1Detect(void *pkt, void *ctxt, const u_int8_t *cursor);
-int DynamicsfUnfold(const u_int8_t *, u_int32_t , u_int8_t *, u_int32_t , u_int32_t *);
-int Dynamicsfbase64decode(u_int8_t *, u_int32_t , u_int8_t *, u_int32_t , u_int32_t *);
+int DynamicPreprocRuleOptInit(struct _SnortConfig *, void *);
+void* DynamicFlowbitRegister(void *);
+void DynamicFlowbitUnregister(void *);
+int DynamicFlowbitCheck(void *pkt, void *);
+int DynamicAsn1Detect(void *pkt, void *ctxt, const uint8_t *cursor);
+int DynamicsfUnfold(const uint8_t *, uint32_t , uint8_t *, uint32_t , uint32_t *);
+int Dynamicsfbase64decode(uint8_t *, uint32_t , uint8_t *, uint32_t , uint32_t *);
+int DynamicGetAltDetect(uint8_t **, uint16_t *);
+void DynamicSetAltDetect(uint8_t *, uint16_t );
+int DynamicIsDetectFlag(SFDetectFlagType);
+void DynamicDetectFlagDisable(SFDetectFlagType);
+
 int DynamicHasFlow(OptTreeNode *otn);
 int DynamicHasFlowbit(OptTreeNode *otn);
 int DynamicHasContent(OptTreeNode *otn);
 int DynamicHasByteTest(OptTreeNode *otn);
 int DynamicHasPCRE(OptTreeNode *otn);
 
-u_int32_t DynamicRuleHash(void *d);
+uint32_t DynamicRuleHash(void *d);
 int DynamicRuleCompare(void *l, void *r);
 
 #endif  /* __SP_DYNAMIC_H_ */

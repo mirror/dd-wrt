@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (C) 2008-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2008-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -14,12 +15,21 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************
- * 
+ *
  ****************************************************************************/
 
+#include <errno.h>
+#include <string.h>
+#include <stdarg.h>
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#include "sf_types.h"
 #include "dce2_roptions.h"
 #include "dce2_memory.h"
 #include "dcerpc.h"
@@ -32,14 +42,6 @@
 #include "sf_snort_plugin_api.h"
 #include "sfhashfcn.h"
 #include "profiler.h"
-#include <errno.h>
-#include <string.h>
-#include <stdarg.h>
-
-/********************************************************************
- * Extern variables
- ********************************************************************/
-extern DynamicPreprocessorData _dpd;
 
 /********************************************************************
  * Macros
@@ -140,7 +142,7 @@ typedef struct _DCE2_IfaceData
     int iface_vers_maj;
     int iface_vers_min;
     DCE2_IfOp operator;
-    int any_frag; 
+    int any_frag;
 
 } DCE2_IfaceData;
 
@@ -192,15 +194,15 @@ typedef struct _DCE2_ByteJumpData
 /********************************************************************
  * Private function prototypes
  ********************************************************************/
-static int DCE2_IfaceInit(char *, char *, void **);
-static int DCE2_OpnumInit(char *, char *, void **);
+static int DCE2_IfaceInit(struct _SnortConfig *, char *, char *, void **);
+static int DCE2_OpnumInit(struct _SnortConfig *, char *, char *, void **);
 static void DCE2_ParseOpnumList(char **, char *, uint8_t *);
-static INLINE void DCE2_OpnumSet(uint8_t *, const uint16_t);
-static INLINE void DCE2_OpnumSetRange(uint8_t *, uint16_t, uint16_t);
-static INLINE int DCE2_OpnumIsSet(const uint8_t *, const uint16_t, const uint16_t, const uint16_t);
-static int DCE2_StubDataInit(char *, char *, void **);
-static int DCE2_ByteTestInit(char *, char *, void **);
-static int DCE2_ByteJumpInit(char *, char *, void **);
+static inline void DCE2_OpnumSet(uint8_t *, const uint16_t);
+static inline void DCE2_OpnumSetRange(uint8_t *, uint16_t, uint16_t);
+static inline int DCE2_OpnumIsSet(const uint8_t *, const uint16_t, const uint16_t, const uint16_t);
+static int DCE2_StubDataInit(struct _SnortConfig *, char *, char *, void **);
+static int DCE2_ByteTestInit(struct _SnortConfig *, char *, char *, void **);
+static int DCE2_ByteJumpInit(struct _SnortConfig *, char *, char *, void **);
 static void DCE2_ParseIface(char *, DCE2_IfaceData *);
 static int DCE2_IfaceEval(void *, const uint8_t **, void *);
 static int DCE2_OpnumEval(void *, const uint8_t **, void *);
@@ -219,9 +221,9 @@ static int DCE2_IfaceKeyCompare(void *, void *);
 static int DCE2_OpnumKeyCompare(void *, void *);
 static int DCE2_ByteTestKeyCompare(void *, void *);
 static int DCE2_ByteJumpKeyCompare(void *, void *);
-static INLINE int DCE2_RoptDoEval(SFSnortPacket *);
+static inline int DCE2_RoptDoEval(SFSnortPacket *);
 static NORETURN void DCE2_RoptError(const char *, ...);
-static INLINE void * DCE2_AllocFp(uint32_t);
+static inline void * DCE2_AllocFp(uint32_t);
 static int DCE2_IfaceAddFastPatterns(void *, int, int, FPContentInfo **);
 
 /********************************************************************
@@ -234,19 +236,19 @@ static int DCE2_IfaceAddFastPatterns(void *, int, int, FPContentInfo **);
  * Returns:
  *
  ********************************************************************/
-void DCE2_RegRuleOptions(void)
+void DCE2_RegRuleOptions(struct _SnortConfig *sc)
 {
-    _dpd.preprocOptRegister(DCE2_ROPT__IFACE, DCE2_IfaceInit, DCE2_IfaceEval,
+    _dpd.preprocOptRegister(sc, DCE2_ROPT__IFACE, DCE2_IfaceInit, DCE2_IfaceEval,
             DCE2_IfaceCleanup, DCE2_IfaceHash, DCE2_IfaceKeyCompare,
             NULL, DCE2_IfaceAddFastPatterns);
-    _dpd.preprocOptRegister(DCE2_ROPT__OPNUM, DCE2_OpnumInit, DCE2_OpnumEval,
+    _dpd.preprocOptRegister(sc, DCE2_ROPT__OPNUM, DCE2_OpnumInit, DCE2_OpnumEval,
             DCE2_OpnumCleanup, DCE2_OpnumHash, DCE2_OpnumKeyCompare, NULL, NULL);
-    _dpd.preprocOptRegister(DCE2_ROPT__STUB_DATA, DCE2_StubDataInit,
+    _dpd.preprocOptRegister(sc, DCE2_ROPT__STUB_DATA, DCE2_StubDataInit,
             DCE2_StubDataEval, NULL, NULL, NULL, NULL, NULL);
-    _dpd.preprocOptOverrideKeyword(DCE2_ROPT__BYTE_TEST, DCE2_RARG__DCE_OVERRIDE,
+    _dpd.preprocOptOverrideKeyword(sc, DCE2_ROPT__BYTE_TEST, DCE2_RARG__DCE_OVERRIDE,
             DCE2_ByteTestInit, DCE2_ByteTestEval, DCE2_ByteTestCleanup,
             DCE2_ByteTestHash, DCE2_ByteTestKeyCompare, NULL, NULL);
-    _dpd.preprocOptOverrideKeyword(DCE2_ROPT__BYTE_JUMP, DCE2_RARG__DCE_OVERRIDE,
+    _dpd.preprocOptOverrideKeyword(sc, DCE2_ROPT__BYTE_JUMP, DCE2_RARG__DCE_OVERRIDE,
             DCE2_ByteJumpInit, DCE2_ByteJumpEval, DCE2_ByteJumpCleanup,
             DCE2_ByteJumpHash, DCE2_ByteJumpKeyCompare, NULL, NULL);
     _dpd.preprocOptByteOrderKeyword(DCE2_RARG__DCE_BYTEORDER, DCE2_GetByteOrder);
@@ -259,7 +261,7 @@ void DCE2_RegRuleOptions(void)
  *
  * XXX Connectionless uses a 32bit version, connection-oriented
  * a 16bit major version and 16bit minor version.  Not likely to
- * need to support versions greater than 65535, but may need to 
+ * need to support versions greater than 65535, but may need to
  * support minor version.
  *
  * Arguments:
@@ -276,7 +278,7 @@ void DCE2_RegRuleOptions(void)
  *  Fatal errors if invalid arguments.
  *
  ********************************************************************/
-static int DCE2_IfaceInit(char *name, char *args, void **data)
+static int DCE2_IfaceInit(struct _SnortConfig *sc, char *name, char *args, void **data)
 {
     char *token, *saveptr = NULL;
     int iface_vers = 0, any_frag = 0;
@@ -667,7 +669,7 @@ static void DCE2_ParseIface(char *token, DCE2_IfaceData *iface_data)
     }
 }
 
-static INLINE void * DCE2_AllocFp(uint32_t size)
+static inline void * DCE2_AllocFp(uint32_t size)
 {
     void *mem = calloc(1, (size_t)size);
     if (mem == NULL)
@@ -695,6 +697,9 @@ static int DCE2_IfaceAddFastPatterns(void *rule_opt_data, int protocol,
         char *client_fp = "\x05\x00\x00";
         char *server_fp = "\x05\x00\x02";
         char *no_dir_fp = "\x05\x00";
+
+        DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__ROPTIONS, "Adding fast pattern "
+                    "content for TCP rule option.\n"));
 
         switch (direction)
         {
@@ -724,11 +729,14 @@ static int DCE2_IfaceAddFastPatterns(void *rule_opt_data, int protocol,
         //DCE2_IfaceData *iface_data = (DCE2_IfaceData *)rule_opt_data;
         FPContentInfo *big_fp = (FPContentInfo *)DCE2_AllocFp(sizeof(FPContentInfo));
         FPContentInfo *little_fp = (FPContentInfo *)DCE2_AllocFp(sizeof(FPContentInfo));
-        char *big_content = (char *)DCE2_AllocFp(sizeof(Uuid));   
-        char *little_content = (char *)DCE2_AllocFp(sizeof(Uuid));   
+        char *big_content = (char *)DCE2_AllocFp(sizeof(Uuid));
+        char *little_content = (char *)DCE2_AllocFp(sizeof(Uuid));
         uint32_t time32;
         uint16_t time16;
         int index = 0;
+
+        DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__ROPTIONS, "Adding fast pattern "
+                    "content for UDP rule option.\n"));
 
         time32 = DceRpcNtohl(&iface_data->iface.time_low,
                 DCERPC_BO_FLAG__BIG_ENDIAN);
@@ -771,7 +779,7 @@ static int DCE2_IfaceAddFastPatterns(void *rule_opt_data, int protocol,
         little_fp->length = sizeof(Uuid);
 
         DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__ROPTIONS,
-                    "Iface: %s\nBig endian: %s\n, Little endian: %s\n",
+                    " Iface: %s\n  Big endian: %s\n  Little endian: %s\n",
                     DCE2_UuidToStr(&iface_data->iface, DCERPC_BO_FLAG__NONE),
                     DCE2_UuidToStr((Uuid *)big_fp->content, DCERPC_BO_FLAG__NONE),
                     DCE2_UuidToStr((Uuid *)little_fp->content, DCERPC_BO_FLAG__NONE)););
@@ -793,7 +801,7 @@ static int DCE2_IfaceAddFastPatterns(void *rule_opt_data, int protocol,
  * Returns:
  *
  ********************************************************************/
-static int DCE2_OpnumInit(char *name, char *args, void **data)
+static int DCE2_OpnumInit(struct _SnortConfig *sc, char *name, char *args, void **data)
 {
     uint8_t opnum_mask[DCE2_OPNUM__MAX_INDEX];  /* 65536 bits */
     char *args_end;
@@ -1030,7 +1038,7 @@ static void DCE2_ParseOpnumList(char **ptr, char *end, uint8_t *opnum_mask)
  * Returns:
  *
  ********************************************************************/
-static INLINE int DCE2_OpnumIsSet(const uint8_t *opnum_mask, const uint16_t opnum_lo,
+static inline int DCE2_OpnumIsSet(const uint8_t *opnum_mask, const uint16_t opnum_lo,
         const uint16_t opnum_hi, const uint16_t opnum)
 {
     uint16_t otmp = opnum - opnum_lo;
@@ -1051,7 +1059,7 @@ static INLINE int DCE2_OpnumIsSet(const uint8_t *opnum_mask, const uint16_t opnu
  * Returns:
  *
  ********************************************************************/
-static INLINE void DCE2_OpnumSet(uint8_t *opnum_mask, const uint16_t opnum)
+static inline void DCE2_OpnumSet(uint8_t *opnum_mask, const uint16_t opnum)
 {
     opnum_mask[(opnum / 8)] |= (1 << (opnum % 8));
 }
@@ -1066,7 +1074,7 @@ static INLINE void DCE2_OpnumSet(uint8_t *opnum_mask, const uint16_t opnum)
  * Returns:
  *
  ********************************************************************/
-static INLINE void DCE2_OpnumSetRange(uint8_t *opnum_mask, uint16_t lo_opnum, uint16_t hi_opnum)
+static inline void DCE2_OpnumSetRange(uint8_t *opnum_mask, uint16_t lo_opnum, uint16_t hi_opnum)
 {
     uint16_t i;
 
@@ -1091,7 +1099,7 @@ static INLINE void DCE2_OpnumSetRange(uint8_t *opnum_mask, uint16_t lo_opnum, ui
  * Returns:
  *
  ********************************************************************/
-static int DCE2_StubDataInit(char *name, char *args, void **data)
+static int DCE2_StubDataInit(struct _SnortConfig *sc, char *name, char *args, void **data)
 {
     if (strcasecmp(name, DCE2_ROPT__STUB_DATA) != 0)
         return 0;
@@ -1119,7 +1127,7 @@ static int DCE2_StubDataInit(char *name, char *args, void **data)
  * Returns:
  *
  ********************************************************************/
-static int DCE2_ByteTestInit(char *name, char *args, void **data)
+static int DCE2_ByteTestInit(struct _SnortConfig *sc, char *name, char *args, void **data)
 {
     char *token, *saveptr = NULL;
     int tok_num = 0;
@@ -1315,7 +1323,7 @@ static int DCE2_ByteTestInit(char *name, char *args, void **data)
  * Returns:
  *
  ********************************************************************/
-static int DCE2_ByteJumpInit(char *name, char *args, void **data)
+static int DCE2_ByteJumpInit(struct _SnortConfig *sc, char *name, char *args, void **data)
 {
     char *token, *saveptr = NULL;
     int tok_num = 0;
@@ -1450,7 +1458,7 @@ static int DCE2_ByteJumpInit(char *name, char *args, void **data)
                 if (arg == NULL)
                 {
                     DCE2_Free((void *)bj_data, sizeof(DCE2_ByteJumpData), DCE2_MEM_TYPE__ROPTION);
-                    DCE2_RoptError("\"%s\" rule option: \"%s\" requires an argument.", 
+                    DCE2_RoptError("\"%s\" rule option: \"%s\" requires an argument.",
                             DCE2_ROPT__BYTE_JUMP, DCE2_RARG__MULTIPLIER);
                 }
 
@@ -1550,9 +1558,8 @@ static int DCE2_IfaceEval(void *pkt, const uint8_t **cursor, void *data)
     if (!DCE2_RoptDoEval(p))
         return RULE_NOMATCH;
 
-    sd = (DCE2_SsnData *)
-        _dpd.streamAPI->get_application_data(p->stream_session_ptr, PP_DCE2);
-    if (sd == NULL)
+    sd = (DCE2_SsnData *)_dpd.sessionAPI->get_application_data(p->stream_session, PP_DCE2);
+    if ((sd == NULL) || DCE2_SsnNoInspect(sd))
     {
         DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__ROPTIONS,
                     "No session data - not evaluating.\n"));
@@ -1658,7 +1665,7 @@ static int DCE2_IfaceEval(void *pkt, const uint8_t **cursor, void *data)
             break;
 
         default:
-            break; 
+            break;
     }
 
     return ret;
@@ -1687,9 +1694,8 @@ static int DCE2_OpnumEval(void *pkt, const uint8_t **cursor, void *data)
     if (!DCE2_RoptDoEval(p))
         return RULE_NOMATCH;
 
-    sd = (DCE2_SsnData *)
-        _dpd.streamAPI->get_application_data(p->stream_session_ptr, PP_DCE2);
-    if (sd == NULL)
+    sd = (DCE2_SsnData *)_dpd.sessionAPI->get_application_data(p->stream_session, PP_DCE2);
+    if ((sd == NULL) || DCE2_SsnNoInspect(sd))
     {
         DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__ROPTIONS,
                     "No session data - not evaluating.\n"));
@@ -1774,8 +1780,8 @@ static int DCE2_StubDataEval(void *pkt, const uint8_t **cursor, void *data)
     if (!DCE2_RoptDoEval(p))
         return RULE_NOMATCH;
 
-    sd = (DCE2_SsnData *)_dpd.streamAPI->get_application_data(p->stream_session_ptr, PP_DCE2);
-    if (sd == NULL)
+    sd = (DCE2_SsnData *)_dpd.sessionAPI->get_application_data(p->stream_session, PP_DCE2);
+    if ((sd == NULL) || DCE2_SsnNoInspect(sd))
     {
         DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__ROPTIONS,
                     "No session data - not evaluating.\n"));
@@ -1789,6 +1795,7 @@ static int DCE2_StubDataEval(void *pkt, const uint8_t **cursor, void *data)
         DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__ROPTIONS,
                     "Setting cursor to stub data: %p.\n", ropts->stub_data));
         *cursor = ropts->stub_data;
+        _dpd.SetAltDetect((uint8_t *)ropts->stub_data, (uint16_t)(p->payload_size - (ropts->stub_data - p->payload)));
         return RULE_MATCH;
     }
 
@@ -1811,6 +1818,8 @@ static int DCE2_ByteTestEval(void *pkt, const uint8_t **cursor, void *data)
     DCE2_SsnData *sd;
     DCE2_Roptions *ropts;
     DCE2_ByteTestData *bt_data;
+    const uint8_t *start_ptr;
+    uint16_t dsize;
     const uint8_t *bt_ptr;
     uint32_t pkt_value;
     DceRpcBoFlag byte_order;
@@ -1829,8 +1838,8 @@ static int DCE2_ByteTestEval(void *pkt, const uint8_t **cursor, void *data)
     if (!DCE2_RoptDoEval(p))
         return RULE_NOMATCH;
 
-    sd = (DCE2_SsnData *)_dpd.streamAPI->get_application_data(p->stream_session_ptr, PP_DCE2);
-    if (sd == NULL)
+    sd = (DCE2_SsnData *)_dpd.sessionAPI->get_application_data(p->stream_session, PP_DCE2);
+    if ((sd == NULL) || DCE2_SsnNoInspect(sd))
     {
         DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__ROPTIONS,
                     "No session data - not evaluating.\n"));
@@ -1852,11 +1861,23 @@ static int DCE2_ByteTestEval(void *pkt, const uint8_t **cursor, void *data)
     if (bt_data == NULL)
         return RULE_NOMATCH;
 
+    if (_dpd.Is_DetectFlag(SF_FLAG_ALT_DETECT))
+    {
+        _dpd.GetAltDetect((uint8_t **)&start_ptr, &dsize);
+        DEBUG_WRAP(DebugMessage(DEBUG_PATTERN_MATCH,
+                    "Using Alternative Detect buffer!\n"););
+    }
+    else
+    {
+        start_ptr = p->payload;
+        dsize = p->payload_size;
+    }
+
     /* Make sure we don't read past the end of the payload or before
      * beginning of payload */
     if (bt_data->relative)
     {
-        if ((bt_data->offset < 0) && (*cursor + bt_data->offset) < p->payload)
+        if ((bt_data->offset < 0) && (*cursor + bt_data->offset) < start_ptr)
         {
             DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__ROPTIONS,
                         "Offset is negative and puts cursor before beginning "
@@ -1864,7 +1885,7 @@ static int DCE2_ByteTestEval(void *pkt, const uint8_t **cursor, void *data)
             return RULE_NOMATCH;
         }
 
-        if ((*cursor + bt_data->offset + bt_data->num_bytes) > (p->payload + p->payload_size))
+        if ((*cursor + bt_data->offset + bt_data->num_bytes) > (start_ptr + dsize))
         {
             DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__ROPTIONS,
                         "Offset plus number of bytes to read puts cursor past "
@@ -1883,7 +1904,7 @@ static int DCE2_ByteTestEval(void *pkt, const uint8_t **cursor, void *data)
                         "not evaluating.\n"));
             return RULE_NOMATCH;
         }
-        else if ((p->payload + bt_data->offset + bt_data->num_bytes) > (p->payload + p->payload_size))
+        else if ((start_ptr + bt_data->offset + bt_data->num_bytes) > (start_ptr + dsize))
         {
             DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__ROPTIONS,
                         "Offset plus number of bytes to read puts cursor past "
@@ -1891,7 +1912,7 @@ static int DCE2_ByteTestEval(void *pkt, const uint8_t **cursor, void *data)
             return RULE_NOMATCH;
         }
 
-        bt_ptr = p->payload + bt_data->offset;
+        bt_ptr = start_ptr + bt_data->offset;
     }
 
     /* Determine which byte order to use */
@@ -1939,14 +1960,11 @@ static int DCE2_ByteTestEval(void *pkt, const uint8_t **cursor, void *data)
             return RULE_NOMATCH;
     }
 
-    /* Invert the return value if necessary */
+    /* Invert the return value. */
     if (bt_data->invert)
     {
         DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__ROPTIONS, "Applying not flag.\n"));
-        if (ret == RULE_MATCH)
-            ret = RULE_NOMATCH;
-        else
-            ret = RULE_MATCH;
+        ret = RULE_MATCH;
     }
 
     switch (bt_data->operator)
@@ -2025,7 +2043,7 @@ static int DCE2_ByteTestEval(void *pkt, const uint8_t **cursor, void *data)
             return RULE_NOMATCH;
     }
 
-#ifdef DEBUG
+#ifdef DEBUG_MSGS
     if (ret == RULE_MATCH)
     {
         DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__ROPTIONS,
@@ -2057,6 +2075,8 @@ static int DCE2_ByteJumpEval(void *pkt, const uint8_t **cursor, void *data)
     DCE2_SsnData *sd;
     DCE2_Roptions *ropts;
     DCE2_ByteJumpData *bj_data;
+    const uint8_t *start_ptr;
+    uint16_t dsize;
     const uint8_t *bj_ptr;
     uint32_t jmp_value;
     DceRpcBoFlag byte_order;
@@ -2074,8 +2094,8 @@ static int DCE2_ByteJumpEval(void *pkt, const uint8_t **cursor, void *data)
     if (!DCE2_RoptDoEval(p))
         return RULE_NOMATCH;
 
-    sd = (DCE2_SsnData *)_dpd.streamAPI->get_application_data(p->stream_session_ptr, PP_DCE2);
-    if (sd == NULL)
+    sd = (DCE2_SsnData *)_dpd.sessionAPI->get_application_data(p->stream_session, PP_DCE2);
+    if ((sd == NULL) || DCE2_SsnNoInspect(sd))
     {
         DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__ROPTIONS,
                     "No session data - not evaluating.\n"));
@@ -2097,11 +2117,23 @@ static int DCE2_ByteJumpEval(void *pkt, const uint8_t **cursor, void *data)
     if (bj_data == NULL)
         return RULE_NOMATCH;
 
+    if (_dpd.Is_DetectFlag(SF_FLAG_ALT_DETECT))
+    {
+        _dpd.GetAltDetect((uint8_t **)&start_ptr, &dsize);
+        DEBUG_WRAP(DebugMessage(DEBUG_PATTERN_MATCH,
+                    "Using Alternative Detect buffer!\n"););
+    }
+    else
+    {
+        start_ptr = p->payload;
+        dsize = p->payload_size;
+    }
+
     /* Make sure we don't read past the end of the payload or before
      * beginning of payload */
     if (bj_data->relative)
     {
-        if ((bj_data->offset < 0) && (*cursor + bj_data->offset) < p->payload)
+        if ((bj_data->offset < 0) && (*cursor + bj_data->offset) < start_ptr)
         {
             DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__ROPTIONS,
                         "Offset is negative and puts cursor before beginning "
@@ -2109,7 +2141,7 @@ static int DCE2_ByteJumpEval(void *pkt, const uint8_t **cursor, void *data)
             return RULE_NOMATCH;
         }
 
-        if ((*cursor + bj_data->offset + bj_data->num_bytes) > (p->payload + p->payload_size))
+        if ((*cursor + bj_data->offset + bj_data->num_bytes) > (start_ptr + dsize))
         {
             DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__ROPTIONS,
                         "Offset plus number of bytes to read puts cursor past "
@@ -2128,7 +2160,7 @@ static int DCE2_ByteJumpEval(void *pkt, const uint8_t **cursor, void *data)
                         "not evaluating.\n"));
             return RULE_NOMATCH;
         }
-        else if ((p->payload + bj_data->offset + bj_data->num_bytes) > (p->payload + p->payload_size))
+        else if ((start_ptr + bj_data->offset + bj_data->num_bytes) > (start_ptr + dsize))
         {
             DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__ROPTIONS,
                         "Offset plus number of bytes to read puts cursor past "
@@ -2136,7 +2168,7 @@ static int DCE2_ByteJumpEval(void *pkt, const uint8_t **cursor, void *data)
             return RULE_NOMATCH;
         }
 
-        bj_ptr = p->payload + bj_data->offset;
+        bj_ptr = start_ptr + bj_data->offset;
     }
 
     /* Determine which byte order to use */
@@ -2203,7 +2235,7 @@ static int DCE2_ByteJumpEval(void *pkt, const uint8_t **cursor, void *data)
     }
 
     bj_ptr += bj_data->num_bytes + jmp_value + bj_data->post_offset;
-    if ((bj_ptr < p->payload) || (bj_ptr >= (p->payload + p->payload_size)))
+    if ((bj_ptr < start_ptr) || (bj_ptr >= (start_ptr + dsize)))
     {
         DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__ROPTIONS,
                     "\"%s\" Fail.  Jump puts us past end of payload.\n",
@@ -2229,10 +2261,10 @@ static int DCE2_ByteJumpEval(void *pkt, const uint8_t **cursor, void *data)
  * Returns:
  *
  ********************************************************************/
-static INLINE int DCE2_RoptDoEval(SFSnortPacket *p)
+static inline int DCE2_RoptDoEval(SFSnortPacket *p)
 {
     if ((p->payload_size == 0) ||
-            (p->stream_session_ptr == NULL) ||
+            (p->stream_session == NULL) ||
             (!IsTCP(p) && !IsUDP(p)))
     {
 
@@ -2704,27 +2736,27 @@ static int DCE2_ByteJumpKeyCompare(void *l, void *r)
  ********************************************************************/
 void DCE2_PrintRoptions(DCE2_Roptions *ropts)
 {
-    printf("First frag: %s\n", ropts->first_frag == 1 ? "yes" : (ropts->first_frag == 0 ? "no" : "unset"));
+    printf("  First frag: %s\n", ropts->first_frag == 1 ? "yes" : (ropts->first_frag == 0 ? "no" : "unset"));
     if (ropts->first_frag == DCE2_SENTINEL)
     {
-        printf("Iface: unset\n");
-        printf("Iface version: unset\n");
+        printf("  Iface: unset\n");
+        printf("  Iface version: unset\n");
     }
     else
     {
-        printf("Iface: %s\n", DCE2_UuidToStr(&ropts->iface, DCERPC_BO_FLAG__NONE)); 
-        printf("Iface version: %u\n", ropts->iface_vers_maj);
+        printf("  Iface: %s\n", DCE2_UuidToStr(&ropts->iface, DCERPC_BO_FLAG__NONE));
+        printf("  Iface version: %u\n", ropts->iface_vers_maj);
     }
-    if (ropts->opnum == DCE2_SENTINEL) printf("Opnum: unset\n");
-    else printf("Opnum: %u\n", ropts->opnum);
-    printf("Header byte order: %s\n",
+    if (ropts->opnum == DCE2_SENTINEL) printf("  Opnum: unset\n");
+    else printf("  Opnum: %u\n", ropts->opnum);
+    printf("  Header byte order: %s\n",
             ropts->hdr_byte_order == DCERPC_BO_FLAG__LITTLE_ENDIAN ? "little endian" :
             (ropts->hdr_byte_order == DCERPC_BO_FLAG__BIG_ENDIAN ? "big endian" : "unset"));
-    printf("Data byte order: %s\n",
+    printf("  Data byte order: %s\n",
             ropts->data_byte_order == DCERPC_BO_FLAG__LITTLE_ENDIAN ? "little endian" :
             (ropts->data_byte_order == DCERPC_BO_FLAG__BIG_ENDIAN ? "big endian" : "unset"));
-    if (ropts->stub_data != NULL) printf("Stub data: %p\n", ropts->stub_data);
-    else printf("Stub data: NULL\n");
+    if (ropts->stub_data != NULL) printf("  Stub data: %p\n", ropts->stub_data);
+    else printf("  Stub data: NULL\n");
 }
 
 /********************************************************************
@@ -2788,8 +2820,8 @@ int DCE2_GetByteOrder(void *data, int32_t offset)
     if (p == NULL)
         return -1;
 
-    sd = (DCE2_SsnData *)_dpd.streamAPI->get_application_data(p->stream_session_ptr, PP_DCE2);
-    if (sd == NULL)
+    sd = (DCE2_SsnData *)_dpd.sessionAPI->get_application_data(p->stream_session, PP_DCE2);
+    if ((sd == NULL) || DCE2_SsnNoInspect(sd))
     {
         DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__ROPTIONS,
                     "No session data - not evaluating.\n"));

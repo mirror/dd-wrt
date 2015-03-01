@@ -1,6 +1,7 @@
 /****************************************************************************
- * 
- * Copyright (C) 2005-2011 Sourcefire, Inc.
+ *
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -15,7 +16,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************/
 
@@ -45,36 +46,30 @@
 #include "config.h"
 #endif
 
+#include "sf_types.h"
 #include "snort_smtp.h"
 #include "smtp_config.h"
-#include "bounds.h"
+#include "snort_bounds.h"
 #include "sf_dynamic_preprocessor.h"
 #include "sfPolicy.h"
 
 
-/*  Global variable to hold configuration */
-extern SMTPConfig **smtp_config;
-
-extern DynamicPreprocessorData _dpd;
-extern const SMTPToken smtp_known_cmds[];
-
 /* Private functions */
-static void PrintConfig(SMTPConfig *);
 static int  ProcessPorts(SMTPConfig *, char *, int);
-static int ProcessCmds(SMTPConfig *, char *, int, int);
-static int  GetCmdId(SMTPConfig *, char *);
-static int  AddCmd(SMTPConfig *, char *name);
+static int ProcessCmds(SMTPConfig *, char *, int, int, SMTPCmdTypeEnum);
+static int  GetCmdId(SMTPConfig *, char *, SMTPCmdTypeEnum);
+static int  AddCmd(SMTPConfig *, char *, SMTPCmdTypeEnum);
 static int  ProcessAltMaxCmdLen(SMTPConfig *, char *, int);
-static int  ProcessMaxMimeMem(SMTPConfig *, char *, int);
 static int  ProcessMaxMimeDepth(SMTPConfig *, char *, int);
+static int  ProcessLogDepth(SMTPConfig *, char *, int);
 static int  ProcessXlink2State(SMTPConfig *, char *, int);
 
 /*
  * Function: SMTP_ParseArgs(char *)
  *
- * Purpose: Process the preprocessor arguments from the rules file and 
+ * Purpose: Process the preprocessor arguments from the rules file and
  *          initialize the preprocessor's data struct.  This function doesn't
- *          have to exist if it makes sense to parse the args in the init 
+ *          have to exist if it makes sense to parse the args in the init
  *          function.
  *
  * Arguments: args => argument list
@@ -89,37 +84,43 @@ void SMTP_ParseArgs(SMTPConfig *config, char *args)
     char *value;
     char errStr[ERRSTRLEN];
     int errStrLen = ERRSTRLEN;
+    int deprecated_options = 0;
 
     if ((config == NULL) || (args == NULL))
         return;
 
-    config->ports[SMTP_DEFAULT_SERVER_PORT / 8]     |= 1 << (SMTP_DEFAULT_SERVER_PORT % 8);
-    config->ports[XLINK2STATE_DEFAULT_PORT / 8]     |= 1 << (XLINK2STATE_DEFAULT_PORT % 8);
-    config->ports[SMTP_DEFAULT_SUBMISSION_PORT / 8] |= 1 << (SMTP_DEFAULT_SUBMISSION_PORT % 8);
+    enablePort( config->ports, SMTP_DEFAULT_SERVER_PORT );
+    enablePort( config->ports, XLINK2STATE_DEFAULT_PORT );
+    enablePort( config->ports, SMTP_DEFAULT_SUBMISSION_PORT );
     config->inspection_type = SMTP_STATELESS;
     config->max_command_line_len = DEFAULT_MAX_COMMAND_LINE_LEN;
     config->max_header_line_len = DEFAULT_MAX_HEADER_LINE_LEN;
     config->max_response_line_len = DEFAULT_MAX_RESPONSE_LINE_LEN;
     config->max_mime_depth = DEFAULT_MAX_MIME_DEPTH;
-    config->max_mime_mem = DEFAULT_MAX_MIME_MEM;
+    config->memcap = DEFAULT_SMTP_MEMCAP;
     config->alert_xlink2state = 1;
     config->print_cmds = 1;
     config->enable_mime_decoding = 0;
+    _dpd.fileAPI->set_mime_decode_config_defauts(&(config->decode_conf));
+    _dpd.fileAPI->set_mime_log_config_defauts(&(config->log_config));
+    config->log_config.email_hdrs_log_depth = DEFAULT_LOG_DEPTH;
 
     config->cmd_config = (SMTPCmdConfig *)calloc(CMD_LAST, sizeof(SMTPCmdConfig));
     if (config->cmd_config == NULL)
     {
         DynamicPreprocessorFatalMessage("%s(%d) => Failed to allocate memory for SMTP "
-                                        "command structure\n", 
+                                        "command structure\n",
                                         *(_dpd.config_file), *(_dpd.config_line));
     }
 
     *errStr = '\0';
 
     arg = strtok(args, CONF_SEPARATORS);
-    
+
     while ( arg != NULL )
     {
+        unsigned long val = 0;
+
         if ( !strcasecmp(CONF_PORTS, arg) )
         {
             ret = ProcessPorts(config, errStr, errStrLen);
@@ -161,12 +162,12 @@ void SMTP_ParseArgs(SMTPConfig *config, char *args)
             }
         }
         else if ( !strcasecmp(CONF_IGNORE_DATA, arg) )
-        {                    
-            config->ignore_data = 1;            
+        {
+            config->decode_conf.ignore_data = 1;
         }
         else if ( !strcasecmp(CONF_IGNORE_TLS_DATA, arg) )
         {
-            config->ignore_tls_data = 1;            
+            config->ignore_tls_data = 1;
         }
         else if ( !strcasecmp(CONF_MAX_COMMAND_LINE_LEN, arg) )
         {
@@ -199,7 +200,7 @@ void SMTP_ParseArgs(SMTPConfig *config, char *args)
             config->max_response_line_len = strtol(value, &endptr, 10);
         }
         else if ( !strcasecmp(CONF_NO_ALERTS, arg) )
-        {     
+        {
             config->no_alerts = 1;
         }
         else if ( !strcasecmp(CONF_ALERT_UNKNOWN_CMDS, arg) )
@@ -209,33 +210,59 @@ void SMTP_ParseArgs(SMTPConfig *config, char *args)
         else if ( !strcasecmp(CONF_INVALID_CMDS, arg) )
         {
             /* Parse disallowed commands */
-            ret = ProcessCmds(config, errStr, errStrLen, ACTION_ALERT);
+            ret = ProcessCmds(config, errStr, errStrLen, ACTION_ALERT, SMTP_CMD_TYPE_NORMAL);
         }
         else if ( !strcasecmp(CONF_VALID_CMDS, arg) )
         {
             /* Parse allowed commands */
-            ret = ProcessCmds(config, errStr, errStrLen, ACTION_NO_ALERT);   
+            ret = ProcessCmds(config, errStr, errStrLen, ACTION_NO_ALERT, SMTP_CMD_TYPE_NORMAL);
+        }
+        else if ( !strcasecmp(CONF_AUTH_CMDS, arg) )
+        {
+            ret = ProcessCmds(config, errStr, errStrLen, ACTION_NO_ALERT, SMTP_CMD_TYPE_AUTH);
+        }
+        else if ( !strcasecmp(CONF_DATA_CMDS, arg) )
+        {
+            ret = ProcessCmds(config, errStr, errStrLen, ACTION_NO_ALERT, SMTP_CMD_TYPE_DATA);
+        }
+        else if ( !strcasecmp(CONF_BDATA_CMDS, arg) )
+        {
+            ret = ProcessCmds(config, errStr, errStrLen, ACTION_NO_ALERT, SMTP_CMD_TYPE_BDATA);
         }
         else if ( !strcasecmp(CONF_NORMALIZE_CMDS, arg) )
         {
             /* Parse normalized commands */
-            ret = ProcessCmds(config, errStr, errStrLen, ACTION_NORMALIZE);
+            ret = ProcessCmds(config, errStr, errStrLen, ACTION_NORMALIZE, SMTP_CMD_TYPE_NORMAL);
         }
         else if ( !strcasecmp(CONF_ALT_MAX_COMMAND_LINE_LEN, arg) )
         {
             /* Parse max line len for commands */
             ret = ProcessAltMaxCmdLen(config, errStr, errStrLen);
         }
+        else if ( !strcasecmp(CONF_SMTP_MEMCAP, arg) )
+        {
+            ret = _dpd.checkValueInRange(strtok(NULL, CONF_SEPARATORS), CONF_SMTP_MEMCAP,
+                    MIN_SMTP_MEMCAP, MAX_SMTP_MEMCAP, &val);
+            config->memcap = (uint32_t)val;
+        }
         else if ( !strcasecmp(CONF_MAX_MIME_MEM, arg) )
         {
-            ret = ProcessMaxMimeMem(config, errStr, errStrLen);
+            ret = _dpd.checkValueInRange(strtok(NULL, CONF_SEPARATORS), CONF_MAX_MIME_MEM,
+                    MIN_MIME_MEM, MAX_MIME_MEM, &val);
+            config->decode_conf.max_mime_mem = (int)val;
         }
         else if ( !strcasecmp(CONF_MAX_MIME_DEPTH, arg) )
         {
+            deprecated_options = 1;
+            _dpd.logMsg("WARNING: %s(%d) => The SMTP config option 'max_mime_depth' is deprecated.\n",
+                            *(_dpd.config_file), *(_dpd.config_line));
             ret = ProcessMaxMimeDepth(config, errStr, errStrLen);
         }
         else if ( !strcasecmp(CONF_ENABLE_MIME_DECODING, arg) )
         {
+            deprecated_options = 1;
+            _dpd.logMsg("WARNING: %s(%d) => The SMTP config option 'enable_mime_decoding' is deprecated.\n",
+                                        *(_dpd.config_file), *(_dpd.config_line));
             config->enable_mime_decoding = 1;
         }
         else if ( !strcasecmp(CONF_DISABLED, arg) )
@@ -246,16 +273,41 @@ void SMTP_ParseArgs(SMTPConfig *config, char *args)
         {
             ret = ProcessXlink2State(config, errStr, errStrLen);
         }
+        else if ( !strcasecmp(CONF_LOG_FILENAME, arg) )
+        {
+            config->log_config.log_filename = 1;
+        }
+        else if ( !strcasecmp(CONF_LOG_MAIL_FROM, arg) )
+        {
+            config->log_config.log_mailfrom = 1;
+        }
+        else if ( !strcasecmp(CONF_LOG_RCPT_TO, arg) )
+        {
+            config->log_config.log_rcptto = 1;
+        }
+        else if ( !strcasecmp(CONF_LOG_EMAIL_HDRS, arg) )
+        {
+            config->log_config.log_email_hdrs = 1;
+        }
+        else if ( !strcasecmp(CONF_EMAIL_HDRS_LOG_DEPTH, arg) )
+        {
+            ret = ProcessLogDepth(config, errStr, errStrLen);
+        }
 
         else if ( !strcasecmp(CONF_PRINT_CMDS, arg) )
         {
             config->print_cmds = 1;
         }
+
+        else if(!_dpd.fileAPI->parse_mime_decode_args(&(config->decode_conf), arg, "SMTP"))
+        {
+            ret = 0;
+        }
         else
         {
-            DynamicPreprocessorFatalMessage("%s(%d) => Unknown SMTP configuration option %s\n", 
+            DynamicPreprocessorFatalMessage("%s(%d) => Unknown SMTP configuration option %s\n",
                                             *(_dpd.config_file), *(_dpd.config_line), arg);
-        }        
+        }
 
         if (ret == -1)
         {
@@ -264,12 +316,12 @@ void SMTP_ParseArgs(SMTPConfig *config, char *args)
             */
             if (*errStr)
             {
-                DynamicPreprocessorFatalMessage("%s(%d) => %s\n", 
+                DynamicPreprocessorFatalMessage("%s(%d) => %s\n",
                                                 *(_dpd.config_file), *(_dpd.config_line), errStr);
             }
             else
             {
-                DynamicPreprocessorFatalMessage("%s(%d) => Undefined Error.\n", 
+                DynamicPreprocessorFatalMessage("%s(%d) => Undefined Error.\n",
                                                 *(_dpd.config_file), *(_dpd.config_line));
             }
         }
@@ -278,7 +330,31 @@ void SMTP_ParseArgs(SMTPConfig *config, char *args)
         arg = strtok(NULL, CONF_SEPARATORS);
     }
 
-    PrintConfig(config);
+    // NOTE: the default b64_depth is not defined in this file 
+    //       but is equal to DEFAULT_MAX_MIME_DEPTH
+    if(config->decode_conf.b64_depth == DEFAULT_MAX_MIME_DEPTH)
+    {
+        if(config->enable_mime_decoding)
+            config->decode_conf.b64_depth = config->max_mime_depth;
+    }
+    else if(deprecated_options)
+    {
+        DynamicPreprocessorFatalMessage("%s(%d) => Cannot specify 'enable_mime_decoding' or 'max_mime_depth' with "
+                                       "'b64_decode_depth'\n",
+                                     *(_dpd.config_file), *(_dpd.config_line), arg);
+    }
+
+    if(!config->log_config.email_hdrs_log_depth)
+    {
+        if(config->log_config.log_email_hdrs)
+        {
+            _dpd.logMsg("WARNING: %s(%d) => 'log_email_hdrs' enabled with 'email_hdrs_log_depth' = 0."
+                    "Email headers won't be logged. Please set 'email_hdrs_log_depth' > 0 to enable logging.\n",
+                    *(_dpd.config_file), *(_dpd.config_line));
+        }
+        config->log_config.log_email_hdrs = 0;
+    }
+
 }
 
 void SMTP_CheckConfig(SMTPConfig *pPolicyConfig, tSfPolicyUserContextId context)
@@ -287,42 +363,54 @@ void SMTP_CheckConfig(SMTPConfig *pPolicyConfig, tSfPolicyUserContextId context)
                 (SMTPConfig *)sfPolicyUserDataGetDefault(context);
 
     if (pPolicyConfig == defaultConfig)
-    {    
-        if (!pPolicyConfig->max_mime_mem)
-            pPolicyConfig->max_mime_mem = DEFAULT_MAX_MIME_MEM;
+    {
+        if (!_dpd.fileAPI->check_decoding_conf(&(pPolicyConfig->decode_conf),
+                &(defaultConfig->decode_conf), "SMTP"))
+            return;
 
-        if (!pPolicyConfig->max_mime_depth)
-            pPolicyConfig->max_mime_depth = DEFAULT_MAX_MIME_DEPTH;
+        if (!pPolicyConfig->memcap)
+            pPolicyConfig->memcap = DEFAULT_SMTP_MEMCAP;
 
+        if(pPolicyConfig->disabled && !pPolicyConfig->log_config.email_hdrs_log_depth)
+            pPolicyConfig->log_config.email_hdrs_log_depth = DEFAULT_LOG_DEPTH;
 
-    }    
+    }
     else if (defaultConfig == NULL)
-    {    
-        if (pPolicyConfig->max_mime_mem)
-        {    
-            DynamicPreprocessorFatalMessage("%s(%d) => SMTP: max_mime_mem must be "
-                   "configured in the default policy.\n", 
+    {
+        _dpd.fileAPI->check_decoding_conf(&(pPolicyConfig->decode_conf),
+                        NULL, "SMTP");
+
+        if (pPolicyConfig->memcap)
+        {
+            DynamicPreprocessorFatalMessage("%s(%d) => SMTP: memcap must be "
+                    "configured in the default config.\n",
                     *(_dpd.config_file), *(_dpd.config_line));
-        }    
+        }
 
-        if (pPolicyConfig->max_mime_depth)
-        {    
-            DynamicPreprocessorFatalMessage("%s(%d) => SMTP: max_mime_depth must be " 
-                   "configured in the default policy.\n",          
-                   *(_dpd.config_file), *(_dpd.config_line));
-        }    
+        if(pPolicyConfig->log_config.log_email_hdrs && pPolicyConfig->log_config.email_hdrs_log_depth)
+        {
+            DynamicPreprocessorFatalMessage("%s(%d) => SMTP: email_hdrs_log_depth must be "
+                    "configured in the default config.\n",
+                    *(_dpd.config_file), *(_dpd.config_line));
+        }
 
-    }    
-    else 
-    {    
-        pPolicyConfig->max_mime_mem = defaultConfig->max_mime_mem;
-        pPolicyConfig->max_mime_depth = defaultConfig->max_mime_depth;
-        pPolicyConfig->max_mime_decode_bytes = defaultConfig->max_mime_decode_bytes;
-        pPolicyConfig->max_mime_sessions = defaultConfig->max_mime_sessions;
-    }    
+    }
+    else
+    {
+        pPolicyConfig->memcap = defaultConfig->memcap;
+        pPolicyConfig->log_config.email_hdrs_log_depth = defaultConfig->log_config.email_hdrs_log_depth;
+        if(pPolicyConfig->disabled)
+        {
+           pPolicyConfig->decode_conf = defaultConfig->decode_conf;
+           return;
+        }
+        _dpd.fileAPI->check_decoding_conf(&(pPolicyConfig->decode_conf),
+                        &(defaultConfig->decode_conf), "SMTP");
+
+    }
 }
 
-static void PrintConfig(SMTPConfig *config)
+void SMTP_PrintConfig(SMTPConfig *config)
 {
     int i;
     const SMTPToken *cmd;
@@ -334,12 +422,17 @@ static void PrintConfig(SMTPConfig *config)
     memset(&buf[0], 0, sizeof(buf));
 
     _dpd.logMsg("SMTP Config:\n");
-    
+
+    if(config->disabled)
+    {
+        _dpd.logMsg("    SMTP: INACTIVE\n");
+    }
+
     snprintf(buf, sizeof(buf) - 1, "    Ports: ");
 
-    for (i = 0; i < 65536; i++)
+    for(i = 0; i < 65536; i++)
     {
-        if (config->ports[i / 8] & (1 << (i % 8)))
+        if( isPortEnabled( config->ports, i ) )
         {
             _dpd.printfappend(buf, sizeof(buf) - 1, "%d ", i);
         }
@@ -375,15 +468,15 @@ static void PrintConfig(SMTPConfig *config)
             {
                 _dpd.printfappend(buf, sizeof(buf) - 1, "cmds");
             }
-            
+
             break;
     }
 
     _dpd.logMsg("%s\n", buf);
 
-    _dpd.logMsg("    Ignore Data: %s\n", 
-                config->ignore_data ? "Yes" : "No");
-    _dpd.logMsg("    Ignore TLS Data: %s\n", 
+    _dpd.logMsg("    Ignore Data: %s\n",
+                config->decode_conf.ignore_data ? "Yes" : "No");
+    _dpd.logMsg("    Ignore TLS Data: %s\n",
                 config->ignore_tls_data ? "Yes" : "No");
     _dpd.logMsg("    Ignore SMTP Alerts: %s\n",
                 config->no_alerts ? "Yes" : "No");
@@ -447,7 +540,7 @@ static void PrintConfig(SMTPConfig *config)
         else
             _dpd.logMsg("%s%d\n", buf, config->max_response_line_len);
     }
-    
+
     _dpd.logMsg("    X-Link2State Alert: %s\n",
                 config->alert_xlink2state ? "Yes" : "No");
     if (config->alert_xlink2state)
@@ -459,7 +552,7 @@ static void PrintConfig(SMTPConfig *config)
     if (config->print_cmds && !config->no_alerts)
     {
         int alert_count = 0;
-        
+
         snprintf(buf, sizeof(buf) - 1, "    Alert on commands: ");
 
         for (cmd = config->cmds; cmd->name != NULL; cmd++)
@@ -480,6 +573,96 @@ static void PrintConfig(SMTPConfig *config)
             _dpd.logMsg("%s\n", buf);
         }
     }
+    _dpd.logMsg("    Alert on unknown commands: %s\n",
+            config->alert_unknown_cmds ? "Yes" : "No");
+
+    _dpd.logMsg("    SMTP Memcap: %u\n",
+            config->memcap);
+
+    _dpd.logMsg("    MIME Max Mem: %d\n",
+            config->decode_conf.max_mime_mem);
+
+    if(config->decode_conf.b64_depth > -1)
+    {
+        _dpd.logMsg("    Base64 Decoding: %s\n", "Enabled");
+        switch(config->decode_conf.b64_depth)
+        {
+            case 0:
+                _dpd.logMsg("    Base64 Decoding Depth: %s\n", "Unlimited");
+                break;
+            default:
+                _dpd.logMsg("    Base64 Decoding Depth: %d\n", config->decode_conf.b64_depth);
+                break;
+        }
+    }
+    else
+        _dpd.logMsg("    Base64 Decoding: %s\n", "Disabled");
+
+    if(config->decode_conf.qp_depth > -1)
+    {
+        _dpd.logMsg("    Quoted-Printable Decoding: %s\n","Enabled");
+        switch(config->decode_conf.qp_depth)
+        {
+            case 0:
+                _dpd.logMsg("    Quoted-Printable Decoding Depth: %s\n", "Unlimited");
+                break;
+            default:
+                _dpd.logMsg("    Quoted-Printable Decoding Depth: %d\n", config->decode_conf.qp_depth);
+                break;
+        }
+    }
+    else
+        _dpd.logMsg("    Quoted-Printable Decoding: %s\n", "Disabled");
+
+    if(config->decode_conf.uu_depth > -1)
+    {
+        _dpd.logMsg("    Unix-to-Unix Decoding: %s\n","Enabled");
+        switch(config->decode_conf.uu_depth)
+        {
+            case 0:
+                _dpd.logMsg("    Unix-to-Unix Decoding Depth: %s\n", "Unlimited");
+                break;
+            default:
+                _dpd.logMsg("    Unix-to-Unix Decoding Depth: %d\n", config->decode_conf.uu_depth);
+                break;
+        }
+    }
+    else
+        _dpd.logMsg("    Unix-to-Unix Decoding: %s\n", "Disabled");
+
+    if(config->decode_conf.bitenc_depth > -1)
+    {
+        _dpd.logMsg("    Non-Encoded MIME attachment Extraction: %s\n","Enabled");
+        switch(config->decode_conf.bitenc_depth)
+        {
+            case 0:
+                _dpd.logMsg("    Non-Encoded MIME attachment Extraction Depth: %s\n", "Unlimited");
+                break;
+            default:
+                _dpd.logMsg("    Non-Encoded MIME attachment Extraction Depth: %d\n", config->decode_conf.bitenc_depth);
+                break;
+        }
+    }
+    else
+        _dpd.logMsg("    Non-Encoded MIME attachment Extraction/text: %s\n", "Disabled");
+
+    _dpd.logMsg("    Log Attachment filename: %s\n",
+                config->log_config.log_filename ? "Enabled" : "Not Enabled");
+
+    _dpd.logMsg("    Log MAIL FROM Address: %s\n",
+                config->log_config.log_mailfrom ? "Enabled" : "Not Enabled");
+
+    _dpd.logMsg("    Log RCPT TO Addresses: %s\n",
+                config->log_config.log_rcptto ? "Enabled" : "Not Enabled");
+
+    _dpd.logMsg("    Log Email Headers: %s\n",
+                config->log_config.log_email_hdrs ? "Enabled" : "Not Enabled");
+
+    if(config->log_config.log_email_hdrs)
+    {
+        _dpd.logMsg("    Email Hdrs Log Depth: %u\n",
+                config->log_config.email_hdrs_log_depth);
+    }
 }
 
 /*
@@ -489,13 +672,13 @@ static void PrintConfig(SMTPConfig *config)
 /**
 **  Process the port list.
 **
-**  This configuration is a list of valid ports and is ended by a 
+**  This configuration is a list of valid ports and is ended by a
 **  delimiter.
 **
 **  @param ErrorString error string buffer
 **  @param ErrStrLen   the length of the error string buffer
 **
-**  @return an error code integer 
+**  @return an error code integer
 **          (0 = success, >0 = non-fatal error, <0 = fatal error)
 **
 **  @retval  0 successs
@@ -508,6 +691,7 @@ static int ProcessPorts(SMTPConfig *config, char *ErrorString, int ErrStrLen)
     char *pcEnd;
     int  iPort;
     int  iEndPorts = 0;
+    int num_ports = 0;
 
     if (config == NULL)
     {
@@ -531,10 +715,9 @@ static int ProcessPorts(SMTPConfig *config, char *ErrorString, int ErrStrLen)
     }
 
     /* Since ports are specified, clear default ports */
-    config->ports[SMTP_DEFAULT_SERVER_PORT / 8] &= ~(1 << (SMTP_DEFAULT_SERVER_PORT % 8));
-    config->ports[XLINK2STATE_DEFAULT_PORT / 8] &= ~(1 << (XLINK2STATE_DEFAULT_PORT % 8));
-    config->ports[SMTP_DEFAULT_SUBMISSION_PORT / 8] &= ~(1 << (SMTP_DEFAULT_SUBMISSION_PORT % 8));
-
+    disablePort( config->ports, SMTP_DEFAULT_SERVER_PORT );
+    disablePort( config->ports, XLINK2STATE_DEFAULT_PORT );
+    disablePort( config->ports, SMTP_DEFAULT_SUBMISSION_PORT );
     while ((pcToken = strtok(NULL, CONF_SEPARATORS)) != NULL)
     {
         if(!strcmp(CONF_END_LIST, pcToken))
@@ -564,7 +747,8 @@ static int ProcessPorts(SMTPConfig *config, char *ErrorString, int ErrStrLen)
             return -1;
         }
 
-        config->ports[iPort / 8] |= (1 << (iPort % 8));
+        enablePort( config->ports, iPort );
+        num_ports++;
     }
 
     if(!iEndPorts)
@@ -573,6 +757,12 @@ static int ProcessPorts(SMTPConfig *config, char *ErrorString, int ErrStrLen)
                  "Must end '%s' configuration with '%s'.",
                  CONF_PORTS, CONF_END_LIST);
 
+        return -1;
+    }
+    else if(!num_ports)
+    {
+        snprintf(ErrorString, ErrStrLen,
+             "SMTP: Empty port list not allowed.");
         return -1;
     }
 
@@ -586,19 +776,20 @@ static int ProcessPorts(SMTPConfig *config, char *ErrorString, int ErrStrLen)
 /**
 **  Process the command list.
 **
-**  This configuration is a list of valid ports and is ended by a 
+**  This configuration is a list of valid ports and is ended by a
 **  delimiter.
 **
 **  @param ErrorString error string buffer
 **  @param ErrStrLen   the length of the error string buffer
 **
-**  @return an error code integer 
+**  @return an error code integer
 **          (0 = success, >0 = non-fatal error, <0 = fatal error)
 **
 **  @retval  0 successs
 **  @retval -1 generic fatal error
 */
-static int ProcessCmds(SMTPConfig *config, char *ErrorString, int ErrStrLen, int action)
+static int ProcessCmds(SMTPConfig *config, char *ErrorString,
+        int ErrStrLen, int action, SMTPCmdTypeEnum type)
 {
     char *pcToken;
     int   iEndCmds = 0;
@@ -609,7 +800,7 @@ static int ProcessCmds(SMTPConfig *config, char *ErrorString, int ErrStrLen, int
         snprintf(ErrorString, ErrStrLen, "SMTP config is NULL.\n");
         return -1;
     }
-    
+
     pcToken = strtok(NULL, CONF_SEPARATORS);
     if (!pcToken)
     {
@@ -625,7 +816,7 @@ static int ProcessCmds(SMTPConfig *config, char *ErrorString, int ErrStrLen, int
 
         return -1;
     }
-    
+
     while ((pcToken = strtok(NULL, CONF_SEPARATORS)) != NULL)
     {
         if (strcmp(CONF_END_LIST, pcToken) == 0)
@@ -634,7 +825,7 @@ static int ProcessCmds(SMTPConfig *config, char *ErrorString, int ErrStrLen, int
             break;
         }
 
-        id = GetCmdId(config, pcToken);
+        id = GetCmdId(config, pcToken, type);
 
         if (action == ACTION_ALERT)
         {
@@ -665,23 +856,26 @@ static int ProcessCmds(SMTPConfig *config, char *ErrorString, int ErrStrLen, int
 }
 
 /* Return id associated with a given command string */
-static int GetCmdId(SMTPConfig *config, char *name)
+static int GetCmdId(SMTPConfig *config, char *name, SMTPCmdTypeEnum type)
 {
-    const SMTPToken *cmd;
+    SMTPToken *cmd;
 
     for (cmd = config->cmds; cmd->name != NULL; cmd++)
     {
         if (strcasecmp(cmd->name, name) == 0)
         {
+            if (type && (type != cmd->type))
+                cmd->type = type;
+
             return cmd->search_id;
         }
     }
-    
-    return AddCmd(config, name);
+
+    return AddCmd(config, name, type);
 }
 
 
-static int AddCmd(SMTPConfig *config, char *name)
+static int AddCmd(SMTPConfig *config, char *name, SMTPCmdTypeEnum type)
 {
     SMTPToken *cmds, *tmp_cmds;
     SMTPSearch *cmd_search;
@@ -701,7 +895,7 @@ static int AddCmd(SMTPConfig *config, char *name)
     if (cmds == NULL)
     {
         DynamicPreprocessorFatalMessage("%s(%d) => Failed to allocate memory for SMTP "
-                                        "command structure\n", 
+                                        "command structure\n",
                                         *(_dpd.config_file), *(_dpd.config_line));
     }
 
@@ -710,7 +904,7 @@ static int AddCmd(SMTPConfig *config, char *name)
     if (cmd_search == NULL)
     {
         DynamicPreprocessorFatalMessage("%s(%d) => Failed to allocate memory for SMTP "
-                                        "command structure\n", 
+                                        "command structure\n",
                                         *(_dpd.config_file), *(_dpd.config_line));
     }
 
@@ -718,7 +912,7 @@ static int AddCmd(SMTPConfig *config, char *name)
     if (cmd_config == NULL)
     {
         DynamicPreprocessorFatalMessage("%s(%d) => Failed to allocate memory for SMTP "
-                                        "command structure\n", 
+                                        "command structure\n",
                                         *(_dpd.config_file), *(_dpd.config_line));
     }
 
@@ -729,7 +923,7 @@ static int AddCmd(SMTPConfig *config, char *name)
 
     if (ret != SAFEMEM_SUCCESS)
     {
-        DynamicPreprocessorFatalMessage("%s(%d) => Failed to memory copy SMTP command structure\n", 
+        DynamicPreprocessorFatalMessage("%s(%d) => Failed to memory copy SMTP command structure\n",
                                         *(_dpd.config_file), *(_dpd.config_line));
     }
 
@@ -738,7 +932,7 @@ static int AddCmd(SMTPConfig *config, char *name)
 
     if (ret != SAFEMEM_SUCCESS)
     {
-        DynamicPreprocessorFatalMessage("%s(%d) => Failed to memory copy SMTP command structure\n", 
+        DynamicPreprocessorFatalMessage("%s(%d) => Failed to memory copy SMTP command structure\n",
                                         *(_dpd.config_file), *(_dpd.config_line));
     }
 
@@ -749,11 +943,13 @@ static int AddCmd(SMTPConfig *config, char *name)
     tmp_cmds->name = strdup(name);
     tmp_cmds->name_len = strlen(name);
     tmp_cmds->search_id = config->num_cmds - 1;
+    if (type)
+        tmp_cmds->type = type;
 
     if (tmp_cmds->name == NULL)
     {
         DynamicPreprocessorFatalMessage("%s(%d) => Failed to allocate memory for SMTP "
-                                        "command structure\n", 
+                                        "command structure\n",
                                         *(_dpd.config_file), *(_dpd.config_line));
     }
 
@@ -774,47 +970,6 @@ static int AddCmd(SMTPConfig *config, char *name)
 
     return (config->num_cmds - 1);
 }
-
-static int ProcessMaxMimeMem(SMTPConfig *config, char *ErrorString, int ErrStrLen)
-{
-    char *endptr;
-    char *value;
-    int max_mime_mem = 0;
-    if (config == NULL)
-    {
-        snprintf(ErrorString, ErrStrLen, "SMTP config is NULL.\n");
-        return -1;
-    }
-
-    value = strtok(NULL, CONF_SEPARATORS);
-    if ( value == NULL )
-    {
-        snprintf(ErrorString, ErrStrLen,
-                "Invalid format for max_mime_mem.");
-        return -1;
-    }
-    max_mime_mem = strtol(value, &endptr, 10);
-
-    if(*endptr)
-    {
-        snprintf(ErrorString, ErrStrLen,
-            "Invalid format for max_mime_mem.");
-        return -1;
-    }
-
-    if (max_mime_mem < MIN_MIME_MEM || max_mime_mem > MAX_MIME_MEM)
-    {
-        snprintf(ErrorString, ErrStrLen,
-                "Invalid value for max_mime_mem."
-                "It should range between %d and %d.", 
-                MIN_MIME_MEM, MAX_MIME_MEM);
-        return -1;
-    }
-
-    config->max_mime_mem = max_mime_mem;
-    return 0;
-}
-
 
 static int ProcessMaxMimeDepth(SMTPConfig *config, char *ErrorString, int ErrStrLen)
 {
@@ -839,7 +994,7 @@ static int ProcessMaxMimeDepth(SMTPConfig *config, char *ErrorString, int ErrStr
     if(*endptr)
     {
         snprintf(ErrorString, ErrStrLen,
-            "Invalid format for max_mime_mem.");
+            "Invalid format for max_mime_depth.");
         return -1;
     }
 
@@ -847,14 +1002,81 @@ static int ProcessMaxMimeDepth(SMTPConfig *config, char *ErrorString, int ErrStr
     {
         snprintf(ErrorString, ErrStrLen,
                 "Invalid value for max_mime_depth."
-                "It should range between %d and %d.", 
+                "It should range between %d and %d.",
                 MIN_MIME_DEPTH, MAX_MIME_DEPTH);
         return -1;
+    }
+    if(max_mime_depth & 3)
+    {
+        max_mime_depth += 4 - (max_mime_depth & 3);
+        _dpd.logMsg("WARNING: %s(%d) => SMTP: 'max_mime_depth' is not a multiple of 4. "
+             "Rounding up to the next multiple of 4. The new 'max_mime_depth' is %d.\n",
+              *(_dpd.config_file), *(_dpd.config_line), max_mime_depth);
+
     }
 
     config->max_mime_depth = max_mime_depth;
     return 0;
 }
+
+static int ProcessLogDepth(SMTPConfig *config, char *ErrorString, int ErrStrLen)
+{
+    char *endptr;
+    char *value;
+    uint32_t log_depth = 0;
+    if (config == NULL)
+    {
+        snprintf(ErrorString, ErrStrLen, "SMTP config is NULL.\n");
+        return -1;
+    }
+
+    value = strtok(NULL, CONF_SEPARATORS);
+    if ( value == NULL )
+    {
+        snprintf(ErrorString, ErrStrLen,
+                "Missing value for email_hdrs_log_depth.");
+        return -1;
+    }
+    log_depth = strtoul(value, &endptr, 10);
+
+    if((value[0] == '-') || (*endptr != '\0'))
+    {
+        snprintf(ErrorString, ErrStrLen,
+            "Invalid format '%s' for email_hdrs_log_depth.",
+            value);
+        return -1;
+    }
+
+    if(log_depth && log_depth < MIN_LOG_DEPTH)
+    {
+        snprintf(ErrorString, ErrStrLen,
+                "Invalid value for email_hdrs_log_depth."
+                "It should range between %d and %d.",
+                MIN_LOG_DEPTH, MAX_LOG_DEPTH);
+        return -1;
+    }
+    else if (log_depth > MAX_LOG_DEPTH)
+    {
+        _dpd.logMsg("WARNING: %s(%d) => Invalid value for email_hdrs_log_depth. "
+                "It should range between %d and %d. The email_hdrs_log_depth "
+                "will be reduced to the max value.\n", *(_dpd.config_file), *(_dpd.config_line),
+                MIN_LOG_DEPTH, MAX_LOG_DEPTH);
+
+        log_depth = MAX_LOG_DEPTH;
+    }
+
+    /* Rounding the log depth to a multiple of 8 since
+     * multiple sessions use the same mempool
+     *
+     * Moved from spp_smtp.c
+     */
+    if (log_depth & 7)
+        log_depth += (8 - (log_depth & 7));
+
+    config->log_config.email_hdrs_log_depth = log_depth;
+    return 0;
+}
+
 
 /*
 **  NAME
@@ -867,7 +1089,7 @@ static int ProcessMaxMimeDepth(SMTPConfig *config, char *ErrorString, int ErrStr
 **  @param ErrorString error string buffer
 **  @param ErrStrLen   the length of the error string buffer
 **
-**  @return an error code integer 
+**  @return an error code integer
 **          (0 = success, >0 = non-fatal error, <0 = fatal error)
 **
 **  @retval  0 successs
@@ -887,7 +1109,7 @@ static int ProcessAltMaxCmdLen(SMTPConfig *config, char *ErrorString, int ErrStr
         snprintf(ErrorString, ErrStrLen, "SMTP config is NULL.\n");
         return -1;
     }
-    
+
     /* Find number */
     pcLen = strtok(NULL, CONF_SEPARATORS);
     if (!pcLen)
@@ -906,7 +1128,7 @@ static int ProcessAltMaxCmdLen(SMTPConfig *config, char *ErrorString, int ErrStr
 
         return -1;
     }
-    
+
     cmd_len = strtoul(pcLen, &pcLenEnd, 10);
     if (pcLenEnd == pcLen)
     {
@@ -924,7 +1146,7 @@ static int ProcessAltMaxCmdLen(SMTPConfig *config, char *ErrorString, int ErrStr
 
         return -1;
     }
-    
+
     while ((pcToken = strtok(NULL, CONF_SEPARATORS)) != NULL)
     {
         if (strcmp(CONF_END_LIST, pcToken) == 0)
@@ -932,8 +1154,8 @@ static int ProcessAltMaxCmdLen(SMTPConfig *config, char *ErrorString, int ErrStr
             iEndCmds = 1;
             break;
         }
-        
-        id = GetCmdId(config, pcToken);
+
+        id = GetCmdId(config, pcToken, SMTP_CMD_TYPE_NORMAL);
 
         config->cmd_config[id].max_line_len = cmd_len;
     }
@@ -942,7 +1164,7 @@ static int ProcessAltMaxCmdLen(SMTPConfig *config, char *ErrorString, int ErrStr
     {
         snprintf(ErrorString, ErrStrLen,
                 "Must end alt_max_command_line_len configuration with '%s'.", CONF_END_LIST);
-     
+
         return -1;
     }
 
@@ -961,7 +1183,7 @@ static int ProcessAltMaxCmdLen(SMTPConfig *config, char *ErrorString, int ErrStr
 **  @param ErrorString error string buffer
 **  @param ErrStrLen   the length of the error string buffer
 **
-**  @return an error code integer 
+**  @return an error code integer
 **          (0 = success, >0 = non-fatal error, <0 = fatal error)
 **
 **  @retval  0 successs
@@ -995,7 +1217,7 @@ static int ProcessXlink2State(SMTPConfig *config, char *ErrorString, int ErrStrL
 
         return -1;
     }
-    
+
     while ((pcToken = strtok(NULL, CONF_SEPARATORS)) != NULL)
     {
         if(!strcmp(CONF_END_LIST, pcToken))
@@ -1007,12 +1229,12 @@ static int ProcessXlink2State(SMTPConfig *config, char *ErrorString, int ErrStrL
         if ( !strcasecmp(CONF_DISABLE, pcToken) )
         {
             config->alert_xlink2state = 0;
-            config->ports[XLINK2STATE_DEFAULT_PORT / 8] &= ~(1 << (XLINK2STATE_DEFAULT_PORT % 8));
+            disablePort( config->ports, XLINK2STATE_DEFAULT_PORT );
         }
         else if ( !strcasecmp(CONF_ENABLE, pcToken) )
         {
             config->alert_xlink2state = 1;
-            config->ports[XLINK2STATE_DEFAULT_PORT / 8] |= 1 << (XLINK2STATE_DEFAULT_PORT % 8);
+            disablePort( config->ports, XLINK2STATE_DEFAULT_PORT );
         }
         else if ( !strcasecmp(CONF_INLINE_DROP, pcToken) )
         {
@@ -1038,4 +1260,3 @@ static int ProcessXlink2State(SMTPConfig *config, char *ErrorString, int ErrStrL
 
     return 0;
 }
-

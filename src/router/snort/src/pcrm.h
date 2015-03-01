@@ -3,7 +3,8 @@
 **
 ** pcrm.h
 **
-** Copyright (C) 2002-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Marc Norton <mnorton@sourcefire.com>
 ** Dan Roelker <droelker@sourcefire.com>
 **
@@ -22,7 +23,7 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **
 ** Packet Classification-Rule Manager
 **
@@ -192,6 +193,7 @@ RULE_PTR prmGetNextRuleNC( PORT_GROUP * pg );
 
 
 int prmFindRuleGroup( PORT_RULE_MAP * p, int dport, int sport, PORT_GROUP ** src, PORT_GROUP **dst , PORT_GROUP ** gen);
+int prmFindGenericRuleGroup(PORT_RULE_MAP *prm, PORT_GROUP ** gen);
 int prmFindByteRuleGroup( BYTE_RULE_MAP * p, int dport, PORT_GROUP **dst , PORT_GROUP ** gen);
 
 PORT_GROUP * prmFindDstRuleGroup( PORT_RULE_MAP * p, int port );

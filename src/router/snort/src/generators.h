@@ -1,6 +1,7 @@
 /* $Id$ */
 /*
-** Copyright (C) 2002-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -16,7 +17,7 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 #ifndef __GENERATORS_H__
@@ -83,7 +84,7 @@
 #define     DECODE_BAD_VLAN                       130
 #define     DECODE_BAD_VLAN_ETHLLC                131
 #define     DECODE_BAD_VLAN_OTHER                 132
-#define     DECODE_BAD_80211_ETHLLC               133 
+#define     DECODE_BAD_80211_ETHLLC               133
 #define     DECODE_BAD_80211_OTHER                134
 
 #define     DECODE_BAD_TRH                        140
@@ -91,8 +92,8 @@
 #define     DECODE_BAD_TR_MR_LEN                  142
 #define     DECODE_BAD_TRHMR                      143
 
-#define     DECODE_BAD_TRAFFIC_LOOPBACK           150 
-#define     DECODE_BAD_TRAFFIC_SAME_SRCDST        151 
+#define     DECODE_BAD_TRAFFIC_LOOPBACK           150
+#define     DECODE_BAD_TRAFFIC_SAME_SRCDST        151
 
 #ifdef GRE
 #define     DECODE_GRE_DGRAM_LT_GREHDR            160
@@ -119,7 +120,7 @@
 #define     DECODE_ICMP_ORIG_PAYLOAD_GT_576       254
 #define     DECODE_ICMP_ORIG_IP_WITH_FRAGOFFSET   255
 
-#define     DECODE_IPV6_MIN_TTL                   270 
+#define     DECODE_IPV6_MIN_TTL                   270
 #define     DECODE_IPV6_IS_NOT                    271
 #define     DECODE_IPV6_TRUNCATED_EXT             272
 #define     DECODE_IPV6_TRUNCATED                 273
@@ -135,7 +136,7 @@
 #define     DECODE_IPV6_TWO_ROUTE_HEADERS         283
 
 #define     DECODE_ICMPV6_TOO_BIG_BAD_MTU         285
-#define     DECODE_ICMPV6_UNREACHABLE_BAD_CODE    286
+#define     DECODE_ICMPV6_UNREACHABLE_NON_RFC_2463_CODE    286
 #define     DECODE_ICMPV6_SOLICITATION_BAD_CODE   287
 #define     DECODE_ICMPV6_ADVERT_BAD_CODE         288
 #define     DECODE_ICMPV6_SOLICITATION_BAD_RESERVED     289
@@ -149,6 +150,8 @@
 #define     DECODE_IPV6_BAD_OPT_LEN               295
 #define     DECODE_IPV6_UNORDERED_EXTENSIONS      296
 
+#define     DECODE_GTP_MULTIPLE_ENCAPSULATION     297
+#define     DECODE_GTP_BAD_LEN                    298
 
 //-----------------------------------------------------
 // remember to add rules to preproc_rules/decoder.rules
@@ -209,7 +212,20 @@ enum {
     DECODE_IP_BAD_PROTO,
     DECODE_ICMP_PATH_MTU_DOS,
     DECODE_ICMP_DOS_ATTEMPT,
-    
+    DECODE_IPV6_ISATAP_SPOOF,
+    DECODE_PGM_NAK_OVERFLOW,
+    DECODE_IGMP_OPTIONS_DOS,
+    DECODE_IP6_EXCESS_EXT_HDR,
+    DECODE_ICMPV6_UNREACHABLE_NON_RFC_4443_CODE,
+    DECODE_IPV6_BAD_FRAG_PKT,
+    DECODE_ZERO_LENGTH_FRAG,
+    DECODE_ICMPV6_NODE_INFO_BAD_CODE,
+    DECODE_IPV6_ROUTE_ZERO,
+    DECODE_ERSPAN_HDR_VERSION_MISMATCH,
+    DECODE_ERSPAN2_DGRAM_LT_HDR,
+    DECODE_ERSPAN3_DGRAM_LT_HDR,
+    DECODE_AUTH_HDR_TRUNC,
+    DECODE_AUTH_HDR_BAD_LEN,
     DECODE_INDEX_MAX
 };
 
@@ -224,11 +240,15 @@ enum {
 **    trick is that whatever the number is in HttpInspect,
 **    it must be +1 when you define it here.
 */
+// these are client specific events
 #define GENERATOR_SPP_HTTP_INSPECT_CLIENT           119
 #define     HI_CLIENT_ASCII                         1   /* done */
 #define     HI_CLIENT_DOUBLE_DECODE                 2   /* done */
 #define     HI_CLIENT_U_ENCODE                      3   /* done */
 #define     HI_CLIENT_BARE_BYTE                     4   /* done */
+/* Base 36 is deprecated and essentially a noop
+ * Leaving here in case anyone out there has historical data with
+ * alerts of this type */
 #define     HI_CLIENT_BASE36                        5   /* done */
 #define     HI_CLIENT_UTF_8                         6   /* done */
 #define     HI_CLIENT_IIS_UNICODE                   7   /* done */
@@ -248,17 +268,37 @@ enum {
 #define     HI_CLIENT_MULTIPLE_CONTLEN              21
 #define     HI_CLIENT_CHUNK_SIZE_MISMATCH           22
 #define     HI_CLIENT_INVALID_TRUEIP                23
+#define     HI_CLIENT_MULTIPLE_HOST_HDRS            24
+#define     HI_CLIENT_LONG_HOSTNAME                 25
+#define     HI_CLIENT_EXCEEDS_SPACES                26
+#define     HI_CLIENT_CONSECUTIVE_SMALL_CHUNK_SIZES 27
+#define     HI_CLIENT_UNBOUNDED_POST                28
+#define     HI_CLIENT_MULTIPLE_TRUEIP_IN_SESSION    29
+#define     HI_CLIENT_BOTH_TRUEIP_XFF_HDRS          30 
+#define     HI_CLIENT_UNKNOWN_METHOD                31
+#define     HI_CLIENT_SIMPLE_REQUEST                32
+#define     HI_CLIENT_UNESCAPED_SPACE_URI           33
+#define     HI_CLIENT_PIPELINE_MAX                  34
 
-#define GENERATOR_SPP_HTTP_INSPECT_SERVER          120 
+// these are either server specific or both client / server
+#define GENERATOR_SPP_HTTP_INSPECT                 120 
 #define     HI_ANOM_SERVER_ALERT                    1   /* done */
-#define     HI_SERVER_INVALID_STATCODE              2 
+#define     HI_SERVER_INVALID_STATCODE              2
 #define     HI_SERVER_NO_CONTLEN                    3
 #define     HI_SERVER_UTF_NORM_FAIL                 4
 #define     HI_SERVER_UTF7                          5
-
-/*#define GENERATOR_SPP_HTTP_INSPECT_ANOM_SERVER      120
-#define     HI_ANOM_SERVER_ALERT                    1   */
-
+#define     HI_SERVER_DECOMPR_FAILED                6
+#define     HI_SERVER_CONSECUTIVE_SMALL_CHUNK_SIZES 7 
+#define     HI_CLISRV_MSG_SIZE_EXCEPTION            8 
+#define     HI_SERVER_JS_OBFUSCATION_EXCD           9 
+#define     HI_SERVER_JS_EXCESS_WS                  10 
+#define     HI_SERVER_MIXED_ENCODINGS               11
+#define     HI_SERVER_SWF_ZLIB_FAILURE              12
+#define     HI_SERVER_SWF_LZMA_FAILURE              13
+#define     HI_SERVER_PDF_DEFLATE_FAILURE           14
+#define     HI_SERVER_PDF_UNSUP_COMP_TYPE           15
+#define     HI_SERVER_PDF_CASC_COMP                 16
+#define     HI_SERVER_PDF_PARSE_FAILURE             17
 
 
 #define GENERATOR_PSNG                             122
@@ -303,8 +343,14 @@ enum {
 #define     FRAG3_ANOMALY_BADSIZE_SM                6
 #define     FRAG3_ANOMALY_BADSIZE_LG                7
 #define     FRAG3_ANOMALY_OVLP                      8
+/* 123:9, 123:10 are OBE w/ addition of 116:458
+ * (aka DECODE_IPV6_BAD_FRAG_PKT).
+ * Leave these here so they are not reused.
+ * ------
 #define     FRAG3_IPV6_BSD_ICMP_FRAG                9
 #define     FRAG3_IPV6_BAD_FRAG_PKT                10
+ * ------
+*/
 #define     FRAG3_MIN_TTL_EVASION                  11
 #define     FRAG3_EXCESSIVE_OVERLAP                12
 #define     FRAG3_TINY_FRAGMENT                    13
@@ -318,6 +364,14 @@ enum {
 #define     SMTP_ILLEGAL_CMD                       6
 #define     SMTP_HEADER_NAME_OVERFLOW              7
 #define     SMTP_XLINK2STATE_OVERFLOW              8
+/* This alert is obsolete. *
+* #define     SMTP_DECODE_MEMCAP_EXCEEDED            9*/
+#define     SMTP_B64_DECODING_FAILED               10 
+#define     SMTP_QP_DECODING_FAILED                11
+/* Do not delete or reuse this SID. Commenting this SID as this alert is no longer valid.*
+* #define     SMTP_BITENC_DECODING_FAILED            12
+*/
+#define     SMTP_UU_DECODING_FAILED                13
     
 /*
 **  FTPTelnet Generator IDs
@@ -353,26 +407,27 @@ enum {
 #define     SSH_EVENT_PAYLOAD_SIZE             6
 #define     SSH_EVENT_VERSION                  7
 
-#define GENERATOR_SPP_STREAM5                     129
-#define     STREAM5_SYN_ON_EST                      1
-#define     STREAM5_DATA_ON_SYN                     2
-#define     STREAM5_DATA_ON_CLOSED                  3
-#define     STREAM5_BAD_TIMESTAMP                   4
-#define     STREAM5_BAD_SEGMENT                     5
-#define     STREAM5_WINDOW_TOO_LARGE                6
-#define     STREAM5_EXCESSIVE_TCP_OVERLAPS          7
-#define     STREAM5_DATA_AFTER_RESET                8
-#define     STREAM5_SESSION_HIJACKED_CLIENT         9
-#define     STREAM5_SESSION_HIJACKED_SERVER        10
-#define     STREAM5_DATA_WITHOUT_FLAGS             11
-#define     STREAM5_SMALL_SEGMENT                  12
-#define     STREAM5_4WAY_HANDSHAKE                 13
-#define     STREAM5_NO_TIMESTAMP                   14
-#define     STREAM5_BAD_RST                        15
-#define     STREAM5_BAD_FIN                        16
-#define     STREAM5_BAD_ACK                        17
-#define     STREAM5_DATA_AFTER_RST_RCVD            18
-#define     STREAM5_WINDOW_SLAM                    19
+#define GENERATOR_SPP_STREAM                     129
+#define     STREAM_SYN_ON_EST                      1
+#define     STREAM_DATA_ON_SYN                     2
+#define     STREAM_DATA_ON_CLOSED                  3
+#define     STREAM_BAD_TIMESTAMP                   4
+#define     STREAM_BAD_SEGMENT                     5
+#define     STREAM_WINDOW_TOO_LARGE                6
+#define     STREAM_EXCESSIVE_TCP_OVERLAPS          7
+#define     STREAM_DATA_AFTER_RESET                8
+#define     STREAM_SESSION_HIJACKED_CLIENT         9
+#define     STREAM_SESSION_HIJACKED_SERVER        10
+#define     STREAM_DATA_WITHOUT_FLAGS             11
+#define     STREAM_SMALL_SEGMENT                  12
+#define     STREAM_4WAY_HANDSHAKE                 13
+#define     STREAM_NO_TIMESTAMP                   14
+#define     STREAM_BAD_RST                        15
+#define     STREAM_BAD_FIN                        16
+#define     STREAM_BAD_ACK                        17
+#define     STREAM_DATA_AFTER_RST_RCVD            18
+#define     STREAM_WINDOW_SLAM                    19
+#define     STREAM_NO_3WHS                        20
 
 #define GENERATOR_DNS                             131
 #define     DNS_EVENT_OBSOLETE_TYPES                1
@@ -429,25 +484,48 @@ enum {
 #define     DCE2_EVENT__SMB_V2                       45
 #define     DCE2_EVENT__SMB_INVALID_BINDING          46
 #define     DCE2_EVENT__SMB2_EXCESSIVE_COMPOUNDING   47
-
+#define     DCE2_EVENT__SMB_DCNT_ZERO                48
+#define     DCE2_EVENT__SMB_DCNT_MISMATCH            49
+#define     DCE2_EVENT__SMB_MAX_REQS_EXCEEDED        50
+#define     DCE2_EVENT__SMB_REQS_SAME_MID            51
+#define     DCE2_EVENT__SMB_DEPR_DIALECT_NEGOTIATED  52
+#define     DCE2_EVENT__SMB_DEPR_COMMAND_USED        53
+#define     DCE2_EVENT__SMB_UNUSUAL_COMMAND_USED     54
+#define     DCE2_EVENT__SMB_INVALID_SETUP_COUNT      55
+#define     DCE2_EVENT__SMB_MULTIPLE_NEGOTIATIONS    56
+#define     DCE2_EVENT__SMB_EVASIVE_FILE_ATTRS       57
 
 #define GENERATOR_PPM                               134
 #define     PPM_EVENT_RULE_TREE_DISABLED              1
 #define     PPM_EVENT_RULE_TREE_ENABLED               2
+#define     PPM_EVENT_PACKET_ABORTED                  3
 
 #define GENERATOR_INTERNAL                          135
 #define     INTERNAL_EVENT_SYN_RECEIVED               1
 #define     INTERNAL_EVENT_SESSION_ADD                2
 #define     INTERNAL_EVENT_SESSION_DEL                3
 
-/* Reserved for Marty's IP blacklisting patch
-#define GENERATOR_SPP_IPLIST                        136 */
+#define GENERATOR_SPP_REPUTATION	                136
 
 #define GENERATOR_SPP_SSLPP                         137
 
 #define GENERATOR_SPP_SDF_RULES                     138
 #define GENERATOR_SPP_SDF_PREPROC                   139
+// #define GENERATOR_SPP_SIP	                    140 // Defined in spp_sip.h file, not here.
+// #define GENERATOR_SPP_IMAP                       141 // Defined in imap_log.h file
+// #define GENERATOR_SPP_POP                        142 // Defined in pop_log.h file.
 #define     SDF_COMBO_ALERT                           1
+
+
+#define GENERATOR_SPP_GTP                           143
+
+#define GENERATOR_SPP_MODBUS                        144
+
+#define GENERATOR_SPP_DNP3                          145
+
+// #define GENERATOR_FILE_TYPE                      146 //Defined in file_service.h
+// #define GENERATOR_FILE_SIGNATURE                 147 //Defined in file_service.h
+
 
 /*  This is where all the alert messages will be archived for each
     internal alerts */
@@ -474,51 +552,59 @@ enum {
 #define FRAG3_ANOM_BADSIZE_SM_STR "(spp_frag3) Bad fragment size, packet size is negative"
 #define FRAG3_ANOM_BADSIZE_LG_STR "(spp_frag3) Bad fragment size, packet size is greater than 65536"
 #define FRAG3_ANOM_OVLP_STR "(spp_frag3) Fragmentation overlap"
+/* 123:9, 123:10 are OBE w/ addition of 116:458
+ * (aka DECODE_IPV6_BAD_FRAG_PKT).
+ * Leave these here so they are not reused.
+ * ------
 #define FRAG3_IPV6_BSD_ICMP_FRAG_STR "(spp_frag3) IPv6 BSD mbufs remote kernel buffer overflow"
 #define FRAG3_IPV6_BAD_FRAG_PKT_STR "(spp_frag3) Bogus fragmentation packet. Possible BSD attack"
+ * ------
+ */
 #define FRAG3_MIN_TTL_EVASION_STR "(spp_frag3) TTL value less than configured minimum, not using for reassembly"
 #define FRAG3_EXCESSIVE_OVERLAP_STR "(spp_frag3) Excessive fragment overlap"
 #define FRAG3_TINY_FRAGMENT_STR "(spp_frag3) Tiny fragment"
 
-/*   Stream5 strings */
-#define STREAM5_SYN_ON_EST_STR "Syn on established session"
-#define STREAM5_DATA_ON_SYN_STR "Data on SYN packet"
-#define STREAM5_DATA_ON_CLOSED_STR "Data sent on stream not accepting data"
-#define STREAM5_BAD_TIMESTAMP_STR "TCP Timestamp is outside of PAWS window"
-#define STREAM5_BAD_SEGMENT_STR "Bad segment, adjusted size <= 0"
-#define STREAM5_WINDOW_TOO_LARGE_STR "Window size (after scaling) larger than policy allows"
-#define STREAM5_EXCESSIVE_TCP_OVERLAPS_STR "Limit on number of overlapping TCP packets reached"
-#define STREAM5_DATA_AFTER_RESET_STR "Data sent on stream after TCP Reset sent"
-#define STREAM5_SESSION_HIJACKED_CLIENT_STR "TCP Client possibly hijacked, different Ethernet Address"
-#define STREAM5_SESSION_HIJACKED_SERVER_STR "TCP Server possibly hijacked, different Ethernet Address"
-#define STREAM5_DATA_WITHOUT_FLAGS_STR "TCP Data with no TCP Flags set"
-#define STREAM5_SMALL_SEGMENT_STR "Consecutive TCP small segments exceeding threshold"
-#define STREAM5_4WAY_HANDSHAKE_STR "4-way handshake detected"
-#define STREAM5_NO_TIMESTAMP_STR "TCP Timestamp is missing"
-#define STREAM5_BAD_RST_STR "Reset outside window"
-#define STREAM5_BAD_FIN_STR "FIN number is greater than prior FIN"
-#define STREAM5_BAD_ACK_STR "ACK number is greater than prior FIN"
-#define STREAM5_DATA_AFTER_RST_RCVD_STR "Data sent on stream after TCP Reset received"
-#define STREAM5_WINDOW_SLAM_STR "TCP window closed before receiving data"
+/*   Stream strings */
+#define STREAM_SYN_ON_EST_STR "Syn on established session"
+#define STREAM_DATA_ON_SYN_STR "Data on SYN packet"
+#define STREAM_DATA_ON_CLOSED_STR "Data sent on stream not accepting data"
+#define STREAM_BAD_TIMESTAMP_STR "TCP Timestamp is outside of PAWS window"
+#define STREAM_BAD_SEGMENT_STR "Bad segment, adjusted size <= 0"
+#define STREAM_WINDOW_TOO_LARGE_STR "Window size (after scaling) larger than policy allows"
+#define STREAM_EXCESSIVE_TCP_OVERLAPS_STR "Limit on number of overlapping TCP packets reached"
+#define STREAM_DATA_AFTER_RESET_STR "Data sent on stream after TCP Reset sent"
+#define STREAM_SESSION_HIJACKED_CLIENT_STR "TCP Client possibly hijacked, different Ethernet Address"
+#define STREAM_SESSION_HIJACKED_SERVER_STR "TCP Server possibly hijacked, different Ethernet Address"
+#define STREAM_DATA_WITHOUT_FLAGS_STR "TCP Data with no TCP Flags set"
+#define STREAM_SMALL_SEGMENT_STR "Consecutive TCP small segments exceeding threshold"
+#define STREAM_4WAY_HANDSHAKE_STR "4-way handshake detected"
+#define STREAM_NO_TIMESTAMP_STR "TCP Timestamp is missing"
+#define STREAM_BAD_RST_STR "Reset outside window"
+#define STREAM_BAD_FIN_STR "FIN number is greater than prior FIN"
+#define STREAM_BAD_ACK_STR "ACK number is greater than prior FIN"
+#define STREAM_DATA_AFTER_RST_RCVD_STR "Data sent on stream after TCP Reset received"
+#define STREAM_WINDOW_SLAM_STR "TCP window closed before receiving data"
+#define STREAM_NO_3WHS_STR "TCP session without 3-way handshake"
 
-#define STREAM5_INTERNAL_EVENT_STR ""
+#define STREAM_INTERNAL_EVENT_STR ""
 
 /* PPM strings */
-#define PPM_EVENT_RULE_TREE_DISABLED_STR "Rule Options Disabled by Rule Latency"
-#define PPM_EVENT_RULE_TREE_ENABLED_STR "Rule Options Re-enabled by Rule Latency"
+#define PPM_EVENT_RULE_TREE_DISABLED_STR "PPM Rule Options Disabled by Rule Latency"
+#define PPM_EVENT_RULE_TREE_ENABLED_STR  "PPM Rule Options Re-enabled by Rule Latency"
+#define PPM_EVENT_PACKET_ABORTED_STR     "PPM Packet Aborted due to Latency"
 
 /*   Snort decoder strings */
-#define DECODE_NOT_IPV4_DGRAM_STR "(snort_decoder) WARNING: Not IPv4 datagram!"
-#define DECODE_IPV4_INVALID_HEADER_LEN_STR "(snort_decoder) WARNING: hlen < IP_HEADER_LEN!"
-#define DECODE_IPV4_DGRAM_LT_IPHDR_STR "(snort_decoder) WARNING: IP dgm len < IP Hdr len!"
+#define DECODE_NOT_IPV4_DGRAM_STR "(snort_decoder) WARNING: Not IPv4 datagram"
+#define DECODE_IPV4_INVALID_HEADER_LEN_STR "(snort_decoder) WARNING: hlen < IP_HEADER_LEN"
+#define DECODE_IPV4_DGRAM_LT_IPHDR_STR "(snort_decoder) WARNING: IP dgm len < IP Hdr len"
 #define DECODE_IPV4OPT_BADLEN_STR      "(snort_decoder) WARNING: Ipv4 Options found with bad lengths"
-#define DECODE_IPV4OPT_TRUNCATED_STR   "(snort_decoder) WARNING:Truncated Ipv4 Options"
-#define DECODE_IPV4_DGRAM_GT_CAPLEN_STR "(snort_decoder) WARNING: IP dgm len > captured len!"
+#define DECODE_IPV4OPT_TRUNCATED_STR   "(snort_decoder) WARNING: Truncated Ipv4 Options"
+#define DECODE_IPV4_DGRAM_GT_CAPLEN_STR "(snort_decoder) WARNING: IP dgm len > captured len"
 #define DECODE_NOT_IPV6_DGRAM_STR      "(snort_decoder) WARNING: Not an IPv6 datagram"
 
-#define DECODE_TCP_DGRAM_LT_TCPHDR_STR "(snort_decoder) WARNING: TCP packet len is smaller than 20 bytes!"
-#define DECODE_TCP_INVALID_OFFSET_STR "(snort_decoder) WARNING: TCP Data Offset is less than 5!"
-#define DECODE_TCP_LARGE_OFFSET_STR "(snort_decoder) WARNING: TCP Header length exceeds packet length!"
+#define DECODE_TCP_DGRAM_LT_TCPHDR_STR "(snort_decoder) WARNING: TCP packet len is smaller than 20 bytes"
+#define DECODE_TCP_INVALID_OFFSET_STR "(snort_decoder) WARNING: TCP Data Offset is less than 5"
+#define DECODE_TCP_LARGE_OFFSET_STR "(snort_decoder) WARNING: TCP Header length exceeds packet length"
 
 #define DECODE_TCPOPT_BADLEN_STR      "(snort_decoder) WARNING: Tcp Options found with bad lengths"
 #define DECODE_TCPOPT_TRUNCATED_STR   "(snort_decoder) WARNING: Truncated Tcp Options"
@@ -527,33 +613,33 @@ enum {
 #define DECODE_TCPOPT_EXPERIMENT_STR  "(snort_decoder) WARNING: Experimental Tcp Options found"
 #define DECODE_TCPOPT_WSCALE_INVALID_STR "(snort_decoder) WARNING: Tcp Window Scale Option found with length > 14"
 
-#define DECODE_UDP_DGRAM_LT_UDPHDR_STR "(snort_decoder) WARNING: Truncated UDP Header!"
+#define DECODE_UDP_DGRAM_LT_UDPHDR_STR "(snort_decoder) WARNING: Truncated UDP Header"
 #define DECODE_UDP_DGRAM_INVALID_LENGTH_STR "(snort_decoder) WARNING: Invalid UDP header, length field < 8"
 #define DECODE_UDP_DGRAM_SHORT_PACKET_STR "(snort_decoder) WARNING: Short UDP packet, length field > payload length"
 #define DECODE_UDP_DGRAM_LONG_PACKET_STR "(snort_decoder) WARNING: Long UDP packet, length field < payload length"
 
-#define DECODE_ICMP_DGRAM_LT_ICMPHDR_STR "(snort_decoder) WARNING: ICMP Header Truncated!"
-#define DECODE_ICMP_DGRAM_LT_TIMESTAMPHDR_STR "(snort_decoder) WARNING: ICMP Timestamp Header Truncated!"
-#define DECODE_ICMP_DGRAM_LT_ADDRHDR_STR "(snort_decoder) WARNING: ICMP Address Header Truncated!"
-#define DECODE_IPV4_DGRAM_UNKNOWN_STR "(snort_decoder) WARNING: Unknown Datagram decoding problem!"
-#define DECODE_ARP_TRUNCATED_STR "(snort_decoder) WARNING: Truncated ARP!"
-#define DECODE_EAPOL_TRUNCATED_STR "(snort_decoder) WARNING: Truncated EAP Header!"
-#define DECODE_EAPKEY_TRUNCATED_STR "(snort_decoder) WARNING: EAP Key Truncated!"
-#define DECODE_EAP_TRUNCATED_STR "(snort_decoder) WARNING: EAP Header Truncated!"
-#define DECODE_BAD_PPPOE_STR "(snort_decoder) WARNING: Bad PPPOE frame detected!"
-#define DECODE_BAD_VLAN_STR "(snort_decoder) WARNING: Bad VLAN Frame!"
-#define DECODE_BAD_VLAN_ETHLLC_STR "(snort_decoder) WARNING: Bad LLC header!"
-#define DECODE_BAD_VLAN_OTHER_STR "(snort_decoder) WARNING: Bad Extra LLC Info!"
-#define DECODE_BAD_80211_ETHLLC_STR "(snort_decoder) WARNING: Bad 802.11 LLC header!"
-#define DECODE_BAD_80211_OTHER_STR "(snort_decoder) WARNING: Bad 802.11 Extra LLC Info!"
+#define DECODE_ICMP_DGRAM_LT_ICMPHDR_STR "(snort_decoder) WARNING: ICMP Header Truncated"
+#define DECODE_ICMP_DGRAM_LT_TIMESTAMPHDR_STR "(snort_decoder) WARNING: ICMP Timestamp Header Truncated"
+#define DECODE_ICMP_DGRAM_LT_ADDRHDR_STR "(snort_decoder) WARNING: ICMP Address Header Truncated"
+#define DECODE_IPV4_DGRAM_UNKNOWN_STR "(snort_decoder) WARNING: Unknown Datagram decoding problem"
+#define DECODE_ARP_TRUNCATED_STR "(snort_decoder) WARNING: Truncated ARP"
+#define DECODE_EAPOL_TRUNCATED_STR "(snort_decoder) WARNING: Truncated EAP Header"
+#define DECODE_EAPKEY_TRUNCATED_STR "(snort_decoder) WARNING: EAP Key Truncated"
+#define DECODE_EAP_TRUNCATED_STR "(snort_decoder) WARNING: EAP Header Truncated"
+#define DECODE_BAD_PPPOE_STR "(snort_decoder) WARNING: Bad PPPOE frame detected"
+#define DECODE_BAD_VLAN_STR "(snort_decoder) WARNING: Bad VLAN Frame"
+#define DECODE_BAD_VLAN_ETHLLC_STR "(snort_decoder) WARNING: Bad LLC header"
+#define DECODE_BAD_VLAN_OTHER_STR "(snort_decoder) WARNING: Bad Extra LLC Info"
+#define DECODE_BAD_80211_ETHLLC_STR "(snort_decoder) WARNING: Bad 802.11 LLC header"
+#define DECODE_BAD_80211_OTHER_STR "(snort_decoder) WARNING: Bad 802.11 Extra LLC Info"
 
-#define DECODE_BAD_TRH_STR "(snort_decoder) WARNING: Bad Token Ring Header!"
-#define DECODE_BAD_TR_ETHLLC_STR "(snort_decoder) WARNING: Bad Token Ring ETHLLC Header!"
-#define DECODE_BAD_TR_MR_LEN_STR "(snort_decoder) WARNING: Bad Token Ring MRLENHeader!"
-#define DECODE_BAD_TRHMR_STR "(snort_decoder) WARNING: Bad Token Ring MR Header!"
+#define DECODE_BAD_TRH_STR "(snort_decoder) WARNING: Bad Token Ring Header"
+#define DECODE_BAD_TR_ETHLLC_STR "(snort_decoder) WARNING: Bad Token Ring ETHLLC Header"
+#define DECODE_BAD_TR_MR_LEN_STR "(snort_decoder) WARNING: Bad Token Ring MRLENHeader"
+#define DECODE_BAD_TRHMR_STR "(snort_decoder) WARNING: Bad Token Ring MR Header"
 
-#define     DECODE_BAD_TRAFFIC_LOOPBACK_STR     "(snort decoder) WARNING: Bad Traffic Loopback IP"      
-#define     DECODE_BAD_TRAFFIC_SAME_SRCDST_STR  "(snort decoder) WARNING: Bad Traffic Same Src/Dst IP"      
+#define     DECODE_BAD_TRAFFIC_LOOPBACK_STR     "(snort decoder) WARNING: Bad Traffic Loopback IP"
+#define     DECODE_BAD_TRAFFIC_SAME_SRCDST_STR  "(snort decoder) WARNING: Bad Traffic Same Src/Dst IP"
 
 #ifdef GRE
 #define DECODE_GRE_DGRAM_LT_GREHDR_STR "(snort decoder) WARNING: GRE header length > payload length"
@@ -564,19 +650,19 @@ enum {
 #define DECODE_GRE_TRANS_DGRAM_LT_TRANSHDR_STR "(snort decoder) WARNING: GRE Trans header length > payload length"
 #endif  /* GRE */
 
-#define DECODE_ICMP_ORIG_IP_TRUNCATED_STR "(snort_decoder) WARNING: ICMP Original IP Header Truncated!"
-#define DECODE_ICMP_ORIG_IP_VER_MISMATCH_STR "(snort_decoder) WARNING: ICMP version and Original IP Header versions differ!"
-#define DECODE_ICMP_ORIG_DGRAM_LT_ORIG_IP_STR "(snort_decoder) WARNING: ICMP Original Datagram Length < Original IP Header Length!"
-#define DECODE_ICMP_ORIG_PAYLOAD_LT_64_STR "(snort_decoder) WARNING: ICMP Original IP Payload < 64 bits!"
-#define DECODE_ICMP_ORIG_PAYLOAD_GT_576_STR "(snort_decoder) WARNING: ICMP Origianl IP Payload > 576 bytes!"
-#define DECODE_ICMP_ORIG_IP_WITH_FRAGOFFSET_STR "(snort_decoder) WARNING: ICMP Original IP Fragmented and Offset Not 0!"
+#define DECODE_ICMP_ORIG_IP_TRUNCATED_STR "(snort_decoder) WARNING: ICMP Original IP Header Truncated"
+#define DECODE_ICMP_ORIG_IP_VER_MISMATCH_STR "(snort_decoder) WARNING: ICMP version and Original IP Header versions differ"
+#define DECODE_ICMP_ORIG_DGRAM_LT_ORIG_IP_STR "(snort_decoder) WARNING: ICMP Original Datagram Length < Original IP Header Length"
+#define DECODE_ICMP_ORIG_PAYLOAD_LT_64_STR "(snort_decoder) WARNING: ICMP Original IP Payload < 64 bits"
+#define DECODE_ICMP_ORIG_PAYLOAD_GT_576_STR "(snort_decoder) WARNING: ICMP Origianl IP Payload > 576 bytes"
+#define DECODE_ICMP_ORIG_IP_WITH_FRAGOFFSET_STR "(snort_decoder) WARNING: ICMP Original IP Fragmented and Offset Not 0"
 
 #define DECODE_IPV6_MIN_TTL_STR "(snort decoder) WARNING: IPv6 packet below TTL limit"
 #define DECODE_IPV6_IS_NOT_STR "(snort decoder) WARNING: IPv6 header claims to not be IPv6"
 #define DECODE_IPV6_TRUNCATED_EXT_STR "(snort decoder) WARNING: IPV6 truncated extension header"
 #define DECODE_IPV6_TRUNCATED_STR "(snort decoder) WARNING: IPV6 truncated header"
-#define DECODE_IPV6_DGRAM_LT_IPHDR_STR "(snort_decoder) WARNING: IP dgm len < IP Hdr len!"
-#define DECODE_IPV6_DGRAM_GT_CAPLEN_STR "(snort_decoder) WARNING: IP dgm len > captured len!"
+#define DECODE_IPV6_DGRAM_LT_IPHDR_STR "(snort_decoder) WARNING: IP dgm len < IP Hdr len"
+#define DECODE_IPV6_DGRAM_GT_CAPLEN_STR "(snort_decoder) WARNING: IP dgm len > captured len"
 
 #define DECODE_IPV6_DST_ZERO_STR "(snort_decoder) WARNING: IPv6 packet with destination address ::0"
 #define DECODE_IPV6_SRC_MULTICAST_STR "(snort_decoder) WARNING: IPv6 packet with multicast source address"
@@ -588,7 +674,7 @@ enum {
 #define DECODE_IPV6_TWO_ROUTE_HEADERS_STR "(snort_decoder) WARNING: IPv6 header includes two routing extension headers"
 #define DECODE_IPV6_DSTOPTS_WITH_ROUTING_STR "(snort_decoder) WARNING: IPv6 header has destination options followed by a routing header"
 #define DECODE_ICMPV6_TOO_BIG_BAD_MTU_STR "(snort_decoder) WARNING: ICMPv6 packet of type 2 (message too big) with MTU field < 1280"
-#define DECODE_ICMPV6_UNREACHABLE_BAD_CODE_STR "(snort_decoder) WARNING: ICMPv6 packet of type 1 (destination unreachable) with invalid code field"
+#define DECODE_ICMPV6_UNREACHABLE_NON_RFC_2463_CODE_STR "(snort_decoder) WARNING: ICMPv6 packet of type 1 (destination unreachable) with non-RFC 2463 code"
 #define DECODE_ICMPV6_SOLICITATION_BAD_CODE_STR "(snort_decoder) WARNING: ICMPv6 router solicitation packet with a code not equal to 0"
 #define DECODE_ICMPV6_ADVERT_BAD_CODE_STR "(snort_decoder) WARNING: ICMPv6 router advertisement packet with a code not equal to 0"
 #define DECODE_ICMPV6_SOLICITATION_BAD_RESERVED_STR "(snort_decoder) WARNING: ICMPv6 router solicitation packet with the reserved field not equal to 0"
@@ -600,18 +686,19 @@ enum {
 
 #define DECODE_ESP_HEADER_TRUNC_STR "(snort_decoder) WARNING: truncated Encapsulated Security Payload (ESP) header"
 
-#define DECODE_IPV6_BAD_OPT_LEN_STR "(snort_decoder) WARNING: IPv6 header includes an option which is too big for the containing header."
+#define DECODE_IPV6_BAD_OPT_LEN_STR "(snort_decoder) WARNING: IPv6 header includes an option which is too big for the containing header"
 
 #define DECODE_IPV6_UNORDERED_EXTENSIONS_STR "(snort_decoder) WARNING: IPv6 packet includes out-of-order extension headers"
+#define DECODE_GTP_MULTIPLE_ENCAPSULATION_STR "(snort_decoder) WARNING: Two or more GTP encapsulation layers present"
+#define DECODE_GTP_BAD_LEN_STR "(snort_decoder) WARNING: GTP header length is invalid"
+#define DECODE_TCP_XMAS_STR "(snort_decoder) WARNING: XMAS Attack Detected"
+#define DECODE_TCP_NMAP_XMAS_STR "(snort_decoder) WARNING: Nmap XMAS Attack Detected"
 
-#define DECODE_TCP_XMAS_STR "(snort_decoder) WARNING: XMAS Attack Detected!"
-#define DECODE_TCP_NMAP_XMAS_STR "(snort_decoder) WARNING: Nmap XMAS Attack Detected!"
-
-#define DECODE_DOS_NAPTHA_STR "(snort_decoder) WARNING: DOS NAPTHA Vulnerability Detected!"
+#define DECODE_DOS_NAPTHA_STR "(snort_decoder) WARNING: DOS NAPTHA Vulnerability Detected"
 #define DECODE_SYN_TO_MULTICAST_STR "(snort_decoder) WARNING: Bad Traffic SYN to multicast address"
 #define DECODE_ZERO_TTL_STR "(snort_decoder) WARNING: IPV4 packet with zero TTL"
 #define DECODE_BAD_FRAGBITS_STR "(snort_decoder) WARNING: IPV4 packet with bad frag bits (Both MF and DF set)"
-#define DECODE_UDP_IPV6_ZERO_CHECKSUM_STR "(snort_decoder) WARNING: Invalid IPv6 UDP packet, checksum zero" 
+#define DECODE_UDP_IPV6_ZERO_CHECKSUM_STR "(snort_decoder) WARNING: Invalid IPv6 UDP packet, checksum zero"
 #define DECODE_IP4_LEN_OFFSET_STR "(snort_decoder) WARNING: IPV4 packet frag offset + length exceed maximum"
 #define DECODE_IP4_SRC_THIS_NET_STR "(snort_decoder) WARNING: IPV4 packet from 'current net' source address"
 #define DECODE_IP4_DST_THIS_NET_STR "(snort_decoder) WARNING: IPV4 packet to 'current net' dest address"
@@ -657,6 +744,20 @@ enum {
 #define DECODE_IP_BAD_PROTO_STR "(snort_decoder) WARNING: BAD-TRAFFIC Bad IP protocol"
 #define DECODE_ICMP_PATH_MTU_DOS_STR "(snort_decoder) WARNING: ICMP PATH MTU denial of service attempt"
 #define DECODE_ICMP_DOS_ATTEMPT_STR "(snort_decoder) WARNING: BAD-TRAFFIC linux ICMP header dos attempt"
+#define DECODE_IPV6_ISATAP_SPOOF_STR "(snort_decoder) WARNING: BAD-TRAFFIC ISATAP-addressed IPv6 traffic spoofing attempt"
+#define DECODE_PGM_NAK_OVERFLOW_STR "(snort_decoder) WARNING: BAD-TRAFFIC PGM nak list overflow attempt"
+#define DECODE_IGMP_OPTIONS_DOS_STR "(snort_decoder) WARNING: DOS IGMP IP Options validation attempt"
+#define DECODE_IP6_EXCESS_EXT_HDR_STR "(snort_decoder) WARNING: too many IP6 extension headers"
+#define DECODE_ICMPV6_UNREACHABLE_NON_RFC_4443_CODE_STR "(snort_decoder) WARNING: ICMPv6 packet of type 1 (destination unreachable) with non-RFC 4443 code"
+#define DECODE_IPV6_BAD_FRAG_PKT_STR "(snort_decoder) WARNING: bogus fragmentation packet. Possible BSD attack"
+#define DECODE_ZERO_LENGTH_FRAG_STR "(snort_decoder) WARNING: fragment with zero length"
+#define DECODE_ICMPV6_NODE_INFO_BAD_CODE_STR "(snort_decoder) WARNING: ICMPv6 node info query/response packet with a code greater than 2"
+#define DECODE_IPV6_ROUTE_ZERO_STR "(snort decoder) WARNING: IPV6 routing type 0 extension header"
+#define DECODE_ERSPAN_HDR_VERSION_MISMATCH_STR "(snort_decoder) WARNING: ERSpan Header version mismatch"
+#define DECODE_ERSPAN2_DGRAM_LT_HDR_STR "(snort_decoder) WARNING: captured < ERSpan Type2 Header Length"
+#define DECODE_ERSPAN3_DGRAM_LT_HDR_STR "(snort_decoder) WARNING: captured < ERSpan Type3 Header Length"
+#define DECODE_AUTH_HDR_TRUNC_STR "(snort_decoder) WARNING: truncated authentication header"
+#define DECODE_AUTH_HDR_BAD_LEN_STR "(snort_decoder) WARNING: authentication header bad length"
 
 /*  RPC decode preprocessor strings */
 #define RPC_FRAG_TRAFFIC_STR "(spp_rpc_decode) Fragmented RPC Records"
@@ -697,7 +798,7 @@ enum {
 
 #define PSNG_OPEN_PORT_STR "(portscan) Open Port"
 
-#define DECODE_BAD_MPLS_STR "(snort_decoder) WARNING: Bad MPLS Frame!"
+#define DECODE_BAD_MPLS_STR "(snort_decoder) WARNING: Bad MPLS Frame"
 #define DECODE_BAD_MPLS_LABEL0_STR "(snort_decoder) WARNING: MPLS Label 0 Appears in Nonbottom Header"
 #define DECODE_BAD_MPLS_LABEL1_STR "(snort_decoder) WARNING: MPLS Label 1 Appears in Bottom Header"
 #define DECODE_BAD_MPLS_LABEL2_STR "(snort_decoder) WARNING: MPLS Label 2 Appears in Nonbottom Header"

@@ -15,19 +15,22 @@ Payload and Delivery header support
 Proto     Delivery    Payload
 -----     --------    -------
 IPv4          x          x
-IPv6          x          x      (only with IPv6 compiled binary)
+IPv6          x          x
 Trans-                    
   Bridging               x
 Arp                      x
+ERSPAN.2      x          x
+ERSPAN.3      x          x
 PPP                      x      (only on architectures that do not
                                  require word alignment - so this is
                                  supported on Intel and PPC, but not
                                  supported on SPARC)
 
-
 How to enable the decoder
 =========================
-$ ./configure --enable-gre
+Decoding of GRE is enabled by default, to disable, use the following option
+to configure
+$ ./configure --disable-gre
 
 
 Note on multiple encapsulation

@@ -1,5 +1,6 @@
 /*
-** Copyright (C) 2006-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2006-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License Version 2 as
@@ -14,13 +15,17 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 /*
  * Author: Steven Sturges
  * sftarget_protocol_reference.c
  */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #ifdef TARGET_BASED
 
@@ -29,14 +34,22 @@
 
 #include "log.h"
 #include "util.h"
-#include "debug.h"
+#include "snort_debug.h"
 
+#include "session_api.h"
 #include "stream_api.h"
 #include "spp_frag3.h"
 #include "sftarget_reader.h"
 #include "sftarget_hostentry.h"
 
+int16_t protocolReferenceTCP;
+int16_t protocolReferenceUDP;
+int16_t protocolReferenceICMP;
+
 static SFGHASH *proto_reference_table = NULL;
+#if defined(FEAT_OPEN_APPID)
+static SFTargetProtocolReference** proto_name_table = NULL;
+#endif /* defined(FEAT_OPEN_APPID) */
 static int16_t protocol_number = 1;
 
 static char *standard_protocols[] =
@@ -73,7 +86,7 @@ static char *standard_protocols[] =
 
 /* XXX XXX Probably need to do this during swap time since the
  * proto_reference_table is accessed during runtime */
-int16_t AddProtocolReference(char *protocol)
+int16_t AddProtocolReference(const char *protocol)
 {
     SFTargetProtocolReference *reference;
 
@@ -85,7 +98,7 @@ int16_t AddProtocolReference(char *protocol)
         InitializeProtocolReferenceTable();
     }
 
-    reference = sfghash_find(proto_reference_table, protocol);
+    reference = sfghash_find(proto_reference_table, (void *)protocol);
     if (reference)
     {
         DEBUG_WRAP(
@@ -106,7 +119,7 @@ int16_t AddProtocolReference(char *protocol)
         * defined as 8192.
         */
         LogMessage("WARNING: protocol_number wrapped.   This may result"
-                   "in odd behavior and potential false positives\n");
+                   "in odd behavior and potential false positives.\n");
 
         /* 1 is the first protocol id we use. */
         /* 0 is not used */
@@ -116,6 +129,9 @@ int16_t AddProtocolReference(char *protocol)
     SnortStrncpy(reference->name, protocol, STD_BUF);
 
     sfghash_add(proto_reference_table, reference->name, reference);
+#if defined(FEAT_OPEN_APPID)
+    proto_name_table[reference->ordinal-1] = reference;
+#endif /* defined(FEAT_OPEN_APPID) */
 
     DEBUG_WRAP(
             DebugMessage(DEBUG_ATTRIBUTE,
@@ -125,7 +141,7 @@ int16_t AddProtocolReference(char *protocol)
     return reference->ordinal;
 }
 
-int16_t FindProtocolReference(char *protocol)
+int16_t FindProtocolReference(const char *protocol)
 {
     SFTargetProtocolReference *reference;
 
@@ -137,7 +153,7 @@ int16_t FindProtocolReference(char *protocol)
         InitializeProtocolReferenceTable();
     }
 
-    reference = sfghash_find(proto_reference_table, protocol);
+    reference = sfghash_find(proto_reference_table, (void *)protocol);
 
     if (reference)
         return reference->ordinal;
@@ -145,6 +161,22 @@ int16_t FindProtocolReference(char *protocol)
     return SFTARGET_UNKNOWN_PROTOCOL;
 }
 
+#if defined(FEAT_OPEN_APPID)
+const char * FindProtocolName(int16_t protocol_number)
+{
+    if (protocol_number <= 0 || protocol_number > MAX_PROTOCOL_ORDINAL)
+        return NULL;
+
+    if (!proto_reference_table)
+    {
+        return NULL;
+    }
+
+    if (proto_name_table[protocol_number-1])
+        return proto_name_table[protocol_number-1]->name;
+    return NULL;
+}
+#endif /* defined(FEAT_OPEN_APPID) */
 void InitializeProtocolReferenceTable(void)
 {
     char **protocol;
@@ -160,17 +192,33 @@ void InitializeProtocolReferenceTable(void)
         FatalError("Failed to Initialize Target-Based Protocol Reference Table\n");
     }
 
+#if defined(FEAT_OPEN_APPID)
+    proto_name_table = calloc(MAX_PROTOCOL_ORDINAL, sizeof(*proto_name_table));
+    if (!proto_name_table)
+    {
+        FatalError("Failed to Initialize Target-Based Protocol name Table\n");
+    }
+
+
+#endif /* defined(FEAT_OPEN_APPID) */
     /* Initialize the standard protocols from the list above */
     for (protocol = standard_protocols; *protocol; protocol++)
     {
         AddProtocolReference(*protocol);
     }
+    protocolReferenceTCP = FindProtocolReference("tcp");
+    protocolReferenceUDP = FindProtocolReference("udp");
+    protocolReferenceICMP = FindProtocolReference("icmp");
 }
 
 void FreeProtoocolReferenceTable(void)
 {
     sfghash_delete(proto_reference_table);
     proto_reference_table = NULL;
+#if defined(FEAT_OPEN_APPID)
+    free(proto_name_table);
+    proto_name_table = NULL;
+#endif /* defined(FEAT_OPEN_APPID) */
 }
 
 int16_t GetProtocolReference(Packet *p)
@@ -187,10 +235,10 @@ int16_t GetProtocolReference(Packet *p)
     do /* Simple do loop to break out of quickly, not really a loop */
     {
         HostAttributeEntry *host_entry;
-        if (p->ssnptr && stream_api)
+        if (p->ssnptr && session_api)
         {
-            /* Use session information via Stream API */
-            protocol = stream_api->get_application_protocol_id(p->ssnptr);
+            /* Use session information */
+            protocol = session_api->get_application_protocol_id(p->ssnptr);
             if (protocol != 0)
             {
                 break;
@@ -210,13 +258,13 @@ int16_t GetProtocolReference(Packet *p)
         switch (GET_IPH_PROTO(p))
         {
         case IPPROTO_TCP:
-            ipprotocol = FindProtocolReference("tcp");
+            ipprotocol = protocolReferenceTCP;
             break;
         case IPPROTO_UDP:
-            ipprotocol = FindProtocolReference("udp");
+            ipprotocol = protocolReferenceUDP;
             break;
         case IPPROTO_ICMP:
-            ipprotocol = FindProtocolReference("icmp");
+            ipprotocol = protocolReferenceICMP;
             break;
         }
 
@@ -234,7 +282,7 @@ int16_t GetProtocolReference(Packet *p)
 
         if (protocol != 0)
         {
-            
+
             break;
         }
 

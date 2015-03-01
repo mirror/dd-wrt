@@ -1,5 +1,6 @@
 /*
-** Copyright (C) 2006-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2006-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License Version 2 as
@@ -14,7 +15,7 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 /*
@@ -55,7 +56,7 @@
 
 #include "snort.h"
 
-#include "debug.h"
+#include "snort_debug.h"
 #include "sfPolicy.h"
 
 typedef struct
@@ -160,7 +161,7 @@ char *SFAT_LookupAttributeNameById(int id)
 
     if (!pConfig->next.mapTable)
         return NULL;
-    
+
     entry = sfxhash_find(pConfig->next.mapTable, &id);
 
     if (entry)
@@ -250,7 +251,7 @@ void FreeHostEntry(HostAttributeEntry *host)
 
 void PrintAttributeData(char *prefix, AttributeData *data)
 {
-#ifdef DEBUG
+#ifdef DEBUG_MSGS
     DebugMessage(DEBUG_ATTRIBUTE, "AttributeData for %s\n", prefix);
     if (data->type == ATTRIBUTE_NAME)
     {
@@ -265,26 +266,13 @@ void PrintAttributeData(char *prefix, AttributeData *data)
 #endif
 }
 
-#ifdef SUP_IP6
 int SFAT_SetHostIp(char *ip)
-#else
-int SFAT_SetHostIp4(char *ip)
-#endif
 {
     static HostAttributeEntry *tmp_host = NULL;
-#ifdef SUP_IP6
     sfip_t ipAddr;
-#else
-    struct in_addr ip4_inAddr;
-    uint32_t ipAddr = 0;
-    uint8_t bits = 32;
-    char *ipMask;
-    char *hasMask;
-#endif
     tTargetBasedPolicyConfig *pConfig = &targetBasedPolicyConfig;
     SFAT_CHECKHOST;
 
-#ifdef SUP_IP6
     if (sfip_pton(ip, &ipAddr) != SFIP_SUCCESS)
     {
         return SFAT_ERROR;
@@ -309,52 +297,6 @@ int SFAT_SetHostIp4(char *ip)
         /* New entry for this host/CIDR */
         sfip_set_ip(&current_host->ipAddr, &ipAddr);
     }
-#else
-    ipMask = strdup(ip); /* Don't use SnortStrdup, can't FatalError here */
-    if (!ipMask)
-    {
-        return SFAT_ERROR;
-    }
-
-    hasMask = strchr(ipMask, '/');
-    if (hasMask)
-    {
-        *hasMask = '\0';
-        hasMask++;
-        bits = (char)strtoul(hasMask, NULL, 10);
-    }
-    /* No mask, implicit 32 bits */
-
-    /* this is terminated at end of
-     * IP part if mask included */
-    if (inet_pton(AF_INET, ipMask, &ip4_inAddr) == 0)
-    {
-        free(ipMask);
-        return SFAT_ERROR;
-    }
-    ipAddr = ntohl(ip4_inAddr.s_addr);
-
-    /*** : Lookup and set current_host via IP addr */
-    tmp_host = sfrt_lookup(&ipAddr, pConfig->next.lookupTable);
-
-    /*** If found, free current_host and set current_host to the one found */
-    if (tmp_host && 
-        (tmp_host->ipAddr == ipAddr) &&
-        (tmp_host->bits == bits))
-    {
-        /* Exact match. */
-        FreeHostEntry(current_host);
-        current_host = tmp_host;
-    }
-    else
-    {
-        /* New entry for this host/CIDR */
-        current_host->ipAddr = ipAddr;
-        current_host->bits = bits;
-    }
-
-    free(ipMask);
-#endif
     return SFAT_OK;
 }
 
@@ -365,10 +307,12 @@ int SFAT_SetOSPolicy(char *policy_name, int attribute)
     switch (attribute)
     {
         case HOST_INFO_FRAG_POLICY:
-            SnortStrncpy(current_host->hostInfo.fragPolicyName, policy_name, STD_BUF);
+            SnortStrncpy(current_host->hostInfo.fragPolicyName, policy_name,
+                sizeof(current_host->hostInfo.fragPolicyName));
             break;
         case HOST_INFO_STREAM_POLICY:
-            SnortStrncpy(current_host->hostInfo.streamPolicyName, policy_name, STD_BUF);
+            SnortStrncpy(current_host->hostInfo.streamPolicyName, policy_name,
+                sizeof(current_host->hostInfo.streamPolicyName));
             break;
     }
     return SFAT_OK;
@@ -377,19 +321,7 @@ int SFAT_SetOSPolicy(char *policy_name, int attribute)
 int SFAT_SetOSAttribute(AttributeData *data, int attribute)
 {
     SFAT_CHECKHOST;
-
-    switch (attribute)
-    {
-        case HOST_INFO_OS:
-            memcpy(&current_host->hostInfo.operatingSystem, data, sizeof(AttributeData));
-            break;
-        case HOST_INFO_VENDOR:
-            memcpy(&current_host->hostInfo.vendor, data, sizeof(AttributeData));
-            break;
-        case HOST_INFO_VERSION:
-            memcpy(&current_host->hostInfo.version, data, sizeof(AttributeData));
-            break;
-    }
+    // currently not using os, vendor, or version
     return SFAT_OK;
 }
 
@@ -420,21 +352,12 @@ int SFAT_AddApplicationData(void)
                           APPLICATION_ENTRY_PROTO);
         if ((current_app->fields & required_fields) != required_fields)
         {
-#ifdef SUP_IP6
             sfip_t host_addr;
             sfip_set_ip(&host_addr, &current_host->ipAddr);
             host_addr.ip32[0] = ntohl(host_addr.ip32[0]);
-#else
-            struct in_addr host_addr;
-            host_addr.s_addr = ntohl(current_host->ipAddr);
-#endif
             FatalError("%s(%d): Missing required field in Service attribute table for host %s\n",
                 file_name, file_line,
-#ifdef SUP_IP6
                 inet_ntoa(&host_addr)
-#else
-                inet_ntoa(host_addr)
-#endif
                 );
         }
 
@@ -446,21 +369,12 @@ int SFAT_AddApplicationData(void)
         /* Currently, client data only includes PROTO, not IPPROTO */
         if ((current_app->fields & required_fields) != required_fields)
         {
-#ifdef SUP_IP6
             sfip_t host_addr;
             sfip_set_ip(&host_addr, &current_host->ipAddr);
             host_addr.ip32[0] = ntohl(host_addr.ip32[0]);
-#else
-            struct in_addr host_addr;
-            host_addr.s_addr = ntohl(current_host->ipAddr);
-#endif
             FatalError("%s(%d): Missing required field in Client attribute table for host %s\n",
                 file_name, file_line,
-#ifdef SUP_IP6
                 inet_ntoa(&host_addr)
-#else
-                inet_ntoa(host_addr)
-#endif
                 );
         }
 
@@ -482,34 +396,34 @@ int SFAT_SetApplicationAttribute(AttributeData *data, int attribute)
                 char *endPtr = NULL;
                 unsigned long value = SnortStrtoul(data->value.s_value, &endPtr, 10);
                 if ((endPtr == &data->value.s_value[0]) ||
-                    (errno == ERANGE))
+                    (errno == ERANGE) || value > UINT16_MAX)
                 {
-                    current_app->port.value.l_value = 0;
+                    current_app->port = 0;
                     return SFAT_ERROR;
                 }
-                current_app->port.value.l_value = value;
+
+                current_app->port = (uint16_t)value;
             }
             else
             {
-                current_app->port.value.l_value = data->value.l_value;
+                if (data->value.l_value > UINT16_MAX)
+                {
+                    current_app->port = 0;
+                    return SFAT_ERROR;
+                }
+
+                current_app->port = (uint16_t)data->value.l_value;
             }
             break;
         case APPLICATION_ENTRY_IPPROTO:
-            memcpy(&current_app->ipproto, data, sizeof(AttributeData));
             /* Add IP Protocol to the reference list */
-            current_app->ipproto.attributeOrdinal = AddProtocolReference(data->value.s_value);
+            current_app->ipproto = AddProtocolReference(data->value.s_value);
             break;
         case APPLICATION_ENTRY_PROTO:
-            memcpy(&current_app->protocol, data, sizeof(AttributeData));
             /* Add Application Protocol to the reference list */
-            current_app->protocol.attributeOrdinal = AddProtocolReference(data->value.s_value);
+            current_app->protocol = AddProtocolReference(data->value.s_value);
             break;
-        case APPLICATION_ENTRY_APPLICATION:
-            memcpy(&current_app->application, data, sizeof(AttributeData));
-            break;
-        case APPLICATION_ENTRY_VERSION:
-            memcpy(&current_app->version, data, sizeof(AttributeData));
-            break;
+        // currently not using application or version
         default:
             attribute = 0;
     }
@@ -518,70 +432,32 @@ int SFAT_SetApplicationAttribute(AttributeData *data, int attribute)
     return SFAT_OK;
 }
 
-#ifdef DEBUG
+#ifdef DEBUG_MSGS
 void PrintHostAttributeEntry(HostAttributeEntry *host)
 {
     ApplicationEntry *app;
     int i = 0;
-#ifndef SUP_IP6
-    struct in_addr host_addr;
-#else
     sfip_t host_addr;
-#endif
 
     if (!host)
         return;
 
-#ifndef SUP_IP6
-    host_addr.s_addr = ntohl(host->ipAddr);
-#else
     sfip_set_ip(&host_addr, &host->ipAddr);
     host_addr.ip32[0] = ntohl(host_addr.ip32[0]);
-#endif
 
     DebugMessage(DEBUG_ATTRIBUTE, "Host IP: %s/%d\n",
-#ifdef SUP_IP6
             inet_ntoa(&host_addr),
             host->ipAddr.bits
-#else
-            inet_ntoa(host_addr),
-            host->bits
-#endif
             );
-    DebugMessage(DEBUG_ATTRIBUTE, "\tOS Information: %s(%d) %s(%d) %s(%d)\n",
-            host->hostInfo.operatingSystem.value.s_value,
-            host->hostInfo.operatingSystem.confidence,
-            host->hostInfo.vendor.value.s_value,
-            host->hostInfo.vendor.confidence,
-            host->hostInfo.version.value.s_value,
-            host->hostInfo.version.confidence);
-    DebugMessage(DEBUG_ATTRIBUTE, "\tPolicy Information: frag:%s stream: %s\n",
-            host->hostInfo.fragPolicyName,
-            host->hostInfo.streamPolicyName);
+    DebugMessage(DEBUG_ATTRIBUTE, "\tPolicy Information: frag:%s (%s %u) stream: %s (%s %u)\n",
+            host->hostInfo.fragPolicyName, host->hostInfo.fragPolicySet ? "set":"unset", host->hostInfo.fragPolicy,
+            host->hostInfo.fragPolicyName, host->hostInfo.streamPolicySet ? "set":"unset", host->hostInfo.streamPolicy);
     DebugMessage(DEBUG_ATTRIBUTE, "\tServices:\n");
     for (i=0, app = host->services; app; app = app->next,i++)
     {
         DebugMessage(DEBUG_ATTRIBUTE, "\tService #%d:\n", i);
-        DebugMessage(DEBUG_ATTRIBUTE, "\t\tIPProtocol: %s(%d)\tPort: %s(%d)"
-                "\tProtocol %s(%d)\n",
-                app->ipproto.value.s_value,
-                app->ipproto.confidence,
-                app->port.value.s_value,
-                app->port.confidence,
-                app->protocol.value.s_value,
-                app->protocol.confidence);
-
-        if (app->fields & APPLICATION_ENTRY_APPLICATION)
-        {
-            DebugMessage(DEBUG_ATTRIBUTE, "\t\tApplication: %s(%d)\n",
-                app->application.value.s_value,
-                app->application.confidence);
-
-            if (app->fields & APPLICATION_ENTRY_VERSION)
-                DebugMessage(DEBUG_ATTRIBUTE, "\t\tVersion: %s(%d)\n",
-                    app->version.value.s_value,
-                    app->version.confidence);
-        }
+        DebugMessage(DEBUG_ATTRIBUTE, "\t\tIPProtocol: %s\tPort: %s\tProtocol %s\n",
+                app->ipproto, app->port, app->protocol);
     }
     if (i==0)
         DebugMessage(DEBUG_ATTRIBUTE, "\t\tNone\n");
@@ -590,29 +466,12 @@ void PrintHostAttributeEntry(HostAttributeEntry *host)
     for (i=0, app = host->clients; app; app = app->next,i++)
     {
         DebugMessage(DEBUG_ATTRIBUTE, "\tClient #%d:\n", i);
-        DebugMessage(DEBUG_ATTRIBUTE, "\t\tIPProtocol: %s(%d)\tProtocol %s(%d)\n",
-                app->ipproto.value.s_value,
-                app->ipproto.confidence,
-                app->protocol.value.s_value,
-                app->protocol.confidence);
+        DebugMessage(DEBUG_ATTRIBUTE, "\t\tIPProtocol: %s\tProtocol %s\n",
+                app->ipproto, app->protocol);
 
         if (app->fields & APPLICATION_ENTRY_PORT)
         {
-            DebugMessage(DEBUG_ATTRIBUTE, "\t\tPort: %s(%d)\n",
-                app->port.value.s_value,
-                app->port.confidence);
-        }
-
-        if (app->fields & APPLICATION_ENTRY_APPLICATION)
-        {
-            DebugMessage(DEBUG_ATTRIBUTE, "\t\tApplication: %s(%d)\n",
-                app->application.value.s_value,
-                app->application.confidence);
-
-            if (app->fields & APPLICATION_ENTRY_VERSION)
-                DebugMessage(DEBUG_ATTRIBUTE, "\t\tVersion: %s(%d)\n",
-                    app->version.value.s_value,
-                    app->version.confidence);
+            DebugMessage(DEBUG_ATTRIBUTE, "\t\tPort: %s\n", app->port);
         }
     }
     if (i==0)
@@ -626,28 +485,17 @@ int SFAT_AddHostEntryToMap(void)
 {
     HostAttributeEntry *host = current_host;
     int ret;
-#ifdef SUP_IP6
     sfip_t *ipAddr;
-#else
-    uint32_t ipAddr;
-#endif
     tTargetBasedPolicyConfig *pConfig = &targetBasedPolicyConfig;
 
     SFAT_CHECKHOST;
 
     DEBUG_WRAP(PrintHostAttributeEntry(host););
 
-#ifdef SUP_IP6
     ipAddr = &host->ipAddr;
 
     ret = sfrt_insert(ipAddr, (unsigned char)ipAddr->bits, host,
                         RT_FAVOR_SPECIFIC, pConfig->next.lookupTable);
-#else
-    ipAddr = host->ipAddr;
-
-    ret = sfrt_insert(&ipAddr, host->bits, host,
-                        RT_FAVOR_SPECIFIC, pConfig->next.lookupTable);
-#endif
 
     if (ret != RT_SUCCESS)
     {
@@ -682,18 +530,12 @@ int SFAT_AddHostEntryToMap(void)
     return ret == RT_SUCCESS ? SFAT_OK : SFAT_ERROR;
 }
 
-#ifdef SUP_IP6
 HostAttributeEntry *SFAT_LookupHostEntryByIP(sfip_t *ipAddr)
-#else
-HostAttributeEntry *SFAT_LookupHostEntryByIp4Addr(uint32_t ipAddr)
-#endif
 {
     tTargetBasedPolicyConfig *pConfig = NULL;
-    tSfPolicyId policyId = getRuntimePolicy();
+    tSfPolicyId policyId = getNapRuntimePolicy();
     HostAttributeEntry *host = NULL;
-#ifdef SUP_IP6
     sfip_t local_ipAddr;
-#endif
 
     TargetBasedConfig *tbc = &snort_conf->targeted_policies[policyId]->target_based_config;
 
@@ -705,7 +547,6 @@ HostAttributeEntry *SFAT_LookupHostEntryByIp4Addr(uint32_t ipAddr)
 
     pConfig = &targetBasedPolicyConfig;
 
-#ifdef SUP_IP6
     sfip_set_ip(&local_ipAddr, ipAddr);
     if (local_ipAddr.family == AF_INET)
     {
@@ -713,9 +554,6 @@ HostAttributeEntry *SFAT_LookupHostEntryByIp4Addr(uint32_t ipAddr)
     }
 
     host = sfrt_lookup(&local_ipAddr, pConfig->curr.lookupTable);
-#else
-    host = sfrt_lookup(&ipAddr, pConfig->curr.lookupTable);
-#endif
 
     if (host)
     {
@@ -728,40 +566,18 @@ HostAttributeEntry *SFAT_LookupHostEntryByIp4Addr(uint32_t ipAddr)
 
 HostAttributeEntry *SFAT_LookupHostEntryBySrc(Packet *p)
 {
-#ifdef SUP_IP6
     if (!p || !p->iph_api)
         return NULL;
 
     return SFAT_LookupHostEntryByIP(GET_SRC_IP(p));
-#else
-    uint32_t ipAddr;
-
-    if (!p || !p->iph)
-        return NULL;
-
-    ipAddr = ntohl(p->iph->ip_src.s_addr);
-
-    return SFAT_LookupHostEntryByIp4Addr(ipAddr);
-#endif
 }
 
 HostAttributeEntry *SFAT_LookupHostEntryByDst(Packet *p)
 {
-#ifdef SUP_IP6
     if (!p || !p->iph_api)
         return NULL;
 
     return SFAT_LookupHostEntryByIP(GET_DST_IP(p));
-#else
-    uint32_t ipAddr;
-
-    if (!p || !p->iph)
-        return NULL;
-
-    ipAddr = ntohl(p->iph->ip_dst.s_addr);
-
-    return SFAT_LookupHostEntryByIp4Addr(ipAddr);
-#endif
 }
 
 static GetPolicyIdFunc updatePolicyCallback;
@@ -927,7 +743,7 @@ void *SFAT_ReloadAttributeTableThread(void *arg)
     pConfig = &targetBasedPolicyConfig;
 
     sigemptyset(&mtmask);
-    attribute_reload_thread_pid = getpid();
+    attribute_reload_thread_pid = gettid();
 
     /* Get the current set of signals inherited from main thread.*/
     pthread_sigmask(SIG_UNBLOCK, &mtmask, &oldmask);
@@ -952,7 +768,7 @@ void *SFAT_ReloadAttributeTableThread(void *arg)
      */
     while (!attribute_reload_thread_stop)
     {
-#ifdef DEBUG
+#ifdef DEBUG_MSGS
         DebugMessage(DEBUG_ATTRIBUTE,
             "AttrReloadThread: Checking for new attr table...\n");
 #endif
@@ -963,7 +779,7 @@ void *SFAT_ReloadAttributeTableThread(void *arg)
         {
             if (check_attribute_table_flag(ATTRIBUTE_TABLE_AVAILABLE_FLAG))
             {
-#ifdef DEBUG
+#ifdef DEBUG_MSGS
                 DebugMessage(DEBUG_ATTRIBUTE,
                     "AttrReloadThread: Freeing old attr table...\n");
 #endif
@@ -971,7 +787,7 @@ void *SFAT_ReloadAttributeTableThread(void *arg)
                  * prev.mapTable and prev.lookupTable */
                 sfxhash_delete(pConfig->prev.mapTable);
                 pConfig->prev.mapTable = NULL;
-    
+
                 sfrt_cleanup(pConfig->prev.lookupTable, SFAT_CleanupCallback);
                 sfrt_free(pConfig->prev.lookupTable);
                 pConfig->prev.lookupTable = NULL;
@@ -987,7 +803,7 @@ void *SFAT_ReloadAttributeTableThread(void *arg)
         {
             /* Is there an new table ready? */
             set_attribute_table_flag(ATTRIBUTE_TABLE_RELOADING_FLAG);
-#ifdef DEBUG
+#ifdef DEBUG_MSGS
             DebugMessage(DEBUG_ATTRIBUTE,
                 "AttrReloadThread: loading new attr table.\n");
 #endif
@@ -997,16 +813,11 @@ void *SFAT_ReloadAttributeTableThread(void *arg)
                 /* Initialize a new lookup table */
                 if (!pConfig->next.lookupTable)
                 {
-                    /* Add 1 to max for table purposes */
-#ifdef SUP_IP6
+                    /* Add 1 to max for table purposes
+                     * We use max_hosts to limit memcap, assume 16k per entry costs*/
                     pConfig->next.lookupTable =
-                        sfrt_new(DIR_16x7_4x4, IPv6, ScMaxAttrHosts() + 1,
-                                 sizeof(HostAttributeEntry) * 200);
-#else
-                    pConfig->next.lookupTable =
-                        sfrt_new(DIR_16_4x4, IPv4, ScMaxAttrHosts() + 1,
-                                 sizeof(HostAttributeEntry) * 200);
-#endif
+                        sfrt_new(DIR_8x16, IPv6, ScMaxAttrHosts() + 1,
+                                ((ScMaxAttrHosts())>>6) + 1);
                     if (!pConfig->next.lookupTable)
                     {
                         SnortSnprintf(sfat_error_message, STD_BUF,
@@ -1062,14 +873,14 @@ void *SFAT_ReloadAttributeTableThread(void *arg)
         else
         {
             /* Sleep for 60 seconds */
-#ifdef DEBUG
+#ifdef DEBUG_MSGS
             DebugMessage(DEBUG_ATTRIBUTE,
                 "AttrReloadThread: Checked for new attr table... sleeping.\n");
 #endif
             sleep(60);
         }
     }
-#ifdef DEBUG
+#ifdef DEBUG_MSGS
     DebugMessage(DEBUG_ATTRIBUTE,
         "AttrReloadThread: exiting... Handled %d reloads\n", reloads);
 #endif
@@ -1092,7 +903,7 @@ void AttributeTableReloadCheck(void)
                  * flag... */
     }
     /* Swap the attribute table pointers. */
-    else if ((pConfig != NULL) && 
+    else if ((pConfig != NULL) &&
             check_attribute_table_flag(ATTRIBUTE_TABLE_AVAILABLE_FLAG))
     {
         LogMessage("Swapping Attribute Tables.\n");
@@ -1121,6 +932,7 @@ void AttributeTableReloadCheck(void)
     }
 }
 
+/**called once during initialization. Reads attribute table for the first time.*/
 int SFAT_ParseAttributeTable(char *args)
 {
     char **toks;
@@ -1134,16 +946,11 @@ int SFAT_ParseAttributeTable(char *args)
     /* Initialize lookup table */
     if (!pConfig->next.lookupTable)
     {
-        /* Add 1 to max for table purposes */
-#ifdef SUP_IP6
+        /* Add 1 to max for table purposes
+         * We use max_hosts to limit memcap, assume 16k per entry costs*/
         pConfig->next.lookupTable =
-            sfrt_new(DIR_16x7_4x4, IPv6, ScMaxAttrHosts() + 1,
-                     sizeof(HostAttributeEntry) * 200);
-#else
-        pConfig->next.lookupTable =
-            sfrt_new(DIR_16_4x4, IPv4, ScMaxAttrHosts() + 1,
-                     sizeof(HostAttributeEntry) * 200);
-#endif
+            sfrt_new(DIR_8x16, IPv6, ScMaxAttrHosts() + 1,
+                    ((ScMaxAttrHosts())>>6)+ 1);
         if (!pConfig->next.lookupTable)
         {
             FatalError("Failed to initialize attribute table memory\n");
@@ -1202,8 +1009,9 @@ int SFAT_ParseAttributeTable(char *args)
     if (!ScDisableAttrReload())
     {
         /* Register signal handler for attribute table. */
-        signal(SIGNAL_SNORT_READ_ATTR_TBL, SigAttributeTableReloadHandler);
-        if(errno!=0) errno=0;
+        SnortAddSignal(SIGNAL_SNORT_READ_ATTR_TBL,SigAttributeTableReloadHandler,0);
+        if(errno != 0)
+            errno = 0;
     }
 #endif
 
@@ -1213,7 +1021,7 @@ int SFAT_ParseAttributeTable(char *args)
 void SFAT_StartReloadThread(void)
 {
 #ifndef WIN32
-    if (!IsAdaptiveConfigured(getDefaultPolicy(), 0) || ScDisableAttrReload())
+    if (!IsAdaptiveConfigured() || ScDisableAttrReload())
         return;
 
     LogMessage("Attribute Table Reload Thread Starting...\n");
@@ -1232,19 +1040,35 @@ void SFAT_StartReloadThread(void)
 #endif
 }
 
-int IsAdaptiveConfigured(tSfPolicyId id, int parsing)
+int IsAdaptiveConfigured( void )
 {
     SnortConfig *sc = snort_conf;
+    tSfPolicyId id = getDefaultPolicy( ); 
 
-    if (parsing)
+    if (id >= sc->num_policies_allocated)
     {
-        if (snort_conf_for_parsing == NULL)
-        {
-            FatalError("%s(%d) Snort conf for parsing is NULL.\n",
-                       __FILE__, __LINE__);
-        }
+        ErrorMessage("%s(%d) Policy id is greater than the number of policies "
+                     "allocated.\n", __FILE__, __LINE__);
+        return 0;
+    }
 
-        sc = snort_conf_for_parsing;
+    if ((sc->targeted_policies[id] == NULL) ||
+        (sc->targeted_policies[id]->target_based_config.args == NULL))
+    {
+        return 0;
+    }
+
+    return 1;
+}
+
+int IsAdaptiveConfiguredForSnortConfig(struct _SnortConfig *sc)
+{
+    tSfPolicyId id = getDefaultPolicy( ); 
+
+    if (sc == NULL)
+    {
+        FatalError("%s(%d) Snort conf for parsing is NULL.\n",
+                   __FILE__, __LINE__);
     }
 
     if (id >= sc->num_policies_allocated)
@@ -1263,4 +1087,73 @@ int IsAdaptiveConfigured(tSfPolicyId id, int parsing)
     return 1;
 }
 
+void SFAT_UpdateApplicationProtocol(sfip_t *ipAddr, uint16_t port, uint16_t protocol, uint16_t id)
+{
+    HostAttributeEntry *host_entry;
+    ApplicationEntry *service;
+    tTargetBasedPolicyConfig *pConfig = &targetBasedPolicyConfig;
+    sfip_t local_ipAddr;
+    unsigned service_count = 0;
+    int rval;
+
+    pConfig = &targetBasedPolicyConfig;
+
+    sfip_set_ip(&local_ipAddr, ipAddr);
+    if (local_ipAddr.family == AF_INET)
+        local_ipAddr.ip32[0] = ntohl(local_ipAddr.ip32[0]);
+
+    host_entry = sfrt_lookup(&local_ipAddr, pConfig->curr.lookupTable);
+
+    if (!host_entry)
+    {
+        GetPolicyIdsCallbackList *list_entry;
+
+        if (sfrt_num_entries(pConfig->curr.lookupTable) >= ScMaxAttrHosts())
+            return;
+
+        host_entry = SnortAlloc(sizeof(*host_entry));
+        sfip_set_ip(&host_entry->ipAddr, &local_ipAddr);
+        if ((rval = sfrt_insert(&local_ipAddr, (unsigned char)local_ipAddr.bits, host_entry,
+                                RT_FAVOR_SPECIFIC, pConfig->curr.lookupTable)) != RT_SUCCESS)
+        {
+            FreeHostEntry(host_entry);
+            return;
+        }
+        for (list_entry = updatePolicyCallbackList; list_entry; list_entry = list_entry->next)
+        {
+            if (list_entry->policyCallback)
+                list_entry->policyCallback(host_entry);
+        }
+        service = NULL;
+    }
+    else
+    {
+        for (service = host_entry->services; service; service = service->next)
+        {
+            if (service->ipproto == protocol && (uint16_t)service->port == port)
+            {
+                break;
+            }
+            service_count++;
+        }
+    }
+    if (!service)
+    {
+        if ( service_count >= ScMaxAttrServicesPerHost() )
+            return;
+
+        service = SnortAlloc(sizeof(*service));
+        service->port = port;
+        service->ipproto = protocol;
+        service->next = host_entry->services;
+        host_entry->services = service;
+        service->protocol = id;
+    }
+    else if (service->protocol != id)
+    {
+        service->protocol = id;
+    }
+}
+
 #endif /* TARGET_BASED */
+

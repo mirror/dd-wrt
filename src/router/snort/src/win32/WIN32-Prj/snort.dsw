@@ -23,6 +23,9 @@ Package=<4>
     Begin Project Dependency
     Project_Dep_Name snort
     End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name u2spewfoo
+    End Project Dependency
 }}}
 
 ###############################################################################
@@ -68,11 +71,50 @@ Package=<4>
     Begin Project Dependency
     Project_Dep_Name sf_sdf
     End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name sf_sip
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name sf_dynamic_initialize
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name sf_imap
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name sf_pop
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name sf_dnp3
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name sf_modbus
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name sf_reputation
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name sf_gtp
+    End Project Dependency
 }}}
 
 ###############################################################################
 
 Project: "sf_dce2"="..\..\dynamic-preprocessors\dcerpc2\sf_dce2.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name sf_dynamic_initialize
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "sf_dnp3"="..\..\dynamic-preprocessors\dnp3\sf_dnp3.dsp" - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -156,7 +198,94 @@ Package=<4>
 
 ###############################################################################
 
+Project: "sf_gtp"="..\..\dynamic-preprocessors\gtp\sf_gtp.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "sf_imap"="..\..\dynamic-preprocessors\imap\sf_imap.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name sf_dynamic_initialize
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "sf_modbus"="..\..\dynamic-preprocessors\modbus\sf_modbus.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name sf_dynamic_initialize
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "sf_pop"="..\..\dynamic-preprocessors\pop\sf_pop.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name sf_dynamic_initialize
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "sf_reputation"="..\..\dynamic-preprocessors\reputation\sf_reputation.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name sf_dynamic_initialize
+    End Project Dependency
+}}}
+
+###############################################################################
+
 Project: "sf_sdf"="..\..\dynamic-preprocessors\sdf\sf_sdf.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name sf_dynamic_initialize
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "sf_sip"="..\..\dynamic-preprocessors\sip\sf_sip.dsp" - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -215,9 +344,6 @@ Package=<4>
     Begin Project Dependency
     Project_Dep_Name sf_dynamic_initialize
     End Project Dependency
-    Begin Project Dependency
-    Project_Dep_Name sfdynamic_preproc_libs
-    End Project Dependency
 }}}
 
 ###############################################################################
@@ -253,6 +379,18 @@ Package=<4>
 ###############################################################################
 
 Project: "snort_initialize"=".\snort_initialize.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "u2spewfoo"="..\..\..\tools\u2spewfoo\u2spewfoo.dsp" - Package Owner=<4>
 
 Package=<5>
 {{{

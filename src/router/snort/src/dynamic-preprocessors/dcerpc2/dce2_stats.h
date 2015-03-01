@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (C) 2008-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2008-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -14,7 +15,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************
  * 
@@ -24,6 +25,7 @@
 #define _DCE2_STATS_H_
 
 #include "dce2_utils.h"
+#include "smb.h"
 #include "sf_types.h"
 
 /********************************************************************
@@ -32,9 +34,8 @@
 typedef struct _DCE2_Stats
 {
     uint64_t sessions;
-    uint64_t missed_bytes;
-    uint64_t overlapped_bytes;
     uint64_t sessions_autodetected;
+    uint64_t sessions_aborted;
     uint64_t bad_autodetects;
     uint64_t events;
 
@@ -45,224 +46,19 @@ typedef struct _DCE2_Stats
     uint64_t smb_sessions;
     uint64_t smb_pkts;
     uint64_t smb_ignored_bytes;
-    uint64_t smb_non_ipc_packets;
-    uint64_t smb_nbss_not_message;
-    uint64_t smb_seg_reassembled;
+    uint64_t smb_cli_seg_reassembled;
+    uint64_t smb_srv_seg_reassembled;
+    uint64_t smb_max_outstanding_requests;
 
-    uint64_t smb_ssx_chained;
-    uint64_t smb_ssx_req;
-    uint64_t smb_ssx_req_chained_loffx;
-    uint64_t smb_ssx_req_chained_tc;
-    uint64_t smb_ssx_req_chained_tcx;
-    uint64_t smb_ssx_req_chained_tdis;
-    uint64_t smb_ssx_req_chained_open;
-    uint64_t smb_ssx_req_chained_openx;
-    uint64_t smb_ssx_req_chained_ntcx;
-    uint64_t smb_ssx_req_chained_close;
-    uint64_t smb_ssx_req_chained_trans;
-    uint64_t smb_ssx_req_chained_write;
-    uint64_t smb_ssx_req_chained_readx;
-    uint64_t smb_ssx_req_chained_other;
-    uint64_t smb_ssx_resp;
-    uint64_t smb_ssx_resp_chained_loffx;
-    uint64_t smb_ssx_resp_chained_tc;
-    uint64_t smb_ssx_resp_chained_tcx;
-    uint64_t smb_ssx_resp_chained_tdis;
-    uint64_t smb_ssx_resp_chained_open;
-    uint64_t smb_ssx_resp_chained_openx;
-    uint64_t smb_ssx_resp_chained_ntcx;
-    uint64_t smb_ssx_resp_chained_close;
-    uint64_t smb_ssx_resp_chained_trans;
-    uint64_t smb_ssx_resp_chained_write;
-    uint64_t smb_ssx_resp_chained_readx;
-    uint64_t smb_ssx_resp_chained_other;
+    uint64_t smb_com_stats[2][SMB_MAX_NUM_COMS];
+    uint64_t smb_chained_stats[2][SMB_ANDX_COM__MAX][SMB_MAX_NUM_COMS];
+    // The +1 is for codes beyond the range of the highest valid subcommand code
+    // Indicates a bogus subcommand 
+    uint64_t smb_trans_subcom_stats[2][TRANS_SUBCOM_MAX+1];
+    uint64_t smb_trans2_subcom_stats[2][TRANS2_SUBCOM_MAX+1];
+    uint64_t smb_nt_transact_subcom_stats[2][NT_TRANSACT_SUBCOM_MAX+1];
 
-    uint64_t smb_loffx_chained;
-    uint64_t smb_loffx_req;
-    uint64_t smb_loffx_req_chained_ssx;
-    uint64_t smb_loffx_req_chained_tcx;
-    uint64_t smb_loffx_req_chained_tdis;
-    uint64_t smb_loffx_req_chained_other;
-    uint64_t smb_loffx_resp;
-    uint64_t smb_loffx_resp_chained_ssx;
-    uint64_t smb_loffx_resp_chained_tcx;
-    uint64_t smb_loffx_resp_chained_tdis;
-    uint64_t smb_loffx_resp_chained_other;
-
-    uint64_t smb_tc_req;
-    uint64_t smb_tc_resp;
-
-    uint64_t smb_tcx_chained;
-    uint64_t smb_tcx_req;
-    uint64_t smb_tcx_req_chained_ssx;
-    uint64_t smb_tcx_req_chained_loffx;
-    uint64_t smb_tcx_req_chained_tdis;
-    uint64_t smb_tcx_req_chained_open;
-    uint64_t smb_tcx_req_chained_openx;
-    uint64_t smb_tcx_req_chained_ntcx;
-    uint64_t smb_tcx_req_chained_close;
-    uint64_t smb_tcx_req_chained_trans;
-    uint64_t smb_tcx_req_chained_write;
-    uint64_t smb_tcx_req_chained_readx;
-    uint64_t smb_tcx_req_chained_other;
-    uint64_t smb_tcx_resp;
-    uint64_t smb_tcx_resp_chained_ssx;
-    uint64_t smb_tcx_resp_chained_loffx;
-    uint64_t smb_tcx_resp_chained_tdis;
-    uint64_t smb_tcx_resp_chained_open;
-    uint64_t smb_tcx_resp_chained_openx;
-    uint64_t smb_tcx_resp_chained_ntcx;
-    uint64_t smb_tcx_resp_chained_close;
-    uint64_t smb_tcx_resp_chained_trans;
-    uint64_t smb_tcx_resp_chained_write;
-    uint64_t smb_tcx_resp_chained_readx;
-    uint64_t smb_tcx_resp_chained_other;
-
-    uint64_t smb_tdis_req;
-    uint64_t smb_tdis_resp;
-
-    uint64_t smb_open_req;
-    uint64_t smb_open_resp;
-
-    uint64_t smb_openx_chained;
-    uint64_t smb_openx_req;
-    uint64_t smb_openx_req_chained_ssx;
-    uint64_t smb_openx_req_chained_loffx;
-    uint64_t smb_openx_req_chained_tc;
-    uint64_t smb_openx_req_chained_tcx;
-    uint64_t smb_openx_req_chained_tdis;
-    uint64_t smb_openx_req_chained_open;
-    uint64_t smb_openx_req_chained_openx;
-    uint64_t smb_openx_req_chained_ntcx;
-    uint64_t smb_openx_req_chained_close;
-    uint64_t smb_openx_req_chained_write;
-    uint64_t smb_openx_req_chained_readx;
-    uint64_t smb_openx_req_chained_other;
-    uint64_t smb_openx_resp;
-    uint64_t smb_openx_resp_chained_ssx;
-    uint64_t smb_openx_resp_chained_loffx;
-    uint64_t smb_openx_resp_chained_tc;
-    uint64_t smb_openx_resp_chained_tcx;
-    uint64_t smb_openx_resp_chained_tdis;
-    uint64_t smb_openx_resp_chained_open;
-    uint64_t smb_openx_resp_chained_openx;
-    uint64_t smb_openx_resp_chained_ntcx;
-    uint64_t smb_openx_resp_chained_close;
-    uint64_t smb_openx_resp_chained_write;
-    uint64_t smb_openx_resp_chained_readx;
-    uint64_t smb_openx_resp_chained_other;
-
-    uint64_t smb_ntcx_chained;
-    uint64_t smb_ntcx_req;
-    uint64_t smb_ntcx_req_chained_ssx;
-    uint64_t smb_ntcx_req_chained_loffx;
-    uint64_t smb_ntcx_req_chained_tc;
-    uint64_t smb_ntcx_req_chained_tcx;
-    uint64_t smb_ntcx_req_chained_tdis;
-    uint64_t smb_ntcx_req_chained_open;
-    uint64_t smb_ntcx_req_chained_openx;
-    uint64_t smb_ntcx_req_chained_ntcx;
-    uint64_t smb_ntcx_req_chained_close;
-    uint64_t smb_ntcx_req_chained_write;
-    uint64_t smb_ntcx_req_chained_readx;
-    uint64_t smb_ntcx_req_chained_other;
-    uint64_t smb_ntcx_resp;
-    uint64_t smb_ntcx_resp_chained_ssx;
-    uint64_t smb_ntcx_resp_chained_loffx;
-    uint64_t smb_ntcx_resp_chained_tc;
-    uint64_t smb_ntcx_resp_chained_tcx;
-    uint64_t smb_ntcx_resp_chained_tdis;
-    uint64_t smb_ntcx_resp_chained_open;
-    uint64_t smb_ntcx_resp_chained_openx;
-    uint64_t smb_ntcx_resp_chained_ntcx;
-    uint64_t smb_ntcx_resp_chained_close;
-    uint64_t smb_ntcx_resp_chained_write;
-    uint64_t smb_ntcx_resp_chained_readx;
-    uint64_t smb_ntcx_resp_chained_other;
-
-    uint64_t smb_close_req;
-    uint64_t smb_close_resp;
-
-    uint64_t smb_write_req;
-    uint64_t smb_write_resp;
-
-    uint64_t smb_writebr_req;
-    uint64_t smb_writebr_resp;
-
-    uint64_t smb_writex_chained;
-    uint64_t smb_writex_req;
-    uint64_t smb_writex_req_chained_ssx;
-    uint64_t smb_writex_req_chained_loffx;
-    uint64_t smb_writex_req_chained_tc;
-    uint64_t smb_writex_req_chained_tcx;
-    uint64_t smb_writex_req_chained_openx;
-    uint64_t smb_writex_req_chained_ntcx;
-    uint64_t smb_writex_req_chained_close;
-    uint64_t smb_writex_req_chained_write;
-    uint64_t smb_writex_req_chained_writex;
-    uint64_t smb_writex_req_chained_read;
-    uint64_t smb_writex_req_chained_readx;
-    uint64_t smb_writex_req_chained_other;
-    uint64_t smb_writex_resp;
-    uint64_t smb_writex_resp_chained_ssx;
-    uint64_t smb_writex_resp_chained_loffx;
-    uint64_t smb_writex_resp_chained_tc;
-    uint64_t smb_writex_resp_chained_tcx;
-    uint64_t smb_writex_resp_chained_openx;
-    uint64_t smb_writex_resp_chained_ntcx;
-    uint64_t smb_writex_resp_chained_close;
-    uint64_t smb_writex_resp_chained_write;
-    uint64_t smb_writex_resp_chained_writex;
-    uint64_t smb_writex_resp_chained_read;
-    uint64_t smb_writex_resp_chained_readx;
-    uint64_t smb_writex_resp_chained_other;
-
-    uint64_t smb_writeclose_req;
-    uint64_t smb_writeclose_resp;
-
-    uint64_t smb_writecomplete_resp;
-
-    uint64_t smb_trans_req;
-    uint64_t smb_trans_sec_req;
-    uint64_t smb_trans_resp;
-
-    uint64_t smb_read_req;
-    uint64_t smb_read_resp;
-
-    uint64_t smb_readbr_req;
-    uint64_t smb_readbr_resp;
-
-    uint64_t smb_readx_chained;
-    uint64_t smb_readx_req;
-    uint64_t smb_readx_req_chained_ssx;
-    uint64_t smb_readx_req_chained_loffx;
-    uint64_t smb_readx_req_chained_tc;
-    uint64_t smb_readx_req_chained_tcx;
-    uint64_t smb_readx_req_chained_tdis;
-    uint64_t smb_readx_req_chained_openx;
-    uint64_t smb_readx_req_chained_ntcx;
-    uint64_t smb_readx_req_chained_close;
-    uint64_t smb_readx_req_chained_write;
-    uint64_t smb_readx_req_chained_readx;
-    uint64_t smb_readx_req_chained_other;
-    uint64_t smb_readx_resp;
-    uint64_t smb_readx_resp_chained_ssx;
-    uint64_t smb_readx_resp_chained_loffx;
-    uint64_t smb_readx_resp_chained_tc;
-    uint64_t smb_readx_resp_chained_tcx;
-    uint64_t smb_readx_resp_chained_tdis;
-    uint64_t smb_readx_resp_chained_openx;
-    uint64_t smb_readx_resp_chained_ntcx;
-    uint64_t smb_readx_resp_chained_close;
-    uint64_t smb_readx_resp_chained_write;
-    uint64_t smb_readx_resp_chained_readx;
-    uint64_t smb_readx_resp_chained_other;
-
-    uint64_t smb_rename_req;
-    uint64_t smb_rename_resp;
-
-    uint64_t smb_other_req;
-    uint64_t smb_other_resp;
+    uint64_t smb_files_processed;
 
     uint64_t tcp_sessions;
     uint64_t tcp_pkts;
@@ -325,6 +121,12 @@ typedef struct _DCE2_Stats
     uint64_t cl_max_seqnum;
 
 } DCE2_Stats;
+
+/********************************************************************
+ * Extern variables
+ ********************************************************************/
+extern DCE2_Stats dce2_stats;
+extern char **dce2_trans_strs;
 
 /********************************************************************
  * Public function prototypes
