@@ -1,5 +1,6 @@
 /*
-** Copyright (C) 2002-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -15,7 +16,7 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 /* $Id$ */
@@ -36,7 +37,7 @@
 #include "decode.h"
 #include "plugbase.h"
 #include "parser.h"
-#include "debug.h"
+#include "snort_debug.h"
 #include "util.h"
 #include "plugin_enum.h"
 #include "sfhashfcn.h"
@@ -54,7 +55,7 @@ extern PreprocStats ruleOTNEvalPerfStats;
 /*
  * This is driven by 64-bit Solaris which doesn't
  * define _LONG
- * 
+ *
  */
 
 #ifndef IXDR_GET_LONG
@@ -74,8 +75,8 @@ typedef struct _RpcCheckData
 #define RPC_CHECK_VERS 2
 #define RPC_CHECK_PROC 4
 
-void RpcCheckInit(char *, OptTreeNode *, int);
-void ParseRpc(char *, OptTreeNode *);
+void RpcCheckInit(struct _SnortConfig *, char *, OptTreeNode *, int);
+void ParseRpc(struct _SnortConfig *, char *, OptTreeNode *);
 int CheckRpc(void *option_data, Packet *p);
 
 uint32_t RpcCheckHash(void *d)
@@ -118,7 +119,7 @@ int RpcCheckCompare(void *l, void *r)
 
 
 /****************************************************************************
- * 
+ *
  * Function: SetupRpcCheck()
  *
  * Purpose: Register the rpc option keyword with its setup function
@@ -142,8 +143,8 @@ void SetupRpcCheck(void)
 
 
 /****************************************************************************
- * 
- * Function: RpcCheckInit(char *, OptTreeNode *)
+ *
+ * Function: RpcCheckInit(struct _SnortConfig *, char *, OptTreeNode *)
  *
  * Purpose: Parse the rpc keyword arguments and link the detection module
  *          into the function list
@@ -154,7 +155,7 @@ void SetupRpcCheck(void)
  * Returns: void function
  *
  ****************************************************************************/
-void RpcCheckInit(char *data, OptTreeNode *otn, int protocol)
+void RpcCheckInit(struct _SnortConfig *sc, char *data, OptTreeNode *otn, int protocol)
 {
     OptFpList *fpl;
     if(protocol != IPPROTO_TCP && protocol != IPPROTO_UDP)
@@ -163,7 +164,7 @@ void RpcCheckInit(char *data, OptTreeNode *otn, int protocol)
                    file_name, file_line);
     }
 
-    /* multiple declaration check */ 
+    /* multiple declaration check */
     if(otn->ds_list[PLUGIN_RPC_CHECK])
     {
         FatalError("%s(%d): Multiple rpc options in rule\n", file_name,
@@ -175,11 +176,11 @@ void RpcCheckInit(char *data, OptTreeNode *otn, int protocol)
     otn->ds_list[PLUGIN_RPC_CHECK] = (RpcCheckData *)
             SnortAlloc(sizeof(RpcCheckData));
 
-    /* this is where the keyword arguments are processed and placed into the 
+    /* this is where the keyword arguments are processed and placed into the
        rule option's data structure */
-    ParseRpc(data, otn);
+    ParseRpc(sc, data, otn);
 
-    /* finally, attach the option's detection function to the rule's 
+    /* finally, attach the option's detection function to the rule's
        detect function pointer list */
     fpl = AddOptFuncToList(CheckRpc, otn);
     fpl->type = RULE_OPTION_TYPE_RPC_CHECK;
@@ -188,8 +189,8 @@ void RpcCheckInit(char *data, OptTreeNode *otn, int protocol)
 
 
 /****************************************************************************
- * 
- * Function: ParseRpc(char *, OptTreeNode *)
+ *
+ * Function: ParseRpc(struct _SnortConfig *, char *, OptTreeNode *)
  *
  * Purpose: Parse the RPC keyword's arguments
  *
@@ -199,7 +200,7 @@ void RpcCheckInit(char *data, OptTreeNode *otn, int protocol)
  * Returns: void function
  *
  ****************************************************************************/
-void ParseRpc(char *data, OptTreeNode *otn)
+void ParseRpc(struct _SnortConfig *sc, char *data, OptTreeNode *otn)
 {
     RpcCheckData *ds_ptr;  /* data struct pointer */
     void *ds_ptr_dup;
@@ -223,9 +224,9 @@ void ParseRpc(char *data, OptTreeNode *otn)
     {
         FatalError("%s(%d): Invalid applicaion number in rpc rule option\n",file_name,file_line);
     }
-    
+
     if(*tmp == '\0') return;
-    
+
     data=++tmp;
     if(*data != '*')
     {
@@ -246,7 +247,7 @@ void ParseRpc(char *data, OptTreeNode *otn)
         DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN,"Set RPC proc to %lu\n", ds_ptr->proc););
     }
 
-    if (add_detection_option(RULE_OPTION_TYPE_RPC_CHECK, (void *)ds_ptr, &ds_ptr_dup) == DETECTION_OPTION_EQUAL)
+    if (add_detection_option(sc, RULE_OPTION_TYPE_RPC_CHECK, (void *)ds_ptr, &ds_ptr_dup) == DETECTION_OPTION_EQUAL)
     {
         free(ds_ptr);
         ds_ptr = otn->ds_list[PLUGIN_RPC_CHECK] = ds_ptr_dup;
@@ -256,7 +257,7 @@ void ParseRpc(char *data, OptTreeNode *otn)
 
 
 /****************************************************************************
- * 
+ *
  * Function: CheckRpc(char *, OptTreeNode *)
  *
  * Purpose: Test if the packet RPC equals the rule option's rpc
@@ -271,10 +272,10 @@ int CheckRpc(void *option_data, Packet *p)
 {
     RpcCheckData *ds_ptr = (RpcCheckData *)option_data;
     unsigned char* c=(unsigned char*)p->data;
-    u_long xid, rpcvers, prog, vers, proc;
+    u_long rpcvers, prog, vers, proc;
     enum msg_type direction;
     int rval = DETECTION_OPTION_NO_MATCH;
-#ifdef DEBUG
+#ifdef DEBUG_MSGS
     int i;
 #endif
     PROFILE_VARS;
@@ -309,7 +310,7 @@ int CheckRpc(void *option_data, Packet *p)
         }
     }
 
-#ifdef DEBUG
+#ifdef DEBUG_MSGS
     DebugMessage(DEBUG_PLUGIN,"<---xid---> <---dir---> <---rpc--->"
                               " <---prog--> <---vers--> <---proc-->\n");
     for(i=0; i<24; i++)
@@ -320,7 +321,7 @@ int CheckRpc(void *option_data, Packet *p)
 #endif
 
     /* Read xid */
-    xid = IXDR_GET_LONG (c);
+    (void)IXDR_GET_LONG (c);
 
     /* Read direction : CALL or REPLY */
     direction = IXDR_GET_ENUM (c, enum msg_type);

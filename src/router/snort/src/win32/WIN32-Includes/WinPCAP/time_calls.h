@@ -24,7 +24,7 @@
 
 #ifdef WIN_NT_DRIVER
 
-#include "debug.h"
+#include "snort_debug.h"
 #include "ndis.h"
 
 #define	DEFAULT_TIMESTAMPMODE	0
@@ -43,7 +43,7 @@ extern ULONG TimestampMode;
 /*!
   \brief A microsecond precise timestamp.
 
-  included in the sf_pkthdr or the bpf_hdr that NPF associates with every packet. 
+  included in the sf_pkthdr or the bpf_hdr that NPF associates with every packet.
 */
 
 struct timeval {
@@ -77,17 +77,17 @@ __inline void ReadTimeStampModeFromRegistry(PUNICODE_STRING RegistryPath)
 	ULONG DefaultTimestampMode = DEFAULT_TIMESTAMPMODE;
 
 	NewLength = RegistryPath->Length/2;
-	
+
 	NullTerminatedString = ExAllocatePool(PagedPool, (NewLength+1) *sizeof(WCHAR));
-	
+
 	if (NullTerminatedString != NULL)
 	{
 		RtlCopyMemory(NullTerminatedString, RegistryPath->Buffer, RegistryPath->Length);
-				
+
 		NullTerminatedString[NewLength]=0;
 
 		RtlZeroMemory(Queries, sizeof(Queries));
-		
+
 		Queries[0].Flags = RTL_QUERY_REGISTRY_DIRECT;
 		Queries[0].Name = TIMESTAMPMODE_REGKEY;
 		Queries[0].EntryContext = &TimestampMode;
@@ -100,14 +100,14 @@ __inline void ReadTimeStampModeFromRegistry(PUNICODE_STRING RegistryPath)
 			TimestampMode = DEFAULT_TIMESTAMPMODE;
 		}
 
-		RtlWriteRegistryValue(	RTL_REGISTRY_ABSOLUTE, NullTerminatedString, TIMESTAMPMODE_REGKEY,  REG_DWORD, &TimestampMode,sizeof(ULONG));	
+		RtlWriteRegistryValue(	RTL_REGISTRY_ABSOLUTE, NullTerminatedString, TIMESTAMPMODE_REGKEY,  REG_DWORD, &TimestampMode,sizeof(ULONG));
 		ExFreePool(NullTerminatedString);
-	}	
+	}
 	else
 		TimestampMode = DEFAULT_TIMESTAMPMODE;
 }
 
-#pragma optimize ("g",off)  //Due to some weird behaviour of the optimizer of DDK build 2600 
+#pragma optimize ("g",off)  //Due to some weird behaviour of the optimizer of DDK build 2600
 
 /* KeQueryPerformanceCounter TimeStamps */
 __inline void SynchronizeOnCpu(struct timeval *start)
@@ -120,11 +120,11 @@ __inline void SynchronizeOnCpu(struct timeval *start)
 	ULONG tmp2;
 	LARGE_INTEGER TimeFreq,PTime;
 
-	// get the absolute value of the system boot time.   
-	
+	// get the absolute value of the system boot time.
+
 	PTime = KeQueryPerformanceCounter(&TimeFreq);
 	KeQuerySystemTime(&SystemTime);
-	
+
 	start->tv_sec = (LONG)(SystemTime.QuadPart/10000000-11644473600);
 
 	start->tv_usec = (LONG)((SystemTime.QuadPart%10000000)/10);
@@ -138,7 +138,7 @@ __inline void SynchronizeOnCpu(struct timeval *start)
 		start->tv_sec --;
 		start->tv_usec += 1000000;
 	}
-}	
+}
 
 /*RDTSC timestamps			*/
 /* callers must be at IRQL=PASSIVE_LEVEL*/
@@ -157,7 +157,7 @@ __inline VOID TimeSynchronizeRDTSC(struct time_conv *data)
 
    	if (data->reference!=0)
 		return;
-	
+
 	KeInitializeEvent(&event,NotificationEvent,FALSE);
 
 	i.QuadPart=-3500000;
@@ -179,7 +179,7 @@ __inline VOID TimeSynchronizeRDTSC(struct time_conv *data)
 	}
 
 	KeLowerIrql(old);
-	
+
     	KeWaitForSingleObject(&event,UserRequest,KernelMode,TRUE ,&i);
 
 	KeRaiseIrql(HIGH_LEVEL,&old);
@@ -208,16 +208,16 @@ __inline VOID TimeSynchronizeRDTSC(struct time_conv *data)
 	}
 
 	reference=delta*(start_freq.QuadPart)/delta2;
-	
+
 	data->reference=reference/1000;
 
-	if (reference%1000>500) 
+	if (reference%1000>500)
 		data->reference++;
 
 	data->reference*=1000;
 
 	reference=data->reference;
-		
+
 	KeQuerySystemTime(&system_time);
 
 	__asm
@@ -233,16 +233,16 @@ __inline VOID TimeSynchronizeRDTSC(struct time_conv *data)
 		pop edx
 		pop eax
 	}
-	
+
 	tmp.tv_sec=-(LONG)(curr_ticks/reference);
 
 	tmp.tv_usec=-(LONG)((curr_ticks%reference)*1000000/reference);
 
 	system_time.QuadPart-=116444736000000000;
-	
+
 	tmp.tv_sec+=(LONG)(system_time.QuadPart/10000000);
 	tmp.tv_usec+=(LONG)((system_time.QuadPart%10000000)/10);
-	
+
 	if (tmp.tv_usec<0)
 	{
 		tmp.tv_sec--;
@@ -254,7 +254,7 @@ __inline VOID TimeSynchronizeRDTSC(struct time_conv *data)
 	IF_LOUD(DbgPrint("Frequency " STDu64 " MHz\n",data->reference);)
 }
 
-#pragma optimize ("g",on)  //Due to some weird behaviour of the optimizer of DDK build 2600 
+#pragma optimize ("g",on)  //Due to some weird behaviour of the optimizer of DDK build 2600
 
 __inline VOID TIME_SYNCHRONIZE(struct time_conv *data)
 {
@@ -263,7 +263,7 @@ __inline VOID TIME_SYNCHRONIZE(struct time_conv *data)
 
 	if (data->reference != 0)
 		return;
-		
+
 	NumberOfCpus = NdisSystemProcessorCount();
 
 	if ( TimestampMode ==  TIMESTAMPMODE_SYNCHRONIZATION_ON_CPU_WITH_FIXUP || TimestampMode == TIMESTAMPMODE_SYNCHRONIZATION_ON_CPU_NO_FIXUP)
@@ -272,7 +272,7 @@ __inline VOID TIME_SYNCHRONIZE(struct time_conv *data)
 		{
 			AffinityMask = (1 << i);
 			ZwSetInformationThread(NtCurrentThread(), ThreadAffinityMask, &AffinityMask, sizeof(KAFFINITY));
-			SynchronizeOnCpu(&(data->start[i]));		
+			SynchronizeOnCpu(&(data->start[i]));
 		}
 		AffinityMask = 0xFFFFFFFF;
 		ZwSetInformationThread(NtCurrentThread(), ThreadAffinityMask, &AffinityMask, sizeof(KAFFINITY));
@@ -298,7 +298,7 @@ __inline VOID TIME_SYNCHRONIZE(struct time_conv *data)
 }
 
 
-#pragma optimize ("g",off)  //Due to some weird behaviour of the optimizer of DDK build 2600 
+#pragma optimize ("g",off)  //Due to some weird behaviour of the optimizer of DDK build 2600
 
 __inline void GetTimeKQPC(struct timeval *dst, struct time_conv *data)
 {
@@ -313,12 +313,12 @@ __inline void GetTimeKQPC(struct timeval *dst, struct time_conv *data)
 
 	if (TimestampMode ==  TIMESTAMPMODE_SYNCHRONIZATION_ON_CPU_WITH_FIXUP || TimestampMode == TIMESTAMPMODE_SYNCHRONIZATION_ON_CPU_NO_FIXUP)
 	{
-		//actually this code is ok only if we are guaranteed that no thread scheduling will take place. 
-		CurrentCpu = KeGetCurrentProcessorNumber();	
+		//actually this code is ok only if we are guaranteed that no thread scheduling will take place.
+		CurrentCpu = KeGetCurrentProcessorNumber();
 
 		dst->tv_sec = data->start[CurrentCpu].tv_sec + tmp;
 		dst->tv_usec = data->start[CurrentCpu].tv_usec + (LONG)((PTime.QuadPart%TimeFreq.QuadPart)*1000000/TimeFreq.QuadPart);
-	
+
 		if (dst->tv_usec >= 1000000)
 		{
 			dst->tv_sec ++;
@@ -329,7 +329,7 @@ __inline void GetTimeKQPC(struct timeval *dst, struct time_conv *data)
 		{
 			if (old_ts.tv_sec > dst->tv_sec || (old_ts.tv_sec == dst->tv_sec &&  old_ts.tv_usec > dst->tv_usec) )
 				*dst = old_ts;
-	
+
 			else
 				old_ts = *dst;
 		}
@@ -338,7 +338,7 @@ __inline void GetTimeKQPC(struct timeval *dst, struct time_conv *data)
 	{	//it should be only the normal case i.e. TIMESTAMPMODE_SINGLESYNCHRONIZATION
 		dst->tv_sec = data->start[0].tv_sec + tmp;
 		dst->tv_usec = data->start[0].tv_usec + (LONG)((PTime.QuadPart%TimeFreq.QuadPart)*1000000/TimeFreq.QuadPart);
-	
+
 		if (dst->tv_usec >= 1000000)
 		{
 			dst->tv_sec ++;
@@ -372,7 +372,7 @@ __inline void GetTimeRDTSC(struct timeval *dst, struct time_conv *data)
 	dst->tv_sec=(LONG)(tmp/data->reference);
 
 	dst->tv_usec=(LONG)((tmp-dst->tv_sec*data->reference)*1000000/data->reference);
-	
+
 	dst->tv_sec+=data->start[0].tv_sec;
 
 	dst->tv_usec+=data->start[0].tv_usec;
@@ -391,13 +391,13 @@ __inline void GetTimeQST(struct timeval *dst, struct time_conv *data)
 	LARGE_INTEGER SystemTime;
 
 	KeQuerySystemTime(&SystemTime);
-	
+
 	dst->tv_sec = (LONG)(SystemTime.QuadPart/10000000-11644473600);
 	dst->tv_usec = (LONG)((SystemTime.QuadPart%10000000)/10);
 
 }
 
-#pragma optimize ("g",on)  //Due to some weird behaviour of the optimizer of DDK build 2600 
+#pragma optimize ("g",on)  //Due to some weird behaviour of the optimizer of DDK build 2600
 
 
 __inline void GET_TIME(struct timeval *dst, struct time_conv *data)

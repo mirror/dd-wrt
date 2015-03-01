@@ -1,6 +1,7 @@
 /****************************************************************************
  *
- * Copyright (C) 2003-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -15,7 +16,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************/
  
@@ -134,7 +135,7 @@ static int FindCodePage(FILE *fFile, int iCodePage)
 **  @retval HI_FATAL_ERR there was an error while parsing the file
 **  @retval HI_SUCCESS   function was successful
 */
-static int MapCodePoints(FILE *fFile, int *iis_unicode_map)
+static int MapCodePoints(FILE *fFile, uint8_t *iis_unicode_map)
 {
     char buffer[9];
     char *pcPtr;
@@ -219,7 +220,7 @@ static int MapCodePoints(FILE *fFile, int *iis_unicode_map)
 **  @retval HI_INVALID_FILE    Could not open the supplied filename
 **  @retval HI_SUCCESS         function was successful
 */
-int hi_ui_parse_iis_unicode_map(int **iis_unicode_map, char *filename,
+int hi_ui_parse_iis_unicode_map(uint8_t **iis_unicode_map, char *filename,
                                 int iCodePage)
 {
     int  iRet;
@@ -239,14 +240,14 @@ int hi_ui_parse_iis_unicode_map(int **iis_unicode_map, char *filename,
         return HI_INVALID_FILE;
     }
 
-    *iis_unicode_map = (int *)xmalloc(sizeof(int) * 65536);
+    *iis_unicode_map = (uint8_t *)xmalloc(sizeof(uint8_t) * 65536);
     if(*iis_unicode_map == NULL)
     {   
         fclose(fFile);
         return HI_MEM_ALLOC_FAIL;
     }
 
-    memset(*iis_unicode_map, HI_UI_NON_ASCII_CODEPOINT, (sizeof(int)*65536));
+    memset(*iis_unicode_map, HI_UI_NON_ASCII_CODEPOINT, (sizeof(uint8_t)*65536));
 
     /*
     **  Find the correct codepage

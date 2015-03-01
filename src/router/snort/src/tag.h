@@ -1,5 +1,6 @@
 /*
-** Copyright (C) 2002-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -15,7 +16,7 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 /* $Id$ */
@@ -37,15 +38,16 @@
 #define TAG_HOST_SRC  3
 #define TAG_HOST_DST  4
 
-#define TAG_METRIC_SECONDS    0x1
-#define TAG_METRIC_PACKETS    0x2
-#define TAG_METRIC_BYTES      0x4
-#define TAG_METRIC_UNLIMITED  0x8
+#define TAG_METRIC_SECONDS    0x01
+#define TAG_METRIC_PACKETS    0x02
+#define TAG_METRIC_BYTES      0x04
+#define TAG_METRIC_UNLIMITED  0x08
+#define TAG_METRIC_SESSION    0x10
 
 
 void InitTag(void);
 void CleanupTag(void);
-int CheckTagList(Packet *, Event *);
+int CheckTagList(Packet *, Event *, void**);
 void SetTags(Packet *, OptTreeNode *, uint16_t);
 void TagCacheReset(void);
 

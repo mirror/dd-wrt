@@ -1,6 +1,7 @@
 /* $Id$ */
 /*
- ** Copyright (C) 2003-2011 Sourcefire, Inc.
+ ** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2003-2013 Sourcefire, Inc.
  **
  ** This program is free software; you can redistribute it and/or modify
  ** it under the terms of the GNU General Public License Version 2 as
@@ -15,22 +16,22 @@
  **
  ** You should have received a copy of the GNU General Public License
  ** along with this program; if not, write to the Free Software
- ** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 /*
    sfthreshold.c
 
-   This file contains functions that glue the generic thresholding2 code to 
+   This file contains functions that glue the generic thresholding2 code to
    snort.
 
-   dependent files:  sfthd sfxghash sfghash sflsq 
+   dependent files:  sfthd sfxghash sfghash sflsq
                      util mstring
 
    Marc Norton
 
    2003-05-29:
      cmg: Added s_checked variable  --
-       when this is 1, the sfthreshold_test will always return the same 
+       when this is 1, the sfthreshold_test will always return the same
        answer until
        sfthreshold_reset is called
 
@@ -40,6 +41,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "mstring.h"
 #include "util.h"
@@ -106,20 +111,20 @@ static int print_thd_node( THD_NODE *p , PrintFormat type, unsigned* prnMode )
            if(p->type == THD_TYPE_SUPPRESS ) return 0;
            if(p->sig_id != 0 ) return 0;
            break;
-           
+
     case PRINT_LOCAL:
            if(p->type == THD_TYPE_SUPPRESS ) return 0;
            if(p->sig_id == 0 || p->gen_id == 0 ) return 0;
            break;
-           
+
     case PRINT_SUPPRESS:
            if(p->type != THD_TYPE_SUPPRESS ) return 0;
            break;
     }
-    
+
     /* SnortSnprintfAppend(buf, STD_BUF, "| thd-id=%d", p->thd_id ); */
 
-    
+
     if ( *prnMode && !p->filtered )
         return 1;
 
@@ -139,17 +144,17 @@ static int print_thd_node( THD_NODE *p , PrintFormat type, unsigned* prnMode )
     {
         SnortSnprintfAppend(buf, STD_BUF, " sig-id=%-10d", p->sig_id );
     }
-    
+
     switch ( p->type )
     {
         case THD_TYPE_LIMIT:
             SnortSnprintfAppend(buf, STD_BUF, " type=Limit    ");
             break;
-        
+
         case THD_TYPE_THRESHOLD:
             SnortSnprintfAppend(buf, STD_BUF, " type=Threshold");
             break;
-        
+
         case THD_TYPE_BOTH:
             SnortSnprintfAppend(buf, STD_BUF, " type=Both     ");
             break;
@@ -159,7 +164,7 @@ static int print_thd_node( THD_NODE *p , PrintFormat type, unsigned* prnMode )
                 SnortSnprintfAppend(buf, STD_BUF, " type=Suppress ");
             break;
     }
-    
+
     switch ( p->tracking )
     {
         case THD_TRK_NONE:
@@ -188,7 +193,7 @@ static int print_thd_node( THD_NODE *p , PrintFormat type, unsigned* prnMode )
         SnortSnprintfAppend(buf, STD_BUF, " count=%-3d", p->count);
         SnortSnprintfAppend(buf, STD_BUF, " seconds=%-3d", p->seconds);
     }
-    
+
     if ( *prnMode )
     {
         if ( *prnMode == 1 )
@@ -199,15 +204,15 @@ static int print_thd_node( THD_NODE *p , PrintFormat type, unsigned* prnMode )
         SnortSnprintfAppend(buf, STD_BUF, " filtered=" STDu64, p->filtered);
     }
     LogMessage("%s\n", buf);
-    
+
     return 1;
 }
 /*
- * 
+ *
  */
 static int print_thd_local(ThresholdObjects *thd_objs, PrintFormat type, unsigned* prnMode)
 {
-    SFGHASH  * sfthd_hash; 
+    SFGHASH  * sfthd_hash;
     THD_ITEM * sfthd_item;
     THD_NODE * sfthd_node;
     int        gen_id;
@@ -226,7 +231,7 @@ static int print_thd_local(ThresholdObjects *thd_objs, PrintFormat type, unsigne
             }
 
             for(item_hash_node  = sfghash_findfirst( sfthd_hash );
-                    item_hash_node != 0; 
+                    item_hash_node != 0;
                     item_hash_node  = sfghash_findnext( sfthd_hash ) )
             {
                 /* Check for any Permanent sig_id objects for this gen_id */
@@ -263,6 +268,9 @@ void print_thresholding(ThresholdConfig *thd_config, unsigned shutdown)
     int i;
     THD_NODE * thd;
 
+    if (thd_config == NULL)
+        return;
+
     if ( !shutdown )
     {
         LogMessage("\n");
@@ -295,7 +303,7 @@ void print_thresholding(ThresholdConfig *thd_config, unsigned shutdown)
                 gcnt++;
             }
 
-            if( !gcnt ) 
+            if( !gcnt )
             {
                 if ( !shutdown )
                     LogMessage("| none\n");
@@ -376,7 +384,7 @@ void sfthreshold_free(void)
     Create and Add a Thresholding Event Object
 
 */
-int sfthreshold_create(ThresholdConfig *thd_config, THDX_STRUCT *thdx)
+int sfthreshold_create(struct _SnortConfig *sc, ThresholdConfig *thd_config, THDX_STRUCT *thdx)
 {
     if (thd_config == NULL)
         return -1;
@@ -395,7 +403,8 @@ int sfthreshold_create(ThresholdConfig *thd_config, THDX_STRUCT *thdx)
     /* print_thdx( thdx ); */
 
     /* Add the object to the table - */
-    return sfthd_create_threshold(thd_config->thd_objs,
+    return sfthd_create_threshold(sc,
+                                  thd_config->thd_objs,
                                   thdx->gen_id,
                                   thdx->sig_id,
                                   thdx->tracking,
@@ -414,10 +423,10 @@ int sfthreshold_create(ThresholdConfig *thd_config, THDX_STRUCT *thdx)
     called
 
     gen_id:
-    sig_id: 
+    sig_id:
     sip:    host ordered sip
     dip:    host ordered dip
-    curtime: 
+    curtime:
 
     2003-05-29 cmg:
 
@@ -445,11 +454,11 @@ int sfthreshold_test(
        thd_answer = sfthd_test_threshold(snort_conf->threshold_config->thd_objs,
                                          thd_runtime, gen_id, sig_id, sip, dip, curtime);
     }
-       
+
     return thd_answer;
 }
 
-/** 
+/**
  * Reset the thresholding system so that subsequent calls to
  * sfthreshold_test will indeed try to alter the thresholding system
  *

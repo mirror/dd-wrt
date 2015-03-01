@@ -11,7 +11,7 @@ and decoding and interpreting FTP traffic.
 
 FTPTelnet handles stateful and stateless processing.  It saves state
 between individual packets.  However maintaining correct state is
-dependent on the reassembly of the client side of the stream (ie, a
+dependent on the reassembly of the client side of the stream (i.e., a
 loss of coherent stream data results in a loss of state).
 
 -- Telnet -- 
@@ -38,7 +38,7 @@ It is VERY IMPORTANT to understand the configuration semantics, so an
 administrator can know what to expect from the normalization routines and
 protocol correctness checks.
 
-Within the discussions of each option, occurance of a / in the option
+Within the discussions of each option, occurrence of a / in the option
 parameters implies that one or the other parameter must be specified
 when that option is used.  For example, with a yes/no option, the presence
 of the option causes detection to occur when tracking state.  A yes
@@ -108,7 +108,7 @@ the corresponding SE.
 
 -- FTP configuration --
 The FTP configuration deals with configuration options relating to
-FTP servers and FTP clients.  Each of these will be discussed invidually
+FTP servers and FTP clients.  Each of these will be discussed individually
 below, as the configurations are different.
 
 ** Server Configuration **
@@ -121,7 +121,7 @@ server that is not individually configured.  It is suggested that you
 start with the default configuration and craft individual server
 configurations as required by the environment.
 
-For specific IP's (ie, FTP servers with known behaviour), the configuration
+For specific IP's (i.e., FTP servers with known behavior), the configuration
 is very similar:
   - preprocessor ftp_telnet_protocol: ftp server [IP] [server options]
 
@@ -136,7 +136,7 @@ only include 21, however, additional ports may be specified.
 Useful for debugging.  This turns on printing of the configuration
 information for each ftp command listed for this server.  By default
 it is not in use, as it generates a substantial amount of output when
-snort is run from the commandline.
+snort is run from the command line.
 
 * ftp_cmds { cmd [cmd] ... } *
 This specifies additional FTP commands outside of those checked by
@@ -177,7 +177,7 @@ fmt is as follows:
     char <chars>    	Param must be a single char, and one of <chars>
     date <datefmt>  	Param follows format specified where
                    	# = Number, C=Char, []=optional, |=OR, {}=choice,
-                   	anything else=literal (ie, .+- )
+                   	anything else=literal (i.e., .+- )
     string         	Param is string (effectively unrestricted)
     host_port      	Param must a host port specifier, per RFC 959.
     long_host_port 	Parameter must be a long host port specified, per RFC 1639
@@ -254,7 +254,7 @@ client that is not individually configured.  It is suggested that you
 start with the default configuration and craft individual client
 configurations as required by the environment.
 
-For specific IP's (ie, FTP clients with known behaviour), the configuration
+For specific IP's (i.e., FTP clients with known behavior), the configuration
 is very similar:
   - preprocessor ftp_telnet_protocol: ftp client [IP] [client options]
 
@@ -279,10 +279,10 @@ IP address [CIDR format] and port (or inclusive port range ) without
 generating an alert.  It can be used to deal with proxied FTP
 connections where the FTP data channel is different from the client.
 Two examples of the bounce_to command:
-1) This allows bounces to 192.168.1.1 port 20020 -- ie, the use
+1) This allows bounces to 192.168.1.1 port 20020 -- i.e., the use
 of PORT 192,168,1,1,78,52.
   bounce_to { 192.168.1.1,20020 }
-2) This allows bounces to 192.168.1.1 ports 20020 to 20040 -- ie,
+2) This allows bounces to 192.168.1.1 ports 20020 to 20040 -- i.e.,
 the use of PORT 192,168,1,1,78,xx, where xx is 52 through 72, inclusive.
   bounce_to { 192.168.1.1,20020,20040 } 
 3) This allows bounces to 192.168.1.1 port 20020 and 192.168.1.2 port 20030
@@ -346,7 +346,7 @@ preprocessor.
 The content parameter in the snort rule language searches the NORMALIZED
 telnet and FTP buffers.  This means that rules that include things that
 are normalized, such as telnet option negotiation for encryption,
-ie |FF FA 26|, these rules will not alert.  They should be changed to
+i.e. |FF FA 26|, these rules will not alert.  They should be changed to
 add the rawbytes parameter to specify look at the raw data, not the
 normalized data.
 

@@ -32,7 +32,7 @@ Platform: HPUX
 - HP-UX 10.x note from Chris Sylvain:
 
   if you run snort and receive the error message
-    "ERROR: OpenPcap() device lan0 open:
+    "Can't start DAQ error...
                      recv_ack: promisc_phys: Invalid argument"
   it's because there's another program running using the DLPI service.
 

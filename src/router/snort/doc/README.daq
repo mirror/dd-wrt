@@ -1,8 +1,8 @@
 Snort 2.9 introduces the DAQ, or Data Acquisition library, for packet I/O.  The
-DAQ replaces direct calls to PCAP functions with an abstraction layer that
+DAQ replaces direct calls to libpcap functions with an abstraction layer that
 facilitates operation on a variety of hardware and software interfaces without
 requiring changes to Snort.  It is possible to select the DAQ type and mode
-when invoking Snort to perform PCAP readback or inline operation, etc.
+when invoking Snort to perform pcap readback or inline operation, etc.
 
 This README summarizes the important things you need to know to use the DAQ.
 
@@ -28,7 +28,7 @@ you can use this configure option:
 
     ./configure --disable-static-daq
 
-PCAP is the default DAQ, but you can change that like this:
+pcap is the default DAQ, but you can change that like this:
 
     ./configure "CPPFLAGS=-DDEFAULT_DAQ=<type>"
 
@@ -87,9 +87,13 @@ Note that if Snort finds multiple versions of a given library, the most recent
 version is selected.  This applies to static and dynamic versions of the same
 library.
 
-    ./snort [--daq-list <dir>]
+    ./snort --daq-list[=<dir>]
+    ./snort --daq-dir=<dir> --daq-list
 
-The above command searches the specified directory for DAQ modules and prints
+The above commands search the specified directories for DAQ modules and print
 type, version, and attributes of each.  This feature is not available in the
-conf.
+conf.  Snort stops processing after parsing --daq-list so if you want to add
+one or more directories add --daq-dir options before --daq-list on the command
+line.  (Since the directory is optional to --daq-list, you must use an =
+without spaces for this option.)
 

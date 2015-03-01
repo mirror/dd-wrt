@@ -13,7 +13,7 @@ Note that in the following, fields are cleared only if they are non-zero.
 Also, normalizations will only be enabled if the selected DAQ supports packet
 replacement and is operating in inline mode.
 
-If a policy is configured for inline_test or passive mode, any normalization 
+If a policy is configured for inline_test or passive mode, any normalization
 statements in the policy config are ignored.
 
 
@@ -26,7 +26,7 @@ IP4 normalizations are enabled with:
 
 Base normalizations enabled with "preprocessor normalize_ip4" include:
 
-* TTL normalizaton if enabled (explained below).
+* TTL normalization if enabled (explained below).
 
 * NOP all options octets.
 
@@ -39,7 +39,7 @@ Optional normalizations include:
 * tos - type of service (differentiated services): clear this byte.
 
 * trim - truncate packets with excess payload to the datagram length specified in the
-  IP header + the layer 2 header (eg ethernet), but don't truncate below minimum
+  IP header + the layer 2 header (e.g. ethernet), but don't truncate below minimum
   frame length.  This is automatically disabled if the DAQ can't inject packets.
 
 
@@ -52,7 +52,7 @@ IP6 normalizations are enabled with:
 
 Base normalizations enabled with "preprocessor normalize_ip6" include:
 
-* Hop limit normalizaton if enabled (explained below).
+* Hop limit normalization if enabled (explained below).
 
 * NOP all options octets in hop-by-hop and destination options extension
   headers.
@@ -77,7 +77,11 @@ TCP Normalizations
 TCP normalizations are enabled with:
 
     preprocessor normalize_tcp: \
-        [ips] [urp] \
+        [block], [rsv], [pad], \
+        [req_urg], [req_pay], [req_urp], \
+        [ips], [urp], [trim], \
+        [trim_syn], [trim_rst], \
+        [trim_win], [trim_mss], \
         [ecn <ecn_type>], \
         [opts [allow <allowed_opt>+]]
 
@@ -92,38 +96,37 @@ TCP normalizations are enabled with:
     <conn_count> ::= { 11, 12, 13 }
     <alt_checksum> ::= { 14, 15 }
     <md5> ::= { 19 }
-    <num> ::= (3..255) 
+    <num> ::= (3..255)
 
-Base normalizations enabled with "preprocessor normalize_tcp" include:
+Normalizations include:
 
-* Remove data on SYN.
+* block:  allow packet drops during TCP normalization.
 
-* Clear the reserved bits in the TCP header.
+* rsv:  clear the reserved bits in the TCP header.
 
-* Clear the urgent pointer if the urgent flag is not set.
+* pad:  clear any option padding bytes.
 
-* Clear the urgent pointer and the urgent flag if there is no payload.
+* req_urg:  clear the urgent pointer if the urgent flag is not set.
 
-* Set the urgent pointer to the payload length if it is greater than the
-  payload length.
- 
-* Clear the urgent flag if the urgent pointer is not set.
+* req_pay:  clear the urgent pointer and the urgent flag if there is no payload.
 
-* Clear any option padding bytes.
-
-* Remove any data from RST packet.
-
-* Trim data to window.
-
-* Trim data to MSS.
-
-Optional normalizations include:
+* req_urp:  clear the urgent flag if the urgent pointer is not set.
 
 * ips:  ensure consistency in retransmitted data (also forces reassembly policy
   to "first").  Any segments that can't be properly reassembled will be dropped.
 
-* urp - urgent pointer:  don't adjust the urgent pointer if it is greater than
+* urp:  set the urgent pointer to the payload length if it is greater than the
   payload length.
+
+* trim_syn:  remove data on SYN.
+
+* trim_rst:  remove any data from RST packet.
+
+* trim_win:  trim data to window.
+
+* trim_mss:  trim data to MSS.
+
+* trim:  enable all of the above trim options.
 
 * ecn packet:  clear ECN flags on a per packet basis (regardless of
   negotiation).
@@ -143,8 +146,6 @@ Optional normalizations include:
 * opts:  clear TS ECR if ACK flag is not set.
 
 * opts:  MSS and window scale options are NOP'd if SYN flag is not set.
-
-* opts:  trim payload length to MSS if longer.
 
 
 TTL Normalization
@@ -202,13 +203,13 @@ New Decoder and Preprocessor Rules
 116,422	TCP: FIN==1 && ACK==0
 116,422	TCP: PUSH==1 && ACK==0
 129,15	TCP: RST not in window
-116,420	TCP: SYN==1 && FIN==1	
+116,420	TCP: SYN==1 && FIN==1
 129,2	TCP: SYN with data
-116,421	TCP: SYN==1 && RST==1	
+116,421	TCP: SYN==1 && RST==1
 116,423	TCP: SYN==0 && ACK==0 && RST==0
 129,1	TCP: SYN on established session
 116,422	TCP: URG==1 && ACK==0
-116,419	TCP: URG==1 && (dsize==0 || urp > dsize)	
+116,419	TCP: URG==1 && (dsize==0 || urp > dsize)
 129,6	TCP: Window Too large	normalize_tcp
 129,4	TCP TS option: packet fails PAWS test
 129,14	TCP TS option: missing but negotiated in SYN

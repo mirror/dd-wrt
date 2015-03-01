@@ -1,5 +1,6 @@
 /*
-** Copyright (C) 2002-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -15,7 +16,7 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 /* $Id$ */
@@ -28,12 +29,13 @@
 #include <ctype.h>
 #include <string.h>
 
+#include "sf_types.h"
 #include "rules.h"
 #include "treenodes.h"
 #include "decode.h"
 #include "plugbase.h"
 #include "parser.h"
-#include "debug.h"
+#include "snort_debug.h"
 #include "util.h"
 #include "plugin_enum.h"
 
@@ -54,8 +56,8 @@ typedef struct _IpOptionData
 
 } IpOptionData;
 
-void IpOptionInit(char *, OptTreeNode *, int);
-void ParseIpOptionData(char *, OptTreeNode *);
+void IpOptionInit(struct _SnortConfig *, char *, OptTreeNode *, int);
+void ParseIpOptionData(struct _SnortConfig *, char *, OptTreeNode *);
 int CheckIpOptions(void *option_data, Packet *p);
 
 uint32_t IpOptionCheckHash(void *d)
@@ -90,7 +92,7 @@ int IpOptionCheckCompare(void *l, void *r)
 }
 
 /****************************************************************************
- * 
+ *
  * Function: SetupTemplate()
  *
  * Purpose: Generic detection engine plugin template.  Registers the
@@ -113,10 +115,10 @@ void SetupIpOptionCheck(void)
 
 
 /****************************************************************************
- * 
- * Function: TemplateInit(char *, OptTreeNode *)
  *
- * Purpose: Generic rule configuration function.  Handles parsing the rule 
+ * Function: TemplateInit(struct _SnortConfig *, char *, OptTreeNode *)
+ *
+ * Purpose: Generic rule configuration function.  Handles parsing the rule
  *          information and attaching the associated detection function to
  *          the OTN.
  *
@@ -126,10 +128,10 @@ void SetupIpOptionCheck(void)
  * Returns: void function
  *
  ****************************************************************************/
-void IpOptionInit(char *data, OptTreeNode *otn, int protocol)
+void IpOptionInit(struct _SnortConfig *sc, char *data, OptTreeNode *otn, int protocol)
 {
     OptFpList *fpl;
-    /* multiple declaration check */ 
+    /* multiple declaration check */
     if(otn->ds_list[PLUGIN_IPOPTION_CHECK])
     {
         FatalError("%s(%d): Multiple ipopts options in rule\n", file_name,
@@ -141,11 +143,11 @@ void IpOptionInit(char *data, OptTreeNode *otn, int protocol)
     otn->ds_list[PLUGIN_IPOPTION_CHECK] = (IpOptionData *)
             SnortAlloc(sizeof(IpOptionData));
 
-    /* this is where the keyword arguments are processed and placed into the 
+    /* this is where the keyword arguments are processed and placed into the
        rule option's data structure */
-    ParseIpOptionData(data, otn);
+    ParseIpOptionData(sc, data, otn);
 
-    /* finally, attach the option's detection function to the rule's 
+    /* finally, attach the option's detection function to the rule's
        detect function pointer list */
     fpl = AddOptFuncToList(CheckIpOptions, otn);
     fpl->type = RULE_OPTION_TYPE_IP_OPTION;
@@ -155,8 +157,8 @@ void IpOptionInit(char *data, OptTreeNode *otn, int protocol)
 
 
 /****************************************************************************
- * 
- * Function: TemplateRuleParseFunction(char *, OptTreeNode *)
+ *
+ * Function: ParseIpOptionData(struct _SnortConfig *, char *, OptTreeNode *)
  *
  * Purpose: This is the function that is used to process the option keyword's
  *          arguments and attach them to the rule's data structures.
@@ -167,7 +169,7 @@ void IpOptionInit(char *data, OptTreeNode *otn, int protocol)
  * Returns: void function
  *
  ****************************************************************************/
-void ParseIpOptionData(char *data, OptTreeNode *otn)
+void ParseIpOptionData(struct _SnortConfig *sc, char *data, OptTreeNode *otn)
 {
     IpOptionData *ds_ptr;  /* data struct pointer */
     void *ds_ptr_dup;
@@ -182,7 +184,7 @@ void ParseIpOptionData(char *data, OptTreeNode *otn)
     }
 
     while(isspace((u_char)*data))
-        data++; 
+        data++;
 
 
     if(strcasecmp(data, "rr") == 0)
@@ -236,7 +238,7 @@ void ParseIpOptionData(char *data, OptTreeNode *otn)
                    file_name, file_line, data);
     }
 
-    if (add_detection_option(RULE_OPTION_TYPE_IP_OPTION, (void *)ds_ptr, &ds_ptr_dup) == DETECTION_OPTION_EQUAL)
+    if (add_detection_option(sc, RULE_OPTION_TYPE_IP_OPTION, (void *)ds_ptr, &ds_ptr_dup) == DETECTION_OPTION_EQUAL)
     {
         free(ds_ptr);
         ds_ptr = otn->ds_list[PLUGIN_IPOPTION_CHECK] = ds_ptr_dup;
@@ -246,7 +248,7 @@ void ParseIpOptionData(char *data, OptTreeNode *otn)
 
 
 /****************************************************************************
- * 
+ *
  * Function: TemplateDetectorFunction(char *, OptTreeNode *)
  *
  * Purpose: Use this function to perform the particular detection routine

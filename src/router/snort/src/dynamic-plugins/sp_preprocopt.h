@@ -12,9 +12,10 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (C) 2005-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * Author: Steven Sturges
  *
@@ -32,6 +33,7 @@ SFGHASH * PreprocessorRuleOptionsNew(void);
 void PreprocessorRuleOptionsFree(SFGHASH *);
 
 int RegisterPreprocessorRuleOption(
+    struct _SnortConfig *,
     char *optionName,
     PreprocOptionInit initFunc,
     PreprocOptionEval evalFunc,
@@ -43,6 +45,7 @@ int RegisterPreprocessorRuleOption(
 );
 
 void RegisterPreprocessorRuleOptionOverride(
+    struct _SnortConfig *,
     char *keyword, char *option,
     PreprocOptionInit initFunc,
     PreprocOptionEval evalFunc,
@@ -54,6 +57,7 @@ void RegisterPreprocessorRuleOptionOverride(
 );
 
 int GetPreprocessorRuleOptionFuncs(
+    struct _SnortConfig *,
     char *optionName,
     PreprocOptionInit* initFunc,
     PreprocOptionEval* evalFunc,
@@ -65,12 +69,13 @@ int GetPreprocessorRuleOptionFuncs(
 
 void RegisterPreprocessorRuleOptionByteOrder(char *keyword, PreprocOptionByteOrderFunc bo_func);
 
-int AddPreprocessorRuleOption(char *, OptTreeNode *, void *, PreprocOptionEval);
+int AddPreprocessorRuleOption(struct _SnortConfig *sc, char *, OptTreeNode *, void *, PreprocOptionEval);
 
-u_int32_t PreprocessorRuleOptionHash(void *d);
+uint32_t PreprocessorRuleOptionHash(void *d);
 int PreprocessorRuleOptionCompare(void *l, void *r);
 void PreprocessorRuleOptionsFreeFunc(void *);
 int GetPreprocFastPatterns(void *, int, int, FPContentInfo **);
+int PreprocessorOptionFunc(void *option_data, Packet *p);
 
 #endif  /* __SP_PREPROCOPT_H_ */
 

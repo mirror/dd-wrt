@@ -5,19 +5,13 @@ noinst_LIBRARIES = libspd.a
 
 BUILT_SOURCES = sf_snort_plugin_hdropts.c \
 sf_snort_packet.h \
-sf_snort_plugin_api.h
+sf_snort_plugin_api.h \
+sf_decompression.h
 
 nodist_libspd_a_SOURCES = sf_snort_plugin_hdropts.c \
 sf_snort_packet.h \
-sf_snort_plugin_api.h
-
-if BUILD_REACT
-REACT_SOURCE = sp_react.c sp_react.h
-endif
-
-if BUILD_RESPOND3
-RESPOND3_SOURCE = sp_respond3.c sp_respond.h
-endif
+sf_snort_plugin_api.h \
+sf_decompression.h
 
 libspd_a_SOURCES = \
 detection_options.c detection_options.h \
@@ -45,8 +39,6 @@ sp_ipoption_check.c sp_ipoption_check.h \
 sp_isdataat.c sp_isdataat.h \
 sp_pattern_match.c sp_pattern_match.h  \
 sp_pcre.c sp_pcre.h \
-$(REACT_SOURCE) \
-$(RESPOND3_SOURCE) \
 sp_replace.c sp_replace.h \
 sp_rpc_check.c sp_rpc_check.h \
 sp_session.c sp_session.h \
@@ -58,8 +50,21 @@ sp_ttl_check.c sp_ttl_check.h \
 sp_urilen_check.c sp_urilen_check.h \
 sp_file_data.c sp_file_data.h \
 sp_base64_decode.c sp_base64_decode.h \
-sp_base64_data.c sp_base64_data.h
+sp_base64_data.c sp_base64_data.h \
+sp_pkt_data.c sp_pkt_data.h \
+sp_file_type.c sp_file_type.h
 
+if BUILD_REACT
+libspd_a_SOURCES += sp_react.c sp_react.h
+endif
+
+if BUILD_RESPOND3
+libspd_a_SOURCES += sp_respond3.c sp_respond.h
+endif
+
+if FEAT_OPEN_APPID
+libspd_a_SOURCES += sp_appid.c sp_appid.h 
+endif
 copy_files = \
 	if test -f $$dst_file; then \
 		x=`diff $$src_file $$dst_file >> /dev/null`; \
@@ -102,10 +107,13 @@ sf_snort_plugin_hdropts.c: ../dynamic-plugins/sf_engine/sf_snort_plugin_hdropts.
 sf_snort_plugin_api.h: ../dynamic-plugins/sf_engine/sf_snort_plugin_api.h
 	@src_file=$?; dst_file=$@; $(copy_files)
 
+sf_decompression.h: ../dynamic-plugins/sf_engine/sf_decompression.h
+	@src_file=$?; dst_file=$@; $(copy_files)
+
 sf_snort_packet.h: ../dynamic-plugins/sf_engine/sf_snort_packet.h
 	@src_file=$?; dst_file=$@; $(copy_files)
 
 clean-local:
-	rm -rf sf_snort_plugin_hdropts.c sf_snort_packet.h sf_snort_plugin_api.h
+	rm -rf sf_snort_plugin_hdropts.c sf_snort_packet.h sf_snort_plugin_api.h sf_decompression.h
 
 INCLUDES = @INCLUDES@

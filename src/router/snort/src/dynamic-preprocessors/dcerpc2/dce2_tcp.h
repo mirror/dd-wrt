@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (C) 2008-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2008-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -14,10 +15,10 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************
- * 
+ *
  ****************************************************************************/
 
 #ifndef _DCE2_TCP_H_
@@ -29,7 +30,7 @@
 #include "dcerpc.h"
 #include "sf_snort_packet.h"
 #include "sf_types.h"
-#include "debug.h"
+#include "snort_debug.h"
 
 /********************************************************************
  * Structures
@@ -44,7 +45,7 @@ typedef struct _DCE2_TcpSsnData
 /********************************************************************
  * Inline function prototypes
  ********************************************************************/
-static INLINE DCE2_TransType DCE2_TcpAutodetect(const SFSnortPacket *);
+static inline DCE2_TransType DCE2_TcpAutodetect(const SFSnortPacket *);
 
 /********************************************************************
  * Public function prototypes
@@ -68,17 +69,19 @@ void DCE2_TcpSsnFree(void *);
  *  DCE2_TranType
  *
  *********************************************************************/
-static INLINE DCE2_TransType DCE2_TcpAutodetect(const SFSnortPacket *p)
+static inline DCE2_TransType DCE2_TcpAutodetect(const SFSnortPacket *p)
 {
     if (p->payload_size >= sizeof(DceRpcCoHdr))
     {
         DceRpcCoHdr *co_hdr = (DceRpcCoHdr *)p->payload;
 
-        if ((DceRpcCoVersMaj(co_hdr) == DCERPC_PROTO_MAJOR_VERS__5) &&
-            (DceRpcCoVersMin(co_hdr) == DCERPC_PROTO_MINOR_VERS__0) &&
-            ((DceRpcCoPduType(co_hdr) == DCERPC_PDU_TYPE__BIND) ||
-             (DceRpcCoPduType(co_hdr) == DCERPC_PDU_TYPE__BIND_ACK)) &&
-            (DceRpcCoFragLen(co_hdr) >= sizeof(DceRpcCoHdr)))
+        if ((DceRpcCoVersMaj(co_hdr) == DCERPC_PROTO_MAJOR_VERS__5)
+                && (DceRpcCoVersMin(co_hdr) == DCERPC_PROTO_MINOR_VERS__0)
+                && ((DCE2_SsnFromClient(p)
+                        && DceRpcCoPduType(co_hdr) == DCERPC_PDU_TYPE__BIND)
+                    || (DCE2_SsnFromServer(p)
+                        && DceRpcCoPduType(co_hdr) == DCERPC_PDU_TYPE__BIND_ACK))
+                && (DceRpcCoFragLen(co_hdr) >= sizeof(DceRpcCoHdr)))
         {
             return DCE2_TRANS_TYPE__TCP;
         }

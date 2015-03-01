@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (C) 2008-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2008-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -14,12 +15,12 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- **************************************************************************** 
+ ****************************************************************************
  * Provides list, queue and stack data structures and methods for use
  * with the preprocessor.
- * 
+ *
  * 8/17/2008 - Initial implementation ... Todd Wease <twease@sourcefire.com>
  *
  ****************************************************************************/
@@ -30,7 +31,7 @@
 #include "dce2_memory.h"
 #include "dce2_utils.h"
 #include "sf_types.h"
-#include "debug.h"
+#include "snort_debug.h"
 
 /********************************************************************
  * Enumerations
@@ -105,6 +106,8 @@ typedef struct _DCE2_Queue
     struct _DCE2_QueueNode *current;
     struct _DCE2_QueueNode *head;
     struct _DCE2_QueueNode *tail;
+    struct _DCE2_QueueNode *next;
+    struct _DCE2_QueueNode *prev;
 
 } DCE2_Queue;
 
@@ -173,7 +176,7 @@ void * DCE2_ListNext(DCE2_List *);
 void * DCE2_ListLast(DCE2_List *);
 void * DCE2_ListPrev(DCE2_List *);
 void DCE2_ListRemoveCurrent(DCE2_List *);
-static INLINE int DCE2_ListIsEmpty(DCE2_List *);
+static inline int DCE2_ListIsEmpty(DCE2_List *);
 void DCE2_ListEmpty(DCE2_List *);
 void DCE2_ListDestroy(DCE2_List *);
 
@@ -184,7 +187,8 @@ void * DCE2_QueueFirst(DCE2_Queue *);
 void * DCE2_QueueNext(DCE2_Queue *);
 void * DCE2_QueueLast(DCE2_Queue *);
 void * DCE2_QueuePrev(DCE2_Queue *);
-static INLINE int DCE2_QueueIsEmpty(DCE2_Queue *);
+void DCE2_QueueRemoveCurrent(DCE2_Queue *);
+static inline int DCE2_QueueIsEmpty(DCE2_Queue *);
 void DCE2_QueueEmpty(DCE2_Queue *);
 void DCE2_QueueDestroy(DCE2_Queue *);
 
@@ -195,7 +199,7 @@ void * DCE2_StackFirst(DCE2_Stack *);
 void * DCE2_StackNext(DCE2_Stack *);
 void * DCE2_StackLast(DCE2_Stack *);
 void * DCE2_StackPrev(DCE2_Stack *);
-static INLINE int DCE2_StackIsEmpty(DCE2_Stack *);
+static inline int DCE2_StackIsEmpty(DCE2_Stack *);
 void DCE2_StackEmpty(DCE2_Stack *);
 void DCE2_StackDestroy(DCE2_Stack *);
 
@@ -204,7 +208,7 @@ DCE2_Ret DCE2_CQueueEnqueue(DCE2_CQueue *, void *);
 void * DCE2_CQueueDequeue(DCE2_CQueue *);
 void * DCE2_CQueueFirst(DCE2_CQueue *);
 void * DCE2_CQueueNext(DCE2_CQueue *);
-static INLINE int DCE2_CQueueIsEmpty(DCE2_CQueue *);
+static inline int DCE2_CQueueIsEmpty(DCE2_CQueue *);
 void DCE2_CQueueEmpty(DCE2_CQueue *);
 void DCE2_CQueueDestroy(DCE2_CQueue *);
 
@@ -214,7 +218,7 @@ void * DCE2_CStackPop(DCE2_CStack *);
 void * DCE2_CStackTop(DCE2_CStack *);
 void * DCE2_CStackFirst(DCE2_CStack *);
 void * DCE2_CStackNext(DCE2_CStack *);
-static INLINE int DCE2_CStackIsEmpty(DCE2_CStack *);
+static inline int DCE2_CStackIsEmpty(DCE2_CStack *);
 void DCE2_CStackEmpty(DCE2_CStack *);
 void DCE2_CStackDestroy(DCE2_CStack *);
 
@@ -235,7 +239,7 @@ void DCE2_CStackDestroy(DCE2_CStack *);
  *      0 if the list has one or more nodes in it.
  *
  ********************************************************************/
-static INLINE int DCE2_ListIsEmpty(DCE2_List *list)
+static inline int DCE2_ListIsEmpty(DCE2_List *list)
 {
     if (list == NULL) return 1;
     if (list->num_nodes == 0) return 1;
@@ -259,7 +263,7 @@ static INLINE int DCE2_ListIsEmpty(DCE2_List *list)
  *      0 if the queue has one or more nodes in it.
  *
  ********************************************************************/
-static INLINE int DCE2_QueueIsEmpty(DCE2_Queue *queue)
+static inline int DCE2_QueueIsEmpty(DCE2_Queue *queue)
 {
     if (queue == NULL) return 1;
     if (queue->num_nodes == 0) return 1;
@@ -283,7 +287,7 @@ static INLINE int DCE2_QueueIsEmpty(DCE2_Queue *queue)
  *      0 if the stack has one or more nodes in it.
  *
  ********************************************************************/
-static INLINE int DCE2_StackIsEmpty(DCE2_Stack *stack)
+static inline int DCE2_StackIsEmpty(DCE2_Stack *stack)
 {
     if (stack == NULL) return 1;
     if (stack->num_nodes == 0) return 1;
@@ -307,7 +311,7 @@ static INLINE int DCE2_StackIsEmpty(DCE2_Stack *stack)
  *      0 if the queue has one or more nodes in it.
  *
  ********************************************************************/
-static INLINE int DCE2_CQueueIsEmpty(DCE2_CQueue *cqueue)
+static inline int DCE2_CQueueIsEmpty(DCE2_CQueue *cqueue)
 {
     if (cqueue == NULL) return 1;
     if (cqueue->num_nodes == 0) return 1;
@@ -331,7 +335,7 @@ static INLINE int DCE2_CQueueIsEmpty(DCE2_CQueue *cqueue)
  *      0 if the stack has one or more nodes in it.
  *
  ********************************************************************/
-static INLINE int DCE2_CStackIsEmpty(DCE2_CStack *cstack)
+static inline int DCE2_CStackIsEmpty(DCE2_CStack *cstack)
 {
     if (cstack == NULL) return 1;
     if (cstack->num_nodes == 0) return 1;

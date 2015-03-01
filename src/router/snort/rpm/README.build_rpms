@@ -24,14 +24,10 @@ RPM requires a SPEC file to provide details on how to compile and build
 the source code into an RPM package. The most difficult and time consuming
 part of building an RPM is writing a correct SPEC file. We've already done
 that for you (and it is heavily commented as well). The snort.spec
-file can build the following packages, with or without flexible response
-(see README.flexresp for more details):
+file can build the following packages:
 
 	plain		Snort (this package, required)
-	mysql		Snort with mysql (optional)
-	postgresql	Snort with postgresql (optional)
-	oracle		Snort with oracle (optional, not official)
-	inline		Snort with inline support (optional)
+	openappid	Snort with openAppId support (optional)
 
 
 Prerequisites
@@ -43,23 +39,6 @@ also need the following if you plan to build packages other than plain:
 	---------------------		----------------
 	All				rpm-build (rpm version 4 and above),
 						pcre-devel
-	Snort with MySQL		MYSQL-devel, pcre-devel
-	Snort with PostgreSQL		postgresql-devel, pcre-devel
-	Snort with Oracle		Oracle libs in /opt/oracle, pcre-devel
-	Snort inline			iptables-devel, libnet
-
-If you plan to build flexresp, you also need libnet. Depending on which
-libnet RPM you install, you may get statically linked binaries. If you
-have statically linked libraries you only need the static library on the
-build machine, NOT the machine on which the final compiled binary runs.
-Given the fact that Snort sensors are security devices and having dynamic
-libnet capabilities may be undesirable, static linking is a Good Thing.
-
-The strongly recommended libnet to use is custom 1.0.2a Packetfactory RPM
-Chris Green built a while ago that may be found here [0]. This is the only
-Snort.org supported libnet and it allows snort to statically compile
-libnet as noted above.
-
 
 Building from a Tarball
 =======================
@@ -79,23 +58,8 @@ rpm {package options} -ta {path/to/snort-n.n.n.tar.gz}
 
 rpmbuild Package Options
 ========================
-
-	--with flexresp
-		Add flexresp capability to whatever package(s) you are
-		building.
-
-	--with inline
-		Add inline capability to whatever package(s) you are
-		building. This will create its own inline package.
-
-	--with mysql
-		Builds a binary/package with support for MySQL.
-
-	--with postgresql
-		Builds a binary/package with support for PostgreSQL.
-
-	--with oracle
-		Builds a binary/package with support for Oracle.
+	--with openappid
+		Builds a binary/package with support for openAppId.
 
 See below for some examples.
 
@@ -111,18 +75,16 @@ SRPM from Snort.org and rebuild:
 rpmbuild examples
 =================
 
-$ rpmbuild --with mysql --with postgresql -ta snort-2.0.4.tar.gz
+$ rpmbuild -ta snort-2.9.7.tar.gz
 
 --OR--
 
-$ rpmbuild --with mysql --with postgresql --rebuild snort-2.0.4-1.src.rpm
+$ rpmbuild --rebuild snort-2.9.7-1.src.rpm
 
 <snip>
 
 $ ls -1 /usr/src/redhat/RPMS/i386/snort-*
-/usr/src/redhat/RPMS/i386/snort-2.0.4-1.i386.rpm
-/usr/src/redhat/RPMS/i386/snort-mysql-2.0.4-1.i386.rpm
-/usr/src/redhat/RPMS/i386/snort-postgresql-2.0.4-1.i386.rpm
+/usr/src/redhat/RPMS/i386/snort-2.9.7-1.i386.rpm
 
 
 The "Official" Snort.org RPM build

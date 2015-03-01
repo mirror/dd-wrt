@@ -1,6 +1,7 @@
 /* $Id$ */
 /*
-** Copyright (C) 2002-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -16,22 +17,22 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 /* Snort Detection Plugin Source File for IP Fragment Bits plugin */
 
-/* sp_ip_fragbits 
- * 
+/* sp_ip_fragbits
+ *
  * Purpose:
  *
  * Check the fragmentation bits of the IP header for set values.  Possible
  * bits are don't fragment (DF), more fragments (MF), and reserved (RB).
  *
  * Arguments:
- *   
+ *
  * The keyword to reference this plugin is "fragbits".  Possible arguments are
- * D, M and R for DF, MF and RB, respectively.  
+ * D, M and R for DF, MF and RB, respectively.
  *
  * Effect:
  *
@@ -52,12 +53,13 @@
 #include <ctype.h>
 #include <string.h>
 
+#include "sf_types.h"
 #include "rules.h"
 #include "treenodes.h"
 #include "plugbase.h"
 #include "decode.h"
 #include "parser.h"
-#include "debug.h"
+#include "snort_debug.h"
 #include "util.h"
 #include "plugin_enum.h"
 
@@ -103,13 +105,13 @@ typedef struct _FragOffsetData
 } FragOffsetData;
 
 
-void FragBitsInit(char *, OptTreeNode *, int);
-void ParseFragBits(char *, OptTreeNode *);
+void FragBitsInit(struct _SnortConfig *, char *, OptTreeNode *, int);
+void ParseFragBits(struct _SnortConfig *, char *, OptTreeNode *);
 int CheckFragBits(void *option_data, Packet *p);
 
 /* offset checks */
-void FragOffsetInit(char *, OptTreeNode *, int);
-void ParseFragOffset(char *, OptTreeNode *);
+void FragOffsetInit(struct _SnortConfig *, char *, OptTreeNode *, int);
+void ParseFragOffset(struct _SnortConfig *, char *, OptTreeNode *);
 int CheckFragOffset(void *option_data, Packet *p);
 
 static uint16_t bitmask;
@@ -178,7 +180,7 @@ int IpFragOffsetCheckCompare(void *l, void *r)
 }
 
 /****************************************************************************
- * 
+ *
  * Function: SetupFragBits()
  *
  * Purpose: Assign the keyword to the rules parser.
@@ -201,8 +203,8 @@ void SetupFragBits(void)
 
 
 /****************************************************************************
- * 
- * Function: FragBitsInit(char *, OptTreeNode *)
+ *
+ * Function: FragBitsInit(struct _SnortConfig *, char *, OptTreeNode *)
  *
  * Purpose: Initialize the detection function and parse the arguments.
  *
@@ -213,32 +215,32 @@ void SetupFragBits(void)
  * Returns: void function
  *
  ****************************************************************************/
-void FragBitsInit(char *data, OptTreeNode *otn, int protocol)
+void FragBitsInit(struct _SnortConfig *sc, char *data, OptTreeNode *otn, int protocol)
 {
     OptFpList *fpl;
-    /* multiple declaration check */ 
+    /* multiple declaration check */
     if(otn->ds_list[PLUGIN_FRAG_BITS])
     {
         FatalError("%s(%d): Multiple fragbits options in rule\n", file_name,
                 file_line);
     }
-        
+
     /* allocate the data structure and attach it to the
        rule's data struct list */
     otn->ds_list[PLUGIN_FRAG_BITS] = (FragBitsData *)
             SnortAlloc(sizeof(FragBitsData));
 
-    /* this is where the keyword arguments are processed and placed into the 
+    /* this is where the keyword arguments are processed and placed into the
        rule option's data structure */
-    ParseFragBits(data, otn);
+    ParseFragBits(sc, data, otn);
 
-    /* 
-     * set the bitmask needed to mask off the IP offset field 
+    /*
+     * set the bitmask needed to mask off the IP offset field
      * in the check function
      */
     bitmask = htons(0xE000);
 
-    /* finally, attach the option's detection function to the rule's 
+    /* finally, attach the option's detection function to the rule's
        detect function pointer list */
     fpl = AddOptFuncToList(CheckFragBits, otn);
     fpl->type = RULE_OPTION_TYPE_IP_FRAGBITS;
@@ -248,8 +250,8 @@ void FragBitsInit(char *data, OptTreeNode *otn, int protocol)
 
 
 /****************************************************************************
- * 
- * Function: ParseFragBits(char *, OptTreeNode *)
+ *
+ * Function: ParseFragBits(struct _SnortConfig *, char *, OptTreeNode *)
  *
  * Purpose: This is the function that is used to process the option keyword's
  *          arguments and attach them to the rule's data structures.
@@ -260,7 +262,7 @@ void FragBitsInit(char *data, OptTreeNode *otn, int protocol)
  * Returns: void function
  *
  ****************************************************************************/
-void ParseFragBits(char *data, OptTreeNode *otn)
+void ParseFragBits(struct _SnortConfig *sc, char *data, OptTreeNode *otn)
 {
     char *fptr;
     char *fend;
@@ -301,7 +303,7 @@ void ParseFragBits(char *data, OptTreeNode *otn)
             case 'M': /* more frags bit */
                 ds_ptr->frag_bits |= FB_MF;
                 break;
-                
+
             case 'r':
             case 'R': /* reserved bit */
                 ds_ptr->frag_bits |= FB_RB;
@@ -310,29 +312,29 @@ void ParseFragBits(char *data, OptTreeNode *otn)
             case '!': /* NOT flag, fire if flags are not set */
                 ds_ptr->mode = FB_NOT;
                 break;
-                    
+
             case '*': /* ANY flag, fire on any of these bits */
                 ds_ptr->mode = FB_ANY;
                 break;
-                    
+
             case '+': /* ALL flag, fire on these bits plus any others */
                 ds_ptr->mode = FB_ALL;
                 break;
 
             default:
                 FatalError("[!] Line %s (%d): Bad Frag Bits = \"%c\"\n"
-                           "     Valid options are: RDM+!*\n", file_name, 
+                           "     Valid options are: RDM+!*\n", file_name,
                            file_line, *fptr);
         }
-        
+
         fptr++;
     }
-                    
+
     /* put the bits in network order for fast comparisons */
     ds_ptr->frag_bits = htons(ds_ptr->frag_bits);
 
     /* set the final option arguments here */
-    if (add_detection_option(RULE_OPTION_TYPE_IP_FRAGBITS, (void *)ds_ptr, &ds_ptr_dup) == DETECTION_OPTION_EQUAL)
+    if (add_detection_option(sc, RULE_OPTION_TYPE_IP_FRAGBITS, (void *)ds_ptr, &ds_ptr_dup) == DETECTION_OPTION_EQUAL)
     {
         free(ds_ptr);
         ds_ptr = otn->ds_list[PLUGIN_FRAG_BITS] = ds_ptr_dup;
@@ -342,7 +344,7 @@ void ParseFragBits(char *data, OptTreeNode *otn)
 
 
 /****************************************************************************
- * 
+ *
  * Function: CheckFragBits(Packet *p, OptTreeNode *otn, OptFpList *fp_list)
  *
  * Purpose: This function checks the frag bits in the packets
@@ -365,7 +367,7 @@ int CheckFragBits(void *option_data, Packet *p)
     }
 
     PREPROC_PROFILE_START(fragBitsPerfStats);
-    
+
     DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN, "           <!!> CheckFragBits: ");
            DebugMessage(DEBUG_PLUGIN, "[rule: 0x%X:%d   pkt: 0x%X] ",
                 fb->frag_bits, fb->mode, (GET_IPH_OFF(p)&bitmask)););
@@ -374,7 +376,7 @@ int CheckFragBits(void *option_data, Packet *p)
     {
         case FB_NORMAL:
             /* check if the rule bits match the bits in the packet */
-            if(fb->frag_bits == (GET_IPH_OFF(p)&bitmask)) 
+            if(fb->frag_bits == (GET_IPH_OFF(p)&bitmask))
             {
                 DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN,"Got Normal bits match\n"););
                 rval = DETECTION_OPTION_MATCH;
@@ -397,7 +399,7 @@ int CheckFragBits(void *option_data, Packet *p)
                 DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN,"NOT test failed\n"););
             }
             break;
-            
+
         case FB_ALL:
             /* check if the rule bits are present in the packet */
             if((fb->frag_bits & (GET_IPH_OFF(p)&bitmask)) == fb->frag_bits)
@@ -410,7 +412,7 @@ int CheckFragBits(void *option_data, Packet *p)
                 DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN,"ALL test failed\n"););
             }
             break;
-            
+
         case FB_ANY:
             /* check if any of the rule bits match the bits in the packet */
             if((fb->frag_bits & (GET_IPH_OFF(p)&bitmask)) != 0)
@@ -434,7 +436,7 @@ int CheckFragBits(void *option_data, Packet *p)
 
 
 /****************************************************************************
- * 
+ *
  * Function: SetupFragOffset()
  *
  * Purpose: Assign the keyword to the rules parser.
@@ -456,30 +458,30 @@ void SetupFragOffset(void)
 }
 
 /****************************************************************************
- * 
- * Function: FragOffsetInit(char *, OptTreeNode *)
+ *
+ * Function: FragOffsetInit(struct _SnortConfig *, char *, OptTreeNode *)
  *
  * Purpose: Initialize the detection function and parse the arguments.
  *
  * Arguments: data => rule arguments/data
  *            otn => pointer to the current rule option list node
  *            protocol => protocol that must be specified to use this plugin
- * 
+ *
  * Returns: void function
  *
  ****************************************************************************/
-void FragOffsetInit(char *data, OptTreeNode *otn, int protocol)
+void FragOffsetInit(struct _SnortConfig *sc, char *data, OptTreeNode *otn, int protocol)
 {
     OptFpList *fpl;
     /* allocate the data structure and attach it to the
        rule's data struct list */
     otn->ds_list[PLUGIN_FRAG_OFFSET] = (FragOffsetData *)SnortAlloc(sizeof(FragOffsetData));
 
-    /* this is where the keyword arguments are processed and placed into the 
+    /* this is where the keyword arguments are processed and placed into the
        rule option's data structure */
-    ParseFragOffset(data, otn);
+    ParseFragOffset(sc, data, otn);
 
-    /* finally, attach the option's detection function to the rule's 
+    /* finally, attach the option's detection function to the rule's
        detect function pointer list */
     fpl = AddOptFuncToList(CheckFragOffset, otn);
     fpl->type = RULE_OPTION_TYPE_IP_FRAG_OFFSET;
@@ -488,8 +490,8 @@ void FragOffsetInit(char *data, OptTreeNode *otn, int protocol)
 
 
 /****************************************************************************
- * 
- * Function: ParseFragOffset(char *, OptTreeNode *)
+ *
+ * Function: ParseFragOffset(struct _SnortConfig *, char *, OptTreeNode *)
  *
  * Purpose: This is the function that is used to process the option keyword's
  *          arguments and attach them to the rule's data structures.
@@ -500,7 +502,7 @@ void FragOffsetInit(char *data, OptTreeNode *otn, int protocol)
  * Returns: void function
  *
  ****************************************************************************/
-void ParseFragOffset(char *data, OptTreeNode *otn)
+void ParseFragOffset(struct _SnortConfig *sc, char *data, OptTreeNode *otn)
 {
     char *fptr;
     char *endTok;
@@ -535,7 +537,7 @@ void ParseFragOffset(char *data, OptTreeNode *otn)
     {
         if(!ds_ptr->not_flag)
         {
-            ds_ptr->comparison_flag = GREATER_THAN; 
+            ds_ptr->comparison_flag = GREATER_THAN;
             fptr++;
         }
     }
@@ -544,7 +546,7 @@ void ParseFragOffset(char *data, OptTreeNode *otn)
     {
         if(!ds_ptr->comparison_flag && !ds_ptr->not_flag)
         {
-            ds_ptr->comparison_flag = LESS_THAN; 
+            ds_ptr->comparison_flag = LESS_THAN;
             fptr++;
         }
     }
@@ -556,7 +558,7 @@ void ParseFragOffset(char *data, OptTreeNode *otn)
                    "number?) \n", file_name, file_line, fptr);
     }
 
-    if (add_detection_option(RULE_OPTION_TYPE_IP_FRAG_OFFSET, (void *)ds_ptr, &ds_ptr_dup) == DETECTION_OPTION_EQUAL)
+    if (add_detection_option(sc, RULE_OPTION_TYPE_IP_FRAG_OFFSET, (void *)ds_ptr, &ds_ptr_dup) == DETECTION_OPTION_EQUAL)
     {
         free(ds_ptr);
         ds_ptr = otn->ds_list[PLUGIN_FRAG_OFFSET] = ds_ptr_dup;
@@ -565,7 +567,7 @@ void ParseFragOffset(char *data, OptTreeNode *otn)
 }
 
 /****************************************************************************
- * 
+ *
  * Function: CheckFragOffset(char *, OptTreeNode *)
  *
  * Purpose: Use this function to perform the particular detection routine
@@ -575,7 +577,7 @@ void ParseFragOffset(char *data, OptTreeNode *otn)
  *            otn => pointer to the current rule's OTN
  *
  * Returns: If the detection test fails, this function *must* return a zero!
- *          On success, it calls the next function in the detection list 
+ *          On success, it calls the next function in the detection list
  *
  ****************************************************************************/
 int CheckFragOffset(void *option_data, Packet *p)
@@ -584,7 +586,7 @@ int CheckFragOffset(void *option_data, Packet *p)
     int p_offset = p->frag_offset * 8;
     int rval = DETECTION_OPTION_NO_MATCH;
     PROFILE_VARS;
-    
+
     if(!IPH_IS_VALID(p))
     {
         return rval;
@@ -592,8 +594,8 @@ int CheckFragOffset(void *option_data, Packet *p)
 
     PREPROC_PROFILE_START(fragOffsetPerfStats);
 
-    
-#ifdef DEBUG
+
+#ifdef DEBUG_MSGS
     DebugMessage(DEBUG_PLUGIN,
          "[!] Checking fragoffset %d against %d\n",
          ipd->offset, p->frag_offset * 8);
@@ -636,7 +638,7 @@ int CheckFragOffset(void *option_data, Packet *p)
             }
         }
     }
-    
+
     /* if the test isn't successful, this function *must* return 0 */
     PREPROC_PROFILE_END(fragOffsetPerfStats);
     return rval;

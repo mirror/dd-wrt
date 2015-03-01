@@ -1,6 +1,7 @@
 /* $Id$ */
 /*
-** Copyright (C) 2002-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -16,7 +17,7 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 /*  I N C L U D E S  ************************************************/
@@ -27,7 +28,7 @@
 #include "config.h"
 #endif
 
-#include "debug.h"
+#include "snort_debug.h"
 #include "decode.h"
 #include "rules.h"
 #include "treenodes.h"
@@ -40,6 +41,7 @@
 /*  P R O T O T Y P E S  ******************************************************/
 extern int do_detect;
 extern int do_detect_content;
+extern uint16_t event_id;
 
 /* rule match action functions */
 int PassAction(void);
@@ -59,11 +61,7 @@ int EvalHeader(RuleTreeNode *, Packet *, int);
 int EvalOpts(OptTreeNode *, Packet *);
 void TriggerResponses(Packet *, OptTreeNode *);
 
-#ifdef SUP_IP6
 int CheckAddrPort(sfip_var_t *, PortObject* , Packet *, uint32_t, int);
-#else
-int CheckAddrPort(IpAddrSet *, PortObject* , Packet *, uint32_t, int);
-#endif
 
 /* detection modules */
 int CheckBidirectional(Packet *, struct _RuleTreeNode *, RuleFpList *, int);
@@ -79,20 +77,26 @@ int CheckDstPortNotEq(Packet *, struct _RuleTreeNode *, RuleFpList *, int);
 int RuleListEnd(Packet *, struct _RuleTreeNode *, RuleFpList *, int);
 int OptListEnd(void *option_data, Packet *p);
 
-void CallLogPlugins(Packet *, char *, void *, Event *);
-void CallAlertPlugins(Packet *, char *, void *, Event *);
+void CallLogPlugins(Packet *, char *, Event *);
+void CallAlertPlugins(Packet *, char *, Event *);
 void CallLogFuncs(Packet *, char *, ListHead *, Event *);
 void CallAlertFuncs(Packet *, char *, ListHead *, Event *);
 
-static INLINE void DisableDetect(Packet *p)
+static inline void DisableDetect( Packet *p )
 {
-    DisablePreprocessors(p);
+    DisableAppPreprocessors( p );
     do_detect_content = 0;
 }
 
-static INLINE void DisableAllDetect(Packet *p)
+static inline void DisableAllDetect( Packet *p )
 {
-    DisablePreprocessors(p);
+    DisableAppPreprocessors( p );
+    do_detect = do_detect_content = 0;
+}
+
+static inline void DisablePacketAnalysis( Packet *p )
+{
+    DisableAllPreprocessors ( p );
     do_detect = do_detect_content = 0;
 }
 

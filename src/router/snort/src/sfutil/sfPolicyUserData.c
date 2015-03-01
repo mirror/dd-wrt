@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (C) 2008-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2008-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -14,17 +15,19 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "stdlib.h"
 #include "string.h"
+#include "sf_types.h"
 #include "sfPolicy.h"
 #include "sfPolicyUserData.h"
-
-tSfPolicyId runtimePolicyId = 0;
-tSfPolicyId parserPolicyId = 0;
 
 /** @defgroup sfPolicyConfig Sourcefire policy configuration module
  *
@@ -39,7 +42,7 @@ tSfPolicyId parserPolicyId = 0;
  *  and put it in a new policy management module. Policy management module will set a single
  *  pointer to user data before calling appropriate callback function in a preprocessor. As
  *  an example, policy module will iterate over all policies and call CleanExit functions in every
- *  preprocessor for each policy. This will make policy management module will hide policies from 
+ *  preprocessor for each policy. This will make policy management module will hide policies from
  *  preprocessors and make them policy agnostic.
  *  @{
  */
@@ -48,14 +51,14 @@ tSfPolicyId parserPolicyId = 0;
  * Allocates a new context and return it to user. All transactions within a context are independent from
  * any other transactions in a different context.
  *
- * @returns tSfPolicyUserContextId 
+ * @returns tSfPolicyUserContextId
 */
 tSfPolicyUserContextId sfPolicyConfigCreate(void)
 {
     tSfPolicyUserContext *pTmp = NULL;
 
     pTmp = calloc(1, sizeof(tSfPolicyUserContext));
-    
+
     return pTmp;
 }
 
@@ -78,11 +81,11 @@ void sfPolicyConfigDelete(
 /**Store a pointer to user data.
  * @param pContext
  * @param policyId is 0 based.
- * @param config - pointer to user configuration. 
+ * @param config - pointer to user configuration.
  */
 int sfPolicyUserDataSet (
-        tSfPolicyUserContextId pContext, 
-        tSfPolicyId policyId, 
+        tSfPolicyUserContextId pContext,
+        tSfPolicyId policyId,
         void *config
         )
 {
@@ -111,7 +114,7 @@ int sfPolicyUserDataSet (
     {
         //dont overwrite existing configuration
         return -1;
-    }  
+    }
 
     pContext->userConfig[policyId] = config;
     pContext->numActivePolicies++;
@@ -139,7 +142,30 @@ void * sfPolicyUserDataClear (
 }
 
 int sfPolicyUserDataIterate (
-        tSfPolicyUserContextId pContext, 
+        struct _SnortConfig *sc,
+        tSfPolicyUserContextId pContext,
+        int (*callback)(struct _SnortConfig *sc, tSfPolicyUserContextId pContext, tSfPolicyId policyId, void* config)
+        )
+{
+    tSfPolicyId policyId;
+    int ret = 0;
+
+    //must not use numActivePolicies because the callback may delete a policy
+    for (policyId = 0; policyId < pContext->numAllocatedPolicies; policyId++)
+    {
+        if (pContext->userConfig[policyId])
+        {
+            ret = callback(sc, pContext, policyId, pContext->userConfig[policyId]);
+            if (ret != 0)
+                break;
+        }
+    }
+
+    return ret;
+}
+
+int sfPolicyUserDataFreeIterate (
+        tSfPolicyUserContextId pContext,
         int (*callback)(tSfPolicyUserContextId pContext, tSfPolicyId policyId, void* config)
         )
 {
@@ -159,7 +185,6 @@ int sfPolicyUserDataIterate (
 
     return ret;
 }
-
 
 /** @} */ //
 

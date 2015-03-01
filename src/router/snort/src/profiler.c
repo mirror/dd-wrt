@@ -1,9 +1,10 @@
 /*
 **  $Id$
-** 
+**
 **  profiler.c
 **
-**  Copyright (C) 2005-2011 Sourcefire, Inc.
+**  Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+**  Copyright (C) 2005-2013 Sourcefire, Inc.
 **  Steven Sturges <ssturges@sourcefire.com>
 **
 **  This program is free software; you can redistribute it and/or modify
@@ -19,7 +20,7 @@
 **
 **  You should have received a copy of the GNU General Public License
 **  along with this program; if not, write to the Free Software
-**  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **
 */
 
@@ -27,6 +28,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "snort.h"
 #include "rules.h"
@@ -75,6 +80,7 @@ OTN_WorstPerformer *worstPerformers = NULL;
 
 Preproc_WorstPerformer *worstPreprocPerformers = NULL;
 PreprocStats totalPerfStats;
+PreprocStats metaPerfStats;
 static PreprocStatsNode * PreprocStatsNodeList = NULL;
 int max_layers = 0;
 
@@ -108,16 +114,17 @@ void ResetRuleProfiling(void)
             hashNode = sfghash_findnext(sc->otn_map))
     {
         otn = (OptTreeNode *)hashNode->data;
-        for ( policyId = 0; 
-              policyId < otn->proto_node_num; 
+        for ( policyId = 0;
+              policyId < otn->proto_node_num;
               policyId++ )
         {
             rtn = getRtnFromOtn(otn, policyId);
-            //rtn = currHeadNodeOtn->proto_node[currHeadNodePolicy];
+            if (rtn == NULL)
+                continue;
 
             if ((rtn->proto == IPPROTO_TCP) || (rtn->proto == IPPROTO_UDP)
-                    || (rtn->proto == IPPROTO_ICMP) || (rtn->proto == ETHERNET_TYPE_IP)) 
-            { 
+                    || (rtn->proto == IPPROTO_ICMP) || (rtn->proto == ETHERNET_TYPE_IP))
+            {
                 //do operation
                 otn->ticks = 0;
                 otn->ticks_match = 0;
@@ -217,7 +224,7 @@ void PrintWorstRules(int numToPrint)
             "%*s%*s%*s%*s%*s%*s%*s%*s%*s%*s%*s\n",
 #endif
              6, "Num",
-             9, "SID", 4, "GID", 4, "Rev", 
+             9, "SID", 4, "GID", 4, "Rev",
             11, "Checks",
             10, "Matches",
             10, "Alerts",
@@ -239,7 +246,7 @@ void PrintWorstRules(int numToPrint)
             "%*s%*s%*s%*s%*s%*s%*s%*s%*s%*s%*s\n",
 #endif
              6, "Num",
-             9, "SID", 4, "GID", 4, "Rev", 
+             9, "SID", 4, "GID", 4, "Rev",
             11, "Checks",
             10, "Matches",
             10, "Alerts",
@@ -365,12 +372,10 @@ void PrintWorstRules(int numToPrint)
 
 void CollectRTNProfile(void)
 {
-    RuleTreeNode *rtn;
     OptTreeNode *otn;
     OTN_WorstPerformer *new, *node, *last = NULL;
     char got_position;
     SFGHASH_NODE *hashNode;
-    tSfPolicyId policyId = 0;
     SnortConfig *sc = snort_conf;
 
     if (sc == NULL)
@@ -381,120 +386,114 @@ void CollectRTNProfile(void)
             hashNode = sfghash_findnext(sc->otn_map))
     {
         otn = (OptTreeNode *)hashNode->data;
-        for ( policyId = 0; 
-              policyId < otn->proto_node_num; 
-              policyId++ )
+
+        /* Only log info if OTN has actually been eval'd */
+        if (otn->checks > 0 && otn->ticks > 0)
         {
-            rtn = getRtnFromOtn(otn, policyId);
+            double ticks_per_check = (double)otn->ticks/(double)otn->checks;
+            double ticks_per_nomatch;
+            double ticks_per_match;
 
-            /* Only log info if OTN has actually been eval'd */
-            if (otn->checks > 0 && otn->ticks > 0)
+            if (otn->matches > otn->checks)
+                otn->checks = otn->matches;
+
+            if (otn->matches)
+                ticks_per_match = (double)otn->ticks_match/(double)otn->matches;
+            else
+                ticks_per_match = 0.0;
+
+            if (otn->checks == otn->matches)
+                ticks_per_nomatch = 0.0;
+            else
+                ticks_per_nomatch = (double)otn->ticks_no_match/(double)(otn->checks - otn->matches);
+
+            /* Find where he goes in the list
+             * Cycle through the list and add
+             * this where it goes
+             */
+            new = (OTN_WorstPerformer *)SnortAlloc(sizeof(OTN_WorstPerformer));
+            new->otn = otn;
+            new->ticks_per_check = ticks_per_check;
+            new->ticks_per_match = ticks_per_match;
+            new->ticks_per_nomatch = ticks_per_nomatch;
+
+            got_position = 0;
+
+            for (node = worstPerformers; node && !got_position; node = node->next)
             {
-                double ticks_per_check = (double)otn->ticks/(double)otn->checks;
-                double ticks_per_nomatch;
-                double ticks_per_match;
-
-                if (otn->matches > otn->checks)
-                    otn->checks = otn->matches;
-
-                if (otn->matches)
-                    ticks_per_match = (double)otn->ticks_match/(double)otn->matches;
-                else
-                    ticks_per_match = 0.0;
-
-                if (otn->checks == otn->matches)
-                    ticks_per_nomatch = 0.0;
-                else
-                    ticks_per_nomatch = (double)otn->ticks_no_match/(double)(otn->checks - otn->matches);
-
-                /* Find where he goes in the list
-                 * Cycle through the list and add
-                 * this where it goes
-                 */
-                new = (OTN_WorstPerformer *)SnortAlloc(sizeof(OTN_WorstPerformer));
-                new->otn = otn;
-                new->ticks_per_check = ticks_per_check;
-                new->ticks_per_match = ticks_per_match;
-                new->ticks_per_nomatch = ticks_per_nomatch;
-
-                got_position = 0;
-
-                for (node = worstPerformers; node && !got_position; node = node->next)
+                last = node;
+                switch (sc->profile_rules.sort)
                 {
-                    last = node;
-                    switch (sc->profile_rules.sort)
-                    {
-                        case PROFILE_SORT_CHECKS:
-                            if (otn->checks >= node->otn->checks)
-                            {
-                                got_position = 1;
-                            }
-                            break;
-                        case PROFILE_SORT_MATCHES:
-                            if (otn->matches >= node->otn->matches)
-                            {
-                                got_position = 1;
-                            }
-                            break;
-                        case PROFILE_SORT_NOMATCHES:
-                            if (otn->checks - otn->matches >
-                                    node->otn->checks - node->otn->matches)
-                            {
-                                got_position = 1;
-                            }
-                            break;
-                        case PROFILE_SORT_AVG_TICKS_PER_MATCH:
-                            if (ticks_per_match >= node->ticks_per_match)
-                            {
-                                got_position = 1;
-                            }
-                            break;
-                        case PROFILE_SORT_AVG_TICKS_PER_NOMATCH:
-                            if (ticks_per_nomatch >= node->ticks_per_nomatch)
-                            {
-                                got_position = 1;
-                            }
-                            break;
-                        case PROFILE_SORT_TOTAL_TICKS:
-                            if (otn->ticks >= node->otn->ticks)
-                            {
-                                got_position = 1;
-                            }
-                            break;
-                        default:
-                        case PROFILE_SORT_AVG_TICKS:
-                            if (ticks_per_check >= node->ticks_per_check)
-                            {
-                                got_position = 1;
-                            }
-                            break;
-                    }
-                    if (got_position)
+                    case PROFILE_SORT_CHECKS:
+                        if (otn->checks >= node->otn->checks)
+                        {
+                            got_position = 1;
+                        }
+                        break;
+                    case PROFILE_SORT_MATCHES:
+                        if (otn->matches >= node->otn->matches)
+                        {
+                            got_position = 1;
+                        }
+                        break;
+                    case PROFILE_SORT_NOMATCHES:
+                        if (otn->checks - otn->matches >
+                                node->otn->checks - node->otn->matches)
+                        {
+                            got_position = 1;
+                        }
+                        break;
+                    case PROFILE_SORT_AVG_TICKS_PER_MATCH:
+                        if (ticks_per_match >= node->ticks_per_match)
+                        {
+                            got_position = 1;
+                        }
+                        break;
+                    case PROFILE_SORT_AVG_TICKS_PER_NOMATCH:
+                        if (ticks_per_nomatch >= node->ticks_per_nomatch)
+                        {
+                            got_position = 1;
+                        }
+                        break;
+                    case PROFILE_SORT_TOTAL_TICKS:
+                        if (otn->ticks >= node->otn->ticks)
+                        {
+                            got_position = 1;
+                        }
+                        break;
+                    default:
+                    case PROFILE_SORT_AVG_TICKS:
+                        if (ticks_per_check >= node->ticks_per_check)
+                        {
+                            got_position = 1;
+                        }
                         break;
                 }
+                if (got_position)
+                    break;
+            }
 
-                if (node)
+            if (node)
+            {
+                new->next = node;
+                new->prev = node->prev;
+                node->prev = new;
+                if (new->prev)
+                    new->prev->next = new;
+                /* Reset the head of list */
+                if (node == worstPerformers)
+                    worstPerformers = new;
+            }
+            else
+            {
+                if (!last)
                 {
-                    new->next = node;
-                    new->prev = node->prev;
-                    node->prev = new;
-                    if (new->prev)
-                        new->prev->next = new;
-                    /* Reset the head of list */
-                    if (node == worstPerformers)
-                        worstPerformers = new;
+                    worstPerformers = new;
                 }
                 else
                 {
-                    if (!last)
-                    {
-                        worstPerformers = new;
-                    }
-                    else
-                    {
-                        new->prev = last;
-                        last->next = new;
-                    }
+                    new->prev = last;
+                    last->next = new;
                 }
             }
         }
@@ -522,7 +521,7 @@ void ShowRuleProfiles(void)
 /* The preprocessor profile list is only accessed for printing stats when
  * Snort shuts down, so adding new nodes during a reload shouldn't be a
  * problem. */
-void RegisterPreprocessorProfile(char *keyword, PreprocStats *stats, int layer, PreprocStats *parent)
+void RegisterPreprocessorProfile(const char *keyword, PreprocStats *stats, int layer, PreprocStats *parent)
 {
     PreprocStatsNode *node;
 

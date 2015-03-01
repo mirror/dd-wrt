@@ -3,7 +3,7 @@ $Id$
 SIGNATURES 
 ----
 * UDP & ICMP flow.  (Client = first person to talk?)
-* Distance from begining of the stream
+* Distance from beginning of the stream
 * Distance between CONTENT and to NEWLINE
 * IP Ranges
 * Port ranges

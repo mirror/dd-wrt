@@ -1,9 +1,10 @@
 /*
 ** $Id$
-** 
+**
 ** bitopt_funcs.h
 **
-** Copyright (C) 2002-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Dan Roelker <droelker@sourcefire.com>
 ** Marc Norton <mnorton@sourcefire.com>
 **
@@ -20,14 +21,14 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **
 ** NOTES
 **   5.15.02 - Initial Source Code. Norton/Roelker
 **   5.23.02 - Moved bitop functions to bitop.h to inline. Norton/Roelker
 **   1.21.04 - Added static initialization. Roelker
 **   9.13.05 - Separated type and inline func definitions. Sturges
-** 
+**
 */
 
 #ifndef _BITOP_FUNCS_H
@@ -41,7 +42,7 @@
 #include "config.h"
 #endif
 
-#include "debug.h"
+#include "snort_debug.h"
 #include "bitop.h"
 
 /*
@@ -58,7 +59,7 @@
 **  @return  0  successful
 **  @return !0  failed
 */
-static INLINE int boInitStaticBITOP(BITOP *BitOp,int iBytes,unsigned char *buf)
+static inline int boInitStaticBITOP(BITOP *BitOp,int iBytes,unsigned char *buf)
 {
     if(iBytes < 1 || !buf || !BitOp)
         return 1;
@@ -92,14 +93,14 @@ static INLINE int boInitStaticBITOP(BITOP *BitOp,int iBytes,unsigned char *buf)
 **    int - 0 if successful, 1 if failed.
 **
 */
-static INLINE int boInitBITOP(BITOP *BitOp, int iSize)
+static inline int boInitBITOP(BITOP *BitOp, int iBytes)
 {
-    int iBytes;
+    int iSize;
 
     /*
     **  Sanity check for size
     */
-    if((iSize < 1) || (BitOp == NULL))
+    if((iBytes < 1) || (BitOp == NULL))
     {
         return 1;
     }
@@ -114,11 +115,7 @@ static INLINE int boInitBITOP(BITOP *BitOp, int iSize)
         return 0;
     }
 
-    iBytes = iSize >> 3;
-    if(iSize & 7) 
-    {
-        iBytes++;
-    }
+    iSize = iBytes << 3;
 
     BitOp->pucBitBuffer = (unsigned char  *)calloc(1, iBytes);
     if(BitOp->pucBitBuffer == NULL)
@@ -147,7 +144,7 @@ static INLINE int boInitBITOP(BITOP *BitOp, int iSize)
 **    int - 0 if successful, 1 if failed.
 **
 */
-static INLINE int boResetBITOP(BITOP *BitOp)
+static inline int boResetBITOP(BITOP *BitOp)
 {
     if (BitOp == NULL)
         return 1;
@@ -171,7 +168,7 @@ static INLINE int boResetBITOP(BITOP *BitOp)
 **    int - 0 if successful, 1 if failed.
 **
 */
-static INLINE int boSetAllBits(BITOP *BitOp)
+static inline int boSetAllBits(BITOP *BitOp)
 {
     if (BitOp == NULL)
         return 1;
@@ -196,7 +193,7 @@ static INLINE int boSetAllBits(BITOP *BitOp)
 **    int - 0 if the bit was set, 1 if there was an error.
 **
 */
-static INLINE int boSetBit(BITOP *BitOp, unsigned int uiPos)
+static inline int boSetBit(BITOP *BitOp, unsigned int uiPos)
 {
     unsigned char  mask;
 
@@ -228,7 +225,7 @@ static INLINE int boSetBit(BITOP *BitOp, unsigned int uiPos)
 **    int - 0 if bit not set, 1 if bit is set.
 **
 */
-static INLINE int boIsBitSet(BITOP *BitOp, unsigned int uiPos)
+static inline int boIsBitSet(BITOP *BitOp, unsigned int uiPos)
 {
     unsigned char  mask;
 
@@ -259,7 +256,7 @@ static INLINE int boIsBitSet(BITOP *BitOp, unsigned int uiPos)
 **    int - 0 if the bit was cleared, 1 if there was an error.
 **
 */
-static INLINE void boClearBit(BITOP *BitOp, unsigned int uiPos)
+static inline void boClearBit(BITOP *BitOp, unsigned int uiPos)
 {
     unsigned char  mask;
 
@@ -290,7 +287,7 @@ static INLINE void boClearBit(BITOP *BitOp, unsigned int uiPos)
 **    int - 0 if the byte was cleared, 1 if there was an error.
 **
 */
-static INLINE void boClearByte(BITOP *BitOp, unsigned int uiPos)
+static inline void boClearByte(BITOP *BitOp, unsigned int uiPos)
 {
     /*
     **  Sanity Check while clearing bytes
@@ -320,7 +317,7 @@ static INLINE void boClearByte(BITOP *BitOp, unsigned int uiPos)
  **    void function
  **
  **/
-static INLINE void boFreeBITOP(BITOP *BitOp)
+static inline void boFreeBITOP(BITOP *BitOp)
 {
     if((BitOp == NULL) || (BitOp->pucBitBuffer == NULL))
         return;

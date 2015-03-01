@@ -67,7 +67,7 @@ A high Avg/Check is a poor performing rule, most likely contains PCRE.
 High Checks and low Avg/Check is usually an ANY->ANY rule with few rule
 options and no content.  Quick to check, the few options may or may not
 match.  We are looking at moving some of these into code... Especially
-those with low SIDs. 
+those with low SIDs.
 
 By default, this information will be printed to the console when Snort
 exits. You can use the "filename" option in snort.conf to specify a
@@ -97,7 +97,7 @@ directory.
 #
 # 3) Print all preprocessors, sorted by number of checks
 # config profile_preprocs: print all, sort checks
-# 
+#
 # When printing a specific number of preprocessors all subtasks info
 # is printed for each layer 0 preprocessor stat.
 
@@ -117,27 +117,51 @@ is:
 - CPU Ticks
 - Avg Ticks per Check
 - Percent of caller
-  For non layer 0 preprocessors -- ie, subroutines within preprocessors,
+  For non layer 0 preprocessors -- i.e., subroutines within preprocessors,
   this identifies the percent of the caller's ticks that is spent for
-  this subtask.  
+  this subtask.
 
-Example, using config profile_rules: print 3, sort total_ticks
-Preprocessor Profile Statistics (worst 3)
+Example, using config profile_preprocs: print 10, sort total_ticks
+Preprocessor Profile Statistics (worst 10)
 ==========================================================
-  Num            Preprocessor Layer     Checks      Exits               Ticks  Avg/Check Pct of Caller
-  ===            ============ =====     ======      =====               =====  ========= =============
-   1                       s4     0     106323     106323          5457197986    51326.6           0.0
-    1           s4StateAction     1     106323     106323          1951276047    18352.3          35.8
-    2        s4ProcessRebuilt     1       1876       1876          1400764326   746676.1          25.7
-    3                 s4State     1     106323     106323           685831114     6450.4          12.6
-    4               s4GetSess     1     106323     106323           565310684     5316.9          10.4
-    5             s4PktInsert     1      67828      67828           293546724     4327.8           5.4
-    6                 s4Flush     1       4064       4064            74460923    18322.1           1.4
-     1              s4Rebuild     2       1876       1876            42991921    22916.8          57.7
-    7               s4NewSess     1        822        822             6625851     8060.6           0.1
-    8                 s4Prune     1         30         30             3573059   119102.0           0.1
-   2              httpinspect     0      69704      69704          1090293755    15641.8           0.0
-   3               sfportscan     0     106323     106323           972732074     9148.8           0.0
+ Num            Preprocessor Layer     Checks      Exits           Microsecs  Avg/Check Pct of Caller Pct of Total
+ ===            ============ =====     ======      =====           =========  ========= ============= ============
+  1                   detect     0     338181     338181             9054573      26.77         64.62        64.62
+   1               rule eval     1     256978     256978             2570596      10.00         28.39        18.35
+    1         rule tree eval     2     399860     399860             2520629       6.30         98.06        17.99
+     1                  pcre     3      51328      51328              505636       9.85         20.06         3.61
+     2             byte_jump     3          6          6                   7       1.30          0.00         0.00
+     3               content     3    1077588    1077588             1123373       1.04         44.57         8.02
+     4            uricontent     3     106498     106498               79685       0.75          3.16         0.57
+     5             byte_test     3       9951       9951                5709       0.57          0.23         0.04
+     6              isdataat     3       8486       8486                3192       0.38          0.13         0.02
+     7              flowbits     3     135739     135739               35365       0.26          1.40         0.25
+     8                 flags     3          2          2                   0       0.20          0.00         0.00
+     9  preproc_rule_options     3      15499      15499                1939       0.13          0.08         0.01
+    10                  flow     3     394817     394817               36420       0.09          1.44         0.26
+    11             file_data     3      15957      15957                1264       0.08          0.05         0.01
+    12                   ack     3          4          4                   0       0.07          0.00         0.00
+    2               rtn eval     2      36928      36928               17500       0.47          0.68         0.12
+   2                    mpse     1     646528     646528             5840244       9.03         64.50        41.68
+  2                       s5     0     310080     310080             3270702      10.55         23.34        23.34
+   1                   s5tcp     1     310080     310080             2993020       9.65         91.51        21.36
+    1             s5TcpState     2     304484     304484             2559085       8.40         85.50        18.26
+     1            s5TcpFlush     3      22148      22148               70681       3.19          2.76         0.50
+      1  s5TcpProcessRebuilt     4      22132      22132             2018748      91.21       2856.11        14.41
+      2     s5TcpBuildPacket     4      22132      22132               34965       1.58         49.47         0.25
+     2             s5TcpData     3     184186     184186              120794       0.66          4.72         0.86
+      1       s5TcpPktInsert     4      46249      46249               89299       1.93         73.93         0.64
+    2           s5TcpNewSess     2       5777       5777               37958       6.57          1.27         0.27
+  3              httpinspect     0     204751     204751             1814731       8.86         12.95        12.95
+  4                      ssl     0      10780      10780               16283       1.51          0.12         0.12
+  5                   decode     0     312638     312638              437860       1.40          3.12         3.12
+  6               DceRpcMain     0     155358     155358              186061       1.20          1.33         1.33
+   1           DceRpcSession     1     155358     155358              156193       1.01         83.95         1.11
+  7              backorifice     0         77         77                  42       0.55          0.00         0.00
+  8                     smtp     0      45197      45197               17126       0.38          0.12         0.12
+  9                      ssh     0      26453      26453                7195       0.27          0.05         0.05
+ 10                      dns     0         28         28                   5       0.18          0.00         0.00
+ total                 total     0     311202     311202            14011946      45.03          0.00         0.00
 
 Because of task swapping, non-instrumented code, and other factors, the
 Percent of caller field will not add up to 100% of the caller's time.

@@ -1,5 +1,6 @@
 /*
-** Copyright (C) 1998-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 1998-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License Version 2 as
@@ -14,7 +15,7 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 /*
@@ -28,6 +29,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#include "sf_types.h"
 #include "sf_vartable.h"
 #include "util.h"
 
@@ -40,7 +46,7 @@ vartable_t * sfvt_alloc_table(void)
      * This value should be incremented for each variable that hasn't been
      * identified as an alias of another variable */
     table->id = 1;
- 
+
     return table;
 }
 
@@ -168,6 +174,7 @@ static char * sfvt_expand_value(vartable_t *table, char *value)
     return ret;
 
 sfvt_expand_value_error:
+    free(ret);
     free(tmp);
     return NULL;
 }
@@ -223,7 +230,7 @@ SFIP_RET sfvt_add_str(vartable_t *table, char *str, sfip_var_t **ipret)
     *ipret = var;
 
     /* Insertion sort */
-    
+
     if(!table->head)
     {
         table->head = var;
@@ -242,22 +249,22 @@ SFIP_RET sfvt_add_str(vartable_t *table, char *str, sfip_var_t **ipret)
         var->next = table->head->next;
         sfvar_free(table->head);
         table->head = var;
-        return SFIP_DUPLICATE;       
+        return SFIP_DUPLICATE;
     }
-    
+
     /* The loop below checks table->head->next->name in the first iteration.
      * Make sure there is a table->head->next first */
     if(!table->head->next)
     {
         table->head->next = var;
         return SFIP_SUCCESS;
-    } 
+    }
     else if(!strcmp(var->name, table->head->next->name))
     {
         var->next = table->head->next->next;
         sfvar_free(table->head->next);
         table->head->next = var;
-        return SFIP_DUPLICATE;       
+        return SFIP_DUPLICATE;
     }
 
     for(p = table->head; p->next; p=p->next)
@@ -276,7 +283,7 @@ SFIP_RET sfvt_add_str(vartable_t *table, char *str, sfip_var_t **ipret)
             var->next = p->next->next;
             sfvar_free(p->next);
             p->next = var;
-            return SFIP_DUPLICATE;       
+            return SFIP_DUPLICATE;
         }
     }
 
@@ -290,12 +297,12 @@ SFIP_RET sfvt_add_to_var(vartable_t *table, sfip_var_t *dst, char *src)
 {
     SFIP_RET ret;
 
-    if(!table || !dst || !src) return SFIP_ARG_ERR;        
+    if(!table || !dst || !src) return SFIP_ARG_ERR;
 
     if((ret = sfvar_parse_iplist(table, dst, src, 0)) == SFIP_SUCCESS)
         return sfvar_validate(dst);
 
-    return ret;    
+    return ret;
 }
 
 /* Looks up a variable from the table by the variable's name  */
@@ -304,15 +311,15 @@ sfip_var_t *sfvt_lookup_var(vartable_t *table, char *name)
     sfip_var_t *p;
     int len;
     char *end;
-    
+
     if(!table || !name) return NULL;
 
     if(*name == '$') name++;
 
     /* XXX should I assume there will be trailing garbage or
      * should I automatically find where the variable ends? */
-    for(end=name; 
-        *end && !isspace((int)*end) && *end != '\\' && *end != ']'; 
+    for(end=name;
+        *end && !isspace((int)*end) && *end != '\\' && *end != ']';
         end++) ;
     len = end - name;
 
@@ -351,7 +358,7 @@ void sfip_print_table(FILE *f, vartable_t *table)
     fprintf(f, "(Table %p)\n", (void*)table);
     for(p=table->head; p; p=p->next)
     {
-        sfvar_print(f, p);
+        sfvar_print_to_file(f, p);
         puts("");
     }
 }
@@ -368,7 +375,7 @@ int main()
     vartable_t *table;
     sfip_var_t *var;
     sfip_t *ip;
-     
+
     puts("********************************************************************");
     puts("Testing variable table parsing:");
     table = sfvt_alloc_table();
@@ -405,7 +412,7 @@ int main()
     var = sfvt_lookup(table, "goo");
     ip = sfip_alloc("192.168.248.255");
     TEST(sfvar_ip_in(var, ip) == SFIP_SUCCESS);
-    
+
     /* Check against the 'any' variable */
     var = sfvt_lookup_var(table, "moo");
     TEST(sfvar_ip_in(var, ip) == SFIP_SUCCESS);
@@ -422,8 +429,8 @@ int main()
     free_ip(ip);
     ip = sfip_alloc_str("192.168.0.2");
     TEST(sfvar_ip_in(var, ip) == SFIP_SUCCESS);
-    
-    
+
+
     puts("");
     puts("********************************************************************");
 

@@ -1,5 +1,6 @@
 /*
-** Copyright (C) 2002-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -15,7 +16,7 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 /* $Id$ */
@@ -28,12 +29,13 @@
 #include <string.h>
 #include <ctype.h>
 
+#include "sf_types.h"
 #include "rules.h"
 #include "treenodes.h"
 #include "decode.h"
 #include "plugbase.h"
 #include "parser.h"
-#include "debug.h"
+#include "snort_debug.h"
 #include "util.h"
 #include "plugin_enum.h"
 #include "sp_icmp_type_check.h"
@@ -45,12 +47,12 @@
 PreprocStats icmpTypePerfStats;
 extern PreprocStats ruleOTNEvalPerfStats;
 #endif
- 
+
 #include "sfhashfcn.h"
 #include "detection_options.h"
 
-void IcmpTypeCheckInit(char *, OptTreeNode *, int);
-void ParseIcmpType(char *, OptTreeNode *);
+void IcmpTypeCheckInit(struct _SnortConfig *, char *, OptTreeNode *, int);
+void ParseIcmpType(struct _SnortConfig *, char *, OptTreeNode *);
 int IcmpTypeCheck(void *option_data, Packet *p);
 
 uint32_t IcmpTypeCheckHash(void *d)
@@ -90,7 +92,7 @@ int IcmpTypeCheckCompare(void *l, void *r)
 }
 
 /****************************************************************************
- * 
+ *
  * Function: SetupIcmpTypeCheck()
  *
  * Purpose: Register the itype keyword and configuration function
@@ -112,8 +114,8 @@ void SetupIcmpTypeCheck(void)
 
 
 /****************************************************************************
- * 
- * Function: IcmpTypeCheckInit(char *, OptTreeNode *)
+ *
+ * Function: IcmpTypeCheckInit(struct _SnortConfig *, char *, OptTreeNode *)
  *
  * Purpose: Initialize the rule data structs and parse the rule argument
  *          data, then link in the detection function
@@ -124,31 +126,31 @@ void SetupIcmpTypeCheck(void)
  * Returns: void function
  *
  ****************************************************************************/
-void IcmpTypeCheckInit(char *data, OptTreeNode *otn, int protocol)
+void IcmpTypeCheckInit(struct _SnortConfig *sc, char *data, OptTreeNode *otn, int protocol)
 {
     OptFpList *fpl;
     if(protocol != IPPROTO_ICMP)
     {
         FatalError("%s(%d): ICMP Options on non-ICMP rule\n", file_name, file_line);
     }
-    
-    /* multiple declaration check */ 
+
+    /* multiple declaration check */
     if(otn->ds_list[PLUGIN_ICMP_TYPE])
     {
         FatalError("%s(%d): Multiple ICMP type options in rule\n", file_name,
                 file_line);
     }
-        
+
     /* allocate the data structure and attach it to the
        rule's data struct list */
     otn->ds_list[PLUGIN_ICMP_TYPE] = (IcmpTypeCheckData *)
             SnortAlloc(sizeof(IcmpTypeCheckData));
 
-    /* this is where the keyword arguments are processed and placed into the 
+    /* this is where the keyword arguments are processed and placed into the
        rule option's data structure */
-    ParseIcmpType(data, otn);
+    ParseIcmpType(sc, data, otn);
 
-    /* finally, attach the option's detection function to the rule's 
+    /* finally, attach the option's detection function to the rule's
        detect function pointer list */
     fpl = AddOptFuncToList(IcmpTypeCheck, otn);
     fpl->type = RULE_OPTION_TYPE_ICMP_TYPE;
@@ -158,8 +160,8 @@ void IcmpTypeCheckInit(char *data, OptTreeNode *otn, int protocol)
 
 
 /****************************************************************************
- * 
- * Function: ParseIcmpType(char *, OptTreeNode *)
+ *
+ * Function: ParseIcmpType(struct _SnortConfig *, char *, OptTreeNode *)
  *
  * Purpose: Process the itype argument and stick it in the data struct
  *
@@ -169,7 +171,7 @@ void IcmpTypeCheckInit(char *data, OptTreeNode *otn, int protocol)
  * Returns: void function
  *
  ****************************************************************************/
-void ParseIcmpType(char *data, OptTreeNode *otn)
+void ParseIcmpType(struct _SnortConfig *sc, char *data, OptTreeNode *otn)
 {
     char *type;
     IcmpTypeCheckData *ds_ptr;  /* data struct pointer */
@@ -188,7 +190,7 @@ void ParseIcmpType(char *data, OptTreeNode *otn)
         FatalError("%s (%d): No ICMP Type Specified\n",
                    file_name, file_line);
     }
-    
+
     /* get rid of spaces before the data */
     while(isspace((int)*data))
         data++;
@@ -200,7 +202,7 @@ void ParseIcmpType(char *data, OptTreeNode *otn)
     }
 
     /*
-     * if a range is specified, put the min in icmp_type, and the max in 
+     * if a range is specified, put the min in icmp_type, and the max in
      * icmp_type2
      */
 
@@ -277,7 +279,7 @@ void ParseIcmpType(char *data, OptTreeNode *otn)
         ds_ptr->operator = ICMP_TYPE_TEST_EQ;
     }
 
-    if (add_detection_option(RULE_OPTION_TYPE_ICMP_TYPE, (void *)ds_ptr, &ds_ptr_dup) == DETECTION_OPTION_EQUAL)
+    if (add_detection_option(sc, RULE_OPTION_TYPE_ICMP_TYPE, (void *)ds_ptr, &ds_ptr_dup) == DETECTION_OPTION_EQUAL)
     {
         free(ds_ptr);
         ds_ptr = otn->ds_list[PLUGIN_ICMP_TYPE] = ds_ptr_dup;
@@ -287,7 +289,7 @@ void ParseIcmpType(char *data, OptTreeNode *otn)
 }
 
 /****************************************************************************
- * 
+ *
  * Function: IcmpTypeCheck(char *, OptTreeNode *)
  *
  * Purpose: Test the packet's ICMP type field value against the option's
@@ -328,7 +330,7 @@ int IcmpTypeCheck(void *option_data, Packet *p)
                 rval = DETECTION_OPTION_MATCH;
             break;
         case ICMP_TYPE_TEST_RG:
-            if (p->icmph->type > ds_ptr->icmp_type && 
+            if (p->icmph->type > ds_ptr->icmp_type &&
                     p->icmph->type < ds_ptr->icmp_type2)
                 rval = DETECTION_OPTION_MATCH;
             break;

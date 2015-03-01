@@ -1,5 +1,6 @@
 /*
-** Copyright (C) 2002-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 ** Copyright (C) 2000,2001 Andrew R. Baker <andrewb@uab.edu>
 **
@@ -16,17 +17,17 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 /* $Id$ */
 
 /* spo_alert_full
- * 
+ *
  * Purpose:  output plugin for full alerting
  *
  * Arguments:  alert file (eventually)
- *   
+ *
  * Effect:
  *
  * Alerts are written to a file in the snort full alert format
@@ -46,12 +47,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "sf_types.h"
 #include "spo_alert_full.h"
 #include "event.h"
 #include "decode.h"
 #include "plugbase.h"
 #include "spo_plugbase.h"
-#include "debug.h"
+#include "snort_debug.h"
 #include "parser.h"
 #include "util.h"
 #include "log.h"
@@ -66,11 +68,10 @@ typedef struct _SpoAlertFullData
     TextLog* log;
 } SpoAlertFullData;
 
-static void AlertFullInit(char *);
-static SpoAlertFullData *ParseAlertFullArgs(char *);
+static void AlertFullInit(struct _SnortConfig *sc, char *);
+static SpoAlertFullData *ParseAlertFullArgs(struct _SnortConfig *, char *);
 static void AlertFull(Packet *, char *, void *, Event *);
 static void AlertFullCleanExit(int, void *);
-static void AlertFullRestart(int, void *);
 
 /*
  * not defined for backwards compatibility
@@ -83,7 +84,7 @@ static void AlertFullRestart(int, void *);
 /*
  * Function: SetupAlertFull()
  *
- * Purpose: Registers the output plugin keyword and initialization 
+ * Purpose: Registers the output plugin keyword and initialization
  *          function into the output plugin list.  This is the function that
  *          gets called from InitOutputPlugins() in plugbase.c.
  *
@@ -94,7 +95,7 @@ static void AlertFullRestart(int, void *);
  */
 void AlertFullSetup(void)
 {
-    /* link the preprocessor keyword to the init function in 
+    /* link the preprocessor keyword to the init function in
        the preproc list */
     RegisterOutputPlugin("alert_full", OUTPUT_TYPE_FLAG__ALERT, AlertFullInit);
 
@@ -113,26 +114,24 @@ void AlertFullSetup(void)
  * Returns: void function
  *
  */
-static void AlertFullInit(char *args)
+static void AlertFullInit(struct _SnortConfig *sc, char *args)
 {
     SpoAlertFullData *data;
     DEBUG_WRAP(DebugMessage(DEBUG_INIT, "Output: AlertFull Initialized\n"););
-    
+
     /* parse the argument list from the rules file */
-    data = ParseAlertFullArgs(args);
+    data = ParseAlertFullArgs(sc, args);
     DEBUG_WRAP(DebugMessage(DEBUG_INIT,"Linking AlertFull functions to call lists...\n"););
 
     /* Set the preprocessor function into the function list */
-    AddFuncToOutputList(AlertFull, OUTPUT_TYPE__ALERT, data);
+    AddFuncToOutputList(sc, AlertFull, OUTPUT_TYPE__ALERT, data);
     AddFuncToCleanExitList(AlertFullCleanExit, data);
-    AddFuncToRestartList(AlertFullRestart, data);
 }
 
 static void AlertFull(Packet *p, char *msg, void *arg, Event *event)
 {
     SpoAlertFullData *data = (SpoAlertFullData *)arg;
 
-    if(msg != NULL)
     {
         TextLog_Puts(data->log, "[**] ");
 
@@ -148,18 +147,17 @@ static void AlertFull(Packet *p, char *msg, void *arg, Event *event)
         {
             const char* iface = PRINT_INTERFACE(DAQ_GetInterfaceSpec());
             TextLog_Print(data->log, " <%s> ", iface);
+        }
+
+        if(msg != NULL)
+        {
             TextLog_Puts(data->log, msg);
             TextLog_Puts(data->log, " [**]\n");
         }
         else
         {
-            TextLog_Puts(data->log, msg);
-            TextLog_Puts(data->log, " [**]\n");
+            TextLog_Puts(data->log, "[**]\n");
         }
-    }
-    else
-    {
-        TextLog_Puts(data->log, "[**] Snort Alert! [**]\n");
     }
 
     if(p && IPH_IS_VALID(p))
@@ -202,9 +200,8 @@ static void AlertFull(Packet *p, char *msg, void *arg, Event *event)
                 default:
                     break;
             }
-
-           LogXrefs(data->log, 1);
         }
+        LogXrefs(data->log, 1);
 
         TextLog_Putc(data->log, '\n');
     } /* End of if(p) */
@@ -226,7 +223,7 @@ static void AlertFull(Packet *p, char *msg, void *arg, Event *event)
  *
  * Returns: void function
  */
-static SpoAlertFullData *ParseAlertFullArgs(char *args)
+static SpoAlertFullData *ParseAlertFullArgs(struct _SnortConfig *sc, char *args)
 {
     char **toks;
     int num_toks;
@@ -256,7 +253,7 @@ static SpoAlertFullData *ParseAlertFullArgs(char *args)
                 if ( !strcasecmp(tok, "stdout") )
                     filename = SnortStrdup(tok);
                 else
-                    filename = ProcessFileOption(snort_conf_for_parsing, tok);
+                    filename = ProcessFileOption(sc, tok);
                 break;
 
             case 1:
@@ -285,7 +282,7 @@ static SpoAlertFullData *ParseAlertFullArgs(char *args)
     mSplitFree(&toks, num_toks);
 
 #ifdef DEFAULT_FILE
-    if ( !filename ) filename = ProcessFileOption(snort_conf_for_parsing, DEFAULT_FILE);
+    if ( !filename ) filename = ProcessFileOption(sc, DEFAULT_FILE);
 #endif
 
     DEBUG_WRAP(DebugMessage(
@@ -293,8 +290,8 @@ static SpoAlertFullData *ParseAlertFullArgs(char *args)
         filename ? filename : "alert", limit
     ););
 
-    if ((filename == NULL) && (snort_conf->alert_file != NULL))
-        filename = SnortStrdup(snort_conf->alert_file);
+    if ((filename == NULL) && (sc->alert_file != NULL))
+        filename = SnortStrdup(sc->alert_file);
 
     data->log = TextLog_Init(filename, LOG_BUFFER, limit);
 
@@ -317,10 +314,5 @@ static void AlertFullCleanup(int signal, void *arg, const char* msg)
 static void AlertFullCleanExit(int signal, void *arg)
 {
     AlertFullCleanup(signal, arg, "AlertFullCleanExit");
-}
-
-static void AlertFullRestart(int signal, void *arg)
-{
-    AlertFullCleanup(signal, arg, "AlertFullRestart");
 }
 

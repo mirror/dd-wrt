@@ -3,7 +3,8 @@
 **
 ** fpfuncs.h
 **
-** Copyright (C) 2002-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Dan Roelker <droelker@sourcefire.com>
 ** Marc Norton <mnorton@sourcefire.com>
 **
@@ -23,7 +24,7 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **
 */
 
@@ -35,7 +36,7 @@
 #endif
 
 #include "fpcreate.h"
-#include "debug.h"
+#include "snort_debug.h"
 #include "decode.h"
 #include "sflsq.h"
 #include "event_queue.h"
@@ -56,9 +57,9 @@ int fpEvalRTN(RuleTreeNode *rtn, Packet *p, int check_ports);
 **  to match before choosing which event to log.
 **  (Since we can only log one.) This define is the limit.
 */
-#define MAX_EVENT_MATCH 100 
+#define MAX_EVENT_MATCH 100
 
-/*              
+/*
 **  MATCH_INFO
 **  The events that are matched get held in this structure,
 **  and iMatchIndex gets set to the event that holds the
@@ -70,7 +71,7 @@ typedef struct {
  int  iMatchCount;
  int  iMatchIndex;
  int  iMatchMaxLen;
- 
+
 }MATCH_INFO;
 
 /*
@@ -82,7 +83,7 @@ typedef struct {
 **  the event to log based on the event comparison
 **  function.
 */
-typedef struct 
+typedef struct
 {
     PORT_GROUP * pg;
     Packet * p;
@@ -95,9 +96,9 @@ typedef struct
 OTNX_MATCH_DATA * OtnXMatchDataNew(int);
 void OtnxMatchDataFree(OTNX_MATCH_DATA *);
 
-int fpAddMatch( OTNX_MATCH_DATA *omd_local, OTNX *otnx, int pLen,
-                OptTreeNode *otn);
+int fpAddMatch( OTNX_MATCH_DATA *omd_local, int pLen, OptTreeNode *otn);
 void fpEvalIpProtoOnlyRules(SF_LIST **, Packet *);
+OptTreeNode * GetOTN(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, char *);
 
 #define TO_SERVER 1
 #define TO_CLIENT 0

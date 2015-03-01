@@ -1,5 +1,6 @@
 /*
-** Copyright (C) 2002-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -15,24 +16,24 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 /* $Id$ */
-/* sp_icmp_seq_check 
- * 
+/* sp_icmp_seq_check
+ *
  * Purpose:
  *
- * Test the Sequence number field of ICMP ECHO and ECHO_REPLY packets for 
+ * Test the Sequence number field of ICMP ECHO and ECHO_REPLY packets for
  * specified values.  This is useful for detecting TFN attacks, amongst others.
  *
  * Arguments:
- *   
+ *
  * The ICMP Seq plugin takes a number as an option argument.
  *
  * Effect:
  *
- * Tests ICMP ECHO and ECHO_REPLY packet Seq field values and returns a 
+ * Tests ICMP ECHO and ECHO_REPLY packet Seq field values and returns a
  * "positive" detection result (i.e. passthrough) upon a value match.
  *
  * Comments:
@@ -48,12 +49,13 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+#include "sf_types.h"
 #include "rules.h"
 #include "treenodes.h"
 #include "decode.h"
 #include "plugbase.h"
 #include "parser.h"
-#include "debug.h"
+#include "snort_debug.h"
 #include "util.h"
 #include "plugin_enum.h"
 
@@ -71,10 +73,10 @@ typedef struct _IcmpSeqCheckData
 {
     unsigned short icmpseq;
 
-} IcmpSeqCheckData; 
+} IcmpSeqCheckData;
 
-void IcmpSeqCheckInit(char *, OptTreeNode *, int);
-void ParseIcmpSeq(char *, OptTreeNode *);
+void IcmpSeqCheckInit(struct _SnortConfig *, char *, OptTreeNode *, int);
+void ParseIcmpSeq(struct _SnortConfig *, char *, OptTreeNode *);
 int IcmpSeqCheck(void *option_data, Packet *p);
 
 uint32_t IcmpSeqCheckHash(void *d)
@@ -110,7 +112,7 @@ int IcmpSeqCheckCompare(void *l, void *r)
 
 
 /****************************************************************************
- * 
+ *
  * Function: SetupIcmpSeqCheck()
  *
  * Purpose: Registers the configuration function and links it to a rule
@@ -135,7 +137,7 @@ void SetupIcmpSeqCheck(void)
 
 
 /****************************************************************************
- * 
+ *
  * Function: IcmpSeqCheckInit(char *, OptTreeNode *)
  *
  * Purpose: Handles parsing the rule information and attaching the associated
@@ -147,7 +149,7 @@ void SetupIcmpSeqCheck(void)
  * Returns: void function
  *
  ****************************************************************************/
-void IcmpSeqCheckInit(char *data, OptTreeNode *otn, int protocol)
+void IcmpSeqCheckInit(struct _SnortConfig *sc, char *data, OptTreeNode *otn, int protocol)
 {
     OptFpList *fpl;
     if(protocol != IPPROTO_ICMP)
@@ -155,7 +157,7 @@ void IcmpSeqCheckInit(char *data, OptTreeNode *otn, int protocol)
         FatalError("%s(%d): ICMP Options on non-ICMP rule\n", file_name, file_line);
     }
 
-    /* multiple declaration check */ 
+    /* multiple declaration check */
     if(otn->ds_list[PLUGIN_ICMP_SEQ_CHECK])
     {
         FatalError("%s(%d): Multiple ICMP seq options in rule\n", file_name,
@@ -167,11 +169,11 @@ void IcmpSeqCheckInit(char *data, OptTreeNode *otn, int protocol)
     otn->ds_list[PLUGIN_ICMP_SEQ_CHECK] = (IcmpSeqCheckData *)
         SnortAlloc(sizeof(IcmpSeqCheckData));
 
-    /* this is where the keyword arguments are processed and placed into the 
+    /* this is where the keyword arguments are processed and placed into the
        rule option's data structure */
-    ParseIcmpSeq(data, otn);
+    ParseIcmpSeq(sc, data, otn);
 
-    /* finally, attach the option's detection function to the rule's 
+    /* finally, attach the option's detection function to the rule's
        detect function pointer list */
     fpl = AddOptFuncToList(IcmpSeqCheck, otn);
     fpl->type = RULE_OPTION_TYPE_ICMP_SEQ;
@@ -181,8 +183,8 @@ void IcmpSeqCheckInit(char *data, OptTreeNode *otn, int protocol)
 
 
 /****************************************************************************
- * 
- * Function: ParseIcmpSeq(char *, OptTreeNode *)
+ *
+ * Function: ParseIcmpSeq(struct _SnortConfig *, char *, OptTreeNode *)
  *
  * Purpose: Convert the rule option argument to program data.
  *
@@ -192,7 +194,7 @@ void IcmpSeqCheckInit(char *data, OptTreeNode *otn, int protocol)
  * Returns: void function
  *
  ****************************************************************************/
-void ParseIcmpSeq(char *data, OptTreeNode *otn)
+void ParseIcmpSeq(struct _SnortConfig *sc, char *data, OptTreeNode *otn)
 {
     IcmpSeqCheckData *ds_ptr;  /* data struct pointer */
     void *ds_ptr_dup;
@@ -213,8 +215,8 @@ void ParseIcmpSeq(char *data, OptTreeNode *otn)
                    file_name, file_line, data);
     }
     ds_ptr->icmpseq = htons(ds_ptr->icmpseq);
-    
-    if (add_detection_option(RULE_OPTION_TYPE_ICMP_SEQ, (void *)ds_ptr, &ds_ptr_dup) == DETECTION_OPTION_EQUAL)
+
+    if (add_detection_option(sc, RULE_OPTION_TYPE_ICMP_SEQ, (void *)ds_ptr, &ds_ptr_dup) == DETECTION_OPTION_EQUAL)
     {
         free(ds_ptr);
         ds_ptr = otn->ds_list[PLUGIN_ICMP_SEQ_CHECK] = ds_ptr_dup;
@@ -225,7 +227,7 @@ void ParseIcmpSeq(char *data, OptTreeNode *otn)
 
 
 /****************************************************************************
- * 
+ *
  * Function: IcmpSeqCheck(char *, OptTreeNode *)
  *
  * Purpose: Compare the ICMP Sequence field to the rule value.
@@ -234,7 +236,7 @@ void ParseIcmpSeq(char *data, OptTreeNode *otn)
  *            otn => pointer to the current rule's OTN
  *
  * Returns: If the detection test fails, this function *must* return a zero!
- *          On success, it calls the next function in the detection list 
+ *          On success, it calls the next function in the detection list
  *
  ****************************************************************************/
 int IcmpSeqCheck(void *option_data, Packet *p)
@@ -248,11 +250,9 @@ int IcmpSeqCheck(void *option_data, Packet *p)
 
     PREPROC_PROFILE_START(icmpSeqPerfStats);
 
-    if( (p->icmph->type == ICMP_ECHO || p->icmph->type == ICMP_ECHOREPLY) 
-#ifdef SUP_IP6
-        || (p->icmph->type == ICMP6_ECHO || p->icmph->type == ICMP6_REPLY) 
-#endif
-      ) 
+    if( (p->icmph->type == ICMP_ECHO || p->icmph->type == ICMP_ECHOREPLY)
+        || (p->icmph->type == ICMP6_ECHO || p->icmph->type == ICMP6_REPLY)
+      )
     {
         /* test the rule ID value against the ICMP extension ID field */
         if(icmpSeq->icmpseq == p->icmph->s_icmp_seq)

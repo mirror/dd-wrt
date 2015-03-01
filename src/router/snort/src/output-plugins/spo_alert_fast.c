@@ -1,5 +1,6 @@
 /*
-** Copyright (C) 2002-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 ** Copyright (C) 2000,2001 Andrew R. Baker <andrewb@uab.edu>
 **
@@ -16,17 +17,17 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 /* $Id$ */
 
 /* spo_alert_fast
- * 
+ *
  * Purpose:  output plugin for fast alerting
  *
  * Arguments:  alert file
- *   
+ *
  * Effect:
  *
  * Alerts are written to a file in the snort fast alert format
@@ -59,7 +60,7 @@
 #include "spo_alert_fast.h"
 #include "event.h"
 #include "decode.h"
-#include "debug.h"
+#include "snort_debug.h"
 #include "plugbase.h"
 #include "spo_plugbase.h"
 #include "parser.h"
@@ -93,16 +94,15 @@ typedef struct _SpoAlertFastData
     uint8_t packet_flag;
 } SpoAlertFastData;
 
-static void AlertFastInit(char *);
-static SpoAlertFastData *ParseAlertFastArgs(char *);
+static void AlertFastInit(struct _SnortConfig *, char *);
+static SpoAlertFastData *ParseAlertFastArgs(struct _SnortConfig *, char *);
 static void AlertFastCleanExitFunc(int, void *);
-static void AlertFastRestartFunc(int, void *);
 static void AlertFast(Packet *, char *, void *, Event *);
 
 /*
  * Function: SetupAlertFast()
  *
- * Purpose: Registers the output plugin keyword and initialization 
+ * Purpose: Registers the output plugin keyword and initialization
  *          function into the output plugin list.  This is the function that
  *          gets called from InitOutputPlugins() in plugbase.c.
  *
@@ -113,7 +113,7 @@ static void AlertFast(Packet *, char *, void *, Event *);
  */
 void AlertFastSetup(void)
 {
-    /* link the preprocessor keyword to the init function in 
+    /* link the preprocessor keyword to the init function in
        the preproc list */
     RegisterOutputPlugin("alert_fast", OUTPUT_TYPE_FLAG__ALERT, AlertFastInit);
     DEBUG_WRAP(DebugMessage(DEBUG_INIT,"Output plugin: AlertFast is setup...\n"););
@@ -131,40 +131,39 @@ void AlertFastSetup(void)
  * Returns: void function
  *
  */
-static void AlertFastInit(char *args)
+static void AlertFastInit(struct _SnortConfig *sc, char *args)
 {
     SpoAlertFastData *data;
 
     DEBUG_WRAP(DebugMessage(DEBUG_INIT,"Output: AlertFast Initialized\n"););
 
     /* parse the argument list from the rules file */
-    data = ParseAlertFastArgs(args);
+    data = ParseAlertFastArgs(sc, args);
 
     DEBUG_WRAP(DebugMessage(DEBUG_INIT,"Linking AlertFast functions to call lists...\n"););
-    
+
     /* Set the preprocessor function into the function list */
-    AddFuncToOutputList(AlertFast, OUTPUT_TYPE__ALERT, data);
+    AddFuncToOutputList(sc, AlertFast, OUTPUT_TYPE__ALERT, data);
     AddFuncToCleanExitList(AlertFastCleanExitFunc, data);
-    AddFuncToRestartList(AlertFastRestartFunc, data);
 }
+
+static const char* s_dispos[] = { " [Allow]", " [CDrop]", " [WDrop]", " [Drop]", " [FDrop]" };
 
 static void AlertFast(Packet *p, char *msg, void *arg, Event *event)
 {
     SpoAlertFastData *data = (SpoAlertFastData *)arg;
+    tActiveDrop dispos = Active_GetDisposition();
 
     LogTimeStamp(data->log, p);
 
-    if( p != NULL && Active_PacketWasDropped() )
+    if( p != NULL && dispos > ACTIVE_ALLOW )
     {
-        TextLog_Puts(data->log, " [Drop]");
-    }
-    else if( p != NULL && Active_PacketWouldBeDropped() )
-    {
-        TextLog_Puts(data->log, " [WDrop]");
+        if ( dispos > ACTIVE_DROP )
+            dispos = ACTIVE_DROP;
+
+        TextLog_Puts(data->log, s_dispos[dispos]);
     }
 
-
-    if(msg != NULL)
     {
 #ifdef MARK_TAGGED
         char c=' ';
@@ -188,14 +187,17 @@ static void AlertFast(Packet *p, char *msg, void *arg, Event *event)
         if (ScAlertInterface())
         {
             TextLog_Print(data->log, " <%s> ", PRINT_INTERFACE(DAQ_GetInterfaceSpec()));
+        }
+
+        if (msg != NULL)
+        {
             TextLog_Puts(data->log, msg);
+            TextLog_Puts(data->log, " [**] ");
         }
         else
         {
-            TextLog_Puts(data->log, msg);
+            TextLog_Puts(data->log, "[**] ");
         }
-
-        TextLog_Puts(data->log, " [**] ");
     }
 
     /* print the packet header to the alert file */
@@ -210,22 +212,34 @@ static void AlertFast(Packet *p, char *msg, void *arg, Event *event)
     {
         /* Log whether or not this is reassembled data - only indicate
          * if we're actually going to show any of the payload */
-        if (ScOutputAppData() && (p->dsize > 0))
+        if (ScOutputAppData() && (p->dsize > 0) && PacketWasCooked(p))
         {
-            if (p->packet_flags & PKT_SMB_SEG)
+            switch ( p->pseudo_type ) {
+            case PSEUDO_PKT_SMB_SEG:
                 TextLog_Print(data->log, "\n%s", "SMB desegmented packet");
-            else if (p->packet_flags & PKT_DCE_SEG)
+                break;
+            case PSEUDO_PKT_DCE_SEG:
                 TextLog_Print(data->log, "\n%s", "DCE/RPC desegmented packet");
-            else if (p->packet_flags & PKT_DCE_FRAG)
+                break;
+            case PSEUDO_PKT_DCE_FRAG:
                 TextLog_Print(data->log, "\n%s", "DCE/RPC defragmented packet");
-            else if (p->packet_flags & PKT_SMB_TRANS)
+                break;
+            case PSEUDO_PKT_SMB_TRANS:
                 TextLog_Print(data->log, "\n%s", "SMB Transact reassembled packet");
-            else if (p->packet_flags & PKT_DCE_RPKT)
+                break;
+            case PSEUDO_PKT_DCE_RPKT:
                 TextLog_Print(data->log, "\n%s", "DCE/RPC reassembled packet");
-            else if (p->packet_flags & PKT_REBUILT_STREAM)
+                break;
+            case PSEUDO_PKT_TCP:
                 TextLog_Print(data->log, "\n%s", "Stream reassembled packet");
-            else if (p->packet_flags & PKT_REBUILT_FRAG)
+                break;
+            case PSEUDO_PKT_IP:
                 TextLog_Print(data->log, "\n%s", "Frag reassembled packet");
+                break;
+            default:
+                // FIXTHIS do we get here for portscan or sdf?
+                break;
+            }
         }
 
         TextLog_NewLine(data->log);
@@ -253,7 +267,7 @@ static void AlertFast(Packet *p, char *msg, void *arg, Event *event)
  * Returns: void function
  *
  */
-static SpoAlertFastData *ParseAlertFastArgs(char *args)
+static SpoAlertFastData *ParseAlertFastArgs(struct _SnortConfig *sc, char *args)
 {
     char **toks;
     int num_toks;
@@ -285,7 +299,7 @@ static SpoAlertFastData *ParseAlertFastArgs(char *args)
                     filename = SnortStrdup(tok);
 
                 else
-                    filename = ProcessFileOption(snort_conf_for_parsing, tok);
+                    filename = ProcessFileOption(sc, tok);
                 break;
 
             case 1:
@@ -325,7 +339,7 @@ static SpoAlertFastData *ParseAlertFastArgs(char *args)
     mSplitFree(&toks, num_toks);
 
 #ifdef DEFAULT_FILE
-    if ( !filename ) filename = ProcessFileOption(snort_conf_for_parsing, DEFAULT_FILE);
+    if ( !filename ) filename = ProcessFileOption(sc, DEFAULT_FILE);
 #endif
 
     DEBUG_WRAP(DebugMessage(
@@ -333,8 +347,8 @@ static SpoAlertFastData *ParseAlertFastArgs(char *args)
         filename?filename:"alert", data->packet_flag, limit
     ););
 
-    if ((filename == NULL) && (snort_conf->alert_file != NULL))
-        filename = SnortStrdup(snort_conf->alert_file);
+    if ((filename == NULL) && (sc->alert_file != NULL))
+        filename = SnortStrdup(sc->alert_file);
 
     data->log = TextLog_Init(filename, bufSize, limit);
 
@@ -357,10 +371,5 @@ static void AlertFastCleanup(int signal, void *arg, const char* msg)
 static void AlertFastCleanExitFunc(int signal, void *arg)
 {
     AlertFastCleanup(signal, arg, "AlertFastCleanExitFunc");
-}
-
-static void AlertFastRestartFunc(int signal, void *arg)
-{
-    AlertFastCleanup(signal, arg, "AlertFastRestartFunc");
 }
 

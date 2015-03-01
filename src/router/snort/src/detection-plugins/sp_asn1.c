@@ -1,6 +1,7 @@
 /* $Id$ */
 /*
- ** Copyright (C) 2002-2011 Sourcefire, Inc.
+ ** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2002-2013 Sourcefire, Inc.
  ** Author: Daniel Roelker
  **
  ** This program is free software; you can redistribute it and/or modify
@@ -16,20 +17,20 @@
  **
  ** You should have received a copy of the GNU General Public License
  ** along with this program; if not, write to the Free Software
- ** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
 /**
 **  @file        sp_asn1.c
 **
 **  @author      Daniel Roelker <droelker@sourcefire.com>
-** 
+**
 **  @brief       Decode and detect ASN.1 types, lengths, and data.
 **
 **  This detection plugin adds ASN.1 detection functions on a per rule
 **  basis.  ASN.1 detection plugins can be added by editing this file and
 **  providing an interface in the configuration code.
-**  
+**
 **  Detection Plugin Interface:
 **
 **  asn1: [detection function],[arguments],[offset type],[size]
@@ -60,13 +61,14 @@
 #include <ctype.h>
 #include <errno.h>
 
-#include "bounds.h"
+#include "sf_types.h"
+#include "snort_bounds.h"
 #include "rules.h"
 #include "treenodes.h"
 #include "decode.h"
 #include "plugbase.h"
 #include "parser.h"
-#include "debug.h"
+#include "snort_debug.h"
 #include "util.h"
 #include "plugin_enum.h"
 #include "asn1.h"
@@ -110,7 +112,7 @@ uint32_t Asn1Hash(void *d)
     a += data->length;
     b += data->max_length;
     c += data->offset;
-    
+
     mix(a,b,c);
 
     a += data->offset_type;
@@ -128,7 +130,7 @@ int Asn1Compare(void *l, void *r)
 
     if (!left || !right)
         return DETECTION_OPTION_NOT_EQUAL;
-    
+
     if ((left->bs_overflow == right->bs_overflow) &&
         (left->double_overflow == right->double_overflow) &&
         (left->print == right->print) &&
@@ -208,7 +210,7 @@ static void Asn1RuleParse(char *data, OptTreeNode *otn, ASN1_CTXT *asn1)
             {
                 FatalError("%s(%d) => Negative size, underflow or overflow "
                            "(of long int) to '%s' in 'asn1' detection plugin. "
-                           "Must be positive or zero.\n", 
+                           "Must be positive or zero.\n",
                            file_name, file_line, LENGTH_OPT);
             }
 
@@ -229,7 +231,7 @@ static void Asn1RuleParse(char *data, OptTreeNode *otn, ASN1_CTXT *asn1)
             if (endTok == pcTok)
             {
                 FatalError("%s(%d) => Invalid parameter to '%s' in 'asn1' "
-                           "detection plugin\n", 
+                           "detection plugin\n",
                            file_name, file_line, ABS_OFFSET_OPT);
             }
 
@@ -248,7 +250,7 @@ static void Asn1RuleParse(char *data, OptTreeNode *otn, ASN1_CTXT *asn1)
             if (endTok == pcTok)
             {
                 FatalError("%s(%d) => Invalid parameter to '%s' in 'asn1' "
-                           "detection plugin\n", 
+                           "detection plugin\n",
                            file_name, file_line, pcTok);
             }
         }
@@ -303,21 +305,21 @@ int Asn1Detect(void *context, Packet *p)
     return DETECTION_OPTION_NO_MATCH;
 }
 
-static void Asn1Init(char *data, OptTreeNode *otn, int protocol)
+static void Asn1Init(struct _SnortConfig *sc, char *data, OptTreeNode *otn, int protocol)
 {
     ASN1_CTXT *asn1;
     void *ds_ptr_dup;
     OptFpList *ofl;
 
-    /* 
-     * allocate the data structure and attach 
-     * it to the rule's data struct list 
+    /*
+     * allocate the data structure and attach
+     * it to the rule's data struct list
      */
     asn1 = (ASN1_CTXT *)SnortAlloc(sizeof(ASN1_CTXT));
 
     Asn1RuleParse(data, otn, asn1);
 
-    if (add_detection_option(RULE_OPTION_TYPE_ASN1, (void *)asn1, &ds_ptr_dup) == DETECTION_OPTION_EQUAL)
+    if (add_detection_option(sc, RULE_OPTION_TYPE_ASN1, (void *)asn1, &ds_ptr_dup) == DETECTION_OPTION_EQUAL)
     {
         free(asn1);
         asn1 = ds_ptr_dup;

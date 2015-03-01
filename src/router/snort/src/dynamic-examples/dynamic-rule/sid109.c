@@ -1,6 +1,7 @@
 /****************************************************************************
  *
- * Copyright (C) 2005-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -15,9 +16,13 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************/
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "sf_snort_plugin_api.h"
 #include "sf_snort_packet.h"
 #include "detection_lib_meta.h"
@@ -33,7 +38,7 @@
  */
 
 /* flow:established, from_server; */
-static FlowFlags sid109flow = 
+static FlowFlags sid109flow =
 {
     FLOW_ESTABLISHED|FLOW_TO_CLIENT
 };
@@ -47,7 +52,7 @@ static RuleOption sid109option1 =
 };
 
 /* content:"NetBus";  */
-static ContentInfo sid109content = 
+static ContentInfo sid109content =
 {
     (u_int8_t *)"NetBus",               /* pattern to search for */
     0,                      /* depth */
@@ -59,10 +64,14 @@ static ContentInfo sid109content =
     0,                      /* holder of increment length */
     0,                      /* holder for fp offset */
     0,                      /* holder for fp length */
-    0                       /* holder for fp only */
+    0,                      /* holder for fp only */
+    NULL, // offset_refId
+    NULL, // depth_refId
+    NULL, // offset_location
+    NULL  // depth_location
 };
 
-static RuleOption sid109option2 = 
+static RuleOption sid109option2 =
 {
     OPTION_TYPE_CONTENT,
     {
@@ -102,7 +111,7 @@ Rule sid109 =
         ANY_PORT            /* destination port(s) */
     },
     /* metadata */
-    { 
+    {
         3,                  /* genid -- use 3 to distinguish a C rule */
         109,                /* sigid */
         5,                  /* revision */

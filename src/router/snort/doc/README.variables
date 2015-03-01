@@ -12,13 +12,8 @@ The Snort configuration file allows a user to declare and use variables for
 configuring Snort.  Variables may contain a string (such as to be used in 
 a path), IPs, or ports.
 
-The IP variable and list behavior documented below is only enabled with IPv6 
-support.  The port variable and list behavior is hardcoded to be on by default.
-
 NOTE: The behavior for negating IP, IP lists, and CIDR blocks has changed!
-This new behavior is enabled by default regardless of whether or not IPv6
-support is enabled.  See the IP Variables and IP Lists section below for 
-more information.
+See the IP Variables and IP Lists section below for more information.
 
 
 IP Variables and IP Lists

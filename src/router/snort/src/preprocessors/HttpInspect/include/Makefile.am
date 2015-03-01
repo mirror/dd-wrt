@@ -8,6 +8,7 @@ hi_client_stateful.h \
 hi_eo_events.h \
 hi_eo.h \
 hi_eo_log.h \
+hi_paf.h \
 hi_include.h \
 hi_mi.h \
 hi_norm.h \
@@ -25,4 +26,7 @@ hi_uri.h \
 hi_util.h \
 hi_util_hbm.h \
 hi_util_kmap.h \
-hi_util_xmalloc.h 
+hi_util_xmalloc.h \
+file_decomp.h \
+file_decomp_PDF.h \
+file_decomp_SWF.h

@@ -33,6 +33,10 @@
 #include <windows.h>
 #include <stdio.h>
 #include <time.h>
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "name.h"
 #include "syslog.h"
 
@@ -108,12 +112,12 @@ void vsyslog(int pri, char *fmt, va_list ap){
         fmt_cpy[FMT_LEN - 1] = '\0';
 	    vsnprintf(p, tbuf_left, fmt_cpy, ap);
         p[tbuf_left - 1] = '\0';
-	    
+
 	    /* Get connected, output the message to the local logger. */
 	    if (!opened)
 		    openlog(LogTag, LogStat, 0);
 
-	
+
         if ((strlen(snort_conf->syslog_server) != 0)
                 && resolve_host(snort_conf->syslog_server))
         {
@@ -138,7 +142,7 @@ void vsyslog(int pri, char *fmt, va_list ap){
 
 		return;
 	}
-	
+
     /* Check for invalid bits. */
     if (pri & ~(LOG_PRIMASK|LOG_FACMASK)) {
             syslog(INTERNALLOG,
@@ -257,7 +261,7 @@ void vsyslog(int pri, char *fmt, va_list ap){
 	if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) == SOCKET_ERROR)
     {
 		ErrorMessage("[!] ERROR: Could not create the socket to send the "
-                     "syslog alert. Error Number: %d.\n", WSAGetLastError());	
+                     "syslog alert. Error Number: %d.\n", WSAGetLastError());
 		return;
 	}
 
@@ -268,7 +272,7 @@ void vsyslog(int pri, char *fmt, va_list ap){
 	if (!sin.sin_addr.s_addr)
     {
 		ErrorMessage("[!] ERROR: Could not resolve syslog server's hostname. "
-                     "Error Number: %d.\n", WSAGetLastError());		
+                     "Error Number: %d.\n", WSAGetLastError());
 		closesocket(sockfd);
 		return;
 	}
@@ -276,7 +280,7 @@ void vsyslog(int pri, char *fmt, va_list ap){
 	if(sendto(sockfd,tbuf,cnt,(int)NULL, (SOCKADDR *)&sin, sizeof(SOCKADDR_IN)) == SOCKET_ERROR)
     {
 		ErrorMessage("[!] ERROR: Could not send the alert to the syslog "
-                     "server. Error Number: %d.\n", WSAGetLastError());		
+                     "server. Error Number: %d.\n", WSAGetLastError());
 		closesocket(sockfd);
 		return;
 	}
@@ -301,57 +305,57 @@ void openlog(char *ident, int logstat, int logfac){
 /* Taken from MSDN. */
 void AddEventSource(char *ident)
 {
-    HKEY hk; 
-    DWORD dwData; 
+    HKEY hk;
+    DWORD dwData;
     char szFilePath[_MAX_PATH];
 	char key[_MAX_PATH];
-	
-    // Add your source name as a subkey under the Application 
-    // key in the EventLog registry key. 
+
+    // Add your source name as a subkey under the Application
+    // key in the EventLog registry key.
     SnortSnprintf(key, sizeof(key), "SYSTEM\\CurrentControlSet\\Services\\EventLog\\Application\\%s", ident);
 
     if (RegCreateKey(HKEY_LOCAL_MACHINE, key, &hk)) {
-		printf("Could not create the registry key."); 
+		printf("Could not create the registry key.");
 		exit(-1);
 	}
- 
-    // Set the name of the message file. 
+
+    // Set the name of the message file.
 	GetModuleFileName(NULL, szFilePath, sizeof(szFilePath));
     szFilePath[ sizeof(szFilePath)-1 ] = 0;
-    // Add the name to the EventMessageFile subkey. 
- 
-    if (RegSetValueEx(hk,             // subkey handle 
-            "EventMessageFile",       // value name 
-            0,                        // must be zero 
-            REG_EXPAND_SZ,            // value type 
-            (LPBYTE) szFilePath,           // pointer to value data 
-            strlen(szFilePath) + 1)) {       // length of value data 
-        printf("Could not set the event message file."); 
+    // Add the name to the EventMessageFile subkey.
+
+    if (RegSetValueEx(hk,             // subkey handle
+            "EventMessageFile",       // value name
+            0,                        // must be zero
+            REG_EXPAND_SZ,            // value type
+            (LPBYTE) szFilePath,           // pointer to value data
+            strlen(szFilePath) + 1)) {       // length of value data
+        printf("Could not set the event message file.");
 		exit(-1);
 	}
- 
-    // Set the supported event types in the TypesSupported subkey. 
- 
-    dwData = EVENTLOG_ERROR_TYPE | EVENTLOG_WARNING_TYPE | 
-        EVENTLOG_INFORMATION_TYPE | EVENTLOG_AUDIT_SUCCESS | EVENTLOG_AUDIT_FAILURE; 
- 
-    if (RegSetValueEx(hk,      // subkey handle 
-            "TypesSupported",  // value name 
-            0,                 // must be zero 
-            REG_DWORD,         // value type 
-            (LPBYTE) &dwData,  // pointer to value data 
-            sizeof(DWORD))){    // length of value data 
-        printf("Could not set the supported types."); 
+
+    // Set the supported event types in the TypesSupported subkey.
+
+    dwData = EVENTLOG_ERROR_TYPE | EVENTLOG_WARNING_TYPE |
+        EVENTLOG_INFORMATION_TYPE | EVENTLOG_AUDIT_SUCCESS | EVENTLOG_AUDIT_FAILURE;
+
+    if (RegSetValueEx(hk,      // subkey handle
+            "TypesSupported",  // value name
+            0,                 // must be zero
+            REG_DWORD,         // value type
+            (LPBYTE) &dwData,  // pointer to value data
+            sizeof(DWORD))){    // length of value data
+        printf("Could not set the supported types.");
 		exit(-1);
 	}
- 
-    RegCloseKey(hk); 
-} 
+
+    RegCloseKey(hk);
+}
 
 unsigned long resolve_host(char *host) {
     struct hostent *he;
     unsigned long ip;
-    
+
     if (inet_addr(host) == INADDR_NONE)
     {
         he = gethostbyname(host);
@@ -381,6 +385,6 @@ unsigned long resolve_host(char *host) {
     } else {
         ip = inet_addr(host);
     }
-    
+
     return ip;
 }

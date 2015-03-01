@@ -15,12 +15,12 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 /*
  * win32_service.c v1.0 - 20 February 2002
- * 
+ *
  * Purpose: Lets Snort register as a Win32 Service.  This includes both
  *          an installation an uninstallation aspect.
  *
@@ -30,15 +30,15 @@
  *          saved into the registry when the snort service is
  *          being installed.  They are stored in:
  *              HKLM \ SOFTWARE \ Snort
- *          
+ *
  * Usage:
  *          snort.exe /SERVICE /INSTALL [regular command-line params]
- *          
+ *
  *          snort.exe /SERVICE /UNINSTALL
- * 
+ *
  *          snort.exe /SERVICE /SHOW
- * 
- * References 
+ *
+ * References
  *          Microsoft has full docs on programming Win32 Services in their
  *          MSDN (Microsoft Developer Network) library.
  *          http://msdn.microsoft.com/
@@ -67,7 +67,7 @@
 #include <pcap.h>
 
 #include "snort.h"
-#include "debug.h"
+#include "snort_debug.h"
 #include "util.h"
 
 static LPTSTR g_lpszServiceName        = "SnortSvc";
@@ -78,19 +78,19 @@ static LPTSTR g_lpszRegistryKey        = "SOFTWARE\\Snort";
 static LPTSTR g_lpszRegistryCmdFormat  = "CmdLineParam_%03d";
 static LPTSTR g_lpszRegistryCountFormat= "CmdLineParamCount";
 
-static SERVICE_STATUS          g_SnortServiceStatus; 
-static SERVICE_STATUS_HANDLE   g_SnortServiceStatusHandle; 
+static SERVICE_STATUS          g_SnortServiceStatus;
+static SERVICE_STATUS_HANDLE   g_SnortServiceStatusHandle;
 
 #define MAX_REGISTRY_KEY_LENGTH   255
 #define MAX_REGISTRY_DATA_LENGTH  1000
- 
+
 
 static VOID  SvcDebugOut(LPSTR String, DWORD Status);
 static VOID  SvcFormatMessage(LPSTR szString, int iCount);
 static VOID  ReadServiceCommandLineParams( int * piArgCounter, char** * pargvDynamic );
-static VOID  WINAPI SnortServiceStart (DWORD argc, LPTSTR *argv); 
-static VOID  WINAPI SnortServiceCtrlHandler (DWORD opcode); 
-static DWORD SnortServiceInitialization (DWORD argc, LPTSTR *argv, DWORD *specificError); 
+static VOID  WINAPI SnortServiceStart (DWORD argc, LPTSTR *argv);
+static VOID  WINAPI SnortServiceCtrlHandler (DWORD opcode);
+static DWORD SnortServiceInitialization (DWORD argc, LPTSTR *argv, DWORD *specificError);
 static VOID  InstallSnortService(int argc, char* argv[]);
 static VOID  UninstallSnortService();
 static VOID  ShowSnortServiceParams();
@@ -104,7 +104,7 @@ static VOID  ShowSnortServiceParams();
  *
  * Writing a Service Program's main Function
  * -----------------------------------------------------------------------------
- * 
+ *
  * The main function of a service program calls the StartServiceCtrlDispatcher
  * function to connect to the SCM and start the control dispatcher thread. The
  * dispatcher thread loops, waiting for incoming control requests for the
@@ -113,30 +113,30 @@ static VOID  ShowSnortServiceParams();
  * all services in a process have terminated, the SCM sends a control request
  * to the dispatcher thread telling it to shut down. The thread can then return
  * from the StartServiceCtrlDispatcher call and the process can terminate.
- * 
+ *
  * The following example is a service process that supports only one service. It
  * takes two parameters: a string that can contain one formatted output
  * character and a numeric value to be used as the formatted character. The
  * SvcDebugOut function prints informational messages and errors to the debugger.
  * For information on writing the SnortServiceStart and SnortServiceInitialization
  * functions, see Writing a ServiceMain Function. For information on writing the
- * SnortServiceCtrlHandler function, see Writing a Control Handler Function. 
+ * SnortServiceCtrlHandler function, see Writing a Control Handler Function.
  *******************************************************************************/
 
 
 /* this is the entry point which is called from main() */
-int SnortServiceMain(int argc, char* argv[]) 
+int SnortServiceMain(int argc, char* argv[])
 {
     int i;
     /*
-    SERVICE_TABLE_ENTRY   steDispatchTable[] = 
-    { 
-        { g_lpszServiceName, SnortServiceStart }, 
-        { NULL,       NULL                     } 
-    }; 
+    SERVICE_TABLE_ENTRY   steDispatchTable[] =
+    {
+        { g_lpszServiceName, SnortServiceStart },
+        { NULL,       NULL                     }
+    };
     */
 
-    SERVICE_TABLE_ENTRY   steDispatchTable[2]; 
+    SERVICE_TABLE_ENTRY   steDispatchTable[2];
 
     steDispatchTable[0].lpServiceName = g_lpszServiceName;
     steDispatchTable[0].lpServiceProc = SnortServiceStart;
@@ -188,28 +188,28 @@ int SnortServiceMain(int argc, char* argv[])
     }
 
     /* If we got to this point, then it's time to start up the Win32 Service */
-    if (!StartServiceCtrlDispatcher(steDispatchTable)) 
+    if (!StartServiceCtrlDispatcher(steDispatchTable))
     {
         char szString[1024];
         memset(szString, sizeof(szString), '\0');
         SvcFormatMessage(szString, sizeof(szString));
 
-        SvcDebugOut(szString, 0); 
-        SvcDebugOut(" [SNORT_SERVICE] StartServiceCtrlDispatcher error = %d\n", GetLastError()); 
-        FatalError (" [SNORT_SERVICE] StartServiceCtrlDispatcher error = %d\n%s\n", GetLastError(), szString); 
+        SvcDebugOut(szString, 0);
+        SvcDebugOut(" [SNORT_SERVICE] StartServiceCtrlDispatcher error = %d\n", GetLastError());
+        FatalError (" [SNORT_SERVICE] StartServiceCtrlDispatcher error = %d\n%s\n", GetLastError(), szString);
     }
 
     return(0);
-} 
- 
-VOID SvcDebugOut(LPSTR szString, DWORD dwStatus) 
-{ 
-    CHAR  szBuffer[1024]; 
-    if (strlen(szString) < 1000) 
-    { 
-        sprintf(szBuffer, szString, dwStatus); 
-        OutputDebugStringA(szBuffer); 
-    } 
+}
+
+VOID SvcDebugOut(LPSTR szString, DWORD dwStatus)
+{
+    CHAR  szBuffer[1024];
+    if (strlen(szString) < 1000)
+    {
+        sprintf(szBuffer, szString, dwStatus);
+        OutputDebugStringA(szBuffer);
+    }
 }
 
 /* Copy the system error message into the buffer provided.
@@ -221,21 +221,21 @@ VOID SvcFormatMessage(LPSTR szString, int iCount)
     if( szString!=NULL && iCount>0)
     {
         memset(szString, 0, iCount);
-        FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | 
-                       FORMAT_MESSAGE_FROM_SYSTEM | 
+        FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER |
+                       FORMAT_MESSAGE_FROM_SYSTEM |
                        FORMAT_MESSAGE_IGNORE_INSERTS,
                        NULL,
                        GetLastError(),
                        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), /* Default language */
                        (LPTSTR) &lpMsgBuf,
                        0,
-                       NULL 
+                       NULL
                      );
 
         strncpy(szString, (LPCTSTR) lpMsgBuf, iCount-1);
-        
+
         szString[iCount-1]=0;
-        
+
         /* Free the buffer. */
         LocalFree( lpMsgBuf );
         lpMsgBuf = NULL;
@@ -267,7 +267,7 @@ VOID ReadServiceCommandLineParams( int * piArgCounter, char** * pargvDynamic )
         SvcFormatMessage(szMsg, sizeof(szMsg));
         FatalError(" [SNORT_SERVICE] Unable to open Snort registry entry. "
                    " Perhaps Snort has not been installed as a service."
-                   " %s", szMsg); 
+                   " %s", szMsg);
     }
 
     memset(byData, 0, sizeof(byData));
@@ -285,7 +285,7 @@ VOID ReadServiceCommandLineParams( int * piArgCounter, char** * pargvDynamic )
         SvcFormatMessage(szMsg, sizeof(szMsg));
         FatalError(" [SNORT_SERVICE] Unable to read Snort registry entry '%s'."
                    " Perhaps Snort has not been installed as a service."
-                   " %s", g_lpszRegistryCountFormat, szMsg); 
+                   " %s", g_lpszRegistryCountFormat, szMsg);
     }
 
     (*piArgCounter) = * ((int*)&byData);
@@ -314,10 +314,10 @@ VOID ReadServiceCommandLineParams( int * piArgCounter, char** * pargvDynamic )
             SvcFormatMessage(szMsg, sizeof(szMsg));
             FatalError(" [SNORT_SERVICE] Unable to read Snort registry entry '%s'."
                        " Perhaps Snort has not been installed as a service."
-                       " %s", szName, szMsg); 
+                       " %s", szName, szMsg);
         }
 
-        (*pargvDynamic)[i] = _strdup( (char*) byData );
+        (*pargvDynamic)[i] = SnortStrdup( (char*) byData );
         DEBUG_WRAP(DebugMessage(DEBUG_INIT, "  %s\n", (*pargvDynamic)[i]););
     }
     lRegRC = RegCloseKey( hkSnort );
@@ -327,7 +327,7 @@ VOID ReadServiceCommandLineParams( int * piArgCounter, char** * pargvDynamic )
         SvcFormatMessage(szMsg, sizeof(szMsg));
         FatalError(" [SNORT_SERVICE] Unable to close Snort registry entry."
                    " Perhaps Snort has not been installed as a service."
-                   " %s", szMsg); 
+                   " %s", szMsg);
     }
     hkSnort = NULL;
 }
@@ -339,22 +339,22 @@ VOID ReadServiceCommandLineParams( int * piArgCounter, char** * pargvDynamic )
  *
  * Writing a ServiceMain Function
  * -----------------------------------------------------------------------------
- * 
+ *
  * The SnortServiceStart function in the following example is the entry point for
  * the service. SnortServiceStart has access to the command-line arguments, in the
  * way that the main function of a console application does. The first parameter
  * contains the number of arguments being passed to the service. There will
  * always be at least one argument. The second parameter is a pointer to an
  * array of string pointers. The first item in the array always points to the
- * service name. 
- * 
+ * service name.
+ *
  * The SnortServiceStart function first fills in the SERVICE_STATUS structure
  * including the control codes that it accepts. Although this service accepts
  * SERVICE_CONTROL_PAUSE and SERVICE_CONTROL_CONTINUE, it does nothing
  * significant when told to pause. The flags SERVICE_ACCEPT_PAUSE_CONTINUE was
  * included for illustration purposes only; if pausing does not add value to
- * your service, do not support it. 
- * 
+ * your service, do not support it.
+ *
  * The SnortServiceStart function then calls the RegisterServiceCtrlHandler
  * function to register SnortService as the service's Handler function and begin
  * initialization. The following sample initialization function,
@@ -363,13 +363,13 @@ VOID ReadServiceCommandLineParams( int * piArgCounter, char** * pargvDynamic )
  * your service's initialization performs tasks that are expected to take longer
  * than one second, your code must call the SetServiceStatus function
  * periodically to send out wait hints and check points indicating that progress
- * is being made. 
- * 
+ * is being made.
+ *
  * When initialization has completed successfully, the example calls
  * SetServiceStatus with a status of SERVICE_RUNNING and the service continues
  * with its work. If an error has occurred in initialization, SnortServiceStart
  * reports SERVICE_STOPPED with the SetServiceStatus function and returns.
- * 
+ *
  * Because this sample service does not complete any real tasks, SnortServiceStart
  * simply returns control to the caller. However, your service should use this
  * thread to complete whatever tasks it was designed to do. If a service does not
@@ -378,9 +378,9 @@ VOID ReadServiceCommandLineParams( int * piArgCounter, char** * pargvDynamic )
  * important for the function to return, rather than call the ExitThread
  * function, because returning allows for cleanup of the memory allocated for the
  * arguments.
- * 
+ *
  * To output debugging information, SnortServiceStart calls SvcDebugOut. The source
- * code for SvcDebugOut is given in Writing a Service Program's main Function. 
+ * code for SvcDebugOut is given in Writing a Service Program's main Function.
  *******************************************************************************/
 
 void logmsg(char* msg)
@@ -424,65 +424,65 @@ void logadapternames( char* interfacenames, char* errorbuf )
     logmsg("\n");
 }
 
-void WINAPI SnortServiceStart (DWORD argc, LPTSTR *argv) 
-{ 
+void WINAPI SnortServiceStart (DWORD argc, LPTSTR *argv)
+{
     int i;
     int iArgCounter;
     char** argvDynamic = NULL;
     char errorbuf[PCAP_ERRBUF_SIZE];
     char *interfacenames = NULL;
 
-    DWORD dwStatus; 
-    DWORD dwSpecificError; 
+    DWORD dwStatus;
+    DWORD dwSpecificError;
 
-    g_SnortServiceStatus.dwServiceType             = SERVICE_WIN32; 
-    g_SnortServiceStatus.dwCurrentState            = SERVICE_START_PENDING; 
-    g_SnortServiceStatus.dwControlsAccepted        = SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_PAUSE_CONTINUE; 
-    g_SnortServiceStatus.dwWin32ExitCode           = 0; 
-    g_SnortServiceStatus.dwServiceSpecificExitCode = 0; 
-    g_SnortServiceStatus.dwCheckPoint              = 0; 
-    g_SnortServiceStatus.dwWaitHint                = 0; 
- 
-    g_SnortServiceStatusHandle = RegisterServiceCtrlHandler(g_lpszServiceName, SnortServiceCtrlHandler); 
- 
-    if (g_SnortServiceStatusHandle == (SERVICE_STATUS_HANDLE)0) 
-    { 
+    g_SnortServiceStatus.dwServiceType             = SERVICE_WIN32;
+    g_SnortServiceStatus.dwCurrentState            = SERVICE_START_PENDING;
+    g_SnortServiceStatus.dwControlsAccepted        = SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_PAUSE_CONTINUE;
+    g_SnortServiceStatus.dwWin32ExitCode           = 0;
+    g_SnortServiceStatus.dwServiceSpecificExitCode = 0;
+    g_SnortServiceStatus.dwCheckPoint              = 0;
+    g_SnortServiceStatus.dwWaitHint                = 0;
+
+    g_SnortServiceStatusHandle = RegisterServiceCtrlHandler(g_lpszServiceName, SnortServiceCtrlHandler);
+
+    if (g_SnortServiceStatusHandle == (SERVICE_STATUS_HANDLE)0)
+    {
         TCHAR szMsg[1000];
         SvcFormatMessage(szMsg, sizeof(szMsg));
-        SvcDebugOut(" [SNORT_SERVICE] RegisterServiceCtrlHandler failed %d\n", GetLastError()); 
-        FatalError (" [SNORT_SERVICE] RegisterServiceCtrlHandler failed %d\n%s\n", GetLastError(), szMsg); 
-        return; 
-    } 
- 
+        SvcDebugOut(" [SNORT_SERVICE] RegisterServiceCtrlHandler failed %d\n", GetLastError());
+        FatalError (" [SNORT_SERVICE] RegisterServiceCtrlHandler failed %d\n%s\n", GetLastError(), szMsg);
+        return;
+    }
+
     /* Initialization code goes here. */
-    dwStatus = SnortServiceInitialization(argc, argv, &dwSpecificError); 
- 
+    dwStatus = SnortServiceInitialization(argc, argv, &dwSpecificError);
+
     /* Handle error condition */
-    if (dwStatus != NO_ERROR) 
-    { 
-        g_SnortServiceStatus.dwCurrentState            = SERVICE_STOPPED; 
-        g_SnortServiceStatus.dwCheckPoint              = 0; 
-        g_SnortServiceStatus.dwWaitHint                = 0; 
-        g_SnortServiceStatus.dwWin32ExitCode           = dwStatus; 
-        g_SnortServiceStatus.dwServiceSpecificExitCode = dwSpecificError; 
- 
-        SetServiceStatus (g_SnortServiceStatusHandle, &g_SnortServiceStatus); 
-        return; 
-    } 
- 
+    if (dwStatus != NO_ERROR)
+    {
+        g_SnortServiceStatus.dwCurrentState            = SERVICE_STOPPED;
+        g_SnortServiceStatus.dwCheckPoint              = 0;
+        g_SnortServiceStatus.dwWaitHint                = 0;
+        g_SnortServiceStatus.dwWin32ExitCode           = dwStatus;
+        g_SnortServiceStatus.dwServiceSpecificExitCode = dwSpecificError;
+
+        SetServiceStatus (g_SnortServiceStatusHandle, &g_SnortServiceStatus);
+        return;
+    }
+
     /* Initialization complete - report running status. */
-    g_SnortServiceStatus.dwCurrentState       = SERVICE_RUNNING; 
-    g_SnortServiceStatus.dwCheckPoint         = 0; 
-    g_SnortServiceStatus.dwWaitHint           = 0; 
- 
-    if (!SetServiceStatus (g_SnortServiceStatusHandle, &g_SnortServiceStatus)) 
-    { 
+    g_SnortServiceStatus.dwCurrentState       = SERVICE_RUNNING;
+    g_SnortServiceStatus.dwCheckPoint         = 0;
+    g_SnortServiceStatus.dwWaitHint           = 0;
+
+    if (!SetServiceStatus (g_SnortServiceStatusHandle, &g_SnortServiceStatus))
+    {
         TCHAR szMsg[1000];
         SvcFormatMessage(szMsg, sizeof(szMsg));
-        dwStatus = GetLastError(); 
-        SvcDebugOut(" [SNORT_SERVICE] SetServiceStatus error %ld\n",dwStatus); 
-        FatalError (" [SNORT_SERVICE] SetServiceStatus error %ld\n%s\n",dwStatus,szMsg); 
-    } 
+        dwStatus = GetLastError();
+        SvcDebugOut(" [SNORT_SERVICE] SetServiceStatus error %ld\n",dwStatus);
+        FatalError (" [SNORT_SERVICE] SetServiceStatus error %ld\n%s\n",dwStatus,szMsg);
+    }
 
     /* There seems to be a bug in Winpcap, such that snort works fine
      * when it is started from the command line, and the service works
@@ -508,19 +508,19 @@ void WINAPI SnortServiceStart (DWORD argc, LPTSTR *argv)
     free( argvDynamic );
     argvDynamic = NULL;
 
-    SvcDebugOut(" [SNORT_SERVICE] Returning the Main Thread \n",0); 
- 
-    return; 
-} 
- 
+    SvcDebugOut(" [SNORT_SERVICE] Returning the Main Thread \n",0);
+
+    return;
+}
+
 /* Stub initialization function. */
-DWORD SnortServiceInitialization(DWORD argc, LPTSTR *argv, DWORD *pdwSpecificError) 
-{ 
-    argv; 
-    argc; 
-    pdwSpecificError; 
-    return(0); 
-} 
+DWORD SnortServiceInitialization(DWORD argc, LPTSTR *argv, DWORD *pdwSpecificError)
+{
+    argv;
+    argc;
+    pdwSpecificError;
+    return(0);
+}
 
 
 
@@ -530,7 +530,7 @@ DWORD SnortServiceInitialization(DWORD argc, LPTSTR *argv, DWORD *pdwSpecificErr
  *
  * Writing a Control Handler Function
  * -----------------------------------------------------------------------------
- * 
+ *
  * The SnortServiceCtrlHandler function in the following example is the Handler
  * function. When this function is called by the dispatcher thread, it handles
  * the control code passed in the Opcode parameter and then calls the
@@ -538,7 +538,7 @@ DWORD SnortServiceInitialization(DWORD argc, LPTSTR *argv, DWORD *pdwSpecificErr
  * Handler function receives a control code, it is appropriate to return status
  * with a call to SetServiceStatus regardless of whether the service acts on
  * the control.
- * 
+ *
  * When the pause control is received, SnortServiceCtrlHandler simply sets the
  * dwCurrentState field in the SERVICE_STATUS structure to SERVICE_PAUSED.
  * Likewise, when the continue control is received, the state is set to
@@ -550,35 +550,35 @@ DWORD SnortServiceInitialization(DWORD argc, LPTSTR *argv, DWORD *pdwSpecificErr
  * sense. Many services support neither the pause or continue control. If the
  * service indicates that it does not support pause or continue with the
  * dwControlsAccepted parameter, then the SCM will not send pause or continue
- * controls to the service's Handler function. 
- * 
+ * controls to the service's Handler function.
+ *
  * To output debugging information, SnortServiceCtrlHandler calls SvcDebugOut. The
  * source code for SvcDebugOut is listed in Writing a Service Program's main
  * Function. Also, note that the g_SnortServiceStatus variable is a global variable
- * and should be initialized as demonstrated in Writing a ServiceMain function. 
+ * and should be initialized as demonstrated in Writing a ServiceMain function.
  *******************************************************************************/
 
-VOID WINAPI SnortServiceCtrlHandler (DWORD dwOpcode) 
-{ 
-    DWORD dwStatus; 
- 
-    switch(dwOpcode) 
-    { 
-        case SERVICE_CONTROL_PAUSE: 
+VOID WINAPI SnortServiceCtrlHandler (DWORD dwOpcode)
+{
+    DWORD dwStatus;
+
+    switch(dwOpcode)
+    {
+        case SERVICE_CONTROL_PAUSE:
             /* Do whatever it takes to pause here.  */
             snort_conf->run_flags |= RUN_FLAG__PAUSE_SERVICE;
 
-            g_SnortServiceStatus.dwCurrentState = SERVICE_PAUSED; 
-            break; 
- 
-        case SERVICE_CONTROL_CONTINUE: 
+            g_SnortServiceStatus.dwCurrentState = SERVICE_PAUSED;
+            break;
+
+        case SERVICE_CONTROL_CONTINUE:
             /* Do whatever it takes to continue here.  */
             snort_conf->run_flags &= ~RUN_FLAG__PAUSE_SERVICE;
 
-            g_SnortServiceStatus.dwCurrentState = SERVICE_RUNNING; 
-            break; 
- 
-        case SERVICE_CONTROL_STOP: 
+            g_SnortServiceStatus.dwCurrentState = SERVICE_RUNNING;
+            break;
+
+        case SERVICE_CONTROL_STOP:
             /* Do whatever it takes to stop here. */
             snort_conf->run_flags |= RUN_FLAG__TERMINATE_SERVICE;
 
@@ -586,37 +586,37 @@ VOID WINAPI SnortServiceCtrlHandler (DWORD dwOpcode)
                                          * the service has processed any last packets
                                          */
 
-            g_SnortServiceStatus.dwWin32ExitCode = 0; 
-            g_SnortServiceStatus.dwCurrentState  = SERVICE_STOPPED; 
-            g_SnortServiceStatus.dwCheckPoint    = 0; 
-            g_SnortServiceStatus.dwWaitHint      = 0; 
- 
-            if (!SetServiceStatus (g_SnortServiceStatusHandle, &g_SnortServiceStatus))
-            { 
-                dwStatus = GetLastError(); 
-                SvcDebugOut(" [SNORT_SERVICE] SetServiceStatus error %ld\n",dwStatus); 
-            } 
- 
-            SvcDebugOut(" [SNORT_SERVICE] Leaving SnortService \n",0); 
-            return; 
- 
-        case SERVICE_CONTROL_INTERROGATE: 
-            /* Fall through to send current status. */
-            break; 
- 
-        default: 
-            SvcDebugOut(" [SNORT_SERVICE] Unrecognized opcode %ld\n", dwOpcode); 
-    } 
- 
-    /* Send current status.  */
-    if (!SetServiceStatus (g_SnortServiceStatusHandle,  &g_SnortServiceStatus)) 
-    { 
-        dwStatus = GetLastError(); 
-        SvcDebugOut(" [SNORT_SERVICE] SetServiceStatus error %ld\n",dwStatus); 
-    } 
+            g_SnortServiceStatus.dwWin32ExitCode = 0;
+            g_SnortServiceStatus.dwCurrentState  = SERVICE_STOPPED;
+            g_SnortServiceStatus.dwCheckPoint    = 0;
+            g_SnortServiceStatus.dwWaitHint      = 0;
 
-    return; 
-} 
+            if (!SetServiceStatus (g_SnortServiceStatusHandle, &g_SnortServiceStatus))
+            {
+                dwStatus = GetLastError();
+                SvcDebugOut(" [SNORT_SERVICE] SetServiceStatus error %ld\n",dwStatus);
+            }
+
+            SvcDebugOut(" [SNORT_SERVICE] Leaving SnortService \n",0);
+            return;
+
+        case SERVICE_CONTROL_INTERROGATE:
+            /* Fall through to send current status. */
+            break;
+
+        default:
+            SvcDebugOut(" [SNORT_SERVICE] Unrecognized opcode %ld\n", dwOpcode);
+    }
+
+    /* Send current status.  */
+    if (!SetServiceStatus (g_SnortServiceStatusHandle,  &g_SnortServiceStatus))
+    {
+        dwStatus = GetLastError();
+        SvcDebugOut(" [SNORT_SERVICE] SetServiceStatus error %ld\n",dwStatus);
+    }
+
+    return;
+}
 
 
 
@@ -626,15 +626,15 @@ VOID WINAPI SnortServiceCtrlHandler (DWORD dwOpcode)
  *
  * Installing a Service
  * -----------------------------------------------------------------------------
- * 
+ *
  * A service configuration program uses the CreateService function to install a
  * service in a SCM database. The application-defined schSCManager handle must
  * have SC_MANAGER_CREATE_SERVICE access to the SCManager object. The following
- * example shows how to install a service. 
+ * example shows how to install a service.
  *******************************************************************************/
 
-VOID InstallSnortService(int argc, char* argv[]) 
-{ 
+VOID InstallSnortService(int argc, char* argv[])
+{
     SC_HANDLE schSCManager, schService;
     char buffer[_MAX_PATH+1];
     LPCTSTR lpszBinaryPathName = NULL;
@@ -660,7 +660,7 @@ VOID InstallSnortService(int argc, char* argv[])
     {
         TCHAR szMsg[1000];
         SvcFormatMessage(szMsg, sizeof(szMsg));
-        FatalError(" [SNORT_SERVICE] Unable to determine current working directory. %s", szMsg); 
+        FatalError(" [SNORT_SERVICE] Unable to determine current working directory. %s", szMsg);
     }
 
     if( buffer[strlen(buffer) - 1] != '\\' )
@@ -674,7 +674,7 @@ VOID InstallSnortService(int argc, char* argv[])
         }
         else
         {
-            FatalError(" [SNORT_SERVICE] Unable to create full path to Snort binary."); 
+            FatalError(" [SNORT_SERVICE] Unable to create full path to Snort binary.");
         }
     }
 
@@ -705,7 +705,7 @@ VOID InstallSnortService(int argc, char* argv[])
     {
         TCHAR szMsg[1000];
         SvcFormatMessage(szMsg, sizeof(szMsg));
-        FatalError(" [SNORT_SERVICE] Unable to create Snort registry entry. %s", szMsg); 
+        FatalError(" [SNORT_SERVICE] Unable to create Snort registry entry. %s", szMsg);
     }
 
     for( iArgCounter=1; iArgCounter<argc; iArgCounter++ )
@@ -721,7 +721,7 @@ VOID InstallSnortService(int argc, char* argv[])
         }
         else if( strlen(argv[iArgCounter]) > MAX_REGISTRY_DATA_LENGTH )
         {
-            FatalError(" [SNORT_SERVICE] A single command line parameter cannot exceed %d characters.", MAX_REGISTRY_DATA_LENGTH); 
+            FatalError(" [SNORT_SERVICE] A single command line parameter cannot exceed %d characters.", MAX_REGISTRY_DATA_LENGTH);
         }
         else
         {
@@ -739,7 +739,7 @@ VOID InstallSnortService(int argc, char* argv[])
             {
                 TCHAR szMsg[1000];
                 SvcFormatMessage(szMsg, sizeof(szMsg));
-                FatalError(" [SNORT_SERVICE] Unable to write Snort registry entry. %s", szMsg); 
+                FatalError(" [SNORT_SERVICE] Unable to write Snort registry entry. %s", szMsg);
             }
         }
     } /* end for() */
@@ -755,7 +755,7 @@ VOID InstallSnortService(int argc, char* argv[])
     {
         TCHAR szMsg[1000];
         SvcFormatMessage(szMsg, sizeof(szMsg));
-        FatalError(" [SNORT_SERVICE] Unable to write Snort registry entry. %s", szMsg); 
+        FatalError(" [SNORT_SERVICE] Unable to write Snort registry entry. %s", szMsg);
     }
 
     lRegRC = RegCloseKey( hkSnort );
@@ -763,7 +763,7 @@ VOID InstallSnortService(int argc, char* argv[])
     {
         TCHAR szMsg[1000];
         SvcFormatMessage(szMsg, sizeof(szMsg));
-        FatalError(" [SNORT_SERVICE] Unable to close Snort registry entry. %s", szMsg); 
+        FatalError(" [SNORT_SERVICE] Unable to close Snort registry entry. %s", szMsg);
     }
 
     printf("\n");
@@ -777,29 +777,29 @@ VOID InstallSnortService(int argc, char* argv[])
     schSCManager = OpenSCManager(NULL,                    /* local machine                        */
                                  NULL,                    /* defaults to SERVICES_ACTIVE_DATABASE */
                                  SC_MANAGER_ALL_ACCESS);  /* full access rights                   */
- 
+
     if (schSCManager == NULL)
     {
         DWORD dwErr = GetLastError();
-        LPCTSTR lpszBasicMessage = "Unable to open a connection to the Services database."; 
+        LPCTSTR lpszBasicMessage = "Unable to open a connection to the Services database.";
         TCHAR szMsg[1000];
 
         SvcFormatMessage(szMsg, sizeof(szMsg));
         switch(dwErr)
         {
-        case ERROR_ACCESS_DENIED: 
+        case ERROR_ACCESS_DENIED:
             FatalError(" [SNORT_SERVICE] %s Access is denied. %s", lpszBasicMessage, szMsg);
             break;
 
-        case ERROR_DATABASE_DOES_NOT_EXIST: 
+        case ERROR_DATABASE_DOES_NOT_EXIST:
             FatalError(" [SNORT_SERVICE] %s Services database does not exist. %s", lpszBasicMessage, szMsg);
             break;
 
-        case ERROR_INVALID_PARAMETER: 
+        case ERROR_INVALID_PARAMETER:
             FatalError(" [SNORT_SERVICE] %s Invalid parameter. %s", lpszBasicMessage, szMsg);
             break;
 
-        default: 
+        default:
             FatalError(" [SNORT_SERVICE] %s Unrecognized error (%d). %s", lpszBasicMessage, dwErr, szMsg);
             break;
         }
@@ -818,50 +818,50 @@ VOID InstallSnortService(int argc, char* argv[])
                                 NULL,                      /* no dependencies           */
                                 NULL,                      /* LocalSystem account       */
                                 NULL);                     /* no password               */
- 
+
     if (schService == NULL)
     {
         DWORD dwErr = GetLastError();
-        LPCTSTR lpszBasicMessage = "Error while adding the Snort service to the Services database."; 
+        LPCTSTR lpszBasicMessage = "Error while adding the Snort service to the Services database.";
         TCHAR szMsg[1000];
 
         SvcFormatMessage(szMsg, sizeof(szMsg));
         switch(dwErr)
         {
-        case ERROR_ACCESS_DENIED: 
+        case ERROR_ACCESS_DENIED:
             FatalError(" [SNORT_SERVICE] %s Access is denied. %s", lpszBasicMessage, szMsg);
             break;
         case ERROR_CIRCULAR_DEPENDENCY:
             FatalError(" [SNORT_SERVICE] %s Circular dependency. %s", lpszBasicMessage, szMsg);
             break;
 
-        case ERROR_DUP_NAME: 
+        case ERROR_DUP_NAME:
             FatalError(" [SNORT_SERVICE] %s The display name (\"%s\") is already in use. %s", lpszBasicMessage
                                                                                             , g_lpszServiceDisplayName
                                                                                             , szMsg);
             break;
 
-        case ERROR_INVALID_HANDLE: 
+        case ERROR_INVALID_HANDLE:
             FatalError(" [SNORT_SERVICE] %s Invalid handle. %s", lpszBasicMessage, szMsg);
             break;
 
-        case ERROR_INVALID_NAME: 
+        case ERROR_INVALID_NAME:
             FatalError(" [SNORT_SERVICE] %s Invalid service name. %s", lpszBasicMessage, szMsg);
             break;
 
-        case ERROR_INVALID_PARAMETER: 
+        case ERROR_INVALID_PARAMETER:
             FatalError(" [SNORT_SERVICE] %s Invalid parameter. %s", lpszBasicMessage, szMsg);
             break;
 
-        case ERROR_INVALID_SERVICE_ACCOUNT: 
+        case ERROR_INVALID_SERVICE_ACCOUNT:
             FatalError(" [SNORT_SERVICE] %s Invalid service account. %s", lpszBasicMessage, szMsg);
             break;
 
-        case ERROR_SERVICE_EXISTS: 
+        case ERROR_SERVICE_EXISTS:
             FatalError(" [SNORT_SERVICE] %s Service already exists. %s", lpszBasicMessage, szMsg);
             break;
 
-        default: 
+        default:
             FatalError(" [SNORT_SERVICE] %s Unrecognized error (%d). %s", lpszBasicMessage, dwErr, szMsg);
             break;
         }
@@ -876,16 +876,16 @@ VOID InstallSnortService(int argc, char* argv[])
     {
         TCHAR szMsg[1000];
         SvcFormatMessage(szMsg, sizeof(szMsg));
-        FatalError(" [SNORT_SERVICE] Unable to add a description to the Snort service. %s", szMsg); 
+        FatalError(" [SNORT_SERVICE] Unable to add a description to the Snort service. %s", szMsg);
     }
 #endif
 
     printf("\n");
-    printf(" [SNORT_SERVICE] Successfully added the Snort service to the Services database.\n"); 
- 
-    CloseServiceHandle(schService); 
+    printf(" [SNORT_SERVICE] Successfully added the Snort service to the Services database.\n");
+
+    CloseServiceHandle(schService);
     CloseServiceHandle(schSCManager);
-} 
+}
 
 
 
@@ -895,15 +895,15 @@ VOID InstallSnortService(int argc, char* argv[])
  *
  * Deleting a Service
  * -----------------------------------------------------------------------------
- * 
+ *
  * In the following example, a service configuration program uses the
  * OpenService function to get a handle with DELETE access to an installed
  * service object. The program then uses the service object handle in the
- * DeleteService function to remove the service from the SCM database. 
+ * DeleteService function to remove the service from the SCM database.
  *******************************************************************************/
 
-VOID UninstallSnortService() 
-{ 
+VOID UninstallSnortService()
+{
     SC_HANDLE schSCManager, schService;
     //HKEY hkSnort = NULL;
     long lRegRC = 0;
@@ -922,7 +922,7 @@ VOID UninstallSnortService()
     {
         TCHAR szMsg[1000];
         SvcFormatMessage(szMsg, sizeof(szMsg));
-        printf(" [SNORT_SERVICE] Warning.  Unable to remove root Snort registry entry. %s", szMsg); 
+        printf(" [SNORT_SERVICE] Warning.  Unable to remove root Snort registry entry. %s", szMsg);
     }
 
     printf("\n");
@@ -936,29 +936,29 @@ VOID UninstallSnortService()
     schSCManager = OpenSCManager(NULL,                    /* local machine            */
                                  NULL,                    /* ServicesActive database  */
                                  SC_MANAGER_ALL_ACCESS);  /* full access rights       */
- 
-    if (schSCManager == NULL) 
+
+    if (schSCManager == NULL)
     {
         DWORD dwErr = GetLastError();
-        LPCTSTR lpszBasicMessage = "Unable to open a connection to the Services database."; 
+        LPCTSTR lpszBasicMessage = "Unable to open a connection to the Services database.";
         TCHAR szMsg[1000];
 
         SvcFormatMessage(szMsg, sizeof(szMsg));
         switch(dwErr)
         {
-        case ERROR_ACCESS_DENIED: 
+        case ERROR_ACCESS_DENIED:
             FatalError(" [SNORT_SERVICE] %s Access is denied. %s", lpszBasicMessage, szMsg);
             break;
 
-        case ERROR_DATABASE_DOES_NOT_EXIST: 
+        case ERROR_DATABASE_DOES_NOT_EXIST:
             FatalError(" [SNORT_SERVICE] %s Services database does not exist. %s", lpszBasicMessage, szMsg);
             break;
 
-        case ERROR_INVALID_PARAMETER: 
+        case ERROR_INVALID_PARAMETER:
             FatalError(" [SNORT_SERVICE] %s Invalid parameter. %s", lpszBasicMessage, szMsg);
             break;
 
-        default: 
+        default:
             FatalError(" [SNORT_SERVICE] %s Unrecognized error (%d). %s", lpszBasicMessage, dwErr, szMsg);
             break;
         }
@@ -967,71 +967,71 @@ VOID UninstallSnortService()
     schService = OpenService(schSCManager,       /* SCManager database       */
                              g_lpszServiceName,  /* name of service          */
                              DELETE);            /* only need DELETE access  */
- 
-    if (schService == NULL) 
+
+    if (schService == NULL)
     {
         DWORD dwErr = GetLastError();
-        LPCTSTR lpszBasicMessage = "Unable to locate Snort in the Services database."; 
+        LPCTSTR lpszBasicMessage = "Unable to locate Snort in the Services database.";
         TCHAR szMsg[1000];
 
         SvcFormatMessage(szMsg, sizeof(szMsg));
         switch(dwErr)
         {
-        case ERROR_ACCESS_DENIED: 
+        case ERROR_ACCESS_DENIED:
             FatalError(" [SNORT_SERVICE] %s Access is denied. %s", lpszBasicMessage, szMsg);
             break;
 
-        case ERROR_INVALID_HANDLE: 
+        case ERROR_INVALID_HANDLE:
             FatalError(" [SNORT_SERVICE] %s Invalid handle. %s", lpszBasicMessage, szMsg);
             break;
 
-        case ERROR_INVALID_NAME: 
+        case ERROR_INVALID_NAME:
             FatalError(" [SNORT_SERVICE] %s Invalid name. %s", lpszBasicMessage, szMsg);
             break;
 
-        case ERROR_SERVICE_DOES_NOT_EXIST: 
+        case ERROR_SERVICE_DOES_NOT_EXIST:
             FatalError(" [SNORT_SERVICE] %s Service does not exist. %s", lpszBasicMessage, szMsg);
             break;
 
-        default: 
+        default:
             FatalError(" [SNORT_SERVICE] %s Unrecognized error (%d). %s", lpszBasicMessage, dwErr, szMsg);
             break;
         }
     }
- 
-    if (! DeleteService(schService) ) 
+
+    if (! DeleteService(schService) )
     {
         DWORD dwErr = GetLastError();
-        LPCTSTR lpszBasicMessage = "Unable to remove Snort from the Services database."; 
+        LPCTSTR lpszBasicMessage = "Unable to remove Snort from the Services database.";
         TCHAR szMsg[1000];
 
         SvcFormatMessage(szMsg, sizeof(szMsg));
         switch(dwErr)
         {
-        case ERROR_ACCESS_DENIED: 
+        case ERROR_ACCESS_DENIED:
             FatalError(" [SNORT_SERVICE] %s Access is denied. %s", lpszBasicMessage, szMsg);
             break;
 
-        case ERROR_INVALID_HANDLE: 
+        case ERROR_INVALID_HANDLE:
             FatalError(" [SNORT_SERVICE] %s Invalid handle. %s", lpszBasicMessage, szMsg);
             break;
 
-        case ERROR_SERVICE_MARKED_FOR_DELETE: 
+        case ERROR_SERVICE_MARKED_FOR_DELETE:
             FatalError(" [SNORT_SERVICE] %s Service already marked for delete. %s", lpszBasicMessage, szMsg);
             break;
 
-        default: 
+        default:
             FatalError(" [SNORT_SERVICE] %s Unrecognized error (%d). %s", lpszBasicMessage, dwErr, szMsg);
             break;
         }
     }
 
     printf("\n");
-    printf(" [SNORT_SERVICE] Successfully removed the Snort service from the Services database.\n"); 
- 
-    CloseServiceHandle(schService); 
+    printf(" [SNORT_SERVICE] Successfully removed the Snort service from the Services database.\n");
+
+    CloseServiceHandle(schService);
     CloseServiceHandle(schSCManager);
-} 
+}
 
 
 VOID  ShowSnortServiceParams(void)

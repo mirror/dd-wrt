@@ -1,6 +1,7 @@
 /* $Id$ */
 /*
-** Copyright (C) 2002-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 2002 Martin Roesch <roesch@sourcefire.com>
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -16,7 +17,7 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 
@@ -25,20 +26,25 @@
 
 #define TIMEBUF_SIZE 26
 
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
 #ifndef WIN32
 # include <sys/time.h>
 # include <sys/types.h>
+# ifdef LINUX
+#  include <sys/syscall.h>
+# endif
 #endif
-#include<stdlib.h>
-#include<errno.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <unistd.h>
 
 #ifdef HAVE_STRINGS_H
 #include <strings.h>
 #endif
 #include <string.h>
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
 
 #include "sf_types.h"
 #include "sflsq.h"
@@ -96,28 +102,6 @@ extern uint32_t *netmasks;
 
 /* Data types *****************************************************************/
 
-/* Self preservation memory control struct */
-typedef struct _SPMemControl
-{
-    unsigned long memcap;
-    unsigned long mem_usage;
-    void *control;
-    int (*sp_func)(struct _SPMemControl *);
-
-    unsigned long fault_count;
-
-} SPMemControl;
-
-typedef struct _PcapPktStats
-{
-    uint64_t recv;
-    uint64_t drop;
-    uint32_t wrap_recv;
-    uint32_t wrap_drop;
-
-} PcapPktStats;
-
-
 typedef struct _IntervalStats
 {
     uint64_t recv, recv_total;
@@ -174,15 +158,13 @@ typedef struct _IntervalStats
 
 
 /* Public function prototypes *************************************************/
+void StoreSnortInfoStrings(void);
 int DisplayBanner(void);
-void GetTime(char *);
 int gmt2local(time_t);
 void ts_print(register const struct timeval *, char *);
 char *copy_argv(char **);
 void strip(char *);
 double CalcPct(uint64_t, uint64_t);
-void ReadPacketsFromFile(void);
-void InitBinFrag(void);
 void GoDaemon(void);
 void SignalWaitingParent(void);
 void CheckLogDir(void);
@@ -194,7 +176,6 @@ void SetUidGid(int, int);
 void InitGroups(int, int);
 void SetChroot(char *, char **);
 void DropStats(int);
-void *SPAlloc(unsigned long, struct _SPMemControl *);
 void TimeStart(void);
 void TimeStop(void);
 
@@ -202,8 +183,19 @@ void TimeStop(void);
 #define __attribute__(x)  /*NOTHING*/
 #endif
 void LogMessage(const char *, ...) __attribute__((format (printf, 1, 2)));
+void WarningMessage(const char *, ...) __attribute__((format (printf, 1, 2)));
 void ErrorMessage(const char *, ...) __attribute__((format (printf, 1, 2)));
+typedef struct _ThrottleInfo
+{
+    time_t lastUpdate;
+    /*Within this duration (in seconds), maximal one distinct message is logged*/
+    uint32_t duration_to_log;
+    uint64_t count;
+}ThrottleInfo;
+void ErrorMessageThrottled(ThrottleInfo*,const char *, ...) __attribute__((format (printf, 2, 3)));
+
 NORETURN void FatalError(const char *, ...) __attribute__((format (printf, 1, 2)));
+NORETURN void SnortFatalExit(void);
 int SnortSnprintf(char *, size_t, const char *, ...) __attribute__((format (printf, 3, 4)));
 int SnortSnprintfAppend(char *, size_t, const char *, ...) __attribute__((format (printf, 3, 4)));
 
@@ -213,31 +205,22 @@ char *SnortStrndup(const char *, size_t);
 int SnortStrnlen(const char *, int);
 const char *SnortStrnPbrk(const char *s, int slen, const char *accept);
 const char *SnortStrnStr(const char *s, int slen, const char *searchstr);
-const char *SnortStrcasestr(const char *s, const char *substr);
-void *SnortAlloc(unsigned long);
+const char *SnortStrcasestr(const char *s, int slen, const char *substr);
+int CheckValueInRange(const char *value_str, char *option,
+        unsigned long lo, unsigned long hi, unsigned long *value);
+
 void *SnortAlloc2(size_t, const char *, ...);
 char *CurrentWorkingDir(void);
 char *GetAbsolutePath(char *dir);
 char *StripPrefixDir(char *prefix, char *dir);
 void PrintPacketData(const uint8_t *, const uint32_t);
 
-#ifndef SUP_IP6
-char * ObfuscateIpToText(const struct in_addr);
-#else
 char * ObfuscateIpToText(sfip_t *);
-#endif
-
-void TimeStats(void);
 
 #ifndef WIN32
 SF_LIST * SortDirectory(const char *);
 int GetFilesUnderDir(const char *, SF_QUEUE *, const char *);
 #endif
-
-char *GetUniqueName(char *);
-char *GetIP(char *);
-char *GetHostname(void);
-int GetLocalTimezone(void);
 
 /***********************************************************
  If you use any of the functions in this section, you need
@@ -245,17 +228,25 @@ int GetLocalTimezone(void);
  done using it. Otherwise, you will have created a memory
  leak.
 ***********************************************************/
-char *GetTimestamp(register const struct timeval *, int);
-char *GetCurrentTimestamp(void);
-char *base64(const u_char *, int);
-char *ascii(const u_char *, int);
 char *hex(const u_char *, int);
 char *fasthex(const u_char *, int);
-long int xatol(const char *, const char *);
-unsigned long int xatou(const char *, const char *);
-unsigned long int xatoup(const char *, const char *); // return > 0
+int xatol(const char *, const char *);
+unsigned int xatou(const char *, const char *);
+unsigned int xatoup(const char *, const char *); // return > 0
 
-static INLINE long SnortStrtol(const char *nptr, char **endptr, int base)
+static inline void* SnortAlloc (unsigned long size)
+{
+    void* pv = calloc(size, sizeof(char));
+
+    if ( pv )
+        return pv;
+
+    FatalError("Unable to allocate memory!  (%lu requested)\n", size);
+
+    return NULL;
+}
+
+static inline long SnortStrtol(const char *nptr, char **endptr, int base)
 {
     long iRet;
     errno = 0;
@@ -264,7 +255,7 @@ static INLINE long SnortStrtol(const char *nptr, char **endptr, int base)
     return iRet;
 }
 
-static INLINE unsigned long SnortStrtoul(const char *nptr, char **endptr, int base)
+static inline unsigned long SnortStrtoul(const char *nptr, char **endptr, int base)
 {
         unsigned long iRet;
         errno = 0;
@@ -273,7 +264,66 @@ static INLINE unsigned long SnortStrtoul(const char *nptr, char **endptr, int ba
         return iRet;
 }
 
-static INLINE long SnortStrtolRange(const char *nptr, char **endptr, int base, long lo, long hi)
+// Checks to make sure we're not going to evaluate a negative number for which
+// strtoul() gladly accepts and parses returning an underflowed wrapped unsigned
+// long without error.
+//
+// Buffer passed in MUST be NULL terminated.
+//
+// Returns
+//  int
+//    -1 if buffer is nothing but spaces or first non-space character is a
+//       negative sign.  Also if errno is EINVAL (which may be due to a bad
+//       base) or there was nothing to convert.
+//     0 on success
+//
+// Populates pointer to uint32_t value passed in which should
+// only be used on a successful return from this function.
+//
+// Also will set errno to ERANGE on a value returned from strtoul that is
+// greater than UINT32_MAX, but still return success.
+//
+static inline int SnortStrToU32(const char *buffer, char **endptr,
+        uint32_t *value, int base)
+{
+    unsigned long int tmp;
+
+    if ((buffer == NULL) || (endptr == NULL) || (value == NULL))
+        return -1;
+
+    // Only positive numbers should be processed and strtoul will
+    // eat up white space and process '-' and '+' so move past
+    // white space and check for a negative sign.
+    while (isspace((int)*buffer))
+        buffer++;
+
+    // If all spaces or a negative sign is found, return error.
+    // XXX May also want to exclude '+' as well.
+    if ((*buffer == '\0') || (*buffer == '-'))
+        return -1;
+
+    tmp = SnortStrtoul(buffer, endptr, base);
+
+    // The user of the function should check for ERANGE in errno since this
+    // function can be used such that an ERANGE error is acceptable and
+    // value gets truncated to UINT32_MAX.
+    if ((errno == EINVAL) || (*endptr == buffer))
+        return -1;
+
+    // If value is greater than a UINT32_MAX set value to UINT32_MAX
+    // and errno to ERANGE
+    if (tmp > UINT32_MAX)
+    {
+        tmp = UINT32_MAX;
+        errno = ERANGE;
+    }
+
+    *value = (uint32_t)tmp;
+
+    return 0;
+}
+
+static inline long SnortStrtolRange(const char *nptr, char **endptr, int base, long lo, long hi)
 {
     long iRet = SnortStrtol(nptr, endptr, base);
     if ((iRet > hi) || (iRet < lo))
@@ -282,7 +332,7 @@ static INLINE long SnortStrtolRange(const char *nptr, char **endptr, int base, l
     return iRet;
 }
 
-static INLINE unsigned long SnortStrtoulRange(const char *nptr, char **endptr, int base, unsigned long lo, unsigned long hi)
+static inline unsigned long SnortStrtoulRange(const char *nptr, char **endptr, int base, unsigned long lo, unsigned long hi)
 {
     unsigned long iRet = SnortStrtoul(nptr, endptr, base);
     if ((iRet > hi) || (iRet < lo))
@@ -291,9 +341,9 @@ static INLINE unsigned long SnortStrtoulRange(const char *nptr, char **endptr, i
     return iRet;
 }
 
-static INLINE int IsEmptyStr(char *str)
+static inline int IsEmptyStr(const char *str)
 {
-    char *end;
+    const char *end;
 
     if (str == NULL)
         return 1;
@@ -309,5 +359,13 @@ static INLINE int IsEmptyStr(char *str)
     return 0;
 }
 
+static inline pid_t gettid(void)
+{
+#if defined(LINUX) && defined(SYS_gettid)
+    return syscall(SYS_gettid);
+#else
+    return getpid();
+#endif
+}
 
 #endif /*__UTIL_H__*/

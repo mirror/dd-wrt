@@ -1,6 +1,7 @@
 /****************************************************************************
  *
- * Copyright (C) 2003-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -15,10 +16,10 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************/
- 
+
 /**
 **  @file       hi_mi.c
 **
@@ -34,6 +35,10 @@
 **  NOTES:
 **    - 3.2.03:  Initial development.  DJR
 */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "hi_si.h"
 #include "hi_client.h"
@@ -71,7 +76,7 @@ int hi_mi_mode_inspection(HI_SESSION *Session, int iInspectMode,
 
     /*
     **  Depending on the mode, we inspect the packet differently.
-    **  
+    **
     **  HI_SI_CLIENT_MODE:
     **    Inspect for HTTP client communication.
     **
@@ -80,14 +85,11 @@ int hi_mi_mode_inspection(HI_SESSION *Session, int iInspectMode,
     */
     if(iInspectMode == HI_SI_CLIENT_MODE)
     {
-        if(hsd)
-        {
-            iRet = hi_client_inspection((void *)Session, p->data, p->dsize, &(hsd->true_ip));
-            if(hsd->true_ip)
-                p->data_flags |= DATA_FLAGS_TRUE_IP;
-        }
+        if ( ScPafEnabled() )
+            iRet = hi_client_inspection(p, (void *)Session, hsd, !PacketHasStartOfPDU(p));
         else
-            iRet = hi_client_inspection((void *)Session, p->data, p->dsize, NULL);
+            iRet = hi_client_inspection(p, (void *)Session, hsd, p->packet_flags & PKT_STREAM_INSERT);
+
         if (iRet)
             return iRet;
     }

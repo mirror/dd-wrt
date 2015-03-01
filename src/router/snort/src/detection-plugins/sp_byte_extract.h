@@ -1,5 +1,6 @@
 /*
-** Copyright (C) 2010-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2010-2013 Sourcefire, Inc.
 ** Author: Ryan Jordan <ryan.jordan@sourcefire.com>
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -15,7 +16,7 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 #ifndef __SP_BYTE_EXTRACT_H__
@@ -29,7 +30,7 @@
 
 #define NUM_BYTE_EXTRACT_VARS 2
 #define BYTE_EXTRACT_NO_VAR -1
-#define BYTE_EXTRACT_INVALID_ERR_STR "Rule option uses an undefined byte_extract variable name."
+#define BYTE_EXTRACT_INVALID_ERR_FMT "Rule option %s uses an undefined byte_extract variable name (%s)." //format: rule name, variable name
 #define MAX_BYTES_TO_GRAB 4
 
 #define MIN_BYTE_EXTRACT_OFFSET -65535
@@ -37,7 +38,7 @@
 #define MIN_BYTE_EXTRACT_MULTIPLIER 1
 #define MAX_BYTE_EXTRACT_MULTIPLIER 65535
 
-typedef struct _ByteExractData
+typedef struct _ByteExtractData
 {
     uint32_t bytes_to_grab;
     int32_t offset;
@@ -59,6 +60,8 @@ int DetectByteExtract(void *, Packet *);
 void ByteExtractFree(void *d);
 
 int8_t GetVarByName(char *name);
+void ClearVarNames(OptFpList *fpl);
+int8_t AddVarNameToList(ByteExtractData *data);
 
 int GetByteExtractValue(uint32_t *dst, int8_t var_number);
 int SetByteExtractValue(uint32_t value, int8_t var_number);

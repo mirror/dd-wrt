@@ -1,6 +1,7 @@
 /****************************************************************************
  *
- * Copyright (C) 2003-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -15,31 +16,42 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************/
- 
+
 /*
   sfmemcap.c
 
   These functions wrap the alloc & free functions. They enforce a memory cap using
   the MEMCAP structure.  The MEMCAP structure tracks memory usage.  Each allocation
-  has 4 bytes added to it so we can store the allocation size.  This allows us to 
+  has 4 bytes added to it so we can store the allocation size.  This allows us to
   free a block and accurately track how much memory was recovered.
-  
-  Marc Norton  
+
+  Marc Norton
 */
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
-#include "sfmemcap.h"
-#include "util.h"
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
+#include "sf_types.h"
+#include "snort_debug.h"
+#include "sfmemcap.h"
+
+#ifndef DYNAMIC_PREPROC_CONTEXT
+#include "util.h"
+#else
+#include "sf_dynamic_preprocessor.h"
+#define SnortAlloc(a) calloc(1,(a))
+#endif   //DYNAMIC_PREPROC_CONTEXT
 /*
 *   Set max # bytes & init other variables.
 */
-void sfmemcap_init( MEMCAP * mc, unsigned nbytes )
+void sfmemcap_init( MEMCAP * mc, unsigned long nbytes )
 {
 	mc->memcap = nbytes;
 	mc->memused= 0;
@@ -56,7 +68,7 @@ MEMCAP * sfmemcap_new( unsigned nbytes )
 	 mc = (MEMCAP*)calloc(1,sizeof(MEMCAP));
 
          if( mc ) sfmemcap_init( mc, nbytes );
-	 
+
 	 return mc;
 }
 
@@ -71,7 +83,7 @@ void sfmemcap_delete( MEMCAP * p )
 /*
 *  Allocate some memory
 */
-void * sfmemcap_alloc( MEMCAP * mc, unsigned nbytes )
+void * sfmemcap_alloc( MEMCAP * mc, unsigned long nbytes )
 {
    long * data;
 
@@ -126,8 +138,8 @@ void sfmemcap_free( MEMCAP * mc, void * p )
 */
 void sfmemcap_showmem( MEMCAP * mc )
 {
-     fprintf(stderr, "memcap: memcap = %u bytes,",mc->memcap);
-     fprintf(stderr, " memused= %u bytes,",mc->memused);
+     fprintf(stderr, "memcap: memcap = %lu bytes,",mc->memcap);
+     fprintf(stderr, " memused= %lu bytes,",mc->memused);
      fprintf(stderr, " nblocks= %d blocks\n",mc->nblocks);
 }
 
@@ -155,7 +167,7 @@ char * sfmemcap_strdup( MEMCAP * mc, const char *str )
 /*
 *  Dup Some memory.
 */
-void * sfmemcap_dupmem( MEMCAP * mc, void * src, int n )
+void * sfmemcap_dupmem( MEMCAP * mc, void * src, unsigned long n )
 {
     void * data = (char *)sfmemcap_alloc( mc, n );
     if(data == NULL)

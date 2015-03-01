@@ -1,6 +1,7 @@
 /* $Id$ */
 /*
-** Copyright (C) 2002-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -16,7 +17,7 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 #ifdef HAVE_CONFIG_H
@@ -27,7 +28,6 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 
 #ifdef HAVE_STRINGS_H
 #include <strings.h>
@@ -45,7 +45,7 @@
 #include "plugbase.h"
 #include "spo_plugbase.h"
 #include "snort.h"
-#include "debug.h"
+#include "snort_debug.h"
 #include "util.h"
 #include "log.h"
 #include "detect.h"
@@ -53,7 +53,8 @@
 /* built-in preprocessors */
 #include "preprocessors/spp_rpc_decode.h"
 #include "preprocessors/spp_bo.h"
-#include "preprocessors/spp_stream5.h"
+#include "preprocessors/spp_session.h"
+#include "preprocessors/spp_stream6.h"
 #include "preprocessors/spp_arpspoof.h"
 #include "preprocessors/spp_perfmonitor.h"
 #include "preprocessors/spp_httpinspect.h"
@@ -92,37 +93,36 @@
 #include "detection-plugins/sp_file_data.h"
 #include "detection-plugins/sp_base64_decode.h"
 #include "detection-plugins/sp_base64_data.h"
+#include "detection-plugins/sp_pkt_data.h"
 #include "detection-plugins/sp_asn1.h"
+
 #ifdef ENABLE_REACT
 #include "detection-plugins/sp_react.h"
 #endif
+
 #ifdef ENABLE_RESPOND
 #include "detection-plugins/sp_respond.h"
 #endif
+
 #include "detection-plugins/sp_ftpbounce.h"
 #include "detection-plugins/sp_urilen_check.h"
 #include "detection-plugins/sp_cvs.h"
+#include "detection-plugins/sp_file_type.h"
+
+#if defined(FEAT_OPEN_APPID)
+#include "detection-plugins/sp_appid.h"
+#endif /* defined(FEAT_OPEN_APPID) */
 
 /* built-in output plugins */
 #include "output-plugins/spo_alert_syslog.h"
 #include "output-plugins/spo_log_tcpdump.h"
-#include "output-plugins/spo_database.h"
 #include "output-plugins/spo_alert_fast.h"
 #include "output-plugins/spo_alert_full.h"
 #include "output-plugins/spo_alert_unixsock.h"
 #include "output-plugins/spo_csv.h"
-#include "output-plugins/spo_unified.h"
 #include "output-plugins/spo_log_null.h"
 #include "output-plugins/spo_log_ascii.h"
 #include "output-plugins/spo_unified2.h"
-
-#ifdef ARUBA
-#include "output-plugins/spo_alert_arubaaction.h"
-#endif
-
-#ifdef HAVE_LIBPRELUDE
-#include "output-plugins/spo_alert_prelude.h"
-#endif
 
 #ifdef LINUX
 #include "output-plugins/spo_alert_sf_socket.h"
@@ -144,14 +144,16 @@ extern PreprocSignalFuncNode *preproc_reset_stats_funcs;
 extern PreprocStatsFuncNode *preproc_stats_funcs;
 extern PluginSignalFuncNode *plugin_shutdown_funcs;
 extern PluginSignalFuncNode *plugin_clean_exit_funcs;
-extern PluginSignalFuncNode *plugin_restart_funcs;
+#ifdef SNORT_RELOAD
+extern PostConfigFuncNode *plugin_reload_funcs;
+#endif
 extern OutputFuncNode *AlertList;
 extern OutputFuncNode *LogList;
-
+extern PeriodicCheckFuncNode *periodic_check_funcs;
 
 /**************************** Detection Plugin API ****************************/
 /* For translation from enum to char* */
-#ifdef DEBUG
+#ifdef DEBUG_MSGS
 static const char *optTypeMap[OPT_TYPE_MAX] =
 {
     "action",
@@ -162,7 +164,7 @@ static const char *optTypeMap[OPT_TYPE_MAX] =
 #define ENUM2STR(num, map) \
     ((num < sizeof(map)/sizeof(map[0])) ? map[num] : "undefined")
 #endif
- 
+
 
 void RegisterRuleOptions(void)
 {
@@ -189,6 +191,7 @@ void RegisterRuleOptions(void)
     SetupIpProto();
     SetupIpSameCheck();
     SetupClientServer();
+    SetupPktData();
     SetupByteTest();
     SetupByteJump();
     SetupByteExtract();
@@ -208,6 +211,10 @@ void RegisterRuleOptions(void)
     SetupFTPBounce();
     SetupUriLenCheck();
     SetupCvs();
+    SetupFileType();
+#if defined(FEAT_OPEN_APPID)
+    SetupAppId();
+#endif /* defined(FEAT_OPEN_APPID) */
 }
 
 /****************************************************************************
@@ -295,7 +302,7 @@ void RegisterRuleOption(char *opt_name, RuleOptConfigFunc ro_config_func,
                 tmp = tmp->next;
 
             } while (tmp != NULL);
-    
+
             last->next = node_override;
         }
 
@@ -327,7 +334,7 @@ void RegisterByteOrderKeyword(char *keyword, RuleOptByteOrderFunc roo_func)
     RuleOptByteOrderFuncNode *node = (RuleOptByteOrderFuncNode *)SnortAlloc(sizeof(RuleOptByteOrderFuncNode));
     RuleOptByteOrderFuncNode *list = rule_opt_byte_order_funcs;
     RuleOptByteOrderFuncNode *last;
-    
+
     node->keyword = SnortStrdup(keyword);
     node->func = roo_func;
     node->next = NULL;
@@ -401,7 +408,7 @@ void DumpRuleOptions(void)
 
 
 /****************************************************************************
- * 
+ *
  * Function: AddOptFuncToList(int (*func)(), OptTreeNode *)
  *
  * Purpose: Links the option detection module to the OTN
@@ -483,11 +490,11 @@ void AddRspFuncToList(ResponseFunc resp_func, OptTreeNode *otn, void *params)
     rsp->params = params;
 }
 
-void PostConfigInitPlugins(PluginSignalFuncNode *post_config_funcs)
+void PostConfigInitPlugins(struct _SnortConfig *sc, PostConfigFuncNode *post_config_funcs)
 {
     while (post_config_funcs != NULL)
     {
-        post_config_funcs->func(0, post_config_funcs->arg);
+        post_config_funcs->func(sc, 0, post_config_funcs->arg);
         post_config_funcs = post_config_funcs->next;
     }
 }
@@ -547,19 +554,32 @@ void FreePluginSigFuncs(PluginSignalFuncNode *head)
 
         head = head->next;
 
-        /* don't free sig->arg, that's free'd by the CleanExit/Restart func */
+        /* don't free sig->arg, that's free'd by the CleanExit func */
+        free(tmp);
+    }
+}
+
+void FreePluginPostConfigFuncs(PostConfigFuncNode *head)
+{
+    while (head != NULL)
+    {
+        PostConfigFuncNode *tmp = head;
+
+        head = head->next;
+
+        /* don't free sig->arg, that's free'd by the CleanExit func */
         free(tmp);
     }
 }
 
 /************************** Non Rule Detection Plugin API *********************/
-DetectionEvalFuncNode * AddFuncToDetectionList(DetectionEvalFunc detect_eval_func,
+DetectionEvalFuncNode * AddFuncToDetectionList(SnortConfig *sc,
+                                            DetectionEvalFunc detect_eval_func,
                                             uint16_t priority, uint32_t detect_id,
                                             uint32_t proto_mask)
 {
     DetectionEvalFuncNode *node;
-    SnortConfig *sc = snort_conf_for_parsing;
-    tSfPolicyId policy_id = getParserPolicy();
+    tSfPolicyId policy_id = getParserPolicy(sc);
     SnortPolicy *p;
 
     if (sc == NULL)
@@ -660,7 +680,8 @@ void RegisterPreprocessors(void)
     SetupNormalizer();
 #endif
     SetupFrag3();
-    SetupStream5();
+    SetupSessionManager();
+    SetupStream6();
     SetupRpcDecode();
     SetupBo();
     SetupHttpInspect();
@@ -682,11 +703,11 @@ void RegisterPreprocessors(void)
  *
  ***************************************************************************/
 #ifndef SNORT_RELOAD
-void RegisterPreprocessor(char *keyword, PreprocConfigFunc pp_config_func)
+void RegisterPreprocessor(const char *keyword, PreprocConfigFunc pp_config_func)
 #else
-void RegisterPreprocessor(char *keyword, PreprocConfigFunc pp_config_func,
-                          PreprocReloadFunc rfunc, PreprocReloadSwapFunc sfunc,
-                          PreprocReloadSwapFreeFunc ffunc)
+void RegisterPreprocessor(const char *keyword, PreprocConfigFunc pp_config_func,
+                          PreprocReloadFunc rfunc, PreprocReloadVerifyFunc rvfunc,
+                          PreprocReloadSwapFunc sfunc, PreprocReloadSwapFreeFunc ffunc)
 #endif
 {
     PreprocConfigFuncNode *node =
@@ -724,10 +745,32 @@ void RegisterPreprocessor(char *keyword, PreprocConfigFunc pp_config_func,
 
 #ifdef SNORT_RELOAD
     node->reload_func = rfunc;
+    node->reload_verify_func = rvfunc;
     node->reload_swap_func = sfunc;
     node->reload_swap_free_func = ffunc;
 #endif
 }
+
+#ifdef SNORT_RELOAD
+void *GetRelatedReloadData(SnortConfig *sc, const char *keyword)
+{
+    PreprocessorSwapData *swapData;
+    for (swapData = sc->preprocSwapData; swapData; swapData = swapData->next)
+    {
+        if (swapData->preprocNode && swapData->preprocNode->keyword &&
+            strcasecmp(swapData->preprocNode->keyword, keyword) == 0)
+        {
+            return swapData->data;
+        }
+    }
+    return NULL;
+}
+
+void *GetReloadStreamConfig(SnortConfig *sc)
+{
+    return sc->streamReloadConfig;
+}
+#endif
 
 PreprocConfigFuncNode * GetPreprocConfig(char *keyword)
 {
@@ -757,7 +800,7 @@ PreprocConfigFunc GetPreprocConfigFunc(char *keyword)
     while (head != NULL)
     {
         if (strcasecmp(head->keyword, keyword) == 0)
-           return head->config_func; 
+           return head->config_func;
 
         head = head->next;
     }
@@ -778,7 +821,7 @@ PreprocConfigFunc GetPreprocConfigFunc(char *keyword)
  * Returns: void function
  *
  ***************************************************************************/
-void RegisterPreprocStats(char *keyword, PreprocStatsFunc pp_stats_func)
+void RegisterPreprocStats(const char *keyword, PreprocStatsFunc pp_stats_func)
 {
     PreprocStatsFuncNode *node;
 
@@ -844,11 +887,10 @@ void DumpPreprocessors(void)
     LogMessage("-------------------------------------------------\n\n");
 }
 
-int IsPreprocEnabled(uint32_t preproc_id)
+int IsPreprocEnabled(SnortConfig *sc, uint32_t preproc_id)
 {
     PreprocEvalFuncNode *node;
-    SnortConfig *sc = snort_conf_for_parsing;
-    tSfPolicyId policy_id = getParserPolicy();
+    tSfPolicyId policy_id = getParserPolicy(sc);
     SnortPolicy *p;
 
     if (sc == NULL)
@@ -870,12 +912,11 @@ int IsPreprocEnabled(uint32_t preproc_id)
     return 0;
 }
 
-PreprocEvalFuncNode * AddFuncToPreprocList(PreprocEvalFunc pp_eval_func, uint16_t priority,
+PreprocEvalFuncNode * AddFuncToPreprocList(SnortConfig *sc, PreprocEvalFunc pp_eval_func, uint16_t priority,
                                            uint32_t preproc_id, uint32_t proto_mask)
 {
     PreprocEvalFuncNode *node;
-    SnortConfig *sc = snort_conf_for_parsing;
-    tSfPolicyId policy_id = getParserPolicy();
+    tSfPolicyId policy_id = getParserPolicy(sc);
     SnortPolicy *p;
 
     if (sc == NULL)
@@ -948,10 +989,117 @@ PreprocEvalFuncNode * AddFuncToPreprocList(PreprocEvalFunc pp_eval_func, uint16_
     return node;
 }
 
-void AddFuncToPreprocPostConfigList(PreprocPostConfigFunc pp_post_config_func, void *data)
+void AddFuncToPreprocListAllNapPolicies(struct _SnortConfig *sc, PreprocEvalFunc pp_eval_func, uint16_t priority,
+                                        uint32_t preproc_id, uint32_t proto_mask)
+{
+    tSfPolicyId save_policy_id = getParserPolicy( sc );
+    uint32_t i;
+
+    if (sc == NULL)
+        FatalError("%s(%d) Snort config for parsing is NULL.\n", __FILE__, __LINE__);
+
+    // preprocs are only registered in NAP policies so if num_prerocs > 0 then policy is NAP, this works here
+    //  because this func is always called after all policies have been parsed and preprocs configured per policy
+    //  have already registered...
+    for( i = 0; i < sc->num_policies_allocated; i++ )
+        if( ( sc->targeted_policies[ i ] != NULL ) && ( sc->targeted_policies[ i ]->num_preprocs > 0 ) )
+        {
+            setParserPolicy( sc, i );
+            AddFuncToPreprocList( sc, pp_eval_func, priority, preproc_id, proto_mask );
+        }
+
+    setParserPolicy( sc, save_policy_id );
+ }
+
+
+PreprocMetaEvalFuncNode * AddFuncToPreprocMetaEvalList(
+    SnortConfig *sc,
+    PreprocMetaEvalFunc pp_meta_eval_func,
+    uint16_t priority,
+    uint32_t preproc_id)
+{
+    PreprocMetaEvalFuncNode *node;
+    tSfPolicyId policy_id = getDefaultPolicy( );
+    SnortPolicy *p;
+
+    if (sc == NULL)
+    {
+        FatalError("%s(%d) Snort config for parsing is NULL.\n",
+                   __FILE__, __LINE__);
+    }
+
+#ifndef HAVE_DAQ_ACQUIRE_WITH_META
+    WarningMessage("Metadata not available for processing.  Not registering Preprocessor Meta Eval id %d\n", preproc_id);
+    return NULL; // Not supported
+#endif
+
+    p = sc->targeted_policies[policy_id];
+    if (p == NULL)
+        return NULL;
+
+    DEBUG_WRAP(DebugMessage(DEBUG_CONFIGRULES,
+                            "Adding preprocessor function ID %d/bit %d/pri %d to list\n",
+                            preproc_id, p->num_preprocs, priority););
+
+    node = (PreprocMetaEvalFuncNode *)SnortAlloc(sizeof(PreprocMetaEvalFuncNode));
+
+    if (p->preproc_meta_eval_funcs == NULL)
+    {
+        p->preproc_meta_eval_funcs = node;
+        SetupMetadataCallback();
+    }
+    else
+    {
+        PreprocMetaEvalFuncNode *tmp = p->preproc_meta_eval_funcs;
+        PreprocMetaEvalFuncNode *last = NULL;
+
+        do
+        {
+            if (tmp->preproc_id == preproc_id)
+            {
+                free(node);
+                FatalError("Preprocessor Meta Eval already registered with ID %d\n",
+                           preproc_id);
+            }
+
+            /* Insert higher priority preprocessors first.  Lower priority
+             * number means higher priority */
+            if (priority < tmp->priority)
+                break;
+
+            last = tmp;
+            tmp = tmp->next;
+
+        } while (tmp != NULL);
+
+        /* Priority higher than first item in list */
+        if (last == NULL)
+        {
+            node->next = tmp;
+            p->preproc_meta_eval_funcs = node;
+        }
+        else
+        {
+            node->next = tmp;
+            last->next = node;
+        }
+    }
+
+    node->func = pp_meta_eval_func;
+    node->priority = priority;
+    node->preproc_id = preproc_id;
+    node->preproc_bit = (1 << preproc_id);
+
+    p->num_meta_preprocs++;
+    p->preproc_meta_bit_mask |= node->preproc_bit;
+
+    return node;
+}
+
+void AddFuncToPreprocPostConfigList(SnortConfig *sc, PreprocPostConfigFunc pp_post_config_func,
+                                    void *data)
 {
     PreprocPostConfigFuncNode *node;
-    SnortConfig *sc = snort_conf_for_parsing;
 
     if (sc == NULL)
     {
@@ -989,92 +1137,88 @@ void PostConfigPreprocessors(SnortConfig *sc)
                    __FILE__, __LINE__);
     }
 
-    snort_conf_for_parsing = sc;
-
     list = sc->preproc_post_config_funcs;
 
     for (; list != NULL; list = list->next)
     {
         if (list->func != NULL)
-            list->func(list->data);
-    }
-
-    snort_conf_for_parsing = NULL;
-}
-
-#ifdef SNORT_RELOAD
-void SwapPreprocConfigurations(void)
-{
-    PreprocConfigFuncNode *node = preproc_config_funcs;
-
-    for (; node != NULL; node = node->next)
-    {
-        if (node->reload_swap_func != NULL)
-            node->swap_free_data = node->reload_swap_func();
+            list->func(sc, list->data);
     }
 }
 
-void FreeSwappedPreprocConfigurations(void)
+void FilterConfigPreprocessors(SnortConfig *sc)
 {
-    PreprocConfigFuncNode *node = preproc_config_funcs;
+    tSfPolicyId policy_id;
+    SnortPolicy *p;
+    PreprocEvalFuncNode *node;
+    PreprocEvalFuncNode **list;
+    PreprocEvalFuncNode **free_list;
 
-    for (; node != NULL; node = node->next)
+    if (sc == NULL)
     {
-        if ((node->reload_swap_free_func != NULL) &&
-            (node->swap_free_data != NULL))
+        ParseError("%s(%d) Snort config is NULL.\n",
+                   __FILE__, __LINE__);
+    }
+
+    if (!sc->disable_all_policies)
+        return;
+
+    policy_id = getParserPolicy(sc);
+    p = sc->targeted_policies[policy_id];
+    if (p == NULL)
+        return;
+
+    list = &p->preproc_eval_funcs;
+    free_list = &p->unused_preproc_eval_funcs;
+
+    while ((node = *list) != NULL)
+    {
+        if (node->preproc_bit & sc->reenabled_preprocessor_bits)
         {
-            node->reload_swap_free_func(node->swap_free_data);
-            node->swap_free_data = NULL;
+            list = &node->next;
+        }
+        else
+        {
+            *list = node->next;
+            node->next = NULL;
+            *free_list = node;
+            free_list = &node->next;
         }
     }
 }
 
-void AddFuncToPreprocReloadVerifyList(PreprocReloadVerifyFunc pp_reload_func)
+#ifdef SNORT_RELOAD
+void SwapPreprocConfigurations(SnortConfig *sc)
 {
-    PreprocReloadVerifyFuncNode *node;
-    SnortConfig *sc = snort_conf_for_parsing;
+    PreprocessorSwapData *node;
+    PreprocConfigFuncNode *preproc;
 
-    if (sc == NULL)
+    for (node = sc->preprocSwapData; node != NULL; node = node->next)
     {
-        FatalError("%s(%d) Snort config for parsing is NULL.\n",
-                   __FILE__, __LINE__);
+        if ((preproc = node->preprocNode) && preproc->reload_swap_func)
+            node->data = preproc->reload_swap_func(sc, node->data);
     }
-
-    node = (PreprocReloadVerifyFuncNode *)SnortAlloc(sizeof(PreprocReloadVerifyFuncNode));
-
-    if (sc->preproc_reload_verify_funcs == NULL)
-    {
-        sc->preproc_reload_verify_funcs = node;
-    }
-    else
-    {
-        PreprocReloadVerifyFuncNode *tmp = sc->preproc_reload_verify_funcs;
-
-        while (tmp->next != NULL)
-            tmp = tmp->next;
-
-        tmp->next = node;
-    }
-
-    node->func = pp_reload_func;
 }
 
-void FreePreprocReloadVerifyFuncList(PreprocReloadVerifyFuncNode *head)
+void FreeSwappedPreprocConfigurations(struct _SnortConfig *sc)
 {
-    while (head != NULL)
-    {
-        PreprocReloadVerifyFuncNode *tmp = head;
+    PreprocessorSwapData *node;
+    PreprocConfigFuncNode *preproc;
 
-        head = head->next;
-        free(tmp);
+    for (node = sc->preprocSwapData; node != NULL; node = node->next)
+    {
+        if (node->data && (preproc = node->preprocNode) && preproc->reload_swap_free_func)
+        {
+            preproc->reload_swap_free_func(node->data);
+            node->data = NULL;
+        }
     }
 }
 #endif
 
-void AddFuncToConfigCheckList(PreprocCheckConfigFunc pp_chk_config_func)
+void AddFuncToConfigCheckList(SnortConfig *sc, PreprocCheckConfigFunc pp_chk_config_func)
 {
     PreprocCheckConfigFuncNode *node;
-    SnortConfig *sc = snort_conf_for_parsing;
 
     if (sc == NULL)
     {
@@ -1177,40 +1321,57 @@ static void AddFuncToPreprocSignalList(PreprocSignalFunc pp_sig_func, void *arg,
     node->priority = priority;
 }
 
-void AddFuncToPreprocReassemblyPktList(PreprocReassemblyPktFunc pp_reass_pkt_func, uint32_t preproc_id)
+void AddFuncToPeriodicCheckList(PeriodicFunc periodic_func, void *arg,
+        uint16_t priority, uint32_t preproc_id, uint32_t period )
 {
-    PreprocReassemblyPktFuncNode *node;
-    SnortConfig *sc = snort_conf_for_parsing;
-    tSfPolicyId policy_id = getParserPolicy();
-    SnortPolicy *p;
+    PeriodicCheckFuncNode **list= &periodic_check_funcs;
+    PeriodicCheckFuncNode *node;
 
-    if (sc == NULL)
-    {
-        FatalError("%s(%d) Snort config for parsing is NULL.\n",
-                   __FILE__, __LINE__);
-    }
-
-    p = sc->targeted_policies[policy_id];
-    if (p == NULL)
+    if (list == NULL)
         return;
 
-    node = (PreprocReassemblyPktFuncNode *)SnortAlloc(sizeof(PreprocReassemblyPktFuncNode));
+    node = (PeriodicCheckFuncNode *)SnortAlloc(sizeof(PeriodicCheckFuncNode));
 
-    if (p->preproc_reassembly_pkt_funcs == NULL)
+    if (*list == NULL)
     {
-        p->preproc_reassembly_pkt_funcs = node;
+        *list = node;
     }
     else
     {
-        PreprocReassemblyPktFuncNode *tmp = p->preproc_reassembly_pkt_funcs;
+        PeriodicCheckFuncNode *tmp = *list;
+        PeriodicCheckFuncNode *last = NULL;
 
-        /* just insert at front of list */
-        p->preproc_reassembly_pkt_funcs = node;
-        node->next = tmp;
+        do
+        {
+            /* Insert higher priority stuff first.  Lower priority
+             * number means higher priority */
+            if (priority < tmp->priority)
+                break;
+
+            last = tmp;
+            tmp = tmp->next;
+
+        } while (tmp != NULL);
+
+        /* Priority higher than first item in list */
+        if (last == NULL)
+        {
+            node->next = tmp;
+            *list = node;
+        }
+        else
+        {
+            node->next = tmp;
+            last->next = node;
+        }
     }
 
-    node->func = pp_reass_pkt_func;
+    node->func = periodic_func;
+    node->arg = arg;
     node->preproc_id = preproc_id;
+    node->priority = priority;
+    node->period = period;
+    node->time_left = period;
 }
 
 void FreePreprocConfigFuncs(void)
@@ -1280,13 +1441,15 @@ void FreePreprocEvalFuncs(PreprocEvalFuncNode *head)
     }
 }
 
-void FreePreprocReassemblyPktFuncs(PreprocReassemblyPktFuncNode *head)
+void FreePreprocMetaEvalFuncs(PreprocMetaEvalFuncNode *head)
 {
-    PreprocReassemblyPktFuncNode *tmp;
+    PreprocMetaEvalFuncNode *tmp;
 
     while (head != NULL)
     {
         tmp = head->next;
+        //if (head->context)
+        //    free(head->context);
         free(head);
         head = tmp;
     }
@@ -1299,23 +1462,35 @@ void FreePreprocSigFuncs(PreprocSignalFuncNode *head)
     while (head != NULL)
     {
         tmp = head->next;
-        /* don't free sig->arg, that's free'd by the CleanExit/Restart func */
+        /* don't free sig->arg, that's free'd by the CleanExit func */
         free(head);
         head = tmp;
     }
 }
 
-void CheckPreprocessorsConfig(SnortConfig *sc)
+void FreePeriodicFuncs(PeriodicCheckFuncNode *head)
+{
+    PeriodicCheckFuncNode *tmp;
+
+    while (head != NULL)
+    {
+        tmp = head->next;
+        /* don't free sig->arg, that's free'd by the CleanExit func */
+        free(head);
+        head = tmp;
+    }
+}
+
+int CheckPreprocessorsConfig(SnortConfig *sc)
 {
     PreprocCheckConfigFuncNode *idx;
+    int rval;
 
     if (sc == NULL)
     {
         FatalError("%s(%d) Snort config is NULL.\n",
                    __FILE__, __LINE__);
     }
-
-    snort_conf_for_parsing = sc;
 
     idx = sc->preproc_config_check_funcs;
 
@@ -1323,44 +1498,63 @@ void CheckPreprocessorsConfig(SnortConfig *sc)
 
     while(idx != NULL)
     {
-        idx->func();
+        if ((rval = idx->func(sc)))
+            return rval;
         idx = idx->next;
     }
-
-    snort_conf_for_parsing = NULL;
+    return 0;
 }
 
 #ifdef SNORT_RELOAD
 int VerifyReloadedPreprocessors(SnortConfig *sc)
 {
-    PreprocReloadVerifyFuncNode *node;
+    int rval;
+    PreprocessorSwapData *node;
+    PreprocConfigFuncNode *preproc;
 
-    if (sc == NULL)
+    for (node = sc->preprocSwapData; node != NULL; node = node->next)
     {
-        FatalError("%s(%d) Snort config is NULL.\n",
-                   __FILE__, __LINE__);
-    }
-
-    snort_conf_for_parsing = sc;
-
-    node = sc->preproc_reload_verify_funcs;
-    while (node != NULL)
-    {
-        if (node->func != NULL)
+        if (node->data && (preproc = node->preprocNode) && preproc->reload_verify_func &&
+            (rval = preproc->reload_verify_func(sc, node->data)))
         {
-            if (node->func() == -1)
-                return -1;
+            return rval;
         }
-
-        node = node->next;
     }
-
-    snort_conf_for_parsing = NULL;
 
     return 0;
 }
+
+void FreePreprocessorReloadData(SnortConfig *sc)
+{
+    PreprocessorSwapData *node;
+    PreprocConfigFuncNode *preproc;
+
+    while ((node = sc->preprocSwapData))
+    {
+        sc->preprocSwapData = node->next;
+        if (node->data && (preproc = node->preprocNode) && preproc->reload_swap_free_func)
+            preproc->reload_swap_free_func(node->data);
+        free(node);
+    }
+}
 #endif
 
+void DisableAllPolicies(SnortConfig *sc)
+{
+    if (!sc->disable_all_policies)
+    {
+        sc->disable_all_policies = 1;
+        sc->reenabled_preprocessor_bits = (1 << PP_FRAG3);
+        sc->reenabled_preprocessor_bits |= (1 << PP_STREAM);
+        sc->reenabled_preprocessor_bits |= (1 << PP_PERFMONITOR);
+    }
+}
+
+int ReenablePreprocBit(SnortConfig *sc, unsigned int preproc_id)
+{
+    sc->reenabled_preprocessor_bits |= (1 << preproc_id);
+    return 0;
+}
 
 /***************************** Output Plugin API  *****************************/
 extern OutputConfigFuncNode *output_config_funcs;
@@ -1373,7 +1567,6 @@ void RegisterOutputPlugins(void)
 
     AlertSyslogSetup();
     LogTcpdumpSetup();
-    DatabaseSetup();
     AlertFastSetup();
     AlertFullSetup();
 #ifndef WIN32
@@ -1382,21 +1575,12 @@ void RegisterOutputPlugins(void)
 #endif /* !WIN32 */
     AlertCSVSetup();
     LogNullSetup();
-    UnifiedSetup();
     Unified2Setup();
     LogAsciiSetup();
-
-#ifdef ARUBA
-    AlertArubaActionSetup();
-#endif
 
 #ifdef LINUX
     /* This uses linux only capabilities */
     AlertSFSocket_Setup();
-#endif
-
-#ifdef HAVE_LIBPRELUDE
-    AlertPreludeSetup();
 #endif
 
     AlertTestSetup();
@@ -1420,7 +1604,7 @@ void RegisterOutputPlugin(char *keyword, int type_flags, OutputConfigFunc oc_fun
 {
     OutputConfigFuncNode *node = (OutputConfigFuncNode *)SnortAlloc(sizeof(OutputConfigFuncNode));
 
-    DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN,"Registering keyword:output => %s:%p\n", 
+    DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN,"Registering keyword:output => %s:%p\n",
                             keyword, oc_func););
 
     if (output_config_funcs == NULL)
@@ -1453,6 +1637,41 @@ void RegisterOutputPlugin(char *keyword, int type_flags, OutputConfigFunc oc_fun
     node->output_type_flags = type_flags;
 }
 
+void RemoveOutputPlugin(char *keyword)
+{
+    OutputConfigFuncNode *head = output_config_funcs;
+
+    if (!head ||(keyword == NULL))
+        return;
+
+    /*If head node, remove head*/
+    if (strcasecmp(head->keyword, keyword) == 0)
+    {
+        output_config_funcs = head->next;
+        if (head->keyword != NULL)
+            free(head->keyword);
+        free(head);
+        return;
+    }
+
+    while (head->next != NULL)
+    {
+        OutputConfigFuncNode *next;
+        next = head->next;
+        if (strcasecmp(next->keyword, keyword) == 0)
+        {
+            head->next = next->next;
+            if (next->keyword != NULL)
+                free(next->keyword);
+            free(next);
+            break;
+        }
+        head = head->next;
+    }
+
+    return;
+}
+
 OutputConfigFunc GetOutputConfigFunc(char *keyword)
 {
     OutputConfigFuncNode *head = output_config_funcs;
@@ -1463,7 +1682,7 @@ OutputConfigFunc GetOutputConfigFunc(char *keyword)
     while (head != NULL)
     {
         if (strcasecmp(head->keyword, keyword) == 0)
-           return head->config_func; 
+           return head->config_func;
 
         head = head->next;
     }
@@ -1541,21 +1760,21 @@ void DumpOutputPlugins(void)
     LogMessage("-------------------------------------------------\n\n");
 }
 
-void AddFuncToOutputList(OutputFunc o_func, OutputType type, void *arg)
+void AddFuncToOutputList(SnortConfig *sc, OutputFunc o_func, OutputType type, void *arg)
 {
     switch (type)
     {
         case OUTPUT_TYPE__ALERT:
-            if (head_tmp != NULL)
-                AppendOutputFuncList(o_func, arg, &head_tmp->AlertList);
+            if (sc->head_tmp != NULL)
+                AppendOutputFuncList(o_func, arg, &sc->head_tmp->AlertList);
             else
                 AppendOutputFuncList(o_func, arg, &AlertList);
 
             break;
 
         case OUTPUT_TYPE__LOG:
-            if (head_tmp != NULL)
-                AppendOutputFuncList(o_func, arg, &head_tmp->LogList);
+            if (sc->head_tmp != NULL)
+                AppendOutputFuncList(o_func, arg, &sc->head_tmp->LogList);
             else
                 AppendOutputFuncList(o_func, arg, &LogList);
 
@@ -1600,10 +1819,36 @@ void AppendOutputFuncList(OutputFunc o_func, void *arg, OutputFuncNode **list)
 
 /* functions to aid in cleaning up after plugins
  * Used for both rule options and output.  Preprocessors have their own */
-void AddFuncToRestartList(PluginSignalFunc pl_sig_func, void *arg)
+static inline void _AddFuncToPostConfigList(PostConfigFunc pl_post_func, void *arg, PostConfigFuncNode **list)
 {
-    AddFuncToSignalList(pl_sig_func, arg, &plugin_restart_funcs);
+    PostConfigFuncNode *node;
+
+    node = (PostConfigFuncNode *)SnortAlloc(sizeof(PostConfigFuncNode));
+
+    if (*list == NULL)
+    {
+        *list = node;
+    }
+    else
+    {
+        PostConfigFuncNode *tmp = *list;
+
+        while (tmp->next != NULL)
+            tmp = tmp->next;
+
+        tmp->next = node;
+    }
+
+    node->func = pl_post_func;
+    node->arg = arg;
 }
+
+#ifdef SNORT_RELOAD
+void AddFuncToReloadList(PostConfigFunc pl_post_func, void *arg)
+{
+    _AddFuncToPostConfigList(pl_post_func, arg, &plugin_reload_funcs);
+}
+#endif
 
 void AddFuncToCleanExitList(PluginSignalFunc pl_sig_func, void *arg)
 {
@@ -1615,17 +1860,9 @@ void AddFuncToShutdownList(PluginSignalFunc pl_sig_func, void *arg)
     AddFuncToSignalList(pl_sig_func, arg, &plugin_shutdown_funcs);
 }
 
-void AddFuncToPostConfigList(PluginSignalFunc pl_sig_func, void *arg)
+void AddFuncToPostConfigList(SnortConfig *sc, PostConfigFunc pl_post_func, void *arg)
 {
-    SnortConfig *sc = snort_conf_for_parsing;
-
-    if (sc == NULL)
-    {
-        FatalError("%s(%d) Snort config for parsing is NULL.\n",
-                   __FILE__, __LINE__);
-    }
-
-    AddFuncToSignalList(pl_sig_func, arg, &sc->plugin_post_config_funcs);
+    _AddFuncToPostConfigList(pl_post_func, arg, &sc->plugin_post_config_funcs);
 }
 
 void AddFuncToSignalList(PluginSignalFunc pl_sig_func, void *arg, PluginSignalFuncNode **list)

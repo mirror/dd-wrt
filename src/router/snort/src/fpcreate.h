@@ -3,7 +3,8 @@
 **
 **  fpcreate.h
 **
-** Copyright (C) 2002-2011 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Dan Roelker <droelker@sourcefire.com>
 ** Marc Norton <mnorton@sourcefire.com>
 **
@@ -23,10 +24,10 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **
 ** 6/13/05 - marc norton
-**   Added plugin support for fast pattern match data, requires DYNAMIC_PLUGIN be defined
+**   Added plugin support for fast pattern match data
 **
 */
 #ifndef __FPCREATE_H__
@@ -53,7 +54,7 @@ struct _SnortConfig;
 #include "sftarget_protocol_reference.h"
 
 /*
- *  This controls how many fast pattern match contents may be 
+ *  This controls how many fast pattern match contents may be
  *  used/retrieved per rule in fpcreate.c.
  */
 #define PLUGIN_MAX_FPLIST_SIZE 16
@@ -64,21 +65,6 @@ struct _SnortConfig;
 #define PL_DEBUG_PRINT_RULEGROUPS_UNCOMPILED 0x08
 #define PL_DEBUG_PRINT_RULEGROUPS_COMPILED   0x10
 #define PL_SINGLE_RULE_GROUP                 0x20
-
-/*
-**  This structure holds the RTN and OTN
-**  for a specific rule.  This way we can
-**  verify each rule and stay within the
-**  current snort rule architecture.
-*/
-typedef struct _otnx_
-{
-
-   OptTreeNode   * otn;
-   //RuleTreeNode  * rtn; 
-   unsigned int    content_length;
-
-} OTNX;
 
 typedef struct _pmx_
 {
@@ -97,7 +83,7 @@ typedef struct _NCListNode
 } NCListNode;
 
 /*
-**  This structure holds configuration options for the 
+**  This structure holds configuration options for the
 **  detection engine.
 */
 typedef struct _FastPatternConfig
@@ -123,11 +109,11 @@ typedef struct _FastPatternConfig
 /*
  *  Service Rule Map Master Table
  */
-typedef struct 
+typedef struct
 {
   SFGHASH * tcp_to_srv;
   SFGHASH * tcp_to_cli;
-  
+
   SFGHASH * udp_to_srv;
   SFGHASH * udp_to_cli;
 
@@ -142,11 +128,11 @@ typedef struct
 /*
  *  Service/Protocol Oridinal To PORT_GROUP table
  */
-typedef struct 
+typedef struct
 {
   PORT_GROUP *tcp_to_srv[MAX_PROTOCOL_ORDINAL];
   PORT_GROUP *tcp_to_cli[MAX_PROTOCOL_ORDINAL];
-  
+
   PORT_GROUP *udp_to_srv[MAX_PROTOCOL_ORDINAL];
   PORT_GROUP *udp_to_cli[MAX_PROTOCOL_ORDINAL];
 
@@ -156,7 +142,7 @@ typedef struct
   PORT_GROUP *ip_to_srv[MAX_PROTOCOL_ORDINAL];
   PORT_GROUP *ip_to_cli[MAX_PROTOCOL_ORDINAL];
 
-} sopg_table_t; 
+} sopg_table_t;
 #endif
 
 /*
@@ -177,7 +163,7 @@ void fpSetDefaults(FastPatternConfig *);
 void FastPatternConfigFree(FastPatternConfig *);
 
 /*
-**  Functions that allow the detection routins to 
+**  Functions that allow the detection routins to
 **  find the right classification for a given packet.
 */
 int prmFindRuleGroupTcp(PORT_RULE_MAP *, int, int, PORT_GROUP **, PORT_GROUP **, PORT_GROUP **);
@@ -226,10 +212,7 @@ PORT_GROUP * fpGetServicePortGroupByOrdinal(sopg_table_t *, int, int, int16_t);
 void fpShowEventStats(struct _SnortConfig *);
 typedef int (*OtnWalkFcn)(int, RuleTreeNode *, OptTreeNode *);
 void fpWalkOtns(int, OtnWalkFcn);
-
-#ifdef DYNAMIC_PLUGIN
 void fpDynamicDataFree(void *);
-#endif
 
 const char * PatternRawToContent(const char *pattern, int pattern_len);
 

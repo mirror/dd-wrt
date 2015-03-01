@@ -1,6 +1,7 @@
 /***************************************************************************
  *
- * Copyright (C) 2005-2011 Sourcefire, Inc.
+ * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -15,12 +16,12 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************/
 
 /************************************************************************
- * 
+ *
  * smtp_xlink2state.c
  *
  * Author: Andy  Mullican
@@ -43,6 +44,11 @@
 #include <ctype.h>
 #include <string.h>
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#include "sf_types.h"
 #include "snort_smtp.h"
 #include "smtp_config.h"
 #include "smtp_util.h"
@@ -62,11 +68,8 @@
 /* X-Link2State overlong length */
 #define XLINK2STATE_MAX_LEN  520
 
-
 extern SMTP *smtp_ssn;
 extern SMTPConfig *smtp_eval_config;
-extern DynamicPreprocessorData _dpd;
-
 
 /* Prototypes */
 static uint32_t get_xlink_hex_value(const uint8_t *, const uint8_t *);
@@ -78,7 +81,7 @@ static char      get_xlink_keyword(const uint8_t *, const uint8_t *);
  * @param   buf         pointer to beginning of buffer to parse
  * @param   end         end pointer of buffer to parse
  *
- * @return  unsigned long   value of number extracted          
+ * @return  unsigned long   value of number extracted
  *
  * @note    this could be more efficient, but the search buffer should be pretty short
  */
@@ -121,7 +124,7 @@ static uint32_t get_xlink_hex_value(const uint8_t *buf, const uint8_t *end)
 
 /*
  * Check for X-LINK2STATE keywords FIRST or CHUNK
- *   
+ *
  *
  * @param   x           pointer to "X-LINK2STATE" in buffer
  * @param   x_len       length of buffer after x
@@ -147,7 +150,7 @@ static char get_xlink_keyword(const uint8_t *ptr, const uint8_t *end)
 
     len = end - ptr;
 
-    if (len > 5 && strncasecmp((const char *)ptr, "FIRST", 5) == 0) 
+    if (len > 5 && strncasecmp((const char *)ptr, "FIRST", 5) == 0)
     {
         return XLINK_FIRST;
     }
@@ -161,9 +164,9 @@ static char get_xlink_keyword(const uint8_t *ptr, const uint8_t *end)
 
 /*
  * Handle X-Link2State vulnerability
- *   
+ *
  *  From Lurene Grenier:
- 
+
     The X-LINK2STATE command always takes the following form:
 
     X-LINK2STATE [FIRST|NEXT|LAST] CHUNK=<SOME DATA>
@@ -186,7 +189,7 @@ static char get_xlink_keyword(const uint8_t *ptr, const uint8_t *end)
         next; # chunks came with proper first chunk specified
     if (/X-LINK2STATE [FIRST|NEXT|LAST] CHUNK/) {
         if (/X-LINK2STATE FIRST CHUNK/) gotFirstChunk = TRUE;
-        next; # some specifier is marked 
+        next; # some specifier is marked
     }
     if (chunkLen > 520)
        attempt = TRUE; # Gotcha!
@@ -272,7 +275,7 @@ int ParseXLink2State(SFSnortPacket *p, const uint8_t *ptr)
          * (outside of whether its thresholded). */
         if (smtp_eval_config->drop_xlink2state)
         {
-            _dpd.inlineDrop(p);
+            _dpd.inlineDropAndReset(p);
         }
 
         SMTP_GenerateAlert(SMTP_XLINK2STATE_OVERFLOW, "%s", SMTP_XLINK2STATE_OVERFLOW_STR);

@@ -1,9 +1,10 @@
 /*
 **  $Id$
-** 
+**
 **  fpcreate.c
 **
-**  Copyright (C) 2002-2011 Sourcefire, Inc.
+**  Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+**  Copyright (C) 2002-2013 Sourcefire, Inc.
 **  Dan Roelker <droelker@sourcefire.com>
 **  Marc Norton <mnorton@sourcefire.com>
 **
@@ -23,10 +24,10 @@
 **
 **  You should have received a copy of the GNU General Public License
 **  along with this program; if not, write to the Free Software
-**  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **
 ** 6/13/05 - marc norton
-**   Added plugin support for fast pattern match data, requires DYNAMIC_PLUGIN be defined
+**   Added plugin support for fast pattern match data
 **
 */
 
@@ -34,6 +35,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#include "snort.h"
 #include "rules.h"
 #include "treenodes.h"
 #include "treenodes.h"
@@ -65,14 +71,10 @@
 #include "sfutil/sfrim.h"
 #include "detection_options.h"
 #include "sfPolicy.h"
-#ifdef DYNAMIC_PLUGIN
 #include "dynamic-plugins/sp_dynamic.h"
 #include "dynamic-plugins/sp_preprocopt.h"
-#endif
-
 #include "dynamic-plugins/sf_dynamic_define.h"
 
-  
 /*
  *  Content flag values
  */
@@ -90,27 +92,23 @@ static void fpDeletePortGroup(void *);
 static void fpDeletePMX(void *data);
 static int fpGetFinalPattern(FastPatternConfig *fp, PatternMatchData *pmd,
         char **ret_pattern, int *ret_bytes);
-#ifdef DYNAMIC_PLUGIN
 static FPContentInfo * GetLongestDynamicContent(FPContentInfo *content_list);
 static PatternMatchData * GetDynamicFastPatternPmd(DynamicData *dd, int dd_type);
-static INLINE int IsDynamicContentFpEligible(FPContentInfo *content);
-static INLINE PatternMatchData * DynamicContentToPmd(FPContentInfo *content_info);
-static INLINE void FreeDynamicContentList(FPContentInfo *fplist);
-#endif
+static inline int IsDynamicContentFpEligible(FPContentInfo *content);
+static inline PatternMatchData * DynamicContentToPmd(FPContentInfo *content_info);
+static inline void FreeDynamicContentList(FPContentInfo *fplist);
 static PatternMatchData * GetLongestPmdContent(OptTreeNode *otn, int type);
-static int fpFinishPortGroupRule(PORT_GROUP *pg, PmType pm_type,
+static int fpFinishPortGroupRule(SnortConfig *sc, PORT_GROUP *pg, PmType pm_type,
         OptTreeNode *otn, PatternMatchData *pmd, FastPatternConfig *fp);
-static int fpFinishPortGroup(PORT_GROUP *pg, FastPatternConfig *fp);
-static int fpAllocPms(PORT_GROUP *pg, FastPatternConfig *fp);
-static int fpAddPortGroupRule(PORT_GROUP *pg, OptTreeNode *otn, FastPatternConfig *fp);
+static int fpFinishPortGroup(SnortConfig *sc, PORT_GROUP *pg, FastPatternConfig *fp);
+static int fpAllocPms(SnortConfig *sc, PORT_GROUP *pg, FastPatternConfig *fp);
+static int fpAddPortGroupRule(SnortConfig *sc, PORT_GROUP *pg, OptTreeNode *otn, FastPatternConfig *fp);
 static int fpAddPortGroupPrmx(PORT_GROUP *pg, OptTreeNode *otn, int cflag);
-static INLINE int IsPmdFpEligible(PatternMatchData *content);
+static inline int IsPmdFpEligible(PatternMatchData *content);
 static void PrintFastPatternInfo(OptTreeNode *otn, PatternMatchData *pmd,
         const char *pattern, int pattern_length, PmType pm_type);
-#ifdef DYNAMIC_PLUGIN
 static int GetPreprocOptPmdList(OptTreeNode *, PatternMatchData **);
 static int UsePreprocOptFastPatterns(PatternMatchData *, PatternMatchData *);
-#endif
 
 static const char *pm_type_strings[PM_TYPE__MAX] =
 {
@@ -139,12 +137,11 @@ static sopg_table_t * ServicePortGroupTableNew(void)
 /*
  * Test if this otn is for traffic to the server
  */
-static int fpOtnFlowToServer( OptTreeNode * otn ) 
+static int fpOtnFlowToServer( OptTreeNode * otn )
 {
-    if( OtnFlowFromClient(otn) ) 
+    if( OtnFlowFromClient(otn) )
         return  1;
-    
-#ifdef DYNAMIC_PLUGIN
+
     if (otn->ds_list[PLUGIN_DYNAMIC])
     {
         DynamicData *dd = (DynamicData *)otn->ds_list[PLUGIN_DYNAMIC];
@@ -154,19 +151,18 @@ static int fpOtnFlowToServer( OptTreeNode * otn )
         if (dd->hasOptionFunction(dd->contextData, optType, flags))
             return 1;
     }
-#endif
+
     return 0;
 }
 /*
- * Test if this otn is for traffic to the client 
+ * Test if this otn is for traffic to the client
  */
-static 
-int fpOtnFlowToClient( OptTreeNode * otn ) 
+static
+int fpOtnFlowToClient( OptTreeNode * otn )
 {
-    if( OtnFlowFromServer(otn) ) 
+    if( OtnFlowFromServer(otn) )
         return 1;
-    
-#ifdef DYNAMIC_PLUGIN
+
     if (otn->ds_list[PLUGIN_DYNAMIC])
     {
         DynamicData *dd = (DynamicData *)otn->ds_list[PLUGIN_DYNAMIC];
@@ -176,32 +172,32 @@ int fpOtnFlowToClient( OptTreeNode * otn )
         if (dd->hasOptionFunction(dd->contextData, optType, flags))
             return 1;
     }
-#endif
+
     return 0;
 }
 
 #if 0
 Not currently used
 /*
-* Extract the Icmp Type field to determine the PortGroup.  
+* Extract the Icmp Type field to determine the PortGroup.
 *
 * returns :
 *   -1 : any, or not an EQ tests
 *   >0 : any other ip type
-*   
+*
 */
-static 
+static
 int GetOtnIcmpType (OptTreeNode * otn )
 {
    int                 type;
    IcmpTypeCheckData * IcmpType;
-       
+
    IcmpType = (IcmpTypeCheckData *)otn->ds_list[PLUGIN_ICMP_TYPE];
-   
+
    if( IcmpType && (IcmpType->operator == ICMP_TYPE_TEST_EQ) )
    {
        type = IcmpType->icmp_type;
-   } 
+   }
    else
    {
        return -1;
@@ -227,14 +223,14 @@ static SFGHASH * alloc_srvmap(void)
 static srmm_table_t * ServiceMapNew(void)
 {
     srmm_table_t *table = (srmm_table_t *)SnortAlloc(sizeof(srmm_table_t));
-    
-    table->tcp_to_srv = alloc_srvmap();        
-    table->tcp_to_cli = alloc_srvmap(); 
 
-    table->udp_to_srv = alloc_srvmap(); 
-    table->udp_to_cli = alloc_srvmap(); 
-        
-    table->icmp_to_srv = alloc_srvmap(); 
+    table->tcp_to_srv = alloc_srvmap();
+    table->tcp_to_cli = alloc_srvmap();
+
+    table->udp_to_srv = alloc_srvmap();
+    table->udp_to_cli = alloc_srvmap();
+
+    table->icmp_to_srv = alloc_srvmap();
     table->icmp_to_cli = alloc_srvmap();
 
     table->ip_to_srv = alloc_srvmap();
@@ -269,14 +265,14 @@ static void ServiceMapFree(srmm_table_t *srvc_map)
 static SFGHASH * alloc_spgmm(void)
 {
    SFGHASH * p;
-   
+
    /* TODO: keys are ascii service names - for now ! */
    p = sfghash_new(1000, /* # rows in table */
                    0, /* size: of key 0 = ascii, >0 = fixed size */
                    0, /* bool:user keys,  if true just store this pointer, don't copy the key */
                    fpDeletePortGroup);
                    /* ??? Why shouldn't we delete the port groups ??? */
-                   //(void(*)(void*))0 /* free nodes are port_groups do not delete here */ );        
+                   //(void(*)(void*))0 /* free nodes are port_groups do not delete here */ );
 
    if (p == NULL)
        FatalError("could not allocate a service port_group map : no memory?\n");
@@ -288,13 +284,13 @@ static srmm_table_t * ServicePortGroupMapNew(void)
 {
     srmm_table_t *table = (srmm_table_t *)SnortAlloc(sizeof(srmm_table_t));
 
-    table->tcp_to_srv = alloc_spgmm();        
-    table->tcp_to_cli = alloc_spgmm(); 
+    table->tcp_to_srv = alloc_spgmm();
+    table->tcp_to_cli = alloc_spgmm();
 
-    table->udp_to_srv = alloc_spgmm(); 
-    table->udp_to_cli = alloc_spgmm(); 
+    table->udp_to_srv = alloc_spgmm();
+    table->udp_to_cli = alloc_spgmm();
 
-    table->icmp_to_srv = alloc_spgmm(); 
+    table->icmp_to_srv = alloc_spgmm();
     table->icmp_to_cli = alloc_spgmm();
 
     table->ip_to_srv = alloc_spgmm();
@@ -358,43 +354,43 @@ static
 void ServiceMapAddOtnRaw( SFGHASH * table, char * servicename, OptTreeNode * otn )
 {
     SF_LIST * list;
-    
+
     list = (SF_LIST*) sfghash_find( table, servicename );
-    
+
     if( !list )
     {
         /* create the list */
         list = sflist_new();
         if( !list )
             FatalError("service_rule_map: could not create a  service rule-list\n");
-        
+
         /* add the service list to the table */
         if( sfghash_add( table, servicename, list ) != SFGHASH_OK )
         {
             FatalError("service_rule_map: could not add a rule to the rule-service-map\n");
         }
     }
-    
+
     /* add the rule */
     if( sflist_add_tail( list, otn ) )
         FatalError("service_rule_map: could not add a rule to the service rule-list\n");
 }
 /*
  *  maintain a table of service maps, one for each protocol and direction,
- *  each service map maintains a list of otn's for each service it maps to a 
+ *  each service map maintains a list of otn's for each service it maps to a
  *  service name.
  */
 static int ServiceMapAddOtn(srmm_table_t *srmm, int proto, char *servicename, OptTreeNode *otn)
 {
     SFGHASH * to_srv; /* to srv service rule map */
     SFGHASH * to_cli; /* to cli service rule map */
-   
-    if( !servicename ) 
+
+    if( !servicename )
         return 0;
 
     if(!otn )
         return 0;
-    
+
     if( proto == IPPROTO_TCP)
     {
         to_srv = srmm->tcp_to_srv;
@@ -412,7 +408,7 @@ static int ServiceMapAddOtn(srmm_table_t *srmm, int proto, char *servicename, Op
     }
     else if( proto ==  ETHERNET_TYPE_IP )
     {
-        to_srv = srmm->tcp_to_srv;
+        to_srv = srmm->ip_to_srv;
         to_cli = srmm->ip_to_cli;
     }
     else
@@ -424,7 +420,7 @@ static int ServiceMapAddOtn(srmm_table_t *srmm, int proto, char *servicename, Op
     {
         ServiceMapAddOtnRaw( to_srv, servicename, otn );
     }
-    else if( fpOtnFlowToClient(otn) ) 
+    else if( fpOtnFlowToClient(otn) )
     {
         ServiceMapAddOtnRaw( to_cli, servicename, otn );
     }
@@ -458,13 +454,13 @@ int prmFindRuleGroupIcmp(PORT_RULE_MAP *prm, int type, PORT_GROUP **type_group, 
     return prmFindRuleGroup( prm, type, -1, &src, type_group, gen);
 }
 
-int prmFindRuleGroupTcp(PORT_RULE_MAP *prm, int dport, int sport, PORT_GROUP ** src, 
+int prmFindRuleGroupTcp(PORT_RULE_MAP *prm, int dport, int sport, PORT_GROUP ** src,
                         PORT_GROUP **dst , PORT_GROUP ** gen)
 {
     return prmFindRuleGroup( prm, dport, sport, src, dst , gen);
 }
 
-int prmFindRuleGroupUdp(PORT_RULE_MAP *prm, int dport, int sport, PORT_GROUP ** src, 
+int prmFindRuleGroupUdp(PORT_RULE_MAP *prm, int dport, int sport, PORT_GROUP ** src,
                         PORT_GROUP **dst , PORT_GROUP ** gen)
 {
     return prmFindRuleGroup( prm, dport, sport, src, dst , gen);
@@ -498,7 +494,7 @@ void free_detection_option_tree(detection_option_tree_node_t *node)
 //static int num_trees = 0;
 //static int num_nc_trees = 0;
 //static int num_dup_trees = 0;
-int finalize_detection_option_tree(detection_option_tree_root_t *root)
+int finalize_detection_option_tree(SnortConfig *sc, detection_option_tree_root_t *root)
 {
     detection_option_tree_node_t *node = NULL;
     void *dup_node = NULL;
@@ -510,7 +506,7 @@ int finalize_detection_option_tree(detection_option_tree_root_t *root)
     for (i=0;i<root->num_children;i++)
     {
         node = root->children[i];
-        if (add_detection_option_tree(node, &dup_node) == DETECTION_OPTION_EQUAL)
+        if (add_detection_option_tree(sc, node, &dup_node) == DETECTION_OPTION_EQUAL)
         {
             free_detection_option_tree(node);
             root->children[i] = (detection_option_tree_node_t *)dup_node;
@@ -561,7 +557,7 @@ int otn_create_tree(OptTreeNode *otn, void **existing_tree)
     /* Build out sub-nodes for each option in the OTN fp list */
     while (opt_fp)
     {
-        /* If child node does not match existing option_data, 
+        /* If child node does not match existing option_data,
          * Create a child branch from a given sub-node. */
         void *option_data = opt_fp->context;
         char found_child_match = 0;
@@ -757,11 +753,10 @@ static void neg_list_free(void **list)
     *list = NULL;
 }
 
-int pmx_create_tree(void *id, void **existing_tree)
+int pmx_create_tree(struct _SnortConfig *sc, void *id, void **existing_tree)
 {
     PMX              *pmx    = NULL;
     RULE_NODE        *rnNode = NULL;
-    OTNX             *otnx   = NULL;
     OptTreeNode      *otn    = NULL;
 
     if (!existing_tree)
@@ -775,20 +770,19 @@ int pmx_create_tree(void *id, void **existing_tree)
     if (!id)
     {
         /* NULL input id (PMX *), last call for this pattern state */
-        return finalize_detection_option_tree((detection_option_tree_root_t *)*existing_tree);
+        return finalize_detection_option_tree(sc, (detection_option_tree_root_t *)*existing_tree);
     }
 
     pmx    = (PMX*)id;
     rnNode = (RULE_NODE*)(pmx->RuleNode);
-    otnx   = (OTNX*)(rnNode->rnRuleData);
-    otn    = otnx->otn;
+    otn    = (OptTreeNode *)rnNode->rnRuleData;
     return otn_create_tree(otn, existing_tree);
 }
 
 /*
-**  The following functions deal with the intialization of the 
+**  The following functions deal with the intialization of the
 **  detection engine.  These are set through parser.c with the
-**  option 'config detection:'.  This functionality may be 
+**  option 'config detection:'.  This functionality may be
 **  broken out later into it's own file to separate from this
 **  file's functionality.
 */
@@ -961,7 +955,7 @@ int fpSetDetectSearchMethod(FastPatternConfig *fp, char *method)
        LogMessage("   Search-Method = AC-Sparse-Bands\n");
     }
     /* These are for backwards compatability - and will be removed in future releases*/
-    else if( !strcasecmp(method,"mwm") ) 
+    else if( !strcasecmp(method,"mwm") )
     {
        fp->search_method = MPSE_LOWMEM;
        LogMessage("   Search-Method = Low-Mem (MWM depracated)\n");
@@ -1037,6 +1031,10 @@ void fpSetMaxQueueEvents(FastPatternConfig *fp, unsigned int num_events)
 */
 void fpSetMaxPatternLen(FastPatternConfig *fp, unsigned int max_len)
 {
+    if (fp->max_pattern_len != 0)
+    {
+        LogMessage("WARNING: Maximum pattern length redefined.\n");
+    }
     fp->max_pattern_len = max_len;
     LogMessage("    Maximum pattern length = %u\n", max_len);
 }
@@ -1044,8 +1042,8 @@ void fpSetMaxPatternLen(FastPatternConfig *fp, unsigned int max_len)
 /* FLP_Trim
   *
   * Trim zero byte prefixes, this increases uniqueness
-  * 
-  * returns 
+  *
+  * returns
   *   length - of trimmed pattern
   *   buff - ptr to new beggining of trimmed buffer
   */
@@ -1053,25 +1051,25 @@ static int FLP_Trim( char * p, int plen, char ** buff )
  {
     int i;
     int size = 0;
- 
+
     if( !p )
         return 0;
-    
+
     for(i=0;i<plen;i++)
     {
         if( p[i] != 0 ) break;
     }
-  
+
     if( i < plen )
         size = plen - i;
     else
         size = 0;
-    
-    if( buff && (size==0) ) 
+
+    if( buff && (size==0) )
     {
         *buff = 0;
     }
-    else if( buff ) 
+    else if( buff )
     {
         *buff = &p[i];
     }
@@ -1079,8 +1077,7 @@ static int FLP_Trim( char * p, int plen, char ** buff )
  }
 
 
-#ifdef DYNAMIC_PLUGIN
-static INLINE PatternMatchData * DynamicContentToPmd(FPContentInfo *content_info)
+static inline PatternMatchData * DynamicContentToPmd(FPContentInfo *content_info)
 {
     PatternMatchData *pmd;
 
@@ -1097,7 +1094,7 @@ static INLINE PatternMatchData * DynamicContentToPmd(FPContentInfo *content_info
     pmd->fp_offset = content_info->fp_offset;
     pmd->fp_length = content_info->fp_length;
     pmd->fp_only = content_info->fp_only;
-    pmd->uri_buffer = content_info->uri_buffer;
+    pmd->http_buffer = content_info->uri_buffer & 0xF;  // FIXTHIS make include
 
     return pmd;
 }
@@ -1128,7 +1125,7 @@ static PatternMatchData * DynamicFpContentsToPmdList(FPContentInfo *fp_list)
     return pmd_list;
 }
 
-static INLINE void FreeDynamicContentList(FPContentInfo *fplist)
+static inline void FreeDynamicContentList(FPContentInfo *fplist)
 {
     while (fplist != NULL)
     {
@@ -1157,7 +1154,7 @@ static PatternMatchData * GetDynamicFastPatternPmd(DynamicData *dd, int dd_type)
     return NULL;
 }
 
-static INLINE int IsDynamicContentFpEligible(FPContentInfo *content)
+static inline int IsDynamicContentFpEligible(FPContentInfo *content)
 {
     if (content == NULL)
         return 0;
@@ -1223,17 +1220,16 @@ static FPContentInfo * GetLongestDynamicContent(FPContentInfo *content_list)
     return NULL;
 
 }
-#endif
 
-static INLINE int IsPmdFpEligible(PatternMatchData *content)
+static inline int IsPmdFpEligible(PatternMatchData *content)
 {
     if (content == NULL)
         return 0;
 
-    if ((content->pattern_buf != NULL) && (content->pattern_size != 0))
+    if ((content->pattern_buf != NULL) && (content->pattern_size != 0) && (!content->protected_pattern))
     {
         /* We don't add cookie and some other contents to fast pattern matcher */
-        if(content->uri_buffer && !IsHttpBufFpEligible(content->uri_buffer))
+        if(content->http_buffer && !IsHttpBufFpEligible(content->http_buffer))
             return 0;
 
         if (content->exception_flag)
@@ -1267,9 +1263,7 @@ static PatternMatchData * GetLongestPmdContent(OptTreeNode *otn, int type)
     PatternMatchData *pmd_zero_not = NULL;
     OptFpList *ofl;
     int max_size = 0;
-    int max_not_size = 0;
     int max_zero_size = 0;
-    int max_zero_not_size = 0;
     uint8_t base64_buf_flag = 0;
     uint8_t mime_buf_flag = 0;
 
@@ -1286,22 +1280,21 @@ static PatternMatchData * GetLongestPmdContent(OptTreeNode *otn, int type)
             case RULE_OPTION_TYPE_CONTENT:
                 if (type != CONTENT_NORMAL)
                     continue;
-                if(!(ofl->isRelative))
-                {
-                    base64_buf_flag = 0;
-                    mime_buf_flag = 0;
-                }
                 else if(base64_buf_flag || mime_buf_flag)
                     continue;
                 break;
             case RULE_OPTION_TYPE_CONTENT_URI:
-                if (type != CONTENT_HTTP)
-                    continue;
                 base64_buf_flag = 0;
                 mime_buf_flag = 0;
+                if (type != CONTENT_HTTP)
+                    continue;
                 break;
             case RULE_OPTION_TYPE_BASE64_DATA:
                 base64_buf_flag =1;
+                continue;
+            case RULE_OPTION_TYPE_PKT_DATA:
+                base64_buf_flag = 0;
+                mime_buf_flag = 0;
                 continue;
             case RULE_OPTION_TYPE_FILE_DATA:
                 filedata = (FileData *)ofl->context;
@@ -1325,7 +1318,6 @@ static PatternMatchData * GetLongestPmdContent(OptTreeNode *otn, int type)
             {
                 if (tmp->exception_flag)
                 {
-                    max_zero_not_size = tmp->pattern_size;
                     pmd_zero_not = tmp;
                 }
                 else
@@ -1338,7 +1330,6 @@ static PatternMatchData * GetLongestPmdContent(OptTreeNode *otn, int type)
             {
                 if (tmp->exception_flag)
                 {
-                    max_not_size = size;
                     pmd_not = tmp;
                 }
                 else
@@ -1362,7 +1353,6 @@ static PatternMatchData * GetLongestPmdContent(OptTreeNode *otn, int type)
     return NULL;
 }
 
-#ifdef DYNAMIC_PLUGIN
 static int GetPreprocOptPmdList(OptTreeNode *otn, PatternMatchData **pmd_list)
 {
     OptFpList *ofl;
@@ -1455,12 +1445,10 @@ static int UsePreprocOptFastPatterns(PatternMatchData *pmd, PatternMatchData *pr
 
     return 0;
 }
-#endif
 
-static int fpFinishPortGroupRule(PORT_GROUP *pg, PmType pm_type,
+static int fpFinishPortGroupRule(SnortConfig *sc, PORT_GROUP *pg, PmType pm_type,
         OptTreeNode *otn, PatternMatchData *pmd_list, FastPatternConfig *fp)
 {
-    OTNX *otnx;
     PMX * pmx;
     RULE_NODE * rn;
     char *pattern;
@@ -1481,7 +1469,6 @@ static int fpFinishPortGroupRule(PORT_GROUP *pg, PmType pm_type,
         case PM_TYPE__HTTP_URI_CONTENT:
         case PM_TYPE__HTTP_HEADER_CONTENT:
         case PM_TYPE__HTTP_CLIENT_BODY_CONTENT:
-        case PM_TYPE__HTTP_METHOD_CONTENT:
             if (pmd_list == NULL)
                 return -1;
             pg_type = PGCT_URICONTENT;
@@ -1504,13 +1491,9 @@ static int fpFinishPortGroupRule(PORT_GROUP *pg, PmType pm_type,
         if (fpGetFinalPattern(fp, pmd, &pattern, &pattern_length) == -1)
             return -1;
 
-        otnx = (OTNX *)SnortAlloc(sizeof(OTNX));
-        otnx->otn = otn;
-        otnx->content_length = pmd->pattern_size;
-
         /* create a rule_node */
-        rn = (RULE_NODE *)SnortAlloc(sizeof(RULE_NODE)); 
-        rn->rnRuleData = otnx; 
+        rn = (RULE_NODE *)SnortAlloc(sizeof(RULE_NODE));
+        rn->rnRuleData = otn;
 
         /* create pmx */
         pmx = (PMX *)SnortAlloc(sizeof(PMX));
@@ -1520,12 +1503,13 @@ static int fpFinishPortGroupRule(PORT_GROUP *pg, PmType pm_type,
         if (fpDetectGetDebugPrintFastPatterns(fp))
             PrintFastPatternInfo(otn, pmd, pattern, pattern_length, pm_type);
 
-        mpseAddPattern(
+        mpseAddPatternWithSnortConfig(
+                sc,
                 pg->pgPms[pm_type],
                 pattern,
                 pattern_length,
                 pmd->nocase,
-                pmd->offset, 
+                pmd->offset,
                 pmd->depth,
                 (unsigned)pmd->exception_flag,
                 pmx,
@@ -1536,7 +1520,7 @@ static int fpFinishPortGroupRule(PORT_GROUP *pg, PmType pm_type,
     return 0;
 }
 
-static int fpFinishPortGroup(PORT_GROUP *pg, FastPatternConfig *fp)
+static int fpFinishPortGroup(SnortConfig *sc, PORT_GROUP *pg, FastPatternConfig *fp)
 {
     PmType i;
     int rules = 0;
@@ -1550,11 +1534,11 @@ static int fpFinishPortGroup(PORT_GROUP *pg, FastPatternConfig *fp)
         {
             if (mpseGetPatternCount(pg->pgPms[i]) != 0)
             {
-                if (mpsePrepPatterns(pg->pgPms[i], pmx_create_tree,
+                if (mpsePrepPatternsWithSnortConf(sc, pg->pgPms[i], pmx_create_tree,
                             add_patrn_to_neg_list) != 0)
                 {
                     FatalError("%s(%d) Failed to compile port group "
-                            "patterns.\n", __FILE__, __LINE__); 
+                            "patterns.\n", __FILE__, __LINE__);
                 }
 
                 if (fp->debug)
@@ -1575,11 +1559,11 @@ static int fpFinishPortGroup(PORT_GROUP *pg, FastPatternConfig *fp)
 
         for (ruleNode = pg->pgHeadNC; ruleNode; ruleNode = ruleNode->rnNext)
         {
-            OTNX *otnx = (OTNX *)ruleNode->rnRuleData;
-            otn_create_tree(otnx->otn, &pg->pgNonContentTree);
+            OptTreeNode *otn = (OptTreeNode *)ruleNode->rnRuleData;
+            otn_create_tree(otn, &pg->pgNonContentTree);
         }
 
-        finalize_detection_option_tree((detection_option_tree_root_t*)pg->pgNonContentTree);
+        finalize_detection_option_tree(sc, (detection_option_tree_root_t*)pg->pgNonContentTree);
         rules = 1;
     }
 
@@ -1593,14 +1577,14 @@ static int fpFinishPortGroup(PORT_GROUP *pg, FastPatternConfig *fp)
     return 0;
 }
 
-static int fpAllocPms(PORT_GROUP *pg, FastPatternConfig *fp)
+static int fpAllocPms(SnortConfig *sc, PORT_GROUP *pg, FastPatternConfig *fp)
 {
     PmType i;
 
     for (i = PM_TYPE__CONTENT; i < PM_TYPE__MAX; i++)
     {
         /* init pattern matchers  */
-        pg->pgPms[i] = mpseNew(fp->search_method,
+        pg->pgPms[i] = mpseNewWithSnortConfig(sc, fp->search_method,
                 MPSE_INCREMENT_GLOBAL_CNT,
                 fpDeletePMX,
                 free_detection_option_root,
@@ -1629,13 +1613,30 @@ static int fpAllocPms(PORT_GROUP *pg, FastPatternConfig *fp)
     return 0;
 }
 
-static int fpAddPortGroupRule(PORT_GROUP *pg, OptTreeNode *otn, FastPatternConfig *fp)
+static PmType GetPmType (HTTP_BUFFER hb_type)
+{
+    switch ( hb_type )
+    {
+    case HTTP_BUFFER_URI:
+        return PM_TYPE__HTTP_URI_CONTENT;
+
+    case HTTP_BUFFER_HEADER:
+        return PM_TYPE__HTTP_HEADER_CONTENT;
+
+    case HTTP_BUFFER_CLIENT_BODY:
+        return PM_TYPE__HTTP_CLIENT_BODY_CONTENT;
+
+    default:
+        break;
+    }
+    return PM_TYPE__CONTENT;
+}
+
+static int fpAddPortGroupRule(SnortConfig *sc, PORT_GROUP *pg, OptTreeNode *otn, FastPatternConfig *fp)
 {
     PatternMatchData *pmd = NULL;
     PatternMatchData *pmd_uri = NULL;
-#ifdef DYNAMIC_PLUGIN
     PatternMatchData *preproc_opt_pmds = NULL;
-#endif
 
     if ((pg == NULL) || (otn == NULL))
         return -1;
@@ -1648,7 +1649,6 @@ static int fpAddPortGroupRule(PORT_GROUP *pg, OptTreeNode *otn, FastPatternConfi
     if (otn->rule_state != RULE_STATE_ENABLED)
         return -1;
 
-#ifdef DYNAMIC_PLUGIN
     /* Check for an so dynamic rule */
     if (otn->ds_list[PLUGIN_DYNAMIC] != NULL)
     {
@@ -1658,45 +1658,40 @@ static int fpAddPortGroupRule(PORT_GROUP *pg, OptTreeNode *otn, FastPatternConfi
         pmd = GetDynamicFastPatternPmd(dd, CONTENT_NORMAL);
         if ((pmd != NULL) && pmd->fp)
         {
-            if (fpFinishPortGroupRule(pg, PM_TYPE__CONTENT, otn, pmd, fp) == 0)
+            if (fpFinishPortGroupRule(sc, pg, PM_TYPE__CONTENT, otn, pmd, fp) == 0)
             {
                 /* Need to do this so the pmd can be freed later */
                 (void)AppendPmdToList(&dd->pmds, pmd);
+                if (pmd->pattern_size > otn->longestPatternLen)
+                    otn->longestPatternLen = pmd->pattern_size;
                 return 0;
             }
 
             PatternMatchFree((void *)pmd);
             pmd = NULL;
         }
-       
+
         pmd_uri = GetDynamicFastPatternPmd(dd, CONTENT_HTTP);
         if (pmd_uri != NULL)
         {
-            PmType pm_type;
+            PmType pm_type = GetPmType(pmd_uri->http_buffer);
 
-            if (pmd_uri->uri_buffer & HTTP_SEARCH_URI)
-                pm_type = PM_TYPE__HTTP_URI_CONTENT;
-            else if (pmd_uri->uri_buffer & HTTP_SEARCH_HEADER)
-                pm_type = PM_TYPE__HTTP_HEADER_CONTENT;
-            else if (pmd_uri->uri_buffer & HTTP_SEARCH_CLIENT_BODY)
-                pm_type = PM_TYPE__HTTP_CLIENT_BODY_CONTENT;
-            else
-                pm_type = PM_TYPE__HTTP_METHOD_CONTENT;
-
-            if (fpFinishPortGroupRule(pg, pm_type, otn, pmd_uri, fp) == 0)
+            if (fpFinishPortGroupRule(sc, pg, pm_type, otn, pmd_uri, fp) == 0)
             {
                 /* Using the http content so free this */
                 if (pmd != NULL)
                     PatternMatchFree((void *)pmd);
 
                 (void)AppendPmdToList(&dd->pmds, pmd_uri);
+                if (pmd_uri->pattern_size > otn->longestPatternLen)
+                    otn->longestPatternLen = pmd_uri->pattern_size;
                 return 0;
             }
 
             PatternMatchFree((void *)pmd_uri);
             pmd_uri = NULL;
         }
-        
+
         /* If we get this far then no URI contents were added */
 
         if (GetPreprocOptPmdList(otn, &preproc_opt_pmds) == 0)
@@ -1718,9 +1713,11 @@ static int fpAddPortGroupRule(PORT_GROUP *pg, OptTreeNode *otn, FastPatternConfi
             }
         }
 
-        if (fpFinishPortGroupRule(pg, PM_TYPE__CONTENT, otn, pmd, fp) == 0)
+        if (fpFinishPortGroupRule(sc, pg, PM_TYPE__CONTENT, otn, pmd, fp) == 0)
         {
             (void)AppendPmdToList(&dd->pmds, pmd);
+            if (pmd->pattern_size > otn->longestPatternLen)
+                otn->longestPatternLen = pmd->pattern_size;
             return 0;
         }
 
@@ -1730,12 +1727,11 @@ static int fpAddPortGroupRule(PORT_GROUP *pg, OptTreeNode *otn, FastPatternConfi
         if (pmd != NULL)
             FreePmdList(pmd);
 
-        if (fpFinishPortGroupRule(pg, PM_TYPE__MAX, otn, NULL, fp) != 0)
+        if (fpFinishPortGroupRule(sc, pg, PM_TYPE__MAX, otn, NULL, fp) != 0)
             return -1;
 
         return 0;
     }
-#endif
 
     pmd = GetLongestPmdContent(otn, CONTENT_NORMAL);
 
@@ -1748,8 +1744,13 @@ static int fpAddPortGroupRule(PORT_GROUP *pg, OptTreeNode *otn, FastPatternConfi
 
     if ((pmd != NULL) && pmd->fp)
     {
-        if (fpFinishPortGroupRule(pg, PM_TYPE__CONTENT, otn, pmd, fp) == 0)
+        if (fpFinishPortGroupRule(sc, pg, PM_TYPE__CONTENT, otn, pmd, fp) == 0)
+        {
+            if (pmd->pattern_size > otn->longestPatternLen)
+                otn->longestPatternLen = pmd->pattern_size;
+
             return 0;
+        }
     }
 
     /* http buffer contents take precedence over normal contents if
@@ -1758,24 +1759,18 @@ static int fpAddPortGroupRule(PORT_GROUP *pg, OptTreeNode *otn, FastPatternConfi
     (void)RemovePmdFromList(pmd_uri);
     if (pmd_uri != NULL)
     {
-        PmType pm_type;
+        PmType pm_type = GetPmType(pmd_uri->http_buffer);
 
-        if (pmd_uri->uri_buffer & HTTP_SEARCH_URI)
-            pm_type = PM_TYPE__HTTP_URI_CONTENT;
-        else if (pmd_uri->uri_buffer & HTTP_SEARCH_HEADER)
-            pm_type = PM_TYPE__HTTP_HEADER_CONTENT;
-        else if (pmd_uri->uri_buffer & HTTP_SEARCH_CLIENT_BODY)
-            pm_type = PM_TYPE__HTTP_CLIENT_BODY_CONTENT;
-        else
-            pm_type = PM_TYPE__HTTP_METHOD_CONTENT;
-
-        if (fpFinishPortGroupRule(pg, pm_type, otn, pmd_uri, fp) == 0)
+        if (fpFinishPortGroupRule(sc, pg, pm_type, otn, pmd_uri, fp) == 0)
+        {
+            if (pmd_uri->pattern_size > otn->longestPatternLen)
+                otn->longestPatternLen = pmd_uri->pattern_size;
             return 0;
+        }
     }
 
     /* If we get this far then no URI contents were added */
 
-#ifdef DYNAMIC_PLUGIN
     if (GetPreprocOptPmdList(otn, &preproc_opt_pmds) == 0)
     {
         if (!UsePreprocOptFastPatterns(pmd, preproc_opt_pmds))
@@ -1787,17 +1782,20 @@ static int fpAddPortGroupRule(PORT_GROUP *pg, OptTreeNode *otn, FastPatternConfi
         else
         {
             pmd = preproc_opt_pmds;
-            
+
             /* Need to be able to free this list */
             (void)AppendPmdToList(
                     (PatternMatchData **)&otn->preproc_fp_list,
                     preproc_opt_pmds);
         }
     }
-#endif
 
-    if (fpFinishPortGroupRule(pg, PM_TYPE__CONTENT, otn, pmd, fp) == 0)
+    if (fpFinishPortGroupRule(sc, pg, PM_TYPE__CONTENT, otn, pmd, fp) == 0)
+    {
+        if (pmd->pattern_size > otn->longestPatternLen)
+            otn->longestPatternLen = pmd->pattern_size;
         return 0;
+    }
 
 #if 0
     /* XXX Not currently used */
@@ -1812,13 +1810,11 @@ static int fpAddPortGroupRule(PORT_GROUP *pg, OptTreeNode *otn, FastPatternConfi
         fpAddAllContents(pg->pgPms[PM_TYPE__CONTENT], otn, id, pmd, fp);
 #endif
 
-#ifdef DYNAMIC_PLUGIN
     /* No content added */
     if (pmd == preproc_opt_pmds)
         FreePmdList(pmd);
-#endif
 
-    if (fpFinishPortGroupRule(pg, PM_TYPE__MAX, otn, NULL, fp) != 0)
+    if (fpFinishPortGroupRule(sc, pg, PM_TYPE__MAX, otn, NULL, fp) != 0)
         return -1;
 
     return 0;
@@ -1829,12 +1825,11 @@ static int fpAddPortGroupRule(PORT_GROUP *pg, OptTreeNode *otn, FastPatternConfi
  *          -pcrm.h
  *          PORT_RULE_MAP -> srcPortGroup,dstPortGroup,genericPortGroup
  *          PORT_GROUP    -> pgPatData, pgPatDataUri (acsm objects), (also rule_node lists 1/rule, not neeed)
- *                           each rule content added to an acsm object has a PMX data ptr associated with it. 
- *          RULE_NODE     -> iRuleNodeID (used for bitmap object index), otnx
+ *                           each rule content added to an acsm object has a PMX data ptr associated with it.
+ *          RULE_NODE     -> iRuleNodeID (used for bitmap object index)
  *
  *          -fpcreate.h
- *          PMX   -> RULE_NODE(->otnx), PatternMatchData
- *          OTNX  -> otn,rtn,content_length
+ *          PMX   -> RULE_NODE(->otn), PatternMatchData
  *
  *  PortList model supports the same structures except:
  *
@@ -1844,39 +1839,38 @@ static int fpAddPortGroupRule(PORT_GROUP *pg, OptTreeNode *otn, FastPatternConfi
  *  Generation of PortRuleMaps and data is done differently.
  *
  *    1) Build tcp/udp/icmp/ip src and dst PORT_GROUP objects based on the PortList Objects rules.
- * 
+ *
  *    2) For each protocols PortList objects walk it's ports and assign the PORT_RULE_MAP src and dst
  *         PORT_GROUP[port] array pointers to that PortList objects PORT_GROUP.
  *
  *    Implementation:
- *      
- *    Each PortList Object will be translated into a PORT_GROUP, than pointed to by the 
+ *
+ *    Each PortList Object will be translated into a PORT_GROUP, than pointed to by the
  *    PORT_GROUP array in the PORT_RULE_MAP for the procotocol
- *      
+ *
  *    protocol = tcp, udp, ip, icmp - one port_rule_map for each of these protocols
  *    { create a port_rule_map
  *      dst port processing
  *          for each port-list object create a port_group object
  *          {   create a pattern match object, store its pointer in port_group
  *              for each rule index in port-list object
- *              {  
+ *              {
  *                  get the gid+sid for the index
  *                  lookup up the otn
- *                  create otnx
  *                  create pmx
  *                  create RULE_NODE, set iRuleNodeID within this port-list object
  *                  get longest content for the rule
- *                  set up otnx,pmx,RULE_NODE
+ *                  set up pmx,RULE_NODE
  *                  add the content and pmx to the pattern match object
  *              }
  *              compile the pattern match object
- *              
+ *
  *              repeat for uri content
  *          }
  *      src port processing
  *          repeat as for dst port processing
  *    }
- *    ** bidirectional rules - these are added to both src and dst PortList objects, so they are 
+ *    ** bidirectional rules - these are added to both src and dst PortList objects, so they are
  *    automatically handled during conversion to port_group objects.
  */
 /*
@@ -1892,24 +1886,24 @@ static int fpAddPortGroupRule(PORT_GROUP *pg, OptTreeNode *otn, FastPatternConfi
 static
 int fpCreateInitRuleMap( PORT_RULE_MAP * prm, PortTable * src, PortTable * dst, PortObject * anyany, PortObject * nc )
 {
-   SFGHASH_NODE   * node; 
+   SFGHASH_NODE   * node;
    PortObjectItem * poi;
    PortObject2    * po;
    int              i;
    //int            * pi;
-  
+
    /* setup the any-any-port content port group */
    prm->prmGeneric =(PORT_GROUP*) anyany->data;
-   
+
    /* all rules that are any any some may not be content ? */
    prm->prmNumGenericRules = anyany->rule_list->count;
-     
+
    prm->prmNumSrcRules= 0;
    prm->prmNumDstRules= 0;
-   
+
    prm->prmNumSrcGroups= 0;
    prm->prmNumDstGroups= 0;
-      
+
    /* Process src PORT groups */
    if(src )
    for( node=sfghash_findfirst(src->pt_mpxo_hash);
@@ -1917,13 +1911,13 @@ int fpCreateInitRuleMap( PORT_RULE_MAP * prm, PortTable * src, PortTable * dst, 
         node=sfghash_findnext(src->pt_mpxo_hash) )
    {
         po = (PortObject2*)node->data;
-  
+
         if( !po ) continue;
         if( !po->data ) continue;
 
         /* Add up the total src rules */
         prm->prmNumSrcRules  += po->rule_hash->count;
-      
+
         /* Increment the port group count */
         prm->prmNumSrcGroups++;
 
@@ -1954,8 +1948,8 @@ int fpCreateInitRuleMap( PORT_RULE_MAP * prm, PortTable * src, PortTable * dst, 
                  break;
              }
         }
-   }                                             
- 
+   }
+
    /* process destination port groups */
    if( dst )
    for( node=sfghash_findfirst(dst->pt_mpxo_hash);
@@ -1963,13 +1957,13 @@ int fpCreateInitRuleMap( PORT_RULE_MAP * prm, PortTable * src, PortTable * dst, 
         node=sfghash_findnext(dst->pt_mpxo_hash) )
    {
         po = (PortObject2*)node->data;
-  
+
         if( !po ) continue;
         if( !po->data ) continue;
 
         /* Add up the total src rules */
         prm->prmNumDstRules  += po->rule_hash->count;
-      
+
         /* Increment the port group count */
         prm->prmNumDstGroups++;
 
@@ -2000,8 +1994,8 @@ int fpCreateInitRuleMap( PORT_RULE_MAP * prm, PortTable * src, PortTable * dst, 
                  break;
              }
         }
-   }                                             
-   
+   }
+
   return 0;
 }
 /*
@@ -2154,7 +2148,6 @@ static int fpGetFinalPattern(FastPatternConfig *fp, PatternMatchData *pmd,
     return 0;
 }
 
-#ifdef DYNAMIC_PLUGIN
 void fpDynamicDataFree(void *data)
 {
     DynamicData *dd = (DynamicData *)data;
@@ -2173,31 +2166,25 @@ void fpDynamicDataFree(void *data)
 
     free(dd);
 }
-#endif
 
-/* 
+/*
  *  Add a rule to the proper port group RULE_NODE list
  *
  *  cflag : content flag  ( 0=no content, 1=content, 2=uri-content)
  */
 static int fpAddPortGroupPrmx(PORT_GROUP *pg, OptTreeNode *otn, int cflag)
 {
-    OTNX *otnx = (OTNX *)SnortAlloc(sizeof(OTNX));
-
-    otnx->otn = otn;
-    otnx->content_length = 0; 
-
     /* Add the no content rule_node to the port group (NClist) */
     switch (cflag)
     {
         case PGCT_NOCONTENT:
-            prmxAddPortRuleNC( pg, otnx );
+            prmxAddPortRuleNC( pg, otn );
             break;
         case PGCT_CONTENT:
-            prmxAddPortRule( pg, otnx );
+            prmxAddPortRule( pg, otn );
             break;
         case PGCT_URICONTENT:
-            prmxAddPortRuleUri( pg, otnx );
+            prmxAddPortRuleUri( pg, otn );
             break;
         default:
             return -1;
@@ -2233,9 +2220,6 @@ static void fpPortGroupPrintRuleCount(PORT_GROUP *pg)
             case PM_TYPE__HTTP_CLIENT_BODY_CONTENT:
                 LogMessage("\tHttp Client Body Content: %d\n", count);
                 break;
-            case PM_TYPE__HTTP_METHOD_CONTENT:
-                LogMessage("\tHttp Method Content: %d\n", count);
-                break;
             default:
                 break;
         }
@@ -2247,13 +2231,13 @@ static void fpPortGroupPrintRuleCount(PORT_GROUP *pg)
 static void fpDeletePMX(void *data)
 {
     PMX *pmx = (PMX *)data;
-    RULE_NODE *rn;
-    OTNX *otnx;
 
-    rn = (RULE_NODE *)pmx->RuleNode;
-    otnx = (OTNX *)rn->rnRuleData;
-    free(otnx);
-    free(rn);
+    if (data == NULL)
+        return;
+
+    if (pmx->RuleNode != NULL)
+        free(pmx->RuleNode);
+
     free(pmx);
 }
 
@@ -2261,15 +2245,12 @@ static void fpDeletePortGroup(void *data)
 {
     PORT_GROUP *pg = (PORT_GROUP *)data;
     RULE_NODE *rn, *tmpRn;
-    OTNX *otnx;
     PmType i;
 
     rn = pg->pgHead;
     while (rn)
     {
         tmpRn = rn->rnNext;
-        otnx = (OTNX *)rn->rnRuleData;
-        free(otnx);
         free(rn);
         rn = tmpRn;
     }
@@ -2279,19 +2260,15 @@ static void fpDeletePortGroup(void *data)
     while (rn)
     {
         tmpRn = rn->rnNext;
-        otnx = (OTNX *)rn->rnRuleData;
-        free(otnx);
         free(rn);
         rn = tmpRn;
     }
     pg->pgUriHead = NULL;
-    
+
     rn = pg->pgHeadNC;
     while (rn)
     {
         tmpRn = rn->rnNext;
-        otnx = (OTNX *)rn->rnRuleData;
-        free(otnx);
         free(rn);
         rn = tmpRn;
     }
@@ -2314,13 +2291,13 @@ static void fpDeletePortGroup(void *data)
 /*
  *  Create the PortGroup for these PortObject2 entitiies
  *
- *  This builds the 1st pass multi-pattern state machines for 
+ *  This builds the 1st pass multi-pattern state machines for
  *  content and uricontent based on the rules in the PortObjects
  *  hash table.
  */
 static int fpCreatePortObject2PortGroup(SnortConfig *sc, PortObject2 *po, PortObject2 *poaa)
 {
-    SFGHASH_NODE *node; 
+    SFGHASH_NODE *node;
     unsigned sid, gid;
     OptTreeNode * otn;
     PORT_GROUP * pg;
@@ -2343,31 +2320,28 @@ static int fpCreatePortObject2PortGroup(SnortConfig *sc, PortObject2 *po, PortOb
     /* create a port_group */
     pg = (PORT_GROUP *)SnortAlloc(sizeof(PORT_GROUP));
 
-    if (fpAllocPms(pg, fp) != 0)
+    if (fpAllocPms(sc, pg, fp) != 0)
     {
         free(pg);
         return -1;
     }
 
-    /* 
-     * Walk the rules in the PortObject and add to 
+    /*
+     * Walk the rules in the PortObject and add to
      * the PORT_GROUP pattern state machine
      *  and to the port group RULE_NODE lists.
      * (The lists are still used in some cases
      *  during detection to walk the rules in a group
      *  so we have to load these as well...fpEvalHeader()... for now.)
      *
-     * po   src/dst ports : content/uri and nocontent  
+     * po   src/dst ports : content/uri and nocontent
      * poaa any-any ports : content/uri and nocontent
      *
-     * each PG has src or dst contents, generic-contents, and no-contents 
+     * each PG has src or dst contents, generic-contents, and no-contents
      * (src/dst or any-any ports)
-     * 
+     *
      */
     pox = po;
-
-    if (po == NULL)
-        pox = poaa;
 
     while (pox != NULL)
     {
@@ -2378,7 +2352,7 @@ static int fpCreatePortObject2PortGroup(SnortConfig *sc, PortObject2 *po, PortOb
             int *prindex = (int *)node->data;
 
             /* be safe - no rule index, ignore it */
-            if (prindex == NULL) 
+            if (prindex == NULL)
                 continue;
 
             /* look up gid:sid */
@@ -2408,7 +2382,7 @@ static int fpCreatePortObject2PortGroup(SnortConfig *sc, PortObject2 *po, PortOb
                 fpRegIpProto(sc->ip_proto_array, otn);
             }
 
-            if (fpAddPortGroupRule(pg, otn, fp) != 0)
+            if (fpAddPortGroupRule(sc, pg, otn, fp) != 0)
                 continue;
         }
 
@@ -2416,14 +2390,14 @@ static int fpCreatePortObject2PortGroup(SnortConfig *sc, PortObject2 *po, PortOb
             fpPortGroupPrintRuleCount(pg);
 
         if (pox == poaa)
-            break; 
+            break;
 
         pox = poaa;
     }
 
     /* This might happen if there was ip proto only rules
      * Don't return failure */
-    if (fpFinishPortGroup(pg, fp) != 0)
+    if (fpFinishPortGroup(sc, pg, fp) != 0)
         return 0;
 
     po->data = pg;
@@ -2437,10 +2411,10 @@ static int fpCreatePortObject2PortGroup(SnortConfig *sc, PortObject2 *po, PortOb
  */
 static int fpCreatePortTablePortGroups(SnortConfig *sc, PortTable *p, PortObject2 *poaa)
 {
-   SFGHASH_NODE * node; 
+   SFGHASH_NODE * node;
    int cnt=1;
    FastPatternConfig *fp = sc->fast_pattern_config;
-   
+
    if (fpDetectGetDebugPrintRuleGroupBuildDetails(fp))
        LogMessage("%d Port Groups in Port Table\n",p->pt_mpo_hash->count);
 
@@ -2451,15 +2425,15 @@ static int fpCreatePortTablePortGroups(SnortConfig *sc, PortTable *p, PortObject
         PortObject2 * po;
 
         po = (PortObject2*)node->data;
-        if (po == NULL) 
+        if (po == NULL)
             continue;
 
         if (fpDetectGetDebugPrintRuleGroupBuildDetails(fp))
             LogMessage("Creating Port Group Object %d of %d\n",cnt++,p->pt_mpo_hash->count);
 
-        /* if the object is not referenced, don't add it to the PORT_GROUPs 
+        /* if the object is not referenced, don't add it to the PORT_GROUPs
          * as it may overwrite other objects that are more inclusive. */
-        if (!po->port_cnt) 
+        if (!po->port_cnt)
             continue;
 
         if (fpCreatePortObject2PortGroup(sc, po, poaa))
@@ -2476,20 +2450,20 @@ static int fpCreatePortTablePortGroups(SnortConfig *sc, PortTable *p, PortObject
 }
 
 /*
- *  Create port group objects for all port tables 
+ *  Create port group objects for all port tables
  *
- *  note: any-any ports are standard PortObjects not PortObject2's so we have to 
+ *  note: any-any ports are standard PortObjects not PortObject2's so we have to
  *  uprade them for the create port group function
  */
 static int fpCreatePortGroups(SnortConfig *sc, rule_port_tables_t *p)
 {
     PortObject2 *po2, *add_any_any = NULL;
     FastPatternConfig *fp = sc->fast_pattern_config;
-   
+
     if (!rule_count)
         return 0 ;
 
-    /* TCP */ 
+    /* TCP */
     /* convert the tcp-any-any to a PortObject2 creature */
     po2 = PortObject2Dup(p->tcp_anyany);
     if (po2 == NULL)
@@ -2533,7 +2507,7 @@ static int fpCreatePortGroups(SnortConfig *sc, rule_port_tables_t *p)
     //LogMessage("fpcreate: calling PortObjectFree2(po2), line = %d\n",__LINE__ );
     PortObject2Free(po2);
 
-    /* UDP */ 
+    /* UDP */
     po2 = PortObject2Dup(p->udp_anyany);
     if (po2 == NULL )
         FatalError("Could not create a PortObject version 2 for udp-any-any rules\n!");
@@ -2574,7 +2548,7 @@ static int fpCreatePortGroups(SnortConfig *sc, rule_port_tables_t *p)
     //LogMessage("fpcreate: calling PortObjectFree2(po2), line = %d\n",__LINE__ );
     PortObject2Free(po2);
 
-    /* ICMP */ 
+    /* ICMP */
     po2 = PortObject2Dup(p->icmp_anyany);
     if (po2 == NULL)
         FatalError("Could not create a PortObject version 2 for icmp-any-any rules\n!");
@@ -2602,7 +2576,7 @@ static int fpCreatePortGroups(SnortConfig *sc, rule_port_tables_t *p)
 
     if (fpDetectGetDebugPrintRuleGroupBuildDetails(fp))
         LogMessage("\nICMP-ANYANY ");
-    
+
     if (fpCreatePortObject2PortGroup(sc, po2, 0))
     {
         LogMessage("fpCreatePorTablePortGroups failed-icmp any-any\n");
@@ -2615,7 +2589,7 @@ static int fpCreatePortGroups(SnortConfig *sc, rule_port_tables_t *p)
     //LogMessage("fpcreate: calling PortObjectFree2(po2), line = %d\n",__LINE__ );
     PortObject2Free(po2);
 
-    /* IP */ 
+    /* IP */
     po2 = PortObject2Dup(p->ip_anyany);
     if (po2 == NULL)
         FatalError("Could not create a PortObject version 2 for ip-any-any rules\n!");
@@ -2663,14 +2637,14 @@ static int fpCreatePortGroups(SnortConfig *sc, rule_port_tables_t *p)
 
 /*
  *  Scan the master otn lists and and pass
- *  
- *  
+ *
+ *
  *  enabled - if true requires otn to be enabled
  *  fcn - callback
  *  proto - IP,TCP,IDP,ICMP protocol flag
  *  otn   - OptTreeNode
  */
-void fpWalkOtns(int enabled, OtnWalkFcn fcn) 
+void fpWalkOtns(int enabled, OtnWalkFcn fcn)
 {
     RuleTreeNode *rtn;
     SFGHASH_NODE *hashNode;
@@ -2685,8 +2659,8 @@ void fpWalkOtns(int enabled, OtnWalkFcn fcn)
             hashNode = sfghash_findnext(snort_conf->otn_map))
     {
         otn = (OptTreeNode *)hashNode->data;
-        for ( policyId = 0; 
-              policyId < otn->proto_node_num; 
+        for ( policyId = 0;
+              policyId < otn->proto_node_num;
               policyId++ )
         {
             rtn = getRtnFromOtn(otn, policyId);
@@ -2697,7 +2671,7 @@ void fpWalkOtns(int enabled, OtnWalkFcn fcn)
 
             if ((rtn->proto == IPPROTO_TCP) || (rtn->proto == IPPROTO_UDP)
                 || (rtn->proto == IPPROTO_ICMP) || (rtn->proto == ETHERNET_TYPE_IP))
-            { 
+            {
                 //do operation
                 if ( enabled && (otn->rule_state != RULE_STATE_ENABLED) )
                     continue;
@@ -2713,7 +2687,7 @@ void fpWalkOtns(int enabled, OtnWalkFcn fcn)
  *  Scan the master otn lists and load the Service maps
  *  for service based rule grouping.
  */
-static int fpCreateServiceMaps(SnortConfig *sc) 
+static int fpCreateServiceMaps(SnortConfig *sc)
 {
     RuleTreeNode *rtn;
     SFGHASH_NODE *hashNode;
@@ -2726,15 +2700,15 @@ static int fpCreateServiceMaps(SnortConfig *sc)
             hashNode = sfghash_findnext(sc->otn_map))
     {
         otn = (OptTreeNode *)hashNode->data;
-        for ( policyId = 0; 
-              policyId < otn->proto_node_num; 
+        for ( policyId = 0;
+              policyId < otn->proto_node_num;
               policyId++ )
         {
             rtn = getRtnFromOtn(otn, policyId);
 
             if (rtn && ((rtn->proto == IPPROTO_TCP) || (rtn->proto == IPPROTO_UDP)
                     || (rtn->proto == IPPROTO_ICMP) || (rtn->proto == ETHERNET_TYPE_IP)))
-            { 
+            {
                 //do operation
 
                 /* Non-content preprocessor or decoder rule.
@@ -2762,31 +2736,31 @@ static int fpCreateServiceMaps(SnortConfig *sc)
 
 
 /*
-* Build a Port Group for this service based on the list of otns. The final 
+* Build a Port Group for this service based on the list of otns. The final
 * port_group pointer is stored using the service name as the key.
-* 
+*
 * p   - hash table mapping services to port_groups
 * srvc- service name, key used to store the port_group
 *       ...could use a service id instead (bytes, fixed length,etc...)
 * list- list of otns for this service
 */
-void fpBuildServicePortGroupByServiceOtnList(SFGHASH *p, char *srvc, SF_LIST *list, FastPatternConfig *fp)
+void fpBuildServicePortGroupByServiceOtnList(SnortConfig *sc, SFGHASH *p, char *srvc, SF_LIST *list, FastPatternConfig *fp)
 {
     OptTreeNode * otn;
     PORT_GROUP *pg = (PORT_GROUP *)SnortAlloc(sizeof(PORT_GROUP));
 
-    if (fpAllocPms(pg, fp) != 0)
+    if (fpAllocPms(sc, pg, fp) != 0)
     {
         free(pg);
         return;
     }
 
-    /* 
-     * add each rule to the port group pattern matchers, 
-     * or to the no-content rule list 
+    /*
+     * add each rule to the port group pattern matchers,
+     * or to the no-content rule list
      */
     for (otn = sflist_first(list);
-            otn; 
+            otn;
             otn = sflist_next(list))
     {
         if (otn->proto == ETHERNET_TYPE_IP)
@@ -2801,11 +2775,11 @@ void fpBuildServicePortGroupByServiceOtnList(SFGHASH *p, char *srvc, SF_LIST *li
             }
         }
 
-        if (fpAddPortGroupRule(pg, otn, fp) != 0)
+        if (fpAddPortGroupRule(sc, pg, otn, fp) != 0)
             continue;
     }
 
-    if (fpFinishPortGroup(pg, fp) != 0)
+    if (fpFinishPortGroup(sc, pg, fp) != 0)
         return;
 
     /* Add the port_group using it's service name */
@@ -2813,19 +2787,19 @@ void fpBuildServicePortGroupByServiceOtnList(SFGHASH *p, char *srvc, SF_LIST *li
 }
 
 /*
- * For each service we create a PORT_GROUP based on the otn's defined to 
+ * For each service we create a PORT_GROUP based on the otn's defined to
  * be applicable to that service by the metadata option.
  *
  * Than we lookup the protocol/srvc oridinal in the target-based area
  * and assign the PORT_GROUP for the srvc to it.
- * 
+ *
  * spg - service port group (lookup should be by service id/tag)
  *     - this table maintains a port_group ptr for each service
  * srm - service rule map table (lookup by ascii service name)
  *     - this table maintains a sf_list ptr (list of rule otns) for each service
  *
  */
-void fpBuildServicePortGroups(SFGHASH *spg, PORT_GROUP **sopg, SFGHASH *srm, FastPatternConfig *fp)  
+void fpBuildServicePortGroups(SnortConfig *sc, SFGHASH *spg, PORT_GROUP **sopg, SFGHASH *srm, FastPatternConfig *fp)
 {
     SFGHASH_NODE * n;
     char * srvc;
@@ -2842,7 +2816,7 @@ void fpBuildServicePortGroups(SFGHASH *spg, PORT_GROUP **sopg, SFGHASH *srm, Fas
         srvc = n->key;
         if(!srvc)continue;
 
-        fpBuildServicePortGroupByServiceOtnList(spg, srvc, list, fp);
+        fpBuildServicePortGroupByServiceOtnList(sc, spg, srvc, list, fp);
 
         /* Add this PORT_GROUP to the protocol-ordinal -> port_group table */
         pg = sfghash_find( spg, srvc );
@@ -2892,50 +2866,50 @@ void fpBuildServicePortGroups(SFGHASH *spg, PORT_GROUP **sopg, SFGHASH *srm, Fas
 }
 
 /*
- * For each proto+dir+service build a PORT_GROUP  
+ * For each proto+dir+service build a PORT_GROUP
  */
-static void fpCreateServiceMapPortGroups(SnortConfig *sc) 
+static void fpCreateServiceMapPortGroups(SnortConfig *sc)
 {
     FastPatternConfig *fp = sc->fast_pattern_config;
 
-    sc->spgmmTable = ServicePortGroupMapNew();  
+    sc->spgmmTable = ServicePortGroupMapNew();
     sc->sopgTable = ServicePortGroupTableNew();
 
-    fpBuildServicePortGroups(sc->spgmmTable->tcp_to_srv, sc->sopgTable->tcp_to_srv,
+    fpBuildServicePortGroups(sc, sc->spgmmTable->tcp_to_srv, sc->sopgTable->tcp_to_srv,
                              sc->srmmTable->tcp_to_srv, fp);
-    fpBuildServicePortGroups(sc->spgmmTable->tcp_to_cli, sc->sopgTable->tcp_to_cli,
+    fpBuildServicePortGroups(sc, sc->spgmmTable->tcp_to_cli, sc->sopgTable->tcp_to_cli,
                              sc->srmmTable->tcp_to_cli, fp);
 
-    fpBuildServicePortGroups(sc->spgmmTable->udp_to_srv, sc->sopgTable->udp_to_srv,
+    fpBuildServicePortGroups(sc, sc->spgmmTable->udp_to_srv, sc->sopgTable->udp_to_srv,
                              sc->srmmTable->udp_to_srv, fp);
-    fpBuildServicePortGroups(sc->spgmmTable->udp_to_cli, sc->sopgTable->udp_to_cli,
+    fpBuildServicePortGroups(sc, sc->spgmmTable->udp_to_cli, sc->sopgTable->udp_to_cli,
                              sc->srmmTable->udp_to_cli, fp);
 
-    fpBuildServicePortGroups(sc->spgmmTable->icmp_to_srv, sc->sopgTable->icmp_to_srv,
+    fpBuildServicePortGroups(sc, sc->spgmmTable->icmp_to_srv, sc->sopgTable->icmp_to_srv,
                              sc->srmmTable->icmp_to_srv, fp);
-    fpBuildServicePortGroups(sc->spgmmTable->icmp_to_cli, sc->sopgTable->icmp_to_cli,
+    fpBuildServicePortGroups(sc, sc->spgmmTable->icmp_to_cli, sc->sopgTable->icmp_to_cli,
                              sc->srmmTable->icmp_to_cli, fp);
 
-    fpBuildServicePortGroups(sc->spgmmTable->ip_to_srv, sc->sopgTable->ip_to_srv,
+    fpBuildServicePortGroups(sc, sc->spgmmTable->ip_to_srv, sc->sopgTable->ip_to_srv,
                              sc->srmmTable->ip_to_srv, fp);
-    fpBuildServicePortGroups(sc->spgmmTable->ip_to_cli, sc->sopgTable->ip_to_srv,
+    fpBuildServicePortGroups(sc, sc->spgmmTable->ip_to_cli, sc->sopgTable->ip_to_srv,
                              sc->srmmTable->ip_to_cli, fp);
 }
 
 PORT_GROUP * fpGetServicePortGroupByOrdinal(sopg_table_t *sopg, int proto, int dir, int16_t proto_ordinal)
 {
    //SFGHASH_NODE * n;
-   PORT_GROUP *pg = NULL; 
+   PORT_GROUP *pg = NULL;
 
    if (proto_ordinal >= MAX_PROTOCOL_ORDINAL)
        return NULL;
 
    if (sopg == NULL)
        return NULL;
-   
+
    switch (proto)
    {
-       case IPPROTO_TCP: 
+       case IPPROTO_TCP:
            if (dir == TO_SERVER)
                pg = sopg->tcp_to_srv[proto_ordinal];
            else
@@ -2943,7 +2917,7 @@ PORT_GROUP * fpGetServicePortGroupByOrdinal(sopg_table_t *sopg, int proto, int d
 
            break;
 
-       case IPPROTO_UDP: 
+       case IPPROTO_UDP:
            if (dir == TO_SERVER)
                pg = sopg->udp_to_srv[proto_ordinal];
            else
@@ -2951,7 +2925,7 @@ PORT_GROUP * fpGetServicePortGroupByOrdinal(sopg_table_t *sopg, int proto, int d
 
            break;
 
-       case IPPROTO_ICMP: 
+       case IPPROTO_ICMP:
            if (dir == TO_SERVER)
                pg = sopg->icmp_to_srv[proto_ordinal];
            else
@@ -2959,7 +2933,7 @@ PORT_GROUP * fpGetServicePortGroupByOrdinal(sopg_table_t *sopg, int proto, int d
 
            break;
 
-       case ETHERNET_TYPE_IP: 
+       case ETHERNET_TYPE_IP:
            if (dir == TO_SERVER)
                pg = sopg->ip_to_srv[proto_ordinal];
            else
@@ -2981,7 +2955,7 @@ PORT_GROUP * fpGetServicePortGroupByOrdinal(sopg_table_t *sopg, int proto, int d
 void fpPrintRuleList( SF_LIST * list )
 {
     OptTreeNode * otn;
-    
+
     for( otn=(OptTreeNode*)sflist_first(list);
          otn;
          otn=(OptTreeNode*)sflist_next(list) )
@@ -2994,18 +2968,18 @@ void fpPrintServiceRuleMapTable(  SFGHASH * p, char * msg )
 {
      SFGHASH_NODE * n;
 
-     if( !p || !p->count ) 
+     if( !p || !p->count )
          return;
 
      LogMessage("| Protocol [%s] %d services\n",msg,p->count );
      LogMessage("----------------------------------------------------\n");
-     
+
      for( n = sfghash_findfirst(p);
           n;
           n = sfghash_findnext(p) )
      {
           SF_LIST * list;
-          
+
           list = (SF_LIST*)n->data;
           if( !list ) continue;
 
@@ -3013,7 +2987,7 @@ void fpPrintServiceRuleMapTable(  SFGHASH * p, char * msg )
 
           LogMessage("| Service [%s] %d rules, rule list follows as gid:sid.\n",
               (char*)n->key, list->count);
-          
+
           fpPrintRuleList( list );
      }
      LogMessage("----------------------------------------------------\n");
@@ -3026,13 +3000,13 @@ static void fpPrintServiceRuleMaps(srmm_table_t *service_map)
     LogMessage("----------------------------------------------------\n");
     fpPrintServiceRuleMapTable( service_map->tcp_to_srv,  "tcp to server" );
     fpPrintServiceRuleMapTable( service_map->tcp_to_cli,  "tcp to client" );
-    
+
     fpPrintServiceRuleMapTable( service_map->udp_to_srv,  "udp to server" );
     fpPrintServiceRuleMapTable( service_map->udp_to_cli,  "udp to client" );
-    
+
     fpPrintServiceRuleMapTable( service_map->icmp_to_srv, "icmp to server" );
     fpPrintServiceRuleMapTable( service_map->icmp_to_cli, "icmp to client" );
-    
+
     fpPrintServiceRuleMapTable( service_map->ip_to_srv,   "ip to server" );
     fpPrintServiceRuleMapTable( service_map->ip_to_cli,   "ip to client" );
 }
@@ -3074,31 +3048,31 @@ void fpPrintServicePortGroupSummary(srmm_table_t *srvc_pg_map)
  *  metadata option service parameter.
  */
 static int fpCreateServicePortGroups(SnortConfig *sc)
-{ 
+{
     FastPatternConfig *fp = sc->fast_pattern_config;
 
     sc->srmmTable = ServiceMapNew();
 
     if (fpCreateServiceMaps(sc))
         return -1;
-    
+
     if (fpDetectGetDebugPrintRuleGroupBuildDetails(fp))
         fpPrintServiceRuleMaps(sc->srmmTable);
-  
+
     fpCreateServiceMapPortGroups(sc);
 
     if (fpDetectGetDebugPrintRuleGroupBuildDetails(fp))
         fpPrintServicePortGroupSummary(sc->spgmmTable);
-        
+
     //srvcmap_term();
-    
+
     return 0;
 }
 //TARGET_BASED
 #endif
 
 /*
-*  Port list version 
+*  Port list version
 *
 *  7/2007 - man
 *
@@ -3112,8 +3086,6 @@ int fpCreateFastPacketDetection(SnortConfig *sc)
 
     /* This is somewhat necessary because of how the detection option trees
      * are added via a callback from the pattern matcher */
-    snort_conf_for_parsing = sc;
-
     if(!rule_count || (sc == NULL))
         return 0;
 
@@ -3163,14 +3135,13 @@ int fpCreateFastPacketDetection(SnortConfig *sc)
                 fp->num_patterns_trimmed);
     }
 #else
-    if (IsAdaptiveConfigured(getParserPolicy(), 1)
-            || fpDetectGetDebugPrintFastPatterns(fp))
+    if (IsAdaptiveConfiguredForSnortConfig(sc) || fpDetectGetDebugPrintFastPatterns(fp))
     {
         if (fpDetectGetDebugPrintRuleGroupBuildDetails(fp))
             LogMessage("Creating Service Based Rule Maps....\n");
 
-        /* Build Service based port groups - rules require service metdata 
-         * i.e. 'metatdata: service [=] service-name, ... ;' 
+        /* Build Service based port groups - rules require service metdata
+         * i.e. 'metatdata: service [=] service-name, ... ;'
          *
          * Also requires a service attribute for lookup ...
          */
@@ -3200,14 +3171,12 @@ int fpCreateFastPacketDetection(SnortConfig *sc)
         LogMessage("[ Number of null byte prefixed patterns trimmed: %d ]\n",
                 fp->num_patterns_trimmed);
     }
-#endif 
+#endif
 
 #ifdef INTEL_SOFT_CPM
     if (fp->search_method == MPSE_INTEL_CPM)
-        IntelPmCompile();
+        IntelPmCompile(sc);
 #endif
-
-    snort_conf_for_parsing = NULL;
 
     return 0;
 }
