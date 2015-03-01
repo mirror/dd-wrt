@@ -1,10 +1,6 @@
 #ifndef _SF_REDEFINES
 #define _SF_REDEFINES
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 #define gen_loadi sf_gen_loadi
 #define gen_load sf_gen_load
 #define gen_loadlen sf_gen_loadlen

@@ -2,7 +2,8 @@
  * Copyright (c) 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997
  *	The Regents of the University of California.  All rights reserved.
  *
- * Some portions Copyright (C) 2010 Sourcefire, Inc.
+ * Some portions Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Some portions Copyright (C) 2010-2013 Sourcefire, Inc.
  *
  * This code is derived from the Stanford/CMU enet packet filter,
  * (net/enet.c) distributed as part of 4.3BSD, and code contributed
@@ -39,7 +40,7 @@
  *
  *      @(#)bpf.h       7.1 (Berkeley) 5/7/91
  *
- * @(#) $Header: /usr/cvsroot/sfeng/ims/src/libraries/daq/daq/sfbpf/sfbpf_dlt.h,v 1.1 2010/04/15 19:18:35 maltizer Exp $ (LBL)
+ * @(#) $Header: /usr/cvsroot/sfeng/ims/src/libraries/daq/daq/sfbpf/sfbpf_dlt.h,v 1.3 2014/06/10 13:38:55 cwaxman Exp $ (LBL)
  */
 
 /*

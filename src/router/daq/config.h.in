@@ -1,10 +1,21 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Define to 1 if you have the declaration of `PACKET_TX_RING', and to 0 if
+   you don't. */
+#undef HAVE_DECL_PACKET_TX_RING
+
+/* Define to 1 if you have the declaration of `TPACKET2_HDRLEN', and to 0 if
+   you don't. */
+#undef HAVE_DECL_TPACKET2_HDRLEN
+
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
 /* Define to 1 if you have the <dnet.h> header file. */
 #undef HAVE_DNET_H
+
+/* Define to 1 if you have the <dumbnet.h> header file. */
+#undef HAVE_DUMBNET_H
 
 /* Define to 1 if you have the `gethostbyname' function. */
 #undef HAVE_GETHOSTBYNAME
@@ -15,12 +26,21 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
+/* Define to 1 if you have the `dnet' library (-ldnet). */
+#undef HAVE_LIBDNET
+
+/* Define to 1 if you have the `dumbnet' library (-ldumbnet). */
+#undef HAVE_LIBDUMBNET
+
 /* Define to 1 if you have the <libipq.h> header file. */
 #undef HAVE_LIBIPQ_H
 
 /* Define to 1 if you have the <libnetfilter_queue/libnetfilter_queue.h>
    header file. */
 #undef HAVE_LIBNETFILTER_QUEUE_LIBNETFILTER_QUEUE_H
+
+/* Define to 1 if you have the `pcap' library (-lpcap). */
+#undef HAVE_LIBPCAP
 
 /* Define to 1 if you have the <linux/if_ether.h> header file. */
 #undef HAVE_LINUX_IF_ETHER_H
