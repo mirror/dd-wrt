@@ -1,8 +1,8 @@
 Snort 2.9 introduces the DAQ, or Data Acquisition library, for packet I/O.  The
-DAQ replaces direct calls to PCAP functions with an abstraction layer that
+DAQ replaces direct calls to libpcap functions with an abstraction layer that
 facilitates operation on a variety of hardware and software interfaces without
 requiring changes to Snort.  It is possible to select the DAQ type and mode
-when invoking Snort to perform PCAP readback or inline operation, etc.  The
+when invoking Snort to perform pcap readback or inline operation, etc.  The
 DAQ library may be useful for other packet processing applications and the
 modular nature allows you to build new modules for other platforms.
 
@@ -82,9 +82,9 @@ afpacket functions similar to the pcap DAQ but with better performance:
             [--daq-var buffer_size_mb=<#MB>]
             [--daq-var debug]
 
-If you want to run afpacket in inline mode, you must set device to one or more
-interface pairs, where each member of a pair is separated by a single colon and
-each pair is separated by a double colon like this:
+If you want to run afpacket in inline mode, you must craft the device string as
+one or more interface pairs, where each member of a pair is separated by a
+single colon and each pair is separated by a double colon like this:
 
     eth0:eth1
 
@@ -111,6 +111,9 @@ default packet memory with a snaplen of 1518, the numbers break down like this:
 * As a result, we need 84733 / 2 = 42366 blocks.
 
 * Actual memory allocated is 42366 * 4 KB = 165.5 MB.
+
+NOTE: Linux kernel version 2.6.31 or higher is required for the AFPacket DAQ
+module due to its dependency on both TPACKET v2 and PACKET_TX_RING support.
 
 
 NFQ Module
@@ -208,6 +211,72 @@ you will probably want to have the pcap DAQ acquire in another mode like this:
     ./snort -i <device> -Q --daq dump --daq-var load-mode=passive
 
 
+Netmap Module
+=============
+
+The netmap project is a framework for very high speed packet I/O.  It is
+available on both FreeBSD and Linux with varying amounts of preparatory
+setup required.  Specific notes for each follow.
+
+    ./snort --daq netmap -i <device>
+            [--daq-var debug]
+
+If you want to run netmap in inline mode, you must craft the device string as
+one or more interface pairs, where each member of a pair is separated by a
+single colon and each pair is separated by a double colon like this:
+
+    em1:em2
+
+or this:
+
+    em1:em2::em3:em4
+
+Inline operation performs Layer 2 forwarding with no MAC filtering, akin to the
+AFPacket module's behavior.  All packets received on one interface in an inline
+pair will be forwarded out the other interface unless dropped by the reader and
+vice versa.
+
+IMPORTANT: The interfaces will need to be up and in promiscuous mode in order to
+function ('ifconfig em1 up promisc').  The DAQ module does not currently do
+either of these configuration steps for itself.
+
+FreeBSD
+-------
+In FreeBSD 10.0, netmap has been integrated into the core OS.  In order to use
+it, you must recompile your kernel with the line
+
+    device netmap
+
+added to your kernel config.
+
+Linux
+-----
+You will need to download the netmap source code from the project's repository:
+
+    https://code.google.com/p/netmap/
+
+Follow the instructions on the project's homepage for compiling and installing
+the code:
+
+    http://info.iet.unipi.it/~luigi/netmap/
+
+It will involve a standalone kernel module (netmap_lin) as well as patching and
+rebuilding the kernel module used to drive your network adapters. The following
+drivers are supported under Linux at the time of writing (June 2014):
+
+    e1000
+    e1000e
+    forcedeth
+    igb
+    ixgbe
+    r8169
+    virtio
+
+TODO:
+- Support for attaching to only a single ring (queue) on a network adapter.
+- Support for VALE and netmap pipes.
+
+
 Notes on iptables
 =================
 
@@ -288,6 +357,15 @@ kernel configuration file:
 
 (The file in this case was: /usr/src/sys/i386/conf/GENERIC; which is platform
 dependent.)
+
+You may need to also set these to use the loadable kernel modules:
+
+/etc/rc.conf:
+firewall_enable="YES"
+
+/boot/loader.conf:
+ipfw_load="YES"
+ipdivert_load="YES"
 
 $ dmesg | grep ipfw
 ipfw2 (+ipv6) initialized, divert loadable, nat loadable, rule-based

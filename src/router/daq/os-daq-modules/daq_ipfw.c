@@ -1,6 +1,5 @@
-/* $Id: daq_ipfw.c,v 1.13 2010/12/08 16:03:09 rcombs Exp $ */
 /*
- ** Portions Copyright (C) 1998-2010 Sourcefire, Inc.
+ ** Portions Copyright (C) 1998-2013 Sourcefire, Inc.
  **
  ** This program is free software; you can redistribute it and/or modify
  ** it under the terms of the GNU General Public License as published by
@@ -14,7 +13,7 @@
  **
  ** You should have received a copy of the GNU General Public License
  ** along with this program; if not, write to the Free Software
- ** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -27,7 +26,7 @@
 
 #include <sys/types.h>
 #include <sys/time.h>
-#include <unistd.h>
+#include <sys/unistd.h>
 
 #include <netinet/in.h>
 #include <sys/socket.h>
@@ -41,7 +40,7 @@
 #define IPPROTO_DIVERT 254
 #endif
 
-#define DAQ_MOD_VERSION 2
+#define DAQ_MOD_VERSION 3
 
 #define DAQ_NAME "ipfw"
 #define DAQ_TYPE (DAQ_TYPE_INTF_CAPABLE | DAQ_TYPE_INLINE_CAPABLE | \
@@ -257,7 +256,7 @@ static int ipfw_daq_inject (
     int reverse)
 {
     IpfwImpl* impl = (IpfwImpl*)handle;
-    int status = ipfw_daq_forward(impl, hdr, impl->buf, hdr->pktlen, 0);
+    int status = ipfw_daq_forward(impl, hdr, buf, len, 0);
 
     if ( status == DAQ_SUCCESS )
         impl->stats.packets_injected++;
@@ -274,17 +273,21 @@ static void SetPktHdr(DAQ_PktHdr_t* phdr, ssize_t len)
     phdr->ts.tv_usec = t.tv_usec;
     phdr->caplen = len;
     phdr->pktlen = len;
-    phdr->device_index = 0;
+    phdr->ingress_index = -1;
+    phdr->egress_index = -1;
+    phdr->ingress_group = -1;
+    phdr->egress_group = -1;
     phdr->flags = 0;
+    phdr->address_space_id = 0;
 }
 
 //-------------------------------------------------------------------------
 
-// forward all but drops and blacklists:
-static const int s_fwd[MAX_DAQ_VERDICT] = { 1, 0, 1, 1, 0, 1 };
+// forward all but drops, retries and blacklists:
+static const int s_fwd[MAX_DAQ_VERDICT] = { 1, 0, 1, 1, 0, 1, 0 };
 
 static int ipfw_daq_acquire (
-    void* handle, int cnt, DAQ_Analysis_Func_t callback, void* user)
+    void* handle, int cnt, DAQ_Analysis_Func_t callback, DAQ_Meta_Func_t metaback, void* user)
 {
     IpfwImpl* impl = (IpfwImpl*)handle;
 
@@ -307,6 +310,8 @@ static int ipfw_daq_acquire (
 
         if ( select(impl->sock+1, &fdset, NULL, NULL, &tv) < 0 )
         {
+            if ( errno == EINTR )
+                break;
             DPE(impl->error, "%s: can't select divert socket (%s)\n",
                 __FUNCTION__, strerror(errno));
             return DAQ_ERROR;
@@ -345,6 +350,10 @@ static int ipfw_daq_acquire (
             else
             {
                 verdict = callback(NULL, &hdr, impl->buf);
+
+                if ( verdict >= MAX_DAQ_VERDICT )
+                    verdict = DAQ_VERDICT_BLOCK;
+
                 impl->stats.verdicts[verdict]++;
                 impl->stats.packets_received++;
             }
@@ -422,7 +431,7 @@ static int ipfw_daq_get_device_index(void* handle, const char* device)
 //-------------------------------------------------------------------------
 
 #ifdef BUILDING_SO
-SO_PUBLIC DAQ_Module_t DAQ_MODULE_DATA =
+DAQ_SO_PUBLIC DAQ_Module_t DAQ_MODULE_DATA =
 #else
 DAQ_Module_t ipfw_daq_module_data =
 #endif
@@ -447,6 +456,10 @@ DAQ_Module_t ipfw_daq_module_data =
     .get_datalink_type = ipfw_daq_get_datalink_type,
     .get_errbuf = ipfw_daq_get_errbuf,
     .set_errbuf = ipfw_daq_set_errbuf,
-    .get_device_index = ipfw_daq_get_device_index
+    .get_device_index = ipfw_daq_get_device_index,
+    .modify_flow = NULL,
+    .hup_prep = NULL,
+    .hup_apply = NULL,
+    .hup_post = NULL,
 };
 

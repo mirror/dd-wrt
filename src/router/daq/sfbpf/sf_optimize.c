@@ -2,7 +2,7 @@
  * Copyright (c) 1988, 1989, 1990, 1991, 1993, 1994, 1995, 1996
  *	The Regents of the University of California.  All rights reserved.
  *
- * Some portions Copyright (C) 2010 Sourcefire, Inc.
+ * Some portions Copyright (C) 2010-2013 Sourcefire, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that: (1) source code distributions
@@ -24,7 +24,7 @@
  */
 #ifndef lint
 static const char rcsid[] =
-    "@(#) $Header: /usr/cvsroot/sfeng/ims/src/libraries/daq/daq/sfbpf/sf_optimize.c,v 1.2 2010/05/06 19:13:26 maltizer Exp $ (LBL)";
+    "@(#) $Header: /usr/cvsroot/sfeng/ims/src/libraries/daq/daq/sfbpf/sf_optimize.c,v 1.3 2013/06/28 14:57:30 rcombs Exp $ (LBL)";
 #endif
 
 #ifdef HAVE_CONFIG_H

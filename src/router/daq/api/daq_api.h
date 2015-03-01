@@ -1,5 +1,6 @@
 /*
-** Copyright (C) 2010 Sourcefire, Inc.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2010-2013 Sourcefire, Inc.
 ** Author: Michael R. Altizer <maltizer@sourcefire.com>
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -15,7 +16,7 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 #ifndef _DAQ_API_H
@@ -52,7 +53,7 @@ struct _daq_module
        The return value of the callback will determine the action taken by the DAQ for each packet.
        If <cnt> is 0, packets will continue to be acquired until some other factor breaks the
        acquisition loop. */
-    int (*acquire) (void *handle, int cnt, DAQ_Analysis_Func_t callback, void *user);
+    int (*acquire) (void *handle, int cnt, DAQ_Analysis_Func_t callback, DAQ_Meta_Func_t metaback, void *user);
     /* Inject a new packet going either the same or opposite direction as the specified packet. */
     int (*inject) (void *handle, const DAQ_PktHdr_t *hdr, const uint8_t *packet_data, uint32_t len, int reverse);
     /* Force breaking out of the acquisition loop after the current iteration. */
@@ -79,9 +80,26 @@ struct _daq_module
     void (*set_errbuf) (void *handle, const char *string);
     /* Return the index of the given named device if possible. */
     int (*get_device_index) (void *handle, const char *device);
+    /* Modify a flow */
+    int (*modify_flow) (void *handle, const DAQ_PktHdr_t *hdr, DAQ_ModFlow_t *modify);
+    /* Read new configuration */
+    int (*hup_prep) (void *handle, void **new_config);
+    /* Swap new and old configuration */
+    int (*hup_apply) (void *handle, void *new_config, void **old_config);
+    /* Destroy old configuration */
+    int (*hup_post) (void *handle, void *old_config);
+    /** DAQ API to program a FST/EFT entry for dynamic protocol data channel
+     *
+     * @param [in] handle      NFE context
+     * @param [in] hdr         DAQ packet header of the control channel packet.
+     * @param [in] dp_key      Key structure of the data channel flow
+     * @param [in] packet_data Packet of the companion control channel packet.
+     * @return                 Error code of the API. 0 - success.
+     */
+     int (*dp_add_dc) (void *handle, const DAQ_PktHdr_t * hdr, DAQ_DP_key_t * dp_key, const uint8_t * packet_data);
 };
 
-#define DAQ_API_VERSION    0x00010001
+#define DAQ_API_VERSION    0x00010002
 
 #define DAQ_ERRBUF_SIZE 256
 /* This is a convenience macro for safely printing to DAQ error buffers.  It must be called on a known-size character array. */
