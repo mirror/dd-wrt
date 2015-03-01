@@ -1,0 +1,134 @@
+Modbus Preprocessor
+===================
+
+
+Overview
+========
+The Modbus preprocessor is a Snort module that decodes the Modbus protocol.  It
+also provides rule options to access certain protocol fields.  This allows a
+user to write rules for Modbus packets without decoding the protocol with a
+series of "content" and "byte_test" options.
+
+Modbus is a protocol used in SCADA networks. If your network does not contain
+any Modbus-enabled devices, we recommend leaving this preprocessor turned off.
+
+Dependencies
+============
+The Stream5 preprocessor must be enabled for the Modbus preprocessor to work.
+Protocol-Aware Flushing (PAF) is also required. See README.stream5 for more
+information.
+
+Preprocessor Configuration
+==========================
+Modbus configuration is split into two parts: the preprocessor config, and the
+rule options. The preprocessor config starts with:
+
+preprocesor modbus:
+
+Options are as follows:
+
+    Option              Argument        Required    Default
+    --------------------------------------------------------------
+    ports               <number>, or          NO    ports 502
+                        { port [port] ... }
+
+Option explanations
+    ports
+        This sets the port numbers on which Modbus traffic is inspected.
+        A single port number may be provided, or a space-separated list
+        enclosed in curly brackets. The default is port 502.
+
+Example preprocessor config
+
+preprocessor modbus: ports { 502 }
+
+Rule Options
+============
+The Modbus preprocessor adds 3 new rule options. These rule options match on
+various pieces of the Modbus headers.
+
+The preprocessor must be enabled for these rule options to work.
+
+modbus_func
+---------
+This option matches against the Function Code inside of a Modbus
+Application-Layer request/response header. The code may be a number
+(in decimal format), or a string from the list provided below.
+
+Syntax:
+    modbus_func:<code>
+
+    code  = 0-255
+            read_coils
+            read_discrete_inputs
+            read_holding_registers
+            read_input_registers
+            write_single_coil
+            write_single_register
+            read_exception_status
+            diagnostics
+            get_comm_event_counter
+            get_comm_event_log
+            write_multiple_coils
+            write_multiple_registers
+            report_slave_id
+            read_file_record
+            write_file_record
+            mask_write_register
+            read_write_multiple_registers
+            read_fifo_queue
+            encapsulated_interface_transport
+
+Example:
+    alert tcp any any -> any 502 (msg:"Modbus Write Coils request"; \
+        modbus_func:write_multiple_coils; sid:1;)
+
+modbus_unit
+-----------
+This rule option matches against the Unit ID field in a Modbus header.
+
+Syntax:
+    modbus_unit:<unit>
+
+    unit = 0-255
+
+Example:
+    var MODBUS_ADMIN 192.168.1.2
+    alert tcp !$MODBUS_ADMIN any -> any 502 (msg:"Modbus command to Unit 01 \
+        from unauthorized host"; modbus_unit:1; sid:1;)
+
+modbus_data
+---------
+This rule option sets the cursor at the beginning of the Data field in
+a Modbus request/response.
+
+Syntax:
+    modbus_data;
+    
+    No options.
+
+Example:
+
+alert tcp any any -> any any (msg:"String 'badstuff' in Modbus message"; \
+    modbus_data; content:"badstuff"; sid:1;)
+
+
+Preprocessor Rules
+==================
+The Modbus preprocessor uses GID 144 for its preprocessor events.
+
+SID     Description
+--------------------------------------------------------------------
+  1     The length in the Modbus header does not match the length needed
+        by the Modbus function code.
+
+        Each Modbus function has an expected format for requests and responses.
+        If the length of the message does not match the expected format, this
+        alert is generated.
+
+  2     Modbus protocol ID is non-zero.
+        The protocol ID field is used for multiplexing other protocols with
+        Modbus. Since the preprocessor cannot handle these other protocols,
+        this alert is generated instead.
+
+  3     Reserved Modbus function code in use.

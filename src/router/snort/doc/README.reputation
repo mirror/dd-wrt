@@ -1,0 +1,295 @@
+Reputation Preprocessor
+================================================================================
+Hui Cao
+
+Overview
+================================================================================
+Reputation preprocessor provides basic IP blacklist/whitelist capabilities, to 
+block/drop/pass traffic from IP addresses listed. In the past, we use standard 
+Snort rules to implement Reputation-based IP blocking. This preprocessor will 
+address the performance issue and make the IP reputation management easier.
+Reputation preprocessor runs before other preprocessors.
+
+Sections:
+    Configuration
+    IP list file format
+    Events
+    Shared memory support
+    
+Configuration
+================================================================================
+The preprocessor configuration name is "reputation".
+
+preprocessor reputation
+
+Option         Argument            Required  Default
+memcap         <memcap>             No       memcap 500
+scan_local      None                No       off 
+blacklist      <list file name>     No       NULL
+whitelist      <list file name>     No       NULL
+priority      [blacklist whitelist] No       priority whitelist
+nested_ip     [inner outer both]    No       nested_ip inner
+white         [black trust]         No       white unblack
+
+memcap        = 1 - 4095 Mbytes
+
+preprocessor reputation:\ 
+            < memcap  number >,\
+            < scan_local >, \
+            < blacklist  < list filename >>,\
+            < whitelist < list filename >>,\
+            < priority  [blacklist whitelist] >,\
+            < nested_ip  [inner outer both] >,\
+            < white  [unblack trust] >
+Options:
+
+  < memcap number >: 
+           maximum total memory allocated (in Megabytes). It can be set up to  
+           4095 Megabytes.   
+       
+  < scan_local > : 
+           Enable to inspect local address defined in RFC 1918:
+             10.0.0.0        -   10.255.255.255  (10/8 prefix)
+             172.16.0.0      -   172.31.255.255  (172.16/12 prefix)
+             192.168.0.0     -   192.168.255.255 (192.168/16 prefix)
+               
+  < list filename > : 
+           The IP lists are loaded from external files. It supports relative 
+           paths for inclusion and $variables for path. Multiple blacklists or 
+           whitelists are supported.
+          
+           Note: if the same IP is redefined later, it will overwrite the 
+           previous one. In other words, IP lists always favors the last file or
+           entry processed.
+           
+  < priority > :  
+           Specify either blacklist or whitelist has higher priority when 
+           source/destination is on blacklist while destination/source is on 
+           whitelist. By default, whitelist has higher priority. In other words,
+           the packet will be passed when either source or destination is 
+           whitelisted.
+           
+           Note: this only defines priority when there is a decision conflict, 
+           during run-time. During initialization time, if the same IP address 
+           is defined in whitelist and blacklist, whoever the last one defined 
+           will be the final one. Priority does not work on this case.
+         
+  < nested_ip >: 
+           Specify which IP address to be used when there is IP encapsulation. 
+
+  < white >: 
+           Specify the meaning of whitelist. When white means unblack, it 
+           unblacks IPs that are in blacklists; when white means trust, the 
+           packet gets bypassed, without further detection by snort. You can 
+           only specify either unblack or trust.
+           
+           Note: when white means unblack, whitelist always has higher priority
+           than blacklist.
+           
+Configuration examples
+
+  Default configuration
+    # Standard blacklisting. 
+    # If running in inline mode the packets will be dropped.
+    preprocessor reputation:\ 
+                  blacklist /etc/snort/default.blacklist, \
+                  whitelist /etc/snort/default.whitelist
+  
+  Inspect inner and outer IP configuration
+    # Inspect both inner and outer,  Also adds a whitelist entry
+    # to make exceptions.
+    preprocessor reputation: n
+                     nested_ip both, \
+                     blacklist /etc/snort/default.blacklist, \
+                     whitelist /etc/snort/default.whitelist
+  Full configuration
+    # Blacklisting with scan local network, use both headers, 
+    # and whitelist has higher priority.  
+    # Also adds a whitelist entry to make exceptions.
+    preprocessor reputation: \
+                     memcap  200, scan_local, nested_ip both, \
+                     priority whitelist, \
+                     blacklist /etc/snort/default.blacklist, \
+                     whitelist /etc/snort/default.whitelist, \
+                     white trust
+  
+  Variable path/file configuration
+   
+  $REP_BLACK_FILE1 = ../dshield.list
+  $REP_BLACK_FILE2 = ../snort.org.list
+  preprocessor reputation: \
+                blacklist $REP_BLACK_FILE1,\
+                blacklist $REP_BLACK_FILE2
+
+IP List File Format
+  
+  Syntax
+    The IP list file has 1 entry per line. The entry can be either IP entry or 
+    comment. 
+  
+  IP Entry
+    CIDR notation <comments> line break
+    Example:
+      172.16.42.32/32
+  
+  Comment
+    # <comments>
+    Example:
+      # This is a full line comment
+      
+  IP List File Example
+    ----------------------
+    # This is a full line comment
+    172.16.42.32/32    # This is an inline comment, line with single CIDR block
+
+Use case
+  
+  A user wants to protect his/her network from unwanted/unknown IPs, only 
+  allowing some trusted IPs. Here is the configuration:
+  
+  preprocessor reputation: \
+        blacklist /etc/snort/default.blacklist
+        whitelist /etc/snort/default.whitelist
+  
+  In file "default.blacklist"  
+        # These two entries will match all ipv4 addresses
+        1.0.0.0/1 
+        128.0.0.0/1
+  
+  In file "default.whitelist"
+        68.177.102.22 # sourcefire.com
+        74.125.93.104 # google.com
+
+Events
+================================================================================
+The preprocessor uses GID 136 to register events.
+ 
+
+SID   Description 
+--------------------------------------------------------------------------------
+  1   Packets are blacklisted. 
+  2   Packets are whitelisted.
+  3   Packets are inspected.
+
+
+Rule Options
+================================================================================
+  No rule options
+  
+Shared memory support
+================================================================================
+  In order to minimize memory consumption when multiple Snort instances are 
+  running concurrently, we introduce the support of shared memory. After 
+  configured, all the snort instances share the same IP tables in shared memory. 
+
+System requirement
+  This feature is supported only in Linux.
+  
+Build configuration
+
+  A new option, --enable-shared-rep is introduced to ./configure command. 
+  This option enables the support for shared memory.
+  In order to signal Snort to reload the IP file lists, control socket feature
+  should be enabled also. --enable-control-socket
+
+Configuration
+
+  shared_mem
+ 
+  If the build supports shared memory, this configuration will enable shared 
+  memory. If this option isn't set, standard memory is used.  This option must 
+  specify a path or directory where IP lists will be loaded in shared memory. 
+  One snort instance will create and maintain the shared IP lists. 
+  We use instance ID 1, specified in the snort -G option to be the master snort.
+  All the other snort instances are clients (readers). 
+ 
+  Syntax:
+    shared_mem: path
+  Examples:            
+    shared_mem  /user/reputation/iplists
+
+  shared_refresh
+  
+  This option changes the period of checking new shared memory segment, in the 
+  unit of second. By default, the refresh rate is 60 seconds.  
+  
+  Syntax:
+    shared_refresh <period>
+    period = "1 - 4294967295"
+  Examples:            
+    shared_refresh 60
+
+ Steps to configure shared memory
+   
+   1) When building Snort, add option -enable-shared-rep and --enable-control-socket
+      to ./configure.
+      For example:
+      ./configure --enable-gre --enable-sourcefire --enable-flexresp3 
+      --enable-pthread --enable-linux-smp-stats --enable-mpls 
+      --enable-targetbased --enable-shared-rep --enable-control-socket
+      
+   2) Put your IP list file into a directory, where snort has full access
+      For example: /user/reputation/iplists
+      In order to separate whitelist with blacklist, you need to specify 
+      whitelist with .wlf extension and blacklist with .blf extension.
+   3) In snort config file, specify shared memory support with the path to IP files.
+      Example: shared_mem  /user/reputation/iplists
+      If you want to change the period of checking new IP lists, add refresh period.
+      Example: shared_refresh 300
+   4) Start shared memory master(writer) with -G 0 option. Note: only one master
+      should be enabled.
+   5) Start shared memory clients (readers) with -G  1 or other IDs. Note: for 
+      one ID, only one snort instance should be enabled.
+   6) You will see the IP lists got loaded and shared across snort instances!
+ 
+ Reload IP list using control socket
+   1) Run snort using command line with option --cs-dir <path>
+      or configure snort with config cs_dir:<path>
+   2) (Optional) you can create a version file named "IPRVersion.dat" in the IP list
+      directory. This file helps managing reloading IP lists, by specifying version. 
+      When the version isn't changed, IP lists will not be reloaded if they are 
+      already in shared memory. The version number should be a 32 bit number.
+      For example: 
+      VERSION=19
+   3) In the ./src/tools/control directory, you will find snort_control command if 
+      built with --enable-control-socket option. 
+   4) Type the following command to reload IP lists. Before typing this command,
+      make sure to update version file if you are using version file.
+      The <path> is the same path in step 1).
+       <snort root>/src/tools/control/snort_control  <path> 1361
+ 
+ Using manifest file to manage loading (optional)
+ 
+   Using manifest file, you can control the file loading sequence, action taken,
+   and support zone based detection. You can create a manifest file named 
+   "zone.info" in the IP list directory.
+    
+   When Snort is signaled to load new lists, a manifest file is read first to 
+   determine which zones the IPs in each list are applicable to and what action 
+   to take per list (Block, White, Monitor). 
+   
+   Files listed in manifest are loaded from top to bottom. You should put files 
+   that have higher priority first. In manifest file, you can put up to 255 
+   files. Without manifest file, files will be loaded in alphabet order.
+   
+   Here's the format of the manifest file. Each line of the file has the 
+   following format:
+   
+     <filename>, <list id>,<action>[, <zone>]+
+  
+     <list id> ::= 32 bit integer
+     <action> ::= "monitor"|"block"|"white"
+     <zone>  ::= [0-1051]
+   
+   Using manifest file, you can specify a new action called "monitor", which
+   indicates a packet needs to be monitored, but does not disable detection. 
+   This is different from "block" action, which disables further detection. 
+   This new action helps users evaluate their IP lists before applying it.
+   
+   An example manifest file:
+   
+   #ipreputation manifest file
+   white.wlf, 111 ,white, 
+   black1.blf, 1112, black,  3, 12
+   black2.blf, 1113, black,  3, 12
+   monitor.blf,2222, monitor, 0, 2, 8

@@ -1,0 +1,137 @@
+# File IPS
+
+## Synopsis
+
+This README documents the File Type for IPS rules set of keywords. These
+keywords provide rule writers the ability to leverage Snort's file
+identification capability in IPS rules. These new keywords are the indented
+replacement for existing 'flowbits' rules that solve the same problem.
+
+## Configuration
+
+You're running configuration must contain a set of `file` identification rules.
+These rules perform the magic identification of files seen on-the-wire. It 
+is recommended that you configure Snort to use the prepackaged file magic 
+rules. See 'README.file' to learn more about file identification rules.
+
+To identify files transferred through FTP, TCP normalization with ips must be 
+enabled:
+
+    preprocessor normalize_tcp:ips
+    
+Note that file type detection will be enabled automatically when Snort parses a
+rule using either of the new keywords. There is no need to specify `config
+file:` of `preprocessor file` in the Snort configurations.
+
+## file_type
+
+The file_type rule keyword allows users to write rules constrained to a given
+file type, a specific version of a file type, several different file types or
+several file types of varying versions.
+
+### Syntax
+
+    file_type: <FILE_TYPE>
+    FILE_TYPE ::= <TYPE>[,<VERSION>][|<FILE_TYPE>]
+
+    TYPE    ::= The type name, as configured in a file rule. TYPE must match
+                an actual configured file rule.
+
+    VERSION ::= A specific file type version to match. Omitting VERSION will
+                cause the IPS rule to match all versions of the configured
+                TYPE.
+
+### Example
+
+1. Single file type
+
+    alert tcp any any -> any any ( msg:"PDF"; file_type:PDF; )
+
+2. Single file type with version
+
+    alert tcp any any -> any any ( msg:"PDF version 1.6"; file_type:PDF,1.6; )
+
+3. Single file type with multiple versions
+
+    alert tcp any any -> any any ( msg:"PDF version 1.6"; file_type:PDF,1.6,1.7; )
+
+3. Several file types
+
+    alert tcp any any -> any any ( msg:"Random documents"; file_type:PDF|DOC; )
+    alert tcp any any -> any any ( msg:"More random documents"; file_type:PDF|DOC|XLS; )
+
+4. Multiple file types and some versions
+
+    alert tcp any any -> any any ( msg:"Multiple file types and version"; file_type:PDF,1.6,1.7|DOC,10,11,12; )
+
+## file_group
+
+The `file_group` keyword provides the same capability as the `file_type`
+keyword, but allows for more appropriate collections of common file types.
+
+Many file types can belong to a common `group`. See README.file for more
+information on file groups.
+
+# Syntax
+
+    file_group:<GROUP>;
+
+    GROUP   ::= Match several file types who are contained in the same GROUP.
+
+## Example
+
+Given the following Snort configuration
+
+    file type:MSEXE; id:21; group:windows; msg:"MS EXE"; rev:1; content:|4D 5A|;                   offset:0;
+    file type:MSCAB; id:26; group:windows; msg:"MS CAB"; rev:1; content:|4D 53 43 46|;             offset:0;
+    file type:MSOLE; id:27; group:windows; msg:"MS OLE"; rev:1; content:|D0 CF 11 E0 A1 B1 1A E1|; offset:0;
+
+The following two rules work exactly the same
+
+    alert tcp any any -> any any ( msg:"This uses file grouping"; file_group:windows;          )
+    alert tcp any any -> any any ( msg:"This uses file list";     file_type:MSEXE|MSCAB|MSOLE; )
+
+## Converting existing flowbits rules
+
+As mentioned above, the file_type and file_group are the intended replacement
+for rules currently using flowbit setter's. What follows are existing flowbits
+setter rules and an example checker.
+ 
+    alert tcp $EXTERNAL_NET $FILE_DATA_PORTS -> $HOME_NET any ( \
+        msg:"FILE-IDENTIFY Adobe Shockwave Flash file magic detection"; \
+        flow:to_client,established; \
+        file_data; content:"CWS"; within:3; fast_pattern; \
+        flowbits:set,http.swf; flowbits:noalert; \
+        classtype:misc-activity; sid:20495; rev:3; )
+    alert tcp $EXTERNAL_NET $FILE_DATA_PORTS -> $HOME_NET any ( \
+        msg:"FILE-IDENTIFY Adobe Shockwave Flash file magic detection"; \
+        flow:to_client,established; \
+        file_data; content:"FWS"; within:3; fast_pattern; \
+        flowbits:set,http.swf; flowbits:noalert; \
+        classtype:misc-activity; sid:20496; rev:3; )
+    alert tcp $EXTERNAL_NET $FILE_DATA_PORTS -> $HOME_NET any ( \
+        msg:"FILE-IDENTIFY Adobe Shockwave Flash file magic detection"; \
+        flow:to_client,established; \
+        file_data; content:"|46 4C 56 01|"; within:4; fast_pattern; \
+        flowbits:set,http.swf; flowbits:noalert; \
+        classtype:misc-activity; sid:20497; rev:2; )
+    alert tcp $EXTERNAL_NET $HTTP_PORTS -> $HOME_NET any ( \
+        msg:"SWF nonsense"; \
+        flowbits:isset,http.swf; \
+        content:"|BA D0 1D EA|"; \
+        sid:1000000; rev:1; )
+
+
+Would be replaced with
+
+    file type:SWF; id:1; msg:"Shockwave Flash File"; rev:1; content:|43 57 53|;    offset:0;
+    file type:SWF; id:2; msg:"Shockwave Flash File"; rev:1; content:|46 57 53|;    offset:0;
+    file type:SWF; id:3; msg:"Shockwave Flash File"; rev:1; content:|46 4C 56 01|; offset:0;
+
+     alert tcp $EXTERNAL_NET $HTTP_PORTS -> $HOME_NET any ( \
+        msg:"SWF nonsense"; \
+        file_type:SWF; \
+        content:"|BA D0 1D EA|"; \
+        sid:1000000; rev:2; )
+
+
