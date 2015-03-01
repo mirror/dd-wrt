@@ -12,16 +12,16 @@
 #include <getopt.h>
 #include <ctype.h>
 #include <unistd.h>
+#include "../include/ebtables_u.h"
 #ifdef __UCLIBC__
 #include <netinet/ether.h>
 #endif
-#include "../include/ebtables_u.h"
 #include "../include/ethernetdb.h"
+#include <linux/if_ether.h>
 #include <linux/netfilter_bridge/ebt_among.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-
 
 #define AMONG_DST '1'
 #define AMONG_SRC '2'
@@ -204,11 +204,13 @@ static struct ebt_mac_wormhash *create_wormhash(const char *arg)
 			if (read_until(&pc, ":", token, 2) < 0
 			    || token[0] == 0) {
 				ebt_print_error("MAC parse error: %.20s", anchor);
+				free(workcopy);
 				return NULL;
 			}
 			mac[i] = strtol(token, &endptr, 16);
 			if (*endptr) {
 				ebt_print_error("MAC parse error: %.20s", anchor);
+				free(workcopy);
 				return NULL;
 			}
 			pc++;
@@ -247,7 +249,7 @@ static struct ebt_mac_wormhash *create_wormhash(const char *arg)
 				ebt_print_error("IP parse error: %.20s", anchor);
 				return NULL;
 			}
-			if (*(uint32_t*)ip == 0) {
+			if (ip[0] == 0 && ip[1] == 0 && ip[2] == 0 && ip[3] == 0) {
 				ebt_print_error("Illegal IP 0.0.0.0");
 				return NULL;
 			}
@@ -258,7 +260,7 @@ static struct ebt_mac_wormhash *create_wormhash(const char *arg)
 
 		/* we have collected MAC and IP, so we add an entry */
 		memcpy(((char *) workcopy->pool[nmacs].cmp) + 2, mac, 6);
-		workcopy->pool[nmacs].ip = *(const uint32_t *) ip;
+		memcpy(&(workcopy->pool[nmacs].ip), ip, 4);
 		nmacs++;
 
 		/* re-allocate memory if needed */
@@ -313,8 +315,8 @@ static int parse(int c, char **argv, int argc,
 	struct ebt_mac_wormhash *wh;
 	struct ebt_entry_match *h;
 	int new_size;
-	long flen;
-	int fd;
+	long flen = 0;
+	int fd = -1;
 
 	switch (c) {
 	case AMONG_DST_F:
@@ -367,7 +369,7 @@ static int parse(int c, char **argv, int argc,
 		       ebt_mac_wormhash_size(wh));
 		h->match_size = EBT_ALIGN(new_size);
 		info = (struct ebt_among_info *) h->data;
-		if (c == AMONG_DST) {
+		if (c == AMONG_DST || c == AMONG_DST_F) {
 			info->wh_dst_ofs = old_size;
 		} else {
 			info->wh_src_ofs = old_size;
@@ -482,7 +484,7 @@ static int compare(const struct ebt_entry_match *m1,
 static struct ebt_u_match among_match = {
 	.name 		= "among",
 	.size 		= sizeof(struct ebt_among_info),
-//	.help 		= print_help,
+	// .help 		= print_help,
 	.init 		= init,
 	.parse 		= parse,
 	.final_check 	= final_check,
