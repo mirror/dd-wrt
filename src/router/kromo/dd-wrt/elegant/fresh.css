@@ -82,27 +82,27 @@ border-radius: 4px;
 box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.075) inset;
 transition: border-color 0.15s ease-in-out 0s, box-shadow 0.15s ease-in-out 0s;
 }
-input[value="Apply Settings"]{
+input[name="apply_button"]{
 background: none repeat scroll 0 0 #696969;
 color: #FFF;
 }
-input[value="Apply Settings"]:hover{
+input[name="apply_button"]:hover{
 background: none repeat scroll 0 0 #777674;
 color: #000;
 }
-input[value="Cancel Changes"] {
+input[name="reset_button"] {
 background: none repeat scroll 0 0 #fff;
 color: #000;
 }
-input[value="Cancel Changes"]:hover {
+input[name="reset_button"]:hover {
 background: none repeat scroll 0 0 #FFA500;
 color: #000;
 }
-input[value="Reboot Router"]{
+input[name="reboot_button"]{
 background: none repeat scroll 0 0 #FF0000;
 color:#FFF;
 }
-input[value="Reboot Router"]:hover{
+input[name="reboot_button"]:hover{
 background: none repeat scroll 0 0 #FF7C7C;
 color:#000;
 }
