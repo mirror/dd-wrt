@@ -1,5 +1,5 @@
 {wan_shortproto::<% nvg("wan_proto"); %>}
-{wan_status::<% nvram_status_get("status2","1"); %>&nbsp;&nbsp;<input type="button" value="<% nvram_status_get("button1","1"); %>" onclick="connect(this.form, '<% nvram_status_get("button1","0"); %>_<% nvg("wan_proto"); %>')" />}
+{wan_status::<% nvram_status_get("status2","1"); %>&nbsp;&nbsp;<input class="button" type="button" value="<% nvram_status_get("button1","1"); %>" onclick="connect(this.form, '<% nvram_status_get("button1","0"); %>_<% nvg("wan_proto"); %>')" />}
 {wan_uptime::<% get_wan_uptime(); %>}
 {wan_3g_signal::<% nvram_status_get("wan_3g_signal"); %>}
 {wan_ipaddr::<% nvram_status_get("wan_ipaddr"); %>}
