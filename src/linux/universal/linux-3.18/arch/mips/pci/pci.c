@@ -258,6 +258,7 @@ int __init pcibios_init(void)
 subsys_initcall(pcibios_init);
 #endif
 
+#ifndef CONFIG_BCM47XX
 static int pcibios_enable_resources(struct pci_dev *dev, int mask)
 {
 	u16 cmd, old_cmd;
@@ -288,6 +289,7 @@ static int pcibios_enable_resources(struct pci_dev *dev, int mask)
 		if (r->flags & IORESOURCE_MEM)
 			cmd |= PCI_COMMAND_MEMORY;
 	}
+	printk(KERN_EMERG "%X vs %X\n",cmd,old_cmd);
 	if (cmd != old_cmd) {
 		printk("PCI: Enabling device %s (%04x -> %04x)\n",
 		       pci_name(dev), old_cmd, cmd);
@@ -295,7 +297,7 @@ static int pcibios_enable_resources(struct pci_dev *dev, int mask)
 	}
 	return 0;
 }
-
+#endif
 unsigned int pcibios_assign_all_busses(void)
 {
 	return 1;
