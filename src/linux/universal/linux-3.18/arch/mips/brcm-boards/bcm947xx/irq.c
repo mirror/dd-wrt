@@ -299,7 +299,7 @@ static struct irq_chip brcm_irq2_type = {
  * relies on the SBFlagSt register's reliable recording of the SB cores
  * that raised the interrupt.
  */
-void __init
+void
 arch_init_irq(void)
 {
 	int i;
