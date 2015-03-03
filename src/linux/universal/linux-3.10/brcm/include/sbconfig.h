@@ -1,7 +1,7 @@
 /*
  * Broadcom SiliconBackplane hardware register definitions.
  *
- * Copyright (C) 2012, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: sbconfig.h 241182 2011-02-17 21:50:03Z $
+ * $Id: sbconfig.h 458249 2014-02-26 06:31:34Z $
  */
 
 #ifndef	_SBCONFIG_H
@@ -75,7 +75,7 @@
 #define SBTMPORTCONNID0		0xed8
 #define SBTMPORTLOCK0		0xef8
 
-#ifndef _LANGUAGE_ASSEMBLY
+#if !defined(_LANGUAGE_ASSEMBLY) && !defined(__ASSEMBLY__)
 
 typedef volatile struct _sbconfig {
 	uint32	PAD[2];
@@ -117,7 +117,7 @@ typedef volatile struct _sbconfig {
 	uint32	sbidhigh;		/* identification */
 } sbconfig_t;
 
-#endif /* _LANGUAGE_ASSEMBLY */
+#endif /* !_LANGUAGE_ASSEMBLY && !__ASSEMBLY__ */
 
 /* sbipsflag */
 #define	SBIPS_INT1_MASK		0x3f		/* which sbflags get routed to mips interrupt 1 */

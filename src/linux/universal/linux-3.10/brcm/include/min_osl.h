@@ -1,7 +1,7 @@
 /*
  * HND Minimal OS Abstraction Layer.
  *
- * Copyright (C) 2012, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: min_osl.h 341899 2012-06-29 04:06:38Z $
+ * $Id: min_osl.h 466958 2014-04-02 02:15:47Z $
  */
 
 #ifndef _min_osl_h_
@@ -61,20 +61,29 @@ extern void assfail(char *exp, char *file, int line);
 #endif /* BCMDBG */
 
 /* PCMCIA attribute space access macros */
-#define	OSL_PCMCIA_READ_ATTR(osh, offset, buf, size) \
-	ASSERT(0)
-#define	OSL_PCMCIA_WRITE_ATTR(osh, offset, buf, size) \
-	ASSERT(0)
+#define	OSL_PCMCIA_READ_ATTR(osh, offset, buf, size) 	\
+	({ \
+	 BCM_REFERENCE(osh); \
+	 BCM_REFERENCE(buf); \
+	 ASSERT(0); \
+	 })
+#define	OSL_PCMCIA_WRITE_ATTR(osh, offset, buf, size) 	\
+	({ \
+	 BCM_REFERENCE(osh); \
+	 BCM_REFERENCE(buf); \
+	 ASSERT(0); \
+	 })
 
 /* PCI configuration space access macros */
-#define	OSL_PCI_READ_CONFIG(loc, offset, size) \
-	(offset == 8 ? 0 : 0xffffffff)
-#define	OSL_PCI_WRITE_CONFIG(loc, offset, size, val) \
-	do {} while (0)
+#define	OSL_PCI_READ_CONFIG(loc, offset, size)		\
+	({BCM_REFERENCE(loc); (((offset) == 8) ? 0 : 0xffffffff);})
+#define	OSL_PCI_WRITE_CONFIG(osh, offset, size, val)	({BCM_REFERENCE(osh); BCM_REFERENCE(val);})
 
 /* PCI device bus # and slot # */
-#define OSL_PCI_BUS(osh)	(0)
-#define OSL_PCI_SLOT(osh)	(0)
+#define OSL_PCI_BUS(osh)	({BCM_REFERENCE(osh); 0;})
+#define OSL_PCI_SLOT(osh)	({BCM_REFERENCE(osh); 0;})
+#define OSL_PCIE_DOMAIN(osh)	({BCM_REFERENCE(osh); 0;})
+#define OSL_PCIE_BUS(osh)	({BCM_REFERENCE(osh); 0;})
 
 /* register access macros */
 #ifdef	IL_BIGENDIAN
@@ -111,6 +120,7 @@ extern void assfail(char *exp, char *file, int line);
 
 #define R_REG(osh, r) ({ \
 	__typeof(*(r)) __osl_v; \
+	BCM_REFERENCE(osh); \
 	switch (sizeof(*(r))) { \
 	case sizeof(uint8):	__osl_v = rreg8((void *)(r)); break; \
 	case sizeof(uint16):	__osl_v = rreg16((void *)(r)); break; \
@@ -119,6 +129,7 @@ extern void assfail(char *exp, char *file, int line);
 	__osl_v; \
 })
 #define W_REG(osh, r, v) do { \
+	BCM_REFERENCE(osh); \
 	switch (sizeof(*(r))) { \
 	case sizeof(uint8):	wreg8((void *)(r), (v)); break; \
 	case sizeof(uint16):	wreg16((void *)(r), (v)); break; \
@@ -129,12 +140,21 @@ extern void assfail(char *exp, char *file, int line);
 #define	OR_REG(osh, r, v)		W_REG(osh, (r), R_REG(osh, r) | (v))
 
 /* general purpose memory allocation */
-#define	MALLOC(osh, size)	malloc(size)
-#define	MALLOC_ALIGN(osh, size, align_bits)	malloc_align((size), (align_bits))
-#define	MFREE(osh, addr, size)	free(addr)
-#define	MALLOCED(osh)		0
-#define	MALLOC_FAILED(osh)	0
-#define	MALLOC_DUMP(osh, b)
+#define	MALLOC(osh, size)	({BCM_REFERENCE(osh); malloc(size);})
+#define	MALLOCZ(osh, size) \
+	({void *_ptr; \
+	_ptr = MALLOC(osh, size); \
+	if (_ptr != NULL) {bzero(_ptr, (size));} \
+	_ptr; })
+#define	MALLOC_ALIGN(osh, size, align_bits) \
+	({ \
+	 BCM_REFERENCE(osh); \
+	 malloc_align((size), (align_bits)); \
+	 })
+#define	MFREE(osh, addr, size)	({BCM_REFERENCE(osh); free(addr);})
+#define	MALLOCED(osh)		({BCM_REFERENCE(osh); 0;})
+#define	MALLOC_FAILED(osh)	({BCM_REFERENCE(osh); 0;})
+#define	MALLOC_DUMP(osh, b)	BCM_REFERENCE(osh)
 extern int free(void *ptr);
 extern void *malloc(uint size);
 extern void *malloc_align(uint size, uint align_bits);
@@ -183,51 +203,58 @@ extern uint32 osl_getcycles(void);
 
 /* Misc stubs */
 #define osl_attach(pdev)	((osl_t*)pdev)
-#define osl_detach(osh)
+#define osl_detach(osh)		BCM_REFERENCE(osh)
 
-#define PKTFREESETCB(osh, _tx_fn, _tx_ctx)
+#define PKTFREESETCB(osh, _tx_fn, _tx_ctx)	BCM_REFERENCE(osh)
 
 extern void *osl_init(void);
 #define OSL_ERROR(bcmerror)	osl_error(bcmerror)
 extern int osl_error(int);
 
+#define OSH_NULL   NULL
+
 /* the largest reasonable packet buffer driver uses for ethernet MTU in bytes */
 #define	PKTBUFSZ			(MAXPKTBUFSZ - LBUFSZ)
 
 /* packet primitives */
-#define PKTGET(osh, len, send)		((void *)NULL)
-#define PKTFREE(osh, p, send)
-#define	PKTDATA(osh, lb)		((void *)NULL)
-#define	PKTLEN(osh, lb)			0
-#define	PKTHEADROOM(osh, lb)		0
-#define	PKTTAILROOM(osh, lb)		0
-#define	PKTNEXT(osh, lb)		((void *)NULL)
-#define	PKTSETNEXT(osh, lb, x)
-#define	PKTSETLEN(osh, lb, len)
-#define	PKTPUSH(osh, lb, bytes)
-#define	PKTPULL(osh, lb, bytes)
-#define PKTDUP(osh, p)
-#define	PKTTAG(lb)			((void *)NULL)
-#define	PKTLINK(lb)			((void *)NULL)
-#define	PKTSETLINK(lb, x)
-#define	PKTPRIO(lb)			0
-#define	PKTSETPRIO(lb, x)
-#define PKTSHARED(lb)			1
-#define PKTALLOCED(osh)			0
-#define PKTLIST_DUMP(osh, buf)
-#define PKTFRMNATIVE(osh, lb)		((void *)NULL)
-#define PKTTONATIVE(osh, p)		((struct lbuf *)NULL)
-#define PKTSETPOOL(osh, lb, x, y)	do {} while (0)
-#define PKTPOOL(osh, lb)		FALSE
-#define PKTSHRINK(osh, m)		(m)
+#define PKTGET(osh, len, send)		({BCM_REFERENCE(osh); ((void *)NULL);})
+#define PKTFREE(osh, p, send)		BCM_REFERENCE(osh)
+#define	PKTDATA(osh, lb)		({BCM_REFERENCE(osh); ((void *)NULL);})
+#define	PKTLEN(osh, lb)			({BCM_REFERENCE(osh); 0;})
+#define	PKTHEADROOM(osh, lb)		({BCM_REFERENCE(osh); 0;})
+#define	PKTTAILROOM(osh, lb)		({BCM_REFERENCE(osh); 0;})
+#define	PKTNEXT(osh, lb)		({BCM_REFERENCE(osh); ((void *)NULL);})
+#define	PKTSETNEXT(osh, lb, x)		BCM_REFERENCE(osh)
+#define	PKTSETLEN(osh, lb, len)		BCM_REFERENCE(osh)
+#define	PKTPUSH(osh, lb, bytes)		BCM_REFERENCE(osh)
+#define	PKTPULL(osh, lb, bytes)		BCM_REFERENCE(osh)
+#define PKTDUP(osh, p)			BCM_REFERENCE(osh)
+#define	PKTTAG(lb)			({BCM_REFERENCE(lb); ((void *)NULL);})
+#define	PKTLINK(lb)			({BCM_REFERENCE(lb); ((void *)NULL);})
+#define	PKTSETLINK(lb, x)		BCM_REFERENCE(lb)
+#define	PKTPRIO(lb)			({BCM_REFERENCE(lb); 0;})
+#define	PKTSETPRIO(lb, x)		BCM_REFERENCE(lb)
+#define PKTSHARED(lb)			({BCM_REFERENCE(lb); 1;})
+#define PKTALLOCED(osh)			({BCM_REFERENCE(osh); 0;})
+#define PKTLIST_DUMP(osh, buf)		BCM_REFERENCE(osh)
+#define PKTFRMNATIVE(osh, lb)		({BCM_REFERENCE(osh); ((void *)NULL);})
+#define PKTTONATIVE(osh, p)		({BCM_REFERENCE(osh); ((struct lbuf *)NULL);})
+#define PKTSETPOOL(osh, lb, x, y)	BCM_REFERENCE(osh)
+#define PKTPOOL(osh, lb)		({BCM_REFERENCE(osh); FALSE;})
+#define PKTFREELIST(lb)         PKTLINK(lb)
+#define PKTSETFREELIST(lb, x)   PKTSETLINK((lb), (x))
+#define PKTPTR(lb)              (lb)
+#define PKTID(lb)               ({BCM_REFERENCE(lb); 0;})
+#define PKTSETID(lb, id)        ({BCM_REFERENCE(lb); BCM_REFERENCE(id);})
+#define PKTSHRINK(osh, m)		({BCM_REFERENCE(osh); m;})
 
 /* Global ASSERT type */
 extern uint32 g_assert_type;
 
 /* Kernel: File Operations: start */
-#define osl_os_open_image(filename)	NULL
-#define osl_os_get_image_block(buf, len, image)	0
-#define osl_os_close_image(image)	do {} while (0)
+#define osl_os_open_image(filename)	({BCM_REFERENCE(osh); NULL;})
+#define osl_os_get_image_block(buf, len, image)	({BCM_REFERENCE(osh); 0;})
+#define osl_os_close_image(image)	BCM_REFERENCE(osh)
 /* Kernel: File Operations: end */
 
 #endif	/* _min_osl_h_ */

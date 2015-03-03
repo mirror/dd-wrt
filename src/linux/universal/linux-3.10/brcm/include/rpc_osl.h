@@ -1,7 +1,7 @@
 /*
  * RPC OSL
  *
- * Copyright (C) 2012, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -15,13 +15,13 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: rpc_osl.h 296577 2011-11-16 03:09:51Z $
+ * $Id: rpc_osl.h 306461 2012-01-06 00:11:03Z $
  */
 
 #ifndef _rpcosl_h_
 #define _rpcosl_h_
 
-#ifdef WLC_HIGH
+#if (defined WLC_HIGH || defined BCM_FD_AGGR)
 typedef struct rpc_osl rpc_osl_t;
 extern rpc_osl_t *rpc_osl_attach(osl_t *osh);
 extern void rpc_osl_detach(rpc_osl_t *rpc_osh);
