@@ -1,7 +1,7 @@
 /*
  * Broadcom AMBA Interconnect definitions.
  *
- * Copyright (C) 2012, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: aidmp.h 241182 2011-02-17 21:50:03Z $
+ * $Id: aidmp.h 458249 2014-02-26 06:31:34Z $
  */
 
 #ifndef	_AIDMP_H
@@ -105,7 +105,7 @@
 #define	SD_SZ_ALIGN		0x00000fff
 
 
-#ifndef _LANGUAGE_ASSEMBLY
+#if !defined(_LANGUAGE_ASSEMBLY) && !defined(__ASSEMBLY__)
 
 typedef volatile struct _aidmp {
 	uint32	oobselina30;	/* 0x000 */
@@ -225,7 +225,7 @@ typedef volatile struct _aidmp {
 	uint32	componentid3;	/* 0xffc */
 } aidmp_t;
 
-#endif /* _LANGUAGE_ASSEMBLY */
+#endif /* !_LANGUAGE_ASSEMBLY && !__ASSEMBLY__ */
 
 /* Out-of-band Router registers */
 #define	OOB_BUSCONFIG		0x020
@@ -324,14 +324,14 @@ typedef volatile struct _aidmp {
 
 #define	AI_RESETREADID		0x808
 #define	AI_RESETWRITEID		0x80c
-#define	AI_ERRLOGCTRL		0xa00
-#define	AI_ERRLOGDONE		0xa04
-#define	AI_ERRLOGSTATUS		0xa08
-#define	AI_ERRLOGADDRLO		0xa0c
-#define	AI_ERRLOGADDRHI		0xa10
-#define	AI_ERRLOGID		0xa14
-#define	AI_ERRLOGUSER		0xa18
-#define	AI_ERRLOGFLAGS		0xa1c
+#define	AI_ERRLOGCTRL		0x900
+#define AI_ERRLOGDONE		0x904
+#define AI_ERRLOGSTATUS		0x908
+#define	AI_ERRLOGADDRLO		0x90c
+#define	AI_ERRLOGADDRHI		0x910
+#define	AI_ERRLOGID		0x914
+#define	AI_ERRLOGUSER		0x918
+#define	AI_ERRLOGFLAGS		0x91c
 #define	AI_INTSTATUS		0xa00
 #define	AI_CONFIG		0xe00
 #define	AI_ITCR			0xf00
@@ -368,6 +368,17 @@ typedef volatile struct _aidmp {
 /* resetctrl */
 #define	AIRC_RESET		1
 
+/* errlogctrl */
+#define AIELC_TO_EXP_MASK	0x0000001f0		/* backplane timeout exponent */
+#define AIELC_TO_EXP_SHIFT	4
+#define AIELC_TO_ENAB_SHIFT	9			/* backplane timeout enable */
+
+/* errlogdone */
+#define AIELD_ERRDONE_MASK	0x3
+
+/* errlogstatus */
+#define AIELS_TIMEOUT_MASK	0x3
+
 /* config */
 #define	AICFG_OOB		0x00000020
 #define	AICFG_IOS		0x00000010
@@ -379,5 +390,16 @@ typedef volatile struct _aidmp {
 /* bit defines for AI_OOBSELOUTB74 reg */
 #define OOB_SEL_OUTEN_B_5	15
 #define OOB_SEL_OUTEN_B_6	23
+
+/* AI_OOBSEL for A/B/C/D, 0-7 */
+#define AI_OOBSEL_MASK		0x1F
+#define AI_OOBSEL_0_SHIFT	0
+#define AI_OOBSEL_1_SHIFT	8
+#define AI_OOBSEL_2_SHIFT	16
+#define AI_OOBSEL_3_SHIFT	24
+#define AI_OOBSEL_4_SHIFT	0
+#define AI_OOBSEL_5_SHIFT	8
+#define AI_OOBSEL_6_SHIFT	16
+#define AI_OOBSEL_7_SHIFT	24
 
 #endif	/* _AIDMP_H */

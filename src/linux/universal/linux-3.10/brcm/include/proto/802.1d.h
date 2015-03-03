@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -15,7 +15,7 @@
  *
  * Fundamental types and constants relating to 802.1D
  *
- * $Id: 802.1d.h 241182 2011-02-17 21:50:03Z $
+ * $Id: 802.1d.h 382882 2013-02-04 23:24:31Z $
  */
 
 #ifndef _802_1_D_

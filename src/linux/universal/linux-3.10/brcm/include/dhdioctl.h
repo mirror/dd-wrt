@@ -5,7 +5,7 @@
  *
  * Definitions subject to change without notice.
  *
- * Copyright (C) 2012, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -19,7 +19,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: dhdioctl.h 327775 2012-04-16 18:54:32Z $
+ * $Id: dhdioctl.h 437388 2013-11-18 20:11:38Z $
  */
 
 #ifndef _dhdioctl_h_
@@ -27,7 +27,7 @@
 
 #include <typedefs.h>
 
-#ifdef __NetBSD__
+#if defined(__NetBSD__) || defined(__FreeBSD__)
 /* NetBSD 2.0 does not have SIOCDEVPRIVATE. This is NetBSD 2.0 specific */
 #define SIOCDEVPRIVATE	_IOWR('i', 139, struct ifreq)
 #endif
@@ -48,10 +48,29 @@ typedef struct dhd_ioctl {
 	uint driver;	/* to identify target driver */
 } dhd_ioctl_t;
 
+struct dhdnl_ioctl {
+	uint cmd;	/* common ioctl definition */
+	uint len;	/* attached buffer length */
+	uint offset;	/* user buffer offset */
+	uint set;	/* get or set request optional */
+	uint magic;	/* magic number for verification */
+};
+
+enum dhdnl_attrs {
+	DHD_NLATTR_UNSPEC,
+
+	DHD_NLATTR_LEN,
+	DHD_NLATTR_DATA,
+
+	__DHD_NLATTR_AFTER_LAST,
+	DHD_NLATTR_MAX = __DHD_NLATTR_AFTER_LAST - 1
+};
+
 /* Underlying BUS definition */
 enum {
 	BUS_TYPE_USB = 0, /* for USB dongles */
-	BUS_TYPE_SDIO /* for SDIO dongles */
+	BUS_TYPE_SDIO, /* for SDIO dongles */
+	BUS_TYPE_PCIE /* for PCIE dongles */
 };
 
 /* per-driver magic numbers */
@@ -89,6 +108,11 @@ enum {
 #define DHD_ISCAN_VAL	0x2000
 #endif
 #define DHD_ARPOE_VAL	0x4000
+#define DHD_REORDER_VAL	0x8000
+#define DHD_WL_VAL		0x10000
+#define DHD_NOCHECKDIED_VAL		0x20000 /* UTF WAR */
+#define DHD_WL_VAL2		0x40000
+#define DHD_PNO_VAL		0x80000
 
 #ifdef SDTEST
 /* For pktgen iovar */
