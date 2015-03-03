@@ -687,7 +687,11 @@ static int vlan_dev_init(struct net_device *dev)
 	dev->needed_headroom = real_dev->needed_headroom;
 	if (vlan_hw_offload_capable(real_dev->features,
 				    vlan_dev_priv(dev)->vlan_proto)) {
-		dev->header_ops      = &vlan_passthru_header_ops;
+#ifdef CONFIG_MVSWITCH_PHY
+		dev->header_ops      = real_dev->header_ops;
+#else
+ 		dev->header_ops      = &vlan_passthru_header_ops;
+#endif
 		dev->hard_header_len = real_dev->hard_header_len;
 	} else {
 		dev->header_ops      = &vlan_header_ops;
