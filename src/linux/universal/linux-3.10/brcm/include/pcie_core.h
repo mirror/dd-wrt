@@ -1,7 +1,7 @@
 /*
  * BCM43XX PCIE core hardware definitions.
  *
- * Copyright (C) 2012, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -15,10 +15,13 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: pcie_core.h 348160 2012-07-31 21:25:18Z $
+ * $Id: pcie_core.h 468895 2014-04-09 02:33:06Z $
  */
 #ifndef	_PCIE_CORE_H
 #define	_PCIE_CORE_H
+
+#include <sbhnddma.h>
+#include <siutils.h>
 
 /* cpp contortions to concatenate w/arg prescan */
 #ifndef PAD
@@ -36,6 +39,9 @@
 #define  PCIE_SPROM_SHADOW_OFFSET	0x800
 #define  PCIE_SBCONFIG_OFFSET		0xE00
 
+
+#define PCIEDEV_MAX_DMAS			4
+
 /* PCIE Bar0 Address Mapping. Each function maps 16KB config space */
 #define PCIE_DEV_BAR0_SIZE		0x4000
 #define PCIE_BAR0_WINMAPCORE_OFFSET	0x0
@@ -46,6 +52,27 @@
 /* different register spaces to access thr'u pcie indirect access */
 #define PCIE_CONFIGREGS 	1		/* Access to config space */
 #define PCIE_PCIEREGS 		2		/* Access to pcie registers */
+
+/* dma regs to control the flow between host2dev and dev2host  */
+typedef struct pcie_devdmaregs {
+	dma64regs_t	tx;
+	uint32		PAD[2];
+	dma64regs_t	rx;
+	uint32		PAD[2];
+} pcie_devdmaregs_t;
+
+#define PCIE_DB_HOST2DEV_0		0x1
+#define PCIE_DB_HOST2DEV_1		0x2
+#define PCIE_DB_DEV2HOST_0		0x3
+#define PCIE_DB_DEV2HOST_1		0x4
+
+/* door bell register sets */
+typedef struct pcie_doorbell {
+	uint32		host2dev_0;
+	uint32		host2dev_1;
+	uint32		dev2host_0;
+	uint32		dev2host_1;
+} pcie_doorbell_t;
 
 /* SB side: PCIE core and host control registers */
 typedef struct sbpcieregs {
@@ -67,7 +94,9 @@ typedef struct sbpcieregs {
 	uint32 errlogaddr;	/* PCIE2: 0x44 */
 	uint32 mailboxint;	/* PCIE2: 0x48 */
 	uint32 mailboxintmsk; /* PCIE2: 0x4c */
-	uint32 PAD[44];
+	uint32 ltrspacing;	/* PCIE2: 0x50 */
+	uint32 ltrhysteresiscnt;	/* PCIE2: 0x54 */
+	uint32 PAD[42];
 
 	uint32 sbtopcie0;	/* sb to pcie translation 0: 0x100 */
 	uint32 sbtopcie1;	/* sb to pcie translation 1: 0x104 */
@@ -86,16 +115,38 @@ typedef struct sbpcieregs {
 			uint32 pcieindaddr; /* indirect access to the internal register: 0x130 */
 			uint32 pcieinddata;	/* Data to/from the internal regsiter: 0x134 */
 			uint32 clkreqenctrl;	/* >= rev 6, Clkreq rdma control : 0x138 */
+			uint32 PAD[177];
 		} pcie1;
 		struct {
 			/* mdio access to serdes */
 			uint32 mdiocontrol;	/* controls the mdio access: 0x128 */
 			uint32 mdiowrdata;	/* write data to mdio 0x12C */
 			uint32 mdiorddata;	/* read data to mdio 0x130 */
-			uint32	PAD[2];
+			uint32	PAD[3]; 	/* 0x134-0x138-0x13c */
+			/* door bell registers available from gen2 rev5 onwards */
+			pcie_doorbell_t	   dbls[PCIEDEV_MAX_DMAS]; /* 0x140 - 0x17F */
+			uint32	dataintf;	/* 0x180 */
+			uint32  PAD[1];		/* 0x184 */
+			uint32	d2h_intrlazy_0; /* 0x188 */
+			uint32	h2d_intrlazy_0; /* 0x18c */
+			uint32  h2d_intstat_0;  /* 0x190 */
+			uint32  h2d_intmask_0;	/* 0x194 */
+			uint32  d2h_intstat_0;  /* 0x198 */
+			uint32  d2h_intmask_0;  /* 0x19c */
+			uint32	ltr_state;	/* 0x1A0 */
+			uint32	pwr_int_status;	/* 0x1A4 */
+			uint32	pwr_int_mask;	/* 0x1A8 */
+			uint32  PAD[21]; 	/* 0x1AC - 0x200 */
+			pcie_devdmaregs_t  h2d0_dmaregs; /* 0x200 - 0x23c */
+			pcie_devdmaregs_t  d2h0_dmaregs; /* 0x240 - 0x27c */
+			pcie_devdmaregs_t  h2d1_dmaregs; /* 0x280 - 0x2bc */
+			pcie_devdmaregs_t  d2h1_dmaregs; /* 0x2c0 - 0x2fc */
+			pcie_devdmaregs_t  h2d2_dmaregs; /* 0x300 - 0x33c */
+			pcie_devdmaregs_t  d2h2_dmaregs; /* 0x340 - 0x37c */
+			pcie_devdmaregs_t  h2d3_dmaregs; /* 0x380 - 0x3bc */
+			pcie_devdmaregs_t  d2h3_dmaregs; /* 0x3c0 - 0x3fc */
 		} pcie2;
 	} u;
-	uint32 PAD[177];
 	uint32 pciecfg[4][64];	/* 0x400 - 0x7FF, PCIE Cfg Space */
 	uint16 sprom[64];	/* SPROM shadow Area */
 } sbpcieregs_t;
@@ -103,6 +154,11 @@ typedef struct sbpcieregs {
 /* PCI control */
 #define PCIE_RST_OE	0x01	/* When set, drives PCI_RESET out to pin */
 #define PCIE_RST	0x02	/* Value driven out to pin */
+#define PCIE_SPERST	0x04	/* SurvivePeRst */
+#define PCIE_DISABLE_L1CLK_GATING	0x10
+#define PCIE_DLYPERST	0x100	/* Delay PeRst to CoE Core */
+#define PCIE_DISSPROMLD	0x200	/* DisableSpromLoadOnPerst */
+#define PCIE_WakeModeL2	0x1000	/* Wake on L2 */
 
 #define	PCIE_CFGADDR	0x120	/* offsetof(configaddr) */
 #define	PCIE_CFGDATA	0x124	/* offsetof(configdata) */
@@ -114,6 +170,7 @@ typedef struct sbpcieregs {
 #define PCIE_INTNFATAL	0x08	/* PCIE INTNONFATAL message is received */
 #define PCIE_INTCORR	0x10	/* PCIE INTCORR message is received */
 #define PCIE_INTPME	0x20	/* PCIE INTPME message is received */
+#define PCIE_PERST	0x40	/* PCIE Reset Interrupt */
 
 #define PCIE_INT_MB_FN0_0 0x0100 /* PCIE to SB Mailbox int Fn0.0 is received */
 #define PCIE_INT_MB_FN0_1 0x0200 /* PCIE to SB Mailbox int Fn0.1 is received */
@@ -125,22 +182,36 @@ typedef struct sbpcieregs {
 #define PCIE_INT_MB_FN3_1 0x8000 /* PCIE to SB Mailbox int Fn3.1 is received */
 
 /* PCIE MailboxInt/MailboxIntMask register */
-#define PCIE_MB_TOSB_FN0_0   0x0001 /* write to assert PCIEtoSB Mailbox interrupt */
-#define PCIE_MB_TOSB_FN0_1   0x0002
-#define PCIE_MB_TOSB_FN1_0   0x0004
-#define PCIE_MB_TOSB_FN1_1   0x0008
-#define PCIE_MB_TOSB_FN2_0   0x0010
-#define PCIE_MB_TOSB_FN2_1   0x0020
-#define PCIE_MB_TOSB_FN3_0   0x0040
-#define PCIE_MB_TOSB_FN3_1   0x0080
-#define PCIE_MB_TOPCIE_FN0_0 0x0100 /* int status/mask for SBtoPCIE Mailbox interrupts */
-#define PCIE_MB_TOPCIE_FN0_1 0x0200
-#define PCIE_MB_TOPCIE_FN1_0 0x0400
-#define PCIE_MB_TOPCIE_FN1_1 0x0800
-#define PCIE_MB_TOPCIE_FN2_0 0x1000
-#define PCIE_MB_TOPCIE_FN2_1 0x2000
-#define PCIE_MB_TOPCIE_FN3_0 0x4000
-#define PCIE_MB_TOPCIE_FN3_1 0x8000
+#define PCIE_MB_TOSB_FN0_0   	0x0001 /* write to assert PCIEtoSB Mailbox interrupt */
+#define PCIE_MB_TOSB_FN0_1   	0x0002
+#define PCIE_MB_TOSB_FN1_0   	0x0004
+#define PCIE_MB_TOSB_FN1_1   	0x0008
+#define PCIE_MB_TOSB_FN2_0   	0x0010
+#define PCIE_MB_TOSB_FN2_1   	0x0020
+#define PCIE_MB_TOSB_FN3_0   	0x0040
+#define PCIE_MB_TOSB_FN3_1   	0x0080
+#define PCIE_MB_TOPCIE_FN0_0 	0x0100 /* int status/mask for SBtoPCIE Mailbox interrupts */
+#define PCIE_MB_TOPCIE_FN0_1 	0x0200
+#define PCIE_MB_TOPCIE_FN1_0 	0x0400
+#define PCIE_MB_TOPCIE_FN1_1 	0x0800
+#define PCIE_MB_TOPCIE_FN2_0 	0x1000
+#define PCIE_MB_TOPCIE_FN2_1 	0x2000
+#define PCIE_MB_TOPCIE_FN3_0 	0x4000
+#define PCIE_MB_TOPCIE_FN3_1 	0x8000
+#define	PCIE_MB_TOPCIE_D2H0_DB0	0x10000
+#define	PCIE_MB_TOPCIE_D2H0_DB1	0x20000
+#define	PCIE_MB_TOPCIE_D2H1_DB0	0x40000
+#define	PCIE_MB_TOPCIE_D2H1_DB1	0x80000
+#define	PCIE_MB_TOPCIE_D2H2_DB0	0x100000
+#define	PCIE_MB_TOPCIE_D2H2_DB1	0x200000
+#define	PCIE_MB_TOPCIE_D2H3_DB0	0x400000
+#define	PCIE_MB_TOPCIE_D2H3_DB1	0x800000
+
+#define PCIE_MB_D2H_MB_MASK		\
+	(PCIE_MB_TOPCIE_D2H0_DB0 | PCIE_MB_TOPCIE_D2H0_DB1 |	\
+	PCIE_MB_TOPCIE_D2H1_DB1  | PCIE_MB_TOPCIE_D2H1_DB1 |	\
+	PCIE_MB_TOPCIE_D2H2_DB1  | PCIE_MB_TOPCIE_D2H2_DB1 |	\
+	PCIE_MB_TOPCIE_D2H3_DB1  | PCIE_MB_TOPCIE_D2H3_DB1)
 
 /* SB to PCIE translation masks */
 #define SBTOPCIE0_MASK	0xfc000000
@@ -381,9 +452,22 @@ typedef struct sbpcieregs {
 #define PCIE_ASPM_L0s_ENAB		1	/* ASPM L0s & L1 in linkctrl */
 #define PCIE_ASPM_DISAB			0	/* ASPM L0s & L1 in linkctrl */
 
+#define PCIE_ASPM_L11_ENAB		8	/* ASPM L1.1 in PML1_sub_control2 */
+#define PCIE_ASPM_L12_ENAB		4	/* ASPM L1.2 in PML1_sub_control2 */
+
 /* Devcontrol2 reg offset in PCIE Cap */
 #define PCIE_CAP_DEVCTRL2_OFFSET	0x28	/* devctrl2 offset in pcie cap */
 #define PCIE_CAP_DEVCTRL2_LTR_ENAB_MASK	0x400	/* Latency Tolerance Reporting Enable */
+#define PCIE_CAP_DEVCTRL2_OBFF_ENAB_SHIFT 13	/* Enable OBFF mechanism, select signaling method */
+#define PCIE_CAP_DEVCTRL2_OBFF_ENAB_MASK 0x6000	/* Enable OBFF mechanism, select signaling method */
+
+/* LTR registers in PCIE Cap */
+#define PCIE_CAP_LTR0_REG_OFFSET	0x798	/* ltr0_reg offset in pcie cap */
+#define PCIE_CAP_LTR1_REG_OFFSET	0x79C	/* ltr1_reg offset in pcie cap */
+#define PCIE_CAP_LTR2_REG_OFFSET	0x7A0	/* ltr2_reg offset in pcie cap */
+#define PCIE_CAP_LTR0_REG			0		/* ltr0_reg */
+#define PCIE_CAP_LTR1_REG			1		/* ltr1_reg */
+#define PCIE_CAP_LTR2_REG			2		/* ltr2_reg */
 
 /* Status reg PCIE_PLP_STATUSREG */
 #define PCIE_PLP_POLARITYINV_STAT	0x10
@@ -415,5 +499,131 @@ typedef struct sbpcieregs {
 #define PCIE2R0_BRCMCAP_BPDATA_OFFSET		52
 #define PCIE2R0_BRCMCAP_CLKCTLSTS_OFFSET	56
 
+/* definition of configuration space registers of PCIe gen2
+ * http://hwnbu-twiki.sj.broadcom.com/twiki/pub/Mwgroup/CurrentPcieGen2ProgramGuide/pcie_ep.htm
+ */
+#define PCIECFGREG_STATUS_CMD		0x4
+#define PCIECFGREG_PM_CSR		0x4C
+#define PCIECFGREG_MSI_CAP		0x58
+#define PCIECFGREG_MSI_ADDR_L		0x5C
+#define PCIECFGREG_MSI_ADDR_H		0x60
+#define PCIECFGREG_MSI_DATA		0x64
+#define PCIECFGREG_LINK_STATUS_CTRL	0xBC
+#define PCIECFGREG_LINK_STATUS_CTRL2	0xDC
+#define PCIECFGREG_RBAR_CTRL		0x228
+#define PCIECFGREG_PML1_SUB_CTRL1	0x248
+#define PCIECFGREG_REG_BAR2_CONFIG	0x4E0
+#define PCIECFGREG_REG_BAR3_CONFIG	0x4F4
+#define PCIECFGREG_PDL_CTRL1		0x1004
+#define PCIECFGREG_PDL_IDDQ		0x1814
+#define PCIECFGREG_REG_PHY_CTL7		0x181c
+
+/* PCIECFGREG_PML1_SUB_CTRL1 Bit Definition */
+#define PCI_PM_L1_2_ENA_MASK		0x00000001	/* PCI-PM L1.2 Enabled */
+#define PCI_PM_L1_1_ENA_MASK		0x00000002	/* PCI-PM L1.1 Enabled */
+#define ASPM_L1_2_ENA_MASK		0x00000004	/* ASPM L1.2 Enabled */
+#define ASPM_L1_1_ENA_MASK		0x00000008	/* ASPM L1.1 Enabled */
+
+/* PCIe gen2 mailbox interrupt masks */
+#define I_MB    0x3
+#define I_BIT0  0x1
+#define I_BIT1  0x2
+
+/* PCIE gen2 config regs */
+#define PCIIntstatus	0x090
+#define PCIIntmask	0x094
+#define PCISBMbx	0x98
+
+/* enumeration Core regs */
+#define PCIH2D_MailBox  0x140
+#define PCID2H_MailBox  0x148
+#define PCIMailBoxInt	0x48
+#define PCIMailBoxMask	0x4C
+
+#define I_F0_B0         (0x1 << 8) /* Mail box interrupt Function 0 interrupt, bit 0 */
+#define I_F0_B1         (0x1 << 9) /* Mail box interrupt Function 0 interrupt, bit 1 */
+
+#define PCIECFGREG_DEVCONTROL	0xB4
+
+/* SROM hardware region */
+#define SROM_OFFSET_BAR1_CTRL  52
+
+#define BAR1_ENC_SIZE_MASK	0x000e
+#define BAR1_ENC_SIZE_SHIFT	1
+
+#define BAR1_ENC_SIZE_1M	0
+#define BAR1_ENC_SIZE_2M	1
+#define BAR1_ENC_SIZE_4M	2
+
+#define PCIEGEN2_CAP_DEVSTSCTRL2_OFFSET		0xD4
+#define PCIEGEN2_CAP_DEVSTSCTRL2_LTRENAB	0x400
+
+/*
+ * Latency Tolerance Reporting (LTR) states
+ * Active has the least tolerant latency requirement
+ * Sleep is most tolerant
+ */
+#define LTR_ACTIVE				2
+#define LTR_ACTIVE_IDLE			1
+#define LTR_SLEEP				0
+#define LTR_FINAL_MASK			0x300
+#define LTR_FINAL_SHIFT			8
+
+
+/* pwrinstatus, pwrintmask regs */
+#define PCIEGEN2_PWRINT_D0_STATE_SHIFT		0
+#define PCIEGEN2_PWRINT_D1_STATE_SHIFT		1
+#define PCIEGEN2_PWRINT_D2_STATE_SHIFT		2
+#define PCIEGEN2_PWRINT_D3_STATE_SHIFT		3
+#define PCIEGEN2_PWRINT_L0_LINK_SHIFT		4
+#define PCIEGEN2_PWRINT_L0s_LINK_SHIFT		5
+#define PCIEGEN2_PWRINT_L1_LINK_SHIFT		6
+#define PCIEGEN2_PWRINT_L2_L3_LINK_SHIFT	7
+#define PCIEGEN2_PWRINT_OBFF_CHANGE_SHIFT	8
+
+#define PCIEGEN2_PWRINT_D0_STATE_MASK		(1 << PCIEGEN2_PWRINT_D0_STATE_SHIFT)
+#define PCIEGEN2_PWRINT_D1_STATE_MASK		(1 << PCIEGEN2_PWRINT_D1_STATE_SHIFT)
+#define PCIEGEN2_PWRINT_D2_STATE_MASK		(1 << PCIEGEN2_PWRINT_D2_STATE_SHIFT)
+#define PCIEGEN2_PWRINT_D3_STATE_MASK		(1 << PCIEGEN2_PWRINT_D3_STATE_SHIFT)
+#define PCIEGEN2_PWRINT_L0_LINK_MASK		(1 << PCIEGEN2_PWRINT_L0_LINK_SHIFT)
+#define PCIEGEN2_PWRINT_L0s_LINK_MASK		(1 << PCIEGEN2_PWRINT_L0s_LINK_SHIFT)
+#define PCIEGEN2_PWRINT_L1_LINK_MASK		(1 << PCIEGEN2_PWRINT_L1_LINK_SHIFT)
+#define PCIEGEN2_PWRINT_L2_L3_LINK_MASK		(1 << PCIEGEN2_PWRINT_L2_L3_LINK_SHIFT)
+#define PCIEGEN2_PWRINT_OBFF_CHANGE_MASK	(1 << PCIEGEN2_PWRINT_OBFF_CHANGE_SHIFT)
+
+/* sbtopcie mail box */
+#define SBTOPCIE_MB_FUNC0_SHIFT 8
+#define SBTOPCIE_MB_FUNC1_SHIFT 10
+#define SBTOPCIE_MB_FUNC2_SHIFT 12
+#define SBTOPCIE_MB_FUNC3_SHIFT 14
+
+/* pcieiocstatus */
+#define PCIEGEN2_IOC_D0_STATE_SHIFT		8
+#define PCIEGEN2_IOC_D1_STATE_SHIFT		9
+#define PCIEGEN2_IOC_D2_STATE_SHIFT		10
+#define PCIEGEN2_IOC_D3_STATE_SHIFT		11
+#define PCIEGEN2_IOC_L0_LINK_SHIFT		12
+#define PCIEGEN2_IOC_L1_LINK_SHIFT		13
+#define PCIEGEN2_IOC_L1L2_LINK_SHIFT	14
+#define PCIEGEN2_IOC_L2_L3_LINK_SHIFT	15
+
+#define PCIEGEN2_IOC_D0_STATE_MASK		(1 << PCIEGEN2_IOC_D0_STATE_SHIFT)
+#define PCIEGEN2_IOC_D1_STATE_MASK		(1 << PCIEGEN2_IOC_D1_STATE_SHIF)
+#define PCIEGEN2_IOC_D2_STATE_MASK		(1 << PCIEGEN2_IOC_D2_STATE_SHIF)
+#define PCIEGEN2_IOC_D3_STATE_MASK		(1 << PCIEGEN2_IOC_D3_STATE_SHIF)
+#define PCIEGEN2_IOC_L0_LINK_MASK		(1 << PCIEGEN2_IOC_L0_LINK_SHIF)
+#define PCIEGEN2_IOC_L1_LINK_MASK		(1 << PCIEGEN2_IOC_L1_LINK_SHIF)
+#define PCIEGEN2_IOC_L1L2_LINK_MASK		(1 << PCIEGEN2_IOC_L1L2_LINK_SHIFT)
+#define PCIEGEN2_IOC_L2_L3_LINK_MASK	(1 << PCIEGEN2_IOC_L2_L3_LINK_SHIFT)
+
+/* stat_ctrl */
+#define PCIE_STAT_CTRL_RESET		0x1
+#define PCIE_STAT_CTRL_ENABLE		0x2
+#define PCIE_STAT_CTRL_INTENABLE	0x4
+#define PCIE_STAT_CTRL_INTSTATUS	0x8
+
+#ifdef BCMDRIVER
+void pcie_watchdog_reset(osl_t *osh, si_t *sih, sbpcieregs_t *sbpcieregs);
+#endif /* BCMDRIVER */
 
 #endif	/* _PCIE_CORE_H */
