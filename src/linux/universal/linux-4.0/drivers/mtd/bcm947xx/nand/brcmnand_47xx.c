@@ -2541,6 +2541,7 @@ brcmnand_mtd_init(void)
 	mtd->_resume = brcmnand_resume;
 	mtd->_block_isbad = brcmnand_block_isbad;
 	mtd->_block_markbad = brcmnand_block_markbad;
+	mtd->owner = THIS_MODULE;
 
 	/* propagate ecc.layout to mtd_info */
 	mtd->ecclayout = chip->ecc.layout;
