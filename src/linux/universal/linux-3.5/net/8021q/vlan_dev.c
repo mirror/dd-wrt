@@ -581,7 +581,11 @@ static int vlan_dev_init(struct net_device *dev)
 
 	dev->needed_headroom = real_dev->needed_headroom;
 	if (real_dev->features & NETIF_F_HW_VLAN_TX) {
+#ifdef CONFIG_MVSWITCH_PHY
+		dev->header_ops      = real_dev->header_ops;
+#else
 		dev->header_ops      = &vlan_passthru_header_ops;
+#endif
 		dev->hard_header_len = real_dev->hard_header_len;
 	} else {
 		dev->header_ops      = &vlan_header_ops;
