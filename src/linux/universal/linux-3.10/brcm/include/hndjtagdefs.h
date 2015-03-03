@@ -1,9 +1,9 @@
 /*
  * Definitiosn for Jtag taps in HND chips.
  *
- * $Id: hndjtagdefs.h 241182 2011-02-17 21:50:03Z $
+ * $Id: hndjtagdefs.h 400891 2013-05-07 23:25:36Z $
  *
- * Copyright (C) 2012, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -93,6 +93,12 @@
 #define LV_RO			0x00080000
 #define	LV_USER_BASE		0x10
 
+/* 38 bits IR, Reg address is in bits 31:27, WriteEnable is in bit 26 */
+#define	LV_38_BASE		0x03efff3a
+#define	LV_38_REG_MASK		0xf8000000
+#define	LV_38_REG_SHIFT		27
+#define LV_38_RO		0x04000000
+
 /* Keystone base */
 #define	LV_BASE_KY		0xfe07ff3a
 
@@ -120,6 +126,26 @@
 
 #define	LV_IDCODE		0xfffffffe
 #define	LV_BYPASS		0xffffffff
+
+/* Northstar mode */
+
+#define	NS_BASE			0xe06ff33a
+#define	NS_REG_MASK		0x1f000000
+#define	NS_REG_SHIFT		24
+#define NS_RO			0x00800000
+
+/* Northstar-Lite */
+#define	NSL_BASE		0xe81bf33a
+#define	NSL_REG_MASK	0x07C00000
+#define	NSL_REG_SHIFT	22
+#define NSL_RO			0x00200000
+
+#define	NS_REG_IR(reg)		(NS_BASE | (((reg) << NS_REG_SHIFT) & NS_REG_MASK))
+#define NS_DEVID		0x002BE17F
+#define NS_DEVID11		0x002BF17F
+#define NS_DEVID12		0x002C017F
+#define NS_DEVID13		0x0031E17F
+#define NS_DEVID47082	0x0032D17F
 
 #define	IDC_MFG_MASK		0x00000fff
 #define	IDC_PART_MASK		0x0ffff000
