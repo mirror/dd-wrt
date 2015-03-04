@@ -591,7 +591,7 @@ int main(int argc, char **argv)
 #elif HAVE_TESTEM
 	fprintf(fp, "TESTEM %s (c) 2015 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
 #elif HAVE_HOBBIT
-	fprintf(fp, "Hobb-IT %s (c) 2015 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
+	fprintf(fp, "HQ-NDS %s (c) 2015 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
 #elif HAVE_ONNET
 #ifdef HAVE_ONNET_BLANK
 	fprintf(fp, "Enterprise AP %s (c) 2015 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
