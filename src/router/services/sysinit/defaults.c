@@ -2548,7 +2548,7 @@ struct nvram_param srouter_defaults[] = {
 #elif defined(HAVE_KORENRON)
 	{"snmpd_sysname", "KORENRON"},
 #elif defined(HAVE_HOBBIT)
-	{"snmpd_sysname", "Hobb-IT"},
+	{"snmpd_sysname", "HQ-NDS"},
 #else
 	{"snmpd_sysname", "dd-wrt"},
 #endif
