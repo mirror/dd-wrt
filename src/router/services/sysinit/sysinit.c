@@ -373,6 +373,11 @@ static void buffalo_defaults(int force)
 		} else if (!strcmp(region, "KR")) {
 			nvram_set("wl1_regdomain", "KOREA_REPUBLIC");
 		}
+
+#ifdef HAVE_HOBBIT
+	nvram_set("wl0_regdomain", "EUROPE");
+#endif
+
 #endif
 		if (!strcmp(region, "AP") || !strcmp(region, "CH")
 		    || !strcmp(region, "KR")
