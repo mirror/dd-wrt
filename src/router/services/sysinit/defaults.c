@@ -131,7 +131,7 @@ struct nvram_param srouter_defaults[] = {
 #elif HAVE_AXTEL
 	{"time_zone", "America/Mexico City"},
 #elif HAVE_HOBBIT
-	{"time_zone", "Europe/Bruessel"},
+	{"time_zone", "Europe/Brussels"},
 #else
 	{"time_zone", "Europe/Berlin"},
 #endif
@@ -2698,11 +2698,7 @@ struct nvram_param srouter_defaults[] = {
 	{"wl0_country_rev", "0"},
 	{"wl1_country_rev", "0"},
 #elif HAVE_HOBBIT
-	{"wl_regdomain", "GERMANY"},
-	{"wl0_country_code", "DE"},
-	{"wl1_country_code", "DE"},
-	{"wl0_country_rev", "0"},
-	{"wl1_country_rev", "0"},
+	{"wl_regdomain", "EUROPE"},
 #endif
 #endif
 #ifdef HAVE_MICRO
