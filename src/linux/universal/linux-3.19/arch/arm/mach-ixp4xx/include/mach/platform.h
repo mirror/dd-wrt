@@ -194,10 +194,10 @@ static inline void gpio_line_get(u8 line, int *value)
 
 static inline void gpio_line_set(u8 line, int value)
 {
-	if (value == IXP4XX_GPIO_HIGH)
-	    *IXP4XX_GPIO_GPOUTR |= (1 << line);
-	else if (value == IXP4XX_GPIO_LOW)
+	if (value == IXP4XX_GPIO_LOW)
 	    *IXP4XX_GPIO_GPOUTR &= ~(1 << line);
+	else
+	    *IXP4XX_GPIO_GPOUTR |= (1 << line);
 }
 
 static inline void gpio_line_isr_clear(u8 line)
