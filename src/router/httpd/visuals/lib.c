@@ -153,7 +153,7 @@ void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 #elif HAVE_SANSFIL
 		websWrite(wp, " SANSFIL %s %s%s", MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
 #elif HAVE_HOBBIT
-		websWrite(wp, " Hobb-IT %s %s%s", MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
+		websWrite(wp, " HQ-NDS %s %s%s", MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
 #else
 		websWrite(wp, " %s%s %s%s", CYBERTAN_VERSION, MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
 #endif
