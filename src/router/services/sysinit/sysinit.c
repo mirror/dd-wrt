@@ -375,7 +375,7 @@ static void buffalo_defaults(int force)
 		}
 
 #ifdef HAVE_HOBBIT
-	nvram_set("wl0_regdomain", "EUROPE");
+	nvram_set("wl_regdomain", "EUROPE");
 #endif
 
 #endif
