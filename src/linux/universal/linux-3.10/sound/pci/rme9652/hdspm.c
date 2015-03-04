@@ -5863,6 +5863,12 @@ static int snd_hdspm_capture_open(struct snd_pcm_substream *substream)
 		snd_pcm_hw_constraint_minmax(runtime,
 					     SNDRV_PCM_HW_PARAM_PERIOD_SIZE,
 					     64, 8192);
+		snd_pcm_hw_constraint_minmax(runtime,
+					     SNDRV_PCM_HW_PARAM_PERIODS,
+					     2, 2);
+		snd_pcm_hw_constraint_minmax(runtime,
+					     SNDRV_PCM_HW_PARAM_PERIODS,
+					     2, 2);
 		break;
 	}
 

@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.19.0-rc1 Kernel Configuration
+# Linux/mips 3.19.0 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -2119,11 +2119,6 @@ CONFIG_OCTEON_USB=y
 # CONFIG_GS_FPGABOOT is not set
 
 #
-# SOC (System On Chip) specific Drivers
-#
-# CONFIG_SOC_TI is not set
-
-#
 # Hardware Spinlock drivers
 #
 
@@ -2150,6 +2145,7 @@ CONFIG_OCTEON_USB=y
 #
 # SOC (System On Chip) specific Drivers
 #
+# CONFIG_SOC_TI is not set
 # CONFIG_PM_DEVFREQ is not set
 # CONFIG_EXTCON is not set
 # CONFIG_MEMORY is not set
@@ -2630,7 +2626,7 @@ CONFIG_ZLIB_DEFLATE=y
 # CONFIG_XZ_DEC is not set
 # CONFIG_XZ_DEC_BCJ is not set
 CONFIG_LZMA_COMPRESS=m
-CONFIG_LZMA_DECOMPRESS=y
+CONFIG_LZMA_DECOMPRESS=m
 CONFIG_TEXTSEARCH=y
 CONFIG_TEXTSEARCH_KMP=y
 CONFIG_TEXTSEARCH_BM=y

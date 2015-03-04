@@ -1689,22 +1689,66 @@ static int megasas_slave_alloc(struct scsi_device *sdev)
 	return 0;
 }
 
+/*
+* megasas_complete_outstanding_ioctls - Complete outstanding ioctls after a
+*                                       kill adapter
+* @instance:				Adapter soft state
+*
+*/
+void megasas_complete_outstanding_ioctls(struct megasas_instance *instance)
+{
+	int i;
+	struct megasas_cmd *cmd_mfi;
+	struct megasas_cmd_fusion *cmd_fusion;
+	struct fusion_context *fusion = instance->ctrl_context;
+
+	/* Find all outstanding ioctls */
+	if (fusion) {
+		for (i = 0; i < instance->max_fw_cmds; i++) {
+			cmd_fusion = fusion->cmd_list[i];
+			if (cmd_fusion->sync_cmd_idx != (u32)ULONG_MAX) {
+				cmd_mfi = instance->cmd_list[cmd_fusion->sync_cmd_idx];
+				if (cmd_mfi->sync_cmd &&
+					cmd_mfi->frame->hdr.cmd != MFI_CMD_ABORT)
+					megasas_complete_cmd(instance,
+							     cmd_mfi, DID_OK);
+			}
+		}
+	} else {
+		for (i = 0; i < instance->max_fw_cmds; i++) {
+			cmd_mfi = instance->cmd_list[i];
+			if (cmd_mfi->sync_cmd && cmd_mfi->frame->hdr.cmd !=
+				MFI_CMD_ABORT)
+				megasas_complete_cmd(instance, cmd_mfi, DID_OK);
+		}
+	}
+}
+
+
 void megaraid_sas_kill_hba(struct megasas_instance *instance)
 {
+	/* Set critical error to block I/O & ioctls in case caller didn't */
+	instance->adprecovery = MEGASAS_HW_CRITICAL_ERROR;
+	/* Wait 1 second to ensure IO or ioctls in build have posted */
+	msleep(1000);
 	if ((instance->pdev->device == PCI_DEVICE_ID_LSI_SAS0073SKINNY) ||
-	    (instance->pdev->device == PCI_DEVICE_ID_LSI_SAS0071SKINNY) ||
-	    (instance->pdev->device == PCI_DEVICE_ID_LSI_FUSION) ||
-	    (instance->pdev->device == PCI_DEVICE_ID_LSI_PLASMA) ||
-	    (instance->pdev->device == PCI_DEVICE_ID_LSI_INVADER) ||
-	    (instance->pdev->device == PCI_DEVICE_ID_LSI_FURY)) {
-		writel(MFI_STOP_ADP, &instance->reg_set->doorbell);
+		(instance->pdev->device == PCI_DEVICE_ID_LSI_SAS0071SKINNY) ||
+		(instance->pdev->device == PCI_DEVICE_ID_LSI_FUSION) ||
+		(instance->pdev->device == PCI_DEVICE_ID_LSI_PLASMA) ||
+		(instance->pdev->device == PCI_DEVICE_ID_LSI_INVADER) ||
+		(instance->pdev->device == PCI_DEVICE_ID_LSI_FURY)) {
+		writel(MFI_STOP_ADP,
+			&instance->reg_set->doorbell);
 		/* Flush */
 		readl(&instance->reg_set->doorbell);
 		if (instance->mpio && instance->requestorId)
 			memset(instance->ld_ids, 0xff, MEGASAS_MAX_LD_IDS);
 	} else {
-		writel(MFI_STOP_ADP, &instance->reg_set->inbound_doorbell);
+		writel(MFI_STOP_ADP,
+			&instance->reg_set->inbound_doorbell);
 	}
+	/* Complete outstanding ioctls when adapter is killed */
+	megasas_complete_outstanding_ioctls(instance);
 }
 
  /**
@@ -3028,10 +3072,9 @@ megasas_issue_pending_cmds_again(struct megasas_instance *instance)
 					"was tried multiple times during reset."
 					"Shutting down the HBA\n",
 					cmd, cmd->scmd, cmd->sync_cmd);
+				instance->instancet->disable_intr(instance);
+				atomic_set(&instance->fw_reset_no_pci_access, 1);
 				megaraid_sas_kill_hba(instance);
-
-				instance->adprecovery =
-						MEGASAS_HW_CRITICAL_ERROR;
 				return;
 			}
 		}
@@ -3165,8 +3208,8 @@ process_fw_state_change_wq(struct work_struct *work)
 		if (megasas_transition_to_ready(instance, 1)) {
 			printk(KERN_NOTICE "megaraid_sas:adapter not ready\n");
 
+			atomic_set(&instance->fw_reset_no_pci_access, 1);
 			megaraid_sas_kill_hba(instance);
-			instance->adprecovery	= MEGASAS_HW_CRITICAL_ERROR;
 			return ;
 		}
 
@@ -3547,7 +3590,6 @@ static int megasas_create_frame_pool(struct megasas_instance *instance)
 	int i;
 	u32 max_cmd;
 	u32 sge_sz;
-	u32 sgl_sz;
 	u32 total_sz;
 	u32 frame_count;
 	struct megasas_cmd *cmd;
@@ -3566,24 +3608,23 @@ static int megasas_create_frame_pool(struct megasas_instance *instance)
 	}
 
 	/*
-	 * Calculated the number of 64byte frames required for SGL
+	 * For MFI controllers.
+	 * max_num_sge = 60
+	 * max_sge_sz  = 16 byte (sizeof megasas_sge_skinny)
+	 * Total 960 byte (15 MFI frame of 64 byte)
+	 *
+	 * Fusion adapter require only 3 extra frame.
+	 * max_num_sge = 16 (defined as MAX_IOCTL_SGE)
+	 * max_sge_sz  = 12 byte (sizeof  megasas_sge64)
+	 * Total 192 byte (3 MFI frame of 64 byte)
 	 */
-	sgl_sz = sge_sz * instance->max_num_sge;
-	frame_count = (sgl_sz + MEGAMFI_FRAME_SIZE - 1) / MEGAMFI_FRAME_SIZE;
-	frame_count = 15;
-
-	/*
-	 * We need one extra frame for the MFI command
-	 */
-	frame_count++;
-
+	frame_count = instance->ctrl_context ? (3 + 1) : (15 + 1);
 	total_sz = MEGAMFI_FRAME_SIZE * frame_count;
 	/*
 	 * Use DMA pool facility provided by PCI layer
 	 */
 	instance->frame_dma_pool = pci_pool_create("megasas frame pool",
-						   instance->pdev, total_sz, 64,
-						   0);
+					instance->pdev, total_sz, 256, 0);
 
 	if (!instance->frame_dma_pool) {
 		printk(KERN_DEBUG "megasas: failed to setup frame pool\n");

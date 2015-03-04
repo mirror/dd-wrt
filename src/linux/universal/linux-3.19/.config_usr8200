@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 3.19.0-rc1 Kernel Configuration
+# Linux/arm 3.19.0 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_MIGHT_HAVE_PCI=y
@@ -134,7 +134,6 @@ CONFIG_PERF_USE_VMALLOC=y
 #
 # CONFIG_PERF_EVENTS is not set
 # CONFIG_VM_EVENT_COUNTERS is not set
-# CONFIG_SLUB_DEBUG is not set
 CONFIG_COMPAT_BRK=y
 CONFIG_SLAB=y
 # CONFIG_SLUB is not set
@@ -179,6 +178,7 @@ CONFIG_OLD_SIGACTION=y
 #
 CONFIG_ARCH_HAS_GCOV_PROFILE_ALL=y
 CONFIG_HAVE_GENERIC_DMA_COHERENT=y
+CONFIG_SLABINFO=y
 CONFIG_RT_MUTEXES=y
 CONFIG_BASE_SMALL=0
 CONFIG_MODULES=y
@@ -1523,6 +1523,7 @@ CONFIG_DUMMY_CONSOLE=y
 # HID support
 #
 CONFIG_HID=m
+# CONFIG_HID_BATTERY_STRENGTH is not set
 # CONFIG_HIDRAW is not set
 # CONFIG_UHID is not set
 # CONFIG_HID_GENERIC is not set
@@ -1687,11 +1688,6 @@ CONFIG_RTC_INTF_DEV=y
 # CONFIG_STAGING is not set
 
 #
-# SOC (System On Chip) specific Drivers
-#
-# CONFIG_SOC_TI is not set
-
-#
 # Hardware Spinlock drivers
 #
 
@@ -1720,6 +1716,7 @@ CONFIG_IOMMU_SUPPORT=y
 #
 # SOC (System On Chip) specific Drivers
 #
+# CONFIG_SOC_TI is not set
 # CONFIG_PM_DEVFREQ is not set
 # CONFIG_EXTCON is not set
 # CONFIG_MEMORY is not set
@@ -1939,7 +1936,6 @@ CONFIG_FRAME_WARN=1024
 # Memory Debugging
 #
 # CONFIG_PAGE_EXTENSION is not set
-# CONFIG_SLUB_STATS is not set
 CONFIG_HAVE_DEBUG_KMEMLEAK=y
 # CONFIG_DEBUG_MEMORY_INIT is not set
 
@@ -2172,7 +2168,6 @@ CONFIG_ZLIB_INFLATE=y
 CONFIG_ZLIB_DEFLATE=y
 # CONFIG_XZ_DEC is not set
 # CONFIG_XZ_DEC_BCJ is not set
-CONFIG_LZMA_DECOMPRESS=y
 CONFIG_GENERIC_ALLOCATOR=y
 CONFIG_TEXTSEARCH=y
 CONFIG_TEXTSEARCH_KMP=y
