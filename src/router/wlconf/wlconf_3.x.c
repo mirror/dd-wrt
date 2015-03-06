@@ -1635,7 +1635,8 @@ cprintf("disable bss %s\n",name);
 
 			snprintf(tmp, sizeof(tmp), "wl%d.%d_hwaddr", unit, bsscfg->idx);
 			ether_atoe(nvram_safe_get(tmp), (unsigned char *)eaddr);
-			WL_BSSIOVAR_SET(name, "cur_etheraddr", bsscfg->idx, eaddr, ETHER_ADDR_LEN);
+			snprintf(tmp, sizeof(tmp), "wl%d.%d", unit, bsscfg->idx);
+			WL_BSSIOVAR_SET(tmp, "cur_etheraddr", bsscfg->idx, eaddr, ETHER_ADDR_LEN);
 		}
 	} else { /* One of URE or Proxy STA Repeater is enabled */
 		/* URE/PSR is on, so set wlX.1 hwaddr is same as that of primary interface */
