@@ -1593,7 +1593,8 @@ int remove_pid_file(void){
 
 /* bail if daemon is running as root */
 int check_privileges(void){
-	uid_t uid=-1;
+	return OK;
+/*	uid_t uid=-1;
 	gid_t gid=-1;
 
 	uid=geteuid();
@@ -1604,7 +1605,7 @@ int check_privileges(void){
 		exit(STATE_CRITICAL);
 	        }
 
-	return OK;
+	return OK;*/
         }
 
 
