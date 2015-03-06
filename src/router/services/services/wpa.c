@@ -664,7 +664,7 @@ void start_nas_single(char *type, char *prefix)
 	}
 	
 	if (!strcmp(mode, "-S")) {
-		wlconf_up(iface); // touble tip
+		//wlconf_up(iface); // touble tip
 	}
 
 	

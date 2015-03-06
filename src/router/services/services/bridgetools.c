@@ -205,6 +205,11 @@ int br_add_interface(const char *br, const char *dev)
 
 	if (!ifexists(dev))
 		return -1;
+	if(nvram_nmatch("apsta", "%s_mode", dev)){
+		fprintf(stderr, "skip %s is apsta\n", dev);
+		return 0;
+	}
+	
 	char ipaddr[32];
 
 	sprintf(ipaddr, "%s_ipaddr", dev);
