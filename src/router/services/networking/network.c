@@ -2716,6 +2716,22 @@ void start_lan(void)
 	br_shutdown();
 #endif
 
+#ifdef HAVE_DHDAP	
+	int ifs = get_wl_instances();
+	int i;
+	char *vifs;
+	char *nxt;
+	char var[80];
+
+	for(i = 0; i < ifs ; i++){
+		vifs = nvram_nget("wl%d_vifs", i);
+		if (vifs != NULL) {
+			foreach(var, vifs, nxt) {
+				eval("wl", "-i", var, "bss", "up");
+			}
+		}
+	}
+#endif
 }
 
 void stop_lan(void)
