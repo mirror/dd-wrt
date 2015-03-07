@@ -663,8 +663,8 @@ void start_nas_single(char *type, char *prefix)
 		cprintf("done\n");
 	}
 	
-	if (!strcmp(mode, "-S")) {
-		//wlconf_up(iface); // touble tip
+	if (!strcmp(nvram_safe_get(apmode), "apstawet") || !strcmp(nvram_safe_get(apmode), "wet")) {
+		wlconf_up(iface); // touble tip
 	}
 
 	
