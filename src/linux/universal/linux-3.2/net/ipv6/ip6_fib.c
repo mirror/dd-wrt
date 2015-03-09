@@ -1276,9 +1276,9 @@ static int fib6_walk_continue(struct fib6_walker_t *w)
 			if (w->leaf && fn->fn_flags&RTN_RTINFO) {
 				int err;
 
-				if (w->count < w->skip) {
-					w->count++;
-					continue;
+				if (w->skip) {
+					w->skip--;
+					goto skip;
 				}
 
 				err = w->func(w);
@@ -1288,6 +1288,7 @@ static int fib6_walk_continue(struct fib6_walker_t *w)
 				w->count++;
 				continue;
 			}
+skip:
 			w->state = FWS_U;
 		case FWS_U:
 			if (fn == w->root)
