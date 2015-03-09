@@ -2353,6 +2353,7 @@ struct gro_remcsum {
 
 static inline void skb_gro_remcsum_init(struct gro_remcsum *grc)
 {
+	grc->offset = 0;
 	grc->delta = 0;
 }
 
