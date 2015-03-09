@@ -608,6 +608,17 @@ int do_adjtimex(struct timex *txc)
 			return -EINVAL;
 	}
 
+	/*
+	 * Check for potential multiplication overflows that can
+	 * only happen on 64-bit systems:
+	 */
+	if ((txc->modes & ADJ_FREQUENCY) && (BITS_PER_LONG == 64)) {
+		if (LLONG_MIN / PPM_SCALE > txc->freq)
+			return -EINVAL;
+		if (LLONG_MAX / PPM_SCALE < txc->freq)
+			return -EINVAL;
+	}
+
 	if (txc->modes & ADJ_SETOFFSET) {
 		struct timespec delta;
 		delta.tv_sec  = txc->time.tv_sec;
