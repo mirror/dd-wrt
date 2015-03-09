@@ -823,6 +823,7 @@ int gpio_export_link(struct device *dev, const char *name, unsigned gpio)
 		if (tdev != NULL) {
 			status = sysfs_create_link(&dev->kobj, &tdev->kobj,
 						name);
+			put_device(tdev);
 		} else {
 			status = -ENODEV;
 		}
@@ -873,7 +874,7 @@ int gpio_sysfs_set_active_low(unsigned gpio, int value)
 	}
 
 	status = sysfs_set_active_low(desc, dev, value);
-
+	put_device(dev);
 unlock:
 	mutex_unlock(&sysfs_lock);
 
