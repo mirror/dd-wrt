@@ -2849,7 +2849,9 @@ void start_firewall(void)
 	 */
 	cprintf("Exec RC Filewall\n");
 #ifdef HAVE_REGISTER
+#ifndef HAVE_ERC
 	if (isregistered_real())
+#endif
 #endif
 	{
 		runStartup("/jffs/etc/config", ".prewall");	// if available
