@@ -36,6 +36,33 @@
 #define DHCP_MAX_COUNT 254
 #define EXPIRES_NEVER 0xFFFFFFFF	/* static lease */
 
+static int landhcp(void)
+{
+	if (!getWET())
+		if (nvram_match("dhcp_dnsmasq", "1")
+		    && nvram_match("lan_proto", "dhcp")
+		    && nvram_match("dhcpfwd_enable", "0"))
+			return 1;
+	return 0;
+}
+
+static int hasmdhcp(void)
+{
+	if (nvram_get("mdhcpd_count") != NULL) {
+		int mdhcpcount = atoi(nvram_safe_get("mdhcpd_count"));
+		return mdhcpcount > 0 ? 1 : 0;
+	}
+	return 0;
+}
+
+void ej_dhcpenabled(webs_t wp, int argc, char_t ** argv)
+{
+	if (landhcp() || hasmdhcp())
+		websWrite(wp, argv[0]);
+	else
+		websWrite(wp, argv[1]);
+}
+
 char *dhcp_reltime(char *buf, time_t t)
 {
 	if (t < 0)
@@ -74,7 +101,7 @@ void ej_dumpleases(webs_t wp, int argc, char_t ** argv)
 	cprintf("entry dumpleases:%d\n", __LINE__);
 	macmask = atoi(argv[0]);
 	cprintf("entry dumpleases:%d\n", __LINE__);
-	if (nvram_match("dhcp_dnsmasq", "1")) {
+	if (landhcp() || hasmdhcp()) {
 		cprintf("entry dumpleases:%d\n", __LINE__);
 
 		if (nvram_invmatch("dhcpd_usenvram", "1")) {

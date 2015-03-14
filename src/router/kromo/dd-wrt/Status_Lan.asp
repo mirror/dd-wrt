@@ -161,8 +161,8 @@ addEvent(window, "load", function() {
 	setElementVisible("pppoe", "<% nvg("pppoeserver_enabled"); %>" == "1");
 <% ifndef("PPPOESERVER", "*/"); %>
 	setARPTable(<% dumparptable(0); %>);
-	setElementVisible("dhcp_1", "<% nvg("lan_proto"); %>" == "dhcp");
-	setElementVisible("dhcp_2", "<% nvg("lan_proto"); %>" == "dhcp");
+	setElementVisible("dhcp_1", "<% dhcpenabled("dhcp","static"); %>" == "dhcp");
+	setElementVisible("dhcp_2", "<% dhcpenabled("dhcp","static"); %>" == "dhcp");
 
 	update = new StatusUpdate("Status_Lan.live.asp", <% nvg("refresh_time"); %>);
 	update.onUpdate("lan_proto", function(u) {
@@ -275,7 +275,7 @@ addEvent(window, "unload", function() {
 								<legend><% tran("status_lan.legend2"); %></legend>
 								<div class="setting">
 									<div class="label"><% tran("service.dhcp_legend2"); %></div>
-									<% nvm("lan_proto", "dhcp", "<script type="text/javascript">Capture(share.enabled)</script>"); %><% nvm("lan_proto", "static", "<script type="text/javascript">Capture(share.disabled)</script>"); %>&nbsp;
+									<% dhcpenabled("<script type="text/javascript">Capture(share.enabled)</script>","<script type="text/javascript">Capture(share.disabled)</script>"); %>&nbsp;
 								</div>
 								<div id="dhcp_1" style="display:none">
 									<div class="setting">
