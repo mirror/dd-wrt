@@ -1979,6 +1979,7 @@ struct nvram_param srouter_defaults[] = {
 	{"l2tp_req_chap", "yes"},	/* L2TP require chap */
 	{"l2tp_ref_pap", "yes"},	/* L2TP refuse pap */
 	{"l2tp_req_auth", "yes"},	/* L2TP require authentication */
+	{"l2tp_encrypt", "0"},
 	{"wan_gateway_buf", "0.0.0.0"},	/* save the default gateway for DHCP */
 
 	{"hb_server_ip", ""},	/* heartbeat auth server (IP Address) */
