@@ -41,7 +41,7 @@ extern void addHost(char *host, char *ip, int withdomain);
 
 void stop_dnsmasq(void);
 
-char *getmdhcp(int count, int index)
+static char *getmdhcp(int count, int index)
 {
 	int cnt = 0;
 	static char word[256];
@@ -84,7 +84,7 @@ char *getmdhcp(int count, int index)
 	return "";
 }
 
-int landhcp(void)
+static int landhcp(void)
 {
 	if (!getWET())
 		if (nvram_match("dhcp_dnsmasq", "1")
@@ -94,20 +94,16 @@ int landhcp(void)
 	return 0;
 }
 
-int hasdhcp(void)
+static int hasmdhcp(void)
 {
-	int count = 0;
-	int ret = landhcp();
-
-	return ret;
-	// for now, keep it disabled
-/*    if( nvram_get( "mdhcpd_count" ) != NULL )
-	count = atoi( nvram_safe_get( "mdhcpd_count" ) );
-    ret |= count;
-    return ret > 0 ? 1 : 0;*/
+	if (nvram_get("mdhcpd_count") != NULL) {
+		int mdhcpcount = atoi(nvram_safe_get("mdhcpd_count"));
+		return mdhcpcount>0?1:0;
+	}
+	return 0;
 }
 
-int canlan(void)
+static int canlan(void)
 {
 	if (nvram_match("dhcpfwd_enable", "0"))
 		return 1;
@@ -214,7 +210,7 @@ void start_dnsmasq(void)
 	 */
 
 	//bs mod
-	if (hasdhcp()) {
+	if (landhcp() || hasmdhcp()) {
 		/*
 		 * DHCP leasefile 
 		 */
