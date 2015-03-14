@@ -48,13 +48,13 @@
 </div>
 <div class="setting">
 	<div class="label"><% tran("service.pptpd_encry"); %></div>
-	<input class="spaceradio" type="radio" name="pptp_encrypt" value="1" <% nvc("pptp_encrypt","1"); %> /><% tran("share.enable"); %>&nbsp;
-	<input class="spaceradio" type="radio" name="pptp_encrypt" value="0" <% nvc("pptp_encrypt","0"); %> /><% tran("share.disable"); %>
+	<input class="spaceradio" type="radio" name="pptp_encrypt" value="1" <% nvc("pptp_encrypt","1"); %> /><% tran("share.yes"); %>&nbsp;
+	<input class="spaceradio" type="radio" name="pptp_encrypt" value="0" <% nvc("pptp_encrypt","0"); %> /><% tran("share.no"); %>
 </div>
 <div class="setting">
 	<div class="label"><% tran("idx_pptp.reorder"); %></div>
-	<input class="spaceradio" type="radio" name="pptp_reorder" value="1" <% nvc("pptp_reorder","1"); %> /><% tran("share.enable"); %>&nbsp;
-	<input class="spaceradio" type="radio" name="pptp_reorder" value="0" <% nvc("pptp_reorder","0"); %> /><% tran("share.disable"); %>
+	<input class="spaceradio" type="radio" name="pptp_reorder" value="1" <% nvc("pptp_reorder","1"); %> /><% tran("share.yes"); %>&nbsp;
+	<input class="spaceradio" type="radio" name="pptp_reorder" value="0" <% nvc("pptp_reorder","0"); %> /><% tran("share.no"); %>
 </div>
 <div class="setting">
 	<div class="label"><% tran("share.wan_dualaccess"); %></div>
