@@ -1976,9 +1976,9 @@ struct nvram_param srouter_defaults[] = {
 	{"l2tp_server_ip", ""},	/* L2TP auth server (IP Address) */
 	{"l2tp_server_name", ""},	/* L2TP auth server (IP Address) */
 	{"l2tp_get_ip", ""},	/* IP Address assigned by L2TP server */
-	{"l2tp_req_chap", "yes"},	/* L2TP require chap */
-	{"l2tp_ref_pap", "yes"},	/* L2TP refuse pap */
-	{"l2tp_req_auth", "yes"},	/* L2TP require authentication */
+	{"l2tp_req_chap", "1"},	/* L2TP require chap */
+	{"l2tp_ref_pap", "1"},	/* L2TP refuse pap */
+	{"l2tp_req_auth", "1"},	/* L2TP require authentication */
 	{"l2tp_encrypt", "0"},
 	{"wan_gateway_buf", "0.0.0.0"},	/* save the default gateway for DHCP */
 
