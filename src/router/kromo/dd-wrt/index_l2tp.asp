@@ -48,23 +48,23 @@
 </div>
 <div class="setting">
 		<div class="label"><% tran("service.pptpd_encry"); %></div>
-		<input class="spaceradio" type="radio" name="l2tp_encrypt" value="1" <% nvc("l2tp_encrypt","1"); %> /><% tran("share.enable"); %>&nbsp;
-		<input class="spaceradio" type="radio" name="l2tp_encrypt" value="0" <% nvc("l2tp_encrypt","0"); %> /><% tran("share.disable"); %>
+		<input class="spaceradio" type="radio" name="l2tp_encrypt" value="1" <% nvc("l2tp_encrypt","1"); %> /><% tran("share.yes"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="l2tp_encrypt" value="0" <% nvc("l2tp_encrypt","0"); %> /><% tran("share.no"); %>
 </div>
 <div class="setting">
 		<div class="label"><% tran("idx_l.req_chap"); %></div>
-		<input class="spaceradio" type="radio" name="l2tp_req_chap" value="yes" <% nvc("l2tp_req_chap", "yes"); %> /><% tran("share.yes"); %>&nbsp;
-		<input class="spaceradio" type="radio" name="l2tp_req_chap" value="no" <% nvc("l2tp_req_chap", "no"); %> /><% tran("share.no"); %>
+		<input class="spaceradio" type="radio" name="l2tp_req_chap" value="1" <% nvc("l2tp_req_chap", "1"); %> /><% tran("share.yes"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="l2tp_req_chap" value="0" <% nvc("l2tp_req_chap", "0"); %> /><% tran("share.no"); %>
 </div>
 <div class="setting">
 		<div class="label"><% tran("idx_l.ref_pap"); %></div>
-		<input class="spaceradio" type="radio" name="l2tp_ref_pap" value="yes" <% nvc("l2tp_ref_pap", "yes"); %> /><% tran("share.yes"); %>&nbsp;
-		<input class="spaceradio" type="radio" name="l2tp_ref_pap" value="no" <% nvc("l2tp_ref_pap", "no"); %> /><% tran("share.no"); %>
+		<input class="spaceradio" type="radio" name="l2tp_ref_pap" value="1" <% nvc("l2tp_ref_pap", "1"); %> /><% tran("share.yes"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="l2tp_ref_pap" value="0" <% nvc("l2tp_ref_pap", "0"); %> /><% tran("share.no"); %>
 </div>
 <div class="setting">
 		<div class="label"><% tran("idx_l.req_auth"); %></div>
-		<input class="spaceradio" type="radio" name="l2tp_req_auth" value="yes" <% nvc("l2tp_req_auth", "yes"); %> /><% tran("share.yes"); %>&nbsp;
-		<input class="spaceradio" type="radio" name="l2tp_req_auth" value="no" <% nvc("l2tp_req_auth", "no"); %> /><% tran("share.no"); %>
+		<input class="spaceradio" type="radio" name="l2tp_req_auth" value="1" <% nvc("l2tp_req_auth", "1"); %> /><% tran("share.yes"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="l2tp_req_auth" value="0" <% nvc("l2tp_req_auth", "0"); %> /><% tran("share.no"); %>
 </div>
 <div class="setting">
         <div class="label"><% tran("share.wan_dualaccess"); %></div>
