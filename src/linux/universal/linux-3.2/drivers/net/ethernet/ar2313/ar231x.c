@@ -584,6 +584,7 @@ static void ar231x_check_link(struct net_device *dev)
 					  mac_control | MAC_CONTROL_DRO) & ~MAC_CONTROL_F);
 			}
 		} else {
+			printk(KERN_INFO "%s: Link Down\n",dev->name);
 			/* no link */
 			sp->link = 0;
 		}
