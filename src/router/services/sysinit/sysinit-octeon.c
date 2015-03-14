@@ -76,8 +76,8 @@ void start_sysinit(void)
 	if (mount("/dev/sda3", "/jffs", "ext2", MS_MGC_VAL, NULL)) {
 		eval("/sbin/mkfs.ext2", "-F", "-b", "1024", "/dev/sda3");
 		mount("/dev/sda3", "/jffs", "ext2", MS_MGC_VAL, NULL);
-		eval("mount", "--bind", "/jffs", "/usr/local");
 	}
+	eval("mount", "--bind", "/jffs", "/usr/local");
 
 	int brand = getRouterBrand();
 
