@@ -4,7 +4,7 @@
 {lan_netmask::<% nvg("lan_netmask"); %>}
 {lan_gateway::<% nvg("lan_gateway"); %>}
 {lan_dns::<% nvg("sv_localdns"); %>}
-{lan_proto::<% nvg("lan_proto"); %>}
+{lan_proto::<% dhcpenabled("dhcp","static"); %>}
 {dhcp_daemon::<% nvem("dhcp_dnsmasq", "1", "DNSMasq", "uDHCPd"); %>}
 {dhcp_start::<% nvg("dhcp_start"); %>}
 {dhcp_num::<% nvg("dhcp_num"); %>}
