@@ -3777,9 +3777,17 @@ void start_wan(int status)
 		if (nvram_match("ppp_demand", "1"))
 			fprintf(fp, "demand\n"
 				"idle %s\n"
-				"10.112.112.112:10.112.112.113\n" "lcp-echo-interval %d\n" "lcp-echo-failure 10\n" "ipcp-accept-remote\n" "ipcp-accept-local\n" "connect true\n" "ktune\n", idletime, atoi(idletime) * 2);
+				"10.112.112.112:10.112.112.113\n" 
+				"lcp-echo-interval %d\n" 
+				"lcp-echo-failure 10\n" 
+				"ipcp-accept-remote\n" 
+				"ipcp-accept-local\n" 
+				"connect true\n" 
+				"ktune\n", idletime, atoi(idletime) * 2);
 		else
-			fprintf(fp, "persist\n" "lcp-echo-interval 3\n" "lcp-echo-failure 20\n");
+			fprintf(fp, "persist\n" 
+			"lcp-echo-interval 3\n" 
+			"lcp-echo-failure 20\n");
 #ifdef HAVE_IPV6
 		if (nvram_match("ipv6_enable", "1"))
 			fprintf(fp, "ipv6 ,\n");

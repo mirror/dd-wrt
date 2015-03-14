@@ -47,6 +47,11 @@
 	</div>
 </div>
 <div class="setting">
+		<div class="label"><% tran("service.pptpd_encry"); %></div>
+		<input class="spaceradio" type="radio" name="l2tp_encrypt" value="1" <% nvc("l2tp_encrypt","1"); %> /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="l2tp_encrypt" value="0" <% nvc("l2tp_encrypt","0"); %> /><% tran("share.disable"); %>
+</div>
+<div class="setting">
 		<div class="label"><% tran("idx_l.req_chap"); %></div>
 		<input class="spaceradio" type="radio" name="l2tp_req_chap" value="yes" <% nvc("l2tp_req_chap", "yes"); %> /><% tran("share.yes"); %>&nbsp;
 		<input class="spaceradio" type="radio" name="l2tp_req_chap" value="no" <% nvc("l2tp_req_chap", "no"); %> /><% tran("share.no"); %>
