@@ -204,20 +204,22 @@ length bit = yes
 
 		fprintf(fp, "default-asyncmap\n");	// Disable asyncmap
 		fprintf(fp, "crtscts\n");	// Disable protocol field compression
-		// negotiation
 		fprintf(fp, "nopcomp\n");	// Disable protocol field compression
 		fprintf(fp, "refuse-eap\n");	// Disable protocol field compression
 		fprintf(fp, "noaccomp\n");	// Disable Address/Control
-		// compression 
-		fprintf(fp, "noccp\n");	// Disable CCP (Compression Control
-		// Protocol)
+		if (nvram_match("l2tp_encrypt", "0")) {
+			fprintf(fp, "nomppe\n");	// Disable mppe negotiation
+			fprintf(fp, "noccp\n");	// Disable CCP (Compression Control
+			// Protocol)
+		} else {
+			fprintf(fp, "mppe required,stateless\n");
+		}
 		fprintf(fp, "novj\n");	// Disable Van Jacobson style TCP/IP
-		// header compression
 		fprintf(fp, "nobsdcomp\n");	// Disables BSD-Compress compression
 		fprintf(fp, "nodeflate\n");	// Disables Deflate compression
 		//fprintf(fp, "lcp-echo-interval 0\n"); // Don't send an LCP
-		fprintf(fp, "lcp-echo-failure 20\n");
-		fprintf(fp, "lcp-echo-interval 3\n");	// echo-request frame to the peer       
+		fprintf(fp, "lcp-echo-failure 30\n");
+		fprintf(fp, "lcp-echo-interval 5\n");	// echo-request frame to the peer       
 		fprintf(fp, "lock\n");
 		fprintf(fp, "noauth\n");
 //              fprintf(fp, "debug\n");
