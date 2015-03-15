@@ -218,8 +218,8 @@ length bit = yes
 		fprintf(fp, "nobsdcomp\n");	// Disables BSD-Compress compression
 		fprintf(fp, "nodeflate\n");	// Disables Deflate compression
 		//fprintf(fp, "lcp-echo-interval 0\n"); // Don't send an LCP
-		fprintf(fp, "lcp-echo-failure 30\n");
-		fprintf(fp, "lcp-echo-interval 5\n");	// echo-request frame to the peer       
+		fprintf(fp, "lcp-echo-failure 60\n");
+		fprintf(fp, "lcp-echo-interval 120\n");	// echo-request frame to the peer       
 		fprintf(fp, "lock\n");
 		fprintf(fp, "noauth\n");
 //              fprintf(fp, "debug\n");
