@@ -164,8 +164,9 @@ length bit = yes
 
 		if (nvram_match("mtu_enable", "1")) {
 			if (atoi(nvram_safe_get("wan_mtu")) > 0) {
-				fprintf(fp, "mtu %s\n", nvram_safe_get("wan_mtu"));
-				fprintf(fp, "mru %s\n", nvram_safe_get("wan_mtu"));
+				int wan_mtu = atoi(nvram_safe_get("wan_mtu"));
+				fprintf(fp, "mtu %d\n", wan_mtu);
+				fprintf(fp, "mru %d\n", wan_mtu);
 			}
 
 		}
@@ -212,7 +213,7 @@ length bit = yes
 			fprintf(fp, "noccp\n");	// Disable CCP (Compression Control
 			// Protocol)
 		} else {
-			fprintf(fp, "mppe required\n");
+			fprintf(fp, "mppe required,stateless\n");
 			fprintf(fp, "require-mschap-v2\n");
 		}
 		fprintf(fp, "novj\n");	// Disable Van Jacobson style TCP/IP
