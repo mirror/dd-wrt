@@ -212,7 +212,8 @@ length bit = yes
 			fprintf(fp, "noccp\n");	// Disable CCP (Compression Control
 			// Protocol)
 		} else {
-			fprintf(fp, "mppe required,stateless\n");
+			fprintf(fp, "mppe required\n");
+			fprintf(fp, "require-mschap-v2\n");
 		}
 		fprintf(fp, "novj\n");	// Disable Van Jacobson style TCP/IP
 		fprintf(fp, "nobsdcomp\n");	// Disables BSD-Compress compression
