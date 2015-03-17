@@ -576,7 +576,7 @@ DEFUN (no_bgp_confederation_identifier,
        "AS number\n")
 {
   struct bgp *bgp;
-  as_t as;
+  as_t as __attribute__((unused)); /* Dummy for VTY_GET_INTEGER_RANGE */
 
   bgp = vty->index;
 
@@ -2093,25 +2093,41 @@ DEFUN (no_neighbor_capability_orf_prefix,
 /* neighbor next-hop-self. */
 DEFUN (neighbor_nexthop_self,
        neighbor_nexthop_self_cmd,
-       NEIGHBOR_CMD2 "next-hop-self",
+       NEIGHBOR_CMD2 "next-hop-self {all}",
        NEIGHBOR_STR
        NEIGHBOR_ADDR_STR2
-       "Disable the next hop calculation for this neighbor\n")
+       "Disable the next hop calculation for this neighbor\n"
+       "Apply also to ibgp-learned routes when acting as a route reflector\n")
 {
-  return peer_af_flag_set_vty (vty, argv[0], bgp_node_afi (vty),
-			       bgp_node_safi (vty), PEER_FLAG_NEXTHOP_SELF);
+  u_int32_t flags = PEER_FLAG_NEXTHOP_SELF, unset = 0;
+  int rc;
+
+  /* Check if "all" is specified */
+  if (argv[1] != NULL)
+    flags |= PEER_FLAG_NEXTHOP_SELF_ALL;
+  else
+    unset |= PEER_FLAG_NEXTHOP_SELF_ALL;
+
+  rc = peer_af_flag_set_vty (vty, argv[0], bgp_node_afi (vty),
+			     bgp_node_safi (vty), flags);
+  if ( rc == CMD_SUCCESS && unset )
+    rc = peer_af_flag_unset_vty (vty, argv[0], bgp_node_afi (vty),
+				 bgp_node_safi (vty), unset);
+  return rc;
 }
 
 DEFUN (no_neighbor_nexthop_self,
        no_neighbor_nexthop_self_cmd,
-       NO_NEIGHBOR_CMD2 "next-hop-self",
+       NO_NEIGHBOR_CMD2 "next-hop-self {all}",
        NO_STR
        NEIGHBOR_STR
        NEIGHBOR_ADDR_STR2
-       "Disable the next hop calculation for this neighbor\n")
+       "Disable the next hop calculation for this neighbor\n"
+       "Apply also to ibgp-learned routes when acting as a route reflector\n")
 {
   return peer_af_flag_unset_vty (vty, argv[0], bgp_node_afi (vty),
-				 bgp_node_safi (vty), PEER_FLAG_NEXTHOP_SELF);
+				 bgp_node_safi (vty),
+				 PEER_FLAG_NEXTHOP_SELF|PEER_FLAG_NEXTHOP_SELF_ALL);
 }
 
 /* neighbor remove-private-AS. */
@@ -3189,7 +3205,6 @@ static int
 peer_weight_set_vty (struct vty *vty, const char *ip_str, 
                      const char *weight_str)
 {
-  int ret;
   struct peer *peer;
   unsigned long weight;
 
@@ -3199,9 +3214,7 @@ peer_weight_set_vty (struct vty *vty, const char *ip_str,
 
   VTY_GET_INTEGER_RANGE("weight", weight, weight_str, 0, 65535);
 
-  ret = peer_weight_set (peer, weight);
-
-  return CMD_SUCCESS;
+  return bgp_vty_return (vty, peer_weight_set (peer, weight));
 }
 
 static int
@@ -3213,9 +3226,7 @@ peer_weight_unset_vty (struct vty *vty, const char *ip_str)
   if (! peer)
     return CMD_WARNING;
 
-  peer_weight_unset (peer);
-
-  return CMD_SUCCESS;
+  return bgp_vty_return (vty, peer_weight_unset (peer));
 }
 
 DEFUN (neighbor_weight,
@@ -3355,7 +3366,6 @@ static int
 peer_timers_connect_set_vty (struct vty *vty, const char *ip_str, 
                              const char *time_str)
 {
-  int ret;
   struct peer *peer;
   u_int32_t connect;
 
@@ -3365,24 +3375,19 @@ peer_timers_connect_set_vty (struct vty *vty, const char *ip_str,
 
   VTY_GET_INTEGER_RANGE ("Connect time", connect, time_str, 0, 65535);
 
-  ret = peer_timers_connect_set (peer, connect);
-
-  return CMD_SUCCESS;
+  return bgp_vty_return (vty, peer_timers_connect_set (peer, connect));
 }
 
 static int
 peer_timers_connect_unset_vty (struct vty *vty, const char *ip_str)
 {
-  int ret;
   struct peer *peer;
 
   peer = peer_and_group_lookup_vty (vty, ip_str);
   if (! peer)
     return CMD_WARNING;
 
-  ret = peer_timers_connect_unset (peer);
-
-  return CMD_SUCCESS;
+  return bgp_vty_return (vty, peer_timers_connect_unset (peer));
 }
 
 DEFUN (neighbor_timers_connect,
@@ -3439,7 +3444,7 @@ peer_advertise_interval_vty (struct vty *vty, const char *ip_str,
   else
     ret = peer_advertise_interval_unset (peer);
 
-  return CMD_SUCCESS;
+  return bgp_vty_return (vty, ret);
 }
 
 DEFUN (neighbor_advertise_interval,
@@ -3489,7 +3494,7 @@ peer_interface_vty (struct vty *vty, const char *ip_str, const char *str)
   else
     ret = peer_interface_unset (peer);
 
-  return CMD_SUCCESS;
+  return bgp_vty_return (vty, ret);
 }
 
 DEFUN (neighbor_interface,
@@ -6932,7 +6937,7 @@ bgp_show_summary (struct vty *vty, struct bgp *bgp, int afi, int safi)
   int len;
 
   /* Header string for each address family. */
-  static char header[] = "Neighbor        V    AS MsgRcvd MsgSent   TblVer  InQ OutQ Up/Down  State/PfxRcd";
+  static char header[] = "Neighbor        V         AS MsgRcvd MsgSent   TblVer  InQ OutQ Up/Down  State/PfxRcd";
   
   for (ALL_LIST_ELEMENTS (bgp->peer, node, nnode, peer))
     {
@@ -8297,7 +8302,7 @@ bgp_write_rsclient_summary (struct vty *vty, struct peer *rsclient,
 
   vty_out (vty, "4 ");
 
-  vty_out (vty, "%11d ", rsclient->as);
+  vty_out (vty, "%10u ", rsclient->as);
 
   rmname = ROUTE_MAP_EXPORT_NAME(&rsclient->filter[afi][safi]);
   if ( rmname && strlen (rmname) > 13 )
@@ -8342,7 +8347,7 @@ bgp_show_rsclient_summary (struct vty *vty, struct bgp *bgp,
   int count = 0;
 
   /* Header string for each address family. */
-  static char header[] = "Neighbor        V    AS  Export-Policy  Import-Policy  Up/Down  State";
+  static char header[] = "Neighbor        V         AS  Export-Policy  Import-Policy  Up/Down  State";
 
   for (ALL_LIST_ELEMENTS (bgp->rsclient, node, nnode, peer))
     {

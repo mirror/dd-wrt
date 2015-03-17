@@ -556,7 +556,7 @@ ospf_check_abr_status (struct ospf *ospf)
 
   if (new_flags != ospf->flags)
     {
-      ospf_spf_calculate_schedule (ospf);
+      ospf_spf_calculate_schedule (ospf, SPF_FLAG_ABR_STATUS_CHANGE);
       if (IS_DEBUG_OSPF_EVENT)
 	zlog_debug ("ospf_check_abr_status(): new router flags: %x",new_flags);
       ospf->flags = new_flags;

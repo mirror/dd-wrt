@@ -59,9 +59,20 @@ struct vertex_parent
   int backlink;			/* index back to parent for router-lsa's */
 };
 
-extern void ospf_spf_calculate_schedule (struct ospf *);
+/* What triggered the SPF ? */
+typedef enum {
+  SPF_FLAG_ROUTER_LSA_INSTALL = 1,
+  SPF_FLAG_NETWORK_LSA_INSTALL,
+  SPF_FLAG_SUMMARY_LSA_INSTALL,
+  SPF_FLAG_ASBR_SUMMARY_LSA_INSTALL,
+  SPF_FLAG_MAXAGE,
+  SPF_FLAG_ABR_STATUS_CHANGE,
+  SPF_FLAG_ASBR_STATUS_CHANGE,
+  SPF_FLAG_CONFIG_CHANGE,
+} ospf_spf_reason_t;
+
+extern void ospf_spf_calculate_schedule (struct ospf *, ospf_spf_reason_t);
 extern void ospf_rtrs_free (struct route_table *);
 
 /* void ospf_spf_calculate_timer_add (); */
-
 #endif /* _QUAGGA_OSPF_SPF_H */

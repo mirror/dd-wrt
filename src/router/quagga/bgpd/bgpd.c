@@ -1028,9 +1028,9 @@ peer_remote_as (struct bgp *bgp, union sockunion *su, as_t *as,
 
       if (bgp_flag_check (bgp, BGP_FLAG_NO_DEFAULT_IPV4)
 	  && afi == AFI_IP && safi == SAFI_UNICAST)
-	peer = peer_create (su, bgp, local_as, *as, 0, 0); 
+	peer_create (su, bgp, local_as, *as, 0, 0); 
       else
-	peer = peer_create (su, bgp, local_as, *as, afi, safi); 
+	peer_create (su, bgp, local_as, *as, afi, safi); 
     }
 
   return 0;
@@ -1927,6 +1927,18 @@ peer_group_unbind (struct bgp *bgp, struct peer *peer,
   return 0;
 }
 
+
+static int
+bgp_startup_timer_expire (struct thread *thread)
+{
+  struct bgp *bgp;
+
+  bgp = THREAD_ARG (thread);
+  bgp->t_startup = NULL;
+
+  return 0;
+}
+
 /* BGP instance creation by `router bgp' commands. */
 static struct bgp *
 bgp_create (as_t *as, const char *name)
@@ -1971,6 +1983,9 @@ bgp_create (as_t *as, const char *name)
 
   if (name)
     bgp->name = strdup (name);
+
+  THREAD_TIMER_ON (master, bgp->t_startup, bgp_startup_timer_expire,
+                   bgp, bgp->restart_time);
 
   return bgp;
 }
@@ -2087,6 +2102,8 @@ bgp_delete (struct bgp *bgp)
   struct listnode *next;
   afi_t afi;
   int i;
+
+  THREAD_OFF (bgp->t_startup);
 
   /* Delete static route. */
   bgp_static_delete (bgp);
@@ -2355,6 +2372,7 @@ static const struct peer_flag_action peer_af_flag_action_list[] =
     { PEER_FLAG_ORF_PREFIX_SM,            1, peer_change_reset },
     { PEER_FLAG_ORF_PREFIX_RM,            1, peer_change_reset },
     { PEER_FLAG_NEXTHOP_LOCAL_UNCHANGED,  0, peer_change_reset_out },
+    { PEER_FLAG_NEXTHOP_SELF_ALL,         1, peer_change_reset_out },
     { 0, 0, 0 }
   };
 
@@ -4990,7 +5008,9 @@ bgp_config_write_peer (struct vty *vty, struct bgp *bgp,
   /* Nexthop self. */
   if (peer_af_flag_check (peer, afi, safi, PEER_FLAG_NEXTHOP_SELF)
       && ! peer->af_group[afi][safi])
-    vty_out (vty, " neighbor %s next-hop-self%s", addr, VTY_NEWLINE);
+    vty_out (vty, " neighbor %s next-hop-self%s%s", addr,
+	     peer_af_flag_check (peer, afi, safi, PEER_FLAG_NEXTHOP_SELF_ALL) ?
+	     " all" : "", VTY_NEWLINE);
 
   /* Remove private AS. */
   if (peer_af_flag_check (peer, afi, safi, PEER_FLAG_REMOVE_PRIVATE_AS)

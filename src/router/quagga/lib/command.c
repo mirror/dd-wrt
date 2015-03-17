@@ -181,6 +181,7 @@ print_version (const char *progname)
 {
   printf ("%s version %s\n", progname, QUAGGA_VERSION);
   printf ("%s\n", QUAGGA_COPYRIGHT);
+  printf ("configured with:\n\t%s\n", QUAGGA_CONFIG_ARGS);
 }
 
 
@@ -1411,7 +1412,7 @@ cmd_matcher_read_keywords(struct cmd_matcher *matcher,
   const char *word;
   int keyword_argc;
   const char **keyword_argv;
-  enum matcher_rv rv;
+  enum matcher_rv rv = MATCHER_NO_MATCH;
 
   keyword_mask = 0;
   while (1)
@@ -1642,7 +1643,7 @@ cmd_element_match(struct cmd_element *cmd_element,
 {
   struct cmd_matcher matcher;
   unsigned int token_index;
-  enum matcher_rv rv;
+  enum matcher_rv rv = MATCHER_NO_MATCH;
 
   cmd_matcher_init(&matcher, cmd_element, filter,
                    vline, index, match_type, match);
@@ -2762,13 +2763,15 @@ cmd_execute_command_strict (vector vline, struct vty *vty,
 
 /* Configration make from file. */
 int
-config_from_file (struct vty *vty, FILE *fp)
+config_from_file (struct vty *vty, FILE *fp, unsigned int *line_num)
 {
   int ret;
+  *line_num = 0;
   vector vline;
 
   while (fgets (vty->buf, VTY_BUFSIZ, fp))
     {
+      ++(*line_num);
       vline = cmd_make_strvec (vty->buf);
 
       /* In case of comment line */
@@ -2870,6 +2873,7 @@ DEFUN (config_exit,
     case KEYCHAIN_NODE:
     case MASC_NODE:
     case RMAP_NODE:
+    case PIM_NODE:
     case VTY_NODE:
       vty->node = CONFIG_NODE;
       break;
@@ -2927,6 +2931,7 @@ DEFUN (config_end,
     case KEYCHAIN_NODE:
     case KEYCHAIN_KEY_NODE:
     case MASC_NODE:
+    case PIM_NODE:
     case VTY_NODE:
       vty_config_unlock (vty);
       vty->node = ENABLE_NODE;
@@ -2947,6 +2952,8 @@ DEFUN (show_version,
   vty_out (vty, "Quagga %s (%s).%s", QUAGGA_VERSION, host.name?host.name:"",
 	   VTY_NEWLINE);
   vty_out (vty, "%s%s%s", QUAGGA_COPYRIGHT, GIT_INFO, VTY_NEWLINE);
+  vty_out (vty, "configured with:%s    %s%s", VTY_NEWLINE,
+           QUAGGA_CONFIG_ARGS, VTY_NEWLINE);
 
   return CMD_SUCCESS;
 }

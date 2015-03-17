@@ -244,20 +244,6 @@ typedef int socklen_t;
 #include <execinfo.h>
 #endif /* HAVE_GLIBC_BACKTRACE */
 
-#ifdef BSDI_NRL
-
-#ifdef HAVE_NETINET6_IN6_H
-#include <netinet6/in6.h>
-#endif /* HAVE_NETINET6_IN6_H */
-
-#ifdef NRL
-#include <netinet6/in6.h>
-#endif /* NRL */
-
-#define IN6_ARE_ADDR_EQUAL IN6_IS_ADDR_EQUAL
-
-#endif /* BSDI_NRL */
-
 /* Local includes: */
 #if !(defined(__GNUC__) || defined(VTYSH_EXTRACT_PL)) 
 #define __attribute__(x)
@@ -358,7 +344,8 @@ struct in_pktinfo
  * OpenBSD: network byte order, apart from older versions which are as per 
  *          *BSD
  */
-#if defined(__NetBSD__) || defined(__FreeBSD__) \
+#if defined(__NetBSD__) \
+   || (defined(__FreeBSD__) && (__FreeBSD_version < 1100030)) \
    || (defined(__OpenBSD__) && (OpenBSD < 200311)) \
    || (defined(__APPLE__)) \
    || (defined(SUNOS_5) && defined(WORDS_BIGENDIAN))
@@ -424,7 +411,8 @@ struct in_pktinfo
 #define ZEBRA_ROUTER_ID_DELETE            21
 #define ZEBRA_ROUTER_ID_UPDATE            22
 #define ZEBRA_HELLO                       23
-#define ZEBRA_MESSAGE_MAX                 24
+#define ZEBRA_IPV4_NEXTHOP_LOOKUP_MRIB    24
+#define ZEBRA_MESSAGE_MAX                 25
 
 /* Marker value used in new Zserv, in the byte location corresponding
  * the command value in the old zserv header. To allow old and new

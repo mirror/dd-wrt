@@ -973,7 +973,8 @@ bgp_announce_check (struct bgp_info *ri, struct peer *peer, struct prefix *p,
     }
 
   /* next-hop-set */
-  if (transparent || reflect
+  if (transparent
+      || (reflect && ! CHECK_FLAG (peer->af_flags[afi][safi], PEER_FLAG_NEXTHOP_SELF_ALL))
       || (CHECK_FLAG (peer->af_flags[afi][safi], PEER_FLAG_NEXTHOP_UNCHANGED)
 	  && ((p->family == AF_INET && attr->nexthop.s_addr)
 #ifdef HAVE_IPV6
@@ -4524,19 +4525,10 @@ bgp_aggregate_route (struct bgp *bgp, struct prefix *p, struct bgp_info *rinew,
   struct aspath *asmerge = NULL;
   struct community *community = NULL;
   struct community *commerge = NULL;
-  struct in_addr nexthop;
-  u_int32_t med = 0;
   struct bgp_info *ri;
   struct bgp_info *new;
   int first = 1;
   unsigned long match = 0;
-
-  /* Record adding route's nexthop and med. */
-  if (rinew)
-    {
-      nexthop = rinew->attr->nexthop;
-      med = rinew->attr->med;
-    }
 
   /* ORIGIN attribute: If at least one route among routes that are
      aggregated has ORIGIN with the value INCOMPLETE, then the
@@ -4565,11 +4557,7 @@ bgp_aggregate_route (struct bgp *bgp, struct prefix *p, struct bgp_info *rinew,
 	      continue;
 
 	    if (! rinew && first)
-	      {
-		nexthop = ri->attr->nexthop;
-		med = ri->attr->med;
-		first = 0;
-	      }
+              first = 0;
 
 #ifdef AGGREGATE_NEXTHOP_CHECK
 	    if (! IPV4_ADDR_SAME (&ri->attr->nexthop, &nexthop)
@@ -11772,7 +11760,13 @@ bgp_distance_unset (struct vty *vty, const char *distance_str,
     }
 
   bdistance = rn->info;
-
+  
+  if (bdistance->distance != distance)
+    {
+       vty_out (vty, "Distance does not match configured%s", VTY_NEWLINE);
+       return CMD_WARNING;
+    }
+  
   if (bdistance->access_list)
     free (bdistance->access_list);
   bgp_distance_free (bdistance);
