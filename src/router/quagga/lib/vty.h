@@ -217,6 +217,14 @@ do {                                                                            
     }                                                                         \
 } while (0)
 
+#define VTY_WARN_EXPERIMENTAL()                                               \
+do {                                                                          \
+  vty_out (vty, "%% WARNING: this command is experimental. Both its name and" \
+                " parameters may%s%% change in a future version of Quagga,"   \
+                " possibly breaking your configuration!%s",                   \
+                VTY_NEWLINE, VTY_NEWLINE);                                    \
+} while (0)
+
 /* Exported variables */
 extern char integrate_default[];
 
@@ -242,6 +250,6 @@ extern void vty_hello (struct vty *);
 
 /* Send a fixed-size message to all vty terminal monitors; this should be
    an async-signal-safe function. */
-extern void vty_log_fixed (const char *buf, size_t len);
+extern void vty_log_fixed (char *buf, size_t len);
 
 #endif /* _ZEBRA_VTY_H */

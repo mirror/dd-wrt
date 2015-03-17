@@ -122,6 +122,10 @@ struct ospf6_route
   /* Destination Type */
   u_char type;
 
+  /* XXX: It would likely be better to use separate struct in_addr's
+   * for the advertising router-ID and prefix IDs, instead of stuffing them
+   * into one. See also XXX below.
+   */
   /* Destination ID */
   struct prefix prefix;
 
@@ -235,6 +239,7 @@ extern const char *ospf6_path_type_substr[OSPF6_PATH_TYPE_MAX];
            sizeof (struct ospf6_nexthop) * OSPF6_MULTI_PATH_LIMIT) == 0)
 #define ospf6_route_is_best(r) (CHECK_FLAG ((r)->flag, OSPF6_ROUTE_BEST))
 
+/* XXX: This gives GCC heartburn aboutbreaking aliasing rules. */
 #define ospf6_linkstate_prefix_adv_router(x) \
   (*(u_int32_t *)(&(x)->u.prefix6.s6_addr[0]))
 #define ospf6_linkstate_prefix_id(x) \

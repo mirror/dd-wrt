@@ -539,8 +539,8 @@ zsend_ipv4_nexthop_lookup (struct zserv *client, struct in_addr addr)
   u_char num;
   struct nexthop *nexthop;
 
-  /* Lookup nexthop. */
-  rib = rib_match_ipv4 (addr);
+  /* Lookup nexthop - eBGP excluded */
+  rib = rib_match_ipv4_safi (addr, SAFI_UNICAST, 1, NULL);
 
   /* Get output stream. */
   s = client->obuf;
@@ -592,6 +592,76 @@ zsend_ipv4_nexthop_lookup (struct zserv *client, struct in_addr addr)
         zlog_debug("%s: No matching rib entry found.", __func__);
       stream_putl (s, 0);
       stream_putc (s, 0);
+    }
+
+  stream_putw_at (s, 0, stream_get_endp (s));
+  
+  return zebra_server_send_message(client);
+}
+
+/*
+  Modified version of zsend_ipv4_nexthop_lookup():
+  Query unicast rib if nexthop is not found on mrib.
+  Returns both route metric and protocol distance.
+*/
+static int
+zsend_ipv4_nexthop_lookup_mrib (struct zserv *client, struct in_addr addr,
+				struct rib *rib)
+{
+  struct stream *s;
+  unsigned long nump;
+  u_char num;
+  struct nexthop *nexthop;
+
+  /* Get output stream. */
+  s = client->obuf;
+  stream_reset (s);
+
+  /* Fill in result. */
+  zserv_create_header (s, ZEBRA_IPV4_NEXTHOP_LOOKUP_MRIB);
+  stream_put_in_addr (s, &addr);
+
+  if (rib)
+    {
+      stream_putc (s, rib->distance);
+      stream_putl (s, rib->metric);
+      num = 0;
+      nump = stream_get_endp(s); /* remember position for nexthop_num */
+      stream_putc (s, 0);        /* reserve room for nexthop_num */
+      /* Only non-recursive routes are elegible to resolve the nexthop we
+       * are looking up. Therefore, we will just iterate over the top
+       * chain of nexthops. */
+      for (nexthop = rib->nexthop; nexthop; nexthop = nexthop->next)
+	if (CHECK_FLAG (nexthop->flags, NEXTHOP_FLAG_FIB))
+	  {
+	    stream_putc (s, nexthop->type);
+	    switch (nexthop->type)
+	      {
+	      case ZEBRA_NEXTHOP_IPV4:
+		stream_put_in_addr (s, &nexthop->gate.ipv4);
+		break;
+	      case ZEBRA_NEXTHOP_IPV4_IFINDEX:
+		stream_put_in_addr (s, &nexthop->gate.ipv4);
+		stream_putl (s, nexthop->ifindex);
+		break;
+	      case ZEBRA_NEXTHOP_IFINDEX:
+	      case ZEBRA_NEXTHOP_IFNAME:
+		stream_putl (s, nexthop->ifindex);
+		break;
+	      default:
+		/* do nothing */
+		break;
+	      }
+	    num++;
+	  }
+    
+      stream_putc_at (s, nump, num); /* store nexthop_num */
+    }
+  else
+    {
+      stream_putc (s, 0); /* distance */
+      stream_putl (s, 0); /* metric */
+      stream_putc (s, 0); /* nexthop_num */
     }
 
   stream_putw_at (s, 0, stream_get_endp (s));
@@ -918,6 +988,18 @@ zread_ipv4_nexthop_lookup (struct zserv *client, u_short length)
     zlog_debug("%s: looking up %s", __func__,
                inet_ntop (AF_INET, &addr, buf, BUFSIZ));
   return zsend_ipv4_nexthop_lookup (client, addr);
+}
+
+/* MRIB Nexthop lookup for IPv4. */
+static int
+zread_ipv4_nexthop_lookup_mrib (struct zserv *client, u_short length)
+{
+  struct in_addr addr;
+  struct rib *rib;
+
+  addr.s_addr = stream_get_ipv4 (client->ibuf);
+  rib = rib_match_ipv4_multicast (addr, NULL);
+  return zsend_ipv4_nexthop_lookup_mrib (client, addr, rib);
 }
 
 /* Nexthop lookup for IPv4. */
@@ -1351,6 +1433,9 @@ zebra_client_read (struct thread *thread)
       break;
     case ZEBRA_IPV4_NEXTHOP_LOOKUP:
       zread_ipv4_nexthop_lookup (client, length);
+      break;
+    case ZEBRA_IPV4_NEXTHOP_LOOKUP_MRIB:
+      zread_ipv4_nexthop_lookup_mrib (client, length);
       break;
 #ifdef HAVE_IPV6
     case ZEBRA_IPV6_NEXTHOP_LOOKUP:

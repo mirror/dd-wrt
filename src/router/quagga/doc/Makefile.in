@@ -78,16 +78,17 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-@BGPD_TRUE@am__append_1 = bgpd.8
-@ISISD_TRUE@am__append_2 = isisd.8
-@OSPF6D_TRUE@am__append_3 = ospf6d.8
-@OSPFCLIENT_TRUE@am__append_4 = ospfclient.8
-@OSPFD_TRUE@am__append_5 = ospfd.8
-@RIPD_TRUE@am__append_6 = ripd.8
-@RIPNGD_TRUE@am__append_7 = ripngd.8
-@VTYSH_TRUE@am__append_8 = vtysh.1
-@WATCHQUAGGA_TRUE@am__append_9 = watchquagga.8
-@ZEBRA_TRUE@am__append_10 = zebra.8
+@PIMD_TRUE@am__append_1 = pimd.8
+@BGPD_TRUE@am__append_2 = bgpd.8
+@ISISD_TRUE@am__append_3 = isisd.8
+@OSPF6D_TRUE@am__append_4 = ospf6d.8
+@OSPFCLIENT_TRUE@am__append_5 = ospfclient.8
+@OSPFD_TRUE@am__append_6 = ospfd.8
+@RIPD_TRUE@am__append_7 = ripd.8
+@RIPNGD_TRUE@am__append_8 = ripngd.8
+@VTYSH_TRUE@am__append_9 = vtysh.1
+@WATCHQUAGGA_TRUE@am__append_10 = watchquagga.8
+@ZEBRA_TRUE@am__append_11 = zebra.8
 subdir = doc
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(srcdir)/defines.texi.in $(quagga_TEXINFOS) mdate-sh \
@@ -211,6 +212,7 @@ CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
 CONFDATE = @CONFDATE@
+CONFIG_ARGS = @CONFIG_ARGS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CURSES = @CURSES@
@@ -232,8 +234,6 @@ GAWK = @GAWK@
 GREP = @GREP@
 HAVE_LIBPCREPOSIX = @HAVE_LIBPCREPOSIX@
 IF_METHOD = @IF_METHOD@
-IF_PROC = @IF_PROC@
-INCLUDES = @INCLUDES@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -256,7 +256,6 @@ LIBPAM = @LIBPAM@
 LIBREADLINE = @LIBREADLINE@
 LIBS = @LIBS@
 LIBTOOL = @LIBTOOL@
-LIB_IPV6 = @LIB_IPV6@
 LIB_REGEX = @LIB_REGEX@
 LIPO = @LIPO@
 LN_S = @LN_S@
@@ -274,7 +273,6 @@ OSPF6D = @OSPF6D@
 OSPFAPI = @OSPFAPI@
 OSPFCLIENT = @OSPFCLIENT@
 OSPFD = @OSPFD@
-OTHER_METHOD = @OTHER_METHOD@
 OTOOL = @OTOOL@
 OTOOL64 = @OTOOL64@
 PACKAGE = @PACKAGE@
@@ -289,6 +287,7 @@ PDFLATEX = @PDFLATEX@
 PERL = @PERL@
 PICFLAGS = @PICFLAGS@
 PILDFLAGS = @PILDFLAGS@
+PIMD = @PIMD@
 RANLIB = @RANLIB@
 RIPD = @RIPD@
 RIPNGD = @RIPNGD@
@@ -417,10 +416,10 @@ quagga_TEXINFOS = appendix.texi babeld.texi basic.texi bgpd.texi filter.texi \
 man_MANS = $(am__append_1) $(am__append_2) $(am__append_3) \
 	$(am__append_4) $(am__append_5) $(am__append_6) \
 	$(am__append_7) $(am__append_8) $(am__append_9) \
-	$(am__append_10)
+	$(am__append_10) $(am__append_11)
 EXTRA_DIST = BGP-TypeCode draft-zebra-00.ms draft-zebra-00.txt \
 	bgpd.8 isisd.8 ospf6d.8 ospfclient.8 ospfd.8 ripd.8 \
-	ripngd.8 vtysh.1 watchquagga.8 zebra.8 \
+	ripngd.8 pimd.8 vtysh.1 watchquagga.8 zebra.8 \
 	mpls/ChangeLog.opaque.txt mpls/cli_summary.txt \
 	mpls/opaque_lsa.txt mpls/ospfd.conf \
 	$(figures_sources) $(figures_png) $(figures_txt)
@@ -980,7 +979,7 @@ uninstall-man: uninstall-man1 uninstall-man8
 # because it cant just work from the png's directly it seems - contrary
 # to the documentation...
 quagga.pdf: $(info_TEXINFOS) $(figures_pdf) $(quagga_TEXINFOS)
-	$(TEXI2PDF) -o "$@" $<
+	$(TEXI2PDF) -o "$@" $< || true
 
 .png.eps:
 	$(PNGTOEPS) $< "$@"

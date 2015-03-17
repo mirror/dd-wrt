@@ -771,7 +771,7 @@ ospf_find_vl_data (struct ospf *ospf, struct ospf_vl_config_data *vl_config)
 	{
 	  vl_data->vl_oi = ospf_vl_new (ospf, vl_data);
 	  ospf_vl_add (ospf, vl_data);
-	  ospf_spf_calculate_schedule (ospf);
+	  ospf_spf_calculate_schedule (ospf, SPF_FLAG_CONFIG_CHANGE);
 	}
     }
   return vl_data;
@@ -2172,7 +2172,7 @@ DEFUN (ospf_compatible_rfc1583,
   if (!CHECK_FLAG (ospf->config, OSPF_RFC1583_COMPATIBLE))
     {
       SET_FLAG (ospf->config, OSPF_RFC1583_COMPATIBLE);
-      ospf_spf_calculate_schedule (ospf);
+      ospf_spf_calculate_schedule (ospf, SPF_FLAG_CONFIG_CHANGE);
     }
   return CMD_SUCCESS;
 }
@@ -2189,7 +2189,7 @@ DEFUN (no_ospf_compatible_rfc1583,
   if (CHECK_FLAG (ospf->config, OSPF_RFC1583_COMPATIBLE))
     {
       UNSET_FLAG (ospf->config, OSPF_RFC1583_COMPATIBLE);
-      ospf_spf_calculate_schedule (ospf);
+      ospf_spf_calculate_schedule (ospf, SPF_FLAG_CONFIG_CHANGE);
     }
   return CMD_SUCCESS;
 }
@@ -2749,6 +2749,9 @@ DEFUN (show_ip_ospf,
       vty_out (vty, "last executed %s ago%s",
                ospf_timeval_dump (&result, timebuf, sizeof (timebuf)),
                VTY_NEWLINE);
+      vty_out (vty, " Last SPF duration %s%s",
+	       ospf_timeval_dump (&ospf->ts_spf_duration, timebuf, sizeof (timebuf)),
+	       VTY_NEWLINE);
     }
   else
     vty_out (vty, "has not been run%s", VTY_NEWLINE);
@@ -4034,7 +4037,6 @@ static void
 show_ip_ospf_database_maxage (struct vty *vty, struct ospf *ospf)
 {
   struct route_node *rn;
-  struct ospf_lsa *lsa;
 
   vty_out (vty, "%s                MaxAge Link States:%s%s",
            VTY_NEWLINE, VTY_NEWLINE, VTY_NEWLINE);

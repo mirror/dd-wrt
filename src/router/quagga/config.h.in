@@ -9,9 +9,6 @@
 /* bgpd vty socket */
 #undef BGP_VTYSH_PATH
 
-/* BSDI */
-#undef BSDI_NRL
-
 /* Mask for config files */
 #undef CONFIGFILE_MASK
 
@@ -38,9 +35,6 @@
 
 /* Define to 1 if you have the <asm/types.h> header file. */
 #undef HAVE_ASM_TYPES_H
-
-/* Broken Alias */
-#undef HAVE_BROKEN_ALIASES
 
 /* Broken CMSG_FIRSTHDR */
 #undef HAVE_BROKEN_CMSG_FIRSTHDR
@@ -127,7 +121,7 @@
 /* Define to 1 if you have the `if_nametoindex' function. */
 #undef HAVE_IF_NAMETOINDEX
 
-/* __inet_aton */
+/* Define to 1 if you have the `inet_aton' function. */
 #undef HAVE_INET_ATON
 
 /* Define to 1 if you have the <inet/nd.h> header file. */
@@ -136,17 +130,26 @@
 /* Define to 1 if you have the `inet_ntoa' function. */
 #undef HAVE_INET_NTOA
 
-/* __inet_ntop */
+/* inet_ntop */
 #undef HAVE_INET_NTOP
 
-/* __inet_pton */
+/* inet_pton */
 #undef HAVE_INET_PTON
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
-/* Linux IPv6 */
+/* IPv6 */
 #undef HAVE_IPV6
+
+/* Have IP_PKTINFO */
+#undef HAVE_IP_PKTINFO
+
+/* Have IP_RECVDSTADDR */
+#undef HAVE_IP_RECVDSTADDR
+
+/* Have IP_RECVIF */
+#undef HAVE_IP_RECVIF
 
 /* IRDP */
 #undef HAVE_IRDP
@@ -159,9 +162,6 @@
 
 /* Define to 1 if you have the `crypt' library (-lcrypt). */
 #undef HAVE_LIBCRYPT
-
-/* Define to 1 if you have the `kvm' library (-lkvm). */
-#undef HAVE_LIBKVM
 
 /* Have libm */
 #undef HAVE_LIBM
@@ -276,12 +276,6 @@
 
 /* Define to 1 if you have the <priv.h> header file. */
 #undef HAVE_PRIV_H
-
-/* /proc/net/dev */
-#undef HAVE_PROC_NET_DEV
-
-/* /proc/net/if_inet6 */
-#undef HAVE_PROC_NET_IF_INET6
 
 /* prctl */
 #undef HAVE_PR_SET_KEEPCAPS
@@ -410,6 +404,9 @@
 /* Define to 1 if `ifi_link_state' is a member of `struct if_data'. */
 #undef HAVE_STRUCT_IF_DATA_IFI_LINK_STATE
 
+/* Define to 1 if the system has the type `struct igmpmsg'. */
+#undef HAVE_STRUCT_IGMPMSG
+
 /* Define to 1 if the system has the type `struct in6_aliasreq'. */
 #undef HAVE_STRUCT_IN6_ALIASREQ
 
@@ -418,6 +415,9 @@
 
 /* Define to 1 if `imr_ifindex' is a member of `struct ip_mreqn'. */
 #undef HAVE_STRUCT_IP_MREQN_IMR_IFINDEX
+
+/* Define to 1 if the system has the type `struct mfcctl'. */
+#undef HAVE_STRUCT_MFCCTL
 
 /* Define to 1 if the system has the type `struct nd_opt_adv_interval'. */
 #undef HAVE_STRUCT_ND_OPT_ADV_INTERVAL
@@ -431,6 +431,12 @@
 
 /* Define to 1 if the system has the type `struct rt_addrinfo'. */
 #undef HAVE_STRUCT_RT_ADDRINFO
+
+/* Define to 1 if the system has the type `struct sioc_sg_req'. */
+#undef HAVE_STRUCT_SIOC_SG_REQ
+
+/* Define to 1 if the system has the type `struct sioc_vif_req'. */
+#undef HAVE_STRUCT_SIOC_VIF_REQ
 
 /* Define to 1 if the system has the type `struct sockaddr'. */
 #undef HAVE_STRUCT_SOCKADDR
@@ -461,6 +467,9 @@
 
 /* Define to 1 if `sun_len' is a member of `struct sockaddr_un'. */
 #undef HAVE_STRUCT_SOCKADDR_UN_SUN_LEN
+
+/* Define to 1 if the system has the type `struct vifctl'. */
+#undef HAVE_STRUCT_VIFCTL
 
 /* Define to 1 if you have the <syslog.h> header file. */
 #undef HAVE_SYSLOG_H
@@ -544,6 +553,18 @@
 /* Define to 1 if you have the <ucontext.h> header file. */
 #undef HAVE_UCONTEXT_H
 
+/* Define to 1 if `uc_mcontext.gregs' is a member of `ucontext_t'. */
+#undef HAVE_UCONTEXT_T_UC_MCONTEXT_GREGS
+
+/* Define to 1 if `uc_mcontext.regs' is a member of `ucontext_t'. */
+#undef HAVE_UCONTEXT_T_UC_MCONTEXT_REGS
+
+/* Define to 1 if `uc_mcontext.regs.nip' is a member of `ucontext_t'. */
+#undef HAVE_UCONTEXT_T_UC_MCONTEXT_REGS_NIP
+
+/* Define to 1 if `uc_mcontext.uc_regs' is a member of `ucontext_t'. */
+#undef HAVE_UCONTEXT_T_UC_MCONTEXT_UC_REGS
+
 /* Define to 1 if you have the `uname' function. */
 #undef HAVE_UNAME
 
@@ -555,6 +576,9 @@
 
 /* Define to 1 if you have the <vfork.h> header file. */
 #undef HAVE_VFORK_H
+
+/* Define to 1 if the system has the type `vifi_t'. */
+#undef HAVE_VIFI_T
 
 /* Define to 1 if you have the `vprintf' function. */
 #undef HAVE_VPRINTF
@@ -574,12 +598,6 @@
 /* Define to 1 if `vfork' works. */
 #undef HAVE_WORKING_VFORK
 
-/* INRIA IPv6 */
-#undef INRIA_IPV6
-
-/* IRIX 6.5 */
-#undef IRIX_65
-
 /* selected method for isis, == one of the constants */
 #undef ISIS_METHOD
 
@@ -595,7 +613,7 @@
 /* isisd vty socket */
 #undef ISIS_VTYSH_PATH
 
-/* KAME IPv6 stack */
+/* KAME IPv6 */
 #undef KAME
 
 /* Linux IPv6 stack */
@@ -608,15 +626,8 @@
    slash. */
 #undef LSTAT_FOLLOWS_SLASHED_SYMLINK
 
-/* Define to the sub-directory in which libtool stores uninstalled libraries.
-   */
+/* Define to the sub-directory where libtool stores uninstalled libraries. */
 #undef LT_OBJDIR
-
-/* Musica IPv6 stack */
-#undef MUSICA
-
-/* NRL */
-#undef NRL
 
 /* OpenBSD */
 #undef OPEN_BSD
@@ -666,6 +677,9 @@
 /* ospfd PID */
 #undef PATH_OSPFD_PID
 
+/* pimd PID */
+#undef PATH_PIMD_PID
+
 /* ripd PID */
 #undef PATH_RIPD_PID
 
@@ -677,6 +691,9 @@
 
 /* zebra PID */
 #undef PATH_ZEBRA_PID
+
+/* pimd vty socket */
+#undef PIM_VTYSH_PATH
 
 /* Quagga Group */
 #undef QUAGGA_GROUP

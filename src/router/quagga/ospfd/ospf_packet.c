@@ -383,7 +383,7 @@ static int
 ospf_make_md5_digest (struct ospf_interface *oi, struct ospf_packet *op)
 {
   struct ospf_header *ospfh;
-  unsigned char digest[OSPF_AUTH_MD5_SIZE];
+  unsigned char digest[OSPF_AUTH_MD5_SIZE] = {0};
   MD5_CTX ctx;
   void *ibuf;
   u_int32_t t;
@@ -410,7 +410,7 @@ ospf_make_md5_digest (struct ospf_interface *oi, struct ospf_packet *op)
 
   /* Get MD5 Authentication key from auth_key list. */
   if (list_isempty (OSPF_IF_PARAM (oi, auth_crypt)))
-    auth_key = (const u_int8_t *) "";
+    auth_key = (const u_int8_t *) digest;
   else
     {
       ck = listgetdata (listtail(OSPF_IF_PARAM (oi, auth_crypt)));
@@ -789,6 +789,9 @@ ospf_write (struct thread *thread)
   /* Now delete packet from queue. */
   ospf_packet_delete (oi);
 
+  /* Move this interface to the tail of write_q to
+	 serve everyone in a round robin fashion */
+  listnode_move_to_tail (ospf->oi_write_q, node);
   if (ospf_fifo_head (oi->obuf) == NULL)
     {
       oi->on_write_q = 0;
@@ -3140,22 +3143,7 @@ ospf_make_db_desc (struct ospf_interface *oi, struct ospf_neighbor *nbr,
   options = OPTIONS (oi);
 #ifdef HAVE_OPAQUE_LSA
   if (CHECK_FLAG (oi->ospf->config, OSPF_OPAQUE_CAPABLE))
-    {
-      if (IS_SET_DD_I (nbr->dd_flags)
-      ||  CHECK_FLAG (nbr->options, OSPF_OPTION_O))
-        /*
-         * Set O-bit in the outgoing DD packet for capablity negotiation,
-         * if one of following case is applicable. 
-         *
-         * 1) WaitTimer expiration event triggered the neighbor state to
-         *    change to Exstart, but no (valid) DD packet has received
-         *    from the neighbor yet.
-         *
-         * 2) At least one DD packet with O-bit on has received from the
-         *    neighbor.
-         */
-        SET_FLAG (options, OSPF_OPTION_O);
-    }
+    SET_FLAG (options, OSPF_OPTION_O);
 #endif /* HAVE_OPAQUE_LSA */
   stream_putc (s, options);
 
@@ -3326,7 +3314,7 @@ ospf_make_ls_upd (struct ospf_interface *oi, struct list *update, struct stream 
       u_int16_t ls_age;
 
       if (IS_DEBUG_OSPF_EVENT)
-        zlog_debug ("ospf_make_ls_upd: List Iteration");
+        zlog_debug ("ospf_make_ls_upd: List Iteration %d", count);
 
       lsa = listgetdata (node);
 
@@ -3732,7 +3720,8 @@ ospf_ls_upd_queue_send (struct ospf_interface *oi, struct list *update,
   u_int16_t length = OSPF_HEADER_SIZE;
 
   if (IS_DEBUG_OSPF_EVENT)
-    zlog_debug ("listcount = %d, dst %s", listcount (update), inet_ntoa(addr));
+    zlog_debug ("listcount = %d, [%s]dst %s", listcount (update), IF_NAME(oi),
+			    inet_ntoa(addr));
   
   op = ospf_ls_upd_packet_new (update, oi);
 

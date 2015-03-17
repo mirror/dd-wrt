@@ -27,9 +27,9 @@
 #define NL_PKT_BUF_SIZE 8192
 
 extern int
-addattr32 (struct nlmsghdr *n, int maxlen, int type, int data);
+addattr32 (struct nlmsghdr *n, size_t maxlen, int type, int data);
 extern int
-addattr_l (struct nlmsghdr *n, int maxlen, int type, void *data, int alen);
+addattr_l (struct nlmsghdr *n, size_t maxlen, int type, void *data, int alen);
 
 extern int
 rta_addattr_l (struct rtattr *rta, int maxlen, int type, void *data, int alen);
