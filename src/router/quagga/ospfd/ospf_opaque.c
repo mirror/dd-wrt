@@ -2126,10 +2126,12 @@ out:
  *------------------------------------------------------------------------*/
 
 static void ospf_opaque_exclude_lsa_from_lsreq (struct route_table *nbrs, struct ospf_neighbor *inbr, struct ospf_lsa *lsa);
+#ifdef BUGGY_UNLOCK
 static void ospf_opaque_type9_lsa_rxmt_nbr_check (struct ospf_interface *oi);
 static void ospf_opaque_type10_lsa_rxmt_nbr_check (struct ospf_area *area);
 static void ospf_opaque_type11_lsa_rxmt_nbr_check (struct ospf *top);
 static unsigned long ospf_opaque_nrxmt_self (struct route_table *nbrs, int lsa_type);
+#endif /* BUGGY_UNLOCK */
 
 void
 ospf_opaque_adjust_lsreq (struct ospf_neighbor *nbr, struct list *lsas)
@@ -2296,17 +2298,20 @@ ospf_opaque_ls_ack_received (struct ospf_neighbor *nbr, struct ospf_lsa *lsa)
     {
     case OSPF_OPAQUE_LINK_LSA:
       if (CHECK_FLAG (top->opaque, OPAQUE_BLOCK_TYPE_09_LSA_BIT))
-        ospf_opaque_type9_lsa_rxmt_nbr_check (nbr->oi);
+        UNSET_FLAG (top->opaque, OPAQUE_BLOCK_TYPE_09_LSA_BIT);
+        /* BUGGY_UNLOCK: ospf_opaque_type9_lsa_rxmt_nbr_check (nbr->oi); */
       /* Callback function... */
       break;
     case OSPF_OPAQUE_AREA_LSA:
       if (CHECK_FLAG (top->opaque, OPAQUE_BLOCK_TYPE_10_LSA_BIT))
-        ospf_opaque_type10_lsa_rxmt_nbr_check (nbr->oi->area);
+        UNSET_FLAG (top->opaque, OPAQUE_BLOCK_TYPE_10_LSA_BIT);
+        /* BUGGY_UNLOCK: ospf_opaque_type10_lsa_rxmt_nbr_check (nbr->oi->area); */
       /* Callback function... */
       break;
     case OSPF_OPAQUE_AS_LSA:
       if (CHECK_FLAG (top->opaque, OPAQUE_BLOCK_TYPE_11_LSA_BIT))
-        ospf_opaque_type11_lsa_rxmt_nbr_check (top);
+        UNSET_FLAG (top->opaque, OPAQUE_BLOCK_TYPE_11_LSA_BIT);
+        /* BUGGY_UNLOCK: ospf_opaque_type11_lsa_rxmt_nbr_check (top); */
       /* Callback function... */
       break;
     default:
@@ -2315,11 +2320,10 @@ ospf_opaque_ls_ack_received (struct ospf_neighbor *nbr, struct ospf_lsa *lsa)
     }
   
   if (IS_OPAQUE_LSA_ORIGINATION_BLOCKED (top->opaque))
-    {
-      if (IS_DEBUG_OSPF_EVENT)
-        zlog_debug ("Block Opaque-LSA origination: ON -> OFF");
       return; /* Blocking still in progress. */
-    }
+
+  if (IS_DEBUG_OSPF_EVENT)
+    zlog_debug ("Block Opaque-LSA origination: ON -> OFF");
   
   if (! CHECK_FLAG (top->config, OSPF_OPAQUE_CAPABLE))
     return; /* Opaque capability condition must have changed. */
@@ -2339,6 +2343,7 @@ ospf_opaque_ls_ack_received (struct ospf_neighbor *nbr, struct ospf_lsa *lsa)
   return;
 }
 
+#ifdef BUGGY_UNLOCK
 static void
 ospf_opaque_type9_lsa_rxmt_nbr_check (struct ospf_interface *oi)
 {
@@ -2439,6 +2444,7 @@ ospf_opaque_nrxmt_self (struct route_table *nbrs, int lsa_type)
 
   return n;
 }
+#endif /* BUGGY_UNLOCK */
 
 /*------------------------------------------------------------------------*
  * Followings are util functions; probably be used by Opaque-LSAs only...

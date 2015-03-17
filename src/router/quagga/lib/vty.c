@@ -713,6 +713,7 @@ vty_end_config (struct vty *vty)
     case KEYCHAIN_NODE:
     case KEYCHAIN_KEY_NODE:
     case MASC_NODE:
+    case PIM_NODE:
     case VTY_NODE:
       vty_config_unlock (vty);
       vty->node = ENABLE_NODE;
@@ -1117,6 +1118,7 @@ vty_stop_input (struct vty *vty)
     case KEYCHAIN_NODE:
     case KEYCHAIN_KEY_NODE:
     case MASC_NODE:
+    case PIM_NODE:
     case VTY_NODE:
       vty_config_unlock (vty);
       vty->node = ENABLE_NODE;
@@ -1773,7 +1775,7 @@ vty_accept (struct thread *thread)
   return 0;
 }
 
-#if defined(HAVE_IPV6) && !defined(NRL)
+#ifdef HAVE_IPV6
 static void
 vty_serv_sock_addrinfo (const char *hostname, unsigned short port)
 {
@@ -1838,7 +1840,7 @@ vty_serv_sock_addrinfo (const char *hostname, unsigned short port)
 
   freeaddrinfo (ainfo_save);
 }
-#else /* HAVE_IPV6 && ! NRL */
+#else /* HAVE_IPV6 */
 
 /* Make vty server socket. */
 static void
@@ -1906,7 +1908,7 @@ vty_serv_sock_family (const char* addr, unsigned short port, int family)
   /* Add vty server event. */
   vty_event (VTY_SERV, accept_sock, NULL);
 }
-#endif /* HAVE_IPV6 && ! NRL */
+#endif /* HAVE_IPV6 */
 
 #ifdef VTYSH
 /* For sockaddr_un. */
@@ -2141,12 +2143,7 @@ vty_serv_sock (const char *addr, unsigned short port, const char *path)
     {
 
 #ifdef HAVE_IPV6
-#ifdef NRL
-      vty_serv_sock_family (addr, port, AF_INET);
-      vty_serv_sock_family (addr, port, AF_INET6);
-#else /* ! NRL */
       vty_serv_sock_addrinfo (addr, port);
-#endif /* NRL*/
 #else /* ! HAVE_IPV6 */
       vty_serv_sock_family (addr,port, AF_INET);
 #endif /* HAVE_IPV6 */
@@ -2229,28 +2226,37 @@ vty_read_file (FILE *confp)
 {
   int ret;
   struct vty *vty;
+  unsigned int line_num = 0;
 
   vty = vty_new ();
-  vty->fd = 0;			/* stdout */
-  vty->type = VTY_TERM;
+  vty->fd = dup(STDERR_FILENO); /* vty_close() will close this */
+  if (vty->fd < 0)
+  {
+    /* Fine, we couldn't make a new fd. vty_close doesn't close stdout. */
+    vty->fd = STDOUT_FILENO;
+  }
+  vty->type = VTY_FILE;
   vty->node = CONFIG_NODE;
   
   /* Execute configuration file */
-  ret = config_from_file (vty, confp);
+  ret = config_from_file (vty, confp, &line_num);
+
+  /* Flush any previous errors before printing messages below */
+  buffer_flush_all (vty->obuf, vty->fd);
 
   if ( !((ret == CMD_SUCCESS) || (ret == CMD_ERR_NOTHING_TODO)) ) 
     {
       switch (ret)
        {
          case CMD_ERR_AMBIGUOUS:
-           fprintf (stderr, "Ambiguous command.\n");
+           fprintf (stderr, "*** Error reading config: Ambiguous command.\n");
            break;
          case CMD_ERR_NO_MATCH:
-           fprintf (stderr, "There is no such command.\n");
+           fprintf (stderr, "*** Error reading config: There is no such command.\n");
            break;
        }
-      fprintf (stderr, "Error occured during reading below line.\n%s\n", 
-	       vty->buf);
+      fprintf (stderr, "*** Error occured processing line %u, below:\n%s\n",
+		       line_num, vty->buf);
       vty_close (vty);
       exit (1);
     }
@@ -2449,7 +2455,7 @@ vty_log (const char *level, const char *proto_str,
 
 /* Async-signal-safe version of vty_log for fixed strings. */
 void
-vty_log_fixed (const char *buf, size_t len)
+vty_log_fixed (char *buf, size_t len)
 {
   unsigned int i;
   struct iovec iov[2];
@@ -2458,7 +2464,7 @@ vty_log_fixed (const char *buf, size_t len)
   if (!vtyvec)
     return;
   
-  iov[0].iov_base = (void *)buf;
+  iov[0].iov_base = buf;
   iov[0].iov_len = len;
   iov[1].iov_base = (void *)"\r\n";
   iov[1].iov_len = 2;

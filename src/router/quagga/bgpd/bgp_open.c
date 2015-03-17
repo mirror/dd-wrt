@@ -338,13 +338,13 @@ bgp_capability_restart (struct peer *peer, struct capability_header *caphdr)
 {
   struct stream *s = BGP_INPUT (peer);
   u_int16_t restart_flag_time;
-  int restart_bit = 0;
   size_t end = stream_get_getp (s) + caphdr->length;
 
   SET_FLAG (peer->cap, PEER_CAP_RESTART_RCV);
   restart_flag_time = stream_getw(s);
   if (CHECK_FLAG (restart_flag_time, RESTART_R_BIT))
-    restart_bit = 1;
+    SET_FLAG (peer->cap, PEER_CAP_RESTART_BIT_RCV);
+  
   UNSET_FLAG (restart_flag_time, 0xF000);
   peer->v_gr_restart = restart_flag_time;
 
@@ -352,7 +352,9 @@ bgp_capability_restart (struct peer *peer, struct capability_header *caphdr)
     {
       zlog_debug ("%s OPEN has Graceful Restart capability", peer->host);
       zlog_debug ("%s Peer has%srestarted. Restart Time : %d",
-                  peer->host, restart_bit ? " " : " not ",
+                  peer->host,
+                  CHECK_FLAG (peer->cap, PEER_CAP_RESTART_BIT_RCV) ? " " 
+                                                                   : " not ",
                   peer->v_gr_restart);
     }
 
@@ -898,10 +900,11 @@ void
 bgp_open_capability (struct stream *s, struct peer *peer)
 {
   u_char len;
-  unsigned long cp;
+  unsigned long cp, capp, rcapp;
   afi_t afi;
   safi_t safi;
   as_t local_as;
+  u_int32_t restart_time;
 
   /* Remember current pointer for Opt Parm Len. */
   cp = stream_get_endp (s);
@@ -1020,16 +1023,43 @@ bgp_open_capability (struct stream *s, struct peer *peer)
       stream_putc (s, CAPABILITY_CODE_DYNAMIC_LEN);
     }
 
-  /* Graceful restart capability */
+  /* Sending base graceful-restart capability irrespective of the config */
+  SET_FLAG (peer->cap, PEER_CAP_RESTART_ADV);
+  stream_putc (s, BGP_OPEN_OPT_CAP);
+  capp = stream_get_endp (s);           /* Set Capability Len Pointer */
+  stream_putc (s, 0);                   /* Capability Length */
+  stream_putc (s, CAPABILITY_CODE_RESTART);
+  rcapp = stream_get_endp (s);          /* Set Restart Capability Len Pointer */
+  stream_putc (s, 0);
+  restart_time = peer->bgp->restart_time;
+  if (peer->bgp->t_startup)
+    {
+      SET_FLAG (restart_time, RESTART_R_BIT);
+      SET_FLAG (peer->cap, PEER_CAP_RESTART_BIT_ADV);
+    }
+  stream_putw (s, restart_time);
+
+  /* Send address-family specific graceful-restart capability only when GR config
+     is present */
   if (bgp_flag_check (peer->bgp, BGP_FLAG_GRACEFUL_RESTART))
     {
-      SET_FLAG (peer->cap, PEER_CAP_RESTART_ADV);
-      stream_putc (s, BGP_OPEN_OPT_CAP);
-      stream_putc (s, CAPABILITY_CODE_RESTART_LEN + 2);
-      stream_putc (s, CAPABILITY_CODE_RESTART);
-      stream_putc (s, CAPABILITY_CODE_RESTART_LEN);
-      stream_putw (s, peer->bgp->restart_time);
-     }
+      for (afi = AFI_IP ; afi < AFI_MAX ; afi++)
+        for (safi = SAFI_UNICAST ; safi < SAFI_MAX ; safi++)
+          if (peer->afc[afi][safi])
+            {
+              stream_putw (s, afi);
+              stream_putc (s, safi);
+              stream_putc (s, 0); //Forwarding is not retained as of now.
+            }
+    }
+
+  /* Total Graceful restart capability Len. */
+  len = stream_get_endp (s) - rcapp - 1;
+  stream_putc_at (s, rcapp, len);
+
+  /* Total Capability Len. */
+  len = stream_get_endp (s) - capp - 1;
+  stream_putc_at (s, capp, len);
 
   /* Total Opt Parm Len. */
   len = stream_get_endp (s) - cp - 1;

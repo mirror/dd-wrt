@@ -30,11 +30,16 @@
 
 #include "zebra/zserv.h"
 
-/* General fucntion for static route. */
+static int do_show_ip_route(struct vty *vty, safi_t safi);
+static void vty_show_ip_route_detail (struct vty *vty, struct route_node *rn,
+                                      int mcast);
+
+/* General function for static route. */
 static int
-zebra_static_ipv4 (struct vty *vty, int add_cmd, const char *dest_str,
-		   const char *mask_str, const char *gate_str,
-		   const char *flag_str, const char *distance_str)
+zebra_static_ipv4_safi (struct vty *vty, safi_t safi, int add_cmd,
+			const char *dest_str, const char *mask_str,
+			const char *gate_str, const char *flag_str,
+			const char *distance_str)
 {
   int ret;
   u_char distance;
@@ -81,9 +86,9 @@ zebra_static_ipv4 (struct vty *vty, int add_cmd, const char *dest_str,
           return CMD_WARNING;
         }
       if (add_cmd)
-        static_add_ipv4 (&p, NULL, NULL, ZEBRA_FLAG_BLACKHOLE, distance, 0);
+        static_add_ipv4_safi (safi, &p, NULL, NULL, ZEBRA_FLAG_BLACKHOLE, distance, 0);
       else
-        static_delete_ipv4 (&p, NULL, NULL, distance, 0);
+        static_delete_ipv4_safi (safi, &p, NULL, NULL, distance, 0);
       return CMD_SUCCESS;
     }
 
@@ -107,9 +112,9 @@ zebra_static_ipv4 (struct vty *vty, int add_cmd, const char *dest_str,
   if (gate_str == NULL)
   {
     if (add_cmd)
-      static_add_ipv4 (&p, NULL, NULL, flag, distance, 0);
+      static_add_ipv4_safi (safi, &p, NULL, NULL, flag, distance, 0);
     else
-      static_delete_ipv4 (&p, NULL, NULL, distance, 0);
+      static_delete_ipv4_safi (safi, &p, NULL, NULL, distance, 0);
 
     return CMD_SUCCESS;
   }
@@ -123,9 +128,168 @@ zebra_static_ipv4 (struct vty *vty, int add_cmd, const char *dest_str,
     ifname = gate_str;
 
   if (add_cmd)
-    static_add_ipv4 (&p, ifname ? NULL : &gate, ifname, flag, distance, 0);
+    static_add_ipv4_safi (safi, &p, ifname ? NULL : &gate, ifname, flag, distance, 0);
   else
-    static_delete_ipv4 (&p, ifname ? NULL : &gate, ifname, distance, 0);
+    static_delete_ipv4_safi (safi, &p, ifname ? NULL : &gate, ifname, distance, 0);
+
+  return CMD_SUCCESS;
+}
+
+static int
+zebra_static_ipv4 (struct vty *vty, int add_cmd, const char *dest_str,
+		   const char *mask_str, const char *gate_str,
+		   const char *flag_str, const char *distance_str)
+{
+  return zebra_static_ipv4_safi(vty, SAFI_UNICAST, add_cmd, dest_str, mask_str, gate_str, flag_str, distance_str);
+}
+
+/* Static unicast routes for multicast RPF lookup. */
+DEFUN (ip_mroute_dist,
+       ip_mroute_dist_cmd,
+       "ip mroute A.B.C.D/M (A.B.C.D|INTERFACE) <1-255>",
+       IP_STR
+       "Configure static unicast route into MRIB for multicast RPF lookup\n"
+       "IP destination prefix (e.g. 10.0.0.0/8)\n"
+       "Nexthop address\n"
+       "Nexthop interface name\n"
+       "Distance\n")
+{
+  VTY_WARN_EXPERIMENTAL();
+  return zebra_static_ipv4_safi(vty, SAFI_MULTICAST, 1, argv[0], NULL, argv[1],
+                                NULL, argc > 2 ? argv[2] : NULL);
+}
+
+ALIAS (ip_mroute_dist,
+       ip_mroute_cmd,
+       "ip mroute A.B.C.D/M (A.B.C.D|INTERFACE)",
+       IP_STR
+       "Configure static unicast route into MRIB for multicast RPF lookup\n"
+       "IP destination prefix (e.g. 10.0.0.0/8)\n"
+       "Nexthop address\n"
+       "Nexthop interface name\n")
+
+DEFUN (no_ip_mroute_dist,
+       no_ip_mroute_dist_cmd,
+       "no ip mroute A.B.C.D/M (A.B.C.D|INTERFACE) <1-255>",
+       IP_STR
+       "Configure static unicast route into MRIB for multicast RPF lookup\n"
+       "IP destination prefix (e.g. 10.0.0.0/8)\n"
+       "Nexthop address\n"
+       "Nexthop interface name\n"
+       "Distance\n")
+{
+  VTY_WARN_EXPERIMENTAL();
+  return zebra_static_ipv4_safi(vty, SAFI_MULTICAST, 0, argv[0], NULL, argv[1],
+                                NULL, argc > 2 ? argv[2] : NULL);
+}
+
+ALIAS (no_ip_mroute_dist,
+       no_ip_mroute_cmd,
+       "no ip mroute A.B.C.D/M (A.B.C.D|INTERFACE)",
+       NO_STR
+       IP_STR
+       "Configure static unicast route into MRIB for multicast RPF lookup\n"
+       "IP destination prefix (e.g. 10.0.0.0/8)\n"
+       "Nexthop address\n"
+       "Nexthop interface name\n")
+
+DEFUN (ip_multicast_mode,
+       ip_multicast_mode_cmd,
+       "ip multicast rpf-lookup-mode (urib-only|mrib-only|mrib-then-urib|lower-distance|longer-prefix)",
+       IP_STR
+       "Multicast options\n"
+       "RPF lookup behavior\n"
+       "Lookup in unicast RIB only\n"
+       "Lookup in multicast RIB only\n"
+       "Try multicast RIB first, fall back to unicast RIB\n"
+       "Lookup both, use entry with lower distance\n"
+       "Lookup both, use entry with longer prefix\n")
+{
+  VTY_WARN_EXPERIMENTAL();
+
+  if (!strncmp (argv[0], "u", 1))
+    multicast_mode_ipv4_set (MCAST_URIB_ONLY);
+  else if (!strncmp (argv[0], "mrib-o", 6))
+    multicast_mode_ipv4_set (MCAST_MRIB_ONLY);
+  else if (!strncmp (argv[0], "mrib-t", 6))
+    multicast_mode_ipv4_set (MCAST_MIX_MRIB_FIRST);
+  else if (!strncmp (argv[0], "low", 3))
+    multicast_mode_ipv4_set (MCAST_MIX_DISTANCE);
+  else if (!strncmp (argv[0], "lon", 3))
+    multicast_mode_ipv4_set (MCAST_MIX_PFXLEN);
+  else
+    {
+      vty_out (vty, "Invalid mode specified%s", VTY_NEWLINE);
+      return CMD_WARNING;
+    }
+
+  return CMD_SUCCESS;
+}
+
+DEFUN (no_ip_multicast_mode,
+       no_ip_multicast_mode_cmd,
+       "no ip multicast rpf-lookup-mode (urib-only|mrib-only|mrib-then-urib|lower-distance|longer-prefix)",
+       NO_STR
+       IP_STR
+       "Multicast options\n"
+       "RPF lookup behavior\n"
+       "Lookup in unicast RIB only\n"
+       "Lookup in multicast RIB only\n"
+       "Try multicast RIB first, fall back to unicast RIB\n"
+       "Lookup both, use entry with lower distance\n"
+       "Lookup both, use entry with longer prefix\n")
+{
+  multicast_mode_ipv4_set (MCAST_NO_CONFIG);
+  return CMD_SUCCESS;
+}
+
+ALIAS (no_ip_multicast_mode,
+       no_ip_multicast_mode_noarg_cmd,
+       "no ip multicast rpf-lookup-mode",
+       NO_STR
+       IP_STR
+       "Multicast options\n"
+       "RPF lookup behavior\n")
+
+DEFUN (show_ip_rpf,
+       show_ip_rpf_cmd,
+       "show ip rpf",
+       SHOW_STR
+       IP_STR
+       "Display RPF information for multicast source\n")
+{
+  VTY_WARN_EXPERIMENTAL();
+  return do_show_ip_route(vty, SAFI_MULTICAST);
+}
+
+DEFUN (show_ip_rpf_addr,
+       show_ip_rpf_addr_cmd,
+       "show ip rpf A.B.C.D",
+       SHOW_STR
+       IP_STR
+       "Display RPF information for multicast source\n"
+       "IP multicast source address (e.g. 10.0.0.0)\n")
+{
+  struct in_addr addr;
+  struct route_node *rn;
+  struct rib *rib;
+  int ret;
+
+  VTY_WARN_EXPERIMENTAL();
+
+  ret = inet_aton (argv[0], &addr);
+  if (ret == 0)
+    {
+      vty_out (vty, "%% Malformed address%s", VTY_NEWLINE);
+      return CMD_WARNING;
+    }
+
+  rib = rib_match_ipv4_multicast (addr, &rn);
+
+  if (rib)
+    vty_show_ip_route_detail (vty, rn, 1);
+  else
+    vty_out (vty, "%% No match for RPF lookup%s", VTY_NEWLINE);
 
   return CMD_SUCCESS;
 }
@@ -530,7 +694,7 @@ DEFUN (no_ip_protocol,
 
 /* New RIB.  Detailed information for IPv4 route. */
 static void
-vty_show_ip_route_detail (struct vty *vty, struct route_node *rn)
+vty_show_ip_route_detail (struct vty *vty, struct route_node *rn, int mcast)
 {
   struct rib *rib;
   struct nexthop *nexthop, *tnexthop;
@@ -538,8 +702,16 @@ vty_show_ip_route_detail (struct vty *vty, struct route_node *rn)
 
   RNODE_FOREACH_RIB (rn, rib)
     {
-      vty_out (vty, "Routing entry for %s/%d%s", 
-	       inet_ntoa (rn->p.u.prefix4), rn->p.prefixlen,
+      const char *mcast_info = "";
+      if (mcast)
+        {
+          rib_table_info_t *info = rn->table->info;
+          mcast_info = (info->safi == SAFI_MULTICAST)
+                       ? " using Multicast RIB"
+                       : " using Unicast RIB";
+        }
+      vty_out (vty, "Routing entry for %s/%d%s%s",
+	       inet_ntoa (rn->p.u.prefix4), rn->p.prefixlen, mcast_info,
 	       VTY_NEWLINE);
       vty_out (vty, "  Known via \"%s\"", zebra_route_string (rib->type));
       vty_out (vty, ", distance %u, metric %u", rib->distance, rib->metric);
@@ -794,12 +966,16 @@ DEFUN (show_ip_route,
        IP_STR
        "IP routing table\n")
 {
+  return do_show_ip_route(vty, SAFI_UNICAST);
+}
+
+static int do_show_ip_route(struct vty *vty, safi_t safi) {
   struct route_table *table;
   struct route_node *rn;
   struct rib *rib;
   int first = 1;
 
-  table = vrf_table (AFI_IP, SAFI_UNICAST, 0);
+  table = vrf_table (AFI_IP, safi, 0);
   if (! table)
     return CMD_SUCCESS;
 
@@ -969,7 +1145,7 @@ DEFUN (show_ip_route_addr,
       return CMD_WARNING;
     }
 
-  vty_show_ip_route_detail (vty, rn);
+  vty_show_ip_route_detail (vty, rn, 0);
 
   route_unlock_node (rn);
 
@@ -1004,10 +1180,12 @@ DEFUN (show_ip_route_prefix,
   if (! rn || rn->p.prefixlen != p.prefixlen)
     {
       vty_out (vty, "%% Network not in table%s", VTY_NEWLINE);
+      if (rn)
+        route_unlock_node (rn);
       return CMD_WARNING;
     }
 
-  vty_show_ip_route_detail (vty, rn);
+  vty_show_ip_route_detail (vty, rn, 0);
 
   route_unlock_node (rn);
 
@@ -1078,6 +1256,84 @@ vty_show_ip_route_summary (struct vty *vty, struct route_table *table)
 	   fib_cnt[ZEBRA_ROUTE_TOTAL], VTY_NEWLINE);  
 }
 
+/*
+ * Implementation of the ip route summary prefix command.
+ *
+ * This command prints the primary prefixes that have been installed by various
+ * protocols on the box.
+ *
+ */
+static void
+vty_show_ip_route_summary_prefix (struct vty *vty, struct route_table *table)
+{
+  struct route_node *rn;
+  struct rib *rib;
+  struct nexthop *nexthop;
+#define ZEBRA_ROUTE_IBGP  ZEBRA_ROUTE_MAX
+#define ZEBRA_ROUTE_TOTAL (ZEBRA_ROUTE_IBGP + 1)
+  u_int32_t rib_cnt[ZEBRA_ROUTE_TOTAL + 1];
+  u_int32_t fib_cnt[ZEBRA_ROUTE_TOTAL + 1];
+  u_int32_t i;
+  int       cnt;
+
+  memset (&rib_cnt, 0, sizeof(rib_cnt));
+  memset (&fib_cnt, 0, sizeof(fib_cnt));
+  for (rn = route_top (table); rn; rn = route_next (rn))
+    RNODE_FOREACH_RIB (rn, rib)
+      {
+
+       /*
+        * In case of ECMP, count only once.
+        */
+       cnt = 0;
+       for (nexthop = rib->nexthop; (!cnt && nexthop); nexthop = nexthop->next)
+         {
+          cnt++;
+          rib_cnt[ZEBRA_ROUTE_TOTAL]++;
+          rib_cnt[rib->type]++;
+          if (CHECK_FLAG (nexthop->flags, NEXTHOP_FLAG_FIB))
+	        {
+	         fib_cnt[ZEBRA_ROUTE_TOTAL]++;
+             fib_cnt[rib->type]++;
+            }
+	      if (rib->type == ZEBRA_ROUTE_BGP &&
+	          CHECK_FLAG (rib->flags, ZEBRA_FLAG_IBGP))
+            {
+	         rib_cnt[ZEBRA_ROUTE_IBGP]++;
+		     if (CHECK_FLAG (nexthop->flags, NEXTHOP_FLAG_FIB))
+		        fib_cnt[ZEBRA_ROUTE_IBGP]++;
+            }
+	     }
+      }
+
+  vty_out (vty, "%-20s %-20s %-20s %s",
+	   "Route Source", "Prefix Routes", "FIB", VTY_NEWLINE);
+
+  for (i = 0; i < ZEBRA_ROUTE_MAX; i++)
+    {
+      if (rib_cnt[i] > 0)
+	{
+	  if (i == ZEBRA_ROUTE_BGP)
+	    {
+	      vty_out (vty, "%-20s %-20d %-20d %s", "ebgp",
+		       rib_cnt[ZEBRA_ROUTE_BGP] - rib_cnt[ZEBRA_ROUTE_IBGP],
+		       fib_cnt[ZEBRA_ROUTE_BGP] - fib_cnt[ZEBRA_ROUTE_IBGP],
+		       VTY_NEWLINE);
+	      vty_out (vty, "%-20s %-20d %-20d %s", "ibgp",
+		       rib_cnt[ZEBRA_ROUTE_IBGP], fib_cnt[ZEBRA_ROUTE_IBGP],
+		       VTY_NEWLINE);
+	    }
+	  else
+	    vty_out (vty, "%-20s %-20d %-20d %s", zebra_route_string(i),
+		     rib_cnt[i], fib_cnt[i], VTY_NEWLINE);
+	}
+    }
+
+  vty_out (vty, "------%s", VTY_NEWLINE);
+  vty_out (vty, "%-20s %-20d %-20d %s", "Totals", rib_cnt[ZEBRA_ROUTE_TOTAL],
+	   fib_cnt[ZEBRA_ROUTE_TOTAL], VTY_NEWLINE);
+}
+
 /* Show route summary.  */
 DEFUN (show_ip_route_summary,
        show_ip_route_summary_cmd,
@@ -1098,9 +1354,30 @@ DEFUN (show_ip_route_summary,
   return CMD_SUCCESS;
 }
 
+/* Show route summary prefix.  */
+DEFUN (show_ip_route_summary_prefix,
+       show_ip_route_summary_prefix_cmd,
+       "show ip route summary prefix",
+       SHOW_STR
+       IP_STR
+       "IP routing table\n"
+       "Summary of all routes\n"
+       "Prefix routes\n")
+{
+  struct route_table *table;
+
+  table = vrf_table (AFI_IP, SAFI_UNICAST, 0);
+  if (! table)
+    return CMD_SUCCESS;
+
+  vty_show_ip_route_summary_prefix (vty, table);
+
+  return CMD_SUCCESS;
+}
+
 /* Write IPv4 static route configuration. */
 static int
-static_config_ipv4 (struct vty *vty)
+static_config_ipv4 (struct vty *vty, safi_t safi, const char *cmd)
 {
   struct route_node *rn;
   struct static_ipv4 *si;  
@@ -1110,14 +1387,14 @@ static_config_ipv4 (struct vty *vty)
   write = 0;
 
   /* Lookup table.  */
-  stable = vrf_static_table (AFI_IP, SAFI_UNICAST, 0);
+  stable = vrf_static_table (AFI_IP, safi, 0);
   if (! stable)
     return -1;
 
   for (rn = route_top (stable); rn; rn = route_next (rn))
     for (si = rn->info; si; si = si->next)
       {
-        vty_out (vty, "ip route %s/%d", inet_ntoa (rn->p.u.prefix4),
+        vty_out (vty, "%s %s/%d", cmd, inet_ntoa (rn->p.u.prefix4),
                  rn->p.prefixlen);
 
         switch (si->type)
@@ -1909,6 +2186,8 @@ DEFUN (show_ipv6_route_prefix,
   if (! rn || rn->p.prefixlen != p.prefixlen)
     {
       vty_out (vty, "%% Network not in table%s", VTY_NEWLINE);
+      if (rn)
+        route_unlock_node (rn);
       return CMD_WARNING;
     }
 
@@ -1935,6 +2214,27 @@ DEFUN (show_ipv6_route_summary,
     return CMD_SUCCESS;
 
   vty_show_ip_route_summary (vty, table);
+
+  return CMD_SUCCESS;
+}
+
+/* Show ipv6 route summary prefix.  */
+DEFUN (show_ipv6_route_summary_prefix,
+       show_ipv6_route_summary_prefix_cmd,
+       "show ipv6 route summary prefix",
+       SHOW_STR
+       IP_STR
+       "IPv6 routing table\n"
+       "Summary of all IPv6 routes\n"
+       "Prefix routes\n")
+{
+  struct route_table *table;
+
+  table = vrf_table (AFI_IP6, SAFI_UNICAST, 0);
+  if (! table)
+    return CMD_SUCCESS;
+
+  vty_show_ip_route_summary_prefix (vty, table);
 
   return CMD_SUCCESS;
 }
@@ -2034,7 +2334,8 @@ zebra_ip_config (struct vty *vty)
 {
   int write = 0;
 
-  write += static_config_ipv4 (vty);
+  write += static_config_ipv4 (vty, SAFI_UNICAST, "ip route");
+  write += static_config_ipv4 (vty, SAFI_MULTICAST, "ip mroute");
 #ifdef HAVE_IPV6
   write += static_config_ipv6 (vty);
 #endif /* HAVE_IPV6 */
@@ -2042,10 +2343,19 @@ zebra_ip_config (struct vty *vty)
   return write;
 }
 
-/* ip protocol configuration write function */
-static int config_write_protocol(struct vty *vty)
-{  
+static int config_write_vty(struct vty *vty)
+{
   int i;
+  enum multicast_mode ipv4_multicast_mode = multicast_mode_ipv4_get ();
+
+  if (ipv4_multicast_mode != MCAST_NO_CONFIG)
+    vty_out (vty, "ip multicast rpf-lookup-mode %s%s",
+             ipv4_multicast_mode == MCAST_URIB_ONLY ? "urib-only" :
+             ipv4_multicast_mode == MCAST_MRIB_ONLY ? "mrib-only" :
+             ipv4_multicast_mode == MCAST_MIX_MRIB_FIRST ? "mrib-then-urib" :
+             ipv4_multicast_mode == MCAST_MIX_DISTANCE ? "lower-distance" :
+             "longer-prefix",
+             VTY_NEWLINE);
 
   for (i=0;i<ZEBRA_ROUTE_MAX;i++)
     {
@@ -2071,8 +2381,15 @@ void
 zebra_vty_init (void)
 {
   install_node (&ip_node, zebra_ip_config);
-  install_node (&protocol_node, config_write_protocol);
+  install_node (&protocol_node, config_write_vty);
 
+  install_element (CONFIG_NODE, &ip_mroute_cmd);
+  install_element (CONFIG_NODE, &ip_mroute_dist_cmd);
+  install_element (CONFIG_NODE, &no_ip_mroute_cmd);
+  install_element (CONFIG_NODE, &no_ip_mroute_dist_cmd);
+  install_element (CONFIG_NODE, &ip_multicast_mode_cmd);
+  install_element (CONFIG_NODE, &no_ip_multicast_mode_cmd);
+  install_element (CONFIG_NODE, &no_ip_multicast_mode_noarg_cmd);
   install_element (CONFIG_NODE, &ip_protocol_cmd);
   install_element (CONFIG_NODE, &no_ip_protocol_cmd);
   install_element (VIEW_NODE, &show_ip_protocol_cmd);
@@ -2108,6 +2425,7 @@ zebra_vty_init (void)
   install_element (VIEW_NODE, &show_ip_route_protocol_cmd);
   install_element (VIEW_NODE, &show_ip_route_supernets_cmd);
   install_element (VIEW_NODE, &show_ip_route_summary_cmd);
+  install_element (VIEW_NODE, &show_ip_route_summary_prefix_cmd);
   install_element (ENABLE_NODE, &show_ip_route_cmd);
   install_element (ENABLE_NODE, &show_ip_route_addr_cmd);
   install_element (ENABLE_NODE, &show_ip_route_prefix_cmd);
@@ -2115,10 +2433,15 @@ zebra_vty_init (void)
   install_element (ENABLE_NODE, &show_ip_route_protocol_cmd);
   install_element (ENABLE_NODE, &show_ip_route_supernets_cmd);
   install_element (ENABLE_NODE, &show_ip_route_summary_cmd);
+  install_element (ENABLE_NODE, &show_ip_route_summary_prefix_cmd);
 
   install_element (VIEW_NODE, &show_ip_mroute_cmd);
   install_element (ENABLE_NODE, &show_ip_mroute_cmd);
 
+  install_element (VIEW_NODE, &show_ip_rpf_cmd);
+  install_element (ENABLE_NODE, &show_ip_rpf_cmd);
+  install_element (VIEW_NODE, &show_ip_rpf_addr_cmd);
+  install_element (ENABLE_NODE, &show_ip_rpf_addr_cmd);
 
 #ifdef HAVE_IPV6
   install_element (CONFIG_NODE, &ipv6_route_cmd);
@@ -2139,6 +2462,7 @@ zebra_vty_init (void)
   install_element (CONFIG_NODE, &no_ipv6_route_ifname_flags_pref_cmd);
   install_element (VIEW_NODE, &show_ipv6_route_cmd);
   install_element (VIEW_NODE, &show_ipv6_route_summary_cmd);
+  install_element (VIEW_NODE, &show_ipv6_route_summary_prefix_cmd);
   install_element (VIEW_NODE, &show_ipv6_route_protocol_cmd);
   install_element (VIEW_NODE, &show_ipv6_route_addr_cmd);
   install_element (VIEW_NODE, &show_ipv6_route_prefix_cmd);
@@ -2149,6 +2473,7 @@ zebra_vty_init (void)
   install_element (ENABLE_NODE, &show_ipv6_route_prefix_cmd);
   install_element (ENABLE_NODE, &show_ipv6_route_prefix_longer_cmd);
   install_element (ENABLE_NODE, &show_ipv6_route_summary_cmd);
+  install_element (ENABLE_NODE, &show_ipv6_route_summary_prefix_cmd);
 
   install_element (VIEW_NODE, &show_ipv6_mroute_cmd);
   install_element (ENABLE_NODE, &show_ipv6_mroute_cmd);

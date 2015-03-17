@@ -254,13 +254,8 @@ sin6_masklen (struct in6_addr mask)
   char *p, *lim;
   int len;
 
-#if defined (INRIA)
-  if (IN_ANYADDR6 (mask)) 
-    return sizeof (long);
-#else /* ! INRIA */
   if (IN6_IS_ADDR_UNSPECIFIED (&mask)) 
     return sizeof (long);
-#endif /* ! INRIA */
 
   sin6.sin6_addr = mask;
   len = sizeof (struct sockaddr_in6);
@@ -474,22 +469,6 @@ kernel_delete_ipv6 (struct prefix *p, struct rib *rib)
   if (zserv_privs.change(ZPRIVS_RAISE))
     zlog (NULL, LOG_ERR, "Can't raise privileges");
   route =  kernel_rtm_ipv6_multipath (RTM_DELETE, p, rib, AF_INET6);
-  if (zserv_privs.change(ZPRIVS_LOWER))
-    zlog (NULL, LOG_ERR, "Can't lower privileges");
-
-  return route;
-}
-
-/* Delete IPv6 route from the kernel. */
-int
-kernel_delete_ipv6_old (struct prefix_ipv6 *dest, struct in6_addr *gate,
- 		        unsigned int index, int flags, int table)
-{
-  int route;
-
-  if (zserv_privs.change(ZPRIVS_RAISE))
-    zlog (NULL, LOG_ERR, "Can't raise privileges");
-  route = kernel_rtm_ipv6 (RTM_DELETE, dest, gate, index, flags);
   if (zserv_privs.change(ZPRIVS_LOWER))
     zlog (NULL, LOG_ERR, "Can't lower privileges");
 

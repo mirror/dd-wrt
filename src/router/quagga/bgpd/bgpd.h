@@ -104,6 +104,8 @@ struct bgp
   as_t *confed_peers;
   int confed_peers_cnt;
 
+  struct thread *t_startup;
+
   /* BGP flags. */
   u_int16_t flags;
 #define BGP_FLAG_ALWAYS_COMPARE_MED       (1 << 0)
@@ -366,6 +368,8 @@ struct peer
 #define PEER_CAP_RESTART_RCV                (1 << 6) /* restart received */
 #define PEER_CAP_AS4_ADV                    (1 << 7) /* as4 advertised */
 #define PEER_CAP_AS4_RCV                    (1 << 8) /* as4 received */
+#define PEER_CAP_RESTART_BIT_ADV            (1 << 9) /* sent restart state */
+#define PEER_CAP_RESTART_BIT_RCV            (1 << 10) /* peer restart state */
 
   /* Capability flags (reset in bgp_stop) */
   u_int16_t af_cap[AFI_MAX][SAFI_MAX];
@@ -412,6 +416,7 @@ struct peer
 #define PEER_FLAG_MAX_PREFIX                (1 << 14) /* maximum prefix */
 #define PEER_FLAG_MAX_PREFIX_WARNING        (1 << 15) /* maximum prefix warning-only */
 #define PEER_FLAG_NEXTHOP_LOCAL_UNCHANGED   (1 << 16) /* leave link-local nexthop unchanged */
+#define PEER_FLAG_NEXTHOP_SELF_ALL          (1 << 17) /* next-hop-self all */
 
   /* MD5 password */
   char *password;

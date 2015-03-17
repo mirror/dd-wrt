@@ -42,10 +42,10 @@
  * the input key.
  */
 u_int32_t
-jhash (void *key, u_int32_t length, u_int32_t initval)
+jhash (const void *key, u_int32_t length, u_int32_t initval)
 {
   u_int32_t a, b, c, len;
-  u_int8_t *k = key;
+  const u_int8_t *k = key;
 
   len = length;
   a = b = JHASH_GOLDEN_RATIO;
@@ -105,7 +105,7 @@ jhash (void *key, u_int32_t length, u_int32_t initval)
  * The length parameter here is the number of u_int32_ts in the key.
  */
 u_int32_t
-jhash2 (u_int32_t * k, u_int32_t length, u_int32_t initval)
+jhash2 (const u_int32_t *k, u_int32_t length, u_int32_t initval)
 {
   u_int32_t a, b, c, len;
 

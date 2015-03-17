@@ -183,6 +183,7 @@ CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
 CONFDATE = @CONFDATE@
+CONFIG_ARGS = @CONFIG_ARGS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CURSES = @CURSES@
@@ -204,8 +205,6 @@ GAWK = @GAWK@
 GREP = @GREP@
 HAVE_LIBPCREPOSIX = @HAVE_LIBPCREPOSIX@
 IF_METHOD = @IF_METHOD@
-IF_PROC = @IF_PROC@
-INCLUDES = @INCLUDES@ -I.. -I$(top_srcdir) -I$(top_srcdir)/lib -I$(top_builddir)/lib
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -228,7 +227,6 @@ LIBPAM = @LIBPAM@
 LIBREADLINE = @LIBREADLINE@
 LIBS = @LIBS@
 LIBTOOL = @LIBTOOL@
-LIB_IPV6 = @LIB_IPV6@
 LIB_REGEX = @LIB_REGEX@
 LIPO = @LIPO@
 LN_S = @LN_S@
@@ -246,7 +244,6 @@ OSPF6D = @OSPF6D@
 OSPFAPI = @OSPFAPI@
 OSPFCLIENT = @OSPFCLIENT@
 OSPFD = @OSPFD@
-OTHER_METHOD = @OTHER_METHOD@
 OTOOL = @OTOOL@
 OTOOL64 = @OTOOL64@
 PACKAGE = @PACKAGE@
@@ -261,6 +258,7 @@ PDFLATEX = @PDFLATEX@
 PERL = @PERL@
 PICFLAGS = @PICFLAGS@
 PILDFLAGS = @PILDFLAGS@
+PIMD = @PIMD@
 RANLIB = @RANLIB@
 RIPD = @RIPD@
 RIPNGD = @RIPNGD@
@@ -341,6 +339,7 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+AM_CPPFLAGS = -I.. -I$(top_srcdir) -I$(top_srcdir)/lib -I$(top_builddir)/lib
 AM_CFLAGS = $(PICFLAGS)
 AM_LDFLAGS = $(PILDFLAGS)
 noinst_LIBRARIES = libtopology.a
@@ -634,9 +633,6 @@ uninstall-am:
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
 	tags tags-am uninstall uninstall-am
 
-
-depend:
-	@$(CPP) -MM $(INCLUDES) $(LDFLAGS) *.c
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

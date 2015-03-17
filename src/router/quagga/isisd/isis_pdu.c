@@ -62,7 +62,7 @@
 #endif /* PNBBY */
 
 /* Utility mask array. */
-static u_char maskbit[] = {
+static const u_char maskbit[] = {
   0x00, 0x80, 0xc0, 0xe0, 0xf0, 0xf8, 0xfc, 0xfe, 0xff
 };
 
@@ -566,6 +566,17 @@ process_p2p_hello (struct isis_circuit *circuit)
    * the circuit
    */
   adj = circuit->u.p2p.neighbor;
+  /* If an adjacency exists, check it is with the source of the hello
+   * packets */
+  if (adj)
+    {
+      if (memcmp(hdr->source_id, adj->sysid, ISIS_SYS_ID_LEN))
+	{
+          zlog_debug("hello source and adjacency do not match, set adj down\n");
+          isis_adj_state_change (adj, ISIS_ADJ_DOWN, "adj do not exist");
+          return 0;
+        }
+    }
   if (!adj || adj->level != hdr->circuit_t)
     {
       if (!adj)

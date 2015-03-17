@@ -44,7 +44,7 @@ info_TEXINFOS = quagga.texi
 # because it cant just work from the png's directly it seems - contrary
 # to the documentation...
 quagga.pdf: $(info_TEXINFOS) $(figures_pdf) $(quagga_TEXINFOS)
-	$(TEXI2PDF) -o "$@" $<
+	$(TEXI2PDF) -o "$@" $< || true
 
 quagga_TEXINFOS = appendix.texi babeld.texi basic.texi bgpd.texi filter.texi \
 	install.texi ipv6.texi kernel.texi main.texi ospf6d.texi ospfd.texi \
@@ -61,7 +61,11 @@ quagga_TEXINFOS = appendix.texi babeld.texi basic.texi bgpd.texi filter.texi \
 .dia.png:
 	$(DIATOPNG) "$@" $<
 
-man_MANS = 
+man_MANS =
+
+if PIMD
+man_MANS += pimd.8
+endif
 
 if BGPD
 man_MANS += bgpd.8
@@ -105,7 +109,7 @@ endif
 
 EXTRA_DIST = BGP-TypeCode draft-zebra-00.ms draft-zebra-00.txt \
 	bgpd.8 isisd.8 ospf6d.8 ospfclient.8 ospfd.8 ripd.8 \
-	ripngd.8 vtysh.1 watchquagga.8 zebra.8 \
+	ripngd.8 pimd.8 vtysh.1 watchquagga.8 zebra.8 \
 	mpls/ChangeLog.opaque.txt mpls/cli_summary.txt \
 	mpls/opaque_lsa.txt mpls/ospfd.conf \
 	$(figures_sources) $(figures_png) $(figures_txt)

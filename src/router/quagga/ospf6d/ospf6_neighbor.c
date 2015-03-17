@@ -46,6 +46,31 @@ const char *ospf6_neighbor_state_str[] =
 { "None", "Down", "Attempt", "Init", "Twoway", "ExStart", "ExChange",
   "Loading", "Full", NULL };
 
+static const char *ospf6_neighbor_event_str[] =
+  {
+    "NoEvent",
+    "HelloReceived",
+    "2-WayReceived",
+    "NegotiationDone",
+    "ExchangeDone",
+    "LoadingDone",
+    "AdjOK?",
+    "SeqNumberMismatch",
+    "BadLSReq",
+    "1-WayReceived",
+    "InactivityTimer",
+  };
+
+static const char *
+ospf6_neighbor_event_string (int event)
+{
+  #define OSPF6_NEIGHBOR_UNKNOWN_EVENT_STRING "UnknownEvent"
+
+  if (event < OSPF6_NEIGHBOR_EVENT_MAX_EVENT)
+      return ospf6_neighbor_event_str[event];
+  return OSPF6_NEIGHBOR_UNKNOWN_EVENT_STRING;
+}
+
 int
 ospf6_neighbor_cmp (void *va, void *vb)
 {

@@ -40,6 +40,7 @@
 #include "ospf6_intra.h"
 #include "ospf6_interface.h"
 #include "ospf6d.h"
+#include "ospf6_abr.h"
 
 unsigned char conf_debug_ospf6_spf = 0;
 
@@ -391,7 +392,7 @@ static const char *ospf6_spf_reason_str[] =
 
 void ospf6_spf_reason_string (unsigned int reason, char *buf, int size)
 {
-  int bit;
+  size_t bit;
   int len = 0;
 
   if (!buf)

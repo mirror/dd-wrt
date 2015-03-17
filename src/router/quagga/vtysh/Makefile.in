@@ -212,6 +212,7 @@ CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
 CONFDATE = @CONFDATE@
+CONFIG_ARGS = @CONFIG_ARGS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CURSES = @CURSES@
@@ -233,8 +234,6 @@ GAWK = @GAWK@
 GREP = @GREP@
 HAVE_LIBPCREPOSIX = @HAVE_LIBPCREPOSIX@
 IF_METHOD = @IF_METHOD@
-IF_PROC = @IF_PROC@
-INCLUDES = @INCLUDES@ -I$(top_srcdir) -I$(top_srcdir)/lib -I$(top_builddir)/lib
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -257,7 +256,6 @@ LIBPAM = @LIBPAM@
 LIBREADLINE = @LIBREADLINE@
 LIBS = @LIBS@ @CURSES@ @LIBPAM@
 LIBTOOL = @LIBTOOL@
-LIB_IPV6 = @LIB_IPV6@
 LIB_REGEX = @LIB_REGEX@
 LIPO = @LIPO@
 LN_S = @LN_S@
@@ -275,7 +273,6 @@ OSPF6D = @OSPF6D@
 OSPFAPI = @OSPFAPI@
 OSPFCLIENT = @OSPFCLIENT@
 OSPFD = @OSPFD@
-OTHER_METHOD = @OTHER_METHOD@
 OTOOL = @OTOOL@
 OTOOL64 = @OTOOL64@
 PACKAGE = @PACKAGE@
@@ -290,6 +287,7 @@ PDFLATEX = @PDFLATEX@
 PERL = @PERL@
 PICFLAGS = @PICFLAGS@
 PILDFLAGS = @PILDFLAGS@
+PIMD = @PIMD@
 RANLIB = @RANLIB@
 RIPD = @RIPD@
 RIPNGD = @RIPNGD@
@@ -370,6 +368,7 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/lib -I$(top_builddir)/lib
 AM_CFLAGS = $(PICFLAGS)
 AM_LDFLAGS = $(PILDFLAGS)
 vtysh_SOURCES = vtysh_main.c vtysh.c vtysh_user.c vtysh_config.c
@@ -384,6 +383,7 @@ vtysh_cmd_FILES = $(top_srcdir)/bgpd/*.c $(top_srcdir)/isisd/*.c \
 		  $(top_srcdir)/ospfd/*.c $(top_srcdir)/ospf6d/*.c \
 		  $(top_srcdir)/ripd/*.c $(top_srcdir)/ripngd/*.c \
 		  $(top_srcdir)/babeld/*.c \
+		  $(top_srcdir)/pimd/pim_cmd.c \
 		  $(top_srcdir)/lib/keychain.c $(top_srcdir)/lib/routemap.c \
 		  $(top_srcdir)/lib/filter.c $(top_srcdir)/lib/plist.c \
 		  $(top_srcdir)/lib/distribute.c $(top_srcdir)/lib/if_rmap.c \

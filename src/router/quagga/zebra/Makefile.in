@@ -106,8 +106,7 @@ am_testzebra_OBJECTS = test_main.$(OBJEXT) zebra_rib.$(OBJEXT) \
 	misc_null.$(OBJEXT)
 testzebra_OBJECTS = $(am_testzebra_OBJECTS)
 am__DEPENDENCIES_1 =
-testzebra_DEPENDENCIES = ../lib/libzebra.la $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
+testzebra_DEPENDENCIES = ../lib/libzebra.la $(am__DEPENDENCIES_1)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
@@ -126,7 +125,6 @@ am_zebra_OBJECTS = zserv.$(OBJEXT) main.$(OBJEXT) interface.$(OBJEXT) \
 	router-id.$(OBJEXT) zebra_fpm.$(OBJEXT) $(am__objects_1)
 zebra_OBJECTS = $(am_zebra_OBJECTS)
 am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 AM_V_P = $(am__v_P_@AM_V@)
@@ -233,6 +231,7 @@ CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
 CONFDATE = @CONFDATE@
+CONFIG_ARGS = @CONFIG_ARGS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CURSES = @CURSES@
@@ -254,8 +253,6 @@ GAWK = @GAWK@
 GREP = @GREP@
 HAVE_LIBPCREPOSIX = @HAVE_LIBPCREPOSIX@
 IF_METHOD = @IF_METHOD@
-IF_PROC = @IF_PROC@
-INCLUDES = @INCLUDES@ -I.. -I$(top_srcdir) -I$(top_srcdir)/lib -I$(top_builddir)/lib
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -278,7 +275,6 @@ LIBPAM = @LIBPAM@
 LIBREADLINE = @LIBREADLINE@
 LIBS = @LIBS@
 LIBTOOL = @LIBTOOL@
-LIB_IPV6 = @LIB_IPV6@
 LIB_REGEX = @LIB_REGEX@
 LIPO = @LIPO@
 LN_S = @LN_S@
@@ -296,7 +292,6 @@ OSPF6D = @OSPF6D@
 OSPFAPI = @OSPFAPI@
 OSPFCLIENT = @OSPFCLIENT@
 OSPFD = @OSPFD@
-OTHER_METHOD = @OTHER_METHOD@
 OTOOL = @OTOOL@
 OTOOL64 = @OTOOL64@
 PACKAGE = @PACKAGE@
@@ -311,6 +306,7 @@ PDFLATEX = @PDFLATEX@
 PERL = @PERL@
 PICFLAGS = @PICFLAGS@
 PILDFLAGS = @PILDFLAGS@
+PIMD = @PIMD@
 RANLIB = @RANLIB@
 RIPD = @RIPD@
 RIPNGD = @RIPNGD@
@@ -391,17 +387,16 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+AM_CPPFLAGS = -I.. -I$(top_srcdir) -I$(top_srcdir)/lib -I$(top_builddir)/lib
 INSTALL_SDATA = @INSTALL@ -m 600
 ipforward = @IPFORWARD@
 if_method = @IF_METHOD@
-if_proc = @IF_PROC@
 rt_method = @RT_METHOD@
 rtread_method = @RTREAD_METHOD@
 kernel_method = @KERNEL_METHOD@
-other_method = @OTHER_METHOD@
 ioctl_method = @IOCTL_METHOD@
-otherobj = $(ioctl_method) $(ipforward) $(if_method) $(if_proc) \
-	$(rt_method) $(rtread_method) $(kernel_method) $(other_method)
+otherobj = $(ioctl_method) $(ipforward) $(if_method) \
+	$(rt_method) $(rtread_method) $(kernel_method)
 
 @HAVE_NETLINK_TRUE@othersrc = zebra_fpm_netlink.c
 AM_CFLAGS = $(PICFLAGS)
@@ -421,20 +416,17 @@ noinst_HEADERS = \
 	interface.h ipforward.h irdp.h router-id.h kernel_socket.h \
 	rt_netlink.h zebra_fpm.h zebra_fpm_private.h
 
-zebra_LDADD = $(otherobj) ../lib/libzebra.la $(LIBCAP) $(LIB_IPV6)
-testzebra_LDADD = ../lib/libzebra.la $(LIBCAP) $(LIB_IPV6)
+zebra_LDADD = $(otherobj) ../lib/libzebra.la $(LIBCAP)
+testzebra_LDADD = ../lib/libzebra.la $(LIBCAP)
 zebra_DEPENDENCIES = $(otherobj)
-EXTRA_DIST = if_ioctl.c if_ioctl_solaris.c if_netlink.c if_proc.c \
-        if_sysctl.c ipforward_aix.c ipforward_ews.c ipforward_proc.c \
-	ipforward_solaris.c ipforward_sysctl.c rt_ioctl.c rt_netlink.c \
-	rt_socket.c rtread_netlink.c rtread_proc.c rtread_sysctl.c \
-	rtread_getmsg.c kernel_socket.c kernel_netlink.c mtu_kvm.c \
+EXTRA_DIST = if_ioctl.c if_ioctl_solaris.c if_netlink.c \
+        if_sysctl.c ipforward_proc.c \
+	ipforward_solaris.c ipforward_sysctl.c rt_netlink.c \
+	rt_socket.c rtread_netlink.c rtread_sysctl.c \
+	rtread_getmsg.c kernel_socket.c kernel_netlink.c \
 	ioctl.c ioctl_solaris.c \
 	GNOME-SMI GNOME-PRODUCT-ZEBRA-MIB
 
-
-#client : client_main.o ../lib/libzebra.la
-#	$(CC) -g -o client client_main.o ../liblzebra.la $(LIBS) $(LIB_IPV6)
 quaggaconfdir = $(sysconfdir)
 examplesdir = $(exampledir)
 dist_examples_DATA = zebra.conf.sample
@@ -824,6 +816,9 @@ uninstall-am: uninstall-dist_examplesDATA uninstall-sbinPROGRAMS
 	tags tags-am uninstall uninstall-am \
 	uninstall-dist_examplesDATA uninstall-sbinPROGRAMS
 
+
+client : client_main.o ../lib/libzebra.la
+	$(CC) -g -o client client_main.o ../liblzebra.la $(LIBS) $(LIB_IPV6)
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

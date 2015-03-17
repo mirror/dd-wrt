@@ -373,6 +373,21 @@ typedef struct rib_tables_iter_t_
   rib_tables_iter_state_t state;
 } rib_tables_iter_t;
 
+/* RPF lookup behaviour */
+enum multicast_mode
+{
+  MCAST_NO_CONFIG = 0,	/* MIX_MRIB_FIRST, but no show in config write */
+  MCAST_MRIB_ONLY,	/* MRIB only */
+  MCAST_URIB_ONLY,	/* URIB only */
+  MCAST_MIX_MRIB_FIRST,	/* MRIB, if nothing at all then URIB */
+  MCAST_MIX_DISTANCE,	/* MRIB & URIB, lower distance wins */
+  MCAST_MIX_PFXLEN,	/* MRIB & URIB, longer prefix wins */
+			/* on equal value, MRIB wins for last 2 */
+};
+
+extern void multicast_mode_ipv4_set (enum multicast_mode mode);
+extern enum multicast_mode multicast_mode_ipv4_get (void);
+
 extern const char *nexthop_type_to_str (enum nexthop_types_t nh_type);
 extern struct nexthop *nexthop_ifindex_add (struct rib *, unsigned int);
 extern struct nexthop *nexthop_ifname_add (struct rib *, char *);
@@ -418,7 +433,10 @@ extern int rib_delete_ipv4 (int type, int flags, struct prefix_ipv4 *p,
 		            struct in_addr *gate, unsigned int ifindex, 
 		            u_int32_t, safi_t safi);
 
-extern struct rib *rib_match_ipv4 (struct in_addr);
+extern struct rib *rib_match_ipv4_safi (struct in_addr addr, safi_t safi,
+					int skip_bgp, struct route_node **rn_out);
+extern struct rib *rib_match_ipv4_multicast (struct in_addr addr,
+					     struct route_node **rn_out);
 
 extern struct rib *rib_lookup_ipv4 (struct prefix_ipv4 *);
 
@@ -430,12 +448,12 @@ extern void rib_init (void);
 extern unsigned long rib_score_proto (u_char proto);
 
 extern int
-static_add_ipv4 (struct prefix *p, struct in_addr *gate, const char *ifname,
-       u_char flags, u_char distance, u_int32_t vrf_id);
-
+static_add_ipv4_safi (safi_t safi, struct prefix *p, struct in_addr *gate,
+		      const char *ifname, u_char flags, u_char distance,
+		      u_int32_t vrf_id);
 extern int
-static_delete_ipv4 (struct prefix *p, struct in_addr *gate, const char *ifname,
-		    u_char distance, u_int32_t vrf_id);
+static_delete_ipv4_safi (safi_t safi, struct prefix *p, struct in_addr *gate,
+			 const char *ifname, u_char distance, u_int32_t vrf_id);
 
 #ifdef HAVE_IPV6
 extern int
