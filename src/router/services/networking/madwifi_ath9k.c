@@ -838,6 +838,10 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 #ifdef HAVE_HOTSPOT20
 	setupHS20(fp, ifname);
 #endif
+	char *v = nvram_nget("%s_config",ifname);
+	fprintf(fp, "\n");
+	if (v && strlen(v)>0)
+	    fprintf(fp,"%s",v);	
 	fprintf(fp, "\n");
 
 	fclose(fp);
