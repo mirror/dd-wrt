@@ -1138,8 +1138,8 @@ static void change_pageblock_range(struct page *pageblock_page,
  * nor move CMA pages to different free lists. We don't want unmovable pages
  * to be allocated from MIGRATE_CMA areas.
  *
- * Returns the new migratetype of the pageblock (or the same old migratetype
- * if it was unchanged).
+ * Returns the allocation migratetype if free pages were stolen, or the
+ * fallback migratetype if it was decided not to steal.
  */
 static int try_to_steal_freepages(struct zone *zone, struct page *page,
 				  int start_type, int fallback_type)
@@ -1170,12 +1170,10 @@ static int try_to_steal_freepages(struct zone *zone, struct page *page,
 
 		/* Claim the whole block if over half of it is free */
 		if (pages >= (1 << (pageblock_order-1)) ||
-				page_group_by_mobility_disabled) {
-
+				page_group_by_mobility_disabled)
 			set_pageblock_migratetype(page, start_type);
-			return start_type;
-		}
 
+		return start_type;
 	}
 
 	return fallback_type;
@@ -1227,7 +1225,7 @@ __rmqueue_fallback(struct zone *zone, unsigned int order, int start_migratetype)
 			set_freepage_migratetype(page, new_type);
 
 			trace_mm_page_alloc_extfrag(page, order, current_order,
-				start_migratetype, migratetype, new_type);
+				start_migratetype, migratetype);
 
 			return page;
 		}
@@ -2382,8 +2380,15 @@ __alloc_pages_may_oom(gfp_t gfp_mask, unsigned int order,
 		if (high_zoneidx < ZONE_NORMAL)
 			goto out;
 		/* The OOM killer does not compensate for light reclaim */
-		if (!(gfp_mask & __GFP_FS))
+		if (!(gfp_mask & __GFP_FS)) {
+			/*
+			 * XXX: Page reclaim didn't yield anything,
+			 * and the OOM killer can't be invoked, but
+			 * keep looping as per should_alloc_retry().
+			 */
+			*did_some_progress = 1;
 			goto out;
+		}
 		/*
 		 * GFP_THISNODE contains __GFP_NORETRY and we never hit this.
 		 * Sanity check for bare calls of __GFP_THISNODE, not real OOM.
