@@ -977,9 +977,6 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 		}
 		fprintf(fp, "wep_default_key=%d\n", atoi(nvram_nget("%s_key", prefix)) - 1);
 		addWPS(fp, prefix, 1);
-#ifdef HAVE_HOTSPOT20
-		setupHS20(fp, prefix);
-#endif
 		fclose(fp);
 		do_hostapd(fstr, prefix);
 
@@ -1084,6 +1081,10 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 #ifdef HAVE_HOTSPOT20
 		setupHS20(fp, prefix);
 #endif
+		char *v = nvram_nget("%s_config", ifname);
+		fprintf(fp, "\n");
+		if (v && strlen(v) > 0)
+			fprintf(fp, "%s", v);
 		fclose(fp);
 		do_hostapd(fstr, prefix);
 
