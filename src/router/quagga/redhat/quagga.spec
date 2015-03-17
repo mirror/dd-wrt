@@ -89,8 +89,8 @@
 
 Summary: Routing daemon
 Name:		quagga
-Version:	0.99.23.1
-Release:	20140825%{release_rev}
+Version:	0.99.24.1
+Release:	20150307%{release_rev}
 License:	GPL
 Group: System Environment/Daemons
 Source0:	http://www.quagga.net/snapshots/cvs/%{name}-%{version}.tar.gz
@@ -302,6 +302,9 @@ zebra_spec_add_service ospfapi  2607/tcp "OSPF-API"
 %endif
 %if %{with_isisd}
 zebra_spec_add_service isisd    2608/tcp "ISISd vty"
+%endif
+%if %{with_pimd}
+zebra_spec_add_service pimd     2611/tcp "PIMd vty"
 %endif
 
 for daemon in %daemon_list ; do

@@ -1283,7 +1283,6 @@ DEFUN (no_ipv6_ospf6_cost,
 {
   struct ospf6_interface *oi;
   struct interface *ifp;
-  unsigned long int lcost;
 
   ifp = (struct interface *) vty->index;
   assert (ifp);

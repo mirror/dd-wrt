@@ -102,7 +102,7 @@ timeval_cmp (struct timeval a, struct timeval b)
 	  ? a.tv_usec - b.tv_usec : a.tv_sec - b.tv_sec);
 }
 
-static unsigned long
+unsigned long
 timeval_elapsed (struct timeval a, struct timeval b)
 {
   return (((a.tv_sec - b.tv_sec) * TIMER_SECOND_MICRO)
@@ -267,7 +267,7 @@ cpu_record_hash_alloc (struct cpu_thread_history *a)
   struct cpu_thread_history *new;
   new = XCALLOC (MTYPE_THREAD_STATS, sizeof (struct cpu_thread_history));
   new->func = a->func;
-  strcpy(new->funcname, a->funcname);
+  new->funcname = a->funcname;
   return new;
 }
 
@@ -334,7 +334,7 @@ cpu_record_print(struct vty *vty, thread_type filter)
   void *args[3] = {&tmp, vty, &filter};
 
   memset(&tmp, 0, sizeof tmp);
-  strcpy(tmp.funcname, "TOTAL");
+  tmp.funcname = "TOTAL";
   tmp.types = filter;
 
 #ifdef HAVE_RUSAGE
@@ -582,7 +582,6 @@ thread_add_unuse (struct thread_master *m, struct thread *thread)
   assert (thread->prev == NULL);
   assert (thread->type == THREAD_UNUSED);
   thread_list_add (&m->unuse, thread);
-  /* XXX: Should we deallocate funcname here? */
 }
 
 /* Free all unused thread. */
@@ -663,35 +662,13 @@ thread_timer_remain_second (struct thread *thread)
     return 0;
 }
 
-/* Trim blankspace and "()"s */
-void
-strip_funcname (char *dest, const char *funcname)
-{
-  char buff[FUNCNAME_LEN];
-  char tmp, *e, *b = buff;
-
-  strncpy(buff, funcname, sizeof(buff));
-  buff[ sizeof(buff) -1] = '\0';
-  e = buff +strlen(buff) -1;
-
-  /* Wont work for funcname ==  "Word (explanation)"  */
-
-  while (*b == ' ' || *b == '(')
-    ++b;
-  while (*e == ' ' || *e == ')')
-    --e;
-  e++;
-
-  tmp = *e;
-  *e = '\0';
-  strcpy (dest, b);
-  *e = tmp;
-}
+#define debugargdef  const char *funcname, const char *schedfrom, int fromln
+#define debugargpass funcname, schedfrom, fromln
 
 /* Get new thread.  */
 static struct thread *
 thread_get (struct thread_master *m, u_char type,
-	    int (*func) (struct thread *), void *arg, const char* funcname)
+	    int (*func) (struct thread *), void *arg, debugargdef)
 {
   struct thread *thread = thread_trim_head (&m->unuse);
 
@@ -707,7 +684,9 @@ thread_get (struct thread_master *m, u_char type,
   thread->arg = arg;
   thread->index = -1;
 
-  strip_funcname (thread->funcname, funcname);
+  thread->funcname = funcname;
+  thread->schedfrom = schedfrom;
+  thread->schedfrom_line = fromln;
 
   return thread;
 }
@@ -715,7 +694,8 @@ thread_get (struct thread_master *m, u_char type,
 /* Add new read thread. */
 struct thread *
 funcname_thread_add_read (struct thread_master *m, 
-		 int (*func) (struct thread *), void *arg, int fd, const char* funcname)
+		 int (*func) (struct thread *), void *arg, int fd,
+		 debugargdef)
 {
   struct thread *thread;
 
@@ -727,7 +707,7 @@ funcname_thread_add_read (struct thread_master *m,
       return NULL;
     }
 
-  thread = thread_get (m, THREAD_READ, func, arg, funcname);
+  thread = thread_get (m, THREAD_READ, func, arg, debugargpass);
   FD_SET (fd, &m->readfd);
   thread->u.fd = fd;
   thread_list_add (&m->read, thread);
@@ -738,7 +718,8 @@ funcname_thread_add_read (struct thread_master *m,
 /* Add new write thread. */
 struct thread *
 funcname_thread_add_write (struct thread_master *m,
-		 int (*func) (struct thread *), void *arg, int fd, const char* funcname)
+		 int (*func) (struct thread *), void *arg, int fd,
+		 debugargdef)
 {
   struct thread *thread;
 
@@ -750,7 +731,7 @@ funcname_thread_add_write (struct thread_master *m,
       return NULL;
     }
 
-  thread = thread_get (m, THREAD_WRITE, func, arg, funcname);
+  thread = thread_get (m, THREAD_WRITE, func, arg, debugargpass);
   FD_SET (fd, &m->writefd);
   thread->u.fd = fd;
   thread_list_add (&m->write, thread);
@@ -763,8 +744,8 @@ funcname_thread_add_timer_timeval (struct thread_master *m,
                                    int (*func) (struct thread *), 
                                   int type,
                                   void *arg, 
-                                  struct timeval *time_relative, 
-                                  const char* funcname)
+                                  struct timeval *time_relative,
+				  debugargdef)
 {
   struct thread *thread;
   struct pqueue *queue;
@@ -776,7 +757,7 @@ funcname_thread_add_timer_timeval (struct thread_master *m,
   assert (time_relative);
   
   queue = ((type == THREAD_TIMER) ? m->timer : m->background);
-  thread = thread_get (m, type, func, arg, funcname);
+  thread = thread_get (m, type, func, arg, debugargpass);
 
   /* Do we need jitter here? */
   quagga_get_relative (NULL);
@@ -793,7 +774,8 @@ funcname_thread_add_timer_timeval (struct thread_master *m,
 struct thread *
 funcname_thread_add_timer (struct thread_master *m,
 		           int (*func) (struct thread *), 
-		           void *arg, long timer, const char* funcname)
+		           void *arg, long timer,
+			   debugargdef)
 {
   struct timeval trel;
 
@@ -803,14 +785,15 @@ funcname_thread_add_timer (struct thread_master *m,
   trel.tv_usec = 0;
 
   return funcname_thread_add_timer_timeval (m, func, THREAD_TIMER, arg, 
-                                            &trel, funcname);
+                                            &trel, debugargpass);
 }
 
 /* Add timer event thread with "millisecond" resolution */
 struct thread *
 funcname_thread_add_timer_msec (struct thread_master *m,
                                 int (*func) (struct thread *), 
-                                void *arg, long timer, const char* funcname)
+                                void *arg, long timer,
+				debugargdef)
 {
   struct timeval trel;
 
@@ -820,15 +803,15 @@ funcname_thread_add_timer_msec (struct thread_master *m,
   trel.tv_usec = 1000*(timer % 1000);
 
   return funcname_thread_add_timer_timeval (m, func, THREAD_TIMER, 
-                                            arg, &trel, funcname);
+                                            arg, &trel, debugargpass);
 }
 
 /* Add a background thread, with an optional millisec delay */
 struct thread *
 funcname_thread_add_background (struct thread_master *m,
                                 int (*func) (struct thread *),
-                                void *arg, long delay, 
-                                const char *funcname)
+                                void *arg, long delay,
+				debugargdef)
 {
   struct timeval trel;
   
@@ -846,19 +829,20 @@ funcname_thread_add_background (struct thread_master *m,
     }
 
   return funcname_thread_add_timer_timeval (m, func, THREAD_BACKGROUND,
-                                            arg, &trel, funcname);
+                                            arg, &trel, debugargpass);
 }
 
 /* Add simple event thread. */
 struct thread *
 funcname_thread_add_event (struct thread_master *m,
-		  int (*func) (struct thread *), void *arg, int val, const char* funcname)
+		  int (*func) (struct thread *), void *arg, int val,
+		  debugargdef)
 {
   struct thread *thread;
 
   assert (m != NULL);
 
-  thread = thread_get (m, THREAD_EVENT, func, arg, funcname);
+  thread = thread_get (m, THREAD_EVENT, func, arg, debugargpass);
   thread->u.val = val;
   thread_list_add (&m->event, thread);
 
@@ -1233,6 +1217,8 @@ thread_getrusage (RUSAGE_T *r)
 #endif /* HAVE_CLOCK_MONOTONIC */
 }
 
+struct thread *thread_current = NULL;
+
 /* We check thread consumed time. If the system has getrusage, we'll
    use that to get in-depth stats on the performance of the thread in addition
    to wall clock time stats from gettimeofday. */
@@ -1253,7 +1239,7 @@ thread_call (struct thread *thread)
       struct cpu_thread_history tmp;
       
       tmp.func = thread->func;
-      strcpy(tmp.funcname, thread->funcname);
+      tmp.funcname = thread->funcname;
       
       thread->hist = hash_get (cpu_record, &tmp, 
                     (void * (*) (void *))cpu_record_hash_alloc);
@@ -1262,7 +1248,9 @@ thread_call (struct thread *thread)
   GETRUSAGE (&before);
   thread->real = before.real;
 
+  thread_current = thread;
   (*thread->func) (thread);
+  thread_current = NULL;
 
   GETRUSAGE (&after);
 
@@ -1301,7 +1289,7 @@ funcname_thread_execute (struct thread_master *m,
                 int (*func)(struct thread *), 
                 void *arg,
                 int val,
-		const char* funcname)
+		debugargdef)
 {
   struct thread dummy; 
 
@@ -1313,7 +1301,11 @@ funcname_thread_execute (struct thread_master *m,
   dummy.func = func;
   dummy.arg = arg;
   dummy.u.val = val;
-  strip_funcname (dummy.funcname, funcname);
+
+  dummy.funcname = funcname;
+  dummy.schedfrom = schedfrom;
+  dummy.schedfrom_line = fromln;
+
   thread_call (&dummy);
 
   return NULL;

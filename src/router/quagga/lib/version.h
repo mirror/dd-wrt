@@ -37,13 +37,15 @@
 
 #define QUAGGA_PROGNAME   "Quagga"
 
-#define QUAGGA_VERSION     "0.99.23.1" GIT_SUFFIX
+#define QUAGGA_VERSION     "0.99.24.1" GIT_SUFFIX
 
 #define ZEBRA_BUG_ADDRESS "https://bugzilla.quagga.net"
 
 #define QUAGGA_URL "http://www.quagga.net"
 
 #define QUAGGA_COPYRIGHT "Copyright 1996-2005 Kunihiro Ishiguro, et al."
+
+#define QUAGGA_CONFIG_ARGS ""
 
 pid_t pid_output (const char *);
 

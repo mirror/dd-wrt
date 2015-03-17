@@ -309,8 +309,6 @@ struct interface *
 if_lookup_prefix (struct prefix *prefix)
 {
   struct listnode *node;
-  struct prefix addr;
-  int bestlen = 0;
   struct listnode *cnode;
   struct interface *ifp;
   struct connected *c;
@@ -453,7 +451,7 @@ static void
 if_dump (const struct interface *ifp)
 {
   struct listnode *node;
-  struct connected *c;
+  struct connected *c __attribute__((unused));
 
   for (ALL_LIST_ELEMENTS_RO (ifp->connected, node, c))
     zlog_info ("Interface %s index %d metric %d mtu %d "

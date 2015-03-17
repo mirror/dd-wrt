@@ -21,13 +21,6 @@ Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 #ifndef _QUAGGA_BGP_ADVERTISE_H
 #define _QUAGGA_BGP_ADVERTISE_H
 
-/* BGP advertise FIFO.  */
-struct bgp_advertise_fifo
-{
-  struct bgp_advertise *next;
-  struct bgp_advertise *prev;
-};
-
 /* BGP advertise attribute.  */
 struct bgp_advertise_attr
 {
@@ -44,7 +37,7 @@ struct bgp_advertise_attr
 struct bgp_advertise
 {
   /* FIFO for advertisement.  */
-  struct bgp_advertise_fifo fifo;
+  struct fifo fifo;
 
   /* Link list for same attribute advertise.  */
   struct bgp_advertise *next;
@@ -97,10 +90,12 @@ struct bgp_adj_in
 /* BGP advertisement list.  */
 struct bgp_synchronize
 {
-  struct bgp_advertise_fifo update;
-  struct bgp_advertise_fifo withdraw;
-  struct bgp_advertise_fifo withdraw_low;
+  struct fifo update;
+  struct fifo withdraw;
+  struct fifo withdraw_low;
 };
+
+#define BGP_ADV_FIFO_HEAD(F) ((struct bgp_advertise *)FIFO_HEAD(F))
 
 /* BGP adjacency linked list.  */
 #define BGP_INFO_ADD(N,A,TYPE)                        \

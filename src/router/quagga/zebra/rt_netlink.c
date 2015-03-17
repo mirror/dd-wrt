@@ -1246,9 +1246,9 @@ netlink_route_read (void)
 /* Utility function  comes from iproute2. 
    Authors:	Alexey Kuznetsov, <kuznet@ms2.inr.ac.ru> */
 int
-addattr_l (struct nlmsghdr *n, int maxlen, int type, void *data, int alen)
+addattr_l (struct nlmsghdr *n, size_t maxlen, int type, void *data, int alen)
 {
-  int len;
+  size_t len;
   struct rtattr *rta;
 
   len = RTA_LENGTH (alen);
@@ -1288,9 +1288,9 @@ rta_addattr_l (struct rtattr *rta, int maxlen, int type, void *data, int alen)
 /* Utility function comes from iproute2. 
    Authors:	Alexey Kuznetsov, <kuznet@ms2.inr.ac.ru> */
 int
-addattr32 (struct nlmsghdr *n, int maxlen, int type, int data)
+addattr32 (struct nlmsghdr *n, size_t maxlen, int type, int data)
 {
-  int len;
+  size_t len;
   struct rtattr *rta;
 
   len = RTA_LENGTH (4);
@@ -1561,7 +1561,7 @@ _netlink_route_build_multipath(
     {
       rta_addattr_l (rta, NL_PKT_BUF_SIZE, RTA_GATEWAY,
                      &nexthop->gate.ipv4, bytelen);
-      rtnh->rtnh_len += sizeof (struct rtattr) + 4;
+      rtnh->rtnh_len += sizeof (struct rtattr) + bytelen;
 
       if (nexthop->src.ipv4.s_addr)
         *src = &nexthop->src;
@@ -1580,6 +1580,7 @@ _netlink_route_build_multipath(
     {
       rta_addattr_l (rta, NL_PKT_BUF_SIZE, RTA_GATEWAY,
                      &nexthop->gate.ipv6, bytelen);
+      rtnh->rtnh_len += sizeof (struct rtattr) + bytelen;
 
       if (IS_ZEBRA_DEBUG_KERNEL)
         zlog_debug("netlink_route_multipath() (%s): "
@@ -1853,15 +1854,6 @@ int
 kernel_delete_ipv6 (struct prefix *p, struct rib *rib)
 {
   return netlink_route_multipath (RTM_DELROUTE, p, rib, AF_INET6);
-}
-
-/* Delete IPv6 route from the kernel. */
-int
-kernel_delete_ipv6_old (struct prefix_ipv6 *dest, struct in6_addr *gate,
-                        unsigned int index, int flags, int table)
-{
-  return netlink_route (RTM_DELROUTE, AF_INET6, &dest->prefix,
-                        dest->prefixlen, gate, index, flags, table);
 }
 #endif /* HAVE_IPV6 */
 
