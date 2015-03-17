@@ -1081,7 +1081,7 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 #ifdef HAVE_HOTSPOT20
 		setupHS20(fp, prefix);
 #endif
-		char *v = nvram_nget("%s_config", ifname);
+		char *v = nvram_nget("%s_config", prefix);
 		fprintf(fp, "\n");
 		if (v && strlen(v) > 0)
 			fprintf(fp, "%s", v);
