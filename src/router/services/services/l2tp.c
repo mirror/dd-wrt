@@ -124,21 +124,6 @@ void start_l2tp(int status)
 			perror("/tmp/xl2tpd/xl2tpd.conf");
 			return;
 		}
-/*[global]
-port = 1701
-;auth file = /etc/xl2tpd/xl2tp-secrets
-
-[lac fbnl2tpserver]
-lns = 10.64.1.237
-require chap = yes
-refuse pap = yes
-require authentication = yes
-; Name should be the same as the username in the PPP authentication!
-name = dani
-ppp debug = yes
-pppoptfile = /etc/xl2tpd/options.l2tp
-length bit = yes
-*/
 
 		fprintf(fp, "[global]\n");	// Global section
 		fprintf(fp, "port = 1701\n");	// Bind address
@@ -163,8 +148,8 @@ length bit = yes
 		}
 
 		if (nvram_match("mtu_enable", "1")) {
-			if (atoi(nvram_safe_get("wan_mtu")) > 0) {
-				int wan_mtu = atoi(nvram_safe_get("wan_mtu"));
+			int wan_mtu = atoi(nvram_safe_get("wan_mtu"));
+			if (wan_mtu > 0) {
 				fprintf(fp, "mtu %d\n", wan_mtu);
 				fprintf(fp, "mru %d\n", wan_mtu);
 			}
