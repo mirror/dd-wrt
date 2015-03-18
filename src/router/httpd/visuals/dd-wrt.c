@@ -5052,13 +5052,13 @@ void show_addconfig(webs_t wp, char *prefix)
 	rep(vvar, '.', 'X');
 	websWrite(wp, "div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\">Custom Config</div>\n");
-	websWrite(wp, "<textarea cols=\"60\" rows=\"4\" id=\"%s_config\" name=\"%s_config\"></textarea>\n");
+	websWrite(wp, "<textarea cols=\"60\" rows=\"4\" id=\"%s_config\" name=\"%s_config\"></textarea>\n", vvar, vvar);
 	websWrite(wp, "<script type=\"text/javascript\">\n");
 	websWrite(wp, "//<![CDATA[\n");
-	websWrite(wp, "var %s_config = fix_cr( '%s' );\n");
-	websWrite(wp, "document.getElementById(\"%s_config\").value = %s_config;\n");
+	websWrite(wp, "var %s_config = fix_cr( '%s' );\n", vvar, nvram_nget("%s_config", prefix));
+	websWrite(wp, "document.getElementById(\"%s_config\").value = %s_config;\n", vvar, vvar);
 	websWrite(wp, "//]]>\n");
-	websWrite(wp, "</script>\n", vvar, vvar, vvar, nvram_nget("%s_config", prefix), vvar, vvar);
+	websWrite(wp, "</script>\n");
 	websWrite(wp, "</div>\n");
 
 #endif
@@ -5110,7 +5110,7 @@ void show_preshared(webs_t wp, char *prefix)
 		websWrite(wp, "</div>\n");
 	}
 	websWrite(wp, "</div>\n");
-	show_addconfig(wp,prefix);
+	show_addconfig(wp, prefix);
 }
 
 void show_radius(webs_t wp, char *prefix, int showmacformat, int backup)
@@ -5241,7 +5241,7 @@ void show_radius(webs_t wp, char *prefix, int showmacformat, int backup)
 		websWrite(wp, "//]]>\n</script>\n");
 	}
 #endif
-	show_addconfig(wp,prefix);
+	show_addconfig(wp, prefix);
 }
 
 #ifdef HAVE_WPA_SUPPLICANT
@@ -5553,7 +5553,7 @@ void show_wparadius(webs_t wp, char *prefix)
 	websWrite(wp, "<input name=\"%s_wpa_gtk_rekey\" maxlength=\"5\" size=\"10\" onblur=\"valid_range(this,0,99999,wpa.rekey)\" value=\"%s\" />", prefix, nvram_default_get(var, "3600"));
 	websWrite(wp, "</div>\n");
 	websWrite(wp, "</div>\n");
-	show_addconfig(wp,prefix);
+	show_addconfig(wp, prefix);
 }
 
 void show_wep(webs_t wp, char *prefix)
