@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.18.7 Kernel Configuration
+# Linux/mips 3.18.9 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -2016,6 +2016,7 @@ CONFIG_MMC_BLOCK_BOUNCE=y
 # MMC/SD/SDIO Host Controller Drivers
 #
 # CONFIG_MMC_SDHCI is not set
+CONFIG_MMC_OCTEON=m
 # CONFIG_MMC_TIFM_SD is not set
 # CONFIG_MMC_SPI is not set
 # CONFIG_MMC_CB710 is not set

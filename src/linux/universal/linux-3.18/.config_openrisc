@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 3.18.7 Kernel Configuration
+# Linux/arm 3.18.9 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_MIGHT_HAVE_PCI=y
@@ -2418,7 +2418,7 @@ CONFIG_BTRFS_FS=m
 CONFIG_EXPORTFS=m
 CONFIG_FILE_LOCKING=y
 # CONFIG_DIRECT_IO is not set
-# CONFIG_FSNOTIFY is not set
+CONFIG_FSNOTIFY=y
 # CONFIG_DNOTIFY is not set
 CONFIG_INOTIFY_USER=y
 # CONFIG_FANOTIFY is not set
