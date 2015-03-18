@@ -57,7 +57,6 @@
 #ifdef HAVE_L2TP
 void start_l2tp(int status)
 {
-	int ret;
 	FILE *fp;
 	char *l2tp_argv[] = { "xl2tpd",
 		NULL
@@ -125,18 +124,19 @@ void start_l2tp(int status)
 			return;
 		}
 
-		fprintf(fp, "[global]\n");	// Global section
-		fprintf(fp, "port = 1701\n");	// Bind address
-		fprintf(fp, "[lac %s]\n", nvram_safe_get("l2tp_server_name"));
-		fprintf(fp, "lns = %s\n", nvram_safe_get("l2tp_server_name"));
-		fprintf(fp, "require chap = %s\n", nvram_match("l2tp_req_chap", "0") ? "no" : "yes");
-		fprintf(fp, "refuse pap = %s\n", nvram_match("l2tp_ref_pap", "0") ? "no" : "yes");
-		fprintf(fp, "redial = yes\n");
-		fprintf(fp, "redial timeout = 15\n");
-		fprintf(fp, "require authentication = %s\n", nvram_match("l2tp_req_auth", "0") ? "no" : "yes");
-		fprintf(fp, "name = %s\n", username);
-		fprintf(fp, "pppoptfile = /tmp/ppp/options\n");
-		fprintf(fp, "length bit = yes\n");
+		fprintf(fp, "[global]\n"	// Global section
+			"port = 1701\n"	// Bind address
+			"[lac %s]\n"	//
+			"lns = %s\n"	//
+			"require chap = %s\n"	//
+			"refuse pap = %s\n"	//
+			"redial = yes\n"	//
+			"redial timeout = 15\n"	//
+			"require authentication = %s\n"	//
+			"name = %s\n"	//
+			"pppoptfile = /tmp/ppp/options\n"	//
+			"length bit = yes\n", nvram_safe_get("l2tp_server_name"), nvram_safe_get("l2tp_server_name"), nvram_match("l2tp_req_chap", "0") ? "no" : "yes", nvram_match("l2tp_ref_pap", "0") ? "no" : "yes",
+			nvram_match("l2tp_req_auth", "0") ? "no" : "yes", username);
 		fclose(fp);
 
 		/*
@@ -150,66 +150,48 @@ void start_l2tp(int status)
 		if (nvram_match("mtu_enable", "1")) {
 			int wan_mtu = atoi(nvram_safe_get("wan_mtu"));
 			if (wan_mtu > 0) {
-				fprintf(fp, "mtu %d\n", wan_mtu);
-				fprintf(fp, "mru %d\n", wan_mtu);
+				fprintf(fp, "mtu %d\n"	//
+					"mru %d\n", wan_mtu, wan_mtu);
 			}
 
 		}
 
-		fprintf(fp, "defaultroute\n");	// Add a default route to the 
-		// system routing tables,
-		// using the peer as the
-		// gateway
-		fprintf(fp, "usepeerdns\n");	// Ask the peer for up to 2 DNS
-		// server addresses
-		// fprintf(fp, "pty 'pptp %s
-		// --nolaunchpppd'\n",nvram_safe_get("pptp_server_ip")); 
-		fprintf(fp, "user '%s'\n", username);
-		// fprintf(fp, "persist\n"); // Do not exit after a connection is
-		// terminated.
+		fprintf(fp, "defaultroute\n"	// Add a default route to the 
+			"usepeerdns\n"	// Ask the peer for up to 2 DNS
+			"user '%s'\n", username);
 
 		if (nvram_match("ppp_demand", "1")) {	// demand mode
-			fprintf(fp, "idle %d\n", nvram_match("ppp_demand", "1") ? atoi(nvram_safe_get("ppp_idletime")) * 60 : 0);
-			// fprintf(fp, "demand\n"); // Dial on demand
-			// fprintf(fp, "persist\n"); // Do not exit after a connection is 
-			// terminated.
-			// fprintf(fp, "%s:%s\n",PPP_PSEUDO_IP,PPP_PSEUDO_GW); // <local
-			// IP>:<remote IP>
-			fprintf(fp, "ipcp-accept-remote\n");
-			fprintf(fp, "ipcp-accept-local\n");
-			fprintf(fp, "connect true\n");
-			fprintf(fp, "noipdefault\n");	// Disables the default
-			// behaviour when no local IP 
-			// address is specified
-			fprintf(fp, "ktune\n");	// Set /proc/sys/net/ipv4/ip_dynaddr
+			fprintf(fp, "idle %d\n"	//
+				"ipcp-accept-remote\n"	//
+				"ipcp-accept-local\n"	//
+				"connect true\n"	//
+				"noipdefault\n"	//
+				"ktune\n", nvram_match("ppp_demand", "1") ? atoi(nvram_safe_get("ppp_idletime")) * 60 : 0);
 			// to 1 in demand mode if the local
 			// address changes
 		} else {	// keepalive mode
 			start_redial();
 		}
 
-		fprintf(fp, "default-asyncmap\n");	// Disable asyncmap
-		fprintf(fp, "crtscts\n");	// Disable protocol field compression
-		fprintf(fp, "nopcomp\n");	// Disable protocol field compression
-		fprintf(fp, "refuse-eap\n");	// Disable protocol field compression
-		fprintf(fp, "noaccomp\n");	// Disable Address/Control
+		fprintf(fp, "default-asyncmap\n"	// Disable asyncmap
+			"crtscts\n"	// Disable protocol field compression
+			"nopcomp\n"	// Disable protocol field compression
+			"refuse-eap\n"	// Disable protocol field compression
+			"noaccomp\n");	// Disable Address/Control
 		if (nvram_match("l2tp_encrypt", "0")) {
-			fprintf(fp, "nomppe\n");	// Disable mppe negotiation
-			fprintf(fp, "noccp\n");	// Disable CCP (Compression Control
+			fprintf(fp, "nomppe\n"	// Disable mppe negotiation
+				"noccp\n");	// Disable CCP (Compression Control
 			// Protocol)
 		} else {
-			fprintf(fp, "mppe required,stateless\n");
-			fprintf(fp, "require-mschap-v2\n");
+			fprintf(fp, "mppe required,stateless\n" "require-mschap-v2\n");
 		}
-		fprintf(fp, "novj\n");	// Disable Van Jacobson style TCP/IP
-		fprintf(fp, "nobsdcomp\n");	// Disables BSD-Compress compression
-		fprintf(fp, "nodeflate\n");	// Disables Deflate compression
-		//fprintf(fp, "lcp-echo-interval 0\n"); // Don't send an LCP
-		fprintf(fp, "lcp-echo-failure 60\n");
-		fprintf(fp, "lcp-echo-interval 120\n");	// echo-request frame to the peer       
-		fprintf(fp, "lock\n");
-		fprintf(fp, "noauth\n");
-//              fprintf(fp, "debug\n");
+		fprintf(fp, "novj\n"	// Disable Van Jacobson style TCP/IP
+			"nobsdcomp\n"	// Disables BSD-Compress compression
+			"nodeflate\n"	// Disables Deflate compression
+			"lcp-echo-failure 60\n"	//
+			"lcp-echo-interval 120\n"	// echo-request frame to the peer       
+			"lock\n"	//
+			"noauth\n");
 
 		fclose(fp);
 
@@ -251,7 +233,7 @@ void start_l2tp(int status)
 	// ifconfig(nvram_safe_get("wan_ifname"), IFUP,
 	// nvram_safe_get("wan_ipaddr"), nvram_safe_get("wan_netmask"));
 
-	ret = _evalpid(l2tp_argv, NULL, 0, NULL);
+	_evalpid(l2tp_argv, NULL, 0, NULL);
 	sleep(1);
 
 	if (nvram_match("ppp_demand", "1")) {
