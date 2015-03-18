@@ -5050,7 +5050,7 @@ void show_addconfig(webs_t wp, char *prefix)
 
 	strcpy(vvar, prefix);
 	rep(vvar, '.', 'X');
-	websWrite(wp, "div class=\"setting\">\n");
+	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\">Custom Config</div>\n");
 	websWrite(wp, "<textarea cols=\"60\" rows=\"4\" id=\"%s_config\" name=\"%s_config\"></textarea>\n", vvar, vvar);
 	websWrite(wp, "<script type=\"text/javascript\">\n");
