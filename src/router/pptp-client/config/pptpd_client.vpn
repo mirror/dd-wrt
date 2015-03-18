@@ -99,7 +99,7 @@ case $1 in
   kill -9 $PPTPPID
   sleep 2
   rm /var/run/vpn.pid
-  rm /tmp/pptpd_client/ -R
+  #rm /tmp/pptpd_client/ -R
   echo "VPN Stopped"
  ;; 
 * ) 
