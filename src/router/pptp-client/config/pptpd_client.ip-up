@@ -3,6 +3,7 @@ REMOTESUB=$(/usr/sbin/nvram get pptpd_client_srvsub)
 REMOTENET=$(/usr/sbin/nvram get pptpd_client_srvsubmsk)
 case "$6" in
  kelokepptpd)
+  /sbin/startstop firewall
   /sbin/route add -net $REMOTESUB netmask $REMOTENET dev $1
   /usr/sbin/iptables -I OUTPUT -d $REMOTESUB/$REMOTENET -o $1 -j ACCEPT
   /usr/sbin/iptables -I INPUT -s $REMOTESUB/$REMOTENET -i $1 -j ACCEPT 
