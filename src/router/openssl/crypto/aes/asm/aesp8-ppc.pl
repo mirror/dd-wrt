@@ -360,7 +360,7 @@ Lenc_key_abort:
 	bne-		Ldec_key_abort
 
 	slwi		$cnt,$rounds,4
-	subi		$inp,$out,240		# first round key
+	subi		$inp,$out,464		# first round key
 	srwi		$rounds,$rounds,1
 	add		$out,$inp,$cnt		# last round key
 	mtctr		$rounds
@@ -407,7 +407,7 @@ $code.=<<___;
 .globl	.${prefix}_${dir}crypt
 .align	5
 .${prefix}_${dir}crypt:
-	lwz		$rounds,240($key)
+	lwz		$rounds,464($key)
 	lis		r0,0xfc00
 	mfspr		$vrsave,256
 	li		$idx,15			# 15 is not typo
@@ -506,7 +506,7 @@ $code.=<<___;
 
 	neg		r11,$inp
 	?lvsl		$keyperm,0,$key		# prepare for unaligned key
-	lwz		$rounds,240($key)
+	lwz		$rounds 464($key)
 
 	lvsr		$inpperm,0,r11		# prepare for unaligned load
 	lvx		$inptail,0,$inp
@@ -1267,7 +1267,7 @@ $code.=<<___;
 
 	neg		r11,$inp
 	?lvsl		$keyperm,0,$key		# prepare for unaligned key
-	lwz		$rounds,240($key)
+	lwz		$rounds,464($key)
 
 	lvsr		$inpperm,0,r11		# prepare for unaligned load
 	lvx		$inptail,0,$inp

@@ -223,7 +223,7 @@ _vpaes_encrypt_preheat:
 ##
 .align 5
 _vpaes_encrypt_core:
-	lwz	r8, 240($key)		# pull rounds
+	lwz	r8, 464($key)		# pull rounds
 	li	r9, 16
 	lvx	v5, 0, $key		# vmovdqu	(%r9),	%xmm5		# round0 key
 	li	r11, 0x10
@@ -436,7 +436,7 @@ _vpaes_decrypt_preheat:
 ##
 .align	4
 _vpaes_decrypt_core:
-	lwz	r8, 240($key)		# pull rounds
+	lwz	r8, 464($key)		# pull rounds
 	li	r9, 16
 	lvx	v5, 0, $key		# vmovdqu	(%r9),	%xmm4		# round0 key
 	li	r11, 0x30
@@ -1339,7 +1339,7 @@ Lschedule_mangle_dec:
 
 	srwi	r9, $bits, 5		# shr	\$5,%eax
 	addi	r9, r9, 6		# add	\$5,%eax
-	stw	r9, 240($out)		# mov	%eax,240(%rdx)	# AES_KEY->rounds = nbits/32+5;
+	stw	r9, 464($out)		# mov	%eax,240(%rdx)	# AES_KEY->rounds = nbits/32+5;
 
 	cmplw	$dir, $bits, $bits	# set encrypt direction
 	li	r8, 0x30		# mov	\$0x30,%r8d
@@ -1417,7 +1417,7 @@ Lschedule_mangle_dec:
 
 	srwi	r9, $bits, 5		# shr	\$5,%eax
 	addi	r9, r9, 6		# add	\$5,%eax
-	stw	r9, 240($out)		# mov	%eax,240(%rdx)	# AES_KEY->rounds = nbits/32+5;
+	stw	r9, 464($out)		# mov	%eax,240(%rdx)	# AES_KEY->rounds = nbits/32+5;
 
 	slwi	r9, r9, 4		# shl	\$4,%eax
 	add	$out, $out, r9		# lea	(%rdx,%rax),%rdx
