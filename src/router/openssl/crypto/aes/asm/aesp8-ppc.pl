@@ -506,7 +506,7 @@ $code.=<<___;
 
 	neg		r11,$inp
 	?lvsl		$keyperm,0,$key		# prepare for unaligned key
-	lwz		$rounds 464($key)
+	lwz		$rounds,464($key)
 
 	lvsr		$inpperm,0,r11		# prepare for unaligned load
 	lvx		$inptail,0,$inp
