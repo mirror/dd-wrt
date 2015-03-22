@@ -4900,7 +4900,6 @@ void stop_hotplug_net(void)
 
 void start_hotplug_net(void)
 {
-#ifdef HAVE_MADWIFI
 	char *interface, *action;
 
 	interface = getenv("INTERFACE");
@@ -4909,8 +4908,8 @@ void start_hotplug_net(void)
 	action = getenv("ACTION");
 	if (!action)
 		return;
-	if (!strcmp(action, "add")) {
 #ifdef _SC_NPROCESSORS_ONLN
+	if (!strcmp(action, "add")) {
 		int cpumask = 0;
 		int cpucount = sysconf(_SC_NPROCESSORS_ONLN);
 		if (cpucount > 1) {
@@ -4918,8 +4917,9 @@ void start_hotplug_net(void)
 		}
 		sysprintf("echo %d > /sys/class/net/%s/queues/rx-0/rps_cpus", cpumask, interface);
 		sysprintf("echo %d > /sys/class/net/%s/queues/tx-0/xps_cpus", cpumask, interface);
-#endif
 	}
+#endif
+#ifdef HAVE_MADWIFI
 	// sysprintf("echo \"Hotplug %s=%s\" > /dev/console\n",action,interface);
 	if (strncmp(interface, "ath", 3))
 		return;
@@ -4959,13 +4959,6 @@ void start_hotplug_net(void)
 	}
 	return;
 #else
-
-	// char *lan_ifname = nvram_safe_get("lan_ifname");
-	char *interface, *action;
-
-	if (!(interface = getenv("INTERFACE"))
-	    || !(action = getenv("ACTION")))
-		return;
 
 	if (strncmp(interface, "wds", 3))
 		return;
