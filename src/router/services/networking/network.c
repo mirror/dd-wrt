@@ -482,9 +482,9 @@ int wlconf_up(char *name)
 	if (instance == -1)
 		return -1;	// no wireless device
 
-	if(nvram_nmatch("disabled", "wl%d_net_mode", instance))
+	if (nvram_nmatch("disabled", "wl%d_net_mode", instance))
 		return -1;
-	
+
 	char prefix[16];
 	sprintf(prefix, "wl%d", instance);
 	if (nvram_nmatch("infra", "wl%d_mode", instance)) {
@@ -2716,14 +2716,14 @@ void start_lan(void)
 	br_shutdown();
 #endif
 
-#ifdef HAVE_DHDAP	
+#ifdef HAVE_DHDAP
 	int ifs = get_wl_instances();
 	int i;
 	char *vifs;
 	char *nxt;
 	char var[80];
 
-	for(i = 0; i < ifs ; i++){
+	for (i = 0; i < ifs; i++) {
 		vifs = nvram_nget("wl%d_vifs", i);
 		if (vifs != NULL) {
 			foreach(var, vifs, nxt) {
@@ -3777,17 +3777,9 @@ void start_wan(int status)
 		if (nvram_match("ppp_demand", "1"))
 			fprintf(fp, "demand\n"
 				"idle %s\n"
-				"10.112.112.112:10.112.112.113\n" 
-				"lcp-echo-interval %d\n" 
-				"lcp-echo-failure 10\n" 
-				"ipcp-accept-remote\n" 
-				"ipcp-accept-local\n" 
-				"connect true\n" 
-				"ktune\n", idletime, atoi(idletime) * 2);
+				"10.112.112.112:10.112.112.113\n" "lcp-echo-interval %d\n" "lcp-echo-failure 10\n" "ipcp-accept-remote\n" "ipcp-accept-local\n" "connect true\n" "ktune\n", idletime, atoi(idletime) * 2);
 		else
-			fprintf(fp, "persist\n" 
-			"lcp-echo-interval 3\n" 
-			"lcp-echo-failure 20\n");
+			fprintf(fp, "persist\n" "lcp-echo-interval 3\n" "lcp-echo-failure 20\n");
 #ifdef HAVE_IPV6
 		if (nvram_match("ipv6_enable", "1"))
 			fprintf(fp, "ipv6 ,\n");
@@ -4888,6 +4880,17 @@ void start_hotplug_net(void)
 	action = getenv("ACTION");
 	if (!action)
 		return;
+	if (!strcmp(action, "add")) {
+#ifdef _SC_NPROCESSORS_ONLN
+		int cpumask = 0;
+		int cpucount = sysconf(_SC_NPROCESSORS_ONLN);
+		if (cpucount > 1) {
+			cpumask = (1 << cpucount) - 1;
+		}
+		sysprintf("echo %d > /sys/class/net/%s/queues/rx-0/rps_cpus", cpumask, interface);
+		sysprintf("echo %d > /sys/class/net/%s/queues/tx-0/xps_cpus", cpumask, interface);
+#endif
+	}
 	// sysprintf("echo \"Hotplug %s=%s\" > /dev/console\n",action,interface);
 	if (strncmp(interface, "ath", 3))
 		return;
