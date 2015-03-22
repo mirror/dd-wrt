@@ -3698,7 +3698,12 @@ void start_wan(int status)
 			fprintf(fp, "noccp\n");
 			fprintf(fp, "nomppc\n");
 		}
-		fprintf(fp, "noipdefault\n" "noauth\n" "defaultroute\n" "noaccomp\n" "nobsdcomp\n" "nodeflate\n"
+		fprintf(fp, "noipdefault\n"	//
+			"noauth\n"	//
+			"defaultroute\n"	//
+			"noaccomp\n"	//
+			"nobsdcomp\n"	//
+			"nodeflate\n"
 			// "debug\n"
 			// "maxfail 0\n"
 			// "nocrtscts\n"
@@ -3719,7 +3724,8 @@ void start_wan(int status)
 			fprintf(fp, "nomppe\n");
 		if (nvram_match("ppp_mlppp", "1"))
 			fprintf(fp, "mp\n");
-		fprintf(fp, "usepeerdns\nuser '%s'\n" "password '%s'\n", username, passwd);
+		fprintf(fp, "usepeerdns\nuser '%s'\n"	// 
+			"password '%s'\n", username, passwd);
 
 		// This is a tricky one. When used it could improve speed of PPPoE
 		// but not all ISP's can support it.
@@ -3775,11 +3781,19 @@ void start_wan(int status)
 		// When not using demand dialing, it only takes 15 seconds to detect
 		// the lost connection.
 		if (nvram_match("ppp_demand", "1"))
-			fprintf(fp, "demand\n"
-				"idle %s\n"
-				"10.112.112.112:10.112.112.113\n" "lcp-echo-interval %d\n" "lcp-echo-failure 10\n" "ipcp-accept-remote\n" "ipcp-accept-local\n" "connect true\n" "ktune\n", idletime, atoi(idletime) * 2);
+			fprintf(fp, "demand\n"	//
+				"idle %s\n"	//
+				"10.112.112.112:10.112.112.113\n"	//
+				"lcp-echo-interval %d\n"	//
+				"lcp-echo-failure 10\n"	//
+				"ipcp-accept-remote\n"	//
+				"ipcp-accept-local\n"	//
+				"connect true\n"	//
+				"ktune\n", idletime, atoi(idletime) * 2);
 		else
-			fprintf(fp, "persist\n" "lcp-echo-interval 3\n" "lcp-echo-failure 20\n");
+			fprintf(fp, "persist\n"	//
+				"lcp-echo-interval 3\n"	//
+				"lcp-echo-failure 20\n");
 #ifdef HAVE_IPV6
 		if (nvram_match("ipv6_enable", "1"))
 			fprintf(fp, "ipv6 ,\n");
@@ -3937,14 +3951,21 @@ void start_wan(int status)
 			fprintf(fp, "noccp\n");
 			fprintf(fp, "nomppc\n");
 		}
-		fprintf(fp, "noipdefault\n" "noauth\n" "defaultroute\n" "noaccomp\n" "nobsdcomp\n" "nodeflate\n" "nopcomp\n");
+		fprintf(fp, "noipdefault\n"	// 
+			"noauth\n"	//
+			"defaultroute\n"	//
+			"noaccomp\n"	//
+			"nobsdcomp\n"	//
+			"nodeflate\n"	//
+			"nopcomp\n");
 		if (nvram_invmatch("ppp_mppe", ""))
 			fprintf(fp, "%s\n", nvram_safe_get("ppp_mppe"));
 		else
 			fprintf(fp, "nomppe\n");
 		if (nvram_match("ppp_mlppp", "1"))
 			fprintf(fp, "mp\n");
-		fprintf(fp, "usepeerdns\nuser '%s'\n" "password '%s'\n", username, passwd);
+		fprintf(fp, "usepeerdns\nuser '%s'\n"	//
+			"password '%s'\n", username, passwd);
 
 		if (nvram_match("ppp_asyncmap", "1"))
 			fprintf(fp, "asyncmap 0\n");
@@ -3972,11 +3993,19 @@ void start_wan(int status)
 			fprintf(fp, "debug\n");
 
 		if (nvram_match("ppp_demand", "1"))
-			fprintf(fp, "demand\n"
-				"idle %s\n"
-				"10.112.112.112:10.112.112.113\n" "lcp-echo-interval %d\n" "lcp-echo-failure 10\n" "ipcp-accept-remote\n" "ipcp-accept-local\n" "connect true\n" "ktune\n", idletime, atoi(idletime) * 2);
+			fprintf(fp, "demand\n"	//
+				"idle %s\n"	//
+				"10.112.112.112:10.112.112.113\n"	// 
+				"lcp-echo-interval %d\n"	//
+				"lcp-echo-failure 10\n"	//
+				"ipcp-accept-remote\n"	//
+				"ipcp-accept-local\n"	//
+				"connect true\n"	//
+				"ktune\n", idletime, atoi(idletime) * 2);
 		else
-			fprintf(fp, "persist\n" "lcp-echo-interval 3\n" "lcp-echo-failure 20\n");
+			fprintf(fp, "persist\n"	//
+				"lcp-echo-interval 3\n"	//
+				"lcp-echo-failure 20\n");
 
 		fclose(fp);
 
