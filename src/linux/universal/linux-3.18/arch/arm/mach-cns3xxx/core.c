@@ -353,7 +353,7 @@ static void __init __cns3xxx_timer_init(unsigned int timer_irq)
 
 	cns3xxx_clocksource_init();
 	cns3xxx_clockevents_init(timer_irq);
-#ifdef CONFIG_LOCAL_TIMERS
+#ifdef CONFIG_HAVE_ARM_TWD
 	int err = twd_local_timer_register(&twd_local_timer);
 	if (err)
 		pr_err("twd_local_timer_register failed %d\n", err);
