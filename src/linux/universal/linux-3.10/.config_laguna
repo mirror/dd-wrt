@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 3.10.69 Kernel Configuration
+# Linux/arm 3.10.72 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_MIGHT_HAVE_PCI=y
@@ -461,7 +461,8 @@ CONFIG_IP_ROUTE_CLASSID=y
 # CONFIG_NET_IPIP is not set
 CONFIG_NET_IPGRE_DEMUX=y
 CONFIG_NET_IP_TUNNEL=m
-# CONFIG_NET_IPGRE is not set
+CONFIG_NET_IPGRE=m
+# CONFIG_NET_IPGRE_BROADCAST is not set
 CONFIG_NET_ETHERIP=m
 CONFIG_IP_MROUTE=y
 CONFIG_IP_MROUTE_MULTIPLE_TABLES=y
