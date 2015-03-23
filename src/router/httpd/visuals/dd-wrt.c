@@ -454,29 +454,13 @@ void ej_show_cpuinfo(webs_t wp, int argc, char_t ** argv)
 
 void ej_show_cpucores(webs_t wp, int argc, char_t ** argv)
 {
-	FILE *fp = popen("cat /proc/cpuinfo|grep processor|wc -l", "r");
-	int count, dcount;
-	if (fp) {
-		fscanf(fp, "%d", &count);
-		pclose(fp);
+	int count = 1;
+#ifdef _SC_NPROCESSORS_ONLN
+	int cpucount = sysconf(_SC_NPROCESSORS_ONLN);
+	if (cpucount > 1) {
+		count = cpucount;
 	}
-	fp = popen("cat /proc/cpuinfo|grep \"compatible processor\"|wc -l", "r");
-	if (fp) {
-		fscanf(fp, "%d", &dcount);
-		pclose(fp);
-	}
-	count -= dcount;
-
-	fp = popen("cat /proc/cpuinfo|grep \"Intel(R) processor\"|wc -l", "r");
-	if (fp) {
-		fscanf(fp, "%d", &dcount);
-		pclose(fp);
-	}
-	count -= dcount;
-
-	if (!count)
-		count = 1;
-
+#endif
 	websWrite(wp, "%d", count);
 }
 
