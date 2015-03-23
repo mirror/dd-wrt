@@ -893,7 +893,6 @@ int check_vlan_support(void)
 {
 #if defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_MAGICBOX)  || defined(HAVE_RB600) || defined(HAVE_FONERA) || defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_WHRAG108) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_RT2880) || defined(HAVE_OPENRISC)
 	return 0;
-#else
 
 	int brand = getRouterBrand();
 
@@ -1173,7 +1172,7 @@ int internal_getRouterBrand()
 
 	if (boardnum == 24 && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1110")
-	    && nvram_match("gpio7", "wps_button") && !nvram_match("gpio6", "wps_led")) {
+	    && nvram_match("gpio7", "wps_button") && nvram_match("gpio6", "wps_led") && nvram_get("pci/1/1/venid")) {
 		setRouter("Dlink-DIR868L");
 		return ROUTER_DLINK_DIR868;
 	}
