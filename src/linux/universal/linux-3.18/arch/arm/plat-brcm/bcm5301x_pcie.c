@@ -227,6 +227,7 @@ static struct soc_pcie_port {
 	bool enable;
 	bool link;
 	bool isswitch;
+	int  init_state;
 	bool port1active;
 	bool port2active;
 	uint16 switch_id;
@@ -368,6 +369,11 @@ static void plx_pcie_switch_init(struct pci_bus *bus, unsigned int devfn)
 	u32 dRead = 0;
 	u16 bm = 0;
 	int bus_inc = 0;
+	
+	if ((port->init_state & (bus->number | devfn)) == (bus->number | devfn)) {
+	    return;
+	}
+	port->init_state|=(bus->number | devfn);
 
 	soc_pci_read_config(bus, devfn, 0x100, 4, &dRead);
 	printk("PCIE: Doing PLX switch Init...Test Read = %08x\n", (unsigned int)dRead);
@@ -409,7 +415,6 @@ static void plx_pcie_switch_init(struct pci_bus *bus, unsigned int devfn)
 	 */
 	if (bus->number == (bus_inc + 1)) {
 		soc_pci_write_config(bus, devfn, 0x18, 4, PLX_PRIM_SEC_BUS_NUM);
-
 		/* TODO: We need to scan all outgoing windows,
 		 * to look for a base limit pair for this register.
 		 */
@@ -576,6 +581,7 @@ static int soc_pci_read_config(struct pci_bus *bus, unsigned int devfn, int wher
 		port->switch_id = ASMEDIA_SWITCH_ID;
 		port->isswitch = 1;
 	}
+
 	if ((bus->number == (bus_inc + 2)) && (port->isswitch == 1) && (where == 0) && (((data_reg >> 16) & 0xFFFF) == PLX_SWITCH_ID)) {
 		plx_pcie_switch_init(bus, devfn);
 	} else if ((bus->number == (bus_inc + 2)) && (port->isswitch == 1) && (where == 0) && (((data_reg >> 16) & 0xFFFF) == ASMEDIA_SWITCH_ID)) {
