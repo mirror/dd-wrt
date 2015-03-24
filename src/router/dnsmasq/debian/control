@@ -42,5 +42,3 @@ Description: Utilities for manipulating DHCP leases
  Small utilities to query a DHCP server's lease database and
  remove leases from it. These programs are distributed with dnsmasq
  and may not work correctly with other DHCP servers.
-
- 

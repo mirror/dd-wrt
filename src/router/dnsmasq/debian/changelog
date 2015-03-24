@@ -3,8 +3,22 @@ dnsmasq (2.73-1) unstable; urgency=low
    * New upstream.
    * Tweak field width in cache dump to avoid truncating IPv6
      addresses. (closes: #771557)
+   * Add newline at the end of example config file. (LP: #1416895)
+   * Make Debian package build reproducible. (closes: #777323)
 
- -- Simon Kelley <simon@thekelleys.org.uk>  Fri, 03 Oct 2014 08:49:42 +0000
+ -- Simon Kelley <simon@thekelleys.org.uk>  Wed, 11 Feb 2015 21:59:42 +0000
+
+dnsmasq (2.72-3) unstable; urgency=medium
+
+   * debian/systemd.service: switch from Type=dbus to Type=forking.
+     dnsmasq does not depend on dbus, but Type=dbus systemd services cannot
+     work without it. (Closes: #769486, #776530)
+     - debian/init: when called with systemd-exec argument, let dnsmasq
+       go into the background, so Type=forking can detect when it is ready
+   * Remove line containing only whitespace in debian/contol.
+     (closes: #777571)
+
+ -- Simon Kelley <simon@thekelleys.org.uk>  Wed, 11 Feb 2015 21:56:12 +0000
 
 dnsmasq (2.72-2) unstable; urgency=low
 
