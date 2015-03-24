@@ -85,6 +85,9 @@ int __init pcibios_map_irq(const struct pci_dev *dev, uint8_t slot, uint8_t pin)
 		} else if (soc_is_qca955x()) {
 			ar71xx_pci_irq_map = qca955x_pci_irq_map;
 			ar71xx_pci_nr_irqs = ARRAY_SIZE(qca955x_pci_irq_map);
+		} else if (soc_is_qca956x()) {
+			ar71xx_pci_irq_map = qca955x_pci_irq_map;
+			ar71xx_pci_nr_irqs = ARRAY_SIZE(qca955x_pci_irq_map);
 		} else {
 			printk(KERN_INFO "pci %s: invalid irq map\n",
 				pci_name((struct pci_dev *) dev));
@@ -221,6 +224,19 @@ int __init ar71xx_pci_init(void)
 						 QCA955X_PCI_MEM_SIZE,
 						 1,
 						 AR934X_IP3_IRQ(2));
+		/* fall through */
+		break;
+	case AR71XX_SOC_QCA9561:
+	case AR71XX_SOC_TP9343:
+		pdev = ar71xx_register_pci_ar724x(0,
+						 QCA956X_PCI_CFG_BASE1,
+						 QCA956X_PCI_CTRL_BASE1,
+						 QCA956X_PCI_CRP_BASE1,
+						 QCA956X_PCI_MEM_BASE1,
+						 QCA956X_PCI_MEM_SIZE,
+						 0,
+						 AR934X_IP2_IRQ(2));
+
 		/* fall through */
 		break;
 	default:
