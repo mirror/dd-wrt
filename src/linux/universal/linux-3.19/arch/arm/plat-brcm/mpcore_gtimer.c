@@ -23,7 +23,7 @@
 #include <linux/irq.h>
 #include <linux/io.h>
 #include <linux/irqchip/arm-gic.h>
-#include <asm/sched_clock.h>
+#include <linux/sched_clock.h>
 #include <asm/mach/irq.h>
 
 #include <plat/mpcore.h>
@@ -258,7 +258,7 @@ void __init mpcore_gtimer_init(
 	count = gptimer_count_read(NULL);
 
 
-	setup_sched_clock(read_sched_clock, 32, freq);
+	sched_clock_register(read_sched_clock, 32, freq);
 
 	/* Enable the free-running global counter */
 	setup_percpu_irq(timer_irq, &gtimer_irq);
