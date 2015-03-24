@@ -915,7 +915,7 @@ int __init ar7240_platform_init(void)
 	}
 
 #ifdef CONFIG_AP135
-	if (is_qca955x()) {
+	if (is_qca955x() || is_qca956x()) {
 		qca_usbregister();
 	}
 #endif
