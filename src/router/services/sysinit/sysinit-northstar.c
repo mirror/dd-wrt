@@ -2371,6 +2371,7 @@ void start_sysinit(void)
 			}
 
 		}
+		set_gpio(8, 1);	// fixup ses button
 
 	break;
 	case ROUTER_DLINK_DIR868:
