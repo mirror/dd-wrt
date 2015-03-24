@@ -3433,7 +3433,7 @@ activate_new(pcap_t *handle)
 	 */
 	handle->fd = sock_fd;
 
-#ifdef SO_BPF_EXTENSIONS
+#if defined(SO_BPF_EXTENSIONS) && defined(SKF_AD_VLAN_TAG_PRESENT)
 	/*
 	 * Can we generate special code for VLAN checks?
 	 * (XXX - what if we need the special code but it's not supported
