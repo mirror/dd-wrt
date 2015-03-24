@@ -994,7 +994,7 @@ void sas_show_channel(webs_t wp, char *dev, char *prefix, int type)
 
 		if (!strcmp(prefix, "wl1"))
 			instance = 1;
-		else if if (!strcmp(prefix, "wl2"))
+		else if (!strcmp(prefix, "wl2"))
 			instance = 2;
 
 		unsigned int chanlist[128];

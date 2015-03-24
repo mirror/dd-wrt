@@ -3251,6 +3251,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		}
 #endif
 	}
+#ifndef HAVE_GUESTPORT
 	websWrite(wp, "<div class=\"center\">\n");
 #ifdef HAVE_MADWIFI
 	if (count < 8)
@@ -3272,7 +3273,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 			  prefix);
 
 	websWrite(wp, "</div><br />\n");
-
+#endif
 #ifdef HAVE_GUESTPORT
 	int gpfound = 0;
 	websWrite(wp, "<h2>Guestport</h2>\n");
