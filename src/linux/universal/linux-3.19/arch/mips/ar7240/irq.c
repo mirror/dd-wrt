@@ -216,6 +216,8 @@ static void __init ar71xx_misc_irq_init(void)
 	case AR71XX_SOC_QCA9533:
 	case AR71XX_SOC_QCA9556:
 	case AR71XX_SOC_QCA9558:
+	case AR71XX_SOC_QCA9561:
+	case AR71XX_SOC_TP9343:
 		ar71xx_misc_irq_chip.irq_ack = ar724x_misc_irq_ack;
 		break;
 	default:
@@ -327,7 +329,7 @@ static void ar934x_ip2_irq_init(void)
 }
 
 
-static void qca956x_enable_timer_cb(void) {
+static void qca955x_enable_timer_cb(void) {
 	u32 misc;
 
 	misc = ar71xx_reset_rr(AR71XX_RESET_REG_MISC_INT_ENABLE);
@@ -356,12 +358,105 @@ static void qca955x_irq_init(void)
 	if (ar71xx_soc == AR71XX_SOC_QCA9556) {
 		/* QCA956x timer init workaround has to be applied right before setting
 		 * up the clock. Else, there will be no jiffies */
-		late_time_init = &qca956x_enable_timer_cb;
+		late_time_init = &qca955x_enable_timer_cb;
 	}
 	
 
 }
 
+
+static void qca956x_ip2_irq_dispatch(unsigned int irq, struct irq_desc *desc)
+{
+	u32 status;
+
+	disable_irq_nosync(irq);
+
+	status = ar71xx_reset_rr(QCA956X_RESET_REG_EXT_INT_STATUS);
+	status &= QCA956X_EXT_INT_PCIE_RC1_ALL | QCA956X_EXT_INT_WMAC_ALL;
+
+	if (status == 0) {
+		spurious_interrupt();
+		goto enable;
+	}
+
+	if (status & QCA956X_EXT_INT_PCIE_RC1_ALL) {
+		/* TODO: flush DDR? */
+		generic_handle_irq(AR71XX_CPU_IRQ_IP2);
+	}
+
+	if (status & QCA956X_EXT_INT_WMAC_ALL) {
+		/* TODO: flsuh DDR? */
+		generic_handle_irq(AR71XX_CPU_IRQ_IP3);
+	}
+
+enable:
+	enable_irq(irq);
+}
+
+static void qca956x_ip3_irq_dispatch(unsigned int irq, struct irq_desc *desc)
+{
+	u32 status;
+
+	disable_irq_nosync(irq);
+
+	status = ar71xx_reset_rr(QCA956X_RESET_REG_EXT_INT_STATUS);
+	status &= QCA956X_EXT_INT_PCIE_RC2_ALL |
+		  QCA956X_EXT_INT_USB1 | QCA956X_EXT_INT_USB2;
+
+	if (status == 0) {
+		spurious_interrupt();
+		goto enable;
+	}
+
+	if (status & QCA956X_EXT_INT_USB1) {
+		/* TODO: flush DDR? */
+		generic_handle_irq(AR934X_IP3_IRQ(0));
+	}
+
+	if (status & QCA956X_EXT_INT_USB2) {
+		/* TODO: flush DDR? */
+		generic_handle_irq(AR934X_IP3_IRQ(1));
+	}
+
+	if (status & QCA956X_EXT_INT_PCIE_RC2_ALL) {
+		/* TODO: flush DDR? */
+		generic_handle_irq(AR934X_IP3_IRQ(2));
+	}
+
+enable:
+	enable_irq(irq);
+}
+
+static void qca956x_enable_timer_cb(void) {
+	u32 misc;
+
+	misc = ar71xx_reset_rr(AR71XX_RESET_REG_MISC_INT_ENABLE);
+	misc |= MISC_INT_MIPS_SI_TIMERINT_MASK;
+	ar71xx_reset_wr(AR71XX_RESET_REG_MISC_INT_ENABLE, misc);
+}
+
+static void qca956x_irq_init(void)
+{
+	int i;
+
+	for (i = AR934X_IP2_IRQ_BASE;
+	     i < AR934X_IP2_IRQ_BASE + AR934X_IP2_IRQ_COUNT; i++)
+		irq_set_chip_and_handler(i, &dummy_irq_chip,
+					 handle_level_irq);
+
+	irq_set_chained_handler(AR71XX_CPU_IRQ_IP2, qca956x_ip2_irq_dispatch);
+
+	for (i = AR934X_IP3_IRQ_BASE;
+	     i < AR934X_IP3_IRQ_BASE + AR934X_IP3_IRQ_COUNT; i++)
+		irq_set_chip_and_handler(i, &dummy_irq_chip,
+					 handle_level_irq);
+
+	irq_set_chained_handler(AR71XX_CPU_IRQ_IP3, qca956x_ip3_irq_dispatch);
+
+	/* QCA956x timer init workaround has to be applied right before setting
+	 * up the clock. Else, there will be no jiffies */
+	late_time_init = &qca956x_enable_timer_cb;
+}
 
 
 
@@ -540,6 +635,11 @@ void __init arch_init_irq(void)
 		ip2_handler = ar71xx_default_ip2_handler;
 		ip3_handler = ar71xx_default_ip3_handler;
 		break;
+	case AR71XX_SOC_QCA9561:
+	case AR71XX_SOC_TP9343:
+		ip2_handler = ar71xx_default_ip2_handler;
+		ip3_handler = ar71xx_default_ip3_handler;
+		break;
 
 	default:
 		BUG();
@@ -553,6 +653,8 @@ void __init arch_init_irq(void)
 		ar934x_ip2_irq_init();
 	else if (ar71xx_soc == AR71XX_SOC_QCA9556 || ar71xx_soc == AR71XX_SOC_QCA9558)
 		qca955x_irq_init();
+	else if (ar71xx_soc == AR71XX_SOC_QCA9561 || ar71xx_soc == AR71XX_SOC_TP9343)
+		qca956x_irq_init();
 
 	cp0_perfcount_irq = AR71XX_MISC_IRQ_PERFC;
 
