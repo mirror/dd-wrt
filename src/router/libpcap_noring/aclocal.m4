@@ -231,7 +231,7 @@ AC_DEFUN(AC_LBL_CHECK_UNKNOWN_WARNING_OPTION_ERROR,
 		# We're assuming this is clang, where
 		# -Werror=unknown-warning-option is the appropriate
 		# option to force the compiler to fail.
-		# 
+		#
 		ac_lbl_unknown_warning_option_error="-Werror=unknown-warning-option"
 	    ],
 	    [
@@ -438,7 +438,7 @@ AC_DEFUN(AC_LBL_SHLIBS_INIT,
 			esac
 			;;
 		    esac
-		    V_CCOPT="$V_CCOPT"
+		    V_CCOPT="$V_CCOPT $PIC_OPT"
 		    V_SONAME_OPT="-Wl,-soname,"
 		    V_RPATH_OPT="-Wl,-rpath,"
 		    ;;
@@ -501,7 +501,7 @@ AC_DEFUN(AC_LBL_SHLIBS_INIT,
 		    #
 		    # "cc" is GCC.
 		    #
-		    V_CCOPT="$V_CCOPT"
+		    V_CCOPT="$V_CCOPT -fpic"
 		    V_SHLIB_CMD="\$(CC)"
 		    V_SHLIB_OPT="-shared"
 		    V_SONAME_OPT="-Wl,-soname,"
@@ -1274,7 +1274,7 @@ dnl
 dnl	AC_LBL_DL_PASSIVE_REQ_T
 dnl
 dnl results:
-dnl 
+dnl
 dnl 	HAVE_DLPI_PASSIVE (defined)
 dnl
 AC_DEFUN(AC_LBL_DL_PASSIVE_REQ_T,
