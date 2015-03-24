@@ -144,26 +144,26 @@ ifeq (,$(findstring nodocs,$(DEB_BUILD_OPTIONS)))
 	install -m 644 dnsmasq.conf.example debian/base/usr/share/doc/$(package)/examples/.
 	install -m 644 trust-anchors.conf debian/base/usr/share/$(package)/.
 	install -m 644 FAQ debian/base/usr/share/doc/$(package)/.
-	gzip -9 debian/base/usr/share/doc/$(package)/FAQ
+	gzip -9n debian/base/usr/share/doc/$(package)/FAQ
 	install -m 644 CHANGELOG debian/base/usr/share/doc/$(package)/changelog
-	gzip -9 debian/base/usr/share/doc/$(package)/changelog
+	gzip -9n debian/base/usr/share/doc/$(package)/changelog
 	install -m 644 CHANGELOG.archive debian/base/usr/share/doc/$(package)/changelog.archive
-	gzip -9 debian/base/usr/share/doc/$(package)/changelog.archive
+	gzip -9n debian/base/usr/share/doc/$(package)/changelog.archive
 	install -m 644 dbus/DBus-interface debian/base/usr/share/doc/$(package)/.
-	gzip -9 debian/base/usr/share/doc/$(package)/DBus-interface	
+	gzip -9n debian/base/usr/share/doc/$(package)/DBus-interface	
 endif
 	install -m 644 debian/dnsmasq-base.conffiles debian/base/DEBIAN/conffiles
 	install -m 755 debian/dnsmasq-base.postinst debian/base/DEBIAN/postinst
 	install -m 755 debian/dnsmasq-base.postrm  debian/base/DEBIAN/postrm
 	install -m 644 debian/changelog debian/base/usr/share/doc/$(package)/changelog.Debian
-	gzip -9 debian/base/usr/share/doc/$(package)/changelog.Debian
+	gzip -9n debian/base/usr/share/doc/$(package)/changelog.Debian
 	install -m 644 debian/readme debian/base/usr/share/doc/$(package)/README.Debian
 	install -m 644 debian/copyright debian/base/usr/share/doc/$(package)/copyright
 	install -m 644 debian/dbus.conf debian/base/etc/dbus-1/system.d/dnsmasq.conf
-	gzip -9 debian/base/usr/share/man/man8/dnsmasq.8
+	gzip -9n debian/base/usr/share/man/man8/dnsmasq.8
 	for f in debian/base/usr/share/man/*; do \
 		if [ -f $$f/man8/dnsmasq.8 ]; then \
-                       gzip -9 $$f/man8/dnsmasq.8 ; \
+                       gzip -9n $$f/man8/dnsmasq.8 ; \
                 fi \
 	done
 ifeq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
@@ -185,13 +185,13 @@ ifeq ($(DEB_HOST_ARCH_OS),linux)
 	make -C contrib/wrt PREFIX=/usr DESTDIR=`pwd`/debian/utils CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" COPTS="$(DEB_COPTS)" CC=gcc
 	install -m 755 contrib/wrt/dhcp_release debian/utils/usr/bin/dhcp_release
 	install -m 644 contrib/wrt/dhcp_release.1 debian/utils/usr/share/man/man1/dhcp_release.1
-	gzip -9 debian/utils/usr/share/man/man1/dhcp_release.1
+	gzip -9n debian/utils/usr/share/man/man1/dhcp_release.1
 	install -m 755 contrib/wrt/dhcp_lease_time debian/utils/usr/bin/dhcp_lease_time
 	install -m 644 contrib/wrt/dhcp_lease_time.1 debian/utils/usr/share/man/man1/dhcp_lease_time.1
 	install -m 644 debian/copyright debian/utils/usr/share/doc/dnsmasq-utils/copyright
 	install -m 644 debian/changelog debian/utils/usr/share/doc/dnsmasq-utils/changelog.Debian
-	gzip -9 debian/utils/usr/share/doc/dnsmasq-utils/changelog.Debian
-	gzip -9 debian/utils/usr/share/man/man1/dhcp_lease_time.1
+	gzip -9n debian/utils/usr/share/doc/dnsmasq-utils/changelog.Debian
+	gzip -9n debian/utils/usr/share/man/man1/dhcp_lease_time.1
 ifeq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
 	strip -R .note -R .comment debian/utils/usr/bin/dhcp_release
 	strip -R .note -R .comment debian/utils/usr/bin/dhcp_lease_time
