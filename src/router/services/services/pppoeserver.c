@@ -42,24 +42,10 @@ static char *getifip(void)
 void add_pppoe_natrule(void)
 {
 
-	if (nvram_match("wan_proto", "disabled")) {
-		char mask[128];
-
-		sprintf(mask, "%s/%s", nvram_safe_get("pppoeserver_remotenet"), nvram_safe_get("pppoeserver_remotemask"));
-		eval("iptables", "-A", "INPUT", "-i", getifip(), "-s", mask, "-j", "DROP");
-		eval("iptables", "-t", "nat", "-A", "POSTROUTING", "-s", mask, "-j", "SNAT", "--to-source", getifip());
-	}
 }
 
 void del_pppoe_natrule(void)
 {
-	if (nvram_match("wan_proto", "disabled")) {
-		char mask[128];
-
-		sprintf(mask, "%s/%s", nvram_safe_get("pppoeserver_remotenet"), nvram_safe_get("pppoeserver_remotemask"));
-		eval("iptables", "-D", "INPUT", "-i", getifip(), "-s", mask, "-j", "DROP");
-		eval("iptables", "-t", "nat", "-D", "POSTROUTING", "-s", mask, "-j", "SNAT", "--to-source", getifip());
-	}
 }
 
 void addpppoeconnected_main(int argc, char *argv[])
