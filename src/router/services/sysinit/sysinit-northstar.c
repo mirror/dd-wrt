@@ -81,6 +81,7 @@ static void set_regulation(int card, char *code, char *rev)
 	case ROUTER_NETGEAR_R6300V2:
 	case ROUTER_NETGEAR_R7000:
 	case ROUTER_DLINK_DIR868:
+	case ROUTER_DLINK_DIR860:
 		sprintf(path, "pci/%d/1/regrev", card + 1);
 		nvram_set(path, rev);
 		sprintf(path, "pci/%d/1/ccode", card + 1);
@@ -102,7 +103,7 @@ void start_sysinit(void)
 	time_t tm = 0;
 	struct nvram_param *extra_params = NULL;
 
-	insmod("softdog");
+//      insmod("softdog");
 	/*
 	 * Setup console 
 	 */
@@ -2109,6 +2110,269 @@ void start_sysinit(void)
 		set_gpio(7, 1);	// fixup ses button
 
 		break;
+	case ROUTER_DLINK_DIR860:
+		if (nvram_get("devpath0") == NULL) {
+			nvram_set("devpath0", "pci/1/1/");
+			nvram_set("devpath1", "pci/2/1/");
+
+			char buf[64];
+			FILE *fp = popen("cat /dev/mtdblock0|grep lanmac", "r");
+			fread(buf, 1, 24, fp);
+			pclose(fp);
+			buf[24] = 0;
+			fprintf(stderr, "set main mac %s\n", &buf[7]);
+			nvram_set("et0macaddr", &buf[7]);
+
+			fp = popen("cat /dev/mtdblock0|grep wlan5mac", "r");
+			fread(buf, 1, 26, fp);
+			pclose(fp);
+			buf[26] = 0;
+			fprintf(stderr, "set 5g mac %s\n", &buf[9]);
+			nvram_set("pci/2/0/macaddr", &buf[9]);
+			nvram_set("pci/2/1/macaddr", &buf[9]);
+			fp = popen("cat /dev/mtdblock0|grep wlan24mac", "r");
+			fread(buf, 1, 27, fp);
+			pclose(fp);
+			buf[27] = 0;
+			fprintf(stderr, "set 2.4g mac %s\n", &buf[10]);
+			nvram_set("pci/1/0/macaddr", &buf[10]);
+			nvram_set("pci/1/1/macaddr", &buf[10]);
+			struct nvram_param dir860_1_1params[] = {
+				{"aa2g", "0x3"},
+				{"ag0", "0x0"},
+				{"ag1", "0x0"},
+				{"ag2", "0xff"},
+				{"ag3", "0xff"},
+				{"antswctl2g", "0x0"},
+				{"antswitch", "0x0"},
+				{"boardflags2", "0x9800"},
+				{"boardflags", "0x200"},
+				{"boardtype", "0x5e8"},
+				{"boardvendor", "0x14E4"},
+				{"bw40po", "0x0"},
+				{"bwduppo", "0x0"},
+				{"bxa2g", "0x0"},
+				{"cck2gpo", "0x1111"},
+				{"ccode", "0"},
+				{"cddpo", "0x0"},
+				{"devid", "0x43a9"},
+				{"extpagain2g", "0x2"},
+				{"itt2ga0", "0x20"},
+				{"itt2ga1", "0x20"},
+				{"ledbh0", "11"},
+				{"ledbh10", "11"},
+				{"ledbh11", "11"},
+				{"ledbh1", "11"},
+				{"ledbh2", "11"},
+				{"ledbh3", "11"},
+				{"ledbh4", "11"},
+				{"ledbh5", "11"},
+				{"ledbh6", "11"},
+				{"ledbh7", "11"},
+				{"ledbh8", "11"},
+				{"ledbh9", "11"},
+				{"leddc", "0xffff"},
+				{"maxp2ga0", "0x50"},
+				{"maxp2ga1", "0x50"},
+				{"mcs2gpo0", "0x7777"},
+				{"mcs2gpo1", "0x9777"},
+				{"mcs2gpo2", "0x7777"},
+				{"mcs2gpo3", "0x9777"},
+				{"mcs2gpo4", "0x9999"},
+				{"mcs2gpo5", "0xb999"},
+				{"mcs2gpo6", "0x9999"},
+				{"mcs2gpo7", "0xb999"},
+				{"ofdm2gpo", "0x97777777"},
+				{"opo", "0x0"},
+				{"pa2gw0a0", "0xFE31"},
+				{"pa2gw0a1", "0xFE4F"},
+				{"pa2gw1a0", "0x14E9"},
+				{"pa2gw1a1", "0x16DB"},
+				{"pa2gw2a0", "0xFA80"},
+				{"pa2gw2a1", "0xFA4C"},
+				{"pdetrange2g", "0x2"},
+				{"phycal_tempdelta", "0"},
+				{"regrev", "0"},
+				{"rssisav2g", "0x0"},
+				{"rssismc2g", "0x0"},
+				{"rssismf2g", "0x0"},
+				{"rxchain", "0x3"},
+				{"rxpo2g", "0x0"},
+				{"sromrev", "8"},
+				{"stbcpo", "0x0"},
+				{"tempoffset", "0"},
+				{"temps_period", "5"},
+				{"tempthresh", "120"},
+				{"tri2g", "0x0"},
+				{"triso2g", "0x4"},
+				{"tssipos2g", "0x1"},
+				{"txchain", "0x3"},
+				{"vendid", "0x14E4"},
+				{"venid", "0x14E4"},
+				{0, 0}
+			};
+
+			struct nvram_param dir860_2_1params[] = {
+				{"aa2g", "0"},
+				{"aa5g", "3"},
+				{"aga0", "0"},
+				{"aga1", "0"},
+				{"aga2", "0"},
+				{"agbg0", "0"},
+				{"agbg1", "0"},
+				{"agbg2", "0"},
+				{"antswitch", "0"},
+				{"boardflags2", "0x2"},
+				{"boardflags3", "0x0"},
+				{"boardflags", "0x10001000"},
+				{"boardnum", "0"},
+				{"boardrev", "0x1350"},
+				{"boardtype", "0x62f"},
+				{"boardvendor", "0x14E4"},
+				{"cckbw202gpo", "0"},
+				{"cckbw20ul2gpo", "0"},
+				{"ccode", "0"},
+				{"devid", "0x43b3"},
+				{"dot11agduphrpo", "0"},
+				{"dot11agduplrpo", "0"},
+				{"dot11agofdmhrbw202g", "17408"},
+				{"epagain2g", "0"},
+				{"epagain5g", "0"},
+				{"femctrl", "6"},
+				{"gainctrlsph", "0"},
+				{"maxp2ga0", "66"},
+				{"maxp2ga1", "66"},
+				{"maxp2ga2", "66"},
+				{"maxp5ga0", "78,78,78,78"},
+				{"maxp5ga1", "78,78,78,78"},
+				{"maxp5ga2", "78,78,78,78"},
+				{"mcsbw1605ghpo", "0"},
+				{"mcsbw1605glpo", "0"},
+				{"mcsbw1605gmpo", "0"},
+				{"mcsbw202gpo", "2571386880"},
+				{"mcsbw205ghpo", "2252472320"},
+				{"mcsbw205glpo", "2252472320"},
+				{"mcsbw205gmpo", "2252472320"},
+				{"mcsbw402gpo", "2571386880"},
+				{"mcsbw405ghpo", "2252472320"},
+				{"mcsbw405glpo", "2252472320"},
+				{"mcsbw405gmpo", "2252472320"},
+				{"mcsbw805ghpo", "2252472320"},
+				{"mcsbw805glpo", "2252472320"},
+				{"mcsbw805gmpo", "2252472320"},
+				{"mcslr5ghpo", "0"},
+				{"mcslr5glpo", "0"},
+				{"mcslr5gmpo", "0"},
+				{"measpower1", "0x7f"},
+				{"measpower2", "0x7f"},
+				{"measpower", "0x7f"},
+				{"noiselvl2ga0", "31"},
+				{"noiselvl2ga1", "31"},
+				{"noiselvl2ga2", "31"},
+				{"noiselvl5ga0", "31,31,31,31"},
+				{"noiselvl5ga1", "31,31,31,31"},
+				{"noiselvl5ga2", "31,31,31,31"},
+				{"ofdmlrbw202gpo", "0"},
+				{"pa2ga0", "0xff24,0x188e,0xfce6"},
+				{"pa2ga1", "0xff3e,0x15f9,0xfd36"},
+				{"pa2ga2", "0xff25,0x18a6,0xfce2"},
+				{"pa5ga0", "0xff72,0x17d1,0xfd29,0xff78,0x183b,0xfd27,0xff75,0x1866,0xfd20,0xff85,0x18c8,0xfd30"},
+				{"pa5ga1", "0xff4e,0x1593,0xfd4b,0xff61,0x1743,0xfd21,0xff6a,0x1721,0xfd41,0xff99,0x18e6,0xfd40"},
+				{"pa5ga2", "0xff4d,0x166c,0xfd2a,0xff52,0x168a,0xfd31,0xff5e,0x1768,0xfd25,0xff61,0x1744,0xfd32"},
+				{"papdcap2g", "0"},
+				{"papdcap5g", "0"},
+				{"pcieingress_war", "15"},
+				{"pdgain2g", "10"},
+				{"pdgain5g", "10"},
+				{"pdoffset40ma0", "12834"},
+				{"pdoffset40ma1", "12834"},
+				{"pdoffset40ma2", "12834"},
+				{"pdoffset80ma0", "256"},
+				{"pdoffset80ma1", "256"},
+				{"pdoffset80ma2", "256"},
+				{"phycal_tempdelta", "255"},
+				{"rawtempsense", "0x1ff"},
+				{"regrev", "0"},
+				{"rxchain", "3"},
+				{"rxgainerr2ga0", "63"},
+				{"rxgainerr2ga1", "31"},
+				{"rxgainerr2ga2", "31"},
+				{"rxgainerr5ga0", "63,63,63,63"},
+				{"rxgainerr5ga1", "31,31,31,31"},
+				{"rxgainerr5ga2", "31,31,31,31"},
+				{"rxgains2gelnagaina0", "0"},
+				{"rxgains2gelnagaina1", "0"},
+				{"rxgains2gelnagaina2", "0"},
+				{"rxgains2gtrelnabypa", "0"},
+				{"rxgains2gtrisoa0", "0"},
+				{"rxgains2gtrisoa1", "0"},
+				{"rxgains2gtrisoa2", "0"},
+				{"rxgains5gelnagaina0", "3"},
+				{"rxgains5gelnagaina1", "3"},
+				{"rxgains5gelnagaina2", "3"},
+				{"rxgains5ghelnagaina", "7"},
+				{"rxgains5ghtrelnabyp", "1"},
+				{"rxgains5ghtrisoa0", "15"},
+				{"rxgains5ghtrisoa1", "15"},
+				{"rxgains5ghtrisoa2", "15"},
+				{"rxgains5gmelnagaina", "7"},
+				{"rxgains5gmtrelnabyp", "1"},
+				{"rxgains5gmtrisoa0", "15"},
+				{"rxgains5gmtrisoa1", "15"},
+				{"rxgains5gmtrisoa2", "15"},
+				{"rxgains5gtrelnabypa", "1"},
+				{"rxgains5gtrisoa0", "6"},
+				{"rxgains5gtrisoa1", "6"},
+				{"rxgains5gtrisoa2", "6"},
+				{"sar2g", "18"},
+				{"sar5g", "15"},
+				{"sb20in40hrpo", "0"},
+				{"sb20in40lrpo", "0"},
+				{"sb20in80and160hr5gh", "0"},
+				{"sb20in80and160hr5gl", "0"},
+				{"sb20in80and160hr5gm", "0"},
+				{"sb20in80and160lr5gh", "0"},
+				{"sb20in80and160lr5gl", "0"},
+				{"sb20in80and160lr5gm", "0"},
+				{"sb40and80hr5ghpo", "0"},
+				{"sb40and80hr5glpo", "0"},
+				{"sb40and80hr5gmpo", "0"},
+				{"sb40and80lr5ghpo", "0"},
+				{"sb40and80lr5glpo", "0"},
+				{"sb40and80lr5gmpo", "0"},
+				{"sromrev", "11"},
+				{"subband5gver", "0x4"},
+				{"tempcorrx", "0x3f"},
+				{"tempoffset", "255"},
+				{"temps_hysteresis", "15"},
+				{"temps_period", "15"},
+				{"tempsense_option", "0x3"},
+				{"tempsense_slope", "0xff"},
+				{"tempthresh", "255"},
+				{"tssiposslope2g", "1"},
+				{"tssiposslope5g", "1"},
+				{"tworangetssi2g", "0"},
+				{"tworangetssi5g", "0"},
+				{"txchain", "3"},
+				{"vendid", "0x14E4"},
+				{"venid", "0x14E4"},
+				{0, 0}
+			};
+			struct nvram_param *t;
+			t = dir860_1_1params;
+			while (t->name) {
+				nvram_nset(t->value, "pci/1/1/%s", t->name);
+				t++;
+			}
+			t = dir860_2_1params;
+			while (t->name) {
+				nvram_nset(t->value, "pci/2/1/%s", t->name);
+				t++;
+			}
+
+		}
+
+	break;
 	case ROUTER_DLINK_DIR868:
 	case ROUTER_DLINK_DIR865:
 
@@ -3036,7 +3300,7 @@ void start_sysinit(void)
 #ifdef HAVE_DHDAP
 	insmod("dhd");
 #endif
-	insmod("wl");
+      insmod("wl");
 
 	/*
 	 * Set a sane date 
