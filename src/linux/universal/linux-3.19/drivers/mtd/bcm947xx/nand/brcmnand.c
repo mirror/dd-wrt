@@ -285,7 +285,7 @@ brcmnand_hw_ecc_layout(struct brcmnand_mtd *brcmnand)
 	layout->oobavail = ((oob_per_sec - ecc_per_sec)	<< brcmnand->sec_per_page_shift) - 1;
 
 	brcmnand->mtd.oobavail = layout->oobavail;
-	brcmnand->chip.ecclayout = layout;
+//	brcmnand->chip.ecclayout = layout;
 	brcmnand->chip.ecc.layout = layout;
 
 	/* Output layout for debugging */
@@ -1150,6 +1150,7 @@ brcmnand_mtd_init(void)
 	chip->ecc.write_page = brcmnand_write_page_ecc;
 	chip->ecc.read_oob = brcmnand_read_oob;
 	chip->ecc.write_oob = brcmnand_write_oob;
+	chip->ecc.strength = 1;
 	chip->select_chip = brcmnand_select_chip;
 #ifdef CONFIG_MIPS_BRCM
 	chip->cmdfunc = brcmnand_command;

@@ -110,7 +110,7 @@ void __init mpcore_init_timer( unsigned long perphclk_freq )
 	mpcore_gtimer_init( periphbase + MPCORE_GTIMER_OFF, 
 			perphclk_freq, MPCORE_IRQ_GLOBALTIMER );
 
-#ifdef CONFIG_LOCAL_TIMERS
+#ifdef CONFIG_HAVE_ARM_TWD
 	printk(KERN_INFO "register local timer\n");
 	int err = twd_local_timer_register(&twd_local_timer);
 	if (err)
