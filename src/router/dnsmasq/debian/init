@@ -293,9 +293,7 @@ case "$1" in
            mkdir /var/run/dnsmasq || return 2
            chown dnsmasq:nogroup /var/run/dnsmasq || return 2
         fi
-# Enable DBus by default because we use DBus activation with systemd.
-	exec $DAEMON --keep-in-foreground --enable-dbus \
-	    -x /var/run/dnsmasq/$NAME.pid \
+	exec $DAEMON -x /var/run/dnsmasq/$NAME.pid \
 	    ${MAILHOSTNAME:+ -m $MAILHOSTNAME} \
 	    ${MAILTARGET:+ -t $MAILTARGET} \
 	    ${DNSMASQ_USER:+ -u $DNSMASQ_USER} \
