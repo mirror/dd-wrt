@@ -9,7 +9,9 @@ version 2.73
 
 	    Use inotify for checking on updates to /etc/resolv.conf and
 	    friends under Linux. This fixes race conditions when the files are 
-	    updated rapidly and saves CPU by noy polling.
+	    updated rapidly and saves CPU by noy polling. To build
+	    a binary that runs on old Linux kernels without inotify,
+	    use make COPTS=-DNO_INOTIFY
 
 	    Fix breakage of --domain=<domain>,<subnet>,local - only reverse
 	    queries were intercepted. THis appears to have been broken 
@@ -58,6 +60,18 @@ version 2.73
 	    configurations to a running dnsmasq instance much more 
 	    cheaply than having dnsmasq re-read all its existing
 	    configuration each time. 
+	
+	    Don't reply to DHCPv6 SOLICIT messages if we're not 
+	    configured to do stateful DHCPv6. Thanks to Win King Wan 
+	    for the patch.
+
+	    Fix broken DNSSEC validation of ECDSA signatures.
+
+	    Add --dnssec-timestamp option, which provides an automatic
+	    way to detect when the system time becomes valid after boot
+	    on systems without an RTC, whilst allowing DNS queries before the
+	    clock is valid so that NTP can run. Thanks to
+	    Kevin Darbyshire-Bryant for developing this idea.
 	
 	
 version 2.72

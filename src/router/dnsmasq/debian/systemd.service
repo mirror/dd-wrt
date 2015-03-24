@@ -2,8 +2,8 @@
 Description=dnsmasq - A lightweight DHCP and caching DNS server
 
 [Service]
-Type=dbus
-BusName=uk.org.thekelleys.dnsmasq
+Type=forking
+PIDFile=/var/run/dnsmasq/dnsmasq.pid
 
 # Test the config file and refuse starting if it is not valid.
 ExecStartPre=/usr/sbin/dnsmasq --test
@@ -11,11 +11,6 @@ ExecStartPre=/usr/sbin/dnsmasq --test
 # We run dnsmasq via the /etc/init.d/dnsmasq script which acts as a
 # wrapper picking up extra configuration files and then execs dnsmasq
 # itself, when called with the "systemd-exec" function.
-#
-# It also adds the command-line flags
-#    --keep-in-foreground --enable-dbus 
-# to enable DBus by default because we use DBus activation.
-#
 ExecStart=/etc/init.d/dnsmasq systemd-exec
 
 # The systemd-*-resolvconf functions configure (and deconfigure)
