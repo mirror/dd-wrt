@@ -6605,7 +6605,7 @@ int writeproc(char *path, char *value)
 	}
 	fprintf(fp,"%s",value);
 	fclose(fp);*/
-	sysprintf("echo %s > %s", value, path);
+	sysprintf("echo \"%s\" > %s", value, path);
 	return 0;
 }
 
