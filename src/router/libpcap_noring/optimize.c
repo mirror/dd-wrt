@@ -2203,9 +2203,133 @@ icode_to_fcode(struct block *root, u_int *lenp)
 	return fp;
 }
 
+/*
+ * Make a copy of a BPF program and put it in the "fcode" member of
+ * a "pcap_t".
+ *
+ * If we fail to allocate memory for the copy, fill in the "errbuf"
+ * member of the "pcap_t" with an error message, and return -1;
+ * otherwise, return 0.
+ */
+int
+install_bpf_program(pcap_t *p, struct bpf_program *fp)
+{
+	size_t prog_size;
+
+	/*
+	 * Validate the program.
+	 */
+	if (!bpf_validate(fp->bf_insns, fp->bf_len)) {
+		snprintf(p->errbuf, sizeof(p->errbuf),
+			"BPF program is not valid");
+		return (-1);
+	}
+
+	/*
+	 * Free up any already installed program.
+	 */
+	pcap_freecode(&p->fcode);
+
+	prog_size = sizeof(*fp->bf_insns) * fp->bf_len;
+	p->fcode.bf_len = fp->bf_len;
+	p->fcode.bf_insns = (struct bpf_insn *)malloc(prog_size);
+	if (p->fcode.bf_insns == NULL) {
+		snprintf(p->errbuf, sizeof(p->errbuf),
+			 "malloc: %s", pcap_strerror(errno));
+		return (-1);
+	}
+	memcpy(p->fcode.bf_insns, fp->bf_insns, prog_size);
+	return (0);
+}
+
 #ifdef BDEBUG
 static void
-opt_dump(struct block *root)
+dot_dump_node(struct block *block, struct bpf_program *prog, FILE *out)
+{
+	int icount, noffset;
+	int i;
+
+	if (block == NULL || isMarked(block))
+		return;
+	Mark(block);
+
+	icount = slength(block->stmts) + 1 + block->longjt + block->longjf;
+	noffset = min(block->offset + icount, (int)prog->bf_len);
+
+	fprintf(out, "\tblock%d [shape=ellipse, id=\"block-%d\" label=\"BLOCK%d\\n", block->id, block->id, block->id);
+	for (i = block->offset; i < noffset; i++) {
+		fprintf(out, "\\n%s", bpf_image(prog->bf_insns + i, i));
+	}
+	fprintf(out, "\" tooltip=\"");
+	for (i = 0; i < BPF_MEMWORDS; i++)
+		if (block->val[i] != 0)
+			fprintf(out, "val[%d]=%d ", i, block->val[i]);
+	fprintf(out, "val[A]=%d ", block->val[A_ATOM]);
+	fprintf(out, "val[X]=%d", block->val[X_ATOM]);
+	fprintf(out, "\"");
+	if (JT(block) == NULL)
+		fprintf(out, ", peripheries=2");
+	fprintf(out, "];\n");
+
+	dot_dump_node(JT(block), prog, out);
+	dot_dump_node(JF(block), prog, out);
+}
+static void
+dot_dump_edge(struct block *block, FILE *out)
+{
+	if (block == NULL || isMarked(block))
+		return;
+	Mark(block);
+
+	if (JT(block)) {
+		fprintf(out, "\t\"block%d\":se -> \"block%d\":n [label=\"T\"]; \n",
+				block->id, JT(block)->id);
+		fprintf(out, "\t\"block%d\":sw -> \"block%d\":n [label=\"F\"]; \n",
+			   block->id, JF(block)->id);
+	}
+	dot_dump_edge(JT(block), out);
+	dot_dump_edge(JF(block), out);
+}
+/* Output the block CFG using graphviz/DOT language
+ * In the CFG, block's code, value index for each registers at EXIT,
+ * and the jump relationship is show.
+ *
+ * example DOT for BPF `ip src host 1.1.1.1' is:
+    digraph BPF {
+    	block0 [shape=ellipse, id="block-0" label="BLOCK0\n\n(000) ldh      [12]\n(001) jeq      #0x800           jt 2	jf 5" tooltip="val[A]=0 val[X]=0"];
+    	block1 [shape=ellipse, id="block-1" label="BLOCK1\n\n(002) ld       [26]\n(003) jeq      #0x1010101       jt 4	jf 5" tooltip="val[A]=0 val[X]=0"];
+    	block2 [shape=ellipse, id="block-2" label="BLOCK2\n\n(004) ret      #68" tooltip="val[A]=0 val[X]=0", peripheries=2];
+    	block3 [shape=ellipse, id="block-3" label="BLOCK3\n\n(005) ret      #0" tooltip="val[A]=0 val[X]=0", peripheries=2];
+    	"block0":se -> "block1":n [label="T"];
+    	"block0":sw -> "block3":n [label="F"];
+    	"block1":se -> "block2":n [label="T"];
+    	"block1":sw -> "block3":n [label="F"];
+    }
+ *
+ *  After install graphviz on http://www.graphviz.org/, save it as bpf.dot
+ *  and run `dot -Tpng -O bpf.dot' to draw the graph.
+ */
+static void
+dot_dump(struct block *root)
+{
+	struct bpf_program f;
+	FILE *out = stdout;
+
+	memset(bids, 0, sizeof bids);
+	f.bf_insns = icode_to_fcode(root, &f.bf_len);
+
+	fprintf(out, "digraph BPF {\n");
+	unMarkAll();
+	dot_dump_node(root, &f, out);
+	unMarkAll();
+	dot_dump_edge(root, out);
+	fprintf(out, "}\n");
+
+	free((char *)f.bf_insns);
+}
+
+static void
+plain_dump(struct block *root)
 {
 	struct bpf_program f;
 
@@ -2215,4 +2339,17 @@ opt_dump(struct block *root)
 	putchar('\n');
 	free((char *)f.bf_insns);
 }
+static void
+opt_dump(struct block *root)
+{
+	/* if optimizer debugging is enabled, output DOT graph
+	 * `dflag=4' is equivalent to -dddd to follow -d/-dd/-ddd
+     * convention in tcpdump command line
+	 */
+	if (dflag > 3)
+		dot_dump(root);
+	else
+		plain_dump(root);
+}
+
 #endif

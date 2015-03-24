@@ -109,7 +109,6 @@ struct pcap_opt {
 	char	*source;
 	int	timeout;	/* timeout for buffering */
 	int	buffer_size;
-	int	proto;      /* protocol for packet socket (linux) */
 	int	promisc;
 	int	rfmon;		/* monitor mode */
 	int	immediate;	/* immediate mode - deliver packets as soon as they arrive */
@@ -204,6 +203,11 @@ struct pcap {
 	pcap_direction_t direction;
 
 	/*
+	 * Flags to affect BPF code generation.
+	 */
+	int bpf_codegen_flags;
+
+	/*
 	 * Placeholder for filter code if bpf not in kernel.
 	 */
 	struct bpf_program fcode;
@@ -248,6 +252,11 @@ struct pcap {
 #endif
 	cleanup_op_t cleanup_op;
 };
+
+/*
+ * BPF code generation flags.
+ */
+#define BPF_SPECIAL_VLAN_HANDLING	0x00000001	/* special VLAN handling for Linux */
 
 /*
  * This is a timeval as stored in a savefile.
