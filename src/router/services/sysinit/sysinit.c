@@ -2403,7 +2403,7 @@ void start_restore_defaults(void)
 		    || !nvram_get("vlan2ports")
 		    || nvram_match("vlan2ports", "")) {
 			nvram_set("vlan1ports", "0 1 2 3 5*");
-			nvram_set("vlan2ports", "4 5t");
+			nvram_set("vlan2ports", "4 5u");
 		}
 		break;
 	case ROUTER_LINKSYS_EA6900:
@@ -2416,7 +2416,7 @@ void start_restore_defaults(void)
 		    || !nvram_get("vlan2ports")
 		    || nvram_match("vlan2ports", "")) {
 			nvram_set("vlan1ports", "1 2 3 4 5*");
-			nvram_set("vlan2ports", "0 5t");
+			nvram_set("vlan2ports", "0 5u");
 		}
 		break;
 	case ROUTER_ASUS_AC87U:
@@ -2424,7 +2424,7 @@ void start_restore_defaults(void)
 		    || !nvram_get("vlan2ports")
 		    || nvram_match("vlan2ports", "")) {
 			nvram_set("vlan1ports", "1 2 3 5 7*");
-			nvram_set("vlan2ports", "0 7t");
+			nvram_set("vlan2ports", "0 7u");
 		}
 		break;
 
@@ -2461,7 +2461,7 @@ void start_restore_defaults(void)
 		    || !nvram_get("vlan2ports")
 		    || nvram_match("vlan2ports", "")) {
 			nvram_set("vlan1ports", "4 3 2 1 5*");
-			nvram_set("vlan2ports", "0 5t");
+			nvram_set("vlan2ports", "0 5u");
 		}
 		break;
 	case ROUTER_NETGEAR_R8000:
@@ -2469,7 +2469,7 @@ void start_restore_defaults(void)
 		    || !nvram_get("vlan2ports")
 		    || nvram_match("vlan2ports", "")) {
 			nvram_set("vlan1ports", "3 2 1 0 5 7 8*");
-			nvram_set("vlan2ports", "4 8t");
+			nvram_set("vlan2ports", "4 8u");
 		}
 		break;
 	default:
