@@ -19,7 +19,6 @@
 
 #include <asm/cacheflush.h>
 #include <asm/mach-types.h>
-#include <asm/localtimer.h>
 #include <asm/unified.h>
 #include <asm/smp.h>
 #include <asm/smp_scu.h>
@@ -99,22 +98,22 @@ static int __cpuinit brcm_boot_secondary(unsigned int cpu, struct task_struct *i
 
 	dsb_sev();
 
-	/*
-	 * Timeout set on purpose in jiffies so that on slow processors
-	 * that must also have low HZ it will wait longer.
-	 */
-	timeout = jiffies + (HZ * 10);
-
 	udelay(100);
 	/*
 	 * If the secondary CPU was waiting on WFE, it should
 	 * be already watching <pen_release>, or it could be
 	 * waiting in WFI, send it an IPI to be sure it wakes.
 	 */
+//	arch_send_wakeup_ipi_mask(cpumask_of(cpu));
 	if (pen_release != -1)
 		tick_broadcast(cpumask_of(cpu));
 
 
+	/*
+	 * Timeout set on purpose in jiffies so that on slow processors
+	 * that must also have low HZ it will wait longer.
+	 */
+	timeout = jiffies + (HZ * 10);
 	while (time_before(jiffies, timeout)) {
 		smp_rmb();
 		if (pen_release == -1)

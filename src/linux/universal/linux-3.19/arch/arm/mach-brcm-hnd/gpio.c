@@ -235,7 +235,7 @@ static int __init gpio_init(void)
 		isac68 = 1;
 	}
 
-	if ((boardnum == 24) && nvram_match("boardtype", "0x0646") && (nvram_match("boardrev", "0x1110"))) {
+	if ((boardnum == 24) && nvram_match("boardtype", "0x0646") && nvram_match("boardrev", "0x1110") && !nvram_match("gpio6", "wps_led")) {
 		printk(KERN_EMERG "DLink DIR-868 init\n");
 		isac66 = 1;
 	}
