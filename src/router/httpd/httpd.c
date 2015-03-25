@@ -1490,6 +1490,7 @@ int main(int argc, char **argv)
 //                              ERR_print_errors_fp(stderr);
 //                              fprintf(stderr,"ssl accept return %d, ssl error %d %d\n",r,SSL_get_error(ssl,r),RAND_status());
 				ct_syslog(LOG_ERR, httpd_level, "SSL accept error");
+				SSL_free(ssl);
 				close(conn_fd);
 				continue;
 			}
@@ -1541,6 +1542,10 @@ int main(int argc, char **argv)
 #ifdef HAVE_HTTPS
 			if (check_action() == ACT_WEBS_UPGRADE) {	// We don't want user to use web (http) during web (https) upgrade.
 				fprintf(stderr, "httpd: nothing to do...\n");
+#ifdef HAVE_OPENSSL
+				BIO_free(ssl_bio);
+				SSL_free(ssl);
+#endif
 				return -1;
 			}
 #endif
@@ -1548,6 +1553,10 @@ int main(int argc, char **argv)
 				conn_fp = safe_malloc(sizeof(webs));
 			if (!(conn_fp->fp = fdopen(conn_fd, "r+"))) {
 				perror("fdopen");
+#ifdef HAVE_OPENSSL
+				BIO_free(ssl_bio);
+				SSL_free(ssl);
+#endif
 				return errno;
 			}
 		}
@@ -1568,7 +1577,12 @@ int main(int argc, char **argv)
 #ifdef HAVE_POLARSSL
 		ssl_close_notify(&ssl);
 #endif
+#ifdef HAVE_OPENSSL
+		BIO_free(ssl_bio);
+		SSL_free(ssl);
 #endif
+#endif
+
 		wfclose(conn_fp);	// jimmy, https, 8/4/2003
 		free(conn_fp);
 		conn_fp = NULL;
