@@ -37,6 +37,11 @@ enum ar8327_clk_delay_sel {
 	AR8327_CLK_DELAY_SEL3,
 };
 
+enum ar8327_sgmii_clk_phase_sel {
+	AR8327_SGMII_CLK_PHASE_RISE,
+	AR8327_SGMII_CLK_PHASE_FALL,
+};
+
 struct ar8327_pad_cfg {
 	enum ar8327_pad_mode mode;
 	bool rxclk_sel;
@@ -47,6 +52,8 @@ struct ar8327_pad_cfg {
 	bool sgmii_delay_en;
 	enum ar8327_clk_delay_sel txclk_delay_sel;
 	enum ar8327_clk_delay_sel rxclk_delay_sel;
+	enum ar8327_sgmii_clk_phase_sel sgmii_txclk_phase_sel;
+	enum ar8327_sgmii_clk_phase_sel sgmii_rxclk_phase_sel;
 };
 
 enum ar8327_port_speed {

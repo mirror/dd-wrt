@@ -16,6 +16,7 @@
 static void ag71xx_phy_link_adjust(struct net_device *dev)
 {
 	struct ag71xx *ag = netdev_priv(dev);
+	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
 	struct phy_device *phydev = ag->phy_dev;
 	unsigned long flags;
 	int status_change = 0;
@@ -32,10 +33,17 @@ static void ag71xx_phy_link_adjust(struct net_device *dev)
 	if (phydev->link != ag->link)
 		status_change = 1;
 
+	if (pdata->force_link) {
+	ag->link = 1;
+	ag->duplex = pdata->duplex;
+	ag->speed = pdata->speed;
+	
+	
+	}else{
 	ag->link = phydev->link;
 	ag->duplex = phydev->duplex;
 	ag->speed = phydev->speed;
-
+	}
 	if (status_change)
 		ag71xx_link_adjust(ag);
 
@@ -52,7 +60,8 @@ void ag71xx_phy_start(struct ag71xx *ag)
 		ag71xx_ar7240_start(ag);
 	} else {
 		ag->link = 1;
-		ag71xx_link_adjust(ag);
+		if (!pdata->is_qca9561)
+			ag71xx_link_adjust(ag);
 	}
 }
 
@@ -69,7 +78,12 @@ void ag71xx_phy_stop(struct ag71xx *ag)
 	spin_lock_irqsave(&ag->lock, flags);
 	if (ag->link) {
 		ag->link = 0;
-		ag71xx_link_adjust(ag);
+		if (pdata->is_qca9561) {
+		    if (ag->phy_dev)
+			    ag->phy_dev->link = 0;
+		} else {
+			    ag71xx_link_adjust(ag);
+		}
 	}
 	spin_unlock_irqrestore(&ag->lock, flags);
 }
