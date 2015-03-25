@@ -216,7 +216,7 @@ static void __init ar71xx_misc_irq_init(void)
 	case AR71XX_SOC_QCA9533:
 	case AR71XX_SOC_QCA9556:
 	case AR71XX_SOC_QCA9558:
-	case AR71XX_SOC_QCA9561:
+	case AR71XX_SOC_QCA9563:
 	case AR71XX_SOC_TP9343:
 		ar71xx_misc_irq_chip.irq_ack = ar724x_misc_irq_ack;
 		break;
@@ -635,7 +635,7 @@ void __init arch_init_irq(void)
 		ip2_handler = ar71xx_default_ip2_handler;
 		ip3_handler = ar71xx_default_ip3_handler;
 		break;
-	case AR71XX_SOC_QCA9561:
+	case AR71XX_SOC_QCA9563:
 	case AR71XX_SOC_TP9343:
 		ip2_handler = ar71xx_default_ip2_handler;
 		ip3_handler = ar71xx_default_ip3_handler;
@@ -653,7 +653,7 @@ void __init arch_init_irq(void)
 		ar934x_ip2_irq_init();
 	else if (ar71xx_soc == AR71XX_SOC_QCA9556 || ar71xx_soc == AR71XX_SOC_QCA9558)
 		qca955x_irq_init();
-	else if (ar71xx_soc == AR71XX_SOC_QCA9561 || ar71xx_soc == AR71XX_SOC_TP9343)
+	else if (ar71xx_soc == AR71XX_SOC_QCA9563 || ar71xx_soc == AR71XX_SOC_TP9343)
 		qca956x_irq_init();
 
 	cp0_perfcount_irq = AR71XX_MISC_IRQ_PERFC;

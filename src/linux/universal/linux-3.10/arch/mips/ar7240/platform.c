@@ -491,8 +491,10 @@ static struct mdio_board_info wdr4300_mdio0_info[] = {
 
 static struct ar8327_pad_cfg ap152_ar8337_pad0_cfg = {
 	.mode = AR8327_PAD_MAC_SGMII,
-	.sgmii_txclk_phase_sel = AR8327_SGMII_CLK_PHASE_RISE,
-	.sgmii_rxclk_phase_sel = AR8327_SGMII_CLK_PHASE_FALL,
+	.txclk_delay_en = true,
+	.rxclk_delay_en = true,
+	.txclk_delay_sel = AR8327_CLK_DELAY_SEL1,
+	.rxclk_delay_sel = AR8327_CLK_DELAY_SEL2,
 };
 
 static struct ar8327_platform_data ap152_ar8337_data = {
@@ -961,7 +963,7 @@ int __init ar7240_platform_init(void)
 	mdiobus_register_board_info(db120_mdio0_info, ARRAY_SIZE(db120_mdio0_info));
 		#endif
 	#ifdef CONFIG_DIR859	
-	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_SGMII;
 	ar71xx_eth0_data.phy_mask = BIT(0);
 	ar71xx_eth0_data.speed = SPEED_1000;
 	ar71xx_eth0_data.duplex = DUPLEX_FULL;

@@ -207,7 +207,7 @@ void __init ar9xxx_add_device_wmac(u8 *cal_data, u8 *mac_addr)
 	case AR71XX_SOC_QCA9558:
 		qca955x_wmac_init();
 		break;
-	case AR71XX_SOC_QCA9561:
+	case AR71XX_SOC_QCA9563:
 	case AR71XX_SOC_TP9343:
 		qca956x_wmac_init();
 		break;
