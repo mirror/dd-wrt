@@ -381,9 +381,10 @@ static int __init ar7240_flash_init(void)
 			if (*((__u32 *)buf) == SQUASHFS_MAGIC || *check2 == SQUASHFS_MAGIC) {
 				printk(KERN_EMERG "\nfound squashfs at %X\n",
 				       offset);
-				if (*check2 == SQUASHFS_MAGIC)
+				if (*check2 == SQUASHFS_MAGIC) {
 				    buf+=0x60;
-				offset +=0x60;
+				    offset +=0x60;
+				}
 				sb = (struct squashfs_super_block *)buf;
 				dir_parts[2].offset = offset;
 
