@@ -5359,6 +5359,13 @@ int led_control(int type, int act)
 		usb_gpio = 0x10b;
 		ses_gpio = 0x10f;
 		break;
+#elif HAVE_DIR859
+	case ROUTER_BOARD_WHRHPGN:
+		power_gpio = 0x10f;
+		connected_gpio = 0x110;
+	    
+		diag_gpio = 0x00f;
+		break;
 #elif HAVE_DIR825C1
 	case ROUTER_BOARD_WHRHPGN:
 		diag_gpio = 0x10f;
