@@ -398,19 +398,19 @@ static void __init qca956x_clocks_init(void)
 	u32 cpu_pll, ddr_pll;
 	u32 bootstrap;
 
-	bootstrap = ar71xx_reset_rr(QCA956X_RESET_REG_BOOTSTRAP);
+	bootstrap = ar7240_reg_rd(ATH_RESET_BASE + QCA956X_RESET_REG_BOOTSTRAP);
 	if (bootstrap &	QCA956X_BOOTSTRAP_REF_CLK_40)
 		ref_rate = 40 * 1000 * 1000;
 	else
 		ref_rate = 25 * 1000 * 1000;
 
-	pll = ar7240_reg_rd(QCA956X_PLL_CPU_CONFIG_REG);
+	pll = ar7240_reg_rd(ATH_PLL_BASE + QCA956X_PLL_CPU_CONFIG_REG);
 	out_div = (pll >> QCA956X_PLL_CPU_CONFIG_OUTDIV_SHIFT) &
 		  QCA956X_PLL_CPU_CONFIG_OUTDIV_MASK;
 	ref_div = (pll >> QCA956X_PLL_CPU_CONFIG_REFDIV_SHIFT) &
 		  QCA956X_PLL_CPU_CONFIG_REFDIV_MASK;
 
-	pll = ar7240_reg_rd(QCA956X_PLL_CPU_CONFIG1_REG);
+	pll = ar7240_reg_rd(ATH_PLL_BASE + QCA956X_PLL_CPU_CONFIG1_REG);
 	nint = (pll >> QCA956X_PLL_CPU_CONFIG1_NINT_SHIFT) &
 	       QCA956X_PLL_CPU_CONFIG1_NINT_MASK;
 	hfrac = (pll >> QCA956X_PLL_CPU_CONFIG1_NFRAC_H_SHIFT) &
@@ -423,12 +423,12 @@ static void __init qca956x_clocks_init(void)
 	cpu_pll += (hfrac >> 13) * ref_rate / ref_div;
 	cpu_pll /= (1 << out_div);
 
-	pll = ar7240_reg_rd(QCA956X_PLL_DDR_CONFIG_REG);
+	pll = ar7240_reg_rd(ATH_PLL_BASE + QCA956X_PLL_DDR_CONFIG_REG);
 	out_div = (pll >> QCA956X_PLL_DDR_CONFIG_OUTDIV_SHIFT) &
 		  QCA956X_PLL_DDR_CONFIG_OUTDIV_MASK;
 	ref_div = (pll >> QCA956X_PLL_DDR_CONFIG_REFDIV_SHIFT) &
 		  QCA956X_PLL_DDR_CONFIG_REFDIV_MASK;
-	pll = ar7240_reg_rd(QCA956X_PLL_DDR_CONFIG1_REG);
+	pll = ar7240_reg_rd(ATH_PLL_BASE + QCA956X_PLL_DDR_CONFIG1_REG);
 	nint = (pll >> QCA956X_PLL_DDR_CONFIG1_NINT_SHIFT) &
 	       QCA956X_PLL_DDR_CONFIG1_NINT_MASK;
 	hfrac = (pll >> QCA956X_PLL_DDR_CONFIG1_NFRAC_H_SHIFT) &
@@ -441,7 +441,7 @@ static void __init qca956x_clocks_init(void)
 	ddr_pll += (hfrac >> 13) * ref_rate / ref_div;
 	ddr_pll /= (1 << out_div);
 
-	clk_ctrl = ar7240_reg_rd(QCA956X_PLL_CLK_CTRL_REG);
+	clk_ctrl = ar7240_reg_rd(ATH_PLL_BASE + QCA956X_PLL_CLK_CTRL_REG);
 
 	postdiv = (clk_ctrl >> QCA956X_PLL_CLK_CTRL_CPU_POST_DIV_SHIFT) &
 		  QCA956X_PLL_CLK_CTRL_CPU_POST_DIV_MASK;
@@ -479,6 +479,7 @@ static void __init qca956x_clocks_init(void)
 	ar7240_cpu_freq = cpu_rate;
 	ar7240_ddr_freq = ddr_rate;
 	ar7240_ahb_freq = ahb_rate;
+	printk(KERN_INFO "ref %d, cpu %d, ddr %d, ahb %d\n",ref_rate,ar7240_cpu_freq,ar7240_ddr_freq,ar7240_ahb_freq);
 }
 
 
@@ -490,7 +491,7 @@ static void wasp_sys_frequency(void)
 
 	if (ar7240_cpu_freq)
 		return;
-	if (soc_is_qca956x()) {
+	if (is_qca956x()) {
 		qca956x_clocks_init();
 		return;
 	}
@@ -780,7 +781,6 @@ void __init plat_mem_setup(void)
 		ar71xx_soc = AR71XX_SOC_TP9343;
 		ar71xx_soc_rev = id & QCA956X_REV_ID_REVISION_MASK;
 	} else {
-//                      serial_print("ARFOOO\n");
 
 	}
 
