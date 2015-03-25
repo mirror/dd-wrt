@@ -381,12 +381,12 @@ static void qca956x_ip2_irq_dispatch(unsigned int irq, struct irq_desc *desc)
 
 	if (status & QCA956X_EXT_INT_PCIE_RC1_ALL) {
 		/* TODO: flush DDR? */
-		generic_handle_irq(AR71XX_CPU_IRQ_IP2);
+		generic_handle_irq(AR934X_IP2_IRQ(0));
 	}
 
 	if (status & QCA956X_EXT_INT_WMAC_ALL) {
 		/* TODO: flsuh DDR? */
-		generic_handle_irq(AR71XX_CPU_IRQ_IP3);
+		generic_handle_irq(AR934X_IP2_IRQ(1));
 	}
 
 enable:
@@ -441,14 +441,14 @@ static void qca956x_irq_init(void)
 
 	for (i = AR934X_IP2_IRQ_BASE;
 	     i < AR934X_IP2_IRQ_BASE + AR934X_IP2_IRQ_COUNT; i++)
-		irq_set_chip_and_handler(i, &dummy_irq_chip,
+		irq_set_chip_and_handler(i, &ip2_chip,
 					 handle_level_irq);
 
 	irq_set_chained_handler(AR71XX_CPU_IRQ_IP2, qca956x_ip2_irq_dispatch);
 
 	for (i = AR934X_IP3_IRQ_BASE;
 	     i < AR934X_IP3_IRQ_BASE + AR934X_IP3_IRQ_COUNT; i++)
-		irq_set_chip_and_handler(i, &dummy_irq_chip,
+		irq_set_chip_and_handler(i, &ip3_chip,
 					 handle_level_irq);
 
 	irq_set_chained_handler(AR71XX_CPU_IRQ_IP3, qca956x_ip3_irq_dispatch);

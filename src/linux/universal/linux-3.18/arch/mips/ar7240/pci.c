@@ -234,8 +234,8 @@ int __init ar71xx_pci_init(void)
 						 QCA956X_PCI_CRP_BASE1,
 						 QCA956X_PCI_MEM_BASE1,
 						 QCA956X_PCI_MEM_SIZE,
-						 0,
-						 AR934X_IP2_IRQ(2));
+						 1,
+						 AR934X_IP3_IRQ(2));
 
 		/* fall through */
 		break;
