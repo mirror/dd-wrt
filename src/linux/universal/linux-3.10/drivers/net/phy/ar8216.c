@@ -1885,7 +1885,7 @@ ar8xxx_is_possible(struct mii_bus *bus)
 		phy_id = mdiobus_read(bus, i, MII_PHYSID1) << 16;
 		phy_id |= mdiobus_read(bus, i, MII_PHYSID2);
 		if (!ar8xxx_phy_match(phy_id)) {
-			pr_debug("ar8xxx: unknown PHY at %s:%02x id:%08x\n",
+			printk(KERN_EMERG "ar8xxx: unknown PHY at %s:%02x id:%08x\n",
 				 dev_name(&bus->dev), i, phy_id);
 			return false;
 		}

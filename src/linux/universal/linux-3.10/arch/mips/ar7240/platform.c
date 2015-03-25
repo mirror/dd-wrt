@@ -488,6 +488,31 @@ static struct mdio_board_info wdr4300_mdio0_info[] = {
 	 },
 };
 
+
+static struct ar8327_pad_cfg ap152_ar8337_pad0_cfg = {
+	.mode = AR8327_PAD_MAC_SGMII,
+	.sgmii_txclk_phase_sel = AR8327_SGMII_CLK_PHASE_RISE,
+	.sgmii_rxclk_phase_sel = AR8327_SGMII_CLK_PHASE_FALL,
+};
+
+static struct ar8327_platform_data ap152_ar8337_data = {
+	.pad0_cfg = &ap152_ar8337_pad0_cfg,
+	.port0_cfg = {
+		.force_link = 1,
+		.speed = AR8327_PORT_SPEED_1000,
+		.duplex = 1,
+		.txpause = 1,
+		.rxpause = 1,
+	},
+};
+
+static struct mdio_board_info ap152_mdio0_info[] = {
+	{
+		.bus_id = "ag71xx-mdio.0",
+		.phy_addr = 0,
+		.platform_data = &ap152_ar8337_data,
+	},
+};
 extern void __init ap91_pci_init(u8 *cal_data, u8 *mac_addr);
 extern void ap91_set_tx_gain_buffalo(void);
 void ar9xxx_add_device_wmac(u8 *cal_data, u8 *mac_addr) __init;
@@ -540,8 +565,46 @@ void __init ath79_init_mac(unsigned char *dst, const unsigned char *src, int off
 }
 
 #if defined(CONFIG_DIR825C1) || defined(CONFIG_DIR615I)
+
+
+#define AR934X_GPIO_REG_OUT_FUNC0	0x2c
+
+static void __init ath79_gpio_output_select(unsigned gpio, u8 val)
+{
+	void __iomem *base = ar71xx_gpio_base;
+	unsigned long flags;
+	unsigned int reg;
+	u32 t, s;
+
+
+	if (gpio >= AR934X_GPIO_COUNT)
+		return;
+
+	reg = AR934X_GPIO_REG_OUT_FUNC0 + 4 * (gpio / 4);
+	s = 8 * (gpio % 4);
+
+//	spin_lock_irqsave(&ar71xx_gpio_lock, flags);
+
+	t = __raw_readl(base + reg);
+	t &= ~(0xff << s);
+	t |= val << s;
+	__raw_writel(t, base + reg);
+
+	/* flush write */
+	(void) __raw_readl(base + reg);
+
+//	spin_unlock_irqrestore(&ar71xx_gpio_lock, flags);
+}
+
+
+
+
 #define DIR825C1_MAC_LOCATION_0			0x1ffe0004
 #define DIR825C1_MAC_LOCATION_1			0x1ffe0018
+
+#define DIR859_MAC_LOCATION_0			0x1f050051
+#define DIR859_MAC_LOCATION_1			0x1f05006c
+
 #define DHP1565A1_MAC_LOCATION_0			0x1ffeffa0
 #define DHP1565A1_MAC_LOCATION_1			0x1ffeffb4
 
@@ -620,12 +683,17 @@ int __init ar7240_platform_init(void)
 
     #if !defined(CONFIG_WDR4300) && !defined(CONFIG_AP135) && !defined(CONFIG_UBNTXW)
     #ifdef CONFIG_DIR825C1
+	#ifdef CONFIG_DIR859
+	dir825b1_read_ascii_mac(mac0, DIR859_MAC_LOCATION_0);
+	dir825b1_read_ascii_mac(mac1, DIR859_MAC_LOCATION_1);
+	#else
 	dir825b1_read_ascii_mac(mac0, DIR825C1_MAC_LOCATION_0);
 	dir825b1_read_ascii_mac(mac1, DIR825C1_MAC_LOCATION_1);
 	if (!memcmp(mac0,"\x0\x0\x0\x0\x0\x0",6)) {
 		dir825b1_read_ascii_mac(mac0, DHP1565A1_MAC_LOCATION_0);
 		dir825b1_read_ascii_mac(mac1, DHP1565A1_MAC_LOCATION_1);
 	}
+	#endif
     #endif
 
     #else
@@ -706,6 +774,7 @@ int __init ar7240_platform_init(void)
 	#ifdef CONFIG_AP135
 	ap136_gmac_setup();
 	#else
+#ifndef HAVE_DIR859
 	base = ioremap(AR934X_GMAC_BASE, AR934X_GMAC_SIZE);
 	t = __raw_readl(base + AR934X_GMAC_REG_ETH_CFG);
 
@@ -723,6 +792,7 @@ int __init ar7240_platform_init(void)
 	    #endif
 	__raw_writel(t, base + AR934X_GMAC_REG_ETH_CFG);
 	iounmap(base);
+#endif
 	#endif
     #endif
 
@@ -867,6 +937,11 @@ int __init ar7240_platform_init(void)
 	ar71xx_add_device_mdio(1, 0x0);
 		    #endif
 		#endif
+	#ifdef CONFIG_DIR859
+	printk(KERN_INFO "gpio mdio for AP152\n");
+	ath79_gpio_output_select(3,33);
+	ath79_gpio_output_select(4,32);
+	#endif
 	ar71xx_add_device_mdio(0, 0x0);
 
 		#ifdef CONFIG_MMS344
@@ -879,15 +954,27 @@ int __init ar7240_platform_init(void)
 
 		#ifdef CONFIG_WDR4300
 	mdiobus_register_board_info(wdr4300_mdio0_info, ARRAY_SIZE(wdr4300_mdio0_info));
+		#elif CONFIG_DIR859
+	mdiobus_register_board_info(ap152_mdio0_info, ARRAY_SIZE(ap152_mdio0_info));		
 		#else
 	mdiobus_register_board_info(db120_mdio0_info, ARRAY_SIZE(db120_mdio0_info));
 		#endif
+	#ifdef CONFIG_DIR859	
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_SGMII;
+	ar71xx_eth0_data.phy_mask = BIT(0);
+	ar71xx_eth0_data.speed = SPEED_1000;
+	ar71xx_eth0_data.duplex = DUPLEX_FULL;
+	ar71xx_eth0_data.force_link = 1;
+	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio0_device.dev;
+	ar71xx_eth0_pll_data.pll_1000 = 0x06000000;
+	ar71xx_add_device_eth(0);
+	#else		
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ar71xx_eth0_data.phy_mask = BIT(0);
 	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio0_device.dev;
 	ar71xx_eth0_pll_data.pll_1000 = 0x06000000;
 	ar71xx_add_device_eth(0);
-
+	#endif
 		#ifndef CONFIG_WDR4300
 		    #ifndef CONFIG_DIR825C1
 	/* GMAC1 is connected to the internal switch */

@@ -479,6 +479,7 @@ static void __init qca956x_clocks_init(void)
 	ar7240_cpu_freq = cpu_rate;
 	ar7240_ddr_freq = ddr_rate;
 	ar7240_ahb_freq = ahb_rate;
+	printk(KERN_INFO "ref %d, cpu %d, ddr %d, ahb %d\n",ref_rate,ar7240_cpu_freq,ar7240_ddr_freq,ar7240_ahb_freq);
 }
 
 
