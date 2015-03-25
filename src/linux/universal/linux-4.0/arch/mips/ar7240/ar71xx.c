@@ -101,7 +101,7 @@ void ar71xx_device_stop(u32 mask)
 		spin_unlock_irqrestore(&ar71xx_device_lock, flags);
 		break;
 
-	case AR71XX_SOC_QCA9561:
+	case AR71XX_SOC_QCA9563:
 	case AR71XX_SOC_TP9343:
 		spin_lock_irqsave(&ar71xx_device_lock, flags);
 		t = ar71xx_reset_rr(QCA956X_RESET_REG_RESET_MODULE);
@@ -181,7 +181,7 @@ void ar71xx_device_start(u32 mask)
 		ar71xx_reset_wr(QCA955X_RESET_REG_RESET_MODULE, t & ~mask);
 		spin_unlock_irqrestore(&ar71xx_device_lock, flags);
 		break;
-	case AR71XX_SOC_QCA9561:
+	case AR71XX_SOC_QCA9563:
 	case AR71XX_SOC_TP9343:
 		spin_lock_irqsave(&ar71xx_device_lock, flags);
 		t = ar71xx_reset_rr(QCA956X_RESET_REG_RESET_MODULE);
@@ -237,7 +237,7 @@ void ar71xx_device_reset_rmw(u32 clear, u32 set)
 	case AR71XX_SOC_QCA9558:
 		reg = QCA955X_RESET_REG_RESET_MODULE;
 		break;
-	case AR71XX_SOC_QCA9561:
+	case AR71XX_SOC_QCA9563:
 	case AR71XX_SOC_TP9343:
 		reg = QCA956X_RESET_REG_RESET_MODULE;
 		break;
@@ -311,7 +311,7 @@ int ar71xx_device_stopped(u32 mask)
 		t = ar71xx_reset_rr(QCA955X_RESET_REG_RESET_MODULE);
 		spin_unlock_irqrestore(&ar71xx_device_lock, flags);
 		break;
-	case AR71XX_SOC_QCA9561:
+	case AR71XX_SOC_QCA9563:
 	case AR71XX_SOC_TP9343:
 		spin_lock_irqsave(&ar71xx_device_lock, flags);
 		t = ar71xx_reset_rr(QCA956X_RESET_REG_RESET_MODULE);

@@ -211,7 +211,7 @@ enum ar71xx_soc_type {
 	AR71XX_SOC_QCA9556,
 	AR71XX_SOC_QCA9558,
 	AR71XX_SOC_TP9343,
-	AR71XX_SOC_QCA9561,
+	AR71XX_SOC_QCA9563,
 };
 extern u32 ar71xx_soc_rev;
 
@@ -308,14 +308,14 @@ static inline int soc_is_tp9343(void)
 	return ar71xx_soc == AR71XX_SOC_TP9343;
 }
  
-static inline int soc_is_qca9561(void)
+static inline int soc_is_qca9563(void)
 {
-	return ar71xx_soc == AR71XX_SOC_QCA9561;
+	return ar71xx_soc == AR71XX_SOC_QCA9563;
 }
 
 static inline int soc_is_qca956x(void)
 {
-	return soc_is_tp9343() || soc_is_qca9561();
+	return soc_is_tp9343() || soc_is_qca9563();
 }
 
 /*
@@ -1232,7 +1232,7 @@ void ar71xx_ddr_flush(u32 reg);
 #define REV_ID_MAJOR_QCA9556	0x0130
 #define REV_ID_MAJOR_QCA9558	0x1130
 #define REV_ID_MAJOR_TP9343		0x0150
-#define REV_ID_MAJOR_QCA9561		0x1150
+#define REV_ID_MAJOR_QCA9563		0x1150
 
 
 
