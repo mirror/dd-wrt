@@ -121,7 +121,6 @@ static struct platform_device ar7240_usb_ehci_device = {
 	.resource = ar7240_usb_ehci_resources,
 };
 
-#ifdef CONFIG_AP135
 
 static struct usb_ehci_pdata ath79_ehci_pdata_v2 = {
 	.caps_offset		= 0x100,
@@ -223,7 +222,7 @@ static void qca_usbregister(void) {
 
 
 }
-#endif
+
 static struct resource ar7240_uart_resources[] = {
 	{
 	 .start = AR7240_UART_BASE,
@@ -1004,11 +1003,10 @@ int __init ar7240_platform_init(void)
 		ret = platform_add_devices(ar7240_platform_devices, ARRAY_SIZE(ar7240_platform_devices));
 	}
 
-#ifdef CONFIG_AP135
 	if (is_qca955x() || is_qca956x()) {
 		qca_usbregister();
 	}
-#endif
+
 	platform_device_register_simple("ar71xx-wdt", -1, NULL, 0);
 
 #ifdef CONFIG_MACH_HORNET
