@@ -1491,7 +1491,6 @@ int main(int argc, char **argv)
 //                              fprintf(stderr,"ssl accept return %d, ssl error %d %d\n",r,SSL_get_error(ssl,r),RAND_status());
 				ct_syslog(LOG_ERR, httpd_level, "SSL accept error");
 				SSL_free(ssl);
-				BIO_free_all(sbio);
 				close(conn_fd);
 				continue;
 			}
