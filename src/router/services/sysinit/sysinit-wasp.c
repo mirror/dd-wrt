@@ -167,7 +167,7 @@ void start_sysinit(void)
 		nvram_set("et0macaddr_safe", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
 		close(s);
 	}
-#ifdef HAVE_ARCHERC7
+#if defined(HAVE_ARCHERC7) || defined(HAVE_DIR859)
 	FILE *fp = fopen("/dev/mtdblock/5", "rb");
 	FILE *out = fopen("/tmp/archerc7-board.bin", "wb");
 	if (fp) {
