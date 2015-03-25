@@ -113,6 +113,10 @@ int guessbootsize(void *offset, unsigned int maxscan)
 	for (i = 0; i < maxscan; i += 16384) {
 		if (ofs[i] == 0x6d000080) {
 			printk(KERN_EMERG "redboot or compatible detected\n");
+			return 0x70000;	// redboot, lzma image
+		}
+		if (ofs[i] == 0x5ea3a417) {
+			printk(KERN_EMERG "alpha SEAMA found\n");
 			return i * 4;	// redboot, lzma image
 		}
 		if (ofs[i] == 0x27051956) {
@@ -373,9 +377,14 @@ static int __init ar7240_flash_init(void)
 		}
 		while ((offset + mtd->erasesize) < mtd->size) {
 //                      printk(KERN_EMERG "[0x%08X] = [0x%08X]!=[0x%08X]\n",offset,*((unsigned int *) buf),SQUASHFS_MAGIC);
-			if (*((__u32 *)buf) == SQUASHFS_MAGIC) {
+			__u32 *check2 = (__u32 *)&buf[0x60];	
+			if (*((__u32 *)buf) == SQUASHFS_MAGIC || *check2 == SQUASHFS_MAGIC) {
 				printk(KERN_EMERG "\nfound squashfs at %X\n",
 				       offset);
+				if (*check2 == SQUASHFS_MAGIC) {
+				    buf+=0x60;
+				    offset +=0x60;
+				}
 				sb = (struct squashfs_super_block *)buf;
 				dir_parts[2].offset = offset;
 
