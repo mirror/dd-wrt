@@ -154,9 +154,7 @@ void start_config_vlan(void)
 
 	// configure ports
 	writevaproc("1", "/proc/switch/%s/reset", phy);
-		usleep(150);
 	writevaproc("1", "/proc/switch/%s/enable_vlan", phy);
-		usleep(150);
 	for (i = 0; i < 16; i++) {
 		char vlanb[16];
 
@@ -164,9 +162,7 @@ void start_config_vlan(void)
 		if (nvram_get(vlanb) == NULL || nvram_match(vlanb, ""))
 			continue;
 		writevaproc(nvram_safe_get(vlanb), "/proc/switch/%s/vlan/%d/ports", phy, i);
-		usleep(150);
 	}
-	sysprintf("cat /proc/switch/eth0/vlan/2/ports >> /tmp/checkports.log");
 	/*
 	 * set vlan i/f name to style "vlan<ID>" 
 	 */
