@@ -204,10 +204,29 @@ static void __init ath79_usb_register(const char *name, int id,
 }
 
 
+static void qca956x_usb_setup(void)
+{
+	ath79_usb_register("ehci-platform", 0,
+			   QCA956X_EHCI0_BASE, QCA956X_EHCI_SIZE,
+			   AR934X_IP3_IRQ(0),
+			   &ath79_ehci_pdata_v2, sizeof(ath79_ehci_pdata_v2));
+
+	ath79_usb_register("ehci-platform", 1,
+			   QCA956X_EHCI1_BASE, QCA956X_EHCI_SIZE,
+			   AR934X_IP3_IRQ(1),
+			   &ath79_ehci_pdata_v2, sizeof(ath79_ehci_pdata_v2));
+}
+
+
 
 
 static void qca_usbregister(void) {
 
+
+	if (is_qca956x()) {
+		qca956x_usb_setup();
+	} else {
+	    
 	ath79_ehci_pdata_v2.reset_notifier = qca955x_usb_reset_notifier;
 
 	ath79_usb_register("ehci-platform", 0,
@@ -220,7 +239,7 @@ static void qca_usbregister(void) {
 			   AR934X_IP3_IRQ(1),
 			   &ath79_ehci_pdata_v2, sizeof(ath79_ehci_pdata_v2));
 
-
+	}
 }
 
 static struct resource ar7240_uart_resources[] = {
