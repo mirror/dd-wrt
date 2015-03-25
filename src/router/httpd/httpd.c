@@ -1796,6 +1796,7 @@ int wfclose(webs_t wp)
 #ifdef HAVE_HTTPS
 	if (do_ssl) {
 #ifdef HAVE_OPENSSL
+		BIO_free((BIO *) fp);
 		return 1;
 #elif defined(HAVE_MATRIXSSL)
 		return matrixssl_free_session(fp);
