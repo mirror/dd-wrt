@@ -941,6 +941,7 @@ int __init ar7240_platform_init(void)
 	printk(KERN_INFO "gpio mdio for AP152\n");
 	ath79_gpio_output_select(3,33);
 	ath79_gpio_output_select(4,32);
+	ar71xx_add_device_mdio(1, 0x0);
 	#endif
 	ar71xx_add_device_mdio(0, 0x0);
 
@@ -960,7 +961,7 @@ int __init ar7240_platform_init(void)
 	mdiobus_register_board_info(db120_mdio0_info, ARRAY_SIZE(db120_mdio0_info));
 		#endif
 	#ifdef CONFIG_DIR859	
-	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_SGMII;
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ar71xx_eth0_data.phy_mask = BIT(0);
 	ar71xx_eth0_data.speed = SPEED_1000;
 	ar71xx_eth0_data.duplex = DUPLEX_FULL;
