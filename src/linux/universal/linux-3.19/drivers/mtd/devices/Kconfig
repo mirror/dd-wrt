@@ -270,6 +270,9 @@ config DIR825C1
 config MMS344
 	bool "support for MMS344"
 	depends on DIR825C1
+config DIR859
+	bool "support for MMS344"
+	depends on DIR825C1
 config WDR4300
 	bool "support for WDR4300"
 	depends on DIR825C1
