@@ -1491,6 +1491,7 @@ int main(int argc, char **argv)
 //                              fprintf(stderr,"ssl accept return %d, ssl error %d %d\n",r,SSL_get_error(ssl,r),RAND_status());
 				ct_syslog(LOG_ERR, httpd_level, "SSL accept error");
 				SSL_free(ssl);
+				BIO_free_all(sbio);
 				close(conn_fd);
 				continue;
 			}
@@ -1544,6 +1545,7 @@ int main(int argc, char **argv)
 				fprintf(stderr, "httpd: nothing to do...\n");
 #ifdef HAVE_OPENSSL
 				SSL_free(ssl);
+				BIO_free_all(sbio);
 #endif
 				return -1;
 			}
@@ -1554,6 +1556,7 @@ int main(int argc, char **argv)
 				perror("fdopen");
 #ifdef HAVE_OPENSSL
 				SSL_free(ssl);
+				BIO_free_all(sbio);
 #endif
 				return errno;
 			}
@@ -1577,6 +1580,7 @@ int main(int argc, char **argv)
 #endif
 #ifdef HAVE_OPENSSL
 		SSL_free(ssl);
+		BIO_free_all(sbio);
 #endif
 #endif
 
