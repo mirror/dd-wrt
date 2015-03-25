@@ -1545,7 +1545,6 @@ int main(int argc, char **argv)
 				fprintf(stderr, "httpd: nothing to do...\n");
 #ifdef HAVE_OPENSSL
 				SSL_free(ssl);
-				BIO_free_all(sbio);
 #endif
 				return -1;
 			}
@@ -1556,7 +1555,6 @@ int main(int argc, char **argv)
 				perror("fdopen");
 #ifdef HAVE_OPENSSL
 				SSL_free(ssl);
-				BIO_free_all(sbio);
 #endif
 				return errno;
 			}
@@ -1580,7 +1578,6 @@ int main(int argc, char **argv)
 #endif
 #ifdef HAVE_OPENSSL
 		SSL_free(ssl);
-		BIO_free_all(sbio);
 #endif
 #endif
 
