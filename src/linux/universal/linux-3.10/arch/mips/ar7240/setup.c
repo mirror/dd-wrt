@@ -127,6 +127,7 @@ const char
 	char *chip;
 	u32 id;
 	u32 qca=0;
+	u32 tp = 0;
 	u32 rev = 0;
 	static char str[64];
 	id = ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK;
@@ -295,23 +296,23 @@ const char
 		qca = 1;
 		break;
 
-	case QCA9561_REV_1_0:
-		chip = "9561";
+	case QCA9563_REV_1_0:
+		chip = "9563";
 		rev = 0;
 		qca = 1;
 		break;
-	case QCA9561_REV_1_1:
-		chip = "9561";
+	case QCA9563_REV_1_1:
+		chip = "9563";
 		rev = 1;
 		qca = 1;
 		break;
-	case QCA9561_REV_1_2:
-		chip = "9561";
+	case QCA9563_REV_1_2:
+		chip = "9563";
 		rev = 2;
 		qca = 1;
 		break;
-	case QCA9561_REV_1_3:
-		chip = "9561";
+	case QCA9563_REV_1_3:
+		chip = "9563";
 		rev = 3;
 		qca = 1;
 		break;
@@ -319,27 +320,30 @@ const char
 	case TP9343_REV_1_0:
 		chip = "9343";
 		rev = 0;
-		qca = 1;
+		tp = 1;
 		break;
 	case TP9343_REV_1_1:
 		chip = "9343";
 		rev = 1;
-		qca = 1;
+		tp = 1;
 		break;
 	case TP9343_REV_1_2:
 		chip = "9343";
 		rev = 2;
-		qca = 1;
+		tp = 1;
 		break;
 	case TP9343_REV_1_3:
 		chip = "9343";
 		rev = 3;
-		qca = 1;
+		tp = 1;
 		break;
 	default:
 		chip = "724x";
 	}
-	sprintf(str, "%s %s%s rev 1.%u (0x%04x)",qca ? "Qualcomm Atheros" : "Atheros", qca ? "QCA" : "AR",chip, rev, id);
+	if (tp)
+		sprintf(str, "%s %s%s rev 1.%u (0x%04x)",qca ? "Qualcomm Atheros" : "Atheros", "TP", chip, rev, id);
+	else 
+		sprintf(str, "%s %s%s rev 1.%u (0x%04x)",qca ? "Qualcomm Atheros" : "Atheros", qca ? "QCA" : "AR",chip, rev, id);
 	return str;
 }
 
@@ -772,9 +776,9 @@ void __init plat_mem_setup(void)
 		serial_print("QCA9558\n");
 		ar71xx_soc = AR71XX_SOC_QCA9558;
 		ar71xx_soc_rev = id & QCA955X_REV_ID_REVISION_MASK;
-	} else if (is_qca9561()) {
-		serial_print("QCA9561\n");
-		ar71xx_soc = AR71XX_SOC_QCA9561;
+	} else if (is_qca9563()) {
+		serial_print("QCA9563\n");
+		ar71xx_soc = AR71XX_SOC_QCA9563;
 		ar71xx_soc_rev = id & QCA956X_REV_ID_REVISION_MASK;
 	} else if (is_tp9343()) {
 		serial_print("TP9343\n");
