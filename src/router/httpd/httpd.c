@@ -1543,6 +1543,7 @@ int main(int argc, char **argv)
 			if (check_action() == ACT_WEBS_UPGRADE) {	// We don't want user to use web (http) during web (https) upgrade.
 				fprintf(stderr, "httpd: nothing to do...\n");
 #ifdef HAVE_OPENSSL
+				SSL_shutdown(ssl);
 				SSL_free(ssl);
 #endif
 				return -1;
@@ -1553,6 +1554,7 @@ int main(int argc, char **argv)
 			if (!(conn_fp->fp = fdopen(conn_fd, "r+"))) {
 				perror("fdopen");
 #ifdef HAVE_OPENSSL
+				SSL_shutdown(ssl);
 				SSL_free(ssl);
 #endif
 				return errno;
@@ -1576,6 +1578,7 @@ int main(int argc, char **argv)
 		ssl_close_notify(&ssl);
 #endif
 #ifdef HAVE_OPENSSL
+		SSL_shutdown(ssl);
 		SSL_free(ssl);
 #endif
 #endif
