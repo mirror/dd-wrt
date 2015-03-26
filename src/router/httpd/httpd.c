@@ -1494,7 +1494,7 @@ int main(int argc, char **argv)
 			if (!conn_fp)
 				conn_fp = safe_malloc(sizeof(webs));
 
-			conn_fp->fp = (FILE *)ssl;
+			conn_fp->fp = (FILE *) ssl;
 
 #elif defined(HAVE_MATRIXSSL)
 			matrixssl_new_session(conn_fd);
@@ -1588,7 +1588,7 @@ char *wfgets(char *buf, int len, webs_t wp)
 #ifdef HAVE_HTTPS
 #ifdef HAVE_OPENSSL
 	if (do_ssl) {
-		SSL *ssl = (SSL *)fp;
+		SSL *ssl = (SSL *) fp;
 		char *rc;
 		ssize_t rlen;
 		int eof = 1;
@@ -1599,7 +1599,7 @@ char *wfgets(char *buf, int len, webs_t wp)
 			rlen = SSL_read(ssl, &c, 1);
 			if (rlen <= 0)
 				return NULL;
-			
+
 			buf[i] = c;
 			if (c == '\n' || c == 0) {
 				eof = 0;
@@ -1638,7 +1638,7 @@ int wfputc(char c, webs_t wp)
 	if (do_ssl)
 #ifdef HAVE_OPENSSL
 	{
-		SSL *ssl = (SSL *)fp;
+		SSL *ssl = (SSL *) fp;
 
 		return SSL_write(ssl, &c, 1);
 	}
@@ -1662,7 +1662,7 @@ int wfputs(char *buf, webs_t wp)
 	if (do_ssl)
 #ifdef HAVE_OPENSSL
 	{
-		SSL *ssl = (SSL *)fp;
+		SSL *ssl = (SSL *) fp;
 
 		return SSL_write(ssl, buf, strlen(buf));
 	}
@@ -1692,7 +1692,7 @@ int wfprintf(webs_t wp, char *fmt, ...)
 	if (do_ssl)
 #ifdef HAVE_OPENSSL
 	{
-		SSL *ssl = (SSL *)fp;
+		SSL *ssl = (SSL *) fp;
 
 		ret = SSL_write(ssl, buf, strlen(buf));
 	}
@@ -1726,7 +1726,7 @@ int websWrite(webs_t wp, char *fmt, ...)
 	if (do_ssl)
 #ifdef HAVE_OPENSSL
 	{
-		SSL *ssl = (SSL *)fp;
+		SSL *ssl = (SSL *) fp;
 
 		ret = SSL_write(ssl, buf, strlen(buf));
 	}
@@ -1753,7 +1753,7 @@ size_t wfwrite(char *buf, int size, int n, webs_t wp)
 	if (do_ssl)
 #ifdef HAVE_OPENSSL
 	{
-		SSL *ssl = (SSL *)fp;
+		SSL *ssl = (SSL *) fp;
 
 		return SSL_write(ssl, buf, n * size);
 	}
@@ -1777,7 +1777,7 @@ size_t wfread(char *buf, int size, int n, webs_t wp)
 #ifdef HAVE_HTTPS
 	if (do_ssl) {
 #ifdef HAVE_OPENSSL
-		SSL *ssl = (SSL *)fp;
+		SSL *ssl = (SSL *) fp;
 
 		return SSL_read(ssl, buf, n * size);
 #elif defined(HAVE_MATRIXSSL)
@@ -1830,7 +1830,7 @@ int wfclose(webs_t wp)
 #ifdef HAVE_HTTPS
 	if (do_ssl) {
 #ifdef HAVE_OPENSSL
-		SSL *ssl = (SSL *)fp;
+		SSL *ssl = (SSL *) fp;
 		int sockfd = SSL_get_fd(ssl);
 
 		SSL_shutdown(ssl);
