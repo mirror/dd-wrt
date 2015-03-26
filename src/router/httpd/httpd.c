@@ -661,7 +661,7 @@ static void handle_request(void)
 	int len;
 	struct mime_handler *handler;
 	int cl = 0, count, flags;
-	char line[LINE_LEN];
+	char line[LINE_LEN + 1];
 
 	/* Initialize the request variables. */
 	authorization = referer = boundary = host = NULL;
@@ -1601,7 +1601,7 @@ char *wfgets(char *buf, int len, webs_t wp)
 		int i;
 		char c;
 
-		for (i = 0; i < len - 1; i++) {
+		for (i = 0; i < len; i++) {
 			rlen = SSL_read(ssl, &c, 1);
 			if (rlen <= 0)
 				return NULL;
@@ -1698,10 +1698,10 @@ int websWrite(webs_t wp, char *fmt, ...)
 	va_list args;
 	char buf[2048];
 	int ret;
-	FILE *fp = wp->fp;
-
 	if (!wp || !fmt)
 		return -1;
+	FILE *fp = wp->fp;
+
 	va_start(args, fmt);
 	vsnprintf(buf, sizeof(buf), fmt, args);
 #ifdef HAVE_HTTPS
@@ -1709,7 +1709,6 @@ int websWrite(webs_t wp, char *fmt, ...)
 #ifdef HAVE_OPENSSL
 	{
 		SSL *ssl = (SSL *) fp;
-
 		ret = SSL_write(ssl, buf, strlen(buf));
 	}
 #elif defined(HAVE_MATRIXSSL)
