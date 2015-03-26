@@ -1595,7 +1595,7 @@ char *wfgets(char *buf, int len, webs_t wp)
 		int i;
 		char c;
 
-		for (i = 0; i < len; i++) {
+		for (i = 0; i < len - 1; i++) {
 			rlen = SSL_read(ssl, &c, 1);
 			if (rlen <= 0)
 				return NULL;
