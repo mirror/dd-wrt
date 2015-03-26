@@ -65,7 +65,6 @@ void (*do_ej) (struct mime_handler * handler, char *path, webs_t stream, char *q
 int (*ejArgs) (int argc, char_t ** argv, char_t * fmt, ...) = NULL;
 FILE *(*getWebsFile) (char *path) = NULL;
 int (*wfflush) (webs_t fp) = NULL;
-int (*wfputc) (char c, webs_t fp) = NULL;
 int (*wfputs) (char *buf, webs_t fp) = NULL;
 char *(*live_translate) (char *tran) = NULL;
 websRomPageIndexType *PwebsRomPageIndex = NULL;
@@ -93,7 +92,6 @@ void initWeb(struct Webenvironment *env)
 	ejArgs = env->PejArgs;
 	getWebsFile = env->PgetWebsFile;
 	wfflush = env->Pwfflush;
-	wfputc = env->Pwfputc;
 	wfputs = env->Pwfputs;
 	PwebsRomPageIndex = env->PwebsRomPageIndex;
 	live_translate = env->Plive_translate;
@@ -2659,37 +2657,46 @@ void ej_getwirelessnetmode(webs_t wp, int argc, char_t ** argv)
 void ej_show_openvpn_status(webs_t wp, int argc, char_t ** argv)
 {
 	websWrite(wp, "<fieldset>\n<legend><script type=\"text/javascript\">Capture(share.state)</script></legend>\n");
+	char *buffer = malloc(4096);
+	int len;
 
 	system2("/etc/openvpnstate.sh > /tmp/.temp");
 	FILE *in = fopen("/tmp/.temp", "r");
 
-	while (!feof(in)) {
-		int b = getc(in);
-
-		if (b != EOF)
-			wfputc(b, wp);
+	while ((len = fread(buffer, 1, 4095, in)) == 4095) {
+		buffer[len] = 0;
+		wfputs(buffer, wp);
 	}
+	if (len) {
+		buffer[len] = 0;
+		wfputs(buffer, wp);
+	}
+
 	fclose(in);
 	websWrite(wp, "</fieldset><br />");
 	websWrite(wp, "<fieldset>\n<legend><script type=\"text/javascript\">Capture(share.statu)</script></legend>\n");
 	system2("/etc/openvpnstatus.sh > /tmp/.temp");
 	in = fopen("/tmp/.temp", "r");
-	while (!feof(in)) {
-		int b = getc(in);
-
-		if (b != EOF)
-			wfputc(b, wp);
+	while ((len = fread(buffer, 1, 4095, in)) == 4095) {
+		buffer[len] = 0;
+		wfputs(buffer, wp);
+	}
+	if (len) {
+		buffer[len] = 0;
+		wfputs(buffer, wp);
 	}
 	fclose(in);
 	websWrite(wp, "</fieldset><br />");
 	websWrite(wp, "<fieldset>\n<legend><script type=\"text/javascript\">Capture(log.legend)</script></legend>\n");
 	system2("/etc/openvpnlog.sh > /tmp/.temp");
 	in = fopen("/tmp/.temp", "r");
-	while (!feof(in)) {
-		int b = getc(in);
-
-		if (b != EOF)
-			wfputc(b, wp);
+	while ((len = fread(buffer, 1, 4095, in)) == 4095) {
+		buffer[len] = 0;
+		wfputs(buffer, wp);
+	}
+	if (len) {
+		buffer[len] = 0;
+		wfputs(buffer, wp);
 	}
 	fclose(in);
 	websWrite(wp, "</fieldset><br />");

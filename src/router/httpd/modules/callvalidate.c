@@ -174,7 +174,6 @@ static int initWeb(void *handle)
 #endif
 	env.PejArgs = ejArgs;
 	env.PgetWebsFile = getWebsFile;
-	env.Pwfputc = wfputc;
 	env.Pwfputs = wfputs;
 	env.Pwfflush = wfflush;
 	env.PwebsRomPageIndex = websRomPageIndex;

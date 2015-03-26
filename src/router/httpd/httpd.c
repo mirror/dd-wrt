@@ -509,8 +509,14 @@ static void do_file_2(struct mime_handler *handler, char *path, webs_t stream, c
 		if (!handler->send_headers)
 			send_headers(200, "Ok", handler->extra_header, handler->mime_type, ftell(fp), attach);
 		fseek(fp, 0, SEEK_SET);
-		while ((c = getc(fp)) != EOF)
-			wfputc(c, stream);	// jimmy, https, 8/4/2003
+		char *buffer = malloc(4096);
+		int len;
+		while ((len = fread(buffer, 1, 4096, fp)) == 4096) {
+			wfwrite(buffer, 1, len, stream);
+		}
+		if (len)
+			wfwrite(buffer, 1, len, stream);
+		free(buffer);
 		fclose(fp);
 	} else {
 		int len = getWebsFileLen(path);
@@ -1629,30 +1635,6 @@ char *wfgets(char *buf, int len, webs_t wp)
 #endif
 #endif
 		return fgets(buf, len, fp);
-}
-
-int wfputc(char c, webs_t wp)
-{
-	FILE *fp = wp->fp;
-#ifdef HAVE_HTTPS
-	if (do_ssl)
-#ifdef HAVE_OPENSSL
-	{
-		SSL *ssl = (SSL *) fp;
-
-		return SSL_write(ssl, &c, 1);
-	}
-#elif defined(HAVE_MATRIXSSL)
-		return matrixssl_putc(fp, c);
-#elif defined(HAVE_POLARSSL)
-	{
-		fprintf(stderr, "ssl write 1 c\n");
-		return ssl_write((ssl_context *) fp, (unsigned char *)&c, 1);
-	}
-#endif
-	else
-#endif
-		return fputc(c, fp);
 }
 
 int wfputs(char *buf, webs_t wp)
