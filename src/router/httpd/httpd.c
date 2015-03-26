@@ -1595,24 +1595,20 @@ char *wfgets(char *buf, int len, webs_t wp)
 #ifdef HAVE_OPENSSL
 	if (do_ssl) {
 		SSL *ssl = (SSL *) fp;
-		char *rc;
-		ssize_t rlen;
 		int eof = 1;
 		int i;
 		char c;
-
+		if (SSL_peek(ssl, buf, len) <= 0)
+			return NULL;
 		for (i = 0; i < len; i++) {
-			rlen = SSL_read(ssl, &c, 1);
-			if (rlen <= 0)
-				return NULL;
-
-			buf[i] = c;
+			c = buf[i];
 			if (c == '\n' || c == 0) {
 				eof = 0;
 				break;
 			}
 		}
-
+		if (SSL_read(ssl, buf, i + 1) <= 0)
+			return NULL;
 		if (!eof) {
 			buf[i + 1] = 0;
 			return buf;
