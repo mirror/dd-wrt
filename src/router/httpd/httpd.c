@@ -1542,10 +1542,6 @@ int main(int argc, char **argv)
 #ifdef HAVE_HTTPS
 			if (check_action() == ACT_WEBS_UPGRADE) {	// We don't want user to use web (http) during web (https) upgrade.
 				fprintf(stderr, "httpd: nothing to do...\n");
-#ifdef HAVE_OPENSSL
-				SSL_shutdown(ssl);
-				SSL_free(ssl);
-#endif
 				return -1;
 			}
 #endif
@@ -1553,10 +1549,6 @@ int main(int argc, char **argv)
 				conn_fp = safe_malloc(sizeof(webs));
 			if (!(conn_fp->fp = fdopen(conn_fd, "r+"))) {
 				perror("fdopen");
-#ifdef HAVE_OPENSSL
-				SSL_shutdown(ssl);
-				SSL_free(ssl);
-#endif
 				return errno;
 			}
 		}
@@ -1573,14 +1565,17 @@ int main(int argc, char **argv)
 			memdebug_leave_info("handle_request");
 		}
 		wfflush(conn_fp);	// jimmy, https, 8/4/2003
+
 #ifdef HAVE_HTTPS
+		if (do_ssl) {
 #ifdef HAVE_POLARSSL
-		ssl_close_notify(&ssl);
+			ssl_close_notify(&ssl);
 #endif
 #ifdef HAVE_OPENSSL
-		SSL_shutdown(ssl);
-		SSL_free(ssl);
+			SSL_shutdown(ssl);
+			SSL_free(ssl);
 #endif
+		}
 #endif
 
 		wfclose(conn_fp);	// jimmy, https, 8/4/2003
