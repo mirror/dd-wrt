@@ -1307,6 +1307,16 @@ void sslbufferfree(struct sslbuffer *buffer)
 	free(buffer);
 }
 
+int sslbufferread(struct sslbuffer *buffer, char *data, int datalen)
+{
+	return SSL_read(buffer->ssl, data, datalen);
+}
+
+int sslbufferpeek(struct sslbuffer *buffer, char *data, int datalen)
+{
+	return SSL_peek(buffer->ssl, data, datalen);
+}
+
 int sslbufferwrite(struct sslbuffer *buffer, char *data, int datalen)
 {
 
@@ -1647,12 +1657,10 @@ char *wfgets(char *buf, int len, webs_t wp)
 #ifdef HAVE_HTTPS
 #ifdef HAVE_OPENSSL
 	if (do_ssl) {
-		struct sslbuffer *buffer = (struct sslbuffer *)fp;
-		SSL * ssl = buffer->ssl;
 		int eof = 1;
 		int i;
 		char c;
-		if (SSL_peek(ssl, buf, len) <= 0)
+		if (sslbufferpeek((struct sslbuffer *)fp, buf, len) <= 0)
 			return NULL;
 		for (i = 0; i < len; i++) {
 			c = buf[i];
@@ -1661,7 +1669,7 @@ char *wfgets(char *buf, int len, webs_t wp)
 				break;
 			}
 		}
-		if (SSL_read(ssl, buf, i + 1) <= 0)
+		if (sslbufferread((struct sslbuffer *)fp, buf, i + 1) <= 0)
 			return NULL;
 		if (!eof) {
 			buf[i + 1] = 0;
@@ -1801,10 +1809,7 @@ size_t wfread(char *buf, int size, int n, webs_t wp)
 #ifdef HAVE_HTTPS
 	if (do_ssl) {
 #ifdef HAVE_OPENSSL
-		struct sslbuffer *buffer = (struct sslbuffer*)fp;
-		SSL *ssl = buffer->ssl;
-
-		return SSL_read(ssl, buf, n * size);
+		return sslbufferread((struct sslbuffer *)fp, buf, n * size);
 #elif defined(HAVE_MATRIXSSL)
 		//do it in chains
 		int cnt = (size * n) / 0x4000;
