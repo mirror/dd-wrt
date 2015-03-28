@@ -18,7 +18,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <shutils.h>		//Added by Dainel(2004-07-26)
-#include <features.h>		
+#include <features.h>
 #define assert(a)
 
 #if defined(linux)
@@ -52,7 +52,7 @@ char *get_cgi(char *name)
 {
 	ENTRY e, *ep;
 
-#if defined(__UCLIBC__) || defined(__GLIBC__) 
+#if defined(__UCLIBC__) || defined(__GLIBC__)
 	if (!htab.table)
 		return NULL;
 #else
