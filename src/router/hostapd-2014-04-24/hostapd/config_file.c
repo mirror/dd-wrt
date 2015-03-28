@@ -2675,8 +2675,6 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 		}
 	} else if (os_strcmp(buf, "dynamic_ht40") == 0) {
 		conf->dynamic_ht40 = atoi(pos);
-		if (conf->dynamic_ht40 == 1)
-			conf->dynamic_ht40 = 1500;
 	} else if (os_strcmp(buf, "require_ht") == 0) {
 		conf->require_ht = atoi(pos);
 	} else if (os_strcmp(buf, "obss_interval") == 0) {
