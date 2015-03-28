@@ -89,6 +89,7 @@ static const char *ieee80211_ntoa(const uint8_t mac[6])
 	i = snprintf(a, sizeof(a), "%02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 	return (i < 17 ? NULL : a);
 }
+
 /*
 		USHORT MCS:7;
 		USHORT BW:2;
@@ -321,32 +322,31 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 				TxRxRateFor11n(&HTSetting, &rate);
 				snprintf(rx, 8, "%.1f", rate);
 
+				int ht = 0;
+				int sgi = 0;
+				int vht = 0;
+				char info[32];
 
-		int ht = 0;
-		int sgi = 0;
-		int vht = 0;
-		char info[32];
+				if (HTSetting.field.BW)
+					ht = 1;
+				if (HTSetting.field.ShortGI)
+					sgi = 1;
 
-		if (HTSetting.field.BW)
-			ht = 1;
-		if (HTSetting.field.ShortGI)
-			sgi = 1;
+				if (sgi)
+					sprintf(info, "SGI");
+				if (vht)
+					sprintf(info, "VHT");
+				else
+					sprintf(info, "HT");
 
-		if (sgi)
-			sprintf(info, "SGI");
-		if (vht)
-			sprintf(info, "VHT");
-		else
-			sprintf(info, "HT");
-
-		if (ht == 0)
-			sprintf(info, "%s20", info);
-		if (ht == 1)
-			sprintf(info, "%s40", info);
-		if (ht == 2)
-			sprintf(info, "%s80", info);
-		if (ht == 3)
-			sprintf(info, "%s160", info);
+				if (ht == 0)
+					sprintf(info, "%s20", info);
+				if (ht == 1)
+					sprintf(info, "%s40", info);
+				if (ht == 2)
+					sprintf(info, "%s80", info);
+				if (ht == 3)
+					sprintf(info, "%s160", info);
 
 				websWrite(wp,
 					  "'%s','%s','%s','%s','%s','%s','%d','%d','%d','%d'", mac, getRADev(ifname), UPTIME(table.Entry[i].ConnectedTime), tx, rx, info, table.Entry[i].AvgRssi0, -95,
