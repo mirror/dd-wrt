@@ -358,7 +358,10 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 			fprintf(fp, "ieee80211n=1\n");
 		if (nvram_match(bw, "2040")) {
 			fprintf(fp, "dynamic_ht40=1\n");
+		} else {
+			fprintf(fp, "dynamic_ht40=0\n");
 		}
+		
 		if (nvram_default_match(bw, "20", "20")) {
 			sprintf(ht, "HT20");
 		} else if (nvram_match(bw, "80") || nvram_match(bw, "40") || nvram_match(bw, "2040")) {
