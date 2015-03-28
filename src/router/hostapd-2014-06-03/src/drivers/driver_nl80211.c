@@ -2490,6 +2490,7 @@ static void nl80211_cqm_event(struct wpa_driver_nl80211_data *drv,
 
 
 static void nl80211_new_station_event(struct wpa_driver_nl80211_data *drv,
+				      struct i802_bss *bss,
 				      struct nlattr **tb)
 {
 	u8 *addr;
@@ -2508,7 +2509,7 @@ static void nl80211_new_station_event(struct wpa_driver_nl80211_data *drv,
 			ies_len = nla_len(tb[NL80211_ATTR_IE]);
 		}
 		wpa_hexdump(MSG_DEBUG, "nl80211: Assoc Req IEs", ies, ies_len);
-		drv_event_assoc(drv->ctx, addr, ies, ies_len, 0);
+		drv_event_assoc(bss->ctx, addr, ies, ies_len, 0);
 		return;
 	}
 
@@ -2517,7 +2518,7 @@ static void nl80211_new_station_event(struct wpa_driver_nl80211_data *drv,
 
 	os_memset(&data, 0, sizeof(data));
 	os_memcpy(data.ibss_rsn_start.peer, addr, ETH_ALEN);
-	wpa_supplicant_event(drv->ctx, EVENT_IBSS_RSN_START, &data);
+	wpa_supplicant_event(bss->ctx, EVENT_IBSS_RSN_START, &data);
 }
 
 
@@ -3111,7 +3112,7 @@ static void do_process_drv_event(struct i802_bss *bss, int cmd,
 				     &data);
 		break;
 	case NL80211_CMD_NEW_STATION:
-		nl80211_new_station_event(drv, tb);
+		nl80211_new_station_event(drv, bss, tb);
 		break;
 	case NL80211_CMD_DEL_STATION:
 		nl80211_del_station_event(drv, tb);
