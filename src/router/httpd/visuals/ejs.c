@@ -64,7 +64,6 @@ void (*do_ej) (struct mime_handler * handler, char *path, webs_t stream, char *q
 									// 8/4/2003
 int (*ejArgs) (int argc, char_t ** argv, char_t * fmt, ...) = NULL;
 FILE *(*getWebsFile) (char *path) = NULL;
-int (*wfflush) (webs_t fp) = NULL;
 int (*wfputs) (char *buf, webs_t fp) = NULL;
 char *(*live_translate) (char *tran) = NULL;
 websRomPageIndexType *PwebsRomPageIndex = NULL;
@@ -91,7 +90,6 @@ void initWeb(struct Webenvironment *env)
 #endif
 	ejArgs = env->PejArgs;
 	getWebsFile = env->PgetWebsFile;
-	wfflush = env->Pwfflush;
 	wfputs = env->Pwfputs;
 	PwebsRomPageIndex = env->PwebsRomPageIndex;
 	live_translate = env->Plive_translate;
@@ -3012,7 +3010,6 @@ int tf_webWriteESC(webs_t wp, const char *value)
 		buf[n] = 0;
 		r += wfputs(buf, wp);
 	}
-	wfflush(wp);
 	return r;
 }
 
@@ -3053,7 +3050,6 @@ int tf_webWriteJS(webs_t wp, const char *s)
 		buf[n] = 0;
 		r += wfputs(buf, wp);
 	}
-	wfflush(wp);
 	return r;
 }
 

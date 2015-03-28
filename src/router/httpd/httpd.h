@@ -45,10 +45,10 @@ extern int wfprintf(webs_t fp, char *fmt, ...);
 extern size_t wfwrite(char *buf, int size, int n, webs_t fp);
 extern size_t wfread(char *buf, int size, int n, webs_t fp);
 extern int wfclose(webs_t fp);
+extern int wfflush(webs_t fp);
 #ifndef VALIDSOURCE
 #ifndef VISUALSOURCE
 
-extern int wfflush(webs_t fp);
 extern int wfputs(char *buf, webs_t fp);
 #endif
 #endif
@@ -121,7 +121,6 @@ struct Webenvironment {
 	void (*Pdo_ej) (struct mime_handler * handler, char *path, webs_t stream, char *query);	// jimmy, https, 8/4/2003
 	int (*PejArgs) (int argc, char_t ** argv, char_t * fmt, ...);
 	FILE *(*PgetWebsFile) (char *path);
-	int (*Pwfflush) (webs_t fp);
 	int (*Pwfputs) (char *buf, webs_t fp);
 	char *(*PGOZILA_GET) (webs_t wp, char *name);
 	char *(*Plive_translate) (char *tran);
