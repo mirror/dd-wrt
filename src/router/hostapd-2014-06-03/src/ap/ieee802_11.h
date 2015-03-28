@@ -89,17 +89,4 @@ int hostapd_update_time_adv(struct hostapd_data *hapd);
 void hostapd_client_poll_ok(struct hostapd_data *hapd, const u8 *addr);
 u8 * hostapd_eid_bss_max_idle_period(struct hostapd_data *hapd, u8 *eid);
 
-#ifdef CONFIG_IEEE80211N
-void hostapd_trigger_20mhz(struct hostapd_iface *iface);
-void hostapd_deinit_ht(struct hostapd_iface *iface);
-
-#else
-static inline void hostapd_deinit_ht(struct hostapd_iface *iface)
-{
-}
-static inline void hostapd_trigger_20mhz(struct hostapd_iface *iface)
-{
-}
-#endif /* CONFIG_IEEE80211N */
-
 #endif /* IEEE802_11_H */

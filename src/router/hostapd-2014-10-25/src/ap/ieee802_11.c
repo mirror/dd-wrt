@@ -1597,9 +1597,6 @@ static void handle_beacon(struct hostapd_data *hapd,
 					     sizeof(mgmt->u.beacon)), &elems,
 				      0);
 
-	if (!elems.ht_capabilities)
-		hostapd_trigger_20mhz(hapd->iface);
-
 	ap_list_process_beacon(hapd->iface, mgmt, &elems, fi);
 }
 
