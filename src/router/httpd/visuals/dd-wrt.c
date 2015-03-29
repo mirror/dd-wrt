@@ -1306,6 +1306,19 @@ static void showOptions(webs_t wp, char *propname, char *names, char *select)
 	websWrite(wp, "//]]>\n</script>\n</select>\n");
 }
 
+static void showIfOptions(webs_t wp, char *propname, char *names, char *select)
+{
+	char *next;
+	char var[80];
+
+	websWrite(wp, "<select name=\"%s\">\n", propname);
+	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+	foreach(var, names, next) {
+		websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n", var, !strcmp(var, select) ? "selected=\\\"selected\\\"" : "", getNetworkLabel(var));
+	}
+	websWrite(wp, "//]]>\n</script>\n</select>\n");
+}
+
 static void showOptionsChoose(webs_t wp, char *propname, char *names, char *select)
 {
 	char *next;
@@ -1646,7 +1659,7 @@ void ej_show_bondings(webs_t wp, int argc, char_t ** argv)
 		showOptions(wp, vlan_name, bondnames, tag);
 		sprintf(vlan_name, "bondingattach%d", count);
 		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.slave)</script>&nbsp;");
-		showOptions(wp, vlan_name, bufferif, port);
+		showIfOptions(wp, vlan_name, bufferif, port);
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bond_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
 			  count);
@@ -1802,7 +1815,7 @@ void ej_show_mdhcp(webs_t wp, int argc, char_t ** argv)
 		char *netmask = nvram_nget("%s_netmask", interface);
 
 		if (strlen(ipaddr) > 0 && strlen(netmask) > 0) {
-			websWrite(wp, "<script type=\"text/javascript\">Capture(networking.iface);</script> %s: IP %s/%s\n", interface, ipaddr, netmask);
+			websWrite(wp, "<script type=\"text/javascript\">Capture(networking.iface);</script> %s: IP %s/%s\n", getNetworkLabel(interface), ipaddr, netmask);
 		}
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "DHCP %d &nbsp;\n", count);
@@ -1840,7 +1853,7 @@ void ej_show_mdhcp(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "DHCP %d\n", totalcount);
 		// interface
 		sprintf(vlan_name, "mdhcpifname%d", totalcount);
-		showOptions(wp, vlan_name, buffer, "");
+		showIfOptions(wp, vlan_name, buffer, "");
 		// on off
 		sprintf(vlan_name, "mdhcpon%d", totalcount);
 		showOptions(wp, vlan_name, "On Off", "");
@@ -2193,10 +2206,10 @@ void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<script type=\"text/javascript\">Capture(networking.assign);</script> %d\n", count);
 		sprintf(vlan_name, "bridge%d", count);
-		showOptions(wp, vlan_name, finalbuffer, tag);
+		showIfOptions(wp, vlan_name, finalbuffer, tag);
 		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.bridge);</script><script type=\"text/javascript\">Capture(networking.iface);</script>&nbsp;");
 		sprintf(vlan_name, "bridgeif%d", count);
-		showOptions(wp, vlan_name, bufferif, port);
+		showIfOptions(wp, vlan_name, bufferif, port);
 		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.prio);</script>&nbsp;");
 		sprintf(vlan_name, "bridgeifprio%d", count);
 		websWrite(wp, "<input class=\"num\" name=\"%s\"size=\"3\" value=\"%s\" />\n", vlan_name, prio != NULL ? prio : "63");
@@ -2214,10 +2227,10 @@ void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<script type=\"text/javascript\">Capture(networking.assign)</script> %d\n", i);
 		sprintf(vlan_name, "bridge%d", i);
-		showOptions(wp, vlan_name, finalbuffer, "");
+		showIfOptions(wp, vlan_name, finalbuffer, "");
 		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.iface)</script>&nbsp;");
 		sprintf(vlan_name, "bridgeif%d", i);
-		showOptions(wp, vlan_name, bufferif, "");
+		showIfOptions(wp, vlan_name, bufferif, "");
 		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.prio)</script>&nbsp;");
 		sprintf(vlan_name, "bridgeifprio%d", i);
 		websWrite(wp, "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n", vlan_name, "63");
@@ -7024,8 +7037,7 @@ static void getNetworkLabel(char *var)
 {
 	char label[64];
 	char *label = nvram_nget("%s_label", var);
-	int haslabel = strcmp(label, "");
-	snprintf(label, 64, "%s%s%s", var, haslabel ? " - " : "", label);
+	snprintf(label, 64, "%s%s%s", var, strcmp(label, "") ? " - " : "", label);
 	return label;
 }
 
@@ -7057,7 +7069,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 
 		websWrite(wp, "<option value=\"\" %s ><script type=\"text/javascript\">Capture(share.disabled);</script></option>\n", strlen(wanifname) == 0 ? "selected=\"selected\"" : "");
 		foreach(var, eths, next) {
-			websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, !strcmp(wanifname, var) ? "selected=\"selected\"" : "", var);
+			websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, !strcmp(wanifname, var) ? "selected=\"selected\"" : "", getNetworkLabel(var));
 		}
 		websWrite(wp, "</select></div>\n");
 	}
@@ -7433,7 +7445,7 @@ void ej_show_ifselect(webs_t wp, int argc, char_t ** argv)
 		if (!nvram_nmatch("0", "%s_bridged", var)
 		    && strncmp(var, "br", 2))
 			continue;
-		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, nvram_match(ifname, var) ? "selected" : "", var);
+		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, nvram_match(ifname, var) ? "selected" : "", getNetworkLabel(var));
 	}
 
 	websWrite(wp, "</select>\n");
