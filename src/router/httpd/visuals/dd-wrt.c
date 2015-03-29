@@ -7075,7 +7075,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		sprintf(ssid, "%s_bridged", var);
 		// nvram_nset("0", "%s_bridged", var);
 		websWrite(wp, "<fieldset>\n");
-		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.network)</script> %s</div>\n", var);
+		websWrite(wp, "<legend><script type=\"text/javascript\">Capture(wl_basic.network)</script> %s</legend>\n", var);
 		// qlen here
 
 		websWrite(wp, "<div class=\"setting\">\n");
