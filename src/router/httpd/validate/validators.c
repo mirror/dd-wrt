@@ -744,6 +744,11 @@ void validate_portsetup(webs_t wp, char *value, struct variable *v)
 	foreach(var, eths, next) {
 		char val[64];
 
+		sprintf(val, "%s_label", var);
+		char *label = websGetVar(wp, val, NULL);
+		if (label)
+			nvram_set(val, label);
+
 		sprintf(val, "%s_bridged", var);
 		char *bridged = websGetVar(wp, val, NULL);
 
