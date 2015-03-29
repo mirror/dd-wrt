@@ -7076,6 +7076,9 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		// nvram_nset("0", "%s_bridged", var);
 		websWrite(wp, "<fieldset>\n");
 		websWrite(wp, "<legend><script type=\"text/javascript\">Capture(wl_basic.network)</script> %s</legend>\n", var);
+		// label here
+		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(idx.label)</script></div>\n");
+		websWrite(wp, "<input maxlength=\"32\" size=\"25\" name=\"%s_label\" value=\"%s\" /></div>\n", var, nvram_nget("%s_label"), var);
 		// qlen here
 
 		websWrite(wp, "<div class=\"setting\">\n");
