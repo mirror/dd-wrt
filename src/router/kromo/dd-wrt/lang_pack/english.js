@@ -1111,6 +1111,7 @@ idx.stp_mess="(disable for COMCAST ISP)";
 idx.optional="Optional Settings";
 idx.mtu="MTU";
 idx.txqlen="TX Queue Length";
+idx.label="Label";
 idx.h23="Network Setup";
 idx.routerip="Router IP";
 idx.lanip="Local IP Address";
