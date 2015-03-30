@@ -50,7 +50,6 @@
 #include <bcmnvram.h>
 //#include <l7protocols.h>
 
-static char *getNetworkLabel(char *var);
 
 #ifdef HAVE_OVERCLOCKING
 static unsigned int type2_clocks[7] = { 200, 240, 252, 264, 300, 330, 0 };
@@ -7033,7 +7032,7 @@ void ej_bandwidth(webs_t wp, int argc, char_t ** argv)
 	}
 }
 #endif
-static char *getNetworkLabel(char *var)
+char *getNetworkLabel(char *var)
 {
 	char label[64];
 	char *l = nvram_nget("%s_label", var);
