@@ -622,6 +622,7 @@ extern void ej_show_meminfo(webs_t wp, int argc, char_t ** argv);
 extern void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv);
 extern void ej_dump_wiviz_data(webs_t wp, int argc, char_t ** argv);
 extern void ej_get_url(webs_t wp, int argc, char_t ** argv);
+extern char *getNetworkLabel(char *var);
 
 #ifdef FBNFW
 extern void ej_list_fbn(webs_t wp, int argc, char_t ** argv);
@@ -706,12 +707,6 @@ extern int (*UejArgs) (int argc, char_t ** argv, char_t * fmt, ...);
 extern FILE *(*UgetWebsFile) (char *path);
 
 #define getWebsFile UgetWebsFile
-extern int (*Uwfflush) (webs_t fp);
-
-#define wfflush Uwfflush
-extern int (*Uwfputc) (char c, webs_t fp);
-
-#define wfputc Uwfputc
 extern int (*Uwfputs) (char *buf, webs_t fp);
 
 #define wfputs Uwfputs
