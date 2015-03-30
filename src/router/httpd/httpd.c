@@ -1630,13 +1630,6 @@ int main(int argc, char **argv)
 
 			memdebug_leave_info("handle_request");
 		}
-#ifdef HAVE_HTTPS
-		if (do_ssl) {
-#ifdef HAVE_POLARSSL
-			ssl_close_notify(&ssl);
-#endif
-		}
-#endif
 		wfclose(conn_fp);	// jimmy, https, 8/4/2003
 		free(conn_fp);
 		conn_fp = NULL;
@@ -1867,6 +1860,7 @@ int wfclose(webs_t wp)
 #elif defined(HAVE_MATRIXSSL)
 		return matrixssl_free_session(fp);
 #elif defined(HAVE_POLARSSL)
+		ssl_close_notify(ssl_context *) fp);
 		ssl_free((ssl_context *) fp);
 		return 1;
 #endif
