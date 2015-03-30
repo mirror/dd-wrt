@@ -83,7 +83,7 @@ void ej_show_routeif(webs_t wp, int argc, char_t ** argv)
 			continue;
 		if (nvram_match("wan_ifname", word))
 			continue;
-		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", word, strcmp(word, ifnamecopy) == 0 ? "selected=\"selected\"" : "", word);
+		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", word, strcmp(word, ifnamecopy) == 0 ? "selected=\"selected\"" : "", getNetworkLabel(word));
 	}
 }
 
