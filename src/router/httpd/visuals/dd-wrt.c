@@ -7033,7 +7033,7 @@ void ej_bandwidth(webs_t wp, int argc, char_t ** argv)
 #endif
 char *getNetworkLabel(char *var)
 {
-	char label[64];
+	static char label[64];
 	char *l = nvram_nget("%s_label", var);
 	snprintf(label, sizeof(label), "%s%s%s", var, strcmp(l, "") ? " - " : "", l);
 	return label;
