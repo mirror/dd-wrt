@@ -135,7 +135,7 @@ void ej_dump_route_table(webs_t wp, int argc, char_t ** argv)
 				flags[fidx++] = 'M';
 			flags[fidx] = 0;
 
-			websWrite(wp, "%s%c'%s','%s','%s','%s','%d','%s'\n", debug ? "//" : "", blank ? ' ' : ',', sdest, inet_ntop(AF_INET, &netmask_ip, client, 16), sgw, flags, metric, ifname);
+			websWrite(wp, "%s%c'%s','%s','%s','%s','%d','%s'\n", debug ? "//" : "", blank ? ' ' : ',', sdest, inet_ntop(AF_INET, &netmask_ip, client, 16), sgw, flags, metric, getNetworkLabel(ifname));
 
 			if (debug && blank)
 				blank = 1;
