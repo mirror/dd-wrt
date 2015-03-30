@@ -1,7 +1,7 @@
 /*
  * dd-wrt.c
  *
- * Copyright (C) 2005 - 2013 Sebastian Gottschall <gottschall@dd-wrt.com>
+ * Copyright (C) 2005 - 2015 Sebastian Gottschall <gottschall@dd-wrt.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -50,7 +50,7 @@
 #include <bcmnvram.h>
 //#include <l7protocols.h>
 
-static void getNetworkLabel(char *var);
+static char *getNetworkLabel(char *var);
 
 #ifdef HAVE_OVERCLOCKING
 static unsigned int type2_clocks[7] = { 200, 240, 252, 264, 300, 330, 0 };
@@ -1016,7 +1016,7 @@ static void ej_show_security_single(webs_t wp, int argc, char_t ** argv, char *p
 	websWrite(wp, "<h2><script type=\"text/javascript\">Capture(wpa.h2)</script> %s</h2>\n", prefix);
 	websWrite(wp, "<fieldset>\n");
 	// cprintf("getting %s %s\n",ssid,nvram_safe_get(ssid));
-	websWrite(wp, "<legend><script type=\"text/javascript\">Capture(share.pintrface)</script> %s SSID [", IFMAP(prefix));
+	websWrite(wp, "<legend><script type=\"text/javascript\">Capture(share.pintrface)</script> %s SSID [", getNetworkLabel(IFMAP(prefix)));
 	tf_webWriteESCNV(wp, ssid);	// fix for broken html page if ssid
 	// contains html tag
 	websWrite(wp, "] HWAddr [%s]</legend>\n", nvram_safe_get(mac));
@@ -1030,7 +1030,7 @@ static void ej_show_security_single(webs_t wp, int argc, char_t ** argv, char *p
 		sprintf(ssid, "%s_ssid", var);
 		websWrite(wp, "<fieldset>\n");
 		// cprintf("getting %s %s\n", ssid,nvram_safe_get(ssid));
-		websWrite(wp, "<legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [", IFMAP(var));
+		websWrite(wp, "<legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [", getNetworkLabel(IFMAP(var)));
 		tf_webWriteESCNV(wp, ssid);	// fix for broken html page if ssid
 		// contains html tag
 		sprintf(mac, "%s_hwaddr", var);
@@ -1049,7 +1049,7 @@ static void ej_show_security_single(webs_t wp, int argc, char_t ** argv, char *p
 
 			sprintf(ssid, "%s_ssid", var);
 			websWrite(wp, "<fieldset>\n");
-			websWrite(wp, "<legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [", IFMAP(var));
+			websWrite(wp, "<legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [", getNetworkLabel(IFMAP(var)));
 			tf_webWriteESCNV(wp, ssid);	// fix for broken html page if ssid
 			// contains html tag
 			sprintf(mac, "%s_hwaddr", var);
@@ -1569,7 +1569,7 @@ void ej_show_olsrd(webs_t wp, int argc, char_t ** argv)
 
 		memset(buffer, 0, 256);
 		getIfList(buffer, NULL);
-		showOptions(wp, "olsrd_ifname", buffer, "");
+		showIfOptions(wp, "olsrd_ifname", buffer, "");
 		websWrite(wp, "&nbsp;&nbsp;");
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"olsrd_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
@@ -1677,7 +1677,7 @@ void ej_show_bondings(webs_t wp, int argc, char_t ** argv)
 		showOptions(wp, vlan_name, bondnames, "");
 		sprintf(vlan_name, "bondingattach%d", i);
 		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.slave)</script>&nbsp;");
-		showOptions(wp, vlan_name, bufferif, "");
+		showIfOptions(wp, vlan_name, bufferif, "");
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bond_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
 			  i);
@@ -1724,7 +1724,7 @@ void ej_show_vlantagging(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(networking.vlan)+document.write(\" %d \")+Capture(networking.iface)</script></div>\n", count);
 		sprintf(vlan_name, "vlanifname%d", count);
-		showOptions(wp, vlan_name, buffer, tag);
+		showIfOptions(wp, vlan_name, buffer, tag);
 		//tag number
 		sprintf(vlan_name, "vlantag%d", count);
 		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.tg_number);</script>&nbsp;");
@@ -1749,7 +1749,7 @@ void ej_show_vlantagging(webs_t wp, int argc, char_t ** argv)
 		char vlan_name[32];
 
 		sprintf(vlan_name, "vlanifname%d", i);
-		showOptions(wp, vlan_name, buffer, "");
+		showIfOptions(wp, vlan_name, buffer, "");
 		sprintf(vlan_name, "vlantag%d", i);
 		//tag number
 		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.tg_number);</script>&nbsp;");
@@ -1820,7 +1820,7 @@ void ej_show_mdhcp(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "DHCP %d &nbsp;\n", count);
 		sprintf(vlan_name, "mdhcpifname%d", count);
-		showOptions(wp, vlan_name, buffer, interface);
+		showIfOptions(wp, vlan_name, buffer, interface);
 		// on off
 		sprintf(vlan_name, "mdhcpon%d", count);
 		showOptions(wp, vlan_name, "On Off", dhcpon);
@@ -3077,7 +3077,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		}
 #endif
 		sprintf(ssid, "%s_ssid", var);
-		websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [", IFMAP(var));
+		websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [", getNetworkLabel(IFMAP(var)));
 		tf_webWriteESCNV(wp, ssid);	// fix for broken html page if ssid
 		// contains html tag
 		char wl_macaddr[18];
@@ -3297,7 +3297,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 			gpfound = 1;
 
 			sprintf(ssid, "%s_ssid", var);
-			websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [", IFMAP(var));
+			websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [", getNetworkLabel(IFMAP(var)));
 			tf_webWriteESCNV(wp, ssid);	// fix for broken html page if ssid
 			// contains html tag
 			char wl_macaddr[18];
@@ -3492,7 +3492,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	// wireless mode
 	websWrite(wp, "<h2><script type=\"text/javascript\">Capture(wl_basic.h2_v24)</script> %s%s</h2>\n", prefix, frequencies);
 	websWrite(wp, "<fieldset>\n");
-	websWrite(wp, "<legend><script type=\"text/javascript\">Capture(share.pintrface)</script> %s - SSID [", IFMAP(prefix));
+	websWrite(wp, "<legend><script type=\"text/javascript\">Capture(share.pintrface)</script> %s - SSID [", getNetworkLabel(IFMAP(prefix)));
 	tf_webWriteESCNV(wp, wl_ssid);	// fix 
 	sprintf(wl_macaddr, "%s_hwaddr", prefix);
 	websWrite(wp, "] HWAddr [%s]</legend>\n", nvram_safe_get(wl_macaddr));
@@ -7033,11 +7033,11 @@ void ej_bandwidth(webs_t wp, int argc, char_t ** argv)
 	}
 }
 #endif
-static void getNetworkLabel(char *var)
+static char *getNetworkLabel(char *var)
 {
 	char label[64];
-	char *label = nvram_nget("%s_label", var);
-	snprintf(label, 64, "%s%s%s", var, strcmp(label, "") ? " - " : "", label);
+	char *l = nvram_nget("%s_label", var);
+	snprintf(label, sizeof(label), "%s%s%s", var, strcmp(l, "") ? " - " : "", l);
 	return label;
 }
 
@@ -7253,7 +7253,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 static void show_macfilter_if(webs_t wp, char *ifname)
 {
 	websWrite(wp, "<fieldset>\n");
-	websWrite(wp, "<legend>%s - %s</legend>\n", IFMAP(ifname), live_translate("wl_mac.legend"));
+	websWrite(wp, "<legend>%s - %s</legend>\n", getNetworkLabel(IFMAP(ifname)), live_translate("wl_mac.legend"));
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\">%s</div>\n", live_translate("wl_mac.label"));
 	char macmode[32];
