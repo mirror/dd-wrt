@@ -1400,7 +1400,7 @@ void show_bwif(webs_t wp, char *ifname, char *name)
 					goto skip;
 				}
 			}
-			sprintf(name, "LAN (%s)", var);
+			sprintf(name, "LAN (%s)", getNetworkLabel(var));
 			show_bwif(wp, var, name);
 		}
 	      skip:;
@@ -1408,9 +1408,9 @@ void show_bwif(webs_t wp, char *ifname, char *name)
 
 	if (!nvram_match("wan_proto", "disabled")) {
 		if (getSTA()) {
-			sprintf(name, "%s WAN (%s)", live_translate("share.wireless"), get_wan_face());
+			sprintf(name, "%s WAN (%s)", live_translate("share.wireless"), getNetworkLabel(get_wan_face()));
 		} else
-			sprintf(name, "WAN (%s)", get_wan_face());
+			sprintf(name, "WAN (%s)", getNetworkLabel(get_wan_face()));
 
 		show_bwif(wp, get_wan_face(), name);
 
@@ -1431,14 +1431,14 @@ void show_bwif(webs_t wp, char *ifname, char *name)
 
 		sprintf(dev, "ath%d", i);
 
-		sprintf(name, "%s (%s)", live_translate("share.wireless"), dev);
+		sprintf(name, "%s (%s)", live_translate("share.wireless"), getNetworkLabel(dev));
 		show_bwif(wp, dev, name);
 		char *vifs = nvram_nget("%s_vifs", dev);
 
 		if (vifs == NULL)
 			continue;
 		foreach(var, vifs, next) {
-			sprintf(name, "%s (%s)", live_translate("share.wireless"), var);
+			sprintf(name, "%s (%s)", live_translate("share.wireless"), getNetworkLabel(var));
 			show_bwif(wp, var, name);
 		}
 		int s;
@@ -1451,7 +1451,7 @@ void show_bwif(webs_t wp, char *ifname, char *name)
 				continue;
 			if (nvram_nmatch("0", "%s_wds%d_enable", dev, s))
 				continue;
-			sprintf(name, "%s (%s)", live_translate("share.wireless"), wdsdev);
+			sprintf(name, "%s (%s)", live_translate("share.wireless"), getNetworkLabel(wdsdev));
 			show_bwif(wp, wdsdev, name);
 		}
 #ifdef HAVE_ATH9K
@@ -1474,7 +1474,7 @@ void show_bwif(webs_t wp, char *ifname, char *name)
 
 #else
 	for (c = 0; c < cnt; c++) {
-		sprintf(name, "%s (wl%d)", live_translate("share.wireless"), c);
+		sprintf(name, "%s (wl%d)", live_translate("share.wireless"), getNetworkLabel(get_wl_instance_name(c)));
 		show_bwif(wp, get_wl_instance_name(c), name);
 	}
 #endif
