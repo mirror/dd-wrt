@@ -1214,11 +1214,11 @@ void ej_show_wifiselect(webs_t wp, int argc, char_t ** argv)
 
 	for (i = 0; i < count; i++) {
 		sprintf(var, "ath%d", i);
-		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, nvram_match("wifi_display", var) ? "selected=\"selected\"" : "", var);
+		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, nvram_match("wifi_display", var) ? "selected=\"selected\"" : "", getNetworkLabel(var));
 		char *names = nvram_nget("ath%d_vifs", i);
 
 		foreach(var, names, next) {
-			websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, nvram_match("wifi_display", var) ? "selected=\"selected\"" : "", var);
+			websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, nvram_match("wifi_display", var) ? "selected=\"selected\"" : "", getNetworkLabel(var));
 		}
 	}
 	websWrite(wp, "</select>\n");
@@ -1241,7 +1241,7 @@ void ej_show_wifiselect(webs_t wp, int argc, char_t ** argv)
 
 	for (i = 0; i < count; i++) {
 		sprintf(var, "wl%d", i);
-		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, nvram_match("wifi_display", var) ? "selected=\"selected\"" : "", var);
+		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, nvram_match("wifi_display", var) ? "selected=\"selected\"" : "", getNetworkLabel(var));
 	}
 	websWrite(wp, "</select>\n");
 	websWrite(wp, "</div>\n");
