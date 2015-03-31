@@ -674,7 +674,7 @@ void generate_wep_key(webs_t wp)
 	generate_wep_key_single(prefix, passphrase, bit, tx);
 }
 
-void copytonv(webs_t wp, const char *fmt, ...)
+char *copytonv(webs_t wp, const char *fmt, ...)
 {
 	char varbuf[64];
 	va_list args;
@@ -687,6 +687,7 @@ void copytonv(webs_t wp, const char *fmt, ...)
 
 	if (wl)
 		nvram_set(varbuf, wl);
+	return wl;
 }
 
 void copytonv2(webs_t wp, char *prefix_get, char *prefix_set, char *name)
@@ -2907,7 +2908,6 @@ static void save_prefix(webs_t wp, char *prefix)
 		nvram_set(n, gwaddr);
 #endif
 #ifdef HAVE_IFL
-	copytonv(wp, "%s_label", prefix);
 	copytonv(wp, "%s_note", prefix);
 #endif
 #ifdef HAVE_MADWIFI
@@ -3604,7 +3604,7 @@ void ddns_save_value(webs_t wp)
 	case 10:		// dtdns
 		snprintf(_username, sizeof(_username), "ddns_username_%s", enable);
 		snprintf(_passwd, sizeof(_passwd), "ddns_passwd_%s", enable);
-		snprintf(_hostname, sizeof(_username), "ddns_username_%s", enable);
+		snprintf(_hostname, sizeof(_hostname), "ddns_username_%s", enable);
 		break;
 	case 5:
 		// custom
