@@ -64,6 +64,28 @@ function port_grey(sw_disabled,F) {
 	F.svqos_port4bw.disabled = sw_disabled;
 }
 
+function devs_grey(sw_disabled,F,overwrite) {
+	F.svqos_dev.disabled = sw_disabled;
+	F.add_devsprio_button.disabled = sw_disabled;
+	
+	if (sw_disabled == true) {
+		for (i=0; i<F.svqos_nodevs.value; i++){
+			eval("F.svqos_devdel" + i).disabled = sw_disabled;
+			eval("F.svqos_devup" + i).disabled = sw_disabled;
+			eval("F.svqos_devdown" + i).disabled = sw_disabled;
+			eval("F.svqos_devlanlvl" + i).disabled = sw_disabled;
+			eval("F.svqos_devprio" + i).disabled = sw_disabled;
+		}
+	} else {
+		for (i=0; i<F.svqos_nodevs.value; i++) {
+			eval("F.svqos_devdel" + i).disabled = sw_disabled;
+			eval("F.svqos_devprio" + i).disabled = sw_disabled;
+			if (eval("F.svqos_devup" + i))
+				iplvl_grey(i, eval("F.svqos_devprio" + i), F, overwrite);
+		}
+	}
+}
+
 function ips_grey(sw_disabled,F,overwrite) {
 	F.svqos_ipaddr0.disabled = sw_disabled;
 	F.svqos_ipaddr1.disabled = sw_disabled;
@@ -178,6 +200,7 @@ function mac_add_submit(F) {
 }
 
 function submitcheck(F) {
+	devs_grey(false, F, true);
 	ips_grey(false, F, true);
 	macs_grey(false, F, true);
 	
