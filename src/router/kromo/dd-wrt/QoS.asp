@@ -81,10 +81,20 @@ function devs_grey(sw_disabled,F,overwrite) {
 			eval("F.svqos_devdel" + i).disabled = sw_disabled;
 			eval("F.svqos_devprio" + i).disabled = sw_disabled;
 			if (eval("F.svqos_devup" + i))
-				iplvl_grey(i, eval("F.svqos_devprio" + i), F, overwrite);
+				devlvl_grey(i, eval("F.svqos_devprio" + i), F, overwrite);
 		}
 	}
 }
+
+function devlvl_grey(num,field,F,overwrite) {
+	if (overwrite) var sw_disabled = false;
+	else var sw_disabled = (field.selectedIndex == 0) ? false : true;
+		
+	eval("F.svqos_devup" + num).disabled = sw_disabled;
+	eval("F.svqos_devdown" + num).disabled = sw_disabled;
+	eval("F.svqos_devlanlvl" + num).disabled = sw_disabled;
+}
+
 
 function ips_grey(sw_disabled,F,overwrite) {
 	F.svqos_ipaddr0.disabled = sw_disabled;
@@ -136,12 +146,13 @@ function qos_grey(num,F) {
 	F.wshaper_downlink.disabled = sw_disabled;
 	F.wshaper_dev.disabled = sw_disabled;
 	F.qos_type.disabled = sw_disabled;
-    F.qos_aqd.disabled = sw_disabled;
+	F.qos_aqd.disabled = sw_disabled;
 	F.add_svc_button.disabled = sw_disabled;
 	F.edit_svc_button.disabled = sw_disabled;
 	<% nvm("portprio_support","0","/"); %><% nvm("portprio_support","0","*"); %>port_grey(sw_disabled, F);
-    <% nvm("portprio_support","0","*"); %><% nvm("portprio_support","0","/"); %>
-    pkts_grey(sw_disabled, F);
+	<% nvm("portprio_support","0","*"); %><% nvm("portprio_support","0","/"); %>
+	pkts_grey(sw_disabled, F);
+	devs_grey(sw_disabled, F, false);
 	macs_grey(sw_disabled, F, false);
 	ips_grey(sw_disabled, F, false);
 	svcs_grey(sw_disabled, F);		
