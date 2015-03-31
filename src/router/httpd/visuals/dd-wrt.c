@@ -7590,11 +7590,11 @@ void ej_show_iflist(webs_t wp, int argc, char_t ** argv)
 
 	foreach(var, buffer, next) {
 		if (nvram_match("wan_ifname", var)) {
-			websWrite(wp, "<option value=\"%s\" >WAN</option>\n", wanif);
+			websWrite(wp, "<option value=\"%s\" >WAN</option>\n", var);
 			continue;
 		}	
 		if (nvram_match("lan_ifname", var)) {
-			websWrite(wp, "<option value=\"%s\">LAN &amp; WLAN</option>\n", nvram_safe_get("lan_ifname"));
+			websWrite(wp, "<option value=\"%s\">LAN &amp; WLAN</option>\n", var);
 			continue;
 		}	
 		websWrite(wp, "<option value=\"%s\" >%s</option>\n", var, getNetworkLabel(var));
