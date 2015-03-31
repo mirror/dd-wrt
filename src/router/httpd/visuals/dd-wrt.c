@@ -7582,33 +7582,22 @@ void ej_show_ifselect(webs_t wp, int argc, char_t ** argv)
 
 void ej_show_iflist(webs_t wp, int argc, char_t ** argv)
 {
-	websWrite(wp, "<option value=\"%s\">LAN &amp; WLAN</option>\n", nvram_safe_get("lan_ifname"));
-
-	char *lanifs = nvram_safe_get("lan_ifnames");
 	char *next;
 	char var[80];
+	char buffer[256];
+	memset(buffer, 0, 256);
+	getIfList(buffer, NULL);
 
-	foreach(var, lanifs, next) {
-		if (nvram_match("wan_ifname", var))
+	foreach(var, buffer, next) {
+		if (nvram_match("wan_ifname", var)) {
+			websWrite(wp, "<option value=\"%s\" >WAN</option>\n", wanif);
 			continue;
-		if (!ifexists(var))
+		}	
+		if (nvram_match("lan_ifname", var)) {
+			websWrite(wp, "<option value=\"%s\">LAN &amp; WLAN</option>\n", nvram_safe_get("lan_ifname"));
 			continue;
+		}	
 		websWrite(wp, "<option value=\"%s\" >%s</option>\n", var, getNetworkLabel(var));
-	}
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-	int cnt = get_wl_instances();
-	int c;
-
-	for (c = 0; c < cnt; c++) {
-		sprintf(var, "wl%d_ifname", c);
-		websWrite(wp, "<option value=\"%s\" >WLAN%d</option>\n", nvram_safe_get(var), c);
-	}
-#endif
-
-	char *wanif = nvram_safe_get("wan_ifname");
-
-	if (strlen(wanif) != 0) {
-		websWrite(wp, "<option value=\"%s\" >WAN</option>\n", wanif);
 	}
 }
 
