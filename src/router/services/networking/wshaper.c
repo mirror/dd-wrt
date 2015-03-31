@@ -253,6 +253,7 @@ void aqos_tables(void)
 	FILE *outmacs = fopen("/tmp/aqos_macs", "wb");
 
 	char *qos_ipaddr = nvram_safe_get("svqos_ips");
+	char *qos_devs = nvram_safe_get("svqos_devs");
 	char *qos_mac = nvram_safe_get("svqos_macs");
 	char *qos_svcs = NULL;
 
@@ -314,6 +315,31 @@ void aqos_tables(void)
 		base += 10;
 	}
 	while ((qos_ipaddr = strpbrk(++qos_ipaddr, "|")) && qos_ipaddr++);
+
+
+
+	do {
+		ret = sscanf(qos_devs, "%31s %31s %31s %31s %31s |", data, level, level2, level3, prio);
+		if (ret < 5)
+			break;
+
+		add_client_classes(base, atoi(level), atoi(level2), atoi(level3), atoi(prio));
+
+		qos_svcs = nvram_safe_get("svqos_svcs");
+		do {
+			if (sscanf(qos_svcs, "%31s %31s %31s %31s ", srvname, srvtype, srvdata, srvlevel) < 4)
+				break;
+
+			add_client_dev_srvfilter(srvname, srvtype, srvdata, srvlevel, base, data);
+		} while ((qos_svcs = strpbrk(++qos_svcs, "|")) && qos_svcs++);
+
+		// not service-prioritized, then default class          
+		eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-o", data, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + 3));
+		eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-i", data, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + 3));
+
+		base += 10;
+	}
+	while ((qos_devs = strpbrk(++qos_devs, "|")) && qos_devs++);
 
 	fclose(outips);
 	fclose(outmacs);
@@ -537,6 +563,7 @@ int svqos_iptables(void)
 
 	char *qos_mac = nvram_safe_get("svqos_macs");
 	char *qos_ipaddr = nvram_safe_get("svqos_ips");
+	char *qos_devs = nvram_safe_get("svqos_devs");
 
 	char srvname[32], srvtype[32], srvdata[32], srvlevel[32];
 
@@ -593,6 +620,30 @@ int svqos_iptables(void)
 		base += 10;
 	}
 	while ((qos_ipaddr = strpbrk(++qos_ipaddr, "|")) && qos_ipaddr++);
+
+
+	do {
+
+		if (sscanf(qos_devs, "%31s %31s |", data, level) < 2)
+			break;
+
+		add_client_classes(base, atoi(level));
+
+		qos_svcs = nvram_safe_get("svqos_svcs");
+		do {
+			if (sscanf(qos_svcs, "%31s %31s %31s %31s ", srvname, srvtype, srvdata, srvlevel) < 4)
+				break;
+
+			add_client_ip_srvfilter(srvname, srvtype, srvdata, srvlevel, base, data);
+		} while ((qos_svcs = strpbrk(++qos_svcs, "|")) && qos_svcs++);
+
+		// not service-prioritized, then default class          
+		eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-o", data, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + 3));
+		eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-i", data, "-m", "mark", "--mark", "0", "-j", "MARK", "--set-mark", qos_nfmark(base + 3));
+
+		base += 10;
+	}
+	while ((qos_devs = strpbrk(++qos_devs, "|")) && qos_devs++);
 #endif
 
 	// if OSPF is active put it into the Express bucket for outgoing QoS
