@@ -325,8 +325,8 @@ void add_client_dev_srvfilter(char *name, char *type, char *data, char *level, i
 	}
 #ifdef HAVE_OPENDPI
 	if (strstr(type, "dpi")) {
-		char npdi[32];
-		snprintf(npdi, 32, "--%s", name);
+		char ndpi[32];
+		snprintf(ndpi, 32, "--%s", name);
 		eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "3", "-i", dev, "-m", "npdi", ndpi, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 		eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "3", "-o", dev, "-m", "npdi", ndpi, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 	}
@@ -412,8 +412,8 @@ void add_client_mac_srvfilter(char *name, char *type, char *data, char *level, i
 	}
 #ifdef HAVE_OPENDPI
 	if (strstr(type, "dpi")) {
-		char npdi[32];
-		snprintf(npdi, 32, "--%s", name);
+		char ndpi[32];
+		snprintf(ndpi, 32, "--%s", name);
 		eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "3", "-m", "mac", "--mac-source", client, "-m", "npdi", ndpi, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 	}
 #endif
@@ -510,7 +510,7 @@ void add_client_ip_srvfilter(char *name, char *type, char *data, char *level, in
 	}
 #ifdef HAVE_OPENDPI
 	if (strstr(type, "dpi")) {
-		char npdi[32];
+		char ndpi[32];
 		snprintf(ndpi, 32, "--%s", name);
 
 		eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "3", "-s", client, "-m", "npdi", ndpi, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
