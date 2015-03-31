@@ -891,6 +891,7 @@ static struct gozila_action gozila_actions[] = {
 	{"QoS", "add_svc", "", 0, REFRESH, "qos_add_svc"},
 	{"QoS", "add_ip", "", 0, REFRESH, "qos_add_ip"},
 	{"QoS", "add_mac", "", 0, REFRESH, "qos_add_mac"},
+	{"QoS", "add_dev", "", 0, REFRESH, "qos_add_dev"},
 	{"QoS", "save", "filters", 1, REFRESH, "qos_save"},
 	/*
 	 * end Sveasoft addition 
