@@ -6357,6 +6357,137 @@ void ej_get_qossvcs(webs_t wp, int argc, char_t ** argv)
 }
 
 #ifndef HAVE_AQOS
+void ej_get_qosdevs(webs_t wp, int argc, char_t ** argv)
+{
+	char *qos_ips = nvram_safe_get("svqos_devs");
+	char ip[32], level[32];
+	int no_ips = 0, i = 0;
+
+	// calc # of ips
+	while ((qos_ips = strpbrk(qos_ips, "|"))) {
+		no_ips++;
+		qos_ips++;
+	}
+	websWrite(wp, "<tr>\n"
+		  "<th><script type=\"text/javascript\">Capture(share.del)</script></th>\n"
+		  "<th><script type=\"text/javascript\">Capture(share.intrface)</script></th>\n" "<th><script type=\"text/javascript\">Capture(share.priority)</script></th>\n" "</tr>\n");
+
+	// write HTML data
+
+	websWrite(wp, "<tr><td colspan=\"3\"><input type=\"hidden\" name=\"svqos_nodevs\" value=\"%d\" /></td></tr>", no_ips);
+
+	qos_ips = nvram_safe_get("svqos_devs");
+
+	/*
+	 * IP format is "data level | data level |" ..etc 
+	 */
+	for (i = 0; i < no_ips && qos_ips && qos_ips[0]; i++) {
+		if (sscanf(qos_ips, "%31s %31s ", ip, level) < 2)
+			break;
+
+		websWrite(wp, "<tr>\n"
+			  "<td>\n" "<input type=\"checkbox\" name=\"svqos_devdel%d\" />\n" "<input type=\"hidden\" name=\"svqos_dev%d\" value=\"%s\" />\n" "</td>\n" "<td><em>%s</em></td>\n" "<td>\n", i, i, ip, ip);
+		websWrite(wp, "<select name=\"svqos_devprio%d\"> \n"
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"100\\\" %s >\" + qos.prio_x + \"</option>\");\n"
+			  "document.write(\"<option value=\\\"10\\\" %s >\" + qos.prio_p + \"</option>\");\n"
+			  "document.write(\"<option value=\\\"20\\\" %s >\" + qos.prio_e + \"</option>\");\n"
+			  "document.write(\"<option value=\\\"30\\\" %s >\" + share.standard + \"</option>\");\n"
+			  "document.write(\"<option value=\\\"40\\\" %s >\" + qos.prio_b + \"</option>\");\n//]]>\n</script>\n"
+			  "</select>\n"
+			  "</td>\n"
+			  "</tr>\n", i, strcmp(level, "100") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(level, "10") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(level,
+																					  "20") ==
+			  0 ? "selected=\\\"selected\\\"" : "", strcmp(level, "30") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(level, "40") == 0 ? "selected=\\\"selected\\\"" : "");
+
+		qos_ips = strpbrk(++qos_ips, "|");
+		qos_ips++;
+
+	}
+
+	return;
+}
+#else
+void ej_get_qosdevs(webs_t wp, int argc, char_t ** argv)
+{
+	char *qos_ips = nvram_safe_get("svqos_devs");
+	char ip[32], level[32], level2[32], lanlevel[32], prio[32];
+	int no_ips = 0, i = 0;
+
+	// calc # of ips
+	while ((qos_ips = strpbrk(qos_ips, "|"))) {
+		no_ips++;
+		qos_ips++;
+	}
+	websWrite(wp, "<tr>\n"
+		  "<th><script type=\"text/javascript\">Capture(share.del)</script></th>\n"
+		  "<th><script type=\"text/javascript\">Capture(share.intrface)</script></th>\n"
+		  "<th><script type=\"text/javascript\">Capture(qos.maxdownrate_b)</script></th>\n"
+		  "<th><script type=\"text/javascript\">Capture(qos.maxuprate_b)</script></th>\n"
+		  "<th><script type=\"text/javascript\">Capture(qos.maxlanrate_b)</script></th>\n" "<th><script type=\"text/javascript\">Capture(share.priority)</script></th>\n" "</tr>\n");
+
+	// write HTML data
+
+	websWrite(wp, "<tr><td colspan=\"3\"><input type=\"hidden\" name=\"svqos_nodevs\" value=\"%d\" /></td></tr>", no_ips);
+
+	qos_ips = nvram_safe_get("svqos_devs");
+
+	/*
+	 * IP format is "data level | data level |" ..etc 
+	 */
+
+	lanlevel[0] = '\0';
+	prio[0] = '\0';
+	for (i = 0; i < no_ips && qos_ips && qos_ips[0]; i++) {
+		if (sscanf(qos_ips, "%31s %31s %31s", ip, level, level2) < 3)
+			break;
+		if (sscanf(qos_ips, "%31s %31s %31s %31s %31s", ip, level, level2, lanlevel, prio)) {
+			if (!strcmp(lanlevel, "|")) {
+				strcpy(lanlevel, "0");
+				strcpy(prio, "0");
+			}
+			if (!strcmp(prio, "|"))
+				strcpy(prio, "0");
+		}
+
+		websWrite(wp, "<tr>\n" "<td align=\"center\">\n" "<input type=\"checkbox\" name=\"svqos_devdel%d\" />\n" "<input type=\"hidden\" name=\"svqos_dev%d\" value=\"%s\" />\n" "</td>\n", i, i, ip);
+		websWrite(wp, "	<td><em>%s</em></td>\n", ip);
+
+		websWrite(wp, "	<td nowrap>\n"
+			  "<input name=\"svqos_devdown%d\" class=\"num\" size=\"5\" maxlength=\"6\" value=\"%s\" style=\"text-align:right;\" %s /> kBits\n" "</td>\n", i, level2, strcmp(prio, "0") == 0 ? "" : "disabled");
+		websWrite(wp, "	<td nowrap>\n" "<input class=\"num\" name=\"svqos_devup%d\" size=\"5\" maxlength=\"6\" value=\"%s\" style=\"text-align:right;\" %s /> kBits\n" "</td>\n", i, level,
+			  strcmp(prio, "0") == 0 ? "" : "disabled");
+
+		websWrite(wp, "	<td nowrap>\n"
+			  "<input name=\"svqos_devlanlvl%d\" class=\"num\" size=\"5\" maxlength=\"6\" value=\"%s\" style=\"text-align:right;\" %s /> kBits\n"
+			  "</td>\n", i, lanlevel, strcmp(prio, "0") == 0 ? "" : "disabled");
+
+		websWrite(wp, "	<td>\n"
+			  "<select name=\"svqos_devprio%d\" onChange=\"iplvl_grey(%d,this,this.form,false)\"> \n"
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"0\\\" %s >\" + qos.prio_m + \"</option>\");\n"
+			  "document.write(\"<option value=\\\"100\\\" %s >\" + qos.prio_x + \"</option>\");\n"
+			  "document.write(\"<option value=\\\"10\\\" %s >\" + qos.prio_p + \"</option>\");\n"
+			  "document.write(\"<option value=\\\"20\\\" %s >\" + qos.prio_e + \"</option>\");\n"
+			  "document.write(\"<option value=\\\"30\\\" %s >\" + share.standard + \"</option>\");\n"
+			  "document.write(\"<option value=\\\"40\\\" %s >\" + qos.prio_b + \"</option>\");\n//]]>\n"
+			  "</script>\n"
+			  "</select>\n"
+			  "</td>\n"
+			  "</tr>\n", i, i, strcmp(prio, "0") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(prio, "100") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(prio,
+																					  "10") ==
+			  0 ? "selected=\\\"selected\\\"" : "", strcmp(prio, "20") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(prio, "30") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(prio,
+																							       "40") ==
+			  0 ? "selected=\\\"selected\\\"" : "");
+
+		qos_ips = strpbrk(++qos_ips, "|");
+		qos_ips++;
+
+	}
+
+	return;
+}
+#endif
+
+#ifndef HAVE_AQOS
 void ej_get_qosips(webs_t wp, int argc, char_t ** argv)
 {
 	char *qos_ips = nvram_safe_get("svqos_ips");
@@ -7449,6 +7580,38 @@ void ej_show_ifselect(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "</select>\n");
 }
 
+void ej_show_iflist(webs_t wp, int argc, char_t ** argv)
+{
+	websWrite(wp, "<option value=\"%s\">LAN &amp; WLAN</option>\n", nvram_safe_get("lan_ifname"));
+
+	char *lanifs = nvram_safe_get("lan_ifnames");
+	char *next;
+	char var[80];
+
+	foreach(var, lanifs, next) {
+		if (nvram_match("wan_ifname", var))
+			continue;
+		if (!ifexists(var))
+			continue;
+		websWrite(wp, "<option value=\"%s\" >%s</option>\n", var, getNetworkLabel(var));
+	}
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+	int cnt = get_wl_instances();
+	int c;
+
+	for (c = 0; c < cnt; c++) {
+		sprintf(var, "wl%d_ifname", c);
+		websWrite(wp, "<option value=\"%s\" >WLAN%d</option>\n", nvram_safe_get(var), c);
+	}
+#endif
+
+	char *wanif = nvram_safe_get("wan_ifname");
+
+	if (strlen(wanif) != 0) {
+		websWrite(wp, "<option value=\"%s\" >WAN</option>\n", wanif);
+	}
+}
+
 #ifdef HAVE_RFLOW
 void ej_show_rflowif(webs_t wp, int argc, char_t ** argv)
 {
@@ -7484,7 +7647,6 @@ void ej_show_rflowif(webs_t wp, int argc, char_t ** argv)
 	}
 }
 #endif
-
 #ifdef CONFIG_STATUS_GPIO
 void ej_show_status_gpio_output(webs_t wp, int argc, char_t ** argv)
 {

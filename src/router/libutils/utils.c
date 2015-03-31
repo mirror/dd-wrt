@@ -296,6 +296,100 @@ char
 		return getBridgeMTU(get_wshaper_dev());
 }
 
+void add_client_dev_srvfilter(char *name, char *type, char *data, char *level, int base, char *dev)
+{
+	int idx = atoi(level) / 10;
+
+	if (idx == 10)
+		idx = 0;
+
+	if (strstr(type, "udp") || strstr(type, "both")) {
+		eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "3", "-p", "udp", "-m", "udp", "--dport", data, "-i", dev, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "3", "-p", "udp", "-m", "udp", "--sport", data, "-i", dev, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "3", "-p", "udp", "-m", "udp", "--dport", data, "-o", dev, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "3", "-p", "udp", "-m", "udp", "--sport", data, "-o", dev, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+	}
+
+	if (strstr(type, "tcp") || strstr(type, "both")) {
+		eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "3", "-p", "tcp", "-m", "udp", "--dport", data, "-i", dev, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "3", "-p", "tcp", "-m", "udp", "--sport", data, "-i", dev, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "3", "-p", "tcp", "-m", "udp", "--dport", data, "-o", dev, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "3", "-p", "tcp", "-m", "udp", "--sport", data, "-o", dev, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+	}
+
+	if (strstr(type, "l7")) {
+		eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "3", "-i", dev, "-m", "layer7", "--l7proto", name, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "3", "-i", dev, "-m", "layer7", "--l7proto", name, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "3", "-o", dev, "-m", "layer7", "--l7proto", name, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "3", "-o", dev, "-m", "layer7", "--l7proto", name, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+	}
+#ifdef HAVE_OPENDPI
+	if (strstr(type, "dpi")) {
+		char npdi[32];
+		snprintf(npdi, 32, "--%s", name);
+		eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "3", "-i", dev, "-m", "npdi", ndpi, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "3", "-o", dev, "-m", "npdi", ndpi, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+	}
+#endif
+
+	if (strstr(type, "p2p")) {
+		char *proto = NULL;
+		char *realname = name;
+
+		if (!strcasecmp(realname, "applejuice"))
+			proto = "apple";
+		else if (!strcasecmp(realname, "ares"))
+			proto = "ares";
+		else if (!strcasecmp(realname, "bearshare"))
+			proto = "gnu";
+		else if (!strcasecmp(realname, "bittorrent"))
+			proto = "bit";
+		else if (!strcasecmp(realname, "directconnect"))
+			proto = "dc";
+		else if (!strcasecmp(realname, "edonkey"))
+			proto = "edk";
+		else if (!strcasecmp(realname, "gnutella"))
+			proto = "gnu";
+		else if (!strcasecmp(realname, "kazaa"))
+			proto = "kazaa";
+		else if (!strcasecmp(realname, "mute"))
+			proto = "mute";
+		else if (!strcasecmp(realname, "soulseek"))
+			proto = "soul";
+		else if (!strcasecmp(realname, "waste"))
+			proto = "waste";
+		else if (!strcasecmp(realname, "winmx"))
+			proto = "winmx";
+		else if (!strcasecmp(realname, "xdcc"))
+			proto = "xdcc";
+		if (proto) {
+			insmod("ipt_ipp2p");
+			char ipp2p[32];
+			snprintf(ipp2p, 32, "--%s", proto);
+
+			eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "3", "-p", "tcp", "-i", dev, "-m", "ipp2p", ipp2p, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+			eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "3", "-p", "tcp", "-o", dev, "-m", "ipp2p", ipp2p, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+
+			if (!strcmp(proto, "bit")) {
+				// bittorrent detection enhanced 
+#ifdef HAVE_MICRO
+				eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "3", "-i", dev, "-m", "layer7", "--l7proto", "bt", "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+				eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "3", "-o", dev, "-m", "layer7", "--l7proto", "bt", "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+#else
+				eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "3", "-i", dev, "-m", "length", "--length", "0:550", "-m", "layer7", "--l7proto", "bt", "-j", "MARK",
+				     "--set-mark", qos_nfmark(base + idx));
+				eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "3", "-o", dev, "-m", "length", "--length", "0:550", "-m", "layer7", "--l7proto", "bt", "-j", "MARK",
+				     "--set-mark", qos_nfmark(base + idx));
+#endif
+				eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "3", "-i", dev, "-m", "layer7", "--l7proto", "bt1", "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+				eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "3", "-i", dev, "-m", "layer7", "--l7proto", "bt2", "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+				eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "3", "-o", dev, "-m", "layer7", "--l7proto", "bt1", "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+				eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "3", "-o", dev, "-m", "layer7", "--l7proto", "bt2", "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+			}
+		}
+	}
+}
+
 void add_client_mac_srvfilter(char *name, char *type, char *data, char *level, int base, char *client)
 {
 	int idx = atoi(level) / 10;
@@ -589,7 +683,7 @@ void add_client_classes(unsigned int base, unsigned int level)
 		prio = 6;
 		parent = 6;
 		break;
-	case 0:
+	default:
 		uplimit = uprate;
 		downlimit = downrate;
 		lanlimit = lanrate;
@@ -762,6 +856,42 @@ void add_client_classes(unsigned int base, unsigned int level)
 }
 
 #ifdef HAVE_AQOS
+void add_userdev(char *dev, int base, char *upstream, char *downstream, char *lanstream)
+{
+	unsigned int uprate = atoi(upstream);
+	unsigned int downrate = atoi(downstream);
+	unsigned int lanrate = atoi(lanstream);
+
+	char srvname[32], srvtype[32], srvdata[32], srvlevel[32];
+	char *qos_svcs = nvram_safe_get("svqos_svcs");
+
+	char nullmask[24];
+	strcpy(nullmask, qos_nfmark(0));
+
+	eval("iptables", "-t", "mangle", "-D", "FILTER_IN", "-j", "CONNMARK", "--save");
+	eval("iptables", "-t", "mangle", "-D", "FILTER_IN", "-j", "RETURN");
+	eval("iptables", "-t", "mangle", "-D", "FILTER_OUT", "-j", "CONNMARK", "--save");
+	eval("iptables", "-t", "mangle", "-D", "FILTER_OUT", "-j", "RETURN");
+
+	add_client_classes(base, uprate, downrate, lanrate, 0);
+
+	do {
+		if (sscanf(qos_svcs, "%31s %31s %31s %31s ", srvname, srvtype, srvdata, srvlevel) < 4)
+			break;
+
+		add_client_dev_srvfilter(srvname, srvtype, srvdata, srvlevel, base, dev);
+	} while ((qos_svcs = strpbrk(++qos_svcs, "|")) && qos_svcs++);
+
+	eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-i", dev, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base));
+	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-o", dev, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base));
+
+	eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-j", "CONNMARK", "--save");
+	eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-j", "RETURN");
+	eval("iptables", "-t", "mangle", "-D", "FILTER_IN", "-j", "CONNMARK", "--save");
+	eval("iptables", "-t", "mangle", "-D", "FILTER_IN", "-j", "RETURN");
+
+}
+
 void add_usermac(char *mac, int base, char *upstream, char *downstream, char *lanstream)
 {
 	unsigned int uprate = atoi(upstream);
@@ -774,12 +904,8 @@ void add_usermac(char *mac, int base, char *upstream, char *downstream, char *la
 	char nullmask[24];
 	strcpy(nullmask, qos_nfmark(0));
 
-	system2("iptables -t mangle -D FILTER_IN -j CONNMARK --save");
-// http://svn.dd-wrt.com/ticket/2737 (default bandwidth level)
-//      sysprintf
-//          ("iptables -t mangle -D FILTER_IN -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j MARK --set-mark %s", 
-//               qos_nfmark(0x64));
-	system2("iptables -t mangle -D FILTER_IN -j RETURN");
+	eval("iptables", "-t", "mangle", "-D", "FILTER_IN", "-j", "CONNMARK", "--save");
+	eval("iptables", "-t", "mangle", "-D", "FILTER_IN", "-j", "RETURN");
 
 	add_client_classes(base, uprate, downrate, lanrate, 0);
 
@@ -790,14 +916,10 @@ void add_usermac(char *mac, int base, char *upstream, char *downstream, char *la
 		add_client_mac_srvfilter(srvname, srvtype, srvdata, srvlevel, base, mac);
 	} while ((qos_svcs = strpbrk(++qos_svcs, "|")) && qos_svcs++);
 
-	sysprintf("iptables -t mangle -A FILTER_IN -m mac --mac-source %s -m mark --mark %s -j MARK --set-mark %s", mac, nullmask, qos_nfmark(base));
+	eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-m", "mac", "--mac-source", mac, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base));
 
-	system2("iptables -t mangle -A FILTER_IN -j CONNMARK --save");
-// http://svn.dd-wrt.com/ticket/2737 (default bandwidth level)
-//      sysprintf
-//          ("iptables -t mangle -A FILTER_IN -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j MARK --set-mark %s",
-//               qos_nfmark(0x64));
-	system2("iptables -t mangle -A FILTER_IN -j RETURN");
+	eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-j", "CONNMARK", "--save");
+	eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-j", "RETURN");
 }
 
 void add_userip(char *ip, int base, char *upstream, char *downstream, char *lanstream)
@@ -813,18 +935,12 @@ void add_userip(char *ip, int base, char *upstream, char *downstream, char *lans
 	char nullmask[24];
 	strcpy(nullmask, qos_nfmark(0));
 
-	system2("iptables -t mangle -D FILTER_IN -j CONNMARK --save");
-// http://svn.dd-wrt.com/ticket/2737 (default bandwidth level)
-//      sysprintf
-//          ("iptables -t mangle -D FILTER_IN -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j MARK --set-mark %s",
-//               qos_nfmark(0x64));
-	system2("iptables -t mangle -D FILTER_IN -j RETURN");
+	eval("iptables", "-t", "mangle", "-D", "FILTER_IN", "-j", "CONNMARK", "--save");
+	eval("iptables", "-t", "mangle", "-D", "FILTER_IN", "-j", "RETURN");
 
-//      system2("iptables -t mangle -D FILTER_OUT -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j CLASSIFY --set-class 1:100");   
-//      system2("iptables -t mangle -D FILTER_OUT -m layer7 --l7proto dns -j CLASSIFY --set-class 1:100");
-	system2("iptables -t mangle -D FILTER_OUT -j VPN_DSCP");
-	system2("iptables -t mangle -D FILTER_OUT -j CONNMARK --save");
-	system2("iptables -t mangle -D FILTER_OUT -j RETURN");
+	eval("iptables", "-t", "mangle", "-D", "FILTER_OUT", "-j", "VPN_DSCP");
+	eval("iptables", "-t", "mangle", "-D", "FILTER_OUT", "-j", "CONNMARK", "--save");
+	eval("iptables", "-t", "mangle", "-D", "FILTER_OUT", "-j", "RETURN");
 
 	add_client_classes(base, uprate, downrate, lanrate, 0);
 
@@ -835,23 +951,17 @@ void add_userip(char *ip, int base, char *upstream, char *downstream, char *lans
 		add_client_ip_srvfilter(srvname, srvtype, srvdata, srvlevel, base, ip);
 	} while ((qos_svcs = strpbrk(++qos_svcs, "|")) && qos_svcs++);
 
-	sysprintf("iptables -t mangle -A FILTER_OUT -s %s -m mark --mark %s -j MARK --set-mark %s", ip, nullmask, qos_nfmark(base));
-	sysprintf("iptables -t mangle -A FILTER_OUT -d %s -m mark --mark %s -j MARK --set-mark %s", ip, nullmask, qos_nfmark(base));
-	sysprintf("iptables -t mangle -A FILTER_IN -s %s -m mark --mark %s -j MARK --set-mark %s", ip, nullmask, qos_nfmark(base));
-	sysprintf("iptables -t mangle -A FILTER_IN -d %s -m mark --mark %s -j MARK --set-mark %s", ip, nullmask, qos_nfmark(base));
+	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-s", ip, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base));
+	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-d", ip, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base));
+	eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-s", ip, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base));
+	eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-d", ip, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base));
 
-	system2("iptables -t mangle -A FILTER_IN -j CONNMARK --save");
-// http://svn.dd-wrt.com/ticket/2737 (default bandwidth level)
-//      sysprintf
-//          ("iptables -t mangle -A FILTER_IN -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j MARK --set-mark %s",
-//               qos_nfmark(0x64));
-	system2("iptables -t mangle -A FILTER_IN -j RETURN");
+	eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-j", "CONNMARK", "--save");
+	eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-j", "RETURN");
 
-//      system2("iptables -t mangle -A FILTER_OUT -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j CLASSIFY --set-class 1:100");   
-//      system2("iptables -t mangle -A FILTER_OUT -m layer7 --l7proto dns -j CLASSIFY --set-class 1:100");
-	system2("iptables -t mangle -A FILTER_OUT -j VPN_DSCP");
-	system2("iptables -t mangle -A FILTER_OUT -j CONNMARK --save");
-	system2("iptables -t mangle -A FILTER_OUT -j RETURN");
+	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "VPN_DSCP");
+	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "CONNMARK", "--save");
+	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "RETURN");
 }
 #endif
 #endif				// HAVE_SVQOS

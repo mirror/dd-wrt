@@ -165,6 +165,12 @@ function ip_add_submit(F) {
 	apply(F);
 }
 
+function dev_add_submit(F) {
+	F.change_action.value="gozila_cgi";
+	F.submit_type.value = "add_dev";
+	apply(F);
+}
+
 function mac_add_submit(F) {
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "add_mac";
@@ -315,6 +321,25 @@ addEvent(window, "unload", function() {
 									</script>&nbsp;&nbsp;&nbsp;
 								</div>
 								
+							</fieldset><br />
+							<fieldset>
+								<legend><% tran("qos.legend8"); %></legend>
+								<table class="table" summary="IP addresses priority table">
+									<% get_qosdevs(); %>
+									<tr>
+										<td>&nbsp;</td>
+										<td colspan="3">
+											<script type="text/javascript">
+											//<![CDATA[
+											document.write("<input class=\"button\" type=\"button\" name=\"add_devsprio_button\" value=\"" + sbutton.add + "\" onclick=\"dev_add_submit(this.form);\" />");
+											//]]>
+											</script>&nbsp;&nbsp;&nbsp;
+											<select name="svqos_dev">
+											<% show_iflist(); %>
+											</select>
+										</td>
+									</tr>
+								</table>
 							</fieldset><br />
 							
 							<fieldset>
