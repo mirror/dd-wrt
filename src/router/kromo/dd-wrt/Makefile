@@ -206,6 +206,10 @@ ifeq ($(CONFIG_ENEO),y)
 	cp eneo/images/* $(INSTALLDIR)/www/images
 	cp eneo/help/* $(INSTALLDIR)/www/help
 	cp eneo/About.htm $(INSTALLDIR)/www
+	mkdir -p $(INSTALLDIR)/etc/config
+	cp -f eneo/defaults/config/* $(INSTALLDIR)/etc/config
+	mkdir -p $(INSTALLDIR)/sbin
+	cp -f eneo/defaults/sbin/* $(INSTALLDIR)/sbin
 endif
 
 ifeq ($(CONFIG_OCTAGON),y)

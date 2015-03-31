@@ -1236,6 +1236,7 @@ qos.legend4="MAC-Priorität";
 qos.legend5="Ethernet-Port-Priorität";
 qos.legend6="Standard-Bandbreiten-Zuweisung";
 qos.legend7="TCP-Paket Priorität";
+qos.legend8="Schnittstellen-Priorität";
 qos.pktdesc="Priorisiere kleine TCP-Pakete mit den folgenden Attributen:";
 qos.pktack="ACK";
 qos.pktrst="RST";

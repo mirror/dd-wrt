@@ -1433,6 +1433,7 @@ qos.legend4="MAC Priority";
 qos.legend5="Ethernet Port Priority";
 qos.legend6="Default Bandwidth Level";
 qos.legend7="TCP-Packet Priority";
+qos.legend8="Interface Priority";
 qos.pktdesc="Prioritize small TCP-packets with the following flags:";
 qos.pktack="ACK";
 qos.pktrst="RST";
