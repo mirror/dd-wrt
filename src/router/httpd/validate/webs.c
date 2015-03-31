@@ -1565,6 +1565,7 @@ void qos_save(webs_t wp)
 
 	if (strlen(svqos_var) <= sizeof(svqos_var))
 		nvram_set("svqos_devs", svqos_var);
+	memset(svqos_var, 0, sizeof(svqos_var));
 
 	/*
 	 * IP priorities 
