@@ -7464,7 +7464,7 @@ void ej_show_rflowif(webs_t wp, int argc, char_t ** argv)
 			continue;
 		if (!ifexists(var))
 			continue;
-		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, nvram_match("rflow_if", var) ? "selected=\"selected\"" : "", var);
+		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, nvram_match("rflow_if", var) ? "selected=\"selected\"" : "", getNetworkLabel(var));
 	}
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	int cnt = get_wl_instances();
