@@ -663,6 +663,7 @@ static size_t process_reply(struct dns_header *header, time_t now, struct server
       header->ancount = htons(0);
       header->nscount = htons(0);
       header->arcount = htons(0);
+      header->hb3 &= ~HB3_TC;
     }
   
   /* the bogus-nxdomain stuff, doctor and NXDOMAIN->NODATA munging can all elide
@@ -991,7 +992,10 @@ void reply_query(int fd, int family, time_t now)
 	      char *result;
 	      
 	      if (forward->work_counter == 0)
-		result = "ABANDONED";
+		{
+		  result = "ABANDONED";
+		  status = STAT_BOGUS;
+		}
 	      else
 		result = (status == STAT_SECURE ? "SECURE" : (status == STAT_INSECURE ? "INSECURE" : "BOGUS"));
 	      
@@ -1938,7 +1942,10 @@ unsigned char *tcp_request(int confd, time_t now,
 			  char *result;
 
 			  if (keycount == 0)
-			    result = "ABANDONED";
+			    {
+			      result = "ABANDONED";
+			      status = STAT_BOGUS;
+			    }
 			  else
 			    result = (status == STAT_SECURE ? "SECURE" : (status == STAT_INSECURE ? "INSECURE" : "BOGUS"));
 			  

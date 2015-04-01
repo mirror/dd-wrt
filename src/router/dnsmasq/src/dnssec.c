@@ -1177,7 +1177,7 @@ int dnssec_validate_by_ds(time_t now, struct dns_header *header, size_t plen, ch
    STAT_NO_DS       It's proved there's no DS here.
    STAT_NO_NS       It's proved there's no DS _or_ NS here.
    STAT_BOGUS       no DS in reply or not signed, fails validation, bad packet.
-   STAT_NEED_DNSKEY DNSKEY records to validate a DS not found, name in keyname
+   STAT_NEED_KEY    DNSKEY records to validate a DS not found, name in keyname
 */
 
 int dnssec_validate_ds(time_t now, struct dns_header *header, size_t plen, char *name, char *keyname, int class)
@@ -1208,7 +1208,10 @@ int dnssec_validate_ds(time_t now, struct dns_header *header, size_t plen, char 
   if (!(p = skip_section(p, ntohs(header->ancount), header, plen)))
     val = STAT_BOGUS;
   
-  if (val == STAT_BOGUS)
+  /* If the key needed to validate the DS is on the same domain as the DS, we'll
+     loop getting nowhere. Stop that now. This can happen of the DS answer comes
+     from the DS's zone, and not the parent zone. */
+  if (val == STAT_BOGUS ||  (val == STAT_NEED_KEY && hostname_isequal(name, keyname)))
     {
       log_query(F_NOEXTRA | F_UPSTREAM, name, NULL, "BOGUS DS");
       return STAT_BOGUS;
@@ -2032,7 +2035,8 @@ int dnssec_validate_reply(time_t now, struct dns_header *header, size_t plen, ch
   /* NXDOMAIN or NODATA reply, prove that (name, class1, type1) can't exist */
   /* First marshall the NSEC records, if we've not done it previously */
   if (!nsec_type && !(nsec_type = find_nsec_records(header, plen, &nsecs, &nsec_count, qclass)))
-    return STAT_BOGUS; /* No NSECs */
+    return STAT_NO_SIG; /* No NSECs, this is probably a dangling CNAME pointing into
+			   an unsigned zone. Return STAT_NO_SIG to cause this to be proved. */
    
   /* Get name of missing answer */
   if (!extract_name(header, plen, &qname, name, 1, 0))
