@@ -128,8 +128,8 @@ int extract_name(struct dns_header *header, size_t plen, unsigned char **pp,
 	    if (isExtract)
 	      {
 		unsigned char c = *p;
-		if (isascii(c) && !iscntrl(c) && c != '.')
-		  *cp++ = *p;
+		if (c != 0 && c != '.')
+		  *cp++ = c;
 		else
 		  return 0;
 	      }
