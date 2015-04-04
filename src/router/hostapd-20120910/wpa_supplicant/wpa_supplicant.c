@@ -139,7 +139,7 @@ static int hostapd_reload(struct wpa_supplicant *wpa_s, struct wpa_bss *bss)
 
 	channel = ieee80211_frequency_to_channel(bss->freq);
 
-	if (asprintf(&cmd, "UPDATE channel=%d frequency=%d sec_chan=0 hw_mode=%d ieee80211n=%d",
+	if (asprintf(&cmd, "UPDATE channel=%d frequency=%d sec_chan=0 hw_mode=%d",
 		     channel, bss->freq, hw_mode, !!bss->ht_capab) < 0) {
 		return -1;
 	}
