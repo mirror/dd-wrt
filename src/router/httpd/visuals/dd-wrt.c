@@ -6368,9 +6368,11 @@ void ej_get_qosdevs(webs_t wp, int argc, char_t ** argv)
 		no_ips++;
 		qos_ips++;
 	}
-	websWrite(wp, "<tr>\n"
-		  "<th><script type=\"text/javascript\">Capture(share.del)</script></th>\n"
-		  "<th><script type=\"text/javascript\">Capture(share.intrface)</script></th>\n" "<th><script type=\"text/javascript\">Capture(share.priority)</script></th>\n" "</tr>\n");
+	websWrite(wp, "<tr>\n"	//
+		  "<th><script type=\"text/javascript\">Capture(share.del)</script></th>\n"	//
+		  "<th><script type=\"text/javascript\">Capture(share.intrface)</script></th>\n"	// 
+		  "<th><script type=\"text/javascript\">Capture(share.priority)</script></th>\n"	//
+		  "</tr>\n");	//
 
 	// write HTML data
 
@@ -6385,16 +6387,21 @@ void ej_get_qosdevs(webs_t wp, int argc, char_t ** argv)
 		if (sscanf(qos_ips, "%31s %31s ", ip, level) < 2)
 			break;
 
-		websWrite(wp, "<tr>\n"
-			  "<td>\n" "<input type=\"checkbox\" name=\"svqos_devdel%d\" />\n" "<input type=\"hidden\" name=\"svqos_dev%d\" value=\"%s\" />\n" "</td>\n" "<td><em>%s</em></td>\n" "<td>\n", i, i, ip, ip);
-		websWrite(wp, "<select name=\"svqos_devprio%d\"> \n"
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"100\\\" %s >\" + qos.prio_x + \"</option>\");\n"
-			  "document.write(\"<option value=\\\"10\\\" %s >\" + qos.prio_p + \"</option>\");\n"
-			  "document.write(\"<option value=\\\"20\\\" %s >\" + qos.prio_e + \"</option>\");\n"
-			  "document.write(\"<option value=\\\"30\\\" %s >\" + share.standard + \"</option>\");\n"
-			  "document.write(\"<option value=\\\"40\\\" %s >\" + qos.prio_b + \"</option>\");\n//]]>\n</script>\n"
-			  "</select>\n"
-			  "</td>\n"
+		websWrite(wp, "<tr>\n"	//
+			  "<td>\n"	//
+			  "<input type=\"checkbox\" name=\"svqos_devdel%d\" />\n"	//
+			  "<input type=\"hidden\" name=\"svqos_dev%d\" value=\"%s\" />\n"	// 
+			  "</td>\n"	//
+			  "<td><em>%s</em></td>\n"	//
+			  "<td>\n", i, i, ip, getNetworkLabel(ip));	//
+		websWrite(wp, "<select name=\"svqos_devprio%d\"> \n"	//
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"100\\\" %s >\" + qos.prio_x + \"</option>\");\n"	//
+			  "document.write(\"<option value=\\\"10\\\" %s >\" + qos.prio_p + \"</option>\");\n"	//
+			  "document.write(\"<option value=\\\"20\\\" %s >\" + qos.prio_e + \"</option>\");\n"	//
+			  "document.write(\"<option value=\\\"30\\\" %s >\" + share.standard + \"</option>\");\n"	//
+			  "document.write(\"<option value=\\\"40\\\" %s >\" + qos.prio_b + \"</option>\");\n//]]>\n</script>\n"	//
+			  "</select>\n"	//
+			  "</td>\n"	//
 			  "</tr>\n", i, strcmp(level, "100") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(level, "10") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(level,
 																					  "20") ==
 			  0 ? "selected=\\\"selected\\\"" : "", strcmp(level, "30") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(level, "40") == 0 ? "selected=\\\"selected\\\"" : "");
@@ -6418,12 +6425,14 @@ void ej_get_qosdevs(webs_t wp, int argc, char_t ** argv)
 		no_ips++;
 		qos_ips++;
 	}
-	websWrite(wp, "<tr>\n"
-		  "<th><script type=\"text/javascript\">Capture(share.del)</script></th>\n"
-		  "<th><script type=\"text/javascript\">Capture(share.intrface)</script></th>\n"
-		  "<th><script type=\"text/javascript\">Capture(qos.maxdownrate_b)</script></th>\n"
-		  "<th><script type=\"text/javascript\">Capture(qos.maxuprate_b)</script></th>\n"
-		  "<th><script type=\"text/javascript\">Capture(qos.maxlanrate_b)</script></th>\n" "<th><script type=\"text/javascript\">Capture(share.priority)</script></th>\n" "</tr>\n");
+	websWrite(wp, "<tr>\n"	//
+		  "<th><script type=\"text/javascript\">Capture(share.del)</script></th>\n"	//
+		  "<th><script type=\"text/javascript\">Capture(share.intrface)</script></th>\n"	//
+		  "<th><script type=\"text/javascript\">Capture(qos.maxdownrate_b)</script></th>\n"	//
+		  "<th><script type=\"text/javascript\">Capture(qos.maxuprate_b)</script></th>\n"	//
+		  "<th><script type=\"text/javascript\">Capture(qos.maxlanrate_b)</script></th>\n"	//
+		  "<th><script type=\"text/javascript\">Capture(share.priority)</script></th>\n"	//
+		  "</tr>\n");	//
 
 	// write HTML data
 
@@ -6449,34 +6458,35 @@ void ej_get_qosdevs(webs_t wp, int argc, char_t ** argv)
 				strcpy(prio, "0");
 		}
 
-		websWrite(wp, "<tr>\n" "<td align=\"center\">\n" "<input type=\"checkbox\" name=\"svqos_devdel%d\" />\n" "<input type=\"hidden\" name=\"svqos_dev%d\" value=\"%s\" />\n" "</td>\n", i, i, ip);
-		websWrite(wp, "	<td><em>%s</em></td>\n", ip);
+		websWrite(wp, "<tr>\n" "<td align=\"center\">\n"	//
+			  "<input type=\"checkbox\" name=\"svqos_devdel%d\" />\n"	//
+			  "<input type=\"hidden\" name=\"svqos_dev%d\" value=\"%s\" />\n"	//
+			  "</td>\n", i, i, ip);
+		websWrite(wp, "	<td><em>%s</em></td>\n", getNetworkLabel(ip));
 
-		websWrite(wp, "	<td nowrap>\n"
-			  "<input name=\"svqos_devdown%d\" class=\"num\" size=\"5\" maxlength=\"6\" value=\"%s\" style=\"text-align:right;\" %s /> kBits\n" "</td>\n", i, level2, strcmp(prio, "0") == 0 ? "" : "disabled");
-		websWrite(wp, "	<td nowrap>\n" "<input class=\"num\" name=\"svqos_devup%d\" size=\"5\" maxlength=\"6\" value=\"%s\" style=\"text-align:right;\" %s /> kBits\n" "</td>\n", i, level,
+		websWrite(wp, "	<td nowrap>\n" "<input name=\"svqos_devdown%d\" class=\"num\" size=\"5\" maxlength=\"6\" value=\"%s\" style=\"text-align:right;\" %s /> kBits\n"	//
+			  "</td>\n", i, level2, strcmp(prio, "0") == 0 ? "" : "disabled");
+		websWrite(wp, "	<td nowrap>\n" "<input class=\"num\" name=\"svqos_devup%d\" size=\"5\" maxlength=\"6\" value=\"%s\" style=\"text-align:right;\" %s /> kBits\n" "</td>\n", i, level,	//
 			  strcmp(prio, "0") == 0 ? "" : "disabled");
 
-		websWrite(wp, "	<td nowrap>\n"
-			  "<input name=\"svqos_devlanlvl%d\" class=\"num\" size=\"5\" maxlength=\"6\" value=\"%s\" style=\"text-align:right;\" %s /> kBits\n"
-			  "</td>\n", i, lanlevel, strcmp(prio, "0") == 0 ? "" : "disabled");
+		websWrite(wp, "	<td nowrap>\n"	//
+			  "<input name=\"svqos_devlanlvl%d\" class=\"num\" size=\"5\" maxlength=\"6\" value=\"%s\" style=\"text-align:right;\" %s /> kBits\n"	//
+			  "</td>\n", i, lanlevel, strcmp(prio, "0") == 0 ? "" : "disabled");	//
 
-		websWrite(wp, "	<td>\n"
-			  "<select name=\"svqos_devprio%d\" onChange=\"iplvl_grey(%d,this,this.form,false)\"> \n"
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"0\\\" %s >\" + qos.prio_m + \"</option>\");\n"
-			  "document.write(\"<option value=\\\"100\\\" %s >\" + qos.prio_x + \"</option>\");\n"
-			  "document.write(\"<option value=\\\"10\\\" %s >\" + qos.prio_p + \"</option>\");\n"
-			  "document.write(\"<option value=\\\"20\\\" %s >\" + qos.prio_e + \"</option>\");\n"
-			  "document.write(\"<option value=\\\"30\\\" %s >\" + share.standard + \"</option>\");\n"
-			  "document.write(\"<option value=\\\"40\\\" %s >\" + qos.prio_b + \"</option>\");\n//]]>\n"
-			  "</script>\n"
-			  "</select>\n"
-			  "</td>\n"
+		websWrite(wp, "	<td>\n"	//
+			  "<select name=\"svqos_devprio%d\" onChange=\"iplvl_grey(%d,this,this.form,false)\"> \n"	//
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"0\\\" %s >\" + qos.prio_m + \"</option>\");\n"	//
+			  "document.write(\"<option value=\\\"100\\\" %s >\" + qos.prio_x + \"</option>\");\n"	//
+			  "document.write(\"<option value=\\\"10\\\" %s >\" + qos.prio_p + \"</option>\");\n"	//
+			  "document.write(\"<option value=\\\"20\\\" %s >\" + qos.prio_e + \"</option>\");\n"	//
+			  "document.write(\"<option value=\\\"30\\\" %s >\" + share.standard + \"</option>\");\n"	//
+			  "document.write(\"<option value=\\\"40\\\" %s >\" + qos.prio_b + \"</option>\");\n//]]>\n"	//
+			  "</script>\n"	//
+			  "</select>\n"	//
+			  "</td>\n"	//
 			  "</tr>\n", i, i, strcmp(prio, "0") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(prio, "100") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(prio,
-																					  "10") ==
-			  0 ? "selected=\\\"selected\\\"" : "", strcmp(prio, "20") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(prio, "30") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(prio,
-																							       "40") ==
-			  0 ? "selected=\\\"selected\\\"" : "");
+																					  "10") == 0 ? "selected=\\\"selected\\\"" : "",
+			  strcmp(prio, "20") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(prio, "30") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(prio, "40") == 0 ? "selected=\\\"selected\\\"" : "");
 
 		qos_ips = strpbrk(++qos_ips, "|");
 		qos_ips++;
@@ -6499,9 +6509,11 @@ void ej_get_qosips(webs_t wp, int argc, char_t ** argv)
 		no_ips++;
 		qos_ips++;
 	}
-	websWrite(wp, "<tr>\n"
-		  "<th><script type=\"text/javascript\">Capture(share.del)</script></th>\n"
-		  "<th><script type=\"text/javascript\">Capture(qos.ipmask)</script></th>\n" "<th><script type=\"text/javascript\">Capture(share.priority)</script></th>\n" "</tr>\n");
+	websWrite(wp, "<tr>\n"	//
+		  "<th><script type=\"text/javascript\">Capture(share.del)</script></th>\n"	//
+		  "<th><script type=\"text/javascript\">Capture(qos.ipmask)</script></th>\n"	//
+		  "<th><script type=\"text/javascript\">Capture(share.priority)</script></th>\n"	//
+		  "</tr>\n");	//
 
 	// write HTML data
 
@@ -6516,8 +6528,9 @@ void ej_get_qosips(webs_t wp, int argc, char_t ** argv)
 		if (sscanf(qos_ips, "%31s %31s ", ip, level) < 2)
 			break;
 
-		websWrite(wp, "<tr>\n"
-			  "<td>\n" "<input type=\"checkbox\" name=\"svqos_ipdel%d\" />\n" "<input type=\"hidden\" name=\"svqos_ip%d\" value=\"%s\" />\n" "</td>\n" "<td><em>%s</em></td>\n" "<td>\n", i, i, ip, ip);
+		websWrite(wp, "<tr>\n" "<td>\n" "<input type=\"checkbox\" name=\"svqos_ipdel%d\" />\n"	//
+			  "<input type=\"hidden\" name=\"svqos_ip%d\" value=\"%s\" />\n"	//
+			  "</td>\n" "<td><em>%s</em></td>\n" "<td>\n", i, i, ip, ip);	//
 		websWrite(wp, "<select name=\"svqos_ipprio%d\"> \n"
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"100\\\" %s >\" + qos.prio_x + \"</option>\");\n"
 			  "document.write(\"<option value=\\\"10\\\" %s >\" + qos.prio_p + \"</option>\");\n"
@@ -6549,12 +6562,14 @@ void ej_get_qosips(webs_t wp, int argc, char_t ** argv)
 		no_ips++;
 		qos_ips++;
 	}
-	websWrite(wp, "<tr>\n"
-		  "<th><script type=\"text/javascript\">Capture(share.del)</script></th>\n"
-		  "<th><script type=\"text/javascript\">Capture(qos.ipmask)</script></th>\n"
-		  "<th><script type=\"text/javascript\">Capture(qos.maxdownrate_b)</script></th>\n"
-		  "<th><script type=\"text/javascript\">Capture(qos.maxuprate_b)</script></th>\n"
-		  "<th><script type=\"text/javascript\">Capture(qos.maxlanrate_b)</script></th>\n" "<th><script type=\"text/javascript\">Capture(share.priority)</script></th>\n" "</tr>\n");
+	websWrite(wp, "<tr>\n"	//
+		  "<th><script type=\"text/javascript\">Capture(share.del)</script></th>\n"	//
+		  "<th><script type=\"text/javascript\">Capture(qos.ipmask)</script></th>\n"	//
+		  "<th><script type=\"text/javascript\">Capture(qos.maxdownrate_b)</script></th>\n"	//
+		  "<th><script type=\"text/javascript\">Capture(qos.maxuprate_b)</script></th>\n"	//
+		  "<th><script type=\"text/javascript\">Capture(qos.maxlanrate_b)</script></th>\n"	//
+		  "<th><script type=\"text/javascript\">Capture(share.priority)</script></th>\n"	//
+		  "</tr>\n");	//
 
 	// write HTML data
 
@@ -6630,9 +6645,11 @@ void ej_get_qosmacs(webs_t wp, int argc, char_t ** argv)
 		qos_macs++;
 	}
 
-	websWrite(wp, "<tr>\n"
-		  "<th><script type=\"text/javascript\">Capture(share.del)</script></th>\n"
-		  "<th><script type=\"text/javascript\">Capture(share.mac)</script></th>\n" "<th><script type=\"text/javascript\">Capture(share.priority)</script></th>\n" "</tr>\n");
+	websWrite(wp, "<tr>\n"	//
+		  "<th><script type=\"text/javascript\">Capture(share.del)</script></th>\n"	//
+		  "<th><script type=\"text/javascript\">Capture(share.mac)</script></th>\n"	// 
+		  "<th><script type=\"text/javascript\">Capture(share.priority)</script></th>\n"	// 
+		  "</tr>\n");	//
 
 	// write HTML data
 	websWrite(wp, "<input type=\"hidden\" name=\"svqos_nomacs\" value=\"%d\" />", no_macs);
@@ -6678,12 +6695,14 @@ void ej_get_qosmacs(webs_t wp, int argc, char_t ** argv)
 		no_macs++;
 		qos_macs++;
 	}
-	websWrite(wp, "<tr>\n"
-		  "<th><script type=\"text/javascript\">Capture(share.del)</script></th>\n"
-		  "<th><script type=\"text/javascript\">Capture(share.mac)</script></th>\n"
-		  "<th><script type=\"text/javascript\">Capture(qos.maxdownrate_b)</script></th>\n"
-		  "<th><script type=\"text/javascript\">Capture(qos.maxuprate_b)</script></th>\n"
-		  "<th><script type=\"text/javascript\">Capture(qos.maxlanrate_b)</script></th>\n" "<th><script type=\"text/javascript\">Capture(share.priority)</script></th>\n" "</tr>\n");
+	websWrite(wp, "<tr>\n"	//
+		  "<th><script type=\"text/javascript\">Capture(share.del)</script></th>\n"	//
+		  "<th><script type=\"text/javascript\">Capture(share.mac)</script></th>\n"	//
+		  "<th><script type=\"text/javascript\">Capture(qos.maxdownrate_b)</script></th>\n"	//
+		  "<th><script type=\"text/javascript\">Capture(qos.maxuprate_b)</script></th>\n"	//
+		  "<th><script type=\"text/javascript\">Capture(qos.maxlanrate_b)</script></th>\n"	//
+		  "<th><script type=\"text/javascript\">Capture(share.priority)</script></th>\n"	//
+		  "</tr>\n");	//
 
 	// write HTML data
 	websWrite(wp, "<input type=\"hidden\" name=\"svqos_nomacs\" value=\"%d\" />", no_macs);
@@ -7592,11 +7611,11 @@ void ej_show_iflist(webs_t wp, int argc, char_t ** argv)
 		if (nvram_match("wan_ifname", var)) {
 			websWrite(wp, "<option value=\"%s\" >WAN</option>\n", var);
 			continue;
-		}	
+		}
 		if (nvram_match("lan_ifname", var)) {
 			websWrite(wp, "<option value=\"%s\">LAN &amp; WLAN</option>\n", var);
 			continue;
-		}	
+		}
 		websWrite(wp, "<option value=\"%s\" >%s</option>\n", var, getNetworkLabel(var));
 	}
 }
