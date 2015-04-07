@@ -3593,7 +3593,9 @@ char *request_freedns(char *user, char *password)
 	for (i = 0; i < 20; i++)
 		sprintf(request, "%s%02x", request, final[i]);
 	unlink("/tmp/.hash");
-	sysprintf("wget \"http://freedns.afraid.org/api/?action=getdyndns&sha=%s\" -O /tmp/.hash", request);
+	char url[128];
+	snprintf(url, sizeof(url), "http://freedns.afraid.org/api/?action=getdyndns&sha=%s", request);
+	eval("wget", url, "-O", "/tmp/.hash");
 	FILE *in = fopen("/tmp/.hash", "rb");
 
 	if (in == NULL)
