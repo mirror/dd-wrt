@@ -1281,7 +1281,7 @@ struct sslbuffer {
 	SSL *ssl;
 };
 
-struct sslbuffer *initsslbuffer(SSL * ssl)
+static struct sslbuffer *initsslbuffer(SSL * ssl)
 {
 	struct sslbuffer *buffer;
 	buffer = malloc(sizeof(struct sslbuffer));
@@ -1291,13 +1291,13 @@ struct sslbuffer *initsslbuffer(SSL * ssl)
 	return buffer;
 }
 
-void sslbufferflush(struct sslbuffer *buffer)
+static void sslbufferflush(struct sslbuffer *buffer)
 {
 	SSL_write(buffer->ssl, buffer->sslbuffer, buffer->count);
 	buffer->count = 0;
 }
 
-void sslbufferfree(struct sslbuffer *buffer)
+static void sslbufferfree(struct sslbuffer *buffer)
 {
 	free(buffer->sslbuffer);
 	int sockfd = SSL_get_fd(ssl);
@@ -1307,17 +1307,17 @@ void sslbufferfree(struct sslbuffer *buffer)
 	free(buffer);
 }
 
-int sslbufferread(struct sslbuffer *buffer, char *data, int datalen)
+static int sslbufferread(struct sslbuffer *buffer, char *data, int datalen)
 {
 	return SSL_read(buffer->ssl, data, datalen);
 }
 
-int sslbufferpeek(struct sslbuffer *buffer, char *data, int datalen)
+static int sslbufferpeek(struct sslbuffer *buffer, char *data, int datalen)
 {
 	return SSL_peek(buffer->ssl, data, datalen);
 }
 
-int sslbufferwrite(struct sslbuffer *buffer, char *data, int datalen)
+static int sslbufferwrite(struct sslbuffer *buffer, char *data, int datalen)
 {
 
 	int targetsize = SSLBUFFERSIZE - buffer->count;
@@ -1860,7 +1860,7 @@ int wfclose(webs_t wp)
 #elif defined(HAVE_MATRIXSSL)
 		return matrixssl_free_session(fp);
 #elif defined(HAVE_POLARSSL)
-		ssl_close_notify(ssl_context *) fp);
+		ssl_close_notify((ssl_context *) fp);
 		ssl_free((ssl_context *) fp);
 		return 1;
 #endif
