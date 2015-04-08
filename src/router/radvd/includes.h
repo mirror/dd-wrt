@@ -98,5 +98,7 @@
 
 #ifdef HAVE_IFADDRS_H
 #include <ifaddrs.h>
+#else
+#include <../shared/ifaddrs.h>
 #endif
 
