@@ -149,9 +149,9 @@ extern "C" {
 
 #undef G_VA_COPY
 
-#ifdef __va_copy
+#if defined(__va_copy)
 #  define G_VA_COPY(ap1, ap2)	  __va_copy(ap1, ap2)
-#elif va_copy
+#elif defined(va_copy)
 #  define G_VA_COPY(ap1, ap2)	  va_copy(ap1, ap2)
 #else
 #  define G_VA_COPY(ap1, ap2)	  ((ap1) = (ap2))
