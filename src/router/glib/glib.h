@@ -146,8 +146,14 @@ extern "C" {
 /* Define G_VA_COPY() to do the right thing for copying va_list variables.
  * glibconfig.h may have already defined G_VA_COPY as va_copy or __va_copy.
  */
-#  define G_VA_COPY(ap1, ap2)	  ((ap1) = (ap2))
 
+#undef G_VA_COPY
+
+#ifdef __va_copy
+#  define G_VA_COPY(ap1, ap2)	  __va_copy(ap1, ap2)
+#else
+#  define G_VA_COPY(ap1, ap2)	  ((ap1) = (ap2))
+#endif
 
 /* Provide convenience macros for handling structure
  * fields through their offsets.
