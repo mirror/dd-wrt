@@ -50,3 +50,6 @@ endif
 ifeq ($(CONFIG_ATH5K),y)
 CFLAGS += -DHAVE_ATH5K
 endif
+ifeq ($(CONFIG_E200),y)
+CFLAGS += -DHAVE_E200
+endif
