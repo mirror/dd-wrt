@@ -180,6 +180,9 @@ endif
 ifeq ($(CONFIG_KERNEL_ELF_CORE),y)
 	sed -i 's/\# CONFIG_ELF_CORE is not set/CONFIG_ELF_CORE=y/g' $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_USBBOOT),y)
+	sed -i 's/root=\/dev\/mmcblk0p2/root=\/dev\/sda2/g' $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_EOP_TUNNEL),y)
 	echo CONFIG_NET_ETHERIP=m >> $(LINUXDIR)/.config
 else
@@ -662,6 +665,11 @@ endif
 	cp $(ARCH)-uclibc/root.fs $(ARCH)-uclibc/sysupgrade-erlite/root
 	(cd $(ARCH)-uclibc; tar cvf ubnt-erlite-sysupgrade.tar sysupgrade-erlite)
 
+	mkdir -p $(ARCH)-uclibc/sysupgrade-er/
+	echo "BOARD=er" > $(ARCH)-uclibc/sysupgrade-er/CONTROL
+	cp $(LINUXDIR)/vmlinux $(ARCH)-uclibc/sysupgrade-er/kernel
+	cp $(ARCH)-uclibc/root.fs $(ARCH)-uclibc/sysupgrade-er/root
+	(cd $(ARCH)-uclibc; tar cvf ubnt-er-sysupgrade.tar sysupgrade-er)
 
 
 #	dd if=$(ARCH)-uclibc/vmlinux.gz of=$(ARCH)-uclibc/vmlinux.bin.gz bs=65536 conv=sync
