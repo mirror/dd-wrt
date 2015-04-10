@@ -72,8 +72,8 @@ void start_sysinit(void)
 	insmod("mbcache");
 	insmod("jbd2");
 	insmod("ext4");
-	FILE *check = fopen("/dev/sda3", "rb")
-	    if (check) {
+	FILE *check = fopen("/dev/sda3", "rb");
+	if (check) {
 		fclose(check);
 		if (mount("/dev/sda3", "/jffs", "ext2", MS_MGC_VAL, NULL)) {
 			eval("/sbin/mkfs.ext2", "-F", "-b", "1024", "/dev/sda3");
