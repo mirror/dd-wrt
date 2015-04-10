@@ -1,7 +1,7 @@
 /*
    Virtual File System: External file system.
 
-   Copyright (C) 1995-2014
+   Copyright (C) 1995-2015
    Free Software Foundation, Inc.
 
    Written by:
@@ -356,7 +356,7 @@ extfs_fill_names (struct vfs_class *me, fill_names_f func)
 
         info = &g_array_index (extfs_plugins, extfs_plugin_info_t, a->fstype);
         name =
-            g_strconcat (a->name ? a->name : "", "/", info->prefix, VFS_PATH_URL_DELIMITER,
+            g_strconcat (a->name ? a->name : "", PATH_SEP_STR, info->prefix, VFS_PATH_URL_DELIMITER,
                          (char *) NULL);
         func (name);
         g_free (name);
@@ -420,7 +420,7 @@ extfs_open_archive (int fstype, const char *name, struct archive **pparc)
                 goto ret;
         }
 
-        tmp = name_quote (vfs_path_get_last_path_str (name_vpath), 0);
+        tmp = name_quote (vfs_path_get_last_path_str (name_vpath), FALSE);
     }
 
     cmd = g_strconcat (info->path, info->prefix, " list ",
@@ -523,11 +523,11 @@ extfs_read_archive (int fstype, const char *name, struct archive **pparc)
 
             if (*cfn != '\0')
             {
-                if (*cfn == PATH_SEP)
+                if (IS_PATH_SEP (*cfn))
                     cfn++;
                 p = strchr (cfn, '\0');
-                if (p != cfn && *(p - 1) == PATH_SEP)
-                    *(p - 1) = '\0';
+                if (p != cfn && IS_PATH_SEP (p[-1]))
+                    p[-1] = '\0';
                 p = strrchr (cfn, PATH_SEP);
                 if (p == NULL)
                 {
@@ -834,13 +834,13 @@ extfs_cmd (const char *str_extfs_cmd, struct archive *archive,
     int retval;
 
     file = extfs_get_path_from_entry (entry);
-    quoted_file = name_quote (file, 0);
+    quoted_file = name_quote (file, FALSE);
     g_free (file);
 
     archive_name = extfs_get_archive_name (archive);
-    quoted_archive_name = name_quote (archive_name, 0);
+    quoted_archive_name = name_quote (archive_name, FALSE);
     g_free (archive_name);
-    quoted_localname = name_quote (localname, 0);
+    quoted_localname = name_quote (localname, FALSE);
     info = &g_array_index (extfs_plugins, extfs_plugin_info_t, archive->fstype);
     cmd = g_strconcat (info->path, info->prefix, str_extfs_cmd,
                        quoted_archive_name, " ", quoted_file, " ", quoted_localname, (char *) NULL);
@@ -868,11 +868,11 @@ extfs_run (const vfs_path_t * vpath)
     p = extfs_get_path (vpath, &archive, FALSE);
     if (p == NULL)
         return;
-    q = name_quote (p, 0);
+    q = name_quote (p, FALSE);
     g_free (p);
 
     archive_name = extfs_get_archive_name (archive);
-    quoted_archive_name = name_quote (archive_name, 0);
+    quoted_archive_name = name_quote (archive_name, FALSE);
     g_free (archive_name);
     info = &g_array_index (extfs_plugins, extfs_plugin_info_t, archive->fstype);
     cmd =

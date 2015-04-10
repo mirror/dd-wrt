@@ -3,14 +3,14 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
-# Piotr Drąg <piotrdrag@gmail.com>, 2011-2014
+# Piotr Drąg <piotrdrag@gmail.com>, 2011-2015
 # Slava Zanko <slavazanko@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2014-09-04 16:51+0300\n"
-"PO-Revision-Date: 2014-09-04 10:10+0000\n"
+"POT-Creation-Date: 2015-03-20 21:10+0300\n"
+"PO-Revision-Date: 2015-02-26 17:29+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Polish (http://www.transifex.com/projects/p/mc/language/pl/)\n"
 "Language: pl\n"
@@ -351,6 +351,9 @@ msgstr "Apostrof"
 msgid "Colon"
 msgstr "Dwukropek"
 
+msgid "Semicolon"
+msgstr "Średnik"
+
 msgid "Exclamation mark"
 msgstr "Wykrzyknik"
 
@@ -446,6 +449,32 @@ msgid ""
 msgstr ""
 "Rozmiar ekranu %dx%d nie jest obsługiwany.\n"
 "Proszę sprawdzić zmienną środowiskową TERM.\n"
+
+msgid "Cannot create pipe descriptor"
+msgstr "Nie można utworzyć deskryptora potoku"
+
+msgid "Cannot parse command for pipe"
+msgstr "Nie można przetworzyć polecenia dla potoku"
+
+msgid "Cannot create pipe streams"
+msgstr "Nie można utworzyć strumieni potoku"
+
+#, c-format
+msgid ""
+"Unexpected error in select() reading data from a child process:\n"
+"%s"
+msgstr ""
+"Nieoczekiwany błąd w select() podczas odczytywania danych z procesu "
+"potomnego:\n"
+"%s"
+
+#, c-format
+msgid ""
+"Unexpected error in waitpid():\n"
+"%s"
+msgstr ""
+"Nieoczekiwany błąd w waitpid():\n"
+"%s"
 
 msgid "Warning"
 msgstr "Ostrzeżenie"
@@ -681,7 +710,7 @@ msgid ""
 "   color16 to color255, or rgb000 to rgb555 and gray0 to gray23\n"
 "\n"
 "Attributes:\n"
-"   bold, underline, reverse, blink; append more with '+'\n"
+"   bold, italic, underline, reverse, blink; append more with '+'\n"
 msgstr ""
 "Standardowe kolory:\n"
 "   black, gray, red, brightred, green, brightgreen, brown,\n"
@@ -689,10 +718,11 @@ msgstr ""
 "   brightcyan, lightgray i white\n"
 "\n"
 "Rozszerzone kolory, kiedy dostępnych jest 256 kolorów:\n"
-"   color16 do color255 lub rgb000 do rgb555 oraz gray0 do gray23\n"
+"   color16 do color255 lub rgb000 do rgb555 i gray0 do gray23\n"
 "\n"
 "Atrybuty:\n"
-"   bold, underline, reverse, blink; można dołączyć więcej za pomocą \"+\"\n"
+"   bold, italic, underline, reverse, blink; można dołączyć więcej za pomocą "
+"\"+\"\n"
 
 msgid "Color options"
 msgstr "Opcje kolorów"
@@ -735,6 +765,12 @@ msgstr "Nie podano parametrów dla przeglądarki."
 msgid "Two files are required to evoke the diffviewer."
 msgstr "Wymagane są dwa pliki, aby wywołać program diffviewer."
 
+msgid "Background protocol error"
+msgstr "Błąd protokołu komunikacji w tle"
+
+msgid "Reading failed"
+msgstr "Odczytanie się nie powiodło"
+
 msgid "Background process error"
 msgstr "Błąd procesu w tle"
 
@@ -743,12 +779,6 @@ msgstr "Nieznany błąd procesu potomnego"
 
 msgid "Child died unexpectedly"
 msgstr "Proces potomny został niespodziewanie zakończony"
-
-msgid "Background protocol error"
-msgstr "Błąd protokołu komunikacji w tle"
-
-msgid "Reading failed"
-msgstr "Odczytanie się nie powiodło"
 
 msgid ""
 "Background process sent us a request for more arguments\n"
@@ -906,62 +936,6 @@ msgstr "Przeglądarka różnic: nieprawidłowy tryb"
 
 msgid "Two files are needed to compare"
 msgstr "Wymagane są dwa pliki do porównania"
-
-#, fuzzy
-msgid "Bookmarks"
-msgstr "&Wyczyść zakładki"
-
-#, fuzzy
-msgid " - Sort: "
-msgstr "Posortuj"
-
-msgid "ABC"
-msgstr ""
-
-msgid "FRQ"
-msgstr ""
-
-#, fuzzy
-msgid " - Filter: "
-msgstr "Filtr"
-
-msgid "FOUND"
-msgstr ""
-
-msgid "USER"
-msgstr ""
-
-#, fuzzy
-msgid "&Go to"
-msgstr "&Przejdź do wiersza..."
-
-#, fuzzy
-msgid "&Add"
-msgstr "Dod&aj nowy"
-
-msgid "&Remove"
-msgstr "&Usuń"
-
-msgid "Fl&ush"
-msgstr ""
-
-#, fuzzy
-msgid "&Filter"
-msgstr "Filtr"
-
-#, fuzzy
-msgid "&Sort"
-msgstr "Posortuj"
-
-#, fuzzy
-msgid "Re&verse"
-msgstr "Od&wrócony"
-
-msgid "Bookmark list"
-msgstr ""
-
-msgid "Bookmark detail"
-msgstr ""
 
 msgid "Choose syntax highlighting"
 msgstr "Proszę wybrać wyróżnianie składni"
@@ -1604,8 +1578,8 @@ msgstr ""
 "Przyjazny dla użytkownika edytor tekstu,\n"
 "napisany dla programu Midnight Commander"
 
-msgid "Copyright (C) 1996-2014 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2014 Free Software Foundation"
+msgid "Copyright (C) 1996-2015 the Free Software Foundation"
+msgstr "Copyright (C) 1996-2015 Free Software Foundation"
 
 msgid "About"
 msgstr "O programie"
@@ -1800,6 +1774,12 @@ msgstr ""
 "Nie można wykonać chown na \"%s\"\n"
 "%s"
 
+msgid "< Default >"
+msgstr "< Domyślne >"
+
+msgid "Skins"
+msgstr "Skórki"
+
 msgid "Other 8 bit"
 msgstr "Inne 8 bitowe"
 
@@ -1883,12 +1863,6 @@ msgstr "Auto&matyczny zapis ustawień"
 
 msgid "Configure options"
 msgstr "Konfiguracja opcji"
-
-msgid "< Default >"
-msgstr "< Domyślne >"
-
-msgid "Skins"
-msgstr "Skórki"
 
 msgid "Skin:"
 msgstr "Skórka:"
@@ -3003,6 +2977,9 @@ msgstr "Nowy wpi&s"
 msgid "&Insert"
 msgstr "&Wstaw"
 
+msgid "&Remove"
+msgstr "&Usuń"
+
 msgid "Subgroup - press ENTER to see list"
 msgstr "Podgrupa - ENTER wyświetla listę"
 
@@ -3681,14 +3658,6 @@ msgid "The %%var macro has no variable"
 msgstr "Makro %%var nie posiada zmiennych"
 
 #, c-format
-msgid ""
-"Cannot open file%s\n"
-"%s"
-msgstr ""
-"Nie można otworzyć pliku %s\n"
-"%s"
-
-#, c-format
 msgid "No suitable entries found in %s"
 msgstr "Nie odnaleziono odpowiednich wpisów w %s"
 
@@ -4348,14 +4317,8 @@ msgstr ""
 "Program Midnight Commander kończy działanie.\n"
 "Zapisać zmodyfikowany plik?"
 
-msgid "Cannot spawn child process"
-msgstr "Nie można utworzyć procesu potomnego"
-
-msgid "Empty output from child filter"
-msgstr "Puste wyjście filtru potomnego"
-
 msgid "&Line number"
-msgstr ""
+msgstr "&Numer wiersza"
 
 msgid "Pe&rcents"
 msgstr "P&rocenty"
@@ -4398,6 +4361,14 @@ msgstr "BezFrm"
 
 msgid "ButtonBar|Format"
 msgstr "Format"
+
+#, c-format
+msgid ""
+"Failed to read data from child stdout:\n"
+"%s"
+msgstr ""
+"Odczytanie danych z potomnego standardowego wyjścia się nie powiodło:\n"
+"%s"
 
 #, c-format
 msgid ""
@@ -4448,6 +4419,3 @@ msgstr "Kontynuować od początku?"
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr ""
 "Nie można pobrać lokalnej kopii /ftp://jakiś.komputer/modyfikuj_mnie.txt"
-
-#~ msgid "sftp: Invalid port value."
-#~ msgstr "sftp: nieprawidłowa wartość portu."

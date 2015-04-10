@@ -25,7 +25,6 @@ src/background.c
 src/diffviewer/internal.h
 src/diffviewer/search.c
 src/diffviewer/ydiff.c
-src/editor/bookmark_list.c
 src/editor/choosesyntax.c
 src/editor/edit.c
 src/editor/editcmd.c
@@ -81,9 +80,9 @@ src/vfs/smbfs/smbfs.c
 src/vfs/tar/tar.c
 src/vfs/undelfs/undelfs.c
 src/viewer/actions_cmd.c
-src/viewer/datasource.c
 src/viewer/dialogs.c
 src/viewer/display.c
+src/viewer/growbuf.c
 src/viewer/hex.c
 src/viewer/lib.c
 src/viewer/mcviewer.c

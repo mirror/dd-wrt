@@ -1,7 +1,7 @@
 /*
    Return a list of mounted file systems
 
-   Copyright (C) 1991-2014
+   Copyright (C) 1991-2015
    Free Software Foundation, Inc.
 
    This file is part of the Midnight Commander.
@@ -157,6 +157,12 @@
 #include <sys/mntent.h>
 #endif
 
+#ifdef MOUNTED_PROC_MOUNTINFO
+/* Use /proc/self/mountinfo instead of /proc/self/mounts (/etc/mtab)
+ * on Linux, if available */
+#include <libmount/libmount.h>
+#endif
+
 #ifndef HAVE_HASMNTOPT
 #define hasmntopt(mnt, opt) ((char *) 0)
 #endif
@@ -227,10 +233,9 @@
    we grant an exception to any with "bind" in its list of mount options.
    I.e., those are *not* dummy entries.  */
 #ifdef MOUNTED_GETMNTENT1
-#define ME_DUMMY(Fs_name, Fs_type, Fs_ent)      \
+#define ME_DUMMY(Fs_name, Fs_type, Bind)        \
   (ME_DUMMY_0 (Fs_name, Fs_type)                \
-   || (strcmp (Fs_type, "none") == 0            \
-       && !hasmntopt (Fs_ent, "bind")))
+   || (strcmp (Fs_type, "none") == 0 && !Bind))
 #else
 #define ME_DUMMY(Fs_name, Fs_type)              \
   (ME_DUMMY_0 (Fs_name, Fs_type) || strcmp (Fs_type, "none") == 0)
@@ -653,32 +658,79 @@ read_file_system_list (int need_fs_type)
 
 #ifdef MOUNTED_GETMNTENT1       /* GNU/Linux, 4.3BSD, SunOS, HP-UX, Dynix, Irix.  */
     {
-        struct mntent *mnt;
-        const char *table = MOUNTED;
-        FILE *fp;
+#ifdef MOUNTED_PROC_MOUNTINFO
+        struct libmnt_table *fstable = NULL;
 
-        fp = setmntent (table, "r");
-        if (fp == NULL)
-            return NULL;
+        fstable = mnt_new_table_from_file ("/proc/self/mountinfo");
 
-        while ((mnt = getmntent (fp)))
+        if (fstable != NULL)
         {
-            me = g_malloc (sizeof (*me));
-            me->me_devname = g_strdup (mnt->mnt_fsname);
-            me->me_mountdir = g_strdup (mnt->mnt_dir);
-            me->me_type = g_strdup (mnt->mnt_type);
-            me->me_type_malloced = 1;
-            me->me_dummy = ME_DUMMY (me->me_devname, me->me_type, mnt);
-            me->me_remote = ME_REMOTE (me->me_devname, me->me_type);
-            me->me_dev = dev_from_mount_options (mnt->mnt_opts);
+            struct libmnt_fs *fs;
+            struct libmnt_iter *iter;
 
-            /* Add to the linked list. */
-            *mtail = me;
-            mtail = &me->me_next;
+            iter = mnt_new_iter (MNT_ITER_FORWARD);
+
+            while (iter && mnt_table_next_fs (fstable, iter, &fs) == 0)
+            {
+                me = g_malloc (sizeof *me);
+
+                me->me_devname = g_strdup (mnt_fs_get_source (fs));
+                me->me_mountdir = g_strdup (mnt_fs_get_target (fs));
+                me->me_type = g_strdup (mnt_fs_get_fstype (fs));
+                me->me_type_malloced = 1;
+                me->me_dev = mnt_fs_get_devno (fs);
+                /* Note we don't use mnt_fs_is_pseudofs() or mnt_fs_is_netfs() here
+                   as libmount's classification is non-compatible currently.
+                   Also we pass "false" for the "Bind" option as that's only
+                   significant when the Fs_type is "none" which will not be
+                   the case when parsing "/proc/self/mountinfo", and only
+                   applies for static /etc/mtab files.  */
+                me->me_dummy = ME_DUMMY (me->me_devname, me->me_type, FALSE);
+                me->me_remote = ME_REMOTE (me->me_devname, me->me_type);
+
+                /* Add to the linked list. */
+                *mtail = me;
+                mtail = &me->me_next;
+            }
+
+            mnt_free_iter (iter);
+            mnt_free_table (fstable);
+
         }
+        else                    /* fallback to /proc/self/mounts (/etc/mtab) if anything failed */
+#endif /* MOUNTED_PROC_MOUNTINFO */
+        {
+            FILE *fp;
+            struct mntent *mnt;
+            const char *table = MOUNTED;
 
-        if (endmntent (fp) == 0)
-            goto free_then_fail;
+            fp = setmntent (table, "r");
+            if (fp == NULL)
+                return NULL;
+
+            while ((mnt = getmntent (fp)) != NULL)
+            {
+                gboolean bind;
+
+                bind = hasmntopt (mnt, "bind") != NULL;
+
+                me = g_malloc (sizeof (*me));
+                me->me_devname = g_strdup (mnt->mnt_fsname);
+                me->me_mountdir = g_strdup (mnt->mnt_dir);
+                me->me_type = g_strdup (mnt->mnt_type);
+                me->me_type_malloced = 1;
+                me->me_dummy = ME_DUMMY (me->me_devname, me->me_type, bind);
+                me->me_remote = ME_REMOTE (me->me_devname, me->me_type);
+                me->me_dev = dev_from_mount_options (mnt->mnt_opts);
+
+                /* Add to the linked list. */
+                *mtail = me;
+                mtail = &me->me_next;
+            }
+
+            if (endmntent (fp) == 0)
+                goto free_then_fail;
+        }
     }
 #endif /* MOUNTED_GETMNTENT1. */
 
@@ -796,7 +848,7 @@ read_file_system_list (int need_fs_type)
         /* All volumes are mounted in the rootfs, directly under /. */
         rootdir_list = NULL;
         rootdir_tail = &rootdir_list;
-        dirp = opendir ("/");
+        dirp = opendir (PATH_SEP_STR);
         if (dirp)
         {
             struct dirent *d;
@@ -810,9 +862,9 @@ read_file_system_list (int need_fs_type)
                     continue;
 
                 if (DIR_IS_DOTDOT (d->d_name))
-                    name = g_strdup ("/");
+                    name = g_strdup (PATH_SEP_STR);
                 else
-                    name = g_strconcat ("/", d->d_name, (char *) NULL);
+                    name = g_strconcat (PATH_SEP_STR, d->d_name, (char *) NULL);
 
                 if (lstat (name, &statbuf) >= 0 && S_ISDIR (statbuf.st_mode))
                 {
@@ -999,7 +1051,7 @@ read_file_system_list (int need_fs_type)
         char *table = MNTTAB;
         FILE *fp;
         int ret;
-        int lockfd;
+        int lockfd = -1;
 
 #if defined F_RDLCK && defined F_SETLKW
         /* MNTTAB_LOCK is a macro name of our own invention; it's not present in
@@ -1609,7 +1661,7 @@ my_statfs (struct my_statfs *myfs_stats, const char *path)
 
         i = strlen (temp->me_mountdir);
         if (i > len && (strncmp (path, temp->me_mountdir, i) == 0))
-            if (!entry || (path[i] == PATH_SEP || path[i] == '\0'))
+            if (entry == NULL || IS_PATH_SEP (path[i]) || path[i] == '\0')
             {
                 len = i;
                 entry = temp;

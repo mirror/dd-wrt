@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2014-09-04 16:51+0300\n"
-"PO-Revision-Date: 2014-09-04 10:10+0000\n"
+"POT-Creation-Date: 2015-03-20 21:10+0300\n"
+"PO-Revision-Date: 2015-02-26 09:48+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Ukrainian (http://www.transifex.com/projects/p/mc/language/"
 "uk/)\n"
@@ -353,6 +353,9 @@ msgstr "'"
 msgid "Colon"
 msgstr ":"
 
+msgid "Semicolon"
+msgstr ""
+
 msgid "Exclamation mark"
 msgstr "!"
 
@@ -448,6 +451,27 @@ msgid ""
 msgstr ""
 "Розмір екрана %dx%d не підтримується.\n"
 "Перевірте змінну оточення TERM.\n"
+
+msgid "Cannot create pipe descriptor"
+msgstr ""
+
+msgid "Cannot parse command for pipe"
+msgstr ""
+
+msgid "Cannot create pipe streams"
+msgstr ""
+
+#, c-format
+msgid ""
+"Unexpected error in select() reading data from a child process:\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
+"Unexpected error in waitpid():\n"
+"%s"
+msgstr ""
 
 msgid "Warning"
 msgstr "Попередження"
@@ -663,19 +687,8 @@ msgid ""
 "   color16 to color255, or rgb000 to rgb555 and gray0 to gray23\n"
 "\n"
 "Attributes:\n"
-"   bold, underline, reverse, blink; append more with '+'\n"
+"   bold, italic, underline, reverse, blink; append more with '+'\n"
 msgstr ""
-"Стандартні кольори:\n"
-"   black, gray, red, brightred, green, brightgreen, brown,\n"
-"   yellow, blue, brightblue, magenta, brightmagenta, cyan,\n"
-"   brightcyan, lightgray і white\n"
-"\n"
-"Розширені кольори, якщо термінал підтримує 256 кольорів:\n"
-"   від color16 до color255, або від rgb000 до rgb555 і від gray0 до gray23\n"
-"\n"
-"Атрибути:\n"
-"   bold, underline, reverse, blink; додавайте більше за допомогою символу "
-"«+»\n"
 
 msgid "Color options"
 msgstr "Параметри кольору"
@@ -714,6 +727,12 @@ msgstr "Переглядачу не передано жодних аргумен
 msgid "Two files are required to evoke the diffviewer."
 msgstr "Необхідно вказати 2 файли для різницевого перегляду."
 
+msgid "Background protocol error"
+msgstr "Сталася помилка фонового протоколу"
+
+msgid "Reading failed"
+msgstr "Сталася помилка зчитування"
+
 msgid "Background process error"
 msgstr "Сталася помилка фонового процесу"
 
@@ -722,12 +741,6 @@ msgstr "Сталася невідома помилка у нащадку"
 
 msgid "Child died unexpectedly"
 msgstr "Процес-нащадок неочікувано закінчився"
-
-msgid "Background protocol error"
-msgstr "Сталася помилка фонового протоколу"
-
-msgid "Reading failed"
-msgstr "Сталася помилка зчитування"
 
 msgid ""
 "Background process sent us a request for more arguments\n"
@@ -883,62 +896,6 @@ msgstr "Переглядач diff: некоректний режим"
 
 msgid "Two files are needed to compare"
 msgstr "Для порівняння необхідно вказати два файли"
-
-#, fuzzy
-msgid "Bookmarks"
-msgstr "&Скинути закладки"
-
-#, fuzzy
-msgid " - Sort: "
-msgstr "Сортування"
-
-msgid "ABC"
-msgstr ""
-
-msgid "FRQ"
-msgstr ""
-
-#, fuzzy
-msgid " - Filter: "
-msgstr "Фільтр"
-
-msgid "FOUND"
-msgstr ""
-
-msgid "USER"
-msgstr ""
-
-#, fuzzy
-msgid "&Go to"
-msgstr "Пе&рейти на рядок…"
-
-#, fuzzy
-msgid "&Add"
-msgstr "&Додати новий"
-
-msgid "&Remove"
-msgstr "Ви&далити"
-
-msgid "Fl&ush"
-msgstr ""
-
-#, fuzzy
-msgid "&Filter"
-msgstr "Фільтр"
-
-#, fuzzy
-msgid "&Sort"
-msgstr "Сортування"
-
-#, fuzzy
-msgid "Re&verse"
-msgstr "&Зворотній"
-
-msgid "Bookmark list"
-msgstr ""
-
-msgid "Bookmark detail"
-msgstr ""
 
 msgid "Choose syntax highlighting"
 msgstr "Оберіть підсвітку синтаксису"
@@ -1577,7 +1534,7 @@ msgstr ""
 "Дружній до користувача редактор тексту\n"
 "написаний для Midnight Commander."
 
-msgid "Copyright (C) 1996-2014 the Free Software Foundation"
+msgid "Copyright (C) 1996-2015 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -1773,6 +1730,12 @@ msgstr ""
 "Не вдалося змінити власника «%s» \n"
 "%s"
 
+msgid "< Default >"
+msgstr ""
+
+msgid "Skins"
+msgstr ""
+
 msgid "Other 8 bit"
 msgstr "Інше 8-розрядне"
 
@@ -1856,12 +1819,6 @@ msgstr "&Автозбереження параметрів"
 
 msgid "Configure options"
 msgstr "Параметри конфігурації"
-
-msgid "< Default >"
-msgstr ""
-
-msgid "Skins"
-msgstr ""
 
 msgid "Skin:"
 msgstr ""
@@ -2973,6 +2930,9 @@ msgstr "Новий &запис"
 msgid "&Insert"
 msgstr "&Вставити"
 
+msgid "&Remove"
+msgstr "Ви&далити"
+
 msgid "Subgroup - press ENTER to see list"
 msgstr "Підгрупа — для перегляду натисніть Enter"
 
@@ -3651,14 +3611,6 @@ msgid "The %%var macro has no variable"
 msgstr "Макрос %%var не має змінної"
 
 #, c-format
-msgid ""
-"Cannot open file%s\n"
-"%s"
-msgstr ""
-"Не вдалося відкрити файл %s\n"
-"%s"
-
-#, c-format
 msgid "No suitable entries found in %s"
 msgstr "У %s не знайдено потрібних записів"
 
@@ -4320,12 +4272,6 @@ msgstr ""
 "Виконується вихід із Midnight Commander.\n"
 "Зберегти змінений файл?"
 
-msgid "Cannot spawn child process"
-msgstr "Не вдалося створити процес-нащадок"
-
-msgid "Empty output from child filter"
-msgstr "Фільтр-нащадок не повернув даних"
-
 msgid "&Line number"
 msgstr ""
 
@@ -4373,6 +4319,12 @@ msgstr "ButtonBar|Формат."
 
 #, c-format
 msgid ""
+"Failed to read data from child stdout:\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
 "Error while closing the file:\n"
 "%s\n"
 "Data may have been written or not"
@@ -4417,6 +4369,3 @@ msgstr "Почати спочатку?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr ""
-
-#~ msgid "sftp: Invalid port value."
-#~ msgstr "sftp: Неправильний порт."

@@ -1,7 +1,7 @@
 /*
    libmc - checks for processing esc sequences in replace string
 
-   Copyright (C) 2011-2014
+   Copyright (C) 2011-2015
    Free Software Foundation, Inc.
 
    Written by:
@@ -71,7 +71,8 @@ START_PARAMETRIZED_TEST (test_translate_replace_glob_to_regex, test_translate_re
     dest_str = mc_search__translate_replace_glob_to_regex (data->input_value);
 
     /* then */
-    mctest_assert_str_eq (dest_str->str, data->expected_result) g_string_free (dest_str, TRUE);
+    mctest_assert_str_eq (dest_str->str, data->expected_result);
+    g_string_free (dest_str, TRUE);
 }
 /* *INDENT-OFF* */
 END_PARAMETRIZED_TEST

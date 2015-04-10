@@ -4,8 +4,8 @@
 #
 # Translators:
 # flipthegreat <flipthegreat@hotmail.com>, 2011
-# Heimen Stoffels <motionshot@vivaldi.net>, 2013
-# Richard E. van der Luit <nippur@fedoraproject.org>, 2012-2013
+# Heimen Stoffels <vistausss@outlook.com>, 2013
+# Richard E. van der Luit <nippur@fedoraproject.org>, 2012-2014
 # Slava Zanko <slavazanko@gmail.com>, 2011
 # toniotonba <TonioTonBa@gmail.com>, 2011
 # bucovaina78 <wannessmet@gmail.com>, 2012
@@ -13,8 +13,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2014-09-04 16:51+0300\n"
-"PO-Revision-Date: 2014-09-04 10:10+0000\n"
+"POT-Creation-Date: 2015-03-20 21:10+0300\n"
+"PO-Revision-Date: 2015-02-26 09:48+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Dutch (http://www.transifex.com/projects/p/mc/language/nl/)\n"
 "Language: nl\n"
@@ -157,7 +157,7 @@ msgstr ""
 "Standaard skin is geladen"
 
 msgid "Escape"
-msgstr ""
+msgstr "Escape"
 
 msgid "Function key 1"
 msgstr "Functietoets 1"
@@ -223,43 +223,43 @@ msgid "Completion/M-tab"
 msgstr "Completeren/M-Tab"
 
 msgid "BackTab/S-tab"
-msgstr ""
+msgstr "BackTab/S-tab"
 
 msgid "Backspace"
-msgstr ""
+msgstr "Backspace"
 
 msgid "Up arrow"
-msgstr ""
+msgstr "Pijl omhoog"
 
 msgid "Down arrow"
-msgstr ""
+msgstr "Pijl omlaag"
 
 msgid "Left arrow"
-msgstr ""
+msgstr "Pijl links"
 
 msgid "Right arrow"
-msgstr ""
+msgstr "Pijl rechts"
 
 msgid "Insert"
-msgstr ""
+msgstr "Invoegen"
 
 msgid "Delete"
-msgstr ""
+msgstr "Verwijderen"
 
 msgid "Home"
-msgstr ""
+msgstr "Home"
 
 msgid "End key"
 msgstr "End-toets"
 
 msgid "Page Up"
-msgstr ""
+msgstr "Page Up"
 
 msgid "Page Down"
-msgstr ""
+msgstr "Page Down"
 
 msgid "/ on keypad"
-msgstr ""
+msgstr "Numeriek /"
 
 msgid "* on keypad"
 msgstr "Numeriek *"
@@ -350,6 +350,9 @@ msgstr "Apostrof"
 
 msgid "Colon"
 msgstr "Dubbele punt"
+
+msgid "Semicolon"
+msgstr ""
 
 msgid "Exclamation mark"
 msgstr "Uitroepteken"
@@ -446,6 +449,31 @@ msgid ""
 msgstr ""
 "Schermgrootte %dx%d wordt niet ondersteund.\n"
 "Controleer omgevingsvariabele TERM ( opdr: set).\n"
+
+msgid "Cannot create pipe descriptor"
+msgstr "Aanmaken van pipe discriptor mislukt"
+
+msgid "Cannot parse command for pipe"
+msgstr "Kan commando voor pipe niet parsen"
+
+msgid "Cannot create pipe streams"
+msgstr "Kan pipe streams niet aanmaken"
+
+#, c-format
+msgid ""
+"Unexpected error in select() reading data from a child process:\n"
+"%s"
+msgstr ""
+"Onverwachte fout in select() reading data van een child process:\n"
+"%s"
+
+#, c-format
+msgid ""
+"Unexpected error in waitpid():\n"
+"%s"
+msgstr ""
+"Onverwachte fout in waitpid():\n"
+"%s"
 
 msgid "Warning"
 msgstr "Waarschuwing"
@@ -548,7 +576,7 @@ msgstr "Fout"
 
 #, c-format
 msgid "%d: %s"
-msgstr ""
+msgstr "%d: %s"
 
 msgid "&Abort"
 msgstr "&Afbreken"
@@ -649,6 +677,24 @@ msgid ""
 "   Viewer:       viewnormal,viewbold, viewunderline, viewselected\n"
 "   Help:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 msgstr ""
+"--colors KEYWORD={FORE},{BACK},{ATTR}:KEYWORD2=...\n"
+"\n"
+"{FORE}, {BACK} and {ATTR} can be omitted, and the default will be used\n"
+"\n"
+" Keywords:\n"
+"   Global:       errors, disabled, reverse, gauge, header\n"
+"                 input, inputmark, inputunchanged, commandlinemark\n"
+"                 bbarhotkey, bbarbutton, statusbar\n"
+"   File display: normal, selected, marked, markselect\n"
+"   Dialog boxes: dnormal, dfocus, dhotnormal, dhotfocus, errdhotnormal,\n"
+"                 errdhotfocus\n"
+"   Menus:        menunormal, menuhot, menusel, menuhotsel, menuinactive\n"
+"   Popup menus:  pmenunormal, pmenusel, pmenutitle\n"
+"   Editor:       editnormal, editbold, editmarked, editwhitespace,\n"
+"                 editlinestate, editbg, editframe, editframeactive\n"
+"                 editframedrag\n"
+"   Viewer:       viewnormal,viewbold, viewunderline, viewselected\n"
+"   Help:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 
 #. TRANSLATORS: don't translate color names and attributes
 msgid ""
@@ -661,19 +707,8 @@ msgid ""
 "   color16 to color255, or rgb000 to rgb555 and gray0 to gray23\n"
 "\n"
 "Attributes:\n"
-"   bold, underline, reverse, blink; append more with '+'\n"
+"   bold, italic, underline, reverse, blink; append more with '+'\n"
 msgstr ""
-"Kleuren: \n"
-"   zwart, grijs, rood, felrood, groen, felgroen, bruin, \n"
-"   geel, blauw, felblauw, magenta, lichtmagenta, cyaan,\n"
-"   lichtcyaan, lichtgrijs en wit\n"
-"\n"
-"Meer kleuren, indien 256 kleuren beschikbaar zijn:\n"
-"   color16 tot color255, of rgb000 tot rgb555 en gray0 tot gray23\n"
-"\n"
-"Attributen:\n"
-"   vet, onderlijnd, reverse, knipperen; voeg meer toe met '+'\n"
-" \n"
 
 msgid "Color options"
 msgstr "Kleur instellingen"
@@ -715,6 +750,12 @@ msgstr "Geen argumenten opgegevan aan de viewer"
 msgid "Two files are required to evoke the diffviewer."
 msgstr "Voor de diffviewer zijn 2 files nodig"
 
+msgid "Background protocol error"
+msgstr "Backgound protocol fout"
+
+msgid "Reading failed"
+msgstr "Lezen mislukt"
+
 msgid "Background process error"
 msgstr "Background process fout"
 
@@ -723,12 +764,6 @@ msgstr "Onbekende fout in child"
 
 msgid "Child died unexpectedly"
 msgstr "Child is onverwacht gestopt"
-
-msgid "Background protocol error"
-msgstr "Backgound protocol fout"
-
-msgid "Reading failed"
-msgstr "Lezen mislukt"
 
 msgid ""
 "Background process sent us a request for more arguments\n"
@@ -885,62 +920,6 @@ msgstr "Diff viewer: ongeldige modus"
 msgid "Two files are needed to compare"
 msgstr "Er zijn twee bestanden nodig om te vergelijken"
 
-#, fuzzy
-msgid "Bookmarks"
-msgstr "&Flush bladwijzers"
-
-#, fuzzy
-msgid " - Sort: "
-msgstr "Sorteren"
-
-msgid "ABC"
-msgstr ""
-
-msgid "FRQ"
-msgstr ""
-
-#, fuzzy
-msgid " - Filter: "
-msgstr "Filter"
-
-msgid "FOUND"
-msgstr ""
-
-msgid "USER"
-msgstr ""
-
-#, fuzzy
-msgid "&Go to"
-msgstr "&Ga naar regel..."
-
-#, fuzzy
-msgid "&Add"
-msgstr "Nieuw toevoegen"
-
-msgid "&Remove"
-msgstr "Ver&wijderen"
-
-msgid "Fl&ush"
-msgstr ""
-
-#, fuzzy
-msgid "&Filter"
-msgstr "Filter"
-
-#, fuzzy
-msgid "&Sort"
-msgstr "Sorteren"
-
-#, fuzzy
-msgid "Re&verse"
-msgstr "Omd&raaien"
-
-msgid "Bookmark list"
-msgstr ""
-
-msgid "Bookmark detail"
-msgstr ""
-
 msgid "Choose syntax highlighting"
 msgstr "Kies syntax highlighting"
 
@@ -952,17 +931,17 @@ msgstr "< Herlaadt Huidige Syntax >"
 
 #, c-format
 msgid "Loading: %3d%%"
-msgstr ""
+msgstr "Laden: %3d%%"
 
 msgid "Loading..."
-msgstr ""
+msgstr "Laden..."
 
 #, c-format
 msgid "Cannot open %s for reading"
 msgstr "Kan %s niet openen om te lezen"
 
 msgid "Load file"
-msgstr ""
+msgstr "Laden bestand"
 
 #, c-format
 msgid "Error reading %s"
@@ -994,7 +973,7 @@ msgstr "Openen van pipe voor lezen mislukt: %s"
 
 #, c-format
 msgid "Searching %s: %3d%%"
-msgstr ""
+msgstr "Zoeken %s: %3d%%"
 
 #, c-format
 msgid "Searching %s"
@@ -1019,7 +998,7 @@ msgid "Cannot open file for writing: %s"
 msgstr "Openen van bestand voor schrijven mislukt: %s "
 
 msgid "The file you are saving does not end with a newline."
-msgstr ""
+msgstr "Het bestand dat je wilt opslaan eindigd niet met een nieuwe regel."
 
 msgid "C&ontinue"
 msgstr "D&oorgaan"
@@ -1049,7 +1028,7 @@ msgid "Block is large, you may not be able to undo this action"
 msgstr "Groot blok, wellicht kunt u deze actie niet ongedaan maken..."
 
 msgid "Collect completions"
-msgstr ""
+msgstr "Verzamel uitkomsten"
 
 msgid "&Quick save"
 msgstr "&Snel opslaan "
@@ -1578,7 +1557,7 @@ msgstr ""
 "Eeen gebruikersvriendelijke tekstbewerker\n"
 "geschreven voor de Midnight Commander"
 
-msgid "Copyright (C) 1996-2014 the Free Software Foundation"
+msgid "Copyright (C) 1996-2015 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -1609,76 +1588,76 @@ msgid "ButtonBar|PullDn"
 msgstr "Menu"
 
 msgid "Breton"
-msgstr ""
+msgstr "Bretons"
 
 msgid "Czech"
-msgstr ""
+msgstr "Tjechisch"
 
 msgid "Welsh"
-msgstr ""
+msgstr "Welsh"
 
 msgid "Danish"
-msgstr ""
+msgstr "Deens"
 
 msgid "German"
-msgstr ""
+msgstr "Duits"
 
 msgid "Greek"
-msgstr ""
+msgstr "Grieks"
 
 msgid "English"
-msgstr ""
+msgstr "Engels"
 
 msgid "British English"
-msgstr ""
+msgstr "Brits Engels"
 
 msgid "Canadian English"
-msgstr ""
+msgstr "Canadees Engels"
 
 msgid "American English"
-msgstr ""
+msgstr "Amerikaans Engels"
 
 msgid "Esperanto"
-msgstr ""
+msgstr "Esperanto"
 
 msgid "Spanish"
-msgstr ""
+msgstr "Spaans"
 
 msgid "Faroese"
-msgstr ""
+msgstr "Faroese"
 
 msgid "French"
-msgstr ""
+msgstr "Frans"
 
 msgid "Italian"
-msgstr ""
+msgstr "Italiaans"
 
 msgid "Dutch"
-msgstr ""
+msgstr "Nederlands"
 
 msgid "Norwegian"
-msgstr ""
+msgstr "Noors"
 
 msgid "Polish"
-msgstr ""
+msgstr "Pools"
 
 msgid "Portuguese"
-msgstr ""
+msgstr "Portugees"
 
 msgid "Romanian"
-msgstr ""
+msgstr "Roemeens"
 
 msgid "Russian"
-msgstr ""
+msgstr "Russisch"
 
 msgid "Slovak"
-msgstr ""
+msgstr "Sloveens"
 
 msgid "Swedish"
-msgstr ""
+msgstr "Zweeds"
 
 msgid "Ukrainian"
-msgstr ""
+msgstr "Ukrainian"
 
 msgid "&Add word"
 msgstr "&Woord toevoegen"
@@ -1775,6 +1754,12 @@ msgstr ""
 "chown voor \"%s\" mislukt \n"
 "%s"
 
+msgid "< Default >"
+msgstr "< Default >"
+
+msgid "Skins"
+msgstr "Skins"
+
 msgid "Other 8 bit"
 msgstr "Andere 8 bits"
 
@@ -1859,17 +1844,11 @@ msgstr "A&utomatisch instellingen opslaan"
 msgid "Configure options"
 msgstr "Instellingen"
 
-msgid "< Default >"
-msgstr ""
-
-msgid "Skins"
-msgstr ""
-
 msgid "Skin:"
-msgstr ""
+msgstr "Skin:"
 
 msgid "Appearance"
-msgstr ""
+msgstr "Uiterlijk"
 
 msgid "Case &insensitive"
 msgstr "Hoofdletter&ongevoelig"
@@ -2408,7 +2387,7 @@ msgstr "Verwijder"
 
 #, no-c-format
 msgid "%o %f%n\"%s\"%m"
-msgstr ""
+msgstr "%o %f%n\"%s\"%m"
 
 #, no-c-format
 msgid "%o %d %f%m"
@@ -2747,7 +2726,7 @@ msgstr ""
 
 #, c-format
 msgid "Directories: %zd, total size: %s"
-msgstr ""
+msgstr "Directories: %zd, totale grootte: %s"
 
 msgid "Cannot operate on \"..\"!"
 msgstr "Opereren op \"..\" is niet mogelijk! "
@@ -2855,7 +2834,7 @@ msgid "Target"
 msgstr "Doel"
 
 msgid "Deleting"
-msgstr ""
+msgstr "Verwijderen"
 
 msgid "&Using shell patterns"
 msgstr "Shell Patroon gebr&uiken"
@@ -2979,6 +2958,9 @@ msgstr "Nieuw &Item"
 
 msgid "&Insert"
 msgstr "&Invoegen"
+
+msgid "&Remove"
+msgstr "Ver&wijderen"
 
 msgid "Subgroup - press ENTER to see list"
 msgstr "Subgroep - druk ENTER om de lijst te zien"
@@ -3331,7 +3313,7 @@ msgid "C&onfirmation..."
 msgstr "&Bevestiging..."
 
 msgid "&Appearance..."
-msgstr ""
+msgstr "&Uiterlijk..."
 
 msgid "&Display bits..."
 msgstr "&Weergavebits..."
@@ -3653,14 +3635,6 @@ msgstr "De %%var-macro heeft geen standaard"
 #, c-format
 msgid "The %%var macro has no variable"
 msgstr "De %%var macro heeft geen variabele "
-
-#, c-format
-msgid ""
-"Cannot open file%s\n"
-"%s"
-msgstr ""
-"Kan bestand %s niet openen\n"
-"%s"
 
 #, c-format
 msgid "No suitable entries found in %s"
@@ -4317,14 +4291,8 @@ msgstr ""
 "Midnight Commander wordt afgesloten. \n"
 "Gewijzigd bestand opslaan??"
 
-msgid "Cannot spawn child process"
-msgstr "Kan geen kindproces opstarten"
-
-msgid "Empty output from child filter"
-msgstr "Geen uitvoer van kindfilter"
-
 msgid "&Line number"
-msgstr ""
+msgstr "Rege&lnummer"
 
 msgid "Pe&rcents"
 msgstr "Pe&rcenten"
@@ -4370,6 +4338,14 @@ msgstr "Format"
 
 #, c-format
 msgid ""
+"Failed to read data from child stdout:\n"
+"%s"
+msgstr ""
+"Kon geen data lezen van child stdout:\n"
+"%s"
+
+#, c-format
+msgid ""
 "Error while closing the file:\n"
 "%s\n"
 "Data may have been written or not"
@@ -4412,6 +4388,3 @@ msgstr "Doorgaan vanaf het begin?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr "Kan geen lokale versie van /ftp://some.host/editme.txt ophalen"
-
-#~ msgid "sftp: Invalid port value."
-#~ msgstr "sftp: Ongeldige poortwaarde"

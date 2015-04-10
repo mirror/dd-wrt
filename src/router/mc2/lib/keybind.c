@@ -1,7 +1,7 @@
 /*
    Definitions of key bindings.
 
-   Copyright (C) 2005-2014
+   Copyright (C) 2005-2015
    Free Software Foundation, Inc.
 
    Written by:
@@ -211,6 +211,7 @@ static name_keymap_t command_names[] = {
     {"Unselect", CK_Unselect},
 
     /* panel */
+    {"SelectExt", CK_SelectExt},
     {"ScrollLeft", CK_ScrollLeft},
     {"ScrollRight", CK_ScrollRight},
     {"PanelOtherCd", CK_PanelOtherCd},

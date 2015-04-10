@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2014-09-04 16:51+0300\n"
-"PO-Revision-Date: 2014-09-04 10:10+0000\n"
+"POT-Creation-Date: 2015-03-20 21:10+0300\n"
+"PO-Revision-Date: 2015-02-26 09:48+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Estonian (http://www.transifex.com/projects/p/mc/language/"
 "et/)\n"
@@ -349,6 +349,9 @@ msgstr "Ülakoma '"
 msgid "Colon"
 msgstr "Koolon :"
 
+msgid "Semicolon"
+msgstr "Semikoolon"
+
 msgid "Exclamation mark"
 msgstr "Hüüumärk !"
 
@@ -445,6 +448,31 @@ msgstr ""
 "Ekraani suurus %dx%d ei ole toetatud.\n"
 "Kontrolli keskkonna muutujat TERM.\n"
 
+msgid "Cannot create pipe descriptor"
+msgstr "Nurjus torupideme loomine"
+
+msgid "Cannot parse command for pipe"
+msgstr "Nurjus toru käsu parsimine"
+
+msgid "Cannot create pipe streams"
+msgstr "Nurjus toru voogude loomine"
+
+#, c-format
+msgid ""
+"Unexpected error in select() reading data from a child process:\n"
+"%s"
+msgstr ""
+"Ootamatu viga tütarprotsessist andmete lugemisel funktsioonis select():\n"
+"%s"
+
+#, c-format
+msgid ""
+"Unexpected error in waitpid():\n"
+"%s"
+msgstr ""
+"Tundmatu viga funktsioonis waitpid():\n"
+"%s"
+
 msgid "Warning"
 msgstr "Hoiatus"
 
@@ -483,7 +511,7 @@ msgstr "Sa ei ole kataloogi %s omanik\n"
 
 #, c-format
 msgid "Cannot set correct permissions for directory %s\n"
-msgstr "Kataloogi %s loabittide määramine nurjus\n"
+msgstr "Kataloogi %s õiguste määramine nurjus\n"
 
 #, c-format
 msgid "Cannot create temporary directory %s: %s\n"
@@ -561,7 +589,7 @@ msgid "Print extended info about used data directories"
 msgstr "Trüki laiendatud informatsioon andmete kataloogide kasutamisest"
 
 msgid "Print configure options"
-msgstr "Trüki seadistuse valikud"
+msgstr "Trüki häälestuse suvandid"
 
 msgid "Print last working directory to specified file"
 msgstr "Väljasta viimane töökataloog määratud faili"
@@ -678,21 +706,11 @@ msgid ""
 "   color16 to color255, or rgb000 to rgb555 and gray0 to gray23\n"
 "\n"
 "Attributes:\n"
-"   bold, underline, reverse, blink; append more with '+'\n"
+"   bold, italic, underline, reverse, blink; append more with '+'\n"
 msgstr ""
-"Standardvärvid:\n"
-"   black, gray, red, brightred, green, brightgreen, brown,\n"
-"   yellow, blue, brightblue, magenta, brightmagenta, cyan,\n"
-"   brightcyan, lightgray, white\n"
-"\n"
-"Laiendatud värvid, kui 256 värvi on kasutatavad:\n"
-"   color16 - color255, või rgb000 - rgb555 ja gray0 - gray23\n"
-"\n"
-"Tunnused:\n"
-"   bold, underline, reverse, blink; lisamiseks kasuta '+'\n"
 
 msgid "Color options"
-msgstr "Värvi seaded"
+msgstr "Värvi suvandid"
 
 msgid "+number"
 msgstr "+number"
@@ -717,10 +735,10 @@ msgid "GNU Midnight Commander %s\n"
 msgstr "GNU Midnight Commander %s\n"
 
 msgid "Main options"
-msgstr "Põhiseaded"
+msgstr "Põhisuvandid"
 
 msgid "Terminal options"
-msgstr "Terminali seaded"
+msgstr "Terminali suvandid"
 
 msgid "Arguments parse error!"
 msgstr "Parameetrite parsimise viga!"
@@ -731,6 +749,12 @@ msgstr "Vaaturile parameetreid ei antud."
 msgid "Two files are required to evoke the diffviewer."
 msgstr "Erinevuste vaatamiseks on vaja kahte faili."
 
+msgid "Background protocol error"
+msgstr "Tausta protokolli viga"
+
+msgid "Reading failed"
+msgstr "Lugemine ebaõnnestus"
+
 msgid "Background process error"
 msgstr "Taustaprotsessi viga"
 
@@ -739,12 +763,6 @@ msgstr "Tundmatu viga alamprotsessis"
 
 msgid "Child died unexpectedly"
 msgstr "Alamprotsess suri ootamatult"
-
-msgid "Background protocol error"
-msgstr "Tausta protokolli viga"
-
-msgid "Reading failed"
-msgstr "Lugemine ebaõnnestus"
 
 msgid ""
 "Background process sent us a request for more arguments\n"
@@ -813,7 +831,7 @@ msgid "Diff algorithm"
 msgstr "Võrdlusalgoritm"
 
 msgid "Diff extra options"
-msgstr "Võrdluse lisaparameetrid"
+msgstr "Võrdluse lisasuvandid"
 
 msgid "&Ignore case"
 msgstr "Tõstutundet&u"
@@ -831,7 +849,7 @@ msgid "Strip &trailing carriage return"
 msgstr "Eemalda &realõpu kelgu tagasijooks"
 
 msgid "Diff Options"
-msgstr "Võrdluse parameetrid"
+msgstr "Võrdluse suvandid"
 
 msgid "Edit"
 msgstr "Muuda"
@@ -864,7 +882,7 @@ msgid "ButtonBar|Search"
 msgstr "ButtonBar|Otsi"
 
 msgid "ButtonBar|Options"
-msgstr "ButtonBar|Seaded"
+msgstr "ButtonBar|Suvandid"
 
 msgid "ButtonBar|Quit"
 msgstr "ButtonBar|Välju"
@@ -902,62 +920,6 @@ msgstr "Erinevuste vaatur: vale režiim"
 
 msgid "Two files are needed to compare"
 msgstr "Võrdlemiseks on vaja kahte faili"
-
-#, fuzzy
-msgid "Bookmarks"
-msgstr "&Tühjenda kohaviidad"
-
-#, fuzzy
-msgid " - Sort: "
-msgstr "Sorteeri"
-
-msgid "ABC"
-msgstr ""
-
-msgid "FRQ"
-msgstr ""
-
-#, fuzzy
-msgid " - Filter: "
-msgstr "Filter"
-
-msgid "FOUND"
-msgstr ""
-
-msgid "USER"
-msgstr ""
-
-#, fuzzy
-msgid "&Go to"
-msgstr "&Mine reale..."
-
-#, fuzzy
-msgid "&Add"
-msgstr "&Lisa uus"
-
-msgid "&Remove"
-msgstr "&Kustuta"
-
-msgid "Fl&ush"
-msgstr ""
-
-#, fuzzy
-msgid "&Filter"
-msgstr "Filter"
-
-#, fuzzy
-msgid "&Sort"
-msgstr "Sorteeri"
-
-#, fuzzy
-msgid "Re&verse"
-msgstr "&Tagurpidi"
-
-msgid "Bookmark list"
-msgstr ""
-
-msgid "Bookmark detail"
-msgstr ""
 
 msgid "Choose syntax highlighting"
 msgstr "Valsi süntaksi esiletoomine"
@@ -1217,7 +1179,7 @@ msgid "Run sort"
 msgstr "Räivita sortimine"
 
 msgid "Enter sort options (see manpage) separated by whitespace:"
-msgstr "Sisesta sortimise parameetrid (loe manuaalist) tüheikutega eraldatult:"
+msgstr "Sisesta sortimise suvandid tühikutega eraldatult (vaata manuaali):"
 
 msgid "Sort"
 msgstr "Sorteeri"
@@ -1490,7 +1452,7 @@ msgid "Save &mode..."
 msgstr "&Salvestusrežiim..."
 
 msgid "Learn &keys..."
-msgstr "&Klahvide õppimine..."
+msgstr "K&lahvide õppimine..."
 
 msgid "Syntax &highlighting..."
 msgstr "Süntaksi &esiletõstmine..."
@@ -1502,7 +1464,7 @@ msgid "&Menu file"
 msgstr "&Menüü fail"
 
 msgid "&Save setup"
-msgstr "&Salvesta seaded"
+msgstr "&Salvesta häälestus"
 
 msgid "&File"
 msgstr "&Fail"
@@ -1523,7 +1485,7 @@ msgid "&Window"
 msgstr "&Aken"
 
 msgid "&Options"
-msgstr "&Seaded"
+msgstr "&Suvandid"
 
 msgid "&None"
 msgstr "&Puudub"
@@ -1553,7 +1515,7 @@ msgid "Tab spacing:"
 msgstr "Tabulaatori pikkus:"
 
 msgid "Other options"
-msgstr "Muud seaded"
+msgstr "Muud suvandid"
 
 msgid "&Return does autoindent"
 msgstr "&Return trepib automaatselt"
@@ -1589,7 +1551,7 @@ msgid "Word wrap line length:"
 msgstr "Sõna täpsusega reavahetuse rea pikkus:"
 
 msgid "Editor options"
-msgstr "Redaktori seaded"
+msgstr "Redaktori suvandid"
 
 msgid ""
 "A user friendly text editor\n"
@@ -1598,8 +1560,8 @@ msgstr ""
 "Kasutajasõbralik tekstitoimeti, mis\n"
 "on loodud Midnight Commanderile."
 
-msgid "Copyright (C) 1996-2014 the Free Software Foundation"
-msgstr "Autoriõigus (C) 1996-2014 Free Software Foundation"
+msgid "Copyright (C) 1996-2015 the Free Software Foundation"
+msgstr ""
 
 msgid "About"
 msgstr "Programmist"
@@ -1794,6 +1756,12 @@ msgstr ""
 "\"%s\" omaniku vahetus nurjus:\n"
 "%s"
 
+msgid "< Default >"
+msgstr "< Vaikimisi >"
+
+msgid "Skins"
+msgstr "Nahad"
+
 msgid "Other 8 bit"
 msgstr "Muu 8-bitine"
 
@@ -1846,7 +1814,7 @@ msgid "Use internal edi&t"
 msgstr "Kasuta sisemist &toimetit"
 
 msgid "Use internal vie&w"
-msgstr "Kasuta sisemist k&uvajat"
+msgstr "Kasuta sisemist &vaaturit"
 
 msgid "A&sk new file name"
 msgstr "Küsi &uue faili nime"
@@ -1876,13 +1844,7 @@ msgid "A&uto save setup"
 msgstr "Seadete a&utomaatsalvestus"
 
 msgid "Configure options"
-msgstr "Valikute seadistamine"
-
-msgid "< Default >"
-msgstr "< Vaikimisi >"
-
-msgid "Skins"
-msgstr "Nahad"
+msgstr "Häälestuse suvandid"
 
 msgid "Skin:"
 msgstr "Nahk:"
@@ -1918,7 +1880,7 @@ msgid "Ma&rk moves down"
 msgstr "Mä&rkimine liigutab alla"
 
 msgid "Re&verse files only"
-msgstr "&Tagurpidi ainult failid"
+msgstr "&Pööra ainult failid"
 
 msgid "Simple s&wap"
 msgstr "&Lihtne vahetus"
@@ -1951,7 +1913,7 @@ msgid "Quick search"
 msgstr "Kiirotsing"
 
 msgid "Panel options"
-msgstr "Paneeli seaded"
+msgstr "Paneeli suvandid"
 
 msgid "Information"
 msgstr "Informatsioon"
@@ -2994,6 +2956,9 @@ msgstr "Uus &Kirje"
 msgid "&Insert"
 msgstr "&Sisesta"
 
+msgid "&Remove"
+msgstr "&Kustuta"
+
 msgid "Subgroup - press ENTER to see list"
 msgstr "Alamgrupp - loendi nägemiseks vajuta ENTER"
 
@@ -3156,7 +3121,7 @@ msgid "&Keybar visible"
 msgstr "&Klahviriba nähtav"
 
 msgid "H&intbar visible"
-msgstr "V&ihjeid kuvatakse"
+msgstr "V&ihjed nähtaval"
 
 msgid "&XTerm window title"
 msgstr "&XTermi akna tiitel"
@@ -3183,7 +3148,7 @@ msgid "Layout"
 msgstr "Kujundus"
 
 msgid "File listin&g"
-msgstr "Failide &loend"
+msgstr "F&ailide loend"
 
 msgid "&Quick view"
 msgstr "&Kiirvaade"
@@ -3192,22 +3157,22 @@ msgid "&Info"
 msgstr "&Info"
 
 msgid "&Listing mode..."
-msgstr "&Loendi režiim..."
+msgstr "L&oendi režiim..."
 
 msgid "&Sort order..."
 msgstr "&Sortimine..."
 
 msgid "&Filter..."
-msgstr "&Filtreerimine..."
+msgstr "Filtreeri&mine..."
 
 msgid "&Encoding..."
-msgstr "&Kodeerimine..."
+msgstr "Ko&deerimine..."
 
 msgid "FT&P link..."
 msgstr "F&TP ühendus..."
 
 msgid "S&hell link..."
-msgstr "&Kesta ühendus..."
+msgstr "K&esta ühendus..."
 
 msgid "S&FTP link..."
 msgstr "S&FTP ühendus..."
@@ -3216,34 +3181,34 @@ msgid "SM&B link..."
 msgstr "SM&B ühendus..."
 
 msgid "Paneli&ze"
-msgstr "&Paneelile"
+msgstr "Pa&neelile"
 
 msgid "&Rescan"
-msgstr "&Kordusskannimine"
+msgstr "Ko&rdusskannimine"
 
 msgid "&View"
-msgstr "&Vaata"
+msgstr "V&aata"
 
 msgid "Vie&w file..."
-msgstr "&Kuva faili..."
+msgstr "Vaa&ta faili..."
 
 msgid "&Filtered view"
 msgstr "&Filtreeritud vaade"
 
 msgid "&Copy"
-msgstr "&Kopeeri"
+msgstr "Ko&peeri"
 
 msgid "C&hmod"
-msgstr "Õiguste muutmine"
+msgstr "Õi&guste muutmine"
 
 msgid "&Link"
 msgstr "&Jäikviit"
 
 msgid "&Symlink"
-msgstr "Ab&soluutne nimeviit"
+msgstr "A&bsoluutne nimeviit"
 
 msgid "Relative symlin&k"
-msgstr "Suhteline nime&viit"
+msgstr "&Suhteline nimeviit"
 
 msgid "Edit s&ymlink"
 msgstr "Muuda &nimeviita"
@@ -3252,34 +3217,34 @@ msgid "Ch&own"
 msgstr "Muuda &omanik"
 
 msgid "&Advanced chown"
-msgstr "&Täpsem omaniku muutmine"
+msgstr "Täpsem omani&ku muutmine"
 
 msgid "&Rename/Move"
-msgstr "&Teisalda/nimeta"
+msgstr "Teisal&da/nimeta"
 
 msgid "&Mkdir"
 msgstr "&Loo kataloog"
 
 msgid "&Quick cd"
-msgstr "&Kiire kataloogi vahetus"
+msgstr "K&iire kataloogi vahetus"
 
 msgid "Select &group"
-msgstr "Vali &grupp"
+msgstr "Vali g&rupp"
 
 msgid "U&nselect group"
-msgstr "Tühista &grupi valik"
+msgstr "Tü&hista grupi valik"
 
 msgid "&Invert selection"
-msgstr "&Vaheta valik"
+msgstr "Vah&eta valik"
 
 msgid "E&xit"
 msgstr "&Välju"
 
 msgid "&User menu"
-msgstr "&Kasutaja menüü"
+msgstr "Kas&utaja menüü"
 
 msgid "&Directory tree"
-msgstr "&Kataloogipuu"
+msgstr "Kataloogi&puu"
 
 msgid "&Find file"
 msgstr "&Failide otsimine"
@@ -3288,37 +3253,37 @@ msgid "S&wap panels"
 msgstr "&Vaheta paneelid"
 
 msgid "Switch &panels on/off"
-msgstr "Kuva/peida &paneelid"
+msgstr "&Kuva/peida paneelid"
 
 msgid "&Compare directories"
-msgstr "Kataloogide &võrdlemine"
+msgstr "Kataloogi&de võrdlemine"
 
 msgid "C&ompare files"
 msgstr "Võ&rdle faile"
 
 msgid "E&xternal panelize"
-msgstr "Väliskäsk paneelile"
+msgstr "Väliskäsk pa&neelile"
 
 msgid "Show directory s&izes"
 msgstr "Kuva kataloogide &suurused"
 
 msgid "Command &history"
-msgstr "Käskude &ajalugu"
+msgstr "Käskude a&jalugu"
 
 msgid "Di&rectory hotlist"
-msgstr "&Kataloogide kiirvalik"
+msgstr "Katal&oogide kiirvalik"
 
 msgid "&Active VFS list"
-msgstr "&Aktiivsete VFSde loend"
+msgstr "Akt&iivsete VFSde loend"
 
 msgid "&Background jobs"
 msgstr "&Tööd taustal"
 
 msgid "Screen lis&t"
-msgstr "Ekraanide loend"
+msgstr "&Ekraanide loend"
 
 msgid "&Undelete files (ext2fs only)"
-msgstr "&Failide taastamine (ainult ext2fs)"
+msgstr "F&ailide taastamine (ainult ext2fs)"
 
 msgid "&Listing format edit"
 msgstr "&Loend vorminduse muutmine"
@@ -3330,28 +3295,28 @@ msgid "Edit &menu file"
 msgstr "Muuda &menüü faili"
 
 msgid "Edit hi&ghlighting group file"
-msgstr "Muuda &esiletõstu grupi faili"
+msgstr "Muuda esiletõstu &grupi faili"
 
 msgid "&Configuration..."
-msgstr "&Seadistus..."
+msgstr "&Häälestus..."
 
 msgid "&Layout..."
 msgstr "&Kujundus..."
 
 msgid "&Panel options..."
-msgstr "P&aneeli seaded..."
+msgstr "&Paneeli häälestus..."
 
 msgid "C&onfirmation..."
-msgstr "&Kinnituste küsimine..."
+msgstr "K&innitused..."
 
 msgid "&Appearance..."
 msgstr "&Välimus..."
 
 msgid "&Display bits..."
-msgstr "&Kuva bitid"
+msgstr "K&uva bitid"
 
 msgid "&Virtual FS..."
-msgstr "&Virtuaalne FS..."
+msgstr "Vi&rtuaalne FS..."
 
 msgid "Panels:"
 msgstr "Paneelid:"
@@ -3667,14 +3632,6 @@ msgid "The %%var macro has no variable"
 msgstr "Makrol %%var puudub muutuja"
 
 #, c-format
-msgid ""
-"Cannot open file%s\n"
-"%s"
-msgstr ""
-"Faili %s avamine nurjus\n"
-"%s"
-
-#, c-format
 msgid "No suitable entries found in %s"
 msgstr "Failist %s ei leitud sobivaid kirjeid"
 
@@ -3685,7 +3642,7 @@ msgid "Help file format error\n"
 msgstr "Abi failivorminduse viga\n"
 
 msgid "Internal bug: Double start of link area"
-msgstr "Sisemine viga: viida ala on topeltalgus"
+msgstr "Sisemine viga: viida ala topeltalgus"
 
 #, c-format
 msgid "Cannot find node %s in help file"
@@ -4077,7 +4034,7 @@ msgid "ftpfs: could not create socket: %s"
 msgstr "ftpfs: sokli loomine ebaõnnestus: %s"
 
 msgid "ftpfs: could not setup passive mode"
-msgstr "ftpfs: passiivse režiimi häälestamine ebaõnnestus"
+msgstr "ftpfs: passiivse režiimi seadistamine nurjus"
 
 msgid "ftpfs: aborting transfer."
 msgstr "ftpfs: ülekanne katkestatud."
@@ -4333,14 +4290,8 @@ msgstr ""
 "Midnight Commander on sulgumas.\n"
 "Kas salvestada muudetud fail?"
 
-msgid "Cannot spawn child process"
-msgstr "Alamprotsessi loomine nurjus"
-
-msgid "Empty output from child filter"
-msgstr "Alamprotsessi filter ei väljastanud mitte midagi"
-
 msgid "&Line number"
-msgstr ""
+msgstr "&Rea number"
 
 msgid "Pe&rcents"
 msgstr "P&rotsendid"
@@ -4383,6 +4334,14 @@ msgstr "ButtonBar|Vormita"
 
 msgid "ButtonBar|Format"
 msgstr "ButtonBar|Vormiga"
+
+#, c-format
+msgid ""
+"Failed to read data from child stdout:\n"
+"%s"
+msgstr ""
+"Nurjus tütre std. väljundist andmete lugemine:\n"
+"%s"
 
 #, c-format
 msgid ""
@@ -4432,6 +4391,3 @@ msgstr "Kas jätkata algusest?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr "Kohaliku koopia hankimine failist /ftp://some.host/editme.txt nurjus"
-
-#~ msgid "sftp: Invalid port value."
-#~ msgstr "sftp: vigane pordi väärtus."

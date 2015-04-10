@@ -13,8 +13,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2014-09-04 16:51+0300\n"
-"PO-Revision-Date: 2014-09-04 10:10+0000\n"
+"POT-Creation-Date: 2015-03-20 21:10+0300\n"
+"PO-Revision-Date: 2015-02-26 09:48+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Chinese (China) (http://www.transifex.com/projects/p/mc/"
 "language/zh_CN/)\n"
@@ -354,6 +354,9 @@ msgstr "撇号"
 msgid "Colon"
 msgstr "冒号"
 
+msgid "Semicolon"
+msgstr ""
+
 msgid "Exclamation mark"
 msgstr "感叹号"
 
@@ -449,6 +452,27 @@ msgid ""
 msgstr ""
 "不支持屏幕大小 %dx%d。\n"
 "检查 TERM 环境变量。\n"
+
+msgid "Cannot create pipe descriptor"
+msgstr ""
+
+msgid "Cannot parse command for pipe"
+msgstr ""
+
+msgid "Cannot create pipe streams"
+msgstr ""
+
+#, c-format
+msgid ""
+"Unexpected error in select() reading data from a child process:\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
+"Unexpected error in waitpid():\n"
+"%s"
+msgstr ""
 
 msgid "Warning"
 msgstr "警告"
@@ -664,18 +688,8 @@ msgid ""
 "   color16 to color255, or rgb000 to rgb555 and gray0 to gray23\n"
 "\n"
 "Attributes:\n"
-"   bold, underline, reverse, blink; append more with '+'\n"
+"   bold, italic, underline, reverse, blink; append more with '+'\n"
 msgstr ""
-"标准颜色: \n"
-"   black, gray, red, brightred, green, brightgreen, brown,\n"
-"   yellow, blue, brightblue, magenta, brightmagenta, cyan,\n"
-"   brightcyan, lightgray and white\n"
-"\n"
-"扩展颜色，当256色可用时: \n"
-"   color16 到 color255，或者 rgb000 到 rgb555 或者 gray0 到 gray23\n"
-"\n"
-"属性: \n"
-"   bold, underline, reverse, blink; 添加更多用 “+”\n"
 
 msgid "Color options"
 msgstr "颜色选项"
@@ -717,6 +731,12 @@ msgstr "查看器没有指定参数。"
 msgid "Two files are required to evoke the diffviewer."
 msgstr "两个文件需要调用差异查看器。"
 
+msgid "Background protocol error"
+msgstr "后台协议错误"
+
+msgid "Reading failed"
+msgstr "读失败"
+
 msgid "Background process error"
 msgstr "后台进程错误"
 
@@ -725,12 +745,6 @@ msgstr "子进程未知错误"
 
 msgid "Child died unexpectedly"
 msgstr "子进程异常退出"
-
-msgid "Background protocol error"
-msgstr "后台协议错误"
-
-msgid "Reading failed"
-msgstr "读失败"
 
 msgid ""
 "Background process sent us a request for more arguments\n"
@@ -888,62 +902,6 @@ msgstr "Diff 查看器: 模式无效"
 
 msgid "Two files are needed to compare"
 msgstr "比较时需要两个文件"
-
-#, fuzzy
-msgid "Bookmarks"
-msgstr "清理书签(&F)"
-
-#, fuzzy
-msgid " - Sort: "
-msgstr "排序"
-
-msgid "ABC"
-msgstr ""
-
-msgid "FRQ"
-msgstr ""
-
-#, fuzzy
-msgid " - Filter: "
-msgstr "过滤"
-
-msgid "FOUND"
-msgstr ""
-
-msgid "USER"
-msgstr ""
-
-#, fuzzy
-msgid "&Go to"
-msgstr "转到行(&G)..."
-
-#, fuzzy
-msgid "&Add"
-msgstr "添加新(&A)"
-
-msgid "&Remove"
-msgstr "删除(&R)"
-
-msgid "Fl&ush"
-msgstr ""
-
-#, fuzzy
-msgid "&Filter"
-msgstr "过滤"
-
-#, fuzzy
-msgid "&Sort"
-msgstr "排序"
-
-#, fuzzy
-msgid "Re&verse"
-msgstr "反向(&R)"
-
-msgid "Bookmark list"
-msgstr ""
-
-msgid "Bookmark detail"
-msgstr ""
 
 msgid "Choose syntax highlighting"
 msgstr "选择语法突出显示"
@@ -1584,7 +1542,7 @@ msgstr ""
 "为 Midnight Commander 编写的\n"
 "一个界面友好的文本编辑器。"
 
-msgid "Copyright (C) 1996-2014 the Free Software Foundation"
+msgid "Copyright (C) 1996-2015 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -1780,6 +1738,12 @@ msgstr ""
 "无法 chown“%s”\n"
 "%s"
 
+msgid "< Default >"
+msgstr ""
+
+msgid "Skins"
+msgstr ""
+
 msgid "Other 8 bit"
 msgstr "其它 8 位"
 
@@ -1863,12 +1827,6 @@ msgstr "自动保存设置(&U)"
 
 msgid "Configure options"
 msgstr "配置选项"
-
-msgid "< Default >"
-msgstr ""
-
-msgid "Skins"
-msgstr ""
 
 msgid "Skin:"
 msgstr ""
@@ -2979,6 +2937,9 @@ msgstr "新建项(&E)"
 msgid "&Insert"
 msgstr "插入(&I)"
 
+msgid "&Remove"
+msgstr "删除(&R)"
+
 msgid "Subgroup - press ENTER to see list"
 msgstr "子组－按 ENTER 查看列表"
 
@@ -3648,14 +3609,6 @@ msgid "The %%var macro has no variable"
 msgstr "%%var 宏没有变量"
 
 #, c-format
-msgid ""
-"Cannot open file%s\n"
-"%s"
-msgstr ""
-"无法打开文件 %s\n"
-"%s"
-
-#, c-format
 msgid "No suitable entries found in %s"
 msgstr "在 %s 没有找到相应的项"
 
@@ -4314,12 +4267,6 @@ msgstr ""
 "Midnight Commander 即将被关闭。\n"
 "要保存修改过的文件吗?"
 
-msgid "Cannot spawn child process"
-msgstr "无法生成子进程"
-
-msgid "Empty output from child filter"
-msgstr "子过滤器输出为空"
-
 msgid "&Line number"
 msgstr ""
 
@@ -4364,6 +4311,12 @@ msgstr "ButtonBar|未格式化"
 
 msgid "ButtonBar|Format"
 msgstr "ButtonBar|格式化"
+
+#, c-format
+msgid ""
+"Failed to read data from child stdout:\n"
+"%s"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -4413,6 +4366,3 @@ msgstr "从头继续搜索?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr "无法获取 /ftp://some.host/editme.txt 的本地副本"
-
-#~ msgid "sftp: Invalid port value."
-#~ msgstr "sftp: 无效的端口值。"

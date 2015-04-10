@@ -11,8 +11,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2014-09-04 16:51+0300\n"
-"PO-Revision-Date: 2014-09-04 10:10+0000\n"
+"POT-Creation-Date: 2015-03-20 21:10+0300\n"
+"PO-Revision-Date: 2015-02-26 09:48+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Japanese (http://www.transifex.com/projects/p/mc/language/"
 "ja/)\n"
@@ -343,6 +343,9 @@ msgstr "アポストロフィ"
 msgid "Colon"
 msgstr "コロン"
 
+msgid "Semicolon"
+msgstr ""
+
 msgid "Exclamation mark"
 msgstr "感嘆符（！）"
 
@@ -438,6 +441,27 @@ msgid ""
 msgstr ""
 "スクリーンサイズ %dx%d はサポートされていません\n"
 "TERM環境変数の値をチェックしてください\n"
+
+msgid "Cannot create pipe descriptor"
+msgstr ""
+
+msgid "Cannot parse command for pipe"
+msgstr ""
+
+msgid "Cannot create pipe streams"
+msgstr ""
+
+#, c-format
+msgid ""
+"Unexpected error in select() reading data from a child process:\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
+"Unexpected error in waitpid():\n"
+"%s"
+msgstr ""
 
 msgid "Warning"
 msgstr "警告"
@@ -653,7 +677,7 @@ msgid ""
 "   color16 to color255, or rgb000 to rgb555 and gray0 to gray23\n"
 "\n"
 "Attributes:\n"
-"   bold, underline, reverse, blink; append more with '+'\n"
+"   bold, italic, underline, reverse, blink; append more with '+'\n"
 msgstr ""
 
 msgid "Color options"
@@ -693,6 +717,12 @@ msgstr ""
 msgid "Two files are required to evoke the diffviewer."
 msgstr ""
 
+msgid "Background protocol error"
+msgstr ""
+
+msgid "Reading failed"
+msgstr ""
+
 msgid "Background process error"
 msgstr ""
 
@@ -700,12 +730,6 @@ msgid "Unknown error in child"
 msgstr ""
 
 msgid "Child died unexpectedly"
-msgstr ""
-
-msgid "Background protocol error"
-msgstr ""
-
-msgid "Reading failed"
 msgstr ""
 
 msgid ""
@@ -850,62 +874,6 @@ msgid "Diff viewer: invalid mode"
 msgstr ""
 
 msgid "Two files are needed to compare"
-msgstr ""
-
-#, fuzzy
-msgid "Bookmarks"
-msgstr "次のブックマーク(&N)"
-
-#, fuzzy
-msgid " - Sort: "
-msgstr "並び替え"
-
-msgid "ABC"
-msgstr ""
-
-msgid "FRQ"
-msgstr ""
-
-#, fuzzy
-msgid " - Filter: "
-msgstr "フィルター"
-
-msgid "FOUND"
-msgstr ""
-
-msgid "USER"
-msgstr ""
-
-#, fuzzy
-msgid "&Go to"
-msgstr "行移動(&G)..."
-
-#, fuzzy
-msgid "&Add"
-msgstr "新規追加(&A)"
-
-msgid "&Remove"
-msgstr "削除(&R)"
-
-msgid "Fl&ush"
-msgstr ""
-
-#, fuzzy
-msgid "&Filter"
-msgstr "フィルター"
-
-#, fuzzy
-msgid "&Sort"
-msgstr "並び替え"
-
-#, fuzzy
-msgid "Re&verse"
-msgstr "反転(&R)"
-
-msgid "Bookmark list"
-msgstr ""
-
-msgid "Bookmark detail"
 msgstr ""
 
 msgid "Choose syntax highlighting"
@@ -1535,7 +1503,7 @@ msgid ""
 "written for the Midnight Commander."
 msgstr ""
 
-msgid "Copyright (C) 1996-2014 the Free Software Foundation"
+msgid "Copyright (C) 1996-2015 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -1726,6 +1694,12 @@ msgid ""
 "%s"
 msgstr ""
 
+msgid "< Default >"
+msgstr ""
+
+msgid "Skins"
+msgstr ""
+
 msgid "Other 8 bit"
 msgstr "別の 8bit"
 
@@ -1809,12 +1783,6 @@ msgstr "自動保存の設定(&U)"
 
 msgid "Configure options"
 msgstr "設定オプション"
-
-msgid "< Default >"
-msgstr ""
-
-msgid "Skins"
-msgstr ""
 
 msgid "Skin:"
 msgstr ""
@@ -2836,6 +2804,9 @@ msgstr "新しいエントリー(&E)"
 msgid "&Insert"
 msgstr "挿入(&I)"
 
+msgid "&Remove"
+msgstr "削除(&R)"
+
 msgid "Subgroup - press ENTER to see list"
 msgstr "サブグループ - ENTER を押せばリストが表示されます"
 
@@ -3499,12 +3470,6 @@ msgid "The %%var macro has no variable"
 msgstr ""
 
 #, c-format
-msgid ""
-"Cannot open file%s\n"
-"%s"
-msgstr ""
-
-#, c-format
 msgid "No suitable entries found in %s"
 msgstr ""
 
@@ -4137,12 +4102,6 @@ msgid ""
 "Save modified file?"
 msgstr ""
 
-msgid "Cannot spawn child process"
-msgstr ""
-
-msgid "Empty output from child filter"
-msgstr ""
-
 msgid "&Line number"
 msgstr ""
 
@@ -4186,6 +4145,12 @@ msgid "ButtonBar|Unform"
 msgstr ""
 
 msgid "ButtonBar|Format"
+msgstr ""
+
+#, c-format
+msgid ""
+"Failed to read data from child stdout:\n"
+"%s"
 msgstr ""
 
 #, c-format

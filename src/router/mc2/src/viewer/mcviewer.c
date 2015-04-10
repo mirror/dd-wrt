@@ -2,7 +2,7 @@
    Internal file viewer for the Midnight Commander
    Interface functions
 
-   Copyright (C) 1994-2014
+   Copyright (C) 1994-2015
    Free Software Foundation, Inc
 
    Written by:
@@ -325,6 +325,7 @@ mcview_load (mcview_t * view, const char *command, const char *file, int start_l
         {
             g_snprintf (tmp, sizeof (tmp), _("Cannot open \"%s\"\n%s"),
                         file, unix_error_string (errno));
+            mcview_close_datasource (view);
             mcview_show_error (view, tmp);
             vfs_path_free (view->filename_vpath);
             view->filename_vpath = NULL;
@@ -339,6 +340,7 @@ mcview_load (mcview_t * view, const char *command, const char *file, int start_l
             mc_close (fd);
             g_snprintf (tmp, sizeof (tmp), _("Cannot stat \"%s\"\n%s"),
                         file, unix_error_string (errno));
+            mcview_close_datasource (view);
             mcview_show_error (view, tmp);
             vfs_path_free (view->filename_vpath);
             view->filename_vpath = NULL;
@@ -350,6 +352,7 @@ mcview_load (mcview_t * view, const char *command, const char *file, int start_l
         if (!S_ISREG (st.st_mode))
         {
             mc_close (fd);
+            mcview_close_datasource (view);
             mcview_show_error (view, _("Cannot view: not a regular file"));
             vfs_path_free (view->filename_vpath);
             view->filename_vpath = NULL;
@@ -382,6 +385,7 @@ mcview_load (mcview_t * view, const char *command, const char *file, int start_l
                 {
                     g_snprintf (tmp, sizeof (tmp), _("Cannot open \"%s\" in parse mode\n%s"),
                                 file, unix_error_string (errno));
+                    mcview_close_datasource (view);
                     mcview_show_error (view, tmp);
                 }
                 else
@@ -402,6 +406,10 @@ mcview_load (mcview_t * view, const char *command, const char *file, int start_l
   finish:
     view->command = g_strdup (command);
     view->dpy_start = 0;
+    view->dpy_paragraph_skip_lines = 0;
+    mcview_state_machine_init (&view->dpy_state_top, 0);
+    view->dpy_wrap_dirty = FALSE;
+    view->force_max = -1;
     view->search_start = 0;
     view->search_end = 0;
     view->dpy_text_column = 0;
@@ -421,7 +429,10 @@ mcview_load (mcview_t * view, const char *command, const char *file, int start_l
         else
             new_offset = min (new_offset, max_offset);
         if (!view->hex_mode)
+        {
             view->dpy_start = mcview_bol (view, new_offset, 0);
+            view->dpy_wrap_dirty = TRUE;
+        }
         else
         {
             view->dpy_start = new_offset - new_offset % view->bytes_per_line;

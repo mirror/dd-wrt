@@ -1,7 +1,7 @@
 /*
    Main dialog (file panels) of the Midnight Commander
 
-   Copyright (C) 1994-2014
+   Copyright (C) 1994-2015
    Free Software Foundation, Inc.
 
    Written by:
@@ -736,7 +736,7 @@ midnight_put_panel_path (WPanel * panel)
 
     command_insert (cmdline, cwd_vpath_str, FALSE);
 
-    if (cwd_vpath_str[strlen (cwd_vpath_str) - 1] != PATH_SEP)
+    if (!IS_PATH_SEP (cwd_vpath_str[strlen (cwd_vpath_str) - 1]))
         command_insert (cmdline, PATH_SEP_STR, FALSE);
 
     vfs_path_free (cwd_vpath);
@@ -1459,6 +1459,16 @@ midnight_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void
         if (parm == '\n')
         {
             size_t i;
+
+            /* HACK: don't execute command in the command line if Enter was pressed
+               in the quick viewer panel. */
+            /* TODO: currently, when one of panels is other than view_listing,
+               current_panel points to view_listing panel all time independently of
+               it's activity. Thus, we can't use get_current_type() here.
+               current_panel should point to actualy current active panel
+               independently of it's type. */
+            if (current_panel->active == 0 && get_other_type () == view_quick)
+                return MSG_NOT_HANDLED;
 
             for (i = 0; cmdline->buffer[i] != '\0' &&
                  (cmdline->buffer[i] == ' ' || cmdline->buffer[i] == '\t'); i++)
