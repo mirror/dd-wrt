@@ -1511,10 +1511,12 @@ static void sdhci_do_set_ios(struct sdhci_host *host, struct mmc_ios *ios)
 
 	ctrl = sdhci_readb(host, SDHCI_HOST_CONTROL);
 
+#ifdef CONFIG_ARCH_CNS3XXX
 	if (ios->bus_width == MMC_BUS_WIDTH_8) //jacky for eMMC
 		ctrl |= (0x1 << 5);//CNS34xxx proprietary
 	else
 		ctrl &= ~(0x1 << 5);
+#endif
 
 	if ((ios->timing == MMC_TIMING_SD_HS ||
 	     ios->timing == MMC_TIMING_MMC_HS)
