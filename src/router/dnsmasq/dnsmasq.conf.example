@@ -486,6 +486,9 @@
 # Set the root directory for files available via FTP.
 #tftp-root=/var/ftpd
 
+# Do not abort if the tftp-root is unavailable
+#tftp-no-fail
+
 # Make the TFTP server more secure: with this set, only files owned by
 # the user dnsmasq is running as will be send over the net.
 #tftp-secure

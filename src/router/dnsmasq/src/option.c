@@ -153,6 +153,7 @@ struct myoption {
 #define LOPT_DHOPT_INOTIFY 341
 #define LOPT_HOST_INOTIFY  342
 #define LOPT_DNSSEC_STAMP  343
+#define LOPT_TFTP_NO_FAIL  344
 
 #ifdef HAVE_GETOPT_LONG
 static const struct option opts[] =  
@@ -235,6 +236,7 @@ static const struct myoption opts[] =
     { "dhcp-ignore-names", 2, 0, LOPT_NO_NAMES },
     { "enable-tftp", 2, 0, LOPT_TFTP },
     { "tftp-secure", 0, 0, LOPT_SECURE },
+    { "tftp-no-fail", 0, 0, LOPT_TFTP_NO_FAIL },
     { "tftp-unique-root", 0, 0, LOPT_APREF },
     { "tftp-root", 1, 0, LOPT_PREFIX },
     { "tftp-max", 1, 0, LOPT_TFTP_MAX },
@@ -419,6 +421,7 @@ static struct {
   { LOPT_PREFIX, ARG_DUP, "<dir>[,<iface>]", gettext_noop("Export files by TFTP only from the specified subtree."), NULL },
   { LOPT_APREF, OPT_TFTP_APREF, NULL, gettext_noop("Add client IP address to tftp-root."), NULL },
   { LOPT_SECURE, OPT_TFTP_SECURE, NULL, gettext_noop("Allow access only to files owned by the user running dnsmasq."), NULL },
+  { LOPT_TFTP_NO_FAIL, OPT_TFTP_NO_FAIL, NULL, gettext_noop("Do not terminate the service if TFTP directories are inaccessible."), NULL },
   { LOPT_TFTP_MAX, ARG_ONE, "<integer>", gettext_noop("Maximum number of conncurrent TFTP transfers (defaults to %s)."), "#" },
   { LOPT_NOBLOCK, OPT_TFTP_NOBLOCK, NULL, gettext_noop("Disable the TFTP blocksize extension."), NULL },
   { LOPT_TFTP_LC, OPT_TFTP_LC, NULL, gettext_noop("Convert TFTP filenames to lowercase"), NULL },
