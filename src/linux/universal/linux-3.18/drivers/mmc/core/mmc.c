@@ -1270,7 +1270,7 @@ static int mmc_init_card(struct mmc_host *host, u32 ocr,
 	mmc_go_idle(host);
 
 	/* The extra bit indicates that we support high capacity */
-	err = mmc_send_op_cond(host, ocr , &rocr);
+	err = mmc_send_op_cond(host, ocr | (1 << 30), &rocr);
 	if (err)
 		goto err;
 
@@ -1883,10 +1883,11 @@ int mmc_attach_mmc(struct mmc_host *host)
 
 	mmc_attach_bus(host, &mmc_ops);
 
+#ifdef CONFIG_ARCH_CNS3XXX
 //Jacky for eMMC capabilities
 	host->caps   |= (MMC_CAP_4_BIT_DATA | MMC_CAP_8_BIT_DATA);
         host->caps   |= MMC_CAP_MMC_HIGHSPEED;
-
+#endif
 	if (host->ocr_avail_mmc)
 		host->ocr_avail = host->ocr_avail_mmc;
 
