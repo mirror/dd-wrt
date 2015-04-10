@@ -131,19 +131,19 @@ void start_sysinit(void)
 	char *board2 = nvram_safe_get("DD_BOARD2");
 	if (!strncmp(board, "Gateworks Ventana GW54", 22)
 	    || !strncmp(board2, "Gateworks Ventana GW54", 22))
-		sysprintf("gsp_updater -f /etc/gsc_5400_v44.txt 44");
+		eval("gsp_updater", "-f", "/etc/gsc_5400_v44.txt", "44");
 
 	if (!strncmp(board, "Gateworks Ventana GW53", 22)
 	    || !strncmp(board2, "Gateworks Ventana GW53", 22))
-		sysprintf("gsp_updater -f /etc/gsc_5300_v44.txt 44");
+		eval("gsp_updater", "-f", "/etc/gsc_5300_v44.txt", "44");
 
 	if (!strncmp(board, "Gateworks Ventana GW52", 22)
 	    || !strncmp(board2, "Gateworks Ventana GW52", 22))
-		sysprintf("gsp_updater -f /etc/gsc_5200_v44.txt 44");
+		eval("gsp_updater", "-f", "/etc/gsc_5200_v44.txt", "44");
 
 	if (!strncmp(board, "Gateworks Ventana GW51", 22)
 	    || !strncmp(board2, "Gateworks Ventana GW51", 22))
-		sysprintf("gsp_updater -f /etc/gsc_5100_v44.txt 44");
+		eval("gsp_updater", "-f", "/etc/gsc_5100_v44.txt", "44");
 
 	led_control(LED_POWER, LED_ON);
 	led_control(LED_DIAG, LED_OFF);

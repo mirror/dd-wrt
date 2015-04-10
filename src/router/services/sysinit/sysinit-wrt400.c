@@ -81,13 +81,13 @@ void start_sysinit(void)
 		int copy[6];
 		int i;
 #ifdef HAVE_WNDR3700
-		system("swconfig dev rtl8366s set reset 1");
-		system("swconfig dev rtl8366s set enable_vlan 0");
-		system("swconfig dev rtl8366s set blinkrate 2");
-		system("swconfig dev rtl8366s port 1 set led 9");
-		system("swconfig dev rtl8366s port 2 set led 6");
-		system("swconfig dev rtl8366s port 5 set led 2");
-		system("swconfig dev rtl8366s set apply");
+		eval("swconfig", "dev", "rtl8366s", "set", "reset", "1");
+		eval("swconfig", "dev", "rtl8366s", "set", "enable_vlan", "0");
+		eval("swconfig", "dev", "rtl8366s", "set", "blinkrate", "2");
+		eval("swconfig", "dev", "rtl8366s", "port", "1", "set", "led 9");
+		eval("swconfig", "dev", "rtl8366s", "port", "2", "set", "led 6");
+		eval("swconfig", "dev", "rtl8366s", "port", "5", "set", "led 2");
+		eval("swconfig", "dev", "rtl8366s", "set", "apply");
 
 #ifdef HAVE_WNDR3700V2
 		fseek(fp, 0xff0000, SEEK_SET);
@@ -114,10 +114,10 @@ void start_sysinit(void)
 			copy[i] &= 0xff;
 		sprintf(wmac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 #elif HAVE_WZRHPAG300NH
-		system("swconfig dev eth0 set reset 1");
-		system("swconfig dev eth0 set enable_vlan 0");
-		system("swconfig dev eth0 vlan 1 set ports \"0 1 2 3 4\"");
-		system("swconfig dev eth0 set apply");
+		eval("swconfig", "dev", "eth0", "set", "reset", "1");
+		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
+		eval("swconfig", "dev", "eth0", "vlan", "1", "set ports", "0 1 2 3 4");
+		eval("swconfig", "dev", "eth0", "set", "apply");
 		fseek(fp, 0x5120C, SEEK_SET);
 		fread(mactmp, 6, 1, fp);
 		fclose(fp);
@@ -131,7 +131,7 @@ void start_sysinit(void)
 //              eval("gpio","enable","2");
 #elif HAVE_WZRG300NH2
 #ifndef HAVE_WZR300HP
-		sysprintf("startservice bootloader_check");
+		eval("startservice", "bootloader_check");
 #endif
 		fseek(fp, 0x5120C, SEEK_SET);
 		fread(mactmp, 6, 1, fp);
@@ -144,16 +144,16 @@ void start_sysinit(void)
 		sprintf(mac2, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 //              eval("gpio","enable","13");
 #ifdef HAVE_SWCONFIG
-		system("swconfig dev eth0 set reset 1");
-		system("swconfig dev eth0 set enable_vlan 1");
+		eval("swconfig", "dev", "eth0", "set", "reset", "1");
+		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 		if (nvram_match("wan_proto", "disabled")
 		    && nvram_match("fullswitch", "1")) {
-			system("swconfig dev eth0 vlan 1 set ports \"0t 1 2 3 4 5\"");
+			eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 1 2 3 4 5");
 		} else {
-			system("swconfig dev eth0 vlan 1 set ports \"0t 1 3 4 5\"");
-			system("swconfig dev eth0 vlan 2 set ports \"0t 2\"");
+			eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 1 3 4 5");
+			eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 2");
 		}
-		system("swconfig dev eth0 set apply");
+		eval("swconfig", "dev", "eth0", "set", "apply");
 #endif
 
 		fprintf(stderr, "configure eth0 to %s\n", mac2);
@@ -207,10 +207,10 @@ void start_sysinit(void)
 		fprintf(stderr, "configure vlan2 to %s\n", mac2);
 		eval("ifconfig", "vlan2", "hw", "ether", mac2);
 #else
-		system("swconfig dev eth0 set reset 1");
-		system("swconfig dev eth0 set enable_vlan 1");
-		system("swconfig dev eth0 vlan 1 set ports \"0 1 2 3 4\"");
-		system("swconfig dev eth0 set apply");
+		eval("swconfig", "dev", "eth0", "set", "reset", "1");
+		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
+		eval("swconfig", "dev", "eth0", "vlan", "1", "set ports", "0 1 2 3 4");
+		eval("swconfig", "dev", "eth0", "set", "apply");
 		fseek(fp, 0x7f120c, SEEK_SET);
 		fread(mactmp, 6, 1, fp);
 		fclose(fp);
