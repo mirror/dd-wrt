@@ -521,7 +521,8 @@ static int forward_query(int udpfd, union mysockaddr *udpaddr,
 }
 
 static size_t process_reply(struct dns_header *header, time_t now, struct server *server, size_t n, int check_rebind, 
-			    int no_cache, int cache_secure, int ad_reqd, int do_bit, int added_pheader, int check_subnet, union mysockaddr *query_source)
+			    int no_cache, int cache_secure, int bogusanswer, int ad_reqd, int do_bit, int added_pheader, 
+			    int check_subnet, union mysockaddr *query_source)
 {
   unsigned char *pheader, *sizep;
   char **sets = 0;
@@ -529,7 +530,8 @@ static size_t process_reply(struct dns_header *header, time_t now, struct server
   size_t plen; 
 
   (void)ad_reqd;
-  (void) do_bit;
+  (void)do_bit;
+  (void)bogusanswer;
 
 #ifdef HAVE_IPSET
   if (daemon->ipsets && extract_request(header, n, daemon->namebuff, NULL))
@@ -634,7 +636,7 @@ static size_t process_reply(struct dns_header *header, time_t now, struct server
     }
   
 #ifdef HAVE_DNSSEC
-  if (no_cache && !(header->hb4 & HB4_CD)) 
+  if (bogusanswer && !(header->hb4 & HB4_CD)) 
     {
       if (!option_bool(OPT_DNSSEC_DEBUG))
 	{
@@ -786,7 +788,7 @@ void reply_query(int fd, int family, time_t now)
      everything is broken */
   if (forward->forwardall == 0 || --forward->forwardall == 1 || RCODE(header) != SERVFAIL)
     {
-      int check_rebind = 0, no_cache_dnssec = 0, cache_secure = 0;
+      int check_rebind = 0, no_cache_dnssec = 0, cache_secure = 0, bogusanswer = 0;
 
       if (option_bool(OPT_NO_REBIND))
 	check_rebind = !(forward->flags & FREC_NOREBIND);
@@ -819,7 +821,13 @@ void reply_query(int fd, int family, time_t now)
 	  else if (forward->flags & FREC_DS_QUERY)
 	    {
 	      status = dnssec_validate_ds(now, header, n, daemon->namebuff, daemon->keyname, forward->class);
-	      if (status == STAT_NO_DS || status == STAT_NO_NS)
+	      /* Provably no DS, everything below is insecure, even if signatures are offered */
+	      if (status == STAT_NO_DS)
+		/* We only cache sigs when we've validated a reply.
+		   Avoid caching a reply with sigs if there's a vaildated break in the 
+		   DS chain, so we don't return replies from cache missing sigs. */
+		status = STAT_INSECURE_DS;
+	      else if (status == STAT_NO_NS)
 		status = STAT_BOGUS;
 	    }
 	  else if (forward->flags & FREC_CHECK_NOSIGN)
@@ -959,8 +967,14 @@ void reply_query(int fd, int family, time_t now)
 		  else if (forward->flags & FREC_DS_QUERY)
 		    {
 		      status = dnssec_validate_ds(now, header, n, daemon->namebuff, daemon->keyname, forward->class);
-		      if (status == STAT_NO_DS || status == STAT_NO_NS)
-			status = STAT_BOGUS;
+		       /* Provably no DS, everything below is insecure, even if signatures are offered */
+		      if (status == STAT_NO_DS)
+			/* We only cache sigs when we've validated a reply.
+			   Avoid caching a reply with sigs if there's a vaildated break in the 
+			   DS chain, so we don't return replies from cache missing sigs. */
+			status = STAT_INSECURE_DS;
+		      else if (status == STAT_NO_NS)
+			status = STAT_BOGUS; 
 		    }
 		  else if (forward->flags & FREC_CHECK_NOSIGN)
 		    {
@@ -985,6 +999,17 @@ void reply_query(int fd, int family, time_t now)
 		}
 	    }
 	  
+	  no_cache_dnssec = 0;
+
+	  if (status == STAT_INSECURE_DS)
+	    {
+	      /* We only cache sigs when we've validated a reply.
+		 Avoid caching a reply with sigs if there's a vaildated break in the 
+		 DS chain, so we don't return replies from cache missing sigs. */
+	      status = STAT_INSECURE;
+	      no_cache_dnssec = 1;
+	    }
+	  
 	  if (status == STAT_TRUNCATED)
 	    header->hb3 |= HB3_TC;
 	  else
@@ -1002,12 +1027,13 @@ void reply_query(int fd, int family, time_t now)
 	      log_query(F_KEYTAG | F_SECSTAT, "result", NULL, result);
 	    }
 	  
-	  no_cache_dnssec = 0;
-	  
 	  if (status == STAT_SECURE)
 	    cache_secure = 1;
 	  else if (status == STAT_BOGUS)
-	    no_cache_dnssec = 1;
+	    {
+	      no_cache_dnssec = 1;
+	      bogusanswer = 1;
+	    }
 	}
 #endif     
       
@@ -1017,7 +1043,7 @@ void reply_query(int fd, int family, time_t now)
       else
 	header->hb4 &= ~HB4_CD;
       
-      if ((nn = process_reply(header, now, server, (size_t)n, check_rebind, no_cache_dnssec, cache_secure,
+      if ((nn = process_reply(header, now, server, (size_t)n, check_rebind, no_cache_dnssec, cache_secure, bogusanswer, 
 			      forward->flags & FREC_AD_QUESTION, forward->flags & FREC_DO_QUESTION, 
 			      forward->flags & FREC_ADDED_PHEADER, forward->flags & FREC_HAS_SUBNET, &forward->source)))
 	{
@@ -1420,7 +1446,7 @@ static int do_check_sign(struct frec *forward, int status, time_t now, char *nam
     }
 }
 
-/* Move toward the root, until we find a signed non-existance of a DS, in which case
+/* Move down from the root, until we find a signed non-existance of a DS, in which case
    an unsigned answer is OK, or we find a signed DS, in which case there should be 
    a signature, and the answer is BOGUS */
 static int  tcp_check_for_unsigned_zone(time_t now, struct dns_header *header, size_t plen, int class, char *name, 
@@ -1570,8 +1596,13 @@ static int tcp_key_recurse(time_t now, int status, struct dns_header *header, si
   else if (status == STAT_NEED_DS || status == STAT_NEED_DS_NEG)
     {
       new_status = dnssec_validate_ds(now, header, n, name, keyname, class);
-      if (status == STAT_NEED_DS && (new_status == STAT_NO_DS || new_status == STAT_NO_NS))
-	new_status = STAT_BOGUS;
+      if (status == STAT_NEED_DS)
+	{
+	  if (new_status == STAT_NO_DS)
+	    new_status = STAT_INSECURE_DS;
+	  else if (new_status == STAT_NO_NS)
+	    new_status = STAT_BOGUS;
+	}
     }
   else if (status == STAT_CHASE_CNAME)
     new_status = dnssec_chase_cname(now, header, n, name, keyname);
@@ -1630,8 +1661,13 @@ static int tcp_key_recurse(time_t now, int status, struct dns_header *header, si
 	      else if (status == STAT_NEED_DS || status == STAT_NEED_DS_NEG)
 		{
 		  new_status = dnssec_validate_ds(now, header, n, name, keyname, class);
-		  if (status == STAT_NEED_DS  && (new_status == STAT_NO_DS || new_status == STAT_NO_NS))
-		    new_status = STAT_BOGUS; /* Validated no DS */
+		  if (status == STAT_NEED_DS)
+		    {
+		      if (new_status == STAT_NO_DS)
+			new_status = STAT_INSECURE_DS;
+		      else if (new_status == STAT_NO_NS)
+			new_status = STAT_BOGUS; /* Validated no DS */
+		    }
 		}
 	      else if (status == STAT_CHASE_CNAME)
 		new_status = dnssec_chase_cname(now, header, n, name, keyname);
@@ -1652,7 +1688,7 @@ static int tcp_key_recurse(time_t now, int status, struct dns_header *header, si
 		goto another_tcp_key;
 	    }
 	}
-
+      
       free(packet);
     }
   return new_status;
@@ -1673,7 +1709,7 @@ unsigned char *tcp_request(int confd, time_t now,
   int local_auth = 0;
 #endif
   int checking_disabled, ad_question, do_bit, added_pheader = 0;
-  int check_subnet, no_cache_dnssec = 0, cache_secure = 0;
+  int check_subnet, no_cache_dnssec = 0, cache_secure = 0, bogusanswer = 0;
   size_t m;
   unsigned short qtype;
   unsigned int gotname;
@@ -1941,6 +1977,15 @@ unsigned char *tcp_request(int confd, time_t now,
 			  int status = tcp_key_recurse(now, STAT_TRUNCATED, header, m, 0, daemon->namebuff, daemon->keyname, last_server, &keycount);
 			  char *result;
 
+			  if (status == STAT_INSECURE_DS)
+			    {
+			      /* We only cache sigs when we've validated a reply.
+				 Avoid caching a reply with sigs if there's a vaildated break in the 
+				 DS chain, so we don't return replies from cache missing sigs. */
+			      status = STAT_INSECURE;
+			      no_cache_dnssec = 1;
+			    }
+			  
 			  if (keycount == 0)
 			    {
 			      result = "ABANDONED";
@@ -1952,8 +1997,11 @@ unsigned char *tcp_request(int confd, time_t now,
 			  log_query(F_KEYTAG | F_SECSTAT, "result", NULL, result);
 			  
 			  if (status == STAT_BOGUS)
-			    no_cache_dnssec = 1;
-			  
+			    {
+			      no_cache_dnssec = 1;
+			      bogusanswer = 1;
+			    }
+
 			  if (status == STAT_SECURE)
 			    cache_secure = 1;
 			}
@@ -1987,7 +2035,7 @@ unsigned char *tcp_request(int confd, time_t now,
 #endif
 
 		      m = process_reply(header, now, last_server, (unsigned int)m, 
-					option_bool(OPT_NO_REBIND) && !norebind, no_cache_dnssec,
+					option_bool(OPT_NO_REBIND) && !norebind, no_cache_dnssec, bogusanswer,
 					cache_secure, ad_question, do_bit, added_pheader, check_subnet, &peer_addr); 
 		      
 		      break;

@@ -72,7 +72,15 @@ version 2.73
 	    on systems without an RTC, whilst allowing DNS queries before the
 	    clock is valid so that NTP can run. Thanks to
 	    Kevin Darbyshire-Bryant for developing this idea.
-	
+
+	    Add --tftp-no-fail option. Thanks to Stefan Tomanek for
+	    the patch.
+
+	    Fix crash caused by looking up servers.bind, CHAOS text record,
+	    when more than about five --servers= lines are in the dnsmasq
+	    config. This causes memory corruption which causes a crash later.
+	    Thanks to Matt Coddington for sterling work chasing this down.
+
 	
 version 2.72
             Add ra-advrouter mode, for RFC-3775 mobile IPv6 support.
@@ -117,6 +125,9 @@ version 2.72
             Fix problem with --local-service option on big-endian platforms
 	    Thanks to Richard Genoud for the patch.
 
+	    Fix crash on receipt of certain malformed DNS requests. Thanks
+	    to Nick Sampanis for spotting the problem.
+	
 
 version 2.71
             Subtle change to error handling to help DNSSEC validation 
