@@ -1711,6 +1711,9 @@ Absolute paths (starting with /) are allowed, but they must be within
 the tftp-root. If the optional interface argument is given, the
 directory is only used for TFTP requests via that interface.
 .TP
+.B --tftp-no-fail
+Do not abort startup if specified tftp root directories are inaccessible.
+.TP
 .B --tftp-unique-root
 Add the IP address of the TFTP client as a path component on the end
 of the TFTP-root (in standard dotted-quad format). Only valid if a

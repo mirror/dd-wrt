@@ -981,7 +981,7 @@ int dnssec_validate_by_ds(time_t now, struct dns_header *header, size_t plen, ch
   
   /* If we've cached that DS provably doesn't exist, result must be INSECURE */
   if (crecp->flags & F_NEG)
-    return STAT_INSECURE;
+    return STAT_INSECURE_DS;
   
   /* NOTE, we need to find ONE DNSKEY which matches the DS */
   for (valid = 0, j = ntohs(header->ancount); j != 0 && !valid; j--) 
