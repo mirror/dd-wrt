@@ -212,6 +212,12 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	char drive[64];
 #ifdef HAVE_RB600
 	sprintf(drive, "/dev/sda");
+	FILE *check = fopen(drive, "rb");
+	if (check) {
+		fclose(check);
+	} else {
+		sprintf(drive, "/dev/mmcblk0");
+	}
 #else
 	sprintf(drive, "/dev/%s", getdisc());
 #endif
@@ -237,6 +243,9 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 #endif
 	fprintf(stderr, "write system\n");
 	FILE *out = fopen(drive, "r+b");
+	if (!out) {
+		return -1;
+	}
 	char *flashbuf = (char *)malloc(linuxsize);
 	if (!flashbuf)		// not enough memory, use direct way
 	{
