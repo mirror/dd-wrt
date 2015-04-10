@@ -221,11 +221,12 @@ void start_sysinit(void)
 		}
 	} else {
 #ifdef HAVE_SWCONFIG
-		system("swconfig dev eth0 set reset 1");
-		system("swconfig dev eth0 set enable_vlan 1");
-		system("swconfig dev eth0 vlan 1 set ports \"0 1 2 3 5t\"");
-		system("swconfig dev eth0 vlan 2 set ports \"4 5t\"");
-		system("swconfig dev eth0 set apply");
+
+		eval("swconfig", "dev", "eth0", "set", "reset", "1");
+		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
+		eval("swconfig", "dev", "eth0", "vlan", "1", "set ports", "0 1 2 3 5t");
+		eval("swconfig", "dev", "eth0", "vlan", "2", "set ports", "4 5t");
+		eval("swconfig", "dev", "eth0", "set", "apply");
 		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		eval("vconfig", "add", "eth0", "1");
 		eval("vconfig", "add", "eth0", "2");

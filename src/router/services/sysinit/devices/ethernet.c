@@ -24,7 +24,7 @@
 
 static int try_module(char *module)
 {
-	sysprintf("insmod %s", module);
+	eval("insmod", module);
 	return 1;
 }
 

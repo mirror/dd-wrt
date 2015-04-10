@@ -119,7 +119,7 @@ void start_change_mac(void)
 	for (i = 0; i < 12; i++)
 		putc(os[i], tmp);
 	fclose(tmp);
-	sysprintf("mtd -f write /tmp/boot.bin boot");
+	eval("mtd", "-f", "write", "/tmp/boot.bin", "boot");
 	fclose(fp);
 
 }

@@ -120,56 +120,47 @@ void start_sysinit(void)
 			eval("ifconfig", "eth0", "hw", "ether", mac);
 	}
 
-/*	system("swconfig dev eth0 set reset 1");
-	system("swconfig dev eth0 set enable_vlan 1");
-	system("swconfig dev eth0 vlan 1 set ports \"0 1 2 3 6t\"");
-	system("swconfig dev eth0 vlan 2 set ports \"4 6t\"");
-	system("swconfig dev eth0 set apply");*/
-
 	//LAN/WAN ports as security mode
 	if (brand == ROUTER_DIR860LB1) {
-		system("swconfig dev eth0 set reset 1");
-		system("swconfig dev eth0 set enable_vlan 1");
-		system("swconfig dev eth0 vlan 1 set ports \"1 2 3 4 6t\"");
-		system("swconfig dev eth0 vlan 2 set ports \"0 6t\"");
-		system("swconfig dev eth0 set apply");
+		eval("swconfig", "dev", "eth0", "set", "reset", "1");
+		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
+		eval("swconfig", "dev", "eth0", "vlan", "1", "set ports", "1 2 3 4 6t");
+		eval("swconfig", "dev", "eth0", "vlan", "2", "set ports", "0 6t");
+		eval("swconfig", "dev", "eth0", "set", "apply");
 	} else if (brand == ROUTER_BOARD_E1700 || brand == ROUTER_DIR810L) {
-//      sysprintf("switch reg w 3600 5ee3a");
-//      sysprintf("switch reg w 7000 717fc3");
-//      sysprintf("switch reg w 7804 1015e9f");
-//      sysprintf("switch reg w 3600 5ee3b");
+
 	} else {
 #ifndef HAVE_WHR1166D
-		sysprintf("switch reg w 2004 ff0003");
-		sysprintf("switch reg w 2104 ff0003");
-		sysprintf("switch reg w 2204 ff0003");
-		sysprintf("switch reg w 2304 ff0003");
-		sysprintf("switch reg w 2404 ff0003");
-		sysprintf("switch reg w 2504 ff0003");
+		eval("switch", "reg", "w", "2004", "ff0003");
+		eval("switch", "reg", "w", "2104", "ff0003");
+		eval("switch", "reg", "w", "2204", "ff0003");
+		eval("switch", "reg", "w", "2304", "ff0003");
+		eval("switch", "reg", "w", "2404", "ff0003");
+		eval("switch", "reg", "w", "2504", "ff0003");
 		//LAN/WAN ports as transparent port
-		sysprintf("switch reg w 2010 810000c0");
-		sysprintf("switch reg w 2110 810000c0");
-		sysprintf("switch reg w 2210 810000c0");
-		sysprintf("switch reg w 2310 810000c0");
-		sysprintf("switch reg w 2410 810000c0");
-		sysprintf("switch reg w 2510 810000c0");
+		eval("switch", "reg", "w", "2010", "810000c0");
+		eval("switch", "reg", "w", "2110", "810000c0");
+		eval("switch", "reg", "w", "2210", "810000c0");
+		eval("switch", "reg", "w", "2310", "810000c0");
+		eval("switch", "reg", "w", "2410", "810000c0");
+		eval("switch", "reg", "w", "2510", "810000c0");
 		//set CPU/P7 port as user port
-		sysprintf("switch reg w 2610 81000000");
-		sysprintf("switch reg w 2710 81000000");
+		eval("switch", "reg", "w", "2610", "81000000");
+		eval("switch", "reg", "w", "2710", "81000000");
 
-		sysprintf("switch reg w 2604 20ff0003");	// #port6, Egress VLAN Tag Attribution=tagged
-		sysprintf("switch reg w 2704 20ff0003");	// #port7, Egress VLAN Tag Attribution=tagged
+		eval("switch", "reg", "w", "2604", "20ff0003");	// #port6, Egress VLAN Tag Attribution=tagged
+		eval("switch", "reg", "w", "2704", "20ff0003");	// #port7, Egress VLAN Tag Attribution=tagged
 
-		sysprintf("switch reg w 2014 10001");
-		sysprintf("switch reg w 2114 10001");
-		sysprintf("switch reg w 2214 10001");
-		sysprintf("switch reg w 2314 10001");
-		sysprintf("switch reg w 2414 10002");
-		sysprintf("switch reg w 2514 10001");
+		eval("switch", "reg", "w", "2014", "10001");
+		eval("switch", "reg", "w", "2114", "10001");
+		eval("switch", "reg", "w", "2214", "10001");
+		eval("switch", "reg", "w", "2314", "10001");
+		eval("switch", "reg", "w", "2414", "10002");
+		eval("switch", "reg", "w", "2514", "10001");
 		//VLAN member port
-		sysprintf("switch vlan set 0 1 11110111");
-		sysprintf("switch vlan set 1 2 00001011");
-		sysprintf("switch clear");
+		eval("switch", "vlan", "set", "0", "1", "11110111");
+		eval("switch", "vlan", "set", "1", "2", "00001011");
+		eval("switch", "clear");
 #else
 		eval("swconfig", "dev", "eth0", "set", "reset", "1");
 		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
@@ -297,65 +288,65 @@ void start_sysinit(void)
 
 #if defined(HAVE_ALLNET11N) || defined(HAVE_ESR6650) || defined(HAVE_WR5422) || defined(HAVE_RT10N) || \
     defined(HAVE_ACXNR22) || defined(HAVE_W502U) || defined(HAVE_ESR9752) || defined(HAVE_ALL02310N)
-		sysprintf("switch reg w 14 405555");
-		sysprintf("switch reg w 50 2001");
-		sysprintf("switch reg w 90 7f7f");
-		sysprintf("switch reg w 98 7f3f");
-		sysprintf("switch reg w e4 3f");
-		sysprintf("switch reg w 40 1002");
-		sysprintf("switch reg w 44 1001");
-		sysprintf("switch reg w 48 1001");
-		sysprintf("switch reg w 70 ffff417e");
+		eval("switch", "reg", "w", "14", "405555");
+		eval("switch", "reg", "w", "50", "2001");
+		eval("switch", "reg", "w", "90", "7f7f");
+		eval("switch", "reg", "w", "98", "7f3f");
+		eval("switch", "reg", "w", "e4", "3f");
+		eval("switch", "reg", "w", "40", "1002");
+		eval("switch", "reg", "w", "44", "1001");
+		eval("switch", "reg", "w", "48", "1001");
+		eval("switch", "reg", "w", "70", "ffff417e");
 #ifdef HAVE_ESR9752
-		sysprintf("switch reg w c8 3f502b28");
+		eval("switch", "reg", "w", "c8", "3f502b28");
 #endif
 #elif HAVE_AR670W
-		sysprintf("mii_mgr -s -p 29 -r 23 -v 0x07c2");
-		sysprintf("mii_mgr -s -p 29 -r 22 -v 0x8420");
+		eval("mii_mgr", "-s", "-p", "29", "-r", "23", "-v", "0x07c2");
+		eval("mii_mgr", "-s", "-p", "29", "-r", "22", "-v", "0x8420");
 
-		sysprintf("mii_mgr -s -p 29 -r 24 -v 0x1");
-		sysprintf("mii_mgr -s -p 29 -r 25 -v 0x1");
-		sysprintf("mii_mgr -s -p 29 -r 26 -v 0x1");
-		sysprintf("mii_mgr -s -p 29 -r 27 -v 0x1");
-		sysprintf("mii_mgr -s -p 29 -r 28 -v 0x2");
-		sysprintf("mii_mgr -s -p 30 -r 9 -v 0x1089");
-		sysprintf("mii_mgr -s -p 30 -r 1 -v 0x2f00");
-		sysprintf("mii_mgr -s -p 30 -r 2 -v 0x0030");
+		eval("mii_mgr", "-s", "-p", "29", "-r", "24", "-v", "0x1");
+		eval("mii_mgr", "-s", "-p", "29", "-r", "25", "-v", "0x1");
+		eval("mii_mgr", "-s", "-p", "29", "-r", "26", "-v", "0x1");
+		eval("mii_mgr", "-s", "-p", "29", "-r", "27", "-v", "0x1");
+		eval("mii_mgr", "-s", "-p", "29", "-r", "28", "-v", "0x2");
+		eval("mii_mgr", "-s", "-p", "30", "-r", "9", "-v", "0x1089");
+		eval("mii_mgr", "-s", "-p", "30", "-r", "1", "-v", "0x2f00");
+		eval("mii_mgr", "-s", "-p", "30", "-r", "2", "-v", "0x0030");
 #elif HAVE_AR690W
 #elif HAVE_RT15N
 #elif HAVE_BR6574N
 #elif HAVE_F5D8235
-		sysprintf("switch reg w 14 405555");
-		sysprintf("switch reg w 50 2001");
-		sysprintf("switch reg w 90 7f7f");
-		sysprintf("switch reg w 98 7f40");
-		sysprintf("switch reg w e4 20");
-		sysprintf("switch reg w 40 1001");
-		sysprintf("switch reg w 44 1001");
-		sysprintf("switch reg w 48 1001");
-		sysprintf("switch reg w 4c 1");
-		sysprintf("switch reg w 70 ffffffff");
+		eval("switch", "reg", "w", "14", "405555");
+		eval("switch", "reg", "w", "50", "2001");
+		eval("switch", "reg", "w", "90", "7f7f");
+		eval("switch", "reg", "w", "98", "7f40");
+		eval("switch", "reg", "w", "e4", "20");
+		eval("switch", "reg", "w", "40", "1001");
+		eval("switch", "reg", "w", "44", "1001");
+		eval("switch", "reg", "w", "48", "1001");
+		eval("switch", "reg", "w", "4c", "1");
+		eval("switch", "reg", "w", "70", "ffffffff");
 #elif HAVE_EAP9550
-		sysprintf("switch reg w 14 5555");
-		sysprintf("switch reg w 40 1001");
-		sysprintf("switch reg w 44 1001");
-		sysprintf("switch reg w 48 1001");
-		sysprintf("switch reg w 4c 1");
-		sysprintf("switch reg w 50 2001");
-		sysprintf("switch reg w 70 ffffffff");
-		sysprintf("switch reg w 90 7f7f");
-		sysprintf("switch reg w 98 7f7f");
-		sysprintf("switch reg w e4 7f");
+		eval("switch", "reg", "w", "14", "5555");
+		eval("switch", "reg", "w", "40", "1001");
+		eval("switch", "reg", "w", "44", "1001");
+		eval("switch", "reg", "w", "48", "1001");
+		eval("switch", "reg", "w", "4c", "1");
+		eval("switch", "reg", "w", "50", "2001");
+		eval("switch", "reg", "w", "70", "ffffffff");
+		eval("switch", "reg", "w", "90", "7f7f");
+		eval("switch", "reg", "w", "98", "7f7f");
+		eval("switch", "reg", "w", "e4", "7f");
 #else
-		sysprintf("switch reg w 14 405555");
-		sysprintf("switch reg w 50 2001");
-		sysprintf("switch reg w 90 7f7f");
-		sysprintf("switch reg w 98 7f3f");
-		sysprintf("switch reg w e4 3f");
-		sysprintf("switch reg w 40 1001");
-		sysprintf("switch reg w 44 1001");
-		sysprintf("switch reg w 48 1002");
-		sysprintf("switch reg w 70 ffff506f");
+		eval("switch", "reg", "w", "14", "405555");
+		eval("switch", "reg", "w", "50", "2001");
+		eval("switch", "reg", "w", "90", "7f7f");
+		eval("switch", "reg", "w", "98", "7f3f");
+		eval("switch", "reg", "w", "e4", "3f");
+		eval("switch", "reg", "w", "40", "1001");
+		eval("switch", "reg", "w", "44", "1001");
+		eval("switch", "reg", "w", "48", "1002");
+		eval("switch", "reg", "w", "70", "ffff506f");
 #endif
 	}
 
@@ -411,44 +402,44 @@ char *enable_dtag_vlan(int enable)
 	if (getRouterBrand() != ROUTER_BOARD_ECB9750 && getRouterBrand() != ROUTER_BOARD_TECHNAXX3G) {
 		if (enable) {
 #if !defined(HAVE_AR670W) && !defined(HAVE_BR6574N) && !defined(HAVE_F5D8235)
-			sysprintf("switch reg w 14 405555");
-			sysprintf("switch reg w 50 7001");
-			sysprintf("switch reg w 90 7f7f");
-			sysprintf("switch reg w 98 7f2f");
-			sysprintf("switch reg w e4 2f");
+			eval("switch", "reg", "w", "14 405555");
+			eval("switch", "reg", "w", "50 7001");
+			eval("switch", "reg", "w", "90 7f7f");
+			eval("switch", "reg", "w", "98 7f2f");
+			eval("switch", "reg", "w", "e4 2f");
 #if defined(HAVE_ALLNET11N) || defined(HAVE_ESR6650) || defined(HAVE_WR5422) || defined(HAVE_RT10N) || \
     defined(HAVE_ACXNR22) || defined(HAVE_W502U) || defined(HAVE_ESR9752) || defined(HAVE_ALL02310N)
-			sysprintf("switch reg w 40 1007");
-			sysprintf("switch reg w 44 1001");
-			sysprintf("switch reg w 48 1001");
-			sysprintf("switch reg w 70 ffff417e");
+			eval("switch", "reg", "w", "40 1007");
+			eval("switch", "reg", "w", "44 1001");
+			eval("switch", "reg", "w", "48 1001");
+			eval("switch", "reg", "w", "70 ffff417e");
 #ifdef HAVE_ESR9752
-			sysprintf("switch reg w c8 3f502b28");
+			eval("switch", "reg", "w", "c8 3f502b28");
 #endif
 #else
-			sysprintf("switch reg w 40 1001");
-			sysprintf("switch reg w 44 1001");
-			sysprintf("switch reg w 48 1007");
-			sysprintf("switch reg w 70 ffff506f");
+			eval("switch", "reg", "w", "40 1001");
+			eval("switch", "reg", "w", "44 1001");
+			eval("switch", "reg", "w", "48 1007");
+			eval("switch", "reg", "w", "70 ffff506f");
 #endif
 #endif
 			// now we got vlan7, how do we trunk now. lets find out
 			return "eth2";
 		} else {
 #if !defined(HAVE_AR670W) && !defined(HAVE_BR6574N) && !defined(HAVE_F5D8235)
-			sysprintf("switch reg w 14 405555");
-			sysprintf("switch reg w 50 2001");
-			sysprintf("switch reg w 90 7f7f");
-			sysprintf("switch reg w 98 7f3f");
-			sysprintf("switch reg w e4 3f");
+			eval("switch", "reg", "w", "14 405555");
+			eval("switch", "reg", "w", "50 2001");
+			eval("switch", "reg", "w", "90 7f7f");
+			eval("switch", "reg", "w", "98 7f3f");
+			eval("switch", "reg", "w", "e4 3f");
 #if defined(HAVE_ALLNET11N) || defined(HAVE_ESR6650) || defined(HAVE_WR5422) || defined(HAVE_RT10N) || \
     defined(HAVE_ACXNR22) || defined(HAVE_W502U) || defined(HAVE_ESR9752) || defined(HAVE_ALL02310N)
-			sysprintf("switch reg w 40 1002");
-			sysprintf("switch reg w 44 1001");
-			sysprintf("switch reg w 48 1001");
-			sysprintf("switch reg w 70 ffff417e");
+			eval("switch", "reg", "w", "40 1002");
+			eval("switch", "reg", "w", "44 1001");
+			eval("switch", "reg", "w", "48 1001");
+			eval("switch", "reg", "w", "70 ffff417e");
 #ifdef HAVE_ESR9752
-			sysprintf("switch reg w c8 3f502b28");
+			eval("switch", "reg", "w", "c8 3f502b28");
 #endif
 #elif HAVE_BR6574N
 #elif HAVE_AR690W
@@ -456,10 +447,10 @@ char *enable_dtag_vlan(int enable)
 #elif HAVE_AR670W
 #elif HAVE_F5D8235
 #else
-			sysprintf("switch reg w 40 1001");
-			sysprintf("switch reg w 44 1001");
-			sysprintf("switch reg w 48 1002");
-			sysprintf("switch reg w 70 ffff506f");
+			eval("switch", "reg", "w", "40 1001");
+			eval("switch", "reg", "w", "44 1001");
+			eval("switch", "reg", "w", "48 1002");
+			eval("switch", "reg", "w", "70 ffff506f");
 #endif
 			eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 			eval("vconfig", "add", "eth2", "2");	//WAN
