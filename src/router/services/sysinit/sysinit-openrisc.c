@@ -53,7 +53,7 @@
 #include <linux/mii.h>
 #include "devices/wireless.c"
 
-#define sys_reboot() sysprintf("startservice run_rc_shutdown"); eval("sync"); eval("event","3","1","15")
+#define sys_reboot() eval("startservice","run_rc_shutdown"); eval("sync"); eval("event","3","1","15")
 
 static void install_sdcard(void)
 {

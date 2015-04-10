@@ -110,7 +110,7 @@ void start_devinit(void)
 #ifdef HAVE_HOTPLUG2
 	// shell-skript. otherwise we loose our console
 	system("echo >/proc/sys/kernel/hotplug");
-	system("mount -t tmpfs none /dev -o size=512K");
+	eval("mount", "-t", "tmpfs", "none", "/dev", "-o", "size=512K");
 
 	mknod("/dev/console", S_IFCHR | 0644, makedev(5, 1));
 	mknod("/dev/null", S_IFCHR | 0644, makedev(1, 3));

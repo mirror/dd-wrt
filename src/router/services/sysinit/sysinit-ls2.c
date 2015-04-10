@@ -104,9 +104,9 @@ void start_sysinit(void)
 #ifdef HAVE_BWRG1000
 	eval("ifconfig", "eth0", "up");	// wan
 #ifdef HAVE_SWCONFIG
-	system("swconfig dev eth0 vlan 1 set ports \"0 1 2 3 5t\"");
-	system("swconfig dev eth0 vlan 2 set ports \"4 5t\"");
-	system("swconfig dev eth0 set apply");
+	eval("swconfig", "dev", "eth0", "vlan", "1", "set ports", "0 1 2 3 5t");
+	eval("swconfig", "dev", "eth0", "vlan", "2", "set ports", "4 5t");
+	eval("swconfig", "dev", "eth0", "set", "apply");
 	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 	eval("vconfig", "add", "eth0", "1");
 	eval("vconfig", "add", "eth0", "2");
@@ -118,9 +118,9 @@ void start_sysinit(void)
 #if !defined(HAVE_NS2) && !defined(HAVE_BS2) && !defined(HAVE_LC2) && !defined(HAVE_BS2HP) && !defined(HAVE_MS2) && !defined(HAVE_PICO2) && !defined(HAVE_PICO2HP)
 	eval("ifconfig", "eth0", "up");	// wan
 #ifdef HAVE_SWCONFIG
-	system("swconfig dev eth0 vlan 1 set ports \"0 1 2 3 5t\"");
-	system("swconfig dev eth0 vlan 2 set ports \"4 5t\"");
-	system("swconfig dev eth0 set apply");
+	eval("swconfig", "dev", "eth0", "vlan", "1", "set ports", "0 1 2 3 5t");
+	eval("swconfig", "dev", "eth0", "vlan", "2", "set ports", "4 5t");
+	eval("swconfig", "dev", "eth0", "set", "apply");
 	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 	eval("vconfig", "add", "eth0", "1");
 	eval("vconfig", "add", "eth0", "2");

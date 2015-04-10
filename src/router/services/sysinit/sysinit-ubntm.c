@@ -162,23 +162,23 @@ void start_sysinit(void)
 	int brand = getRouterBrand();
 #ifdef HAVE_WPE72
 	if (!nvram_match("wlanled", "0"))
-		sysprintf("/sbin/wlanled -l generic_14:-94 -l generic_15:-80 -l generic_16:-73 -l generic_17:-65");
+		eval("/sbin/wlanled", "-l", "generic_14:-94", "-l", "generic_15:-80", "-l", "generic_16:-73", "-l", "generic_17:-65");
 #elif HAVE_DAP3310
 	set_gpio(14, 1);
 	set_gpio(13, 1);
 	set_gpio(20, 1);
 	if (!nvram_match("wlanled", "0"))
-		sysprintf("/sbin/wlanled -L generic_14:-94 -l generic_13:-76 -L generic_20:-65");
+		eval("/sbin/wlanled", "-L", "generic_14:-94", "-l", "generic_13:-76", "-L", "generic_20:-65");
 #elif HAVE_DAP3410
 	set_gpio(14, 1);
 	set_gpio(15, 1);
 	set_gpio(16, 1);
 	if (!nvram_match("wlanled", "0"))
-		sysprintf("/sbin/wlanled -L generic_14:-94 -L generic_15:-76 -L generic_16:-65");
+		eval("/sbin/wlanled", "-L", "generic_14:-94", "-L", "generic_15:-76", "-L", "generic_16:-65");
 #elif HAVE_UBNTXW
 	writeproc("/proc/sys/dev/wifi0/softled", "0");
 	if (!nvram_match("wlanled", "0"))
-		sysprintf("/sbin/wlanled -L generic_11:-94 -L generic_16:-80 -l generic_13:-73 -L generic_14:-65");
+		eval("/sbin/wlanled", "-L", "generic_11:-94", "-L", "generic_16:-80", "-l", "generic_13:-73", "-L", "generic_14:-65");
 #else
 	switch (brand) {
 	case ROUTER_BOARD_UNIFI:
@@ -189,7 +189,7 @@ void start_sysinit(void)
 	default:
 		writeproc("/proc/sys/dev/wifi0/softled", "0");
 		if (!nvram_match("wlanled", "0"))
-			sysprintf("/sbin/wlanled -l generic_0:-94 -l generic_1:-80 -l generic_11:-73 -l generic_7:-65");
+			eval("/sbin/wlanled", "-l", "generic_0:-94", "-l", "generic_1:-80", "-l", "generic_11:-73", "-l", "generic_7:-65");
 
 	}
 #endif
