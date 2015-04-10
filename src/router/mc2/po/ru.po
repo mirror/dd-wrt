@@ -4,8 +4,7 @@
 #
 # Translators:
 # Alex Tkachenko <alex@bcs.zp.ua>, 1998
-# and Alex Tkachenko <alex@bcs.zp.ua>, 1998
-# Andrew V. Samoilov <sav@bcs.zp.ua>, 1999
+# Andrew V. Samoilov <sav@bcs.zp.ua>, 1999, 2014
 # Evgeny Bulgakov <bgav@netvision.net.il>, 1999
 # Sergey Panov <sipan@mit.edu>, 1999
 # Valek Filippov <frob@df.ru>, 2000
@@ -13,13 +12,13 @@
 # Ilia Maslakov <il.smind@gmail.com>, 2009
 # Slava Zanko <slavazanko@gmail.com>, 2009, 2011
 # NaiLi (aka jamesjames) Rootaerc <theism@mail.ru>, 2012
-# Andrew Borodin <aborodin@vmail.ru>, 2009-2014.
+# Andrew Borodin <aborodin@vmail.ru>, 2009-2015.
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2014-09-04 16:51+0300\n"
-"PO-Revision-Date: 2014-07-22 14:40+0300\n"
+"POT-Creation-Date: 2015-03-20 21:10+0300\n"
+"PO-Revision-Date: 2015-02-26 09:45+0300\n"
 "Last-Translator: Andrew Borodin <aborodin@vmail.ru>\n"
 "Language-Team: Russian (http://www.transifex.com/projects/p/mc/language/"
 "ru/)\n"
@@ -98,7 +97,7 @@ msgid ""
 "http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html"
 msgstr ""
 "Ваши старые настройки перенесены из %s\n"
-"в директории, рекомендованные FreeDesktop.org.\n"
+"в каталоги, рекомендованные FreeDesktop.org.\n"
 "Для более полной информации посетите страницу\n"
 "http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html"
 
@@ -163,7 +162,7 @@ msgid ""
 msgstr ""
 "Невозможно использовать скин %s, требующий 256 цветов,\n"
 "на терминале, не поддерживающем 256 цветов.\n"
-"Будет использован скин по-умолчанию"
+"Будет использован скин по умолчанию"
 
 msgid "Escape"
 msgstr "Клавиша Esc      "
@@ -360,6 +359,9 @@ msgstr "Апостроф"
 msgid "Colon"
 msgstr "Двоеточие"
 
+msgid "Semicolon"
+msgstr "Точка с запятой"
+
 msgid "Exclamation mark"
 msgstr "Exclamation mark"
 
@@ -455,6 +457,27 @@ msgid ""
 msgstr ""
 "Размер экрана %dx%d не поддерживается.\n"
 "Проверьте переменную окружения TERM.\n"
+
+msgid "Cannot create pipe descriptor"
+msgstr ""
+
+msgid "Cannot parse command for pipe"
+msgstr ""
+
+msgid "Cannot create pipe streams"
+msgstr ""
+
+#, c-format
+msgid ""
+"Unexpected error in select() reading data from a child process:\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
+"Unexpected error in waitpid():\n"
+"%s"
+msgstr ""
 
 msgid "Warning"
 msgstr "Предупреждение"
@@ -693,7 +716,7 @@ msgid ""
 "   color16 to color255, or rgb000 to rgb555 and gray0 to gray23\n"
 "\n"
 "Attributes:\n"
-"   bold, underline, reverse, blink; append more with '+'\n"
+"   bold, italic, underline, reverse, blink; append more with '+'\n"
 msgstr ""
 "Стандартные цвета:\n"
 "   black, gray, red, brightred, green, brightgreen, brown,\n"
@@ -704,8 +727,8 @@ msgstr ""
 "   от color16 до color255 или от rgb000 до rgb555 и от gray0 до gray23\n"
 "\n"
 "Атрибуты:\n"
-"   bold, underline, reverse, blink; несколько атрибутов объединяются знаком "
-"\"+\"\n"
+"   bold, italic, underline, reverse, blink; несколько атрибутов объединяются "
+"знаком \"+\"\n"
 
 msgid "Color options"
 msgstr "Цветовые настройки"
@@ -747,6 +770,12 @@ msgstr "Не заданы аргументы для программы прос�
 msgid "Two files are required to evoke the diffviewer."
 msgstr "Требуются два файла для программы сравнения."
 
+msgid "Background protocol error"
+msgstr "Ошибка фонового протокола"
+
+msgid "Reading failed"
+msgstr "Сбой чтения"
+
 msgid "Background process error"
 msgstr "Ошибка фонового процесса"
 
@@ -755,12 +784,6 @@ msgstr "Неизвестная ошибка в дочернем процессе
 
 msgid "Child died unexpectedly"
 msgstr "Дочерний процесс неожиданно завершился"
-
-msgid "Background protocol error"
-msgstr "Ошибка фонового протокола"
-
-msgid "Reading failed"
-msgstr "Сбой чтения"
 
 msgid ""
 "Background process sent us a request for more arguments\n"
@@ -918,62 +941,6 @@ msgstr "Неверный режим запуска программы сравн
 
 msgid "Two files are needed to compare"
 msgstr "Для сравнения необходимы два файла"
-
-#, fuzzy
-msgid "Bookmarks"
-msgstr "У&брать все закладки"
-
-#, fuzzy
-msgid " - Sort: "
-msgstr "Сортировка"
-
-msgid "ABC"
-msgstr ""
-
-msgid "FRQ"
-msgstr ""
-
-#, fuzzy
-msgid " - Filter: "
-msgstr "Фильтр"
-
-msgid "FOUND"
-msgstr ""
-
-msgid "USER"
-msgstr ""
-
-#, fuzzy
-msgid "&Go to"
-msgstr "Перейти к &строке..."
-
-#, fuzzy
-msgid "&Add"
-msgstr "&Добавить"
-
-msgid "&Remove"
-msgstr "&Удалить"
-
-msgid "Fl&ush"
-msgstr ""
-
-#, fuzzy
-msgid "&Filter"
-msgstr "Фильтр"
-
-#, fuzzy
-msgid "&Sort"
-msgstr "Сортировка"
-
-#, fuzzy
-msgid "Re&verse"
-msgstr "&Обратный"
-
-msgid "Bookmark list"
-msgstr ""
-
-msgid "Bookmark detail"
-msgstr ""
 
 msgid "Choose syntax highlighting"
 msgstr "Выбор цветовыделения синтаксиса"
@@ -1282,7 +1249,7 @@ msgid ""
 "Current text was modified without a file save.\n"
 "Continue discards these changes"
 msgstr ""
-"Текущий текст был модифицирован и не сохранён.\n"
+"Текущий текст был изменён и не сохранён.\n"
 "Продолжение операции приведёт к потере изменений."
 
 msgid "In se&lection"
@@ -1316,7 +1283,7 @@ msgid ""
 "Current text was modified without a file save.\n"
 "Continue discards these changes."
 msgstr ""
-"Текущий текст был модифицирован и не сохранён.\n"
+"Текущий текст был изменён и не сохранён.\n"
 "Продолжение операции приведёт к потере изменений"
 
 msgid "NoName"
@@ -1614,8 +1581,8 @@ msgstr ""
 "Текстовый редактор с дружественным интерфейсом пользователя.\n"
 "Создан для Midnight Commander."
 
-msgid "Copyright (C) 1996-2014 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2014 the Free Software Foundation"
+msgid "Copyright (C) 1996-2015 the Free Software Foundation"
+msgstr "Copyright (C) 1996-2015 the Free Software Foundation"
 
 msgid "About"
 msgstr "О программе"
@@ -1811,6 +1778,12 @@ msgstr ""
 "Невозможно изменить владельца \"%s\"\n"
 "%s"
 
+msgid "< Default >"
+msgstr "< По умолчанию >"
+
+msgid "Skins"
+msgstr "Скины"
+
 msgid "Other 8 bit"
 msgstr "Другая 8-битная"
 
@@ -1894,12 +1867,6 @@ msgstr "&Автосохранение настроек"
 
 msgid "Configure options"
 msgstr "Параметры конфигурации"
-
-msgid "< Default >"
-msgstr "< По умолчанию >"
-
-msgid "Skins"
-msgstr "Скины"
 
 msgid "Skin:"
 msgstr "Скин:"
@@ -3014,6 +2981,9 @@ msgstr "Новый &элемент"
 msgid "&Insert"
 msgstr "В &начало"
 
+msgid "&Remove"
+msgstr "&Удалить"
+
 msgid "Subgroup - press ENTER to see list"
 msgstr "Подгруппа - для просмотра нажмите ENTER"
 
@@ -3552,7 +3522,7 @@ msgid "&Case sensitive"
 msgstr "Учет ре&гистра"
 
 msgid "Select"
-msgstr "отметить группу"
+msgstr "Отметить группу"
 
 msgid "Unselect"
 msgstr "Снять отметку"
@@ -3690,14 +3660,6 @@ msgstr "Макрос %%var не имеет значения по умолчан�
 #, c-format
 msgid "The %%var macro has no variable"
 msgstr "Макрос %%var не имеет переменной"
-
-#, c-format
-msgid ""
-"Cannot open file%s\n"
-"%s"
-msgstr ""
-"Невозможно открыть файл %s\n"
-"%s"
 
 #, c-format
 msgid "No suitable entries found in %s"
@@ -4042,7 +4004,7 @@ msgstr "Передача успешно прервана."
 
 #, c-format
 msgid "ftpfs: Disconnecting from %s"
-msgstr "ftpfs: отсоединение от %s"
+msgstr "ftpfs: отключение от %s"
 
 #, c-format
 msgid "FTP: Password required for %s"
@@ -4059,7 +4021,7 @@ msgid "FTP: Account required for user %s"
 msgstr "FTP: Необходима учётная запись для пользователя %s"
 
 msgid "Account:"
-msgstr "Счет:"
+msgstr "Учётная запись:"
 
 msgid "ftpfs: sending user account"
 msgstr "ftpfs: посылается учётная запись пользователя"
@@ -4357,12 +4319,6 @@ msgstr ""
 "Midnight Commander завершается.\n"
 "Сохранить изменённый файл?"
 
-msgid "Cannot spawn child process"
-msgstr "Невозможно породить дочерний процесс"
-
-msgid "Empty output from child filter"
-msgstr "Дочерний фильтр не вернул данные"
-
 msgid "&Line number"
 msgstr "&Номер строки"
 
@@ -4407,6 +4363,12 @@ msgstr "Не форм"
 
 msgid "ButtonBar|Format"
 msgstr "Формат"
+
+#, c-format
+msgid ""
+"Failed to read data from child stdout:\n"
+"%s"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -4456,9 +4418,3 @@ msgstr "Продолжить с начала?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr "Невозможно получить локальную копию /ftp://some.host/editme.txt"
-
-#~ msgid "sftp: Invalid port value."
-#~ msgstr "sftp: неверный порт."
-
-#~ msgid "Seeking to search result"
-#~ msgstr "Переход к найденному"

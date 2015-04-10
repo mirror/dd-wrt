@@ -27,6 +27,13 @@
 #define mc_return_if_error(mcerror) do { if (mcerror != NULL && *mcerror != NULL) return; } while (0)
 #define mc_return_val_if_error(mcerror, mcvalue) do { if (mcerror != NULL && *mcerror != NULL) return mcvalue; } while (0)
 
+#define MC_PIPE_BUFSIZE BUF_8K
+#define MC_PIPE_STREAM_EOF 0
+#define MC_PIPE_STREAM_UNREAD -1
+#define MC_PIPE_ERROR_CREATE_PIPE -2
+#define MC_PIPE_ERROR_PARSE_COMMAND -3
+#define MC_PIPE_ERROR_CREATE_PIPE_STREAM -4
+#define MC_PIPE_ERROR_READ -5
 
 /*** enums ***************************************************************************************/
 
@@ -50,6 +57,37 @@ enum compression_type
     COMPRESSION_LZMA,
     COMPRESSION_XZ
 };
+
+/* stdout or stderr stream of child process */
+typedef struct
+{
+    /* file descriptor */
+    int fd;
+    /* data read from fd */
+    char buf[MC_PIPE_BUFSIZE];
+    /* positive: length of data in buf as before read as after;
+     * zero or negative before read: do not read drom fd;
+     * MC_PIPE_STREAM_EOF after read: EOF of fd;
+     * MC_PIPE_STREAM_UNREAD after read: there was not read from fd;
+     * MC_PIPE_ERROR_READ after read: reading error from fd.
+     */
+    ssize_t len;
+    /* whether buf is null-terminated or not */
+    gboolean null_term;
+    /* error code in case of len == MC_PIPE_ERROR_READ */
+    int error;
+} mc_pipe_stream_t;
+
+/* Pipe descriptor for child process */
+typedef struct
+{
+    /* PID of child process */
+    GPid child_pid;
+    /* stdout of child process */
+    mc_pipe_stream_t out;
+    /* stderr of child process */
+    mc_pipe_stream_t err;
+} mc_pipe_t;
 
 /*** structures declarations (and typedefs of structures)*****************************************/
 
@@ -86,10 +124,10 @@ int is_printable (int c);
 /* Quote the filename for the purpose of inserting it into the command
  * line.  If quote_percent is 1, replace "%" with "%%" - the percent is
  * processed by the mc command line. */
-char *name_quote (const char *c, int quote_percent);
+char *name_quote (const char *c, gboolean quote_percent);
 
 /* returns a duplicate of c. */
-char *fake_name_quote (const char *c, int quote_percent);
+char *fake_name_quote (const char *c, gboolean quote_percent);
 
 /* path_trunc() is the same as str_trunc() but
  * it deletes possible password from path for security
@@ -157,6 +195,10 @@ int my_systeml (int flags, const char *shell, ...);
 int my_systemv (const char *command, char *const argv[]);
 int my_systemv_flags (int flags, const char *command, char *const argv[]);
 
+mc_pipe_t *mc_popen (const char *command, GError ** error);
+void mc_pread (mc_pipe_t * p, GError ** error);
+void mc_pclose (mc_pipe_t * p, GError ** error);
+
 void my_exit (int status);
 void save_stop_handler (void);
 
@@ -206,6 +248,8 @@ char *mc_build_filenamev (const char *first_element, va_list args);
 
 void mc_propagate_error (GError ** dest, int code, const char *format, ...);
 void mc_replace_error (GError ** dest, int code, const char *format, ...);
+
+gboolean mc_time_elapsed (guint64 * timestamp, guint64 delay);
 
 /*** inline functions **************************************************/
 

@@ -1,6 +1,10 @@
 #ifndef MC_GLIBCOMPAT_H
 #define MC_GLIBCOMPAT_H
 
+#if ! GLIB_CHECK_VERSION (2, 22, 0)
+#include <stdarg.h>             /* for g_error_new_valist() */
+#endif /* ! GLIB_CHECK_VERSION (2, 22, 0) */
+
 /*** typedefs(not structures) and defined constants **********************************************/
 
 /*** enums ***************************************************************************************/
@@ -10,10 +14,6 @@
 /*** global variables defined in .c file *********************************************************/
 
 /*** declarations of public functions ************************************************************/
-
-#if ! GLIB_CHECK_VERSION (2, 13, 0)
-gboolean g_unichar_iszerowidth (gunichar);
-#endif /* ! GLIB_CHECK_VERSION (2, 13, 0) */
 
 #if ! GLIB_CHECK_VERSION (2, 16, 0)
 int g_strcmp0 (const char *str1, const char *str2);

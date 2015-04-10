@@ -1,7 +1,7 @@
 /*
    Concurrent shell support for the Midnight Commander
 
-   Copyright (C) 1994-2014
+   Copyright (C) 1994-2015
    Free Software Foundation, Inc.
 
    Written by:
@@ -874,7 +874,8 @@ init_subshell (void)
     {
     case BASH:
         g_snprintf (precmd, sizeof (precmd),
-                    " PROMPT_COMMAND='pwd>&%d;kill -STOP $$'\n", subshell_pipe[WRITE]);
+                    " PROMPT_COMMAND=${PROMPT_COMMAND:+$PROMPT_COMMAND; }'pwd>&%d;kill -STOP $$'\n",
+                    subshell_pipe[WRITE]);
         break;
 
     case ZSH:

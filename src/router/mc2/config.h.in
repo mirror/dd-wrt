@@ -592,6 +592,9 @@
    mounted file systems. (UNICOS) */
 #undef MOUNTED_LISTMNTENT
 
+/* Define if want to use /proc/self/mountinfo on Linux. */
+#undef MOUNTED_PROC_MOUNTINFO
+
 /* Define if there is a function named mntctl that can be used to read the
    list of mounted file systems, and there is a system header file that
    declares 'struct vmount.' (AIX) */
@@ -599,9 +602,6 @@
 
 /* Define to 1 if assertions should be disabled. */
 #undef NDEBUG
-
-/* Define to 1 if your C compiler doesn't accept -c and -o together. */
-#undef NO_MINUS_C_MINUS_O
 
 /* Name of package */
 #undef PACKAGE

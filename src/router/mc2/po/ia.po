@@ -5,13 +5,14 @@
 # Translators:
 # lusitanus <interlusitana@gmail.com>, 2011
 # Martijn Dekker <mcdutchie@hotmail.com>, 2012
+# SoftInterlingua <>, 2015
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2014-09-04 16:51+0300\n"
-"PO-Revision-Date: 2014-09-04 10:10+0000\n"
-"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
+"POT-Creation-Date: 2015-03-20 21:10+0300\n"
+"PO-Revision-Date: 2015-03-18 02:19+0000\n"
+"Last-Translator: SoftInterlingua <>\n"
 "Language-Team: Interlingua (http://www.transifex.com/projects/p/mc/language/"
 "ia/)\n"
 "Language: ia\n"
@@ -231,10 +232,10 @@ msgid "Right arrow"
 msgstr ""
 
 msgid "Insert"
-msgstr ""
+msgstr "Inserer"
 
 msgid "Delete"
-msgstr ""
+msgstr "Deler"
 
 msgid "Home"
 msgstr ""
@@ -341,6 +342,9 @@ msgstr "Apostrophe"
 msgid "Colon"
 msgstr "Duo punctos"
 
+msgid "Semicolon"
+msgstr ""
+
 msgid "Exclamation mark"
 msgstr "Signo de exclamation"
 
@@ -436,6 +440,27 @@ msgid ""
 msgstr ""
 "Le dimenion de schermo %dx%d non es supportate.\n"
 "Verifica le variabile de ambiente TERM.\n"
+
+msgid "Cannot create pipe descriptor"
+msgstr ""
+
+msgid "Cannot parse command for pipe"
+msgstr ""
+
+msgid "Cannot create pipe streams"
+msgstr ""
+
+#, c-format
+msgid ""
+"Unexpected error in select() reading data from a child process:\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
+"Unexpected error in waitpid():\n"
+"%s"
+msgstr ""
 
 msgid "Warning"
 msgstr "Advertimento"
@@ -651,7 +676,7 @@ msgid ""
 "   color16 to color255, or rgb000 to rgb555 and gray0 to gray23\n"
 "\n"
 "Attributes:\n"
-"   bold, underline, reverse, blink; append more with '+'\n"
+"   bold, italic, underline, reverse, blink; append more with '+'\n"
 msgstr ""
 
 msgid "Color options"
@@ -691,6 +716,12 @@ msgstr "Nulle parametro passate al visualisator."
 msgid "Two files are required to evoke the diffviewer."
 msgstr "Duo files es necessari pro usar le visualisator de differentias."
 
+msgid "Background protocol error"
+msgstr "Error de protocollo in secunde plano"
+
+msgid "Reading failed"
+msgstr "Lectura fallite"
+
 msgid "Background process error"
 msgstr "Error in processo in secunde plano"
 
@@ -699,12 +730,6 @@ msgstr "Error incognite in processo filio"
 
 msgid "Child died unexpectedly"
 msgstr "Termination inexpectate del processo filio"
-
-msgid "Background protocol error"
-msgstr "Error de protocollo in secunde plano"
-
-msgid "Reading failed"
-msgstr "Lectura fallite"
 
 msgid ""
 "Background process sent us a request for more arguments\n"
@@ -858,58 +883,6 @@ msgstr ""
 
 msgid "Two files are needed to compare"
 msgstr "Duo files es necessari pro comparar"
-
-msgid "Bookmarks"
-msgstr ""
-
-msgid " - Sort: "
-msgstr ""
-
-msgid "ABC"
-msgstr ""
-
-msgid "FRQ"
-msgstr ""
-
-#, fuzzy
-msgid " - Filter: "
-msgstr "Filtro"
-
-msgid "FOUND"
-msgstr ""
-
-msgid "USER"
-msgstr ""
-
-#, fuzzy
-msgid "&Go to"
-msgstr "&Vader al linea..."
-
-#, fuzzy
-msgid "&Add"
-msgstr "&Adder nove"
-
-msgid "&Remove"
-msgstr "&Remover"
-
-msgid "Fl&ush"
-msgstr ""
-
-#, fuzzy
-msgid "&Filter"
-msgstr "Filtro"
-
-msgid "&Sort"
-msgstr ""
-
-msgid "Re&verse"
-msgstr ""
-
-msgid "Bookmark list"
-msgstr ""
-
-msgid "Bookmark detail"
-msgstr ""
 
 msgid "Choose syntax highlighting"
 msgstr "Selige coloration syntactic"
@@ -1531,14 +1504,14 @@ msgid "Word wrap line length:"
 msgstr ""
 
 msgid "Editor options"
-msgstr ""
+msgstr "Optiones de editor"
 
 msgid ""
 "A user friendly text editor\n"
 "written for the Midnight Commander."
 msgstr ""
 
-msgid "Copyright (C) 1996-2014 the Free Software Foundation"
+msgid "Copyright (C) 1996-2015 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -1581,13 +1554,13 @@ msgid "Danish"
 msgstr ""
 
 msgid "German"
-msgstr ""
+msgstr "Germano"
 
 msgid "Greek"
 msgstr ""
 
 msgid "English"
-msgstr ""
+msgstr "Anglese"
 
 msgid "British English"
 msgstr ""
@@ -1602,7 +1575,7 @@ msgid "Esperanto"
 msgstr ""
 
 msgid "Spanish"
-msgstr ""
+msgstr "Espaniol"
 
 msgid "Faroese"
 msgstr ""
@@ -1644,7 +1617,7 @@ msgid "&Add word"
 msgstr ""
 
 msgid "Language"
-msgstr ""
+msgstr "Lingua"
 
 msgid "Misspelled"
 msgstr ""
@@ -1723,6 +1696,12 @@ msgstr ""
 msgid ""
 "Cannot chown \"%s\"\n"
 "%s"
+msgstr ""
+
+msgid "< Default >"
+msgstr ""
+
+msgid "Skins"
 msgstr ""
 
 msgid "Other 8 bit"
@@ -1808,12 +1787,6 @@ msgstr ""
 
 msgid "Configure options"
 msgstr "Configurar optiones"
-
-msgid "< Default >"
-msgstr ""
-
-msgid "Skins"
-msgstr ""
 
 msgid "Skin:"
 msgstr ""
@@ -2834,6 +2807,9 @@ msgstr "Nove &entrata"
 msgid "&Insert"
 msgstr "&Inserer"
 
+msgid "&Remove"
+msgstr "&Remover"
+
 msgid "Subgroup - press ENTER to see list"
 msgstr ""
 
@@ -3495,12 +3471,6 @@ msgid "The %%var macro has no variable"
 msgstr ""
 
 #, c-format
-msgid ""
-"Cannot open file%s\n"
-"%s"
-msgstr ""
-
-#, c-format
 msgid "No suitable entries found in %s"
 msgstr ""
 
@@ -4136,12 +4106,6 @@ msgstr ""
 "Midnight Commander essera ora claudite.\n"
 "Salveguardar le file modificate?"
 
-msgid "Cannot spawn child process"
-msgstr ""
-
-msgid "Empty output from child filter"
-msgstr ""
-
 msgid "&Line number"
 msgstr ""
 
@@ -4185,6 +4149,12 @@ msgid "ButtonBar|Unform"
 msgstr ""
 
 msgid "ButtonBar|Format"
+msgstr ""
+
+#, c-format
+msgid ""
+"Failed to read data from child stdout:\n"
+"%s"
 msgstr ""
 
 #, c-format

@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2014-09-04 16:51+0300\n"
-"PO-Revision-Date: 2014-09-04 10:10+0000\n"
+"POT-Creation-Date: 2015-03-20 21:10+0300\n"
+"PO-Revision-Date: 2015-02-26 09:48+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: French (http://www.transifex.com/projects/p/mc/language/fr/)\n"
 "Language: fr\n"
@@ -343,6 +343,9 @@ msgstr "Apostrophe"
 msgid "Colon"
 msgstr "Deux points"
 
+msgid "Semicolon"
+msgstr ""
+
 msgid "Exclamation mark"
 msgstr "Point d'exclamation"
 
@@ -438,6 +441,27 @@ msgid ""
 msgstr ""
 "La taille de l'écran %dx%d n'est pas supportée.\n"
 "Vérifiez la variable d'environnement TERM.\n"
+
+msgid "Cannot create pipe descriptor"
+msgstr ""
+
+msgid "Cannot parse command for pipe"
+msgstr ""
+
+msgid "Cannot create pipe streams"
+msgstr ""
+
+#, c-format
+msgid ""
+"Unexpected error in select() reading data from a child process:\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
+"Unexpected error in waitpid():\n"
+"%s"
+msgstr ""
 
 msgid "Warning"
 msgstr "Attention"
@@ -653,7 +677,7 @@ msgid ""
 "   color16 to color255, or rgb000 to rgb555 and gray0 to gray23\n"
 "\n"
 "Attributes:\n"
-"   bold, underline, reverse, blink; append more with '+'\n"
+"   bold, italic, underline, reverse, blink; append more with '+'\n"
 msgstr ""
 
 msgid "Color options"
@@ -693,6 +717,12 @@ msgstr "Aucun argument passé à la visionneuse."
 msgid "Two files are required to evoke the diffviewer."
 msgstr "Deux fichiers sont nécessaires pour lancer la vue différentielle."
 
+msgid "Background protocol error"
+msgstr "Erreur de protocole en tâche de fond"
+
+msgid "Reading failed"
+msgstr "Échec de lecture"
+
 msgid "Background process error"
 msgstr "Erreur dans un processus en tâche de fond"
 
@@ -701,12 +731,6 @@ msgstr " Erreur inconnue dans le processus fils"
 
 msgid "Child died unexpectedly"
 msgstr " Fin inattendue du processus fils"
-
-msgid "Background protocol error"
-msgstr "Erreur de protocole en tâche de fond"
-
-msgid "Reading failed"
-msgstr "Échec de lecture"
 
 msgid ""
 "Background process sent us a request for more arguments\n"
@@ -860,62 +884,6 @@ msgstr ""
 
 msgid "Two files are needed to compare"
 msgstr "Deux fichiers sont nécessaires à la comparaison"
-
-#, fuzzy
-msgid "Bookmarks"
-msgstr "Supprimer tous les marque-pages"
-
-#, fuzzy
-msgid " - Sort: "
-msgstr " Trier"
-
-msgid "ABC"
-msgstr ""
-
-msgid "FRQ"
-msgstr ""
-
-#, fuzzy
-msgid " - Filter: "
-msgstr "Filtre"
-
-msgid "FOUND"
-msgstr ""
-
-msgid "USER"
-msgstr ""
-
-#, fuzzy
-msgid "&Go to"
-msgstr "&Aller à la ligne..."
-
-#, fuzzy
-msgid "&Add"
-msgstr "&Ajouter un nouveau"
-
-msgid "&Remove"
-msgstr "&Supprimer"
-
-msgid "Fl&ush"
-msgstr ""
-
-#, fuzzy
-msgid "&Filter"
-msgstr "Filtre"
-
-#, fuzzy
-msgid "&Sort"
-msgstr " Trier"
-
-#, fuzzy
-msgid "Re&verse"
-msgstr "Inve&Rsé"
-
-msgid "Bookmark list"
-msgstr ""
-
-msgid "Bookmark detail"
-msgstr ""
 
 msgid "Choose syntax highlighting"
 msgstr "Choisir la coloration syntaxique"
@@ -1549,7 +1517,7 @@ msgid ""
 "written for the Midnight Commander."
 msgstr ""
 
-msgid "Copyright (C) 1996-2014 the Free Software Foundation"
+msgid "Copyright (C) 1996-2015 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -1742,6 +1710,12 @@ msgstr ""
 "Ne peut changer l'appartenance de \"%s\"\n"
 "%s"
 
+msgid "< Default >"
+msgstr ""
+
+msgid "Skins"
+msgstr ""
+
 msgid "Other 8 bit"
 msgstr "Autre 8 bits"
 
@@ -1825,12 +1799,6 @@ msgstr "Enregistrement a&utomatique de la configuration"
 
 msgid "Configure options"
 msgstr "Configurer les options"
-
-msgid "< Default >"
-msgstr ""
-
-msgid "Skins"
-msgstr ""
 
 msgid "Skin:"
 msgstr ""
@@ -2920,6 +2888,9 @@ msgstr "Nouvelle &entrée"
 msgid "&Insert"
 msgstr "&Insérer"
 
+msgid "&Remove"
+msgstr "&Supprimer"
+
 msgid "Subgroup - press ENTER to see list"
 msgstr "Sous-groupe - tapez Entrée pour voir la liste"
 
@@ -3594,14 +3565,6 @@ msgid "The %%var macro has no variable"
 msgstr ""
 
 #, c-format
-msgid ""
-"Cannot open file%s\n"
-"%s"
-msgstr ""
-"Impossible d'ouvrir le fichier %s\n"
-"%s"
-
-#, c-format
 msgid "No suitable entries found in %s"
 msgstr ""
 
@@ -4258,12 +4221,6 @@ msgid ""
 "Save modified file?"
 msgstr ""
 
-msgid "Cannot spawn child process"
-msgstr "Impossible de créer un processus fils"
-
-msgid "Empty output from child filter"
-msgstr "Sortie vide du processus fils"
-
 msgid "&Line number"
 msgstr ""
 
@@ -4311,6 +4268,12 @@ msgstr "ButtonBar|Fmter"
 
 #, c-format
 msgid ""
+"Failed to read data from child stdout:\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
 "Error while closing the file:\n"
 "%s\n"
 "Data may have been written or not"
@@ -4352,6 +4315,3 @@ msgstr "Continuer à partir de début ?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr ""
-
-#~ msgid "sftp: Invalid port value."
-#~ msgstr "sftp: Numéro de port invalide."

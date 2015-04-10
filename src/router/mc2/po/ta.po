@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2014-09-04 16:51+0300\n"
-"PO-Revision-Date: 2014-09-04 10:10+0000\n"
+"POT-Creation-Date: 2015-03-20 21:10+0300\n"
+"PO-Revision-Date: 2015-02-26 09:48+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Tamil (http://www.transifex.com/projects/p/mc/language/ta/)\n"
 "Language: ta\n"
@@ -332,6 +332,9 @@ msgstr ""
 msgid "Colon"
 msgstr ""
 
+msgid "Semicolon"
+msgstr ""
+
 msgid "Exclamation mark"
 msgstr ""
 
@@ -424,6 +427,27 @@ msgstr ""
 msgid ""
 "Screen size %dx%d is not supported.\n"
 "Check the TERM environment variable.\n"
+msgstr ""
+
+msgid "Cannot create pipe descriptor"
+msgstr ""
+
+msgid "Cannot parse command for pipe"
+msgstr ""
+
+msgid "Cannot create pipe streams"
+msgstr ""
+
+#, c-format
+msgid ""
+"Unexpected error in select() reading data from a child process:\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
+"Unexpected error in waitpid():\n"
+"%s"
 msgstr ""
 
 msgid "Warning"
@@ -640,7 +664,7 @@ msgid ""
 "   color16 to color255, or rgb000 to rgb555 and gray0 to gray23\n"
 "\n"
 "Attributes:\n"
-"   bold, underline, reverse, blink; append more with '+'\n"
+"   bold, italic, underline, reverse, blink; append more with '+'\n"
 msgstr ""
 
 msgid "Color options"
@@ -680,6 +704,12 @@ msgstr ""
 msgid "Two files are required to evoke the diffviewer."
 msgstr ""
 
+msgid "Background protocol error"
+msgstr ""
+
+msgid "Reading failed"
+msgstr ""
+
 msgid "Background process error"
 msgstr ""
 
@@ -687,12 +717,6 @@ msgid "Unknown error in child"
 msgstr ""
 
 msgid "Child died unexpectedly"
-msgstr ""
-
-msgid "Background protocol error"
-msgstr ""
-
-msgid "Reading failed"
 msgstr ""
 
 msgid ""
@@ -837,54 +861,6 @@ msgid "Diff viewer: invalid mode"
 msgstr ""
 
 msgid "Two files are needed to compare"
-msgstr ""
-
-msgid "Bookmarks"
-msgstr ""
-
-msgid " - Sort: "
-msgstr ""
-
-msgid "ABC"
-msgstr ""
-
-msgid "FRQ"
-msgstr ""
-
-msgid " - Filter: "
-msgstr ""
-
-msgid "FOUND"
-msgstr ""
-
-msgid "USER"
-msgstr ""
-
-msgid "&Go to"
-msgstr ""
-
-msgid "&Add"
-msgstr ""
-
-msgid "&Remove"
-msgstr ""
-
-msgid "Fl&ush"
-msgstr ""
-
-msgid "&Filter"
-msgstr ""
-
-msgid "&Sort"
-msgstr ""
-
-msgid "Re&verse"
-msgstr ""
-
-msgid "Bookmark list"
-msgstr ""
-
-msgid "Bookmark detail"
 msgstr ""
 
 msgid "Choose syntax highlighting"
@@ -1514,7 +1490,7 @@ msgid ""
 "written for the Midnight Commander."
 msgstr ""
 
-msgid "Copyright (C) 1996-2014 the Free Software Foundation"
+msgid "Copyright (C) 1996-2015 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -1701,6 +1677,12 @@ msgid ""
 "%s"
 msgstr ""
 
+msgid "< Default >"
+msgstr ""
+
+msgid "Skins"
+msgstr ""
+
 msgid "Other 8 bit"
 msgstr ""
 
@@ -1783,12 +1765,6 @@ msgid "A&uto save setup"
 msgstr ""
 
 msgid "Configure options"
-msgstr ""
-
-msgid "< Default >"
-msgstr ""
-
-msgid "Skins"
 msgstr ""
 
 msgid "Skin:"
@@ -2810,6 +2786,9 @@ msgstr ""
 msgid "&Insert"
 msgstr ""
 
+msgid "&Remove"
+msgstr ""
+
 msgid "Subgroup - press ENTER to see list"
 msgstr ""
 
@@ -3471,12 +3450,6 @@ msgid "The %%var macro has no variable"
 msgstr ""
 
 #, c-format
-msgid ""
-"Cannot open file%s\n"
-"%s"
-msgstr ""
-
-#, c-format
 msgid "No suitable entries found in %s"
 msgstr ""
 
@@ -4080,12 +4053,6 @@ msgid ""
 "Save modified file?"
 msgstr ""
 
-msgid "Cannot spawn child process"
-msgstr ""
-
-msgid "Empty output from child filter"
-msgstr ""
-
 msgid "&Line number"
 msgstr ""
 
@@ -4129,6 +4096,12 @@ msgid "ButtonBar|Unform"
 msgstr ""
 
 msgid "ButtonBar|Format"
+msgstr ""
+
+#, c-format
+msgid ""
+"Failed to read data from child stdout:\n"
+"%s"
 msgstr ""
 
 #, c-format
