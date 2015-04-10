@@ -73,17 +73,16 @@ void start_sysinit(void)
 	insmod("jbd2");
 	insmod("ext4");
 	FILE *check = fopen("/dev/sda3", "rb");
+	char drive[64];
 	if (check) {
 		fclose(check);
-		if (mount("/dev/sda3", "/jffs", "ext2", MS_MGC_VAL, NULL)) {
-			eval("/sbin/mkfs.ext2", "-F", "-b", "1024", "/dev/sda3");
-			mount("/dev/sda3", "/jffs", "ext2", MS_MGC_VAL, NULL);
-		}
+		sprintf(drive, "/dev/sda3");
 	} else {
-		if (mount("/dev/mmcblk0p3", "/jffs", "ext2", MS_MGC_VAL, NULL)) {
-			eval("/sbin/mkfs.ext2", "-F", "-b", "1024", "/dev/mmcblk0p3");
-			mount("/dev/mmcblk0p3", "/jffs", "ext2", MS_MGC_VAL, NULL);
-		}
+		sprintf(drive, "/dev/mmcblk0p3");
+	}
+	if (mount(drive, "/jffs", "ext2", MS_MGC_VAL, NULL)) {
+		eval("/sbin/mkfs.ext2", "-F", "-b", "1024", drive);
+		mount(drive, "/jffs", "ext2", MS_MGC_VAL, NULL);
 	}
 	eval("mount", "--bind", "/jffs", "/usr/local");
 
