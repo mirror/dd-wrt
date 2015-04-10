@@ -240,7 +240,8 @@ struct event_desc {
 #define OPT_LOCAL_SERVICE  49
 #define OPT_LOOP_DETECT    50
 #define OPT_EXTRALOG       51
-#define OPT_LAST           52
+#define OPT_TFTP_NO_FAIL   52
+#define OPT_LAST           53
 
 /* extra flags for my_syslog, we use a couple of facilities since they are known 
    not to occupy the same bits as priorities, no matter how syslog.h is set up. */
@@ -582,6 +583,7 @@ struct hostsfile {
 #define STAT_NO_NS             10
 #define STAT_NEED_DS_NEG       11
 #define STAT_CHASE_CNAME       12
+#define STAT_INSECURE_DS       13
 
 #define FREC_NOREBIND           1
 #define FREC_CHECKING_DISABLED  2
@@ -901,6 +903,7 @@ struct addr_list {
 struct tftp_prefix {
   char *interface;
   char *prefix;
+  int missing;
   struct tftp_prefix *next;
 };
 
