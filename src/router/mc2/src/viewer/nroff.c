@@ -1,8 +1,8 @@
 /*
    Internal file viewer for the Midnight Commander
-   Function for nroff-like view
+   Functions for searching in nroff-like view
 
-   Copyright (C) 1994-2014
+   Copyright (C) 1994-2015
    Free Software Foundation, Inc.
 
    Written by:
@@ -65,11 +65,11 @@ mcview_nroff_get_char (mcview_nroff_t * nroff, int *ret_val, off_t nroff_index)
     if (nroff->view->utf8)
     {
         gboolean utf_result;
-        c = mcview_get_utf (nroff->view, nroff_index, &nroff->char_width, &utf_result);
+        c = mcview_get_utf (nroff->view, nroff_index, &nroff->char_length, &utf_result);
         if (!utf_result)
         {
             /* we need got symbol in any case */
-            nroff->char_width = 1;
+            nroff->char_length = 1;
             if (!mcview_get_byte (nroff->view, nroff_index, &c) || !g_ascii_isprint (c))
                 return FALSE;
         }
@@ -77,7 +77,7 @@ mcview_nroff_get_char (mcview_nroff_t * nroff, int *ret_val, off_t nroff_index)
     else
 #endif
     {
-        nroff->char_width = 1;
+        nroff->char_length = 1;
         if (!mcview_get_byte (nroff->view, nroff_index, &c))
             return FALSE;
     }
@@ -89,162 +89,6 @@ mcview_nroff_get_char (mcview_nroff_t * nroff, int *ret_val, off_t nroff_index)
 
 /* --------------------------------------------------------------------------------------------- */
 /*** public functions ****************************************************************************/
-/* --------------------------------------------------------------------------------------------- */
-
-void
-mcview_display_nroff (mcview_t * view)
-{
-    const screen_dimen left = view->data_area.left;
-    const screen_dimen top = view->data_area.top;
-    const screen_dimen width = view->data_area.width;
-    const screen_dimen height = view->data_area.height;
-    screen_dimen row, col;
-    off_t from;
-    int cw = 1;
-    int c;
-    int c_prev = 0;
-    int c_next = 0;
-
-    mcview_display_clean (view);
-    mcview_display_ruler (view);
-
-    /* Find the first displayable changed byte */
-    from = view->dpy_start;
-
-    tty_setcolor (VIEW_NORMAL_COLOR);
-    for (row = 0, col = 0; row < height;)
-    {
-#ifdef HAVE_CHARSET
-        if (view->utf8)
-        {
-            gboolean read_res = TRUE;
-            c = mcview_get_utf (view, from, &cw, &read_res);
-            if (!read_res)
-                break;
-        }
-        else
-#endif
-        {
-            if (!mcview_get_byte (view, from, &c))
-                break;
-        }
-        from++;
-        if (cw > 1)
-            from += cw - 1;
-
-        if (c == '\b')
-        {
-            if (from > 1)
-            {
-#ifdef HAVE_CHARSET
-                if (view->utf8)
-                {
-                    gboolean read_res;
-                    c_next = mcview_get_utf (view, from, &cw, &read_res);
-                }
-                else
-#endif
-                    mcview_get_byte (view, from, &c_next);
-            }
-            if (g_unichar_isprint (c_prev) && g_unichar_isprint (c_next)
-                && (c_prev == c_next || c_prev == '_' || (c_prev == '+' && c_next == 'o')))
-            {
-                if (col == 0)
-                {
-                    if (row == 0)
-                    {
-                        /* We're inside an nroff character sequence at the
-                         * beginning of the screen -- just skip the
-                         * backspace and continue with the next character. */
-                        continue;
-                    }
-                    row--;
-                    col = width;
-                }
-                col--;
-                if (c_prev == '_'
-                    && (c_next != '_' || mcview_count_backspaces (view, from + 1) == 1))
-                    tty_setcolor (VIEW_UNDERLINED_COLOR);
-                else
-                    tty_setcolor (VIEW_BOLD_COLOR);
-                continue;
-            }
-        }
-
-        if ((c == '\n') || (col >= width && view->text_wrap_mode))
-        {
-            col = 0;
-            row++;
-            if (c == '\n' || row >= height)
-                continue;
-        }
-
-        if (c == '\r')
-        {
-            mcview_get_byte_indexed (view, from, 1, &c);
-            if (c == '\r' || c == '\n')
-                continue;
-            col = 0;
-            row++;
-            continue;
-        }
-
-        if (c == '\t')
-        {
-            off_t line, column;
-            mcview_offset_to_coord (view, &line, &column, from);
-            col += (option_tab_spacing - col % option_tab_spacing);
-            if (view->text_wrap_mode && col >= width && width != 0)
-            {
-                row += col / width;
-                col %= width;
-            }
-            continue;
-        }
-
-        if (view->search_start <= from && from < view->search_end)
-        {
-            tty_setcolor (SELECTED_COLOR);
-        }
-
-        c_prev = c;
-
-        if ((off_t) col >= view->dpy_text_column
-            && (off_t) col - view->dpy_text_column < (off_t) width)
-        {
-            widget_move (view, top + row, left + ((off_t) col - view->dpy_text_column));
-#ifdef HAVE_CHARSET
-            if (mc_global.utf8_display)
-            {
-                if (!view->utf8)
-                {
-                    c = convert_from_8bit_to_utf_c ((unsigned char) c, view->converter);
-                }
-                if (!g_unichar_isprint (c))
-                    c = '.';
-            }
-            else if (view->utf8)
-                c = convert_from_utf_to_current_c (c, view->converter);
-            else
-                c = convert_to_display_c (c);
-#endif
-            tty_print_anychar (c);
-        }
-        col++;
-#ifdef HAVE_CHARSET
-        if (view->utf8)
-        {
-            if (g_unichar_iswide (c))
-                col++;
-            else if (g_unichar_iszerowidth (c))
-                col--;
-        }
-#endif
-        tty_setcolor (VIEW_NORMAL_COLOR);
-    }
-    view->dpy_end = from;
-}
-
 /* --------------------------------------------------------------------------------------------- */
 
 int
@@ -265,7 +109,7 @@ mcview__get_nroff_real_len (mcview_t * view, off_t start, off_t length)
         switch (nroff->type)
         {
         case NROFF_TYPE_BOLD:
-            ret += 1 + nroff->char_width;       /* real char width and 0x8 */
+            ret += 1 + nroff->char_length;      /* real char length and 0x8 */
             break;
         case NROFF_TYPE_UNDERLINE:
             ret += 2;           /* underline symbol and ox8 */
@@ -273,7 +117,7 @@ mcview__get_nroff_real_len (mcview_t * view, off_t start, off_t length)
         default:
             break;
         }
-        i += nroff->char_width;
+        i += nroff->char_length;
         mcview_nroff_seq_next (nroff);
     }
 
@@ -331,10 +175,10 @@ mcview_nroff_seq_info (mcview_nroff_t * nroff)
     if (!mcview_nroff_get_char (nroff, &nroff->current_char, nroff->index))
         return nroff->type;
 
-    if (!mcview_get_byte (nroff->view, nroff->index + nroff->char_width, &next) || next != '\b')
+    if (!mcview_get_byte (nroff->view, nroff->index + nroff->char_length, &next) || next != '\b')
         return nroff->type;
 
-    if (!mcview_nroff_get_char (nroff, &next2, nroff->index + 1 + nroff->char_width))
+    if (!mcview_nroff_get_char (nroff, &next2, nroff->index + 1 + nroff->char_length))
         return nroff->type;
 
     if (nroff->current_char == '_' && next2 == '_')
@@ -372,7 +216,7 @@ mcview_nroff_seq_next (mcview_nroff_t * nroff)
     switch (nroff->type)
     {
     case NROFF_TYPE_BOLD:
-        nroff->index += 1 + nroff->char_width;
+        nroff->index += 1 + nroff->char_length;
         break;
     case NROFF_TYPE_UNDERLINE:
         nroff->index += 2;
@@ -381,7 +225,7 @@ mcview_nroff_seq_next (mcview_nroff_t * nroff)
         break;
     }
 
-    nroff->index += nroff->char_width;
+    nroff->index += nroff->char_length;
 
     mcview_nroff_seq_info (nroff);
     return nroff->current_char;

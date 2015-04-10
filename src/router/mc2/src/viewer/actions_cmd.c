@@ -2,7 +2,7 @@
    Internal file viewer for the Midnight Commander
    Callback function for some actions (hotkeys, menu)
 
-   Copyright (C) 1994-2014
+   Copyright (C) 1994-2015
    Free Software Foundation, Inc.
 
    Written by:
@@ -99,14 +99,16 @@ mcview_remove_ext_script (mcview_t * view)
 static void
 mcview_search (mcview_t * view, gboolean start_search)
 {
+    off_t want_search_start = view->search_start;
+
     if (start_search)
     {
         if (mcview_dialog_search (view))
         {
             if (view->hex_mode)
-                view->search_start = view->hex_cursor;
+                want_search_start = view->hex_cursor;
 
-            mcview_do_search (view);
+            mcview_do_search (view, want_search_start);
         }
     }
     else
@@ -114,14 +116,14 @@ mcview_search (mcview_t * view, gboolean start_search)
         if (view->hex_mode)
         {
             if (!mcview_search_options.backwards)
-                view->search_start = view->hex_cursor + 1;
+                want_search_start = view->hex_cursor + 1;
             else if (view->hex_cursor > 0)
-                view->search_start = view->hex_cursor - 1;
+                want_search_start = view->hex_cursor - 1;
             else
-                view->search_start = 0;
+                want_search_start = 0;
         }
 
-        mcview_do_search (view);
+        mcview_do_search (view, want_search_start);
     }
 }
 
@@ -252,7 +254,7 @@ mcview_handle_editkey (mcview_t * view, int key)
     else
     {
         /* Text editing */
-        if (key < 256 && ((key == '\n') || is_printable (key)))
+        if (key < 256 && key != '\t')
             byte_val = key;
         else
             return MSG_NOT_HANDLED;
@@ -510,6 +512,8 @@ mcview_execute_cmd (mcview_t * view, unsigned long command)
         break;
     case CK_Bookmark:
         view->dpy_start = view->marks[view->marker];
+        view->dpy_paragraph_skip_lines = 0;     /* TODO: remember this value in the marker? */
+        view->dpy_wrap_dirty = TRUE;
         view->dirty++;
         break;
 #ifdef HAVE_CHARSET
@@ -592,6 +596,7 @@ mcview_adjust_size (WDialog * h)
     widget_set_size (WIDGET (view), 0, 0, LINES - 1, COLS);
     widget_set_size (WIDGET (b), LINES - 1, 0, 1, COLS);
 
+    view->dpy_wrap_dirty = TRUE;
     mcview_compute_areas (view);
     mcview_update_bytes_per_line (view);
 }
@@ -669,7 +674,8 @@ mcview_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *
     case MSG_KEY:
         i = mcview_handle_key (view, parm);
         mcview_update (view);
-        return i;
+        /* don't pass any chars to command line in QuickView mode */
+        return mcview_is_in_panel (view) ? MSG_HANDLED : i;
 
     case MSG_ACTION:
         i = mcview_execute_cmd (view, parm);

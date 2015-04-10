@@ -2,7 +2,7 @@
    Skins engine.
    Work with colors - backward compatibility
 
-   Copyright (C) 2009-2014
+   Copyright (C) 2009-2015
    Free Software Foundation, Inc.
 
    Written by:
@@ -96,8 +96,8 @@ static const mc_skin_colors_old_t old_colors[] = {
     {"reverse", "core", "reverse"},
     {"selected", "core", "selected"},
     {"statusbar", "statusbar", "_default_"},
-    {"viewnormal", "viewer", "_default_"},
     {"viewbold", "viewer", "viewbold"},
+    {"viewnormal", "viewer", "_default_"},
     {"viewselected", "viewer", "viewselected"},
     {"viewunderline", "viewer", "viewunderline"}
 };

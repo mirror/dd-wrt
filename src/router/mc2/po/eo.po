@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2014-09-04 16:51+0300\n"
-"PO-Revision-Date: 2014-09-04 10:10+0000\n"
+"POT-Creation-Date: 2015-03-20 21:10+0300\n"
+"PO-Revision-Date: 2015-02-26 09:48+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Esperanto (http://www.transifex.com/projects/p/mc/language/"
 "eo/)\n"
@@ -349,6 +349,9 @@ msgstr "Apostrofo"
 msgid "Colon"
 msgstr "Dupunkto"
 
+msgid "Semicolon"
+msgstr "Punktokomo"
+
 msgid "Exclamation mark"
 msgstr "Krisigno"
 
@@ -444,6 +447,31 @@ msgid ""
 msgstr ""
 "Ekrangrando %dx%d ne estas regata.\n"
 "Kontroli la medivariablon TERM.\n"
+
+msgid "Cannot create pipe descriptor"
+msgstr "Ne eblas krei duktan priskribilon"
+
+msgid "Cannot parse command for pipe"
+msgstr "Ne eblas analizi komandon por dukto"
+
+msgid "Cannot create pipe streams"
+msgstr "Ne eblas krei duktajn fluojn"
+
+#, c-format
+msgid ""
+"Unexpected error in select() reading data from a child process:\n"
+"%s"
+msgstr ""
+"Neatendita eraro en select() leginte datumojn el ida procezo:\n"
+"%s"
+
+#, c-format
+msgid ""
+"Unexpected error in waitpid():\n"
+"%s"
+msgstr ""
+"Neatendita eraro en waitpid():\n"
+"%s"
 
 msgid "Warning"
 msgstr "Averto"
@@ -679,7 +707,7 @@ msgid ""
 "   color16 to color255, or rgb000 to rgb555 and gray0 to gray23\n"
 "\n"
 "Attributes:\n"
-"   bold, underline, reverse, blink; append more with '+'\n"
+"   bold, italic, underline, reverse, blink; append more with '+'\n"
 msgstr ""
 "Ordinaraj koloroj:\n"
 "   black, gray, red, brightred, green, brightgreen, brown,\n"
@@ -689,8 +717,8 @@ msgstr ""
 "Aliaj koloroj, kiam 256 koloroj haveblas:\n"
 "   color16 ĝis color255, aŭ rgb000 ĝis rgb555 kaj gray0 ĝis gray23\n"
 "\n"
-"Attributes:\n"
-"   bold, underline, reverse, blink; almeti plian per '+'\n"
+"Attributoj:\n"
+"   bold, italic, underline, reverse, blink; almeti plian per '+'\n"
 
 msgid "Color options"
 msgstr "Kolora agordo"
@@ -732,6 +760,12 @@ msgstr "Neniuj parametroj donitaj al la legilo."
 msgid "Two files are required to evoke the diffviewer."
 msgstr "Du dosieroj estas bezonitaj por voki la flikaĵo-legilon."
 
+msgid "Background protocol error"
+msgstr "Eraro ĉe fona protokolo"
+
+msgid "Reading failed"
+msgstr "Legado malsukcesis"
+
 msgid "Background process error"
 msgstr "Eraro ĉe fona procezo"
 
@@ -740,12 +774,6 @@ msgstr "Nekonata eraro en ido"
 
 msgid "Child died unexpectedly"
 msgstr "Ido mortis neatendite"
-
-msgid "Background protocol error"
-msgstr "Eraro ĉe fona protokolo"
-
-msgid "Reading failed"
-msgstr "Legado malsukcesis"
 
 msgid ""
 "Background process sent us a request for more arguments\n"
@@ -903,62 +931,6 @@ msgstr "Diff-legilo: neprava reĝimo"
 
 msgid "Two files are needed to compare"
 msgstr "Du dosieroj estas bezonataj por kompari"
-
-#, fuzzy
-msgid "Bookmarks"
-msgstr "&Forviŝi legosignojn"
-
-#, fuzzy
-msgid " - Sort: "
-msgstr "Ordigi"
-
-msgid "ABC"
-msgstr ""
-
-msgid "FRQ"
-msgstr ""
-
-#, fuzzy
-msgid " - Filter: "
-msgstr "Filtri"
-
-msgid "FOUND"
-msgstr ""
-
-msgid "USER"
-msgstr ""
-
-#, fuzzy
-msgid "&Go to"
-msgstr "&Iri al linio..."
-
-#, fuzzy
-msgid "&Add"
-msgstr "&Aldoni novan"
-
-msgid "&Remove"
-msgstr "&Forigi"
-
-msgid "Fl&ush"
-msgstr ""
-
-#, fuzzy
-msgid "&Filter"
-msgstr "Filtri"
-
-#, fuzzy
-msgid "&Sort"
-msgstr "Ordigi"
-
-#, fuzzy
-msgid "Re&verse"
-msgstr "In&versigi"
-
-msgid "Bookmark list"
-msgstr ""
-
-msgid "Bookmark detail"
-msgstr ""
 
 msgid "Choose syntax highlighting"
 msgstr "Elekti sintaksan prilumadon"
@@ -1600,8 +1572,8 @@ msgstr ""
 "Afabla tekstoredaktilo\n"
 "verkita por Midnight Commander."
 
-msgid "Copyright (C) 1996-2014 the Free Software Foundation"
-msgstr "Kopirajto (C) 1996–2014 la Fondaĵo pri liberaj programoj"
+msgid "Copyright (C) 1996-2015 the Free Software Foundation"
+msgstr ""
 
 msgid "About"
 msgstr "Pri"
@@ -1797,6 +1769,12 @@ msgstr ""
 "Ne eblas ŝanĝi estrecon de \"%s\"\n"
 "%s"
 
+msgid "< Default >"
+msgstr "< Apriora >"
+
+msgid "Skins"
+msgstr "Etosoj"
+
 msgid "Other 8 bit"
 msgstr "Alia 8-bita"
 
@@ -1880,12 +1858,6 @@ msgstr "Aŭtomate konservi agor&don"
 
 msgid "Configure options"
 msgstr "Agordaĵoj"
-
-msgid "< Default >"
-msgstr "< Apriora >"
-
-msgid "Skins"
-msgstr "Etosoj"
 
 msgid "Skin:"
 msgstr "Etoso:"
@@ -2999,6 +2971,9 @@ msgstr "&Nova ero"
 msgid "&Insert"
 msgstr "&Enmeti"
 
+msgid "&Remove"
+msgstr "&Forigi"
+
 msgid "Subgroup - press ENTER to see list"
 msgstr "Subgrupo - premu enen-klavon por vidi liston"
 
@@ -3673,14 +3648,6 @@ msgid "The %%var macro has no variable"
 msgstr "La makroo %%var havas neniun variablon"
 
 #, c-format
-msgid ""
-"Cannot open file%s\n"
-"%s"
-msgstr ""
-"Ne eblas malfermi dosieron%s\n"
-"%s"
-
-#, c-format
 msgid "No suitable entries found in %s"
 msgstr "Neniuj taŭgaj eroj trovitaj en %s"
 
@@ -4339,14 +4306,8 @@ msgstr ""
 "Midnight Commander estas elirinta.\n"
 "Ĉu konservi modifitan dosieron?"
 
-msgid "Cannot spawn child process"
-msgstr "Ne eblas krei idan procezon"
-
-msgid "Empty output from child filter"
-msgstr "Vaka eligo el ida filtrilo"
-
 msgid "&Line number"
-msgstr ""
+msgstr "&Lininumero"
 
 msgid "Pe&rcents"
 msgstr "&Elcentoj"
@@ -4389,6 +4350,14 @@ msgstr "Buttonbar|Malform"
 
 msgid "ButtonBar|Format"
 msgstr "ButtonBar|Format"
+
+#, c-format
+msgid ""
+"Failed to read data from child stdout:\n"
+"%s"
+msgstr ""
+"Malsukcesis legi datumojn el ida ĉefeligujo:\n"
+"%s"
 
 #, c-format
 msgid ""
@@ -4438,6 +4407,3 @@ msgstr "Ĉu deiri de la komenco?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr "Ne eblas atingi lokan kopion de /ftp://some.host/editme.txt"
-
-#~ msgid "sftp: Invalid port value."
-#~ msgstr "sftp: Nevalida pordnumero."

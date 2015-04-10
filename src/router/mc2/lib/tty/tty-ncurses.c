@@ -2,7 +2,7 @@
    Interface to the terminal controlling library.
    Ncurses wrapper.
 
-   Copyright (C) 2005-2014
+   Copyright (C) 2005-2015
    Free Software Foundation, Inc.
 
    Written by:
@@ -66,7 +66,7 @@
 
 /*** file scope macro definitions ****************************************************************/
 
-#if defined(_AIX) && !defined(CTRL)
+#if !defined(CTRL)
 #define CTRL(x) ((x) & 0x1f)
 #endif
 

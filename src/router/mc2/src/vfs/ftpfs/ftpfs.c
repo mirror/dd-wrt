@@ -1,7 +1,7 @@
 /*
    Virtual File System: FTP file system.
 
-   Copyright (C) 1995-2014
+   Copyright (C) 1995-2015
    Free Software Foundation, Inc.
 
    Written by:
@@ -290,7 +290,7 @@ ftpfs_translate_path (struct vfs_class *me, struct vfs_s_super *super, const cha
         }
 
         /* strip leading slash(es) */
-        while (*remote_path == '/')
+        while (IS_PATH_SEP (*remote_path))
             remote_path++;
 
         /*
@@ -304,11 +304,11 @@ ftpfs_translate_path (struct vfs_class *me, struct vfs_s_super *super, const cha
 
         /* replace first occurrence of ":/" with ":" */
         p = strchr (ret, ':');
-        if ((p != NULL) && (*(p + 1) == '/'))
+        if (p != NULL && IS_PATH_SEP (p[1]))
             memmove (p + 1, p + 2, strlen (p + 2) + 1);
 
         /* strip trailing "/." */
-        p = strrchr (ret, '/');
+        p = strrchr (ret, PATH_SEP);
         if ((p != NULL) && (*(p + 1) == '.') && (*(p + 2) == '\0'))
             *p = '\0';
 
@@ -989,7 +989,8 @@ ftpfs_open_archive (struct vfs_s_super *super,
     SUP->strict = ftpfs_use_unix_list_options ? RFC_AUTODETECT : RFC_STRICT;
     SUP->isbinary = TYPE_UNKNOWN;
     SUP->remote_is_amiga = 0;
-    super->name = g_strdup ("/");
+    SUP->ctl_connection_busy = 0;
+    super->name = g_strdup (PATH_SEP_STR);
     super->root =
         vfs_s_new_inode (vpath_element->class, super,
                          vfs_s_default_stat (vpath_element->class, S_IFDIR | 0755));
@@ -1044,19 +1045,19 @@ ftpfs_get_current_directory (struct vfs_class *me, struct vfs_s_super *super)
 
                     if (*bufp != '\0')
                     {
-                        if (*(bufq - 1) != '/')
+                        if (!IS_PATH_SEP (bufq[-1]))
                         {
-                            *bufq++ = '/';
+                            *bufq++ = PATH_SEP;
                             *bufq = '\0';
                         }
 
-                        if (*bufp == '/')
+                        if (IS_PATH_SEP (*bufp))
                             return g_strdup (bufp);
 
                         /* If the remote server is an Amiga a leading slash
                            might be missing. MC needs it because it is used
                            as separator between hostname and path internally. */
-                        return g_strconcat ("/", bufp, (char *) NULL);
+                        return g_strconcat (PATH_SEP_STR, bufp, (char *) NULL);
                     }
 
                     break;
@@ -1359,6 +1360,10 @@ ftpfs_open_data_connection (struct vfs_class *me, struct vfs_s_super *super, con
     int s, j, data;
     socklen_t fromlen = sizeof (from);
 
+    /* FTP doesn't allow to open more than one file at a time */
+    if (SUP->ctl_connection_busy)
+        return -1;
+
     s = ftpfs_initconn (me, super);
     if (s == -1)
         return -1;
@@ -1376,7 +1381,7 @@ ftpfs_open_data_connection (struct vfs_class *me, struct vfs_s_super *super, con
         char *remote_path = ftpfs_translate_path (me, super, remote);
         j = ftpfs_command (me, super, WAIT_REPLY, "%s /%s", cmd,
                            /* WarFtpD can't STORE //filename */
-                           (*remote_path == '/') ? remote_path + 1 : remote_path);
+                           IS_PATH_SEP (*remote_path) ? remote_path + 1 : remote_path);
         g_free (remote_path);
     }
     else
@@ -1399,6 +1404,7 @@ ftpfs_open_data_connection (struct vfs_class *me, struct vfs_s_super *super, con
         close (s);
     }
     tty_disable_interrupt_key ();
+    SUP->ctl_connection_busy = 1;
     return data;
 }
 
@@ -1478,7 +1484,7 @@ resolve_symlink_without_ls_options (struct vfs_class *me, struct vfs_s_super *su
         fel = flist->data;
         if (S_ISLNK (fel->s.st_mode) && fel->linkname)
         {
-            if (fel->linkname[0] == '/')
+            if (IS_PATH_SEP (fel->linkname[0]))
             {
                 if (strlen (fel->linkname) >= MC_MAXPATHLEN)
                     continue;
@@ -1490,7 +1496,7 @@ resolve_symlink_without_ls_options (struct vfs_class *me, struct vfs_s_super *su
                     continue;
                 strcpy (tmp, dir->remote_path);
                 if (tmp[1] != '\0')
-                    strcat (tmp, "/");
+                    strcat (tmp, PATH_SEP_STR);
                 strcat (tmp + 1, fel->linkname);
             }
             for (depth = 0; depth < 100; depth++)
@@ -1502,7 +1508,7 @@ resolve_symlink_without_ls_options (struct vfs_class *me, struct vfs_s_super *su
                     if (S_ISLNK (fe->s.st_mode) && fe->l_stat == 0)
                     {
                         /* Symlink points to link which isn't resolved, yet. */
-                        if (fe->linkname[0] == '/')
+                        if (IS_PATH_SEP (fe->linkname[0]))
                         {
                             if (strlen (fe->linkname) >= MC_MAXPATHLEN)
                                 break;
@@ -1513,7 +1519,7 @@ resolve_symlink_without_ls_options (struct vfs_class *me, struct vfs_s_super *su
                             /* at this point tmp looks always like this
                                /directory/filename, i.e. no need to check
                                strrchr's return value */
-                            *(strrchr (tmp, '/') + 1) = '\0';   /* dirname */
+                            *(strrchr (tmp, PATH_SEP) + 1) = '\0';      /* dirname */
                             if ((strlen (tmp) + strlen (fe->linkname)) >= MC_MAXPATHLEN)
                                 break;
                             strcat (tmp, fe->linkname);
@@ -1714,6 +1720,7 @@ ftpfs_dir_load (struct vfs_class *me, struct vfs_s_inode *dir, char *remote_path
         {
             me->verrno = ECONNRESET;
             close (sock);
+            SUP->ctl_connection_busy = 0;
             tty_disable_interrupt_key ();
             ftpfs_get_reply (me, SUP->sock, NULL, 0);
             vfs_print_message (_("%s: failure"), me->name);
@@ -1742,6 +1749,7 @@ ftpfs_dir_load (struct vfs_class *me, struct vfs_s_inode *dir, char *remote_path
     }
 
     close (sock);
+    SUP->ctl_connection_busy = 0;
     me->verrno = E_REMOTE;
     if ((ftpfs_get_reply (me, SUP->sock, NULL, 0) != COMPLETE))
         goto fallback;
@@ -1807,9 +1815,10 @@ ftpfs_file_store (struct vfs_class *me, vfs_file_handler_t * fh, char *name, cha
     if (h == -1)
         ERRNOR (EIO, -1);
 
-    sock =
-        ftpfs_open_data_connection (me, super, ftp->append ? "APPE" : "STOR", name, TYPE_BINARY, 0);
-    if (sock < 0 || fstat (h, &s) == -1)
+    if (fstat (h, &s) == -1 ||
+        ((sock =
+          ftpfs_open_data_connection (me, super, ftp->append ? "APPE" : "STOR", name, TYPE_BINARY,
+                                      0)) < 0))
     {
         close (h);
         return -1;
@@ -1863,6 +1872,7 @@ ftpfs_file_store (struct vfs_class *me, vfs_file_handler_t * fh, char *name, cha
     }
     tty_disable_interrupt_key ();
     close (sock);
+    SUP->ctl_connection_busy = 0;
     close (h);
     if (ftpfs_get_reply (me, SUP->sock, NULL, 0) != COMPLETE)
         ERRNOR (EIO, -1);
@@ -1870,6 +1880,7 @@ ftpfs_file_store (struct vfs_class *me, vfs_file_handler_t * fh, char *name, cha
   error_return:
     tty_disable_interrupt_key ();
     close (sock);
+    SUP->ctl_connection_busy = 0;
     close (h);
     ftpfs_get_reply (me, SUP->sock, NULL, 0);
     return -1;
@@ -1893,7 +1904,6 @@ ftpfs_linear_start (struct vfs_class *me, vfs_file_handler_t * fh, off_t offset)
     if (FH_SOCK == -1)
         ERRNOR (EACCES, 0);
     fh->linear = LS_LINEAR_OPEN;
-    ((ftp_super_data_t *) (FH_SUPER->data))->ctl_connection_busy = 1;
     ((ftp_fh_data_t *) fh->data)->append = 0;
     return 1;
 }
@@ -2208,6 +2218,7 @@ ftpfs_fh_close (struct vfs_class *me, vfs_file_handler_t * fh)
 
         close (fh->handle);
         fh->handle = -1;
+        ftp->ctl_connection_busy = 0;
         /* File is stored to destination already, so
          * we prevent MEDATA->ftpfs_file_store() call from vfs_s_close ()
          */

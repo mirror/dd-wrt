@@ -604,8 +604,8 @@ regex/i/\.djvu?$
 regex/i/\.cb[zr]$
 	Open=@EXTHELPERSDIR@/doc.sh open comic
 
-# Epub
-shell/i/.epub
+# Epub & mobi
+regex/i/\.(epub|mobi)$
 	Open=@EXTHELPERSDIR@/doc.sh open epub
 	View=%view{ascii} @EXTHELPERSDIR@/doc.sh view epub
 
@@ -656,6 +656,10 @@ shell/i/.glade
 shell/.mo
 	View=%view{ascii} @EXTHELPERSDIR@/misc.sh view mo
 
+# po
+shell/.po
+	Open=@EXTHELPERSDIR@/misc.sh open po
+
 # lyx
 shell/i/.lyx
 	Open=@EXTHELPERSDIR@/misc.sh open lyx
@@ -691,7 +695,7 @@ type/i/^zip\ archive
 	View=%view{ascii} @EXTHELPERSDIR@/archive.sh view zip
 
 # jar(zip)
-type/i/^Java\ Jar\ file\ data\ \(zip\)
+type/i/^Java\ (Jar\ file|archive)\ data\ \((zip|JAR)\)
 	Open=%cd %p/uzip://
 	View=%view{ascii} @EXTHELPERSDIR@/archive.sh view zip
 

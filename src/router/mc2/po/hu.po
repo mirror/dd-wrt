@@ -4,15 +4,15 @@
 #
 # Translators:
 # Mátyás Demeter <mathias.demeter@gmail.com>, 2014
-# Rezső Páder <rezso@rezso.net>, 2012-2014
+# Rezső Páder <rezso@rezso.net>, 2012-2015
 # Slava Zanko <slavazanko@gmail.com>, 2011
 # Szabo Attila <atekka@gmail.com>, 2013
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2014-09-04 16:51+0300\n"
-"PO-Revision-Date: 2014-09-04 10:10+0000\n"
+"POT-Creation-Date: 2015-03-20 21:10+0300\n"
+"PO-Revision-Date: 2015-02-26 09:48+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Hungarian (http://www.transifex.com/projects/p/mc/language/"
 "hu/)\n"
@@ -158,7 +158,7 @@ msgstr ""
 "Alapértelmezett borítás használata"
 
 msgid "Escape"
-msgstr ""
+msgstr "Escape"
 
 msgid "Function key 1"
 msgstr " F1 "
@@ -224,10 +224,10 @@ msgid "Completion/M-tab"
 msgstr " Kieg./M-Tab"
 
 msgid "BackTab/S-tab"
-msgstr ""
+msgstr "Shift+Tab"
 
 msgid "Backspace"
-msgstr ""
+msgstr "Backspace"
 
 msgid "Up arrow"
 msgstr " <Fel> "
@@ -242,25 +242,25 @@ msgid "Right arrow"
 msgstr " <Jobbra> "
 
 msgid "Insert"
-msgstr ""
+msgstr "Insert"
 
 msgid "Delete"
-msgstr ""
+msgstr "Delete"
 
 msgid "Home"
-msgstr ""
+msgstr "Home"
 
 msgid "End key"
 msgstr " \"End\""
 
 msgid "Page Up"
-msgstr ""
+msgstr "Page Up"
 
 msgid "Page Down"
-msgstr ""
+msgstr "Page Down"
 
 msgid "/ on keypad"
-msgstr ""
+msgstr "/ numerikus"
 
 msgid "* on keypad"
 msgstr " * numerikus"
@@ -351,6 +351,9 @@ msgstr "Aposztróf"
 
 msgid "Colon"
 msgstr "Kettőspont"
+
+msgid "Semicolon"
+msgstr "Pontosvessző"
 
 msgid "Exclamation mark"
 msgstr "Felkiáltójel"
@@ -447,6 +450,27 @@ msgid ""
 msgstr ""
 "A(z) %dx%d képernyőméret nem támogatott.\n"
 "Ellenőrizze a TERM környezeti változót.\n"
+
+msgid "Cannot create pipe descriptor"
+msgstr ""
+
+msgid "Cannot parse command for pipe"
+msgstr ""
+
+msgid "Cannot create pipe streams"
+msgstr ""
+
+#, c-format
+msgid ""
+"Unexpected error in select() reading data from a child process:\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
+"Unexpected error in waitpid():\n"
+"%s"
+msgstr ""
 
 msgid "Warning"
 msgstr "Figyelem"
@@ -549,7 +573,7 @@ msgstr "Hiba"
 
 #, c-format
 msgid "%d: %s"
-msgstr ""
+msgstr "%d: %s"
 
 msgid "&Abort"
 msgstr "&Megszakítás"
@@ -652,6 +676,24 @@ msgid ""
 "   Viewer:       viewnormal,viewbold, viewunderline, viewselected\n"
 "   Help:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 msgstr ""
+"--colors KEYWORD={FORE},{BACK},{ATTR}:KEYWORD2=...\n"
+"\n"
+"{FORE}, {BACK} és {ATTR} elhagyható, akkor az alapértelmezett lesz "
+"használva\n"
+" Keywords:\n"
+"   Általános:       errors, disabled, reverse, gauge, header\n"
+"                 input, inputmark, inputunchanged, commandlinemark\n"
+"                 bbarhotkey, bbarbutton, statusbar\n"
+"   Fájl megjelenítés: normal, selected, marked, markselect\n"
+"   Dialógus dobozok: dnormal, dfocus, dhotnormal, dhotfocus, errdhotnormal,\n"
+"                 errdhotfocus\n"
+"   Menük:        menunormal, menuhot, menusel, menuhotsel, menuinactive\n"
+"   Popup menük:  pmenunormal, pmenusel, pmenutitle\n"
+"   Szerkesztő:       editnormal, editbold, editmarked, editwhitespace,\n"
+"                 editlinestate, editbg, editframe, editframeactive\n"
+"                 editframedrag\n"
+"   Megjelenítő:       viewnormal,viewbold, viewunderline, viewselected\n"
+"   Súgó:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 
 #. TRANSLATORS: don't translate color names and attributes
 msgid ""
@@ -664,20 +706,18 @@ msgid ""
 "   color16 to color255, or rgb000 to rgb555 and gray0 to gray23\n"
 "\n"
 "Attributes:\n"
-"   bold, underline, reverse, blink; append more with '+'\n"
+"   bold, italic, underline, reverse, blink; append more with '+'\n"
 msgstr ""
 "Alap színek:\\n\n"
-"   black (fekete), gray (szürke), red (piros), brightred (élénkpiros),\\n\n"
-"   green (zöld), brightgreen, brown (barna), yellow (sárga), \\n\n"
-"   blue (kék), brightblue, magenta (lila), brightmagenta,\\n\n"
-"   cyan (türkiz), brightcyan, lightgray andés white (fehér)\\n\n"
+"   black, gray, red, brightred, green, brightgreen, brown,\\n\n"
+"   yellow, blue, brightblue, magenta, brightmagenta, cyan,\\n\n"
+"   brightcyan, lightgray, white\\n\n"
 "\\n\n"
 "Bővített színek, ha a 256 szín elérhető:\\n\n"
 "   color16 - color255, vagy rgb000 - rgb555 és gray0 - gray23\\n\n"
 "\\n\n"
 "Attribútumok:\\n\n"
-"   bold (félkövér), underline (aláhúzott), reverse (inverz), blink "
-"(villogás); továbbiak hozzáadása: '+'\\n\n"
+"   bold, italic, underline, reverse, blink; továbbiak hozzáadása: '+'\\n\n"
 
 msgid "Color options"
 msgstr "Színbeállítások"
@@ -719,6 +759,12 @@ msgstr "Hiányzó paraméterek a nézethez."
 msgid "Two files are required to evoke the diffviewer."
 msgstr "Két fájl kell a diff-nézet indításához."
 
+msgid "Background protocol error"
+msgstr "Háttérprotokoll-hiba"
+
+msgid "Reading failed"
+msgstr "Sikertelen olvasás"
+
 msgid "Background process error"
 msgstr "Hiba a háttérfolyamatban"
 
@@ -727,12 +773,6 @@ msgstr "Ismeretlen hiba a futtatott programban"
 
 msgid "Child died unexpectedly"
 msgstr "Váratlanul leállt a futtatott program"
-
-msgid "Background protocol error"
-msgstr "Háttérprotokoll-hiba"
-
-msgid "Reading failed"
-msgstr "Sikertelen olvasás"
 
 msgid ""
 "Background process sent us a request for more arguments\n"
@@ -891,62 +931,6 @@ msgstr "Különbség megjelenítő: érvénytelen mód"
 msgid "Two files are needed to compare"
 msgstr "Két fájl kell az összehasonlításhoz"
 
-#, fuzzy
-msgid "Bookmarks"
-msgstr "Könyvjelzők &törlése"
-
-#, fuzzy
-msgid " - Sort: "
-msgstr "Rendezés"
-
-msgid "ABC"
-msgstr ""
-
-msgid "FRQ"
-msgstr ""
-
-#, fuzzy
-msgid " - Filter: "
-msgstr "Szűrő"
-
-msgid "FOUND"
-msgstr ""
-
-msgid "USER"
-msgstr ""
-
-#, fuzzy
-msgid "&Go to"
-msgstr "U&grás sorra..."
-
-#, fuzzy
-msgid "&Add"
-msgstr "Ú&j"
-
-msgid "&Remove"
-msgstr "&Törlés"
-
-msgid "Fl&ush"
-msgstr ""
-
-#, fuzzy
-msgid "&Filter"
-msgstr "Szűrő"
-
-#, fuzzy
-msgid "&Sort"
-msgstr "Rendezés"
-
-#, fuzzy
-msgid "Re&verse"
-msgstr "&Fordított sorrend"
-
-msgid "Bookmark list"
-msgstr ""
-
-msgid "Bookmark detail"
-msgstr ""
-
 msgid "Choose syntax highlighting"
 msgstr "Válasszon szintaktikus szövegkiemelést"
 
@@ -1000,7 +984,7 @@ msgstr "A cső nem megnyitható olvasásra: %s"
 
 #, c-format
 msgid "Searching %s: %3d%%"
-msgstr ""
+msgstr "%s keresése: %3d%%"
 
 #, c-format
 msgid "Searching %s"
@@ -1025,7 +1009,7 @@ msgid "Cannot open file for writing: %s"
 msgstr "A(z) \"%s\" fájl nem megnyitható írásra."
 
 msgid "The file you are saving does not end with a newline."
-msgstr ""
+msgstr "A mentendő fájl nem soremeléssel ér véget."
 
 msgid "C&ontinue"
 msgstr "&Tovább"
@@ -1586,7 +1570,7 @@ msgstr ""
 "Felhasználóbarát szövegszerkesztő\n"
 "a Midnight Commander-hez készítve"
 
-msgid "Copyright (C) 1996-2014 the Free Software Foundation"
+msgid "Copyright (C) 1996-2015 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -1617,13 +1601,13 @@ msgid "ButtonBar|PullDn"
 msgstr "Főmenü"
 
 msgid "Breton"
-msgstr ""
+msgstr "Breton"
 
 msgid "Czech"
-msgstr ""
+msgstr "Cseh"
 
 msgid "Welsh"
-msgstr ""
+msgstr "Velszi"
 
 msgid "Danish"
 msgstr "Dán"
@@ -1638,13 +1622,13 @@ msgid "English"
 msgstr "angol"
 
 msgid "British English"
-msgstr ""
+msgstr "Brit angol"
 
 msgid "Canadian English"
-msgstr ""
+msgstr "Kanadai angol"
 
 msgid "American English"
-msgstr ""
+msgstr "Amerikai angol"
 
 msgid "Esperanto"
 msgstr "Eszperantó"
@@ -1783,6 +1767,12 @@ msgstr ""
 "\"%s\" tulaja nem állítható\n"
 "%s"
 
+msgid "< Default >"
+msgstr "< Alapértelmezett >"
+
+msgid "Skins"
+msgstr ""
+
 msgid "Other 8 bit"
 msgstr "Egyéb 8 bites"
 
@@ -1867,17 +1857,11 @@ msgstr "Auto &Beállításmentés"
 msgid "Configure options"
 msgstr "Alapbeállítások"
 
-msgid "< Default >"
-msgstr ""
-
-msgid "Skins"
-msgstr ""
-
 msgid "Skin:"
 msgstr ""
 
 msgid "Appearance"
-msgstr ""
+msgstr "Megjelenítés"
 
 msgid "Case &insensitive"
 msgstr "&Kis-/nagybetű mindegy"
@@ -2413,7 +2397,7 @@ msgstr "Töröl"
 
 #, no-c-format
 msgid "%o %f%n\"%s\"%m"
-msgstr ""
+msgstr "%o %f%n\"%s\"%m"
 
 #, no-c-format
 msgid "%o %d %f%m"
@@ -2753,7 +2737,7 @@ msgstr ""
 
 #, c-format
 msgid "Directories: %zd, total size: %s"
-msgstr ""
+msgstr "Könyvtár: %zd, összméret: %s"
 
 msgid "Cannot operate on \"..\"!"
 msgstr "A \"..\" könyvtárral ez nem lehetséges!"
@@ -2985,6 +2969,9 @@ msgstr "Ú&j bejegyzés"
 
 msgid "&Insert"
 msgstr "Be&szúrás"
+
+msgid "&Remove"
+msgstr "&Törlés"
 
 msgid "Subgroup - press ENTER to see list"
 msgstr "Alcsoport (listázás: \"Enter\" billentyű)"
@@ -3337,7 +3324,7 @@ msgid "C&onfirmation..."
 msgstr "&Rákérdezés..."
 
 msgid "&Appearance..."
-msgstr ""
+msgstr "&Megjelenítés..."
 
 msgid "&Display bits..."
 msgstr "&Kivitel és bevitel..."
@@ -3657,14 +3644,6 @@ msgstr "A %%var makrónak nincs alapértéke"
 #, c-format
 msgid "The %%var macro has no variable"
 msgstr "A %%var makrónak nincs változója"
-
-#, c-format
-msgid ""
-"Cannot open file%s\n"
-"%s"
-msgstr ""
-"A(z) %s fájl nem megnyitható\n"
-"%s"
 
 #, c-format
 msgid "No suitable entries found in %s"
@@ -4328,14 +4307,8 @@ msgstr ""
 "A Midnight Commander kilép.\n"
 "Módosított fájl mentése?"
 
-msgid "Cannot spawn child process"
-msgstr "Nem sikerült programot indítani"
-
-msgid "Empty output from child filter"
-msgstr "A szűrő kimenete üres."
-
 msgid "&Line number"
-msgstr ""
+msgstr "&Sorszám"
 
 msgid "Pe&rcents"
 msgstr "Szá&zalék"
@@ -4378,6 +4351,12 @@ msgstr "NemForm"
 
 msgid "ButtonBar|Format"
 msgstr "Formáz"
+
+#, c-format
+msgid ""
+"Failed to read data from child stdout:\n"
+"%s"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -4425,6 +4404,3 @@ msgstr "Folytatás az elejéről?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr "Nem sikerült behozni /ftp://some.host/editme.txt helyi másolatát"
-
-#~ msgid "sftp: Invalid port value."
-#~ msgstr "sftp: Érvénytelen portszám."

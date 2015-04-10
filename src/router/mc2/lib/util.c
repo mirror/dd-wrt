@@ -1,7 +1,7 @@
 /*
    Various utilities
 
-   Copyright (C) 1994-2014
+   Copyright (C) 1994-2015
    Free Software Foundation, Inc.
 
    Written by:
@@ -52,6 +52,7 @@
 #include "lib/vfs/vfs.h"
 #include "lib/strutil.h"
 #include "lib/util.h"
+#include "lib/timer.h"
 
 /*** global variables ****************************************************************************/
 
@@ -151,28 +152,28 @@ resolve_symlinks (const vfs_path_t * vpath)
                 goto ret;
             }
             buf2[len] = 0;
-            if (*buf2 == PATH_SEP)
+            if (IS_PATH_SEP (*buf2))
                 strcpy (buf, buf2);
             else
                 strcpy (r, buf2);
         }
         canonicalize_pathname (buf);
         r = strchr (buf, 0);
-        if (!*r || *(r - 1) != PATH_SEP)
+        if (*r == '\0' || !IS_PATH_SEP (r[-1]))
             /* FIXME: this condition is always true because r points to the EOL */
         {
             *r++ = PATH_SEP;
-            *r = 0;
+            *r = '\0';
         }
         *q = c;
         p = q;
     }
     while (c != '\0');
 
-    if (!*buf)
+    if (*buf == '\0')
         strcpy (buf, PATH_SEP_STR);
-    else if (*(r - 1) == PATH_SEP && r != buf + 1)
-        *(r - 1) = 0;
+    else if (IS_PATH_SEP (r[-1]) && r != buf + 1)
+        r[-1] = '\0';
 
   ret:
     g_free (buf2);
@@ -244,28 +245,26 @@ is_printable (int c)
 /* --------------------------------------------------------------------------------------------- */
 /**
  * Quote the filename for the purpose of inserting it into the command
- * line.  If quote_percent is 1, replace "%" with "%%" - the percent is
+ * line.  If quote_percent is TRUE, replace "%" with "%%" - the percent is
  * processed by the mc command line.
  */
 char *
-name_quote (const char *s, int quote_percent)
+name_quote (const char *s, gboolean quote_percent)
 {
-    char *ret, *d;
+    GString *ret;
 
-    d = ret = g_malloc (strlen (s) * 2 + 2 + 1);
+    ret = g_string_sized_new (64);
+
     if (*s == '-')
-    {
-        *d++ = '.';
-        *d++ = '/';
-    }
+        g_string_append (ret, "." PATH_SEP_STR);
 
-    for (; *s; s++, d++)
+    for (; *s != '\0'; s++)
     {
         switch (*s)
         {
         case '%':
             if (quote_percent)
-                *d++ = '%';
+                g_string_append_c (ret, '%');
             break;
         case '\'':
         case '\\':
@@ -290,24 +289,24 @@ name_quote (const char *s, int quote_percent)
         case '*':
         case '(':
         case ')':
-            *d++ = '\\';
+            g_string_append_c (ret, '\\');
             break;
         case '~':
         case '#':
-            if (d == ret)
-                *d++ = '\\';
+            if (ret->len == 0)
+                g_string_append_c (ret, '\\');
             break;
         }
-        *d = *s;
+        g_string_append_c (ret, *s);
     }
-    *d = '\0';
-    return ret;
+
+    return g_string_free (ret, FALSE);
 }
 
 /* --------------------------------------------------------------------------------------------- */
 
 char *
-fake_name_quote (const char *s, int quote_percent)
+fake_name_quote (const char *s, gboolean quote_percent)
 {
     (void) quote_percent;
     return g_strdup (s);
@@ -654,17 +653,18 @@ x_basename (const char *s)
         || url_delim - s + strlen (VFS_PATH_URL_DELIMITER) < strlen (s))
     {
         /* avoid trailing PATH_SEP, if present */
-        if (s[strlen (s) - 1] == PATH_SEP)
-        {
-            while (--path_sep > s && *path_sep != PATH_SEP);
-            return (path_sep != s) ? path_sep + 1 : s;
-        }
-        else
+        if (!IS_PATH_SEP (s[strlen (s) - 1]))
             return (path_sep != NULL) ? path_sep + 1 : s;
+
+        while (--path_sep > s && !IS_PATH_SEP (*path_sep))
+            ;
+        return (path_sep != s) ? path_sep + 1 : s;
     }
 
-    while (--url_delim > s && *url_delim != PATH_SEP);
-    while (--url_delim > s && *url_delim != PATH_SEP);
+    while (--url_delim > s && !IS_PATH_SEP (*url_delim))
+        ;
+    while (--url_delim > s && !IS_PATH_SEP (*url_delim))
+        ;
 
     return (url_delim == s) ? s : url_delim + 1;
 }
@@ -1448,6 +1448,31 @@ mc_replace_error (GError ** dest, int code, const char *format, ...)
         *dest = NULL;
         g_propagate_error (dest, tmp_error);
     }
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+/**
+ * Returns if the given duration has elapsed since the given timestamp,
+ * and if it has then updates the timestamp.
+ *
+ * @param timestamp the last timestamp in microseconds, updated if the given time elapsed
+ * @param deleay amount of time in microseconds
+
+ * @return TRUE if clock skew detected, FALSE otherwise
+ */
+gboolean
+mc_time_elapsed (guint64 * timestamp, guint64 delay)
+{
+    guint64 now;
+
+    now = mc_timer_elapsed (mc_global.timer);
+
+    if (now >= *timestamp && now < *timestamp + delay)
+        return FALSE;
+
+    *timestamp = now;
+    return TRUE;
 }
 
 /* --------------------------------------------------------------------------------------------- */

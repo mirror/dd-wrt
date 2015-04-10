@@ -2,7 +2,7 @@
    Internal file viewer for the Midnight Commander
    Function for whow info on display
 
-   Copyright (C) 1994-2014
+   Copyright (C) 1994-2015
    Free Software Foundation, Inc.
 
    Written by:
@@ -251,10 +251,6 @@ mcview_display (mcview_t * view)
     {
         mcview_display_hex (view);
     }
-    else if (view->text_nroff_mode)
-    {
-        mcview_display_nroff (view);
-    }
     else
     {
         mcview_display_text (view);
@@ -288,11 +284,12 @@ mcview_compute_areas (mcview_t * view)
     /* Compute the heights of the areas */
     rest = view_area.height;
 
-    height = mcview_dimen_min (rest, 1);
+    height = min (rest, 1);
     view->status_area.height = height;
     rest -= height;
 
-    height = mcview_dimen_min (rest, (ruler == RULER_NONE || view->hex_mode) ? 0 : 2);
+    height = (ruler == RULER_NONE || view->hex_mode) ? 0 : 2;
+    height = min (rest, height);
     view->ruler_area.height = height;
     rest -= height;
 
@@ -325,10 +322,10 @@ mcview_update_bytes_per_line (mcview_t * view)
     const screen_dimen cols = view->data_area.width;
     int bytes;
 
-    if (cols < 8 + 17)
+    if (cols < 9 + 17)
         bytes = 4;
     else
-        bytes = 4 * ((cols - 8) / ((cols < 80) ? 17 : 18));
+        bytes = 4 * ((cols - 9) / ((cols <= 80) ? 17 : 18));
 #ifdef HAVE_ASSERT_H
     assert (bytes != 0);
 #endif

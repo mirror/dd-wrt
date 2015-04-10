@@ -12,8 +12,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2014-09-04 16:51+0300\n"
-"PO-Revision-Date: 2014-09-04 10:10+0000\n"
+"POT-Creation-Date: 2015-03-20 21:10+0300\n"
+"PO-Revision-Date: 2015-02-26 09:48+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Galician (http://www.transifex.com/projects/p/mc/language/"
 "gl/)\n"
@@ -355,6 +355,9 @@ msgstr "Apostrofo"
 msgid "Colon"
 msgstr "Dous puntos"
 
+msgid "Semicolon"
+msgstr ""
+
 msgid "Exclamation mark"
 msgstr "Signo de exclamación"
 
@@ -450,6 +453,27 @@ msgid ""
 msgstr ""
 "O tamaño de xanela %dx%d non esta admitido.\n"
 "Verifique o valor da variábel de contorno TERM.\n"
+
+msgid "Cannot create pipe descriptor"
+msgstr ""
+
+msgid "Cannot parse command for pipe"
+msgstr ""
+
+msgid "Cannot create pipe streams"
+msgstr ""
+
+#, c-format
+msgid ""
+"Unexpected error in select() reading data from a child process:\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
+"Unexpected error in waitpid():\n"
+"%s"
+msgstr ""
 
 msgid "Warning"
 msgstr "Atención"
@@ -665,18 +689,8 @@ msgid ""
 "   color16 to color255, or rgb000 to rgb555 and gray0 to gray23\n"
 "\n"
 "Attributes:\n"
-"   bold, underline, reverse, blink; append more with '+'\n"
+"   bold, italic, underline, reverse, blink; append more with '+'\n"
 msgstr ""
-"Cores estándar:\n"
-"   black, gray, red, brightred, green, brightgreen, brown,\n"
-"   yellow, blue, brightblue, magenta, brightmagenta, cyan,\n"
-"   brightcyan, lightgray and white\n"
-"\n"
-"Cores estendidas, cando estean dispoñíbeis 256 cores::\n"
-"   color16 a color255, ou rgb000 a rgb555 e gray0 a gray23\n"
-"\n"
-"Atributos:\n"
-"   bold, underline, reverse, blink; engadir máis empregando «+»\n"
 
 msgid "Color options"
 msgstr "Opcións de cor"
@@ -718,6 +732,12 @@ msgstr "Non hai argumentos para o visor."
 msgid "Two files are required to evoke the diffviewer."
 msgstr "Precísanse dous ficheiros para invocar o visor de diferenzas."
 
+msgid "Background protocol error"
+msgstr "Produciuse un erro de protocolo en proceso en 2º plano"
+
+msgid "Reading failed"
+msgstr "Produciuse un fallo na lectura"
+
 msgid "Background process error"
 msgstr "Produciuse un erro nun proceso en 2º plano"
 
@@ -726,12 +746,6 @@ msgstr "Produciuse un erro descoñecido no proceso fillo"
 
 msgid "Child died unexpectedly"
 msgstr "O proceso fillo rematou inesperadamente"
-
-msgid "Background protocol error"
-msgstr "Produciuse un erro de protocolo en proceso en 2º plano"
-
-msgid "Reading failed"
-msgstr "Produciuse un fallo na lectura"
 
 msgid ""
 "Background process sent us a request for more arguments\n"
@@ -889,62 +903,6 @@ msgstr "Visor de diferenzas: modo incorrecto"
 
 msgid "Two files are needed to compare"
 msgstr "Son precisos dous ficheiros para comparar"
-
-#, fuzzy
-msgid "Bookmarks"
-msgstr "Limpar &Todos os marcadores"
-
-#, fuzzy
-msgid " - Sort: "
-msgstr "Ordenar"
-
-msgid "ABC"
-msgstr ""
-
-msgid "FRQ"
-msgstr ""
-
-#, fuzzy
-msgid " - Filter: "
-msgstr "Filtro"
-
-msgid "FOUND"
-msgstr ""
-
-msgid "USER"
-msgstr ""
-
-#, fuzzy
-msgid "&Go to"
-msgstr "&Ir á liña "
-
-#, fuzzy
-msgid "&Add"
-msgstr "&Engadir novo"
-
-msgid "&Remove"
-msgstr "&Quitar"
-
-msgid "Fl&ush"
-msgstr ""
-
-#, fuzzy
-msgid "&Filter"
-msgstr "Filtro"
-
-#, fuzzy
-msgid "&Sort"
-msgstr "Ordenar"
-
-#, fuzzy
-msgid "Re&verse"
-msgstr "Inve&Rter"
-
-msgid "Bookmark list"
-msgstr ""
-
-msgid "Bookmark detail"
-msgstr ""
 
 msgid "Choose syntax highlighting"
 msgstr "Elixa a sintaxe de resalte"
@@ -1585,8 +1543,8 @@ msgstr ""
 "Un editor de texto de uso amigábel\n"
 "escrito para o Midnight Commander."
 
-msgid "Copyright (C) 1996-2014 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2014 a Free Software Foundation"
+msgid "Copyright (C) 1996-2015 the Free Software Foundation"
+msgstr ""
 
 msgid "About"
 msgstr "Sobre"
@@ -1782,6 +1740,12 @@ msgstr ""
 "Non é posíbel cambiar o propietario de «%s»\n"
 "%s"
 
+msgid "< Default >"
+msgstr "< Predeterminado >"
+
+msgid "Skins"
+msgstr "Temas"
+
 msgid "Other 8 bit"
 msgstr "Outro (8 bit)"
 
@@ -1865,12 +1829,6 @@ msgstr "Configuración do &Auto-gardado"
 
 msgid "Configure options"
 msgstr "Configuración"
-
-msgid "< Default >"
-msgstr "< Predeterminado >"
-
-msgid "Skins"
-msgstr "Temas"
 
 msgid "Skin:"
 msgstr "Tema:"
@@ -2986,6 +2944,9 @@ msgstr "Nova &Entrada"
 msgid "&Insert"
 msgstr "&Inserir"
 
+msgid "&Remove"
+msgstr "&Quitar"
+
 msgid "Subgroup - press ENTER to see list"
 msgstr "Subgrupo - prema INTRO para ver a lista"
 
@@ -3659,14 +3620,6 @@ msgid "The %%var macro has no variable"
 msgstr "A macro %%var non contén variábeis"
 
 #, c-format
-msgid ""
-"Cannot open file%s\n"
-"%s"
-msgstr ""
-"Non é posíbel abrir o ficheiro %s\n"
-"%s"
-
-#, c-format
 msgid "No suitable entries found in %s"
 msgstr "Non se atopan entradas apropiadas en %s"
 
@@ -4327,12 +4280,6 @@ msgstr ""
 "Saíndo de Midnight Commander.\n"
 "Gardar o ficheiro modificado?"
 
-msgid "Cannot spawn child process"
-msgstr "Non é posíbel executar o proceso fillo"
-
-msgid "Empty output from child filter"
-msgstr "Saída do filtro baleira"
-
 msgid "&Line number"
 msgstr ""
 
@@ -4377,6 +4324,12 @@ msgstr "ButtonBar|SenFormato"
 
 msgid "ButtonBar|Format"
 msgstr "ButtonBar|Formato"
+
+#, c-format
+msgid ""
+"Failed to read data from child stdout:\n"
+"%s"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -4426,6 +4379,3 @@ msgstr "Continuar desde o principio?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr "Non é posíbel obter unha copia local de /ftp://some.host/editme.txt"
-
-#~ msgid "sftp: Invalid port value."
-#~ msgstr "sftp: porto incorrecto."

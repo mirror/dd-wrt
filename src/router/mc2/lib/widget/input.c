@@ -1,7 +1,7 @@
 /*
    Widgets for the Midnight Commander
 
-   Copyright (C) 1994-2014
+   Copyright (C) 1994-2015
    Free Software Foundation, Inc.
 
    Authors:
@@ -422,13 +422,14 @@ forward_word (WInput * in)
 static void
 backward_word (WInput * in)
 {
-    const char *p, *p_tmp;
+    const char *p;
 
-    for (p = in->buffer + str_offset_to_pos (in->buffer, in->point);
-         (p != in->buffer) && (p[0] == '\0'); str_cprev_char (&p), in->point--);
+    p = in->buffer + str_offset_to_pos (in->buffer, in->point);
 
     while (p != in->buffer)
     {
+        const char *p_tmp;
+
         p_tmp = p;
         str_cprev_char (&p);
         if (!str_isspace (p) && !str_ispunct (p))
@@ -683,26 +684,30 @@ input_execute_cmd (WInput * in, unsigned long command)
 {
     cb_ret_t res = MSG_HANDLED;
 
-    /* a highlight command like shift-arrow */
-    if (command == CK_MarkLeft || command == CK_MarkRight ||
-        command == CK_MarkToWordBegin || command == CK_MarkToWordEnd ||
-        command == CK_MarkToHome || command == CK_MarkToEnd)
+    switch (command)
     {
+    case CK_MarkLeft:
+    case CK_MarkRight:
+    case CK_MarkToWordBegin:
+    case CK_MarkToWordEnd:
+    case CK_MarkToHome:
+    case CK_MarkToEnd:
+        /* a highlight command like shift-arrow */
         if (in->mark < 0)
         {
             input_mark_cmd (in, FALSE); /* clear */
             input_mark_cmd (in, TRUE);  /* marking on */
         }
-    }
-
-    switch (command)
-    {
+        break;
     case CK_WordRight:
     case CK_WordLeft:
     case CK_Right:
     case CK_Left:
         if (in->mark >= 0)
             input_mark_cmd (in, FALSE);
+        break;
+    default:
+        break;
     }
 
     switch (command)
@@ -806,10 +811,20 @@ input_execute_cmd (WInput * in, unsigned long command)
         res = MSG_NOT_HANDLED;
     }
 
-    if (command != CK_MarkLeft && command != CK_MarkRight &&
-        command != CK_MarkToWordBegin && command != CK_MarkToWordEnd &&
-        command != CK_MarkToHome && command != CK_MarkToEnd)
+    switch (command)
+    {
+    case CK_MarkLeft:
+    case CK_MarkRight:
+    case CK_MarkToWordBegin:
+    case CK_MarkToWordEnd:
+    case CK_MarkToHome:
+    case CK_MarkToEnd:
+        /* do nothing */
+        break;
+    default:
         in->mark = -1;
+        break;
+    }
 
     return res;
 }

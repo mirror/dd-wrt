@@ -2,7 +2,7 @@
    Internal file viewer for the Midnight Commander
    Function for work with growing bufers
 
-   Copyright (C) 1994-2014
+   Copyright (C) 1994-2015
    Free Software Foundation, Inc.
 
    Written by:
@@ -14,7 +14,7 @@
    Pavel Machek, 1998
    Roland Illig <roland.illig@gmx.de>, 2004, 2005
    Slava Zanko <slavazanko@google.com>, 2009
-   Andrew Borodin <aborodin@vmail.ru>, 2009
+   Andrew Borodin <aborodin@vmail.ru>, 2009, 2014
    Ilia Maslakov <il.smind@gmail.com>, 2009
 
    This file is part of the Midnight Commander.
@@ -73,6 +73,25 @@ mcview_growbuf_init (mcview_t * view)
 /* --------------------------------------------------------------------------------------------- */
 
 void
+mcview_growbuf_done (mcview_t * view)
+{
+    view->growbuf_finished = TRUE;
+
+    if (view->datasource == DS_STDIO_PIPE)
+    {
+        mc_pclose (view->ds_stdio_pipe, NULL);
+        view->ds_stdio_pipe = NULL;
+    }
+    else                        /* view->datasource == DS_VFS_PIPE */
+    {
+        (void) mc_close (view->ds_vfs_pipe);
+        view->ds_vfs_pipe = -1;
+    }
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+void
 mcview_growbuf_free (mcview_t * view)
 {
 #ifdef HAVE_ASSERT_H
@@ -111,8 +130,7 @@ mcview_growbuf_filesize (mcview_t * view)
 void
 mcview_growbuf_read_until (mcview_t * view, off_t ofs)
 {
-    ssize_t nread;
-    gboolean short_read;
+    gboolean short_read = FALSE;
 
 #ifdef HAVE_ASSERT_H
     assert (view->growbuf_in_use);
@@ -121,9 +139,9 @@ mcview_growbuf_read_until (mcview_t * view, off_t ofs)
     if (view->growbuf_finished)
         return;
 
-    short_read = FALSE;
     while (mcview_growbuf_filesize (view) < ofs || short_read)
     {
+        ssize_t nread = 0;
         byte *p;
         size_t bytesfree;
 
@@ -144,14 +162,64 @@ mcview_growbuf_read_until (mcview_t * view, off_t ofs)
 
         if (view->datasource == DS_STDIO_PIPE)
         {
-            nread = fread (p, 1, bytesfree, view->ds_stdio_pipe);
-            if (nread == 0)
+            mc_pipe_t *sp = view->ds_stdio_pipe;
+            GError *error = NULL;
+
+            if (bytesfree > MC_PIPE_BUFSIZE)
+                bytesfree = MC_PIPE_BUFSIZE;
+
+            sp->out.len = bytesfree;
+            sp->err.len = MC_PIPE_BUFSIZE;
+
+            mc_pread (sp, &error);
+
+            if (error != NULL)
             {
-                view->growbuf_finished = TRUE;
-                (void) pclose (view->ds_stdio_pipe);
+                mcview_show_error (view, error->message);
+                g_error_free (error);
+                mcview_growbuf_done (view);
+                return;
+            }
+
+            if (view->pipe_first_err_msg && sp->err.len > 0)
+            {
+                /* ignore possible following errors */
+                /* reset this flag before call of mcview_show_error() to break
+                 * endless recursion: mcview_growbuf_read_until() -> mcview_show_error() ->
+                 * MSG_DRAW -> mcview_display() -> mcview_get_byte() -> mcview_growbuf_read_until()
+                 */
+                view->pipe_first_err_msg = FALSE;
+
+                mcview_show_error (view, sp->err.buf);
+            }
+
+            if (sp->out.len > 0)
+            {
+                memmove (p, sp->out.buf, sp->out.len);
+                nread = sp->out.len;
+            }
+            else if (sp->out.len == MC_PIPE_STREAM_EOF || sp->out.len == MC_PIPE_ERROR_READ)
+            {
+                if (sp->out.len == MC_PIPE_ERROR_READ)
+                {
+                    char *err_msg;
+
+                    err_msg = g_strdup_printf (_("Failed to read data from child stdout:\n%s"),
+                                               unix_error_string (sp->out.error));
+                    mcview_show_error (view, err_msg);
+                    g_free (err_msg);
+                }
+
+                if (view->ds_stdio_pipe != NULL)
+                {
+                    /* when switch from parse to raw mode and back,
+                     * do not close the already closed pipe after following loop:
+                     * mcview_growbuf_read_until() -> mcview_show_error() ->
+                     * MSG_DRAW -> mcview_display() -> mcview_get_byte() -> mcview_growbuf_read_until()
+                     */
+                    mcview_growbuf_done (view);
+                }
                 mcview_display (view);
-                close_error_pipe (D_NORMAL, NULL);
-                view->ds_stdio_pipe = NULL;
                 return;
             }
         }
@@ -165,11 +233,10 @@ mcview_growbuf_read_until (mcview_t * view, off_t ofs)
                 nread = mc_read (view->ds_vfs_pipe, p, bytesfree);
             }
             while (nread == -1 && errno == EINTR);
-            if (nread == -1 || nread == 0)
+
+            if (nread <= 0)
             {
-                view->growbuf_finished = TRUE;
-                (void) mc_close (view->ds_vfs_pipe);
-                view->ds_vfs_pipe = -1;
+                mcview_growbuf_done (view);
                 return;
             }
         }
@@ -183,39 +250,26 @@ mcview_growbuf_read_until (mcview_t * view, off_t ofs)
 gboolean
 mcview_get_byte_growing_buffer (mcview_t * view, off_t byte_index, int *retval)
 {
-    off_t pageno;
-    off_t pageindex;
-
-    if (retval != NULL)
-        *retval = -1;
-
-    pageno = byte_index / VIEW_PAGE_SIZE;
-    pageindex = byte_index % VIEW_PAGE_SIZE;
+    char *p;
 
 #ifdef HAVE_ASSERT_H
     assert (view->growbuf_in_use);
 #endif
 
-    if (pageno < 0)
+    if (retval != NULL)
+        *retval = -1;
+
+    if (byte_index < 0)
         return FALSE;
 
-    mcview_growbuf_read_until (view, byte_index + 1);
-    if (view->growbuf_blockptr->len == 0)
+    p = mcview_get_ptr_growing_buffer (view, byte_index);
+    if (p == NULL)
         return FALSE;
-    if (pageno < (off_t) view->growbuf_blockptr->len - 1)
-    {
-        if (retval != NULL)
-            *retval = *((byte *) (g_ptr_array_index (view->growbuf_blockptr, pageno) + pageindex));
-        return TRUE;
-    }
-    if (pageno == (off_t) view->growbuf_blockptr->len - 1
-        && pageindex < (off_t) view->growbuf_lastindex)
-    {
-        if (retval != NULL)
-            *retval = *((byte *) (g_ptr_array_index (view->growbuf_blockptr, pageno) + pageindex));
-        return TRUE;
-    }
-    return FALSE;
+
+    if (retval != NULL)
+        *retval = *p;
+
+    return TRUE;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -223,15 +277,17 @@ mcview_get_byte_growing_buffer (mcview_t * view, off_t byte_index, int *retval)
 char *
 mcview_get_ptr_growing_buffer (mcview_t * view, off_t byte_index)
 {
-    off_t pageno = byte_index / VIEW_PAGE_SIZE;
-    off_t pageindex = byte_index % VIEW_PAGE_SIZE;
+    off_t pageno, pageindex;
 
 #ifdef HAVE_ASSERT_H
     assert (view->growbuf_in_use);
 #endif
 
-    if (pageno < 0)
+    if (byte_index < 0)
         return NULL;
+
+    pageno = byte_index / VIEW_PAGE_SIZE;
+    pageindex = byte_index % VIEW_PAGE_SIZE;
 
     mcview_growbuf_read_until (view, byte_index + 1);
     if (view->growbuf_blockptr->len == 0)

@@ -2,7 +2,7 @@
    Internal file viewer for the Midnight Commander
    Common finctions (used from some other mcviewer functions)
 
-   Copyright (C) 1994-2014
+   Copyright (C) 1994-2015
    Free Software Foundation, Inc.
 
    Written by:
@@ -106,9 +106,8 @@ mcview_toggle_magic_mode (mcview_t * view)
 void
 mcview_toggle_wrap_mode (mcview_t * view)
 {
-    if (view->text_wrap_mode)
-        view->dpy_start = mcview_bol (view, view->dpy_start, 0);
     view->text_wrap_mode = !view->text_wrap_mode;
+    view->dpy_wrap_dirty = TRUE;
     view->dpy_bbar_dirty = TRUE;
     view->dirty++;
 }
@@ -120,6 +119,7 @@ mcview_toggle_nroff_mode (mcview_t * view)
 {
     view->text_nroff_mode = !view->text_nroff_mode;
     mcview_altered_nroff_flag = 1;
+    view->dpy_wrap_dirty = TRUE;
     view->dpy_bbar_dirty = TRUE;
     view->dirty++;
 }
@@ -144,6 +144,8 @@ mcview_toggle_hex_mode (mcview_t * view)
         widget_want_cursor (WIDGET (view), FALSE);
     }
     mcview_altered_hex_mode = 1;
+    view->dpy_paragraph_skip_lines = 0;
+    view->dpy_wrap_dirty = TRUE;
     view->dpy_bbar_dirty = TRUE;
     view->dirty++;
 }
@@ -170,6 +172,10 @@ mcview_init (mcview_t * view)
     view->coord_cache = NULL;
 
     view->dpy_start = 0;
+    view->dpy_paragraph_skip_lines = 0;
+    mcview_state_machine_init (&view->dpy_state_top, 0);
+    view->dpy_wrap_dirty = FALSE;
+    view->force_max = -1;
     view->dpy_text_column = 0;
     view->dpy_end = 0;
     view->hex_cursor = 0;
@@ -242,8 +248,7 @@ mcview_done (mcview_t * view)
 
     mc_search_free (view->search);
     view->search = NULL;
-    g_free (view->last_search_string);
-    view->last_search_string = NULL;
+    MC_PTR_FREE (view->last_search_string);
     mcview_nroff_seq_free (&view->search_nroff_seq);
     mcview_hexedit_free_change_list (view);
 
@@ -282,6 +287,7 @@ mcview_set_codeset (mcview_t * view)
             view->converter = conv;
         }
         view->utf8 = (gboolean) str_isutf8 (cp_id);
+        view->dpy_wrap_dirty = TRUE;
     }
 #else
     (void) view;
@@ -304,15 +310,10 @@ mcview_select_encoding (mcview_t * view)
 void
 mcview_show_error (mcview_t * view, const char *msg)
 {
-    mcview_close_datasource (view);
     if (mcview_is_in_panel (view))
-    {
         mcview_set_datasource_string (view, msg);
-    }
     else
-    {
         message (D_ERROR, MSG_ERROR, "%s", msg);
-    }
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -339,7 +340,7 @@ mcview_bol (mcview_t * view, off_t current, off_t limit)
         if (c == '\r')
             current--;
     }
-    while (current > 0 && current >= limit)
+    while (current > 0 && current > limit)
     {
         if (!mcview_get_byte (view, current - 1, &c))
             break;

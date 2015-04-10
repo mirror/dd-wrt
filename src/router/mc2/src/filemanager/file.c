@@ -1,7 +1,7 @@
 /*
    File management.
 
-   Copyright (C) 1994-2014
+   Copyright (C) 1994-2015
    Free Software Foundation, Inc.
 
    Written by:
@@ -521,7 +521,9 @@ do_compute_dir_size (const vfs_path_t * dirname_vpath, dirsize_status_msg_t * ds
                      size_t * dir_count, size_t * ret_marked, uintmax_t * ret_total,
                      gboolean compute_symlinks)
 {
-    static unsigned short int update_ui_count = 0;
+    static guint64 timestamp = 0;
+    /* update with 25 FPS rate */
+    static const guint64 delay = G_USEC_PER_SEC / 25;
 
     status_msg_t *sm = STATUS_MSG (dsm);
     int res;
@@ -564,36 +566,23 @@ do_compute_dir_size (const vfs_path_t * dirname_vpath, dirsize_status_msg_t * ds
         if (res == 0)
         {
             if (S_ISDIR (s.st_mode))
-            {
                 ret =
                     do_compute_dir_size (tmp_vpath, dsm, dir_count, ret_marked, ret_total,
                                          compute_symlinks);
-                if (ret == FILE_CONT && sm->update != NULL)
-                {
-                    dsm->dirname_vpath = tmp_vpath;
-                    dsm->dir_count = *dir_count;
-                    dsm->total_size = *ret_total;
-                    ret = (FileProgressStatus) sm->update (sm);
-                }
-            }
             else
             {
+                ret = FILE_CONT;
+
                 (*ret_marked)++;
                 *ret_total += (uintmax_t) s.st_size;
+            }
 
-                update_ui_count++;
-                if ((update_ui_count & 31) == 0)
-                {
-                    if (sm->update == NULL)
-                        ret = FILE_CONT;
-                    else
-                    {
-                        dsm->dirname_vpath = dirname_vpath;
-                        dsm->dir_count = *dir_count;
-                        dsm->total_size = *ret_total;
-                        ret = (FileProgressStatus) sm->update (sm);
-                    }
-                }
+            if (ret == FILE_CONT && sm->update != NULL && mc_time_elapsed (&timestamp, delay))
+            {
+                dsm->dirname_vpath = tmp_vpath;
+                dsm->dir_count = *dir_count;
+                dsm->total_size = *ret_total;
+                ret = (FileProgressStatus) sm->update (sm);
             }
         }
 
@@ -1341,7 +1330,7 @@ panel_operate_init_totals (const WPanel * panel, const char *source, file_op_con
 
         memset (&dsm, 0, sizeof (dsm));
         dsm.allow_skip = TRUE;
-        status_msg_init (STATUS_MSG (&dsm), _("Directory scanning"), 1.0, dirsize_status_init_cb,
+        status_msg_init (STATUS_MSG (&dsm), _("Directory scanning"), 0, dirsize_status_init_cb,
                          dirsize_status_update_cb, dirsize_status_deinit_cb);
 
         ctx->progress_count = 0;
@@ -1508,7 +1497,6 @@ copy_file_file (file_op_total_context_t * tctx, file_op_context_t * ctx,
     int open_flags;
     gboolean is_first_time = TRUE;
     vfs_path_t *src_vpath = NULL, *dst_vpath = NULL;
-    gboolean write_errno_nospace = FALSE;
 
     /* FIXME: We should not be using global variables! */
     ctx->do_reget = 0;
@@ -1750,28 +1738,39 @@ copy_file_file (file_op_total_context_t * tctx, file_op_context_t * ctx,
         goto ret;
     }
 
-    while (TRUE)
+    /* try preallocate space; if fail, try copy anyway */
+    while (vfs_preallocate (dest_desc, file_size, ctx->do_append != 0 ? sb.st_size : 0) != 0)
     {
-        errno = vfs_preallocate (dest_desc, file_size, (ctx->do_append != 0) ? sb.st_size : 0);
-        if (errno == 0)
-            break;
-
         if (ctx->skip_all)
-            return_status = FILE_SKIPALL;
-        else
         {
-            return_status =
-                file_error (_("Cannot preallocate space for target file \"%s\"\n%s"), dst_path);
-            if (return_status == FILE_RETRY)
-                continue;
-            if (return_status == FILE_SKIPALL)
-                ctx->skip_all = TRUE;
+            /* cannot allocate, start the file copying anyway */
+            return_status = FILE_CONT;
+            break;
         }
-        mc_close (dest_desc);
-        dest_desc = -1;
-        mc_unlink (dst_vpath);
-        dst_status = DEST_NONE;
-        goto ret;
+
+        return_status =
+            file_error (_("Cannot preallocate space for target file \"%s\"\n%s"), dst_path);
+
+        if (return_status == FILE_SKIPALL)
+            ctx->skip_all = TRUE;
+
+        if (ctx->skip_all || return_status == FILE_SKIP)
+        {
+            /* skip the space allocation error, start file copying */
+            return_status = FILE_CONT;
+            break;
+        }
+
+        if (return_status == FILE_ABORT)
+        {
+            mc_close (dest_desc);
+            dest_desc = -1;
+            mc_unlink (dst_vpath);
+            dst_status = DEST_NONE;
+            goto ret;
+        }
+
+        /* return_status == FILE_RETRY -- try allocate space again */
     }
 
     ctx->eta_secs = 0.0;
@@ -1833,6 +1832,8 @@ copy_file_file (file_op_total_context_t * tctx, file_op_context_t * ctx,
                 /* dst_write */
                 while ((n_written = mc_write (dest_desc, t, n_read)) < n_read)
                 {
+                    gboolean write_errno_nospace;
+
                     if (n_written > 0)
                     {
                         n_read -= n_written;
@@ -1862,10 +1863,6 @@ copy_file_file (file_op_total_context_t * tctx, file_op_context_t * ctx,
                     }
                     if (return_status != FILE_RETRY)
                         goto ret;
-
-                    /* User pressed "Retry". Will the next mc_write() call be successful?
-                     * Reset error flag to be ready for that. */
-                    write_errno_nospace = FALSE;
                 }
             }
 
@@ -1944,16 +1941,9 @@ copy_file_file (file_op_total_context_t * tctx, file_op_context_t * ctx,
 
     if (dst_status == DEST_SHORT)
     {
-        /* Remove short file */
-        int result = 0;
-
-        /* In case of copy/move to full partition, keep source file
-         * and remove incomplete destination one */
-        if (!write_errno_nospace)
-            result = query_dialog (Q_ ("DialogTitle|Copy"),
-                                   _("Incomplete file was retrieved. Keep it?"),
-                                   D_ERROR, 2, _("&Delete"), _("&Keep"));
-        if (result == 0)
+        /* Query to remove short file */
+        if (query_dialog (Q_ ("DialogTitle|Copy"), _("Incomplete file was retrieved. Keep it?"),
+                          D_ERROR, 2, _("&Delete"), _("&Keep")) == 0)
             mc_unlink (dst_vpath);
     }
     else if (dst_status == DEST_FULL)
@@ -2538,12 +2528,12 @@ dirsize_status_update_cb (status_msg_t * sm)
     if (WIDGET (dsm->count_size)->cols + 6 > wd->cols)
     {
         dlg_set_size (sm->dlg, wd->lines, WIDGET (dsm->count_size)->cols + 6);
-        dirsize_status_locate_buttons ((dirsize_status_msg_t *) sm);
+        dirsize_status_locate_buttons (dsm);
+        dlg_redraw (sm->dlg);
     }
 
     /* adjust first label */
-    label_set_text (dsm->dirname,
-                    str_trunc (vfs_path_as_str (dsm->dirname_vpath), WIDGET (sm->dlg)->cols - 6));
+    label_set_text (dsm->dirname, str_trunc (vfs_path_as_str (dsm->dirname_vpath), wd->cols - 6));
 
     switch (status_msg_common_update (sm))
     {
@@ -2698,7 +2688,7 @@ panel_operate (void *source_panel, FileOperation operation, gboolean force_singl
          * dir is deleted)
          */
         if (!force_single && tmp_dest_dir[0] != '\0'
-            && tmp_dest_dir[strlen (tmp_dest_dir) - 1] != PATH_SEP)
+            && !IS_PATH_SEP (tmp_dest_dir[strlen (tmp_dest_dir) - 1]))
         {
             /* add trailing separator */
             dest_dir = g_strconcat (tmp_dest_dir, PATH_SEP_STR, (char *) NULL);

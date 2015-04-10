@@ -2,7 +2,7 @@
    Internal file viewer for the Midnight Commander
    Functions for datasources
 
-   Copyright (C) 1994-2014
+   Copyright (C) 1994-2015
    Free Software Foundation, Inc.
 
    Written by:
@@ -69,25 +69,26 @@
 
 /*** file scope variables ************************************************************************/
 
+/* --------------------------------------------------------------------------------------------- */
 /*** file scope functions ************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 
-/* --------------------------------------------------------------------------------------------- */
-/*** public functions ****************************************************************************/
-/* --------------------------------------------------------------------------------------------- */
-
 static void
-mcview_set_datasource_stdio_pipe (mcview_t * view, FILE * fp)
+mcview_set_datasource_stdio_pipe (mcview_t * view, mc_pipe_t * p)
 {
-#ifdef HAVE_ASSERT_H
-    assert (fp != NULL);
-#endif
+    p->out.len = MC_PIPE_BUFSIZE;
+    p->out.null_term = FALSE;
+    p->err.len = MC_PIPE_BUFSIZE;
+    p->err.null_term = TRUE;
     view->datasource = DS_STDIO_PIPE;
-    view->ds_stdio_pipe = fp;
+    view->ds_stdio_pipe = p;
+    view->pipe_first_err_msg = TRUE;
 
     mcview_growbuf_init (view);
 }
 
+/* --------------------------------------------------------------------------------------------- */
+/*** public functions ****************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 
 void
@@ -150,21 +151,8 @@ mcview_get_ptr_file (mcview_t * view, off_t byte_index)
 
 /* --------------------------------------------------------------------------------------------- */
 
-char *
-mcview_get_ptr_string (mcview_t * view, off_t byte_index)
-{
-#ifdef HAVE_ASSERT_H
-    assert (view->datasource == DS_STRING);
-#endif
-    if (byte_index < (off_t) view->ds_string_len)
-        return (char *) (view->ds_string_data + byte_index);
-    return NULL;
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
 int
-mcview_get_utf (mcview_t * view, off_t byte_index, int *char_width, gboolean * result)
+mcview_get_utf (mcview_t * view, off_t byte_index, int *char_length, gboolean * result)
 {
     gchar *str = NULL;
     int res = -1;
@@ -172,7 +160,7 @@ mcview_get_utf (mcview_t * view, off_t byte_index, int *char_width, gboolean * r
     gchar *next_ch = NULL;
     gchar utf8buf[UTF8_CHAR_LEN + 1];
 
-    *char_width = 0;
+    *char_length = 0;
     *result = FALSE;
 
     switch (view->datasource)
@@ -218,17 +206,14 @@ mcview_get_utf (mcview_t * view, off_t byte_index, int *char_width, gboolean * r
     if (res < 0)
     {
         ch = *str;
-        *char_width = 1;
+        *char_length = 1;
     }
     else
     {
         ch = res;
-        /* Calculate UTF-8 char width */
+        /* Calculate UTF-8 char length */
         next_ch = g_utf8_next_char (str);
-        if (next_ch)
-            *char_width = next_ch - str;
-        else
-            return 0;
+        *char_length = next_ch - str;
     }
     *result = TRUE;
     return ch;
@@ -236,21 +221,34 @@ mcview_get_utf (mcview_t * view, off_t byte_index, int *char_width, gboolean * r
 
 /* --------------------------------------------------------------------------------------------- */
 
-gboolean
-mcview_get_byte_string (mcview_t * view, off_t byte_index, int *retval)
+char *
+mcview_get_ptr_string (mcview_t * view, off_t byte_index)
 {
 #ifdef HAVE_ASSERT_H
     assert (view->datasource == DS_STRING);
 #endif
-    if (byte_index < (off_t) view->ds_string_len)
-    {
-        if (retval)
-            *retval = view->ds_string_data[byte_index];
-        return TRUE;
-    }
-    if (retval)
+    if (byte_index >= 0 && byte_index < (off_t) view->ds_string_len)
+        return (char *) (view->ds_string_data + byte_index);
+    return NULL;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+gboolean
+mcview_get_byte_string (mcview_t * view, off_t byte_index, int *retval)
+{
+    char *p;
+
+    if (retval != NULL)
         *retval = -1;
-    return FALSE;
+
+    p = mcview_get_ptr_string (view, byte_index);
+    if (p == NULL)
+        return FALSE;
+
+    if (retval != NULL)
+        *retval = *p;
+    return TRUE;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -350,19 +348,14 @@ mcview_close_datasource (mcview_t * view)
     case DS_STDIO_PIPE:
         if (view->ds_stdio_pipe != NULL)
         {
-            (void) pclose (view->ds_stdio_pipe);
+            mcview_growbuf_done (view);
             mcview_display (view);
-            close_error_pipe (D_NORMAL, NULL);
-            view->ds_stdio_pipe = NULL;
         }
         mcview_growbuf_free (view);
         break;
     case DS_VFS_PIPE:
         if (view->ds_vfs_pipe != -1)
-        {
-            (void) mc_close (view->ds_vfs_pipe);
-            view->ds_vfs_pipe = -1;
-        }
+            mcview_growbuf_done (view);
         mcview_growbuf_free (view);
         break;
     case DS_FILE:
@@ -401,44 +394,29 @@ mcview_set_datasource_file (mcview_t * view, int fd, const struct stat *st)
 gboolean
 mcview_load_command_output (mcview_t * view, const char *command)
 {
-    FILE *fp;
+    mc_pipe_t *pipe;
+    GError *error = NULL;
 
     mcview_close_datasource (view);
 
-    open_error_pipe ();
-    fp = popen (command, "r");
-    if (fp == NULL)
+    pipe = mc_popen (command, &error);
+    if (pipe == NULL)
     {
-        /* Avoid two messages.  Message from stderr has priority.  */
         mcview_display (view);
-        if (!close_error_pipe (mcview_is_in_panel (view) ? -1 : D_ERROR, NULL))
-            mcview_show_error (view, _("Cannot spawn child process"));
+        mcview_show_error (view, error->message);
+        g_error_free (error);
         return FALSE;
     }
 
-    /* First, check if filter produced any output */
-    mcview_set_datasource_stdio_pipe (view, fp);
+    /* Check if filter produced any output */
+    mcview_set_datasource_stdio_pipe (view, pipe);
     if (!mcview_get_byte (view, 0, NULL))
     {
         mcview_close_datasource (view);
-
-        /* Avoid two messages.  Message from stderr has priority.  */
         mcview_display (view);
-        if (!close_error_pipe (mcview_is_in_panel (view) ? -1 : D_ERROR, NULL))
-            mcview_show_error (view, _("Empty output from child filter"));
         return FALSE;
     }
-    else
-    {
-        /*
-         * At least something was read correctly. Close stderr and let
-         * program die if it will try to write something there.
-         *
-         * Ideally stderr should be read asynchronously to prevent programs
-         * from blocking (poll/select multiplexor).
-         */
-        close_error_pipe (D_NORMAL, NULL);
-    }
+
     return TRUE;
 }
 

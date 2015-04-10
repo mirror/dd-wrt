@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2014-09-04 16:51+0300\n"
-"PO-Revision-Date: 2014-09-04 10:10+0000\n"
+"POT-Creation-Date: 2015-03-20 21:10+0300\n"
+"PO-Revision-Date: 2015-02-26 09:48+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Korean (http://www.transifex.com/projects/p/mc/language/ko/)\n"
 "Language: ko\n"
@@ -336,6 +336,9 @@ msgstr "아포스트로피"
 msgid "Colon"
 msgstr "콜론"
 
+msgid "Semicolon"
+msgstr ""
+
 msgid "Exclamation mark"
 msgstr "느낌표"
 
@@ -431,6 +434,27 @@ msgid ""
 msgstr ""
 "화면크기 %dx%d은(는) 지원되지 않습니다.\n"
 "TERM 환경변수를 확인해 보세요.\n"
+
+msgid "Cannot create pipe descriptor"
+msgstr ""
+
+msgid "Cannot parse command for pipe"
+msgstr ""
+
+msgid "Cannot create pipe streams"
+msgstr ""
+
+#, c-format
+msgid ""
+"Unexpected error in select() reading data from a child process:\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
+"Unexpected error in waitpid():\n"
+"%s"
+msgstr ""
 
 msgid "Warning"
 msgstr "경고"
@@ -646,7 +670,7 @@ msgid ""
 "   color16 to color255, or rgb000 to rgb555 and gray0 to gray23\n"
 "\n"
 "Attributes:\n"
-"   bold, underline, reverse, blink; append more with '+'\n"
+"   bold, italic, underline, reverse, blink; append more with '+'\n"
 msgstr ""
 
 msgid "Color options"
@@ -686,6 +710,12 @@ msgstr ""
 msgid "Two files are required to evoke the diffviewer."
 msgstr ""
 
+msgid "Background protocol error"
+msgstr ""
+
+msgid "Reading failed"
+msgstr "읽기 실패함"
+
 msgid "Background process error"
 msgstr ""
 
@@ -694,12 +724,6 @@ msgstr ""
 
 msgid "Child died unexpectedly"
 msgstr ""
-
-msgid "Background protocol error"
-msgstr ""
-
-msgid "Reading failed"
-msgstr "읽기 실패함"
 
 msgid ""
 "Background process sent us a request for more arguments\n"
@@ -843,60 +867,6 @@ msgid "Diff viewer: invalid mode"
 msgstr ""
 
 msgid "Two files are needed to compare"
-msgstr ""
-
-#, fuzzy
-msgid "Bookmarks"
-msgstr "다음  북마크(&N)"
-
-msgid " - Sort: "
-msgstr ""
-
-msgid "ABC"
-msgstr ""
-
-msgid "FRQ"
-msgstr ""
-
-msgid " - Filter: "
-msgstr ""
-
-msgid "FOUND"
-msgstr ""
-
-msgid "USER"
-msgstr ""
-
-#, fuzzy
-msgid "&Go to"
-msgstr "줄찾기(&G)..."
-
-#, fuzzy
-msgid "&Add"
-msgstr "새명령 더하기(&A)"
-
-msgid "&Remove"
-msgstr "제거(&R)"
-
-msgid "Fl&ush"
-msgstr ""
-
-#, fuzzy
-msgid "&Filter"
-msgstr "파일(&F)"
-
-#, fuzzy
-msgid "&Sort"
-msgstr "정렬(&S)..."
-
-#, fuzzy
-msgid "Re&verse"
-msgstr "반대로(&R)"
-
-msgid "Bookmark list"
-msgstr ""
-
-msgid "Bookmark detail"
 msgstr ""
 
 msgid "Choose syntax highlighting"
@@ -1526,7 +1496,7 @@ msgid ""
 "written for the Midnight Commander."
 msgstr ""
 
-msgid "Copyright (C) 1996-2014 the Free Software Foundation"
+msgid "Copyright (C) 1996-2015 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -1713,6 +1683,12 @@ msgid ""
 "%s"
 msgstr ""
 
+msgid "< Default >"
+msgstr ""
+
+msgid "Skins"
+msgstr ""
+
 msgid "Other 8 bit"
 msgstr "다른 8 비트"
 
@@ -1796,12 +1772,6 @@ msgstr ""
 
 msgid "Configure options"
 msgstr "환경설정 선택항목"
-
-msgid "< Default >"
-msgstr ""
-
-msgid "Skins"
-msgstr ""
 
 msgid "Skin:"
 msgstr ""
@@ -2821,6 +2791,9 @@ msgstr ""
 msgid "&Insert"
 msgstr "삽입(&I)"
 
+msgid "&Remove"
+msgstr "제거(&R)"
+
 msgid "Subgroup - press ENTER to see list"
 msgstr "하위집단 - 보려면 엔터키를 누르십시오"
 
@@ -3484,12 +3457,6 @@ msgid "The %%var macro has no variable"
 msgstr ""
 
 #, c-format
-msgid ""
-"Cannot open file%s\n"
-"%s"
-msgstr ""
-
-#, c-format
 msgid "No suitable entries found in %s"
 msgstr ""
 
@@ -4129,12 +4096,6 @@ msgid ""
 "Save modified file?"
 msgstr ""
 
-msgid "Cannot spawn child process"
-msgstr ""
-
-msgid "Empty output from child filter"
-msgstr "이 하위필터는 내보내기 충분"
-
 msgid "&Line number"
 msgstr ""
 
@@ -4179,6 +4140,12 @@ msgstr "ButtonBar|Unform"
 
 msgid "ButtonBar|Format"
 msgstr "ButtonBar|포맷"
+
+#, c-format
+msgid ""
+"Failed to read data from child stdout:\n"
+"%s"
+msgstr ""
 
 #, c-format
 msgid ""
