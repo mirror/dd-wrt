@@ -120,7 +120,7 @@ void start_sysinit(void)
 				fclose(fp);
 				fp = fopen("/tmp/nvramcopy", "wb");
 				fwrite(temp, 1, 65536, fp);
-				sysprintf("mtd -f write /tmp/nvramcopy nvram");
+				eval("mtd", "-f", "write", "/tmp/nvramcopy nvram");
 				sys_reboot();
 			}
 			fclose(fp);
@@ -1697,7 +1697,7 @@ void start_sysinit(void)
 				break;
 			}
 			sleep(1);
-			sysprintf("/sbin/erase nvram");
+			eval("/sbin/erase", "nvram");
 			nvram_set("flash_active", "1");	// prevent recommit of value until reboot is done
 			sys_reboot();
 		}
@@ -1790,7 +1790,7 @@ void start_sysinit(void)
 				break;
 			}
 			sleep(1);
-			sysprintf("/sbin/erase nvram");
+			eval("/sbin/erase", "nvram");
 			nvram_set("flash_active", "1");	// prevent recommit of value until reboot is done
 			sys_reboot();
 		}
@@ -2373,7 +2373,7 @@ void start_sysinit(void)
 		}
 		set_gpio(8, 1);	// fixup ses button
 
-	break;
+		break;
 	case ROUTER_DLINK_DIR868:
 	case ROUTER_DLINK_DIR865:
 
@@ -3240,7 +3240,7 @@ void start_sysinit(void)
 				bp = NULL;
 				fp = NULL;
 				fprintf(stderr, "update bootloader\n");
-				sysprintf("mtd -f write /tmp/cfe.bin boot");
+				eval("mtd", "-f", "write", "/tmp/cfe.bin", "boot");
 				fprintf(stderr, "reboot\n");
 				sys_reboot();
 			}
@@ -3301,7 +3301,7 @@ void start_sysinit(void)
 #ifdef HAVE_DHDAP
 	insmod("dhd");
 #endif
-      insmod("wl");
+	insmod("wl");
 
 	/*
 	 * Set a sane date 

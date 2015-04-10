@@ -77,40 +77,40 @@ void start_sysinit(void)
 	system("insmod ag71xx || insmod ag7240_mod");
 
 #ifdef HAVE_WDR3500
-	system("swconfig dev eth0 set reset 1");
-	system("swconfig dev eth0 set enable_vlan 1");
-	system("swconfig dev eth0 vlan 0 set ports \"0 1 2 3 4\"");
+	eval("swconfig", "dev", "eth0", "set", "reset", "1");
+	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
+	eval("swconfig", "dev", "eth0", "vlan", "0", "set ports", "0 1 2 3 4");
+	eval("swconfig", "dev", "eth0", "set", "apply");
 #else
 #ifdef HAVE_WDR4300
-	system("swconfig dev eth0 set reset 1");
-	system("swconfig dev eth0 set enable_vlan 1");
-	system("swconfig dev eth0 vlan 1 set ports \"0t 2 3 4 5\"");
-	system("swconfig dev eth0 vlan 2 set ports \"0t 1\"");
+	eval("swconfig", "dev", "eth0", "set", "reset", "1");
+	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
+	eval("swconfig", "dev", "eth0", "vlan", "1", "set ports", "0t 2 3 4 5");
+	eval("swconfig", "dev", "eth0", "vlan", "2", "set ports", "0t 1");
 #elif defined (HAVE_MMS344)
-	system("swconfig dev eth0 set reset 1");
-	system("swconfig dev eth0 set enable_vlan 0");
-	system("swconfig dev eth0 vlan 1 set ports \"2 3 6\"");
-	system("swconfig dev eth0 set apply");
+	eval("swconfig", "dev", "eth0", "set", "reset", "1");
+	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
+	eval("swconfig", "dev", "eth0", "vlan", "1", "set ports", "2 3 6");
 #elif defined (HAVE_ARCHERC7)
-	system("swconfig dev eth0 set reset 1");
-	system("swconfig dev eth0 set enable_vlan 0");
-	system("swconfig dev eth0 vlan 1 set ports \"0 2 3 4 5\"");
-	system("swconfig dev eth0 vlan 2 set ports \"1 6\"");
-	system("swconfig dev eth0 set apply");
+	eval("swconfig", "dev", "eth0", "set", "reset", "1");
+	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
+	eval("swconfig", "dev", "eth0", "vlan", "1", "set ports", "0 2 3 4 5");
+	eval("swconfig", "dev", "eth0", "vlan", "2", "set ports", "1 6");
+
 #elif defined (HAVE_WZR450HP2) || defined(HAVE_WR1043V2)
-	system("swconfig dev eth0 set reset 1");
-	system("swconfig dev eth0 set enable_vlan 0");
-	system("swconfig dev eth0 vlan 1 set ports \"0 1 2 3 4\"");
-	system("swconfig dev eth0 vlan 2 set ports \"5 6\"");
-	system("swconfig dev eth0 set apply");
+	eval("swconfig", "dev", "eth0", "set", "reset", "1");
+	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
+	eval("swconfig", "dev", "eth0", "vlan", "1", "set ports", "0 1 2 3 4");
+	eval("swconfig", "dev", "eth0", "vlan", "2", "set ports", "5 6");
+
 #else
-	system("swconfig dev eth0 set reset 1");
-	system("swconfig dev eth0 set enable_vlan 1");
-	system("swconfig dev eth0 vlan 1 set ports \"0t 1 2 3 4\"");
-	system("swconfig dev eth0 vlan 2 set ports \"0t 5\"");
+	eval("swconfig", "dev", "eth0", "set", "reset", "1");
+	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
+	eval("swconfig", "dev", "eth0", "vlan", "1", "set ports", "0t 1 2 3 4");
+	eval("swconfig", "dev", "eth0", "vlan", "2", "set ports", "0t 5");
 #endif
 #endif
-	system("swconfig dev eth0 set apply");
+	eval("swconfig", "dev", "eth0", "set", "apply");
 #ifdef HAVE_WNDR3700V4
 	FILE *fp = fopen("/dev/mtdblock/5", "rb");
 	if (fp) {
@@ -221,7 +221,7 @@ void start_sysinit(void)
 	setWirelessLed(0, 18);
 #elif  HAVE_DIR859
 	setWirelessLed(0, 19);
-//	setWirelessLed(1, 32);
+//      setWirelessLed(1, 32);
 #elif  HAVE_DIR825C1
 	setWirelessLed(0, 13);
 	setWirelessLed(1, 32);

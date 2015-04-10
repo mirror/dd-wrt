@@ -122,7 +122,7 @@ void start_sysinit(void)
 	led_control(LED_CONNECTED, LED_OFF);
 
 #ifdef HAVE_ALFANX
-	sysprintf("/sbin/wlanled -L generic_12:-94 -L generic_8:-80 -L generic_6:-73 -L generic_7:-65");
+	eval("/sbin/wlanled", "-L", "generic_12:-94", "-L", "generic_8:-80", "-L", "generic_6:-73", "-L", "generic_7:-65");
 #endif
 	/*
 	 * Set a sane date 

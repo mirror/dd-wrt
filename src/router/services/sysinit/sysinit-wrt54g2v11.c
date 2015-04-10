@@ -108,16 +108,16 @@ void start_sysinit(void)
 	detect_wireless_devices();
 
 	eval("ifconfig", "eth0", "up");	// wan
-	system("swconfig dev eth0 set reset 1");
-	system("swconfig dev eth0 set enable_vlan 1");
+	eval("swconfig", "dev", "eth0", "set", "reset", "1");
+	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 #ifdef HAVE_RTG32
-	system("swconfig dev eth0 vlan 1 set ports \"0t 1 2 3 4\"");
-	system("swconfig dev eth0 vlan 2 set ports \"0t 5\"");
+	eval("swconfig", "dev", "eth0", "vlan", "1", "set ports", "0t 1 2 3 4");
+	eval("swconfig", "dev", "eth0", "vlan", "2", "set ports", "0t 5");
 #else
-	system("swconfig dev eth0 vlan 1 set ports \"0t 2 3 4 5\"");
-	system("swconfig dev eth0 vlan 2 set ports \"0t 1\"");
+	eval("swconfig", "dev", "eth0", "vlan", "1", "set ports", "0t 2 3 4 5");
+	eval("swconfig", "dev", "eth0", "vlan", "2", "set ports", "0t 1");
 #endif
-	system("swconfig dev eth0 set apply");
+	eval("swconfig", "dev", "eth0", "set", "apply");
 	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 	eval("vconfig", "add", "eth0", "1");
 	eval("vconfig", "add", "eth0", "2");
@@ -176,31 +176,31 @@ void start_overclocking(void)
 char *enable_dtag_vlan(int enable)
 {
 	if (enable) {
-		system("swconfig dev eth0 set reset 1");
-		system("swconfig dev eth0 set vlan 1");
+		eval("swconfig", "dev", "eth0", "set", "reset", "1");
+		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
+		eval("swconfig", "dev", "eth0", "vlan", "1", "set ports", "1 2 3 4 6t");
+		eval("swconfig", "dev", "eth0", "vlan", "2", "set ports", "0 6t");
+		eval("swconfig", "dev", "eth0", "set", "apply");
 #ifdef HAVE_RTG32
-		system("swconfig dev eth0 vlan 1 set ports \"0t 1 2 3 4\"");
-		system("swconfig dev eth0 vlan 7 set ports \"0t 5t\"");
-		system("swconfig dev eth0 vlan 8 set ports \"0t 5t\"");
+		eval("swconfig", "dev", "eth0", "vlan", "1", "set ports", "0t 1 2 3 4");
+		eval("swconfig", "dev", "eth0", "vlan", "7", "set ports", "0t 5t");
+		eval("swconfig", "dev", "eth0", "vlan", "8", "set ports", "0t 5t");
 #else
-		system("swconfig dev eth0 vlan 1 set ports \"0t 2 3 4 5\"");
-		system("swconfig dev eth0 vlan 7 set ports \"0t 1t\"");
-		system("swconfig dev eth0 vlan 8 set ports \"0t 1t\"");
-
+		eval("swconfig", "dev", "eth0", "vlan", "1", "set ports", "0t 2 3 4 5");
+		eval("swconfig", "dev", "eth0", "vlan", "7", "set ports", "0t 1t");
+		eval("swconfig", "dev", "eth0", "vlan", "8", "set ports", "0t 1t");
 #endif
-		system("swconfig dev eth0 set apply");
 	} else {
-		system("swconfig dev eth0 set reset 1");
-		system("swconfig dev eth0 set vlan 1");
+		eval("swconfig", "dev", "eth0", "set", "reset", "1");
+		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 #ifdef HAVE_RTG32
-		system("swconfig dev eth0 vlan 1 set ports \"0t 1 2 3 4\"");
-		system("swconfig dev eth0 vlan 2 set ports \"0t 5\"");
+		eval("swconfig", "dev", "eth0", "vlan", "1", "set ports", "0t 1 2 3 4");
+		eval("swconfig", "dev", "eth0", "vlan", "2", "set ports", "0t 5");
 #else
-		system("swconfig dev eth0 vlan 1 set ports \"0t 2 3 4 5\"");
-		system("swconfig dev eth0 vlan 2 set ports \"0t 1\"");
+		eval("swconfig", "dev", "eth0", "vlan", "1", "set ports", "0t 2 3 4 5");
+		eval("swconfig", "dev", "eth0", "vlan", "2", "set ports", "0t 1");
 #endif
-		system("swconfig dev eth0 set apply");
-
 	}
+	eval("swconfig", "dev", "eth0", "set", "apply");
 	return "eth0";
 }

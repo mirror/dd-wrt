@@ -131,7 +131,7 @@ void runStartup(char *folder, char *extension)
 			sprintf(fullname, "%s/%s", folder, entry[n]->d_name);
 			if (!stat(fullname, &filestat)
 			    && (filestat.st_mode & S_IXUSR))
-				sysprintf("%s 2>&1 > /dev/null", fullname);
+				eval_silence(fullname);
 			free(entry[n]);
 			n++;
 			continue;
@@ -140,7 +140,7 @@ void runStartup(char *folder, char *extension)
 			sprintf(fullname, "%s/%s", folder, entry[n]->d_name);
 			if (!stat(fullname, &filestat)
 			    && (filestat.st_mode & S_IXUSR))
-				sysprintf("%s 2>&1 > /dev/null", fullname);
+				eval_silence(fullname);
 			free(entry[n]);
 			n++;
 			continue;
@@ -165,17 +165,15 @@ void runStartup(char *folder, char *extension)
 				}
 			}
 #endif
-			sysprintf("%s/%s 2>&1 > /dev/null", folder, entry[n]->d_name);
+
+			sprintf(fullname, "%s/%s", folder, entry[n]->d_name);
+			eval_silence(fullname);
 			// execute script 
 		}
 		free(entry[n]);
 		n++;
 	}
 	free(entry);
-
-//      sysprintf("/usr/sbin/wl interference_override 4");
-//      sysprintf("/usr/sbin/wl -i eth1 interference 3");
-//      sysprintf("/usr/sbin/wl -i eth2 interference 3");
 
 	return;
 }
@@ -373,9 +371,8 @@ static void buffalo_defaults(int force)
 		} else if (!strcmp(region, "KR")) {
 			nvram_set("wl1_regdomain", "KOREA_REPUBLIC");
 		}
-
 #ifdef HAVE_HOBBIT
-	nvram_set("wl_regdomain", "EUROPE");
+		nvram_set("wl_regdomain", "EUROPE");
 #endif
 
 #endif
@@ -518,7 +515,7 @@ static void buffalo_defaults(int force)
 		nvram_unset("http_userpln");
 		nvram_unset("http_pwdpln");
 #ifdef HAVE_SPOTPASS
-		system("startservice spotpass_defaults -f");
+		eval("startservice", "spotpass_defaults", "-f");
 #endif
 	}
 }
@@ -550,7 +547,7 @@ static void buffalo_defaults(int force)
 		}
 
 		chmod(script, 0755);
-		system(script);
+		eval(script);
 
 		fp = fopen(config, "r");
 		if (fp) {
@@ -615,7 +612,7 @@ static void buffalo_defaults(int force)
 		nvram_unset("http_userpln");
 		nvram_unset("http_pwdpln");
 #ifdef HAVE_SPOTPASS
-		system("startservice spotpass_defaults -f");
+		eval("startservice", "spotpass_defaults", "-f");
 #endif
 		nvram_commit();
 	}
@@ -848,7 +845,7 @@ static void buffalo_defaults(int force)
 		nvram_unset("http_userpln");
 		nvram_unset("http_pwdpln");
 #ifdef HAVE_SPOTPASS
-		system("startservice spotpass_defaults -f");
+		eval("startservice", "spotpass_defaults", "-f");
 #endif
 		nvram_commit();
 	}
@@ -920,7 +917,7 @@ void start_run_rc_startup(void)
 	create_rc_file(RC_STARTUP);
 
 	if (f_exists("/tmp/.rc_startup"))
-		system("/tmp/.rc_startup");
+		eval("/tmp/.rc_startup");
 
 	while (count > 0) {
 		directory = opendir("/opt/etc/init.d");
@@ -944,7 +941,7 @@ void start_run_rc_shutdown(void)
 	runStartup("/opt/etc/init.d", "K**");	// if available; run K** shutdown scripts
 	create_rc_file(RC_SHUTDOWN);
 	if (f_exists("/tmp/.rc_shutdown"))
-		system("/tmp/.rc_shutdown");
+		eval("/tmp/.rc_shutdown");
 	return;
 }
 
@@ -2828,7 +2825,7 @@ void start_drivers(void)
 
 		rmmod("usb-libusual");
 		rmmod("dwc_otg");	// usb
-		rmmod("xhci-pci"); 
+		rmmod("xhci-pci");
 		rmmod("xhci-hcd");
 
 		rmmod("usb-ohci");

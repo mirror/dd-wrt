@@ -74,9 +74,9 @@ void start_sysinit(void)
 	system("insmod ag71xx || insmod ag7100_mod");
 	char mac1[32];
 	char mac2[32];
-	system("swconfig dev rtl8366s set reset 1");
-	system("swconfig dev rtl8366s set enable_vlan 0");
-	system("swconfig dev rtl8366s set apply");
+	eval("swconfig", "dev", "rtl8366s", "set", "reset", "1");
+	eval("swconfig", "dev", "rtl8366s", "set", "enable_vlan", "0");
+	eval("swconfig", "dev", "rtl8366s", "set", "apply");
 #ifndef HAVE_WNDR3700
 	FILE *fp = fopen("/dev/mtdblock/7", "rb");
 	if (fp) {

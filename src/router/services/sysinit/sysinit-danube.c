@@ -252,10 +252,10 @@ void start_sysinit(void)
 	set_gpio(1, 0);
 	set_gpio(18, 0);
 
-	system("swconfig dev eth0 set reset 1");
-	system("swconfig dev eth0 set enable_vlan 0");
-	system("swconfig dev eth0 vlan 1 set ports \"0 1 2 3 4 5\"");
-	system("swconfig dev eth0 set apply");
+	eval("swconfig", "dev", "eth0", "set", "reset", "1");
+	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
+	eval("swconfig", "dev", "eth0", "vlan", "1", "set ports", "0 1 2 3 4 5");
+	eval("swconfig", "dev", "eth0", "set", "apply");
 #endif
 #ifdef HAVE_SX763
 	char mac[18];
