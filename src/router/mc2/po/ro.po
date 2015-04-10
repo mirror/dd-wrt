@@ -5,13 +5,14 @@
 # Translators:
 # Arthur Titeica <arthur@psw.ro>, 2013
 # Arthur Țițeică <arthur.titeica@gmail.com>, 2013-2014
+# Nicolae Crefelean, 2014
 # Slava Zanko <slavazanko@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2014-09-04 16:51+0300\n"
-"PO-Revision-Date: 2014-09-04 10:10+0000\n"
+"POT-Creation-Date: 2015-03-20 21:10+0300\n"
+"PO-Revision-Date: 2015-02-26 09:48+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Romanian (http://www.transifex.com/projects/p/mc/language/"
 "ro/)\n"
@@ -352,6 +353,9 @@ msgstr "Apostrof"
 msgid "Colon"
 msgstr "Punct și virgulă"
 
+msgid "Semicolon"
+msgstr ""
+
 msgid "Exclamation mark"
 msgstr "Semn de exclamare"
 
@@ -377,13 +381,13 @@ msgid "Tilda"
 msgstr "Tildă"
 
 msgid "Prime"
-msgstr ""
+msgstr "Prim"
 
 msgid "Underline"
 msgstr "Subliniere"
 
 msgid "Understrike"
-msgstr ""
+msgstr "Liniuță de subliniere"
 
 msgid "Pipe"
 msgstr "Pipe"
@@ -447,6 +451,27 @@ msgid ""
 msgstr ""
 "Mărimea %dx%d a ecranului nu este suportată.\n"
 "Verificați variabila de mediu TERM.\n"
+
+msgid "Cannot create pipe descriptor"
+msgstr ""
+
+msgid "Cannot parse command for pipe"
+msgstr ""
+
+msgid "Cannot create pipe streams"
+msgstr ""
+
+#, c-format
+msgid ""
+"Unexpected error in select() reading data from a child process:\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
+"Unexpected error in waitpid():\n"
+"%s"
+msgstr ""
 
 msgid "Warning"
 msgstr "Atenție"
@@ -664,18 +689,8 @@ msgid ""
 "   color16 to color255, or rgb000 to rgb555 and gray0 to gray23\n"
 "\n"
 "Attributes:\n"
-"   bold, underline, reverse, blink; append more with '+'\n"
+"   bold, italic, underline, reverse, blink; append more with '+'\n"
 msgstr ""
-"Culori standard:\n"
-"   black, gray, red, brightred, green, brightgreen, brown,\n"
-"   yellow, blue, brightblue, magenta, brightmagenta, cyan,\n"
-"   brightcyan, lightgray și white\n"
-"\n"
-"Culori extinse, când sunt disponibile 256 culori:\n"
-"   color16 la color255, sau rgb000 la rgb555 și gray0 la gray23\n"
-"\n"
-"Atribute:\n"
-"   bold, underline, reverse, blink; adaugă mai multe cu '+'\n"
 
 msgid "Color options"
 msgstr "Opțiuni culori"
@@ -718,6 +733,12 @@ msgstr "Nu au fost date argumente către vizualizator."
 msgid "Two files are required to evoke the diffviewer."
 msgstr "Sunt necesare două fișiere pentru a invoca vizualizatorul de diferențe"
 
+msgid "Background protocol error"
+msgstr "Eroare în protocolul de fundal"
+
+msgid "Reading failed"
+msgstr "Citirea a eșuat"
+
 msgid "Background process error"
 msgstr "Eroare a sarciniii din fundal"
 
@@ -726,12 +747,6 @@ msgstr "Eroare necunoscută în procesul copil"
 
 msgid "Child died unexpectedly"
 msgstr "Procesul copil a murit neașteptat"
-
-msgid "Background protocol error"
-msgstr "Eroare în protocolul de fundal"
-
-msgid "Reading failed"
-msgstr "Citirea a eșuat"
 
 msgid ""
 "Background process sent us a request for more arguments\n"
@@ -889,62 +904,6 @@ msgstr "Vizualizator diff: mod invalid"
 
 msgid "Two files are needed to compare"
 msgstr "Sunt necesare două fișiere pentru comparare"
-
-#, fuzzy
-msgid "Bookmarks"
-msgstr "Ște&rge marcaje"
-
-#, fuzzy
-msgid " - Sort: "
-msgstr "Sortare"
-
-msgid "ABC"
-msgstr ""
-
-msgid "FRQ"
-msgstr ""
-
-#, fuzzy
-msgid " - Filter: "
-msgstr "Filtru"
-
-msgid "FOUND"
-msgstr ""
-
-msgid "USER"
-msgstr ""
-
-#, fuzzy
-msgid "&Go to"
-msgstr "Mer&gi la linia..."
-
-#, fuzzy
-msgid "&Add"
-msgstr "&Adaugă nou"
-
-msgid "&Remove"
-msgstr "Ș&terge"
-
-msgid "Fl&ush"
-msgstr ""
-
-#, fuzzy
-msgid "&Filter"
-msgstr "Filtru"
-
-#, fuzzy
-msgid "&Sort"
-msgstr "Sortare"
-
-#, fuzzy
-msgid "Re&verse"
-msgstr "In&vers"
-
-msgid "Bookmark list"
-msgstr ""
-
-msgid "Bookmark detail"
-msgstr ""
 
 msgid "Choose syntax highlighting"
 msgstr "Alege sintaxa de evidenţiere"
@@ -1586,8 +1545,8 @@ msgstr ""
 "Un editor de text ușor de utilizat\n"
 "creat pentru Midnight Commander."
 
-msgid "Copyright (C) 1996-2014 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2014 Free Software Foundation"
+msgid "Copyright (C) 1996-2015 the Free Software Foundation"
+msgstr ""
 
 msgid "About"
 msgstr "Despre"
@@ -1783,6 +1742,12 @@ msgstr ""
 "Nu se poate aplica chown \"%s\"\n"
 "%s"
 
+msgid "< Default >"
+msgstr "< Implicit >"
+
+msgid "Skins"
+msgstr "Tematici"
+
 msgid "Other 8 bit"
 msgstr "Alt 8 biți"
 
@@ -1866,12 +1831,6 @@ msgstr "Auto-salvare a configurației"
 
 msgid "Configure options"
 msgstr "Opțiuni de configurare"
-
-msgid "< Default >"
-msgstr "< Implicit >"
-
-msgid "Skins"
-msgstr "Tematici"
 
 msgid "Skin:"
 msgstr "Tematică:"
@@ -2986,6 +2945,9 @@ msgstr "Înr&egistrare nouă"
 msgid "&Insert"
 msgstr "&Inserează"
 
+msgid "&Remove"
+msgstr "Ș&terge"
+
 msgid "Subgroup - press ENTER to see list"
 msgstr "Subgrup - apăsați ENTER ca să vedeți lista"
 
@@ -3665,14 +3627,6 @@ msgid "The %%var macro has no variable"
 msgstr "Macro-ul %%var nu are o variabilă"
 
 #, c-format
-msgid ""
-"Cannot open file%s\n"
-"%s"
-msgstr ""
-"Nu se poate deschide fișierul%s\n"
-"%s"
-
-#, c-format
 msgid "No suitable entries found in %s"
 msgstr "Nu au fost găsite înregistrări potrivite in %s"
 
@@ -4332,12 +4286,6 @@ msgstr ""
 "Midnight Commander este în curs de închidere.\n"
 "Salvezi fișierul modificat?"
 
-msgid "Cannot spawn child process"
-msgstr "Nu se poate porni procesul copil"
-
-msgid "Empty output from child filter"
-msgstr "Ieșire vidă de la filtrul copil"
-
 msgid "&Line number"
 msgstr ""
 
@@ -4382,6 +4330,12 @@ msgstr "ButtonBar|Unform"
 
 msgid "ButtonBar|Format"
 msgstr "ButtonBar|Format"
+
+#, c-format
+msgid ""
+"Failed to read data from child stdout:\n"
+"%s"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -4431,6 +4385,3 @@ msgstr "Continuă de la început?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr "Nu se poate aduce o copie locală a /ftp://some.host/editme.txt"
-
-#~ msgid "sftp: Invalid port value."
-#~ msgstr "sftp: Port nevalid."

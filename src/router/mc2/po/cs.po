@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2014-09-04 16:51+0300\n"
-"PO-Revision-Date: 2014-09-04 10:10+0000\n"
+"POT-Creation-Date: 2015-03-20 21:10+0300\n"
+"PO-Revision-Date: 2015-02-26 09:48+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Czech (http://www.transifex.com/projects/p/mc/language/cs/)\n"
 "Language: cs\n"
@@ -347,6 +347,9 @@ msgstr "Apostrof"
 msgid "Colon"
 msgstr "Dvojtečka"
 
+msgid "Semicolon"
+msgstr ""
+
 msgid "Exclamation mark"
 msgstr "Vykřičník"
 
@@ -442,6 +445,27 @@ msgid ""
 msgstr ""
 "Velikost obrazovky %d×%d není podporovaná.\n"
 "Prověřte nastavení proměnné prostředí TERM.\n"
+
+msgid "Cannot create pipe descriptor"
+msgstr ""
+
+msgid "Cannot parse command for pipe"
+msgstr ""
+
+msgid "Cannot create pipe streams"
+msgstr ""
+
+#, c-format
+msgid ""
+"Unexpected error in select() reading data from a child process:\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
+"Unexpected error in waitpid():\n"
+"%s"
+msgstr ""
 
 msgid "Warning"
 msgstr "Varování"
@@ -657,18 +681,8 @@ msgid ""
 "   color16 to color255, or rgb000 to rgb555 and gray0 to gray23\n"
 "\n"
 "Attributes:\n"
-"   bold, underline, reverse, blink; append more with '+'\n"
+"   bold, italic, underline, reverse, blink; append more with '+'\n"
 msgstr ""
-"Standartní barvy:\n"
-"   černá, šedá, červená, světlečervená, zelená, světlezelená, hnědá,\n"
-"   žlutá, modrá, světlemodrá, červenorudá, světle-červenorudá, modrozelená,\n"
-"   světle-modrozelená, světle-šedá a bílá\n"
-"\n"
-"Rozšířené barvy, pokud je dostupných 256 barev:\n"
-"   color16 až color255, nebo rgb000 až rgb555 a gray0 až gray23\n"
-"\n"
-"Vlastnosti:\n"
-"   tučné, podtržené, obrácené, blikající; přidejte další pomocí '+'\n"
 
 msgid "Color options"
 msgstr "Možnosti barev"
@@ -707,6 +721,12 @@ msgstr "Prohlížeči nebyly zadány žádné parametry"
 msgid "Two files are required to evoke the diffviewer."
 msgstr "Dva soubory jsou potřeba k vyvolání prohlížeče změn"
 
+msgid "Background protocol error"
+msgstr "Chyba protokolu na pozadí"
+
+msgid "Reading failed"
+msgstr "Čtení selhalo"
+
 msgid "Background process error"
 msgstr "Chyba procesu na pozadí"
 
@@ -715,12 +735,6 @@ msgstr "Neznámá chyba v potomku procesu"
 
 msgid "Child died unexpectedly"
 msgstr "Potomek procesu neočekávaně umřel"
-
-msgid "Background protocol error"
-msgstr "Chyba protokolu na pozadí"
-
-msgid "Reading failed"
-msgstr "Čtení selhalo"
 
 msgid ""
 "Background process sent us a request for more arguments\n"
@@ -876,62 +890,6 @@ msgstr ""
 
 msgid "Two files are needed to compare"
 msgstr "K porovnání jsou potřeba dva soubory"
-
-#, fuzzy
-msgid "Bookmarks"
-msgstr "&Další záložka"
-
-#, fuzzy
-msgid " - Sort: "
-msgstr "Setřídit"
-
-msgid "ABC"
-msgstr ""
-
-msgid "FRQ"
-msgstr ""
-
-#, fuzzy
-msgid " - Filter: "
-msgstr "Filtr"
-
-msgid "FOUND"
-msgstr ""
-
-msgid "USER"
-msgstr ""
-
-#, fuzzy
-msgid "&Go to"
-msgstr "&Jdi na řádek..."
-
-#, fuzzy
-msgid "&Add"
-msgstr "&Přidat nový"
-
-msgid "&Remove"
-msgstr "&Smazat"
-
-msgid "Fl&ush"
-msgstr ""
-
-#, fuzzy
-msgid "&Filter"
-msgstr "Filtr"
-
-#, fuzzy
-msgid "&Sort"
-msgstr "Setřídit"
-
-#, fuzzy
-msgid "Re&verse"
-msgstr "Po&zpátku"
-
-msgid "Bookmark list"
-msgstr ""
-
-msgid "Bookmark detail"
-msgstr ""
 
 msgid "Choose syntax highlighting"
 msgstr "Vyber zvýraznění syntaxe"
@@ -1564,7 +1522,7 @@ msgid ""
 "written for the Midnight Commander."
 msgstr ""
 
-msgid "Copyright (C) 1996-2014 the Free Software Foundation"
+msgid "Copyright (C) 1996-2015 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -1761,6 +1719,12 @@ msgstr ""
 "Nelze změnit vlastníka souboru „%s“\n"
 "%s"
 
+msgid "< Default >"
+msgstr ""
+
+msgid "Skins"
+msgstr ""
+
 msgid "Other 8 bit"
 msgstr "Ostatní 8 bitů"
 
@@ -1844,12 +1808,6 @@ msgstr "&Automatické ukládání parametrů"
 
 msgid "Configure options"
 msgstr "Změna nastavení"
-
-msgid "< Default >"
-msgstr ""
-
-msgid "Skins"
-msgstr ""
 
 msgid "Skin:"
 msgstr ""
@@ -2954,6 +2912,9 @@ msgstr "&Nová položka"
 msgid "&Insert"
 msgstr "&Vložit"
 
+msgid "&Remove"
+msgstr "&Smazat"
+
 msgid "Subgroup - press ENTER to see list"
 msgstr "Podskupina - pro seznam stiskněte ENTER"
 
@@ -3628,14 +3589,6 @@ msgid "The %%var macro has no variable"
 msgstr "Makro %%var nemá proměnnou"
 
 #, c-format
-msgid ""
-"Cannot open file%s\n"
-"%s"
-msgstr ""
-"Nelze otevřít soubor %s\n"
-"%s"
-
-#, c-format
 msgid "No suitable entries found in %s"
 msgstr "V %s nejsou odpovídající položky"
 
@@ -4286,12 +4239,6 @@ msgstr ""
 "Midnight Commander se ukončuje.\n"
 "Uložit upravený soubor?"
 
-msgid "Cannot spawn child process"
-msgstr "Nelze vytvořit proces potomka"
-
-msgid "Empty output from child filter"
-msgstr "Prázdný výstup z filtru potomka"
-
 msgid "&Line number"
 msgstr ""
 
@@ -4336,6 +4283,12 @@ msgstr "TlačítkováLišta|Odform"
 
 msgid "ButtonBar|Format"
 msgstr "TlačítkováLišta|Formát"
+
+#, c-format
+msgid ""
+"Failed to read data from child stdout:\n"
+"%s"
+msgstr ""
 
 #, c-format
 msgid ""

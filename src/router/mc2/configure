@@ -2889,7 +2889,7 @@ ac_config_headers="$ac_config_headers config.h"
 
 
 
-am__api_version='1.13'
+am__api_version='1.14'
 
 # Find a good install program.  We prefer a C program (faster),
 # so one script is as good as another.  But avoid the broken or
@@ -3427,6 +3427,47 @@ am__tar='$${TAR-tar} chof - "$$tardir"' am__untar='$${TAR-tar} xf -'
 
 
 
+# POSIX will say in a future version that running "rm -f" with no argument
+# is OK; and we want to be able to make that assumption in our Makefile
+# recipes.  So use an aggressive probe to check that the usage we want is
+# actually supported "in the wild" to an acceptable degree.
+# See automake bug#10828.
+# To make any issue more visible, cause the running configure to be aborted
+# by default if the 'rm' program in use doesn't match our expectations; the
+# user can still override this though.
+if rm -f && rm -fr && rm -rf; then : OK; else
+  cat >&2 <<'END'
+Oops!
+
+Your 'rm' program seems unable to run without file operands specified
+on the command line, even when the '-f' option is present.  This is contrary
+to the behaviour of most rm programs out there, and not conforming with
+the upcoming POSIX standard: <http://austingroupbugs.net/view.php?id=542>
+
+Please tell bug-automake@gnu.org about your system, including the value
+of your $PATH and any error possibly output before this message.  This
+can help us improve future automake versions.
+
+END
+  if test x"$ACCEPT_INFERIOR_RM_PROGRAM" = x"yes"; then
+    echo 'Configuration will proceed anyway, since you have set the' >&2
+    echo 'ACCEPT_INFERIOR_RM_PROGRAM variable to "yes"' >&2
+    echo >&2
+  else
+    cat >&2 <<'END'
+Aborting the configuration process, to ensure you take notice of the issue.
+
+You can download and install GNU coreutils to get an 'rm' implementation
+that behaves properly: <http://www.gnu.org/software/coreutils/>.
+
+If you want to complete the configuration process using your problematic
+'rm' anyway, export the environment variable ACCEPT_INFERIOR_RM_PROGRAM
+to "yes", and re-run configure.
+
+END
+    as_fn_error $? "Your 'rm' program is bad, sorry." "$LINENO" 5
+  fi
+fi
 # Check whether --enable-silent-rules was given.
 if test "${enable_silent_rules+set}" = set; then :
   enableval=$enable_silent_rules;
@@ -4415,6 +4456,65 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
+ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CC understands -c and -o together" >&5
+$as_echo_n "checking whether $CC understands -c and -o together... " >&6; }
+if ${am_cv_prog_cc_c_o+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+  # Make sure it works both with $CC and with simple cc.
+  # Following AC_PROG_CC_C_O, we do the test twice because some
+  # compilers refuse to overwrite an existing .o file with -o,
+  # though they will create one.
+  am_cv_prog_cc_c_o=yes
+  for am_i in 1 2; do
+    if { echo "$as_me:$LINENO: $CC -c conftest.$ac_ext -o conftest2.$ac_objext" >&5
+   ($CC -c conftest.$ac_ext -o conftest2.$ac_objext) >&5 2>&5
+   ac_status=$?
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } \
+         && test -f conftest2.$ac_objext; then
+      : OK
+    else
+      am_cv_prog_cc_c_o=no
+      break
+    fi
+  done
+  rm -f core conftest*
+  unset am_i
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $am_cv_prog_cc_c_o" >&5
+$as_echo "$am_cv_prog_cc_c_o" >&6; }
+if test "$am_cv_prog_cc_c_o" != yes; then
+   # Losing compiler, so override with the script.
+   # FIXME: It is wrong to rewrite CC.
+   # But if we don't then we get into trouble of one sort or another.
+   # A longer-term fix would be to have automake use am__CC in this case,
+   # and then we could set am__CC="\$(top_srcdir)/compile \$(CC)"
+   CC="$am_aux_dir/compile $CC"
+fi
+ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+
 depcc="$CC"   am_compiler_list=
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking dependency style of $depcc" >&5
@@ -5296,131 +5396,6 @@ $as_echo "none needed" >&6; } ;; #(
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_prog_cc_stdc" >&5
 $as_echo "$ac_cv_prog_cc_stdc" >&6; } ;;
 esac
-
-if test "x$CC" != xcc; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CC and cc understand -c and -o together" >&5
-$as_echo_n "checking whether $CC and cc understand -c and -o together... " >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether cc understands -c and -o together" >&5
-$as_echo_n "checking whether cc understands -c and -o together... " >&6; }
-fi
-set dummy $CC; ac_cc=`$as_echo "$2" |
-		      sed 's/[^a-zA-Z0-9_]/_/g;s/^[0-9]/_/'`
-if eval \${ac_cv_prog_cc_${ac_cc}_c_o+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-# Make sure it works both with $CC and with simple cc.
-# We do the test twice because some compilers refuse to overwrite an
-# existing .o file with -o, though they will create one.
-ac_try='$CC -c conftest.$ac_ext -o conftest2.$ac_objext >&5'
-rm -f conftest2.*
-if { { case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval ac_try_echo="\"\$as_me:${as_lineno-$LINENO}: $ac_try_echo\""
-$as_echo "$ac_try_echo"; } >&5
-  (eval "$ac_try") 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; } &&
-   test -f conftest2.$ac_objext && { { case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval ac_try_echo="\"\$as_me:${as_lineno-$LINENO}: $ac_try_echo\""
-$as_echo "$ac_try_echo"; } >&5
-  (eval "$ac_try") 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; };
-then
-  eval ac_cv_prog_cc_${ac_cc}_c_o=yes
-  if test "x$CC" != xcc; then
-    # Test first that cc exists at all.
-    if { ac_try='cc -c conftest.$ac_ext >&5'
-  { { case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval ac_try_echo="\"\$as_me:${as_lineno-$LINENO}: $ac_try_echo\""
-$as_echo "$ac_try_echo"; } >&5
-  (eval "$ac_try") 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }; }; then
-      ac_try='cc -c conftest.$ac_ext -o conftest2.$ac_objext >&5'
-      rm -f conftest2.*
-      if { { case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval ac_try_echo="\"\$as_me:${as_lineno-$LINENO}: $ac_try_echo\""
-$as_echo "$ac_try_echo"; } >&5
-  (eval "$ac_try") 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; } &&
-	 test -f conftest2.$ac_objext && { { case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval ac_try_echo="\"\$as_me:${as_lineno-$LINENO}: $ac_try_echo\""
-$as_echo "$ac_try_echo"; } >&5
-  (eval "$ac_try") 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; };
-      then
-	# cc works too.
-	:
-      else
-	# cc exists but doesn't like -o.
-	eval ac_cv_prog_cc_${ac_cc}_c_o=no
-      fi
-    fi
-  fi
-else
-  eval ac_cv_prog_cc_${ac_cc}_c_o=no
-fi
-rm -f core conftest*
-
-fi
-if eval test \$ac_cv_prog_cc_${ac_cc}_c_o = yes; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-$as_echo "#define NO_MINUS_C_MINUS_O 1" >>confdefs.h
-
-fi
-
-# FIXME: we rely on the cache variable name because
-# there is no other way.
-set dummy $CC
-am_cc=`echo $2 | sed 's/[^a-zA-Z0-9_]/_/g;s/^[0-9]/_/'`
-eval am_t=\$ac_cv_prog_cc_${am_cc}_c_o
-if test "$am_t" != yes; then
-   # Losing compiler, so override with the script.
-   # FIXME: It is wrong to rewrite CC.
-   # But if we don't then we get into trouble of one sort or another.
-   # A longer-term fix would be to have automake use am__CC in this case,
-   # and then we could set am__CC="\$(top_srcdir)/compile \$(CC)"
-   CC="$am_aux_dir/compile $CC"
-fi
 
 
 
@@ -14362,6 +14337,8 @@ else
 $as_echo "yes" >&6; }
 	have_check=yes
 fi
+
+
     fi
      if test x"$have_check" = "xyes"; then
   HAVE_TESTS_TRUE=
@@ -14406,12 +14383,12 @@ if test -n "$GLIB_CFLAGS"; then
     pkg_cv_GLIB_CFLAGS="$GLIB_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"glib-2.0 >= 2.12\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "glib-2.0 >= 2.12") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"glib-2.0 >= 2.14\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "glib-2.0 >= 2.14") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_GLIB_CFLAGS=`$PKG_CONFIG --cflags "glib-2.0 >= 2.12" 2>/dev/null`
+  pkg_cv_GLIB_CFLAGS=`$PKG_CONFIG --cflags "glib-2.0 >= 2.14" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -14423,12 +14400,12 @@ if test -n "$GLIB_LIBS"; then
     pkg_cv_GLIB_LIBS="$GLIB_LIBS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"glib-2.0 >= 2.12\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "glib-2.0 >= 2.12") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"glib-2.0 >= 2.14\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "glib-2.0 >= 2.14") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_GLIB_LIBS=`$PKG_CONFIG --libs "glib-2.0 >= 2.12" 2>/dev/null`
+  pkg_cv_GLIB_LIBS=`$PKG_CONFIG --libs "glib-2.0 >= 2.14" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -14449,9 +14426,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        GLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "glib-2.0 >= 2.12" 2>&1`
+	        GLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "glib-2.0 >= 2.14" 2>&1`
         else
-	        GLIB_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "glib-2.0 >= 2.12" 2>&1`
+	        GLIB_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "glib-2.0 >= 2.14" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$GLIB_PKG_ERRORS" >&5
@@ -14469,7 +14446,7 @@ $as_echo "yes" >&6; }
 	glib_found=yes
 fi
     if test x"$glib_found" = xno; then
-        as_fn_error $? "glib-2.0 not found or version too old (must be >= 2.12)" "$LINENO" 5
+        as_fn_error $? "glib-2.0 not found or version too old (must be >= 2.14)" "$LINENO" 5
     fi
 
 
@@ -14487,12 +14464,12 @@ if test -n "$GMODULE_CFLAGS"; then
     pkg_cv_GMODULE_CFLAGS="$GMODULE_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gmodule-no-export-2.0 >= 2.12\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "gmodule-no-export-2.0 >= 2.12") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gmodule-no-export-2.0 >= 2.14\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gmodule-no-export-2.0 >= 2.14") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_GMODULE_CFLAGS=`$PKG_CONFIG --cflags "gmodule-no-export-2.0 >= 2.12" 2>/dev/null`
+  pkg_cv_GMODULE_CFLAGS=`$PKG_CONFIG --cflags "gmodule-no-export-2.0 >= 2.14" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -14504,12 +14481,12 @@ if test -n "$GMODULE_LIBS"; then
     pkg_cv_GMODULE_LIBS="$GMODULE_LIBS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gmodule-no-export-2.0 >= 2.12\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "gmodule-no-export-2.0 >= 2.12") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gmodule-no-export-2.0 >= 2.14\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gmodule-no-export-2.0 >= 2.14") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_GMODULE_LIBS=`$PKG_CONFIG --libs "gmodule-no-export-2.0 >= 2.12" 2>/dev/null`
+  pkg_cv_GMODULE_LIBS=`$PKG_CONFIG --libs "gmodule-no-export-2.0 >= 2.14" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -14530,9 +14507,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        GMODULE_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "gmodule-no-export-2.0 >= 2.12" 2>&1`
+	        GMODULE_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "gmodule-no-export-2.0 >= 2.14" 2>&1`
         else
-	        GMODULE_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "gmodule-no-export-2.0 >= 2.12" 2>&1`
+	        GMODULE_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "gmodule-no-export-2.0 >= 2.14" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$GMODULE_PKG_ERRORS" >&5
@@ -14561,12 +14538,12 @@ if test -n "$GMODULE_CFLAGS"; then
     pkg_cv_GMODULE_CFLAGS="$GMODULE_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gmodule-2.0 >= 2.12\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "gmodule-2.0 >= 2.12") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gmodule-2.0 >= 2.14\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gmodule-2.0 >= 2.14") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_GMODULE_CFLAGS=`$PKG_CONFIG --cflags "gmodule-2.0 >= 2.12" 2>/dev/null`
+  pkg_cv_GMODULE_CFLAGS=`$PKG_CONFIG --cflags "gmodule-2.0 >= 2.14" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -14578,12 +14555,12 @@ if test -n "$GMODULE_LIBS"; then
     pkg_cv_GMODULE_LIBS="$GMODULE_LIBS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gmodule-2.0 >= 2.12\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "gmodule-2.0 >= 2.12") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gmodule-2.0 >= 2.14\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gmodule-2.0 >= 2.14") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_GMODULE_LIBS=`$PKG_CONFIG --libs "gmodule-2.0 >= 2.12" 2>/dev/null`
+  pkg_cv_GMODULE_LIBS=`$PKG_CONFIG --libs "gmodule-2.0 >= 2.14" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -14604,9 +14581,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        GMODULE_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "gmodule-2.0 >= 2.12" 2>&1`
+	        GMODULE_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "gmodule-2.0 >= 2.14" 2>&1`
         else
-	        GMODULE_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "gmodule-2.0 >= 2.12" 2>&1`
+	        GMODULE_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "gmodule-2.0 >= 2.14" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$GMODULE_PKG_ERRORS" >&5
@@ -18712,6 +18689,64 @@ _ACEOF
 fi
 done
 
+
+      # Check for libmount to support /proc/self/mountinfo on Linux
+      if ${ac_cv_lib_libmount_mnt_table_parse_stream+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for mnt_new_table_from_file in -lmount" >&5
+$as_echo_n "checking for mnt_new_table_from_file in -lmount... " >&6; }
+if ${ac_cv_lib_mount_mnt_new_table_from_file+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lmount  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char mnt_new_table_from_file ();
+int
+main ()
+{
+return mnt_new_table_from_file ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_mount_mnt_new_table_from_file=yes
+else
+  ac_cv_lib_mount_mnt_new_table_from_file=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_mount_mnt_new_table_from_file" >&5
+$as_echo "$ac_cv_lib_mount_mnt_new_table_from_file" >&6; }
+if test "x$ac_cv_lib_mount_mnt_new_table_from_file" = xyes; then :
+  ac_cv_lib_mount_mnt_table_parse_stream=yes
+else
+  ac_cv_lib_mount_mnt_table_parse_stream=no
+fi
+
+fi
+
+      if test $ac_cv_lib_mount_mnt_table_parse_stream = yes; then
+
+$as_echo "#define MOUNTED_PROC_MOUNTINFO 1" >>confdefs.h
+
+         LIBS="-lmount $LIBS"
+      elif test -f /proc/self/mountinfo; then
+         { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: /proc/self/mountinfo present but libmount is missing." >&5
+$as_echo "$as_me: WARNING: /proc/self/mountinfo present but libmount is missing." >&2;}
+      fi
     fi
   fi
 
@@ -19424,6 +19459,64 @@ _ACEOF
 fi
 done
 
+
+      # Check for libmount to support /proc/self/mountinfo on Linux
+      if ${ac_cv_lib_libmount_mnt_table_parse_stream+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for mnt_new_table_from_file in -lmount" >&5
+$as_echo_n "checking for mnt_new_table_from_file in -lmount... " >&6; }
+if ${ac_cv_lib_mount_mnt_new_table_from_file+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lmount  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char mnt_new_table_from_file ();
+int
+main ()
+{
+return mnt_new_table_from_file ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_mount_mnt_new_table_from_file=yes
+else
+  ac_cv_lib_mount_mnt_new_table_from_file=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_mount_mnt_new_table_from_file" >&5
+$as_echo "$ac_cv_lib_mount_mnt_new_table_from_file" >&6; }
+if test "x$ac_cv_lib_mount_mnt_new_table_from_file" = xyes; then :
+  ac_cv_lib_mount_mnt_table_parse_stream=yes
+else
+  ac_cv_lib_mount_mnt_table_parse_stream=no
+fi
+
+fi
+
+      if test $ac_cv_lib_mount_mnt_table_parse_stream = yes; then
+
+$as_echo "#define MOUNTED_PROC_MOUNTINFO 1" >>confdefs.h
+
+         LIBS="-lmount $LIBS"
+      elif test -f /proc/self/mountinfo; then
+         { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: /proc/self/mountinfo present but libmount is missing." >&5
+$as_echo "$as_me: WARNING: /proc/self/mountinfo present but libmount is missing." >&2;}
+      fi
     fi
   fi
 

@@ -1,7 +1,7 @@
 /*
    src/editor - tests for edit_complete_word_cmd() function
 
-   Copyright (C) 2013-2014
+   Copyright (C) 2013-2015
    Free Software Foundation, Inc.
 
    Written by:
@@ -29,6 +29,7 @@
 
 #include <ctype.h>
 
+#include "lib/timer.h"
 #ifdef HAVE_CHARSET
 #include "lib/charsets.h"
 #endif
@@ -47,7 +48,7 @@ static WEdit *test_edit;
 /* --------------------------------------------------------------------------------------------- */
 /* @Mock */
 void
-edit_load_syntax (WEdit * _edit, char ***_pnames, const char *_type)
+edit_load_syntax (WEdit * _edit, GPtrArray * _pnames, const char *_type)
 {
     (void) _edit;
     (void) _pnames;
@@ -144,6 +145,7 @@ editcmd_dialog_completion_show__deinit (void)
 static void
 my_setup (void)
 {
+    mc_global.timer = mc_timer_new ();
     str_init_strings (NULL);
 
     vfs_init ();
@@ -178,6 +180,7 @@ my_teardown (void)
     vfs_shut ();
 
     str_uninit_strings ();
+    mc_timer_destroy (mc_global.timer);
 }
 
 /* --------------------------------------------------------------------------------------------- */

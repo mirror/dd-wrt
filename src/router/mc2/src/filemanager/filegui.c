@@ -10,7 +10,7 @@
    Janne Kukonlehto added much error recovery to them for being used
    in an interactive program.
 
-   Copyright (C) 1994-2014
+   Copyright (C) 1994-2015
    Free Software Foundation, Inc.
 
    Written by:
@@ -613,14 +613,23 @@ overwrite_query_dialog (file_op_context_t * ctx, enum OperationMode mode)
 /* --------------------------------------------------------------------------------------------- */
 
 static gboolean
-is_wildcarded (char *p)
+is_wildcarded (const char *p)
 {
+    gboolean escaped = FALSE;
     for (; *p; p++)
     {
-        if (*p == '*')
-            return TRUE;
-        if (*p == '\\' && p[1] >= '1' && p[1] <= '9')
-            return TRUE;
+        if (*p == '\\')
+        {
+            if (p[1] >= '1' && p[1] <= '9' && !escaped)
+                return TRUE;
+            escaped = !escaped;
+        }
+        else
+        {
+            if ((*p == '*' || *p == '?') && !escaped)
+                return TRUE;
+            escaped = FALSE;
+        }
     }
     return FALSE;
 }
