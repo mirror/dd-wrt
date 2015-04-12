@@ -90,7 +90,7 @@ asterisk-configure: util-linux-configure
 
 asterisk-clean:
 	$(MAKE) -C asterisk clean
-	$(MAKE) -C chan_dongle clean
+#	$(MAKE) -C chan_dongle clean
 
 asterisk: util-linux util-linux-stageinstall
 	-make -C asterisk \
@@ -106,9 +106,10 @@ asterisk: util-linux util-linux-stageinstall
 		OPTIMIZE="" \
 		all
 	-make -C asterisk
-	make -C chan_dongle
+#	make -C chan_dongle
 
 asterisk-install:
+	chmod 700 asterisk/build_tools/install_subst
 	-ASTCFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -fPIC -I$(TOP)/ncurses/include -I$(TOP)/openssl/include -I$(TOP)/minidlna/sqlite-3.6.22" \
 	ASTLDFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -fPIC -L$(TOP)/ncurses/lib -L$(TOP)/openssl -L$(TOP)/minidlna/lib" \
 	$(MAKE) -C asterisk \
@@ -183,5 +184,5 @@ asterisk-install:
 	$(INSTALL_DIR) $(INSTALLDIR)/asterisk/usr/lib/asterisk/modules
 	$(INSTALL_BIN) $(TOP)/$(ARCH)-uclibc/tmp/$(ARCHITECTURE)/asterisk/usr/lib/asterisk/modules/res* $(INSTALLDIR)/asterisk/usr/lib/asterisk/modules/
 	rm -rf $(TOP)/$(ARCH)-uclibc/tmp/$(ARCHITECTURE)/asterisk
-	make -C chan_dongle install
+#	make -C chan_dongle install
 
