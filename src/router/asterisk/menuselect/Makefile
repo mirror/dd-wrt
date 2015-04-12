@@ -19,7 +19,7 @@ ifneq ($(wildcard makeopts),)
 endif
 
 .PHONY: clean dist-clean distclean test ntest ctest gtest
-
+CC:=gcc
 # Basic set of sources and flags/libraries/includes
 OBJS:=menuselect.o strcompat.o
 CFLAGS+=-g -D_GNU_SOURCE -Wall
