@@ -1,0 +1,99 @@
+{
+	"_copyright": "Copyright (C) 2012 - 2013, Digium, Inc.",
+	"_author": "David M. Lee, II <dlee@digium.com>",
+	"_svn_revision": "$Revision: 429091 $",
+	"apiVersion": "1.6.0",
+	"swaggerVersion": "1.1",
+	"basePath": "http://localhost:8088/ari",
+	"resourcePath": "/api-docs/sounds.{format}",
+	"apis": [
+		{
+			"path": "/sounds",
+			"description": "Sounds",
+			"operations": [
+				{
+					"httpMethod": "GET",
+					"summary": "List all sounds.",
+					"nickname": "list",
+					"responseClass": "List[Sound]",
+					"parameters": [
+						{
+							"name": "lang",
+							"description": "Lookup sound for a specific language.",
+							"paramType": "query",
+							"dataType": "string",
+							"required": false
+						},
+						{
+							"name": "format",
+							"description": "Lookup sound in a specific format.",
+							"paramType": "query",
+							"dataType": "string",
+							"required": false,
+							"__note": "core show translation can show translation paths between formats, along with relative costs. so this could be just installed format, or we could follow that for transcoded formats."
+						}
+					]
+				}
+			]
+		},
+		{
+			"path": "/sounds/{soundId}",
+			"description": "Individual sound",
+			"operations": [
+				{
+					"httpMethod": "GET",
+					"summary": "Get a sound's details.",
+					"nickname": "get",
+					"responseClass": "Sound",
+					"parameters": [
+						{
+							"name": "soundId",
+							"description": "Sound's id",
+							"paramType": "path",
+							"required": true,
+							"allowMultiple": false,
+							"dataType": "string"
+						}
+					]
+				}
+			]
+		}
+	],
+	"models": {
+		"FormatLangPair": {
+			"id": "FormatLangPair",
+			"description": "Identifies the format and language of a sound file",
+			"properties": {
+				"language": {
+					"required": true,
+					"type": "string"
+				},
+				"format": {
+					"required": true,
+					"type": "string"
+				}
+			}
+		},
+		"Sound": {
+			"id": "Sound",
+			"description": "A media file that may be played back.",
+			"properties": {
+				"id": {
+					"required": true,
+					"description": "Sound's identifier.",
+					"type": "string"
+				},
+				"text": {
+					"required": false,
+					"description": "Text description of the sound, usually the words spoken.",
+					"type": "string"
+				},
+				"formats": {
+					"required": true,
+					"description": "The formats and languages in which this sound is available.",
+					"type": "List[FormatLangPair]"
+				}
+			}
+		}
+	}
+}
