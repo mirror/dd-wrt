@@ -366,5 +366,4 @@ could result in a privilege escalation. Asterisk can inhibit the execution of
 these functions, if live_dangerously in the [options] section of asterisk.conf
 is set to no.
 
-For backwards compatibility, live_dangerously defaults to yes, and must be
-explicitly set to no to enable this privilege escalation protection.
+In Asterisk 12 and later, live_dangerously defaults to no.

@@ -23,15 +23,25 @@
  * \todo Support writing attendees
  */
 
+/*! \li \ref res_calendar.c uses the configuration file \ref calendar.conf
+ * \addtogroup configuration_file Configuration Files
+ */
+
+/*! 
+ * \page calendar.conf calendar.conf
+ * \verbinclude calendar.conf.sample
+ */
+
 /*** MODULEINFO
 	<support_level>core</support_level>
  ***/
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 392810 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 428246 $")
 
 #include "asterisk/_private.h"
+#include "asterisk/channel.h"
 #include "asterisk/calendar.h"
 #include "asterisk/utils.h"
 #include "asterisk/astobj2.h"
@@ -45,6 +55,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 392810 $")
 #include "asterisk/cli.h"
 #include "asterisk/pbx.h"
 #include "asterisk/app.h"
+#include "asterisk/format_cache.h"
 
 /*** DOCUMENTATION
 	<function name="CALENDAR_BUSY" language="en_US">
@@ -527,6 +538,11 @@ int ast_calendar_register(struct ast_calendar_tech *tech)
 {
 	struct ast_calendar_tech *iter;
 
+	if (!calendar_config) {
+		ast_log(LOG_WARNING, "Calendar support disabled, not loading %s calendar module\n", tech->type);
+		return -1;
+	}
+
 	AST_LIST_LOCK(&techs);
 	AST_LIST_TRAVERSE(&techs, iter, list) {
 		if(!strcasecmp(tech->type, iter->type)) {
@@ -687,7 +703,7 @@ static void *event_notification_duplicate(void *data)
 /*! \brief Generate 32 byte random string (stolen from chan_sip.c)*/
 static char *generate_random_string(char *buf, size_t size)
 {
-	long val[4];
+	unsigned long val[4];
 	int x;
 
 	for (x = 0; x < 4; x++) {
@@ -720,6 +736,7 @@ static void *do_notify(void *data)
 	struct ast_variable *itervar;
 	char *tech, *dest;
 	char buf[8];
+	struct ast_format_cap *caps;
 
 	tech = ast_strdupa(event->owner->notify_channel);
 
@@ -736,7 +753,7 @@ static void *do_notify(void *data)
 		goto notify_cleanup;
 	}
 
-	if (ast_dial_append(dial, tech, dest) < 0) {
+	if (ast_dial_append(dial, tech, dest, NULL) < 0) {
 		ast_log(LOG_ERROR, "Could not append channel\n");
 		goto notify_cleanup;
 	}
@@ -744,18 +761,27 @@ static void *do_notify(void *data)
 	ast_dial_set_global_timeout(dial, event->owner->notify_waittime);
 	generate_random_string(buf, sizeof(buf));
 
-	if (!(chan = ast_channel_alloc(1, AST_STATE_DOWN, 0, 0, 0, 0, 0, 0, 0, "Calendar/%s-%s", event->owner->name, buf))) {
+	if (!(chan = ast_channel_alloc(1, AST_STATE_DOWN, 0, 0, 0, 0, 0, NULL, NULL, 0, "Calendar/%s-%s", event->owner->name, buf))) {
 		ast_log(LOG_ERROR, "Could not allocate notification channel\n");
 		goto notify_cleanup;
 	}
 
 	ast_channel_tech_set(chan, &null_tech);
-	ast_format_set(ast_channel_writeformat(chan), AST_FORMAT_SLINEAR, 0);
-	ast_format_set(ast_channel_readformat(chan), AST_FORMAT_SLINEAR, 0);
-	ast_format_set(ast_channel_rawwriteformat(chan), AST_FORMAT_SLINEAR, 0);
-	ast_format_set(ast_channel_rawreadformat(chan), AST_FORMAT_SLINEAR, 0);
-	/* clear native formats and set to slinear. write format is signlear so just use that to set it */
-	ast_format_cap_set(ast_channel_nativeformats(chan), ast_channel_writeformat(chan));
+	ast_channel_set_writeformat(chan, ast_format_slin);
+	ast_channel_set_readformat(chan, ast_format_slin);
+	ast_channel_set_rawwriteformat(chan, ast_format_slin);
+	ast_channel_set_rawreadformat(chan, ast_format_slin);
+
+	caps = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT);
+	if (!caps) {
+		ast_log(LOG_ERROR, "Could not allocate capabilities, notification not being sent!\n");
+		goto notify_cleanup;
+	}
+	ast_format_cap_append(caps, ast_format_slin, 0);
+	ast_channel_nativeformats_set(chan, caps);
+	ao2_ref(caps, -1);
+
+	ast_channel_unlock(chan);
 
 	if (!(datastore = ast_datastore_alloc(&event_notification_datastore, NULL))) {
 		ast_log(LOG_ERROR, "Could not allocate datastore, notification not being sent!\n");
@@ -766,7 +792,10 @@ static void *do_notify(void *data)
 	datastore->inheritance = DATASTORE_INHERIT_FOREVER;
 
 	ao2_ref(event, +1);
+
+	ast_channel_lock(chan);
 	res = ast_channel_datastore_add(chan, datastore);
+	ast_channel_unlock(chan);
 
 	if (!(tmpstr = ast_str_create(32))) {
 		goto notify_cleanup;
@@ -774,7 +803,7 @@ static void *do_notify(void *data)
 
 	for (itervar = event->owner->vars; itervar; itervar = itervar->next) {
 		ast_str_substitute_variables(&tmpstr, 0, chan, itervar->value);
-		pbx_builtin_setvar_helper(chan, itervar->name, tmpstr->str);
+		pbx_builtin_setvar_helper(chan, itervar->name, ast_str_buffer(tmpstr));
 	}
 
 	if (!(apptext = ast_str_create(32))) {
@@ -1353,7 +1382,7 @@ static int calendar_query_result_exec(struct ast_channel *chan, const char *cmd,
 		} else if (!strcasecmp(args.field, "end")) {
 			snprintf(buf, len, "%ld", (long) entry->event->end);
 		} else if (!strcasecmp(args.field, "busystate")) {
-			snprintf(buf, len, "%d", entry->event->busy_state);
+			snprintf(buf, len, "%u", entry->event->busy_state);
 		} else if (!strcasecmp(args.field, "attendees")) {
 			calendar_join_attendees(entry->event, buf, len);
 		} else {
@@ -1414,7 +1443,7 @@ static int calendar_write_exec(struct ast_channel *chan, const char *cmd, char *
 	}
 
 	if (fields.argc - 1 != values.argc) {
-		ast_log(LOG_WARNING, "CALENDAR_WRITE should have the same number of fields (%d) and values (%d)!\n", fields.argc - 1, values.argc);
+		ast_log(LOG_WARNING, "CALENDAR_WRITE should have the same number of fields (%u) and values (%u)!\n", fields.argc - 1, values.argc);
 		goto write_cleanup;
 	}
 
@@ -1670,6 +1699,11 @@ static int calendar_event_read(struct ast_channel *chan, const char *cmd, char *
 	struct ast_datastore *datastore;
 	struct ast_calendar_event *event;
 
+	if (!chan) {
+		ast_log(LOG_WARNING, "No channel was provided to %s function.\n", cmd);
+		return -1;
+	}
+
 	if (ast_strlen_zero(data)) {
 		ast_log(LOG_WARNING, "%s requires an argument\n", cmd);
 		return -1;
@@ -1709,7 +1743,7 @@ static int calendar_event_read(struct ast_channel *chan, const char *cmd, char *
 	} else if (!strcasecmp(data, "end")) {
 		snprintf(buf, len, "%ld", (long)event->end);
 	} else if (!strcasecmp(data, "busystate")) {
-		snprintf(buf, len, "%d", event->busy_state);
+		snprintf(buf, len, "%u", event->busy_state);
 	} else if (!strcasecmp(data, "attendees")) {
 		calendar_join_attendees(event, buf, len);
 	}
@@ -1832,6 +1866,16 @@ static int unload_module(void)
 	return 0;
 }
 
+/*!
+ * \brief Load the module
+ *
+ * Module loading including tests for configuration or dependencies.
+ * This function can return AST_MODULE_LOAD_FAILURE, AST_MODULE_LOAD_DECLINE,
+ * or AST_MODULE_LOAD_SUCCESS. If a dependency or environment variable fails
+ * tests return AST_MODULE_LOAD_FAILURE. If the module can not load the 
+ * configuration file or other non-critical problem return 
+ * AST_MODULE_LOAD_DECLINE. On success return AST_MODULE_LOAD_SUCCESS.
+ */
 static int load_module(void)
 {
 	if (!(calendars = ao2_container_alloc(CALENDAR_BUCKETS, calendar_hash_fn, calendar_cmp_fn))) {
@@ -1869,6 +1913,7 @@ static int load_module(void)
 	return AST_MODULE_LOAD_SUCCESS;
 }
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_GLOBAL_SYMBOLS | AST_MODFLAG_LOAD_ORDER, "Asterisk Calendar integration",
+		.support_level = AST_MODULE_SUPPORT_CORE,
 		.load = load_module,
 		.unload = unload_module,
 		.reload = reload,

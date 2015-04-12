@@ -109,7 +109,7 @@ struct ast_audiohook {
 	struct ast_slinfactory write_factory;                  /*!< Factory where frames written to the channel will go through */
 	struct timeval read_time;                              /*!< Last time read factory was fed */
 	struct timeval write_time;                             /*!< Last time write factory was fed */
-	struct ast_format format;                              /*!< Format translation path is setup as */
+	struct ast_format *format;                             /*!< Format translation path is setup as */
 	struct ast_trans_pvt *trans_pvt;                       /*!< Translation path for reading frames */
 	ast_audiohook_manipulate_callback manipulate_callback; /*!< Manipulation callback */
 	struct ast_audiohook_options options;                  /*!< Applicable options */
@@ -154,10 +154,10 @@ struct ast_frame *ast_audiohook_read_frame(struct ast_audiohook *audiohook, size
 /*! \brief Reads a frame in from the audiohook structure in mixed audio mode and copies read and write frame data to provided arguments.
  * \param audiohook Audiohook structure
  * \param samples Number of samples wanted
- * \param direction Direction the audio frame came from
- * \param format Format of frame remote side wants back
- * \param ast_frame read_frame - if available, we'll copy the read buffer to this.
- * \param ast_frame write_frame - if available, we'll copy the write buffer to this.
+ * \param ast_format Format of frame remote side wants back
+ * \param read_frame if available, we'll copy the read buffer to this.
+ * \param write_frame if available, we'll copy the write buffer to this.
+ * \param direction
  * \return Returns frame on success, NULL on failure
  */
 struct ast_frame *ast_audiohook_read_frame_all(struct ast_audiohook *audiohook, size_t samples, struct ast_format *format, struct ast_frame **read_frame, struct ast_frame **write_frame);
@@ -175,11 +175,12 @@ int ast_audiohook_attach(struct ast_channel *chan, struct ast_audiohook *audioho
  */
 int ast_audiohook_detach(struct ast_audiohook *audiohook);
 
-/*! \brief Detach audiohooks from list and destroy said list
- * \param audiohook_list List of audiohooks
- * \return Returns 0 on success, -1 on failure
+/*!
+ * \brief Detach audiohooks from list and destroy said list
+ * \param audiohook_list List of audiohooks (NULL tolerant)
+ * \return Nothing
  */
-int ast_audiohook_detach_list(struct ast_audiohook_list *audiohook_list);
+void ast_audiohook_detach_list(struct ast_audiohook_list *audiohook_list);
 
 /*! \brief Move an audiohook from one channel to a new one
  *
@@ -195,6 +196,17 @@ int ast_audiohook_detach_list(struct ast_audiohook_list *audiohook_list);
  * \param source The source of the audiohook we want to move
  */
 void ast_audiohook_move_by_source(struct ast_channel *old_chan, struct ast_channel *new_chan, const char *source);
+
+/*! \brief Move all audiohooks from one channel to another
+ *
+ * \note It is required that both old_chan and new_chan are locked prior to calling
+ * this function. Besides needing to protect the data within the channels, not locking
+ * these channels can lead to a potential deadlock.
+ *
+ * \param old_chan The source of the audiohooks being moved
+ * \param new_chan The destination channel for the audiohooks to be moved to
+ */
+void ast_audiohook_move_all(struct ast_channel *old_chan, struct ast_channel *new_chan);
 
 /*!
  * \brief Detach specified source audiohook from channel
@@ -221,7 +233,9 @@ int ast_audiohook_detach_source(struct ast_channel *chan, const char *source);
 int ast_audiohook_remove(struct ast_channel *chan, struct ast_audiohook *audiohook);
 
 /*!
- * \brief determines if a audiohook_list is empty or not.
+ * \brief Determine if a audiohook_list is empty or not.
+ *
+ * \param audiohook Audiohook to check.  (NULL also means empty)
  *
  * retval 0 false, 1 true
  */

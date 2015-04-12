@@ -32,11 +32,12 @@
  
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 364580 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419592 $")
 
 #include "asterisk/mod_format.h"
 #include "asterisk/module.h"
 #include "asterisk/endian.h"
+#include "asterisk/format_cache.h"
 
 /* Some Ideas for this code came from makeg729e.c by Jeffrey Chilton */
 
@@ -49,9 +50,6 @@ static struct ast_frame *g729_read(struct ast_filestream *s, int *whennext)
 {
 	int res;
 	/* Send a frame from the file to the appropriate channel */
-	s->fr.frametype = AST_FRAME_VOICE;
-	ast_format_set(&s->fr.subclass.format, AST_FORMAT_G729A, 0);
-	s->fr.mallocd = 0;
 	s->fr.samples = G729A_SAMPLES;
 	AST_FRAME_SET_BUFFER(&s->fr, s->buf, AST_FRIENDLY_OFFSET, BUF_SIZE);
 	if ((res = fread(s->fr.data.ptr, 1, s->fr.datalen, s->f)) != s->fr.datalen) {
@@ -66,14 +64,7 @@ static struct ast_frame *g729_read(struct ast_filestream *s, int *whennext)
 static int g729_write(struct ast_filestream *fs, struct ast_frame *f)
 {
 	int res;
-	if (f->frametype != AST_FRAME_VOICE) {
-		ast_log(LOG_WARNING, "Asked to write non-voice frame!\n");
-		return -1;
-	}
-	if (f->subclass.format.id != AST_FORMAT_G729A) {
-		ast_log(LOG_WARNING, "Asked to write non-G729 frame (%s)!\n", ast_getformatname(&f->subclass.format));
-		return -1;
-	}
+
 	if (f->datalen % 10) {
 		ast_log(LOG_WARNING, "Invalid data length, %d, should be multiple of 10\n", f->datalen);
 		return -1;
@@ -147,7 +138,7 @@ static struct ast_format_def g729_f = {
 
 static int load_module(void)
 {
-	ast_format_set(&g729_f.format, AST_FORMAT_G729A, 0);
+	g729_f.format = ast_format_g729;
 	if (ast_format_def_register(&g729_f))
 		return AST_MODULE_LOAD_FAILURE;
 	return AST_MODULE_LOAD_SUCCESS;
@@ -159,6 +150,7 @@ static int unload_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "Raw G.729 data",
+	.support_level = AST_MODULE_SUPPORT_CORE,
 	.load = load_module,
 	.unload = unload_module,
 	.load_pri = AST_MODPRI_APP_DEPEND

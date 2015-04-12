@@ -20,7 +20,7 @@
  *
  * \brief RADIUS CEL Support
  * \author Philippe Sultan
- * \extref The Radius Client Library - http://developer.berlios.de/projects/radiusclient-ng/
+ * The Radius Client Library - http://developer.berlios.de/projects/radiusclient-ng/
  *
  * \arg See also \ref AstCEL
  * \ingroup cel_drivers
@@ -33,9 +33,13 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Rev: 328259 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Rev: 419592 $")
 
+#ifdef FREERADIUS_CLIENT
+#include <freeradius-client.h>
+#else
 #include <radiusclient-ng.h>
+#endif
 
 #include "asterisk/channel.h"
 #include "asterisk/cel.h"
@@ -79,12 +83,17 @@ enum {
 
 static char *cel_config = "cel.conf";
 
+#ifdef FREERADIUS_CLIENT
+static char radiuscfg[PATH_MAX] = "/etc/radiusclient/radiusclient.conf";
+#else
 static char radiuscfg[PATH_MAX] = "/etc/radiusclient-ng/radiusclient.conf";
+#endif
 
 static struct ast_flags global_flags = { RADIUS_FLAG_USEGMTIME | RADIUS_FLAG_LOGUNIQUEID | RADIUS_FLAG_LOGUSERFIELD };
 
 static rc_handle *rh = NULL;
-static struct ast_event_sub *event_sub = NULL;
+
+#define RADIUS_BACKEND_NAME "CEL Radius Logging"
 
 #define ADD_VENDOR_CODE(x,y) (rc_avpair_add(rh, send, x, &y, strlen(y), VENDOR_CODE))
 
@@ -150,7 +159,7 @@ static int build_radius_record(VALUE_PAIR **send, struct ast_cel_event_record *r
 		return -1;
 	}
 	/* AMA Flags */
-	amaflags = ast_strdupa(ast_cel_get_ama_flag_name(record->amaflag));
+	amaflags = ast_strdupa(ast_channel_amaflags2string(record->amaflag));
 	if (!rc_avpair_add(rh, send, PW_AST_AMA_FLAGS, amaflags, strlen(amaflags), VENDOR_CODE)) {
 		return -1;
 	}
@@ -174,7 +183,7 @@ static int build_radius_record(VALUE_PAIR **send, struct ast_cel_event_record *r
 	return 0;
 }
 
-static void radius_log(const struct ast_event *event, void *userdata)
+static void radius_log(struct ast_event *event)
 {
 	int result = ERROR_RC;
 	VALUE_PAIR *send = NULL;
@@ -204,9 +213,7 @@ return_cleanup:
 
 static int unload_module(void)
 {
-	if (event_sub) {
-		event_sub = ast_event_unsubscribe(event_sub);
-	}
+	ast_cel_backend_unregister(RADIUS_BACKEND_NAME);
 	if (rh) {
 		rc_destroy(rh);
 		rh = NULL;
@@ -256,8 +263,7 @@ static int load_module(void)
 		return AST_MODULE_LOAD_DECLINE;
 	}
 
-	event_sub = ast_event_subscribe(AST_EVENT_CEL, radius_log, "CEL Radius Logging", NULL, AST_EVENT_IE_END);
-	if (!event_sub) {
+	if (ast_cel_backend_register(RADIUS_BACKEND_NAME, radius_log)) {
 		rc_destroy(rh);
 		rh = NULL;
 		return AST_MODULE_LOAD_DECLINE;
@@ -267,6 +273,7 @@ static int load_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "RADIUS CEL Backend",
+	.support_level = AST_MODULE_SUPPORT_EXTENDED,
 	.load = load_module,
 	.unload = unload_module,
 	.load_pri = AST_MODPRI_CDR_DRIVER,

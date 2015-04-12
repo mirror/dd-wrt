@@ -9,6 +9,2105 @@
 ==============================================================================
 
 ------------------------------------------------------------------------------
+--- Functionality changes from Asterisk 13.2.0 to Asterisk 13.3.0 ------------
+------------------------------------------------------------------------------
+
+chan_pjsip/app_transfer
+------------------
+ * The Transfer application, when used with chan_pjsip, now supports using
+   a PJSIP endpoint as the transfer destination. This is in addition to
+   explicitly specifying a SIP URI to transfer to.
+
+res_ari_channels
+------------------
+ * The ARI /channels resource now supports a new operation, 'redirect'. The
+   redirect operation will perform a technology and state specific redirection
+   on the channel to a specified endpoint or destination. In the case of SIP
+   technologies, this is either a 302 Redirect response to an on-going INVITE
+   dialog or a SIP REFER request.
+
+res_pjsip
+------------------
+ * A new 'endpoint_identifier_order' option has been added that allows one to
+   set the order by which endpoint identifiers are processed and checked. This
+   option is specified under the 'global' type configuration section.
+
+------------------------------------------------------------------------------
+--- Functionality changes from Asterisk 13.1.0 to Asterisk 13.2.0 ------------
+------------------------------------------------------------------------------
+
+res_pjsip_outbound_registration
+------------------
+ * The 'pjsip send unregister' command now stops further registrations.
+
+ * A new command 'pjsip send register' has been added which allows you to
+   start or restart periodic registration.  It can be used after a
+   'send unregister' or after a 401 permanent error.
+
+chan_pjsip
+------------------
+ * New 'user_eq_phone' endpoint setting. This adds a 'user=phone' parameter
+   to the request URI and From URI if the user is determined to be a phone number.
+
+ * New global setting 'keep_alive_interval'. Setting this to a non-zero value
+   will cause keep alive messages to be sent periodically over connection
+   oriented transports.
+
+ * New 'PJSIP_AOR' and 'PJSIP_CONTACT' dialplan functions have been added which
+   allow examining PJSIP AORs or contacts from the dialplan.
+
+res_pjsip_config_wizard
+------------------
+ * This is a new module that adds streamlined configuration capability for
+   chan_pjsip.  It's targetted at users who have lots of basic configuration
+   scenarios like 'phone' or 'agent' or 'trunk'.  Additional information
+   can be found in the sample configuration file at
+   config/samples/pjsip_wizard.conf.sample.
+
+res_fax
+-----------
+ * The T.38 negotiation timeout was previously hard coded at 5000 milliseconds
+   and is now configurable via the 't38timeout' configuration option in
+   res_fax.conf and via the fax options dialplan function 'FAXOPT(t38timeout)'.
+   The default remains at 5000 milliseconds.
+
+PJSIP Transports
+----------
+ * The ca_list_path transport parameter has been added for TLS transports. This
+   option behaves similarly to the old sip.conf option "tlscapath". In order to
+   use this, you must be using PJProject version 2.4 or higher.
+
+ARI
+------------------
+ * The Originate operation now takes in an originator channel. The linked ID of
+   this originator channel is applied to the newly originated outgoing channel.
+   If using CEL this allows an association to be established between the two so
+   it can be recognized that the originator is dialing the originated channel.
+
+ * "language" (the default spoken language for the channel) is now included in
+   the standard channel state output for suitable events.
+
+ * The POST channels/{id} operation and the POST channels/{id}/continue operation
+   now have a new "label" parameter. This allows for origination or continuation
+   to a labeled priority in the dialplan instead of requiring a specific priority
+   number. The ARI version has been bumped to 1.7.0 as a result.
+
+AMI
+------------------
+ * "Language" (the default spoken language for the channel) is now included in
+   the standard channel state output for suitable events.
+
+ * AMI actions that return a list of events have been made to return consistent
+   headers for the action response event starting the list and the list complete
+   event.  The AMI version has been bumped to 2.7.0 as a result.
+
+------------------------------------------------------------------------------
+--- Functionality changes from Asterisk 13.0.0 to Asterisk 13.1.0 ------------
+------------------------------------------------------------------------------
+
+AMI
+------------------
+ * Event NewConnectedLine is emitted when the connected line information on
+   a channel changes.
+
+ * The version of AMI has been bumped to 2.6.0 to account for the backwards
+   compatible feature listed above.
+
+ARI
+------------------
+ * Event ChannelConnectedLine is emitted when the connected line information
+   on a channel changes.
+
+ * The version of ARI has been bumped to 1.6.0 to account for the backwards
+   compatible feature listed above.
+
+Core Transfers
+-----------------
+
+The features.conf general section has three new configurable options:
+    * transferdialattempts
+	* transferretrysound
+	* transferinvalidsound
+For more information on what these options do, see the Asterisk wiki:
+	https://wiki.asterisk.org/wiki/x/W4fAAQ
+
+Channel Drivers
+------------------
+
+chan_pjsip
+------------------
+ * New 'media_encryption_optimistic' endpoint setting. This will use SRTP
+   when possible but does not consider lack of it a failure.
+
+res_pjsip_endpoint_identifer_ip
+------------------
+ * New CLI commands have been added: "pjsip show identif(y|ies)", which lists
+   all configured PJSIP identify objects
+   
+------------------------------------------------------------------------------
+--- Functionality changes from Asterisk 12 to Asterisk 13 --------------------
+------------------------------------------------------------------------------
+
+Overview
+------------------
+
+Asterisk 13 is the next Long Term Support (LTS) release of Asterisk. As such,
+the focus of development for this release of Asterisk was on improving the
+usability and features developed in the previous Standard release, Asterisk 12.
+Beyond a general refinement of end user features, development focussed heavily
+on the Asterisk APIs - the Asterisk Manager Interface (AMI) and the Asterisk
+REST Interface (ARI) - and the PJSIP stack in Asterisk. Some highlights of the
+new features include:
+
+* Asterisk security events are now provided via AMI, allowing end users to
+  monitor their Asterisk system in real time for security related issues.
+* External control of Message Waiting Indicators (MWI) through both AMI and ARI.
+* Reception/transmission of out of call text messages using any supported
+  channel driver/protocol stack through ARI.
+* Resource List Server support in the PJSIP stack, providing subscriptions to
+  lists of resources and batched delivery of NOTIFY requests.
+* Inter-Asterisk distributed device state and mailbox state using the PJSIP
+  stack.
+
+It is important to note that Asterisk 13 is built on the architecture developed
+during the previous Standard release, Asterisk 12. Users upgrading to
+Asterisk 13 should read about the new features in Asterisk 12 later in this file
+(see Functionality changes from Asterisk 11 to Asterisk 12), as well as the
+UPGRADE-12.txt delivered with this release. In particular, users upgrading to
+Asterisk 13 from a release prior to Asterisk 12 should read the specifications
+on AMI, CDRs, and CEL on the Asterisk wiki:
+ * AMI - https://wiki.asterisk.org/wiki/x/dAFRAQ
+ * CEL - https://wiki.asterisk.org/wiki/x/4ICLAQ
+ * CDRs - https://wiki.asterisk.org/wiki/x/pwpRAQ
+
+Many new featuers in Asterisk 13 were introduced in point releases of
+Asterisk 12. Following this section - which documents the changes from all
+versions of Asterisk 12 to Asterisk 13 - users should examine the new features
+that were introduced in the point releases of Asterisk 12, as they are also
+included in Asterisk 13.
+
+Finally, all users upgrading to Asterisk 13 should read the UPGRADE.txt file
+delivered with this release.
+
+Build System
+------------------
+ * Sample config files have been moved from configs/ to a sub-folder of that
+   directory, samples.
+
+ * The menuselect utility has been pulled into the Asterisk repository. As a
+   result, the libxml2 development library is now a required dependency for
+   Asterisk.
+
+ * A new Compiler Flag, REF_DEBUG, has been added. When enabled, reference
+   counted objects will emit additional debug information to the refs log file
+   located in the standard Asterisk log file directory. This log file is useful
+   in tracking down object leaks and other reference counting issues. Prior to
+   this version, this option was only available by modifying the source code
+   directly. This change also includes a new script, refcounter.py, in the
+   contrib folder that will process the refs log file. Note that this replaces
+   the refcounter utility that could be built from the utils directory.
+
+
+Applications
+------------------
+
+DahdiBarge
+------------------
+ * This module was deprecated and has been removed. Users of app_dahdibarge
+   should use ChanSpy instead.
+
+MixMonitor
+------------------
+ * New options to play a beep when starting a recording and stopping a recording
+   have been added.  The option "p" will play a beep to the channel that starts
+   the recording.  The option "P" will play a beep to the channel that stops the
+   recording.
+
+Queue
+------------------
+ * Queue rules can now be stored in a database table, queue_rules. Unlike other
+   RealTime tables, the queue_rules table is only examined on module load or
+   module reload. A new general setting has been added to queuerules.conf,
+   'realtime_rules', which, when set to 'yes', will cause app_queue to look in
+   RealTime for additional queue rules to parse. Note that both the file and
+   the database can be used as a provide of queue rules when 'realtime_rules'
+   is set to 'yes'.
+
+   When app_queue is reloaded, all rules are re-parsed and loaded into memory.
+   There is no caching of RealTime queue rules.
+
+ReadFile
+------------------
+ * This module was deprecated and has been removed. Users of app_readfile
+   should use func_env's FILE function instead.
+
+Say
+------------------
+ * The 'say' family of dialplan applications now support the Japanese
+   language. The 'language' parameter in say.conf now recognizes a setting of
+   'ja', which will enable Japanese language specific mechanisms for playing
+   back numbers, dates, and other items.
+
+SayCountPL
+------------------
+ * This module was deprecated and has been removed. Users of app_saycountpl
+   should use the Say family of applications.
+
+SetMusicOnHold
+------------------
+ * The SetMusicOnHold dialplan application was deprecated and has been removed.
+   Users of the application should use the CHANNEL function's musicclass
+   setting instead.
+
+WaitMusicOnHold
+------------------
+ * The WaitMusicOnHold dialplan application was deprecated and has been
+   removed. Users of the application should use MusicOnHold with a duration
+   parameter instead.
+
+VoiceMail
+------------------
+ * VoiceMail and VoiceMailMain now support the Japanese language. The
+   'language' parameter in voicemail.conf now recognizes a setting of 'ja',
+   which will enable prompts to be played back using a Japanese grammatical
+   structure. Additional prompts are necessary for this functionality,
+   including:
+   - jb-arimasu: there is
+   - jb-arimasen: there is not
+   - jb-oshitekudasai: please press
+   - jb-ni: article ni
+   - jb-ga: article ga
+   - jb-wa: article wa
+   - jb-wo: article wo
+
+ * Add the ability to specify multiple email addresses in configuration,
+   separated by a |.
+
+
+CDR Backends
+------------------
+
+cdr_sqlite
+-----------------
+ * This module was deprecated and has been removed. Users of cdr_sqlite
+   should use cdr_sqlite3_custom.
+
+cdr_pgsql
+------------------
+ * Added the ability to support PostgreSQL application_name on connections.
+   This allows PostgreSQL to display the configured name in the
+   pg_stat_activity view and CSV log entries. This setting is configurable
+   for cdr_pgsql via the appname configuration setting in cdr_pgsql.conf.
+
+
+CEL Backends
+------------------
+
+cel_pgsql
+------------------
+ * Added the ability to support PostgreSQL application_name on connections.
+   This allows PostgreSQL to display the configured name in the
+   pg_stat_activity view and CSV log entries. This setting is configurable
+   for cel_pgsql via the appname configuration setting in cel_pgsql.conf.
+
+
+Channel Drivers
+------------------
+
+chan_dahdi
+------------------
+ * SS7 support now requires libss7 v2.0 or later.
+
+ * Added SS7 support for connected line and redirecting.
+
+ * Most SS7 CLI commands are reworked as well as new SS7 commands added.
+   See online CLI help.
+
+ * Added several SS7 config option parameters described in
+   chan_dahdi.conf.sample.
+
+chan_gtalk
+------------------
+ * This module was deprecated and has been removed. Users of chan_gtalk
+   should use chan_motif.
+
+chan_h323
+------------------
+ * This module was deprecated and has been removed. Users of chan_h323
+   should use chan_ooh323.
+
+chan_jingle
+------------------
+ * This module was deprecated and has been removed. Users of chan_jingle
+   should use chan_motif.
+
+chan_pjsip
+------------------
+ * Added the CLI command 'pjsip list ciphers' so a user can know what
+   OpenSSL names are available on their system for the pjsip.conf cipher
+   option.
+
+chan_sip
+------------------
+ * The SIPPEER dialplan function no longer supports using a colon as a
+   delimiter for parameters. The parameters for the function should be
+   delimited using a comma.
+
+ * The SIPCHANINFO dialplan function was deprecated and has been removed. Users
+   of the function should use the CHANNEL function instead.
+
+
+Core
+------------------
+
+Account Codes
+------------------
+ * Added functional peeraccount support.  Except for Queue, the
+   accountcode propagation is now consistently propagated to outgoing
+   channels before dialing.  The channel accountcode can change from its
+   original non-empty value on channel creation for the following specific
+   reasons.  One, dialplan sets it using CHANNEL(accountcode).  Two, an
+   originate method that can specify an accountcode value.  Three, the
+   calling channel propagates its peeraccount or accountcode to the
+   outgoing channel's accountcode before dialing.  The change has two
+   visible effects.  One, local channels now cross accountcode and
+   peeraccount across the special bridge between the ;1 and ;2 channels
+   just like channels between normal bridges.  Two, the
+   CHANNEL(peeraccount) value can now be set before Dial and FollowMe to
+   set the accountcode on the outgoing channel(s).
+
+   For Queue, an outgoing channel's non-empty accountcode will not change
+   unless explicitly set by CHANNEL(accountcode).  The change has three
+   visible effects.  One, local channels now cross accountcode and
+   peeraccount across the special bridge between the ;1 and ;2 channels
+   just like channels between normal bridges.  Two, the queue member will
+   get an accountcode if it doesn't have one and one is available from the
+   calling channel's peeraccount.  Three, accountcode propagation includes
+   local channel members where the accountcodes are propagated early
+   enough to be available on the ;2 channel.
+
+AMI
+------------------
+ * New DeviceStateChanged and PresenceStateChanged AMI events have been added.
+   These events are emitted whenever a device state or presence state change
+   occurs. The events are controlled by res_manager_device_state.so and
+   res_manager_presence_state.so. If the high frequency of these events is
+   problematic for you, do not load these modules.
+
+ * Added DialplanExtensionAdd and DialplanExtensionRemove AMI commands. They
+   work in basically the same way as the 'dialplan add extension' and
+   'dialplan remove extension' CLI commands respectively.
+
+ * New AMI action LoggerRotate reloads and rotates logger in the same manner
+   as CLI command 'logger rotate'
+
+ * New AMI Actions FAXSessions, FAXSession, and FAXStats replicate the
+   functionality of CLI commands 'fax show sessions', 'fax show session',
+   and fax show stats' respectively.
+
+ * New AMI actions PRIDebugSet, PRIDebugFileSet, and PRIDebugFileUnset
+   enable manager control over PRI debugging levels and file output.
+
+ * AMI action PJSIPNotify may now send to a URI instead of only to a PJSIP
+   endpoint as long as a default outbound endpoint is set. This also applies
+   to the equivalent CLI command (pjsip send notify)
+ 
+ * The AMI action PJSIPShowEndpoint now includes ContactStatusDetail sections
+   that give information on Asterisk's attempts to qualify the endpoint.
+
+ * The DialEnd event will now contain a Forward header if the dial is ending
+   due to the call being forwarded. The contents of the Forward header is the
+   extension in the number to which the call is being forwarded.
+
+CEL
+------------------
+ * The "bridge_technology" extra field key has been added to BRIDGE_ENTER
+   and BRIDGE_EXIT events.
+
+Features
+------------------
+ * Channel variables are now substituted in arguments passed to applications
+   run by using dynamic features.
+
+TLS
+------------------
+ * The TLS core in Asterisk now supports Perfect Forward Secrecy (PFS).
+   Enabling PFS is attempted by default, and is dependent on the configuration
+   of the module using TLS.
+   - Ephemeral ECDH (ECDHE) is enabled by default. To disable it, do not
+     specify a ECDHE cipher suite in sip.conf, for example:
+       tlscipher=AES128-SHA:DES-CBC3-SHA
+   - Ephemeral DH (DHE) is disabled by default. To enable it, add DH parameters
+     into the private key file, e.g., sip.conf tlsprivatekey. For example, the
+     default dh2048.pem - see
+     http://www.opensource.apple.com/source/OpenSSL098/OpenSSL098-35.1/src/apps/dh2048.pem?txt
+   - Because clients expect the server to prefer PFS, and because OpenSSL sorts
+     its cipher suites by bit strength, see "openssl ciphers -v DEFAULT".
+     Consider re-ordering your cipher suites in the respective configuration
+     file. For example:
+       tlscipher=AES128+kEECDH:AES128+kEDH:3DES+kEDH:AES128-SHA:DES-CBC3-SHA:-ADH:-AECDH
+     will use PFS when offered by the client. Clients which do not offer PFS
+     fall-back to AES-128 (or even 3DES, as recommended by RFC 3261).
+
+
+Functions
+------------------
+
+JACK_HOOK
+------------------
+ * The JACK_HOOK function now supports audio with a sample rate higher than
+   8kHz.
+
+
+Resources
+------------------
+
+res_config_pgsql
+------------------
+ * Added the ability to support PostgreSQL application_name on connections.
+   This allows PostgreSQL to display the configured name in the
+   pg_stat_activity view and CSV log entries. This setting is configurable
+   for res_config_pgsql via the dbappname configuration setting in
+   res_pgsql.conf.
+
+res_pjsip_outbound_publish
+------------------
+ * A new module, res_pjsip_outbound_publish provides the mechanisms for sending
+   PUBLISH requests for specific event packages to another SIP User Agent.
+
+res_pjsip_pubsub
+------------------
+ * The publish/subscribe core module has been updated to support RFC 4662
+   Resource Lists, allowing Asterisk to act as a Resource List Server (RLS).
+   Resource lists are configured in pjsip.conf under a new object type,
+   resource_list. Resource lists can contain either message-summary or presence
+   events, and can be composed of specific resources that provide the event or
+   other resource lists.
+
+ * Inbound publication support is provided by a new object, inbound-publication.
+   This configures res_pjsip_pubsub to accept PUBLISH requests from a particular
+   resource. Which events are accepted is constructed dynamically; see
+   res_pjsip_publish_asterisk for more information.
+
+res_pjsip_publish_asterisk
+------------------
+ * A new module, res_pjsip_publish_asterisk adds support for PUBLISH requests of
+   Asterisk information to other Asterisk servers. This module is intended only
+   for Asterisk to Asterisk exchanges of information. Currently, this includes
+   both mailbox state and device state information.
+
+------------------------------------------------------------------------------
+--- Functionality changes from Asterisk 12.4.0 to Asterisk 12.5.0 ------------
+------------------------------------------------------------------------------
+
+ARI
+------------------
+ * Stored recordings now support a new operation, copy. This will take an
+   existing stored recording and copy it to a new location in the recordings
+   directory.
+
+ * LiveRecording objects now have three additional fields that can be reported
+   in a RecordingFinished ARI event:
+   - total_duration: the duration of the recording
+   - talking_duration: optional. The duration of talking detected in the
+     recording. This is only available if max_silence_seconds was specified
+     when the recording was started.
+   - silence_duration: optional. The duration of silence detected in the
+     recording. This is only available if max_silence_seconds was specified
+     when the recording was started.
+   Note that all duration values are reported in seconds.
+
+ * Users of ARI can now send and receive out of call text messages. Messages
+   can be sent directly to a particular endpoint, or can be sent to the
+   endpoints resource directly and inferred from the URI scheme. Text
+   messages are passed to ARI clients as TextMessageReceived events. ARI
+   clients can choose to receive text messages by subscribing to the particular
+   endpoint technology or endpoints that they are interested in.
+
+ * The applications resource now supports subscriptions to all endpoints of
+   a particular channel technology. For example, subscribing to an eventSource
+   of 'endpoint:PJSIP' will subscribe to all PJSIP endpoints.
+
+res_pjsip
+------------------
+ * The endpoint configuration object now supports 'accountcode'. Any channel
+   created for an endpoint with this setting will have its accountcode set
+   to the specified value.
+
+res_hep_rtcp
+------------------
+ * A new module, res_hep_rtcp, has been added that will forward RTCP call
+   statistics to a HEP capture server. See res_hep for more information.
+
+Functions
+------------------
+ * Function AUDIOHOOK_INHERIT has been deprecated. Audiohooks are now
+   unconditionally inhereted through masquerades. As a side benefit, more
+   than one audiohook of a given type may persist through a masquerade now.
+
+------------------------------------------------------------------------------
+--- Functionality changes from Asterisk 12.3.0 to Asterisk 12.4.0 ------------
+------------------------------------------------------------------------------
+
+AgentRequest
+------------------
+ * Returns new AGENT_STATUS value "NOT_CONNECTED" if the agent fails to
+   connect with an incoming caller after being alerted to the presence
+   of the incoming caller.  The most likely reason this would happen is
+   the agent did not acknowledge the call in time.
+
+AMI
+------------------
+ * New events have been added for the TALK_DETECT function. When the function
+   is used on a channel, ChannelTalkingStart/ChannelTalkingStop events will be
+   emitted to connected AMI clients indicating the start/stop of talking on
+   the channel.
+
+ARI
+------------------
+ * New event models have been aded for the TALK_DETECT function. When the
+   function is used on a channel, ChannelTalkingStarted/ChannelTalkingFinished
+   events will be emitted to connected WebSockets subscribed to the channel,
+   indicating the start/stop of talking on the channel.
+
+Functions
+------------------
+ * A new function, TALK_DETECT, has been added. When set on a channel, this
+   fucntion causes events indicating the starting/stoping of talking on said
+   channel to be emitted to both AMI and ARI clients.
+
+------------------------------------------------------------------------------
+--- Functionality changes from Asterisk 12.2.0 to Asterisk 12.3.0 ------------
+------------------------------------------------------------------------------
+
+ARI
+------------------
+ * A new Playback URI 'tone' has been added. Tones are specified either as
+   an indication name (e.g. 'tone:busy') from indications.conf or as a tone
+   pattern (e.g. 'tone:240/250,0/250'). Tones differ from normal playback
+   URIs in that they must be stopped manually and will continue to occupy
+   a channel's ARI control queue until they are stopped. They also can not
+   be rewound or fastforwarded.
+
+ * User events can now be generated from ARI.  Events can be signalled with
+   arbitrary json variables, and include one or more of channel, bridge, or
+   endpoint snapshots.  An application must be specified which will receive
+   the event message (other applications can subscribe to it).  The message
+   will also be delivered via AMI provided a channel is attached.  Dialplan
+   generated user event messages are still transmitted via the channel, and
+   will only be received by a stasis application they are attached to or if
+   the channel is subscribed to.
+
+chan_sip
+-----------
+ * SIP peers can now specify 'trust_id_outbound' which affects RPID/PAI
+   fields for prohibited callingpres information. Values are legacy, no, and
+   yes. By default, legacy is used.
+   trust_id_outbound=legacy - behavior remains the same as 1.8.26.1. When
+     dealing with prohibited callingpres and sendrpid=pai/rpid, RPID/PAI
+     headers are appended to outbound SIP messages just as they are with
+     allowed callingpres values, but data about the remote party's identity is
+     anonymized.
+     When sendrpid=rpid, only the remote party's domain is anonymized.
+   trust_id_outbound=no - when dealing with prohibited callingpres, RPID/PAI
+     headers are not sent.
+   trust_id_outbound=yes - RPID/PAI headers are applied with the full remote
+     party information in tact even for prohibited callingpres information.
+     In the case of PAI, a Privacy: id header will be appended for prohibited
+     calling information to communicate that the private information should
+     not be relayed to untrusted parties.
+
+res_parking
+------------------
+ * Manager action 'Park' now takes an additional argument 'AnnounceChannel'
+   which can be used to announce the parked call's location to an arbitrary
+   channel in a bridge. If 'Channel' and 'TimeoutChannel' are now the two
+   parties in a one to one bridge, 'TimeoutChannel' is treated as having
+   parked 'Channel' like with the Park Call DTMF feature and will receive
+   announcements prior to being hung up.
+
+------------------------------------------------------------------------------
+--- Functionality changes from Asterisk 12.1.0 to Asterisk 12.2.0 ------------
+------------------------------------------------------------------------------
+
+Record
+------------------
+ * Record application now has an option 'o' which allows 0 to act as an exit
+   key setting the RECORD_STATUS variable to 'OPERATOR' instead of 'DTMF'
+
+ChanSpy
+--------------------------
+ * ChanSpy now accepts a channel uniqueid or a fully specified channel name
+   as the chanprefix parameter if the 'u' option is specified.
+
+ConfBridge
+--------------------------
+ * CONFBRIDGE dialplan function is now capable of creating/modifying dynamic
+   conference user menus.
+
+ * CONFBRIDGE dialplan function is now capable of removing dynamic conference
+   menus, bridge settings, and user settings that have been applied by the
+   CONFBRIDGE dialplan function.
+
+ * The ConfBridge dialplan application now sets a channel variable,
+   CONFBRIGE_RESULT, upon exiting. This variable can be used to determine
+   how a channel exited the conference.
+
+ * Added conference user option 'announce_join_leave_review'. This option
+   implies 'announce_join_leave' with the added effect that the user will
+   be asked if they want to confirm or re-record the recording of their
+   name when entering the conference
+
+Directory
+--------------------------
+ * At exit, the Directory application now sets a channel variable
+   DIRECTORY_RESULT to one of the following based on the reason for exiting:
+     OPERATOR    user requested operator by pressing '0' for operator
+     ASSISTANT   user requested assistant by pressing '*' for assistant
+     TIMEOUT     user pressed nothing and Directory stopped waiting
+     HANGUP      user's channel hung up
+     SELECTED    user selected a user from the directory and is routed
+     USEREXIT    user pressed '#' from the selection prompt to exit
+     FAILED      directory failed in a way that wasn't accounted for. Dang.
+
+Monitor
+------------------
+ * Monitor() - A new option, B(), has been added that will turn on a periodic
+   beep while the call is being recorded.
+
+MusicOnHold
+--------------------------
+ * MusicOnHold streams (all modes other than "files") now support wide band
+   audio too.
+
+Page
+--------------------------
+ * Added options 'b' and 'B' to apply predial handlers for outgoing calls
+   and for the channel executing Page respectively.
+
+PickupChan
+--------------------------
+ * PickupChan now accepts channel uniqueids of channels to pickup.
+
+Say
+--------------------------
+ * If a channel variable SAY_DTMF_INTERRUPT is present on a channel and set
+   to 'true' (case insensitive), then any Say application (SayNumber,
+   SayDigits, SayAlpha, SayAlphaCase, SayUnixTime, and SayCounted) will
+   anticipate DTMF. If DTMF is received, these applications will behave like
+   the background application and jump to the received extension once a match
+   is established or after a short period of inactivity.
+
+MixMonitor
+-------------------------
+ * A new function, MIXMONITOR, has been added to allow access to individual
+   instances of MixMonitor on a channel.
+
+ * A new option, B(), has been added that will turn on a periodic beep while the
+   call is being recorded.
+
+
+Channel Drivers
+-------------------------
+
+chan_sip
+-------------------------
+ * TEL URI support for inbound INVITE requests has been added. chan_sip will
+   now handle TEL schemes in the Request and From URIs. The phone-context in
+   the Request URI will be stored in the SIPURIPHONECONTEXT channel variable on
+   the inbound channel.
+
+Core
+------------------
+ * Exposed sorcery-based configuration files like pjsip.conf to dialplans via
+   the new AST_SORCERY diaplan function.
+
+ * Core Show Locks output now includes Thread/LWP ID if the platform
+   supports this feature.
+
+ * New "logger add channel" and "logger remove channel" CLI commands have
+   been added to allow creation and deletion of dynamic logger channels
+   without configuration changes. These dynamic logger channels will only
+   exist until the next restart of asterisk.
+
+ARI
+------------------
+ * The live recording object on recording events now contains a target_uri
+   field which contains the URI of what is being recorded.
+
+ * The bridge type used when creating a bridge is now a comma separated list of
+   bridge properties. Valid options are: mixing, holding, dtmf_events, and
+   proxy_media.
+
+ * A channelId can now be provided when creating a channel, either in the
+   uri (POST channels/my-channel-id) or as query parameter.  A local channel
+   will suffix the second channel id with ';2' unless provided as query
+   parameter otherChannelId.
+
+ * A bridgeId can now be provided when creating a bridge, either in the uri
+   (POST bridges/my-bridge-id) or as a query parameter.
+
+ * A playbackId can be provided when starting a playback, either in the uri
+   (POST channels/my-channel-id/play/my-playback-id /
+    POST bridges/my-bridge-id/play/my-playback-id)  or as a query parameter.
+
+ * A snoop channel can be started with a snoopId, in the uri or query.
+
+AMI
+------------------
+ * Originate now takes optional parameters ChannelId and OtherChannelId,
+   used to set the UniqueId on creation.  The other id is assigned to the
+   second channel when dialing LOCAL, or defaults to appending ;2 if only
+   the single Id is given.
+
+ * The Mixmonitor action now has a "Command" header that can be used to
+   indicate a post-process command to run once recording finishes.
+
+RealTime
+------------------
+ * A new set of Alembic scripts has been added for CDR tables. This will create
+   a 'cdr' table with the default schema that Asterisk expects.
+
+
+Functions
+------------------
+ * A new function was added: PERIODIC_HOOK.  This allows running a periodic
+   dialplan hook on a channel.  Any audio generated by this hook will be
+   injected into the call.
+
+
+Resources
+------------------
+
+res_hep
+------------------
+ * A new module, res_hep, has been added, that acts as a generic packet
+   capture agent for the Homer Encapsulation Protocol (HEP) version 3.
+   It can be configured via hep.conf. Other modules can use res_hep to send
+   message traffic to a HEP capture server.
+
+res_hep_pjsip
+------------------
+ * A new module, res_hep_pjsip, has been added that will forward PJSIP
+   message traffic to a HEP capture server. See res_hep for more
+   information.
+
+res_pjsip
+------------------
+ * transport and endpoint ToS options (tos, tos_audio, and tos_video) may now
+   be set as the named set of ToS values (cs0-cs7, af11-af43, ef).
+
+ * Added the following new CLI commands:
+   - "pjsip show contacts" - list all current PJSIP contacts.
+   - "pjsip show contact" - show specific information about a current PJSIP
+     contact.
+   - "pjsip show channel" - show detailed information about a PJSIP channel.
+
+res_pjsip_multihomed
+------------------
+ * A new module, res_pjsip_multihomed handles situations where the system
+   Asterisk is running out has multiple interfaces. res_pjsip_multihomed
+   determines which interface should be used during message sending.
+
+res_pjsip_pidf_digium_body_supplement
+------------------
+ * A new module, res_pjsip_pidf_digium_body_supplement provides NOTIFY
+   request body formatting for presence support in Digium phones.
+
+res_pjsip_send_to_voicemail
+------------------
+ * A new module, res_pjsip_send_to_voicemail allows for REFER requests with
+   particular headers to transfer a PJSIP channel directly to a particular
+   extension that has VoiceMail. This is intended to be used with Digium
+   phones that support this feature.
+
+res_pjsip_outbound_registration
+------------------
+ * A new CLI command has been added: "pjsip show registrations", which lists
+   all configured PJSIP registrations
+
+
+------------------------------------------------------------------------------
+--- Functionality changes from Asterisk 12.0.0 to Asterisk 12.1.0 ------------
+------------------------------------------------------------------------------
+
+AMI
+------------------
+ * Added a new module that provides AMI control over MWI within Asterisk,
+   res_mwi_external_ami. Note that this module depends on res_mwi_external;
+   for more information on enabling this module, see res_mwi_external.
+   This module provides the MWIGet/MWIUpdate/MWIDelete actions, as well as
+   the MWIGet/MWIGetComplete events.
+
+ * The DialStatus field in the DialEnd event can now contain additional
+   statuses that convey how the dial operation terminated. This includes
+   ABORT, CONTINUE, and GOTO.
+
+ * AMI will now emit security events. A new class authorization has been
+   added in manager.conf for the security events, 'security'. The new events
+   are:
+    - FailedACL - raised when a request violates an ACL check
+    - InvalidAccountID - raised when a request fails an authentication
+      check due to an invalid account ID
+    - SessionLimit - raised when a request fails due to exceeding the
+      number of allowed concurrent sessions for a service
+    - MemoryLimit - raised when a request fails due to an internal memory
+      allocation failure
+    - LoadAverageLimit - raised when a request fails because a configured
+      load average limit has been reached
+    - RequestNotAllowed - raised when a request is not allowed by
+      the service
+    - AuthMethodNotAllowed - raised when a request used an authentication
+      method not allowed by the service
+    - RequestBadFormat - raised when a request is received with bad formatting
+    - SuccessfulAuth - raised when a request successfully authenticates
+    - UnexpectedAddress - raised when a request has a different source address
+      then what is expected for a session already in progress with a service
+    - ChallengeResponseFailed - raised when a request's attempt to authenticate
+      has been challenged, and the request failed the authentication challenge
+    - InvalidPassword - raised when a request provides an invalid password
+      during an authentication attempt
+    - ChallengeSent - raised when an Asterisk service send an authentication
+      challenge to a request
+    - InvalidTransport - raised when a request attempts to use a transport not
+      allowed by the Asterisk service
+
+ * Bridge related events now have two additional fields: BridgeName and
+   BridgeCreator. BridgeName is a descriptive name for the bridge;
+   BridgeCreator is the name of the entity that created the bridge. This
+   affects the following events: ConfbridgeStart, ConfbridgeEnd,
+   ConfbridgeJoin, ConfbridgeLeave, ConfbridgeRecord, ConfbridgeStopRecord,
+   ConfbridgeMute, ConfbridgeUnmute, ConfbridgeTalking, BlindTransfer,
+   AttendedTransfer, BridgeCreate, BridgeDestroy, BridgeEnter, BridgeLeave
+
+ARI
+------------------
+ * The Bridge data model now contains the additional fields 'name' and
+   'creator'. The 'name' field conveys a descriptive name for the bridge;
+   the 'creator' field conveys the name of the entity that created the bridge.
+   This affects all responses to HTTP requests that return a Bridge data model
+   as well as all event derived data models that contain a Bridge data model.
+   The POST /bridges operation may now optionally specify a name to give to
+   the bridge being created.
+
+ * Added a new ARI resource 'mailboxes' which allows the creation and
+   modification of mailboxes managed by external MWI. Modules res_mwi_external
+   and res_stasis_mailbox must be enabled to use this resource. For more
+   information on external MWI control, see res_mwi_external.
+
+ * Added new events for externally initiated transfers. The event
+   BridgeBlindTransfer is now raised when a channel initiates a blind transfer
+   of a bridge in the ARI controlled application to the dialplan; the
+   BridgeAttendedTransfer event is raised when a channel initiates an
+   attended transfer of a bridge in the ARI controlled application to the
+   dialplan.
+
+ * Channel variables may now be specified as a body parameter to the
+   POST /channels operation. The 'variables' key in the JSON is interpreted
+   as a sequence of key/value pairs that will be added to the created channel
+   as channel variables. Other parameters in the JSON body are treated as
+   query parameters of the same name.
+
+HTTP
+------------------
+ * Asterisk's HTTP server now supports chunked Transfer-Encoding. This will be
+   automatically handled by the HTTP server if a request is received with a
+   Transfer-Encoding type of "chunked".
+
+res_pjsip
+------------------
+ * Path support has been added with the 'support_path' option in registration
+   and aor sections.
+
+ * A 'debug' option has been added to the globals section that will allow
+   sip messages to be logged.
+
+ * A 'set_var' option has been added to endpoints that will automatically
+   set the desired variable(s) on a channel created for that endpoint.
+
+ * Several new tables and columns have been added to the realtime schema for
+   the res_pjsip related modules. See the UPGRADE.txt notes for updating
+   the database schema.
+
+res_mwi_external
+------------------
+ * A new module, res_mwi_external, has been added to Asterisk. This module
+   acts as a base framework that other modules can build on top of to allow
+   an external system to control MWI within Asterisk. For implementations
+   that make use of res_mwi_external, see res_mwi_external_ami and
+   res_ari_mailboxes. Note that res_mwi_external canflicts with other modules
+   that may produce MWI themselves, such as app_voicemail. res_mwi_external
+   and other modules that depend on it cannot be built or loaded with
+   app_voicemail present.
+
+res_pjsip
+------------------
+ * DNS functionality will now automatically be enabled if the system configured
+   nameservers can be retrieved. If the system configured nameservers can not be
+   retrieved the functionality will resort to using system resolution. Functionalty
+   such as SRV records and failover will not be available if system resolution
+   is in use.
+
+------------------------------------------------------------------------------
+--- Functionality changes from Asterisk 11 to Asterisk 12 --------------------
+------------------------------------------------------------------------------
+
+Overview
+------------------
+
+Asterisk 12 is a standard release of the Asterisk project. As such, the
+focus of development for this release was on core architectural changes and
+major new features. This includes:
+ * A more flexible bridging core based on the Bridging API
+ * A new internal message bus, Stasis
+ * Major standardization and consistency improvements to AMI
+ * Addition of the Asterisk RESTful Interface (ARI)
+ * A new SIP channel driver, chan_pjsip
+In addition, as the vast majority of bridging in Asterisk was migrated to the
+Bridging API used by ConfBridge, major changes were made to most of the
+interfaces in Asterisk. This includes not only AMI, but also CDRs and CEL.
+
+Specifications have been written for the affected interfaces. These
+specifications are available on the Asterisk wiki:
+ * AMI - https://wiki.asterisk.org/wiki/x/dAFRAQ
+ * CEL - https://wiki.asterisk.org/wiki/x/4ICLAQ
+ * CDRs - https://wiki.asterisk.org/wiki/x/pwpRAQ
+
+It is *highly* recommended that anyone migrating to Asterisk 12 read the
+information regarding its release both in this file and in the accompanying
+UPGRADE.txt file. More detailed information on the major changes can be found
+on the Asterisk wiki at https://wiki.asterisk.org/wiki/x/0YCLAQ.
+
+
+Build System
+------------------
+ * Added build option DISABLE_INLINE. This option can be used to work around a
+   bug in gcc. For more information, see
+   http://gcc.gnu.org/bugzilla/show_bug.cgi?id=47816
+
+ * Removed the CHANNEL_TRACE development mode build option. Certain aspects of
+   the CHANNEL_TRACE build option were incompatible with the new bridging
+   architecture.
+
+ * Asterisk now optionally uses libxslt to improve XML documentation generation
+   and maintainability. If libxslt is not available on the system, some XML
+   documentation will be incomplete.
+
+ * Asterisk now depends on libjansson. If a package of libjansson is not
+   available on your distro, please see http://www.digip.org/jansson/.
+
+ * Asterisk now depends on libuuid and, optionally, uriparser. It is
+   recommended that you install uriparser, even if it is optional.
+
+ * The new SIP stack and channel driver uses a particular version of PJSIP.
+   Please see https://wiki.asterisk.org/wiki/x/J4GLAQ for more information on
+   configuring and installing PJSIP for usage with Asterisk.
+
+ * Optional API was re-implemented to be more portable, and no longer requires
+   weak reference support from the compiler. The build option OPTIONAL_API may
+   be disabled to disable Optional API support.
+
+Applications
+------------------
+
+AgentLogin
+------------------
+ * Along with AgentRequest, this application has been modified to be a
+   replacement for chan_agent. The act of a channel calling the AgentLogin
+   application places the channel into a pool of agents that can be
+   requested by the AgentRequest application. Note that this application, as
+   well as all other agent related functionality, is now provided by the
+   app_agent_pool module. See chan_agent and AgentRequest for more information.
+
+ * This application no longer performs agent authentication. If authentication
+   is desired, the dialplan needs to perform this function using the
+   Authenticate or VMAuthenticate application or through an AGI script before
+   running AgentLogin.
+
+ * If this application is called and the agent is already logged in, the
+   dialplan will continue exection with the AGENT_STATUS channel variable set
+   to ALREADY_LOGGED_IN.
+
+ * The agents.conf schema has changed. Rather than specifying agents on a
+   single line in comma delineated fashion, each agent is defined in a separate
+   context. This allows agents to use the power of context templates in their
+   definition.
+
+ * A number of parameters from agents.conf have been removed. This includes
+   maxloginretries, autologoffunavail, updatecdr, goodbye, group, recordformat,
+   urlprefix, and savecallsin. These options were obsoleted by the move from
+   a channel driver model to the bridging/application model provided by
+   app_agent_pool.
+
+AgentRequest
+------------------
+ * A new application, this will request a logged in agent from the pool and
+   bridge the requested channel with the channel calling this application.
+   Logged in agents are those channels that called the AgentLogin application.
+   If an agent cannot be requested from the pool, the AGENT_STATUS dialplan
+   application will be set with an appropriate error value.
+
+AgentMonitorOutgoing
+------------------
+ * This application has been removed. It was a holdover from when
+   AgentCallbackLogin was removed.
+
+AlarmReceiver
+------------------
+ * Added support for additional Ademco DTMF signalling formats, including
+   Express 4+1, Express 4+2, High Speed and Super Fast.
+
+ * Added channel variable ALARMRECEIVER_CALL_LIMIT. This sets the maximum
+   call time, in milliseconds, to run the application.
+
+ * Added channel variable ALARMRECEIVER_RETRIES_LIMIT. This sets the
+   maximum number of times to retry the call.
+
+ * Added a new configuration option answait. If set, the AlarmReceiver
+   application will wait the number of milliseconds specified by answait
+   after the channel has answered. Valid values range between 500
+   milliseconds and 10000 milliseconds.
+
+ * Added configuration option no_group_meta. If enabled, grouping of metadata
+   information in the AlarmReceiver log file will be skipped.
+
+Answer
+------------------
+ * It is now no longer possible to bypass updating the CDR on the channel
+   when answering. CDRs reflect the state of the channel and will always
+   reflect the time they were Answered.
+
+BridgeWait
+------------------
+ * A new application in Asterisk, this will place the calling channel
+   into a holding bridge, optionally entertaining them with some form of
+   media. Channels participating in a holding bridge do not interact with
+   other channels in the same holding bridge. Optionally, however, a channel
+   may join as an announcer. Any media passed from an announcer channel is
+   played to all channels in the holding bridge. Channels leave a holding
+   bridge either when an optional timer expires, or via the ChannelRedirect
+   application or AMI Redirect action.
+
+ConfBridge
+------------------
+ * All participants in a bridge can now be kicked out of a conference room
+   by specifying the channel parameter as 'all' in the ConfBridge kick CLI
+   command, i.e., 'confbridge kick <conference> all'
+
+ * CLI output for the 'confbridge list' command has been improved. When
+   displaying information about a particular bridge, flags will now be shown
+   for the participating users indicating properties of that user.
+
+ * The ConfbridgeList event now contains the following fields: WaitMarked,
+   EndMarked, and Waiting. This displays additional properties about the
+   user's profile, as well as whether or not the user is waiting for a
+   Marked user to enter the conference.
+
+ * Added a new option for conference recording, record_file_append. If enabled,
+   when the recording is stopped and then re-started, the existing recording
+   will be used and appended to.
+
+ * ConfBridge now has the ability to set the language of announcements to the
+   conference.  The language can be set on a bridge profile in confbridge.conf
+   or by the dialplan function CONFBRIDGE(bridge,language)=en.
+
+ControlPlayback
+------------------
+ * The channel variable CPLAYBACKSTATUS may now return the value
+   'REMOTESTOPPED'. This occurs when playback is stopped by a remote interface,
+   such as AMI. See the AMI action ControlPlayback for more information.
+
+Directory
+------------------
+ * Added the 'a' option, which allows the caller to enter in an additional
+   alias for the user in the directory. This option must be used in conjunction
+   with the 'f', 'l', or 'b' options. Note that the alias for a user can be
+   specified in voicemail.conf.
+
+DumpChan
+------------------
+ * The output of DumpChan no longer includes the DirectBridge or IndirectBridge
+   fields. Instead, if a channel is in a bridge, it includes a BridgeID field
+   containing the unique ID of the bridge that the channel happens to be in.
+
+ForkCDR
+------------------
+ * ForkCDR no longer automatically resets the forked CDR. See the 'r' option
+   for more information.
+
+ * Variables are no longer purged from the original CDR. See the 'v' option for
+   more information.
+
+ * The 'A' option has been removed. The Answer time on a CDR is never updated
+   once set.
+
+ * The 'd' option has been removed. The disposition on a CDR is a function of
+   the state of the channel and cannot be altered.
+
+ * The 'D' option has been removed. Who the Party B is on a CDR is a function
+   of the state of the respective channels involved in the CDR and cannot be
+   altered.
+
+ * The 'r' option has been changed. Previously, ForkCDR always reset the CDR
+   such that the start time and, if applicable, the answer time was updated.
+   Now, by default, ForkCDR simply forks the CDR, maintaining any times. The
+   'r' option now triggers the Reset, setting the start time (and answer time
+   if applicable) to the current time. Note that the 'a' option still sets
+   the answer time to the current time if the channel was already answered.
+
+ * The 's' option has been removed. A variable can be set on the original CDR
+   if desired using the CDR function, and removed from a forked CDR using the
+   same function.
+
+ * The 'T' option has been removed. The concept of DONT_TOUCH and LOCKED no
+   longer applies in the CDR engine.
+
+ * The 'v' option now prevents the copy of the variables from the original CDR
+   to the forked CDR. Previously the variables were always copied but were
+   removed from the original. This was changed as removing variables from a CDR
+   can have unintended side effects - this option allows the user to prevent
+   propagation of variables from the original to the forked without modifying
+   the original.
+
+MeetMe
+-------------------
+ * Added the 'n' option to MeetMe to prevent application of the DENOISE
+   function to a channel joining a conference. Some channel drivers that vary
+   the number of audio samples in a voice frame will experience significant
+   quality problems if a denoiser is attached to the channel; this option gives
+   them the ability to remove the denoiser without having to unload func_speex.
+
+MixMonitor
+------------------
+ * The 'b' option now includes conferences as well as sounds played to the
+   participants.
+
+ * The AUDIOHOOK_INHERIT function is no longer needed to keep a MixMonitor
+   running during a transfer. If a MixMonitor is started on a channel,
+   the MixMonitor will continue to record the audio passing through the
+   channel even in the presence of transfers.
+
+NoCDR
+------------------
+ * The NoCDR application is deprecated. Please use the CDR_PROP function to
+   disable CDRs.
+
+ * While the NoCDR application will prevent CDRs for a channel from being
+   propagated to registered CDR backends, it will not prevent that data from
+   being collected. Hence, a subsequent call to ResetCDR or the CDR_PROP
+   function that enables CDRs on a channel will restore those records that have
+   not yet been finalized.
+
+ParkAndAnnounce
+-------------------
+ * The app_parkandannounce module has been removed. The application
+   ParkAndAnnounce is now provided by the res_parking module. See the
+   res_parking changes for more information.
+
+Queue
+-------------------
+ * Added queue available hint. The hint can be added to the dialplan using the
+   following syntax: exten,hint,Queue:{queue_name}_avail
+   For example, if the name of the queue is 'markq':
+        exten => 8501,hint,Queue:markq_avail
+   This will report 'InUse' if there are no logged in agents or no free agents.
+   It will report 'Idle' when an agent is free.
+
+ * Queues now support a hint for member paused state. The hint uses the form
+   'Queue:{queue_name}_pause_{member_name}', where {queue_name} and {member_name}
+   are the name of the queue and the name of the member to subscribe to,
+   respectively. For example: exten => 8501,hint,Queue:sales_pause_mark.
+   Members will show as In Use when paused.
+
+ * The configuration options eventwhencalled and eventmemberstatus have been
+   removed.  As a result, the AMI events QueueMemberStatus, AgentCalled,
+   AgentConnect, AgentComplete, AgentDump, and AgentRingNoAnswer will always be
+   sent.  The "Variable" fields will also no longer exist on the Agent* events.
+   These events can be filtered out from a connected AMI client using the
+   eventfilter setting in manager.conf.
+
+ * The queue log now differentiates between blind and attended transfers. A
+   blind transfer will result in a BLINDTRANSFER message with the destination
+   context and extension. An attended transfer will result in an
+   ATTENDEDTRANSFER message. This message will indicate the method by which
+   the attended transfer was completed: "BRIDGE" for a bridge merge, "APP"
+   for running an application on a bridge or channel, or "LINK" for linking
+   two bridges together with local channels. The queue log will also now detect
+   externally initiated blind and attended transfers and record the transfer
+   status accordingly.
+
+ * When performing queue pause/unpause on an interface without specifying an
+   individual queue, the PAUSEALL/UNPAUSEALL event will only be logged if at
+   least one member of any queue exists for that interface.
+
+ * Added the 'queue_log_realtime_use_gmt' option to have timestamps in GMT
+   for realtime queue log entries.
+
+ResetCDR
+------------------
+ * The 'e' option has been deprecated. Use the CDR_PROP function to re-enable
+   CDRs when they were previously disabled on a channel.
+
+ * The 'w' and 'a' options have been removed. Dispatching CDRs to registered
+   backends occurs on an as-needed basis in order to preserve linkedid
+   propagation and other needed behavior.
+
+SayAlphaCase
+------------------
+ * A new application, this is similar to SayAlpha except that it supports
+   case sensitive playback of the specified characters. For example,
+   SayAlphaCase(u,aBc) will result in 'a uppercase b c'.
+
+SetAMAFlags
+------------------
+ * This application is deprecated in favor of CHANNEL(amaflags).
+
+SendDTMF
+------------------
+ * The SendDTMF application will now accept 'W' as valid input. This will cause
+   the application to delay one second while streaming DTMF.
+
+Stasis
+------------------
+ * A new application in Asterisk 12, this hands control of the channel calling
+   the application over to an external system. Currently, external systems
+   manipulate channels in Stasis through the Asterisk RESTful Interface (ARI).
+
+UserEvent
+------------------
+ * UserEvent will now handle duplicate keys by overwriting the previous value
+   assigned to the key.
+
+ * In addition to AMI, UserEvent invocations will now be distributed to any
+   interested Stasis applications.
+
+VoiceMail
+------------------
+ * Mailboxes defined by app_voicemail MUST be referenced by the rest of the
+   system as mailbox@context.  The rest of the system cannot add @default
+   to mailbox identifiers for app_voicemail that do not specify a context
+   any longer.  It is a mailbox identifier format that should only be
+   interpreted by app_voicemail.
+
+ * The voicemail.conf configuration file now has an 'alias' configuration
+   parameter for use with the Directory application. The voicemail realtime
+   database table schema has also been updated with an 'alias' column.
+
+
+Codecs
+------------------
+ * Pass through support has been added for both VP8 and Opus.
+
+ * Added format attribute negotiation for the Opus codec. Format attribute
+   negotiation is provided by the res_format_attr_opus module.
+
+
+Core
+------------------
+ * Masquerades as an operation inside Asterisk have been effectively hidden
+   by the migration to the Bridging API. As such, many 'quirks' of Asterisk
+   no longer occur. This includes renaming of channels, "<ZOMBIE>" channels,
+   dropping of frame/audio hooks, and other internal implementation details
+   that users had to deal with. This fundamental change has large implications
+   throughout the changes documented for this version. For more information
+   about the new core architecture of Asterisk, please see the Asterisk wiki.
+
+ * Multiple parties in a bridge may now be transferred. If a participant in a
+   multi-party bridge initiates a blind transfer, a Local channel will be used
+   to execute the dialplan location that the transferer sent the parties to. If
+   a participant in a multi-party bridge initiates an attended transfer,
+   several options are possible. If the attended transfer results in a transfer
+   to an application, a Local channel is used. If the attended transfer results
+   in a transfer to another channel, the resulting channels will be merged into
+   a single bridge.
+
+ * The channel variable ATTENDED_TRANSFER_COMPLETE_SOUND is no longer channel
+   driver specific.  If the channel variable is set on the transferrer channel,
+   the sound will be played to the target of an attended transfer.
+
+ * The channel variable BRIDGEPEER becomes a comma separated list of peers in
+   a multi-party bridge.  The BRIDGEPEER value can have a maximum of 10 peers
+   listed.  Any more peers in the bridge will not be included in the list.
+   BRIDGEPEER is not valid in holding bridges like parking since those channels
+   do not talk to each other even though they are in a bridge.
+
+ * The channel variable BRIDGEPVTCALLID is only valid for two party bridges
+   and will contain a value if the BRIDGEPEER's channel driver supports it.
+
+ * A channel variable ATTENDEDTRANSFER is now set which indicates which channel
+   was responsible for an attended transfer in a similar fashion to
+   BLINDTRANSFER.
+
+ * Modules using the Configuration Framework or Sorcery must have XML
+   configuration documentation. This configuration documentation is included
+   with the rest of Asterisk's XML documentation, and is accessible via CLI
+   commands. See the CLI changes for more information.
+
+AMI (Asterisk Manager Interface)
+------------------
+ * Major changes were made to both the syntax as well as the semantics of the
+   AMI protocol. In particular, AMI events have been substantially improved
+   in this version of Asterisk. For more information, please see the AMI
+   specification at https://wiki.asterisk.org/wiki/x/dAFRAQ
+
+ * AMI events that reference a particular channel or bridge will now always
+   contain a standard set of fields. When multiple channels or bridges are
+   referenced in an event, fields for at least some subset of the channels
+   and bridges in the event will be prefixed with a descriptive name to avoid
+   name collisions. See the AMI event documentation on the Asterisk wiki for
+   more information.
+
+ * The CLI command 'manager show commands' no longer truncates command names
+   longer than 15 characters and no longer shows authorization requirement
+   for commands. 'manager show command' now displays the privileges needed
+   for using a given manager command instead.
+
+ * The SIPshowpeer action will now include a 'SubscribeContext' field for a
+   peer in its response if the peer has a subscribe context set.
+
+ * The SIPqualifypeer action now acknowledges the request once it has
+   established that the request is against a known peer. It also issues a new
+   event, 'SIPQualifyPeerDone', once the qualify action has been completed.
+
+ * The PlayDTMF action now supports an optional 'Duration' parameter.  This
+   specifies the duration of the digit to be played, in milliseconds.
+
+ * Added VoicemailRefresh action to allow an external entity to trigger mailbox
+   updates when changes occur instead of requiring the use of pollmailboxes.
+
+ * Added a new action 'ControlPlayback'. The ControlPlayback action allows an
+   AMI client to manipulate audio currently being played back on a channel. The
+   supported operations depend on the application being used to send audio to
+   the channel. When the audio playback was initiated using the ControlPlayback
+   application or CONTROL STREAM FILE AGI command, the audio can be paused,
+   stopped, restarted, reversed, or skipped forward. When initiated by other
+   mechanisms (such as the Playback application), the audio can be stopped,
+   reversed, or skipped forward.
+
+ * Channel related events now contain a snapshot of channel state, adding new
+   fields to many of these events.
+
+ * The AMI event 'Newexten' field 'Extension' is deprecated, and may be removed
+   in a future release. Please use the common 'Exten' field instead.
+
+ * The AMI event 'UserEvent' from app_userevent now contains the channel state
+   fields. The channel state fields will come before the body fields.
+
+ * The AMI events 'ParkedCall', 'ParkedCallTimeOut', 'ParkedCallGiveUp', and
+   'UnParkedCall' have changed significantly in the new res_parking module.
+
+   The 'Channel' and 'From' headers are gone. For the channel that was parked
+   or is coming out of parking, a 'Parkee' channel snapshot is issued and it
+   has a number of fields associated with it. The old 'Channel' header relayed
+   the same data as the new 'ParkeeChannel' header.
+
+   The 'From' field was ambiguous and changed meaning depending on the event.
+   for most of these, it was the name of the channel that parked the call
+   (the 'Parker'). There is no longer a header that provides this channel name,
+   however the 'ParkerDialString' will contain a dialstring to redial the
+   device that parked the call.
+
+   On UnParkedCall events, the 'From' header would instead represent the
+   channel responsible for retrieving the parkee. It receives a channel
+   snapshot labeled 'Retriever'. The 'from' field is is replaced with
+   'RetrieverChannel'.
+
+   Lastly, the 'Exten' field has been replaced with 'ParkingSpace'.
+
+ * The AMI event 'Parkinglot' (response to 'Parkinglots' command) in a similar
+   fashion has changed the field names 'StartExten' and 'StopExten' to
+   'StartSpace' and 'StopSpace' respectively.
+
+ * The deprecated use of | (pipe) as a separator in the channelvars setting in
+   manager.conf has been removed.
+
+ * Channel Variables conveyed with a channel no longer contain the name of the
+   channel as part of the key field, i.e., ChanVariable(SIP/foo): bar=baz is now
+   ChanVariable: bar=baz. When multiple channels are present in a single AMI
+   event, the various ChanVariable fields will contain a suffix that specifies
+   which channel they correspond to.
+
+ * The NewPeerAccount AMI event is no longer raised. The NewAccountCode AMI
+   event always conveys the AMI event for a particular channel.
+
+ * All 'Reload' events have been consolidated into a single event type. This
+   event will always contain a Module field specifying the name of the module
+   and a Status field denoting the result of the reload. All modules now issue
+   this event when being reloaded.
+
+ * The 'ModuleLoadReport' event has been removed. Most AMI connections would
+   fail to receive this event due to being connected after modules have loaded.
+   AMI connections that want to know when Asterisk is ready should listen for
+   the 'FullyBooted' event.
+
+ * app_fax now sends the same send fax/receive fax events as res_fax. The
+   'FaxSent' event is now the 'SendFAX' event, and the 'FaxReceived' event is
+   now the 'ReceiveFAX' event.
+
+ * The 'MusicOnHold' event is now two events: 'MusicOnHoldStart' and
+   'MusicOnHoldStop'. The sub type field has been removed.
+
+ * The 'JabberEvent' event has been removed. It is not AMI's purpose to be a
+   carrier for another protocol.
+
+ * The Bridge Manager action's 'Playtone' header now accepts more fine-grained
+   options. 'Channel1' and 'Channel2' may be specified in order to play a tone
+   to the specific channel. 'Both' may be specified to play a tone to both
+   channels. The old 'yes' option is still accepted as a way of playing the
+   tone to Channel2 only.
+
+ * The AMI 'Status' response event to the AMI Status action replaces the
+   'BridgedChannel' and 'BridgedUniqueid' headers with the 'BridgeID' header to
+   indicate what bridge the channel is currently in.
+
+ * The AMI 'Hold' event has been moved out of individual channel drivers, into
+   core, and is now two events: 'Hold' and 'Unhold'.  The status field has been
+   removed.
+
+ * The AMI events in app_queue have been made more consistent with each other.
+   Events that reference channels (QueueCaller* and Agent*) will show
+   information about each channel.  The (infamous) 'Join' and 'Leave' AMI
+   events have been changed to 'QueueCallerJoin' and 'QueueCallerLeave'.
+
+ * The 'MCID' AMI event now publishes a channel snapshot when available and
+   its non-channel-snapshot parameters now use either the "MCallerID" or
+   'MConnectedID' prefixes with Subaddr*, Name*, and Num* suffixes instead
+   of 'CallerID' and 'ConnectedID' to avoid confusion with similarly named
+   parameters in the channel snapshot.
+
+ * The AMI events 'Agentlogin' and 'Agentlogoff' have been renamed
+   'AgentLogin' and 'AgentLogoff' respectively.
+
+ * The 'Channel' key used in the 'AlarmClear', 'Alarm', and 'DNDState' has been
+   renamed "DAHDIChannel" since it does not convey an Asterisk channel name.
+
+ * 'ChannelUpdate' events have been removed.
+
+ * All AMI events now contain a 'SystemName' field, if available.
+
+ * Local channel optimization is now conveyed in two events:
+   'LocalOptimizationBegin' and 'LocalOptimizationEnd'. The Begin event is sent
+   when the Local channel driver begins attempting to optimize itself out of
+   the media path; the End event is sent after the channel halves have
+   successfully optimized themselves out of the media path.
+
+ * Local channel information in events is now prefixed with 'LocalOne' and
+   'LocalTwo'. This replaces the suffix of '1' and '2' for the two halves of
+   the Local channel. This affects the 'LocalBridge', 'LocalOptimizationBegin',
+   and 'LocalOptimizationEnd' events.
+
+ * The option 'allowmultiplelogin' can now be set or overriden in a particular
+   account. When set in the general context, it will act as the default
+   setting for defined accounts.
+
+ * The 'BridgeAction' event was removed. It technically added no value, as the
+   Bridge Action already receives confirmation of the bridge through a
+   successful completion Event.
+
+ * The 'BridgeExec' events were removed. These events duplicated the events that
+   occur in the Briding API, and are conveyed now through BridgeCreate,
+   BridgeEnter, and BridgeLeave events.
+
+ * The 'RTCPSent'/'RTCPReceived' events have been significantly modified from
+   previous versions. They now report all SR/RR packets sent/received, and
+   have been restructured to better reflect the data sent in a SR/RR. In
+   particular, the event structure now supports multiple report blocks.
+
+ * Added 'BlindTransfer' and 'AttendedTransfer' events. These events are
+   raised when a blind transfer/attended transfer completes successfully.
+   They contain information about the transfer that just completed, including
+   the location of the transfered channel.
+
+ * Added a 'security' class to AMI which outputs the required fields for
+   security messages similar to the log messages from res_security_log
+
+ * The AMI event 'ExtensionStatus' now contains a 'StatusText' field
+   that describes the status value in a human readable string.
+
+CDR (Call Detail Records)
+------------------
+ * Significant changes have been made to the behavior of CDRs. The CDR engine
+   was effectively rewritten and built on the Stasis message bus. For a full
+   definition of CDR behavior in Asterisk 12, please read the specification
+   on the Asterisk wiki (wiki.asterisk.org).
+
+ * CDRs will now be created between all participants in a bridge. For each
+   pair of channels in a bridge, a CDR is created to represent the path of
+   communication between those two endpoints. This lets an end user choose who
+   to bill for what during bridge operations with multiple parties.
+
+ * The duration, billsec, start, answer, and end times now reflect the times
+   associated with the current CDR for the channel, as opposed to a cumulative
+   measurement of all CDRs for that channel.
+
+ * When a CDR is dispatched, user defined CDR variables from both parties are
+   included in the resulting CDR. If both parties have the same variable, only
+   the Party A value is provided.
+
+ * Added a new option to cdr.conf, 'debug'. When enabled, significantly more
+   information regarding the CDR engine is logged as verbose messages. This
+   option should only be used if the behavior of the CDR engine needs to be
+   debugged.
+
+ * Added CLI command 'cdr set debug {on|off}'. This toggles the 'debug' setting
+   normally configured in cdr.conf.
+
+ * Added CLI command 'cdr show active {channel}'. When {channel} is not
+   specified, this command provides a summary of the channels with CDR
+   information and their statistics. When {channel} is specified, it shows
+   detailed information about all records associated with {channel}.
+
+CEL (Channel Event Logging)
+------------------
+ * CEL has undergone significant rework in Asterisk 12, and is now built on the
+   Stasis message bus. Please see the specification for CEL on the Asterisk
+   wiki at https://wiki.asterisk.org/wiki/x/4ICLAQ for more detailed
+   information.
+
+ * The 'extra' field of all CEL events that use it now consists of a JSON blob
+   with key/value pairs which are defined in the Asterisk 12 CEL documentation.
+
+ * BLINDTRANSFER events now report the transferee bridge unique
+   identifier, extension, and context in a JSON blob as the extra string
+   instead of the transferee channel name as the peer.
+
+ * ATTENDEDTRANSFER events now report the peer as NULL and additional
+   information in the 'extra' string as a JSON blob. For transfers that occur
+   between two bridged channels, the 'extra' JSON blob contains the primary
+   bridge unique identifier, the secondary channel name, and the secondary
+   bridge unique identifier. For transfers that occur between a bridged channel
+   and a channel running an app, the 'extra' JSON blob contains the primary
+   bridge unique identifier, the secondary channel name, and the app name.
+
+ * LOCAL_OPTIMIZE events have been added to convey local channel
+   optimizations with the record occurring for the semi-one channel and
+   the semi-two channel name in the peer field.
+
+ * BRIDGE_START, BRIDGE_END, BRIDGE_UPDATE, 3WAY_START, 3WAY_END, CONF_ENTER,
+   CONF_EXIT, CONF_START, and CONF_END events have all been removed. These
+   events have been replaced by BRIDGE_ENTER/BRIDGE_EXIT. The BRIDGE_ENTER
+   and BRIDGE_EXIT events are raised when a channel enters/exits any bridge,
+   regardless of whether or not that bridge happens to contain multiple
+   parties.
+
+CLI
+-------------------
+ * When compiled with '--enable-dev-mode', the astobj2 library will now add
+   several CLI commands that allow for inspection of ao2 containers that
+   register themselves with astobj2. The CLI commands are 'astobj2 container
+   dump', 'astobj2 container stats', and 'astobj2 container check'.
+
+ * Added specific CLI commands for bridge inspection. This includes 'bridge
+   show all', which lists all bridges in the system, and 'bridge show {id}',
+   which provides specific information about a bridge.
+
+ * Added CLI command 'bridge destroy'. This will destroy the specified bridge,
+   ejecting the channels currently in the bridge. If the channels cannot
+   continue in the dialplan or application that put them in the bridge, they
+   will be hung up.
+
+ * Added command 'bridge kick'. This will eject a single channel from a bridge.
+
+ * Added commands to inspect and manipulate the registered bridge technologies.
+   This include 'bridge technology show', which lists the registered bridge
+   technologies, as well as 'bridge technology {suspend|unsuspend} {tech}',
+   which controls whether or not a registered bridge technology can be used
+   during smart bridge operations. If a technology is suspended, it will not
+   be used when a bridge technology is picked for channels; when unsuspended,
+   it can be used again.
+
+ * The command 'config show help {module} {type} {option}' will show
+   configuration documentation for modules with XML configuration
+   documentation. When {module}, {type}, and {option} are omitted, a listing
+   of all modules with registered documentation is displayed. When {module}
+   is specified, a listing of all configuration types for that module is
+   displayed, along with their synopsis. When {module} and {type} are
+   specified, a listing of all configuration options for that type are
+   displayed along with their synopsis. When {module}, {type}, and {option}
+   are specified, detailed information for that configuration option is
+   displayed.
+
+ * Added 'core show sounds' and 'core show sound' CLI commands. These display
+   a listing of all installed media sounds available on the system and
+   detailed information about a sound, respectively.
+
+ * 'xmldoc dump' has been added. This CLI command will dump the XML
+   documentation DOM as a string to the specified file. The Asterisk core
+   will populate certain XML elements pulled from the source files with
+   additional run-time information; this command lets a user produce the
+   XML documentation with all information.
+
+Features
+-------------------
+ * Parking has been pulled from core and placed into a separate module called
+   res_parking. See Parking changes below for more details. Configuration for
+   parking should now be performed in res_parking.conf. Configuration for
+   parking in features.conf is now unsupported.
+
+ * Core attended transfers now have several new options. While performing an
+   attended transfer, the transferer now has the following options:
+   - *1 - cancel the attended transfer (configurable via atxferabort)
+   - *2 - complete the attended transfer, dropping out of the call
+          (configurable via atxfercomplete)
+   - *3 - complete the attended transfer, but stay in the call. This will turn
+          the call into a multi-party bridge (configurable via atxferthreeway)
+   - *4 - swap to the other party. Once an attended transfer has begun, this
+          options may be used multiple times (configurable via atxferswap)
+
+ * For DTMF blind and attended transfers, the channel variable TRANSFER_CONTEXT
+   must be on the channel initiating the transfer to have any effect.
+
+ * The BRIDGE_FEATURES channel variable would previously only set features for
+   the calling party and would set this feature regardless of whether the
+   feature was in caps or in lowercase. Use of a caps feature for a letter
+   will now apply the feature to the calling party while use of a lowercase
+   letter will apply that feature to the called party.
+
+ * Add support for automixmon to the BRIDGE_FEATURES channel variable.
+
+ * The channel variable DYNAMIC_PEERNAME is redundant with BRIDGEPEER and is
+   removed.  The more useful DYNAMIC_WHO_ACTIVATED gives the channel name that
+   activated the dynamic feature.
+
+ * The channel variables DYNAMIC_FEATURENAME and DYNAMIC_WHO_ACTIVATED are set
+   only on the channel executing the dynamic feature.  Executing a dynamic
+   feature on the bridge peer in a multi-party bridge will execute it on all
+   peers of the activating channel.
+
+ * You can now have the settings for a channel updated using the FEATURE()
+   and FEATUREMAP() functions inherited to child channels by setting
+   FEATURE(inherit)=yes.
+
+ * automixmon now supports additional channel variables from automon including:
+   TOUCH_MIXMONITOR_PREFIX, TOUCH_MIXMONITOR_MESSAGE_START,
+   and TOUCH_MIXMONITOR_MESSAGE_STOP
+
+ * A new general features.conf option 'recordingfailsound' has been added which
+   allowssetting a failure sound for a user tries to invoke a recording feature
+   such as automon or automixmon and it fails.
+
+ * It is no longer necessary (or possible) to define the ATXFER_NULL_TECH in
+   features.c for atxferdropcall=no to work properly. This option now just
+   works.
+
+Logging
+-------------------
+ * Added log rotation strategy 'none'. If set, no log rotation strategy will
+   be used. Given that this can cause the Asterisk log files to grow quickly,
+   this option should only be used if an external mechanism for log management
+   is preferred.
+
+Realtime
+------------------
+ * Dynamic realtime tables for SIP Users can now include a 'path' field. This
+   will store the path information for that peer when it registers. Realtime
+   tables can also use the 'supportpath' field to enable Path header support.
+
+ * LDAP realtime configurations for SIP Users now have the AstAccountPathSupport
+   objectIdentifier. This maps to the supportpath option in sip.conf.
+
+Sorcery
+------------------
+ * Sorcery is a new data abstraction and object persistence API in Asterisk. It
+   provides modules a useful abstraction on top of the many storage mechanisms
+   in Asterisk, including the Asterisk Database, static configuration files,
+   static Realtime, and dynamic Realtime. It also provides a caching service.
+   Users can configure a hierarchy of data storage layers for specific modules
+   in sorcery.conf.
+
+ * All future modules which utilize Sorcery for object persistence must have a
+   column named "id" within their schema when using the Sorcery realtime module.
+   This column must be able to contain a string of up to 128 characters in length.
+
+Security Events Framework
+------------------
+ * Security Event timestamps now use ISO 8601 formatted date/time instead of
+   the "seconds-microseconds" format that it was using previously.
+
+Stasis Message Bus
+------------------
+ * The Stasis message bus is a publish/subscribe message bus internal to
+   Asterisk. Many services in Asterisk are built on the Stasis message bus,
+   including AMI, ARI, CDRs, and CEL. Parameters controlling the operation of
+   Stasis can be configured in stasis.conf. Note that these parameters operate
+   at a very low level in Asterisk, and generally will not require changes.
+
+Channel Drivers
+------------------
+ * When a channel driver is configured to enable jiterbuffers, they are now
+   applied unconditionally when a channel joins a bridge. If a jitterbuffer
+   is already set for that channel when it enters, such as by the JITTERBUFFER
+   function, then the existing jitterbuffer will be used and the one set by
+   the channel driver will not be applied.
+
+chan_agent
+------------------
+ * chan_agent has been removed and replaced with AgentLogin and AgentRequest
+   dialplan applications provided by the app_agent_pool module. Agents are
+   connected with callers using the new AgentRequest dialplan application.
+   The Agents:<agent-id> device state is available to monitor the status of an
+   agent. See agents.conf.sample for valid configuration options.
+
+ * The updatecdr option has been removed. Altering the names of channels on a
+   CDR is not supported - the name of the channel is the name of the channel,
+   and pretending otherwise helps no one. The AGENTUPDATECDR channel variable
+   has also been removed, for the same reason.
+
+ * The endcall and enddtmf configuration options are removed.  Use the
+   dialplan function CHANNEL(dtmf-features) to set DTMF features on the agent
+   channel before calling AgentLogin.
+
+chan_bridge
+------------------
+ * chan_bridge has been removed. Its functionality has been incorporated
+   directly into the ConfBridge application itself.
+
+chan_dahdi
+------------------
+ * Added the CLI command 'pri destroy span'. This will destroy the D-channel
+   of the specified span and its B-channels. Note that this command should
+   only be used if you understand the risks it entails.
+
+ * The CLI command 'dahdi destroy channel' is now 'dahdi destroy channels'.
+   A range of channels can be specified to be destroyed. Note that this command
+   should only be used if you understand the risks it entails.
+
+ * Added the CLI command 'dahdi create channels'. A range of channels can be
+   specified to be created, or the keyword 'new' can be used to add channels
+   not yet created.
+
+ * The script specified by the chan_dahdi.conf mwimonitornotify option now gets
+   the exact configured mailbox name.  For app_voicemail mailboxes this is
+   mailbox@context.
+
+ * Added mwi_vm_boxes that also must be configured for ISDN MWI to be enabled.
+
+chan_iax2
+------------------
+ * IPv6 support has been added.  We are now able to bind to and
+   communicate using IPv6 addresses.
+
+chan_local
+------------------
+ * The /b option has been removed.
+
+ * chan_local moved into the system core and is no longer a loadable module.
+
+chan_mobile
+------------------
+ * Added general support for busy detection.
+
+ * Added ECAM command support for Sony Ericsson phones.
+
+chan_pjsip
+------------------
+ * A new SIP channel driver for Asterisk, chan_pjsip is built on the PJSIP
+   SIP stack. A collection of resource modules provides the bulk of the SIP
+   functionality. For more information on the new SIP channel driver, see
+   https://wiki.asterisk.org/wiki/x/JYGLAQ
+
+chan_sip
+------------------
+ * Added support for RFC 3327 "Path" headers. This can be enabled in sip.conf
+   using the 'supportpath' setting, either on a global basis or on a peer basis.
+   This setting enables Asterisk to route outgoing out-of-dialog requests via a
+   set of proxies by using a pre-loaded route-set defined by the Path headers in
+   the REGISTER request. See Realtime updates for more configuration information.
+
+ * The SIP_CODEC family of variables may now specify more than one codec. Each
+   codec must be separated by a comma. The first codec specified is the
+   preferred codec for the offer. This allows a dialplan writer to specify both
+   audio and video codecs, e.g., Set(SIP_CODEC=ulaw,h264)
+
+ * The 'callevents' parameter has been removed. Hold AMI events are now raised
+   in the core, and can be filtered out using the 'eventfilter' parameter
+   in manager.conf.
+
+ * Added 'ignore_requested_pref'. When enabled, this will use the preferred
+   codecs configured for a peer instead of the requested codec.
+
+ * The option "register_retry_403" has been added to chan_sip to work around
+   servers that are known to erroneously send 403 in response to valid
+   REGISTER requests and allows Asterisk to continue attepmting to connect.
+
+chan_skinny
+------------------
+ * Added the 'immeddialkey' parameter. If set, when the user presses the
+   configured key the already entered number will be immediately dialed. This
+   is useful when the dialplan allows for variable length pattern matching.
+   Valid options are '*' and '#'.
+
+ * Added the 'callfwdtimeout' parameter. This configures the amount of time (in
+   milliseconds) before a call forward is considered to not be answered.
+
+ * The 'serviceurl' parameter allows Service URLs to be attached to line
+   buttons.
+
+
+Functions
+------------------
+
+AGENT
+------------------
+ * The password option has been disabled, as the AgentLogin application no
+   longer provides authentication.
+
+AUDIOHOOK_INHERIT
+------------------
+ * Due to changes in the Asterisk core, this function is no longer needed to
+   preserve a MixMonitor on a channel during transfer operations and dialplan
+   execution. It is effectively obsolete.
+
+CDR (function)
+------------------
+ * The 'amaflags' and 'accountcode' attributes for the CDR function are
+   deprecated. Use the CHANNEL function instead to access these attributes.
+
+ * The 'l' option has been removed. When reading a CDR attribute, the most
+   recent record is always used. When writing a CDR attribute, all non-finalized
+   CDRs are updated.
+
+ * The 'r' option has been removed, for the same reason as the 'l' option.
+
+ * The 's' option has been removed, as LOCKED semantics no longer exist in the
+   CDR engine.
+
+CDR_PROP
+------------------
+ * A new function CDR_PROP has been added. This function lets you set properties
+   on a channel's active CDRs. This function is write-only. Properties accept
+   boolean values to set/clear them on the channel's CDRs. Valid properties
+   include:
+   - 'party_a' - make this channel the preferred Party A in any CDR between two
+     channels. If two channels have this property set, the creation time of the
+     channel is used to determine who is Party A. Note that dialed channels are
+     never Party A in a CDR.
+   - 'disable' - disable CDRs on this channel. This is analogous to the NoCDR
+     application when set to True, and analogous to the 'e' option in ResetCDR
+     when set to False.
+
+CHANNEL
+------------------
+ * Added the argument 'dtmf_features'. This sets the DTMF features that will be
+   enabled on a channel when it enters a bridge. Allowed values are 'T', 'K',
+   'H', 'W', and 'X', and are analogous to the parameters passed to the Dial
+   application.
+
+ * Added the argument 'after_bridge_goto'. This can be set to a parseable Goto
+   string, i.e., [[context],extension],priority. If set on a channel, if a
+   channel leaves a bridge but is not hung up it will resume dialplan execution
+   at that location.
+
+JITTERBUFFER
+------------------
+ * JITTERBUFFER now accepts an argument of 'disabled' which can be used
+   to remove jitterbuffers previously set on a channel with JITTERBUFFER.
+   The value of this setting is ignored when disabled is used for the argument.
+
+PJSIP_DIAL_CONTACTS
+------------------
+ * A new function provided by chan_pjsip, this function can be used in
+   conjunction with the Dial application to construct a dial string that will
+   dial all contacts on an Address of Record associated with a chan_pjsip
+   endpoint.
+
+PJSIP_MEDIA_OFFER
+------------------
+ * Provided by chan_pjsip, this function sets the codecs to be offerred on the
+   outbound channel prior to dialing.
+
+REDIRECTING
+------------------
+ * Redirecting reasons can now be set to arbitrary strings. This means
+   that the REDIRECTING dialplan function can be used to set the redirecting
+   reason to any string. It also allows for custom strings to be read as the
+   redirecting reason from SIP Diversion headers.
+
+SPEECH_ENGINE
+------------------
+ * The SPEECH_ENGINE function now supports read operations. When read from, it
+   will return the current value of the requested attribute.
+
+VMCOUNT:
+------------------
+ * Mailboxes defined by app_voicemail MUST be referenced by the rest of the
+   system as mailbox@context.  The rest of the system cannot add @default
+   to mailbox identifiers for app_voicemail that do not specify a context
+   any longer.  It is a mailbox identifier format that should only be
+   interpreted by app_voicemail.
+
+
+Resources
+------------------
+
+res_agi (Asterisk Gateway Interface)
+------------------
+ * The manager event AGIExec has been split into AGIExecStart and AGIExecEnd.
+
+ * The manager event AsyncAGI has been split into AsyncAGIStart, AsyncAGIExec,
+   and AsyncAGIEnd.
+
+ * The CONTROL STREAM FILE command now accepts an offsetms parameter. This
+   will start the playback of the audio at the position specified. It will
+   also return the final position of the file in 'endpos'.
+
+ * The CONTROL STREAM FILE command will now populate the CPLAYBACKSTATUS
+   channel variable if the user stopped the file playback or if a remote
+   entity stopped the playback. If neither stopped the playback, it will
+   indicate the overall success/failure of the playback. If stopped early,
+   the final offset of the file will be set in the CPLAYBACKOFFSET channel
+   variable.
+
+ * The SAY ALPHA command now accepts an additional parameter to control
+   whether it specifies the case of uppercase, lowercase, or all letters to
+   provide functionality similar to SayAlphaCase.
+
+res_ari (Asterisk RESTful Interface) (and others)
+------------------
+ * The Asterisk RESTful Interface (ARI) provides a mechanism to expose and
+   control telephony primitives in Asterisk by remote client. This includes
+   channels, bridges, endpoints, media, and other fundamental concepts. Users
+   of ARI can develop their own communications applications, controlling
+   multiple channels using an HTTP RESTful interface and receiving JSON events
+   about the objects via a WebSocket connection. ARI can be configured in
+   Asterisk via ari.conf. For more information on ARI, see
+   https://wiki.asterisk.org/wiki/x/0YCLAQ
+
+res_parking
+-------------------
+ * Parking has been extracted from the Asterisk core as a loadable module,
+   res_parking. Configuration for parking is now provided by res_parking.conf.
+   Configuration through features.conf is no longer supported.
+
+ * res_parking uses the configuration framework. If an invalid configuration is
+   supplied, res_parking will fail to load or fail to reload. Previously,
+   invalid configurations would generally be accepted, with certain errors
+   resulting in individually disabled parking lots.
+
+ * Parked calls are now placed in bridges. While this is largely an
+   architectural change, it does have implications on how channels in a parking
+   lot are viewed. For example, commands that display channels in bridges will
+   now also display the channels in a parking lot.
+
+ * The order of arguments for the new parking applications have been modified.
+   Timeout and return context/exten/priority are now implemented as options,
+   while the name of the parking lot is now the first parameter. See the
+   application documentation for Park, ParkedCall, and ParkAndAnnounce for more
+   in-depth information as well as syntax.
+
+ * Extensions are by default no longer automatically created in the dialplan to
+   park calls or pickup parked calls. Generation of dialplan extensions can be
+   enabled using the 'parkext' configuration option.
+
+ * ADSI functionality for parking is no longer supported. The 'adsipark'
+   configuration option has been removed as a result.
+
+ * The PARKINGSLOT channel variable has been deprecated in favor of
+   PARKING_SPACE to match the naming scheme of the new system.
+
+ * PARKING_SPACE and PARKEDLOT channel variables will now be set for a parked
+   channel even when the configuration option 'comebactoorigin' is enabled.
+
+ * A new CLI command 'parking show' has been added. This allows a user to
+   inspect the parking lots that are currently in use.
+   'parking show <parkinglot>' will also show the parked calls in a specific
+   parking lot.
+
+ * The CLI command 'parkedcalls' is now deprecated in favor of
+   'parking show <parkinglot>'.
+
+ * The AMI command 'ParkedCalls' will now accept a 'ParkingLot' argument which
+   can be used to get a list of parked calls for a specific parking lot.
+
+ * The AMI command 'Park' field 'Channel2' has been deprecated and replaced
+   with 'TimeoutChannel'. If both 'Channel2' and 'TimeoutChannel' are
+   specified, 'TimeoutChannel' will be used. The field 'TimeoutChannel' is no
+   longer a required argument.
+
+ * The ParkAndAnnounce application is now provided through res_parking instead
+   of through the separate app_parkandannounce module.
+
+ * ParkAndAnnounce will no longer go to the next position in dialplan on timeout
+   by default. Instead, it will follow the timeout rules of the parking lot. The
+   old behavior can be reproduced by using the 'c' option.
+
+ * Dynamic parking lots will now fail to be created under the following
+   conditions:
+   - if the parking lot specified by PARKINGDYNAMIC does not exist
+   - if they require exclusive park and parkedcall extensions which overlap
+     with existing parking lots.
+
+ * Dynamic parking lots will be cleared on reload for dynamic parking lots that
+   currently contain no calls. Dynamic parking lots containing parked calls
+   will persist through the reloads without alteration.
+
+ * If 'parkext_exclusive' is set for a parking lot and that extension is
+   already in use when that parking lot tries to register it, this is now
+   considered a parking system configuration error. Configurations which do
+   this will be rejected.
+
+ * Added channel variable PARKER_FLAT. This contains the name of the extension
+   that would be used if 'comebacktoorigin' is enabled. This can be useful when
+   comebacktoorigin is disabled, but the dialplan or an external control
+   mechanism wants to use the extension in the park-dial context that was
+   generated to re-dial the parker on timeout.
+
+res_pjsip (and many others)
+------------------
+ * A large number of resource modules make up the SIP stack based on pjsip.
+   The chan_pjsip channel driver users these resource modules to provide
+   various SIP functionality in Asterisk. The majority of configuration for
+   these modules is performed in pjsip.conf. Other modules may use their
+   own configuration files.
+
+ * Added 'set_var' option for an endpoint. For each variable specified that
+   variable gets set upon creation of a channel involving the endpoint.
+
+res_rtp_asterisk
+------------------
+ * ICE/STUN/TURN support in res_rtp_asterisk has been made optional.  To enable
+   them, an Asterisk-specific version of PJSIP needs to be installed.
+   Tarballs are available from https://github.com/asterisk/pjproject/tags/.
+
+res_statsd/res_chan_stats
+------------------
+ * A new resource module, res_statsd, has been added, which acts as a statsd
+   client. This module allows Asterisk to publish statistics to a statsd
+   server. In conjunction with res_chan_stats, it will publish statistics about
+   channels to the statsd server. It can be configured via res_statsd.conf.
+
+res_xmpp
+------------------
+ * Device state for XMPP buddies is now available using the following format:
+   XMPP/<client name>/<buddy address>
+   If any resource is available the device state is considered to be not in use.
+   If no resources exist or all are unavailable the device state is considered
+   to be unavailable.
+
+
+Scripts
+------------------
+
+Realtime/Database Scripts
+------------------
+ * Asterisk previously included example db schemas in the contrib/realtime/
+   directory of the source tree.  This has been replaced by a set of database
+   migrations using the Alembic framework.  This allows you to use alembic to
+   initialize the database for you.  It will also serve as a database migration
+   tool when upgrading Asterisk in the future.
+
+   See contrib/ast-db-manage/README.md for more details.
+
+sip_to_res_pjsip.py
+-------------------
+ * A new script has been added in the contrib/scripts/sip_to_res_pjsip folder.
+   This python script will convert an existing sip.conf file to a
+   pjsip.conf file, for use with the chan_pjsip channel driver. This script
+   is meant to be an aid in converting an existing chan_sip configuration to
+   a chan_pjsip configuration, but it is expected that configuration beyond
+   what the script provides will be needed.
+
+------------------------------------------------------------------------------
 --- Functionality changes from Asterisk 10 to Asterisk 11 --------------------
 ------------------------------------------------------------------------------
 
@@ -66,6 +2165,9 @@ ConfBridge
  * Added announcement configuration option to user profile. If set the sound
    file will be played to the user, and only the user, upon joining the
    conference bridge.
+
+ * Added record_file_append option that defaults to "yes", but if set to no
+   will create a new file between each start/stop recording.
 
 
 Dial
@@ -152,6 +2254,9 @@ Queue
    state_interface has been set.
 
  * Add queue monitoring hints.  exten => 8501,hint,Queue:markq.
+
+ * App_queue will now play periodic announcements for the caller that
+   holds the first position in the queue while waiting for answer.
 
 SayUnixTime
 ------------------
@@ -367,6 +2472,9 @@ chan_sip
 
  * Added support to use private party ID information with calls.
 
+ * Adds an option discard_remote_hold_retrieval that when set stops telling
+   the peer to start music on hold.
+
 
 chan_skinny
 ------------------
@@ -375,6 +2483,15 @@ chan_skinny
 
 chan_unistim
 --------------------
+ * Added option 'dtmf_duration' allowing playback time of DTMF tones to be set
+
+ * Modified option 'date_format' to allow options to display date in 31Jan and Jan31
+   formats as options 0 and 1. The previous options 0 and 1 now map to options 2 and 3
+   as per the UNISTIM protocol.
+
+ * Fixed issues with dialtone not matching indications.conf and mute stopping rx
+   as well as tx. Also fixed issue with call "Timer" displaying as French "Dur\E9e"
+
  * Added ability to use multiple lines for a single phone.  This allows multiple
    calls to occur on a single phone, using callwaiting and switching between calls.
 
@@ -693,13 +2810,6 @@ Scripts
    its value to determine the directory to assume is the top-level directory of
    the source tree.  If the variable is not set, it defaults to the current
    behavior and uses the current working directory.
-
-Queue
--------------------
- * Add queue available hint.  exten => 8501,hint,Queue:markq_avail
-   Note: the suffix '_avail' after the queuename.
-   Reports 'InUse' for no logged in agents or no free agents.
-   Reports 'Idle' when an agent is free.
 
 ------------------------------------------------------------------------------
 --- Functionality changes from Asterisk 1.8 to Asterisk 10 -------------------

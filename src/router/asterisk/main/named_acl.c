@@ -1,5 +1,5 @@
 /*
- * Asterisk -- A telephony toolkit for Linux.
+ * Asterisk -- An open source telephony toolkit.
  *
  * Copyright (C) 2012, Digium, Inc.
  *
@@ -29,26 +29,38 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 398103 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 429894 $")
 
 #include "asterisk/config.h"
 #include "asterisk/config_options.h"
-#include "asterisk/event.h"
 #include "asterisk/utils.h"
 #include "asterisk/module.h"
 #include "asterisk/cli.h"
 #include "asterisk/acl.h"
 #include "asterisk/astobj2.h"
 #include "asterisk/paths.h"
+#include "asterisk/stasis.h"
+#include "asterisk/json.h"
+#include "asterisk/security_events.h"
 
 #define NACL_CONFIG "acl.conf"
 #define ACL_FAMILY "acls"
 
-struct named_acl_global_config {
-	AST_DECLARE_STRING_FIELDS(
-		/* Nothing here yet. */
-	);
-};
+/*** DOCUMENTATION
+	<configInfo name="named_acl" language="en_US">
+		<configFile name="named_acl.conf">
+			<configObject name="named_acl">
+				<synopsis>Options for configuring a named ACL</synopsis>
+				<configOption name="permit">
+					<synopsis>An address/subnet from which to allow access</synopsis>
+				</configOption>
+				<configOption name="deny">
+					<synopsis>An address/subnet from which to disallow access</synopsis>
+				</configOption>
+			</configObject>
+		</configFile>
+	</configInfo>
+***/
 
 /*
  * Configuration structure - holds pointers to ao2 containers used for configuration
@@ -56,7 +68,6 @@ struct named_acl_global_config {
  * time, it's really a config options friendly wrapper for the named ACL container
  */
 struct named_acl_config {
-	struct named_acl_global_config *global;
 	struct ao2_container *named_acl_list;
 };
 
@@ -70,6 +81,7 @@ static void *named_acl_find(struct ao2_container *container, const char *cat);
 /* Config type for named ACL profiles (must not be named general) */
 static struct aco_type named_acl_type = {
 	.type = ACO_ITEM,                  /*!< named_acls are items stored in containers, not individual global objects */
+	.name = "named_acl",
 	.category_match = ACO_BLACKLIST,
 	.category = "^general$",           /*!< Match everything but "general" */
 	.item_alloc = named_acl_alloc,     /*!< A callback to allocate a new named_acl based on category */
@@ -77,26 +89,16 @@ static struct aco_type named_acl_type = {
 	.item_offset = offsetof(struct named_acl_config, named_acl_list), /*!< Could leave this out since 0 */
 };
 
-/* Config type for the general part of the ACL profile (must be named general) */
-static struct aco_type global_option = {
-	.type = ACO_GLOBAL,
-	.item_offset = offsetof(struct named_acl_config, global),
-	.category_match = ACO_WHITELIST,
-	.category = "^general$",
-};
-
 /* This array of aco_type structs is necessary to use aco_option_register */
 struct aco_type *named_acl_types[] = ACO_TYPES(&named_acl_type);
 
-struct aco_type *global_options[] = ACO_TYPES(&global_option);
-
 struct aco_file named_acl_conf = {
 	.filename = "acl.conf",
-	.types = ACO_TYPES(&named_acl_type, &global_option),
+	.types = ACO_TYPES(&named_acl_type),
 };
 
 /* Create a config info struct that describes the config processing for named ACLs. */
-CONFIG_INFO_STANDARD(cfg_info, globals, named_acl_config_alloc,
+CONFIG_INFO_CORE("named_acl", cfg_info, globals, named_acl_config_alloc,
 	.files = ACO_FILES(&named_acl_conf),
 );
 
@@ -124,13 +126,6 @@ static void named_acl_config_destructor(void *obj)
 {
 	struct named_acl_config *cfg = obj;
 	ao2_cleanup(cfg->named_acl_list);
-	ao2_cleanup(cfg->global);
-}
-
-static void named_acl_global_config_destructor(void *obj)
-{
-	struct named_acl_global_config *global = obj;
-	ast_string_field_free_memory(global);
 }
 
 /*! \brief allocator callback for named_acl_config. Notice it returns void * since it is used by
@@ -142,14 +137,6 @@ static void *named_acl_config_alloc(void)
 
 	if (!(cfg = ao2_alloc(sizeof(*cfg), named_acl_config_destructor))) {
 		return NULL;
-	}
-
-	if (!(cfg->global = ao2_alloc(sizeof(*cfg->global), named_acl_global_config_destructor))) {
-		goto error;
-	}
-
-	if (ast_string_field_init(cfg->global, 128)) {
-		goto error;
 	}
 
 	if (!(cfg->named_acl_list = ao2_container_alloc(37, named_acl_hash_fn, named_acl_cmp_fn))) {
@@ -177,7 +164,7 @@ static void destroy_named_acl(void *obj)
  * \retval NULL failure
  *\retval non-NULL successfully allocated named ACL
  */
-void *named_acl_alloc(const char *cat)
+static void *named_acl_alloc(const char *cat)
 {
 	struct named_acl *named_acl;
 
@@ -195,10 +182,10 @@ void *named_acl_alloc(const char *cat)
  * \brief Find a named ACL in a container by its name
  *
  * \param container ao2container holding the named ACLs
- * \param name of the ACL wanted to be found
+ * \param cat name of the ACL wanted to be found
  * \retval pointer to the named ACL if available. Null if not found.
  */
-void *named_acl_find(struct ao2_container *container, const char *cat)
+static void *named_acl_find(struct ao2_container *container, const char *cat)
 {
 	struct named_acl tmp;
 	ast_copy_string(tmp.name, cat, sizeof(tmp.name));
@@ -309,7 +296,8 @@ static struct named_acl *named_acl_find_realtime(const char *name)
 	return acl;
 }
 
-struct ast_ha *ast_named_acl_find(const char *name, int *is_realtime, int *is_undefined) {
+struct ast_ha *ast_named_acl_find(const char *name, int *is_realtime, int *is_undefined)
+{
 	struct ast_ha *ha = NULL;
 
 	RAII_VAR(struct named_acl_config *, cfg, ao2_global_obj_ref(globals), ao2_cleanup);
@@ -369,9 +357,16 @@ struct ast_ha *ast_named_acl_find(const char *name, int *is_realtime, int *is_un
 	return ha;
 }
 
+/*! \brief Message type for named ACL changes */
+STASIS_MESSAGE_TYPE_DEFN(ast_named_acl_change_type);
+
 /*!
  * \internal
- * \brief Sends an update event corresponding to a given named ACL that has changed.
+ * \brief Sends a stasis message corresponding to a given named ACL that has changed or
+ *        that all ACLs have been updated and old copies must be refreshed. Consumers of
+ *        named ACLs should subscribe to the ast_security_topic and respond to messages
+ *        of the ast_named_acl_change_type stasis message type in order to be able to
+ *        accommodate changes to named ACLs.
  *
  * \param name Name of the ACL that has changed. May be an empty string (but not NULL)
  *        If name is an empty string, then all ACLs must be refreshed.
@@ -379,23 +374,38 @@ struct ast_ha *ast_named_acl_find(const char *name, int *is_realtime, int *is_un
  * \retval 0 success
  * \retval 1 failure
  */
-static int push_acl_change_event(char *name)
+static int publish_acl_change(const char *name)
 {
-	struct ast_event *event = ast_event_new(AST_EVENT_ACL_CHANGE,
-							AST_EVENT_IE_DESCRIPTION, AST_EVENT_IE_PLTYPE_STR, name,
-							AST_EVENT_IE_END);
-	if (!event) {
-		ast_log(LOG_ERROR, "Failed to allocate acl.conf reload event. Some modules will have out of date ACLs.\n");
-		return -1;
+	RAII_VAR(struct stasis_message *, msg, NULL, ao2_cleanup);
+	RAII_VAR(struct ast_json_payload *, json_payload, NULL, ao2_cleanup);
+	RAII_VAR(struct ast_json *, json_object, ast_json_object_create(), ast_json_unref);
+
+	if (!json_object || !ast_named_acl_change_type()) {
+		goto publish_failure;
 	}
 
-	if (ast_event_queue(event)) {
-		ast_event_destroy(event);
-		ast_log(LOG_ERROR, "Failed to queue acl.conf reload event. Some modules will have out of date ACLs.\n");
-		return -1;
+	if (ast_json_object_set(json_object, "name", ast_json_string_create(name))) {
+		goto publish_failure;
 	}
+
+	if (!(json_payload = ast_json_payload_create(json_object))) {
+		goto publish_failure;
+	}
+
+	msg = stasis_message_create(ast_named_acl_change_type(), json_payload);
+
+	if (!msg) {
+		goto publish_failure;
+	}
+
+	stasis_publish(ast_security_topic(), msg);
 
 	return 0;
+
+publish_failure:
+	ast_log(LOG_ERROR, "Failed to to issue ACL change message for %s.\n",
+		ast_strlen_zero(name) ? "all named ACLs" : name);
+	return -1;
 }
 
 /*!
@@ -423,7 +433,7 @@ int ast_named_acl_reload(void)
 	}
 
 	/* We need to push an ACL change event with no ACL name so that all subscribers update with all ACLs */
-	push_acl_change_event("");
+	publish_acl_change("");
 
 	return 0;
 }
@@ -559,6 +569,7 @@ static void named_acl_cleanup(void)
 {
 	ast_cli_unregister_multiple(cli_named_acl, ARRAY_LEN(cli_named_acl));
 
+	STASIS_MESSAGE_TYPE_CLEANUP(ast_named_acl_change_type);
 	aco_info_destroy(&cfg_info);
 	ao2_global_obj_release(globals);
 }
@@ -567,7 +578,9 @@ int ast_named_acl_init()
 {
 	ast_cli_register_multiple(cli_named_acl, ARRAY_LEN(cli_named_acl));
 
-	ast_register_atexit(named_acl_cleanup);
+	STASIS_MESSAGE_TYPE_INIT(ast_named_acl_change_type);
+
+	ast_register_cleanup(named_acl_cleanup);
 
 	if (aco_info_init(&cfg_info)) {
 		return 0;
@@ -577,10 +590,7 @@ int ast_named_acl_init()
 	aco_option_register(&cfg_info, "permit", ACO_EXACT, named_acl_types, NULL, OPT_ACL_T, 1, FLDSET(struct named_acl, ha));
 	aco_option_register(&cfg_info, "deny", ACO_EXACT, named_acl_types, NULL, OPT_ACL_T, 0, FLDSET(struct named_acl, ha));
 
-	if (aco_process_config(&cfg_info, 0)) {
-		aco_info_destroy(&cfg_info);
-		return 0;
-	}
+	aco_process_config(&cfg_info, 0);
 
 	return 0;
 }

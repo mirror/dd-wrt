@@ -27,7 +27,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 362307 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 430998 $")
 
 #include "asterisk/module.h"
 #include "asterisk/channel.h"
@@ -50,7 +50,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 362307 $")
 		</syntax>
 		<description>
 			<para>Calculates the group count for the specified group, or uses the
-			channel's current group if not specifed (and non-empty).</para>
+			channel's current group if not specified (and non-empty).</para>
 		</description>
 	</function>
 	<function name="GROUP_MATCH_COUNT" language="en_US">
@@ -103,6 +103,11 @@ static int group_count_function_read(struct ast_channel *chan, const char *cmd,
 	int ret = -1;
 	int count = -1;
 	char group[80] = "", category[80] = "";
+
+	if (!chan) {
+		ast_log(LOG_WARNING, "No channel was provided to %s function.\n", cmd);
+		return -1;
+	}
 
 	ast_app_group_split_group(data, group, sizeof(group), category,
 				  sizeof(category));
@@ -174,9 +179,14 @@ static int group_function_read(struct ast_channel *chan, const char *cmd,
 {
 	int ret = -1;
 	struct ast_group_info *gi = NULL;
-	
+
+	if (!chan) {
+		ast_log(LOG_WARNING, "No channel was provided to %s function.\n", cmd);
+		return -1;
+	}
+
 	ast_app_group_list_rdlock();
-	
+
 	for (gi = ast_app_group_list_head(); gi; gi = AST_LIST_NEXT(gi, group_list)) {
 		if (gi->chan != chan)
 			continue;
@@ -200,6 +210,11 @@ static int group_function_write(struct ast_channel *chan, const char *cmd,
 				char *data, const char *value)
 {
 	char grpcat[256];
+
+	if (!chan) {
+		ast_log(LOG_WARNING, "No channel was provided to %s function.\n", cmd);
+		return -1;
+	}
 
 	if (!value) {
 		return -1;

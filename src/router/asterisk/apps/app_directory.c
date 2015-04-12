@@ -26,12 +26,11 @@
  */
 
 /*** MODULEINFO
-	<depend>app_voicemail</depend>
 	<support_level>core</support_level>
  ***/
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 368751 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 425384 $")
 
 #include <ctype.h>
 
@@ -87,6 +86,12 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 368751 $")
 						argument will be used for the number of characters the user should enter.</para>
 						<argument name="n" required="true" />
 					</option>
+					<option name="a">
+						<para>Allow the caller to additionally enter an alias for a user in the
+						directory.  This option must be specified in addition to the
+						<literal>f</literal>, <literal>l</literal>, or <literal>b</literal>
+						option.</para>
+					</option>
 					<option name="m">
 						<para>Instead of reading each name sequentially and asking for
 						confirmation, create a menu of up to 8 names.</para>
@@ -105,6 +110,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 368751 $")
 				options may be specified. <emphasis>If more than one is specified</emphasis>, then Directory will act as 
 				if <replaceable>b</replaceable> was specified.  The number
 				of characters for the user to type defaults to <literal>3</literal>.</para></note>
+
 			</parameter>
 		</syntax>
 		<description>
@@ -115,6 +121,19 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 368751 $")
 			received and the extension to jump to exists:</para>
 			<para><literal>0</literal> - Jump to the 'o' extension, if it exists.</para>
 			<para><literal>*</literal> - Jump to the 'a' extension, if it exists.</para>
+			<para>This application will set the following channel variable before completion:</para>
+			<variablelist>
+				<variable name="DIRECTORY_RESULT">
+					<para>Reason Directory application exited.</para>
+					<value name="OPERATOR">User requested operator</value>
+					<value name="ASSISTANT">User requested assistant</value>
+					<value name="TIMEOUT">User allowed DTMF wait duration to pass without sending DTMF</value>
+					<value name="HANGUP">The channel hung up before the application finished</value>
+					<value name="SELECTED">User selected a user to call from the directory</value>
+					<value name="USEREXIT">User exited with '#' during selection</value>
+					<value name="FAILED">The application failed</value>
+				</variable>
+			</variablelist>
 		</description>
 	</application>
 
@@ -135,6 +154,7 @@ enum {
 	OPT_LISTBYEITHER =    OPT_LISTBYFIRSTNAME | OPT_LISTBYLASTNAME,
 	OPT_PAUSE =           (1 << 5),
 	OPT_NOANSWER =        (1 << 6),
+	OPT_ALIAS =           (1 << 7),
 };
 
 enum {
@@ -164,6 +184,7 @@ AST_APP_OPTIONS(directory_app_options, {
 	AST_APP_OPTION('v', OPT_FROMVOICEMAIL),
 	AST_APP_OPTION('m', OPT_SELECTFROMMENU),
 	AST_APP_OPTION('n', OPT_NOANSWER),
+	AST_APP_OPTION('a', OPT_ALIAS),
 });
 
 static int compare(const char *text, const char *template)
@@ -268,18 +289,24 @@ static int play_mailbox_owner(struct ast_channel *chan, const char *context,
 	const char *ext, const char *name, struct ast_flags *flags)
 {
 	int res = 0;
-	if ((res = ast_app_sayname(chan, ext, context)) >= 0) {
+	char *mailbox_id;
+
+	mailbox_id = ast_alloca(strlen(ext) + strlen(context) + 2);
+	sprintf(mailbox_id, "%s@%s", ext, context); /* Safe */
+
+	res = ast_app_sayname(chan, mailbox_id);
+	if (res >= 0) {
 		ast_stopstream(chan);
 		/* If Option 'e' was specified, also read the extension number with the name */
 		if (ast_test_flag(flags, OPT_SAYEXTENSION)) {
 			ast_stream_and_wait(chan, "vm-extension", AST_DIGIT_ANY);
-			res = ast_say_character_str(chan, ext, AST_DIGIT_ANY, ast_channel_language(chan));
+			res = ast_say_character_str(chan, ext, AST_DIGIT_ANY, ast_channel_language(chan), AST_SAY_CASE_NONE);
 		}
 	} else {
-		res = ast_say_character_str(chan, S_OR(name, ext), AST_DIGIT_ANY, ast_channel_language(chan));
+		res = ast_say_character_str(chan, S_OR(name, ext), AST_DIGIT_ANY, ast_channel_language(chan), AST_SAY_CASE_NONE);
 		if (!ast_strlen_zero(name) && ast_test_flag(flags, OPT_SAYEXTENSION)) {
 			ast_stream_and_wait(chan, "vm-extension", AST_DIGIT_ANY);
-			res = ast_say_character_str(chan, ext, AST_DIGIT_ANY, ast_channel_language(chan));
+			res = ast_say_character_str(chan, ext, AST_DIGIT_ANY, ast_channel_language(chan), AST_SAY_CASE_NONE);
 		}
 	}
 
@@ -301,6 +328,7 @@ static int select_entry(struct ast_channel *chan, const char *dialcontext, const
 		return -1;
 	}
 
+	pbx_builtin_setvar_helper(chan, "DIRECTORY_RESULT", "SELECTED");
 	return 0;
 }
 
@@ -341,6 +369,7 @@ static int select_item_seq(struct ast_channel *chan, struct directory_item **ite
 	
 			if (res == '0') { /* operator selected */
 				goto_exten(chan, dialcontext, "o");
+				pbx_builtin_setvar_helper(chan, "DIRECTORY_RESULT", "OPERATOR");
 				return '0';
 			} else if (res == '1') { /* Name selected */
 				return select_entry(chan, dialcontext, item, flags) ? -1 : 1;
@@ -349,6 +378,7 @@ static int select_item_seq(struct ast_channel *chan, struct directory_item **ite
 				break;
 			} else if (res == '#') {
 				/* Exit reading, continue in dialplan */
+				pbx_builtin_setvar_helper(chan, "DIRECTORY_RESULT", "USEREXIT");
 				return res;
 			}
 
@@ -414,6 +444,7 @@ static int select_item_menu(struct ast_channel *chan, struct directory_item **it
 		}
 
 		if (res && res > '0' && res < '1' + limit) {
+			pbx_builtin_setvar_helper(chan, "DIRECTORY_RESULT", "SELECTED");
 			return select_entry(chan, dialcontext, block[res - '1'], flags) ? -1 : 1;
 		}
 
@@ -427,17 +458,23 @@ static int select_item_menu(struct ast_channel *chan, struct directory_item **it
 	return 0;
 }
 
+AST_THREADSTORAGE(commonbuf);
+
 static struct ast_config *realtime_directory(char *context)
 {
 	struct ast_config *cfg;
-	struct ast_config *rtdata;
+	struct ast_config *rtdata = NULL;
 	struct ast_category *cat;
 	struct ast_variable *var;
 	char *mailbox;
 	const char *fullname;
 	const char *hidefromdir, *searchcontexts = NULL;
-	char tmp[100];
 	struct ast_flags config_flags = { 0 };
+	struct ast_str *tmp = ast_str_thread_get(&commonbuf, 100);
+
+	if (!tmp) {
+		return NULL;
+	}
 
 	/* Load flat file config. */
 	cfg = ast_config_load(VOICEMAIL_CONFIG, config_flags);
@@ -461,7 +498,7 @@ static struct ast_config *realtime_directory(char *context)
 			rtdata = ast_load_realtime_multientry("voicemail", "mailbox LIKE", "%", "context", "default", SENTINEL);
 			context = "default";
 		}
-	} else {
+	} else if (!ast_strlen_zero(context)) {
 		rtdata = ast_load_realtime_multientry("voicemail", "mailbox LIKE", "%", "context", context, SENTINEL);
 	}
 
@@ -472,6 +509,7 @@ static struct ast_config *realtime_directory(char *context)
 
 	mailbox = NULL;
 	while ( (mailbox = ast_category_browse(rtdata, mailbox)) ) {
+		struct ast_variable *alias;
 		const char *ctx = ast_variable_retrieve(rtdata, mailbox, "context");
 
 		fullname = ast_variable_retrieve(rtdata, mailbox, "fullname");
@@ -480,10 +518,17 @@ static struct ast_config *realtime_directory(char *context)
 			/* Skip hidden */
 			continue;
 		}
-		snprintf(tmp, sizeof(tmp), "no-password,%s", S_OR(fullname, ""));
+		ast_str_set(&tmp, 0, "no-password,%s", S_OR(fullname, ""));
+		if (ast_variable_retrieve(rtdata, mailbox, "alias")) {
+			for (alias = ast_variable_browse(rtdata, mailbox); alias; alias = alias->next) {
+				if (!strcasecmp(alias->name, "alias")) {
+					ast_str_append(&tmp, 0, "|alias=%s", alias->value);
+				}
+			}
+		}
 
 		/* Does the context exist within the config file? If not, make one */
-		if (!(cat = ast_category_get(cfg, ctx))) {
+		if (!(cat = ast_category_get(cfg, ctx, NULL))) {
 			if (!(cat = ast_category_new(ctx, "", 99999))) {
 				ast_log(LOG_WARNING, "Out of memory\n");
 				ast_config_destroy(cfg);
@@ -495,7 +540,7 @@ static struct ast_config *realtime_directory(char *context)
 			ast_category_append(cfg, cat);
 		}
 
-		if ((var = ast_variable_new(mailbox, tmp, ""))) {
+		if ((var = ast_variable_new(mailbox, ast_str_buffer(tmp), ""))) {
 			ast_variable_append(cat, var);
 		} else {
 			ast_log(LOG_WARNING, "Out of memory adding mailbox '%s'\n", mailbox);
@@ -556,20 +601,26 @@ typedef AST_LIST_HEAD_NOLOCK(, directory_item) itemlist;
 static int search_directory_sub(const char *context, struct ast_config *vmcfg, struct ast_config *ucfg, const char *ext, struct ast_flags flags, itemlist *alist)
 {
 	struct ast_variable *v;
-	char buf[AST_MAX_EXTENSION + 1], *pos, *bufptr, *cat;
+	struct ast_str *buf = ast_str_thread_get(&commonbuf, 100);
+	char *pos, *bufptr, *cat, *alias;
 	struct directory_item *item;
 	int res;
+
+	if (!buf) {
+		return -1;
+	}
 
 	ast_debug(2, "Pattern: %s\n", ext);
 
 	for (v = ast_variable_browse(vmcfg, context); v; v = v->next) {
 
 		/* Ignore hidden */
-		if (strcasestr(v->value, "hidefromdir=yes"))
+		if (strcasestr(v->value, "hidefromdir=yes")) {
 			continue;
+		}
 
-		ast_copy_string(buf, v->value, sizeof(buf));
-		bufptr = buf;
+		ast_str_set(&buf, 0, "%s", v->value);
+		bufptr = ast_str_buffer(buf);
 
 		/* password,Full Name,email,pager,options */
 		strsep(&bufptr, ",");
@@ -587,11 +638,23 @@ static int search_directory_sub(const char *context, struct ast_config *vmcfg, s
 		if (!res && ast_test_flag(&flags, OPT_LISTBYFIRSTNAME)) {
 			res = check_match(&item, context, pos, v->name, ext, 1 /* use_first_name */);
 		}
+		if (!res && ast_test_flag(&flags, OPT_ALIAS) && (alias = strcasestr(bufptr, "alias="))) {
+			char *a;
+			ast_debug(1, "Found alias: %s\n", alias);
+			while ((a = strsep(&alias, "|"))) {
+				if (!strncasecmp(a, "alias=", 6)) {
+					if ((res = check_match(&item, context, a + 6, v->name, ext, 1))) {
+						break;
+					}
+				}
+			}
+		}
 
-		if (!res)
+		if (!res) {
 			continue;
-		else if (res < 0)
+		} else if (res < 0) {
 			return -1;
+		}
 
 		AST_LIST_INSERT_TAIL(alist, item, entry);
 	}
@@ -599,15 +662,18 @@ static int search_directory_sub(const char *context, struct ast_config *vmcfg, s
 	if (ucfg) {
 		for (cat = ast_category_browse(ucfg, NULL); cat ; cat = ast_category_browse(ucfg, cat)) {
 			const char *position;
-			if (!strcasecmp(cat, "general"))
+
+			if (!strcasecmp(cat, "general")) {
 				continue;
-			if (!ast_true(ast_config_option(ucfg, cat, "hasdirectory")))
+			}
+			if (!ast_true(ast_config_option(ucfg, cat, "hasdirectory"))) {
 				continue;
+			}
 
 			/* Find all candidate extensions */
-			position = ast_variable_retrieve(ucfg, cat, "fullname");
-			if (!position)
+			if (!(position = ast_variable_retrieve(ucfg, cat, "fullname"))) {
 				continue;
+			}
 
 			res = 0;
 			if (ast_test_flag(&flags, OPT_LISTBYLASTNAME)) {
@@ -616,11 +682,20 @@ static int search_directory_sub(const char *context, struct ast_config *vmcfg, s
 			if (!res && ast_test_flag(&flags, OPT_LISTBYFIRSTNAME)) {
 				res = check_match(&item, context, position, cat, ext, 1 /* use_first_name */);
 			}
+			if (!res && ast_test_flag(&flags, OPT_ALIAS)) {
+				struct ast_variable *alias;
+				for (alias = ast_variable_browse(ucfg, cat); alias; alias = alias->next) {
+					if (!strcasecmp(v->name, "alias") && (res = check_match(&item, context, v->value, cat, ext, 1))) {
+						break;
+					}
+				}
+			}
 
-			if (!res)
+			if (!res) {
 				continue;
-			else if (res < 0)
+			} else if (res < 0) {
 				return -1;
+			}
 
 			AST_LIST_INSERT_TAIL(alist, item, entry);
 		}
@@ -689,10 +764,12 @@ static int do_directory(struct ast_channel *chan, struct ast_config *vmcfg, stru
 	char ext[10] = "";
 
 	if (digit == '0' && !goto_exten(chan, dialcontext, "o")) {
+		pbx_builtin_setvar_helper(chan, "DIRECTORY_RESULT", "OPERATOR");
 		return digit;
 	}
 
 	if (digit == '*' && !goto_exten(chan, dialcontext, "a")) {
+		pbx_builtin_setvar_helper(chan, "DIRECTORY_RESULT", "ASSISTANT");
 		return digit;
 	}
 
@@ -857,8 +934,12 @@ static int directory_exec(struct ast_channel *chan, const char *data)
 		if (!res)
 			res = ast_waitfordigit(chan, 5000);
 
-		if (res <= 0)
+		if (res <= 0) {
+			if (res == 0) {
+				pbx_builtin_setvar_helper(chan, "DIRECTORY_RESULT", "TIMEOUT");
+			}
 			break;
+		}
 
 		res = do_directory(chan, cfg, ucfg, args.vmcontext, args.dialcontext, res, digit, &flags, opts);
 		if (res)
@@ -866,14 +947,21 @@ static int directory_exec(struct ast_channel *chan, const char *data)
 
 		res = ast_waitstream(chan, AST_DIGIT_ANY);
 		ast_stopstream(chan);
-
-		if (res)
+		if (res < 0) {
 			break;
+		}
 	}
 
 	if (ucfg)
 		ast_config_destroy(ucfg);
 	ast_config_destroy(cfg);
+
+	if (ast_check_hangup(chan)) {
+		pbx_builtin_setvar_helper(chan, "DIRECTORY_RESULT", "HANGUP");
+	} else if (res < 0) {
+		/* If the res < 0 and we didn't hangup, an unaccounted for error must have happened. */
+		pbx_builtin_setvar_helper(chan, "DIRECTORY_RESULT", "FAILED");
+	}
 
 	return res < 0 ? -1 : 0;
 }

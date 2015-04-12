@@ -31,7 +31,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 373954 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 374030 $")
 
 #include "asterisk/pbx.h"
 #include "asterisk/module.h"
@@ -47,7 +47,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 373954 $")
 		<syntax>
 			<parameter name="digits" required="true">
 				<para>List of digits 0-9,*#,a-d,A-D to send also w for a half second pause,
-				and f or F for a flash-hook if the channel supports
+				W for a one second pause, and f or F for a flash-hook if the channel supports
 				flash-hook.</para>
 			</parameter>
 			<parameter name="timeout_ms" required="false">
@@ -78,6 +78,9 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 373954 $")
 			</parameter>
 			<parameter name="Digit" required="true">
 				<para>The DTMF digit to play.</para>
+			</parameter>
+			<parameter name="Duration" required="false">
+				<para>The duration, in milliseconds, of the digit to be played.</para>
 			</parameter>
 		</syntax>
 		<description>
@@ -145,7 +148,9 @@ static int manager_play_dtmf(struct mansession *s, const struct message *m)
 {
 	const char *channel = astman_get_header(m, "Channel");
 	const char *digit = astman_get_header(m, "Digit");
+	const char *duration = astman_get_header(m, "Duration");
 	struct ast_channel *chan;
+	unsigned int duration_ms = 0;
 
 	if (!(chan = ast_channel_get_by_name(channel))) {
 		astman_send_error(s, m, "Channel not found");
@@ -157,8 +162,14 @@ static int manager_play_dtmf(struct mansession *s, const struct message *m)
 		chan = ast_channel_unref(chan);
 		return 0;
 	}
+	
+	if (!ast_strlen_zero(duration) && (sscanf(duration, "%30u", &duration_ms) != 1)) {
+		astman_send_error(s, m, "Could not convert Duration parameter");
+		chan = ast_channel_unref(chan);
+		return 0;
+	}
 
-	ast_senddigit(chan, *digit, 0);
+	ast_senddigit(chan, *digit, duration_ms);
 
 	chan = ast_channel_unref(chan);
 

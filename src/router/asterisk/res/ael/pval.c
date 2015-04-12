@@ -29,7 +29,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 370655 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 418019 $")
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -56,11 +56,9 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 370655 $")
 #endif
 #include "asterisk/utils.h"
 
-extern struct ast_flags ast_compat;
 extern int localized_pbx_load_module(void);
 
 static char expr_output[2096];
-#define AST_PBX_MAX_STACK  128
 #define BUF_SIZE 2000
 
 /* these functions are in ../ast_expr2.fl */
@@ -1389,7 +1387,7 @@ static void find_pval_goto_item(pval *item, int lev)
 	struct pval *p4;
 	
 	if (lev>100) {
-		ast_log(LOG_ERROR,"find_pval_goto in infinite loop! item_type: %d\n\n", item->type);
+		ast_log(LOG_ERROR,"find_pval_goto in infinite loop! item_type: %u\n\n", item->type);
 		return;
 	}
 	
@@ -3385,11 +3383,7 @@ static int gen_prios(struct ael_extension *exten, char *label, pval *statement, 
 					for (first = 1; first >= 0; first--) {
 						switch_set = new_prio();
 						switch_set->type = AEL_APPCALL;
-						if (!ast_compat_app_set) {
-							switch_set->app = strdup("MSet");
-						} else {
-							switch_set->app = strdup("Set");
-						}
+						switch_set->app = strdup("MSet");
 						/* Are we likely inside a gosub subroutine? */
 						if (!strcmp(mother_exten->name, "~~s~~") && first) {
 							/* If we're not actually within a gosub, this will fail, but the
@@ -3414,11 +3408,7 @@ static int gen_prios(struct ael_extension *exten, char *label, pval *statement, 
 					for (first = 1; first >= 0; first--) {
 						switch_set = new_prio();
 						switch_set->type = AEL_APPCALL;
-						if (!ast_compat_app_set) {
-							switch_set->app = strdup("MSet");
-						} else {
-							switch_set->app = strdup("Set");
-						}
+						switch_set->app = strdup("MSet");
 						/* Are we likely inside a gosub subroutine? */
 						if (!strcmp(exten->name, "~~s~~")) {
 							/* If we're not actually within a gosub, this will fail, but the
@@ -3454,11 +3444,7 @@ static int gen_prios(struct ael_extension *exten, char *label, pval *statement, 
 			pr = new_prio();
 			pr->type = AEL_APPCALL;
 			snprintf(buf1, BUF_SIZE, "%s=$[%s]", p->u1.str, p->u2.val);
-			if (!ast_compat_app_set) {
-				pr->app = strdup("MSet");
-			} else {
-				pr->app = strdup("Set");
-			}
+			pr->app = strdup("MSet");
 			remove_spaces_before_equals(buf1);
 			pr->appargs = strdup(buf1);
 			pr->origin = p;
@@ -3469,11 +3455,7 @@ static int gen_prios(struct ael_extension *exten, char *label, pval *statement, 
 			pr = new_prio();
 			pr->type = AEL_APPCALL;
 			snprintf(buf1, BUF_SIZE, "LOCAL(%s)=$[%s]", p->u1.str, p->u2.val);
-			if (!ast_compat_app_set) {
-				pr->app = strdup("MSet");
-			} else {
-				pr->app = strdup("Set");
-			}
+			pr->app = strdup("MSet");
 			remove_spaces_before_equals(buf1);
 			pr->appargs = strdup(buf1);
 			pr->origin = p;
@@ -3536,11 +3518,7 @@ static int gen_prios(struct ael_extension *exten, char *label, pval *statement, 
 			for_test->goto_false = for_end;
 			for_loop->type = AEL_CONTROL1; /* simple goto */
 			for_end->type = AEL_APPCALL;
-			if (!ast_compat_app_set) {
-				for_init->app = strdup("MSet");
-			} else {
-				for_init->app = strdup("Set");
-			}
+			for_init->app = strdup("MSet");
 			
 			strcpy(buf2,p->u1.for_init);
 			remove_spaces_before_equals(buf2);
@@ -3601,11 +3579,7 @@ static int gen_prios(struct ael_extension *exten, char *label, pval *statement, 
 				strncat(buf2,strp2+1, BUF_SIZE-strlen(strp2+1)-2);
 				strcat(buf2,"]");
 				for_inc->appargs = strdup(buf2);
-				if (!ast_compat_app_set) {
-					for_inc->app = strdup("MSet");
-				} else {
-					for_inc->app = strdup("Set");
-				}
+				for_inc->app = strdup("MSet");
 			} else {
 				strp2 = p->u3.for_inc;
 				while (*strp2 && isspace(*strp2))
@@ -4490,11 +4464,7 @@ int ast_compile_ael2(struct ast_context **local_contexts, struct ast_hashtab *lo
 				/* for each arg, set up a "Set" command */
 				struct ael_priority *np2 = new_prio();
 				np2->type = AEL_APPCALL;
-				if (!ast_compat_app_set) {
-					np2->app = strdup("MSet");
-				} else {
-					np2->app = strdup("Set");
-				}
+				np2->app = strdup("MSet");
 				snprintf(buf,sizeof(buf),"LOCAL(%s)=${ARG%d}", lp->u1.str, argc++);
 				remove_spaces_before_equals(buf);
 				np2->appargs = strdup(buf);

@@ -32,7 +32,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 377883 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 427876 $")
 
 #include "asterisk/_private.h"
 #include "asterisk/stun.h"
@@ -182,7 +182,7 @@ static int stun_process_attr(struct stun_state *state, struct stun_attr *attr)
 {
 	if (stundebug)
 		ast_verbose("Found STUN Attribute %s (%04x), length %d\n",
-			    stun_attr2str(ntohs(attr->attr)), ntohs(attr->attr), ntohs(attr->len));
+			    stun_attr2str(ntohs(attr->attr)), (unsigned)ntohs(attr->attr), ntohs(attr->len));
 	switch (ntohs(attr->attr)) {
 	case STUN_USERNAME:
 		state->username = (const char *) (attr->value);
@@ -193,7 +193,7 @@ static int stun_process_attr(struct stun_state *state, struct stun_attr *attr)
 	default:
 		if (stundebug)
 			ast_verbose("Ignoring STUN attribute %s (%04x), length %d\n",
-				    stun_attr2str(ntohs(attr->attr)), ntohs(attr->attr), ntohs(attr->len));
+				    stun_attr2str(ntohs(attr->attr)), (unsigned)ntohs(attr->attr), ntohs(attr->len));
 	}
 	return 0;
 }
@@ -201,12 +201,15 @@ static int stun_process_attr(struct stun_state *state, struct stun_attr *attr)
 /*! \brief append a string to an STUN message */
 static void append_attr_string(struct stun_attr **attr, int attrval, const char *s, int *len, int *left)
 {
-	int size = sizeof(**attr) + strlen(s);
+	int str_length = strlen(s);
+	int attr_length = str_length + ((~(str_length - 1)) & 0x3);
+	int size = sizeof(**attr) + attr_length;
 	if (*left > size) {
 		(*attr)->attr = htons(attrval);
-		(*attr)->len = htons(strlen(s));
-		memcpy((*attr)->value, s, strlen(s));
-		(*attr) = (struct stun_attr *)((*attr)->value + strlen(s));
+		(*attr)->len = htons(attr_length);
+		memcpy((*attr)->value, s, str_length);
+		memset((*attr)->value + str_length, 0, attr_length - str_length);
+		(*attr) = (struct stun_attr *)((*attr)->value + attr_length);
 		*len += size;
 		*left -= size;
 	}
@@ -281,7 +284,7 @@ int ast_stun_handle_packet(int s, struct sockaddr_in *src, unsigned char *data, 
 	data += sizeof(struct stun_header);
 	x = ntohs(hdr->msglen);	/* len as advertised in the message */
 	if (stundebug)
-		ast_verbose("STUN Packet, msg %s (%04x), length: %d\n", stun_msg2str(ntohs(hdr->msgtype)), ntohs(hdr->msgtype), x);
+		ast_verbose("STUN Packet, msg %s (%04x), length: %d\n", stun_msg2str(ntohs(hdr->msgtype)), (unsigned)ntohs(hdr->msgtype), x);
 	if (x > len) {
 		ast_debug(1, "Scrambled STUN packet length (got %d, expecting %d)\n", x, (int)len);
 	} else
@@ -302,7 +305,7 @@ int ast_stun_handle_packet(int s, struct sockaddr_in *src, unsigned char *data, 
 		if (stun_cb)
 			stun_cb(attr, arg);
 		if (stun_process_attr(&st, attr)) {
-			ast_debug(1, "Failed to handle attribute %s (%04x)\n", stun_attr2str(ntohs(attr->attr)), ntohs(attr->attr));
+			ast_debug(1, "Failed to handle attribute %s (%04x)\n", stun_attr2str(ntohs(attr->attr)), (unsigned)ntohs(attr->attr));
 			break;
 		}
 		/* Clear attribute id: in case previous entry was a string,
@@ -353,7 +356,7 @@ int ast_stun_handle_packet(int s, struct sockaddr_in *src, unsigned char *data, 
 			break;
 		default:
 			if (stundebug)
-				ast_verbose("Dunno what to do with STUN message %04x (%s)\n", ntohs(hdr->msgtype), stun_msg2str(ntohs(hdr->msgtype)));
+				ast_verbose("Dunno what to do with STUN message %04x (%s)\n", (unsigned)ntohs(hdr->msgtype), stun_msg2str(ntohs(hdr->msgtype)));
 		}
 	}
 	return ret;

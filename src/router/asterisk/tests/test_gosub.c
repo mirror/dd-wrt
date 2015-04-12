@@ -20,7 +20,7 @@
  * \file
  * \brief Gosub tests
  *
- * \author\verbatim Tilghman Lesher <tlesher AT digium DOT com> \endverbatim
+ * \author Tilghman Lesher \verbatim <tlesher AT digium DOT com> \endverbatim
  *
  * \ingroup tests
  */
@@ -32,7 +32,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 358812 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 389251 $")
 
 #include "asterisk/utils.h"
 #include "asterisk/module.h"

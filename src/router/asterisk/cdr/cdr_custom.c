@@ -30,13 +30,22 @@
  * \ingroup cdr_drivers
  */
 
+/*! \li \ref cdr_custom.c uses the configuration file \ref cdr_custom.conf
+ * \addtogroup configuration_file Configuration Files
+ */
+
+/*!
+ * \page cdr_custom.conf cdr_custom.conf
+ * \verbinclude cdr_custom.conf.sample
+ */
+
 /*** MODULEINFO
 	<support_level>core</support_level>
  ***/
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 356042 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419592 $")
 
 #include <time.h>
 
@@ -58,20 +67,20 @@ AST_THREADSTORAGE(custom_buf);
 
 static const char name[] = "cdr-custom";
 
-struct cdr_config {
+struct cdr_custom_config {
 	AST_DECLARE_STRING_FIELDS(
 		AST_STRING_FIELD(filename);
 		AST_STRING_FIELD(format);
 		);
 	ast_mutex_t lock;
-	AST_RWLIST_ENTRY(cdr_config) list;
+	AST_RWLIST_ENTRY(cdr_custom_config) list;
 };
 
-static AST_RWLIST_HEAD_STATIC(sinks, cdr_config);
+static AST_RWLIST_HEAD_STATIC(sinks, cdr_custom_config);
 
 static void free_config(void)
 {
-	struct cdr_config *sink;
+	struct cdr_custom_config *sink;
 	while ((sink = AST_RWLIST_REMOVE_HEAD(&sinks, list))) {
 		ast_mutex_destroy(&sink->lock);
 		ast_free(sink);
@@ -94,7 +103,7 @@ static int load_config(void)
 	var = ast_variable_browse(cfg, "mappings");
 	while (var) {
 		if (!ast_strlen_zero(var->name) && !ast_strlen_zero(var->value)) {
-			struct cdr_config *sink = ast_calloc_with_stringfields(1, struct cdr_config, 1024);
+			struct cdr_custom_config *sink = ast_calloc_with_stringfields(1, struct cdr_custom_config, 1024);
 
 			if (!sink) {
 				ast_log(LOG_ERROR, "Unable to allocate memory for configuration settings.\n");
@@ -121,7 +130,7 @@ static int custom_log(struct ast_cdr *cdr)
 {
 	struct ast_channel *dummy;
 	struct ast_str *str;
-	struct cdr_config *config;
+	struct cdr_custom_config *config;
 
 	/* Batching saves memory management here.  Otherwise, it's the same as doing an allocation and free each time. */
 	if (!(str = ast_str_thread_get(&custom_buf, 16))) {
@@ -175,7 +184,9 @@ static int custom_log(struct ast_cdr *cdr)
 
 static int unload_module(void)
 {
-	ast_cdr_unregister(name);
+	if (ast_cdr_unregister(name)) {
+		return -1;
+	}
 
 	if (AST_RWLIST_WRLOCK(&sinks)) {
 		ast_cdr_register(name, ast_module_info->description, custom_log);
@@ -215,6 +226,7 @@ static int reload(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "Customizable Comma Separated Values CDR Backend",
+		.support_level = AST_MODULE_SUPPORT_CORE,
 		.load = load_module,
 		.unload = unload_module,
 		.reload = reload,

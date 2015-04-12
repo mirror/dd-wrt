@@ -33,6 +33,9 @@ struct ast_dial;
 /*! \brief Dialing channel structure. Contains per-channel dialing options, asterisk channel, and more! */
 struct ast_dial_channel;
 
+/*! \brief Forward declaration for format capabilities, used in prerun */
+struct ast_format_cap;
+
 typedef void (*ast_dial_state_callback)(struct ast_dial *);
 
 /*! \brief List of options that are applicable either globally or per dialed channel */
@@ -41,6 +44,9 @@ enum ast_dial_option {
 	AST_DIAL_OPTION_ANSWER_EXEC,             /*!< Execute application upon answer in async mode */
 	AST_DIAL_OPTION_MUSIC,                   /*!< Play music on hold instead of ringing to the calling channel */
 	AST_DIAL_OPTION_DISABLE_CALL_FORWARDING, /*!< Disable call forwarding on channels */
+	AST_DIAL_OPTION_PREDIAL,                 /*!< Execute a predial subroutine before dialing */
+	AST_DIAL_OPTION_DIAL_REPLACES_SELF,      /*!< The dial operation is a replacement for the requester */
+	AST_DIAL_OPTION_SELF_DESTROY,            /*!< Destroy self at end of ast_dial_run */
 	AST_DIAL_OPTION_MAX,                     /*!< End terminator -- must always remain last */
 };
 
@@ -68,7 +74,16 @@ struct ast_dial *ast_dial_create(void);
  * \note Appends a channel to a dialing structure
  * \return Returns channel reference number on success, -1 on failure
  */
-int ast_dial_append(struct ast_dial *dial, const char *tech, const char *device);
+int ast_dial_append(struct ast_dial *dial, const char *tech, const char *device, const struct ast_assigned_ids *assignedids);
+
+/*! \brief Request all appended channels, but do not dial
+ * \param dial Dialing structure
+ * \param chan Optional dialing channel
+ * \param cap Optional requested capabilities
+ * \retval -1 failure
+ * \reval 0 success
+ */
+int ast_dial_prerun(struct ast_dial *dial, struct ast_channel *chan, struct ast_format_cap *cap);
 
 /*! \brief Execute dialing synchronously or asynchronously
  * \note Dials channels in a dial structure.
@@ -145,6 +160,20 @@ int ast_dial_option_global_disable(struct ast_dial *dial, enum ast_dial_option o
  */
 int ast_dial_option_disable(struct ast_dial *dial, int num, enum ast_dial_option option);
 
+/*! \brief Get the reason an outgoing channel has failed
+ * \param dial Dial structure
+ * \param num Channel number to get the reason from
+ * \return Numerical cause code
+ */
+int ast_dial_reason(struct ast_dial *dial, int num);
+
+/*! \brief Get the dialing channel, if prerun has been executed
+ * \param dial Dial structure
+ * \param num Channel number to get channel of
+ * \return Pointer to channel, without reference
+ */
+struct ast_channel *ast_dial_get_channel(struct ast_dial *dial, int num);
+
 /*! \brief Set a callback for state changes
  * \param dial The dial structure to watch for state changes
  * \param callback the callback
@@ -179,6 +208,11 @@ void ast_dial_set_global_timeout(struct ast_dial *dial, int timeout);
  * \return nothing
  */
 void ast_dial_set_timeout(struct ast_dial *dial, int num, int timeout);
+
+/*! \since 12
+ * \brief Convert a hangup cause to a publishable dial status
+ */
+const char *ast_hangup_cause_to_dial_status(int hangup_cause);
 
 #if defined(__cplusplus) || defined(c_plusplus)
 }

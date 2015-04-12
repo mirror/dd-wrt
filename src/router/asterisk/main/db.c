@@ -33,7 +33,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 375763 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 430434 $")
 
 #include "asterisk/_private.h"
 #include "asterisk/paths.h"	/* use ast_config_AST_DB */
@@ -112,6 +112,7 @@ static ast_cond_t dbcond;
 static sqlite3 *astdb;
 static pthread_t syncthread;
 static int doexit;
+static int dosync;
 
 static void db_sync(void);
 
@@ -145,12 +146,14 @@ static int init_stmt(sqlite3_stmt **stmt, const char *sql, size_t len)
  * \brief Clean up the prepared SQLite3 statement
  * \note dblock should already be locked prior to calling this method
  */
-static int clean_stmt(sqlite3_stmt *stmt, const char *sql)
+static int clean_stmt(sqlite3_stmt **stmt, const char *sql)
 {
-	if (sqlite3_finalize(stmt) != SQLITE_OK) {
+	if (sqlite3_finalize(*stmt) != SQLITE_OK) {
 		ast_log(LOG_WARNING, "Couldn't finalize statement '%s': %s\n", sql, sqlite3_errmsg(astdb));
+		*stmt = NULL;
 		return -1;
 	}
+	*stmt = NULL;
 	return 0;
 }
 
@@ -160,15 +163,15 @@ static int clean_stmt(sqlite3_stmt *stmt, const char *sql)
  */
 static void clean_statements(void)
 {
-	clean_stmt(get_stmt, get_stmt_sql);
-	clean_stmt(del_stmt, del_stmt_sql);
-	clean_stmt(deltree_stmt, deltree_stmt_sql);
-	clean_stmt(deltree_all_stmt, deltree_all_stmt_sql);
-	clean_stmt(gettree_stmt, gettree_stmt_sql);
-	clean_stmt(gettree_all_stmt, gettree_all_stmt_sql);
-	clean_stmt(showkey_stmt, showkey_stmt_sql);
-	clean_stmt(put_stmt, put_stmt_sql);
-	clean_stmt(create_astdb_stmt, create_astdb_stmt_sql);
+	clean_stmt(&get_stmt, get_stmt_sql);
+	clean_stmt(&del_stmt, del_stmt_sql);
+	clean_stmt(&deltree_stmt, deltree_stmt_sql);
+	clean_stmt(&deltree_all_stmt, deltree_all_stmt_sql);
+	clean_stmt(&gettree_stmt, gettree_stmt_sql);
+	clean_stmt(&gettree_all_stmt, gettree_all_stmt_sql);
+	clean_stmt(&showkey_stmt, showkey_stmt_sql);
+	clean_stmt(&put_stmt, put_stmt_sql);
+	clean_stmt(&create_astdb_stmt, create_astdb_stmt_sql);
 }
 
 static int init_statements(void)
@@ -254,6 +257,7 @@ static int db_open(void)
 		ast_mutex_unlock(&dblock);
 		return -1;
 	}
+
 	ast_mutex_unlock(&dblock);
 
 	return 0;
@@ -280,9 +284,8 @@ static int db_execute_sql(const char *sql, int (*callback)(void *, int, char **,
 	char *errmsg = NULL;
 	int res =0;
 
-	sqlite3_exec(astdb, sql, callback, arg, &errmsg);
-	if (errmsg) {
-		ast_log(LOG_WARNING, "Error executing SQL: %s\n", errmsg);
+	if (sqlite3_exec(astdb, sql, callback, arg, &errmsg) != SQLITE_OK) {
+		ast_log(LOG_WARNING, "Error executing SQL (%s): %s\n", sql, errmsg);
 		sqlite3_free(errmsg);
 		res = -1;
 	}
@@ -838,7 +841,7 @@ static int manager_dbput(struct mansession *s, const struct message *m)
 static int manager_dbget(struct mansession *s, const struct message *m)
 {
 	const char *id = astman_get_header(m,"ActionID");
-	char idText[256] = "";
+	char idText[256];
 	const char *family = astman_get_header(m, "Family");
 	const char *key = astman_get_header(m, "Key");
 	char tmp[MAX_DB_FIELD];
@@ -853,6 +856,7 @@ static int manager_dbget(struct mansession *s, const struct message *m)
 		return 0;
 	}
 
+	idText[0] = '\0';
 	if (!ast_strlen_zero(id))
 		snprintf(idText, sizeof(idText) ,"ActionID: %s\r\n", id);
 
@@ -860,7 +864,8 @@ static int manager_dbget(struct mansession *s, const struct message *m)
 	if (res) {
 		astman_send_error(s, m, "Database entry not found");
 	} else {
-		astman_send_ack(s, m, "Result will follow");
+		astman_send_listack(s, m, "Result will follow", "start");
+
 		astman_append(s, "Event: DBGetResponse\r\n"
 				"Family: %s\r\n"
 				"Key: %s\r\n"
@@ -868,10 +873,9 @@ static int manager_dbget(struct mansession *s, const struct message *m)
 				"%s"
 				"\r\n",
 				family, key, tmp, idText);
-		astman_append(s, "Event: DBGetComplete\r\n"
-				"%s"
-				"\r\n",
-				idText);
+
+		astman_send_list_complete_start(s, m, "DBGetComplete", 1);
+		astman_send_list_complete_end(s);
 	}
 	return 0;
 }
@@ -937,6 +941,7 @@ static int manager_dbdeltree(struct mansession *s, const struct message *m)
  */
 static void db_sync(void)
 {
+	dosync = 1;
 	ast_cond_signal(&dbcond);
 }
 
@@ -955,8 +960,14 @@ static void *db_sync_thread(void *data)
 	ast_mutex_lock(&dblock);
 	ast_db_begin_transaction();
 	for (;;) {
-		/* We're ok with spurious wakeups, so we don't worry about a predicate */
-		ast_cond_wait(&dbcond, &dblock);
+		/* If dosync is set, db_sync() was called during sleep(1), 
+		 * and the pending transaction should be committed. 
+		 * Otherwise, block until db_sync() is called.
+		 */
+		while (!dosync) {
+			ast_cond_wait(&dbcond, &dblock);
+		}
+		dosync = 0;
 		if (ast_db_commit_transaction()) {
 			ast_db_rollback_transaction();
 		}
@@ -968,21 +979,15 @@ static void *db_sync_thread(void *data)
 		ast_mutex_unlock(&dblock);
 		sleep(1);
 		ast_mutex_lock(&dblock);
-		/* Unfortunately, it is possible for signaling to happen
-		 * when we're not waiting: in the bit when we're unlocked
-		 * above. Do the do-exit check here again. (We could do
-		 * it once, but that would impose a forced delay of 1
-		 * second always.) */
-		if (doexit) {
-			ast_mutex_unlock(&dblock);
-			break;
-		}
 	}
 
 	return NULL;
 }
 
-/*! \internal \brief Clean up resources on Asterisk shutdown */
+/*!
+ * \internal
+ * \brief Clean up resources on Asterisk shutdown
+ */
 static void astdb_atexit(void)
 {
 	ast_cli_unregister_multiple(cli_database, ARRAY_LEN(cli_database));
@@ -993,8 +998,8 @@ static void astdb_atexit(void)
 
 	/* Set doexit to 1 to kill thread. db_sync must be called with
 	 * mutex held. */
-	doexit = 1;
 	ast_mutex_lock(&dblock);
+	doexit = 1;
 	db_sync();
 	ast_mutex_unlock(&dblock);
 

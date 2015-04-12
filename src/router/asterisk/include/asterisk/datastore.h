@@ -34,7 +34,7 @@ struct ast_datastore_info {
 	void (*destroy)(void *data);		/*!< Destroy function */
 
 	/*!
-	 * \brief Fix up channel references
+	 * \brief Fix up channel references on the masquerading channel
 	 *
 	 * \arg data The datastore data
 	 * \arg old_chan The old channel owning the datastore
@@ -48,6 +48,20 @@ struct ast_datastore_info {
 	 * \return nothing.
 	 */
 	void (*chan_fixup)(void *data, struct ast_channel *old_chan, struct ast_channel *new_chan);
+
+	/*!
+	 * \brief Fix up channel references on the channel being masqueraded into
+	 *
+	 * \arg data The datastore data
+	 * \arg old_chan The old channel owning the datastore
+	 * \arg new_chan The new channel owning the datastore
+	 *
+	 * This is the same as the above callback, except it is called for the channel
+	 * being masqueraded into instead of the channel that is masquerading.
+	 *
+	 * \return nothing.
+	 */
+	void (*chan_breakdown)(void *data, struct ast_channel *old_chan, struct ast_channel *new_chan);
 };
 
 /*! \brief Structure for a data store object */
@@ -63,6 +77,7 @@ struct ast_datastore {
  * \brief Create a data store object
  * \param[in] info information describing the data store object
  * \param[in] uid unique identifer
+ * \param file, line, function
  * \version 1.6.1 moved here and renamed from ast_channel_datastore_alloc
  */
 struct ast_datastore * attribute_malloc __ast_datastore_alloc(const struct ast_datastore_info *info, const char *uid,

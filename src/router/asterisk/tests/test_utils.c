@@ -32,7 +32,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 356397 $");
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 422154 $");
 
 #include "asterisk/utils.h"
 #include "asterisk/test.h"
@@ -41,6 +41,8 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 356397 $");
 #include "asterisk/agi.h"
 #include "asterisk/channel.h"
 #include "asterisk/module.h"
+
+#include <sys/stat.h>
 
 AST_TEST_DEFINE(uri_encode_decode_test)
 {
@@ -200,7 +202,7 @@ AST_TEST_DEFINE(md5_test)
 	ast_test_status_update(test, "Testing MD5 ...\n");
 
 	for (i = 0; i < ARRAY_LEN(tests); i++) {
-		char md5_hash[32];
+		char md5_hash[33];
 		ast_md5_hash(md5_hash, tests[i].input);
 		if (strcasecmp(md5_hash, tests[i].expected_output)) {
 			ast_test_status_update(test,
@@ -421,6 +423,223 @@ AST_TEST_DEFINE(agi_loaded_test)
 	return res;
 }
 
+AST_TEST_DEFINE(safe_mkdir_test)
+{
+	char base_path[] = "/tmp/safe_mkdir.XXXXXX";
+	char path[80] = {};
+	int res;
+	struct stat actual;
+
+	switch (cmd) {
+	case TEST_INIT:
+		info->name = __func__;
+		info->category = "/main/utils/";
+		info->summary = "Safe mkdir test";
+		info->description =
+			"This test ensures that ast_safe_mkdir does what it is "
+			"supposed to";
+		return AST_TEST_NOT_RUN;
+	case TEST_EXECUTE:
+		break;
+	}
+
+	if (mkdtemp(base_path) == NULL) {
+		ast_test_status_update(test, "Failed to create tmpdir for test\n");
+		return AST_TEST_FAIL;
+	}
+
+	snprintf(path, sizeof(path), "%s/should_work", base_path);
+	res = ast_safe_mkdir(base_path, path, 0777);
+	ast_test_validate(test, 0 == res);
+	res = stat(path, &actual);
+	ast_test_validate(test, 0 == res);
+	ast_test_validate(test, S_ISDIR(actual.st_mode));
+
+	snprintf(path, sizeof(path), "%s/should/also/work", base_path);
+	res = ast_safe_mkdir(base_path, path, 0777);
+	ast_test_validate(test, 0 == res);
+	res = stat(path, &actual);
+	ast_test_validate(test, 0 == res);
+	ast_test_validate(test, S_ISDIR(actual.st_mode));
+
+	snprintf(path, sizeof(path), "%s/even/this/../should/work", base_path);
+	res = ast_safe_mkdir(base_path, path, 0777);
+	ast_test_validate(test, 0 == res);
+	snprintf(path, sizeof(path), "%s/even/should/work", base_path);
+	res = stat(path, &actual);
+	ast_test_validate(test, 0 == res);
+	ast_test_validate(test, S_ISDIR(actual.st_mode));
+
+	snprintf(path, sizeof(path),
+		"%s/surprisingly/this/should//////////////////work", base_path);
+	res = ast_safe_mkdir(base_path, path, 0777);
+	ast_test_validate(test, 0 == res);
+	snprintf(path, sizeof(path),
+		"%s/surprisingly/this/should/work", base_path);
+	res = stat(path, &actual);
+	ast_test_validate(test, 0 == res);
+	ast_test_validate(test, S_ISDIR(actual.st_mode));
+
+	snprintf(path, sizeof(path), "/should_not_work");
+	res = ast_safe_mkdir(base_path, path, 0777);
+	ast_test_validate(test, 0 != res);
+	ast_test_validate(test, EPERM == errno);
+	res = stat(path, &actual);
+	ast_test_validate(test, 0 != res);
+	ast_test_validate(test, ENOENT == errno);
+
+	snprintf(path, sizeof(path), "%s/../nor_should_this", base_path);
+	res = ast_safe_mkdir(base_path, path, 0777);
+	ast_test_validate(test, 0 != res);
+	ast_test_validate(test, EPERM == errno);
+	strncpy(path, "/tmp/nor_should_this", sizeof(path));
+	res = stat(path, &actual);
+	ast_test_validate(test, 0 != res);
+	ast_test_validate(test, ENOENT == errno);
+
+	snprintf(path, sizeof(path),
+		"%s/this/especially/should/not/../../../../../work", base_path);
+	res = ast_safe_mkdir(base_path, path, 0777);
+	ast_test_validate(test, 0 != res);
+	ast_test_validate(test, EPERM == errno);
+	strncpy(path, "/tmp/work", sizeof(path));
+	res = stat(path, &actual);
+	ast_test_validate(test, 0 != res);
+	ast_test_validate(test, ENOENT == errno);
+
+	return AST_TEST_PASS;
+}
+
+AST_TEST_DEFINE(crypt_test)
+{
+	RAII_VAR(char *, password_crypted, NULL, ast_free);
+	RAII_VAR(char *, blank_crypted, NULL, ast_free);
+	const char *password = "Passw0rd";
+	const char *not_a_password = "not-a-password";
+
+	switch (cmd) {
+	case TEST_INIT:
+		info->name = "crypt_test";
+		info->category = "/main/utils/";
+		info->summary = "Test ast_crypt wrappers";
+		info->description = "Verifies that the ast_crypt wrappers work as expected.";
+		return AST_TEST_NOT_RUN;
+	case TEST_EXECUTE:
+		break;
+	}
+
+	password_crypted = ast_crypt_encrypt(password);
+	ast_test_validate(test, NULL != password_crypted);
+	ast_test_validate(test, 0 != strcmp(password, password_crypted));
+	ast_test_validate(test, ast_crypt_validate(password, password_crypted));
+	ast_test_validate(test,
+		!ast_crypt_validate(not_a_password, password_crypted));
+
+	blank_crypted = ast_crypt_encrypt("");
+	ast_test_validate(test, NULL != blank_crypted);
+	ast_test_validate(test, 0 != strcmp(blank_crypted, ""));
+	ast_test_validate(test, ast_crypt_validate("", blank_crypted));
+	ast_test_validate(test,
+		!ast_crypt_validate(not_a_password, blank_crypted));
+
+	return AST_TEST_PASS;
+}
+
+
+struct quote_set {
+	char *input;
+	char *output;
+};
+
+AST_TEST_DEFINE(quote_mutation)
+{
+	char escaped[64];
+	static const struct quote_set escape_sets[] = {
+		{"\"string\"", "\\\"string\\\""},
+		{"\"string", "\\\"string"},
+		{"string\"", "string\\\""},
+		{"string", "string"},
+		{"str\"ing", "str\\\"ing"},
+		{"\"", "\\\""},
+		{"\\\"", "\\\\\\\""},
+	};
+	int i;
+
+	switch (cmd) {
+	case TEST_INIT:
+		info->name = "quote_mutation";
+		info->category = "/main/utils/";
+		info->summary = "Test mutation of quotes in strings";
+		info->description =
+			"This tests escaping and unescaping of quotes in strings to "
+			"verify that the original string is recovered.";
+		return AST_TEST_NOT_RUN;
+	case TEST_EXECUTE:
+		break;
+	}
+
+	for (i = 0; i < ARRAY_LEN(escape_sets); i++) {
+		ast_escape_quoted(escape_sets[i].input, escaped, sizeof(escaped));
+
+		if (strcmp(escaped, escape_sets[i].output)) {
+			ast_test_status_update(test,
+				"Expected escaped string '%s' instead of '%s'\n",
+				escape_sets[i].output, escaped);
+			return AST_TEST_FAIL;
+		}
+
+		ast_unescape_quoted(escaped);
+		if (strcmp(escaped, escape_sets[i].input)) {
+			ast_test_status_update(test,
+				"Expected unescaped string '%s' instead of '%s'\n",
+				escape_sets[i].input, escaped);
+			return AST_TEST_FAIL;
+		}
+	}
+
+	return AST_TEST_PASS;
+}
+
+AST_TEST_DEFINE(quote_unescaping)
+{
+	static const struct quote_set escape_sets[] = {
+		{"\"string\"", "\"string\""},
+		{"\\\"string\"", "\"string\""},
+		{"\"string\\\"", "\"string\""},
+		{"str\\ing", "string"},
+		{"string\\", "string"},
+		{"\\string", "string"},
+	};
+	int i;
+
+	switch (cmd) {
+	case TEST_INIT:
+		info->name = "quote_unescaping";
+		info->category = "/main/utils/";
+		info->summary = "Test unescaping of off-nominal strings";
+		info->description =
+			"This tests unescaping of strings which contain a mix of "
+			"escaped and unescaped sequences.";
+		return AST_TEST_NOT_RUN;
+	case TEST_EXECUTE:
+		break;
+	}
+
+	for (i = 0; i < ARRAY_LEN(escape_sets); i++) {
+		RAII_VAR(char *, escaped, ast_strdup(escape_sets[i].input), ast_free);
+
+		ast_unescape_quoted(escaped);
+		if (strcmp(escaped, escape_sets[i].output)) {
+			ast_test_status_update(test,
+				"Expected unescaped string '%s' instead of '%s'\n",
+				escape_sets[i].output, escaped);
+			return AST_TEST_FAIL;
+		}
+	}
+
+	return AST_TEST_PASS;
+}
+
 static int unload_module(void)
 {
 	AST_TEST_UNREGISTER(uri_encode_decode_test);
@@ -431,6 +650,10 @@ static int unload_module(void)
 	AST_TEST_UNREGISTER(crypto_loaded_test);
 	AST_TEST_UNREGISTER(adsi_loaded_test);
 	AST_TEST_UNREGISTER(agi_loaded_test);
+	AST_TEST_UNREGISTER(safe_mkdir_test);
+	AST_TEST_UNREGISTER(crypt_test);
+	AST_TEST_UNREGISTER(quote_mutation);
+	AST_TEST_UNREGISTER(quote_unescaping);
 	return 0;
 }
 
@@ -444,6 +667,10 @@ static int load_module(void)
 	AST_TEST_REGISTER(crypto_loaded_test);
 	AST_TEST_REGISTER(adsi_loaded_test);
 	AST_TEST_REGISTER(agi_loaded_test);
+	AST_TEST_REGISTER(safe_mkdir_test);
+	AST_TEST_REGISTER(crypt_test);
+	AST_TEST_REGISTER(quote_mutation);
+	AST_TEST_REGISTER(quote_unescaping);
 	return AST_MODULE_LOAD_SUCCESS;
 }
 

@@ -19,7 +19,7 @@
 /*! \file
  * \brief XMPP Interface
  * \author Joshua Colp <jcolp@digium.com>
- * \extref IKSEMEL http://iksemel.jabberstudio.org
+ * IKSEMEL http://iksemel.jabberstudio.org
  */
 
 #ifndef _ASTERISK_XMPP_H
@@ -47,6 +47,7 @@
 #include "asterisk/linkedlists.h"
 #include "asterisk/stringfields.h"
 #include "asterisk/pbx.h"
+#include "asterisk/stasis.h"
 
 /*
  * As per RFC 3920 - section 3.1, the maximum length for a full Jabber ID
@@ -68,74 +69,83 @@
 
 /*! \brief Client connection states */
 enum xmpp_state {
-        XMPP_STATE_DISCONNECTING,   /*!< Client is disconnecting */
-        XMPP_STATE_DISCONNECTED,    /*!< Client is disconnected */
-        XMPP_STATE_CONNECTING,      /*!< Client is connecting */
-        XMPP_STATE_REQUEST_TLS,     /*!< Client should request TLS */
-        XMPP_STATE_REQUESTED_TLS,   /*!< Client has requested TLS */
-        XMPP_STATE_AUTHENTICATE,    /*!< Client needs to authenticate */
-        XMPP_STATE_AUTHENTICATING,  /*!< Client is authenticating */
-        XMPP_STATE_ROSTER,          /*!< Client is currently getting the roster */
-        XMPP_STATE_CONNECTED,       /*!< Client is fully connected */
+	XMPP_STATE_DISCONNECTING,   /*!< Client is disconnecting */
+	XMPP_STATE_DISCONNECTED,    /*!< Client is disconnected */
+	XMPP_STATE_CONNECTING,      /*!< Client is connecting */
+	XMPP_STATE_REQUEST_TLS,     /*!< Client should request TLS */
+	XMPP_STATE_REQUESTED_TLS,   /*!< Client has requested TLS */
+	XMPP_STATE_AUTHENTICATE,    /*!< Client needs to authenticate */
+	XMPP_STATE_AUTHENTICATING,  /*!< Client is authenticating */
+	XMPP_STATE_ROSTER,          /*!< Client is currently getting the roster */
+	XMPP_STATE_CONNECTED,       /*!< Client is fully connected */
 };
 
 /*! \brief Resource capabilities */
 struct ast_xmpp_capabilities {
-        char node[200];        /*!< Node string from the capabilities stanza in presence notification */
-        char version[50];      /*!< Version string from the capabilities stanza in presence notification */
-        unsigned int jingle:1; /*!< Set if the resource supports Jingle */
-        unsigned int google:1; /*!< Set if the resource supports Google Talk */
+	char node[200];        /*!< Node string from the capabilities stanza in presence notification */
+	char version[50];      /*!< Version string from the capabilities stanza in presence notification */
+	unsigned int jingle:1; /*!< Set if the resource supports Jingle */
+	unsigned int google:1; /*!< Set if the resource supports Google Talk */
 };
 
 /*! \brief XMPP Resource */
 struct ast_xmpp_resource {
-        char resource[XMPP_MAX_RESJIDLEN]; /*!< JID of the resource */
-        int status;                        /*!< Current status of the resource */
-        char *description;                 /*!< Description of the resource */
-        int priority;                      /*!< Priority, used for deciding what resource to use */
-        struct ast_xmpp_capabilities caps; /*!< Capabilities of the resource */
+	char resource[XMPP_MAX_RESJIDLEN]; /*!< JID of the resource */
+	int status;                        /*!< Current status of the resource */
+	char *description;                 /*!< Description of the resource */
+	int priority;                      /*!< Priority, used for deciding what resource to use */
+	struct ast_xmpp_capabilities caps; /*!< Capabilities of the resource */
 };
 
 /*! \brief XMPP Message */
 struct ast_xmpp_message {
-        char *from;                            /*!< Who the message is from */
-        char *message;                         /*!< Message contents */
-        char id[25];                           /*!< Identifier for the message */
-        struct timeval arrived;                /*!< When the message arrived */
-        AST_LIST_ENTRY(ast_xmpp_message) list; /*!< Linked list information */
+	char *from;                            /*!< Who the message is from */
+	char *message;                         /*!< Message contents */
+	char id[25];                           /*!< Identifier for the message */
+	struct timeval arrived;                /*!< When the message arrived */
+	AST_LIST_ENTRY(ast_xmpp_message) list; /*!< Linked list information */
 };
+
+struct ast_endpoint;
 
 /*! \brief XMPP Buddy */
 struct ast_xmpp_buddy {
-        char id[XMPP_MAX_JIDLEN];        /*!< JID of the buddy */
-        struct ao2_container *resources; /*!< Resources for the buddy */
-        unsigned int subscribe:1;        /*!< Need to subscribe to get their status */
+	char id[XMPP_MAX_JIDLEN];        /*!< JID of the buddy */
+	struct ao2_container *resources; /*!< Resources for the buddy */
+	unsigned int subscribe:1;        /*!< Need to subscribe to get their status */
 };
 
 /*! \brief XMPP Client Connection */
 struct ast_xmpp_client {
-        AST_DECLARE_STRING_FIELDS(
-                AST_STRING_FIELD(name); /*!< Name of the client configuration */
-                );
-        char mid[6]; /* Message ID */
-        iksid *jid;
-        iksparser *parser;
-        iksfilter *filter;
-        ikstack *stack;
+	AST_DECLARE_STRING_FIELDS(
+		/*! Name of the client configuration */
+		AST_STRING_FIELD(name);
+		);
+	/*! Message ID */
+	char mid[6];
+	iksid *jid;
+	iksparser *parser;
+	iksfilter *filter;
+	ikstack *stack;
 #ifdef HAVE_OPENSSL
-        SSL_CTX *ssl_context;
-        SSL *ssl_session;
-        const SSL_METHOD *ssl_method;
-        unsigned int stream_flags;
+	SSL_CTX *ssl_context;
+	SSL *ssl_session;
+	const SSL_METHOD *ssl_method;
+	unsigned int stream_flags;
 #endif /* HAVE_OPENSSL */
-        enum xmpp_state state;
-        struct ao2_container *buddies;
-        AST_LIST_HEAD(, ast_xmpp_message) messages;
-        pthread_t thread;
+	enum xmpp_state state;
+	struct ao2_container *buddies;
+	AST_LIST_HEAD(, ast_xmpp_message) messages;
+	pthread_t thread;
 	int timeout;
-	unsigned int reconnect:1; /*!< Reconnect this client */
-	struct ast_event_sub *mwi_sub; /*!< If distributing event information the MWI subscription */
-	struct ast_event_sub *device_state_sub; /*!< If distributing event information the device state subscription */
+	/*! Reconnect this client */
+	unsigned int reconnect:1;
+	/*! If distributing event information the MWI subscription */
+	struct stasis_subscription *mwi_sub;
+	/*! If distributing event information the device state subscription */
+	struct stasis_subscription *device_state_sub;
+	/*! The endpoint associated with this client */
+	struct ast_endpoint *endpoint;
 };
 
 /*!
@@ -234,7 +244,7 @@ int ast_xmpp_chatroom_join(struct ast_xmpp_client *client, const char *room, con
  *
  * \param client Pointer to the client
  * \param nickname Nickname to use
- * \param Address Address of the room
+ * \param address Address of the room
  * \param message Message itself
  *
  * \retval 0 on success

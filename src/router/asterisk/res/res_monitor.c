@@ -29,7 +29,7 @@
  
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 376391 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 429033 $")
 
 #include <sys/stat.h>
 #include <libgen.h>
@@ -40,14 +40,18 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 376391 $")
 #include "asterisk/file.h"
 #include "asterisk/pbx.h"
 #include "asterisk/module.h"
-#include "asterisk/manager.h"
 #include "asterisk/cli.h"
+#include "asterisk/manager.h"
+#include "asterisk/stasis.h"
+#include "asterisk/stasis_channels.h"
 #define AST_API_MODULE
 #include "asterisk/monitor.h"
+#undef AST_API_MODULE
 #include "asterisk/app.h"
 #include "asterisk/utils.h"
 #include "asterisk/config.h"
 #include "asterisk/options.h"
+#include "asterisk/beep.h"
 
 /*** DOCUMENTATION
 	<application name="Monitor" language="en_US">
@@ -81,6 +85,10 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 376391 $")
 					</option>
 					<option name="b">
 						<para>Don't begin recording unless a call is bridged to another channel.</para>
+					</option>
+					<option name="B">
+						<para>Play a periodic beep while this call is being recorded.</para>
+						<argument name="interval"><para>Interval, in seconds. Default is 15.</para></argument>
 					</option>
 					<option name="i">
 						<para>Skip recording of input stream (disables <literal>m</literal> option).</para>
@@ -288,9 +296,11 @@ static int ast_monitor_set_state(struct ast_channel *chan, int state)
  * \retval -1 on failure
  */
 int AST_OPTIONAL_API_NAME(ast_monitor_start)(struct ast_channel *chan, const char *format_spec,
-					     const char *fname_base, int need_lock, int stream_action)
+					     const char *fname_base, int need_lock, int stream_action,
+					     const char *beep_id)
 {
 	int res = 0;
+	RAII_VAR(struct stasis_message *, message, NULL, ao2_cleanup);
 
 	LOCK_IF_NEEDED(chan, need_lock);
 
@@ -304,6 +314,10 @@ int AST_OPTIONAL_API_NAME(ast_monitor_start)(struct ast_channel *chan, const cha
 		if (!(monitor = ast_calloc(1, sizeof(*monitor)))) {
 			UNLOCK_IF_NEEDED(chan, need_lock);
 			return -1;
+		}
+
+		if (!ast_strlen_zero(beep_id)) {
+			ast_copy_string(monitor->beep_id, beep_id, sizeof(monitor->beep_id));
 		}
 
 		/* Determine file names */
@@ -326,9 +340,9 @@ int AST_OPTIONAL_API_NAME(ast_monitor_start)(struct ast_channel *chan, const cha
 			}
 		} else {
 			ast_mutex_lock(&monitorlock);
-			snprintf(monitor->read_filename, FILENAME_MAX, "%s/audio-in-%ld",
+			snprintf(monitor->read_filename, FILENAME_MAX, "%s/audio-in-%lu",
 						ast_config_AST_MONITOR_DIR, seq);
-			snprintf(monitor->write_filename, FILENAME_MAX, "%s/audio-out-%ld",
+			snprintf(monitor->write_filename, FILENAME_MAX, "%s/audio-out-%lu",
 						ast_config_AST_MONITOR_DIR, seq);
 			seq++;
 			ast_mutex_unlock(&monitorlock);
@@ -388,16 +402,19 @@ int AST_OPTIONAL_API_NAME(ast_monitor_start)(struct ast_channel *chan, const cha
 		} else
 			monitor->write_stream = NULL;
 
+		ast_channel_insmpl_set(chan, 0);
+		ast_channel_outsmpl_set(chan, 0);
 		ast_channel_monitor_set(chan, monitor);
 		ast_monitor_set_state(chan, AST_MONITOR_RUNNING);
 		/* so we know this call has been monitored in case we need to bill for it or something */
 		pbx_builtin_setvar_helper(chan, "__MONITORED","true");
 
-		ast_manager_event(chan, EVENT_FLAG_CALL, "MonitorStart",
-			                "Channel: %s\r\n"
-					        "Uniqueid: %s\r\n",
-	                        ast_channel_name(chan),
-			                ast_channel_uniqueid(chan));
+		message = ast_channel_blob_create_from_cache(ast_channel_uniqueid(chan),
+				ast_channel_monitor_start_type(),
+				NULL);
+		if (message) {
+			stasis_publish(ast_channel_topic(chan), message);
+		}
 	} else {
 		ast_debug(1,"Cannot start monitoring %s, already monitored\n", ast_channel_name(chan));
 		res = -1;
@@ -437,6 +454,7 @@ static const char *get_soxmix_format(const char *format)
 int AST_OPTIONAL_API_NAME(ast_monitor_stop)(struct ast_channel *chan, int need_lock)
 {
 	int delfiles = 0;
+	RAII_VAR(struct stasis_message *, message, NULL, ao2_cleanup);
 
 	LOCK_IF_NEEDED(chan, need_lock);
 
@@ -451,28 +469,24 @@ int AST_OPTIONAL_API_NAME(ast_monitor_stop)(struct ast_channel *chan, int need_l
 		}
 
 		if (ast_channel_monitor(chan)->filename_changed && !ast_strlen_zero(ast_channel_monitor(chan)->filename_base)) {
-			if (ast_channel_monitor(chan)->read_stream) {
-				if (ast_fileexists(ast_channel_monitor(chan)->read_filename,NULL,NULL) > 0) {
-					snprintf(filename, FILENAME_MAX, "%s-in", ast_channel_monitor(chan)->filename_base);
-					if (ast_fileexists(filename, NULL, NULL) > 0) {
-						ast_filedelete(filename, NULL);
-					}
-					ast_filerename(ast_channel_monitor(chan)->read_filename, filename, ast_channel_monitor(chan)->format);
-				} else {
-					ast_log(LOG_WARNING, "File %s not found\n", ast_channel_monitor(chan)->read_filename);
+			if (ast_fileexists(ast_channel_monitor(chan)->read_filename,NULL,NULL) > 0) {
+				snprintf(filename, FILENAME_MAX, "%s-in", ast_channel_monitor(chan)->filename_base);
+				if (ast_fileexists(filename, NULL, NULL) > 0) {
+					ast_filedelete(filename, NULL);
 				}
+				ast_filerename(ast_channel_monitor(chan)->read_filename, filename, ast_channel_monitor(chan)->format);
+			} else {
+				ast_log(LOG_WARNING, "File %s not found\n", ast_channel_monitor(chan)->read_filename);
 			}
 
-			if (ast_channel_monitor(chan)->write_stream) {
-				if (ast_fileexists(ast_channel_monitor(chan)->write_filename,NULL,NULL) > 0) {
-					snprintf(filename, FILENAME_MAX, "%s-out", ast_channel_monitor(chan)->filename_base);
-					if (ast_fileexists(filename, NULL, NULL) > 0) {
-						ast_filedelete(filename, NULL);
-					}
-					ast_filerename(ast_channel_monitor(chan)->write_filename, filename, ast_channel_monitor(chan)->format);
-				} else {
-					ast_log(LOG_WARNING, "File %s not found\n", ast_channel_monitor(chan)->write_filename);
+			if (ast_fileexists(ast_channel_monitor(chan)->write_filename,NULL,NULL) > 0) {
+				snprintf(filename, FILENAME_MAX, "%s-out", ast_channel_monitor(chan)->filename_base);
+				if (ast_fileexists(filename, NULL, NULL) > 0) {
+					ast_filedelete(filename, NULL);
 				}
+				ast_filerename(ast_channel_monitor(chan)->write_filename, filename, ast_channel_monitor(chan)->format);
+			} else {
+				ast_log(LOG_WARNING, "File %s not found\n", ast_channel_monitor(chan)->write_filename);
 			}
 		}
 
@@ -510,17 +524,21 @@ int AST_OPTIONAL_API_NAME(ast_monitor_stop)(struct ast_channel *chan, int need_l
 			if (ast_safe_system(tmp) == -1)
 				ast_log(LOG_WARNING, "Execute of %s failed.\n",tmp);
 		}
-		
+
+		if (!ast_strlen_zero(ast_channel_monitor(chan)->beep_id)) {
+			ast_beep_stop(chan, ast_channel_monitor(chan)->beep_id);
+		}
+
 		ast_free(ast_channel_monitor(chan)->format);
 		ast_free(ast_channel_monitor(chan));
 		ast_channel_monitor_set(chan, NULL);
 
-		ast_manager_event(chan, EVENT_FLAG_CALL, "MonitorStop",
-			                "Channel: %s\r\n"
-	                        "Uniqueid: %s\r\n",
-	                        ast_channel_name(chan),
-	                        ast_channel_uniqueid(chan)
-	                        );
+		message = ast_channel_blob_create_from_cache(ast_channel_uniqueid(chan),
+				ast_channel_monitor_stop_type(),
+				NULL);
+		if (message) {
+			stasis_publish(ast_channel_topic(chan), message);
+		}
 		pbx_builtin_setvar_helper(chan, "MONITORED", NULL);
 	}
 	pbx_builtin_setvar_helper(chan, "AUTO_MONITOR", NULL);
@@ -638,7 +656,27 @@ int AST_OPTIONAL_API_NAME(ast_monitor_change_fname)(struct ast_channel *chan, co
 	return 0;
 }
 
- 
+enum {
+	MON_FLAG_BRIDGED =  (1 << 0),
+	MON_FLAG_MIX =      (1 << 1),
+	MON_FLAG_DROP_IN =  (1 << 2),
+	MON_FLAG_DROP_OUT = (1 << 3),
+	MON_FLAG_BEEP =     (1 << 4),
+};
+
+enum {
+	OPT_ARG_BEEP_INTERVAL,
+	OPT_ARG_ARRAY_SIZE,	/* Always last element of the enum */
+};
+
+AST_APP_OPTIONS(monitor_opts, {
+	AST_APP_OPTION('b', MON_FLAG_BRIDGED),
+	AST_APP_OPTION('m', MON_FLAG_MIX),
+	AST_APP_OPTION('i', MON_FLAG_DROP_IN),
+	AST_APP_OPTION('o', MON_FLAG_DROP_OUT),
+	AST_APP_OPTION_ARG('B', MON_FLAG_BEEP, OPT_ARG_BEEP_INTERVAL),
+});
+
 /*!
  * \brief Start monitor
  * \param chan
@@ -655,9 +693,11 @@ static int start_monitor_exec(struct ast_channel *chan, const char *data)
 	char tmp[256];
 	int stream_action = X_REC_IN | X_REC_OUT;
 	int joinfiles = 0;
-	int waitforbridge = 0;
 	int res = 0;
 	char *parse;
+	struct ast_flags flags = { 0 };
+	char *opts[OPT_ARG_ARRAY_SIZE] = { NULL, };
+	char beep_id[64] = "";
 	AST_DECLARE_APP_ARGS(args,
 		AST_APP_ARG(format);
 		AST_APP_ARG(fname_base);
@@ -674,14 +714,31 @@ static int start_monitor_exec(struct ast_channel *chan, const char *data)
 	AST_STANDARD_APP_ARGS(args, parse);
 
 	if (!ast_strlen_zero(args.options)) {
-		if (strchr(args.options, 'm'))
+		ast_app_parse_options(monitor_opts, &flags, opts, args.options);
+
+		if (ast_test_flag(&flags, MON_FLAG_MIX)) {
 			stream_action |= X_JOIN;
-		if (strchr(args.options, 'b'))
-			waitforbridge = 1;
-		if (strchr(args.options, 'i'))
+		}
+		if (ast_test_flag(&flags, MON_FLAG_DROP_IN)) {
 			stream_action &= ~X_REC_IN;
-		if (strchr(args.options, 'o'))
+		}
+		if (ast_test_flag(&flags, MON_FLAG_DROP_OUT)) {
 			stream_action &= ~X_REC_OUT;
+		}
+		if (ast_test_flag(&flags, MON_FLAG_BEEP)) {
+			const char *interval_str = S_OR(opts[OPT_ARG_BEEP_INTERVAL], "15");
+			unsigned int interval = 15;
+
+			if (sscanf(interval_str, "%30u", &interval) != 1) {
+				ast_log(LOG_WARNING, "Invalid interval '%s' for periodic beep. Using default of %u\n",
+						interval_str, interval);
+			}
+
+			if (ast_beep_start(chan, interval, beep_id, sizeof(beep_id))) {
+				ast_log(LOG_WARNING, "Unable to enable periodic beep, please ensure func_periodic_hook is loaded.\n");
+				return -1;
+			}
+		}
 	}
 
 	arg = strchr(args.format, ':');
@@ -691,21 +748,13 @@ static int start_monitor_exec(struct ast_channel *chan, const char *data)
 	}
 
 	if (!ast_strlen_zero(urlprefix) && !ast_strlen_zero(args.fname_base)) {
-		struct ast_cdr *chan_cdr;
 		snprintf(tmp, sizeof(tmp), "%s/%s.%s", urlprefix, args.fname_base,
 			((strcmp(args.format, "gsm")) ? "wav" : "gsm"));
 		ast_channel_lock(chan);
-		if (!ast_channel_cdr(chan)) {
-			if (!(chan_cdr = ast_cdr_alloc())) {
-				ast_channel_unlock(chan);
-				return -1;
-			}
-			ast_channel_cdr_set(chan, chan_cdr);
-		}
-		ast_cdr_setuserfield(chan, tmp);
+		ast_cdr_setuserfield(ast_channel_name(chan), tmp);
 		ast_channel_unlock(chan);
 	}
-	if (waitforbridge) {
+	if (ast_test_flag(&flags, MON_FLAG_BRIDGED)) {
 		/* We must remove the "b" option if listed.  In principle none of
 		   the following could give NULL results, but we check just to
 		   be pedantic. Reconstructing with checks for 'm' option does not
@@ -722,7 +771,7 @@ static int start_monitor_exec(struct ast_channel *chan, const char *data)
 		return 0;
 	}
 
-	res = ast_monitor_start(chan, args.format, args.fname_base, 1, stream_action);
+	res = ast_monitor_start(chan, args.format, args.fname_base, 1, stream_action, beep_id);
 	if (res < 0)
 		res = ast_monitor_change_fname(chan, args.fname_base, 1);
 
@@ -781,7 +830,7 @@ static int start_monitor_action(struct mansession *s, const struct message *m)
 		}
 	}
 
-	if (ast_monitor_start(c, format, fname, 1, X_REC_IN | X_REC_OUT)) {
+	if (ast_monitor_start(c, format, fname, 1, X_REC_IN | X_REC_OUT, NULL)) {
 		if (ast_monitor_change_fname(c, fname, 1)) {
 			astman_send_error(s, m, "Could not start monitoring channel");
 			c = ast_channel_unref(c);
@@ -952,6 +1001,7 @@ static int unload_module(void)
 
 /* usecount semantics need to be defined */
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_GLOBAL_SYMBOLS | AST_MODFLAG_LOAD_ORDER, "Call Monitoring Resource",
+		.support_level = AST_MODULE_SUPPORT_CORE,
 		.load = load_module,
 		.unload = unload_module,
 		.load_pri = AST_MODPRI_CHANNEL_DEPEND,

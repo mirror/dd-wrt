@@ -26,7 +26,7 @@
  *
  * \ingroup functions
  *
- * \extref The Speex 1.2 library - http://www.speex.org
+ * The Speex 1.2 library - http://www.speex.org
  * \note Requires the 1.2 version of the Speex library (which might not be what you find in Linux packages)
  */
 
@@ -39,7 +39,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 366169 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419044 $")
 
 #include <speex/speex_preprocess.h>
 #include "asterisk/module.h"
@@ -165,8 +165,8 @@ static int speex_callback(struct ast_audiohook *audiohook, struct ast_channel *c
 		return -1;
 	}
 
-	if ((sdi->samples != frame->samples) || (ast_format_rate(&frame->subclass.format) != si->lastrate)) {
-		si->lastrate = ast_format_rate(&frame->subclass.format);
+	if ((sdi->samples != frame->samples) || (ast_format_get_sample_rate(frame->subclass.format) != si->lastrate)) {
+		si->lastrate = ast_format_get_sample_rate(frame->subclass.format);
 		if (sdi->state) {
 			speex_preprocess_state_destroy(sdi->state);
 		}
@@ -201,6 +201,11 @@ static int speex_write(struct ast_channel *chan, const char *cmd, char *data, co
 	struct speex_info *si = NULL;
 	struct speex_direction_info **sdi = NULL;
 	int is_new = 0;
+
+	if (!chan) {
+		ast_log(LOG_WARNING, "No channel was provided to %s function.\n", cmd);
+		return -1;
+	}
 
 	if (strcasecmp(data, "rx") && strcasecmp(data, "tx")) {
 		ast_log(LOG_ERROR, "Invalid argument provided to the %s function\n", cmd);

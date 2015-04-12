@@ -41,7 +41,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 355321 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419592 $")
 
 #include <sqlite3.h>
 
@@ -57,6 +57,8 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 355321 $")
 #include "asterisk/options.h"
 #include "asterisk/stringfields.h"
 
+#define SQLITE_BACKEND_NAME "CEL sqlite3 custom backend"
+
 AST_MUTEX_DEFINE_STATIC(lock);
 
 static const char config_file[] = "cel_sqlite3_custom.conf";
@@ -65,9 +67,10 @@ static const char name[] = "cel_sqlite3_custom";
 static sqlite3 *db = NULL;
 
 static char table[80];
-/*! XXX \bug Handling of this var is crash prone on reloads */
+/*!
+ * \bug Handling of this var is crash prone on reloads
+ */
 static char *columns;
-static struct ast_event_sub *event_sub = NULL;
 
 struct values {
 	char *expression;
@@ -227,11 +230,10 @@ static void free_config(void)
 	}
 }
 
-static void write_cel(const struct ast_event *event, void *userdata)
+static void write_cel(struct ast_event *event)
 {
 	char *error = NULL;
 	char *sql = NULL;
-	int count = 0;
 
 	if (db == NULL) {
 		/* Should not have loaded, but be failsafe. */
@@ -266,18 +268,7 @@ static void write_cel(const struct ast_event *event, void *userdata)
 		ast_free(value_string);
 	}
 
-	/* XXX This seems awful arbitrary... */
-	for (count = 0; count < 5; count++) {
-		int res = sqlite3_exec(db, sql, NULL, NULL, &error);
-		if (res != SQLITE_BUSY && res != SQLITE_LOCKED) {
-			break;
-		}
-		usleep(200);
-	}
-
-	ast_mutex_unlock(&lock);
-
-	if (error) {
+	if (sqlite3_exec(db, sql, NULL, NULL, &error) != SQLITE_OK) {
 		ast_log(LOG_ERROR, "%s. SQL: %s.\n", error, sql);
 		sqlite3_free(error);
 	}
@@ -285,15 +276,14 @@ static void write_cel(const struct ast_event *event, void *userdata)
 	if (sql) {
 		sqlite3_free(sql);
 	}
+	ast_mutex_unlock(&lock);
 
 	return;
 }
 
 static int unload_module(void)
 {
-	if (event_sub) {
-		event_sub = ast_event_unsubscribe(event_sub);
-	}
+	ast_cel_backend_unregister(SQLITE_BACKEND_NAME);
 
 	free_config();
 
@@ -319,7 +309,7 @@ static int load_module(void)
 		free_config();
 		return AST_MODULE_LOAD_DECLINE;
 	}
-
+	sqlite3_busy_timeout(db, 1000);
 	/* is the table there? */
 	sql = sqlite3_mprintf("SELECT COUNT(*) FROM %q;", table);
 	res = sqlite3_exec(db, sql, NULL, NULL, NULL);
@@ -337,8 +327,7 @@ static int load_module(void)
 		}
 	}
 
-	event_sub = ast_event_subscribe(AST_EVENT_CEL, write_cel, "CEL sqlite3 custom backend", NULL, AST_EVENT_IE_END);
-	if (!event_sub) {
+	if (ast_cel_backend_register(SQLITE_BACKEND_NAME, write_cel)) {
 		ast_log(LOG_ERROR, "Unable to register custom SQLite3 CEL handling\n");
 		free_config();
 		return AST_MODULE_LOAD_DECLINE;
@@ -359,6 +348,7 @@ static int reload(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "SQLite3 Custom CEL Module",
+	.support_level = AST_MODULE_SUPPORT_EXTENDED,
 	.load = load_module,
 	.unload = unload_module,
 	.reload = reload,

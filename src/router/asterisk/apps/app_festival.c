@@ -27,13 +27,22 @@
  * \ingroup applications
  */
 
+/*! \li \ref app_festival.c uses the configuration file \ref festival.conf
+ * \addtogroup configuration_file Configuration Files
+ */
+
+/*! 
+ * \page festival.conf festival.conf
+ * \verbinclude festival.conf.sample
+ */
+
 /*** MODULEINFO
 	<support_level>extended</support_level>
  ***/
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 370655 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419592 $")
 
 #include <sys/socket.h>
 #include <netdb.h>
@@ -54,6 +63,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 370655 $")
 #include "asterisk/lock.h"
 #include "asterisk/app.h"
 #include "asterisk/endian.h"
+#include "asterisk/format_cache.h"
 
 #define FESTIVAL_CONFIG "festival.conf"
 #define MAXLEN 180
@@ -168,7 +178,7 @@ static int send_waveform_to_channel(struct ast_channel *chan, char *waveform, in
 	int res = 0;
 	int fds[2];
 	int needed = 0;
-	struct ast_format owriteformat;
+	struct ast_format *owriteformat;
 	struct ast_frame *f;
 	struct myframe {
 		struct ast_frame f;
@@ -178,7 +188,6 @@ static int send_waveform_to_channel(struct ast_channel *chan, char *waveform, in
 		.f = { 0, },
 	};
 
-	ast_format_clear(&owriteformat);
 	if (pipe(fds)) {
 		ast_log(LOG_WARNING, "Unable to create pipe\n");
 		return -1;
@@ -190,12 +199,19 @@ static int send_waveform_to_channel(struct ast_channel *chan, char *waveform, in
 	ast_stopstream(chan);
 	ast_indicate(chan, -1);
 	
-	ast_format_copy(&owriteformat, ast_channel_writeformat(chan));
-	res = ast_set_write_format_by_id(chan, AST_FORMAT_SLINEAR);
+	owriteformat = ao2_bump(ast_channel_writeformat(chan));
+	res = ast_set_write_format(chan, ast_format_slin);
 	if (res < 0) {
 		ast_log(LOG_WARNING, "Unable to set write format to signed linear\n");
+		ao2_cleanup(owriteformat);
 		return -1;
 	}
+
+	myf.f.frametype = AST_FRAME_VOICE;
+	myf.f.subclass.format = ast_format_slin;
+	myf.f.offset = AST_FRIENDLY_OFFSET;
+	myf.f.src = __PRETTY_FUNCTION__;
+	myf.f.data.ptr = myf.frdata;
 	
 	res = send_waveform_to_fd(waveform, length, fds[1]);
 	if (res >= 0) {
@@ -231,13 +247,8 @@ static int send_waveform_to_channel(struct ast_channel *chan, char *waveform, in
 				}
 				res = read(fds[0], myf.frdata, needed);
 				if (res > 0) {
-					myf.f.frametype = AST_FRAME_VOICE;
-					ast_format_set(&myf.f.subclass.format, AST_FORMAT_SLINEAR, 0);
 					myf.f.datalen = res;
 					myf.f.samples = res / 2;
-					myf.f.offset = AST_FRIENDLY_OFFSET;
-					myf.f.src = __PRETTY_FUNCTION__;
-					myf.f.data.ptr = myf.frdata;
 					if (ast_write(chan, &myf.f) < 0) {
 						res = -1;
 						ast_frfree(f);
@@ -260,8 +271,10 @@ static int send_waveform_to_channel(struct ast_channel *chan, char *waveform, in
 	close(fds[0]);
 	close(fds[1]);
 
-	if (!res && owriteformat.id)
-		ast_set_write_format(chan, &owriteformat);
+	if (!res && owriteformat)
+		ast_set_write_format(chan, owriteformat);
+	ao2_cleanup(owriteformat);
+
 	return res;
 }
 
@@ -415,7 +428,7 @@ static int festival_exec(struct ast_channel *chan, const char *vdata)
 	/* Convert to HEX and look if there is any matching file in the cache 
 		directory */
 	for (i = 0; i < 16; i++) {
-		snprintf(koko, sizeof(koko), "%X", MD5Res[i]);
+		snprintf(koko, sizeof(koko), "%X", (unsigned)MD5Res[i]);
 		strncat(MD5Hex, koko, sizeof(MD5Hex) - strlen(MD5Hex) - 1);
 	}
 	readcache = 0;
@@ -537,6 +550,16 @@ static int unload_module(void)
 	return ast_unregister_application(app);
 }
 
+/*!
+ * \brief Load the module
+ *
+ * Module loading including tests for configuration or dependencies.
+ * This function can return AST_MODULE_LOAD_FAILURE, AST_MODULE_LOAD_DECLINE,
+ * or AST_MODULE_LOAD_SUCCESS. If a dependency or environment variable fails
+ * tests return AST_MODULE_LOAD_FAILURE. If the module can not load the 
+ * configuration file or other non-critical problem return 
+ * AST_MODULE_LOAD_DECLINE. On success return AST_MODULE_LOAD_SUCCESS.
+ */
 static int load_module(void)
 {
 	struct ast_flags config_flags = { 0 };
@@ -552,4 +575,5 @@ static int load_module(void)
 	return ast_register_application_xml(app, festival_exec);
 }
 
-AST_MODULE_INFO_STANDARD(ASTERISK_GPL_KEY, "Simple Festival Interface");
+AST_MODULE_INFO_STANDARD_EXTENDED(ASTERISK_GPL_KEY, "Simple Festival Interface");
+

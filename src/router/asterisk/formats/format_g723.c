@@ -31,10 +31,11 @@
  
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 364580 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419592 $")
 
 #include "asterisk/mod_format.h"
 #include "asterisk/module.h"
+#include "asterisk/format_cache.h"
 
 #define G723_MAX_SIZE 1024
 
@@ -64,9 +65,6 @@ static struct ast_frame *g723_read(struct ast_filestream *s, int *whennext)
 		return NULL;
 	}
 	/* Read the data into the buffer */
-	s->fr.frametype = AST_FRAME_VOICE;
-	ast_format_set(&s->fr.subclass.format, AST_FORMAT_G723_1, 0);
-	s->fr.mallocd = 0;
 	AST_FRAME_SET_BUFFER(&s->fr, s->buf, AST_FRIENDLY_OFFSET, size);
 	if ((res = fread(s->fr.data.ptr, 1, s->fr.datalen, s->f)) != size) {
 		ast_log(LOG_WARNING, "Short read (%d of %d bytes) (%s)!\n", res, size, strerror(errno));
@@ -82,14 +80,6 @@ static int g723_write(struct ast_filestream *s, struct ast_frame *f)
 	uint16_t size;
 	int res;
 	/* XXX there used to be a check s->fr means a read stream */
-	if (f->frametype != AST_FRAME_VOICE) {
-		ast_log(LOG_WARNING, "Asked to write non-voice frame!\n");
-		return -1;
-	}
-	if (f->subclass.format.id != AST_FORMAT_G723_1) {
-		ast_log(LOG_WARNING, "Asked to write non-g723 frame!\n");
-		return -1;
-	}
 	delay = 0;
 	if (f->datalen <= 0) {
 		ast_log(LOG_WARNING, "Short frame ignored (%d bytes long?)\n", f->datalen);
@@ -151,7 +141,7 @@ static struct ast_format_def g723_1_f = {
 
 static int load_module(void)
 {
-	ast_format_set(&g723_1_f.format, AST_FORMAT_G723_1, 0);
+	g723_1_f.format = ast_format_g723;
 
 	if (ast_format_def_register(&g723_1_f))
 		return AST_MODULE_LOAD_FAILURE;
@@ -164,6 +154,7 @@ static int unload_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "G.723.1 Simple Timestamp File Format",
+	.support_level = AST_MODULE_SUPPORT_CORE,
 	.load = load_module,
 	.unload = unload_module,
 	.load_pri = AST_MODPRI_APP_DEPEND

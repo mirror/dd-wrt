@@ -30,7 +30,7 @@
 #include "asterisk/utils.h"
 #include "asterisk/syslog.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 369013 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 430507 $")
 
 #include <syslog.h>
 
@@ -163,8 +163,16 @@ static const int logger_level_to_syslog_map[] = {
 
 int ast_syslog_priority_from_loglevel(int level)
 {
+	/* First 16 levels are reserved for system use.
+	 * Default to using LOG_NOTICE for dynamic logging.
+	 */
+	if (level >= 16 && level < ASTNUMLOGLEVELS) {
+		return LOG_NOTICE;
+	}
+
 	if (level < 0 || level >= ARRAY_LEN(logger_level_to_syslog_map)) {
 		return -1;
 	}
+
 	return logger_level_to_syslog_map[level];
 }

@@ -520,7 +520,7 @@ static yyconst flex_int16_t yy_chk[159] =
 #include <stdio.h>
 
 #if !defined(STANDALONE)
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 369940 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 373330 $")
 #else
 #ifndef __USE_ISOC99
 #define __USE_ISOC99 1
@@ -2142,8 +2142,8 @@ void ast_yyset_lineno (int  line_number , yyscan_t yyscanner)
 }
 
 /** Set the current column.
- * @param line_number
- * @param yyscanner The scanner object.
+ * \param column_no line_number
+ * \param yyscanner The scanner object.
  */
 void ast_yyset_column (int  column_no , yyscan_t yyscanner)
 {

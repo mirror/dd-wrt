@@ -34,13 +34,14 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 397948 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419044 $")
 
 #include "asterisk/pbx.h"
 #include "asterisk/module.h"
 #include "asterisk/channel.h"
 #include "asterisk/app.h"
 #include "asterisk/translate.h"
+#include "asterisk/bridge.h"
 
 /*** DOCUMENTATION
 	<application name="DumpChan" language="en_US">
@@ -49,7 +50,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 397948 $")
 		</synopsis>
 		<syntax>
 			<parameter name="level">
-				<para>Minimun verbose level</para>
+				<para>Minimum verbose level</para>
 			</parameter>
 		</syntax>
 		<description>
@@ -69,26 +70,27 @@ static const char app[] = "DumpChan";
 
 static int serialize_showchan(struct ast_channel *c, char *buf, size_t size)
 {
-	struct timeval now;
 	long elapsed_seconds = 0;
 	int hour = 0, min = 0, sec = 0;
-	char nf[256];
+	struct ast_str *format_buf = ast_str_alloca(64);
 	char cgrp[256];
 	char pgrp[256];
 	struct ast_str *write_transpath = ast_str_alloca(256);
 	struct ast_str *read_transpath = ast_str_alloca(256);
+	struct ast_bridge *bridge;
 
-	now = ast_tvnow();
 	memset(buf, 0, size);
 	if (!c)
 		return 0;
 
-	if (ast_channel_cdr(c)) {
-		elapsed_seconds = now.tv_sec - ast_channel_cdr(c)->start.tv_sec;
-		hour = elapsed_seconds / 3600;
-		min = (elapsed_seconds % 3600) / 60;
-		sec = elapsed_seconds % 60;
-	}
+	elapsed_seconds = ast_channel_get_duration(c);
+	hour = elapsed_seconds / 3600;
+	min = (elapsed_seconds % 3600) / 60;
+	sec = elapsed_seconds % 60;
+
+	ast_channel_lock(c);
+	bridge = ast_channel_get_bridge(c);
+	ast_channel_unlock(c);
 
 	snprintf(buf,size,
 		"Name=               %s\n"
@@ -103,7 +105,7 @@ static int serialize_showchan(struct ast_channel *c, char *buf, size_t size)
 		"RDNIS=              %s\n"
 		"Parkinglot=         %s\n"
 		"Language=           %s\n"
-		"State=              %s (%d)\n"
+		"State=              %s (%u)\n"
 		"Rings=              %d\n"
 		"NativeFormat=       %s\n"
 		"WriteFormat=        %s\n"
@@ -113,12 +115,11 @@ static int serialize_showchan(struct ast_channel *c, char *buf, size_t size)
 		"WriteTranscode=     %s %s\n"
 		"ReadTranscode=      %s %s\n"
 		"1stFileDescriptor=  %d\n"
-		"Framesin=           %d %s\n"
-		"Framesout=          %d %s\n"
+		"Framesin=           %u %s\n"
+		"Framesout=          %u %s\n"
 		"TimetoHangup=       %ld\n"
 		"ElapsedTime=        %dh%dm%ds\n"
-		"DirectBridge=       %s\n"
-		"IndirectBridge=     %s\n"
+		"BridgeID=           %s\n"
 		"Context=            %s\n"
 		"Extension=          %s\n"
 		"Priority=           %d\n"
@@ -142,11 +143,11 @@ static int serialize_showchan(struct ast_channel *c, char *buf, size_t size)
 		ast_state2str(ast_channel_state(c)),
 		ast_channel_state(c),
 		ast_channel_rings(c),
-		ast_getformatname_multiple(nf, sizeof(nf), ast_channel_nativeformats(c)),
-		ast_getformatname(ast_channel_writeformat(c)),
-		ast_getformatname(ast_channel_readformat(c)),
-		ast_getformatname(ast_channel_rawwriteformat(c)),
-		ast_getformatname(ast_channel_rawreadformat(c)),
+		ast_format_cap_get_names(ast_channel_nativeformats(c), &format_buf),
+		ast_format_get_name(ast_channel_writeformat(c)),
+		ast_format_get_name(ast_channel_readformat(c)),
+		ast_format_get_name(ast_channel_rawwriteformat(c)),
+		ast_format_get_name(ast_channel_rawreadformat(c)),
 		ast_channel_writetrans(c) ? "Yes" : "No",
 		ast_translate_path_to_str(ast_channel_writetrans(c), &write_transpath),
 		ast_channel_readtrans(c) ? "Yes" : "No",
@@ -158,8 +159,7 @@ static int serialize_showchan(struct ast_channel *c, char *buf, size_t size)
 		hour,
 		min,
 		sec,
-		ast_channel_internal_bridged_channel(c) ? ast_channel_name(ast_channel_internal_bridged_channel(c)) : "<none>",
-		ast_bridged_channel(c) ? ast_channel_name(ast_bridged_channel(c)) : "<none>",
+		bridge ? bridge->uniqueid : "(Not bridged)",
 		ast_channel_context(c),
 		ast_channel_exten(c),
 		ast_channel_priority(c),
@@ -169,6 +169,7 @@ static int serialize_showchan(struct ast_channel *c, char *buf, size_t size)
 		ast_channel_data(c) ? S_OR(ast_channel_data(c), "(Empty)") : "(None)",
 		(ast_test_flag(ast_channel_flags(c), AST_FLAG_BLOCKING) ? ast_channel_blockproc(c) : "(Not Blocking)"));
 
+	ao2_cleanup(bridge);
 	return 0;
 }
 
@@ -182,15 +183,17 @@ static int dumpchan_exec(struct ast_channel *chan, const char *data)
 	if (!ast_strlen_zero(data))
 		level = atoi(data);
 
-	serialize_showchan(chan, info, sizeof(info));
-	pbx_builtin_serialize_variables(chan, &vars);
-	ast_verb(level, "\n"
-		 "Dumping Info For Channel: %s:\n"
-		 "%s\n"
-		 "Info:\n"
-		 "%s\n"
-		 "Variables:\n"
-		 "%s%s\n", ast_channel_name(chan), line, info, ast_str_buffer(vars), line);
+	if (VERBOSITY_ATLEAST(level)) {
+		serialize_showchan(chan, info, sizeof(info));
+		pbx_builtin_serialize_variables(chan, &vars);
+		ast_verb(level, "\n"
+			"Dumping Info For Channel: %s:\n"
+			"%s\n"
+			"Info:\n"
+			"%s\n"
+			"Variables:\n"
+			"%s%s\n", ast_channel_name(chan), line, info, ast_str_buffer(vars), line);
+	}
 
 	return 0;
 }

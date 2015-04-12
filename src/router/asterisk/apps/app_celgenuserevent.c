@@ -29,7 +29,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 376659 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419592 $")
 
 #include "asterisk/module.h"
 #include "asterisk/app.h"
@@ -62,6 +62,7 @@ static int celgenuserevent_exec(struct ast_channel *chan, const char *data)
 {
 	int res = 0;
 	char *parse;
+	RAII_VAR(struct ast_json *, blob, NULL, ast_json_unref);
 	AST_DECLARE_APP_ARGS(args,
 		AST_APP_ARG(event);
 		AST_APP_ARG(extra);
@@ -74,7 +75,13 @@ static int celgenuserevent_exec(struct ast_channel *chan, const char *data)
 	parse = ast_strdupa(data);
 	AST_STANDARD_APP_ARGS(args, parse);
 
-	ast_cel_report_event(chan, AST_CEL_USER_DEFINED, args.event, args.extra, NULL);
+	blob = ast_json_pack("{s: s, s: {s: s}}",
+		"event", args.event,
+		"extra", "extra", S_OR(args.extra, ""));
+	if (!blob) {
+		return res;
+	}
+	ast_cel_publish_event(chan, AST_CEL_USER_DEFINED, blob);
 	return res;
 }
 
@@ -95,6 +102,7 @@ static int load_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT, "Generate an User-Defined CEL event",
+		.support_level = AST_MODULE_SUPPORT_CORE,
 				.load = load_module,
 				.unload = unload_module,
 	);

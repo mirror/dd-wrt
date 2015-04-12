@@ -64,7 +64,7 @@ CREATE TABLE [dbo].[cdr] (
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 371592 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419592 $")
 
 #include "asterisk/config.h"
 #include "asterisk/channel.h"
@@ -176,7 +176,7 @@ retry:
 					 settings->table,
 					 accountcode, src, dst, dcontext, clid, channel,
 					 dstchannel, lastapp, lastdata, start, answer, end, hrduration,
-					 hrbillsec, ast_cdr_disp2str(cdr->disposition), ast_cdr_flags2str(cdr->amaflags), uniqueid,
+					 hrbillsec, ast_cdr_disp2str(cdr->disposition), ast_channel_amaflags2string(cdr->amaflags), uniqueid,
 					 userfield
 			);
 		} else {
@@ -196,7 +196,7 @@ retry:
 					 settings->table,
 					 accountcode, src, dst, dcontext, clid, channel,
 					 dstchannel, lastapp, lastdata, start, answer, end, cdr->duration,
-					 cdr->billsec, ast_cdr_disp2str(cdr->disposition), ast_cdr_flags2str(cdr->amaflags), uniqueid,
+					 cdr->billsec, ast_cdr_disp2str(cdr->disposition), ast_channel_amaflags2string(cdr->amaflags), uniqueid,
 					 userfield
 			);
 		}
@@ -226,7 +226,7 @@ retry:
 					 settings->table,
 					 accountcode, src, dst, dcontext, clid, channel,
 					 dstchannel, lastapp, lastdata, start, answer, end, hrduration,
-					 hrbillsec, ast_cdr_disp2str(cdr->disposition), ast_cdr_flags2str(cdr->amaflags), uniqueid
+					 hrbillsec, ast_cdr_disp2str(cdr->disposition), ast_channel_amaflags2string(cdr->amaflags), uniqueid
 			);
 		} else {
 			erc = dbfcmd(settings->dbproc,
@@ -245,7 +245,7 @@ retry:
 					 settings->table,
 					 accountcode, src, dst, dcontext, clid, channel,
 					 dstchannel, lastapp, lastdata, start, answer, end, cdr->duration,
-					 cdr->billsec, ast_cdr_disp2str(cdr->disposition), ast_cdr_flags2str(cdr->amaflags), uniqueid
+					 cdr->billsec, ast_cdr_disp2str(cdr->disposition), ast_channel_amaflags2string(cdr->amaflags), uniqueid
 			);
 		}
 	}
@@ -443,6 +443,10 @@ failed:
 
 static int tds_unload_module(void)
 {
+	if (ast_cdr_unregister(name)) {
+		return -1;
+	}
+
 	if (settings) {
 		ast_mutex_lock(&tds_lock);
 		mssql_disconnect();
@@ -451,8 +455,6 @@ static int tds_unload_module(void)
 		ast_string_field_free_memory(settings);
 		ast_free(settings);
 	}
-
-	ast_cdr_unregister(name);
 
 	dbexit();
 
@@ -630,6 +632,7 @@ static int unload_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "FreeTDS CDR Backend",
+		.support_level = AST_MODULE_SUPPORT_EXTENDED,
 		.load = load_module,
 		.unload = unload_module,
 		.reload = reload,

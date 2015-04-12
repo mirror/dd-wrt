@@ -31,7 +31,7 @@
  
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 376014 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 428655 $")
 
 #include "asterisk/file.h"
 #include "asterisk/pbx.h"
@@ -39,6 +39,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 376014 $")
 #include "asterisk/app.h"
 #include "asterisk/channel.h"
 #include "asterisk/dsp.h"	/* use dsp routines for silence detection */
+#include "asterisk/format_cache.h"
 
 /*** DOCUMENTATION
 	<application name="Record" language="en_US">
@@ -66,6 +67,10 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 376014 $")
 					</option>
 					<option name="n">
 						<para>Do not answer, but record anyway if line not yet answered.</para>
+					</option>
+					<option name="o">
+						<para>Exit when 0 is pressed, setting the variable <variable>RECORD_STATUS</variable>
+						to <literal>OPERATOR</literal> instead of <literal>DTMF</literal></para>
 					</option>
 					<option name="q">
 						<para>quiet (do not play a beep tone).</para>
@@ -113,6 +118,8 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 376014 $")
 
  ***/
 
+#define OPERATOR_KEY '0'
+
 static char *app = "Record";
 
 enum {
@@ -125,18 +132,50 @@ enum {
 	OPTION_KEEP = (1 << 6),
 	FLAG_HAS_PERCENT = (1 << 7),
 	OPTION_ANY_TERMINATE = (1 << 8),
+	OPTION_OPERATOR_EXIT = (1 << 9),
 };
 
 AST_APP_OPTIONS(app_opts,{
 	AST_APP_OPTION('a', OPTION_APPEND),
-	AST_APP_OPTION('k', OPTION_KEEP),	
+	AST_APP_OPTION('k', OPTION_KEEP),
 	AST_APP_OPTION('n', OPTION_NOANSWER),
+	AST_APP_OPTION('o', OPTION_OPERATOR_EXIT),
 	AST_APP_OPTION('q', OPTION_QUIET),
 	AST_APP_OPTION('s', OPTION_SKIP),
 	AST_APP_OPTION('t', OPTION_STAR_TERMINATE),
 	AST_APP_OPTION('y', OPTION_ANY_TERMINATE),
 	AST_APP_OPTION('x', OPTION_IGNORE_TERMINATE),
 });
+
+/*!
+ * \internal
+ * \brief Used to determine what action to take when DTMF is received while recording
+ * \since 13.0.0
+ *
+ * \param chan channel being recorded
+ * \param flags option flags in use by the record application
+ * \param dtmf_integer the integer value of the DTMF key received
+ * \param terminator key currently set to be pressed for normal termination
+ *
+ * \retval 0 do not exit
+ * \retval -1 do exit
+ */
+static int record_dtmf_response(struct ast_channel *chan, struct ast_flags *flags, int dtmf_integer, int terminator)
+{
+	if ((dtmf_integer == OPERATOR_KEY) &&
+		(ast_test_flag(flags, OPTION_OPERATOR_EXIT))) {
+		pbx_builtin_setvar_helper(chan, "RECORD_STATUS", "OPERATOR");
+		return -1;
+	}
+
+	if ((dtmf_integer == terminator) ||
+		(ast_test_flag(flags, OPTION_ANY_TERMINATE))) {
+		pbx_builtin_setvar_helper(chan, "RECORD_STATUS", "DTMF");
+		return -1;
+	}
+
+	return 0;
+}
 
 static int record_exec(struct ast_channel *chan, const char *data)
 {
@@ -158,7 +197,7 @@ static int record_exec(struct ast_channel *chan, const char *data)
 	int maxduration = 0;		/* max duration of recording in milliseconds */
 	int gottimeout = 0;		/* did we timeout for maxduration exceeded? */
 	int terminator = '#';
-	struct ast_format rfmt;
+	RAII_VAR(struct ast_format *, rfmt, NULL, ao2_cleanup);
 	int ioflags;
 	struct ast_silence_generator *silgen = NULL;
 	struct ast_flags flags = { 0, };
@@ -170,8 +209,6 @@ static int record_exec(struct ast_channel *chan, const char *data)
 	);
 	int ms;
 	struct timeval start;
-
-	ast_format_clear(&rfmt);
 
 	/* The next few lines of code parse out the filename and header from the input string */
 	if (ast_strlen_zero(data)) { /* no data implies no filename or anything is present */
@@ -293,8 +330,8 @@ static int record_exec(struct ast_channel *chan, const char *data)
 	/* The end of beep code.  Now the recording starts */
 
 	if (silence > 0) {
-		ast_format_copy(&rfmt, ast_channel_readformat(chan));
-		res = ast_set_read_format_by_id(chan, AST_FORMAT_SLINEAR);
+		rfmt = ao2_bump(ast_channel_readformat(chan));
+		res = ast_set_read_format(chan, ast_format_slin);
 		if (res < 0) {
 			ast_log(LOG_WARNING, "Unable to set to linear mode, giving up\n");
 			pbx_builtin_setvar_helper(chan, "RECORD_STATUS", "ERROR");
@@ -384,12 +421,11 @@ static int record_exec(struct ast_channel *chan, const char *data)
 				ast_frfree(f);
 				break;
 			}
-		} else if ((f->frametype == AST_FRAME_DTMF) &&
-			   ((f->subclass.integer == terminator) ||
-			    (ast_test_flag(&flags, OPTION_ANY_TERMINATE)))) {
-			ast_frfree(f);
-			pbx_builtin_setvar_helper(chan, "RECORD_STATUS", "DTMF");
-			break;
+		} else if (f->frametype == AST_FRAME_DTMF) {
+			if (record_dtmf_response(chan, &flags, f->subclass.integer, terminator)) {
+				ast_frfree(f);
+				break;
+			}
 		}
 		ast_frfree(f);
 	}
@@ -411,8 +447,13 @@ static int record_exec(struct ast_channel *chan, const char *data)
 	if (gotsilence) {
 		ast_stream_rewind(s, silence - 1000);
 		ast_truncstream(s);
-	} else if (!gottimeout) {
-		/* Strip off the last 1/4 second of it */
+	} else if (!gottimeout && f) {
+		/*
+		 * Strip off the last 1/4 second of it, if we didn't end because of a timeout,
+		 * or a hangup.  This must mean we ended because of a DTMF tone and while this
+		 * 1/4 second stripping is very old code the most likely explanation is that it
+		 * relates to stripping a partial DTMF tone.
+		 */
 		ast_stream_rewind(s, 250);
 		ast_truncstream(s);
 	}
@@ -422,8 +463,8 @@ static int record_exec(struct ast_channel *chan, const char *data)
 		ast_channel_stop_silence_generator(chan, silgen);
 
 out:
-	if ((silence > 0) && rfmt.id) {
-		res = ast_set_read_format(chan, &rfmt);
+	if ((silence > 0) && rfmt) {
+		res = ast_set_read_format(chan, rfmt);
 		if (res) {
 			ast_log(LOG_WARNING, "Unable to restore read format on '%s'\n", ast_channel_name(chan));
 		}

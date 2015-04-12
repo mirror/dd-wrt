@@ -35,7 +35,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 398168 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419592 $")
 
 #include "asterisk/paths.h"
 #include "asterisk/channel.h"
@@ -64,7 +64,7 @@ struct cel_config {
 	AST_RWLIST_ENTRY(cel_config) list;
 };
 
-static struct ast_event_sub *event_sub = NULL;
+#define CUSTOM_BACKEND_NAME "CEL Custom CSV Logging"
 
 static AST_RWLIST_HEAD_STATIC(sinks, cel_config);
 
@@ -124,7 +124,7 @@ static int load_config(void)
 	return res;
 }
 
-static void custom_log(const struct ast_event *event, void *userdata)
+static void custom_log(struct ast_event *event)
 {
 	struct ast_channel *dummy;
 	struct ast_str *str;
@@ -175,19 +175,15 @@ static void custom_log(const struct ast_event *event, void *userdata)
 
 static int unload_module(void)
 {
-	if (event_sub) {
-		event_sub = ast_event_unsubscribe(event_sub);
-	}
 
 	if (AST_RWLIST_WRLOCK(&sinks)) {
-		event_sub = ast_event_subscribe(AST_EVENT_CEL, custom_log, "CEL Custom CSV Logging",
-			NULL, AST_EVENT_IE_END);
 		ast_log(LOG_ERROR, "Unable to lock sink list.  Unload failed.\n");
 		return -1;
 	}
 
 	free_config();
 	AST_RWLIST_UNLOCK(&sinks);
+	ast_cel_backend_unregister(CUSTOM_BACKEND_NAME);
 	return 0;
 }
 
@@ -201,8 +197,9 @@ static enum ast_module_load_result load_module(void)
 	load_config();
 	AST_RWLIST_UNLOCK(&sinks);
 
-	event_sub = ast_event_subscribe(AST_EVENT_CEL, custom_log, "CEL Custom CSV Logging",
-		NULL, AST_EVENT_IE_END);
+	if (ast_cel_backend_register(CUSTOM_BACKEND_NAME, custom_log)) {
+		return AST_MODULE_LOAD_FAILURE;
+	}
 	return AST_MODULE_LOAD_SUCCESS;
 }
 
@@ -220,6 +217,7 @@ static int reload(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "Customizable Comma Separated Values CEL Backend",
+	.support_level = AST_MODULE_SUPPORT_CORE,
 	.load = load_module,
 	.unload = unload_module,
 	.reload = reload,

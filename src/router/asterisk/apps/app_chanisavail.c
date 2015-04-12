@@ -33,7 +33,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 359495 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419592 $")
 
 #include <sys/ioctl.h>
 
@@ -171,7 +171,7 @@ static int chanavail_exec(struct ast_channel *chan, const char *data)
 			}
 			snprintf(tmp, sizeof(tmp), "%d", status);
 			ast_str_append(&tmp_availstat, 0, "%s%s", ast_str_strlen(tmp_availstat) ? "&" : "", tmp);
-			if ((inuse <= 1) && (tempchan = ast_request(tech, ast_channel_nativeformats(chan), chan, number, &status))) {
+			if ((inuse <= 1) && (tempchan = ast_request(tech, ast_channel_nativeformats(chan), NULL, chan, number, &status))) {
 					ast_str_append(&tmp_availchan, 0, "%s%s", ast_str_strlen(tmp_availchan) ? "&" : "", ast_channel_name(tempchan));
 					
 					snprintf(tmp, sizeof(tmp), "%s/%s", tech, number);
@@ -211,4 +211,5 @@ static int load_module(void)
 		AST_MODULE_LOAD_DECLINE : AST_MODULE_LOAD_SUCCESS;
 }
 
-AST_MODULE_INFO_STANDARD(ASTERISK_GPL_KEY, "Check channel availability");
+AST_MODULE_INFO_STANDARD_EXTENDED(ASTERISK_GPL_KEY, "Check channel availability");
+

@@ -31,7 +31,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 381554 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 415466 $")
 
 #include <sys/time.h>
 #include <signal.h>
@@ -72,6 +72,7 @@ static AST_LIST_HEAD_STATIC(aslist, asent);
 static ast_cond_t as_cond;
 
 static pthread_t asthread = AST_PTHREADT_NULL;
+static volatile int asexit = 0;
 
 static int as_chan_list_state;
 
@@ -83,7 +84,7 @@ static void *autoservice_run(void *ign)
 		.subclass.integer = AST_CONTROL_HANGUP,
 	};
 
-	for (;;) {
+	while (!asexit) {
 		struct ast_channel *mons[MAX_AUTOMONS];
 		struct asent *ents[MAX_AUTOMONS];
 		struct ast_channel *chan;
@@ -131,6 +132,9 @@ static void *autoservice_run(void *ign)
 
 		callid = ast_channel_callid(chan);
 		ast_callid_threadassoc_change(callid);
+		if (callid) {
+			callid = ast_callid_unref(callid);
+		}
 
 		f = ast_read(chan);
 
@@ -144,41 +148,43 @@ static void *autoservice_run(void *ign)
 			defer_frame = &hangup_frame;
 		} else if (ast_is_deferrable_frame(f)) {
 			defer_frame = f;
-		}
-
-		if (defer_frame) {
-			for (i = 0; i < x; i++) {
-				struct ast_frame *dup_f;
-
-				if (mons[i] != chan) {
-					continue;
-				}
-
-				if (defer_frame != f) {
-					if ((dup_f = ast_frdup(defer_frame))) {
-						AST_LIST_INSERT_HEAD(&ents[i]->deferred_frames, dup_f, frame_list);
-					}
-				} else {
-					if ((dup_f = ast_frisolate(defer_frame))) {
-						if (dup_f != defer_frame) {
-							ast_frfree(defer_frame);
-						}
-						AST_LIST_INSERT_HEAD(&ents[i]->deferred_frames, dup_f, frame_list);
-					}
-				}
-
-				break;
-			}
-		} else if (f) {
+		} else {
+			/* Can't defer. Discard and continue with next. */
 			ast_frfree(f);
+			continue;
 		}
+
+		for (i = 0; i < x; i++) {
+			struct ast_frame *dup_f;
+
+			if (mons[i] != chan) {
+				continue;
+			}
+
+			if (!f) { /* defer_frame == &hangup_frame */
+				if ((dup_f = ast_frdup(defer_frame))) {
+					AST_LIST_INSERT_HEAD(&ents[i]->deferred_frames, dup_f, frame_list);
+				}
+			} else {
+				if ((dup_f = ast_frisolate(defer_frame))) {
+					AST_LIST_INSERT_HEAD(&ents[i]->deferred_frames, dup_f, frame_list);
+				}
+				if (dup_f != defer_frame) {
+					ast_frfree(defer_frame);
+				}
+			}
+
+			break;
+		}
+		/* The ast_waitfor_n() call will only read frames from
+		 * the channels' file descriptors. If ast_waitfor_n()
+		 * returns non-NULL, then one of the channels in the
+		 * mons array must have triggered the return. It's
+		 * therefore impossible that we got here while (i >= x).
+		 * If we did, we'd need to ast_frfree(f) if (f). */
 	}
 
-	if (callid) {
-		ast_callid_threadassoc_remove();
-		callid = ast_callid_unref(callid);
-	}
-
+	ast_callid_threadassoc_change(NULL);
 	asthread = AST_PTHREADT_NULL;
 
 	return NULL;
@@ -339,7 +345,19 @@ int ast_autoservice_ignore(struct ast_channel *chan, enum ast_frame_type ftype)
 	return res;
 }
 
+static void autoservice_shutdown(void)
+{
+	pthread_t th = asthread;
+	asexit = 1;
+	if (th != AST_PTHREADT_NULL) {
+		ast_cond_signal(&as_cond);
+		pthread_kill(th, SIGURG);
+		pthread_join(th, NULL);
+	}
+}
+
 void ast_autoservice_init(void)
 {
+	ast_register_cleanup(autoservice_shutdown);
 	ast_cond_init(&as_cond, NULL);
 }
