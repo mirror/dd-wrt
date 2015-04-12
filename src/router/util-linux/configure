@@ -17271,6 +17271,7 @@ for ac_func in  \
 	llseek \
 	lseek64 \
 	mempcpy \
+	mkostemp \
 	nanosleep \
 	ntp_gettime \
 	open_memstream \
@@ -19859,33 +19860,6 @@ fi
     check:*)
       { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: libblkid disabled; not building libmount" >&5
 $as_echo "$as_me: WARNING: libblkid disabled; not building libmount" >&2;}
-      build_libmount=no ;;
-    esac
-  fi
-
-
-
-
-  if test "x$build_libmount" != xno; then
-
-    ul_haveone_libmount=no
-
-      if test "x$have_scanf_alloc_modifier" = xyes; then
-        ul_haveone_libmount=yes
-      fi
-
-    case $enable_libmount:$ul_haveone_libmount in #(
-    no:*)
-      build_libmount=no ;;
-    yes:yes)
-      build_libmount=yes ;;
-    yes:*)
-      as_fn_error $? "libmount selected, but required scanf string alloc modifier not available" "$LINENO" 5;;
-    check:yes)
-      build_libmount=yes ;;
-    check:*)
-      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: scanf string alloc modifier not found; not building libmount" >&5
-$as_echo "$as_me: WARNING: scanf string alloc modifier not found; not building libmount" >&2;}
       build_libmount=no ;;
     esac
   fi
@@ -27142,7 +27116,7 @@ ac_config_headers="$ac_config_headers config.h"
 # Don't use configure.ac to replace install paths! See Makefile PATHFILES for
 # more details.
 #
-ac_config_files="$ac_config_files Makefile libblkid/docs/Makefile libblkid/docs/version.xml libblkid/src/blkid.h libfdisk/docs/Makefile libfdisk/docs/version.xml libfdisk/src/libfdisk.h libmount/docs/Makefile libmount/docs/version.xml libmount/src/libmount.h libsmartcols/docs/Makefile libsmartcols/docs/version.xml libsmartcols/src/libsmartcols.h po/Makefile.in"
+ac_config_files="$ac_config_files Makefile libblkid/blkid.pc libblkid/docs/Makefile libblkid/docs/version.xml libblkid/src/blkid.h libfdisk/docs/Makefile libfdisk/docs/version.xml libfdisk/src/libfdisk.h libmount/mount.pc libmount/docs/Makefile libmount/docs/version.xml libmount/src/libmount.h libsmartcols/smartcols.pc libsmartcols/docs/Makefile libsmartcols/docs/version.xml libsmartcols/src/libsmartcols.h libuuid/uuid.pc po/Makefile.in"
 
 
 cat >confcache <<\_ACEOF
@@ -28857,18 +28831,22 @@ do
     "po-directories") CONFIG_COMMANDS="$CONFIG_COMMANDS po-directories" ;;
     "config.h") CONFIG_HEADERS="$CONFIG_HEADERS config.h" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
+    "libblkid/blkid.pc") CONFIG_FILES="$CONFIG_FILES libblkid/blkid.pc" ;;
     "libblkid/docs/Makefile") CONFIG_FILES="$CONFIG_FILES libblkid/docs/Makefile" ;;
     "libblkid/docs/version.xml") CONFIG_FILES="$CONFIG_FILES libblkid/docs/version.xml" ;;
     "libblkid/src/blkid.h") CONFIG_FILES="$CONFIG_FILES libblkid/src/blkid.h" ;;
     "libfdisk/docs/Makefile") CONFIG_FILES="$CONFIG_FILES libfdisk/docs/Makefile" ;;
     "libfdisk/docs/version.xml") CONFIG_FILES="$CONFIG_FILES libfdisk/docs/version.xml" ;;
     "libfdisk/src/libfdisk.h") CONFIG_FILES="$CONFIG_FILES libfdisk/src/libfdisk.h" ;;
+    "libmount/mount.pc") CONFIG_FILES="$CONFIG_FILES libmount/mount.pc" ;;
     "libmount/docs/Makefile") CONFIG_FILES="$CONFIG_FILES libmount/docs/Makefile" ;;
     "libmount/docs/version.xml") CONFIG_FILES="$CONFIG_FILES libmount/docs/version.xml" ;;
     "libmount/src/libmount.h") CONFIG_FILES="$CONFIG_FILES libmount/src/libmount.h" ;;
+    "libsmartcols/smartcols.pc") CONFIG_FILES="$CONFIG_FILES libsmartcols/smartcols.pc" ;;
     "libsmartcols/docs/Makefile") CONFIG_FILES="$CONFIG_FILES libsmartcols/docs/Makefile" ;;
     "libsmartcols/docs/version.xml") CONFIG_FILES="$CONFIG_FILES libsmartcols/docs/version.xml" ;;
     "libsmartcols/src/libsmartcols.h") CONFIG_FILES="$CONFIG_FILES libsmartcols/src/libsmartcols.h" ;;
+    "libuuid/uuid.pc") CONFIG_FILES="$CONFIG_FILES libuuid/uuid.pc" ;;
     "po/Makefile.in") CONFIG_FILES="$CONFIG_FILES po/Makefile.in" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
