@@ -1,11 +1,20 @@
-python-configure:
+libffi-configure:
+	cd libffi && ./configure --host=$(ARCH)-linux --build=$(ARCH) --prefix=/usr CFLAGS="$(COPTS) $(MIPS16_OPT)"
+
+libffi:
+	make -C libffi
+
+libffi-install:
+	make -C libffi install DESTDIR=$(INSTALLDIR)/libffi
+
+python-configure: libffi-install libffi
 	cd python && ./configure --host=$(ARCH)-linux --build=$(ARCH) --sysconfdir=/etc \
 		--enable-shared \
 		--enable-static \
 		--prefix=/usr \
 		--without-cxx-main \
+		--with-system-ffi="$(INSTALLDIR)/libffi/usr" \
 		--with-threads \
-		--with-system-ffi="$(INSTALLDIR)/python/usr" \
 		--without-ensurepip \
 		--enable-ipv6 \
 		CONFIG_SITE="$(TOP)/python/site/config.site" \
@@ -13,7 +22,10 @@ python-configure:
 		LDFLAGS="$(COPTS) -L$(TOP)/openssl -L$(TOP)/zlib -L$(TOP)/python" \
 		CFLAGS="$(COPTS) -I$(TOP)/openssl/include -I$(TOP)/zlib" \
 		CXXFLAGS="$(COPTS) -I$(TOP)/openssl/include -I$(TOP)/zlib" \
-		CC="$(ARCH)-linux-uclibc-gcc $(COPTS)"
+		CC="$(ARCH)-linux-uclibc-gcc $(COPTS)" \
+		LIBFFI_INCLUDEDIR="$(INSTALLDIR)/libffi/usr/lib/libffi-3.2.1/include"
+
+
 
 python-clean:
 	make -C python clean
@@ -29,4 +41,10 @@ python-install:
 	rm -f $(INSTALLDIR)/python/usr/lib/python3.4/config-3.4m/*.a
 #18M...
 	rm -rf $(INSTALLDIR)/python/usr/lib/python3.4/test
+
+	rm -rf $(INSTALLDIR)/libffi/usr/pkgconfig
+	rm -rf $(INSTALLDIR)/libffi/usr/lib/libffi-3.2.1/include
+	rm -rf $(INSTALLDIR)/libffi/usr/share
+	rm -f $(INSTALLDIR)/libffi/usr/lib/*.a
+	rm -f $(INSTALLDIR)/libffi/usr/lib/*.la
 
