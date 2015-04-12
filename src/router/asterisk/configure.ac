@@ -896,19 +896,6 @@ AC_LINK_IFELSE(
   ]
 )
 
-# Some platforms define sem_init(), but only support sem_open(). joyous.
-AC_MSG_CHECKING(for working unnamed semaphores)
-AC_RUN_IFELSE(
-	[AC_LANG_PROGRAM([#include <semaphore.h>],
-		[sem_t sem; return sem_init(&sem, 0, 0);])],
-	AC_MSG_RESULT(yes)
-	AC_DEFINE([HAS_WORKING_SEMAPHORE], 1, [Define to 1 if anonymous semaphores work.]),
-	AC_MSG_RESULT(no),
-	AC_MSG_RESULT(cross-compile)
-	AC_MSG_NOTICE([WARNING: result yes guessed because of cross compilation])
-	AC_DEFINE([HAS_WORKING_SEMAPHORE], 1, [Define to 1 if anonymous semaphores work.])
-)
-
 LIBS="$save_LIBS"
 CFLAGS="$save_CFLAGS"
 if test "${ac_cv_pthread_rwlock_timedwrlock}" = "yes"; then
@@ -1215,7 +1202,6 @@ AC_LINK_IFELSE(
 			#include <resolv.h>],
 			[int foo = res_ninit(NULL);])],
 	AC_MSG_RESULT(yes)
-	AC_DEFINE([HAVE_RES_NINIT], 1, [Define to 1 if your system has the re-entrant resolver functions.])
 	AC_SEARCH_LIBS(res_9_ndestroy, resolv)
 	AC_MSG_CHECKING(for res_ndestroy)
 	AC_LINK_IFELSE(
