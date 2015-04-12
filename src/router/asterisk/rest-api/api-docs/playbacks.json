@@ -1,0 +1,155 @@
+{
+	"_copyright": "Copyright (C) 2012 - 2013, Digium, Inc.",
+	"_author": "David M. Lee, II <dlee@digium.com>",
+	"_svn_revision": "$Revision: 429091 $",
+	"apiVersion": "1.6.0",
+	"swaggerVersion": "1.1",
+	"basePath": "http://localhost:8088/ari",
+	"resourcePath": "/api-docs/playbacks.{format}",
+	"apis": [
+		{
+			"path": "/playbacks/{playbackId}",
+			"description": "Control object for a playback operation.",
+			"operations": [
+				{
+					"httpMethod": "GET",
+					"summary": "Get a playback's details.",
+					"nickname": "get",
+					"responseClass": "Playback",
+					"parameters": [
+						{
+							"name": "playbackId",
+							"description": "Playback's id",
+							"paramType": "path",
+							"required": true,
+							"allowMultiple": false,
+							"dataType": "string"
+						}
+					],
+					"errorResponses": [
+						{
+							"code": 404,
+							"reason": "The playback cannot be found"
+						}
+					]
+				},
+				{
+					"httpMethod": "DELETE",
+					"summary": "Stop a playback.",
+					"nickname": "stop",
+					"responseClass": "void",
+					"parameters": [
+						{
+							"name": "playbackId",
+							"description": "Playback's id",
+							"paramType": "path",
+							"required": true,
+							"allowMultiple": false,
+							"dataType": "string"
+						}
+					],
+					"errorResponses": [
+						{
+							"code": 404,
+							"reason": "The playback cannot be found"
+						}
+					]
+				}
+			]
+		},
+		{
+			"path": "/playbacks/{playbackId}/control",
+			"description": "Control object for a playback operation.",
+			"operations": [
+				{
+					"httpMethod": "POST",
+					"summary": "Control a playback.",
+					"nickname": "control",
+					"responseClass": "void",
+					"parameters": [
+						{
+							"name": "playbackId",
+							"description": "Playback's id",
+							"paramType": "path",
+							"required": true,
+							"allowMultiple": false,
+							"dataType": "string"
+						},
+						{
+							"name": "operation",
+							"description": "Operation to perform on the playback.",
+							"paramType": "query",
+							"required": true,
+							"allowMultiple": false,
+							"dataType": "string",
+							"allowableValues": {
+								"valueType": "LIST",
+								"values": [
+									"restart",
+									"pause",
+									"unpause",
+									"reverse",
+									"forward"
+								]
+							}
+						}
+					],
+					"errorResponses": [
+						{
+							"code": 400,
+							"reason": "The provided operation parameter was invalid"
+						},
+						{
+							"code": 404,
+							"reason": "The playback cannot be found"
+						},
+						{
+							"code": 409,
+							"reason": "The operation cannot be performed in the playback's current state"
+						}
+]
+				}
+			]
+		}
+	],
+	"models": {
+		"Playback": {
+			"id": "Playback",
+			"description": "Object representing the playback of media to a channel",
+			"properties": {
+				"id": {
+					"type": "string",
+					"description": "ID for this playback operation",
+					"required": true
+				},
+				"media_uri": {
+					"type": "string",
+					"description": "URI for the media to play back.",
+					"required": true
+				},
+				"target_uri": {
+					"type": "string",
+					"description": "URI for the channel or bridge to play the media on",
+					"required": true
+				},
+				"language": {
+					"type": "string",
+					"description": "For media types that support multiple languages, the language requested for playback."
+				},
+				"state": {
+					"type": "string",
+					"description": "Current state of the playback operation.",
+					"required": true,
+					"allowableValues": {
+						"valueType": "LIST",
+						"values": [
+							"queued",
+							"playing",
+							"complete"
+						]
+					}
+				}
+			}
+		}
+	}
+}

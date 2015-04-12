@@ -1,0 +1,656 @@
+{
+	"_copyright": "Copyright (C) 2012 - 2013, Digium, Inc.",
+	"_author": "David M. Lee, II <dlee@digium.com>",
+	"_svn_revision": "$Revision: 431145 $",
+	"apiVersion": "1.6.0",
+	"swaggerVersion": "1.1",
+	"basePath": "http://localhost:8088/ari",
+	"resourcePath": "/api-docs/bridges.{format}",
+	"apis": [
+		{
+			"path": "/bridges",
+			"description": "Active bridges",
+			"operations": [
+				{
+					"httpMethod": "GET",
+					"summary": "List all active bridges in Asterisk.",
+					"nickname": "list",
+					"responseClass": "List[Bridge]"
+				},
+				{
+					"httpMethod": "POST",
+					"summary": "Create a new bridge.",
+					"notes": "This bridge persists until it has been shut down, or Asterisk has been shut down.",
+					"nickname": "create",
+					"responseClass": "Bridge",
+					"parameters": [
+						{
+							"name": "type",
+							"description": "Comma separated list of bridge type attributes (mixing, holding, dtmf_events, proxy_media).",
+							"paramType": "query",
+							"required": false,
+							"allowMultiple": false,
+							"dataType": "string"
+						},
+						{
+							"name": "bridgeId",
+							"description": "Unique ID to give to the bridge being created.",
+							"paramType": "query",
+							"required": false,
+							"allowMultiple": false,
+							"dataType": "string"
+						},
+						{
+							"name": "name",
+							"description": "Name to give to the bridge being created.",
+							"paramType": "query",
+							"required": false,
+							"allowMultiple": false,
+							"dataType": "string"
+						}
+					]
+				}
+			]
+		},
+		{
+			"path": "/bridges/{bridgeId}",
+			"description": "Individual bridge",
+			"operations": [
+				{
+					"httpMethod": "POST",
+					"summary": "Create a new bridge or updates an existing one.",
+					"notes": "This bridge persists until it has been shut down, or Asterisk has been shut down.",
+					"nickname": "createWithId",
+					"responseClass": "Bridge",
+					"parameters": [
+						{
+							"name": "type",
+							"description": "Comma separated list of bridge type attributes (mixing, holding, dtmf_events, proxy_media) to set.",
+							"paramType": "query",
+							"required": false,
+							"allowMultiple": false,
+							"dataType": "string"
+						},
+						{
+							"name": "bridgeId",
+							"description": "Unique ID to give to the bridge being created.",
+							"paramType": "path",
+							"required": true,
+							"allowMultiple": false,
+							"dataType": "string"
+						},
+						{
+							"name": "name",
+							"description": "Set the name of the bridge.",
+							"paramType": "query",
+							"required": false,
+							"allowMultiple": false,
+							"dataType": "string"
+						}
+					]
+				},
+				{
+					"httpMethod": "GET",
+					"summary": "Get bridge details.",
+					"nickname": "get",
+					"responseClass": "Bridge",
+					"parameters": [
+						{
+							"name": "bridgeId",
+							"description": "Bridge's id",
+							"paramType": "path",
+							"required": true,
+							"allowMultiple": false,
+							"dataType": "string"
+						}
+					],
+					"errorResponses": [
+						{
+							"code": 404,
+							"reason": "Bridge not found"
+						}
+					]
+				},
+				{
+					"httpMethod": "DELETE",
+					"summary": "Shut down a bridge.",
+					"notes": "If any channels are in this bridge, they will be removed and resume whatever they were doing beforehand.",
+					"nickname": "destroy",
+					"responseClass": "void",
+					"parameters": [
+						{
+							"name": "bridgeId",
+							"description": "Bridge's id",
+							"paramType": "path",
+							"required": true,
+							"allowMultiple": false,
+							"dataType": "string"
+						}
+					],
+					"errorResponses": [
+						{
+							"code": 404,
+							"reason": "Bridge not found"
+						}
+					]
+				}
+			]
+		},
+		{
+			"path": "/bridges/{bridgeId}/addChannel",
+			"description": "Add a channel to a bridge",
+			"operations": [
+				{
+					"httpMethod": "POST",
+					"summary": "Add a channel to a bridge.",
+					"nickname": "addChannel",
+					"responseClass": "void",
+					"parameters": [
+						{
+							"name": "bridgeId",
+							"description": "Bridge's id",
+							"paramType": "path",
+							"required": true,
+							"allowMultiple": false,
+							"dataType": "string"
+						},
+						{
+							"name": "channel",
+							"description": "Ids of channels to add to bridge",
+							"paramType": "query",
+							"required": true,
+							"allowMultiple": true,
+							"dataType": "string"
+						},
+						{
+							"name": "role",
+							"description": "Channel's role in the bridge",
+							"paramType": "query",
+							"required": false,
+							"allowMultiple": false,
+							"dataType": "string"
+						}
+					],
+					"errorResponses": [
+						{
+							"code": 400,
+							"reason": "Channel not found"
+						},
+						{
+							"code": 404,
+							"reason": "Bridge not found"
+						},
+						{
+							"code": 409,
+							"reason": "Bridge not in Stasis application; Channel currently recording"
+						},
+						{
+							"code": 422,
+							"reason": "Channel not in Stasis application"
+						}
+					]
+				}
+			]
+		},
+		{
+			"path": "/bridges/{bridgeId}/removeChannel",
+			"description": "Remove a channel from a bridge",
+			"operations": [
+				{
+					"httpMethod": "POST",
+					"summary": "Remove a channel from a bridge.",
+					"nickname": "removeChannel",
+					"responseClass": "void",
+					"parameters": [
+						{
+							"name": "bridgeId",
+							"description": "Bridge's id",
+							"paramType": "path",
+							"required": true,
+							"allowMultiple": false,
+							"dataType": "string"
+						},
+						{
+							"name": "channel",
+							"description": "Ids of channels to remove from bridge",
+							"paramType": "query",
+							"required": true,
+							"allowMultiple": true,
+							"dataType": "string"
+						}
+					],
+					"errorResponses": [
+						{
+							"code": 400,
+							"reason": "Channel not found"
+						},
+						{
+							"code": 404,
+							"reason": "Bridge not found"
+						},
+						{
+							"code": 409,
+							"reason": "Bridge not in Stasis application"
+						},
+						{
+							"code": 422,
+							"reason": "Channel not in this bridge"
+						}
+					]
+				}
+			]
+		},
+		{
+			"path": "/bridges/{bridgeId}/moh",
+			"description": "Play music on hold to a bridge",
+			"operations": [
+				{
+					"httpMethod": "POST",
+					"summary": "Play music on hold to a bridge or change the MOH class that is playing.",
+					"nickname": "startMoh",
+					"responseClass": "void",
+					"parameters": [
+						{
+							"name": "bridgeId",
+							"description": "Bridge's id",
+							"paramType": "path",
+							"required": true,
+							"allowMultiple": false,
+							"dataType": "string"
+						},
+						{
+							"name": "mohClass",
+							"description": "Channel's id",
+							"paramType": "query",
+							"required": false,
+							"allowMultiple": false,
+							"dataType": "string"
+						}
+					],
+					"errorResponses": [
+						{
+							"code": 404,
+							"reason": "Bridge not found"
+						},
+						{
+							"code": 409,
+							"reason": "Bridge not in Stasis application"
+						}
+					]
+				},
+				{
+					"httpMethod": "DELETE",
+					"summary": "Stop playing music on hold to a bridge.",
+					"notes": "This will only stop music on hold being played via POST bridges/{bridgeId}/moh.",
+					"nickname": "stopMoh",
+					"responseClass": "void",
+					"parameters": [
+						{
+							"name": "bridgeId",
+							"description": "Bridge's id",
+							"paramType": "path",
+							"required": true,
+							"allowMultiple": false,
+							"dataType": "string"
+						}
+					],
+					"errorResponses": [
+						{
+							"code": 404,
+							"reason": "Bridge not found"
+						},
+						{
+							"code": 409,
+							"reason": "Bridge not in Stasis application"
+						}
+					]
+				}
+			]
+		},
+		{
+			"path": "/bridges/{bridgeId}/play",
+			"description": "Play media to the participants of a bridge",
+			"operations": [
+				{
+					"httpMethod": "POST",
+					"summary": "Start playback of media on a bridge.",
+					"notes": "The media URI may be any of a number of URI's. Currently sound:, recording:, number:, digits:, characters:, and tone: URI's are supported. This operation creates a playback resource that can be used to control the playback of media (pause, rewind, fast forward, etc.)",
+					"nickname": "play",
+					"responseClass": "Playback",
+					"parameters": [
+						{
+							"name": "bridgeId",
+							"description": "Bridge's id",
+							"paramType": "path",
+							"required": true,
+							"allowMultiple": false,
+							"dataType": "string"
+						},
+						{
+							"name": "media",
+							"description": "Media's URI to play.",
+							"paramType": "query",
+							"required": true,
+							"allowMultiple": false,
+							"dataType": "string"
+						},
+						{
+							"name": "lang",
+							"description": "For sounds, selects language for sound.",
+							"paramType": "query",
+							"required": false,
+							"allowMultiple": false,
+							"dataType": "string"
+						},
+						{
+							"name": "offsetms",
+							"description": "Number of media to skip before playing.",
+							"paramType": "query",
+							"required": false,
+							"allowMultiple": false,
+							"dataType": "int",
+							"defaultValue": 0,
+							"allowableValues": {
+								"valueType": "RANGE",
+								"min": 0
+							}
+
+						},
+						{
+							"name": "skipms",
+							"description": "Number of milliseconds to skip for forward/reverse operations.",
+							"paramType": "query",
+							"required": false,
+							"allowMultiple": false,
+							"dataType": "int",
+							"defaultValue": 3000,
+							"allowableValues": {
+								"valueType": "RANGE",
+								"min": 0
+							}
+						},
+						{
+							"name": "playbackId",
+							"description": "Playback Id.",
+							"paramType": "query",
+							"required": false,
+							"allowMultiple": false,
+							"dataType": "string"
+						}
+					],
+					"errorResponses": [
+						{
+							"code": 404,
+							"reason": "Bridge not found"
+						},
+						{
+							"code": 409,
+							"reason": "Bridge not in a Stasis application"
+						}
+					]
+				}
+			]
+		},
+		{
+			"path": "/bridges/{bridgeId}/play/{playbackId}",
+			"description": "Play media to a bridge",
+			"operations": [
+				{
+					"httpMethod": "POST",
+					"summary": "Start playback of media on a bridge.",
+					"notes": "The media URI may be any of a number of URI's. Currently sound:, recording:, number:, digits:, characters:, and tone: URI's are supported. This operation creates a playback resource that can be used to control the playback of media (pause, rewind, fast forward, etc.)",
+					"nickname": "playWithId",
+					"responseClass": "Playback",
+					"parameters": [
+						{
+							"name": "bridgeId",
+							"description": "Bridge's id",
+							"paramType": "path",
+							"required": true,
+							"allowMultiple": false,
+							"dataType": "string"
+						},
+						{
+							"name": "playbackId",
+							"description": "Playback ID.",
+							"paramType": "path",
+							"required": true,
+							"allowMultiple": false,
+							"dataType": "string"
+						},
+						{
+							"name": "media",
+							"description": "Media's URI to play.",
+							"paramType": "query",
+							"required": true,
+							"allowMultiple": false,
+							"dataType": "string"
+						},
+						{
+							"name": "lang",
+							"description": "For sounds, selects language for sound.",
+							"paramType": "query",
+							"required": false,
+							"allowMultiple": false,
+							"dataType": "string"
+						},
+						{
+							"name": "offsetms",
+							"description": "Number of media to skip before playing.",
+							"paramType": "query",
+							"required": false,
+							"allowMultiple": false,
+							"dataType": "int",
+							"defaultValue": 0,
+							"allowableValues": {
+								"valueType": "RANGE",
+								"min": 0
+							}
+						},
+						{
+							"name": "skipms",
+							"description": "Number of milliseconds to skip for forward/reverse operations.",
+							"paramType": "query",
+							"required": false,
+							"allowMultiple": false,
+							"dataType": "int",
+							"defaultValue": 3000,
+							"allowableValues": {
+								"valueType": "RANGE",
+								"min": 0
+							}
+						}
+					],
+					"errorResponses": [
+						{
+							"code": 404,
+							"reason": "Bridge not found"
+						},
+						{
+							"code": 409,
+							"reason": "Bridge not in a Stasis application"
+						}
+					]
+
+				}
+			]
+		},
+		{
+			"path": "/bridges/{bridgeId}/record",
+			"description": "Record audio on a bridge",
+			"operations": [
+				{
+					"httpMethod": "POST",
+					"summary": "Start a recording.",
+					"notes": "This records the mixed audio from all channels participating in this bridge.",
+					"nickname": "record",
+					"responseClass": "LiveRecording",
+					"parameters": [
+						{
+							"name": "bridgeId",
+							"description": "Bridge's id",
+							"paramType": "path",
+							"required": true,
+							"allowMultiple": false,
+							"dataType": "string"
+						},
+						{
+							"name": "name",
+							"description": "Recording's filename",
+							"paramType": "query",
+							"required": true,
+							"allowMultiple": false,
+							"dataType": "string"
+						},
+						{
+							"name": "format",
+							"description": "Format to encode audio in",
+							"paramType": "query",
+							"required": true,
+							"allowMultiple": false,
+							"dataType": "string"
+						},
+						{
+							"name": "maxDurationSeconds",
+							"description": "Maximum duration of the recording, in seconds. 0 for no limit.",
+							"paramType": "query",
+							"required": false,
+							"allowMultiple": false,
+							"dataType": "int",
+							"defaultValue": 0,
+							"allowableValues": {
+								"valueType": "RANGE",
+								"min": 0
+							}
+						},
+						{
+							"name": "maxSilenceSeconds",
+							"description": "Maximum duration of silence, in seconds. 0 for no limit.",
+							"paramType": "query",
+							"required": false,
+							"allowMultiple": false,
+							"dataType": "int",
+							"defaultValue": 0,
+							"allowableValues": {
+								"valueType": "RANGE",
+								"min": 0
+							}
+						},
+						{
+							"name": "ifExists",
+							"description": "Action to take if a recording with the same name already exists.",
+							"paramType": "query",
+							"required": false,
+							"allowMultiple": false,
+							"dataType": "string",
+							"defaultValue": "fail",
+							"allowableValues": {
+								"valueType": "LIST",
+								"values": [
+									"fail",
+									"overwrite",
+									"append"
+								]
+							}
+						},
+						{
+							"name": "beep",
+							"description": "Play beep when recording begins",
+							"paramType": "query",
+							"required": false,
+							"allowMultiple": false,
+							"dataType": "boolean",
+							"defaultValue": false
+						},
+						{
+							"name": "terminateOn",
+							"description": "DTMF input to terminate recording.",
+							"paramType": "query",
+							"required": false,
+							"allowMultiple": false,
+							"dataType": "string",
+							"defaultValue": "none",
+							"allowableValues": {
+								"valueType": "LIST",
+								"values": [
+									"none",
+									"any",
+									"*",
+									"#"
+								]
+							}
+						}
+					],
+                    "errorResponses": [
+                        {
+                            "code": 400,
+                            "reason": "Invalid parameters"
+                        },
+                        {
+                            "code": 404,
+                            "reason": "Bridge not found"
+                        },
+                        {
+                            "code": 409,
+                            "reason": "Bridge is not in a Stasis application; A recording with the same name already exists on the system and can not be overwritten because it is in progress or ifExists=fail"
+                        },
+						{
+							"code": 422,
+							"reason": "The format specified is unknown on this system"
+						}
+                    ]
+				}
+			]
+		}
+	],
+	"models": {
+		"Bridge": {
+			"id": "Bridge",
+			"description": "The merging of media from one or more channels.\n\nEveryone on the bridge receives the same audio.",
+			"properties": {
+				"id": {
+					"type": "string",
+					"description": "Unique identifier for this bridge",
+					"required": true
+				},
+				"technology": {
+					"type": "string",
+					"description": "Name of the current bridging technology",
+					"required": true
+				},
+				"bridge_type": {
+					"type": "string",
+					"description": "Type of bridge technology",
+					"required": true,
+					"allowableValues": {
+						"valueType": "LIST",
+						"values": [
+							"mixing",
+							"holding"
+						]
+					}
+				},
+				"bridge_class": {
+					"type": "string",
+					"description": "Bridging class",
+					"required": true
+				},
+				"creator": {
+					"type": "string",
+					"description": "Entity that created the bridge",
+					"required": true
+				},
+				"name": {
+					"type": "string",
+					"description": "Name the creator gave the bridge",
+					"required": true
+				},
+				"channels": {
+					"type": "List[string]",
+					"description": "Ids of channels participating in this bridge",
+					"required": true
+				}
+			}
+		}
+	}
+}

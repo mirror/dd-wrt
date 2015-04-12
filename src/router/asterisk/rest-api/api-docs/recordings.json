@@ -1,0 +1,378 @@
+{
+	"_copyright": "Copyright (C) 2012 - 2013, Digium, Inc.",
+	"_author": "David M. Lee, II <dlee@digium.com>",
+	"_svn_revision": "$Revision: 429091 $",
+	"apiVersion": "1.6.0",
+	"swaggerVersion": "1.1",
+	"basePath": "http://localhost:8088/ari",
+	"resourcePath": "/api-docs/recordings.{format}",
+	"apis": [
+		{
+			"path": "/recordings/stored",
+			"description": "Recordings",
+			"operations": [
+				{
+					"httpMethod": "GET",
+					"summary": "List recordings that are complete.",
+					"nickname": "listStored",
+					"responseClass": "List[StoredRecording]"
+				}
+			]
+		},
+		{
+			"path": "/recordings/stored/{recordingName}",
+			"description": "Individual recording",
+			"operations": [
+				{
+					"httpMethod": "GET",
+					"summary": "Get a stored recording's details.",
+					"nickname": "getStored",
+					"responseClass": "StoredRecording",
+					"parameters": [
+						{
+							"name": "recordingName",
+							"description": "The name of the recording",
+							"paramType": "path",
+							"required": true,
+							"allowMultiple": false,
+							"dataType": "string"
+						}
+					],
+					"errorResponses": [
+						{
+							"code": 404,
+							"reason": "Recording not found"
+						}
+					]
+				},
+				{
+					"httpMethod": "DELETE",
+					"summary": "Delete a stored recording.",
+					"nickname": "deleteStored",
+					"responseClass": "void",
+					"parameters": [
+						{
+							"name": "recordingName",
+							"description": "The name of the recording",
+							"paramType": "path",
+							"required": true,
+							"allowMultiple": false,
+							"dataType": "string"
+						}
+					],
+					"errorResponses": [
+						{
+							"code": 404,
+							"reason": "Recording not found"
+						}
+					]
+				}
+			]
+		},
+		{
+			"path": "/recordings/stored/{recordingName}/copy",
+			"description": "Copy an individual recording",
+			"operations": [
+				{
+					"httpMethod": "POST",
+					"summary": "Copy a stored recording.",
+					"nickname": "copyStored",
+					"responseClass": "StoredRecording",
+					"parameters": [
+						{
+							"name": "recordingName",
+							"description": "The name of the recording to copy",
+							"paramType": "path",
+							"required": true,
+							"allowMultiple": false,
+							"dataType": "string"
+						},
+						{
+							"name": "destinationRecordingName",
+							"description": "The destination name of the recording",
+							"paramType": "query",
+							"required": true,
+							"allowMultiple": false,
+							"dataType": "string"
+						}
+					],
+					"errorResponses": [
+						{
+							"code": 404,
+							"reason": "Recording not found"
+						},
+						{
+							"code": 409,
+							"reason": "A recording with the same name already exists on the system"
+						}
+					]
+				}
+			]
+		},
+		{
+			"path": "/recordings/live/{recordingName}",
+			"description": "A recording that is in progress",
+			"operations": [
+				{
+					"httpMethod": "GET",
+					"summary": "List live recordings.",
+					"nickname": "getLive",
+					"responseClass": "LiveRecording",
+					"parameters": [
+						{
+							"name": "recordingName",
+							"description": "The name of the recording",
+							"paramType": "path",
+							"required": true,
+							"allowMultiple": false,
+							"dataType": "string"
+						}
+					],
+					"errorResponses": [
+						{
+							"code": 404,
+							"reason": "Recording not found"
+						}
+					]
+				},
+				{
+					"httpMethod": "DELETE",
+					"summary": "Stop a live recording and discard it.",
+					"nickname": "cancel",
+					"responseClass": "void",
+					"parameters": [
+						{
+							"name": "recordingName",
+							"description": "The name of the recording",
+							"paramType": "path",
+							"required": true,
+							"allowMultiple": false,
+							"dataType": "string"
+						}
+					],
+					"errorResponses": [
+						{
+							"code": 404,
+							"reason": "Recording not found"
+						}
+					]
+				}
+			]
+		},
+		{
+			"path": "/recordings/live/{recordingName}/stop",
+			"operations": [
+				{
+					"httpMethod": "POST",
+					"summary": "Stop a live recording and store it.",
+					"nickname": "stop",
+					"responseClass": "void",
+					"parameters": [
+						{
+							"name": "recordingName",
+							"description": "The name of the recording",
+							"paramType": "path",
+							"required": true,
+							"allowMultiple": false,
+							"dataType": "string"
+						}
+					],
+					"errorResponses": [
+						{
+							"code": 404,
+							"reason": "Recording not found"
+						}
+					]
+				}
+			]
+		},
+		{
+			"path": "/recordings/live/{recordingName}/pause",
+			"operations": [
+				{
+					"httpMethod": "POST",
+					"summary": "Pause a live recording.",
+					"notes": "Pausing a recording suspends silence detection, which will be restarted when the recording is unpaused. Paused time is not included in the accounting for maxDurationSeconds.",
+					"nickname": "pause",
+					"responseClass": "void",
+					"parameters": [
+						{
+							"name": "recordingName",
+							"description": "The name of the recording",
+							"paramType": "path",
+							"required": true,
+							"allowMultiple": false,
+							"dataType": "string"
+						}
+					],
+					"errorResponses": [
+						{
+							"code": 404,
+							"reason": "Recording not found"
+						},
+						{
+							"code": 409,
+							"reason": "Recording not in session"
+						}
+					]
+				},
+				{
+					"httpMethod": "DELETE",
+					"summary": "Unpause a live recording.",
+					"nickname": "unpause",
+					"responseClass": "void",
+					"parameters": [
+						{
+							"name": "recordingName",
+							"description": "The name of the recording",
+							"paramType": "path",
+							"required": true,
+							"allowMultiple": false,
+							"dataType": "string"
+						}
+					],
+					"errorResponses": [
+						{
+							"code": 404,
+							"reason": "Recording not found"
+						},
+						{
+							"code": 409,
+							"reason": "Recording not in session"
+						}
+					]
+				}
+			]
+		},
+		{
+			"path": "/recordings/live/{recordingName}/mute",
+			"operations": [
+				{
+					"httpMethod": "POST",
+					"summary": "Mute a live recording.",
+					"notes": "Muting a recording suspends silence detection, which will be restarted when the recording is unmuted.",
+					"nickname": "mute",
+					"responseClass": "void",
+					"parameters": [
+						{
+							"name": "recordingName",
+							"description": "The name of the recording",
+							"paramType": "path",
+							"required": true,
+							"allowMultiple": false,
+							"dataType": "string"
+						}
+					],
+					"errorResponses": [
+						{
+							"code": 404,
+							"reason": "Recording not found"
+						},
+						{
+							"code": 409,
+							"reason": "Recording not in session"
+						}
+					]
+				},
+				{
+					"httpMethod": "DELETE",
+					"summary": "Unmute a live recording.",
+					"nickname": "unmute",
+					"responseClass": "void",
+					"parameters": [
+						{
+							"name": "recordingName",
+							"description": "The name of the recording",
+							"paramType": "path",
+							"required": true,
+							"allowMultiple": false,
+							"dataType": "string"
+						}
+					],
+					"errorResponses": [
+						{
+							"code": 404,
+							"reason": "Recording not found"
+						},
+						{
+							"code": 409,
+							"reason": "Recording not in session"
+						}
+					]
+				}
+			]
+		}
+	],
+	"models": {
+		"StoredRecording": {
+			"id": "StoredRecording",
+			"description": "A past recording that may be played back.",
+			"properties": {
+				"name": {
+					"required": true,
+					"type": "string"
+				},
+				"format": {
+					"required": true,
+					"type": "string"
+				}
+			}
+		},
+		"LiveRecording": {
+			"id": "LiveRecording",
+			"description": "A recording that is in progress",
+			"properties": {
+				"name": {
+					"required": true,
+					"type": "string",
+					"description": "Base name for the recording"
+				},
+				"format": {
+					"required": true,
+					"type": "string",
+					"description": "Recording format (wav, gsm, etc.)"
+				},
+				"target_uri": {
+					"required": true,
+					"type": "string",
+					"description": "URI for the channel or bridge being recorded"
+				},
+				"state": {
+					"required": true,
+					"type": "string",
+					"allowableValues": {
+						"valueType": "LIST",
+						"values": [
+							"queued",
+							"recording",
+							"paused",
+							"done",
+							"failed",
+							"canceled"
+						]
+					}
+				},
+				"duration": {
+					"required": false,
+					"type": "int",
+					"description": "Duration in seconds of the recording"
+				},
+				"talking_duration": {
+					"required": false,
+					"type": "int",
+					"description": "Duration of talking, in seconds, detected in the recording. This is only available if the recording was initiated with a non-zero maxSilenceSeconds."
+				},
+				"silence_duration": {
+					"required": false,
+					"type": "int",
+					"description": "Duration of silence, in seconds, detected in the recording. This is only available if the recording was initiated with a non-zero maxSilenceSeconds."
+				},
+				"cause": {
+					"required": false,
+					"type": "string",
+					"description": "Cause for recording failure if failed"
+				}
+			}
+		}
+	}
+}
