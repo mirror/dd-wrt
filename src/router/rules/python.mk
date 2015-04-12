@@ -7,7 +7,7 @@ libffi:
 libffi-install:
 	make -C libffi install DESTDIR=$(INSTALLDIR)/libffi
 
-python-configure: libffi-install libffi
+python-configure: libffi libffi-install
 	cd python && ./configure --host=$(ARCH)-linux --build=$(ARCH) --sysconfdir=/etc \
 		--enable-shared \
 		--enable-static \
@@ -30,7 +30,7 @@ python-configure: libffi-install libffi
 python-clean:
 	make -C python clean
 
-python:
+python: libffi libffi-install
 	make -C python python Parser/pgen
 	make -C python sharedmods
 
