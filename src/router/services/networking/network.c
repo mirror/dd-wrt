@@ -4851,49 +4851,7 @@ static int notify_nas(char *type, char *ifname, char *action)
 	return _evalpid(argv, ">/dev/console", 0, &pid);
 }
 #endif
-/*
- * static int notify_nas(char *type, char *ifname, char *action) { char
- * *argv[] = {"nas4not", type, ifname, action, NULL, NULL, NULL, NULL,
- * NULL, NULL}; char *str = NULL; int retries = 10; char tmp[100], prefix[]
- * = "wlXXXXXXXXXX_"; int unit; char remote[ETHER_ADDR_LEN]; char ssid[48],
- * pass[80], auth[16], crypto[16], role[8]; int i;
- * 
- * wl_ioctl(ifname, WLC_GET_INSTANCE, &unit, sizeof(unit)); snprintf(prefix,
- * sizeof(prefix), "wl%d_", unit); #ifdef WPA2_WMM if
- * (nvram_match(strcat_r(prefix, "akm", tmp), "") &&
- * nvram_match(strcat_r(prefix, "auth_mode", tmp), "none")) #else if
- * (nvram_match(strcat_r(prefix, "auth_mode", tmp), "open") ||
- * nvram_match(strcat_r(prefix, "auth_mode", tmp), "shared")) #endif return
- * 0;
- * 
- * wl_ioctl(ifname, WLC_WDS_GET_REMOTE_HWADDR, remote, ETHER_ADDR_LEN); for
- * (i = 0; i < MAX_NVPARSE; i ++) { char mac[ETHER_ADDR_STR_LEN]; uint8
- * ea[ETHER_ADDR_LEN];
- * 
- * if (get_wds_wsec(unit, i, mac, role, crypto, auth, ssid, pass) &&
- * ether_atoe(mac, ea) && !bcmp(ea, remote, ETHER_ADDR_LEN)) { argv[4] =
- * role; argv[5] = crypto; argv[6] = auth; argv[7] = pass; argv[8] = ssid;
- * break; } }
- * 
- * if (i == MAX_NVPARSE) {
- * 
- * argv[4] = "auto";
- * 
- * argv[5] = nvram_safe_get(strcat_r(prefix, "crypto", tmp));
- * 
- * #ifdef WPA2_WMM argv[6] = nvram_safe_get(strcat_r(prefix, "akm", tmp));
- * #else argv[6] = nvram_safe_get(strcat_r(prefix, "auth_mode", tmp)); #endif
- * 
- * argv[7] = nvram_safe_get(strcat_r(prefix, "wpa_psk", tmp));
- * 
- * argv[8] = nvram_safe_get(strcat_r(prefix, "ssid", tmp)); }
- * 
- * while (retries -- > 0 && !(str = file2str("/tmp/nas.lan.pid"))) sleep(1);
- * if (str) { int pid; free(str); return _eval(argv, ">/dev/console", 0,
- * &pid); } return -1;
- * 
- * } 
- */
+
 void stop_hotplug_net(void)
 {
 }
