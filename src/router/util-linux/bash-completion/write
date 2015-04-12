@@ -1,0 +1,28 @@
+_write_module()
+{
+	local cur prev
+	COMPREPLY=()
+	cur="${COMP_WORDS[COMP_CWORD]}"
+	prev="${COMP_WORDS[COMP_CWORD-1]}"
+	case $prev in
+		'-h'|'--help'|'-V'|'--version')
+			return 0
+			;;
+	esac
+	case $COMP_CWORD in
+		1)
+			COMPREPLY=( $(compgen -u -- $cur) )
+			return 0
+			;;
+		2)
+			local I TERMS=''
+			for I in /sys/class/tty/*; do
+				TERMS+="/dev${I##/sys/class/tty} "
+			done
+			COMPREPLY=( $(compgen -W "$TERMS" -- $cur) )
+			return 0
+			;;
+	esac
+	return 0
+}
+complete -F _write_module write
