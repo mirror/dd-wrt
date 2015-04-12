@@ -20,7 +20,7 @@
  *
  * \author Eliel C. Sardanons (LU1ALY) <eliels@gmail.com>
  *
- * \extref libxml2 http://www.xmlsoft.org/
+ * libxml2 http://www.xmlsoft.org/
  */
 
 /*** MODULEINFO
@@ -29,7 +29,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 398758 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 433247 $")
 
 #include "asterisk/_private.h"
 #include "asterisk/paths.h"
@@ -38,19 +38,24 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 398758 $")
 #include "asterisk/term.h"
 #include "asterisk/astobj2.h"
 #include "asterisk/xmldoc.h"
+#include "asterisk/cli.h"
 
 #ifdef AST_XML_DOCS
 
 /*! \brief Default documentation language. */
 static const char default_documentation_language[] = "en_US";
 
-/*! \brief Number of columns to print when showing the XML documentation with a
- *         'core show application/function *' CLI command. Used in text wrapping.*/
+/*!
+ * \brief Number of columns to print when showing the XML documentation with a
+ *         'core show application/function *' CLI command. Used in text wrapping.
+ */
 static const int xmldoc_text_columns = 74;
 
-/*! \brief This is a value that we will use to let the wrapping mechanism move the cursor
+/*!
+ * \brief This is a value that we will use to let the wrapping mechanism move the cursor
  *         backward and forward xmldoc_max_diff positions before cutting the middle of a
- *         word, trying to find a space or a \n. */
+ *         word, trying to find a space or a \n.
+ */
 static const int xmldoc_max_diff = 5;
 
 /*! \brief XML documentation language. */
@@ -65,6 +70,7 @@ struct documentation_tree {
 
 static char *xmldoc_get_syntax_cmd(struct ast_xml_node *fixnode, const char *name, int printname);
 static int xmldoc_parse_enumlist(struct ast_xml_node *fixnode, const char *tabs, struct ast_str **buffer);
+static void xmldoc_parse_parameter(struct ast_xml_node *fixnode, const char *tabs, struct ast_str **buffer);
 static int xmldoc_parse_info(struct ast_xml_node *node, const char *tabs, const char *posttabs, struct ast_str **buffer);
 static int xmldoc_parse_para(struct ast_xml_node *node, const char *tabs, const char *posttabs, struct ast_str **buffer);
 static int xmldoc_parse_specialtags(struct ast_xml_node *fixnode, const char *tabs, const char *posttabs, struct ast_str **buffer);
@@ -98,7 +104,9 @@ static const struct strcolorized_tags {
 
 	/* Special tags */
 	{ "", "", COLOR_YELLOW, "<note>",   "</note>" },
-	{ "", "", COLOR_RED,   "<warning>", "</warning>" }
+	{ "", "", COLOR_RED,   "<warning>", "</warning>" },
+	{ "", "", COLOR_WHITE, "<example>", "</example>" },
+	{ "", "", COLOR_GRAY, "<exampletext>", "</exampletext>"},
 };
 
 static const struct strspecial_tags {
@@ -107,14 +115,18 @@ static const struct strspecial_tags {
 	const char *end;		/*!< Print this at the end. */
 } special_tags[] = {
 	{ "note",    "<note>NOTE:</note> ",             "" },
-	{ "warning", "<warning>WARNING!!!:</warning> ", "" }
+	{ "warning", "<warning>WARNING!!!:</warning> ", "" },
+	{ "example", "<example>Example:</example> ", "" },
 };
 
-/*! \internal
- *  \brief Calculate the space in bytes used by a format string
- *         that will be passed to a sprintf function.
- *  \param postbr The format string to use to calculate the length.
- *  \retval The postbr length.
+/*!
+ * \internal
+ * \brief Calculate the space in bytes used by a format string
+ *        that will be passed to a sprintf function.
+ *
+ * \param postbr The format string to use to calculate the length.
+ *
+ * \retval The postbr length.
  */
 static int xmldoc_postbrlen(const char *postbr)
 {
@@ -135,12 +147,14 @@ static int xmldoc_postbrlen(const char *postbr)
 	return postbrreallen;
 }
 
-/*! \internal
- *  \brief Setup postbr to be used while wrapping the text.
- *         Add to postbr array all the spaces and tabs at the beginning of text.
- *  \param postbr output array.
- *  \param len text array length.
- *  \param text Text with format string before the actual string.
+/*!
+ * \internal
+ * \brief Setup postbr to be used while wrapping the text.
+ *        Add to postbr array all the spaces and tabs at the beginning of text.
+ *
+ * \param postbr output array.
+ * \param len text array length.
+ * \param text Text with format string before the actual string.
  */
 static void xmldoc_setpostbr(char *postbr, size_t len, const char *text)
 {
@@ -160,15 +174,18 @@ static void xmldoc_setpostbr(char *postbr, size_t len, const char *text)
 	postbr[postbrlen] = '\0';
 }
 
-/*! \internal
- *  \brief Try to find a space or a break in text starting at currentpost
+/*!
+ * \internal
+ * \brief Try to find a space or a break in text starting at currentpost
  *         and moving at most maxdiff positions.
  *         Helper for xmldoc_string_wrap().
- *  \param text Input string where it will search.
- *  \param currentpos Current position within text.
- *  \param maxdiff Not move more than maxdiff inside text.
- *  \retval 1 if a space or break is found inside text while moving.
- *  \retval 0 if no space or break is found.
+ *
+ * \param text Input string where it will search.
+ * \param currentpos Current position within text.
+ * \param maxdiff Not move more than maxdiff inside text.
+ *
+ * \retval 1 if a space or break is found inside text while moving.
+ * \retval 0 if no space or break is found.
  */
 static int xmldoc_wait_nextspace(const char *text, int currentpos, int maxdiff)
 {
@@ -199,16 +216,19 @@ static int xmldoc_wait_nextspace(const char *text, int currentpos, int maxdiff)
 	return 0;
 }
 
-/*! \internal
- *  \brief Helper function for xmldoc_string_wrap().
- *	   Try to found a space or a break inside text moving backward
- *	   not more than maxdiff positions.
- *  \param text The input string where to search for a space.
- *  \param currentpos The current cursor position.
- *  \param maxdiff The max number of positions to move within text.
- *  \retval 0 If no space is found (Notice that text[currentpos] is not a space or a break)
- *  \retval > 0 If a space or a break is found, and the result is the position relative to
- *		currentpos.
+/*!
+ * \internal
+ * \brief Helper function for xmldoc_string_wrap().
+ *    Try to found a space or a break inside text moving backward
+ *    not more than maxdiff positions.
+ *
+ * \param text The input string where to search for a space.
+ * \param currentpos The current cursor position.
+ * \param maxdiff The max number of positions to move within text.
+ *
+ * \retval 0 If no space is found (Notice that text[currentpos] is not a space or a break)
+ * \retval > 0 If a space or a break is found, and the result is the position relative to
+ *  currentpos.
  */
 static int xmldoc_foundspace_backward(const char *text, int currentpos, int maxdiff)
 {
@@ -231,13 +251,16 @@ static int xmldoc_foundspace_backward(const char *text, int currentpos, int maxd
 	return 0;
 }
 
-/*! \internal
- *  \brief Justify a text to a number of columns.
- *  \param text Input text to be justified.
- *  \param columns Number of columns to preserve in the text.
- *  \param maxdiff Try to not cut a word when goinf down.
- *  \retval NULL on error.
- *  \retval The wrapped text.
+/*!
+ * \internal
+ * \brief Justify a text to a number of columns.
+ *
+ * \param text Input text to be justified.
+ * \param columns Number of columns to preserve in the text.
+ * \param maxdiff Try to not cut a word when goinf down.
+ *
+ * \retval NULL on error.
+ * \retval The wrapped text.
  */
 static char *xmldoc_string_wrap(const char *text, int columns, int maxdiff)
 {
@@ -412,7 +435,7 @@ char *ast_xmldoc_printable(const char *bwinput, int withcolors)
 	}
 
 	if (withcolors) {
-		ast_str_append(&colorized, 0, "%s", term_end());
+		ast_str_append(&colorized, 0, "%s", ast_term_reset());
 		if (!colorized) {
 			return NULL;
 		}
@@ -426,13 +449,16 @@ char *ast_xmldoc_printable(const char *bwinput, int withcolors)
 	return wrapped;
 }
 
-/*! \internal
- *  \brief Cleanup spaces and tabs after a \n
- *  \param text String to be cleaned up.
- *  \param output buffer (not already allocated).
- *  \param lastspaces Remove last spaces in the string.
+/*!
+ * \internal
+ * \brief Cleanup spaces and tabs after a \n
+ *
+ * \param text String to be cleaned up.
+ * \param output buffer (not already allocated).
+ * \param lastspaces Remove last spaces in the string.
+ * \param maintain_newlines Preserve new line characters (\n \r) discovered in the string
  */
-static void xmldoc_string_cleanup(const char *text, struct ast_str **output, int lastspaces)
+static void xmldoc_string_cleanup(const char *text, struct ast_str **output, int lastspaces, int maintain_newlines)
 {
 	int i;
 	size_t textlen;
@@ -452,6 +478,9 @@ static void xmldoc_string_cleanup(const char *text, struct ast_str **output, int
 
 	for (i = 0; i < textlen; i++) {
 		if (text[i] == '\n' || text[i] == '\r') {
+			if (maintain_newlines) {
+				ast_str_append(output, 0, "%c", text[i]);
+			}
 			/* remove spaces/tabs/\n after a \n. */
 			while (text[i + 1] == '\t' || text[i + 1] == '\r' || text[i + 1] == '\n') {
 				i++;
@@ -469,11 +498,14 @@ static void xmldoc_string_cleanup(const char *text, struct ast_str **output, int
 	}
 }
 
-/*! \internal
+/*!
+ * \internal
  * \brief Check if the given attribute on the given node matches the given value.
+ *
  * \param node the node to match
  * \param attr the name of the attribute
  * \param value the expected value of the attribute
+ *
  * \retval true if the given attribute contains the given value
  * \retval false if the given attribute does not exist or does not contain the given value
  */
@@ -485,16 +517,19 @@ static int xmldoc_attribute_match(struct ast_xml_node *node, const char *attr, c
 	return match;
 }
 
-/*! \internal
- *  \brief Get the application/function node for 'name' application/function with language 'language'
- *         and module 'module' if we don't find any, get the first application
- *         with 'name' no matter which language or module.
- *  \param type 'application', 'function', ...
- *  \param name Application or Function name.
- *  \param module Module item is in.
- *  \param language Try to get this language (if not found try with en_US)
- *  \retval NULL on error.
- *  \retval A node of type ast_xml_node.
+/*!
+ * \internal
+ * \brief Get the application/function node for 'name' application/function with language 'language'
+ *        and module 'module' if we don't find any, get the first application
+ *        with 'name' no matter which language or module.
+ *
+ * \param type 'application', 'function', ...
+ * \param name Application or Function name.
+ * \param module Module item is in.
+ * \param language Try to get this language (if not found try with en_US)
+ *
+ * \retval NULL on error.
+ * \retval A node of type ast_xml_node.
  */
 static struct ast_xml_node *xmldoc_get_node(const char *type, const char *name, const char *module, const char *language)
 {
@@ -567,14 +602,16 @@ static struct ast_xml_node *xmldoc_get_node(const char *type, const char *name, 
 	return node;
 }
 
-/*! \internal
- *  \brief Helper function used to build the syntax, it allocates the needed buffer (or reallocates it),
- *         and based on the reverse value it makes use of fmt to print the parameter list inside the
- *         realloced buffer (syntax).
- *  \param reverse We are going backwards while generating the syntax?
- *  \param len Current length of 'syntax' buffer.
- *  \param syntax Output buffer for the concatenated values.
- *  \param fmt A format string that will be used in a sprintf call.
+/*!
+ * \internal
+ * \brief Helper function used to build the syntax, it allocates the needed buffer (or reallocates it),
+ *        and based on the reverse value it makes use of fmt to print the parameter list inside the
+ *        realloced buffer (syntax).
+ *
+ * \param reverse We are going backwards while generating the syntax?
+ * \param len Current length of 'syntax' buffer.
+ * \param syntax Output buffer for the concatenated values.
+ * \param fmt A format string that will be used in a sprintf call.
  */
 static void __attribute__((format(printf, 4, 5))) xmldoc_reverse_helper(int reverse, int *len, char **syntax, const char *fmt, ...)
 {
@@ -618,12 +655,15 @@ static void __attribute__((format(printf, 4, 5))) xmldoc_reverse_helper(int reve
 	ast_free(tmpfmt);
 }
 
-/*! \internal
- *  \brief Check if the passed node has 'what' tags inside it.
- *  \param node Root node to search 'what' elements.
- *  \param what node name to search inside node.
- *  \retval 1 If a 'what' element is found inside 'node'.
- *  \retval 0 If no 'what' is found inside 'node'.
+/*!
+ * \internal
+ * \brief Check if the passed node has 'what' tags inside it.
+ *
+ * \param node Root node to search 'what' elements.
+ * \param what node name to search inside node.
+ *
+ * \retval 1 If a 'what' element is found inside 'node'.
+ * \retval 0 If no 'what' is found inside 'node'.
  */
 static int xmldoc_has_inside(struct ast_xml_node *fixnode, const char *what)
 {
@@ -637,11 +677,14 @@ static int xmldoc_has_inside(struct ast_xml_node *fixnode, const char *what)
 	return 0;
 }
 
-/*! \internal
- *  \brief Check if the passed node has at least one node inside it.
- *  \param node Root node to search node elements.
- *  \retval 1 If a node element is found inside 'node'.
- *  \retval 0 If no node is found inside 'node'.
+/*!
+ * \internal
+ * \brief Check if the passed node has at least one node inside it.
+ *
+ * \param node Root node to search node elements.
+ *
+ * \retval 1 If a node element is found inside 'node'.
+ * \retval 0 If no node is found inside 'node'.
  */
 static int xmldoc_has_nodes(struct ast_xml_node *fixnode)
 {
@@ -655,11 +698,14 @@ static int xmldoc_has_nodes(struct ast_xml_node *fixnode)
 	return 0;
 }
 
-/*! \internal
- *  \brief Check if the passed node has at least one specialtag.
- *  \param node Root node to search "specialtags" elements.
- *  \retval 1 If a "specialtag" element is found inside 'node'.
- *  \retval 0 If no "specialtag" is found inside 'node'.
+/*!
+ * \internal
+ * \brief Check if the passed node has at least one specialtag.
+ *
+ * \param node Root node to search "specialtags" elements.
+ *
+ * \retval 1 If a "specialtag" element is found inside 'node'.
+ * \retval 0 If no "specialtag" is found inside 'node'.
  */
 static int xmldoc_has_specialtags(struct ast_xml_node *fixnode)
 {
@@ -676,15 +722,18 @@ static int xmldoc_has_specialtags(struct ast_xml_node *fixnode)
 	return 0;
 }
 
-/*! \internal
- *  \brief Build the syntax for a specified starting node.
- *  \param rootnode A pointer to the ast_xml root node.
- *  \param rootname Name of the application, function, option, etc. to build the syntax.
- *  \param childname The name of each parameter node.
- *  \param printparenthesis Boolean if we must print parenthesis if not parameters are found in the rootnode.
- *  \param printrootname Boolean if we must print the rootname before the syntax and parenthesis at the begining/end.
- *  \retval NULL on error.
- *  \retval An ast_malloc'ed string with the syntax generated.
+/*!
+ * \internal
+ * \brief Build the syntax for a specified starting node.
+ *
+ * \param rootnode A pointer to the ast_xml root node.
+ * \param rootname Name of the application, function, option, etc. to build the syntax.
+ * \param childname The name of each parameter node.
+ * \param printparenthesis Boolean if we must print parenthesis if not parameters are found in the rootnode.
+ * \param printrootname Boolean if we must print the rootname before the syntax and parenthesis at the begining/end.
+ *
+ * \retval NULL on error.
+ * \retval An ast_malloc'ed string with the syntax generated.
  */
 static char *xmldoc_get_syntax_fun(struct ast_xml_node *rootnode, const char *rootname, const char *childname, int printparenthesis, int printrootname)
 {
@@ -921,12 +970,14 @@ static char *xmldoc_get_syntax_fun(struct ast_xml_node *rootnode, const char *ro
 #undef MP
 }
 
-/*! \internal
- *  \brief Parse an enumlist inside a <parameter> to generate a COMMAND
- *         syntax.
- *  \param fixnode A pointer to the <enumlist> node.
- *  \retval {<unknown>} on error.
- *  \retval A string inside brackets {} with the enum's separated by pipes |.
+/*!
+ * \internal
+ * \brief Parse an enumlist inside a <parameter> to generate a COMMAND syntax.
+ *
+ * \param fixnode A pointer to the <enumlist> node.
+ *
+ * \retval {<unknown>} on error.
+ * \retval A string inside brackets {} with the enum's separated by pipes |.
  */
 static char *xmldoc_parse_cmd_enumlist(struct ast_xml_node *fixnode)
 {
@@ -967,13 +1018,16 @@ static char *xmldoc_parse_cmd_enumlist(struct ast_xml_node *fixnode)
 	return ret;
 }
 
-/*! \internal
- *  \brief Generate a syntax of COMMAND type.
- *  \param fixnode The <syntax> node pointer.
- *  \param name The name of the 'command'.
- *  \param printname Print the name of the command before the paramters?
- *  \retval On error, return just 'name'.
- *  \retval On success return the generated syntax.
+/*!
+ * \internal
+ * \brief Generate a syntax of COMMAND type.
+ *
+ * \param fixnode The <syntax> node pointer.
+ * \param name The name of the 'command'.
+ * \param printname Print the name of the command before the paramters?
+ *
+ * \retval On error, return just 'name'.
+ * \retval On success return the generated syntax.
  */
 static char *xmldoc_get_syntax_cmd(struct ast_xml_node *fixnode, const char *name, int printname)
 {
@@ -982,6 +1036,10 @@ static char *xmldoc_get_syntax_cmd(struct ast_xml_node *fixnode, const char *nam
 	char *ret, *paramname;
 	const char *paramtype, *attrname, *literal;
 	int required, isenum, first = 1, isliteral;
+
+	if (!fixnode) {
+		return NULL;
+	}
 
 	syntax = ast_str_create(128);
 	if (!syntax) {
@@ -1066,13 +1124,16 @@ static char *xmldoc_get_syntax_cmd(struct ast_xml_node *fixnode, const char *nam
 	return ret;
 }
 
-/*! \internal
- *  \brief Generate an AMI action/event syntax.
- *  \param fixnode The manager action/event node pointer.
- *  \param name The name of the manager action/event.
- *  \param manager_type "Action" or "Event"
- *  \retval The generated syntax.
- *  \retval NULL on error.
+/*!
+ * \internal
+ * \brief Generate an AMI action/event syntax.
+ *
+ * \param fixnode The manager action/event node pointer.
+ * \param name The name of the manager action/event.
+ * \param manager_type "Action" or "Event"
+ *
+ * \retval The generated syntax.
+ * \retval NULL on error.
  */
 static char *xmldoc_get_syntax_manager(struct ast_xml_node *fixnode, const char *name, const char *manager_type)
 {
@@ -1081,6 +1142,10 @@ static char *xmldoc_get_syntax_manager(struct ast_xml_node *fixnode, const char 
 	const char *paramtype, *attrname;
 	int required;
 	char *ret;
+
+	if (!fixnode) {
+		return NULL;
+	}
 
 	syntax = ast_str_create(128);
 	if (!syntax) {
@@ -1122,11 +1187,78 @@ static char *xmldoc_get_syntax_manager(struct ast_xml_node *fixnode, const char 
 	return ret;
 }
 
+static char *xmldoc_get_syntax_config_object(struct ast_xml_node *fixnode, const char *name)
+{
+	struct ast_xml_node *matchinfo, *tmp;
+	int match;
+	const char *attr_value;
+	const char *text;
+	RAII_VAR(struct ast_str *, syntax, ast_str_create(128), ast_free);
+
+	if (!syntax || !fixnode) {
+		return NULL;
+	}
+	if (!(matchinfo = ast_xml_find_element(ast_xml_node_get_children(fixnode), "matchInfo", NULL, NULL))) {
+		return NULL;
+	}
+	if (!(tmp  = ast_xml_find_element(ast_xml_node_get_children(matchinfo), "category", NULL, NULL))) {
+		return NULL;
+	}
+	attr_value = ast_xml_get_attribute(tmp, "match");
+	if (attr_value) {
+		match = ast_true(attr_value);
+		text = ast_xml_get_text(tmp);
+		ast_str_set(&syntax, 0, "category %s /%s/", match ? "=~" : "!~", text);
+		ast_xml_free_attr(attr_value);
+		ast_xml_free_text(text);
+	}
+
+	if ((tmp = ast_xml_find_element(ast_xml_node_get_children(matchinfo), "field", NULL, NULL))) {
+		text = ast_xml_get_text(tmp);
+		attr_value = ast_xml_get_attribute(tmp, "name");
+		ast_str_append(&syntax, 0, " matchfield: %s = %s", S_OR(attr_value, "Unknown"), text);
+		ast_xml_free_attr(attr_value);
+		ast_xml_free_text(text);
+	}
+	return ast_strdup(ast_str_buffer(syntax));
+}
+
+static char *xmldoc_get_syntax_config_option(struct ast_xml_node *fixnode, const char *name)
+{
+	const char *type;
+	const char *default_value;
+	const char *regex;
+	RAII_VAR(struct ast_str *, syntax, ast_str_create(128), ast_free);
+
+	if (!syntax || !fixnode) {
+		return NULL;
+	}
+	type = ast_xml_get_attribute(fixnode, "type");
+	default_value = ast_xml_get_attribute(fixnode, "default");
+
+	regex = ast_xml_get_attribute(fixnode, "regex");
+	ast_str_set(&syntax, 0, "%s = [%s] (Default: %s) (Regex: %s)\n",
+		name,
+		type ?: "",
+		default_value ?: "n/a",
+		regex ?: "False");
+
+	ast_xml_free_attr(type);
+	ast_xml_free_attr(default_value);
+	ast_xml_free_attr(regex);
+
+	return ast_strdup(ast_str_buffer(syntax));
+}
+
 /*! \brief Types of syntax that we are able to generate. */
 enum syntaxtype {
 	FUNCTION_SYNTAX,
 	MANAGER_SYNTAX,
 	MANAGER_EVENT_SYNTAX,
+	CONFIG_INFO_SYNTAX,
+	CONFIG_FILE_SYNTAX,
+	CONFIG_OPTION_SYNTAX,
+	CONFIG_OBJECT_SYNTAX,
 	COMMAND_SYNTAX
 };
 
@@ -1135,17 +1267,24 @@ static struct strsyntaxtype {
 	const char *type;
 	enum syntaxtype stxtype;
 } stxtype[] = {
-	{ "function",		FUNCTION_SYNTAX			},
-	{ "application",	FUNCTION_SYNTAX			},
-	{ "manager",		MANAGER_SYNTAX			},
-	{ "managerEvent",	MANAGER_EVENT_SYNTAX	},
-	{ "agi",			COMMAND_SYNTAX			}
+    { "function",     FUNCTION_SYNTAX      },
+    { "application",  FUNCTION_SYNTAX      },
+    { "manager",      MANAGER_SYNTAX       },
+    { "managerEvent", MANAGER_EVENT_SYNTAX },
+    { "configInfo",   CONFIG_INFO_SYNTAX   },
+    { "configFile",   CONFIG_FILE_SYNTAX   },
+    { "configOption", CONFIG_OPTION_SYNTAX },
+    { "configObject", CONFIG_OBJECT_SYNTAX },
+    { "agi",          COMMAND_SYNTAX       },
 };
 
-/*! \internal
- *  \brief Get syntax type based on type of node.
- *  \param type Type of node.
- *  \retval The type of syntax to generate based on the type of node.
+/*!
+ * \internal
+ * \brief Get syntax type based on type of node.
+ *
+ * \param type Type of node.
+ *
+ * \retval The type of syntax to generate based on the type of node.
  */
 static enum syntaxtype xmldoc_get_syntax_type(const char *type)
 {
@@ -1169,23 +1308,20 @@ static enum syntaxtype xmldoc_get_syntax_type(const char *type)
  * \note This method exists for when you already have the node.  This
  * prevents having to lock the documentation tree twice
  *
- * \returns A malloc'd character pointer to the syntax of the item
- * \returns NULL on failure
+ * \retval A malloc'd character pointer to the syntax of the item
+ * \retval NULL on failure
  *
  * \since 11
  */
-static char *_ast_xmldoc_build_syntax(struct ast_xml_node *node, const char *type, const char *name)
+static char *_ast_xmldoc_build_syntax(struct ast_xml_node *root_node, const char *type, const char *name)
 {
 	char *syntax = NULL;
+	struct ast_xml_node *node = root_node;
 
 	for (node = ast_xml_node_get_children(node); node; node = ast_xml_node_get_next(node)) {
 		if (!strcasecmp(ast_xml_node_get_name(node), "syntax")) {
 			break;
 		}
-	}
-
-	if (!node) {
-		return syntax;
 	}
 
 	switch (xmldoc_get_syntax_type(type)) {
@@ -1200,6 +1336,12 @@ static char *_ast_xmldoc_build_syntax(struct ast_xml_node *node, const char *typ
 		break;
 	case MANAGER_EVENT_SYNTAX:
 		syntax = xmldoc_get_syntax_manager(node, name, "Event");
+		break;
+	case CONFIG_OPTION_SYNTAX:
+		syntax = xmldoc_get_syntax_config_option(root_node, name);
+		break;
+	case CONFIG_OBJECT_SYNTAX:
+		syntax = xmldoc_get_syntax_config_object(node, name);
 		break;
 	default:
 		syntax = xmldoc_get_syntax_fun(node, name, "parameter", 1, 1);
@@ -1220,18 +1362,21 @@ char *ast_xmldoc_build_syntax(const char *type, const char *name, const char *mo
 	return _ast_xmldoc_build_syntax(node, type, name);
 }
 
-/*! \internal
- *  \brief Parse common internal elements.  This includes paragraphs, special
- *         tags, and information nodes.
- *  \param node The element to parse
- *  \param tabs Add this string before the content of the parsed element.
- *  \param posttabs Add this string after the content of the parsed element.
- *  \param buffer This must be an already allocated ast_str. It will be used to
- *                store the result (if something has already been placed in the
- *                buffer, the parsed elements will be appended)
- *  \retval 1 if any data was appended to the buffer
- *  \retval 2 if the data appended to the buffer contained a text paragraph
- *  \retval 0 if no data was appended to the buffer
+/*!
+ * \internal
+ * \brief Parse common internal elements.  This includes paragraphs, special
+ *        tags, and information nodes.
+ *
+ * \param node The element to parse
+ * \param tabs Add this string before the content of the parsed element.
+ * \param posttabs Add this string after the content of the parsed element.
+ * \param buffer This must be an already allocated ast_str. It will be used to
+ *               store the result (if something has already been placed in the
+ *               buffer, the parsed elements will be appended)
+ *
+ * \retval 1 if any data was appended to the buffer
+ * \retval 2 if the data appended to the buffer contained a text paragraph
+ * \retval 0 if no data was appended to the buffer
  */
 static int xmldoc_parse_common_elements(struct ast_xml_node *node, const char *tabs, const char *posttabs, struct ast_str **buffer)
 {
@@ -1240,17 +1385,20 @@ static int xmldoc_parse_common_elements(struct ast_xml_node *node, const char *t
 		|| xmldoc_parse_info(node, tabs, posttabs, buffer));
 }
 
-/*! \internal
- *  \brief Parse a <para> element.
- *  \param node The <para> element pointer.
- *  \param tabs Added this string before the content of the <para> element.
- *  \param posttabs Added this string after the content of the <para> element.
- *  \param buffer This must be an already allocated ast_str. It will be used
- *         to store the result (if already has something it will be appended to the current
- *         string).
- *  \retval 1 If 'node' is a named 'para'.
- *  \retval 2 If data is appended in buffer.
- *  \retval 0 on error.
+/*!
+ * \internal
+ * \brief Parse a <para> element.
+ *
+ * \param node The <para> element pointer.
+ * \param tabs Added this string before the content of the <para> element.
+ * \param posttabs Added this string after the content of the <para> element.
+ * \param buffer This must be an already allocated ast_str. It will be used
+ *        to store the result (if already has something it will be appended to the current
+ *        string).
+ *
+ * \retval 1 If 'node' is a named 'para'.
+ * \retval 2 If data is appended in buffer.
+ * \retval 0 on error.
  */
 static int xmldoc_parse_para(struct ast_xml_node *node, const char *tabs, const char *posttabs, struct ast_str **buffer)
 {
@@ -1276,7 +1424,7 @@ static int xmldoc_parse_para(struct ast_xml_node *node, const char *tabs, const 
 		tmptext = ast_xml_get_text(tmp);
 		if (tmptext) {
 			/* Strip \n etc. */
-			xmldoc_string_cleanup(tmptext, &tmpstr, 0);
+			xmldoc_string_cleanup(tmptext, &tmpstr, 0, 0);
 			ast_xml_free_text(tmptext);
 			if (tmpstr) {
 				if (strcasecmp(ast_xml_node_get_name(tmp), "text")) {
@@ -1296,15 +1444,69 @@ static int xmldoc_parse_para(struct ast_xml_node *node, const char *tabs, const 
 	return ret;
 }
 
-/*! \internal
- *  \brief Parse special elements defined in 'struct special_tags' special elements must have a <para> element inside them.
- *  \param fixnode special tag node pointer.
- *  \param tabs put tabs before printing the node content.
- *  \param posttabs put posttabs after printing node content.
- *  \param buffer Output buffer, the special tags will be appended here.
- *  \retval 0 if no special element is parsed.
- *  \retval 1 if a special element is parsed (data is appended to buffer).
- *  \retval 2 if a special element is parsed and also a <para> element is parsed inside the specialtag.
+/*!
+ * \internal
+ * \brief Parse an <example> node.
+ * \since 13.0.0
+ *
+ * \param fixnode An ast xml pointer to the <example> node.
+ * \param buffer The output buffer.
+ *
+ * \retval 0 if no example node is parsed.
+ * \retval 1 if an example node is parsed.
+ */
+static int xmldoc_parse_example(struct ast_xml_node *fixnode, struct ast_str **buffer)
+{
+	struct ast_xml_node *node = fixnode;
+	const char *tmptext;
+	const char *title;
+	struct ast_str *stripped_text;
+	int ret = 0;
+
+	if (!node || !ast_xml_node_get_children(node)) {
+		return ret;
+	}
+
+	if (strcasecmp(ast_xml_node_get_name(node), "example")) {
+		return ret;
+	}
+
+	ret = 1;
+
+	title = ast_xml_get_attribute(node, "title");
+	if (title) {
+		ast_str_append(buffer, 0, "%s", title);
+		ast_xml_free_attr(title);
+	}
+	ast_str_append(buffer, 0, "\n");
+
+	for (node = ast_xml_node_get_children(node); node; node = ast_xml_node_get_next(node)) {
+		tmptext = ast_xml_get_text(node);
+		if (tmptext) {
+			xmldoc_string_cleanup(tmptext, &stripped_text, 0, 1);
+			if (stripped_text) {
+				ast_str_append(buffer, 0, "<exampletext>%s</exampletext>\n", ast_str_buffer(stripped_text));
+				ast_xml_free_text(tmptext);
+				ast_free(stripped_text);
+			}
+		}
+	}
+
+	return ret;
+}
+
+/*!
+ * \internal
+ * \brief Parse special elements defined in 'struct special_tags' special elements must have a <para> element inside them.
+ *
+ * \param fixnode special tag node pointer.
+ * \param tabs put tabs before printing the node content.
+ * \param posttabs put posttabs after printing node content.
+ * \param buffer Output buffer, the special tags will be appended here.
+ *
+ * \retval 0 if no special element is parsed.
+ * \retval 1 if a special element is parsed (data is appended to buffer).
+ * \retval 2 if a special element is parsed and also a <para> element is parsed inside the specialtag.
  */
 static int xmldoc_parse_specialtags(struct ast_xml_node *fixnode, const char *tabs, const char *posttabs, struct ast_str **buffer)
 {
@@ -1328,6 +1530,11 @@ static int xmldoc_parse_specialtags(struct ast_xml_node *fixnode, const char *ta
 			ast_str_append(buffer, 0, "%s%s", tabs, special_tags[i].init);
 		}
 
+		if (xmldoc_parse_example(node, buffer)) {
+			ret = 1;
+			break;
+		}
+
 		/* parse <para> elements inside special tags. */
 		for (node = ast_xml_node_get_children(node); node; node = ast_xml_node_get_next(node)) {
 			/* first <para> just print it without tabs at the begining. */
@@ -1347,64 +1554,18 @@ static int xmldoc_parse_specialtags(struct ast_xml_node *fixnode, const char *ta
 	return ret;
 }
 
-/*! \internal
- *  \brief Parse an 'info' tag inside an element.
- *  \param node A pointer to the 'info' xml node.
- *  \param tabs A string to be appended at the beginning of each line being printed
- *              inside 'buffer'
- *  \param posttabs Add this string after the content of the <para> element, if one exists
- *  \param String buffer to put values found inide the info element.
- *  \ret 2 if the information contained a para element, and it returned a value of 2
- *  \ret 1 if information was put into the buffer
- *  \ret 0 if no information was put into the buffer or error
- */
-static int xmldoc_parse_info(struct ast_xml_node *node, const char *tabs, const char *posttabs, struct ast_str **buffer)
-{
-	const char *tech;
-	char *internaltabs;
-	int internal_ret;
-	int ret = 0;
-
-	if (strcasecmp(ast_xml_node_get_name(node), "info")) {
-		return ret;
-	}
-
-	ast_asprintf(&internaltabs, "%s    ", tabs);
-	if (!internaltabs) {
-		return ret;
-	}
-
-	tech = ast_xml_get_attribute(node, "tech");
-	if (tech) {
-		ast_str_append(buffer, 0, "%s<note>Technology: %s</note>\n", internaltabs, tech);
-		ast_xml_free_attr(tech);
-	}
-
-	ret = 1;
-
-	for (node = ast_xml_node_get_children(node); node; node = ast_xml_node_get_next(node)) {
-		if (!strcasecmp(ast_xml_node_get_name(node), "enumlist")) {
-			xmldoc_parse_enumlist(node, internaltabs, buffer);
-		} else if ((internal_ret = xmldoc_parse_common_elements(node, internaltabs, posttabs, buffer))) {
-			if (internal_ret > ret) {
-				ret = internal_ret;
-			}
-		}
-	}
-	ast_free(internaltabs);
-
-	return ret;
-}
-
-/*! \internal
- *  \brief Parse an <argument> element from the xml documentation.
- *  \param fixnode Pointer to the 'argument' xml node.
- *  \param insideparameter If we are parsing an <argument> inside a <parameter>.
- *  \param paramtabs pre tabs if we are inside a parameter element.
- *  \param tabs What to be printed before the argument name.
- *  \param buffer Output buffer to put values found inside the <argument> element.
- *  \retval 1 If there is content inside the argument.
- *  \retval 0 If the argument element is not parsed, or there is no content inside it.
+/*!
+ * \internal
+ * \brief Parse an <argument> element from the xml documentation.
+ *
+ * \param fixnode Pointer to the 'argument' xml node.
+ * \param insideparameter If we are parsing an <argument> inside a <parameter>.
+ * \param paramtabs pre tabs if we are inside a parameter element.
+ * \param tabs What to be printed before the argument name.
+ * \param buffer Output buffer to put values found inside the <argument> element.
+ *
+ * \retval 1 If there is content inside the argument.
+ * \retval 0 If the argument element is not parsed, or there is no content inside it.
  */
 static int xmldoc_parse_argument(struct ast_xml_node *fixnode, int insideparameter, const char *paramtabs, const char *tabs, struct ast_str **buffer)
 {
@@ -1439,16 +1600,19 @@ static int xmldoc_parse_argument(struct ast_xml_node *fixnode, int insideparamet
 	return ret;
 }
 
-/*! \internal
- *  \brief Parse a <variable> node inside a <variablelist> node.
- *  \param node The variable node to parse.
- *  \param tabs A string to be appended at the begining of the output that will be stored
- *         in buffer.
- *  \param buffer This must be an already created ast_str. It will be used
- *         to store the result (if already has something it will be appended to the current
- *         string).
- *  \retval 0 if no data is appended.
- *  \retval 1 if data is appended.
+/*!
+ * \internal
+ * \brief Parse a <variable> node inside a <variablelist> node.
+ *
+ * \param node The variable node to parse.
+ * \param tabs A string to be appended at the begining of the output that will be stored
+ *        in buffer.
+ * \param buffer This must be an already created ast_str. It will be used
+ *        to store the result (if already has something it will be appended to the current
+ *        string).
+ *
+ * \retval 0 if no data is appended.
+ * \retval 1 if data is appended.
  */
 static int xmldoc_parse_variable(struct ast_xml_node *node, const char *tabs, struct ast_str **buffer)
 {
@@ -1484,7 +1648,7 @@ static int xmldoc_parse_variable(struct ast_xml_node *node, const char *tabs, st
 		/* Check inside this node for any explanation about its meaning. */
 		if (tmptext) {
 			/* Cleanup text. */
-			xmldoc_string_cleanup(tmptext, &cleanstr, 1);
+			xmldoc_string_cleanup(tmptext, &cleanstr, 1, 0);
 			ast_xml_free_text(tmptext);
 			if (cleanstr && ast_str_strlen(cleanstr) > 0) {
 				ast_str_append(buffer, 0, ":%s", ast_str_buffer(cleanstr));
@@ -1497,16 +1661,19 @@ static int xmldoc_parse_variable(struct ast_xml_node *node, const char *tabs, st
 	return ret;
 }
 
-/*! \internal
- *  \brief Parse a <variablelist> node and put all the output inside 'buffer'.
- *  \param node The variablelist node pointer.
- *  \param tabs A string to be appended at the begining of the output that will be stored
- *         in buffer.
- *  \param buffer This must be an already created ast_str. It will be used
- *         to store the result (if already has something it will be appended to the current
- *         string).
- *  \retval 1 If a <variablelist> element is parsed.
- *  \retval 0 On error.
+/*!
+ * \internal
+ * \brief Parse a <variablelist> node and put all the output inside 'buffer'.
+ *
+ * \param node The variablelist node pointer.
+ * \param tabs A string to be appended at the begining of the output that will be stored
+ *        in buffer.
+ * \param buffer This must be an already created ast_str. It will be used
+ *        to store the result (if already has something it will be appended to the current
+ *        string).
+ *
+ * \retval 1 If a <variablelist> element is parsed.
+ * \retval 0 On error.
  */
 static int xmldoc_parse_variablelist(struct ast_xml_node *node, const char *tabs, struct ast_str **buffer)
 {
@@ -1555,13 +1722,14 @@ static int xmldoc_parse_variablelist(struct ast_xml_node *node, const char *tabs
 /*!
  * \internal
  * \brief Build seealso information for an item
+ *
  * \param node	The seealso node to parse
  *
  * \note This method exists for when you already have the node.  This
  * prevents having to lock the documentation tree twice
  *
- * \returns A malloc'd character pointer to the seealso information of the item
- * \returns NULL on failure
+ * \retval A malloc'd character pointer to the seealso information of the item
+ * \retval NULL on failure
  *
  * \since 11
  */
@@ -1647,12 +1815,15 @@ char *ast_xmldoc_build_seealso(const char *type, const char *name, const char *m
 	return output;
 }
 
-/*! \internal
- *  \brief Parse a <enum> node.
- *  \brief fixnode An ast_xml_node pointer to the <enum> node.
- *  \bried buffer The output buffer.
- *  \retval 0 if content is not found inside the enum element (data is not appended to buffer).
- *  \retval 1 if content is found and data is appended to buffer.
+/*!
+ * \internal
+ * \brief Parse a <enum> node.
+ *
+ * \param fixnode An ast_xml_node pointer to the <enum> node.
+ * \param buffer The output buffer.
+ *
+ * \retval 0 if content is not found inside the enum element (data is not appended to buffer).
+ * \retval 1 if content is found and data is appended to buffer.
  */
 static int xmldoc_parse_enum(struct ast_xml_node *fixnode, const char *tabs, struct ast_str **buffer)
 {
@@ -1670,6 +1841,7 @@ static int xmldoc_parse_enum(struct ast_xml_node *fixnode, const char *tabs, str
 		}
 
 		xmldoc_parse_enumlist(node, optiontabs, buffer);
+		xmldoc_parse_parameter(node, optiontabs, buffer);
 	}
 
 	ast_free(optiontabs);
@@ -1677,12 +1849,15 @@ static int xmldoc_parse_enum(struct ast_xml_node *fixnode, const char *tabs, str
 	return ret;
 }
 
-/*! \internal
- *  \brief Parse a <enumlist> node.
- *  \param fixnode As ast_xml pointer to the <enumlist> node.
- *  \param buffer The ast_str output buffer.
- *  \retval 0 if no <enumlist> node was parsed.
- *  \retval 1 if a <enumlist> node was parsed.
+/*!
+ * \internal
+ * \brief Parse a <enumlist> node.
+ *
+ * \param fixnode As ast_xml pointer to the <enumlist> node.
+ * \param buffer The ast_str output buffer.
+ *
+ * \retval 0 if no <enumlist> node was parsed.
+ * \retval 1 if a <enumlist> node was parsed.
  */
 static int xmldoc_parse_enumlist(struct ast_xml_node *fixnode, const char *tabs, struct ast_str **buffer)
 {
@@ -1711,14 +1886,17 @@ static int xmldoc_parse_enumlist(struct ast_xml_node *fixnode, const char *tabs,
 	return ret;
 }
 
-/*! \internal
- *  \brief Parse an <option> node.
- *  \param fixnode An ast_xml pointer to the <option> node.
- *  \param tabs A string to be appended at the begining of each line being added to the
- *              buffer string.
- *  \param buffer The output buffer.
- *  \retval 0 if no option node is parsed.
- *  \retval 1 if an option node is parsed.
+/*!
+ * \internal
+ * \brief Parse an <option> node.
+ *
+ * \param fixnode An ast_xml pointer to the <option> node.
+ * \param tabs A string to be appended at the begining of each line being added to the
+ *             buffer string.
+ * \param buffer The output buffer.
+ *
+ * \retval 0 if no option node is parsed.
+ * \retval 1 if an option node is parsed.
  */
 static int xmldoc_parse_option(struct ast_xml_node *fixnode, const char *tabs, struct ast_str **buffer)
 {
@@ -1755,12 +1933,14 @@ static int xmldoc_parse_option(struct ast_xml_node *fixnode, const char *tabs, s
 	return ret;
 }
 
-/*! \internal
- *  \brief Parse an <optionlist> element from the xml documentation.
- *  \param fixnode Pointer to the optionlist xml node.
- *  \param tabs A string to be appended at the begining of each line being added to the
- *              buffer string.
- *  \param buffer Output buffer to put what is inside the optionlist tag.
+/*!
+ * \internal
+ * \brief Parse an <optionlist> element from the xml documentation.
+ *
+ * \param fixnode Pointer to the optionlist xml node.
+ * \param tabs A string to be appended at the begining of each line being added to the
+ *             buffer string.
+ * \param buffer Output buffer to put what is inside the optionlist tag.
  */
 static void xmldoc_parse_optionlist(struct ast_xml_node *fixnode, const char *tabs, struct ast_str **buffer)
 {
@@ -1806,12 +1986,14 @@ static void xmldoc_parse_optionlist(struct ast_xml_node *fixnode, const char *ta
 	}
 }
 
-/*! \internal
- *  \brief Parse a 'parameter' tag inside a syntax element.
- *  \param fixnode A pointer to the 'parameter' xml node.
- *  \param tabs A string to be appended at the beginning of each line being printed inside
- *              'buffer'.
- *  \param buffer String buffer to put values found inside the parameter element.
+/*!
+ * \internal
+ * \brief Parse a 'parameter' tag inside a syntax element.
+ *
+ * \param fixnode A pointer to the 'parameter' xml node.
+ * \param tabs A string to be appended at the beginning of each line being printed inside
+ *             'buffer'.
+ * \param buffer String buffer to put values found inside the parameter element.
  */
 static void xmldoc_parse_parameter(struct ast_xml_node *fixnode, const char *tabs, struct ast_str **buffer)
 {
@@ -1884,14 +2066,69 @@ static void xmldoc_parse_parameter(struct ast_xml_node *fixnode, const char *tab
 
 /*!
  * \internal
+ * \brief Parse an 'info' tag inside an element.
+ *
+ * \param node A pointer to the 'info' xml node.
+ * \param tabs A string to be appended at the beginning of each line being printed
+ *             inside 'buffer'
+ * \param posttabs Add this string after the content of the <para> element, if one exists
+ * \param String buffer to put values found inide the info element.
+ *
+ * \retval 2 if the information contained a para element, and it returned a value of 2
+ * \retval 1 if information was put into the buffer
+ * \retval 0 if no information was put into the buffer or error
+ */
+static int xmldoc_parse_info(struct ast_xml_node *node, const char *tabs, const char *posttabs, struct ast_str **buffer)
+{
+	const char *tech;
+	char *internaltabs;
+	int internal_ret;
+	int ret = 0;
+
+	if (strcasecmp(ast_xml_node_get_name(node), "info")) {
+		return ret;
+	}
+
+	ast_asprintf(&internaltabs, "%s    ", tabs);
+	if (!internaltabs) {
+		return ret;
+	}
+
+	tech = ast_xml_get_attribute(node, "tech");
+	if (tech) {
+		ast_str_append(buffer, 0, "%s<note>Technology: %s</note>\n", internaltabs, tech);
+		ast_xml_free_attr(tech);
+	}
+
+	ret = 1;
+
+	for (node = ast_xml_node_get_children(node); node; node = ast_xml_node_get_next(node)) {
+		if (!strcasecmp(ast_xml_node_get_name(node), "enumlist")) {
+			xmldoc_parse_enumlist(node, internaltabs, buffer);
+		} else if (!strcasecmp(ast_xml_node_get_name(node), "parameter")) {
+			xmldoc_parse_parameter(node, internaltabs, buffer);
+		} else if ((internal_ret = xmldoc_parse_common_elements(node, internaltabs, posttabs, buffer))) {
+			if (internal_ret > ret) {
+				ret = internal_ret;
+			}
+		}
+	}
+	ast_free(internaltabs);
+
+	return ret;
+}
+
+/*!
+ * \internal
  * \brief Build the arguments for an item
+ *
  * \param node	The arguments node to parse
  *
  * \note This method exists for when you already have the node.  This
  * prevents having to lock the documentation tree twice
  *
- * \returns A malloc'd character pointer to the arguments for the item
- * \returns NULL on failure
+ * \retval A malloc'd character pointer to the arguments for the item
+ * \retval NULL on failure
  *
  * \since 11
  */
@@ -1952,13 +2189,16 @@ char *ast_xmldoc_build_arguments(const char *type, const char *name, const char 
 	return _ast_xmldoc_build_arguments(node);
 }
 
-/*! \internal
- *  \brief Return the string within a node formatted with <para> and <variablelist> elements.
- *  \param node Parent node where content resides.
- *  \param raw If set, return the node's content without further processing.
- *  \param raw_wrap Wrap raw text.
- *  \retval NULL on error
- *  \retval Node content on success.
+/*!
+ * \internal
+ * \brief Return the string within a node formatted with <para> and <variablelist> elements.
+ *
+ * \param node Parent node where content resides.
+ * \param raw If set, return the node's content without further processing.
+ * \param raw_wrap Wrap raw text.
+ *
+ * \retval NULL on error
+ * \retval Node content on success.
  */
 static struct ast_str *xmldoc_get_formatted(struct ast_xml_node *node, int raw_output, int raw_wrap)
 {
@@ -1970,18 +2210,27 @@ static struct ast_str *xmldoc_get_formatted(struct ast_xml_node *node, int raw_o
 		/* xmldoc_string_cleanup will allocate the ret object */
 		notcleanret = ast_xml_get_text(node);
 		tmpstr = notcleanret;
-		xmldoc_string_cleanup(ast_skip_blanks(notcleanret), &ret, 0);
+		xmldoc_string_cleanup(ast_skip_blanks(notcleanret), &ret, 0, 0);
 		ast_xml_free_text(tmpstr);
 	} else {
 		ret = ast_str_create(128);
+		if (!ret) {
+			return NULL;
+		}
 		for (tmp = ast_xml_node_get_children(node); tmp; tmp = ast_xml_node_get_next(tmp)) {
-			/* if found, parse a <para> element. */
+			/* if found, parse children elements. */
 			if (xmldoc_parse_common_elements(tmp, "", "\n", &ret)) {
 				continue;
 			}
-			/* if found, parse a <variablelist> element. */
-			xmldoc_parse_variablelist(tmp, "", &ret);
-			xmldoc_parse_enumlist(tmp, "    ", &ret);
+			if (xmldoc_parse_variablelist(tmp, "", &ret)) {
+				continue;
+			}
+			if (xmldoc_parse_enumlist(tmp, "    ", &ret)) {
+				continue;
+			}
+			if (xmldoc_parse_specialtags(tmp, "", "", &ret)) {
+				continue;
+			}
 		}
 		/* remove last '\n' */
 		/* XXX Don't modify ast_str internals manually */
@@ -1994,13 +2243,16 @@ static struct ast_str *xmldoc_get_formatted(struct ast_xml_node *node, int raw_o
 }
 
 /*!
- *  \brief Get the content of a field (synopsis, description, etc) from an asterisk document tree node
- *  \param node The node to obtain the information from
- *  \param var Name of field to return (synopsis, description, etc).
- *  \param raw Field only contains text, no other elements inside it.
- *  \retval NULL On error.
- *  \retval Field text content on success.
- *  \since 11
+ * \internal
+ * \brief Get the content of a field (synopsis, description, etc) from an asterisk document tree node
+ *
+ * \param node The node to obtain the information from
+ * \param var Name of field to return (synopsis, description, etc).
+ * \param raw Field only contains text, no other elements inside it.
+ *
+ * \retval NULL On error.
+ * \retval Field text content on success.
+ * \since 11
  */
 static char *_xmldoc_build_field(struct ast_xml_node *node, const char *var, int raw)
 {
@@ -2010,12 +2262,11 @@ static char *_xmldoc_build_field(struct ast_xml_node *node, const char *var, int
 	node = ast_xml_find_element(ast_xml_node_get_children(node), var, NULL, NULL);
 
 	if (!node || !ast_xml_node_get_children(node)) {
-		ast_debug(1, "Cannot find variable '%s' in tree\n", var);
 		return ret;
 	}
 
 	formatted = xmldoc_get_formatted(node, raw, raw);
-	if (ast_str_strlen(formatted) > 0) {
+	if (formatted && ast_str_strlen(formatted) > 0) {
 		ret = ast_strdup(ast_str_buffer(formatted));
 	}
 	ast_free(formatted);
@@ -2024,13 +2275,17 @@ static char *_xmldoc_build_field(struct ast_xml_node *node, const char *var, int
 }
 
 /*!
- *  \brief Get the content of a field (synopsis, description, etc) from an asterisk document tree
- *  \param type Type of element (application, function, ...).
- *  \param name Name of element (Dial, Echo, Playback, ...).
- *  \param var Name of field to return (synopsis, description, etc).
- *  \param raw Field only contains text, no other elements inside it.
- *  \retval NULL On error.
- *  \retval Field text content on success.
+ * \internal
+ * \brief Get the content of a field (synopsis, description, etc) from an asterisk document tree
+ *
+ * \param type Type of element (application, function, ...).
+ * \param name Name of element (Dial, Echo, Playback, ...).
+ * \param var Name of field to return (synopsis, description, etc).
+ * \param module
+ * \param raw Field only contains text, no other elements inside it.
+ *
+ * \retval NULL On error.
+ * \retval Field text content on success.
  */
 static char *xmldoc_build_field(const char *type, const char *name, const char *module, const char *var, int raw)
 {
@@ -2051,15 +2306,17 @@ static char *xmldoc_build_field(const char *type, const char *name, const char *
 	return _xmldoc_build_field(node, var, raw);
 }
 
-/* \internal
+/*!
+ * \internal
  * \brief Build the synopsis for an item
+ *
  * \param node The synopsis node
  *
  * \note This method exists for when you already have the node.  This
  * prevents having to lock the documentation tree twice
  *
- * \returns A malloc'd character pointer to the synopsis information
- * \returns NULL on failure
+ * \retval A malloc'd character pointer to the synopsis information
+ * \retval NULL on failure
  * \since 11
  */
 static char *_ast_xmldoc_build_synopsis(struct ast_xml_node *node)
@@ -2075,13 +2332,14 @@ char *ast_xmldoc_build_synopsis(const char *type, const char *name, const char *
 /*!
  * \internal
  * \brief Build the descripton for an item
+ *
  * \param node	The description node to parse
  *
  * \note This method exists for when you already have the node.  This
  * prevents having to lock the documentation tree twice
  *
- * \returns A malloc'd character pointer to the arguments for the item
- * \returns NULL on failure
+ * \retval A malloc'd character pointer to the arguments for the item
+ * \retval NULL on failure
  * \since 11
  */
 static char *_ast_xmldoc_build_description(struct ast_xml_node *node)
@@ -2094,7 +2352,9 @@ char *ast_xmldoc_build_description(const char *type, const char *name, const cha
 	return xmldoc_build_field(type, name, module, "description", 0);
 }
 
-/*! \internal \brief ast_xml_doc_item ao2 destructor
+/*!
+ * \internal
+ * \brief ast_xml_doc_item ao2 destructor
  * \since 11
  */
 static void ast_xml_doc_item_destructor(void *obj)
@@ -2112,14 +2372,16 @@ static void ast_xml_doc_item_destructor(void *obj)
 	ast_free(doc->description);
 	ast_string_field_free_memory(doc);
 
-	if (doc->next) {
-		ao2_ref(doc->next, -1);
-		doc->next = NULL;
+	if (AST_LIST_NEXT(doc, next)) {
+		ao2_ref(AST_LIST_NEXT(doc, next), -1);
+		AST_LIST_NEXT(doc, next) = NULL;
 	}
 }
 
-/*! \internal
+/*!
+ * \internal
  * \brief Create an ao2 ref counted ast_xml_doc_item
+ *
  * \param name The name of the item
  * \param type The item's source type
  * \since 11
@@ -2156,7 +2418,8 @@ ast_xml_doc_item_failure:
 	return NULL;
 }
 
-/*! \internal
+/*!
+ * \internal
  * \brief ao2 item hash function for ast_xml_doc_item
  * \since 11
  */
@@ -2167,7 +2430,8 @@ static int ast_xml_doc_item_hash(const void *obj, const int flags)
 	return ast_str_case_hash(name);
 }
 
-/*! \internal
+/*!
+ * \internal
  * \brief ao2 item comparison function for ast_xml_doc_item
  * \since 11
  */
@@ -2179,14 +2443,16 @@ static int ast_xml_doc_item_cmp(void *obj, void *arg, int flags)
 	return strcasecmp(left->name, match) ? 0 : (CMP_MATCH | CMP_STOP);
 }
 
-/* \internal
+/*!
+ * \internal
  * \brief Build an XML documentation item
+ *
  * \param node The root node for the item
  * \param name The name of the item
  * \param type The item's source type
  *
- * \returns NULL on failure
- * \returns An ao2 ref counted object
+ * \retval NULL on failure
+ * \retval An ao2 ref counted object
  * \since 11
  */
 static struct ast_xml_doc_item *xmldoc_build_documentation_item(struct ast_xml_node *node, const char *name, const char *type)
@@ -2201,6 +2467,7 @@ static struct ast_xml_doc_item *xmldoc_build_documentation_item(struct ast_xml_n
 	if (!(item = ast_xml_doc_item_alloc(name, type))) {
 		return NULL;
 	}
+	item->node = node;
 
 	syntax = _ast_xmldoc_build_syntax(node, type, name);
 	seealso = _ast_xmldoc_build_seealso(node);
@@ -2233,10 +2500,253 @@ static struct ast_xml_doc_item *xmldoc_build_documentation_item(struct ast_xml_n
 	return item;
 }
 
+/*!
+ * \internal
+ * \brief Build the list responses for an item
+ *
+ * \param manager_action The action node to parse
+ *
+ * \note This method exists for when you already have the node.  This
+ * prevents having to lock the documentation tree twice
+ *
+ * \retval A list of ast_xml_doc_items
+ * \retval NULL on failure
+ *
+ * \since 13.0.0
+ */
+static struct ast_xml_doc_item *xmldoc_build_list_responses(struct ast_xml_node *manager_action)
+{
+	struct ast_xml_node *event;
+	struct ast_xml_node *responses;
+	struct ast_xml_node *list_elements;
+	struct ast_xml_doc_item_list root;
+
+	AST_LIST_HEAD_INIT(&root);
+
+	responses = ast_xml_find_element(ast_xml_node_get_children(manager_action), "responses", NULL, NULL);
+	if (!responses) {
+		return NULL;
+	}
+
+	list_elements = ast_xml_find_element(ast_xml_node_get_children(responses), "list-elements", NULL, NULL);
+	if (!list_elements) {
+		return NULL;
+	}
+
+	/* Iterate over managerEvent nodes */
+	for (event = ast_xml_node_get_children(list_elements); event; event = ast_xml_node_get_next(event)) {
+		struct ast_xml_node *event_instance;
+		RAII_VAR(const char *, name, ast_xml_get_attribute(event, "name"),
+			ast_xml_free_attr);
+		struct ast_xml_doc_item *new_item;
+
+		if (!name || strcmp(ast_xml_node_get_name(event), "managerEvent")) {
+			continue;
+		}
+
+		event_instance = ast_xml_find_element(ast_xml_node_get_children(event),
+			"managerEventInstance", NULL, NULL);
+		new_item = xmldoc_build_documentation_item(event_instance, name, "managerEvent");
+		if (!new_item) {
+			ao2_cleanup(AST_LIST_FIRST(&root));
+			return NULL;
+		}
+
+		AST_LIST_INSERT_TAIL(&root, new_item, next);
+	}
+
+	return AST_LIST_FIRST(&root);
+}
+
+struct ast_xml_doc_item *ast_xmldoc_build_list_responses(const char *type, const char *name, const char *module)
+{
+	struct ast_xml_node *node;
+
+	if (ast_strlen_zero(type) || ast_strlen_zero(name)) {
+		return NULL;
+	}
+
+	node = xmldoc_get_node(type, name, module, documentation_language);
+
+	if (!node || !ast_xml_node_get_children(node)) {
+		return NULL;
+	}
+
+	return xmldoc_build_list_responses(node);
+}
+
+/*!
+ * \internal
+ * \brief Build the final response for an item
+ *
+ * \param manager_action The action node to parse
+ *
+ * \note This method exists for when you already have the node.  This
+ * prevents having to lock the documentation tree twice
+ *
+ * \retval An ast_xml_doc_item
+ * \retval NULL on failure
+ *
+ * \since 13.0.0
+ */
+static struct ast_xml_doc_item *xmldoc_build_final_response(struct ast_xml_node *manager_action)
+{
+	struct ast_xml_node *responses;
+	struct ast_xml_node *final_response_event;
+	struct ast_xml_node *event_instance;
+
+	responses = ast_xml_find_element(ast_xml_node_get_children(manager_action),
+		"responses", NULL, NULL);
+	if (!responses) {
+		return NULL;
+	}
+
+	final_response_event = ast_xml_find_element(ast_xml_node_get_children(responses),
+		"managerEvent", NULL, NULL);
+	if (!final_response_event) {
+		return NULL;
+	}
+
+	event_instance = ast_xml_find_element(ast_xml_node_get_children(final_response_event),
+		"managerEventInstance", NULL, NULL);
+	if (!event_instance) {
+		return NULL;
+	} else {
+		const char *name;
+		struct ast_xml_doc_item *res;
+
+		name = ast_xml_get_attribute(final_response_event, "name");
+		res = xmldoc_build_documentation_item(event_instance, name, "managerEvent");
+		ast_xml_free_attr(name);
+		return res;
+	}
+
+}
+
+struct ast_xml_doc_item *ast_xmldoc_build_final_response(const char *type, const char *name, const char *module)
+{
+	struct ast_xml_node *node;
+
+	if (ast_strlen_zero(type) || ast_strlen_zero(name)) {
+		return NULL;
+	}
+
+	node = xmldoc_get_node(type, name, module, documentation_language);
+
+	if (!node || !ast_xml_node_get_children(node)) {
+		return NULL;
+	}
+
+	return xmldoc_build_final_response(node);
+}
+
+struct ast_xml_xpath_results *__attribute__((format(printf, 1, 2))) ast_xmldoc_query(const char *fmt, ...)
+{
+	struct ast_xml_xpath_results *results = NULL;
+	struct documentation_tree *doctree;
+	RAII_VAR(struct ast_str *, xpath_str, ast_str_create(128), ast_free);
+	va_list ap;
+
+	if (!xpath_str) {
+		return NULL;
+	}
+
+	va_start(ap, fmt);
+	ast_str_set_va(&xpath_str, 0, fmt, ap);
+	va_end(ap);
+
+	AST_RWLIST_RDLOCK(&xmldoc_tree);
+	AST_LIST_TRAVERSE(&xmldoc_tree, doctree, entry) {
+		if (!(results = ast_xml_query(doctree->doc, ast_str_buffer(xpath_str)))) {
+			continue;
+		}
+		break;
+	}
+	AST_RWLIST_UNLOCK(&xmldoc_tree);
+
+	return results;
+}
+
+static void build_config_docs(struct ast_xml_node *cur, struct ast_xml_doc_item_list *root)
+{
+	struct ast_xml_node *iter;
+	struct ast_xml_doc_item *item;
+
+	for (iter = ast_xml_node_get_children(cur); iter; iter = ast_xml_node_get_next(iter)) {
+		const char *iter_name;
+		if (strncasecmp(ast_xml_node_get_name(iter), "config", 6)) {
+			continue;
+		}
+		iter_name = ast_xml_get_attribute(iter, "name");
+		/* Now add all of the child config-related items to the list */
+		if (!(item = xmldoc_build_documentation_item(iter, iter_name, ast_xml_node_get_name(iter)))) {
+			ast_log(LOG_ERROR, "Could not build documentation for '%s:%s'\n", ast_xml_node_get_name(iter), iter_name);
+			ast_xml_free_attr(iter_name);
+			break;
+		}
+		ast_xml_free_attr(iter_name);
+		if (!strcasecmp(ast_xml_node_get_name(iter), "configOption")) {
+			const char *name = ast_xml_get_attribute(cur, "name");
+			ast_string_field_set(item, ref, name);
+			ast_xml_free_attr(name);
+		}
+		AST_LIST_INSERT_TAIL(root, item, next);
+		build_config_docs(iter, root);
+	}
+}
+
+int ast_xmldoc_regenerate_doc_item(struct ast_xml_doc_item *item)
+{
+	const char *name;
+	char *syntax;
+	char *seealso;
+	char *arguments;
+	char *synopsis;
+	char *description;
+
+	if (!item || !item->node) {
+		return -1;
+	}
+
+	name = ast_xml_get_attribute(item->node, "name");
+	if (!name) {
+		return -1;
+	}
+
+	syntax = _ast_xmldoc_build_syntax(item->node, item->type, name);
+	seealso = _ast_xmldoc_build_seealso(item->node);
+	arguments = _ast_xmldoc_build_arguments(item->node);
+	synopsis = _ast_xmldoc_build_synopsis(item->node);
+	description = _ast_xmldoc_build_description(item->node);
+
+	if (syntax) {
+		ast_str_set(&item->syntax, 0, "%s", syntax);
+	}
+	if (seealso) {
+		ast_str_set(&item->seealso, 0, "%s", seealso);
+	}
+	if (arguments) {
+		ast_str_set(&item->arguments, 0, "%s", arguments);
+	}
+	if (synopsis) {
+		ast_str_set(&item->synopsis, 0, "%s", synopsis);
+	}
+	if (description) {
+		ast_str_set(&item->description, 0, "%s", description);
+	}
+
+	ast_free(syntax);
+	ast_free(seealso);
+	ast_free(arguments);
+	ast_free(synopsis);
+	ast_free(description);
+	ast_xml_free_attr(name);
+	return 0;
+}
+
 struct ao2_container *ast_xmldoc_build_documentation(const char *type)
 {
 	struct ao2_container *docs;
-	struct ast_xml_doc_item *item = NULL, *root = NULL;
 	struct ast_xml_node *node = NULL, *instance = NULL;
 	struct documentation_tree *doctree;
 	const char *name;
@@ -2255,6 +2765,8 @@ struct ao2_container *ast_xmldoc_build_documentation(const char *type)
 		}
 
 		for (node = ast_xml_node_get_children(node); node; node = ast_xml_node_get_next(node)) {
+			struct ast_xml_doc_item *item = NULL;
+
 			/* Ignore empty nodes or nodes that aren't of the type requested */
 			if (!ast_xml_node_get_children(node) || strcasecmp(ast_xml_node_get_name(node), type)) {
 				continue;
@@ -2266,6 +2778,10 @@ struct ao2_container *ast_xmldoc_build_documentation(const char *type)
 
 			switch (xmldoc_get_syntax_type(type)) {
 			case MANAGER_EVENT_SYNTAX:
+			{
+				struct ast_xml_doc_item_list root;
+
+				AST_LIST_HEAD_INIT(&root);
 				for (instance = ast_xml_node_get_children(node); instance; instance = ast_xml_node_get_next(instance)) {
 					struct ast_xml_doc_item *temp;
 					if (!ast_xml_node_get_children(instance) || strcasecmp(ast_xml_node_get_name(instance), "managerEventInstance")) {
@@ -2275,16 +2791,29 @@ struct ao2_container *ast_xmldoc_build_documentation(const char *type)
 					if (!temp) {
 						break;
 					}
-					if (!item) {
-						item = temp;
-						root = item;
-					} else {
-						item->next = temp;
-						item = temp;
-					}
+					AST_LIST_INSERT_TAIL(&root, temp, next);
 				}
-				item = root;
+				item = AST_LIST_FIRST(&root);
 				break;
+			}
+			case CONFIG_INFO_SYNTAX:
+			{
+				RAII_VAR(const char *, name, ast_xml_get_attribute(node, "name"), ast_xml_free_attr);
+
+				if (!ast_xml_node_get_children(node) || strcasecmp(ast_xml_node_get_name(node), "configInfo")) {
+					break;
+				}
+
+				item = xmldoc_build_documentation_item(node, name, "configInfo");
+				if (item) {
+					struct ast_xml_doc_item_list root;
+
+					AST_LIST_HEAD_INIT(&root);
+					AST_LIST_INSERT_TAIL(&root, item, next);
+					build_config_docs(node, &root);
+				}
+				break;
+			}
 			default:
 				item = xmldoc_build_documentation_item(node, name, type);
 			}
@@ -2293,7 +2822,6 @@ struct ao2_container *ast_xmldoc_build_documentation(const char *type)
 			if (item) {
 				ao2_link(docs, item);
 				ao2_t_ref(item, -1, "Dispose of creation ref");
-				item = NULL;
 			}
 		}
 	}
@@ -2301,6 +2829,9 @@ struct ao2_container *ast_xmldoc_build_documentation(const char *type)
 
 	return docs;
 }
+
+int ast_xmldoc_regenerate_doc_item(struct ast_xml_doc_item *item);
+
 
 #if !defined(HAVE_GLOB_NOMAGIC) || !defined(HAVE_GLOB_BRACE) || defined(DEBUG_NONGNU)
 static int xml_pathmatch(char *xmlpattern, int xmlpattern_maxlen, glob_t *globbuf)
@@ -2345,10 +2876,46 @@ static int xml_pathmatch(char *xmlpattern, int xmlpattern_maxlen, glob_t *globbu
 }
 #endif
 
+static char *handle_dump_docs(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a)
+{
+	struct documentation_tree *doctree;
+	FILE *f;
+
+	switch (cmd) {
+	case CLI_INIT:
+		e->command = "xmldoc dump";
+		e->usage =
+			"Usage: xmldoc dump <filename>\n"
+			"  Dump XML documentation to a file\n";
+		return NULL;
+	case CLI_GENERATE:
+		return NULL;
+	}
+
+	if (a->argc != 3) {
+		return CLI_SHOWUSAGE;
+	}
+	if (!(f = fopen(a->argv[2], "w"))) {
+		ast_log(LOG_ERROR, "Could not open file '%s': %s\n", a->argv[2], strerror(errno));
+		return CLI_FAILURE;
+	}
+	AST_RWLIST_RDLOCK(&xmldoc_tree);
+	AST_LIST_TRAVERSE(&xmldoc_tree, doctree, entry) {
+		ast_xml_doc_dump_file(f, doctree->doc);
+	}
+	AST_RWLIST_UNLOCK(&xmldoc_tree);
+	fclose(f);
+	return CLI_SUCCESS;
+}
+
+static struct ast_cli_entry cli_dump_xmldocs = AST_CLI_DEFINE(handle_dump_docs, "Dump the XML docs to the specified file");
+
 /*! \brief Close and unload XML documentation. */
 static void xmldoc_unload_documentation(void)
 {
 	struct documentation_tree *doctree;
+
+	ast_cli_unregister(&cli_dump_xmldocs);
 
 	AST_RWLIST_WRLOCK(&xmldoc_tree);
 	while ((doctree = AST_RWLIST_REMOVE_HEAD(&xmldoc_tree, entry))) {
@@ -2393,6 +2960,7 @@ int ast_xmldoc_load_documentation(void)
 	/* initialize the XML library. */
 	ast_xml_init();
 
+	ast_cli_register(&cli_dump_xmldocs);
 	/* register function to be run when asterisk finish. */
 	ast_register_atexit(xmldoc_unload_documentation);
 
@@ -2411,7 +2979,7 @@ int ast_xmldoc_load_documentation(void)
 	globret = glob(xmlpattern, MY_GLOB_FLAGS, NULL, &globbuf);
 #endif
 
-	ast_debug(3, "gl_pathc %zd\n", globbuf.gl_pathc);
+	ast_debug(3, "gl_pathc %zu\n", (size_t)globbuf.gl_pathc);
 	if (globret == GLOB_NOSPACE) {
 		ast_log(LOG_WARNING, "XML load failure, glob expansion of pattern '%s' failed: Not enough memory\n", xmlpattern);
 		ast_free(xmlpattern);

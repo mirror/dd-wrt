@@ -27,7 +27,6 @@
 
 #include "asterisk/channel.h"
 #include "asterisk/frame.h"
-#include "asterisk/event.h"
 #include "asterisk/ccss.h"
 #include <libpri.h>
 #include <dahdi/user.h>
@@ -172,6 +171,7 @@ enum sig_pri_reset_state {
 };
 
 struct sig_pri_span;
+struct xfer_rsp_data;
 
 struct sig_pri_callback {
 	/* Unlock the private in the signalling private structure.  This is used for three way calling madness. */
@@ -192,7 +192,9 @@ struct sig_pri_callback {
 	int (* const train_echocanceller)(void *pvt);
 	int (* const dsp_reset_and_flush_digits)(void *pvt);
 
-	struct ast_channel * (* const new_ast_channel)(void *pvt, int state, enum sig_pri_law law, char *exten, const struct ast_channel *chan);
+	struct ast_channel * (* const new_ast_channel)(void *pvt, int state,
+		enum sig_pri_law law, char *exten, const struct ast_assigned_ids *assignedids,
+		const struct ast_channel *requestor);
 
 	void (* const fixup_chans)(void *old_chan, void *new_chan);
 
@@ -229,6 +231,8 @@ struct sig_pri_callback {
 	void (*module_ref)(void);
 	/*! Unreference the parent module. */
 	void (*module_unref)(void);
+	/*! Mark the span for destruction. */
+	void (*destroy_later)(struct sig_pri_span *pri);
 };
 
 /*! Global sig_pri callbacks to the upper layer. */
@@ -343,6 +347,10 @@ struct sig_pri_chan {
 	/*! \brief TRUE if this is a call waiting call */
 	unsigned int is_call_waiting:1;
 #endif	/* defined(HAVE_PRI_CALL_WAITING) */
+#if defined(HAVE_PRI_SETUP_ACK_INBAND)
+	/*! TRUE if outgoing SETUP had no called digits */
+	unsigned int no_dialed_digits:1;
+#endif	/* defined(HAVE_PRI_SETUP_ACK_INBAND) */
 
 	struct ast_channel *owner;
 
@@ -353,6 +361,10 @@ struct sig_pri_chan {
 	enum sig_pri_call_level call_level;
 	/*! \brief Channel reset/restart state. */
 	enum sig_pri_reset_state resetting;
+#if defined(HAVE_PRI_TRANSFER)
+	/*! If non-NULL, send transfer disconnect successfull response to first call disconnecting. */
+	struct xfer_rsp_data *xfer_data;
+#endif	/* defined(HAVE_PRI_TRANSFER) */
 	int prioffset;					/*!< channel number in span */
 	int logicalspan;				/*!< logical span number within trunk group */
 	int mastertrunkgroup;			/*!< what trunk group is our master */
@@ -384,7 +396,7 @@ struct sig_pri_chan {
 /*! Typical maximum length of mwi mailbox context */
 #define SIG_PRI_MAX_MWI_CONTEXT_LEN			10
 /*!
- * \brief Maximum mwi_vm_numbers string length.
+ * \brief Maximum mwi_vm_numbers and mwi_vm_boxes string length.
  * \details
  * max_length = #mailboxes * (vm_number + ',')
  * The last ',' is a null terminator instead.
@@ -392,25 +404,32 @@ struct sig_pri_chan {
 #define SIG_PRI_MAX_MWI_VM_NUMBER_STR	(SIG_PRI_MAX_MWI_MAILBOXES \
 	* (SIG_PRI_MAX_MWI_VM_NUMBER_LEN + 1))
 /*!
+ * \brief Maximum length of vm_mailbox string.
+ * \details
+ * max_length = vm_box + '@' + context.
+ */
+#define SIG_PRI_MAX_MWI_VM_MAILBOX		(SIG_PRI_MAX_MWI_MBOX_NUMBER_LEN \
+	+ 1 + SIG_PRI_MAX_MWI_CONTEXT_LEN)
+/*!
  * \brief Maximum mwi_mailboxs string length.
  * \details
- * max_length = #mailboxes * (mbox_number + '@' + context + ',')
+ * max_length = #mailboxes * (vm_mailbox + ',')
  * The last ',' is a null terminator instead.
  */
 #define SIG_PRI_MAX_MWI_MAILBOX_STR		(SIG_PRI_MAX_MWI_MAILBOXES	\
-	* (SIG_PRI_MAX_MWI_MBOX_NUMBER_LEN + 1 + SIG_PRI_MAX_MWI_CONTEXT_LEN + 1))
+	* (SIG_PRI_MAX_MWI_VM_MAILBOX + 1))
 
 struct sig_pri_mbox {
 	/*!
 	 * \brief MWI mailbox event subscription.
 	 * \note NULL if mailbox not configured.
 	 */
-	struct ast_event_sub *sub;
-	/*! \brief Mailbox number */
-	const char *number;
-	/*! \brief Mailbox context. */
-	const char *context;
-	/*! \brief Voicemail controlling number. */
+	struct stasis_subscription *sub;
+	/*! \brief Mailbox uniqueid. */
+	const char *uniqueid;
+	/*! \brief Mailbox number sent to span. */
+	const char *vm_box;
+	/*! \brief Voicemail access controlling number sent to span. */
 	const char *vm_number;
 };
 #endif	/* defined(HAVE_PRI_MWI) */
@@ -470,6 +489,8 @@ struct sig_pri_span {
 	 * appended to the initial_user_tag[].
 	 */
 	unsigned int append_msn_to_user_tag:1;
+	/*! TRUE if a SETUP ACK message needs to open the audio path. */
+	unsigned int inband_on_setup_ack:1;
 	/*! TRUE if a PROCEEDING message needs to unsquelch the received audio. */
 	unsigned int inband_on_proceeding:1;
 #if defined(HAVE_PRI_MCID)
@@ -502,10 +523,17 @@ struct sig_pri_span {
 	/*!
 	 * \brief Comma separated list of mailboxes to indicate MWI.
 	 * \note Empty if disabled.
-	 * \note Format: mailbox_number[@context]{,mailbox_number[@context]}
+	 * \note Format: vm_mailbox{,vm_mailbox}
 	 * \note String is split apart when span is started.
 	 */
 	char mwi_mailboxes[SIG_PRI_MAX_MWI_MAILBOX_STR];
+	/*!
+	 * \brief Comma separated list of mailbox numbers sent over ISDN span for MWI.
+	 * \note Empty if disabled.
+	 * \note Format: vm_box{,vm_box}
+	 * \note String is split apart when span is started.
+	 */
+	char mwi_vm_boxes[SIG_PRI_MAX_MWI_VM_NUMBER_STR];
 	/*!
 	 * \brief Comma separated list of voicemail access controlling numbers for MWI.
 	 * \note Format: vm_number{,vm_number}
@@ -594,7 +622,7 @@ struct sig_pri_span {
 	 * AST_DEVICE_BUSY - All B channels are in use.
 	 * AST_DEVICE_UNAVAILABLE - Span is in alarm.
 	 * \note
-	 * Device name: \startverbatim DAHDI/I<span>/congestion. \endverbatim
+	 * Device name: \verbatim DAHDI/I<span>/congestion. \endverbatim
 	 */
 	int congestion_devstate;
 #if defined(THRESHOLD_DEVSTATE_PLACEHOLDER)
@@ -649,7 +677,9 @@ int sig_pri_is_alarm_ignored(struct sig_pri_span *pri);
 void pri_event_alarm(struct sig_pri_span *pri, int index, int before_start_pri);
 void pri_event_noalarm(struct sig_pri_span *pri, int index, int before_start_pri);
 
-struct ast_channel *sig_pri_request(struct sig_pri_chan *p, enum sig_pri_law law, const struct ast_channel *requestor, int transfercapability);
+struct ast_channel *sig_pri_request(struct sig_pri_chan *p, enum sig_pri_law law,
+	const struct ast_assigned_ids *assignedids, const struct ast_channel *requestor,
+	int transfercapability);
 
 struct sig_pri_chan *sig_pri_chan_new(void *pvt_data, struct sig_pri_span *pri, int logicalspan, int channo, int trunkgroup);
 void sig_pri_chan_delete(struct sig_pri_chan *doomed);

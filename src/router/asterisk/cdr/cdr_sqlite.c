@@ -22,7 +22,7 @@
  * \brief Store CDR records in a SQLite database.
  *
  * \author Holger Schurig <hs4233@mail.mn-solutions.de>
- * \extref SQLite http://www.sqlite.org/
+ * SQLite http://www.sqlite.org/
  *
  * See also
  * \arg \ref Config_cdr
@@ -43,7 +43,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 328259 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419592 $")
 
 #include <sqlite.h>
 
@@ -191,7 +191,10 @@ static int sqlite_log(struct ast_cdr *cdr)
 
 static int unload_module(void)
 {
-	ast_cdr_unregister(name);
+	if (ast_cdr_unregister(name)) {
+		return -1;
+	}
+
 	if (db) {
 		sqlite_close(db);
 	}
@@ -243,6 +246,7 @@ err:
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "SQLite CDR Backend",
+	.support_level = AST_MODULE_SUPPORT_DEPRECATED,
 	.load = load_module,
 	.unload = unload_module,
 	.load_pri = AST_MODPRI_CDR_DRIVER,

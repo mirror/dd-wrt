@@ -22,13 +22,22 @@
  *
  * \author Joshua Colp <jcolp@digium.com>
  *
- * \extref Iksemel http://code.google.com/p/iksemel/
+ * Iksemel http://code.google.com/p/iksemel/
  *
  * A reference module for interfacting Asterisk directly as a client or component with
  * an XMPP/Jabber compliant server.
  *
  * This module is based upon the original res_jabber as done by Matt O'Gorman.
  *
+ */
+
+/*! \li \ref res_xmpp.c uses the configuration file \ref xmpp.conf and \ref jabber.conf
+ * \addtogroup configuration_file Configuration Files
+ */
+
+/*!
+ * \page xmpp.conf xmpp.conf
+ * \verbinclude xmpp.conf.sample
  */
 
 /*** MODULEINFO
@@ -39,7 +48,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 401120 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 428687 $")
 
 #include <ctype.h>
 #include <iksemel.h>
@@ -50,7 +59,6 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 401120 $")
 #include "asterisk/app.h"
 #include "asterisk/message.h"
 #include "asterisk/manager.h"
-#include "asterisk/event.h"
 #include "asterisk/cli.h"
 #include "asterisk/config_options.h"
 
@@ -279,6 +287,126 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 401120 $")
 		account defined in <literal>xmpp.conf</literal> to send the message from.
 		Note that this field is required for XMPP messages.</para>
 	</info>
+	<configInfo name="res_xmpp" language="en_US">
+		<synopsis>XMPP Messaging</synopsis>
+		<configFile name="xmpp.conf">
+			<configObject name="global">
+				<synopsis>Global configuration settings</synopsis>
+				<configOption name="debug">
+					<synopsis>Enable/disable XMPP message debugging</synopsis>
+				</configOption>
+				<configOption name="autoprune">
+					<synopsis>Auto-remove users from buddy list.</synopsis>
+					<description><para>Auto-remove users from buddy list. Depending on the setup
+					(e.g., using your personal Gtalk account for a test) this could cause loss of
+					the contact list.
+					</para></description>
+				</configOption>
+				<configOption name="autoregister">
+					<synopsis>Auto-register users from buddy list</synopsis>
+				</configOption>
+				<configOption name="collection_nodes">
+					<synopsis>Enable support for XEP-0248 for use with distributed device state</synopsis>
+				</configOption>
+				<configOption name="pubsub_autocreate">
+					<synopsis>Whether or not the PubSub server supports/is using auto-create for nodes</synopsis>
+				</configOption>
+				<configOption name="auth_policy">
+					<synopsis>Whether to automatically accept or deny users' subscription requests</synopsis>
+				</configOption>
+			</configObject>
+			<configObject name="client">
+				<synopsis>Configuration options for an XMPP client</synopsis>
+				<configOption name="username">
+					<synopsis>XMPP username with optional resource</synopsis>
+				</configOption>
+				<configOption name="secret">
+					<synopsis>XMPP password</synopsis>
+				</configOption>
+				<configOption name="serverhost">
+					<synopsis>Route to server, e.g. talk.google.com</synopsis>
+				</configOption>
+				<configOption name="statusmessage">
+					<synopsis>Custom status message</synopsis>
+				</configOption>
+				<configOption name="pubsub_node">
+					<synopsis>Node for publishing events via PubSub</synopsis>
+				</configOption>
+				<configOption name="context">
+					<synopsis>Dialplan context to send incoming messages to</synopsis>
+				</configOption>
+				<configOption name="priority">
+					<synopsis>XMPP resource priority</synopsis>
+				</configOption>
+				<configOption name="port">
+					<synopsis>XMPP server port</synopsis>
+				</configOption>
+				<configOption name="timeout">
+					<synopsis>Timeout in seconds to hold incoming messages</synopsis>
+					<description><para>Timeout (in seconds) on the message stack. Messages stored longer
+					than this value will be deleted by Asterisk. This option applies to incoming messages only
+					which are intended to be processed by the <literal>JABBER_RECEIVE</literal> dialplan function.
+					</para></description>
+				</configOption>
+				<configOption name="debug">
+					<synopsis>Enable debugging</synopsis>
+				</configOption>
+				<configOption name="type">
+					<synopsis>Connection is either a client or a component</synopsis>
+				</configOption>
+				<configOption name="distribute_events">
+					<synopsis>Whether or not to distribute events using this connection</synopsis>
+				</configOption>
+				<configOption name="usetls">
+					<synopsis>Whether to use TLS for the connection or not</synopsis>
+				</configOption>
+				<configOption name="usesasl">
+					<synopsis>Whether to use SASL for the connection or not</synopsis>
+				</configOption>
+				<configOption name="forceoldssl">
+					<synopsis>Force the use of old-style SSL for the connection</synopsis>
+				</configOption>
+				<configOption name="keepalive">
+					<synopsis>If enabled, periodically send an XMPP message from this client with an empty message</synopsis>
+				</configOption>
+				<configOption name="autoprune">
+					<synopsis>Auto-remove users from buddy list.</synopsis>
+					<description><para>Auto-remove users from buddy list. Depending on the setup
+					(e.g., using your personal Gtalk account for a test) this could cause loss of
+					the contact list.
+					</para></description>
+				</configOption>
+				<configOption name="autoregister">
+					<synopsis>Auto-register users bfrom buddy list</synopsis>
+				</configOption>
+				<configOption name="auth_policy">
+					<synopsis>Whether to automatically accept or deny users' subscription requests</synopsis>
+				</configOption>
+				<configOption name="sendtodialplan">
+					<synopsis>Send incoming messages into the dialplan</synopsis>
+				</configOption>
+				<configOption name="status">
+					<synopsis>Default XMPP status for the client</synopsis>
+					<description><para>Can be one of the following XMPP statuses:</para>
+						<enumlist>
+							<enum name="chat"/>
+							<enum name="available"/>
+							<enum name="away"/>
+							<enum name="xaway"/>
+							<enum name="dnd"/>
+						</enumlist>
+					</description>
+				</configOption>
+				<configOption name="buddy">
+					<synopsis>Manual addition of buddy to list</synopsis>
+					<description><para>
+					Manual addition of buddy to the buddy list. For distributed events, these budies are
+					automatically added in the whitelist as 'owners' of the node(s).
+					</para></description>
+				</configOption>
+			</configObject>
+		</configFile>
+	</configInfo>
 ***/
 
 /*! \brief Supported general configuration flags */
@@ -431,6 +559,10 @@ static void xmpp_client_destructor(void *obj)
 
 	ast_xmpp_client_disconnect(client);
 
+	ast_endpoint_shutdown(client->endpoint);
+	ao2_cleanup(client->endpoint);
+	client->endpoint = NULL;
+
 	if (client->filter) {
 		iks_filter_delete(client->filter);
 	}
@@ -465,6 +597,20 @@ static int xmpp_buddy_cmp(void *obj, void *arg, int flags)
 	return !strcmp(buddy1->id, flags & OBJ_KEY ? id : buddy2->id) ? CMP_MATCH | CMP_STOP : 0;
 }
 
+/*! \brief Internal function which changes the XMPP client state */
+static void xmpp_client_change_state(struct ast_xmpp_client *client, int state)
+{
+	if (state == client->state) {
+		return;
+	}
+	client->state = state;
+	if (client->state == XMPP_STATE_DISCONNECTED) {
+		ast_endpoint_set_state(client->endpoint, AST_ENDPOINT_OFFLINE);
+	} else if (client->state == XMPP_STATE_CONNECTED) {
+		ast_endpoint_set_state(client->endpoint, AST_ENDPOINT_ONLINE);
+	}
+}
+
 /*! \brief Allocator function for ast_xmpp_client */
 static struct ast_xmpp_client *xmpp_client_alloc(const char *name)
 {
@@ -476,6 +622,12 @@ static struct ast_xmpp_client *xmpp_client_alloc(const char *name)
 
 	AST_LIST_HEAD_INIT(&client->messages);
 	client->thread = AST_PTHREADT_NULL;
+
+	client->endpoint = ast_endpoint_create("XMPP", name);
+	if (!client->endpoint) {
+		ao2_ref(client, -1);
+		return NULL;
+	}
 
 	if (!(client->buddies = ao2_container_alloc(BUDDY_BUCKETS, xmpp_buddy_hash, xmpp_buddy_cmp))) {
 		ast_log(LOG_ERROR, "Could not initialize buddy container for '%s'\n", name);
@@ -498,7 +650,7 @@ static struct ast_xmpp_client *xmpp_client_alloc(const char *name)
 	ast_string_field_set(client, name, name);
 
 	client->timeout = 50;
-	client->state = XMPP_STATE_DISCONNECTED;
+	xmpp_client_change_state(client, XMPP_STATE_DISCONNECTED);
 	ast_copy_string(client->mid, "aaaaa", sizeof(client->mid));
 
 	return client;
@@ -649,6 +801,7 @@ static void xmpp_config_post_apply(void)
 
 static struct aco_type global_option = {
 	.type = ACO_GLOBAL,
+	.name = "global",
 	.item_offset = offsetof(struct xmpp_config, global),
 	.category_match = ACO_WHITELIST,
 	.category = "^general$",
@@ -658,6 +811,7 @@ struct aco_type *global_options[] = ACO_TYPES(&global_option);
 
 static struct aco_type client_option = {
 	.type = ACO_ITEM,
+	.name = "client",
 	.category_match = ACO_BLACKLIST,
 	.category = "^(general)$",
 	.item_alloc = ast_xmpp_client_config_alloc,
@@ -1042,6 +1196,7 @@ static void xmpp_pubsub_create_affiliations(struct ast_xmpp_client *client, cons
  * \param client the configured XMPP client we use to connect to a XMPP server
  * \param node_type the type of node to create
  * \param name the name of the node to create
+ * \param collection_name
  * \return void
  */
 static void xmpp_pubsub_create_node(struct ast_xmpp_client *client, const char *node_type, const
@@ -1101,6 +1256,7 @@ static void xmpp_pubsub_create_collection(struct ast_xmpp_client *client, const 
 /*!
  * \brief Create a PubSub leaf node.
  * \param client the configured XMPP client we use to connect to a XMPP server
+ * \param collection_name
  * \param leaf_name The name to use for this collection
  * \return void.
  */
@@ -1113,19 +1269,20 @@ static void xmpp_pubsub_create_leaf(struct ast_xmpp_client *client, const char *
 /*!
  * \brief Publish MWI to a PubSub node
  * \param client the configured XMPP client we use to connect to a XMPP server
- * \param device the name of the device whose state to publish
- * \param device_state the state to publish
+ * \param mailbox The mailbox identifier
+ * \param oldmsgs Old messages
+ * \param newmsgs New Messages
  * \return void
  */
 static void xmpp_pubsub_publish_mwi(struct ast_xmpp_client *client, const char *mailbox,
-				    const char *context, const char *oldmsgs, const char *newmsgs)
+	const char *oldmsgs, const char *newmsgs)
 {
-	char full_mailbox[AST_MAX_EXTENSION+AST_MAX_CONTEXT], eid_str[20];
+	char eid_str[20];
 	iks *mailbox_node, *request;
 
-	snprintf(full_mailbox, sizeof(full_mailbox), "%s@%s", mailbox, context);
-
-	if (!(request = xmpp_pubsub_build_publish_skeleton(client, full_mailbox, "message_waiting", AST_DEVSTATE_CACHABLE))) {
+	request = xmpp_pubsub_build_publish_skeleton(client, mailbox, "message_waiting",
+		AST_DEVSTATE_CACHABLE);
+	if (!request) {
 		return;
 	}
 
@@ -1184,25 +1341,26 @@ static void xmpp_pubsub_publish_device_state(struct ast_xmpp_client *client, con
  * \param data void pointer to ast_client structure
  * \return void
  */
-static void xmpp_pubsub_mwi_cb(const struct ast_event *ast_event, void *data)
+static void xmpp_pubsub_mwi_cb(void *data, struct stasis_subscription *sub, struct stasis_message *msg)
 {
 	struct ast_xmpp_client *client = data;
-	const char *mailbox, *context;
 	char oldmsgs[10], newmsgs[10];
+	struct ast_mwi_state *mwi_state;
 
-	if (ast_eid_cmp(&ast_eid_default, ast_event_get_ie_raw(ast_event, AST_EVENT_IE_EID))) {
-		/* If the event didn't originate from this server, don't send it back out. */
-		ast_debug(1, "Returning here\n");
+	if (!stasis_subscription_is_subscribed(sub) || ast_mwi_state_type() != stasis_message_type(msg)) {
 		return;
 	}
 
-	mailbox = ast_event_get_ie_str(ast_event, AST_EVENT_IE_MAILBOX);
-	context = ast_event_get_ie_str(ast_event, AST_EVENT_IE_CONTEXT);
-	snprintf(oldmsgs, sizeof(oldmsgs), "%d",
-		 ast_event_get_ie_uint(ast_event, AST_EVENT_IE_OLDMSGS));
-	snprintf(newmsgs, sizeof(newmsgs), "%d",
-		 ast_event_get_ie_uint(ast_event, AST_EVENT_IE_NEWMSGS));
-	xmpp_pubsub_publish_mwi(client, mailbox, context, oldmsgs, newmsgs);
+	mwi_state = stasis_message_data(msg);
+
+	if (ast_eid_cmp(&ast_eid_default, &mwi_state->eid)) {
+		/* If the event didn't originate from this server, don't send it back out. */
+		return;
+	}
+
+	snprintf(oldmsgs, sizeof(oldmsgs), "%d", mwi_state->old_msgs);
+	snprintf(newmsgs, sizeof(newmsgs), "%d", mwi_state->new_msgs);
+	xmpp_pubsub_publish_mwi(client, mwi_state->uniqueid, oldmsgs, newmsgs);
 }
 
 /*!
@@ -1211,22 +1369,22 @@ static void xmpp_pubsub_mwi_cb(const struct ast_event *ast_event, void *data)
  * \param data void pointer to ast_client structure
  * \return void
  */
-static void xmpp_pubsub_devstate_cb(const struct ast_event *ast_event, void *data)
+static void xmpp_pubsub_devstate_cb(void *data, struct stasis_subscription *sub, struct stasis_message *msg)
 {
 	struct ast_xmpp_client *client = data;
-	const char *device, *device_state;
-	unsigned int cachable;
+	struct ast_device_state_message *dev_state;
 
-	if (ast_eid_cmp(&ast_eid_default, ast_event_get_ie_raw(ast_event, AST_EVENT_IE_EID))) {
-		/* If the event didn't originate from this server, don't send it back out. */
-		ast_debug(1, "Returning here\n");
+	if (!stasis_subscription_is_subscribed(sub) || ast_device_state_message_type() != stasis_message_type(msg)) {
 		return;
 	}
 
-	device = ast_event_get_ie_str(ast_event, AST_EVENT_IE_DEVICE);
-	device_state = ast_devstate_str(ast_event_get_ie_uint(ast_event, AST_EVENT_IE_STATE));
-	cachable = ast_event_get_ie_uint(ast_event, AST_EVENT_IE_CACHABLE);
-	xmpp_pubsub_publish_device_state(client, device, device_state, cachable);
+	dev_state = stasis_message_data(msg);
+	if (!dev_state->eid || ast_eid_cmp(&ast_eid_default, dev_state->eid)) {
+		/* If the event is aggregate or didn't originate from this server, don't send it out. */
+		return;
+	}
+
+	xmpp_pubsub_publish_device_state(client, dev_state->device, ast_devstate_str(dev_state->state), dev_state->cachable);
 }
 
 /*!
@@ -1305,6 +1463,7 @@ static void xmpp_pubsub_subscribe(struct ast_xmpp_client *client, const char *no
 /*!
  * \brief Callback for handling PubSub events
  * \param data void pointer to ast_xmpp_client structure
+ * \param pak A pak
  * \return IKS_FILTER_EAT
  */
 static int xmpp_pubsub_handle_event(void *data, ikspak *pak)
@@ -1313,7 +1472,6 @@ static int xmpp_pubsub_handle_event(void *data, ikspak *pak)
 	int oldmsgs, newmsgs;
 	iks *item, *item_content;
 	struct ast_eid pubsub_eid;
-	struct ast_event *event;
 	unsigned int cachable = AST_DEVSTATE_CACHABLE;
 	item = iks_find(iks_find(iks_find(pak->x, "event"), "items"), "item");
 	if (!item) {
@@ -1329,40 +1487,26 @@ static int xmpp_pubsub_handle_event(void *data, ikspak *pak)
 	}
 	if (!strcasecmp(iks_name(item_content), "state")) {
 		if ((cachable_str = iks_find_attrib(item_content, "cachable"))) {
-			sscanf(cachable_str, "%30d", &cachable);
+			sscanf(cachable_str, "%30u", &cachable);
 		}
 		device_state = iks_find_cdata(item, "state");
-		if (!(event = ast_event_new(AST_EVENT_DEVICE_STATE_CHANGE,
-					    AST_EVENT_IE_DEVICE, AST_EVENT_IE_PLTYPE_STR, item_id, AST_EVENT_IE_STATE,
-					    AST_EVENT_IE_PLTYPE_UINT, ast_devstate_val(device_state), AST_EVENT_IE_EID,
-					    AST_EVENT_IE_PLTYPE_RAW, &pubsub_eid, sizeof(pubsub_eid),
-					    AST_EVENT_IE_CACHABLE, AST_EVENT_IE_PLTYPE_UINT, cachable,
-					    AST_EVENT_IE_END))) {
-			return IKS_FILTER_EAT;
-		}
+		ast_publish_device_state_full(item_id,
+						ast_devstate_val(device_state),
+						cachable == AST_DEVSTATE_CACHABLE ? AST_DEVSTATE_CACHABLE : AST_DEVSTATE_NOT_CACHABLE,
+						&pubsub_eid);
+		return IKS_FILTER_EAT;
 	} else if (!strcasecmp(iks_name(item_content), "mailbox")) {
 		mailbox = strsep(&item_id, "@");
 		sscanf(iks_find_cdata(item_content, "OLDMSGS"), "%10d", &oldmsgs);
 		sscanf(iks_find_cdata(item_content, "NEWMSGS"), "%10d", &newmsgs);
-		if (!(event = ast_event_new(AST_EVENT_MWI,
-			AST_EVENT_IE_MAILBOX, AST_EVENT_IE_PLTYPE_STR, mailbox,
-			AST_EVENT_IE_CONTEXT, AST_EVENT_IE_PLTYPE_STR, item_id,
-			AST_EVENT_IE_OLDMSGS, AST_EVENT_IE_PLTYPE_UINT, oldmsgs,
-			AST_EVENT_IE_NEWMSGS, AST_EVENT_IE_PLTYPE_UINT, newmsgs,
-			AST_EVENT_IE_EID, AST_EVENT_IE_PLTYPE_RAW, &pubsub_eid, sizeof(pubsub_eid),
-			AST_EVENT_IE_END))) {
-			return IKS_FILTER_EAT;
-		}
+
+		ast_publish_mwi_state_full(mailbox, item_id, newmsgs, oldmsgs, NULL, &pubsub_eid);
+
+		return IKS_FILTER_EAT;
 	} else {
 		ast_debug(1, "Don't know how to handle PubSub event of type %s\n",
 			  iks_name(item_content));
 		return IKS_FILTER_EAT;
-	}
-
-	if (cachable == AST_DEVSTATE_CACHABLE) {
-		ast_event_queue_and_cache(event);
-	} else {
-		ast_event_queue(event);
 	}
 
 	return IKS_FILTER_EAT;
@@ -1436,6 +1580,14 @@ static int xmpp_pubsub_handle_error(void *data, ikspak *pak)
 	return IKS_FILTER_EAT;
 }
 
+static int cached_devstate_cb(void *obj, void *arg, int flags)
+{
+	struct stasis_message *msg = obj;
+	struct ast_xmpp_client *client = arg;
+	xmpp_pubsub_devstate_cb(client, client->device_state_sub, msg);
+	return 0;
+}
+
 /*!
  * \brief Initialize collections for event distribution
  * \param client the configured XMPP client we use to connect to a XMPP server
@@ -1445,6 +1597,7 @@ static void xmpp_init_event_distribution(struct ast_xmpp_client *client)
 {
 	RAII_VAR(struct xmpp_config *, cfg, ao2_global_obj_ref(globals), ao2_cleanup);
 	RAII_VAR(struct ast_xmpp_client_config *, clientcfg, NULL, ao2_cleanup);
+	RAII_VAR(struct ao2_container *, cached, NULL, ao2_cleanup);
 
 	if (!cfg || !cfg->clients || !(clientcfg = xmpp_config_find(cfg->clients, client->name))) {
 		return;
@@ -1453,24 +1606,17 @@ static void xmpp_init_event_distribution(struct ast_xmpp_client *client)
 	xmpp_pubsub_unsubscribe(client, "device_state");
 	xmpp_pubsub_unsubscribe(client, "message_waiting");
 
-	if (!(client->mwi_sub = ast_event_subscribe(AST_EVENT_MWI, xmpp_pubsub_mwi_cb, "xmpp_pubsub_mwi_subscription",
-						    client, AST_EVENT_IE_END))) {
+	if (!(client->mwi_sub = stasis_subscribe_pool(ast_mwi_topic_all(), xmpp_pubsub_mwi_cb, client))) {
 		return;
 	}
 
-	if (ast_enable_distributed_devstate()) {
-		return;
-	}
-	
-
-	if (!(client->device_state_sub = ast_event_subscribe(AST_EVENT_DEVICE_STATE_CHANGE,
-							     xmpp_pubsub_devstate_cb, "xmpp_pubsub_devstate_subscription", client, AST_EVENT_IE_END))) {
-		ast_event_unsubscribe(client->mwi_sub);
-		client->mwi_sub = NULL;
+	if (!(client->device_state_sub = stasis_subscribe(ast_device_state_topic_all(), xmpp_pubsub_devstate_cb, client))) {
+		client->mwi_sub = stasis_unsubscribe(client->mwi_sub);
 		return;
 	}
 
-	ast_event_dump_cache(client->device_state_sub);
+	cached = stasis_cache_dump(ast_device_state_cache(), NULL);
+	ao2_callback(cached, OBJ_NODATA, cached_devstate_cb, client);
 
 	xmpp_pubsub_subscribe(client, "device_state");
 	xmpp_pubsub_subscribe(client, "message_waiting");
@@ -1923,7 +2069,7 @@ static int acf_jabberreceive_read(struct ast_channel *chan, const char *name, ch
 
 	start = ast_tvnow();
 
-	if (ast_autoservice_start(chan) < 0) {
+	if (chan && ast_autoservice_start(chan) < 0) {
 		ast_log(LOG_WARNING, "Cannot start autoservice for channel %s\n", ast_channel_name(chan));
 		return -1;
 	}
@@ -1995,7 +2141,7 @@ static int acf_jabberreceive_read(struct ast_channel *chan, const char *name, ch
 		diff = ast_tvdiff_ms(ast_tvnow(), start);
 	}
 
-	if (ast_autoservice_stop(chan) < 0) {
+	if (chan && ast_autoservice_stop(chan) < 0) {
 		ast_log(LOG_WARNING, "Cannot stop autoservice for channel %s\n", ast_channel_name(chan));
 	}
 
@@ -2090,12 +2236,6 @@ static const struct ast_msg_tech msg_tech = {
 	.name = "xmpp",
 	.msg_send = xmpp_send_cb,
 };
-
-/*! \brief Internal function which changes the XMPP client state */
-static void xmpp_client_change_state(struct ast_xmpp_client *client, int state)
-{
-	client->state = state;
-}
 
 /*! \brief Internal function which creates a buddy on a client */
 static struct ast_xmpp_buddy *xmpp_client_create_buddy(struct ao2_container *container, const char *id)
@@ -2410,10 +2550,6 @@ static void xmpp_log_hook(void *data, const char *xmpp, size_t size, int incomin
 	RAII_VAR(struct ast_xmpp_client_config *, clientcfg, NULL, ao2_cleanup);
 	struct ast_xmpp_client *client = data;
 
-	if (!ast_strlen_zero(xmpp)) {
-		manager_event(EVENT_FLAG_USER, "JabberEvent", "Account: %s\r\nPacket: %s\r\n", client->name, xmpp);
-	}
-
 	if (!debug && (!cfg || !cfg->clients || !(clientcfg = xmpp_config_find(cfg->clients, client->name)) || !ast_test_flag(&clientcfg->flags, XMPP_DEBUG))) {
 		return;
 	}
@@ -2501,6 +2637,7 @@ static int xmpp_client_requested_tls(struct ast_xmpp_client *client, struct ast_
 {
 #ifdef HAVE_OPENSSL
 	int sock;
+	long ssl_opts;
 #endif
 
 	if (!strcmp(iks_name(node), "success")) {
@@ -2519,10 +2656,13 @@ static int xmpp_client_requested_tls(struct ast_xmpp_client *client, struct ast_
 	ast_log(LOG_ERROR, "Somehow we managed to try to start TLS negotiation on client '%s' without OpenSSL support, disconnecting\n", client->name);
 	return -1;
 #else
-	client->ssl_method = SSLv3_method();
+	client->ssl_method = SSLv23_method();
 	if (!(client->ssl_context = SSL_CTX_new((SSL_METHOD *) client->ssl_method))) {
 		goto failure;
 	}
+
+	ssl_opts = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
+	SSL_CTX_set_options(client->ssl_context, ssl_opts);
 
 	if (!(client->ssl_session = SSL_new(client->ssl_context))) {
 		goto failure;
@@ -3038,16 +3178,27 @@ static int xmpp_pak_message(struct ast_xmpp_client *client, struct ast_xmpp_clie
 
 	if (ast_test_flag(&cfg->flags, XMPP_SEND_TO_DIALPLAN)) {
 		struct ast_msg *msg;
+		struct ast_xmpp_buddy *buddy;
 
 		if ((msg = ast_msg_alloc())) {
 			int res;
 
 			ast_xmpp_client_lock(client);
 
+			buddy = ao2_find(client->buddies, pak->from->partial, OBJ_KEY | OBJ_NOLOCK);
+
 			res = ast_msg_set_to(msg, "xmpp:%s", cfg->user);
 			res |= ast_msg_set_from(msg, "xmpp:%s", message->from);
 			res |= ast_msg_set_body(msg, "%s", message->message);
 			res |= ast_msg_set_context(msg, "%s", cfg->context);
+			res |= ast_msg_set_tech(msg, "%s", "XMPP");
+			res |= ast_msg_set_endpoint(msg, "%s", client->name);
+
+			if (buddy) {
+				res |= ast_msg_set_var(msg, "XMPP_BUDDY", buddy->id);
+			}
+
+			ao2_cleanup(buddy);
 
 			ast_xmpp_client_unlock(client);
 
@@ -3104,6 +3255,14 @@ static int xmpp_client_send_disco_info_request(struct ast_xmpp_client *client, c
 	return res;
 }
 
+/*! \brief Callback function which returns when the resource is available */
+static int xmpp_resource_is_available(void *obj, void *arg, int flags)
+{
+	struct ast_xmpp_resource *resource = obj;
+
+	return (resource->status == IKS_SHOW_AVAILABLE) ? CMP_MATCH | CMP_STOP : 0;
+}
+
 /*! \brief Helper function which sends a ping request to a server */
 static int xmpp_ping_request(struct ast_xmpp_client *client, const char *to, const char *from)
 {
@@ -3145,6 +3304,7 @@ static int xmpp_pak_presence(struct ast_xmpp_client *client, struct ast_xmpp_cli
 	struct ast_xmpp_resource *resource;
 	char *type = iks_find_attrib(pak->x, "type");
 	int status = pak->show ? pak->show : STATUS_DISAPPEAR;
+	enum ast_device_state state = AST_DEVICE_UNAVAILABLE;
 
 	/* If no resource is available this is a general buddy presence update, which we will ignore */
 	if (!pak->from->resource) {
@@ -3247,13 +3407,21 @@ static int xmpp_pak_presence(struct ast_xmpp_client *client, struct ast_xmpp_cli
 		}
 
 		manager_event(EVENT_FLAG_USER, "JabberStatus",
-			      "Account: %s\r\nJID: %s\r\nStatus: %d\r\n",
+			      "Account: %s\r\nJID: %s\r\nStatus: %u\r\n",
 			      client->name, pak->from->partial, pak->show ? pak->show : IKS_SHOW_UNAVAILABLE);
+	}
+
+	/* Determine if at least one resource is available for device state purposes */
+	if ((resource = ao2_callback(buddy->resources, OBJ_NOLOCK, xmpp_resource_is_available, NULL))) {
+		state = AST_DEVICE_NOT_INUSE;
+		ao2_ref(resource, -1);
 	}
 
 	ao2_unlock(buddy->resources);
 
 	ao2_ref(buddy, -1);
+
+	ast_devstate_changed(state, AST_DEVSTATE_CACHABLE, "XMPP/%s/%s", client->name, pak->from->partial);
 
 	return 0;
 }
@@ -3395,20 +3563,18 @@ static int xmpp_action_hook(void *data, int type, iks *node)
 int ast_xmpp_client_disconnect(struct ast_xmpp_client *client)
 {
 	if ((client->thread != AST_PTHREADT_NULL) && !pthread_equal(pthread_self(), client->thread)) {
-		client->state = XMPP_STATE_DISCONNECTING;
+		xmpp_client_change_state(client, XMPP_STATE_DISCONNECTING);
 		pthread_join(client->thread, NULL);
 		client->thread = AST_PTHREADT_NULL;
 	}
 
 	if (client->mwi_sub) {
-		ast_event_unsubscribe(client->mwi_sub);
-		client->mwi_sub = NULL;
+		client->mwi_sub = stasis_unsubscribe(client->mwi_sub);
 		xmpp_pubsub_unsubscribe(client, "message_waiting");
 	}
 
 	if (client->device_state_sub) {
-		ast_event_unsubscribe(client->device_state_sub);
-		client->device_state_sub = NULL;
+		client->device_state_sub = stasis_unsubscribe(client->device_state_sub);
 		xmpp_pubsub_unsubscribe(client, "device_state");
 	}
 
@@ -3426,7 +3592,7 @@ int ast_xmpp_client_disconnect(struct ast_xmpp_client *client)
 		iks_disconnect(client->parser);
 	}
 
-	client->state = XMPP_STATE_DISCONNECTED;
+	xmpp_client_change_state(client, XMPP_STATE_DISCONNECTED);
 
 	return 0;
 }
@@ -3641,7 +3807,7 @@ static void *xmpp_client_thread(void *data)
 			ast_log(LOG_WARNING, "JABBER: Not Supported\n");
 		} else if (res == IKS_NET_DROPPED) {
 			ast_log(LOG_WARNING, "JABBER: Dropped?\n");
-		} else {
+		} else if (res == IKS_NET_UNKNOWN) {
 			ast_debug(5, "JABBER: Unknown\n");
 		}
 
@@ -4406,6 +4572,16 @@ static int client_buddy_handler(const struct aco_option *opt, struct ast_variabl
 	return 0;
 }
 
+/*!
+ * \brief Load the module
+ *
+ * Module loading including tests for configuration or dependencies.
+ * This function can return AST_MODULE_LOAD_FAILURE, AST_MODULE_LOAD_DECLINE,
+ * or AST_MODULE_LOAD_SUCCESS. If a dependency or environment variable fails
+ * tests return AST_MODULE_LOAD_FAILURE. If the module can not load the 
+ * configuration file or other non-critical problem return 
+ * AST_MODULE_LOAD_DECLINE. On success return AST_MODULE_LOAD_SUCCESS.
+ */
 static int load_module(void)
 {
 	if (aco_info_init(&cfg_info)) {
@@ -4477,6 +4653,7 @@ static int reload(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_GLOBAL_SYMBOLS | AST_MODFLAG_LOAD_ORDER, "Asterisk XMPP Interface",
+		.support_level = AST_MODULE_SUPPORT_CORE,
 		.load = load_module,
 		.unload = unload_module,
 		.reload = reload,

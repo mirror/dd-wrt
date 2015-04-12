@@ -54,7 +54,7 @@
 - \ref manager.c Main manager code file
  */
 
-#define AMI_VERSION                     "1.3"
+#define AMI_VERSION                     "2.7.0"
 #define DEFAULT_MANAGER_PORT 5038	/* Default port for Asterisk management via TCP */
 #define DEFAULT_MANAGER_TLS_PORT 5039	/* Default port for Asterisk management via TCP */
 
@@ -68,33 +68,42 @@
 
 /*! \name Manager event classes */
 /*@{ */
-#define EVENT_FLAG_SYSTEM 		(1 << 0) /* System events such as module load/unload */
-#define EVENT_FLAG_CALL			(1 << 1) /* Call event, such as state change, etc */
-#define EVENT_FLAG_LOG			(1 << 2) /* Log events */
-#define EVENT_FLAG_VERBOSE		(1 << 3) /* Verbose messages */
-#define EVENT_FLAG_COMMAND		(1 << 4) /* Ability to read/set commands */
-#define EVENT_FLAG_AGENT		(1 << 5) /* Ability to read/set agent info */
-#define EVENT_FLAG_USER                 (1 << 6) /* Ability to read/set user info */
-#define EVENT_FLAG_CONFIG		(1 << 7) /* Ability to modify configurations */
-#define EVENT_FLAG_DTMF  		(1 << 8) /* Ability to read DTMF events */
-#define EVENT_FLAG_REPORTING		(1 << 9) /* Reporting events such as rtcp sent */
-#define EVENT_FLAG_CDR			(1 << 10) /* CDR events */
-#define EVENT_FLAG_DIALPLAN		(1 << 11) /* Dialplan events (VarSet, NewExten) */
-#define EVENT_FLAG_ORIGINATE	(1 << 12) /* Originate a call to an extension */
-#define EVENT_FLAG_AGI			(1 << 13) /* AGI events */
-#define EVENT_FLAG_HOOKRESPONSE		(1 << 14) /* Hook Response */
-#define EVENT_FLAG_CC			(1 << 15) /* Call Completion events */
-#define EVENT_FLAG_AOC			(1 << 16) /* Advice Of Charge events */
-#define EVENT_FLAG_TEST			(1 << 17) /* Test event used to signal the Asterisk Test Suite */
+#define EVENT_FLAG_SYSTEM           (1 << 0) /* System events such as module load/unload */
+#define EVENT_FLAG_CALL             (1 << 1) /* Call event, such as state change, etc */
+#define EVENT_FLAG_LOG              (1 << 2) /* Log events */
+#define EVENT_FLAG_VERBOSE          (1 << 3) /* Verbose messages */
+#define EVENT_FLAG_COMMAND          (1 << 4) /* Ability to read/set commands */
+#define EVENT_FLAG_AGENT            (1 << 5) /* Ability to read/set agent info */
+#define EVENT_FLAG_USER             (1 << 6) /* Ability to read/set user info */
+#define EVENT_FLAG_CONFIG           (1 << 7) /* Ability to modify configurations */
+#define EVENT_FLAG_DTMF             (1 << 8) /* Ability to read DTMF events */
+#define EVENT_FLAG_REPORTING        (1 << 9) /* Reporting events such as rtcp sent */
+#define EVENT_FLAG_CDR              (1 << 10) /* CDR events */
+#define EVENT_FLAG_DIALPLAN         (1 << 11) /* Dialplan events (VarSet, NewExten) */
+#define EVENT_FLAG_ORIGINATE        (1 << 12) /* Originate a call to an extension */
+#define EVENT_FLAG_AGI              (1 << 13) /* AGI events */
+#define EVENT_FLAG_HOOKRESPONSE     (1 << 14) /* Hook Response */
+#define EVENT_FLAG_CC               (1 << 15) /* Call Completion events */
+#define EVENT_FLAG_AOC              (1 << 16) /* Advice Of Charge events */
+#define EVENT_FLAG_TEST             (1 << 17) /* Test event used to signal the Asterisk Test Suite */
+#define EVENT_FLAG_SECURITY         (1 << 18) /* Security Message as AMI Event */
 /*XXX Why shifted by 30? XXX */
-#define EVENT_FLAG_MESSAGE		(1 << 30) /* MESSAGE events. */
+#define EVENT_FLAG_MESSAGE          (1 << 30) /* MESSAGE events. */
 /*@} */
 
 /*! \brief Export manager structures */
 #define AST_MAX_MANHEADERS 128
 
-/*! \brief Manager Helper Function */
-typedef int (*manager_hook_t)(int, const char *, char *);
+/*! \brief Manager Helper Function
+ *
+ * \param category The class authorization category of the event
+ * \param event The name of the event being raised
+ * \param body The body of the event
+ *
+ * \retval 0 Success
+ * \retval non-zero Error
+ */
+typedef int (*manager_hook_t)(int category, const char *event, char *body);
 
 struct manager_custom_hook {
 	/*! Identifier */
@@ -147,6 +156,10 @@ struct manager_action {
 		AST_STRING_FIELD(arguments);	/*!< Description of each argument. */
 		AST_STRING_FIELD(seealso);	/*!< See also */
 	);
+	/*! Possible list element response events. */
+	struct ast_xml_doc_item *list_responses;
+	/*! Final response event. */
+	struct ast_xml_doc_item *final_response;
 	/*! Permission required for action.  EVENT_FLAG_* */
 	int authority;
 	/*! Function to be called */
@@ -247,7 +260,9 @@ int astman_verify_session_writepermissions(uint32_t ident, int perm);
  * \param event Event name
  * \param chancount Number of channels in chans parameter
  * \param chans A pointer to an array of channels involved in the event
+ * \param file, line, func
  * \param contents Format string describing event
+ * \param ...
  * \since 1.8
 */
 int __ast_manager_event_multichan(int category, const char *event, int chancount,
@@ -257,8 +272,20 @@ int __ast_manager_event_multichan(int category, const char *event, int chancount
 /*! \brief Get header from mananger transaction */
 const char *astman_get_header(const struct message *m, char *var);
 
-/*! \brief Get a linked list of the Variable: headers */
+/*! \brief Get a linked list of the Variable: headers
+ *
+ *  \note Order of variables is reversed from the order they are specified in
+ *        the manager message
+ */
 struct ast_variable *astman_get_variables(const struct message *m);
+
+enum variable_orders {
+	ORDER_NATURAL,
+	ORDER_REVERSE
+};
+
+/*! \brief Get a linked list of the Variable: headers with order specified */
+struct ast_variable *astman_get_variables_order(const struct message *m, enum variable_orders order);
 
 /*! \brief Send error in manager transaction */
 void astman_send_error(struct mansession *s, const struct message *m, char *error);
@@ -272,8 +299,57 @@ void astman_send_response(struct mansession *s, const struct message *m, char *r
 /*! \brief Send ack in manager transaction */
 void astman_send_ack(struct mansession *s, const struct message *m, char *msg);
 
-/*! \brief Send ack in manager list transaction */
+/*!
+ * \brief Send ack in manager transaction to begin a list.
+ *
+ * \param s - AMI session control struct.
+ * \param m - AMI action request that started the list.
+ * \param msg - Message contents describing the list to follow.
+ * \param listflag - Should always be set to "start".
+ *
+ * \note You need to call astman_send_list_complete_start() and
+ * astman_send_list_complete_end() to send the AMI list completion event.
+ *
+ * \return Nothing
+ */
 void astman_send_listack(struct mansession *s, const struct message *m, char *msg, char *listflag);
+
+/*!
+ * \brief Start the list complete event.
+ * \since 13.2.0
+ *
+ * \param s - AMI session control struct.
+ * \param m - AMI action request that started the list.
+ * \param event_name - AMI list complete event name.
+ * \param count - Number of items in the list.
+ *
+ * \note You need to call astman_send_list_complete_end() to end
+ * the AMI list completion event.
+ *
+ * \note Between calling astman_send_list_complete_start() and
+ * astman_send_list_complete_end() you can add additonal headers
+ * using astman_append().
+ *
+ * \return Nothing
+ */
+void astman_send_list_complete_start(struct mansession *s, const struct message *m, const char *event_name, int count);
+
+/*!
+ * \brief End the list complete event.
+ * \since 13.2.0
+ *
+ * \param s - AMI session control struct.
+ *
+ * \note You need to call astman_send_list_complete_start() to start
+ * the AMI list completion event.
+ *
+ * \note Between calling astman_send_list_complete_start() and
+ * astman_send_list_complete_end() you can add additonal headers
+ * using astman_append().
+ *
+ * \return Nothing
+ */
+void astman_send_list_complete_end(struct mansession *s);
 
 void __attribute__((format(printf, 2, 3))) astman_append(struct mansession *s, const char *fmt, ...);
 
@@ -313,5 +389,231 @@ int astman_datastore_remove(struct mansession *s, struct ast_datastore *datastor
  * \since 1.6.1
  */
 struct ast_datastore *astman_datastore_find(struct mansession *s, const struct ast_datastore_info *info, const char *uid);
+
+/*!
+ * \brief append an event header to an ast string
+ * \since 12
+ *
+ * \param fields_string pointer to an ast_string pointer. It may be a pointer to a
+ *        NULL ast_str pointer, in which case the ast_str will be initialized.
+ * \param header The header being applied
+ * \param value the value of the header
+ *
+ * \retval 0 if successful
+ * \retval non-zero on failure
+ */
+int ast_str_append_event_header(struct ast_str **fields_string,
+	const char *header, const char *value);
+
+/*! \brief Struct representing a snapshot of channel state */
+struct ast_channel_snapshot;
+
+/*!
+ * \brief Generate the AMI message body from a channel snapshot
+ * \since 12
+ *
+ * \param snapshot the channel snapshot for which to generate an AMI message
+ *                 body
+ * \param prefix What to prepend to the channel fields
+ *
+ * \retval NULL on error
+ * \retval ast_str* on success (must be ast_freed by caller)
+ */
+struct ast_str *ast_manager_build_channel_state_string_prefix(
+		const struct ast_channel_snapshot *snapshot,
+		const char *prefix);
+
+/*!
+ * \brief Generate the AMI message body from a channel snapshot
+ * \since 12
+ *
+ * \param snapshot the channel snapshot for which to generate an AMI message
+ *                 body
+ *
+ * \retval NULL on error
+ * \retval ast_str* on success (must be ast_freed by caller)
+ */
+struct ast_str *ast_manager_build_channel_state_string(
+		const struct ast_channel_snapshot *snapshot);
+
+/*! \brief Struct representing a snapshot of bridge state */
+struct ast_bridge_snapshot;
+
+/*!
+ * \since 12
+ * \brief Callback used to determine whether a key should be skipped when converting a
+ *  JSON object to a manager blob
+ * \param key Key from JSON blob to be evaluated
+ * \retval non-zero if the key should be excluded
+ * \retval zero if the key should not be excluded
+ */
+typedef int (*key_exclusion_cb)(const char *key);
+
+struct ast_json;
+
+/*!
+ * \since 12
+ * \brief Convert a JSON object into an AMI compatible string
+ *
+ * \param blob The JSON blob containing key/value pairs to convert
+ * \param exclusion_cb A \ref key_exclusion_cb pointer to a function that will exclude
+ * keys from the final AMI string
+ *
+ * \retval A malloc'd \ref ast_str object. Callers of this function should free
+ * the returned \ref ast_str object
+ * \retval NULL on error
+ */
+struct ast_str *ast_manager_str_from_json_object(struct ast_json *blob, key_exclusion_cb exclusion_cb);
+
+/*!
+ * \brief Generate the AMI message body from a bridge snapshot
+ * \since 12
+ *
+ * \param snapshot the bridge snapshot for which to generate an AMI message
+ *                 body
+ * \param prefix What to prepend to the bridge fields
+ *
+ * \retval NULL on error
+ * \retval ast_str* on success (must be ast_freed by caller)
+ */
+struct ast_str *ast_manager_build_bridge_state_string_prefix(
+	const struct ast_bridge_snapshot *snapshot,
+	const char *prefix);
+
+/*!
+ * \brief Generate the AMI message body from a bridge snapshot
+ * \since 12
+ *
+ * \param snapshot the bridge snapshot for which to generate an AMI message
+ *                 body
+ *
+ * \retval NULL on error
+ * \retval ast_str* on success (must be ast_freed by caller)
+ */
+struct ast_str *ast_manager_build_bridge_state_string(
+	const struct ast_bridge_snapshot *snapshot);
+
+/*! \brief Struct containing info for an AMI event to send out. */
+struct ast_manager_event_blob {
+	int event_flags;		/*!< Flags the event should be raised with. */
+	const char *manager_event;	/*!< The event to be raised, should be a string literal. */
+	AST_DECLARE_STRING_FIELDS(
+		AST_STRING_FIELD(extra_fields);	/*!< Extra fields to include in the event. */
+	);
+};
+
+/*!
+ * \since 12
+ * \brief Construct a \ref ast_manager_event_blob.
+ *
+ * The returned object is AO2 managed, so clean up with ao2_cleanup().
+ *
+ * \param event_flags Flags the event should be raised with.
+ * \param manager_event The event to be raised, should be a string literal.
+ * \param extra_fields_fmt Format string for extra fields to include.
+ *                         Or NO_EXTRA_FIELDS for no extra fields.
+ *
+ * \return New \ref ast_manager_snapshot_event object.
+ * \return \c NULL on error.
+ */
+struct ast_manager_event_blob *
+__attribute__((format(printf, 3, 4)))
+ast_manager_event_blob_create(
+	int event_flags,
+	const char *manager_event,
+	const char *extra_fields_fmt,
+	...);
+
+/*! GCC warns about blank or NULL format strings. So, shenanigans! */
+#define NO_EXTRA_FIELDS "%s", ""
+
+/*!
+ * \since 12
+ * \brief Initialize support for AMI system events.
+ * \retval 0 on success
+ * \retval non-zero on error
+ */
+int manager_system_init(void);
+
+/*!
+ * \brief Initialize support for AMI channel events.
+ * \retval 0 on success.
+ * \retval non-zero on error.
+ * \since 12
+ */
+int manager_channels_init(void);
+
+/*!
+ * \since 12
+ * \brief Initialize support for AMI MWI events.
+ * \retval 0 on success
+ * \retval non-zero on error
+ */
+int manager_mwi_init(void);
+
+/*!
+ * \brief Initialize support for AMI channel events.
+ * \return 0 on success.
+ * \return non-zero on error.
+ * \since 12
+ */
+int manager_bridging_init(void);
+
+/*!
+ * \brief Initialize support for AMI endpoint events.
+ * \return 0 on success.
+ * \return non-zero on error.
+ * \since 12
+ */
+int manager_endpoints_init(void);
+
+/*!
+ * \since 12
+ * \brief Get the \ref stasis_message_type for generic messages
+ *
+ * A generic AMI message expects a JSON only payload. The payload must have the following
+ * structure:
+ * {type: s, class_type: i, event: [ {s: s}, ...] }
+ *
+ * - type is the AMI event type
+ * - class_type is the class authorization type for the event
+ * - event is a list of key/value tuples to be sent out in the message
+ *
+ * \retval A \ref stasis_message_type for AMI messages
+ */
+struct stasis_message_type *ast_manager_get_generic_type(void);
+
+/*!
+ * \since 12
+ * \brief Get the \ref stasis topic for AMI
+ *
+ * \retval The \ref stasis topic for AMI
+ * \retval NULL on error
+ */
+struct stasis_topic *ast_manager_get_topic(void);
+
+/*!
+ * \since 12
+ * \brief Publish an event to AMI
+ *
+ * \param type The type of AMI event to publish
+ * \param class_type The class on which to publish the event
+ * \param obj The event data to be published.
+ *
+ * Publishes a message to the \ref stasis message bus solely for the consumption of AMI.
+ * The message will be of the type provided by \ref ast_manager_get_type, and will be
+ * published to the topic provided by \ref ast_manager_get_topic. As such, the JSON must
+ * be constructed as defined by the \ref ast_manager_get_type message.
+ */
+void ast_manager_publish_event(const char *type, int class_type, struct ast_json *obj);
+
+/*!
+ * \since 12
+ * \brief Get the \ref stasis_message_router for AMI
+ *
+ * \retval The \ref stasis_message_router for AMI
+ * \retval NULL on error
+ */
+struct stasis_message_router *ast_manager_get_message_router(void);
 
 #endif /* _ASTERISK_MANAGER_H */

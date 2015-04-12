@@ -29,7 +29,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 370655 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 425155 $")
 
 #include <time.h>
 #include <math.h>
@@ -42,6 +42,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 370655 $")
 #include "asterisk/callerid.h"
 #include "asterisk/fskmodem.h"
 #include "asterisk/utils.h"
+#include "asterisk/format_cache.h"
 
 struct callerid_state {
 	fsk_data fskd;
@@ -447,7 +448,7 @@ int callerid_feed_jp(struct callerid_state *cid, unsigned char *ubuf, int len, s
 						case 0x06: /* short dial number */
 						case 0x07: /* reserved */
 						default:   /* reserved */
-							ast_debug(2, "cid info:#1=%X\n", cid->rawdata[x]);
+							ast_debug(2, "cid info:#1=%X\n", (unsigned)cid->rawdata[x]);
 							break ;
 						}
 						x++;
@@ -463,7 +464,7 @@ int callerid_feed_jp(struct callerid_state *cid, unsigned char *ubuf, int len, s
 						case 0x09: /* private dial plan */
 						case 0x05: /* reserved */
 						default:   /* reserved */
-							ast_debug(2, "cid info:#2=%X\n", cid->rawdata[x]);
+							ast_debug(2, "cid info:#2=%X\n", (unsigned)cid->rawdata[x]);
 							break ;
 						}
 						x++;
@@ -503,7 +504,7 @@ int callerid_feed_jp(struct callerid_state *cid, unsigned char *ubuf, int len, s
 						case 0x07: /* reserved */
 						default:   /* reserved */
 							if (option_debug > 1)
-								ast_log(LOG_NOTICE, "did info:#1=%X\n", cid->rawdata[x]);
+								ast_log(LOG_NOTICE, "did info:#1=%X\n", (unsigned)cid->rawdata[x]);
 							break ;
 						}
 						x++;
@@ -519,7 +520,7 @@ int callerid_feed_jp(struct callerid_state *cid, unsigned char *ubuf, int len, s
 						case 0x09: /* private dial plan */
 						case 0x05: /* reserved */
 						default:   /* reserved */
-							ast_debug(2, "did info:#2=%X\n", cid->rawdata[x]);
+							ast_debug(2, "did info:#2=%X\n", (unsigned)cid->rawdata[x]);
 							break ;
 						}
 						x++;
@@ -621,7 +622,7 @@ int callerid_feed(struct callerid_state *cid, unsigned char *ubuf, int len, stru
 				}
 				break;
 			case 5: /* Check checksum */
-				if (b != (256 - (cid->cksum & 0xff))) {
+				if ((b + cid->cksum) & 0xff) {
 					ast_log(LOG_NOTICE, "Caller*ID failed checksum\n");
 					/* Try again */
 					cid->sawflag = 0;
@@ -1006,52 +1007,49 @@ int ast_is_shrinkable_phonenumber(const char *exten)
 	return ast_is_valid_string(exten, "0123456789*#+()-.");
 }
 
-int ast_callerid_parse(char *instr, char **name, char **location)
+int ast_callerid_parse(char *input_str, char **name, char **location)
 {
-	char *ns, *ne, *ls, *le;
+	char *ls;
+	char *le;
+	char *name_start;
+	char *instr;
+	int quotes_stripped = 0;
 
-	/* Try "name" <location> format or name <location> format */
-	if ((ls = strrchr(instr, '<')) && (le = strrchr(ls, '>'))) {
-		*ls = *le = '\0';	/* location found, trim off the brackets */
-		*location = ls + 1;	/* and this is the result */
-		if ((ns = strchr(instr, '"')) && (ne = strchr(ns + 1, '"'))) {
-			*ns = *ne = '\0';	/* trim off the quotes */
-			*name = ns + 1;		/* and this is the name */
-		} else if (ns) {
-			/* An opening quote was found but no closing quote was. The closing
-			 * quote may actually be after the end of the bracketed number
-			 */
-			if (strchr(le + 1, '\"')) {
-				*ns = '\0';
-				*name = ns + 1;
-				ast_trim_blanks(*name);
-			} else {
-				*name = NULL;
-			}
-		} else { /* no quotes, trim off leading and trailing spaces */
-			*name = ast_skip_blanks(instr);
-			ast_trim_blanks(*name);
+	/* Handle surrounding quotes */
+	input_str = ast_strip(input_str);
+	instr = ast_strip_quoted(input_str, "\"", "\"");
+	if (instr != input_str) {
+		quotes_stripped = 1;
+	}
+
+	/* Try "name" <location> format or name <location> format or with a missing > */
+	if ((ls = strrchr(instr, '<'))) {
+		if ((le = strrchr(ls, '>'))) {
+			*le = '\0';	/* location found, trim off the brackets */
 		}
+		*ls = '\0';
+		*location = ls + 1;	/* and this is the result */
+
+		name_start = ast_strip_quoted(instr, "\"", "\"");
 	} else {	/* no valid brackets */
 		char tmp[256];
 
 		ast_copy_string(tmp, instr, sizeof(tmp));
 		ast_shrink_phone_number(tmp);
-		if (ast_isphonenumber(tmp)) {	/* Assume it's just a location */
-			*name = NULL;
+		if (!quotes_stripped && ast_isphonenumber(tmp)) {	/* Assume it's just a location */
+			name_start = NULL;
 			strcpy(instr, tmp); /* safe, because tmp will always be the same size or smaller than instr */
 			*location = instr;
 		} else { /* Assume it's just a name. */
 			*location = NULL;
-			if ((ns = strchr(instr, '"')) && (ne = strchr(ns + 1, '"'))) {
-				*ns = *ne = '\0';	/* trim off the quotes */
-				*name = ns + 1;		/* and this is the name */
-			} else { /* no quotes, trim off leading and trailing spaces */
-				*name = ast_skip_blanks(instr);
-				ast_trim_blanks(*name);
-			}
+			name_start = ast_strip_quoted(instr, "\"", "\"");
 		}
 	}
+
+	if (name_start) {
+		ast_unescape_quoted(name_start);
+	}
+	*name = name_start;
 	return 0;
 }
 
@@ -1078,14 +1076,18 @@ char *ast_callerid_merge(char *buf, int bufsiz, const char *name, const char *nu
 {
 	if (!unknown)
 		unknown = "<unknown>";
-	if (name && num)
-		snprintf(buf, bufsiz, "\"%s\" <%s>", name, num);
-	else if (name)
+	if (name && num) {
+		char name_buf[128];
+
+		ast_escape_quoted(name, name_buf, sizeof(name_buf));
+		snprintf(buf, bufsiz, "\"%s\" <%s>", name_buf, num);
+	} else if (name) {
 		ast_copy_string(buf, name, bufsiz);
-	else if (num)
+	} else if (num) {
 		ast_copy_string(buf, num, bufsiz);
-	else
+	} else {
 		ast_copy_string(buf, unknown, bufsiz);
+	}
 	return buf;
 }
 
@@ -1237,12 +1239,17 @@ const char *ast_redirecting_reason_describe(int data)
 	return "not-known";
 }
 
-const char *ast_redirecting_reason_name(int data)
+const char *ast_redirecting_reason_name(const struct ast_party_redirecting_reason *data)
 {
 	int index;
 
+	if (!ast_strlen_zero(data->str)) {
+		/* Use this string if it has been set. Otherwise, use the table. */
+		return data->str;
+	}
+
 	for (index = 0; index < ARRAY_LEN(redirecting_reason_types); ++index) {
-		if (redirecting_reason_types[index].value == data) {
+		if (redirecting_reason_types[index].value == data->code) {
 			return redirecting_reason_types[index].name;
 		}
 	}

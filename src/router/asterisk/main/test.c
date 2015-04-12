@@ -31,7 +31,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 401661 $");
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 428973 $");
 
 #include "asterisk/_private.h"
 
@@ -45,7 +45,16 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 401661 $");
 #include "asterisk/ast_version.h"
 #include "asterisk/paths.h"
 #include "asterisk/time.h"
-#include "asterisk/manager.h"
+#include "asterisk/stasis.h"
+#include "asterisk/json.h"
+#include "asterisk/astobj2.h"
+#include "asterisk/stasis.h"
+#include "asterisk/json.h"
+
+/*! \since 12
+ * \brief The topic for test suite messages
+ */
+struct stasis_topic *test_suite_topic;
 
 /*! This array corresponds to the values defined in the ast_test_state enum */
 static const char * const test_result2str[] = {
@@ -68,9 +77,11 @@ struct ast_test {
 	 * CLI in addition to being saved off in status_str.
 	 */
 	struct ast_cli_args *cli;
-	enum ast_test_result_state state; /*!< current test state */
-	unsigned int time;                /*!< time in ms test took */
-	ast_test_cb_t *cb;                /*!< test callback function */
+	enum ast_test_result_state state;   /*!< current test state */
+	unsigned int time;                  /*!< time in ms test took */
+	ast_test_cb_t *cb;                  /*!< test callback function */
+	ast_test_init_cb_t *init_cb;        /*!< test init function */
+	ast_test_cleanup_cb_t *cleanup_cb;  /*!< test cleanup function */
 	AST_LIST_ENTRY(ast_test) entry;
 };
 
@@ -100,8 +111,28 @@ static int test_insert(struct ast_test *test);
 static struct ast_test *test_remove(ast_test_cb_t *cb);
 static int test_cat_cmp(const char *cat1, const char *cat2);
 
-int __ast_test_status_update(const char *file, const char *func, int line,
-		struct ast_test *test, const char *fmt, ...)
+void ast_test_debug(struct ast_test *test, const char *fmt, ...)
+{
+	struct ast_str *buf = NULL;
+	va_list ap;
+
+	buf = ast_str_create(128);
+	if (!buf) {
+		return;
+	}
+
+	va_start(ap, fmt);
+	ast_str_set_va(&buf, 0, fmt, ap);
+	va_end(ap);
+
+	if (test->cli) {
+		ast_cli(test->cli->fd, "%s", ast_str_buffer(buf));
+	}
+
+	ast_free(buf);
+}
+
+int __ast_test_status_update(const char *file, const char *func, int line, struct ast_test *test, const char *fmt, ...)
 {
 	struct ast_str *buf = NULL;
 	va_list ap;
@@ -125,6 +156,40 @@ int __ast_test_status_update(const char *file, const char *func, int line,
 	ast_free(buf);
 
 	return 0;
+}
+
+int ast_test_register_init(const char *category, ast_test_init_cb_t *cb)
+{
+	struct ast_test *test;
+	int registered = 1;
+
+	AST_LIST_LOCK(&tests);
+	AST_LIST_TRAVERSE(&tests, test, entry) {
+		if (!(test_cat_cmp(test->info.category, category))) {
+			test->init_cb = cb;
+			registered = 0;
+		}
+	}
+	AST_LIST_UNLOCK(&tests);
+
+	return registered;
+}
+
+int ast_test_register_cleanup(const char *category, ast_test_cleanup_cb_t *cb)
+{
+	struct ast_test *test;
+	int registered = 1;
+
+	AST_LIST_LOCK(&tests);
+	AST_LIST_TRAVERSE(&tests, test, entry) {
+		if (!(test_cat_cmp(test->info.category, category))) {
+			test->cleanup_cb = cb;
+			registered = 0;
+		}
+	}
+	AST_LIST_UNLOCK(&tests);
+
+	return registered;
 }
 
 int ast_test_register(ast_test_cb_t *cb)
@@ -171,12 +236,33 @@ int ast_test_unregister(ast_test_cb_t *cb)
 static void test_execute(struct ast_test *test)
 {
 	struct timeval begin;
+	enum ast_test_result_state result;
 
 	ast_str_reset(test->status_str);
 
 	begin = ast_tvnow();
-	test->state = test->cb(&test->info, TEST_EXECUTE, test);
+	if (test->init_cb && test->init_cb(&test->info, test)) {
+		test->state = AST_TEST_FAIL;
+		goto exit;
+	}
+	test->state = AST_TEST_NOT_RUN;
+	result = test->cb(&test->info, TEST_EXECUTE, test);
+	if (test->state != AST_TEST_FAIL) {
+		test->state = result;
+	}
+	if (test->cleanup_cb && test->cleanup_cb(&test->info, test)) {
+		test->state = AST_TEST_FAIL;
+	}
+exit:
 	test->time = ast_tvdiff_ms(ast_tvnow(), begin);
+}
+
+void ast_test_set_result(struct ast_test *test, enum ast_test_result_state state)
+{
+	if (test->state == AST_TEST_FAIL || state == AST_TEST_NOT_RUN) {
+		return;
+	}
+	test->state = state;
 }
 
 static void test_xml_entry(struct ast_test *test, FILE *f)
@@ -185,7 +271,7 @@ static void test_xml_entry(struct ast_test *test, FILE *f)
 		return;
 	}
 
-	fprintf(f, "\t<testcase time=\"%d.%d\" name=\"%s%s\"%s>\n",
+	fprintf(f, "\t<testcase time=\"%u.%u\" name=\"%s%s\"%s>\n",
 			test->time / 1000, test->time % 1000,
 			test->info.category, test->info.name,
 			test->state == AST_TEST_PASS ? "/" : "");
@@ -210,7 +296,7 @@ static void test_txt_entry(struct ast_test *test, FILE *f)
 	fprintf(f,   "Description:       %s\n", test->info.description);
 	fprintf(f,   "Result:            %s\n", test_result2str[test->state]);
 	if (test->state != AST_TEST_NOT_RUN) {
-		fprintf(f,   "Time:              %d\n", test->time);
+		fprintf(f,   "Time:              %u\n", test->time);
 	}
 	if (test->state == AST_TEST_FAIL) {
 		fprintf(f,   "Error Description: %s\n\n", S_OR(ast_str_buffer(test->status_str), "NA"));
@@ -296,7 +382,7 @@ static int test_execute_multiple(const char *name, const char *category, struct 
 					(test->state == AST_TEST_FAIL) ? COLOR_RED : COLOR_GREEN,
 					0,
 					sizeof(result_buf));
-				ast_cli(cli->fd, "END    %s - %s Time: %s%dms Result: %s\n",
+				ast_cli(cli->fd, "END    %s - %s Time: %s%ums Result: %s\n",
 					test->info.category,
 					test->info.name,
 					test->time ? "" : "<",
@@ -385,7 +471,7 @@ static int test_generate_results(const char *name, const char *category, const c
 		 * http://confluence.atlassian.com/display/BAMBOO/JUnit+parsing+in+Bamboo
 		 */
 		fprintf(f_xml, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-		fprintf(f_xml, "<testsuite errors=\"0\" time=\"%d.%d\" tests=\"%d\" "
+		fprintf(f_xml, "<testsuite errors=\"0\" time=\"%u.%u\" tests=\"%u\" "
 				"name=\"AsteriskUnitTests\">\n",
 				last_results.total_time / 1000, last_results.total_time % 1000,
 				last_results.total_tests);
@@ -398,11 +484,11 @@ static int test_generate_results(const char *name, const char *category, const c
 	if (f_txt) {
 		fprintf(f_txt, "Asterisk Version:         %s\n", ast_get_version());
 		fprintf(f_txt, "Asterisk Version Number:  %s\n", ast_get_version_num());
-		fprintf(f_txt, "Number of Tests:          %d\n", last_results.total_tests);
-		fprintf(f_txt, "Number of Tests Executed: %d\n", (last_results.total_passed + last_results.total_failed));
-		fprintf(f_txt, "Passed Tests:             %d\n", last_results.total_passed);
-		fprintf(f_txt, "Failed Tests:             %d\n", last_results.total_failed);
-		fprintf(f_txt, "Total Execution Time:     %d\n", last_results.total_time);
+		fprintf(f_txt, "Number of Tests:          %u\n", last_results.total_tests);
+		fprintf(f_txt, "Number of Tests Executed: %u\n", (last_results.total_passed + last_results.total_failed));
+		fprintf(f_txt, "Passed Tests:             %u\n", last_results.total_passed);
+		fprintf(f_txt, "Failed Tests:             %u\n", last_results.total_failed);
+		fprintf(f_txt, "Total Execution Time:     %u\n", last_results.total_time);
 	}
 
 	/* export each individual test */
@@ -728,7 +814,7 @@ static char *test_cli_execute_registered(struct ast_cli_entry *e, int cmd, struc
 		if (!(last_results.last_passed + last_results.last_failed)) {
 			ast_cli(a->fd, "--- No Tests Found! ---\n");
 		}
-		ast_cli(a->fd, "\n%d Test(s) Executed  %d Passed  %d Failed\n",
+		ast_cli(a->fd, "\n%u Test(s) Executed  %u Passed  %u Failed\n",
 			(last_results.last_passed + last_results.last_failed),
 			last_results.last_passed,
 			last_results.last_failed);
@@ -890,60 +976,156 @@ static struct ast_cli_entry test_cli[] = {
 	AST_CLI_DEFINE(test_cli_generate_results,          "generate test results to file"),
 };
 
-int __ast_test_suite_event_notify(const char *file, const char *func, int line,
-		const char *state, const char *fmt, ...)
+struct stasis_topic *ast_test_suite_topic(void)
 {
-	struct ast_str *buf = NULL;
+	return test_suite_topic;
+}
+
+/*!
+ * \since 12
+ * \brief A wrapper object that can be ao2 ref counted around an \ref ast_json blob
+ */
+struct ast_test_suite_message_payload {
+	struct ast_json *blob; /*!< The actual blob that we want to deliver */
+};
+
+/*! \internal
+ * \since 12
+ * \brief Destructor for \ref ast_test_suite_message_payload
+ */
+static void test_suite_message_payload_dtor(void *obj)
+{
+	struct ast_test_suite_message_payload *payload = obj;
+
+	if (payload->blob) {
+		ast_json_unref(payload->blob);
+	}
+}
+
+struct ast_json *ast_test_suite_get_blob(struct ast_test_suite_message_payload *payload)
+{
+	return payload->blob;
+}
+
+static struct ast_manager_event_blob *test_suite_event_to_ami(struct stasis_message *msg)
+{
+	RAII_VAR(struct ast_str *, packet_string, ast_str_create(128), ast_free);
+	struct ast_test_suite_message_payload *payload;
+	struct ast_json *blob;
+	const char *type;
+
+	payload = stasis_message_data(msg);
+	if (!payload) {
+		return NULL;
+	}
+	blob = ast_test_suite_get_blob(payload);
+	if (!blob) {
+		return NULL;
+	}
+
+	type = ast_json_string_get(ast_json_object_get(blob, "type"));
+	if (ast_strlen_zero(type) || strcmp("testevent", type)) {
+		return NULL;
+	}
+
+	ast_str_append(&packet_string, 0, "Type: StateChange\r\n");
+	ast_str_append(&packet_string, 0, "State: %s\r\n",
+		ast_json_string_get(ast_json_object_get(blob, "state")));
+	ast_str_append(&packet_string, 0, "AppFile: %s\r\n",
+		ast_json_string_get(ast_json_object_get(blob, "appfile")));
+	ast_str_append(&packet_string, 0, "AppFunction: %s\r\n",
+		ast_json_string_get(ast_json_object_get(blob, "appfunction")));
+	ast_str_append(&packet_string, 0, "AppLine: %jd\r\n",
+		ast_json_integer_get(ast_json_object_get(blob, "line")));
+	ast_str_append(&packet_string, 0, "%s\r\n",
+		ast_json_string_get(ast_json_object_get(blob, "data")));
+
+	return ast_manager_event_blob_create(EVENT_FLAG_REPORTING,
+		"TestEvent",
+		"%s",
+		ast_str_buffer(packet_string));
+}
+
+/*! \since 12
+ * \brief The message type for test suite messages
+ */
+STASIS_MESSAGE_TYPE_DEFN(ast_test_suite_message_type,
+	.to_ami = test_suite_event_to_ami);
+
+void __ast_test_suite_event_notify(const char *file, const char *func, int line, const char *state, const char *fmt, ...)
+{
+	RAII_VAR(struct ast_test_suite_message_payload *, payload,
+			NULL,
+			ao2_cleanup);
+	RAII_VAR(struct stasis_message *, msg, NULL, ao2_cleanup);
+	RAII_VAR(struct ast_str *, buf, NULL, ast_free);
 	va_list ap;
 
-	if (!(buf = ast_str_create(128))) {
-		return -1;
+	if (!ast_test_suite_message_type()) {
+		return;
+	}
+
+	buf = ast_str_create(128);
+	if (!buf) {
+		return;
+	}
+
+	payload = ao2_alloc(sizeof(*payload), test_suite_message_payload_dtor);
+	if (!payload) {
+		return;
 	}
 
 	va_start(ap, fmt);
 	ast_str_set_va(&buf, 0, fmt, ap);
 	va_end(ap);
-
-	manager_event(EVENT_FLAG_TEST, "TestEvent",
-		"Type: StateChange\r\n"
-		"State: %s\r\n"
-		"AppFile: %s\r\n"
-		"AppFunction: %s\r\n"
-		"AppLine: %d\r\n%s\r\n",
-		state, file, func, line, ast_str_buffer(buf));
-
-	ast_free(buf);
-
-	return 0;
-}
-
-int __ast_test_suite_assert_notify(const char *file, const char *func, int line,
-		const char *exp)
-{
-	manager_event(EVENT_FLAG_TEST, "TestEvent",
-		"Type: Assert\r\n"
-		"AppFile: %s\r\n"
-		"AppFunction: %s\r\n"
-		"AppLine: %d\r\n"
-		"Expression: %s\r\n",
-		file, func, line, exp);
-
-	return 0;
-}
-
-static void test_shutdown(void)
-{
-	ast_cli_unregister_multiple(test_cli, ARRAY_LEN(test_cli));
+	payload->blob = ast_json_pack("{s: s, s: s, s: s, s: s, s: i, s: s}",
+			     "type", "testevent",
+			     "state", state,
+			     "appfile", file,
+			     "appfunction", func,
+			     "line", line,
+			     "data", ast_str_buffer(buf));
+	if (!payload->blob) {
+		return;
+	}
+	msg = stasis_message_create(ast_test_suite_message_type(), payload);
+	if (!msg) {
+		return;
+	}
+	stasis_publish(ast_test_suite_topic(), msg);
 }
 
 #endif /* TEST_FRAMEWORK */
 
-int ast_test_init()
+#ifdef TEST_FRAMEWORK
+
+static void test_cleanup(void)
+{
+	ast_cli_unregister_multiple(test_cli, ARRAY_LEN(test_cli));
+	ao2_cleanup(test_suite_topic);
+	test_suite_topic = NULL;
+	STASIS_MESSAGE_TYPE_CLEANUP(ast_test_suite_message_type);
+}
+
+#endif
+
+int ast_test_init(void)
 {
 #ifdef TEST_FRAMEWORK
+	ast_register_cleanup(test_cleanup);
+
+	/* Create stasis topic */
+	test_suite_topic = stasis_topic_create("test_suite_topic");
+	if (!test_suite_topic) {
+		return -1;
+	}
+
+	if (STASIS_MESSAGE_TYPE_INIT(ast_test_suite_message_type) != 0) {
+		return -1;
+	}
+
 	/* Register cli commands */
 	ast_cli_register_multiple(test_cli, ARRAY_LEN(test_cli));
-	ast_register_atexit(test_shutdown);
 #endif
 
 	return 0;

@@ -24,9 +24,8 @@
 /*!
 \page AsteriskArchitecture Asterisk Architecture Overview
 \author Russell Bryant <russell@digium.com>
-\AsteriskTrunkWarning
 
-<hr/>
+<hr>
 
 \section ArchTOC Table of Contents
 
@@ -54,7 +53,7 @@
     -# \ref ArchConceptBridging
  -# \ref ArchCodeFlows
     -# \ref ArchCodeFlowPlayback
-    -# \ref ArchCodeFlowBridge 
+    -# \ref ArchCodeFlowBridge
  -# \ref ArchDataStructures
     -# \ref ArchAstobj2
     -# \ref ArchLinkedLists
@@ -64,7 +63,7 @@
     -# \ref ArchThreadDebugging
     -# \ref ArchMemoryDebugging
 
-<hr/>
+<hr>
 
 \section ArchIntro Introduction
 
@@ -259,11 +258,14 @@ in the source tree.
 For a list of bridge technology implementations, see \ref bridges.
 
 For additional information on the bridging API, see
-<code>include/asterisk/bridging.h</code> and
-<code>include/asterisk/bridging_technology.h</code>.
+\arg <code>include/asterisk/bridge.h</code>
+\arg <code>include/asterisk/bridge_technology.h</code>
+\arg <code>include/asterisk/bridge_channel.h</code>
+\arg <code>include/asterisk/bridge_features.h</code>
+\arg <code>include/asterisk/bridge_after.h</code>
 
 For additional implementation details regarding the core bridging API, see
-<code>main/bridging.c</code>.
+<code>main/bridge.c</code> and <code>main/bridge_channel.c</code>.
 
 \subsection ArchInterfaceCDR Call Detail Record (CDR) Handlers
 
@@ -295,7 +297,7 @@ many events to one call.  The CEL modules look very similar to CDR modules.
 
 CEL modules typically live in the <code>cel/</code> directory in the source tree.
 
-For a list of CEL handlers, see \ref cel_drivers.
+For a list of CEL handlers, see cel_drivers.
 
 For additional information about the CEL API, see
 <code>include/asterisk/cel.h</code>.
@@ -407,7 +409,7 @@ When an inbound channel executes an application such as <code>Dial()</code>, an
 outbound channel is created and bridged to the inbound channel once it answers.
 
 Dialplan applications always execute in the context of a channel thread.  Dialplan
-functions \i almost always do, as well.  However, it is possible to read and write
+functions almost always do, as well.  However, it is possible to read and write
 dialplan functions from an asynchronous interface such as the Asterisk CLI or the
 manager interface (AMI).  However, it is still always the channel thread that is
 the owner of the ast_channel data structure.
@@ -437,7 +439,7 @@ Asterisk CLI operates using connections to a UNIX %domain socket.
 There are other miscellaneous threads throughout the system that perform a specific task.
 For example, the event API (include/asterisk/event.h) uses a thread internally
 (main/event.c) to handle asychronous event dispatching.  The devicestate API
-(include/asterisk/devicestate.h) uses a thread internally (main/devicestate.c) 
+(include/asterisk/devicestate.h) uses a thread internally (main/devicestate.c)
 to asynchronously process device state changes.
 
 
@@ -710,7 +712,7 @@ The implementation of this memory debugging system can be found in
 <code>main/astmm.c</code>.
 
 
-<hr/>
+<hr>
 Return to the \ref ArchTOC
  */
 

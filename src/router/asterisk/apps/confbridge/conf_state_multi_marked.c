@@ -38,14 +38,15 @@
 #include "include/confbridge.h"
 #include "asterisk/musiconhold.h"
 #include "include/conf_state.h"
+#include "asterisk/pbx.h"
 
-static void join_active(struct conference_bridge_user *cbu);
-static void join_marked(struct conference_bridge_user *cbu);
-static void leave_active(struct conference_bridge_user *cbu);
-static void leave_marked(struct conference_bridge_user *cbu);
-static void transition_to_marked(struct conference_bridge_user *cbu);
+static void join_active(struct confbridge_user *user);
+static void join_marked(struct confbridge_user *user);
+static void leave_active(struct confbridge_user *user);
+static void leave_marked(struct confbridge_user *user);
+static void transition_to_marked(struct confbridge_user *user);
 
-static struct conference_state STATE_MULTI_MARKED = {
+static struct confbridge_state STATE_MULTI_MARKED = {
 	.name = "MULTI_MARKED",
 	.join_unmarked = join_active,
 	.join_waitmarked = join_active,
@@ -55,94 +56,90 @@ static struct conference_state STATE_MULTI_MARKED = {
 	.leave_marked = leave_marked,
 	.entry = transition_to_marked,
 };
-struct conference_state *CONF_STATE_MULTI_MARKED = &STATE_MULTI_MARKED;
+struct confbridge_state *CONF_STATE_MULTI_MARKED = &STATE_MULTI_MARKED;
 
-static void join_active(struct conference_bridge_user *cbu)
+static void join_active(struct confbridge_user *user)
 {
-	conf_add_user_active(cbu->conference_bridge, cbu);
+	conf_add_user_active(user->conference, user);
+	conf_update_user_mute(user);
 }
 
-static void join_marked(struct conference_bridge_user *cbu)
+static void join_marked(struct confbridge_user *user)
 {
-	conf_add_user_marked(cbu->conference_bridge, cbu);
+	conf_add_user_marked(user->conference, user);
+	conf_update_user_mute(user);
 }
 
-static void leave_active(struct conference_bridge_user *cbu)
+static void leave_active(struct confbridge_user *user)
 {
-	conf_remove_user_active(cbu->conference_bridge, cbu);
-	if (cbu->conference_bridge->activeusers == 1) {
-		conf_change_state(cbu, CONF_STATE_SINGLE_MARKED);
+	conf_remove_user_active(user->conference, user);
+	if (user->conference->activeusers == 1) {
+		conf_change_state(user, CONF_STATE_SINGLE_MARKED);
 	}
 }
 
-static void leave_marked(struct conference_bridge_user *cbu)
+static void leave_marked(struct confbridge_user *user)
 {
-	struct conference_bridge_user *cbu_iter;
+	struct confbridge_user *user_iter;
+	int need_prompt = 0;
 
-	conf_remove_user_marked(cbu->conference_bridge, cbu);
+	conf_remove_user_marked(user->conference, user);
 
-	if (cbu->conference_bridge->markedusers == 0) {
-		/* Play back the audio prompt saying the leader has left the conference */
-		if (!ast_test_flag(&cbu->u_profile, USER_OPT_QUIET)) {
-			ao2_unlock(cbu->conference_bridge);
-			ast_autoservice_start(cbu->chan);
-			play_sound_file(cbu->conference_bridge,
-				conf_get_sound(CONF_SOUND_LEADER_HAS_LEFT, cbu->b_profile.sounds));
-			ast_autoservice_stop(cbu->chan);
-			ao2_lock(cbu->conference_bridge);
-		}
-
-		AST_LIST_TRAVERSE_SAFE_BEGIN(&cbu->conference_bridge->active_list, cbu_iter, list) {
+	if (user->conference->markedusers == 0) {
+		AST_LIST_TRAVERSE_SAFE_BEGIN(&user->conference->active_list, user_iter, list) {
 			/* Kick ENDMARKED cbu_iters */
-			if (ast_test_flag(&cbu_iter->u_profile, USER_OPT_ENDMARKED)) {
-				if (ast_test_flag(&cbu_iter->u_profile, USER_OPT_WAITMARKED) &&
-						  !ast_test_flag(&cbu_iter->u_profile, USER_OPT_MARKEDUSER)) {
+			if (ast_test_flag(&user_iter->u_profile, USER_OPT_ENDMARKED) && !user_iter->kicked) {
+				if (ast_test_flag(&user_iter->u_profile, USER_OPT_WAITMARKED)
+					&& !ast_test_flag(&user_iter->u_profile, USER_OPT_MARKEDUSER)) {
 					AST_LIST_REMOVE_CURRENT(list);
-					cbu_iter->conference_bridge->activeusers--;
-					AST_LIST_INSERT_TAIL(&cbu_iter->conference_bridge->waiting_list, cbu_iter, list);
-					cbu_iter->conference_bridge->waitingusers++;
+					user_iter->conference->activeusers--;
+					AST_LIST_INSERT_TAIL(&user_iter->conference->waiting_list, user_iter, list);
+					user_iter->conference->waitingusers++;
 				}
-				cbu_iter->kicked = 1;
-				ast_bridge_remove(cbu_iter->conference_bridge->bridge, cbu_iter->chan);
-			} else if (ast_test_flag(&cbu_iter->u_profile, USER_OPT_WAITMARKED) &&
-					!ast_test_flag(&cbu_iter->u_profile, USER_OPT_MARKEDUSER)) {
+				user_iter->kicked = 1;
+				pbx_builtin_setvar_helper(user_iter->chan, "CONFBRIDGE_RESULT", "ENDMARKED");
+				ast_bridge_remove(user_iter->conference->bridge, user_iter->chan);
+			} else if (ast_test_flag(&user_iter->u_profile, USER_OPT_WAITMARKED)
+				&& !ast_test_flag(&user_iter->u_profile, USER_OPT_MARKEDUSER)) {
+				need_prompt = 1;
+
 				AST_LIST_REMOVE_CURRENT(list);
-				cbu_iter->conference_bridge->activeusers--;
-				AST_LIST_INSERT_TAIL(&cbu_iter->conference_bridge->waiting_list, cbu_iter, list);
-				cbu_iter->conference_bridge->waitingusers++;
-				/* Handle muting/moh of cbu_iter if necessary */
-				if (ast_test_flag(&cbu_iter->u_profile, USER_OPT_MUSICONHOLD)) {
-					cbu_iter->features.mute = 1;
-					conf_moh_start(cbu_iter);
-				}
+				user_iter->conference->activeusers--;
+				AST_LIST_INSERT_TAIL(&user_iter->conference->waiting_list, user_iter, list);
+				user_iter->conference->waitingusers++;
+			} else {
+				/* User is neither wait_marked nor end_marked; however, they
+				 * should still hear the prompt.
+				 */
+				need_prompt = 1;
 			}
 		}
 		AST_LIST_TRAVERSE_SAFE_END;
 	}
 
-	switch (cbu->conference_bridge->activeusers) {
+	switch (user->conference->activeusers) {
 	case 0:
 		/* Implies markedusers == 0 */
-		switch (cbu->conference_bridge->waitingusers) {
+		switch (user->conference->waitingusers) {
 		case 0:
-			conf_change_state(cbu, CONF_STATE_EMPTY);
+			conf_change_state(user, CONF_STATE_EMPTY);
 			break;
 		default:
-			conf_change_state(cbu, CONF_STATE_INACTIVE);
+			conf_change_state(user, CONF_STATE_INACTIVE);
 			break;
 		}
 		break;
 	case 1:
-		switch (cbu->conference_bridge->markedusers) {
+		switch (user->conference->markedusers) {
 		case 0:
-			conf_change_state(cbu, CONF_STATE_SINGLE);
+			conf_change_state(user, CONF_STATE_SINGLE);
 			break;
 		case 1:
 			/* XXX I seem to remember doing this for a reason, but right now it escapes me
 			 * how we could possibly ever have a waiting user while we have a marked user */
-			switch (cbu->conference_bridge->waitingusers) {
+			switch (user->conference->waitingusers) {
 			case 0:
-				conf_change_state(cbu, CONF_STATE_SINGLE_MARKED);
+				conf_change_state(user, CONF_STATE_SINGLE_MARKED);
 				break;
 			case 1:
 				break; /* Stay in marked */
@@ -151,38 +148,75 @@ static void leave_marked(struct conference_bridge_user *cbu)
 		}
 		break;
 	default:
-		switch (cbu->conference_bridge->markedusers) {
+		switch (user->conference->markedusers) {
 		case 0:
-			conf_change_state(cbu, CONF_STATE_MULTI);
+			conf_change_state(user, CONF_STATE_MULTI);
 			break;
 		default:
 			break; /* Stay in marked */
 		}
 	}
+
+	if (need_prompt) {
+		/* Play back the audio prompt saying the leader has left the conference */
+		if (!ast_test_flag(&user->u_profile, USER_OPT_QUIET)) {
+			ao2_unlock(user->conference);
+			ast_autoservice_start(user->chan);
+			play_sound_file(user->conference,
+				conf_get_sound(CONF_SOUND_LEADER_HAS_LEFT, user->b_profile.sounds));
+			ast_autoservice_stop(user->chan);
+			ao2_lock(user->conference);
+		}
+
+		AST_LIST_TRAVERSE(&user->conference->waiting_list, user_iter, list) {
+			if (user_iter->kicked) {
+				continue;
+			}
+
+			if (ast_test_flag(&user_iter->u_profile, USER_OPT_MUSICONHOLD)) {
+				conf_moh_start(user_iter);
+			}
+
+			conf_update_user_mute(user_iter);
+		}
+	}
 }
 
-static void transition_to_marked(struct conference_bridge_user *cbu)
+static int post_join_play_begin(struct confbridge_user *cbu)
 {
-	struct conference_bridge_user *cbu_iter;
+	int res;
 
-	/* Play the audio file stating they are going to be placed into the conference */
-	if (cbu->conference_bridge->markedusers == 1 && ast_test_flag(&cbu->u_profile, USER_OPT_MARKEDUSER)) {
-		conf_handle_first_marked_common(cbu);
-	}
+	ast_autoservice_start(cbu->chan);
+	res = play_sound_file(cbu->conference,
+		conf_get_sound(CONF_SOUND_BEGIN, cbu->b_profile.sounds));
+	ast_autoservice_stop(cbu->chan);
+	return res;
+}
 
-	/* Move all waiting users to active, stopping MOH and umuting if necessary */
-	AST_LIST_TRAVERSE_SAFE_BEGIN(&cbu->conference_bridge->waiting_list, cbu_iter, list) {
+static void transition_to_marked(struct confbridge_user *user)
+{
+	struct confbridge_user *user_iter;
+	int waitmarked_moved = 0;
+
+	/* Move all waiting users to active, stopping MOH and unmuting if necessary */
+	AST_LIST_TRAVERSE_SAFE_BEGIN(&user->conference->waiting_list, user_iter, list) {
 		AST_LIST_REMOVE_CURRENT(list);
-		cbu->conference_bridge->waitingusers--;
-		AST_LIST_INSERT_TAIL(&cbu->conference_bridge->active_list, cbu_iter, list);
-		cbu->conference_bridge->activeusers++;
-		if (cbu_iter->playing_moh) {
-			conf_moh_stop(cbu_iter);
+		user->conference->waitingusers--;
+		AST_LIST_INSERT_TAIL(&user->conference->active_list, user_iter, list);
+		user->conference->activeusers++;
+		if (user_iter->playing_moh) {
+			conf_moh_stop(user_iter);
 		}
-		/* only unmute them if they are not supposed to start muted */
-		if (!ast_test_flag(&cbu_iter->u_profile, USER_OPT_STARTMUTED)) {
-			cbu_iter->features.mute = 0;
-		}
+		conf_update_user_mute(user_iter);
+		waitmarked_moved++;
 	}
 	AST_LIST_TRAVERSE_SAFE_END;
+
+	/* Play the audio file stating that the conference is beginning */
+	if (user->conference->markedusers == 1
+		&& ast_test_flag(&user->u_profile, USER_OPT_MARKEDUSER)
+		&& !ast_test_flag(&user->u_profile, USER_OPT_QUIET)
+		&& waitmarked_moved) {
+		conf_add_post_join_action(user, post_join_play_begin);
+	}
 }

@@ -1,5 +1,5 @@
 #
-# Asterisk -- A telephony toolkit for Linux.
+# Asterisk -- An open source telephony toolkit.
 # 
 # Makefile for sound files
 #
@@ -19,16 +19,18 @@ CMD_PREFIX?=@
 SOUNDS_DIR:=$(DESTDIR)$(ASTDATADIR)/sounds
 SOUNDS_CACHE_DIR?=
 MOH_DIR:=$(DESTDIR)$(ASTDATADIR)/moh
-CORE_SOUNDS_VERSION:=1.4.24
-EXTRA_SOUNDS_VERSION:=1.4.13
+CORE_SOUNDS_VERSION:=1.4.26
+EXTRA_SOUNDS_VERSION:=1.4.15
 MOH_VERSION:=2.03
 SOUNDS_URL:=http://downloads.asterisk.org/pub/telephony/sounds/releases
 MCS:=$(subst -EN-,-en-,$(MENUSELECT_CORE_SOUNDS))
 MCS:=$(subst -EN_AU-,-en_AU-,$(MCS))
+MCS:=$(subst -EN_GB-,-en_GB-,$(MCS))
 MCS:=$(subst -FR-,-fr-,$(MCS))
 MCS:=$(subst -ES-,-es-,$(MCS))
 MCS:=$(subst -RU-,-ru-,$(MCS))
 MCS:=$(subst -IT-,-it-,$(MCS))
+MCS:=$(subst -JA-,-ja-,$(MCS))
 MCS:=$(subst -WAV,-wav,$(MCS))
 MCS:=$(subst -ULAW,-ulaw,$(MCS))
 MCS:=$(subst -ALAW,-alaw,$(MCS))
@@ -41,8 +43,8 @@ MCS:=$(subst -SIREN14,-siren14,$(MCS))
 CORE_SOUNDS:=$(MCS:CORE-SOUNDS-%=asterisk-core-sounds-%-$(CORE_SOUNDS_VERSION).tar.gz)
 CORE_SOUND_TAGS:=$(MCS:CORE-SOUNDS-%=.asterisk-core-sounds-%-$(CORE_SOUNDS_VERSION))
 MES:=$(subst -EN-,-en-,$(MENUSELECT_EXTRA_SOUNDS))
+MES:=$(subst -EN_GB-,-en_GB-,$(MES))
 MES:=$(subst -FR-,-fr-,$(MES))
-MES:=$(subst -ES-,-es-,$(MES))
 MES:=$(subst -WAV,-wav,$(MES))
 MES:=$(subst -ULAW,-ulaw,$(MES))
 MES:=$(subst -ALAW,-alaw,$(MES))
@@ -139,6 +141,8 @@ $(eval $(call sound_format_lang_rule,$(SOUNDS_DIR),core-sounds,en,$(CORE_SOUNDS_
 
 $(eval $(call sound_format_lang_rule,$(SOUNDS_DIR),core-sounds,en_AU,$(CORE_SOUNDS_VERSION)))
 
+$(eval $(call sound_format_lang_rule,$(SOUNDS_DIR),core-sounds,en_GB,$(CORE_SOUNDS_VERSION)))
+
 $(eval $(call sound_format_lang_rule,$(SOUNDS_DIR),core-sounds,es,$(CORE_SOUNDS_VERSION)))
 
 $(eval $(call sound_format_lang_rule,$(SOUNDS_DIR),core-sounds,fr,$(CORE_SOUNDS_VERSION)))
@@ -147,9 +151,11 @@ $(eval $(call sound_format_lang_rule,$(SOUNDS_DIR),core-sounds,it,$(CORE_SOUNDS_
 
 $(eval $(call sound_format_lang_rule,$(SOUNDS_DIR),core-sounds,ru,$(CORE_SOUNDS_VERSION)))
 
+$(eval $(call sound_format_lang_rule,$(SOUNDS_DIR),core-sounds,ja,$(CORE_SOUNDS_VERSION)))
+
 $(eval $(call sound_format_lang_rule,$(SOUNDS_DIR),extra-sounds,en,$(EXTRA_SOUNDS_VERSION)))
 
-$(eval $(call sound_format_lang_rule,$(SOUNDS_DIR),extra-sounds,es,$(EXTRA_SOUNDS_VERSION)))
+$(eval $(call sound_format_lang_rule,$(SOUNDS_DIR),extra-sounds,en_GB,$(EXTRA_SOUNDS_VERSION)))
 
 $(eval $(call sound_format_lang_rule,$(SOUNDS_DIR),extra-sounds,fr,$(EXTRA_SOUNDS_VERSION)))
 

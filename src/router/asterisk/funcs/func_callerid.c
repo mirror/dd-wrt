@@ -30,7 +30,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 371120 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 411328 $")
 
 #include "asterisk/module.h"
 #include "asterisk/channel.h"
@@ -900,6 +900,11 @@ static int callerpres_deprecate_notify;
  */
 static int callerpres_read(struct ast_channel *chan, const char *cmd, char *data, char *buf, size_t len)
 {
+	if (!chan) {
+		ast_log(LOG_WARNING, "No channel was provided to %s function.\n", cmd);
+		return -1;
+	}
+
 	if (!callerpres_deprecate_notify) {
 		callerpres_deprecate_notify = 1;
 		ast_log(LOG_WARNING, "CALLERPRES is deprecated."
@@ -925,6 +930,11 @@ static int callerpres_read(struct ast_channel *chan, const char *cmd, char *data
 static int callerpres_write(struct ast_channel *chan, const char *cmd, char *data, const char *value)
 {
 	int pres;
+
+	if (!chan) {
+		ast_log(LOG_WARNING, "No channel was provided to %s function.\n", cmd);
+		return -1;
+	}
 
 	if (!callerpres_deprecate_notify) {
 		callerpres_deprecate_notify = 1;
@@ -1142,9 +1152,6 @@ static int callerid_write(struct ast_channel *chan, const char *cmd, char *data,
 		ast_channel_redirecting(chan)->from.number.valid = 1;
 		ast_free(ast_channel_redirecting(chan)->from.number.str);
 		ast_channel_redirecting(chan)->from.number.str = ast_strdup(value);
-		if (ast_channel_cdr(chan)) {
-			ast_cdr_setcid(ast_channel_cdr(chan), chan);
-		}
 	} else if (!strcasecmp("dnid", member.argv[0])) {
 		ast_party_dialed_set_init(&dialed, ast_channel_dialed(chan));
 		if (member.argc == 1) {
@@ -1162,9 +1169,6 @@ static int callerid_write(struct ast_channel *chan, const char *cmd, char *data,
 				dialed.number.str = ast_strdup(value);
 				ast_trim_blanks(dialed.number.str);
 				ast_party_dialed_set(ast_channel_dialed(chan), &dialed);
-				if (ast_channel_cdr(chan)) {
-					ast_cdr_setcid(ast_channel_cdr(chan), chan);
-				}
 			} else if (member.argc == 3 && !strcasecmp("plan", member.argv[2])) {
 				/* dnid-num-plan */
 				val = ast_strdupa(value);
@@ -1172,9 +1176,6 @@ static int callerid_write(struct ast_channel *chan, const char *cmd, char *data,
 
 				if (('0' <= val[0]) && (val[0] <= '9')) {
 					ast_channel_dialed(chan)->number.plan = atoi(val);
-					if (ast_channel_cdr(chan)) {
-						ast_cdr_setcid(ast_channel_cdr(chan), chan);
-					}
 				} else {
 					ast_log(LOG_ERROR,
 						"Unknown type-of-number/numbering-plan '%s', value unchanged\n", val);
@@ -1192,9 +1193,6 @@ static int callerid_write(struct ast_channel *chan, const char *cmd, char *data,
 			switch (status) {
 			case ID_FIELD_VALID:
 				ast_party_dialed_set(ast_channel_dialed(chan), &dialed);
-				if (ast_channel_cdr(chan)) {
-					ast_cdr_setcid(ast_channel_cdr(chan), chan);
-				}
 				break;
 			case ID_FIELD_INVALID:
 				break;
@@ -1212,9 +1210,6 @@ static int callerid_write(struct ast_channel *chan, const char *cmd, char *data,
 
 		if (('0' <= val[0]) && (val[0] <= '9')) {
 			ast_channel_caller(chan)->ani2 = atoi(val);
-			if (ast_channel_cdr(chan)) {
-				ast_cdr_setcid(ast_channel_cdr(chan), chan);
-			}
 		} else {
 			ast_log(LOG_ERROR, "Unknown callerid ani2 '%s', value unchanged\n", val);
 		}
@@ -1229,9 +1224,6 @@ static int callerid_write(struct ast_channel *chan, const char *cmd, char *data,
 		switch (status) {
 		case ID_FIELD_VALID:
 			ast_party_caller_set(ast_channel_caller(chan), &caller, NULL);
-			if (ast_channel_cdr(chan)) {
-				ast_cdr_setcid(ast_channel_cdr(chan), chan);
-			}
 			break;
 		case ID_FIELD_INVALID:
 			break;
@@ -1246,9 +1238,6 @@ static int callerid_write(struct ast_channel *chan, const char *cmd, char *data,
 		switch (status) {
 		case ID_FIELD_VALID:
 			ast_party_caller_set(ast_channel_caller(chan), &caller, NULL);
-			if (ast_channel_cdr(chan)) {
-				ast_cdr_setcid(ast_channel_cdr(chan), chan);
-			}
 			break;
 		case ID_FIELD_INVALID:
 			break;
@@ -1263,9 +1252,6 @@ static int callerid_write(struct ast_channel *chan, const char *cmd, char *data,
 		switch (status) {
 		case ID_FIELD_VALID:
 			ast_channel_set_caller_event(chan, &caller, NULL);
-			if (ast_channel_cdr(chan)) {
-				ast_cdr_setcid(ast_channel_cdr(chan), chan);
-			}
 			break;
 		case ID_FIELD_INVALID:
 			break;
@@ -1493,7 +1479,7 @@ static int redirecting_read(struct ast_channel *chan, const char *cmd, char *dat
 	if (!strcasecmp("orig", member.argv[0])) {
 		if (member.argc == 2 && !strcasecmp("reason", member.argv[1])) {
 			ast_copy_string(buf,
-				ast_redirecting_reason_name(ast_redirecting->orig_reason), len);
+				ast_redirecting_reason_name(&ast_redirecting->orig_reason), len);
 		} else {
 			status = party_id_read(buf, len, member.argc - 1, member.argv + 1,
 				&ast_redirecting->orig);
@@ -1537,7 +1523,7 @@ static int redirecting_read(struct ast_channel *chan, const char *cmd, char *dat
 			ast_named_caller_presentation(
 				ast_party_id_presentation(&ast_redirecting->from)), len);
 	} else if (member.argc == 1 && !strcasecmp("reason", member.argv[0])) {
-		ast_copy_string(buf, ast_redirecting_reason_name(ast_redirecting->reason), len);
+		ast_copy_string(buf, ast_redirecting_reason_name(&ast_redirecting->reason), len);
 	} else if (member.argc == 1 && !strcasecmp("count", member.argv[0])) {
 		snprintf(buf, len, "%d", ast_redirecting->count);
 	} else if (1 < member.argc && !strcasecmp("priv", member.argv[0])) {
@@ -1659,10 +1645,16 @@ static int redirecting_write(struct ast_channel *chan, const char *cmd, char *da
 			}
 
 			if (reason < 0) {
-				ast_log(LOG_ERROR,
-					"Unknown redirecting orig reason '%s', value unchanged\n", val);
+			/* The argument passed into the function does not correspond to a pre-defined
+			 * reason, so we can just set the reason string to what was given and set the
+			 * code to be unknown
+			 */
+				redirecting.orig_reason.code = AST_REDIRECTING_REASON_UNKNOWN;
+				redirecting.orig_reason.str = val;
+				set_it(chan, &redirecting, NULL);
 			} else {
-				redirecting.orig_reason = reason;
+				redirecting.orig_reason.code = reason;
+				redirecting.orig_reason.str = "";
 				set_it(chan, &redirecting, NULL);
 			}
 		} else {
@@ -1742,9 +1734,16 @@ static int redirecting_write(struct ast_channel *chan, const char *cmd, char *da
 		}
 
 		if (reason < 0) {
-			ast_log(LOG_ERROR, "Unknown redirecting reason '%s', value unchanged\n", val);
+			/* The argument passed into the function does not correspond to a pre-defined
+			 * reason, so we can just set the reason string to what was given and set the
+			 * code to be unknown
+			 */
+			redirecting.reason.code = AST_REDIRECTING_REASON_UNKNOWN;
+			redirecting.reason.str = val;
+			set_it(chan, &redirecting, NULL);
 		} else {
-			redirecting.reason = reason;
+			redirecting.reason.code = reason;
+			redirecting.reason.str = "";
 			set_it(chan, &redirecting, NULL);
 		}
 	} else if (member.argc == 1 && !strcasecmp("count", member.argv[0])) {

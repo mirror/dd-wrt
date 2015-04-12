@@ -28,7 +28,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 380452 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419592 $")
 
 #include <libical/ical.h>
 #include <ne_session.h>
@@ -38,6 +38,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 380452 $")
 #include <ne_redirect.h>
 
 #include "asterisk/module.h"
+#include "asterisk/channel.h"
 #include "asterisk/calendar.h"
 #include "asterisk/lock.h"
 #include "asterisk/config.h"
@@ -245,7 +246,7 @@ static void icalendar_add_event(icalcomponent *comp, struct icaltime_span *span,
 			ast_string_field_set(event, uid, event->summary);
 		} else {
 			char tmp[100];
-			snprintf(tmp, sizeof(tmp), "%lu", event->start);
+			snprintf(tmp, sizeof(tmp), "%ld", event->start);
 			ast_string_field_set(event, uid, tmp);
 		}
 	}
@@ -503,6 +504,7 @@ static int unload_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "Asterisk iCalendar .ics file integration",
+		.support_level = AST_MODULE_SUPPORT_CORE,
 		.load = load_module,
 		.unload = unload_module,
 		.load_pri = AST_MODPRI_DEVSTATE_PLUGIN,

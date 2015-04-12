@@ -28,6 +28,15 @@
  * \ingroup cdr_drivers
  */
 
+/*! \li \ref cdr_odbc.c uses the configuration file \ref cdr_odbc.conf
+ * \addtogroup configuration_file Configuration Files
+ */
+
+/*!
+ * \page cdr_odbc.conf cdr_odbc.conf
+ * \verbinclude cdr_odbc.conf.sample
+ */
+
 /*** MODULEINFO
 	<depend>res_odbc</depend>
 	<support_level>extended</support_level>
@@ -35,7 +44,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 329615 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419592 $")
 
 #include "asterisk/config.h"
 #include "asterisk/channel.h"
@@ -85,7 +94,7 @@ static SQLHSTMT execute_cb(struct odbc_obj *obj, void *data)
 	ODBC_res = SQLAllocHandle(SQL_HANDLE_STMT, obj->con, &stmt);
 
 	if ((ODBC_res != SQL_SUCCESS) && (ODBC_res != SQL_SUCCESS_WITH_INFO)) {
-		ast_verb(11, "cdr_odbc: Failure in AllocStatement %d\n", ODBC_res);
+		ast_log(LOG_WARNING, "cdr_odbc: Failure in AllocStatement %d\n", ODBC_res);
 		SQLFreeHandle(SQL_HANDLE_STMT, stmt);
 		return NULL;
 	}
@@ -115,10 +124,13 @@ static SQLHSTMT execute_cb(struct odbc_obj *obj, void *data)
 		SQLBindParameter(stmt, 10, SQL_PARAM_INPUT, SQL_C_SLONG, SQL_INTEGER, 0, 0, &cdr->billsec, 0, NULL);
 	}
 
-	if (ast_test_flag(&config, CONFIG_DISPOSITIONSTRING))
-		SQLBindParameter(stmt, 11, SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, strlen(ast_cdr_disp2str(cdr->disposition)) + 1, 0, ast_cdr_disp2str(cdr->disposition), 0, NULL);
-	else
+	if (ast_test_flag(&config, CONFIG_DISPOSITIONSTRING)) {
+		char *disposition;
+		disposition = ast_strdupa(ast_cdr_disp2str(cdr->disposition));
+		SQLBindParameter(stmt, 11, SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, strlen(disposition) + 1, 0, disposition, 0, NULL);
+	} else {
 		SQLBindParameter(stmt, 11, SQL_PARAM_INPUT, SQL_C_SLONG, SQL_INTEGER, 0, 0, &cdr->disposition, 0, NULL);
+	}
 	SQLBindParameter(stmt, 12, SQL_PARAM_INPUT, SQL_C_SLONG, SQL_INTEGER, 0, 0, &cdr->amaflags, 0, NULL);
 	SQLBindParameter(stmt, 13, SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, sizeof(cdr->accountcode), 0, cdr->accountcode, 0, NULL);
 
@@ -130,7 +142,7 @@ static SQLHSTMT execute_cb(struct odbc_obj *obj, void *data)
 	ODBC_res = SQLExecDirect(stmt, (unsigned char *)sqlcmd, SQL_NTS);
 
 	if ((ODBC_res != SQL_SUCCESS) && (ODBC_res != SQL_SUCCESS_WITH_INFO)) {
-		ast_verb(11, "cdr_odbc: Error in ExecDirect: %d\n", ODBC_res);
+		ast_log(LOG_WARNING, "cdr_odbc: Error in ExecDirect: %d, query is: %s\n", ODBC_res, sqlcmd);
 		SQLFreeHandle(SQL_HANDLE_STMT, stmt);
 		return NULL;
 	}
@@ -240,9 +252,6 @@ static int odbc_load_module(int reload)
 			break;
 		}
 
-		ast_verb(3, "cdr_odbc: dsn is %s\n", dsn);
-		ast_verb(3, "cdr_odbc: table is %s\n", table);
-
 		if (!ast_test_flag(&config, CONFIG_REGISTERED)) {
 			res = ast_cdr_register(name, ast_module_info->description, odbc_log);
 			if (res) {
@@ -254,8 +263,10 @@ static int odbc_load_module(int reload)
 	} while (0);
 
 	if (ast_test_flag(&config, CONFIG_REGISTERED) && (!cfg || dsn == NULL || table == NULL)) {
-		ast_cdr_unregister(name);
+		ast_cdr_backend_suspend(name);
 		ast_clear_flag(&config, CONFIG_REGISTERED);
+	} else {
+		ast_cdr_backend_unsuspend(name);
 	}
 
 	if (cfg && cfg != CONFIG_STATUS_FILEUNCHANGED && cfg != CONFIG_STATUS_FILEINVALID) {
@@ -271,14 +282,14 @@ static int load_module(void)
 
 static int unload_module(void)
 {
-	ast_cdr_unregister(name);
+	if (ast_cdr_unregister(name)) {
+		return -1;
+	}
 
 	if (dsn) {
-		ast_verb(11, "cdr_odbc: free dsn\n");
 		ast_free(dsn);
 	}
 	if (table) {
-		ast_verb(11, "cdr_odbc: free table\n");
 		ast_free(table);
 	}
 
@@ -291,6 +302,7 @@ static int reload(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "ODBC CDR Backend",
+		.support_level = AST_MODULE_SUPPORT_EXTENDED,
 		.load = load_module,
 		.unload = unload_module,
 		.reload = reload,

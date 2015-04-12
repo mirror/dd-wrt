@@ -32,7 +32,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 398103 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 433064 $")
 
 #include "asterisk/paths.h"	/* use ast_config_AST_CONFIG_DIR */
 #include "asterisk/network.h"	/* we do some sockaddr manipulation here */
@@ -40,6 +40,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 398103 $")
 #include <sys/stat.h>
 
 #include <math.h>	/* HUGE_VAL */
+#include <regex.h>
 
 #define AST_INCLUDE_GLOB 1
 
@@ -69,7 +70,9 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 398103 $")
 static char *extconfig_conf = "extconfig.conf";
 
 static struct ao2_container *cfg_hooks;
-static void config_hook_exec(const char *filename, const char *module, struct ast_config *cfg);
+static void config_hook_exec(const char *filename, const char *module, const struct ast_config *cfg);
+inline struct ast_variable *variable_list_switch(struct ast_variable *l1, struct ast_variable *l2);
+static int does_category_match(struct ast_category *cat, const char *category_name, const char *match);
 
 /*! \brief Structure to keep comments for rewriting configuration files */
 struct ast_comment {
@@ -81,6 +84,7 @@ struct ast_comment {
 /*! \brief Hold the mtime for config files, so if we don't need to reread our config, don't. */
 struct cache_file_include {
 	AST_LIST_ENTRY(cache_file_include) list;
+	/*! Filename or wildcard pattern as specified by the including file. */
 	char include[0];
 };
 
@@ -88,7 +92,12 @@ struct cache_file_mtime {
 	AST_LIST_ENTRY(cache_file_mtime) list;
 	AST_LIST_HEAD_NOLOCK(includes, cache_file_include) includes;
 	unsigned int has_exec:1;
-	time_t mtime;
+	/*! stat() file size */
+	unsigned long stat_size;
+	/*! stat() file modtime nanoseconds */
+	unsigned long stat_mtime_nsec;
+	/*! stat() file modtime seconds since epoc */
+	time_t stat_mtime;
 
 	/*! String stuffed in filename[] after the filename string. */
 	const char *who_asked;
@@ -119,8 +128,10 @@ static void  CB_ADD(struct ast_str **cb, const char *str)
 static void  CB_ADD_LEN(struct ast_str **cb, const char *str, int len)
 {
 	char *s = ast_alloca(len + 1);
-	ast_copy_string(s, str, len);
-	ast_str_append(cb, 0, "%s", str);
+
+	memcpy(s, str, len);
+	s[len] = '\0';
+	ast_str_append(cb, 0, "%s", s);
 }
 
 static void CB_RESET(struct ast_str *cb, struct ast_str *llb)
@@ -223,6 +234,8 @@ struct ast_category {
 	struct ast_variable *root;
 	/*! Last category variable in the list. */
 	struct ast_variable *last;
+	/*! Previous node in the list. */
+	struct ast_category *prev;
 	/*! Next node in the list. */
 	struct ast_category *next;
 };
@@ -553,6 +566,30 @@ struct ast_variable *ast_variables_dup(struct ast_variable *var)
 	return cloned;
 }
 
+struct ast_variable *ast_variables_reverse(struct ast_variable *var)
+{
+	struct ast_variable *var1, *var2;
+
+	var1 = var;
+
+	if (!var1 || !var1->next) {
+		return var1;
+	}
+
+	var2 = var1->next;
+	var1->next = NULL;
+
+	while (var2) {
+		struct ast_variable *next = var2->next;
+
+		var2->next = var1;
+		var1 = var2;
+		var2 = next;
+	}
+
+	return var1;
+}
+
 void ast_variables_destroy(struct ast_variable *v)
 {
 	struct ast_variable *vn;
@@ -566,19 +603,68 @@ void ast_variables_destroy(struct ast_variable *v)
 
 struct ast_variable *ast_variable_browse(const struct ast_config *config, const char *category)
 {
-	struct ast_category *cat = NULL;
-
-	if (!category) {
-		return NULL;
-	}
+	struct ast_category *cat;
 
 	if (config->last_browse && (config->last_browse->name == category)) {
 		cat = config->last_browse;
 	} else {
-		cat = ast_category_get(config, category);
+		cat = ast_category_get(config, category, NULL);
 	}
 
 	return (cat) ? cat->root : NULL;
+}
+
+inline struct ast_variable *variable_list_switch(struct ast_variable *l1, struct ast_variable *l2)
+{
+    l1->next = l2->next;
+    l2->next = l1;
+    return l2;
+}
+
+struct ast_variable *ast_variable_list_sort(struct ast_variable *start)
+{
+	struct ast_variable *p, *q;
+	struct ast_variable top;
+	int changed = 1;
+	memset(&top, 0, sizeof(top));
+	top.next = start;
+	if (start != NULL && start->next != NULL) {
+		while (changed) {
+			changed = 0;
+			q = &top;
+			p = top.next;
+			while (p->next != NULL) {
+				if (p->next != NULL && strcmp(p->name, p->next->name) > 0) {
+					q->next = variable_list_switch(p, p->next);
+					changed = 1;
+				}
+				q = p;
+				if (p->next != NULL)
+					p = p->next;
+			}
+		}
+	}
+	return top.next;
+}
+
+struct ast_variable *ast_variable_list_append_hint(struct ast_variable **head, struct ast_variable *search_hint, struct ast_variable *newvar)
+{
+	struct ast_variable *curr;
+	ast_assert(head != NULL);
+
+	if (!*head) {
+		*head = newvar;
+	} else {
+		if (search_hint == NULL) {
+			search_hint = *head;
+		}
+		for (curr = search_hint; curr->next; curr = curr->next);
+		curr->next = newvar;
+	}
+
+	for (curr = newvar; curr->next; curr = curr->next);
+
+	return curr;
 }
 
 const char *ast_config_option(struct ast_config *cfg, const char *cat, const char *var)
@@ -591,8 +677,7 @@ const char *ast_config_option(struct ast_config *cfg, const char *cat, const cha
 	return tmp;
 }
 
-
-const char *ast_variable_retrieve(const struct ast_config *config, const char *category, const char *variable)
+const char *ast_variable_retrieve(struct ast_config *config, const char *category, const char *variable)
 {
 	struct ast_variable *v;
 
@@ -614,6 +699,39 @@ const char *ast_variable_retrieve(const struct ast_config *config, const char *c
 		}
 	}
 
+	return NULL;
+}
+
+const char *ast_variable_retrieve_filtered(struct ast_config *config,
+	const char *category, const char *variable, const char *filter)
+{
+	struct ast_category *cat = NULL;
+	const char *value;
+
+	while ((cat = ast_category_browse_filtered(config, category, cat, filter))) {
+		value = ast_variable_find(cat, variable);
+		if (value) {
+			return value;
+		}
+	}
+
+	return NULL;
+}
+
+const char *ast_variable_find(const struct ast_category *category, const char *variable)
+{
+	return ast_variable_find_in_list(category->root, variable);
+}
+
+const char *ast_variable_find_in_list(const struct ast_variable *list, const char *variable)
+{
+	const struct ast_variable *v;
+
+	for (v = list; v; v = v->next) {
+		if (!strcasecmp(variable, v->name)) {
+			return v->value;
+		}
+	}
 	return NULL;
 }
 
@@ -640,7 +758,99 @@ static void move_variables(struct ast_category *old, struct ast_category *new)
 	ast_variable_append(new, var);
 }
 
-struct ast_category *ast_category_new(const char *name, const char *in_file, int lineno)
+/*! \brief Returns true if ALL of the regex expressions and category name match.
+ * Both can be NULL (I.E. no predicate) which results in a true return;
+ */
+static int does_category_match(struct ast_category *cat, const char *category_name, const char *match)
+{
+	char *dupmatch;
+	char *nvp = NULL;
+	int match_found = 0, match_expressions = 0;
+	int template_ok = 0;
+
+	/* Only match on category name if it's not a NULL or empty string */
+	if (!ast_strlen_zero(category_name) && strcasecmp(cat->name, category_name)) {
+		return 0;
+	}
+
+	/* If match is NULL or empty, automatically match if not a template */
+	if (ast_strlen_zero(match)) {
+		return !cat->ignored;
+	}
+
+	dupmatch = ast_strdupa(match);
+
+	while ((nvp = ast_strsep(&dupmatch, ',', AST_STRSEP_STRIP))) {
+		struct ast_variable *v;
+		char *match_name;
+		char *match_value = NULL;
+		char *regerr;
+		int rc;
+		regex_t r_name, r_value;
+
+		match_expressions++;
+
+		match_name = ast_strsep(&nvp, '=', AST_STRSEP_STRIP);
+		match_value = ast_strsep(&nvp, '=', AST_STRSEP_STRIP);
+
+		/* an empty match value is OK.  A NULL match value (no =) is NOT. */
+		if (match_value == NULL) {
+			break;
+		}
+
+		if (!strcmp("TEMPLATES", match_name)) {
+			if (!strcasecmp("include", match_value)) {
+				if (cat->ignored) {
+					template_ok = 1;
+				}
+				match_found++;
+			} else if (!strcasecmp("restrict", match_value)) {
+				if (cat->ignored) {
+					match_found++;
+					template_ok = 1;
+				} else {
+					break;
+				}
+			}
+			continue;
+		}
+
+		if ((rc = regcomp(&r_name, match_name, REG_EXTENDED | REG_NOSUB))) {
+			regerr = ast_alloca(128);
+			regerror(rc, &r_name, regerr, 128);
+			ast_log(LOG_ERROR, "Regular expression '%s' failed to compile: %s\n",
+				match_name, regerr);
+			regfree(&r_name);
+			return 0;
+		}
+		if ((rc = regcomp(&r_value, match_value, REG_EXTENDED | REG_NOSUB))) {
+			regerr = ast_alloca(128);
+			regerror(rc, &r_value, regerr, 128);
+			ast_log(LOG_ERROR, "Regular expression '%s' failed to compile: %s\n",
+				match_value, regerr);
+			regfree(&r_name);
+			regfree(&r_value);
+			return 0;
+		}
+
+		for (v = cat->root; v; v = v->next) {
+			if (!regexec(&r_name, v->name, 0, NULL, 0)
+				&& !regexec(&r_value, v->value, 0, NULL, 0)) {
+				match_found++;
+				break;
+			}
+		}
+		regfree(&r_name);
+		regfree(&r_value);
+	}
+	if (match_found == match_expressions && (!cat->ignored || template_ok)) {
+		return 1;
+	}
+	return 0;
+}
+
+
+static struct ast_category *new_category(const char *name, const char *in_file, int lineno, int template)
 {
 	struct ast_category *category;
 
@@ -655,66 +865,124 @@ struct ast_category *ast_category_new(const char *name, const char *in_file, int
 	}
 	ast_copy_string(category->name, name, sizeof(category->name));
 	category->lineno = lineno; /* if you don't know the lineno, set it to 999999 or something real big */
+	category->ignored = template;
 	return category;
 }
 
-static struct ast_category *category_get(const struct ast_config *config, const char *category_name, int ignored)
+struct ast_category *ast_category_new(const char *name, const char *in_file, int lineno)
+{
+	return new_category(name, in_file, lineno, 0);
+}
+
+struct ast_category *ast_category_new_template(const char *name, const char *in_file, int lineno)
+{
+	return new_category(name, in_file, lineno, 1);
+}
+
+struct ast_category *ast_category_get(const struct ast_config *config,
+	const char *category_name, const char *filter)
 {
 	struct ast_category *cat;
 
-	/* try exact match first, then case-insensitive match */
 	for (cat = config->root; cat; cat = cat->next) {
-		if (cat->name == category_name && (ignored || !cat->ignored))
+		if (cat->name == category_name && does_category_match(cat, category_name, filter)) {
 			return cat;
+		}
 	}
 
 	for (cat = config->root; cat; cat = cat->next) {
-		if (!strcasecmp(cat->name, category_name) && (ignored || !cat->ignored))
+		if (does_category_match(cat, category_name, filter)) {
 			return cat;
+		}
 	}
 
 	return NULL;
 }
 
-struct ast_category *ast_category_get(const struct ast_config *config, const char *category_name)
+const char *ast_category_get_name(const struct ast_category *category)
 {
-	return category_get(config, category_name, 0);
+	return category->name;
 }
 
-int ast_category_exist(const struct ast_config *config, const char *category_name)
+int ast_category_is_template(const struct ast_category *category)
 {
-	return !!ast_category_get(config, category_name);
+	return category->ignored;
+}
+
+struct ast_str *ast_category_get_templates(const struct ast_category *category)
+{
+	struct ast_category_template_instance *template;
+	struct ast_str *str;
+	int first = 1;
+
+	if (AST_LIST_EMPTY(&category->template_instances)) {
+		return NULL;
+	}
+
+	str = ast_str_create(128);
+	if (!str) {
+		return NULL;
+	}
+
+	AST_LIST_TRAVERSE(&category->template_instances, template, next) {
+		ast_str_append(&str, 0, "%s%s", first ? "" : ",", template->name);
+		first = 0;
+	}
+
+	return str;
+}
+
+int ast_category_exist(const struct ast_config *config, const char *category_name,
+	const char *filter)
+{
+	return !!ast_category_get(config, category_name, filter);
 }
 
 void ast_category_append(struct ast_config *config, struct ast_category *category)
 {
-	if (config->last)
+	if (config->last) {
 		config->last->next = category;
-	else
+		category->prev = config->last;
+	} else {
 		config->root = category;
+		category->prev = NULL;
+	}
+	category->next = NULL;
 	category->include_level = config->include_level;
+
 	config->last = category;
 	config->current = category;
 }
 
-void ast_category_insert(struct ast_config *config, struct ast_category *cat, const char *match)
+int ast_category_insert(struct ast_config *config, struct ast_category *cat, const char *match)
 {
 	struct ast_category *cur_category;
 
-	if (!cat || !match)
-		return;
+	if (!config || !config->root || !cat || !match) {
+		return -1;
+	}
+
 	if (!strcasecmp(config->root->name, match)) {
 		cat->next = config->root;
+		cat->prev = NULL;
+		config->root->prev = cat;
 		config->root = cat;
-		return;
+		return 0;
 	}
-	for (cur_category = config->root; cur_category; cur_category = cur_category->next) {
-		if (!strcasecmp(cur_category->next->name, match)) {
-			cat->next = cur_category->next;
-			cur_category->next = cat;
-			break;
+
+	for (cur_category = config->root->next; cur_category; cur_category = cur_category->next) {
+		if (!strcasecmp(cur_category->name, match)) {
+			cat->prev = cur_category->prev;
+			cat->prev->next = cat;
+
+			cat->next = cur_category;
+			cur_category->prev = cat;
+
+			return 0;
 		}
 	}
+
+	return -1;
 }
 
 static void ast_destroy_template_list(struct ast_category *cat)
@@ -751,9 +1019,10 @@ static void ast_includes_destroy(struct ast_config_include *incls)
 	}
 }
 
-static struct ast_category *next_available_category(struct ast_category *cat)
+static struct ast_category *next_available_category(struct ast_category *cat,
+	const char *name, const char *filter)
 {
-	for (; cat && cat->ignored; cat = cat->next);
+	for (; cat && !does_category_match(cat, name, filter); cat = cat->next);
 
 	return cat;
 }
@@ -766,7 +1035,7 @@ struct ast_variable *ast_category_first(struct ast_category *cat)
 
 struct ast_variable *ast_category_root(struct ast_config *config, char *cat)
 {
-	struct ast_category *category = ast_category_get(config, cat);
+	struct ast_category *category = ast_category_get(config, cat, NULL);
 
 	if (category)
 		return category->root;
@@ -931,10 +1200,26 @@ char *ast_category_browse(struct ast_config *config, const char *prev)
 	}
 
 	if (cat)
-		cat = next_available_category(cat);
+		cat = next_available_category(cat, NULL, NULL);
 
 	config->last_browse = cat;
 	return (cat) ? cat->name : NULL;
+}
+
+struct ast_category *ast_category_browse_filtered(struct ast_config *config,
+	const char *category_name, struct ast_category *prev, const char *filter)
+{
+	struct ast_category *cat;
+
+	if (!prev) {
+		prev = config->root;
+	} else {
+		prev = prev->next;
+	}
+
+	cat = next_available_category(prev, category_name, filter);
+
+	return cat;
 }
 
 struct ast_variable *ast_category_detach_variables(struct ast_category *cat)
@@ -953,20 +1238,27 @@ void ast_category_rename(struct ast_category *cat, const char *name)
 	ast_copy_string(cat->name, name, sizeof(cat->name));
 }
 
-static void inherit_category(struct ast_category *new, const struct ast_category *base)
+int ast_category_inherit(struct ast_category *new, const struct ast_category *base)
 {
 	struct ast_variable *var;
 	struct ast_category_template_instance *x;
 
 	x = ast_calloc(1, sizeof(*x));
 	if (!x) {
-		return;
+		return -1;
 	}
 	strcpy(x->name, base->name);
 	x->inst = base;
 	AST_LIST_INSERT_TAIL(&new->template_instances, x, next);
-	for (var = base->root; var; var = var->next)
-		ast_variable_append(new, variable_clone(var));
+	for (var = base->root; var; var = var->next) {
+		struct ast_variable *cloned = variable_clone(var);
+		if (!cloned) {
+			return -1;
+		}
+		cloned->inherited = 1;
+		ast_variable_append(new, cloned);
+	}
+	return 0;
 }
 
 struct ast_config *ast_config_new(void)
@@ -1057,65 +1349,49 @@ int ast_variable_update(struct ast_category *category, const char *variable,
 	return -1;
 }
 
-int ast_category_delete(struct ast_config *cfg, const char *category)
+struct ast_category *ast_category_delete(struct ast_config *config,
+	struct ast_category *category)
 {
-	struct ast_category *prev=NULL, *cat;
+	struct ast_category *prev;
 
-	cat = cfg->root;
-	while (cat) {
-		if (cat->name == category) {
-			if (prev) {
-				prev->next = cat->next;
-				if (cat == cfg->last)
-					cfg->last = prev;
-			} else {
-				cfg->root = cat->next;
-				if (cat == cfg->last)
-					cfg->last = NULL;
-			}
-			ast_category_destroy(cat);
-			return 0;
-		}
-		prev = cat;
-		cat = cat->next;
+	if (!config || !category) {
+		return NULL;
 	}
 
-	prev = NULL;
-	cat = cfg->root;
-	while (cat) {
-		if (!strcasecmp(cat->name, category)) {
-			if (prev) {
-				prev->next = cat->next;
-				if (cat == cfg->last)
-					cfg->last = prev;
-			} else {
-				cfg->root = cat->next;
-				if (cat == cfg->last)
-					cfg->last = NULL;
-			}
-			ast_category_destroy(cat);
-			return 0;
-		}
-		prev = cat;
-		cat = cat->next;
+	if (category->prev) {
+		category->prev->next = category->next;
+	} else {
+		config->root = category->next;
 	}
-	return -1;
+
+	if (category->next) {
+		category->next->prev = category->prev;
+	} else {
+		config->last = category->prev;
+	}
+
+	prev = category->prev;
+
+	if (config->last_browse == category) {
+		config->last_browse = prev;
+	}
+
+	ast_category_destroy(category);
+
+	return prev;
 }
 
-int ast_category_empty(struct ast_config *cfg, const char *category)
+int ast_category_empty(struct ast_category *category)
 {
-	struct ast_category *cat;
-
-	for (cat = cfg->root; cat; cat = cat->next) {
-		if (!strcasecmp(cat->name, category))
-			continue;
-		ast_variables_destroy(cat->root);
-		cat->root = NULL;
-		cat->last = NULL;
-		return 0;
+	if (!category) {
+		return -1;
 	}
 
-	return -1;
+	ast_variables_destroy(category->root);
+	category->root = NULL;
+	category->last = NULL;
+
+	return 0;
 }
 
 void ast_config_destroy(struct ast_config *cfg)
@@ -1168,9 +1444,9 @@ static struct cache_file_mtime *cfmtime_new(const char *filename, const char *wh
 		return NULL;
 	}
 	dst = cfmtime->filename;	/* writable space starts here */
-	strcpy(dst, filename);
+	strcpy(dst, filename); /* Safe */
 	dst += strlen(dst) + 1;
-	cfmtime->who_asked = strcpy(dst, who_asked);
+	cfmtime->who_asked = strcpy(dst, who_asked); /* Safe */
 
 	return cfmtime;
 }
@@ -1180,11 +1456,115 @@ enum config_cache_attribute_enum {
 	ATTRIBUTE_EXEC = 1,
 };
 
+/*!
+ * \internal
+ * \brief Save the stat() data to the cached file modtime struct.
+ *
+ * \param cfmtime Cached file modtime.
+ * \param statbuf Buffer filled in by stat().
+ *
+ * \return Nothing
+ */
+static void cfmstat_save(struct cache_file_mtime *cfmtime, struct stat *statbuf)
+{
+	cfmtime->stat_size = statbuf->st_size;
+#if defined(HAVE_STRUCT_STAT_ST_MTIM)
+	cfmtime->stat_mtime_nsec = statbuf->st_mtim.tv_nsec;
+#elif defined(HAVE_STRUCT_STAT_ST_MTIMENSEC)
+	cfmtime->stat_mtime_nsec = statbuf->st_mtimensec;
+#elif defined(HAVE_STRUCT_STAT_ST_MTIMESPEC)
+	cfmtime->stat_mtime_nsec = statbuf->st_mtimespec.tv_nsec;
+#else
+	cfmtime->stat_mtime_nsec = 0;
+#endif
+	cfmtime->stat_mtime = statbuf->st_mtime;
+}
+
+/*!
+ * \internal
+ * \brief Compare the stat() data with the cached file modtime struct.
+ *
+ * \param cfmtime Cached file modtime.
+ * \param statbuf Buffer filled in by stat().
+ *
+ * \retval non-zero if different.
+ */
+static int cfmstat_cmp(struct cache_file_mtime *cfmtime, struct stat *statbuf)
+{
+	struct cache_file_mtime cfm_buf;
+
+	cfmstat_save(&cfm_buf, statbuf);
+
+	return cfmtime->stat_size != cfm_buf.stat_size
+		|| cfmtime->stat_mtime != cfm_buf.stat_mtime
+		|| cfmtime->stat_mtime_nsec != cfm_buf.stat_mtime_nsec;
+}
+
+/*!
+ * \internal
+ * \brief Clear the cached file modtime include list.
+ *
+ * \param cfmtime Cached file modtime.
+ *
+ * \note cfmtime_head is assumed already locked.
+ *
+ * \return Nothing
+ */
+static void config_cache_flush_includes(struct cache_file_mtime *cfmtime)
+{
+	struct cache_file_include *cfinclude;
+
+	while ((cfinclude = AST_LIST_REMOVE_HEAD(&cfmtime->includes, list))) {
+		ast_free(cfinclude);
+	}
+}
+
+/*!
+ * \internal
+ * \brief Destroy the given cached file modtime entry.
+ *
+ * \param cfmtime Cached file modtime.
+ *
+ * \note cfmtime_head is assumed already locked.
+ *
+ * \return Nothing
+ */
+static void config_cache_destroy_entry(struct cache_file_mtime *cfmtime)
+{
+	config_cache_flush_includes(cfmtime);
+	ast_free(cfmtime);
+}
+
+/*!
+ * \internal
+ * \brief Remove and destroy the config cache entry for the filename and who_asked.
+ *
+ * \param filename Config filename.
+ * \param who_asked Which module asked.
+ *
+ * \return Nothing
+ */
+static void config_cache_remove(const char *filename, const char *who_asked)
+{
+	struct cache_file_mtime *cfmtime;
+
+	AST_LIST_LOCK(&cfmtime_head);
+	AST_LIST_TRAVERSE_SAFE_BEGIN(&cfmtime_head, cfmtime, list) {
+		if (!strcmp(cfmtime->filename, filename)
+			&& !strcmp(cfmtime->who_asked, who_asked)) {
+			AST_LIST_REMOVE_CURRENT(list);
+			config_cache_destroy_entry(cfmtime);
+			break;
+		}
+	}
+	AST_LIST_TRAVERSE_SAFE_END;
+	AST_LIST_UNLOCK(&cfmtime_head);
+}
+
 static void config_cache_attribute(const char *configfile, enum config_cache_attribute_enum attrtype, const char *filename, const char *who_asked)
 {
 	struct cache_file_mtime *cfmtime;
 	struct cache_file_include *cfinclude;
-	struct stat statbuf = { 0, };
 
 	/* Find our cached entry for this configuration file */
 	AST_LIST_LOCK(&cfmtime_head);
@@ -1202,11 +1582,6 @@ static void config_cache_attribute(const char *configfile, enum config_cache_att
 		AST_LIST_INSERT_SORTALPHA(&cfmtime_head, cfmtime, list, filename);
 	}
 
-	if (!stat(configfile, &statbuf))
-		cfmtime->mtime = 0;
-	else
-		cfmtime->mtime = statbuf.st_mtime;
-
 	switch (attrtype) {
 	case ATTRIBUTE_INCLUDE:
 		AST_LIST_TRAVERSE(&cfmtime->includes, cfinclude, list) {
@@ -1220,7 +1595,7 @@ static void config_cache_attribute(const char *configfile, enum config_cache_att
 			AST_LIST_UNLOCK(&cfmtime_head);
 			return;
 		}
-		strcpy(cfinclude->include, filename);
+		strcpy(cfinclude->include, filename); /* Safe */
 		AST_LIST_INSERT_TAIL(&cfmtime->includes, cfinclude, list);
 		break;
 	case ATTRIBUTE_EXEC:
@@ -1300,7 +1675,7 @@ static int process_text_line(struct ast_config *cfg, struct ast_category **cat,
 				if (!strcasecmp(cur, "!")) {
 					(*cat)->ignored = 1;
 				} else if (!strcasecmp(cur, "+")) {
-					*cat = category_get(cfg, catname, 1);
+					*cat = ast_category_get(cfg, catname, NULL);
 					if (!(*cat)) {
 						if (newcat)
 							ast_category_destroy(newcat);
@@ -1315,12 +1690,15 @@ static int process_text_line(struct ast_config *cfg, struct ast_category **cat,
 				} else {
 					struct ast_category *base;
 
-					base = category_get(cfg, cur, 1);
+					base = ast_category_get(cfg, cur, "TEMPLATES=include");
 					if (!base) {
 						ast_log(LOG_WARNING, "Inheritance requested, but category '%s' does not exist, line %d of %s\n", cur, lineno, configfile);
 						return -1;
 					}
-					inherit_category(*cat, base);
+					if (ast_category_inherit(*cat, base)) {
+						ast_log(LOG_ERROR, "Inheritence requested, but allocation failed\n");
+						return -1;
+					}
 				}
 			}
 		}
@@ -1419,14 +1797,26 @@ static int process_text_line(struct ast_config *cfg, struct ast_category **cat,
 	} else {
 		/* Just a line (variable = value) */
 		int object = 0;
+		int is_escaped;
+
 		if (!(*cat)) {
 			ast_log(LOG_WARNING,
 				"parse error: No category context for line %d of %s\n", lineno, configfile);
 			return -1;
 		}
-		c = strchr(cur, '=');
 
-		if (c && c > cur && (*(c - 1) == '+')) {
+		is_escaped = cur[0] == '\\';
+		if (is_escaped) {
+			/* First character is escaped. */
+			++cur;
+			if (cur[0] < 33) {
+				ast_log(LOG_ERROR, "Invalid escape in line %d of %s\n", lineno, configfile);
+				return -1;
+			}
+		}
+		c = strchr(cur + is_escaped, '=');
+
+		if (c && c > cur + is_escaped && (*(c - 1) == '+')) {
 			struct ast_variable *var, *replace = NULL;
 			struct ast_str **str = ast_threadstorage_get(&appendbuf, sizeof(*str));
 
@@ -1462,8 +1852,11 @@ static int process_text_line(struct ast_config *cfg, struct ast_category **cat,
 				object = 1;
 				c++;
 			}
+			cur = ast_strip(cur);
 set_new_variable:
-			if ((v = ast_variable_new(ast_strip(cur), ast_strip(c), S_OR(suggested_include_file, cfg->include_level == 1 ? "" : configfile)))) {
+			if (ast_strlen_zero(cur)) {
+				ast_log(LOG_WARNING, "No variable name in line %d of %s\n", lineno, configfile);
+			} else if ((v = ast_variable_new(cur, ast_strip(c), S_OR(suggested_include_file, cfg->include_level == 1 ? "" : configfile)))) {
 				v->lineno = lineno;
 				v->object = object;
 				*last_cat = 0;
@@ -1511,9 +1904,14 @@ static struct ast_config *config_text_file_load(const char *database, const char
 	/*! Growable string buffer */
 	struct ast_str *comment_buffer = NULL;	/*!< this will be a comment collector.*/
 	struct ast_str *lline_buffer = NULL;	/*!< A buffer for stuff behind the ; */
+#ifdef AST_INCLUDE_GLOB
+	int glob_ret;
+	glob_t globbuf;
+#endif
 
-	if (cfg)
+	if (cfg) {
 		cat = ast_config_get_current_category(cfg);
+	}
 
 	if (filename[0] == '/') {
 		ast_copy_string(fn, filename, sizeof(fn));
@@ -1523,8 +1921,9 @@ static struct ast_config *config_text_file_load(const char *database, const char
 
 	if (ast_test_flag(&flags, CONFIG_FLAG_WITHCOMMENTS)) {
 		comment_buffer = ast_str_create(CB_SIZE);
-		if (comment_buffer)
+		if (comment_buffer) {
 			lline_buffer = ast_str_create(CB_SIZE);
+		}
 		if (!lline_buffer) {
 			ast_free(comment_buffer);
 			ast_log(LOG_ERROR, "Failed to initialize the comment buffer!\n");
@@ -1532,269 +1931,284 @@ static struct ast_config *config_text_file_load(const char *database, const char
 		}
 	}
 #ifdef AST_INCLUDE_GLOB
-	{
-		int glob_ret;
-		glob_t globbuf;
-		globbuf.gl_offs = 0;	/* initialize it to silence gcc */
-		glob_ret = glob(fn, MY_GLOB_FLAGS, NULL, &globbuf);
-		if (glob_ret == GLOB_NOSPACE)
-			ast_log(LOG_WARNING,
-				"Glob Expansion of pattern '%s' failed: Not enough memory\n", fn);
-		else if (glob_ret  == GLOB_ABORTED)
-			ast_log(LOG_WARNING,
-				"Glob Expansion of pattern '%s' failed: Read error\n", fn);
-		else  {
-			/* loop over expanded files */
-			int i;
-			for (i=0; i<globbuf.gl_pathc; i++) {
-				ast_copy_string(fn, globbuf.gl_pathv[i], sizeof(fn));
-#endif
-	/*
-	 * The following is not a loop, but just a convenient way to define a block
-	 * (using do { } while(0) ), and be able to exit from it with 'continue'
-	 * or 'break' in case of errors. Nice trick.
-	 */
-	do {
-		if (stat(fn, &statbuf))
-			continue;
+	globbuf.gl_offs = 0;	/* initialize it to silence gcc */
+	glob_ret = glob(fn, MY_GLOB_FLAGS, NULL, &globbuf);
+	if (glob_ret == GLOB_NOSPACE) {
+		ast_log(LOG_WARNING,
+			"Glob Expansion of pattern '%s' failed: Not enough memory\n", fn);
+	} else if (glob_ret  == GLOB_ABORTED) {
+		ast_log(LOG_WARNING,
+			"Glob Expansion of pattern '%s' failed: Read error\n", fn);
+	} else {
+		/* loop over expanded files */
+		int i;
 
-		if (!S_ISREG(statbuf.st_mode)) {
-			ast_log(LOG_WARNING, "'%s' is not a regular file, ignoring\n", fn);
-			continue;
-		}
-
-		if (!ast_test_flag(&flags, CONFIG_FLAG_NOCACHE)) {
-			/* Find our cached entry for this configuration file */
-			AST_LIST_LOCK(&cfmtime_head);
-			AST_LIST_TRAVERSE(&cfmtime_head, cfmtime, list) {
-				if (!strcmp(cfmtime->filename, fn) && !strcmp(cfmtime->who_asked, who_asked))
-					break;
-			}
-			if (!cfmtime) {
-				cfmtime = cfmtime_new(fn, who_asked);
-				if (!cfmtime)
-					continue;
-				/* Note that the file mtime is initialized to 0, i.e. 1970 */
-				AST_LIST_INSERT_SORTALPHA(&cfmtime_head, cfmtime, list, filename);
-			}
-		}
-
-		if (cfmtime && (!cfmtime->has_exec) && (cfmtime->mtime == statbuf.st_mtime) && ast_test_flag(&flags, CONFIG_FLAG_FILEUNCHANGED)) {
-			/* File is unchanged, what about the (cached) includes (if any)? */
-			int unchanged = 1;
-			AST_LIST_TRAVERSE(&cfmtime->includes, cfinclude, list) {
-				/* We must glob here, because if we did not, then adding a file to globbed directory would
-				 * incorrectly cause no reload to be necessary. */
-				char fn2[256];
-#ifdef AST_INCLUDE_GLOB
-				int glob_return;
-				glob_t glob_buf = { .gl_offs = 0 };
-				glob_return = glob(cfinclude->include, MY_GLOB_FLAGS, NULL, &glob_buf);
-				/* On error, we reparse */
-				if (glob_return == GLOB_NOSPACE || glob_return  == GLOB_ABORTED)
-					unchanged = 0;
-				else  {
-					/* loop over expanded files */
-					int j;
-					for (j = 0; j < glob_buf.gl_pathc; j++) {
-						ast_copy_string(fn2, glob_buf.gl_pathv[j], sizeof(fn2));
-#else
-						ast_copy_string(fn2, cfinclude->include);
-#endif
-						if (config_text_file_load(NULL, NULL, fn2, NULL, flags, "", who_asked) == NULL) {
-							/* that second-to-last field needs to be looked at in this case... TODO */
-							unchanged = 0;
-							/* One change is enough to short-circuit and reload the whole shebang */
-							break;
-						}
-#ifdef AST_INCLUDE_GLOB
-					}
-				}
-#endif
-			}
-
-			if (unchanged) {
-				AST_LIST_UNLOCK(&cfmtime_head);
-				ast_free(comment_buffer);
-				ast_free(lline_buffer);
-#ifdef AST_INCLUDE_GLOB
-				globfree(&globbuf);
-#endif
-				return CONFIG_STATUS_FILEUNCHANGED;
-			}
-		}
-		if (!ast_test_flag(&flags, CONFIG_FLAG_NOCACHE))
-			AST_LIST_UNLOCK(&cfmtime_head);
-
-		/* If cfg is NULL, then we just want an answer */
-		if (cfg == NULL) {
+		if (!cfg && (globbuf.gl_pathc != 1 || strcmp(fn, globbuf.gl_pathv[0]))) {
+			/*
+			 * We just want a file changed answer and since we cannot
+			 * tell if a file was deleted with wildcard matching we will
+			 * assume that something has always changed.  Also without
+			 * a lot of refactoring we couldn't check more than one file
+			 * for changes in the glob loop anyway.
+			 */
+			globfree(&globbuf);
 			ast_free(comment_buffer);
 			ast_free(lline_buffer);
-#ifdef AST_INCLUDE_GLOB
-				globfree(&globbuf);
-#endif
 			return NULL;
 		}
-
-		if (cfmtime)
-			cfmtime->mtime = statbuf.st_mtime;
-
-		if (!(f = fopen(fn, "r"))) {
-			ast_debug(1, "No file to parse: %s\n", fn);
-			ast_verb(2, "Parsing '%s': Not found (%s)\n", fn, strerror(errno));
-			continue;
-		}
-		count++;
-		/* If we get to this point, then we're loading regardless */
-		ast_clear_flag(&flags, CONFIG_FLAG_FILEUNCHANGED);
-		ast_debug(1, "Parsing %s\n", fn);
-		ast_verb(2, "Parsing '%s': Found\n", fn);
-		while (!feof(f)) {
-			lineno++;
-			if (fgets(buf, sizeof(buf), f)) {
-				/* Skip lines that are too long */
-				if (strlen(buf) == sizeof(buf) - 1 && buf[sizeof(buf) - 1] != '\n') {
-					ast_log(LOG_WARNING, "Line %d too long, skipping. It begins with: %.32s...\n", lineno, buf);
-					while (fgets(buf, sizeof(buf), f)) {
-						if (strlen(buf) != sizeof(buf) - 1 || buf[sizeof(buf) - 1] == '\n') {
-							break;
-						}
+		for (i=0; i<globbuf.gl_pathc; i++) {
+			ast_copy_string(fn, globbuf.gl_pathv[i], sizeof(fn));
+#endif
+			/*
+			 * The following is not a loop, but just a convenient way to define a block
+			 * (using do { } while(0) ), and be able to exit from it with 'continue'
+			 * or 'break' in case of errors. Nice trick.
+			 */
+			do {
+				if (stat(fn, &statbuf)) {
+					if (!ast_test_flag(&flags, CONFIG_FLAG_NOCACHE)) {
+						config_cache_remove(fn, who_asked);
 					}
 					continue;
 				}
 
-				if (ast_test_flag(&flags, CONFIG_FLAG_WITHCOMMENTS) && lline_buffer && ast_str_strlen(lline_buffer)) {
-					CB_ADD(&comment_buffer, ast_str_buffer(lline_buffer));       /* add the current lline buffer to the comment buffer */
-					ast_str_reset(lline_buffer);        /* erase the lline buffer */
-				}
-
-				new_buf = buf;
-				if (comment)
-					process_buf = NULL;
-				else
-					process_buf = buf;
-
-				if (ast_test_flag(&flags, CONFIG_FLAG_WITHCOMMENTS) && comment_buffer && ast_str_strlen(comment_buffer) && (ast_strlen_zero(buf) || strlen(buf) == strspn(buf," \t\n\r"))) {
-					/* blank line? really? Can we add it to an existing comment and maybe preserve inter- and post- comment spacing? */
-					CB_ADD(&comment_buffer, "\n");       /* add a newline to the comment buffer */
-					continue; /* go get a new line, then */
-				}
-
-				while ((comment_p = strchr(new_buf, COMMENT_META))) {
-					if ((comment_p > new_buf) && (*(comment_p - 1) == '\\')) {
-						/* Escaped semicolons aren't comments. */
-						new_buf = comment_p;
-						/* write over the \ and bring the null terminator with us */
-						memmove(comment_p - 1, comment_p, strlen(comment_p) + 1);
-					} else if (comment_p[1] == COMMENT_TAG && comment_p[2] == COMMENT_TAG && (comment_p[3] != '-')) {
-						/* Meta-Comment start detected ";--" */
-						if (comment < MAX_NESTED_COMMENTS) {
-							*comment_p = '\0';
-							new_buf = comment_p + 3;
-							comment++;
-							nest[comment-1] = lineno;
-						} else {
-							ast_log(LOG_ERROR, "Maximum nest limit of %d reached.\n", MAX_NESTED_COMMENTS);
-						}
-					} else if ((comment_p >= new_buf + 2) &&
-						   (*(comment_p - 1) == COMMENT_TAG) &&
-						   (*(comment_p - 2) == COMMENT_TAG)) {
-						/* Meta-Comment end detected */
-						comment--;
-						new_buf = comment_p + 1;
-						if (!comment) {
-							/* Back to non-comment now */
-							if (process_buf) {
-								/* Actually have to move what's left over the top, then continue */
-								char *oldptr;
-								oldptr = process_buf + strlen(process_buf);
-								if (ast_test_flag(&flags, CONFIG_FLAG_WITHCOMMENTS)) {
-									CB_ADD(&comment_buffer, ";");
-									CB_ADD_LEN(&comment_buffer, oldptr+1, new_buf-oldptr-1);
-								}
-
-								memmove(oldptr, new_buf, strlen(new_buf) + 1);
-								new_buf = oldptr;
-							} else
-								process_buf = new_buf;
-						}
-					} else {
-						if (!comment) {
-							/* If ; is found, and we are not nested in a comment,
-							   we immediately stop all comment processing */
-							if (ast_test_flag(&flags, CONFIG_FLAG_WITHCOMMENTS)) {
-								CB_ADD(&lline_buffer, comment_p);
-							}
-							*comment_p = '\0';
-							new_buf = comment_p;
-						} else
-							new_buf = comment_p + 1;
+				if (!S_ISREG(statbuf.st_mode)) {
+					ast_log(LOG_WARNING, "'%s' is not a regular file, ignoring\n", fn);
+					if (!ast_test_flag(&flags, CONFIG_FLAG_NOCACHE)) {
+						config_cache_remove(fn, who_asked);
 					}
-				}
-				if (ast_test_flag(&flags, CONFIG_FLAG_WITHCOMMENTS) && comment && !process_buf ) {
-					CB_ADD(&comment_buffer, buf);  /* the whole line is a comment, store it */
+					continue;
 				}
 
-				if (process_buf) {
-					char *buffer = ast_strip(process_buf);
-					if (!ast_strlen_zero(buffer)) {
-						if (process_text_line(cfg, &cat, buffer, lineno, fn, flags, comment_buffer, lline_buffer, suggested_include_file, &last_cat, &last_var, who_asked)) {
-							cfg = CONFIG_STATUS_FILEINVALID;
+				if (!ast_test_flag(&flags, CONFIG_FLAG_NOCACHE)) {
+					/* Find our cached entry for this configuration file */
+					AST_LIST_LOCK(&cfmtime_head);
+					AST_LIST_TRAVERSE(&cfmtime_head, cfmtime, list) {
+						if (!strcmp(cfmtime->filename, fn) && !strcmp(cfmtime->who_asked, who_asked)) {
 							break;
 						}
 					}
-				}
-			}
-		}
-		/* end of file-- anything in a comment buffer? */
-		if (last_cat) {
-			if (ast_test_flag(&flags, CONFIG_FLAG_WITHCOMMENTS) && comment_buffer && ast_str_strlen(comment_buffer)) {
-				if (lline_buffer && ast_str_strlen(lline_buffer)) {
-					CB_ADD(&comment_buffer, ast_str_buffer(lline_buffer));       /* add the current lline buffer to the comment buffer */
-					ast_str_reset(lline_buffer);        /* erase the lline buffer */
-				}
-				last_cat->trailing = ALLOC_COMMENT(comment_buffer);
-			}
-		} else if (last_var) {
-			if (ast_test_flag(&flags, CONFIG_FLAG_WITHCOMMENTS) && comment_buffer && ast_str_strlen(comment_buffer)) {
-				if (lline_buffer && ast_str_strlen(lline_buffer)) {
-					CB_ADD(&comment_buffer, ast_str_buffer(lline_buffer));       /* add the current lline buffer to the comment buffer */
-					ast_str_reset(lline_buffer);        /* erase the lline buffer */
-				}
-				last_var->trailing = ALLOC_COMMENT(comment_buffer);
-			}
-		} else {
-			if (ast_test_flag(&flags, CONFIG_FLAG_WITHCOMMENTS) && comment_buffer && ast_str_strlen(comment_buffer)) {
-				ast_debug(1, "Nothing to attach comments to, discarded: %s\n", ast_str_buffer(comment_buffer));
-			}
-		}
-		if (ast_test_flag(&flags, CONFIG_FLAG_WITHCOMMENTS))
-			CB_RESET(comment_buffer, lline_buffer);
-
-		fclose(f);
-	} while (0);
-	if (comment) {
-		ast_log(LOG_WARNING,"Unterminated comment detected beginning on line %d\n", nest[comment - 1]);
-	}
-#ifdef AST_INCLUDE_GLOB
-					if (cfg == NULL || cfg == CONFIG_STATUS_FILEUNCHANGED || cfg == CONFIG_STATUS_FILEINVALID) {
-						break;
+					if (!cfmtime) {
+						cfmtime = cfmtime_new(fn, who_asked);
+						if (!cfmtime) {
+							AST_LIST_UNLOCK(&cfmtime_head);
+							continue;
+						}
+						/* Note that the file mtime is initialized to 0, i.e. 1970 */
+						AST_LIST_INSERT_SORTALPHA(&cfmtime_head, cfmtime, list, filename);
 					}
 				}
-				globfree(&globbuf);
+
+				if (cfmtime
+					&& !cfmtime->has_exec
+					&& !cfmstat_cmp(cfmtime, &statbuf)
+					&& ast_test_flag(&flags, CONFIG_FLAG_FILEUNCHANGED)) {
+					int unchanged = 1;
+
+					/* File is unchanged, what about the (cached) includes (if any)? */
+					AST_LIST_TRAVERSE(&cfmtime->includes, cfinclude, list) {
+						if (!config_text_file_load(NULL, NULL, cfinclude->include,
+							NULL, flags, "", who_asked)) {
+							/* One change is enough to short-circuit and reload the whole shebang */
+							unchanged = 0;
+							break;
+						}
+					}
+
+					if (unchanged) {
+						AST_LIST_UNLOCK(&cfmtime_head);
+#ifdef AST_INCLUDE_GLOB
+						globfree(&globbuf);
+#endif
+						ast_free(comment_buffer);
+						ast_free(lline_buffer);
+						return CONFIG_STATUS_FILEUNCHANGED;
+					}
+				}
+
+				/* If cfg is NULL, then we just want a file changed answer. */
+				if (cfg == NULL) {
+					if (cfmtime) {
+						AST_LIST_UNLOCK(&cfmtime_head);
+					}
+					continue;
+				}
+
+				if (cfmtime) {
+					/* Forget about what we thought we knew about this file's includes. */
+					cfmtime->has_exec = 0;
+					config_cache_flush_includes(cfmtime);
+
+					cfmstat_save(cfmtime, &statbuf);
+					AST_LIST_UNLOCK(&cfmtime_head);
+				}
+
+				if (!(f = fopen(fn, "r"))) {
+					ast_debug(1, "No file to parse: %s\n", fn);
+					ast_verb(2, "Parsing '%s': Not found (%s)\n", fn, strerror(errno));
+					continue;
+				}
+				count++;
+				/* If we get to this point, then we're loading regardless */
+				ast_clear_flag(&flags, CONFIG_FLAG_FILEUNCHANGED);
+				ast_debug(1, "Parsing %s\n", fn);
+				ast_verb(2, "Parsing '%s': Found\n", fn);
+				while (!feof(f)) {
+					lineno++;
+					if (fgets(buf, sizeof(buf), f)) {
+						/* Skip lines that are too long */
+						if (strlen(buf) == sizeof(buf) - 1 && buf[sizeof(buf) - 1] != '\n') {
+							ast_log(LOG_WARNING, "Line %d too long, skipping. It begins with: %.32s...\n", lineno, buf);
+							while (fgets(buf, sizeof(buf), f)) {
+								if (strlen(buf) != sizeof(buf) - 1 || buf[sizeof(buf) - 1] == '\n') {
+									break;
+								}
+							}
+							continue;
+						}
+
+						if (ast_test_flag(&flags, CONFIG_FLAG_WITHCOMMENTS)
+							&& lline_buffer
+							&& ast_str_strlen(lline_buffer)) {
+							CB_ADD(&comment_buffer, ast_str_buffer(lline_buffer)); /* add the current lline buffer to the comment buffer */
+							ast_str_reset(lline_buffer);        /* erase the lline buffer */
+						}
+
+						new_buf = buf;
+						if (comment) {
+							process_buf = NULL;
+						} else {
+							process_buf = buf;
+						}
+
+						if (ast_test_flag(&flags, CONFIG_FLAG_WITHCOMMENTS)
+							&& comment_buffer
+							&& ast_str_strlen(comment_buffer)
+							&& (ast_strlen_zero(buf) || strlen(buf) == strspn(buf," \t\n\r"))) {
+							/* blank line? really? Can we add it to an existing comment and maybe preserve inter- and post- comment spacing? */
+							CB_ADD(&comment_buffer, "\n"); /* add a newline to the comment buffer */
+							continue; /* go get a new line, then */
+						}
+
+						while ((comment_p = strchr(new_buf, COMMENT_META))) {
+							if ((comment_p > new_buf) && (*(comment_p - 1) == '\\')) {
+								/* Escaped semicolons aren't comments. */
+								new_buf = comment_p;
+								/* write over the \ and bring the null terminator with us */
+								memmove(comment_p - 1, comment_p, strlen(comment_p) + 1);
+							} else if (comment_p[1] == COMMENT_TAG && comment_p[2] == COMMENT_TAG && (comment_p[3] != '-')) {
+								/* Meta-Comment start detected ";--" */
+								if (comment < MAX_NESTED_COMMENTS) {
+									*comment_p = '\0';
+									new_buf = comment_p + 3;
+									comment++;
+									nest[comment-1] = lineno;
+								} else {
+									ast_log(LOG_ERROR, "Maximum nest limit of %d reached.\n", MAX_NESTED_COMMENTS);
+								}
+							} else if ((comment_p >= new_buf + 2) &&
+								   (*(comment_p - 1) == COMMENT_TAG) &&
+								   (*(comment_p - 2) == COMMENT_TAG)) {
+								/* Meta-Comment end detected "--;" */
+								comment--;
+								new_buf = comment_p + 1;
+								if (!comment) {
+									/* Back to non-comment now */
+									if (process_buf) {
+										/* Actually have to move what's left over the top, then continue */
+										char *oldptr;
+
+										oldptr = process_buf + strlen(process_buf);
+										if (ast_test_flag(&flags, CONFIG_FLAG_WITHCOMMENTS)) {
+											CB_ADD(&comment_buffer, ";");
+											CB_ADD_LEN(&comment_buffer, oldptr+1, new_buf-oldptr-1);
+										}
+
+										memmove(oldptr, new_buf, strlen(new_buf) + 1);
+										new_buf = oldptr;
+									} else {
+										process_buf = new_buf;
+									}
+								}
+							} else {
+								if (!comment) {
+									/* If ; is found, and we are not nested in a comment,
+									   we immediately stop all comment processing */
+									if (ast_test_flag(&flags, CONFIG_FLAG_WITHCOMMENTS)) {
+										CB_ADD(&lline_buffer, comment_p);
+									}
+									*comment_p = '\0';
+									new_buf = comment_p;
+								} else {
+									new_buf = comment_p + 1;
+								}
+							}
+						}
+						if (ast_test_flag(&flags, CONFIG_FLAG_WITHCOMMENTS) && comment && !process_buf ) {
+							CB_ADD(&comment_buffer, buf); /* the whole line is a comment, store it */
+						}
+
+						if (process_buf) {
+							char *buffer = ast_strip(process_buf);
+
+							if (!ast_strlen_zero(buffer)) {
+								if (process_text_line(cfg, &cat, buffer, lineno, fn,
+									flags, comment_buffer, lline_buffer,
+									suggested_include_file, &last_cat, &last_var,
+									who_asked)) {
+									cfg = CONFIG_STATUS_FILEINVALID;
+									break;
+								}
+							}
+						}
+					}
+				}
+				/* end of file-- anything in a comment buffer? */
+				if (last_cat) {
+					if (ast_test_flag(&flags, CONFIG_FLAG_WITHCOMMENTS) && comment_buffer && ast_str_strlen(comment_buffer)) {
+						if (lline_buffer && ast_str_strlen(lline_buffer)) {
+							CB_ADD(&comment_buffer, ast_str_buffer(lline_buffer)); /* add the current lline buffer to the comment buffer */
+							ast_str_reset(lline_buffer); /* erase the lline buffer */
+						}
+						last_cat->trailing = ALLOC_COMMENT(comment_buffer);
+					}
+				} else if (last_var) {
+					if (ast_test_flag(&flags, CONFIG_FLAG_WITHCOMMENTS) && comment_buffer && ast_str_strlen(comment_buffer)) {
+						if (lline_buffer && ast_str_strlen(lline_buffer)) {
+							CB_ADD(&comment_buffer, ast_str_buffer(lline_buffer)); /* add the current lline buffer to the comment buffer */
+							ast_str_reset(lline_buffer); /* erase the lline buffer */
+						}
+						last_var->trailing = ALLOC_COMMENT(comment_buffer);
+					}
+				} else {
+					if (ast_test_flag(&flags, CONFIG_FLAG_WITHCOMMENTS) && comment_buffer && ast_str_strlen(comment_buffer)) {
+						ast_debug(1, "Nothing to attach comments to, discarded: %s\n", ast_str_buffer(comment_buffer));
+					}
+				}
+				if (ast_test_flag(&flags, CONFIG_FLAG_WITHCOMMENTS)) {
+					CB_RESET(comment_buffer, lline_buffer);
+				}
+
+				fclose(f);
+			} while (0);
+			if (comment) {
+				ast_log(LOG_WARNING,"Unterminated comment detected beginning on line %d\n", nest[comment - 1]);
+			}
+#ifdef AST_INCLUDE_GLOB
+			if (cfg == NULL || cfg == CONFIG_STATUS_FILEUNCHANGED || cfg == CONFIG_STATUS_FILEINVALID) {
+				break;
 			}
 		}
+		globfree(&globbuf);
+	}
 #endif
 
-	if (ast_test_flag(&flags, CONFIG_FLAG_WITHCOMMENTS)) {
-		ast_free(comment_buffer);
-		ast_free(lline_buffer);
-		comment_buffer = NULL;
-		lline_buffer = NULL;
-	}
+	ast_free(comment_buffer);
+	ast_free(lline_buffer);
 
-	if (count == 0)
+	if (count == 0) {
 		return NULL;
+	}
 
 	return cfg;
 }
@@ -1846,21 +2260,27 @@ static void inclfile_destroy(void *obj)
 	ast_free(o->fname);
 }
 
+static void make_fn(char *fn, size_t fn_size, const char *file, const char *configfile)
+{
+	if (ast_strlen_zero(file)) {
+		if (configfile[0] == '/') {
+			ast_copy_string(fn, configfile, fn_size);
+		} else {
+			snprintf(fn, fn_size, "%s/%s", ast_config_AST_CONFIG_DIR, configfile);
+		}
+	} else if (file[0] == '/') {
+		ast_copy_string(fn, file, fn_size);
+	} else {
+		snprintf(fn, fn_size, "%s/%s", ast_config_AST_CONFIG_DIR, file);
+	}
+}
 
-static struct inclfile *set_fn(char *fn, int fn_size, const char *file, const char *configfile, struct ao2_container *fileset)
+static struct inclfile *set_fn(char *fn, size_t fn_size, const char *file, const char *configfile, struct ao2_container *fileset)
 {
 	struct inclfile lookup;
 	struct inclfile *fi;
 
-	if (ast_strlen_zero(file)) {
-		if (configfile[0] == '/')
-			ast_copy_string(fn, configfile, fn_size);
-		else
-			snprintf(fn, fn_size, "%s/%s", ast_config_AST_CONFIG_DIR, configfile);
-	} else if (file[0] == '/')
-		ast_copy_string(fn, file, fn_size);
-	else
-		snprintf(fn, fn_size, "%s/%s", ast_config_AST_CONFIG_DIR, file);
+	make_fn(fn, fn_size, file, configfile);
 	lookup.fname = fn;
 	fi = ao2_find(fileset, &lookup, OBJ_POINTER);
 	if (fi) {
@@ -1948,10 +2368,15 @@ static void insert_leading_blank_lines(FILE *fp, struct inclfile *fi, struct ast
 
 int config_text_file_save(const char *configfile, const struct ast_config *cfg, const char *generator)
 {
-	return ast_config_text_file_save(configfile, cfg, generator);
+	return ast_config_text_file_save2(configfile, cfg, generator, CONFIG_SAVE_FLAG_PRESERVE_EFFECTIVE_CONTEXT);
 }
 
 int ast_config_text_file_save(const char *configfile, const struct ast_config *cfg, const char *generator)
+{
+	return ast_config_text_file_save2(configfile, cfg, generator, CONFIG_SAVE_FLAG_PRESERVE_EFFECTIVE_CONTEXT);
+}
+
+int ast_config_text_file_save2(const char *configfile, const struct ast_config *cfg, const char *generator, uint32_t flags)
 {
 	FILE *f;
 	char fn[PATH_MAX];
@@ -1969,10 +2394,28 @@ int ast_config_text_file_save(const char *configfile, const struct ast_config *c
 		return -1;
 	}
 
-	/* reset all the output flags, in case this isn't our first time saving this data */
+	/* Check all the files for write access before attempting to modify any of them */
 	for (incl = cfg->includes; incl; incl = incl->next) {
+		/* reset all the output flags in case this isn't our first time saving this data */
 		incl->output = 0;
+		/* now make sure we have write access */
+		if (!incl->exec) {
+			make_fn(fn, sizeof(fn), incl->included_file, configfile);
+			if (access(fn, R_OK | W_OK)) {
+				ast_log(LOG_ERROR, "Unable to write %s (%s)\n", fn, strerror(errno));
+				return -1;
+			}
+		}
 	}
+
+	/* now make sure we have write access to the main config file */
+	make_fn(fn, sizeof(fn), 0, configfile);
+	if (access(fn, R_OK | W_OK)) {
+		ast_log(LOG_ERROR, "Unable to write %s (%s)\n", fn, strerror(errno));
+		return -1;
+	}
+
+	/* Now that we know we have write access to all files, it's safe to start truncating them */
 
 	/* go thru all the inclusions and make sure all the files involved (configfile plus all its inclusions)
 	   are all truncated to zero bytes and have that nice header*/
@@ -1985,8 +2428,7 @@ int ast_config_text_file_save(const char *configfile, const struct ast_config *c
 				gen_header(f, configfile, fn, generator);
 				fclose(f); /* this should zero out the file */
 			} else {
-				ast_debug(1, "Unable to open for writing: %s\n", fn);
-				ast_verb(2, "Unable to write %s (%s)\n", fn, strerror(errno));
+				ast_log(LOG_ERROR, "Unable to write %s (%s)\n", fn, strerror(errno));
 			}
 			if (fi) {
 				ao2_ref(fi, -1);
@@ -2019,8 +2461,7 @@ int ast_config_text_file_save(const char *configfile, const struct ast_config *c
 			fi = set_fn(fn, sizeof(fn), cat->file, configfile, fileset);
 			f = fopen(fn, "a");
 			if (!f) {
-				ast_debug(1, "Unable to open for writing: %s\n", fn);
-				ast_verb(2, "Unable to write %s (%s)\n", fn, strerror(errno));
+				ast_log(LOG_ERROR, "Unable to write %s (%s)\n", fn, strerror(errno));
 				if (fi) {
 					ao2_ref(fi, -1);
 				}
@@ -2092,16 +2533,31 @@ int ast_config_text_file_save(const char *configfile, const struct ast_config *c
 			while (var) {
 				struct ast_category_template_instance *x;
 				int found = 0;
+
 				AST_LIST_TRAVERSE(&cat->template_instances, x, next) {
 					struct ast_variable *v;
 					for (v = x->inst->root; v; v = v->next) {
-						if (!strcasecmp(var->name, v->name) && !strcmp(var->value, v->value)) {
-							found = 1;
-							break;
+
+						if (flags & CONFIG_SAVE_FLAG_PRESERVE_EFFECTIVE_CONTEXT) {
+							if (!strcasecmp(var->name, v->name) && !strcmp(var->value, v->value)) {
+								found = 1;
+								break;
+							}
+						} else {
+							if (var->inherited) {
+								found = 1;
+								break;
+							} else {
+								if (!strcasecmp(var->name, v->name) && !strcmp(var->value, v->value)) {
+									found = 1;
+									break;
+								}
+							}
 						}
 					}
-					if (found)
+					if (found) {
 						break;
+					}
 				}
 				if (found) {
 					var = var->next;
@@ -2137,10 +2593,22 @@ int ast_config_text_file_save(const char *configfile, const struct ast_config *c
 					if (cmt->cmt[0] != ';' || cmt->cmt[1] != '!')
 						fprintf(f,"%s", cmt->cmt);
 				}
-				if (var->sameline)
-					fprintf(f, "%s %s %s  %s", var->name, (var->object ? "=>" : "="), var->value, var->sameline->cmt);
-				else
-					fprintf(f, "%s %s %s\n", var->name, (var->object ? "=>" : "="), var->value);
+
+				{ /* Block for 'escaped' scope */
+					int escaped_len = 2 * strlen(var->value) + 1;
+					char escaped[escaped_len];
+
+					ast_escape_semicolons(var->value, escaped, escaped_len);
+
+					if (var->sameline) {
+						fprintf(f, "%s %s %s  %s", var->name, (var->object ? "=>" : "="),
+							escaped, var->sameline->cmt);
+					} else {
+						fprintf(f, "%s %s %s\n", var->name, (var->object ? "=>" : "="),
+							escaped);
+					}
+				}
+
 				for (cmt = var->trailing; cmt; cmt=cmt->next) {
 					if (cmt->cmt[0] != ';' || cmt->cmt[1] != '!')
 						fprintf(f,"%s", cmt->cmt);
@@ -2204,6 +2672,9 @@ int ast_config_text_file_save(const char *configfile, const struct ast_config *c
 	}
 	ao2_ref(fileset, -1); /* this should destroy the hash container */
 
+	/* pass new configuration to any config hooks */
+	config_hook_exec(configfile, generator, cfg);
+
 	return 0;
 }
 
@@ -2211,18 +2682,20 @@ static void clear_config_maps(void)
 {
 	struct ast_config_map *map;
 
-	ast_mutex_lock(&config_lock);
+	SCOPED_MUTEX(lock, &config_lock);
 
 	while (config_maps) {
 		map = config_maps;
 		config_maps = config_maps->next;
 		ast_free(map);
 	}
-
-	ast_mutex_unlock(&config_lock);
 }
 
-static int append_mapping(const char *name, const char *driver, const char *database, const char *table, int priority)
+#ifdef TEST_FRAMEWORK
+int ast_realtime_append_mapping(const char *name, const char *driver, const char *database, const char *table, int priority)
+#else
+static int ast_realtime_append_mapping(const char *name, const char *driver, const char *database, const char *table, int priority)
+#endif
 {
 	struct ast_config_map *map;
 	char *dst;
@@ -2272,7 +2745,6 @@ int read_config_maps(void)
 		ast_log(LOG_ERROR, "Unable to allocate memory for new config\n");
 		return -1;
 	}
-	configtmp->max_include_level = 1;
 	config = ast_config_internal_load(extconfig_conf, configtmp, flags, "", "extconfig");
 	if (config == CONFIG_STATUS_FILEINVALID) {
 		return -1;
@@ -2325,13 +2797,13 @@ int read_config_maps(void)
 			continue;
 		if (!strcasecmp(v->name, "sipfriends")) {
 			ast_log(LOG_WARNING, "The 'sipfriends' table is obsolete, update your config to use sippeers instead.\n");
-			append_mapping("sippeers", driver, database, table ? table : "sipfriends", pri);
+			ast_realtime_append_mapping("sippeers", driver, database, table ? table : "sipfriends", pri);
 		} else if (!strcasecmp(v->name, "iaxfriends")) {
 			ast_log(LOG_WARNING, "The 'iaxfriends' table is obsolete, update your config to use iaxusers and iaxpeers, though they can point to the same table.\n");
-			append_mapping("iaxusers", driver, database, table ? table : "iaxfriends", pri);
-			append_mapping("iaxpeers", driver, database, table ? table : "iaxfriends", pri);
+			ast_realtime_append_mapping("iaxusers", driver, database, table ? table : "iaxfriends", pri);
+			ast_realtime_append_mapping("iaxpeers", driver, database, table ? table : "iaxfriends", pri);
 		} else
-			append_mapping(v->name, driver, database, table, pri);
+			ast_realtime_append_mapping(v->name, driver, database, table, pri);
 	}
 
 	ast_config_destroy(config);
@@ -2342,7 +2814,7 @@ int ast_config_engine_register(struct ast_config_engine *new)
 {
 	struct ast_config_engine *ptr;
 
-	ast_mutex_lock(&config_lock);
+	SCOPED_MUTEX(lock, &config_lock);
 
 	if (!config_engine_list) {
 		config_engine_list = new;
@@ -2351,9 +2823,6 @@ int ast_config_engine_register(struct ast_config_engine *new)
 		ptr->next = new;
 	}
 
-	ast_mutex_unlock(&config_lock);
-	ast_log(LOG_NOTICE,"Registered Config Engine %s\n", new->name);
-
 	return 1;
 }
 
@@ -2361,7 +2830,7 @@ int ast_config_engine_deregister(struct ast_config_engine *del)
 {
 	struct ast_config_engine *ptr, *last=NULL;
 
-	ast_mutex_lock(&config_lock);
+	SCOPED_MUTEX(lock, &config_lock);
 
 	for (ptr = config_engine_list; ptr; ptr=ptr->next) {
 		if (ptr == del) {
@@ -2374,24 +2843,19 @@ int ast_config_engine_deregister(struct ast_config_engine *del)
 		last = ptr;
 	}
 
-	ast_mutex_unlock(&config_lock);
-
 	return 0;
 }
 
 int ast_realtime_is_mapping_defined(const char *family)
 {
 	struct ast_config_map *map;
-	ast_mutex_lock(&config_lock);
+	SCOPED_MUTEX(lock, &config_lock);
 
 	for (map = config_maps; map; map = map->next) {
 		if (!strcasecmp(family, map->name)) {
-			ast_mutex_unlock(&config_lock);
 			return 1;
 		}
 	}
-
-	ast_mutex_unlock(&config_lock);
 
 	return 0;
 }
@@ -2402,7 +2866,7 @@ static struct ast_config_engine *find_engine(const char *family, int priority, c
 	struct ast_config_engine *eng, *ret = NULL;
 	struct ast_config_map *map;
 
-	ast_mutex_lock(&config_lock);
+	SCOPED_MUTEX(lock, &config_lock);
 
 	for (map = config_maps; map; map = map->next) {
 		if (!strcasecmp(family, map->name) && (priority == map->priority)) {
@@ -2421,8 +2885,6 @@ static struct ast_config_engine *find_engine(const char *family, int priority, c
 				ret = eng;
 		}
 	}
-
-	ast_mutex_unlock(&config_lock);
 
 	/* if we found a mapping, but the engine is not available, then issue a warning */
 	if (map && !ret)
@@ -2527,7 +2989,103 @@ struct ast_config *ast_config_load2(const char *filename, const char *who_asked,
 	return result;
 }
 
-static struct ast_variable *ast_load_realtime_helper(const char *family, va_list ap)
+#define realtime_arguments_to_fields(ap, result) realtime_arguments_to_fields2(ap, 0, result)
+
+/*!
+ * \internal
+ * \brief
+ *
+ * \param ap list of variable arguments
+ * \param skip Skip argument pairs for this number of variables
+ * \param result Address of a variables pointer to store the results
+ *               May be NULL if no arguments are parsed
+ *               Will be NULL on failure.
+ *
+ * \retval 0 on success or empty ap list
+ * \retval -1 on failure
+ */
+static int realtime_arguments_to_fields2(va_list ap, int skip, struct ast_variable **result)
+{
+	struct ast_variable *first, *fields = NULL;
+	const char *newparam;
+	const char *newval;
+
+	/*
+	 * Previously we would do:
+	 *
+	 *     va_start(ap, last);
+	 *     x = realtime_arguments_to_fields(ap);
+	 *     y = realtime_arguments_to_fields(ap);
+	 *     va_end(ap);
+	 *
+	 * While this works on generic amd64 machines (2014), it doesn't on the
+	 * raspberry PI. The va_arg() manpage says:
+	 *
+	 *     If ap is passed to a function that uses va_arg(ap,type) then
+	 *     the value of ap is undefined after the return of that function.
+	 *
+	 * On the raspberry, ap seems to get reset after the call: the contents
+	 * of y would be equal to the contents of x.
+	 *
+	 * So, instead we allow the caller to skip past earlier argument sets
+	 * using the skip parameter:
+	 *
+	 *     va_start(ap, last);
+	 *     if (realtime_arguments_to_fields(ap, &x)) {
+	 *         // FAILURE CONDITIONS
+	 *     }
+	 *     va_end(ap);
+	 *     va_start(ap, last);
+	 *     if (realtime_arguments_to_fields2(ap, 1, &y)) {
+	 *         // FAILURE CONDITIONS
+	 *     }
+	 *     va_end(ap);
+	 */
+	while (skip--) {
+		/* There must be at least one argument. */
+		newparam = va_arg(ap, const char *);
+		newval = va_arg(ap, const char *);
+		while ((newparam = va_arg(ap, const char *))) {
+			newval = va_arg(ap, const char *);
+		}
+	}
+
+	/* Load up the first vars. */
+	newparam = va_arg(ap, const char *);
+	if (!newparam) {
+		*result = NULL;
+		return 0;
+	}
+	newval = va_arg(ap, const char *);
+
+	if (!(first = ast_variable_new(newparam, newval, ""))) {
+		*result = NULL;
+		return -1;
+	}
+
+	while ((newparam = va_arg(ap, const char *))) {
+		struct ast_variable *field;
+
+		newval = va_arg(ap, const char *);
+		if (!(field = ast_variable_new(newparam, newval, ""))) {
+			ast_variables_destroy(fields);
+			ast_variables_destroy(first);
+			*result = NULL;
+			return -1;
+		}
+
+		field->next = fields;
+		fields = field;
+	}
+
+	first->next = fields;
+	fields = first;
+
+	*result = fields;
+	return 0;
+}
+
+struct ast_variable *ast_load_realtime_all_fields(const char *family, const struct ast_variable *fields)
 {
 	struct ast_config_engine *eng;
 	char db[256];
@@ -2537,7 +3095,7 @@ static struct ast_variable *ast_load_realtime_helper(const char *family, va_list
 
 	for (i = 1; ; i++) {
 		if ((eng = find_engine(family, i, db, sizeof(db), table, sizeof(table)))) {
-			if (eng->realtime_func && (res = eng->realtime_func(db, table, ap))) {
+			if (eng->realtime_func && (res = eng->realtime_func(db, table, fields))) {
 				return res;
 			}
 		} else {
@@ -2550,26 +3108,28 @@ static struct ast_variable *ast_load_realtime_helper(const char *family, va_list
 
 struct ast_variable *ast_load_realtime_all(const char *family, ...)
 {
-	struct ast_variable *res;
+	RAII_VAR(struct ast_variable *, fields, NULL, ast_variables_destroy);
+	struct ast_variable *res = NULL;
 	va_list ap;
 
 	va_start(ap, family);
-	res = ast_load_realtime_helper(family, ap);
+	realtime_arguments_to_fields(ap, &fields);
 	va_end(ap);
+
+	if (fields) {
+		res = ast_load_realtime_all_fields(family, fields);
+	}
 
 	return res;
 }
 
-struct ast_variable *ast_load_realtime(const char *family, ...)
+struct ast_variable *ast_load_realtime_fields(const char *family, const struct ast_variable *fields)
 {
 	struct ast_variable *res;
 	struct ast_variable *cur;
 	struct ast_variable **prev;
-	va_list ap;
 
-	va_start(ap, family);
-	res = ast_load_realtime_helper(family, ap);
-	va_end(ap);
+	res = ast_load_realtime_all_fields(family, fields);
 
 	/* Filter the list. */
 	prev = &res;
@@ -2596,6 +3156,29 @@ struct ast_variable *ast_load_realtime(const char *family, ...)
 		}
 	}
 	return res;
+}
+
+struct ast_variable *ast_load_realtime(const char *family, ...)
+{
+	RAII_VAR(struct ast_variable *, fields, NULL, ast_variables_destroy);
+	int field_res = 0;
+	va_list ap;
+
+	va_start(ap, family);
+	if (realtime_arguments_to_fields(ap, &fields)) {
+		field_res = -1;
+	}
+	va_end(ap);
+
+	if (field_res) {
+		return NULL;
+	}
+
+	if (!fields) {
+		return NULL;
+	}
+
+	return ast_load_realtime_fields(family, fields);
 }
 
 /*! \brief Check if realtime engine is configured for family */
@@ -2662,19 +3245,17 @@ int ast_unload_realtime(const char *family)
 	return res;
 }
 
-struct ast_config *ast_load_realtime_multientry(const char *family, ...)
+struct ast_config *ast_load_realtime_multientry_fields(const char *family, const struct ast_variable *fields)
 {
 	struct ast_config_engine *eng;
 	char db[256];
 	char table[256];
 	struct ast_config *res = NULL;
-	va_list ap;
 	int i;
 
-	va_start(ap, family);
 	for (i = 1; ; i++) {
 		if ((eng = find_engine(family, i, db, sizeof(db), table, sizeof(table)))) {
-			if (eng->realtime_multi_func && (res = eng->realtime_multi_func(db, table, ap))) {
+			if (eng->realtime_multi_func && (res = eng->realtime_multi_func(db, table, fields))) {
 				/* If we were returned an empty cfg, destroy it and return NULL */
 				if (!res->root) {
 					ast_config_destroy(res);
@@ -2686,103 +3267,181 @@ struct ast_config *ast_load_realtime_multientry(const char *family, ...)
 			break;
 		}
 	}
+
+	return res;
+}
+
+struct ast_config *ast_load_realtime_multientry(const char *family, ...)
+{
+	RAII_VAR(struct ast_variable *, fields, NULL, ast_variables_destroy);
+	va_list ap;
+
+	va_start(ap, family);
+	realtime_arguments_to_fields(ap, &fields);
 	va_end(ap);
+
+	if (!fields) {
+		return NULL;
+	}
+
+	return ast_load_realtime_multientry_fields(family, fields);
+}
+
+int ast_update_realtime_fields(const char *family, const char *keyfield, const char *lookup, const struct ast_variable *fields)
+{
+	struct ast_config_engine *eng;
+	int res = -1, i;
+	char db[256];
+	char table[256];
+
+	for (i = 1; ; i++) {
+		if ((eng = find_engine(family, i, db, sizeof(db), table, sizeof(table)))) {
+			/* If the update succeeds, it returns >= 0. */
+			if (eng->update_func && ((res = eng->update_func(db, table, keyfield, lookup, fields)) >= 0)) {
+				break;
+			}
+		} else {
+			break;
+		}
+	}
 
 	return res;
 }
 
 int ast_update_realtime(const char *family, const char *keyfield, const char *lookup, ...)
 {
+	RAII_VAR(struct ast_variable *, fields, NULL, ast_variables_destroy);
+	va_list ap;
+
+	va_start(ap, lookup);
+	realtime_arguments_to_fields(ap, &fields);
+	va_end(ap);
+
+	if (!fields) {
+		return -1;
+	}
+
+	return ast_update_realtime_fields(family, keyfield, lookup, fields);
+}
+
+int ast_update2_realtime_fields(const char *family, const struct ast_variable *lookup_fields, const struct ast_variable *update_fields)
+{
 	struct ast_config_engine *eng;
 	int res = -1, i;
 	char db[256];
 	char table[256];
-	va_list ap;
 
-	va_start(ap, lookup);
 	for (i = 1; ; i++) {
 		if ((eng = find_engine(family, i, db, sizeof(db), table, sizeof(table)))) {
-			/* If the update succeeds, it returns 0. */
-			if (eng->update_func && !(res = eng->update_func(db, table, keyfield, lookup, ap))) {
+			if (eng->update2_func && !(res = eng->update2_func(db, table, lookup_fields, update_fields))) {
 				break;
 			}
 		} else {
 			break;
 		}
 	}
-	va_end(ap);
 
 	return res;
 }
 
 int ast_update2_realtime(const char *family, ...)
 {
+	RAII_VAR(struct ast_variable *, lookup_fields, NULL, ast_variables_destroy);
+	RAII_VAR(struct ast_variable *, update_fields, NULL, ast_variables_destroy);
+	va_list ap;
+
+	va_start(ap, family);
+	/* XXX: If we wanted to pass no lookup fields (select all), we'd be
+	 * out of luck. realtime_arguments_to_fields expects at least one key
+	 * value pair. */
+	realtime_arguments_to_fields(ap, &lookup_fields);
+	va_end(ap);
+
+	va_start(ap, family);
+	realtime_arguments_to_fields2(ap, 1, &update_fields);
+	va_end(ap);
+
+	if (!lookup_fields || !update_fields) {
+		return -1;
+	}
+
+	return ast_update2_realtime_fields(family, lookup_fields, update_fields);
+}
+
+int ast_store_realtime_fields(const char *family, const struct ast_variable *fields)
+{
 	struct ast_config_engine *eng;
 	int res = -1, i;
 	char db[256];
 	char table[256];
-	va_list ap;
 
-	va_start(ap, family);
 	for (i = 1; ; i++) {
 		if ((eng = find_engine(family, i, db, sizeof(db), table, sizeof(table)))) {
-			if (eng->update2_func && !(res = eng->update2_func(db, table, ap))) {
+			/* If the store succeeds, it returns >= 0*/
+			if (eng->store_func && ((res = eng->store_func(db, table, fields)) >= 0)) {
 				break;
 			}
 		} else {
 			break;
 		}
 	}
-	va_end(ap);
 
 	return res;
 }
 
 int ast_store_realtime(const char *family, ...)
 {
+	RAII_VAR(struct ast_variable *, fields, NULL, ast_variables_destroy);
+	va_list ap;
+
+	va_start(ap, family);
+	realtime_arguments_to_fields(ap, &fields);
+	va_end(ap);
+
+	if (!fields) {
+		return -1;
+	}
+
+	return ast_store_realtime_fields(family, fields);
+}
+
+int ast_destroy_realtime_fields(const char *family, const char *keyfield, const char *lookup, const struct ast_variable *fields)
+{
 	struct ast_config_engine *eng;
 	int res = -1, i;
 	char db[256];
 	char table[256];
-	va_list ap;
 
-	va_start(ap, family);
 	for (i = 1; ; i++) {
 		if ((eng = find_engine(family, i, db, sizeof(db), table, sizeof(table)))) {
-			/* If the store succeeds, it returns 0. */
-			if (eng->store_func && !(res = eng->store_func(db, table, ap))) {
+			if (eng->destroy_func && !(res = eng->destroy_func(db, table, keyfield, lookup, fields))) {
 				break;
 			}
 		} else {
 			break;
 		}
 	}
-	va_end(ap);
 
 	return res;
 }
 
 int ast_destroy_realtime(const char *family, const char *keyfield, const char *lookup, ...)
 {
-	struct ast_config_engine *eng;
-	int res = -1, i;
-	char db[256];
-	char table[256];
+	RAII_VAR(struct ast_variable *, fields, NULL, ast_variables_destroy);
+	int res = 0;
 	va_list ap;
 
 	va_start(ap, lookup);
-	for (i = 1; ; i++) {
-		if ((eng = find_engine(family, i, db, sizeof(db), table, sizeof(table)))) {
-			if (eng->destroy_func && !(res = eng->destroy_func(db, table, keyfield, lookup, ap))) {
-				break;
-			}
-		} else {
-			break;
-		}
+	if (realtime_arguments_to_fields(ap, &fields)) {
+		res = -1;
 	}
 	va_end(ap);
 
-	return res;
+	if (res) {
+		return -1;
+	}
+
+	return ast_destroy_realtime_fields(family, keyfield, lookup, fields);
 }
 
 char *ast_realtime_decode_chunk(char *chunk)
@@ -2790,7 +3449,7 @@ char *ast_realtime_decode_chunk(char *chunk)
 	char *orig = chunk;
 	for (; *chunk; chunk++) {
 		if (*chunk == '^' && strchr("0123456789ABCDEFabcdef", chunk[1]) && strchr("0123456789ABCDEFabcdef", chunk[2])) {
-			sscanf(chunk + 1, "%02hhX", chunk);
+			sscanf(chunk + 1, "%02hhX", (unsigned char *)chunk);
 			memmove(chunk + 1, chunk + 3, strlen(chunk + 3) + 1);
 		}
 	}
@@ -3045,23 +3704,23 @@ static char *handle_cli_core_show_config_mappings(struct ast_cli_entry *e, int c
 		return NULL;
 	}
 
-	ast_mutex_lock(&config_lock);
+	{
+		SCOPED_MUTEX(lock, &config_lock);
 
-	if (!config_engine_list) {
-		ast_cli(a->fd, "No config mappings found.\n");
-	} else {
-		for (eng = config_engine_list; eng; eng = eng->next) {
-			ast_cli(a->fd, "Config Engine: %s\n", eng->name);
-			for (map = config_maps; map; map = map->next) {
-				if (!strcasecmp(map->driver, eng->name)) {
-					ast_cli(a->fd, "===> %s (db=%s, table=%s)\n", map->name, map->database,
-							map->table ? map->table : map->name);
+		if (!config_engine_list) {
+			ast_cli(a->fd, "No config mappings found.\n");
+		} else {
+			for (eng = config_engine_list; eng; eng = eng->next) {
+				ast_cli(a->fd, "Config Engine: %s\n", eng->name);
+				for (map = config_maps; map; map = map->next) {
+					if (!strcasecmp(map->driver, eng->name)) {
+						ast_cli(a->fd, "===> %s (db=%s, table=%s)\n", map->name, map->database,
+								map->table ? map->table : map->name);
+					}
 				}
 			}
 		}
 	}
-
-	ast_mutex_unlock(&config_lock);
 
 	return CLI_SUCCESS;
 }
@@ -3164,15 +3823,14 @@ static void config_shutdown(void)
 
 	AST_LIST_LOCK(&cfmtime_head);
 	while ((cfmtime = AST_LIST_REMOVE_HEAD(&cfmtime_head, list))) {
-		struct cache_file_include *cfinclude;
-		while ((cfinclude = AST_LIST_REMOVE_HEAD(&cfmtime->includes, list))) {
-			ast_free(cfinclude);
-		}
-		ast_free(cfmtime);
+		config_cache_destroy_entry(cfmtime);
 	}
 	AST_LIST_UNLOCK(&cfmtime_head);
 
 	ast_cli_unregister_multiple(cli_config, ARRAY_LEN(cli_config));
+
+	ao2_cleanup(cfg_hooks);
+	cfg_hooks = NULL;
 }
 
 int register_config_cli(void)
@@ -3221,7 +3879,7 @@ void ast_config_hook_unregister(const char *name)
 	ao2_find(cfg_hooks, &tmp, OBJ_POINTER | OBJ_UNLINK | OBJ_NODATA);
 }
 
-static void config_hook_exec(const char *filename, const char *module, struct ast_config *cfg)
+static void config_hook_exec(const char *filename, const char *module, const struct ast_config *cfg)
 {
 	struct ao2_iterator it;
 	struct cfg_hook *hook;
@@ -3261,5 +3919,6 @@ int ast_config_hook_register(const char *name,
 	hook->module = ast_strdup(module);
 
 	ao2_link(cfg_hooks, hook);
+	ao2_ref(hook, -1);
 	return 0;
 }

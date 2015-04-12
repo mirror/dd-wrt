@@ -35,7 +35,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 369013 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 421678 $")
 
 #include "asterisk/network.h"
 #include <arpa/nameser.h>	/* res_* functions */
@@ -225,11 +225,7 @@ static int dns_parse_answer(void *context,
 		answer += sizeof(struct dn_answer);
 		len -= sizeof(struct dn_answer);
 		if (len < 0) {
-			ast_log(LOG_WARNING, "Strange result size\n");
-			return -1;
-		}
-		if (len < 0) {
-			ast_log(LOG_WARNING, "Length exceeds frame\n");
+			ast_log(LOG_WARNING, "Length of DNS answer exceeds frame\n");
 			return -1;
 		}
 
@@ -300,3 +296,48 @@ int ast_search_dns(void *context,
 
 	return ret;
 }
+
+struct ao2_container *ast_dns_get_nameservers(void)
+{
+#ifdef HAVE_RES_NINIT
+	struct __res_state dnsstate;
+#endif
+	struct __res_state *state;
+	struct ao2_container *nameservers;
+	int i;
+
+	nameservers = ast_str_container_alloc_options(AO2_ALLOC_OPT_LOCK_NOLOCK, 3);
+	if (!nameservers) {
+		return NULL;
+	}
+
+#ifdef HAVE_RES_NINIT
+	memset(&dnsstate, 0, sizeof(dnsstate));
+	res_ninit(&dnsstate);
+	state = &dnsstate;
+#else
+	ast_mutex_lock(&res_lock);
+	res_init();
+	state = &_res;
+#endif
+
+	for (i = 0; i < state->nscount; i++) {
+		ast_str_container_add(nameservers, ast_inet_ntoa(state->nsaddr_list[i].sin_addr));
+	}
+
+#ifdef HAVE_RES_NINIT
+#ifdef HAVE_RES_NDESTROY
+	res_ndestroy(&dnsstate);
+#else
+	res_nclose(&dnsstate);
+#endif
+#else
+#ifdef HAVE_RES_CLOSE
+	res_close();
+#endif
+	ast_mutex_unlock(&res_lock);
+#endif
+
+	return nameservers;
+}
+

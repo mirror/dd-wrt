@@ -32,7 +32,7 @@
 
 #include "asterisk.h"
  
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 396287 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 422719 $")
 
 #include "asterisk/pbx.h"
 #include "asterisk/module.h"
@@ -40,6 +40,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 396287 $")
 #include "asterisk/manager.h"
 #include "asterisk/channel.h"
 #include "asterisk/agi.h"
+#include "asterisk/stasis_channels.h"
 
 /*** DOCUMENTATION
 	<application name="Gosub" language="en_US">
@@ -202,7 +203,32 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 396287 $")
 			<para>Cause the channel to execute the specified dialplan subroutine,
 			returning to the dialplan with execution of a Return().</para>
 		</description>
+		<see-also>
+			<ref type="application">GoSub</ref>
+		</see-also>
 	</agi>
+	<managerEvent language="en_US" name="VarSet">
+		<managerEventInstance class="EVENT_FLAG_DIALPLAN">
+			<synopsis>Raised when a variable local to the gosub stack frame is set due to a subroutine call.</synopsis>
+			<syntax>
+				<channel_snapshot/>
+				<parameter name="Variable">
+					<para>The LOCAL variable being set.</para>
+					<note><para>The variable name will always be enclosed with
+					<literal>LOCAL()</literal></para></note>
+				</parameter>
+				<parameter name="Value">
+					<para>The new value of the variable.</para>
+				</parameter>
+			</syntax>
+			<see-also>
+				<ref type="application">GoSub</ref>
+				<ref type="agi">gosub</ref>
+				<ref type="function">LOCAL</ref>
+				<ref type="function">LOCAL_PEEK</ref>
+			</see-also>
+		</managerEventInstance>
+	</managerEvent>
  ***/
 
 static const char app_gosub[] = "Gosub";
@@ -225,6 +251,8 @@ struct gosub_stack_frame {
 	int priority;
 	/*! TRUE if the return location marks the end of a special routine. */
 	unsigned int is_special:1;
+	/*! Whether or not we were in a subroutine when this one was created */
+	unsigned int in_subroutine:1;
 	char *context;
 	char extension[0];
 };
@@ -235,6 +263,8 @@ static int frame_set_var(struct ast_channel *chan, struct gosub_stack_frame *fra
 {
 	struct ast_var_t *variables;
 	int found = 0;
+	int len;
+	RAII_VAR(char *, local_buffer, NULL, ast_free);
 
 	/* Does this variable already exist? */
 	AST_LIST_TRAVERSE(&frame->varshead, variables, entries) {
@@ -253,20 +283,13 @@ static int frame_set_var(struct ast_channel *chan, struct gosub_stack_frame *fra
 		pbx_builtin_setvar_helper(chan, var, value);
 	}
 
-	/*** DOCUMENTATION
-	<managerEventInstance>
-		<synopsis>Raised when a LOCAL channel variable is set due to a subroutine call.</synopsis>
-		<see-also>
-			<ref type="application">GoSub</ref>
-		</see-also>
-	</managerEventInstance>
-	***/
-	manager_event(EVENT_FLAG_DIALPLAN, "VarSet",
-		"Channel: %s\r\n"
-		"Variable: LOCAL(%s)\r\n"
-		"Value: %s\r\n"
-		"Uniqueid: %s\r\n",
-		ast_channel_name(chan), var, value, ast_channel_uniqueid(chan));
+	len = 8 + strlen(var); /* LOCAL() + var */
+	local_buffer = ast_malloc(len);
+	if (!local_buffer) {
+		return 0;
+	}
+	sprintf(local_buffer, "LOCAL(%s)", var);
+	ast_channel_publish_varset(chan, local_buffer, value);
 	return 0;
 }
 
@@ -289,7 +312,7 @@ static void gosub_release_frame(struct ast_channel *chan, struct gosub_stack_fra
 	ast_free(frame);
 }
 
-static struct gosub_stack_frame *gosub_allocate_frame(const char *context, const char *extension, int priority, unsigned char arguments)
+static struct gosub_stack_frame *gosub_allocate_frame(const char *context, const char *extension, int priority, int in_subroutine, unsigned char arguments)
 {
 	struct gosub_stack_frame *new = NULL;
 	int len_extension = strlen(extension), len_context = strlen(context);
@@ -300,6 +323,7 @@ static struct gosub_stack_frame *gosub_allocate_frame(const char *context, const
 		new->context = new->extension + len_extension + 1;
 		strcpy(new->context, context);
 		new->priority = priority;
+		new->in_subroutine = in_subroutine ? 1 : 0;
 		new->arguments = arguments;
 	}
 	return new;
@@ -395,6 +419,7 @@ static int return_exec(struct ast_channel *chan, const char *data)
 		--oldframe->priority;
 	}
 	ast_channel_priority_set(chan, oldframe->priority);
+	ast_set2_flag(ast_channel_flags(chan), oldframe->in_subroutine, AST_FLAG_SUBROUTINE_EXEC);
 
 	gosub_release_frame(chan, oldframe);
 
@@ -503,6 +528,7 @@ static int gosub_exec(struct ast_channel *chan, const char *data)
 	char *orig_exten;
 	char *dest_context;
 	char *dest_exten;
+	int orig_in_subroutine;
 	int orig_priority;
 	int dest_priority;
 	int i;
@@ -542,6 +568,7 @@ static int gosub_exec(struct ast_channel *chan, const char *data)
 	orig_context = ast_strdupa(ast_channel_context(chan));
 	orig_exten = ast_strdupa(ast_channel_exten(chan));
 	orig_priority = ast_channel_priority(chan);
+	orig_in_subroutine = ast_test_flag(ast_channel_flags(chan), AST_FLAG_SUBROUTINE_EXEC);
 	ast_channel_unlock(chan);
 
 	if (ast_parseable_goto(chan, label)) {
@@ -609,7 +636,7 @@ static int gosub_exec(struct ast_channel *chan, const char *data)
 	}
 
 	/* Create the return address */
-	newframe = gosub_allocate_frame(orig_context, orig_exten, orig_priority + 1, max_argc);
+	newframe = gosub_allocate_frame(orig_context, orig_exten, orig_priority + 1, orig_in_subroutine, max_argc);
 	if (!newframe) {
 		goto error_exit_locked;
 	}
@@ -620,8 +647,10 @@ static int gosub_exec(struct ast_channel *chan, const char *data)
 		frame_set_var(chan, newframe, argname, i < args2.argc ? args2.argval[i] : "");
 		ast_debug(1, "Setting '%s' to '%s'\n", argname, i < args2.argc ? args2.argval[i] : "");
 	}
-	snprintf(argname, sizeof(argname), "%d", args2.argc);
+	snprintf(argname, sizeof(argname), "%u", args2.argc);
 	frame_set_var(chan, newframe, "ARGC", argname);
+
+	ast_set_flag(ast_channel_flags(chan), AST_FLAG_SUBROUTINE_EXEC);
 
 	/* And finally, save our return address */
 	AST_LIST_LOCK(oldlist);
@@ -687,6 +716,11 @@ static int local_read(struct ast_channel *chan, const char *cmd, char *data, cha
 	struct gosub_stack_frame *frame;
 	struct ast_var_t *variables;
 
+	if (!chan) {
+		ast_log(LOG_WARNING, "No channel was provided to %s function.\n", cmd);
+		return -1;
+	}
+
 	ast_channel_lock(chan);
 	if (!(stack_store = ast_channel_datastore_find(chan, &stack_info, NULL))) {
 		ast_channel_unlock(chan);
@@ -720,6 +754,11 @@ static int local_write(struct ast_channel *chan, const char *cmd, char *var, con
 	struct ast_datastore *stack_store;
 	struct gosub_stack_list *oldlist;
 	struct gosub_stack_frame *frame;
+
+	if (!chan) {
+		ast_log(LOG_WARNING, "No channel was provided to %s function.\n", cmd);
+		return -1;
+	}
 
 	ast_channel_lock(chan);
 	if (!(stack_store = ast_channel_datastore_find(chan, &stack_info, NULL))) {
@@ -763,6 +802,12 @@ static int peek_read(struct ast_channel *chan, const char *cmd, char *data, char
 	}
 
 	AST_STANDARD_RAW_ARGS(args, data);
+
+	if (ast_strlen_zero(args.n) || ast_strlen_zero(args.name)) {
+		ast_log(LOG_ERROR, "LOCAL_PEEK requires parameters n and varname\n");
+		return -1;
+	}
+
 	n = atoi(args.n);
 	*buf = '\0';
 
@@ -802,6 +847,11 @@ static int stackpeek_read(struct ast_channel *chan, const char *cmd, char *data,
 	data = ast_strdupa(data);
 	AST_STANDARD_APP_ARGS(args, data);
 
+	if (ast_strlen_zero(args.n) || ast_strlen_zero(args.which)) {
+		ast_log(LOG_ERROR, "STACK_PEEK requires parameters n and which\n");
+		return -1;
+	}
+
 	n = atoi(args.n);
 	if (n <= 0) {
 		ast_log(LOG_ERROR, "STACK_PEEK must be called with a positive peek value\n");
@@ -831,6 +881,7 @@ static int stackpeek_read(struct ast_channel *chan, const char *cmd, char *data,
 		if (!ast_true(args.suppress)) {
 			ast_log(LOG_ERROR, "Stack peek of '%s' is more stack frames than I have\n", args.n);
 		}
+		AST_LIST_UNLOCK(oldlist);
 		ast_channel_unlock(chan);
 		return -1;
 	}
@@ -924,6 +975,7 @@ static int gosub_run(struct ast_channel *chan, const char *sub_args, int ignore_
 	int saved_priority;
 	int saved_hangup_flags;
 	int saved_autoloopflag;
+	int saved_in_subroutine;
 	int res;
 
 	ast_channel_lock(chan);
@@ -933,10 +985,9 @@ static int gosub_run(struct ast_channel *chan, const char *sub_args, int ignore_
 
 	/* Save non-hangup softhangup flags. */
 	saved_hangup_flags = ast_channel_softhangup_internal_flag(chan)
-		& (AST_SOFTHANGUP_ASYNCGOTO | AST_SOFTHANGUP_UNBRIDGE);
+		& AST_SOFTHANGUP_ASYNCGOTO;
 	if (saved_hangup_flags) {
-		ast_channel_clear_softhangup(chan,
-			AST_SOFTHANGUP_ASYNCGOTO | AST_SOFTHANGUP_UNBRIDGE);
+		ast_channel_clear_softhangup(chan, AST_SOFTHANGUP_ASYNCGOTO);
 	}
 
 	/* Save autoloop flag */
@@ -947,6 +998,9 @@ static int gosub_run(struct ast_channel *chan, const char *sub_args, int ignore_
 	saved_context = ast_strdupa(ast_channel_context(chan));
 	saved_exten = ast_strdupa(ast_channel_exten(chan));
 	saved_priority = ast_channel_priority(chan);
+
+	/* Save whether or not we are in a subroutine */
+	saved_in_subroutine = ast_test_flag(ast_channel_flags(chan), AST_FLAG_SUBROUTINE_EXEC);
 
 	ast_debug(4, "%s Original location: %s,%s,%d\n", ast_channel_name(chan),
 		saved_context, saved_exten, saved_priority);
@@ -985,10 +1039,6 @@ static int gosub_run(struct ast_channel *chan, const char *sub_args, int ignore_
 		 */
 		do {
 			/* Check for hangup. */
-			if (ast_channel_softhangup_internal_flag(chan) & AST_SOFTHANGUP_UNBRIDGE) {
-				saved_hangup_flags |= AST_SOFTHANGUP_UNBRIDGE;
-				ast_channel_clear_softhangup(chan, AST_SOFTHANGUP_UNBRIDGE);
-			}
 			if (ast_check_hangup(chan)) {
 				if (ast_channel_softhangup_internal_flag(chan) & AST_SOFTHANGUP_ASYNCGOTO) {
 					ast_log(LOG_ERROR, "%s An async goto just messed up our execution location.\n",
@@ -1053,6 +1103,9 @@ static int gosub_run(struct ast_channel *chan, const char *sub_args, int ignore_
 	/* Restore autoloop flag */
 	ast_set2_flag(ast_channel_flags(chan), saved_autoloopflag, AST_FLAG_IN_AUTOLOOP);
 
+	/* Restore subroutine flag */
+	ast_set2_flag(ast_channel_flags(chan), saved_in_subroutine, AST_FLAG_SUBROUTINE_EXEC);
+
 	/* Restore non-hangup softhangup flags. */
 	if (saved_hangup_flags) {
 		ast_softhangup_nolock(chan, saved_hangup_flags);
@@ -1068,6 +1121,7 @@ static int handle_gosub(struct ast_channel *chan, AGI *agi, int argc, const char
 	int res;
 	int priority;
 	int old_autoloopflag;
+	int old_in_subroutine;
 	int old_priority;
 	const char *old_context;
 	const char *old_extension;
@@ -1115,6 +1169,9 @@ static int handle_gosub(struct ast_channel *chan, AGI *agi, int argc, const char
 	/* Save autoloop flag */
 	old_autoloopflag = ast_test_flag(ast_channel_flags(chan), AST_FLAG_IN_AUTOLOOP);
 	ast_set_flag(ast_channel_flags(chan), AST_FLAG_IN_AUTOLOOP);
+
+	/* Save subroutine flag */
+	old_in_subroutine = ast_test_flag(ast_channel_flags(chan), AST_FLAG_SUBROUTINE_EXEC);
 
 	/* Save previous location, since we're going to change it */
 	old_context = ast_strdupa(ast_channel_context(chan));
@@ -1194,8 +1251,7 @@ static int handle_gosub(struct ast_channel *chan, AGI *agi, int argc, const char
 		ast_agi_send(agi->fd, chan, "200 result=%d Gosub failed\n", res);
 	}
 
-	/* Must use free because the memory was allocated by asprintf(). */
-	free(gosub_args);
+	ast_free(gosub_args);
 
 	ast_channel_lock(chan);
 	ast_debug(4, "%s Ending location: %s,%s,%d\n", ast_channel_name(chan),
@@ -1209,6 +1265,9 @@ static int handle_gosub(struct ast_channel *chan, AGI *agi, int argc, const char
 
 	/* Restore autoloop flag */
 	ast_set2_flag(ast_channel_flags(chan), old_autoloopflag, AST_FLAG_IN_AUTOLOOP);
+
+	/* Restore subroutine flag */
+	ast_set2_flag(ast_channel_flags(chan), old_in_subroutine, AST_FLAG_SUBROUTINE_EXEC);
 	ast_channel_unlock(chan);
 
 	return RESULT_SUCCESS;
@@ -1259,6 +1318,7 @@ static int load_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT | AST_MODFLAG_LOAD_ORDER, "Dialplan subroutines (Gosub, Return, etc)",
+		.support_level = AST_MODULE_SUPPORT_CORE,
 		.load = load_module,
 		.unload = unload_module,
 		.load_pri = AST_MODPRI_APP_DEPEND,

@@ -25,17 +25,30 @@
  * \author Mark Spencer <markster@digium.com>
  */
 
+/*! \li \ref logger.c uses the configuration file \ref logger.conf
+ * \addtogroup configuration_file Configuration Files
+ */
+
+/*!
+ * \page logger.conf logger.conf
+ * \verbinclude logger.conf.sample
+ */
+
 /*** MODULEINFO
 	<support_level>core</support_level>
  ***/
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 401833 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 433126 $")
 
 /* When we include logger.h again it will trample on some stuff in syslog.h, but
  * nothing we care about in here. */
 #include <syslog.h>
+#include <signal.h>
+#include <time.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include "asterisk/_private.h"
 #include "asterisk/paths.h"	/* use ast_config_AST_LOG_DIR */
@@ -55,19 +68,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 401833 $")
 #include "asterisk/syslog.h"
 #include "asterisk/buildinfo.h"
 #include "asterisk/ast_version.h"
-
-#include <signal.h>
-#include <time.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#ifdef HAVE_BKTR
-#include <execinfo.h>
-#define MAX_BACKTRACE_FRAMES 20
-#  if defined(HAVE_DLADDR) && defined(HAVE_BFD) && defined(BETTER_BACKTRACES)
-#    include <dlfcn.h>
-#    include <bfd.h>
-#  endif
-#endif
+#include "asterisk/backtrace.h"
 
 /*** DOCUMENTATION
  ***/
@@ -86,12 +87,13 @@ static int display_callids;
 static void unique_callid_cleanup(void *data);
 
 struct ast_callid {
-    int call_identifier; /* Numerical value of the call displayed in the logs */
+	int call_identifier; /* Numerical value of the call displayed in the logs */
 };
 
 AST_THREADSTORAGE_CUSTOM(unique_callid, NULL, unique_callid_cleanup);
 
 static enum rotatestrategy {
+	NONE = 0,                /* Do not rotate log files at all, instead rely on external mechanisms */
 	SEQUENTIAL = 1 << 0,     /* Original method - create a new file, in order */
 	ROTATE = 1 << 1,         /* Rotate all files, such that the oldest file has the highest suffix */
 	TIMESTAMP = 1 << 2,      /* Append the epoch timestamp onto the end of the archived file */
@@ -101,6 +103,7 @@ static struct {
 	unsigned int queue_log:1;
 	unsigned int queue_log_to_file:1;
 	unsigned int queue_adaptive_realtime:1;
+	unsigned int queue_log_realtime_use_gmt:1;
 } logfiles = { 1 };
 
 static char hostname[MAXHOSTNAMELEN];
@@ -118,7 +121,7 @@ struct logchannel {
 	int disabled;
 	/*! syslog facility */
 	int facility;
-	/*! Verbosity level */
+	/*! Verbosity level. (-1 if use option_verbose for the level.) */
 	int verbosity;
 	/*! Type of log channel */
 	enum logtypes type;
@@ -130,6 +133,8 @@ struct logchannel {
 	AST_LIST_ENTRY(logchannel) list;
 	/*! Line number from configuration file */
 	int lineno;
+	/*! Whether this log channel was created dynamically */
+	int dynamic;
 	/*! Components (levels) from last config load */
 	char components[0];
 };
@@ -230,42 +235,57 @@ static const int colors[NUMLOGLEVELS] = {
 };
 
 AST_THREADSTORAGE(verbose_buf);
+AST_THREADSTORAGE(verbose_build_buf);
 #define VERBOSE_BUF_INIT_SIZE   256
 
 AST_THREADSTORAGE(log_buf);
 #define LOG_BUF_INIT_SIZE       256
 
-static void logger_queue_init(void);
-
-static unsigned int make_components(const char *s, int lineno, int *verbosity)
+static void make_components(struct logchannel *chan)
 {
 	char *w;
-	unsigned int res = 0;
-	char *stringp = ast_strdupa(s);
+	unsigned int logmask = 0;
+	char *stringp = ast_strdupa(chan->components);
 	unsigned int x;
+	unsigned int verb_level;
 
-	*verbosity = 3;
+	/* Default to using option_verbose as the verbosity level of the logging channel.  */
+	verb_level = -1;
 
 	while ((w = strsep(&stringp, ","))) {
-		w = ast_skip_blanks(w);
-
+		w = ast_strip(w);
+		if (ast_strlen_zero(w)) {
+			continue;
+		}
 		if (!strcmp(w, "*")) {
-			res = 0xFFFFFFFF;
-			break;
-		} else if (!strncasecmp(w, "verbose(", 8) && sscanf(w + 8, "%d)", verbosity) == 1) {
-			res |= (1 << __LOG_VERBOSE);
-		} else for (x = 0; x < ARRAY_LEN(levels); x++) {
-			if (levels[x] && !strcasecmp(w, levels[x])) {
-				res |= (1 << x);
-				break;
+			logmask = 0xFFFFFFFF;
+		} else if (!strncasecmp(w, "verbose(", 8)) {
+			if (levels[__LOG_VERBOSE] && sscanf(w + 8, "%30u)", &verb_level) == 1) {
+				logmask |= (1 << __LOG_VERBOSE);
+			}
+		} else {
+			for (x = 0; x < ARRAY_LEN(levels); ++x) {
+				if (levels[x] && !strcasecmp(w, levels[x])) {
+					logmask |= (1 << x);
+					break;
+				}
 			}
 		}
 	}
-
-	return res;
+	if (chan->type == LOGTYPE_CONSOLE) {
+		/*
+		 * Force to use the root console verbose level so if the
+		 * user specified any verbose level then it does not interfere
+		 * with calculating the ast_verb_sys_level value.
+		 */
+		chan->verbosity = -1;
+	} else {
+		chan->verbosity = verb_level;
+	}
+	chan->logmask = logmask;
 }
 
-static struct logchannel *make_logchannel(const char *channel, const char *components, int lineno)
+static struct logchannel *make_logchannel(const char *channel, const char *components, int lineno, int dynamic)
 {
 	struct logchannel *chan;
 	char *facility;
@@ -278,6 +298,7 @@ static struct logchannel *make_logchannel(const char *channel, const char *compo
 
 	strcpy(chan->components, components);
 	chan->lineno = lineno;
+	chan->dynamic = dynamic;
 
 	if (!strcasecmp(channel, "console")) {
 		chan->type = LOGTYPE_CONSOLE;
@@ -303,13 +324,22 @@ static struct logchannel *make_logchannel(const char *channel, const char *compo
 		ast_copy_string(chan->filename, channel, sizeof(chan->filename));
 		openlog("asterisk", LOG_PID, chan->facility);
 	} else {
-		if (!ast_strlen_zero(hostname)) {
-			snprintf(chan->filename, sizeof(chan->filename), "%s/%s.%s",
-				 channel[0] != '/' ? ast_config_AST_LOG_DIR : "", channel, hostname);
-		} else {
-			snprintf(chan->filename, sizeof(chan->filename), "%s/%s",
-				 channel[0] != '/' ? ast_config_AST_LOG_DIR : "", channel);
+		const char *log_dir_prefix = "";
+		const char *log_dir_separator = "";
+
+		if (channel[0] != '/') {
+			log_dir_prefix = ast_config_AST_LOG_DIR;
+			log_dir_separator = "/";
 		}
+
+		if (!ast_strlen_zero(hostname)) {
+			snprintf(chan->filename, sizeof(chan->filename), "%s%s%s.%s",
+				log_dir_prefix, log_dir_separator, channel, hostname);
+		} else {
+			snprintf(chan->filename, sizeof(chan->filename), "%s%s%s",
+				log_dir_prefix, log_dir_separator, channel);
+		}
+
 		if (!(chan->fileptr = fopen(chan->filename, "a"))) {
 			/* Can't do real logging here since we're called with a lock
 			 * so log to any attached consoles */
@@ -332,12 +362,19 @@ static struct logchannel *make_logchannel(const char *channel, const char *compo
 		}
 		chan->type = LOGTYPE_FILE;
 	}
-	chan->logmask = make_components(chan->components, lineno, &chan->verbosity);
+	make_components(chan);
 
 	return chan;
 }
 
-static void init_logger_chain(int locked, const char *altconf)
+/* \brief Read config, setup channels.
+ * \param locked The logchannels list is locked and this is a reload
+ * \param altconf Alternate configuration file to read.
+ *
+ * \retval 0 Success
+ * \retval -1 No config found or Failed
+ */
+static int init_logger_chain(int locked, const char *altconf)
 {
 	struct logchannel *chan;
 	struct ast_config *cfg;
@@ -348,7 +385,7 @@ static void init_logger_chain(int locked, const char *altconf)
 	display_callids = 1;
 
 	if (!(cfg = ast_config_load2(S_OR(altconf, "logger.conf"), "logger", config_flags)) || cfg == CONFIG_STATUS_FILEINVALID) {
-		return;
+		cfg = NULL;
 	}
 
 	/* delete our list of log channels */
@@ -369,16 +406,13 @@ static void init_logger_chain(int locked, const char *altconf)
 
 	/* If no config file, we're fine, set default options. */
 	if (!cfg) {
-		if (errno) {
-			fprintf(stderr, "Unable to open logger.conf: %s; default settings will be used.\n", strerror(errno));
-		} else {
-			fprintf(stderr, "Errors detected in logger.conf: see above; default settings will be used.\n");
-		}
 		if (!(chan = ast_calloc(1, sizeof(*chan)))) {
-			return;
+			fprintf(stderr, "Failed to initialize default logging\n");
+			return -1;
 		}
 		chan->type = LOGTYPE_CONSOLE;
 		chan->logmask = __LOG_WARNING | __LOG_NOTICE | __LOG_ERROR;
+
 		if (!locked) {
 			AST_RWLIST_WRLOCK(&logchannels);
 		}
@@ -387,7 +421,8 @@ static void init_logger_chain(int locked, const char *altconf)
 		if (!locked) {
 			AST_RWLIST_UNLOCK(&logchannels);
 		}
-		return;
+
+		return -1;
 	}
 
 	if ((s = ast_variable_retrieve(cfg, "general", "appendhostname"))) {
@@ -416,6 +451,9 @@ static void init_logger_chain(int locked, const char *altconf)
 	if ((s = ast_variable_retrieve(cfg, "general", "queue_log_name"))) {
 		ast_copy_string(queue_log_name, s, sizeof(queue_log_name));
 	}
+	if ((s = ast_variable_retrieve(cfg, "general", "queue_log_realtime_use_gmt"))) {
+		logfiles.queue_log_realtime_use_gmt = ast_true(s);
+	}
 	if ((s = ast_variable_retrieve(cfg, "general", "exec_after_rotate"))) {
 		ast_copy_string(exec_after_rotate, s, sizeof(exec_after_rotate));
 	}
@@ -426,6 +464,8 @@ static void init_logger_chain(int locked, const char *altconf)
 			rotatestrategy = ROTATE;
 		} else if (strcasecmp(s, "sequential") == 0) {
 			rotatestrategy = SEQUENTIAL;
+		} else if (strcasecmp(s, "none") == 0) {
+			rotatestrategy = NONE;
 		} else {
 			fprintf(stderr, "Unknown rotatestrategy: %s\n", s);
 		}
@@ -441,7 +481,7 @@ static void init_logger_chain(int locked, const char *altconf)
 	}
 	var = ast_variable_browse(cfg, "logfiles");
 	for (; var; var = var->next) {
-		if (!(chan = make_logchannel(var->name, var->value, var->lineno))) {
+		if (!(chan = make_logchannel(var->name, var->value, var->lineno, 0))) {
 			/* Print error message directly to the consoles since the lock is held
 			 * and we don't want to unlock with the list partially built */
 			ast_console_puts_mutable("ERROR: Unable to create log channel '", __LOG_ERROR);
@@ -463,6 +503,8 @@ static void init_logger_chain(int locked, const char *altconf)
 	}
 
 	ast_config_destroy(cfg);
+
+	return 0;
 }
 
 void ast_child_verbose(int level, const char *fmt, ...)
@@ -523,25 +565,13 @@ void ast_queue_log(const char *queuename, const char *callid, const char *agent,
 		return;
 	}
 	if (!queuelog_init) {
-		AST_RWLIST_WRLOCK(&logchannels);
-		if (!queuelog_init) {
-			/*
-			 * We have delayed initializing the queue logging system so
-			 * preloaded realtime modules can get up.  We must initialize
-			 * now since someone is trying to log something.
-			 */
-			logger_queue_init();
-			queuelog_init = 1;
-			AST_RWLIST_UNLOCK(&logchannels);
-			ast_queue_log("NONE", "NONE", "NONE", "QUEUESTART", "%s", "");
-		} else {
-			AST_RWLIST_UNLOCK(&logchannels);
-		}
+		/* We must initialize now since someone is trying to log something. */
+		logger_queue_start();
 	}
 
 	if (ast_check_realtime("queue_log")) {
 		tv = ast_tvnow();
-		ast_localtime(&tv, &tm, NULL);
+		ast_localtime(&tv, &tm, logfiles.queue_log_realtime_use_gmt ? "GMT" : NULL);
 		ast_strftime(time_str, sizeof(time_str), "%F %T.%6q", &tm);
 		va_start(ap, fmt);
 		vsnprintf(qlog_msg, sizeof(qlog_msg), fmt, ap);
@@ -609,6 +639,9 @@ static int rotate_file(const char *filename)
 	char *suffixes[4] = { "", ".gz", ".bz2", ".Z" };
 
 	switch (rotatestrategy) {
+	case NONE:
+		/* No rotation */
+		break;
 	case SEQUENTIAL:
 		for (x = 0; ; x++) {
 			snprintf(new, sizeof(new), "%s.%d", filename, x);
@@ -809,7 +842,7 @@ static int reload_logger(int rotate, const char *altconf)
 		}
 		if (f->fileptr && (f->fileptr != stdout) && (f->fileptr != stderr)) {
 			int rotate_this = 0;
-			if (ftello(f->fileptr) > 0x40000000) { /* Arbitrarily, 1 GB */
+			if (rotatestrategy != NONE && ftello(f->fileptr) > 0x40000000) { /* Arbitrarily, 1 GB */
 				/* Be more proactive about rotating massive log files */
 				rotate_this = 1;
 			}
@@ -829,10 +862,12 @@ static int reload_logger(int rotate, const char *altconf)
 	if (logfiles.queue_log) {
 		res = logger_queue_restart(queue_rotate);
 		AST_RWLIST_UNLOCK(&logchannels);
+		ast_verb_update();
 		ast_queue_log("NONE", "NONE", "NONE", "CONFIGRELOAD", "%s", "");
 		ast_verb(1, "Asterisk Queue Logger restarted\n");
 	} else {
 		AST_RWLIST_UNLOCK(&logchannels);
+		ast_verb_update();
 	}
 
 	return res;
@@ -884,6 +919,11 @@ static char *handle_logger_rotate(struct ast_cli_entry *e, int cmd, struct ast_c
 		return CLI_FAILURE;
 	}
 	return CLI_SUCCESS;
+}
+
+int ast_logger_rotate()
+{
+	return reload_logger(1, NULL);
 }
 
 static char *handle_logger_set_level(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a)
@@ -967,6 +1007,117 @@ static char *handle_logger_show_channels(struct ast_cli_entry *e, int cmd, struc
 	return CLI_SUCCESS;
 }
 
+static char *handle_logger_add_channel(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a)
+{
+	struct logchannel *chan;
+
+	switch (cmd) {
+	case CLI_INIT:
+		e->command = "logger add channel";
+		e->usage =
+			"Usage: logger add channel <name> <levels>\n"
+			"       Adds a temporary logger channel. This logger channel\n"
+			"       will exist until removed or until Asterisk is restarted.\n"
+			"       <levels> is a comma-separated list of desired logger\n"
+			"       levels such as: verbose,warning,error\n";
+		return NULL;
+	case CLI_GENERATE:
+		return NULL;
+	}
+
+	if (a->argc < 5) {
+		return CLI_SHOWUSAGE;
+	}
+
+	AST_RWLIST_WRLOCK(&logchannels);
+	AST_RWLIST_TRAVERSE(&logchannels, chan, list) {
+		if (!strcmp(chan->filename, a->argv[3])) {
+			break;
+		}
+	}
+
+	if (chan) {
+		AST_RWLIST_UNLOCK(&logchannels);
+		ast_cli(a->fd, "Logger channel '%s' already exists\n", a->argv[3]);
+		return CLI_SUCCESS;
+	}
+
+	chan = make_logchannel(a->argv[3], a->argv[4], 0, 1);
+	if (chan) {
+		AST_RWLIST_INSERT_HEAD(&logchannels, chan, list);
+		global_logmask |= chan->logmask;
+		AST_RWLIST_UNLOCK(&logchannels);
+		return CLI_SUCCESS;
+	}
+
+	AST_RWLIST_UNLOCK(&logchannels);
+	ast_cli(a->fd, "ERROR: Unable to create log channel '%s'\n", a->argv[3]);
+
+	return CLI_FAILURE;
+}
+
+static char *handle_logger_remove_channel(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a)
+{
+	struct logchannel *chan;
+	int gen_count = 0;
+	char *gen_ret = NULL;
+
+	switch (cmd) {
+	case CLI_INIT:
+		e->command = "logger remove channel";
+		e->usage =
+			"Usage: logger remove channel <name>\n"
+			"       Removes a temporary logger channel.\n";
+		return NULL;
+	case CLI_GENERATE:
+		if (a->argc > 4 || (a->argc == 4 && a->pos > 3)) {
+			return NULL;
+		}
+		AST_RWLIST_RDLOCK(&logchannels);
+		AST_RWLIST_TRAVERSE(&logchannels, chan, list) {
+			if (chan->dynamic && (ast_strlen_zero(a->argv[3])
+				|| !strncmp(a->argv[3], chan->filename, strlen(a->argv[3])))) {
+				if (gen_count == a->n) {
+					gen_ret = ast_strdup(chan->filename);
+					break;
+				}
+				gen_count++;
+			}
+		}
+		AST_RWLIST_UNLOCK(&logchannels);
+		return gen_ret;
+	}
+
+	if (a->argc < 4) {
+		return CLI_SHOWUSAGE;
+	}
+
+	AST_RWLIST_WRLOCK(&logchannels);
+	AST_RWLIST_TRAVERSE_SAFE_BEGIN(&logchannels, chan, list) {
+		if (chan->dynamic && !strcmp(chan->filename, a->argv[3])) {
+			AST_RWLIST_REMOVE_CURRENT(list);
+			break;
+		}
+	}
+	AST_RWLIST_TRAVERSE_SAFE_END;
+	AST_RWLIST_UNLOCK(&logchannels);
+
+	if (!chan) {
+		ast_cli(a->fd, "Unable to find dynamic logger channel '%s'\n", a->argv[3]);
+		return CLI_SUCCESS;
+	}
+
+	ast_cli(a->fd, "Removed dynamic logger channel '%s'\n", chan->filename);
+	if (chan->fileptr) {
+		fclose(chan->fileptr);
+		chan->fileptr = NULL;
+	}
+	ast_free(chan);
+	chan = NULL;
+
+	return CLI_SUCCESS;
+}
+
 struct verb {
 	void (*verboser)(const char *string);
 	AST_LIST_ENTRY(verb) list;
@@ -978,7 +1129,9 @@ static struct ast_cli_entry cli_logger[] = {
 	AST_CLI_DEFINE(handle_logger_show_channels, "List configured log channels"),
 	AST_CLI_DEFINE(handle_logger_reload, "Reopens the log files"),
 	AST_CLI_DEFINE(handle_logger_rotate, "Rotates and reopens the log files"),
-	AST_CLI_DEFINE(handle_logger_set_level, "Enables/Disables a specific logging level for this console")
+	AST_CLI_DEFINE(handle_logger_set_level, "Enables/Disables a specific logging level for this console"),
+	AST_CLI_DEFINE(handle_logger_add_channel, "Adds a new logging channel"),
+	AST_CLI_DEFINE(handle_logger_remove_channel, "Removes a logging channel"),
 };
 
 static void _handle_SIGXFSZ(int sig)
@@ -999,7 +1152,7 @@ static void ast_log_vsyslog(struct logmsg *msg)
 	char call_identifier_str[13];
 
 	if (msg->callid) {
-		snprintf(call_identifier_str, sizeof(call_identifier_str), "[C-%08x]", msg->callid->call_identifier);
+		snprintf(call_identifier_str, sizeof(call_identifier_str), "[C-%08x]", (unsigned)msg->callid->call_identifier);
 	} else {
 		call_identifier_str[0] = '\0';
 	}
@@ -1017,11 +1170,33 @@ static void ast_log_vsyslog(struct logmsg *msg)
 	syslog(syslog_level, "%s", buf);
 }
 
-/* These gymnastics are due to platforms which designate char as unsigned by
- * default. Level is the negative character -- offset by 1, because \0 is the
- * EOS delimiter. */
-#define VERBOSE_MAGIC2LEVEL(x) (((char) -*(signed char *) (x)) - 1)
-#define VERBOSE_HASMAGIC(x)	(*(signed char *) (x) < 0)
+static char *logger_strip_verbose_magic(const char *message, int level)
+{
+	const char *begin, *end;
+	char *stripped_message, *dst;
+	char magic = -(level + 1);
+
+	if (!(stripped_message = ast_malloc(strlen(message) + 1))) {
+		return NULL;
+	}
+
+	begin = message;
+	dst = stripped_message;
+	do {
+		end = strchr(begin, magic);
+		if (end) {
+			size_t len = end - begin;
+			memcpy(dst, begin, len);
+			begin = end + 1;
+			dst += len;
+		} else {
+			strcpy(dst, begin); /* safe */
+			break;
+		}
+	} while (1);
+
+	return stripped_message;
+}
 
 /*! \brief Print a normal log message to the channels */
 static void logger_print_normal(struct logmsg *logmsg)
@@ -1029,17 +1204,24 @@ static void logger_print_normal(struct logmsg *logmsg)
 	struct logchannel *chan = NULL;
 	char buf[BUFSIZ];
 	struct verb *v = NULL;
+	char *tmpmsg;
 	int level = 0;
 
 	if (logmsg->level == __LOG_VERBOSE) {
-		char *tmpmsg = ast_strdupa(logmsg->message + 1);
-		level = VERBOSE_MAGIC2LEVEL(logmsg->message);
+
 		/* Iterate through the list of verbosers and pass them the log message string */
 		AST_RWLIST_RDLOCK(&verbosers);
 		AST_RWLIST_TRAVERSE(&verbosers, v, list)
 			v->verboser(logmsg->message);
 		AST_RWLIST_UNLOCK(&verbosers);
-		ast_string_field_set(logmsg, message, tmpmsg);
+
+		level = VERBOSE_MAGIC2LEVEL(logmsg->message);
+
+		tmpmsg = logger_strip_verbose_magic(logmsg->message, level);
+		if (tmpmsg) {
+			ast_string_field_set(logmsg, message, tmpmsg);
+			ast_free(tmpmsg);
+		}
 	}
 
 	AST_RWLIST_RDLOCK(&logchannels);
@@ -1049,7 +1231,7 @@ static void logger_print_normal(struct logmsg *logmsg)
 			char call_identifier_str[13];
 
 			if (logmsg->callid) {
-				snprintf(call_identifier_str, sizeof(call_identifier_str), "[C-%08x]", logmsg->callid->call_identifier);
+				snprintf(call_identifier_str, sizeof(call_identifier_str), "[C-%08x]", (unsigned)logmsg->callid->call_identifier);
 			} else {
 				call_identifier_str[0] = '\0';
 			}
@@ -1059,7 +1241,8 @@ static void logger_print_normal(struct logmsg *logmsg)
 			if (chan->disabled) {
 				continue;
 			}
-			if (logmsg->level == __LOG_VERBOSE && level > chan->verbosity) {
+			if (logmsg->level == __LOG_VERBOSE
+				&& (((chan->verbosity < 0) ? option_verbose : chan->verbosity)) < level) {
 				continue;
 			}
 
@@ -1069,7 +1252,6 @@ static void logger_print_normal(struct logmsg *logmsg)
 			/* Console channels */
 			} else if (chan->type == LOGTYPE_CONSOLE && (chan->logmask & (1 << logmsg->level))) {
 				char linestr[128];
-				char tmp1[80], tmp2[80], tmp3[80], tmp4[80];
 
 				/* If the level is verbose, then skip it */
 				if (logmsg->level == __LOG_VERBOSE)
@@ -1078,14 +1260,14 @@ static void logger_print_normal(struct logmsg *logmsg)
 				/* Turn the numerical line number into a string */
 				snprintf(linestr, sizeof(linestr), "%d", logmsg->line);
 				/* Build string to print out */
-				snprintf(buf, sizeof(buf), "[%s] %s[%d]%s: %s:%s %s: %s",
+				snprintf(buf, sizeof(buf), "[%s] " COLORIZE_FMT "[%d]%s: " COLORIZE_FMT ":" COLORIZE_FMT " " COLORIZE_FMT ": %s",
 					 logmsg->date,
-					 term_color(tmp1, logmsg->level_name, colors[logmsg->level], 0, sizeof(tmp1)),
+					 COLORIZE(colors[logmsg->level], 0, logmsg->level_name),
 					 logmsg->lwp,
 					 call_identifier_str,
-					 term_color(tmp2, logmsg->file, COLOR_BRWHITE, 0, sizeof(tmp2)),
-					 term_color(tmp3, linestr, COLOR_BRWHITE, 0, sizeof(tmp3)),
-					 term_color(tmp4, logmsg->function, COLOR_BRWHITE, 0, sizeof(tmp4)),
+					 COLORIZE(COLOR_BRWHITE, 0, logmsg->file),
+					 COLORIZE(COLOR_BRWHITE, 0, linestr),
+					 COLORIZE(COLOR_BRWHITE, 0, logmsg->function),
 					 logmsg->message);
 				/* Print out */
 				ast_console_puts_mutable(buf, logmsg->level);
@@ -1208,8 +1390,33 @@ static void logger_queue_init(void)
 	}
 }
 
+/*!
+ * \brief Start the ast_queue_log() logger.
+ *
+ * \note Called when the system is fully booted after startup
+ * so preloaded realtime modules can get up.
+ *
+ * \return Nothing
+ */
+void logger_queue_start(void)
+{
+	/* Must not be called before the logger is initialized. */
+	ast_assert(logger_initialized);
+
+	AST_RWLIST_WRLOCK(&logchannels);
+	if (!queuelog_init) {
+		logger_queue_init();
+		queuelog_init = 1;
+		AST_RWLIST_UNLOCK(&logchannels);
+		ast_queue_log("NONE", "NONE", "NONE", "QUEUESTART", "%s", "");
+	} else {
+		AST_RWLIST_UNLOCK(&logchannels);
+	}
+}
+
 int init_logger(void)
 {
+	int res;
 	/* auto rotate if sig SIGXFSZ comes a-knockin */
 	sigaction(SIGXFSZ, &handle_SIGXFSZ, NULL);
 
@@ -1235,8 +1442,12 @@ int init_logger(void)
 	ast_mkdir(ast_config_AST_LOG_DIR, 0777);
 
 	/* create log channels */
-	init_logger_chain(0 /* locked */, NULL);
+	res = init_logger_chain(0 /* locked */, NULL);
+	ast_verb_update();
 	logger_initialized = 1;
+	if (res) {
+		ast_log(LOG_ERROR, "Errors detected in logger.conf.  Default console logging is being used.\n");
+	}
 
 	return 0;
 }
@@ -1287,14 +1498,14 @@ void close_logger(void)
 
 void ast_callid_strnprint(char *buffer, size_t buffer_size, struct ast_callid *callid)
 {
-	snprintf(buffer, buffer_size, "[C-%08x]", callid->call_identifier);
+	snprintf(buffer, buffer_size, "[C-%08x]", (unsigned)callid->call_identifier);
 }
 
 struct ast_callid *ast_create_callid(void)
 {
 	struct ast_callid *call;
 
-	call = ao2_alloc_options(sizeof(struct ast_callid), NULL, AO2_ALLOC_OPT_LOCK_NOLOCK);
+	call = ao2_alloc_options(sizeof(*call), NULL, AO2_ALLOC_OPT_LOCK_NOLOCK);
 	if (!call) {
 		ast_log(LOG_ERROR, "Could not allocate callid struct.\n");
 		return NULL;
@@ -1302,7 +1513,7 @@ struct ast_callid *ast_create_callid(void)
 
 	call->call_identifier = ast_atomic_fetchadd_int(&next_unique_callid, +1);
 #ifdef TEST_FRAMEWORK
-	ast_debug(3, "CALL_ID [C-%08x] created by thread.\n", call->call_identifier);
+	ast_debug(3, "CALL_ID [C-%08x] created by thread.\n", (unsigned)call->call_identifier);
 #endif
 	return call;
 }
@@ -1310,7 +1521,8 @@ struct ast_callid *ast_create_callid(void)
 struct ast_callid *ast_read_threadstorage_callid(void)
 {
 	struct ast_callid **callid;
-	callid = ast_threadstorage_get(&unique_callid, sizeof(struct ast_callid **));
+
+	callid = ast_threadstorage_get(&unique_callid, sizeof(*callid));
 	if (callid && *callid) {
 		ast_callid_ref(*callid);
 		return *callid;
@@ -1322,8 +1534,7 @@ struct ast_callid *ast_read_threadstorage_callid(void)
 
 int ast_callid_threadassoc_change(struct ast_callid *callid)
 {
-	struct ast_callid **id =
-		ast_threadstorage_get(&unique_callid, sizeof(struct ast_callid **));
+	struct ast_callid **id = ast_threadstorage_get(&unique_callid, sizeof(*id));
 
 	if (!id) {
 		ast_log(LOG_ERROR, "Failed to allocate thread storage.\n");
@@ -1332,7 +1543,7 @@ int ast_callid_threadassoc_change(struct ast_callid *callid)
 
 	if (*id && (*id != callid)) {
 #ifdef TEST_FRAMEWORK
-		ast_debug(3, "CALL_ID [C-%08x] being removed from thread.\n", (*id)->call_identifier);
+		ast_debug(3, "CALL_ID [C-%08x] being removed from thread.\n", (unsigned)(*id)->call_identifier);
 #endif
 		*id = ast_callid_unref(*id);
 		*id = NULL;
@@ -1343,7 +1554,7 @@ int ast_callid_threadassoc_change(struct ast_callid *callid)
 		ast_callid_ref(callid);
 		*id = callid;
 #ifdef TEST_FRAMEWORK
-		ast_debug(3, "CALL_ID [C-%08x] bound to thread.\n", callid->call_identifier);
+		ast_debug(3, "CALL_ID [C-%08x] bound to thread.\n", (unsigned)callid->call_identifier);
 #endif
 	}
 
@@ -1353,7 +1564,8 @@ int ast_callid_threadassoc_change(struct ast_callid *callid)
 int ast_callid_threadassoc_add(struct ast_callid *callid)
 {
 	struct ast_callid **pointing;
-	pointing = ast_threadstorage_get(&unique_callid, sizeof(struct ast_callid **));
+
+	pointing = ast_threadstorage_get(&unique_callid, sizeof(*pointing));
 	if (!(pointing)) {
 		ast_log(LOG_ERROR, "Failed to allocate thread storage.\n");
 		return -1;
@@ -1364,7 +1576,7 @@ int ast_callid_threadassoc_add(struct ast_callid *callid)
 		ast_callid_ref(callid);
 		*pointing = callid;
 #ifdef TEST_FRAMEWORK
-		ast_debug(3, "CALL_ID [C-%08x] bound to thread.\n", callid->call_identifier);
+		ast_debug(3, "CALL_ID [C-%08x] bound to thread.\n", (unsigned)callid->call_identifier);
 #endif
 	} else {
 		ast_log(LOG_WARNING, "Attempted to ast_callid_threadassoc_add on thread already associated with a callid.\n");
@@ -1374,10 +1586,11 @@ int ast_callid_threadassoc_add(struct ast_callid *callid)
 	return 0;
 }
 
-int ast_callid_threadassoc_remove()
+int ast_callid_threadassoc_remove(void)
 {
 	struct ast_callid **pointing;
-	pointing = ast_threadstorage_get(&unique_callid, sizeof(struct ast_callid **));
+
+	pointing = ast_threadstorage_get(&unique_callid, sizeof(*pointing));
 	if (!(pointing)) {
 		ast_log(LOG_ERROR, "Failed to allocate thread storage.\n");
 		return -1;
@@ -1388,7 +1601,7 @@ int ast_callid_threadassoc_remove()
 		return -1;
 	} else {
 #ifdef TEST_FRAMEWORK
-		ast_debug(3, "Call_ID [C-%08x] being removed from thread.\n", (*pointing)->call_identifier);
+		ast_debug(3, "CALL_ID [C-%08x] being removed from thread.\n", (unsigned)(*pointing)->call_identifier);
 #endif
 		*pointing = ast_callid_unref(*pointing);
 		return 0;
@@ -1561,197 +1774,8 @@ void ast_log_callid(int level, const char *file, int line, const char *function,
 	va_end(ap);
 }
 
-#ifdef HAVE_BKTR
 
-struct ast_bt *ast_bt_create(void)
-{
-	struct ast_bt *bt = ast_calloc(1, sizeof(*bt));
-	if (!bt) {
-		ast_log(LOG_ERROR, "Unable to allocate memory for backtrace structure!\n");
-		return NULL;
-	}
-
-	bt->alloced = 1;
-
-	ast_bt_get_addresses(bt);
-
-	return bt;
-}
-
-int ast_bt_get_addresses(struct ast_bt *bt)
-{
-	bt->num_frames = backtrace(bt->addresses, AST_MAX_BT_FRAMES);
-
-	return 0;
-}
-
-void *ast_bt_destroy(struct ast_bt *bt)
-{
-	if (bt->alloced) {
-		ast_free(bt);
-	}
-
-	return NULL;
-}
-
-char **ast_bt_get_symbols(void **addresses, size_t num_frames)
-{
-	char **strings;
-#if defined(BETTER_BACKTRACES)
-	int stackfr;
-	bfd *bfdobj;           /* bfd.h */
-	Dl_info dli;           /* dlfcn.h */
-	long allocsize;
-	asymbol **syms = NULL; /* bfd.h */
-	bfd_vma offset;        /* bfd.h */
-	const char *lastslash;
-	asection *section;
-	const char *file, *func;
-	unsigned int line;
-	char address_str[128];
-	char msg[1024];
-	size_t strings_size;
-	size_t *eachlen;
-#endif
-
-#if defined(BETTER_BACKTRACES)
-	strings_size = num_frames * sizeof(*strings);
-
-	eachlen = ast_calloc(num_frames, sizeof(*eachlen));
-	strings = ast_std_calloc(num_frames, sizeof(*strings));
-	if (!eachlen || !strings) {
-		ast_free(eachlen);
-		ast_std_free(strings);
-		return NULL;
-	}
-
-	for (stackfr = 0; stackfr < num_frames; stackfr++) {
-		int found = 0, symbolcount;
-
-		msg[0] = '\0';
-
-		if (!dladdr(addresses[stackfr], &dli)) {
-			continue;
-		}
-
-		if (strcmp(dli.dli_fname, "asterisk") == 0) {
-			char asteriskpath[256];
-
-			if (!(dli.dli_fname = ast_utils_which("asterisk", asteriskpath, sizeof(asteriskpath)))) {
-				/* This will fail to find symbols */
-				ast_debug(1, "Failed to find asterisk binary for debug symbols.\n");
-				dli.dli_fname = "asterisk";
-			}
-		}
-
-		lastslash = strrchr(dli.dli_fname, '/');
-		if ((bfdobj = bfd_openr(dli.dli_fname, NULL)) &&
-			bfd_check_format(bfdobj, bfd_object) &&
-			(allocsize = bfd_get_symtab_upper_bound(bfdobj)) > 0 &&
-			(syms = ast_malloc(allocsize)) &&
-			(symbolcount = bfd_canonicalize_symtab(bfdobj, syms))) {
-
-			if (bfdobj->flags & DYNAMIC) {
-				offset = addresses[stackfr] - dli.dli_fbase;
-			} else {
-				offset = addresses[stackfr] - (void *) 0;
-			}
-
-			for (section = bfdobj->sections; section; section = section->next) {
-				if (!bfd_get_section_flags(bfdobj, section) & SEC_ALLOC ||
-					section->vma > offset ||
-					section->size + section->vma < offset) {
-					continue;
-				}
-
-				if (!bfd_find_nearest_line(bfdobj, section, syms, offset - section->vma, &file, &func, &line)) {
-					continue;
-				}
-
-				/* file can possibly be null even with a success result from bfd_find_nearest_line */
-				file = file ? file : "";
-
-				/* Stack trace output */
-				found++;
-				if ((lastslash = strrchr(file, '/'))) {
-					const char *prevslash;
-
-					for (prevslash = lastslash - 1; *prevslash != '/' && prevslash >= file; prevslash--) {
-					}
-					if (prevslash >= file) {
-						lastslash = prevslash;
-					}
-				}
-				if (dli.dli_saddr == NULL) {
-					address_str[0] = '\0';
-				} else {
-					snprintf(address_str, sizeof(address_str), " (%p+%lX)",
-						dli.dli_saddr,
-						(unsigned long) (addresses[stackfr] - dli.dli_saddr));
-				}
-				snprintf(msg, sizeof(msg), "%s:%u %s()%s",
-					lastslash ? lastslash + 1 : file, line,
-					S_OR(func, "???"),
-					address_str);
-
-				break; /* out of section iteration */
-			}
-		}
-		if (bfdobj) {
-			bfd_close(bfdobj);
-			ast_free(syms);
-		}
-
-		/* Default output, if we cannot find the information within BFD */
-		if (!found) {
-			if (dli.dli_saddr == NULL) {
-				address_str[0] = '\0';
-			} else {
-				snprintf(address_str, sizeof(address_str), " (%p+%lX)",
-					dli.dli_saddr,
-					(unsigned long) (addresses[stackfr] - dli.dli_saddr));
-			}
-			snprintf(msg, sizeof(msg), "%s %s()%s",
-				lastslash ? lastslash + 1 : dli.dli_fname,
-				S_OR(dli.dli_sname, "<unknown>"),
-				address_str);
-		}
-
-		if (!ast_strlen_zero(msg)) {
-			char **tmp;
-
-			eachlen[stackfr] = strlen(msg) + 1;
-			if (!(tmp = ast_std_realloc(strings, strings_size + eachlen[stackfr]))) {
-				ast_std_free(strings);
-				strings = NULL;
-				break; /* out of stack frame iteration */
-			}
-			strings = tmp;
-			strings[stackfr] = (char *) strings + strings_size;
-			strcpy(strings[stackfr], msg);/* Safe since we just allocated the room. */
-			strings_size += eachlen[stackfr];
-		}
-	}
-
-	if (strings) {
-		/* Recalculate the offset pointers because of the reallocs. */
-		strings[0] = (char *) strings + num_frames * sizeof(*strings);
-		for (stackfr = 1; stackfr < num_frames; stackfr++) {
-			strings[stackfr] = strings[stackfr - 1] + eachlen[stackfr - 1];
-		}
-	}
-	ast_free(eachlen);
-
-#else /* !defined(BETTER_BACKTRACES) */
-
-	strings = backtrace_symbols(addresses, num_frames);
-#endif /* defined(BETTER_BACKTRACES) */
-	return strings;
-}
-
-#endif /* HAVE_BKTR */
-
-void ast_backtrace(void)
+void ast_log_backtrace(void)
 {
 #ifdef HAVE_BKTR
 	struct ast_bt *bt;
@@ -1764,14 +1788,14 @@ void ast_backtrace(void)
 	}
 
 	if ((strings = ast_bt_get_symbols(bt->addresses, bt->num_frames))) {
-		ast_debug(1, "Got %d backtrace record%c\n", bt->num_frames, bt->num_frames != 1 ? 's' : ' ');
+		ast_verbose("Got %d backtrace record%c\n", bt->num_frames, bt->num_frames != 1 ? 's' : ' ');
 		for (i = 3; i < bt->num_frames - 2; i++) {
-			ast_debug(1, "#%d: [%p] %s\n", i - 3, bt->addresses[i], strings[i]);
+			ast_verbose("#%d: [%p] %s\n", i - 3, bt->addresses[i], strings[i]);
 		}
 
 		ast_std_free(strings);
 	} else {
-		ast_debug(1, "Could not allocate memory for backtrace\n");
+		ast_verbose("Could not allocate memory for backtrace\n");
 	}
 	ast_bt_destroy(bt);
 #else
@@ -1782,9 +1806,8 @@ void ast_backtrace(void)
 void __ast_verbose_ap(const char *file, int line, const char *func, int level, struct ast_callid *callid, const char *fmt, va_list ap)
 {
 	const char *p;
-	struct ast_str *prefixed, *buf = NULL;
+	struct ast_str *prefixed, *buf;
 	int res = 0;
-	const char *prefix = level >= 4 ? VERBOSE_PREFIX_4 : level == 3 ? VERBOSE_PREFIX_3 : level == 2 ? VERBOSE_PREFIX_2 : level == 1 ? VERBOSE_PREFIX_1 : "";
 	signed char magic = level > 9 ? -10 : -level - 1; /* 0 => -1, 1 => -2, etc.  Can't pass NUL, as it is EOS-delimiter */
 
 	/* For compatibility with modules still calling ast_verbose() directly instead of using ast_verb() */
@@ -1803,18 +1826,18 @@ void __ast_verbose_ap(const char *file, int line, const char *func, int level, s
 	}
 
 	if (!(prefixed = ast_str_thread_get(&verbose_buf, VERBOSE_BUF_INIT_SIZE)) ||
-	    !(buf = ast_str_create(VERBOSE_BUF_INIT_SIZE))) {
+	    !(buf = ast_str_thread_get(&verbose_build_buf, VERBOSE_BUF_INIT_SIZE))) {
 		return;
 	}
 
 	res = ast_str_set_va(&buf, 0, fmt, ap);
 	/* If the build failed then we can drop this allocated message */
 	if (res == AST_DYNSTR_BUILD_FAILED) {
-		ast_free(buf);
 		return;
 	}
 
 	ast_str_reset(prefixed);
+
 	/* for every newline found in the buffer add verbose prefix data */
 	fmt = ast_str_buffer(buf);
 	do {
@@ -1823,22 +1846,12 @@ void __ast_verbose_ap(const char *file, int line, const char *func, int level, s
 		}
 		++p;
 
-		if (ast_opt_timestamp) {
-			struct ast_tm tm;
-			char date[40];
-			struct timeval now = ast_tvnow();
-			ast_localtime(&now, &tm, NULL);
-			ast_strftime(date, sizeof(date), dateformat, &tm);
-			ast_str_append(&prefixed, 0, "%c[%s] %s", (char) magic, date, prefix);
-		} else {
-			ast_str_append(&prefixed, 0, "%c%s", (char) magic, prefix);
-		}
+		ast_str_append(&prefixed, 0, "%c", (char)magic);
 		ast_str_append_substr(&prefixed, 0, fmt, p - fmt);
 		fmt = p;
 	} while (p && *p);
 
 	ast_log_callid(__LOG_VERBOSE, file, line, func, callid, "%s", ast_str_buffer(prefixed));
-	ast_free(buf);
 }
 
 void __ast_verbose(const char *file, int line, const char *func, int level, const char *fmt, ...)
@@ -1884,6 +1897,148 @@ void ast_verbose(const char *fmt, ...)
 	}
 }
 
+/*! Console verbosity level node. */
+struct verb_console {
+	/*! List node link */
+	AST_LIST_ENTRY(verb_console) node;
+	/*! Console verbosity level. */
+	int *level;
+};
+
+/*! Registered console verbosity levels */
+static AST_RWLIST_HEAD_STATIC(verb_consoles, verb_console);
+
+/*! ast_verb_update() reentrancy protection lock. */
+AST_MUTEX_DEFINE_STATIC(verb_update_lock);
+
+void ast_verb_update(void)
+{
+	struct logchannel *log;
+	struct verb_console *console;
+	int verb_level;
+
+	ast_mutex_lock(&verb_update_lock);
+
+	AST_RWLIST_RDLOCK(&verb_consoles);
+
+	/* Default to the root console verbosity. */
+	verb_level = option_verbose;
+
+	/* Determine max remote console level. */
+	AST_LIST_TRAVERSE(&verb_consoles, console, node) {
+		if (verb_level < *console->level) {
+			verb_level = *console->level;
+		}
+	}
+	AST_RWLIST_UNLOCK(&verb_consoles);
+
+	/* Determine max logger channel level. */
+	AST_RWLIST_RDLOCK(&logchannels);
+	AST_RWLIST_TRAVERSE(&logchannels, log, list) {
+		if (verb_level < log->verbosity) {
+			verb_level = log->verbosity;
+		}
+	}
+	AST_RWLIST_UNLOCK(&logchannels);
+
+	ast_verb_sys_level = verb_level;
+
+	ast_mutex_unlock(&verb_update_lock);
+}
+
+/*!
+ * \internal
+ * \brief Unregister a console verbose level.
+ *
+ * \param console Which console to unregister.
+ *
+ * \return Nothing
+ */
+static void verb_console_unregister(struct verb_console *console)
+{
+	AST_RWLIST_WRLOCK(&verb_consoles);
+	console = AST_RWLIST_REMOVE(&verb_consoles, console, node);
+	AST_RWLIST_UNLOCK(&verb_consoles);
+	if (console) {
+		ast_verb_update();
+	}
+}
+
+static void verb_console_free(void *v_console)
+{
+	struct verb_console *console = v_console;
+
+	verb_console_unregister(console);
+	ast_free(console);
+}
+
+/*! Thread specific console verbosity level node. */
+AST_THREADSTORAGE_CUSTOM(my_verb_console, NULL, verb_console_free);
+
+void ast_verb_console_register(int *level)
+{
+	struct verb_console *console;
+
+	console = ast_threadstorage_get(&my_verb_console, sizeof(*console));
+	if (!console || !level) {
+		return;
+	}
+	console->level = level;
+
+	AST_RWLIST_WRLOCK(&verb_consoles);
+	AST_RWLIST_INSERT_HEAD(&verb_consoles, console, node);
+	AST_RWLIST_UNLOCK(&verb_consoles);
+	ast_verb_update();
+}
+
+void ast_verb_console_unregister(void)
+{
+	struct verb_console *console;
+
+	console = ast_threadstorage_get(&my_verb_console, sizeof(*console));
+	if (!console) {
+		return;
+	}
+	verb_console_unregister(console);
+}
+
+int ast_verb_console_get(void)
+{
+	struct verb_console *console;
+	int verb_level;
+
+	console = ast_threadstorage_get(&my_verb_console, sizeof(*console));
+	AST_RWLIST_RDLOCK(&verb_consoles);
+	if (!console) {
+		verb_level = 0;
+	} else if (console->level) {
+		verb_level = *console->level;
+	} else {
+		verb_level = option_verbose;
+	}
+	AST_RWLIST_UNLOCK(&verb_consoles);
+	return verb_level;
+}
+
+void ast_verb_console_set(int verb_level)
+{
+	struct verb_console *console;
+
+	console = ast_threadstorage_get(&my_verb_console, sizeof(*console));
+	if (!console) {
+		return;
+	}
+
+	AST_RWLIST_WRLOCK(&verb_consoles);
+	if (console->level) {
+		*console->level = verb_level;
+	} else {
+		option_verbose = verb_level;
+	}
+	AST_RWLIST_UNLOCK(&verb_consoles);
+	ast_verb_update();
+}
+
 int ast_register_verbose(void (*v)(const char *string))
 {
 	struct verb *verb;
@@ -1927,7 +2082,7 @@ static void update_logchannels(void)
 	global_logmask = 0;
 
 	AST_RWLIST_TRAVERSE(&logchannels, cur, list) {
-		cur->logmask = make_components(cur->components, cur->lineno, &cur->verbosity);
+		make_components(cur);
 		global_logmask |= cur->logmask;
 	}
 
@@ -1970,7 +2125,7 @@ int ast_logger_register_level(const char *name)
 
 	AST_RWLIST_UNLOCK(&logchannels);
 
-	ast_debug(1, "Registered dynamic logger level '%s' with index %d.\n", name, available);
+	ast_debug(1, "Registered dynamic logger level '%s' with index %u.\n", name, available);
 
 	update_logchannels();
 
@@ -2008,10 +2163,16 @@ void ast_logger_unregister_level(const char *name)
 		levels[x] = NULL;
 		AST_RWLIST_UNLOCK(&logchannels);
 
-		ast_debug(1, "Unregistered dynamic logger level '%s' with index %d.\n", name, x);
+		ast_debug(1, "Unregistered dynamic logger level '%s' with index %u.\n", name, x);
 
 		update_logchannels();
 	} else {
 		AST_RWLIST_UNLOCK(&logchannels);
 	}
 }
+
+const char *ast_logger_get_dateformat(void)
+{
+	return dateformat;
+}
+

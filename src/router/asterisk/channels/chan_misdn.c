@@ -24,9 +24,17 @@
  *
  * \author Christian Richter <crich@beronet.com>
  *
- * \extref MISDN http://www.misdn.org/
+ * MISDN http://www.misdn.org/
  *
  * \ingroup channel_drivers
+ */
+
+/*! \li \ref chan_misdn.c uses the configuration file \ref misdn.conf
+ * \addtogroup configuration_file
+ */
+
+/*! \page misdn.conf misdn.conf
+ * \verbinclude misdn.conf.sample
  */
 
 /*!
@@ -49,6 +57,21 @@
 /* Define to enable cli commands to generate canned CCBS messages. */
 // #define CCBS_TEST_MESSAGES	1
 
+/*
+ * XXX The mISDN channel driver needs its native bridge code
+ * converted to the new bridge technology scheme.  The
+ * chan_dahdi native bridge code can be used as an example.  It
+ * is unlikely that this will ever get done.  Support for this
+ * channel driver is dwindling because the supported version of
+ * mISDN does not support newer kernels.
+ *
+ * Without native bridge support, the following config file
+ * parameters have no effect: bridging.
+ *
+ * The existing native bridge code is marked with the
+ * mISDN_NATIVE_BRIDGING conditional.
+ */
+
 /*** MODULEINFO
 	<depend>isdnnet</depend>
 	<depend>misdn</depend>
@@ -58,7 +81,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 398236 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 430998 $")
 
 #include <pthread.h>
 #include <sys/socket.h>
@@ -94,6 +117,10 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 398236 $")
 #include "asterisk/causes.h"
 #include "asterisk/format.h"
 #include "asterisk/format_cap.h"
+#include "asterisk/features_config.h"
+#include "asterisk/bridge.h"
+#include "asterisk/pickup.h"
+#include "asterisk/format_cache.h"
 
 #include "chan_misdn_config.h"
 #include "isdn_lib.h"
@@ -649,7 +676,7 @@ static int *misdn_ports;
 static void chan_misdn_log(int level, int port, char *tmpl, ...)
 	__attribute__((format(printf, 3, 4)));
 
-static struct ast_channel *misdn_new(struct chan_list *cl, int state,  char *exten, char *callerid, struct ast_format_cap *cap, const char *linkedid, int port, int c);
+static struct ast_channel *misdn_new(struct chan_list *cl, int state,  char *exten, char *callerid, struct ast_format_cap *cap, const struct ast_assigned_ids *assignedids, const struct ast_channel *requestor, int port, int c);
 static void send_digit_to_chan(struct chan_list *cl, char digit);
 
 static int pbx_start_chan(struct chan_list *ch);
@@ -664,9 +691,6 @@ static int pbx_start_chan(struct chan_list *ch);
 static const char misdn_type[] = "mISDN";
 
 static int tracing = 0;
-
-/*! \brief Only alaw and mulaw is allowed for now */
-static struct ast_format prefformat; /*  AST_FORMAT_SLINEAR ;  AST_FORMAT_ULAW | */
 
 static int *misdn_debug;
 static int *misdn_debug_only;
@@ -739,6 +763,7 @@ static int misdn_chan_is_valid(struct chan_list *ch)
 	return 0;
 }
 
+#if defined(mISDN_NATIVE_BRIDGING)
 /*! Returns a reference to the found chan_list. */
 static struct chan_list *get_chan_by_ast(struct ast_channel *ast)
 {
@@ -756,6 +781,7 @@ static struct chan_list *get_chan_by_ast(struct ast_channel *ast)
 
 	return NULL;
 }
+#endif	/* defined(mISDN_NATIVE_BRIDGING) */
 
 /*! Returns a reference to the found chan_list. */
 static struct chan_list *get_chan_by_ast_name(const char *name)
@@ -3432,6 +3458,7 @@ static void misdn_add_number_prefix(int port, enum mISDN_NUMBER_TYPE number_type
 
 static void export_aoc_vars(int originator, struct ast_channel *ast, struct misdn_bchannel *bc)
 {
+	RAII_VAR(struct ast_channel *, chan, NULL, ast_channel_cleanup);
 	char buf[128];
 
 	if (!bc->AOCD_need_export || !ast) {
@@ -3439,46 +3466,48 @@ static void export_aoc_vars(int originator, struct ast_channel *ast, struct misd
 	}
 
 	if (originator == ORG_AST) {
-		ast = ast_bridged_channel(ast);
-		if (!ast) {
+		chan = ast_channel_bridge_peer(ast);
+		if (!chan) {
 			return;
 		}
+	} else {
+		chan = ast_channel_ref(ast);
 	}
 
 	switch (bc->AOCDtype) {
 	case Fac_AOCDCurrency:
-		pbx_builtin_setvar_helper(ast, "AOCD_Type", "currency");
+		pbx_builtin_setvar_helper(chan, "AOCD_Type", "currency");
 		if (bc->AOCD.currency.chargeNotAvailable) {
-			pbx_builtin_setvar_helper(ast, "AOCD_ChargeAvailable", "no");
+			pbx_builtin_setvar_helper(chan, "AOCD_ChargeAvailable", "no");
 		} else {
-			pbx_builtin_setvar_helper(ast, "AOCD_ChargeAvailable", "yes");
+			pbx_builtin_setvar_helper(chan, "AOCD_ChargeAvailable", "yes");
 			if (bc->AOCD.currency.freeOfCharge) {
-				pbx_builtin_setvar_helper(ast, "AOCD_FreeOfCharge", "yes");
+				pbx_builtin_setvar_helper(chan, "AOCD_FreeOfCharge", "yes");
 			} else {
-				pbx_builtin_setvar_helper(ast, "AOCD_FreeOfCharge", "no");
+				pbx_builtin_setvar_helper(chan, "AOCD_FreeOfCharge", "no");
 				if (snprintf(buf, sizeof(buf), "%d %s", bc->AOCD.currency.currencyAmount * bc->AOCD.currency.multiplier, bc->AOCD.currency.currency) < sizeof(buf)) {
-					pbx_builtin_setvar_helper(ast, "AOCD_Amount", buf);
+					pbx_builtin_setvar_helper(chan, "AOCD_Amount", buf);
 					if (bc->AOCD.currency.billingId >= 0 && snprintf(buf, sizeof(buf), "%d", bc->AOCD.currency.billingId) < sizeof(buf)) {
-						pbx_builtin_setvar_helper(ast, "AOCD_BillingId", buf);
+						pbx_builtin_setvar_helper(chan, "AOCD_BillingId", buf);
 					}
 				}
 			}
 		}
 		break;
 	case Fac_AOCDChargingUnit:
-		pbx_builtin_setvar_helper(ast, "AOCD_Type", "charging_unit");
+		pbx_builtin_setvar_helper(chan, "AOCD_Type", "charging_unit");
 		if (bc->AOCD.chargingUnit.chargeNotAvailable) {
-			pbx_builtin_setvar_helper(ast, "AOCD_ChargeAvailable", "no");
+			pbx_builtin_setvar_helper(chan, "AOCD_ChargeAvailable", "no");
 		} else {
-			pbx_builtin_setvar_helper(ast, "AOCD_ChargeAvailable", "yes");
+			pbx_builtin_setvar_helper(chan, "AOCD_ChargeAvailable", "yes");
 			if (bc->AOCD.chargingUnit.freeOfCharge) {
-				pbx_builtin_setvar_helper(ast, "AOCD_FreeOfCharge", "yes");
+				pbx_builtin_setvar_helper(chan, "AOCD_FreeOfCharge", "yes");
 			} else {
-				pbx_builtin_setvar_helper(ast, "AOCD_FreeOfCharge", "no");
+				pbx_builtin_setvar_helper(chan, "AOCD_FreeOfCharge", "no");
 				if (snprintf(buf, sizeof(buf), "%d", bc->AOCD.chargingUnit.recordedUnits) < sizeof(buf)) {
-					pbx_builtin_setvar_helper(ast, "AOCD_RecordedUnits", buf);
+					pbx_builtin_setvar_helper(chan, "AOCD_RecordedUnits", buf);
 					if (bc->AOCD.chargingUnit.billingId >= 0 && snprintf(buf, sizeof(buf), "%d", bc->AOCD.chargingUnit.billingId) < sizeof(buf)) {
-						pbx_builtin_setvar_helper(ast, "AOCD_BillingId", buf);
+						pbx_builtin_setvar_helper(chan, "AOCD_BillingId", buf);
 					}
 				}
 			}
@@ -5923,7 +5952,9 @@ static int read_config(struct chan_list *ch)
 	chan_misdn_log(1, port, "read_config: Getting Config\n");
 
 	misdn_cfg_get(port, MISDN_CFG_LANGUAGE, lang, sizeof(lang));
+	ast_channel_lock(ast);
 	ast_channel_language_set(ast, lang);
+	ast_channel_unlock(ast);
 
 	misdn_cfg_get(port, MISDN_CFG_MUSICCLASS, ch->mohinterpret, sizeof(ch->mohinterpret));
 
@@ -5969,7 +6000,9 @@ static int read_config(struct chan_list *ch)
 
 	misdn_cfg_get(bc->port, MISDN_CFG_CONTEXT, ch->context, sizeof(ch->context));
 
+	ast_channel_lock(ast);
 	ast_channel_context_set(ast, ch->context);
+	ast_channel_unlock(ast);
 
 #ifdef MISDN_1_2
 	update_pipeline_config(bc);
@@ -5986,8 +6019,10 @@ static int read_config(struct chan_list *ch)
 	misdn_cfg_get(port, MISDN_CFG_PICKUPGROUP, &pg, sizeof(pg));
 	misdn_cfg_get(port, MISDN_CFG_CALLGROUP, &cg, sizeof(cg));
 	chan_misdn_log(5, port, " --> * CallGrp:%s PickupGrp:%s\n", ast_print_group(buf, sizeof(buf), cg), ast_print_group(buf2, sizeof(buf2), pg));
+	ast_channel_lock(ast);
 	ast_channel_pickupgroup_set(ast, pg);
 	ast_channel_callgroup_set(ast, cg);
+	ast_channel_unlock(ast);
 
 	misdn_cfg_get(port, MISDN_CFG_NAMEDPICKUPGROUP, &npg, sizeof(npg));
 	misdn_cfg_get(port, MISDN_CFG_NAMEDCALLGROUP, &ncg, sizeof(ncg));
@@ -6000,8 +6035,10 @@ static int read_config(struct chan_list *ch)
 		ast_free(tmp_str);
 	}
 
+	ast_channel_lock(ast);
 	ast_channel_named_pickupgroups_set(ast, npg);
 	ast_channel_named_callgroups_set(ast, ncg);
+	ast_channel_unlock(ast);
 
 	if (ch->originator == ORG_AST) {
 		char callerid[BUFFERSIZE + 1];
@@ -6055,7 +6092,9 @@ static int read_config(struct chan_list *ch)
 		/* Add configured prefix to dialed.number */
 		misdn_add_number_prefix(bc->port, bc->dialed.number_type, bc->dialed.number, sizeof(bc->dialed.number));
 
+		ast_channel_lock(ast);
 		ast_channel_exten_set(ast, bc->dialed.number);
+		ast_channel_unlock(ast);
 
 		misdn_cfg_get(bc->port, MISDN_CFG_OVERLAP_DIAL, &ch->overlap_dial, sizeof(ch->overlap_dial));
 		ast_mutex_init(&ch->overlap_tv_lock);
@@ -6382,7 +6421,7 @@ static void misdn_copy_redirecting_from_ast(struct misdn_bchannel *bc, struct as
 		bc->redirecting.to.number_plan = NUMPLAN_UNKNOWN;
 	}
 
-	bc->redirecting.reason = ast_to_misdn_reason(ast_channel_redirecting(ast)->reason);
+	bc->redirecting.reason = ast_to_misdn_reason(ast_channel_redirecting(ast)->reason.code);
 	bc->redirecting.count = ast_channel_redirecting(ast)->count;
 }
 
@@ -6426,7 +6465,7 @@ static void misdn_copy_redirecting_to_ast(struct ast_channel *ast, const struct 
 		| misdn_to_ast_screen(redirect->to.screening);
 	redirecting.to.tag = tag;
 
-	redirecting.reason = misdn_to_ast_reason(redirect->reason);
+	redirecting.reason.code = misdn_to_ast_reason(redirect->reason);
 	redirecting.count = redirect->count;
 
 	ast_channel_set_redirecting(ast, &redirecting, &update_redirecting);
@@ -7069,6 +7108,7 @@ static int misdn_indication(struct ast_channel *ast, int cond, const void *data,
 		chan_misdn_log(1, p->bc->port, " --> * Unknown Indication:%d pid:%d\n", cond, p->bc->pid);
 		/* fallthrough */
 	case AST_CONTROL_PVT_CAUSE_CODE:
+	case AST_CONTROL_MASQUERADE_NOTIFY:
 		return -1;
 	}
 
@@ -7395,7 +7435,7 @@ static struct ast_frame *misdn_read(struct ast_channel *ast)
 	}
 
 	tmp->frame.frametype = AST_FRAME_VOICE;
-	ast_format_set(&tmp->frame.subclass.format, AST_FORMAT_ALAW, 0);
+	tmp->frame.subclass.format = ast_format_alaw;
 	tmp->frame.datalen = len;
 	tmp->frame.samples = len;
 	tmp->frame.mallocd = 0;
@@ -7460,13 +7500,14 @@ static int misdn_write(struct ast_channel *ast, struct ast_frame *frame)
 	}
 
 
-	if (!frame->subclass.format.id) {
+	if (!frame->subclass.format) {
 		chan_misdn_log(4, ch->bc->port, "misdn_write: * prods us\n");
 		return 0;
 	}
 
-	if (ast_format_cmp(&frame->subclass.format, &prefformat) == AST_FORMAT_CMP_NOT_EQUAL) {
-		chan_misdn_log(-1, ch->bc->port, "Got Unsupported Frame with Format:%s\n", ast_getformatname(&frame->subclass.format));
+	if (ast_format_cmp(frame->subclass.format, ast_format_alaw) == AST_FORMAT_CMP_NOT_EQUAL) {
+		chan_misdn_log(-1, ch->bc->port, "Got Unsupported Frame with Format:%s\n",
+			ast_format_get_name(frame->subclass.format));
 		return 0;
 	}
 
@@ -7500,7 +7541,7 @@ static int misdn_write(struct ast_channel *ast, struct ast_frame *frame)
 		ast_debug(1, "write2mISDN %p %d bytes: ", p, frame->samples);
 
 		for (i = 0; i < max; i++) {
-			ast_debug(1, "%2.2x ", ((char *) frame->data.ptr)[i]);
+			ast_debug(1, "%02hhx ", ((unsigned char *) frame->data.ptr)[i]);
 		}
 	}
 #endif
@@ -7543,6 +7584,7 @@ static int misdn_write(struct ast_channel *ast, struct ast_frame *frame)
 	return 0;
 }
 
+#if defined(mISDN_NATIVE_BRIDGING)
 static enum ast_bridge_result misdn_bridge(struct ast_channel *c0,
 	struct ast_channel *c1, int flags,
 	struct ast_frame **fo,
@@ -7556,14 +7598,20 @@ static enum ast_bridge_result misdn_bridge(struct ast_channel *c0,
 	int p1_b, p2_b;
 	int bridging;
 
+	misdn_cfg_get(0, MISDN_GEN_BRIDGING, &bridging, sizeof(bridging));
+	if (!bridging) {
+		/* Native mISDN bridging globally disabled. */
+		return AST_BRIDGE_FAILED_NOWARN;
+	}
+
 	ch1 = get_chan_by_ast(c0);
 	if (!ch1) {
-		return -1;
+		return AST_BRIDGE_FAILED;
 	}
 	ch2 = get_chan_by_ast(c1);
 	if (!ch2) {
 		chan_list_unref(ch1, "Failed to find ch2");
-		return -1;
+		return AST_BRIDGE_FAILED;
 	}
 
 	carr[0] = c0;
@@ -7571,20 +7619,16 @@ static enum ast_bridge_result misdn_bridge(struct ast_channel *c0,
 
 	misdn_cfg_get(ch1->bc->port, MISDN_CFG_BRIDGING, &p1_b, sizeof(p1_b));
 	misdn_cfg_get(ch2->bc->port, MISDN_CFG_BRIDGING, &p2_b, sizeof(p2_b));
-
-	if (! p1_b || ! p2_b) {
+	if (!p1_b || !p2_b) {
 		ast_log(LOG_NOTICE, "Falling back to Asterisk bridging\n");
 		chan_list_unref(ch1, "Bridge fallback ch1");
 		chan_list_unref(ch2, "Bridge fallback ch2");
-		return AST_BRIDGE_FAILED;
+		return AST_BRIDGE_FAILED_NOWARN;
 	}
 
-	misdn_cfg_get(0, MISDN_GEN_BRIDGING, &bridging, sizeof(bridging));
-	if (bridging) {
-		/* trying to make a mISDN_dsp conference */
-		chan_misdn_log(1, ch1->bc->port, "I SEND: Making conference with Number:%d\n", ch1->bc->pid + 1);
-		misdn_lib_bridge(ch1->bc, ch2->bc);
-	}
+	/* make a mISDN_dsp conference */
+	chan_misdn_log(1, ch1->bc->port, "I SEND: Making conference with Number:%d\n", ch1->bc->pid + 1);
+	misdn_lib_bridge(ch1->bc, ch2->bc);
 
 	ast_verb(3, "Native bridging %s and %s\n", ast_channel_name(c0), ast_channel_name(c1));
 
@@ -7657,6 +7701,7 @@ static enum ast_bridge_result misdn_bridge(struct ast_channel *c0,
 	chan_list_unref(ch2, "Bridge complete ch2");
 	return AST_BRIDGE_COMPLETE;
 }
+#endif	/* defined(mISDN_NATIVE_BRIDGING) */
 
 /** AST INDICATIONS END **/
 
@@ -7808,7 +7853,7 @@ static struct chan_list *chan_list_init(int orig)
 	return cl;
 }
 
-static struct ast_channel *misdn_request(const char *type, struct ast_format_cap *cap, const struct ast_channel *requestor, const char *data, int *cause)
+static struct ast_channel *misdn_request(const char *type, struct ast_format_cap *cap, const struct ast_assigned_ids *assignedids, const struct ast_channel *requestor, const char *data, int *cause)
 {
 	struct ast_channel *ast;
 	char group[BUFFERSIZE + 1] = "";
@@ -8042,7 +8087,7 @@ static struct ast_channel *misdn_request(const char *type, struct ast_format_cap
 	}
 	cl->bc = newbc;
 
-	ast = misdn_new(cl, AST_STATE_RESERVED, args.ext, NULL, cap, requestor ? ast_channel_linkedid(requestor) : NULL, port, channel);
+	ast = misdn_new(cl, AST_STATE_RESERVED, args.ext, NULL, cap, assignedids, requestor, port, channel);
 	if (!ast) {
 		chan_list_unref(cl, "Failed to create a new channel");
 		misdn_lib_release(newbc);
@@ -8090,24 +8135,6 @@ static struct ast_channel_tech misdn_tech = {
 	.send_digit_begin = misdn_digit_begin,
 	.send_digit_end = misdn_digit_end,
 	.call = misdn_call,
-	.bridge = misdn_bridge,
-	.hangup = misdn_hangup,
-	.answer = misdn_answer,
-	.read = misdn_read,
-	.write = misdn_write,
-	.indicate = misdn_indication,
-	.fixup = misdn_fixup,
-	.send_text = misdn_send_text,
-	.properties = 0,
-};
-
-static struct ast_channel_tech misdn_tech_wo_bridge = {
-	.type = misdn_type,
-	.description = "Channel driver for mISDN Support (Bri/Pri)",
-	.requester = misdn_request,
-	.send_digit_begin = misdn_digit_begin,
-	.send_digit_end = misdn_digit_end,
-	.call = misdn_call,
 	.hangup = misdn_hangup,
 	.answer = misdn_answer,
 	.read = misdn_read,
@@ -8145,15 +8172,20 @@ static void update_name(struct ast_channel *tmp, int port, int c)
 	}
 }
 
-static struct ast_channel *misdn_new(struct chan_list *chlist, int state,  char *exten, char *callerid, struct ast_format_cap *cap, const char *linkedid, int port, int c)
+static struct ast_channel *misdn_new(struct chan_list *chlist, int state,  char *exten, char *callerid, struct ast_format_cap *cap, const struct ast_assigned_ids *assignedids, const struct ast_channel *requestor, int port, int c)
 {
+	struct ast_format_cap *native;
 	struct ast_channel *tmp;
 	char *cid_name = NULL;
 	char *cid_num = NULL;
 	int chan_offset = 0;
 	int tmp_port = misdn_cfg_get_next_port(0);
-	int bridging;
-	struct ast_format tmpfmt;
+	struct ast_format *tmpfmt;
+
+	native = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT);
+	if (!native) {
+		return NULL;
+	}
 
 	for (; tmp_port > 0; tmp_port = misdn_cfg_get_next_port(tmp_port)) {
 		if (tmp_port == port) {
@@ -8169,24 +8201,26 @@ static struct ast_channel *misdn_new(struct chan_list *chlist, int state,  char 
 		ast_callerid_parse(callerid, &cid_name, &cid_num);
 	}
 
-	tmp = ast_channel_alloc(1, state, cid_num, cid_name, "", exten, "", linkedid, 0, "%s/%s%d-u%d", misdn_type, c ? "" : "tmp", chan_offset + c, glob_channel++);
+	tmp = ast_channel_alloc(1, state, cid_num, cid_name, "", exten, "", assignedids, requestor, 0, "%s/%s%d-u%d", misdn_type, c ? "" : "tmp", chan_offset + c, glob_channel++);
 	if (tmp) {
 		chan_misdn_log(2, port, " --> * NEW CHANNEL dialed:%s caller:%s\n", exten, callerid);
 
-		ast_best_codec(cap, &tmpfmt);
-		ast_format_cap_add(ast_channel_nativeformats(tmp), &prefformat);
-		ast_format_copy(ast_channel_writeformat(tmp), &tmpfmt);
-		ast_format_copy(ast_channel_rawwriteformat(tmp), &tmpfmt);
-		ast_format_copy(ast_channel_readformat(tmp), &tmpfmt);
-		ast_format_copy(ast_channel_rawreadformat(tmp), &tmpfmt);
+		tmpfmt = ast_format_cap_get_format(cap, 0);
+		ast_format_cap_append(native, ast_format_alaw, 0);
+		ast_channel_nativeformats_set(tmp, native);
+		ast_channel_set_writeformat(tmp, tmpfmt);
+		ast_channel_set_rawwriteformat(tmp, tmpfmt);
+		ast_channel_set_readformat(tmp, tmpfmt);
+		ast_channel_set_rawreadformat(tmp, tmpfmt);
+
+		ao2_ref(tmpfmt, -1);
 
 		/* Link the channel and private together */
 		chan_list_ref(chlist, "Give a reference to ast_channel");
 		MISDN_ASTERISK_TECH_PVT_SET(tmp, chlist);
 		chlist->ast = tmp;
 
-		misdn_cfg_get(0, MISDN_GEN_BRIDGING, &bridging, sizeof(bridging));
-		ast_channel_tech_set(tmp, bridging ? &misdn_tech : &misdn_tech_wo_bridge);
+		ast_channel_tech_set(tmp, &misdn_tech);
 
 		ast_channel_priority_set(tmp, 1);
 
@@ -8211,9 +8245,13 @@ static struct ast_channel *misdn_new(struct chan_list *chlist, int state,  char 
 		ast_channel_rings_set(tmp, (state == AST_STATE_RING) ? 1 : 0);
 
 		ast_jb_configure(tmp, misdn_get_global_jbconf());
+
+		ast_channel_unlock(tmp);
 	} else {
 		chan_misdn_log(-1, 0, "Unable to allocate channel structure\n");
 	}
+
+	ao2_ref(native, -1);
 
 	return tmp;
 }
@@ -8582,10 +8620,9 @@ static void release_chan_early(struct chan_list *ch)
 static int misdn_attempt_transfer(struct chan_list *active_ch, struct chan_list *held_ch)
 {
 	int retval;
-	struct ast_channel *target;
-	struct ast_channel *transferee;
-	struct ast_party_connected_line target_colp;
-	struct ast_party_connected_line transferee_colp;
+	enum ast_transfer_result xfer_res;
+	struct ast_channel *to_target;
+	struct ast_channel *to_transferee;
 
 	switch (active_ch->state) {
 	case MISDN_PROCEEDING:
@@ -8598,59 +8635,24 @@ static int misdn_attempt_transfer(struct chan_list *active_ch, struct chan_list 
 	}
 
 	ast_channel_lock_both(held_ch->ast, active_ch->ast);
+	to_target = active_ch->ast;
+	to_transferee = held_ch->ast;
+	chan_misdn_log(1, held_ch->hold.port, "TRANSFERRING %s to %s\n",
+		ast_channel_name(to_transferee), ast_channel_name(to_target));
+	held_ch->hold.state = MISDN_HOLD_TRANSFER;
+	ast_channel_ref(to_target);
+	ast_channel_ref(to_transferee);
+	ast_channel_unlock(to_target);
+	ast_channel_unlock(to_transferee);
 
-	transferee = ast_bridged_channel(held_ch->ast);
-	if (!transferee) {
-		/*
-		 * Could not transfer.  Held channel is not bridged anymore.
-		 * Held party probably got tired of waiting and hung up.
-		 */
-		ast_channel_unlock(held_ch->ast);
-		ast_channel_unlock(active_ch->ast);
-		return -1;
+	retval = 0;
+	xfer_res = ast_bridge_transfer_attended(to_transferee, to_target);
+	if (xfer_res != AST_BRIDGE_TRANSFER_SUCCESS) {
+		retval = -1;
 	}
 
-	target = active_ch->ast;
-	chan_misdn_log(1, held_ch->hold.port, "TRANSFERRING %s to %s\n",
-		ast_channel_name(held_ch->ast), ast_channel_name(target));
-
-	ast_party_connected_line_init(&target_colp);
-	ast_party_connected_line_copy(&target_colp, ast_channel_connected(target));
-
-	/* Reset any earlier private connected id representation */
-	ast_party_id_reset(&target_colp.priv);
-
-	ast_party_connected_line_init(&transferee_colp);
-	ast_party_connected_line_copy(&transferee_colp, ast_channel_connected(held_ch->ast));
-
-	/* Reset any earlier private connected id representation*/
-	ast_party_id_reset(&transferee_colp.priv);
-
-	held_ch->hold.state = MISDN_HOLD_TRANSFER;
-
-	/*
-	 * Before starting a masquerade, all channel and pvt locks must
-	 * be unlocked.  Any recursive channel locks held before
-	 * ast_channel_transfer_masquerade() invalidates deadlock
-	 * avoidance.  Since we are unlocking both the pvt and its owner
-	 * channel it is possible for "target" and "transferee" to be
-	 * destroyed by their pbx threads.  To prevent this we must give
-	 * "target" and "transferee" a reference before any unlocking
-	 * takes place.
-	 */
-	ao2_ref(target, +1);
-	ao2_ref(transferee, +1);
-	ast_channel_unlock(held_ch->ast);
-	ast_channel_unlock(active_ch->ast);
-
-	/* Setup transfer masquerade. */
-	retval = ast_channel_transfer_masquerade(target, &target_colp, 0,
-		transferee, &transferee_colp, 1);
-
-	ast_party_connected_line_free(&target_colp);
-	ast_party_connected_line_free(&transferee_colp);
-	ao2_ref(target, -1);
-	ao2_ref(transferee, -1);
+	ast_channel_unref(to_target);
+	ast_channel_unref(to_transferee);
 	return retval;
 }
 
@@ -8969,6 +8971,8 @@ static void misdn_cc_pbx_notify(long record_id, const struct misdn_cc_notify *no
 	ast_channel_priority_set(chan, notify->priority);
 	ast_free(ast_channel_dialed(chan)->number.str);
 	ast_channel_dialed(chan)->number.str = ast_strdup(notify->exten);
+
+	ast_channel_unlock(chan);
 
 	if (ast_pbx_start(chan)) {
 		ast_log(LOG_WARNING, "Unable to start pbx channel %s!\n", ast_channel_name(chan));
@@ -9446,11 +9450,11 @@ static void misdn_facility_ie_handler(enum event_e event, struct misdn_bchannel 
 		break;
 #endif	/* We don't handle this yet */
 	case Fac_SubaddressTransfer:
-		/* We do not have anything to do for this message since we do not handle subaddreses. */
+		/* We do not have anything to do for this message since we do not handle subaddresses. */
 		break;
 	case Fac_RequestSubaddress:
 		/*
-		 * We do not have anything to do for this message since we do not handle subaddreses.
+		 * We do not have anything to do for this message since we do not handle subaddresses.
 		 * However, we do care about some other ie's that should be present.
 		 */
 		if (bc->redirecting.to_changed) {
@@ -10062,6 +10066,9 @@ cb_events(enum event_e event, struct misdn_bchannel *bc, void *user_data)
 		}
 
 		if (ch->state == MISDN_WAITING4DIGS) {
+			RAII_VAR(struct ast_features_pickup_config *, pickup_cfg, NULL, ao2_cleanup);
+			const char *pickupexten;
+
 			/*  Ok, incomplete Setup, waiting till extension exists */
 			if (ast_strlen_zero(bc->info_dad) && ! ast_strlen_zero(bc->keypad)) {
 				chan_misdn_log(1, bc->port, " --> using keypad as info\n");
@@ -10071,8 +10078,18 @@ cb_events(enum event_e event, struct misdn_bchannel *bc, void *user_data)
 			strncat(bc->dialed.number, bc->info_dad, sizeof(bc->dialed.number) - strlen(bc->dialed.number) - 1);
 			ast_channel_exten_set(ch->ast, bc->dialed.number);
 
+			ast_channel_lock(ch->ast);
+			pickup_cfg = ast_get_chan_features_pickup_config(ch->ast);
+			if (!pickup_cfg) {
+				ast_log(LOG_ERROR, "Unable to retrieve pickup configuration options. Unable to detect call pickup extension\n");
+				pickupexten = "";
+			} else {
+				pickupexten = ast_strdupa(pickup_cfg->pickupexten);
+			}
+			ast_channel_unlock(ch->ast);
+
 			/* Check for Pickup Request first */
-			if (!strcmp(ast_channel_exten(ch->ast), ast_pickup_ext())) {
+			if (!strcmp(ast_channel_exten(ch->ast), pickupexten)) {
 				if (ast_pickup_call(ch->ast)) {
 					hangup_chan(ch, bc);
 				} else {
@@ -10146,7 +10163,6 @@ cb_events(enum event_e event, struct misdn_bchannel *bc, void *user_data)
 				if (digits) {
 					strncat(bc->dialed.number, bc->info_dad, sizeof(bc->dialed.number) - strlen(bc->dialed.number) - 1);
 					ast_channel_exten_set(ch->ast, bc->dialed.number);
-					ast_cdr_update(ch->ast);
 				}
 
 				ast_queue_frame(ch->ast, &fr);
@@ -10160,6 +10176,8 @@ cb_events(enum event_e event, struct misdn_bchannel *bc, void *user_data)
 		int ai;
 		int im;
 		int append_msn = 0;
+		RAII_VAR(struct ast_features_pickup_config *, pickup_cfg, NULL, ao2_cleanup);
+		const char *pickupexten;
 
 		if (ch) {
 			switch (ch->state) {
@@ -10200,20 +10218,29 @@ cb_events(enum event_e event, struct misdn_bchannel *bc, void *user_data)
 		ch->addr = bc->addr;
 
 		{
-			struct ast_format_cap *cap = ast_format_cap_alloc_nolock();
-			struct ast_format tmpfmt;
+			struct ast_format_cap *cap = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT);
 			if (!(cap)) {
 				return RESPONSE_ERR;
 			}
-			ast_format_cap_add(cap, ast_format_set(&tmpfmt, AST_FORMAT_ALAW, 0));
-			chan = misdn_new(ch, AST_STATE_RESERVED, bc->dialed.number, bc->caller.number, cap, NULL, bc->port, bc->channel);
-			cap = ast_format_cap_destroy(cap);
+			ast_format_cap_append(cap, ast_format_alaw, 0);
+			chan = misdn_new(ch, AST_STATE_RESERVED, bc->dialed.number, bc->caller.number, cap, NULL, NULL, bc->port, bc->channel);
+			ao2_ref(cap, -1);
 		}
 		if (!chan) {
 			chan_list_unref(ch, "Failed to create a new channel");
 			ast_log(LOG_ERROR, "cb_events: misdn_new failed!\n");
 			return RESPONSE_RELEASE_SETUP;
 		}
+
+		ast_channel_lock(chan);
+		pickup_cfg = ast_get_chan_features_pickup_config(chan);
+		if (!pickup_cfg) {
+			ast_log(LOG_ERROR, "Unable to retrieve pickup configuration options. Unable to detect call pickup extension\n");
+			pickupexten = "";
+		} else {
+			pickupexten = ast_strdupa(pickup_cfg->pickupexten);
+		}
+		ast_channel_unlock(chan);
 
 		if ((exceed = add_in_calls(bc->port))) {
 			char tmp[16];
@@ -10225,8 +10252,10 @@ cb_events(enum event_e event, struct misdn_bchannel *bc, void *user_data)
 
 		export_ch(chan, bc, ch);
 
+		ast_channel_lock(ch->ast);
 		ast_channel_rings_set(ch->ast, 1);
 		ast_setstate(ch->ast, AST_STATE_RINGING);
+		ast_channel_unlock(ch->ast);
 
 		/* Update asterisk channel caller information */
 		chan_misdn_log(2, bc->port, " --> TON: %s(%d)\n", misdn_to_str_ton(bc->caller.number_type), bc->caller.number_type);
@@ -10306,7 +10335,7 @@ cb_events(enum event_e event, struct misdn_bchannel *bc, void *user_data)
 		}
 
 		/* Check for Pickup Request first */
-		if (!strcmp(ast_channel_exten(chan), ast_pickup_ext())) {
+		if (!strcmp(ast_channel_exten(chan), pickupexten)) {
 			if (!ch->noautorespond_on_setup) {
 				/* Sending SETUP_ACK */
 				misdn_lib_send_event(bc, EVENT_SETUP_ACKNOWLEDGE);
@@ -10525,7 +10554,9 @@ cb_events(enum event_e event, struct misdn_bchannel *bc, void *user_data)
 		}
 
 		ast_queue_control(ch->ast, AST_CONTROL_RINGING);
+		ast_channel_lock(ch->ast);
 		ast_setstate(ch->ast, AST_STATE_RINGING);
+		ast_channel_unlock(ch->ast);
 
 		cb_log(7, bc->port, " --> Set State Ringing\n");
 
@@ -10828,7 +10859,7 @@ cb_events(enum event_e event, struct misdn_bchannel *bc, void *user_data)
 			/* In Data Modes we queue frames */
 			memset(&frame, 0, sizeof(frame));
 			frame.frametype = AST_FRAME_VOICE; /* we have no data frames yet */
-			ast_format_set(&frame.subclass.format, AST_FORMAT_ALAW, 0);
+			frame.subclass.format = ast_format_alaw;
 			frame.datalen = bc->bframe_len;
 			frame.samples = bc->bframe_len;
 			frame.mallocd = 0;
@@ -10934,7 +10965,7 @@ cb_events(enum event_e event, struct misdn_bchannel *bc, void *user_data)
 		ch->hold.port = 0;
 		ch->hold.channel = 0;
 
-		ast_queue_control(ch->ast, AST_CONTROL_UNHOLD);
+		ast_queue_unhold(ch->ast);
 
 		if (misdn_lib_send_event(bc, EVENT_RETRIEVE_ACKNOWLEDGE) < 0) {
 			chan_misdn_log(4, bc->port, " --> RETRIEVE_ACK failed\n");
@@ -10944,7 +10975,7 @@ cb_events(enum event_e event, struct misdn_bchannel *bc, void *user_data)
 	case EVENT_HOLD:
 	{
 		int hold_allowed;
-		struct ast_channel *bridged;
+		RAII_VAR(struct ast_channel *, bridged, NULL, ast_channel_cleanup);
 
 		misdn_cfg_get(bc->port, MISDN_CFG_HOLD_ALLOWED, &hold_allowed, sizeof(hold_allowed));
 		if (!hold_allowed) {
@@ -10953,7 +10984,7 @@ cb_events(enum event_e event, struct misdn_bchannel *bc, void *user_data)
 			break;
 		}
 
-		bridged = ast_bridged_channel(ch->ast);
+		bridged = ast_channel_bridge_peer(ch->ast);
 		if (bridged) {
 			chan_misdn_log(2, bc->port, "Bridge Partner is of type: %s\n", ast_channel_tech(bridged)->type);
 			ch->l3id = bc->l3_id;
@@ -10964,7 +10995,7 @@ cb_events(enum event_e event, struct misdn_bchannel *bc, void *user_data)
 			ch->hold.port = bc->port;
 			ch->hold.channel = bc->channel;
 
-			ast_queue_control(ch->ast, AST_CONTROL_HOLD);
+			ast_queue_hold(ch->ast, NULL);
 
 			misdn_lib_send_event(bc, EVENT_HOLD_ACKNOWLEDGE);
 		} else {
@@ -11266,12 +11297,22 @@ static int unload_module(void)
 #if defined(AST_MISDN_ENHANCEMENTS)
 	misdn_cc_destroy();
 #endif	/* defined(AST_MISDN_ENHANCEMENTS) */
-	misdn_tech.capabilities = ast_format_cap_destroy(misdn_tech.capabilities);
-	misdn_tech_wo_bridge.capabilities = ast_format_cap_destroy(misdn_tech_wo_bridge.capabilities);
+	ao2_cleanup(misdn_tech.capabilities);
+	misdn_tech.capabilities = NULL;
 
 	return 0;
 }
 
+/*!
+ * \brief Load the module
+ *
+ * Module loading including tests for configuration or dependencies.
+ * This function can return AST_MODULE_LOAD_FAILURE, AST_MODULE_LOAD_DECLINE,
+ * or AST_MODULE_LOAD_SUCCESS. If a dependency or environment variable fails
+ * tests return AST_MODULE_LOAD_FAILURE. If the module can not load the
+ * configuration file or other non-critical problem return
+ * AST_MODULE_LOAD_DECLINE. On success return AST_MODULE_LOAD_SUCCESS.
+ */
 static int load_module(void)
 {
 	int i, port;
@@ -11286,15 +11327,10 @@ static int load_module(void)
 	};
 
 
-	if (!(misdn_tech.capabilities = ast_format_cap_alloc())) {
+	if (!(misdn_tech.capabilities = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT))) {
 		return AST_MODULE_LOAD_DECLINE;
 	}
-	if (!(misdn_tech_wo_bridge.capabilities = ast_format_cap_alloc())) {
-		return AST_MODULE_LOAD_DECLINE;
-	}
-	ast_format_set(&prefformat, AST_FORMAT_ALAW, 0);
-	ast_format_cap_add(misdn_tech.capabilities, &prefformat);
-	ast_format_cap_add(misdn_tech_wo_bridge.capabilities, &prefformat);
+	ast_format_cap_append(misdn_tech.capabilities, ast_format_alaw, 0);
 
 	max_ports = misdn_lib_maxports_get();
 
@@ -12795,6 +12831,7 @@ static void chan_misdn_log(int level, int port, char *tmpl, ...)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "Channel driver for mISDN Support (BRI/PRI)",
+	.support_level = AST_MODULE_SUPPORT_EXTENDED,
 	.load = load_module,
 	.unload = unload_module,
 	.reload = reload,

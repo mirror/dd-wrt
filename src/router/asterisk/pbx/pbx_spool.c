@@ -28,7 +28,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 383121 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 431468 $")
 
 #include <sys/stat.h>
 #include <time.h>
@@ -53,6 +53,8 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 383121 $")
 #include "asterisk/module.h"
 #include "asterisk/utils.h"
 #include "asterisk/options.h"
+#include "asterisk/format.h"
+#include "asterisk/format_cache.h"
 
 /*
  * pbx_spool is similar in spirit to qcall, but with substantially enhanced functionality...
@@ -108,7 +110,7 @@ static void free_outgoing(struct outgoing *o)
 	if (o->vars) {
 		ast_variables_destroy(o->vars);
 	}
-	o->capabilities = ast_format_cap_destroy(o->capabilities);
+	ao2_cleanup(o->capabilities);
 	ast_string_field_free_memory(o);
 	ast_free(o);
 }
@@ -116,7 +118,6 @@ static void free_outgoing(struct outgoing *o)
 static struct outgoing *new_outgoing(const char *fn)
 {
 	struct outgoing *o;
-	struct ast_format tmpfmt;
 
 	o = ast_calloc(1, sizeof(*o));
 	if (!o) {
@@ -144,12 +145,12 @@ static struct outgoing *new_outgoing(const char *fn)
 		return NULL;
 	}
 
-	o->capabilities = ast_format_cap_alloc_nolock();
+	o->capabilities = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT);
 	if (!o->capabilities) {
 		free_outgoing(o);
 		return NULL;
 	}
-	ast_format_cap_add(o->capabilities, ast_format_set(&tmpfmt, AST_FORMAT_SLINEAR, 0));
+	ast_format_cap_append(o->capabilities, ast_format_slin, 0);
 
 	return o;
 }
@@ -226,7 +227,7 @@ static int apply_outgoing(struct outgoing *o, FILE *f)
 				o->maxretries = 0;
 			}
 		} else if (!strcasecmp(buf, "codecs")) {
-			ast_parse_allow_disallow(NULL, o->capabilities, c, 1);
+			ast_format_cap_update_by_allow_disallow(o->capabilities, c, 1);
 		} else if (!strcasecmp(buf, "context")) {
 			ast_string_field_set(o, context, c);
 		} else if (!strcasecmp(buf, "extension")) {
@@ -375,15 +376,13 @@ static void *attempt_thread(void *data)
 		ast_verb(3, "Attempting call on %s/%s for application %s(%s) (Retry %d)\n", o->tech, o->dest, o->app, o->data, o->retries);
 		res = ast_pbx_outgoing_app(o->tech, o->capabilities, o->dest, o->waittime * 1000,
 			o->app, o->data, &reason, 2 /* wait to finish */, o->cid_num, o->cid_name,
-			o->vars, o->account, NULL);
-		o->vars = NULL;
+			o->vars, o->account, NULL, NULL);
 	} else {
 		ast_verb(3, "Attempting call on %s/%s for %s@%s:%d (Retry %d)\n", o->tech, o->dest, o->exten, o->context,o->priority, o->retries);
 		res = ast_pbx_outgoing_exten(o->tech, o->capabilities, o->dest,
 			o->waittime * 1000, o->context, o->exten, o->priority, &reason,
 			2 /* wait to finish */, o->cid_num, o->cid_name, o->vars, o->account, NULL,
-			ast_test_flag(&o->options, SPOOL_FLAG_EARLY_MEDIA));
-		o->vars = NULL;
+			ast_test_flag(&o->options, SPOOL_FLAG_EARLY_MEDIA), NULL);
 	}
 	if (res) {
 		ast_log(LOG_NOTICE, "Call failed to go through, reason (%d) %s\n", reason, ast_channel_reason2str(reason));

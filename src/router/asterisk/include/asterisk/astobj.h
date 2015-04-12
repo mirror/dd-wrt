@@ -16,8 +16,10 @@
  * at the top of the source tree.
  */
 
-/*
- * Object Model for Asterisk
+/*! \file
+ * \brief Object Model for Asterisk
+ *
+ * \deprecated Use astobj2.h instead
  */
 
 #ifndef _ASTERISK_ASTOBJ_H
@@ -798,7 +800,7 @@ extern "C" {
  * refcount fields of an object to the specfied string buffer.
  */
 #define ASTOBJ_DUMP(s,slen,obj) \
-	snprintf((s),(slen),"name: %s\nobjflags: %d\nrefcount: %d\n\n", (obj)->name, (obj)->objflags, (obj)->refcount);
+	snprintf((s),(slen),"name: %s\nobjflags: %u\nrefcount: %u\n\n", (obj)->name, (obj)->objflags, (obj)->refcount);
 
 /*! \brief Dump information about all the objects in a container to a file descriptor.
  *

@@ -713,8 +713,8 @@ int ooSendTermCapMsg(OOH323CallData *call)
          memset(entry, 0, sizeof(H245CapabilityTableEntry));
          entry->m.capabilityPresent = 1;
 
-         entry->capability.t = T_H245Capability_receiveUserInputCapability;
-         entry->capability.u.receiveUserInputCapability = userInputCap;
+         entry->capability.t = T_H245Capability_receiveAndTransmitUserInputCapability;
+         entry->capability.u.receiveAndTransmitUserInputCapability = userInputCap;
       
          entry->capabilityTableEntryNumber = i+1;
          dListAppend(pctxt , &(termCap->capabilityTable), entry);
@@ -749,8 +749,8 @@ int ooSendTermCapMsg(OOH323CallData *call)
          memset(entry, 0, sizeof(H245CapabilityTableEntry));
          entry->m.capabilityPresent = 1;
 
-         entry->capability.t = T_H245Capability_receiveUserInputCapability;
-         entry->capability.u.receiveUserInputCapability = userInputCap;
+         entry->capability.t = T_H245Capability_receiveAndTransmitUserInputCapability;
+         entry->capability.u.receiveAndTransmitUserInputCapability = userInputCap;
       
          entry->capabilityTableEntryNumber = i+1;
          dListAppend(pctxt , &(termCap->capabilityTable), entry);
@@ -1909,7 +1909,7 @@ int ooOnReceivedOpenLogicalChannelAck(OOH323CallData *call,
                                      T_H245TransportAddress_unicastAddress)
    	{
       	 OOTRACEERR3("Error: Processing OpenLogicalChannelAck - media control "
-                  "channel addres type is not unicast (%s, %s)\n", 
+                  "channel address type is not unicast (%s, %s)\n", 
                    call->callType, call->callToken);
       	 return OO_FAILED;
    	}

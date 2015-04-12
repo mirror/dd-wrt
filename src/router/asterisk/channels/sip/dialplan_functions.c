@@ -20,12 +20,12 @@
  */
 
 /*** MODULEINFO
-	<support_level>core</support_level>
+	<support_level>extended</support_level>
  ***/
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 397133 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 420562 $")
 
 #include <math.h>
 
@@ -76,6 +76,8 @@ int sip_acf_channel_read(struct ast_channel *chan, const char *funcname, char *p
 		ast_copy_string(buf, ast_sockaddr_isnull(&p->sa) ? "" : ast_sockaddr_stringify_addr(&p->sa), buflen);
 	} else if (!strcasecmp(args.param, "recvip")) {
 		ast_copy_string(buf, ast_sockaddr_isnull(&p->recv) ? "" : ast_sockaddr_stringify_addr(&p->recv), buflen);
+	} else if (!strcasecmp(args.param, "recvport")) {
+		ast_copy_string(buf, ast_sockaddr_isnull(&p->recv) ? "" : ast_sockaddr_stringify_port(&p->recv), buflen);
 	} else if (!strcasecmp(args.param, "from")) {
 		ast_copy_string(buf, p->from, buflen);
 	} else if (!strcasecmp(args.param, "uri")) {
@@ -226,7 +228,7 @@ int sip_acf_channel_read(struct ast_channel *chan, const char *funcname, char *p
 			return -1;
 		}
 	} else if (!strcasecmp(args.param, "secure_signaling")) {
-		snprintf(buf, buflen, "%s", p->socket.type == SIP_TRANSPORT_TLS ? "1" : "");
+		snprintf(buf, buflen, "%s", p->socket.type == AST_TRANSPORT_TLS ? "1" : "");
 	} else if (!strcasecmp(args.param, "secure_media")) {
 		snprintf(buf, buflen, "%s", p->srtp ? "1" : "");
 	} else {

@@ -30,6 +30,15 @@
  * \arg See also: \ref cdr_odbc
  */
 
+/*! \li \ref res_odbc.c uses the configuration file \ref res_odbc.conf
+ * \addtogroup configuration_file Configuration Files
+ */
+
+/*! 
+ * \page res_odbc.conf res_odbc.conf
+ * \verbinclude res_odbc.conf.sample
+ */
+
 /*** MODULEINFO
 	<depend>generic_odbc</depend>
 	<depend>ltdl</depend>
@@ -38,7 +47,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 370187 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 431618 $")
 
 #include "asterisk/file.h"
 #include "asterisk/channel.h"
@@ -452,7 +461,7 @@ struct odbc_cache_tables *ast_odbc_find_table(const char *database, const char *
 	SQLLEN sqlptr;
 	SQLHSTMT stmt = NULL;
 	int res = 0, error = 0, try = 0;
-	struct odbc_obj *obj = ast_odbc_request_obj(database, 0);
+	struct odbc_obj *obj;
 
 	AST_RWLIST_RDLOCK(&odbc_tables);
 	AST_RWLIST_TRAVERSE(&odbc_tables, tableptr, list) {
@@ -463,13 +472,10 @@ struct odbc_cache_tables *ast_odbc_find_table(const char *database, const char *
 	if (tableptr) {
 		AST_RWLIST_RDLOCK(&tableptr->columns);
 		AST_RWLIST_UNLOCK(&odbc_tables);
-		if (obj) {
-			ast_odbc_release_obj(obj);
-		}
 		return tableptr;
 	}
 
-	if (!obj) {
+	if (!(obj = ast_odbc_request_obj(database, 0))) {
 		ast_log(LOG_WARNING, "Unable to retrieve database handle for table description '%s@%s'\n", tablename, database);
 		AST_RWLIST_UNLOCK(&odbc_tables);
 		return NULL;
@@ -537,7 +543,7 @@ struct odbc_cache_tables *ast_odbc_find_table(const char *database, const char *
 				entry->octetlen = entry->size;
 			}
 
-			ast_verb(10, "Found %s column with type %hd with len %ld, octetlen %ld, and numlen (%hd,%hd)\n", entry->name, entry->type, (long) entry->size, (long) entry->octetlen, entry->decimals, entry->radix);
+			ast_debug(3, "Found %s column with type %hd with len %ld, octetlen %ld, and numlen (%hd,%hd)\n", entry->name, entry->type, (long) entry->size, (long) entry->octetlen, entry->decimals, entry->radix);
 			/* Insert column info into column list */
 			AST_LIST_INSERT_TAIL(&(tableptr->columns), entry, list);
 		}
@@ -555,9 +561,7 @@ struct odbc_cache_tables *ast_odbc_find_table(const char *database, const char *
 		destroy_table_cache(tableptr);
 		tableptr = NULL;
 	}
-	if (obj) {
-		ast_odbc_release_obj(obj);
-	}
+	ast_odbc_release_obj(obj);
 	return tableptr;
 }
 
@@ -981,7 +985,7 @@ static char *handle_cli_odbc_show(struct ast_cli_entry *e, int cmd, struct ast_c
 			if (class->haspool) {
 				struct ao2_iterator aoi2 = ao2_iterator_init(class->obj_container, 0);
 
-				ast_cli(a->fd, "  Pooled: Yes\n  Limit:  %d\n  Connections in use: %d\n", class->limit, class->count);
+				ast_cli(a->fd, "  Pooled: Yes\n  Limit:  %u\n  Connections in use: %d\n", class->limit, class->count);
 
 				while ((current = ao2_iterator_next(&aoi2))) {
 					ao2_lock(current);
@@ -1875,6 +1879,16 @@ static int unload_module(void)
 	return -1;
 }
 
+/*!
+ * \brief Load the module
+ *
+ * Module loading including tests for configuration or dependencies.
+ * This function can return AST_MODULE_LOAD_FAILURE, AST_MODULE_LOAD_DECLINE,
+ * or AST_MODULE_LOAD_SUCCESS. If a dependency or environment variable fails
+ * tests return AST_MODULE_LOAD_FAILURE. If the module can not load the 
+ * configuration file or other non-critical problem return 
+ * AST_MODULE_LOAD_DECLINE. On success return AST_MODULE_LOAD_SUCCESS.
+ */
 static int load_module(void)
 {
 	if (!(class_container = ao2_container_alloc(1, null_hash_fn, ao2_match_by_addr)))
@@ -1891,6 +1905,7 @@ static int load_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_GLOBAL_SYMBOLS | AST_MODFLAG_LOAD_ORDER, "ODBC resource",
+		.support_level = AST_MODULE_SUPPORT_CORE,
 		.load = load_module,
 		.unload = unload_module,
 		.reload = reload,

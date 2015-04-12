@@ -33,7 +33,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 398285 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419175 $")
 
 #include <sys/stat.h>
 
@@ -43,22 +43,40 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 398285 $")
 #include "asterisk/paths.h"
 #include "asterisk/channel.h"
 #include "asterisk/app.h"
+#include "asterisk/format_cache.h"
 
-/*! \internal \brief Permissions to set on the voicemail directories we create
- * - taken from app_voicemail */
+/*!
+ * \internal
+ * \brief Permissions to set on the voicemail directories we create
+ *
+ * \note taken from app_voicemail
+ */
 #define VOICEMAIL_DIR_MODE 0777
 
-/*! \internal \brief Permissions to set on the voicemail files we create
- * - taken from app_voicemail */
+/*!
+ * \internal
+ * \brief Permissions to set on the voicemail files we create
+ *
+ * \note taken from app_voicemail
+ */
 #define VOICEMAIL_FILE_MODE 0666
 
-/*! \internal \brief The number of mock snapshot objects we use for tests */
+/*!
+ * \internal
+ * \brief The number of mock snapshot objects we use for tests
+ */
 #define TOTAL_SNAPSHOTS 4
 
-/*! \internal \brief Create and populate the mock message objects and create the
- * envelope files on the file system */
+/*!
+ * \internal
+ * \brief Create and populate the mock message objects and create the
+ * envelope files on the file system
+ */
 #define VM_API_TEST_SETUP do { \
-	if (test_vm_api_test_setup()) { \
+	if (!ast_vm_is_registered()) { \
+		ast_test_status_update(test, "No voicemail provider registered.\n"); \
+		return AST_TEST_FAIL; \
+	} else if (test_vm_api_test_setup()) { \
 		VM_API_TEST_CLEANUP; \
 		ast_test_status_update(test, "Failed to set up necessary mock objects for voicemail API test\n"); \
 		return AST_TEST_FAIL; \
@@ -70,41 +88,59 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 398285 $")
 		} \
 } } while (0)
 
-/*! \internal \brief Safely cleanup after a test run.  This should be called both when a
- * test fails and when it passes */
+/*!
+ * \internal
+ * \brief Safely cleanup after a test run.
+ *
+ * \note This should be called both when a test fails and when it passes
+ */
 #define VM_API_TEST_CLEANUP test_vm_api_test_teardown()
 
-/*! \internal \brief Safely cleanup a snapshot and a test run.  Note that it assumes
- * that the mailbox snapshot object is test_mbox_snapshot */
+/*!
+ * \internal
+ * \brief Safely cleanup a snapshot and a test run.
+ *
+ * \note It assumes that the mailbox snapshot object is test_mbox_snapshot
+ */
 #define VM_API_SNAPSHOT_TEST_CLEANUP \
 		if (test_mbox_snapshot) { \
 			test_mbox_snapshot = ast_vm_mailbox_snapshot_destroy(test_mbox_snapshot); \
 		} \
 		VM_API_TEST_CLEANUP; \
 
-/*! \internal \brief Verify the expected result from two string values obtained
- * from a mailbox snapshot.  Note that it assumes the mailbox snapshot
- * object is test_mbox_snapshot
+/*!
+ * \internal
+ * \brief Verify the expected result from two string values obtained
+ * from a mailbox snapshot.
+ *
+ * \note It assumes the mailbox snapshot object is test_mbox_snapshot
  */
 #define VM_API_STRING_FIELD_VERIFY(expected, actual) do { \
-	if (strncmp((expected), (actual), sizeof((expected)))) { \
+	if (strcmp((expected), (actual))) { \
 		ast_test_status_update(test, "Test failed for parameter %s: Expected [%s], Actual [%s]\n", #actual, expected, actual); \
 		VM_API_SNAPSHOT_TEST_CLEANUP; \
 		return AST_TEST_FAIL; \
 	} } while (0)
 
-/*! \internal \brief Verify the expected result from two integer values.  Note
- * that it assumes the mailbox snapshot object is test_mbox_snapshot */
+/*!
+ * \internal
+ * \brief Verify the expected result from two integer values.
+ *
+ * \note It assumes the mailbox snapshot object is test_mbox_snapshot
+ */
 #define VM_API_INT_VERIFY(expected, actual) do { \
 	if ((expected) != (actual)) { \
-		ast_test_status_update(test, "Test failed for parameter %s: Expected [%d], Actual [%d]\n", #actual, expected, actual); \
+		ast_test_status_update(test, "Test failed for parameter %s: Expected [%d], Actual [%d]\n", #actual, (int)expected, (int)actual); \
 		VM_API_SNAPSHOT_TEST_CLEANUP; \
 		return AST_TEST_FAIL; \
 	} } while (0)
 
-/*! \internal \brief Verify that a mailbox snapshot contains the expected message
- * snapshot, in the correct position, with the expected values.  Note
- * that it assumes the mailbox snapshot object is test_mbox_snapshot
+/*!
+ * \internal
+ * \brief Verify that a mailbox snapshot contains the expected message
+ * snapshot, in the correct position, with the expected values.
+ *
+ * \note It assumes the mailbox snapshot object is test_mbox_snapshot
  */
 #define VM_API_SNAPSHOT_MSG_VERIFY(expected, actual, expected_folder, expected_index) do { \
 	struct ast_vm_msg_snapshot *msg; \
@@ -140,8 +176,11 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 398285 $")
 } } while (0)
 
 
-/*! \internal \brief Create a message snapshot, failing the test if the snapshot could not be created.
- * This requires having a snapshot named test_mbox_snapshot.
+/*!
+ * \internal
+ * \brief Create a message snapshot, failing the test if the snapshot could not be created.
+ *
+ * \note This requires having a snapshot named test_mbox_snapshot.
  */
 #define VM_API_SNAPSHOT_CREATE(mailbox, context, folder, desc, sort, old_and_inbox) do { \
 	if (!(test_mbox_snapshot = ast_vm_mailbox_snapshot_create( \
@@ -151,9 +190,12 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 398285 $")
 		return AST_TEST_FAIL; \
 	} } while (0)
 
-/*! \internal \brief Create a message snapshot, failing the test if the snapshot could be created.
- * This is used to test off nominal conditions.
- * This requires having a snapshot named test_mbox_snapshot.
+/*!
+ * \internal
+ * \brief Create a message snapshot, failing the test if the snapshot could be created.
+ *
+ * \note This is used to test off nominal conditions.
+ * \note This requires having a snapshot named test_mbox_snapshot.
  */
 #define VM_API_SNAPSHOT_OFF_NOMINAL_TEST(mailbox, context, folder, desc, sort, old_and_inbox) do { \
 	if ((test_mbox_snapshot = ast_vm_mailbox_snapshot_create( \
@@ -164,7 +206,10 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 398285 $")
 		return AST_TEST_FAIL; \
 	} } while (0)
 
-/*! \internal \brief Move a voicemail message, failing the test if the message could not be moved */
+/*!
+ * \internal
+ * \brief Move a voicemail message, failing the test if the message could not be moved
+ */
 #define VM_API_MOVE_MESSAGE(mailbox, context, number_of_messages, source, message_numbers_in, dest) do { \
 	if (ast_vm_msg_move((mailbox), (context), (number_of_messages), (source), (message_numbers_in), (dest))) { \
 		ast_test_status_update(test, "Failed to move message %s@%s from %s to %s\n", \
@@ -173,7 +218,10 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 398285 $")
 		return AST_TEST_FAIL; \
 	} } while (0)
 
- /*! \internal \brief Attempt to move a voicemail message, failing the test if the message could be moved */
+/*!
+ * \internal
+ * \brief Attempt to move a voicemail message, failing the test if the message could be moved
+ */
 #define VM_API_MOVE_MESSAGE_OFF_NOMINAL(mailbox, context, number_of_messages, source, message_numbers_in, dest) do { \
 	if (!ast_vm_msg_move((mailbox), (context), (number_of_messages), (source), (message_numbers_in), (dest))) { \
 		ast_test_status_update(test, "Succeeded to move message %s@%s from %s to %s when we really shouldn't\n", \
@@ -182,7 +230,10 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 398285 $")
 		return AST_TEST_FAIL; \
 	} } while (0)
 
-/*! \internal \brief Remove a message, failing the test if the method failed or if the message is still present. */
+/*!
+ * \internal
+ * \brief Remove a message, failing the test if the method failed or if the message is still present.
+ */
 #define VM_API_REMOVE_MESSAGE(mailbox, context, number_of_messages, folder, message_numbers_in) do { \
 	if (ast_vm_msg_remove((mailbox), (context), (number_of_messages), (folder), (message_numbers_in))) { \
 		ast_test_status_update(test, "Failed to remove message from mailbox %s@%s, folder %s", \
@@ -195,7 +246,10 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 398285 $")
 	test_mbox_snapshot = ast_vm_mailbox_snapshot_destroy(test_mbox_snapshot); \
 } while (0)
 
-/*! \internal \brief Remove a message, failing the test if the method succeeds */
+/*!
+ * \internal
+ * \brief Remove a message, failing the test if the method succeeds
+ */
 #define VM_API_REMOVE_MESSAGE_OFF_NOMINAL(mailbox, context, number_of_messages, folder, message_numbers_in) do { \
 	if (!ast_vm_msg_remove((mailbox), (context), (number_of_messages), (folder), (message_numbers_in))) { \
 		ast_test_status_update(test, "Succeeded in removing message from mailbox %s@%s, folder %s, when expected result was failure\n", \
@@ -204,7 +258,10 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 398285 $")
 		return AST_TEST_FAIL; \
 	} } while (0)
 
-/*! \internal \brief Forward a message, failing the test if the message could not be forwarded */
+/*!
+ * \internal
+ * \brief Forward a message, failing the test if the message could not be forwarded
+ */
 # define VM_API_FORWARD_MESSAGE(from_mailbox, from_context, from_folder, to_mailbox, to_context, to_folder, number_of_messages, message_numbers_in, delete_old) do { \
 	if (ast_vm_msg_forward((from_mailbox), (from_context), (from_folder), (to_mailbox), (to_context), (to_folder), (number_of_messages), (message_numbers_in), (delete_old))) { \
 		ast_test_status_update(test, "Failed to forward message from %s@%s [%s] to %s@%s [%s]\n", \
@@ -214,7 +271,10 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 398285 $")
 			return AST_TEST_FAIL; \
 	} } while (0)
 
-	/*! \internal \brief Forward a message, failing the test if the message was successfully forwarded */
+/*!
+ * \internal
+ * \brief Forward a message, failing the test if the message was successfully forwarded
+ */
 #define VM_API_FORWARD_MESSAGE_OFF_NOMINAL(from_mailbox, from_context, from_folder, to_mailbox, to_context, to_folder, number_of_messages, message_numbers_in, delete_old) do { \
 	if (!ast_vm_msg_forward((from_mailbox), (from_context), (from_folder), (to_mailbox), (to_context), (to_folder), (number_of_messages), (message_numbers_in), (delete_old))) { \
 		ast_test_status_update(test, "Succeeded in forwarding message from %s@%s [%s] to %s@%s [%s] when expected result was fail\n", \
@@ -224,32 +284,43 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 398285 $")
 			return AST_TEST_FAIL; \
 	} } while (0)
 
-/*! \internal \brief Playback a message on a channel or callback function.  Note that the channel name must be test_channel.
- * Fail the test if the message could not be played. */
+/*!
+ * \internal                                                                                                              .
+ * \brief Playback a message on a channel or callback function                                                            .
+ *                                                                                                                        .
+ * \note The channel name must be test_channel.
+ * \note Fail the test if the message could not be played.
+ */
 #define VM_API_PLAYBACK_MESSAGE(channel, mailbox, context, folder, message, callback_fn) do { \
 	if (ast_vm_msg_play((channel), (mailbox), (context), (folder), (message), (callback_fn))) { \
 		ast_test_status_update(test, "Failed nominal playback message test\n"); \
-		if (test_channel) { \
-			ast_hangup(test_channel); \
-		} \
+		ast_hangup(test_channel); \
 		VM_API_TEST_CLEANUP; \
 		return AST_TEST_FAIL; \
 	} } while (0)
 
-/*! \internal \brief Playback a message on a channel or callback function.  Note that the channel name must be test_channel.
- * Fail the test if the message is successfully played */
+/*!
+ * \internal
+ * \brief Playback a message on a channel or callback function.
+ *
+ * \note The channel name must be test_channel.
+ * \note Fail the test if the message is successfully played
+ */
 #define VM_API_PLAYBACK_MESSAGE_OFF_NOMINAL(channel, mailbox, context, folder, message, callback_fn) do { \
 	if (!ast_vm_msg_play((channel), (mailbox), (context), (folder), (message), (callback_fn))) { \
 		ast_test_status_update(test, "Succeeded in playing back of message when expected result was to fail\n"); \
-		if (test_channel) { \
-			ast_hangup(test_channel); \
-		} \
+		ast_hangup(test_channel); \
 		VM_API_TEST_CLEANUP; \
 		return AST_TEST_FAIL; \
 	} } while (0)
 
 
-/*! \internal \brief Possible names of folders.  Taken from app_voicemail */
+/*!
+ * \internal
+ * \brief Possible names of folders.
+ *
+ * \note Taken from app_voicemail
+ */
 static const char * const mailbox_folders[] = {
 	"INBOX",
 	"Old",
@@ -265,13 +336,22 @@ static const char * const mailbox_folders[] = {
 	"Urgent",
 };
 
-/*! \internal \brief Message snapshots representing the messages that are used by the various tests */
+/*!
+ * \internal
+ * \brief Message snapshots representing the messages that are used by the various tests
+ */
 static struct ast_vm_msg_snapshot *test_snapshots[TOTAL_SNAPSHOTS];
 
-/*! \internal \brief Tracks whether or not we entered into the message playback callback function */
+/*!
+ * \internal
+ * \brief Tracks whether or not we entered into the message playback callback function
+ */
 static int global_entered_playback_callback = 0;
 
-/*! \internal \brief Get a folder index by its name */
+/*!
+ * \internal
+ * \brief Get a folder index by its name
+ */
 static int get_folder_by_name(const char *folder)
 {
 	size_t i;
@@ -285,10 +365,14 @@ static int get_folder_by_name(const char *folder)
 	return -1;
 }
 
-/*! \internal \brief Get a mock snapshot object
+/*!
+ * \internal
+ * \brief Get a mock snapshot object
+ *
  * \param context The mailbox context
  * \param exten The mailbox extension
  * \param callerid The caller ID of the person leaving the message
+ *
  * \returns an ast_vm_msg_snapshot object on success
  * \returns NULL on error
  */
@@ -325,8 +409,12 @@ static void test_vm_api_destroy_mock_snapshot(struct ast_vm_msg_snapshot *snapsh
 	}
 }
 
-/*! \internal \brief Make a voicemail mailbox folder based on the values provided in a message snapshot
+/*!
+ * \internal
+ * \brief Make a voicemail mailbox folder based on the values provided in a message snapshot
+ *
  * \param snapshot The snapshot containing the information to create the folder from
+ *
  * \returns 0 on success
  * \returns 1 on failure
  */
@@ -342,12 +430,17 @@ static int test_vm_api_create_voicemail_folder(const char *folder_path)
 	return 0;
 }
 
-/*! \internal \brief Create the voicemail files specified by a snapshot
+/*!
+ * \internal
+ * \brief Create the voicemail files specified by a snapshot
+ *
  * \param context The context of the mailbox
  * \param mailbox The actual mailbox
  * \param snapshot The message snapshot object containing the relevant envelope data
+ *
  * \note This will symbolic link the sound file 'beep.gsm' to act as the 'sound' portion of the voicemail.
  * Certain actions in app_voicemail will fail if an actual sound file does not exist
+ *
  * \returns 0 on success
  * \returns 1 on any failure
  */
@@ -365,9 +458,9 @@ static int test_vm_api_create_voicemail_files(const char *context, const char *m
 	 */
 	snprintf(folder_path, sizeof(folder_path), "%s/voicemail/%s/%s/%s",
 		ast_config_AST_SPOOL_DIR, context, mailbox, snapshot->folder_name);
-	snprintf(msg_path, sizeof(msg_path), "%s/msg%04d.txt",
+	snprintf(msg_path, sizeof(msg_path), "%s/msg%04u.txt",
 		folder_path, snapshot->msg_number);
-	snprintf(snd_path, sizeof(snd_path), "%s/msg%04d.gsm",
+	snprintf(snd_path, sizeof(snd_path), "%s/msg%04u.gsm",
 		folder_path, snapshot->msg_number);
 	snprintf(beep_path, sizeof(beep_path), "%s/sounds/en/beep.gsm", ast_config_AST_VAR_DIR);
 
@@ -437,7 +530,10 @@ static int test_vm_api_create_voicemail_files(const char *context, const char *m
 	return 0;
 }
 
-/*! \internal \brief Destroy the voicemail on the file system associated with a snapshot
+/*!
+ * \internal
+ * \brief Destroy the voicemail on the file system associated with a snapshot
+ *
  * \param snapshot The snapshot describing the voicemail
  */
 static void test_vm_api_remove_voicemail(struct ast_vm_msg_snapshot *snapshot)
@@ -453,9 +549,9 @@ static void test_vm_api_remove_voicemail(struct ast_vm_msg_snapshot *snapshot)
 	snprintf(folder_path, sizeof(folder_path), "%s/voicemail/%s/%s/%s",
 		ast_config_AST_SPOOL_DIR, "default", snapshot->exten, snapshot->folder_name);
 
-	snprintf(msg_path, sizeof(msg_path), "%s/msg%04d.txt",
+	snprintf(msg_path, sizeof(msg_path), "%s/msg%04u.txt",
 			folder_path, snapshot->msg_number);
-	snprintf(snd_path, sizeof(snd_path), "%s/msg%04d.gsm",
+	snprintf(snd_path, sizeof(snd_path), "%s/msg%04u.gsm",
 			folder_path, snapshot->msg_number);
 	unlink(msg_path);
 	unlink(snd_path);
@@ -463,10 +559,14 @@ static void test_vm_api_remove_voicemail(struct ast_vm_msg_snapshot *snapshot)
 	return;
 }
 
-/*! \internal \brief Destroy the voicemails associated with a mailbox snapshot
+/*!
+ * \internal
+ * \brief Destroy the voicemails associated with a mailbox snapshot
+ *
  * \param mailbox The actual mailbox name
  * \param mailbox_snapshot The mailbox snapshot containing the voicemails to destroy
- * \note Its necessary to specify not just the snapshot, but the mailbox itself.  The
+ *
+ * \note It is necessary to specify not just the snapshot, but the mailbox itself.  The
  * message snapshots contained in the snapshot may have originated from a different mailbox
  * then the one we're destroying, which means that we can't determine the files to delete
  * without knowing the actual mailbox they exist in.
@@ -484,7 +584,10 @@ static void test_vm_api_destroy_mailbox_voicemails(const char *mailbox, struct a
 	}
 }
 
-/*! \internal \brief Use snapshots to remove all messages in the mailboxes */
+/*!
+ * \internal
+ * \brief Use snapshots to remove all messages in the mailboxes
+ */
 static void test_vm_api_remove_all_messages(void)
 {
 	struct ast_vm_mailbox_snapshot *mailbox_snapshot;
@@ -506,8 +609,11 @@ static void test_vm_api_remove_all_messages(void)
 	}
 }
 
-/*! \internal \brief Set up the necessary voicemails for a unit test run
- * \note
+/*!
+ * \internal
+ * \brief Set up the necessary voicemails for a unit test run
+ *
+ * \details
  * This creates 4 voicemails, stores them on the file system, and creates snapshot objects
  * representing them for expected/actual value comparisons in the array test_snapshots.
  *
@@ -627,7 +733,10 @@ static void test_vm_api_test_teardown(void)
 	ast_vm_test_destroy_user("default", "test_vm_api_2345");
 }
 
-/*! \internal \brief Update the test snapshots with a new mailbox snapshot
+/*!
+ * \internal
+ * \brief Update the test snapshots with a new mailbox snapshot
+ *
  * \param mailbox_snapshot The new mailbox shapshot to update the test snapshots with
  */
 static void test_vm_api_update_test_snapshots(struct ast_vm_mailbox_snapshot *mailbox_snapshot)
@@ -654,10 +763,14 @@ static void test_vm_api_update_test_snapshots(struct ast_vm_mailbox_snapshot *ma
 	}
 }
 
-/*! \internal \brief A callback function for message playback
+/*!
+ * \internal
+ * \brief A callback function for message playback
+ *
  * \param chan The channel the file would be played back on
  * \param file The file to play back
  * \param duration The duration of the file
+ *
  * \note This sets global_entered_playback_callback to 1 if the parameters
  * passed to the callback are minimally valid
  */
@@ -670,25 +783,37 @@ static void message_playback_callback_fn(struct ast_channel *chan, const char *f
 	}
 }
 
-/*! \internal \brief Dummy channel write function for mock_channel_tech */
+/*!
+ * \internal
+ * \brief Dummy channel write function for mock_channel_tech
+ */
 static int test_vm_api_mock_channel_write(struct ast_channel *chan, struct ast_frame *frame)
 {
 	return 0;
 }
 
-/*! \internal \brief Dummy channel read function for mock_channel_tech */
+/*!
+ * \internal
+ * \brief Dummy channel read function for mock_channel_tech
+ */
 static struct ast_frame *test_vm_api_mock_channel_read(struct ast_channel *chan)
 {
 	return &ast_null_frame;
 }
 
-/*! \internal \brief A dummy channel technology */
+/*!
+ * \internal
+ * \brief A dummy channel technology
+ */
 static const struct ast_channel_tech mock_channel_tech = {
 		.write = test_vm_api_mock_channel_write,
 		.read = test_vm_api_mock_channel_read,
 };
 
-/*! \internal \brief Create a dummy channel suitable for 'playing back' gsm sound files on
+/*!
+ * \internal
+ * \brief Create a dummy channel suitable for 'playing back' gsm sound files on
+ *
  * \returns a channel on success
  * \returns NULL on failure
  */
@@ -697,17 +822,19 @@ static struct ast_channel *test_vm_api_create_mock_channel(void)
 	struct ast_channel *mock_channel;
 	struct ast_format_cap *native_formats;
 
-	if (!(mock_channel = ast_channel_alloc(0, AST_STATE_DOWN, NULL, NULL, NULL, NULL, NULL, 0, 0, "TestChannel"))) {
+	if (!(mock_channel = ast_channel_alloc(0, AST_STATE_DOWN, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, "TestChannel"))) {
 		return NULL;
 	}
 
-	ast_format_set(ast_channel_writeformat(mock_channel), AST_FORMAT_GSM, 0);
+	ast_channel_set_writeformat(mock_channel, ast_format_gsm);
 	native_formats = ast_channel_nativeformats(mock_channel);
-	ast_format_cap_add(native_formats, ast_channel_writeformat(mock_channel));
-	ast_format_set(ast_channel_rawwriteformat(mock_channel), AST_FORMAT_GSM, 0);
-	ast_format_set(ast_channel_readformat(mock_channel), AST_FORMAT_GSM, 0);
-	ast_format_set(ast_channel_rawreadformat(mock_channel), AST_FORMAT_GSM, 0);
+	ast_format_cap_append(native_formats, ast_channel_writeformat(mock_channel), 0);
+	ast_channel_set_rawwriteformat(mock_channel, ast_format_gsm);
+	ast_channel_set_readformat(mock_channel, ast_format_gsm);
+	ast_channel_set_rawreadformat(mock_channel, ast_format_gsm);
 	ast_channel_tech_set(mock_channel, &mock_channel_tech);
+
+	ast_channel_unlock(mock_channel);
 
 	return mock_channel;
 }
@@ -1338,9 +1465,7 @@ AST_TEST_DEFINE(voicemail_api_nominal_msg_playback)
 	VM_API_INT_VERIFY(test_mbox_snapshot->total_msg_num, 2);
 	test_mbox_snapshot = ast_vm_mailbox_snapshot_destroy(test_mbox_snapshot);
 
-	if (test_channel) {
-		ast_hangup(test_channel);
-	}
+	ast_hangup(test_channel);
 	VM_API_TEST_CLEANUP;
 
 	return AST_TEST_PASS;
@@ -1398,9 +1523,7 @@ AST_TEST_DEFINE(voicemail_api_off_nominal_msg_playback)
 
 	ast_test_status_update(test, "Playing back message with NULL message specifier\n");
 	VM_API_PLAYBACK_MESSAGE_OFF_NOMINAL(test_channel, "test_vm_api_1234", "default", "INBOX", NULL, NULL);
-	if (test_channel) {
-		ast_hangup(test_channel);
-	}
+	ast_hangup(test_channel);
 	VM_API_TEST_CLEANUP;
 
 	return AST_TEST_PASS;

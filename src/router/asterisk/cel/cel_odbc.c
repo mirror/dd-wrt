@@ -22,7 +22,7 @@
  *
  * \brief ODBC CEL backend
  *
- * \author Tilghman Lesher <tlesher AT digium DOT com>
+ * \author Tilghman Lesher \verbatim <tlesher AT digium DOT com> \endverbatim
  * \ingroup cel_drivers
  */
 
@@ -33,7 +33,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 358576 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 427954 $")
 
 #include <sys/types.h>
 #include <time.h>
@@ -51,7 +51,8 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 358576 $")
 #include "asterisk/module.h"
 
 #define	CONFIG	"cel_odbc.conf"
-static struct ast_event_sub *event_sub = NULL;
+
+#define ODBC_BACKEND_NAME "ODBC CEL backend"
 
 /*! \brief show_user_def is off by default */
 #define CEL_SHOW_USERDEF_DEFAULT	0
@@ -367,7 +368,7 @@ static SQLHSTMT generic_prepare(struct odbc_obj *obj, void *data)
 				}																\
 			} while (0)
 
-static void odbc_log(const struct ast_event *event, void *userdata)
+static void odbc_log(struct ast_event *event)
 {
 	struct tables *tableptr;
 	struct columns *entry;
@@ -435,7 +436,7 @@ static void odbc_log(const struct ast_event *event, void *userdata)
 				   This should be ok, however, as nobody is going to store just event
 				   date or just time for CDR purposes.
 				 */
-				ast_strftime(colbuf, sizeof(colbuf), "%Y-%m-%d %H:%M:%S.%q", &tm);
+				ast_strftime(colbuf, sizeof(colbuf), "%Y-%m-%d %H:%M:%S.%6q", &tm);
 				colptr = colbuf;
 			} else {
 				if (strcmp(entry->celname, "userdeftype") == 0) {
@@ -473,11 +474,11 @@ static void odbc_log(const struct ast_event *event, void *userdata)
 				} else if (strcmp(entry->celname, "peer") == 0) {
 					ast_copy_string(colbuf, record.peer, sizeof(colbuf));
 				} else if (strcmp(entry->celname, "amaflags") == 0) {
-					snprintf(colbuf, sizeof(colbuf), "%d", record.amaflag);
+					snprintf(colbuf, sizeof(colbuf), "%u", record.amaflag);
 				} else if (strcmp(entry->celname, "extra") == 0) {
 					ast_copy_string(colbuf, record.extra, sizeof(colbuf));
 				} else if (strcmp(entry->celname, "eventtype") == 0) {
-					snprintf(colbuf, sizeof(colbuf), "%d", record.event_type);
+					snprintf(colbuf, sizeof(colbuf), "%u", record.event_type);
 				} else {
 					colbuf[0] = 0;
 					unknown = 1;
@@ -614,7 +615,7 @@ static void odbc_log(const struct ast_event *event, void *userdata)
 					if (ast_strlen_zero(colptr)) {
 						continue;
 					} else {
-						int year = 0, month = 0, day = 0, hour = 0, minute = 0, second = 0;
+						int year = 0, month = 0, day = 0, hour = 0, minute = 0, second = 0, fraction = 0;
 						if (strcasecmp(entry->name, "eventdate") == 0) {
 							struct ast_tm tm;
 							ast_localtime(&record.event_time, &tm, tableptr->usegmtime ? "UTC" : NULL);
@@ -624,17 +625,18 @@ static void odbc_log(const struct ast_event *event, void *userdata)
 							hour = tm.tm_hour;
 							minute = tm.tm_min;
 							second = (tableptr->allowleapsec || tm.tm_sec < 60) ? tm.tm_sec : 59;
+							fraction = tm.tm_usec;
 						} else {
-							int count = sscanf(colptr, "%4d-%2d-%2d %2d:%2d:%2d", &year, &month, &day, &hour, &minute, &second);
+							int count = sscanf(colptr, "%4d-%2d-%2d %2d:%2d:%2d.%6d", &year, &month, &day, &hour, &minute, &second, &fraction);
 
-							if ((count != 3 && count != 5 && count != 6) || year <= 0 ||
+							if ((count != 3 && count != 5 && count != 6 && count != 7) || year <= 0 ||
 								month <= 0 || month > 12 || day < 0 || day > 31 ||
 								((month == 4 || month == 6 || month == 9 || month == 11) && day == 31) ||
 								(month == 2 && year % 400 == 0 && day > 29) ||
 								(month == 2 && year % 100 == 0 && day > 28) ||
 								(month == 2 && year % 4 == 0 && day > 29) ||
 								(month == 2 && year % 4 != 0 && day > 28) ||
-								hour > 23 || minute > 59 || second > (tableptr->allowleapsec ? 60 : 59) || hour < 0 || minute < 0 || second < 0) {
+								hour > 23 || minute > 59 || second > (tableptr->allowleapsec ? 60 : 59) || hour < 0 || minute < 0 || second < 0 || fraction < 0) {
 								ast_log(LOG_WARNING, "CEL variable %s is not a valid timestamp ('%s').\n", entry->name, colptr);
 								continue;
 							}
@@ -646,7 +648,7 @@ static void odbc_log(const struct ast_event *event, void *userdata)
 
 						ast_str_append(&sql, 0, "%s%s", first ? "" : ",", entry->name);
 						LENGTHEN_BUF2(27);
-						ast_str_append(&sql2, 0, "%s{ts '%04d-%02d-%02d %02d:%02d:%02d'}", first ? "" : ",", year, month, day, hour, minute, second);
+						ast_str_append(&sql2, 0, "%s{ts '%04d-%02d-%02d %02d:%02d:%02d.%d'}", first ? "" : ",", year, month, day, hour, minute, second, fraction);
 					}
 					break;
 				case SQL_INTEGER:
@@ -691,7 +693,7 @@ static void odbc_log(const struct ast_event *event, void *userdata)
 					break;
 				case SQL_TINYINT:
 					{
-						char integer = 0;
+						signed char integer = 0;
 						if (sscanf(colptr, "%30hhd", &integer) != 1) {
 							ast_log(LOG_WARNING, "CEL variable %s is not an integer.\n", entry->name);
 							continue;
@@ -704,7 +706,7 @@ static void odbc_log(const struct ast_event *event, void *userdata)
 					break;
 				case SQL_BIT:
 					{
-						char integer = 0;
+						signed char integer = 0;
 						if (sscanf(colptr, "%30hhd", &integer) != 1) {
 							ast_log(LOG_WARNING, "CEL variable %s is not an integer.\n", entry->name);
 							continue;
@@ -760,8 +762,7 @@ static void odbc_log(const struct ast_event *event, void *userdata)
 		ast_str_append(&sql2, 0, ")");
 		ast_str_append(&sql, 0, "%s", ast_str_buffer(sql2));
 
-		ast_verb(11, "[%s]\n", ast_str_buffer(sql));
-
+		ast_debug(3, "Executing SQL statement: [%s]\n", ast_str_buffer(sql));
 		stmt = ast_odbc_prepare_and_execute(obj, generic_prepare, ast_str_buffer(sql));
 		if (stmt) {
 			SQLRowCount(stmt, &rows);
@@ -789,18 +790,12 @@ early_release:
 
 static int unload_module(void)
 {
-	if (event_sub) {
-		event_sub = ast_event_unsubscribe(event_sub);
-	}
 	if (AST_RWLIST_WRLOCK(&odbc_tables)) {
-		event_sub = ast_event_subscribe(AST_EVENT_CEL, odbc_log, "ODBC CEL backend", NULL, AST_EVENT_IE_END);
-		if (!event_sub) {
-			ast_log(LOG_ERROR, "Unable to subscribe to CEL events\n");
-		}
 		ast_log(LOG_ERROR, "Unable to lock column list.  Unload failed.\n");
 		return -1;
 	}
 
+	ast_cel_backend_unregister(ODBC_BACKEND_NAME);
 	free_config();
 	AST_RWLIST_UNLOCK(&odbc_tables);
 	AST_RWLIST_HEAD_DESTROY(&odbc_tables);
@@ -814,13 +809,13 @@ static int load_module(void)
 
 	if (AST_RWLIST_WRLOCK(&odbc_tables)) {
 		ast_log(LOG_ERROR, "Unable to lock column list.  Load failed.\n");
-		return 0;
+		return AST_MODULE_LOAD_FAILURE;
 	}
 	load_config();
 	AST_RWLIST_UNLOCK(&odbc_tables);
-	event_sub = ast_event_subscribe(AST_EVENT_CEL, odbc_log, "ODBC CEL backend", NULL, AST_EVENT_IE_END);
-	if (!event_sub) {
+	if (ast_cel_backend_register(ODBC_BACKEND_NAME, odbc_log)) {
 		ast_log(LOG_ERROR, "Unable to subscribe to CEL events\n");
+		return AST_MODULE_LOAD_FAILURE;
 	}
 	return AST_MODULE_LOAD_SUCCESS;
 }
@@ -829,7 +824,7 @@ static int reload(void)
 {
 	if (AST_RWLIST_WRLOCK(&odbc_tables)) {
 		ast_log(LOG_ERROR, "Unable to lock column list.  Reload failed.\n");
-		return -1;
+		return AST_MODULE_LOAD_FAILURE;
 	}
 
 	free_config();
@@ -838,7 +833,8 @@ static int reload(void)
 	return AST_MODULE_LOAD_SUCCESS;
 }
 
-AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "ODBC CEL backend",
+AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, ODBC_BACKEND_NAME,
+	.support_level = AST_MODULE_SUPPORT_CORE,
 	.load = load_module,
 	.unload = unload_module,
 	.reload = reload,

@@ -45,21 +45,28 @@
  * \todo The service type selection needs to be redone.
  */
 
+/*! \li \ref enum.c uses the configuration file \ref enum.conf
+ * \addtogroup configuration_file Configuration Files
+ */
+
+/*!
+ * \page enum.conf enum.conf
+ * \verbinclude enum.conf.sample
+ */
+
 /*** MODULEINFO
 	<support_level>core</support_level>
  ***/
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 369013 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 413589 $")
 
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/nameser.h>
 #ifdef __APPLE__
-#if __APPLE_CC__ >= 1495
 #include <arpa/nameser_compat.h>
-#endif
 #endif
 #include <resolv.h>
 #include <ctype.h>
@@ -376,7 +383,7 @@ static unsigned int parse_ie(char *data, unsigned int maxdatalen, unsigned char 
 	srclen--;
 
 	if (len > srclen) {
-		ast_log(LOG_WARNING, "ENUM parsing failed: Wanted %d characters, got %d\n", len, srclen);
+		ast_log(LOG_WARNING, "ENUM parsing failed: Wanted %u characters, got %u\n", len, srclen);
 		return -1;
 	}
 
@@ -654,7 +661,7 @@ int ast_get_enum(struct ast_channel *chan, const char *number, char *dst, int ds
 		return -1;
 	}
 
-	ast_debug(2, "num='%s', tech='%s', suffix='%s', options='%s', record=%d\n", number, tech, suffix, options, record);
+	ast_debug(2, "num='%s', tech='%s', suffix='%s', options='%s', record=%u\n", number, tech, suffix, options, record);
 
 /*
   We don't need that any more, that "n" preceding the number has been replaced by a flag
@@ -1000,7 +1007,6 @@ static int private_enum_init(int reload)
 		ast_config_destroy(cfg);
 	}
 	ast_mutex_unlock(&enumlock);
-	manager_event(EVENT_FLAG_SYSTEM, "Reload", "Module: Enum\r\nStatus: Enabled\r\nMessage: ENUM reload Requested\r\n");
 	return 0;
 }
 

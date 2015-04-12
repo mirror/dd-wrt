@@ -38,13 +38,14 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 370951 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419044 $")
 
 #include "asterisk/file.h"
 #include "asterisk/channel.h"
 #include "asterisk/pbx.h"
 #include "asterisk/module.h"
 #include "asterisk/app.h"
+#include "asterisk/format_cache.h"
 
 static const char app_originate[] = "Originate";
 
@@ -112,22 +113,22 @@ static int originate_exec(struct ast_channel *chan, const char *data)
 	int outgoing_status = 0;
 	unsigned int timeout = 30;
 	static const char default_exten[] = "s";
-	struct ast_format tmpfmt;
-	struct ast_format_cap *cap_slin = ast_format_cap_alloc_nolock();
+	struct ast_format_cap *cap_slin = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT);
 
 	ast_autoservice_start(chan);
 	if (!cap_slin) {
 		goto return_cleanup;
 	}
-	ast_format_cap_add(cap_slin, ast_format_set(&tmpfmt, AST_FORMAT_SLINEAR, 0));
-	ast_format_cap_add(cap_slin, ast_format_set(&tmpfmt, AST_FORMAT_SLINEAR12, 0));
-	ast_format_cap_add(cap_slin, ast_format_set(&tmpfmt, AST_FORMAT_SLINEAR16, 0));
-	ast_format_cap_add(cap_slin, ast_format_set(&tmpfmt, AST_FORMAT_SLINEAR24, 0));
-	ast_format_cap_add(cap_slin, ast_format_set(&tmpfmt, AST_FORMAT_SLINEAR32, 0));
-	ast_format_cap_add(cap_slin, ast_format_set(&tmpfmt, AST_FORMAT_SLINEAR44, 0));
-	ast_format_cap_add(cap_slin, ast_format_set(&tmpfmt, AST_FORMAT_SLINEAR48, 0));
-	ast_format_cap_add(cap_slin, ast_format_set(&tmpfmt, AST_FORMAT_SLINEAR96, 0));
-	ast_format_cap_add(cap_slin, ast_format_set(&tmpfmt, AST_FORMAT_SLINEAR192, 0));
+
+	ast_format_cap_append(cap_slin, ast_format_slin, 0);
+	ast_format_cap_append(cap_slin, ast_format_slin12, 0);
+	ast_format_cap_append(cap_slin, ast_format_slin16, 0);
+	ast_format_cap_append(cap_slin, ast_format_slin24, 0);
+	ast_format_cap_append(cap_slin, ast_format_slin32, 0);
+	ast_format_cap_append(cap_slin, ast_format_slin44, 0);
+	ast_format_cap_append(cap_slin, ast_format_slin48, 0);
+	ast_format_cap_append(cap_slin, ast_format_slin96, 0);
+	ast_format_cap_append(cap_slin, ast_format_slin192, 0);
 
 	if (ast_strlen_zero(data)) {
 		ast_log(LOG_ERROR, "Originate() requires arguments\n");
@@ -177,15 +178,15 @@ static int originate_exec(struct ast_channel *chan, const char *data)
 				chantech, chandata, args.arg1, exten, priority);
 
 		ast_pbx_outgoing_exten(chantech, cap_slin, chandata,
-				timeout * 1000, args.arg1, exten, priority, &outgoing_status, 0, NULL,
-				NULL, NULL, NULL, NULL, 0);
+				timeout * 1000, args.arg1, exten, priority, &outgoing_status, 1, NULL,
+				NULL, NULL, NULL, NULL, 0, NULL);
 	} else if (!strcasecmp(args.type, "app")) {
 		ast_debug(1, "Originating call to '%s/%s' and connecting them to %s(%s)\n",
 				chantech, chandata, args.arg1, S_OR(args.arg2, ""));
 
 		ast_pbx_outgoing_app(chantech, cap_slin, chandata,
-				timeout * 1000, args.arg1, args.arg2, &outgoing_status, 0, NULL,
-				NULL, NULL, NULL, NULL);
+				timeout * 1000, args.arg1, args.arg2, &outgoing_status, 1, NULL,
+				NULL, NULL, NULL, NULL, NULL);
 	} else {
 		ast_log(LOG_ERROR, "Incorrect type, it should be 'exten' or 'app': %s\n",
 				args.type);
@@ -222,7 +223,7 @@ return_cleanup:
 			break;
 		}
 	}
-	cap_slin = ast_format_cap_destroy(cap_slin);
+	ao2_cleanup(cap_slin);
 	ast_autoservice_stop(chan);
 
 	return res;

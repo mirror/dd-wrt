@@ -33,7 +33,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 357542 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419592 $")
 
 #include "asterisk/lock.h"
 #include "asterisk/file.h"
@@ -127,4 +127,5 @@ static int load_module(void)
 	return ast_register_application_xml(app2, setcallerid_pres_exec);
 }
 
-AST_MODULE_INFO_STANDARD(ASTERISK_GPL_KEY, "Set CallerID Presentation Application");
+AST_MODULE_INFO_STANDARD_DEPRECATED(ASTERISK_GPL_KEY, "Set CallerID Presentation Application");
+

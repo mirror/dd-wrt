@@ -1,5 +1,5 @@
 /*
- * Asterisk -- A telephony toolkit for Linux.
+ * Asterisk -- An open source telephony toolkit.
  *
  * General Definitions for Asterisk top level program
  *
@@ -90,10 +90,62 @@ int ast_pbx_init(void);				/*!< Provided by pbx.c */
 int ast_register_atexit(void (*func)(void));
 
 /*!
+ * \since 11.9
+ * \brief Register a function to be executed before Asterisk gracefully exits.
+ *
+ * If Asterisk is immediately shutdown (core stop now, or sending the TERM
+ * signal), the callback is not run. When the callbacks are run, they are run in
+ * sequence with ast_register_atexit() callbacks, in the reverse order of
+ * registration.
+ *
+ * \param func The callback function to use.
+ *
+ * \retval 0 on success.
+ * \retval -1 on error.
+ */
+int ast_register_cleanup(void (*func)(void));
+
+/*!
  * \brief Unregister a function registered with ast_register_atexit().
  * \param func The callback function to unregister.
  */
 void ast_unregister_atexit(void (*func)(void));
+
+/*!
+ * \brief Cancel an existing shutdown and return to normal operation.
+ *
+ * \note Shutdown can be cancelled while the server is waiting for
+ * any existing channels to be destroyed before shutdown becomes
+ * irreversible.
+ *
+ * \return non-zero if shutdown cancelled.
+ */
+int ast_cancel_shutdown(void);
+
+/*!
+ * \details
+ * The server is preventing new channel creation in preparation for
+ * shutdown and may actively be releasing resources.  The shutdown
+ * process may be canceled by ast_cancel_shutdown() if it is not too
+ * late.
+ *
+ * \note The preparation to shutdown phase can be quite lengthy
+ * if we are gracefully shutting down.  How long existing calls will
+ * last is not up to us.
+ *
+ * \return non-zero if the server is preparing to or actively shutting down.
+ */
+int ast_shutting_down(void);
+
+/*!
+ * \return non-zero if the server is actively shutting down.
+ * \since 13.3.0
+ *
+ * \details
+ * The server is releasing resources and unloading modules.
+ * It won't be long now.
+ */
+int ast_shutdown_final(void);
 
 #if !defined(LOW_MEMORY)
 /*!
@@ -212,17 +264,6 @@ struct ast_module;
 struct ast_variable;
 struct ast_str;
 struct ast_sched_context;
-
-#ifdef bzero
-#undef bzero
-#endif
-
-#ifdef bcopy
-#undef bcopy
-#endif
-
-#define bzero  0x__dont_use_bzero__use_memset_instead""
-#define bcopy  0x__dont_use_bcopy__use_memmove_instead()
 
 /* Some handy macros for turning a preprocessor token into (effectively) a quoted string */
 #define __stringify_1(x)	#x

@@ -13,8 +13,17 @@
  *
  * \author Thorsten Lockert <tholo@voop.as>
  *
- * \extref Uses the Net-SNMP libraries available at
+ * Uses the Net-SNMP libraries available at
  *	 http://net-snmp.sourceforge.net/
+ */
+
+/*! \li \ref res_snmp.c uses the configuration file \ref res_snmp.conf
+ * \addtogroup configuration_file Configuration Files
+ */
+
+/*!
+ * \page res_snmp.conf res_snmp.conf
+ * \verbinclude res_snmp.conf.sample
  */
 
 /*** MODULEINFO
@@ -24,7 +33,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 328259 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419592 $")
 
 #include "asterisk/channel.h"
 #include "asterisk/module.h"
@@ -94,6 +103,16 @@ static int load_config(void)
 	return 1;
 }
 
+/*!
+ * \brief Load the module
+ *
+ * Module loading including tests for configuration or dependencies.
+ * This function can return AST_MODULE_LOAD_FAILURE, AST_MODULE_LOAD_DECLINE,
+ * or AST_MODULE_LOAD_SUCCESS. If a dependency or environment variable fails
+ * tests return AST_MODULE_LOAD_FAILURE. If the module can not load the 
+ * configuration file or other non-critical problem return 
+ * AST_MODULE_LOAD_DECLINE. On success return AST_MODULE_LOAD_SUCCESS.
+ */
 static int load_module(void)
 {
 	if(!load_config())
@@ -117,6 +136,7 @@ static int unload_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT, "SNMP [Sub]Agent for Asterisk",
+		.support_level = AST_MODULE_SUPPORT_EXTENDED,
 		.load = load_module,
 		.unload = unload_module,
 		);

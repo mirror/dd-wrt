@@ -31,7 +31,6 @@ extern "C" {
 
 #include <sys/time.h>
 
-#include "asterisk/format_pref.h"
 #include "asterisk/format.h"
 #include "asterisk/endian.h"
 #include "asterisk/linkedlists.h"
@@ -39,11 +38,11 @@ extern "C" {
 /*!
  * \page Def_Frame AST Multimedia and signalling frames
  * \section Def_AstFrame What is an ast_frame ?
- * A frame of data read used to communicate between 
+ * A frame of data read used to communicate between
  * between channels and applications.
  * Frames are divided into frame types and subclasses.
  *
- * \par Frame types 
+ * \par Frame types
  * \arg \b VOICE:  Voice data, subclass is codec (AST_FORMAT_*)
  * \arg \b VIDEO:  Video data, subclass is codec (AST_FORMAT_*)
  * \arg \b DTMF:   A DTMF digit, subclass is the digit
@@ -88,7 +87,7 @@ extern "C" {
  */
 
 /*!
- * \brief Frame types 
+ * \brief Frame types
  *
  * \note It is important that the values of each frame type are never changed,
  *       because it will break backwards compatability with older versions.
@@ -113,13 +112,21 @@ enum ast_frame_type {
 	AST_FRAME_IMAGE,
 	/*! HTML Frame */
 	AST_FRAME_HTML,
-	/*! Comfort Noise frame (subclass is level of CNG in -dBov), 
+	/*! Comfort Noise frame (subclass is level of CNG in -dBov),
 	    body may include zero or more 8-bit quantization coefficients */
 	AST_FRAME_CNG,
 	/*! Modem-over-IP data streams */
-	AST_FRAME_MODEM,	
+	AST_FRAME_MODEM,
 	/*! DTMF begin event, subclass is the digit */
 	AST_FRAME_DTMF_BEGIN,
+	/*! Internal bridge module action. */
+	AST_FRAME_BRIDGE_ACTION,
+	/*! Internal synchronous bridge module action.
+	 * Synchronous bridge actions may be queued onto bridge
+	 * channels, but they absolutely must not ever be written
+	 * directly into bridges.
+	 */
+	AST_FRAME_BRIDGE_ACTION_SYNC,
 };
 #define AST_FRAME_DTMF AST_FRAME_DTMF_END
 
@@ -128,33 +135,37 @@ enum {
 	AST_FRFLAG_HAS_TIMING_INFO = (1 << 0),
 };
 
-union ast_frame_subclass {
+struct ast_frame_subclass {
+	/*! A frame specific code */
 	int integer;
-	struct ast_format format;
+	/*! The asterisk media format */
+	struct ast_format *format;
+	/*! For video formats, an indication that a frame ended */
+	unsigned int frame_ending;
 };
 
 /*! \brief Data structure associated with a single frame of data
  */
 struct ast_frame {
 	/*! Kind of frame */
-	enum ast_frame_type frametype;				
+	enum ast_frame_type frametype;
 	/*! Subclass, frame dependent */
-	union ast_frame_subclass subclass;
+	struct ast_frame_subclass subclass;
 	/*! Length of data */
-	int datalen;				
+	int datalen;
 	/*! Number of samples in this frame */
-	int samples;				
+	int samples;
 	/*! Was the data malloc'd?  i.e. should we free it when we discard the frame? */
-	int mallocd;				
+	int mallocd;
 	/*! The number of bytes allocated for a malloc'd frame header */
 	size_t mallocd_hdr_len;
 	/*! How many bytes exist _before_ "data" that can be used if needed */
-	int offset;				
+	int offset;
 	/*! Optional source of frame for debugging */
-	const char *src;				
+	const char *src;
 	/*! Pointer to actual data */
 	union { void *ptr; uint32_t uint32; char pad[8]; } data;
-	/*! Global delivery time */		
+	/*! Global delivery time */
 	struct timeval delivery;
 	/*! For placing in a linked list */
 	AST_LIST_ENTRY(ast_frame) frame_list;
@@ -197,7 +208,7 @@ extern struct ast_frame ast_null_frame;
  * RTP header information into the space provided by AST_FRIENDLY_OFFSET instead
  * of having to create a new buffer with the necessary space allocated.
  */
-#define AST_FRIENDLY_OFFSET 	64	
+#define AST_FRIENDLY_OFFSET 	64
 #define AST_MIN_OFFSET 		32	/*! Make sure we keep at least this much handy */
 
 /*! Need the header be free'd? */
@@ -233,6 +244,18 @@ extern struct ast_frame ast_null_frame;
 /*! Reject link request */
 #define AST_HTML_LINKREJECT	20
 
+/*!
+ * \brief Internal control frame subtype field values.
+ *
+ * \warning
+ * IAX2 sends these values out over the wire.  To prevent future
+ * incompatibilities, pick the next value in the enum from whatever
+ * is on the current trunk.  If you lose the merge race you need to
+ * fix the previous branches to match what is on trunk.  In addition
+ * you need to change chan_iax2 to explicitly allow the control
+ * frame over the wire if it makes sense for the frame to be passed
+ * to another Asterisk instance.
+ */
 enum ast_control_frame_type {
 	AST_CONTROL_HANGUP = 1,			/*!< Other end has hungup */
 	AST_CONTROL_RING = 2,			/*!< Local ring */
@@ -267,6 +290,35 @@ enum ast_control_frame_type {
 	AST_CONTROL_MCID = 31,			/*!< Indicate that the caller is being malicious. */
 	AST_CONTROL_UPDATE_RTP_PEER = 32, /*!< Interrupt the bridge and have it update the peer */
 	AST_CONTROL_PVT_CAUSE_CODE = 33, /*!< Contains an update to the protocol-specific cause-code stored for branching dials */
+	AST_CONTROL_MASQUERADE_NOTIFY = 34,	/*!< A masquerade is about to begin/end. (Never sent as a frame but directly with ast_indicate_data().) */
+
+	/*
+	 * WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
+	 *
+	 * IAX2 sends these values out over the wire.  To prevent future
+	 * incompatibilities, pick the next value in the enum from whatever
+	 * is on the current trunk.  If you lose the merge race you need to
+	 * fix the previous branches to match what is on trunk.  In addition
+	 * you need to change chan_iax2 to explicitly allow the control
+	 * frame over the wire if it makes sense for the frame to be passed
+	 * to another Asterisk instance.
+	 *
+	 * WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
+	 */
+
+	/* Control frames used to manipulate a stream on a channel. The values for these
+	 * must be greater than the allowed value for a 8-bit char, so that they avoid
+	 * conflicts with DTMF values. */
+	AST_CONTROL_STREAM_STOP = 1000,		/*!< Indicate to a channel in playback to stop the stream */
+	AST_CONTROL_STREAM_SUSPEND = 1001,	/*!< Indicate to a channel in playback to suspend the stream */
+	AST_CONTROL_STREAM_RESTART = 1002,	/*!< Indicate to a channel in playback to restart the stream */
+	AST_CONTROL_STREAM_REVERSE = 1003,	/*!< Indicate to a channel in playback to rewind */
+	AST_CONTROL_STREAM_FORWARD = 1004,	/*!< Indicate to a channel in playback to fast forward */
+	/* Control frames to manipulate recording on a channel. */
+	AST_CONTROL_RECORD_CANCEL = 1100,	/*!< Indicated to a channel in record to stop recording and discard the file */
+	AST_CONTROL_RECORD_STOP = 1101,	/*!< Indicated to a channel in record to stop recording */
+	AST_CONTROL_RECORD_SUSPEND = 1102,	/*!< Indicated to a channel in record to suspend/unsuspend recording */
+	AST_CONTROL_RECORD_MUTE = 1103,	/*!< Indicated to a channel in record to mute/unmute (i.e. write silence) recording */
 };
 
 enum ast_frame_read_action {
@@ -336,9 +388,6 @@ struct ast_control_pvt_cause_code {
 	char code[1];				/*!< Tech-specific cause code information, beginning with the name of the tech */
 };
 
-#define AST_SMOOTHER_FLAG_G729		(1 << 0)
-#define AST_SMOOTHER_FLAG_BE		(1 << 1)
-
 /* Option identifiers and flags */
 #define AST_OPTION_FLAG_REQUEST		0
 #define AST_OPTION_FLAG_ACCEPT		1
@@ -347,10 +396,10 @@ struct ast_control_pvt_cause_code {
 #define AST_OPTION_FLAG_ANSWER		5
 #define AST_OPTION_FLAG_WTF		6
 
-/*! Verify touchtones by muting audio transmission 
+/*! Verify touchtones by muting audio transmission
  * (and reception) and verify the tone is still present
  * Option data is a single signed char value 0 or 1 */
-#define AST_OPTION_TONE_VERIFY		1		
+#define AST_OPTION_TONE_VERIFY		1
 
 /*! Put a compatible channel into TDD (TTY for the hearing-impared) mode
  * Option data is a single signed char value 0 or 1 */
@@ -364,7 +413,7 @@ struct ast_control_pvt_cause_code {
  * Option data is a single signed char value 0 or 1 */
 #define	AST_OPTION_AUDIO_MODE		4
 
-/*! Set channel transmit gain 
+/*! Set channel transmit gain
  * Option data is a single signed char representing number of decibels (dB)
  * to set gain to (on top of any gain specified in channel driver) */
 #define AST_OPTION_TXGAIN		5
@@ -374,7 +423,7 @@ struct ast_control_pvt_cause_code {
  * to set gain to (on top of any gain specified in channel driver) */
 #define AST_OPTION_RXGAIN		6
 
-/* set channel into "Operator Services" mode 
+/* set channel into "Operator Services" mode
  * Option data is a struct oprmode
  *
  * \note This option should never be sent over the network */
@@ -427,7 +476,7 @@ struct ast_control_pvt_cause_code {
  * Option data is a character buffer of suitable length */
 #define AST_OPTION_DEVICE_NAME		16
 
-/*! Get the CC agent type from the channel (Read only) 
+/*! Get the CC agent type from the channel (Read only)
  * Option data is a character buffer of suitable length */
 #define AST_OPTION_CC_AGENT_TYPE    17
 
@@ -444,12 +493,12 @@ struct oprmode {
 struct ast_option_header {
 	/* Always keep in network byte order */
 #if __BYTE_ORDER == __BIG_ENDIAN
-        uint16_t flag:3;
-        uint16_t option:13;
+	uint16_t flag:3;
+	uint16_t option:13;
 #else
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-        uint16_t option:13;
-        uint16_t flag:3;
+	uint16_t option:13;
+	uint16_t flag:3;
 #else
 #error Byte order not defined
 #endif
@@ -457,25 +506,31 @@ struct ast_option_header {
 		uint8_t data[0];
 };
 
-/*! \brief  Requests a frame to be allocated 
- * 
- * \param source 
- * Request a frame be allocated.  source is an optional source of the frame, 
- * len is the requested length, or "0" if the caller will supply the buffer 
+/*! \brief  Requests a frame to be allocated
+ *
+ * \param source
+ * Request a frame be allocated.  source is an optional source of the frame,
+ * len is the requested length, or "0" if the caller will supply the buffer
  */
 #if 0 /* Unimplemented */
 struct ast_frame *ast_fralloc(char *source, int len);
 #endif
 
-/*!  
+/*!
  * \brief Frees a frame or list of frames
- * 
+ *
  * \param fr Frame to free, or head of list to free
  * \param cache Whether to consider this frame for frame caching
  */
 void ast_frame_free(struct ast_frame *fr, int cache);
 
 #define ast_frfree(fr) ast_frame_free(fr, 1)
+
+/*!
+ * \brief NULL-safe wrapper for \ref ast_frfree, good for \ref RAII_VAR.
+ * \param frame Frame to free, or head of list to free.
+ */
+void ast_frame_dtor(struct ast_frame *frame);
 
 /*! \brief Makes a frame independent of any static storage
  * \param fr frame to act upon
@@ -492,7 +547,7 @@ void ast_frame_free(struct ast_frame *fr, int cache);
  */
 struct ast_frame *ast_frisolate(struct ast_frame *fr);
 
-/*! \brief Copies a frame 
+/*! \brief Copies a frame
  * \param fr frame to copy
  * Duplicates a frame -- should only rarely be used, typically frisolate is good enough
  * \return Returns a frame on success, NULL on error
@@ -501,7 +556,7 @@ struct ast_frame *ast_frdup(const struct ast_frame *fr);
 
 void ast_swapcopy_samples(void *dst, const void *src, int samples);
 
-/* Helpers for byteswapping native samples to/from 
+/* Helpers for byteswapping native samples to/from
    little-endian and big-endian. */
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 #define ast_frame_byteswap_le(fr) do { ; } while(0)
@@ -511,76 +566,10 @@ void ast_swapcopy_samples(void *dst, const void *src, int samples);
 #define ast_frame_byteswap_be(fr) do { ; } while(0)
 #endif
 
-/*! \brief Parse an "allow" or "deny" line in a channel or device configuration
-        and update the capabilities and pref if provided.
-	Video codecs are not added to codec preference lists, since we can not transcode
-	\return Returns number of errors encountered during parsing
- */
-int ast_parse_allow_disallow(struct ast_codec_pref *pref, struct ast_format_cap *cap, const char *list, int allowing);
-
-/*! \name AST_Smoother 
-*/
-/*@{ */
-/*! \page ast_smooth The AST Frame Smoother
-The ast_smoother interface was designed specifically
-to take frames of variant sizes and produce frames of a single expected
-size, precisely what you want to do.
-
-The basic interface is:
-
-- Initialize with ast_smoother_new()
-- Queue input frames with ast_smoother_feed()
-- Get output frames with ast_smoother_read()
-- when you're done, free the structure with ast_smoother_free()
-- Also see ast_smoother_test_flag(), ast_smoother_set_flags(), ast_smoother_get_flags(), ast_smoother_reset()
-*/
-struct ast_smoother;
-
-struct ast_smoother *ast_smoother_new(int bytes);
-void ast_smoother_set_flags(struct ast_smoother *smoother, int flags);
-int ast_smoother_get_flags(struct ast_smoother *smoother);
-int ast_smoother_test_flag(struct ast_smoother *s, int flag);
-void ast_smoother_free(struct ast_smoother *s);
-void ast_smoother_reset(struct ast_smoother *s, int bytes);
-
-/*!
- * \brief Reconfigure an existing smoother to output a different number of bytes per frame
- * \param s the smoother to reconfigure
- * \param bytes the desired number of bytes per output frame
- * \return nothing
- *
- */
-void ast_smoother_reconfigure(struct ast_smoother *s, int bytes);
-
-int __ast_smoother_feed(struct ast_smoother *s, struct ast_frame *f, int swap);
-struct ast_frame *ast_smoother_read(struct ast_smoother *s);
-#define ast_smoother_feed(s,f) __ast_smoother_feed(s, f, 0)
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-#define ast_smoother_feed_be(s,f) __ast_smoother_feed(s, f, 1)
-#define ast_smoother_feed_le(s,f) __ast_smoother_feed(s, f, 0)
-#else
-#define ast_smoother_feed_be(s,f) __ast_smoother_feed(s, f, 0)
-#define ast_smoother_feed_le(s,f) __ast_smoother_feed(s, f, 1)
-#endif
-/*@} Doxygen marker */
-
 void ast_frame_dump(const char *name, struct ast_frame *f, char *prefix);
-
-/*! \brief Returns the number of samples contained in the frame */
-int ast_codec_get_samples(struct ast_frame *f);
-
-/*! \brief Returns the number of bytes for the number of samples of the given format */
-int ast_codec_get_len(struct ast_format *format, int samples);
 
 /*! \brief Appends a frame to the end of a list of frames, truncating the maximum length of the list */
 struct ast_frame *ast_frame_enqueue(struct ast_frame *head, struct ast_frame *f, int maxlen, int dupe);
-
-
-/*! \brief Gets duration in ms of interpolation frame for a format */
-static inline int ast_codec_interp_len(struct ast_format *format)
-{ 
-	return (format->id == AST_FORMAT_ILBC) ? 30 : 20;
-}
 
 /*!
   \brief Adjusts the volume of the audio samples contained in a frame.

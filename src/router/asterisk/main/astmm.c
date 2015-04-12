@@ -32,7 +32,7 @@
 
 #if defined(__AST_DEBUG_MALLOC)
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 398721 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 398732 $")
 
 #include "asterisk/paths.h"	/* use ast_config_AST_LOG_DIR */
 #include <stddef.h>
@@ -42,6 +42,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 398721 $")
 #include "asterisk/lock.h"
 #include "asterisk/strings.h"
 #include "asterisk/unaligned.h"
+#include "asterisk/backtrace.h"
 
 /*!
  * The larger the number the faster memory can be freed.
@@ -78,13 +79,13 @@ static FILE *mmlog;
 
 struct ast_region {
 	AST_LIST_ENTRY(ast_region) node;
+	struct ast_bt *bt;
 	size_t len;
 	unsigned int cache;		/* region was allocated as part of a cache pool */
 	unsigned int lineno;
 	enum func_type which;
 	char file[64];
 	char func[40];
-
 	/*!
 	 * \brief Lower guard fence.
 	 *
@@ -141,6 +142,8 @@ enum summary_opts {
 static enum summary_opts atexit_summary;
 /*! Nonzero if the unfreed regions are listed at exit. */
 static int atexit_list;
+/*! Nonzero if the memory allocation backtrace is enabled. */
+static int backtrace_enabled;
 
 #define HASH(a)		(((unsigned long)(a)) % ARRAY_LEN(regions))
 
@@ -182,6 +185,24 @@ void ast_free_ptr(void *ptr)
 	ast_free(ptr);
 }
 
+static void print_backtrace(struct ast_bt *bt)
+{
+	int i = 0;
+	char **strings;
+
+	if (!bt) {
+		return;
+	}
+
+	if ((strings = ast_bt_get_symbols(bt->addresses, bt->num_frames))) {
+		astmm_log("Memory allocation backtrace:\n");
+		for (i = 3; i < bt->num_frames - 2; i++) {
+			astmm_log("#%d: [%p] %s\n", i - 3, bt->addresses[i], strings[i]);
+		}
+		ast_std_free(strings);
+	}
+}
+
 /*!
  * \internal
  *
@@ -216,6 +237,7 @@ static void *__ast_alloc_region(size_t size, const enum func_type which, const c
 	reg->cache = cache;
 	reg->lineno = lineno;
 	reg->which = which;
+	reg->bt = backtrace_enabled ? ast_bt_create() : NULL;
 	ast_copy_string(reg->file, file, sizeof(reg->file));
 	ast_copy_string(reg->func, func, sizeof(reg->func));
 
@@ -287,6 +309,7 @@ static void region_data_check(struct ast_region *reg)
 		if (*pos != FREED_MAGIC) {
 			astmm_log("WARNING: Memory corrupted after free of %p allocated at %s %s() line %d\n",
 				reg->data, reg->file, reg->func, reg->lineno);
+			print_backtrace(reg->bt);
 			my_do_crash();
 			break;
 		}
@@ -346,6 +369,7 @@ static void region_free(struct ast_freed_regions *freed, struct ast_region *reg)
 
 	if (old) {
 		region_data_check(old);
+		old->bt = ast_bt_destroy(old->bt);
 		free(old);
 	}
 }
@@ -405,12 +429,14 @@ static void region_check_fences(struct ast_region *reg)
 	if (*fence != FENCE_MAGIC) {
 		astmm_log("WARNING: Low fence violation of %p allocated at %s %s() line %d\n",
 			reg->data, reg->file, reg->func, reg->lineno);
+		print_backtrace(reg->bt);
 		my_do_crash();
 	}
 	fence = (unsigned int *) (reg->data + reg->len);
 	if (get_unaligned_uint32(fence) != FENCE_MAGIC) {
 		astmm_log("WARNING: High fence violation of %p allocated at %s %s() line %d\n",
 			reg->data, reg->file, reg->func, reg->lineno);
+		print_backtrace(reg->bt);
 		my_do_crash();
 	}
 }
@@ -951,11 +977,49 @@ static char *handle_memory_show_summary(struct ast_cli_entry *e, int cmd, struct
 	return CLI_SUCCESS;
 }
 
+static char *handle_memory_backtrace(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a)
+{
+	switch (cmd) {
+	case CLI_INIT:
+		e->command = "memory backtrace";
+		e->usage =
+			"Usage: memory backtrace {on|off}\n"
+			"       Enable dumping an allocation backtrace with memory diagnostics.\n"
+			"       Note that saving the backtrace data for each allocation\n"
+			"       can be CPU intensive.\n";
+		return NULL;
+	case CLI_GENERATE:
+		if (a->pos == 2) {
+			const char * const options[] = { "off", "on", NULL };
+
+			return ast_cli_complete(a->word, options, a->n);
+		}
+		return NULL;
+	}
+
+	if (a->argc != 3) {
+		return CLI_SHOWUSAGE;
+	}
+
+	if (ast_true(a->argv[2])) {
+		backtrace_enabled = 1;
+	} else if (ast_false(a->argv[2])) {
+		backtrace_enabled = 0;
+	} else {
+		return CLI_SHOWUSAGE;
+	}
+
+	ast_cli(a->fd, "The memory backtrace is: %s\n", backtrace_enabled ? "On" : "Off");
+
+	return CLI_SUCCESS;
+}
+
 static struct ast_cli_entry cli_memory[] = {
 	AST_CLI_DEFINE(handle_memory_atexit_list, "Enable memory allocations not freed at exit list."),
 	AST_CLI_DEFINE(handle_memory_atexit_summary, "Enable memory allocations not freed at exit summary."),
 	AST_CLI_DEFINE(handle_memory_show_allocations, "Display outstanding memory allocations"),
 	AST_CLI_DEFINE(handle_memory_show_summary, "Summarize outstanding memory allocations"),
+	AST_CLI_DEFINE(handle_memory_backtrace, "Enable dumping an allocation backtrace with memory diagnostics."),
 };
 
 AST_LIST_HEAD_NOLOCK(region_list, ast_region);

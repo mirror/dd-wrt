@@ -140,6 +140,15 @@ struct ast_custom_function {
 	/*! Write function, if write is supported */
 	ast_acf_write_fn_t write;	/*!< Write function, if write is supported */
 	struct ast_module *mod;         /*!< Module this custom function belongs to */
+	unsigned int read_escalates:1;  /*!< The read function is to be considered
+					 * 'dangerous', and should not be run directly
+					 * from external interfaces (AMI, ARI, etc.)
+					 * \since 12 */
+	unsigned int write_escalates:1; /*!< The write function is to be considerd
+					 * 'dangerous', and should not be run directly
+					 * from external interfaces (AMI, ARI, etc.)
+					 * \since 12 */
+
 	AST_RWLIST_ENTRY(ast_custom_function) acflist;
 };
 
@@ -476,6 +485,17 @@ int ast_add_extension(const char *context, int replace, const char *extension,
  * \note For details about the arguments, check ast_add_extension()
  */
 int ast_add_extension2(struct ast_context *con, int replace, const char *extension,
+	int priority, const char *label, const char *callerid,
+	const char *application, void *data, void (*datad)(void *), const char *registrar);
+
+/*!
+ * \brief Same as ast_add_extension2, but assumes you have already locked context
+ * \since 12.0.0
+ *
+ * \note con must be write locked prior to calling. For details about the arguments,
+ *       check ast_add_extension2()
+ */
+int ast_add_extension2_nolock(struct ast_context *con, int replace, const char *extension,
 	int priority, const char *label, const char *callerid,
 	const char *application, void *data, void (*datad)(void *), const char *registrar);
 
@@ -831,7 +851,7 @@ int ast_context_add_include(const char *context, const char *include,
  * \brief Add a context include
  *
  * \param con context to add the include to
- * \param include include to add
+ * \param value include value to add
  * \param registrar who registered the context
  *
  * Adds an include taking a struct ast_context as the first parameter
@@ -1082,13 +1102,77 @@ int ast_async_goto(struct ast_channel *chan, const char *context, const char *ex
  */
 int ast_async_goto_by_name(const char *chan, const char *context, const char *exten, int priority);
 
-/*! Synchronously or asynchronously make an outbound call and send it to a
-   particular extension */
-int ast_pbx_outgoing_exten(const char *type, struct ast_format_cap *cap, const char *addr, int timeout, const char *context, const char *exten, int priority, int *reason, int sync, const char *cid_num, const char *cid_name, struct ast_variable *vars, const char *account, struct ast_channel **locked_channel, int early_media);
+/*!
+ * \brief Synchronously or asynchronously make an outbound call and send it to a
+ * particular extension
+ *
+ * \param type The channel technology to create
+ * \param cap The format capabilities for the channel
+ * \param addr Address data to pass to the channel technology driver
+ * \param timeout How long we should attempt to dial the outbound channel
+ * \param context The destination context for the outbound channel
+ * \param exten The destination extension for the outbound channel
+ * \param priority The destination priority for the outbound channel
+ * \param reason Optional.  If provided, the dialed status of the outgoing channel.
+ *        Codes are AST_CONTROL_xxx values.  Valid only if synchronous is non-zero.
+ * \param synchronous If zero then don't wait for anything.
+ *        If one then block until the outbound channel answers or the call fails.
+ *        If greater than one then wait for the call to complete or if the call doesn't
+ *        answer and failed@context exists then run a channel named OutgoingSpoolFailed
+ *        at failed@context.
+ * \param cid_num The caller ID number to set on the outbound channel
+ * \param cid_name The caller ID name to set on the outbound channel
+ * \param vars Variables to set on the outbound channel
+ * \param account The accountcode for the outbound channel
+ * \param locked_channel Optional.  The outbound channel that was created if success
+ *        is returned.  Otherwise it is set to NULL.  This is returned both locked
+ *        and reference bumped.
+ * \param early_media If non-zero the channel "answers" when progress is indicated.
+ * \param assignedids Optional. The uniqueid(s) to assign the channel(s) that are created.
+ *
+ * \retval 0 on success
+ * \retval -1 on failure
+ */
+int ast_pbx_outgoing_exten(const char *type, struct ast_format_cap *cap, const char *addr,
+	int timeout, const char *context, const char *exten, int priority, int *reason,
+	int synchronous, const char *cid_num, const char *cid_name, struct ast_variable *vars,
+	const char *account, struct ast_channel **locked_channel, int early_media,
+	const struct ast_assigned_ids *assignedids);
 
-/*! Synchronously or asynchronously make an outbound call and send it to a
-   particular application with given extension */
-int ast_pbx_outgoing_app(const char *type, struct ast_format_cap *cap, const char *addr, int timeout, const char *app, const char *appdata, int *reason, int sync, const char *cid_num, const char *cid_name, struct ast_variable *vars, const char *account, struct ast_channel **locked_channel);
+/*!
+ * \brief Synchronously or asynchronously make an outbound call and execute an
+ *  application on the channel.
+ *
+ * Note that when the application stops executing, the channel is hungup.
+ *
+ * \param type The channel technology to create
+ * \param cap The format capabilities for the channel
+ * \param addr Address data to pass to the channel technology driver
+ * \param timeout How long we should attempt to dial the outbound channel
+ * \param app The name of the application to execute
+ * \param appdata Data to pass to the application
+ * \param reason Optional.  If provided, the dialed status of the outgoing channel.
+ *        Codes are AST_CONTROL_xxx values.  Valid only if synchronous is non-zero.
+ * \param synchronous If zero then don't wait for anything.
+ *        If one then block until the outbound channel answers or the call fails.
+ *        If greater than one then wait for the call to complete.
+ * \param cid_num The caller ID number to set on the outbound channel
+ * \param cid_name The caller ID name to set on the outbound channel
+ * \param vars Variables to set on the outbound channel
+ * \param account The accountcode for the outbound channel
+ * \param locked_channel Optional.  The outbound channel that was created if success
+ *        is returned.  Otherwise it is set to NULL.  This is returned both locked
+ *        and reference bumped.
+ * \param assignedids Optional. The uniqueid(s) to assign the channel(s) that are created.
+ *
+ * \retval 0 on success
+ * \retval -1 on failure
+ */
+int ast_pbx_outgoing_app(const char *type, struct ast_format_cap *cap, const char *addr,
+	int timeout, const char *app, const char *appdata, int *reason, int synchronous,
+	const char *cid_num, const char *cid_name, struct ast_variable *vars,
+	const char *account, struct ast_channel **locked_channel,
+	const struct ast_assigned_ids *assignedids);
 
 /*!
  * \brief Evaluate a condition

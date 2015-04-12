@@ -28,7 +28,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 381655 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 431092 $")
 
 #include "asterisk/module.h"
 #include "asterisk/channel.h"
@@ -41,8 +41,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 381655 $")
 #include "asterisk/app.h"
 #ifdef TEST_FRAMEWORK
 #include "asterisk/test.h"
-#include "asterisk/event.h"
-#include <semaphore.h>
+#include "asterisk/sem.h"
 #endif
 
 /*** DOCUMENTATION
@@ -72,7 +71,9 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 381655 $")
 			  <optionlist>
 			    <option name="e">
 				  <para>On Write - Use this option when the subtype and message provided are Base64
-					encoded. On Read - Retrieves message/subtype in Base64 encoded form.</para>
+					encoded. The values will be stored encoded within Asterisk, but all consumers of
+					the presence state (e.g. the SIP presence event package) will receive decoded values.</para>
+					<para>On Read - Retrieves unencoded message/subtype in Base64 encoded form.</para>
 				</option>
 			  </optionlist>
 			</parameter>
@@ -90,7 +91,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 381655 $")
 			<para>Set(BASE64_LAMP3_PRESENCE=${PRESENCE_STATE(CustomPresence:lamp3,subtype,e)})</para>
 			<para>You can subscribe to the status of a custom presence state using a hint in
 			the dialplan:</para>
-			<para>exten => 1234,hint,CustomPresence:lamp1</para>
+			<para>exten => 1234,hint,,CustomPresence:lamp1</para>
 			<para>The possible values for both uses of this function are:</para>
 			<para>not_set | unavailable | available | away | xa | chat | dnd</para>
 		</description>
@@ -230,7 +231,18 @@ static int presence_write(struct ast_channel *chan, const char *cmd, char *data,
 
 	ast_db_put(astdb_family, data, value);
 
-	ast_presence_state_changed_literal(state, subtype, message, tmp);
+	if (strchr(options, 'e')) {
+		/* Let's decode the values before sending them to stasis, yes? */
+		char decoded_subtype[256] = { 0, };
+		char decoded_message[256] = { 0, };
+
+		ast_base64decode((unsigned char *) decoded_subtype, subtype, sizeof(decoded_subtype) -1);
+		ast_base64decode((unsigned char *) decoded_message, message, sizeof(decoded_message) -1);
+
+		ast_presence_state_changed_literal(state, decoded_subtype, decoded_message, tmp);
+	} else {
+		ast_presence_state_changed_literal(state, subtype, message, tmp);
+	}
 
 	return 0;
 }
@@ -251,6 +263,7 @@ static enum ast_presence_state custom_presence_callback(const char *data, char *
 
 	if ((strchr(_options, 'e'))) {
 		char tmp[1301];
+
 		if (ast_strlen_zero(_subtype)) {
 			*subtype = NULL;
 		} else {
@@ -644,34 +657,93 @@ AST_TEST_DEFINE(test_invalid_parse_data)
 	return res;
 }
 
+#define PRES_STATE "away"
+#define PRES_SUBTYPE "down the hall"
+#define PRES_MESSAGE "Quarterly financial meeting"
+
 struct test_cb_data {
-	enum ast_presence_state presence;
-	const char *provider;
-	const char *subtype;
-	const char *message;
+	struct ast_presence_state_message *presence_state;
 	/* That's right. I'm using a semaphore */
-	sem_t sem;
+	struct ast_sem sem;
 };
 
-static void test_cb(const struct ast_event *event, void *userdata)
+static struct test_cb_data *test_cb_data_alloc(void)
 {
-	struct test_cb_data *cb_data = userdata;
-	cb_data->presence = ast_event_get_ie_uint(event, AST_EVENT_IE_PRESENCE_STATE);
-	cb_data->provider = ast_strdup(ast_event_get_ie_str(event, AST_EVENT_IE_PRESENCE_PROVIDER));
-	cb_data->subtype = ast_strdup(ast_event_get_ie_str(event, AST_EVENT_IE_PRESENCE_SUBTYPE));
-	cb_data->message = ast_strdup(ast_event_get_ie_str(event, AST_EVENT_IE_PRESENCE_MESSAGE));
-	sem_post(&cb_data->sem);
+	struct test_cb_data *cb_data = ast_calloc(1, sizeof(*cb_data));
+
+	if (!cb_data) {
+		return NULL;
+	}
+
+	if (ast_sem_init(&cb_data->sem, 0, 0)) {
+		ast_free(cb_data);
+		return NULL;
+	}
+
+	return cb_data;
 }
 
-/* XXX This test could probably stand to be moved since
- * it does not test func_presencestate but rather code in
- * presencestate.h and presencestate.c. However, the convenience
- * of presence_write() makes this a nice location for this test.
- */
+static void test_cb_data_destroy(struct test_cb_data *cb_data)
+{
+	ao2_cleanup(cb_data->presence_state);
+	ast_sem_destroy(&cb_data->sem);
+	ast_free(cb_data);
+}
+
+static void test_cb(void *userdata, struct stasis_subscription *sub, struct stasis_message *msg)
+{
+	struct test_cb_data *cb_data = userdata;
+	if (stasis_message_type(msg) != ast_presence_state_message_type()) {
+		return;
+	}
+	cb_data->presence_state = stasis_message_data(msg);
+	ao2_ref(cb_data->presence_state, +1);
+
+	ast_sem_post(&cb_data->sem);
+}
+
+static enum ast_test_result_state presence_change_common(struct ast_test *test,
+		const char *state, const char *subtype, const char *message, const char *options,
+		char *out_state, size_t out_state_size,
+		char *out_subtype, size_t out_subtype_size,
+		char *out_message, size_t out_message_size)
+{
+	RAII_VAR(struct test_cb_data *, cb_data, test_cb_data_alloc(), test_cb_data_destroy);
+	struct stasis_subscription *test_sub;
+	char pres[1301];
+
+	if (!(test_sub = stasis_subscribe(ast_presence_state_topic_all(), test_cb, cb_data))) {
+		return AST_TEST_FAIL;
+	}
+
+	if (ast_strlen_zero(options)) {
+		snprintf(pres, sizeof(pres), "%s,%s,%s", state, subtype, message);
+	} else {
+		snprintf(pres, sizeof(pres), "%s,%s,%s,%s", state, subtype, message, options);
+	}
+
+	if (presence_write(NULL, "PRESENCESTATE", "CustomPresence:TestPresenceStateChange", pres)) {
+		test_sub = stasis_unsubscribe_and_join(test_sub);
+		return AST_TEST_FAIL;
+	}
+
+	ast_sem_wait(&cb_data->sem);
+
+	ast_copy_string(out_state, ast_presence_state2str(cb_data->presence_state->state), out_state_size);
+	ast_copy_string(out_subtype, cb_data->presence_state->subtype, out_subtype_size);
+	ast_copy_string(out_message, cb_data->presence_state->message, out_message_size);
+
+	test_sub = stasis_unsubscribe_and_join(test_sub);
+	ast_db_del("CustomPresence", "TestPresenceStateChange");
+
+	return AST_TEST_PASS;
+}
+
 AST_TEST_DEFINE(test_presence_state_change)
 {
-	struct ast_event_sub *test_sub;
-	struct test_cb_data *cb_data;
+	char out_state[32];
+	char out_subtype[32];
+	char out_message[32];
 
 	switch (cmd) {
 	case TEST_INIT:
@@ -685,35 +757,66 @@ AST_TEST_DEFINE(test_presence_state_change)
 		break;
 	}
 
-	cb_data = ast_calloc(1, sizeof(*cb_data));
-	if (!cb_data) {
+	if (presence_change_common(test, PRES_STATE, PRES_SUBTYPE, PRES_MESSAGE, NULL,
+				out_state, sizeof(out_state),
+				out_subtype, sizeof(out_subtype),
+				out_message, sizeof(out_message)) == AST_TEST_FAIL) {
 		return AST_TEST_FAIL;
 	}
 
-	if (!(test_sub = ast_event_subscribe(AST_EVENT_PRESENCE_STATE,
-			test_cb, "Test presence state callbacks", cb_data, AST_EVENT_IE_END))) {
+	if (strcmp(out_state, PRES_STATE) ||
+			strcmp(out_subtype, PRES_SUBTYPE) ||
+			strcmp(out_message, PRES_MESSAGE)) {
+		ast_test_status_update(test, "Unexpected presence values, %s != %s, %s != %s, or %s != %s\n",
+				PRES_STATE, out_state,
+				PRES_SUBTYPE, out_subtype,
+				PRES_MESSAGE, out_message);
 		return AST_TEST_FAIL;
 	}
 
-	if (sem_init(&cb_data->sem, 0, 0)) {
+	return AST_TEST_PASS;
+}
+
+AST_TEST_DEFINE(test_presence_state_base64_encode)
+{
+	char out_state[32];
+	char out_subtype[32];
+	char out_message[32];
+	char encoded_subtype[64];
+	char encoded_message[64];
+
+	switch (cmd) {
+	case TEST_INIT:
+		info->name = "test_presence_state_base64_encode";
+		info->category = "/funcs/func_presence/";
+		info->summary = "presence state base64 encoding";
+		info->description =
+			"Ensure that base64-encoded presence state is stored base64-encoded but\n"
+			"is presented to consumers decoded.";
+		return AST_TEST_NOT_RUN;
+	case TEST_EXECUTE:
+		break;
+	}
+
+	ast_base64encode(encoded_subtype, (unsigned char *) PRES_SUBTYPE, strlen(PRES_SUBTYPE), sizeof(encoded_subtype) - 1);
+	ast_base64encode(encoded_message, (unsigned char *) PRES_MESSAGE, strlen(PRES_MESSAGE), sizeof(encoded_message) - 1);
+
+	if (presence_change_common(test, PRES_STATE, encoded_subtype, encoded_message, "e",
+				out_state, sizeof(out_state),
+				out_subtype, sizeof(out_subtype),
+				out_message, sizeof(out_message)) == AST_TEST_FAIL) {
 		return AST_TEST_FAIL;
 	}
 
-	presence_write(NULL, "PRESENCESTATE", "CustomPresence:TestPresenceStateChange", "away,down the hall,Quarterly financial meeting");
-	sem_wait(&cb_data->sem);
-	if (cb_data->presence != AST_PRESENCE_AWAY ||
-			strcmp(cb_data->provider, "CustomPresence:TestPresenceStateChange") ||
-			strcmp(cb_data->subtype, "down the hall") ||
-			strcmp(cb_data->message, "Quarterly financial meeting")) {
+	if (strcmp(out_state, PRES_STATE) ||
+			strcmp(out_subtype, PRES_SUBTYPE) ||
+			strcmp(out_message, PRES_MESSAGE)) {
+		ast_test_status_update(test, "Unexpected presence values, %s != %s, %s != %s, or %s != %s\n",
+				PRES_STATE, out_state,
+				PRES_SUBTYPE, out_subtype,
+				PRES_MESSAGE, out_message);
 		return AST_TEST_FAIL;
 	}
-
-	ast_free((char *)cb_data->provider);
-	ast_free((char *)cb_data->subtype);
-	ast_free((char *)cb_data->message);
-	ast_free((char *)cb_data);
-
-	ast_db_del("CustomPresence", "TestPresenceStateChange");
 
 	return AST_TEST_PASS;
 }
@@ -731,6 +834,7 @@ static int unload_module(void)
 	AST_TEST_UNREGISTER(test_valid_parse_data);
 	AST_TEST_UNREGISTER(test_invalid_parse_data);
 	AST_TEST_UNREGISTER(test_presence_state_change);
+	AST_TEST_UNREGISTER(test_presence_state_base64_encode);
 #endif
 	return res;
 }
@@ -745,20 +849,16 @@ static int load_module(void)
 	db_entry = db_tree = ast_db_gettree(astdb_family, NULL);
 	for (; db_entry; db_entry = db_entry->next) {
 		const char *dev_name = strrchr(db_entry->key, '/') + 1;
-		char state_info[1301];
 		enum ast_presence_state state;
 		char *message;
 		char *subtype;
-		char *options;
 		if (dev_name <= (const char *) 1) {
 			continue;
 		}
-		ast_copy_string(state_info, db_entry->data, sizeof(state_info));
-		if (parse_data(state_info, &state, &subtype, &message, &options)) {
-			ast_log(LOG_WARNING, "Invalid CustomPresence entry %s encountered\n", db_entry->data);
-			continue;
-		}
+		state = custom_presence_callback(dev_name, &subtype, &message);
 		ast_presence_state_changed(state, subtype, message, "CustomPresence:%s", dev_name);
+		ast_free(subtype);
+		ast_free(message);
 	}
 	ast_db_freetree(db_tree);
 	db_tree = NULL;
@@ -770,12 +870,14 @@ static int load_module(void)
 	AST_TEST_REGISTER(test_valid_parse_data);
 	AST_TEST_REGISTER(test_invalid_parse_data);
 	AST_TEST_REGISTER(test_presence_state_change);
+	AST_TEST_REGISTER(test_presence_state_base64_encode);
 #endif
 
 	return res;
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "Gets or sets a presence state in the dialplan",
+	.support_level = AST_MODULE_SUPPORT_CORE,
 	.load = load_module,
 	.unload = unload_module,
 	.load_pri = AST_MODPRI_DEVSTATE_PROVIDER,

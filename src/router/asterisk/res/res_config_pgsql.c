@@ -1,5 +1,5 @@
 /*
- * Asterisk -- A telephony toolkit for Linux.
+ * Asterisk -- An open source telephony toolkit.
  *
  * Copyright (C) 1999-2010, Digium, Inc.
  *
@@ -19,7 +19,7 @@
  * \author Mark Spencer <markster@digium.com>
  * \author Manuel Guesdon <mguesdon@oxymium.net> - PostgreSQL RealTime Driver Author/Adaptor
  *
- * \extref PostgreSQL http://www.postgresql.org
+ * PostgreSQL http://www.postgresql.org
  */
 
 /*** MODULEINFO
@@ -29,7 +29,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 387823 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419592 $")
 
 #include <libpq-fe.h>			/* PostgreSQL */
 
@@ -79,6 +79,7 @@ static char dbhost[MAX_DB_OPTION_SIZE] = "";
 static char dbuser[MAX_DB_OPTION_SIZE] = "";
 static char dbpass[MAX_DB_OPTION_SIZE] = "";
 static char dbname[MAX_DB_OPTION_SIZE] = "";
+static char dbappname[MAX_DB_OPTION_SIZE] = "";
 static char dbsock[MAX_DB_OPTION_SIZE] = "";
 static int dbport = 5432;
 static time_t connect_time = 0;
@@ -139,7 +140,7 @@ static void destroy_table(struct tables *table)
  *  \return -2 on query failure that resulted in disconnection
  *  \return 0 on success
  *
- *  \example see pgsql_exec for full example
+ *  \note see pgsql_exec for full example
  */
 static int _pgsql_exec(const char *database, const char *tablename, const char *sql, PGresult **result)
 {
@@ -252,8 +253,8 @@ static struct tables *find_table(const char *database, const char *orig_tablenam
 	struct columns *column;
 	struct tables *table;
 	struct ast_str *sql = ast_str_thread_get(&findtable_buf, 330);
-        PGresult *result;
-        int exec_result;
+	RAII_VAR(PGresult *, result, NULL, PQclear);
+	int exec_result;
 	char *fname, *ftype, *flen, *fnotnull, *fdef;
 	int i, rows;
 
@@ -339,14 +340,12 @@ static struct tables *find_table(const char *database, const char *orig_tablenam
 	ast_debug(1, "Query of table structure complete.  Now retrieving results.\n");
 	if (exec_result != 0) {
 		ast_log(LOG_ERROR, "Failed to query database columns for table %s\n", orig_tablename);
-		PQclear(result);
 		AST_LIST_UNLOCK(&psql_tables);
 		return NULL;
 	}
 
 	if (!(table = ast_calloc(1, sizeof(*table) + strlen(orig_tablename) + 1))) {
 		ast_log(LOG_ERROR, "Unable to allocate memory for new table structure\n");
-		PQclear(result);
 		AST_LIST_UNLOCK(&psql_tables);
 		return NULL;
 	}
@@ -365,7 +364,6 @@ static struct tables *find_table(const char *database, const char *orig_tablenam
 
 		if (!(column = ast_calloc(1, sizeof(*column) + strlen(fname) + strlen(ftype) + 2))) {
 			ast_log(LOG_ERROR, "Unable to allocate column element for %s, %s\n", orig_tablename, fname);
-			PQclear(result);
 			destroy_table(table);
 			AST_LIST_UNLOCK(&psql_tables);
 			return NULL;
@@ -395,7 +393,6 @@ static struct tables *find_table(const char *database, const char *orig_tablenam
 		}
 		AST_LIST_INSERT_TAIL(&table->columns, column, list);
 	}
-	PQclear(result);
 
 	AST_LIST_INSERT_TAIL(&psql_tables, table, list);
 	ast_rwlock_rdlock(&table->lock);
@@ -418,16 +415,16 @@ static struct columns *find_column(struct tables *t, const char *colname)
 	return NULL;
 }
 
-static struct ast_variable *realtime_pgsql(const char *database, const char *tablename, va_list ap)
+static struct ast_variable *realtime_pgsql(const char *database, const char *tablename, const struct ast_variable *fields)
 {
-	PGresult *result = NULL;
+	RAII_VAR(PGresult *, result, NULL, PQclear);
 	int num_rows = 0, pgresult;
 	struct ast_str *sql = ast_str_thread_get(&sql_buf, 100);
 	struct ast_str *escapebuf = ast_str_thread_get(&escapebuf_buf, 100);
 	char *stringp;
 	char *chunk;
 	char *op;
-	const char *newparam, *newval;
+	const struct ast_variable *field = fields;
 	struct ast_variable *var = NULL, *prev = NULL;
 
 	/*
@@ -442,9 +439,7 @@ static struct ast_variable *realtime_pgsql(const char *database, const char *tab
 	}
 
 	/* Get the first parameter and first value in our list of passed paramater/value pairs */
-	newparam = va_arg(ap, const char *);
-	newval = va_arg(ap, const char *);
-	if (!newparam || !newval) {
+	if (!field) {
 		ast_log(LOG_WARNING,
 				"PostgreSQL RealTime: Realtime retrieval requires at least 1 parameter and 1 value to search on.\n");
 		if (pgsqlConn) {
@@ -456,36 +451,34 @@ static struct ast_variable *realtime_pgsql(const char *database, const char *tab
 
 	/* Create the first part of the query using the first parameter/value pairs we just extracted
 	   If there is only 1 set, then we have our query. Otherwise, loop thru the list and concat */
-	op = strchr(newparam, ' ') ? "" : " =";
+	op = strchr(field->name, ' ') ? "" : " =";
 
-	ESCAPE_STRING(escapebuf, newval);
+	ESCAPE_STRING(escapebuf, field->value);
 	if (pgresult) {
-		ast_log(LOG_ERROR, "PostgreSQL RealTime: detected invalid input: '%s'\n", newval);
+		ast_log(LOG_ERROR, "PostgreSQL RealTime: detected invalid input: '%s'\n", field->value);
 		return NULL;
 	}
 
-	ast_str_set(&sql, 0, "SELECT * FROM %s WHERE %s%s '%s'", tablename, newparam, op, ast_str_buffer(escapebuf));
-	while ((newparam = va_arg(ap, const char *))) {
-		newval = va_arg(ap, const char *);
-		if (!strchr(newparam, ' '))
+	ast_str_set(&sql, 0, "SELECT * FROM %s WHERE %s%s '%s'", tablename, field->name, op, ast_str_buffer(escapebuf));
+	while ((field = field->next)) {
+		if (!strchr(field->name, ' '))
 			op = " =";
 		else
 			op = "";
 
-		ESCAPE_STRING(escapebuf, newval);
+		ESCAPE_STRING(escapebuf, field->value);
 		if (pgresult) {
-			ast_log(LOG_ERROR, "PostgreSQL RealTime: detected invalid input: '%s'\n", newval);
+			ast_log(LOG_ERROR, "PostgreSQL RealTime: detected invalid input: '%s'\n", field->value);
 			return NULL;
 		}
 
-		ast_str_append(&sql, 0, " AND %s%s '%s'", newparam, op, ast_str_buffer(escapebuf));
+		ast_str_append(&sql, 0, " AND %s%s '%s'", field->name, op, ast_str_buffer(escapebuf));
 	}
 
 	/* We now have our complete statement; Lets connect to the server and execute it. */
 	ast_mutex_lock(&pgsql_lock);
 
         if (pgsql_exec(database, tablename, ast_str_buffer(sql), &result) != 0) {
-		PQclear(result);
 		ast_mutex_unlock(&pgsql_lock);
 		return NULL;
         }
@@ -501,7 +494,6 @@ static struct ast_variable *realtime_pgsql(const char *database, const char *tab
 		ast_debug(1, "PostgreSQL RealTime: Found %d rows.\n", num_rows);
 
 		if (!(fieldnames = ast_calloc(1, numFields * sizeof(char *)))) {
-			PQclear(result);
 			ast_mutex_unlock(&pgsql_lock);
 			return NULL;
 		}
@@ -530,23 +522,22 @@ static struct ast_variable *realtime_pgsql(const char *database, const char *tab
 		ast_debug(1, "Postgresql RealTime: Could not find any rows in table %s@%s.\n", tablename, database);
 	}
 
-	PQclear(result);
 	ast_mutex_unlock(&pgsql_lock);
 
 	return var;
 }
 
-static struct ast_config *realtime_multi_pgsql(const char *database, const char *table, va_list ap)
+static struct ast_config *realtime_multi_pgsql(const char *database, const char *table, const struct ast_variable *fields)
 {
-	PGresult *result = NULL;
+	RAII_VAR(PGresult *, result, NULL, PQclear);
 	int num_rows = 0, pgresult;
 	struct ast_str *sql = ast_str_thread_get(&sql_buf, 100);
 	struct ast_str *escapebuf = ast_str_thread_get(&escapebuf_buf, 100);
+	const struct ast_variable *field = fields;
 	const char *initfield = NULL;
 	char *stringp;
 	char *chunk;
 	char *op;
-	const char *newparam, *newval;
 	struct ast_variable *var = NULL;
 	struct ast_config *cfg = NULL;
 	struct ast_category *cat = NULL;
@@ -566,9 +557,7 @@ static struct ast_config *realtime_multi_pgsql(const char *database, const char 
 		return NULL;
 
 	/* Get the first parameter and first value in our list of passed paramater/value pairs */
-	newparam = va_arg(ap, const char *);
-	newval = va_arg(ap, const char *);
-	if (!newparam || !newval) {
+	if (!field) {
 		ast_log(LOG_WARNING,
 				"PostgreSQL RealTime: Realtime retrieval requires at least 1 parameter and 1 value to search on.\n");
 		if (pgsqlConn) {
@@ -579,7 +568,7 @@ static struct ast_config *realtime_multi_pgsql(const char *database, const char 
 		return NULL;
 	}
 
-	initfield = ast_strdupa(newparam);
+	initfield = ast_strdupa(field->name);
 	if ((op = strchr(initfield, ' '))) {
 		*op = '\0';
 	}
@@ -587,34 +576,33 @@ static struct ast_config *realtime_multi_pgsql(const char *database, const char 
 	/* Create the first part of the query using the first parameter/value pairs we just extracted
 	   If there is only 1 set, then we have our query. Otherwise, loop thru the list and concat */
 
-	if (!strchr(newparam, ' '))
+	if (!strchr(field->name, ' '))
 		op = " =";
 	else
 		op = "";
 
-	ESCAPE_STRING(escapebuf, newval);
+	ESCAPE_STRING(escapebuf, field->value);
 	if (pgresult) {
-		ast_log(LOG_ERROR, "PostgreSQL RealTime: detected invalid input: '%s'\n", newval);
+		ast_log(LOG_ERROR, "PostgreSQL RealTime: detected invalid input: '%s'\n", field->value);
 		ast_config_destroy(cfg);
 		return NULL;
 	}
 
-	ast_str_set(&sql, 0, "SELECT * FROM %s WHERE %s%s '%s'", table, newparam, op, ast_str_buffer(escapebuf));
-	while ((newparam = va_arg(ap, const char *))) {
-		newval = va_arg(ap, const char *);
-		if (!strchr(newparam, ' '))
+	ast_str_set(&sql, 0, "SELECT * FROM %s WHERE %s%s '%s'", table, field->name, op, ast_str_buffer(escapebuf));
+	while ((field = field->next)) {
+		if (!strchr(field->name, ' '))
 			op = " =";
 		else
 			op = "";
 
-		ESCAPE_STRING(escapebuf, newval);
+		ESCAPE_STRING(escapebuf, field->value);
 		if (pgresult) {
-			ast_log(LOG_ERROR, "PostgreSQL RealTime: detected invalid input: '%s'\n", newval);
+			ast_log(LOG_ERROR, "PostgreSQL RealTime: detected invalid input: '%s'\n", field->value);
 			ast_config_destroy(cfg);
 			return NULL;
 		}
 
-		ast_str_append(&sql, 0, " AND %s%s '%s'", newparam, op, ast_str_buffer(escapebuf));
+		ast_str_append(&sql, 0, " AND %s%s '%s'", field->name, op, ast_str_buffer(escapebuf));
 	}
 
 	if (initfield) {
@@ -639,7 +627,6 @@ static struct ast_config *realtime_multi_pgsql(const char *database, const char 
 			ast_debug(1, "PostgreSQL RealTime: Query: %s\n", ast_str_buffer(sql));
 			ast_debug(1, "PostgreSQL RealTime: Query Failed because: %s (%s)\n",
 						PQresultErrorMessage(result), PQresStatus(result_status));
-			PQclear(result);
 			ast_mutex_unlock(&pgsql_lock);
 			ast_config_destroy(cfg);
 			return NULL;
@@ -657,7 +644,6 @@ static struct ast_config *realtime_multi_pgsql(const char *database, const char 
 		ast_debug(1, "PostgreSQL RealTime: Found %d rows.\n", num_rows);
 
 		if (!(fieldnames = ast_calloc(1, numFields * sizeof(char *)))) {
-			PQclear(result);
 			ast_mutex_unlock(&pgsql_lock);
 			ast_config_destroy(cfg);
 			return NULL;
@@ -689,18 +675,17 @@ static struct ast_config *realtime_multi_pgsql(const char *database, const char 
 		ast_debug(1, "PostgreSQL RealTime: Could not find any rows in table %s.\n", table);
 	}
 
-	PQclear(result);
 	ast_mutex_unlock(&pgsql_lock);
 
 	return cfg;
 }
 
 static int update_pgsql(const char *database, const char *tablename, const char *keyfield,
-						const char *lookup, va_list ap)
+						const char *lookup, const struct ast_variable *fields)
 {
-	PGresult *result = NULL;
+	RAII_VAR(PGresult *, result, NULL, PQclear);
 	int numrows = 0, pgresult;
-	const char *newparam, *newval;
+	const struct ast_variable *field = fields;
 	struct ast_str *sql = ast_str_thread_get(&sql_buf, 100);
 	struct ast_str *escapebuf = ast_str_thread_get(&escapebuf_buf, 100);
 	struct tables *table;
@@ -723,9 +708,7 @@ static int update_pgsql(const char *database, const char *tablename, const char 
 	}
 
 	/* Get the first parameter and first value in our list of passed paramater/value pairs */
-	newparam = va_arg(ap, const char *);
-	newval = va_arg(ap, const char *);
-	if (!newparam || !newval) {
+	if (!field) {
 		ast_log(LOG_WARNING,
 				"PostgreSQL RealTime: Realtime retrieval requires at least 1 parameter and 1 value to search on.\n");
 		if (pgsqlConn) {
@@ -738,13 +721,13 @@ static int update_pgsql(const char *database, const char *tablename, const char 
 
 	/* Check that the column exists in the table */
 	AST_LIST_TRAVERSE(&table->columns, column, list) {
-		if (strcmp(column->name, newparam) == 0) {
+		if (strcmp(column->name, field->name) == 0) {
 			break;
 		}
 	}
 
 	if (!column) {
-		ast_log(LOG_ERROR, "PostgreSQL RealTime: Updating on column '%s', but that column does not exist within the table '%s'!\n", newparam, tablename);
+		ast_log(LOG_ERROR, "PostgreSQL RealTime: Updating on column '%s', but that column does not exist within the table '%s'!\n", field->name, tablename);
 		release_table(table);
 		return -1;
 	}
@@ -752,30 +735,28 @@ static int update_pgsql(const char *database, const char *tablename, const char 
 	/* Create the first part of the query using the first parameter/value pairs we just extracted
 	   If there is only 1 set, then we have our query. Otherwise, loop thru the list and concat */
 
-	ESCAPE_STRING(escapebuf, newval);
+	ESCAPE_STRING(escapebuf, field->value);
 	if (pgresult) {
-		ast_log(LOG_ERROR, "PostgreSQL RealTime: detected invalid input: '%s'\n", newval);
+		ast_log(LOG_ERROR, "PostgreSQL RealTime: detected invalid input: '%s'\n", field->value);
 		release_table(table);
 		return -1;
 	}
-	ast_str_set(&sql, 0, "UPDATE %s SET %s = '%s'", tablename, newparam, ast_str_buffer(escapebuf));
+	ast_str_set(&sql, 0, "UPDATE %s SET %s = '%s'", tablename, field->name, ast_str_buffer(escapebuf));
 
-	while ((newparam = va_arg(ap, const char *))) {
-		newval = va_arg(ap, const char *);
-
-		if (!find_column(table, newparam)) {
-			ast_log(LOG_NOTICE, "Attempted to update column '%s' in table '%s', but column does not exist!\n", newparam, tablename);
+	while ((field = field->next)) {
+		if (!find_column(table, field->name)) {
+			ast_log(LOG_NOTICE, "Attempted to update column '%s' in table '%s', but column does not exist!\n", field->name, tablename);
 			continue;
 		}
 
-		ESCAPE_STRING(escapebuf, newval);
+		ESCAPE_STRING(escapebuf, field->value);
 		if (pgresult) {
-			ast_log(LOG_ERROR, "PostgreSQL RealTime: detected invalid input: '%s'\n", newval);
+			ast_log(LOG_ERROR, "PostgreSQL RealTime: detected invalid input: '%s'\n", field->value);
 			release_table(table);
 			return -1;
 		}
 
-		ast_str_append(&sql, 0, ", %s = '%s'", newparam, ast_str_buffer(escapebuf));
+		ast_str_append(&sql, 0, ", %s = '%s'", field->name, ast_str_buffer(escapebuf));
 	}
 	release_table(table);
 
@@ -805,7 +786,6 @@ static int update_pgsql(const char *database, const char *tablename, const char 
 			ast_debug(1, "PostgreSQL RealTime: Query: %s\n", ast_str_buffer(sql));
 			ast_debug(1, "PostgreSQL RealTime: Query Failed because: %s (%s)\n",
 						PQresultErrorMessage(result), PQresStatus(result_status));
-			PQclear(result);
 			ast_mutex_unlock(&pgsql_lock);
 			return -1;
 		}
@@ -828,12 +808,12 @@ static int update_pgsql(const char *database, const char *tablename, const char 
 	return -1;
 }
 
-static int update2_pgsql(const char *database, const char *tablename, va_list ap)
+static int update2_pgsql(const char *database, const char *tablename, const struct ast_variable *lookup_fields, const struct ast_variable *update_fields)
 {
-	PGresult *result = NULL;
+	RAII_VAR(PGresult *, result, NULL, PQclear);
 	int numrows = 0, pgresult, first = 1;
 	struct ast_str *escapebuf = ast_str_thread_get(&escapebuf_buf, 16);
-	const char *newparam, *newval;
+	const struct ast_variable *field;
 	struct ast_str *sql = ast_str_thread_get(&sql_buf, 100);
 	struct ast_str *where = ast_str_thread_get(&where_buf, 100);
 	struct tables *table;
@@ -859,25 +839,23 @@ static int update2_pgsql(const char *database, const char *tablename, va_list ap
 		return -1;
 	}
 
-	ast_str_set(&sql, 0, "UPDATE %s SET ", tablename);
-	ast_str_set(&where, 0, "WHERE");
+	ast_str_set(&sql, 0, "UPDATE %s SET", tablename);
+	ast_str_set(&where, 0, " WHERE");
 
-	while ((newparam = va_arg(ap, const char *))) {
-		if (!find_column(table, newparam)) {
-			ast_log(LOG_ERROR, "Attempted to update based on criteria column '%s' (%s@%s), but that column does not exist!\n", newparam, tablename, database);
+	for (field = lookup_fields; field; field = field->next) {
+		if (!find_column(table, field->name)) {
+			ast_log(LOG_ERROR, "Attempted to update based on criteria column '%s' (%s@%s), but that column does not exist!\n", field->name, tablename, database);
 			release_table(table);
 			return -1;
 		}
 
-		newval = va_arg(ap, const char *);
-		ESCAPE_STRING(escapebuf, newval);
+		ESCAPE_STRING(escapebuf, field->value);
 		if (pgresult) {
-			ast_log(LOG_ERROR, "PostgreSQL RealTime: detected invalid input: '%s'\n", newval);
+			ast_log(LOG_ERROR, "PostgreSQL RealTime: detected invalid input: '%s'\n", field->value);
 			release_table(table);
-			ast_free(sql);
 			return -1;
 		}
-		ast_str_append(&where, 0, "%s %s='%s'", first ? "" : " AND", newparam, ast_str_buffer(escapebuf));
+		ast_str_append(&where, 0, "%s %s='%s'", first ? "" : " AND", field->name, ast_str_buffer(escapebuf));
 		first = 0;
 	}
 
@@ -894,28 +872,26 @@ static int update2_pgsql(const char *database, const char *tablename, va_list ap
 
 	/* Now retrieve the columns to update */
 	first = 1;
-	while ((newparam = va_arg(ap, const char *))) {
-		newval = va_arg(ap, const char *);
-
+	for (field = update_fields; field; field = field->next) {
 		/* If the column is not within the table, then skip it */
-		if (!find_column(table, newparam)) {
-			ast_log(LOG_NOTICE, "Attempted to update column '%s' in table '%s@%s', but column does not exist!\n", newparam, tablename, database);
+		if (!find_column(table, field->name)) {
+			ast_log(LOG_NOTICE, "Attempted to update column '%s' in table '%s@%s', but column does not exist!\n", field->name, tablename, database);
 			continue;
 		}
 
-		ESCAPE_STRING(escapebuf, newval);
+		ESCAPE_STRING(escapebuf, field->value);
 		if (pgresult) {
-			ast_log(LOG_ERROR, "PostgreSQL RealTime: detected invalid input: '%s'\n", newval);
+			ast_log(LOG_ERROR, "PostgreSQL RealTime: detected invalid input: '%s'\n", field->value);
 			release_table(table);
-			ast_free(sql);
 			return -1;
 		}
 
-		ast_str_append(&sql, 0, "%s %s='%s'", first ? "" : ",", newparam, ast_str_buffer(escapebuf));
+		ast_str_append(&sql, 0, "%s %s='%s'", first ? "" : ",", field->name, ast_str_buffer(escapebuf));
+		first = 0;
 	}
 	release_table(table);
 
-	ast_str_append(&sql, 0, " %s", ast_str_buffer(where));
+	ast_str_append(&sql, 0, "%s", ast_str_buffer(where));
 
 	ast_debug(1, "PostgreSQL RealTime: Update SQL: %s\n", ast_str_buffer(sql));
 
@@ -943,15 +919,15 @@ static int update2_pgsql(const char *database, const char *tablename, va_list ap
 	return -1;
 }
 
-static int store_pgsql(const char *database, const char *table, va_list ap)
+static int store_pgsql(const char *database, const char *table, const struct ast_variable *fields)
 {
-	PGresult *result = NULL;
-	Oid insertid;
+	RAII_VAR(PGresult *, result, NULL, PQclear);
+	int numrows;
 	struct ast_str *buf = ast_str_thread_get(&escapebuf_buf, 256);
 	struct ast_str *sql1 = ast_str_thread_get(&sql_buf, 256);
 	struct ast_str *sql2 = ast_str_thread_get(&where_buf, 256);
 	int pgresult;
-	const char *newparam, *newval;
+	const struct ast_variable *field = fields;
 
 	/*
 	 * Ignore database from the extconfig.conf since it was
@@ -965,9 +941,7 @@ static int store_pgsql(const char *database, const char *table, va_list ap)
 	}
 
 	/* Get the first parameter and first value in our list of passed paramater/value pairs */
-	newparam = va_arg(ap, const char *);
-	newval = va_arg(ap, const char *);
-	if (!newparam || !newval) {
+	if (!field) {
 		ast_log(LOG_WARNING,
 				"PostgreSQL RealTime: Realtime storage requires at least 1 parameter and 1 value to store.\n");
 		if (pgsqlConn) {
@@ -986,15 +960,14 @@ static int store_pgsql(const char *database, const char *table, va_list ap)
 
 	/* Create the first part of the query using the first parameter/value pairs we just extracted
 	   If there is only 1 set, then we have our query. Otherwise, loop thru the list and concat */
-	ESCAPE_STRING(buf, newparam);
+	ESCAPE_STRING(buf, field->name);
 	ast_str_set(&sql1, 0, "INSERT INTO %s (%s", table, ast_str_buffer(buf));
-	ESCAPE_STRING(buf, newval);
+	ESCAPE_STRING(buf, field->value);
 	ast_str_set(&sql2, 0, ") VALUES ('%s'", ast_str_buffer(buf));
-	while ((newparam = va_arg(ap, const char *))) {
-		newval = va_arg(ap, const char *);
-		ESCAPE_STRING(buf, newparam);
+	while ((field = field->next)) {
+		ESCAPE_STRING(buf, field->name);
 		ast_str_append(&sql1, 0, ", %s", ast_str_buffer(buf));
-		ESCAPE_STRING(buf, newval);
+		ESCAPE_STRING(buf, field->value);
 		ast_str_append(&sql2, 0, ", '%s'", ast_str_buffer(buf));
 	}
 	ast_str_append(&sql1, 0, "%s)", ast_str_buffer(sql2));
@@ -1006,11 +979,10 @@ static int store_pgsql(const char *database, const char *table, va_list ap)
 	        return -1;
         }
 
-	insertid = PQoidValue(result);
-	PQclear(result);
+	numrows = atoi(PQcmdTuples(result));
 	ast_mutex_unlock(&pgsql_lock);
 
-	ast_debug(1, "PostgreSQL RealTime: row inserted on table: %s, id: %u\n", table, insertid);
+	ast_debug(1, "PostgreSQL RealTime: row inserted on table: %s.", table);
 
 	/* From http://dev.pgsql.com/doc/pgsql/en/pgsql-affected-rows.html
 	 * An integer greater than zero indicates the number of rows affected
@@ -1018,20 +990,21 @@ static int store_pgsql(const char *database, const char *table, va_list ap)
 	 * -1 indicates that the query returned an error (although, if the query failed, it should have been caught above.)
 	 */
 
-	if (insertid >= 0)
-		return (int) insertid;
+	if (numrows >= 0) {
+		return numrows;
+	}
 
 	return -1;
 }
 
-static int destroy_pgsql(const char *database, const char *table, const char *keyfield, const char *lookup, va_list ap)
+static int destroy_pgsql(const char *database, const char *table, const char *keyfield, const char *lookup, const struct ast_variable *fields)
 {
-	PGresult *result = NULL;
+	RAII_VAR(PGresult *, result, NULL, PQclear);
 	int numrows = 0;
 	int pgresult;
 	struct ast_str *sql = ast_str_thread_get(&sql_buf, 256);
 	struct ast_str *buf1 = ast_str_thread_get(&where_buf, 60), *buf2 = ast_str_thread_get(&escapebuf_buf, 60);
-	const char *newparam, *newval;
+	const struct ast_variable *field;
 
 	/*
 	 * Ignore database from the extconfig.conf since it was
@@ -1072,10 +1045,9 @@ static int destroy_pgsql(const char *database, const char *table, const char *ke
 	ESCAPE_STRING(buf1, keyfield);
 	ESCAPE_STRING(buf2, lookup);
 	ast_str_set(&sql, 0, "DELETE FROM %s WHERE %s = '%s'", table, ast_str_buffer(buf1), ast_str_buffer(buf2));
-	while ((newparam = va_arg(ap, const char *))) {
-		newval = va_arg(ap, const char *);
-		ESCAPE_STRING(buf1, newparam);
-		ESCAPE_STRING(buf2, newval);
+	for (field = fields; field; field = field->next) {
+		ESCAPE_STRING(buf1, field->name);
+		ESCAPE_STRING(buf2, field->value);
 		ast_str_append(&sql, 0, " AND %s = '%s'", ast_str_buffer(buf1), ast_str_buffer(buf2));
 	}
 
@@ -1108,7 +1080,7 @@ static struct ast_config *config_pgsql(const char *database, const char *table,
 									   const char *file, struct ast_config *cfg,
 									   struct ast_flags flags, const char *suggested_incl, const char *who_asked)
 {
-	PGresult *result = NULL;
+	RAII_VAR(PGresult *, result, NULL, PQclear);
 	long num_rows;
 	struct ast_variable *new_v;
 	struct ast_category *cur_cat = NULL;
@@ -1155,7 +1127,6 @@ static struct ast_config *config_pgsql(const char *database, const char *table,
 			char *field_cat_metric = PQgetvalue(result, rowIndex, 3);
 			if (!strcmp(field_var_name, "#include")) {
 				if (!ast_config_internal_load(field_var_val, cfg, flags, "", who_asked)) {
-					PQclear(result);
 					ast_mutex_unlock(&pgsql_lock);
 					return NULL;
 				}
@@ -1178,7 +1149,6 @@ static struct ast_config *config_pgsql(const char *database, const char *table,
 				"PostgreSQL RealTime: Could not find config '%s' in database.\n", file);
 	}
 
-	PQclear(result);
 	ast_mutex_unlock(&pgsql_lock);
 
 	return cfg;
@@ -1298,7 +1268,7 @@ static int require_pgsql(const char *database, const char *tablename, va_list ap
 				ast_debug(1, "About to run ALTER query on table '%s' to add column '%s'\n", tablename, elm);
 
 			        if (pgsql_exec(database, tablename, ast_str_buffer(sql), &result) != 0) {
-					ast_mutex_unlock(&pgsql_lock);
+						ast_mutex_unlock(&pgsql_lock);
 				        return -1;
 			        }
 
@@ -1365,7 +1335,7 @@ static int load_module(void)
 		return AST_MODULE_LOAD_DECLINE;
 
 	ast_config_engine_register(&pgsql_engine);
-	ast_verb(1, "PostgreSQL RealTime driver loaded.\n");
+
 	ast_cli_register_multiple(cli_realtime, ARRAY_LEN(cli_realtime));
 
 	return 0;
@@ -1383,7 +1353,6 @@ static int unload_module(void)
 	}
 	ast_cli_unregister_multiple(cli_realtime, ARRAY_LEN(cli_realtime));
 	ast_config_engine_deregister(&pgsql_engine);
-	ast_verb(1, "PostgreSQL RealTime unloaded.\n");
 
 	/* Destroy cached table info */
 	AST_LIST_LOCK(&psql_tables);
@@ -1468,6 +1437,12 @@ static int parse_config(int is_reload)
 		dbport = atoi(s);
 	}
 
+	if (!(s = ast_variable_retrieve(config, "general", "dbappname"))) {
+		dbappname[0] = '\0';
+	} else {
+		ast_copy_string(dbappname, s, sizeof(dbappname));
+	}
+
 	if (!ast_strlen_zero(dbhost)) {
 		/* No socket needed */
 	} else if (!(s = ast_variable_retrieve(config, "general", "dbsock"))) {
@@ -1531,18 +1506,27 @@ static int pgsql_reconnect(const char *database)
 
 	/* DB password can legitimately be 0-length */
 	if ((!pgsqlConn) && (!ast_strlen_zero(dbhost) || !ast_strlen_zero(dbsock)) && !ast_strlen_zero(dbuser) && !ast_strlen_zero(my_database)) {
-		struct ast_str *connInfo = ast_str_create(128);
+		struct ast_str *conn_info = ast_str_create(128);
 
-		ast_str_set(&connInfo, 0, "host=%s port=%d dbname=%s user=%s",
+		if (!conn_info) {
+			ast_log(LOG_ERROR, "PostgreSQL RealTime: Failed to allocate memory for connection string.\n");
+			return 0;
+		}
+
+		ast_str_set(&conn_info, 0, "host=%s port=%d dbname=%s user=%s",
 			S_OR(dbhost, dbsock), dbport, my_database, dbuser);
-		if (!ast_strlen_zero(dbpass))
-			ast_str_append(&connInfo, 0, " password=%s", dbpass);
 
-		ast_debug(1, "%u connInfo=%s\n", (unsigned int)ast_str_size(connInfo), ast_str_buffer(connInfo));
-		pgsqlConn = PQconnectdb(ast_str_buffer(connInfo));
-		ast_debug(1, "%u connInfo=%s\n", (unsigned int)ast_str_size(connInfo), ast_str_buffer(connInfo));
-		ast_free(connInfo);
-		connInfo = NULL;
+		if (!ast_strlen_zero(dbappname)) {
+			ast_str_append(&conn_info, 0, " application_name=%s", dbappname);
+		}
+
+		if (!ast_strlen_zero(dbpass)) {
+			ast_str_append(&conn_info, 0, " password=%s", dbpass);
+		}
+
+		pgsqlConn = PQconnectdb(ast_str_buffer(conn_info));
+		ast_free(conn_info);
+		conn_info = NULL;
 
 		ast_debug(1, "pgsqlConn=%p\n", pgsqlConn);
 		if (pgsqlConn && PQstatus(pgsqlConn) == CONNECTION_OK) {
@@ -1671,6 +1655,7 @@ static char *handle_cli_realtime_pgsql_status(struct ast_cli_entry *e, int cmd, 
 
 /* needs usecount semantics defined */
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "PostgreSQL RealTime Configuration Driver",
+		.support_level = AST_MODULE_SUPPORT_EXTENDED,
 		.load = load_module,
 		.unload = unload_module,
 		.reload = reload,

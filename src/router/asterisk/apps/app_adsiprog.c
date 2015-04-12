@@ -25,6 +25,15 @@
  * \ingroup applications
  */
 
+/*! \li \ref app_adsiprog.c uses the configuration file \ref adsi.conf
+ * \addtogroup configuration_file Configuration Files
+ */
+
+/*! 
+ * \page adsi.conf adsi.conf
+ * \verbinclude adsi.conf.sample
+ */
+
 /*** MODULEINFO
 	<depend>res_adsi</depend>
 	<support_level>extended</support_level>
@@ -32,7 +41,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 350223 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 429675 $")
 
 #include <netinet/in.h>
 #include <ctype.h>
@@ -202,7 +211,7 @@ static int process_token(void *out, char *src, int maxlen, int argtype)
 		if (!(argtype & ARG_NUMBER))
 			return -1;
 		/* Octal value */
-		if (sscanf(src, "%30o", (int *)out) != 1)
+		if (sscanf(src, "%30o", (unsigned *)out) != 1)
 			return -1;
 		if (argtype & ARG_STRING) {
 			/* Convert */
@@ -1447,7 +1456,7 @@ static void dump_message(char *type, char *vname, unsigned char *buf, int buflen
 	int x;
 	printf("%s %s: [ ", type, vname);
 	for (x = 0; x < buflen; x++)
-		printf("%02x ", buf[x]);
+		printf("%02hhx ", buf[x]);
 	printf("]\n");
 }
 #endif
@@ -1585,6 +1594,16 @@ static int unload_module(void)
 	return ast_unregister_application(app);
 }
 
+/*!
+ * \brief Load the module
+ *
+ * Module loading including tests for configuration or dependencies.
+ * This function can return AST_MODULE_LOAD_FAILURE, AST_MODULE_LOAD_DECLINE,
+ * or AST_MODULE_LOAD_SUCCESS. If a dependency or environment variable fails
+ * tests return AST_MODULE_LOAD_FAILURE. If the module can not load the 
+ * configuration file or other non-critical problem return 
+ * AST_MODULE_LOAD_DECLINE. On success return AST_MODULE_LOAD_SUCCESS.
+ */
 static int load_module(void)
 {
 	if (ast_register_application_xml(app, adsi_exec))
@@ -1593,6 +1612,7 @@ static int load_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT, "Asterisk ADSI Programming Application",
+		.support_level = AST_MODULE_SUPPORT_EXTENDED,
 		.load = load_module,
 		.unload = unload_module,
 		.nonoptreq = "res_adsi",

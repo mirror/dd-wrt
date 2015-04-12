@@ -29,6 +29,7 @@
 #include <asterisk/frame.h>
 #include <asterisk/cli.h>
 #include <asterisk/stringfields.h>
+#include <asterisk/manager.h>
 
 /*! \brief capabilities for res_fax to locate a fax technology module */
 enum ast_fax_capabilities {
@@ -174,12 +175,18 @@ struct ast_fax_session_details {
 	struct ast_fax_t38_parameters our_t38_parameters;
 	/*! the other endpoint's T.38 session parameters, if any */
 	struct ast_fax_t38_parameters their_t38_parameters;
+	/*! T.38 negotiation in ms */
+	unsigned int t38timeout;
 	/*! the id of the t.38 gateway framehook for this channel */
 	int gateway_id;
 	/*! the timeout for this gateway in seconds */
 	int gateway_timeout;
 	/*! the id of the faxdetect framehook for this channel */
 	int faxdetect_id;
+	/*! The timeout for this fax detect in seconds */
+	int faxdetect_timeout;
+	/*! flags used for fax detection */
+	int faxdetect_flags;
 };
 
 struct ast_fax_tech;
@@ -255,6 +262,9 @@ struct ast_fax_tech {
 	char * (* const cli_show_capabilities)(int);
 	/*! displays details about the fax session */
 	char * (* const cli_show_session)(struct ast_fax_session *, int);
+	/*! Generates manager event detailing the fax session */
+	void (* const manager_fax_session)(struct mansession *,
+		const char *, struct ast_fax_session *);
 	/*! displays statistics from the fax technology module */
 	char * (* const cli_show_stats)(int);
 	/*! displays settings from the fax technology module */
@@ -275,6 +285,9 @@ unsigned int ast_fax_maxrate(void);
 
 /*! \brief convert an ast_fax_state to a string */
 const char *ast_fax_state_to_str(enum ast_fax_state state);
+
+/*! \brief get string representation of a FAX session's operation */
+const char *ast_fax_session_operation_str(struct ast_fax_session *s);
 
 /*!
  * \brief Log message at FAX or recommended level

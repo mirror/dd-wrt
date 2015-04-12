@@ -22,9 +22,9 @@ def merge_parameter_information(managerEvent):
 
     def __swap_parameter_documentation(one, two):
         # See who has the better documentation and use it
-        if (one.hasChildNodes()):
+        if (one.hasChildNodes() and not two.hasChildNodes()):
             two.parentNode.replaceChild(one.cloneNode(True), two)
-        elif (two.hasChildNodes()):
+        elif (two.hasChildNodes() and not one.hasChildNodes()):
             one.parentNode.replaceChild(two.cloneNode(True), one)
 
     def __merge_parameter(param, other_instances):
@@ -59,7 +59,10 @@ def collapse_event_pair(managerEventOne, managerEventTwo):
 def collapse_manager_events(rootNode, managerEvents):
     events = {}
     for managerEvent in managerEvents:
-        rootNode.removeChild(managerEvent)
+        if (managerEvent.parentNode.nodeName == 'list-elements'
+            or managerEvent.parentNode.nodeName == 'responses'):
+            continue
+        managerEvent.parentNode.removeChild(managerEvent)
         attr = managerEvent.getAttribute('name')
         if attr in events:
             # match, collapse the two managerEvents

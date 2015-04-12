@@ -35,7 +35,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 396657 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419175 $")
 #include <pthread.h>
 #include "asterisk/hashtab.h"
 #include "asterisk/lock.h"
@@ -58,10 +58,20 @@ struct hash_test {
 	int preload;
 	/*! When to give up on the tests */
 	struct timeval deadline;
+	/*! The actual test object */
+	struct ast_test *test;
 };
 
 static int is_timed_out(struct hash_test const *data) {
-	return ast_tvdiff_us(data->deadline, ast_tvnow()) < 0;
+	struct timeval now = ast_tvnow();
+	int val = ast_tvdiff_us(data->deadline, now) < 0;
+	if (val) {
+		/* tv_usec is suseconds_t, which could be int or long */
+		ast_test_status_update(data->test, "Now: %ld.%06ld Deadline: %ld.%06ld\n",
+			now.tv_sec, (long)now.tv_usec,
+			data->deadline.tv_sec, (long)data->deadline.tv_usec);
+	}
+	return val;
 }
 
 /*! /brief Create test element */
@@ -73,7 +83,7 @@ static char *ht_new(int i)
 	if (keybuf == NULL) {
 		return NULL;
 	}
-	needed = snprintf(keybuf, buflen, "key%08x", i);
+	needed = snprintf(keybuf, buflen, "key%08x", (unsigned)i);
 	ast_assert(needed + 1 <= buflen);
 	return keybuf;
 }
@@ -235,6 +245,7 @@ AST_TEST_DEFINE(hash_test)
 	}
 
 	ast_test_status_update(test, "Executing hash concurrency test...\n");
+	data.test = test;
 	data.preload = MAX_HASH_ENTRIES / 2;
 	data.max_grow = MAX_HASH_ENTRIES - data.preload;
 	data.deadline = ast_tvadd(ast_tvnow(), ast_tv(MAX_TEST_SECONDS, 0));

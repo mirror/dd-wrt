@@ -135,6 +135,20 @@ void ast_copy_ha(const struct ast_ha *from, struct ast_ha *to);
 struct ast_ha *ast_append_ha(const char *sense, const char *stuff, struct ast_ha *path, int *error);
 
 /*!
+ * \brief Convert HAs to a comma separated string value
+ * \param ha the starting ha head
+ * \param buf string buffer to convert data to
+ */
+void ast_ha_join(const struct ast_ha *ha, struct ast_str **buf);
+
+/*!
+ * \brief Convert HAs to a comma separated string value using CIDR notation
+ * \param ha the starting ha head
+ * \param buf string buffer to convert data to
+ */
+void ast_ha_join_cidr(const struct ast_ha *ha, struct ast_str **buf);
+
+/*!
  * \brief Add a rule to an ACL struct
  *
  * \details
@@ -189,7 +203,7 @@ enum ast_acl_sense ast_apply_ha(const struct ast_ha *ha, const struct ast_sockad
  * contained in the acl container. It will deny if any of the ast_ha lists
  * fail, and it will pass only if all of the rules pass.
  *
- * \param acl The head of the list of ACLs to evaluate
+ * \param acl_list The head of the list of ACLs to evaluate
  * \param addr An ast_sockaddr whose address is considered when matching rules
  * \param purpose Context for which the ACL is being applied - Establishes purpose of a notice when rejected
  *
@@ -208,7 +222,7 @@ enum ast_acl_sense ast_apply_acl(struct ast_acl_list *acl_list, const struct ast
  *
  * \param addr The IP address found.  The address family is used
  * as an input parameter to filter the returned addresses.  If
- * it is 0, both IPv4 and IPv6 addresses can be returned.
+ * it is AST_AF_UNSPEC, both IPv4 and IPv6 addresses can be returned.
  * \param hostname The hostname to look up
  *
  * \retval 0 Success
@@ -384,6 +398,18 @@ int ast_named_acl_init(void);
  * ACL consumers.
  */
 int ast_named_acl_reload(void);
+
+/*!
+ * \brief a \ref stasis_message_type for changes against a named ACL or the set of all named ACLs
+ * \since 12
+ *
+ * \retval NULL on error
+ * \retval \ref stasis_message_type for named ACL changes
+ *
+ * \note Messages of this type should always be issued on and expected from the
+ *       \ref ast_security_topic \ref stasis_topic
+ */
+struct stasis_message_type *ast_named_acl_change_type(void);
 
 #if defined(__cplusplus) || defined(c_plusplus)
 }

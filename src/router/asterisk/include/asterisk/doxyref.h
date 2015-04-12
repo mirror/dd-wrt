@@ -1,7 +1,7 @@
 /*
  * Asterisk -- An open source telephony toolkit.
  *
- * Copyright (C) 1999 - 2009, Digium, Inc.
+ * Copyright (C) 1999 - 2012, Digium, Inc.
  *
  * See http://www.asterisk.org for more information about
  * the Asterisk project. Please do not directly contact
@@ -17,9 +17,9 @@
 /*! 
  * \file
  *
- * This is the main header file used for generating miscellaneous developer
- * documentation using doxygen.  This also pulls in all of the documentation
- * that is in include/asterisk/doxygen/.
+ * This is the main header file used for generating miscellaneous documentation
+ * using Doxygen.  This also utilizes the documentation in 
+ * include/asterisk/doxygen/ header files.
  */
 
 /* 
@@ -58,7 +58,6 @@
  * \arg \ref AstSpeech
  *
  * \section debugconfig Debugging and Configuration References
- * \arg \ref AstREADME : General Administrator README file
  * \arg \ref AstDebug : Hints on debugging
  * \arg \ref extref 
  * \arg \ref ConfigFiles
@@ -92,22 +91,6 @@
  * \arg \ref AstExtState
  * \arg \ref AstDataRetrieval
  *
- * \subsection model_txt Generic Model
- * Description of call model:
- * Incoming Call:
- * 	Channel backend waits for a RING or equivalent on some sort of
- * interface. Typically this is done in its own thread.  When a RING is
- * detected, the backend should create a channel structure and then call
- * ast_pbx_start() on that channel, which will create a thread to monitor
- * that interface.  At this point, the PBX and/or applications it launches
- * will manage the interface, and it need not be monitored by the
- * aforementioned thread.  When the applications are finished, the requisite
- * hangup function will be called, at which the channel can be considered to
- * be no longer valid, and the thread that controls it will imminently be
- * terminated. 
- *
- *
- * \todo Link to wiki content
  * \subsection channel_txt Channels
  * \arg See \ref Def_Channel
  */
@@ -116,7 +99,6 @@
  * \page AstAPIChanges Asterisk API Changes
  *
  * \section Changes161 Version 1.6.1
- * \li ast_install_vm_functions()
  * \li vmwi_generate()
  * \li ast_channel_datastore_alloc()
  * \li ast_channel_datastore_free()
@@ -147,37 +129,11 @@
  */
 
 /*! 
- * \page AstDebug Debugging
- * \section debug Debugging
- * Please see the documentation on the wiki at
- * https://wiki.asterisk.org/wiki/display/AST/Getting+a+Backtrace
- * for more information
- */
-
-/*!
- * \page AstSpeech The Generic Speech Recognition API
- * \section debug The Generic Speech Recognition API
- * Please see the documentation on the wiki at
- * https://wiki.asterisk.org/wiki/display/AST/Speech+Recognition+API
- * for more information
- */
-
-/*! 
- * \page DataStores Channel Data Stores
- * \section debug Channel Data Stores
- * Please see the documentation on the wiki at
- * https://wiki.asterisk.org/wiki/display/AST/Asterisk+Channel+Data+Stores
- * for more information
- */
-
-/*! 
  * \page AstAMI AMI - The Manager Interface
  * \section ami AMI - The manager Interface
  * \arg \link Config_ami Configuration file \endlink
  * \arg \ref manager.c
- * Please see the documentation on the wiki at
- * https://wiki.asterisk.org/wiki/display/AST/Asterisk+Manager+Interface+%28AMI%29
- * for more information
+ * \todo include missing manager txt
  */
 
 /*!
@@ -185,7 +141,8 @@
  * \section realtime ARA - a generic API to storage and retrieval
  * Implemented in \ref config.c 
  * Implemented in \ref pbx_realtime.c 
- * https://wiki.asterisk.org/wiki/display/AST/Realtime+Database+Configuration
+ * \todo include missing realtime txt
+ * \todo include missing extconfig txt
  */
 
 /*! 
@@ -214,16 +171,9 @@
  * \arg \ref cdr_drivers
  * \arg \ref Config_cdr CDR configuration files
  *
- * Please see the documentation on the wiki at
- * https://wiki.asterisk.org/wiki/display/AST/CDR+Storage+Backends
- * for more information
+ * \todo include missing cdrdriver txt
  */
 
-/*! 
- * \page AstREADME README
- * \verbinclude README
- */
- 
 /*! 
  * \page AstCREDITS CREDITS
  * \verbinclude CREDITS
@@ -232,9 +182,7 @@
 /*! 
  * \page AstVideo Video support in Asterisk
  * \section sectAstVideo Video support in Asterisk
- * Please see the documentation on the wiki at
- * https://wiki.asterisk.org/wiki/display/AST/Video+Telephony
- * for more information
+ * \todo include missing video txt
  */
 
 /*! 
@@ -249,9 +197,6 @@
  * - \ref pbx_retrieve_variable()
  * - \ref AstChanVar
  *
- * Please see the documentation on the wiki at
- * https://wiki.asterisk.org/wiki/display/AST/Channel+Variables
- * for more information
  */
 
 /*! 
@@ -302,203 +247,18 @@
  */
 
 /*! 
- * \page AstENUM ENUM
- * \section enumreadme ENUM
- * \arg Configuration: \ref Config_enum
- * \arg \ref enum.c
- * \arg \ref func_enum.c
- *
- * Please see the documentation on the wiki at
- * https://wiki.asterisk.org/wiki/display/AST/The+ENUMLOOKUP+Dialplan+Function
- * for more information
- */
-
-/*! 
- * \page ConfigFiles Configuration files
- * \section config Main configuration files
- * \arg \link Config_ast asterisk.conf - the main configuration file \endlink
- * \arg \link Config_ext extensions.conf - The Dial Plan \endlink
- * \arg \link Config_mod modules.conf - which modules to load and not to load \endlink
- * \arg \link Config_fea features.conf - call features (transfer, parking, etc) \endlink
- * \section chanconf Channel configuration files
- * \arg \link Config_iax IAX2 configuration  \endlink
- * \arg \link Config_sip SIP configuration  \endlink
- * \arg \link Config_mgcp MGCP configuration  \endlink
- * \arg \link Config_rtp RTP configuration  \endlink
- * \arg \link Config_dahdi DAHDI configuration  \endlink
- * \arg \link Config_oss OSS (sound card) configuration  \endlink
- * \arg \link Config_alsa ALSA (sound card) configuration  \endlink
- * \arg \link Config_agent Agent (proxy channel) configuration  \endlink
- * \arg \link Config_misdn MISDN Experimental ISDN BRI channel configuration  \endlink
- * \arg \link Config_h323 H.323 configuration  \endlink
- * \section appconf Application configuration files
- * \arg \link Config_mm Meetme (conference bridge) configuration  \endlink
- * \arg \link Config_qu Queue system configuration  \endlink
- * \arg \link Config_vm Voicemail configuration  \endlink
- * \arg \link Config_followme Followme configuration  \endlink
- * \section cdrconf CDR configuration files
- * \arg \link Config_cdr CDR configuration  \endlink
- * \arg \link cdr_csv Default CDR driver configuration \endlink
- * \arg \link cdr_custom Custom CDR driver configuration \endlink
- * \arg \link cdr_ami Manager CDR driver configuration \endlink
- * \arg \link cdr_odbc ODBC CDR driver configuration \endlink
- * \arg \link cdr_adaptive_odbc Adaptive ODBC CDR driver configuration \endlink
- * \arg \link cdr_pgsql PostgreSQL CDR driver configuration \endlink
- * \arg \link cdr_radius RADIUS CDR driver configuration \endlink
- * \arg \link cdr_sqlite SQLite 2 CDR driver configuration \endlink
- * \arg \link cdr_sqlite3_custom SQLite 3 CDR driver configuration \endlink
- * \arg \link cdr_syslog Syslog CDR driver configuration \endlink
- * \arg \link cdr_tds FreeTDS CDR driver configuration (Microsoft SQL Server) \endlink
- * \section miscconf Miscellenaous configuration files
- * \arg \link Config_adsi ADSI configuration  \endlink
- * \arg \link Config_ami AMI - Manager configuration  \endlink
- * \arg \link Config_ara Realtime configuration  \endlink
- * \arg \link Config_codec Codec configuration  \endlink
- * \arg \link Config_dun DUNDi configuration  \endlink
- * \arg \link Config_enum ENUM configuration  \endlink
- * \arg \link Config_moh Music on Hold configuration  \endlink
- * \arg \link Config_vm Voicemail configuration  \endlink
- * \arg \link res_config_sqlite SQLite Resource driver configuration \endlink
- */
-
-/*! 
- * \page Config_ast Asterisk.conf
- * \verbinclude asterisk-conf.txt
- */
-
-/*! 
  * \page Config_mod Modules configuration
  * All res_ resource modules are loaded with globals on, which means
  * that non-static functions are callable from other modules.
  *
  * If you want your non res_* module to export functions to other modules
  * you have to include it in the [global] section.
- * \verbinclude modules.conf.sample
  */
 
-/*! 
- * \page Config_fea Call features configuration
- * \par See also
- * \arg \ref features.c : Call feature implementation
- * \section featconf features.conf
- * \verbinclude features.conf.sample
- */
-
-/*! 
- * \page Config_followme Followme: An application for simple follow-me calls
- * \section followmeconf Followme.conf
- * - See app_followme.c
- * \verbinclude followme.conf.sample
- */
-
-/*! 
+/*!
  * \page Config_ext Extensions.conf - the Dial Plan
  * \section dialplan Extensions.conf 
  * \verbinclude extensions.conf.sample
- */
-
-/*! 
- * \page Config_iax IAX2 configuration
- * IAX2 is implemented in \ref chan_iax2.c
- * \arg \link Config_iax iax.conf Configuration file example \endlink
- * \section iaxreadme IAX2
- * Please see the documentation on the wiki at
- * https://wiki.asterisk.org/wiki/display/AST/Inter-Asterisk+eXchange+protocol%2C+version+2+%28IAX2%29
- * for more information
- * \section Config_iax IAX Configuration example
- * \verbinclude iax.conf.sample
- * \section iaxjitter IAX Jitterbuffer information
- * Please see the documentation on the wiki at
- * https://wiki.asterisk.org/wiki/display/AST/IAX2+Jitterbuffer
- * for more information
- */
-
-/*! 
- * \page Config_iax IAX configuration
- * \arg Implemented in \ref chan_iax2.c
- * \section iaxconf iax.conf
- * \verbinclude iax.conf.sample
- */
-
-/*! 
- * \page Config_sip SIP configuration
- * Also see \ref Config_rtp RTP configuration
- * \arg Implemented in \ref chan_sip.c
- * \section sipconf sip.conf
- * \verbinclude sip.conf.sample
- *
- * \arg \b Back \ref chanconf
- */
-
-/*! 
- * \page Config_mgcp MGCP configuration
- * Also see \ref Config_rtp RTP configuration
- * \arg Implemented in \ref chan_mgcp.c
- * \section mgcpconf mgcp.conf
- * \verbinclude mgcp.conf.sample
- */
-
-/*! 
- * \page README_misdn MISDN documentation
- * \arg See \ref Config_misdn
- * \section mISDN configuration
- * Please see the documentation on the wiki at
- * https://wiki.asterisk.org/wiki/display/AST/mISDN
- * for more information
- */
-
-/*! 
- * \page Config_misdn MISDN configuration
- * \arg Implemented in \ref chan_misdn.c
- * \arg \ref README_misdn
- * \arg See the mISDN home page: http://www.isdn4linux.de/mISDN/
- * \section misdnconf misdn.conf
- * \verbinclude misdn.conf.sample
- */
-
-/*! 
- * \page Config_vm VoiceMail configuration
- * \section vmconf voicemail.conf
- * \arg Implemented in \ref app_voicemail.c
- * \verbinclude voicemail.conf.sample
- */
-
-/*! 
- * \page Config_dahdi DAHDI configuration
- * \section dahdiconf dahdi.conf
- * \arg Implemented in \ref chan_dahdi.c
- * \verbinclude dahdi.conf.sample
- */
-
-/*! 
- * \page Config_h323 H.323 channel driver information
- * This is the configuration of the H.323 channel driver within the Asterisk
- * distribution. There's another one, called OH323, in asterisk-addons
- * \arg Implemented in \ref chan_h323.c
- * \section h323conf h323.conf
- * \ref chan_h323.c
- */
-
-/*! 
- * \page Config_oss OSS configuration
- * \section ossconf oss.conf
- * \arg Implemented in \ref chan_oss.c
- * \verbinclude oss.conf.sample
- */
-
-/*! 
- * \page Config_alsa ALSA configuration
- * \section alsaconf alsa.conf
- * \arg Implemented in \ref chan_alsa.c
- * \verbinclude alsa.conf.sample
- */
-
-/*! 
- * \page Config_agent Agent configuration
- * \section agentconf agents.conf
- * The agent channel is a proxy channel for queues
- * \arg Implemented in \ref chan_agent.c
- * \verbinclude agents.conf.sample
  */
 
 /*! 
@@ -507,144 +267,6 @@
  * Used in \ref chan_sip.c and \ref chan_mgcp.c (and various H.323 channels)
  * \section rtpconf rtp.conf
  * \verbinclude rtp.conf.sample
- */
-
-/*! 
- * \page Config_dun DUNDi Configuration
- * \arg See also \ref AstDUNDi
- * \section dundiconf dundi.conf
- * \verbinclude dundi.conf.sample
- */
-
-/*! 
- * \page Config_enum ENUM Configuration
- * \section enumconf enum.conf
- * \arg See also \ref enumreadme
- * \arg Implemented in \ref func_enum.c and \ref enum.c
- * \verbinclude enum.conf.sample
- */
-
-/*!
- * \page cdr_csv Default CDR driver configuration
- * \par See also
- * \arg \ref cdrconf
- * \arg Implemented in \ref cdr_csv.c
- * \verbinclude cdr_csv.conf.sample
- */
-
-/*! 
- * \page cdr_custom Custom CDR Configuration
- * \par See also 
- * \arg \ref cdrconf
- * \arg Implemented in \ref cdr_custom.c
- * \verbinclude cdr_custom.conf.sample
- */
-
-/*! 
- * \page cdr_ami Manager CDR driver configuration
- * \par See also 
- * \arg \ref cdrconf
- * \arg \ref AstAMI
- * \arg Implemented in \ref cdr_manager.c
- * \verbinclude cdr_manager.conf.sample
- */
-
-/*! 
- * \page cdr_odbc ODBC CDR driver configuration
- * \arg See also \ref cdrconf
- * \arg Implemented in \ref cdr_odbc.c
- * \verbinclude cdr_odbc.conf.sample
- * See also:
- * \arg http://www.unixodbc.org
- */
-
-/*! 
- * \page cdr_odbc Adaptive ODBC CDR driver configuration
- * \arg See also \ref cdrconf
- * \arg Implemented in \ref cdr_adaptive_odbc.c
- * \verbinclude cdr_adaptive_odbc.conf.sample
- * See also:
- * \arg http://www.unixodbc.org
- */
-
-/*! 
- * \page cdr_pgsql PostgreSQL CDR driver configuration
- * \arg See also \ref cdrconf
- * \arg Implemented in \ref cdr_pgsql.c
- * See also:
- * \arg http://www.postgresql.org
- * \verbinclude cdr_pgsql.conf.sample
- */
-
-/*!
- * \page cdr_radius RADIUS CDR driver configuration
- * \arg See also \ref cdrconf
- * \arg Implemented in \ref cdr_radius.c
- * \verbinclude cdr_radius.conf.sample
- */
-
-/*! 
- * \page cdr_sqlite SQLite 2 CDR driver configuration
- * \arg See also \ref cdrconf
- * \arg Implemented in \ref cdr_sqlite.c
- * See also:
- * \arg http://www.sqlite.org
- */
-
-/*!
- * \page cdr_sqlite3_custom SQLite 3 CDR driver configuration
- * \arg See also \ref cdrconf
- * \arg Implemented in \ref cdr_sqlite3_custom.c
- * See also:
- * \arg http://www.sqlite.org
- * \verbinclude cdr_sqlite3_custom.conf.sample
- */
-
-/*!
- * \page cdr_syslog Syslog CDR driver configuration
- * \arg See also \ref cdrconf
- * \arg \ref cdr_syslog.c
- * \verbinclude cdr_syslog.conf.sample
- */
-
-/*! 
- * \page cdr_tds FreeTDS CDR driver configuration
- * \arg See also \ref cdrconf
- * See also:
- * \arg http://www.freetds.org
- * \verbinclude cdr_tds.conf.sample
- */
-
-/*! 
- * \page Config_cdr CDR configuration
- * \par See also
- * \arg \ref cdr_drivers
- * \arg \link Config_cdr CDR configuration  \endlink  
- * \arg \link cdr_csv Default CDR driver configuration \endlink
- * \arg \link cdr_custom Custom CDR driver configuration \endlink
- * \arg \link cdr_ami Manager CDR driver configuration \endlink
- * \arg \link cdr_odbc ODBC CDR driver configuration \endlink
- * \arg \link cdr_adaptive_odbc Adaptive ODBC CDR driver configuration \endlink
- * \arg \link cdr_pgsql PostgreSQL CDR driver configuration \endlink
- * \arg \link cdr_radius RADIUS CDR driver configuration \endlink
- * \arg \link cdr_sqlite SQLite 2 CDR driver configuration \endlink
- * \arg \link cdr_sqlite3_custom SQLite 3 CDR driver configuration \endlink
- * \arg \link cdr_syslog Syslog CDR driver configuration \endlink
- * \arg \link cdr_tds FreeTDS CDR driver configuration (Microsoft SQL Server) \endlink
- * \verbinclude cdr.conf.sample
- */
-
-/*! 
- * \page Config_moh Music on Hold Configuration
- * \arg Implemented in \ref res_musiconhold.c
- * \section mohconf musiconhold.conf
- * \verbinclude musiconhold.conf.sample
- */
-
-/*! 
- * \page Config_adsi ADSI Configuration
- * \section adsiconf adsi.conf
- * \verbinclude adsi.conf.sample
  */
 
 /*! 
@@ -668,20 +290,6 @@
  */
 
 /*! 
- * \page Config_qu ACD - Queue system configuration
- * \arg Implemented in \ref app_queue.c
- * \section quconf queues.conf
- * \verbinclude queues.conf.sample
- */
-
-/*! 
- * \page Config_mm Meetme - The conference bridge configuration
- * \arg Implemented in \ref app_meetme.c
- * \section mmconf meetme.conf
- * \verbinclude meetme.conf.sample
- */
-
-/*! 
  * \page SoundFiles Sound files
  * \section SecSound Asterisk Sound files
  * Asterisk includes a large number of sound files. Many of these
@@ -689,6 +297,21 @@
  *
  * Additional sound files are available in the asterisk-addons
  * repository on svn.digium.com
+ */
+
+/*!
+ * \page AstHTTP AMI over HTTP support
+ * The http.c file includes support for manager transactions over
+ * http.
+ * \section ami AMI - The manager Interface
+ * \arg \link Config_ami Configuration file \endlink
+ */
+
+/*
+ * Doxygen Groups
+ */
+
+/*! \addtogroup configuration_file Configuration Files
  */
 
 /*! 
@@ -700,7 +323,6 @@
  * \arg \ref Config_cdr "CDR Configuration"
  */
 
-
 /*! 
  * \addtogroup channel_drivers Module: Asterisk Channel Drivers
  * \section channel_generic Asterisk Channel Drivers
@@ -709,7 +331,7 @@
  */
 
 /*! 
- * \addtogroup applications Module: Dial plan applications
+ * \addtogroup applications Dial plan applications
  * \section app_generic Asterisk Dial Plan Applications
  * \brief Applications support the dialplan. They register dynamically with 
  *        \see ast_register_application() and unregister with 
@@ -748,24 +370,3 @@
  * \addtogroup rtp_engines Module: RTP Engines
  * \section rtp_engine_blah Asterisk RTP Engines
  */
-
-/*! 
- * \page AstHTTP AMI over HTTP support
- * The http.c file includes support for manager transactions over
- * http.
- * \section ami AMI - The manager Interface
- * \arg \link Config_ami Configuration file \endlink
- */
-
-/*! 
- * \page res_config_sqlite SQLite Resource driver configuration
- * \arg Implemented in \ref res_config_sqlite.c
- * \arg Configuration file:
- * \verbinclude res_config_sqlite.conf
- * \arg SQL tables:
- * https://wiki.asterisk.org/wiki/display/AST/SQLite+Tables
- * \arg See also:
- * http://www.sqlite.org
- */
-
-

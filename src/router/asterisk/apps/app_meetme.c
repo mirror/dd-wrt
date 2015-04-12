@@ -29,6 +29,15 @@
  * \ingroup applications
  */
 
+/*! \li \ref app_meetme.c uses configuration file \ref meetme.conf
+ * \addtogroup configuration_file Configuration Files
+ */
+
+/*! 
+ * \page meetme.conf meetme.conf
+ * \verbinclude meetme.conf.sample
+ */
+
 /*** MODULEINFO
 	<depend>dahdi</depend>
 	<defaultenabled>no</defaultenabled>
@@ -38,7 +47,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 399034 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 430434 $")
 
 #include <dahdi/user.h>
 
@@ -64,6 +73,11 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 399034 $")
 #include "asterisk/paths.h"
 #include "asterisk/data.h"
 #include "asterisk/test.h"
+#include "asterisk/stasis.h"
+#include "asterisk/stasis_channels.h"
+#include "asterisk/stasis_message_router.h"
+#include "asterisk/json.h"
+#include "asterisk/format_compatibility.h"
 
 #include "enter.h"
 #include "leave.h"
@@ -544,6 +558,88 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 399034 $")
 				MeetmeListRoomsComplete.</para>
 		</description>
 	</manager>
+	<managerEvent language="en_US" name="MeetmeJoin">
+		<managerEventInstance class="EVENT_FLAG_CALL">
+			<synopsis>Raised when a user joins a MeetMe conference.</synopsis>
+			<syntax>
+				<parameter name="Meetme">
+					<para>The identifier for the MeetMe conference.</para>
+				</parameter>
+				<parameter name="Usernum">
+					<para>The identifier of the MeetMe user who joined.</para>
+				</parameter>
+				<channel_snapshot/>
+			</syntax>
+			<see-also>
+				<ref type="managerEvent">MeetmeLeave</ref>
+				<ref type="application">MeetMe</ref>
+			</see-also>
+		</managerEventInstance>
+	</managerEvent>
+	<managerEvent language="en_US" name="MeetmeLeave">
+		<managerEventInstance class="EVENT_FLAG_CALL">
+			<synopsis>Raised when a user leaves a MeetMe conference.</synopsis>
+			<syntax>
+				<xi:include xpointer="xpointer(/docs/managerEvent[@name='MeetmeJoin']/managerEventInstance/syntax/parameter)" />
+				<channel_snapshot/>
+				<parameter name="Duration">
+					<para>The length of time in seconds that the Meetme user was in the conference.</para>
+				</parameter>
+			</syntax>
+			<see-also>
+				<ref type="managerEvent">MeetmeJoin</ref>
+			</see-also>
+		</managerEventInstance>
+	</managerEvent>
+	<managerEvent language="en_US" name="MeetmeEnd">
+		<managerEventInstance class="EVENT_FLAG_CALL">
+			<synopsis>Raised when a MeetMe conference ends.</synopsis>
+			<syntax>
+				<xi:include xpointer="xpointer(/docs/managerEvent[@name='MeetmeJoin']/managerEventInstance/syntax/parameter[@name='Meetme'])" />
+			</syntax>
+			<see-also>
+				<ref type="managerEvent">MeetmeJoin</ref>
+			</see-also>
+		</managerEventInstance>
+	</managerEvent>
+	<managerEvent language="en_US" name="MeetmeTalkRequest">
+		<managerEventInstance class="EVENT_FLAG_CALL">
+			<synopsis>Raised when a MeetMe user has started talking.</synopsis>
+			<syntax>
+				<xi:include xpointer="xpointer(/docs/managerEvent[@name='MeetmeJoin']/managerEventInstance/syntax/parameter)" />
+				<channel_snapshot/>
+				<parameter name="Duration">
+					<para>The length of time in seconds that the Meetme user has been in the conference at the time of this event.</para>
+				</parameter>
+				<parameter name="Status">
+					<enumlist>
+						<enum name="on"/>
+						<enum name="off"/>
+					</enumlist>
+				</parameter>
+			</syntax>
+		</managerEventInstance>
+	</managerEvent>
+	<managerEvent language="en_US" name="MeetmeTalking">
+		<managerEventInstance class="EVENT_FLAG_CALL">
+			<synopsis>Raised when a MeetMe user begins or ends talking.</synopsis>
+			<syntax>
+				<xi:include xpointer="xpointer(/docs/managerEvent[@name='MeetmeJoin']/managerEventInstance/syntax/parameter)" />
+				<channel_snapshot/>
+				<xi:include xpointer="xpointer(/docs/managerEvent[@name='MeetmeTalkRequest']/managerEventInstance/syntax/parameter)" />
+			</syntax>
+		</managerEventInstance>
+	</managerEvent>
+	<managerEvent language="en_US" name="MeetmeMute">
+		<managerEventInstance class="EVENT_FLAG_CALL">
+			<synopsis>Raised when a MeetMe user is muted or unmuted.</synopsis>
+			<syntax>
+				<xi:include xpointer="xpointer(/docs/managerEvent[@name='MeetmeJoin']/managerEventInstance/syntax/parameter)" />
+				<channel_snapshot/>
+				<xi:include xpointer="xpointer(/docs/managerEvent[@name='MeetmeTalkRequest']/managerEventInstance/syntax/parameter)" />
+			</syntax>
+		</managerEventInstance>
+	</managerEvent>
  ***/
 
 #define CONFIG_FILE_NAME	"meetme.conf"
@@ -1033,6 +1129,271 @@ static const char gain_map[] = {
 	15,
 };
 
+/* Routes the various meetme message types to the meetme stasis callback function to turn them into events */
+static struct stasis_message_router *meetme_event_message_router;
+
+STASIS_MESSAGE_TYPE_DEFN_LOCAL(meetme_join_type);
+STASIS_MESSAGE_TYPE_DEFN_LOCAL(meetme_leave_type);
+STASIS_MESSAGE_TYPE_DEFN_LOCAL(meetme_end_type);
+STASIS_MESSAGE_TYPE_DEFN_LOCAL(meetme_mute_type);
+STASIS_MESSAGE_TYPE_DEFN_LOCAL(meetme_talking_type);
+STASIS_MESSAGE_TYPE_DEFN_LOCAL(meetme_talk_request_type);
+
+static void meetme_stasis_cb(void *data, struct stasis_subscription *sub,
+	struct stasis_message *message);
+
+static void meetme_stasis_cleanup(void)
+{
+	if (meetme_event_message_router) {
+		stasis_message_router_unsubscribe(meetme_event_message_router);
+		meetme_event_message_router = NULL;
+	}
+
+	STASIS_MESSAGE_TYPE_CLEANUP(meetme_join_type);
+	STASIS_MESSAGE_TYPE_CLEANUP(meetme_leave_type);
+	STASIS_MESSAGE_TYPE_CLEANUP(meetme_end_type);
+	STASIS_MESSAGE_TYPE_CLEANUP(meetme_mute_type);
+	STASIS_MESSAGE_TYPE_CLEANUP(meetme_talking_type);
+	STASIS_MESSAGE_TYPE_CLEANUP(meetme_talk_request_type);
+}
+
+static int meetme_stasis_init(void)
+{
+
+	STASIS_MESSAGE_TYPE_INIT(meetme_join_type);
+	STASIS_MESSAGE_TYPE_INIT(meetme_leave_type);
+	STASIS_MESSAGE_TYPE_INIT(meetme_end_type);
+	STASIS_MESSAGE_TYPE_INIT(meetme_mute_type);
+	STASIS_MESSAGE_TYPE_INIT(meetme_talking_type);
+	STASIS_MESSAGE_TYPE_INIT(meetme_talk_request_type);
+
+	meetme_event_message_router = stasis_message_router_create(
+		ast_channel_topic_all_cached());
+
+	if (!meetme_event_message_router) {
+		meetme_stasis_cleanup();
+		return -1;
+	}
+
+	if (stasis_message_router_add(meetme_event_message_router,
+			meetme_join_type(),
+			meetme_stasis_cb,
+			NULL)) {
+		meetme_stasis_cleanup();
+		return -1;
+	}
+
+	if (stasis_message_router_add(meetme_event_message_router,
+			meetme_leave_type(),
+			meetme_stasis_cb,
+			NULL)) {
+		meetme_stasis_cleanup();
+		return -1;
+	}
+
+	if (stasis_message_router_add(meetme_event_message_router,
+			meetme_end_type(),
+			meetme_stasis_cb,
+			NULL)) {
+		meetme_stasis_cleanup();
+		return -1;
+	}
+
+	if (stasis_message_router_add(meetme_event_message_router,
+			meetme_mute_type(),
+			meetme_stasis_cb,
+			NULL)) {
+		meetme_stasis_cleanup();
+		return -1;
+	}
+
+	if (stasis_message_router_add(meetme_event_message_router,
+			meetme_talking_type(),
+			meetme_stasis_cb,
+			NULL)) {
+		meetme_stasis_cleanup();
+		return -1;
+	}
+
+	if (stasis_message_router_add(meetme_event_message_router,
+			meetme_talk_request_type(),
+			meetme_stasis_cb,
+			NULL)) {
+		meetme_stasis_cleanup();
+		return -1;
+	}
+
+	return 0;
+}
+
+static void meetme_stasis_cb(void *data, struct stasis_subscription *sub,
+	struct stasis_message *message)
+{
+	struct ast_channel_blob *channel_blob = stasis_message_data(message);
+	struct stasis_message_type *message_type;
+	const char *event;
+	const char *conference_num;
+	const char *status;
+	struct ast_json *json_cur;
+	RAII_VAR(struct ast_str *, channel_text, NULL, ast_free);
+	RAII_VAR(struct ast_str *, extra_text, NULL, ast_free);
+
+	if (!channel_blob) {
+		ast_assert(0);
+		return;
+	}
+
+	message_type = stasis_message_type(message);
+
+	if (!message_type) {
+		ast_assert(0);
+		return;
+	}
+
+	if (message_type == meetme_join_type()) {
+		event = "MeetmeJoin";
+	} else if (message_type == meetme_leave_type()) {
+		event = "MeetmeLeave";
+	} else if (message_type == meetme_end_type()) {
+		event = "MeetmeEnd";
+	} else if (message_type == meetme_mute_type()) {
+		event = "MeetmeMute";
+	} else if (message_type == meetme_talking_type()) {
+		event = "MeetmeTalking";
+	} else if (message_type == meetme_talk_request_type()) {
+		event = "MeetmeTalkRequest";
+	} else {
+		ast_assert(0);
+		return;
+	}
+
+	if (!event) {
+		ast_assert(0);
+		return;
+	}
+
+	conference_num = ast_json_string_get(ast_json_object_get(channel_blob->blob, "Meetme"));
+	if (!conference_num) {
+		ast_assert(0);
+		return;
+	}
+
+	status = ast_json_string_get(ast_json_object_get(channel_blob->blob, "status"));
+	if (status) {
+		ast_str_append_event_header(&extra_text, "Status", status);
+	}
+
+	if (channel_blob->snapshot) {
+		channel_text = ast_manager_build_channel_state_string(channel_blob->snapshot);
+	}
+
+	if ((json_cur = ast_json_object_get(channel_blob->blob, "user"))) {
+		int user_number = ast_json_integer_get(json_cur);
+		RAII_VAR(struct ast_str *, user_prop_str, ast_str_create(32), ast_free);
+		if (!user_prop_str) {
+			return;
+		}
+
+		ast_str_set(&user_prop_str, 0, "%d", user_number);
+		ast_str_append_event_header(&extra_text, "User", ast_str_buffer(user_prop_str));
+
+		if ((json_cur = ast_json_object_get(channel_blob->blob, "duration"))) {
+			int duration = ast_json_integer_get(json_cur);
+			ast_str_set(&user_prop_str, 0, "%d", duration);
+			ast_str_append_event_header(&extra_text, "Duration", ast_str_buffer(user_prop_str));
+		}
+
+		json_cur = NULL;
+	}
+
+	manager_event(EVENT_FLAG_CALL, event,
+		"Meetme: %s\r\n"
+		"%s"
+		"%s",
+		conference_num,
+		channel_text ? ast_str_buffer(channel_text) : "",
+		extra_text ? ast_str_buffer(extra_text) : "");
+}
+
+/*!
+ * \internal
+ * \brief Build a json object from a status value for inclusion in json extras for meetme_stasis_generate_msg
+ * \since 12.0.0
+ *
+ * \param on if true, then status is on. Otherwise status is off
+ * \retval NULL on failure to allocate the JSON blob.
+ * \retval pointer to the JSON blob if successful.
+ */
+static struct ast_json *status_to_json(int on)
+{
+	struct ast_json *json_object = ast_json_pack("{s: s}",
+		"status", on ? "on" : "off");
+
+	return json_object;
+}
+
+/*!
+ * \internal
+ * \brief Generate a stasis message associated with a meetme event
+ * \since 12.0.0
+ *
+ * \param meetme_confere The conference responsible for generating this message
+ * \param chan The channel involved in the message (NULL allowed)
+ * \param user The conference user involved in the message (NULL allowed)
+ * \param message_type the type the stasis message being generated
+ * \param extras Additional json fields desired for inclusion
+ */
+static void meetme_stasis_generate_msg(struct ast_conference *meetme_conference, struct ast_channel *chan,
+	struct ast_conf_user *user, struct stasis_message_type *message_type, struct ast_json *extras)
+{
+	RAII_VAR(struct stasis_message *, msg, NULL, ao2_cleanup);
+	RAII_VAR(struct ast_json *, json_object, NULL, ast_json_unref);
+
+	json_object = ast_json_pack("{s: s}",
+		"Meetme", meetme_conference->confno);
+
+	if (!json_object) {
+		return;
+	}
+
+	if (extras) {
+		ast_json_object_update(json_object, extras);
+	}
+
+	if (user) {
+		struct timeval now = ast_tvnow();
+		long duration = (long)(now.tv_sec - user->jointime);
+		struct ast_json *json_user;
+		struct ast_json *json_user_duration;
+
+		json_user = ast_json_integer_create(user->user_no);
+		if (!json_user || ast_json_object_set(json_object, "user", json_user)) {
+			return;
+		}
+
+		if (duration > 0) {
+			json_user_duration = ast_json_integer_create(duration);
+			if (!json_user_duration
+				|| ast_json_object_set(json_object, "duration", json_user_duration)) {
+				return;
+			}
+		}
+	}
+
+	if (chan) {
+		ast_channel_lock(chan);
+	}
+	msg = ast_channel_blob_create(chan, message_type, json_object);
+	if (chan) {
+		ast_channel_unlock(chan);
+	}
+
+	if (!msg) {
+		return;
+	}
+
+	stasis_publish(ast_channel_topic(chan), msg);
+}
 
 static int admin_exec(struct ast_channel *chan, const char *data);
 static void *recordthread(void *args);
@@ -1240,6 +1601,7 @@ static int user_max_cmp(void *obj, void *arg, int flags)
  * \param dynamic Mark the newly created conference as dynamic
  * \param refcount How many references to mark on the conference
  * \param chan The asterisk channel
+ * \param test
  *
  * \return A pointer to the conference struct, or NULL if it wasn't found and
  *         make or dynamic were not set.
@@ -1251,8 +1613,7 @@ static struct ast_conference *build_conf(const char *confno, const char *pin,
 	struct ast_conference *cnf;
 	struct dahdi_confinfo dahdic = { 0, };
 	int confno_int = 0;
-	struct ast_format_cap *cap_slin = ast_format_cap_alloc_nolock();
-	struct ast_format tmp_fmt;
+	struct ast_format_cap *cap_slin = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT);
 
 	AST_LIST_LOCK(&confs);
 
@@ -1264,7 +1625,7 @@ static struct ast_conference *build_conf(const char *confno, const char *pin,
 	if (cnf || (!make && !dynamic) || !cap_slin)
 		goto cnfout;
 
-	ast_format_cap_add(cap_slin, ast_format_set(&tmp_fmt, AST_FORMAT_SLINEAR, 0));
+	ast_format_cap_append(cap_slin, ast_format_slin, 0);
 	/* Make a new one */
 	if (!(cnf = ast_calloc(1, sizeof(*cnf))) ||
 		!(cnf->usercontainer = ao2_container_alloc(1, NULL, user_no_cmp))) {
@@ -1310,10 +1671,10 @@ static struct ast_conference *build_conf(const char *confno, const char *pin,
 	cnf->dahdiconf = dahdic.confno;
 
 	/* Setup a new channel for playback of audio files */
-	cnf->chan = ast_request("DAHDI", cap_slin, chan, "pseudo", NULL);
+	cnf->chan = ast_request("DAHDI", cap_slin, NULL, chan, "pseudo", NULL);
 	if (cnf->chan) {
-		ast_set_read_format_by_id(cnf->chan, AST_FORMAT_SLINEAR);
-		ast_set_write_format_by_id(cnf->chan, AST_FORMAT_SLINEAR);
+		ast_set_read_format(cnf->chan, ast_format_slin);
+		ast_set_write_format(cnf->chan, ast_format_slin);
 		dahdic.chan = 0;
 		dahdic.confno = cnf->dahdiconf;
 		dahdic.confmode = DAHDI_CONF_CONFANN | DAHDI_CONF_CONFANNMON;
@@ -1349,7 +1710,7 @@ static struct ast_conference *build_conf(const char *confno, const char *pin,
 		conf_map[confno_int] = 1;
 	
 cnfout:
-	cap_slin = ast_format_cap_destroy(cap_slin);
+	ao2_cleanup(cap_slin);
 	if (cnf)
 		ast_atomic_fetchadd_int(&cnf->refcount, refcount);
 
@@ -1965,20 +2326,10 @@ static int conf_free(struct ast_conference *conf)
 {
 	int x;
 	struct announce_listitem *item;
-	
+
 	AST_LIST_REMOVE(&confs, conf, list);
-	/*** DOCUMENTATION
-		<managerEventInstance>
-			<synopsis>Raised when a MeetMe conference ends.</synopsis>
-			<syntax>
-				<xi:include xpointer="xpointer(/docs/managerEvent[@name='MeetmeJoin']/managerEventInstance/syntax/parameter[@name='Meetme'])" />
-			</syntax>
-			<see-also>
-				<ref type="managerEvent">MeetmeJoin</ref>
-			</see-also>
-		</managerEventInstance>
-	***/
-	manager_event(EVENT_FLAG_CALL, "MeetmeEnd", "Meetme: %s\r\n", conf->confno);
+
+	meetme_stasis_generate_msg(conf, NULL, NULL, meetme_end_type(), NULL);
 
 	if (conf->recording == MEETME_RECORD_ACTIVE) {
 		conf->recording = MEETME_RECORD_TERMINATE;
@@ -2018,10 +2369,8 @@ static int conf_free(struct ast_conference *conf)
 
 	if (conf->origframe)
 		ast_frfree(conf->origframe);
-	if (conf->lchan)
-		ast_hangup(conf->lchan);
-	if (conf->chan)
-		ast_hangup(conf->chan);
+	ast_hangup(conf->lchan);
+	ast_hangup(conf->chan);
 	if (conf->fd >= 0)
 		close(conf->fd);
 	if (conf->recordingfilename) {
@@ -2325,30 +2674,8 @@ static int can_write(struct ast_channel *chan, struct ast_flags64 *confflags)
 
 static void send_talking_event(struct ast_channel *chan, struct ast_conference *conf, struct ast_conf_user *user, int talking)
 {
-	/*** DOCUMENTATION
-		<managerEventInstance>
-			<synopsis>Raised when a MeetMe user begins or ends talking.</synopsis>
-			<syntax>
-				<xi:include xpointer="xpointer(/docs/managerEvent[@name='MeetmeJoin']/managerEventInstance/syntax/parameter[@name='Meetme'])" />
-				<xi:include xpointer="xpointer(/docs/managerEvent[@name='MeetmeJoin']/managerEventInstance/syntax/parameter[@name='Usernum'])" />
-				<parameter name="Status">
-					<enumlist>
-						<enum name="on"/>
-						<enum name="off"/>
-					</enumlist>
-				</parameter>
-			</syntax>
-		</managerEventInstance>
-	***/
-	ast_manager_event(chan, EVENT_FLAG_CALL, "MeetmeTalking",
-		"Channel: %s\r\n"
-		"Uniqueid: %s\r\n"
-		"Meetme: %s\r\n"
-		"Usernum: %d\r\n"
-		"Status: %s\r\n",
-		ast_channel_name(chan), ast_channel_uniqueid(chan),
-		conf->confno,
-		user->user_no, talking ? "on" : "off");
+	RAII_VAR(struct ast_json *, status_blob, status_to_json(talking), ast_json_unref);
+	meetme_stasis_generate_msg(conf, chan, user, meetme_talking_type(), status_blob);
 }
 
 static void set_user_talking(struct ast_channel *chan, struct ast_conference *conf, struct ast_conf_user *user, int talking, int monitor)
@@ -2629,9 +2956,11 @@ static void meetme_menu_admin(enum menu_modes *menu_mode, int *dtmf, struct ast_
  * \param chan ast_channel belonging to the user who called the menu
  * \param user which meetme conference user invoked the menu
  * \param recordingtmp character buffer which may hold the name of the conference recording file
- * \param dahdic dahdi configuration info used by the main conference loop
  */
-static void meetme_menu_admin_extended(enum menu_modes *menu_mode, int *dtmf, struct ast_conference *conf, struct ast_flags64 *confflags, struct ast_channel *chan, struct ast_conf_user *user, char *recordingtmp, struct dahdi_confinfo *dahdic, struct ast_format_cap *cap_slin)
+static void meetme_menu_admin_extended(enum menu_modes *menu_mode, int *dtmf,
+	struct ast_conference *conf, struct ast_flags64 *confflags, struct ast_channel *chan,
+	struct ast_conf_user *user, char *recordingtmp, int recordingtmp_size,
+	struct ast_format_cap *cap_slin)
 {
 	int keepplaying;
 	int playednamerec;
@@ -2752,7 +3081,7 @@ static void meetme_menu_admin_extended(enum menu_modes *menu_mode, int *dtmf, st
 				}
 				ast_channel_unlock(chan);
 				if (!conf->recordingfilename) {
-					snprintf(recordingtmp, sizeof(recordingtmp), "meetme-conf-rec-%s-%s", conf->confno, ast_channel_uniqueid(chan));
+					snprintf(recordingtmp, recordingtmp_size, "meetme-conf-rec-%s-%s", conf->confno, ast_channel_uniqueid(chan));
 					conf->recordingfilename = ast_strdup(recordingtmp);
 				}
 				if (!conf->recordingformat) {
@@ -2763,13 +3092,15 @@ static void meetme_menu_admin_extended(enum menu_modes *menu_mode, int *dtmf, st
 			}
 
 			ast_mutex_lock(&conf->recordthreadlock);
-			if ((conf->recordthread == AST_PTHREADT_NULL) && ast_test_flag64(confflags, CONFFLAG_RECORDCONF) && ((conf->lchan = ast_request("DAHDI", cap_slin, chan, "pseudo", NULL)))) {
-				ast_set_read_format_by_id(conf->lchan, AST_FORMAT_SLINEAR);
-				ast_set_write_format_by_id(conf->lchan, AST_FORMAT_SLINEAR);
-				dahdic->chan = 0;
-				dahdic->confno = conf->dahdiconf;
-				dahdic->confmode = DAHDI_CONF_CONFANN | DAHDI_CONF_CONFANNMON;
-				if (ioctl(ast_channel_fd(conf->lchan, 0), DAHDI_SETCONF, dahdic)) {
+			if ((conf->recordthread == AST_PTHREADT_NULL) && ast_test_flag64(confflags, CONFFLAG_RECORDCONF) && ((conf->lchan = ast_request("DAHDI", cap_slin, NULL, chan, "pseudo", NULL)))) {
+				struct dahdi_confinfo dahdic;
+
+				ast_set_read_format(conf->lchan, ast_format_slin);
+				ast_set_write_format(conf->lchan, ast_format_slin);
+				dahdic.chan = 0;
+				dahdic.confno = conf->dahdiconf;
+				dahdic.confmode = DAHDI_CONF_CONFANN | DAHDI_CONF_CONFANNMON;
+				if (ioctl(ast_channel_fd(conf->lchan, 0), DAHDI_SETCONF, &dahdic)) {
 					ast_log(LOG_WARNING, "Error starting listen channel\n");
 					ast_hangup(conf->lchan);
 					conf->lchan = NULL;
@@ -2812,10 +3143,11 @@ static void meetme_menu_admin_extended(enum menu_modes *menu_mode, int *dtmf, st
  * \param chan ast_channel belonging to the user who called the menu
  * \param user which meetme conference user invoked the menu
  * \param recordingtmp character buffer which may hold the name of the conference recording file
- * \param dahdic dahdi configuration info used by the main conference loop
  */
-
-static void meetme_menu(enum menu_modes *menu_mode, int *dtmf, struct ast_conference *conf, struct ast_flags64 *confflags, struct ast_channel *chan, struct ast_conf_user *user, char *recordingtmp, struct dahdi_confinfo *dahdic, struct ast_format_cap *cap_slin)
+static void meetme_menu(enum menu_modes *menu_mode, int *dtmf,
+	struct ast_conference *conf, struct ast_flags64 *confflags, struct ast_channel *chan,
+	struct ast_conf_user *user, char *recordingtmp, int recordingtmp_size,
+	struct ast_format_cap *cap_slin)
 {
 	switch (*menu_mode) {
 	case MENU_DISABLED:
@@ -2830,7 +3162,8 @@ static void meetme_menu(enum menu_modes *menu_mode, int *dtmf, struct ast_confer
 			break;
 		}
 	case MENU_ADMIN_EXTENDED:
-		meetme_menu_admin_extended(menu_mode, dtmf, conf, confflags, chan, user, recordingtmp, dahdic, cap_slin);
+		meetme_menu_admin_extended(menu_mode, dtmf, conf, confflags, chan, user,
+			recordingtmp, recordingtmp_size, cap_slin);
 		break;
 	}
 }
@@ -2890,13 +3223,12 @@ static int conf_run(struct ast_channel *chan, struct ast_conference *conf, struc
 	int setusercount = 0;
 	int confsilence = 0, totalsilence = 0;
 	char *mailbox, *context;
-	struct ast_format_cap *cap_slin = ast_format_cap_alloc_nolock();
-	struct ast_format tmpfmt;
+	struct ast_format_cap *cap_slin = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT);
 
 	if (!cap_slin) {
 		goto conf_run_cleanup;
 	}
-	ast_format_cap_add(cap_slin, ast_format_set(&tmpfmt, AST_FORMAT_SLINEAR, 0));
+	ast_format_cap_append(cap_slin, ast_format_slin, 0);
 
 	if (!(user = ao2_alloc(sizeof(*user), NULL))) {
 		goto conf_run_cleanup;
@@ -2912,7 +3244,7 @@ static int conf_run(struct ast_channel *chan, struct ast_conference *conf, struc
 
 	if (ast_test_flag64(confflags, CONFFLAG_DURATION_STOP) && !ast_strlen_zero(optargs[OPT_ARG_DURATION_STOP])) {
 		calldurationlimit = atoi(optargs[OPT_ARG_DURATION_STOP]);
-		ast_verb(3, "Setting call duration limit to %d seconds.\n", calldurationlimit);
+		ast_verb(3, "Setting call duration limit to %u seconds.\n", calldurationlimit);
 	}
 
 	if (ast_test_flag64(confflags, CONFFLAG_DURATION_LIMIT) && !ast_strlen_zero(optargs[OPT_ARG_DURATION_LIMIT])) {
@@ -3017,9 +3349,9 @@ static int conf_run(struct ast_channel *chan, struct ast_conference *conf, struc
 
 	ast_mutex_lock(&conf->recordthreadlock);
 	if ((conf->recordthread == AST_PTHREADT_NULL) && ast_test_flag64(confflags, CONFFLAG_RECORDCONF) &&
-		((conf->lchan = ast_request("DAHDI", cap_slin, chan, "pseudo", NULL)))) {
-		ast_set_read_format_by_id(conf->lchan, AST_FORMAT_SLINEAR);
-		ast_set_write_format_by_id(conf->lchan, AST_FORMAT_SLINEAR);
+		((conf->lchan = ast_request("DAHDI", cap_slin, NULL, chan, "pseudo", NULL)))) {
+		ast_set_read_format(conf->lchan, ast_format_slin);
+		ast_set_write_format(conf->lchan, ast_format_slin);
 		dahdic.chan = 0;
 		dahdic.confno = conf->dahdiconf;
 		dahdic.confmode = DAHDI_CONF_CONFANN | DAHDI_CONF_CONFANNMON;
@@ -3076,9 +3408,9 @@ static int conf_run(struct ast_channel *chan, struct ast_conference *conf, struc
 	if (rt_schedule && conf->maxusers) {
 		if (conf->users >= conf->maxusers) {
 			/* Sorry, but this confernce has reached the participant limit! */	
+			ast_mutex_unlock(&conf->playlock);
 			if (!ast_streamfile(chan, "conf-full", ast_channel_language(chan)))
 				ast_waitstream(chan, "");
-			ast_mutex_unlock(&conf->playlock);
 			goto outrun;
 		}
 	}
@@ -3245,12 +3577,12 @@ static int conf_run(struct ast_channel *chan, struct ast_conference *conf, struc
 		ast_indicate(chan, -1);
 	}
 
-	if (ast_set_write_format_by_id(chan, AST_FORMAT_SLINEAR) < 0) {
+	if (ast_set_write_format(chan, ast_format_slin) < 0) {
 		ast_log(LOG_WARNING, "Unable to set '%s' to write linear mode\n", ast_channel_name(chan));
 		goto outrun;
 	}
 
-	if (ast_set_read_format_by_id(chan, AST_FORMAT_SLINEAR) < 0) {
+	if (ast_set_read_format(chan, ast_format_slin) < 0) {
 		ast_log(LOG_WARNING, "Unable to set '%s' to read linear mode\n", ast_channel_name(chan));
 		goto outrun;
 	}
@@ -3362,39 +3694,7 @@ static int conf_run(struct ast_channel *chan, struct ast_conference *conf, struc
 	ast_debug(1, "Placed channel %s in DAHDI conf %d\n", ast_channel_name(chan), conf->dahdiconf);
 
 	if (!sent_event) {
-		/*** DOCUMENTATION
-			<managerEventInstance>
-				<synopsis>Raised when a user joins a MeetMe conference.</synopsis>
-				<syntax>
-					<parameter name="Meetme">
-						<para>The identifier for the MeetMe conference.</para>
-					</parameter>
-					<parameter name="Usernum">
-						<para>The identifier of the MeetMe user who joined.</para>
-					</parameter>
-				</syntax>
-				<see-also>
-					<ref type="managerEvent">MeetmeLeave</ref>
-					<ref type="application">MeetMe</ref>
-				</see-also>
-			</managerEventInstance>
-		***/
-		ast_manager_event(chan, EVENT_FLAG_CALL, "MeetmeJoin",
-			"Channel: %s\r\n"
-			"Uniqueid: %s\r\n"
-			"Meetme: %s\r\n"
-			"Usernum: %d\r\n"
-			"CallerIDnum: %s\r\n"
-			"CallerIDname: %s\r\n"
-			"ConnectedLineNum: %s\r\n"
-			"ConnectedLineName: %s\r\n",
-			ast_channel_name(chan), ast_channel_uniqueid(chan), conf->confno,
-			user->user_no,
-			S_COR(ast_channel_caller(user->chan)->id.number.valid, ast_channel_caller(user->chan)->id.number.str, "<unknown>"),
-			S_COR(ast_channel_caller(user->chan)->id.name.valid, ast_channel_caller(user->chan)->id.name.str, "<unknown>"),
-			S_COR(ast_channel_connected(user->chan)->id.number.valid, ast_channel_connected(user->chan)->id.number.str, "<unknown>"),
-			S_COR(ast_channel_connected(user->chan)->id.name.valid, ast_channel_connected(user->chan)->id.name.str, "<unknown>")
-			);
+		meetme_stasis_generate_msg(conf, chan, user, meetme_join_type(), NULL);
 		sent_event = 1;
 	}
 
@@ -3743,6 +4043,7 @@ static int conf_run(struct ast_channel *chan, struct ast_conference *conf, struc
 
 			/* If I should be muted but am still talker, mute me */
 			if ((user->adminflags & (ADMINFLAG_MUTED | ADMINFLAG_SELFMUTED)) && (dahdic.confmode & DAHDI_CONF_TALKER)) {
+				RAII_VAR(struct ast_json *, status_blob, status_to_json(1), ast_json_unref);
 				dahdic.confmode ^= DAHDI_CONF_TALKER;
 				if (ioctl(fd, DAHDI_SETCONF, &dahdic)) {
 					ast_log(LOG_WARNING, "Error setting conference - Un/Mute \n");
@@ -3754,95 +4055,34 @@ static int conf_run(struct ast_channel *chan, struct ast_conference *conf, struc
 				if (ast_test_flag64(confflags,  (CONFFLAG_MONITORTALKER | CONFFLAG_OPTIMIZETALKER))) {
 					set_user_talking(chan, conf, user, -1, ast_test_flag64(confflags, CONFFLAG_MONITORTALKER));
 				}
-				/*** DOCUMENTATION
-				<managerEventInstance>
-					<synopsis>Raised when a MeetMe user is muted.</synopsis>
-					<syntax>
-						<xi:include xpointer="xpointer(/docs/managerEvent[@name='MeetmeJoin']/managerEventInstance/syntax/parameter[@name='Meetme'])" />
-						<xi:include xpointer="xpointer(/docs/managerEvent[@name='MeetmeJoin']/managerEventInstance/syntax/parameter[@name='Usernum'])" />
-						<parameter name="Status">
-							<enumlist>
-								<enum name="on"/>
-								<enum name="off"/>
-							</enumlist>
-						</parameter>
-					</syntax>
-				</managerEventInstance>
-				***/
-				ast_manager_event(chan, EVENT_FLAG_CALL, "MeetmeMute",
-					"Channel: %s\r\n"
-					"Uniqueid: %s\r\n"
-					"Meetme: %s\r\n"
-					"Usernum: %d\r\n"
-					"Status: on\r\n",
-					ast_channel_name(chan), ast_channel_uniqueid(chan), conf->confno, user->user_no);
+				meetme_stasis_generate_msg(conf, chan, user, meetme_mute_type(), status_blob);
 			}
 
 			/* If I should be un-muted but am not talker, un-mute me */
 			if (!(user->adminflags & (ADMINFLAG_MUTED | ADMINFLAG_SELFMUTED)) && !ast_test_flag64(confflags, CONFFLAG_MONITOR) && !(dahdic.confmode & DAHDI_CONF_TALKER)) {
+				RAII_VAR(struct ast_json *, status_blob, status_to_json(0), ast_json_unref);
 				dahdic.confmode |= DAHDI_CONF_TALKER;
 				if (ioctl(fd, DAHDI_SETCONF, &dahdic)) {
 					ast_log(LOG_WARNING, "Error setting conference - Un/Mute \n");
 					ret = -1;
 					break;
 				}
-				/*** DOCUMENTATION
-				<managerEventInstance>
-					<synopsis>Raised when a MeetMe user is unmuted.</synopsis>
-				</managerEventInstance>
-				***/
-				ast_manager_event(chan, EVENT_FLAG_CALL, "MeetmeMute",
-					"Channel: %s\r\n"
-					"Uniqueid: %s\r\n"
-					"Meetme: %s\r\n"
-					"Usernum: %d\r\n"
-					"Status: off\r\n",
-					ast_channel_name(chan), ast_channel_uniqueid(chan), conf->confno, user->user_no);
+				meetme_stasis_generate_msg(conf, chan, user, meetme_mute_type(), status_blob);
 			}
-			
+
 			if ((user->adminflags & (ADMINFLAG_MUTED | ADMINFLAG_SELFMUTED)) && 
 				(user->adminflags & ADMINFLAG_T_REQUEST) && !(talkreq_manager)) {
-				talkreq_manager = 1;
 
-				/*** DOCUMENTATION
-				<managerEventInstance>
-					<synopsis>Raised when a MeetMe user has started talking.</synopsis>
-					<syntax>
-						<xi:include xpointer="xpointer(/docs/managerEvent[@name='MeetmeJoin']/managerEventInstance/syntax/parameter[@name='Meetme'])" />
-						<xi:include xpointer="xpointer(/docs/managerEvent[@name='MeetmeJoin']/managerEventInstance/syntax/parameter[@name='Usernum'])" />
-						<parameter name="Status">
-							<enumlist>
-								<enum name="on"/>
-								<enum name="off"/>
-							</enumlist>
-						</parameter>
-					</syntax>
-				</managerEventInstance>
-				***/
-				ast_manager_event(chan, EVENT_FLAG_CALL, "MeetmeTalkRequest",
-					"Channel: %s\r\n"
-					"Uniqueid: %s\r\n"
-					"Meetme: %s\r\n"
-					"Usernum: %d\r\n"
-					"Status: on\r\n",
-					ast_channel_name(chan), ast_channel_uniqueid(chan), conf->confno, user->user_no);
+				RAII_VAR(struct ast_json *, status_blob, status_to_json(1), ast_json_unref);
+				talkreq_manager = 1;
+				meetme_stasis_generate_msg(conf, chan, user, meetme_talk_request_type(), status_blob);
 			}
 
 			if (!(user->adminflags & (ADMINFLAG_MUTED | ADMINFLAG_SELFMUTED)) && 
 				!(user->adminflags & ADMINFLAG_T_REQUEST) && (talkreq_manager)) {
+				RAII_VAR(struct ast_json *, status_blob, status_to_json(0), ast_json_unref);
 				talkreq_manager = 0;
-				/*** DOCUMENTATION
-				<managerEventInstance>
-					<synopsis>Raised when a MeetMe user has finished talking.</synopsis>
-				</managerEventInstance>
-				***/
-				ast_manager_event(chan, EVENT_FLAG_CALL, "MeetmeTalkRequest",
-					"Channel: %s\r\n"
-					"Uniqueid: %s\r\n"
-					"Meetme: %s\r\n"
-					"Usernum: %d\r\n"
-					"Status: off\r\n",
-					ast_channel_name(chan), ast_channel_uniqueid(chan), conf->confno, user->user_no);
+				meetme_stasis_generate_msg(conf, chan, user, meetme_talk_request_type(), status_blob);
 			}
 
 			/* If user have been hung up, exit the conference */
@@ -3896,7 +4136,7 @@ static int conf_run(struct ast_channel *chan, struct ast_conference *conf, struc
 					dtmfstr[1] = '\0';
 				}
 
-				if ((f->frametype == AST_FRAME_VOICE) && (f->subclass.format.id == AST_FORMAT_SLINEAR)) {
+				if ((f->frametype == AST_FRAME_VOICE) && (ast_format_cmp(f->subclass.format, ast_format_slin) == AST_FORMAT_CMP_EQUAL)) {
 					if (user->talk.actual) {
 						ast_frame_adjust_volume(f, user->talk.actual);
 					}
@@ -3936,6 +4176,7 @@ static int conf_run(struct ast_channel *chan, struct ast_conference *conf, struc
 					if (ast_test_flag64(confflags, CONFFLAG_PASS_DTMF)) {
 						conf_queue_dtmf(conf, user, f);
 					}
+					/* Take out of conference */
 					if (ioctl(fd, DAHDI_SETCONF, &dahdic_empty)) {
 						ast_log(LOG_WARNING, "Error setting conference\n");
 						close(fd);
@@ -3973,13 +4214,15 @@ static int conf_run(struct ast_channel *chan, struct ast_conference *conf, struc
 					}
 
 					if (dtmf > 0) {
-						meetme_menu(&menu_mode, &dtmf, conf, confflags, chan, user, recordingtmp, &dahdic, cap_slin);
+						meetme_menu(&menu_mode, &dtmf, conf, confflags,
+							chan, user, recordingtmp, sizeof(recordingtmp), cap_slin);
 					}
 
 					if (musiconhold && !menu_mode) {
 						conf_start_moh(chan, optargs[OPT_ARG_MOH_CLASS]);
 					}
 
+					/* Put back into conference */
 					if (ioctl(fd, DAHDI_SETCONF, &dahdic)) {
 						ast_log(LOG_WARNING, "Error setting conference\n");
 						close(fd);
@@ -4037,12 +4280,12 @@ static int conf_run(struct ast_channel *chan, struct ast_conference *conf, struc
 						break;
 					default:
 						ast_debug(1,
-							"Got ignored control frame on channel %s, f->frametype=%d,f->subclass=%d\n",
+							"Got ignored control frame on channel %s, f->frametype=%u,f->subclass=%d\n",
 							ast_channel_name(chan), f->frametype, f->subclass.integer);
 					}
 				} else {
 					ast_debug(1,
-						"Got unrecognized frame on channel %s, f->frametype=%d,f->subclass=%d\n",
+						"Got unrecognized frame on channel %s, f->frametype=%u,f->subclass=%d\n",
 						ast_channel_name(chan), f->frametype, f->subclass.integer);
 				}
 				ast_frfree(f);
@@ -4051,7 +4294,7 @@ static int conf_run(struct ast_channel *chan, struct ast_conference *conf, struc
 				if (res > 0) {
 					memset(&fr, 0, sizeof(fr));
 					fr.frametype = AST_FRAME_VOICE;
-					ast_format_set(&fr.subclass.format, AST_FORMAT_SLINEAR, 0);
+					fr.subclass.format = ast_format_slin;
 					fr.datalen = res;
 					fr.samples = res / 2;
 					fr.data.ptr = buf;
@@ -4063,7 +4306,7 @@ static int conf_run(struct ast_channel *chan, struct ast_conference *conf, struc
 						 )) {
 						int idx;
 						for (idx = 0; idx < AST_FRAME_BITS; idx++) {
-							if (ast_format_to_old_bitfield(ast_channel_rawwriteformat(chan)) & (1 << idx)) {
+							if (ast_format_compatibility_format2bitfield(ast_channel_rawwriteformat(chan)) & (1 << idx)) {
 								break;
 							}
 						}
@@ -4073,16 +4316,15 @@ static int conf_run(struct ast_channel *chan, struct ast_conference *conf, struc
 						ast_mutex_lock(&conf->listenlock);
 						if (!conf->transframe[idx]) {
 							if (conf->origframe) {
-								if (musiconhold && !ast_dsp_silence(dsp, conf->origframe, &confsilence) && confsilence < MEETME_DELAYDETECTTALK) {
+								if (musiconhold
+									&& !ast_test_flag64(confflags, CONFFLAG_WAITMARKED)
+									&& !ast_dsp_silence(dsp, conf->origframe, &confsilence)
+									&& confsilence < MEETME_DELAYDETECTTALK) {
 									ast_moh_stop(chan);
 									mohtempstopped = 1;
 								}
 								if (!conf->transpath[idx]) {
-									struct ast_format src;
-									struct ast_format dst;
-									ast_format_set(&src, AST_FORMAT_SLINEAR, 0);
-									ast_format_from_old_bitfield(&dst, (1 << idx));
-									conf->transpath[idx] = ast_translator_build_path(&dst, &src);
+									conf->transpath[idx] = ast_translator_build_path(ast_channel_rawwriteformat(chan), ast_format_slin);
 								}
 								if (conf->transpath[idx]) {
 									conf->transframe[idx] = ast_translate(conf->transpath[idx], conf->origframe, 0);
@@ -4117,7 +4359,10 @@ static int conf_run(struct ast_channel *chan, struct ast_conference *conf, struc
 						ast_mutex_unlock(&conf->listenlock);
 					} else {
 bailoutandtrynormal:
-						if (musiconhold && !ast_dsp_silence(dsp, &fr, &confsilence) && confsilence < MEETME_DELAYDETECTTALK) {
+						if (musiconhold
+							&& !ast_test_flag64(confflags, CONFFLAG_WAITMARKED)
+							&& !ast_dsp_silence(dsp, &fr, &confsilence)
+							&& confsilence < MEETME_DELAYDETECTTALK) {
 							ast_moh_stop(chan);
 							mohtempstopped = 1;
 						}
@@ -4196,38 +4441,7 @@ bailoutandtrynormal:
 		now = ast_tvnow();
 
 		if (sent_event) {
-			/*** DOCUMENTATION
-			<managerEventInstance>
-				<synopsis>Raised when a user leaves a MeetMe conference.</synopsis>
-				<syntax>
-					<xi:include xpointer="xpointer(/docs/managerEvent[@name='MeetmeJoin']/managerEventInstance/syntax/parameter[@name='Meetme'])" />
-					<xi:include xpointer="xpointer(/docs/managerEvent[@name='MeetmeJoin']/managerEventInstance/syntax/parameter[@name='Usernum'])" />
-					<parameter name="Duration">
-						<para>The length of time in seconds that the Meetme user was in the conference.</para>
-					</parameter>
-				</syntax>
-				<see-also>
-					<ref type="managerEvent">MeetmeJoin</ref>
-				</see-also>
-			</managerEventInstance>
-			***/
-			ast_manager_event(chan, EVENT_FLAG_CALL, "MeetmeLeave",
-				"Channel: %s\r\n"
-				"Uniqueid: %s\r\n"
-				"Meetme: %s\r\n"
-				"Usernum: %d\r\n"
-				"CallerIDNum: %s\r\n"
-				"CallerIDName: %s\r\n"
-				"ConnectedLineNum: %s\r\n"
-				"ConnectedLineName: %s\r\n"
-				"Duration: %ld\r\n",
-				ast_channel_name(chan), ast_channel_uniqueid(chan), conf->confno,
-				user->user_no,
-				S_COR(ast_channel_caller(user->chan)->id.number.valid, ast_channel_caller(user->chan)->id.number.str, "<unknown>"),
-				S_COR(ast_channel_caller(user->chan)->id.name.valid, ast_channel_caller(user->chan)->id.name.str, "<unknown>"),
-				S_COR(ast_channel_connected(user->chan)->id.number.valid, ast_channel_connected(user->chan)->id.number.str, "<unknown>"),
-				S_COR(ast_channel_connected(user->chan)->id.name.valid, ast_channel_connected(user->chan)->id.name.str, "<unknown>"),
-				(long)(now.tv_sec - user->jointime));
+			meetme_stasis_generate_msg(conf, chan, user, meetme_leave_type(), NULL);
 		}
 
 		if (setusercount) {
@@ -4272,7 +4486,7 @@ bailoutandtrynormal:
 
 
 conf_run_cleanup:
-	cap_slin = ast_format_cap_destroy(cap_slin);
+	ao2_cleanup(cap_slin);
 
 	return ret;
 }
@@ -5363,13 +5577,10 @@ static int action_meetmelist(struct mansession *s, const struct message *m)
 		ao2_iterator_destroy(&user_iter);
 	}
 	AST_LIST_UNLOCK(&confs);
+
 	/* Send final confirmation */
-	astman_append(s,
-	"Event: MeetmeListComplete\r\n"
-	"EventList: Complete\r\n"
-	"ListItems: %d\r\n"
-	"%s"
-	"\r\n", total, idText);
+	astman_send_list_complete_start(s, m, "MeetmeListComplete", total);
+	astman_send_list_complete_end(s);
 	return 0;
 }
 
@@ -5431,12 +5642,8 @@ static int action_meetmelistrooms(struct mansession *s, const struct message *m)
 	AST_LIST_UNLOCK(&confs);
 
 	/* Send final confirmation */
-	astman_append(s,
-	"Event: MeetmeListRoomsComplete\r\n"
-	"EventList: Complete\r\n"
-	"ListItems: %d\r\n"
-	"%s"
-	"\r\n", totalitems, idText);
+	astman_send_list_complete_start(s, m, "MeetmeListRoomsComplete", totalitems);
+	astman_send_list_complete_end(s);
 	return 0;
 }
 
@@ -5556,21 +5763,8 @@ static enum ast_device_state meetmestate(const char *data)
 	return AST_DEVICE_INUSE;
 }
 
-static void load_config_meetme(void)
+static void meetme_set_defaults(void)
 {
-	struct ast_config *cfg;
-	struct ast_flags config_flags = { 0 };
-	const char *val;
-
-	if (!(cfg = ast_config_load(CONFIG_FILE_NAME, config_flags))) {
-		return;
-	} else if (cfg == CONFIG_STATUS_FILEINVALID) {
-		ast_log(LOG_ERROR, "Config file " CONFIG_FILE_NAME " is in an invalid format.  Aborting.\n");
-		return;
-	}
-
-	audio_buffers = DEFAULT_AUDIO_BUFFERS;
-
 	/*  Scheduling support is off by default */
 	rt_schedule = 0;
 	fuzzystart = 0;
@@ -5579,7 +5773,29 @@ static void load_config_meetme(void)
 	extendby = 0;
 
 	/*  Logging of participants defaults to ON for compatibility reasons */
-	rt_log_members = 1;  
+	rt_log_members = 1;
+}
+
+static void load_config_meetme(int reload)
+{
+	struct ast_config *cfg;
+	struct ast_flags config_flags = { 0 };
+	const char *val;
+
+	if (!reload) {
+		meetme_set_defaults();
+	}
+
+	if (!(cfg = ast_config_load(CONFIG_FILE_NAME, config_flags))) {
+		return;
+	} else if (cfg == CONFIG_STATUS_FILEINVALID) {
+		ast_log(LOG_ERROR, "Config file " CONFIG_FILE_NAME " is in an invalid format.  Aborting.\n");
+		return;
+	}
+
+	if (reload) {
+		meetme_set_defaults();
+	}
 
 	if ((val = ast_variable_retrieve(cfg, "general", "audiobuffers"))) {
 		if ((sscanf(val, "%30d", &audio_buffers) != 1)) {
@@ -6143,7 +6359,7 @@ static int sla_ring_station(struct sla_ringing_trunk *ringing_trunk, struct sla_
 	tech_data = ast_strdupa(station->device);
 	tech = strsep(&tech_data, "/");
 
-	if (ast_dial_append(dial, tech, tech_data) == -1) {
+	if (ast_dial_append(dial, tech, tech_data, NULL) == -1) {
 		ast_dial_destroy(dial);
 		return -1;
 	}
@@ -6649,7 +6865,7 @@ static void *dial_trunk(void *data)
 
 	tech_data = ast_strdupa(trunk_ref->trunk->device);
 	tech = strsep(&tech_data, "/");
-	if (ast_dial_append(dial, tech, tech_data) == -1) {
+	if (ast_dial_append(dial, tech, tech_data, NULL) == -1) {
 		ast_mutex_lock(args->cond_lock);
 		ast_cond_signal(args->cond);
 		ast_mutex_unlock(args->cond_lock);
@@ -6891,7 +7107,7 @@ static int sla_station_exec(struct ast_channel *chan, const char *data)
 		ast_cond_destroy(&cond);
 		ast_autoservice_stop(chan);
 		if (!trunk_ref->trunk->chan) {
-			ast_debug(1, "Trunk didn't get created. chan: %lx\n", (long) trunk_ref->trunk->chan);
+			ast_debug(1, "Trunk didn't get created. chan: %lx\n", (unsigned long) trunk_ref->trunk->chan);
 			pbx_builtin_setvar_helper(chan, "SLASTATION_STATUS", "CONGESTION");
 			sla_change_trunk_state(trunk_ref->trunk, SLA_TRUNK_STATE_IDLE, ALL_TRUNK_REFS, NULL);
 			trunk_ref->chan = NULL;
@@ -7786,7 +8002,7 @@ static struct ast_custom_function meetme_info_acf = {
 
 static int load_config(int reload)
 {
-	load_config_meetme();
+	load_config_meetme(reload);
 	return sla_load_config(reload);
 }
 
@@ -7931,11 +8147,13 @@ AST_TEST_DEFINE(test_meetme_data_provider)
 		break;
 	}
 
-	chan = ast_channel_alloc(0, AST_STATE_DOWN, NULL, NULL, NULL, NULL, NULL, 0, 0, "MeetMeTest");
+	chan = ast_channel_alloc(0, AST_STATE_DOWN, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, "MeetMeTest");
 	if (!chan) {
 		ast_test_status_update(test, "Channel allocation failed\n");
 		return AST_TEST_FAIL;
 	}
+
+	ast_channel_unlock(chan);
 
 	cnf = build_conf("9898", "", "1234", 1, 1, 1, chan, test);
 	if (!cnf) {
@@ -7997,14 +8215,28 @@ static int unload_module(void)
 	res |= ast_custom_function_unregister(&meetme_info_acf);
 	ast_unload_realtime("meetme");
 
+	meetme_stasis_cleanup();
+
 	return res;
 }
 
+/*!
+ * \brief Load the module
+ *
+ * Module loading including tests for configuration or dependencies.
+ * This function can return AST_MODULE_LOAD_FAILURE, AST_MODULE_LOAD_DECLINE,
+ * or AST_MODULE_LOAD_SUCCESS. If a dependency or environment variable fails
+ * tests return AST_MODULE_LOAD_FAILURE. If the module can not load the 
+ * configuration file or other non-critical problem return 
+ * AST_MODULE_LOAD_DECLINE. On success return AST_MODULE_LOAD_SUCCESS.
+ */
 static int load_module(void)
 {
 	int res = 0;
 
 	res |= load_config(0);
+
+	res |= meetme_stasis_init();
 
 	ast_cli_register_multiple(cli_meetme, ARRAY_LEN(cli_meetme));
 	res |= ast_manager_register_xml("MeetmeMute", EVENT_FLAG_CALL, action_meetmemute);
@@ -8039,6 +8271,7 @@ static int reload(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "MeetMe conference bridge",
+		.support_level = AST_MODULE_SUPPORT_EXTENDED,
 		.load = load_module,
 		.unload = unload_module,
 		.reload = reload,

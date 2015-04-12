@@ -29,7 +29,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 369110 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 433057 $")
 
 #include "asterisk/config.h"
 #include "asterisk/netsock2.h"
@@ -127,6 +127,40 @@ char *ast_sockaddr_stringify_fmt(const struct ast_sockaddr *sa, int format)
 	}
 
 	return ast_str_buffer(str);
+}
+
+int ast_sockaddr_cidr_bits(const struct ast_sockaddr *sa)
+{
+	struct ast_sockaddr sa_ipv4;
+	const struct ast_sockaddr *sa_tmp;
+	int bits = 0;
+	int bytes;
+	int i;
+	int j;
+	char *addr;
+
+	if (ast_sockaddr_isnull(sa)) {
+		return 0;
+	}
+
+	if (ast_sockaddr_ipv4_mapped(sa, &sa_ipv4)) {
+		sa_tmp = &sa_ipv4;
+	} else {
+		sa_tmp = sa;
+	}
+
+	bytes = sa_tmp->len;
+	addr = ((struct sockaddr *)&sa_tmp->ss)->sa_data;
+
+	for (i = 0; i < bytes ; ++i) {
+		for (j = 0; j < 8; ++j) {
+			if ((addr[i] >> j) & 1) {
+				bits++;
+			}
+		}
+	}
+
+	return bits;
 }
 
 int ast_sockaddr_split_hostport(char *str, char **host, char **port, int flags)
@@ -253,11 +287,13 @@ int ast_sockaddr_resolve(struct ast_sockaddr **addrs, const char *str,
 	int	e, i, res_cnt;
 
 	if (!str) {
+		*addrs = NULL;
 		return 0;
 	}
 
 	s = ast_strdupa(str);
 	if (!ast_sockaddr_split_hostport(s, &host, &port, flags)) {
+		*addrs = NULL;
 		return 0;
 	}
 
@@ -268,6 +304,7 @@ int ast_sockaddr_resolve(struct ast_sockaddr **addrs, const char *str,
 	if ((e = getaddrinfo(host, port, &hints, &res))) {
 		ast_log(LOG_ERROR, "getaddrinfo(\"%s\", \"%s\", ...): %s\n",
 			host, S_OR(port, "(null)"), gai_strerror(e));
+		*addrs = NULL;
 		return 0;
 	}
 
@@ -277,6 +314,7 @@ int ast_sockaddr_resolve(struct ast_sockaddr **addrs, const char *str,
 	}
 
 	if (res_cnt == 0) {
+		*addrs = NULL;
 		goto cleanup;
 	}
 
@@ -295,6 +333,37 @@ int ast_sockaddr_resolve(struct ast_sockaddr **addrs, const char *str,
 cleanup:
 	freeaddrinfo(res);
 	return res_cnt;
+}
+
+int ast_sockaddr_apply_netmask(const struct ast_sockaddr *addr, const struct ast_sockaddr *netmask,
+		struct ast_sockaddr *result)
+{
+	int res = 0;
+
+	if (ast_sockaddr_is_ipv4(addr)) {
+		struct sockaddr_in result4 = { 0, };
+		struct sockaddr_in *addr4 = (struct sockaddr_in *) &addr->ss;
+		struct sockaddr_in *mask4 = (struct sockaddr_in *) &netmask->ss;
+		result4.sin_family = AF_INET;
+		result4.sin_addr.s_addr = addr4->sin_addr.s_addr & mask4->sin_addr.s_addr;
+		ast_sockaddr_from_sin(result, &result4);
+	} else if (ast_sockaddr_is_ipv6(addr)) {
+		struct sockaddr_in6 result6 = { 0, };
+		struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *) &addr->ss;
+		struct sockaddr_in6 *mask6 = (struct sockaddr_in6 *) &netmask->ss;
+		int i;
+		result6.sin6_family = AF_INET6;
+		for (i = 0; i < 4; ++i) {
+			V6_WORD(&result6, i) = V6_WORD(addr6, i) & V6_WORD(mask6, i);
+		}
+		memcpy(&result->ss, &result6, sizeof(result6));
+		result->len = sizeof(result6);
+	} else {
+		/* Unsupported address scheme */
+		res = -1;
+	}
+
+	return res;
 }
 
 int ast_sockaddr_cmp(const struct ast_sockaddr *a, const struct ast_sockaddr *b)
@@ -456,6 +525,24 @@ int ast_sockaddr_hash(const struct ast_sockaddr *addr)
 			addr->ss.ss_family);
 		return 0;
 	}
+}
+
+const char *ast_transport2str(enum ast_transport transport)
+{
+	switch (transport) {
+	case AST_TRANSPORT_TLS:
+		return "TLS";
+	case AST_TRANSPORT_UDP:
+		return "UDP";
+	case AST_TRANSPORT_TCP:
+		return "TCP";
+	case AST_TRANSPORT_WS:
+		return "WS";
+	case AST_TRANSPORT_WSS:
+		return "WSS";
+	}
+
+	return "Undefined";
 }
 
 int ast_accept(int sockfd, struct ast_sockaddr *addr)

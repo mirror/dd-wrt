@@ -31,7 +31,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 370043 $");
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 430315 $");
 
 #include <math.h> /* HUGE_VAL */
 
@@ -42,9 +42,11 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 370043 $");
 #include "asterisk/config_options.h"
 #include "asterisk/netsock2.h"
 #include "asterisk/acl.h"
+#include "asterisk/pbx.h"
 #include "asterisk/frame.h"
 #include "asterisk/utils.h"
 #include "asterisk/logger.h"
+#include "asterisk/format_cap.h"
 
 #define CONFIG_FILE "test_config.conf"
 
@@ -223,6 +225,575 @@ AST_TEST_DEFINE(copy_config)
 out:
 	ast_config_destroy(cfg);
 	ast_config_destroy(copy);
+	return res;
+}
+
+AST_TEST_DEFINE(config_basic_ops)
+{
+	enum ast_test_result_state res = AST_TEST_FAIL;
+	struct ast_config *cfg = NULL;
+	struct ast_category *cat = NULL;
+	struct ast_variable *var;
+	char temp[32];
+	const char *cat_name;
+	const char *var_value;
+	int i;
+
+	switch (cmd) {
+	case TEST_INIT:
+		info->name = "config_basic_ops";
+		info->category = "/main/config/";
+		info->summary = "Test basic config ops";
+		info->description =	"Test basic config ops";
+		return AST_TEST_NOT_RUN;
+	case TEST_EXECUTE:
+		break;
+	}
+
+	cfg = ast_config_new();
+	if (!cfg) {
+		return res;
+	}
+
+	/* load the config */
+	for(i = 0; i < 5; i++) {
+		snprintf(temp, sizeof(temp), "test%d", i);
+		ast_category_append(cfg, ast_category_new(temp, "dummy", -1));
+	}
+
+	/* test0 test1 test2 test3 test4 */
+	/* check the config has 5 elements */
+	i = 0;
+	cat = NULL;
+	while ((cat = ast_category_browse_filtered(cfg, NULL, cat, NULL))) {
+		snprintf(temp, sizeof(temp), "test%d", i);
+		if (strcmp(ast_category_get_name(cat), temp)) {
+			ast_test_status_update(test, "%s != %s\n", ast_category_get_name(cat), temp);
+			goto out;
+		}
+		i++;
+	}
+	if (i != 5) {
+		ast_test_status_update(test, "There were %d matches instead of 5.\n", i);
+		goto out;
+	}
+
+	/* search for test2 */
+	cat = ast_category_get(cfg, "test2", NULL);
+	if (!cat || strcmp(ast_category_get_name(cat), "test2")) {
+		ast_test_status_update(test, "Get failed %s != %s\n", ast_category_get_name(cat), "test2");
+		goto out;
+	}
+
+	/* delete test2 */
+	cat = ast_category_delete(cfg, cat);
+
+	/* Now: test0 test1 test3 test4 */
+	/* make sure the curr category is test1 */
+	if (!cat || strcmp(ast_category_get_name(cat), "test1")) {
+		ast_test_status_update(test, "Delete failed %s != %s\n", ast_category_get_name(cat), "test1");
+		goto out;
+	}
+
+	/* Now: test0 test1 test3 test4 */
+	/* make sure the test2 is not found */
+	cat = ast_category_get(cfg, "test2", NULL);
+	if (cat) {
+		ast_test_status_update(test, "Should not have found test2\n");
+		goto out;
+	}
+
+	/* Now: test0 test1 test3 test4 */
+	/* make sure the sequence is correctly missing test2 */
+	i = 0;
+	cat = NULL;
+	while ((cat = ast_category_browse_filtered(cfg, NULL, cat, NULL))) {
+		snprintf(temp, sizeof(temp), "test%d", i);
+		if (strcmp(ast_category_get_name(cat), temp)) {
+			ast_test_status_update(test, "%s != %s\n", ast_category_get_name(cat), temp);
+			goto out;
+		}
+		i++;
+		if (i == 2) {
+			i++;
+		}
+	}
+	if (i != 5) {
+		ast_test_status_update(test, "There were %d matches instead of 5.\n", i);
+		goto out;
+	}
+
+	/* insert test2 back in before test3 */
+	ast_category_insert(cfg, ast_category_new("test2", "dummy", -1), "test3");
+
+	/* Now: test0 test1 test2 test3 test4 */
+	/* make sure the sequence is correct again */
+	i = 0;
+	cat = NULL;
+	while ((cat = ast_category_browse_filtered(cfg, NULL, cat, NULL))) {
+		snprintf(temp, sizeof(temp), "test%d", i);
+		if (strcmp(ast_category_get_name(cat), temp)) {
+			ast_test_status_update(test, "%s != %s\n", ast_category_get_name(cat), temp);
+			goto out;
+		}
+		i++;
+	}
+	if (i != 5) {
+		ast_test_status_update(test, "There were %d matches instead of 5.\n", i);
+		goto out;
+	}
+
+	/* Now: test0 test1 test2 test3 test4 */
+	/* make sure non filtered browse still works */
+	i = 0;
+	cat_name = NULL;
+	while ((cat_name = ast_category_browse(cfg, cat_name))) {
+		snprintf(temp, sizeof(temp), "test%d", i);
+		if (strcmp(cat_name, temp)) {
+			ast_test_status_update(test, "%s != %s\n", cat_name, temp);
+			goto out;
+		}
+		i++;
+	}
+	if (i != 5) {
+		ast_test_status_update(test, "There were %d matches instead of 5.\n", i);
+		goto out;
+	}
+
+	/* append another test2 */
+	ast_category_append(cfg, ast_category_new("test2", "dummy", -1));
+	/* Now: test0 test1 test2 test3 test4 test2*/
+	/* make sure only test2's are returned */
+	i = 0;
+	cat = NULL;
+	while ((cat = ast_category_browse_filtered(cfg, "test2", cat, NULL))) {
+		if (strcmp(ast_category_get_name(cat), "test2")) {
+			ast_test_status_update(test, "Should have returned test2 instead of %s\n", ast_category_get_name(cat));
+			goto out;
+		}
+		i++;
+	}
+	/* make sure 2 test2's were found */
+	if (i != 2) {
+		ast_test_status_update(test, "Should have found 2 test2's %d\n", i);
+		goto out;
+	}
+
+	/* Test in-flight deletion using ast_category_browse_filtered */
+	/* Now: test0 test1 test2 test3 test4 test2 */
+	/* Delete the middle test2 and continue */
+	cat = NULL;
+	for(i = 0; i < 5; i++) {
+		snprintf(temp, sizeof(temp), "test%d", i);
+		cat = ast_category_browse_filtered(cfg, NULL, cat, NULL);
+		cat_name = ast_category_get_name(cat);
+		if (strcmp(cat_name, temp)) {
+			ast_test_status_update(test, "Should have returned %s instead of %s: %d\n", temp, cat_name, i);
+			goto out;
+		}
+		if (i == 2) {
+			cat = ast_category_delete(cfg, cat);
+		}
+	}
+
+	/* Now: test0 test3 test4 test2 */
+	/* delete the head item */
+	cat = ast_category_browse_filtered(cfg, NULL, NULL, NULL);
+	cat_name = ast_category_get_name(cat);
+	if (strcmp(cat_name, "test0")) {
+		ast_test_status_update(test, "Should have returned test0 instead of %s\n", cat_name);
+		goto out;
+	}
+	ast_category_delete(cfg, cat);
+	/* Now: test3 test4 test2 */
+
+	/* make sure head got updated to the new first element */
+	cat = ast_category_browse_filtered(cfg, NULL, NULL, NULL);
+	cat_name = ast_category_get_name(cat);
+	if (strcmp(cat_name, "test1")) {
+		ast_test_status_update(test, "Should have returned test3 instead of %s\n", cat_name);
+		goto out;
+	}
+
+	/* delete the tail item */
+	cat = ast_category_get(cfg, "test2", NULL);
+	cat_name = ast_category_get_name(cat);
+	if (strcmp(cat_name, "test2")) {
+		ast_test_status_update(test, "Should have returned test2 instead of %s\n", cat_name);
+		goto out;
+	}
+	ast_category_delete(cfg, cat);
+	/* Now: test3 test4 */
+
+	/* There should now only be 2 elements in the list */
+	cat = NULL;
+	cat = ast_category_browse_filtered(cfg, NULL, cat, NULL);
+	cat_name = ast_category_get_name(cat);
+	if (strcmp(cat_name, "test1")) {
+		ast_test_status_update(test, "Should have returned test1 instead of %s\n", cat_name);
+		goto out;
+	}
+
+	cat = ast_category_browse_filtered(cfg, NULL, cat, NULL);
+	cat_name = ast_category_get_name(cat);
+	if (strcmp(cat_name, "test3")) {
+		ast_test_status_update(test, "Should have returned test3 instead of %s\n", cat_name);
+		goto out;
+	}
+
+	cat = ast_category_browse_filtered(cfg, NULL, cat, NULL);
+	cat_name = ast_category_get_name(cat);
+	if (strcmp(cat_name, "test4")) {
+		ast_test_status_update(test, "Should have returned test4 instead of %s\n", cat_name);
+		goto out;
+	}
+
+	/* There should be nothing more */
+	cat = ast_category_browse_filtered(cfg, NULL, cat, NULL);
+	if (cat) {
+		ast_test_status_update(test, "Should not have returned anything\n");
+		goto out;
+	}
+
+	/* Test ast_variable retrieve.
+	 * Get the second category.
+	 */
+	cat = ast_category_browse_filtered(cfg, NULL, NULL, NULL);
+	cat = ast_category_browse_filtered(cfg, NULL, cat, NULL);
+	cat_name = ast_category_get_name(cat);
+	var = ast_variable_new("aaa", "bbb0", "dummy");
+	if (!var) {
+		ast_test_status_update(test, "Couldn't allocate variable.\n");
+		goto out;
+	}
+	ast_variable_append(cat, var);
+
+	/* Make sure we can retrieve with specific category name */
+	var_value = ast_variable_retrieve(cfg, cat_name, "aaa");
+	if (!var_value || strcmp(var_value, "bbb0")) {
+		ast_test_status_update(test, "Variable not found or wrong value.\n");
+		goto out;
+	}
+
+	/* Make sure we can retrieve with NULL category name */
+	var_value = ast_variable_retrieve(cfg, NULL, "aaa");
+	if (!var_value || strcmp(var_value, "bbb0")) {
+		ast_test_status_update(test, "Variable not found or wrong value.\n");
+		goto out;
+	}
+
+	/* Now test variable retrieve inside a browse loop
+	 * with multiple categories of the same name
+	 */
+	cat = ast_category_new("test3", "dummy", -1);
+	if (!cat) {
+		ast_test_status_update(test, "Couldn't allocate category.\n");
+		goto out;
+	}
+	var = ast_variable_new("aaa", "bbb1", "dummy");
+	if (!var) {
+		ast_test_status_update(test, "Couldn't allocate variable.\n");
+		goto out;
+	}
+	ast_variable_append(cat, var);
+	ast_category_append(cfg, cat);
+
+	cat = ast_category_new("test3", "dummy", -1);
+	if (!cat) {
+		ast_test_status_update(test, "Couldn't allocate category.\n");
+		goto out;
+	}
+	var = ast_variable_new("aaa", "bbb2", "dummy");
+	if (!var) {
+		ast_test_status_update(test, "Couldn't allocate variable.\n");
+		goto out;
+	}
+	ast_variable_append(cat, var);
+	ast_category_append(cfg, cat);
+
+	cat_name = NULL;
+	i = 0;
+	while ((cat_name = ast_category_browse(cfg, cat_name))) {
+		if (!strcmp(cat_name, "test3")) {
+			snprintf(temp, sizeof(temp), "bbb%d", i);
+
+			var_value = ast_variable_retrieve(cfg, cat_name, "aaa");
+			if (!var_value || strcmp(var_value, temp)) {
+				ast_test_status_update(test, "Variable not found or wrong value %s.\n", var_value);
+				goto out;
+			}
+
+			var = ast_variable_browse(cfg, cat_name);
+			if (!var->value || strcmp(var->value, temp)) {
+				ast_test_status_update(test, "Variable not found or wrong value %s.\n", var->value);
+				goto out;
+			}
+
+			i++;
+		}
+	}
+	if (i != 3) {
+		ast_test_status_update(test, "There should have been 3 matches instead of %d.\n", i);
+		goto out;
+	}
+
+	res = AST_TEST_PASS;
+
+out:
+	ast_config_destroy(cfg);
+	return res;
+}
+
+AST_TEST_DEFINE(config_filtered_ops)
+{
+	enum ast_test_result_state res = AST_TEST_FAIL;
+	struct ast_config *cfg = NULL;
+	struct ast_category *cat = NULL;
+	char temp[32];
+	const char *value;
+	int i;
+
+	switch (cmd) {
+	case TEST_INIT:
+		info->name = "config_filtered_ops";
+		info->category = "/main/config/";
+		info->summary = "Test filtered config ops";
+		info->description =	"Test filtered config ops";
+		return AST_TEST_NOT_RUN;
+	case TEST_EXECUTE:
+		break;
+	}
+
+	cfg = ast_config_new();
+	if (!cfg) {
+		return res;
+	}
+
+	/* load the config */
+	for(i = 0; i < 5; i++) {
+		snprintf(temp, sizeof(temp), "test%d", i);
+		cat = ast_category_new(temp, "dummy", -1);
+		ast_variable_insert(cat, ast_variable_new("type", "a", "dummy"), "0");
+		ast_category_append(cfg, cat);
+	}
+
+	for(i = 0; i < 5; i++) {
+		snprintf(temp, sizeof(temp), "test%d", i);
+		cat = ast_category_new(temp, "dummy", -1);
+		ast_variable_insert(cat, ast_variable_new("type", "b", "dummy"), "0");
+		ast_category_append(cfg, cat);
+	}
+
+	/* check the config has 5 elements for each type*/
+	i = 0;
+	cat = NULL;
+	while ((cat = ast_category_browse_filtered(cfg, NULL, cat, "type=a"))) {
+		snprintf(temp, sizeof(temp), "test%d", i);
+		if (strcmp(ast_category_get_name(cat), temp)) {
+			ast_test_status_update(test, "%s != %s\n", ast_category_get_name(cat), temp);
+			goto out;
+		}
+		value = ast_variable_find(cat, "type");
+		if (!value || strcmp(value, "a")) {
+			ast_test_status_update(test, "Type %s != %s\n", "a", value);
+			goto out;
+		}
+		i++;
+	}
+	if (i != 5) {
+		ast_test_status_update(test, "There were %d matches instead of 5.\n", i);
+		goto out;
+	}
+
+	i = 0;
+	cat = NULL;
+	while ((cat = ast_category_browse_filtered(cfg, NULL, cat, "type=b"))) {
+		snprintf(temp, sizeof(temp), "test%d", i);
+		if (!cat || strcmp(ast_category_get_name(cat), temp)) {
+			ast_test_status_update(test, "%s != %s\n", ast_category_get_name(cat), temp);
+			goto out;
+		}
+		value = ast_variable_find(cat, "type");
+		if (!value || strcmp(value, "b")) {
+			ast_test_status_update(test, "Type %s != %s\n", "b", value);
+			goto out;
+		}
+		i++;
+	}
+	if (i != 5) {
+		ast_test_status_update(test, "There were %d matches instead of 5.\n", i);
+		goto out;
+	}
+
+	/* Delete b3 and make sure it's gone and a3 is still there.
+	 * Really this is a test of get since delete takes a specific category structure.
+	 */
+	cat = ast_category_get(cfg, "test3", "type=b");
+	value = ast_variable_find(cat, "type");
+	if (strcmp(value, "b")) {
+		ast_test_status_update(test, "Type %s != %s\n", "b", value);
+		goto out;
+	}
+	ast_category_delete(cfg, cat);
+
+	cat = ast_category_get(cfg, "test3", "type=b");
+	if (cat) {
+		ast_test_status_update(test, "Category b was not deleted.\n");
+		goto out;
+	}
+
+	cat = ast_category_get(cfg, "test3", "type=a");
+	if (!cat) {
+		ast_test_status_update(test, "Category a was deleted.\n");
+		goto out;
+	}
+
+	value = ast_variable_find(cat, "type");
+	if (strcmp(value, "a")) {
+		ast_test_status_update(test, "Type %s != %s\n", value, "a");
+		goto out;
+	}
+
+	/* Basic regex stuff is handled by regcomp/regexec so not testing here.
+	 * Still need to test multiple name/value pairs though.
+	 */
+	ast_category_empty(cat);
+	ast_variable_insert(cat, ast_variable_new("type", "bx", "dummy"), "0");
+	ast_variable_insert(cat, ast_variable_new("e", "z", "dummy"), "0");
+
+	cat = ast_category_get(cfg, "test3", "type=.,e=z");
+	if (!cat) {
+		ast_test_status_update(test, "Category not found.\n");
+		goto out;
+	}
+
+	cat = ast_category_get(cfg, "test3", "type=.,e=zX");
+	if (cat) {
+		ast_test_status_update(test, "Category found.\n");
+		goto out;
+	}
+
+	cat = ast_category_get(cfg, "test3", "TEMPLATE=restrict,type=.,e=z");
+	if (cat) {
+		ast_test_status_update(test, "Category found.\n");
+		goto out;
+	}
+
+	res = AST_TEST_PASS;
+
+out:
+	ast_config_destroy(cfg);
+	return res;
+}
+
+AST_TEST_DEFINE(config_template_ops)
+{
+	enum ast_test_result_state res = AST_TEST_FAIL;
+	struct ast_config *cfg = NULL;
+	struct ast_category *cat = NULL;
+	char temp[32];
+	const char *value;
+	int i;
+
+	switch (cmd) {
+	case TEST_INIT:
+		info->name = "config_template_ops";
+		info->category = "/main/config/";
+		info->summary = "Test template config ops";
+		info->description =	"Test template config ops";
+		return AST_TEST_NOT_RUN;
+	case TEST_EXECUTE:
+		break;
+	}
+
+	cfg = ast_config_new();
+	if (!cfg) {
+		return res;
+	}
+
+	/* load the config with 5 templates and 5 regular */
+	for(i = 0; i < 5; i++) {
+		snprintf(temp, sizeof(temp), "test%d", i);
+		cat = ast_category_new_template(temp, "dummy", -1);
+		ast_variable_insert(cat, ast_variable_new("type", "a", "dummy"), "0");
+		ast_category_append(cfg, cat);
+	}
+
+	for(i = 0; i < 5; i++) {
+		snprintf(temp, sizeof(temp), "test%d", i);
+		cat = ast_category_new(temp, "dummy", -1);
+		ast_variable_insert(cat, ast_variable_new("type", "b", "dummy"), "0");
+		ast_category_append(cfg, cat);
+	}
+
+	/* check the config has 5 template elements of type a */
+	i = 0;
+	cat = NULL;
+	while ((cat = ast_category_browse_filtered(cfg, NULL, cat, "TEMPLATES=restrict,type=a"))) {
+		snprintf(temp, sizeof(temp), "test%d", i);
+		if (strcmp(ast_category_get_name(cat), temp)) {
+			ast_test_status_update(test, "%s != %s\n", ast_category_get_name(cat), temp);
+			goto out;
+		}
+		value = ast_variable_find(cat, "type");
+		if (!value || strcmp(value, "a")) {
+			ast_test_status_update(test, "Type %s != %s\n", value, "a");
+			goto out;
+		}
+		i++;
+	}
+	if (i != 5) {
+		ast_test_status_update(test, "There were %d matches instead of 5.\n", i);
+		goto out;
+	}
+
+	/* Test again with 'include'.  There should still only be 5 (type a) */
+	i = 0;
+	cat = NULL;
+	while ((cat = ast_category_browse_filtered(cfg, NULL, cat, "TEMPLATES=include,type=a"))) {
+		snprintf(temp, sizeof(temp), "test%d", i);
+		if (strcmp(ast_category_get_name(cat), temp)) {
+			ast_test_status_update(test, "%s != %s\n", ast_category_get_name(cat), temp);
+			goto out;
+		}
+		value = ast_variable_find(cat, "type");
+		if (!value || strcmp(value, "a")) {
+			ast_test_status_update(test, "Type %s != %s\n", value, "a");
+			goto out;
+		}
+		i++;
+	}
+	if (i != 5) {
+		ast_test_status_update(test, "There were %d matches instead of 5.\n", i);
+		goto out;
+	}
+
+	/* Test again with 'include' but no type.  There should now be 10 (type a and type b) */
+	i = 0;
+	cat = NULL;
+	while ((cat = ast_category_browse_filtered(cfg, NULL, cat, "TEMPLATES=include"))) {
+		i++;
+	}
+	if (i != 10) {
+		ast_test_status_update(test, "There were %d matches instead of 10.\n", i);
+		goto out;
+	}
+
+	/* Test again with 'restrict' and type b.  There should 0 */
+	i = 0;
+	cat = NULL;
+	while ((cat = ast_category_browse_filtered(cfg, NULL, cat, "TEMPLATES=restrict,type=b"))) {
+		i++;
+	}
+	if (i != 0) {
+		ast_test_status_update(test, "There were %d matches instead of 0.\n", i);
+		goto out;
+	}
+
+	res = AST_TEST_PASS;
+
+out:
+	ast_config_destroy(cfg);
 	return res;
 }
 
@@ -627,7 +1198,6 @@ struct test_item {
 	struct ast_sockaddr sockaddropt;
 	int boolopt;
 	struct ast_ha *aclopt;
-	struct ast_codec_pref codecprefopt;
 	struct ast_format_cap *codeccapopt;
 	unsigned int customopt:1;
 };
@@ -653,9 +1223,7 @@ static void test_item_destructor(void *obj)
 {
 	struct test_item *item = obj;
 	ast_string_field_free_memory(item);
-	if (item->codeccapopt) {
-		ast_format_cap_destroy(item->codeccapopt);
-	}
+	ao2_cleanup(item->codeccapopt);
 	if (item->aclopt) {
 		ast_free_ha(item->aclopt);
 	}
@@ -671,7 +1239,7 @@ static void *test_item_alloc(const char *cat)
 		ao2_ref(item, -1);
 		return NULL;
 	}
-	if (!(item->codeccapopt = ast_format_cap_alloc())) {
+	if (!(item->codeccapopt = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT))) {
 		ao2_ref(item, -1);
 		return NULL;
 	}
@@ -749,7 +1317,7 @@ struct aco_file config_test_conf = {
 };
 
 static AO2_GLOBAL_OBJ_STATIC(global_obj);
-CONFIG_INFO_STANDARD(cfg_info, global_obj, test_config_alloc,
+CONFIG_INFO_TEST(cfg_info, global_obj, test_config_alloc,
 	.files = ACO_FILES(&config_test_conf),
 );
 
@@ -821,7 +1389,7 @@ AST_TEST_DEFINE(config_options_test)
 	aco_option_register(&cfg_info, "boolflag3", ACO_EXACT, config_test_conf.types, BOOLFLAG3_DEFAULT, OPT_BOOLFLAG_T, 1, FLDSET(struct test_item, flags), BOOLFLAG3);
 	aco_option_register(&cfg_info, "aclpermitopt", ACO_EXACT, config_test_conf.types, ACL_DEFAULT, OPT_ACL_T, 1, FLDSET(struct test_item, aclopt));
 	aco_option_register(&cfg_info, "acldenyopt", ACO_EXACT, config_test_conf.types, ACL_DEFAULT, OPT_ACL_T, 0, FLDSET(struct test_item, aclopt));
-	aco_option_register(&cfg_info, "codecopt", ACO_EXACT, config_test_conf.types, CODEC_DEFAULT, OPT_CODEC_T, 1, FLDSET(struct test_item, codecprefopt, codeccapopt));
+	aco_option_register(&cfg_info, "codecopt", ACO_EXACT, config_test_conf.types, CODEC_DEFAULT, OPT_CODEC_T, 1, FLDSET(struct test_item, codeccapopt));
 	aco_option_register(&cfg_info, "stropt", ACO_EXACT, config_test_conf.types, STR_DEFAULT, OPT_STRINGFIELD_T, 0, STRFLDSET(struct test_item, stropt));
 	aco_option_register_custom(&cfg_info, "customopt", ACO_EXACT, config_test_conf.types, CUSTOM_DEFAULT, customopt_handler, 0);
 	aco_option_register_deprecated(&cfg_info, "permit", config_test_conf.types, "aclpermitopt");
@@ -855,11 +1423,11 @@ AST_TEST_DEFINE(config_options_test)
 	ast_sockaddr_parse(&acl_allow, "1.2.3.4", PARSE_PORT_FORBID);
 	ast_sockaddr_parse(&acl_fail, "1.1.1.1", PARSE_PORT_FORBID);
 
-	defaults.codeccapopt = ast_format_cap_alloc();
-	ast_parse_allow_disallow(&defaults.codecprefopt, defaults.codeccapopt, CODEC_DEFAULT, 1);
+	defaults.codeccapopt = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT);
+	ast_format_cap_update_by_allow_disallow(defaults.codeccapopt, CODEC_DEFAULT, 1);
 
-	configs.codeccapopt = ast_format_cap_alloc();
-	ast_parse_allow_disallow(&configs.codecprefopt, configs.codeccapopt, CODEC_CONFIG, 1);
+	configs.codeccapopt = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT);
+	ast_format_cap_update_by_allow_disallow(configs.codeccapopt, CODEC_CONFIG, 1);
 
 	ast_string_field_init(&defaults, 128);
 	ast_string_field_init(&configs, 128);
@@ -885,19 +1453,19 @@ AST_TEST_DEFINE(config_options_test)
 	arr[3] = item_defaults;
 	/* Test global and item against configs, global_defaults and item_defaults against defaults */
 
-#define NOT_EQUAL_FAIL(field)  \
+#define NOT_EQUAL_FAIL(field, format)  \
 	if (arr[x]->field != control->field) { \
-		ast_test_status_update(test, "%s did not match: %d != %d with x = %d\n", #field, arr[x]->field, control->field, x); \
+		ast_test_status_update(test, "%s did not match: " format " != " format " with x = %d\n", #field, arr[x]->field, control->field, x); \
 		res = AST_TEST_FAIL; \
 	}
 	for (x = 0; x < 4; x++) {
 		struct test_item *control = x < 2 ? &configs : &defaults;
 
-		NOT_EQUAL_FAIL(intopt);
-		NOT_EQUAL_FAIL(uintopt);
-		NOT_EQUAL_FAIL(boolopt);
-		NOT_EQUAL_FAIL(flags);
-		NOT_EQUAL_FAIL(customopt);
+		NOT_EQUAL_FAIL(intopt, "%d");
+		NOT_EQUAL_FAIL(uintopt, "%u");
+		NOT_EQUAL_FAIL(boolopt, "%d");
+		NOT_EQUAL_FAIL(flags, "%u");
+		NOT_EQUAL_FAIL(customopt, "%d");
 		if (fabs(arr[x]->doubleopt - control->doubleopt) > 0.001) {
 			ast_test_status_update(test, "doubleopt did not match: %f vs %f on loop %d\n", arr[x]->doubleopt, control->doubleopt, x);
 			res = AST_TEST_FAIL;
@@ -907,10 +1475,13 @@ AST_TEST_DEFINE(config_options_test)
 			res = AST_TEST_FAIL;
 		}
 		if (!ast_format_cap_identical(arr[x]->codeccapopt, control->codeccapopt)) {
-			char buf1[128], buf2[128];
-			ast_getformatname_multiple(buf1, sizeof(buf1), arr[x]->codeccapopt);
-			ast_getformatname_multiple(buf2, sizeof(buf2), control->codeccapopt);
-			ast_test_status_update(test, "format did not match: '%s' vs '%s' on loop %d\n", buf1, buf2, x);
+			struct ast_str *codec_buf1 = ast_str_alloca(64);
+			struct ast_str *codec_buf2 = ast_str_alloca(64);
+
+			ast_test_status_update(test, "format did not match: '%s' vs '%s' on loop %d\n",
+				ast_format_cap_get_names(arr[x]->codeccapopt, &codec_buf1),
+				ast_format_cap_get_names(control->codeccapopt, &codec_buf2),
+				x);
 			res = AST_TEST_FAIL;
 		}
 		if (strcasecmp(arr[x]->stropt, control->stropt)) {
@@ -925,28 +1496,188 @@ AST_TEST_DEFINE(config_options_test)
 	}
 
 	ast_free_ha(configs.aclopt);
-	ast_format_cap_destroy(defaults.codeccapopt);
-	ast_format_cap_destroy(configs.codeccapopt);
+	ao2_cleanup(defaults.codeccapopt);
+	defaults.codeccapopt = NULL;
+	ao2_cleanup(configs.codeccapopt);
+	configs.codeccapopt = NULL;
 	ast_string_field_free_memory(&defaults);
 	ast_string_field_free_memory(&configs);
 	return res;
 }
 
+AST_TEST_DEFINE(config_dialplan_function)
+{
+	enum ast_test_result_state res = AST_TEST_PASS;
+	FILE *config_file;
+	char filename[PATH_MAX];
+	struct ast_str *buf;
+
+	switch (cmd) {
+	case TEST_INIT:
+		info->name = "config_dialplan_function";
+		info->category = "/main/config/";
+		info->summary = "Test AST_CONFIG dialplan function";
+		info->description = "Test AST_CONFIG dialplan function";
+		return AST_TEST_NOT_RUN;
+	case TEST_EXECUTE:
+		break;
+	}
+
+	snprintf(filename, sizeof(filename), "%s/%s",
+			ast_config_AST_CONFIG_DIR, CONFIG_FILE);
+	config_file = fopen(filename, "w");
+
+	if (!config_file) {
+		return AST_TEST_FAIL;
+	}
+
+	fputs(
+		"[c1t](!)\n"
+		"var1=val1\n"
+		"var1=val2\n"
+		"var2=val21\n"
+		"\n"
+		"[c1](c1t)\n"
+		"var1=val3\n"
+		"var1=val4\n"
+		, config_file);
+
+	fclose(config_file);
+
+	if (!(buf = ast_str_create(32))) {
+		ast_test_status_update(test, "Failed to allocate return buffer\n");
+		res = AST_TEST_FAIL;
+		goto out;
+	}
+
+	if (ast_func_read2(NULL, "AST_CONFIG("CONFIG_FILE",c1,var1)", &buf, 32)) {
+		ast_test_status_update(test, "Failed to retrieve field 'var1'\n");
+		res = AST_TEST_FAIL;
+		goto out;
+	}
+	if (strcmp(ast_str_buffer(buf), "val1")) {
+		ast_test_status_update(test, "Got '%s', should be '%s'\n",
+			ast_str_buffer(buf), "val1");
+		res = AST_TEST_FAIL;
+		goto out;
+	}
+
+	ast_str_reset(buf);
+	if (ast_func_read2(NULL, "AST_CONFIG("CONFIG_FILE",c1,var1,0)", &buf, 32)) {
+		ast_test_status_update(test, "Failed to retrieve field 'var1'\n");
+		res = AST_TEST_FAIL;
+		goto out;
+	}
+	if (strcmp(ast_str_buffer(buf), "val1")) {
+		ast_test_status_update(test, "Got '%s', should be '%s'\n",
+			ast_str_buffer(buf), "val1");
+		res = AST_TEST_FAIL;
+		goto out;
+	}
+
+	ast_str_reset(buf);
+	if (ast_func_read2(NULL, "AST_CONFIG("CONFIG_FILE",c1,var1,1)", &buf, 32)) {
+		ast_test_status_update(test, "Failed to retrieve field 'var1'\n");
+		res = AST_TEST_FAIL;
+		goto out;
+	}
+	if (strcmp(ast_str_buffer(buf), "val2")) {
+		ast_test_status_update(test, "Got '%s', should be '%s'\n",
+			ast_str_buffer(buf), "val2");
+		res = AST_TEST_FAIL;
+		goto out;
+	}
+
+	ast_str_reset(buf);
+	if (ast_func_read2(NULL, "AST_CONFIG("CONFIG_FILE",c1,var1,2)", &buf, 32)) {
+		ast_test_status_update(test, "Failed to retrieve field 'var1'\n");
+		res = AST_TEST_FAIL;
+		goto out;
+	}
+	if (strcmp(ast_str_buffer(buf), "val3")) {
+		ast_test_status_update(test, "Got '%s', should be '%s'\n",
+			ast_str_buffer(buf), "val3");
+		res = AST_TEST_FAIL;
+		goto out;
+	}
+
+	ast_str_reset(buf);
+	if (ast_func_read2(NULL, "AST_CONFIG("CONFIG_FILE",c1,var1,3)", &buf, 32)) {
+		ast_test_status_update(test, "Failed to retrieve field 'var1'\n");
+		res = AST_TEST_FAIL;
+		goto out;
+	}
+	if (strcmp(ast_str_buffer(buf), "val4")) {
+		ast_test_status_update(test, "Got '%s', should be '%s'\n",
+			ast_str_buffer(buf), "val4");
+		res = AST_TEST_FAIL;
+		goto out;
+	}
+
+	ast_str_reset(buf);
+	if (ast_func_read2(NULL, "AST_CONFIG("CONFIG_FILE",c1,var1,-1)", &buf, 32)) {
+		ast_test_status_update(test, "Failed to retrieve field 'var1'\n");
+		res = AST_TEST_FAIL;
+		goto out;
+	}
+	if (strcmp(ast_str_buffer(buf), "val4")) {
+		ast_test_status_update(test, "Got '%s', should be '%s'\n",
+			ast_str_buffer(buf), "val4");
+		res = AST_TEST_FAIL;
+		goto out;
+	}
+
+	ast_str_reset(buf);
+	if (ast_func_read2(NULL, "AST_CONFIG("CONFIG_FILE",c1,var2,-1)", &buf, 32)) {
+		ast_test_status_update(test, "Failed to retrieve field 'var2'\n");
+		res = AST_TEST_FAIL;
+		goto out;
+	}
+	if (strcmp(ast_str_buffer(buf), "val21")) {
+		ast_test_status_update(test, "Got '%s', should be '%s'\n",
+			ast_str_buffer(buf), "val21");
+		res = AST_TEST_FAIL;
+		goto out;
+	}
+
+	ast_str_reset(buf);
+	if (!ast_func_read2(NULL, "AST_CONFIG("CONFIG_FILE",c1,var1,5)", &buf, 32)) {
+		ast_test_status_update(test, "Should not have retrieved a value\n");
+		res = AST_TEST_FAIL;
+		goto out;
+	}
+
+out:
+	if (buf) {
+		ast_free(buf);
+	}
+	delete_config_file();
+	return res;
+}
+
 static int unload_module(void)
 {
+	AST_TEST_UNREGISTER(config_basic_ops);
+	AST_TEST_UNREGISTER(config_filtered_ops);
+	AST_TEST_UNREGISTER(config_template_ops);
 	AST_TEST_UNREGISTER(copy_config);
 	AST_TEST_UNREGISTER(config_hook);
 	AST_TEST_UNREGISTER(ast_parse_arg_test);
 	AST_TEST_UNREGISTER(config_options_test);
+	AST_TEST_UNREGISTER(config_dialplan_function);
 	return 0;
 }
 
 static int load_module(void)
 {
+	AST_TEST_REGISTER(config_basic_ops);
+	AST_TEST_REGISTER(config_filtered_ops);
+	AST_TEST_REGISTER(config_template_ops);
 	AST_TEST_REGISTER(copy_config);
 	AST_TEST_REGISTER(config_hook);
 	AST_TEST_REGISTER(ast_parse_arg_test);
 	AST_TEST_REGISTER(config_options_test);
+	AST_TEST_REGISTER(config_dialplan_function);
 	return AST_MODULE_LOAD_SUCCESS;
 }
 

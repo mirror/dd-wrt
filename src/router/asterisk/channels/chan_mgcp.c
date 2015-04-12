@@ -22,11 +22,15 @@
  *
  * \author Mark Spencer <markster@digium.com>
  *
- * \par See also
- * \arg \ref Config_mgcp
- * \arg \ref res_pktccops
- *
  * \ingroup channel_drivers
+ */
+
+/*! \li \ref chan_mgcp.c uses the configuration file \ref mgcp.conf
+ * \addtogroup configuration_file
+ */
+
+/*! \page mgcp.conf mgcp.conf
+ * \verbinclude mgcp.conf.sample
  */
 
 /*** MODULEINFO
@@ -36,7 +40,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 401538 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 428687 $")
 
 #include <sys/socket.h>
 #include <sys/ioctl.h>
@@ -55,6 +59,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 401538 $")
 #include "asterisk/channel.h"
 #include "asterisk/config.h"
 #include "asterisk/module.h"
+#include "asterisk/pickup.h"
 #include "asterisk/pbx.h"
 #include "asterisk/sched.h"
 #include "asterisk/io.h"
@@ -63,7 +68,6 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 401538 $")
 #include "asterisk/callerid.h"
 #include "asterisk/cli.h"
 #include "asterisk/say.h"
-#include "asterisk/cdr.h"
 #include "asterisk/astdb.h"
 #include "asterisk/features.h"
 #include "asterisk/app.h"
@@ -75,9 +79,14 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 401538 $")
 #include "asterisk/devicestate.h"
 #include "asterisk/stringfields.h"
 #include "asterisk/abstract_jb.h"
-#include "asterisk/event.h"
 #include "asterisk/chanvars.h"
 #include "asterisk/pktccops.h"
+#include "asterisk/stasis.h"
+#include "asterisk/bridge.h"
+#include "asterisk/features_config.h"
+#include "asterisk/parking.h"
+#include "asterisk/stasis_channels.h"
+#include "asterisk/format_cache.h"
 
 /*
  * Define to work around buggy dlink MGCP phone firmware which
@@ -194,13 +203,14 @@ static int directmedia = DIRECTMEDIA;
 
 static char accountcode[AST_MAX_ACCOUNT_CODE] = "";
 
-static char mailbox[AST_MAX_EXTENSION];
+static char mailbox[AST_MAX_MAILBOX_UNIQUEID];
 
 static int amaflags = 0;
 
 static int adsi = 0;
 
-static unsigned int oseq;
+static unsigned int oseq_global = 0;
+AST_MUTEX_DEFINE_STATIC(oseq_lock);
 
 /*! Wait up to 16 seconds for first digit (FXO logic) */
 static int firstdigittimeout = 16000;
@@ -338,7 +348,7 @@ struct mgcp_endpoint {
 	char curtone[80];			/*!< Current tone */
 	char mailbox[AST_MAX_EXTENSION];
 	char parkinglot[AST_MAX_CONTEXT];   /*!< Parkinglot */
-	struct ast_event_sub *mwi_event_sub;
+	struct stasis_subscription *mwi_event_sub;
 	ast_group_t callgroup;
 	ast_group_t pickupgroup;
 	int callwaiting;
@@ -425,6 +435,7 @@ static int mgcpsock  = -1;
 
 static struct sockaddr_in bindaddr;
 
+static void mgcp_set_owner(struct mgcp_subchannel *sub, struct ast_channel *chan);
 static struct ast_frame  *mgcp_read(struct ast_channel *ast);
 static int transmit_response(struct mgcp_subchannel *sub, char *msg, struct mgcp_request *req, char *msgrest);
 static int transmit_notify_request(struct mgcp_subchannel *sub, char *tone);
@@ -441,7 +452,7 @@ static void dump_cmd_queues(struct mgcp_endpoint *p, struct mgcp_subchannel *sub
 static char *mgcp_reload(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a);
 static int reload_config(int reload);
 
-static struct ast_channel *mgcp_request(const char *type, struct ast_format_cap *cap, const struct ast_channel *requestor, const char *dest, int *cause);
+static struct ast_channel *mgcp_request(const char *type, struct ast_format_cap *cap, const struct ast_assigned_ids *assignedids, const struct ast_channel *requestor, const char *dest, int *cause);
 static int mgcp_call(struct ast_channel *ast, const char *dest, int timeout);
 static int mgcp_hangup(struct ast_channel *ast);
 static int mgcp_answer(struct ast_channel *ast);
@@ -475,11 +486,10 @@ static struct ast_channel_tech mgcp_tech = {
 	.fixup = mgcp_fixup,
 	.send_digit_begin = mgcp_senddigit_begin,
 	.send_digit_end = mgcp_senddigit_end,
-	.bridge = ast_rtp_instance_bridge,
 	.func_channel_read = acf_channel_read,
 };
 
-static void mwi_event_cb(const struct ast_event *event, void *userdata)
+static void mwi_event_cb(void *userdata, struct stasis_subscription *sub, struct stasis_message *msg)
 {
 	/* This module does not handle MWI in an event-based manner.  However, it
 	 * subscribes to MWI for each mailbox that is configured so that the core
@@ -490,24 +500,15 @@ static void mwi_event_cb(const struct ast_event *event, void *userdata)
 static int has_voicemail(struct mgcp_endpoint *p)
 {
 	int new_msgs;
-	struct ast_event *event;
-	char *mbox, *cntx;
+	RAII_VAR(struct stasis_message *, msg, NULL, ao2_cleanup);
 
-	cntx = mbox = ast_strdupa(p->mailbox);
-	strsep(&cntx, "@");
-	if (ast_strlen_zero(cntx))
-		cntx = "default";
-
-	event = ast_event_get_cached(AST_EVENT_MWI,
-		AST_EVENT_IE_MAILBOX, AST_EVENT_IE_PLTYPE_STR, mbox,
-		AST_EVENT_IE_CONTEXT, AST_EVENT_IE_PLTYPE_STR, cntx,
-		AST_EVENT_IE_END);
-
-	if (event) {
-		new_msgs = ast_event_get_ie_uint(event, AST_EVENT_IE_NEWMSGS);
-		ast_event_destroy(event);
-	} else
+	msg = stasis_cache_get(ast_mwi_state_cache(), ast_mwi_state_type(), p->mailbox);
+	if (msg) {
+		struct ast_mwi_state *mwi_state = stasis_message_data(msg);
+		new_msgs = mwi_state->new_msgs;
+	} else {
 		new_msgs = ast_app_has_voicemail(p->mailbox, NULL);
+	}
 
 	return new_msgs;
 }
@@ -521,7 +522,7 @@ static int unalloc_sub(struct mgcp_subchannel *sub)
 	}
 	ast_debug(1, "Released sub %d of channel %s@%s\n", sub->id, p->name, p->parent->name);
 
-	sub->owner = NULL;
+	mgcp_set_owner(sub, NULL);
 	if (!ast_strlen_zero(sub->cxident)) {
 		transmit_connection_del(sub);
 	}
@@ -838,20 +839,11 @@ static int mgcp_call(struct ast_channel *ast, const char *dest, int timeout)
 	struct mgcp_endpoint *p;
 	struct mgcp_subchannel *sub;
 	char tone[50] = "";
-	const char *distinctive_ring = NULL;
-	struct varshead *headp;
-	struct ast_var_t *current;
+	const char *distinctive_ring = pbx_builtin_getvar_helper(ast, "ALERT_INFO");
 
 	ast_debug(3, "MGCP mgcp_call(%s)\n", ast_channel_name(ast));
 	sub = ast_channel_tech_pvt(ast);
 	p = sub->parent;
-	headp = ast_channel_varshead(ast);
-	AST_LIST_TRAVERSE(headp,current,entries) {
-		/* Check whether there is an ALERT_INFO variable */
-		if (strcasecmp(ast_var_name(current),"ALERT_INFO") == 0) {
-			distinctive_ring = ast_var_value(current);
-		}
-	}
 
 	ast_mutex_lock(&sub->lock);
 	switch (p->hookstate) {
@@ -921,7 +913,6 @@ static int mgcp_hangup(struct ast_channel *ast)
 {
 	struct mgcp_subchannel *sub = ast_channel_tech_pvt(ast);
 	struct mgcp_endpoint *p = sub->parent;
-	struct ast_channel *bridged;
 
 	ast_debug(1, "mgcp_hangup(%s)\n", ast_channel_name(ast));
 	if (!ast_channel_tech_pvt(ast)) {
@@ -947,7 +938,7 @@ static int mgcp_hangup(struct ast_channel *ast)
 		}
 	}
 
-	sub->owner = NULL;
+	mgcp_set_owner(sub, NULL);
 
 	/* for deleting gate */
 	if (p->pktcgatealloc && sub->gate) {
@@ -968,10 +959,11 @@ static int mgcp_hangup(struct ast_channel *ast)
 	}
 	sub->cxident[0] = '\0';
 	if ((sub == p->sub) && sub->next->owner) {
+		RAII_VAR(struct ast_channel *, bridged, ast_channel_bridge_peer(sub->next->owner), ast_channel_cleanup);
+
 		if (p->hookstate == MGCP_OFFHOOK) {
-			if (sub->next->owner && ast_bridged_channel(sub->next->owner)) {
+			if (sub->next->owner && bridged) {
 				/* ncs fix! */
-				bridged = ast_bridged_channel(sub->next->owner);
 				transmit_notify_request_with_callerid(p->sub, (p->ncs ? "L/wt1" : "L/wt"),
 					S_COR(ast_channel_caller(bridged)->id.number.valid, ast_channel_caller(bridged)->id.number.str, ""),
 					S_COR(ast_channel_caller(bridged)->id.name.valid, ast_channel_caller(bridged)->id.name.str, ""));
@@ -981,8 +973,7 @@ static int mgcp_hangup(struct ast_channel *ast)
 			p->sub = sub->next;
 			p->sub->cxmode = MGCP_CX_RECVONLY;
 			transmit_modify_request(p->sub);
-			if (sub->next->owner && ast_bridged_channel(sub->next->owner)) {
-				bridged = ast_bridged_channel(sub->next->owner);
+			if (sub->next->owner && bridged) {
 				transmit_notify_request_with_callerid(p->sub, "L/rg",
 					S_COR(ast_channel_caller(bridged)->id.number.valid, ast_channel_caller(bridged)->id.number.str, ""),
 					S_COR(ast_channel_caller(bridged)->id.name.valid, ast_channel_caller(bridged)->id.name.str, ""));
@@ -1144,7 +1135,7 @@ static char *handle_mgcp_set_debug(struct ast_cli_entry *e, int cmd, struct ast_
 		e->command = "mgcp set debug {on|off}";
 		e->usage =
 			"Usage: mgcp set debug {on|off}\n"
-			"       Enables/Disables dumping of MGCP packets for debugging purposes\n";	
+			"       Enables/Disables dumping of MGCP packets for debugging purposes\n";
 		return NULL;
 	case CLI_GENERATE:
 		return NULL;
@@ -1209,9 +1200,20 @@ static struct ast_frame *mgcp_rtp_read(struct mgcp_subchannel *sub)
 	if (sub->owner) {
 		/* We already hold the channel lock */
 		if (f->frametype == AST_FRAME_VOICE) {
-			if (!ast_format_cap_iscompatible(ast_channel_nativeformats(sub->owner), &f->subclass.format)) {
-				ast_debug(1, "Oooh, format changed to %s\n", ast_getformatname(&f->subclass.format));
-				ast_format_cap_set(ast_channel_nativeformats(sub->owner), &f->subclass.format);
+			if (ast_format_cap_iscompatible_format(ast_channel_nativeformats(sub->owner), f->subclass.format) == AST_FORMAT_CMP_NOT_EQUAL) {
+				struct ast_format_cap *caps;
+
+				ast_debug(1, "Oooh, format changed to %s\n", ast_format_get_name(f->subclass.format));
+
+				caps = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT);
+				if (caps) {
+					ast_format_cap_append(caps, f->subclass.format, 0);
+					ast_channel_nativeformats_set(sub->owner, caps);
+					ao2_ref(caps, -1);
+				} else {
+					return &ast_null_frame;
+				}
+
 				ast_set_read_format(sub->owner, ast_channel_readformat(sub->owner));
 				ast_set_write_format(sub->owner, ast_channel_writeformat(sub->owner));
 			}
@@ -1227,6 +1229,13 @@ static struct ast_frame *mgcp_rtp_read(struct mgcp_subchannel *sub)
 	return f;
 }
 
+static void mgcp_set_owner(struct mgcp_subchannel *sub, struct ast_channel *chan)
+{
+	sub->owner = chan;
+	if (sub->rtp) {
+		ast_rtp_instance_set_channel_id(sub->rtp, sub->owner ? ast_channel_uniqueid(chan) : "");
+	}
+}
 
 static struct ast_frame *mgcp_read(struct ast_channel *ast)
 {
@@ -1242,22 +1251,23 @@ static int mgcp_write(struct ast_channel *ast, struct ast_frame *frame)
 {
 	struct mgcp_subchannel *sub = ast_channel_tech_pvt(ast);
 	int res = 0;
-	char buf[256];
 
 	if (frame->frametype != AST_FRAME_VOICE) {
 		if (frame->frametype == AST_FRAME_IMAGE)
 			return 0;
 		else {
-			ast_log(LOG_WARNING, "Can't send %d type frames with MGCP write\n", frame->frametype);
+			ast_log(LOG_WARNING, "Can't send %u type frames with MGCP write\n", frame->frametype);
 			return 0;
 		}
 	} else {
-		if (!(ast_format_cap_iscompatible(ast_channel_nativeformats(ast), &frame->subclass.format))) {
+		if (ast_format_cap_iscompatible_format(ast_channel_nativeformats(ast), frame->subclass.format) == AST_FORMAT_CMP_NOT_EQUAL) {
+			struct ast_str *cap_buf = ast_str_alloca(64);
+
 			ast_log(LOG_WARNING, "Asked to transmit frame type %s, while native formats is %s (read/write = %s/%s)\n",
-				ast_getformatname(&frame->subclass.format),
-				ast_getformatname_multiple(buf, sizeof(buf), ast_channel_nativeformats(ast)),
-				ast_getformatname(ast_channel_readformat(ast)),
-				ast_getformatname(ast_channel_writeformat(ast)));
+				ast_format_get_name(frame->subclass.format),
+				ast_format_cap_get_names(ast_channel_nativeformats(ast), &cap_buf),
+				ast_format_get_name(ast_channel_readformat(ast)),
+				ast_format_get_name(ast_channel_writeformat(ast)));
 			/* return -1; */
 		}
 	}
@@ -1290,7 +1300,7 @@ static int mgcp_fixup(struct ast_channel *oldchan, struct ast_channel *newchan)
 		ast_log(LOG_WARNING, "old channel wasn't %p but was %p\n", oldchan, sub->owner);
 		return -1;
 	}
-	sub->owner = newchan;
+	mgcp_set_owner(sub, newchan);
 	ast_mutex_unlock(&sub->lock);
 	return 0;
 }
@@ -1445,7 +1455,7 @@ static int mgcp_indicate(struct ast_channel *ast, int ind, const void *data, siz
 	ast_mutex_lock(&sub->lock);
 	switch(ind) {
 	case AST_CONTROL_RINGING:
-#ifdef DLINK_BUGGY_FIRMWARE	
+#ifdef DLINK_BUGGY_FIRMWARE
 		transmit_notify_request(sub, "rt");
 #else
 		if (!sub->sdpsent) { /* will hide the inband progress!!! */
@@ -1491,87 +1501,105 @@ static int mgcp_indicate(struct ast_channel *ast, int ind, const void *data, siz
 	return res;
 }
 
-static struct ast_channel *mgcp_new(struct mgcp_subchannel *sub, int state, const char *linkedid)
+static struct ast_channel *mgcp_new(struct mgcp_subchannel *sub, int state, const struct ast_assigned_ids *assignedids, const struct ast_channel *requestor)
 {
+	struct ast_format_cap *caps = NULL;
 	struct ast_channel *tmp;
 	struct ast_variable *v = NULL;
 	struct mgcp_endpoint *i = sub->parent;
-	struct ast_format tmpfmt;
+	struct ast_format *tmpfmt;
 
-	tmp = ast_channel_alloc(1, state, i->cid_num, i->cid_name, linkedid, i->accountcode, i->exten, i->context, i->amaflags, "MGCP/%s@%s-%d", i->name, i->parent->name, sub->id);
-	if (tmp) {
-		ast_channel_tech_set(tmp, &mgcp_tech);
-		ast_format_cap_copy(ast_channel_nativeformats(tmp), i->cap);
-		if (ast_format_cap_is_empty(ast_channel_nativeformats(tmp))) {
-			ast_format_cap_copy(ast_channel_nativeformats(tmp), global_capability);
-		}
-		if (sub->rtp) {
-			ast_channel_set_fd(tmp, 0, ast_rtp_instance_fd(sub->rtp, 0));
-		}
-		if (i->dtmfmode & (MGCP_DTMF_INBAND | MGCP_DTMF_HYBRID)) {
-			i->dsp = ast_dsp_new();
-			ast_dsp_set_features(i->dsp, DSP_FEATURE_DIGIT_DETECT);
-			/* this is to prevent clipping of dtmf tones during dsp processing */
-			ast_dsp_set_digitmode(i->dsp, DSP_DIGITMODE_NOQUELCH);
-		} else {
-			i->dsp = NULL;
-		}
-		if (state == AST_STATE_RING)
-			ast_channel_rings_set(tmp, 1);
-
-		ast_best_codec(ast_channel_nativeformats(tmp), &tmpfmt);
-		ast_format_copy(ast_channel_writeformat(tmp), &tmpfmt);
-		ast_format_copy(ast_channel_rawwriteformat(tmp), &tmpfmt);
-		ast_format_copy(ast_channel_readformat(tmp), &tmpfmt);
-		ast_format_copy(ast_channel_rawreadformat(tmp), &tmpfmt);
-		ast_channel_tech_pvt_set(tmp, sub);
-		if (!ast_strlen_zero(i->language))
-			ast_channel_language_set(tmp, i->language);
-		if (!ast_strlen_zero(i->accountcode))
-			ast_channel_accountcode_set(tmp, i->accountcode);
-		if (i->amaflags)
-			ast_channel_amaflags_set(tmp, i->amaflags);
-		sub->owner = tmp;
-		ast_module_ref(ast_module_info->self);
-		ast_channel_callgroup_set(tmp, i->callgroup);
-		ast_channel_pickupgroup_set(tmp, i->pickupgroup);
-		ast_channel_call_forward_set(tmp, i->call_forward);
-		ast_channel_context_set(tmp, i->context);
-		ast_channel_exten_set(tmp, i->exten);
-
-		/* Don't use ast_set_callerid() here because it will
-		 * generate a needless NewCallerID event */
-		if (!ast_strlen_zero(i->cid_num)) {
-			ast_channel_caller(tmp)->ani.number.valid = 1;
-			ast_channel_caller(tmp)->ani.number.str = ast_strdup(i->cid_num);
-		}
-
-		if (!i->adsi) {
-			ast_channel_adsicpe_set(tmp, AST_ADSI_UNAVAILABLE);
-		}
-		ast_channel_priority_set(tmp, 1);
-
-		/* Set channel variables for this call from configuration */
-		for (v = i->chanvars ; v ; v = v->next) {
-			char valuebuf[1024];
-			pbx_builtin_setvar_helper(tmp, v->name, ast_get_encoded_str(v->value, valuebuf, sizeof(valuebuf)));
-		}
-
-		if (sub->rtp) {
-			ast_jb_configure(tmp, &global_jbconf);
-		}
-		if (state != AST_STATE_DOWN) {
-			if (ast_pbx_start(tmp)) {
-				ast_log(LOG_WARNING, "Unable to start PBX on %s\n", ast_channel_name(tmp));
-				ast_hangup(tmp);
-				tmp = NULL;
-			}
-		}
-		ast_verb(3, "MGCP mgcp_new(%s) created in state: %s\n",
-				ast_channel_name(tmp), ast_state2str(state));
-	} else {
-		ast_log(LOG_WARNING, "Unable to allocate channel structure\n");
+	caps = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT);
+	if (!caps) {
+		ast_log(LOG_ERROR, "Format capabilities could not be created\n");
+		return NULL;
 	}
+	tmp = ast_channel_alloc(1, state, i->cid_num, i->cid_name, i->accountcode, i->exten, i->context, assignedids, requestor, i->amaflags, "MGCP/%s@%s-%d", i->name, i->parent->name, sub->id);
+	if (!tmp) {
+		ast_log(LOG_WARNING, "Channel could not be created\n");
+		ao2_ref(caps, -1);
+		return NULL;
+	}
+
+	ast_channel_stage_snapshot(tmp);
+	ast_channel_tech_set(tmp, &mgcp_tech);
+	if (ast_format_cap_count(i->cap)) {
+		ast_format_cap_append_from_cap(caps, i->cap, AST_MEDIA_TYPE_UNKNOWN);
+	} else {
+		ast_format_cap_append_from_cap(caps, global_capability, AST_MEDIA_TYPE_UNKNOWN);
+	}
+	ast_channel_nativeformats_set(tmp, caps);
+	ao2_ref(caps, -1);
+	if (sub->rtp) {
+		ast_channel_set_fd(tmp, 0, ast_rtp_instance_fd(sub->rtp, 0));
+	}
+	if (i->dtmfmode & (MGCP_DTMF_INBAND | MGCP_DTMF_HYBRID)) {
+		i->dsp = ast_dsp_new();
+		ast_dsp_set_features(i->dsp, DSP_FEATURE_DIGIT_DETECT);
+		/* this is to prevent clipping of dtmf tones during dsp processing */
+		ast_dsp_set_digitmode(i->dsp, DSP_DIGITMODE_NOQUELCH);
+	} else {
+		i->dsp = NULL;
+	}
+	if (state == AST_STATE_RING) {
+		ast_channel_rings_set(tmp, 1);
+	}
+
+	tmpfmt = ast_format_cap_get_format(ast_channel_nativeformats(tmp), 0);
+	ast_channel_set_writeformat(tmp, tmpfmt);
+	ast_channel_set_rawwriteformat(tmp, tmpfmt);
+	ast_channel_set_readformat(tmp, tmpfmt);
+	ast_channel_set_rawreadformat(tmp, tmpfmt);
+	ao2_ref(tmpfmt, -1);
+	ast_channel_tech_pvt_set(tmp, sub);
+	if (!ast_strlen_zero(i->language))
+		ast_channel_language_set(tmp, i->language);
+	if (!ast_strlen_zero(i->accountcode))
+		ast_channel_accountcode_set(tmp, i->accountcode);
+	if (i->amaflags)
+		ast_channel_amaflags_set(tmp, i->amaflags);
+	mgcp_set_owner(sub, tmp);
+	ast_module_ref(ast_module_info->self);
+	ast_channel_callgroup_set(tmp, i->callgroup);
+	ast_channel_pickupgroup_set(tmp, i->pickupgroup);
+	ast_channel_call_forward_set(tmp, i->call_forward);
+	ast_channel_context_set(tmp, i->context);
+	ast_channel_exten_set(tmp, i->exten);
+	/* Don't use ast_set_callerid() here because it will
+	 * generate a needless NewCallerID event */
+	if (!ast_strlen_zero(i->cid_num)) {
+		ast_channel_caller(tmp)->ani.number.valid = 1;
+		ast_channel_caller(tmp)->ani.number.str = ast_strdup(i->cid_num);
+	}
+
+	if (!i->adsi) {
+		ast_channel_adsicpe_set(tmp, AST_ADSI_UNAVAILABLE);
+	}
+	ast_channel_priority_set(tmp, 1);
+
+	/* Set channel variables for this call from configuration */
+	for (v = i->chanvars ; v ; v = v->next) {
+		char valuebuf[1024];
+		pbx_builtin_setvar_helper(tmp, v->name, ast_get_encoded_str(v->value, valuebuf, sizeof(valuebuf)));
+	}
+
+	if (sub->rtp) {
+		ast_jb_configure(tmp, &global_jbconf);
+	}
+
+	ast_channel_stage_snapshot_done(tmp);
+	ast_channel_unlock(tmp);
+
+	if (state != AST_STATE_DOWN) {
+		if (ast_pbx_start(tmp)) {
+			ast_log(LOG_WARNING, "Unable to start PBX on %s\n", ast_channel_name(tmp));
+			ast_hangup(tmp);
+			tmp = NULL;
+		}
+	}
+	ast_verb(3, "MGCP mgcp_new(%s) created in state: %s\n",
+			ast_channel_name(tmp), ast_state2str(state));
+
 	return tmp;
 }
 
@@ -1807,17 +1835,12 @@ static struct mgcp_subchannel *find_subchannel_and_lock(char *name, int msgid, s
 			/* not dynamic, check if the name matches */
 			} else if (name) {
 				if (strcasecmp(g->name, at)) {
-					g = g->next;
 					continue;
 				}
 			/* not dynamic, no name, check if the addr matches */
 			} else if (!name && sin) {
 				if ((g->addr.sin_addr.s_addr != sin->sin_addr.s_addr) ||
 				    (g->addr.sin_port != sin->sin_port)) {
-					if(!g->next)
-						g = find_realtime_gw(name, at, sin);
-					else
-						g = g->next;
 					continue;
 				}
 			} else {
@@ -1971,7 +1994,9 @@ static int process_sdp(struct mgcp_subchannel *sub, struct mgcp_request *req)
 	int codec, codec_count=0;
 	int iterator;
 	struct mgcp_endpoint *p = sub->parent;
-	char tmp1[256], tmp2[256], tmp3[256];
+	struct ast_str *global_buf = ast_str_alloca(64);
+	struct ast_str *peer_buf = ast_str_alloca(64);
+	struct ast_str *pvt_buf = ast_str_alloca(64);
 
 	/* Get codec and RTP info from SDP */
 	m = get_sdp(req, "m");
@@ -2021,27 +2046,27 @@ static int process_sdp(struct mgcp_subchannel *sub, struct mgcp_request *req)
 	sdpLineNum_iterator_init(&iterator);
 	while ((a = get_sdp_iterate(&iterator, req, "a"))[0] != '\0') {
 		char* mimeSubtype = ast_strdupa(a); /* ensures we have enough space */
-		if (sscanf(a, "rtpmap: %30u %127[^/]/", &codec, mimeSubtype) != 2)
+		if (sscanf(a, "rtpmap: %30d %127[^/]/", &codec, mimeSubtype) != 2)
 			continue;
 		/* Note: should really look at the 'freq' and '#chans' params too */
 		ast_rtp_codecs_payloads_set_rtpmap_type(ast_rtp_instance_get_codecs(sub->rtp), sub->rtp, codec, "audio", mimeSubtype, 0);
 	}
 
 	/* Now gather all of the codecs that were asked for: */
-	if (!(peercap = ast_format_cap_alloc_nolock())) {
+	if (!(peercap = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT))) {
 		return -1;
 	}
 	ast_rtp_codecs_payload_formats(ast_rtp_instance_get_codecs(sub->rtp), peercap, &peerNonCodecCapability);
-	ast_format_cap_joint_copy(global_capability, peercap, p->cap);
+	ast_format_cap_get_compatible(global_capability, peercap, p->cap);
 	ast_debug(1, "Capabilities: us - %s, them - %s, combined - %s\n",
-		ast_getformatname_multiple(tmp1, sizeof(tmp1), global_capability),
-		ast_getformatname_multiple(tmp2, sizeof(tmp2), peercap),
-		ast_getformatname_multiple(tmp3, sizeof(tmp3), p->cap));
-	peercap = ast_format_cap_destroy(peercap);
+		ast_format_cap_get_names(global_capability, &global_buf),
+		ast_format_cap_get_names(peercap, &peer_buf),
+		ast_format_cap_get_names(p->cap, &pvt_buf));
+	ao2_ref(peercap, -1);
 
 	ast_debug(1, "Non-codec capabilities: us - %d, them - %d, combined - %d\n",
 		nonCodecCapability, peerNonCodecCapability, p->nonCodecCapability);
-	if (ast_format_cap_is_empty(p->cap)) {
+	if (!ast_format_cap_count(p->cap)) {
 		ast_log(LOG_WARNING, "No compatible codecs!\n");
 		return -1;
 	}
@@ -2111,7 +2136,7 @@ static int init_resp(struct mgcp_request *req, char *resp, struct mgcp_request *
 	return 0;
 }
 
-static int init_req(struct mgcp_endpoint *p, struct mgcp_request *req, char *verb)
+static int init_req(struct mgcp_endpoint *p, struct mgcp_request *req, char *verb, unsigned int oseq)
 {
 	/* Initialize a response */
 	if (req->headers || req->len) {
@@ -2121,9 +2146,9 @@ static int init_req(struct mgcp_endpoint *p, struct mgcp_request *req, char *ver
 	req->header[req->headers] = req->data + req->len;
 	/* check if we need brackets around the gw name */
 	if (p->parent->isnamedottedip) {
-		snprintf(req->header[req->headers], sizeof(req->data) - req->len, "%s %d %s@[%s] MGCP 1.0%s\r\n", verb, oseq, p->name, p->parent->name, p->ncs ? " NCS 1.0" : "");
+		snprintf(req->header[req->headers], sizeof(req->data) - req->len, "%s %u %s@[%s] MGCP 1.0%s\r\n", verb, oseq, p->name, p->parent->name, p->ncs ? " NCS 1.0" : "");
 	} else {
-+		snprintf(req->header[req->headers], sizeof(req->data) - req->len, "%s %d %s@%s MGCP 1.0%s\r\n", verb, oseq, p->name, p->parent->name, p->ncs ? " NCS 1.0" : "");
++		snprintf(req->header[req->headers], sizeof(req->data) - req->len, "%s %u %s@%s MGCP 1.0%s\r\n", verb, oseq, p->name, p->parent->name, p->ncs ? " NCS 1.0" : "");
 	}
 	req->len += strlen(req->header[req->headers]);
 	if (req->headers < MGCP_MAX_HEADERS) {
@@ -2144,13 +2169,17 @@ static int respprep(struct mgcp_request *resp, struct mgcp_endpoint *p, char *ms
 
 static int reqprep(struct mgcp_request *req, struct mgcp_endpoint *p, char *verb)
 {
+	unsigned int oseq;
 	memset(req, 0, sizeof(struct mgcp_request));
-	oseq++;
-	if (oseq > 999999999) {
-		oseq = 1;
+	ast_mutex_lock(&oseq_lock);
+	oseq_global++;
+	if (oseq_global > 999999999) {
+		oseq_global = 1;
 	}
-	init_req(p, req, verb);
-	return 0;
+	oseq = oseq_global;
+	ast_mutex_unlock(&oseq_lock);
+	init_req(p, req, verb, oseq);
+	return oseq;
 }
 
 static int transmit_response(struct mgcp_subchannel *sub, char *msg, struct mgcp_request *req, char *msgrest)
@@ -2195,7 +2224,6 @@ static int add_sdp(struct mgcp_request *resp, struct mgcp_subchannel *sub, struc
 	char m[256] = "";
 	char a[1024] = "";
 	int x;
-	struct ast_format tmpfmt;
 	struct sockaddr_in dest = { 0, };
 	struct ast_sockaddr dest_tmp;
 	struct mgcp_endpoint *p = sub->parent;
@@ -2230,24 +2258,25 @@ static int add_sdp(struct mgcp_request *resp, struct mgcp_subchannel *sub, struc
 	ast_copy_string(t, "t=0 0\r\n", sizeof(t));
 	snprintf(m, sizeof(m), "m=audio %d RTP/AVP", ntohs(dest.sin_port));
 
-	ast_format_cap_iter_start(p->cap);
-	while (!(ast_format_cap_iter_next(p->cap, &tmpfmt))) {
-		if (AST_FORMAT_GET_TYPE(tmpfmt.id) != AST_FORMAT_TYPE_AUDIO) {
-			/* Audio is now discontiguous */
+	for (x = 0; x < ast_format_cap_count(p->cap); x++) {
+		struct ast_format *format = ast_format_cap_get_format(p->cap, x);
+
+		if (ast_format_get_type(format) != AST_MEDIA_TYPE_AUDIO) {
+			ao2_ref(format, -1);
 			continue;
 		}
-		if (ast_format_cap_iscompatible(p->cap, &tmpfmt)) {
-			ast_debug(1, "Answering with capability %s\n", ast_getformatname(&tmpfmt));
-			codec = ast_rtp_codecs_payload_code(ast_rtp_instance_get_codecs(sub->rtp), 1, &tmpfmt, 0);
-			if (codec > -1) {
-				snprintf(costr, sizeof(costr), " %d", codec);
-				strncat(m, costr, sizeof(m) - strlen(m) - 1);
-				snprintf(costr, sizeof(costr), "a=rtpmap:%d %s/8000\r\n", codec, ast_rtp_lookup_mime_subtype2(1, &tmpfmt, 0, 0));
-				strncat(a, costr, sizeof(a) - strlen(a) - 1);
-			}
+
+		ast_debug(1, "Answering with capability %s\n", ast_format_get_name(format));
+		codec = ast_rtp_codecs_payload_code(ast_rtp_instance_get_codecs(sub->rtp), 1, format, 0);
+		if (codec > -1) {
+			snprintf(costr, sizeof(costr), " %d", codec);
+			strncat(m, costr, sizeof(m) - strlen(m) - 1);
+			snprintf(costr, sizeof(costr), "a=rtpmap:%d %s/8000\r\n", codec, ast_rtp_lookup_mime_subtype2(1, format, 0, 0));
+			strncat(a, costr, sizeof(a) - strlen(a) - 1);
 		}
+
+		ao2_ref(format, -1);
 	}
-	ast_format_cap_iter_end(p->cap);
 
 	for (x = 1LL; x <= AST_RTP_MAX; x <<= 1) {
 		if (p->nonCodecCapability & x) {
@@ -2286,8 +2315,9 @@ static int transmit_modify_with_sdp(struct mgcp_subchannel *sub, struct ast_rtp_
 	char local[256];
 	char tmp[80];
 	struct mgcp_endpoint *p = sub->parent;
-	struct ast_format tmpfmt;
+	int i;
 	struct ast_sockaddr sub_tmpdest_tmp;
+	unsigned int oseq;
 
 	if (ast_strlen_zero(sub->cxident) && rtp) {
 		/* We don't have a CXident yet, store the destination and
@@ -2297,18 +2327,20 @@ static int transmit_modify_with_sdp(struct mgcp_subchannel *sub, struct ast_rtp_
 		return 0;
 	}
 	ast_copy_string(local, "e:on, s:off, p:20", sizeof(local));
-	ast_format_cap_iter_start(p->cap);
-	while (!(ast_format_cap_iter_next(p->cap, &tmpfmt))) {
-		if (AST_FORMAT_GET_TYPE(tmpfmt.id) != AST_FORMAT_TYPE_AUDIO) {
-			/* Audio is now discontiguous */
+
+	for (i = 0; i < ast_format_cap_count(p->cap); i++) {
+		struct ast_format *format = ast_format_cap_get_format(p->cap, i);
+
+		if (ast_format_get_type(format) != AST_MEDIA_TYPE_AUDIO) {
+			ao2_ref(format, -1);
 			continue;
 		}
-		if (ast_format_cap_iscompatible(p->cap, &tmpfmt)) {
-			snprintf(tmp, sizeof(tmp), ", a:%s", ast_rtp_lookup_mime_subtype2(1, &tmpfmt, 0, 0));
-			strncat(local, tmp, sizeof(local) - strlen(local) - 1);
-		}
+
+		snprintf(tmp, sizeof(tmp), ", a:%s", ast_rtp_lookup_mime_subtype2(1, format, 0, 0));
+		strncat(local, tmp, sizeof(local) - strlen(local) - 1);
+
+		ao2_ref(format, -1);
 	}
-	ast_format_cap_iter_end(p->cap);
 
 	if (sub->gate) {
 		if (sub->gate->state == GATE_ALLOCATED || sub->gate->state == GATE_OPEN) {
@@ -2324,7 +2356,7 @@ static int transmit_modify_with_sdp(struct mgcp_subchannel *sub, struct ast_rtp_
 	}
 
 
-	reqprep(&resp, p, "MDCX");
+	oseq = reqprep(&resp, p, "MDCX");
 	add_header(&resp, "C", sub->callid);
 	add_header(&resp, "L", local);
 	add_header(&resp, "M", mgcp_cxmodes[sub->cxmode]);
@@ -2344,26 +2376,28 @@ static int transmit_connect_with_sdp(struct mgcp_subchannel *sub, struct ast_rtp
 	struct mgcp_request resp;
 	char local[256];
 	char tmp[80];
-	struct ast_format tmpfmt;
+	int i;
 	struct mgcp_endpoint *p = sub->parent;
+	unsigned int oseq;
 
 	ast_debug(3, "Creating connection for %s@%s-%d in cxmode: %s callid: %s\n",
 		 p->name, p->parent->name, sub->id, mgcp_cxmodes[sub->cxmode], sub->callid);
 
 	ast_copy_string(local, "e:on, s:off, p:20", sizeof(local));
 
-	ast_format_cap_iter_start(p->cap);
-	while (!(ast_format_cap_iter_next(p->cap, &tmpfmt))) {
-		if (AST_FORMAT_GET_TYPE(tmpfmt.id) != AST_FORMAT_TYPE_AUDIO) {
-			/* Audio is now discontiguous */
+	for (i = 0; i < ast_format_cap_count(p->cap); i++) {
+		struct ast_format *format = ast_format_cap_get_format(p->cap, i);
+
+		if (ast_format_get_type(format) != AST_MEDIA_TYPE_AUDIO) {
+			ao2_ref(format, -1);
 			continue;
 		}
-		if (ast_format_cap_iscompatible(p->cap, &tmpfmt)) {
-			snprintf(tmp, sizeof(tmp), ", a:%s", ast_rtp_lookup_mime_subtype2(1, &tmpfmt, 0, 0));
-			strncat(local, tmp, sizeof(local) - strlen(local) - 1);
-		}
+
+		snprintf(tmp, sizeof(tmp), ", a:%s", ast_rtp_lookup_mime_subtype2(1, format, 0, 0));
+		strncat(local, tmp, sizeof(local) - strlen(local) - 1);
+
+		ao2_ref(format, -1);
 	}
-	ast_format_cap_iter_end(p->cap);
 
 	if (sub->gate) {
 		if(sub->gate->state == GATE_ALLOCATED) {
@@ -2372,7 +2406,7 @@ static int transmit_connect_with_sdp(struct mgcp_subchannel *sub, struct ast_rtp
 		}
 	}
 	sub->sdpsent = 1;
-	reqprep(&resp, p, "CRCX");
+	oseq = reqprep(&resp, p, "CRCX");
 	add_header(&resp, "C", sub->callid);
 	add_header(&resp, "L", local);
 	add_header(&resp, "M", mgcp_cxmodes[sub->cxmode]);
@@ -2439,26 +2473,28 @@ static int mgcp_alloc_pktcgate(struct mgcp_subchannel *sub)
 static int transmit_connect(struct mgcp_subchannel *sub)
 {
 	struct mgcp_request resp;
+	int x;
 	char local[256];
 	char tmp[80];
-	struct ast_format tmpfmt;
+	struct ast_format *tmpfmt;
 	struct mgcp_endpoint *p = sub->parent;
+	unsigned int oseq;
 
 	ast_copy_string(local, "p:20, s:off, e:on", sizeof(local));
 
-	ast_format_cap_iter_start(p->cap);
-	while (!(ast_format_cap_iter_next(p->cap, &tmpfmt))) {
-		if (ast_format_cap_iscompatible(p->cap, &tmpfmt)) {
-			snprintf(tmp, sizeof(tmp), ", a:%s", ast_rtp_lookup_mime_subtype2(1, &tmpfmt, 0, 0));
-			strncat(local, tmp, sizeof(local) - strlen(local) - 1);
-		}
+	for (x = 0; x < ast_format_cap_count(p->cap); x++) {
+		tmpfmt = ast_format_cap_get_format(p->cap, x);
+
+		snprintf(tmp, sizeof(tmp), ", a:%s", ast_rtp_lookup_mime_subtype2(1, tmpfmt, 0, 0));
+		strncat(local, tmp, sizeof(local) - strlen(local) - 1);
+
+		ao2_ref(tmpfmt, -1);
 	}
-	ast_format_cap_iter_end(p->cap);
 
 	ast_debug(3, "Creating connection for %s@%s-%d in cxmode: %s callid: %s\n",
 		    p->name, p->parent->name, sub->id, mgcp_cxmodes[sub->cxmode], sub->callid);
 	sub->sdpsent = 0;
-	reqprep(&resp, p, "CRCX");
+	oseq = reqprep(&resp, p, "CRCX");
 	add_header(&resp, "C", sub->callid);
 	add_header(&resp, "L", local);
 	add_header(&resp, "M", "inactive");
@@ -2475,11 +2511,12 @@ static int transmit_notify_request(struct mgcp_subchannel *sub, char *tone)
 {
 	struct mgcp_request resp;
 	struct mgcp_endpoint *p = sub->parent;
+	unsigned int oseq;
 
 	ast_debug(3, "MGCP Asked to indicate tone: %s on  %s@%s-%d in cxmode: %s\n",
 		tone, p->name, p->parent->name, sub->id, mgcp_cxmodes[sub->cxmode]);
 	ast_copy_string(p->curtone, tone, sizeof(p->curtone));
-	reqprep(&resp, p, "RQNT");
+	oseq = reqprep(&resp, p, "RQNT");
 	add_header(&resp, "X", p->rqnt_ident);
 	switch (p->hookstate) {
 	case MGCP_ONHOOK:
@@ -2506,6 +2543,7 @@ static int transmit_notify_request_with_callerid(struct mgcp_subchannel *sub, ch
 	struct timeval t = ast_tvnow();
 	struct ast_tm tm;
 	struct mgcp_endpoint *p = sub->parent;
+	unsigned int oseq;
 
 	ast_localtime(&t, &tm, NULL);
 	n = callername;
@@ -2521,7 +2559,7 @@ static int transmit_notify_request_with_callerid(struct mgcp_subchannel *sub, ch
 	snprintf(tone2, sizeof(tone2), "%s,L/ci(%02d/%02d/%02d/%02d,%s,%s)", tone,
 		tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, l, n);
 	ast_copy_string(p->curtone, tone, sizeof(p->curtone));
-	reqprep(&resp, p, "RQNT");
+	oseq = reqprep(&resp, p, "RQNT");
 	add_header(&resp, "X", p->rqnt_ident);
 	switch (p->hookstate) {
 	case MGCP_ONHOOK:
@@ -2546,10 +2584,11 @@ static int transmit_modify_request(struct mgcp_subchannel *sub)
 {
 	struct mgcp_request resp;
 	struct mgcp_endpoint *p = sub->parent;
-	struct ast_format tmpfmt;
+	int i;
 	int fc = 1;
 	char local[256];
 	char tmp[80];
+	unsigned int oseq;
 
 	if (ast_strlen_zero(sub->cxident)) {
 		/* We don't have a CXident yet, store the destination and
@@ -2560,18 +2599,22 @@ static int transmit_modify_request(struct mgcp_subchannel *sub)
 		p->name, p->parent->name, sub->id, mgcp_cxmodes[sub->cxmode], sub->callid);
 
 	ast_copy_string(local, "", sizeof(local));
-	ast_format_cap_iter_start(p->cap);
-	while (!(ast_format_cap_iter_next(p->cap, &tmpfmt))) {
+	for (i = 0; i < ast_format_cap_count(p->cap); i++) {
+		struct ast_format *format = ast_format_cap_get_format(p->cap, i);
+
 		if (p->ncs && !fc) {
-			ast_format_cap_set(p->cap, &tmpfmt); /* sb5120e bug */
+			ast_format_cap_remove_by_type(p->cap, AST_MEDIA_TYPE_UNKNOWN);
+			ast_format_cap_append(p->cap, format, 0); /* sb5120e bug */
+			ao2_ref(format, -1);
 			break;
 		} else {
 			fc = 0;
-			snprintf(tmp, sizeof(tmp), ", a:%s", ast_rtp_lookup_mime_subtype2(1, &tmpfmt, 0, 0));
+			snprintf(tmp, sizeof(tmp), ", a:%s", ast_rtp_lookup_mime_subtype2(1, format, 0, 0));
 		}
 		strncat(local, tmp, sizeof(local) - strlen(local) - 1);
+
+		ao2_ref(format, -1);
 	}
-	ast_format_cap_iter_end(p->cap);
 
 	if (!sub->sdpsent) {
 		if (sub->gate) {
@@ -2585,7 +2628,7 @@ static int transmit_modify_request(struct mgcp_subchannel *sub)
 		}
 	}
 
-	reqprep(&resp, p, "MDCX");
+	oseq = reqprep(&resp, p, "MDCX");
 	add_header(&resp, "C", sub->callid);
 	if (!sub->sdpsent) {
 		add_header(&resp, "L", local);
@@ -2644,7 +2687,8 @@ static void add_header_offhook(struct mgcp_subchannel *sub, struct mgcp_request 
 static int transmit_audit_endpoint(struct mgcp_endpoint *p)
 {
 	struct mgcp_request resp;
-	reqprep(&resp, p, "AUEP");
+	unsigned int oseq;
+	oseq = reqprep(&resp, p, "AUEP");
 	/* removed unknown param VS */
 	/*add_header(&resp, "F", "A,R,D,S,X,N,I,T,O,ES,E,MD,M");*/
 	add_header(&resp, "F", "A");
@@ -2658,10 +2702,11 @@ static int transmit_connection_del(struct mgcp_subchannel *sub)
 {
 	struct mgcp_endpoint *p = sub->parent;
 	struct mgcp_request resp;
+	unsigned int oseq;
 
 	ast_debug(3, "Delete connection %s %s@%s-%d with new mode: %s on callid: %s\n",
 		sub->cxident, p->name, p->parent->name, sub->id, mgcp_cxmodes[sub->cxmode], sub->callid);
-	reqprep(&resp, p, "DLCX");
+	oseq = reqprep(&resp, p, "DLCX");
 	/* check if call id is avail */
 	if (sub->callid[0])
 		add_header(&resp, "C", sub->callid);
@@ -2679,10 +2724,11 @@ static int transmit_connection_del(struct mgcp_subchannel *sub)
 static int transmit_connection_del_w_params(struct mgcp_endpoint *p, char *callid, char *cxident)
 {
 	struct mgcp_request resp;
+	unsigned int oseq;
 
 	ast_debug(3, "Delete connection %s %s@%s on callid: %s\n",
 		cxident ? cxident : "", p->name, p->parent->name, callid ? callid : "");
-	reqprep(&resp, p, "DLCX");
+	oseq = reqprep(&resp, p, "DLCX");
 	/* check if call id is avail */
 	if (callid && *callid)
 		add_header(&resp, "C", callid);
@@ -2779,7 +2825,7 @@ static void handle_response(struct mgcp_endpoint *p, struct mgcp_subchannel *sub
 		req = find_command(p, sub, &p->cmd_queue, &p->cmd_queue_lock, ident);
 
 	if (!req) {
-		ast_verb(3, "No command found on [%s] for transaction %d. Ignoring...\n",
+		ast_verb(3, "No command found on [%s] for transaction %u. Ignoring...\n",
 				gw->name, ident);
 		return;
 	}
@@ -2793,10 +2839,10 @@ static void handle_response(struct mgcp_endpoint *p, struct mgcp_subchannel *sub
 			p->hookstate = MGCP_ONHOOK;
 			break;
 		case 406:
-			ast_log(LOG_NOTICE, "Transaction %d timed out\n", ident);
+			ast_log(LOG_NOTICE, "Transaction %u timed out\n", ident);
 			break;
 		case 407:
-			ast_log(LOG_NOTICE, "Transaction %d aborted\n", ident);
+			ast_log(LOG_NOTICE, "Transaction %u aborted\n", ident);
 			break;
 		}
 		if (sub) {
@@ -2949,7 +2995,7 @@ static void start_rtp(struct mgcp_subchannel *sub)
 		ast_rtp_instance_set_prop(sub->rtp, AST_RTP_PROPERTY_NAT, sub->nat);
 	}
 	/* Make a call*ID */
-	snprintf(sub->callid, sizeof(sub->callid), "%08lx%s", ast_random(), sub->txident);
+	snprintf(sub->callid, sizeof(sub->callid), "%08lx%s", (unsigned long)ast_random(), sub->txident);
 	/* Transmit the connection create */
 	if(!sub->parent->pktcgatealloc) {
 		transmit_connect_with_sdp(sub, NULL);
@@ -2973,8 +3019,20 @@ static void *mgcp_ss(void *data)
 	int res= 0;
 	int getforward = 0;
 	int loop_pause = 100;
+	RAII_VAR(struct ast_features_pickup_config *, pickup_cfg, NULL, ao2_cleanup);
+	const char *pickupexten;
 
 	len = strlen(p->dtmf_buf);
+
+	ast_channel_lock(chan);
+	pickup_cfg = ast_get_chan_features_pickup_config(chan);
+	if (!pickup_cfg) {
+		ast_log(LOG_ERROR, "Unable to retrieve pickup configuration options. Unable to detect call pickup extension\n");
+		pickupexten = "";
+	} else {
+		pickupexten = ast_strdupa(pickup_cfg->pickupexten);
+	}
+	ast_channel_unlock(chan);
 
 	while (len < AST_MAX_EXTENSION - 1) {
 		ast_debug(1, "Dtmf buffer '%s' for '%s@%s'\n", p->dtmf_buf, p->name, p->parent->name);
@@ -3023,6 +3081,7 @@ static void *mgcp_ss(void *data)
 				} else {
 					/*res = tone_zone_play_tone(p->subs[index].zfd, -1);*/
 					ast_indicate(chan, -1);
+					ast_channel_lock(chan);
 					ast_channel_exten_set(chan, p->dtmf_buf);
 					ast_channel_dialed(chan)->number.str = ast_strdup(p->dtmf_buf);
 					memset(p->dtmf_buf, 0, sizeof(p->dtmf_buf));
@@ -3031,7 +3090,7 @@ static void *mgcp_ss(void *data)
 						p->hidecallerid ? "" : p->cid_name,
 						ast_channel_caller(chan)->ani.number.valid ? NULL : p->cid_num);
 					ast_setstate(chan, AST_STATE_RING);
-					/*dahdi_enable_ec(p);*/
+					ast_channel_unlock(chan);
 					if (p->dtmfmode & MGCP_DTMF_HYBRID) {
 						p->dtmfmode |= MGCP_DTMF_INBAND;
 						ast_indicate(chan, -1);
@@ -3067,7 +3126,7 @@ static void *mgcp_ss(void *data)
 			len = 0;
 			memset(p->dtmf_buf, 0, sizeof(p->dtmf_buf));
 			timeout = firstdigittimeout;
-		} else if (!strcmp(p->dtmf_buf,ast_pickup_ext())) {
+		} else if (!strcmp(p->dtmf_buf, pickupexten)) {
 			/* Scan all channels and see if any there
 			 * ringing channqels with that have call groups
 			 * that equal this channels pickup group
@@ -3131,13 +3190,17 @@ static void *mgcp_ss(void *data)
 			getforward = 0;
 			memset(p->dtmf_buf, 0, sizeof(p->dtmf_buf));
 			len = 0;
-		} else if (ast_parking_ext_valid(p->dtmf_buf, chan, ast_channel_context(chan)) &&
-			sub->next->owner && ast_bridged_channel(sub->next->owner)) {
+		} else if (ast_parking_provider_registered() && ast_parking_is_exten_park(ast_channel_context(chan), p->dtmf_buf) &&
+			sub->next->owner) {
+			RAII_VAR(struct ast_bridge_channel *, bridge_channel, NULL, ao2_cleanup);
 			/* This is a three way call, the main call being a real channel,
-			   and we're parking the first call. */
-			ast_masq_park_call_exten(ast_bridged_channel(sub->next->owner), chan,
-				p->dtmf_buf, ast_channel_context(chan), 0, NULL);
-			ast_verb(3, "Parking call to '%s'\n", ast_channel_name(chan));
+				and we're parking the first call. */
+			ast_channel_lock(chan);
+			bridge_channel = ast_channel_get_bridge_channel(chan);
+			ast_channel_unlock(chan);
+			if (bridge_channel && !ast_parking_blind_transfer_park(bridge_channel, ast_channel_context(chan), p->dtmf_buf, NULL, NULL)) {
+				ast_verb(3, "Parking call to '%s'\n", ast_channel_name(chan));
+			}
 			break;
 		} else if (!ast_strlen_zero(p->lastcallerid) && !strcmp(p->dtmf_buf, "*60")) {
 			ast_verb(3, "Blacklisting number %s\n", p->lastcallerid);
@@ -3215,57 +3278,55 @@ static void *mgcp_ss(void *data)
 	return NULL;
 }
 
-static int attempt_transfer(struct mgcp_endpoint *p)
+/*! \brief Complete an attended transfer
+ *
+ * \param p The endpoint performing the attended transfer
+ * \param sub The sub-channel completing the attended transfer
+ *
+ * \note p->sub is the currently active sub-channel (the channel the phone is using)
+ * \note p->sub->next is the sub-channel not in use, potentially on hold
+ *
+ * \retval 0 when channel should be hung up
+ * \retval 1 when channel should not be hung up
+ */
+static int attempt_transfer(struct mgcp_endpoint *p, struct mgcp_subchannel *sub)
 {
-	/* *************************
-	 * I hope this works.
-	 * Copied out of chan_zap
-	 * Cross your fingers
-	 * *************************/
+	enum ast_transfer_result res;
 
-	/* In order to transfer, we need at least one of the channels to
-	   actually be in a call bridge.  We can't conference two applications
-	   together (but then, why would we want to?) */
-	if (ast_bridged_channel(p->sub->owner)) {
-		/* The three-way person we're about to transfer to could still be in MOH, so
-		   stop if now if appropriate */
-		if (ast_bridged_channel(p->sub->next->owner))
-			ast_queue_control(p->sub->next->owner, AST_CONTROL_UNHOLD);
-		if (ast_channel_state(p->sub->owner) == AST_STATE_RINGING) {
-			ast_indicate(ast_bridged_channel(p->sub->next->owner), AST_CONTROL_RINGING);
-		}
-		if (ast_channel_masquerade(p->sub->next->owner, ast_bridged_channel(p->sub->owner))) {
-			ast_log(LOG_WARNING, "Unable to masquerade %s as %s\n",
-				ast_channel_name(ast_bridged_channel(p->sub->owner)), ast_channel_name(p->sub->next->owner));
-			return -1;
-		}
-		/* Orphan the channel */
-		unalloc_sub(p->sub->next);
-	} else if (ast_bridged_channel(p->sub->next->owner)) {
-		if (ast_channel_state(p->sub->owner) == AST_STATE_RINGING) {
-			ast_indicate(ast_bridged_channel(p->sub->next->owner), AST_CONTROL_RINGING);
-		}
-		ast_queue_control(p->sub->next->owner, AST_CONTROL_UNHOLD);
-		if (ast_channel_masquerade(p->sub->owner, ast_bridged_channel(p->sub->next->owner))) {
-			ast_log(LOG_WARNING, "Unable to masquerade %s as %s\n",
-				ast_channel_name(ast_bridged_channel(p->sub->next->owner)), ast_channel_name(p->sub->owner));
-			return -1;
-		}
-		/*swap_subs(p, SUB_THREEWAY, SUB_REAL);*/
-		ast_verb(3, "Swapping %d for %d on %s@%s\n", p->sub->id, p->sub->next->id, p->name, p->parent->name);
-		p->sub = p->sub->next;
-		unalloc_sub(p->sub->next);
-		/* Tell the caller not to hangup */
-		return 1;
-	} else {
-		ast_debug(1, "Neither %s nor %s are in a bridge, nothing to transfer\n",
-			ast_channel_name(p->sub->owner), ast_channel_name(p->sub->next->owner));
-		ast_channel_softhangup_internal_flag_add(p->sub->next->owner, AST_SOFTHANGUP_DEV);
-		if (p->sub->next->owner) {
-			p->sub->next->alreadygone = 1;
-			mgcp_queue_hangup(p->sub->next);
-		}
+	/* Ensure that the other channel goes off hold and that it is indicating properly */
+	ast_queue_unhold(sub->next->owner);
+	if (ast_channel_state(sub->owner) == AST_STATE_RINGING) {
+		ast_queue_control(sub->next->owner, AST_CONTROL_RINGING);
 	}
+
+	ast_mutex_unlock(&p->sub->next->lock);
+	ast_mutex_unlock(&p->sub->lock);
+	res = ast_bridge_transfer_attended(sub->owner, sub->next->owner);
+
+	/* Subs are only freed when the endpoint itself is destroyed, so they will continue to exist
+	 * after ast_bridge_transfer_attended returns making this safe without reference counting
+	 */
+	ast_mutex_lock(&p->sub->lock);
+	ast_mutex_lock(&p->sub->next->lock);
+
+	if (res != AST_BRIDGE_TRANSFER_SUCCESS) {
+		/* If transferring fails hang up the other channel if present and us */
+		if (sub->next->owner) {
+			ast_channel_softhangup_internal_flag_add(sub->next->owner, AST_SOFTHANGUP_DEV);
+			mgcp_queue_hangup(sub->next);
+		}
+		sub->next->alreadygone = 1;
+		return 0;
+	}
+
+	unalloc_sub(sub->next);
+
+	/* If the active sub is NOT the one completing the transfer change it to be, and hang up the other sub */
+	if (p->sub != sub) {
+		p->sub = sub;
+		return 1;
+	}
+
 	return 0;
 }
 
@@ -3279,8 +3340,7 @@ static void handle_hd_hf(struct mgcp_subchannel *sub, char *ev)
 	if (sub->outgoing) {
 		/* Answered */
 		if (sub->owner) {
-			if (ast_bridged_channel(sub->owner))
-				ast_queue_control(sub->owner, AST_CONTROL_UNHOLD);
+			ast_queue_unhold(sub->owner);
 			sub->cxmode = MGCP_CX_SENDRECV;
 			if (!sub->rtp) {
 				start_rtp(sub);
@@ -3307,7 +3367,7 @@ static void handle_hd_hf(struct mgcp_subchannel *sub, char *ev)
 #else
 				transmit_notify_request(sub, p->ncs ? "L/rt" : "G/rt");
 #endif
-				c = mgcp_new(sub, AST_STATE_RING, NULL);
+				c = mgcp_new(sub, AST_STATE_RING, NULL, NULL);
 				if (!c) {
 					ast_log(LOG_WARNING, "Unable to start PBX on channel %s@%s\n", p->name, p->parent->name);
 					transmit_notify_request(sub, p->ncs ? "L/cg" : "G/cg");
@@ -3319,7 +3379,7 @@ static void handle_hd_hf(struct mgcp_subchannel *sub, char *ev)
 				} else {
 					transmit_notify_request(sub, "L/dl");
 				}
-				c = mgcp_new(sub, AST_STATE_DOWN, NULL);
+				c = mgcp_new(sub, AST_STATE_DOWN, NULL, NULL);
 				if (c) {
 					if (ast_pthread_create_detached(&t, NULL, mgcp_ss, c)) {
 						ast_log(LOG_WARNING, "Unable to create switch thread: %s\n", strerror(errno));
@@ -3336,8 +3396,7 @@ static void handle_hd_hf(struct mgcp_subchannel *sub, char *ev)
 				ast_log(LOG_WARNING, "On hook, but already have owner on %s@%s\n", p->name, p->parent->name);
 				ast_log(LOG_WARNING, "If we're onhook why are we here trying to handle a hd or hf?\n");
 			}
-			if (ast_bridged_channel(sub->owner))
-				ast_queue_control(sub->owner, AST_CONTROL_UNHOLD);
+			ast_queue_unhold(sub->owner);
 			sub->cxmode = MGCP_CX_SENDRECV;
 			if (!sub->rtp) {
 				start_rtp(sub);
@@ -3454,20 +3513,20 @@ static int handle_request(struct mgcp_subchannel *sub, struct mgcp_request *req,
 					sub->cxmode = MGCP_CX_MUTE;
 					ast_verb(3, "MGCP Muting %d on %s@%s\n", sub->id, p->name, p->parent->name);
 					transmit_modify_request(sub);
-					if (sub->owner && ast_bridged_channel(sub->owner))
-						ast_queue_control(sub->owner, AST_CONTROL_HOLD);
+					if (sub->owner) {
+						ast_queue_hold(sub->owner, NULL);
+					}
 					sub->next->cxmode = MGCP_CX_RECVONLY;
 					handle_hd_hf(sub->next, ev);
 				} else if (sub->owner && sub->next->owner) {
 					/* We've got two active calls lets decide whether or not to conference or just flip flop */
 					if ((!sub->outgoing) && (!sub->next->outgoing)) {
-						/* We made both calls lets conferenct */
+						/* We made both calls lets conference */
 						ast_verb(3, "MGCP Conferencing %d and %d on %s@%s\n",
 								sub->id, sub->next->id, p->name, p->parent->name);
 						sub->cxmode = MGCP_CX_CONF;
 						sub->next->cxmode = MGCP_CX_CONF;
-						if (ast_bridged_channel(sub->next->owner))
-							ast_queue_control(sub->next->owner, AST_CONTROL_UNHOLD);
+						ast_queue_unhold(sub->next->owner);
 						transmit_modify_request(sub);
 						transmit_modify_request(sub->next);
 					} else {
@@ -3479,11 +3538,9 @@ static int handle_request(struct mgcp_subchannel *sub, struct mgcp_request *req,
 						sub->cxmode = MGCP_CX_MUTE;
 						ast_verb(3, "MGCP Muting %d on %s@%s\n", sub->id, p->name, p->parent->name);
 						transmit_modify_request(sub);
-						if (ast_bridged_channel(sub->owner))
-							ast_queue_control(sub->owner, AST_CONTROL_HOLD);
 
-						if (ast_bridged_channel(sub->next->owner))
-							ast_queue_control(sub->next->owner, AST_CONTROL_HOLD);
+						ast_queue_hold(sub->owner, NULL);
+						ast_queue_hold(sub->next->owner, NULL);
 
 						handle_hd_hf(sub->next, ev);
 					}
@@ -3498,8 +3555,7 @@ static int handle_request(struct mgcp_subchannel *sub, struct mgcp_request *req,
 						/* XXX - What do we do now? */
 						return -1;
 					}
-					if (ast_bridged_channel(p->sub->owner))
-						ast_queue_control(p->sub->owner, AST_CONTROL_UNHOLD);
+					ast_queue_unhold(p->sub->owner);
 					p->sub->cxmode = MGCP_CX_SENDRECV;
 					transmit_modify_request(p->sub);
 				}
@@ -3520,13 +3576,8 @@ static int handle_request(struct mgcp_subchannel *sub, struct mgcp_request *req,
 				/* We're allowed to transfer, we have two avtive calls and */
 				/* we made at least one of the calls.  Let's try and transfer */
 				ast_mutex_lock(&p->sub->next->lock);
-				res = attempt_transfer(p);
-				if (res < 0) {
-					if (p->sub->next->owner) {
-						sub->next->alreadygone = 1;
-						mgcp_queue_hangup(sub->next);
-					}
-				} else if (res) {
+				res = attempt_transfer(p, sub);
+				if (res) {
 					ast_log(LOG_WARNING, "Transfer attempt failed\n");
 					ast_mutex_unlock(&p->sub->next->lock);
 					return -1;
@@ -3922,14 +3973,16 @@ static int restart_monitor(void)
 	return 0;
 }
 
-static struct ast_channel *mgcp_request(const char *type, struct ast_format_cap *cap, const struct ast_channel *requestor, const char *dest, int *cause)
+static struct ast_channel *mgcp_request(const char *type, struct ast_format_cap *cap, const struct ast_assigned_ids *assignedids, const struct ast_channel *requestor, const char *dest, int *cause)
 {
 	struct mgcp_subchannel *sub;
 	struct ast_channel *tmpc = NULL;
 	char tmp[256];
 
-	if (!(ast_format_cap_has_joint(cap, global_capability))) {
-		ast_log(LOG_NOTICE, "Asked to get a channel of unsupported format '%s'\n", ast_getformatname_multiple(tmp, sizeof(tmp), cap));
+	if (!(ast_format_cap_iscompatible(cap, global_capability))) {
+		struct ast_str *cap_buf = ast_str_alloca(64);
+		ast_log(LOG_NOTICE, "Asked to get a channel of unsupported format '%s'\n",
+			ast_format_cap_get_names(cap, &cap_buf));
 		/*return NULL;*/
 	}
 	ast_copy_string(tmp, dest, sizeof(tmp));
@@ -3961,7 +4014,7 @@ static struct ast_channel *mgcp_request(const char *type, struct ast_format_cap 
 		ast_mutex_unlock(&sub->lock);
 		return NULL;
 	}
-	tmpc = mgcp_new(sub->owner ? sub->next : sub, AST_STATE_DOWN, requestor ? ast_channel_linkedid(requestor) : NULL);
+	tmpc = mgcp_new(sub->owner ? sub->next : sub, AST_STATE_DOWN, assignedids, requestor);
 	ast_mutex_unlock(&sub->lock);
 	if (!tmpc)
 		ast_log(LOG_WARNING, "Unable to make channel for '%s'\n", tmp);
@@ -4087,7 +4140,7 @@ static struct mgcp_gateway *build_gateway(char *cat, struct ast_variable *v)
 		} else if (!strcasecmp(v->name, "accountcode")) {
 			ast_copy_string(accountcode, v->value, sizeof(accountcode));
 		} else if (!strcasecmp(v->name, "amaflags")) {
-			y = ast_cdr_amaflags2int(v->value);
+			y = ast_channel_string2amaflag(v->value);
 			if (y < 0) {
 				ast_log(LOG_WARNING, "Invalid AMA flags: %s at line %d\n", v->value, v->lineno);
 			} else {
@@ -4120,7 +4173,15 @@ static struct mgcp_gateway *build_gateway(char *cat, struct ast_variable *v)
 			ast_copy_string(mailbox, v->value, sizeof(mailbox));
 		} else if (!strcasecmp(v->name, "hasvoicemail")) {
 			if (ast_true(v->value) && ast_strlen_zero(mailbox)) {
-				ast_copy_string(mailbox, gw->name, sizeof(mailbox));
+				/*
+				 * hasvoicemail is a users.conf legacy voicemail enable method.
+				 * hasvoicemail is only going to work for app_voicemail mailboxes.
+				 */
+				if (strchr(gw->name, '@')) {
+					ast_copy_string(mailbox, gw->name, sizeof(mailbox));
+				} else {
+					snprintf(mailbox, sizeof(mailbox), "%s@default", gw->name);
+				}
 			}
 		} else if (!strcasecmp(v->name, "adsi")) {
 			adsi = ast_true(v->value);
@@ -4157,7 +4218,7 @@ static struct mgcp_gateway *build_gateway(char *cat, struct ast_variable *v)
 					ast_mutex_init(&e->lock);
 					ast_mutex_init(&e->rqnt_queue_lock);
 					ast_mutex_init(&e->cmd_queue_lock);
-					e->cap = ast_format_cap_alloc_nolock();
+					e->cap = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT);
 					ast_copy_string(e->name, v->value, sizeof(e->name));
 					e->needaudit = 1;
 				}
@@ -4172,22 +4233,17 @@ static struct mgcp_gateway *build_gateway(char *cat, struct ast_variable *v)
 				ast_copy_string(e->mailbox, mailbox, sizeof(e->mailbox));
 				ast_copy_string(e->parkinglot, parkinglot, sizeof(e->parkinglot));
 				if (!ast_strlen_zero(e->mailbox)) {
-					char *mbox, *cntx;
-					cntx = mbox = ast_strdupa(e->mailbox);
-					strsep(&cntx, "@");
-					if (ast_strlen_zero(cntx)) {
-						cntx = "default";
+					struct stasis_topic *mailbox_specific_topic;
+
+					mailbox_specific_topic = ast_mwi_topic(e->mailbox);
+					if (mailbox_specific_topic) {
+						e->mwi_event_sub = stasis_subscribe_pool(mailbox_specific_topic, mwi_event_cb, NULL);
 					}
-					e->mwi_event_sub = ast_event_subscribe(AST_EVENT_MWI, mwi_event_cb, "MGCP MWI subscription", NULL,
-						AST_EVENT_IE_MAILBOX, AST_EVENT_IE_PLTYPE_STR, mbox,
-						AST_EVENT_IE_CONTEXT, AST_EVENT_IE_PLTYPE_STR, cntx,
-						AST_EVENT_IE_NEWMSGS, AST_EVENT_IE_PLTYPE_EXISTS,
-						AST_EVENT_IE_END);
 				}
-				snprintf(e->rqnt_ident, sizeof(e->rqnt_ident), "%08lx", ast_random());
+				snprintf(e->rqnt_ident, sizeof(e->rqnt_ident), "%08lx", (unsigned long)ast_random());
 				e->msgstate = -1;
 				e->amaflags = amaflags;
-				ast_format_cap_copy(e->cap, global_capability);
+				ast_format_cap_append_from_cap(e->cap, global_capability, AST_MEDIA_TYPE_UNKNOWN);
 				e->parent = gw;
 				e->ncs = ncs;
 				e->dtmfmode = dtmfmode;
@@ -4213,7 +4269,7 @@ static struct mgcp_gateway *build_gateway(char *cat, struct ast_variable *v)
 				e->hookstate = MGCP_ONHOOK;
 				e->chanvars = copy_vars(chanvars);
 				if (!ep_reload) {
-					/*snprintf(txident, sizeof(txident), "%08lx", ast_random());*/
+					/*snprintf(txident, sizeof(txident), "%08lx", (unsigned long)ast_random());*/
 					for (i = 0; i < MAX_SUBS; i++) {
 						sub = ast_calloc(1, sizeof(*sub));
 						if (sub) {
@@ -4222,7 +4278,7 @@ static struct mgcp_gateway *build_gateway(char *cat, struct ast_variable *v)
 							ast_mutex_init(&sub->cx_queue_lock);
 							sub->parent = e;
 							sub->id = i;
-							snprintf(sub->txident, sizeof(sub->txident), "%08lx", ast_random());
+							snprintf(sub->txident, sizeof(sub->txident), "%08lx", (unsigned long)ast_random());
 							/*stnrcpy(sub->txident, txident, sizeof(sub->txident) - 1);*/
 							sub->cxmode = MGCP_CX_INACTIVE;
 							sub->nat = nat;
@@ -4269,7 +4325,7 @@ static struct mgcp_gateway *build_gateway(char *cat, struct ast_variable *v)
 					ast_mutex_init(&e->lock);
 					ast_mutex_init(&e->rqnt_queue_lock);
 					ast_mutex_init(&e->cmd_queue_lock);
-					e->cap = ast_format_cap_alloc_nolock();
+					e->cap = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT);
 					ast_copy_string(e->name, v->value, sizeof(e->name));
 					e->needaudit = 1;
 				}
@@ -4291,7 +4347,7 @@ static struct mgcp_gateway *build_gateway(char *cat, struct ast_variable *v)
 					e->parent = gw;
 				}
 				e->amaflags = amaflags;
-				ast_format_cap_copy(e->cap, global_capability);
+				ast_format_cap_append_from_cap(e->cap, global_capability, AST_MEDIA_TYPE_UNKNOWN);
 				e->dtmfmode = dtmfmode;
 				e->ncs = ncs;
 				e->pktcgatealloc = pktcgatealloc;
@@ -4324,7 +4380,7 @@ static struct mgcp_gateway *build_gateway(char *cat, struct ast_variable *v)
 					e->onhooktime = time(NULL);
 					/* ASSUME we're onhook */
 					e->hookstate = MGCP_ONHOOK;
-					snprintf(e->rqnt_ident, sizeof(e->rqnt_ident), "%08lx", ast_random());
+					snprintf(e->rqnt_ident, sizeof(e->rqnt_ident), "%08lx", (unsigned long)ast_random());
 				}
 
 				for (i = 0, sub = NULL; i < MAX_SUBS; i++) {
@@ -4346,7 +4402,7 @@ static struct mgcp_gateway *build_gateway(char *cat, struct ast_variable *v)
 							ast_copy_string(sub->magic, MGCP_SUBCHANNEL_MAGIC, sizeof(sub->magic));
 							sub->parent = e;
 							sub->id = i;
-							snprintf(sub->txident, sizeof(sub->txident), "%08lx", ast_random());
+							snprintf(sub->txident, sizeof(sub->txident), "%08lx", (unsigned long)ast_random());
 							sub->cxmode = MGCP_CX_INACTIVE;
 							sub->next = e->sub;
 							e->sub = sub;
@@ -4447,7 +4503,8 @@ static void mgcp_get_codec(struct ast_channel *chan, struct ast_format_cap *resu
 {
 	struct mgcp_subchannel *sub = ast_channel_tech_pvt(chan);
 	struct mgcp_endpoint *p = sub->parent;
-	ast_format_cap_copy(result, p->cap);
+
+	ast_format_cap_append_from_cap(result, p->cap, AST_MEDIA_TYPE_UNKNOWN);
 }
 
 static struct ast_rtp_glue mgcp_rtp_glue = {
@@ -4521,8 +4578,9 @@ static void destroy_endpoint(struct mgcp_endpoint *e)
 		ast_free(s);
 	}
 
-	if (e->mwi_event_sub)
-		ast_event_unsubscribe(e->mwi_event_sub);
+	if (e->mwi_event_sub) {
+		e->mwi_event_sub = stasis_unsubscribe(e->mwi_event_sub);
+	}
 
 	if (e->chanvars) {
 		ast_variables_destroy(e->chanvars);
@@ -4532,7 +4590,7 @@ static void destroy_endpoint(struct mgcp_endpoint *e)
 	ast_mutex_destroy(&e->lock);
 	ast_mutex_destroy(&e->rqnt_queue_lock);
 	ast_mutex_destroy(&e->cmd_queue_lock);
-	e->cap = ast_format_cap_destroy(e->cap);
+	ao2_ref(e->cap, -1);
 	ast_free(e);
 }
 
@@ -4630,9 +4688,8 @@ static int reload_config(int reload)
 	char *cat;
 	struct ast_hostent ahp;
 	struct hostent *hp;
-	struct ast_format format;
 	struct ast_flags config_flags = { reload ? CONFIG_FLAG_FILEUNCHANGED : 0 };
-	
+
 	if (gethostname(ourhost, sizeof(ourhost)-1)) {
 		ast_log(LOG_WARNING, "Unable to get hostname, MGCP disabled\n");
 		return 0;
@@ -4670,19 +4727,9 @@ static int reload_config(int reload)
 				memcpy(&bindaddr.sin_addr, hp->h_addr, sizeof(bindaddr.sin_addr));
 			}
 		} else if (!strcasecmp(v->name, "allow")) {
-			ast_getformatbyname(v->value, &format);
-			if (!format.id) {
-				ast_log(LOG_WARNING, "Cannot allow unknown format '%s'\n", v->value);
-			} else {
-				ast_format_cap_add(global_capability, &format);
-			}
+			ast_format_cap_update_by_allow_disallow(global_capability, v->value, 1);
 		} else if (!strcasecmp(v->name, "disallow")) {
-			ast_getformatbyname(v->value, &format);
-			if (!format.id) {
-				ast_log(LOG_WARNING, "Cannot allow unknown format '%s'\n", v->value);
-			} else {
-				ast_format_cap_remove(global_capability, &format);
-			}
+			ast_format_cap_update_by_allow_disallow(global_capability, v->value, 0);
 		} else if (!strcasecmp(v->name, "tos")) {
 			if (ast_str2tos(v->value, &qos.tos)) {
 			    ast_log(LOG_WARNING, "Invalid tos value at line %d, refer to QoS documentation\n", v->lineno);
@@ -4795,39 +4842,56 @@ static int reload_config(int reload)
 	return 0;
 }
 
-/*! \brief  load_module: PBX load module - initialization ---*/
+/*!
+ * \brief Load the module
+ *
+ * Module loading including tests for configuration or dependencies.
+ * This function can return AST_MODULE_LOAD_FAILURE, AST_MODULE_LOAD_DECLINE,
+ * or AST_MODULE_LOAD_SUCCESS. If a dependency or environment variable fails
+ * tests return AST_MODULE_LOAD_FAILURE. If the module can not load the
+ * configuration file or other non-critical problem return
+ * AST_MODULE_LOAD_DECLINE. On success return AST_MODULE_LOAD_SUCCESS.
+ */
 static int load_module(void)
 {
-	struct ast_format tmpfmt;
-
-	if (!(global_capability = ast_format_cap_alloc())) {
+	if (!(global_capability = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT))) {
 		return AST_MODULE_LOAD_FAILURE;
 	}
-	if (!(mgcp_tech.capabilities = ast_format_cap_alloc())) {
+	if (!(mgcp_tech.capabilities = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT))) {
+		ao2_ref(global_capability, -1);
 		return AST_MODULE_LOAD_FAILURE;
 	}
-	ast_format_cap_add(global_capability, ast_format_set(&tmpfmt, AST_FORMAT_ULAW, 0));
-	ast_format_cap_add(mgcp_tech.capabilities, ast_format_set(&tmpfmt, AST_FORMAT_ULAW, 0));
-	ast_format_cap_add(mgcp_tech.capabilities, ast_format_set(&tmpfmt, AST_FORMAT_ALAW, 0));
+	ast_format_cap_append(global_capability, ast_format_ulaw, 0);
+	ast_format_cap_append(mgcp_tech.capabilities, ast_format_ulaw, 0);
+	ast_format_cap_append(mgcp_tech.capabilities, ast_format_alaw, 0);
 	if (!(sched = ast_sched_context_create())) {
 		ast_log(LOG_WARNING, "Unable to create schedule context\n");
+		ao2_ref(global_capability, -1);
+		ao2_ref(mgcp_tech.capabilities, -1);
 		return AST_MODULE_LOAD_FAILURE;
 	}
 
 	if (!(io = io_context_create())) {
 		ast_log(LOG_WARNING, "Unable to create I/O context\n");
 		ast_sched_context_destroy(sched);
+		ao2_ref(global_capability, -1);
+		ao2_ref(mgcp_tech.capabilities, -1);
 		return AST_MODULE_LOAD_FAILURE;
 	}
 
-	if (reload_config(0))
+	if (reload_config(0)) {
+		ao2_ref(global_capability, -1);
+		ao2_ref(mgcp_tech.capabilities, -1);
 		return AST_MODULE_LOAD_DECLINE;
+	}
 
 	/* Make sure we can register our mgcp channel type */
 	if (ast_channel_register(&mgcp_tech)) {
 		ast_log(LOG_ERROR, "Unable to register channel class 'MGCP'\n");
 		io_context_destroy(io);
 		ast_sched_context_destroy(sched);
+		ao2_ref(global_capability, -1);
+		ao2_ref(mgcp_tech.capabilities, -1);
 		return AST_MODULE_LOAD_FAILURE;
 	}
 
@@ -4940,13 +5004,16 @@ static int unload_module(void)
 	ast_cli_unregister_multiple(cli_mgcp, sizeof(cli_mgcp) / sizeof(struct ast_cli_entry));
 	ast_sched_context_destroy(sched);
 
-	global_capability = ast_format_cap_destroy(global_capability);
-	mgcp_tech.capabilities = ast_format_cap_destroy(mgcp_tech.capabilities);
+	ao2_ref(global_capability, -1);
+	global_capability = NULL;
+	ao2_ref(mgcp_tech.capabilities, -1);
+	mgcp_tech.capabilities = NULL;
 
 	return 0;
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "Media Gateway Control Protocol (MGCP)",
+		.support_level = AST_MODULE_SUPPORT_EXTENDED,
 		.load = load_module,
 		.unload = unload_module,
 		.reload = reload,
