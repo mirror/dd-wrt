@@ -160,7 +160,27 @@ int eval_va(const char *cmd, ...)
 		if (arg == NULL)
 			break;
 	}
-	return _eval(s_args);
+	return _evalpid(s_args, ">/dev/console", 0, NULL);
+
+}
+
+int eval_va_silence(const char *cmd, ...)
+{
+	char *s_args[128];
+	va_list args;
+	va_start(args, (char *)cmd);
+	char *next;
+	int i;
+	s_args[0] = cmd;
+	for (i = 0; i < 127; i++) {
+		const char *arg = va_arg(args, const char *);
+		s_args[i + 1] = arg;
+		if (arg == NULL)
+			break;
+	}
+	return _evalpid(s_args, NULL, 0, NULL);
+
+
 
 }
 
