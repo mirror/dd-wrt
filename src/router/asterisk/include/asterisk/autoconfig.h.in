@@ -394,7 +394,7 @@
 /* Define to 1 if you have the `m' library (-lm). */
 #undef HAVE_LIBM
 
-/* Define if your system has the LIBXML2 libraries. */
+/* Define to 1 if you have the LibXML2 library. */
 #undef HAVE_LIBXML2
 
 /* Define to 1 if you have the LibXSLT library. */

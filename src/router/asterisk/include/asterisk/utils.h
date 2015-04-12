@@ -25,7 +25,7 @@
 
 #include "asterisk/network.h"
 
-#ifndef __UCLIBC__
+#if 0 //ndef __UCLIBC__
 #include <execinfo.h>
 #endif
 #include <time.h>	/* we want to override localtime_r */
@@ -542,7 +542,7 @@ extern void *_ast_mem_backtrace_buffer[_AST_MEM_BACKTRACE_BUFLEN];
  * Ok, this sucks. But if we're already out of mem, we don't
  * want the logger to create infinite recursion (and a crash).
  */
-#ifndef __UCLIBC__
+#if 0// __UCLIBC__
 #define MALLOC_FAILURE_MSG \
 	do { \
 		if (backtrace(_ast_mem_backtrace_buffer, _AST_MEM_BACKTRACE_BUFLEN) < _AST_MEM_BACKTRACE_BUFLEN) { \
