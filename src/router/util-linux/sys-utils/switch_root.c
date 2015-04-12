@@ -182,7 +182,7 @@ static int switchroot(const char *newroot)
 			struct statfs stfs;
 			if (fstatfs(cfd, &stfs) == 0 &&
 			    (stfs.f_type == (ul_statfs_ftype_t) STATFS_RAMFS_MAGIC ||
-			     stfs.f_type == (ul_statfs_ftype_t) STATFS_TMPFS_MAGIC)))
+			     stfs.f_type == (ul_statfs_ftype_t) STATFS_TMPFS_MAGIC))
 				recursiveRemove(cfd);
 			else
 				warn(_("old root filesystem is not an initramfs"));
