@@ -1,0 +1,57 @@
+_fdisk_module()
+{
+	local cur prev OPTS
+	COMPREPLY=()
+	cur="${COMP_WORDS[COMP_CWORD]}"
+	prev="${COMP_WORDS[COMP_CWORD-1]}"
+	case $prev in
+		'-s'|'--getsz')
+			COMPREPLY=( $(compgen -W "$(lsblk -pnro name)" -- $cur) )
+			return 0
+			;;
+		'-b'|'--sector-size')
+			COMPREPLY=( $(compgen -W "512 1024 2048 4096" -- $cur) )
+			return 0
+			;;
+		'-c'|'--compatibility')
+			COMPREPLY=( $(compgen -W "dos nondos" -- $cur) )
+			return 0
+			;;
+		'-L'|'--color')
+			COMPREPLY=( $(compgen -W "auto never always" -- $cur) )
+			return 0
+			;;
+		'-u'|'--units')
+			COMPREPLY=( $(compgen -W "cylinders sectors" -- $cur) )
+			return 0
+			;;
+		'-C'|'--geom-cylinders'|'-H'|'--geom-heads'|'-S'|'--geom-sectors')
+			COMPREPLY=( $(compgen -W "number" -- $cur) )
+			return 0
+			;;
+		'-h'|'--help'|'-v'|'--version'|'-V'|'--list')
+			return 0
+			;;
+	esac
+	case $cur in
+		-*)
+			OPTS="--sector-size
+				--compatibility
+				--color
+				--list
+				--type
+				--units
+				--getsz
+				--geom-cylinders
+				--geom-heads
+				--geom-sectors
+				--help
+				--version"
+			COMPREPLY=( $(compgen -W "${OPTS[*]}" -- $cur) )
+			return 0
+			;;
+	esac
+	COMPREPLY=( $(compgen -W "$(lsblk -pnro name)" -- $cur) )
+	return 0
+}
+complete -F _fdisk_module fdisk

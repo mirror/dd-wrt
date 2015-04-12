@@ -1,0 +1,83 @@
+.\" Written by Andries E. Brouwer (aeb@cwi.nl)
+.\" Placed in the public domain
+.\"
+.TH RENAME 1 "June 2011" "util-linux" "User Commands"
+.SH NAME
+rename \- rename files
+.SH SYNOPSIS
+.B rename
+[options]
+.IR "expression replacement file" ...
+.SH DESCRIPTION
+.B rename
+will rename the specified files by replacing the first occurrence of
+.I expression
+in their name by
+.IR replacement .
+.SH OPTIONS
+.TP
+.BR \-s , " \-\-symlink"
+Do not rename a symlink but its target.
+.TP
+.BR \-v , " \-\-verbose"
+Show which files where renamed, if any.
+.TP
+.BR \-V , " \-\-version"
+Display version information and exit.
+.TP
+.BR \-h , " \-\-help"
+Display help text and exit.
+.SH EXAMPLES
+Given the files
+.IR foo1 ", ..., " foo9 ", " foo10 ", ..., " foo278 ,
+the commands
+.RS
+.PP
+.nf
+rename foo foo0 foo?
+rename foo foo0 foo??
+.fi
+.PP
+.RE
+will turn them into
+.IR foo001 ", ..., " foo009 ", " foo010 ", ..., " foo278 .
+And
+.RS
+.PP
+.nf
+rename .htm .html *.htm
+.fi
+.PP
+.RE
+will fix the extension of your html files.
+.SH WARNING
+The renaming has no safeguards.  If the user has permission to rewrite file names,
+the command will perform the action without any questions.  For example, the
+result can be quite drastic when the command is run as root in the /lib
+directory.  Always make a backup before running the command, unless you truly
+know what you are doing.
+.SH "EXIT STATUS"
+.RS
+.PD 0
+.TP
+.B 0
+all requested rename operations were successful
+.TP
+.B 1
+all rename operations failed
+.TP
+.B 2
+some rename operations failed
+.TP
+.B 4
+nothing was renamed
+.TP
+.B 64
+unanticipated error occurred
+.PD
+.RE
+.SH "SEE ALSO"
+.BR mv (1)
+.SH AVAILABILITY
+The rename command is part of the util-linux package and is available from
+ftp://ftp.kernel.org/pub/linux/utils/util-linux/.

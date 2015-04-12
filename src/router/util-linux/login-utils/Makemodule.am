@@ -1,0 +1,244 @@
+
+if BUILD_LAST
+usrbin_exec_PROGRAMS += last
+dist_man_MANS += \
+	login-utils/last.1 \
+	login-utils/lastb.1
+last_SOURCES = login-utils/last.c lib/monotonic.c
+last_LDADD = $(LDADD) libcommon.la $(CLOCKGETTIME_LIBS)
+
+install-exec-hook-last:
+	cd $(DESTDIR)$(usrbin_execdir) && ln -sf last lastb
+
+INSTALL_EXEC_HOOKS += install-exec-hook-last
+endif
+
+if BUILD_DEPRECATED_LAST
+usrbin_exec_PROGRAMS += last
+dist_man_MANS += login-utils/last-deprecated.1
+last_SOURCES = login-utils/last-deprecated.c
+endif # BUILD_DEPRECATED_LAST
+
+
+if BUILD_SULOGIN
+sbin_PROGRAMS += sulogin
+dist_man_MANS += login-utils/sulogin.8
+sulogin_SOURCES = \
+	login-utils/sulogin.c \
+	login-utils/sulogin-consoles.c \
+	login-utils/sulogin-consoles.h
+sulogin_LDADD = $(LDADD) libcommon.la
+
+if HAVE_LIBCRYPT
+sulogin_LDADD += -lcrypt
+endif
+if HAVE_SELINUX
+sulogin_LDADD += -lselinux
+endif
+
+check_PROGRAMS += test_consoles
+test_consoles_SOURCES = login-utils/sulogin-consoles.c
+test_consoles_CFLAGS = -DTEST_PROGRAM
+test_consoles_LDADD = libcommon.la
+endif # BUILD_SULOGIN
+
+
+if BUILD_LOGIN
+bin_PROGRAMS += login
+dist_man_MANS += login-utils/login.1
+login_SOURCES = \
+	login-utils/login.c \
+	login-utils/logindefs.c \
+	login-utils/logindefs.h
+login_LDADD = $(LDADD) libcommon.la -lpam
+if HAVE_LINUXPAM
+login_LDADD += -lpam_misc
+endif
+if HAVE_AUDIT
+login_LDADD += -laudit
+endif
+if HAVE_SELINUX
+login_LDADD += -lselinux
+endif
+endif # BUILD_LOGIN
+
+
+if BUILD_NOLOGIN
+sbin_PROGRAMS += nologin
+dist_man_MANS += login-utils/nologin.8
+nologin_SOURCES = login-utils/nologin.c
+endif
+
+
+if BUILD_UTMPDUMP
+usrbin_exec_PROGRAMS += utmpdump
+dist_man_MANS += login-utils/utmpdump.1
+utmpdump_SOURCES = login-utils/utmpdump.c
+endif
+
+
+if BUILD_CHFN_CHSH
+usrbin_exec_PROGRAMS += chfn chsh
+dist_man_MANS += \
+	login-utils/chfn.1 \
+	login-utils/chsh.1
+
+chfn_chsh_sources = \
+	login-utils/ch-common.h \
+	login-utils/ch-common.c
+chfn_chsh_cflags = $(SUID_CFLAGS) $(AM_CFLAGS)
+chfn_chsh_ldflags = $(SUID_LDFLAGS) $(AM_LDFLAGS)
+chfn_chsh_ldadd = libcommon.la
+
+if CHFN_CHSH_PASSWORD
+chfn_chsh_ldadd += -lpam
+if HAVE_LINUXPAM
+chfn_chsh_ldadd += -lpam_misc
+endif
+chfn_chsh_sources += \
+	login-utils/auth.c \
+	login-utils/auth.h
+endif # CHFN_CHSH_PASSWORD
+
+if HAVE_USER
+chfn_chsh_ldflags += $(LIBUSER_LIBS)
+chfn_chsh_cflags += $(LIBUSER_CFLAGS)
+chfn_chsh_sources+= \
+	login-utils/libuser.c \
+	login-utils/libuser.h
+else
+chfn_chsh_sources += \
+	login-utils/islocal.c \
+	login-utils/islocal.h \
+	login-utils/setpwnam.c \
+	login-utils/setpwnam.h
+endif
+
+if HAVE_SELINUX
+chfn_chsh_sources += \
+	login-utils/selinux_utils.c \
+	login-utils/selinux_utils.h
+chfn_chsh_ldadd += -lselinux
+endif
+
+chfn_SOURCES = \
+	login-utils/chfn.c \
+	login-utils/logindefs.c \
+	login-utils/logindefs.h \
+	$(chfn_chsh_sources)
+chfn_CFLAGS = $(chfn_chsh_cflags)
+chfn_LDFLAGS = $(chfn_chsh_ldflags)
+chfn_LDADD = $(LDADD) $(chfn_chsh_ldadd)
+
+chsh_SOURCES = login-utils/chsh.c $(chfn_chsh_sources)
+chsh_CFLAGS = $(chfn_chsh_cflags)
+chsh_LDFLAGS = $(chfn_chsh_ldflags)
+chsh_LDADD = $(LDADD) $(chfn_chsh_ldadd)
+endif # BUILD_CHFN_CHSH
+
+
+if BUILD_SU
+bin_PROGRAMS += su
+dist_man_MANS += login-utils/su.1
+su_SOURCES = \
+	login-utils/su.c \
+	login-utils/su-common.c \
+	login-utils/su-common.h \
+	login-utils/logindefs.c \
+	login-utils/logindefs.h
+su_CFLAGS = $(SUID_CFLAGS) $(AM_CFLAGS)
+su_LDFLAGS = $(SUID_LDFLAGS) $(AM_LDFLAGS)
+su_LDADD = $(LDADD) libcommon.la -lpam
+if HAVE_LINUXPAM
+su_LDADD += -lpam_misc
+endif
+endif # BUILD_SU
+
+
+if BUILD_RUNUSER
+sbin_PROGRAMS += runuser
+dist_man_MANS += login-utils/runuser.1
+runuser_SOURCES = \
+	login-utils/runuser.c \
+	login-utils/su-common.c \
+	login-utils/su-common.h \
+	login-utils/logindefs.c \
+	login-utils/logindefs.h
+runuser_LDADD = $(LDADD) libcommon.la -lpam
+if HAVE_LINUXPAM
+runuser_LDADD += -lpam_misc
+endif
+endif # BUILD_RUNUSER
+
+
+if BUILD_NEWGRP
+usrbin_exec_PROGRAMS += newgrp
+dist_man_MANS += login-utils/newgrp.1
+newgrp_SOURCES = login-utils/newgrp.c
+newgrp_CFLAGS = $(SUID_CFLAGS) $(AM_CFLAGS)
+newgrp_LDFLAGS = $(SUID_LDFLAGS) $(AM_LDFLAGS)
+newgrp_LDADD = $(LDADD)
+if HAVE_LIBCRYPT
+newgrp_LDADD += -lcrypt
+endif
+endif # BUILD_NEWGRP
+
+if BUILD_LSLOGINS
+usrbin_exec_PROGRAMS += lslogins
+dist_man_MANS += login-utils/lslogins.1
+lslogins_SOURCES = \
+	login-utils/lslogins.c \
+	login-utils/logindefs.c \
+	login-utils/logindefs.h
+lslogins_LDADD = $(LDADD) libcommon.la libsmartcols.la
+lslogins_CFLAGS = $(AM_CFLAGS) -I$(ul_libsmartcols_incdir)
+if HAVE_SELINUX
+lslogins_LDADD += -lselinux
+endif
+if HAVE_SYSTEMD
+lslogins_LDADD += $(SYSTEMD_LIBS) $(SYSTEMD_JOURNAL_LIBS)
+lslogins_CFLAGS += $(SYSTEMD_CFLAGS) $(SYSTEMD_JOURNAL_CFLAGS)
+endif
+endif # BUILD_LSLOGINS
+
+if BUILD_VIPW
+usrsbin_exec_PROGRAMS += vipw
+dist_man_MANS += \
+	login-utils/vigr.8 \
+	login-utils/vipw.8
+vipw_SOURCES = \
+	login-utils/vipw.c \
+	login-utils/setpwnam.h
+vipw_LDADD = $(LDADD) libcommon.la
+if HAVE_SELINUX
+vipw_LDADD += -lselinux
+endif
+install-exec-hook-vipw::
+	cd $(DESTDIR)$(usrsbin_execdir) && ln -sf vipw vigr
+
+INSTALL_EXEC_HOOKS += install-exec-hook-vipw
+endif # BUILD_VIPW
+
+
+check_PROGRAMS += \
+	test_islocal \
+	test_logindefs
+
+test_islocal_SOURCES = login-utils/islocal.c
+test_islocal_CPPFLAGS = -DTEST_PROGRAM $(AM_CPPFLAGS)
+
+test_logindefs_SOURCES = \
+	login-utils/logindefs.c \
+	login-utils/logindefs.h
+test_logindefs_CPPFLAGS = -DTEST_PROGRAM $(AM_CPPFLAGS)
+
+
+install-exec-hook:
+if BUILD_SU
+if MAKEINSTALL_DO_SETUID
+	chmod 4755 $(DESTDIR)$(bindir)/su
+endif
+endif
+if BUILD_VIPW
+	cd $(DESTDIR)$(usrsbin_execdir) && ln -sf vipw vigr
+endif

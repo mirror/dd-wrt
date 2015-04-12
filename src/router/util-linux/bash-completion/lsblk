@@ -1,0 +1,76 @@
+_lsblk_module()
+{
+	local cur prev OPTS
+	COMPREPLY=()
+	cur="${COMP_WORDS[COMP_CWORD]}"
+	prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+	LSBLK_COLS="NAME KNAME MAJ:MIN FSTYPE MOUNTPOINT
+		LABEL UUID PARTTYPE PARTLABEL PARTUUID PARTFLAGS
+		RA RO RM
+		MODEL SIZE STATE OWNER GROUP MODE
+		ALIGNMENT MIN-IO OPT-IO PHY-SEC LOG-SEC
+		ROTA SCHED RQ-SIZE TYPE DISC-ALN
+		DISC-GRAN DISC-MAX DISC-ZERO WSAME WWN
+		RAND PKNAME HCTL TRAN REV VENDOR"
+
+	case $prev in
+		'-e'|'--exclude'|'-I'|'--include')
+			local MAJOR I J
+			MAJOR=''
+			for I in /sys/dev/block/*; do
+				J=${I##*/}
+				MAJOR="$MAJOR ${J%%:*}"
+			done
+			# FIXME: how to append to a string with compgen?
+			compopt -o nospace
+			COMPREPLY=( $(compgen -W "$MAJOR" -S ',' -- $cur) )
+			return 0
+			;;
+		'-o'|'--output')
+			# FIXME: how to append to a string with compgen?
+			compopt -o nospace
+			COMPREPLY=( $(compgen -W "$LSBLK_COLS" -S ',' -- $cur) )
+			return 0
+			;;
+		'-x'|'--sort')
+			compopt -o nospace
+			COMPREPLY=( $(compgen -W "$LSBLK_COLS"  -- $cur) )
+			return 0
+			;;
+		'-h'|'--help'|'-V'|'--version')
+			return 0
+			;;
+	esac
+	case $cur in
+		-*)
+			OPTS="--all
+				--bytes
+				--nodeps
+				--discard
+				--exclude
+				--fs
+				--help
+				--include
+				--ascii
+				--list
+				--perms
+				--noheadings
+				--output
+				--pairs
+				--raw
+				--inverse
+				--topology
+				--scsi
+				--sort
+				--help
+				--version"
+			COMPREPLY=( $(compgen -W "${OPTS[*]}" -- $cur) )
+			return 0
+			;;
+	esac
+	local DEVS
+	COMPREPLY=( $(compgen -W "$($1 -pnro name)" -- $cur) )
+	return 0
+}
+complete -F _lsblk_module lsblk
